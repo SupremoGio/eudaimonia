@@ -1,4 +1,4 @@
-import os, json as _json, urllib.request, urllib.error
+import os, json as _json, http.client
 from datetime import date, timedelta
 
 TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
@@ -53,22 +53,36 @@ class _TursoCursor:
     def __iter__(self): return iter(self._rows[self._idx:])
 
 
+_http_conn = None   # persistent HTTPS connection reused across requests
+
 class _TursoConn:
     def __init__(self, url, token):
-        self._base  = url.replace("libsql://", "https://")
+        self._host  = url.replace("libsql://", "")
         self._token = token
         self._last_rowid = None
 
     def _pipeline(self, stmts):
+        global _http_conn
         reqs = [{"type": "execute", "stmt": s} for s in stmts]
         reqs.append({"type": "close"})
-        body = _json.dumps({"requests": reqs}).encode()
-        req  = urllib.request.Request(
-            self._base + "/v2/pipeline", data=body,
-            headers={"Authorization": f"Bearer {self._token}",
-                     "Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            return _json.loads(resp.read().decode())
+        body    = _json.dumps({"requests": reqs}).encode()
+        headers = {"Authorization": f"Bearer {self._token}",
+                   "Content-Type": "application/json",
+                   "Connection": "keep-alive"}
+        for attempt in range(3):
+            try:
+                if _http_conn is None:
+                    _http_conn = http.client.HTTPSConnection(self._host, timeout=8)
+                _http_conn.request("POST", "/v2/pipeline", body=body, headers=headers)
+                resp = _http_conn.getresponse()
+                data = resp.read()
+                if resp.status != 200:
+                    raise Exception(f"HTTP {resp.status}")
+                return _json.loads(data.decode())
+            except Exception as e:
+                _http_conn = None
+                if attempt == 2:
+                    raise Exception(f"Turso pipeline failed: {e}")
 
     def execute(self, sql, params=()):
         sql_upper = sql.strip().upper()
