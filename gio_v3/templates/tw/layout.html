@@ -242,7 +242,7 @@
 
   <!-- Marca -->
   <div class="flex items-center gap-3 px-4 py-4 border-b border-border flex-shrink-0">
-    <img src="/static/img/logo.png" alt="SG"
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="SG"
          class="w-10 h-10 rounded-xl object-cover flex-shrink-0"
          style="border:1px solid rgba(197,163,108,.25);">
     <div class="flex flex-col min-w-0">
@@ -423,7 +423,7 @@
 
         <!-- Logo + breadcrumb -->
         <div class="flex items-center gap-2">
-          <img src="/static/img/logo.png" alt="SG"
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="SG"
                class="w-7 h-7 rounded-lg object-cover lg:hidden"
                style="border:1px solid rgba(197,163,108,.2);">
           <span class="text-[0.52rem] text-dim tracking-[0.18em] uppercase hidden sm:block">E U D A I M O N I A</span>
