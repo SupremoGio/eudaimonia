@@ -104,6 +104,16 @@ class _TursoConn:
 
         return _TursoCursor(cols, rows, last_rowid)
 
+    def executemany(self, sql, param_list):
+        stmts = [{"sql": sql, "args": [_to_arg(p) for p in params]}
+                 for params in param_list]
+        BATCH = 20
+        for i in range(0, len(stmts), BATCH):
+            try:
+                self._pipeline(stmts[i:i+BATCH])
+            except Exception as e:
+                print(f"[DB] executemany batch error: {e}")
+
     def executescript(self, sql):
         stmts = []
         for s in sql.split(';'):
@@ -111,16 +121,17 @@ class _TursoConn:
             s = '\n'.join(lines).strip()
             if s:
                 stmts.append({"sql": s, "args": []})
-        if stmts:
+        BATCH = 20
+        for i in range(0, len(stmts), BATCH):
             try:
-                self._pipeline(stmts)
+                self._pipeline(stmts[i:i+BATCH])
             except Exception as e:
-                print(f"[DB] executescript warning: {e}")
+                print(f"[DB] executescript batch {i} error: {e}")
 
-    def commit(self): pass   # HTTP API auto-commits per request
+    def commit(self): pass
     def close(self):  pass
-    def __enter__(self):        return self
-    def __exit__(self, *args):  pass
+    def __enter__(self):       return self
+    def __exit__(self, *args): pass
 
 
 # ── Selección de backend ──────────────────────────────────────────────────────
@@ -142,6 +153,7 @@ else:
 
 
 def init_db():
+  try:
     with get_db() as db:
         db.executescript("""
         -- ── DASHBOARD ────────────────────────────────────────────────────────
@@ -342,23 +354,29 @@ def init_db():
         );
         """)
 
-        # ── Migrate gtd_tasks: context / estimated_mins / energy_level ──────────
-        gtd_cols = [r["name"] for r in db.execute("PRAGMA table_info(gtd_tasks)").fetchall()]
-        if 'context' not in gtd_cols:
-            db.execute("ALTER TABLE gtd_tasks ADD COLUMN context TEXT DEFAULT ''")
-        if 'estimated_mins' not in gtd_cols:
-            db.execute("ALTER TABLE gtd_tasks ADD COLUMN estimated_mins INTEGER DEFAULT 0")
-        if 'energy_level' not in gtd_cols:
-            db.execute("ALTER TABLE gtd_tasks ADD COLUMN energy_level TEXT DEFAULT 'medium'")
-        db.commit()
-
-        # ── Migrate debts table: add monto_total/monto_restante if missing ──
-        cols = [r["name"] for r in db.execute("PRAGMA table_info(debts)").fetchall()]
-        if 'monto_total' not in cols:
-            db.execute("ALTER TABLE debts ADD COLUMN monto_total REAL DEFAULT 0")
-            db.execute("ALTER TABLE debts ADD COLUMN monto_restante REAL DEFAULT 0")
-            db.execute("UPDATE debts SET monto_total=amount, monto_restante=amount WHERE monto_total=0")
+        # ── Migrate gtd_tasks ────────────────────────────────────────────────
+        try:
+            gtd_cols = [r["name"] for r in db.execute("PRAGMA table_info(gtd_tasks)").fetchall()]
+            if 'context' not in gtd_cols:
+                db.execute("ALTER TABLE gtd_tasks ADD COLUMN context TEXT DEFAULT ''")
+            if 'estimated_mins' not in gtd_cols:
+                db.execute("ALTER TABLE gtd_tasks ADD COLUMN estimated_mins INTEGER DEFAULT 0")
+            if 'energy_level' not in gtd_cols:
+                db.execute("ALTER TABLE gtd_tasks ADD COLUMN energy_level TEXT DEFAULT 'medium'")
             db.commit()
+        except Exception as e:
+            print(f"[DB] gtd migration warning: {e}")
+
+        # ── Migrate debts ────────────────────────────────────────────────────
+        try:
+            cols = [r["name"] for r in db.execute("PRAGMA table_info(debts)").fetchall()]
+            if 'monto_total' not in cols:
+                db.execute("ALTER TABLE debts ADD COLUMN monto_total REAL DEFAULT 0")
+                db.execute("ALTER TABLE debts ADD COLUMN monto_restante REAL DEFAULT 0")
+                db.execute("UPDATE debts SET monto_total=amount, monto_restante=amount WHERE monto_total=0")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] debts migration warning: {e}")
 
         # Seed body_measurements
         if db.execute("SELECT COUNT(*) as c FROM body_measurements").fetchone()["c"] == 0:
@@ -575,6 +593,8 @@ def init_db():
             )
 
         db.commit()
+  except Exception as e:
+    print(f"[DB] init_db error (app seguirá iniciando): {e}")
 
 
 # ── Shared stat helpers ───────────────────────────────────────────────────────
