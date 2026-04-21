@@ -1,41 +1,132 @@
 {% extends "gtd_base.html" %}{% set gp='inbox' %}
 {% block title %}Inbox — PRAXIS{% endblock %}{% block topright %}INBOX{% endblock %}
 {% block gtd_body %}
-<div class="pg-hd"><div><div class="pg-t">Inbox</div><div class="pg-s">{{ tasks|length }} items sin procesar</div></div></div>
+<style>
+.badge-2m{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:10px;font-size:.6rem;font-weight:700;padding:1px 6px;}
+.badge-ctx{display:inline-flex;align-items:center;gap:2px;background:rgba(197,163,108,.1);color:var(--gold);border-radius:8px;font-size:.6rem;padding:1px 6px;}
+.inbox-tip{background:rgba(197,163,108,.07);border:1px solid rgba(197,163,108,.2);border-radius:8px;padding:8px 12px;font-size:.72rem;color:var(--dim);margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;}
+.inbox-tip strong{color:var(--gold);}
+</style>
+
+<div class="pg-hd">
+  <div><div class="pg-t">Inbox</div><div class="pg-s">{{ tasks|length }} items sin procesar</div></div>
+</div>
+
+<div class="inbox-tip">
+  <span>📥</span>
+  <span><strong>Regla GTD:</strong> Captura todo sin filtrar. Luego procesa: ¿Se hace en menos de 2 min? Hazlo ya. Si no, asígnalo a Next Actions, Someday o un Proyecto.</span>
+</div>
+
+<!-- ── Formulario ──────────────────────────────────────────────── -->
 <div class="af">
   <div class="af-lbl">NUEVA CAPTURA</div>
-  <div class="fgrid"><div class="fg"><div class="fl">Título *</div><input class="fi" id="tt" placeholder="¿Qué tienes en mente?"></div></div>
+  <div class="fgrid">
+    <div class="fg"><div class="fl">Título *</div><input class="fi" id="tt" placeholder="¿Qué tienes en mente? Captura sin filtrar"></div>
+  </div>
   <div class="fgrid c3">
-    <div class="fg"><div class="fl">Prioridad</div><select class="fi" id="tp"><option value="normal">Normal +10</option><option value="important">Importante +15</option><option value="critical">Crítica +20</option></select></div>
-    <div class="fg"><div class="fl">Proyecto</div><select class="fi" id="tpj"><option value="">— Ninguno —</option>{% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select></div>
+    <div class="fg"><div class="fl">Prioridad</div>
+      <select class="fi" id="tp">
+        <option value="normal">Normal +10</option>
+        <option value="important">Importante +15</option>
+        <option value="critical">Crítica +20</option>
+      </select>
+    </div>
+    <div class="fg"><div class="fl">Proyecto</div>
+      <select class="fi" id="tpj">
+        <option value="">— Ninguno —</option>
+        {% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}
+      </select>
+    </div>
     <div class="fg"><div class="fl">Fecha límite</div><input class="fi" type="date" id="td"></div>
   </div>
-  <div class="fa"><button class="btn-g" onclick="addT('inbox')">+ Inbox</button><button class="btn-a" onclick="addT('next')">+ Next Action</button></div>
+  <div class="fgrid c3">
+    <div class="fg"><div class="fl">Contexto</div>
+      <select class="fi" id="tctx">
+        <option value="">— Sin contexto —</option>
+        <option value="computadora">💻 Computadora</option>
+        <option value="llamada">📞 Llamada</option>
+        <option value="casa">🏠 Casa</option>
+        <option value="comision">🚶 Comisión</option>
+        <option value="email">✉️ Email</option>
+        <option value="online">🌐 Online</option>
+      </select>
+    </div>
+    <div class="fg"><div class="fl">Tiempo estimado (min)</div><input class="fi" type="number" id="tmins" min="0" placeholder="0"></div>
+    <div class="fg"><div class="fl">Nivel de energía</div>
+      <select class="fi" id="teng">
+        <option value="medium">⚡ Media</option>
+        <option value="high">🔥 Alta</option>
+        <option value="low">😌 Baja</option>
+      </select>
+    </div>
+  </div>
+  <div class="fa">
+    <button class="btn-g" onclick="addT('inbox')">+ Inbox</button>
+    <button class="btn-a" onclick="addT('next')">⚡ Next Action</button>
+  </div>
 </div>
+
+<!-- ── Lista ────────────────────────────────────────────────────── -->
 {% for t in tasks %}
+{% set ctx_val = (t.context or '') | lower %}
+{% set mins_val = t.estimated_mins or 0 %}
 <div class="t-row" data-id="{{ t.id }}">
   <div class="t-dot" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
-  <div class="t-main"><div class="t-title">{{ t.title }}</div></div>
-  <div class="t-meta"><span class="pt pt-{{t.priority}}">{{t.priority}}</span><span class="pts-t">+{{t.points}}</span></div>
+  <div class="t-main">
+    <div class="t-title">{{ t.title }}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+      {% if mins_val > 0 and mins_val <= 2 %}<span class="badge-2m">⏱ 2-min — ¡hazlo ya!</span>{% endif %}
+      {% if ctx_val %}<span class="badge-ctx">{{ ctx_val }}</span>{% endif %}
+      {% if mins_val > 0 and mins_val > 2 %}<span style="color:var(--dim);font-size:.6rem;">{{ mins_val }}min</span>{% endif %}
+    </div>
+  </div>
+  <div class="t-meta">
+    <span class="pt pt-{{t.priority}}">{{t.priority}}</span>
+    <span class="pts-t">+{{t.points}}</span>
+  </div>
   <div style="display:flex;gap:3px;">
-    <button class="ai" onclick="mv({{t.id}},'next',this)" title="→ Next"><i data-lucide="arrow-right"></i></button>
+    <button class="ai" onclick="mv({{t.id}},'next',this)" title="→ Next Action"><i data-lucide="arrow-right"></i></button>
     <button class="ai" onclick="mv({{t.id}},'someday',this)" title="Someday"><i data-lucide="clock"></i></button>
     <button class="ai del" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
   </div>
 </div>
-{% else %}<div class="empty-s"><i data-lucide="inbox"></i><p>Inbox vacío — mente clara</p></div>{% endfor %}
+{% else %}
+<div class="empty-s"><i data-lucide="inbox"></i><p>Inbox vacío — mente clara 🧘</p></div>
+{% endfor %}
+
 {% endblock %}
 {% block scripts %}<script>
 async function addT(st){
-  const t=document.getElementById('tt').value.trim();if(!t){toast('Añade un título','err');return;}
-  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t,status:st,priority:document.getElementById('tp').value,project_id:document.getElementById('tpj').value||null,due_date:document.getElementById('td').value})});
-  toast('Añadido ✓');setTimeout(()=>location.reload(),500);
+  const t=document.getElementById('tt').value.trim();
+  if(!t){toast('Añade un título','err');return;}
+  const mins=parseInt(document.getElementById('tmins').value)||0;
+  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      title:t, status:st,
+      priority:document.getElementById('tp').value,
+      project_id:document.getElementById('tpj').value||null,
+      due_date:document.getElementById('td').value,
+      context:document.getElementById('tctx').value,
+      estimated_mins:mins,
+      energy_level:document.getElementById('teng').value
+    })});
+  if(mins>0 && mins<=2) toast('⏱ Regla 2 min: ¡considera hacerlo ya!','ok');
+  else toast('Añadido ✓');
+  setTimeout(()=>location.reload(),600);
 }
 async function cTask(id,dot){
   const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
-  const d=await r.json();if(d.ok){dot.closest('.t-row').remove();toast(`+${d.pts} pts`);}
+  const d=await r.json();
+  if(d.ok){dot.closest('.t-row').remove();toast(`+${d.pts} pts`);}
 }
-async function mv(id,st,btn){await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});btn.closest('.t-row').remove();toast(`→ ${st}`);}
-async function dt(id,btn){await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.t-row').remove();}
+async function mv(id,st,btn){
+  await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});
+  btn.closest('.t-row').remove();
+  toast(`→ ${st}`);
+}
+async function dt(id,btn){
+  await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});
+  btn.closest('.t-row').remove();
+}
 document.getElementById('tt').addEventListener('keydown',e=>{if(e.key==='Enter')addT('inbox');});
 </script>{% endblock %}

@@ -222,6 +222,16 @@ def init_db():
         );
         """)
 
+        # ── Migrate gtd_tasks: context / estimated_mins / energy_level ──────────
+        gtd_cols = [r["name"] for r in db.execute("PRAGMA table_info(gtd_tasks)").fetchall()]
+        if 'context' not in gtd_cols:
+            db.execute("ALTER TABLE gtd_tasks ADD COLUMN context TEXT DEFAULT ''")
+        if 'estimated_mins' not in gtd_cols:
+            db.execute("ALTER TABLE gtd_tasks ADD COLUMN estimated_mins INTEGER DEFAULT 0")
+        if 'energy_level' not in gtd_cols:
+            db.execute("ALTER TABLE gtd_tasks ADD COLUMN energy_level TEXT DEFAULT 'medium'")
+        db.commit()
+
         # ── Migrate debts table: add monto_total/monto_restante if missing ──
         cols = [r["name"] for r in db.execute("PRAGMA table_info(debts)").fetchall()]
         if 'monto_total' not in cols:

@@ -86,11 +86,14 @@ def add_task():
     pts = 20 if d.get('priority')=='critical' else (15 if d.get('priority')=='important' else 10)
     with get_db() as db:
         db.execute("""INSERT INTO gtd_tasks
-            (title,description,status,priority,due_date,category,points,project_id,created_at)
-            VALUES (?,?,?,?,?,?,?,?,?)""",
-            (d['title'],d.get('description',''),d.get('status','inbox'),
-             d.get('priority','normal'),d.get('due_date',''),d.get('category',''),
-             pts,d.get('project_id') or None,datetime.now().isoformat()))
+            (title,description,status,priority,due_date,category,points,project_id,
+             context,estimated_mins,energy_level,created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (d['title'], d.get('description',''), d.get('status','inbox'),
+             d.get('priority','normal'), d.get('due_date',''), d.get('category',''),
+             pts, d.get('project_id') or None,
+             d.get('context',''), int(d.get('estimated_mins') or 0),
+             d.get('energy_level','medium'), datetime.now().isoformat()))
         db.commit()
     return jsonify({'ok':True})
 

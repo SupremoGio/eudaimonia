@@ -66,6 +66,43 @@
 
   /* ── Section label ── */
   .section-lbl{font-size:.55rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:6px 0 4px;}
+
+  /* ── Modals ── */
+  .modal{
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(0,0,0,.65);
+    backdrop-filter:blur(4px);
+    display:flex!important;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+  }
+  .modal[style*="display:none"]{display:none!important;}
+  .modal-box{
+    background:var(--surface);
+    border:1px solid rgba(197,163,108,.25);
+    border-radius:18px;
+    padding:24px;
+    width:100%;
+    max-height:90vh;
+    overflow-y:auto;
+    box-shadow:0 24px 60px rgba(0,0,0,.6);
+    animation:modalIn .18s ease;
+  }
+  @keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:none}}
+  .fi{
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 12px;
+    color:var(--text);
+    font-size:.78rem;
+    outline:none;
+    transition:border-color .15s;
+  }
+  .fi:focus{border-color:var(--gold);}
+  .tile-lbl{font-size:.6rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;}
 </style>
 
 {# ── Header ── #}
@@ -364,6 +401,11 @@ function confirmarCompra() {
     body: JSON.stringify({precio_real: document.getElementById('cPrecioReal').value})
   }).then(() => location.reload());
 }
+
+// Close modal clicking backdrop
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.style.display = 'none'; });
+});
 
 function descartar(id) {
   if (!confirm('¿Descartar este artículo?')) return;

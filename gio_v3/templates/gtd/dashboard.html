@@ -31,19 +31,6 @@
 .ic{font-size:.62rem;color:var(--mid);padding:5px 9px;background:var(--card2);border:1px solid var(--b);border-radius:4px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
 .ic-a{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:.52rem;cursor:pointer;transition:color .14s;padding:0 2px;}
 .ic-a:hover{color:var(--gold);}
-.w-card{background:var(--card);border:1px solid var(--b);border-radius:8px;padding:16px 18px;}
-.wh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
-.w-ph{font-size:.48rem;color:var(--dim);margin-bottom:2px;}
-.w-w{font-family:var(--serif);font-size:1.4rem;font-style:italic;line-height:1;margin-bottom:5px;}
-.w-m{font-size:.63rem;color:var(--mid);line-height:1.5;margin-bottom:7px;}
-.w-ex{font-size:.59rem;color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:7px;line-height:1.5;margin-bottom:7px;}
-.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:.5rem;color:var(--blue);background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);padding:2px 7px;border-radius:100px;}
-.rb{background:none;border:1px solid var(--b);color:var(--dim);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .17s;}
-.rb:hover{border-color:var(--gold);color:var(--gold);}
-.rb svg{width:10px;height:10px;}
-.q-card{background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:8px;padding:16px 18px;}
-.q-t{font-family:var(--serif);font-style:italic;font-size:.97rem;font-weight:300;line-height:1.45;margin-bottom:5px;}
-.q-a{font-size:.5rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;}
 </style>
 <div class="gd">
   <div class="hero full">
@@ -88,21 +75,6 @@
       <div id="ip">{% for t in inbox_tasks %}<div class="ic" data-id="{{ t.id }}"><span>{{ t.title }}</span><div style="display:flex;gap:5px;"><button class="ic-a" onclick="promote({{t.id}},this)">→ Next</button><button class="ic-a" onclick="del({{t.id}},this)">✕</button></div></div>{% endfor %}</div>
     </div>
   </div>
-  <div class="w-card">
-    <div class="wh"><div class="tile-lbl" style="margin:0">WORD OF THE DAY</div><button class="rb" onclick="rw()"><i data-lucide="refresh-cw"></i></button></div>
-    <div id="wb" style="transition:opacity .24s">
-      <div class="w-ph" id="wph">{{ word.phonetic }}</div>
-      <div class="w-w"  id="ww">{{ word.word }}</div>
-      <div class="w-m"  id="wm">{{ word.meaning }}</div>
-      <div class="w-ex" id="we">"{{ word.example }}"</div>
-      <span class="w-fr" id="wf">🇫🇷 {{ word.french }}</span>
-    </div>
-  </div>
-  <div class="q-card">
-    <div class="tile-lbl">FRASE DEL DÍA</div>
-    <div class="q-t">"{{ quote.text }}"</div>
-    <div class="q-a">— {{ quote.author }}</div>
-  </div>
 </div>
 {% endblock %}
 {% block scripts %}<script>
@@ -127,11 +99,6 @@ async function promote(id,btn){
 }
 async function del(id,btn){
   await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.ic').remove();
-}
-async function rw(){
-  const d=await(await fetch('/gtd/api/word/refresh')).json();
-  const b=document.getElementById('wb');b.style.opacity=0;
-  setTimeout(()=>{document.getElementById('wph').textContent=d.phonetic;document.getElementById('ww').textContent=d.word;document.getElementById('wm').textContent=d.meaning;document.getElementById('we').textContent=`"${d.example}"`;document.getElementById('wf').textContent=`🇫🇷 ${d.french}`;b.style.opacity=1;},240);
 }
 document.getElementById('qi').addEventListener('keydown',e=>{if(e.key==='Enter')capture();});
 </script>{% endblock %}

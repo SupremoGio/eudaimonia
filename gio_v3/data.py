@@ -48,6 +48,50 @@ WORDS = [
     {"word": "Formidable",    "phonetic": "/ˈfɔːmɪdəbl/",      "meaning": "Inspiring respect through being impressively capable.",  "example": "She built a formidable reputation through consistent excellence.", "french": "Redoutable"},
 ]
 
+# ── C1 QUIZ ───────────────────────────────────────────────────────────────────
+QUIZ_EN = [
+    {"word":"Ubiquitous","question":"What does 'ubiquitous' mean?","options":["Found everywhere; omnipresent","Unique and extremely rare","Moving very quickly","Related to water"],"answer":0,"example":"Smartphones have become ubiquitous in modern society."},
+    {"word":"Alacrity","question":"'Alacrity' describes:","options":["Great sadness or grief","Brisk and cheerful readiness","Extreme physical strength","A legal dispute"],"answer":1,"example":"She accepted the challenge with alacrity."},
+    {"word":"Recalcitrant","question":"Someone 'recalcitrant' is:","options":["Very intelligent and quick","Having an excellent memory","Stubbornly resistant to authority","Extremely generous"],"answer":2,"example":"The recalcitrant student refused to follow any rules."},
+    {"word":"Pernicious","question":"What does 'pernicious' mean?","options":["Having a subtle harmful effect","Full of joy and energy","Extremely precise","Related to money"],"answer":0,"example":"The pernicious influence of propaganda shaped an entire generation."},
+    {"word":"Sanguine","question":"A 'sanguine' outlook is:","options":["Pessimistic and gloomy","Related to blood","Optimistic, especially in difficult situations","Logical and analytical"],"answer":2,"example":"Despite the setbacks, she remained sanguine about their chances."},
+    {"word":"Obfuscate","question":"To 'obfuscate' means to:","options":["Make it clear and transparent","Make it confused or unclear","Strengthen or reinforce","Analyze thoroughly"],"answer":1,"example":"Politicians often obfuscate the truth with vague language."},
+    {"word":"Laconic","question":"A 'laconic' reply is:","options":["Very long and detailed","Emotional and passionate","Brief and concise","Loud and aggressive"],"answer":2,"example":"His laconic 'yes' was the only reply to the lengthy proposal."},
+    {"word":"Propitious","question":"'Propitious' means:","options":["Giving a good chance of success","Extremely dangerous","Related to property","Confused or disoriented"],"answer":0,"example":"The timing seemed propitious for launching the new product."},
+    {"word":"Intransigent","question":"An 'intransigent' person is:","options":["Very agreeable and flexible","Unwilling to change their views","Highly intelligent","Shy and reserved"],"answer":1,"example":"The intransigent negotiator refused every compromise."},
+    {"word":"Circumspect","question":"To be 'circumspect' means to be:","options":["Completely circular in reasoning","Wary and unwilling to take risks","Extremely talkative","Very generous"],"answer":1,"example":"A circumspect investor avoids impulsive decisions."},
+    {"word":"Enervate","question":"To 'enervate' someone means to:","options":["Give them energy","Make them stronger","Drain their vitality or strength","Irritate them"],"answer":2,"example":"The oppressive heat enervated the workers by midday."},
+    {"word":"Loquacious","question":"A 'loquacious' person tends to:","options":["Speak very little","Eat a lot","Talk a great deal","Move slowly"],"answer":2,"example":"The loquacious host kept the party entertained all evening."},
+    {"word":"Truculent","question":"'Truculent' behavior is:","options":["Eager to argue or fight; aggressively defiant","Shy and withdrawn","Precise and methodical","Cheerful and optimistic"],"answer":0,"example":"His truculent attitude made negotiations nearly impossible."},
+    {"word":"Mendacious","question":"A 'mendacious' person is:","options":["Very hardworking","Not telling the truth; lying","Extremely generous","Skilled with their hands"],"answer":1,"example":"The mendacious politician promised what he couldn't deliver."},
+    {"word":"Fastidious","question":"A 'fastidious' person is:","options":["Reckless and careless","Very demanding about quality and detail","Extremely fast","Generous and open-handed"],"answer":1,"example":"She was fastidious about the presentation of her work."},
+    {"word":"Inveterate","question":"An 'inveterate' habit is:","options":["Easy to break","Related to winter","Deep-rooted and long-established","Beneficial to health"],"answer":2,"example":"He was an inveterate gambler who couldn't stop."},
+    {"word":"Perfidious","question":"'Perfidious' means:","options":["Very generous and kind","Deceitful and untrustworthy","Extremely talented","Related to perfumes"],"answer":1,"example":"His perfidious behavior destroyed years of trust."},
+    {"word":"Dissemble","question":"To 'dissemble' means to:","options":["Take apart carefully","Conceal one's true motives","Distribute widely","Analyze in detail"],"answer":1,"example":"He dissembled his true intentions behind a friendly facade."},
+    {"word":"Pellucid","question":"'Pellucid' writing is:","options":["Translucently clear and easy to understand","Very technical and complex","Emotional and dramatic","Very brief"],"answer":0,"example":"His pellucid explanation made the complex theory accessible to all."},
+    {"word":"Perspicacious","question":"A 'perspicacious' observer is:","options":["Easily fooled","Having sharp insight and keen perception","Very loud and assertive","Extremely slow"],"answer":1,"example":"Her perspicacious analysis impressed the entire board."},
+]
+
+QUIZ_FR = [
+    {"word":"Assidu","question":"Que signifie 'assidu' ?","options":["Qui manque souvent","Qui fréquente régulièrement avec application","Qui parle beaucoup","Qui est très rapide"],"answer":1,"example":"Un étudiant assidu finit toujours par réussir."},
+    {"word":"Perspicace","question":"Une personne 'perspicace' est :","options":["Très lente à comprendre","Qui voit clairement au-delà des apparences","Qui parle fort","Très timide"],"answer":1,"example":"Son analyse perspicace a révélé les failles du projet."},
+    {"word":"Péremptoire","question":"Un ton 'péremptoire' est :","options":["Doux et hésitant","Qui n'admet pas la contradiction ; catégorique","Très humoristique","Triste et mélancolique"],"answer":1,"example":"Il répondit d'un ton péremptoire qui ne laissait place à aucun débat."},
+    {"word":"Circonspect","question":"Agir de manière 'circonspecte' signifie :","options":["Agir impulsivement","Agir avec prudence et réflexion","Agir rapidement","Agir généreusement"],"answer":1,"example":"Soyez circonspect avant de prendre une telle décision."},
+    {"word":"Équivoque","question":"'Équivoque' signifie :","options":["Très clair et précis","Qui peut être interprété de plusieurs façons ; ambigu","Très juste et équitable","Très vocal"],"answer":1,"example":"Sa réponse équivoque laissait place à toutes les interprétations."},
+    {"word":"Inébranlable","question":"Une conviction 'inébranlable' est :","options":["Fragile et incertaine","Qui ne peut être ébranlée ; ferme et solide","Nouvelle et récente","Partiellement vraie"],"answer":1,"example":"Sa confiance inébranlable lui a permis de surmonter tous les obstacles."},
+    {"word":"Fallacieux","question":"Un argument 'fallacieux' est :","options":["Très convaincant et juste","Basé sur une erreur ; trompeur","Très ancien","Complexe et difficile"],"answer":1,"example":"Son raisonnement fallacieux trompa de nombreux auditeurs."},
+    {"word":"Véhément","question":"Une protestation 'véhémente' est :","options":["Calme et mesurée","Exprimée avec force et passion","Écrite et formelle","Silencieuse"],"answer":1,"example":"Il s'opposa de façon véhémente à la décision du directeur."},
+    {"word":"Prégnant","question":"Une image 'prégnante' est :","options":["Floue et difficile à voir","Qui s'impose fortement à l'esprit","Très ancienne","Très petite"],"answer":1,"example":"Ce souvenir reste prégnant dans sa mémoire après toutes ces années."},
+    {"word":"Subreptice","question":"Une action 'subreptice' est faite :","options":["De manière ouverte et transparente","De manière furtive, secrète","Avec beaucoup d'enthousiasme","Avec grande précision"],"answer":1,"example":"Il s'empara subrepticement des documents pendant la réunion."},
+    {"word":"Inéluctable","question":"Quelque chose d'inéluctable est :","options":["Facilement évitable","Auquel on ne peut échapper ; inévitable","Très difficile à comprendre","Très coûteux"],"answer":1,"example":"Sa victoire semblait inéluctable dès le début du match."},
+    {"word":"Acrimonieux","question":"Un échange 'acrimonieux' est :","options":["Agréable et cordial","Plein d'amertume et d'hostilité","Très formel","Très bref"],"answer":1,"example":"La réunion tourna à l'échange acrimonieux entre les deux parties."},
+]
+
+def get_quiz_questions(lang='en', n=5):
+    import random
+    pool = QUIZ_EN if lang == 'en' else QUIZ_FR
+    return random.sample(pool, min(n, len(pool)))
+
 def get_quote_of_day():
     return QUOTES[date.today().toordinal() % len(QUOTES)]
 

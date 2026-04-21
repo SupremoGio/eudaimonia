@@ -1,7 +1,51 @@
 {% extends "gtd_base.html" %}{% set gp='next' %}
 {% block title %}Next Actions — PRAXIS{% endblock %}{% block topright %}NEXT ACTIONS{% endblock %}
 {% block gtd_body %}
-<div class="pg-hd"><div><div class="pg-t">Next Actions</div><div class="pg-s">{{ tasks|length }} tareas ejecutables</div></div></div>
+<style>
+.ctx-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.ctx-chip{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:.72rem;cursor:pointer;transition:.15s;}
+.ctx-chip.on{background:var(--gold);color:#111;border-color:var(--gold);font-weight:600;}
+.eng-chips{display:flex;gap:6px;margin-bottom:14px;}
+.eng-chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:.72rem;cursor:pointer;transition:.15s;}
+.eng-chip.on{border-color:var(--gold);color:var(--gold);font-weight:600;}
+.filter-bar{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+.filter-label{font-size:.65rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.badge-2m{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:10px;font-size:.6rem;font-weight:700;padding:1px 6px;letter-spacing:.04em;}
+.badge-ctx{display:inline-flex;align-items:center;gap:2px;background:rgba(197,163,108,.1);color:var(--gold);border-radius:8px;font-size:.6rem;padding:1px 6px;}
+.badge-eng{display:inline-flex;align-items:center;gap:2px;border-radius:8px;font-size:.6rem;padding:1px 6px;}
+.badge-eng.high{background:rgba(239,68,68,.12);color:#ef4444;}
+.badge-eng.medium{background:rgba(251,191,36,.12);color:#fbbf24;}
+.badge-eng.low{background:rgba(99,102,241,.12);color:#818cf8;}
+.t-row.hidden-r{display:none!important;}
+</style>
+
+<div class="pg-hd">
+  <div><div class="pg-t">Next Actions</div><div class="pg-s">{{ tasks|length }} tareas ejecutables</div></div>
+</div>
+
+<!-- ── Filtros ──────────────────────────────────────────────────── -->
+<div class="filter-bar">
+  <div class="filter-label">Contexto</div>
+  <div class="ctx-chips">
+    <span class="ctx-chip on" data-ctx="all" onclick="setCtx(this,'all')">Todos</span>
+    <span class="ctx-chip" data-ctx="computadora" onclick="setCtx(this,'computadora')">💻 Computadora</span>
+    <span class="ctx-chip" data-ctx="llamada" onclick="setCtx(this,'llamada')">📞 Llamada</span>
+    <span class="ctx-chip" data-ctx="casa" onclick="setCtx(this,'casa')">🏠 Casa</span>
+    <span class="ctx-chip" data-ctx="comision" onclick="setCtx(this,'comision')">🚶 Comisión</span>
+    <span class="ctx-chip" data-ctx="email" onclick="setCtx(this,'email')">✉️ Email</span>
+    <span class="ctx-chip" data-ctx="online" onclick="setCtx(this,'online')">🌐 Online</span>
+  </div>
+  <div class="filter-label" style="margin-top:8px;">Energía</div>
+  <div class="eng-chips">
+    <span class="eng-chip on" data-eng="all" onclick="setEng(this,'all')">Todas</span>
+    <span class="eng-chip" data-eng="high" onclick="setEng(this,'high')">🔥 Alta</span>
+    <span class="eng-chip" data-eng="medium" onclick="setEng(this,'medium')">⚡ Media</span>
+    <span class="eng-chip" data-eng="low" onclick="setEng(this,'low')">😌 Baja</span>
+    <span class="eng-chip" data-eng="2min" onclick="setEng(this,'2min')">⏱ 2-min rule</span>
+  </div>
+</div>
+
+<!-- ── Formulario ──────────────────────────────────────────────── -->
 <div class="af">
   <div class="af-lbl">AÑADIR NEXT ACTION</div>
   <div class="fgrid c3">
@@ -10,39 +54,146 @@
   </div>
   <div class="fgrid c3">
     <div class="fg"><div class="fl">Proyecto</div><select class="fi" id="tpj"><option value="">— Ninguno —</option>{% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select></div>
-    <div class="fg"><div class="fl">Categoría</div><input class="fi" id="tc" placeholder="@calls, @computer..."></div>
+    <div class="fg"><div class="fl">Contexto</div>
+      <select class="fi" id="tctx">
+        <option value="">— Sin contexto —</option>
+        <option value="computadora">💻 Computadora</option>
+        <option value="llamada">📞 Llamada</option>
+        <option value="casa">🏠 Casa</option>
+        <option value="comision">🚶 Comisión</option>
+        <option value="email">✉️ Email</option>
+        <option value="online">🌐 Online</option>
+      </select>
+    </div>
     <div class="fg"><div class="fl">Fecha límite</div><input class="fi" type="date" id="td"></div>
   </div>
-  <div class="fa"><button class="btn-a" onclick="addT()">+ Añadir</button></div>
+  <div class="fgrid c3">
+    <div class="fg"><div class="fl">Tiempo estimado (min)</div><input class="fi" type="number" id="tmins" min="0" placeholder="0"></div>
+    <div class="fg"><div class="fl">Nivel de energía</div>
+      <select class="fi" id="teng">
+        <option value="medium">⚡ Media</option>
+        <option value="high">🔥 Alta</option>
+        <option value="low">😌 Baja</option>
+      </select>
+    </div>
+    <div class="fg" style="display:flex;align-items:flex-end;">
+      <button class="btn-a" style="width:100%" onclick="addT()">+ Añadir</button>
+    </div>
+  </div>
 </div>
+
+<!-- ── Lista de tareas ─────────────────────────────────────────── -->
 {% for t in tasks %}
-<div class="t-row" data-id="{{ t.id }}">
+{% set ctx_val = (t.context or '') | lower %}
+{% set eng_val = t.energy_level or 'medium' %}
+{% set mins_val = t.estimated_mins or 0 %}
+<div class="t-row"
+     data-id="{{ t.id }}"
+     data-ctx="{{ ctx_val }}"
+     data-eng="{{ eng_val }}"
+     data-mins="{{ mins_val }}">
   <div class="t-dot" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
-  <div class="t-main"><div class="t-title">{{ t.title }}</div>{% if t.project_name %}<div class="t-sub">{{ t.project_name }}</div>{% endif %}</div>
+  <div class="t-main">
+    <div class="t-title">{{ t.title }}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+      {% if mins_val > 0 and mins_val <= 2 %}<span class="badge-2m">⏱ 2-min</span>{% endif %}
+      {% if ctx_val %}<span class="badge-ctx">{{ ctx_val }}</span>{% endif %}
+      {% if eng_val == 'high' %}<span class="badge-eng high">🔥 Alta</span>
+      {% elif eng_val == 'low' %}<span class="badge-eng low">😌 Baja</span>
+      {% else %}<span class="badge-eng medium">⚡ Media</span>{% endif %}
+      {% if mins_val > 0 %}<span style="color:var(--dim);font-size:.6rem;">{{ mins_val }}min</span>{% endif %}
+      {% if t.project_name %}<span class="t-sub" style="font-size:.6rem;">{{ t.project_name }}</span>{% endif %}
+    </div>
+  </div>
   <div class="t-meta">
     <span class="pt pt-{{t.priority}}">{{t.priority}}</span>
     {% if t.due_date %}<span class="due-t">{{ t.due_date }}</span>{% endif %}
     <span class="pts-t">+{{t.points}}</span>
   </div>
   <div style="display:flex;gap:3px;">
-    <button class="ai" onclick="mv({{t.id}},'inbox',this)"><i data-lucide="inbox"></i></button>
-    <button class="ai" onclick="mv({{t.id}},'someday',this)"><i data-lucide="clock"></i></button>
+    <button class="ai" onclick="mv({{t.id}},'inbox',this)" title="→ Inbox"><i data-lucide="inbox"></i></button>
+    <button class="ai" onclick="mv({{t.id}},'someday',this)" title="Someday"><i data-lucide="clock"></i></button>
     <button class="ai del" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
   </div>
 </div>
-{% else %}<div class="empty-s"><i data-lucide="zap"></i><p>Sin next actions — captura algo en Inbox</p></div>{% endfor %}
+{% else %}
+<div class="empty-s" id="empty-main"><i data-lucide="zap"></i><p>Sin next actions — captura algo en Inbox</p></div>
+{% endfor %}
+<div class="empty-s hidden-r" id="empty-filter" style="display:none"><i data-lucide="filter"></i><p>Ninguna tarea coincide con los filtros</p></div>
+
 {% endblock %}
 {% block scripts %}<script>
+let activeCtx = 'all', activeEng = 'all';
+
+function applyFilters(){
+  const rows = document.querySelectorAll('.t-row');
+  let visible = 0;
+  rows.forEach(r=>{
+    const ctx  = r.dataset.ctx  || '';
+    const eng  = r.dataset.eng  || 'medium';
+    const mins = parseInt(r.dataset.mins) || 0;
+    const ctxOk = activeCtx === 'all' || ctx === activeCtx;
+    const engOk = activeEng === 'all'
+                  || (activeEng === '2min' ? mins > 0 && mins <= 2 : eng === activeEng);
+    const show = ctxOk && engOk;
+    r.classList.toggle('hidden-r', !show);
+    if(show) visible++;
+  });
+  const emptyFilter = document.getElementById('empty-filter');
+  if(emptyFilter) emptyFilter.style.display = (visible===0 && rows.length>0) ? 'flex' : 'none';
+}
+
+function setCtx(btn, val){
+  document.querySelectorAll('.ctx-chip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  activeCtx = val;
+  applyFilters();
+}
+function setEng(btn, val){
+  document.querySelectorAll('.eng-chip').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  activeEng = val;
+  applyFilters();
+}
+
 async function addT(){
-  const t=document.getElementById('tt').value.trim();if(!t){toast('Añade un título','err');return;}
-  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t,status:'next',priority:document.getElementById('tp').value,project_id:document.getElementById('tpj').value||null,category:document.getElementById('tc').value,due_date:document.getElementById('td').value})});
+  const t=document.getElementById('tt').value.trim();
+  if(!t){toast('Añade un título','err');return;}
+  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      title:t, status:'next',
+      priority:document.getElementById('tp').value,
+      project_id:document.getElementById('tpj').value||null,
+      context:document.getElementById('tctx').value,
+      due_date:document.getElementById('td').value,
+      estimated_mins:parseInt(document.getElementById('tmins').value)||0,
+      energy_level:document.getElementById('teng').value
+    })});
   toast('Añadido ✓');setTimeout(()=>location.reload(),500);
 }
+
 async function cTask(id,dot){
   const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
-  const d=await r.json();if(d.ok){const row=dot.closest('.t-row');row.classList.add('faded');dot.classList.add('ck');lucide.createIcons();toast(`+${d.pts} pts${d.bonus?` ✦ +${d.bonus}`:''}`);}
+  const d=await r.json();
+  if(d.ok){
+    const row=dot.closest('.t-row');
+    row.classList.add('faded');
+    dot.classList.add('ck');
+    lucide.createIcons();
+    toast(`+${d.pts} pts${d.bonus?` ✦ +${d.bonus}`:''}`)
+    if(d.gam && d.gam.levelup) toast(`🏆 Level Up → ${d.gam.level}`,'ok');
+  }
 }
-async function mv(id,st,btn){await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});btn.closest('.t-row').remove();toast(`→ ${st}`);}
-async function dt(id,btn){await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.t-row').remove();}
+async function mv(id,st,btn){
+  await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});
+  btn.closest('.t-row').remove();
+  toast(`→ ${st}`);
+  applyFilters();
+}
+async function dt(id,btn){
+  await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});
+  btn.closest('.t-row').remove();
+  applyFilters();
+}
 document.getElementById('tt').addEventListener('keydown',e=>{if(e.key==='Enter')addT();});
 </script>{% endblock %}
