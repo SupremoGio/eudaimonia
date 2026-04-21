@@ -3,167 +3,199 @@
 
 {% block content %}
 <style>
-  .pri-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:0.62rem; font-weight:600; letter-spacing:.04em; }
-  .pri-alta  { background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.25); }
-  .pri-media { background:rgba(251,191,36,.12); color:#fbbf24; border:1px solid rgba(251,191,36,.22); }
-  .pri-baja  { background:rgba(96,165,250,.12); color:#60a5fa; border:1px solid rgba(96,165,250,.22); }
-  .est-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:0.6rem; font-weight:600; }
-  .est-pend  { background:rgba(251,191,36,.1);  color:#fbbf24; }
-  .est-comp  { background:rgba(52,211,153,.12); color:#34d399; }
-  .est-desc  { background:rgba(100,116,139,.12);color:#64748b; }
-  .filter-tab { padding:4px 14px; border-radius:999px; font-size:.65rem; font-weight:600; border:1px solid var(--border); color:var(--dim); cursor:pointer; transition:all .15s; }
-  .filter-tab.on { background:var(--gold); color:#0a0a1a; border-color:var(--gold); }
-  .filter-tab:hover:not(.on) { border-color:var(--gold); color:var(--gold); }
-  .prow { transition:opacity .15s; }
-  .prow.hidden-row { display:none; }
-  .action-btn { padding:3px 8px; border-radius:6px; font-size:.58rem; font-weight:600; cursor:pointer; transition:all .15s; border:1px solid; }
-  .url-link { color:var(--gold); font-size:.6rem; text-decoration:none; }
-  .url-link:hover { text-decoration:underline; }
-  .stat-num { font-size:1.35rem; font-weight:700; font-family:'Courier New',monospace; }
+  /* ── Badges ── */
+  .pri-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:999px;font-size:.58rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+  .pri-alta {background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.3);}
+  .pri-media{background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.3);}
+  .pri-baja {background:rgba(96,165,250,.14);color:#93c5fd;border:1px solid rgba(96,165,250,.3);}
+  .est-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:999px;font-size:.58rem;font-weight:700;letter-spacing:.04em;}
+  .est-pend {background:rgba(251,191,36,.1);color:#fbbf24;}
+  .est-comp {background:rgba(52,211,153,.1);color:#34d399;}
+  .est-desc {background:rgba(100,116,139,.12);color:#64748b;}
+
+  /* ── Filter tabs ── */
+  .ftab{padding:5px 14px;border-radius:999px;font-size:.62rem;font-weight:600;border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .15s;white-space:nowrap;}
+  .ftab.on{background:var(--gold);color:#0a0a1a;border-color:var(--gold);}
+  .ftab:hover:not(.on){border-color:var(--gold);color:var(--gold);}
+
+  /* ── Item cards ── */
+  .p-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px 18px;
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px 16px;
+    align-items:start;
+    transition:border-color .15s, transform .15s;
+  }
+  .p-card:hover{border-color:rgba(197,163,108,.3);transform:translateY(-1px);}
+  .p-card.comprado{opacity:.65;}
+  .p-card.descartado{opacity:.4;}
+  .hidden-card{display:none;}
+
+  .p-card .nombre{font-size:.82rem;font-weight:700;color:var(--text);line-height:1.2;}
+  .p-card .meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px;}
+  .p-card .cat-tag{font-size:.55rem;color:var(--dim);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:2px 7px;border-radius:6px;}
+  .p-card .tienda-tag{font-size:.55rem;color:var(--dim);}
+  .p-card .notas-txt{font-size:.58rem;color:var(--dim);font-style:italic;margin-top:3px;}
+
+  .p-card .price-block{display:flex;gap:14px;margin-top:8px;align-items:center;}
+  .p-card .price-est{font-size:.78rem;font-weight:600;font-family:'Courier New',monospace;color:var(--text);}
+  .p-card .price-real{font-size:.78rem;font-weight:700;font-family:'Courier New',monospace;color:#34d399;}
+  .p-card .mes-txt{font-size:.58rem;color:var(--dim);border-left:1px solid var(--border);padding-left:10px;}
+
+  .p-card .right-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
+  .p-card .actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+
+  .act-btn{padding:4px 11px;border-radius:8px;font-size:.6rem;font-weight:600;cursor:pointer;transition:all .15s;border:1px solid;background:transparent;}
+  .act-comp{border-color:#34d399;color:#34d399;}  .act-comp:hover{background:#34d399;color:#0a0a1a;}
+  .act-desc{border-color:#475569;color:#64748b;}   .act-desc:hover{background:#475569;color:#fff;}
+  .act-edit{border-color:var(--gold);color:var(--gold);} .act-edit:hover{background:var(--gold);color:#0a0a1a;}
+  .act-del {border-color:#f87171;color:#f87171;}   .act-del:hover{background:#f87171;color:#fff;}
+
+  /* ── Stats ── */
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 18px;text-align:center;}
+  .stat-n{font-size:1.4rem;font-weight:800;font-family:'Courier New',monospace;line-height:1;}
+  .stat-l{font-size:.54rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;}
+
+  /* ── URL link ── */
+  .url-lnk{font-size:.58rem;color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;gap:3px;}
+  .url-lnk:hover{text-decoration:underline;}
+
+  /* ── Section label ── */
+  .section-lbl{font-size:.55rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding:6px 0 4px;}
 </style>
 
+{# ── Header ── #}
 <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
   <div>
     <h1 class="text-xl font-bold tracking-wide brand-text">LISTA DE PRIORIDADES</h1>
-    <p class="text-dim text-[0.6rem] mt-0.5 tracking-widest">WISHLIST · COMPRAS PLANEADAS</p>
+    <p class="text-dim text-[0.58rem] mt-0.5 tracking-[.16em]">WISHLIST · COMPRAS PLANEADAS 2026</p>
   </div>
   <button onclick="openAdd()"
           class="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs"
           style="background:var(--gold);color:#0a0a1a;">
-    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar artículo
+    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Nuevo artículo
   </button>
 </div>
 
-{# ── Stats ── #}
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-  <div class="tile text-center">
-    <div class="tile-lbl mb-1">Alta · Pendiente</div>
-    <div class="stat-num" style="color:#f87171;">${{ "{:,.0f}".format(summary.alta_pend) }}</div>
-    <div class="text-dim text-[0.55rem] mt-0.5">MXN estimado</div>
+{# ── Stats row ── #}
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+  <div class="stat-card">
+    <div class="stat-n" style="color:#fca5a5;">${{ "{:,.0f}".format(summary.alta_pend) }}</div>
+    <div class="stat-l">🔴 Alta · pendiente</div>
   </div>
-  <div class="tile text-center">
-    <div class="tile-lbl mb-1">Media · Pendiente</div>
-    <div class="stat-num" style="color:#fbbf24;">${{ "{:,.0f}".format(summary.media_pend) }}</div>
-    <div class="text-dim text-[0.55rem] mt-0.5">MXN estimado</div>
+  <div class="stat-card">
+    <div class="stat-n" style="color:#fcd34d;">${{ "{:,.0f}".format(summary.media_pend) }}</div>
+    <div class="stat-l">🟡 Media · pendiente</div>
   </div>
-  <div class="tile text-center">
-    <div class="tile-lbl mb-1">Baja · Pendiente</div>
-    <div class="stat-num" style="color:#60a5fa;">${{ "{:,.0f}".format(summary.baja_pend) }}</div>
-    <div class="text-dim text-[0.55rem] mt-0.5">MXN estimado</div>
+  <div class="stat-card">
+    <div class="stat-n" style="color:#93c5fd;">${{ "{:,.0f}".format(summary.baja_pend) }}</div>
+    <div class="stat-l">🔵 Baja · pendiente</div>
   </div>
-  <div class="tile text-center">
-    <div class="tile-lbl mb-1">Total Gastado</div>
-    <div class="stat-num" style="color:#34d399;">${{ "{:,.0f}".format(summary.gastado) }}</div>
-    <div class="text-dim text-[0.55rem] mt-0.5">{{ summary.comp_count }} comprados</div>
+  <div class="stat-card">
+    <div class="stat-n" style="color:#34d399;">${{ "{:,.0f}".format(summary.gastado) }}</div>
+    <div class="stat-l">✅ {{ summary.comp_count }} comprados</div>
   </div>
 </div>
 
-{# ── Filters ── #}
-<div class="flex flex-wrap gap-2 mb-4">
-  <button class="filter-tab on" data-f="todos"      onclick="setFilter(this,'todos')">Todos ({{ items|length }})</button>
-  <button class="filter-tab"   data-f="Pendiente"   onclick="setFilter(this,'Pendiente')">Pendiente</button>
-  <button class="filter-tab"   data-f="Alta"        onclick="setFilter(this,'Alta')">🔴 Alta</button>
-  <button class="filter-tab"   data-f="Media"       onclick="setFilter(this,'Media')">🟡 Media</button>
-  <button class="filter-tab"   data-f="Baja"        onclick="setFilter(this,'Baja')">🔵 Baja</button>
-  <button class="filter-tab"   data-f="Comprado"    onclick="setFilter(this,'Comprado')">✅ Comprado</button>
-  <button class="filter-tab"   data-f="Descartado"  onclick="setFilter(this,'Descartado')">🗑 Descartado</button>
+{# ── Filter tabs ── #}
+<div class="flex flex-wrap gap-2 mb-5">
+  <button class="ftab on" onclick="setFilter(this,'todos')">Todos ({{ items|length }})</button>
+  <button class="ftab"    onclick="setFilter(this,'Pendiente')">Pendiente ({{ summary.pend_count }})</button>
+  <button class="ftab"    onclick="setFilter(this,'Alta')">🔴 Alta</button>
+  <button class="ftab"    onclick="setFilter(this,'Media')">🟡 Media</button>
+  <button class="ftab"    onclick="setFilter(this,'Baja')">🔵 Baja</button>
+  <button class="ftab"    onclick="setFilter(this,'Comprado')">✅ Comprado ({{ summary.comp_count }})</button>
+  <button class="ftab"    onclick="setFilter(this,'Descartado')">🗑 Descartado</button>
 </div>
 
-{# ── Table ── #}
-<div class="tile p-0 overflow-hidden">
-  <div class="tbl-wrap">
-  <table style="width:100%;border-collapse:collapse;">
-    <thead>
-      <tr style="border-bottom:1px solid var(--border);">
-        <th class="tile-lbl text-left px-4 py-2.5 text-[0.58rem]">Artículo</th>
-        <th class="tile-lbl text-left px-3 py-2.5 text-[0.58rem]">Categoría</th>
-        <th class="tile-lbl text-center px-3 py-2.5 text-[0.58rem]">Prioridad</th>
-        <th class="tile-lbl text-right px-3 py-2.5 text-[0.58rem]">Est. MXN</th>
-        <th class="tile-lbl text-right px-3 py-2.5 text-[0.58rem]">Real MXN</th>
-        <th class="tile-lbl text-center px-3 py-2.5 text-[0.58rem]">Mes</th>
-        <th class="tile-lbl text-center px-3 py-2.5 text-[0.58rem]">Estado</th>
-        <th class="tile-lbl text-center px-3 py-2.5 text-[0.58rem]">Acciones</th>
-      </tr>
-    </thead>
-    <tbody id="pTbody">
-    {% for it in items %}
-    <tr class="prow t-row"
-        data-estado="{{ it.estado }}"
-        data-prioridad="{{ it.prioridad }}"
-        data-id="{{ it.id }}"
-        style="border-bottom:1px solid var(--border);">
-      <td class="px-4 py-2.5">
-        <div class="text-[0.72rem] font-semibold" style="color:var(--text);">{{ it.nombre }}</div>
-        {% if it.tienda %}<div class="text-[0.55rem] text-dim">{{ it.tienda }}</div>{% endif %}
-        {% if it.url %}<a href="{{ it.url }}" target="_blank" class="url-link">🔗 ver producto</a>{% endif %}
-        {% if it.notas %}<div class="text-[0.55rem] text-dim italic mt-0.5">{{ it.notas }}</div>{% endif %}
-      </td>
-      <td class="px-3 py-2.5 text-[0.62rem] text-dim">{{ it.categoria or '—' }}</td>
-      <td class="px-3 py-2.5 text-center">
-        {% if it.prioridad == 'Alta' %}
-          <span class="pri-badge pri-alta">Alta</span>
-        {% elif it.prioridad == 'Media' %}
-          <span class="pri-badge pri-media">Media</span>
-        {% else %}
-          <span class="pri-badge pri-baja">Baja</span>
-        {% endif %}
-      </td>
-      <td class="px-3 py-2.5 text-right text-[0.68rem] font-mono" style="color:var(--text);">
-        {% if it.precio_estimado %}${{ "{:,.0f}".format(it.precio_estimado) }}{% else %}—{% endif %}
-      </td>
-      <td class="px-3 py-2.5 text-right text-[0.68rem] font-mono" style="color:#34d399;">
-        {% if it.precio_real %}${{ "{:,.0f}".format(it.precio_real) }}{% else %}—{% endif %}
-      </td>
-      <td class="px-3 py-2.5 text-center text-[0.6rem] text-dim">{{ it.mes_label or '—' }}</td>
-      <td class="px-3 py-2.5 text-center">
-        {% if it.estado == 'Pendiente' %}
-          <span class="est-badge est-pend">Pendiente</span>
-        {% elif it.estado == 'Comprado' %}
-          <span class="est-badge est-comp">Comprado</span>
-        {% else %}
-          <span class="est-badge est-desc">Descartado</span>
-        {% endif %}
-      </td>
-      <td class="px-3 py-2.5">
-        <div class="flex items-center gap-1 justify-center flex-wrap">
-          {% if it.estado == 'Pendiente' %}
-          <button class="action-btn btn-g" style="border-color:#34d399;color:#34d399;"
-                  onclick="openComprar({{ it.id }},'{{ it.nombre|replace("'","\\'") }}',{{ it.precio_estimado or 0 }})">
-            Comprado
-          </button>
-          <button class="action-btn" style="border-color:#64748b;color:#64748b;"
-                  onclick="descartar({{ it.id }},this)">
-            Descartar
-          </button>
-          {% endif %}
-          <button class="action-btn" style="border-color:var(--gold);color:var(--gold);"
-                  onclick="openEdit({{ it.id }})">
-            Editar
-          </button>
-          <button class="action-btn btn-r" style="border-color:#f87171;color:#f87171;"
-                  onclick="delItem({{ it.id }},this)">
-            ✕
-          </button>
-        </div>
-      </td>
-    </tr>
-    {% else %}
-    <tr><td colspan="8" class="text-center py-10 text-dim text-xs">No hay artículos. Agrega el primero.</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-</div>
+{# ── Cards list ── #}
+<div id="cardList" class="flex flex-col gap-3">
+{% for it in items %}
+<div class="p-card {% if it.estado == 'Comprado' %}comprado{% elif it.estado == 'Descartado' %}descartado{% endif %}"
+     data-id="{{ it.id }}" data-estado="{{ it.estado }}" data-prioridad="{{ it.prioridad }}">
 
-{# ── Modal Agregar/Editar ── #}
-<div id="modalAdd" class="modal" style="display:none;">
-  <div class="modal-box" style="max-width:480px;">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="font-bold text-sm tracking-wide" id="modalTitle">Agregar artículo</h3>
-      <button onclick="closeAdd()" style="color:var(--dim);font-size:1.1rem;">&times;</button>
+  {# Left col #}
+  <div>
+    <div class="flex items-start gap-2 flex-wrap">
+      <span class="nombre">{{ it.nombre }}</span>
+      {% if it.prioridad == 'Alta' %}
+        <span class="pri-badge pri-alta">Alta</span>
+      {% elif it.prioridad == 'Media' %}
+        <span class="pri-badge pri-media">Media</span>
+      {% else %}
+        <span class="pri-badge pri-baja">Baja</span>
+      {% endif %}
     </div>
-    <input type="hidden" id="editId" value="">
-    <div class="grid grid-cols-2 gap-3 mb-3">
+
+    <div class="meta">
+      {% if it.categoria %}<span class="cat-tag">{{ it.categoria }}</span>{% endif %}
+      {% if it.tienda %}<span class="tienda-tag">📍 {{ it.tienda }}</span>{% endif %}
+      {% if it.url %}<a href="{{ it.url }}" target="_blank" class="url-lnk"><i data-lucide="external-link" class="w-3 h-3"></i>ver producto</a>{% endif %}
+    </div>
+    {% if it.notas %}<div class="notas-txt">{{ it.notas }}</div>{% endif %}
+
+    <div class="price-block">
+      {% if it.precio_estimado %}
+        <div>
+          <div style="font-size:.5rem;color:var(--dim);margin-bottom:1px;">ESTIMADO</div>
+          <div class="price-est">${{ "{:,.0f}".format(it.precio_estimado) }} <span style="font-size:.55rem;color:var(--dim);">MXN</span></div>
+        </div>
+      {% endif %}
+      {% if it.precio_real %}
+        <div>
+          <div style="font-size:.5rem;color:var(--dim);margin-bottom:1px;">PAGADO</div>
+          <div class="price-real">${{ "{:,.0f}".format(it.precio_real) }} <span style="font-size:.55rem;color:#34d399;">MXN</span></div>
+        </div>
+      {% endif %}
+      {% if it.mes_label %}
+        <div class="mes-txt">📅 {{ it.mes_label }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Right col #}
+  <div class="right-col">
+    {% if it.estado == 'Pendiente' %}
+      <span class="est-badge est-pend">● Pendiente</span>
+    {% elif it.estado == 'Comprado' %}
+      <span class="est-badge est-comp">✓ Comprado</span>
+    {% else %}
+      <span class="est-badge est-desc">✕ Descartado</span>
+    {% endif %}
+
+    <div class="actions">
+      {% if it.estado == 'Pendiente' %}
+      <button class="act-btn act-comp"
+              onclick="openComprar({{ it.id }},'{{ it.nombre|replace("'","\\'") }}',{{ it.precio_estimado or 0 }})">
+        Comprado
+      </button>
+      <button class="act-btn act-desc" onclick="descartar({{ it.id }})">Descartar</button>
+      {% endif %}
+      <button class="act-btn act-edit" onclick="openEdit({{ it.id }})">Editar</button>
+      <button class="act-btn act-del"  onclick="delItem({{ it.id }})">✕</button>
+    </div>
+  </div>
+
+</div>
+{% else %}
+<div class="text-center py-16 text-dim text-xs">No hay artículos. Agrega el primero.</div>
+{% endfor %}
+</div>
+
+{# ── Modal Agregar / Editar ── #}
+<div id="modalAdd" class="modal" style="display:none;">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="flex justify-between items-center mb-5">
+      <h3 class="font-bold text-sm tracking-wide" id="modalTitle">Nuevo artículo</h3>
+      <button onclick="closeAdd()" style="color:var(--dim);font-size:1.2rem;line-height:1;">&times;</button>
+    </div>
+    <input type="hidden" id="editId">
+
+    <div class="grid grid-cols-2 gap-3">
       <div style="grid-column:1/-1;">
         <label class="tile-lbl block mb-1">Artículo *</label>
         <input id="fNombre" type="text" class="fi w-full" placeholder="ej. Apple Watch Series 9">
@@ -207,7 +239,7 @@
       </div>
       <div style="grid-column:1/-1;">
         <label class="tile-lbl block mb-1">Notas</label>
-        <input id="fNotas" type="text" class="fi w-full" placeholder="color, talla, modelo...">
+        <input id="fNotas" type="text" class="fi w-full" placeholder="color, talla, modelo específico...">
       </div>
       <div id="fEstadoWrap" style="grid-column:1/-1;display:none;">
         <label class="tile-lbl block mb-1">Estado</label>
@@ -218,78 +250,69 @@
         </select>
       </div>
     </div>
-    <div class="flex gap-2 justify-end">
-      <button onclick="closeAdd()" class="btn-r text-xs px-4 py-2 rounded-lg">Cancelar</button>
-      <button onclick="saveItem()" class="btn-a text-xs px-4 py-2 rounded-lg">Guardar</button>
+
+    <div class="flex gap-2 justify-end mt-5">
+      <button onclick="closeAdd()" class="act-btn act-del px-5 py-2">Cancelar</button>
+      <button onclick="saveItem()" class="act-btn act-comp px-5 py-2">Guardar</button>
     </div>
   </div>
 </div>
 
-{# ── Modal Marcar Comprado ── #}
+{# ── Modal Comprado ── #}
 <div id="modalComprar" class="modal" style="display:none;">
-  <div class="modal-box" style="max-width:340px;">
+  <div class="modal-box" style="max-width:360px;">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="font-bold text-sm tracking-wide">Marcar como Comprado</h3>
-      <button onclick="closeComprar()" style="color:var(--dim);font-size:1.1rem;">&times;</button>
+      <h3 class="font-bold text-sm tracking-wide">¡Comprado!</h3>
+      <button onclick="closeComprar()" style="color:var(--dim);font-size:1.2rem;line-height:1;">&times;</button>
     </div>
-    <p class="text-dim text-xs mb-3" id="comprarNombre"></p>
-    <label class="tile-lbl block mb-1">Precio real pagado (MXN)</label>
-    <input id="cPrecioReal" type="number" class="fi w-full mb-4" placeholder="0">
+    <p class="text-[0.7rem] font-semibold mb-1" id="comprarNombre" style="color:var(--text);"></p>
+    <p class="text-dim text-[0.58rem] mb-4">¿Cuánto pagaste realmente?</p>
+    <label class="tile-lbl block mb-1">Precio real (MXN)</label>
+    <input id="cPrecioReal" type="number" class="fi w-full mb-5" placeholder="0">
     <input type="hidden" id="comprarId">
     <div class="flex gap-2 justify-end">
-      <button onclick="closeComprar()" class="btn-r text-xs px-4 py-2 rounded-lg">Cancelar</button>
-      <button onclick="confirmarCompra()" class="btn-g text-xs px-4 py-2 rounded-lg">Confirmar</button>
+      <button onclick="closeComprar()" class="act-btn act-del px-5 py-2">Cancelar</button>
+      <button onclick="confirmarCompra()" class="act-btn act-comp px-5 py-2">✓ Confirmar</button>
     </div>
   </div>
 </div>
 
 <script>
 const BASE = '/finanzas/prioridades';
-let _editData = {};
 
-// Filter
 function setFilter(btn, f) {
-  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.ftab').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
-  document.querySelectorAll('.prow').forEach(r => {
-    if (f === 'todos') { r.classList.remove('hidden-row'); return; }
-    const match = r.dataset.estado === f || r.dataset.prioridad === f;
-    r.classList.toggle('hidden-row', !match);
+  document.querySelectorAll('.p-card').forEach(c => {
+    if (f === 'todos') { c.classList.remove('hidden-card'); return; }
+    const match = c.dataset.estado === f || c.dataset.prioridad === f;
+    c.classList.toggle('hidden-card', !match);
   });
 }
 
-// ── Add/Edit Modal ──
 function openAdd() {
-  document.getElementById('editId').value = '';
-  document.getElementById('modalTitle').textContent = 'Agregar artículo';
-  document.getElementById('fNombre').value = '';
+  ['editId','fNombre','fPrecio','fMes','fTienda','fUrl','fNotas'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('fCategoria').value = '';
   document.getElementById('fPrioridad').value = 'Media';
-  document.getElementById('fPrecio').value = '';
-  document.getElementById('fMes').value = '';
-  document.getElementById('fTienda').value = '';
-  document.getElementById('fUrl').value = '';
-  document.getElementById('fNotas').value = '';
   document.getElementById('fEstadoWrap').style.display = 'none';
+  document.getElementById('modalTitle').textContent = 'Nuevo artículo';
   document.getElementById('modalAdd').style.display = 'flex';
 }
 
 function openEdit(id) {
-  const row = document.querySelector(`.prow[data-id="${id}"]`);
-  // Fetch from server
   fetch(`${BASE}/api/get/${id}`).then(r => r.json()).then(d => {
-    document.getElementById('editId').value = id;
-    document.getElementById('modalTitle').textContent = 'Editar artículo';
-    document.getElementById('fNombre').value    = d.nombre || '';
-    document.getElementById('fCategoria').value = d.categoria || '';
-    document.getElementById('fPrioridad').value = d.prioridad || 'Media';
-    document.getElementById('fPrecio').value    = d.precio_estimado || '';
-    document.getElementById('fMes').value       = d.mes_objetivo || '';
-    document.getElementById('fTienda').value    = d.tienda || '';
-    document.getElementById('fUrl').value       = d.url || '';
-    document.getElementById('fNotas').value     = d.notas || '';
-    document.getElementById('fEstado').value    = d.estado || 'Pendiente';
+    document.getElementById('editId').value      = id;
+    document.getElementById('fNombre').value     = d.nombre || '';
+    document.getElementById('fCategoria').value  = d.categoria || '';
+    document.getElementById('fPrioridad').value  = d.prioridad || 'Media';
+    document.getElementById('fPrecio').value     = d.precio_estimado || '';
+    document.getElementById('fMes').value        = d.mes_objetivo || '';
+    document.getElementById('fTienda').value     = d.tienda || '';
+    document.getElementById('fUrl').value        = d.url || '';
+    document.getElementById('fNotas').value      = d.notas || '';
+    document.getElementById('fEstado').value     = d.estado || 'Pendiente';
     document.getElementById('fEstadoWrap').style.display = 'block';
+    document.getElementById('modalTitle').textContent = 'Editar artículo';
     document.getElementById('modalAdd').style.display = 'flex';
   });
 }
@@ -297,9 +320,9 @@ function openEdit(id) {
 function closeAdd() { document.getElementById('modalAdd').style.display = 'none'; }
 
 function saveItem() {
-  const id = document.getElementById('editId').value;
   const nombre = document.getElementById('fNombre').value.trim();
   if (!nombre) { alert('El nombre es requerido'); return; }
+  const id = document.getElementById('editId').value;
   const body = {
     nombre,
     categoria:       document.getElementById('fCategoria').value,
@@ -309,39 +332,36 @@ function saveItem() {
     tienda:          document.getElementById('fTienda').value,
     url:             document.getElementById('fUrl').value,
     notas:           document.getElementById('fNotas').value,
-    estado:          document.getElementById('fEstado').value || 'Pendiente',
+    estado:          id ? document.getElementById('fEstado').value : 'Pendiente',
   };
-  const url = id ? `${BASE}/api/update/${id}` : `${BASE}/api/add`;
-  fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})
-    .then(() => location.reload());
+  fetch(id ? `${BASE}/api/update/${id}` : `${BASE}/api/add`, {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  }).then(() => location.reload());
 }
 
-// ── Comprar Modal ──
 function openComprar(id, nombre, precio) {
-  document.getElementById('comprarId').value = id;
+  document.getElementById('comprarId').value      = id;
   document.getElementById('comprarNombre').textContent = nombre;
-  document.getElementById('cPrecioReal').value = precio || '';
+  document.getElementById('cPrecioReal').value    = precio || '';
   document.getElementById('modalComprar').style.display = 'flex';
 }
 function closeComprar() { document.getElementById('modalComprar').style.display = 'none'; }
 
 function confirmarCompra() {
   const id = document.getElementById('comprarId').value;
-  const precio_real = document.getElementById('cPrecioReal').value;
   fetch(`${BASE}/api/comprar/${id}`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({precio_real})
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({precio_real: document.getElementById('cPrecioReal').value})
   }).then(() => location.reload());
 }
 
-// ── Descartar / Delete ──
-function descartar(id, btn) {
+function descartar(id) {
   if (!confirm('¿Descartar este artículo?')) return;
   fetch(`${BASE}/api/descartar/${id}`, {method:'POST'}).then(() => location.reload());
 }
 
-function delItem(id, btn) {
-  if (!confirm('¿Eliminar definitivamente?')) return;
+function delItem(id) {
+  if (!confirm('¿Eliminar definitivamente este artículo?')) return;
   fetch(`${BASE}/api/delete/${id}`, {method:'POST'}).then(() => location.reload());
 }
 </script>
