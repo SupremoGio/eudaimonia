@@ -323,6 +323,53 @@ def init_db():
         );
         """)
 
+        # ── LISTA DE PRIORIDADES ─────────────────────────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS lista_prioridades (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre          TEXT NOT NULL,
+            categoria       TEXT DEFAULT '',
+            prioridad       TEXT DEFAULT 'Media',
+            precio_estimado REAL DEFAULT 0,
+            precio_real     REAL DEFAULT NULL,
+            estado          TEXT DEFAULT 'Pendiente',
+            mes_objetivo    TEXT DEFAULT '',
+            tienda          TEXT DEFAULT '',
+            url             TEXT DEFAULT '',
+            notas           TEXT DEFAULT '',
+            purchased_at    TEXT DEFAULT NULL,
+            created_at      TEXT NOT NULL
+        );
+        """)
+
+        # Seed lista_prioridades desde Notion
+        if db.execute("SELECT COUNT(*) as c FROM lista_prioridades").fetchone()["c"] == 0:
+            import datetime as _dtp
+            _now = _dtp.datetime.now().isoformat()
+            db.executemany(
+                """INSERT INTO lista_prioridades
+                   (nombre, categoria, prioridad, precio_estimado, precio_real, estado, mes_objetivo, created_at)
+                   VALUES (?,?,?,?,?,?,?,?)""",
+                [
+                    ("Pila portátil",        "Tecnología",      "Alta",  0,    None, "Pendiente", "", _now),
+                    ("Sartenes",             "Hogar",           "Alta",  0,    None, "Pendiente", "", _now),
+                    ("Ram 16 Gb",            "Tecnología",      "Alta",  0,    None, "Comprado",  "", _now),
+                    ("Under Armour HeatGear","Ropa · Accesorios","Media",0,    None, "Pendiente", "", _now),
+                    ("Wallet tarjetero",     "Ropa · Accesorios","Media",0,    None, "Pendiente", "", _now),
+                    ("Toallas beige",        "Hogar",           "Media", 0,    None, "Pendiente", "", _now),
+                    ("Apple Watch",          "Tecnología",      "Baja",  6000, None, "Pendiente", "", _now),
+                    ("Robot Limpieza",       "Hogar",           "Baja",  6000, 6000,"Comprado",  "", _now),
+                    ("Cuadro",               "Hogar",           "Baja",  0,    None, "Pendiente", "", _now),
+                    ("Espejo grande pie",    "Hogar",           "Baja",  0,    None, "Pendiente", "", _now),
+                    ("Kit cambio llantas",   "Auto",            "Baja",  0,    None, "Pendiente", "", _now),
+                    ("Bocina pequeña",       "Tecnología",      "Baja",  0,    None, "Pendiente", "", _now),
+                    ("Nespresso travel mug", "Hogar",           "Baja",  0,    None, "Comprado",  "", _now),
+                    ("Mouse MX Master",      "Tecnología",      "Baja",  0,    None, "Comprado",  "", _now),
+                    ("Espejo baño",          "Hogar",           "Baja",  0,    None, "Comprado",  "", _now),
+                    ("Bata baño",            "Hogar",           "Baja",  0,    None, "Pendiente", "", _now),
+                ]
+            )
+
         # ── CONSUMO INTELIGENTE ───────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS consumo_productos (

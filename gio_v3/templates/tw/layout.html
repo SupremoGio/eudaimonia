@@ -310,13 +310,19 @@
 
     {# OIKONOMIA #}
     <a href="/finanzas"
-       class="nav-link {% if pg == 'finanzas' %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg in ['finanzas','prioridades'] %}active{% else %}text-dim{% endif %}
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="coins" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
         <span class="text-[0.68rem] tracking-wide leading-none">Oikonomia</span>
         <span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">Finanzas</span>
       </div>
+    </a>
+    <a href="/finanzas/prioridades"
+       class="nav-link {% if pg == 'prioridades' %}active{% else %}text-dim{% endif %}
+              flex items-center gap-3 pl-9 pr-3 py-1.5 rounded-xl">
+      <i data-lucide="star" class="w-3 h-3 flex-shrink-0"></i>
+      <span class="text-[0.6rem]">Prioridades</span>
     </a>
 
     {# HEGEMONIKON + sub-items #}

@@ -10,8 +10,9 @@ from modules.nutricion.routes      import nutricion_bp
 from modules.perfil.routes         import perfil_bp
 from modules.sabado.routes         import sabado_bp
 from modules.gamification.routes   import gamification_bp
-from modules.finanzas.consumo import consumo_bp
-from modules.finanzas.budget import budget_bp
+from modules.finanzas.consumo      import consumo_bp
+from modules.finanzas.budget       import budget_bp
+from modules.finanzas.prioridades  import prioridades_bp
 from modules.tw.routes       import tw_bp
 
 
@@ -28,8 +29,9 @@ def create_app():
     app.register_blueprint(perfil_bp,       url_prefix='/perfil')
     app.register_blueprint(sabado_bp,       url_prefix='/sabado')
     app.register_blueprint(gamification_bp)
-    app.register_blueprint(consumo_bp, url_prefix='/finanzas/consumo')
-    app.register_blueprint(budget_bp,  url_prefix='/finanzas/budget')
+    app.register_blueprint(consumo_bp,      url_prefix='/finanzas/consumo')
+    app.register_blueprint(budget_bp,       url_prefix='/finanzas/budget')
+    app.register_blueprint(prioridades_bp,  url_prefix='/finanzas/prioridades')
     app.register_blueprint(tw_bp)
 
     with app.app_context():

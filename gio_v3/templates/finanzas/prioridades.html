@@ -1,0 +1,348 @@
+{% extends "tw/layout.html" %}
+{% set pg = 'prioridades' %}
+
+{% block content %}
+<style>
+  .pri-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:0.62rem; font-weight:600; letter-spacing:.04em; }
+  .pri-alta  { background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.25); }
+  .pri-media { background:rgba(251,191,36,.12); color:#fbbf24; border:1px solid rgba(251,191,36,.22); }
+  .pri-baja  { background:rgba(96,165,250,.12); color:#60a5fa; border:1px solid rgba(96,165,250,.22); }
+  .est-badge { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; font-size:0.6rem; font-weight:600; }
+  .est-pend  { background:rgba(251,191,36,.1);  color:#fbbf24; }
+  .est-comp  { background:rgba(52,211,153,.12); color:#34d399; }
+  .est-desc  { background:rgba(100,116,139,.12);color:#64748b; }
+  .filter-tab { padding:4px 14px; border-radius:999px; font-size:.65rem; font-weight:600; border:1px solid var(--border); color:var(--dim); cursor:pointer; transition:all .15s; }
+  .filter-tab.on { background:var(--gold); color:#0a0a1a; border-color:var(--gold); }
+  .filter-tab:hover:not(.on) { border-color:var(--gold); color:var(--gold); }
+  .prow { transition:opacity .15s; }
+  .prow.hidden-row { display:none; }
+  .action-btn { padding:3px 8px; border-radius:6px; font-size:.58rem; font-weight:600; cursor:pointer; transition:all .15s; border:1px solid; }
+  .url-link { color:var(--gold); font-size:.6rem; text-decoration:none; }
+  .url-link:hover { text-decoration:underline; }
+  .stat-num { font-size:1.35rem; font-weight:700; font-family:'Courier New',monospace; }
+</style>
+
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <div>
+    <h1 class="text-xl font-bold tracking-wide brand-text">LISTA DE PRIORIDADES</h1>
+    <p class="text-dim text-[0.6rem] mt-0.5 tracking-widest">WISHLIST · COMPRAS PLANEADAS</p>
+  </div>
+  <button onclick="openAdd()"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs"
+          style="background:var(--gold);color:#0a0a1a;">
+    <i data-lucide="plus" class="w-3.5 h-3.5"></i> Agregar artículo
+  </button>
+</div>
+
+{# ── Stats ── #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+  <div class="tile text-center">
+    <div class="tile-lbl mb-1">Alta · Pendiente</div>
+    <div class="stat-num" style="color:#f87171;">${{ "{:,.0f}".format(summary.alta_pend) }}</div>
+    <div class="text-dim text-[0.55rem] mt-0.5">MXN estimado</div>
+  </div>
+  <div class="tile text-center">
+    <div class="tile-lbl mb-1">Media · Pendiente</div>
+    <div class="stat-num" style="color:#fbbf24;">${{ "{:,.0f}".format(summary.media_pend) }}</div>
+    <div class="text-dim text-[0.55rem] mt-0.5">MXN estimado</div>
+  </div>
+  <div class="tile text-center">
+    <div class="tile-lbl mb-1">Baja · Pendiente</div>
+    <div class="stat-num" style="color:#60a5fa;">${{ "{:,.0f}".format(summary.baja_pend) }}</div>
+    <div class="text-dim text-[0.55rem] mt-0.5">MXN estimado</div>
+  </div>
+  <div class="tile text-center">
+    <div class="tile-lbl mb-1">Total Gastado</div>
+    <div class="stat-num" style="color:#34d399;">${{ "{:,.0f}".format(summary.gastado) }}</div>
+    <div class="text-dim text-[0.55rem] mt-0.5">{{ summary.comp_count }} comprados</div>
+  </div>
+</div>
+
+{# ── Filters ── #}
+<div class="flex flex-wrap gap-2 mb-4">
+  <button class="filter-tab on" data-f="todos"      onclick="setFilter(this,'todos')">Todos ({{ items|length }})</button>
+  <button class="filter-tab"   data-f="Pendiente"   onclick="setFilter(this,'Pendiente')">Pendiente</button>
+  <button class="filter-tab"   data-f="Alta"        onclick="setFilter(this,'Alta')">🔴 Alta</button>
+  <button class="filter-tab"   data-f="Media"       onclick="setFilter(this,'Media')">🟡 Media</button>
+  <button class="filter-tab"   data-f="Baja"        onclick="setFilter(this,'Baja')">🔵 Baja</button>
+  <button class="filter-tab"   data-f="Comprado"    onclick="setFilter(this,'Comprado')">✅ Comprado</button>
+  <button class="filter-tab"   data-f="Descartado"  onclick="setFilter(this,'Descartado')">🗑 Descartado</button>
+</div>
+
+{# ── Table ── #}
+<div class="tile p-0 overflow-hidden">
+  <div class="tbl-wrap">
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="border-bottom:1px solid var(--border);">
+        <th class="tile-lbl text-left px-4 py-2.5 text-[0.58rem]">Artículo</th>
+        <th class="tile-lbl text-left px-3 py-2.5 text-[0.58rem]">Categoría</th>
+        <th class="tile-lbl text-center px-3 py-2.5 text-[0.58rem]">Prioridad</th>
+        <th class="tile-lbl text-right px-3 py-2.5 text-[0.58rem]">Est. MXN</th>
+        <th class="tile-lbl text-right px-3 py-2.5 text-[0.58rem]">Real MXN</th>
+        <th class="tile-lbl text-center px-3 py-2.5 text-[0.58rem]">Mes</th>
+        <th class="tile-lbl text-center px-3 py-2.5 text-[0.58rem]">Estado</th>
+        <th class="tile-lbl text-center px-3 py-2.5 text-[0.58rem]">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="pTbody">
+    {% for it in items %}
+    <tr class="prow t-row"
+        data-estado="{{ it.estado }}"
+        data-prioridad="{{ it.prioridad }}"
+        data-id="{{ it.id }}"
+        style="border-bottom:1px solid var(--border);">
+      <td class="px-4 py-2.5">
+        <div class="text-[0.72rem] font-semibold" style="color:var(--text);">{{ it.nombre }}</div>
+        {% if it.tienda %}<div class="text-[0.55rem] text-dim">{{ it.tienda }}</div>{% endif %}
+        {% if it.url %}<a href="{{ it.url }}" target="_blank" class="url-link">🔗 ver producto</a>{% endif %}
+        {% if it.notas %}<div class="text-[0.55rem] text-dim italic mt-0.5">{{ it.notas }}</div>{% endif %}
+      </td>
+      <td class="px-3 py-2.5 text-[0.62rem] text-dim">{{ it.categoria or '—' }}</td>
+      <td class="px-3 py-2.5 text-center">
+        {% if it.prioridad == 'Alta' %}
+          <span class="pri-badge pri-alta">Alta</span>
+        {% elif it.prioridad == 'Media' %}
+          <span class="pri-badge pri-media">Media</span>
+        {% else %}
+          <span class="pri-badge pri-baja">Baja</span>
+        {% endif %}
+      </td>
+      <td class="px-3 py-2.5 text-right text-[0.68rem] font-mono" style="color:var(--text);">
+        {% if it.precio_estimado %}${{ "{:,.0f}".format(it.precio_estimado) }}{% else %}—{% endif %}
+      </td>
+      <td class="px-3 py-2.5 text-right text-[0.68rem] font-mono" style="color:#34d399;">
+        {% if it.precio_real %}${{ "{:,.0f}".format(it.precio_real) }}{% else %}—{% endif %}
+      </td>
+      <td class="px-3 py-2.5 text-center text-[0.6rem] text-dim">{{ it.mes_label or '—' }}</td>
+      <td class="px-3 py-2.5 text-center">
+        {% if it.estado == 'Pendiente' %}
+          <span class="est-badge est-pend">Pendiente</span>
+        {% elif it.estado == 'Comprado' %}
+          <span class="est-badge est-comp">Comprado</span>
+        {% else %}
+          <span class="est-badge est-desc">Descartado</span>
+        {% endif %}
+      </td>
+      <td class="px-3 py-2.5">
+        <div class="flex items-center gap-1 justify-center flex-wrap">
+          {% if it.estado == 'Pendiente' %}
+          <button class="action-btn btn-g" style="border-color:#34d399;color:#34d399;"
+                  onclick="openComprar({{ it.id }},'{{ it.nombre|replace("'","\\'") }}',{{ it.precio_estimado or 0 }})">
+            Comprado
+          </button>
+          <button class="action-btn" style="border-color:#64748b;color:#64748b;"
+                  onclick="descartar({{ it.id }},this)">
+            Descartar
+          </button>
+          {% endif %}
+          <button class="action-btn" style="border-color:var(--gold);color:var(--gold);"
+                  onclick="openEdit({{ it.id }})">
+            Editar
+          </button>
+          <button class="action-btn btn-r" style="border-color:#f87171;color:#f87171;"
+                  onclick="delItem({{ it.id }},this)">
+            ✕
+          </button>
+        </div>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="8" class="text-center py-10 text-dim text-xs">No hay artículos. Agrega el primero.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+{# ── Modal Agregar/Editar ── #}
+<div id="modalAdd" class="modal" style="display:none;">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-bold text-sm tracking-wide" id="modalTitle">Agregar artículo</h3>
+      <button onclick="closeAdd()" style="color:var(--dim);font-size:1.1rem;">&times;</button>
+    </div>
+    <input type="hidden" id="editId" value="">
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div style="grid-column:1/-1;">
+        <label class="tile-lbl block mb-1">Artículo *</label>
+        <input id="fNombre" type="text" class="fi w-full" placeholder="ej. Apple Watch Series 9">
+      </div>
+      <div>
+        <label class="tile-lbl block mb-1">Categoría</label>
+        <select id="fCategoria" class="fi w-full">
+          <option value="">— Sin categoría —</option>
+          <option>Tecnología</option>
+          <option>Hogar</option>
+          <option>Ropa · Accesorios</option>
+          <option>Salud · Fitness</option>
+          <option>Auto</option>
+          <option>Entretenimiento</option>
+          <option>Otros</option>
+        </select>
+      </div>
+      <div>
+        <label class="tile-lbl block mb-1">Prioridad</label>
+        <select id="fPrioridad" class="fi w-full">
+          <option>Alta</option>
+          <option selected>Media</option>
+          <option>Baja</option>
+        </select>
+      </div>
+      <div>
+        <label class="tile-lbl block mb-1">Precio estimado (MXN)</label>
+        <input id="fPrecio" type="number" class="fi w-full" placeholder="0">
+      </div>
+      <div>
+        <label class="tile-lbl block mb-1">Mes objetivo</label>
+        <input id="fMes" type="month" class="fi w-full">
+      </div>
+      <div>
+        <label class="tile-lbl block mb-1">Tienda</label>
+        <input id="fTienda" type="text" class="fi w-full" placeholder="Amazon, Liverpool...">
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="tile-lbl block mb-1">URL del producto</label>
+        <input id="fUrl" type="url" class="fi w-full" placeholder="https://...">
+      </div>
+      <div style="grid-column:1/-1;">
+        <label class="tile-lbl block mb-1">Notas</label>
+        <input id="fNotas" type="text" class="fi w-full" placeholder="color, talla, modelo...">
+      </div>
+      <div id="fEstadoWrap" style="grid-column:1/-1;display:none;">
+        <label class="tile-lbl block mb-1">Estado</label>
+        <select id="fEstado" class="fi w-full">
+          <option>Pendiente</option>
+          <option>Comprado</option>
+          <option>Descartado</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex gap-2 justify-end">
+      <button onclick="closeAdd()" class="btn-r text-xs px-4 py-2 rounded-lg">Cancelar</button>
+      <button onclick="saveItem()" class="btn-a text-xs px-4 py-2 rounded-lg">Guardar</button>
+    </div>
+  </div>
+</div>
+
+{# ── Modal Marcar Comprado ── #}
+<div id="modalComprar" class="modal" style="display:none;">
+  <div class="modal-box" style="max-width:340px;">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-bold text-sm tracking-wide">Marcar como Comprado</h3>
+      <button onclick="closeComprar()" style="color:var(--dim);font-size:1.1rem;">&times;</button>
+    </div>
+    <p class="text-dim text-xs mb-3" id="comprarNombre"></p>
+    <label class="tile-lbl block mb-1">Precio real pagado (MXN)</label>
+    <input id="cPrecioReal" type="number" class="fi w-full mb-4" placeholder="0">
+    <input type="hidden" id="comprarId">
+    <div class="flex gap-2 justify-end">
+      <button onclick="closeComprar()" class="btn-r text-xs px-4 py-2 rounded-lg">Cancelar</button>
+      <button onclick="confirmarCompra()" class="btn-g text-xs px-4 py-2 rounded-lg">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = '/finanzas/prioridades';
+let _editData = {};
+
+// Filter
+function setFilter(btn, f) {
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.prow').forEach(r => {
+    if (f === 'todos') { r.classList.remove('hidden-row'); return; }
+    const match = r.dataset.estado === f || r.dataset.prioridad === f;
+    r.classList.toggle('hidden-row', !match);
+  });
+}
+
+// ── Add/Edit Modal ──
+function openAdd() {
+  document.getElementById('editId').value = '';
+  document.getElementById('modalTitle').textContent = 'Agregar artículo';
+  document.getElementById('fNombre').value = '';
+  document.getElementById('fCategoria').value = '';
+  document.getElementById('fPrioridad').value = 'Media';
+  document.getElementById('fPrecio').value = '';
+  document.getElementById('fMes').value = '';
+  document.getElementById('fTienda').value = '';
+  document.getElementById('fUrl').value = '';
+  document.getElementById('fNotas').value = '';
+  document.getElementById('fEstadoWrap').style.display = 'none';
+  document.getElementById('modalAdd').style.display = 'flex';
+}
+
+function openEdit(id) {
+  const row = document.querySelector(`.prow[data-id="${id}"]`);
+  // Fetch from server
+  fetch(`${BASE}/api/get/${id}`).then(r => r.json()).then(d => {
+    document.getElementById('editId').value = id;
+    document.getElementById('modalTitle').textContent = 'Editar artículo';
+    document.getElementById('fNombre').value    = d.nombre || '';
+    document.getElementById('fCategoria').value = d.categoria || '';
+    document.getElementById('fPrioridad').value = d.prioridad || 'Media';
+    document.getElementById('fPrecio').value    = d.precio_estimado || '';
+    document.getElementById('fMes').value       = d.mes_objetivo || '';
+    document.getElementById('fTienda').value    = d.tienda || '';
+    document.getElementById('fUrl').value       = d.url || '';
+    document.getElementById('fNotas').value     = d.notas || '';
+    document.getElementById('fEstado').value    = d.estado || 'Pendiente';
+    document.getElementById('fEstadoWrap').style.display = 'block';
+    document.getElementById('modalAdd').style.display = 'flex';
+  });
+}
+
+function closeAdd() { document.getElementById('modalAdd').style.display = 'none'; }
+
+function saveItem() {
+  const id = document.getElementById('editId').value;
+  const nombre = document.getElementById('fNombre').value.trim();
+  if (!nombre) { alert('El nombre es requerido'); return; }
+  const body = {
+    nombre,
+    categoria:       document.getElementById('fCategoria').value,
+    prioridad:       document.getElementById('fPrioridad').value,
+    precio_estimado: document.getElementById('fPrecio').value,
+    mes_objetivo:    document.getElementById('fMes').value,
+    tienda:          document.getElementById('fTienda').value,
+    url:             document.getElementById('fUrl').value,
+    notas:           document.getElementById('fNotas').value,
+    estado:          document.getElementById('fEstado').value || 'Pendiente',
+  };
+  const url = id ? `${BASE}/api/update/${id}` : `${BASE}/api/add`;
+  fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)})
+    .then(() => location.reload());
+}
+
+// ── Comprar Modal ──
+function openComprar(id, nombre, precio) {
+  document.getElementById('comprarId').value = id;
+  document.getElementById('comprarNombre').textContent = nombre;
+  document.getElementById('cPrecioReal').value = precio || '';
+  document.getElementById('modalComprar').style.display = 'flex';
+}
+function closeComprar() { document.getElementById('modalComprar').style.display = 'none'; }
+
+function confirmarCompra() {
+  const id = document.getElementById('comprarId').value;
+  const precio_real = document.getElementById('cPrecioReal').value;
+  fetch(`${BASE}/api/comprar/${id}`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({precio_real})
+  }).then(() => location.reload());
+}
+
+// ── Descartar / Delete ──
+function descartar(id, btn) {
+  if (!confirm('¿Descartar este artículo?')) return;
+  fetch(`${BASE}/api/descartar/${id}`, {method:'POST'}).then(() => location.reload());
+}
+
+function delItem(id, btn) {
+  if (!confirm('¿Eliminar definitivamente?')) return;
+  fetch(`${BASE}/api/delete/${id}`, {method:'POST'}).then(() => location.reload());
+}
+</script>
+{% endblock %}
