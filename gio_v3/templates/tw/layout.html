@@ -241,9 +241,14 @@
        style="background:#0f0f24;">
 
   <!-- Marca -->
-  <div class="flex flex-col px-5 py-5 border-b border-border flex-shrink-0 gap-0.5">
-    <span class="brand-text font-sans font-bold text-[0.95rem] tracking-[0.28em]">E U D A I M O N I A</span>
-    <span class="text-[0.44rem] text-dim tracking-[0.2em] uppercase">Sistema de alto rendimiento</span>
+  <div class="flex items-center gap-3 px-4 py-4 border-b border-border flex-shrink-0">
+    <img src="/static/img/logo.png" alt="SG"
+         class="w-10 h-10 rounded-xl object-cover flex-shrink-0"
+         style="border:1px solid rgba(197,163,108,.25);">
+    <div class="flex flex-col min-w-0">
+      <span class="brand-text font-sans font-bold text-[0.82rem] tracking-[0.22em] leading-none">E U D A I M O N I A</span>
+      <span class="text-[0.4rem] text-dim tracking-[0.16em] uppercase mt-1">Sistema de alto rendimiento</span>
+    </div>
   </div>
 
   <!-- Nav links -->
@@ -416,10 +421,12 @@
           <span class="burger-line w-5 h-px bg-mid transition-all duration-300"></span>
         </button>
 
-        <!-- Status / breadcrumb -->
+        <!-- Logo + breadcrumb -->
         <div class="flex items-center gap-2">
-          <span class="status-dot w-1.5 h-1.5 rounded-full bg-gio-emerald animate-pulse2 flex-shrink-0 hidden sm:block"></span>
-          <span class="text-[0.52rem] text-dim tracking-[0.18em] uppercase">E U D A I M O N I A</span>
+          <img src="/static/img/logo.png" alt="SG"
+               class="w-7 h-7 rounded-lg object-cover lg:hidden"
+               style="border:1px solid rgba(197,163,108,.2);">
+          <span class="text-[0.52rem] text-dim tracking-[0.18em] uppercase hidden sm:block">E U D A I M O N I A</span>
         </div>
       </div>
 

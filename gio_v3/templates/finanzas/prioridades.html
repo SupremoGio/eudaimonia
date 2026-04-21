@@ -103,13 +103,13 @@
 
 {# ── Filter tabs ── #}
 <div class="flex flex-wrap gap-2 mb-5">
-  <button class="ftab on" onclick="setFilter(this,'todos')">Todos ({{ items|length }})</button>
-  <button class="ftab"    onclick="setFilter(this,'Pendiente')">Pendiente ({{ summary.pend_count }})</button>
-  <button class="ftab"    onclick="setFilter(this,'Alta')">🔴 Alta</button>
-  <button class="ftab"    onclick="setFilter(this,'Media')">🟡 Media</button>
-  <button class="ftab"    onclick="setFilter(this,'Baja')">🔵 Baja</button>
-  <button class="ftab"    onclick="setFilter(this,'Comprado')">✅ Comprado ({{ summary.comp_count }})</button>
-  <button class="ftab"    onclick="setFilter(this,'Descartado')">🗑 Descartado</button>
+  <button class="ftab on" data-f="todos"       onclick="setFilter(this,'todos')">Todos ({{ items|length }})</button>
+  <button class="ftab"    data-f="Pendiente"  onclick="setFilter(this,'Pendiente')">Pendiente ({{ summary.pend_count }})</button>
+  <button class="ftab"    data-f="Alta"       onclick="setFilter(this,'Alta')">🔴 Alta</button>
+  <button class="ftab"    data-f="Media"      onclick="setFilter(this,'Media')">🟡 Media</button>
+  <button class="ftab"    data-f="Baja"       onclick="setFilter(this,'Baja')">🔵 Baja</button>
+  <button class="ftab"    data-f="Comprado"   onclick="setFilter(this,'Comprado')">✅ Comprado ({{ summary.comp_count }})</button>
+  <button class="ftab"    data-f="Descartado" onclick="setFilter(this,'Descartado')">🗑 Descartado</button>
 </div>
 
 {# ── Cards list ── #}
@@ -283,12 +283,22 @@ const BASE = '/finanzas/prioridades';
 function setFilter(btn, f) {
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
+  localStorage.setItem('wl_filter', f);
   document.querySelectorAll('.p-card').forEach(c => {
     if (f === 'todos') { c.classList.remove('hidden-card'); return; }
     const match = c.dataset.estado === f || c.dataset.prioridad === f;
     c.classList.toggle('hidden-card', !match);
   });
 }
+
+// Restore filter after reload
+window.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('wl_filter');
+  if (saved && saved !== 'todos') {
+    const btn = document.querySelector(`.ftab[data-f="${saved}"]`);
+    if (btn) setFilter(btn, saved);
+  }
+});
 
 function openAdd() {
   ['editId','fNombre','fPrecio','fMes','fTienda','fUrl','fNotas'].forEach(id => document.getElementById(id).value = '');

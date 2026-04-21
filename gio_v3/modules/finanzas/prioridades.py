@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect
+from flask import Blueprint, render_template, request, jsonify
 from database import get_db
 import datetime
 
@@ -9,9 +9,6 @@ MESES = {
     '07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'
 }
 
-def _auth():
-    return session.get('fin_ok')
-
 def _fmt_mes(val):
     if not val or '-' not in val:
         return val or ''
@@ -21,8 +18,6 @@ def _fmt_mes(val):
 
 @prioridades_bp.route('/')
 def index():
-    if not _auth():
-        return redirect('/finanzas')
     with get_db() as db:
         items = db.execute("""
             SELECT * FROM lista_prioridades
@@ -41,7 +36,6 @@ def index():
             GROUP BY prioridad, estado
         """).fetchall()
 
-    # Build summary
     summary = {
         'alta_pend': 0, 'media_pend': 0, 'baja_pend': 0,
         'gastado': 0, 'pend_count': 0, 'comp_count': 0,
@@ -68,8 +62,6 @@ def index():
 
 @prioridades_bp.route('/api/add', methods=['POST'])
 def add():
-    if not _auth():
-        return jsonify({'ok': False}), 403
     d = request.json or {}
     now = datetime.datetime.now().isoformat()
     with get_db() as db:
@@ -86,8 +78,6 @@ def add():
 
 @prioridades_bp.route('/api/update/<int:iid>', methods=['POST'])
 def update(iid):
-    if not _auth():
-        return jsonify({'ok': False}), 403
     d = request.json or {}
     with get_db() as db:
         db.execute("""
@@ -105,8 +95,6 @@ def update(iid):
 
 @prioridades_bp.route('/api/comprar/<int:iid>', methods=['POST'])
 def comprar(iid):
-    if not _auth():
-        return jsonify({'ok': False}), 403
     d = request.json or {}
     now = datetime.datetime.now().isoformat()
     with get_db() as db:
@@ -119,8 +107,6 @@ def comprar(iid):
 
 @prioridades_bp.route('/api/descartar/<int:iid>', methods=['POST'])
 def descartar(iid):
-    if not _auth():
-        return jsonify({'ok': False}), 403
     with get_db() as db:
         db.execute("UPDATE lista_prioridades SET estado='Descartado' WHERE id=?", (iid,))
         db.commit()
@@ -129,8 +115,6 @@ def descartar(iid):
 
 @prioridades_bp.route('/api/get/<int:iid>')
 def get_item(iid):
-    if not _auth():
-        return jsonify({'ok': False}), 403
     with get_db() as db:
         row = db.execute("SELECT * FROM lista_prioridades WHERE id=?", (iid,)).fetchone()
     return jsonify(dict(row) if row else {})
@@ -138,8 +122,6 @@ def get_item(iid):
 
 @prioridades_bp.route('/api/delete/<int:iid>', methods=['POST'])
 def delete(iid):
-    if not _auth():
-        return jsonify({'ok': False}), 403
     with get_db() as db:
         db.execute("DELETE FROM lista_prioridades WHERE id=?", (iid,))
         db.commit()
