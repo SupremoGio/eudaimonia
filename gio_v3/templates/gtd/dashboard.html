@@ -2,39 +2,69 @@
 {% block title %}Praxis — Eudaimonia{% endblock %}{% block topright %}{{ today }}{% endblock %}
 {% block gtd_body %}
 <style>
-.gd{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.gd{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
 .full{grid-column:1/-1;}
-.hero{background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:8px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;}
-.h-g{font-family:var(--serif);font-size:1.7rem;font-style:italic;font-weight:300;}
-.h-s{font-size:.52rem;color:var(--dim);letter-spacing:.11em;text-transform:uppercase;margin-top:2px;}
-.h-stats{display:flex;gap:14px;align-items:center;}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:14px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+.h-g{font-family:var(--serif);font-size:1.8rem;font-style:italic;font-weight:300;}
+.h-s{font-size:.52rem;color:var(--dim);letter-spacing:.11em;text-transform:uppercase;margin-top:3px;}
+.h-stats{display:flex;gap:16px;align-items:center;flex-shrink:0;}
 .hs{text-align:center;}
-.hs-v{font-family:var(--serif);font-size:1.3rem;font-weight:300;color:var(--gold);line-height:1;}
-.hs-l{font-size:.42rem;color:var(--dim);letter-spacing:.09em;text-transform:uppercase;margin-top:2px;}
-.vd{width:1px;background:var(--b);height:24px;}
+.hs-v{font-family:var(--serif);font-size:1.4rem;font-weight:300;color:var(--gold);line-height:1;}
+.hs-l{font-size:.44rem;color:var(--dim);letter-spacing:.09em;text-transform:uppercase;margin-top:3px;}
+.vd{width:1px;background:var(--b);height:28px;}
+
+/* Points tile */
 .pts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
-.pg{background:var(--card2);border:1px solid var(--b);border-radius:5px;padding:9px;text-align:center;}
-.pg-v{font-family:var(--serif);font-size:1.2rem;font-weight:300;color:var(--gold);line-height:1;}
-.pg-l{font-size:.42rem;color:var(--dim);letter-spacing:.09em;text-transform:uppercase;margin-top:2px;}
-.str-row{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--gold-d);border:1px solid rgba(197,163,108,.2);border-radius:5px;margin-bottom:12px;}
-.str-n{font-family:var(--serif);font-size:1.5rem;font-style:italic;color:var(--gold);line-height:1;}
+.pg2{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:10px;text-align:center;}
+.pg2-v{font-family:var(--serif);font-size:1.2rem;font-weight:300;color:var(--gold);line-height:1;}
+.pg2-l{font-size:.42rem;color:var(--dim);letter-spacing:.09em;text-transform:uppercase;margin-top:3px;}
+.str-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--gold-d);border:1px solid rgba(197,163,108,.2);border-radius:8px;margin-bottom:12px;}
+.str-n{font-family:var(--serif);font-size:1.6rem;font-style:italic;color:var(--gold);line-height:1;}
 .str-l{font-size:.52rem;color:var(--dim);}
-.lv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.lv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
 .lv-name{font-family:var(--serif);font-size:.95rem;font-style:italic;color:var(--gold);}
 .lv-n{font-size:.5rem;color:var(--dim);}
-.lv-b{background:var(--b);border-radius:100px;height:4px;overflow:hidden;margin-bottom:4px;}
+.lv-b{background:var(--b);border-radius:100px;height:5px;overflow:hidden;margin-bottom:4px;}
 .lv-f{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--gold),#e8c88a);transition:width .6s;}
 .lv-h{font-size:.46rem;color:var(--dim);text-align:right;}
-.qi{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:4px;padding:7px 9px;color:var(--text);font-family:var(--mono);font-size:.68rem;outline:none;transition:border-color .16s;}
+
+/* Quick capture */
+.qi-row{display:flex;gap:8px;margin-bottom:10px;}
+.qi{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--text);font-size:.78rem;outline:none;transition:border-color .16s;min-height:44px;}
 .qi:focus{border-color:var(--gold);}
-.qi-row{display:flex;gap:7px;margin-bottom:11px;}
-.ic{font-size:.62rem;color:var(--mid);padding:5px 9px;background:var(--card2);border:1px solid var(--b);border-radius:4px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-.ic-a{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:.52rem;cursor:pointer;transition:color .14s;padding:0 2px;}
-.ic-a:hover{color:var(--gold);}
+.qi-btn{background:var(--gold);color:#0a0a1a;font-weight:700;font-size:.72rem;padding:11px 16px;border-radius:8px;border:none;cursor:pointer;white-space:nowrap;min-height:44px;}
+
+/* Inbox quick items */
+.ic{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card2);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;font-size:.68rem;}
+.ic-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ic-actions{display:flex;gap:4px;flex-shrink:0;}
+.ic-btn{font-size:.62rem;color:var(--dim);padding:6px 10px;background:var(--card);border:1px solid var(--b);border-radius:6px;cursor:pointer;transition:all .14s;white-space:nowrap;min-height:34px;display:flex;align-items:center;}
+.ic-btn.next-btn{color:var(--gold);border-color:rgba(197,163,108,.3);}
+.ic-btn.next-btn:hover{background:var(--gold);color:#0a0a1a;}
+.ic-btn.del-btn:hover{color:var(--red);border-color:rgba(248,113,113,.3);}
+
+/* Inbox items in task list */
+.see-all-lnk{font-size:.54rem;color:var(--gold);letter-spacing:.07em;text-decoration:none;}
+.see-all-lnk:hover{text-decoration:underline;}
+
+@media(max-width:767px){
+  .gd{grid-template-columns:1fr;}
+  .hero{padding:16px 18px;}
+  .h-g{font-size:1.5rem;}
+  .h-stats{gap:12px;}
+  .hs-v{font-size:1.1rem;}
+}
 </style>
+
 <div class="gd">
+  {# ── Hero ── #}
   <div class="hero full">
-    <div><div class="h-g">{{ greeting }}, Gio.</div><div class="h-s">Control Total · PRAXIS</div></div>
+    <div>
+      <div class="h-g">{{ greeting }}, Gio.</div>
+      <div class="h-s">Control Total · PRAXIS</div>
+    </div>
     <div class="h-stats">
       <div class="hs"><div class="hs-v">{{ stats.done_today }}</div><div class="hs-l">Hoy</div></div>
       <div class="vd"></div>
@@ -45,60 +75,119 @@
       <div class="hs"><div class="hs-v">{{ stats.level }}</div><div class="hs-l">Nivel</div></div>
     </div>
   </div>
-  <div class="tile">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div class="tile-lbl" style="margin:0">NEXT ACTIONS</div><a href="/gtd/next" style="font-size:.52rem;color:var(--gold);letter-spacing:.07em">VER TODAS →</a></div>
-    {% if next_tasks %}{% for t in next_tasks %}
-    <div class="t-row {% if t.id in done_ids %}faded{% endif %}">
-      <div class="t-dot {% if t.id in done_ids %}ck{% endif %}" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
-      <div class="t-main"><div class="t-title">{{ t.title }}</div>{% if t.project_name %}<div class="t-sub">{{ t.project_name }}</div>{% endif %}</div>
-      <div class="t-meta"><span class="pt pt-{{t.priority}}">{{t.priority}}</span><span class="pts-t">+{{t.points}}</span></div>
+
+  {# ── Next Actions ── #}
+  <div class="tile full">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="tile-lbl" style="margin:0">NEXT ACTIONS</div>
+      <a href="/gtd/next" class="see-all-lnk">VER TODAS →</a>
     </div>
-    {% endfor %}{% else %}<div class="empty-s"><i data-lucide="zap"></i><p>Sin next actions</p></div>{% endif %}
-  </div>
-  <div style="display:flex;flex-direction:column;gap:12px;">
-    <div class="tile">
-      <div class="tile-lbl">PUNTOS</div>
-      <div class="pts-grid">
-        <div class="pg"><div class="pg-v" id="dpts">{{ stats.pts_today }}</div><div class="pg-l">Hoy</div></div>
-        <div class="pg"><div class="pg-v">{{ stats.pts_week }}</div><div class="pg-l">Semana</div></div>
-        <div class="pg"><div class="pg-v">{{ stats.pts_month }}</div><div class="pg-l">Mes</div></div>
-        <div class="pg"><div class="pg-v">{{ stats.pts_total }}</div><div class="pg-l">Total</div></div>
+    {% if next_tasks %}
+      {% for t in next_tasks %}
+      <div class="t-row {% if t.id in done_ids %}faded{% endif %}">
+        <div class="t-dot {% if t.id in done_ids %}ck{% endif %}" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
+        <div class="t-main">
+          <div class="t-title">{{ t.title }}</div>
+          {% if t.project_name %}<div class="t-sub">{{ t.project_name }}</div>{% endif %}
+        </div>
+        <div class="t-meta">
+          <span class="pt pt-{{t.priority}}">{{t.priority}}</span>
+          <span class="pts-t">+{{t.points}}</span>
+        </div>
       </div>
-      <div class="str-row"><div class="str-n">{{ stats.streak }}</div><div><div style="font-size:.68rem;color:var(--gold)">🔥 Racha</div><div class="str-l">días consecutivos</div></div></div>
-      <div class="lv-row"><div class="lv-name">{{ stats.level_name }}</div><div class="lv-n">NIV. {{ stats.level }}</div></div>
-      <div class="lv-b"><div class="lv-f" style="width:{{ stats.level_pct }}%"></div></div>
-      <div class="lv-h">{{ stats.level_pct }}% → Nivel {{ stats.level+1 }}</div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-s"><i data-lucide="zap"></i><p>Sin next actions — captura algo en Inbox</p></div>
+    {% endif %}
+  </div>
+
+  {# ── Puntos & Nivel ── #}
+  <div class="tile">
+    <div class="tile-lbl">PUNTOS</div>
+    <div class="pts-grid">
+      <div class="pg2"><div class="pg2-v" id="dpts">{{ stats.pts_today }}</div><div class="pg2-l">Hoy</div></div>
+      <div class="pg2"><div class="pg2-v">{{ stats.pts_week }}</div><div class="pg2-l">Semana</div></div>
+      <div class="pg2"><div class="pg2-v">{{ stats.pts_month }}</div><div class="pg2-l">Mes</div></div>
+      <div class="pg2"><div class="pg2-v">{{ stats.pts_total }}</div><div class="pg2-l">Total</div></div>
     </div>
-    <div class="tile">
-      <div class="tile-lbl">CAPTURE RÁPIDA</div>
-      <div class="qi-row"><input class="qi" id="qi" placeholder="Captura idea o tarea..."><button class="btn-a" onclick="capture()">+ Inbox</button></div>
-      <div id="ip">{% for t in inbox_tasks %}<div class="ic" data-id="{{ t.id }}"><span>{{ t.title }}</span><div style="display:flex;gap:5px;"><button class="ic-a" onclick="promote({{t.id}},this)">→ Next</button><button class="ic-a" onclick="del({{t.id}},this)">✕</button></div></div>{% endfor %}</div>
+    <div class="str-row">
+      <div class="str-n">{{ stats.streak }}</div>
+      <div><div style="font-size:.72rem;color:var(--gold)">🔥 Racha</div><div class="str-l">días consecutivos</div></div>
+    </div>
+    <div class="lv-row"><div class="lv-name">{{ stats.level_name }}</div><div class="lv-n">NIV. {{ stats.level }}</div></div>
+    <div class="lv-b"><div class="lv-f" style="width:{{ stats.level_pct }}%"></div></div>
+    <div class="lv-h">{{ stats.level_pct }}% → Nivel {{ stats.level+1 }}</div>
+  </div>
+
+  {# ── Captura rápida ── #}
+  <div class="tile">
+    <div class="tile-lbl">CAPTURE RÁPIDA</div>
+    <div class="qi-row">
+      <input class="qi" id="qi" placeholder="Captura idea o tarea...">
+      <button class="qi-btn" onclick="capture()">+ Inbox</button>
+    </div>
+    <a href="/gtd/inbox" style="display:block;text-align:right;margin-bottom:10px;" class="see-all-lnk">VER SI SIRVE → Next</a>
+    <div id="ip">
+      {% for t in inbox_tasks %}
+      <div class="ic" data-id="{{ t.id }}">
+        <span class="ic-title">{{ t.title }}</span>
+        <div class="ic-actions">
+          <button class="ic-btn next-btn" onclick="promote({{t.id}},this)">→ Next</button>
+          <button class="ic-btn del-btn"  onclick="del({{t.id}},this)">✕</button>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   </div>
 </div>
+
 {% endblock %}
 {% block scripts %}<script>
-async function cTask(id,dot){
-  const row=dot.closest('.t-row');if(row.classList.contains('faded'))return;
-  const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
-  const d=await r.json();
-  if(d.ok){dot.classList.add('ck');row.classList.add('faded');lucide.createIcons();
-    document.getElementById('dpts').textContent=d.stats.pts_today;
-    toast(`+${d.pts} pts${d.bonus?` ✦ BONUS +${d.bonus}`:''}`,d.bonus?'win':'ok');}
+async function cTask(id, dot){
+  const row = dot.closest('.t-row');
+  if(row.classList.contains('faded')) return;
+  const r = await fetch(`/gtd/api/task/${id}/complete`, {method:'POST'});
+  const d = await r.json();
+  if(d.ok){
+    dot.classList.add('ck'); row.classList.add('faded'); lucide.createIcons();
+    document.getElementById('dpts').textContent = d.stats.pts_today;
+    toast(`+${d.pts} pts${d.bonus ? ` ✦ BONUS +${d.bonus}` : ''}`, d.bonus ? 'win' : 'ok');
+  }
 }
+
 async function capture(){
-  const inp=document.getElementById('qi');const t=inp.value.trim();if(!t)return;
-  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t,status:'inbox'})});
-  const div=document.createElement('div');div.className='ic';
-  div.innerHTML=`<span>${t}</span><div style="display:flex;gap:5px;"><button class="ic-a" style="color:var(--gold)">→ Next</button><button class="ic-a">✕</button></div>`;
-  document.getElementById('ip').prepend(div);inp.value='';toast('Capturado');
+  const inp = document.getElementById('qi');
+  const t = inp.value.trim(); if(!t) return;
+  const r = await fetch('/gtd/api/task', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({title:t, status:'inbox'})
+  });
+  const data = await r.json();
+  const id = data.id;
+  const div = document.createElement('div');
+  div.className = 'ic'; div.dataset.id = id;
+  div.innerHTML = `
+    <span class="ic-title">${t}</span>
+    <div class="ic-actions">
+      <button class="ic-btn next-btn" onclick="promote(${id},this)">→ Next</button>
+      <button class="ic-btn del-btn"  onclick="del(${id},this)">✕</button>
+    </div>`;
+  document.getElementById('ip').prepend(div);
+  inp.value = ''; toast('Capturado ✓');
 }
-async function promote(id,btn){
-  await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'next'})});
-  btn.closest('.ic').remove();toast('→ Next Actions');
+
+async function promote(id, btn){
+  await fetch(`/gtd/api/task/${id}/status`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status:'next'})
+  });
+  btn.closest('.ic').remove(); toast('→ Next Actions');
 }
-async function del(id,btn){
-  await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.ic').remove();
+
+async function del(id, btn){
+  await fetch(`/gtd/api/task/${id}`, {method:'DELETE'});
+  btn.closest('.ic').remove();
 }
-document.getElementById('qi').addEventListener('keydown',e=>{if(e.key==='Enter')capture();});
+
+document.getElementById('qi').addEventListener('keydown', e => { if(e.key==='Enter') capture(); });
 </script>{% endblock %}

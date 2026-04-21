@@ -95,7 +95,8 @@ def add_task():
              d.get('context',''), int(d.get('estimated_mins') or 0),
              d.get('energy_level','medium'), datetime.now().isoformat()))
         db.commit()
-    return jsonify({'ok':True})
+        task_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+    return jsonify({'ok':True, 'id': task_id})
 
 
 @gtd_bp.route('/api/task/<int:tid>/complete', methods=['POST'])
