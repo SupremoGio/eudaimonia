@@ -7,13 +7,15 @@ TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 import sqlite3 as _sqlite3
 _LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
 
+def _dict_factory(cursor, row):
+    return {col[0]: row[i] for i, col in enumerate(cursor.description)}
+
 if TURSO_URL and TURSO_TOKEN:
     try:
         import libsql_experimental as _libsql
-        # Direct HTTP connection — no embedded replica, no sync handshake
         def get_db():
             conn = _libsql.connect(TURSO_URL, auth_token=TURSO_TOKEN)
-            conn.row_factory = _libsql.Row
+            conn.row_factory = _dict_factory
             return conn
         # Test connection at startup
         _test = get_db()
