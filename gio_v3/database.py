@@ -1,13 +1,24 @@
-import sqlite3, os
+import os
 from datetime import date, timedelta
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
+TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
+TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+if TURSO_URL and TURSO_TOKEN:
+    import libsql_experimental as _db_mod
+    _REPLICA = "/tmp/pipeline_replica.db"
+    def get_db():
+        conn = _db_mod.connect(_REPLICA, sync_url=TURSO_URL, auth_token=TURSO_TOKEN)
+        conn.sync()
+        conn.row_factory = _db_mod.Row
+        return conn
+else:
+    import sqlite3 as _db_mod
+    _LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
+    def get_db():
+        conn = _db_mod.connect(_LOCAL)
+        conn.row_factory = _db_mod.Row
+        return conn
 
 
 def init_db():
@@ -212,7 +223,7 @@ def init_db():
         """)
 
         # ── Migrate debts table: add monto_total/monto_restante if missing ──
-        cols = [r[1] for r in db.execute("PRAGMA table_info(debts)").fetchall()]
+        cols = [r["name"] for r in db.execute("PRAGMA table_info(debts)").fetchall()]
         if 'monto_total' not in cols:
             db.execute("ALTER TABLE debts ADD COLUMN monto_total REAL DEFAULT 0")
             db.execute("ALTER TABLE debts ADD COLUMN monto_restante REAL DEFAULT 0")
