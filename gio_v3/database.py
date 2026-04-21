@@ -7,21 +7,71 @@ TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 import sqlite3 as _sqlite3
 _LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
 
-def _dict_factory(cursor, row):
-    return {col[0]: row[i] for i, col in enumerate(cursor.description)}
+class _TursoCursor:
+    def __init__(self, cur):
+        self._cur = cur
+
+    @property
+    def description(self):
+        return self._cur.description
+
+    def _wrap(self, row):
+        if row is None:
+            return None
+        desc = self._cur.description or []
+        return {desc[i][0]: row[i] for i in range(len(desc))}
+
+    def fetchone(self):
+        return self._wrap(self._cur.fetchone())
+
+    def fetchall(self):
+        return [self._wrap(r) for r in (self._cur.fetchall() or [])]
+
+    def __getattr__(self, name):
+        return getattr(self._cur, name)
+
+
+class _TursoConn:
+    def __init__(self, url, token):
+        import libsql_experimental as _libsql
+        self._conn = _libsql.connect(url, auth_token=token)
+
+    def execute(self, sql, params=()):
+        return _TursoCursor(self._conn.execute(sql, params))
+
+    def executescript(self, sql):
+        for stmt in sql.split(';'):
+            s = stmt.strip()
+            if s:
+                try:
+                    self._conn.execute(s)
+                except Exception:
+                    pass
+        self._conn.commit()
+
+    def commit(self):
+        self._conn.commit()
+
+    def close(self):
+        self._conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, *_):
+        if exc_type is None:
+            self._conn.commit()
+        self._conn.close()
+
 
 if TURSO_URL and TURSO_TOKEN:
     try:
-        import libsql_experimental as _libsql
-        def get_db():
-            conn = _libsql.connect(TURSO_URL, auth_token=TURSO_TOKEN)
-            conn.row_factory = _dict_factory
-            return conn
-        # Test connection at startup
-        _test = get_db()
+        _test = _TursoConn(TURSO_URL, TURSO_TOKEN)
         _test.execute("SELECT 1").fetchone()
         _test.close()
         print("[DB] Turso cloud connected ✓")
+        def get_db():
+            return _TursoConn(TURSO_URL, TURSO_TOKEN)
     except Exception as e:
         print(f"[DB] Turso failed ({e}), falling back to local SQLite")
         def get_db():
