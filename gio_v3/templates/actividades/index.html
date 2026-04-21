@@ -1,0 +1,310 @@
+{% extends "tw/layout.html" %}{% set pg='actividades' %}
+{% block title %}Acta Diurna — Eudaimonia{% endblock %}
+{% block topright %}{{ today }}{% endblock %}
+{% block content %}
+<style>
+/* ── Stats cards ─────────────────────────────────────────────── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.sc{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;}
+.sc-v::after{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+.sc-c::after{background:linear-gradient(90deg,var(--cyan),var(--cyan-l));}
+.sc-e::after{background:linear-gradient(90deg,var(--emerald),var(--emerald-l));}
+.sc-a::after{background:linear-gradient(90deg,var(--amber),var(--amber-l));}
+.sc-l{font-size:.46rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:7px;}
+.sc-n{font-size:2.2rem;font-weight:700;line-height:1;font-family:var(--sans);}
+.sc-v .sc-n{background:linear-gradient(135deg,var(--violet-l),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sc-c .sc-n{background:linear-gradient(135deg,var(--cyan),var(--cyan-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sc-e .sc-n{background:linear-gradient(135deg,var(--emerald),var(--emerald-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sc-a .sc-n{background:linear-gradient(135deg,var(--amber),var(--amber-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sc-s{font-size:.52rem;color:var(--dim);margin-top:4px;}
+
+/* ── Layout ──────────────────────────────────────────────────── */
+.act-grid{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;}
+
+/* ── Category blocks ─────────────────────────────────────────── */
+.cat-block{margin-bottom:18px;}
+.cat-block:last-child{margin-bottom:0;}
+
+.cat-n{display:inline-flex;align-items:center;font-size:.46rem;letter-spacing:.16em;text-transform:uppercase;padding:4px 11px;border-radius:100px;margin-bottom:10px;font-weight:500;}
+
+/* 15 category colors cycling every 8 */
+.cat-block:nth-child(8n+1) .cat-n{color:#a78bfa;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.22);}
+.cat-block:nth-child(8n+2) .cat-n{color:var(--cyan);background:var(--cyan-d);border:1px solid rgba(6,182,212,.22);}
+.cat-block:nth-child(8n+3) .cat-n{color:var(--emerald);background:var(--emerald-d);border:1px solid rgba(16,185,129,.22);}
+.cat-block:nth-child(8n+4) .cat-n{color:var(--amber);background:var(--amber-d);border:1px solid rgba(245,158,11,.22);}
+.cat-block:nth-child(8n+5) .cat-n{color:var(--coral);background:var(--coral-d);border:1px solid rgba(244,63,94,.22);}
+.cat-block:nth-child(8n+6) .cat-n{color:var(--pink);background:var(--pink-d);border:1px solid rgba(236,72,153,.22);}
+.cat-block:nth-child(8n+7) .cat-n{color:var(--blue);background:var(--blue-d);border:1px solid rgba(59,130,246,.22);}
+.cat-block:nth-child(8n+0) .cat-n{color:var(--orange);background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.22);}
+
+.acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;}
+.ab{
+  background:var(--card2);border:1px solid var(--b);
+  color:var(--mid);padding:11px 13px;border-radius:10px;
+  font-family:var(--mono);font-size:.62rem;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  gap:6px;transition:all .15s;text-align:left;line-height:1.3;
+  min-height:46px;
+  -webkit-tap-highlight-color:transparent;
+}
+.ab:active{transform:scale(.97);}
+.ab:hover{border-color:var(--b2);color:var(--text);}
+.ab.done{
+  background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(6,182,212,.07));
+  border-color:var(--indigo);color:var(--text);
+}
+.pp{font-size:.5rem;background:var(--b);padding:2px 7px;border-radius:100px;flex-shrink:0;color:var(--dim);}
+.ab.done .pp{background:linear-gradient(135deg,var(--violet),var(--indigo));color:#fff;}
+
+/* ── Right column ────────────────────────────────────────────── */
+.rc{display:flex;flex-direction:column;gap:14px;}
+
+/* Prioridades */
+.pi{display:flex;gap:8px;margin-bottom:12px;}
+.pi input{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:.7rem;outline:none;transition:border-color .18s;}
+.pi input:focus{border-color:var(--violet-l);}
+.pl{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
+.pitem{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid var(--b);border-radius:10px;cursor:pointer;transition:all .18s;-webkit-tap-highlight-color:transparent;}
+.pitem:hover{border-color:var(--b2);background:var(--card2);}
+.pitem.dn{border-color:var(--emerald);background:rgba(16,185,129,.07);}
+.pck{width:18px;height:18px;border:1.5px solid var(--dim);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s;}
+.pitem.dn .pck{border-color:var(--emerald);background:var(--emerald);}
+.pck svg{width:10px;height:10px;color:#fff;display:none;}
+.pitem.dn .pck svg{display:block;}
+.ptxt{font-size:.7rem;color:var(--mid);}
+.pitem.dn .ptxt{color:var(--emerald);text-decoration:line-through;}
+.bonus{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:var(--emerald);font-size:.58rem;padding:9px 13px;border-radius:10px;text-align:center;display:none;}
+.bonus.on{display:block;}
+
+/* Racha */
+.str-n{font-size:3rem;font-weight:700;font-family:var(--sans);line-height:1;margin:6px 0 4px;background:linear-gradient(135deg,var(--amber),var(--amber-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.str-s{font-size:.52rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;}
+.str-bdg{margin-top:12px;padding:8px 13px;background:var(--amber-d);border:1px solid rgba(245,158,11,.25);border-radius:10px;font-size:.58rem;color:var(--amber);display:none;}
+.str-bdg.on{display:block;}
+
+/* Word */
+.wh2{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.w-ph{font-size:.5rem;color:var(--dim);margin-bottom:3px;}
+.w-w{font-size:1.35rem;font-weight:700;font-family:var(--sans);line-height:1;margin-bottom:7px;background:linear-gradient(135deg,var(--cyan),var(--violet-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.w-m{font-size:.64rem;color:var(--mid);line-height:1.55;margin-bottom:8px;}
+.w-ex{font-size:.6rem;color:var(--dim);font-style:italic;border-left:2px solid var(--cyan);padding-left:9px;line-height:1.55;margin-bottom:9px;}
+.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:.52rem;color:var(--blue);background:var(--blue-d);border:1px solid rgba(59,130,246,.18);padding:3px 9px;border-radius:100px;}
+.rb{background:none;border:1px solid var(--b2);color:var(--dim);width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0;}
+.rb:hover{border-color:var(--violet-l);color:var(--violet-l);}
+.rb svg{width:11px;height:11px;}
+
+/* Quote */
+.q-c{background:linear-gradient(135deg,rgba(99,102,241,.09),rgba(6,182,212,.04));border:1px solid var(--b2);border-radius:14px;padding:18px;display:flex;align-items:flex-start;gap:12px;}
+.q-inner{flex:1;}
+.q-t{font-family:var(--sans);font-size:.9rem;font-weight:300;font-style:italic;line-height:1.55;color:var(--text);transition:opacity .26s;}
+.q-a{font-size:.48rem;color:var(--violet-l);letter-spacing:.12em;text-transform:uppercase;margin-top:8px;transition:opacity .26s;}
+
+/* Pipeline */
+.pipe-r{display:flex;gap:8px;margin-bottom:14px;}
+.pipe-inp{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:.7rem;outline:none;transition:border-color .18s;}
+.pipe-inp:focus{border-color:var(--violet-l);}
+.chips{display:flex;gap:7px;flex-wrap:wrap;}
+.chip{background:var(--card2);border:1px solid var(--b);padding:6px 12px;border-radius:100px;font-size:.62rem;color:var(--mid);display:flex;align-items:center;gap:6px;}
+.dc{background:none;border:none;color:var(--dim);display:flex;align-items:center;padding:0;transition:color .18s;}
+.dc:hover{color:var(--coral);}
+.dc svg{width:10px;height:10px;}
+
+/* Alertas de pago */
+.pay-alerts{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px;}
+.pay-alert{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:9px;background:rgba(255,255,255,.02);font-size:.58rem;letter-spacing:.07em;}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media(max-width:1100px){
+  .act-grid{grid-template-columns:1fr;}
+  .rc{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+}
+@media(max-width:767px){
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+  .act-grid{grid-template-columns:1fr;gap:12px;}
+  .rc{display:flex;flex-direction:column;gap:12px;}
+  .acts{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:5px;}
+  .sc-n{font-size:1.9rem;}
+}
+@media(max-width:420px){
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .acts{grid-template-columns:1fr 1fr;}
+}
+</style>
+
+{% if payment_alerts %}
+<div class="pay-alerts">
+  {% for a in payment_alerts %}
+  <div class="pay-alert" style="border:1px solid {{a.color}};color:{{a.color}}">
+    <i data-lucide="bell" style="width:12px;height:12px"></i>HOY: PAGAR {{ a.label }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="stats-row">
+  <div class="sc sc-v">
+    <div class="sc-l">PTS HOY</div>
+    <div class="sc-n" id="v-today">{{ stats.pts_today }}</div>
+    <div class="sc-s">meta 15+</div>
+  </div>
+  <div class="sc sc-c">
+    <div class="sc-l">PTS SEMANA</div>
+    <div class="sc-n" id="v-week">{{ stats.pts_week }}</div>
+    <div class="sc-s">meta 80+</div>
+  </div>
+  <div class="sc sc-e">
+    <div class="sc-l">PTS MES</div>
+    <div class="sc-n" id="v-month">{{ stats.pts_month }}</div>
+    <div class="sc-s">meta 300+</div>
+  </div>
+  <div class="sc sc-a">
+    <div class="sc-l">RACHA</div>
+    <div class="sc-n" id="v-streak">{{ stats.streak }}</div>
+    <div class="sc-s" id="s-sub">{% if stats.streak>=5 %}🔥 bonus activo{% else %}{{ 5-stats.streak }} para bonus{% endif %}</div>
+  </div>
+</div>
+
+<div class="act-grid">
+  <div class="tile">
+    <div class="tile-lbl">ACTA DIURNA DEL DÍA</div>
+    {% for cat in cats %}
+      {% set ca=activities.items()|selectattr('1.cat','equalto',cat)|list %}
+      {% if ca %}
+      <div class="cat-block">
+        <div class="cat-n">{{ cat }}</div>
+        <div class="acts">
+          {% for key,act in ca %}
+          <button class="ab {% if key in stats.done_today %}done{% endif %}" data-key="{{ key }}" onclick="logAct('{{ key }}')">
+            <span>{{ act.label }}</span><span class="pp">+{{ act.pts }}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="rc">
+    <div class="tile">
+      <div class="tile-lbl">PRIORIDADES <span style="color:var(--emerald);opacity:.55">(máx 3)</span></div>
+      <div class="pi">
+        <input id="p-inp" placeholder="Añadir prioridad...">
+        <button class="btn-g" onclick="addP()">+ ADD</button>
+      </div>
+      <div class="pl" id="p-list">
+        {% for p in stats.priorities %}
+        <div class="pitem {% if p.done %}dn{% endif %}" onclick="toggleP({{ p.id }})">
+          <div class="pck"><i data-lucide="check"></i></div>
+          <span class="ptxt">{{ p.text }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="bonus {% if stats.priorities|length==3 and stats.priorities|selectattr('done')|list|length==3 %}on{% endif %}" id="bonus">✦ BONUS +3 — 3/3 completadas</div>
+    </div>
+
+    <div class="tile">
+      <div class="tile-lbl">RACHA</div>
+      <div class="str-n" id="s-big">{{ stats.streak }}</div>
+      <div class="str-s">días consecutivos</div>
+      <div class="str-bdg {% if stats.streak>=5 %}on{% endif %}" id="s-bdg">🔥 RACHA ×5 — BONUS ACTIVO</div>
+    </div>
+
+    <div class="tile">
+      <div class="wh2">
+        <div class="tile-lbl" style="margin:0">WORD OF THE DAY</div>
+        <button class="rb" onclick="rWord()"><i data-lucide="refresh-cw"></i></button>
+      </div>
+      <div id="wb" style="transition:opacity .24s">
+        <div class="w-ph" id="w-ph">{{ word.phonetic }}</div>
+        <div class="w-w"  id="w-w">{{ word.word }}</div>
+        <div class="w-m"  id="w-m">{{ word.meaning }}</div>
+        <div class="w-ex" id="w-ex">"{{ word.example }}"</div>
+        <span class="w-fr" id="w-fr">🇫🇷 {{ word.french }}</span>
+      </div>
+    </div>
+
+    <div class="q-c">
+      <div class="q-inner">
+        <div class="q-t" id="q-t">"{{ quote.text }}"</div>
+        <div class="q-a" id="q-a">— {{ quote.author }}</div>
+      </div>
+      <button class="rb" onclick="rQuote()"><i data-lucide="refresh-cw"></i></button>
+    </div>
+
+    <div class="tile">
+      <div class="tile-lbl">PIPELINE</div>
+      <div class="pipe-r">
+        <input class="pipe-inp" id="pipe-inp" placeholder="Añadir al pipeline...">
+        <button class="btn-g" onclick="addPipe()">+ ADD</button>
+      </div>
+      <div class="chips" id="chips">
+        {% for item in stats.pipeline %}
+        <div class="chip" data-id="{{ item.id }}">{{ item.text }}<button class="dc" onclick="delPipe({{ item.id }},this)"><i data-lucide="x"></i></button></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function updS(s){
+  document.getElementById('v-today').textContent=s.pts_today;
+  document.getElementById('v-week').textContent=s.pts_week;
+  document.getElementById('v-month').textContent=s.pts_month;
+  document.getElementById('v-streak').textContent=s.streak;
+  document.getElementById('s-big').textContent=s.streak;
+  document.getElementById('s-sub').textContent=s.streak>=5?'🔥 bonus activo':`${5-s.streak} para bonus`;
+  document.getElementById('s-bdg').classList.toggle('on',s.streak>=5);
+}
+async function logAct(key){
+  const r=await fetch('/actividades/api/activity/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
+  const d=await r.json();
+  const b=document.querySelector(`[data-key="${key}"]`);
+  if(d.action==='added'){b.classList.add('done');toast(`+${d.pts} pts`);}
+  else{b.classList.remove('done');toast('Removido');}
+  updS(d.stats);lucide.createIcons();
+}
+async function addP(){
+  const inp=document.getElementById('p-inp');const text=inp.value.trim();if(!text)return;
+  const r=await fetch('/actividades/api/priority',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  const d=await r.json();if(d.error){toast(d.error,'err');return;}
+  renderP(d.priorities);inp.value='';
+}
+async function toggleP(id){
+  const r=await fetch(`/actividades/api/priority/${id}/toggle`,{method:'POST'});
+  const d=await r.json();renderP(d.priorities);if(d.all3)toast('✦ +3 BONUS','win');updS(d.stats);
+}
+function renderP(ps){
+  document.getElementById('p-list').innerHTML=ps.map(p=>`<div class="pitem ${p.done?'dn':''}" onclick="toggleP(${p.id})"><div class="pck"><i data-lucide="check"></i></div><span class="ptxt">${p.text}</span></div>`).join('');
+  document.getElementById('bonus').classList.toggle('on',ps.length===3&&ps.every(p=>p.done));
+  lucide.createIcons();
+}
+async function addPipe(){
+  const inp=document.getElementById('pipe-inp');const text=inp.value.trim();if(!text)return;
+  const r=await fetch('/actividades/api/pipeline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+  const d=await r.json();renderChips(d.items);inp.value='';
+}
+async function delPipe(id,btn){await fetch(`/actividades/api/pipeline/${id}`,{method:'DELETE'});btn.closest('.chip').remove();}
+function renderChips(items){
+  document.getElementById('chips').innerHTML=items.map(i=>`<div class="chip" data-id="${i.id}">${i.text}<button class="dc" onclick="delPipe(${i.id},this)"><i data-lucide="x"></i></button></div>`).join('');
+  lucide.createIcons();
+}
+async function rWord(){
+  const d=await(await fetch('/actividades/api/word/refresh')).json();
+  const b=document.getElementById('wb');b.style.opacity=0;
+  setTimeout(()=>{document.getElementById('w-ph').textContent=d.phonetic;document.getElementById('w-w').textContent=d.word;document.getElementById('w-m').textContent=d.meaning;document.getElementById('w-ex').textContent=`"${d.example}"`;document.getElementById('w-fr').textContent=`🇫🇷 ${d.french}`;b.style.opacity=1;},240);
+}
+async function rQuote(){
+  const d=await(await fetch('/actividades/api/quote/refresh')).json();
+  const qt=document.getElementById('q-t'),qa=document.getElementById('q-a');
+  qt.style.opacity=0;qa.style.opacity=0;
+  setTimeout(()=>{qt.textContent=`"${d.text}"`;qa.textContent=`— ${d.author}`;qt.style.opacity=1;qa.style.opacity=1;},250);
+}
+document.getElementById('p-inp').addEventListener('keydown',e=>{if(e.key==='Enter')addP();});
+document.getElementById('pipe-inp').addEventListener('keydown',e=>{if(e.key==='Enter')addPipe();});
+document.getElementById('q-t').style.transition='opacity .25s';
+document.getElementById('q-a').style.transition='opacity .25s';
+</script>
+{% endblock %}

@@ -1,0 +1,278 @@
+{% extends "tw/layout.html" %}{% set pg='dashboard' %}
+{% block title %}Dashboard — GIO{% endblock %}
+{% block topright %}{{ today }}{% endblock %}
+{% block content %}
+
+<!-- ── Encabezado ────────────────────────────────────────────── -->
+<div class="mb-6">
+  <h1 class="font-sans text-2xl md:text-3xl font-light tracking-[0.18em] text-[#eeeeff] mb-1">
+    <span class="brand-text font-bold">EUDAIMONIA</span>
+  </h1>
+  <p class="text-[0.52rem] text-dim tracking-[0.16em] uppercase">
+    Sistema de alto rendimiento · {{ today }}
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     STATS — 2 cols móvil → 4 escritorio
+════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6">
+
+  <div class="gio-card bg-card border border-border rounded-2xl p-4 flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <span class="text-[0.46rem] text-dim tracking-[0.18em] uppercase">Puntos Hoy</span>
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center bg-gio-vd">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-gio-vl"></i>
+      </div>
+    </div>
+    <div>
+      <div class="font-sans text-2xl md:text-3xl font-semibold leading-none mb-1 text-gio-vl">
+        {{ gtd.pts_today + act_today }}
+      </div>
+      <div class="text-[0.5rem] text-mid">GTD + Actividades</div>
+    </div>
+  </div>
+
+  <div class="gio-card bg-card border border-border rounded-2xl p-4 flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <span class="text-[0.46rem] text-dim tracking-[0.18em] uppercase">Completadas</span>
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(16,185,129,.14);">
+        <i data-lucide="check-circle" class="w-3.5 h-3.5 text-gio-emerald"></i>
+      </div>
+    </div>
+    <div>
+      <div class="font-sans text-2xl md:text-3xl font-semibold leading-none mb-1 text-gio-emerald">
+        {{ gtd.done_today }}
+      </div>
+      <div class="text-[0.5rem] text-mid">tareas hoy</div>
+    </div>
+  </div>
+
+  <div class="gio-card bg-card border border-border rounded-2xl p-4 flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <span class="text-[0.46rem] text-dim tracking-[0.18em] uppercase">Racha</span>
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(245,158,11,.14);">
+        <i data-lucide="flame" class="w-3.5 h-3.5 text-gio-amber"></i>
+      </div>
+    </div>
+    <div>
+      <div class="font-sans text-2xl md:text-3xl font-semibold leading-none mb-1 text-gio-amber">
+        {{ act_streak }}d
+      </div>
+      <div class="text-[0.5rem] text-mid">días consecutivos</div>
+    </div>
+  </div>
+
+  <div class="gio-card bg-card border border-border rounded-2xl p-4 flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <span class="text-[0.46rem] text-dim tracking-[0.18em] uppercase">Nivel</span>
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center" style="background:rgba(6,182,212,.14);">
+        <i data-lucide="award" class="w-3.5 h-3.5 text-gio-cyan"></i>
+      </div>
+    </div>
+    <div>
+      <div class="font-sans text-2xl md:text-3xl font-semibold leading-none mb-1 text-gio-cyan">
+        {{ gtd.level }}
+      </div>
+      <div class="text-[0.5rem] text-mid italic">{{ gtd.level_name }}</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     GRID PRINCIPAL — 1→2→3 columnas
+════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+
+  <!-- PROGRESO DE NIVEL -->
+  <div class="gio-card bg-card border border-border rounded-2xl p-5">
+    <div class="text-[0.48rem] text-dim tracking-[0.2em] uppercase mb-4">Nivel de progreso</div>
+    <div class="flex items-end justify-between mb-2">
+      <span class="font-sans text-4xl font-light text-gio-amber">{{ gtd.level }}</span>
+      <span class="text-[0.56rem] text-mid italic pb-1">{{ gtd.level_name }}</span>
+    </div>
+    <div class="h-1.5 bg-border rounded-full overflow-hidden mb-1.5">
+      <div class="h-full rounded-full bg-gradient-to-r from-gio-amber to-yellow-300 transition-all duration-700"
+           style="width:{{ gtd.level_pct }}%"></div>
+    </div>
+    <div class="flex justify-between text-[0.46rem] text-dim mb-4">
+      <span>{{ gtd.level_pct }}% completado</span>
+      <span>→ Nivel {{ gtd.level + 1 }}</span>
+    </div>
+
+    <!-- Barchart semanal -->
+    {% if history %}
+    <div class="flex items-end gap-1 h-14 pt-3 border-t border-border">
+      {% set max_pts = history | map(attribute='pts') | max or 1 %}
+      {% for h in history %}
+      <div class="flex-1 flex flex-col items-center gap-1" title="{{ h.date }}: {{ h.pts }} pts">
+        <div class="w-full rounded-sm min-h-[3px]"
+             style="height:{{ [h.pts / max_pts * 44, 3] | max | int }}px;
+                    background:{% if h.date == today %}linear-gradient(0deg,#f59e0b,#fcd34d){% else %}rgba(245,158,11,0.15){% endif %};
+                    border:1px solid rgba(245,158,11,0.2)"></div>
+        <span class="text-[0.38rem] text-dim">{{ h.label[3:] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Pts semana / mes -->
+    <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
+      {% for label, val in [('Hoy', gtd.pts_today), ('Semana', gtd.pts_week), ('Total', gtd.pts_total)] %}
+      <div class="text-center">
+        <div class="font-sans text-lg font-semibold text-gio-amber leading-none">{{ val }}</div>
+        <div class="text-[0.42rem] text-dim mt-0.5">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- TAREAS RECIENTES -->
+  <div class="gio-card bg-card border border-border rounded-2xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-[0.48rem] text-dim tracking-[0.2em] uppercase">Completadas recientes</span>
+      <a href="/gtd/next"
+         class="text-[0.48rem] text-gio-vl hover:text-gio-violet transition-colors">Ver todo →</a>
+    </div>
+    {% if recent %}
+    <div class="space-y-1">
+      {% for r in recent %}
+      <div class="flex items-center gap-3 py-2 border-b border-border last:border-0">
+        <div class="w-3.5 h-3.5 rounded-full border-2 border-gio-emerald flex-shrink-0 flex items-center justify-center bg-emerald-500/10">
+          <i data-lucide="check" class="w-2 h-2 text-gio-emerald"></i>
+        </div>
+        <span class="text-[0.68rem] text-mid truncate flex-1">
+          {{ r.title[:40] }}{% if r.title | length > 40 %}…{% endif %}
+        </span>
+        <span class="text-[0.56rem] font-semibold text-gio-amber flex-shrink-0">+{{ r.points }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="flex flex-col items-center justify-center py-8 text-dim gap-2">
+      <i data-lucide="inbox" class="w-6 h-6 opacity-20"></i>
+      <p class="text-[0.62rem]">Sin tareas completadas aún</p>
+    </div>
+    {% endif %}
+
+    <!-- Inbox / Next counters -->
+    <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
+      {% for label, val, color in [
+        ('Inbox',      gtd.inbox_n,  'text-gio-amber'),
+        ('Next',       gtd.next_n,   'text-gio-vl'),
+        ('Proyectos',  gtd.proj_n,   'text-gio-cyan'),
+      ] %}
+      <div class="text-center">
+        <div class="font-sans text-lg font-semibold {{ color }} leading-none">{{ val }}</div>
+        <div class="text-[0.42rem] text-dim mt-0.5">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- WORD OF THE DAY + QUOTE -->
+  <div class="flex flex-col gap-4 md:col-span-2 xl:col-span-1">
+
+    <!-- Word of the day -->
+    <div class="gio-card bg-card border border-border rounded-2xl p-5 flex-1">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-[0.48rem] text-dim tracking-[0.2em] uppercase">Word of the day</span>
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 text-[0.46rem] text-gio-cyan bg-gio-cyan/10 border border-gio-cyan/20 px-2 py-0.5 rounded-full">
+            <i data-lucide="globe" class="w-2.5 h-2.5"></i> EN → FR
+          </div>
+          <button class="w-6 h-6 rounded-full border border-border text-dim hover:border-gio-amber hover:text-gio-amber transition-all flex items-center justify-center"
+                  onclick="refreshWord()">
+            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+          </button>
+        </div>
+      </div>
+      <div id="word-block" style="transition:opacity .25s">
+        <div class="text-[0.5rem] text-dim mb-0.5" id="wph">{{ word.phonetic }}</div>
+        <div class="font-sans text-2xl italic font-light text-[#eeeeff] mb-1.5" id="ww">{{ word.word }}</div>
+        <div class="text-[0.66rem] text-mid leading-relaxed mb-2" id="wm">{{ word.meaning }}</div>
+        <div class="text-[0.6rem] text-dim italic border-l-2 border-gio-amber pl-3 mb-3 leading-relaxed" id="we">"{{ word.example }}"</div>
+        <div class="inline-flex items-center gap-1.5 text-[0.52rem] text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2.5 py-1 rounded-full" id="wf">
+          🇫🇷 {{ word.french }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Quote -->
+    <div class="gio-card border border-border rounded-2xl p-5"
+         style="background:linear-gradient(135deg,#0d0c0a,#100f0c)">
+      <div class="text-[0.48rem] text-dim tracking-[0.2em] uppercase mb-3">Frase del día</div>
+      <div class="font-sans text-[0.95rem] italic font-light leading-relaxed text-[#eeeeff] mb-2">
+        "{{ quote.text }}"
+      </div>
+      <div class="text-[0.52rem] text-gio-amber tracking-[0.13em] uppercase">
+        — {{ quote.author }}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     7 PILARES — 1→2→4 columnas
+════════════════════════════════════════════════════════════ -->
+<div class="flex items-baseline gap-3 mb-3">
+  <span class="text-[0.48rem] text-dim tracking-[0.2em] uppercase">Los 7 Pilares</span>
+  <span class="text-[0.42rem] text-dim opacity-50">· ὁδός πρὸς εὐδαιμονίαν</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+  {% for href, icon, pilar, concepto, desc, color_l, color_d in [
+    ('/actividades', 'scroll',        'Acta Diurna',    'Acciones hacia la virtud',      'Registro diario de logros',         '#a78bfa', '#7c3aed'),
+    ('/gtd',         'target',        'Praxis',         'Ejecución de la voluntad',      'Tareas, proyectos y sistema GTD',   '#67e8f9', '#06b6d4'),
+    ('/idiomas',     'globe',         'Cosmopolitismo', 'Ciudadano universal',           'Inglés, francés y más idiomas',     '#93c5fd', '#3b82f6'),
+    ('/finanzas',    'coins',         'Oikonomia',      'Gestión para la Autarquía',     'Deudas, presupuesto y consumo',     '#fcd34d', '#f59e0b'),
+    ('/nutricion',   'shield',        'Hegemonikon',    'Facultad rectora',              'Salud, nutrición y perfil físico',  '#6ee7b7', '#10b981'),
+    ('/sabado',      'anchor',        'Ataraxia',       'Imperturbabilidad y orden',     'Checklist de revisión y sistémica', '#fdba74', '#fb923c'),
+    ('/perfil',      'user',          'Perfil',         'Conocimiento de uno mismo',     'Datos personales y mediciones',     '#c4b5fd', '#6d28d9'),
+    ('/finanzas/consumo','shopping-cart','Consumo',     'Uso consciente de recursos',    'Productos y frecuencias de compra', '#f9a8d4', '#ec4899'),
+  ] %}
+  <a href="{{ href }}"
+     class="gio-card bg-card border border-border rounded-2xl p-4 flex flex-col gap-3 group">
+    <div class="flex items-start justify-between">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+           style="background:{{ color_d }}22;">
+        <i data-lucide="{{ icon }}" class="w-4 h-4" style="color:{{ color_l }}"></i>
+      </div>
+      <span class="text-[0.4rem] tracking-[0.12em] uppercase px-2 py-0.5 rounded-full border"
+            style="color:{{ color_l }};border-color:{{ color_d }}44;background:{{ color_d }}11;">
+        {{ concepto[:18] }}
+      </span>
+    </div>
+    <div class="flex-1">
+      <div class="text-[0.78rem] font-semibold tracking-wide text-[#eeeeff] mb-0.5 group-hover:text-gio-vl transition-colors font-sans">
+        {{ pilar }}
+      </div>
+      <div class="text-[0.52rem] text-dim leading-relaxed">{{ desc }}</div>
+    </div>
+    <div class="flex justify-end">
+      <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-dim group-hover:text-gio-vl group-hover:translate-x-0.5 transition-all"></i>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function refreshWord() {
+  const b = document.getElementById('word-block');
+  b.style.opacity = 0;
+  const d = await (await fetch('/actividades/api/word/refresh')).json();
+  setTimeout(() => {
+    document.getElementById('wph').textContent = d.phonetic;
+    document.getElementById('ww').textContent  = d.word;
+    document.getElementById('wm').textContent  = d.meaning;
+    document.getElementById('we').textContent  = `"${d.example}"`;
+    document.getElementById('wf').textContent  = `🇫🇷 ${d.french}`;
+    b.style.opacity = 1;
+  }, 240);
+}
+</script>
+{% endblock %}

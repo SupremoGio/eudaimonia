@@ -1,0 +1,135 @@
+{% extends "tw/layout.html" %}{% set pg='nutricion' %}
+{% block title %}Hegemonikon — Eudaimonia{% endblock %}{% block topright %}SEMANA {{ week_start }}{% endblock %}
+{% block content %}
+<style>
+.nu-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;max-width:1400px;margin-bottom:20px;}
+.day-col{background:var(--card);border:1px solid var(--b);border-radius:8px;overflow:hidden;}
+.day-hd{padding:8px 10px;border-bottom:1px solid var(--b);font-size:.56rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;text-align:center;}
+.meal-slot{padding:8px 10px;border-bottom:1px solid var(--b);min-height:64px;position:relative;cursor:pointer;transition:background .14s;}
+.meal-slot:last-child{border-bottom:none;}
+.meal-slot:hover{background:var(--card2);}
+.ms-type{font-size:.44rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;}
+.ms-desc{font-size:.6rem;color:var(--text);line-height:1.35;}
+.ms-empty{font-size:.56rem;color:var(--b2);font-style:italic;}
+.ms-del{position:absolute;top:5px;right:6px;background:none;border:none;color:var(--b2);cursor:pointer;display:none;transition:color .14s;}
+.meal-slot:hover .ms-del{display:block;}
+.ms-del:hover{color:var(--red);}
+.ms-del svg{width:9px;height:9px;}
+/* ARTICLES */
+.art-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
+.art-card{background:var(--card2);border:1px solid var(--b);border-radius:7px;padding:13px;}
+.art-cat{font-size:.46rem;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:100px;margin-bottom:8px;display:inline-block;}
+.art-t{font-size:.72rem;color:var(--text);line-height:1.35;margin-bottom:5px;}
+.art-s{font-size:.6rem;color:var(--dim);line-height:1.4;}
+.art-rt{font-size:.46rem;color:var(--mid);}
+</style>
+
+<!-- MEAL CALENDAR -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+  <div>
+    <div style="font-family:var(--serif);font-size:1.4rem;font-style:italic;font-weight:300;">Menú Semanal</div>
+    <div style="font-size:.56rem;color:var(--dim);">Haz clic en cualquier slot para añadir o editar</div>
+  </div>
+</div>
+
+<div class="nu-grid">
+{% for day in days %}
+<div class="day-col">
+  <div class="day-hd">{{ day[:3] }}</div>
+  {% for mt in meal_types %}
+  {% set meal = calendar[day][mt] %}
+  <div class="meal-slot" onclick="openSlot('{{ day }}','{{ mt }}',{{ ('`'+meal.description+'`') if meal else 'null' }},{{ meal.id if meal else 'null' }})">
+    <div class="ms-type">{{ mt }}</div>
+    {% if meal %}
+    <div class="ms-desc">{{ meal.description[:60] }}{% if meal.description|length > 60 %}…{% endif %}</div>
+    {% if meal.video_url %}<div style="font-size:.46rem;color:var(--blue);margin-top:3px;">▶ video</div>{% endif %}
+    <button class="ms-del" onclick="event.stopPropagation();delMeal({{ meal.id }},this)"><i data-lucide="x"></i></button>
+    {% else %}
+    <div class="ms-empty">+ añadir</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+</div>
+
+<!-- ARTICLES -->
+<div style="margin-top:8px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div class="tile-lbl" style="margin:0">ARTÍCULOS DE HEGEMONIKON</div>
+    <button class="btn-g" onclick="loadArticles()"><i data-lucide="refresh-cw" style="width:11px;height:11px;margin-right:5px;"></i>Cargar artículos</button>
+  </div>
+  <div class="art-grid" id="art-grid">
+    <div style="font-size:.64rem;color:var(--dim);padding:12px 0;">Haz clic en "Cargar artículos" para ver contenido de nutrición.</div>
+  </div>
+</div>
+
+<!-- MEAL MODAL -->
+<div class="modal-bg" id="meal-modal">
+  <div class="modal">
+    <div class="modal-title" id="mm-title">Añadir comida</div>
+    <div style="margin-bottom:12px;font-size:.6rem;color:var(--dim);" id="mm-slot"></div>
+    <div style="margin-bottom:10px;"><div class="fl" style="margin-bottom:5px;">Descripción *</div>
+      <textarea class="fi" id="mm-desc" rows="3" style="resize:vertical;" placeholder="Ej: Avena con plátano y miel..."></textarea></div>
+    <div><div class="fl" style="margin-bottom:5px;">URL de video receta (opcional)</div>
+      <input class="fi" id="mm-video" placeholder="https://youtube.com/..."></div>
+    <div id="mm-err" style="color:var(--red);font-size:.58rem;min-height:14px;margin-top:6px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeMeal()">Cancelar</button>
+      <button class="btn-a" onclick="saveMeal()">Guardar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script>
+let _slot={};
+const ART_COLORS={'Muscle':'rgba(197,163,108,.1)|rgba(197,163,108,.2)|var(--gold)','Brain':'rgba(96,165,250,.1)|rgba(96,165,250,.2)|var(--blue)','Metabolismo':'rgba(167,139,250,.1)|rgba(167,139,250,.2)|var(--purple)','Recovery':'rgba(74,222,128,.1)|rgba(74,222,128,.2)|var(--green)','Performance':'rgba(248,113,113,.1)|rgba(248,113,113,.2)|var(--red)'};
+
+function openSlot(day,mt,desc,id){
+  _slot={day,mt,id};
+  document.getElementById('mm-title').textContent=id?'Editar comida':'Añadir comida';
+  document.getElementById('mm-slot').textContent=`${day} — ${mt}`;
+  document.getElementById('mm-desc').value=desc||'';
+  document.getElementById('mm-video').value='';
+  document.getElementById('mm-err').textContent='';
+  document.getElementById('meal-modal').classList.add('open');
+  document.getElementById('mm-desc').focus();
+}
+function closeMeal(){document.getElementById('meal-modal').classList.remove('open');}
+async function saveMeal(){
+  const desc=document.getElementById('mm-desc').value.trim();
+  if(!desc){document.getElementById('mm-err').textContent='La descripción es obligatoria';return;}
+  const video=document.getElementById('mm-video').value.trim();
+  if(_slot.id){
+    await fetch(`/nutricion/api/meal/${_slot.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({description:desc,video_url:video})});
+  } else {
+    await fetch('/nutricion/api/meal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({day_name:_slot.day,meal_type:_slot.mt,description:desc,video_url:video})});
+  }
+  closeMeal();toast('Guardado ✓');setTimeout(()=>location.reload(),500);
+}
+async function delMeal(id,btn){
+  await fetch(`/nutricion/api/meal/${id}`,{method:'DELETE'});
+  const slot=btn.closest('.meal-slot');
+  slot.innerHTML=`<div class="ms-type">${slot.querySelector('.ms-type').textContent}</div><div class="ms-empty">+ añadir</div>`;
+  toast('Eliminado');
+}
+async function loadArticles(){
+  const r=await fetch('/nutricion/api/nutrition/articles');
+  const d=await r.json();
+  const grid=document.getElementById('art-grid');
+  grid.innerHTML=d.articles.map(a=>{
+    const cat=a.category;
+    const [bg,brd,col]=(ART_COLORS[cat]||'var(--b)|var(--b2)|var(--mid)').split('|');
+    return `<div class="art-card">
+      <span class="art-cat" style="background:${bg};border:1px solid ${brd};color:${col}">${cat}</span>
+      <div class="art-t">${a.title}</div>
+      <div class="art-s">${a.summary}</div>
+      <div class="art-rt" style="margin-top:6px">⏱ ${a.read_time}</div>
+    </div>`;
+  }).join('');
+  lucide.createIcons();
+  toast('Artículos cargados','info');
+}
+document.getElementById('meal-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeMeal();});
+document.getElementById('mm-desc').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveMeal();}});
+</script>{% endblock %}

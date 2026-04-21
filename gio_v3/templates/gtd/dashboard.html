@@ -1,0 +1,137 @@
+{% extends "gtd_base.html" %}{% set gp='dashboard' %}
+{% block title %}Praxis — Eudaimonia{% endblock %}{% block topright %}{{ today }}{% endblock %}
+{% block gtd_body %}
+<style>
+.gd{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.full{grid-column:1/-1;}
+.hero{background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:8px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;}
+.h-g{font-family:var(--serif);font-size:1.7rem;font-style:italic;font-weight:300;}
+.h-s{font-size:.52rem;color:var(--dim);letter-spacing:.11em;text-transform:uppercase;margin-top:2px;}
+.h-stats{display:flex;gap:14px;align-items:center;}
+.hs{text-align:center;}
+.hs-v{font-family:var(--serif);font-size:1.3rem;font-weight:300;color:var(--gold);line-height:1;}
+.hs-l{font-size:.42rem;color:var(--dim);letter-spacing:.09em;text-transform:uppercase;margin-top:2px;}
+.vd{width:1px;background:var(--b);height:24px;}
+.pts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.pg{background:var(--card2);border:1px solid var(--b);border-radius:5px;padding:9px;text-align:center;}
+.pg-v{font-family:var(--serif);font-size:1.2rem;font-weight:300;color:var(--gold);line-height:1;}
+.pg-l{font-size:.42rem;color:var(--dim);letter-spacing:.09em;text-transform:uppercase;margin-top:2px;}
+.str-row{display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--gold-d);border:1px solid rgba(197,163,108,.2);border-radius:5px;margin-bottom:12px;}
+.str-n{font-family:var(--serif);font-size:1.5rem;font-style:italic;color:var(--gold);line-height:1;}
+.str-l{font-size:.52rem;color:var(--dim);}
+.lv-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.lv-name{font-family:var(--serif);font-size:.95rem;font-style:italic;color:var(--gold);}
+.lv-n{font-size:.5rem;color:var(--dim);}
+.lv-b{background:var(--b);border-radius:100px;height:4px;overflow:hidden;margin-bottom:4px;}
+.lv-f{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--gold),#e8c88a);transition:width .6s;}
+.lv-h{font-size:.46rem;color:var(--dim);text-align:right;}
+.qi{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:4px;padding:7px 9px;color:var(--text);font-family:var(--mono);font-size:.68rem;outline:none;transition:border-color .16s;}
+.qi:focus{border-color:var(--gold);}
+.qi-row{display:flex;gap:7px;margin-bottom:11px;}
+.ic{font-size:.62rem;color:var(--mid);padding:5px 9px;background:var(--card2);border:1px solid var(--b);border-radius:4px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.ic-a{background:none;border:none;color:var(--dim);font-family:var(--mono);font-size:.52rem;cursor:pointer;transition:color .14s;padding:0 2px;}
+.ic-a:hover{color:var(--gold);}
+.w-card{background:var(--card);border:1px solid var(--b);border-radius:8px;padding:16px 18px;}
+.wh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.w-ph{font-size:.48rem;color:var(--dim);margin-bottom:2px;}
+.w-w{font-family:var(--serif);font-size:1.4rem;font-style:italic;line-height:1;margin-bottom:5px;}
+.w-m{font-size:.63rem;color:var(--mid);line-height:1.5;margin-bottom:7px;}
+.w-ex{font-size:.59rem;color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:7px;line-height:1.5;margin-bottom:7px;}
+.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:.5rem;color:var(--blue);background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);padding:2px 7px;border-radius:100px;}
+.rb{background:none;border:1px solid var(--b);color:var(--dim);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .17s;}
+.rb:hover{border-color:var(--gold);color:var(--gold);}
+.rb svg{width:10px;height:10px;}
+.q-card{background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:8px;padding:16px 18px;}
+.q-t{font-family:var(--serif);font-style:italic;font-size:.97rem;font-weight:300;line-height:1.45;margin-bottom:5px;}
+.q-a{font-size:.5rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;}
+</style>
+<div class="gd">
+  <div class="hero full">
+    <div><div class="h-g">{{ greeting }}, Gio.</div><div class="h-s">Control Total · PRAXIS</div></div>
+    <div class="h-stats">
+      <div class="hs"><div class="hs-v">{{ stats.done_today }}</div><div class="hs-l">Hoy</div></div>
+      <div class="vd"></div>
+      <div class="hs"><div class="hs-v">{{ stats.next_n }}</div><div class="hs-l">Pendientes</div></div>
+      <div class="vd"></div>
+      <div class="hs"><div class="hs-v">{{ stats.streak }}</div><div class="hs-l">Racha</div></div>
+      <div class="vd"></div>
+      <div class="hs"><div class="hs-v">{{ stats.level }}</div><div class="hs-l">Nivel</div></div>
+    </div>
+  </div>
+  <div class="tile">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><div class="tile-lbl" style="margin:0">NEXT ACTIONS</div><a href="/gtd/next" style="font-size:.52rem;color:var(--gold);letter-spacing:.07em">VER TODAS →</a></div>
+    {% if next_tasks %}{% for t in next_tasks %}
+    <div class="t-row {% if t.id in done_ids %}faded{% endif %}">
+      <div class="t-dot {% if t.id in done_ids %}ck{% endif %}" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
+      <div class="t-main"><div class="t-title">{{ t.title }}</div>{% if t.project_name %}<div class="t-sub">{{ t.project_name }}</div>{% endif %}</div>
+      <div class="t-meta"><span class="pt pt-{{t.priority}}">{{t.priority}}</span><span class="pts-t">+{{t.points}}</span></div>
+    </div>
+    {% endfor %}{% else %}<div class="empty-s"><i data-lucide="zap"></i><p>Sin next actions</p></div>{% endif %}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div class="tile">
+      <div class="tile-lbl">PUNTOS</div>
+      <div class="pts-grid">
+        <div class="pg"><div class="pg-v" id="dpts">{{ stats.pts_today }}</div><div class="pg-l">Hoy</div></div>
+        <div class="pg"><div class="pg-v">{{ stats.pts_week }}</div><div class="pg-l">Semana</div></div>
+        <div class="pg"><div class="pg-v">{{ stats.pts_month }}</div><div class="pg-l">Mes</div></div>
+        <div class="pg"><div class="pg-v">{{ stats.pts_total }}</div><div class="pg-l">Total</div></div>
+      </div>
+      <div class="str-row"><div class="str-n">{{ stats.streak }}</div><div><div style="font-size:.68rem;color:var(--gold)">🔥 Racha</div><div class="str-l">días consecutivos</div></div></div>
+      <div class="lv-row"><div class="lv-name">{{ stats.level_name }}</div><div class="lv-n">NIV. {{ stats.level }}</div></div>
+      <div class="lv-b"><div class="lv-f" style="width:{{ stats.level_pct }}%"></div></div>
+      <div class="lv-h">{{ stats.level_pct }}% → Nivel {{ stats.level+1 }}</div>
+    </div>
+    <div class="tile">
+      <div class="tile-lbl">CAPTURE RÁPIDA</div>
+      <div class="qi-row"><input class="qi" id="qi" placeholder="Captura idea o tarea..."><button class="btn-a" onclick="capture()">+ Inbox</button></div>
+      <div id="ip">{% for t in inbox_tasks %}<div class="ic" data-id="{{ t.id }}"><span>{{ t.title }}</span><div style="display:flex;gap:5px;"><button class="ic-a" onclick="promote({{t.id}},this)">→ Next</button><button class="ic-a" onclick="del({{t.id}},this)">✕</button></div></div>{% endfor %}</div>
+    </div>
+  </div>
+  <div class="w-card">
+    <div class="wh"><div class="tile-lbl" style="margin:0">WORD OF THE DAY</div><button class="rb" onclick="rw()"><i data-lucide="refresh-cw"></i></button></div>
+    <div id="wb" style="transition:opacity .24s">
+      <div class="w-ph" id="wph">{{ word.phonetic }}</div>
+      <div class="w-w"  id="ww">{{ word.word }}</div>
+      <div class="w-m"  id="wm">{{ word.meaning }}</div>
+      <div class="w-ex" id="we">"{{ word.example }}"</div>
+      <span class="w-fr" id="wf">🇫🇷 {{ word.french }}</span>
+    </div>
+  </div>
+  <div class="q-card">
+    <div class="tile-lbl">FRASE DEL DÍA</div>
+    <div class="q-t">"{{ quote.text }}"</div>
+    <div class="q-a">— {{ quote.author }}</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script>
+async function cTask(id,dot){
+  const row=dot.closest('.t-row');if(row.classList.contains('faded'))return;
+  const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
+  const d=await r.json();
+  if(d.ok){dot.classList.add('ck');row.classList.add('faded');lucide.createIcons();
+    document.getElementById('dpts').textContent=d.stats.pts_today;
+    toast(`+${d.pts} pts${d.bonus?` ✦ BONUS +${d.bonus}`:''}`,d.bonus?'win':'ok');}
+}
+async function capture(){
+  const inp=document.getElementById('qi');const t=inp.value.trim();if(!t)return;
+  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t,status:'inbox'})});
+  const div=document.createElement('div');div.className='ic';
+  div.innerHTML=`<span>${t}</span><div style="display:flex;gap:5px;"><button class="ic-a" style="color:var(--gold)">→ Next</button><button class="ic-a">✕</button></div>`;
+  document.getElementById('ip').prepend(div);inp.value='';toast('Capturado');
+}
+async function promote(id,btn){
+  await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'next'})});
+  btn.closest('.ic').remove();toast('→ Next Actions');
+}
+async function del(id,btn){
+  await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.ic').remove();
+}
+async function rw(){
+  const d=await(await fetch('/gtd/api/word/refresh')).json();
+  const b=document.getElementById('wb');b.style.opacity=0;
+  setTimeout(()=>{document.getElementById('wph').textContent=d.phonetic;document.getElementById('ww').textContent=d.word;document.getElementById('wm').textContent=d.meaning;document.getElementById('we').textContent=`"${d.example}"`;document.getElementById('wf').textContent=`🇫🇷 ${d.french}`;b.style.opacity=1;},240);
+}
+document.getElementById('qi').addEventListener('keydown',e=>{if(e.key==='Enter')capture();});
+</script>{% endblock %}

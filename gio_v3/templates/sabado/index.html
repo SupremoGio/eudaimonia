@@ -1,0 +1,53 @@
+{% extends "tw/layout.html" %}{% set pg='sabado' %}
+{% block title %}Ataraxia — Eudaimonia{% endblock %}{% block topright %}ATARAXIA{% endblock %}
+{% block content %}
+<div style="max-width:600px;">
+  <div style="font-family:var(--serif);font-size:1.8rem;font-style:italic;font-weight:300;margin-bottom:3px;">Sábado Morning</div>
+  <div style="font-size:.56rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px;">Ritual semanal de orden y limpieza</div>
+  <div style="background:var(--b);border-radius:100px;height:3px;margin-bottom:8px;overflow:hidden;">
+    <div id="pbar" style="width:{{ (done_count/total*100)|int }}%;height:100%;background:linear-gradient(90deg,var(--gold),#e8c88a);border-radius:100px;transition:width .4s;"></div>
+  </div>
+  <div id="plbl" style="font-size:.58rem;color:var(--mid);margin-bottom:18px;">{{ done_count }} / {{ total }} tareas</div>
+  {% if not is_saturday %}
+  <div style="background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.18);border-radius:6px;padding:9px 14px;font-size:.62rem;color:var(--purple);margin-bottom:14px;display:flex;align-items:center;gap:7px;">
+    <i data-lucide="info" style="width:12px;height:12px;flex-shrink:0;"></i>Este checklist es para los sábados — igual puedes marcar lo que hagas hoy.
+  </div>
+  {% endif %}
+  <div id="complete-banner" style="background:var(--gold-d);border:1px solid var(--gold);border-radius:8px;padding:18px 22px;text-align:center;margin-bottom:16px;display:{% if done_count==total %}block{% else %}none{% endif %};">
+    <div style="font-family:var(--serif);font-size:1.5rem;font-style:italic;color:var(--gold);">✦ Casa Impecable</div>
+    <div style="font-size:.56rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;">Semana iniciada en orden</div>
+  </div>
+  <div id="tlist">
+    {% for t in tasks %}
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border:1px solid {% if t.done %}var(--gold){% else %}var(--b){% endif %};border-radius:6px;margin-bottom:7px;cursor:pointer;background:{% if t.done %}var(--gold-d){% else %}var(--card){% endif %};transition:all .18s;"
+         onclick="toggle('{{ t.key }}')" data-key="{{ t.key }}">
+      <div style="width:16px;height:16px;border:1px solid {% if t.done %}var(--gold){% else %}var(--dim){% endif %};border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:{% if t.done %}var(--gold){% else %}transparent{% endif %};transition:all .18s;">
+        {% if t.done %}<i data-lucide="check" style="width:10px;height:10px;color:var(--bg);"></i>{% endif %}
+      </div>
+      <span style="font-size:.76rem;color:{% if t.done %}var(--gold){% else %}var(--mid){% endif %};text-decoration:{% if t.done %}line-through{% else %}none{% endif %};transition:all .18s;">{{ t.label }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="font-size:.5rem;color:var(--dim);text-align:right;margin-top:12px;">Semana: {{ week_start }}</div>
+</div>
+{% endblock %}
+{% block scripts %}<script>
+async function toggle(key){
+  const r=await fetch('/sabado/api/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
+  const d=await r.json();
+  const pct=Math.round(d.done_count/d.total*100);
+  document.getElementById('pbar').style.width=pct+'%';
+  document.getElementById('plbl').textContent=`${d.done_count} / ${d.total} tareas`;
+  document.getElementById('complete-banner').style.display=d.done_count===d.total?'block':'none';
+  const list=document.getElementById('tlist');
+  list.innerHTML=d.tasks.map(t=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:${t.done?'var(--gold-d)':'var(--card)'};border:1px solid ${t.done?'var(--gold)':'var(--b)'};border-radius:6px;margin-bottom:7px;cursor:pointer;transition:all .18s;" onclick="toggle('${t.key}')" data-key="${t.key}">
+      <div style="width:16px;height:16px;border:1px solid ${t.done?'var(--gold)':'var(--dim)'};border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${t.done?'var(--gold)':'transparent'};transition:all .18s;">
+        ${t.done?'<i data-lucide="check" style="width:10px;height:10px;color:var(--bg);"></i>':''}
+      </div>
+      <span style="font-size:.76rem;color:${t.done?'var(--gold)':'var(--mid)'};text-decoration:${t.done?'line-through':'none'};transition:all .18s;">${t.label}</span>
+    </div>`).join('');
+  lucide.createIcons();
+  if(d.done_count===d.total)toast('✦ Casa impecable — sábado completo!','win');
+}
+</script>{% endblock %}

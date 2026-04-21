@@ -1,0 +1,48 @@
+{% extends "gtd_base.html" %}{% set gp='next' %}
+{% block title %}Next Actions — PRAXIS{% endblock %}{% block topright %}NEXT ACTIONS{% endblock %}
+{% block gtd_body %}
+<div class="pg-hd"><div><div class="pg-t">Next Actions</div><div class="pg-s">{{ tasks|length }} tareas ejecutables</div></div></div>
+<div class="af">
+  <div class="af-lbl">AÑADIR NEXT ACTION</div>
+  <div class="fgrid c3">
+    <div class="fg" style="grid-column:span 2"><div class="fl">Título *</div><input class="fi" id="tt" placeholder="Acción específica y ejecutable"></div>
+    <div class="fg"><div class="fl">Prioridad</div><select class="fi" id="tp"><option value="normal">Normal +10</option><option value="important">Importante +15</option><option value="critical">Crítica +20</option></select></div>
+  </div>
+  <div class="fgrid c3">
+    <div class="fg"><div class="fl">Proyecto</div><select class="fi" id="tpj"><option value="">— Ninguno —</option>{% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select></div>
+    <div class="fg"><div class="fl">Categoría</div><input class="fi" id="tc" placeholder="@calls, @computer..."></div>
+    <div class="fg"><div class="fl">Fecha límite</div><input class="fi" type="date" id="td"></div>
+  </div>
+  <div class="fa"><button class="btn-a" onclick="addT()">+ Añadir</button></div>
+</div>
+{% for t in tasks %}
+<div class="t-row" data-id="{{ t.id }}">
+  <div class="t-dot" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
+  <div class="t-main"><div class="t-title">{{ t.title }}</div>{% if t.project_name %}<div class="t-sub">{{ t.project_name }}</div>{% endif %}</div>
+  <div class="t-meta">
+    <span class="pt pt-{{t.priority}}">{{t.priority}}</span>
+    {% if t.due_date %}<span class="due-t">{{ t.due_date }}</span>{% endif %}
+    <span class="pts-t">+{{t.points}}</span>
+  </div>
+  <div style="display:flex;gap:3px;">
+    <button class="ai" onclick="mv({{t.id}},'inbox',this)"><i data-lucide="inbox"></i></button>
+    <button class="ai" onclick="mv({{t.id}},'someday',this)"><i data-lucide="clock"></i></button>
+    <button class="ai del" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
+  </div>
+</div>
+{% else %}<div class="empty-s"><i data-lucide="zap"></i><p>Sin next actions — captura algo en Inbox</p></div>{% endfor %}
+{% endblock %}
+{% block scripts %}<script>
+async function addT(){
+  const t=document.getElementById('tt').value.trim();if(!t){toast('Añade un título','err');return;}
+  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t,status:'next',priority:document.getElementById('tp').value,project_id:document.getElementById('tpj').value||null,category:document.getElementById('tc').value,due_date:document.getElementById('td').value})});
+  toast('Añadido ✓');setTimeout(()=>location.reload(),500);
+}
+async function cTask(id,dot){
+  const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
+  const d=await r.json();if(d.ok){const row=dot.closest('.t-row');row.classList.add('faded');dot.classList.add('ck');lucide.createIcons();toast(`+${d.pts} pts${d.bonus?` ✦ +${d.bonus}`:''}`);}
+}
+async function mv(id,st,btn){await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});btn.closest('.t-row').remove();toast(`→ ${st}`);}
+async function dt(id,btn){await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.t-row').remove();}
+document.getElementById('tt').addEventListener('keydown',e=>{if(e.key==='Enter')addT();});
+</script>{% endblock %}

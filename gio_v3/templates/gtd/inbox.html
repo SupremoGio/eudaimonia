@@ -1,0 +1,41 @@
+{% extends "gtd_base.html" %}{% set gp='inbox' %}
+{% block title %}Inbox — PRAXIS{% endblock %}{% block topright %}INBOX{% endblock %}
+{% block gtd_body %}
+<div class="pg-hd"><div><div class="pg-t">Inbox</div><div class="pg-s">{{ tasks|length }} items sin procesar</div></div></div>
+<div class="af">
+  <div class="af-lbl">NUEVA CAPTURA</div>
+  <div class="fgrid"><div class="fg"><div class="fl">Título *</div><input class="fi" id="tt" placeholder="¿Qué tienes en mente?"></div></div>
+  <div class="fgrid c3">
+    <div class="fg"><div class="fl">Prioridad</div><select class="fi" id="tp"><option value="normal">Normal +10</option><option value="important">Importante +15</option><option value="critical">Crítica +20</option></select></div>
+    <div class="fg"><div class="fl">Proyecto</div><select class="fi" id="tpj"><option value="">— Ninguno —</option>{% for p in projects %}<option value="{{ p.id }}">{{ p.name }}</option>{% endfor %}</select></div>
+    <div class="fg"><div class="fl">Fecha límite</div><input class="fi" type="date" id="td"></div>
+  </div>
+  <div class="fa"><button class="btn-g" onclick="addT('inbox')">+ Inbox</button><button class="btn-a" onclick="addT('next')">+ Next Action</button></div>
+</div>
+{% for t in tasks %}
+<div class="t-row" data-id="{{ t.id }}">
+  <div class="t-dot" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
+  <div class="t-main"><div class="t-title">{{ t.title }}</div></div>
+  <div class="t-meta"><span class="pt pt-{{t.priority}}">{{t.priority}}</span><span class="pts-t">+{{t.points}}</span></div>
+  <div style="display:flex;gap:3px;">
+    <button class="ai" onclick="mv({{t.id}},'next',this)" title="→ Next"><i data-lucide="arrow-right"></i></button>
+    <button class="ai" onclick="mv({{t.id}},'someday',this)" title="Someday"><i data-lucide="clock"></i></button>
+    <button class="ai del" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
+  </div>
+</div>
+{% else %}<div class="empty-s"><i data-lucide="inbox"></i><p>Inbox vacío — mente clara</p></div>{% endfor %}
+{% endblock %}
+{% block scripts %}<script>
+async function addT(st){
+  const t=document.getElementById('tt').value.trim();if(!t){toast('Añade un título','err');return;}
+  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t,status:st,priority:document.getElementById('tp').value,project_id:document.getElementById('tpj').value||null,due_date:document.getElementById('td').value})});
+  toast('Añadido ✓');setTimeout(()=>location.reload(),500);
+}
+async function cTask(id,dot){
+  const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
+  const d=await r.json();if(d.ok){dot.closest('.t-row').remove();toast(`+${d.pts} pts`);}
+}
+async function mv(id,st,btn){await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});btn.closest('.t-row').remove();toast(`→ ${st}`);}
+async function dt(id,btn){await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.t-row').remove();}
+document.getElementById('tt').addEventListener('keydown',e=>{if(e.key==='Enter')addT('inbox');});
+</script>{% endblock %}

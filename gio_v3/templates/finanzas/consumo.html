@@ -1,0 +1,326 @@
+{% extends "tw/layout.html" %}{% set pg='finanzas' %}
+{% block title %}Consumo Inteligente — GIO{% endblock %}
+{% block topright %}<a href="/finanzas/consumo/" style="color:var(--violet-l);font-size:.52rem;letter-spacing:.08em;">CONSUMO</a>{% endblock %}
+{% block content %}
+<style>
+/* ── Header ─────────────���────────────────────────────────────── */
+.ci-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.ci-title{font-family:var(--sans);font-size:1.3rem;font-weight:700;background:linear-gradient(135deg,var(--violet-l),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.ci-sub{font-size:.52rem;color:var(--dim);letter-spacing:.1em;margin-top:3px;}
+.ci-actions{display:flex;gap:8px;align-items:center;}
+
+/* ── Stats bar ───────────────────────────────────────────────── */
+.ci-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.cs{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;}
+.cs::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0;}
+.cs-v::after{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+.cs-c::after{background:linear-gradient(90deg,var(--cyan),var(--cyan-l));}
+.cs-w::after{background:linear-gradient(90deg,var(--coral),#fda4af);}
+.cs-a::after{background:linear-gradient(90deg,var(--amber),var(--amber-l));}
+.cs-l{font-size:.44rem;color:var(--dim);letter-spacing:.17em;text-transform:uppercase;margin-bottom:6px;}
+.cs-n{font-size:1.8rem;font-weight:700;font-family:var(--sans);line-height:1;}
+.cs-v .cs-n{background:linear-gradient(135deg,var(--violet-l),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cs-c .cs-n{background:linear-gradient(135deg,var(--cyan),var(--cyan-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cs-w .cs-n{background:linear-gradient(135deg,var(--coral),#fda4af);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cs-a .cs-n{background:linear-gradient(135deg,var(--amber),var(--amber-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+
+/* ── Filter tabs ───────────────────────��─────────────────────── */
+.filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+.ftab{background:var(--card2);border:1px solid var(--b);color:var(--dim);padding:5px 12px;border-radius:100px;font-size:.56rem;letter-spacing:.07em;cursor:pointer;transition:all .18s;white-space:nowrap;}
+.ftab:hover,.ftab.on{background:var(--violet-d);border-color:var(--violet-l);color:var(--violet-l);}
+
+/* ── Product grid ────────────────────���────────────────────────��� */
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+
+.prod-card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;transition:border-color .2s;}
+.prod-card:hover{border-color:var(--b2);}
+.prod-card.status-atrasado{border-color:rgba(244,63,94,.35);}
+.prod-card.status-proximo {border-color:rgba(245,158,11,.35);}
+.prod-card.status-ok      {border-color:rgba(16,185,129,.18);}
+
+/* card header */
+.pc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.pc-nombre{font-size:.82rem;font-weight:600;font-family:var(--sans);color:var(--text);line-height:1.2;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.sd-ok      {background:var(--emerald);box-shadow:0 0 7px var(--emerald);}
+.sd-proximo {background:var(--amber);box-shadow:0 0 7px var(--amber);}
+.sd-atrasado{background:var(--coral);box-shadow:0 0 7px var(--coral);}
+.sd-sin_datos{background:var(--dim);}
+
+/* cat badge */
+.cat-badge{font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:100px;}
+/* cycle 6 category colors */
+.cb-0{color:#a78bfa;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);}
+.cb-1{color:var(--cyan);background:var(--cyan-d);border:1px solid rgba(6,182,212,.2);}
+.cb-2{color:var(--emerald);background:var(--emerald-d);border:1px solid rgba(16,185,129,.2);}
+.cb-3{color:var(--amber);background:var(--amber-d);border:1px solid rgba(245,158,11,.2);}
+.cb-4{color:var(--pink);background:var(--pink-d);border:1px solid rgba(236,72,153,.2);}
+.cb-5{color:var(--blue);background:var(--blue-d);border:1px solid rgba(59,130,246,.2);}
+
+/* metrics */
+.pc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.pcm{background:var(--card2);border-radius:8px;padding:8px 10px;}
+.pcm-l{font-size:.42rem;color:var(--dim);letter-spacing:.13em;text-transform:uppercase;margin-bottom:3px;}
+.pcm-v{font-size:.72rem;color:var(--text);font-weight:500;}
+.pcm-v.dim{color:var(--dim);}
+
+/* insight chip */
+.pc-insight{font-size:.56rem;padding:6px 10px;border-radius:8px;line-height:1.4;}
+.ins-frecuencia{display:none;}
+.ins-ok      {background:rgba(16,185,129,.08);color:var(--emerald);border:1px solid rgba(16,185,129,.18);}
+.ins-proximo {background:rgba(245,158,11,.1);color:var(--amber);border:1px solid rgba(245,158,11,.22);}
+.ins-warning {background:rgba(244,63,94,.08);color:var(--coral);border:1px solid rgba(244,63,94,.2);}
+.ins-tip     {background:rgba(99,102,241,.08);color:var(--violet-l);border:1px solid rgba(99,102,241,.18);}
+.ins-trend   {background:rgba(6,182,212,.08);color:var(--cyan);border:1px solid rgba(6,182,212,.18);}
+.ins-info    {background:var(--card2);color:var(--dim);border:1px solid var(--b);}
+
+/* actions */
+.pc-actions{display:flex;gap:7px;margin-top:auto;}
+.btn-det{flex:1;background:var(--card2);border:1px solid var(--b);color:var(--mid);padding:8px;border-radius:8px;font-size:.58rem;text-align:center;transition:all .18s;font-family:var(--mono);}
+.btn-det:hover{border-color:var(--b2);color:var(--text);}
+.btn-reg{flex:2;background:linear-gradient(135deg,var(--violet),var(--indigo));border:none;color:#fff;padding:8px;border-radius:8px;font-size:.58rem;font-weight:600;font-family:var(--mono);transition:opacity .18s;}
+.btn-reg:hover{opacity:.85;}
+
+/* ── Modals ──────────────────────────────────────────────────── */
+.m-row{display:flex;flex-direction:column;gap:12px;margin-bottom:4px;}
+.m-field label{display:block;font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px;}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media(max-width:767px){
+  .ci-stats{grid-template-columns:repeat(2,1fr);}
+  .prod-grid{grid-template-columns:1fr;}
+}
+@media(max-width:420px){
+  .ci-stats{grid-template-columns:1fr 1fr;}
+}
+</style>
+
+<!-- Header -->
+<div class="ci-header">
+  <div>
+    <div class="ci-title">Consumo Inteligente</div>
+    <div class="ci-sub">{{ productos|length }} productos activos &middot; <a href="/finanzas/" style="color:var(--dim)">← Finanzas</a></div>
+  </div>
+  <div class="ci-actions">
+    <button class="btn-g" onclick="openNuevo()">+ Nuevo producto</button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="ci-stats">
+  <div class="cs cs-v">
+    <div class="cs-l">PRODUCTOS</div>
+    <div class="cs-n">{{ productos|length }}</div>
+  </div>
+  <div class="cs cs-c">
+    <div class="cs-l">COMPRAS MES</div>
+    <div class="cs-n">{{ compras_mes }}</div>
+  </div>
+  <div class="cs cs-w">
+    <div class="cs-l">ATRASADOS</div>
+    <div class="cs-n">{{ atrasados }}</div>
+  </div>
+  <div class="cs cs-a">
+    <div class="cs-l">GASTO MES</div>
+    <div class="cs-n" style="font-size:1.3rem;">${{ "%.0f"|format(gasto_mes) }}</div>
+  </div>
+</div>
+
+<!-- Filter tabs -->
+<div class="filter-bar">
+  <button class="ftab on" onclick="filtrar(this,'all')">Todos</button>
+  {% for cat in categorias %}
+  <button class="ftab" onclick="filtrar(this,'{{ cat }}')">{{ cat }}</button>
+  {% endfor %}
+  <button class="ftab" style="color:var(--coral);border-color:rgba(244,63,94,.3)" onclick="filtrar(this,'__atrasados')">🔴 Atrasados</button>
+</div>
+
+<!-- Product grid -->
+{% set cat_colors = {'Desechables':0,'Higiene corporal':1,'Limpieza hogar':2,'Lavandería':3,'Suplementación':4,'Higiene personal':5} %}
+<div class="prod-grid" id="prod-grid">
+  {% for p in productos %}
+  {% set ci = cat_colors.get(p.categoria, loop.index0 % 6) %}
+  <div class="prod-card status-{{ p.status }}" data-cat="{{ p.categoria }}" data-status="{{ p.status }}" data-id="{{ p.id }}">
+    <div class="pc-head">
+      <div>
+        <div class="pc-nombre">{{ p.nombre }}</div>
+        <div style="margin-top:5px"><span class="cat-badge cb-{{ ci }}">{{ p.categoria }}</span></div>
+      </div>
+      <div class="status-dot sd-{{ p.status }}"></div>
+    </div>
+
+    <div class="pc-metrics">
+      <div class="pcm">
+        <div class="pcm-l">Última compra</div>
+        <div class="pcm-v {% if not p.ultima_compra %}dim{% endif %}">
+          {% if p.ultima_compra %}
+            {% if p.dias_desde == 0 %}Hoy
+            {% elif p.dias_desde == 1 %}Ayer
+            {% else %}hace {{ p.dias_desde }}d{% endif %}
+          {% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="pcm">
+        <div class="pcm-l">Frecuencia</div>
+        <div class="pcm-v {% if not p.frecuencia_dias %}dim{% endif %}">
+          {% if p.frecuencia_dias %}c/{{ p.frecuencia_dias|int }}d{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="pcm">
+        <div class="pcm-l">Precio prom.</div>
+        <div class="pcm-v {% if not p.precio_promedio %}dim{% endif %}">
+          {% if p.precio_promedio %}${{ "%.0f"|format(p.precio_promedio) }}{% else %}—{% endif %}
+        </div>
+      </div>
+      <div class="pcm">
+        <div class="pcm-l">Compras</div>
+        <div class="pcm-v">{{ p.n_compras }}</div>
+      </div>
+    </div>
+
+    {% set insight = p.insights | selectattr('tipo','ne','frecuencia') | list | first %}
+    {% if insight %}
+    <div class="pc-insight ins-{{ insight.tipo }}">{{ insight.msg }}</div>
+    {% endif %}
+
+    <div class="pc-actions">
+      <a href="/finanzas/consumo/producto/{{ p.id }}" class="btn-det">Ver detalle</a>
+      <button class="btn-reg" onclick="openRegistrar({{ p.id }},'{{ p.nombre|e }}')">+ Registrar compra</button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Modal: Registrar compra ─────────��───────────────────── -->
+<div class="modal-bg" id="m-reg">
+  <div class="modal" style="width:380px">
+    <div class="modal-title">Registrar compra</div>
+    <input type="hidden" id="reg-pid">
+    <div class="m-row">
+      <div class="m-field">
+        <label>Producto</label>
+        <input class="fi" id="reg-nombre" readonly style="opacity:.6">
+      </div>
+      <div class="m-field">
+        <label>Fecha de compra</label>
+        <input class="fi" type="date" id="reg-fecha">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="m-field">
+          <label>Precio total ($)</label>
+          <input class="fi" type="number" step="0.01" min="0.01" id="reg-precio" placeholder="0.00">
+        </div>
+        <div class="m-field">
+          <label>Cantidad (opc.)</label>
+          <input class="fi" type="number" step="1" min="1" id="reg-cantidad" placeholder="1">
+        </div>
+      </div>
+    </div>
+    <div id="reg-insight" style="margin-top:8px;display:none;" class="pc-insight"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeModal('m-reg')">Cancelar</button>
+      <button class="btn-a" onclick="submitRegistrar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Nuevo producto ────────────���─────────────────── -->
+<div class="modal-bg" id="m-nuevo">
+  <div class="modal" style="width:360px">
+    <div class="modal-title">Nuevo producto</div>
+    <div class="m-row">
+      <div class="m-field">
+        <label>Nombre</label>
+        <input class="fi" id="nuevo-nombre" placeholder="ej. Shampoo">
+      </div>
+      <div class="m-field">
+        <label>Categoría</label>
+        <input class="fi" id="nuevo-cat" list="cat-list" placeholder="ej. Higiene personal">
+        <datalist id="cat-list">
+          {% for cat in categorias %}<option value="{{ cat }}">{% endfor %}
+        </datalist>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeModal('m-nuevo')">Cancelar</button>
+      <button class="btn-a" onclick="submitNuevo()">Crear</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// ── Filter ──────��──────────────────────────────────────────────
+function filtrar(btn, cat){
+  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.prod-card').forEach(card=>{
+    if(cat==='all') card.style.display='';
+    else if(cat==='__atrasados') card.style.display=card.dataset.status==='atrasado'?'':'none';
+    else card.style.display=card.dataset.cat===cat?'':'none';
+  });
+}
+
+// ── Registrar compra ────────────────────────────��──────────────
+function openRegistrar(pid, nombre){
+  document.getElementById('reg-pid').value=pid;
+  document.getElementById('reg-nombre').value=nombre;
+  document.getElementById('reg-fecha').value=new Date().toISOString().slice(0,10);
+  document.getElementById('reg-precio').value='';
+  document.getElementById('reg-cantidad').value='1';
+  document.getElementById('reg-insight').style.display='none';
+  document.getElementById('m-reg').classList.add('open');
+  document.getElementById('reg-precio').focus();
+}
+async function submitRegistrar(){
+  const pid    = +document.getElementById('reg-pid').value;
+  const fecha  = document.getElementById('reg-fecha').value;
+  const precio = parseFloat(document.getElementById('reg-precio').value);
+  const cant   = parseFloat(document.getElementById('reg-cantidad').value)||1;
+  if(!precio||precio<=0){toast('Ingresa un precio válido','err');return;}
+  const r = await fetch('/finanzas/consumo/api/compra',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({producto_id:pid,fecha,precio_total:precio,cantidad:cant})
+  });
+  const d = await r.json();
+  if(d.error){toast(d.error,'err');return;}
+  closeModal('m-reg');
+  toast('Compra registrada','win');
+  // Update card in-place
+  const card = document.querySelector(`.prod-card[data-id="${pid}"]`);
+  if(card) setTimeout(()=>location.reload(),700);
+}
+
+// ── Nuevo producto ──────────────────────────────���──────────────
+function openNuevo(){
+  document.getElementById('nuevo-nombre').value='';
+  document.getElementById('nuevo-cat').value='';
+  document.getElementById('m-nuevo').classList.add('open');
+  document.getElementById('nuevo-nombre').focus();
+}
+async function submitNuevo(){
+  const nombre = document.getElementById('nuevo-nombre').value.trim();
+  const cat    = document.getElementById('nuevo-cat').value.trim();
+  if(!nombre){toast('Nombre requerido','err');return;}
+  const r = await fetch('/finanzas/consumo/api/producto',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({nombre,categoria:cat})
+  });
+  const d = await r.json();
+  if(d.error){toast(d.error,'err');return;}
+  closeModal('m-nuevo');
+  toast(`"${nombre}" agregado`,'win');
+  setTimeout(()=>location.reload(),700);
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+// Close modal on background click
+document.querySelectorAll('.modal-bg').forEach(bg=>{
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open');});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+});
+</script>
+{% endblock %}

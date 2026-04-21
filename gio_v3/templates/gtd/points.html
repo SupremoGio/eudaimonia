@@ -1,0 +1,45 @@
+{% extends "gtd_base.html" %}{% set gp='points' %}
+{% block title %}Puntos — PRAXIS{% endblock %}{% block topright %}PUNTOS & NIVEL{% endblock %}
+{% block gtd_body %}
+<div class="pg-hd"><div><div class="pg-t">Puntos & Nivel</div><div class="pg-s">Tu progreso acumulado</div></div></div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+  {% for lbl,val in [('Hoy',stats.pts_today),('Semana',stats.pts_week),('Mes',stats.pts_month),('Total',stats.pts_total)] %}
+  <div style="background:var(--card);border:1px solid var(--b);border-radius:8px;padding:16px;text-align:center;">
+    <div style="font-family:var(--serif);font-size:2rem;font-weight:300;color:var(--gold);line-height:1;">{{ val }}</div>
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.13em;text-transform:uppercase;margin-top:3px;">{{ lbl }}</div>
+  </div>
+  {% endfor %}
+</div>
+<div style="background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:8px;padding:20px 24px;margin-bottom:18px;display:flex;align-items:center;gap:20px;">
+  <div style="font-family:var(--serif);font-size:3.5rem;font-style:italic;color:var(--gold);line-height:1;min-width:70px;">{{ stats.level }}</div>
+  <div style="flex:1;">
+    <div style="font-family:var(--serif);font-size:1.4rem;font-style:italic;margin-bottom:5px;">{{ stats.level_name }}</div>
+    <div style="background:var(--b);border-radius:100px;height:5px;overflow:hidden;margin-bottom:5px;"><div style="width:{{ stats.level_pct }}%;height:100%;background:linear-gradient(90deg,var(--gold),#e8c88a);border-radius:100px;transition:width .8s;"></div></div>
+    <div style="font-size:.56rem;color:var(--dim);">{{ stats.level_pct }}% hacia Nivel {{ stats.level+1 }} — {{ 100-stats.level_pct }} pts restantes</div>
+  </div>
+  <div style="text-align:center;">
+    <div style="font-family:var(--serif);font-size:2.2rem;color:var(--gold);font-style:italic;">{{ stats.streak }}</div>
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;">Racha días</div>
+  </div>
+</div>
+<div class="tile">
+  <div class="tile-lbl">HISTORIAL RECIENTE</div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead><tr>{% for h in ['Fecha','Tarea','Tipo','Puntos'] %}<th style="font-size:.46rem;color:var(--dim);letter-spacing:.13em;text-transform:uppercase;padding:0 7px 9px;text-align:left;border-bottom:1px solid var(--b);">{{ h }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for e in log %}
+    <tr>
+      <td style="padding:8px 7px;border-bottom:1px solid var(--b);font-size:.64rem;color:var(--dim);">{{ e.date }}</td>
+      <td style="padding:8px 7px;border-bottom:1px solid var(--b);font-size:.64rem;color:var(--mid);">{{ e.title or '—' }}</td>
+      <td style="padding:8px 7px;border-bottom:1px solid var(--b);">
+        <span style="font-size:.46rem;padding:2px 6px;border-radius:100px;{% if e.reason=='daily_bonus_3tasks' %}background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--green);{% else %}background:var(--gold-d);border:1px solid rgba(197,163,108,.2);color:var(--gold);{% endif %}">{{ 'BONUS ×3' if e.reason=='daily_bonus_3tasks' else 'completado' }}</span>
+      </td>
+      <td style="padding:8px 7px;border-bottom:1px solid var(--b);font-family:var(--serif);font-size:.95rem;color:var(--green);">+{{ e.points_earned }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" style="text-align:center;padding:22px;color:var(--dim);font-size:.62rem;">Sin registros aún</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

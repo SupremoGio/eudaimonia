@@ -1,0 +1,30 @@
+{% extends "gtd_base.html" %}{% set gp='someday' %}
+{% block title %}Someday — PRAXIS{% endblock %}{% block topright %}SOMEDAY / MAYBE{% endblock %}
+{% block gtd_body %}
+<div class="pg-hd"><div><div class="pg-t">Someday / Maybe</div><div class="pg-s">Ideas sin presión de ejecución</div></div></div>
+<div class="af">
+  <div class="fgrid"><div class="fg"><div class="fl">Idea futura</div><input class="fi" id="tt" placeholder="Algo que quieres hacer algún día..."></div></div>
+  <div class="fa"><button class="btn-a" onclick="addT()">+ Añadir a Someday</button></div>
+</div>
+{% for t in tasks %}
+<div class="t-row" data-id="{{ t.id }}">
+  <div class="t-dot" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
+  <div class="t-main"><div class="t-title">{{ t.title }}</div></div>
+  <div style="display:flex;gap:3px;">
+    <button class="ai" onclick="mv({{t.id}},'next',this)" title="Activar ahora"><i data-lucide="zap"></i></button>
+    <button class="ai del" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
+  </div>
+</div>
+{% else %}<div class="empty-s"><i data-lucide="clock"></i><p>Sin ideas en Someday</p></div>{% endfor %}
+{% endblock %}
+{% block scripts %}<script>
+async function addT(){
+  const t=document.getElementById('tt').value.trim();if(!t)return;
+  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t,status:'someday'})});
+  toast('Añadido');setTimeout(()=>location.reload(),500);
+}
+async function cTask(id,dot){const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});const d=await r.json();if(d.ok){dot.closest('.t-row').remove();toast(`+${d.pts} pts`);}}
+async function mv(id,st,btn){await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});btn.closest('.t-row').remove();toast('→ Next Actions');}
+async function dt(id,btn){await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.t-row').remove();}
+document.getElementById('tt').addEventListener('keydown',e=>{if(e.key==='Enter')addT();});
+</script>{% endblock %}

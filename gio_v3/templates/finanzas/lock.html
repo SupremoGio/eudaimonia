@@ -1,0 +1,39 @@
+{% extends "tw/layout.html" %}{% set pg='finanzas' %}
+{% block title %}Finanzas — Acceso{% endblock %}
+{% block topright %}MÓDULO PRIVADO{% endblock %}
+{% block content %}
+<style>
+.lock-wrap{display:flex;align-items:center;justify-content:center;height:62vh;}
+.lock-card{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:44px 36px;width:320px;text-align:center;}
+.lock-icon{color:var(--gold);display:flex;justify-content:center;margin-bottom:20px;}
+.lock-icon svg{width:30px;height:30px;}
+.lock-t{font-family:var(--serif);font-size:1.7rem;font-style:italic;margin-bottom:4px;}
+.lock-s{font-size:.56rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:28px;}
+.pw-inp{width:100%;background:transparent;border:none;border-bottom:1px solid var(--b);padding:9px 0;color:var(--text);font-family:var(--mono);font-size:.9rem;outline:none;text-align:center;letter-spacing:.2em;margin-bottom:18px;transition:border-color .16s;}
+.pw-inp:focus{border-color:var(--gold);}
+.unlock-btn{width:100%;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:11px;border-radius:4px;font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .22s;}
+.unlock-btn:hover{background:var(--gold);color:var(--bg);}
+.lock-err{color:var(--red);font-size:.62rem;margin-top:9px;min-height:15px;}
+</style>
+<div class="lock-wrap">
+  <div class="lock-card">
+    <div class="lock-icon"><i data-lucide="lock"></i></div>
+    <div class="lock-t">Finanzas</div>
+    <div class="lock-s">Módulo Privado</div>
+    <input class="pw-inp" type="password" id="pw" placeholder="••••••••" maxlength="32">
+    <button class="unlock-btn" onclick="unlock()">Desbloquear</button>
+    <div class="lock-err" id="err"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function unlock(){
+  const r=await fetch('/finanzas/unlock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value})});
+  const d=await r.json();
+  if(d.ok){window.location.href='/finanzas';}
+  else{document.getElementById('err').textContent=d.error;document.getElementById('pw').value='';}
+}
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')unlock();});
+</script>
+{% endblock %}

@@ -1,0 +1,524 @@
+{% extends "tw/layout.html" %}{% set pg='finanzas' %}
+{% block title %}Budget 50-30-20 — {{ mes }}{% endblock %}
+{% block topright %}<a href="/finanzas/" style="color:var(--dim);font-size:.52rem;">← FINANZAS</a>{% endblock %}
+{% block content %}
+<style>
+/* ── Month nav ───────────────────────────────────────────────── */
+.month-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.mn-btn{background:var(--card2);border:1px solid var(--b);color:var(--mid);padding:7px 16px;border-radius:8px;font-size:.6rem;letter-spacing:.05em;transition:all .18s;}
+.mn-btn:hover{border-color:var(--b2);color:var(--text);}
+.mn-mes{font-family:var(--sans);font-size:1.2rem;font-weight:700;color:var(--text);}
+.mn-sub{font-size:.5rem;color:var(--dim);letter-spacing:.1em;text-align:center;margin-top:2px;}
+
+/* ── Income card ─────────────────────────────────────────────── */
+.income-card{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(6,182,212,.06));border:1px solid rgba(16,185,129,.25);border-radius:14px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.ic-left .ic-l{font-size:.46rem;color:var(--emerald);letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;}
+.ic-val{font-family:var(--sans);font-size:2.2rem;font-weight:700;background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.ic-right{display:flex;gap:8px;align-items:center;}
+.ic-inp{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:.72rem;outline:none;width:160px;transition:border-color .18s;}
+.ic-inp:focus{border-color:var(--emerald);}
+
+/* ── 50-30-20 Summary ────────────────────────────────────────── */
+.budget-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.bs-card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;position:relative;overflow:hidden;}
+.bs-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;}
+.bs-nec::after{background:linear-gradient(90deg,var(--emerald),var(--emerald-l));}
+.bs-des::after{background:linear-gradient(90deg,var(--blue),#93c5fd);}
+.bs-aho::after{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+.bs-label{font-size:.46rem;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;}
+.bs-nec .bs-label{color:var(--emerald);}
+.bs-des .bs-label{color:var(--blue);}
+.bs-aho .bs-label{color:var(--violet-l);}
+.bs-pct-target{font-size:.44rem;color:var(--dim);margin-bottom:10px;}
+.bs-amounts{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
+.bs-real{font-family:var(--sans);font-size:1.4rem;font-weight:700;color:var(--text);}
+.bs-target{font-size:.58rem;color:var(--dim);}
+/* progress bar */
+.bs-bar{height:6px;background:var(--b);border-radius:100px;overflow:hidden;}
+.bs-fill{height:100%;border-radius:100px;transition:width .5s;}
+.bs-nec .bs-fill{background:linear-gradient(90deg,var(--emerald),var(--emerald-l));}
+.bs-des .bs-fill{background:linear-gradient(90deg,var(--blue),#93c5fd);}
+.bs-aho .bs-fill{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+.bs-fill.over{background:var(--coral);}
+.bs-status{font-size:.5rem;margin-top:6px;}
+
+/* disponible */
+.disponible-bar{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.db-label{font-size:.5rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase;}
+.db-val{font-family:var(--sans);font-size:1.6rem;font-weight:700;}
+.db-pos{background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.db-neg{color:var(--coral);}
+.db-sub{font-size:.52rem;color:var(--dim);}
+
+/* ── Items grid ──────────────────────────────────────────────── */
+.items-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
+.items-col{}
+.col-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.col-title{font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;}
+.ct-nec{color:var(--emerald);}
+.ct-des{color:var(--blue);}
+.ct-aho{color:var(--violet-l);}
+.col-add{background:none;border:1px dashed var(--b2);color:var(--dim);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.9rem;transition:all .18s;}
+.col-add:hover{border-color:var(--violet-l);color:var(--violet-l);}
+
+/* item row */
+.item-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--b);}
+.item-row:last-child{border-bottom:none;}
+.ir-nombre{flex:1;font-size:.66rem;color:var(--mid);}
+.ir-nombre.deuda-item{color:var(--amber);}
+.ir-est{font-size:.6rem;color:var(--dim);width:64px;text-align:right;}
+.ir-real{width:80px;}
+.ir-real input{background:transparent;border:none;border-bottom:1px solid var(--b);color:var(--text);font-family:var(--mono);font-size:.64rem;text-align:right;outline:none;width:100%;padding:2px 0;transition:border-color .18s;}
+.ir-real input:focus{border-color:var(--violet-l);}
+.ir-del{background:none;border:none;color:var(--dim);width:18px;height:18px;display:flex;align-items:center;justify-content:center;transition:color .16s;flex-shrink:0;}
+.ir-del:hover{color:var(--coral);}
+.ir-del svg{width:10px;height:10px;}
+.col-total{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--b2);font-size:.6rem;}
+.ct-label{color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
+.ct-val{font-weight:600;color:var(--text);}
+
+/* ── Debt section ────────────────────────────────────────────── */
+.debt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.debt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.debt-card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;}
+.dc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.dc-nombre{font-family:var(--sans);font-size:.9rem;font-weight:600;color:var(--text);}
+.dc-tasa{font-size:.48rem;color:var(--dim);margin-top:2px;}
+.dc-saldo{text-align:right;}
+.dc-sl{font-size:.44rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;}
+.dc-sv{font-family:var(--sans);font-size:1.3rem;font-weight:700;color:var(--coral);}
+/* progress */
+.dc-bar{height:5px;background:var(--b);border-radius:100px;overflow:hidden;margin-bottom:4px;}
+.dc-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--emerald),var(--cyan));transition:width .5s;}
+.dc-pct{font-size:.46rem;color:var(--dim);}
+/* payment */
+.dc-pago{display:flex;gap:7px;margin-top:14px;}
+.dc-pago input{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:.68rem;outline:none;transition:border-color .18s;}
+.dc-pago input:focus{border-color:var(--amber);}
+.dc-sim{margin-top:10px;font-size:.54rem;color:var(--dim);display:none;}
+.dc-sim.show{display:block;}
+.sim-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b);}
+.sim-row:last-child{border-bottom:none;}
+.sim-label{color:var(--dim);}
+.sim-val{font-weight:600;}
+.sv-min{color:var(--coral);}
+.sv-prop{color:var(--violet-l);}
+.sv-agr{color:var(--emerald);}
+
+/* ── Modals ──────────────────────────────────────────────────── */
+.m-row{display:flex;flex-direction:column;gap:11px;}
+.m-field label{display:block;font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px;}
+.m-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media(max-width:1100px){
+  .items-grid{grid-template-columns:1fr;}
+  .budget-summary{grid-template-columns:1fr;}
+}
+@media(max-width:767px){
+  .budget-summary{grid-template-columns:1fr;}
+  .items-grid{grid-template-columns:1fr;}
+  .income-card{flex-direction:column;align-items:flex-start;}
+  .ic-inp{width:100%;}
+}
+</style>
+
+<!-- Month navigation -->
+<div class="month-nav">
+  <a href="/finanzas/budget/{{ prev_mes }}" class="mn-btn">← {{ prev_mes }}</a>
+  <div>
+    <div class="mn-mes">{{ mes }}</div>
+    <div class="mn-sub">PRESUPUESTO MENSUAL 50-30-20</div>
+  </div>
+  <a href="/finanzas/budget/{{ next_mes }}" class="mn-btn">{{ next_mes }} →</a>
+</div>
+
+<!-- Income -->
+<div class="income-card">
+  <div class="ic-left">
+    <div class="ic-l">Ingreso mensual neto</div>
+    <div class="ic-val" id="ic-display">${{ "{:,.0f}".format(budget.ingreso_total) }}</div>
+  </div>
+  <div class="ic-right">
+    <input class="ic-inp" type="number" id="ic-inp" placeholder="Ingreso total..." value="{{ budget.ingreso_total or '' }}">
+    <button class="btn-a" onclick="setIngreso()">Guardar</button>
+    {% if items %}
+    <button class="btn-g" onclick="copiarMes()" title="Copiar ítems del mes anterior">⟳ Copiar mes</button>
+    {% else %}
+    <button class="btn-g" onclick="copiarMes()">⟳ Copiar mes anterior</button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- 50-30-20 Summary -->
+<div class="budget-summary">
+  {% set cats = [
+    ('necesidades', 'bs-nec', 'ct-nec', '50% · Necesidades'),
+    ('deseos',      'bs-des', 'ct-des', '30% · Deseos'),
+    ('ahorro_deuda','bs-aho', 'ct-aho', '20% · Ahorro y Deudas'),
+  ] %}
+  {% for cat, cls, _, label in cats %}
+  {% set real   = resumen.totales[cat] %}
+  {% set target = resumen.targets[cat] %}
+  {% set pct    = [[(real / target * 100)|int if target else 0, 0]|max, 100]|min %}
+  {% set over   = real > target %}
+  <div class="bs-card {{ cls }}">
+    <div class="bs-label">{{ label }}</div>
+    <div class="bs-amounts">
+      <div class="bs-real">${{ "{:,.0f}".format(real) }}</div>
+      <div class="bs-target">meta ${{ "{:,.0f}".format(target) }}</div>
+    </div>
+    <div class="bs-bar"><div class="bs-fill {% if over %}over{% endif %}" style="width:{{ pct }}%"></div></div>
+    <div class="bs-status" style="color:{% if over %}var(--coral){% elif pct>=85 %}var(--amber){% else %}var(--emerald){% endif %}">
+      {% if over %}▲ ${{ "{:,.0f}".format(real - target) }} sobre el límite
+      {% elif pct >= 85 %}⚠ Cerca del límite
+      {% else %}✓ Dentro del presupuesto{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Disponible -->
+<div class="disponible-bar">
+  <div>
+    <div class="db-label">Dinero disponible este mes</div>
+    <div class="db-val {% if resumen.disponible >= 0 %}db-pos{% else %}db-neg{% endif %}" id="db-disponible">
+      ${{ "{:,.0f}".format(resumen.disponible) }}
+    </div>
+  </div>
+  <div style="text-align:right">
+    <div class="db-sub">Ingreso: ${{ "{:,.0f}".format(resumen.ingreso) }}</div>
+    <div class="db-sub">Gasto total: ${{ "{:,.0f}".format(resumen.gastado) }}</div>
+  </div>
+</div>
+
+<!-- Items by category -->
+<div class="items-grid">
+  {% set config = [
+    ('necesidades', 'ct-nec', 'Necesidades (50%)'),
+    ('deseos',      'ct-des', 'Deseos (30%)'),
+    ('ahorro_deuda','ct-aho', 'Ahorro y Deudas (20%)'),
+  ] %}
+  {% for cat, cls, label in config %}
+  <div class="tile items-col">
+    <div class="col-header">
+      <span class="col-title {{ cls }}">{{ label }}</span>
+      <button class="col-add" onclick="openAddItem('{{ cat }}')" title="Agregar ítem">+</button>
+    </div>
+    {% for it in items_by_cat[cat] %}
+    <div class="item-row" id="item-{{ it.id }}">
+      <span class="ir-nombre {% if it.deuda_id %}deuda-item{% endif %}">
+        {{ it.nombre }}{% if it.tipo == 'deuda_pago' %} 💳{% endif %}
+      </span>
+      <span class="ir-est">${{ "{:,.0f}".format(it.monto_estimado) }}</span>
+      <div class="ir-real">
+        <input type="number" step="0.01" value="{{ it.monto_real if it.monto_real is not none else '' }}"
+          placeholder="{{ it.monto_estimado }}"
+          onchange="updateItem({{ it.id }}, this.value)"
+          onfocus="this.select()">
+      </div>
+      <button class="ir-del" onclick="deleteItem({{ it.id }})"><i data-lucide="x"></i></button>
+    </div>
+    {% endfor %}
+    {% if not items_by_cat[cat] %}
+    <div style="text-align:center;padding:16px 0;font-size:.58rem;color:var(--dim);">Sin ítems — agrega uno</div>
+    {% endif %}
+    <div class="col-total">
+      <span class="ct-label">Total</span>
+      <span class="ct-val" id="col-total-{{ cat }}">
+        ${{ "{:,.0f}".format(resumen.totales[cat]) }}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Debt tracker -->
+<div class="tile">
+  <div class="debt-header">
+    <div class="tile-lbl" style="margin:0">DEUDAS Y TARJETAS DE CRÉDITO</div>
+    <button class="btn-g" onclick="openAddDeuda()">+ Nueva deuda</button>
+  </div>
+  {% if deudas %}
+  <div class="debt-grid">
+    {% for d in deudas %}
+    {% set pagado = d.saldo_inicial - d.saldo_actual %}
+    {% set pct = ((pagado / d.saldo_inicial * 100)|int) if d.saldo_inicial else 0 %}
+    <div class="debt-card" id="dc-{{ d.id }}">
+      <div class="dc-head">
+        <div>
+          <div class="dc-nombre">{{ d.nombre }}</div>
+          <div class="dc-tasa">
+            {% if d.tasa_interes %}Tasa: {{ d.tasa_interes }}%/mes
+            {% else %}Sin tasa registrada{% endif %}
+            · Mín: ${{ "{:,.0f}".format(d.pago_minimo) }}
+          </div>
+        </div>
+        <div class="dc-saldo">
+          <div class="dc-sl">Saldo actual</div>
+          <div class="dc-sv" id="dc-saldo-{{ d.id }}">${{ "{:,.0f}".format(d.saldo_actual) }}</div>
+        </div>
+      </div>
+      <div class="dc-bar">
+        <div class="dc-fill" id="dc-fill-{{ d.id }}" style="width:{{ pct }}%"></div>
+      </div>
+      <div class="dc-pct" id="dc-pct-{{ d.id }}">{{ pct }}% pagado · Inicial: ${{ "{:,.0f}".format(d.saldo_inicial) }}</div>
+
+      <!-- Payment input -->
+      <div class="dc-pago">
+        <input type="number" step="0.01" min="0.01"
+          id="pago-{{ d.id }}"
+          placeholder="Monto a pagar..."
+          oninput="simularDeuda({{ d.id }}, {{ d.pago_minimo }}, {{ d.tasa_interes or 0 }}, {{ d.saldo_actual }})">
+        <button class="btn-a" style="white-space:nowrap;font-size:.58rem;" onclick="pagarDeuda({{ d.id }})">Registrar pago</button>
+      </div>
+
+      <!-- Simulation output -->
+      <div class="dc-sim" id="sim-{{ d.id }}">
+        <div style="font-size:.46rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;">Proyección de liquidación</div>
+        <div class="sim-row"><span class="sim-label">Pago mínimo (${{ "{:,.0f}".format(d.pago_minimo) }})</span><span class="sim-val sv-min" id="sim-min-{{ d.id }}">—</span></div>
+        <div class="sim-row"><span class="sim-label">Tu pago propuesto</span><span class="sim-val sv-prop" id="sim-prop-{{ d.id }}">—</span></div>
+        <div class="sim-row"><span class="sim-label">Pago agresivo (×2)</span><span class="sim-val sv-agr" id="sim-agr-{{ d.id }}">—</span></div>
+      </div>
+
+      {% if pagos_mes.get(d.id) %}
+      <div style="margin-top:8px;font-size:.54rem;color:var(--emerald);">✓ Este mes: -${{ "{:,.0f}".format(pagos_mes[d.id]) }} pagado</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:24px;color:var(--dim);font-size:.64rem;">
+    Sin deudas registradas — agrega TDC u otras deudas aquí
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Modal: agregar ítem ────────────────────────────────────── -->
+<div class="modal-bg" id="m-item">
+  <div class="modal" style="width:380px">
+    <div class="modal-title">Agregar ítem</div>
+    <input type="hidden" id="item-cat">
+    <div class="m-row">
+      <div class="m-field">
+        <label>Nombre del gasto</label>
+        <input class="fi" id="item-nombre" placeholder="ej. Alquiler">
+      </div>
+      <div class="m-2col">
+        <div class="m-field">
+          <label>Monto estimado ($)</label>
+          <input class="fi" type="number" step="0.01" id="item-est" placeholder="0.00">
+        </div>
+        <div class="m-field">
+          <label>Tipo</label>
+          <select class="fi" id="item-tipo">
+            <option value="fijo">Fijo</option>
+            <option value="variable">Variable</option>
+            <option value="deuda_pago">Pago deuda 💳</option>
+          </select>
+        </div>
+      </div>
+      <div class="m-field" id="item-deuda-row" style="display:none">
+        <label>Vincular deuda</label>
+        <select class="fi" id="item-deuda-id">
+          <option value="">— Sin vincular —</option>
+          {% for d in deudas %}
+          <option value="{{ d.id }}">{{ d.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeModal('m-item')">Cancelar</button>
+      <button class="btn-a" onclick="submitItem()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: nueva deuda ─────────────────────────────────────── -->
+<div class="modal-bg" id="m-deuda">
+  <div class="modal" style="width:400px">
+    <div class="modal-title">Nueva deuda / TDC</div>
+    <div class="m-row">
+      <div class="m-field">
+        <label>Nombre (ej. TDC BBVA)</label>
+        <input class="fi" id="d-nombre" placeholder="TDC BBVA">
+      </div>
+      <div class="m-2col">
+        <div class="m-field">
+          <label>Saldo actual ($)</label>
+          <input class="fi" type="number" step="0.01" id="d-saldo" placeholder="0.00">
+        </div>
+        <div class="m-field">
+          <label>Pago mínimo ($)</label>
+          <input class="fi" type="number" step="0.01" id="d-minimo" placeholder="0.00">
+        </div>
+      </div>
+      <div class="m-field">
+        <label>Tasa interés mensual (%) — opcional</label>
+        <input class="fi" type="number" step="0.01" id="d-tasa" placeholder="ej. 5.5">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeModal('m-deuda')">Cancelar</button>
+      <button class="btn-a" onclick="submitDeuda()">Crear</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const MES = '{{ mes }}';
+
+/* ── Income ─────────────────────────────────────────────────── */
+async function setIngreso(){
+  const v = parseFloat(document.getElementById('ic-inp').value);
+  if(!v||v<=0){toast('Ingresa un monto válido','err');return;}
+  const r = await fetch('/finanzas/budget/api/ingreso',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mes:MES,ingreso_total:v})
+  });
+  const d = await r.json();
+  if(d.ok){
+    document.getElementById('ic-display').textContent='$'+fmt(v);
+    actualizarResumen(d.resumen);
+    toast('Ingreso guardado','win');
+  }
+}
+
+/* ── Items ───────────────────────────────────────────────────── */
+function openAddItem(cat){
+  document.getElementById('item-cat').value=cat;
+  document.getElementById('item-nombre').value='';
+  document.getElementById('item-est').value='';
+  document.getElementById('item-tipo').value='fijo';
+  document.getElementById('item-deuda-row').style.display='none';
+  document.getElementById('m-item').classList.add('open');
+  setTimeout(()=>document.getElementById('item-nombre').focus(),50);
+}
+document.getElementById('item-tipo').addEventListener('change',function(){
+  document.getElementById('item-deuda-row').style.display=this.value==='deuda_pago'?'':'none';
+});
+async function submitItem(){
+  const nombre   = document.getElementById('item-nombre').value.trim();
+  const cat      = document.getElementById('item-cat').value;
+  const est      = parseFloat(document.getElementById('item-est').value)||0;
+  const tipo     = document.getElementById('item-tipo').value;
+  const deuda_id = document.getElementById('item-deuda-id').value||null;
+  if(!nombre){toast('Nombre requerido','err');return;}
+  const r = await fetch('/finanzas/budget/api/item',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mes:MES,nombre,categoria:cat,tipo,monto_estimado:est,deuda_id})
+  });
+  const d = await r.json();
+  if(d.ok){closeModal('m-item');actualizarResumen(d.resumen);toast('Ítem agregado','win');setTimeout(()=>location.reload(),600);}
+}
+async function updateItem(id, val){
+  const r = await fetch(`/finanzas/budget/api/item/${id}`,{
+    method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({monto_real: val===''?null:parseFloat(val)})
+  });
+  const d = await r.json();
+  if(d.ok) actualizarResumen(d.resumen);
+}
+async function deleteItem(id){
+  if(!confirm('¿Eliminar este ítem?'))return;
+  const r = await fetch(`/finanzas/budget/api/item/${id}`,{method:'DELETE'});
+  const d = await r.json();
+  if(d.ok){document.getElementById(`item-${id}`)?.remove();actualizarResumen(d.resumen);}
+}
+
+/* ── Resumen update ──────────────────────────────────────────── */
+function actualizarResumen(res){
+  const disp=document.getElementById('db-disponible');
+  disp.textContent='$'+fmt(res.disponible);
+  disp.className='db-val '+(res.disponible>=0?'db-pos':'db-neg');
+  ['necesidades','deseos','ahorro_deuda'].forEach(cat=>{
+    const el=document.getElementById('col-total-'+cat);
+    if(el) el.textContent='$'+fmt(res.totales[cat]);
+  });
+}
+
+/* ── Deudas ──────────────────────────────────────────────────── */
+function openAddDeuda(){
+  ['d-nombre','d-saldo','d-minimo','d-tasa'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('m-deuda').classList.add('open');
+  setTimeout(()=>document.getElementById('d-nombre').focus(),50);
+}
+async function submitDeuda(){
+  const nombre = document.getElementById('d-nombre').value.trim();
+  const saldo  = parseFloat(document.getElementById('d-saldo').value);
+  const minimo = parseFloat(document.getElementById('d-minimo').value)||0;
+  const tasa   = parseFloat(document.getElementById('d-tasa').value)||0;
+  if(!nombre||!saldo){toast('Nombre y saldo requeridos','err');return;}
+  const r = await fetch('/finanzas/budget/api/deuda',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({nombre,saldo_inicial:saldo,pago_minimo:minimo,tasa_interes:tasa})
+  });
+  const d = await r.json();
+  if(d.ok){closeModal('m-deuda');toast('Deuda registrada','win');setTimeout(()=>location.reload(),600);}
+  else toast(d.error,'err');
+}
+async function pagarDeuda(did){
+  const monto = parseFloat(document.getElementById(`pago-${did}`).value);
+  if(!monto||monto<=0){toast('Ingresa un monto válido','err');return;}
+  const r = await fetch(`/finanzas/budget/api/deuda/${did}/pago`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({mes:MES,monto_pagado:monto,fecha:new Date().toISOString().slice(0,10)})
+  });
+  const d = await r.json();
+  if(d.ok){
+    document.getElementById(`dc-saldo-${did}`).textContent='$'+fmt(d.nuevo_saldo);
+    const ini = d.deuda.saldo_inicial;
+    const pct = Math.min(100,Math.round((ini-d.nuevo_saldo)/ini*100));
+    document.getElementById(`dc-fill-${did}`).style.width=pct+'%';
+    document.getElementById(`dc-pct-${did}`).textContent=pct+'% pagado · Inicial: $'+fmt(ini);
+    document.getElementById(`pago-${did}`).value='';
+    document.getElementById(`sim-${did}`).classList.remove('show');
+    toast(`-$${fmt(monto)} registrado`,'win');
+  } else toast(d.error,'err');
+}
+
+/* ── Simulación (client-side) ────────────────────────────────── */
+function simularDeuda(did, minimo, tasa_pct, saldo){
+  const pago = parseFloat(document.getElementById(`pago-${did}`).value)||0;
+  const tasa = tasa_pct / 100;
+  const sim  = document.getElementById(`sim-${did}`);
+  if(pago <= 0){sim.classList.remove('show');return;}
+  sim.classList.add('show');
+
+  function calc(p){
+    if(p<=0) return '∞';
+    let s=saldo, m=0;
+    while(s>0.01&&m<600){s=s*(1+tasa)-p;m++;}
+    return m<600?`${m} meses (~${(m/12).toFixed(1)}a)`:'> 50 años';
+  }
+  document.getElementById(`sim-min-${did}`).textContent  = calc(minimo);
+  document.getElementById(`sim-prop-${did}`).textContent = calc(pago);
+  document.getElementById(`sim-agr-${did}`).textContent  = calc(minimo*2);
+}
+
+/* ── Copiar mes anterior ─────────────────────────────────────── */
+async function copiarMes(){
+  const [y,m]=MES.split('-').map(Number);
+  const prev=m>1?`${y}-${String(m-1).padStart(2,'0')}`:`${y-1}-12`;
+  if(!confirm(`¿Copiar ítems de ${prev} a este mes?`))return;
+  const r=await fetch(`/finanzas/budget/api/copiar/${prev}/${MES}`,{method:'POST'});
+  const d=await r.json();
+  if(d.ok){toast(`${d.copiados} ítems copiados`,'win');setTimeout(()=>location.reload(),700);}
+  else toast(d.error,'err');
+}
+
+/* ── Utilities ───────────────────────────────────────────────── */
+function fmt(n){return Number(n).toLocaleString('es-MX',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-bg').forEach(bg=>{
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open');});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-bg.open').forEach(m=>m.classList.remove('open'));
+});
+document.getElementById('ic-inp').addEventListener('keydown',e=>{if(e.key==='Enter')setIngreso();});
+</script>
+{% endblock %}

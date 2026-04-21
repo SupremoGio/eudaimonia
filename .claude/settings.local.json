@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\('OK - app started'\\)\")",
+      "Bash(python -c ' *)",
+      "Bash(python run.py)",
+      "Bash(kill %1)",
+      "Bash(wait)",
+      "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\('OK'\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 migrate_db.py)",
+      "Bash(python3 -W ignore migrate_db.py)",
+      "Bash(python3 -c \"from app import create_app; app = create_app\\(\\); print\\('App OK'\\)\")",
+      "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\('OK - blueprints:', [r.name for r in app.blueprints.values\\(\\)]\\)\")",
+      "Bash(timeout 6 python -c ' *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('modules/perfil/routes.py'\\).read\\(\\)\\); print\\('routes OK'\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('templates/perfil/index.html'\\).read\\(\\).replace\\('{%','#'\\).replace\\('%}','#'\\).replace\\('{{',''\\).replace\\('}}',''\\)\\); print\\('template syntax OK'\\)\")",
+      "Bash(python)",
+      "Bash(pip show *)",
+      "Bash(pip list *)",
+      "PowerShell(pip list --format=freeze 2>&1)",
+      "PowerShell(head -30)",
+      "PowerShell(python -c \"import importlib.metadata as m; [print\\(f'{p}=={m.version\\(p\\)}'\\) for p in ['flask','werkzeug','jinja2','click','markupsafe','itsdangerous']]\")"
+    ]
+  }
+}

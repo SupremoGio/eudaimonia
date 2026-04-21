@@ -1,0 +1,355 @@
+{% extends "tw/layout.html" %}{% set pg='finanzas' %}
+{% block title %}Oikonomia — Eudaimonia{% endblock %}
+{% block topright %}{{ today }} — <span style="color:var(--gold)">OIKONOMIA · PRIVADO</span>{% endblock %}
+{% block content %}
+<style>
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:1200px;}
+.full{grid-column:1/-1;}
+.balance-hero{background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:8px;padding:22px 26px;}
+.bal-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:14px;}
+.bal-box{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:14px;text-align:center;}
+.bal-v{font-family:var(--serif);font-size:1.8rem;font-weight:300;line-height:1;}
+.bal-l{font-size:.48rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:3px;}
+.bal-s{font-size:.56rem;color:var(--dim);margin-top:2px;}
+.pos{color:var(--green);}
+.neg{color:var(--red);}
+.neutral{color:var(--gold);}
+.section-tag{display:inline-flex;align-items:center;gap:6px;font-size:.48rem;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border-radius:100px;margin-bottom:12px;}
+.tag-g{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);color:var(--green);}
+.tag-r{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);}
+.debt-form{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:16px;align-items:end;}
+.debt-table{width:100%;border-collapse:collapse;}
+.debt-table th{font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;padding:0 7px 9px;text-align:left;border-bottom:1px solid var(--b);}
+.debt-table td{padding:9px 7px;border-bottom:1px solid var(--b);font-size:.66rem;color:var(--mid);vertical-align:middle;}
+.debt-table tr:last-child td{border-bottom:none;}
+.dp-name{color:var(--text);font-size:.72rem;}
+.dp-amount{font-family:var(--serif);font-size:.95rem;}
+.dp-actions{display:flex;gap:5px;align-items:center;}
+/* PROGRESS BAR */
+.debt-progress{width:100%;height:5px;background:var(--b);border-radius:100px;overflow:hidden;margin-top:3px;}
+.dp-fill{height:100%;border-radius:100px;transition:width .5s;}
+.dp-pct{font-size:.46rem;color:var(--dim);margin-top:2px;}
+/* BUDGET */
+.bcat{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px 14px;}
+.bcat-n{font-size:.56rem;color:var(--mid);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+.bcat-bar{background:var(--b);border-radius:100px;height:4px;overflow:hidden;margin-bottom:8px;}
+.bcat-fill{height:100%;border-radius:100px;transition:width .5s;}
+.bcat-vals{display:flex;justify-content:space-between;font-size:.58rem;margin-bottom:6px;}
+.bcat-edit{display:flex;gap:5px;}
+.bcat-edit input{background:transparent;border-bottom:1px solid var(--b);color:var(--text);font-family:var(--mono);font-size:.58rem;outline:none;padding:2px 0;width:100%;transition:border-color .16s;}
+.bcat-edit input:focus{border-color:var(--gold);}
+.budget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;}
+.pay-rec{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.rec-card{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px 16px;display:flex;align-items:center;gap:10px;}
+.rc-num{font-family:var(--serif);font-size:1.3rem;font-style:italic;line-height:1;min-width:28px;}
+.rc-info{font-size:.68rem;color:var(--text);}
+.rc-sub{font-size:.5rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}
+.lock-btn{background:transparent;border:1px solid var(--b);color:var(--dim);padding:5px 12px;border-radius:4px;font-family:var(--mono);font-size:.55rem;cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px;}
+.lock-btn:hover{border-color:var(--red);color:var(--red);}
+.lock-btn svg{width:11px;height:11px;}
+/* ABONO MODAL */
+.ab-hist{margin-top:12px;border-top:1px solid var(--b);padding-top:10px;}
+.ab-hist-item{display:flex;justify-content:space-between;padding:5px 0;font-size:.62rem;color:var(--mid);border-bottom:1px solid var(--b);}
+.ab-hist-item:last-child{border-bottom:none;}
+.ab-hist-amt{color:var(--green);}
+@media(max-width:767px){
+  .f-grid{grid-template-columns:1fr;gap:10px;}
+  .f-grid .full{grid-column:1/-1;}
+  .balance-hero{padding:14px 16px;}
+  .balance-hero>div:first-child{flex-direction:column;align-items:flex-start;gap:10px;}
+  .balance-hero>div:first-child>div:last-child{flex-wrap:wrap;gap:6px;}
+  .bal-row{grid-template-columns:1fr 1fr;gap:8px;}
+  .bal-v{font-size:1.3rem;}
+  .debt-form{grid-template-columns:1fr 1fr;gap:8px;}
+  .debt-form>*:last-child{grid-column:1/-1;}
+  .debt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .pay-rec{grid-template-columns:1fr;gap:8px;}
+  .budget-grid{grid-template-columns:1fr 1fr;}
+  .lock-btn span{display:none;}
+}
+@media(min-width:768px) and (max-width:1024px){
+  .f-grid{grid-template-columns:1fr;}
+  .bal-row{grid-template-columns:1fr 1fr 1fr;}
+  .debt-form{grid-template-columns:1fr 1fr auto;}
+}
+</style>
+
+{% if alerts %}
+<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;">
+  {% for a in alerts %}
+  <div style="display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid {{a.color}};color:{{a.color}};font-size:.58rem;letter-spacing:.07em;"><i data-lucide="bell" style="width:12px;height:12px"></i>HOY: PAGAR {{ a.label }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="f-grid">
+
+  <!-- BALANCE HERO -->
+  <div class="balance-hero full">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="tile-lbl" style="margin:0">BALANCE GENERAL</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a href="/finanzas/budget/" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;padding:5px 12px;border-radius:6px;font-size:.52rem;letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="pie-chart" style="width:11px;height:11px"></i> Budget</a>
+        <a href="/finanzas/consumo/" style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);color:#a78bfa;padding:5px 12px;border-radius:6px;font-size:.52rem;letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="shopping-cart" style="width:11px;height:11px"></i> Consumo</a>
+        <button class="lock-btn" onclick="lockFin()"><i data-lucide="lock"></i> Bloquear</button>
+      </div>
+    </div>
+    <div class="bal-row">
+      <div class="bal-box">
+        <div class="bal-v pos">${{ "%.2f"|format(total_owe_me) }}</div>
+        <div class="bal-l">Me Deben (restante)</div>
+        <div class="bal-s">{{ owe_me|length }} deuda(s)</div>
+      </div>
+      <div class="bal-box">
+        <div class="bal-v neg">${{ "%.2f"|format(total_i_owe) }}</div>
+        <div class="bal-l">Debo (restante)</div>
+        <div class="bal-s">{{ i_owe|length }} deuda(s)</div>
+      </div>
+      <div class="bal-box">
+        {% set net = total_owe_me - total_i_owe %}
+        <div class="bal-v {% if net>=0 %}pos{% else %}neg{% endif %}">{% if net>=0 %}+{% endif %}${{ "%.2f"|format(net) }}</div>
+        <div class="bal-l">Posición Neta</div>
+        <div class="bal-s">Balance real</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ME DEBEN -->
+  <div class="tile">
+    <span class="section-tag tag-g">✦ Me Deben</span>
+    <div class="tile-lbl">CUENTAS POR COBRAR</div>
+    <div class="debt-form">
+      <div><div class="fl">Persona</div><input class="fi" id="om-person" placeholder="Quién..."></div>
+      <div><div class="fl">Concepto</div><input class="fi" id="om-concept" placeholder="Por qué..."></div>
+      <div><div class="fl">Monto</div><input class="fi" id="om-amount" type="number" placeholder="MXN" min="0"></div>
+      <button class="btn-g" onclick="addDebt('owe_me')">+ ADD</button>
+    </div>
+    <div class="debt-table-wrap">
+    <table class="debt-table">
+      <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
+      <tbody id="tbl-owe-me">
+        {% for d in owe_me %}
+        {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
+        <tr data-id="{{ d.id }}">
+          <td class="dp-name">{{ d.person }}</td>
+          <td>{{ d.concept }}</td>
+          <td>
+            <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--green)"></div></div>
+            <div class="dp-pct">{{ pct }}% cobrado · ${{ "%.2f"|format(d.monto_total - d.monto_restante) }} de ${{ "%.2f"|format(d.monto_total) }}</div>
+          </td>
+          <td><span class="dp-amount pos">${{ "%.2f"|format(d.monto_restante) }}</span></td>
+          <td>
+            <div class="dp-actions">
+              <button class="btn-gr" onclick="openAbono({{ d.id }},'owe_me','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
+              <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:.5rem">✓ Cobrado</button>
+              <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- YO DEBO -->
+  <div class="tile">
+    <span class="section-tag tag-r">✦ Yo Debo</span>
+    <div class="tile-lbl">CUENTAS POR PAGAR</div>
+    <div class="debt-form">
+      <div><div class="fl">A quién</div><input class="fi" id="io-person" placeholder="Quién..."></div>
+      <div><div class="fl">Concepto</div><input class="fi" id="io-concept" placeholder="Por qué..."></div>
+      <div><div class="fl">Monto</div><input class="fi" id="io-amount" type="number" placeholder="MXN" min="0"></div>
+      <button class="btn-g" onclick="addDebt('i_owe')">+ ADD</button>
+    </div>
+    <div class="debt-table-wrap">
+    <table class="debt-table">
+      <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
+      <tbody id="tbl-i-owe">
+        {% for d in i_owe %}
+        {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
+        <tr data-id="{{ d.id }}">
+          <td class="dp-name">{{ d.person }}</td>
+          <td>{{ d.concept }}</td>
+          <td>
+            <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--gold)"></div></div>
+            <div class="dp-pct">{{ pct }}% pagado · ${{ "%.2f"|format(d.monto_total - d.monto_restante) }} de ${{ "%.2f"|format(d.monto_total) }}</div>
+          </td>
+          <td><span class="dp-amount neg">${{ "%.2f"|format(d.monto_restante) }}</span></td>
+          <td>
+            <div class="dp-actions">
+              <button class="btn-g" onclick="openAbono({{ d.id }},'i_owe','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
+              <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:.5rem">✓ Pagado</button>
+              <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- PRESUPUESTO -->
+  <div class="tile full">
+    <div class="tile-lbl">PRESUPUESTO MENSUAL — RADIOGRAFÍA</div>
+    <div style="display:flex;gap:20px;margin-bottom:16px;font-size:.62rem;">
+      <span style="color:var(--dim)">Presupuestado: <span style="color:var(--gold)">${{ "%.2f"|format(total_budget) }}</span></span>
+      <span style="color:var(--dim)">Gastado: <span style="color:var(--text)">${{ "%.2f"|format(total_spent) }}</span></span>
+      {% if total_budget > 0 %}
+      {% set uso = (total_spent/total_budget*100)|int %}
+      <span style="color:var(--dim)">Uso: <span style="color:{% if uso>90 %}var(--red){% elif uso>70 %}var(--pink){% else %}var(--green){% endif %}">{{ uso }}%</span></span>
+      {% endif %}
+    </div>
+    <div class="budget-grid">
+      {% for c in budget %}
+      {% set pct = [c.spent/c.budgeted*100,100]|min|int if c.budgeted > 0 else 0 %}
+      <div class="bcat" data-id="{{ c.id }}">
+        <div class="bcat-n">{{ c.name }}</div>
+        <div class="bcat-bar"><div class="bcat-fill" style="width:{{ pct }}%;background:{% if pct>90 %}var(--red){% elif pct>70 %}var(--pink){% else %}{{ c.color }}{% endif %}"></div></div>
+        <div class="bcat-vals">
+          <span style="color:var(--text)">${{ c.spent|int }}</span>
+          <span style="color:var(--dim)">/ ${{ c.budgeted|int }}</span>
+        </div>
+        <div class="bcat-edit">
+          <input type="number" placeholder="Presupuesto" value="{{ c.budgeted|int }}" onchange="saveBudget({{ c.id }},this)" min="0">
+          <input type="number" placeholder="Gastado"     value="{{ c.spent|int }}"    onchange="saveBudget({{ c.id }},this)" min="0">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- RECORDATORIOS -->
+  <div class="tile full">
+    <div class="tile-lbl">RECORDATORIOS FIJOS</div>
+    <div class="pay-rec">
+      <div class="rec-card"><div class="rc-num" style="color:var(--gold)">15</div><div><div class="rc-sub">Cada mes</div><div class="rc-info">Pagar <span style="color:var(--gold)">BBVA</span> + <span style="color:var(--purple)">Invex</span></div></div></div>
+      <div class="rec-card"><div class="rc-num" style="color:var(--blue)">30</div><div><div class="rc-sub">Cada mes</div><div class="rc-info">Pagar <span style="color:var(--blue)">HSBC</span></div></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ABONO MODAL -->
+<div class="modal-bg" id="abono-modal">
+  <div class="modal">
+    <div class="modal-title">Registrar Abono</div>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:.6rem;color:var(--dim);margin-bottom:4px">Deuda: <span id="ab-person" style="color:var(--text)"></span></div>
+      <div style="font-size:.6rem;color:var(--dim)">Restante: <span id="ab-restante" style="color:var(--gold)"></span></div>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div class="fl" style="margin-bottom:5px;">Monto a abonar (MXN)</div>
+      <input class="fi" id="ab-amount" type="number" min="0.01" step="0.01" placeholder="0.00">
+    </div>
+    <div style="margin-bottom:10px;">
+      <div class="fl" style="margin-bottom:5px;">Nota (opcional)</div>
+      <input class="fi" id="ab-note" placeholder="Ej: transferencia OXXO...">
+    </div>
+    <!-- Payment history -->
+    <div class="ab-hist" id="ab-hist-wrap" style="display:none">
+      <div style="font-size:.5rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px">Historial de abonos</div>
+      <div id="ab-hist-list"></div>
+    </div>
+    <div id="ab-err" style="color:var(--red);font-size:.6rem;min-height:14px;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeAbono()">Cancelar</button>
+      <button class="btn-a" onclick="submitAbono()">Registrar Abono</button>
+    </div>
+  </div>
+</div>
+
+
+<a href="/finanzas/consumo">Consumo Inteligente</a>
+
+{% endblock %}
+{% block scripts %}
+<script>
+let _abono = {};
+
+function openAbono(id, type, person, restante, total) {
+  _abono = {id, type};
+  document.getElementById('ab-person').textContent   = person;
+  document.getElementById('ab-restante').textContent = `$${restante.toFixed(2)} de $${total.toFixed(2)}`;
+  document.getElementById('ab-amount').value = '';
+  document.getElementById('ab-note').value   = '';
+  document.getElementById('ab-err').textContent = '';
+  document.getElementById('abono-modal').classList.add('open');
+  // Load history
+  fetch(`/finanzas/api/debt/${id}/payments`).then(r=>r.json()).then(d=>{
+    if(d.payments && d.payments.length){
+      document.getElementById('ab-hist-wrap').style.display='block';
+      document.getElementById('ab-hist-list').innerHTML = d.payments.map(p=>
+        `<div class="ab-hist-item"><span>${p.note||'—'} · ${p.paid_at.slice(0,10)}</span><span class="ab-hist-amt">+$${p.amount.toFixed(2)}</span></div>`
+      ).join('');
+    } else {
+      document.getElementById('ab-hist-wrap').style.display='none';
+    }
+  });
+  document.getElementById('ab-amount').focus();
+}
+
+function closeAbono() {
+  document.getElementById('abono-modal').classList.remove('open');
+}
+
+async function submitAbono() {
+  const amount = parseFloat(document.getElementById('ab-amount').value);
+  const note   = document.getElementById('ab-note').value;
+  if (!amount || amount <= 0) { document.getElementById('ab-err').textContent = 'Ingresa un monto válido'; return; }
+
+  const r = await fetch(`/finanzas/api/debt/${_abono.id}/abonar`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({amount, note})
+  });
+  const d = await r.json();
+  if (!d.ok) { document.getElementById('ab-err').textContent = d.error; return; }
+
+  closeAbono();
+  toast(`Abono registrado: $${amount.toFixed(2)}`, d.settled ? 'win' : 'ok');
+  if (d.settled) toast('✓ Deuda completamente saldada', 'win');
+  setTimeout(() => location.reload(), 800);
+}
+
+async function addDebt(type) {
+  const pre = type==='owe_me'?'om':'io';
+  const person  = document.getElementById(`${pre}-person`).value.trim();
+  const concept = document.getElementById(`${pre}-concept`).value.trim();
+  const amount  = document.getElementById(`${pre}-amount`).value;
+  if (!person||!concept||!amount) { toast('Completa todos los campos','err'); return; }
+  await fetch('/finanzas/api/debt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,person,concept,amount})});
+  toast('Deuda registrada'); setTimeout(()=>location.reload(),600);
+}
+
+async function settle(id, btn) {
+  await fetch(`/finanzas/api/debt/${id}/settle`,{method:'POST'});
+  btn.closest('tr').style.opacity=0; btn.closest('tr').style.transition='opacity .3s';
+  setTimeout(()=>{btn.closest('tr').remove(); toast('✓ Saldado','win');},300);
+}
+
+async function delDebt(id, btn) {
+  await fetch(`/finanzas/api/debt/${id}`,{method:'DELETE'});
+  btn.closest('tr').remove(); toast('Eliminado');
+}
+
+async function saveBudget(id, input) {
+  const bc = input.closest('.bcat');
+  const ins = bc.querySelectorAll('input[type=number]');
+  await fetch('/finanzas/api/budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,budgeted:ins[0].value,spent:ins[1].value})});
+  toast('Guardado'); setTimeout(()=>location.reload(),800);
+}
+
+async function lockFin() {
+  await fetch('/finanzas/lock',{method:'POST'});
+  window.location.href='/finanzas';
+}
+
+document.getElementById('abono-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeAbono();
+});
+document.getElementById('ab-amount').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitAbono();
+});
+</script>
+{% endblock %}

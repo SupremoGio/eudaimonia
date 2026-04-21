@@ -1,0 +1,38 @@
+{% extends "gtd_base.html" %}{% set gp='projects' %}
+{% block title %}Proyectos — PRAXIS{% endblock %}{% block topright %}PROYECTOS{% endblock %}
+{% block gtd_body %}
+<div class="pg-hd"><div><div class="pg-t">Proyectos</div><div class="pg-s">{{ projects|length }} activos</div></div></div>
+<div class="af">
+  <div class="af-lbl">NUEVO PROYECTO</div>
+  <div class="fgrid c3">
+    <div class="fg" style="grid-column:span 2"><div class="fl">Nombre *</div><input class="fi" id="pn" placeholder="Nombre del proyecto"></div>
+    <div class="fg"><div class="fl">Color</div><select class="fi" id="pc"><option value="#c5a36c">Dorado</option><option value="#a78bfa">Violeta</option><option value="#60a5fa">Azul</option><option value="#4ade80">Verde</option><option value="#f87171">Rojo</option></select></div>
+  </div>
+  <div class="fgrid"><div class="fg"><div class="fl">Objetivo (resultado esperado)</div><input class="fi" id="po" placeholder="¿Qué significa que este proyecto esté completo?"></div></div>
+  <div class="fa"><button class="btn-a" onclick="addP()">+ Crear Proyecto</button></div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;">
+{% for p in projects %}
+<div style="background:var(--card);border:1px solid var(--b);border-radius:8px;padding:16px;transition:border-color .14s;" onmouseover="this.style.borderColor='var(--b2)'" onmouseout="this.style.borderColor='var(--b)'">
+  <div style="height:3px;border-radius:100px;background:{{ p.color }};margin-bottom:12px;"></div>
+  <div style="font-family:var(--serif);font-size:1.05rem;font-style:italic;margin-bottom:4px;">{{ p.name }}</div>
+  {% if p.objective %}<div style="font-size:.62rem;color:var(--dim);margin-bottom:10px;line-height:1.4;">{{ p.objective }}</div>{% endif %}
+  <div style="font-size:.54rem;color:var(--mid);margin-bottom:8px;">{{ proj_tasks[p.id]|length }} tarea(s) pendiente(s)</div>
+  {% for t in proj_tasks[p.id][:4] %}
+  <div style="font-size:.62rem;color:var(--mid);padding:4px 0;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:5px;"><span style="width:4px;height:4px;border-radius:50%;background:var(--dim);flex-shrink:0;"></span>{{ t.title }}</div>
+  {% endfor %}
+  <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+    <button class="btn-r" onclick="delP({{ p.id }},this)">Archivar</button>
+  </div>
+</div>
+{% else %}<div class="empty-s" style="grid-column:1/-1"><i data-lucide="folder"></i><p>Sin proyectos activos</p></div>{% endfor %}
+</div>
+{% endblock %}
+{% block scripts %}<script>
+async function addP(){
+  const n=document.getElementById('pn').value.trim();if(!n){toast('Añade un nombre','err');return;}
+  await fetch('/gtd/api/project',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n,objective:document.getElementById('po').value,color:document.getElementById('pc').value})});
+  toast('Proyecto creado ✓');setTimeout(()=>location.reload(),500);
+}
+async function delP(id,btn){await fetch(`/gtd/api/project/${id}`,{method:'DELETE'});btn.closest('div[style]').remove();toast('Archivado');}
+</script>{% endblock %}

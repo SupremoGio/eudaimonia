@@ -1,0 +1,171 @@
+{% extends "tw/layout.html" %}{% set pg='idiomas' %}
+{% block title %}Cosmopolitismo — Eudaimonia{% endblock %}{% block topright %}COSMOPOLITISMO{% endblock %}
+{% block content %}
+<style>
+.id-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:1200px;}
+.full{grid-column:1/-1;}
+.w-card{background:var(--card);border:1px solid var(--b);border-radius:8px;padding:18px 20px;}
+.wh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.w-ph{font-size:.5rem;color:var(--dim);margin-bottom:2px;}
+.w-w{font-family:var(--serif);font-size:1.6rem;font-style:italic;line-height:1;margin-bottom:6px;}
+.w-m{font-size:.66rem;color:var(--mid);line-height:1.5;margin-bottom:9px;}
+.w-ex{font-size:.62rem;color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:8px;line-height:1.5;margin-bottom:9px;}
+.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:.52rem;color:var(--blue);background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);padding:2px 8px;border-radius:100px;}
+.rb{background:none;border:1px solid var(--b);color:var(--dim);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .17s;}
+.rb:hover{border-color:var(--gold);color:var(--gold);}
+.rb svg{width:11px;height:11px;}
+/* JOURNAL */
+.jtxt{width:100%;background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px;color:var(--text);font-family:var(--mono);font-size:.72rem;outline:none;resize:vertical;min-height:100px;transition:border-color .16s;line-height:1.6;}
+.jtxt:focus{border-color:var(--gold);}
+.j-meta{display:flex;gap:8px;margin-bottom:10px;align-items:end;}
+.fb-box{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px;margin-top:10px;display:none;}
+.fb-box.on{display:block;}
+.fb-score{font-family:var(--serif);font-size:1.8rem;color:var(--gold);line-height:1;margin-bottom:4px;}
+.fb-grade{font-size:.6rem;color:var(--mid);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.fb-item{font-size:.64rem;color:var(--mid);padding:5px 0;border-bottom:1px solid var(--b);}
+.fb-item:last-child{border-bottom:none;}
+.fb-issue{color:var(--red);font-weight:400;}
+.fb-sug{color:var(--green);}
+/* TEST RESULTS */
+.test-table{width:100%;border-collapse:collapse;}
+.test-table th{font-size:.46rem;color:var(--dim);letter-spacing:.13em;text-transform:uppercase;padding:0 7px 9px;text-align:left;border-bottom:1px solid var(--b);}
+.test-table td{padding:9px 7px;border-bottom:1px solid var(--b);font-size:.66rem;color:var(--mid);}
+.test-table tr:last-child td{border-bottom:none;}
+.score-badge{font-family:var(--serif);font-size:1rem;color:var(--gold);}
+.test-type{font-size:.5rem;padding:2px 7px;border-radius:100px;letter-spacing:.08em;text-transform:uppercase;}
+.tt-ielts{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);color:var(--blue);}
+.tt-dalf{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:var(--purple);}
+.tt-other{background:var(--b);color:var(--dim);}
+.jentry{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:11px 13px;margin-bottom:7px;}
+.je-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.je-date{font-size:.5rem;color:var(--dim);letter-spacing:.09em;}
+.je-lang{font-size:.48rem;color:var(--gold);background:var(--gold-d);padding:2px 7px;border-radius:100px;}
+.je-text{font-size:.67rem;color:var(--mid);line-height:1.5;}
+</style>
+<div class="id-grid">
+
+  <!-- WORD OF DAY -->
+  <div class="w-card">
+    <div class="wh"><div class="tile-lbl" style="margin:0">WORD OF THE DAY</div><button class="rb" onclick="rw()"><i data-lucide="refresh-cw"></i></button></div>
+    <div id="wb" style="transition:opacity .24s">
+      <div class="w-ph" id="wph">{{ word.phonetic }}</div>
+      <div class="w-w"  id="ww">{{ word.word }}</div>
+      <div class="w-m"  id="wm">{{ word.meaning }}</div>
+      <div class="w-ex" id="we">"{{ word.example }}"</div>
+      <span class="w-fr" id="wf">🇫🇷 {{ word.french }}</span>
+    </div>
+  </div>
+
+  <!-- TEST TRACKING -->
+  <div class="tile">
+    <div class="tile-lbl">TEST TRACKING — IELTS / DALF</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:7px;margin-bottom:14px;align-items:end;">
+      <div><div class="fl">Tipo</div><select class="fi" id="tt-type"><option value="IELTS">IELTS</option><option value="DALF C1">DALF C1</option><option value="DALF C2">DALF C2</option><option value="DELF B2">DELF B2</option><option value="TOEFL">TOEFL</option><option value="Otro">Otro</option></select></div>
+      <div><div class="fl">Score</div><input class="fi" id="tt-score" placeholder="Ej: 7.5"></div>
+      <div><div class="fl">Fecha</div><input class="fi" type="date" id="tt-date" value="{{ today }}"></div>
+      <button class="btn-a" onclick="addTest()">+ ADD</button>
+    </div>
+    <table class="test-table">
+      <thead><tr><th>Tipo</th><th>Score</th><th>Fecha</th><th>Notas</th><th></th></tr></thead>
+      <tbody id="test-tbody">
+        {% for t in tests %}
+        <tr data-id="{{ t.id }}">
+          <td><span class="test-type tt-{{ t.test_type.split()[0].lower() }}">{{ t.test_type }}</span></td>
+          <td class="score-badge">{{ t.score }}</td>
+          <td>{{ t.test_date }}</td>
+          <td style="font-size:.6rem">{{ t.notes or '—' }}</td>
+          <td><button class="btn-r" onclick="delTest({{ t.id }},this)">✕</button></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" style="text-align:center;padding:18px;color:var(--dim);font-size:.62rem;">Sin resultados registrados</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- JOURNAL -->
+  <div class="tile full">
+    <div class="tile-lbl">WRITING JOURNAL — PRÁCTICA DE IDIOMAS</div>
+    <div class="j-meta">
+      <div style="flex:1"><div class="fl">Idioma</div>
+        <select class="fi" id="j-lang"><option value="English">English</option><option value="Français">Français</option><option value="Español">Español</option><option value="Deutsch">Deutsch</option></select>
+      </div>
+      <button class="btn-g" onclick="getFeedback()" style="align-self:flex-end;">🔍 Feedback automático</button>
+      <button class="btn-a" onclick="saveJournal()" style="align-self:flex-end;">Guardar entrada</button>
+    </div>
+    <textarea class="jtxt" id="j-text" placeholder="Escribe aquí en el idioma que estás practicando. Puedes pedir feedback automático antes de guardar..."></textarea>
+    <div class="fb-box" id="fb-box">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div><div class="fb-score" id="fb-score">—</div><div class="fb-grade" id="fb-grade">—</div></div>
+        <div style="font-size:.52rem;color:var(--dim);text-align:right">Feedback simulado<br>LanguageTool API ready</div>
+      </div>
+      <div id="fb-corrections"></div>
+    </div>
+    <!-- Previous entries -->
+    <div style="margin-top:18px;border-top:1px solid var(--b);padding-top:14px;">
+      <div class="tile-lbl">ENTRADAS ANTERIORES</div>
+      <div id="j-entries">
+        {% for e in journal %}
+        <div class="jentry" data-id="{{ e.id }}">
+          <div class="je-header">
+            <span class="je-date">{{ e.entry_date }}</span>
+            <div style="display:flex;align-items:center;gap:7px;">
+              <span class="je-lang">{{ e.language }}</span>
+              <button class="btn-r" onclick="delJournal({{e.id}},this)" style="padding:2px 7px;font-size:.48rem;">✕</button>
+            </div>
+          </div>
+          <div class="je-text">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</div>
+        </div>
+        {% else %}
+        <div style="font-size:.64rem;color:var(--dim);padding:12px 0;">Sin entradas aún — escribe tu primera</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+{% block scripts %}<script>
+async function rw(){
+  const d=await(await fetch('/idiomas/api/word/refresh')).json();
+  const b=document.getElementById('wb');b.style.opacity=0;
+  setTimeout(()=>{document.getElementById('wph').textContent=d.phonetic;document.getElementById('ww').textContent=d.word;document.getElementById('wm').textContent=d.meaning;document.getElementById('we').textContent=`"${d.example}"`;document.getElementById('wf').textContent=`🇫🇷 ${d.french}`;b.style.opacity=1;},240);
+}
+async function addTest(){
+  const type=document.getElementById('tt-type').value,score=document.getElementById('tt-score').value.trim(),dt=document.getElementById('tt-date').value;
+  if(!score){toast('Ingresa el score','err');return;}
+  const r=await fetch('/idiomas/api/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({test_type:type,score,test_date:dt})});
+  const d=await r.json();
+  if(d.ok){toast('Resultado guardado ✓');setTimeout(()=>location.reload(),500);}
+}
+async function delTest(id,btn){
+  await fetch(`/idiomas/api/test/${id}`,{method:'DELETE'});
+  btn.closest('tr').remove();toast('Eliminado');
+}
+async function getFeedback(){
+  const text=document.getElementById('j-text').value.trim();
+  if(!text){toast('Escribe algo primero','err');return;}
+  const r=await fetch('/idiomas/api/language/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,language:'en-US'})});
+  const d=await r.json();
+  document.getElementById('fb-score').textContent=d.score+' pts';
+  document.getElementById('fb-grade').textContent=`Nivel estimado: ${d.grade} · ${d.word_count} palabras`;
+  const corr=document.getElementById('fb-corrections');
+  if(d.corrections.length){
+    corr.innerHTML=d.corrections.map(c=>`<div class="fb-item">❌ <span class="fb-issue">"${c.issue}"</span> → <span class="fb-sug">"${c.suggestion}"</span> — ${c.message}</div>`).join('');
+  } else {
+    corr.innerHTML='<div class="fb-item" style="color:var(--green)">✓ Sin errores detectados — buen trabajo</div>';
+  }
+  document.getElementById('fb-box').classList.add('on');
+}
+async function saveJournal(){
+  const text=document.getElementById('j-text').value.trim();
+  if(!text){toast('Escribe algo primero','err');return;}
+  const r=await fetch('/idiomas/api/journal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({language:document.getElementById('j-lang').value,entry_text:text})});
+  const d=await r.json();
+  if(d.ok){toast('Entrada guardada ✓','win');document.getElementById('j-text').value='';document.getElementById('fb-box').classList.remove('on');setTimeout(()=>location.reload(),500);}
+}
+async function delJournal(id,btn){
+  await fetch(`/idiomas/api/journal/${id}`,{method:'DELETE'});
+  btn.closest('.jentry').remove();toast('Eliminado');
+}
+</script>{% endblock %}
