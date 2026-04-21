@@ -4,20 +4,33 @@ from datetime import date, timedelta
 TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 
+import sqlite3 as _sqlite3
+_LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
+
 if TURSO_URL and TURSO_TOKEN:
-    import libsql_experimental as _db_mod
-    _REPLICA = "/tmp/pipeline_replica.db"
-    def get_db():
-        conn = _db_mod.connect(_REPLICA, sync_url=TURSO_URL, auth_token=TURSO_TOKEN)
-        conn.sync()
-        conn.row_factory = _db_mod.Row
-        return conn
+    try:
+        import libsql_experimental as _libsql
+        # Direct HTTP connection — no embedded replica, no sync handshake
+        def get_db():
+            conn = _libsql.connect(TURSO_URL, auth_token=TURSO_TOKEN)
+            conn.row_factory = _libsql.Row
+            return conn
+        # Test connection at startup
+        _test = get_db()
+        _test.execute("SELECT 1").fetchone()
+        _test.close()
+        print("[DB] Turso cloud connected ✓")
+    except Exception as e:
+        print(f"[DB] Turso failed ({e}), falling back to local SQLite")
+        def get_db():
+            conn = _sqlite3.connect(_LOCAL)
+            conn.row_factory = _sqlite3.Row
+            return conn
 else:
-    import sqlite3 as _db_mod
-    _LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
+    print("[DB] No Turso env vars — using local SQLite")
     def get_db():
-        conn = _db_mod.connect(_LOCAL)
-        conn.row_factory = _db_mod.Row
+        conn = _sqlite3.connect(_LOCAL)
+        conn.row_factory = _sqlite3.Row
         return conn
 
 
