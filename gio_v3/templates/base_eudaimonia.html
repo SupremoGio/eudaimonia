@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>EUDAIMONIA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow-x: hidden; }
+    body { background: #09070F; color: #F2EDE0; }
+    ::-webkit-scrollbar { display: none; }
+    * { scrollbar-width: none; }
+
+    @keyframes euFadeIn  { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes euScaleIn { from { opacity: 0; transform: scale(0.85) } to { opacity: 1; transform: scale(1) } }
+    @keyframes euBurst {
+      0%   { opacity: 1; transform: translate(0, 0) scale(1) }
+      100% { opacity: 0; transform: translate(var(--dx, 28px), var(--dy, -28px)) scale(0) }
+    }
+
+    input, button { font-family: inherit; }
+    input::placeholder { color: #6A6050; }
+    button { cursor: pointer; }
+
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Server data injected by Flask -->
+  <script>
+    window.__EUDAIMONIA_DATA__ = {{ eudaimonia_data | tojson | safe }};
+  </script>
+
+  <!-- React 18 -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Babel standalone (transforms JSX at runtime) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- EUDAIMONIA data layer (plain JS, reads from __EUDAIMONIA_DATA__ at end of file) -->
+  <script src="{{ url_for('static', filename='js/eu-data.js') }}"></script>
+
+  <!-- EUDAIMONIA UI components -->
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-components.jsx') }}"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-screens.jsx') }}"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-app.jsx') }}"></script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>
