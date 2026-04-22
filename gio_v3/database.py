@@ -5,8 +5,13 @@ TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 
 import sqlite3 as _sqlite3
-_LOCAL     = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
-_LOCAL_TMP = "/tmp/eudaimonia.db"   # fast local cache on Render
+
+# Priority: DATABASE_PATH env var (Railway Volume) > sibling pipeline.db
+_LOCAL     = os.environ.get(
+    "DATABASE_PATH",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
+)
+_LOCAL_TMP = "/tmp/eudaimonia.db"   # fast local cache when Turso is active
 
 # ── Turso HTTP (writes only) ──────────────────────────────────────────────────
 
@@ -692,3 +697,40 @@ def get_gtd_stats():
     return dict(pts_today=pts_today, pts_week=pts_week, pts_month=pts_month, pts_total=pts_total,
                 done_today=done_today, inbox_n=inbox_n, next_n=next_n, proj_n=proj_n,
                 streak=streak, level=level, level_name=level_name, level_pct=pts_total % 100)
+
+
+def get_db_status():
+    """Diagnostic snapshot: persistence mode, table row counts, last activity."""
+    status = {
+        "mode":        "hybrid (SQLite + Turso)" if _USE_HYBRID else "local SQLite only",
+        "turso_url":   TURSO_URL[:40] + "..." if TURSO_URL else "NOT SET",
+        "db_path":     _DB_PATH,
+        "db_exists":   os.path.exists(_DB_PATH),
+        "tables":      {},
+        "last_activity": None,
+        "total_xp":    0,
+    }
+    try:
+        with get_db() as db:
+            for tbl in ["activity_logs", "gtd_tasks", "priorities", "xp_ledger",
+                        "coins_ledger", "gtd_projects", "lang_journal", "meal_plan",
+                        "budget_items", "lista_prioridades", "achievements"]:
+                try:
+                    n = db.execute(f"SELECT COUNT(*) as c FROM {tbl}").fetchone()["c"]
+                    status["tables"][tbl] = n
+                except Exception:
+                    status["tables"][tbl] = "?"
+            try:
+                status["total_xp"] = db.execute(
+                    "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger"
+                ).fetchone()["s"]
+                last = db.execute(
+                    "SELECT date, activity_key FROM activity_logs ORDER BY id DESC LIMIT 1"
+                ).fetchone()
+                if last:
+                    status["last_activity"] = f"{last['date']} — {last['activity_key']}"
+            except Exception:
+                pass
+    except Exception as e:
+        status["error"] = str(e)
+    return status

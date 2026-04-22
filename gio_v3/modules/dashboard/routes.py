@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, jsonify
-from database import get_db, get_gtd_stats, get_activity_streak
+from database import get_db, get_gtd_stats, get_activity_streak, get_db_status
 from data import get_quote_of_day, get_word_of_day, ACTIVITIES
 from datetime import date, timedelta
 
@@ -116,3 +116,8 @@ def eudaimonia_v2():
 def api_xp():
     from modules.gamification.engine import get_gamification_stats
     return jsonify(get_gamification_stats())
+
+
+@dashboard_bp.route('/api/db-status')
+def api_db_status():
+    return jsonify(get_db_status())
