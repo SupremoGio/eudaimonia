@@ -20,7 +20,22 @@
       "Bash(pip list *)",
       "PowerShell(pip list --format=freeze 2>&1)",
       "PowerShell(head -30)",
-      "PowerShell(python -c \"import importlib.metadata as m; [print\\(f'{p}=={m.version\\(p\\)}'\\) for p in ['flask','werkzeug','jinja2','click','markupsafe','itsdangerous']]\")"
+      "PowerShell(python -c \"import importlib.metadata as m; [print\\(f'{p}=={m.version\\(p\\)}'\\) for p in ['flask','werkzeug','jinja2','click','markupsafe','itsdangerous']]\")",
+      "WebFetch(domain:asana.com)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'fix: usar url_for para logo.png en lugar de ruta hardcodeada *)",
+      "Bash(sqlite3 pipeline.db ' *)",
+      "Bash(git commit *)",
+      "Bash(python -c \"from app import create_app; app = create_app\\(\\); print\\('App created OK'\\)\")",
+      "Bash(curl -s http://localhost:5000/)",
+      "Bash(python -c \"import sys; body=sys.stdin.read\\(\\); print\\('EU data injected:', '__EUDAIMONIA_DATA__' in body\\); print\\('react loaded:', 'react@18' in body\\)\")",
+      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" status)",
+      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/templates/finanzas/budget.html gio_v3/templates/finanzas/consumo.html gio_v3/templates/finanzas/index.html gio_v3/templates/finanzas/prioridades.html gio_v3/templates/nutricion/index.html gio_v3/templates/sabado/index.html gio_v3/templates/eu/)",
+      "Bash(git -C c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO commit -m ' *)",
+      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" push origin main)",
+      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/templates/eu/layout_sub.html gio_v3/templates/eu/layout.html gio_v3/templates/gtd_base.html gio_v3/templates/finanzas/index.html gio_v3/templates/finanzas/budget.html gio_v3/templates/finanzas/prioridades.html gio_v3/templates/finanzas/consumo.html gio_v3/templates/nutricion/index.html gio_v3/templates/sabado/index.html)"
     ]
   }
 }
