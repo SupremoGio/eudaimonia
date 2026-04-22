@@ -15,7 +15,7 @@ function fmtDate() {
 // ═══════════════════════════════════════════════════════════
 // HOME SCREEN
 // ═══════════════════════════════════════════════════════════
-function HomeScreen({ appState, dispatch }) {
+function HomeScreen({ appState, dispatch, isDesktop }) {
   const { level, xp, xpNext, modules } = appState;
   const lv = EU.levels[level - 1];
   const xpPct = xpNext ? xp / xpNext : 1;
@@ -23,7 +23,7 @@ function HomeScreen({ appState, dispatch }) {
   const doneCount = modules.filter(m => m.done).length;
 
   return (
-    <div style={{paddingBottom:100, minHeight:'100vh'}}>
+    <div style={{paddingBottom: isDesktop ? 48 : 100, minHeight:'100vh'}}>
       {/* Sticky header */}
       <div style={{
         position:'sticky',top:0,zIndex:50,
@@ -178,13 +178,14 @@ function HomeScreen({ appState, dispatch }) {
 // ═══════════════════════════════════════════════════════════
 // COMMAND CENTER
 // ═══════════════════════════════════════════════════════════
-function CommandCenterScreen({ appState, dispatch }) {
+function CommandCenterScreen({ appState, dispatch, isDesktop }) {
   const { modules } = appState;
   const doneCount = modules.filter(m => m.done).length;
+  const cols = isDesktop ? '1fr 1fr 1fr' : '1fr 1fr';
 
   return (
-    <div style={{paddingBottom:100,minHeight:'100vh'}}>
-      <div style={{padding:'16px 20px 20px'}}>
+    <div style={{paddingBottom: isDesktop ? 48 : 100, minHeight:'100vh'}}>
+      <div style={{padding: isDesktop ? '28px 24px 20px' : '16px 20px 20px'}}>
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.2em',
           color:C.gold,textTransform:'uppercase',opacity:0.6,marginBottom:4}}>
           COMMAND CENTER
@@ -209,7 +210,7 @@ function CommandCenterScreen({ appState, dispatch }) {
         </div>
       </div>
 
-      <div style={{padding:'0 16px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+      <div style={{padding: isDesktop ? '0 24px' : '0 16px', display:'grid', gridTemplateColumns:cols, gap:10}}>
         {modules.map(mod => (
           <ModuleCard key={mod.id} mod={mod}
             onClick={() => dispatch({type:'OPEN_MODULE',id:mod.id})}/>
@@ -241,7 +242,7 @@ function CommandCenterScreen({ appState, dispatch }) {
 // ═══════════════════════════════════════════════════════════
 // MODULE DETAIL
 // ═══════════════════════════════════════════════════════════
-function ModuleDetailScreen({ mod, appState, dispatch }) {
+function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
   const [habits, setHabits] = useState(EU.moduleHabits[mod.id] || []);
   const acc = `oklch(65% 0.15 ${mod.hue})`;
   const accDeep = `oklch(14% 0.04 ${mod.hue})`;
@@ -257,10 +258,10 @@ function ModuleDetailScreen({ mod, appState, dispatch }) {
   const doneCnt = habits.filter(h => h.done).length;
 
   return (
-    <div style={{minHeight:'100vh',paddingBottom:100}}>
+    <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
       {/* Hero header */}
       <div style={{
-        padding:'16px 20px 24px',
+        padding: isDesktop ? '28px 24px 28px' : '16px 20px 24px',
         background:`linear-gradient(170deg,${accDeep} 0%,rgba(9,7,15,0) 100%)`,
         borderBottom:`1px solid ${accMid}`,
       }}>
@@ -296,7 +297,7 @@ function ModuleDetailScreen({ mod, appState, dispatch }) {
         </div>
       </div>
 
-      <div style={{padding:'20px 16px 0'}}>
+      <div style={{padding: isDesktop ? '24px 24px 0' : '20px 16px 0'}}>
         {/* Habits */}
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:C.textMuted,textTransform:'uppercase',marginBottom:2}}>Práctica Diaria</div>
@@ -414,7 +415,7 @@ function ModuleExtra({ id, acc }) {
 // ═══════════════════════════════════════════════════════════
 // GTD SCREEN
 // ═══════════════════════════════════════════════════════════
-function GTDScreen({ appState, dispatch }) {
+function GTDScreen({ appState, dispatch, isDesktop }) {
   const [tab, setTab] = useState('inbox');
   const [inbox, setInbox] = useState(EU.gtd.inbox);
   const [newItem, setNewItem] = useState('');
@@ -429,8 +430,8 @@ function GTDScreen({ appState, dispatch }) {
                 {id:'contexts',label:'Contextos'},{id:'review',label:'Revisión'}];
 
   return (
-    <div style={{minHeight:'100vh',paddingBottom:100}}>
-      <div style={{padding:'16px 20px 0'}}>
+    <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
+      <div style={{padding: isDesktop ? '28px 24px 0' : '16px 20px 0'}}>
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.2em',
           color:C.gold,textTransform:'uppercase',opacity:0.6,marginBottom:4}}>MÉTODO GTD</div>
         <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:28,
@@ -449,7 +450,7 @@ function GTDScreen({ appState, dispatch }) {
         </div>
       </div>
 
-      <div style={{padding:'16px 16px 0'}}>
+      <div style={{padding: isDesktop ? '16px 24px 0' : '16px 16px 0'}}>
         {tab === 'inbox' && (
           <div>
             <div style={{display:'flex',gap:8,marginBottom:14,
@@ -553,14 +554,14 @@ function GTDScreen({ appState, dispatch }) {
 // ═══════════════════════════════════════════════════════════
 // PROFILE SCREEN
 // ═══════════════════════════════════════════════════════════
-function ProfileScreen({ appState }) {
+function ProfileScreen({ appState, isDesktop }) {
   const { level, xp, xpNext, totalXP, modules } = appState;
   const lv = EU.levels[level - 1];
   const xpPct = xpNext ? xp / xpNext : 1;
 
   return (
-    <div style={{minHeight:'100vh',paddingBottom:100}}>
-      <div style={{padding:'16px 20px 0'}}>
+    <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
+      <div style={{padding: isDesktop ? '28px 24px 0' : '16px 20px 0'}}>
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.2em',
           color:C.gold,textTransform:'uppercase',opacity:0.6,marginBottom:4}}>ΑΥΤΟΣ</div>
         <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:28,
@@ -588,7 +589,7 @@ function ProfileScreen({ appState }) {
       </div>
 
       {/* Stats */}
-      <div style={{padding:'0 16px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:20}}>
+      <div style={{padding: isDesktop ? '0 24px' : '0 16px', display:'grid', gridTemplateColumns: isDesktop ? '1fr 1fr 1fr 1fr' : '1fr 1fr', gap:8, marginBottom:20}}>
         {[
           {label:'XP Total',      val: totalXP.toLocaleString()},
           {label:'Racha Mayor',   val:'33 días'},
@@ -605,7 +606,7 @@ function ProfileScreen({ appState }) {
       </div>
 
       {/* Level path */}
-      <div style={{padding:'0 16px'}}>
+      <div style={{padding: isDesktop ? '0 24px' : '0 16px'}}>
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:C.textMuted,textTransform:'uppercase',marginBottom:12}}>Camino al Eudaimón</div>
         {EU.levels.map(lv => (
