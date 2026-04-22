@@ -148,7 +148,8 @@ ACTIVITIES = {
     # Finanzas
     "registrar_gastos":  {"label": "Registrar gastos",                   "cat": "Finanzas",      "pts": 2},
     "finanzas_udemy":    {"label": "Lección finanzas (Udemy)",           "cat": "Finanzas",      "pts": 2},
-    "ahorrar":  {"label": "Ahorrar dinero al mes",                   "cat": "Finanzas",      "pts": 5   },
+    "ahorrar":     {"label": "Ahorrar dinero al mes",                 "cat": "Finanzas",      "pts": 5   },
+    "lavar_carro": {"label": "Lavar carro",                          "cat": "Orden",         "pts": 3   },
 
 }
 

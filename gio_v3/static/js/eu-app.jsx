@@ -124,21 +124,31 @@ function SideNav({ active, onChange }) {
 
 // ── App ───────────────────────────────────────────────────
 function App() {
-  const [state, dispatch] = useReducer(reducer, null, () => loadState() || initial);
+  const [state, dispatch] = useReducer(reducer, null, () => {
+    const saved = loadState();
+    // Always use fresh server data for modules and clear transient state
+    return saved
+      ? { ...saved, modules: window.EU.modules, openModuleId: null }
+      : initial;
+  });
   const [tab, setTab] = useState('home');
   const isDesktop = useIsDesktop();
 
   useEffect(() => {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    // Don't persist transient UI state — always start fresh on reload
+    const { _tab, openModuleId, ...toSave } = state;
+    localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
   }, [state]);
-
-  useEffect(() => {
-    if (state._tab && state._tab !== tab) { setTab(state._tab); }
-  }, [state._tab]);
 
   const appDispatch = (action) => {
     if (action.type === 'SET_TAB') setTab(action.tab);
     dispatch(action);
+  };
+
+  // Closing a module must happen whenever the user switches tabs
+  const handleTabChange = (id) => {
+    dispatch({ type: 'CLOSE_MODULE' });
+    setTab(id);
   };
 
   const props = { appState: state, dispatch: appDispatch, isDesktop };
@@ -156,7 +166,7 @@ function App() {
   if (isDesktop) {
     return (
       <div style={{display:'flex', minHeight:'100vh', background:C.deep}}>
-        <SideNav active={tab} onChange={setTab} />
+        <SideNav active={tab} onChange={handleTabChange} />
         <div style={{marginLeft:210, flex:1, minHeight:'100vh'}}>
           <div style={{maxWidth:900, margin:'0 auto', padding:'0 8px'}}>
             {screen}
@@ -179,7 +189,7 @@ function App() {
       {state.leveledUp && (
         <LevelUpModal level={state.level} onClose={() => dispatch({type:'CLEAR_LEVELUP'})} />
       )}
-      {!openMod && <BottomNav active={tab} onChange={setTab} />}
+      {!openMod && <BottomNav active={tab} onChange={handleTabChange} />}
     </div>
   );
 }

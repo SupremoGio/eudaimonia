@@ -98,21 +98,25 @@
 {% block scripts %}<script>
 async function addT(st){
   const t=document.getElementById('tt').value.trim();
-  if(!t){toast('Añade un título','err');return;}
+  if(!t){toast('Añade un título');return;}
   const mins=parseInt(document.getElementById('tmins').value)||0;
-  await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      title:t, status:st,
-      priority:document.getElementById('tp').value,
-      project_id:document.getElementById('tpj').value||null,
-      due_date:document.getElementById('td').value,
-      context:document.getElementById('tctx').value,
-      estimated_mins:mins,
-      energy_level:document.getElementById('teng').value
-    })});
-  if(mins>0 && mins<=2) toast('⏱ Regla 2 min: ¡considera hacerlo ya!','ok');
-  else toast('Añadido ✓');
-  setTimeout(()=>location.reload(),600);
+  try{
+    const r=await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        title:t, status:st,
+        priority:document.getElementById('tp').value,
+        project_id:document.getElementById('tpj').value||null,
+        due_date:document.getElementById('td').value,
+        context:document.getElementById('tctx').value,
+        estimated_mins:mins,
+        energy_level:document.getElementById('teng').value
+      })});
+    const d=await r.json();
+    if(!d.ok){toast('Error al guardar: '+(d.error||r.status));return;}
+    if(mins>0&&mins<=2) toast('⏱ Regla 2 min: ¡hazlo ya!');
+    else toast('Añadido ✓');
+    setTimeout(()=>location.reload(),600);
+  }catch(e){toast('Error de red: '+e.message);}
 }
 async function cTask(id,dot){
   const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});

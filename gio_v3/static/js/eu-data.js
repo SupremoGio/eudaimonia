@@ -42,10 +42,9 @@ window.EU = {
   submodules: {
     hegemonikon: [
       { name:'Nutrición', icon:'🥗', route:'/nutricion' },
-      { name:'Perfil',    icon:'👤', route:'/perfil'    },
     ],
     oikonomia: [
-      { name:'Finanzas',    icon:'💰', route:'/finanzas'              },
+      { name:'Balance',     icon:'💰', route:'/finanzas'              },
       { name:'Presupuesto', icon:'📊', route:'/finanzas/budget'       },
       { name:'Wishlist',    icon:'⭐', route:'/finanzas/prioridades'  },
       { name:'Consumo',     icon:'🛒', route:'/finanzas/consumo'      },

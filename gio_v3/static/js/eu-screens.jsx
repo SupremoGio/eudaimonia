@@ -274,18 +274,6 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:11,color:C.textMuted,marginTop:3}}>
           {mod.desc}
         </div>
-        <div style={{display:'flex',gap:24,marginTop:16}}>
-          {[
-            {label:'Racha',  val:`${mod.streak}d`},
-            {label:'Estado', val: mod.done ? '✓ Hecho' : 'Pendiente'},
-          ].map(s => (
-            <div key={s.label}>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
-                color:C.textMuted,letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:2}}>{s.label}</div>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:acc}}>{s.val}</div>
-            </div>
-          ))}
-        </div>
       </div>
 
       <div style={{padding: isDesktop ? '24px 24px 0' : '20px 16px 0'}}>
