@@ -429,12 +429,13 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
   const [newItem, setNewItem] = useState('');
 
   const logActivity = (key) => {
-    // Update local state and persist in-memory so tab switches don't reset the view
-    setActs(prev => {
-      const updated = prev.map(a => a.key === key ? {...a, done: !a.done} : a);
-      window.EU._server.activities = updated;
-      return updated;
-    });
+    // Compute toggle synchronously — must happen before any async work
+    // so navigating away immediately still reads the correct state on remount
+    const source = window.EU._server.activities || acts;
+    const updated = source.map(a => a.key === key ? {...a, done: !a.done} : a);
+    window.EU._server.activities = updated;  // update in-memory source of truth NOW
+    setActs(updated);
+
     fetch('/actividades/api/activity/log', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({key}),
