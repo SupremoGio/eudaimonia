@@ -35,7 +35,9 @@
       "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/templates/finanzas/budget.html gio_v3/templates/finanzas/consumo.html gio_v3/templates/finanzas/index.html gio_v3/templates/finanzas/prioridades.html gio_v3/templates/nutricion/index.html gio_v3/templates/sabado/index.html gio_v3/templates/eu/)",
       "Bash(git -C c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO commit -m ' *)",
       "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" push origin main)",
-      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/templates/eu/layout_sub.html gio_v3/templates/eu/layout.html gio_v3/templates/gtd_base.html gio_v3/templates/finanzas/index.html gio_v3/templates/finanzas/budget.html gio_v3/templates/finanzas/prioridades.html gio_v3/templates/finanzas/consumo.html gio_v3/templates/nutricion/index.html gio_v3/templates/sabado/index.html)"
+      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/templates/eu/layout_sub.html gio_v3/templates/eu/layout.html gio_v3/templates/gtd_base.html gio_v3/templates/finanzas/index.html gio_v3/templates/finanzas/budget.html gio_v3/templates/finanzas/prioridades.html gio_v3/templates/finanzas/consumo.html gio_v3/templates/nutricion/index.html gio_v3/templates/sabado/index.html)",
+      "Bash(git -C c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO add gio_v3/static/js/eu-app.jsx gio_v3/static/js/eu-data.js gio_v3/static/js/eu-screens.jsx gio_v3/templates/idiomas/index.html gio_v3/templates/eu/layout.html gio_v3/templates/base_eudaimonia.html gio_v3/templates/gtd/inbox.html gio_v3/data.py)",
+      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/static/js/eu-screens.jsx)"
     ]
   }
 }

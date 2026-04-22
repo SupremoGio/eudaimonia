@@ -15,7 +15,7 @@ _LOCAL_TMP = "/tmp/eudaimonia.db"   # fast local cache when Turso is active
 
 # ── Turso HTTP (writes only) ──────────────────────────────────────────────────
 
-_http_conn = None
+_tls = threading.local()   # thread-local storage for HTTP connections
 
 def _to_arg(v):
     if v is None:            return {"type": "null"}
@@ -34,7 +34,6 @@ def _from_cell(cell):
     return v
 
 def _turso_pipeline(host, token, stmts):
-    global _http_conn
     reqs = [{"type": "execute", "stmt": s} for s in stmts]
     reqs.append({"type": "close"})
     body = _json.dumps({"requests": reqs}).encode()
@@ -42,16 +41,19 @@ def _turso_pipeline(host, token, stmts):
             "Content-Type": "application/json", "Connection": "keep-alive"}
     for attempt in range(3):
         try:
-            if _http_conn is None:
-                _http_conn = http.client.HTTPSConnection(host, timeout=10)
-            _http_conn.request("POST", "/v2/pipeline", body=body, headers=hdrs)
-            resp = _http_conn.getresponse()
+            # Use a thread-local connection — avoids race conditions between workers
+            conn = getattr(_tls, 'conn', None)
+            if conn is None:
+                conn = http.client.HTTPSConnection(host, timeout=15)
+                _tls.conn = conn
+            conn.request("POST", "/v2/pipeline", body=body, headers=hdrs)
+            resp = conn.getresponse()
             data = resp.read()
             if resp.status != 200:
                 raise Exception(f"HTTP {resp.status}: {data[:100]}")
             return _json.loads(data.decode())
         except Exception as e:
-            _http_conn = None
+            _tls.conn = None   # reset only this thread's connection
             if attempt == 2:
                 raise
 
