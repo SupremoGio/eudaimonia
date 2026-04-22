@@ -116,10 +116,34 @@ window.EU = {
   },
 };
 
-// Override with server-injected data when Flask serves this via /v2
+// Override with server-injected data when Flask serves this
 ;(function () {
   var d = window.__EUDAIMONIA_DATA__;
   if (!d) return;
+
+  // Módulos con streak y done reales
   if (Array.isArray(d.modules))   window.EU.modules   = d.modules;
+
+  // GTD inbox real
   if (Array.isArray(d.gtd_inbox)) window.EU.gtd.inbox = d.gtd_inbox;
+
+  // Hábitos done reales (basados en activity_logs de hoy)
+  if (d.habits_done) {
+    Object.keys(d.habits_done).forEach(function(modId) {
+      var doneList = d.habits_done[modId];
+      if (window.EU.moduleHabits[modId]) {
+        window.EU.moduleHabits[modId] = window.EU.moduleHabits[modId].map(function(h, i) {
+          return Object.assign({}, h, { done: doneList[i] !== undefined ? doneList[i] : h.done });
+        });
+      }
+    });
+  }
+
+  // Datos reales disponibles globalmente para los screens
+  window.EU._server = {
+    financial: d.financial || {},
+    body:      d.body      || {},
+    langStats: d.lang_stats || [],
+    xpToday:   d.xp_today  || 0,
+  };
 })();

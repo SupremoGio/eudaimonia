@@ -265,12 +265,24 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
         background:`linear-gradient(170deg,${accDeep} 0%,rgba(9,7,15,0) 100%)`,
         borderBottom:`1px solid ${accMid}`,
       }}>
-        <button onClick={() => dispatch({type:'CLOSE_MODULE'})}
-          style={{background:'none',border:'none',color:C.textMuted,
-            fontFamily:'DM Sans,sans-serif',fontSize:12,cursor:'pointer',
-            padding:0,marginBottom:14,display:'flex',alignItems:'center',gap:6}}>
-          ← Módulos
-        </button>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+          <button onClick={() => dispatch({type:'CLOSE_MODULE'})}
+            style={{background:'none',border:'none',color:C.textMuted,
+              fontFamily:'DM Sans,sans-serif',fontSize:12,cursor:'pointer',
+              padding:0,display:'flex',alignItems:'center',gap:6}}>
+            ← Módulos
+          </button>
+          {mod.route && (
+            <a href={mod.route} style={{
+              fontFamily:'DM Sans,sans-serif',fontSize:10,color:acc,
+              textDecoration:'none',letterSpacing:'0.08em',
+              border:`1px solid ${acc}`,borderRadius:6,padding:'5px 12px',
+              opacity:0.8,transition:'opacity 0.2s',
+            }}>
+              Módulo completo →
+            </a>
+          )}
+        </div>
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:acc,textTransform:'uppercase',opacity:0.85,marginBottom:3}}>
           {mod.concept}
@@ -316,96 +328,96 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
 }
 
 function ModuleExtra({ id, acc }) {
-  if (id === 'oikonomia') return (
-    <div>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-        color:C.textMuted,textTransform:'uppercase',marginBottom:12}}>Resumen Financiero</div>
-      {[
-        {label:'Gastos del mes',   val:'$2,840', sub:'de $3,500 presupuesto'},
-        {label:'Ahorro neto',      val:'$1,260', sub:'+12% vs mes anterior'},
-        {label:'Deudas activas',   val:'$8,400', sub:'2 cuentas · pagando'},
-        {label:'Inversiones',      val:'$14,200',sub:'+4.2% este trimestre'},
-      ].map((r,i) => (
-        <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
-          padding:'12px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
-          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>{r.label}</div>
-          <div style={{textAlign:'right'}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:acc}}>{r.val}</div>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{r.sub}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  const srv = (window.EU._server) || {};
 
-  if (id === 'cosmopolitismo') return (
-    <div>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-        color:C.textMuted,textTransform:'uppercase',marginBottom:14}}>Idiomas en Progreso</div>
-      {[
-        {lang:'Alemán', lvl:'B1+', streak:33, pct:0.72},
-        {lang:'Inglés', lvl:'C1',  streak:120,pct:0.91},
-        {lang:'Francés',lvl:'A2',  streak:7,  pct:0.25},
-      ].map((l,i) => (
-        <div key={i} style={{marginBottom:16}}>
-          <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-            <span style={{fontFamily:'Cormorant Garamond,serif',fontSize:17,color:C.text}}>{l.lang}</span>
-            <span style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:acc}}>{l.lvl} · {l.streak}d ◆</span>
+  if (id === 'oikonomia') {
+    const fin = srv.financial || {};
+    const gastos  = fin.gastos  ? `$${Number(fin.gastos).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
+    const ingreso = fin.ingreso ? `$${Number(fin.ingreso).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
+    const deudas  = fin.deudas  ? `$${Number(fin.deudas).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
+    const ahorro  = (fin.ingreso && fin.gastos) ? `$${(fin.ingreso - fin.gastos).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
+    return (
+      <div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',marginBottom:12}}>Resumen Financiero</div>
+        {[
+          {label:'Gastos del mes',   val: gastos,  sub: `de ${ingreso} ingreso`},
+          {label:'Ahorro neto',      val: ahorro,  sub:'ingreso − gastos'},
+          {label:'Deudas activas',   val: deudas,  sub:'saldo actual total'},
+        ].map((r,i) => (
+          <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+            padding:'12px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>{r.label}</div>
+            <div style={{textAlign:'right'}}>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:acc}}>{r.val}</div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{r.sub}</div>
+            </div>
           </div>
-          <div style={{height:3,background:'rgba(201,168,76,0.08)',borderRadius:2}}>
-            <div style={{height:'100%',borderRadius:2,background:acc,
-              width:`${l.pct*100}%`,boxShadow:`0 0 6px ${acc}66`}}/>
+        ))}
+      </div>
+    );
+  }
+
+  if (id === 'cosmopolitismo') {
+    const langs = (srv.langStats && srv.langStats.length)
+      ? srv.langStats
+      : [{lang:'Alemán',lvl:'B1+',entries:0,pct:0.72},{lang:'Inglés',lvl:'C1',entries:0,pct:0.91},{lang:'Francés',lvl:'A2',entries:0,pct:0.25}];
+    return (
+      <div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',marginBottom:14}}>Idiomas en Progreso</div>
+        {langs.map((l,i) => (
+          <div key={i} style={{marginBottom:16}}>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
+              <span style={{fontFamily:'Cormorant Garamond,serif',fontSize:17,color:C.text}}>{l.lang}</span>
+              <span style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:acc}}>
+                {l.lvl}{l.entries ? ` · ${l.entries} entradas` : ''}
+              </span>
+            </div>
+            <div style={{height:3,background:'rgba(201,168,76,0.08)',borderRadius:2}}>
+              <div style={{height:'100%',borderRadius:2,background:acc,
+                width:`${(l.pct||0)*100}%`,boxShadow:`0 0 6px ${acc}66`}}/>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  }
+
+  if (id === 'hegemonikon') {
+    const b = srv.body || {};
+    const rows = [
+      {label:'Peso',      val: b.peso     || '—', sub: b.estatura ? `Estatura: ${b.estatura}` : ''},
+      {label:'Pecho',     val: b.pecho    || '—', sub: b.cintura ? `Cintura: ${b.cintura}` : ''},
+      {label:'Hombros',   val: b.hombros  || '—', sub: b.manga   ? `Manga: ${b.manga}`    : ''},
+      {label:'T. Camisa', val: b.t_camisa || '—', sub: b.t_pantalon ? `Pantalón: ${b.t_pantalon}` : ''},
+    ];
+    return (
+      <div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',marginBottom:14}}>Métricas Corporales</div>
+        {rows.map((r,i) => (
+          <div key={i} style={{display:'flex',justifyContent:'space-between',
+            padding:'11px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>{r.label}</div>
+            <div style={{textAlign:'right'}}>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:19,color:acc}}>{r.val}</div>
+              {r.sub && <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{r.sub}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (id === 'paideia') return (
     <div>
       <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-        color:C.textMuted,textTransform:'uppercase',marginBottom:14}}>Lectura Activa</div>
-      {[
-        {title:'Meditaciones',      auth:'Marco Aurelio',  pct:0.62, pages:'148/240'},
-        {title:'El Arte de la Guerra',auth:'Sun Tzu',     pct:0.95, pages:'190/200'},
-        {title:'Antifragil',        auth:'N. N. Taleb',   pct:0.30, pages:'120/400'},
-      ].map((b,i) => (
-        <div key={i} style={{display:'flex',gap:12,padding:'10px 0',
-          borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
-          <div style={{width:32,height:42,borderRadius:4,background:'rgba(201,168,76,0.08)',
-            border:'1px solid rgba(201,168,76,0.15)',flexShrink:0}}/>
-          <div style={{flex:1}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,color:C.text}}>{b.title}</div>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginBottom:6}}>{b.auth}</div>
-            <div style={{height:2,background:'rgba(201,168,76,0.08)',borderRadius:1}}>
-              <div style={{height:'100%',borderRadius:1,background:acc,width:`${b.pct*100}%`}}/>
-            </div>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,marginTop:3}}>{b.pages}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  if (id === 'hegemonikon') return (
-    <div>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-        color:C.textMuted,textTransform:'uppercase',marginBottom:14}}>Métricas Corporales</div>
-      {[
-        {label:'Peso actual',  val:'74.2 kg', sub:'objetivo: 72 kg'},
-        {label:'Pasos hoy',    val:'6,240',   sub:'objetivo: 8,000'},
-        {label:'Hidratación',  val:'1.8 L',   sub:'objetivo: 2.5 L'},
-        {label:'Horas sueño',  val:'7h 20m',  sub:'objetivo: 8h'},
-      ].map((r,i) => (
-        <div key={i} style={{display:'flex',justifyContent:'space-between',
-          padding:'11px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
-          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>{r.label}</div>
-          <div style={{textAlign:'right'}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:19,color:acc}}>{r.val}</div>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{r.sub}</div>
-          </div>
-        </div>
-      ))}
+        color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Lectura Activa</div>
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textMuted,
+        padding:'12px 0',fontStyle:'italic'}}>
+        Registra tus libros en la sección de actividades.
+      </div>
     </div>
   );
 

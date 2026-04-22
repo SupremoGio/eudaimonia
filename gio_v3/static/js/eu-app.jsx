@@ -112,7 +112,7 @@ function SideNav({ active, onChange }) {
 
       {/* Link al dashboard clásico */}
       <div style={{padding:'16px 22px', borderTop:'1px solid rgba(201,168,76,0.07)'}}>
-        <a href="/" style={{fontFamily:'DM Sans,sans-serif', fontSize:9.5,
+        <a href="/classic" style={{fontFamily:'DM Sans,sans-serif', fontSize:9.5,
           color:C.textMuted, opacity:0.45, textDecoration:'none',
           letterSpacing:'0.08em', display:'flex', alignItems:'center', gap:5}}>
           ← Dashboard clásico
