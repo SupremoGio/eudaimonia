@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, redirect, url_for
 from database import get_db, get_gtd_stats, get_activity_streak, get_db_status
-from data import get_quote_of_day, get_word_of_day, ACTIVITIES
+from data import get_quote_of_day, get_word_of_day, ACTIVITIES, ACTIVITY_CATEGORIES
 from datetime import date, timedelta
 
 dashboard_bp = Blueprint('dashboard', __name__, template_folder='../../templates')
@@ -107,6 +107,13 @@ def _build_eudaimonia_data():
             "SELECT key, value FROM body_measurements"
         ).fetchall()}
 
+        # PTS stats
+        week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+        month_start = date.today().replace(day=1).isoformat()
+        pts_today_val  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date=?",   (today,)).fetchone()['s']
+        pts_week_val   = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?",  (week_start,)).fetchone()['s']
+        pts_month_val  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?",  (month_start,)).fetchone()['s']
+
         # Idiomas: test results más recientes por idioma
         lang_rows = db.execute(
             "SELECT test_type, score, test_date FROM lang_test_results ORDER BY test_date DESC LIMIT 10"
@@ -170,6 +177,11 @@ def _build_eudaimonia_data():
         {'lang': 'Francés', 'lvl': lang_scores.get('Francés', 'A2'),                            'entries': lang_cnt.get('Francés', 0), 'pct': 0.25},
     ]
 
+    activities = [
+        {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'], 'done': k in today_keys}
+        for k, v in ACTIVITIES.items()
+    ]
+
     return {
         'total_xp':   stats['total_xp'],
         'xp_today':   stats['xp_today'],
@@ -188,6 +200,11 @@ def _build_eudaimonia_data():
         },
         'body': body,
         'lang_stats': lang_stats,
+        'activities': activities,
+        'act_cats':   list(ACTIVITY_CATEGORIES),
+        'pts_today':  pts_today_val,
+        'pts_week':   pts_week_val,
+        'pts_month':  pts_month_val,
     }
 
 

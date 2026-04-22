@@ -243,19 +243,9 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
 // MODULE DETAIL
 // ═══════════════════════════════════════════════════════════
 function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
-  const [habits, setHabits] = useState(EU.moduleHabits[mod.id] || []);
-  const acc = `oklch(65% 0.15 ${mod.hue})`;
+  const acc    = `oklch(65% 0.15 ${mod.hue})`;
   const accDeep = `oklch(14% 0.04 ${mod.hue})`;
-  const accMid = `oklch(28% 0.07 ${mod.hue})`;
-
-  const toggle = (i) => {
-    setHabits(prev => prev.map((h, idx) => {
-      if (idx !== i) return h;
-      if (!h.done) dispatch({ type:'ADD_XP', amount: h.xp });
-      return {...h, done: !h.done};
-    }));
-  };
-  const doneCnt = habits.filter(h => h.done).length;
+  const accMid  = `oklch(28% 0.07 ${mod.hue})`;
 
   return (
     <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
@@ -265,7 +255,7 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
         background:`linear-gradient(170deg,${accDeep} 0%,rgba(9,7,15,0) 100%)`,
         borderBottom:`1px solid ${accMid}`,
       }}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+        <div style={{display:'flex',alignItems:'center',marginBottom:14}}>
           <button onClick={() => dispatch({type:'CLOSE_MODULE'})}
             style={{background:'none',border:'none',color:C.textMuted,
               fontFamily:'DM Sans,sans-serif',fontSize:12,cursor:'pointer',
@@ -286,9 +276,8 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
         </div>
         <div style={{display:'flex',gap:24,marginTop:16}}>
           {[
-            {label:'Racha', val:`${mod.streak}d`},
-            {label:'Hoy', val:`${doneCnt}/${habits.length}`},
-            {label:'Estado', val: doneCnt===habits.length?'✓':'Pendiente'},
+            {label:'Racha',  val:`${mod.streak}d`},
+            {label:'Estado', val: mod.done ? '✓ Hecho' : 'Pendiente'},
           ].map(s => (
             <div key={s.label}>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
@@ -312,11 +301,9 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
                   {subs.map((sub,i) => (
                     <a key={i} href={sub.route} style={{
                       display:'flex',alignItems:'center',gap:10,
-                      background:accDeep,
-                      border:`1px solid ${accMid}`,
-                      borderRadius:12,padding:'14px',
-                      textDecoration:'none',
-                      transition:'all 0.2s',
+                      background:accDeep, border:`1px solid ${accMid}`,
+                      borderRadius:12, padding:'14px',
+                      textDecoration:'none', transition:'all 0.2s',
                     }}>
                       <span style={{fontSize:20,lineHeight:1}}>{sub.icon}</span>
                       <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,flex:1}}>{sub.name}</span>
@@ -325,11 +312,8 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
                   ))}
                 </div>
               ) : (
-                <div style={{
-                  background:accDeep,
-                  border:'1px dashed rgba(201,168,76,0.15)',
-                  borderRadius:12,padding:'18px',textAlign:'center',
-                }}>
+                <div style={{background:accDeep,border:'1px dashed rgba(201,168,76,0.15)',
+                  borderRadius:12,padding:'18px',textAlign:'center'}}>
                   <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.18em',
                     color:C.textMuted,textTransform:'uppercase',opacity:0.6}}>Próximamente</div>
                 </div>
@@ -338,18 +322,8 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
           );
         })()}
 
-        {/* Habits */}
-        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-          color:C.textMuted,textTransform:'uppercase',marginBottom:2}}>Práctica Diaria</div>
-        {habits.map((h,i) => (
-          <HabitRow key={i} label={h.label} done={h.done}
-            onToggle={() => toggle(i)} xp={h.xp} accent={acc}/>
-        ))}
-
         {/* Module-specific content */}
-        <div style={{marginTop:24}}>
-          <ModuleExtra id={mod.id} acc={acc}/>
-        </div>
+        <ModuleExtra id={mod.id} acc={acc}/>
       </div>
     </div>
   );
@@ -453,12 +427,35 @@ function ModuleExtra({ id, acc }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// GTD SCREEN
+// GTD SCREEN — Acta Diurna
 // ═══════════════════════════════════════════════════════════
 function GTDScreen({ appState, dispatch, isDesktop }) {
-  const [tab, setTab] = useState('inbox');
-  const [inbox, setInbox] = useState(EU.gtd.inbox);
+  const srv = window.EU._server || {};
+  const [acts, setActs] = useState(srv.activities || []);
+  const [pts,  setPts]  = useState(srv.pts || {today:0, week:0, month:0});
+  const [streak, setStreak] = useState(srv.streak || 0);
+  const actCats = srv.actCats || [];
+
+  const [gtdTab, setGtdTab] = useState('inbox');
+  const [inbox, setInbox]   = useState(EU.gtd.inbox);
   const [newItem, setNewItem] = useState('');
+
+  const logActivity = (key) => {
+    setActs(prev => prev.map(a => a.key === key ? {...a, done: !a.done} : a));
+    fetch('/actividades/api/activity/log', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key}),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.stats) {
+        setPts({today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month});
+        if (data.stats.streak !== undefined) setStreak(data.stats.streak);
+      }
+      if (data.gam && data.gam.xp_delta) dispatch({type:'ADD_XP', amount: data.gam.xp_delta});
+    })
+    .catch(() => {});
+  };
 
   const addItem = () => {
     if (!newItem.trim()) return;
@@ -466,143 +463,198 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
     setNewItem('');
   };
 
-  const TABS = [{id:'inbox',label:'Inbox'},{id:'projects',label:'Proyectos'},
-                {id:'contexts',label:'Contextos'},{id:'review',label:'Revisión'}];
+  // Group activities by category order
+  const byCategory = {};
+  actCats.forEach(cat => { byCategory[cat] = []; });
+  acts.forEach(a => {
+    if (byCategory[a.cat]) byCategory[a.cat].push(a);
+    else { byCategory[a.cat] = [a]; }
+  });
+
+  const GTD_TABS = [
+    {id:'inbox',    label:'Inbox'},
+    {id:'projects', label:'Proyectos'},
+    {id:'contexts', label:'Contextos'},
+    {id:'review',   label:'Revisión'},
+  ];
 
   return (
     <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
-      <div style={{padding: isDesktop ? '28px 24px 0' : '16px 20px 0'}}>
-        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.2em',
-          color:C.gold,textTransform:'uppercase',opacity:0.6,marginBottom:4}}>MÉTODO GTD</div>
-        <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:28,
-          fontWeight:600,color:C.text,letterSpacing:'0.06em',marginBottom:14,fontStyle:'italic'}}>Acta Diurna</div>
-        {/* Actividades link */}
-        <a href="/actividades" style={{
-          display:'flex',justifyContent:'space-between',alignItems:'center',
-          background:C.card,border:'1px solid rgba(201,168,76,0.16)',
-          borderRadius:12,padding:'13px 16px',marginBottom:16,
-          textDecoration:'none',
-        }}>
-          <div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,
-              fontWeight:600,color:C.text,letterSpacing:'0.08em'}}>Registro de Actividades</div>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
-              color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:3,opacity:0.75}}>
-              Hábitos · Puntos diarios
+
+      {/* ── PTS STATS ── */}
+      <div style={{padding: isDesktop ? '28px 24px 20px' : '16px 20px 16px'}}>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:20}}>
+          {[
+            {label:'PTS HOY',    val: pts.today, sub:'meta 1x+'},
+            {label:'PTS SEMANA', val: pts.week,  sub:'meta 50+'},
+            {label:'PTS MES',    val: pts.month, sub:'meta 300+'},
+            {label:'RACHA',      val: streak,    sub:`${streak > 0 ? streak + 'd' : '—'}`},
+          ].map(s => (
+            <div key={s.label} style={{
+              background:C.card, border:'1px solid rgba(201,168,76,0.1)',
+              borderRadius:10, padding:'10px 8px',
+            }}>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:7,letterSpacing:'0.1em',
+                color:C.textMuted,textTransform:'uppercase',marginBottom:2}}>{s.label}</div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:C.gold,lineHeight:1}}>{s.val}</div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:8,color:C.textMuted,marginTop:2}}>{s.sub}</div>
             </div>
-          </div>
-          <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,color:C.gold,opacity:0.5}}>→</div>
-        </a>
-        {/* Tab bar */}
-        <div style={{display:'flex',borderBottom:'1px solid rgba(201,168,76,0.1)',marginBottom:-1}}>
-          {TABS.map(t => (
-            <div key={t.id} onClick={() => setTab(t.id)} style={{
-              flex:1,padding:'8px 2px',textAlign:'center',cursor:'pointer',
-              fontFamily:'DM Sans,sans-serif',fontSize:11,
-              color: tab===t.id ? C.gold : C.textMuted,
-              borderBottom: tab===t.id ? `2px solid ${C.gold}` : '2px solid transparent',
-              transition:'all 0.2s',
-            }}>{t.label}</div>
           ))}
         </div>
-      </div>
 
-      <div style={{padding: isDesktop ? '16px 24px 0' : '16px 16px 0'}}>
-        {tab === 'inbox' && (
-          <div>
-            <div style={{display:'flex',gap:8,marginBottom:14,
-              background:C.card,border:'1px solid rgba(201,168,76,0.14)',
-              borderRadius:10,padding:'4px 4px 4px 14px',alignItems:'center'}}>
-              <input value={newItem} onChange={e=>setNewItem(e.target.value)}
-                onKeyDown={e=>e.key==='Enter'&&addItem()}
-                placeholder="Capturar pensamiento..."
-                style={{flex:1,background:'none',border:'none',outline:'none',
-                  fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}/>
-              <button onClick={addItem} style={{
-                background:C.gold,border:'none',borderRadius:7,
-                width:34,height:34,cursor:'pointer',
-                fontFamily:'DM Sans,sans-serif',fontSize:20,color:'#09070F',
-                display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>+</button>
-            </div>
-            {inbox.length === 0
-              ? <div style={{textAlign:'center',padding:'48px 0',
-                  fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-                  fontSize:17,color:C.textMuted}}>Inbox limpio. Mente clara.</div>
-              : inbox.map(item => (
-                <div key={item.id} style={{display:'flex',alignItems:'center',gap:10,
-                  padding:'11px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
-                  <div style={{width:5,height:5,borderRadius:'50%',
-                    background:'rgba(201,168,76,0.28)',flexShrink:0}}/>
-                  <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{item.text}</div>
-                  <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{item.context}</div>
-                  <button onClick={()=>setInbox(p=>p.filter(i=>i.id!==item.id))}
-                    style={{background:'none',border:'none',color:C.textMuted,
-                      cursor:'pointer',fontSize:18,padding:'0 2px',lineHeight:1}}>×</button>
-                </div>
-              ))
-            }
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,
-              textAlign:'center',marginTop:10}}>{inbox.length} elemento{inbox.length!==1?'s':''}</div>
-          </div>
-        )}
-
-        {tab === 'projects' && EU.gtd.projects.map(p => {
-          const pct = p.done / p.actions;
+        {/* ── ACTIVITIES BY CATEGORY ── */}
+        {(actCats.length > 0 ? actCats : Object.keys(byCategory)).map(cat => {
+          const catActs = byCategory[cat] || [];
+          if (!catActs.length) return null;
           return (
-            <div key={p.id} style={{background:C.card,border:'1px solid rgba(201,168,76,0.1)',
-              borderRadius:12,padding:'14px 16px',marginBottom:9}}>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,marginBottom:9}}>{p.name}</div>
-              <div style={{display:'flex',alignItems:'center',gap:10}}>
-                <div style={{flex:1,height:3,background:'rgba(201,168,76,0.08)',borderRadius:2}}>
-                  <div style={{height:'100%',borderRadius:2,background:C.gold,
-                    width:`${pct*100}%`,boxShadow:'0 0 6px rgba(201,168,76,0.5)'}}/>
-                </div>
-                <span style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,
-                  whiteSpace:'nowrap'}}>{p.done}/{p.actions}</span>
+            <div key={cat} style={{marginBottom:16}}>
+              <div style={{
+                display:'inline-block',
+                fontFamily:'DM Sans,sans-serif',fontSize:8,letterSpacing:'0.12em',
+                color:C.textMuted,textTransform:'uppercase',
+                border:'1px solid rgba(201,168,76,0.15)',borderRadius:4,
+                padding:'2px 8px',marginBottom:8,
+              }}>{cat}</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:7}}>
+                {catActs.map(act => (
+                  <div key={act.key} onClick={() => logActivity(act.key)} style={{
+                    display:'flex',alignItems:'center',gap:7,
+                    padding:'8px 13px', borderRadius:10, cursor:'pointer',
+                    background: act.done ? 'rgba(201,168,76,0.1)' : C.card,
+                    border: `1.5px solid ${act.done ? 'rgba(201,168,76,0.4)' : 'rgba(201,168,76,0.08)'}`,
+                    transition:'all 0.2s',
+                    boxShadow: act.done ? '0 0 14px rgba(201,168,76,0.12)' : 'none',
+                  }}>
+                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:12,
+                      color: act.done ? C.gold : C.text,
+                      fontWeight: act.done ? 500 : 400,
+                    }}>{act.label}</span>
+                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+                      background:'rgba(201,168,76,0.1)',borderRadius:10,padding:'1px 6px',
+                      color: act.done ? C.gold : C.textMuted,
+                    }}>+{act.pts}</span>
+                  </div>
+                ))}
               </div>
             </div>
           );
         })}
+      </div>
 
-        {tab === 'contexts' && (
-          <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:4}}>
-            {EU.gtd.contexts.map(ctx => (
-              <div key={ctx} style={{padding:'8px 14px',
-                background:C.card,border:'1px solid rgba(201,168,76,0.12)',
-                borderRadius:20,fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>
-                {ctx}
+      {/* ── GTD SECTION ── */}
+      <div style={{borderTop:'1px solid rgba(201,168,76,0.1)', marginTop:4}}>
+        {/* Tab bar */}
+        <div style={{
+          display:'flex', borderBottom:'1px solid rgba(201,168,76,0.1)',
+          padding: isDesktop ? '0 24px' : '0 20px',
+        }}>
+          {GTD_TABS.map(t => (
+            <div key={t.id} onClick={() => setGtdTab(t.id)} style={{
+              flex:1, padding:'11px 2px', textAlign:'center', cursor:'pointer',
+              fontFamily:'DM Sans,sans-serif', fontSize:11,
+              color: gtdTab===t.id ? C.gold : C.textMuted,
+              borderBottom: gtdTab===t.id ? `2px solid ${C.gold}` : '2px solid transparent',
+              transition:'all 0.2s',
+            }}>{t.label}</div>
+          ))}
+        </div>
+
+        <div style={{padding: isDesktop ? '16px 24px 0' : '16px 20px 0'}}>
+          {gtdTab === 'inbox' && (
+            <div>
+              <div style={{display:'flex',gap:8,marginBottom:14,
+                background:C.card,border:'1px solid rgba(201,168,76,0.14)',
+                borderRadius:10,padding:'4px 4px 4px 14px',alignItems:'center'}}>
+                <input value={newItem} onChange={e=>setNewItem(e.target.value)}
+                  onKeyDown={e=>e.key==='Enter'&&addItem()}
+                  placeholder="Capturar pensamiento..."
+                  style={{flex:1,background:'none',border:'none',outline:'none',
+                    fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}/>
+                <button onClick={addItem} style={{
+                  background:C.gold,border:'none',borderRadius:7,width:34,height:34,cursor:'pointer',
+                  fontFamily:'DM Sans,sans-serif',fontSize:20,color:'#09070F',
+                  display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>+</button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {tab === 'review' && (
-          <div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-              fontSize:15,color:C.textSub,lineHeight:1.65,marginBottom:18,textWrap:'pretty'}}>
-              "La revisión semanal es el mantenimiento del sistema. Sin ella, el GTD colapsa."
+              {inbox.length === 0
+                ? <div style={{textAlign:'center',padding:'40px 0',
+                    fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
+                    fontSize:17,color:C.textMuted}}>Inbox limpio. Mente clara.</div>
+                : inbox.map(item => (
+                  <div key={item.id} style={{display:'flex',alignItems:'center',gap:10,
+                    padding:'11px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+                    <div style={{width:5,height:5,borderRadius:'50%',
+                      background:'rgba(201,168,76,0.28)',flexShrink:0}}/>
+                    <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{item.text}</div>
+                    <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{item.context}</div>
+                    <button onClick={()=>setInbox(p=>p.filter(i=>i.id!==item.id))}
+                      style={{background:'none',border:'none',color:C.textMuted,
+                        cursor:'pointer',fontSize:18,padding:'0 2px',lineHeight:1}}>×</button>
+                  </div>
+                ))
+              }
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,
+                textAlign:'center',marginTop:10}}>{inbox.length} elemento{inbox.length!==1?'s':''}</div>
             </div>
-            {EU.gtd.review.map((item,i) => (
-              <div key={i} style={{display:'flex',alignItems:'center',gap:12,
-                padding:'10px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
-                <div style={{
-                  width:20,height:20,borderRadius:6,flexShrink:0,
-                  border:`1.5px solid ${item.done?C.gold:'rgba(201,168,76,0.2)'}`,
-                  background:item.done?C.gold:'transparent',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                }}>
-                  {item.done && <svg width={10} height={10} viewBox="0 0 10 10">
-                    <polyline points="2,5 4.5,8 8,2" stroke="#09070F" strokeWidth={1.5}
-                      fill="none" strokeLinecap="round"/>
-                  </svg>}
+          )}
+
+          {gtdTab === 'projects' && EU.gtd.projects.map(p => {
+            const pct = p.done / p.actions;
+            return (
+              <div key={p.id} style={{background:C.card,border:'1px solid rgba(201,168,76,0.1)',
+                borderRadius:12,padding:'14px 16px',marginBottom:9}}>
+                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,marginBottom:9}}>{p.name}</div>
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <div style={{flex:1,height:3,background:'rgba(201,168,76,0.08)',borderRadius:2}}>
+                    <div style={{height:'100%',borderRadius:2,background:C.gold,
+                      width:`${pct*100}%`,boxShadow:'0 0 6px rgba(201,168,76,0.5)'}}/>
+                  </div>
+                  <span style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,
+                    whiteSpace:'nowrap'}}>{p.done}/{p.actions}</span>
                 </div>
-                <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,
-                  color:item.done?C.textMuted:C.text,
-                  textDecoration:item.done?'line-through':'none'}}>{item.label}</span>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+
+          {gtdTab === 'contexts' && (
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:4}}>
+              {EU.gtd.contexts.map(ctx => (
+                <div key={ctx} style={{padding:'8px 14px',
+                  background:C.card,border:'1px solid rgba(201,168,76,0.12)',
+                  borderRadius:20,fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>
+                  {ctx}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {gtdTab === 'review' && (
+            <div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
+                fontSize:15,color:C.textSub,lineHeight:1.65,marginBottom:18,textWrap:'pretty'}}>
+                "La revisión semanal es el mantenimiento del sistema. Sin ella, el GTD colapsa."
+              </div>
+              {EU.gtd.review.map((item,i) => (
+                <div key={i} style={{display:'flex',alignItems:'center',gap:12,
+                  padding:'10px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+                  <div style={{
+                    width:20,height:20,borderRadius:6,flexShrink:0,
+                    border:`1.5px solid ${item.done?C.gold:'rgba(201,168,76,0.2)'}`,
+                    background:item.done?C.gold:'transparent',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                  }}>
+                    {item.done && <svg width={10} height={10} viewBox="0 0 10 10">
+                      <polyline points="2,5 4.5,8 8,2" stroke="#09070F" strokeWidth={1.5}
+                        fill="none" strokeLinecap="round"/>
+                    </svg>}
+                  </div>
+                  <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,
+                    color:item.done?C.textMuted:C.text,
+                    textDecoration:item.done?'line-through':'none'}}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

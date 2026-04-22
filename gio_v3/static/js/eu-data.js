@@ -163,9 +163,17 @@ window.EU = {
 
   // Datos reales disponibles globalmente para los screens
   window.EU._server = {
-    financial: d.financial || {},
-    body:      d.body      || {},
-    langStats: d.lang_stats || [],
-    xpToday:   d.xp_today  || 0,
+    financial:  d.financial   || {},
+    body:       d.body        || {},
+    langStats:  d.lang_stats  || [],
+    xpToday:    d.xp_today    || 0,
+    activities: d.activities  || [],
+    actCats:    d.act_cats    || [],
+    pts: {
+      today: d.pts_today || 0,
+      week:  d.pts_week  || 0,
+      month: d.pts_month || 0,
+    },
+    streak: d.streak || 0,
   };
 })();
