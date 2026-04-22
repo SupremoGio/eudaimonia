@@ -313,7 +313,7 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
                     <a key={i} href={sub.route} style={{
                       display:'flex',alignItems:'center',gap:10,
                       background:accDeep,
-                      border:`1px solid ${acc}33`,
+                      border:`1px solid ${accMid}`,
                       borderRadius:12,padding:'14px',
                       textDecoration:'none',
                       transition:'all 0.2s',
@@ -622,7 +622,25 @@ function ProfileScreen({ appState, isDesktop }) {
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.2em',
           color:C.gold,textTransform:'uppercase',opacity:0.6,marginBottom:4}}>ΑΥΤΟΣ</div>
         <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:28,
-          fontWeight:600,color:C.text,letterSpacing:'0.05em',marginBottom:20}}>Perfil</div>
+          fontWeight:600,color:C.text,letterSpacing:'0.05em',marginBottom:14}}>Perfil</div>
+
+        {/* Perfil submodule link */}
+        <a href="/perfil" style={{
+          display:'flex',justifyContent:'space-between',alignItems:'center',
+          background:C.card,border:'1px solid rgba(201,168,76,0.16)',
+          borderRadius:12,padding:'13px 16px',marginBottom:20,
+          textDecoration:'none',
+        }}>
+          <div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,
+              fontWeight:600,color:C.text,letterSpacing:'0.08em'}}>Ver Perfil Completo</div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+              color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:3,opacity:0.75}}>
+              Medidas · Datos personales
+            </div>
+          </div>
+          <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,color:C.gold,opacity:0.5}}>→</div>
+        </a>
       </div>
 
       {/* Level showcase */}
