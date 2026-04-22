@@ -429,7 +429,12 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
   const [newItem, setNewItem] = useState('');
 
   const logActivity = (key) => {
-    setActs(prev => prev.map(a => a.key === key ? {...a, done: !a.done} : a));
+    // Update local state and persist in-memory so tab switches don't reset the view
+    setActs(prev => {
+      const updated = prev.map(a => a.key === key ? {...a, done: !a.done} : a);
+      window.EU._server.activities = updated;
+      return updated;
+    });
     fetch('/actividades/api/activity/log', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({key}),
@@ -437,8 +442,13 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
     .then(r => r.json())
     .then(data => {
       if (data.stats) {
-        setPts({today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month});
-        if (data.stats.streak !== undefined) setStreak(data.stats.streak);
+        const newPts = {today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month};
+        setPts(newPts);
+        window.EU._server.pts    = newPts;
+        if (data.stats.streak !== undefined) {
+          setStreak(data.stats.streak);
+          window.EU._server.streak = data.stats.streak;
+        }
       }
       if (data.gam && data.gam.xp_delta) dispatch({type:'ADD_XP', amount: data.gam.xp_delta});
     })
