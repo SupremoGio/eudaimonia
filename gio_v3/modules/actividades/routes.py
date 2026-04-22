@@ -66,6 +66,41 @@ def index():
     )
 
 
+@actividades_bp.route('/api/today')
+def today_status():
+    """Returns current done-state for all activities today — used by the React SPA on mount."""
+    today = date.today().isoformat()
+    week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+    month_start = date.today().replace(day=1).isoformat()
+    with get_db() as db:
+        today_keys = {r['activity_key'] for r in db.execute(
+            "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
+        ).fetchall()}
+        pts_today  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date=?",  (today,)).fetchone()['s']
+        pts_week   = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?", (week_start,)).fetchone()['s']
+        pts_month  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?", (month_start,)).fetchone()['s']
+        dates = [r['date'] for r in db.execute(
+            "SELECT DISTINCT date FROM activity_logs ORDER BY date DESC"
+        ).fetchall()]
+    streak, check = 0, date.today()
+    for d in dates:
+        if d == check.isoformat():
+            streak += 1
+            check -= __import__('datetime').timedelta(days=1)
+        else:
+            break
+    activities = [
+        {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'], 'done': k in today_keys}
+        for k, v in ACTIVITIES.items()
+    ]
+    return jsonify({
+        'activities': activities,
+        'pts': {'today': pts_today, 'week': pts_week, 'month': pts_month},
+        'streak': streak,
+        'date': today,
+    })
+
+
 @actividades_bp.route('/api/activity/log', methods=['POST'])
 def log_activity():
     key   = request.json.get('key')

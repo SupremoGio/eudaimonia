@@ -1,5 +1,5 @@
 // EUDAIMONIA — All Screens
-const { useState, useMemo } = React;
+const { useState, useMemo, useEffect } = React;
 const C = window.EU.c;
 
 function todayQuote() {
@@ -427,6 +427,27 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
   const [gtdTab, setGtdTab] = useState('inbox');
   const [inbox, setInbox]   = useState(EU.gtd.inbox);
   const [newItem, setNewItem] = useState('');
+
+  // Always fetch real done-state from server on mount — same as classic version
+  useEffect(() => {
+    fetch('/actividades/api/today')
+      .then(r => r.json())
+      .then(data => {
+        if (data.activities) {
+          setActs(data.activities);
+          window.EU._server.activities = data.activities;
+        }
+        if (data.pts) {
+          setPts(data.pts);
+          window.EU._server.pts = data.pts;
+        }
+        if (data.streak !== undefined) {
+          setStreak(data.streak);
+          window.EU._server.streak = data.streak;
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const logActivity = (key) => {
     // Compute toggle synchronously — must happen before any async work
