@@ -30,14 +30,36 @@ window.EU = {
   ],
 
   modules: [
-    { id:'hegemonikon',    name:'HEGEMONIKON',    concept:'Bienestar',          desc:'Salud · Nutrición · Perfil',     hue:45,  streak:12, done:true  },
-    { id:'oikonomia',     name:'OIKONOMIA',      concept:'Finanzas', desc:'Finanzas · Gastos · Deudas',     hue:80,  streak:8,  done:false },
-    { id:'ataraxia',      name:'ATARAXIA',        concept:'Productividad', desc:'Automatización · Checklist',     hue:155, streak:21, done:true  },
-    { id:'paideia',       name:'PAIDEIA',         concept:'Conocimiento',        desc:'Aprendizaje · Libros',           hue:265, streak:5,  done:false },
-    { id:'cosmopolitismo',name:'COSMOPOLITISMO',  concept:'Idiomas',       desc:'Idiomas · Culturas',             hue:215, streak:33, done:true  },
-    { id:'logoi',         name:'LOGOI',           concept:'Programación',            desc:'Programación · Lógica',          hue:120, streak:7,  done:false },
-    { id:'eurythmia',     name:'EURYTHMIA',       concept:'Baile',     desc:'Baile · Ritmo · Cuerpo',         hue:330, streak:4,  done:false },
+    { id:'hegemonikon',    name:'HEGEMONIKON',    concept:'Bienestar',      desc:'Salud · Nutrición · Perfil',  hue:45,  streak:12, done:true  },
+    { id:'oikonomia',      name:'OIKONOMIA',      concept:'Finanzas',       desc:'Finanzas · Gastos · Deudas',  hue:80,  streak:8,  done:false },
+    { id:'ataraxia',       name:'ATARAXIA',       concept:'Productividad',  desc:'Automatización · Checklist',  hue:155, streak:21, done:true  },
+    { id:'paideia',        name:'PAIDEIA',        concept:'Conocimiento',   desc:'Aprendizaje · Libros',        hue:265, streak:5,  done:false },
+    { id:'cosmopolitismo', name:'COSMOPOLITISMO', concept:'Idiomas',        desc:'Idiomas · Culturas',          hue:215, streak:33, done:true  },
+    { id:'logoi',          name:'LOGOI',          concept:'Programación',   desc:'Programación · Lógica',       hue:120, streak:7,  done:false },
+    { id:'eurythmia',      name:'EURYTHMIA',      concept:'Baile',          desc:'Baile · Ritmo · Cuerpo',      hue:330, streak:4,  done:false },
   ],
+
+  submodules: {
+    hegemonikon: [
+      { name:'Nutrición', icon:'🥗', route:'/nutricion' },
+      { name:'Perfil',    icon:'👤', route:'/perfil'    },
+    ],
+    oikonomia: [
+      { name:'Finanzas',    icon:'💰', route:'/finanzas'              },
+      { name:'Presupuesto', icon:'📊', route:'/finanzas/budget'       },
+      { name:'Wishlist',    icon:'⭐', route:'/finanzas/prioridades'  },
+      { name:'Consumo',     icon:'🛒', route:'/finanzas/consumo'      },
+    ],
+    ataraxia: [
+      { name:'Sábado', icon:'✅', route:'/sabado' },
+    ],
+    paideia:        [],
+    cosmopolitismo: [
+      { name:'Idiomas', icon:'🌐', route:'/idiomas' },
+    ],
+    logoi:    [],
+    eurythmia:[],
+  },
 
   quotes: [
     { text:'Busca dentro. Dentro está la fuente del bien, y siempre brotará, si siempre cavas.', author:'Marco Aurelio · Meditaciones VII' },

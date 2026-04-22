@@ -272,16 +272,6 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
               padding:0,display:'flex',alignItems:'center',gap:6}}>
             ← Módulos
           </button>
-          {mod.route && (
-            <a href={mod.route} style={{
-              fontFamily:'DM Sans,sans-serif',fontSize:10,color:acc,
-              textDecoration:'none',letterSpacing:'0.08em',
-              border:`1px solid ${acc}`,borderRadius:6,padding:'5px 12px',
-              opacity:0.8,transition:'opacity 0.2s',
-            }}>
-              Módulo completo →
-            </a>
-          )}
         </div>
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:acc,textTransform:'uppercase',opacity:0.85,marginBottom:3}}>
@@ -310,6 +300,44 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
       </div>
 
       <div style={{padding: isDesktop ? '24px 24px 0' : '20px 16px 0'}}>
+        {/* Submodules */}
+        {(() => {
+          const subs = (EU.submodules && EU.submodules[mod.id]) || [];
+          return (
+            <div style={{marginBottom:24}}>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+                color:C.textMuted,textTransform:'uppercase',marginBottom:12}}>Submódulos</div>
+              {subs.length > 0 ? (
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  {subs.map((sub,i) => (
+                    <a key={i} href={sub.route} style={{
+                      display:'flex',alignItems:'center',gap:10,
+                      background:accDeep,
+                      border:`1px solid ${acc}33`,
+                      borderRadius:12,padding:'14px',
+                      textDecoration:'none',
+                      transition:'all 0.2s',
+                    }}>
+                      <span style={{fontSize:20,lineHeight:1}}>{sub.icon}</span>
+                      <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,flex:1}}>{sub.name}</span>
+                      <span style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:acc,opacity:0.6}}>→</span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  background:accDeep,
+                  border:'1px dashed rgba(201,168,76,0.15)',
+                  borderRadius:12,padding:'18px',textAlign:'center',
+                }}>
+                  <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.18em',
+                    color:C.textMuted,textTransform:'uppercase',opacity:0.6}}>Próximamente</div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         {/* Habits */}
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:C.textMuted,textTransform:'uppercase',marginBottom:2}}>Práctica Diaria</div>
@@ -447,7 +475,24 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.2em',
           color:C.gold,textTransform:'uppercase',opacity:0.6,marginBottom:4}}>MÉTODO GTD</div>
         <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:28,
-          fontWeight:600,color:C.text,letterSpacing:'0.06em',marginBottom:16,fontStyle:'italic'}}>Acta Diurna</div>
+          fontWeight:600,color:C.text,letterSpacing:'0.06em',marginBottom:14,fontStyle:'italic'}}>Acta Diurna</div>
+        {/* Actividades link */}
+        <a href="/actividades" style={{
+          display:'flex',justifyContent:'space-between',alignItems:'center',
+          background:C.card,border:'1px solid rgba(201,168,76,0.16)',
+          borderRadius:12,padding:'13px 16px',marginBottom:16,
+          textDecoration:'none',
+        }}>
+          <div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,
+              fontWeight:600,color:C.text,letterSpacing:'0.08em'}}>Registro de Actividades</div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+              color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:3,opacity:0.75}}>
+              Hábitos · Puntos diarios
+            </div>
+          </div>
+          <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,color:C.gold,opacity:0.5}}>→</div>
+        </a>
         {/* Tab bar */}
         <div style={{display:'flex',borderBottom:'1px solid rgba(201,168,76,0.1)',marginBottom:-1}}>
           {TABS.map(t => (
