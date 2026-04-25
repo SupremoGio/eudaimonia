@@ -105,59 +105,106 @@ def get_random_word():
 def get_random_quote():
     return random.choice(QUOTES)
 
-# ── ACTIVITIES ────────────────────────────────────────────────────────────────
+# ── ACTIVITIES v3.0 ──────────────────────────────────────────────────────────
+#
+# pts  = XP directo (sin multiplicador)
+# ec   = Euda-Credits otorgados
+# tier = 'micro' | 'progreso' | 'alto'
+# weekend = 'sat' | 'sun' | None  (solo visible ese día)
+#
 ACTIVITIES = {
-    # Programación
-    "sololearn":         {"label": "Lección SoloLearn / Mimo",          "cat": "Programación",  "pts": 1},
-    "python100":         {"label": "Lección 100 Días Python",            "cat": "Programación",  "pts": 2},
-    "ccna":              {"label": "Curso CCNA / Frontend",              "cat": "Programación",  "pts": 2},
-    "github":            {"label": "Subir proyecto a GitHub",            "cat": "Programación",  "pts": 5},
-    "resolver_codigo":   {"label": "Resolver 5 problemas reales",        "cat": "Programación",  "pts": 4},
-    "leer_prog":         {"label": "Leer programación",                  "cat": "Programación",  "pts": 2},
-    # Knowledge
-    "brilliant":         {"label": "Lección Brilliant",                  "cat": "Knowledge",     "pts": 1},
-    "leer_general":      {"label": "Leer 5 páginas (general)",           "cat": "Knowledge",     "pts": 1},
-    "leer_psico":        {"label": "Leer psicología",                    "cat": "Knowledge",     "pts": 1},
-    "leer_365_dias":        {"label": "Leer 365 días + culto",                    "cat": "Knowledge",     "pts": 1},
-    # Idiomas
-    "podcast_idiomas":   {"label": "Podcast en idiomas",                 "cat": "Idiomas",       "pts": 1},
-    "leccion_idiomas":   {"label": "Lecciones idiomas",                  "cat": "Idiomas",       "pts": 2},
-    "VividVocab":         {"label": "Leccion VividVocab",                 "cat": "Idiomas",       "pts": 1},
-    "conversacion":      {"label": "Conversación real 10min+",           "cat": "Idiomas",       "pts": 4},
-    "test_cert":         {"label": "Test certificación (DALF/IELTS)",    "cat": "Idiomas",       "pts": 5},
-    # Salud
-    "gym":               {"label": "Ejercicio Gym",                      "cat": "Salud Física",  "pts": 3},
-    "pliometria":        {"label": "Pliometría",                         "cat": "Salud Física",  "pts": 2},
-    "gol":               {"label": "Partido + meter gol",               "cat": "Salud Física",  "pts": 5},
-    "meditar":           {"label": "Meditar",                            "cat": "Salud Mental",  "pts": 2},
-    "colacion":          {"label": "Colación saludable",                 "cat": "Salud",         "pts": 1},
-    "jugo_verde":        {"label": "Jugo verde",                         "cat": "Salud",         "pts": 1},
-    "skincare_noche":    {"label": "Skin Care nocturno",                 "cat": "Salud",         "pts": 2},
-    # Baile
-    "baile":             {"label": "Practicar baile",                    "cat": "Baile",         "pts": 2},
-    "grabar_baile":      {"label": "Grabar práctica de baile",           "cat": "Baile",         "pts": 3},
-    # Sistema / Orden
-    "tender_cama":     {"label": "Tender cama",             "cat": "Orden",         "pts": 1},
-    "outfit":            {"label": "Outfit cuidado / presencia",         "cat": "Identidad",     "pts": 1},
-    "lenguaje_corporal": {"label": "Lenguaje corporal consciente",       "cat": "Identidad",     "pts": 1},
-    "prep_comida":       {"label": "Preparar comida semana",             "cat": "Sistema",       "pts": 3},
-    "limpieza":          {"label": "Limpieza semanal",                   "cat": "Sistema",       "pts": 3},
-    "planchar":          {"label": "Planchar ropa",                      "cat": "Orden",         "pts": 2},
-    "Menos de 3.5 horas redes telefono":     {"label": "Menos de 3.5 horas redes telefono",                  "cat": "Enfoque",       "pts": 4},
-    "revision_semanal":  {"label": "Revisión semanal",                   "cat": "Sistema",       "pts": 5},
-    # Finanzas
-    "registrar_gastos":  {"label": "Registrar gastos",                   "cat": "Finanzas",      "pts": 2},
-    "finanzas_udemy":    {"label": "Lección finanzas (Udemy)",           "cat": "Finanzas",      "pts": 2},
-    "ahorrar":     {"label": "Ahorrar dinero al mes",                 "cat": "Finanzas",      "pts": 5   },
-    "lavar_carro": {"label": "Lavar carro",                          "cat": "Orden",         "pts": 3   },
+    # ── LOGOI — Programación ──────────────────────────────────────────────────
+    "sololearn":        {"label": "Lección SoloLearn / Mimo",        "cat": "Programación",     "pts": 1, "ec": 0, "tier": "micro"},
+    "leer_prog":        {"label": "Leer programación",               "cat": "Programación",     "pts": 2, "ec": 0, "tier": "micro"},
+    "python100":        {"label": "Lección 100 Días Python",         "cat": "Programación",     "pts": 2, "ec": 1, "tier": "progreso"},
+    "ccna":             {"label": "Curso CCNA / Frontend",           "cat": "Programación",     "pts": 3, "ec": 1, "tier": "progreso"},
+    "resolver_codigo":  {"label": "Resolver 5 problemas reales",     "cat": "Programación",     "pts": 6, "ec": 2, "tier": "alto"},
+    "github":           {"label": "Subir proyecto a GitHub",         "cat": "Programación",     "pts": 8, "ec": 3, "tier": "alto"},
 
+    # ── COSMOPOLITISMO — Idiomas ──────────────────────────────────────────────
+    "podcast_idiomas":  {"label": "Podcast en idiomas",              "cat": "Idiomas",          "pts": 1, "ec": 0, "tier": "micro"},
+    "VividVocab":       {"label": "Lección VividVocab",              "cat": "Idiomas",          "pts": 1, "ec": 0, "tier": "micro"},
+    "leccion_idiomas":  {"label": "Lecciones idiomas",               "cat": "Idiomas",          "pts": 2, "ec": 1, "tier": "progreso"},
+    "conversacion":     {"label": "Conversación real 10min+",        "cat": "Idiomas",          "pts": 5, "ec": 2, "tier": "alto"},
+    "test_cert":        {"label": "Test certificación (DALF/IELTS)", "cat": "Idiomas",          "pts": 8, "ec": 3, "tier": "alto"},
+
+    # ── HEGEMONIKON — Salud Mental ────────────────────────────────────────────
+    "meditar":          {"label": "Meditar",                         "cat": "Salud Mental",     "pts": 2, "ec": 0, "tier": "micro"},
+
+    # ── HEGEMONIKON — Salud Física ────────────────────────────────────────────
+    "gym":              {"label": "Ejercicio Gym",                   "cat": "Salud Física",     "pts": 4, "ec": 1, "tier": "progreso"},
+    "pliometria":       {"label": "Pliometría",                      "cat": "Salud Física",     "pts": 3, "ec": 1, "tier": "progreso"},
+    "partido":          {"label": "Partido",                         "cat": "Salud Física",     "pts": 3, "ec": 1, "tier": "progreso"},
+    "gol":              {"label": "Gol (bonus partido)",             "cat": "Salud Física",     "pts": 2, "ec": 0, "tier": "micro"},
+
+    # ── HEGEMONIKON — Salud Base ──────────────────────────────────────────────
+    "colacion":         {"label": "Colación saludable",              "cat": "Salud Base",       "pts": 1, "ec": 0, "tier": "micro"},
+    "jugo_verde":       {"label": "Jugo verde",                      "cat": "Salud Base",       "pts": 1, "ec": 0, "tier": "micro"},
+    "comer_fruta":      {"label": "Comer fruta",                     "cat": "Salud Base",       "pts": 1, "ec": 0, "tier": "micro"},
+    "dormir_8h":        {"label": "Dormir 8 horas",                  "cat": "Salud Base",       "pts": 2, "ec": 0, "tier": "micro"},
+    "skincare_noche":   {"label": "Skin Care nocturno",              "cat": "Salud Base",       "pts": 2, "ec": 0, "tier": "micro"},
+
+    # ── EURYTHMIA — Baile ─────────────────────────────────────────────────────
+    "baile":            {"label": "Practicar baile",                 "cat": "Baile",            "pts": 2, "ec": 1, "tier": "progreso"},
+    "grabar_baile":     {"label": "Grabar práctica de baile",        "cat": "Baile",            "pts": 3, "ec": 1, "tier": "progreso"},
+
+    # ── PAIDEIA — Conocimiento ────────────────────────────────────────────────
+    "leer_general":     {"label": "Leer 5 páginas",                  "cat": "Paideia",          "pts": 1, "ec": 0, "tier": "micro"},
+    "leer_psico":       {"label": "Leer psicología",                 "cat": "Paideia",          "pts": 1, "ec": 0, "tier": "micro"},
+    "leer_365_dias":    {"label": "Leer 365 días",                   "cat": "Paideia",          "pts": 1, "ec": 0, "tier": "micro"},
+    "brilliant":        {"label": "Lección Brilliant",               "cat": "Paideia",          "pts": 2, "ec": 1, "tier": "progreso"},
+
+    # ── OIKONOMIA — Finanzas ──────────────────────────────────────────────────
+    "registrar_gastos": {"label": "Registrar gastos",                "cat": "Finanzas",         "pts": 2, "ec": 1, "tier": "progreso"},
+    "finanzas_udemy":   {"label": "Lección finanzas",                "cat": "Finanzas",         "pts": 2, "ec": 1, "tier": "progreso"},
+    "gbm":              {"label": "Investigar en GBM",               "cat": "Finanzas",         "pts": 2, "ec": 1, "tier": "progreso"},
+    "ahorrar":          {"label": "Ahorrar dinero (mensual)",        "cat": "Finanzas",         "pts": 6, "ec": 3, "tier": "alto"},
+
+    # ── ATARAXIA — Orden ──────────────────────────────────────────────────────
+    "tender_cama":      {"label": "Tender cama",                     "cat": "Orden",            "pts": 1, "ec": 0, "tier": "micro"},
+    "planchar":         {"label": "Planchar ropa",                   "cat": "Orden",            "pts": 2, "ec": 1, "tier": "progreso"},
+    "prep_comida":      {"label": "Preparar comida semana",          "cat": "Orden",            "pts": 3, "ec": 1, "tier": "progreso"},
+    "limpieza":         {"label": "Limpieza semanal",                "cat": "Orden",            "pts": 3, "ec": 1, "tier": "progreso"},
+    "lavar_carro":      {"label": "Lavar carro",                     "cat": "Orden",            "pts": 2, "ec": 0, "tier": "micro"},
+    "revision_semanal": {"label": "Revisión semanal",                "cat": "Orden",            "pts": 7, "ec": 3, "tier": "alto"},
+
+    # ── IDENTIDAD — Presencia / Enfoque ──────────────────────────────────────
+    "outfit":           {"label": "Outfit cuidado / presencia",      "cat": "Identidad",        "pts": 1, "ec": 0, "tier": "micro"},
+    "lenguaje_corporal":{"label": "Lenguaje corporal consciente",    "cat": "Identidad",        "pts": 1, "ec": 0, "tier": "micro"},
+    "redes_control":    {"label": "<3.5h redes sociales",            "cat": "Identidad",        "pts": 4, "ec": 1, "tier": "progreso"},
+
+    # ── SÁBADO RESET — solo sábado ────────────────────────────────────────────
+    "sat_bloque1":      {"label": "Bloque 1 — Entorno (limpieza gral.)", "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "progreso", "weekend": "sat"},
+    "sat_bloque2":      {"label": "Bloque 2 — Ropa & Higiene",           "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "progreso", "weekend": "sat"},
+    "sat_bloque3":      {"label": "Bloque 3 — Base (desayuno/plantas)",  "cat": "Sábado Reset", "pts": 3, "ec": 1, "tier": "progreso", "weekend": "sat"},
+    "sat_flow":         {"label": "Bonus — Flow continuo",               "cat": "Sábado Reset", "pts": 2, "ec": 1, "tier": "progreso", "weekend": "sat"},
+
+    # ── DOMINGO STRATEGY — solo domingo ──────────────────────────────────────
+    "sun_reflexion":    {"label": "Reflexión — Revisión semanal",    "cat": "Domingo Strategy", "pts": 7, "ec": 3, "tier": "alto",    "weekend": "sun"},
+    "sun_diseno":       {"label": "Diseño — Preparar semana",        "cat": "Domingo Strategy", "pts": 4, "ec": 2, "tier": "progreso","weekend": "sun"},
+    "sun_comidas":      {"label": "Sistema — Comidas semanales",     "cat": "Domingo Strategy", "pts": 4, "ec": 2, "tier": "progreso","weekend": "sun"},
+    "sun_jugos":        {"label": "Sistema — Jugos",                 "cat": "Domingo Strategy", "pts": 3, "ec": 1, "tier": "progreso","weekend": "sun"},
+    "sun_planchar":     {"label": "Sistema — Planchar",              "cat": "Domingo Strategy", "pts": 2, "ec": 1, "tier": "progreso","weekend": "sun"},
 }
 
+# Canonical categories for weekday activities
 ACTIVITY_CATEGORIES = [
-    "Programación", "Knowledge", "Idiomas", "Salud Física",
-    "Salud Mental", "Salud", "Baile", "Orden", "Identidad",
-    "Sistema", "Finanzas", "Enfoque", "Social", "Marca personal", "Carrera",
+    "Programación", "Idiomas",
+    "Salud Mental", "Salud Física", "Salud Base",
+    "Baile", "Paideia", "Finanzas", "Orden", "Identidad",
 ]
+
+# Mapping virtud → category keys for combo/balance logic
+VIRTUE_CATS = {
+    "LOGOI":          ["Programación"],
+    "COSMOPOLITISMO": ["Idiomas"],
+    "HEGEMONIKON":    ["Salud Mental", "Salud Física", "Salud Base"],
+    "EURYTHMIA":      ["Baile"],
+    "PAIDEIA":        ["Paideia"],
+    "OIKONOMIA":      ["Finanzas"],
+    "ATARAXIA":       ["Orden"],
+    "IDENTIDAD":      ["Identidad"],
+}
 
 # ── SATURDAY TASKS ────────────────────────────────────────────────────────────
 SATURDAY_TASKS = [

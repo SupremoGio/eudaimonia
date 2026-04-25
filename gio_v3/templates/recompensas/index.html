@@ -1,0 +1,192 @@
+{% extends "tw/layout.html" %}{% set pg='recompensas' %}
+{% block title %}Tienda EC — Eudaimonia{% endblock %}
+{% block topright %}{{ gam.total_coins }} EC{% endblock %}
+{% block content %}
+<style>
+.r-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.ec-badge{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:14px;}
+.ec-big{font-family:var(--serif);font-size:2.4rem;font-weight:300;font-style:italic;color:var(--amber);}
+.ec-lbl{font-size:.48rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;}
+.lvl-badge{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);border-radius:14px;}
+.lvl-name{font-size:.9rem;font-family:var(--serif);font-style:italic;color:var(--violet-l);}
+.lvl-sub{font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
+
+.rewards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:28px;}
+.rc{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:border-color .2s;}
+.rc.can{border-color:rgba(245,158,11,.3);}
+.rc.can:hover{border-color:rgba(245,158,11,.5);}
+.rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.rc-name{font-size:.95rem;color:var(--text);font-family:var(--serif);font-style:italic;font-weight:300;}
+.rc-cost{font-size:1.2rem;font-weight:600;color:var(--amber);font-family:var(--serif);font-style:italic;}
+.rc-cost span{font-size:.48rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;display:block;margin-top:1px;text-align:right;}
+.rc-desc{font-size:.64rem;color:var(--dim);line-height:1.55;margin-bottom:12px;}
+.rc-reqs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.req-chip{font-size:.48rem;padding:3px 8px;border-radius:100px;letter-spacing:.06em;}
+.req-lvl{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);color:var(--violet-l);}
+.req-badge{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--amber);}
+.req-cool{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
+.btn-redeem{width:100%;padding:10px;border-radius:9px;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);cursor:pointer;transition:all .18s;border:none;}
+.btn-redeem.active{background:linear-gradient(135deg,var(--amber),#f97316);color:#111;font-weight:600;}
+.btn-redeem.active:hover{opacity:.9;transform:translateY(-1px);}
+.btn-redeem.blocked{background:var(--card2);border:1px solid var(--b);color:var(--dim);cursor:not-allowed;}
+.block-msg{font-size:.52rem;color:var(--coral);margin-top:8px;text-align:center;}
+.last-red{font-size:.5rem;color:var(--dim);margin-top:6px;text-align:center;}
+
+.add-form{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:20px;margin-bottom:28px;}
+.add-form h3{font-family:var(--serif);font-size:1.1rem;font-style:italic;font-weight:300;color:var(--text);margin-bottom:16px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.form-row.single{grid-template-columns:1fr;}
+.fi{display:flex;flex-direction:column;gap:5px;}
+.fi label{font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
+.fi input,.fi select,.fi textarea{background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:.7rem;outline:none;transition:border-color .18s;}
+.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--amber);}
+
+@media(max-width:600px){.form-row{grid-template-columns:1fr;}.r-hdr{flex-direction:column;align-items:flex-start;}}
+</style>
+
+<div class="r-hdr">
+  <div>
+    <div style="font-family:var(--serif);font-size:1.6rem;font-style:italic;font-weight:300;color:var(--text);">Tienda de Recompensas</div>
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:3px;">Convierte tu esfuerzo en recompensas reales</div>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <div class="ec-badge">
+      <div>
+        <div class="ec-lbl">Euda-Credits</div>
+        <div class="ec-big" id="ec-display">{{ ec_balance }}</div>
+      </div>
+    </div>
+    <div class="lvl-badge">
+      <div>
+        <div class="lvl-sub">Nivel {{ level_info.level }}</div>
+        <div class="lvl-name">{{ level_info.level_name }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nivel XP progress -->
+<div class="tile" style="margin-bottom:20px;padding:14px 18px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+    <div style="font-size:.52rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;">Progreso al siguiente nivel</div>
+    <div style="font-size:.64rem;color:var(--violet-l);">{{ level_info.xp_to_next }} XP para <strong>{{ gam.level_name }}</strong>{% if gam.level < 10 %} → Nivel {{ gam.level + 1 }}{% endif %}</div>
+  </div>
+  <div style="background:var(--card2);border-radius:100px;height:6px;overflow:hidden;">
+    <div style="width:{{ level_info.level_pct }}%;height:100%;background:linear-gradient(90deg,var(--violet),var(--violet-l));border-radius:100px;transition:width .5s;"></div>
+  </div>
+</div>
+
+<!-- Rewards grid -->
+<div class="rewards-grid" id="rewards-grid">
+  {% for r in rewards %}
+  <div class="rc {% if r.can_redeem %}can{% endif %}" data-id="{{ r.id }}">
+    <div class="rc-top">
+      <div class="rc-name">{{ r.name }}</div>
+      <div class="rc-cost">{{ r.ec_cost }}<span>EC</span></div>
+    </div>
+    {% if r.description %}
+    <div class="rc-desc">{{ r.description }}</div>
+    {% endif %}
+    <div class="rc-reqs">
+      {% if r.level_required > 1 %}
+      <span class="req-chip req-lvl">Nivel {{ r.level_required }}+</span>
+      {% endif %}
+      {% if r.badge_required %}
+      <span class="req-chip req-badge">Badge: {{ r.badge_required }}</span>
+      {% endif %}
+      {% if r.cooldown_days > 0 %}
+      <span class="req-chip req-cool">Cooldown {{ r.cooldown_days }}d</span>
+      {% endif %}
+    </div>
+    <button class="btn-redeem {% if r.can_redeem %}active{% else %}blocked{% endif %}"
+            onclick="{% if r.can_redeem %}redeemReward({{ r.id }}, '{{ r.name }}', {{ r.ec_cost }}){% endif %}">
+      {% if r.can_redeem %}✦ CANJEAR{% else %}BLOQUEADA{% endif %}
+    </button>
+    {% if not r.can_redeem %}
+    <div class="block-msg">{{ r.block_reason }}</div>
+    {% endif %}
+    {% if r.last_redeemed %}
+    <div class="last-red">Último canje: {{ r.last_redeemed[:10] }}</div>
+    {% endif %}
+    <button style="position:absolute;top:10px;right:38px;background:none;border:none;color:var(--dim);font-size:.58rem;cursor:pointer;padding:4px;" onclick="editReward({{ r.id }}, '{{ r.name }}', '{{ r.description }}', {{ r.ec_cost }}, {{ r.level_required }}, {{ r.cooldown_days }})">✎</button>
+    <button style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--dim);font-size:.58rem;cursor:pointer;padding:4px;" onclick="deleteReward({{ r.id }})">✕</button>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Add reward form -->
+<div class="add-form">
+  <h3>+ Agregar Recompensa</h3>
+  <div class="form-row">
+    <div class="fi"><label>Nombre</label><input id="f-name" placeholder="Ej: Ropa Nike" /></div>
+    <div class="fi"><label>Costo EC</label><input id="f-cost" type="number" min="0" placeholder="50" /></div>
+  </div>
+  <div class="form-row">
+    <div class="fi"><label>Nivel requerido</label><input id="f-lvl" type="number" min="1" max="10" value="1" /></div>
+    <div class="fi"><label>Cooldown (días)</label><input id="f-cool" type="number" min="0" value="30" /></div>
+  </div>
+  <div class="form-row single">
+    <div class="fi"><label>Descripción (opcional)</label><input id="f-desc" placeholder="Descripción de la recompensa..." /></div>
+  </div>
+  <button class="btn-g" onclick="addReward()" style="margin-top:4px;">+ AGREGAR RECOMPENSA</button>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+let editingId = null;
+
+async function redeemReward(id, name, cost) {
+  if (!confirm(`¿Canjear "${name}" por ${cost} EC?`)) return;
+  try {
+    const r = await fetch(`/recompensas/api/rewards/${id}/redeem`, {method: 'POST'});
+    const d = await r.json();
+    if (d.error) { toast(d.error, 'err'); return; }
+    document.getElementById('ec-display').textContent = d.ec_remaining;
+    toast(`✦ ${name} canjeada! -${cost} EC`, 'win');
+    setTimeout(() => location.reload(), 1200);
+  } catch { toast('Error al canjear', 'err'); }
+}
+
+async function addReward() {
+  const name = document.getElementById('f-name').value.trim();
+  const cost = parseInt(document.getElementById('f-cost').value) || 0;
+  const lvl  = parseInt(document.getElementById('f-lvl').value)  || 1;
+  const cool = parseInt(document.getElementById('f-cool').value) || 0;
+  const desc = document.getElementById('f-desc').value.trim();
+  if (!name) { toast('Nombre requerido', 'err'); return; }
+
+  const url    = editingId ? `/recompensas/api/rewards/${editingId}` : '/recompensas/api/rewards';
+  const method = editingId ? 'PUT' : 'POST';
+
+  try {
+    const r = await fetch(url, {
+      method,
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, ec_cost: cost, level_required: lvl, cooldown_days: cool, description: desc})
+    });
+    if (!r.ok) { toast('Error', 'err'); return; }
+    editingId = null;
+    toast(method === 'POST' ? '✦ Recompensa agregada' : '✦ Actualizada');
+    setTimeout(() => location.reload(), 800);
+  } catch { toast('Error', 'err'); }
+}
+
+function editReward(id, name, desc, cost, lvl, cool) {
+  editingId = id;
+  document.getElementById('f-name').value = name;
+  document.getElementById('f-cost').value = cost;
+  document.getElementById('f-lvl').value  = lvl;
+  document.getElementById('f-cool').value = cool;
+  document.getElementById('f-desc').value = desc;
+  document.getElementById('f-name').focus();
+  toast('Editando — modifica y guarda');
+}
+
+async function deleteReward(id) {
+  if (!confirm('¿Eliminar esta recompensa?')) return;
+  await fetch(`/recompensas/api/rewards/${id}`, {method: 'DELETE'});
+  toast('Eliminada');
+  setTimeout(() => location.reload(), 600);
+}
+</script>
+{% endblock %}

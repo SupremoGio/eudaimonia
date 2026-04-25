@@ -2,9 +2,11 @@ from flask import Blueprint, jsonify, request
 from datetime import date, datetime
 from database import get_db
 from modules.gamification.engine import (
-    get_gamification_stats, get_level_info, apply_penalty, check_and_unlock
+    get_gamification_stats, get_level_info, apply_penalty, check_and_unlock,
+    get_daily_classification,
 )
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
+from modules.gamification.badges import get_all_badges, check_and_unlock_badges, get_active_perks
 
 gamification_bp = Blueprint('gamification', __name__)
 
@@ -14,6 +16,14 @@ gamification_bp = Blueprint('gamification', __name__)
 @gamification_bp.route('/api/gamification/stats')
 def stats():
     return jsonify(get_gamification_stats())
+
+
+# ── Daily Classification ──────────────────────────────────────────────────────
+
+@gamification_bp.route('/api/gamification/classification')
+def classification():
+    d = request.args.get('date', date.today().isoformat())
+    return jsonify(get_daily_classification(d))
 
 
 # ── Achievements ──────────────────────────────────────────────────────────────
@@ -45,6 +55,27 @@ def achievements():
     return jsonify({"achievements": result, "unlocked": unlocked_count, "total": len(result)})
 
 
+# ── Badges ────────────────────────────────────────────────────────────────────
+
+@gamification_bp.route('/api/gamification/badges')
+def badges():
+    all_badges   = get_all_badges()
+    active_perks = get_active_perks()
+    unlocked     = [b for b in all_badges if b["unlocked"]]
+    return jsonify({
+        "badges":       all_badges,
+        "unlocked":     len(unlocked),
+        "total":        len(all_badges),
+        "active_perks": active_perks,
+    })
+
+
+@gamification_bp.route('/api/gamification/badges/check', methods=['POST'])
+def check_badges():
+    newly = check_and_unlock_badges()
+    return jsonify({"newly_unlocked": newly, "count": len(newly)})
+
+
 # ── XP / Coins history ────────────────────────────────────────────────────────
 
 @gamification_bp.route('/api/gamification/history')
@@ -61,7 +92,7 @@ def history():
         ).fetchall()
     return jsonify({
         "xp_log":   [dict(r) for r in xp_log],
-        "coin_log": [dict(r) for r in coin_log],
+        "ec_log":   [dict(r) for r in coin_log],
     })
 
 
@@ -137,7 +168,7 @@ def deactivate_event(key):
     return jsonify(dict(row))
 
 
-# ── Manual achievement check (debug / admin) ──────────────────────────────────
+# ── Manual achievement check ──────────────────────────────────────────────────
 
 @gamification_bp.route('/api/gamification/check-achievements', methods=['POST'])
 def check_achievements():

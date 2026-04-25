@@ -15,19 +15,38 @@ def get_dashboard_stats():
     month_start = date.today().replace(day=1).isoformat()
 
     with get_db() as db:
-        pts_today  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date=?",      (today,)).fetchone()["s"]
-        pts_week   = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?",     (week_start,)).fetchone()["s"]
-        pts_month  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?",     (month_start,)).fetchone()["s"]
-        done_today = [r["activity_key"] for r in db.execute("SELECT activity_key FROM activity_logs WHERE date=?", (today,)).fetchall()]
+        xp_today   = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=? AND source='activity'",
+            (today,)
+        ).fetchone()["s"]
+        xp_week    = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (week_start,)
+        ).fetchone()["s"]
+        xp_month   = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (month_start,)
+        ).fetchone()["s"]
+        ec_total   = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM coins_ledger"
+        ).fetchone()["s"]
+        done_today = [r["activity_key"] for r in db.execute(
+            "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
+        ).fetchall()]
         pipeline   = db.execute("SELECT * FROM pipeline_items ORDER BY id DESC").fetchall()
         priorities = db.execute("SELECT * FROM priorities WHERE date=? ORDER BY id", (today,)).fetchall()
 
     return {
-        "pts_today": pts_today, "pts_week": pts_week, "pts_month": pts_month,
-        "streak": engine.get_gamification_streak(),
+        "xp_today":  xp_today,
+        "xp_week":   xp_week,
+        "xp_month":  xp_month,
+        "ec_total":  max(0, ec_total),
+        "streak":    engine.get_gamification_streak(),
         "done_today": done_today,
-        "pipeline":   [dict(r) for r in pipeline],
-        "priorities": [dict(r) for r in priorities],
+        "pipeline":  [dict(r) for r in pipeline],
+        "priorities":[dict(r) for r in priorities],
+        # Legacy aliases for template compatibility
+        "pts_today": xp_today,
+        "pts_week":  xp_week,
+        "pts_month": xp_month,
     }
 
 
@@ -41,46 +60,81 @@ def get_payment_alerts():
     return alerts
 
 
+def get_weekend_mode():
+    """Returns 'sat', 'sun', or None depending on today."""
+    dow = date.today().weekday()   # 5 = Saturday, 6 = Sunday
+    if dow == 5: return "sat"
+    if dow == 6: return "sun"
+    return None
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @actividades_bp.route('/')
 def index():
-    stats = get_dashboard_stats()
+    stats        = get_dashboard_stats()
+    gam          = engine.get_gamification_stats()
+    weekend_mode = get_weekend_mode()
+
+    # Weekend activities separated
+    sat_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sat"}
+    sun_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sun"}
+    # Regular activities (no weekend field)
+    regular_acts = {k: v for k, v in ACTIVITIES.items() if "weekend" not in v}
+
     return render_template('actividades/index.html',
-        stats=stats,
-        activities=ACTIVITIES,
-        cats=ACTIVITY_CATEGORIES,
-        quote=get_quote_of_day(),
-        word=get_word_of_day(),
-        payment_alerts=get_payment_alerts(),
-        today=date.today().isoformat(),
-        gam_stats=engine.get_gamification_stats(),
+        stats         = stats,
+        gam           = gam,
+        activities    = regular_acts,
+        sat_acts      = sat_acts,
+        sun_acts      = sun_acts,
+        cats          = ACTIVITY_CATEGORIES,
+        quote         = get_quote_of_day(),
+        word          = get_word_of_day(),
+        payment_alerts= get_payment_alerts(),
+        today         = date.today().isoformat(),
+        today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][date.today().weekday()],
+        weekend_mode  = weekend_mode,
+        classification= gam["classification"],
     )
 
 
 @actividades_bp.route('/api/today')
 def today_status():
-    """Returns current done-state for all activities today."""
-    today = date.today().isoformat()
-    week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+    today      = date.today().isoformat()
+    week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
     month_start = date.today().replace(day=1).isoformat()
     with get_db() as db:
         today_keys = {r['activity_key'] for r in db.execute(
             "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
         ).fetchall()}
-        pts_today  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date=?",  (today,)).fetchone()['s']
-        pts_week   = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?", (week_start,)).fetchone()['s']
-        pts_month  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?", (month_start,)).fetchone()['s']
+        xp_today  = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=? AND source='activity'", (today,)
+        ).fetchone()['s']
+        xp_week   = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (week_start,)
+        ).fetchone()['s']
+        xp_month  = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (month_start,)
+        ).fetchone()['s']
     activities = [
-        {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'], 'done': k in today_keys}
+        {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'],
+         'ec': v.get('ec', 0), 'tier': v.get('tier', 'micro'), 'done': k in today_keys}
         for k, v in ACTIVITIES.items()
     ]
     return jsonify({
         'activities': activities,
-        'pts': {'today': pts_today, 'week': pts_week, 'month': pts_month},
+        'xp': {'today': xp_today, 'week': xp_week, 'month': xp_month},
         'streak': engine.get_gamification_streak(),
+        'classification': engine.get_daily_classification(today),
         'date': today,
     })
+
+
+@actividades_bp.route('/api/classification')
+def classification():
+    today = request.args.get('date', date.today().isoformat())
+    return jsonify(engine.get_daily_classification(today))
 
 
 @actividades_bp.route('/api/activity/log', methods=['POST'])
@@ -115,7 +169,8 @@ def log_activity():
         return jsonify({'action': 'removed', 'pts': -pts, 'stats': get_dashboard_stats(), 'gam': gam})
 
     gam = engine.process_activity(key, pts, cat, log_id)
-    return jsonify({'action': 'added', 'pts': pts, 'stats': get_dashboard_stats(), 'gam': gam})
+    return jsonify({'action': 'added', 'pts': pts, 'xp': gam['xp'], 'ec': gam['ec'],
+                    'stats': get_dashboard_stats(), 'gam': gam})
 
 
 @actividades_bp.route('/api/pipeline', methods=['POST'])
@@ -156,7 +211,7 @@ def add_priority():
 @actividades_bp.route('/api/priority/<int:pid>/toggle', methods=['POST'])
 def toggle_priority(pid):
     today = date.today().isoformat()
-    bonus_action = None  # 'add' | 'remove' | None
+    bonus_action = None
 
     with get_db() as db:
         row = db.execute("SELECT done FROM priorities WHERE id=?", (pid,)).fetchone()
@@ -175,7 +230,7 @@ def toggle_priority(pid):
         if all3 and not bonus_exists:
             db.execute(
                 "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
-                ('priority_bonus', today, 3)
+                ('priority_bonus', today, 5)
             )
             db.commit()
             bonus_action = 'add'

@@ -616,6 +616,58 @@ def init_db():
                 ]
             )
 
+        # ── GAMIFICATION v3.0 — Badges & Rewards ─────────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS badges (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            key               TEXT    NOT NULL UNIQUE,
+            tier              TEXT    NOT NULL,
+            unlocked_at       TEXT    DEFAULT NULL,
+            perks_active_until TEXT   DEFAULT NULL,
+            notified          INTEGER DEFAULT 0,
+            created_at        TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS rewards (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            name             TEXT    NOT NULL,
+            description      TEXT    DEFAULT '',
+            ec_cost          INTEGER NOT NULL DEFAULT 0,
+            level_required   INTEGER DEFAULT 1,
+            badge_required   TEXT    DEFAULT '',
+            cooldown_days    INTEGER DEFAULT 0,
+            last_redeemed    TEXT    DEFAULT NULL,
+            status           TEXT    DEFAULT 'available',
+            created_at       TEXT    NOT NULL
+        );
+        """)
+
+        # Seed default rewards if empty
+        if db.execute("SELECT COUNT(*) as c FROM rewards").fetchone()["c"] == 0:
+            import datetime as _dtr
+            _now = _dtr.datetime.now().isoformat()
+            db.executemany(
+                """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, created_at)
+                   VALUES (?,?,?,?,?,?,?)""",
+                [
+                    ("Ropa Nike",          "Comprar ropa Nike nueva",          50,  3,  "",               30,  _now),
+                    ("Libro técnico",      "Comprar libro de programación",    30,  2,  "script_junior",  7,   _now),
+                    ("Kindle",             "Comprar Kindle",                   120, 4,  "fullstack_arete", 90, _now),
+                    ("Salida / Experiencia","Experiencia o salida especial",   80,  5,  "",               30,  _now),
+                    ("Apple Watch",        "Comprar Apple Watch",              300, 7,  "stoic_commander", 180,_now),
+                    ("Viaje",              "Viaje o vacaciones merecidas",     500, 10, "diplomatico",    365, _now),
+                ]
+            )
+            db.commit()
+
+        # Migrate activity_logs: add xp column if not present (legacy support)
+        try:
+            al_cols = [r["name"] for r in db.execute("PRAGMA table_info(activity_logs)").fetchall()]
+            if "xp" not in al_cols:
+                db.execute("ALTER TABLE activity_logs ADD COLUMN xp INTEGER DEFAULT 0")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] activity_logs migration warning: {e}")
+
         # Seed default special events (inactive by default)
         if db.execute("SELECT COUNT(*) as c FROM special_events").fetchone()["c"] == 0:
             import datetime as _dt

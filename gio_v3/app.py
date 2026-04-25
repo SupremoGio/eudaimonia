@@ -14,6 +14,7 @@ from modules.finanzas.consumo      import consumo_bp
 from modules.finanzas.budget       import budget_bp
 from modules.finanzas.prioridades  import prioridades_bp
 from modules.tw.routes       import tw_bp
+from modules.recompensas.routes import recompensas_bp
 
 
 def create_app():
@@ -33,6 +34,7 @@ def create_app():
     app.register_blueprint(budget_bp,       url_prefix='/finanzas/budget')
     app.register_blueprint(prioridades_bp,  url_prefix='/finanzas/prioridades')
     app.register_blueprint(tw_bp)
+    app.register_blueprint(recompensas_bp, url_prefix='/recompensas')
 
     with app.app_context():
         init_db()
