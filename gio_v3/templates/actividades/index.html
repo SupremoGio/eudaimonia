@@ -236,6 +236,27 @@
     <div style="font-size:.46rem;color:var(--dim);margin-top:5px;" id="lvl-next">
       {% if not gam.max_level %}{{ gam.xp_to_next }} XP para siguiente nivel{% else %}EUDAIMÓN — Nivel máximo alcanzado{% endif %}
     </div>
+    <div style="margin-top:10px;text-align:right;">
+      <button onclick="openResetModal()" style="background:none;border:none;font-size:.42rem;color:var(--dim);cursor:pointer;letter-spacing:.1em;text-transform:uppercase;padding:2px 4px;border-radius:4px;transition:color .15s;" onmouseover="this.style.color='var(--coral)'" onmouseout="this.style.color='var(--dim)'">reset →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div id="reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center;">
+  <div style="background:var(--card);border:1px solid rgba(244,63,94,.3);border-radius:16px;padding:28px 32px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);">
+    <div style="font-size:.44rem;color:var(--coral);letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Acción irreversible</div>
+    <div style="font-family:var(--serif);font-size:1.1rem;font-style:italic;color:var(--text);margin-bottom:10px;">Reset de Gamificación</div>
+    <div style="font-size:.6rem;color:var(--mid);line-height:1.6;margin-bottom:20px;">
+      Se borrarán permanentemente todos los XP, Euda-Credits, logros, badges, rachas y registros de actividades.<br><br>
+      <span style="color:var(--dim);">Los rewards de la tienda se conservan.</span>
+    </div>
+    <div style="font-size:.52rem;color:var(--dim);margin-bottom:16px;">Escribe <strong style="color:var(--coral);">RESET</strong> para confirmar:</div>
+    <input id="reset-confirm-input" type="text" placeholder="RESET" style="width:100%;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;font-size:.65rem;color:var(--text);font-family:var(--mono);letter-spacing:.08em;box-sizing:border-box;margin-bottom:14px;outline:none;">
+    <div style="display:flex;gap:8px;">
+      <button onclick="closeResetModal()" style="flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:9px;font-size:.52rem;color:var(--mid);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;">Cancelar</button>
+      <button id="reset-confirm-btn" onclick="executeReset()" style="flex:1;background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.3);border-radius:8px;padding:9px;font-size:.52rem;color:var(--coral);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;opacity:.4;transition:opacity .15s;" disabled>Confirmar Reset</button>
+    </div>
   </div>
 </div>
 
@@ -575,6 +596,48 @@ document.getElementById('p-inp').addEventListener('keydown', e => { if(e.key==='
 document.getElementById('pipe-inp').addEventListener('keydown', e => { if(e.key==='Enter') addPipe(); });
 document.getElementById('q-t').style.transition = 'opacity .25s';
 document.getElementById('q-a').style.transition = 'opacity .25s';
+
+// ── Gamification Reset ────────────────────────────────────────────────────────
+function openResetModal() {
+  const m = document.getElementById('reset-modal');
+  m.style.display = 'flex';
+  document.getElementById('reset-confirm-input').value = '';
+  document.getElementById('reset-confirm-btn').disabled = true;
+  document.getElementById('reset-confirm-btn').style.opacity = '.4';
+  setTimeout(() => document.getElementById('reset-confirm-input').focus(), 50);
+}
+
+function closeResetModal() {
+  document.getElementById('reset-modal').style.display = 'none';
+}
+
+document.getElementById('reset-confirm-input').addEventListener('input', function() {
+  const ok = this.value.trim() === 'RESET';
+  const btn = document.getElementById('reset-confirm-btn');
+  btn.disabled = !ok;
+  btn.style.opacity = ok ? '1' : '.4';
+});
+
+document.getElementById('reset-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeResetModal();
+});
+
+async function executeReset() {
+  const btn = document.getElementById('reset-confirm-btn');
+  btn.textContent = 'Reseteando...';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/gamification/reset', {method: 'POST'});
+    if (!r.ok) throw new Error();
+    closeResetModal();
+    toast('Reset completo — empezando desde cero', 'win');
+    setTimeout(() => location.reload(), 1200);
+  } catch {
+    toast('Error al resetear', 'err');
+    btn.textContent = 'Confirmar Reset';
+    btn.disabled = false;
+  }
+}
 
 // Midnight reset detector: reload when the calendar day changes
 const _PAGE_DATE = '{{ today }}';

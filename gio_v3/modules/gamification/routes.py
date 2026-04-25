@@ -174,3 +174,20 @@ def deactivate_event(key):
 def check_achievements():
     newly = check_and_unlock()
     return jsonify({"newly_unlocked": newly, "count": len(newly)})
+
+
+# ── Full Reset ────────────────────────────────────────────────────────────────
+
+@gamification_bp.route('/api/gamification/reset', methods=['POST'])
+def reset_gamification():
+    """Wipe all XP, EC, streaks, achievements and badges. Keeps rewards config."""
+    with get_db() as db:
+        db.execute("DELETE FROM xp_ledger")
+        db.execute("DELETE FROM coins_ledger")
+        db.execute("DELETE FROM multiplier_log")
+        db.execute("DELETE FROM penalty_log")
+        db.execute("DELETE FROM activity_logs")
+        db.execute("UPDATE achievements SET unlocked_at=NULL, coins_earned=0, xp_earned=0, notified=0")
+        db.execute("UPDATE badges SET unlocked_at=NULL, perks_active_until=NULL, notified=0")
+        db.commit()
+    return jsonify({"ok": True, "message": "Reset completo — empezando desde cero"})
