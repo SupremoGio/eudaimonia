@@ -114,6 +114,16 @@ def _build_eudaimonia_data():
         pts_week_val   = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?",  (week_start,)).fetchone()['s']
         pts_month_val  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?",  (month_start,)).fetchone()['s']
 
+        # Max streak y semanas activo (para perfil)
+        _all_dates = sorted({r['date'] for r in all_logs})
+        max_streak, cur_streak, prev_d = 0, 0, None
+        for d_str in _all_dates:
+            dd = date.fromisoformat(d_str)
+            cur_streak = (cur_streak + 1) if (prev_d and dd == prev_d + timedelta(days=1)) else 1
+            max_streak = max(max_streak, cur_streak)
+            prev_d = dd
+        weeks_active = len({date.fromisoformat(r['date']).isocalendar()[:2] for r in all_logs if r['date']})
+
         # Idiomas: test results más recientes por idioma
         lang_rows = db.execute(
             "SELECT test_type, score, test_date FROM lang_test_results ORDER BY test_date DESC LIMIT 10"
@@ -202,9 +212,11 @@ def _build_eudaimonia_data():
         'lang_stats': lang_stats,
         'activities': activities,
         'act_cats':   list(ACTIVITY_CATEGORIES),
-        'pts_today':  pts_today_val,
-        'pts_week':   pts_week_val,
-        'pts_month':  pts_month_val,
+        'pts_today':    pts_today_val,
+        'pts_week':     pts_week_val,
+        'pts_month':    pts_month_val,
+        'max_streak':   max_streak,
+        'weeks_active': weeks_active,
     }
 
 

@@ -685,6 +685,9 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
 // ═══════════════════════════════════════════════════════════
 function ProfileScreen({ appState, isDesktop }) {
   const { level, xp, xpNext, totalXP, modules } = appState;
+  const d = window.__EUDAIMONIA_DATA__ || {};
+  const maxStreak   = d.max_streak   ?? 0;
+  const weeksActive = d.weeks_active ?? 0;
   const lv = EU.levels[level - 1];
   const xpPct = xpNext ? xp / xpNext : 1;
 
@@ -739,9 +742,9 @@ function ProfileScreen({ appState, isDesktop }) {
       <div style={{padding: isDesktop ? '0 24px' : '0 16px', display:'grid', gridTemplateColumns: isDesktop ? '1fr 1fr 1fr 1fr' : '1fr 1fr', gap:8, marginBottom:20}}>
         {[
           {label:'XP Total',      val: totalXP.toLocaleString()},
-          {label:'Racha Mayor',   val:'33 días'},
+          {label:'Racha Mayor',   val:`${maxStreak} días`},
           {label:'Hoy',           val:`${modules.filter(m=>m.done).length}/${modules.length} mods`},
-          {label:'Semanas activo',val:'12'},
+          {label:'Semanas activo',val:String(weeksActive)},
         ].map(s => (
           <div key={s.label} style={{background:C.card,
             border:'1px solid rgba(201,168,76,0.1)',borderRadius:12,padding:'14px'}}>

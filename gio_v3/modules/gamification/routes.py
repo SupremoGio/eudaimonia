@@ -187,7 +187,7 @@ def reset_gamification():
         db.execute("DELETE FROM multiplier_log")
         db.execute("DELETE FROM penalty_log")
         db.execute("DELETE FROM activity_logs")
-        db.execute("UPDATE achievements SET unlocked_at=NULL, coins_earned=0, xp_earned=0, notified=0")
-        db.execute("UPDATE badges SET unlocked_at=NULL, perks_active_until=NULL, notified=0")
+        # Achievements y badges se conservan como "ganados" para que no
+        # se vuelvan a disparar (evita XP inesperado en la primera actividad post-reset)
         db.commit()
     return jsonify({"ok": True, "message": "Reset completo — empezando desde cero"})
