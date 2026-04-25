@@ -51,7 +51,8 @@
       "Bash(py -3.8 -c \"import flask; print\\('flask ok'\\)\")",
       "Bash(py -3.8 -m pip install flask werkzeug --quiet)",
       "Bash(py -3.8 -c \"import flask; print\\('flask', flask.__version__\\)\")",
-      "Bash(py -3.8 -m pytest tests/test_db_persistence.py -v --tb=short)"
+      "Bash(py -3.8 -m pytest tests/test_db_persistence.py -v --tb=short)",
+      "Bash(xargs ls *)"
     ]
   }
 }
