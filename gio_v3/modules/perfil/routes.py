@@ -22,18 +22,26 @@ def index():
 
 @perfil_bp.route('/api/update', methods=['POST'])
 def update():
-    d = request.json
+    d = request.get_json(force=True, silent=True) or {}
+    key = d.get('key', '').strip()
+    value = d.get('value')
+    if not key or value is None:
+        return jsonify({'ok': False, 'error': 'key and value required'}), 400
     with get_db() as db:
-        db.execute("UPDATE personal_info SET value=? WHERE key=?", (d['value'], d['key']))
+        db.execute("UPDATE personal_info SET value=? WHERE key=?", (str(value), key))
         db.commit()
     return jsonify({'ok': True})
 
 
 @perfil_bp.route('/api/update_measurement', methods=['POST'])
 def update_measurement():
-    d = request.json
+    d = request.get_json(force=True, silent=True) or {}
+    key = d.get('key', '').strip()
+    value = d.get('value')
+    if not key or value is None:
+        return jsonify({'ok': False, 'error': 'key and value required'}), 400
     with get_db() as db:
-        db.execute("UPDATE body_measurements SET value=? WHERE key=?", (d['value'], d['key']))
+        db.execute("UPDATE body_measurements SET value=? WHERE key=?", (str(value), key))
         db.commit()
     return jsonify({'ok': True})
 

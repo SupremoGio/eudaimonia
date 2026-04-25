@@ -135,7 +135,9 @@ function cancel(k){
 }
 async function save(k){
   const val=document.getElementById('einp-'+k).value.trim();if(!val)return;
-  await fetch('/perfil/api/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:val})});
+  const r=await fetch('/perfil/api/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:val})});
+  const j=await r.json().catch(()=>({}));
+  if(!j.ok){toast('Error al guardar ✗');return;}
   rv[k]=val;
   const el=document.getElementById('val-'+k);
   el.textContent=priv[k]?'••••••••':val;el.dataset.showing='0';
@@ -160,7 +162,9 @@ function cancelM(k){
 }
 async function saveM(k){
   const val=document.getElementById('meinp-'+k).value.trim();if(!val)return;
-  await fetch('/perfil/api/update_measurement',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:val})});
+  const r=await fetch('/perfil/api/update_measurement',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:val})});
+  const j=await r.json().catch(()=>({}));
+  if(!j.ok){toast('Error al guardar ✗');return;}
   mv[k]=val;
   document.getElementById('mval-'+k).textContent=val;
   cancelM(k);toast('Guardado ✓');

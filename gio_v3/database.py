@@ -21,7 +21,7 @@ def _to_arg(v):
     if v is None:            return {"type": "null"}
     if isinstance(v, bool):  return {"type": "integer", "value": str(int(v))}
     if isinstance(v, int):   return {"type": "integer", "value": str(v)}
-    if isinstance(v, float): return {"type": "real",    "value": str(v)}
+    if isinstance(v, float): return {"type": "float",   "value": str(v)}
     return {"type": "text", "value": str(v)}
 
 def _from_cell(cell):
@@ -30,7 +30,7 @@ def _from_cell(cell):
     v = cell.get("value")
     if t == "null" or v is None:  return None
     if t == "integer":            return int(v)
-    if t == "real":               return float(v)
+    if t in ("float", "real"):    return float(v)
     return v
 
 def _turso_pipeline(host, token, stmts):
