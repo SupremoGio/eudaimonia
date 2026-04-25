@@ -236,9 +236,6 @@
     <div style="font-size:.46rem;color:var(--dim);margin-top:5px;" id="lvl-next">
       {% if not gam.max_level %}{{ gam.xp_to_next }} XP para siguiente nivel{% else %}EUDAIMÓN — Nivel máximo alcanzado{% endif %}
     </div>
-    <div style="margin-top:10px;text-align:right;">
-      <button onclick="openResetModal()" style="background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.25);font-size:.44rem;color:var(--coral);cursor:pointer;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:6px;transition:all .15s;" onmouseover="this.style.background='rgba(244,63,94,.18)'" onmouseout="this.style.background='rgba(244,63,94,.08)'">Reset gamificación</button>
-    </div>
   </div>
 </div>
 
@@ -396,6 +393,13 @@
         <div class="q-a" id="q-a">— {{ quote.author }}</div>
       </div>
       <button class="rb" onclick="rQuote()"><i data-lucide="refresh-cw"></i></button>
+    </div>
+
+    <!-- Reset Gamificación -->
+    <div style="border:1px solid rgba(244,63,94,.3);border-radius:14px;padding:14px 16px;background:rgba(244,63,94,.04);">
+      <div style="font-size:.44rem;color:var(--coral);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;">Zona de peligro</div>
+      <div style="font-size:.6rem;color:var(--mid);margin-bottom:12px;line-height:1.5;">Borra todo: XP, EC, racha, logros y badges. Empieza desde cero.</div>
+      <button onclick="openResetModal()" style="width:100%;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.4);border-radius:8px;padding:9px;font-size:.52rem;color:var(--coral);cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:background .15s;" onmouseover="this.style.background='rgba(244,63,94,.22)'" onmouseout="this.style.background='rgba(244,63,94,.1)'">Reset Gamificación</button>
     </div>
 
     <!-- Pipeline -->

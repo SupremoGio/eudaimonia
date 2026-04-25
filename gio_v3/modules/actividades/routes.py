@@ -16,14 +16,16 @@ def get_dashboard_stats():
 
     with get_db() as db:
         xp_today   = db.execute(
-            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=? AND source='activity'",
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=?",
             (today,)
         ).fetchone()["s"]
         xp_week    = db.execute(
-            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (week_start,)
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=? AND date<=?",
+            (week_start, today)
         ).fetchone()["s"]
         xp_month   = db.execute(
-            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (month_start,)
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=? AND date<=?",
+            (month_start, today)
         ).fetchone()["s"]
         ec_total   = db.execute(
             "SELECT COALESCE(SUM(amount),0) as s FROM coins_ledger"
@@ -109,13 +111,15 @@ def today_status():
             "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
         ).fetchall()}
         xp_today  = db.execute(
-            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=? AND source='activity'", (today,)
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=?", (today,)
         ).fetchone()['s']
         xp_week   = db.execute(
-            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (week_start,)
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=? AND date<=?",
+            (week_start, today)
         ).fetchone()['s']
         xp_month  = db.execute(
-            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (month_start,)
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=? AND date<=?",
+            (month_start, today)
         ).fetchone()['s']
     activities = [
         {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'],
