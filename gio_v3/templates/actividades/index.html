@@ -575,5 +575,15 @@ document.getElementById('p-inp').addEventListener('keydown', e => { if(e.key==='
 document.getElementById('pipe-inp').addEventListener('keydown', e => { if(e.key==='Enter') addPipe(); });
 document.getElementById('q-t').style.transition = 'opacity .25s';
 document.getElementById('q-a').style.transition = 'opacity .25s';
+
+// Midnight reset detector: reload when the calendar day changes
+const _PAGE_DATE = '{{ today }}';
+setInterval(() => {
+  const d = new Date();
+  const curr = d.getFullYear() + '-'
+    + String(d.getMonth() + 1).padStart(2, '0') + '-'
+    + String(d.getDate()).padStart(2, '0');
+  if (curr !== _PAGE_DATE) location.reload();
+}, 60_000);
 </script>
 {% endblock %}
