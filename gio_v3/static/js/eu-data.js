@@ -16,27 +16,31 @@ window.EU = {
     danger:    'oklch(55% 0.18 20)',
   },
 
+  // Must match LEVEL_THRESHOLDS in engine.py exactly
+  levelThresholds: [0, 200, 500, 1000, 1800, 2700, 3600, 4400, 5000, 5500],
+
   levels: [
-    { n:1,  name:'PROKOPTON',     sub:'El que avanza',        xpNext:100  },
-    { n:2,  name:'EFEBO',         sub:'En formación',          xpNext:150  },
-    { n:3,  name:'ASQUETÉS',      sub:'El practicante',        xpNext:250  },
-    { n:4,  name:'ESTRATEGOS',    sub:'El estratega',          xpNext:350  },
-    { n:5,  name:'AUTARKÉS',      sub:'El autosuficiente',     xpNext:450  },
-    { n:6,  name:'POLÍMATA',      sub:'El erudito',            xpNext:600  },
-    { n:7,  name:'ARETÉ',         sub:'La excelencia',         xpNext:700  },
-    { n:8,  name:'HEGEMÓN',       sub:'El rector',             xpNext:900  },
-    { n:9,  name:'SOPHOS',        sub:'El sabio',              xpNext:1500 },
-    { n:10, name:'EUDAIMÓN',      sub:'El floreciente',        xpNext:null },
+    { n:1,  name:'PROKOPTON',     sub:'El que avanza',        xpNext:200  },
+    { n:2,  name:'EFEBO',         sub:'En formación',         xpNext:300  },
+    { n:3,  name:'ASQUETÉS',      sub:'El practicante',       xpNext:500  },
+    { n:4,  name:'ESTRATEGOS',    sub:'El estratega',         xpNext:800  },
+    { n:5,  name:'AUTARKÉS',      sub:'El autosuficiente',    xpNext:900  },
+    { n:6,  name:'POLÍMATA',      sub:'El erudito',           xpNext:900  },
+    { n:7,  name:'ARETÉ',         sub:'La excelencia',        xpNext:800  },
+    { n:8,  name:'HEGEMÓN',       sub:'El rector',            xpNext:600  },
+    { n:9,  name:'SOPHOS',        sub:'El sabio',             xpNext:500  },
+    { n:10, name:'EUDAIMÓN',      sub:'El floreciente',       xpNext:null },
   ],
 
+  // Default modules — streak/done are overridden by server data at runtime
   modules: [
-    { id:'hegemonikon',    name:'HEGEMONIKON',    concept:'Bienestar',      desc:'Salud · Nutrición · Perfil',  hue:45,  streak:12, done:true  },
-    { id:'oikonomia',      name:'OIKONOMIA',      concept:'Finanzas',       desc:'Finanzas · Gastos · Deudas',  hue:80,  streak:8,  done:false },
-    { id:'ataraxia',       name:'ATARAXIA',       concept:'Productividad',  desc:'Automatización · Checklist',  hue:155, streak:21, done:true  },
-    { id:'paideia',        name:'PAIDEIA',        concept:'Conocimiento',   desc:'Aprendizaje · Libros',        hue:265, streak:5,  done:false },
-    { id:'cosmopolitismo', name:'COSMOPOLITISMO', concept:'Idiomas',        desc:'Idiomas · Culturas',          hue:215, streak:33, done:true  },
-    { id:'logoi',          name:'LOGOI',          concept:'Programación',   desc:'Programación · Lógica',       hue:120, streak:7,  done:false },
-    { id:'eurythmia',      name:'EURYTHMIA',      concept:'Baile',          desc:'Baile · Ritmo · Cuerpo',      hue:330, streak:4,  done:false },
+    { id:'hegemonikon',    name:'HEGEMONIKON',    concept:'Bienestar',      desc:'Salud · Nutrición · Perfil',  hue:45,  route:'/actividades', streak:0, done:false },
+    { id:'oikonomia',      name:'OIKONOMIA',      concept:'Finanzas',       desc:'Finanzas · Gastos · Deudas',  hue:80,  route:'/finanzas',    streak:0, done:false },
+    { id:'ataraxia',       name:'ATARAXIA',       concept:'Productividad',  desc:'Automatización · Checklist',  hue:155, route:'/gtd',         streak:0, done:false },
+    { id:'paideia',        name:'PAIDEIA',        concept:'Conocimiento',   desc:'Aprendizaje · Libros',        hue:265, route:'/actividades', streak:0, done:false },
+    { id:'cosmopolitismo', name:'COSMOPOLITISMO', concept:'Idiomas',        desc:'Idiomas · Culturas',          hue:215, route:'/idiomas',     streak:0, done:false },
+    { id:'logoi',          name:'LOGOI',          concept:'Programación',   desc:'Programación · Lógica',       hue:120, route:'/actividades', streak:0, done:false },
+    { id:'eurythmia',      name:'EURYTHMIA',      concept:'Baile',          desc:'Baile · Ritmo · Cuerpo',      hue:330, route:'/actividades', streak:0, done:false },
   ],
 
   submodules: {

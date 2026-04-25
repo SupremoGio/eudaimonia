@@ -2,37 +2,37 @@
 const { useState, useReducer, useEffect } = React;
 const C = window.EU.c;
 
-const SAVE_KEY = 'eudaimonia_v1';
+function _xpStateFromTotal(totalXP) {
+  const thr = EU.levelThresholds; // [0,200,500,1000,1800,2700,3600,4400,5000,5500]
+  let level = 1;
+  for (let i = 0; i < thr.length; i++) {
+    if (totalXP >= thr[i]) level = i + 1; else break;
+  }
+  level = Math.max(1, Math.min(10, level));
+  const cur  = thr[level - 1] || 0;
+  const next = level < 10 ? (thr[level] || 5500) : 5500;
+  return { level, xp: totalXP - cur, xpNext: level < 10 ? (next - cur) : null };
+}
 
-const initial = {
-  level: 3,
-  xp: 186,
-  xpNext: 250,
-  totalXP: 636,
-  modules: window.EU.modules,
-  openModuleId: null,
-};
-
-function loadState() {
-  try { const s = localStorage.getItem(SAVE_KEY); if (s) return JSON.parse(s); } catch {}
-  return null;
+function initFromServer() {
+  const d = window.__EUDAIMONIA_DATA__ || {};
+  const totalXP = d.total_xp || 0;
+  const { level, xp, xpNext } = _xpStateFromTotal(totalXP);
+  // Merge server modules (dynamic streak/done) with static route info
+  const serverMods = Array.isArray(d.modules) && d.modules.length > 0 ? d.modules : null;
+  const modules = serverMods
+    ? EU.modules.map(m => { const s = serverMods.find(sm => sm.id === m.id); return s ? {...m, streak: s.streak, done: s.done} : m; })
+    : EU.modules;
+  return { level, xp, xpNext, totalXP, modules, openModuleId: null, leveledUp: false };
 }
 
 function reducer(state, action) {
   switch (action.type) {
     case 'ADD_XP': {
-      let xp = state.xp + action.amount;
-      let totalXP = state.totalXP + action.amount;
-      let level = state.level;
-      let xpNext = state.xpNext;
-      let leveledUp = false;
-      if (xpNext && xp >= xpNext) {
-        level = Math.min(10, level + 1);
-        xp = xp - xpNext;
-        xpNext = EU.levels[level - 1]?.xpNext || null;
-        leveledUp = true;
-      }
-      return { ...state, xp, xpNext, totalXP, level, leveledUp };
+      const totalXP = state.totalXP + action.amount;
+      const next = _xpStateFromTotal(totalXP);
+      const leveledUp = next.level > state.level;
+      return { ...state, ...next, totalXP, leveledUp };
     }
     case 'CLEAR_LEVELUP': return { ...state, leveledUp: false };
     case 'OPEN_MODULE':   return { ...state, openModuleId: action.id };
@@ -124,21 +124,9 @@ function SideNav({ active, onChange }) {
 
 // ── App ───────────────────────────────────────────────────
 function App() {
-  const [state, dispatch] = useReducer(reducer, null, () => {
-    const saved = loadState();
-    // Always use fresh server data for modules and clear transient state
-    return saved
-      ? { ...saved, modules: window.EU.modules, openModuleId: null }
-      : initial;
-  });
+  const [state, dispatch] = useReducer(reducer, null, initFromServer);
   const [tab, setTab] = useState('home');
   const isDesktop = useIsDesktop();
-
-  useEffect(() => {
-    // Don't persist transient UI state — always start fresh on reload
-    const { _tab, openModuleId, ...toSave } = state;
-    localStorage.setItem(SAVE_KEY, JSON.stringify(toSave));
-  }, [state]);
 
   const appDispatch = (action) => {
     if (action.type === 'SET_TAB') setTab(action.tab);

@@ -472,7 +472,7 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
           window.EU._server.streak = data.stats.streak;
         }
       }
-      if (data.gam && data.gam.xp_delta) dispatch({type:'ADD_XP', amount: data.gam.xp_delta});
+      if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
     })
     .catch(() => {});
   };
