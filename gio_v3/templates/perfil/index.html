@@ -2,124 +2,197 @@
 {% block title %}Hegemonikon — Eudaimonia{% endblock %}{% block topright %}HEGEMONIKON · PERFIL{% endblock %}
 {% block content %}
 <style>
-@media(max-width:767px){
-  .perf-measure-grid{grid-template-columns:1fr 1fr !important;}
-  .perf-doc-row{flex-wrap:wrap;gap:6px;}
-  .perf-doc-row a{font-size:.66rem;}
+/* ── Layout ── */
+.perf-wrap{max-width:680px;width:100%;}
+
+/* ── Section header ── */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sec-title{font-family:var(--serif);font-size:1.15rem;font-style:italic;font-weight:300;color:var(--text);}
+.sec-sub{font-size:.5rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:2px;}
+.sec-tag{display:inline-flex;align-items:center;gap:5px;font-size:.46rem;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:100px;}
+.tag-violet{background:var(--violet-d);border:1px solid rgba(124,58,237,.25);color:var(--violet-l);}
+.tag-cyan{background:var(--cyan-d);border:1px solid rgba(6,182,212,.25);color:var(--cyan-l);}
+.tag-gold{background:var(--gold-d);border:1px solid rgba(245,158,11,.25);color:var(--gold);}
+
+/* ── Field row ── */
+.field-row{padding:13px 0;border-bottom:1px solid var(--b);}
+.field-row:last-child{border-bottom:none;}
+.field-meta{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.field-lbl{font-size:.46rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase;}
+.priv-badge{font-size:.42rem;color:var(--gold);background:var(--gold-d);border:1px solid rgba(245,158,11,.2);padding:1px 6px;border-radius:100px;letter-spacing:.08em;}
+
+.field-view{display:flex;align-items:center;gap:8px;}
+.field-val{font-size:.8rem;color:var(--text);flex:1;}
+.field-val.is-priv{color:var(--mid);letter-spacing:.1em;}
+.icon-btn{background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;padding:3px;border-radius:5px;transition:color .15s,background .15s;}
+.icon-btn:hover{color:var(--violet-l);background:var(--violet-d);}
+.icon-btn.danger:hover{color:var(--coral);background:var(--coral-d);}
+
+.field-edit{display:none;align-items:center;gap:7px;margin-top:6px;}
+.field-edit .fi{font-size:.76rem;padding:7px 11px;}
+
+/* ── Measurement grid ── */
+.meas-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--b);}
+.meas-cell{background:var(--card);padding:14px 16px;}
+.meas-lbl{font-size:.44rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:5px;}
+.meas-row{display:flex;align-items:center;gap:7px;}
+.meas-val{font-size:.82rem;color:var(--text);flex:1;}
+.meas-unit{font-size:.5rem;color:var(--dim);}
+.meas-edit{display:none;align-items:center;gap:6px;margin-top:6px;}
+.meas-edit .fi{font-size:.72rem;padding:6px 10px;}
+
+/* ── Documents ── */
+.doc-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
+.doc-row:last-child{border-bottom:none;}
+.doc-icon-wrap{width:32px;height:32px;border-radius:8px;background:var(--gold-d);border:1px solid rgba(245,158,11,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.doc-name{flex:1;font-size:.72rem;color:var(--text);text-decoration:none;line-height:1.3;word-break:break-all;}
+.doc-name:hover{color:var(--violet-l);}
+.doc-date{font-size:.46rem;color:var(--dim);flex-shrink:0;white-space:nowrap;}
+.doc-empty{text-align:center;padding:28px 0;color:var(--dim);font-size:.68rem;}
+
+/* ── Upload button ── */
+.upload-label{cursor:pointer;}
+
+/* ── Mobile ── */
+@media(max-width:640px){
+  .meas-grid{grid-template-columns:1fr 1fr;}
+  .field-edit{flex-wrap:wrap;}
 }
 </style>
-<div style="max-width:700px;width:100%;">
+
+<div class="perf-wrap">
 
   <!-- ── INFORMACIÓN PERSONAL ─────────────────────────────────────────── -->
-  <div style="font-family:var(--serif);font-size:1.4rem;font-style:italic;font-weight:300;margin-bottom:4px;">Perfil Personal</div>
-  <div style="font-size:.56rem;color:var(--dim);margin-bottom:20px;">Haz clic en ✏️ para editar · 📋 para copiar · Los campos privados muestran •••• por defecto.</div>
-  <div class="tile" style="padding:24px;margin-bottom:28px;">
-    {% for item in info %}
-    <div style="padding:14px 0;border-bottom:1px solid var(--b);display:flex;flex-direction:column;gap:4px;" data-key="{{ item.key }}">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:.48rem;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;">{{ item.label }}</span>
-        {% if item.private %}<span style="font-size:.42rem;color:var(--gold);opacity:.5;background:var(--gold-d);padding:1px 5px;border-radius:100px;">PRIVADO</span>{% endif %}
+  <div style="margin-bottom:28px;">
+    <div class="sec-hd">
+      <div>
+        <div class="sec-title">Perfil Personal</div>
+        <div class="sec-sub">Información de identidad y contacto</div>
       </div>
-      <div style="display:flex;align-items:center;gap:9px;" id="vrow-{{ item.key }}">
-        <span style="font-size:.82rem;color:{% if item.private %}var(--dim){% else %}var(--text){% endif %};" id="val-{{ item.key }}" data-real="{{ item.value }}" data-private="{{ item.private }}">
-          {% if item.private %}••••••••{% else %}{{ item.value }}{% endif %}
-        </span>
-        {% if item.private %}
-        <button style="background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;transition:color .16s;" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--dim)'" onclick="toggleVis('{{ item.key }}')" title="Mostrar/ocultar">
-          <i data-lucide="eye" style="width:13px;height:13px;"></i>
-        </button>
-        {% endif %}
-        <button style="background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;transition:color .16s;" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--dim)'" onclick="copyVal('{{ item.key }}')" title="Copiar">
-          <i data-lucide="copy" style="width:12px;height:12px;"></i>
-        </button>
-        <button style="background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;transition:color .16s;" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--dim)'" onclick="startEdit('{{ item.key }}')" title="Editar">
-          <i data-lucide="edit-2" style="width:12px;height:12px;"></i>
-        </button>
-      </div>
-      <div style="display:none;align-items:center;gap:7px;" id="erow-{{ item.key }}">
-        <input style="flex:1;background:var(--card2);border:none;border-bottom:1px solid var(--gold);color:var(--text);font-family:var(--mono);font-size:.78rem;outline:none;padding:3px 0;" id="einp-{{ item.key }}" value="{{ item.value }}">
-        <button class="btn-a" style="padding:5px 12px;font-size:.58rem;" onclick="save('{{ item.key }}')">Guardar</button>
-        <button class="btn-r" onclick="cancel('{{ item.key }}')">✕</button>
-      </div>
+      <span class="sec-tag tag-violet"><i data-lucide="user" style="width:10px;height:10px;"></i> Personal</span>
     </div>
-    {% endfor %}
-  </div>
-
-  <!-- ── MEDICIONES CORPORALES ─────────────────────────────────────────── -->
-  <div style="font-family:var(--serif);font-size:1.15rem;font-style:italic;font-weight:300;margin-bottom:4px;">Mediciones Corporales</div>
-  <div style="font-size:.56rem;color:var(--dim);margin-bottom:16px;">Tus medidas para elegir tallas correctas al comprar en línea.</div>
-  <div class="tile" style="padding:24px;margin-bottom:28px;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-      {% for m in measurements %}
-      <div style="padding:12px 8px;border-bottom:1px solid var(--b);{% if loop.index is odd %}border-right:1px solid var(--b);padding-right:16px;{% else %}padding-left:16px;{% endif %}display:flex;flex-direction:column;gap:3px;">
-        <div style="font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;">
-          {{ m.label }}{% if m.unit %} <span style="opacity:.5;">({{ m.unit }})</span>{% endif %}
+    <div class="tile" style="padding:6px 20px;">
+      {% for item in info %}
+      <div class="field-row" data-key="{{ item.key }}">
+        <div class="field-meta">
+          <span class="field-lbl">{{ item.label }}</span>
+          {% if item.private %}<span class="priv-badge">privado</span>{% endif %}
         </div>
-        <div style="display:flex;align-items:center;gap:7px;" id="mvrow-{{ m.key }}">
-          <span style="font-size:.78rem;color:var(--text);" id="mval-{{ m.key }}">{{ m.value }}</span>
-          <button style="background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;transition:color .16s;" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--dim)'" onclick="copyMeasure('{{ m.key }}')" title="Copiar">
-            <i data-lucide="copy" style="width:11px;height:11px;"></i>
+        <div class="field-view" id="vrow-{{ item.key }}">
+          <span class="field-val {% if item.private %}is-priv{% endif %}" id="val-{{ item.key }}" data-real="{{ item.value }}" data-private="{{ item.private }}">
+            {% if item.private %}••••••••{% else %}{{ item.value }}{% endif %}
+          </span>
+          {% if item.private %}
+          <button class="icon-btn" onclick="toggleVis('{{ item.key }}')" title="Mostrar/ocultar" id="eyebtn-{{ item.key }}">
+            <i data-lucide="eye" style="width:13px;height:13px;"></i>
           </button>
-          <button style="background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;transition:color .16s;" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--dim)'" onclick="startEditM('{{ m.key }}')" title="Editar">
-            <i data-lucide="edit-2" style="width:11px;height:11px;"></i>
+          {% endif %}
+          <button class="icon-btn" onclick="copyVal('{{ item.key }}')" title="Copiar">
+            <i data-lucide="copy" style="width:13px;height:13px;"></i>
+          </button>
+          <button class="icon-btn" onclick="startEdit('{{ item.key }}')" title="Editar">
+            <i data-lucide="pencil" style="width:13px;height:13px;"></i>
           </button>
         </div>
-        <div style="display:none;align-items:center;gap:6px;" id="merow-{{ m.key }}">
-          <input style="flex:1;min-width:0;background:var(--card2);border:none;border-bottom:1px solid var(--gold);color:var(--text);font-family:var(--mono);font-size:.74rem;outline:none;padding:3px 0;" id="meinp-{{ m.key }}" value="{{ m.value }}">
-          <button class="btn-a" style="padding:4px 10px;font-size:.54rem;" onclick="saveM('{{ m.key }}')">OK</button>
-          <button class="btn-r" onclick="cancelM('{{ m.key }}')">✕</button>
+        <div class="field-edit" id="erow-{{ item.key }}">
+          <input class="fi" style="flex:1;" id="einp-{{ item.key }}" value="{{ item.value }}" autocomplete="off">
+          <button class="btn-a" style="padding:6px 14px;font-size:.58rem;white-space:nowrap;" onclick="save('{{ item.key }}')">Guardar</button>
+          <button class="btn-r" style="padding:6px 11px;" onclick="cancel('{{ item.key }}')">✕</button>
         </div>
       </div>
       {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── MEDICIONES CORPORALES ─────────────────────────────────────────── -->
+  <div style="margin-bottom:28px;">
+    <div class="sec-hd">
+      <div>
+        <div class="sec-title">Mediciones Corporales</div>
+        <div class="sec-sub">Tallas y medidas para compras en línea</div>
+      </div>
+      <span class="sec-tag tag-cyan"><i data-lucide="ruler" style="width:10px;height:10px;"></i> Cuerpo</span>
+    </div>
+    <div class="tile" style="padding:0;overflow:hidden;">
+      <div class="meas-grid">
+        {% for m in measurements %}
+        <div class="meas-cell" style="{% if loop.last and loop.index is odd %}grid-column:span 2;{% endif %}">
+          <div class="meas-lbl">{{ m.label }}{% if m.unit %} <span style="opacity:.5;">({{ m.unit }})</span>{% endif %}</div>
+          <div class="meas-row" id="mvrow-{{ m.key }}">
+            <span class="meas-val" id="mval-{{ m.key }}">{{ m.value }}</span>
+            <button class="icon-btn" onclick="copyMeasure('{{ m.key }}')" title="Copiar">
+              <i data-lucide="copy" style="width:12px;height:12px;"></i>
+            </button>
+            <button class="icon-btn" onclick="startEditM('{{ m.key }}')" title="Editar">
+              <i data-lucide="pencil" style="width:12px;height:12px;"></i>
+            </button>
+          </div>
+          <div class="meas-edit" id="merow-{{ m.key }}">
+            <input class="fi" style="flex:1;min-width:0;" id="meinp-{{ m.key }}" value="{{ m.value }}" autocomplete="off">
+            <button class="btn-a" style="padding:5px 12px;font-size:.54rem;" onclick="saveM('{{ m.key }}')">OK</button>
+            <button class="btn-r" style="padding:5px 9px;" onclick="cancelM('{{ m.key }}')">✕</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
   </div>
 
   <!-- ── DOCUMENTOS ────────────────────────────────────────────────────── -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-    <div style="font-family:var(--serif);font-size:1.15rem;font-style:italic;font-weight:300;">Mis Documentos</div>
-    <label style="cursor:pointer;" title="Subir documento">
-      <input type="file" id="docUploadInput" style="display:none;" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip" onchange="uploadDocs(this)">
-      <span class="btn-a" style="padding:6px 14px;font-size:.6rem;display:flex;align-items:center;gap:5px;">
-        <i data-lucide="upload" style="width:12px;height:12px;"></i> Subir
-      </span>
-    </label>
-  </div>
-  <div style="font-size:.56rem;color:var(--dim);margin-bottom:16px;">PDF, imágenes, Word, Excel, ZIP. Máx 20 MB por archivo.</div>
-  <div class="tile" style="padding:16px 24px;" id="docsList">
-    {% if docs %}
-      {% for doc in docs %}
-      <div style="padding:10px 0;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px;" id="docrow-{{ doc.id }}">
-        <i data-lucide="file-text" style="width:15px;height:15px;color:var(--gold);flex-shrink:0;"></i>
-        <a href="/perfil/docs/{{ doc.filename }}" target="_blank" style="flex:1;font-size:.74rem;color:var(--text);text-decoration:none;word-break:break-all;" onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--text)'">{{ doc.original }}</a>
-        <span style="font-size:.46rem;color:var(--dim);flex-shrink:0;">{{ doc.uploaded_at[:10] }}</span>
-        <button style="background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;transition:color .16s;flex-shrink:0;" onmouseenter="this.style.color='#f87171'" onmouseleave="this.style.color='var(--dim)'" onclick="deleteDoc({{ doc.id }})" title="Eliminar">
-          <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
-        </button>
+  <div style="margin-bottom:28px;">
+    <div class="sec-hd">
+      <div>
+        <div class="sec-title">Mis Documentos</div>
+        <div class="sec-sub">PDF, imágenes, Word, Excel, ZIP · Máx 20 MB</div>
       </div>
-      {% endfor %}
-    {% else %}
-      <div style="text-align:center;padding:24px 0;color:var(--dim);font-size:.7rem;" id="docsEmpty">Aún no hay documentos. Usa el botón <strong>Subir</strong> para agregar.</div>
-    {% endif %}
+      <label class="upload-label" title="Subir documento">
+        <input type="file" id="docUploadInput" style="display:none;" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip" onchange="uploadDocs(this)">
+        <span class="btn-g" style="display:inline-flex;align-items:center;gap:6px;font-size:.58rem;padding:6px 14px;">
+          <i data-lucide="upload" style="width:12px;height:12px;"></i> Subir
+        </span>
+      </label>
+    </div>
+    <div class="tile" style="padding:4px 20px;" id="docsList">
+      {% if docs %}
+        {% for doc in docs %}
+        <div class="doc-row" id="docrow-{{ doc.id }}">
+          <div class="doc-icon-wrap">
+            <i data-lucide="{{ 'image' if doc.original.split('.')[-1].lower() in ['jpg','jpeg','png','webp'] else ('table' if doc.original.split('.')[-1].lower() in ['xls','xlsx'] else ('archive' if doc.original.split('.')[-1].lower() == 'zip' else 'file-text')) }}" style="width:14px;height:14px;color:var(--gold);"></i>
+          </div>
+          <a class="doc-name" href="/perfil/docs/{{ doc.filename }}" target="_blank">{{ doc.original }}</a>
+          <span class="doc-date">{{ doc.uploaded_at[:10] }}</span>
+          <button class="icon-btn danger" onclick="deleteDoc({{ doc.id }})" title="Eliminar">
+            <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+          </button>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="doc-empty" id="docsEmpty">Aún no hay documentos. Usa <strong>Subir</strong> para agregar.</div>
+      {% endif %}
+    </div>
   </div>
 
 </div>
 {% endblock %}
 {% block scripts %}<script>
-// ── Datos info personal ──────────────────────────────────────────────────────
 const rv={};
 {% for item in info %}rv['{{ item.key }}']='{{ item.value }}';{% endfor %}
 const priv={};
 {% for item in info %}priv['{{ item.key }}']={{ 'true' if item.private else 'false' }};{% endfor %}
-
-// ── Datos mediciones ─────────────────────────────────────────────────────────
 const mv={};
 {% for m in measurements %}mv['{{ m.key }}']='{{ m.value }}';{% endfor %}
 
 // ── Info personal ────────────────────────────────────────────────────────────
 function toggleVis(k){
   const el=document.getElementById('val-'+k);
-  el.textContent=el.dataset.showing==='1'?'••••••••':rv[k];
-  el.dataset.showing=el.dataset.showing==='1'?'0':'1';
+  const btn=document.getElementById('eyebtn-'+k);
+  const showing=el.dataset.showing==='1';
+  el.textContent=showing?'••••••••':rv[k];
+  el.classList.toggle('is-priv',showing);
+  el.dataset.showing=showing?'0':'1';
+  const icon=btn.querySelector('i');
+  icon.setAttribute('data-lucide',showing?'eye':'eye-off');
+  lucide.createIcons({nodes:[icon]});
 }
 function copyVal(k){
   navigator.clipboard.writeText(rv[k]).then(()=>toast('Copiado ✓'));
@@ -140,11 +213,13 @@ async function save(k){
   if(!j.ok){toast('Error al guardar ✗');return;}
   rv[k]=val;
   const el=document.getElementById('val-'+k);
-  el.textContent=priv[k]?'••••••••':val;el.dataset.showing='0';
+  el.textContent=priv[k]?'••••••••':val;
+  el.dataset.showing='0';
+  el.classList.toggle('is-priv',priv[k]);
   cancel(k);toast('Guardado ✓');
 }
 document.querySelectorAll('[id^=einp-]').forEach(inp=>{
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')save(inp.id.replace('einp-',''));});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')save(inp.id.replace('einp-',''));if(e.key==='Escape')cancel(inp.id.replace('einp-',''));});
 });
 
 // ── Mediciones ───────────────────────────────────────────────────────────────
@@ -170,20 +245,17 @@ async function saveM(k){
   cancelM(k);toast('Guardado ✓');
 }
 document.querySelectorAll('[id^=meinp-]').forEach(inp=>{
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')saveM(inp.id.replace('meinp-',''));});
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')saveM(inp.id.replace('meinp-',''));if(e.key==='Escape')cancelM(inp.id.replace('meinp-',''));});
 });
 
 // ── Documentos ───────────────────────────────────────────────────────────────
 function docIcon(name){
   const ext=(name.split('.').pop()||'').toLowerCase();
   if(['jpg','jpeg','png','webp'].includes(ext))return'image';
-  if(ext==='pdf')return'file-text';
-  if(['doc','docx'].includes(ext))return'file-text';
   if(['xls','xlsx'].includes(ext))return'table';
   if(ext==='zip')return'archive';
-  return'file';
+  return'file-text';
 }
-
 async function uploadDocs(input){
   const files=[...input.files];if(!files.length)return;
   for(const f of files){
@@ -192,32 +264,25 @@ async function uploadDocs(input){
     const r=await fetch('/perfil/api/upload_doc',{method:'POST',body:fd});
     const j=await r.json();
     if(!j.ok){toast('Error: '+j.error);continue;}
-    appendDocRow(j);
-    toast('Subido ✓');
+    appendDocRow(j);toast('Subido ✓');
   }
   input.value='';
-  document.getElementById('docsEmpty')&&document.getElementById('docsEmpty').remove();
+  document.getElementById('docsEmpty')?.remove();
 }
-
 function appendDocRow(doc){
   const icon=docIcon(doc.original);
   const date=doc.uploaded_at?doc.uploaded_at.substring(0,10):'';
-  const html=`<div style="padding:10px 0;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:10px;" id="docrow-${doc.id}">
-    <i data-lucide="${icon}" style="width:15px;height:15px;color:var(--gold);flex-shrink:0;"></i>
-    <a href="/perfil/docs/${doc.filename}" target="_blank" style="flex:1;font-size:.74rem;color:var(--text);text-decoration:none;word-break:break-all;"
-       onmouseenter="this.style.color='var(--gold)'" onmouseleave="this.style.color='var(--text)'">${doc.original}</a>
-    <span style="font-size:.46rem;color:var(--dim);flex-shrink:0;">${date}</span>
-    <button style="background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;transition:color .16s;flex-shrink:0;"
-            onmouseenter="this.style.color='#f87171'" onmouseleave="this.style.color='var(--dim)'"
-            onclick="deleteDoc(${doc.id})" title="Eliminar">
-      <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+  const html=`<div class="doc-row" id="docrow-${doc.id}">
+    <div class="doc-icon-wrap"><i data-lucide="${icon}" style="width:14px;height:14px;color:var(--gold);"></i></div>
+    <a class="doc-name" href="/perfil/docs/${doc.filename}" target="_blank">${doc.original}</a>
+    <span class="doc-date">${date}</span>
+    <button class="icon-btn danger" onclick="deleteDoc(${doc.id})" title="Eliminar">
+      <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
     </button>
   </div>`;
-  const list=document.getElementById('docsList');
-  list.insertAdjacentHTML('afterbegin',html);
+  document.getElementById('docsList').insertAdjacentHTML('afterbegin',html);
   lucide.createIcons();
 }
-
 async function deleteDoc(id){
   if(!confirm('¿Eliminar este documento?'))return;
   const r=await fetch('/perfil/api/delete_doc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
@@ -226,7 +291,7 @@ async function deleteDoc(id){
     document.getElementById('docrow-'+id)?.remove();
     toast('Eliminado');
     if(!document.querySelector('#docsList [id^=docrow-]')){
-      document.getElementById('docsList').innerHTML='<div style="text-align:center;padding:24px 0;color:var(--dim);font-size:.7rem;" id="docsEmpty">Aún no hay documentos.</div>';
+      document.getElementById('docsList').innerHTML='<div class="doc-empty" id="docsEmpty">Aún no hay documentos.</div>';
     }
   }
 }

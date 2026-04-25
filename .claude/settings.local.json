@@ -37,7 +37,21 @@
       "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" push origin main)",
       "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/templates/eu/layout_sub.html gio_v3/templates/eu/layout.html gio_v3/templates/gtd_base.html gio_v3/templates/finanzas/index.html gio_v3/templates/finanzas/budget.html gio_v3/templates/finanzas/prioridades.html gio_v3/templates/finanzas/consumo.html gio_v3/templates/nutricion/index.html gio_v3/templates/sabado/index.html)",
       "Bash(git -C c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO add gio_v3/static/js/eu-app.jsx gio_v3/static/js/eu-data.js gio_v3/static/js/eu-screens.jsx gio_v3/templates/idiomas/index.html gio_v3/templates/eu/layout.html gio_v3/templates/base_eudaimonia.html gio_v3/templates/gtd/inbox.html gio_v3/data.py)",
-      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/static/js/eu-screens.jsx)"
+      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/static/js/eu-screens.jsx)",
+      "Bash(git -C \"c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO\" add gio_v3/database.py)",
+      "Bash(git -C c:/Users/magos/OneDrive/Escritorio/PIPELINE_SG/gio_v3_ACTUALIZADO add gio_v3/modules/actividades/routes.py gio_v3/static/js/eu-screens.jsx)",
+      "Bash(python -m pytest tests/test_db_persistence.py -v --tb=short)",
+      "Bash(pip install *)",
+      "Bash(python -c \"import flask; print\\(flask.__version__\\)\")",
+      "Bash(where python *)",
+      "Bash(py -3.11 -m pytest --version)",
+      "Bash(py -3.8 -m pytest --version)",
+      "Bash(py -3.8 -c \"import flask\")",
+      "Bash(py -3.8 -m pip install pytest --quiet)",
+      "Bash(py -3.8 -c \"import flask; print\\('flask ok'\\)\")",
+      "Bash(py -3.8 -m pip install flask werkzeug --quiet)",
+      "Bash(py -3.8 -c \"import flask; print\\('flask', flask.__version__\\)\")",
+      "Bash(py -3.8 -m pytest tests/test_db_persistence.py -v --tb=short)"
     ]
   }
 }
