@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from database import get_db
-from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_quote_of_day, get_word_of_day, get_random_quote
+from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_quote_of_day, get_word_of_day, get_random_quote, get_random_word
 import modules.gamification.engine as engine
 
 actividades_bp = Blueprint('actividades', __name__, template_folder='../../templates')
@@ -22,18 +22,10 @@ def get_dashboard_stats():
         pipeline   = db.execute("SELECT * FROM pipeline_items ORDER BY id DESC").fetchall()
         priorities = db.execute("SELECT * FROM priorities WHERE date=? ORDER BY id", (today,)).fetchall()
 
-        dates = [r["date"] for r in db.execute("SELECT DISTINCT date FROM activity_logs ORDER BY date DESC").fetchall()]
-        streak, check = 0, date.today()
-        for d in dates:
-            if d == check.isoformat():
-                streak += 1
-                check -= timedelta(days=1)
-            else:
-                break
-
     return {
         "pts_today": pts_today, "pts_week": pts_week, "pts_month": pts_month,
-        "streak": streak, "done_today": done_today,
+        "streak": engine.get_gamification_streak(),
+        "done_today": done_today,
         "pipeline":   [dict(r) for r in pipeline],
         "priorities": [dict(r) for r in priorities],
     }
@@ -68,7 +60,7 @@ def index():
 
 @actividades_bp.route('/api/today')
 def today_status():
-    """Returns current done-state for all activities today — used by the React SPA on mount."""
+    """Returns current done-state for all activities today."""
     today = date.today().isoformat()
     week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
     month_start = date.today().replace(day=1).isoformat()
@@ -79,16 +71,6 @@ def today_status():
         pts_today  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date=?",  (today,)).fetchone()['s']
         pts_week   = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?", (week_start,)).fetchone()['s']
         pts_month  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?", (month_start,)).fetchone()['s']
-        dates = [r['date'] for r in db.execute(
-            "SELECT DISTINCT date FROM activity_logs ORDER BY date DESC"
-        ).fetchall()]
-    streak, check = 0, date.today()
-    for d in dates:
-        if d == check.isoformat():
-            streak += 1
-            check -= __import__('datetime').timedelta(days=1)
-        else:
-            break
     activities = [
         {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'], 'done': k in today_keys}
         for k, v in ACTIVITIES.items()
@@ -96,7 +78,7 @@ def today_status():
     return jsonify({
         'activities': activities,
         'pts': {'today': pts_today, 'week': pts_week, 'month': pts_month},
-        'streak': streak,
+        'streak': engine.get_gamification_streak(),
         'date': today,
     })
 
@@ -110,6 +92,8 @@ def log_activity():
 
     pts = ACTIVITIES[key]['pts']
     cat = ACTIVITIES[key]['cat']
+    removed_id = None
+    log_id     = None
 
     with get_db() as db:
         existing = db.execute(
@@ -117,17 +101,18 @@ def log_activity():
         ).fetchone()
 
         if existing:
-            log_id = existing["id"]
-            db.execute("DELETE FROM activity_logs WHERE id=?", (log_id,))
-            db.commit()
-            gam = engine.remove_activity(log_id)
-            return jsonify({'action': 'removed', 'pts': -pts, 'stats': get_dashboard_stats(), 'gam': gam})
-
-        cursor = db.execute(
-            "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)", (key, today, pts)
-        )
-        log_id = cursor.lastrowid
+            removed_id = existing["id"]
+            db.execute("DELETE FROM activity_logs WHERE id=?", (removed_id,))
+        else:
+            cursor = db.execute(
+                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)", (key, today, pts)
+            )
+            log_id = cursor.lastrowid
         db.commit()
+
+    if removed_id:
+        gam = engine.remove_activity(removed_id)
+        return jsonify({'action': 'removed', 'pts': -pts, 'stats': get_dashboard_stats(), 'gam': gam})
 
     gam = engine.process_activity(key, pts, cat, log_id)
     return jsonify({'action': 'added', 'pts': pts, 'stats': get_dashboard_stats(), 'gam': gam})
@@ -138,7 +123,6 @@ def add_pipeline():
     text = request.json.get('text', '').strip()
     if not text:
         return jsonify({'error': 'empty'}), 400
-    from datetime import datetime
     with get_db() as db:
         db.execute("INSERT INTO pipeline_items (text, created_at) VALUES (?,?)", (text, datetime.now().isoformat()))
         db.commit()
@@ -172,6 +156,8 @@ def add_priority():
 @actividades_bp.route('/api/priority/<int:pid>/toggle', methods=['POST'])
 def toggle_priority(pid):
     today = date.today().isoformat()
+    bonus_action = None  # 'add' | 'remove' | None
+
     with get_db() as db:
         row = db.execute("SELECT done FROM priorities WHERE id=?", (pid,)).fetchone()
         if not row:
@@ -179,29 +165,33 @@ def toggle_priority(pid):
         db.execute("UPDATE priorities SET done=? WHERE id=?", (0 if row["done"] else 1, pid))
         db.commit()
 
-        rows  = db.execute("SELECT * FROM priorities WHERE date=? ORDER BY id", (today,)).fetchall()
-        all3  = all(r["done"] for r in rows) and len(rows) == 3
+        rows  = [dict(r) for r in db.execute("SELECT * FROM priorities WHERE date=? ORDER BY id", (today,)).fetchall()]
+        all3  = len(rows) == 3 and all(r["done"] for r in rows)
 
         bonus_exists = db.execute(
             "SELECT id FROM activity_logs WHERE activity_key='priority_bonus' AND date=?", (today,)
         ).fetchone()
 
-        gam = None
         if all3 and not bonus_exists:
             db.execute(
                 "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
                 ('priority_bonus', today, 3)
             )
             db.commit()
-            gam = engine.process_priority_bonus(today)
-
+            bonus_action = 'add'
         elif not all3 and bonus_exists:
             db.execute("DELETE FROM activity_logs WHERE activity_key='priority_bonus' AND date=?", (today,))
             db.commit()
-            gam = engine.remove_priority_bonus(today)
+            bonus_action = 'remove'
 
-    return jsonify({'priorities': [dict(r) for r in rows], 'all3': all3,
-                    'stats': get_dashboard_stats(), 'gam': gam})
+    if bonus_action == 'add':
+        gam = engine.process_priority_bonus(today)
+    elif bonus_action == 'remove':
+        gam = engine.remove_priority_bonus(today)
+    else:
+        gam = None
+
+    return jsonify({'priorities': rows, 'all3': all3, 'stats': get_dashboard_stats(), 'gam': gam})
 
 
 @actividades_bp.route('/api/quote/refresh')
@@ -211,5 +201,4 @@ def refresh_quote():
 
 @actividades_bp.route('/api/word/refresh')
 def refresh_word():
-    from data import get_random_word
     return jsonify(get_random_word())

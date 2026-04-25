@@ -259,22 +259,30 @@ function updS(s){
   document.getElementById('s-bdg').classList.toggle('on',s.streak>=5);
 }
 async function logAct(key){
-  const r=await fetch('/actividades/api/activity/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
-  const d=await r.json();
-  const b=document.querySelector(`[data-key="${key}"]`);
-  if(d.action==='added'){b.classList.add('done');toast(`+${d.pts} pts`);}
-  else{b.classList.remove('done');toast('Removido');}
-  updS(d.stats);lucide.createIcons();
+  try{
+    const r=await fetch('/actividades/api/activity/log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key})});
+    if(!r.ok){toast('Error al registrar','err');return;}
+    const d=await r.json();
+    const b=document.querySelector(`[data-key="${key}"]`);
+    if(d.action==='added'){b.classList.add('done');toast(`+${d.pts} pts`);}
+    else{b.classList.remove('done');toast('Removido');}
+    updS(d.stats);lucide.createIcons();
+  }catch{toast('Sin conexión','err');}
 }
 async function addP(){
   const inp=document.getElementById('p-inp');const text=inp.value.trim();if(!text)return;
-  const r=await fetch('/actividades/api/priority',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
-  const d=await r.json();if(d.error){toast(d.error,'err');return;}
-  renderP(d.priorities);inp.value='';
+  try{
+    const r=await fetch('/actividades/api/priority',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    const d=await r.json();if(d.error){toast(d.error,'err');return;}
+    renderP(d.priorities);inp.value='';
+  }catch{toast('Sin conexión','err');}
 }
 async function toggleP(id){
-  const r=await fetch(`/actividades/api/priority/${id}/toggle`,{method:'POST'});
-  const d=await r.json();renderP(d.priorities);if(d.all3)toast('✦ +3 BONUS','win');updS(d.stats);
+  try{
+    const r=await fetch(`/actividades/api/priority/${id}/toggle`,{method:'POST'});
+    if(!r.ok)return;
+    const d=await r.json();renderP(d.priorities);if(d.all3)toast('✦ +3 BONUS','win');updS(d.stats);
+  }catch{toast('Sin conexión','err');}
 }
 function renderP(ps){
   document.getElementById('p-list').innerHTML=ps.map(p=>`<div class="pitem ${p.done?'dn':''}" onclick="toggleP(${p.id})"><div class="pck"><i data-lucide="check"></i></div><span class="ptxt">${p.text}</span></div>`).join('');
@@ -283,10 +291,16 @@ function renderP(ps){
 }
 async function addPipe(){
   const inp=document.getElementById('pipe-inp');const text=inp.value.trim();if(!text)return;
-  const r=await fetch('/actividades/api/pipeline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
-  const d=await r.json();renderChips(d.items);inp.value='';
+  try{
+    const r=await fetch('/actividades/api/pipeline',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    if(!r.ok)return;
+    const d=await r.json();renderChips(d.items);inp.value='';
+  }catch{toast('Sin conexión','err');}
 }
-async function delPipe(id,btn){await fetch(`/actividades/api/pipeline/${id}`,{method:'DELETE'});btn.closest('.chip').remove();}
+async function delPipe(id,btn){
+  btn.closest('.chip').remove();
+  fetch(`/actividades/api/pipeline/${id}`,{method:'DELETE'}).catch(()=>{});
+}
 function renderChips(items){
   document.getElementById('chips').innerHTML=items.map(i=>`<div class="chip" data-id="${i.id}">${i.text}<button class="dc" onclick="delPipe(${i.id},this)"><i data-lucide="x"></i></button></div>`).join('');
   lucide.createIcons();
