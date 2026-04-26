@@ -4,6 +4,10 @@
 *.db-wal
 *.sqlite
 *.sqlite3
+instance/
+
+# User uploads — datos privados, nunca al repo
+gio_v3/uploads/
 
 # Python
 __pycache__/
@@ -12,8 +16,11 @@ __pycache__/
 .venv/
 venv/
 env/
+*.egg-info/
+dist/
+build/
 
-# Environment secrets
+# Environment secrets — NUNCA subir al repo
 .env
 .env.*
 !.env.example
@@ -25,3 +32,9 @@ Thumbs.db
 # Editor
 .vscode/
 *.code-workspace
+.idea/
+
+# Tests / cache
+.pytest_cache/
+htmlcov/
+.coverage

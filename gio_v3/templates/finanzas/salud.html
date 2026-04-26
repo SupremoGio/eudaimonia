@@ -1,0 +1,693 @@
+{% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
+{% block title %}Salud Financiera — Eudaimonia{% endblock %}
+{% block module_title %}OIKONOMIA{% endblock %}
+{% block topright %}{{ today }} — <span style="color:var(--gold)">SALUD FINANCIERA</span>{% endblock %}
+{% block content %}
+<style>
+/* ── Grid ─────────────────────────────────────────────────────────────────── */
+.sf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:1300px;}
+.sf-full{grid-column:1/-1;}
+.sf-left{grid-column:1/2;}
+.sf-right{grid-column:2/3;}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.sf-hero{background:linear-gradient(135deg,#0c0a10,#140f1a);border:1px solid var(--b2);border-radius:12px;padding:24px 28px;}
+.sf-pn-label{font-size:.44rem;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;}
+.sf-pn-value{font-family:var(--serif);font-size:2.6rem;font-weight:300;line-height:1;letter-spacing:.04em;}
+.sf-pn-sub{font-size:.54rem;color:var(--dim);margin-top:6px;}
+.sf-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;}
+.sf-stat{background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:8px;padding:14px 16px;}
+.sf-stat-v{font-family:var(--serif);font-size:1.4rem;font-weight:300;line-height:1;}
+.sf-stat-l{font-size:.44rem;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:4px;}
+.sf-stat-s{font-size:.5rem;color:var(--dim);margin-top:2px;}
+.sf-bar-wrap{margin-top:20px;}
+.sf-bar-labels{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:7px;}
+.sf-bar-lbl{display:flex;align-items:center;gap:5px;font-size:.5rem;color:var(--mid);}
+.sf-bar-dot{width:7px;height:7px;border-radius:50%;}
+.sf-bar{height:6px;border-radius:100px;overflow:hidden;background:rgba(255,255,255,.05);display:flex;}
+.sf-bar-seg{height:100%;transition:width .6s;}
+
+/* ── Account groups ───────────────────────────────────────────────────────── */
+.sf-group-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sf-group-t{font-size:.44rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;}
+.sf-group-total{font-family:var(--serif);font-size:1rem;font-weight:300;}
+.sf-accounts{display:flex;flex-direction:column;gap:7px;}
+.sf-account{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card2);border:1px solid var(--b);border-radius:8px;transition:border-color .16s;}
+.sf-account:hover{border-color:var(--b2);}
+.sf-acc-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sf-acc-icon svg{width:15px;height:15px;}
+.sf-acc-body{flex:1;min-width:0;}
+.sf-acc-name{font-size:.72rem;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sf-acc-inst{font-size:.52rem;color:var(--dim);}
+.sf-acc-saldo{text-align:right;flex-shrink:0;}
+.sf-acc-amount{font-family:var(--serif);font-size:1.05rem;font-weight:300;line-height:1;}
+.sf-acc-moneda{font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.sf-acc-actions{display:flex;gap:4px;flex-shrink:0;}
+.sf-empty{text-align:center;padding:20px;color:var(--dim);font-size:.6rem;border:1px dashed var(--b);border-radius:8px;}
+
+/* ── Bienes ───────────────────────────────────────────────────────────────── */
+.sf-bienes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px;}
+.sf-bien{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:13px 14px;transition:border-color .16s;}
+.sf-bien:hover{border-color:var(--b2);}
+.sf-bien-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.sf-bien-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:100px;font-size:.43rem;letter-spacing:.1em;text-transform:uppercase;}
+.sf-bien-actions{display:flex;gap:3px;}
+.sf-bien-name{font-size:.72rem;color:var(--text);font-weight:500;margin-bottom:2px;}
+.sf-bien-desc{font-size:.52rem;color:var(--dim);margin-bottom:9px;min-height:14px;}
+.sf-bien-vals{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.sf-bien-val{background:rgba(255,255,255,.02);border:1px solid var(--b);border-radius:5px;padding:7px 9px;}
+.sf-bien-val-n{font-family:var(--serif);font-size:.88rem;font-weight:300;line-height:1;}
+.sf-bien-val-l{font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.sf-deprec{font-size:.44rem;margin-top:6px;display:flex;align-items:center;gap:4px;}
+.sf-deprec svg{width:10px;height:10px;}
+.sf-meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;}
+.sf-meta-chip{font-size:.44rem;color:var(--dim);display:flex;align-items:center;gap:3px;}
+.sf-meta-chip svg{width:10px;height:10px;}
+
+/* ── Historial chart ──────────────────────────────────────────────────────── */
+.sf-hist-wrap{display:flex;align-items:flex-end;gap:6px;height:60px;padding:0 2px;}
+.sf-hist-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.sf-hist-bar{border-radius:3px 3px 0 0;min-height:3px;transition:height .4s;width:100%;}
+.sf-hist-lbl{font-size:.38rem;color:var(--dim);text-align:center;}
+
+/* ── Snapshot button ──────────────────────────────────────────────────────── */
+.sf-snap-btn{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;padding:6px 14px;border-radius:7px;font-size:.52rem;letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;font-family:var(--sans);}
+.sf-snap-btn:hover{background:rgba(16,185,129,.18);border-color:rgba(16,185,129,.5);}
+.sf-snap-btn svg{width:11px;height:11px;}
+
+/* ── Modals ───────────────────────────────────────────────────────────────── */
+.sf-form-row{display:grid;gap:8px;margin-bottom:10px;}
+.sf-form-row.c2{grid-template-columns:1fr 1fr;}
+.sf-form-row.c3{grid-template-columns:1fr 1fr 1fr;}
+.sf-modal-wide{width:520px;}
+
+@media(max-width:767px){
+  .sf-grid{grid-template-columns:1fr;}
+  .sf-full,.sf-left,.sf-right{grid-column:1/-1;}
+  .sf-stat-row{grid-template-columns:1fr 1fr;}
+  .sf-pn-value{font-size:1.9rem;}
+  .sf-bienes-grid{grid-template-columns:1fr 1fr;}
+  .sf-form-row.c2,.sf-form-row.c3{grid-template-columns:1fr;}
+}
+@media(min-width:768px) and (max-width:1024px){
+  .sf-grid{grid-template-columns:1fr;}
+  .sf-full,.sf-left,.sf-right{grid-column:1/-1;}
+}
+</style>
+
+{# ── Nav back ──────────────────────────────────────────────────────────────── #}
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+  <a href="/finanzas/" style="display:inline-flex;align-items:center;gap:6px;font-size:.52rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:color .16s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--dim)'">
+    <i data-lucide="arrow-left" style="width:12px;height:12px"></i> Oikonomia
+  </a>
+  <button class="sf-snap-btn" onclick="tomarSnapshot()">
+    <i data-lucide="camera"></i> Guardar Snapshot
+  </button>
+</div>
+
+<div class="sf-grid">
+
+{# ── PATRIMONIO NETO HERO ──────────────────────────────────────────────────── #}
+<div class="sf-hero sf-full">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+    <div>
+      <div class="sf-pn-label">Patrimonio Neto</div>
+      <div class="sf-pn-value {% if patrimonio_neto >= 0 %}pos{% else %}neg{% endif %}">
+        {% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto) }}
+        <span style="font-size:1rem;color:var(--dim)"> MXN</span>
+      </div>
+      <div class="sf-pn-sub">Activos totales menos pasivos · actualizado hoy</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="sf-pn-label">Distribución</div>
+      {% set total_ref = [total_activos, 1]|max %}
+      <div style="font-size:.52rem;color:var(--mid);margin-bottom:6px;">
+        Cuentas&nbsp;{{ "{:.0f}".format(activos_cuentas/total_ref*100) }}% · Bienes&nbsp;{{ "{:.0f}".format(total_bienes/total_ref*100) }}% · Pasivos&nbsp;{{ "{:.0f}".format(total_pasivos/total_ref*100) }}%
+      </div>
+    </div>
+  </div>
+
+  <div class="sf-stat-row">
+    <div class="sf-stat">
+      <div class="sf-stat-v" style="color:#10b981">${{ "{:,.0f}".format(total_activos) }}</div>
+      <div class="sf-stat-l">Total Activos</div>
+      <div class="sf-stat-s">Líquido + Inversiones + Bienes</div>
+    </div>
+    <div class="sf-stat">
+      <div class="sf-stat-v" style="color:#f43f5e">-${{ "{:,.0f}".format(total_pasivos) }}</div>
+      <div class="sf-stat-l">Total Pasivos</div>
+      <div class="sf-stat-s">Tarjetas + Préstamos</div>
+    </div>
+    <div class="sf-stat">
+      <div class="sf-stat-v" style="color:#C9A84C">${{ "{:,.0f}".format(total_bienes) }}</div>
+      <div class="sf-stat-l">Bienes Personales</div>
+      <div class="sf-stat-s">Valor estimado actual</div>
+    </div>
+  </div>
+
+  {# Barra de composición #}
+  {% if total_activos > 0 or total_pasivos > 0 %}
+  {% set total_ref2 = [total_activos + total_pasivos, 1]|max %}
+  <div class="sf-bar-wrap">
+    <div class="sf-bar-labels">
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#60a5fa"></span>Líquido</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#10b981"></span>Inversiones</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#C9A84C"></span>Bienes</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#f43f5e"></span>Pasivos</span>
+    </div>
+    {% set liq = cuentas_liquido|sum(attribute='saldo') %}
+    {% set inv = cuentas_inversion|sum(attribute='saldo') %}
+    <div class="sf-bar">
+      <div class="sf-bar-seg" style="background:#60a5fa;width:{{ (liq/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:#10b981;width:{{ (inv/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:#C9A84C;width:{{ (total_bienes/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:#f43f5e;width:{{ (total_pasivos/total_ref2*100)|int }}%"></div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{# ── ACTIVOS LÍQUIDOS ──────────────────────────────────────────────────────── #}
+<div class="tile sf-left">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">💵 Activos Líquidos</div>
+      <div style="font-size:.5rem;color:var(--dim);margin-top:1px;">Efectivo y cuentas bancarias</div>
+    </div>
+    <div style="text-align:right;">
+      {% set liq_total = cuentas_liquido|sum(attribute='saldo') %}
+      <div class="sf-group-total" style="color:#60a5fa">${{ "{:,.2f}".format(liq_total) }}</div>
+      <button class="btn-gr" style="font-size:.48rem;padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('efectivo')">+ Agregar</button>
+    </div>
+  </div>
+  <div class="sf-accounts">
+    {% for c in cuentas_liquido %}
+    {% set meta = tipo_meta[c.tipo] %}
+    <div class="sf-account" data-cid="{{ c.id }}">
+      <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
+        <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
+      </div>
+      <div class="sf-acc-body">
+        <div class="sf-acc-name">{{ c.nombre }}</div>
+        <div class="sf-acc-inst">{{ c.institucion or meta.label }}</div>
+      </div>
+      <div class="sf-acc-saldo">
+        <div class="sf-acc-amount" style="color:#60a5fa">${{ "{:,.2f}".format(c.saldo) }}</div>
+        <div class="sf-acc-moneda">{{ c.moneda }}</div>
+      </div>
+      <div class="sf-acc-actions">
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+      </div>
+    </div>
+    {% else %}
+    <div class="sf-empty">
+      <i data-lucide="wallet" style="width:20px;height:20px;opacity:.2;display:block;margin:0 auto 7px"></i>
+      Sin cuentas líquidas registradas.<br>
+      <button class="btn-gr" style="margin-top:8px;font-size:.5rem;" onclick="openModalCuenta('efectivo')">+ Agregar cuenta</button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── INVERSIONES ───────────────────────────────────────────────────────────── #}
+<div class="tile sf-right">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">📈 Inversiones</div>
+      <div style="font-size:.5rem;color:var(--dim);margin-top:1px;">GBM, CETES, fondos, etc.</div>
+    </div>
+    <div style="text-align:right;">
+      {% set inv_total = cuentas_inversion|sum(attribute='saldo') %}
+      <div class="sf-group-total" style="color:#10b981">${{ "{:,.2f}".format(inv_total) }}</div>
+      <button class="btn-gr" style="font-size:.48rem;padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('inversion')">+ Agregar</button>
+    </div>
+  </div>
+  <div class="sf-accounts">
+    {% for c in cuentas_inversion %}
+    {% set meta = tipo_meta[c.tipo] %}
+    <div class="sf-account" data-cid="{{ c.id }}">
+      <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
+        <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
+      </div>
+      <div class="sf-acc-body">
+        <div class="sf-acc-name">{{ c.nombre }}</div>
+        <div class="sf-acc-inst">{{ c.institucion or meta.label }}</div>
+      </div>
+      <div class="sf-acc-saldo">
+        <div class="sf-acc-amount" style="color:#10b981">${{ "{:,.2f}".format(c.saldo) }}</div>
+        <div class="sf-acc-moneda">{{ c.moneda }}</div>
+      </div>
+      <div class="sf-acc-actions">
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+      </div>
+    </div>
+    {% else %}
+    <div class="sf-empty">
+      <i data-lucide="trending-up" style="width:20px;height:20px;opacity:.2;display:block;margin:0 auto 7px"></i>
+      Sin inversiones registradas.<br>
+      <button class="btn-gr" style="margin-top:8px;font-size:.5rem;" onclick="openModalCuenta('inversion')">+ Agregar inversión</button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── PASIVOS ───────────────────────────────────────────────────────────────── #}
+<div class="tile sf-full">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">💳 Pasivos — Tarjetas y Deudas</div>
+      <div style="font-size:.5rem;color:var(--dim);margin-top:1px;">Saldo actual adeudado en tarjetas y préstamos</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="sf-group-total" style="color:#f43f5e">-${{ "{:,.2f}".format(total_pasivos) }}</div>
+      <button class="btn-gr" style="font-size:.48rem;padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('tarjeta_credito')">+ Agregar pasivo</button>
+    </div>
+  </div>
+  <div class="sf-accounts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:7px;">
+    {% for c in cuentas_pasivo %}
+    {% set meta = tipo_meta[c.tipo] %}
+    <div class="sf-account" data-cid="{{ c.id }}">
+      <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
+        <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
+      </div>
+      <div class="sf-acc-body">
+        <div class="sf-acc-name">{{ c.nombre }}</div>
+        <div class="sf-acc-inst">{{ c.institucion or meta.label }}</div>
+      </div>
+      <div class="sf-acc-saldo">
+        <div class="sf-acc-amount" style="color:#f43f5e">-${{ "{:,.2f}".format(c.saldo) }}</div>
+        <div class="sf-acc-moneda">{{ c.moneda }}</div>
+      </div>
+      <div class="sf-acc-actions">
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+      </div>
+    </div>
+    {% else %}
+    <div class="sf-empty" style="grid-column:1/-1;">Sin pasivos registrados — ¡excelente!</div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── BIENES PERSONALES ─────────────────────────────────────────────────────── #}
+<div class="tile sf-full">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">🏠 Bienes Personales</div>
+      <div style="font-size:.5rem;color:var(--dim);margin-top:1px;">Vehículo, electrodomésticos, muebles, electrónicos</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="sf-group-total" style="color:var(--gold)">${{ "{:,.2f}".format(total_bienes) }}</div>
+      <button class="btn-a" style="padding:5px 14px;margin-top:5px;" onclick="openModalBien()">+ Agregar bien</button>
+    </div>
+  </div>
+
+  {% if bienes %}
+  {# Tabs por categoría #}
+  <div class="chips2" style="margin-bottom:14px;">
+    <a class="ch2 on" onclick="filtrarCat('todos',this)">Todos ({{ bienes|length }})</a>
+    {% for cat, items in bienes_por_cat.items() %}
+    {% set bm = bien_meta[cat] %}
+    <a class="ch2" onclick="filtrarCat('{{ cat }}',this)">{{ bm.label }} ({{ items|length }})</a>
+    {% endfor %}
+  </div>
+  <div class="sf-bienes-grid" id="bienes-grid">
+    {% for b in bienes %}
+    {% set bm = bien_meta[b.categoria] %}
+    {% set deprec = ((b.valor_actual - b.precio_compra) / b.precio_compra * 100) if b.precio_compra > 0 else 0 %}
+    <div class="sf-bien" data-cat="{{ b.categoria }}" data-bid="{{ b.id }}">
+      <div class="sf-bien-hd">
+        <span class="sf-bien-badge" style="background:{{ bm.color }}18;border:1px solid {{ bm.color }}44;color:{{ bm.color }};">
+          <i data-lucide="{{ bm.icon }}" style="width:9px;height:9px"></i>
+          {{ bm.label }}
+        </span>
+        <div class="sf-bien-actions">
+          <button class="ai" title="Editar" onclick="editBien({{ b.id }},'{{ b.nombre|e }}','{{ b.categoria }}','{{ b.descripcion|e }}',{{ b.precio_compra }},{{ b.valor_actual }},'{{ b.fecha_compra }}','{{ b.lugar_compra|e }}','{{ b.garantia_hasta }}','{{ b.notas|e }}')"><i data-lucide="pencil" style="width:11px;height:11px"></i></button>
+          <button class="ai del" title="Eliminar" onclick="delBien({{ b.id }},this)"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
+        </div>
+      </div>
+      <div class="sf-bien-name">{{ b.nombre }}</div>
+      <div class="sf-bien-desc">{{ b.descripcion or (b.lugar_compra or '') }}</div>
+      <div class="sf-bien-vals">
+        <div class="sf-bien-val">
+          <div class="sf-bien-val-n" style="color:var(--mid)">${{ "{:,.0f}".format(b.precio_compra) }}</div>
+          <div class="sf-bien-val-l">Precio compra</div>
+        </div>
+        <div class="sf-bien-val">
+          <div class="sf-bien-val-n" style="color:var(--gold)">${{ "{:,.0f}".format(b.valor_actual) }}</div>
+          <div class="sf-bien-val-l">Valor actual</div>
+        </div>
+      </div>
+      {% if b.precio_compra > 0 %}
+      <div class="sf-deprec {% if deprec >= 0 %}pos{% else %}neg{% endif %}">
+        <i data-lucide="{% if deprec >= 0 %}trending-up{% else %}trending-down{% endif %}" style="width:10px;height:10px"></i>
+        {% if deprec >= 0 %}+{% endif %}{{ "{:.1f}".format(deprec) }}% valor
+      </div>
+      {% endif %}
+      <div class="sf-meta-row">
+        {% if b.fecha_compra %}<span class="sf-meta-chip"><i data-lucide="calendar" style="width:10px;height:10px"></i>{{ b.fecha_compra }}</span>{% endif %}
+        {% if b.garantia_hasta %}<span class="sf-meta-chip"><i data-lucide="shield-check" style="width:10px;height:10px"></i>Gtía: {{ b.garantia_hasta }}</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="sf-empty" style="padding:36px;">
+    <i data-lucide="package" style="width:28px;height:28px;opacity:.15;display:block;margin:0 auto 10px"></i>
+    Registra tus bienes: carro, lavadora, sofá, refrigerador...<br>
+    <button class="btn-a" style="margin-top:12px;" onclick="openModalBien()">+ Agregar primer bien</button>
+  </div>
+  {% endif %}
+</div>
+
+{# ── HISTORIAL PATRIMONIO ──────────────────────────────────────────────────── #}
+{% if historial %}
+<div class="tile sf-full">
+  <div class="sf-group-hd">
+    <div class="sf-group-t">📊 Evolución Patrimonio Neto</div>
+    <span style="font-size:.48rem;color:var(--dim)">Últimos {{ historial|length }} snapshots</span>
+  </div>
+  {% set max_pn = historial|map(attribute='patrimonio_neto')|max %}
+  {% set min_pn = historial|map(attribute='patrimonio_neto')|min %}
+  {% set range_pn = [(max_pn - min_pn), 1]|max %}
+  <div class="sf-hist-wrap">
+    {% for h in historial %}
+    {% set pct = ((h.patrimonio_neto - min_pn) / range_pn * 100)|int %}
+    <div class="sf-hist-bar-wrap">
+      <div class="sf-hist-bar" style="height:{{ [pct,4]|max }}%;background:{% if h.patrimonio_neto >= 0 %}#10b981{% else %}#f43f5e{% endif %};opacity:.8;"></div>
+      <div class="sf-hist-lbl">{{ h.fecha[5:] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:8px;">
+    <span style="font-size:.5rem;color:var(--dim)">Primer snapshot: <span style="color:var(--mid)">{{ historial[0].fecha }}</span></span>
+    <span style="font-size:.5rem;color:var(--dim)">Último: <span style="color:{% if historial[-1].patrimonio_neto >= 0 %}var(--green){% else %}var(--red){% endif %}">${{ "{:,.0f}".format(historial[-1].patrimonio_neto) }}</span></span>
+  </div>
+</div>
+{% endif %}
+
+</div>{# /sf-grid #}
+
+
+{# ─────────────────────────── MODAL CUENTA ────────────────────────────────── #}
+<div class="modal-bg" id="modal-cuenta">
+  <div class="modal sf-modal-wide">
+    <div class="modal-title" id="mcuenta-title">Agregar Cuenta</div>
+    <input type="hidden" id="mc-id" value="">
+
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Nombre de la cuenta *</label>
+        <input class="fi" id="mc-nombre" placeholder="Ej: BBVA Débito, GBM, Efectivo...">
+      </div>
+      <div class="fg">
+        <label class="fl">Tipo *</label>
+        <select class="fi" id="mc-tipo">
+          <option value="efectivo">Efectivo</option>
+          <option value="cuenta_banco">Cuenta Bancaria</option>
+          <option value="inversion">Inversión</option>
+          <option value="tarjeta_credito">Tarjeta de Crédito</option>
+          <option value="prestamo">Préstamo / Crédito</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Institución / Banco</label>
+        <input class="fi" id="mc-inst" placeholder="Ej: BBVA, GBM, HSBC...">
+      </div>
+      <div class="fg">
+        <label class="fl">Moneda</label>
+        <select class="fi" id="mc-moneda">
+          <option value="MXN">MXN — Pesos</option>
+          <option value="USD">USD — Dólares</option>
+          <option value="EUR">EUR — Euros</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Saldo actual *</label>
+        <input class="fi" id="mc-saldo" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+    </div>
+
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Notas (opcional)</label>
+        <input class="fi" id="mc-notas" placeholder="Ej: cuenta para gastos fijos...">
+      </div>
+    </div>
+
+    <div id="mc-err" style="color:var(--red);font-size:.6rem;min-height:14px;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeMCuenta()">Cancelar</button>
+      <button class="btn-a" onclick="submitCuenta()">Guardar Cuenta</button>
+    </div>
+  </div>
+</div>
+
+
+{# ─────────────────────────── MODAL BIEN ──────────────────────────────────── #}
+<div class="modal-bg" id="modal-bien">
+  <div class="modal sf-modal-wide">
+    <div class="modal-title" id="mbien-title">Agregar Bien Personal</div>
+    <input type="hidden" id="mb-id" value="">
+
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Nombre del bien *</label>
+        <input class="fi" id="mb-nombre" placeholder="Ej: Lavadora Samsung, Sofá L-shape...">
+      </div>
+      <div class="fg">
+        <label class="fl">Categoría *</label>
+        <select class="fi" id="mb-categoria">
+          <option value="vehiculo">Vehículo</option>
+          <option value="electrodomestico">Electrodoméstico</option>
+          <option value="mueble">Mueble</option>
+          <option value="electronico">Electrónico</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Descripción breve</label>
+        <input class="fi" id="mb-descripcion" placeholder="Modelo, características principales...">
+      </div>
+    </div>
+
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Precio de compra (MXN) *</label>
+        <input class="fi" id="mb-precio" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="fg">
+        <label class="fl">Valor actual estimado (MXN)</label>
+        <input class="fi" id="mb-valor" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+    </div>
+
+    <div class="sf-form-row c3">
+      <div class="fg">
+        <label class="fl">Fecha de compra</label>
+        <input class="fi" id="mb-fecha" type="month" placeholder="2024-03">
+      </div>
+      <div class="fg">
+        <label class="fl">Lugar / Tienda</label>
+        <input class="fi" id="mb-lugar" placeholder="Ej: Liverpool, Mercado Libre...">
+      </div>
+      <div class="fg">
+        <label class="fl">Garantía hasta</label>
+        <input class="fi" id="mb-garantia" type="month" placeholder="2026-03">
+      </div>
+    </div>
+
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Notas</label>
+        <input class="fi" id="mb-notas" placeholder="Número de serie, detalles extra...">
+      </div>
+    </div>
+
+    <div id="mb-err" style="color:var(--red);font-size:.6rem;min-height:14px;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeMBien()">Cancelar</button>
+      <button class="btn-a" onclick="submitBien()">Guardar Bien</button>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+{% block scripts %}
+<script>
+// ── Modal Cuenta ─────────────────────────────────────────────────────────────
+function openModalCuenta(tipoDefault='cuenta_banco') {
+  document.getElementById('mc-id').value = '';
+  document.getElementById('mcuenta-title').textContent = 'Agregar Cuenta';
+  document.getElementById('mc-nombre').value = '';
+  document.getElementById('mc-tipo').value = tipoDefault;
+  document.getElementById('mc-inst').value = '';
+  document.getElementById('mc-saldo').value = '';
+  document.getElementById('mc-moneda').value = 'MXN';
+  document.getElementById('mc-notas').value = '';
+  document.getElementById('mc-err').textContent = '';
+  document.getElementById('modal-cuenta').classList.add('open');
+  document.getElementById('mc-nombre').focus();
+}
+
+function editCuenta(id, nombre, tipo, institucion, saldo, moneda, notas) {
+  document.getElementById('mc-id').value = id;
+  document.getElementById('mcuenta-title').textContent = 'Editar Cuenta';
+  document.getElementById('mc-nombre').value = nombre;
+  document.getElementById('mc-tipo').value = tipo;
+  document.getElementById('mc-inst').value = institucion;
+  document.getElementById('mc-saldo').value = saldo;
+  document.getElementById('mc-moneda').value = moneda;
+  document.getElementById('mc-notas').value = notas;
+  document.getElementById('mc-err').textContent = '';
+  document.getElementById('modal-cuenta').classList.add('open');
+}
+
+function closeMCuenta() {
+  document.getElementById('modal-cuenta').classList.remove('open');
+}
+
+async function submitCuenta() {
+  const id     = document.getElementById('mc-id').value;
+  const nombre = document.getElementById('mc-nombre').value.trim();
+  const saldo  = parseFloat(document.getElementById('mc-saldo').value);
+  if (!nombre) { document.getElementById('mc-err').textContent = 'Ingresa el nombre.'; return; }
+  if (isNaN(saldo)) { document.getElementById('mc-err').textContent = 'Saldo inválido.'; return; }
+
+  const payload = {
+    nombre,
+    tipo:        document.getElementById('mc-tipo').value,
+    institucion: document.getElementById('mc-inst').value.trim(),
+    saldo,
+    moneda:      document.getElementById('mc-moneda').value,
+    notas:       document.getElementById('mc-notas').value.trim(),
+  };
+
+  const url    = id ? `/finanzas/salud/api/cuenta/${id}` : '/finanzas/salud/api/cuenta';
+  const method = id ? 'PATCH' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const data = await r.json();
+  if (data.ok) { closeMCuenta(); location.reload(); }
+  else { document.getElementById('mc-err').textContent = data.error || 'Error al guardar.'; }
+}
+
+async function delCuenta(id, btn) {
+  if (!confirm('¿Eliminar esta cuenta?')) return;
+  const r = await fetch(`/finanzas/salud/api/cuenta/${id}`, { method: 'DELETE' });
+  if ((await r.json()).ok) { btn.closest('.sf-account').remove(); location.reload(); }
+}
+
+// ── Modal Bien ───────────────────────────────────────────────────────────────
+function openModalBien() {
+  document.getElementById('mb-id').value = '';
+  document.getElementById('mbien-title').textContent = 'Agregar Bien Personal';
+  ['mb-nombre','mb-descripcion','mb-lugar','mb-notas'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mb-categoria').value = 'electrodomestico';
+  document.getElementById('mb-precio').value = '';
+  document.getElementById('mb-valor').value = '';
+  document.getElementById('mb-fecha').value = '';
+  document.getElementById('mb-garantia').value = '';
+  document.getElementById('mb-err').textContent = '';
+  document.getElementById('modal-bien').classList.add('open');
+  document.getElementById('mb-nombre').focus();
+}
+
+function editBien(id, nombre, categoria, descripcion, precio, valor, fecha, lugar, garantia, notas) {
+  document.getElementById('mb-id').value = id;
+  document.getElementById('mbien-title').textContent = 'Editar Bien';
+  document.getElementById('mb-nombre').value = nombre;
+  document.getElementById('mb-categoria').value = categoria;
+  document.getElementById('mb-descripcion').value = descripcion;
+  document.getElementById('mb-precio').value = precio;
+  document.getElementById('mb-valor').value = valor;
+  document.getElementById('mb-fecha').value = fecha;
+  document.getElementById('mb-lugar').value = lugar;
+  document.getElementById('mb-garantia').value = garantia;
+  document.getElementById('mb-notas').value = notas;
+  document.getElementById('mb-err').textContent = '';
+  document.getElementById('modal-bien').classList.add('open');
+}
+
+function closeMBien() {
+  document.getElementById('modal-bien').classList.remove('open');
+}
+
+async function submitBien() {
+  const id     = document.getElementById('mb-id').value;
+  const nombre = document.getElementById('mb-nombre').value.trim();
+  const precio = parseFloat(document.getElementById('mb-precio').value) || 0;
+  const valorRaw = document.getElementById('mb-valor').value;
+  const valor  = valorRaw !== '' ? parseFloat(valorRaw) : precio;
+  if (!nombre) { document.getElementById('mb-err').textContent = 'Ingresa el nombre.'; return; }
+
+  const payload = {
+    nombre,
+    categoria:     document.getElementById('mb-categoria').value,
+    descripcion:   document.getElementById('mb-descripcion').value.trim(),
+    precio_compra: precio,
+    valor_actual:  valor,
+    fecha_compra:  document.getElementById('mb-fecha').value,
+    lugar_compra:  document.getElementById('mb-lugar').value.trim(),
+    garantia_hasta:document.getElementById('mb-garantia').value,
+    notas:         document.getElementById('mb-notas').value.trim(),
+  };
+
+  const url    = id ? `/finanzas/salud/api/bien/${id}` : '/finanzas/salud/api/bien';
+  const method = id ? 'PATCH' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const data = await r.json();
+  if (data.ok) { closeMBien(); location.reload(); }
+  else { document.getElementById('mb-err').textContent = data.error || 'Error al guardar.'; }
+}
+
+async function delBien(id, btn) {
+  if (!confirm('¿Eliminar este bien?')) return;
+  const r = await fetch(`/finanzas/salud/api/bien/${id}`, { method: 'DELETE' });
+  if ((await r.json()).ok) { btn.closest('.sf-bien').remove(); location.reload(); }
+}
+
+// ── Filtro bienes ────────────────────────────────────────────────────────────
+function filtrarCat(cat, el) {
+  document.querySelectorAll('.chips2 .ch2').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('#bienes-grid .sf-bien').forEach(b => {
+    b.style.display = (cat === 'todos' || b.dataset.cat === cat) ? '' : 'none';
+  });
+}
+
+// ── Snapshot ─────────────────────────────────────────────────────────────────
+async function tomarSnapshot() {
+  const r = await fetch('/finanzas/salud/api/snapshot', { method: 'POST' });
+  const d = await r.json();
+  if (d.ok) {
+    alert(`✓ Snapshot guardado: $${d.patrimonio_neto.toLocaleString('es-MX', {minimumFractionDigits:2})} MXN`);
+    location.reload();
+  } else {
+    alert(d.error || 'No se pudo guardar el snapshot.');
+  }
+}
+
+// ── Cerrar modales con Escape ─────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeMCuenta();
+    closeMBien();
+  }
+});
+
+// Reinit Lucide icons after dynamic content
+lucide.createIcons();
+</script>
+{% endblock %}

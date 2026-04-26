@@ -67,11 +67,24 @@ def add():
     with get_db() as db:
         db.execute("""
             INSERT INTO lista_prioridades
-            (nombre, categoria, prioridad, precio_estimado, mes_objetivo, tienda, url, notas, created_at)
-            VALUES (?,?,?,?,?,?,?,?,?)""",
+            (nombre, categoria, prioridad, precio_estimado, mes_objetivo, tienda, url, notas,
+             protocolo_score, protocolo_rec, comprar_con_ec, ec_pagado, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (d.get('nombre','').strip(), d.get('categoria',''), d.get('prioridad','Media'),
              float(d.get('precio_estimado') or 0), d.get('mes_objetivo',''),
-             d.get('tienda',''), d.get('url',''), d.get('notas',''), now))
+             d.get('tienda',''), d.get('url',''), d.get('notas',''),
+             d.get('protocolo_score'), d.get('protocolo_rec'),
+             1 if d.get('comprar_con_ec') else 0,
+             int(d.get('ec_pagado') or 0), now))
+        iid = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+        # If paid with EC, register deduction in gamification ledger
+        if d.get('comprar_con_ec') and int(d.get('ec_pagado') or 0) > 0:
+            nombre = d.get('nombre','').strip()
+            ec = int(d.get('ec_pagado'))
+            db.execute(
+                """INSERT INTO coins_ledger (amount, source, reference_id, description, date, created_at)
+                   VALUES (?,?,?,?,?,?)""",
+                (-ec, 'reward', iid, f'Wishlist: {nombre}', now[:10], now))
         db.commit()
     return jsonify({'ok': True})
 

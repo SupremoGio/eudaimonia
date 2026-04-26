@@ -1,0 +1,12 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildCommand": "pip install -r gio_v3/requirements.txt"
+  },
+  "deploy": {
+    "startCommand": "cd gio_v3 && gunicorn \"app:create_app()\" --bind 0.0.0.0:$PORT --workers 1 --timeout 120",
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}

@@ -1,5 +1,7 @@
-{% extends "tw/layout.html" %}{% set pg='perfil' %}
-{% block title %}Hegemonikon — Eudaimonia{% endblock %}{% block topright %}HEGEMONIKON · PERFIL{% endblock %}
+{% extends "eu/layout_sub.html" %}{% set pg='perfil' %}
+{% block title %}Perfil — Eudaimonia{% endblock %}
+{% block module_title %}HEGEMONIKON{% endblock %}
+{% block topright %}PERFIL · DATOS PERSONALES{% endblock %}
 {% block content %}
 <style>
 /* ── Layout ── */
@@ -10,8 +12,8 @@
 .sec-title{font-family:var(--serif);font-size:1.15rem;font-style:italic;font-weight:300;color:var(--text);}
 .sec-sub{font-size:.5rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:2px;}
 .sec-tag{display:inline-flex;align-items:center;gap:5px;font-size:.46rem;letter-spacing:.15em;text-transform:uppercase;padding:3px 9px;border-radius:100px;}
-.tag-violet{background:var(--violet-d);border:1px solid rgba(124,58,237,.25);color:var(--violet-l);}
-.tag-cyan{background:var(--cyan-d);border:1px solid rgba(6,182,212,.25);color:var(--cyan-l);}
+.tag-violet{background:var(--violet-d);border:1px solid rgba(201,168,76,.18);color:var(--violet-l);}
+.tag-cyan{background:var(--cyan-d);border:1px solid rgba(168,152,128,.25);color:var(--cyan-l);}
 .tag-gold{background:var(--gold-d);border:1px solid rgba(245,158,11,.25);color:var(--gold);}
 
 /* ── Field row ── */
@@ -21,15 +23,69 @@
 .field-lbl{font-size:.46rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase;}
 .priv-badge{font-size:.42rem;color:var(--gold);background:var(--gold-d);border:1px solid rgba(245,158,11,.2);padding:1px 6px;border-radius:100px;letter-spacing:.08em;}
 
-.field-view{display:flex;align-items:center;gap:8px;}
+.field-view{display:flex;align-items:center;gap:6px;}
 .field-val{font-size:.8rem;color:var(--text);flex:1;}
 .field-val.is-priv{color:var(--mid);letter-spacing:.1em;}
-.icon-btn{background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;padding:3px;border-radius:5px;transition:color .15s,background .15s;}
-.icon-btn:hover{color:var(--violet-l);background:var(--violet-d);}
+.icon-btn{background:none;border:none;color:var(--dim);cursor:pointer;display:flex;align-items:center;padding:3px;border-radius:5px;transition:color .15s,background .15s;position:relative;}
+.icon-btn:hover{color:var(--gold);background:var(--gold-d);}
 .icon-btn.danger:hover{color:var(--coral);background:var(--coral-d);}
+.icon-btn.attach-btn{transition:color .15s,background .15s;}
+.icon-btn.attach-btn.has-docs{color:var(--gold);}
+
+/* attach badge */
+.attach-badge{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#09070F;
+  font-size:8px;font-weight:700;width:14px;height:14px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none;}
 
 .field-edit{display:none;align-items:center;gap:7px;margin-top:6px;}
 .field-edit .fi{font-size:.76rem;padding:7px 11px;}
+
+/* ── Per-field docs panel ── */
+.field-docs-panel{
+  display:none;
+  margin-top:10px;
+  background:var(--card2);
+  border:1px solid rgba(201,168,76,.15);
+  border-radius:10px;
+  overflow:hidden;
+}
+.field-docs-panel.open{display:block;}
+.fdp-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;border-bottom:1px solid rgba(201,168,76,.08);
+}
+.fdp-title{font-size:.46rem;letter-spacing:.15em;text-transform:uppercase;color:var(--dim);}
+.fdp-upload{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:.52rem;color:var(--gold);cursor:pointer;
+  background:var(--gold-d);border:1px solid rgba(201,168,76,.2);
+  border-radius:6px;padding:3px 9px;transition:background .14s;
+}
+.fdp-upload:hover{background:rgba(201,168,76,.14);}
+.fdp-list{padding:4px 0;}
+.fdp-empty{text-align:center;padding:16px;font-size:.6rem;color:var(--dim);}
+.fdp-row{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 14px;transition:background .12s;
+}
+.fdp-row:hover{background:rgba(201,168,76,.04);}
+.fdp-icon{
+  width:28px;height:28px;border-radius:7px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.fdp-icon.pdf {background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);}
+.fdp-icon.img {background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);}
+.fdp-icon.doc {background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.18);}
+.fdp-name{flex:1;min-width:0;}
+.fdp-filename{font-size:.64rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fdp-date{font-size:.46rem;color:var(--dim);margin-top:1px;}
+.fdp-actions{display:flex;gap:4px;flex-shrink:0;}
+
+/* image preview on hover */
+.fdp-row .img-thumb{
+  width:28px;height:28px;border-radius:7px;object-fit:cover;
+  border:1px solid rgba(96,165,250,.2);flex-shrink:0;
+}
 
 /* ── Measurement grid ── */
 .meas-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--b);}
@@ -41,19 +97,33 @@
 .meas-edit{display:none;align-items:center;gap:6px;margin-top:6px;}
 .meas-edit .fi{font-size:.72rem;padding:6px 10px;}
 
-/* ── Documents ── */
+/* ── Documents (general) ── */
 .doc-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
 .doc-row:last-child{border-bottom:none;}
-.doc-icon-wrap{width:32px;height:32px;border-radius:8px;background:var(--gold-d);border:1px solid rgba(245,158,11,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.doc-icon-wrap{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.doc-icon-wrap.pdf{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);}
+.doc-icon-wrap.img{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);}
+.doc-icon-wrap.doc{background:var(--gold-d);border:1px solid rgba(201,168,76,.2);}
+.doc-thumb{width:32px;height:32px;border-radius:8px;object-fit:cover;border:1px solid rgba(96,165,250,.2);flex-shrink:0;}
 .doc-name{flex:1;font-size:.72rem;color:var(--text);text-decoration:none;line-height:1.3;word-break:break-all;}
-.doc-name:hover{color:var(--violet-l);}
+.doc-name:hover{color:var(--gold);}
 .doc-date{font-size:.46rem;color:var(--dim);flex-shrink:0;white-space:nowrap;}
 .doc-empty{text-align:center;padding:28px 0;color:var(--dim);font-size:.68rem;}
 
-/* ── Upload button ── */
 .upload-label{cursor:pointer;}
 
-/* ── Mobile ── */
+/* ── Reminders ── */
+.rem-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
+.rem-row:last-child{border-bottom:none;}
+.rem-check{cursor:pointer;color:var(--dim);display:flex;align-items:center;padding:4px;border-radius:50%;transition:color .15s,background .15s;flex-shrink:0;}
+.rem-check:hover{color:var(--gold);background:var(--gold-d);}
+.rem-info{flex:1;min-width:0;}
+.rem-desc{font-size:.78rem;color:var(--text);margin-bottom:3px;}
+.rem-meta{font-size:.46rem;color:var(--dim);display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.rem-badge{padding:1px 7px;border-radius:100px;font-size:.44rem;}
+.rem-badge.period{background:var(--violet-d);color:var(--violet-l);border:1px solid rgba(167,139,250,.2);}
+.rem-badge.once{background:var(--cyan-d);color:var(--cyan-l);border:1px solid rgba(168,152,128,.2);}
+
 @media(max-width:640px){
   .meas-grid{grid-template-columns:1fr 1fr;}
   .field-edit{flex-wrap:wrap;}
@@ -71,34 +141,80 @@
       </div>
       <span class="sec-tag tag-violet"><i data-lucide="user" style="width:10px;height:10px;"></i> Personal</span>
     </div>
+
     <div class="tile" style="padding:6px 20px;">
       {% for item in info %}
+      {% set field_docs = docs_by_field.get(item.key, []) %}
       <div class="field-row" data-key="{{ item.key }}">
         <div class="field-meta">
           <span class="field-lbl">{{ item.label }}</span>
           {% if item.private %}<span class="priv-badge">privado</span>{% endif %}
         </div>
+
         <div class="field-view" id="vrow-{{ item.key }}">
-          <span class="field-val {% if item.private %}is-priv{% endif %}" id="val-{{ item.key }}" data-real="{{ item.value }}" data-private="{{ item.private }}">
+          <span class="field-val {% if item.private %}is-priv{% endif %}"
+            id="val-{{ item.key }}" data-real="{{ item.value }}" data-private="{{ item.private }}">
             {% if item.private %}••••••••{% else %}{{ item.value }}{% endif %}
           </span>
+
           {% if item.private %}
           <button class="icon-btn" onclick="toggleVis('{{ item.key }}')" title="Mostrar/ocultar" id="eyebtn-{{ item.key }}">
             <i data-lucide="eye" style="width:13px;height:13px;"></i>
           </button>
           {% endif %}
+
           <button class="icon-btn" onclick="copyVal('{{ item.key }}')" title="Copiar">
             <i data-lucide="copy" style="width:13px;height:13px;"></i>
           </button>
+
           <button class="icon-btn" onclick="startEdit('{{ item.key }}')" title="Editar">
             <i data-lucide="pencil" style="width:13px;height:13px;"></i>
           </button>
+
+          <!-- ★ ATTACH BUTTON — solo en campos relevantes -->
+          {% if item.key not in ['nombre', 'telefono', 'email'] %}
+          <button class="icon-btn attach-btn {% if field_docs %}has-docs{% endif %}"
+            id="attachbtn-{{ item.key }}"
+            onclick="toggleDocPanel('{{ item.key }}')"
+            title="Documentos adjuntos">
+            <i data-lucide="paperclip" style="width:13px;height:13px;"></i>
+            {% if field_docs %}
+            <span class="attach-badge" id="badge-{{ item.key }}">{{ field_docs|length }}</span>
+            {% endif %}
+          </button>
+          {% endif %}
         </div>
+
         <div class="field-edit" id="erow-{{ item.key }}">
           <input class="fi" style="flex:1;" id="einp-{{ item.key }}" value="{{ item.value }}" autocomplete="off">
           <button class="btn-a" style="padding:6px 14px;font-size:.58rem;white-space:nowrap;" onclick="save('{{ item.key }}')">Guardar</button>
           <button class="btn-r" style="padding:6px 11px;" onclick="cancel('{{ item.key }}')">✕</button>
         </div>
+
+        <!-- ★ PER-FIELD DOCS PANEL -->
+        {% if item.key not in ['nombre', 'telefono', 'email'] %}
+        <div class="field-docs-panel" id="fdp-{{ item.key }}">
+          <div class="fdp-head">
+            <span class="fdp-title">Documentos — {{ item.label }}</span>
+            <label class="fdp-upload" title="Adjuntar archivo">
+              <input type="file" style="display:none;" multiple
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip"
+                onchange="uploadFieldDoc(this,'{{ item.key }}')">
+              <i data-lucide="upload" style="width:10px;height:10px;"></i> Adjuntar
+            </label>
+          </div>
+          <div class="fdp-list" id="fdp-list-{{ item.key }}">
+            {% if field_docs %}
+              {% for doc in field_docs %}
+              {{ fdp_row(doc) }}
+              {% endfor %}
+            {% else %}
+              <div class="fdp-empty" id="fdp-empty-{{ item.key }}">Sin documentos adjuntos</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}{# end attach panel #}
+
       </div>
       {% endfor %}
     </div>
@@ -138,51 +254,148 @@
     </div>
   </div>
 
-  <!-- ── DOCUMENTOS ────────────────────────────────────────────────────── -->
+  <!-- ── RECORDATORIOS ────────────────────────────────────────────────── -->
   <div style="margin-bottom:28px;">
     <div class="sec-hd">
       <div>
-        <div class="sec-title">Mis Documentos</div>
-        <div class="sec-sub">PDF, imágenes, Word, Excel, ZIP · Máx 20 MB</div>
+        <div class="sec-title">Recordatorios</div>
+        <div class="sec-sub">Periódicos · Únicos · Reprogramación automática</div>
       </div>
-      <label class="upload-label" title="Subir documento">
-        <input type="file" id="docUploadInput" style="display:none;" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip" onchange="uploadDocs(this)">
-        <span class="btn-g" style="display:inline-flex;align-items:center;gap:6px;font-size:.58rem;padding:6px 14px;">
-          <i data-lucide="upload" style="width:12px;height:12px;"></i> Subir
-        </span>
-      </label>
+      <button class="btn-g" style="display:inline-flex;align-items:center;gap:6px;font-size:.58rem;padding:6px 14px;"
+        onclick="toggleRemForm()">
+        <i data-lucide="plus" style="width:12px;height:12px;"></i> Nuevo
+      </button>
     </div>
-    <div class="tile" style="padding:4px 20px;" id="docsList">
-      {% if docs %}
-        {% for doc in docs %}
-        <div class="doc-row" id="docrow-{{ doc.id }}">
-          <div class="doc-icon-wrap">
-            <i data-lucide="{{ 'image' if doc.original.split('.')[-1].lower() in ['jpg','jpeg','png','webp'] else ('table' if doc.original.split('.')[-1].lower() in ['xls','xlsx'] else ('archive' if doc.original.split('.')[-1].lower() == 'zip' else 'file-text')) }}" style="width:14px;height:14px;color:var(--gold);"></i>
+
+    <!-- Form (hidden by default) -->
+    <div id="remForm" style="display:none;margin-bottom:12px;">
+      <div class="tile" style="padding:16px 20px;">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <input class="fi" id="remDesc" placeholder="Ej: Pagar HSBC el día 30" autocomplete="off">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <select class="fi" id="remType" onchange="onRemTypeChange()" style="flex:0 0 140px;">
+              <option value="unico">Único</option>
+              <option value="periodico">Periódico</option>
+            </select>
+            <input class="fi" id="remDate" type="date" style="flex:1;min-width:120px;">
           </div>
-          <a class="doc-name" href="/perfil/docs/{{ doc.filename }}" target="_blank">{{ doc.original }}</a>
-          <span class="doc-date">{{ doc.uploaded_at[:10] }}</span>
-          <button class="icon-btn danger" onclick="deleteDoc({{ doc.id }})" title="Eliminar">
-            <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+          <div id="remFreqRow" style="display:none;gap:10px;flex-wrap:wrap;">
+            <div style="display:flex;gap:10px;flex:1;">
+              <input class="fi" id="remFreqVal" type="number" min="1" value="1" style="flex:0 0 70px;">
+              <select class="fi" id="remFreqUnit" style="flex:1;">
+                <option value="dias">Días</option>
+                <option value="semanas">Semanas</option>
+                <option value="meses">Meses</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;">
+            <button class="btn-r" style="padding:6px 14px;" onclick="toggleRemForm()">Cancelar</button>
+            <button class="btn-g" style="padding:6px 18px;" onclick="saveReminder()">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="tile" style="padding:4px 20px;" id="remindersList">
+      {% if reminders %}
+        {% for r in reminders %}
+        <div class="rem-row" id="remrow-{{ r.id }}">
+          <div class="rem-check" onclick="doneReminder({{ r.id }}, '{{ r.type }}')" title="Marcar como hecho">
+            <i data-lucide="circle" style="width:16px;height:16px;"></i>
+          </div>
+          <div class="rem-info">
+            <div class="rem-desc">{{ r.description }}</div>
+            <div class="rem-meta">
+              {% if r.type == 'periodico' %}
+                <span class="rem-badge period">cada {{ r.freq_value }} {{ r.freq_unit }}</span>
+                {% if r.next_date %}<span>· próx. {{ r.next_date }}</span>{% endif %}
+              {% else %}
+                <span class="rem-badge once">único</span>
+                {% if r.target_date %}<span>· {{ r.target_date }}</span>{% endif %}
+              {% endif %}
+            </div>
+          </div>
+          <button class="icon-btn danger" onclick="deleteReminder({{ r.id }})" title="Eliminar">
+            <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
           </button>
         </div>
         {% endfor %}
       {% else %}
-        <div class="doc-empty" id="docsEmpty">Aún no hay documentos. Usa <strong>Subir</strong> para agregar.</div>
+        <div id="remEmpty" style="text-align:center;padding:28px 0;color:var(--dim);font-size:.68rem;">
+          Sin recordatorios. Usa <strong>Nuevo</strong> para agregar.
+        </div>
       {% endif %}
     </div>
   </div>
 
 </div>
+
 {% endblock %}
+
+{# ── Macros ─────────────────────────────────────────────────── #}
+{% macro fdp_row(doc) %}
+{% set ext = doc.original.split('.')[-1].lower() %}
+{% set is_img = ext in ['jpg','jpeg','png','webp'] %}
+{% set is_pdf = ext == 'pdf' %}
+<div class="fdp-row" id="fdprow-{{ doc.id }}">
+  {% if is_img %}
+  <img class="img-thumb" src="/perfil/docs/{{ doc.filename }}" alt="{{ doc.original }}" loading="lazy">
+  {% else %}
+  <div class="fdp-icon {% if is_pdf %}pdf{% elif ext in ['xls','xlsx'] %}doc{% else %}doc{% endif %}">
+    <i data-lucide="{{ 'file-text' if is_pdf else ('table' if ext in ['xls','xlsx'] else 'file') }}"
+       style="width:13px;height:13px;color:{% if is_pdf %}var(--red){% else %}var(--gold){% endif %};"></i>
+  </div>
+  {% endif %}
+  <div class="fdp-name">
+    <div class="fdp-filename" title="{{ doc.original }}">{{ doc.original }}</div>
+    <div class="fdp-date">{{ doc.uploaded_at[:10] if doc.uploaded_at else '' }}</div>
+  </div>
+  <div class="fdp-actions">
+    <a href="/perfil/docs/{{ doc.filename }}" target="_blank" class="icon-btn" title="Abrir">
+      <i data-lucide="external-link" style="width:12px;height:12px;"></i>
+    </a>
+    <button class="icon-btn danger" onclick="deleteFieldDoc({{ doc.id }}, '{{ doc.field_key }}')" title="Eliminar">
+      <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+    </button>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro gen_doc_row(doc) %}
+{% set ext = doc.original.split('.')[-1].lower() %}
+{% set is_img = ext in ['jpg','jpeg','png','webp'] %}
+{% set is_pdf = ext == 'pdf' %}
+<div class="doc-row" id="docrow-{{ doc.id }}">
+  {% if is_img %}
+  <img class="doc-thumb" src="/perfil/docs/{{ doc.filename }}" alt="{{ doc.original }}" loading="lazy">
+  {% else %}
+  <div class="doc-icon-wrap {% if is_pdf %}pdf{% elif ext in ['xls','xlsx'] %}doc{% else %}doc{% endif %}">
+    <i data-lucide="{{ 'file-text' if is_pdf else ('table' if ext in ['xls','xlsx'] else ('archive' if ext == 'zip' else 'file')) }}"
+       style="width:14px;height:14px;color:{% if is_pdf %}var(--red){% else %}var(--gold){% endif %};"></i>
+  </div>
+  {% endif %}
+  <a class="doc-name" href="/perfil/docs/{{ doc.filename }}" target="_blank">{{ doc.original }}</a>
+  <span class="doc-date">{{ doc.uploaded_at[:10] if doc.uploaded_at else '' }}</span>
+  <button class="icon-btn danger" onclick="deleteDoc({{ doc.id }})" title="Eliminar">
+    <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+  </button>
+</div>
+{% endmacro %}
+
 {% block scripts %}<script>
 const rv={};
-{% for item in info %}rv['{{ item.key }}']='{{ item.value }}';{% endfor %}
+{% for item in info %}rv['{{ item.key }}']='{{ item.value|replace("'","\\'") }}';{% endfor %}
 const priv={};
 {% for item in info %}priv['{{ item.key }}']={{ 'true' if item.private else 'false' }};{% endfor %}
 const mv={};
-{% for m in measurements %}mv['{{ m.key }}']='{{ m.value }}';{% endfor %}
+{% for m in measurements %}mv['{{ m.key }}']='{{ m.value|replace("'","\\'") }}';{% endfor %}
 
-// ── Info personal ────────────────────────────────────────────────────────────
+// Track open doc panel
+let _openPanel = null;
+
+// ── Info personal ─────────────────────────────────────────────────────────────
 function toggleVis(k){
   const el=document.getElementById('val-'+k);
   const btn=document.getElementById('eyebtn-'+k);
@@ -219,13 +432,15 @@ async function save(k){
   cancel(k);toast('Guardado ✓');
 }
 document.querySelectorAll('[id^=einp-]').forEach(inp=>{
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')save(inp.id.replace('einp-',''));if(e.key==='Escape')cancel(inp.id.replace('einp-',''));});
+  inp.addEventListener('keydown',e=>{
+    const k=inp.id.replace('einp-','');
+    if(e.key==='Enter')save(k);
+    if(e.key==='Escape')cancel(k);
+  });
 });
 
-// ── Mediciones ───────────────────────────────────────────────────────────────
-function copyMeasure(k){
-  navigator.clipboard.writeText(mv[k]).then(()=>toast('Copiado ✓'));
-}
+// ── Mediciones ────────────────────────────────────────────────────────────────
+function copyMeasure(k){navigator.clipboard.writeText(mv[k]).then(()=>toast('Copiado ✓'));}
 function startEditM(k){
   document.getElementById('mvrow-'+k).style.display='none';
   const er=document.getElementById('merow-'+k);er.style.display='flex';
@@ -245,18 +460,136 @@ async function saveM(k){
   cancelM(k);toast('Guardado ✓');
 }
 document.querySelectorAll('[id^=meinp-]').forEach(inp=>{
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')saveM(inp.id.replace('meinp-',''));if(e.key==='Escape')cancelM(inp.id.replace('meinp-',''));});
+  inp.addEventListener('keydown',e=>{
+    const k=inp.id.replace('meinp-','');
+    if(e.key==='Enter')saveM(k);
+    if(e.key==='Escape')cancelM(k);
+  });
 });
 
-// ── Documentos ───────────────────────────────────────────────────────────────
-function docIcon(name){
+// ── Per-field docs panel ──────────────────────────────────────────────────────
+function toggleDocPanel(k){
+  const panel=document.getElementById('fdp-'+k);
+  if(!panel)return;
+  const isOpen=panel.classList.contains('open');
+  // Close any other open panel
+  if(_openPanel && _openPanel !== k){
+    document.getElementById('fdp-'+_openPanel)?.classList.remove('open');
+  }
+  panel.classList.toggle('open',!isOpen);
+  _openPanel=isOpen?null:k;
+}
+
+function docType(name){
+  const ext=(name.split('.').pop()||'').toLowerCase();
+  if(['jpg','jpeg','png','webp'].includes(ext))return'img';
+  if(ext==='pdf')return'pdf';
+  return'doc';
+}
+function docLucide(name){
   const ext=(name.split('.').pop()||'').toLowerCase();
   if(['jpg','jpeg','png','webp'].includes(ext))return'image';
+  if(ext==='pdf')return'file-text';
   if(['xls','xlsx'].includes(ext))return'table';
   if(ext==='zip')return'archive';
-  return'file-text';
+  return'file';
 }
-async function uploadDocs(input){
+function docColor(name){
+  const t=docType(name);
+  if(t==='pdf')return'var(--red)';
+  return'var(--gold)';
+}
+
+async function uploadFieldDoc(input, fieldKey){
+  const files=[...input.files];
+  if(!files.length)return;
+  for(const f of files){
+    if(f.size>20*1024*1024){toast('⚠ '+f.name+' supera 20 MB');continue;}
+    const fd=new FormData();
+    fd.append('file',f);
+    fd.append('field_key',fieldKey);
+    const r=await fetch('/perfil/api/upload_doc',{method:'POST',body:fd});
+    const j=await r.json();
+    if(!j.ok){toast('Error: '+j.error);continue;}
+    appendFieldDocRow(j, fieldKey);
+    updateAttachBadge(fieldKey, 1);
+    toast('Adjuntado ✓');
+  }
+  input.value='';
+  document.getElementById('fdp-empty-'+fieldKey)?.remove();
+}
+
+function appendFieldDocRow(doc, fieldKey){
+  const list=document.getElementById('fdp-list-'+fieldKey);
+  if(!list)return;
+  const isImg=docType(doc.original)==='img';
+  const date=doc.uploaded_at?doc.uploaded_at.substring(0,10):'';
+  const iconType=docType(doc.original);
+  let iconHTML;
+  if(isImg){
+    iconHTML=`<img class="img-thumb" src="/perfil/docs/${doc.filename}" alt="${doc.original}" loading="lazy">`;
+  } else {
+    iconHTML=`<div class="fdp-icon ${iconType}">
+      <i data-lucide="${docLucide(doc.original)}" style="width:13px;height:13px;color:${docColor(doc.original)};"></i>
+    </div>`;
+  }
+  const html=`<div class="fdp-row" id="fdprow-${doc.id}">
+    ${iconHTML}
+    <div class="fdp-name">
+      <div class="fdp-filename" title="${doc.original}">${doc.original}</div>
+      <div class="fdp-date">${date}</div>
+    </div>
+    <div class="fdp-actions">
+      <a href="/perfil/docs/${doc.filename}" target="_blank" class="icon-btn" title="Abrir">
+        <i data-lucide="external-link" style="width:12px;height:12px;"></i>
+      </a>
+      <button class="icon-btn danger" onclick="deleteFieldDoc(${doc.id},'${fieldKey}')" title="Eliminar">
+        <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+      </button>
+    </div>
+  </div>`;
+  list.insertAdjacentHTML('beforeend', html);
+  lucide.createIcons();
+}
+
+function updateAttachBadge(fieldKey, delta){
+  const btn=document.getElementById('attachbtn-'+fieldKey);
+  if(!btn)return;
+  let badge=document.getElementById('badge-'+fieldKey);
+  if(!badge){
+    badge=document.createElement('span');
+    badge.className='attach-badge';
+    badge.id='badge-'+fieldKey;
+    btn.appendChild(badge);
+    btn.classList.add('has-docs');
+  }
+  const cur=parseInt(badge.textContent||'0');
+  const next=cur+delta;
+  if(next<=0){
+    badge.remove();
+    btn.classList.remove('has-docs');
+  } else {
+    badge.textContent=next;
+  }
+}
+
+async function deleteFieldDoc(id, fieldKey){
+  if(!confirm('¿Eliminar este documento?'))return;
+  const r=await fetch('/perfil/api/delete_doc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  const j=await r.json();
+  if(j.ok){
+    document.getElementById('fdprow-'+id)?.remove();
+    updateAttachBadge(fieldKey, -1);
+    toast('Eliminado');
+    const list=document.getElementById('fdp-list-'+fieldKey);
+    if(list && !list.querySelector('[id^=fdprow-]')){
+      list.innerHTML=`<div class="fdp-empty" id="fdp-empty-${fieldKey}">Sin documentos adjuntos</div>`;
+    }
+  }
+}
+
+// ── Documentos generales ──────────────────────────────────────────────────────
+async function uploadGeneralDoc(input){
   const files=[...input.files];if(!files.length)return;
   for(const f of files){
     if(f.size>20*1024*1024){toast('⚠ '+f.name+' supera 20 MB');continue;}
@@ -264,16 +597,24 @@ async function uploadDocs(input){
     const r=await fetch('/perfil/api/upload_doc',{method:'POST',body:fd});
     const j=await r.json();
     if(!j.ok){toast('Error: '+j.error);continue;}
-    appendDocRow(j);toast('Subido ✓');
+    appendGenDocRow(j);toast('Subido ✓');
   }
   input.value='';
   document.getElementById('docsEmpty')?.remove();
 }
-function appendDocRow(doc){
-  const icon=docIcon(doc.original);
+function appendGenDocRow(doc){
+  const isImg=docType(doc.original)==='img';
   const date=doc.uploaded_at?doc.uploaded_at.substring(0,10):'';
+  let iconHTML;
+  if(isImg){
+    iconHTML=`<img class="doc-thumb" src="/perfil/docs/${doc.filename}" alt="${doc.original}" loading="lazy">`;
+  } else {
+    iconHTML=`<div class="doc-icon-wrap ${docType(doc.original)}">
+      <i data-lucide="${docLucide(doc.original)}" style="width:14px;height:14px;color:${docColor(doc.original)};"></i>
+    </div>`;
+  }
   const html=`<div class="doc-row" id="docrow-${doc.id}">
-    <div class="doc-icon-wrap"><i data-lucide="${icon}" style="width:14px;height:14px;color:var(--gold);"></i></div>
+    ${iconHTML}
     <a class="doc-name" href="/perfil/docs/${doc.filename}" target="_blank">${doc.original}</a>
     <span class="doc-date">${date}</span>
     <button class="icon-btn danger" onclick="deleteDoc(${doc.id})" title="Eliminar">
@@ -292,6 +633,63 @@ async function deleteDoc(id){
     toast('Eliminado');
     if(!document.querySelector('#docsList [id^=docrow-]')){
       document.getElementById('docsList').innerHTML='<div class="doc-empty" id="docsEmpty">Aún no hay documentos.</div>';
+    }
+  }
+}
+
+// ── Recordatorios ─────────────────────────────────────────────────────────────
+function toggleRemForm(){
+  const f=document.getElementById('remForm');
+  const open=f.style.display!=='none';
+  f.style.display=open?'none':'block';
+  if(!open)document.getElementById('remDesc').focus();
+}
+function onRemTypeChange(){
+  const isPeriodico=document.getElementById('remType').value==='periodico';
+  document.getElementById('remFreqRow').style.display=isPeriodico?'flex':'none';
+}
+async function saveReminder(){
+  const desc=document.getElementById('remDesc').value.trim();
+  if(!desc){toast('Escribe una descripción');return;}
+  const type=document.getElementById('remType').value;
+  const dateVal=document.getElementById('remDate').value;
+  const payload={description:desc,type,target_date:dateVal||null};
+  if(type==='periodico'){
+    payload.freq_value=parseInt(document.getElementById('remFreqVal').value)||1;
+    payload.freq_unit=document.getElementById('remFreqUnit').value;
+    payload.next_date=dateVal||null;
+  }
+  const r=await fetch('/perfil/api/reminder/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
+}
+async function doneReminder(id,type){
+  const row=document.getElementById('remrow-'+id);
+  if(row){row.style.opacity='0.4';row.style.pointerEvents='none';}
+  const r=await fetch(`/perfil/api/reminder/${id}/done`,{method:'POST'});
+  const j=await r.json();
+  if(j.ok){
+    if(type==='unico'){
+      row?.remove();
+      if(!document.querySelector('#remindersList [id^=remrow-]')){
+        document.getElementById('remindersList').innerHTML='<div id="remEmpty" style="text-align:center;padding:28px 0;color:var(--dim);font-size:.68rem;">Sin recordatorios. Usa <strong>Nuevo</strong> para agregar.</div>';
+      }
+    } else {
+      location.reload();
+    }
+  } else {
+    if(row){row.style.opacity='';row.style.pointerEvents='';}
+    toast('Error al actualizar');
+  }
+}
+async function deleteReminder(id){
+  const r=await fetch(`/perfil/api/reminder/${id}/delete`,{method:'POST'});
+  const j=await r.json();
+  if(j.ok){
+    document.getElementById('remrow-'+id)?.remove();
+    toast('Eliminado');
+    if(!document.querySelector('#remindersList [id^=remrow-]')){
+      document.getElementById('remindersList').innerHTML='<div id="remEmpty" style="text-align:center;padding:28px 0;color:var(--dim);font-size:.68rem;">Sin recordatorios. Usa <strong>Nuevo</strong> para agregar.</div>';
     }
   }
 }

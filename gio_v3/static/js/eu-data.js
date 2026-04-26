@@ -45,13 +45,16 @@ window.EU = {
 
   submodules: {
     hegemonikon: [
-      { name:'Nutrición', icon:'🥗', route:'/nutricion' },
+      { name:'Nutrición',   icon:'🥗', route:'/nutricion'    },
+      { name:'Recetas',     icon:'👨‍🍳', route:'/recetas'      },
+      { name:'Guardarropa', icon:'👔', route:'/guardarropa'  },
     ],
     oikonomia: [
       { name:'Balance',     icon:'💰', route:'/finanzas'              },
       { name:'Presupuesto', icon:'📊', route:'/finanzas/budget'       },
       { name:'Wishlist',    icon:'⭐', route:'/finanzas/prioridades'  },
       { name:'Consumo',     icon:'🛒', route:'/finanzas/consumo'      },
+      { name:'Patrimonio',  icon:'🏛️', route:'/finanzas/salud'       },
     ],
     ataraxia: [
       { name:'Sábado', icon:'✅', route:'/sabado' },
@@ -177,6 +180,9 @@ window.EU = {
       week:  d.pts_week  || 0,
       month: d.pts_month || 0,
     },
-    streak: d.streak || 0,
+    streak:    d.streak    || 0,
+    word:      d.word_of_day || null,
+    reminders:  d.reminders   || [],
+    ecBalance:  d.ec_balance  || 0,
   };
 })();

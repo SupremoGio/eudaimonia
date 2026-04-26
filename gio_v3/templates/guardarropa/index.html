@@ -1,0 +1,960 @@
+{% extends "eu/layout_sub.html" %}{% set pg='guardarropa' %}
+{% block title %}Guardarropa — Eudaimonia{% endblock %}
+{% block module_title %}GUARDARROPA{% endblock %}
+{% block topright %}HEGEMONIKON · PRESENCIA{% endblock %}
+{% block content %}
+<style>
+/* ── Tab bar ─────────────────────────────────────────── */
+.gd-tabs{display:flex;gap:2px;margin-bottom:22px;background:var(--card);border:1px solid var(--b);border-radius:10px;padding:3px;}
+.gd-tab{flex:1;padding:8px 0;text-align:center;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);cursor:pointer;border-radius:8px;transition:all .18s;border:none;background:none;font-family:var(--sans);}
+.gd-tab.on{background:var(--gold-d);color:var(--gold);border:1px solid rgba(201,168,76,.25);}
+.gd-tab:hover:not(.on){color:var(--mid);}
+
+/* ── Shared toolbar ──────────────────────────────────── */
+.gd-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+.gd-search-wrap{position:relative;flex:1;min-width:140px;}
+.gd-search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:12px;height:12px;color:var(--dim);pointer-events:none;}
+.gd-search{width:100%;background:var(--card);border:1px solid var(--b);border-radius:8px;
+  padding:7px 12px 7px 32px;color:var(--text);font-family:var(--sans);font-size:.68rem;outline:none;transition:border-color .16s;}
+.gd-search:focus{border-color:var(--gold);}
+.cat-pill{padding:4px 11px;border-radius:100px;font-size:.54rem;letter-spacing:.06em;
+  background:var(--card);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;white-space:nowrap;}
+.cat-pill:hover,.cat-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+
+/* ── Shell: grid + detail ────────────────────────────── */
+.gd-shell{display:grid;grid-template-columns:1fr 400px;gap:18px;align-items:start;}
+@media(max-width:920px){.gd-shell{grid-template-columns:1fr;}}
+
+/* ── Item grid ───────────────────────────────────────── */
+.gd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+.gd-card{background:var(--card);border:1px solid var(--b);border-radius:12px;overflow:hidden;
+  cursor:pointer;transition:all .2s;position:relative;}
+.gd-card:hover{border-color:var(--b2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.4);}
+.gd-card.active{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,168,76,.2);}
+/* Color header or photo */
+.gd-card-visual{height:80px;overflow:hidden;position:relative;flex-shrink:0;}
+.gd-card-visual img{width:100%;height:100%;object-fit:cover;}
+.gd-card-swatch{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+.gd-card-initial{font-family:var(--serif);font-size:1.8rem;font-weight:600;opacity:.35;color:#fff;}
+.gd-card-body{padding:10px 11px 11px;}
+.gd-card-cat{font-size:.42rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
+.gd-card-name{font-size:.72rem;color:var(--text);font-weight:500;line-height:1.25;margin-bottom:6px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gd-card-chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;}
+.gd-chip{font-size:.42rem;padding:2px 6px;border-radius:100px;letter-spacing:.05em;border:1px solid;}
+.chip-estado-nuevo   {background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:var(--green);}
+.chip-estado-bueno   {background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.2);color:var(--gold);}
+.chip-estado-regular {background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);}
+.chip-estado-donar   {background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.2);color:var(--red);}
+.gd-card-meta{font-size:.46rem;color:var(--dim);display:flex;gap:8px;}
+.gd-card-fav{position:absolute;top:7px;right:7px;background:rgba(9,7,15,.55);
+  border:none;border-radius:6px;padding:3px;cursor:pointer;color:rgba(255,255,255,.5);
+  display:flex;align-items:center;transition:color .14s;backdrop-filter:blur(4px);}
+.gd-card-fav.on{color:var(--gold);}
+.gd-card-fav svg{width:12px;height:12px;}
+.gd-empty{text-align:center;padding:48px 20px;color:var(--dim);grid-column:1/-1;}
+.gd-empty svg{width:36px;height:36px;margin:0 auto 12px;display:block;opacity:.18;}
+
+/* ── Detail panel ────────────────────────────────────── */
+.gd-detail{background:var(--card);border:1px solid var(--b);border-radius:14px;
+  position:sticky;top:72px;overflow:hidden;}
+.gd-detail-empty{padding:44px 20px;text-align:center;color:var(--dim);}
+.gd-detail-empty svg{width:38px;height:38px;margin:0 auto 12px;display:block;opacity:.12;}
+.gd-detail-empty p{font-size:.62rem;line-height:1.6;}
+/* Detail visual */
+.gd-dv{height:180px;overflow:hidden;position:relative;}
+.gd-dv img{width:100%;height:100%;object-fit:cover;}
+.gd-dv-swatch{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+.gd-dv-initial{font-family:var(--serif);font-size:4rem;font-weight:600;opacity:.25;color:#fff;}
+.gd-dv-upload{position:absolute;bottom:10px;right:10px;}
+.gd-dv-upload label{display:inline-flex;align-items:center;gap:5px;
+  background:rgba(9,7,15,.7);border:1px solid rgba(201,168,76,.3);color:var(--gold);
+  font-size:.5rem;padding:4px 9px;border-radius:6px;cursor:pointer;backdrop-filter:blur(4px);
+  letter-spacing:.08em;text-transform:uppercase;transition:background .14s;}
+.gd-dv-upload label:hover{background:rgba(9,7,15,.9);}
+/* Detail body */
+.gd-db{padding:16px 18px;}
+.gd-db-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.gd-db-name{font-family:var(--serif);font-size:1.3rem;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:4px;}
+.gd-db-brand{font-size:.6rem;color:var(--mid);margin-bottom:12px;}
+/* Color psychology panel */
+.gd-psych{margin:12px 0;background:var(--card2);border:1px solid var(--b);border-radius:10px;padding:12px 14px;}
+.gd-psych-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.gd-psych-swatch{width:24px;height:24px;border-radius:6px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);}
+.gd-psych-name{font-size:.56rem;color:var(--text);font-weight:500;}
+.gd-psych-label{font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
+.gd-psych-msg{font-size:.62rem;color:var(--mid);line-height:1.55;margin-bottom:6px;}
+.gd-psych-rec{font-size:.54rem;color:var(--gold);display:flex;align-items:center;gap:5px;}
+/* Stats row */
+.gd-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b);border-radius:8px;overflow:hidden;margin:12px 0;}
+.gd-stat{background:var(--card2);padding:10px 12px;text-align:center;}
+.gd-stat-val{font-family:var(--serif);font-size:1.1rem;color:var(--text);line-height:1;}
+.gd-stat-lbl{font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
+/* Actions */
+.gd-actions{display:flex;gap:7px;margin-top:14px;}
+
+/* ── Outfits tab ─────────────────────────────────────── */
+.ot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+.ot-card{background:var(--card);border:1px solid var(--b);border-radius:12px;overflow:hidden;
+  cursor:pointer;transition:all .2s;}
+.ot-card:hover{border-color:var(--b2);transform:translateY(-2px);}
+.ot-color-strip{display:flex;height:8px;}
+.ot-color-seg{flex:1;}
+.ot-card-body{padding:12px 14px;}
+.ot-card-name{font-size:.78rem;color:var(--text);font-weight:500;margin-bottom:5px;}
+.ot-card-meta{display:flex;align-items:center;justify-content:space-between;font-size:.52rem;color:var(--dim);}
+.ot-stars{color:var(--gold);letter-spacing:-2px;}
+.ot-items-mini{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
+.ot-item-dot{width:20px;height:20px;border-radius:5px;border:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;font-size:8px;overflow:hidden;}
+.ot-item-dot img{width:100%;height:100%;object-fit:cover;}
+
+/* ── Intelligence tab ────────────────────────────────── */
+.intel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px;}
+@media(max-width:700px){.intel-grid{grid-template-columns:1fr;}}
+.intel-card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:18px;}
+.intel-title{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
+.color-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.color-dot{width:14px;height:14px;border-radius:4px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);}
+.color-bar-label{font-size:.6rem;color:var(--mid);width:64px;flex-shrink:0;}
+.color-bar-track{flex:1;height:5px;background:var(--b);border-radius:2px;overflow:hidden;}
+.color-bar-fill{height:100%;border-radius:2px;transition:width .5s;}
+.color-bar-val{font-size:.5rem;color:var(--dim);width:24px;text-align:right;flex-shrink:0;}
+.gap-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(201,168,76,.05);}
+.gap-row:last-child{border-bottom:none;}
+.gap-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;}
+.gap-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);}
+.gap-miss{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);}
+.gap-text{flex:1;font-size:.62rem;color:var(--mid);}
+.gap-status-ok{font-size:.5rem;color:var(--green);}
+.gap-status-miss{font-size:.5rem;color:var(--red);}
+.cat-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.cat-bar-label{font-size:.56rem;color:var(--mid);width:80px;flex-shrink:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* ── Modals ──────────────────────────────────────────── */
+.gm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;
+  display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);}
+.gm-overlay.open{display:flex;}
+.gm-box{background:var(--card);border:1px solid var(--b2);border-radius:18px;
+  width:520px;max-width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,.8);}
+.gm-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px 0;}
+.gm-title{font-family:var(--serif);font-size:1.2rem;font-weight:600;color:var(--text);}
+.gm-close{background:none;border:none;color:var(--dim);cursor:pointer;line-height:1;padding:4px;border-radius:6px;}
+.gm-close:hover{color:var(--text);}
+.gm-close svg{width:17px;height:17px;}
+.gm-body{padding:18px 22px 22px;}
+.gm-sec{font-size:.44rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 8px;}
+.gm-sec:first-child{margin-top:0;}
+.gm-row{display:grid;gap:8px;margin-bottom:8px;}
+.gm-row.c2{grid-template-columns:1fr 1fr;}
+.gm-row.c3{grid-template-columns:1fr 1fr 1fr;}
+.gm-occ{display:flex;gap:6px;flex-wrap:wrap;}
+.gm-occ-pill{padding:4px 10px;border-radius:100px;font-size:.54rem;
+  background:var(--card2);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;}
+.gm-occ-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+/* Item picker in outfit modal */
+.item-picker{max-height:220px;overflow-y:auto;border:1px solid var(--b);border-radius:8px;}
+.ip-row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;transition:background .12s;border-bottom:1px solid rgba(201,168,76,.05);}
+.ip-row:last-child{border-bottom:none;}
+.ip-row:hover{background:var(--gold-d);}
+.ip-row.on{background:rgba(201,168,76,.06);}
+.ip-color{width:20px;height:20px;border-radius:5px;flex-shrink:0;border:1px solid rgba(255,255,255,.08);}
+.ip-color img{width:100%;height:100%;object-fit:cover;border-radius:4px;}
+.ip-info{flex:1;min-width:0;}
+.ip-name{font-size:.64rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ip-cat{font-size:.48rem;color:var(--dim);}
+.ip-check{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--b2);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;transition:all .14s;}
+.ip-row.on .ip-check{background:var(--gold);border-color:var(--gold);}
+.ip-check svg{width:9px;height:9px;color:#09070F;display:none;}
+.ip-row.on .ip-check svg{display:block;}
+/* Star rating */
+.star-row{display:flex;gap:4px;}
+.star-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--b2);transition:color .12s;padding:0;}
+.star-btn.on{color:var(--gold);}
+.gm-err{color:var(--red);font-size:.58rem;min-height:14px;margin-top:6px;}
+.gm-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+</style>
+
+<!-- PAGE HEADER -->
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+  <div>
+    <div style="font-family:var(--serif);font-size:1.5rem;font-style:italic;font-weight:300;color:var(--text);">Armario de Élite</div>
+    <div style="font-size:.56rem;color:var(--dim);margin-top:3px;">
+      {{ items|length }} prenda{% if items|length != 1 %}s{% endif %} ·
+      {{ outfits|length }} outfit{% if outfits|length != 1 %}s{% endif %}
+    </div>
+  </div>
+  <button class="btn-a" id="btn-add-main" onclick="openItemModal()">+ Añadir prenda</button>
+</div>
+
+<!-- TABS -->
+<div class="gd-tabs">
+  <button class="gd-tab on" id="tab-armario"   onclick="switchTab('armario')">Armario</button>
+  <button class="gd-tab"    id="tab-outfits"   onclick="switchTab('outfits')">Outfits</button>
+  <button class="gd-tab"    id="tab-intel"     onclick="switchTab('intel')">Inteligencia</button>
+</div>
+
+<!-- ══════════════════ TAB: ARMARIO ══════════════════ -->
+<div id="section-armario">
+  <div class="gd-toolbar">
+    <div class="gd-search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="gd-search" id="arm-search" placeholder="Buscar prenda, marca…" oninput="filterItems()">
+    </div>
+    <button class="cat-pill on" data-cat="" onclick="setCat(this,'')">Todas</button>
+    {% for cat in categorias %}
+    <button class="cat-pill" data-cat="{{ cat }}" onclick="setCat(this,'{{ cat }}')">{{ cat }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="gd-shell">
+    <div>
+      <div class="gd-grid" id="gd-grid">
+        {% for item in items %}{{ item_card(item) }}{% endfor %}
+        {% if not items %}
+        <div class="gd-empty">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.86l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
+          <p>Tu armario está vacío.<br>Añade tu primera prenda.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Detail panel -->
+    <div class="gd-detail" id="gd-detail">
+      <div class="gd-detail-empty" id="gd-detail-empty">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.86l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
+        <p>Selecciona una prenda<br>para ver los detalles</p>
+      </div>
+      <div id="gd-detail-content" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ TAB: OUTFITS ══════════════════ -->
+<div id="section-outfits" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+    <div style="font-size:.56rem;color:var(--dim);">Combina prendas y guarda tus looks favoritos</div>
+    <button class="btn-a" onclick="openOutfitModal()">+ Nuevo outfit</button>
+  </div>
+  <div class="ot-grid" id="ot-grid">
+    {% for o in outfits %}{{ outfit_card(o) }}{% endfor %}
+    {% if not outfits %}
+    <div class="gd-empty" style="grid-column:1/-1">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9 6 6m-6 0 6-6"/></svg>
+      <p>Sin outfits guardados.<br>Crea tu primer look.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ══════════════════ TAB: INTELIGENCIA ══════════════════ -->
+<div id="section-intel" style="display:none;">
+  <div class="intel-grid" id="intel-content">
+    <!-- rendered by JS -->
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL: ADD/EDIT ITEM ══════════════════ -->
+<div class="gm-overlay" id="item-modal">
+  <div class="gm-box">
+    <div class="gm-head">
+      <div class="gm-title" id="im-title">Nueva Prenda</div>
+      <button class="gm-close" onclick="closeItemModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="gm-body">
+      <input type="hidden" id="im-id">
+      <div class="gm-sec">Identificación</div>
+      <div class="gm-row"><label class="fl">Nombre *</label><input class="fi" id="im-nombre" placeholder="Camisa Oxford azul celeste…"></div>
+      <div class="gm-row c2">
+        <div>
+          <label class="fl">Categoría</label>
+          <select class="fi" id="im-categoria">
+            {% for cat in categorias %}<option value="{{ cat }}">{{ cat }}</option>{% endfor %}
+          </select>
+        </div>
+        <div><label class="fl">Marca</label><input class="fi" id="im-marca" placeholder="Zara, H&M, Nike…"></div>
+      </div>
+      <div class="gm-row"><label class="fl">Subcategoría / detalle</label><input class="fi" id="im-sub" placeholder="Oxford, Slim fit, Crew neck…"></div>
+
+      <div class="gm-sec">Color</div>
+      <div class="gm-row c2">
+        <div>
+          <label class="fl">Color</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="color" id="im-color-hex" value="#C9A84C" style="width:42px;height:36px;border-radius:7px;border:1px solid var(--b);background:var(--card);cursor:pointer;padding:3px;" oninput="syncColorName(this.value)">
+            <input class="fi" id="im-color-name" placeholder="Navy, Blanco roto, Camel…" style="flex:1;">
+          </div>
+        </div>
+        <div><label class="fl">Precio pagado ($)</label><input class="fi" id="im-precio" type="number" min="0" step="0.01" placeholder="0"></div>
+      </div>
+
+      <div class="gm-sec">Ocasión</div>
+      <div class="gm-occ" id="im-occ">
+        {% for oc in ocasiones %}
+        <span class="gm-occ-pill" data-oc="{{ oc }}" onclick="toggleOcc(this)">{{ oc }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="gm-sec">Detalles</div>
+      <div class="gm-row c2">
+        <div>
+          <label class="fl">Temporada</label>
+          <select class="fi" id="im-temp">
+            {% for t in temporadas %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="fl">Estado</label>
+          <select class="fi" id="im-estado">
+            {% for e in estados %}<option value="{{ e }}">{{ e }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="gm-row"><label class="fl">Notas</label><textarea class="fi" id="im-notas" rows="2" placeholder="Combina bien con pantalón beige..."></textarea></div>
+
+      <div class="gm-err" id="im-err"></div>
+      <div class="gm-footer">
+        <button class="btn-g" onclick="closeItemModal()">Cancelar</button>
+        <button class="btn-a" onclick="saveItem()">Guardar prenda</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ MODAL: OUTFIT ══════════════════ -->
+<div class="gm-overlay" id="outfit-modal">
+  <div class="gm-box">
+    <div class="gm-head">
+      <div class="gm-title" id="om-title">Nuevo Outfit</div>
+      <button class="gm-close" onclick="closeOutfitModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="gm-body">
+      <input type="hidden" id="om-id">
+      <div class="gm-sec">Nombre y contexto</div>
+      <div class="gm-row"><label class="fl">Nombre del outfit *</label><input class="fi" id="om-nombre" placeholder="Look reunión de trabajo…"></div>
+      <div class="gm-row c2">
+        <div>
+          <label class="fl">Ocasión</label>
+          <select class="fi" id="om-ocasion">
+            <option value="">— elegir —</option>
+            {% for oc in ocasiones %}<option value="{{ oc }}">{{ oc }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="fl">Rating de confianza</label>
+          <div class="star-row" id="om-stars">
+            {% for i in range(1,6) %}
+            <button class="star-btn" data-val="{{ i }}" onclick="setRating({{ i }})">★</button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="gm-sec">Prendas del outfit</div>
+      <div style="margin-bottom:8px;">
+        <input class="gd-search" id="om-item-search" placeholder="Filtrar prendas…" style="width:100%;padding-left:12px;" oninput="filterPicker()">
+      </div>
+      <div class="item-picker" id="om-item-picker">
+        <!-- rendered by JS -->
+      </div>
+
+      <div class="gm-row" style="margin-top:12px;"><label class="fl">Notas</label><textarea class="fi" id="om-notas" rows="2" placeholder="Ideal para presentaciones formales…"></textarea></div>
+
+      <div class="gm-err" id="om-err"></div>
+      <div class="gm-footer">
+        <button class="btn-g" onclick="closeOutfitModal()">Cancelar</button>
+        <button class="btn-a" onclick="saveOutfit()">Guardar outfit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{# ── Jinja macros ───────────────────────────────────── #}
+{% macro item_card(item) %}
+<div class="gd-card" id="icard-{{ item.id }}" onclick="openItemDetail({{ item.id }})">
+  <div class="gd-card-visual">
+    {% if item.foto %}
+    <img src="/guardarropa/photos/{{ item.foto }}" alt="{{ item.nombre }}" loading="lazy">
+    {% else %}
+    <div class="gd-card-swatch" style="background:{{ item.color_hex }};">
+      <span class="gd-card-initial">{{ item.nombre[0]|upper }}</span>
+    </div>
+    {% endif %}
+  </div>
+  <div class="gd-card-body">
+    <div class="gd-card-cat">{{ item.categoria }}</div>
+    <div class="gd-card-name" title="{{ item.nombre }}">{{ item.nombre }}</div>
+    <div class="gd-card-chips">
+      <span class="gd-chip chip-estado-{{ item.estado }}">{{ item.estado }}</span>
+      {% if item.temporada != 'todo' %}<span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">{{ item.temporada }}</span>{% endif %}
+    </div>
+    <div class="gd-card-meta">
+      <span>{{ item.veces_usado }}× uso</span>
+      {% if item.precio %}<span>${{ item.precio|int }}</span>{% endif %}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro outfit_card(o) %}
+<div class="ot-card" id="ocard-{{ o.id }}" onclick="editOutfitById({{ o.id }})">
+  <div class="ot-color-strip">
+    {% for item in o.items[:6] %}
+    <div class="ot-color-seg" style="background:{{ item.color_hex }};"></div>
+    {% endfor %}
+    {% if not o.items %}<div class="ot-color-seg" style="background:var(--b);"></div>{% endif %}
+  </div>
+  <div class="ot-card-body">
+    <div class="ot-card-name">{{ o.nombre }}</div>
+    <div class="ot-card-meta">
+      <span>{{ o.ocasion or '—' }}</span>
+      <span class="ot-stars">{{ '★' * o.rating }}{{ '☆' * (5 - o.rating) }}</span>
+    </div>
+    <div class="ot-items-mini">
+      {% for item in o.items[:6] %}
+      <div class="ot-item-dot" style="background:{{ item.color_hex }};" title="{{ item.nombre }}">
+        {% if item.foto %}<img src="/guardarropa/photos/{{ item.foto }}" alt="{{ item.nombre }}">{% endif %}
+      </div>
+      {% endfor %}
+      {% if o.items|length > 6 %}<div class="ot-item-dot" style="background:var(--card2);color:var(--dim);">+{{ o.items|length - 6 }}</div>{% endif %}
+    </div>
+  </div>
+</div>
+{% endmacro %}
+
+{% block scripts %}
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+const ALL_ITEMS   = {{ items   | tojson | safe }};
+const ALL_OUTFITS = {{ outfits | tojson | safe }};
+let _items = [...ALL_ITEMS];
+let _activeCat = '';
+let _activeItemId = null;
+let _editItemId = null;
+let _editOutfitId = null;
+let _selectedOccs = [];
+let _selectedItemIds = new Set();
+let _rating = 0;
+
+// ── Color Psychology map ──────────────────────────────────────────────────────
+const COLOR_PSYCH = {
+  negro:   {name:'Negro',   hex:'#1a1a1a', psych:'Autoridad · Elegancia · Poder',          rec:'Reuniones clave, entrevistas, eventos formales'},
+  blanco:  {name:'Blanco',  hex:'#f0ede4', psych:'Claridad · Frescura · Accesibilidad',     rec:'Networking casual, verano, looks limpios'},
+  navy:    {name:'Navy',    hex:'#1B2A4A', psych:'Profesionalismo · Confianza · Liderazgo', rec:'Business formal, presentaciones importantes'},
+  gris:    {name:'Gris',    hex:'#6b7280', psych:'Neutralidad · Sofisticación · Balance',   rec:'Office, negocios, complemento versátil'},
+  azul:    {name:'Azul',    hex:'#2563eb', psych:'Calma · Inteligencia · Accesibilidad',    rec:'Trabajo colaborativo, casual smart'},
+  cafe:    {name:'Café',    hex:'#92400e', psych:'Calidez · Fiabilidad · Tierra',           rec:'Casual, otoño, eventos informales'},
+  beige:   {name:'Beige',   hex:'#d4b896', psych:'Sofisticación sutil · Calma',             rec:'Business casual, verano, look europeo'},
+  camel:   {name:'Camel',   hex:'#C19A6B', psych:'Lujo accesible · Calidez intelectual',    rec:'Outerwear premium, look business casual'},
+  borgona: {name:'Borgoña', hex:'#7C2D41', psych:'Madurez · Lujo · Confianza sutil',        rec:'Cenas selectas, eventos sociales nocturnos'},
+  verde:   {name:'Verde',   hex:'#16a34a', psych:'Vitalidad · Crecimiento · Armonía',       rec:'Casual, actividades al aire libre, creatividad'},
+  rojo:    {name:'Rojo',    hex:'#dc2626', psych:'Energía · Poder · Atención inmediata',    rec:'Presentaciones, eventos sociales, impacto visual'},
+  blanco_roto:{name:'Blanco roto',hex:'#ede8dc',psych:'Elegancia cálida · Sofisticación',   rec:'Business casual, look intelectual'},
+};
+
+function matchColor(hex){
+  if(!hex) return null;
+  const h = hex.toLowerCase();
+  // try exact hex in map
+  for(const [k,v] of Object.entries(COLOR_PSYCH)){
+    if(v.hex.toLowerCase()===h) return v;
+  }
+  // approximate by luminance / hue
+  const r=parseInt(h.slice(1,3),16), g=parseInt(h.slice(3,5),16), b=parseInt(h.slice(5,7),16);
+  const lum=(r*299+g*587+b*114)/1000;
+  if(lum<40)  return COLOR_PSYCH.negro;
+  if(lum>210) return h.startsWith('#ede')||h.startsWith('#f0e') ? COLOR_PSYCH.blanco_roto : COLOR_PSYCH.blanco;
+  // hue
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+  if(d<20)    return lum<130 ? COLOR_PSYCH.gris : COLOR_PSYCH.blanco;
+  let hue=0;
+  if(max===r) hue=((g-b)/d+6)%6;
+  else if(max===g) hue=(b-r)/d+2;
+  else hue=(r-g)/d+4;
+  hue*=60;
+  if(hue>=200&&hue<=260) return lum<60 ? COLOR_PSYCH.navy : COLOR_PSYCH.azul;
+  if(hue>=10&&hue<=45)   return lum<80 ? COLOR_PSYCH.cafe : COLOR_PSYCH.beige;
+  if(hue>=340||hue<=10)  return lum<90 ? COLOR_PSYCH.borgona : COLOR_PSYCH.rojo;
+  if(hue>=80&&hue<=160)  return COLOR_PSYCH.verde;
+  return {name:'Color personalizado',psych:'Expresa tu personalidad única',rec:'Accesorios y prendas statement'};
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(t){
+  ['armario','outfits','intel'].forEach(id=>{
+    document.getElementById('section-'+id).style.display = id===t?'':'none';
+    document.getElementById('tab-'+id).classList.toggle('on', id===t);
+  });
+  document.getElementById('btn-add-main').style.display = t==='armario' ? '' : 'none';
+  if(t==='intel') renderIntelligence();
+}
+
+// ── Category filter ───────────────────────────────────────────────────────────
+function setCat(btn, cat){
+  document.querySelectorAll('.cat-pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  _activeCat = cat;
+  filterItems();
+}
+function filterItems(){
+  const q = document.getElementById('arm-search').value.trim().toLowerCase();
+  _items = ALL_ITEMS.filter(r=>{
+    const mc = !_activeCat || r.categoria===_activeCat;
+    const mq = !q || r.nombre.toLowerCase().includes(q) || (r.marca||'').toLowerCase().includes(q);
+    return mc && mq;
+  });
+  renderGrid();
+}
+
+// ── Grid render ───────────────────────────────────────────────────────────────
+function renderGrid(){
+  const grid=document.getElementById('gd-grid');
+  if(!_items.length){
+    grid.innerHTML=`<div class="gd-empty" style="grid-column:1/-1">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;margin:0 auto 10px;display:block;opacity:.18;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <p>Sin resultados</p></div>`;
+    return;
+  }
+  grid.innerHTML = _items.map(r=>itemCardHTML(r)).join('');
+}
+
+function itemCardHTML(r){
+  const visual = r.foto
+    ? `<img src="/guardarropa/photos/${esc(r.foto)}" alt="${esc(r.nombre)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;">`
+    : `<div class="gd-card-swatch" style="background:${esc(r.color_hex||'#333')};"><span class="gd-card-initial">${esc(r.nombre[0]?.toUpperCase()||'?')}</span></div>`;
+  const estadoClass=`chip-estado-${r.estado}`;
+  const tempChip=r.temporada&&r.temporada!=='todo'?`<span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">${esc(r.temporada)}</span>`:'';
+  return `<div class="gd-card${_activeItemId===r.id?' active':''}" id="icard-${r.id}" onclick="openItemDetail(${r.id})">
+    <div class="gd-card-visual">${visual}</div>
+    <div class="gd-card-body">
+      <div class="gd-card-cat">${esc(r.categoria)}</div>
+      <div class="gd-card-name" title="${esc(r.nombre)}">${esc(r.nombre)}</div>
+      <div class="gd-card-chips">
+        <span class="gd-chip ${estadoClass}">${esc(r.estado)}</span>${tempChip}
+      </div>
+      <div class="gd-card-meta">
+        <span>${r.veces_usado}× uso</span>
+        ${r.precio?`<span>$${Math.round(r.precio)}</span>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Item Detail panel ─────────────────────────────────────────────────────────
+function openItemDetail(id){
+  _activeItemId = id;
+  document.querySelectorAll('.gd-card').forEach(c=>c.classList.toggle('active',parseInt(c.id.split('-')[1])===id));
+  const r = ALL_ITEMS.find(x=>x.id===id);
+  if(!r) return;
+
+  const psych = matchColor(r.color_hex);
+  const cpu = r.precio && r.veces_usado>0 ? `$${(r.precio/r.veces_usado).toFixed(0)}` : '—';
+  const occs = (r.ocasion||'').split(',').filter(Boolean).map(o=>`<span class="gd-chip" style="background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.18);color:var(--gold);">${esc(o.trim())}</span>`).join('');
+  const visual = r.foto
+    ? `<img src="/guardarropa/photos/${esc(r.foto)}" alt="${esc(r.nombre)}">`
+    : `<div class="gd-dv-swatch" style="background:${esc(r.color_hex||'#333')};"><span class="gd-dv-initial">${esc(r.nombre[0]?.toUpperCase()||'?')}</span></div>`;
+
+  document.getElementById('gd-detail-empty').style.display='none';
+  document.getElementById('gd-detail-content').style.display='block';
+  document.getElementById('gd-detail-content').innerHTML=`
+    <div class="gd-dv">
+      ${visual}
+      <div class="gd-dv-upload">
+        <label title="Cambiar foto">
+          <input type="file" style="display:none;" accept=".jpg,.jpeg,.png,.webp" onchange="uploadPhoto(this,${r.id})">
+          📷 Foto
+        </label>
+      </div>
+    </div>
+    <div class="gd-db">
+      <div class="gd-db-badges" style="margin-bottom:8px;">
+        <span class="gd-chip chip-estado-${esc(r.estado)}">${esc(r.estado)}</span>
+        <span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">${esc(r.temporada)}</span>
+        ${occs}
+      </div>
+      <div class="gd-db-name">${esc(r.nombre)}</div>
+      <div class="gd-db-brand">${esc(r.categoria)}${r.marca?' · '+esc(r.marca):''}${r.subcategoria?' · '+esc(r.subcategoria):''}</div>
+
+      ${psych?`
+      <div class="gd-psych">
+        <div class="gd-psych-header">
+          <div class="gd-psych-swatch" style="background:${esc(r.color_hex||'#333')};"></div>
+          <div>
+            <div class="gd-psych-name">${esc(psych.name)}</div>
+            <div class="gd-psych-label">Psicología del color</div>
+          </div>
+        </div>
+        <div class="gd-psych-msg">${esc(psych.psych)}</div>
+        <div class="gd-psych-rec">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          ${esc(psych.rec)}
+        </div>
+      </div>` : ''}
+
+      <div class="gd-stats">
+        <div class="gd-stat">
+          <div class="gd-stat-val">${r.veces_usado}</div>
+          <div class="gd-stat-lbl">Usos</div>
+        </div>
+        <div class="gd-stat">
+          <div class="gd-stat-val">${r.precio?'$'+Math.round(r.precio):'—'}</div>
+          <div class="gd-stat-lbl">Precio</div>
+        </div>
+        <div class="gd-stat">
+          <div class="gd-stat-val">${cpu}</div>
+          <div class="gd-stat-lbl">Costo/uso</div>
+        </div>
+      </div>
+
+      ${r.notas?`<div style="font-size:.62rem;color:var(--mid);margin-bottom:12px;line-height:1.55;">${esc(r.notas)}</div>`:''}
+
+      <button class="btn-g" style="width:100%;margin-bottom:8px;" onclick="registerUso(${r.id})">
+        + Registrar uso
+      </button>
+      <div class="gd-actions">
+        <button class="btn-g" style="flex:1;" onclick="openItemModal(${r.id})">Editar</button>
+        <button class="btn-r" onclick="deleteItem(${r.id})">Eliminar</button>
+      </div>
+    </div>`;
+}
+
+async function registerUso(id){
+  const res = await fetch(`/guardarropa/api/item/${id}/uso`,{method:'POST'});
+  const d = await res.json();
+  const item = ALL_ITEMS.find(x=>x.id===id);
+  if(item){ item.veces_usado = d.veces_usado; }
+  openItemDetail(id);
+  renderGrid();
+  toast('Uso registrado ✓');
+}
+
+async function uploadPhoto(input, id){
+  const f = input.files[0]; if(!f) return;
+  const fd = new FormData(); fd.append('file', f);
+  const res = await fetch(`/guardarropa/api/upload/${id}`,{method:'POST',body:fd});
+  const d = await res.json();
+  if(!d.ok){ toast('Error subiendo foto'); return; }
+  const item = ALL_ITEMS.find(x=>x.id===id);
+  if(item) item.foto = d.filename;
+  openItemDetail(id);
+  renderGrid();
+  toast('Foto actualizada ✓');
+}
+
+// ── Item modal ────────────────────────────────────────────────────────────────
+function openItemModal(editId){
+  _editItemId = editId || null;
+  const r = editId ? ALL_ITEMS.find(x=>x.id===editId) : null;
+  document.getElementById('im-title').textContent = r ? 'Editar Prenda' : 'Nueva Prenda';
+  document.getElementById('im-id').value = editId || '';
+  document.getElementById('im-nombre').value    = r?.nombre || '';
+  document.getElementById('im-categoria').value = r?.categoria || 'Camisa';
+  document.getElementById('im-marca').value     = r?.marca || '';
+  document.getElementById('im-sub').value       = r?.subcategoria || '';
+  document.getElementById('im-color-hex').value = r?.color_hex || '#C9A84C';
+  document.getElementById('im-color-name').value= r?.color_name || '';
+  document.getElementById('im-precio').value    = r?.precio || '';
+  document.getElementById('im-temp').value      = r?.temporada || 'todo';
+  document.getElementById('im-estado').value    = r?.estado || 'bueno';
+  document.getElementById('im-notas').value     = r?.notas || '';
+  document.getElementById('im-err').textContent = '';
+  // Occasions
+  const ocSet = new Set((r?.ocasion||'').split(',').map(x=>x.trim()).filter(Boolean));
+  _selectedOccs = [...ocSet];
+  document.querySelectorAll('#im-occ .gm-occ-pill').forEach(p=>{
+    p.classList.toggle('on', ocSet.has(p.dataset.oc));
+  });
+  document.getElementById('item-modal').classList.add('open');
+  document.getElementById('im-nombre').focus();
+}
+function closeItemModal(){ document.getElementById('item-modal').classList.remove('open'); }
+function toggleOcc(btn){
+  btn.classList.toggle('on');
+  const oc = btn.dataset.oc;
+  if(btn.classList.contains('on')) _selectedOccs.push(oc);
+  else _selectedOccs = _selectedOccs.filter(x=>x!==oc);
+}
+function syncColorName(hex){
+  const p = matchColor(hex);
+  const nameField = document.getElementById('im-color-name');
+  if(p && !nameField.value) nameField.placeholder = p.name;
+}
+
+async function saveItem(){
+  const nombre = document.getElementById('im-nombre').value.trim();
+  if(!nombre){ document.getElementById('im-err').textContent='El nombre es obligatorio'; return; }
+  const payload = {
+    nombre,
+    categoria:   document.getElementById('im-categoria').value,
+    subcategoria:document.getElementById('im-sub').value.trim(),
+    color_hex:   document.getElementById('im-color-hex').value,
+    color_name:  document.getElementById('im-color-name').value.trim(),
+    marca:       document.getElementById('im-marca').value.trim(),
+    ocasion:     _selectedOccs.join(','),
+    temporada:   document.getElementById('im-temp').value,
+    estado:      document.getElementById('im-estado').value,
+    precio:      parseFloat(document.getElementById('im-precio').value)||0,
+    notas:       document.getElementById('im-notas').value.trim(),
+  };
+  const id = document.getElementById('im-id').value;
+  const url = id ? `/guardarropa/api/item/${id}` : '/guardarropa/api/item';
+  const method = id ? 'PUT' : 'POST';
+  const res = await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!res.ok){ document.getElementById('im-err').textContent='Error al guardar'; return; }
+  const saved = await res.json();
+  if(id){
+    const idx=ALL_ITEMS.findIndex(x=>x.id===parseInt(id));
+    if(idx>=0) ALL_ITEMS[idx]=saved;
+  } else {
+    ALL_ITEMS.unshift(saved);
+  }
+  closeItemModal();
+  filterItems();
+  toast(`"${saved.nombre}" guardado ✓`);
+  setTimeout(()=>openItemDetail(saved.id),80);
+}
+
+async function deleteItem(id){
+  const r=ALL_ITEMS.find(x=>x.id===id);
+  if(!confirm(`¿Eliminar "${r?.nombre}"?`)) return;
+  await fetch(`/guardarropa/api/item/${id}`,{method:'DELETE'});
+  const idx=ALL_ITEMS.findIndex(x=>x.id===id);
+  if(idx>=0) ALL_ITEMS.splice(idx,1);
+  _activeItemId=null;
+  document.getElementById('gd-detail-empty').style.display='';
+  document.getElementById('gd-detail-content').style.display='none';
+  filterItems();
+  toast('Prenda eliminada');
+}
+
+// ── Outfit modal ──────────────────────────────────────────────────────────────
+function openOutfitModal(editId){
+  _editOutfitId = editId||null;
+  _rating = 0;
+  _selectedItemIds = new Set();
+  const o = editId ? ALL_OUTFITS.find(x=>x.id===editId) : null;
+  document.getElementById('om-title').textContent = o ? 'Editar Outfit' : 'Nuevo Outfit';
+  document.getElementById('om-id').value    = editId||'';
+  document.getElementById('om-nombre').value= o?.nombre||'';
+  document.getElementById('om-ocasion').value=o?.ocasion||'';
+  document.getElementById('om-notas').value = o?.notas||'';
+  document.getElementById('om-err').textContent='';
+  _rating = o?.rating||0;
+  renderStars();
+  if(o?.items) o.items.forEach(i=>_selectedItemIds.add(i.id));
+  renderPicker('');
+  document.getElementById('outfit-modal').classList.add('open');
+}
+function closeOutfitModal(){ document.getElementById('outfit-modal').classList.remove('open'); }
+
+function setRating(v){ _rating=v; renderStars(); }
+function renderStars(){
+  document.querySelectorAll('#om-stars .star-btn').forEach((b,i)=>b.classList.toggle('on',i<_rating));
+}
+
+function renderPicker(q){
+  const items = ALL_ITEMS.filter(r=>!q||r.nombre.toLowerCase().includes(q)||r.categoria.toLowerCase().includes(q));
+  const html = items.map(r=>{
+    const on = _selectedItemIds.has(r.id);
+    const visual = r.foto
+      ? `<div class="ip-color"><img src="/guardarropa/photos/${esc(r.foto)}" alt=""></div>`
+      : `<div class="ip-color" style="background:${esc(r.color_hex||'#333')};"></div>`;
+    return `<div class="ip-row${on?' on':''}" onclick="togglePickerItem(${r.id},this)">
+      ${visual}
+      <div class="ip-info"><div class="ip-name">${esc(r.nombre)}</div><div class="ip-cat">${esc(r.categoria)}</div></div>
+      <div class="ip-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+    </div>`;
+  }).join('');
+  document.getElementById('om-item-picker').innerHTML = html || '<div style="padding:16px;text-align:center;font-size:.62rem;color:var(--dim);">Sin prendas</div>';
+}
+function filterPicker(){
+  renderPicker(document.getElementById('om-item-search').value.trim().toLowerCase());
+}
+function togglePickerItem(id, row){
+  if(_selectedItemIds.has(id)) _selectedItemIds.delete(id);
+  else _selectedItemIds.add(id);
+  row.classList.toggle('on', _selectedItemIds.has(id));
+  row.querySelector('.ip-check').classList?.toggle('on', _selectedItemIds.has(id));
+}
+function editOutfitById(id){ openOutfitModal(id); }
+
+async function saveOutfit(){
+  const nombre=document.getElementById('om-nombre').value.trim();
+  if(!nombre){ document.getElementById('om-err').textContent='El nombre es obligatorio'; return; }
+  const payload={
+    nombre,
+    ocasion: document.getElementById('om-ocasion').value,
+    rating:  _rating,
+    notas:   document.getElementById('om-notas').value.trim(),
+    item_ids:[..._selectedItemIds],
+  };
+  const id=document.getElementById('om-id').value;
+  const url=id?`/guardarropa/api/outfit/${id}`:'/guardarropa/api/outfit';
+  const method=id?'PUT':'POST';
+  const res=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!res.ok){ document.getElementById('om-err').textContent='Error al guardar'; return; }
+  const saved=await res.json();
+  if(id){
+    const idx=ALL_OUTFITS.findIndex(x=>x.id===parseInt(id));
+    if(idx>=0) ALL_OUTFITS[idx]=saved;
+  } else { ALL_OUTFITS.unshift(saved); }
+  closeOutfitModal();
+  renderOutfitsGrid();
+  toast(`Outfit "${saved.nombre}" guardado ✓`);
+}
+
+function renderOutfitsGrid(){
+  const grid=document.getElementById('ot-grid');
+  if(!ALL_OUTFITS.length){
+    grid.innerHTML=`<div class="gd-empty" style="grid-column:1/-1"><p>Sin outfits guardados.</p></div>`;
+    return;
+  }
+  grid.innerHTML=ALL_OUTFITS.map(o=>{
+    const strip=(o.items||[]).slice(0,6).map(i=>`<div class="ot-color-seg" style="background:${esc(i.color_hex||'#333')};"></div>`).join('');
+    const mini=(o.items||[]).slice(0,6).map(i=>{
+      const v=i.foto?`<img src="/guardarropa/photos/${esc(i.foto)}" alt="">`:'';
+      return `<div class="ot-item-dot" style="background:${esc(i.color_hex||'#444')};" title="${esc(i.nombre)}">${v}</div>`;
+    }).join('');
+    const extra=(o.items||[]).length>6?`<div class="ot-item-dot" style="background:var(--card2);color:var(--dim);">+${(o.items||[]).length-6}</div>`:'';
+    return `<div class="ot-card" id="ocard-${o.id}" onclick="editOutfitById(${o.id})">
+      <div class="ot-color-strip">${strip||'<div class="ot-color-seg" style="background:var(--b);"></div>'}</div>
+      <div class="ot-card-body">
+        <div class="ot-card-name">${esc(o.nombre)}</div>
+        <div class="ot-card-meta"><span>${esc(o.ocasion||'—')}</span>
+          <span class="ot-stars">${'★'.repeat(o.rating||0)}${'☆'.repeat(5-(o.rating||0))}</span></div>
+        <div class="ot-items-mini">${mini}${extra}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Intelligence tab ──────────────────────────────────────────────────────────
+const CAPSULE_RULES = [
+  {label:'2+ camisas blancas o blanco roto', check: items=>items.filter(i=>i.categoria==='Camisa'&&(i.color_name||'').toLowerCase().includes('blanc')).length>=2},
+  {label:'Blazer o saco navy/oscuro',       check: items=>items.some(i=>['Blazer / Saco'].includes(i.categoria))},
+  {label:'3+ pantalones tonos neutros',     check: items=>items.filter(i=>['Pantalón','Jeans'].includes(i.categoria)).length>=3},
+  {label:'Zapatos formales negros',         check: items=>items.some(i=>i.categoria==='Zapatos formales'&&(i.color_name||i.color_hex||'').toLowerCase().includes('negr'))},
+  {label:'Zapatos formales café/camel',     check: items=>items.some(i=>i.categoria==='Zapatos formales'&&/(caf|came|marr)/i.test(i.color_name||''))},
+  {label:'Sneakers blancos o neutros',      check: items=>items.some(i=>i.categoria==='Sneakers')},
+  {label:'Camiseta básica blanca o negra',  check: items=>items.some(i=>i.categoria==='Camiseta')},
+  {label:'Chamarra o abrigo versátil',      check: items=>items.some(i=>i.categoria==='Chamarra / Abrigo')},
+  {label:'Accesorio clave (cinturón/reloj)',check: items=>items.some(i=>i.categoria==='Accesorio')},
+];
+
+function renderIntelligence(){
+  const activeItems = ALL_ITEMS.filter(i=>i.activo!==0);
+  if(!activeItems.length){
+    document.getElementById('intel-content').innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim);font-size:.68rem;">Añade prendas para ver el análisis</div>`;
+    return;
+  }
+
+  // Color distribution
+  const colorMap={};
+  activeItems.forEach(i=>{
+    const p=matchColor(i.color_hex);
+    const name=p?.name||'Otro';
+    colorMap[name]=(colorMap[name]||{count:0,hex:i.color_hex});
+    colorMap[name].count++;
+  });
+  const sortedColors=Object.entries(colorMap).sort((a,b)=>b[1].count-a[1].count);
+  const maxColor=sortedColors[0]?.[1]?.count||1;
+  const colorBars=sortedColors.map(([name,{count,hex}])=>`
+    <div class="color-bar-row">
+      <div class="color-dot" style="background:${esc(hex)};"></div>
+      <div class="color-bar-label">${esc(name)}</div>
+      <div class="color-bar-track"><div class="color-bar-fill" style="width:${Math.round(count/maxColor*100)}%;background:${esc(hex)};"></div></div>
+      <div class="color-bar-val">${count}</div>
+    </div>`).join('');
+
+  // Category distribution
+  const catMap={};
+  activeItems.forEach(i=>{ catMap[i.categoria]=(catMap[i.categoria]||0)+1; });
+  const sortedCats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+  const maxCat=sortedCats[0]?.[1]||1;
+  const catBars=sortedCats.map(([cat,count])=>`
+    <div class="cat-bar-row">
+      <div class="cat-bar-label" title="${esc(cat)}">${esc(cat)}</div>
+      <div class="color-bar-track"><div class="color-bar-fill" style="width:${Math.round(count/maxCat*100)}%;background:var(--gold);"></div></div>
+      <div class="color-bar-val">${count}</div>
+    </div>`).join('');
+
+  // Capsule score
+  const gapRows=CAPSULE_RULES.map(rule=>{
+    const ok=rule.check(activeItems);
+    return `<div class="gap-row">
+      <div class="gap-icon ${ok?'gap-ok':'gap-miss'}">${ok?'✓':'!'}</div>
+      <div class="gap-text">${esc(rule.label)}</div>
+      <div class="${ok?'gap-status-ok':'gap-status-miss'}">${ok?'OK':'Falta'}</div>
+    </div>`;
+  }).join('');
+  const score=Math.round(CAPSULE_RULES.filter(r=>r.check(activeItems)).length/CAPSULE_RULES.length*100);
+
+  // Total value + avg cost per use
+  const totalVal=activeItems.reduce((s,i)=>s+(i.precio||0),0);
+  const withUso=activeItems.filter(i=>i.precio&&i.veces_usado>0);
+  const avgCpu=withUso.length?withUso.reduce((s,i)=>s+(i.precio/i.veces_usado),0)/withUso.length:0;
+
+  document.getElementById('intel-content').innerHTML=`
+    <div class="intel-card" style="grid-column:1/-1;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="intel-title" style="margin:0;">SCORE DEL ARMARIO</div>
+        <div style="font-family:var(--serif);font-size:2.2rem;font-weight:600;color:${score>=80?'var(--green)':score>=50?'var(--gold)':'var(--red)'};">${score}%</div>
+      </div>
+      <div style="height:6px;background:var(--b);border-radius:3px;overflow:hidden;margin-bottom:4px;">
+        <div style="height:100%;background:${score>=80?'var(--green)':score>=50?'var(--gold)':'var(--red)'};width:${score}%;border-radius:3px;transition:width .8s;"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b);border-radius:8px;overflow:hidden;margin-top:14px;">
+        <div style="background:var(--card2);padding:10px;text-align:center;">
+          <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">${activeItems.length}</div>
+          <div style="font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Prendas</div>
+        </div>
+        <div style="background:var(--card2);padding:10px;text-align:center;">
+          <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">$${Math.round(totalVal).toLocaleString()}</div>
+          <div style="font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Valor total</div>
+        </div>
+        <div style="background:var(--card2);padding:10px;text-align:center;">
+          <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">${avgCpu?'$'+Math.round(avgCpu):'—'}</div>
+          <div style="font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Costo/uso prom</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="intel-card">
+      <div class="intel-title">DISTRIBUCIÓN DE COLORES</div>
+      ${colorBars||'<div style="font-size:.62rem;color:var(--dim);">Sin datos</div>'}
+    </div>
+
+    <div class="intel-card">
+      <div class="intel-title">PRENDAS POR CATEGORÍA</div>
+      ${catBars||'<div style="font-size:.62rem;color:var(--dim);">Sin datos</div>'}
+    </div>
+
+    <div class="intel-card" style="grid-column:1/-1;">
+      <div class="intel-title">CHECKLIST — ARMARIO CÁPSULA DE ÉLITE</div>
+      ${gapRows}
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--b);">
+        <a href="/finanzas/prioridades" style="font-size:.58rem;color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          Ver lista de deseos para compras de ropa
+        </a>
+      </div>
+    </div>`;
+}
+
+// ── Utility ───────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.getElementById('item-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeItemModal(); });
+document.getElementById('outfit-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeOutfitModal(); });
+</script>
+{% endblock %}

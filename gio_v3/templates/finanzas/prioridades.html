@@ -71,8 +71,8 @@
   /* ── Modals ── */
   .modal{
     position:fixed;inset:0;z-index:9999;
-    background:rgba(0,0,0,.65);
-    backdrop-filter:blur(4px);
+    background:rgba(0,0,0,.75);
+    backdrop-filter:blur(6px);
     display:flex!important;
     align-items:center;
     justify-content:center;
@@ -104,6 +104,95 @@
   }
   .fi:focus{border-color:var(--gold);}
   .tile-lbl{font-size:.6rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;}
+
+  /* ── Protocol wizard ── */
+  .proto-prog{height:3px;background:rgba(255,255,255,.06);border-radius:100px;margin-bottom:0;overflow:hidden;}
+  .proto-prog-fill{height:100%;background:linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D);border-radius:100px;transition:width .4s;}
+  .proto-phases{display:flex;border-bottom:1px solid rgba(197,163,108,.12);margin-bottom:0;}
+  .proto-ph{flex:1;text-align:center;padding:9px 4px;font-size:.44rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s;}
+  .proto-ph.active{color:var(--gold);border-bottom-color:var(--gold);}
+  .proto-ph.done{color:#34d399;border-bottom-color:rgba(52,211,153,.3);}
+  .proto-body{padding:22px 2px 4px;}
+
+  .ph-tag{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:100px;font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
+  .ph-tag-0{background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.18);color:#a89880;}
+  .ph-tag-1{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
+  .ph-tag-2{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:#93c5fd;}
+  .ph-tag-3{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);color:#c4b5fd;}
+
+  .q-t{font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.3;}
+  .q-ins{font-size:.6rem;color:var(--dim);line-height:1.65;margin-bottom:16px;padding:8px 12px;background:rgba(255,255,255,.02);border-left:2px solid rgba(197,163,108,.25);border-radius:0 5px 5px 0;}
+
+  .ch-grid{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;}
+  .ch-btn{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:11px;font-family:inherit;transition:all .15s;width:100%;}
+  .ch-btn:hover{border-color:rgba(197,163,108,.3);background:rgba(201,168,76,.03);}
+  .ch-btn.sel{border-color:var(--gold);background:rgba(201,168,76,.07);}
+  .ch-btn.sel-no{border-color:#f87171;background:rgba(248,113,113,.05);}
+  .ch-ico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;}
+  .ch-t{font-size:.72rem;color:var(--text);font-weight:600;}
+  .ch-s{font-size:.54rem;color:var(--dim);margin-top:1px;}
+  .ch-chk{margin-left:auto;width:17px;height:17px;border:1px solid var(--border);border-radius:50%;flex-shrink:0;transition:all .14s;}
+  .ch-btn.sel .ch-chk{background:var(--gold);border-color:var(--gold);}
+  .ch-btn.sel-no .ch-chk{background:#f87171;border-color:#f87171;}
+
+  .proto-nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(197,163,108,.1);}
+  .btn-proto-next{background:var(--gold);color:#0a0a1a;border:none;padding:9px 20px;border-radius:9px;font-size:.64rem;font-weight:700;cursor:pointer;transition:opacity .15s;}
+  .btn-proto-next:hover{opacity:.85;}
+  .btn-proto-back{background:transparent;border:1px solid var(--border);color:var(--dim);padding:9px 16px;border-radius:9px;font-size:.62rem;cursor:pointer;transition:all .15s;}
+  .btn-proto-back:hover{color:var(--text);border-color:rgba(197,163,108,.3);}
+
+  /* ── CPU input ── */
+  .cpu-input{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 16px;color:var(--text);font-family:inherit;font-size:1rem;outline:none;width:120px;text-align:center;transition:border-color .15s;}
+  .cpu-input:focus{border-color:var(--gold);}
+  .cpu-card{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:9px;padding:12px 16px;margin-bottom:14px;}
+  .cpu-val{font-size:1.4rem;font-weight:800;font-family:'Courier New',monospace;color:var(--gold);}
+  .cpu-note{font-size:.56rem;color:var(--dim);margin-top:4px;line-height:1.5;}
+
+  /* ── Result ── */
+  .res-ring-wrap{position:relative;width:110px;height:110px;margin:0 auto 16px;}
+  .res-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .res-score{font-size:1.8rem;font-weight:800;font-family:'Courier New',monospace;line-height:1;}
+  .res-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:100px;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:14px;}
+  .rb-optima{background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399;}
+  .rb-limitada{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:var(--gold);}
+  .rb-reevaluar{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);color:#fcd34d;}
+  .rb-no{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:#fca5a5;}
+  .rb-bloqueo{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);color:#fca5a5;}
+  .rb-glitch{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);color:#c4b5fd;}
+  .res-desc{font-size:.6rem;color:var(--dim);line-height:1.7;margin-bottom:16px;text-align:center;}
+  .reasons-wrap{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:16px;text-align:left;}
+  .reason-row{display:flex;align-items:flex-start;gap:7px;font-size:.58rem;color:var(--dim);line-height:1.5;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+  .reason-row:last-child{border-bottom:none;}
+  .reason-row.pass{color:#34d399;} .reason-row.warn{color:#fcd34d;} .reason-row.fail{color:#fca5a5;}
+
+  /* ── EC card ── */
+  .ec-panel{background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.22);border-radius:11px;padding:16px 18px;margin-bottom:16px;}
+  .ec-panel-hd{display:flex;align-items:center;gap:7px;margin-bottom:12px;}
+  .ec-panel-title{font-size:.56rem;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;font-weight:700;}
+  .ec-panel-sub{font-size:.5rem;color:var(--dim);margin-top:1px;}
+  .ec-stats-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+  .ec-st{background:rgba(0,0,0,.18);border:1px solid var(--border);border-radius:7px;padding:9px 10px;text-align:center;}
+  .ec-sv{font-size:1.1rem;font-weight:800;font-family:'Courier New',monospace;color:var(--gold);line-height:1;}
+  .ec-sl{font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+  .ec-bar-row{margin-bottom:10px;}
+  .ec-bar-lbls{display:flex;justify-content:space-between;font-size:.48rem;color:var(--dim);margin-bottom:4px;}
+  .ec-bar{height:4px;border-radius:100px;background:rgba(255,255,255,.06);overflow:hidden;}
+  .ec-bar-fill{height:100%;border-radius:100px;transition:width .6s;}
+  .ec-alert{display:flex;align-items:flex-start;gap:7px;padding:8px 11px;border-radius:7px;font-size:.56rem;line-height:1.55;margin-bottom:10px;}
+  .ec-a-ok{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.18);color:#34d399;}
+  .ec-a-warn{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);color:#fcd34d;}
+  .ec-a-no{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.18);color:#fca5a5;}
+  .ec-rate-note{font-size:.48rem;color:var(--dim);text-align:center;margin-bottom:10px;}
+  .btn-ec{width:100%;background:linear-gradient(135deg,#5c3d0a,#9a6f1a,#C9A84C);border:none;color:#0a0a1a;padding:9px 16px;border-radius:9px;font-size:.62rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;font-family:inherit;}
+  .btn-ec:hover{opacity:.85;} .btn-ec:disabled{opacity:.32;cursor:not-allowed;}
+  .res-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+  .btn-res-add{background:var(--gold);color:#0a0a1a;border:none;padding:9px 22px;border-radius:9px;font-size:.64rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity .15s;font-family:inherit;}
+  .btn-res-add:hover{opacity:.85;}
+  .btn-res-skip{background:transparent;border:1px solid rgba(248,113,113,.3);color:#f87171;padding:9px 18px;border-radius:9px;font-size:.62rem;cursor:pointer;transition:all .15s;font-family:inherit;}
+  .btn-res-skip:hover{background:rgba(248,113,113,.07);}
+  .btn-res-pend{background:transparent;border:1px solid var(--border);color:var(--dim);padding:9px 18px;border-radius:9px;font-size:.62rem;cursor:pointer;transition:all .15s;font-family:inherit;}
+  .btn-res-pend:hover{border-color:rgba(197,163,108,.3);color:var(--text);}
+  .ec-badge-small{display:inline-flex;align-items:center;gap:3px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:100px;padding:1px 7px;font-size:.44rem;color:var(--gold);letter-spacing:.06em;text-transform:uppercase;}
 </style>
 
 {# ── Header ── #}
@@ -173,6 +262,8 @@
       {% if it.categoria %}<span class="cat-tag">{{ it.categoria }}</span>{% endif %}
       {% if it.tienda %}<span class="tienda-tag">📍 {{ it.tienda }}</span>{% endif %}
       {% if it.url %}<a href="{{ it.url }}" target="_blank" class="url-lnk"><i data-lucide="external-link" class="w-3 h-3"></i>ver producto</a>{% endif %}
+      {% if it.protocolo_score is not none %}<span class="cat-tag" title="{{ it.protocolo_rec }}">🛡 Score: {{ it.protocolo_score }}</span>{% endif %}
+      {% if it.comprar_con_ec %}<span class="ec-badge-small">🪙 {{ it.ec_pagado }} EC</span>{% endif %}
     </div>
     {% if it.notas %}<div class="notas-txt">{{ it.notas }}</div>{% endif %}
 
@@ -224,79 +315,68 @@
 {% endfor %}
 </div>
 
-{# ── Modal Agregar / Editar ── #}
-<div id="modalAdd" class="modal" style="display:none;">
-  <div class="modal-box" style="max-width:500px;">
+{# ── Modal: Editar (simple, sin protocolo) ── #}
+<div id="modalEdit" class="modal" style="display:none;">
+  <div class="modal-box" style="max-width:480px;">
     <div class="flex justify-between items-center mb-5">
-      <h3 class="font-bold text-sm tracking-wide" id="modalTitle">Nuevo artículo</h3>
-      <button onclick="closeAdd()" style="color:var(--dim);font-size:1.2rem;line-height:1;">&times;</button>
+      <h3 class="font-bold text-sm tracking-wide">Editar artículo</h3>
+      <button onclick="closeEdit()" style="color:var(--dim);font-size:1.2rem;line-height:1;">&times;</button>
     </div>
     <input type="hidden" id="editId">
-
     <div class="grid grid-cols-2 gap-3">
       <div style="grid-column:1/-1;">
         <label class="tile-lbl block mb-1">Artículo *</label>
-        <input id="fNombre" type="text" class="fi w-full" placeholder="ej. Apple Watch Series 9">
+        <input id="fNombre" type="text" class="fi" placeholder="ej. Apple Watch Series 9">
       </div>
       <div>
         <label class="tile-lbl block mb-1">Categoría</label>
-        <select id="fCategoria" class="fi w-full">
+        <select id="fCategoria" class="fi">
           <option value="">— Sin categoría —</option>
-          <option>Tecnología</option>
-          <option>Hogar</option>
-          <option>Ropa · Accesorios</option>
-          <option>Salud · Fitness</option>
-          <option>Auto</option>
-          <option>Entretenimiento</option>
-          <option>Otros</option>
+          <option>Tecnología</option><option>Hogar</option><option>Ropa · Accesorios</option>
+          <option>Salud · Fitness</option><option>Auto</option><option>Entretenimiento</option><option>Otros</option>
         </select>
       </div>
       <div>
         <label class="tile-lbl block mb-1">Prioridad</label>
-        <select id="fPrioridad" class="fi w-full">
-          <option>Alta</option>
-          <option selected>Media</option>
-          <option>Baja</option>
+        <select id="fPrioridad" class="fi">
+          <option>Alta</option><option selected>Media</option><option>Baja</option>
         </select>
       </div>
       <div>
         <label class="tile-lbl block mb-1">Precio estimado (MXN)</label>
-        <input id="fPrecio" type="number" class="fi w-full" placeholder="0">
+        <input id="fPrecio" type="number" class="fi" placeholder="0">
       </div>
       <div>
         <label class="tile-lbl block mb-1">Mes objetivo</label>
-        <input id="fMes" type="month" class="fi w-full">
+        <input id="fMes" type="month" class="fi">
       </div>
       <div>
         <label class="tile-lbl block mb-1">Tienda</label>
-        <input id="fTienda" type="text" class="fi w-full" placeholder="Amazon, Liverpool...">
+        <input id="fTienda" type="text" class="fi" placeholder="Amazon, Liverpool...">
       </div>
       <div style="grid-column:1/-1;">
         <label class="tile-lbl block mb-1">URL del producto</label>
-        <input id="fUrl" type="url" class="fi w-full" placeholder="https://...">
+        <input id="fUrl" type="url" class="fi" placeholder="https://...">
       </div>
       <div style="grid-column:1/-1;">
         <label class="tile-lbl block mb-1">Notas</label>
-        <input id="fNotas" type="text" class="fi w-full" placeholder="color, talla, modelo específico...">
+        <input id="fNotas" type="text" class="fi" placeholder="color, talla, modelo...">
       </div>
-      <div id="fEstadoWrap" style="grid-column:1/-1;display:none;">
+      <div style="grid-column:1/-1;">
         <label class="tile-lbl block mb-1">Estado</label>
-        <select id="fEstado" class="fi w-full">
-          <option>Pendiente</option>
-          <option>Comprado</option>
-          <option>Descartado</option>
+        <select id="fEstado" class="fi">
+          <option>Pendiente</option><option>Comprado</option><option>Descartado</option>
         </select>
       </div>
     </div>
-
     <div class="flex gap-2 justify-end mt-5">
-      <button onclick="closeAdd()" class="act-btn act-del px-5 py-2">Cancelar</button>
-      <button onclick="saveItem()" class="act-btn act-comp px-5 py-2">Guardar</button>
+      <button onclick="closeEdit()" class="act-btn act-del px-5 py-2">Cancelar</button>
+      <button onclick="saveEdit()" class="act-btn act-comp px-5 py-2">Guardar</button>
     </div>
   </div>
 </div>
 
-{# ── Modal Comprado ── #}
+{# ── Modal: Comprado ── #}
 <div id="modalComprar" class="modal" style="display:none;">
   <div class="modal-box" style="max-width:360px;">
     <div class="flex justify-between items-center mb-4">
@@ -306,7 +386,7 @@
     <p class="text-[0.7rem] font-semibold mb-1" id="comprarNombre" style="color:var(--text);"></p>
     <p class="text-dim text-[0.58rem] mb-4">¿Cuánto pagaste realmente?</p>
     <label class="tile-lbl block mb-1">Precio real (MXN)</label>
-    <input id="cPrecioReal" type="number" class="fi w-full mb-5" placeholder="0">
+    <input id="cPrecioReal" type="number" class="fi mb-5" placeholder="0">
     <input type="hidden" id="comprarId">
     <div class="flex gap-2 justify-end">
       <button onclick="closeComprar()" class="act-btn act-del px-5 py-2">Cancelar</button>
@@ -315,9 +395,41 @@
   </div>
 </div>
 
+{# ── Modal: Protocolo de Compra (wizard) ── #}
+<div id="modalProto" class="modal" style="display:none;">
+  <div class="modal-box" style="max-width:540px;">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-3">
+      <div>
+        <div style="font-size:.44rem;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:2px;">🛡 Protocolo de Compra v2.0</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text);">Supremo Protocolo GIO</div>
+      </div>
+      <button onclick="closeProto()" style="color:var(--dim);font-size:1.3rem;line-height:1;">&times;</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="proto-prog mb-0"><div class="proto-prog-fill" id="ppFill" style="width:0%"></div></div>
+
+    <!-- Phase tabs -->
+    <div class="proto-phases">
+      <div class="proto-ph active" id="pph0">Artículo</div>
+      <div class="proto-ph" id="pph1">Dopamina</div>
+      <div class="proto-ph" id="pph2">Solvencia</div>
+      <div class="proto-ph" id="pph3">Lógica</div>
+      <div class="proto-ph" id="pph4">Resultado</div>
+    </div>
+
+    <!-- Body -->
+    <div class="proto-body" id="protoBody"></div>
+  </div>
+</div>
+
 <script>
 const BASE = '/finanzas/prioridades';
+const EC_RATE = 25; // 1 EC = $25 MXN
 
+// ── Filters ────────────────────────────────────────────────────────────────
 function setFilter(btn, f) {
   document.querySelectorAll('.ftab').forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
@@ -328,8 +440,6 @@ function setFilter(btn, f) {
     c.classList.toggle('hidden-card', !match);
   });
 }
-
-// Restore filter after reload
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('wl_filter');
   if (saved && saved !== 'todos') {
@@ -338,84 +448,648 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-function openAdd() {
-  ['editId','fNombre','fPrecio','fMes','fTienda','fUrl','fNotas'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fCategoria').value = '';
-  document.getElementById('fPrioridad').value = 'Media';
-  document.getElementById('fEstadoWrap').style.display = 'none';
-  document.getElementById('modalTitle').textContent = 'Nuevo artículo';
-  document.getElementById('modalAdd').style.display = 'flex';
-}
-
+// ── Edit modal (unchanged) ─────────────────────────────────────────────────
 function openEdit(id) {
   fetch(`${BASE}/api/get/${id}`).then(r => r.json()).then(d => {
-    document.getElementById('editId').value      = id;
-    document.getElementById('fNombre').value     = d.nombre || '';
-    document.getElementById('fCategoria').value  = d.categoria || '';
-    document.getElementById('fPrioridad').value  = d.prioridad || 'Media';
-    document.getElementById('fPrecio').value     = d.precio_estimado || '';
-    document.getElementById('fMes').value        = d.mes_objetivo || '';
-    document.getElementById('fTienda').value     = d.tienda || '';
-    document.getElementById('fUrl').value        = d.url || '';
-    document.getElementById('fNotas').value      = d.notas || '';
-    document.getElementById('fEstado').value     = d.estado || 'Pendiente';
-    document.getElementById('fEstadoWrap').style.display = 'block';
-    document.getElementById('modalTitle').textContent = 'Editar artículo';
-    document.getElementById('modalAdd').style.display = 'flex';
+    document.getElementById('editId').value     = id;
+    document.getElementById('fNombre').value    = d.nombre || '';
+    document.getElementById('fCategoria').value = d.categoria || '';
+    document.getElementById('fPrioridad').value = d.prioridad || 'Media';
+    document.getElementById('fPrecio').value    = d.precio_estimado || '';
+    document.getElementById('fMes').value       = d.mes_objetivo || '';
+    document.getElementById('fTienda').value    = d.tienda || '';
+    document.getElementById('fUrl').value       = d.url || '';
+    document.getElementById('fNotas').value     = d.notas || '';
+    document.getElementById('fEstado').value    = d.estado || 'Pendiente';
+    document.getElementById('modalEdit').style.display = 'flex';
   });
 }
-
-function closeAdd() { document.getElementById('modalAdd').style.display = 'none'; }
-
-function saveItem() {
+function closeEdit() { document.getElementById('modalEdit').style.display = 'none'; }
+function saveEdit() {
   const nombre = document.getElementById('fNombre').value.trim();
   if (!nombre) { alert('El nombre es requerido'); return; }
   const id = document.getElementById('editId').value;
   const body = {
-    nombre,
-    categoria:       document.getElementById('fCategoria').value,
-    prioridad:       document.getElementById('fPrioridad').value,
+    nombre, estado: document.getElementById('fEstado').value,
+    categoria: document.getElementById('fCategoria').value,
+    prioridad: document.getElementById('fPrioridad').value,
     precio_estimado: document.getElementById('fPrecio').value,
-    mes_objetivo:    document.getElementById('fMes').value,
-    tienda:          document.getElementById('fTienda').value,
-    url:             document.getElementById('fUrl').value,
-    notas:           document.getElementById('fNotas').value,
-    estado:          id ? document.getElementById('fEstado').value : 'Pendiente',
+    mes_objetivo: document.getElementById('fMes').value,
+    tienda: document.getElementById('fTienda').value,
+    url: document.getElementById('fUrl').value,
+    notas: document.getElementById('fNotas').value,
   };
-  fetch(id ? `${BASE}/api/update/${id}` : `${BASE}/api/add`, {
-    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  fetch(`${BASE}/api/update/${id}`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
   }).then(() => location.reload());
 }
 
+// ── Comprar modal ──────────────────────────────────────────────────────────
 function openComprar(id, nombre, precio) {
-  document.getElementById('comprarId').value      = id;
+  document.getElementById('comprarId').value = id;
   document.getElementById('comprarNombre').textContent = nombre;
-  document.getElementById('cPrecioReal').value    = precio || '';
+  document.getElementById('cPrecioReal').value = precio || '';
   document.getElementById('modalComprar').style.display = 'flex';
 }
 function closeComprar() { document.getElementById('modalComprar').style.display = 'none'; }
-
 function confirmarCompra() {
   const id = document.getElementById('comprarId').value;
   fetch(`${BASE}/api/comprar/${id}`, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
+    method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({precio_real: document.getElementById('cPrecioReal').value})
   }).then(() => location.reload());
 }
 
-// Close modal clicking backdrop
+// Close modals on backdrop click
 document.querySelectorAll('.modal').forEach(m => {
-  m.addEventListener('click', e => { if(e.target === m) m.style.display = 'none'; });
+  m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
 });
 
 function descartar(id) {
   if (!confirm('¿Descartar este artículo?')) return;
   fetch(`${BASE}/api/descartar/${id}`, {method:'POST'}).then(() => location.reload());
 }
-
 function delItem(id) {
   if (!confirm('¿Eliminar definitivamente este artículo?')) return;
   fetch(`${BASE}/api/delete/${id}`, {method:'POST'}).then(() => location.reload());
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PROTOCOLO DE COMPRA WIZARD
+// ══════════════════════════════════════════════════════════════════════════════
+let pStep = 0;
+let pData = {};   // collected answers
+let pResult = {}; // computed result
+
+function openAdd() {
+  pStep = 0; pData = {}; pResult = {};
+  document.getElementById('modalProto').style.display = 'flex';
+  renderProto();
+}
+function closeProto() { document.getElementById('modalProto').style.display = 'none'; }
+
+function setProtoProgress(s) {
+  document.getElementById('ppFill').style.width = (s / 4 * 100) + '%';
+  for (let i = 0; i <= 4; i++) {
+    const el = document.getElementById('pph' + i);
+    if (!el) continue;
+    el.classList.remove('active','done');
+    if (i < s) el.classList.add('done');
+    else if (i === s) el.classList.add('active');
+  }
+}
+
+function renderProto() {
+  setProtoProgress(pStep);
+  const body = document.getElementById('protoBody');
+  if (pStep === 0) body.innerHTML = stepP0();
+  else if (pStep === 1) body.innerHTML = stepP1();
+  else if (pStep === 2) body.innerHTML = stepP2();
+  else if (pStep === 3) body.innerHTML = stepP3();
+  else if (pStep === 4) { body.innerHTML = stepP4(); loadProtoEC(); }
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// ── Step 0: Artículo ───────────────────────────────────────────────────────
+function stepP0() {
+  return `
+  <div class="ph-tag ph-tag-0">📦 Registro del Artículo</div>
+  <div class="q-t">¿Qué artículo deseas adquirir?</div>
+  <div class="q-ins">Define el artículo antes de evaluar. El precio es clave para el cálculo de CPU y EC.</div>
+  <div class="grid grid-cols-2 gap-3 mb-3">
+    <div style="grid-column:1/-1;">
+      <label class="tile-lbl block mb-1">Nombre del artículo *</label>
+      <input id="p0Name" class="fi" placeholder="ej. MacBook Pro 14" value="${pData.nombre||''}">
+    </div>
+    <div>
+      <label class="tile-lbl block mb-1">Categoría</label>
+      <select id="p0Cat" class="fi">
+        <option value="">— seleccionar —</option>
+        <option>Tecnología</option><option>Hogar</option><option>Ropa · Accesorios</option>
+        <option>Salud · Fitness</option><option>Auto</option><option>Entretenimiento</option><option>Otros</option>
+      </select>
+    </div>
+    <div>
+      <label class="tile-lbl block mb-1">Prioridad</label>
+      <select id="p0Pri" class="fi">
+        <option ${pData.prioridad==='Alta'?'selected':''}>Alta</option>
+        <option ${!pData.prioridad||pData.prioridad==='Media'?'selected':''}>Media</option>
+        <option ${pData.prioridad==='Baja'?'selected':''}>Baja</option>
+      </select>
+    </div>
+    <div>
+      <label class="tile-lbl block mb-1">Precio estimado (MXN)</label>
+      <input id="p0Precio" type="number" class="fi" placeholder="0" value="${pData.precio_estimado||''}">
+    </div>
+    <div>
+      <label class="tile-lbl block mb-1">Mes objetivo</label>
+      <input id="p0Mes" type="month" class="fi" value="${pData.mes_objetivo||''}">
+    </div>
+    <div>
+      <label class="tile-lbl block mb-1">Tienda</label>
+      <input id="p0Tienda" class="fi" placeholder="Amazon, Liverpool..." value="${pData.tienda||''}">
+    </div>
+    <div style="grid-column:1/-1;">
+      <label class="tile-lbl block mb-1">URL del producto</label>
+      <input id="p0Url" type="url" class="fi" placeholder="https://..." value="${pData.url||''}">
+    </div>
+    <div style="grid-column:1/-1;">
+      <label class="tile-lbl block mb-1">Notas</label>
+      <input id="p0Notas" class="fi" placeholder="color, talla, modelo específico..." value="${pData.notas||''}">
+    </div>
+  </div>
+  <div class="proto-nav">
+    <span style="font-size:.48rem;color:var(--dim);">Paso 1 de 4</span>
+    <button class="btn-proto-next" onclick="nextP0()">Iniciar Protocolo →</button>
+  </div>`;
+}
+function nextP0() {
+  const nombre = document.getElementById('p0Name').value.trim();
+  if (!nombre) { alert('El nombre es requerido'); return; }
+  pData.nombre         = nombre;
+  pData.categoria      = document.getElementById('p0Cat').value;
+  pData.prioridad      = document.getElementById('p0Pri').value;
+  pData.precio_estimado= parseFloat(document.getElementById('p0Precio').value) || 0;
+  pData.mes_objetivo   = document.getElementById('p0Mes').value;
+  pData.tienda         = document.getElementById('p0Tienda').value;
+  pData.url            = document.getElementById('p0Url').value;
+  pData.notas          = document.getElementById('p0Notas').value;
+  pStep = 1; renderProto();
+}
+
+// ── Step 1: Dopamina ───────────────────────────────────────────────────────
+let _days = null, _calm = null;
+function stepP1() {
+  _days = null; _calm = null;
+  return `
+  <div class="ph-tag ph-tag-1">⚡ Fase 1 · Firewall de Dopamina</div>
+  <div class="q-t">¿Hace cuánto tiempo deseas este artículo?</div>
+  <div class="q-ins">El 68% de las compras impulsivas no se harían si se esperara 24h (Loewenstein, 1996). El umbral mínimo del protocolo es 72 horas.</div>
+  <div class="ch-grid">
+    ${[
+      {v:0, e:'⚡', t:'Hoy mismo', s:'Alta señal de impulso dopamínico', neg:true},
+      {v:1, e:'🌙', t:'1 a 2 días', s:'Todavía en zona de riesgo', neg:true},
+      {v:3, e:'📅', t:'3 a 7 días', s:'Supera el umbral mínimo de 72h', neg:false},
+      {v:7, e:'🗓️', t:'Más de 7 días', s:'Deseo consolidado — señal sólida', neg:false},
+    ].map(o => `
+    <button class="ch-btn" data-dv="${o.v}" onclick="selDay(this,${o.v},${o.neg})">
+      <div class="ch-ico" style="background:rgba(201,168,76,.06);">${o.e}</div>
+      <div><div class="ch-t">${o.t}</div><div class="ch-s">${o.s}</div></div>
+      <div class="ch-chk"></div>
+    </button>`).join('')}
+  </div>
+  <div class="q-t">En calma, sin redes ni publicidad… ¿el deseo persiste?</div>
+  <div class="q-ins">Imagina que ya tienes el artículo desde hace 3 meses. ¿Aún lo necesitas?</div>
+  <div class="ch-grid">
+    <button class="ch-btn" data-calm="y" onclick="selCalm(this,true)">
+      <div class="ch-ico" style="background:rgba(52,211,153,.07);">✓</div>
+      <div><div class="ch-t">Sí, el deseo persiste</div><div class="ch-s">Señal de necesidad funcional o de diseño de vida</div></div>
+      <div class="ch-chk"></div>
+    </button>
+    <button class="ch-btn" data-calm="n" onclick="selCalm(this,false)">
+      <div class="ch-ico" style="background:rgba(248,113,113,.07);">✗</div>
+      <div><div class="ch-t">No, desaparece en calma</div><div class="ch-s">Patrón de glitch emocional — dopamina sin necesidad real</div></div>
+      <div class="ch-chk"></div>
+    </button>
+  </div>
+  <div class="proto-nav">
+    <button class="btn-proto-back" onclick="pStep=0;renderProto()">← Atrás</button>
+    <span style="font-size:.48rem;color:var(--dim);">Paso 2 de 4</span>
+    <button class="btn-proto-next" onclick="nextP1()">Continuar →</button>
+  </div>`;
+}
+function selDay(el, v, neg) {
+  document.querySelectorAll('[data-dv]').forEach(b => { b.classList.remove('sel','sel-no'); b.querySelector('.ch-chk').textContent=''; });
+  _days = v;
+  el.classList.add(neg ? 'sel-no' : 'sel');
+  el.querySelector('.ch-chk').textContent = '✓';
+}
+function selCalm(el, v) {
+  document.querySelectorAll('[data-calm]').forEach(b => { b.classList.remove('sel','sel-no'); b.querySelector('.ch-chk').textContent=''; });
+  _calm = v;
+  el.classList.add(v ? 'sel' : 'sel-no');
+  el.querySelector('.ch-chk').textContent = '✓';
+}
+function nextP1() {
+  if (_days === null) { alert('Selecciona cuántos días llevas deseando el artículo'); return; }
+  if (_calm === null) { alert('Responde si el deseo persiste en calma'); return; }
+  pData.dias_deseo = _days; pData.q1_persiste = _calm;
+  pStep = 2; renderProto();
+}
+
+// ── Step 2: Solvencia ──────────────────────────────────────────────────────
+let _sol = null, _cls = null;
+function stepP2() {
+  _sol = null; _cls = null;
+  return `
+  <div class="ph-tag ph-tag-2">🏦 Fase 2 · Auditoría de Solvencia</div>
+  <div class="q-t">¿Cuál es tu estado financiero actual?</div>
+  <div class="q-ins">Una compra sabia en abundancia puede ser destructiva en escasez.</div>
+  <div class="ch-grid">
+    <button class="ch-btn" data-sol="estable" onclick="selSol(this,'estable')">
+      <div class="ch-ico" style="background:rgba(52,211,153,.07);">📈</div>
+      <div><div class="ch-t">Estable — tengo excedente o ahorros</div><div class="ch-s">Flujo positivo, deudas bajo control</div></div>
+      <div class="ch-chk"></div>
+    </button>
+    <button class="ch-btn" data-sol="inestable" onclick="selSol(this,'inestable')">
+      <div class="ch-ico" style="background:rgba(248,113,113,.07);">⚠</div>
+      <div><div class="ch-t">Inestable — tengo deudas o flujo negativo</div><div class="ch-s">Sin excedente real, pasivos activos</div></div>
+      <div class="ch-chk"></div>
+    </button>
+  </div>
+  <div id="clsSection" style="display:none;">
+    <div class="q-t">¿Cómo clasificas este artículo?</div>
+    <div class="q-ins">CapEx = genera retorno (ingresos, salud, productividad). OpEx = gasto de consumo/ocio.</div>
+    <div class="ch-grid">
+      <button class="ch-btn" data-cls="capex" onclick="selCls(this,'capex')">
+        <div class="ch-ico" style="background:rgba(201,168,76,.07);">🔧</div>
+        <div><div class="ch-t">CapEx — Inversión productiva</div><div class="ch-s">Genera ingresos, mejora salud o capacidad de trabajo</div></div>
+        <div class="ch-chk"></div>
+      </button>
+      <button class="ch-btn" data-cls="opex" onclick="selCls(this,'opex')">
+        <div class="ch-ico" style="background:rgba(248,113,113,.07);">🎮</div>
+        <div><div class="ch-t">OpEx — Gasto de ocio</div><div class="ch-s">Entretenimiento, moda, colección, estética no esencial</div></div>
+        <div class="ch-chk"></div>
+      </button>
+    </div>
+  </div>
+  <div class="proto-nav">
+    <button class="btn-proto-back" onclick="pStep=1;renderProto()">← Atrás</button>
+    <span style="font-size:.48rem;color:var(--dim);">Paso 3 de 4</span>
+    <button class="btn-proto-next" onclick="nextP2()">Continuar →</button>
+  </div>`;
+}
+function selSol(el, v) {
+  document.querySelectorAll('[data-sol]').forEach(b => { b.classList.remove('sel','sel-no'); b.querySelector('.ch-chk').textContent=''; });
+  _sol = v;
+  el.classList.add(v==='estable'?'sel':'sel-no');
+  el.querySelector('.ch-chk').textContent = '✓';
+  document.getElementById('clsSection').style.display = v==='inestable' ? '' : 'none';
+}
+function selCls(el, v) {
+  document.querySelectorAll('[data-cls]').forEach(b => { b.classList.remove('sel','sel-no'); b.querySelector('.ch-chk').textContent=''; });
+  _cls = v;
+  el.classList.add(v==='capex'?'sel':'sel-no');
+  el.querySelector('.ch-chk').textContent = '✓';
+}
+function nextP2() {
+  if (!_sol) { alert('Indica tu estado financiero'); return; }
+  if (_sol==='inestable' && !_cls) { alert('Clasifica el artículo (CapEx u OpEx)'); return; }
+  pData.q2_estado_financiero = _sol; pData.q2_clasificacion = _cls;
+  pStep = 3; renderProto();
+}
+
+// ── Step 3: Lógica ─────────────────────────────────────────────────────────
+let _util=null, _dry=null, _usos=1, _cpu=null, _mant=null, _cap=null;
+function stepP3() {
+  _util=null; _dry=null; _usos=1; _cpu=null; _mant=null; _cap=null;
+  const precio = pData.precio_estimado || 0;
+  return `
+  <div class="ph-tag ph-tag-3">⚙️ Fase 3 · Algoritmo Lógico</div>
+  <div class="q-t">¿Tiene utilidad directa para tu vida o trabajo?</div>
+  <div class="q-ins">Utilidad directa = contribuye al trabajo, salud, misión o diseño de vida.</div>
+  <div class="ch-grid">
+    <button class="ch-btn" data-util="y" onclick="logSel(this,'util',true)">
+      <div class="ch-ico" style="background:rgba(52,211,153,.07);">✓</div>
+      <div><div class="ch-t">Sí, utilidad directa</div><div class="ch-s">Trabajo, salud, misión o diseño de vida</div></div>
+      <div class="ch-chk"></div>
+    </button>
+    <button class="ch-btn" data-util="n" onclick="logSel(this,'util',false)">
+      <div class="ch-ico" style="background:rgba(248,113,113,.07);">✗</div>
+      <div><div class="ch-t">No, más estético o caprichoso</div><div class="ch-s">Sin utilidad funcional clara</div></div>
+      <div class="ch-chk"></div>
+    </button>
+  </div>
+
+  <div id="l-dry" style="display:none;">
+    <div class="q-t">¿Ya tienes algo que cumpla el 80% de esta función?</div>
+    <div class="q-ins">Principio DRY: si ya tienes una alternativa, la compra es redundancia.</div>
+    <div class="ch-grid">
+      <button class="ch-btn" data-dry="n" onclick="logSel(this,'dry',false)">
+        <div class="ch-ico" style="background:rgba(52,211,153,.07);">✓</div>
+        <div><div class="ch-t">No, no tengo nada equivalente</div><div class="ch-s">Adición de capacidad genuina</div></div>
+        <div class="ch-chk"></div>
+      </button>
+      <button class="ch-btn" data-dry="y" onclick="logSel(this,'dry',true)">
+        <div class="ch-ico" style="background:rgba(248,113,113,.07);">✗</div>
+        <div><div class="ch-t">Sí, ya tengo algo similar</div><div class="ch-s">Cubre al menos el 80% de lo que busco</div></div>
+        <div class="ch-chk"></div>
+      </button>
+    </div>
+  </div>
+
+  <div id="l-cpu" style="display:none;">
+    <div class="q-t">Cálculo de Costo Por Uso (CPU)</div>
+    <div class="q-ins">CPU = Precio ÷ Usos estimados de vida útil. La métrica más honesta para evaluar valor real.</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+      <div>
+        <label class="tile-lbl block mb-1">Usos estimados por mes</label>
+        <input class="cpu-input" id="l-usos" type="number" min="1" step="1" value="1" oninput="calcCPU(${precio})">
+      </div>
+      <div style="font-size:.58rem;color:var(--dim);margin-top:16px;">veces / mes</div>
+    </div>
+    <div class="cpu-card" id="cpuCard">
+      <div class="cpu-val" id="cpuVal">$—</div>
+      <div style="font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Costo por uso</div>
+      <div class="cpu-note" id="cpuNote"></div>
+    </div>
+    <div class="q-t">¿El valor por uso justifica el costo?</div>
+    <div class="ch-grid">
+      <button class="ch-btn" data-cpu="y" onclick="logSel(this,'cpu',true)">
+        <div class="ch-ico" style="background:rgba(52,211,153,.07);">✓</div>
+        <div><div class="ch-t">Sí, el valor supera el costo</div><div class="ch-s">El retorno justifica el precio</div></div>
+        <div class="ch-chk"></div>
+      </button>
+      <button class="ch-btn" data-cpu="n" onclick="logSel(this,'cpu',false)">
+        <div class="ch-ico" style="background:rgba(248,113,113,.07);">✗</div>
+        <div><div class="ch-t">No, el CPU es alto</div><div class="ch-s">El precio no se justifica por el uso real</div></div>
+        <div class="ch-chk"></div>
+      </button>
+    </div>
+  </div>
+
+  <div id="l-mant" style="display:none;">
+    <div class="q-t">¿Requiere menos de 10 min/semana de gestión?</div>
+    <div class="q-ins">Todo objeto tiene un costo oculto en tiempo y atención. El costo real de posesión importa.</div>
+    <div class="ch-grid">
+      <button class="ch-btn" data-mant="y" onclick="logSel(this,'mant',true)">
+        <div class="ch-ico" style="background:rgba(52,211,153,.07);">✓</div>
+        <div><div class="ch-t">Sí, bajo mantenimiento</div><div class="ch-s">Menos de 10 min/semana de gestión</div></div>
+        <div class="ch-chk"></div>
+      </button>
+      <button class="ch-btn" data-mant="n" onclick="logSel(this,'mant',false)">
+        <div class="ch-ico" style="background:rgba(248,113,113,.07);">✗</div>
+        <div><div class="ch-t">No, requiere atención regular</div><div class="ch-s">Más de 10 min/semana</div></div>
+        <div class="ch-chk"></div>
+      </button>
+    </div>
+  </div>
+
+  <div id="l-cap" style="display:none;">
+    <div class="q-t">¿Invertir este capital rendiría más?</div>
+    <div class="q-ins">Si el dinero invertido en un instrumento compuesto generaría más que el valor del artículo, es mejor invertir.</div>
+    <div class="ch-grid">
+      <button class="ch-btn" data-cap="n" onclick="logSel(this,'cap',false)">
+        <div class="ch-ico" style="background:rgba(52,211,153,.07);">✓</div>
+        <div><div class="ch-t">No — el artículo vale más que la inversión</div><div class="ch-s">El valor de uso supera el rendimiento compuesto</div></div>
+        <div class="ch-chk"></div>
+      </button>
+      <button class="ch-btn" data-cap="y" onclick="logSel(this,'cap',true)">
+        <div class="ch-ico" style="background:rgba(248,113,113,.07);">✗</div>
+        <div><div class="ch-t">Sí — el capital crecería más invertido</div><div class="ch-s">El rendimiento compuesto supera el valor</div></div>
+        <div class="ch-chk"></div>
+      </button>
+    </div>
+  </div>
+
+  <div class="proto-nav">
+    <button class="btn-proto-back" onclick="pStep=2;renderProto()">← Atrás</button>
+    <span style="font-size:.48rem;color:var(--dim);">Paso 4 de 4</span>
+    <button class="btn-proto-next" onclick="nextP3()">Ver Resultado →</button>
+  </div>`;
+}
+
+function logSel(el, type, val) {
+  const map = {util:'data-util',dry:'data-dry',cpu:'data-cpu',mant:'data-mant',cap:'data-cap'};
+  document.querySelectorAll(`[${map[type]}]`).forEach(b => { b.classList.remove('sel','sel-no'); b.querySelector('.ch-chk').textContent=''; });
+  if (type==='util') {
+    _util=val;
+    document.getElementById('l-dry').style.display = val ? '' : 'none';
+    if (!val) { _dry=_cpu=_mant=_cap=null; }
+  } else if (type==='dry') {
+    _dry=val;
+    document.getElementById('l-cpu').style.display = !val ? '' : 'none';
+    if (val) { _cpu=_mant=_cap=null; }
+    if (!val) calcCPU(pData.precio_estimado||0);
+  } else if (type==='cpu') {
+    _cpu=val;
+    pData.q3_usos_mes = parseInt(document.getElementById('l-usos')?.value)||1;
+    document.getElementById('l-mant').style.display = val ? '' : 'none';
+    if (!val) { _mant=_cap=null; }
+  } else if (type==='mant') {
+    _mant=val;
+    document.getElementById('l-cap').style.display = val ? '' : 'none';
+    if (!val) _cap=null;
+  } else if (type==='cap') { _cap=val; }
+  const isNo = (type==='util'&&!val)||(type==='dry'&&val)||(type==='cpu'&&!val)||(type==='mant'&&!val)||(type==='cap'&&val);
+  el.classList.add(isNo?'sel-no':'sel');
+  el.querySelector('.ch-chk').textContent = '✓';
+}
+
+function calcCPU(precio) {
+  const usos = parseInt(document.getElementById('l-usos')?.value)||1;
+  _usos = usos;
+  const cpu = precio/usos;
+  const v = document.getElementById('cpuVal');
+  const n = document.getElementById('cpuNote');
+  if (v) v.textContent = '$' + cpu.toFixed(2) + ' MXN';
+  if (n) {
+    const annual = usos*12;
+    let note = `${usos} uso(s)/mes · ~${annual} usos/año. `;
+    if (cpu<20) note += 'Excelente ratio — alta frecuencia.';
+    else if (cpu<100) note += 'Ratio aceptable.';
+    else if (cpu<500) note += 'Ratio elevado — evalúa la calidad del valor.';
+    else note += 'Ratio muy alto — considera el uso real esperado.';
+    n.textContent = note;
+  }
+}
+
+function nextP3() {
+  if (_util===null) { alert('Responde si el artículo es útil'); return; }
+  if (_util && _dry===null) { alert('Responde el filtro DRY'); return; }
+  if (_util && !_dry && _cpu===null) { alert('Responde el cálculo de CPU'); return; }
+  if (_util && !_dry && _cpu && _mant===null) { alert('Responde la pregunta de mantenimiento'); return; }
+  if (_util && !_dry && _cpu && _mant && _cap===null) { alert('Responde el filtro de costo de oportunidad'); return; }
+  pData.q3_es_util=_util; pData.q3_tiene_alternativa=_dry;
+  pData.q3_usos_mes=_usos; pData.q3_cpu_ok=_cpu;
+  pData.q3_mantenimiento_ok=_mant; pData.q3_costo_oportunidad_ok=_cap;
+  pResult = computeProtocol(pData);
+  pStep = 4; renderProto();
+}
+
+// ── Step 4: Resultado ──────────────────────────────────────────────────────
+function stepP4() {
+  const { score, rec, reasons } = pResult;
+  const REC = {
+    compra_optima:        {cls:'rb-optima',   icon:'✅', title:'Adquisición Estratégica Óptima', desc:'El artículo supera todos los filtros. La compra está científicamente justificada.'},
+    compra_limitada:      {cls:'rb-limitada', icon:'🔧', title:'Compra Limitada — CapEx Justificado', desc:'Estado inestable pero es inversión productiva. Procede con máxima austeridad.'},
+    reevaluar:            {cls:'rb-reevaluar',icon:'⚠️', title:'Re-evaluar o Rechazar', desc:'El artículo tiene mérito pero el mantenimiento es alto. Busca una alternativa más simple.'},
+    no_compres:           {cls:'rb-no',       icon:'✗',  title:'No Compres', desc:'No superó los filtros del algoritmo lógico. Guarda este análisis y revísalo en 30 días.'},
+    bloqueo_supervivencia:{cls:'rb-bloqueo',  icon:'🚫', title:'Bloqueo por Supervivencia', desc:'Estado inestable + ocio. Esta compra compromete tu estabilidad financiera.'},
+    glitch_emocional:     {cls:'rb-glitch',   icon:'⚡', title:'Glitch Emocional Detectado', desc:'El deseo desaparece en calma. No es una necesidad real — libera el deseo.'},
+  };
+  const m = REC[rec] || REC.no_compres;
+  const isPositive = rec==='compra_optima'||rec==='compra_limitada';
+  const sc = Math.max(0, Math.min(100, score));
+  const col = sc>=70?'#34d399':sc>=45?'var(--gold)':'#f87171';
+  const circ = 2*Math.PI*46;
+  const off = circ - (sc/100)*circ;
+
+  const rHtml = reasons.map(r => {
+    const isP = r.startsWith('Deseo verificado')||r.startsWith('El deseo persiste')||r.startsWith('Estado financiero')||r.startsWith('Útil')||r.startsWith('No tienes')||r.startsWith('Costo por uso favorable')||r.startsWith('Bajo')||r.startsWith('El valor del artículo')||r.startsWith('Estado inestable, pero');
+    const isW = r.startsWith('Deseo de ')||r.startsWith('Estado inestable');
+    const cls = isP?'pass':isW?'warn':'fail';
+    const ico = cls==='pass'?'✓':cls==='warn'?'△':'✗';
+    return `<div class="reason-row ${cls}"><span style="flex-shrink:0;">${ico}</span><span>${r}</span></div>`;
+  }).join('');
+
+  return `
+  <div style="text-align:center;padding:4px 0 12px;">
+    <div class="res-ring-wrap">
+      <svg viewBox="0 0 100 100" width="110" height="110" style="transform:rotate(-90deg)">
+        <circle fill="none" stroke="rgba(255,255,255,.06)" stroke-width="7" cx="50" cy="50" r="46"/>
+        <circle fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round"
+          cx="50" cy="50" r="46"
+          stroke-dasharray="${circ}" stroke-dashoffset="${circ}"
+          id="pRingFill" style="transition:stroke-dashoffset 1.1s ease;"/>
+      </svg>
+      <div class="res-center">
+        <div class="res-score" style="color:${col};">${sc}</div>
+        <div style="font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:1px;">score</div>
+      </div>
+    </div>
+    <div class="res-badge ${m.cls}" style="margin:0 auto 10px;">${m.icon} ${m.title}</div>
+    <div class="res-desc">${m.desc}</div>
+  </div>
+  <div class="reasons-wrap">${rHtml}</div>
+  <div id="protoEcWrap"></div>
+  <div class="res-actions">
+    ${isPositive
+      ? `<button class="btn-res-add" onclick="addFromProto(false)">➕ Agregar a Wishlist</button>`
+      : `<button class="btn-res-pend" onclick="addFromProto(true)">➕ Agregar de todas formas</button>
+         <button class="btn-res-skip" onclick="closeProto()">✕ Descartar</button>`
+    }
+  </div>`;
+}
+
+async function loadProtoEC() {
+  // Animate ring
+  requestAnimationFrame(() => {
+    const ring = document.getElementById('pRingFill');
+    if (!ring) return;
+    const sc = Math.max(0,Math.min(100,pResult.score||0));
+    const circ = 2*Math.PI*46;
+    requestAnimationFrame(() => { ring.style.strokeDashoffset = circ - (sc/100)*circ; });
+  });
+
+  const precio = pData.precio_estimado || 0;
+  if (!precio) return;
+  const data = await fetch(`/guardarropa/wishlist/api/ec-status?precio=${precio}`).then(r => r.json());
+  const { balance, ec_rate, ec_sugerido, puede_pagar, pct_balance } = data;
+  const pct = Math.min(pct_balance||0, 100);
+  const pctDisplay = pct_balance!==null ? pct_balance+'%' : '—';
+  const barCol = pct<=30?'#34d399':pct<=60?'#C9A84C':'#f87171';
+
+  let alertCls, alertTxt;
+  if (!precio) { return; }
+  else if (ec_sugerido===0) { return; }
+  else if (puede_pagar && pct_balance<=30) {
+    alertCls='ec-a-ok';
+    alertTxt=`✓ Puedes pagar con EC y solo usas el <strong>${pctDisplay}</strong> de tu balance — decisión prudente.`;
+  } else if (puede_pagar && pct_balance<=60) {
+    alertCls='ec-a-warn';
+    alertTxt=`⚠ Puedes pagar, pero usarías el <strong>${pctDisplay}</strong> de tu balance EC. Evalúa si lo vale.`;
+  } else if (puede_pagar) {
+    alertCls='ec-a-warn';
+    alertTxt=`⚠ La compra consumiría <strong>${pctDisplay}</strong> de tu balance EC — más de la mitad de tu esfuerzo acumulado.`;
+  } else {
+    const falta = ec_sugerido - balance;
+    alertCls='ec-a-no';
+    alertTxt=`✗ Te faltan <strong>${falta} EC</strong>. Sigue acumulando — con actividad diaria lo alcanzas en poco tiempo.`;
+  }
+
+  const wrap = document.getElementById('protoEcWrap');
+  if (!wrap) return;
+  wrap.innerHTML = `
+  <div class="ec-panel">
+    <div class="ec-panel-hd">
+      <div style="font-size:1.2rem;">🪙</div>
+      <div>
+        <div class="ec-panel-title">¿Comprar con Euda-Credits (EC)?</div>
+        <div class="ec-panel-sub">Gamificación · 1 EC = $${ec_rate} MXN</div>
+      </div>
+    </div>
+    <div class="ec-stats-row">
+      <div class="ec-st"><div class="ec-sv">${balance}</div><div class="ec-sl">Tu balance</div></div>
+      <div class="ec-st"><div class="ec-sv" style="color:${puede_pagar?'var(--gold)':'#f87171'};">${ec_sugerido}</div><div class="ec-sl">EC sugerido</div></div>
+      <div class="ec-st"><div class="ec-sv" style="color:${barCol};">${pctDisplay}</div><div class="ec-sl">Del balance</div></div>
+    </div>
+    <div class="ec-bar-row">
+      <div class="ec-bar-lbls"><span>0 EC</span><span>${balance} EC</span></div>
+      <div class="ec-bar"><div class="ec-bar-fill" style="width:${pct}%;background:${barCol};"></div></div>
+    </div>
+    <div class="ec-alert ${alertCls}" style="font-size:.56rem;">${alertTxt}</div>
+    <div class="ec-rate-note">$${parseFloat(precio).toLocaleString('es-MX',{minimumFractionDigits:0})} MXN ÷ $${ec_rate}/EC = <strong style="color:var(--gold);margin-left:3px;">${ec_sugerido} EC sugeridos</strong></div>
+    <button class="btn-ec" ${puede_pagar?'':'disabled'} onclick="addFromProtoEC(${ec_sugerido})">
+      🪙 ${puede_pagar ? `Agregar + pagar ${ec_sugerido} EC` : `EC insuficientes (necesitas ${ec_sugerido-balance} más)`}
+    </button>
+  </div>`;
+}
+
+function addFromProto(override) {
+  const body = {
+    nombre: pData.nombre, categoria: pData.categoria,
+    prioridad: pData.prioridad, precio_estimado: pData.precio_estimado,
+    mes_objetivo: pData.mes_objetivo, tienda: pData.tienda,
+    url: pData.url, notas: pData.notas,
+    protocolo_score: pResult.score, protocolo_rec: pResult.rec,
+    comprar_con_ec: 0, ec_pagado: 0,
+  };
+  fetch(`${BASE}/api/add`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  }).then(() => location.reload());
+}
+
+function addFromProtoEC(ecCantidad) {
+  const body = {
+    nombre: pData.nombre, categoria: pData.categoria,
+    prioridad: pData.prioridad, precio_estimado: pData.precio_estimado,
+    mes_objetivo: pData.mes_objetivo, tienda: pData.tienda,
+    url: pData.url, notas: pData.notas,
+    protocolo_score: pResult.score, protocolo_rec: pResult.rec,
+    comprar_con_ec: 1, ec_pagado: ecCantidad,
+  };
+  fetch(`${BASE}/api/add`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  }).then(() => location.reload());
+}
+
+// ── Protocol engine (JS version) ──────────────────────────────────────────
+function computeProtocol(d) {
+  let score=0, reasons=[], rec='no_compres';
+  const dias=parseInt(d.dias_deseo||0), q1=!!d.q1_persiste;
+  const q2e=d.q2_estado_financiero, q2c=d.q2_clasificacion;
+  const q3u=!!d.q3_es_util, q3dry=!!d.q3_tiene_alternativa;
+  const q3usos=parseFloat(d.q3_usos_mes||1)||1;
+  const q3cpu=!!d.q3_cpu_ok, q3mant=!!d.q3_mantenimiento_ok, q3cap=!!d.q3_costo_oportunidad_ok;
+
+  // F1: Dopamina
+  if (dias>=7){score+=15;reasons.push('Deseo verificado por '+dias+' días — supera el filtro de 72h con solidez');}
+  else if(dias>=3){score+=10;reasons.push('Deseo de '+dias+' días — supera el umbral mínimo de 72h');}
+  else if(dias>=1){score+=5;reasons.push('Deseo de '+dias+' día(s) — todavía en zona de riesgo dopamínico');}
+  else reasons.push('Deseo del mismo día — alta probabilidad de compra impulsiva');
+  if(!q1){reasons.push('El deseo desaparece en calma — patrón de glitch emocional detectado');return{score,rec:'glitch_emocional',reasons};}
+  score+=5; reasons.push('El deseo persiste sin estímulos — señal de necesidad real');
+
+  // F2: Solvencia
+  if(q2e==='estable'){score+=30;reasons.push('Estado financiero estable — capital disponible');}
+  else{
+    if(q2c==='capex'){score+=15;reasons.push('Estado inestable, pero es inversión productiva (CapEx)');return{score,rec:'compra_limitada',reasons};}
+    else{reasons.push('Estado inestable + gasto de ocio — bloqueo por supervivencia financiera');return{score,rec:'bloqueo_supervivencia',reasons};}
+  }
+
+  // F3: Lógica
+  if(!q3u){reasons.push('Sin utilidad directa para vida o trabajo — rechazado por utilidad');return{score,rec:'no_compres',reasons};}
+  score+=15; reasons.push('Útil para trabajo/vida — pasa el filtro de utilidad directa');
+  if(q3dry){reasons.push('Ya tienes algo que cumple el 80% de la función — redundancia evitada (DRY)');return{score,rec:'no_compres',reasons};}
+  score+=10; reasons.push('No tienes una alternativa equivalente — no es redundante');
+  if(!q3cpu){reasons.push('Costo por uso elevado — retorno de inversión insuficiente');return{score,rec:'no_compres',reasons};}
+  score+=15; reasons.push('Costo por uso favorable ('+q3usos.toFixed(0)+' usos/mes) — buena relación valor/precio');
+  if(!q3mant){reasons.push('Mantenimiento alto (>10 min/semana) — el costo de tiempo real es significativo');return{score,rec:'reevaluar',reasons};}
+  score+=5; reasons.push('Bajo mantenimiento — no drena tu tiempo de forma relevante');
+  if(q3cap){reasons.push('El capital rendiría más invertido — costo de oportunidad supera el valor');return{score,rec:'no_compres',reasons};}
+  score+=5; reasons.push('El valor supera el rendimiento compuesto del capital — adquisición justificada');
+  return{score,rec:'compra_optima',reasons};
 }
 </script>
 {% endblock %}

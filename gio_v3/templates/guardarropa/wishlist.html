@@ -1,0 +1,997 @@
+{% extends "eu/layout_sub.html" %}{% set pg='guardarropa' %}
+{% block title %}Protocolo de Compra — Eudaimonia{% endblock %}
+{% block module_title %}HEGEMONIKON{% endblock %}
+{% block topright %}{{ today }} — <span style="color:var(--gold)">PROTOCOLO DE COMPRA</span>{% endblock %}
+
+{% block head %}
+<style>
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.wl-shell{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1240px;}
+.wl-full{grid-column:1/-1;}
+@media(max-width:900px){.wl-shell{grid-template-columns:1fr;}}
+
+/* ── Tab nav ──────────────────────────────────────────────────────────────── */
+.wl-tabs{display:flex;gap:6px;margin-bottom:20px;border-bottom:1px solid var(--b);padding-bottom:0;}
+.wl-tab{background:none;border:none;padding:8px 18px;font-family:var(--sans);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s;}
+.wl-tab.on{color:var(--gold);border-bottom-color:var(--gold);}
+.wl-tab:hover:not(.on){color:var(--mid);}
+
+/* ── Hero header ──────────────────────────────────────────────────────────── */
+.proto-hero{background:linear-gradient(135deg,#0a080f 0%,#130d1e 60%,#0f1118 100%);border:1px solid var(--b2);border-radius:14px;padding:28px 32px;margin-bottom:20px;position:relative;overflow:hidden;}
+.proto-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(201,168,76,.07) 0%,transparent 70%);pointer-events:none;}
+.proto-version{font-size:.44rem;color:var(--gold);letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.proto-version::before{content:'';display:inline-block;width:18px;height:1px;background:var(--gold);opacity:.5;}
+.proto-title{font-family:var(--serif);font-size:2rem;font-weight:300;letter-spacing:.08em;margin-bottom:4px;}
+.proto-sub{font-size:.58rem;color:var(--dim);max-width:520px;line-height:1.6;}
+.proto-stats{display:flex;gap:20px;margin-top:18px;flex-wrap:wrap;}
+.proto-stat{text-align:center;}
+.proto-stat-v{font-family:var(--serif);font-size:1.5rem;font-weight:300;line-height:1;color:var(--text);}
+.proto-stat-l{font-size:.44rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+
+/* ── Quiz wizard ──────────────────────────────────────────────────────────── */
+.quiz-wrap{background:var(--card);border:1px solid var(--b2);border-radius:14px;overflow:hidden;}
+.quiz-progress{height:3px;background:var(--b);position:relative;}
+.quiz-progress-fill{height:100%;background:linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D);border-radius:100px;transition:width .4s ease;}
+.quiz-phase-bar{display:flex;gap:0;padding:0;}
+.quiz-phase-seg{flex:1;padding:10px 14px;font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);border-bottom:2px solid transparent;text-align:center;transition:all .2s;}
+.quiz-phase-seg.active{color:var(--gold);border-bottom-color:var(--gold);}
+.quiz-phase-seg.done{color:var(--green);border-bottom-color:rgba(16,185,129,.3);}
+.quiz-body{padding:28px 32px;}
+@media(max-width:600px){.quiz-body{padding:20px 18px;}}
+
+/* ── Phase label ──────────────────────────────────────────────────────────── */
+.phase-tag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:100px;font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px;}
+.phase-tag.p0{background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.2);color:var(--mid);}
+.phase-tag.p1{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
+.phase-tag.p2{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);color:#93c5fd;}
+.phase-tag.p3{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);color:#c4b5fd;}
+.phase-tag svg{width:11px;height:11px;}
+
+/* ── Question ─────────────────────────────────────────────────────────────── */
+.q-title{font-family:var(--serif);font-size:1.35rem;font-weight:400;letter-spacing:.04em;margin-bottom:6px;line-height:1.3;}
+.q-insight{font-size:.58rem;color:var(--dim);margin-bottom:20px;line-height:1.65;max-width:500px;padding:10px 14px;background:rgba(255,255,255,.02);border-left:2px solid var(--b2);border-radius:0 6px 6px 0;}
+
+/* ── Choice buttons ───────────────────────────────────────────────────────── */
+.choices{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.choice-btn{background:var(--card2);border:1px solid var(--b);border-radius:10px;padding:14px 18px;text-align:left;cursor:pointer;transition:all .16s;display:flex;align-items:center;gap:12px;font-family:var(--sans);}
+.choice-btn:hover{border-color:var(--b2);background:rgba(201,168,76,.04);}
+.choice-btn.selected{border-color:var(--gold);background:rgba(201,168,76,.07);}
+.choice-btn.selected-no{border-color:var(--coral);background:rgba(244,63,94,.06);}
+.choice-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;}
+.choice-title{font-size:.72rem;color:var(--text);font-weight:500;}
+.choice-sub{font-size:.54rem;color:var(--dim);margin-top:1px;}
+.choice-check{margin-left:auto;width:18px;height:18px;border:1px solid var(--b);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .14s;}
+.choice-btn.selected .choice-check{background:var(--gold);border-color:var(--gold);}
+.choice-btn.selected-no .choice-check{background:var(--coral);border-color:var(--coral);}
+
+/* ── Number input ─────────────────────────────────────────────────────────── */
+.n-input-wrap{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.n-input{background:var(--card2);border:1px solid var(--b);border-radius:10px;padding:14px 18px;color:var(--text);font-family:var(--mono);font-size:1.1rem;outline:none;width:140px;text-align:center;transition:border-color .18s;}
+.n-input:focus{border-color:var(--gold);}
+.n-label{font-size:.6rem;color:var(--dim);}
+.cpu-display{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:14px 18px;margin-bottom:20px;display:none;}
+.cpu-display.visible{display:block;}
+.cpu-val{font-family:var(--serif);font-size:1.6rem;font-weight:300;color:var(--gold);margin-bottom:2px;}
+.cpu-lbl{font-size:.5rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
+.cpu-note{font-size:.56rem;color:var(--mid);margin-top:6px;line-height:1.5;}
+
+/* ── Form inputs (step 0) ─────────────────────────────────────────────────── */
+.wl-form-grid{display:grid;gap:10px;margin-bottom:16px;}
+.wl-form-grid.c2{grid-template-columns:1fr 1fr;}
+@media(max-width:600px){.wl-form-grid.c2{grid-template-columns:1fr;}}
+
+/* ── Nav buttons ──────────────────────────────────────────────────────────── */
+.quiz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:8px;}
+.quiz-step-info{font-size:.5rem;color:var(--dim);letter-spacing:.1em;}
+
+/* ── Result card ──────────────────────────────────────────────────────────── */
+.result-card{text-align:center;padding:8px 0 20px;}
+.score-ring-wrap{position:relative;width:130px;height:130px;margin:0 auto 20px;}
+.score-ring{transform:rotate(-90deg);}
+.score-ring-bg{fill:none;stroke:var(--b);stroke-width:8;}
+.score-ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);}
+.score-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.score-val{font-family:var(--serif);font-size:2rem;font-weight:300;line-height:1;}
+.score-lbl{font-size:.44rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+
+.rec-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:100px;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500;margin-bottom:16px;}
+.rec-optima{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;}
+.rec-limitada{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:var(--gold);}
+.rec-reevaluar{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fcd34d;}
+.rec-no{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.25);color:#fca5a5;}
+.rec-bloqueo{background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.3);color:#fca5a5;}
+.rec-glitch{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);color:#c4b5fd;}
+
+.rec-title{font-family:var(--serif);font-size:1.5rem;font-weight:400;letter-spacing:.06em;margin-bottom:6px;}
+.rec-desc{font-size:.6rem;color:var(--dim);max-width:420px;margin:0 auto 20px;line-height:1.7;}
+
+.reasons-list{text-align:left;background:var(--card2);border:1px solid var(--b);border-radius:10px;padding:14px 18px;margin-bottom:20px;}
+.reason-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:.6rem;color:var(--mid);line-height:1.5;border-bottom:1px solid var(--b);}
+.reason-item:last-child{border-bottom:none;}
+.reason-item.pass{color:var(--green);}
+.reason-item.warn{color:var(--gold);}
+.reason-item.fail{color:var(--coral);}
+.reason-icon{flex-shrink:0;margin-top:1px;font-size:.7rem;}
+
+.result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.btn-accept{background:linear-gradient(135deg,#7A5520,#C9A84C);border:none;color:#09070F;padding:10px 22px;border-radius:10px;font-size:.62rem;font-family:var(--sans);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px;transition:opacity .18s;}
+.btn-accept:hover{opacity:.85;}
+.btn-override{background:transparent;border:1px solid var(--b2);color:var(--mid);padding:10px 20px;border-radius:10px;font-size:.62rem;font-family:var(--sans);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .18s;}
+.btn-override:hover{border-color:var(--mid);color:var(--text);}
+.btn-discard{background:transparent;border:1px solid rgba(244,63,94,.25);color:var(--coral);padding:10px 20px;border-radius:10px;font-size:.62rem;font-family:var(--sans);cursor:pointer;transition:all .18s;}
+.btn-discard:hover{background:rgba(244,63,94,.06);}
+
+/* ── Wishlist table ───────────────────────────────────────────────────────── */
+.wl-grid{display:flex;flex-direction:column;gap:8px;}
+.wl-item{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:12px;transition:border-color .14s;}
+.wl-item:hover{border-color:var(--b2);}
+.wl-score-ring{width:44px;height:44px;flex-shrink:0;}
+.wl-score-ring svg{width:44px;height:44px;}
+.wl-item-name{font-size:.72rem;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wl-item-meta{font-size:.52rem;color:var(--dim);margin-top:2px;}
+.wl-item-price{font-family:var(--serif);font-size:.95rem;font-weight:300;color:var(--text);text-align:right;white-space:nowrap;}
+.wl-item-sub{font-size:.46rem;color:var(--dim);text-align:right;margin-top:1px;}
+.wl-item-actions{display:flex;gap:4px;align-items:center;}
+.wl-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:.44rem;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+.wl-b-eval{background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.18);color:var(--dim);}
+.wl-b-ok{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--green);}
+.wl-b-no{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
+.wl-b-pend{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
+.wl-b-comp{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;}
+.wl-b-desc{background:rgba(100,100,100,.08);border:1px solid rgba(100,100,100,.2);color:var(--dim);}
+.wl-b-over{font-size:.38rem;padding:1px 5px;}
+
+/* ── EC card ──────────────────────────────────────────────────────────────── */
+.ec-card{background:linear-gradient(135deg,rgba(201,168,76,.06) 0%,rgba(201,168,76,.03) 100%);border:1px solid rgba(201,168,76,.28);border-radius:12px;padding:18px 20px;margin-top:18px;}
+.ec-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.ec-card-icon{width:30px;height:30px;border-radius:8px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.25);display:flex;align-items:center;justify-content:center;font-size:.9rem;}
+.ec-card-title{font-size:.56rem;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-weight:500;}
+.ec-card-sub{font-size:.52rem;color:var(--dim);margin-top:1px;}
+.ec-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+@media(max-width:500px){.ec-row{grid-template-columns:1fr 1fr;}}
+.ec-stat{background:rgba(0,0,0,.2);border:1px solid var(--b);border-radius:8px;padding:10px 12px;text-align:center;}
+.ec-stat-v{font-family:var(--serif);font-size:1.3rem;font-weight:300;line-height:1;color:var(--gold);}
+.ec-stat-l{font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
+.ec-alert{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border-radius:8px;margin-bottom:14px;font-size:.58rem;line-height:1.55;}
+.ec-alert.ok{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);color:#6ee7b7;}
+.ec-alert.warn{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2);color:#fcd34d;}
+.ec-alert.no{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.2);color:#fca5a5;}
+.ec-alert svg{width:14px;height:14px;flex-shrink:0;margin-top:1px;}
+.ec-bar-wrap{margin-bottom:14px;}
+.ec-bar-lbl{display:flex;justify-content:space-between;font-size:.5rem;color:var(--dim);margin-bottom:5px;}
+.ec-bar{height:5px;border-radius:100px;background:var(--b);overflow:hidden;}
+.ec-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,#7A5520,#C9A84C);transition:width .6s;}
+.ec-rate-note{font-size:.5rem;color:var(--dim);text-align:center;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:4px;}
+.btn-ec-buy{background:linear-gradient(135deg,#5c3d0a,#9a6f1a,#C9A84C);border:none;color:#09070F;padding:10px 22px;border-radius:10px;font-size:.62rem;font-family:var(--sans);cursor:pointer;font-weight:600;display:flex;align-items:center;gap:6px;width:100%;justify-content:center;transition:opacity .18s;}
+.btn-ec-buy:hover{opacity:.85;}
+.btn-ec-buy:disabled{opacity:.35;cursor:not-allowed;}
+.ec-spent-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:100px;padding:2px 8px;font-size:.44rem;color:var(--gold);letter-spacing:.07em;text-transform:uppercase;}
+
+.wl-empty{text-align:center;padding:44px 20px;color:var(--dim);}
+.wl-empty svg{width:30px;height:30px;margin:0 auto 10px;opacity:.18;}
+.wl-empty p{font-size:.64rem;}
+
+/* ── Filters ──────────────────────────────────────────────────────────────── */
+.wl-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.wl-f{background:var(--card2);border:1px solid var(--b);border-radius:100px;padding:4px 12px;font-size:.56rem;color:var(--mid);cursor:pointer;transition:all .14s;}
+.wl-f.on{border-color:var(--gold);color:var(--gold);background:var(--gold-d);}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="proto-hero">
+  <div class="proto-version">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Protocolo v2.0
+  </div>
+  <div class="proto-title">Supremo Protocolo de Compra</div>
+  <div class="proto-sub">Sistema de decisión basado en psicología del comportamiento, economía conductual y diseño de vida estoico. Evalúa cada deseo de adquisición con rigor científico antes de actuar.</div>
+  <div class="proto-stats">
+    <div class="proto-stat"><div class="proto-stat-v" id="stat-total">—</div><div class="proto-stat-l">Evaluados</div></div>
+    <div class="proto-stat"><div class="proto-stat-v" id="stat-comp">—</div><div class="proto-stat-l">Comprados</div></div>
+    <div class="proto-stat"><div class="proto-stat-v" id="stat-rej">—</div><div class="proto-stat-l">Rechazados</div></div>
+    <div class="proto-stat"><div class="proto-stat-v" id="stat-saved">—</div><div class="proto-stat-l">Ahorrado</div></div>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="wl-tabs">
+  <button class="wl-tab on" onclick="switchTab('quiz')">Nueva Evaluación</button>
+  <button class="wl-tab" onclick="switchTab('list')">Mi Wishlist</button>
+</div>
+
+<!-- ── TAB: QUIZ ─────────────────────────────────────────────────────────── -->
+<div id="tab-quiz">
+  <div class="quiz-wrap">
+    <div class="quiz-progress"><div class="quiz-progress-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="quiz-phase-bar" id="phase-bar">
+      <div class="quiz-phase-seg active" id="pseg-0">Artículo</div>
+      <div class="quiz-phase-seg" id="pseg-1">Dopamina</div>
+      <div class="quiz-phase-seg" id="pseg-2">Solvencia</div>
+      <div class="quiz-phase-seg" id="pseg-3">Lógica</div>
+      <div class="quiz-phase-seg" id="pseg-4">Resultado</div>
+    </div>
+    <div class="quiz-body" id="quiz-body">
+      <!-- Steps injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ── TAB: LIST ─────────────────────────────────────────────────────────── -->
+<div id="tab-list" style="display:none;">
+  <div class="wl-filters" id="wl-filters">
+    <div class="wl-f on" data-f="" onclick="setFilter(this,'')">Todos</div>
+    <div class="wl-f" data-f="evaluando" onclick="setFilter(this,'evaluando')">Evaluando</div>
+    <div class="wl-f" data-f="pendiente" onclick="setFilter(this,'pendiente')">Pendientes</div>
+    <div class="wl-f" data-f="comprado" onclick="setFilter(this,'comprado')">Comprados</div>
+    <div class="wl-f" data-f="descartado" onclick="setFilter(this,'descartado')">Descartados</div>
+  </div>
+  <div id="wl-list"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const CATS = {{ categorias | tojson }};
+let step = 0;       // 0-4
+let itemId = null;
+let quizData = {};
+let listFilter = '';
+let allItems = [];
+
+// Steps: 0=item-form, 1=dopamine, 2=solvency, 3=logic, 4=result
+const TOTAL_STEPS = 5;
+const STEP_PHASES = [0, 1, 2, 3, 4]; // maps step → phase segment index
+
+// ── Tab ────────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  document.getElementById('tab-quiz').style.display = t === 'quiz' ? '' : 'none';
+  document.getElementById('tab-list').style.display = t === 'list'  ? '' : 'none';
+  document.querySelectorAll('.wl-tab').forEach((b, i) => {
+    b.classList.toggle('on', (i === 0 && t === 'quiz') || (i === 1 && t === 'list'));
+  });
+  if (t === 'list') loadList();
+}
+
+// ── Progress ───────────────────────────────────────────────────────────────
+function setProgress(s) {
+  const pct = (s / (TOTAL_STEPS - 1)) * 100;
+  document.getElementById('prog-fill').style.width = pct + '%';
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const seg = document.getElementById('pseg-' + i);
+    if (!seg) continue;
+    seg.classList.remove('active', 'done');
+    if (i < s) seg.classList.add('done');
+    else if (i === s) seg.classList.add('active');
+  }
+}
+
+// ── Render steps ───────────────────────────────────────────────────────────
+function renderStep() {
+  const body = document.getElementById('quiz-body');
+  setProgress(step);
+  if (step === 0) body.innerHTML = stepItem();
+  else if (step === 1) body.innerHTML = stepDopamine();
+  else if (step === 2) body.innerHTML = stepSolvency();
+  else if (step === 3) body.innerHTML = stepLogic();
+  else if (step === 4) body.innerHTML = stepResult();
+  lucide.createIcons();
+  // re-attach dynamic handlers
+  if (step === 3) attachLogicHandlers();
+}
+
+// ── STEP 0: Item form ───────────────────────────────────────────────────────
+function stepItem() {
+  const catOpts = CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+  return `
+  <div class="phase-tag p0"><i data-lucide="package" style="width:11px;height:11px;"></i>Registro del Artículo</div>
+  <div class="q-title">¿Qué artículo deseas adquirir?</div>
+  <div class="q-insight">Registra los datos básicos del artículo. Esta información alimentará el algoritmo de decisión en cada fase del protocolo.</div>
+  <div class="wl-form-grid">
+    <div class="fg">
+      <label class="fl">Nombre del artículo *</label>
+      <input class="fi" id="f-nombre" placeholder="ej. MacBook Pro 14" value="${quizData.nombre||''}">
+    </div>
+  </div>
+  <div class="wl-form-grid c2">
+    <div class="fg">
+      <label class="fl">Categoría</label>
+      <select class="fi" id="f-cat">
+        <option value="">— seleccionar —</option>
+        ${catOpts}
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">Precio estimado (MXN)</label>
+      <input class="fi" id="f-precio" type="number" min="0" step="0.01" placeholder="0.00" value="${quizData.precio_estimado||''}">
+    </div>
+  </div>
+  <div class="wl-form-grid c2">
+    <div class="fg">
+      <label class="fl">Marca / Modelo</label>
+      <input class="fi" id="f-marca" placeholder="ej. Apple" value="${quizData.marca||''}">
+    </div>
+    <div class="fg">
+      <label class="fl">URL (opcional)</label>
+      <input class="fi" id="f-url" placeholder="https://..." value="${quizData.url||''}">
+    </div>
+  </div>
+  <div class="wl-form-grid">
+    <div class="fg">
+      <label class="fl">Descripción breve</label>
+      <input class="fi" id="f-desc" placeholder="¿Para qué lo usarías?" value="${quizData.descripcion||''}">
+    </div>
+  </div>
+  <div class="quiz-nav">
+    <span class="quiz-step-info">Paso 1 de 4</span>
+    <button class="btn-a" onclick="submitItem()">Iniciar Protocolo →</button>
+  </div>`;
+}
+
+async function submitItem() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  if (!nombre) { toast('Ingresa el nombre del artículo', 'err'); return; }
+  quizData.nombre = nombre;
+  quizData.categoria = document.getElementById('f-cat').value;
+  quizData.precio_estimado = parseFloat(document.getElementById('f-precio').value) || 0;
+  quizData.marca = document.getElementById('f-marca').value;
+  quizData.url = document.getElementById('f-url').value;
+  quizData.descripcion = document.getElementById('f-desc').value;
+
+  if (!itemId) {
+    const r = await fetch('/guardarropa/wishlist/api/item', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(quizData)
+    }).then(r => r.json());
+    if (!r.ok) { toast('Error al guardar', 'err'); return; }
+    itemId = r.id;
+  }
+  step = 1; renderStep();
+}
+
+// ── STEP 1: Dopamine firewall ──────────────────────────────────────────────
+function stepDopamine() {
+  return `
+  <div class="phase-tag p1"><i data-lucide="zap" style="width:11px;height:11px;"></i>Fase 1 · Firewall de Dopamina</div>
+  <div class="q-title">¿Hace cuánto tiempo deseas este artículo?</div>
+  <div class="q-insight">La dopamina anticipa el placer de la compra con hasta 3× más intensidad que el placer real. El filtro de 72h es el protocolo mínimo para distinguir necesidades reales de impulsos. Los estudios de Loewenstein (1996) muestran que el 68% de las compras impulsivas no se harían si se esperara 24h.</div>
+  <div class="choices" id="days-choices">
+    ${[
+      {v:0, icon:'⚡', t:'Hoy mismo', s:'Alta señal de impulso dopamínico', cls:'selected-no'},
+      {v:1, icon:'🌙', t:'1 a 2 días', s:'Todavía en zona de riesgo', cls:''},
+      {v:3, icon:'📅', t:'3 a 7 días', s:'Supera el umbral mínimo de 72h', cls:'selected'},
+      {v:7, icon:'🗓️', t:'Más de 7 días', s:'Deseo consolidado — señal sólida', cls:'selected'},
+    ].map((o,i) => `
+    <button class="choice-btn" data-v="${o.v}" onclick="selectDay(this,${o.v})">
+      <div class="choice-icon" style="background:rgba(201,168,76,.06);">${o.icon}</div>
+      <div><div class="choice-title">${o.t}</div><div class="choice-sub">${o.s}</div></div>
+      <div class="choice-check"><i data-lucide="check" style="width:10px;height:10px;color:#09070F;display:none;"></i></div>
+    </button>`).join('')}
+  </div>
+
+  <div class="q-title" style="margin-top:20px;">En calma, sin redes sociales ni publicidad… ¿el deseo persiste?</div>
+  <div class="q-insight">El ambiente de consumo amplifica artificialmente los deseos. Cierra los ojos, imagina que ya tienes el artículo hace 3 meses. ¿Todavía lo necesitas?</div>
+  <div class="choices">
+    <button class="choice-btn" data-calm="yes" onclick="selectCalm(this,true)">
+      <div class="choice-icon" style="background:rgba(16,185,129,.06);">✓</div>
+      <div><div class="choice-title">Sí, el deseo persiste</div><div class="choice-sub">Señal de necesidad funcional o de diseño de vida</div></div>
+      <div class="choice-check"></div>
+    </button>
+    <button class="choice-btn" data-calm="no" onclick="selectCalm(this,false)">
+      <div class="choice-icon" style="background:rgba(244,63,94,.06);">✗</div>
+      <div><div class="choice-title">No, desaparece en calma</div><div class="choice-sub">Patrón de glitch emocional — activación dopamínica sin necesidad real</div></div>
+      <div class="choice-check"></div>
+    </button>
+  </div>
+  <div class="quiz-nav">
+    <button class="btn-g" onclick="step=0;renderStep()">← Atrás</button>
+    <span class="quiz-step-info">Paso 2 de 4</span>
+    <button class="btn-a" onclick="nextFromDopamine()">Continuar →</button>
+  </div>`;
+}
+
+let _days = null, _calm = null;
+function selectDay(el, v) {
+  document.querySelectorAll('#days-choices .choice-btn').forEach(b => {
+    b.classList.remove('selected','selected-no');
+    b.querySelector('.choice-check').innerHTML = '';
+  });
+  _days = v;
+  el.classList.add(v < 3 ? 'selected-no' : 'selected');
+  el.querySelector('.choice-check').innerHTML = '<i data-lucide="check" style="width:10px;height:10px;color:#09070F;"></i>';
+  lucide.createIcons();
+}
+function selectCalm(el, v) {
+  document.querySelectorAll('[data-calm]').forEach(b => {
+    b.classList.remove('selected','selected-no');
+    b.querySelector('.choice-check').innerHTML = '';
+  });
+  _calm = v;
+  el.classList.add(v ? 'selected' : 'selected-no');
+  el.querySelector('.choice-check').innerHTML = '<i data-lucide="check" style="width:10px;height:10px;color:#09070F;"></i>';
+  lucide.createIcons();
+}
+function nextFromDopamine() {
+  if (_days === null) { toast('Selecciona cuántos días llevas deseando el artículo', 'err'); return; }
+  if (_calm === null) { toast('Responde si el deseo persiste en calma', 'err'); return; }
+  quizData.dias_deseo = _days;
+  quizData.q1_persiste = _calm;
+  step = 2; renderStep();
+}
+
+// ── STEP 2: Solvency audit ─────────────────────────────────────────────────
+function stepSolvency() {
+  return `
+  <div class="phase-tag p2"><i data-lucide="landmark" style="width:11px;height:11px;"></i>Fase 2 · Auditoría de Solvencia</div>
+  <div class="q-title">¿Cuál es tu estado financiero actual?</div>
+  <div class="q-insight">Antes de evaluar el valor de un artículo, el protocolo verifica si el contexto financiero lo permite. Una compra que es sabia en abundancia puede ser destructiva en escasez.</div>
+  <div class="choices">
+    <button class="choice-btn" data-sol="estable" onclick="selectSol(this,'estable')">
+      <div class="choice-icon" style="background:rgba(16,185,129,.07);">📈</div>
+      <div><div class="choice-title">Estable — tengo excedente o ahorros</div><div class="choice-sub">Flujo positivo, deudas bajo control, capital disponible</div></div>
+      <div class="choice-check"></div>
+    </button>
+    <button class="choice-btn" data-sol="inestable" onclick="selectSol(this,'inestable')">
+      <div class="choice-icon" style="background:rgba(244,63,94,.07);">⚠</div>
+      <div><div class="choice-title">Inestable — tengo deudas o flujo negativo</div><div class="choice-sub">Pasivos significativos, sin excedente real, flujo negativo</div></div>
+      <div class="choice-check"></div>
+    </button>
+  </div>
+
+  <div id="capex-section" style="display:none;">
+    <div class="q-title">¿Cómo clasificas este artículo?</div>
+    <div class="q-insight">CapEx es una herramienta que genera retorno: mejora tus ingresos, tu salud o tu capacidad productiva. OpEx es un gasto de consumo: ocio, entretenimiento, lujo estético. Solo el CapEx justifica endeudamiento o sacrificio de liquidez.</div>
+    <div class="choices">
+      <button class="choice-btn" data-cls="capex" onclick="selectCls(this,'capex')">
+        <div class="choice-icon" style="background:rgba(201,168,76,.07);">🔧</div>
+        <div><div class="choice-title">CapEx — Inversión productiva</div><div class="choice-sub">Genera ingresos, mejora salud, potencia tu trabajo o formación</div></div>
+        <div class="choice-check"></div>
+      </button>
+      <button class="choice-btn" data-cls="opex" onclick="selectCls(this,'opex')">
+        <div class="choice-icon" style="background:rgba(244,63,94,.07);">🎮</div>
+        <div><div class="choice-title">OpEx — Gasto de ocio</div><div class="choice-sub">Entretenimiento, moda, colección, estética no esencial</div></div>
+        <div class="choice-check"></div>
+      </button>
+    </div>
+  </div>
+
+  <div class="quiz-nav">
+    <button class="btn-g" onclick="step=1;renderStep()">← Atrás</button>
+    <span class="quiz-step-info">Paso 3 de 4</span>
+    <button class="btn-a" onclick="nextFromSolvency()">Continuar →</button>
+  </div>`;
+}
+
+let _sol = null, _cls = null;
+function selectSol(el, v) {
+  document.querySelectorAll('[data-sol]').forEach(b => {
+    b.classList.remove('selected','selected-no');
+    b.querySelector('.choice-check').innerHTML = '';
+  });
+  _sol = v;
+  el.classList.add(v === 'estable' ? 'selected' : 'selected-no');
+  el.querySelector('.choice-check').innerHTML = '<i data-lucide="check" style="width:10px;height:10px;color:#09070F;"></i>';
+  document.getElementById('capex-section').style.display = v === 'inestable' ? '' : 'none';
+  lucide.createIcons();
+}
+function selectCls(el, v) {
+  document.querySelectorAll('[data-cls]').forEach(b => {
+    b.classList.remove('selected','selected-no');
+    b.querySelector('.choice-check').innerHTML = '';
+  });
+  _cls = v;
+  el.classList.add(v === 'capex' ? 'selected' : 'selected-no');
+  el.querySelector('.choice-check').innerHTML = '<i data-lucide="check" style="width:10px;height:10px;color:#09070F;"></i>';
+  lucide.createIcons();
+}
+function nextFromSolvency() {
+  if (!_sol) { toast('Indica tu estado financiero', 'err'); return; }
+  if (_sol === 'inestable' && !_cls) { toast('Clasifica el artículo (CapEx u OpEx)', 'err'); return; }
+  quizData.q2_estado_financiero = _sol;
+  quizData.q2_clasificacion = _cls;
+  step = 3; renderStep();
+}
+
+// ── STEP 3: Logic algorithm ────────────────────────────────────────────────
+let _util=null, _dry=null, _usos=1, _cpu=null, _mant=null, _cap=null;
+
+function stepLogic() {
+  const precioNum = quizData.precio_estimado || 0;
+  return `
+  <div class="phase-tag p3"><i data-lucide="cpu" style="width:11px;height:11px;"></i>Fase 3 · Algoritmo Lógico</div>
+
+  <!-- Q3.1 Utility -->
+  <div class="q-title">¿Este artículo es útil para tu diseño de vida o trabajo?</div>
+  <div class="q-insight">El "diseño de vida" incluye: salud, productividad, relaciones, misión personal. Un artículo que no contribuye a ninguna de estas áreas es decoración mental costosa.</div>
+  <div class="choices">
+    <button class="choice-btn" data-util="yes" onclick="logicSel(this,'util',true)">
+      <div class="choice-icon" style="background:rgba(16,185,129,.07);">✓</div>
+      <div><div class="choice-title">Sí, tiene utilidad directa</div><div class="choice-sub">Contribuye al trabajo, salud, misión o diseño de vida</div></div>
+      <div class="choice-check"></div>
+    </button>
+    <button class="choice-btn" data-util="no" onclick="logicSel(this,'util',false)">
+      <div class="choice-icon" style="background:rgba(244,63,94,.07);">✗</div>
+      <div><div class="choice-title">No, es más estético o caprichoso</div><div class="choice-sub">No hay utilidad funcional directa identificable</div></div>
+      <div class="choice-check"></div>
+    </button>
+  </div>
+
+  <!-- Q3.2 DRY filter -->
+  <div id="dry-section" style="display:none;">
+    <div class="q-title" style="margin-top:20px;">¿Ya tienes algo que cumpla el 80% de esta función?</div>
+    <div class="q-insight">Principio DRY aplicado al consumo: "Don't Repeat Yourself". Si ya tienes una alternativa funcional que cubre la mayor parte, la nueva compra es redundancia — no adición de valor.</div>
+    <div class="choices">
+      <button class="choice-btn" data-dry="no" onclick="logicSel(this,'dry',false)">
+        <div class="choice-icon" style="background:rgba(16,185,129,.07);">✓</div>
+        <div><div class="choice-title">No, no tengo nada equivalente</div><div class="choice-sub">Sería una adición de capacidad genuina</div></div>
+        <div class="choice-check"></div>
+      </button>
+      <button class="choice-btn" data-dry="yes" onclick="logicSel(this,'dry',true)">
+        <div class="choice-icon" style="background:rgba(244,63,94,.07);">✗</div>
+        <div><div class="choice-title">Sí, ya tengo algo similar</div><div class="choice-sub">Cubre al menos el 80% de lo que busco</div></div>
+        <div class="choice-check"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Q3.3 CPU -->
+  <div id="cpu-section" style="display:none;">
+    <div class="q-title" style="margin-top:20px;">Cálculo de Costo Por Uso (CPU)</div>
+    <div class="q-insight">CPU = Precio ÷ Usos estimados de vida útil. Es la métrica más honesta para evaluar el valor real de una compra. Un artículo costoso de alta frecuencia puede ser más eficiente que uno barato de baja frecuencia.</div>
+    <div class="n-input-wrap">
+      <div>
+        <label class="fl" style="margin-bottom:6px;">Usos estimados por mes</label>
+        <input class="n-input" id="usos-input" type="number" min="1" step="1" value="1" oninput="calcCPU(${precioNum})">
+      </div>
+      <div class="n-label">veces / mes</div>
+    </div>
+    <div class="cpu-display visible" id="cpu-display">
+      <div class="cpu-val" id="cpu-val">$—</div>
+      <div class="cpu-lbl">Costo por uso (mensual)</div>
+      <div class="cpu-note" id="cpu-note"></div>
+    </div>
+    <div class="q-title" style="margin-top:16px;">¿El valor que recibes por uso justifica este costo?</div>
+    <div class="choices">
+      <button class="choice-btn" data-cpu="yes" onclick="logicSel(this,'cpu',true)">
+        <div class="choice-icon" style="background:rgba(16,185,129,.07);">✓</div>
+        <div><div class="choice-title">Sí, el valor supera el costo</div><div class="choice-sub">El retorno (ahorro, tiempo, salud, resultado) justifica el precio</div></div>
+        <div class="choice-check"></div>
+      </button>
+      <button class="choice-btn" data-cpu="no" onclick="logicSel(this,'cpu',false)">
+        <div class="choice-icon" style="background:rgba(244,63,94,.07);">✗</div>
+        <div><div class="choice-title">No, el costo por uso es alto</div><div class="choice-sub">El precio no se justifica por el uso real esperado</div></div>
+        <div class="choice-check"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Q3.4 Maintenance -->
+  <div id="mant-section" style="display:none;">
+    <div class="q-title" style="margin-top:20px;">¿Requiere menos de 10 min/semana de gestión?</div>
+    <div class="q-insight">Todo objeto tiene un costo oculto en tiempo y atención. Los estudios de "complexity creep" muestran que la acumulación de objetos de alto mantenimiento reduce el bienestar neto incluso si el objeto es valioso. Limpia el costo real de posesión.</div>
+    <div class="choices">
+      <button class="choice-btn" data-mant="yes" onclick="logicSel(this,'mant',true)">
+        <div class="choice-icon" style="background:rgba(16,185,129,.07);">✓</div>
+        <div><div class="choice-title">Sí, bajo mantenimiento</div><div class="choice-sub">Menos de 10 min/semana de limpieza, carga, gestión, etc.</div></div>
+        <div class="choice-check"></div>
+      </button>
+      <button class="choice-btn" data-mant="no" onclick="logicSel(this,'mant',false)">
+        <div class="choice-icon" style="background:rgba(244,63,94,.07);">✗</div>
+        <div><div class="choice-title">No, requiere atención regular</div><div class="choice-sub">Más de 10 min/semana de mantenimiento, carga o gestión</div></div>
+        <div class="choice-check"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Q3.5 Opportunity cost -->
+  <div id="cap-section" style="display:none;">
+    <div class="q-title" style="margin-top:20px;">¿Invertir este capital rendiría más que el valor del artículo?</div>
+    <div class="q-insight">El dinero invertido en un instrumento compuesto (ETF, CETES, negocio) crece exponencialmente. Si el artículo no genera más valor del que generaría el capital invertido, la compra destruye riqueza futura. Regla: si el precio supera el 5% de tu capital líquido, aplica este filtro con seriedad.</div>
+    <div class="choices">
+      <button class="choice-btn" data-cap="no" onclick="logicSel(this,'cap',false)">
+        <div class="choice-icon" style="background:rgba(16,185,129,.07);">✓</div>
+        <div><div class="choice-title">No — el artículo vale más que la inversión</div><div class="choice-sub">El valor de uso supera el rendimiento compuesto esperado</div></div>
+        <div class="choice-check"></div>
+      </button>
+      <button class="choice-btn" data-cap="yes" onclick="logicSel(this,'cap',true)">
+        <div class="choice-icon" style="background:rgba(244,63,94,.07);">✗</div>
+        <div><div class="choice-title">Sí — el capital crecería más invertido</div><div class="choice-sub">El rendimiento compuesto superaría el valor del artículo</div></div>
+        <div class="choice-check"></div>
+      </button>
+    </div>
+  </div>
+
+  <div class="quiz-nav">
+    <button class="btn-g" onclick="step=2;renderStep()">← Atrás</button>
+    <span class="quiz-step-info">Paso 4 de 4</span>
+    <button class="btn-a" onclick="submitQuiz()">Ver Resultado →</button>
+  </div>`;
+}
+
+function attachLogicHandlers() {
+  calcCPU(quizData.precio_estimado || 0);
+}
+
+function logicSel(el, type, val) {
+  const map = { util: 'data-util', dry: 'data-dry', cpu: 'data-cpu', mant: 'data-mant', cap: 'data-cap' };
+  document.querySelectorAll(`[${map[type]}]`).forEach(b => {
+    b.classList.remove('selected','selected-no');
+    b.querySelector('.choice-check').innerHTML = '';
+  });
+  if (type === 'util') {
+    _util = val;
+    document.getElementById('dry-section').style.display = val ? '' : 'none';
+    if (!val) { _dry=null; _cpu=null; _mant=null; _cap=null; }
+  } else if (type === 'dry') {
+    _dry = val;
+    document.getElementById('cpu-section').style.display = !val ? '' : 'none';
+    if (val) { _cpu=null; _mant=null; _cap=null; }
+  } else if (type === 'cpu') {
+    _cpu = val;
+    quizData.q3_usos_mes = parseInt(document.getElementById('usos-input')?.value) || 1;
+    document.getElementById('mant-section').style.display = val ? '' : 'none';
+    if (!val) { _mant=null; _cap=null; }
+  } else if (type === 'mant') {
+    _mant = val;
+    document.getElementById('cap-section').style.display = val ? '' : 'none';
+    if (!val) _cap = null;
+  } else if (type === 'cap') {
+    _cap = val;
+  }
+  const isNo = (type==='util'&&!val)||(type==='dry'&&val)||(type==='cpu'&&!val)||(type==='mant'&&!val)||(type==='cap'&&val);
+  el.classList.add(isNo ? 'selected-no' : 'selected');
+  el.querySelector('.choice-check').innerHTML = '<i data-lucide="check" style="width:10px;height:10px;color:#09070F;"></i>';
+  lucide.createIcons();
+}
+
+function calcCPU(precio) {
+  const usos = parseInt(document.getElementById('usos-input')?.value) || 1;
+  _usos = usos;
+  const cpu = precio / usos;
+  const d = document.getElementById('cpu-display');
+  const v = document.getElementById('cpu-val');
+  const n = document.getElementById('cpu-note');
+  if (d) {
+    d.classList.add('visible');
+    v.textContent = '$' + cpu.toFixed(2) + ' MXN';
+    const annual = usos * 12;
+    let note = `Con ${usos} uso(s)/mes serían ~${annual} usos al año. `;
+    if (cpu < 20) note += 'Excelente ratio — artículo de alta frecuencia.';
+    else if (cpu < 100) note += 'Ratio aceptable — evalúa la calidad del valor por uso.';
+    else if (cpu < 500) note += 'Ratio elevado — asegúrate de que el valor justifique el precio.';
+    else note += 'Ratio muy alto — considera si el uso real es suficiente.';
+    n.textContent = note;
+  }
+}
+
+async function submitQuiz() {
+  if (_util === null) { toast('Responde si el artículo es útil', 'err'); return; }
+  if (_util && _dry === null) { toast('Responde el filtro DRY', 'err'); return; }
+  if (_util && !_dry && _cpu === null) { toast('Responde el cálculo de CPU', 'err'); return; }
+  if (_util && !_dry && _cpu && _mant === null) { toast('Responde la pregunta de mantenimiento', 'err'); return; }
+  if (_util && !_dry && _cpu && _mant && _cap === null) { toast('Responde el filtro de costo de oportunidad', 'err'); return; }
+
+  quizData.q3_es_util = _util;
+  quizData.q3_tiene_alternativa = _dry;
+  quizData.q3_usos_mes = _usos;
+  quizData.q3_cpu_ok = _cpu;
+  quizData.q3_mantenimiento_ok = _mant;
+  quizData.q3_costo_oportunidad_ok = _cap;
+
+  const r = await fetch(`/guardarropa/wishlist/api/item/${itemId}/quiz`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(quizData)
+  }).then(r => r.json());
+
+  if (!r.ok) { toast('Error al calcular protocolo', 'err'); return; }
+  quizData._result = r;
+  step = 4; renderStep();
+}
+
+// ── STEP 4: Result ─────────────────────────────────────────────────────────
+function stepResult() {
+  const r = quizData._result;
+  const score = r.score;
+  const rec = r.recomendacion;
+
+  const REC_META = {
+    compra_optima:       { cls:'rec-optima',   icon:'✅', title:'Adquisición Estratégica Óptima', desc:'El artículo supera todos los filtros del protocolo. La compra está científicamente justificada por utilidad, eficiencia económica y diseño de vida.', action:'Comprar' },
+    compra_limitada:     { cls:'rec-limitada', icon:'🔧', title:'Compra Limitada — Inversión Estratégica', desc:'Estado financiero inestable, pero el artículo es CapEx productivo. Procede con máxima austeridad: precio mínimo, financiamiento 0% o ahorro previo obligatorio.', action:'Comprar con austeridad' },
+    reevaluar:           { cls:'rec-reevaluar',icon:'⚠️', title:'Re-evaluar o Rechazar', desc:'El artículo tiene mérito pero el costo en tiempo de mantenimiento es significativo. Busca una alternativa de menor complejidad o espera a tener más claridad.', action:'Pendiente — Re-evaluar' },
+    no_compres:          { cls:'rec-no',       icon:'✗',  title:'No Compres', desc:'El artículo no superó los filtros del algoritmo lógico. Comprar sería una pérdida de capital real. Guarda este análisis y revisítalo en 30 días si el deseo persiste.', action:'Descartar' },
+    bloqueo_supervivencia:{ cls:'rec-bloqueo', icon:'🚫', title:'Bloqueo por Supervivencia', desc:'Estado financiero inestable + gasto de ocio. Esta compra comprometería tu estabilidad financiera. Prioridad absoluta: liquidar pasivos y construir reserva de emergencia primero.', action:'Descartar' },
+    glitch_emocional:    { cls:'rec-glitch',   icon:'⚡', title:'Glitch Emocional Detectado', desc:'El deseo desaparece en ausencia de estímulos externos. No es una necesidad real — es una respuesta dopamínica a marketing o entorno de consumo. Libera el deseo.', action:'Descartar' },
+  };
+
+  const meta = REC_META[rec] || REC_META['no_compres'];
+  const isPositive = rec === 'compra_optima' || rec === 'compra_limitada';
+  const scoreColor = score >= 70 ? '#10b981' : score >= 45 ? '#C9A84C' : '#f43f5e';
+  const circum = 2 * Math.PI * 52;
+  const offset = circum - (score / 100) * circum;
+
+  const reasonsHtml = r.razones.map(rs => {
+    const isPass = rs.startsWith('✓') || rs.startsWith('El valor') || rs.startsWith('No tienes') || rs.startsWith('Útil') || rs.startsWith('Bajo') || rs.startsWith('El deseo persiste') || rs.startsWith('Deseo verificado') || rs.startsWith('Costo por uso favorable') || rs.startsWith('Estado financiero');
+    const isWarn = rs.startsWith('△') || rs.startsWith('Deseo de') || rs.startsWith('Estado inestable');
+    const cls = isPass ? 'pass' : isWarn ? 'warn' : 'fail';
+    const icon = cls === 'pass' ? '✓' : cls === 'warn' ? '△' : '✗';
+    const clean = rs.replace(/^[✓△✗]\s*/, '');
+    return `<div class="reason-item ${cls}"><span class="reason-icon">${icon}</span><span>${clean}</span></div>`;
+  }).join('');
+
+  return `
+  <div class="result-card">
+    <div class="score-ring-wrap">
+      <svg class="score-ring" viewBox="0 0 120 120" width="130" height="130">
+        <circle class="score-ring-bg" cx="60" cy="60" r="52"/>
+        <circle class="score-ring-fill" cx="60" cy="60" r="52"
+          stroke="${scoreColor}"
+          stroke-dasharray="${circum}"
+          stroke-dashoffset="${circum}"
+          id="ring-fill"/>
+      </svg>
+      <div class="score-center">
+        <div class="score-val" style="color:${scoreColor};">${score}</div>
+        <div class="score-lbl">Score</div>
+      </div>
+    </div>
+
+    <div class="rec-badge ${meta.cls}" style="margin:0 auto 14px;">${meta.icon} ${meta.title}</div>
+    <div class="rec-desc">${meta.desc}</div>
+
+    <div class="reasons-list">${reasonsHtml}</div>
+
+    <div class="result-actions">
+      ${isPositive
+        ? `<button class="btn-accept" onclick="decide('comprado',false,'${meta.action}')"><i data-lucide="shopping-bag" style="width:14px;height:14px;"></i>${meta.action}</button>`
+        : `<button class="btn-discard" onclick="decide('descartado',false,'${meta.action}')"><i data-lucide="x" style="width:14px;height:14px;"></i>${meta.action}</button>`
+      }
+      ${!isPositive
+        ? `<button class="btn-override" onclick="decide('pendiente',true,'Agregar de todas formas')"><i data-lucide="plus" style="width:14px;height:14px;"></i>Agregar de todas formas</button>`
+        : `<button class="btn-override" onclick="decide('pendiente',false,'Guardar pendiente')"><i data-lucide="clock" style="width:14px;height:14px;"></i>Guardar pendiente</button>`
+      }
+    </div>
+
+    <!-- EC Card (loaded async) -->
+    <div id="ec-card-wrap" style="margin-top:4px;"></div>
+  </div>`;
+}
+
+// Carga asíncrona del EC card una vez que se renderiza el resultado
+async function loadECCard() {
+  const precio = quizData.precio_estimado || 0;
+  if (!precio) return;
+  const data = await fetch(`/guardarropa/wishlist/api/ec-status?precio=${precio}`).then(r => r.json());
+  const wrap = document.getElementById('ec-card-wrap');
+  if (!wrap) return;
+
+  const { balance, ec_rate, ec_sugerido, puede_pagar, pct_balance } = data;
+  const pct = Math.min(pct_balance || 0, 100);
+  const pctDisplay = pct_balance !== null ? pct_balance + '%' : '—';
+
+  let alertHtml, alertCls;
+  if (ec_sugerido === 0) {
+    alertCls = 'warn';
+    alertHtml = `<i data-lucide="info" style="width:14px;height:14px;"></i><span>El artículo no tiene precio registrado. Edita el precio para calcular el EC necesario.</span>`;
+  } else if (puede_pagar && pct_balance <= 30) {
+    alertCls = 'ok';
+    alertHtml = `<i data-lucide="check-circle" style="width:14px;height:14px;"></i><span>Tienes EC suficientes y la compra usa solo el <strong>${pctDisplay}</strong> de tu balance — decisión financieramente prudente dentro del sistema.</span>`;
+  } else if (puede_pagar && pct_balance <= 60) {
+    alertCls = 'warn';
+    alertHtml = `<i data-lucide="alert-triangle" style="width:14px;height:14px;"></i><span>Puedes pagar, pero usarías el <strong>${pctDisplay}</strong> de tu balance EC. Considera si merece ese porcentaje de tu esfuerzo acumulado.</span>`;
+  } else if (puede_pagar) {
+    alertCls = 'warn';
+    alertHtml = `<i data-lucide="alert-triangle" style="width:14px;height:14px;"></i><span>La compra consumiría <strong>${pctDisplay}</strong> de tu balance EC — más de la mitad de tu esfuerzo acumulado. Evalúa si el artículo lo justifica.</span>`;
+  } else {
+    const falta = ec_sugerido - balance;
+    alertCls = 'no';
+    alertHtml = `<i data-lucide="x-circle" style="width:14px;height:14px;"></i><span>Te faltan <strong>${falta} EC</strong> para completar esta compra. Sigue acumulando puntos — con actividad diaria lo alcanzas en días.</span>`;
+  }
+
+  wrap.innerHTML = `
+  <div class="ec-card">
+    <div class="ec-card-hd">
+      <div class="ec-card-icon">🪙</div>
+      <div>
+        <div class="ec-card-title">¿Comprar con Euda-Credits (EC)?</div>
+        <div class="ec-card-sub">Gamificación · Tasa: 1 EC = $${ec_rate} MXN</div>
+      </div>
+    </div>
+
+    <div class="ec-row">
+      <div class="ec-stat">
+        <div class="ec-stat-v">${balance.toLocaleString('es-MX')}</div>
+        <div class="ec-stat-l">Tu balance EC</div>
+      </div>
+      <div class="ec-stat">
+        <div class="ec-stat-v" style="color:${puede_pagar?'var(--gold)':'var(--coral)'};">${ec_sugerido.toLocaleString('es-MX')}</div>
+        <div class="ec-stat-l">EC Sugerido</div>
+      </div>
+      <div class="ec-stat">
+        <div class="ec-stat-v" style="color:${pct<=30?'var(--green)':pct<=60?'var(--gold)':'var(--coral)'};">${pctDisplay}</div>
+        <div class="ec-stat-l">Del balance</div>
+      </div>
+    </div>
+
+    ${pct_balance !== null ? `
+    <div class="ec-bar-wrap">
+      <div class="ec-bar-lbl"><span>0 EC</span><span>${balance} EC total</span></div>
+      <div class="ec-bar"><div class="ec-bar-fill" style="width:${pct}%;background:${pct<=30?'var(--green)':pct<=60?'#C9A84C':'var(--coral)'};"></div></div>
+    </div>` : ''}
+
+    <div class="ec-alert ${alertCls}">${alertHtml}</div>
+
+    <div class="ec-rate-note">
+      <i data-lucide="info" style="width:11px;height:11px;opacity:.5;"></i>
+      $${parseFloat(precio).toLocaleString('es-MX',{minimumFractionDigits:0})} MXN ÷ $${ec_rate}/EC = <strong style="color:var(--gold);margin-left:3px;">${ec_sugerido} EC sugeridos</strong>
+    </div>
+
+    <button class="btn-ec-buy" ${puede_pagar?'':'disabled'} onclick="comprarConEC(${ec_sugerido})">
+      <i data-lucide="coins" style="width:14px;height:14px;"></i>
+      ${puede_pagar ? `Comprar con ${ec_sugerido} EC` : `EC insuficientes (necesitas ${ec_sugerido - balance} más)`}
+    </button>
+  </div>`;
+  lucide.createIcons();
+}
+
+function decide(decision, override, label) {
+  fetch(`/guardarropa/wishlist/api/item/${itemId}/decide`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ decision, override })
+  }).then(() => {
+    toast(label + ' — guardado en tu wishlist');
+    resetQuiz();
+    switchTab('list');
+  });
+}
+
+async function comprarConEC(ecCantidad) {
+  const r = await fetch(`/guardarropa/wishlist/api/item/${itemId}/comprar-ec`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ ec_cantidad: ecCantidad })
+  }).then(r => r.json());
+  if (!r.ok) { toast(r.error || 'Error al procesar EC', 'err'); return; }
+  toast(`🪙 ${r.ec_gastado} EC deducidos — Nuevo balance: ${r.nuevo_balance} EC`);
+  resetQuiz();
+  switchTab('list');
+}
+
+function resetQuiz() {
+  step = 0; itemId = null; quizData = {};
+  _days=null; _calm=null; _sol=null; _cls=null;
+  _util=null; _dry=null; _usos=1; _cpu=null; _mant=null; _cap=null;
+  renderStep();
+}
+
+// Animate ring + load EC card after result render
+const _origRenderStep = renderStep;
+window.renderStep = function() {
+  _origRenderStep();
+  if (step === 4) {
+    requestAnimationFrame(() => {
+      const ring = document.getElementById('ring-fill');
+      if (ring) {
+        const score = quizData._result?.score || 0;
+        const circum = 2 * Math.PI * 52;
+        const offset = circum - (score / 100) * circum;
+        requestAnimationFrame(() => { ring.style.strokeDashoffset = offset; });
+      }
+      loadECCard();
+    });
+  }
+};
+
+// ── Wishlist list ──────────────────────────────────────────────────────────
+function setFilter(el, f) {
+  listFilter = f;
+  document.querySelectorAll('.wl-f').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+  loadList();
+}
+
+async function loadList() {
+  const url = '/guardarropa/wishlist/api/items' + (listFilter ? '?estado=' + listFilter : '');
+  allItems = await fetch(url).then(r => r.json());
+  renderList();
+  updateStats();
+}
+
+function renderList() {
+  const container = document.getElementById('wl-list');
+  if (!allItems.length) {
+    container.innerHTML = `<div class="wl-empty"><svg data-lucide="package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"></svg><p>No hay artículos en tu wishlist</p></div>`;
+    lucide.createIcons(); return;
+  }
+
+  const REC_BADGE = {
+    compra_optima:        'wl-b-ok',
+    compra_limitada:      'wl-b-pend',
+    reevaluar:            'wl-b-pend',
+    no_compres:           'wl-b-no',
+    bloqueo_supervivencia:'wl-b-no',
+    glitch_emocional:     'wl-b-no',
+  };
+  const REC_LABEL = {
+    compra_optima:'Óptima', compra_limitada:'Limitada', reevaluar:'Re-evaluar',
+    no_compres:'No Comprar', bloqueo_supervivencia:'Bloqueo', glitch_emocional:'Glitch',
+  };
+  const ESTADO_BADGE = { evaluando:'wl-b-eval', pendiente:'wl-b-pend', comprado:'wl-b-comp', descartado:'wl-b-desc' };
+  const ESTADO_LABEL = { evaluando:'Evaluando', pendiente:'Pendiente', comprado:'Comprado', descartado:'Descartado' };
+
+  container.innerHTML = `<div class="wl-grid">${allItems.map(it => {
+    const score = it.score;
+    const hasScore = score !== null;
+    const scoreColor = !hasScore ? 'var(--dim)' : score >= 70 ? '#10b981' : score >= 45 ? '#C9A84C' : '#f43f5e';
+    const circum = 2 * Math.PI * 16;
+    const offset = hasScore ? circum - (score / 100) * circum : circum;
+    const recBadge = it.recomendacion ? `<span class="wl-badge ${REC_BADGE[it.recomendacion]||'wl-b-eval'}">${REC_LABEL[it.recomendacion]||it.recomendacion}</span>` : '';
+    const overBadge = it.decision_override ? `<span class="wl-badge wl-b-over wl-b-pend">override</span>` : '';
+    const precio = it.precio_estimado ? '$' + parseFloat(it.precio_estimado).toLocaleString('es-MX', {minimumFractionDigits:0}) : '—';
+    return `
+    <div class="wl-item">
+      <div class="wl-score-ring">
+        <svg viewBox="0 0 44 44" width="44" height="44" style="transform:rotate(-90deg)">
+          <circle fill="none" stroke="var(--b)" stroke-width="3" cx="22" cy="22" r="16"/>
+          <circle fill="none" stroke="${scoreColor}" stroke-width="3" stroke-linecap="round"
+            cx="22" cy="22" r="16"
+            stroke-dasharray="${circum}"
+            stroke-dashoffset="${offset}"
+            style="transition:stroke-dashoffset .6s;"/>
+        </svg>
+      </div>
+      <div style="min-width:0;">
+        <div class="wl-item-name">${it.nombre}</div>
+        <div class="wl-item-meta">${it.categoria||'—'} ${it.marca ? '· '+it.marca : ''} ${hasScore ? '· Score: '+score : '· Sin evaluar'}</div>
+        <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;">
+          <span class="wl-badge ${ESTADO_BADGE[it.estado]||'wl-b-eval'}">${ESTADO_LABEL[it.estado]||it.estado}</span>
+          ${recBadge}${overBadge}
+          ${it.comprar_con_ec ? `<span class="ec-spent-badge">🪙 ${it.ec_pagado} EC</span>` : ''}
+        </div>
+      </div>
+      <div>
+        <div class="wl-item-price">${precio}</div>
+        <div class="wl-item-sub">MXN</div>
+      </div>
+      <div class="wl-item-actions">
+        ${it.estado !== 'comprado' ? `<button class="btn-gr" title="Marcar como comprado" onclick="markItem(${it.id},'comprado')"><i data-lucide="check" style="width:11px;height:11px;"></i></button>` : ''}
+        ${it.estado !== 'descartado' ? `<button class="btn-r" title="Descartar" onclick="markItem(${it.id},'descartado')"><i data-lucide="x" style="width:11px;height:11px;"></i></button>` : ''}
+        <button class="btn-r" title="Eliminar" onclick="deleteItem(${it.id})"><i data-lucide="trash-2" style="width:11px;height:11px;"></i></button>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+  lucide.createIcons();
+}
+
+async function markItem(id, estado) {
+  await fetch(`/guardarropa/wishlist/api/item/${id}/decide`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ decision: estado })
+  });
+  toast(estado === 'comprado' ? '✓ Marcado como comprado' : '✗ Descartado');
+  loadList();
+}
+
+async function deleteItem(id) {
+  if (!confirm('¿Eliminar este artículo de tu wishlist?')) return;
+  await fetch(`/guardarropa/wishlist/api/item/${id}`, { method:'DELETE' });
+  toast('Artículo eliminado');
+  loadList();
+}
+
+function updateStats() {
+  const all = allItems;
+  const comp = all.filter(i => i.estado === 'comprado');
+  const rej = all.filter(i => i.estado === 'descartado');
+  const saved = rej.reduce((s,i) => s + (i.precio_estimado || 0), 0);
+  document.getElementById('stat-total').textContent = all.length;
+  document.getElementById('stat-comp').textContent = comp.length;
+  document.getElementById('stat-rej').textContent = rej.length;
+  document.getElementById('stat-saved').textContent = saved ? '$' + saved.toLocaleString('es-MX', {minimumFractionDigits:0}) : '—';
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderStep();
+loadList().then(() => {});
+</script>
+{% endblock %}

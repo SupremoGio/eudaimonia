@@ -125,8 +125,20 @@ function SideNav({ active, onChange }) {
 // ── App ───────────────────────────────────────────────────
 function App() {
   const [state, dispatch] = useReducer(reducer, null, initFromServer);
-  const [tab, setTab] = useState('home');
+  const [tab, setTab] = useState(() => {
+    const p = new URLSearchParams(window.location.search);
+    const t = p.get('tab');
+    return ['home','modules','gtd','profile'].includes(t) ? t : 'home';
+  });
   const isDesktop = useIsDesktop();
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const open = p.get('open');
+    if (open && state.modules.find(m => m.id === open)) {
+      dispatch({ type: 'OPEN_MODULE', id: open });
+    }
+  }, []);
 
   const appDispatch = (action) => {
     if (action.type === 'SET_TAB') setTab(action.tab);

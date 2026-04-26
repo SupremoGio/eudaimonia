@@ -189,6 +189,18 @@
   {% block head %}{% endblock %}
 </head>
 
+{% set _pm = {
+  'finanzas':    ('oikonomia',      'OIKONOMIA'),
+  'nutricion':   ('hegemonikon',    'HEGEMONIKON'),
+  'perfil':      ('hegemonikon',    'HEGEMONIKON'),
+  'recetas':     ('hegemonikon',    'HEGEMONIKON'),
+  'guardarropa': ('hegemonikon',    'HEGEMONIKON'),
+  'idiomas':     ('cosmopolitismo', 'COSMOPOLITISMO'),
+  'gtd':         ('ataraxia',       'ATARAXIA'),
+  'sabado':      ('ataraxia',       'ATARAXIA'),
+  'prioridades': ('oikonomia',      'OIKONOMIA'),
+} %}
+
 <body class="bg-[#09070F] text-[#F2EDE0] font-sans antialiased min-h-screen">
 
 <!-- TOPBAR -->
@@ -196,8 +208,8 @@
         style="background:rgba(9,7,15,0.97); border-bottom:1px solid rgba(201,168,76,0.1); backdrop-filter:blur(12px);">
   <div class="flex items-center justify-between px-4 md:px-6" style="height:56px;">
     <div class="flex items-center gap-3">
-      <a href="/" style="font-family:'DM Sans',sans-serif; font-size:9px; letter-spacing:0.22em; color:#C9A84C; opacity:0.6; text-transform:uppercase; text-decoration:none;">
-        ← EUDAIMONIA
+      <a href="/?tab=modules" style="font-family:'DM Sans',sans-serif; font-size:9px; letter-spacing:0.22em; color:#C9A84C; opacity:0.6; text-transform:uppercase; text-decoration:none;">
+        ← Módulos
       </a>
       <span style="color:rgba(201,168,76,0.2); font-size:10px;">/</span>
       <span style="font-family:'Cormorant Garamond',serif; font-size:16px; color:#F2EDE0; letter-spacing:0.08em; font-weight:600;">
@@ -208,6 +220,12 @@
       <span style="font-size:.5rem; color:#A89880; letter-spacing:.08em; text-transform:uppercase;">
         {% block topright %}{% endblock %}
       </span>
+      {% if pg is defined and pg in _pm %}
+      <a href="/?tab=modules&open={{ _pm[pg][0] }}"
+         style="font-family:'DM Sans',sans-serif; font-size:9px; letter-spacing:0.22em; color:#C9A84C; opacity:0.6; text-transform:uppercase; text-decoration:none; margin-left:8px;">
+        {{ _pm[pg][1] }} →
+      </a>
+      {% endif %}
     </div>
   </div>
 </header>

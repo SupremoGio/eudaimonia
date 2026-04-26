@@ -328,6 +328,98 @@ def init_db():
             created_at TEXT    NOT NULL
         );
 
+        -- ── GUARDARROPA ──────────────────────────────────────────────────────
+        CREATE TABLE IF NOT EXISTS wardrobe_items (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre       TEXT    NOT NULL,
+            categoria    TEXT    NOT NULL DEFAULT 'Camisa',
+            subcategoria TEXT    DEFAULT '',
+            color_hex    TEXT    DEFAULT '#C9A84C',
+            color_name   TEXT    DEFAULT '',
+            marca        TEXT    DEFAULT '',
+            ocasion      TEXT    DEFAULT '',
+            temporada    TEXT    DEFAULT 'todo',
+            estado       TEXT    DEFAULT 'bueno',
+            precio       REAL    DEFAULT 0,
+            veces_usado  INTEGER DEFAULT 0,
+            foto         TEXT    DEFAULT '',
+            notas        TEXT    DEFAULT '',
+            activo       INTEGER DEFAULT 1,
+            created_at   TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS outfits (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre     TEXT    NOT NULL,
+            ocasion    TEXT    DEFAULT '',
+            rating     INTEGER DEFAULT 0,
+            foto       TEXT    DEFAULT '',
+            notas      TEXT    DEFAULT '',
+            created_at TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS outfit_items (
+            outfit_id  INTEGER NOT NULL,
+            item_id    INTEGER NOT NULL,
+            PRIMARY KEY (outfit_id, item_id),
+            FOREIGN KEY (outfit_id) REFERENCES outfits(id),
+            FOREIGN KEY (item_id) REFERENCES wardrobe_items(id)
+        );
+
+        -- ── WISHLIST / PROTOCOLO DE COMPRA ───────────────────────────────────
+        CREATE TABLE IF NOT EXISTS wishlist_items (
+            id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre                  TEXT    NOT NULL,
+            categoria               TEXT    DEFAULT '',
+            precio_estimado         REAL    DEFAULT 0,
+            descripcion             TEXT    DEFAULT '',
+            url                     TEXT    DEFAULT '',
+            marca                   TEXT    DEFAULT '',
+            -- Phase 1: Dopamine firewall
+            dias_deseo              INTEGER DEFAULT NULL,
+            q1_persiste             INTEGER DEFAULT NULL,
+            -- Phase 2: Solvency
+            q2_estado_financiero    TEXT    DEFAULT NULL,
+            q2_clasificacion        TEXT    DEFAULT NULL,
+            -- Phase 3: Logic algorithm
+            q3_es_util              INTEGER DEFAULT NULL,
+            q3_tiene_alternativa    INTEGER DEFAULT NULL,
+            q3_usos_mes             REAL    DEFAULT NULL,
+            q3_cpu_ok               INTEGER DEFAULT NULL,
+            q3_mantenimiento_ok     INTEGER DEFAULT NULL,
+            q3_costo_oportunidad_ok INTEGER DEFAULT NULL,
+            -- Result
+            score                   INTEGER DEFAULT NULL,
+            recomendacion           TEXT    DEFAULT NULL,
+            razon_recomendacion     TEXT    DEFAULT '',
+            -- Decision
+            estado                  TEXT    DEFAULT 'evaluando',
+            decision_override       INTEGER DEFAULT 0,
+            notas_decision          TEXT    DEFAULT '',
+            purchased_at            TEXT    DEFAULT NULL,
+            created_at              TEXT    NOT NULL,
+            updated_at              TEXT    DEFAULT NULL
+        );
+
+        -- ── RECETAS ──────────────────────────────────────────────────────────
+        CREATE TABLE IF NOT EXISTS recetas (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre         TEXT    NOT NULL,
+            categoria      TEXT    DEFAULT 'Almuerzo',
+            descripcion    TEXT    DEFAULT '',
+            ingredientes   TEXT    DEFAULT '[]',
+            instrucciones  TEXT    DEFAULT '[]',
+            calorias       INTEGER DEFAULT 0,
+            proteina       REAL    DEFAULT 0,
+            carbos         REAL    DEFAULT 0,
+            grasa          REAL    DEFAULT 0,
+            tiempo_prep    INTEGER DEFAULT 0,
+            tiempo_coccion INTEGER DEFAULT 0,
+            porciones      INTEGER DEFAULT 1,
+            video_url      TEXT    DEFAULT '',
+            tags           TEXT    DEFAULT '',
+            favorita       INTEGER DEFAULT 0,
+            created_at     TEXT    NOT NULL
+        );
+
         -- ── NUTRICION ───────────────────────────────────────────────────────
         CREATE TABLE IF NOT EXISTS meal_plan (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -401,6 +493,20 @@ def init_db():
             end_date        TEXT    DEFAULT NULL,
             created_at      TEXT    NOT NULL
         );
+
+        -- ── RECORDATORIOS ────────────────────────────────────────────────────
+        CREATE TABLE IF NOT EXISTS reminders (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            description TEXT    NOT NULL,
+            type        TEXT    NOT NULL DEFAULT 'unico',
+            freq_unit   TEXT    DEFAULT '',
+            freq_value  INTEGER DEFAULT 1,
+            target_date TEXT    DEFAULT NULL,
+            next_date   TEXT    DEFAULT NULL,
+            last_done   TEXT    DEFAULT NULL,
+            is_active   INTEGER DEFAULT 1,
+            created_at  TEXT    NOT NULL
+        );
         """)
 
         # ── Migrate gtd_tasks ────────────────────────────────────────────────
@@ -452,16 +558,30 @@ def init_db():
             db.executemany(
                 "INSERT INTO personal_info (key, label, value, private) VALUES (?,?,?,?)",
                 [
-                    ("nombre",   "Nombre Completo",    "— editar —", 0),
-                    ("rfc",      "RFC",                 "— editar —", 1),
-                    ("curp",     "CURP",                "— editar —", 1),
-                    ("nss",      "NSS (IMSS)",          "— editar —", 1),
-                    ("telefono", "Teléfono",            "— editar —", 0),
-                    ("email",    "Email",               "— editar —", 0),
-                    ("clabe",    "CLABE bancaria",      "— editar —", 1),
-                    ("direccion","Dirección",           "— editar —", 0),
+                    ("nombre",         "Nombre Completo",    "— editar —", 0),
+                    ("rfc",            "RFC",                 "— editar —", 1),
+                    ("curp",           "CURP",                "— editar —", 1),
+                    ("nss",            "NSS (IMSS)",          "— editar —", 1),
+                    ("telefono",       "Teléfono",            "— editar —", 0),
+                    ("email",          "Email",               "— editar —", 0),
+                    ("clabe",          "CLABE bancaria",      "— editar —", 1),
+                    ("direccion",      "Dirección",           "— editar —", 0),
+                    ("fecha_nac",      "Fecha de Nacimiento", "— editar —", 0),
+                    ("poliza_seguro",  "Póliza de Seguro",    "— editar —", 1),
                 ]
             )
+
+        # Add poliza_seguro if missing (existing DBs)
+        try:
+            keys = [r["key"] for r in db.execute("SELECT key FROM personal_info").fetchall()]
+            if "poliza_seguro" not in keys:
+                db.execute(
+                    "INSERT INTO personal_info (key, label, value, private) VALUES (?,?,?,?)",
+                    ("poliza_seguro", "Póliza de Seguro", "— editar —", 1)
+                )
+                db.commit()
+        except Exception as e:
+            print(f"[DB] poliza_seguro seed warning: {e}")
 
         # Seed budget categories
         if db.execute("SELECT COUNT(*) as c FROM budget_categories").fetchone()["c"] == 0:
@@ -588,6 +708,52 @@ def init_db():
             created_at   TEXT    NOT NULL,
             FOREIGN KEY(producto_id) REFERENCES consumo_productos(id)
         );
+
+        -- ── SALUD FINANCIERA ─────────────────────────────────────────────────
+        CREATE TABLE IF NOT EXISTS salud_cuentas (
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre               TEXT    NOT NULL,
+            tipo                 TEXT    NOT NULL,
+            institucion          TEXT    DEFAULT '',
+            saldo                REAL    DEFAULT 0,
+            moneda               TEXT    DEFAULT 'MXN',
+            color                TEXT    DEFAULT '#C9A84C',
+            activa               INTEGER DEFAULT 1,
+            ultima_actualizacion TEXT    DEFAULT NULL,
+            notas                TEXT    DEFAULT '',
+            created_at           TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS salud_saldos_historial (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            cuenta_id   INTEGER NOT NULL,
+            saldo       REAL    NOT NULL,
+            fecha       TEXT    NOT NULL,
+            nota        TEXT    DEFAULT '',
+            created_at  TEXT    NOT NULL,
+            FOREIGN KEY(cuenta_id) REFERENCES salud_cuentas(id)
+        );
+        CREATE TABLE IF NOT EXISTS salud_bienes (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre         TEXT    NOT NULL,
+            categoria      TEXT    NOT NULL,
+            descripcion    TEXT    DEFAULT '',
+            precio_compra  REAL    DEFAULT 0,
+            valor_actual   REAL    DEFAULT 0,
+            fecha_compra   TEXT    DEFAULT '',
+            lugar_compra   TEXT    DEFAULT '',
+            garantia_hasta TEXT    DEFAULT '',
+            notas          TEXT    DEFAULT '',
+            activo         INTEGER DEFAULT 1,
+            created_at     TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS salud_patrimonio_log (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            total_activos   REAL    NOT NULL,
+            total_pasivos   REAL    NOT NULL,
+            patrimonio_neto REAL    NOT NULL,
+            fecha           TEXT    NOT NULL,
+            created_at      TEXT    NOT NULL
+        );
         """)
 
         # Seed productos iniciales
@@ -658,6 +824,43 @@ def init_db():
                 ]
             )
             db.commit()
+
+        # Migrate lista_prioridades: add protocol columns if missing
+        try:
+            lp_cols = [r["name"] for r in db.execute("PRAGMA table_info(lista_prioridades)").fetchall()]
+            if "protocolo_score" not in lp_cols:
+                db.execute("ALTER TABLE lista_prioridades ADD COLUMN protocolo_score INTEGER DEFAULT NULL")
+            if "protocolo_rec" not in lp_cols:
+                db.execute("ALTER TABLE lista_prioridades ADD COLUMN protocolo_rec TEXT DEFAULT NULL")
+            if "comprar_con_ec" not in lp_cols:
+                db.execute("ALTER TABLE lista_prioridades ADD COLUMN comprar_con_ec INTEGER DEFAULT 0")
+            if "ec_pagado" not in lp_cols:
+                db.execute("ALTER TABLE lista_prioridades ADD COLUMN ec_pagado INTEGER DEFAULT 0")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] lista_prioridades protocol migration warning: {e}")
+
+        # Migrate wishlist_items: add EC columns if missing
+        try:
+            wl_cols = [r["name"] for r in db.execute("PRAGMA table_info(wishlist_items)").fetchall()]
+            if "comprar_con_ec" not in wl_cols:
+                db.execute("ALTER TABLE wishlist_items ADD COLUMN comprar_con_ec INTEGER DEFAULT 0")
+            if "ec_sugerido" not in wl_cols:
+                db.execute("ALTER TABLE wishlist_items ADD COLUMN ec_sugerido INTEGER DEFAULT NULL")
+            if "ec_pagado" not in wl_cols:
+                db.execute("ALTER TABLE wishlist_items ADD COLUMN ec_pagado INTEGER DEFAULT 0")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] wishlist EC migration warning: {e}")
+
+        # Migrate profile_docs: add field_key column if missing
+        try:
+            pd_cols = [r["name"] for r in db.execute("PRAGMA table_info(profile_docs)").fetchall()]
+            if "field_key" not in pd_cols:
+                db.execute("ALTER TABLE profile_docs ADD COLUMN field_key TEXT DEFAULT NULL")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] profile_docs migration warning: {e}")
 
         # Migrate activity_logs: add xp column if not present (legacy support)
         try:
@@ -731,26 +934,32 @@ def get_gtd_streak():
 
 
 def get_gtd_stats():
+    # Deferred import to avoid circular dependency (engine.py imports database.py)
+    from modules.gamification.engine import get_level_info, get_gamification_streak
+
     today       = date.today().isoformat()
     week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
     month_start = date.today().replace(day=1).isoformat()
-    LEVELS = ["","PROKOPTON","EFEBO","ASQUETÉS","ESTRATEGOS","AUTARKÉS",
-              "POLÍMATA","ARETÉ","HEGEMÓN","SOPHOS","EUDAIMÓN"]
     with get_db() as db:
-        pts_today  = db.execute("SELECT COALESCE(SUM(points_earned),0) as s FROM gtd_points_log WHERE date=?",  (today,)).fetchone()["s"]
-        pts_week   = db.execute("SELECT COALESCE(SUM(points_earned),0) as s FROM gtd_points_log WHERE date>=?", (week_start,)).fetchone()["s"]
-        pts_month  = db.execute("SELECT COALESCE(SUM(points_earned),0) as s FROM gtd_points_log WHERE date>=?", (month_start,)).fetchone()["s"]
-        pts_total  = db.execute("SELECT COALESCE(SUM(points_earned),0) as s FROM gtd_points_log").fetchone()["s"]
+        # XP contributed by PRAXIS tasks to the main ledger
+        pts_today  = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE source='task' AND date=?",  (today,)).fetchone()["s"]
+        pts_week   = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE source='task' AND date>=?", (week_start,)).fetchone()["s"]
+        pts_month  = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE source='task' AND date>=?", (month_start,)).fetchone()["s"]
+        pts_total  = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE source='task'").fetchone()["s"]
+        # Global XP for level calculation (same source as main dashboard)
+        total_xp   = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger").fetchone()["s"]
         done_today = db.execute("SELECT COUNT(*) as c FROM gtd_tasks WHERE completed_at=?", (today,)).fetchone()["c"]
         inbox_n    = db.execute("SELECT COUNT(*) as c FROM gtd_tasks WHERE status='inbox'").fetchone()["c"]
         next_n     = db.execute("SELECT COUNT(*) as c FROM gtd_tasks WHERE status='next'").fetchone()["c"]
         proj_n     = db.execute("SELECT COUNT(*) as c FROM gtd_projects WHERE status='active'").fetchone()["c"]
-    streak     = get_gtd_streak()
-    level      = max(1, pts_total // 100)
-    level_name = LEVELS[min(level, 10)]
+    # Use the main gamification engine — same level thresholds and streak logic
+    streak     = get_gamification_streak()
+    level_info = get_level_info(total_xp)
     return dict(pts_today=pts_today, pts_week=pts_week, pts_month=pts_month, pts_total=pts_total,
-                done_today=done_today, inbox_n=inbox_n, next_n=next_n, proj_n=proj_n,
-                streak=streak, level=level, level_name=level_name, level_pct=pts_total % 100)
+                total_xp=total_xp, done_today=done_today, inbox_n=inbox_n, next_n=next_n, proj_n=proj_n,
+                streak=streak,
+                level=level_info["level"], level_name=level_info["level_name"],
+                level_pct=level_info["level_pct"], xp_to_next=level_info["xp_to_next"])
 
 
 def get_db_status():

@@ -15,7 +15,7 @@
   <div style="flex:1;">
     <div style="font-family:var(--serif);font-size:1.4rem;font-style:italic;margin-bottom:5px;">{{ stats.level_name }}</div>
     <div style="background:var(--b);border-radius:100px;height:5px;overflow:hidden;margin-bottom:5px;"><div style="width:{{ stats.level_pct }}%;height:100%;background:linear-gradient(90deg,var(--gold),#e8c88a);border-radius:100px;transition:width .8s;"></div></div>
-    <div style="font-size:.56rem;color:var(--dim);">{{ stats.level_pct }}% hacia Nivel {{ stats.level+1 }} — {{ 100-stats.level_pct }} pts restantes</div>
+    <div style="font-size:.56rem;color:var(--dim);">{{ stats.level_pct }}% hacia Nivel {{ stats.level+1 }} — {{ stats.xp_to_next }} XP restantes</div>
   </div>
   <div style="text-align:center;">
     <div style="font-family:var(--serif);font-size:2.2rem;color:var(--gold);font-style:italic;">{{ stats.streak }}</div>

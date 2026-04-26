@@ -124,6 +124,21 @@ def _build_eudaimonia_data():
             prev_d = dd
         weeks_active = len({date.fromisoformat(r['date']).isocalendar()[:2] for r in all_logs if r['date']})
 
+        # EC balance
+        ec_balance = max(0, int(db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM coins_ledger"
+        ).fetchone()['s'] or 0))
+
+        # Recordatorios activos (próximos 7 días)
+        reminders_rows = db.execute("""
+            SELECT id, description, type, freq_unit, freq_value, target_date, next_date
+            FROM reminders
+            WHERE is_active=1
+            AND COALESCE(next_date, target_date, '9999-12-31') <= ?
+            ORDER BY COALESCE(next_date, target_date)
+            LIMIT 5
+        """, ((date.today() + timedelta(days=7)).isoformat(),)).fetchall()
+
         # Idiomas: test results más recientes por idioma
         lang_rows = db.execute(
             "SELECT test_type, score, test_date FROM lang_test_results ORDER BY test_date DESC LIMIT 10"
@@ -217,6 +232,9 @@ def _build_eudaimonia_data():
         'pts_month':    pts_month_val,
         'max_streak':   max_streak,
         'weeks_active': weeks_active,
+        'word_of_day':  get_word_of_day(),
+        'reminders':    [dict(r) for r in reminders_rows],
+        'ec_balance':   ec_balance,
     }
 
 

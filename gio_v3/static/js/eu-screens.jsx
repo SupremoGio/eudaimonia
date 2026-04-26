@@ -13,6 +13,168 @@ function fmtDate() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// WORD OF THE DAY
+// ═══════════════════════════════════════════════════════════
+function WordOfDay() {
+  const [word, setWord] = useState((window.EU._server || {}).word || null);
+  const [spinning, setSpinning] = useState(false);
+
+  if (!word) return null;
+
+  async function refresh() {
+    setSpinning(true);
+    try {
+      const r = await fetch('/gtd/api/word/refresh');
+      setWord(await r.json());
+    } catch(e) {}
+    setSpinning(false);
+  }
+
+  return (
+    <div style={{
+      background:'rgba(201,168,76,0.04)',
+      border:'1px solid rgba(201,168,76,0.1)',
+      borderRadius:12, padding:'16px 18px', marginBottom:14,
+    }}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase'}}>Word of the Day</div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,color:'#60a5fa',
+            background:'rgba(96,165,250,0.08)',border:'1px solid rgba(96,165,250,0.18)',
+            padding:'2px 8px',borderRadius:100,letterSpacing:'0.06em'}}>EN → FR</span>
+          <button onClick={refresh} style={{
+            background:'transparent',border:'none',cursor:'pointer',
+            color:C.textMuted,fontSize:16,padding:0,lineHeight:1,
+            display:'inline-flex',alignItems:'center',
+            transform:spinning?'rotate(180deg)':'rotate(0deg)',
+            transition:'transform 0.4s ease',
+          }}>↻</button>
+        </div>
+      </div>
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,marginBottom:2,letterSpacing:'0.04em'}}>
+        {word.phonetic}
+      </div>
+      <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
+        fontSize:28,fontWeight:300,color:'#eeeeff',lineHeight:1,marginBottom:10}}>
+        {word.word}
+      </div>
+      <div style={{height:1,background:'linear-gradient(90deg,rgba(201,168,76,0.4),transparent)',marginBottom:10}}/>
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textMuted,lineHeight:1.55,marginBottom:8}}>
+        {word.meaning}
+      </div>
+      <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',fontSize:12,
+        color:C.textMuted,borderLeft:'2px solid rgba(201,168,76,0.3)',
+        paddingLeft:10,marginBottom:10,lineHeight:1.55,opacity:0.75}}>
+        "{word.example}"
+      </div>
+      <span style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+        background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.16)',
+        color:C.gold,padding:'3px 9px',borderRadius:100,display:'inline-block'}}>
+        🇫🇷 {word.french}
+      </span>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// REMINDERS WIDGET
+// ═══════════════════════════════════════════════════════════
+function RemindersWidget() {
+  const initial = (window.EU._server || {}).reminders || [];
+  const [items, setItems] = useState(initial);
+
+  if (!items.length) return null;
+
+  const FREQ_LABELS = { dias: 'días', semanas: 'semanas', meses: 'meses' };
+
+  async function handleDone(id, type) {
+    setItems(prev => prev.map(r => r.id === id ? {...r, _loading: true} : r));
+    try {
+      const res = await fetch(`/perfil/api/reminder/${id}/done`, { method: 'POST' });
+      const j = await res.json();
+      if (j.ok) {
+        if (type === 'unico') {
+          setItems(prev => prev.filter(r => r.id !== id));
+        } else {
+          const res2 = await fetch('/perfil/api/reminders');
+          const all = await res2.json();
+          const today7 = new Date(); today7.setDate(today7.getDate() + 7);
+          const iso7 = today7.toISOString().slice(0, 10);
+          setItems(all.filter(r => {
+            const d = r.next_date || r.target_date || '9999-12-31';
+            return d <= iso7;
+          }).slice(0, 5));
+        }
+      }
+    } catch(e) {
+      setItems(prev => prev.map(r => r.id === id ? {...r, _loading: false} : r));
+    }
+  }
+
+  return (
+    <div style={{marginBottom:14}}>
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+        color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Recordatorios</div>
+      <div style={{
+        background:'rgba(201,168,76,0.03)',
+        border:'1px solid rgba(201,168,76,0.08)',
+        borderRadius:12, overflow:'hidden',
+      }}>
+        {items.map((r, i) => {
+          const dateStr = r.next_date || r.target_date || '';
+          const isPeriodic = r.type === 'periodico';
+          return (
+            <div key={r.id} style={{
+              display:'flex', alignItems:'center', gap:12,
+              padding:'12px 16px',
+              borderBottom: i < items.length - 1 ? '1px solid rgba(201,168,76,0.06)' : 'none',
+              opacity: r._loading ? 0.4 : 1, transition:'opacity 0.2s',
+            }}>
+              <button onClick={() => !r._loading && handleDone(r.id, r.type)} style={{
+                flexShrink:0, background:'none', border:'1.5px solid rgba(201,168,76,0.25)',
+                width:18, height:18, borderRadius:'50%', cursor:'pointer',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                transition:'border-color 0.15s, background 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(201,168,76,0.7)'; e.currentTarget.style.background='rgba(201,168,76,0.1)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(201,168,76,0.25)'; e.currentTarget.style.background='none'; }}
+              />
+              <div style={{flex:1, minWidth:0}}>
+                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,
+                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                  {r.description}
+                </div>
+                <div style={{display:'flex',gap:6,alignItems:'center',marginTop:3}}>
+                  {isPeriodic ? (
+                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
+                      background:'rgba(167,139,250,0.1)',border:'1px solid rgba(167,139,250,0.2)',
+                      color:'#a78bfa',padding:'1px 7px',borderRadius:100,letterSpacing:'0.06em'}}>
+                      cada {r.freq_value} {FREQ_LABELS[r.freq_unit] || r.freq_unit}
+                    </span>
+                  ) : (
+                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
+                      background:'rgba(96,165,250,0.08)',border:'1px solid rgba(96,165,250,0.15)',
+                      color:'#60a5fa',padding:'1px 7px',borderRadius:100,letterSpacing:'0.06em'}}>
+                      único
+                    </span>
+                  )}
+                  {dateStr && (
+                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>
+                      {dateStr}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // HOME SCREEN
 // ═══════════════════════════════════════════════════════════
 function HomeScreen({ appState, dispatch, isDesktop }) {
@@ -148,6 +310,12 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           <QuoteDisplay quote={quote}/>
         </div>
 
+        {/* ── WORD OF THE DAY ── */}
+        <WordOfDay/>
+
+        {/* ── RECORDATORIOS ── */}
+        <RemindersWidget/>
+
         {/* ── NEXT ACTIONS ── */}
         <div>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
@@ -215,25 +383,25 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
           <ModuleCard key={mod.id} mod={mod}
             onClick={() => dispatch({type:'OPEN_MODULE',id:mod.id})}/>
         ))}
-        {/* GTD card */}
-        <div onClick={() => dispatch({type:'SET_TAB',tab:'gtd'})}
+        {/* PRAXIS card — navigates to dedicated /gtd module */}
+        <a href="/gtd"
           style={{
             gridColumn:'1/-1',
             background:C.card,border:'1px solid rgba(201,168,76,0.14)',
             borderRadius:14,padding:'14px 15px',cursor:'pointer',
             display:'flex',justifyContent:'space-between',alignItems:'center',
-            transition:'all 0.25s',
+            transition:'all 0.25s', textDecoration:'none',
           }}>
           <div>
             <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,
               fontWeight:600,color:C.text,letterSpacing:'0.08em'}}>PRAXIS</div>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
               color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:3}}>
-              Registro Diario · GTD
+              Ejecución de la voluntad · GTD
             </div>
           </div>
           <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,color:C.gold,opacity:0.5}}>→</div>
-        </div>
+        </a>
       </div>
     </div>
   );
@@ -688,6 +856,7 @@ function ProfileScreen({ appState, isDesktop }) {
   const d = window.__EUDAIMONIA_DATA__ || {};
   const maxStreak   = d.max_streak   ?? 0;
   const weeksActive = d.weeks_active ?? 0;
+  const ecBalance   = (window.EU._server || {}).ecBalance ?? 0;
   const lv = EU.levels[level - 1];
   const xpPct = xpNext ? xp / xpNext : 1;
 
@@ -739,15 +908,19 @@ function ProfileScreen({ appState, isDesktop }) {
       </div>
 
       {/* Stats */}
-      <div style={{padding: isDesktop ? '0 24px' : '0 16px', display:'grid', gridTemplateColumns: isDesktop ? '1fr 1fr 1fr 1fr' : '1fr 1fr', gap:8, marginBottom:20}}>
+      <div style={{padding: isDesktop ? '0 24px' : '0 16px', display:'grid', gridTemplateColumns: isDesktop ? 'repeat(5,1fr)' : '1fr 1fr', gap:8, marginBottom:20}}>
         {[
           {label:'XP Total',      val: totalXP.toLocaleString()},
           {label:'Racha Mayor',   val:`${maxStreak} días`},
           {label:'Hoy',           val:`${modules.filter(m=>m.done).length}/${modules.length} mods`},
           {label:'Semanas activo',val:String(weeksActive)},
+          {label:'EC Disponibles',val:`${ecBalance} 🪙`, accent: true},
         ].map(s => (
-          <div key={s.label} style={{background:C.card,
-            border:'1px solid rgba(201,168,76,0.1)',borderRadius:12,padding:'14px'}}>
+          <div key={s.label} style={{
+            background: s.accent ? 'rgba(201,168,76,0.06)' : C.card,
+            border: s.accent ? '1px solid rgba(201,168,76,0.25)' : '1px solid rgba(201,168,76,0.1)',
+            borderRadius:12, padding:'14px',
+          }}>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,
               letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:4}}>{s.label}</div>
             <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:C.gold}}>{s.val}</div>
