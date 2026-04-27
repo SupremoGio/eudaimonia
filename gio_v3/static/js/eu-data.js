@@ -184,5 +184,6 @@ window.EU = {
     word:      d.word_of_day || null,
     reminders:  d.reminders   || [],
     ecBalance:  d.ec_balance  || 0,
+    deadlines:  d.deadlines   || [],
   };
 })();

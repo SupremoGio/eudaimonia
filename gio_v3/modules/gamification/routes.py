@@ -1,14 +1,14 @@
-from flask import Blueprint, jsonify, request
-from datetime import date, datetime
+from flask import Blueprint, jsonify, request, render_template
+from datetime import date, datetime, timedelta
 from database import get_db
 from modules.gamification.engine import (
     get_gamification_stats, get_level_info, apply_penalty, check_and_unlock,
     get_daily_classification,
 )
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
-from modules.gamification.badges import get_all_badges, check_and_unlock_badges, get_active_perks
+from modules.gamification.badges import get_all_badges, check_and_unlock_badges, get_active_perks, BADGE_DEFS, TIER_LABELS
 
-gamification_bp = Blueprint('gamification', __name__)
+gamification_bp = Blueprint('gamification', __name__, template_folder='../../templates')
 
 
 # ── Stats ─────────────────────────────────────────────────────────────────────
@@ -174,6 +174,65 @@ def deactivate_event(key):
 def check_achievements():
     newly = check_and_unlock()
     return jsonify({"newly_unlocked": newly, "count": len(newly)})
+
+
+# ── Logros Page ──────────────────────────────────────────────────────────────
+
+@gamification_bp.route('/logros')
+def logros():
+    stats = get_gamification_stats()
+    classification = get_daily_classification()
+
+    # Achievements with ACHIEVEMENT_DEFS metadata merged
+    with get_db() as db:
+        ach_rows = {r["key"]: dict(r) for r in db.execute(
+            "SELECT key, unlocked_at, coins_earned, xp_earned FROM achievements"
+        ).fetchall()}
+        xp_log = db.execute(
+            "SELECT amount, source, description, date FROM xp_ledger ORDER BY id DESC LIMIT 30"
+        ).fetchall()
+
+    achievements = []
+    for key, defn in ACHIEVEMENT_DEFS.items():
+        row = ach_rows.get(key, {})
+        unlocked = bool(row.get("unlocked_at"))
+        achievements.append({
+            "key":         key,
+            "name":        defn["name"] if (not defn["hidden"] or unlocked) else "???",
+            "description": defn["description"] if (not defn["hidden"] or unlocked) else "Logro oculto — sigue progresando",
+            "icon":        defn["icon"] if (not defn["hidden"] or unlocked) else "🔒",
+            "coins":       defn["coins"],
+            "xp":          defn["xp"],
+            "hidden":      defn["hidden"],
+            "unlocked":    unlocked,
+            "unlocked_at": row.get("unlocked_at", "")[:10] if unlocked else None,
+        })
+
+    badges = get_all_badges()
+
+    # Last 7 days classification history
+    history = []
+    for i in range(6, -1, -1):
+        d = (date.today() - timedelta(days=i))
+        cl = get_daily_classification(d.isoformat())
+        history.append({
+            "date":  d.isoformat(),
+            "label": d.strftime("%a %d"),
+            "rank":  cl["rank"],
+            "icon":  cl["icon"],
+            "color": cl["color"],
+            "xp":    cl["xp"],
+        })
+
+    return render_template('gamification/logros.html',
+        stats=stats,
+        classification=classification,
+        achievements=achievements,
+        badges=badges,
+        tier_labels=TIER_LABELS,
+        xp_log=[dict(r) for r in xp_log],
+        history=history,
+    )
 
 
 # ── Full Reset ────────────────────────────────────────────────────────────────

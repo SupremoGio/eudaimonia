@@ -73,12 +73,12 @@
     position:fixed;inset:0;z-index:9999;
     background:rgba(0,0,0,.75);
     backdrop-filter:blur(6px);
-    display:flex!important;
+    display:none;
     align-items:center;
     justify-content:center;
     padding:16px;
   }
-  .modal[style*="display:none"]{display:none!important;}
+  .modal.open{display:flex;}
   .modal-box{
     background:var(--surface);
     border:1px solid rgba(197,163,108,.25);
@@ -377,7 +377,7 @@
 </div>
 
 {# ── Modal: Comprado ── #}
-<div id="modalComprar" class="modal" style="display:none;">
+<div id="modalComprar" class="modal">
   <div class="modal-box" style="max-width:360px;">
     <div class="flex justify-between items-center mb-4">
       <h3 class="font-bold text-sm tracking-wide">¡Comprado!</h3>
@@ -396,7 +396,7 @@
 </div>
 
 {# ── Modal: Protocolo de Compra (wizard) ── #}
-<div id="modalProto" class="modal" style="display:none;">
+<div id="modalProto" class="modal">
   <div class="modal-box" style="max-width:540px;">
 
     <!-- Header -->
@@ -489,9 +489,9 @@ function openComprar(id, nombre, precio) {
   document.getElementById('comprarId').value = id;
   document.getElementById('comprarNombre').textContent = nombre;
   document.getElementById('cPrecioReal').value = precio || '';
-  document.getElementById('modalComprar').style.display = 'flex';
+  document.getElementById('modalComprar').classList.add('open');
 }
-function closeComprar() { document.getElementById('modalComprar').style.display = 'none'; }
+function closeComprar() { document.getElementById('modalComprar').classList.remove('open'); }
 function confirmarCompra() {
   const id = document.getElementById('comprarId').value;
   fetch(`${BASE}/api/comprar/${id}`, {
@@ -502,7 +502,7 @@ function confirmarCompra() {
 
 // Close modals on backdrop click
 document.querySelectorAll('.modal').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; });
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
 function descartar(id) {
@@ -523,10 +523,10 @@ let pResult = {}; // computed result
 
 function openAdd() {
   pStep = 0; pData = {}; pResult = {};
-  document.getElementById('modalProto').style.display = 'flex';
+  document.getElementById('modalProto').classList.add('open');
   renderProto();
 }
-function closeProto() { document.getElementById('modalProto').style.display = 'none'; }
+function closeProto() { document.getElementById('modalProto').classList.remove('open'); }
 
 function setProtoProgress(s) {
   document.getElementById('ppFill').style.width = (s / 4 * 100) + '%';

@@ -47,6 +47,19 @@ def create_app():
     app.register_blueprint(guardarropa_bp, url_prefix='/guardarropa')
     app.register_blueprint(wishlist_bp,   url_prefix='/guardarropa/wishlist')
 
+    @app.route('/health')
+    def health():
+        from database import get_db_status, _USE_HYBRID
+        status = get_db_status()
+        ok = status.get('db_exists', False) and 'error' not in status
+        return {
+            'status': 'ok' if ok else 'degraded',
+            'mode':   status.get('mode'),
+            'turso':  'connected' if _USE_HYBRID else 'not_configured',
+            'tables': status.get('tables', {}),
+            'total_xp': status.get('total_xp', 0),
+        }, 200 if ok else 503
+
     with app.app_context():
         init_db()
 

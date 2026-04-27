@@ -29,6 +29,9 @@ import http.client
 import sys
 import argparse
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()  # carga gio_v3/.env igual que app.py
 
 # ── Configuración ──────────────────────────────────────────────────────────────
 
@@ -103,6 +106,7 @@ def _from_cell(cell):
 
 
 def turso_pipeline(host, token, stmts):
+    import time
     reqs = [{"type": "execute", "stmt": s} for s in stmts]
     reqs.append({"type": "close"})
     body = json.dumps({"requests": reqs}).encode()
@@ -110,14 +114,22 @@ def turso_pipeline(host, token, stmts):
         "Authorization":  f"Bearer {token}",
         "Content-Type":   "application/json",
     }
-    conn = http.client.HTTPSConnection(host, timeout=30)
-    conn.request("POST", "/v2/pipeline", body=body, headers=hdrs)
-    resp = conn.getresponse()
-    data = resp.read()
-    conn.close()
-    if resp.status != 200:
-        raise Exception(f"HTTP {resp.status}: {data[:300].decode(errors='replace')}")
-    return json.loads(data.decode())
+    for attempt in range(4):
+        try:
+            conn = http.client.HTTPSConnection(host, timeout=30)
+            conn.request("POST", "/v2/pipeline", body=body, headers=hdrs)
+            resp = conn.getresponse()
+            data = resp.read()
+            conn.close()
+            if resp.status != 200:
+                raise Exception(f"HTTP {resp.status}: {data[:300].decode(errors='replace')}")
+            return json.loads(data.decode())
+        except Exception as e:
+            if attempt == 3:
+                raise
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            print(f"    ⚠  Turso timeout (intento {attempt+1}/4), reintentando en {wait}s...")
+            time.sleep(wait)
 
 
 def turso_query(host, token, sql, args=None):
@@ -176,7 +188,7 @@ def _is_valid_date(val):
         return True  # NULL / vacío es válido
     for fmt in _DATE_FORMATS:
         try:
-            datetime.strptime(val[:len(fmt)], fmt)
+            datetime.strptime(val, fmt)
             return True
         except ValueError:
             pass
@@ -225,28 +237,35 @@ def migrate_table(local, host, token, name):
 
     ddl = ddl_row[0]
     cur = local.execute(f"SELECT * FROM [{name}]")
-    cols   = [d[0] for d in cur.description]
-    rows   = cur.fetchall()
-    n_local = len(rows)
+    all_local_cols = [d[0] for d in cur.description]
+    rows           = cur.fetchall()
+    n_local        = len(rows)
+
+    # Crear tabla en Turso si no existe
+    turso_pipeline(host, token, [{"sql": ddl, "args": []}])
 
     if n_local == 0:
-        # Crear tabla vacía en Turso si no existe
-        turso_pipeline(host, token, [{"sql": ddl, "args": []}])
         return 0, 0
 
-    # Crear tabla en Turso (IF NOT EXISTS está implícito en CREATE TABLE IF NOT EXISTS)
-    turso_pipeline(host, token, [{"sql": ddl, "args": []}])
+    # Usar solo las columnas que Turso tiene — evita errores por columnas huérfanas locales
+    turso_cols = set(get_turso_columns(host, token, name).keys())
+    use_cols   = [c for c in all_local_cols if c in turso_cols]
+    col_idx    = [all_local_cols.index(c) for c in use_cols]
+
+    if len(use_cols) < len(all_local_cols):
+        skipped = set(all_local_cols) - turso_cols
+        print(f"    ℹ  [{name}] columnas locales ignoradas (no en Turso): {sorted(skipped)}")
 
     before = turso_count(host, token, name)
 
-    ph  = ",".join(["?" for _ in cols])
-    cn  = ",".join([f'[{c}]' for c in cols])
+    ph  = ",".join(["?" for _ in use_cols])
+    cn  = ",".join([f'[{c}]' for c in use_cols])
     sql = f"INSERT OR REPLACE INTO [{name}] ({cn}) VALUES ({ph})"
 
     BATCH = 20
     for i in range(0, n_local, BATCH):
         stmts = [
-            {"sql": sql, "args": [_to_arg(v) for v in row]}
+            {"sql": sql, "args": [_to_arg(row[idx]) for idx in col_idx]}
             for row in rows[i:i + BATCH]
         ]
         turso_pipeline(host, token, stmts)
@@ -254,6 +273,65 @@ def migrate_table(local, host, token, name):
     after    = turso_count(host, token, name)
     new_rows = (after - before) if before >= 0 else n_local
     return n_local, new_rows
+
+
+# ── Verificación post-migración ────────────────────────────────────────────────
+
+def verify_migration(local, host, token, table_names):
+    """Lee de Turso y confirma que los counts son >= counts locales."""
+    print(f"\n{'═'*64}")
+    print(f"  VERIFICACIÓN DE INTEGRIDAD (lectura desde Turso)")
+    print(f"{'═'*64}")
+    print(f"\n  {'Tabla':<32} {'Local':>8} {'Turso':>8}  Estado")
+    print(f"  {'─'*62}")
+
+    all_ok    = True
+    n_match   = 0
+    n_missing = 0
+
+    for name in sorted(table_names):
+        n_local = local.execute(f"SELECT COUNT(*) FROM [{name}]").fetchone()[0]
+        n_turso = turso_count(host, token, name)
+
+        if n_turso < 0:
+            estado   = "✗  NO EXISTE EN TURSO"
+            all_ok   = False
+            n_missing += 1
+        elif n_turso < n_local:
+            falta    = n_local - n_turso
+            estado   = f"✗  FALTAN {falta} FILAS"
+            all_ok   = False
+            n_missing += 1
+        else:
+            estado   = "✓"
+            n_match += 1
+
+        turso_str = str(n_turso) if n_turso >= 0 else "(—)"
+        print(f"  {name:<32} {n_local:>8} {turso_str:>8}  {estado}")
+
+    print(f"  {'─'*62}")
+    print(f"  Tablas OK: {n_match}  |  Con problemas: {n_missing}")
+    print(f"{'═'*64}")
+
+    if all_ok:
+        print(f"""
+  ✓  VERIFICACIÓN EXITOSA
+     Turso tiene todos los datos de pipeline.db.
+
+  ► AHORA ES SEGURO HACER GIT PUSH Y DESPLEGAR EN RAILWAY.
+
+  Pasos finales:
+    git add .
+    git commit -m "deploy: sincronización datos Turso + health check"
+    git push origin main
+""")
+    else:
+        print(f"""
+  ✗  VERIFICACIÓN FALLIDA — algunos datos no llegaron a Turso.
+     Re-ejecuta la migración (sin --dry-run ni --verify) e intenta de nuevo.
+     NO hagas git push hasta que esta verificación pase.
+""")
+    return all_ok
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
@@ -267,6 +345,10 @@ def main():
     parser.add_argument(
         "-n", "--dry-run", action="store_true",
         help="Solo verifica; no escribe nada en Turso"
+    )
+    parser.add_argument(
+        "--verify", action="store_true",
+        help="Lee de vuelta desde Turso y compara counts con local (prueba de integridad)"
     )
     parser.add_argument(
         "--table", metavar="TABLE",
@@ -285,7 +367,11 @@ def main():
         sys.exit(1)
 
     host = TURSO_URL.replace("libsql://", "").rstrip("/")
-    mode = "DRY-RUN (solo lectura)" if args.dry_run else "MIGRACIÓN REAL"
+    if args.verify and args.dry_run:
+        print("\n  ERROR: --verify y --dry-run son incompatibles.\n")
+        sys.exit(1)
+
+    mode = "DRY-RUN (solo lectura)" if args.dry_run else ("SOLO VERIFICACIÓN" if args.verify else "MIGRACIÓN REAL")
 
     print(f"\n{'═'*64}")
     print(f"  EUDAIMONIA OS — migrate_to_turso.py")
@@ -340,19 +426,28 @@ def main():
     turso_existing = get_turso_tables(host, TURSO_TOKEN)
     schema_issues  = []
 
+    # Obtener columnas de Turso en un solo batch para minimizar llamadas HTTP
+    turso_all_cols = {}
+    existing_in_turso = [n for n in table_names if n in turso_existing]
+    for name in existing_in_turso:
+        try:
+            turso_all_cols[name] = get_turso_columns(host, TURSO_TOKEN, name)
+        except Exception:
+            turso_all_cols[name] = {}
+
     for name in table_names:
         if name in turso_existing:
             local_cols = get_local_columns(local, name)
-            turso_cols = get_turso_columns(host, TURSO_TOKEN, name)
+            turso_cols = turso_all_cols.get(name, {})
             issues = compare_schemas(local_cols, turso_cols, name)
             if issues:
                 schema_issues.append((name, issues))
 
-    tables_existing = sum(1 for n in table_names if n in turso_existing)
+    tables_existing = len(existing_in_turso)
     tables_new      = len(table_names) - tables_existing
 
     if schema_issues:
-        print(f"      ⚠  Diferencias de schema en {len(schema_issues)} tabla(s):")
+        print(f"      ⚠  Diferencias de schema en {len(schema_issues)} tabla(s) (la migración las maneja automáticamente):")
         for name, issues in schema_issues:
             print(f"      [{name}]:")
             for issue in issues:
@@ -361,7 +456,14 @@ def main():
         print(f"      ✓ {tables_existing} tabla(s) verificadas sin diferencias")
         print(f"      + {tables_new} tabla(s) nuevas (se crearán en Turso)")
 
-    # ── 5. Dry-run o migración ─────────────────────────────────────────────────
+    # ── 5. Dry-run, verify-only o migración ────────────────────────────────────
+    if args.verify:
+        local_obj = sqlite3.connect(LOCAL_DB)
+        all_ok = verify_migration(local_obj, host, TURSO_TOKEN, table_names)
+        local_obj.close()
+        local.close()
+        sys.exit(0 if all_ok else 1)
+
     print(f"\n[5/5] {'RESUMEN' if args.dry_run else 'EJECUTANDO MIGRACIÓN'}...")
 
     if args.dry_run:
@@ -422,13 +524,11 @@ def main():
                 print(f"    - {name}: {err}")
         else:
             print(f"  Errores            : 0 ✓")
-        print(f"\n  PRÓXIMOS PASOS:")
-        print(f"  1. Configura en Railway → Variables:")
-        print(f"       TURSO_DATABASE_URL = {TURSO_URL}")
-        print(f"       TURSO_AUTH_TOKEN   = (tu token)")
-        print(f"       SECRET_KEY         = (clave generada)")
-        print(f"  2. Redespliega el proyecto en Railway.")
-        print(f"{'═'*64}\n")
+        # Auto-verificación post-migración
+        if not errors:
+            verify_migration(local, host, TURSO_TOKEN, table_names)
+        else:
+            print(f"\n  ⚠  Hubo errores — corrige y re-ejecuta antes de hacer git push.")
 
     local.close()
 

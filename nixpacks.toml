@@ -1,0 +1,9 @@
+# Nixpacks config — usado cuando Railway apunta al raíz del repo.
+# Si en Railway > Settings > Root Directory = "gio_v3", este archivo se ignora
+# y el Procfile + requirements.txt de gio_v3/ toman efecto directamente.
+
+[phases.install]
+cmds = ["pip install -r gio_v3/requirements.txt"]
+
+[start]
+cmd = "cd gio_v3 && gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 1 --timeout 120"

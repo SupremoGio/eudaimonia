@@ -83,7 +83,7 @@ def points():
 @gtd_bp.route('/api/task', methods=['POST'])
 def add_task():
     d   = request.json
-    pts = 20 if d.get('priority')=='critical' else (15 if d.get('priority')=='important' else 10)
+    pts = 8 if d.get('priority')=='critical' else (6 if d.get('priority')=='important' else 4)
     with get_db() as db:
         db.execute("""INSERT INTO gtd_tasks
             (title,description,status,priority,due_date,category,points,project_id,

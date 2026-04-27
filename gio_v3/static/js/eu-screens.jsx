@@ -175,6 +175,147 @@ function RemindersWidget() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// DEADLINE RADAR
+// ═══════════════════════════════════════════════════════════
+function DeadlineRadar() {
+  const initial = (window.EU._server || {}).deadlines || [];
+  const [deadlines, setDeadlines] = useState(initial);
+  const [checking, setChecking] = useState({});
+
+  if (!deadlines.length) return null;
+
+  async function handleCheck(dl) {
+    if (checking[dl.id]) return;
+    setChecking(prev => ({...prev, [dl.id]: true}));
+    try {
+      const res = await fetch(`/perfil/api/reminder/${dl.id}/done`, {method:'POST'});
+      const j = await res.json();
+      if (j.ok) {
+        setDeadlines(prev => prev.filter(d => d.id !== dl.id));
+      }
+    } catch(e) {}
+    setChecking(prev => ({...prev, [dl.id]: false}));
+  }
+
+  const PAL = {
+    red:    { text:'#f87171', bg:'rgba(239,68,68,0.09)',  border:'#ef4444', pill:'rgba(239,68,68,0.20)'  },
+    amber:  { text:'#fbbf24', bg:'rgba(245,158,11,0.09)', border:'#f59e0b', pill:'rgba(245,158,11,0.20)' },
+    yellow: { text:'#fde047', bg:'rgba(234,179,8,0.07)',  border:'#eab308', pill:'rgba(234,179,8,0.18)'  },
+    green:  { text:'#34d399', bg:'rgba(16,185,129,0.07)', border:'#10b981', pill:'rgba(16,185,129,0.18)' },
+  };
+  const TYPE_ICON  = { reminder:'🔔', task:'☑️', wishlist:'🛍️' };
+  const TYPE_LABEL = { reminder:'recordatorio', task:'tarea gtd', wishlist:'wishlist' };
+
+  return (
+    <div style={{marginBottom:14}}>
+      {/* Header */}
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+        <div style={{
+          width:6,height:6,borderRadius:'50%',
+          background:'#ef4444',boxShadow:'0 0 7px #ef4444',
+          animation:'blink 1.4s ease-in-out infinite',
+          flexShrink:0,
+        }}/>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',flex:1}}>Deadline Radar</div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+          color:C.textMuted,opacity:0.45}}>{deadlines.length} próximos</div>
+      </div>
+
+      {/* Scroll horizontal */}
+      <div style={{display:'flex',gap:10,overflowX:'auto',
+        paddingBottom:6,scrollbarWidth:'none',WebkitOverflowScrolling:'touch'}}>
+        {deadlines.map((dl, i) => {
+          const p = PAL[dl.level] || PAL.green;
+          const urgent = dl.level === 'red';
+          const sublabel = dl.days > 0 ? 'DÍAS' : dl.days === 0 ? 'DEADLINE' : 'EXPIRADO';
+
+          const isChecking = checking[dl.id];
+          return (
+            <div key={dl.id ?? i} style={{
+              flexShrink:0,display:'flex',alignItems:'stretch',
+              borderRadius:14,overflow:'hidden',
+              border:'1px solid rgba(255,255,255,0.05)',
+              background:p.bg,minWidth:185,maxWidth:215,
+              boxShadow:'0 2px 14px rgba(0,0,0,0.32)',
+              opacity: isChecking ? 0.5 : 1,
+              transition:'opacity 0.2s',
+            }}>
+              {/* Barra lateral */}
+              <div style={{
+                width:3,flexShrink:0,background:p.border,
+                boxShadow: urgent ? `0 0 9px ${p.border}` : 'none',
+              }}/>
+
+              {/* Contenido */}
+              <div style={{flex:1,padding:'11px 12px',display:'flex',
+                flexDirection:'column',gap:6,minWidth:0}}>
+
+                {/* Header: tipo + check */}
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:5}}>
+                    <span style={{fontSize:10,lineHeight:1}}>{TYPE_ICON[dl.type] || '📌'}</span>
+                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
+                      letterSpacing:'0.12em',textTransform:'uppercase',
+                      color:p.text,opacity:0.65}}>{TYPE_LABEL[dl.type] || dl.type}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCheck(dl)}
+                    title="Marcar como cumplido"
+                    style={{
+                      flexShrink:0,width:20,height:20,borderRadius:'50%',
+                      border:`1.5px solid ${p.border}`,
+                      background:'transparent',cursor:'pointer',
+                      display:'flex',alignItems:'center',justifyContent:'center',
+                      transition:'background 0.15s',
+                      opacity: isChecking ? 0.4 : 1,
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = p.pill}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <span style={{color:p.border,fontSize:11,lineHeight:1,fontWeight:700}}>✓</span>
+                  </button>
+                </div>
+
+                {/* Nombre */}
+                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,fontWeight:500,
+                  color:'#e8e8ff',lineHeight:1.3,
+                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}
+                  title={dl.label}>
+                  {dl.label}
+                </div>
+
+                {/* Badge + pulso */}
+                <div style={{display:'flex',alignItems:'flex-end',
+                  justifyContent:'space-between',marginTop:'auto'}}>
+                  <div style={{background:p.pill,borderRadius:8,
+                    padding:'4px 9px',display:'inline-flex',
+                    alignItems:'baseline',gap:4}}>
+                    <span style={{
+                      fontFamily:'DM Sans,sans-serif',fontWeight:900,lineHeight:1,
+                      fontSize:['HOY','VENCIDO'].includes(dl.badge) ? 12 : 17,
+                      color:p.text,
+                    }}>{dl.badge}</span>
+                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:7,
+                      letterSpacing:'0.14em',color:p.text,opacity:0.6}}>{sublabel}</span>
+                  </div>
+                  {urgent && (
+                    <div style={{width:7,height:7,borderRadius:'50%',flexShrink:0,
+                      marginBottom:2,background:p.border,
+                      boxShadow:`0 0 6px ${p.border}`,
+                      animation:'blink 1.4s ease-in-out infinite'}}/>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // HOME SCREEN
 // ═══════════════════════════════════════════════════════════
 function HomeScreen({ appState, dispatch, isDesktop }) {
@@ -212,6 +353,12 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.gold,marginTop:2}}>
               {xp} / {xpNext} XP
             </div>
+            <a href="/logros" style={{
+              display:'inline-flex',alignItems:'center',gap:4,marginTop:5,
+              fontFamily:'DM Sans,sans-serif',fontSize:9,
+              color:'rgba(201,168,76,0.65)',textDecoration:'none',
+              letterSpacing:'0.08em',
+            }}>🏆 Logros</a>
           </div>
         </div>
       </div>
@@ -313,15 +460,15 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         {/* ── WORD OF THE DAY ── */}
         <WordOfDay/>
 
-        {/* ── RECORDATORIOS ── */}
-        <RemindersWidget/>
+        {/* ── DEADLINE RADAR ── */}
+        <DeadlineRadar/>
 
         {/* ── NEXT ACTIONS ── */}
         <div>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
               color:C.textMuted,textTransform:'uppercase'}}>Próximas Acciones</div>
-            <div onClick={() => dispatch({type:'SET_TAB',tab:'gtd'})}
+            <div onClick={() => window.location.href = '/gtd/'}
               style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.gold,cursor:'pointer',opacity:0.75}}>
               Ver todo →
             </div>
@@ -383,7 +530,7 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
           <ModuleCard key={mod.id} mod={mod}
             onClick={() => dispatch({type:'OPEN_MODULE',id:mod.id})}/>
         ))}
-        {/* PRAXIS card — navigates to dedicated /gtd module */}
+        {/* PRAXIS + LOGROS — bottom full-width cards */}
         <a href="/gtd"
           style={{
             gridColumn:'1/-1',
@@ -398,6 +545,25 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
               color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:3}}>
               Ejecución de la voluntad · GTD
+            </div>
+          </div>
+          <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,color:C.gold,opacity:0.5}}>→</div>
+        </a>
+        <a href="/logros"
+          style={{
+            gridColumn:'1/-1',
+            background:'rgba(201,168,76,0.04)',
+            border:'1px solid rgba(201,168,76,0.14)',
+            borderRadius:14,padding:'14px 15px',cursor:'pointer',
+            display:'flex',justifyContent:'space-between',alignItems:'center',
+            transition:'all 0.25s', textDecoration:'none',
+          }}>
+          <div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,
+              fontWeight:600,color:C.text,letterSpacing:'0.08em'}}>🏆 LOGROS</div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+              color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:3}}>
+              Trofeos · Clasificación · Historial XP
             </div>
           </div>
           <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,color:C.gold,opacity:0.5}}>→</div>

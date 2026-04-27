@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, jsonify, redirect, url_for
-from database import get_db, get_gtd_stats, get_activity_streak, get_db_status
-from data import get_quote_of_day, get_word_of_day, ACTIVITIES, ACTIVITY_CATEGORIES
+from flask import Blueprint, render_template, jsonify, redirect
+from database import get_db, get_db_status
+from data import get_word_of_day, ACTIVITIES, ACTIVITY_CATEGORIES
 from datetime import date, timedelta
 
 dashboard_bp = Blueprint('dashboard', __name__, template_folder='../../templates')
@@ -235,6 +235,7 @@ def _build_eudaimonia_data():
         'word_of_day':  get_word_of_day(),
         'reminders':    [dict(r) for r in reminders_rows],
         'ec_balance':   ec_balance,
+        'deadlines':    _build_deadlines(date.today()),
     }
 
 
@@ -244,36 +245,57 @@ def index():
     return render_template('base_eudaimonia.html', eudaimonia_data=_build_eudaimonia_data())
 
 
-# ── Dashboard clásico ─────────────────────────────────────────────────────────
-@dashboard_bp.route('/classic')
-def index_classic():
-    gtd   = get_gtd_stats()
-    today = date.today().isoformat()
-    week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
-    month_start = date.today().replace(day=1).isoformat()
+def _build_deadlines(today_dt: date) -> list:
+    """Recordatorios activos con fecha en los próximos 6 días (o vencidos)."""
+    horizon = (today_dt + timedelta(days=6)).isoformat()
+    raw = []
 
     with get_db() as db:
-        act_today = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date=?", (today,)).fetchone()["s"]
-        act_week  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?", (week_start,)).fetchone()["s"]
-        act_month = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?", (month_start,)).fetchone()["s"]
-        recent = db.execute("SELECT title, points, completed_at FROM gtd_tasks WHERE completed_at IS NOT NULL ORDER BY completed_at DESC LIMIT 8").fetchall()
-        history = []
-        for i in range(6, -1, -1):
-            d = (date.today() - timedelta(days=i)).isoformat()
-            pts = db.execute("SELECT COALESCE(SUM(points_earned),0) as s FROM gtd_points_log WHERE date=?", (d,)).fetchone()["s"]
-            history.append({"date": d, "pts": pts, "label": d[5:]})
+        for r in db.execute("""
+            SELECT id, description AS label, type AS rem_type,
+                   COALESCE(next_date, target_date) AS fecha
+            FROM reminders
+            WHERE is_active=1
+              AND COALESCE(next_date, target_date) IS NOT NULL
+              AND COALESCE(next_date, target_date) <= ?
+            ORDER BY fecha LIMIT 8
+        """, (horizon,)).fetchall():
+            raw.append(dict(r))
 
-    return render_template('dashboard/index.html',
-        gtd=gtd, quote=get_quote_of_day(), word=get_word_of_day(),
-        act_today=act_today, act_week=act_week, act_month=act_month,
-        act_streak=get_activity_streak(), recent=recent, history=history, today=today,
-    )
+    deadlines = []
+    for d in raw:
+        try:
+            d['type'] = 'reminder'
+            days = (date.fromisoformat(d['fecha'][:10]) - today_dt).days
+            d['days'] = days
+            if days < 0:
+                d['badge'] = 'VENCIDO'
+                d['level'] = 'red'
+            elif days == 0:
+                d['badge'] = 'HOY'
+                d['level'] = 'red'
+            elif days <= 2:
+                d['badge'] = str(days)
+                d['level'] = 'amber'
+            elif days == 3:
+                d['badge'] = str(days)
+                d['level'] = 'yellow'
+            else:
+                d['badge'] = str(days)
+                d['level'] = 'green'
+            deadlines.append(d)
+        except Exception:
+            pass
+
+    deadlines.sort(key=lambda x: x['days'])
+    return deadlines[:8]
 
 
-# ── /v2 redirige a / ──────────────────────────────────────────────────────────
+# ── Redirecciones de compatibilidad ──────────────────────────────────────────
+@dashboard_bp.route('/classic')
 @dashboard_bp.route('/v2')
-def eudaimonia_v2():
-    return redirect(url_for('dashboard.index'))
+def legacy_redirect():
+    return redirect('/', 301)
 
 
 # ── API ───────────────────────────────────────────────────────────────────────

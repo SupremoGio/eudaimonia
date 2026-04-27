@@ -5,13 +5,15 @@ TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
 
 import sqlite3 as _sqlite3
+import tempfile as _tempfile
+import traceback as _traceback
 
 # Priority: DATABASE_PATH env var (Railway Volume) > sibling pipeline.db
 _LOCAL     = os.environ.get(
     "DATABASE_PATH",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
 )
-_LOCAL_TMP = "/tmp/eudaimonia.db"   # fast local cache when Turso is active
+_LOCAL_TMP = os.path.join(_tempfile.gettempdir(), "eudaimonia.db")  # cross-platform temp cache
 
 # ── Turso HTTP (writes only) ──────────────────────────────────────────────────
 
@@ -115,6 +117,7 @@ def _restore_from_turso(host, token):
         return True
     except Exception as e:
         print(f"[DB] Restore failed: {e}")
+        _traceback.print_exc()
         return False
 
 # ── Hybrid connection: local SQLite reads + async Turso writes ────────────────
@@ -899,6 +902,7 @@ def init_db():
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
+    _traceback.print_exc()
 
 
 # ── Shared stat helpers ───────────────────────────────────────────────────────

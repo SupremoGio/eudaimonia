@@ -1,0 +1,305 @@
+{% extends "eu/layout_sub.html" %}
+{% set pg = 'logros' %}
+
+{% block title %}Logros · Eudaimonia{% endblock %}
+{% block module_title %}Logros & Clasificación{% endblock %}
+{% block topright %}TROFEOS · XP · CLASIFICACIÓN{% endblock %}
+
+{% block content %}
+
+<!-- ── Encabezado ───────────────────────────────────────────── -->
+<div class="mb-6">
+  <div style="font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.22em;color:#C9A84C;opacity:.6;text-transform:uppercase;margin-bottom:4px;">
+    Sistema Eudaimonia
+  </div>
+  <h1 style="font-family:'Cormorant Garamond',serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:600;color:#F2EDE0;letter-spacing:.06em;line-height:1;">
+    Trofeos &amp; Clasificación
+  </h1>
+  <p style="font-family:'DM Sans',sans-serif;font-size:.56rem;color:#6A6050;letter-spacing:.16em;text-transform:uppercase;margin-top:4px;">
+    Logros desbloqueados · Clasificación diaria · Historial de XP
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     FILA SUPERIOR — Clasificación hoy + stats
+════════════════════════════════════════════════════════════════ -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+
+  <!-- Card clasificación hoy -->
+  {% set rc = classification.rank %}
+  {% set r_bg    = 'rgba(125,211,252,0.08)' if rc=='diamond' else ('rgba(201,168,76,0.08)' if rc=='gold' else ('rgba(148,163,184,0.08)' if rc=='iron' else 'rgba(71,85,105,0.08)')) %}
+  {% set r_bdr   = 'rgba(125,211,252,0.25)' if rc=='diamond' else ('rgba(201,168,76,0.28)' if rc=='gold' else ('rgba(148,163,184,0.25)' if rc=='iron' else 'rgba(71,85,105,0.25)')) %}
+  {% set r_color = '#7dd3fc'               if rc=='diamond' else ('#C9A84C'               if rc=='gold' else ('#94a3b8'               if rc=='iron' else '#475569')) %}
+
+  <div style="background:{{ r_bg }};border:1px solid {{ r_bdr }};border-radius:16px;padding:22px 20px;display:flex;flex-direction:column;justify-content:space-between;min-height:140px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:{{ r_color }};">
+        Clasificación Hoy
+      </span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:9px;padding:3px 10px;border-radius:100px;border:1px solid {{ r_bdr }};background:{{ r_bg }};color:{{ r_color }};">
+        {{ stats.xp_today | int }} XP
+      </span>
+    </div>
+    <div style="display:flex;align-items:center;gap:18px;">
+      <span style="font-size:52px;line-height:1;">{{ classification.icon }}</span>
+      <div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;letter-spacing:.06em;color:{{ r_color }};line-height:1;margin-bottom:6px;">
+          {{ classification.label | upper }}
+        </div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#6A6050;line-height:1.4;">
+          {{ classification.desc }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+    <!-- Nivel -->
+    <div style="background:#1A1627;border:1px solid rgba(201,168,76,0.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">
+      <span style="font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#6A6050;">Nivel</span>
+      <span style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#C9A84C;line-height:1;">{{ stats.level }}</span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:#A89880;line-height:1.3;">{{ stats.level_name }}</span>
+      <div style="margin-top:auto;">
+        <div style="height:3px;background:rgba(201,168,76,0.1);border-radius:2px;overflow:hidden;margin-bottom:3px;">
+          <div style="width:{{ stats.level_pct }}%;height:100%;border-radius:2px;background:linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D);"></div>
+        </div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:9px;color:#6A6050;">{{ stats.xp_to_next | int }} XP para nv.{{ stats.level + 1 }}</div>
+      </div>
+    </div>
+
+    <!-- XP Total — clickeable -->
+    <div id="xp-card" onclick="toggleXpLog()" style="background:#1A1627;border:1px solid rgba(201,168,76,0.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:border-color .18s,box-shadow .18s;"
+         onmouseenter="this.style.borderColor='rgba(201,168,76,0.38)';this.style.boxShadow='0 0 20px rgba(201,168,76,0.07)'"
+         onmouseleave="this.style.borderColor='rgba(201,168,76,0.15)';this.style.boxShadow='none'">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#6A6050;">XP Total</span>
+        <span id="xp-arrow" style="font-size:11px;color:#6A6050;transition:transform .2s;">▾</span>
+      </div>
+      <span style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#E8C96D;line-height:1;">{{ stats.total_xp | int }}</span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:#A89880;">+{{ stats.xp_today | int }} hoy · +{{ stats.xp_week | int }} sem.</span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:9px;color:rgba(201,168,76,0.5);letter-spacing:.06em;">ver desglose →</span>
+    </div>
+
+    <!-- Racha -->
+    <div style="background:#1A1627;border:1px solid rgba(201,168,76,0.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">
+      <span style="font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#6A6050;">Racha</span>
+      <span style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#fb923c;line-height:1;">{{ stats.streak }}d</span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:#A89880;">
+        {% if stats.streak >= 30 %}🔥 +10% XP{% elif stats.streak >= 7 %}⚡ +5% XP{% else %}Sigue acumulando{% endif %}
+      </span>
+    </div>
+
+    <!-- EC Balance -->
+    <div style="background:#1A1627;border:1px solid rgba(201,168,76,0.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">
+      <span style="font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:#6A6050;">EC Balance</span>
+      <span style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#10b981;line-height:1;">{{ stats.total_coins | int }}</span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:#A89880;">+{{ stats.coins_today | int }} hoy</span>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PANEL XP DESGLOSE (colapsable)
+════════════════════════════════════════════════════════════════ -->
+<div id="xp-log-panel" style="display:none;margin-bottom:24px;overflow:hidden;">
+  <div style="background:#1A1627;border:1px solid rgba(201,168,76,0.22);border-radius:16px;padding:20px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:600;color:#F2EDE0;letter-spacing:.05em;">Desglose de XP</div>
+      <span style="font-family:'DM Sans',sans-serif;font-size:9px;color:#6A6050;letter-spacing:.1em;text-transform:uppercase;">últimas 30 entradas</span>
+    </div>
+
+    {# Agrupar xp_log por fecha en Jinja2 #}
+    {% set ns = namespace(current_date='') %}
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      {% for entry in xp_log %}
+        {% if entry.date != ns.current_date %}
+          {% set ns.current_date = entry.date %}
+          <div style="font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+                      color:rgba(201,168,76,0.55);padding:{% if loop.first %}0{% else %}10px{% endif %} 0 4px;">
+            {{ entry.date }}
+          </div>
+        {% endif %}
+        <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;
+                    background:#221D32;border:1px solid rgba(201,168,76,0.06);border-radius:9px;">
+          <span style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:600;
+                       width:36px;text-align:right;flex-shrink:0;
+                       color:{% if entry.amount > 0 %}#E8C96D{% else %}#f43f5e{% endif %};">
+            {% if entry.amount > 0 %}+{% endif %}{{ entry.amount | int }}
+          </span>
+          <span style="font-family:'DM Sans',sans-serif;font-size:11px;color:#F2EDE0;
+                       flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ entry.description }}
+          </span>
+          <span style="font-family:'DM Sans',sans-serif;font-size:8px;padding:2px 7px;
+                       border-radius:100px;flex-shrink:0;
+                       background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.1);color:#6A6050;">
+            {{ entry.source }}
+          </span>
+        </div>
+      {% else %}
+        <div style="text-align:center;padding:24px;font-family:'DM Sans',sans-serif;font-size:12px;color:#6A6050;">
+          Sin historial todavía.
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     HISTORIAL 7 DÍAS
+════════════════════════════════════════════════════════════════ -->
+<div style="background:#1A1627;border:1px solid rgba(201,168,76,0.15);border-radius:16px;padding:22px 20px;margin-bottom:24px;">
+  <div style="font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:#6A6050;margin-bottom:16px;">Últimos 7 días</div>
+  <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;">
+    {% for day in history %}
+    {% set d_color = '#7dd3fc' if day.rank=='diamond' else ('#C9A84C' if day.rank=='gold' else ('#94a3b8' if day.rank=='iron' else '#475569')) %}
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <span style="font-size:22px;line-height:1;">{{ day.icon }}</span>
+      <div style="width:100%;height:4px;border-radius:2px;background:{{ d_color }}44;overflow:hidden;">
+        <div style="height:100%;background:{{ d_color }};border-radius:2px;width:{{ [day.xp * 5, 100] | min }}%;"></div>
+      </div>
+      <span style="font-family:'DM Sans',sans-serif;font-size:9px;color:#A89880;text-align:center;">{{ day.label }}</span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:9px;color:#6A6050;">{{ day.xp | int }}xp</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,0.08);">
+    {% for r_lbl, r_col in [('💎 Diamante','#7dd3fc'),('🥇 Oro','#C9A84C'),('⚔️ Hierro','#94a3b8'),('🪨 Carbón','#475569')] %}
+    <div style="display:flex;align-items:center;gap:6px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:{{ r_col }};"></div>
+      <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:#6A6050;">{{ r_lbl }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LOGROS / ACHIEVEMENTS
+════════════════════════════════════════════════════════════════ -->
+<div style="margin-bottom:28px;">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:#F2EDE0;letter-spacing:.05em;">Logros</h2>
+    <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:#6A6050;">
+      {{ achievements | selectattr('unlocked') | list | length }} / {{ achievements | length }} desbloqueados
+    </span>
+  </div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+    {% for ach in achievements %}
+    <div style="background:{% if ach.unlocked %}rgba(201,168,76,0.06){% else %}#1A1627{% endif %};
+                border:1px solid {% if ach.unlocked %}rgba(201,168,76,0.25){% else %}rgba(201,168,76,0.1){% endif %};
+                border-radius:14px;padding:16px 14px;display:flex;gap:12px;
+                opacity:{% if ach.unlocked %}1{% else %}0.38{% endif %};">
+      <span style="font-size:26px;line-height:1;flex-shrink:0;margin-top:2px;">{{ ach.icon }}</span>
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0;">
+        <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#F2EDE0;line-height:1.2;">{{ ach.name }}</div>
+        <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#A89880;line-height:1.4;">{{ ach.description }}</div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px;">
+          {% if ach.unlocked %}
+          <span style="font-family:'DM Sans',sans-serif;font-size:9px;color:#6A6050;">{{ ach.unlocked_at }}</span>
+          {% endif %}
+          {% if ach.xp > 0 %}
+          <span style="font-family:'DM Sans',sans-serif;font-size:9px;padding:2px 8px;border-radius:100px;
+                       background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.2);color:#E8C96D;">
+            +{{ ach.xp }} XP
+          </span>
+          {% endif %}
+          {% if ach.coins > 0 %}
+          <span style="font-family:'DM Sans',sans-serif;font-size:9px;padding:2px 8px;border-radius:100px;
+                       background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);color:#6ee7b7;">
+            +{{ ach.coins }} EC
+          </span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     INSIGNIAS / BADGES
+════════════════════════════════════════════════════════════════ -->
+<div style="margin-bottom:28px;">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;">
+    <h2 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:600;color:#F2EDE0;letter-spacing:.05em;">Insignias</h2>
+    <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:#6A6050;">
+      {{ badges | selectattr('unlocked') | list | length }} / {{ badges | length }} desbloqueadas
+    </span>
+  </div>
+
+  {% for tier_key, tier_display, tier_col in [
+    ('diamond','💎 Diamante','#7dd3fc'),
+    ('gold',   '🏆 Oro',     '#C9A84C'),
+    ('silver', '⚔️ Plata',   '#94a3b8'),
+    ('bronze', '🟤 Bronce',  '#cd7f32')
+  ] %}
+  {% set tier_badges = badges | selectattr('tier', 'equalto', tier_key) | list %}
+  {% if tier_badges %}
+  <div style="margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="font-family:'DM Sans',sans-serif;font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;color:{{ tier_col }};">{{ tier_display }}</span>
+      <div style="flex:1;height:1px;background:{{ tier_col }}1a;"></div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+      {% for badge in tier_badges %}
+      <div style="background:{% if badge.unlocked %}{{ tier_col }}0f{% else %}#1A1627{% endif %};
+                  border:1px solid {% if badge.unlocked %}{{ tier_col }}44{% else %}rgba(201,168,76,0.1){% endif %};
+                  border-radius:14px;padding:16px 14px;display:flex;gap:12px;
+                  opacity:{% if badge.unlocked %}1{% else %}0.35{% endif %};">
+        <span style="font-size:26px;line-height:1;flex-shrink:0;margin-top:2px;">{{ badge.icon }}</span>
+        <div style="display:flex;flex-direction:column;gap:3px;min-width:0;flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:#F2EDE0;line-height:1.2;">{{ badge.name }}</div>
+            {% if badge.perk_active %}
+            <span style="font-family:'DM Sans',sans-serif;font-size:8px;padding:2px 7px;border-radius:100px;flex-shrink:0;
+                         border:1px solid {{ tier_col }}55;background:{{ tier_col }}11;color:{{ tier_col }};">ACTIVO</span>
+            {% endif %}
+          </div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:11px;color:#A89880;line-height:1.4;">{{ badge.description }}</div>
+          <div style="font-family:'DM Sans',sans-serif;font-size:10px;color:#6A6050;font-style:italic;line-height:1.35;">{{ badge.perk }}</div>
+          {% if badge.unlocked and badge.unlocked_at %}
+          <div style="font-family:'DM Sans',sans-serif;font-size:9px;color:#6A6050;margin-top:2px;">{{ badge.unlocked_at[:10] }}</div>
+          {% endif %}
+          {% if badge.ec_bonus > 0 and badge.unlocked %}
+          <span style="font-family:'DM Sans',sans-serif;font-size:9px;padding:2px 8px;border-radius:100px;align-self:flex-start;
+                       background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);color:#6ee7b7;">
+            +{{ badge.ec_bonus }} EC
+          </span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let xpOpen = false;
+function toggleXpLog() {
+  xpOpen = !xpOpen;
+  const panel = document.getElementById('xp-log-panel');
+  const arrow = document.getElementById('xp-arrow');
+  const card  = document.getElementById('xp-card');
+  if (xpOpen) {
+    panel.style.display = 'block';
+    arrow.style.transform = 'rotate(180deg)';
+    card.style.borderColor = 'rgba(201,168,76,0.38)';
+    card.style.boxShadow = '0 0 20px rgba(201,168,76,0.07)';
+    setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+  } else {
+    panel.style.display = 'none';
+    arrow.style.transform = 'rotate(0deg)';
+    card.style.borderColor = 'rgba(201,168,76,0.15)';
+    card.style.boxShadow = 'none';
+  }
+}
+</script>
+{% endblock %}
