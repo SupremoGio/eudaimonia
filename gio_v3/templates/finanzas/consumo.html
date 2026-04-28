@@ -123,7 +123,7 @@
   </div>
   <div class="cs cs-a">
     <div class="cs-l">GASTO MES</div>
-    <div class="cs-n" style="font-size:1.3rem;">${{ "%.0f"|format(gasto_mes) }}</div>
+    <div class="cs-n" style="font-size:1.3rem;">${{ "{:,.0f}".format(gasto_mes) }}</div>
   </div>
 </div>
 
@@ -170,7 +170,7 @@
       <div class="pcm">
         <div class="pcm-l">Precio prom.</div>
         <div class="pcm-v {% if not p.precio_promedio %}dim{% endif %}">
-          {% if p.precio_promedio %}${{ "%.0f"|format(p.precio_promedio) }}{% else %}—{% endif %}
+          {% if p.precio_promedio %}${{ "{:,.0f}".format(p.precio_promedio) }}{% else %}—{% endif %}
         </div>
       </div>
       <div class="pcm">

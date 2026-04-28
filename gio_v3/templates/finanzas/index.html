@@ -98,18 +98,18 @@
     </div>
     <div class="bal-row">
       <div class="bal-box">
-        <div class="bal-v pos">${{ "%.2f"|format(total_owe_me) }}</div>
+        <div class="bal-v pos">${{ "{:,.2f}".format(total_owe_me) }}</div>
         <div class="bal-l">Me Deben (restante)</div>
         <div class="bal-s">{{ owe_me|length }} deuda(s)</div>
       </div>
       <div class="bal-box">
-        <div class="bal-v neg">${{ "%.2f"|format(total_i_owe) }}</div>
+        <div class="bal-v neg">${{ "{:,.2f}".format(total_i_owe) }}</div>
         <div class="bal-l">Debo (restante)</div>
         <div class="bal-s">{{ i_owe|length }} deuda(s)</div>
       </div>
       <div class="bal-box">
         {% set net = total_owe_me - total_i_owe %}
-        <div class="bal-v {% if net>=0 %}pos{% else %}neg{% endif %}">{% if net>=0 %}+{% endif %}${{ "%.2f"|format(net) }}</div>
+        <div class="bal-v {% if net>=0 %}pos{% else %}neg{% endif %}">{% if net>=0 %}+{% endif %}${{ "{:,.2f}".format(net) }}</div>
         <div class="bal-l">Posición Neta</div>
         <div class="bal-s">Balance real</div>
       </div>
@@ -137,9 +137,9 @@
           <td>{{ d.concept }}</td>
           <td>
             <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--green)"></div></div>
-            <div class="dp-pct">{{ pct }}% cobrado · ${{ "%.2f"|format(d.monto_total - d.monto_restante) }} de ${{ "%.2f"|format(d.monto_total) }}</div>
+            <div class="dp-pct">{{ pct }}% cobrado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
           </td>
-          <td><span class="dp-amount pos">${{ "%.2f"|format(d.monto_restante) }}</span></td>
+          <td><span class="dp-amount pos">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
           <td>
             <div class="dp-actions">
               <button class="btn-gr" onclick="openAbono({{ d.id }},'owe_me','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
@@ -175,9 +175,9 @@
           <td>{{ d.concept }}</td>
           <td>
             <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--gold)"></div></div>
-            <div class="dp-pct">{{ pct }}% pagado · ${{ "%.2f"|format(d.monto_total - d.monto_restante) }} de ${{ "%.2f"|format(d.monto_total) }}</div>
+            <div class="dp-pct">{{ pct }}% pagado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
           </td>
-          <td><span class="dp-amount neg">${{ "%.2f"|format(d.monto_restante) }}</span></td>
+          <td><span class="dp-amount neg">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
           <td>
             <div class="dp-actions">
               <button class="btn-g" onclick="openAbono({{ d.id }},'i_owe','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
@@ -196,8 +196,8 @@
   <div class="tile full">
     <div class="tile-lbl">PRESUPUESTO MENSUAL — RADIOGRAFÍA</div>
     <div style="display:flex;gap:20px;margin-bottom:16px;font-size:.62rem;">
-      <span style="color:var(--dim)">Presupuestado: <span style="color:var(--gold)">${{ "%.2f"|format(total_budget) }}</span></span>
-      <span style="color:var(--dim)">Gastado: <span style="color:var(--text)">${{ "%.2f"|format(total_spent) }}</span></span>
+      <span style="color:var(--dim)">Presupuestado: <span style="color:var(--gold)">${{ "{:,.2f}".format(total_budget) }}</span></span>
+      <span style="color:var(--dim)">Gastado: <span style="color:var(--text)">${{ "{:,.2f}".format(total_spent) }}</span></span>
       {% if total_budget > 0 %}
       {% set uso = (total_spent/total_budget*100)|int %}
       <span style="color:var(--dim)">Uso: <span style="color:{% if uso>90 %}var(--red){% elif uso>70 %}var(--pink){% else %}var(--green){% endif %}">{{ uso }}%</span></span>
@@ -210,8 +210,8 @@
         <div class="bcat-n">{{ c.name }}</div>
         <div class="bcat-bar"><div class="bcat-fill" style="width:{{ pct }}%;background:{% if pct>90 %}var(--red){% elif pct>70 %}var(--pink){% else %}{{ c.color }}{% endif %}"></div></div>
         <div class="bcat-vals">
-          <span style="color:var(--text)">${{ c.spent|int }}</span>
-          <span style="color:var(--dim)">/ ${{ c.budgeted|int }}</span>
+          <span style="color:var(--text)">${{ "{:,.0f}".format(c.spent) }}</span>
+          <span style="color:var(--dim)">/ ${{ "{:,.0f}".format(c.budgeted) }}</span>
         </div>
         <div class="bcat-edit">
           <input type="number" placeholder="Presupuesto" value="{{ c.budgeted|int }}" onchange="saveBudget({{ c.id }},this)" min="0">
@@ -268,12 +268,13 @@
 {% endblock %}
 {% block scripts %}
 <script>
+const fmt = n => (+n).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
 let _abono = {};
 
 function openAbono(id, type, person, restante, total) {
   _abono = {id, type};
   document.getElementById('ab-person').textContent   = person;
-  document.getElementById('ab-restante').textContent = `$${restante.toFixed(2)} de $${total.toFixed(2)}`;
+  document.getElementById('ab-restante').textContent = `$${fmt(restante)} de $${fmt(total)}`;
   document.getElementById('ab-amount').value = '';
   document.getElementById('ab-note').value   = '';
   document.getElementById('ab-err').textContent = '';
@@ -283,7 +284,7 @@ function openAbono(id, type, person, restante, total) {
     if(d.payments && d.payments.length){
       document.getElementById('ab-hist-wrap').style.display='block';
       document.getElementById('ab-hist-list').innerHTML = d.payments.map(p=>
-        `<div class="ab-hist-item"><span>${p.note||'—'} · ${p.paid_at.slice(0,10)}</span><span class="ab-hist-amt">+$${p.amount.toFixed(2)}</span></div>`
+        `<div class="ab-hist-item"><span>${p.note||'—'} · ${p.paid_at.slice(0,10)}</span><span class="ab-hist-amt">+$${fmt(p.amount)}</span></div>`
       ).join('');
     } else {
       document.getElementById('ab-hist-wrap').style.display='none';
@@ -309,7 +310,7 @@ async function submitAbono() {
   if (!d.ok) { document.getElementById('ab-err').textContent = d.error; return; }
 
   closeAbono();
-  toast(`Abono registrado: $${amount.toFixed(2)}`, d.settled ? 'win' : 'ok');
+  toast(`Abono registrado: $${fmt(amount)}`, d.settled ? 'win' : 'ok');
   if (d.settled) toast('✓ Deuda completamente saldada', 'win');
   setTimeout(() => location.reload(), 800);
 }
