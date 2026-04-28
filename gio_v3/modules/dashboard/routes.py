@@ -208,13 +208,14 @@ def _build_eudaimonia_data():
     ]
 
     return {
-        'total_xp':   stats['total_xp'],
-        'xp_today':   stats['xp_today'],
-        'level':      stats['level'],
-        'level_name': stats['level_name'],
-        'level_pct':  stats['level_pct'],
-        'xp_to_next': stats['xp_to_next'],
-        'streak':     stats['streak'],
+        'total_xp':       stats['total_xp'],
+        'xp_today':       stats['xp_today'],
+        'level':          stats['level'],
+        'level_name':     stats['level_name'],
+        'level_pct':      stats['level_pct'],
+        'xp_to_next':     stats['xp_to_next'],
+        'streak':         stats['streak'],
+        'classification': stats['classification'],
         'modules':    modules,
         'gtd_inbox':  gtd_inbox,
         'habits_done': habits_done,

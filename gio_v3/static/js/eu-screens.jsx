@@ -316,6 +316,162 @@ function DeadlineRadar() {
 }
 
 // ═══════════════════════════════════════════════════════════
+// DAILY SCORE CARD
+// ═══════════════════════════════════════════════════════════
+function DailyScoreCard() {
+  const clf = (window.EU._server || {}).classification;
+  if (!clf) return null;
+
+  const TIERS = [
+    { rank:'carbon',  icon:'🪨', label:'Carbón',   color:'#475569', threshold:0  },
+    { rank:'iron',    icon:'⚔️',  label:'Hierro',   color:'#94a3b8', threshold:8  },
+    { rank:'gold',    icon:'🥇', label:'Oro',      color:'#fbbf24', threshold:16 },
+    { rank:'diamond', icon:'💎', label:'Diamante', color:'#7dd3fc', threshold:20 },
+  ];
+
+  const currentIdx = TIERS.findIndex(t => t.rank === clf.rank);
+  const nextTier   = TIERS[currentIdx + 1] || null;
+  const xpPct      = nextTier
+    ? Math.min(100, (clf.xp / nextTier.threshold) * 100)
+    : 100;
+  const col = clf.color || '#475569';
+  const nextLabel = nextTier
+    ? `${nextTier.threshold} XP${nextTier.rank === 'diamond' ? ' + alto impacto' : ''}`
+    : null;
+
+  return (
+    <div style={{
+      background:`linear-gradient(140deg,rgba(9,7,15,0.99) 0%,${col}0C 100%)`,
+      border:`1px solid ${col}30`,
+      borderRadius:16, padding:'16px 18px', marginBottom:14,
+      position:'relative', overflow:'hidden',
+    }}>
+      {/* Ambient glow */}
+      <div style={{
+        position:'absolute', top:-50, right:-50, width:150, height:150,
+        borderRadius:'50%',
+        background:`radial-gradient(circle,${col}0F 0%,transparent 70%)`,
+        pointerEvents:'none',
+      }}/>
+
+      {/* Header row */}
+      <div style={{
+        display:'flex', justifyContent:'space-between',
+        alignItems:'center', marginBottom:12,
+      }}>
+        <div style={{
+          fontFamily:'DM Sans,sans-serif', fontSize:8,
+          letterSpacing:'0.2em', color:C.textMuted, textTransform:'uppercase',
+        }}>Calificación de Hoy</div>
+        <a href="/actividades" style={{
+          fontFamily:'DM Sans,sans-serif', fontSize:9,
+          color:col, opacity:0.65, textDecoration:'none', letterSpacing:'0.04em',
+        }}>Acta Diurna →</a>
+      </div>
+
+      {/* Rank row */}
+      <div style={{display:'flex', alignItems:'center', gap:14, marginBottom:14}}>
+        {/* Icon bubble */}
+        <div style={{
+          width:52, height:52, borderRadius:13,
+          background:`${col}0D`, border:`1px solid ${col}22`,
+          display:'flex', alignItems:'center', justifyContent:'center',
+          flexShrink:0, fontSize:26, lineHeight:1,
+          boxShadow: clf.rank === 'diamond' ? `0 0 18px ${col}22` : 'none',
+        }}>{clf.icon}</div>
+
+        {/* Name + desc */}
+        <div style={{flex:1}}>
+          <div style={{
+            fontFamily:'Cormorant Garamond,serif',
+            fontSize:22, fontWeight:600, color:col,
+            lineHeight:1.1, letterSpacing:'0.05em',
+          }}>{clf.label}</div>
+          <div style={{
+            fontFamily:'DM Sans,sans-serif',
+            fontSize:9.5, color:C.textMuted, marginTop:4, lineHeight:1.4,
+          }}>{clf.desc}</div>
+        </div>
+
+        {/* XP count */}
+        <div style={{textAlign:'right', flexShrink:0}}>
+          <div style={{
+            fontFamily:'Cormorant Garamond,serif',
+            fontSize:30, fontWeight:300, color:col,
+            lineHeight:1, fontStyle:'italic',
+          }}>{clf.xp}</div>
+          <div style={{
+            fontFamily:'DM Sans,sans-serif', fontSize:7.5,
+            color:C.textMuted, letterSpacing:'0.14em',
+            textTransform:'uppercase', marginTop:2,
+          }}>XP hoy</div>
+        </div>
+      </div>
+
+      {/* Progress bar toward next tier */}
+      {nextTier && (
+        <div style={{marginBottom:12}}>
+          <div style={{
+            height:3, background:'rgba(255,255,255,0.05)',
+            borderRadius:2, overflow:'hidden', marginBottom:6,
+          }}>
+            <div style={{
+              height:'100%', borderRadius:2,
+              background:`linear-gradient(90deg,${col}70,${col})`,
+              width:`${xpPct}%`,
+              boxShadow:`0 0 7px ${col}44`,
+              transition:'width 1.2s ease',
+            }}/>
+          </div>
+          <div style={{
+            display:'flex', justifyContent:'space-between',
+            fontFamily:'DM Sans,sans-serif', fontSize:8.5,
+          }}>
+            <span style={{color:col, opacity:0.85}}>{clf.xp} XP actuales</span>
+            <span style={{color:C.textMuted}}>→ {nextTier.label} necesita {nextLabel}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Tier ladder */}
+      <div style={{display:'flex', alignItems:'flex-start'}}>
+        {TIERS.map((t, i) => {
+          const active = i === currentIdx;
+          const past   = i < currentIdx;
+          return (
+            <React.Fragment key={t.rank}>
+              <div style={{
+                display:'flex', flexDirection:'column', alignItems:'center',
+                gap:5, flex:1,
+              }}>
+                <div style={{
+                  width:active?9:5, height:active?9:5, borderRadius:'50%',
+                  background:active ? col : past ? `${col}55` : 'rgba(255,255,255,0.07)',
+                  boxShadow:active ? `0 0 9px ${col}` : 'none',
+                  transition:'all 0.3s',
+                }}/>
+                <div style={{
+                  fontFamily:'DM Sans,sans-serif', fontSize:7,
+                  color:active ? col : C.textMuted,
+                  opacity:active ? 1 : past ? 0.55 : 0.28,
+                  textAlign:'center', lineHeight:1.3,
+                }}>{t.icon}<br/>{t.label}</div>
+              </div>
+              {i < TIERS.length - 1 && (
+                <div style={{
+                  height:1, flex:1, marginTop:4,
+                  background:i < currentIdx ? `${col}35` : 'rgba(255,255,255,0.05)',
+                }}/>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // HOME SCREEN
 // ═══════════════════════════════════════════════════════════
 function HomeScreen({ appState, dispatch, isDesktop }) {
@@ -415,6 +571,9 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             </div>
           </div>
         </div>
+
+        {/* ── CALIFICACIÓN DE HOY ── */}
+        <DailyScoreCard/>
 
         {/* ── MÓDULOS HOY ── */}
         <div style={{marginBottom:14}}>

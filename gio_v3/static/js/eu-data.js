@@ -183,7 +183,8 @@ window.EU = {
     streak:    d.streak    || 0,
     word:      d.word_of_day || null,
     reminders:  d.reminders   || [],
-    ecBalance:  d.ec_balance  || 0,
-    deadlines:  d.deadlines   || [],
+    ecBalance:      d.ec_balance      || 0,
+    deadlines:      d.deadlines       || [],
+    classification: d.classification  || null,
   };
 })();
