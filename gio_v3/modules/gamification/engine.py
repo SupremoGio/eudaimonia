@@ -17,18 +17,19 @@ from data import ACTIVITIES, ACTIVITY_CATEGORIES, VIRTUE_CATS
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
 from utils import today_str, today_date
 
-# ── Level System (10 Stoic Levels, 5 500 XP in 1 year) ───────────────────────
+# ── Level System (10 Stoic Levels — 1 año dedicado = nivel 10) ───────────────
+# Calibrado a 25 XP/día activo × 5 días/semana = nivel 10 en ~52 semanas
 LEVEL_THRESHOLDS = [
-    (0,     1,  "PROKOPTON"),
-    (200,   2,  "EFEBO"),
-    (500,   3,  "ASQUETÉS"),
-    (1000,  4,  "ESTRATEGOS"),
-    (1800,  5,  "AUTARKÉS"),
-    (2700,  6,  "POLÍMATA"),
-    (3600,  7,  "ARETÉ"),
-    (4400,  8,  "HEGEMÓN"),
-    (5000,  9,  "SOPHOS"),
-    (5500,  10, "EUDAIMÓN"),
+    (0,     1,  "PROKOPTON"),   # inicio
+    (300,   2,  "EFEBO"),        # ~2.5 semanas
+    (900,   3,  "ASQUETÉS"),     # ~7 semanas
+    (1800,  4,  "ESTRATEGOS"),   # ~3.5 meses
+    (3000,  5,  "AUTARKÉS"),     # ~6 meses
+    (4200,  6,  "POLÍMATA"),     # ~8.5 meses
+    (5000,  7,  "ARETÉ"),        # ~10 meses
+    (5600,  8,  "HEGEMÓN"),      # ~11 meses
+    (6000,  9,  "SOPHOS"),       # ~12 meses
+    (6500,  10, "EUDAIMÓN"),     # ~1 año exacto
 ]
 
 LEVEL_SUBTITLES = {
@@ -330,6 +331,13 @@ def _gather_achievement_stats():
             (week_start, today)
         ).fetchone()["s"]
 
+        # XP de actividades+bonos únicamente (excluye logros) — para condición semana_elite
+        xp_week_acts = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger "
+            "WHERE source != 'achievement' AND date>=? AND date<=?",
+            (week_start, today)
+        ).fetchone()["s"]
+
         total_coins = db.execute(
             "SELECT COALESCE(SUM(amount),0) as s FROM coins_ledger"
         ).fetchone()["s"]
@@ -377,6 +385,7 @@ def _gather_achievement_stats():
         "total_xp":             total_xp,
         "total_coins":          total_coins,
         "xp_week":              xp_week,
+        "xp_week_acts":         xp_week_acts,
         "total_activity_count": total_act,
         "cats_done_today":      cats_today,
         "all_cats_ever":        all_cats,
