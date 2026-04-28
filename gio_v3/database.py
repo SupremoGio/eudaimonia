@@ -1,5 +1,6 @@
 import os, json as _json, http.client, threading
 from datetime import date, timedelta
+from utils import today_str, today_date
 
 TURSO_URL   = os.environ.get("TURSO_DATABASE_URL", "")
 TURSO_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
@@ -912,7 +913,7 @@ def get_activity_streak():
         dates = [r["date"] for r in db.execute(
             "SELECT DISTINCT date FROM activity_logs ORDER BY date DESC"
         ).fetchall()]
-        streak, check = 0, date.today()
+        streak, check = 0, today_date()
         for d in dates:
             if d == check.isoformat():
                 streak += 1
@@ -927,7 +928,7 @@ def get_gtd_streak():
         dates = [r["date"] for r in db.execute(
             "SELECT DISTINCT date FROM gtd_points_log ORDER BY date DESC"
         ).fetchall()]
-        streak, check = 0, date.today()
+        streak, check = 0, today_date()
         for d in dates:
             if d == check.isoformat():
                 streak += 1
@@ -941,9 +942,10 @@ def get_gtd_stats():
     # Deferred import to avoid circular dependency (engine.py imports database.py)
     from modules.gamification.engine import get_level_info, get_gamification_streak
 
-    today       = date.today().isoformat()
-    week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
-    month_start = date.today().replace(day=1).isoformat()
+    today       = today_str()
+    _td         = today_date()
+    week_start  = (_td - timedelta(days=_td.weekday())).isoformat()
+    month_start = _td.replace(day=1).isoformat()
     with get_db() as db:
         # XP contributed by PRAXIS tasks to the main ledger
         pts_today  = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE source='task' AND date=?",  (today,)).fetchone()["s"]

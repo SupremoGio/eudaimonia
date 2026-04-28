@@ -9,8 +9,9 @@ Reglas:
   - No permanentes en perks (excepto especiales)
   - Anti-abuso: >3 perks seguidos → -10% XP por 2 días
 """
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from database import get_db
+from utils import today_str, today_date
 
 # ── Badge Definitions ─────────────────────────────────────────────────────────
 #
@@ -176,9 +177,10 @@ def _gather_badge_stats():
     from modules.gamification.engine import _gather_achievement_stats, get_daily_classification
     stats = _gather_achievement_stats()
 
-    today      = date.today().isoformat()
-    month_start = date.today().replace(day=1).isoformat()
-    week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+    today      = today_str()
+    _td        = today_date()
+    month_start = _td.replace(day=1).isoformat()
+    week_start  = (_td - timedelta(days=_td.weekday())).isoformat()
 
     with get_db() as db:
         # GitHub projects this total
@@ -188,7 +190,7 @@ def _gather_badge_stats():
 
         # Salud base activities in last 7 days
         salud_base_keys = ["colacion", "jugo_verde", "comer_fruta", "dormir_8h", "skincare_noche"]
-        since_7 = (date.today() - timedelta(days=7)).isoformat()
+        since_7 = (today_date() - timedelta(days=7)).isoformat()
         salud_base_7d = db.execute(
             "SELECT COUNT(DISTINCT date) as c FROM activity_logs WHERE activity_key IN ({}) AND date >= ?".format(
                 ",".join("?" * len(salud_base_keys))
@@ -212,7 +214,7 @@ def _gather_badge_stats():
                 GROUP BY strftime('%W', date)
                 HAVING COUNT(DISTINCT description) = 2
             )""",
-            ((date.today() - timedelta(days=30)).isoformat(),)
+            ((today_date() - timedelta(days=30)).isoformat(),)
         ).fetchone()["c"]
 
     # Count total diamond days from last 90 days
@@ -256,7 +258,7 @@ def check_and_unlock_badges():
 
         expires = None
         if defn["perk_days"] > 0:
-            expires = (date.today() + timedelta(days=defn["perk_days"])).isoformat()
+            expires = (today_date() + timedelta(days=defn["perk_days"])).isoformat()
 
         with get_db() as db:
             existing = db.execute("SELECT id FROM badges WHERE key=?", (key,)).fetchone()
@@ -298,7 +300,7 @@ def get_all_badges():
             "SELECT key, tier, unlocked_at, perks_active_until FROM badges"
         ).fetchall()}
 
-    today = date.today().isoformat()
+    today = today_str()
     result = []
     for key, defn in BADGE_DEFS.items():
         row      = rows.get(key, {})
@@ -333,7 +335,7 @@ def get_all_badges():
 
 def get_active_perks():
     """Returns badges with currently active perks."""
-    today = date.today().isoformat()
+    today = today_str()
     with get_db() as db:
         rows = db.execute(
             "SELECT key, tier, perks_active_until FROM badges WHERE unlocked_at IS NOT NULL AND perks_active_until >= ?",

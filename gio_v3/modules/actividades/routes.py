@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify
-from datetime import date, timedelta, datetime
+from datetime import timedelta, datetime
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_quote_of_day, get_word_of_day, get_random_quote, get_random_word
+from utils import today_str, today_date
 import modules.gamification.engine as engine
 
 actividades_bp = Blueprint('actividades', __name__, template_folder='../../templates')
@@ -10,9 +11,10 @@ actividades_bp = Blueprint('actividades', __name__, template_folder='../../templ
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def get_dashboard_stats():
-    today       = date.today().isoformat()
-    week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
-    month_start = date.today().replace(day=1).isoformat()
+    today       = today_str()
+    _today      = today_date()
+    week_start  = (_today - timedelta(days=_today.weekday())).isoformat()
+    month_start = _today.replace(day=1).isoformat()
 
     with get_db() as db:
         xp_today   = db.execute(
@@ -53,7 +55,7 @@ def get_dashboard_stats():
 
 
 def get_payment_alerts():
-    d = date.today().day
+    d = today_date().day
     alerts = []
     if d == 15:
         alerts += [{"label": "BBVA", "color": "#c5a36c"}, {"label": "Invex", "color": "#a78bfa"}]
@@ -64,7 +66,7 @@ def get_payment_alerts():
 
 def get_weekend_mode():
     """Returns 'sat', 'sun', or None depending on today."""
-    dow = date.today().weekday()   # 5 = Saturday, 6 = Sunday
+    dow = today_date().weekday()   # 5 = Saturday, 6 = Sunday
     if dow == 5: return "sat"
     if dow == 6: return "sun"
     return None
@@ -84,6 +86,7 @@ def index():
     # Regular activities (no weekend field)
     regular_acts = {k: v for k, v in ACTIVITIES.items() if "weekend" not in v}
 
+    _td = today_date()
     return render_template('actividades/index.html',
         stats         = stats,
         gam           = gam,
@@ -94,8 +97,8 @@ def index():
         quote         = get_quote_of_day(),
         word          = get_word_of_day(),
         payment_alerts= get_payment_alerts(),
-        today         = date.today().isoformat(),
-        today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][date.today().weekday()],
+        today         = _td.isoformat(),
+        today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()],
         weekend_mode  = weekend_mode,
         classification= gam["classification"],
     )
@@ -103,9 +106,10 @@ def index():
 
 @actividades_bp.route('/api/today')
 def today_status():
-    today      = date.today().isoformat()
-    week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
-    month_start = date.today().replace(day=1).isoformat()
+    today       = today_str()
+    _today      = today_date()
+    week_start  = (_today - timedelta(days=_today.weekday())).isoformat()
+    month_start = _today.replace(day=1).isoformat()
     with get_db() as db:
         today_keys = {r['activity_key'] for r in db.execute(
             "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
@@ -137,14 +141,14 @@ def today_status():
 
 @actividades_bp.route('/api/classification')
 def classification():
-    today = request.args.get('date', date.today().isoformat())
+    today = request.args.get('date', today_str())
     return jsonify(engine.get_daily_classification(today))
 
 
 @actividades_bp.route('/api/activity/log', methods=['POST'])
 def log_activity():
     key   = request.json.get('key')
-    today = date.today().isoformat()
+    today = today_str()
     if key not in ACTIVITIES:
         return jsonify({'error': 'invalid'}), 400
 
@@ -200,7 +204,7 @@ def delete_pipeline(item_id):
 @actividades_bp.route('/api/priority', methods=['POST'])
 def add_priority():
     text  = request.json.get('text', '').strip()
-    today = date.today().isoformat()
+    today = today_str()
     if not text:
         return jsonify({'error': 'empty'}), 400
     with get_db() as db:
@@ -214,7 +218,7 @@ def add_priority():
 
 @actividades_bp.route('/api/priority/<int:pid>/toggle', methods=['POST'])
 def toggle_priority(pid):
-    today = date.today().isoformat()
+    today = today_str()
     bonus_action = None
 
     with get_db() as db:

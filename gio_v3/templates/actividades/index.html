@@ -644,14 +644,11 @@ async function executeReset() {
   }
 }
 
-// Midnight reset detector: reload when the calendar day changes
-const _PAGE_DATE = '{{ today }}';
-setInterval(() => {
-  const d = new Date();
-  const curr = d.getFullYear() + '-'
-    + String(d.getMonth() + 1).padStart(2, '0') + '-'
-    + String(d.getDate()).padStart(2, '0');
-  if (curr !== _PAGE_DATE) location.reload();
-}, 60_000);
+// Midnight reset: schedule an exact reload at the next calendar day boundary
+(function scheduleMidnightReload() {
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  setTimeout(() => location.reload(), midnight - now + 500); // +500 ms buffer
+})();
 </script>
 {% endblock %}

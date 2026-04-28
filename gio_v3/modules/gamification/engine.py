@@ -11,10 +11,11 @@ Rule hierarchy:
   7. Daily classification: Carbón / Hierro / Oro / Diamante
   8. Hard cap: 3.0× on any multiplier
 """
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, VIRTUE_CATS
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
+from utils import today_str, today_date
 
 # ── Level System (10 Stoic Levels, 5 500 XP in 1 year) ───────────────────────
 LEVEL_THRESHOLDS = [
@@ -90,7 +91,7 @@ def get_gamification_streak():
             "SELECT DISTINCT date FROM activity_logs"
         ).fetchall()}
     all_dates = xp_dates | act_dates
-    streak, check = 0, date.today()
+    streak, check = 0, today_date()
     while check.isoformat() in all_dates:
         streak += 1
         check -= timedelta(days=1)
@@ -107,7 +108,8 @@ def _streak_xp_mult(streak):
 
 def _get_balance_boost(category):
     """Return 1.20 if category is below 60% of weekly average, else 1.0."""
-    week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+    _td = today_date()
+    week_start = (_td - timedelta(days=_td.weekday())).isoformat()
     with get_db() as db:
         logs = db.execute(
             "SELECT activity_key FROM activity_logs WHERE date >= ? AND activity_key != 'priority_bonus'",
@@ -134,7 +136,7 @@ def _get_balance_boost(category):
 # ── Active Special Events ─────────────────────────────────────────────────────
 
 def _get_active_events():
-    today = date.today().isoformat()
+    today = today_str()
     with get_db() as db:
         rows = db.execute("""
             SELECT * FROM special_events
@@ -164,7 +166,7 @@ def _award_xp(amount, source, desc, ref_id=None, mult=1.0):
         db.execute(
             "INSERT INTO xp_ledger (amount,source,reference_id,description,multiplier,date,created_at)"
             " VALUES (?,?,?,?,?,?,?)",
-            (amount, source, ref_id, desc, mult, date.today().isoformat(), now)
+            (amount, source, ref_id, desc, mult, today_str(), now)
         )
         db.commit()
 
@@ -175,7 +177,7 @@ def _award_coins(amount, source, desc, ref_id=None, mult=1.0):
         db.execute(
             "INSERT INTO coins_ledger (amount,source,reference_id,description,multiplier,date,created_at)"
             " VALUES (?,?,?,?,?,?,?)",
-            (amount, source, ref_id, desc, mult, date.today().isoformat(), now)
+            (amount, source, ref_id, desc, mult, today_str(), now)
         )
         db.commit()
 
@@ -186,7 +188,7 @@ def _log_mult_event(type_, mult, triggered_by, applies_to, expires_at=None):
         db.execute(
             "INSERT INTO multiplier_log (type,multiplier,triggered_by,applies_to,date,expires_at,created_at)"
             " VALUES (?,?,?,?,?,?,?)",
-            (type_, mult, triggered_by, applies_to, date.today().isoformat(), expires_at, now)
+            (type_, mult, triggered_by, applies_to, today_str(), expires_at, now)
         )
         db.commit()
 
@@ -263,7 +265,7 @@ def _check_combo_bonus(today, keys_today):
 # ── Daily Classification ──────────────────────────────────────────────────────
 
 def get_daily_classification(date_str=None):
-    today = date_str or date.today().isoformat()
+    today = date_str or today_str()
     with get_db() as db:
         total_xp = db.execute(
             "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=?", (today,)
@@ -294,8 +296,9 @@ def get_daily_classification(date_str=None):
 # ── Achievement stats + unlock ────────────────────────────────────────────────
 
 def _gather_achievement_stats():
-    today      = date.today().isoformat()
-    week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+    today      = today_str()
+    _td        = today_date()
+    week_start = (_td - timedelta(days=_td.weekday())).isoformat()
 
     with get_db() as db:
         total_act = db.execute(
@@ -338,7 +341,7 @@ def _gather_achievement_stats():
         ).fetchone()["s"]
 
         # Conversaciones this month
-        month_start = date.today().replace(day=1).isoformat()
+        month_start = today_date().replace(day=1).isoformat()
         conv_month = db.execute(
             "SELECT COUNT(*) as c FROM activity_logs WHERE activity_key='conversacion' AND date>=?",
             (month_start,)
@@ -353,13 +356,13 @@ def _gather_achievement_stats():
         # Days with <3.5h screen time (redes_control)
         redes_7 = db.execute(
             "SELECT COUNT(*) as c FROM activity_logs WHERE activity_key='redes_control' AND date>=?",
-            ((date.today() - timedelta(days=7)).isoformat(),)
+            ((today_date() - timedelta(days=7)).isoformat(),)
         ).fetchone()["c"]
 
         # Diamond days this week
         diamond_week = 0
         for i in range(7):
-            d = (date.today() - timedelta(days=i)).isoformat()
+            d = (today_date() - timedelta(days=i)).isoformat()
             cl = get_daily_classification(d)
             if cl["rank"] == "diamond":
                 diamond_week += 1
@@ -480,8 +483,9 @@ def _maybe_award_perfect_day(today):
 # ── Full stats snapshot ───────────────────────────────────────────────────────
 
 def get_gamification_stats():
-    today      = date.today().isoformat()
-    week_start = (date.today() - timedelta(days=date.today().weekday())).isoformat()
+    today      = today_str()
+    _td        = today_date()
+    week_start = (_td - timedelta(days=_td.weekday())).isoformat()
 
     with get_db() as db:
         total_xp    = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger").fetchone()["s"]
@@ -548,7 +552,7 @@ def process_activity(key, pts, cat, log_id):
     if streak in (7, 30):
         _log_mult_event(f"streak_{streak}", xp_mult, f"Racha de {streak} días alcanzada", "xp")
 
-    today       = date.today().isoformat()
+    today       = today_str()
     keys_today  = _get_today_keys(today)
     combo_bonuses = _check_combo_bonus(today, keys_today)
     perfect_day   = _maybe_award_perfect_day(today)
@@ -651,7 +655,7 @@ def apply_penalty(penalty_type, context=""):
         return {"error": "unknown penalty type"}
 
     amount, desc = PENALTIES[penalty_type]
-    today = date.today().isoformat()
+    today = today_str()
     now   = datetime.now().isoformat()
     full_desc = desc + (f" | {context}" if context else "")
 

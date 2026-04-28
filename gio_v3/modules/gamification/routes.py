@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, render_template
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from database import get_db
+from utils import today_str, today_date
 from modules.gamification.engine import (
     get_gamification_stats, get_level_info, apply_penalty, check_and_unlock,
     get_daily_classification,
@@ -22,7 +23,7 @@ def stats():
 
 @gamification_bp.route('/api/gamification/classification')
 def classification():
-    d = request.args.get('date', date.today().isoformat())
+    d = request.args.get('date', today_str())
     return jsonify(get_daily_classification(d))
 
 
@@ -141,7 +142,7 @@ def events():
 @gamification_bp.route('/api/gamification/events/<key>/activate', methods=['POST'])
 def activate_event(key):
     data       = request.json or {}
-    start_date = data.get("start_date") or date.today().isoformat()
+    start_date = data.get("start_date") or today_str()
     end_date   = data.get("end_date")
 
     with get_db() as db:
@@ -213,7 +214,7 @@ def logros():
     # Last 7 days classification history
     history = []
     for i in range(6, -1, -1):
-        d = (date.today() - timedelta(days=i))
+        d = (today_date() - timedelta(days=i))
         cl = get_daily_classification(d.isoformat())
         history.append({
             "date":  d.isoformat(),
