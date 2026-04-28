@@ -110,10 +110,11 @@ def _get_balance_boost(category):
     """Return 1.20 if category is below 60% of weekly average, else 1.0."""
     _td = today_date()
     week_start = (_td - timedelta(days=_td.weekday())).isoformat()
+    today_s = today_str()
     with get_db() as db:
         logs = db.execute(
-            "SELECT activity_key FROM activity_logs WHERE date >= ? AND activity_key != 'priority_bonus'",
-            (week_start,)
+            "SELECT activity_key FROM activity_logs WHERE date >= ? AND date <= ? AND activity_key != 'priority_bonus'",
+            (week_start, today_s)
         ).fetchall()
 
     if not logs:
@@ -325,7 +326,8 @@ def _gather_achievement_stats():
             ).fetchone()["c"]
 
         xp_week = db.execute(
-            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?", (week_start,)
+            "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=? AND date<=?",
+            (week_start, today)
         ).fetchone()["s"]
 
         total_coins = db.execute(
@@ -490,7 +492,7 @@ def get_gamification_stats():
     with get_db() as db:
         total_xp    = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger").fetchone()["s"]
         xp_today    = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=?",    (today,)).fetchone()["s"]
-        xp_week     = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=?",   (week_start,)).fetchone()["s"]
+        xp_week     = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=? AND date<=?", (week_start, today)).fetchone()["s"]
         total_coins = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM coins_ledger").fetchone()["s"]
         coins_today = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM coins_ledger WHERE date=?", (today,)).fetchone()["s"]
 
