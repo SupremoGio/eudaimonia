@@ -81,9 +81,9 @@ def _build_eudaimonia_data():
         ).fetchall()
         today_keys = {r['activity_key'] for r in all_logs if r['date'] == today}
 
-        # GTD inbox
+        # GTD inbox (items sin clasificar en el nuevo modelo Praxis)
         inbox_rows = db.execute(
-            "SELECT id, title, context FROM gtd_tasks WHERE status='inbox' ORDER BY id DESC LIMIT 20"
+            "SELECT id, title FROM gtd_tasks WHERE cuadrante IS NULL AND completado=0 ORDER BY id DESC LIMIT 20"
         ).fetchall()
 
         # Resumen financiero (mes actual)
@@ -185,7 +185,7 @@ def _build_eudaimonia_data():
         {
             'id':      r['id'],
             'text':    r['title'],
-            'context': f"@{r['context']}" if r['context'] else '@inbox',
+            'context': '@inbox',
         }
         for r in inbox_rows
     ]

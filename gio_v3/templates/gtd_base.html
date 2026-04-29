@@ -100,14 +100,14 @@
 <div class="gtd-shell">
   <nav class="gtd-nav">
     <div class="gn-head"><div class="t">PRAXIS</div><div class="s">Ejecución de la voluntad</div></div>
-    <div class="gn-sec">Captura</div>
-    <a href="/gtd/inbox"    class="gl {% if gp=='inbox' %}on{% endif %}"><i data-lucide="inbox"></i>Inbox{% if stats.inbox_n>0 %}<span class="gl-badge">{{stats.inbox_n}}</span>{% endif %}</a>
-    <div class="gn-sec">Ejecución</div>
-    <a href="/gtd/next"     class="gl {% if gp=='next' %}on{% endif %}"><i data-lucide="arrow-right-circle"></i>Next{% if stats.next_n>0 %}<span class="gl-badge">{{stats.next_n}}</span>{% endif %}</a>
-    <a href="/gtd/projects" class="gl {% if gp=='projects' %}on{% endif %}"><i data-lucide="folder"></i>Proyectos{% if stats.proj_n>0 %}<span class="gl-badge">{{stats.proj_n}}</span>{% endif %}</a>
     <div class="gn-sec">Sistema</div>
-    <a href="/gtd/someday"  class="gl {% if gp=='someday' %}on{% endif %}"><i data-lucide="clock"></i>Someday</a>
-    <a href="/gtd/points"   class="gl {% if gp=='points' %}on{% endif %}"><i data-lucide="trophy"></i>Puntos</a>
+    <a href="/gtd/" class="gl {% if gp=='praxis' %}on{% endif %}">
+      <i data-lucide="layout-dashboard"></i>Praxis
+      {% if stats.inbox_n>0 %}<span class="gl-badge">{{stats.inbox_n}}</span>{% endif %}
+    </a>
+    <a href="/gtd/points" class="gl {% if gp=='points' %}on{% endif %}">
+      <i data-lucide="trophy"></i>Puntos
+    </a>
     <div class="gn-foot">
       <div class="lv-lbl">Nivel {{stats.level}} — {{stats.level_name}}</div>
       <div class="lv-bar"><div class="lv-fill" style="width:{{stats.level_pct}}%"></div></div>

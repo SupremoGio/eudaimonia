@@ -857,6 +857,40 @@ def init_db():
         except Exception as e:
             print(f"[DB] wishlist EC migration warning: {e}")
 
+        # Migrate gtd_tasks: add Eisenhower/Praxis columns if missing
+        try:
+            gtd_cols = [r["name"] for r in db.execute("PRAGMA table_info(gtd_tasks)").fetchall()]
+            praxis_alters = [
+                ('importante',       'ALTER TABLE gtd_tasks ADD COLUMN importante INTEGER DEFAULT NULL'),
+                ('urgente',          'ALTER TABLE gtd_tasks ADD COLUMN urgente INTEGER DEFAULT NULL'),
+                ('cuadrante',        'ALTER TABLE gtd_tasks ADD COLUMN cuadrante TEXT DEFAULT NULL'),
+                ('tipo',             "ALTER TABLE gtd_tasks ADD COLUMN tipo TEXT DEFAULT 'tarea'"),
+                ('completado',       'ALTER TABLE gtd_tasks ADD COLUMN completado INTEGER DEFAULT 0'),
+                ('fecha_completado', 'ALTER TABLE gtd_tasks ADD COLUMN fecha_completado TEXT DEFAULT NULL'),
+                ('fecha_limite',     'ALTER TABLE gtd_tasks ADD COLUMN fecha_limite TEXT DEFAULT NULL'),
+                ('notas',            'ALTER TABLE gtd_tasks ADD COLUMN notas TEXT DEFAULT NULL'),
+                ('actualizado_en',   'ALTER TABLE gtd_tasks ADD COLUMN actualizado_en TEXT DEFAULT NULL'),
+            ]
+            for col, sql in praxis_alters:
+                if col not in gtd_cols:
+                    db.execute(sql)
+            db.commit()
+            # Populate new columns from old data (idempotent)
+            db.execute("""UPDATE gtd_tasks SET completado=1,
+                fecha_completado=COALESCE(NULLIF(completed_at,''), created_at)
+                WHERE status='done' AND (completado IS NULL OR completado=0)""")
+            db.execute("""UPDATE gtd_tasks SET importante=0, urgente=0, cuadrante='ideas'
+                WHERE status='someday' AND importante IS NULL""")
+            db.execute("""UPDATE gtd_tasks SET fecha_limite=due_date
+                WHERE due_date IS NOT NULL AND due_date!=''
+                AND (fecha_limite IS NULL OR fecha_limite='')""")
+            db.execute("""UPDATE gtd_tasks SET notas=description
+                WHERE description IS NOT NULL AND description!=''
+                AND (notas IS NULL OR notas='')""")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] gtd_tasks praxis migration warning: {e}")
+
         # Migrate profile_docs: add field_key column if missing
         try:
             pd_cols = [r["name"] for r in db.execute("PRAGMA table_info(profile_docs)").fetchall()]
@@ -954,15 +988,23 @@ def get_gtd_stats():
         pts_total  = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE source='task'").fetchone()["s"]
         # Global XP for level calculation (same source as main dashboard)
         total_xp   = db.execute("SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger").fetchone()["s"]
-        done_today = db.execute("SELECT COUNT(*) as c FROM gtd_tasks WHERE completed_at=?", (today,)).fetchone()["c"]
-        inbox_n    = db.execute("SELECT COUNT(*) as c FROM gtd_tasks WHERE status='inbox'").fetchone()["c"]
-        next_n     = db.execute("SELECT COUNT(*) as c FROM gtd_tasks WHERE status='next'").fetchone()["c"]
-        proj_n     = db.execute("SELECT COUNT(*) as c FROM gtd_projects WHERE status='active'").fetchone()["c"]
+        done_today = db.execute(
+            "SELECT COUNT(*) as c FROM gtd_tasks WHERE fecha_completado=? OR completed_at=?",
+            (today, today)).fetchone()["c"]
+        inbox_n = db.execute(
+            "SELECT COUNT(*) as c FROM gtd_tasks WHERE cuadrante IS NULL AND completado=0"
+        ).fetchone()["c"]
+        hoy_n = db.execute(
+            "SELECT COUNT(*) as c FROM gtd_tasks WHERE cuadrante='hoy' AND completado=0"
+        ).fetchone()["c"]
+        next_n  = hoy_n  # backward compat alias
+        proj_n  = db.execute("SELECT COUNT(*) as c FROM gtd_projects WHERE status='active'").fetchone()["c"]
     # Use the main gamification engine — same level thresholds and streak logic
     streak     = get_gamification_streak()
     level_info = get_level_info(total_xp)
     return dict(pts_today=pts_today, pts_week=pts_week, pts_month=pts_month, pts_total=pts_total,
-                total_xp=total_xp, done_today=done_today, inbox_n=inbox_n, next_n=next_n, proj_n=proj_n,
+                total_xp=total_xp, done_today=done_today, inbox_n=inbox_n,
+                hoy_n=hoy_n, next_n=next_n, proj_n=proj_n,
                 streak=streak,
                 level=level_info["level"], level_name=level_info["level_name"],
                 level_pct=level_info["level_pct"], xp_to_next=level_info["xp_to_next"])

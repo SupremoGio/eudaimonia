@@ -1,0 +1,494 @@
+{% extends "gtd_base.html" %}{% set gp='praxis' %}
+{% block title %}Praxis — Eudaimonia{% endblock %}
+{% block topright %}PRAXIS · Eisenhower{% endblock %}
+
+{% block gtd_body %}
+<style>
+/* ── Capture bar ──────────────────────────────────────────────────────────── */
+.px-capture{position:sticky;top:0;z-index:10;background:var(--surf);border-bottom:1px solid var(--b);padding:12px 0 12px;margin:-22px -26px 18px;}
+.px-capture-in{padding:0 26px;}
+.px-row{display:flex;gap:8px;margin-bottom:8px;}
+.px-input{flex:1;background:var(--card2);border:1px solid var(--b2);border-radius:10px;padding:11px 16px;color:var(--text);font-size:.82rem;outline:none;transition:border-color .16s;min-height:44px;}
+.px-input:focus{border-color:var(--gold);}
+.px-add{background:var(--gold);color:#09070F;font-weight:700;font-size:.72rem;padding:11px 20px;border-radius:10px;border:none;cursor:pointer;min-height:44px;transition:opacity .15s;white-space:nowrap;}
+.px-add:hover{opacity:.85;}
+.px-tipos{display:flex;gap:6px;flex-wrap:wrap;}
+.px-tipo{background:var(--card2);border:1px solid var(--b);border-radius:100px;padding:4px 12px;font-size:.58rem;color:var(--mid);cursor:pointer;transition:all .14s;min-height:28px;display:flex;align-items:center;}
+.px-tipo.on{border-color:var(--gold);color:var(--gold);background:var(--gold-d);}
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+.px-sec{margin-bottom:10px;border-radius:12px;overflow:hidden;border:1px solid var(--b);}
+.px-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;user-select:none;transition:background .14s;}
+.px-hd:hover{background:rgba(255,255,255,.02);}
+.px-hd-left{display:flex;align-items:center;gap:8px;}
+.sec-icon{font-size:.95rem;}
+.sec-title{font-size:.58rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--mid);}
+.sec-badge{background:var(--gold);color:#09070F;font-size:.48rem;font-weight:700;padding:1px 7px;border-radius:100px;min-width:18px;text-align:center;display:none;}
+.sec-badge.v{display:inline-block;}
+.px-hd-right{display:flex;align-items:center;gap:8px;}
+.rev-btn{background:none;border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:100px;font-size:.5rem;padding:3px 10px;cursor:pointer;transition:all .14s;display:none;}
+.rev-btn:hover{background:var(--gold-d);}
+.rev-btn.v{display:block;}
+.sec-chev{width:14px;height:14px;color:var(--dim);transition:transform .22s;flex-shrink:0;}
+.sec-chev.open{transform:rotate(180deg);}
+.px-body{padding:0 10px 8px;display:none;}
+.px-body.open{display:block;}
+
+/* Accent colors per section */
+.sec-inbox   .px-hd{background:rgba(255,255,255,.01);}
+.sec-hoy     {border-color:rgba(239,68,68,.2);}
+.sec-hoy     .px-hd{background:rgba(239,68,68,.035);}
+.sec-semana  {border-color:rgba(59,130,246,.2);}
+.sec-semana  .px-hd{background:rgba(59,130,246,.03);}
+.sec-delegar {border-color:rgba(234,179,8,.2);}
+.sec-delegar .px-hd{background:rgba(234,179,8,.03);}
+.sec-ideas   .px-hd{background:rgba(168,152,128,.02);}
+.sec-done    .px-hd{background:rgba(16,185,129,.02);}
+
+/* ── Items ────────────────────────────────────────────────────────────────── */
+.px-item{display:flex;align-items:flex-start;gap:10px;padding:10px 6px;border-bottom:1px solid var(--b);transition:opacity .22s,transform .22s;}
+.px-item:last-child{border-bottom:none;}
+.px-item.out{opacity:0;transform:translateX(18px);}
+
+.item-dot{width:22px;height:22px;border:1.5px solid var(--dim);border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .16s;margin-top:1px;}
+.item-dot:hover{border-color:var(--gold);}
+.item-dot.ck{background:var(--gold);border-color:var(--gold);}
+.item-dot svg{width:11px;height:11px;color:#09070F;display:none;}
+.item-dot.ck svg{display:block;}
+
+.item-main{flex:1;min-width:0;}
+.item-text{font-size:.76rem;color:var(--text);line-height:1.35;}
+.item-text.crossed{text-decoration:line-through;color:var(--dim);}
+.item-notas{font-size:.57rem;color:var(--dim);margin-top:3px;line-height:1.5;}
+.item-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;}
+.item-date{font-size:.5rem;color:var(--mid);}
+.item-tipo{font-size:.46rem;padding:2px 7px;border-radius:100px;}
+.tp-tarea{background:rgba(197,163,108,.08);border:1px solid rgba(197,163,108,.2);color:var(--gold);}
+.tp-idea {background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);color:var(--purple);}
+.tp-nota {background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.2);color:var(--mid);}
+.done-when{font-size:.48rem;color:var(--dim);margin-top:2px;}
+
+/* Classify panel (inbox) */
+.cls-panel{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.cls-q{display:flex;align-items:center;gap:5px;}
+.cls-lbl{font-size:.48rem;color:var(--dim);width:72px;flex-shrink:0;letter-spacing:.04em;}
+.cls-btn{font-size:.57rem;padding:3px 10px;border-radius:100px;border:1px solid var(--b);background:var(--card2);color:var(--mid);cursor:pointer;transition:all .12s;min-height:26px;}
+.cls-btn:hover{border-color:var(--b2);color:var(--text);}
+.cls-btn.y{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.35);color:var(--green);}
+.cls-btn.n{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.25);color:var(--coral);}
+
+/* Item actions */
+.item-acts{display:flex;gap:2px;flex-shrink:0;align-self:flex-start;}
+.ai{background:none;border:none;color:var(--dim);padding:5px;border-radius:6px;cursor:pointer;display:flex;align-items:center;transition:color .14s;min-width:28px;min-height:28px;justify-content:center;}
+.ai:hover{color:var(--gold);}
+.ai.del:hover{color:var(--coral);}
+.ai svg{width:13px;height:13px;}
+
+.px-empty{text-align:center;padding:16px 10px;color:var(--dim);font-size:.64rem;font-style:italic;}
+
+/* ── Stats bar ────────────────────────────────────────────────────────────── */
+.px-stats{display:flex;gap:14px;flex-wrap:wrap;padding:0 2px 16px;}
+.px-stat{text-align:center;}
+.px-stat-v{font-family:var(--serif);font-size:1.3rem;font-weight:300;color:var(--gold);line-height:1;}
+.px-stat-l{font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.px-vd{width:1px;background:var(--b);height:26px;align-self:center;}
+
+/* ── Review modal ─────────────────────────────────────────────────────────── */
+.rev-overlay{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(5px);z-index:200;display:flex;align-items:center;justify-content:center;animation:rFadeIn .18s;}
+@keyframes rFadeIn{from{opacity:0}to{opacity:1}}
+.rev-card{background:var(--card);border:1px solid var(--b2);border-radius:18px;padding:30px 26px;max-width:400px;width:92%;animation:rScaleIn .2s;}
+@keyframes rScaleIn{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:none}}
+.rev-ctr{font-size:.5rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:18px;}
+.rev-txt{font-family:var(--serif);font-size:1.3rem;font-weight:300;letter-spacing:.04em;margin-bottom:22px;line-height:1.4;color:var(--text);}
+.rev-qs{display:flex;flex-direction:column;gap:12px;margin-bottom:22px;}
+.rev-qrow{display:flex;align-items:center;gap:10px;}
+.rev-qlbl{font-size:.58rem;color:var(--dim);width:90px;flex-shrink:0;}
+.rev-qbtns{display:flex;gap:6px;}
+.rev-qbtn{padding:7px 18px;border-radius:8px;border:1px solid var(--b);background:var(--card2);color:var(--mid);font-size:.66rem;cursor:pointer;transition:all .14s;}
+.rev-qbtn:hover{border-color:var(--b2);color:var(--text);}
+.rev-qbtn.y{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.4);color:var(--green);}
+.rev-qbtn.n{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.3);color:var(--coral);}
+.rev-foot{display:flex;gap:8px;justify-content:flex-end;}
+
+@media(max-width:767px){
+  .px-capture{margin:-16px -14px 14px;}
+  .px-capture-in{padding:0 14px;}
+  .cls-panel{display:none;}
+  .px-item.mob-expanded .cls-panel{display:flex;flex-direction:row;flex-wrap:wrap;gap:8px;width:100%;margin-top:8px;}
+  .item-main{cursor:pointer;}
+}
+</style>
+
+<!-- Quick Capture (sticky) -->
+<div class="px-capture">
+  <div class="px-capture-in">
+    <div class="px-row">
+      <input class="px-input" id="qi" placeholder="Captura rápida... (Enter → Inbox)" autocomplete="off">
+      <button class="px-add" onclick="capture()">+ Inbox</button>
+    </div>
+    <div class="px-tipos">
+      <button class="px-tipo on" data-tipo="tarea" onclick="setTipo(this,'tarea')">📌 Tarea</button>
+      <button class="px-tipo" data-tipo="idea" onclick="setTipo(this,'idea')">💡 Idea</button>
+      <button class="px-tipo" data-tipo="nota" onclick="setTipo(this,'nota')">📝 Nota</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stats summary -->
+<div class="px-stats">
+  <div class="px-stat"><div class="px-stat-v" id="st-inbox">{{ stats.inbox_n }}</div><div class="px-stat-l">Inbox</div></div>
+  <div class="px-vd"></div>
+  <div class="px-stat"><div class="px-stat-v" id="st-hoy">{{ stats.hoy_n }}</div><div class="px-stat-l">Hoy</div></div>
+  <div class="px-vd"></div>
+  <div class="px-stat"><div class="px-stat-v" id="st-done">{{ stats.done_today }}</div><div class="px-stat-l">Completadas hoy</div></div>
+  <div class="px-vd"></div>
+  <div class="px-stat"><div class="px-stat-v">{{ stats.streak }}</div><div class="px-stat-l">Racha</div></div>
+</div>
+
+<!-- Sections rendered by JS -->
+<div id="px-root"></div>
+
+<!-- Review modal -->
+<div class="rev-overlay" id="rev-overlay" style="display:none;" onclick="closeRevIf(event)">
+  <div class="rev-card" id="rev-card">
+    <div class="rev-ctr" id="rev-ctr"></div>
+    <div class="rev-txt" id="rev-txt"></div>
+    <div class="rev-qs">
+      <div class="rev-qrow">
+        <span class="rev-qlbl">¿Importante?</span>
+        <div class="rev-qbtns">
+          <button class="rev-qbtn" id="ri-si" onclick="revAns('importante',true)">Sí</button>
+          <button class="rev-qbtn" id="ri-no" onclick="revAns('importante',false)">No</button>
+        </div>
+      </div>
+      <div class="rev-qrow">
+        <span class="rev-qlbl">¿Urgente?</span>
+        <div class="rev-qbtns">
+          <button class="rev-qbtn" id="ru-si" onclick="revAns('urgente',true)">Sí</button>
+          <button class="rev-qbtn" id="ru-no" onclick="revAns('urgente',false)">No</button>
+        </div>
+      </div>
+    </div>
+    <div class="rev-foot">
+      <button class="btn-g" onclick="skipRev()">Saltar →</button>
+      <button class="btn-g" onclick="closeRev()">✕ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let tasks = {{ tasks | tojson }};
+let activeTipo = 'tarea';
+let openSecs = new Set(['inbox','hoy','semana','delegar','ideas']);
+
+// Normalize integer booleans from SQLite
+tasks.forEach(t => {
+  t.importante = (t.importante === null || t.importante === undefined) ? null : !!t.importante;
+  t.urgente    = (t.urgente    === null || t.urgente    === undefined) ? null : !!t.urgente;
+  t.completado = !!t.completado;
+});
+
+const SECS = [
+  { key:'inbox',   label:'INBOX',          icon:'📥', accent:'sec-inbox',   showRev:true  },
+  { key:'hoy',     label:'HOY — URGENTE + IMPORTANTE',  icon:'🔴', accent:'sec-hoy'          },
+  { key:'semana',  label:'ESTA SEMANA — AGÉNDALO',      icon:'🔵', accent:'sec-semana'        },
+  { key:'delegar', label:'DELEGAR — URGENTE SIN IMPACTO',icon:'🟡',accent:'sec-delegar'       },
+  { key:'ideas',   label:'BANCO DE IDEAS', icon:'⚪', accent:'sec-ideas'                    },
+  { key:'done',    label:'COMPLETADOS',    icon:'✅', accent:'sec-done',    defClosed:true },
+];
+const Q_LABEL = { hoy:'🔴 HOY', semana:'🔵 ESTA SEMANA', delegar:'🟡 DELEGAR', ideas:'⚪ IDEAS' };
+const TIPO_LABEL = { tarea:'📌 Tarea', idea:'💡 Idea', nota:'📝 Nota' };
+const TIPO_CLS   = { tarea:'tp-tarea', idea:'tp-idea',  nota:'tp-nota'  };
+
+// ── Tipo ───────────────────────────────────────────────────────────────────
+function setTipo(el, tipo) {
+  document.querySelectorAll('.px-tipo').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  activeTipo = tipo;
+}
+
+// ── Capture ───────────────────────────────────────────────────────────────
+async function capture() {
+  const inp = document.getElementById('qi');
+  const texto = inp.value.trim();
+  if (!texto) return;
+  inp.disabled = true;
+  const r = await fetch('/gtd/api/task', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({texto, tipo: activeTipo})
+  }).then(r => r.json()).catch(() => null);
+  inp.disabled = false;
+  if (!r || !r.ok) { toast('Error al guardar','err'); return; }
+  tasks.unshift({id:r.id, title:texto, tipo:activeTipo, importante:null, urgente:null,
+    cuadrante:null, completado:false, fecha_completado:null, fecha_limite:null, notas:null});
+  inp.value = '';
+  openSecs.add('inbox');
+  renderAll();
+  toast('Capturado en Inbox ✓');
+}
+
+// ── Classify ───────────────────────────────────────────────────────────────
+async function classify(id, campo, valor) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+  task[campo] = valor;
+
+  if (task.importante !== null && task.urgente !== null) {
+    const r = await fetch(`/gtd/api/task/${id}/classify`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({importante: task.importante, urgente: task.urgente})
+    }).then(r => r.json()).catch(() => null);
+    if (r && r.ok) {
+      task.cuadrante = r.cuadrante;
+      openSecs.add(r.cuadrante);
+      toast(`→ ${Q_LABEL[r.cuadrante] || r.cuadrante}`);
+    }
+  }
+  renderAll();
+}
+
+// ── Unclassify ─────────────────────────────────────────────────────────────
+async function unclassify(id) {
+  await fetch(`/gtd/api/task/${id}/classify`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({importante: null, urgente: null})
+  }).catch(() => {});
+  const task = tasks.find(t => t.id === id);
+  if (task) { task.importante = null; task.urgente = null; task.cuadrante = null; }
+  openSecs.add('inbox');
+  renderAll();
+  toast('↩ Movido a Inbox');
+}
+
+// ── Complete ───────────────────────────────────────────────────────────────
+async function completeTask(id, dot) {
+  const task = tasks.find(t => t.id === id);
+  if (!task || task.completado) return;
+  if (dot) { dot.disabled = true; dot.classList.add('ck'); }
+  const r = await fetch(`/gtd/api/task/${id}/complete`, {method:'POST'})
+    .then(r => r.json()).catch(() => null);
+  if (!r || !r.ok) {
+    if (dot) { dot.disabled = false; dot.classList.remove('ck'); }
+    toast('Error al completar','err'); return;
+  }
+  task.completado = true;
+  task.fecha_completado = new Date().toISOString().split('T')[0];
+  openSecs.add('done');
+  renderAll();
+  updateStatBars(r.stats);
+  toast(`+${r.pts} pts${r.bonus ? ` ✦ BONUS +${r.bonus}` : ''}`);
+}
+
+// ── Delete ─────────────────────────────────────────────────────────────────
+async function delTask(id) {
+  if (!confirm('¿Eliminar esta tarea?')) return;
+  await fetch(`/gtd/api/task/${id}`, {method:'DELETE'}).catch(() => {});
+  tasks = tasks.filter(t => t.id !== id);
+  renderAll();
+}
+
+// ── Section toggle ─────────────────────────────────────────────────────────
+function toggleSec(key) {
+  openSecs.has(key) ? openSecs.delete(key) : openSecs.add(key);
+  renderAll();
+}
+
+// ── Stat bars ──────────────────────────────────────────────────────────────
+function updateStatBars(stats) {
+  if (!stats) return;
+  const inbox = tasks.filter(t => !t.completado && t.cuadrante === null).length;
+  const hoy   = tasks.filter(t => !t.completado && t.cuadrante === 'hoy').length;
+  const done  = tasks.filter(t => t.completado && t.fecha_completado === new Date().toISOString().split('T')[0]).length;
+  document.getElementById('st-inbox').textContent = inbox;
+  document.getElementById('st-hoy').textContent   = hoy;
+  document.getElementById('st-done').textContent  = done;
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderItem(t, secKey) {
+  const imp = t.importante, urg = t.urgente;
+
+  if (secKey === 'inbox') {
+    return `
+    <div class="px-item" data-id="${t.id}">
+      <div class="item-main" onclick="this.closest('.px-item').classList.toggle('mob-expanded')">
+        <div class="item-text">${esc(t.title)}</div>
+        ${t.notas ? `<div class="item-notas">${esc(t.notas)}</div>` : ''}
+        <div class="item-meta">
+          <span class="item-tipo ${TIPO_CLS[t.tipo]||'tp-tarea'}">${TIPO_LABEL[t.tipo]||'📌 Tarea'}</span>
+        </div>
+      </div>
+      <div class="cls-panel">
+        <div class="cls-q">
+          <span class="cls-lbl">¿Importante?</span>
+          <button class="cls-btn ${imp===true?'y':''}" onclick="classify(${t.id},'importante',true)">Sí</button>
+          <button class="cls-btn ${imp===false?'n':''}" onclick="classify(${t.id},'importante',false)">No</button>
+        </div>
+        <div class="cls-q">
+          <span class="cls-lbl">¿Urgente?</span>
+          <button class="cls-btn ${urg===true?'y':''}" onclick="classify(${t.id},'urgente',true)">Sí</button>
+          <button class="cls-btn ${urg===false?'n':''}" onclick="classify(${t.id},'urgente',false)">No</button>
+        </div>
+      </div>
+      <div class="item-acts">
+        <button class="ai del" title="Eliminar" onclick="delTask(${t.id})"><i data-lucide="trash-2"></i></button>
+      </div>
+    </div>`;
+  }
+
+  if (secKey === 'done') {
+    return `
+    <div class="px-item" data-id="${t.id}">
+      <div class="item-dot ck"><i data-lucide="check"></i></div>
+      <div class="item-main">
+        <div class="item-text crossed">${esc(t.title)}</div>
+        ${t.fecha_completado ? `<div class="done-when">Completado ${t.fecha_completado}</div>` : ''}
+      </div>
+      <div class="item-acts">
+        <button class="ai del" title="Eliminar" onclick="delTask(${t.id})"><i data-lucide="trash-2"></i></button>
+      </div>
+    </div>`;
+  }
+
+  // Quadrant items (hoy / semana / delegar / ideas)
+  return `
+  <div class="px-item" data-id="${t.id}">
+    <div class="item-dot" onclick="completeTask(${t.id},this)"><i data-lucide="check"></i></div>
+    <div class="item-main">
+      <div class="item-text">${esc(t.title)}</div>
+      ${t.notas ? `<div class="item-notas">${esc(t.notas)}</div>` : ''}
+      <div class="item-meta">
+        ${t.fecha_limite ? `<span class="item-date">📅 ${t.fecha_limite}</span>` : ''}
+        <span class="item-tipo ${TIPO_CLS[t.tipo]||'tp-tarea'}">${TIPO_LABEL[t.tipo]||'📌 Tarea'}</span>
+      </div>
+    </div>
+    <div class="item-acts">
+      <button class="ai" title="Mover a Inbox" onclick="unclassify(${t.id})"><i data-lucide="inbox"></i></button>
+      <button class="ai del" title="Eliminar" onclick="delTask(${t.id})"><i data-lucide="trash-2"></i></button>
+    </div>
+  </div>`;
+}
+
+function renderAll() {
+  const groups = {
+    inbox:   tasks.filter(t => !t.completado && t.cuadrante === null),
+    hoy:     tasks.filter(t => !t.completado && t.cuadrante === 'hoy'),
+    semana:  tasks.filter(t => !t.completado && t.cuadrante === 'semana'),
+    delegar: tasks.filter(t => !t.completado && t.cuadrante === 'delegar'),
+    ideas:   tasks.filter(t => !t.completado && t.cuadrante === 'ideas'),
+    done:    tasks.filter(t => !!t.completado).slice(0, 40),
+  };
+  const inboxLen = groups.inbox.length;
+
+  let html = '';
+  for (const sec of SECS) {
+    const items  = groups[sec.key] || [];
+    const isOpen = openSecs.has(sec.key);
+    const badge  = items.length > 0 && sec.key !== 'done';
+
+    html += `
+    <div class="px-sec ${sec.accent}">
+      <div class="px-hd" onclick="toggleSec('${sec.key}')">
+        <div class="px-hd-left">
+          <span class="sec-icon">${sec.icon}</span>
+          <span class="sec-title">${sec.label}</span>
+          <span class="sec-badge ${badge?'v':''}">${items.length}</span>
+        </div>
+        <div class="px-hd-right">
+          ${sec.showRev ? `<button class="rev-btn ${inboxLen>0?'v':''}" onclick="startRev(event)">Revisión rápida →</button>` : ''}
+          <svg class="sec-chev ${isOpen?'open':''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+      <div class="px-body ${isOpen?'open':''}">
+        ${items.length === 0
+          ? `<div class="px-empty">${sec.key==='done'?'Aún sin completados.':'Todo limpio aquí 🎉'}</div>`
+          : items.map(t => renderItem(t, sec.key)).join('')
+        }
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('px-root').innerHTML = html;
+  lucide.createIcons();
+}
+
+// ── Review mode ────────────────────────────────────────────────────────────
+let revQ = [], revIdx = 0, revImp = null, revUrg = null;
+
+function startRev(e) {
+  e.stopPropagation();
+  revQ = tasks.filter(t => !t.completado && t.cuadrante === null);
+  if (!revQ.length) { toast('Inbox vacío 🎉'); return; }
+  revIdx = 0; revImp = null; revUrg = null;
+  showRevItem();
+  document.getElementById('rev-overlay').style.display = 'flex';
+}
+
+function showRevItem() {
+  if (revIdx >= revQ.length) { closeRev(); toast('Revisión completa 🎉'); return; }
+  const t = revQ[revIdx];
+  document.getElementById('rev-ctr').textContent = `${revIdx + 1} de ${revQ.length}`;
+  document.getElementById('rev-txt').textContent = t.title;
+  ['ri-si','ri-no','ru-si','ru-no'].forEach(id => {
+    document.getElementById(id).className = 'rev-qbtn';
+  });
+  revImp = null; revUrg = null;
+}
+
+async function revAns(campo, valor) {
+  if (campo === 'importante') {
+    revImp = valor;
+    document.getElementById('ri-si').className = 'rev-qbtn' + (valor ? ' y' : '');
+    document.getElementById('ri-no').className  = 'rev-qbtn' + (!valor ? ' n' : '');
+  } else {
+    revUrg = valor;
+    document.getElementById('ru-si').className = 'rev-qbtn' + (valor ? ' y' : '');
+    document.getElementById('ru-no').className  = 'rev-qbtn' + (!valor ? ' n' : '');
+  }
+
+  if (revImp !== null && revUrg !== null) {
+    const t = revQ[revIdx];
+    const r = await fetch(`/gtd/api/task/${t.id}/classify`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({importante: revImp, urgente: revUrg})
+    }).then(r => r.json()).catch(() => null);
+    if (r && r.ok) {
+      const task = tasks.find(x => x.id === t.id);
+      if (task) { task.importante = revImp; task.urgente = revUrg; task.cuadrante = r.cuadrante; }
+    }
+    await new Promise(res => setTimeout(res, 200));
+    revIdx++;
+    showRevItem();
+    renderAll();
+  }
+}
+
+function skipRev() { revIdx++; showRevItem(); }
+function closeRev() { document.getElementById('rev-overlay').style.display = 'none'; renderAll(); }
+function closeRevIf(e) { if (e.target.id === 'rev-overlay') closeRev(); }
+
+// ── Init ───────────────────────────────────────────────────────────────────
+// Collapse inbox if empty
+const initInbox = tasks.filter(t => !t.completado && t.cuadrante === null).length;
+if (initInbox === 0) openSecs.delete('inbox');
+// Completados start collapsed
+openSecs.delete('done');
+
+renderAll();
+
+document.getElementById('qi').addEventListener('keydown', e => {
+  if (e.key === 'Enter') capture();
+  if (e.key === 'Escape') e.target.blur();
+});
+</script>
+{% endblock %}
