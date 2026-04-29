@@ -174,17 +174,18 @@ ACTIVITIES = {
     "redes_control":    {"label": "<3.5h redes sociales",            "cat": "Identidad",        "pts": 4, "ec": 1, "tier": "progreso"},
 
     # ── SÁBADO RESET — solo sábado ────────────────────────────────────────────
-    "sat_bloque1":      {"label": "Bloque 1 — Entorno (limpieza gral.)", "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "progreso", "weekend": "sat"},
-    "sat_bloque2":      {"label": "Bloque 2 — Ropa & Higiene",           "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "progreso", "weekend": "sat"},
-    "sat_bloque3":      {"label": "Bloque 3 — Base (desayuno/plantas)",  "cat": "Sábado Reset", "pts": 3, "ec": 1, "tier": "progreso", "weekend": "sat"},
+    "sat_bloque1":      {"label": "Bloque 1 — Arranque & Limpieza",      "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "progreso", "weekend": "sat"},
+    "sat_bloque2":      {"label": "Bloque 2 — Ensayo",                   "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "alto",     "weekend": "sat"},
+    "sat_bloque3":      {"label": "Bloque 3 — Gym & Cierre",             "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "alto",     "weekend": "sat"},
+    "sat_jugos":        {"label": "Preparar jugos (opcional)",           "cat": "Sábado Reset", "pts": 2, "ec": 1, "tier": "progreso", "weekend": "sat", "optional": True},
     "sat_flow":         {"label": "Bonus — Flow continuo",               "cat": "Sábado Reset", "pts": 2, "ec": 1, "tier": "progreso", "weekend": "sat"},
 
     # ── DOMINGO STRATEGY — solo domingo ──────────────────────────────────────
-    "sun_reflexion":    {"label": "Reflexión — Revisión semanal",    "cat": "Domingo Strategy", "pts": 7, "ec": 3, "tier": "alto",    "weekend": "sun"},
-    "sun_diseno":       {"label": "Diseño — Preparar semana",        "cat": "Domingo Strategy", "pts": 4, "ec": 2, "tier": "progreso","weekend": "sun"},
-    "sun_comidas":      {"label": "Sistema — Comidas semanales",     "cat": "Domingo Strategy", "pts": 4, "ec": 2, "tier": "progreso","weekend": "sun"},
-    "sun_jugos":        {"label": "Sistema — Jugos",                 "cat": "Domingo Strategy", "pts": 3, "ec": 1, "tier": "progreso","weekend": "sun"},
-    "sun_planchar":     {"label": "Sistema — Planchar",              "cat": "Domingo Strategy", "pts": 2, "ec": 1, "tier": "progreso","weekend": "sun"},
+    "sun_reflexion":    {"label": "Reflexión — Planeación + Prioridades","cat": "Domingo Strategy", "pts": 4, "ec": 2, "tier": "alto",    "weekend": "sun"},
+    "sun_diseno":       {"label": "Finanzas — Revisión semanal",         "cat": "Domingo Strategy", "pts": 4, "ec": 2, "tier": "alto",    "weekend": "sun"},
+    "sun_comidas":      {"label": "Sistema — Super + Comida semanal",    "cat": "Domingo Strategy", "pts": 3, "ec": 1, "tier": "progreso","weekend": "sun"},
+    "sun_jugos":        {"label": "Sistema — Preparar jugos",            "cat": "Domingo Strategy", "pts": 2, "ec": 1, "tier": "progreso","weekend": "sun"},
+    "sun_planchar":     {"label": "Sistema — Planchar & Cargas",         "cat": "Domingo Strategy", "pts": 2, "ec": 1, "tier": "progreso","weekend": "sun"},
 }
 
 # Canonical categories for weekday activities

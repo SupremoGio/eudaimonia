@@ -1,5 +1,7 @@
+import math
 from flask import Blueprint, render_template, request, jsonify
 from database import get_db
+from ec_constants import EC_RATE
 import datetime
 
 prioridades_bp = Blueprint('prioridades', __name__, template_folder='../../templates')
@@ -139,3 +141,24 @@ def delete(iid):
         db.execute("DELETE FROM lista_prioridades WHERE id=?", (iid,))
         db.commit()
     return jsonify({'ok': True})
+
+
+@prioridades_bp.route('/api/ec-status')
+def ec_status():
+    """Devuelve balance EC + cálculo sugerido para un precio dado."""
+    with get_db() as db:
+        balance = db.execute(
+            "SELECT COALESCE(SUM(amount),0) as s FROM coins_ledger"
+        ).fetchone()['s']
+    balance = max(0, int(balance or 0))
+    precio = float(request.args.get('precio', 0) or 0)
+    ec_sugerido = math.ceil(precio / EC_RATE) if precio > 0 else 0
+    puede_pagar = balance >= ec_sugerido if ec_sugerido > 0 else False
+    pct_balance = round((ec_sugerido / balance * 100), 1) if balance > 0 and ec_sugerido > 0 else None
+    return jsonify({
+        'balance': balance,
+        'ec_rate': EC_RATE,
+        'ec_sugerido': ec_sugerido,
+        'puede_pagar': puede_pagar,
+        'pct_balance': pct_balance,
+    })

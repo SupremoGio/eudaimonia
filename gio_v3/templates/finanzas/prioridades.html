@@ -427,7 +427,7 @@
 
 <script>
 const BASE = '/finanzas/prioridades';
-const EC_RATE = 25; // 1 EC = $25 MXN
+const EC_RATE = 10; // 1 EC = $10 MXN (v3.1)
 
 // ── Filters ────────────────────────────────────────────────────────────────
 function setFilter(btn, f) {
@@ -974,7 +974,7 @@ async function loadProtoEC() {
 
   const precio = pData.precio_estimado || 0;
   if (!precio) return;
-  const data = await fetch(`/guardarropa/wishlist/api/ec-status?precio=${precio}`).then(r => r.json());
+  const data = await fetch(`${BASE}/api/ec-status?precio=${precio}`).then(r => r.json());
   const { balance, ec_rate, ec_sugerido, puede_pagar, pct_balance } = data;
   const pct = Math.min(pct_balance||0, 100);
   const pctDisplay = pct_balance!==null ? pct_balance+'%' : '—';

@@ -2,11 +2,9 @@ import math
 from flask import Blueprint, render_template, request, jsonify
 from database import get_db
 from datetime import datetime
+from ec_constants import EC_RATE
 
 wishlist_bp = Blueprint('wishlist', __name__, template_folder='../../templates')
-
-# Tipo de cambio: 1 EC = $MXN (derivado de los rewards existentes, ej. Kindle=120EC≈$3,000)
-EC_RATE = 25  # 1 EC = $25 MXN
 
 CATEGORIAS = [
     'Tecnología', 'Ropa & Calzado', 'Hogar', 'Deporte & Fitness',

@@ -73,7 +73,7 @@
 .weekend-sat{background:linear-gradient(135deg,rgba(6,182,212,.06),rgba(16,185,129,.04));border:1px solid rgba(6,182,212,.25);}
 .weekend-sun{background:linear-gradient(135deg,rgba(124,58,237,.07),rgba(245,158,11,.04));border:1px solid rgba(124,58,237,.25);}
 .wk-title{font-family:var(--serif);font-size:1.2rem;font-style:italic;font-weight:300;margin-bottom:4px;}
-.wk-sub{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:16px;}
+.wk-sub{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;}
 .weekend-sat .wk-title{color:var(--cyan);}
 .weekend-sat .wk-sub{color:rgba(6,182,212,.6);}
 .weekend-sun .wk-title{color:var(--violet-l);}
@@ -82,6 +82,27 @@
 .weekend-sat .wk-xp-badge{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);color:var(--cyan);}
 .weekend-sun .wk-xp-badge{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);color:var(--violet-l);}
 .wk-phase{font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;margin-top:12px;}
+/* Progress bar */
+.wk-prog-wrap{margin-bottom:14px;}
+.wk-prog-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.wk-prog-lbl{font-size:.46rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
+.wk-prog-pct{font-size:.52rem;font-weight:700;}
+.weekend-sat .wk-prog-pct{color:var(--cyan);}
+.weekend-sun .wk-prog-pct{color:var(--violet-l);}
+.wk-prog-bar{height:4px;border-radius:100px;background:rgba(255,255,255,.07);overflow:hidden;}
+.wk-prog-fill{height:100%;border-radius:100px;transition:width .4s;}
+.weekend-sat .wk-prog-fill{background:linear-gradient(90deg,var(--cyan),#10b981);}
+.weekend-sun .wk-prog-fill{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+/* Complete badge */
+.wk-complete-badge{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;margin-top:10px;animation:wkPop .35s ease;}
+.weekend-sat .wk-complete-badge{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.35);color:var(--cyan);}
+.weekend-sun .wk-complete-badge{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.35);color:var(--violet-l);}
+.wk-complete-badge span{font-size:.6rem;font-weight:700;}
+.wk-complete-badge .wk-ec{font-size:.52rem;margin-left:auto;opacity:.8;}
+@keyframes wkPop{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
+/* Optional activity badge */
+.ab.optional-act{border-style:dashed;opacity:.85;}
+.opt-tag{font-size:.4rem;color:var(--dim);background:var(--b);border:1px solid var(--b2);border-radius:100px;padding:1px 5px;letter-spacing:.06em;text-transform:uppercase;margin-left:3px;}
 
 /* ── Right column ────────────────────────────────────────────────────────── */
 .rc{display:flex;flex-direction:column;gap:12px;}
@@ -261,18 +282,32 @@
   <div>
     <!-- Weekend Special Sections -->
     {% if weekend_mode == 'sat' %}
-    <div class="weekend-section weekend-sat">
-      <div class="wk-xp-badge">máx 17 XP</div>
-      <div class="wk-title">🧘 Sábado — ATARAXIA RESET</div>
-      <div class="wk-sub">Sistema de reset semanal · orden · calma</div>
-      <div class="wk-phase">BLOQUES DE RESET</div>
-      <div class="acts">
+    <div class="weekend-section weekend-sat" id="wk-sat">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+        <div>
+          <div class="wk-title">🧘 Sábado — ATARAXIA RESET</div>
+          <div class="wk-sub">Sistema de reset semanal · orden · calma</div>
+        </div>
+        <div class="wk-xp-badge">máx 20 XP</div>
+      </div>
+      <div class="wk-prog-wrap">
+        <div class="wk-prog-hd">
+          <span class="wk-prog-lbl">BLOQUES DE RESET</span>
+          <span class="wk-prog-pct" id="sat-prog-pct">0 / 3</span>
+        </div>
+        <div class="wk-prog-bar"><div class="wk-prog-fill" id="sat-prog-fill" style="width:0%"></div></div>
+      </div>
+      <div class="acts" id="sat-acts">
         {% for key, act in sat_acts.items() %}
-        <button class="ab {% if key in stats.done_today %}done{% elif act.tier=='alto' %}{% endif %}" data-key="{{ key }}" onclick="logAct('{{ key }}')">
-          <span>{{ act.label }}</span>
+        <button class="ab{% if act.get('optional') %} optional-act{% endif %} {% if key in stats.done_today %}{{ 'done-alto' if act.tier=='alto' else 'done' }}{% endif %}"
+                data-key="{{ key }}" onclick="logAct('{{ key }}')">
+          <span>{{ act.label }}{% if act.get('optional') %} <span class="opt-tag">opcional</span>{% endif %}</span>
           <span class="pp {{ act.tier }}">+{{ act.pts }}</span>
         </button>
         {% endfor %}
+      </div>
+      <div class="wk-complete-badge" id="sat-complete-badge" style="display:none;">
+        <span>🎉 ¡Sábado Completo!</span><span class="wk-ec">+4 XP · +2 EC</span>
       </div>
       <div style="margin-top:12px;padding:8px 12px;background:rgba(6,182,212,.06);border-radius:9px;font-size:.54rem;color:rgba(6,182,212,.7);">
         💡 Completa los 3 bloques para obtener +4 XP bonus automático
@@ -281,21 +316,35 @@
     {% endif %}
 
     {% if weekend_mode == 'sun' %}
-    <div class="weekend-section weekend-sun">
-      <div class="wk-xp-badge">máx 25 XP</div>
-      <div class="wk-title">🧠 Domingo — EUDAIMONIA STRATEGY</div>
-      <div class="wk-sub">Sistema de preparación estratégica semanal</div>
-      <div class="wk-phase">FASES ESTRATÉGICAS</div>
-      <div class="acts">
+    <div class="weekend-section weekend-sun" id="wk-sun">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+        <div>
+          <div class="wk-title">🧠 Domingo — EUDAIMONIA STRATEGY</div>
+          <div class="wk-sub">Sistema de preparación estratégica semanal</div>
+        </div>
+        <div class="wk-xp-badge">máx 20 XP</div>
+      </div>
+      <div class="wk-prog-wrap">
+        <div class="wk-prog-hd">
+          <span class="wk-prog-lbl">FASES ESTRATÉGICAS</span>
+          <span class="wk-prog-pct" id="sun-prog-pct">0 / 5</span>
+        </div>
+        <div class="wk-prog-bar"><div class="wk-prog-fill" id="sun-prog-fill" style="width:0%"></div></div>
+      </div>
+      <div class="acts" id="sun-acts">
         {% for key, act in sun_acts.items() %}
-        <button class="ab {% if key in stats.done_today %}done{% elif act.tier=='alto' %}done-alto{% endif %}" data-key="{{ key }}" onclick="logAct('{{ key }}')">
+        <button class="ab {% if key in stats.done_today %}{{ 'done-alto' if act.tier=='alto' else 'done' }}{% endif %}"
+                data-key="{{ key }}" onclick="logAct('{{ key }}')">
           <span>{{ act.label }}</span>
           <span class="pp {{ act.tier }}">+{{ act.pts }}</span>
         </button>
         {% endfor %}
       </div>
+      <div class="wk-complete-badge" id="sun-complete-badge" style="display:none;">
+        <span>🎉 ¡Domingo Completo!</span><span class="wk-ec">+5 XP · +3 EC</span>
+      </div>
       <div style="margin-top:12px;padding:8px 12px;background:rgba(124,58,237,.06);border-radius:9px;font-size:.54rem;color:rgba(167,139,250,.7);">
-        💡 Completa todas las fases para +5 XP bonus · Completa Sábado+Domingo = +8 XP global
+        💡 Completa todas las fases para +5 XP bonus · Sábado+Domingo = 🏆 Fin de Semana Perfecto
       </div>
     </div>
     {% endif %}
@@ -506,6 +555,7 @@ async function logAct(key) {
     }
     updS(d.stats);
     updGam(d.gam?.stats);
+    updWeekend();
     if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
     if (d.gam?.perfect_day)   toast('✦ DÍA PERFECTO +5 XP · +10 EC', 'win');
     if (d.gam?.achievements?.length) toast(`🏆 Logro: ${d.gam.achievements[0].name}`, 'win');
@@ -643,6 +693,34 @@ async function executeReset() {
     btn.disabled = false;
   }
 }
+
+// ── Weekend progress bars & completion badges ─────────────────────────────
+function updWeekend() {
+  const satReq = ['sat_bloque1','sat_bloque2','sat_bloque3'];
+  const satDone = satReq.filter(k => {
+    const b = document.querySelector(`[data-key="${k}"]`);
+    return b && (b.classList.contains('done') || b.classList.contains('done-alto'));
+  }).length;
+  const satPct   = document.getElementById('sat-prog-pct');
+  const satFill  = document.getElementById('sat-prog-fill');
+  const satBadge = document.getElementById('sat-complete-badge');
+  if (satPct)   satPct.textContent  = `${satDone} / 3`;
+  if (satFill)  satFill.style.width = `${Math.round(satDone / 3 * 100)}%`;
+  if (satBadge) satBadge.style.display = satDone === 3 ? '' : 'none';
+
+  const sunAll = ['sun_reflexion','sun_diseno','sun_comidas','sun_jugos','sun_planchar'];
+  const sunDone = sunAll.filter(k => {
+    const b = document.querySelector(`[data-key="${k}"]`);
+    return b && (b.classList.contains('done') || b.classList.contains('done-alto'));
+  }).length;
+  const sunPct   = document.getElementById('sun-prog-pct');
+  const sunFill  = document.getElementById('sun-prog-fill');
+  const sunBadge = document.getElementById('sun-complete-badge');
+  if (sunPct)   sunPct.textContent  = `${sunDone} / 5`;
+  if (sunFill)  sunFill.style.width = `${Math.round(sunDone / 5 * 100)}%`;
+  if (sunBadge) sunBadge.style.display = sunDone === 5 ? '' : 'none';
+}
+updWeekend();
 
 // Midnight reset: schedule an exact reload at the next calendar day boundary
 (function scheduleMidnightReload() {

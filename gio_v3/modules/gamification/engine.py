@@ -377,6 +377,16 @@ def _gather_achievement_stats():
             if cl["rank"] == "diamond":
                 diamond_week += 1
 
+        # Weekend perfect: both sat + sun combos awarded this ISO week
+        sat_combo_week = db.execute(
+            "SELECT COUNT(*) as c FROM xp_ledger WHERE description='Combo: Sábado Completo' AND date>=?",
+            (week_start,)
+        ).fetchone()["c"]
+        sun_combo_week = db.execute(
+            "SELECT COUNT(*) as c FROM xp_ledger WHERE description='Combo: Domingo Completo' AND date>=?",
+            (week_start,)
+        ).fetchone()["c"]
+
     streak     = get_gamification_streak()
     level_info = get_level_info(total_xp)
 
@@ -396,6 +406,7 @@ def _gather_achievement_stats():
         "gol_month":            gol_month,
         "redes_7":              redes_7,
         "diamond_week":         diamond_week,
+        "weekend_perfect_week": sat_combo_week > 0 and sun_combo_week > 0,
     }
 
 
@@ -581,6 +592,72 @@ def process_activity(key, pts, cat, log_id):
         "badges":       new_badges,
         "stats":        get_gamification_stats(),
     }
+
+
+def process_rutina_check(sub_key, xp, ec, cat, bloque_id=None):
+    """
+    Called by ataraxia module on sub-task completion.
+    Awards XP/EC directly; inserts parent bloque_id into activity_logs when complete
+    so the combo engine can fire sat/sun combo bonuses.
+    """
+    today   = today_str()
+    now     = datetime.now().isoformat()
+    final_xp = 0
+
+    if xp > 0:
+        streak   = get_gamification_streak()
+        mult     = _compute_xp_mult(cat, streak) if cat else 1.0
+        final_xp = max(1, int(xp * mult))
+        _award_xp(final_xp, "rutina", f"Rutina: {sub_key}", None, mult)
+
+    if ec > 0:
+        _award_coins(ec, "rutina", f"EC Rutina: {sub_key}")
+
+    if bloque_id:
+        with get_db() as db:
+            if not db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (bloque_id, today)
+            ).fetchone():
+                db.execute(
+                    "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                    (bloque_id, today, xp)
+                )
+                db.commit()
+
+    keys_today    = _get_today_keys(today)
+    combo_bonuses = _check_combo_bonus(today, keys_today)
+    new_ach       = check_and_unlock()
+    new_badges    = _check_badges_safe()
+
+    return {
+        "xp":           final_xp,
+        "ec":           ec,
+        "combo_bonuses": combo_bonuses,
+        "achievements": new_ach,
+        "badges":       new_badges,
+        "stats":        get_gamification_stats(),
+    }
+
+
+def process_rutina_uncheck(sub_key, bloque_id=None):
+    """Reverses XP/EC awarded for a rutina sub-task and removes bloque log if present."""
+    today = today_str()
+    with get_db() as db:
+        db.execute(
+            "DELETE FROM xp_ledger WHERE source='rutina' AND description=? AND date=?",
+            (f"Rutina: {sub_key}", today)
+        )
+        db.execute(
+            "DELETE FROM coins_ledger WHERE source='rutina' AND description=? AND date=?",
+            (f"EC Rutina: {sub_key}", today)
+        )
+        if bloque_id:
+            db.execute(
+                "DELETE FROM activity_logs WHERE activity_key=? AND date=?",
+                (bloque_id, today)
+            )
+        db.commit()
+    return {"removed": True, "stats": get_gamification_stats()}
 
 
 def remove_activity(log_id):

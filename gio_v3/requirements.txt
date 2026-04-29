@@ -7,3 +7,5 @@ itsdangerous==2.2.0
 gunicorn==23.0.0
 python-dotenv==1.0.1
 tzdata
+pytest>=8.0
+pytest-flask>=1.3

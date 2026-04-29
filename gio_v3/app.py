@@ -12,6 +12,7 @@ from modules.idiomas.routes        import idiomas_bp
 from modules.nutricion.routes      import nutricion_bp
 from modules.perfil.routes         import perfil_bp
 from modules.sabado.routes         import sabado_bp
+from modules.ataraxia.routes       import ataraxia_bp
 from modules.gamification.routes   import gamification_bp
 from modules.finanzas.consumo      import consumo_bp
 from modules.finanzas.budget       import budget_bp
@@ -36,6 +37,7 @@ def create_app():
     app.register_blueprint(nutricion_bp,    url_prefix='/nutricion')
     app.register_blueprint(perfil_bp,       url_prefix='/perfil')
     app.register_blueprint(sabado_bp,       url_prefix='/sabado')
+    app.register_blueprint(ataraxia_bp,    url_prefix='/ataraxia')
     app.register_blueprint(gamification_bp)
     app.register_blueprint(consumo_bp,      url_prefix='/finanzas/consumo')
     app.register_blueprint(budget_bp,       url_prefix='/finanzas/budget')
@@ -46,6 +48,35 @@ def create_app():
     app.register_blueprint(recompensas_bp, url_prefix='/recompensas')
     app.register_blueprint(guardarropa_bp, url_prefix='/guardarropa')
     app.register_blueprint(wishlist_bp,   url_prefix='/guardarropa/wishlist')
+
+    @app.route('/api/health/v31')
+    def health_v31():
+        from ec_constants import EC_VALUE_MXN, GAMIFICATION_VERSION
+        from data import ACTIVITIES
+        sat_keys = {"sat_bloque1", "sat_bloque2", "sat_bloque3"}
+        sun_keys = {"sun_reflexion", "sun_diseno", "sun_comidas", "sun_jugos", "sun_planchar"}
+        checks = {
+            "version":            GAMIFICATION_VERSION,
+            "ec_value_mxn":       EC_VALUE_MXN,
+            "ec_rate_ok":         EC_VALUE_MXN == 10,
+            "sat_jugos_optional": ACTIVITIES.get("sat_jugos", {}).get("optional", False),
+            "sat_keys_ok":        sat_keys.issubset(set(ACTIVITIES)),
+            "sun_keys_ok":        sun_keys.issubset(set(ACTIVITIES)),
+        }
+        from database import get_db
+        try:
+            with get_db() as db:
+                checks["ataraxia_seeded"]  = bool(db.execute(
+                    "SELECT 1 FROM rutina_bloques LIMIT 1"
+                ).fetchone())
+                checks["migration_applied"] = bool(db.execute(
+                    "SELECT 1 FROM migration_log WHERE version='3.1'"
+                ).fetchone())
+        except Exception as e:
+            checks["db_error"] = str(e)
+        ok = (checks["ec_rate_ok"] and checks["sat_keys_ok"] and
+              checks["sun_keys_ok"] and "db_error" not in checks)
+        return checks, 200 if ok else 500
 
     @app.route('/health')
     def health():

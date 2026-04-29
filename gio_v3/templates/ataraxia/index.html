@@ -1,0 +1,485 @@
+{% extends "eu/layout_sub.html" %}{% set pg='ataraxia' %}
+{% block title %}Ataraxia — Eudaimonia{% endblock %}
+{% block module_title %}ATARAXIA{% endblock %}
+{% block topright %}FIN DE SEMANA{% endblock %}
+
+{% block head %}
+<style>
+/* ── Bloque cards ──────────────────────────────────────────────────── */
+.bl-card{background:var(--card);border:1px solid var(--b);border-radius:14px;margin-bottom:12px;overflow:hidden;transition:border-color .2s;}
+.bl-card.done{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.03);}
+.bl-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;user-select:none;}
+.bl-icon{font-size:1.1rem;flex-shrink:0;}
+.bl-title{font-size:.72rem;font-weight:500;color:var(--text);flex:1;}
+.bl-meta{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.bl-xp{font-size:.46rem;padding:2px 6px;border-radius:100px;background:var(--gold-d);border:1px solid rgba(201,168,76,.25);color:var(--gold);}
+.bl-prog-txt{font-size:.46rem;color:var(--dim);}
+.bl-chev{font-size:.6rem;color:var(--dim);transition:transform .2s;flex-shrink:0;}
+.bl-card.collapsed .bl-chev{transform:rotate(-90deg);}
+.bl-body{padding:0 16px 14px;}
+.bl-card.collapsed .bl-body{display:none;}
+
+/* ── Mini progress bar inside bloque ─────────────────────────────── */
+.bl-bar-wrap{height:2px;background:rgba(255,255,255,.07);border-radius:100px;overflow:hidden;margin:0 16px 10px;}
+.bl-bar-fill{height:100%;border-radius:100px;transition:width .4s;}
+.sabado-day  .bl-bar-fill{background:linear-gradient(90deg,var(--cyan),#10b981);}
+.domingo-day .bl-bar-fill{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+
+/* ── Cronómetro ───────────────────────────────────────────────────── */
+.timer-strip{display:flex;align-items:center;gap:8px;padding:8px 0 10px;border-bottom:1px solid var(--b);margin-bottom:10px;}
+.timer-display{font-family:var(--mono);font-size:.9rem;font-weight:600;color:var(--text);min-width:80px;}
+.timer-ref{font-size:.46rem;color:var(--dim);flex:1;}
+.timer-btn{background:var(--card2);border:1px solid var(--b);border-radius:7px;padding:4px 9px;font-size:.5rem;color:var(--mid);cursor:pointer;transition:all .15s;font-family:var(--sans);}
+.timer-btn:hover{border-color:var(--gold);color:var(--gold);}
+.timer-btn.running{border-color:rgba(16,185,129,.4);color:var(--emerald);}
+
+/* ── Task rows ────────────────────────────────────────────────────── */
+.task-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .12s;margin-bottom:3px;}
+.task-row:hover{background:var(--card2);}
+.task-row.done{opacity:.55;}
+.task-chk{width:17px;height:17px;border:1px solid var(--dim);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.task-chk.ck{background:var(--emerald);border-color:var(--emerald);}
+.task-chk svg{width:10px;height:10px;color:#09070F;display:none;}
+.task-chk.ck svg{display:block;}
+.task-name{flex:1;font-size:.68rem;color:var(--text);}
+.task-row.done .task-name{text-decoration:line-through;color:var(--dim);}
+.task-hora{font-size:.44rem;color:var(--dim);text-align:right;min-width:70px;line-height:1.3;}
+.task-badges{display:flex;gap:4px;flex-shrink:0;}
+.tb{font-size:.4rem;padding:2px 5px;border-radius:100px;}
+.tb-xp{background:var(--gold-d);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
+.tb-ec{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--emerald);}
+.tb-soma{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
+.tb-hege{background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.2);color:#a78bfa;}
+.tb-paid{background:rgba(6,182,212,.07);border:1px solid rgba(6,182,212,.2);color:var(--cyan);}
+.opt-pill{font-size:.38rem;padding:1px 5px;border-radius:100px;background:var(--b);color:var(--dim);border:1px solid var(--b2);}
+
+/* ── Bloque completion banner ─────────────────────────────────────── */
+.bl-complete{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;margin-top:8px;animation:blPop .3s ease;}
+.sabado-day  .bl-complete{background:rgba(6,182,212,.09);border:1px solid rgba(6,182,212,.3);color:var(--cyan);}
+.domingo-day .bl-complete{background:rgba(124,58,237,.09);border:1px solid rgba(124,58,237,.3);color:#a78bfa;}
+.bl-complete span{font-size:.58rem;font-weight:600;}
+.bl-complete .bc-ec{font-size:.5rem;margin-left:auto;opacity:.8;}
+@keyframes blPop{from{transform:scale(.95);opacity:0}to{transform:none;opacity:1}}
+
+/* ── Day progress bar ────────────────────────────────────────────── */
+.day-prog-wrap{margin-bottom:14px;}
+.day-prog-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.day-prog-lbl{font-size:.46rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
+.day-prog-pct{font-size:.52rem;font-weight:700;}
+.sabado-day  .day-prog-pct{color:var(--cyan);}
+.domingo-day .day-prog-pct{color:#a78bfa;}
+.day-prog-bar{height:4px;border-radius:100px;background:rgba(255,255,255,.07);overflow:hidden;}
+.day-prog-fill{height:100%;border-radius:100px;transition:width .4s;}
+.sabado-day  .day-prog-fill{background:linear-gradient(90deg,var(--cyan),#10b981);}
+.domingo-day .day-prog-fill{background:linear-gradient(90deg,var(--violet),#a78bfa);}
+
+/* ── Day complete banner ─────────────────────────────────────────── */
+.day-complete{padding:14px 18px;border-radius:11px;text-align:center;margin-bottom:14px;animation:blPop .35s ease;}
+.sabado-day  .day-complete{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.3);}
+.domingo-day .day-complete{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.3);}
+.day-complete .dc-title{font-family:var(--serif);font-size:1.1rem;font-style:italic;}
+.sabado-day  .day-complete .dc-title{color:var(--cyan);}
+.domingo-day .day-complete .dc-title{color:#a78bfa;}
+.day-complete .dc-sub{font-size:.5rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
+
+/* ── Finde perfecto banner ───────────────────────────────────────── */
+.finde-banner{padding:16px 20px;border-radius:12px;text-align:center;background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(124,58,237,.06));border:1px solid rgba(201,168,76,.3);margin-bottom:14px;animation:blPop .4s ease;}
+.finde-banner .fb-t{font-family:var(--serif);font-size:1.2rem;font-style:italic;color:var(--gold);}
+.finde-banner .fb-s{font-size:.48rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
+
+/* ── Day tabs ────────────────────────────────────────────────────── */
+.day-tab{padding:7px 18px;border-radius:100px;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;border:1px solid var(--b);color:var(--mid);background:transparent;}
+.day-tab.on{border-color:var(--gold);color:var(--gold);background:var(--gold-d);}
+
+/* ── Global header card ──────────────────────────────────────────── */
+.global-prog{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
+.gp-row{display:flex;gap:12px;}
+.gp-col{flex:1;}
+.gp-lbl{font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.gp-bar{height:3px;border-radius:100px;background:rgba(255,255,255,.07);overflow:hidden;}
+.gp-fill-sat{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--cyan),#10b981);transition:width .4s;}
+.gp-fill-sun{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--violet),#a78bfa);transition:width .4s;}
+.gp-count{font-size:.52rem;font-weight:600;margin-top:3px;}
+.gp-sat{color:var(--cyan);} .gp-sun{color:#a78bfa;}
+
+/* ── Not weekend notice ──────────────────────────────────────────── */
+.not-wk{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.18);border-radius:8px;padding:9px 14px;font-size:.6rem;color:var(--purple);display:flex;align-items:center;gap:7px;margin-bottom:14px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:680px;">
+
+  {# ── Finde perfecto ───────────────────────────────────────────────── #}
+  <div id="finde-banner" class="finde-banner" {% if not (sat_combo and sun_combo) %}style="display:none"{% endif %}>
+    <div class="fb-t">🏆 Fin de Semana Perfecto</div>
+    <div class="fb-s">Sábado + Domingo completados · +15 XP · +30 EC</div>
+  </div>
+
+  {# ── Not weekend notice ───────────────────────────────────────────── #}
+  {% if not is_weekend %}
+  <div class="not-wk">
+    <i data-lucide="info" style="width:13px;height:13px;flex-shrink:0;"></i>
+    Revisando rutinas del fin de semana — semana {{ semana_id }}
+  </div>
+  {% endif %}
+
+  {# ── Global progress header ───────────────────────────────────────── #}
+  <div class="global-prog">
+    <div style="font-size:.44rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;">Progreso — Semana {{ semana_id }}</div>
+    <div class="gp-row">
+      <div class="gp-col">
+        <div class="gp-lbl">🧘 Sábado</div>
+        <div class="gp-bar"><div class="gp-fill-sat" id="gp-sat-fill" style="width:{{ sabado.pct }}%"></div></div>
+        <div class="gp-count gp-sat" id="gp-sat-cnt">{{ sabado.done }} / {{ sabado.total }}</div>
+      </div>
+      <div class="gp-col">
+        <div class="gp-lbl">🧠 Domingo</div>
+        <div class="gp-bar"><div class="gp-fill-sun" id="gp-sun-fill" style="width:{{ domingo.pct }}%"></div></div>
+        <div class="gp-count gp-sun" id="gp-sun-cnt">{{ domingo.done }} / {{ domingo.total }}</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Day tabs ─────────────────────────────────────────────────────── #}
+  <div style="display:flex;gap:8px;margin-bottom:14px;">
+    <button class="day-tab {% if dia=='sabado' %}on{% endif %}" id="tab-sabado" onclick="showDia('sabado')">🧘 Sábado</button>
+    <button class="day-tab {% if dia=='domingo' %}on{% endif %}" id="tab-domingo" onclick="showDia('domingo')">🧠 Domingo</button>
+  </div>
+
+  {# ── SÁBADO ───────────────────────────────────────────────────────── #}
+  <div id="dia-sabado" class="sabado-day" {% if dia != 'sabado' %}style="display:none"{% endif %}>
+
+    <div class="day-prog-wrap">
+      <div class="day-prog-hd">
+        <span class="day-prog-lbl">ATARAXIA RESET</span>
+        <span class="day-prog-pct" id="sat-prog-pct">{{ sabado.done }} / {{ sabado.total }}</span>
+      </div>
+      <div class="day-prog-bar"><div class="day-prog-fill" id="sat-prog-fill" style="width:{{ sabado.pct }}%"></div></div>
+    </div>
+
+    <div class="day-complete" id="sat-day-complete" {% if not sabado.complete %}style="display:none"{% endif %}>
+      <div class="dc-title">🎉 ¡Sábado Completo!</div>
+      <div class="dc-sub">Sistema reset activado · fin de semana en orden</div>
+    </div>
+
+    {% for bl in sabado.bloques %}
+    {% set is_done = bl.bloque_done %}
+    {% set is_collapsed = is_done %}
+    <div class="bl-card {% if is_done %}done{% endif %} {% if is_collapsed %}collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
+
+      <div class="bl-hd" onclick="toggleBloque('{{ bl.bloque_id }}')">
+        <span class="bl-icon">{{ bl.icon }}</span>
+        <span class="bl-title">{{ bl.label }}</span>
+        <div class="bl-meta">
+          {% if bl.xp_total > 0 %}<span class="bl-xp">+{{ bl.xp_total }} XP</span>{% endif %}
+          <span class="bl-prog-txt" id="blprog-{{ bl.bloque_id }}">{{ bl.done_count }}/{{ bl.required_count }}</span>
+        </div>
+        <span class="bl-chev">▼</span>
+      </div>
+
+      <div class="bl-bar-wrap">
+        <div class="bl-bar-fill" id="blbar-{{ bl.bloque_id }}"
+             style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%">
+        </div>
+      </div>
+
+      <div class="bl-body">
+        {# Cronómetro #}
+        <div class="timer-strip" id="tstrip-{{ bl.bloque_id }}">
+          <div class="timer-display" id="timer-{{ bl.bloque_id }}">00:00:00</div>
+          <span class="timer-ref">ref: {{ bl.total_duracion }} min</span>
+          <button class="timer-btn" id="tbtn-{{ bl.bloque_id }}"
+                  onclick="toggleTimer('{{ bl.bloque_id }}', {{ bl.total_duracion * 60 }})">▶</button>
+          <button class="timer-btn" onclick="resetTimer('{{ bl.bloque_id }}')">↺</button>
+        </div>
+
+        {# Tareas #}
+        {% for t in bl.tareas %}
+        {% set tdone = t.id in bl.done_ids %}
+        <div class="task-row {% if tdone %}done{% endif %}" id="trow-{{ t.id }}"
+             onclick="toggleTarea('{{ t.id }}', '{{ bl.bloque_id }}', 'sabado')">
+          <div class="task-chk {% if tdone %}ck{% endif %}" id="tchk-{{ t.id }}">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
+          </div>
+          <span class="task-name">
+            {{ t.nombre }}
+            {% if t.opcional %}<span class="opt-pill">opcional</span>{% endif %}
+          </span>
+          <div class="task-badges">
+            {% if t.categoria == 'SOMA' %}<span class="tb tb-soma">SOMA</span>{% endif %}
+            {% if t.categoria == 'HEGEMONIKON' %}<span class="tb tb-hege">HEGE</span>{% endif %}
+            {% if t.categoria == 'PAIDEIA' %}<span class="tb tb-paid">PAID</span>{% endif %}
+            {% if t.xp > 0 %}<span class="tb tb-xp">+{{ t.xp }}XP</span>{% endif %}
+            {% if t.ec > 0 %}<span class="tb tb-ec">+{{ t.ec }}EC</span>{% endif %}
+          </div>
+          {% set hora = horarios.get(t.id, '') %}
+          {% if hora %}<span class="task-hora">{{ hora }}</span>{% endif %}
+        </div>
+        {% endfor %}
+
+        {# Bloque complete badge #}
+        <div class="bl-complete" id="blc-{{ bl.bloque_id }}" {% if not bl.bloque_done %}style="display:none"{% endif %}>
+          <span>{{ bl.icon }} {{ bl.label.split(' — ')[0] }} Completo</span>
+          {% if bl.xp_total > 0 %}<span class="bc-ec">+{{ bl.xp_total }} XP · +{{ bl.ec_total }} EC</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div style="margin-top:10px;padding:9px 14px;background:rgba(6,182,212,.06);border-radius:9px;font-size:.54rem;color:rgba(6,182,212,.7);">
+      💡 Completa los 3 bloques para obtener +4 XP +2 EC bonus automático
+    </div>
+  </div>
+
+  {# ── DOMINGO ──────────────────────────────────────────────────────── #}
+  <div id="dia-domingo" class="domingo-day" {% if dia != 'domingo' %}style="display:none"{% endif %}>
+
+    <div class="day-prog-wrap">
+      <div class="day-prog-hd">
+        <span class="day-prog-lbl">EUDAIMONIA STRATEGY</span>
+        <span class="day-prog-pct" id="sun-prog-pct">{{ domingo.done }} / {{ domingo.total }}</span>
+      </div>
+      <div class="day-prog-bar"><div class="day-prog-fill" id="sun-prog-fill" style="width:{{ domingo.pct }}%"></div></div>
+    </div>
+
+    <div class="day-complete" id="sun-day-complete" {% if not domingo.complete %}style="display:none"{% endif %}>
+      <div class="dc-title">🎉 ¡Domingo Completo!</div>
+      <div class="dc-sub">Semana preparada · estrategia activada</div>
+    </div>
+
+    {% for bl in domingo.bloques %}
+    {% set is_done = bl.bloque_done %}
+    {% set is_collapsed = is_done %}
+    <div class="bl-card {% if is_done %}done{% endif %} {% if is_collapsed %}collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
+
+      <div class="bl-hd" onclick="toggleBloque('{{ bl.bloque_id }}')">
+        <span class="bl-icon">{{ bl.icon }}</span>
+        <span class="bl-title">{{ bl.label }}</span>
+        <div class="bl-meta">
+          {% if bl.xp_total > 0 %}<span class="bl-xp">+{{ bl.xp_total }} XP</span>{% endif %}
+          <span class="bl-prog-txt" id="blprog-{{ bl.bloque_id }}">{{ bl.done_count }}/{{ bl.required_count }}</span>
+        </div>
+        <span class="bl-chev">▼</span>
+      </div>
+
+      <div class="bl-bar-wrap">
+        <div class="bl-bar-fill" id="blbar-{{ bl.bloque_id }}"
+             style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%">
+        </div>
+      </div>
+
+      <div class="bl-body">
+        <div class="timer-strip" id="tstrip-{{ bl.bloque_id }}">
+          <div class="timer-display" id="timer-{{ bl.bloque_id }}">00:00:00</div>
+          <span class="timer-ref">ref: {{ bl.total_duracion }} min</span>
+          <button class="timer-btn" id="tbtn-{{ bl.bloque_id }}"
+                  onclick="toggleTimer('{{ bl.bloque_id }}', {{ bl.total_duracion * 60 }})">▶</button>
+          <button class="timer-btn" onclick="resetTimer('{{ bl.bloque_id }}')">↺</button>
+        </div>
+
+        {% for t in bl.tareas %}
+        {% set tdone = t.id in bl.done_ids %}
+        <div class="task-row {% if tdone %}done{% endif %}" id="trow-{{ t.id }}"
+             onclick="toggleTarea('{{ t.id }}', '{{ bl.bloque_id }}', 'domingo')">
+          <div class="task-chk {% if tdone %}ck{% endif %}" id="tchk-{{ t.id }}">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
+          </div>
+          <span class="task-name">{{ t.nombre }}</span>
+          <div class="task-badges">
+            {% if t.categoria == 'SOMA' %}<span class="tb tb-soma">SOMA</span>{% endif %}
+            {% if t.categoria == 'HEGEMONIKON' %}<span class="tb tb-hege">HEGE</span>{% endif %}
+            {% if t.categoria == 'PAIDEIA' %}<span class="tb tb-paid">PAID</span>{% endif %}
+            {% if t.xp > 0 %}<span class="tb tb-xp">+{{ t.xp }}XP</span>{% endif %}
+            {% if t.ec > 0 %}<span class="tb tb-ec">+{{ t.ec }}EC</span>{% endif %}
+          </div>
+          {% set hora = horarios.get(t.id, '') %}
+          {% if hora %}<span class="task-hora">{{ hora }}</span>{% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="bl-complete" id="blc-{{ bl.bloque_id }}" {% if not bl.bloque_done %}style="display:none"{% endif %}>
+          <span>{{ bl.icon }} {{ bl.label.split(' — ')[0] if ' — ' in bl.label else bl.label }} Completo</span>
+          {% if bl.xp_total > 0 %}<span class="bc-ec">+{{ bl.xp_total }} XP · +{{ bl.ec_total }} EC</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <div style="margin-top:10px;padding:9px 14px;background:rgba(124,58,237,.06);border-radius:9px;font-size:.54rem;color:rgba(167,139,250,.7);">
+      💡 Completa todas las fases para +5 XP +3 EC bonus · Sáb+Dom = 🏆 Fin de Semana Perfecto
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Timer state ──────────────────────────────────────────────────────────────
+const TIMERS = {};
+
+function _fmtTime(secs) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function _timerColor(secs, refSecs) {
+  if (!refSecs) return 'var(--text)';
+  const pct = secs / refSecs;
+  if (pct >= 1.0) return 'var(--coral)';
+  if (pct >= 0.85) return 'var(--amber)';
+  return 'var(--text)';
+}
+
+function toggleTimer(bloqueId, refSecs) {
+  if (!TIMERS[bloqueId]) TIMERS[bloqueId] = { secs: 0, running: false, intervalId: null, refSecs };
+  const t = TIMERS[bloqueId];
+  if (t.running) {
+    clearInterval(t.intervalId);
+    t.running = false;
+  } else {
+    t.running = true;
+    t.intervalId = setInterval(() => {
+      t.secs++;
+      const el = document.getElementById(`timer-${bloqueId}`);
+      if (el) { el.textContent = _fmtTime(t.secs); el.style.color = _timerColor(t.secs, t.refSecs); }
+    }, 1000);
+  }
+  const btn = document.getElementById(`tbtn-${bloqueId}`);
+  if (btn) { btn.textContent = t.running ? '⏸' : '▶'; btn.classList.toggle('running', t.running); }
+}
+
+function resetTimer(bloqueId) {
+  const t = TIMERS[bloqueId];
+  if (!t) return;
+  clearInterval(t.intervalId);
+  t.running = false;
+  t.secs = 0;
+  const el = document.getElementById(`timer-${bloqueId}`);
+  if (el) { el.textContent = '00:00:00'; el.style.color = 'var(--text)'; }
+  const btn = document.getElementById(`tbtn-${bloqueId}`);
+  if (btn) { btn.textContent = '▶'; btn.classList.remove('running'); }
+}
+
+function stopTimerAuto(bloqueId) {
+  const t = TIMERS[bloqueId];
+  if (t && t.running) {
+    clearInterval(t.intervalId);
+    t.running = false;
+    const btn = document.getElementById(`tbtn-${bloqueId}`);
+    if (btn) { btn.textContent = '▶'; btn.classList.remove('running'); }
+  }
+}
+
+// ── Bloque collapse ──────────────────────────────────────────────────────────
+function toggleBloque(bloqueId) {
+  document.getElementById(`blcard-${bloqueId}`)?.classList.toggle('collapsed');
+}
+
+// ── Day tab switch ────────────────────────────────────────────────────────────
+function showDia(dia) {
+  ['sabado','domingo'].forEach(d => {
+    document.getElementById(`dia-${d}`).style.display  = d === dia ? '' : 'none';
+    document.getElementById(`tab-${d}`).classList.toggle('on', d === dia);
+  });
+  history.replaceState(null, '', `?dia=${dia}`);
+}
+
+// ── Progress updaters ────────────────────────────────────────────────────────
+function updateDayProgress(dia, rutina) {
+  const pfx = dia === 'sabado' ? 'sat' : 'sun';
+  const pct = rutina.total > 0 ? Math.round(rutina.done / rutina.total * 100) : 0;
+  const fill = document.getElementById(`${pfx}-prog-fill`);
+  const pctEl = document.getElementById(`${pfx}-prog-pct`);
+  if (fill)  fill.style.width  = pct + '%';
+  if (pctEl) pctEl.textContent = `${rutina.done} / ${rutina.total}`;
+
+  // Global header
+  const gpFill = document.getElementById(`gp-${pfx}-fill`);
+  const gpCnt  = document.getElementById(`gp-${pfx}-cnt`);
+  if (gpFill) gpFill.style.width  = pct + '%';
+  if (gpCnt)  gpCnt.textContent   = `${rutina.done} / ${rutina.total}`;
+
+  // Day complete banner
+  const dcBanner = document.getElementById(`${pfx}-day-complete`);
+  if (dcBanner) dcBanner.style.display = rutina.complete ? '' : 'none';
+
+  // Per-bloque progress
+  rutina.bloques.forEach(bl => {
+    const pEl = document.getElementById(`blprog-${bl.bloque_id}`);
+    const bEl = document.getElementById(`blbar-${bl.bloque_id}`);
+    if (pEl) pEl.textContent = `${bl.done_count}/${bl.required_count}`;
+    if (bEl) {
+      const bPct = bl.required_count > 0 ? Math.round(bl.done_count / bl.required_count * 100) : 0;
+      bEl.style.width = bPct + '%';
+    }
+    const card = document.getElementById(`blcard-${bl.bloque_id}`);
+    if (card) card.classList.toggle('done', bl.bloque_done);
+    const bc = document.getElementById(`blc-${bl.bloque_id}`);
+    if (bc) bc.style.display = bl.bloque_done ? '' : 'none';
+    if (bl.bloque_done) stopTimerAuto(bl.bloque_id);
+  });
+}
+
+// ── Check / Uncheck ──────────────────────────────────────────────────────────
+let _pending = new Set();
+
+async function toggleTarea(subId, bloqueId, dia) {
+  if (_pending.has(subId)) return;
+  _pending.add(subId);
+
+  const row  = document.getElementById(`trow-${subId}`);
+  const chk  = document.getElementById(`tchk-${subId}`);
+  const isDone = row?.classList.contains('done');
+  const timerSecs = TIMERS[bloqueId]?.secs ?? 0;
+
+  const url    = isDone ? '/ataraxia/api/rutina/uncheck' : '/ataraxia/api/rutina/check';
+  const body   = isDone ? { bloque_id: subId } : { bloque_id: subId, tiempo_seg: timerSecs };
+
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok) { toast('Error al guardar', 'err'); return; }
+
+    // Toggle UI
+    row?.classList.toggle('done', !isDone);
+    if (chk) chk.classList.toggle('ck', !isDone);
+
+    // Update progress
+    updateDayProgress(dia, d.rutina);
+
+    // Gamification toasts
+    const gam = d.gam;
+    if (gam && !isDone) {
+      if (gam.xp > 0 || gam.ec > 0)
+        toast(`+${gam.xp} XP${gam.ec > 0 ? ` · +${gam.ec} EC` : ''}`);
+      (gam.combo_bonuses || []).forEach(c =>
+        setTimeout(() => toast(`🎉 ${c.label} +${c.xp} XP`, 'win'), 300)
+      );
+      (gam.achievements || []).forEach(a =>
+        setTimeout(() => toast(`🏆 Logro: ${a.name}`, 'win'), 500)
+      );
+    }
+
+    // Check finde perfecto
+    if (!isDone) {
+      fetch('/ataraxia/api/rutina/finde/status').then(r => r.json()).then(s => {
+        const fb = document.getElementById('finde-banner');
+        if (fb && s.finde_perfecto) fb.style.display = '';
+      }).catch(() => {});
+    }
+  } catch {
+    toast('Sin conexión', 'err');
+  } finally {
+    _pending.delete(subId);
+  }
+}
+</script>
+{% endblock %}

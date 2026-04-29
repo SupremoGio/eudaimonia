@@ -934,6 +934,72 @@ def init_db():
                 ]
             )
 
+        # ── MIGRATIONS LOG ───────────────────────────────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS migration_log (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            version     TEXT    NOT NULL UNIQUE,
+            description TEXT    DEFAULT '',
+            applied_at  TEXT    NOT NULL
+        );
+        """)
+
+        # ── ATARAXIA — Rutinas fin de semana ─────────────────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS rutina_bloques (
+            id           TEXT PRIMARY KEY,
+            dia          TEXT NOT NULL,
+            bloque_id    TEXT NOT NULL,
+            nombre       TEXT NOT NULL,
+            tier         TEXT NOT NULL DEFAULT 'micro',
+            xp           INTEGER DEFAULT 0,
+            ec           INTEGER DEFAULT 0,
+            categoria    TEXT DEFAULT '',
+            opcional     INTEGER DEFAULT 0,
+            duracion_min INTEGER DEFAULT 0,
+            orden        INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS rutina_progreso (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            bloque_id       TEXT NOT NULL,
+            semana_id       TEXT NOT NULL,
+            completado      INTEGER DEFAULT 0,
+            completado_at   TEXT,
+            tiempo_real_seg INTEGER,
+            UNIQUE(bloque_id, semana_id)
+        );
+        """)
+
+        if db.execute("SELECT COUNT(*) as c FROM rutina_bloques").fetchone()["c"] == 0:
+            db.executemany(
+                """INSERT INTO rutina_bloques
+                   (id, dia, bloque_id, nombre, tier, xp, ec, categoria, opcional, duracion_min, orden)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                [
+                    # ── SÁBADO ───────────────────────────────────────────────
+                    ("sat_arranque",   "sabado","sat_bloque1","Arranque + dispositivos",  "micro",   0,0,"",       0, 20,  1),
+                    ("sat_limpieza",   "sabado","sat_bloque1","Limpieza completa",         "progreso",3,1,"",       0, 65,  2),
+                    ("sat_transicion", "sabado","sat_bloque1","Transición",                "micro",   0,0,"",       0,  5,  3),
+                    ("sat_jugos_r",    "sabado","sat_bloque1","Preparar jugos",            "progreso",2,1,"SOMA",   1, 25,  4),
+                    ("sat_ensayo",     "sabado","sat_bloque2","Ensayo",                    "alto",    4,2,"PAIDEIA",0,120,  5),
+                    ("sat_gym",        "sabado","sat_bloque3","Gym",                       "alto",    4,2,"SOMA",   0,105,  6),
+                    ("sat_ropa",       "sabado","sat_bloque3","Ropa y orden final",        "micro",   0,0,"",       0, 20,  7),
+                    ("sat_cierre",     "sabado","sat_bloque3","Cierre del sábado",         "micro",   0,0,"",       0, 15,  8),
+                    # ── DOMINGO ──────────────────────────────────────────────
+                    ("sun_arranque",   "domingo","sun_reflexion","Arranque + dispositivos","micro",   0,0,"",            0, 20,  1),
+                    ("sun_gym_r",      "domingo","sun_reflexion","Gym",                    "alto",    4,2,"SOMA",         0,105,  2),
+                    ("sun_comidas_r",  "domingo","sun_comidas",  "Super + preparar comida semanal","progreso",3,1,"SOMA", 0, 90,  3),
+                    ("sun_planchar_r", "domingo","sun_planchar", "Planchar uniforme",      "micro",   0,0,"",            0, 20,  4),
+                    ("sun_finanzas",   "domingo","sun_diseno",   "Revisión de finanzas",   "alto",    4,2,"HEGEMONIKON",  0, 40,  5),
+                    ("sun_planeacion", "domingo","sun_reflexion","Planeación semanal",     "alto",    4,2,"HEGEMONIKON",  0, 50,  6),
+                    ("sun_prioridades","domingo","sun_reflexion","3 prioridades de la semana","progreso",3,1,"HEGEMONIKON",0,15,7),
+                    ("sun_jugos_r",    "domingo","sun_jugos",    "Preparar jugos",         "progreso",2,1,"SOMA",         0, 25,  8),
+                    ("sun_cargas",     "domingo","sun_planchar", "Verificar cargas",       "micro",   0,0,"",            0, 15,  9),
+                    ("sun_cierre",     "domingo","sun_reflexion","Cierre del domingo",     "micro",   0,0,"",            0, 15, 10),
+                ]
+            )
+            db.commit()
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

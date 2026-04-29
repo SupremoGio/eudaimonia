@@ -121,6 +121,17 @@ ACHIEVEMENT_DEFS = {
         "condition":   lambda s: s["total_coins"] >= 1000,
     },
 
+    # ── Tier 4b: Fin de semana perfecto ──────────────────────────────────────
+    "fin_semana_perfecto": {
+        "name":        "Fin de semana perfecto",
+        "description": "Completar sábado y domingo completo en la misma semana",
+        "icon":        "🏆",
+        "coins":       30,
+        "xp":          15,
+        "hidden":      True,
+        "condition":   lambda s: s.get("weekend_perfect_week", False),
+    },
+
     # ── Tier 5: Hitos de nivel (solo coins, sin XP) ───────────────────────────
     "nivel_5": {
         "name":        "Disciplinado",
