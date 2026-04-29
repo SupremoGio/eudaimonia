@@ -221,11 +221,12 @@
 <!-- ── TAB: LIST ─────────────────────────────────────────────────────────── -->
 <div id="tab-list" style="display:none;">
   <div class="wl-filters" id="wl-filters">
-    <div class="wl-f on" data-f="" onclick="setFilter(this,'')">Todos</div>
+    <div class="wl-f on" data-f="activos" onclick="setFilter(this,'activos')">Activos</div>
     <div class="wl-f" data-f="evaluando" onclick="setFilter(this,'evaluando')">Evaluando</div>
     <div class="wl-f" data-f="pendiente" onclick="setFilter(this,'pendiente')">Pendientes</div>
     <div class="wl-f" data-f="comprado" onclick="setFilter(this,'comprado')">Comprados</div>
     <div class="wl-f" data-f="descartado" onclick="setFilter(this,'descartado')">Descartados</div>
+    <div class="wl-f" data-f="" onclick="setFilter(this,'')">Todos</div>
   </div>
   <div id="wl-list"></div>
 </div>
@@ -238,7 +239,7 @@ const CATS = {{ categorias | tojson }};
 let step = 0;       // 0-4
 let itemId = null;
 let quizData = {};
-let listFilter = '';
+let listFilter = 'activos';
 let allItems = [];
 
 // Steps: 0=item-form, 1=dopamine, 2=solvency, 3=logic, 4=result
@@ -891,7 +892,8 @@ function setFilter(el, f) {
 }
 
 async function loadList() {
-  const url = '/guardarropa/wishlist/api/items' + (listFilter ? '?estado=' + listFilter : '');
+  const url = '/guardarropa/wishlist/api/items' +
+    (listFilter === 'activos' ? '?view=activos' : listFilter ? '?estado=' + listFilter : '');
   allItems = await fetch(url).then(r => r.json());
   renderList();
   updateStats();
@@ -954,8 +956,8 @@ function renderList() {
         <div class="wl-item-sub">MXN</div>
       </div>
       <div class="wl-item-actions">
-        ${it.estado !== 'comprado' ? `<button class="btn-gr" title="Marcar como comprado" onclick="markItem(${it.id},'comprado')"><i data-lucide="check" style="width:11px;height:11px;"></i></button>` : ''}
-        ${it.estado !== 'descartado' ? `<button class="btn-r" title="Descartar" onclick="markItem(${it.id},'descartado')"><i data-lucide="x" style="width:11px;height:11px;"></i></button>` : ''}
+        ${it.estado !== 'comprado' ? `<button class="btn-gr" title="Marcar como comprado" onclick="markItem(${it.id},'comprado',this)"><i data-lucide="check" style="width:11px;height:11px;"></i></button>` : `<button class="btn-g" title="Desmarcar — regresar a wishlist" onclick="markItem(${it.id},'pendiente',this)"><i data-lucide="undo-2" style="width:11px;height:11px;"></i></button>`}
+        ${it.estado !== 'descartado' ? `<button class="btn-r" title="Descartar" onclick="markItem(${it.id},'descartado',this)"><i data-lucide="x" style="width:11px;height:11px;"></i></button>` : ''}
         <button class="btn-r" title="Eliminar" onclick="deleteItem(${it.id})"><i data-lucide="trash-2" style="width:11px;height:11px;"></i></button>
       </div>
     </div>`;
@@ -963,13 +965,22 @@ function renderList() {
   lucide.createIcons();
 }
 
-async function markItem(id, estado) {
-  await fetch(`/guardarropa/wishlist/api/item/${id}/decide`, {
+async function markItem(id, estado, btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = '.4'; }
+  const r = await fetch(`/guardarropa/wishlist/api/item/${id}/decide`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ decision: estado })
-  });
-  toast(estado === 'comprado' ? '✓ Marcado como comprado' : '✗ Descartado');
-  loadList();
+  }).then(r => r.json()).catch(() => null);
+  if (!r || !r.ok) {
+    toast('Error al actualizar. Intenta de nuevo.', 'err');
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    return;
+  }
+  const msg = estado === 'comprado' ? '✓ Marcado como comprado'
+             : estado === 'pendiente' ? '↩ Devuelto a wishlist'
+             : '✗ Descartado';
+  toast(msg);
+  await loadList();
 }
 
 async function deleteItem(id) {
@@ -979,8 +990,8 @@ async function deleteItem(id) {
   loadList();
 }
 
-function updateStats() {
-  const all = allItems;
+async function updateStats() {
+  const all = await fetch('/guardarropa/wishlist/api/items').then(r => r.json());
   const comp = all.filter(i => i.estado === 'comprado');
   const rej = all.filter(i => i.estado === 'descartado');
   const saved = rej.reduce((s,i) => s + (i.precio_estimado || 0), 0);

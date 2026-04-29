@@ -27,11 +27,14 @@ def index():
 def get_items():
     db = get_db()
     estado = request.args.get('estado', '')
+    view = request.args.get('view', '')
     q = "SELECT * FROM wishlist_items"
     params = []
     if estado:
         q += " WHERE estado = ?"
         params.append(estado)
+    elif view == 'activos':
+        q += " WHERE estado IN ('evaluando','pendiente')"
     q += " ORDER BY created_at DESC"
     items = [dict(r) for r in db.execute(q, params).fetchall()]
     return jsonify(items)
