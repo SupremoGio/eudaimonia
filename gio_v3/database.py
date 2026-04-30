@@ -977,28 +977,57 @@ def init_db():
                    VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
                 [
                     # ── SÁBADO ───────────────────────────────────────────────
-                    ("sat_arranque",   "sabado","sat_bloque1","Arranque + dispositivos",  "micro",   0,0,"",       0, 20,  1),
-                    ("sat_limpieza",   "sabado","sat_bloque1","Limpieza completa",         "progreso",3,1,"",       0, 65,  2),
-                    ("sat_transicion", "sabado","sat_bloque1","Transición",                "micro",   0,0,"",       0,  5,  3),
-                    ("sat_jugos_r",    "sabado","sat_bloque1","Preparar jugos",            "progreso",2,1,"SOMA",   1, 25,  4),
-                    ("sat_ensayo",     "sabado","sat_bloque2","Ensayo",                    "alto",    4,2,"PAIDEIA",0,120,  5),
-                    ("sat_gym",        "sabado","sat_bloque3","Gym",                       "alto",    4,2,"SOMA",   0,105,  6),
-                    ("sat_ropa",       "sabado","sat_bloque3","Ropa y orden final",        "micro",   0,0,"",       0, 20,  7),
-                    ("sat_cierre",     "sabado","sat_bloque3","Cierre del sábado",         "micro",   0,0,"",       0, 15,  8),
+                    ("sat_arranque",   "sabado","sat_bloque1","☕ Café · robot sala · 1ª carga de ropa",       "micro",   0,0,"",       0, 20,  1),
+                    ("sat_limpieza",   "sabado","sat_bloque1","🧹 Limpieza: baño · buró · cocina · mop · plantas","progreso",3,1,"",    0, 65,  2),
+                    ("sat_transicion", "sabado","sat_bloque1","👔 Tender ropa · robot recámara",               "micro",   0,0,"",       0,  5,  3),
+                    ("sat_jugos_r",    "sabado","sat_bloque1","🥤 Preparar jugos",                             "progreso",2,1,"SOMA",   1, 25,  4),
+                    ("sat_ensayo",     "sabado","sat_bloque2","🎸 Ensayo",                                     "alto",    4,2,"PAIDEIA",0,120,  5),
+                    ("sat_gym",        "sabado","sat_bloque3","🏋️ Gym (1.5 hrs + traslado)",                  "alto",    4,2,"SOMA",   0,105,  6),
+                    ("sat_ropa",       "sabado","sat_bloque3","👔 Recoger ropa · orden general rápido",        "micro",   0,0,"",       0, 20,  7),
+                    ("sat_cierre",     "sabado","sat_bloque3","✅ Cierre: casa limpia · ensayo hecho · gym hecho","micro", 0,0,"",      0, 15,  8),
                     # ── DOMINGO ──────────────────────────────────────────────
-                    ("sun_arranque",   "domingo","sun_reflexion","Arranque + dispositivos","micro",   0,0,"",            0, 20,  1),
-                    ("sun_gym_r",      "domingo","sun_reflexion","Gym",                    "alto",    4,2,"SOMA",         0,105,  2),
-                    ("sun_comidas_r",  "domingo","sun_comidas",  "Super + preparar comida semanal","progreso",3,1,"SOMA", 0, 90,  3),
-                    ("sun_planchar_r", "domingo","sun_planchar", "Planchar uniforme",      "micro",   0,0,"",            0, 20,  4),
-                    ("sun_finanzas",   "domingo","sun_diseno",   "Revisión de finanzas",   "alto",    4,2,"HEGEMONIKON",  0, 40,  5),
-                    ("sun_planeacion", "domingo","sun_reflexion","Planeación semanal",     "alto",    4,2,"HEGEMONIKON",  0, 50,  6),
-                    ("sun_prioridades","domingo","sun_reflexion","3 prioridades de la semana","progreso",3,1,"HEGEMONIKON",0,15,7),
-                    ("sun_jugos_r",    "domingo","sun_jugos",    "Preparar jugos",         "progreso",2,1,"SOMA",         0, 25,  8),
-                    ("sun_cargas",     "domingo","sun_planchar", "Verificar cargas",       "micro",   0,0,"",            0, 15,  9),
-                    ("sun_cierre",     "domingo","sun_reflexion","Cierre del domingo",     "micro",   0,0,"",            0, 15, 10),
+                    ("sun_arranque",   "domingo","sun_reflexion","☕ Café · enchufar todos los dispositivos",  "micro",   0,0,"",            0, 20,  1),
+                    ("sun_gym_r",      "domingo","sun_reflexion","🏋️ Gym",                                   "alto",    4,2,"SOMA",         0,105,  2),
+                    ("sun_comidas_r",  "domingo","sun_comidas",  "🥗 Preparar comida semanal (1 hora enfocada)","progreso",3,1,"SOMA",       0, 60,  3),
+                    ("sun_planchar_r", "domingo","sun_planchar", "👔 Planchar uniforme (20 min)",             "micro",   0,0,"",            0, 20,  4),
+                    ("sun_finanzas",   "domingo","sun_diseno",   "💰 Finanzas: gastos semana · proyección",   "alto",    4,2,"HEGEMONIKON",  0, 40,  5),
+                    ("sun_planeacion", "domingo","sun_reflexion","📅 Planeación: agenda · compromisos · GTD", "alto",    4,2,"HEGEMONIKON",  0, 45,  6),
+                    ("sun_prioridades","domingo","sun_reflexion","🎯 3 prioridades de la semana",             "progreso",3,1,"HEGEMONIKON",  0, 15,  7),
+                    ("sun_jugos_r",    "domingo","sun_jugos",    "🥤 Preparar jugos",                         "progreso",2,1,"SOMA",         0, 25,  8),
+                    ("sun_cargas",     "domingo","sun_planchar", "🔋 Verificar cargas: pila · audífonos · iPad","micro", 0,0,"",            0, 15,  9),
+                    ("sun_cierre",     "domingo","sun_reflexion","✅ Cierre: prioridades claras · preparar lunes","micro",0,0,"",           0, 15, 10),
                 ]
             )
             db.commit()
+
+        # Migrate rutina_bloques: update nombres descriptivos (idempotente)
+        try:
+            _nombre_map = [
+                ("☕ Café · robot sala · 1ª carga de ropa",            "sat_arranque"),
+                ("🧹 Limpieza: baño · buró · cocina · mop · plantas",  "sat_limpieza"),
+                ("👔 Tender ropa · robot recámara",                     "sat_transicion"),
+                ("🥤 Preparar jugos",                                   "sat_jugos_r"),
+                ("🎸 Ensayo",                                           "sat_ensayo"),
+                ("🏋️ Gym (1.5 hrs + traslado)",                        "sat_gym"),
+                ("👔 Recoger ropa · orden general rápido",              "sat_ropa"),
+                ("✅ Cierre: casa limpia · ensayo hecho · gym hecho",    "sat_cierre"),
+                ("☕ Café · enchufar todos los dispositivos",           "sun_arranque"),
+                ("🏋️ Gym",                                             "sun_gym_r"),
+                ("🥗 Preparar comida semanal (1 hora enfocada)",        "sun_comidas_r"),
+                ("👔 Planchar uniforme (20 min)",                       "sun_planchar_r"),
+                ("💰 Finanzas: gastos semana · proyección",             "sun_finanzas"),
+                ("📅 Planeación: agenda · compromisos · GTD",           "sun_planeacion"),
+                ("🎯 3 prioridades de la semana",                       "sun_prioridades"),
+                ("🥤 Preparar jugos",                                   "sun_jugos_r"),
+                ("🔋 Verificar cargas: pila · audífonos · iPad",        "sun_cargas"),
+                ("✅ Cierre: prioridades claras · preparar lunes",       "sun_cierre"),
+            ]
+            for nombre, tid in _nombre_map:
+                db.execute("UPDATE rutina_bloques SET nombre=? WHERE id=? AND nombre!=?",
+                           (nombre, tid, nombre))
+            db.commit()
+        except Exception as e:
+            print(f"[DB] rutina_bloques nombres migration warning: {e}")
 
         db.commit()
   except Exception as e:

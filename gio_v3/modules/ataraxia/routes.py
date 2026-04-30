@@ -13,6 +13,7 @@ BLOQUE_LABELS = {k: v["label"] for k, v in ACTIVITIES.items() if v.get("weekend"
 
 # ── Reference horarios ────────────────────────────────────────────────────────
 HORARIOS = {
+    # ── SÁBADO ──────────────────────────────────────────────────────────────
     "sat_arranque":   "9:30 – 9:50",
     "sat_limpieza":   "9:50 – 10:55",
     "sat_transicion": "10:55 – 11:00",
@@ -21,16 +22,17 @@ HORARIOS = {
     "sat_gym":        "1:30 – 3:15pm",
     "sat_ropa":       "3:30 – 3:50pm",
     "sat_cierre":     "5:45 – 6:00pm",
-    "sun_arranque":   "10:00 – 10:20",
-    "sun_gym_r":      "10:20 – 12:20",
-    "sun_comidas_r":  "12:20 – 1:00pm",
-    "sun_planchar_r": "1:00 – 1:20pm",
-    "sun_finanzas":   "3:30 – 4:10pm",
-    "sun_planeacion": "4:10 – 5:00pm",
+    # ── DOMINGO ─────────────────────────────────────────────────────────────
+    "sun_arranque":   "8:00 – 8:20",
+    "sun_comidas_r":  "8:20 – 9:20",
+    "sun_planchar_r": "9:20 – 9:40",
+    "sun_finanzas":   "9:50 – 10:30",
+    "sun_planeacion": "10:30 – 11:15",
     "sun_prioridades": "dentro de planeación",
-    "sun_jugos_r":    "dentro de mañana",
-    "sun_cargas":     "5:00 – 5:15pm",
-    "sun_cierre":     "5:45 – 6:00pm",
+    "sun_jugos_r":    "mañana · flexible",
+    "sun_gym_r":      "ver agenda",
+    "sun_cargas":     "2:00 – 2:20",
+    "sun_cierre":     "5:30 – 6:00pm",
 }
 
 # ── Bloque icons ──────────────────────────────────────────────────────────────

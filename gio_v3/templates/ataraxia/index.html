@@ -5,9 +5,8 @@
 
 {% block head %}
 <style>
-/* ── Bloque cards ──────────────────────────────────────────────────── */
-.bl-card{background:var(--card);border:1px solid var(--b);border-radius:14px;margin-bottom:12px;overflow:hidden;transition:border-color .2s;}
-.bl-card.done{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.03);}
+.bl-card{background:var(--card);border:1px solid var(--b);border-radius:14px;margin-bottom:12px;overflow:hidden;transition:border-color .2s,opacity .3s;}
+.bl-card.done{border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.03);opacity:.55;}
 .bl-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;user-select:none;}
 .bl-icon{font-size:1.1rem;flex-shrink:0;}
 .bl-title{font-size:.72rem;font-weight:500;color:var(--text);flex:1;}
@@ -19,21 +18,18 @@
 .bl-body{padding:0 16px 14px;}
 .bl-card.collapsed .bl-body{display:none;}
 
-/* ── Mini progress bar inside bloque ─────────────────────────────── */
 .bl-bar-wrap{height:2px;background:rgba(255,255,255,.07);border-radius:100px;overflow:hidden;margin:0 16px 10px;}
 .bl-bar-fill{height:100%;border-radius:100px;transition:width .4s;}
 .sabado-day  .bl-bar-fill{background:linear-gradient(90deg,var(--cyan),#10b981);}
 .domingo-day .bl-bar-fill{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
 
-/* ── Cronómetro ───────────────────────────────────────────────────── */
 .timer-strip{display:flex;align-items:center;gap:8px;padding:8px 0 10px;border-bottom:1px solid var(--b);margin-bottom:10px;}
-.timer-display{font-family:var(--mono);font-size:.9rem;font-weight:600;color:var(--text);min-width:80px;}
+.timer-display{font-family:var(--mono);font-size:.9rem;font-weight:600;color:var(--text);min-width:80px;transition:color .3s;}
 .timer-ref{font-size:.46rem;color:var(--dim);flex:1;}
 .timer-btn{background:var(--card2);border:1px solid var(--b);border-radius:7px;padding:4px 9px;font-size:.5rem;color:var(--mid);cursor:pointer;transition:all .15s;font-family:var(--sans);}
 .timer-btn:hover{border-color:var(--gold);color:var(--gold);}
 .timer-btn.running{border-color:rgba(16,185,129,.4);color:var(--emerald);}
 
-/* ── Task rows ────────────────────────────────────────────────────── */
 .task-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .12s;margin-bottom:3px;}
 .task-row:hover{background:var(--card2);}
 .task-row.done{opacity:.55;}
@@ -41,7 +37,7 @@
 .task-chk.ck{background:var(--emerald);border-color:var(--emerald);}
 .task-chk svg{width:10px;height:10px;color:#09070F;display:none;}
 .task-chk.ck svg{display:block;}
-.task-name{flex:1;font-size:.68rem;color:var(--text);}
+.task-name{flex:1;font-size:.68rem;color:var(--text);transition:all .25s;}
 .task-row.done .task-name{text-decoration:line-through;color:var(--dim);}
 .task-hora{font-size:.44rem;color:var(--dim);text-align:right;min-width:70px;line-height:1.3;}
 .task-badges{display:flex;gap:4px;flex-shrink:0;}
@@ -53,7 +49,6 @@
 .tb-paid{background:rgba(6,182,212,.07);border:1px solid rgba(6,182,212,.2);color:var(--cyan);}
 .opt-pill{font-size:.38rem;padding:1px 5px;border-radius:100px;background:var(--b);color:var(--dim);border:1px solid var(--b2);}
 
-/* ── Bloque completion banner ─────────────────────────────────────── */
 .bl-complete{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:9px;margin-top:8px;animation:blPop .3s ease;}
 .sabado-day  .bl-complete{background:rgba(6,182,212,.09);border:1px solid rgba(6,182,212,.3);color:var(--cyan);}
 .domingo-day .bl-complete{background:rgba(124,58,237,.09);border:1px solid rgba(124,58,237,.3);color:#a78bfa;}
@@ -61,7 +56,6 @@
 .bl-complete .bc-ec{font-size:.5rem;margin-left:auto;opacity:.8;}
 @keyframes blPop{from{transform:scale(.95);opacity:0}to{transform:none;opacity:1}}
 
-/* ── Day progress bar ────────────────────────────────────────────── */
 .day-prog-wrap{margin-bottom:14px;}
 .day-prog-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
 .day-prog-lbl{font-size:.46rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
@@ -69,11 +63,11 @@
 .sabado-day  .day-prog-pct{color:var(--cyan);}
 .domingo-day .day-prog-pct{color:#a78bfa;}
 .day-prog-bar{height:4px;border-radius:100px;background:rgba(255,255,255,.07);overflow:hidden;}
-.day-prog-fill{height:100%;border-radius:100px;transition:width .4s;}
+.day-prog-fill{height:100%;border-radius:100px;transition:width .4s,background .4s;}
 .sabado-day  .day-prog-fill{background:linear-gradient(90deg,var(--cyan),#10b981);}
 .domingo-day .day-prog-fill{background:linear-gradient(90deg,var(--violet),#a78bfa);}
+.day-prog-fill.complete{background:linear-gradient(90deg,#10b981,#059669)!important;}
 
-/* ── Day complete banner ─────────────────────────────────────────── */
 .day-complete{padding:14px 18px;border-radius:11px;text-align:center;margin-bottom:14px;animation:blPop .35s ease;}
 .sabado-day  .day-complete{background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.3);}
 .domingo-day .day-complete{background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.3);}
@@ -82,41 +76,55 @@
 .domingo-day .day-complete .dc-title{color:#a78bfa;}
 .day-complete .dc-sub{font-size:.5rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
 
-/* ── Finde perfecto banner ───────────────────────────────────────── */
 .finde-banner{padding:16px 20px;border-radius:12px;text-align:center;background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(124,58,237,.06));border:1px solid rgba(201,168,76,.3);margin-bottom:14px;animation:blPop .4s ease;}
 .finde-banner .fb-t{font-family:var(--serif);font-size:1.2rem;font-style:italic;color:var(--gold);}
 .finde-banner .fb-s{font-size:.48rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
 
-/* ── Day tabs ────────────────────────────────────────────────────── */
-.day-tab{padding:7px 18px;border-radius:100px;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;border:1px solid var(--b);color:var(--mid);background:transparent;}
+.day-tab{padding:7px 18px;border-radius:100px;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .15s;border:1px solid var(--b);color:var(--mid);background:transparent;display:flex;align-items:center;gap:6px;}
 .day-tab.on{border-color:var(--gold);color:var(--gold);background:var(--gold-d);}
+.day-tab.complete{border-color:rgba(16,185,129,.5);color:var(--emerald);background:rgba(16,185,129,.07);}
+.day-tab.on.complete{border-color:var(--emerald);color:var(--emerald);background:rgba(16,185,129,.1);}
+.tab-pct{font-size:.42rem;opacity:.65;}
+.tab-chk{font-size:.5rem;color:var(--emerald);font-weight:700;}
 
-/* ── Global header card ──────────────────────────────────────────── */
 .global-prog{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px 16px;margin-bottom:14px;}
 .gp-row{display:flex;gap:12px;}
 .gp-col{flex:1;}
 .gp-lbl{font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
 .gp-bar{height:3px;border-radius:100px;background:rgba(255,255,255,.07);overflow:hidden;}
-.gp-fill-sat{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--cyan),#10b981);transition:width .4s;}
-.gp-fill-sun{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--violet),#a78bfa);transition:width .4s;}
+.gp-fill-sat{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--cyan),#10b981);transition:width .4s,background .4s;}
+.gp-fill-sun{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--violet),#a78bfa);transition:width .4s,background .4s;}
+.gp-fill-sat.complete,.gp-fill-sun.complete{background:linear-gradient(90deg,#10b981,#059669);}
 .gp-count{font-size:.52rem;font-weight:600;margin-top:3px;}
 .gp-sat{color:var(--cyan);} .gp-sun{color:#a78bfa;}
+.gp-count.complete{color:var(--emerald)!important;}
 
-/* ── Not weekend notice ──────────────────────────────────────────── */
 .not-wk{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.18);border-radius:8px;padding:9px 14px;font-size:.6rem;color:var(--purple);display:flex;align-items:center;gap:7px;margin-bottom:14px;}
+
+.ensayo-note{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:8px;margin-bottom:10px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);font-size:.56rem;color:var(--gold);}
+.ensayo-locked{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:8px;margin-bottom:10px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);font-size:.56rem;color:var(--dim);}
+
+.reset-modal{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:600;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);}
+.reset-modal.open{display:flex;}
+.reset-box{background:var(--card);border:1px solid rgba(244,63,94,.25);border-radius:16px;padding:28px;width:360px;max-width:100%;}
+.reset-box-title{font-family:var(--serif);font-size:1.15rem;font-style:italic;color:var(--coral);margin-bottom:8px;}
+.reset-box-body{font-size:.63rem;color:var(--mid);margin-bottom:20px;line-height:1.65;}
+.reset-box-actions{display:flex;gap:8px;justify-content:flex-end;}
+.reset-trigger{background:transparent;border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:4px 10px;font-size:.46rem;color:var(--dim);cursor:pointer;transition:all .2s;font-family:var(--sans);letter-spacing:.06em;}
+.reset-trigger:hover{border-color:rgba(244,63,94,.4);color:var(--coral);}
 </style>
 {% endblock %}
 
 {% block content %}
 <div style="max-width:680px;">
 
-  {# ── Finde perfecto ───────────────────────────────────────────────── #}
+  {# ── Finde perfecto ── #}
   <div id="finde-banner" class="finde-banner" {% if not (sat_combo and sun_combo) %}style="display:none"{% endif %}>
-    <div class="fb-t">🏆 Fin de Semana Perfecto</div>
+    <div class="fb-t">⚡ Fin de Semana Perfecto</div>
     <div class="fb-s">Sábado + Domingo completados · +15 XP · +30 EC</div>
   </div>
 
-  {# ── Not weekend notice ───────────────────────────────────────────── #}
+  {# ── Not weekend notice ── #}
   {% if not is_weekend %}
   <div class="not-wk">
     <i data-lucide="info" style="width:13px;height:13px;flex-shrink:0;"></i>
@@ -124,30 +132,43 @@
   </div>
   {% endif %}
 
-  {# ── Global progress header ───────────────────────────────────────── #}
+  {# ── Global progress header ── #}
   <div class="global-prog">
-    <div style="font-size:.44rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:10px;">Progreso — Semana {{ semana_id }}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-size:.44rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;">Progreso — Semana {{ semana_id }}</div>
+      <button class="reset-trigger" onclick="openResetModal()">↺ Reset semana</button>
+    </div>
     <div class="gp-row">
       <div class="gp-col">
         <div class="gp-lbl">🧘 Sábado</div>
-        <div class="gp-bar"><div class="gp-fill-sat" id="gp-sat-fill" style="width:{{ sabado.pct }}%"></div></div>
-        <div class="gp-count gp-sat" id="gp-sat-cnt">{{ sabado.done }} / {{ sabado.total }}</div>
+        <div class="gp-bar"><div class="gp-fill-sat {% if sabado.complete %}complete{% endif %}" id="gp-sat-fill" style="width:{{ sabado.pct }}%"></div></div>
+        <div class="gp-count gp-sat {% if sabado.complete %}complete{% endif %}" id="gp-sat-cnt">{{ sabado.done }} / {{ sabado.total }}</div>
       </div>
       <div class="gp-col">
         <div class="gp-lbl">🧠 Domingo</div>
-        <div class="gp-bar"><div class="gp-fill-sun" id="gp-sun-fill" style="width:{{ domingo.pct }}%"></div></div>
-        <div class="gp-count gp-sun" id="gp-sun-cnt">{{ domingo.done }} / {{ domingo.total }}</div>
+        <div class="gp-bar"><div class="gp-fill-sun {% if domingo.complete %}complete{% endif %}" id="gp-sun-fill" style="width:{{ domingo.pct }}%"></div></div>
+        <div class="gp-count gp-sun {% if domingo.complete %}complete{% endif %}" id="gp-sun-cnt">{{ domingo.done }} / {{ domingo.total }}</div>
       </div>
     </div>
   </div>
 
-  {# ── Day tabs ─────────────────────────────────────────────────────── #}
+  {# ── Day tabs ── #}
   <div style="display:flex;gap:8px;margin-bottom:14px;">
-    <button class="day-tab {% if dia=='sabado' %}on{% endif %}" id="tab-sabado" onclick="showDia('sabado')">🧘 Sábado</button>
-    <button class="day-tab {% if dia=='domingo' %}on{% endif %}" id="tab-domingo" onclick="showDia('domingo')">🧠 Domingo</button>
+    <button class="day-tab {% if dia=='sabado' %}on{% endif %} {% if sabado.complete %}complete{% endif %}"
+            id="tab-sabado" onclick="showDia('sabado')">
+      <span>🧘 Sábado</span>
+      <span class="tab-pct" id="tab-sat-pct">{{ sabado.pct }}%</span>
+      <span class="tab-chk" id="tab-sat-chk"{% if not sabado.complete %} style="display:none"{% endif %}>✓</span>
+    </button>
+    <button class="day-tab {% if dia=='domingo' %}on{% endif %} {% if domingo.complete %}complete{% endif %}"
+            id="tab-domingo" onclick="showDia('domingo')">
+      <span>🧠 Domingo</span>
+      <span class="tab-pct" id="tab-sun-pct">{{ domingo.pct }}%</span>
+      <span class="tab-chk" id="tab-sun-chk"{% if not domingo.complete %} style="display:none"{% endif %}>✓</span>
+    </button>
   </div>
 
-  {# ── SÁBADO ───────────────────────────────────────────────────────── #}
+  {# ── SÁBADO ── #}
   <div id="dia-sabado" class="sabado-day" {% if dia != 'sabado' %}style="display:none"{% endif %}>
 
     <div class="day-prog-wrap">
@@ -155,7 +176,7 @@
         <span class="day-prog-lbl">ATARAXIA RESET</span>
         <span class="day-prog-pct" id="sat-prog-pct">{{ sabado.done }} / {{ sabado.total }}</span>
       </div>
-      <div class="day-prog-bar"><div class="day-prog-fill" id="sat-prog-fill" style="width:{{ sabado.pct }}%"></div></div>
+      <div class="day-prog-bar"><div class="day-prog-fill {% if sabado.complete %}complete{% endif %}" id="sat-prog-fill" style="width:{{ sabado.pct }}%"></div></div>
     </div>
 
     <div class="day-complete" id="sat-day-complete" {% if not sabado.complete %}style="display:none"{% endif %}>
@@ -165,8 +186,7 @@
 
     {% for bl in sabado.bloques %}
     {% set is_done = bl.bloque_done %}
-    {% set is_collapsed = is_done %}
-    <div class="bl-card {% if is_done %}done{% endif %} {% if is_collapsed %}collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
+    <div class="bl-card {% if is_done %}done collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
 
       <div class="bl-hd" onclick="toggleBloque('{{ bl.bloque_id }}')">
         <span class="bl-icon">{{ bl.icon }}</span>
@@ -180,13 +200,11 @@
 
       <div class="bl-bar-wrap">
         <div class="bl-bar-fill" id="blbar-{{ bl.bloque_id }}"
-             style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%">
-        </div>
+             style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%"></div>
       </div>
 
       <div class="bl-body">
-        {# Cronómetro #}
-        <div class="timer-strip" id="tstrip-{{ bl.bloque_id }}">
+        <div class="timer-strip">
           <div class="timer-display" id="timer-{{ bl.bloque_id }}">00:00:00</div>
           <span class="timer-ref">ref: {{ bl.total_duracion }} min</span>
           <button class="timer-btn" id="tbtn-{{ bl.bloque_id }}"
@@ -194,7 +212,20 @@
           <button class="timer-btn" onclick="resetTimer('{{ bl.bloque_id }}')">↺</button>
         </div>
 
-        {# Tareas #}
+        {% if bl.bloque_id == 'sat_bloque2' %}
+          {% if today <= '2026-05-30' %}
+          <div class="ensayo-note">
+            <i data-lucide="calendar" style="width:11px;height:11px;flex-shrink:0;"></i>
+            Activo hasta el 30 de mayo
+          </div>
+          {% else %}
+          <div class="ensayo-locked">
+            <i data-lucide="lock" style="width:11px;height:11px;flex-shrink:0;"></i>
+            Ensayo finalizado — bloque inactivo
+          </div>
+          {% endif %}
+        {% endif %}
+
         {% for t in bl.tareas %}
         {% set tdone = t.id in bl.done_ids %}
         <div class="task-row {% if tdone %}done{% endif %}" id="trow-{{ t.id }}"
@@ -218,9 +249,8 @@
         </div>
         {% endfor %}
 
-        {# Bloque complete badge #}
         <div class="bl-complete" id="blc-{{ bl.bloque_id }}" {% if not bl.bloque_done %}style="display:none"{% endif %}>
-          <span>{{ bl.icon }} {{ bl.label.split(' — ')[0] }} Completo</span>
+          <span>{{ bl.icon }} {{ bl.label.split(' — ')[0] if ' — ' in bl.label else bl.label }} Completo</span>
           {% if bl.xp_total > 0 %}<span class="bc-ec">+{{ bl.xp_total }} XP · +{{ bl.ec_total }} EC</span>{% endif %}
         </div>
       </div>
@@ -232,7 +262,7 @@
     </div>
   </div>
 
-  {# ── DOMINGO ──────────────────────────────────────────────────────── #}
+  {# ── DOMINGO ── #}
   <div id="dia-domingo" class="domingo-day" {% if dia != 'domingo' %}style="display:none"{% endif %}>
 
     <div class="day-prog-wrap">
@@ -240,7 +270,7 @@
         <span class="day-prog-lbl">EUDAIMONIA STRATEGY</span>
         <span class="day-prog-pct" id="sun-prog-pct">{{ domingo.done }} / {{ domingo.total }}</span>
       </div>
-      <div class="day-prog-bar"><div class="day-prog-fill" id="sun-prog-fill" style="width:{{ domingo.pct }}%"></div></div>
+      <div class="day-prog-bar"><div class="day-prog-fill {% if domingo.complete %}complete{% endif %}" id="sun-prog-fill" style="width:{{ domingo.pct }}%"></div></div>
     </div>
 
     <div class="day-complete" id="sun-day-complete" {% if not domingo.complete %}style="display:none"{% endif %}>
@@ -250,8 +280,7 @@
 
     {% for bl in domingo.bloques %}
     {% set is_done = bl.bloque_done %}
-    {% set is_collapsed = is_done %}
-    <div class="bl-card {% if is_done %}done{% endif %} {% if is_collapsed %}collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
+    <div class="bl-card {% if is_done %}done collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
 
       <div class="bl-hd" onclick="toggleBloque('{{ bl.bloque_id }}')">
         <span class="bl-icon">{{ bl.icon }}</span>
@@ -265,12 +294,11 @@
 
       <div class="bl-bar-wrap">
         <div class="bl-bar-fill" id="blbar-{{ bl.bloque_id }}"
-             style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%">
-        </div>
+             style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%"></div>
       </div>
 
       <div class="bl-body">
-        <div class="timer-strip" id="tstrip-{{ bl.bloque_id }}">
+        <div class="timer-strip">
           <div class="timer-display" id="timer-{{ bl.bloque_id }}">00:00:00</div>
           <span class="timer-ref">ref: {{ bl.total_duracion }} min</span>
           <button class="timer-btn" id="tbtn-{{ bl.bloque_id }}"
@@ -307,16 +335,30 @@
     {% endfor %}
 
     <div style="margin-top:10px;padding:9px 14px;background:rgba(124,58,237,.06);border-radius:9px;font-size:.54rem;color:rgba(167,139,250,.7);">
-      💡 Completa todas las fases para +5 XP +3 EC bonus · Sáb+Dom = 🏆 Fin de Semana Perfecto
+      💡 Completa todas las fases para +5 XP +3 EC bonus · Sáb+Dom = ⚡ Fin de Semana Perfecto
     </div>
   </div>
 
+</div>
+
+{# ── Reset Modal ── #}
+<div class="reset-modal" id="reset-modal" onclick="if(event.target===this)closeResetModal()">
+  <div class="reset-box">
+    <div class="reset-box-title">↺ Resetear semana</div>
+    <div class="reset-box-body">
+      ¿Resetear la rutina de esta semana?<br>
+      Todo el progreso se perderá. El historial de semanas anteriores no se ve afectado.
+    </div>
+    <div class="reset-box-actions">
+      <button class="btn-g" onclick="closeResetModal()">Cancelar</button>
+      <button class="btn-r" onclick="confirmReset()" style="border-color:rgba(244,63,94,.4);color:var(--coral);">Confirmar reset</button>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// ── Timer state ──────────────────────────────────────────────────────────────
 const TIMERS = {};
 
 function _fmtTime(secs) {
@@ -329,8 +371,8 @@ function _fmtTime(secs) {
 function _timerColor(secs, refSecs) {
   if (!refSecs) return 'var(--text)';
   const pct = secs / refSecs;
-  if (pct >= 1.0) return 'var(--coral)';
-  if (pct >= 0.85) return 'var(--amber)';
+  if (pct >= 1.0)  return '#D85A30';
+  if (pct >= 0.85) return '#BA7517';
   return 'var(--text)';
 }
 
@@ -356,8 +398,7 @@ function resetTimer(bloqueId) {
   const t = TIMERS[bloqueId];
   if (!t) return;
   clearInterval(t.intervalId);
-  t.running = false;
-  t.secs = 0;
+  t.running = false; t.secs = 0;
   const el = document.getElementById(`timer-${bloqueId}`);
   if (el) { el.textContent = '00:00:00'; el.style.color = 'var(--text)'; }
   const btn = document.getElementById(`tbtn-${bloqueId}`);
@@ -367,47 +408,53 @@ function resetTimer(bloqueId) {
 function stopTimerAuto(bloqueId) {
   const t = TIMERS[bloqueId];
   if (t && t.running) {
-    clearInterval(t.intervalId);
-    t.running = false;
+    clearInterval(t.intervalId); t.running = false;
     const btn = document.getElementById(`tbtn-${bloqueId}`);
     if (btn) { btn.textContent = '▶'; btn.classList.remove('running'); }
   }
 }
 
-// ── Bloque collapse ──────────────────────────────────────────────────────────
 function toggleBloque(bloqueId) {
   document.getElementById(`blcard-${bloqueId}`)?.classList.toggle('collapsed');
 }
 
-// ── Day tab switch ────────────────────────────────────────────────────────────
 function showDia(dia) {
   ['sabado','domingo'].forEach(d => {
-    document.getElementById(`dia-${d}`).style.display  = d === dia ? '' : 'none';
+    document.getElementById(`dia-${d}`).style.display = d === dia ? '' : 'none';
     document.getElementById(`tab-${d}`).classList.toggle('on', d === dia);
   });
   history.replaceState(null, '', `?dia=${dia}`);
 }
 
-// ── Progress updaters ────────────────────────────────────────────────────────
+function _updateTab(pfx, pct, complete) {
+  const dia  = pfx === 'sat' ? 'sabado' : 'domingo';
+  const pctEl = document.getElementById(`tab-${pfx}-pct`);
+  const chkEl = document.getElementById(`tab-${pfx}-chk`);
+  const tabEl = document.getElementById(`tab-${dia}`);
+  if (pctEl) pctEl.textContent = pct + '%';
+  if (chkEl) chkEl.style.display = complete ? '' : 'none';
+  if (tabEl) tabEl.classList.toggle('complete', complete);
+}
+
 function updateDayProgress(dia, rutina) {
   const pfx = dia === 'sabado' ? 'sat' : 'sun';
-  const pct = rutina.total > 0 ? Math.round(rutina.done / rutina.total * 100) : 0;
+  const pct  = rutina.total > 0 ? Math.round(rutina.done / rutina.total * 100) : 0;
+
   const fill = document.getElementById(`${pfx}-prog-fill`);
   const pctEl = document.getElementById(`${pfx}-prog-pct`);
-  if (fill)  fill.style.width  = pct + '%';
+  if (fill)  { fill.style.width = pct + '%'; fill.classList.toggle('complete', rutina.complete); }
   if (pctEl) pctEl.textContent = `${rutina.done} / ${rutina.total}`;
 
-  // Global header
   const gpFill = document.getElementById(`gp-${pfx}-fill`);
   const gpCnt  = document.getElementById(`gp-${pfx}-cnt`);
-  if (gpFill) gpFill.style.width  = pct + '%';
-  if (gpCnt)  gpCnt.textContent   = `${rutina.done} / ${rutina.total}`;
+  if (gpFill) { gpFill.style.width = pct + '%'; gpFill.classList.toggle('complete', rutina.complete); }
+  if (gpCnt)  { gpCnt.textContent  = `${rutina.done} / ${rutina.total}`; gpCnt.classList.toggle('complete', rutina.complete); }
 
-  // Day complete banner
+  _updateTab(pfx, pct, rutina.complete);
+
   const dcBanner = document.getElementById(`${pfx}-day-complete`);
   if (dcBanner) dcBanner.style.display = rutina.complete ? '' : 'none';
 
-  // Per-bloque progress
   rutina.bloques.forEach(bl => {
     const pEl = document.getElementById(`blprog-${bl.bloque_id}`);
     const bEl = document.getElementById(`blbar-${bl.bloque_id}`);
@@ -424,7 +471,6 @@ function updateDayProgress(dia, rutina) {
   });
 }
 
-// ── Check / Uncheck ──────────────────────────────────────────────────────────
 let _pending = new Set();
 
 async function toggleTarea(subId, bloqueId, dia) {
@@ -436,8 +482,8 @@ async function toggleTarea(subId, bloqueId, dia) {
   const isDone = row?.classList.contains('done');
   const timerSecs = TIMERS[bloqueId]?.secs ?? 0;
 
-  const url    = isDone ? '/ataraxia/api/rutina/uncheck' : '/ataraxia/api/rutina/check';
-  const body   = isDone ? { bloque_id: subId } : { bloque_id: subId, tiempo_seg: timerSecs };
+  const url  = isDone ? '/ataraxia/api/rutina/uncheck' : '/ataraxia/api/rutina/check';
+  const body = isDone ? { bloque_id: subId } : { bloque_id: subId, tiempo_seg: timerSecs };
 
   try {
     const r = await fetch(url, {
@@ -448,14 +494,11 @@ async function toggleTarea(subId, bloqueId, dia) {
     const d = await r.json();
     if (!r.ok) { toast('Error al guardar', 'err'); return; }
 
-    // Toggle UI
     row?.classList.toggle('done', !isDone);
     if (chk) chk.classList.toggle('ck', !isDone);
 
-    // Update progress
     updateDayProgress(dia, d.rutina);
 
-    // Gamification toasts
     const gam = d.gam;
     if (gam && !isDone) {
       if (gam.xp > 0 || gam.ec > 0)
@@ -468,7 +511,6 @@ async function toggleTarea(subId, bloqueId, dia) {
       );
     }
 
-    // Check finde perfecto
     if (!isDone) {
       fetch('/ataraxia/api/rutina/finde/status').then(r => r.json()).then(s => {
         const fb = document.getElementById('finde-banner');
@@ -479,6 +521,26 @@ async function toggleTarea(subId, bloqueId, dia) {
     toast('Sin conexión', 'err');
   } finally {
     _pending.delete(subId);
+  }
+}
+
+function openResetModal()  { document.getElementById('reset-modal').classList.add('open'); }
+function closeResetModal() { document.getElementById('reset-modal').classList.remove('open'); }
+
+async function confirmReset() {
+  closeResetModal();
+  try {
+    const r = await fetch('/ataraxia/api/rutina/reset', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: 'ataraxia-reset-2026' }),
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) { toast('Error al resetear', 'err'); return; }
+    toast('↺ Semana reseteada');
+    setTimeout(() => location.reload(), 900);
+  } catch {
+    toast('Sin conexión', 'err');
   }
 }
 </script>
