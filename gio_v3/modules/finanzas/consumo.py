@@ -193,8 +193,7 @@ def detalle(pid):
             (pid,),
         ).fetchall()
         compras_asc = list(reversed([dict(c) for c in compras]))
-
-    prod = _enrich(prod, db)
+        prod = _enrich(prod, db)
     insights = _generar_insights(prod, compras_asc)
 
     # Price trend: last 5 purchases
@@ -244,9 +243,8 @@ def registrar_compra():
             "WHERE producto_id=? ORDER BY fecha_compra ASC",
             (producto_id,),
         ).fetchall()
-
-    prod    = _enrich(prod, db)
-    insights = _generar_insights(prod, [dict(c) for c in compras])
+        prod    = _enrich(prod, db)
+        insights = _generar_insights(prod, [dict(c) for c in compras])
 
     return jsonify({"ok": True, "prod": prod, "insights": insights})
 
