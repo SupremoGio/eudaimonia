@@ -123,8 +123,19 @@
 
     /* ── Nav links ── */
     .nav-link.active { background: rgba(124,58,237,0.14); color: #a78bfa; }
-    .nav-link { transition: background 0.18s, color 0.18s; }
+    .nav-link { transition: background 0.18s, color 0.18s; color: var(--dim); }
     .nav-link:hover:not(.active) { background: rgba(255,255,255,0.04); }
+
+    /* ── Light mode overrides for Tailwind hardcoded classes ── */
+    html.light .text-dim  { color: var(--dim)  !important; }
+    html.light .text-mid  { color: var(--mid)  !important; }
+    html.light .bg-border { background-color: var(--b) !important; }
+    html.light .border-border { border-color: var(--b) !important; }
+    html.light .bg-surface { background-color: var(--surf) !important; }
+    html.light .bg-card    { background-color: var(--card) !important; }
+    html.light .bg-card2   { background-color: var(--card2) !important; }
+    html.light .nav-link.active { background: var(--gold-d); color: var(--gold); }
+    html.light .nav-link:hover:not(.active) { background: var(--gold-d); }
 
     /* ── Gio card hover ── */
     .gio-card { transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }

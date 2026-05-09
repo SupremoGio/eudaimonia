@@ -840,6 +840,22 @@ def init_db():
         except Exception as e:
             print(f"[DB] rewards dedup warning: {e}")
 
+        # Dedup consumo_productos — keep lowest id per nombre, orphan compras go too
+        try:
+            db.execute("""
+                DELETE FROM consumo_compras WHERE producto_id NOT IN (
+                    SELECT MIN(id) FROM consumo_productos GROUP BY LOWER(TRIM(nombre))
+                )
+            """)
+            db.execute("""
+                DELETE FROM consumo_productos WHERE id NOT IN (
+                    SELECT MIN(id) FROM consumo_productos GROUP BY LOWER(TRIM(nombre))
+                )
+            """)
+            db.commit()
+        except Exception as e:
+            print(f"[DB] consumo dedup warning: {e}")
+
         # Migrate lista_prioridades: add protocol columns if missing
         try:
             lp_cols = [r["name"] for r in db.execute("PRAGMA table_info(lista_prioridades)").fetchall()]

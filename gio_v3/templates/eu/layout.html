@@ -289,7 +289,7 @@
     .gl.on { color: var(--gold); background: var(--gold-d); border-left-color: var(--gold); }
     .gl svg { width: 13px; height: 13px; flex-shrink: 0; }
     .gl-badge { margin-left: auto; background: var(--b); color: var(--dim); font-size: .44rem; padding: 1px 5px; border-radius: 100px; font-family: var(--sans); }
-    .gl.on .gl-badge { background: var(--gold); color: #09070F; }
+    .gl.on .gl-badge { background: var(--gold); color: var(--bg); }
     .gn-foot { padding: 12px 14px; margin-top: auto; border-top: 1px solid var(--b); }
     .lv-lbl { font-size: .46rem; color: var(--dim); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; font-family: var(--sans); }
     .lv-bar { background: var(--b); border-radius: 100px; height: 3px; overflow: hidden; margin-bottom: 3px; }
@@ -356,21 +356,21 @@
       ('/gtd',         'crosshair',        'Praxis',       'gtd',         'GTD · Productividad'),
     ] %}
     <a href="{{ href }}"
-       class="nav-link {% if pg == key %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg == key %}active{% endif %}
               flex items-center gap-3 px-3 py-2.5 rounded-xl group"
        style="border-left:2px solid transparent;">
       <i data-lucide="{{ icon }}" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
         <span style="font-size:.68rem; letter-spacing:.04em;">{{ label }}</span>
-        {% if prev %}<span style="font-size:.41rem; color:#6A6050; margin-top:1px;">{{ prev }}</span>{% endif %}
+        {% if prev %}<span style="font-size:.41rem; color:var(--dim); margin-top:1px;">{{ prev }}</span>{% endif %}
       </div>
     </a>
     {% endfor %}
 
     <div class="flex items-center gap-2 px-3 pt-3 pb-1">
-      <div class="flex-1 h-px" style="background:rgba(201,168,76,0.1);"></div>
-      <span style="font-size:.4rem; color:#6A6050; letter-spacing:.2em; text-transform:uppercase; flex-shrink:0;">Módulos</span>
-      <div class="flex-1 h-px" style="background:rgba(201,168,76,0.1);"></div>
+      <div class="flex-1 h-px" style="background:var(--b);"></div>
+      <span style="font-size:.4rem; color:var(--dim); letter-spacing:.2em; text-transform:uppercase; flex-shrink:0;">Módulos</span>
+      <div class="flex-1 h-px" style="background:var(--b);"></div>
     </div>
 
     {% for href, icon, label, key, sub in [
@@ -380,40 +380,40 @@
       ('/idiomas',     'globe',       'Cosmopolitismo','idiomas',     'Idiomas'),
     ] %}
     <a href="{{ href }}"
-       class="nav-link {% if pg == key %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg == key %}active{% endif %}
               flex items-center gap-3 px-3 py-2.5 rounded-xl group"
        style="border-left:2px solid transparent;">
       <i data-lucide="{{ icon }}" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
         <span style="font-size:.68rem; letter-spacing:.04em;">{{ label }}</span>
-        <span style="font-size:.41rem; color:#6A6050; margin-top:1px;">{{ sub }}</span>
+        <span style="font-size:.41rem; color:var(--dim); margin-top:1px;">{{ sub }}</span>
       </div>
     </a>
     {% endfor %}
 
     <a href="/finanzas/budget"
-       class="nav-link {% if pg == 'budget' %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg == 'budget' %}active{% endif %}
               flex items-center gap-3 pl-9 pr-3 py-1.5 rounded-xl"
        style="border-left:2px solid transparent;">
       <i data-lucide="bar-chart-2" class="w-3 h-3 flex-shrink-0"></i>
       <span style="font-size:.6rem;">Presupuesto</span>
     </a>
     <a href="/finanzas/prioridades"
-       class="nav-link {% if pg == 'prioridades' %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg == 'prioridades' %}active{% endif %}
               flex items-center gap-3 pl-9 pr-3 py-1.5 rounded-xl"
        style="border-left:2px solid transparent;">
       <i data-lucide="star" class="w-3 h-3 flex-shrink-0"></i>
       <span style="font-size:.6rem;">Wishlist</span>
     </a>
     <a href="/finanzas/consumo"
-       class="nav-link {% if pg == 'consumo' %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg == 'consumo' %}active{% endif %}
               flex items-center gap-3 pl-9 pr-3 py-1.5 rounded-xl"
        style="border-left:2px solid transparent;">
       <i data-lucide="shopping-cart" class="w-3 h-3 flex-shrink-0"></i>
       <span style="font-size:.6rem;">Consumo</span>
     </a>
     <a href="/perfil"
-       class="nav-link {% if pg == 'perfil' %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg == 'perfil' %}active{% endif %}
               flex items-center gap-3 pl-9 pr-3 py-1.5 rounded-xl"
        style="border-left:2px solid transparent;">
       <i data-lucide="user" class="w-3 h-3 flex-shrink-0"></i>
@@ -421,30 +421,30 @@
     </a>
 
     <div class="flex items-center gap-2 px-3 pt-3 pb-1">
-      <div class="flex-1 h-px" style="background:rgba(201,168,76,0.1);"></div>
-      <span style="font-size:.4rem; color:#6A6050; letter-spacing:.2em; text-transform:uppercase; flex-shrink:0;">Sistema</span>
-      <div class="flex-1 h-px" style="background:rgba(201,168,76,0.1);"></div>
+      <div class="flex-1 h-px" style="background:var(--b);"></div>
+      <span style="font-size:.4rem; color:var(--dim); letter-spacing:.2em; text-transform:uppercase; flex-shrink:0;">Sistema</span>
+      <div class="flex-1 h-px" style="background:var(--b);"></div>
     </div>
 
     <a href="/logros"
-       class="nav-link {% if pg == 'logros' %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg == 'logros' %}active{% endif %}
               flex items-center gap-3 px-3 py-2.5 rounded-xl group"
        style="border-left:2px solid transparent;">
       <i data-lucide="trophy" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
         <span style="font-size:.68rem; letter-spacing:.04em;">Logros</span>
-        <span style="font-size:.41rem; color:#6A6050; margin-top:1px;">Trofeos · Clasificación · XP</span>
+        <span style="font-size:.41rem; color:var(--dim); margin-top:1px;">Trofeos · Clasificación · XP</span>
       </div>
     </a>
 
     <a href="/recompensas"
-       class="nav-link {% if pg == 'recompensas' %}active{% else %}text-dim{% endif %}
+       class="nav-link {% if pg == 'recompensas' %}active{% endif %}
               flex items-center gap-3 px-3 py-2.5 rounded-xl group"
        style="border-left:2px solid transparent;">
       <i data-lucide="gift" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
         <span style="font-size:.68rem; letter-spacing:.04em;">Recompensas</span>
-        <span style="font-size:.41rem; color:#6A6050; margin-top:1px;">Shop · Eudaimonia Coins</span>
+        <span style="font-size:.41rem; color:var(--dim); margin-top:1px;">Shop · Eudaimonia Coins</span>
       </div>
     </a>
 

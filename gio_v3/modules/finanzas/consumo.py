@@ -263,7 +263,8 @@ def agregar_producto():
 
     with get_db() as db:
         if db.execute(
-            "SELECT id FROM consumo_productos WHERE nombre=? AND activo=1", (nombre,)
+            "SELECT id FROM consumo_productos WHERE LOWER(TRIM(nombre))=LOWER(TRIM(?)) AND activo=1",
+            (nombre,)
         ).fetchone():
             return jsonify({"error": "Ya existe ese producto"}), 400
 

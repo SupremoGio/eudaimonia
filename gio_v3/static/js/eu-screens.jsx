@@ -1095,7 +1095,7 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
                     fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}/>
                 <button onClick={addItem} style={{
                   background:C.gold,border:'none',borderRadius:7,width:34,height:34,cursor:'pointer',
-                  fontFamily:'DM Sans,sans-serif',fontSize:20,color:'#09070F',
+                  fontFamily:'DM Sans,sans-serif',fontSize:20,color:C.deep,
                   display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>+</button>
               </div>
               {inbox.length === 0
@@ -1166,7 +1166,7 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
                     display:'flex',alignItems:'center',justifyContent:'center',
                   }}>
                     {item.done && <svg width={10} height={10} viewBox="0 0 10 10">
-                      <polyline points="2,5 4.5,8 8,2" stroke="#09070F" strokeWidth={1.5}
+                      <polyline points="2,5 4.5,8 8,2" stroke={C.deep} strokeWidth={1.5}
                         fill="none" strokeLinecap="round"/>
                     </svg>}
                   </div>
@@ -1278,7 +1278,7 @@ function ProfileScreen({ appState, isDesktop }) {
               border:`1.5px solid ${lv.n<=level?C.gold:'rgba(201,168,76,0.1)'}`,
               display:'flex',alignItems:'center',justifyContent:'center',
               fontFamily:'DM Sans,sans-serif',fontSize:10,
-              color: lv.n < level ? '#09070F' : C.gold,
+              color: lv.n < level ? C.deep : C.gold,
             }}>
               {lv.n < level ? '✓' : lv.n}
             </div>
