@@ -50,6 +50,8 @@
 .hist-table tr:last-child td{border-bottom:none;}
 .hist-table tr:hover td{background:var(--card2);}
 .hist-table td:first-child{color:var(--text);}
+.btn-del-c{background:none;border:none;color:var(--dim);cursor:pointer;padding:3px 6px;border-radius:5px;font-size:.7rem;transition:color .15s;}
+.btn-del-c:hover{color:var(--coral);}
 
 /* no data */
 .no-data{text-align:center;padding:32px;color:var(--dim);font-size:.66rem;}
@@ -191,15 +193,17 @@
         <th>Precio total</th>
         <th>Cantidad</th>
         <th>Precio unitario</th>
+        <th></th>
       </tr>
     </thead>
-    <tbody>
+    <tbody id="hist-tbody">
       {% for c in compras %}
-      <tr>
+      <tr id="row-{{ c.id }}">
         <td>{{ c.fecha_compra }}</td>
         <td>${{ "%.2f"|format(c.precio_total) }}</td>
         <td>{{ c.cantidad|int }}</td>
         <td>{% if c.cantidad > 0 %}${{ "%.2f"|format(c.precio_total / c.cantidad) }}{% else %}—{% endif %}</td>
+        <td><button class="btn-del-c" onclick="borrarCompra({{ c.id }})" title="Eliminar">✕</button></td>
       </tr>
       {% endfor %}
     </tbody>
@@ -233,6 +237,17 @@ async function desactivar(){
   if(!confirm('¿Desactivar este producto? Puedes reactivarlo desde la base de datos.')) return;
   await fetch('/finanzas/consumo/api/producto/{{ prod.id }}',{method:'DELETE'});
   window.location.href='/finanzas/consumo/';
+}
+
+async function borrarCompra(cid){
+  if(!confirm('¿Eliminar este registro de compra?')) return;
+  const r = await fetch(`/finanzas/consumo/api/compra/${cid}`,{method:'DELETE'});
+  const d = await r.json();
+  if(d.error){toast(d.error,'err');return;}
+  const row = document.getElementById(`row-${cid}`);
+  if(row) row.remove();
+  toast('Compra eliminada','win');
+  setTimeout(()=>location.reload(),900);
 }
 </script>
 {% endblock %}

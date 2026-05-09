@@ -29,6 +29,11 @@ def _calcular_metricas(producto_id, db):
         (producto_id,)
     ).fetchall()
     if not compras:
+        db.execute(
+            "UPDATE consumo_productos "
+            "SET precio_promedio=0, ultima_compra=NULL, frecuencia_dias=NULL WHERE id=?",
+            (producto_id,),
+        )
         return
 
     precio_promedio = round(sum(c["precio_total"] for c in compras) / len(compras), 2)
@@ -280,6 +285,19 @@ def agregar_producto():
     prod["status"] = "sin_datos"
     prod["insights"] = [{"tipo": "info", "msg": "Sin historial — registra tu primera compra"}]
     return jsonify({"ok": True, "prod": prod})
+
+
+@consumo_bp.route("/api/compra/<int:cid>", methods=["DELETE"])
+def eliminar_compra(cid):
+    with get_db() as db:
+        row = db.execute("SELECT producto_id FROM consumo_compras WHERE id=?", (cid,)).fetchone()
+        if not row:
+            return jsonify({"error": "Compra no encontrada"}), 404
+        producto_id = row["producto_id"]
+        db.execute("DELETE FROM consumo_compras WHERE id=?", (cid,))
+        _calcular_metricas(producto_id, db)
+        db.commit()
+    return jsonify({"ok": True})
 
 
 @consumo_bp.route("/api/producto/<int:pid>", methods=["DELETE"])
