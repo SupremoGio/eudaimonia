@@ -1,142 +1,151 @@
-{% extends "tw/layout.html" %}{% set pg='recompensas' %}
-{% block title %}Tienda EC — Eudaimonia{% endblock %}
-{% block topright %}{{ gam.total_coins }} EC{% endblock %}
-{% block content %}
+{% extends "eu/layout.html" %}{% set pg='recompensas' %}
+{% block title %}Recompensas — Eudaimonia{% endblock %}
+{% block module_title %}RECOMPENSAS{% endblock %}
+{% block topright %}{{ ec_balance }} EC{% endblock %}
+
+{% block head %}
 <style>
-.r-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
-.ec-badge{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:14px;}
-.ec-big{font-family:var(--serif);font-size:2.4rem;font-weight:300;font-style:italic;color:var(--amber);}
-.ec-lbl{font-size:.48rem;color:var(--dim);letter-spacing:.2em;text-transform:uppercase;}
-.lvl-badge{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);border-radius:14px;}
-.lvl-name{font-size:.9rem;font-family:var(--serif);font-style:italic;color:var(--violet-l);}
-.lvl-sub{font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
-
-.rewards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:28px;}
-.rc{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;position:relative;overflow:hidden;transition:border-color .2s;}
-.rc.can{border-color:rgba(245,158,11,.3);}
-.rc.can:hover{border-color:rgba(245,158,11,.5);}
-.rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
-.rc-name{font-size:.95rem;color:var(--text);font-family:var(--serif);font-style:italic;font-weight:300;}
-.rc-cost{font-size:1.2rem;font-weight:600;color:var(--amber);font-family:var(--serif);font-style:italic;}
-.rc-cost span{font-size:.48rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;display:block;margin-top:1px;text-align:right;}
-.rc-desc{font-size:.64rem;color:var(--dim);line-height:1.55;margin-bottom:12px;}
-.rc-reqs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
-.req-chip{font-size:.48rem;padding:3px 8px;border-radius:100px;letter-spacing:.06em;}
-.req-lvl{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.2);color:var(--violet-l);}
-.req-badge{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--amber);}
-.req-cool{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
-.btn-redeem{width:100%;padding:10px;border-radius:9px;font-size:.64rem;letter-spacing:.1em;text-transform:uppercase;font-family:var(--mono);cursor:pointer;transition:all .18s;border:none;}
-.btn-redeem.active{background:linear-gradient(135deg,var(--amber),#f97316);color:#111;font-weight:600;}
-.btn-redeem.active:hover{opacity:.9;transform:translateY(-1px);}
+/* ── Cards de recompensa ── */
+.rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px;margin-bottom:20px;}
+.rc{position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;}
+.rc.can{border-color:rgba(201,168,76,.35);}
+.rc.can:hover{border-color:rgba(201,168,76,.55);box-shadow:0 6px 24px rgba(201,168,76,.08);}
+.rc-name{font-family:var(--serif);font-size:1.05rem;font-style:italic;font-weight:400;color:var(--text);}
+.rc-cost{font-family:var(--serif);font-size:1.4rem;font-style:italic;color:var(--gold);}
+.rc-cost small{font-family:var(--sans);font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;display:block;text-align:right;margin-top:1px;}
+.rc-desc{font-size:.6rem;color:var(--mid);line-height:1.55;margin-bottom:10px;}
+.rc-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
+.rchip{font-size:.44rem;padding:2px 7px;border-radius:100px;letter-spacing:.05em;}
+.rchip-lvl{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
+.rchip-badge{background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.2);color:var(--mid);}
+.rchip-cool{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
+.btn-redeem{width:100%;padding:9px;border-radius:8px;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;font-family:var(--sans);cursor:pointer;transition:all .18s;border:none;}
+.btn-redeem.active{background:linear-gradient(135deg,#7A5520,#C9A84C);color:#09070F;font-weight:600;}
+.btn-redeem.active:hover{opacity:.88;transform:translateY(-1px);}
 .btn-redeem.blocked{background:var(--card2);border:1px solid var(--b);color:var(--dim);cursor:not-allowed;}
-.block-msg{font-size:.52rem;color:var(--coral);margin-top:8px;text-align:center;}
-.last-red{font-size:.5rem;color:var(--dim);margin-top:6px;text-align:center;}
+.block-msg{font-size:.5rem;color:var(--coral);margin-top:7px;text-align:center;}
+.last-red{font-size:.46rem;color:var(--dim);margin-top:5px;text-align:center;}
+.rc-actions{position:absolute;top:10px;right:10px;display:flex;gap:3px;}
 
-.add-form{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:20px;margin-bottom:28px;}
-.add-form h3{font-family:var(--serif);font-size:1.1rem;font-style:italic;font-weight:300;color:var(--text);margin-bottom:16px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
-.form-row.single{grid-template-columns:1fr;}
-.fi{display:flex;flex-direction:column;gap:5px;}
-.fi label{font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
-.fi input,.fi select,.fi textarea{background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:.7rem;outline:none;transition:border-color .18s;}
-.fi input:focus,.fi select:focus,.fi textarea:focus{border-color:var(--amber);}
+/* ── Gasto libre ── */
+.gasto-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:flex-end;margin-bottom:10px;}
+.sep-sym{display:flex;align-items:center;padding-bottom:14px;color:var(--dim);font-size:.7rem;}
 
-@media(max-width:600px){.form-row{grid-template-columns:1fr;}.r-hdr{flex-direction:column;align-items:flex-start;}}
+/* ── Historial ── */
+.hrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--b);}
+.hrow:last-child{border-bottom:none;}
+.hrow-desc{font-size:.68rem;color:var(--text);}
+.hrow-meta{font-size:.44rem;color:var(--dim);letter-spacing:.06em;margin-top:2px;}
+.hrow-ec{font-family:var(--serif);font-size:.95rem;font-style:italic;color:var(--coral);white-space:nowrap;}
+
+@media(max-width:600px){
+  .gasto-row{grid-template-columns:1fr;} .sep-sym{display:none;}
+}
 </style>
+{% endblock %}
 
-<div class="r-hdr">
+{% block content %}
+
+<!-- ── Header ─────────────────────────────────────────────────────── -->
+<div class="pg-hd" style="margin-bottom:18px;">
   <div>
-    <div style="font-family:var(--serif);font-size:1.6rem;font-style:italic;font-weight:300;color:var(--text);">Tienda de Recompensas</div>
-    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:3px;">Convierte tu esfuerzo en recompensas reales</div>
+    <div class="pg-t">Tienda de Recompensas</div>
+    <div class="pg-s">Convierte tu esfuerzo en recompensas reales</div>
   </div>
-  <div style="display:flex;gap:12px;flex-wrap:wrap;">
-    <div class="ec-badge">
-      <div>
-        <div class="ec-lbl">Euda-Credits</div>
-        <div class="ec-big" id="ec-display">{{ ec_balance }}</div>
-      </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+    <div class="tile" style="padding:10px 16px;border-color:rgba(201,168,76,.3);display:inline-flex;flex-direction:column;gap:1px;">
+      <span class="fl" style="margin:0;">Euda-Credits</span>
+      <span style="font-family:var(--serif);font-size:1.8rem;font-style:italic;color:var(--gold);line-height:1;" id="ec-display">{{ ec_balance }}</span>
     </div>
-    <div class="lvl-badge">
-      <div>
-        <div class="lvl-sub">Nivel {{ level_info.level }}</div>
-        <div class="lvl-name">{{ level_info.level_name }}</div>
-      </div>
+    <div class="tile" style="padding:10px 16px;border-color:rgba(201,168,76,.15);display:inline-flex;flex-direction:column;gap:1px;">
+      <span class="fl" style="margin:0;">Nivel {{ level_info.level }}</span>
+      <span style="font-family:var(--serif);font-size:1.05rem;font-style:italic;color:var(--mid);line-height:1;">{{ level_info.level_name }}</span>
     </div>
   </div>
 </div>
 
-<!-- Gastar EC -->
-<div class="add-form" style="margin-bottom:20px;border-color:rgba(245,158,11,.25);">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-    <h3 style="margin:0;">💸 Gastar EC</h3>
-    <div style="font-size:.52rem;color:var(--dim);">1 EC = $10 MXN</div>
+<!-- ── XP Progress ─────────────────────────────────────────────────── -->
+<div class="tile" style="padding:12px 16px;margin-bottom:14px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <span class="fl" style="margin:0;">Progreso al siguiente nivel</span>
+    <span style="font-size:.58rem;color:var(--gold);">{{ level_info.xp_to_next }} XP → Nivel {{ gam.level + 1 }}</span>
   </div>
-  <div class="form-row" style="align-items:flex-end;">
-    <div class="fi">
-      <label>Pesos MXN</label>
-      <input id="g-pesos" type="number" min="0" placeholder="150" oninput="syncGasto('pesos')"
-             style="font-size:.85rem;" />
-      <span style="font-size:.46rem;color:var(--dim);margin-top:3px;" id="g-pesos-hint">÷ 10 = EC</span>
-    </div>
-    <div style="display:flex;align-items:center;padding-bottom:14px;color:var(--dim);font-size:.7rem;">⇄</div>
-    <div class="fi">
-      <label>EC a gastar</label>
-      <input id="g-ec" type="number" min="1" placeholder="15" oninput="syncGasto('ec')"
-             style="font-size:.85rem;color:var(--amber);" />
-      <span style="font-size:.46rem;color:var(--dim);margin-top:3px;" id="g-ec-hint">× 10 = pesos</span>
-    </div>
-  </div>
-  <div class="form-row single" style="margin-top:4px;">
-    <div class="fi">
-      <label>¿En qué lo gasté?</label>
-      <input id="g-desc" placeholder="Ej: Helado, ropa Nike, salida al cine…" />
-    </div>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
-    <button class="btn-g" onclick="registrarGasto()"
-            style="border-color:rgba(245,158,11,.4);color:var(--amber);">
-      💸 REGISTRAR GASTO
-    </button>
-    <span style="font-size:.52rem;color:var(--dim);">Balance actual: <strong id="ec-gasto-bal" style="color:var(--amber);">{{ ec_balance }} EC</strong></span>
+  <div style="background:rgba(255,255,255,.06);border-radius:100px;height:4px;overflow:hidden;">
+    <div style="width:{{ level_info.level_pct }}%;height:100%;background:linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D);border-radius:100px;transition:width .5s;"></div>
   </div>
 </div>
 
-<!-- Nivel XP progress -->
-<div class="tile" style="margin-bottom:20px;padding:14px 18px;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-    <div style="font-size:.52rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;">Progreso al siguiente nivel</div>
-    <div style="font-size:.64rem;color:var(--violet-l);">{{ level_info.xp_to_next }} XP para <strong>{{ gam.level_name }}</strong>{% if gam.level < 10 %} → Nivel {{ gam.level + 1 }}{% endif %}</div>
+<!-- ── Gastar EC ───────────────────────────────────────────────────── -->
+<div class="tile" style="margin-bottom:14px;border-color:rgba(201,168,76,.25);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:6px;">
+    <div>
+      <div style="font-family:var(--serif);font-size:1.05rem;font-style:italic;color:var(--gold);">Gastar EC</div>
+      <div class="pg-s">Balance: <strong id="ec-gasto-bal" style="color:var(--gold);">{{ ec_balance }} EC</strong></div>
+    </div>
+    <span style="font-size:.46rem;color:var(--dim);letter-spacing:.1em;">1 EC = $10 MXN</span>
   </div>
-  <div style="background:var(--card2);border-radius:100px;height:6px;overflow:hidden;">
-    <div style="width:{{ level_info.level_pct }}%;height:100%;background:linear-gradient(90deg,var(--violet),var(--violet-l));border-radius:100px;transition:width .5s;"></div>
+
+  <div class="gasto-row">
+    <div class="fg">
+      <label class="fl">Pesos MXN</label>
+      <input class="fi" id="g-pesos" type="number" min="0" placeholder="150"
+             oninput="syncGasto('pesos')" style="font-size:.85rem;" />
+      <span style="font-size:.44rem;color:var(--dim);margin-top:3px;" id="g-pesos-hint">÷ 10 = EC</span>
+    </div>
+    <div class="sep-sym">⇄</div>
+    <div class="fg">
+      <label class="fl">EC a gastar</label>
+      <input class="fi" id="g-ec" type="number" min="1" placeholder="15"
+             oninput="syncGasto('ec')" style="font-size:.85rem;color:var(--gold);" />
+      <span style="font-size:.44rem;color:var(--dim);margin-top:3px;" id="g-ec-hint">× 10 = pesos</span>
+    </div>
   </div>
+
+  <div class="fg" style="margin-bottom:10px;">
+    <label class="fl">¿En qué lo gasté?</label>
+    <input class="fi" id="g-desc" placeholder="Ej: Helado, ropa Nike, salida al cine…" />
+  </div>
+
+  <button class="btn-a" onclick="registrarGasto()">💸 Registrar gasto</button>
 </div>
 
-<!-- Rewards grid -->
-<div class="rewards-grid" id="rewards-grid">
+<!-- ── Rewards grid ────────────────────────────────────────────────── -->
+<div class="rc-grid" id="rewards-grid">
   {% for r in rewards %}
-  <div class="rc {% if r.can_redeem %}can{% endif %}" data-id="{{ r.id }}">
-    <div class="rc-top">
-      <div class="rc-name">{{ r.name }}</div>
-      <div class="rc-cost">{{ r.ec_cost }}<span>EC</span></div>
+  <div class="tile rc {% if r.can_redeem %}can{% endif %}" data-id="{{ r.id }}">
+    <div class="rc-actions">
+      <button class="ai" onclick="editReward({{ r.id }}, '{{ r.name }}', '{{ r.description|replace("'","\\\'") }}', {{ r.ec_cost }}, {{ r.level_required }}, {{ r.cooldown_days }})" title="Editar">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
+      <button class="ai del" onclick="deleteReward({{ r.id }})" title="Eliminar">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-right:40px;">
+      <div class="rc-name">{{ r.name }}</div>
+      <div class="rc-cost">{{ r.ec_cost }}<small>EC</small></div>
+    </div>
+
     {% if r.description %}
     <div class="rc-desc">{{ r.description }}</div>
     {% endif %}
-    <div class="rc-reqs">
+
+    <div class="rc-chips">
       {% if r.level_required > 1 %}
-      <span class="req-chip req-lvl">Nivel {{ r.level_required }}+</span>
+      <span class="rchip rchip-lvl">Nivel {{ r.level_required }}+</span>
       {% endif %}
       {% if r.badge_required %}
-      <span class="req-chip req-badge">Badge: {{ r.badge_required }}</span>
+      <span class="rchip rchip-badge">{{ r.badge_required }}</span>
       {% endif %}
       {% if r.cooldown_days > 0 %}
-      <span class="req-chip req-cool">Cooldown {{ r.cooldown_days }}d</span>
+      <span class="rchip rchip-cool">{{ r.cooldown_days }}d cooldown</span>
       {% endif %}
     </div>
+
     <button class="btn-redeem {% if r.can_redeem %}active{% else %}blocked{% endif %}"
             onclick="{% if r.can_redeem %}redeemReward({{ r.id }}, '{{ r.name }}', {{ r.ec_cost }}){% endif %}">
-      {% if r.can_redeem %}✦ CANJEAR{% else %}BLOQUEADA{% endif %}
+      {% if r.can_redeem %}✦ Canjear{% else %}Bloqueada{% endif %}
     </button>
     {% if not r.can_redeem %}
     <div class="block-msg">{{ r.block_reason }}</div>
@@ -144,55 +153,59 @@
     {% if r.last_redeemed %}
     <div class="last-red">Último canje: {{ r.last_redeemed[:10] }}</div>
     {% endif %}
-    <button style="position:absolute;top:10px;right:38px;background:none;border:none;color:var(--dim);font-size:.58rem;cursor:pointer;padding:4px;" onclick="editReward({{ r.id }}, '{{ r.name }}', '{{ r.description }}', {{ r.ec_cost }}, {{ r.level_required }}, {{ r.cooldown_days }})">✎</button>
-    <button style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--dim);font-size:.58rem;cursor:pointer;padding:4px;" onclick="deleteReward({{ r.id }})">✕</button>
   </div>
   {% endfor %}
 </div>
 
-<!-- Historial de gastos -->
-<div class="add-form" style="margin-bottom:20px;border-color:rgba(244,63,94,.2);">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <h3 style="margin:0;color:var(--coral);">📋 Historial de Gastos</h3>
-    <div style="font-size:.46rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;">Últimos 60</div>
+<!-- ── Agregar recompensa ──────────────────────────────────────────── -->
+<div class="tile af" style="margin-bottom:14px;">
+  <div class="af-lbl" id="add-form-label">+ Agregar recompensa</div>
+  <div class="fgrid c2">
+    <div class="fg"><label class="fl">Nombre</label><input class="fi" id="f-name" placeholder="Ej: Ropa Nike" /></div>
+    <div class="fg"><label class="fl">Costo EC</label><input class="fi" id="f-cost" type="number" min="0" placeholder="50" /></div>
   </div>
-  <div id="historial-list">
-    <div style="font-size:.58rem;color:var(--dim);text-align:center;padding:12px;">Cargando…</div>
+  <div class="fgrid c2">
+    <div class="fg"><label class="fl">Nivel requerido</label><input class="fi" id="f-lvl" type="number" min="1" max="10" value="1" /></div>
+    <div class="fg"><label class="fl">Cooldown (días)</label><input class="fi" id="f-cool" type="number" min="0" value="30" /></div>
+  </div>
+  <div class="fg" style="margin-bottom:10px;">
+    <label class="fl">Descripción (opcional)</label>
+    <input class="fi" id="f-desc" placeholder="Descripción…" />
+  </div>
+  <div class="fa">
+    <button class="btn-r" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none;">Cancelar</button>
+    <button class="btn-a" onclick="addReward()">Guardar</button>
   </div>
 </div>
 
-<!-- Add reward form -->
-<div class="add-form">
-  <h3>+ Agregar Recompensa</h3>
-  <div class="form-row">
-    <div class="fi"><label>Nombre</label><input id="f-name" placeholder="Ej: Ropa Nike" /></div>
-    <div class="fi"><label>Costo EC</label><input id="f-cost" type="number" min="0" placeholder="50" /></div>
+<!-- ── Historial de gastos ────────────────────────────────────────── -->
+<div class="tile" style="border-color:rgba(244,63,94,.18);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-family:var(--serif);font-size:1rem;font-style:italic;color:var(--coral);">Historial de gastos</div>
+    <span class="fl" style="margin:0;">Últimos 60</span>
   </div>
-  <div class="form-row">
-    <div class="fi"><label>Nivel requerido</label><input id="f-lvl" type="number" min="1" max="10" value="1" /></div>
-    <div class="fi"><label>Cooldown (días)</label><input id="f-cool" type="number" min="0" value="30" /></div>
+  <div id="historial-list">
+    <div style="font-size:.58rem;color:var(--dim);text-align:center;padding:16px;">Cargando…</div>
   </div>
-  <div class="form-row single">
-    <div class="fi"><label>Descripción (opcional)</label><input id="f-desc" placeholder="Descripción de la recompensa..." /></div>
-  </div>
-  <button class="btn-g" onclick="addReward()" style="margin-top:4px;">+ AGREGAR RECOMPENSA</button>
 </div>
+
 {% endblock %}
+
 {% block scripts %}
 <script>
 let editingId = null;
 
-// ── EC Spending ───────────────────────────────────────────────────────────────
+// ── Pesos ↔ EC sync ──────────────────────────────────────────────────────────
 function syncGasto(field) {
   if (field === 'pesos') {
-    const p = parseFloat(document.getElementById('g-pesos').value) || 0;
+    const p  = parseFloat(document.getElementById('g-pesos').value) || 0;
     const ec = Math.round(p / 10);
     document.getElementById('g-ec').value = ec > 0 ? ec : '';
     document.getElementById('g-pesos-hint').textContent = p > 0 ? `÷ 10 = ${ec} EC` : '÷ 10 = EC';
   } else {
     const ec = parseFloat(document.getElementById('g-ec').value) || 0;
     const p  = ec * 10;
-    document.getElementById('g-pesos').value = ec > 0 ? p : '';
+    document.getElementById('g-pesos').value  = ec > 0 ? p : '';
     document.getElementById('g-ec-hint').textContent = ec > 0 ? `× 10 = $${p} MXN` : '× 10 = pesos';
   }
 }
@@ -210,37 +223,19 @@ async function registrarGasto() {
     });
     const d = await r.json();
     if (d.error) { toast(d.error, 'err'); return; }
-    document.getElementById('ec-display').textContent = d.ec_restante;
-    document.getElementById('ec-gasto-bal').textContent = d.ec_restante + ' EC';
+    document.getElementById('ec-display').textContent    = d.ec_restante;
+    document.getElementById('ec-gasto-bal').textContent  = d.ec_restante + ' EC';
     document.getElementById('g-pesos').value = '';
-    document.getElementById('g-ec').value    = '';
+    document.getElementById('g-ec').value   = '';
     document.getElementById('g-desc').value  = '';
     document.getElementById('g-pesos-hint').textContent = '÷ 10 = EC';
     document.getElementById('g-ec-hint').textContent    = '× 10 = pesos';
-    toast(`💸 -${ec} EC · ${desc}`, 'win');
+    toast(`💸 -${ec} EC · ${desc}`);
     loadHistorial();
   } catch { toast('Error al registrar', 'err'); }
 }
 
-async function loadHistorial() {
-  try {
-    const r = await fetch('/recompensas/api/gastos');
-    const gastos = await r.json();
-    const el = document.getElementById('historial-list');
-    if (!el) return;
-    if (!gastos.length) { el.innerHTML = '<div style="font-size:.58rem;color:var(--dim);text-align:center;padding:12px;">Sin gastos registrados</div>'; return; }
-    el.innerHTML = gastos.map(g => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--b);">
-        <div>
-          <div style="font-size:.72rem;color:var(--text);">${g.description}</div>
-          <div style="font-size:.46rem;color:var(--dim);letter-spacing:.08em;margin-top:2px;">${g.date} · $${g.ec * 10} MXN</div>
-        </div>
-        <div style="font-size:.9rem;color:var(--coral);font-family:var(--serif);font-style:italic;white-space:nowrap;">-${g.ec} EC</div>
-      </div>`).join('');
-  } catch {}
-}
-document.addEventListener('DOMContentLoaded', loadHistorial);
-
+// ── Rewards CRUD ─────────────────────────────────────────────────────────────
 async function redeemReward(id, name, cost) {
   if (!confirm(`¿Canjear "${name}" por ${cost} EC?`)) return;
   try {
@@ -248,7 +243,7 @@ async function redeemReward(id, name, cost) {
     const d = await r.json();
     if (d.error) { toast(d.error, 'err'); return; }
     document.getElementById('ec-display').textContent = d.ec_remaining;
-    toast(`✦ ${name} canjeada! -${cost} EC`, 'win');
+    toast(`✦ ${name} canjeada — -${cost} EC`);
     setTimeout(() => location.reload(), 1200);
   } catch { toast('Error al canjear', 'err'); }
 }
@@ -263,7 +258,6 @@ async function addReward() {
 
   const url    = editingId ? `/recompensas/api/rewards/${editingId}` : '/recompensas/api/rewards';
   const method = editingId ? 'PUT' : 'POST';
-
   try {
     const r = await fetch(url, {
       method,
@@ -271,7 +265,7 @@ async function addReward() {
       body: JSON.stringify({name, ec_cost: cost, level_required: lvl, cooldown_days: cool, description: desc})
     });
     if (!r.ok) { toast('Error', 'err'); return; }
-    editingId = null;
+    cancelEdit();
     toast(method === 'POST' ? '✦ Recompensa agregada' : '✦ Actualizada');
     setTimeout(() => location.reload(), 800);
   } catch { toast('Error', 'err'); }
@@ -284,8 +278,22 @@ function editReward(id, name, desc, cost, lvl, cool) {
   document.getElementById('f-lvl').value  = lvl;
   document.getElementById('f-cool').value = cool;
   document.getElementById('f-desc').value = desc;
+  document.getElementById('add-form-label').textContent = '✎ Editando recompensa';
+  document.getElementById('cancel-edit-btn').style.display = '';
   document.getElementById('f-name').focus();
-  toast('Editando — modifica y guarda');
+  document.getElementById('f-name').scrollIntoView({behavior:'smooth', block:'center'});
+  toast('Modifica y guarda');
+}
+
+function cancelEdit() {
+  editingId = null;
+  document.getElementById('f-name').value  = '';
+  document.getElementById('f-cost').value  = '';
+  document.getElementById('f-lvl').value   = '1';
+  document.getElementById('f-cool').value  = '30';
+  document.getElementById('f-desc').value  = '';
+  document.getElementById('add-form-label').textContent = '+ Agregar recompensa';
+  document.getElementById('cancel-edit-btn').style.display = 'none';
 }
 
 async function deleteReward(id) {
@@ -294,5 +302,28 @@ async function deleteReward(id) {
   toast('Eliminada');
   setTimeout(() => location.reload(), 600);
 }
+
+// ── Historial ────────────────────────────────────────────────────────────────
+async function loadHistorial() {
+  try {
+    const r = await fetch('/recompensas/api/gastos');
+    const gastos = await r.json();
+    const el = document.getElementById('historial-list');
+    if (!gastos.length) {
+      el.innerHTML = '<div style="font-size:.58rem;color:var(--dim);text-align:center;padding:16px;">Sin gastos registrados</div>';
+      return;
+    }
+    el.innerHTML = gastos.map(g => `
+      <div class="hrow">
+        <div>
+          <div class="hrow-desc">${g.description}</div>
+          <div class="hrow-meta">${g.date} · $${g.ec * 10} MXN</div>
+        </div>
+        <div class="hrow-ec">-${g.ec} EC</div>
+      </div>`).join('');
+  } catch {}
+}
+
+document.addEventListener('DOMContentLoaded', loadHistorial);
 </script>
 {% endblock %}
