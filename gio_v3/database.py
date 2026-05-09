@@ -829,6 +829,17 @@ def init_db():
             )
             db.commit()
 
+        # Dedup rewards — keep lowest id per name (idempotent)
+        try:
+            db.execute("""
+                DELETE FROM rewards WHERE id NOT IN (
+                    SELECT MIN(id) FROM rewards GROUP BY LOWER(TRIM(name))
+                )
+            """)
+            db.commit()
+        except Exception as e:
+            print(f"[DB] rewards dedup warning: {e}")
+
         # Migrate lista_prioridades: add protocol columns if missing
         try:
             lp_cols = [r["name"] for r in db.execute("PRAGMA table_info(lista_prioridades)").fetchall()]
