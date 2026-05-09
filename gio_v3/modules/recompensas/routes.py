@@ -142,6 +142,41 @@ def delete_reward(reward_id):
     return jsonify({"ok": True})
 
 
+@recompensas_bp.route('/api/gasto', methods=['POST'])
+def registrar_gasto():
+    data = request.json or {}
+    ec   = int(data.get('ec', 0))
+    desc = (data.get('descripcion') or '').strip()
+    if ec <= 0:
+        return jsonify({'error': 'EC inválido'}), 400
+    if not desc:
+        return jsonify({'error': 'Descripción requerida'}), 400
+    balance = _get_ec_balance()
+    if ec > balance:
+        return jsonify({'error': f'EC insuficientes (tienes {balance} EC)'}), 400
+    now = datetime.now().isoformat()
+    with get_db() as db:
+        db.execute(
+            "INSERT INTO coins_ledger (amount, source, description, multiplier, date, created_at)"
+            " VALUES (?,?,?,?,?,?)",
+            (-ec, 'gasto', desc, 1.0, date.today().isoformat(), now)
+        )
+        db.commit()
+    return jsonify({'ok': True, 'ec_gastado': ec, 'ec_restante': balance - ec})
+
+
+@recompensas_bp.route('/api/gastos', methods=['GET'])
+def historial_gastos():
+    with get_db() as db:
+        rows = db.execute(
+            """SELECT id, ABS(amount) as ec, description, date, source
+               FROM coins_ledger
+               WHERE amount < 0
+               ORDER BY id DESC LIMIT 60"""
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
 @recompensas_bp.route('/api/rewards/<int:reward_id>/redeem', methods=['POST'])
 def redeem_reward(reward_id):
     ec_balance  = _get_ec_balance()

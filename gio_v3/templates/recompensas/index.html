@@ -65,6 +65,42 @@
   </div>
 </div>
 
+<!-- Gastar EC -->
+<div class="add-form" style="margin-bottom:20px;border-color:rgba(245,158,11,.25);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+    <h3 style="margin:0;">💸 Gastar EC</h3>
+    <div style="font-size:.52rem;color:var(--dim);">1 EC = $10 MXN</div>
+  </div>
+  <div class="form-row" style="align-items:flex-end;">
+    <div class="fi">
+      <label>Pesos MXN</label>
+      <input id="g-pesos" type="number" min="0" placeholder="150" oninput="syncGasto('pesos')"
+             style="font-size:.85rem;" />
+      <span style="font-size:.46rem;color:var(--dim);margin-top:3px;" id="g-pesos-hint">÷ 10 = EC</span>
+    </div>
+    <div style="display:flex;align-items:center;padding-bottom:14px;color:var(--dim);font-size:.7rem;">⇄</div>
+    <div class="fi">
+      <label>EC a gastar</label>
+      <input id="g-ec" type="number" min="1" placeholder="15" oninput="syncGasto('ec')"
+             style="font-size:.85rem;color:var(--amber);" />
+      <span style="font-size:.46rem;color:var(--dim);margin-top:3px;" id="g-ec-hint">× 10 = pesos</span>
+    </div>
+  </div>
+  <div class="form-row single" style="margin-top:4px;">
+    <div class="fi">
+      <label>¿En qué lo gasté?</label>
+      <input id="g-desc" placeholder="Ej: Helado, ropa Nike, salida al cine…" />
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">
+    <button class="btn-g" onclick="registrarGasto()"
+            style="border-color:rgba(245,158,11,.4);color:var(--amber);">
+      💸 REGISTRAR GASTO
+    </button>
+    <span style="font-size:.52rem;color:var(--dim);">Balance actual: <strong id="ec-gasto-bal" style="color:var(--amber);">{{ ec_balance }} EC</strong></span>
+  </div>
+</div>
+
 <!-- Nivel XP progress -->
 <div class="tile" style="margin-bottom:20px;padding:14px 18px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
@@ -114,6 +150,17 @@
   {% endfor %}
 </div>
 
+<!-- Historial de gastos -->
+<div class="add-form" style="margin-bottom:20px;border-color:rgba(244,63,94,.2);">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <h3 style="margin:0;color:var(--coral);">📋 Historial de Gastos</h3>
+    <div style="font-size:.46rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;">Últimos 60</div>
+  </div>
+  <div id="historial-list">
+    <div style="font-size:.58rem;color:var(--dim);text-align:center;padding:12px;">Cargando…</div>
+  </div>
+</div>
+
 <!-- Add reward form -->
 <div class="add-form">
   <h3>+ Agregar Recompensa</h3>
@@ -134,6 +181,65 @@
 {% block scripts %}
 <script>
 let editingId = null;
+
+// ── EC Spending ───────────────────────────────────────────────────────────────
+function syncGasto(field) {
+  if (field === 'pesos') {
+    const p = parseFloat(document.getElementById('g-pesos').value) || 0;
+    const ec = Math.round(p / 10);
+    document.getElementById('g-ec').value = ec > 0 ? ec : '';
+    document.getElementById('g-pesos-hint').textContent = p > 0 ? `÷ 10 = ${ec} EC` : '÷ 10 = EC';
+  } else {
+    const ec = parseFloat(document.getElementById('g-ec').value) || 0;
+    const p  = ec * 10;
+    document.getElementById('g-pesos').value = ec > 0 ? p : '';
+    document.getElementById('g-ec-hint').textContent = ec > 0 ? `× 10 = $${p} MXN` : '× 10 = pesos';
+  }
+}
+
+async function registrarGasto() {
+  const ec   = parseInt(document.getElementById('g-ec').value) || 0;
+  const desc = document.getElementById('g-desc').value.trim();
+  if (ec <= 0) { toast('Ingresa EC a gastar', 'err'); return; }
+  if (!desc)   { toast('Describe en qué lo gastaste', 'err'); return; }
+  try {
+    const r = await fetch('/recompensas/api/gasto', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ec, descripcion: desc})
+    });
+    const d = await r.json();
+    if (d.error) { toast(d.error, 'err'); return; }
+    document.getElementById('ec-display').textContent = d.ec_restante;
+    document.getElementById('ec-gasto-bal').textContent = d.ec_restante + ' EC';
+    document.getElementById('g-pesos').value = '';
+    document.getElementById('g-ec').value    = '';
+    document.getElementById('g-desc').value  = '';
+    document.getElementById('g-pesos-hint').textContent = '÷ 10 = EC';
+    document.getElementById('g-ec-hint').textContent    = '× 10 = pesos';
+    toast(`💸 -${ec} EC · ${desc}`, 'win');
+    loadHistorial();
+  } catch { toast('Error al registrar', 'err'); }
+}
+
+async function loadHistorial() {
+  try {
+    const r = await fetch('/recompensas/api/gastos');
+    const gastos = await r.json();
+    const el = document.getElementById('historial-list');
+    if (!el) return;
+    if (!gastos.length) { el.innerHTML = '<div style="font-size:.58rem;color:var(--dim);text-align:center;padding:12px;">Sin gastos registrados</div>'; return; }
+    el.innerHTML = gastos.map(g => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--b);">
+        <div>
+          <div style="font-size:.72rem;color:var(--text);">${g.description}</div>
+          <div style="font-size:.46rem;color:var(--dim);letter-spacing:.08em;margin-top:2px;">${g.date} · $${g.ec * 10} MXN</div>
+        </div>
+        <div style="font-size:.9rem;color:var(--coral);font-family:var(--serif);font-style:italic;white-space:nowrap;">-${g.ec} EC</div>
+      </div>`).join('');
+  } catch {}
+}
+document.addEventListener('DOMContentLoaded', loadHistorial);
 
 async function redeemReward(id, name, cost) {
   if (!confirm(`¿Canjear "${name}" por ${cost} EC?`)) return;
