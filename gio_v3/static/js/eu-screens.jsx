@@ -1239,12 +1239,13 @@ function ProfileScreen({ appState, isDesktop }) {
           {label:'Racha Mayor',   val:`${maxStreak} días`},
           {label:'Hoy',           val:`${modules.filter(m=>m.done).length}/${modules.length} mods`},
           {label:'Semanas activo',val:String(weeksActive)},
-          {label:'EC Disponibles',val:`${ecBalance} 🪙`, accent: true},
+          {label:'EC Disponibles',val:`${ecBalance} 🪙`, accent: true, href:'/recompensas'},
         ].map(s => (
-          <div key={s.label} style={{
+          <div key={s.label} onClick={s.href ? ()=>window.location.href=s.href : undefined} style={{
             background: s.accent ? 'rgba(201,168,76,0.06)' : C.card,
             border: s.accent ? '1px solid rgba(201,168,76,0.25)' : '1px solid rgba(201,168,76,0.1)',
             borderRadius:12, padding:'14px',
+            cursor: s.href ? 'pointer' : 'default',
           }}>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,
               letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:4}}>{s.label}</div>
