@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}EUDAIMONIA{% endblock %}</title>
 
+  <!-- Anti-FOUC: apply saved theme before first paint -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('eu-theme') || 'dark';
+      var h = document.documentElement;
+      if (t === 'light') { h.classList.remove('dark'); h.classList.add('light'); }
+      else               { h.classList.add('dark');    h.classList.remove('light'); }
+    })();
+  </script>
+
   <!-- Google Fonts: Cormorant Garamond + DM Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,9 +58,10 @@
   <link rel="stylesheet" href="/static/css/app.css">
 
   <style>
-    /* ── CSS Variables — paleta EUDAIMONIA ── */
-    :root {
+    /* ── CSS Variables — modo NOCHE (default) ── */
+    :root, html.dark {
       --bg:#09070F; --surf:#110E1C; --card:#1A1627; --card2:#221D32;
+      --surf-nav:#0C0A16; --surf-top:rgba(9,7,15,0.97);
       --b:rgba(201,168,76,0.15); --b2:rgba(201,168,76,0.28);
       --violet:#C9A84C; --violet-l:#E8C96D; --violet-d:rgba(201,168,76,0.08);
       --cyan:#A89880;   --cyan-l:#C8B898;   --cyan-d:rgba(168,152,128,0.1);
@@ -68,9 +79,30 @@
       --serif:'Cormorant Garamond',serif;
     }
 
+    /* ── CSS Variables — modo DÍA ── */
+    html.light {
+      --bg:#F5F0E7; --surf:#EDE7D8; --card:#FFFFFF; --card2:#F8F4EC;
+      --surf-nav:#EDE7D8; --surf-top:rgba(245,240,231,0.97);
+      --b:rgba(139,105,20,0.16); --b2:rgba(139,105,20,0.30);
+      --violet:#8B6914; --violet-l:#A07820; --violet-d:rgba(139,105,20,0.08);
+      --cyan:#7A6848;   --cyan-l:#9A8050;   --cyan-d:rgba(122,104,72,0.1);
+      --emerald:#1a7a52; --emerald-l:#22a06b; --emerald-d:rgba(26,122,82,0.1);
+      --amber:#8B6914;  --amber-l:#A07820;  --amber-d:rgba(139,105,20,0.08);
+      --coral:#c0392b;  --coral-d:rgba(192,57,43,0.1);
+      --blue:#7A6848;   --blue-d:rgba(122,104,72,0.08);
+      --pink:#A07820;   --pink-d:rgba(160,120,32,0.08);
+      --indigo:#8B6914; --orange:#A07820;
+      --gold:#8B6914;   --gold-d:rgba(139,105,20,0.08); --gold-g:rgba(139,105,20,0.25);
+      --purple:#A07820; --green:#1a7a52; --red:#c0392b;
+      --text:#1C1610;   --mid:#5A4A30;   --dim:#9B8A6A;
+      --sans:'DM Sans',sans-serif;
+      --mono:'DM Sans',sans-serif;
+      --serif:'Cormorant Garamond',serif;
+    }
+
     /* ── Reset & base ── */
     *, *::before, *::after { box-sizing: border-box; }
-    body { background: #09070F; color: #F2EDE0; font-family: 'DM Sans', sans-serif; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; transition: background .25s, color .25s; }
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -82,13 +114,26 @@
     #eu-sidebar      { transition: transform 0.28s cubic-bezier(.4,0,.2,1); }
     #eu-sidebar-mask { transition: opacity 0.28s ease; }
 
+    /* ── Theme transition ── */
+    aside, header, .tile, .af, .modal, #tw-toast { transition: background .25s, border-color .25s, color .25s; }
+
     /* ── Brand text ── */
-    .brand-text { color: #C9A84C; font-family: 'Cormorant Garamond', serif; letter-spacing: 0.16em; }
+    .brand-text { color: var(--gold); font-family: 'Cormorant Garamond', serif; letter-spacing: 0.16em; }
 
     /* ── Nav links ── */
-    .nav-link { transition: background 0.18s, color 0.18s; color: #6A6050; font-family: 'DM Sans', sans-serif; }
-    .nav-link.active { background: rgba(201,168,76,0.07); color: #C9A84C; border-left: 2px solid #C9A84C !important; }
-    .nav-link:hover:not(.active) { background: rgba(201,168,76,0.04); color: #A89880; }
+    .nav-link { transition: background 0.18s, color 0.18s; color: var(--dim); font-family: 'DM Sans', sans-serif; }
+    .nav-link.active { background: var(--gold-d); color: var(--gold); border-left: 2px solid var(--gold) !important; }
+    .nav-link:hover:not(.active) { background: var(--gold-d); color: var(--mid); }
+
+    /* ── Theme toggle button ── */
+    .theme-btn {
+      width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--b2);
+      background: var(--card2); color: var(--mid); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .2s; flex-shrink: 0;
+    }
+    .theme-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-d); }
+    .theme-btn svg { width: 14px; height: 14px; }
 
     /* ── Card hover ── */
     .gio-card { transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s; }
@@ -270,7 +315,7 @@
   {% block head %}{% endblock %}
 </head>
 
-<body class="bg-[#09070F] text-[#F2EDE0] font-sans antialiased min-h-screen">
+<body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
 
 <!-- Sidebar mask (móvil) -->
 <div id="eu-sidebar-mask"
@@ -280,23 +325,23 @@
 <!-- ── SIDEBAR ─────────────────────────────────────────────── -->
 <aside id="eu-sidebar"
        class="fixed top-0 left-0 h-full w-64 z-40 flex flex-col -translate-x-full lg:translate-x-0"
-       style="background:#0C0A16; border-right:1px solid rgba(201,168,76,0.1);">
+       style="background:var(--surf-nav); border-right:1px solid var(--b);">
 
   <!-- Logo EUDAIMONIA -->
-  <div class="flex-shrink-0" style="padding:24px 22px 20px; border-bottom:1px solid rgba(201,168,76,0.08);">
+  <div class="flex-shrink-0" style="padding:24px 22px 20px; border-bottom:1px solid var(--b);">
     <a href="/" style="text-decoration:none; display:block;">
-      <div style="font-family:'DM Sans',sans-serif; font-size:8px; letter-spacing:0.28em; color:#C9A84C; opacity:0.55; text-transform:uppercase; margin-bottom:4px;">
+      <div style="font-family:'DM Sans',sans-serif; font-size:8px; letter-spacing:0.28em; color:var(--gold); opacity:0.65; text-transform:uppercase; margin-bottom:4px;">
         SISTEMA PERSONAL
       </div>
-      <div style="font-family:'Cormorant Garamond',serif; font-size:20px; color:#F2EDE0; letter-spacing:0.14em; font-weight:600;">
+      <div style="font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--text); letter-spacing:0.14em; font-weight:600;">
         EUDAIMONIA
       </div>
     </a>
   </div>
 
   <!-- Back to main -->
-  <div style="padding:10px 14px; border-bottom:1px solid rgba(201,168,76,0.06);">
-    <a href="/" style="display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; text-decoration:none; color:#6A6050; transition:all .18s; font-family:'DM Sans',sans-serif; font-size:11px; letter-spacing:0.06em;">
+  <div style="padding:10px 14px; border-bottom:1px solid var(--b);">
+    <a href="/" style="display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; text-decoration:none; color:var(--dim); transition:all .18s; font-family:'DM Sans',sans-serif; font-size:11px; letter-spacing:0.06em;">
       <i data-lucide="arrow-left" style="width:12px;height:12px;flex-shrink:0;"></i>
       Volver al inicio
     </a>
@@ -406,10 +451,10 @@
   </nav>
 
   <!-- Sidebar footer -->
-  <div class="flex-shrink-0 px-5 py-4" style="border-top:1px solid rgba(201,168,76,0.08);">
+  <div class="flex-shrink-0 px-5 py-4" style="border-top:1px solid var(--b);">
     <div class="flex items-center gap-2">
-      <span class="status-dot w-2 h-2 rounded-full" style="background:#C9A84C;"></span>
-      <span style="font-size:.46rem; color:#6A6050; letter-spacing:.18em; text-transform:uppercase;">Eudaimonia activa</span>
+      <span class="status-dot w-2 h-2 rounded-full" style="background:var(--gold);"></span>
+      <span style="font-size:.46rem; color:var(--dim); letter-spacing:.18em; text-transform:uppercase;">Eudaimonia activa</span>
     </div>
   </div>
 </aside>
@@ -419,34 +464,46 @@
 
   <!-- TOPBAR -->
   <header class="sticky top-0 z-20 flex-shrink-0"
-          style="background:rgba(9,7,15,0.97); border-bottom:1px solid rgba(201,168,76,0.1); backdrop-filter:blur(12px);">
+          style="background:var(--surf-top); border-bottom:1px solid var(--b); backdrop-filter:blur(12px);">
     <div class="flex items-center justify-between px-4 md:px-6 py-3.5">
 
       <!-- Left: burger + breadcrumb -->
       <div class="flex items-center gap-3">
         <button id="eu-burger-btn" onclick="toggleSidebar()"
                 class="lg:hidden flex flex-col justify-center items-center w-9 h-9 rounded-lg gap-[5px]"
-                style="border:1px solid rgba(201,168,76,0.15);">
-          <span class="burger-line w-5 h-px transition-all duration-300" style="background:#A89880;"></span>
-          <span class="burger-line w-5 h-px transition-all duration-300" style="background:#A89880;"></span>
-          <span class="burger-line w-5 h-px transition-all duration-300" style="background:#A89880;"></span>
+                style="border:1px solid var(--b2);">
+          <span class="burger-line w-5 h-px transition-all duration-300" style="background:var(--mid);"></span>
+          <span class="burger-line w-5 h-px transition-all duration-300" style="background:var(--mid);"></span>
+          <span class="burger-line w-5 h-px transition-all duration-300" style="background:var(--mid);"></span>
         </button>
         <div class="flex items-center gap-3">
-          <a href="/" style="font-family:'DM Sans',sans-serif; font-size:9px; letter-spacing:0.22em; color:#C9A84C; opacity:0.6; text-transform:uppercase; text-decoration:none;">
+          <a href="/" style="font-family:'DM Sans',sans-serif; font-size:9px; letter-spacing:0.22em; color:var(--gold); opacity:0.7; text-transform:uppercase; text-decoration:none;">
             ← EUDAIMONIA
           </a>
-          <span style="color:rgba(201,168,76,0.2); font-size:10px;">/</span>
-          <span style="font-family:'Cormorant Garamond',serif; font-size:16px; color:#F2EDE0; letter-spacing:0.08em; font-weight:600;">
+          <span style="color:var(--b2); font-size:10px;">/</span>
+          <span style="font-family:'Cormorant Garamond',serif; font-size:16px; color:var(--text); letter-spacing:0.08em; font-weight:600;">
             {% block module_title %}{% endblock %}
           </span>
         </div>
       </div>
 
-      <!-- Right -->
+      <!-- Right: topright content + theme toggle -->
       <div class="flex items-center gap-3">
-        <span style="font-size:.5rem; color:#A89880; letter-spacing:.08em; text-transform:uppercase;">
+        <span style="font-size:.5rem; color:var(--mid); letter-spacing:.08em; text-transform:uppercase;">
           {% block topright %}{% endblock %}
         </span>
+        <button class="theme-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema">
+          <!-- Icon updated by JS -->
+          <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
       </div>
     </div>
   </header>
@@ -461,11 +518,39 @@
 <!-- TOAST -->
 <div id="tw-toast"
      class="fixed bottom-6 right-4 z-50 px-4 py-2.5 rounded-xl text-[0.65rem] shadow-lg opacity-0 translate-y-2 pointer-events-none"
-     style="background:#1A1627; border:1px solid rgba(201,168,76,0.3); color:#E8C96D; transition:transform .22s ease, opacity .22s ease;">
+     style="background:var(--card); border:1px solid var(--b2); color:var(--gold); transition:transform .22s ease, opacity .22s ease;">
 </div>
 
 <script>
 lucide.createIcons();
+
+/* ── Theme toggle ── */
+(function initTheme() {
+  var t = localStorage.getItem('eu-theme') || 'dark';
+  _applyTheme(t);
+})();
+
+function _applyTheme(t) {
+  var h = document.documentElement;
+  var moon = document.getElementById('theme-icon-moon');
+  var sun  = document.getElementById('theme-icon-sun');
+  if (t === 'light') {
+    h.classList.add('light'); h.classList.remove('dark');
+    if (moon) moon.style.display = 'none';
+    if (sun)  sun.style.display  = '';
+  } else {
+    h.classList.add('dark'); h.classList.remove('light');
+    if (moon) moon.style.display = '';
+    if (sun)  sun.style.display  = 'none';
+  }
+}
+
+function toggleTheme() {
+  var current = localStorage.getItem('eu-theme') || 'dark';
+  var next    = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('eu-theme', next);
+  _applyTheme(next);
+}
 
 /* ── Sidebar toggle ── */
 const euSidebar   = document.getElementById('eu-sidebar');
