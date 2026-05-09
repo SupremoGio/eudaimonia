@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}GIO Pipeline{% endblock %}</title>
 
+  <!-- Anti-FOUC -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('eu-theme') || 'dark';
+      var h = document.documentElement;
+      if (t === 'light') { h.classList.remove('dark'); h.classList.add('light'); }
+      else               { h.classList.add('dark');    h.classList.remove('light'); }
+    })();
+  </script>
+
   <!-- Tailwind CDN con configuración personalizada -->
   <script>
     tailwind.config = {
@@ -49,10 +59,11 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    /* ── CSS Variables (compatibilidad con templates existentes) ── */
-    :root {
-      --bg:#0d0d1a; --surf:#13132b; --card:#181832; --card2:#1e1e3c;
-      --b:#272750; --b2:#353568;
+    /* ── Modo NOCHE (default) ── */
+    :root, html.dark {
+      --bg:#09070F; --surf:#110E1C; --card:#1A1627; --card2:#221D32;
+      --surf-nav:#0C0A16; --surf-top:rgba(9,7,15,0.97);
+      --b:rgba(201,168,76,0.15); --b2:rgba(201,168,76,0.28);
       --violet:#7c3aed; --violet-l:#a78bfa; --violet-d:rgba(124,58,237,.14);
       --cyan:#06b6d4; --cyan-l:#67e8f9; --cyan-d:rgba(6,182,212,.12);
       --emerald:#10b981; --emerald-l:#6ee7b7; --emerald-d:rgba(16,185,129,.12);
@@ -63,10 +74,35 @@
       --indigo:#6366f1; --orange:#fb923c;
       --gold:#f59e0b; --gold-d:rgba(245,158,11,.12); --gold-g:rgba(245,158,11,.3);
       --purple:#a78bfa; --green:#10b981; --red:#f43f5e;
-      --text:#eeeeff; --mid:#8888bb; --dim:#44447a;
-      --sans:'Inter',sans-serif; --mono:'DM Mono',monospace;
-      --serif:'Georgia',serif;
+      --text:#F2EDE0; --mid:#A89880; --dim:#6A6050;
+      --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+      --serif:'Cormorant Garamond',serif;
     }
+
+    /* ── Modo DÍA ── */
+    html.light {
+      --bg:#F5F0E7; --surf:#EDE7D8; --card:#FFFFFF; --card2:#F8F4EC;
+      --surf-nav:#EDE7D8; --surf-top:rgba(245,240,231,0.97);
+      --b:rgba(139,105,20,0.16); --b2:rgba(139,105,20,0.30);
+      --violet:#8B6914; --violet-l:#A07820; --violet-d:rgba(139,105,20,0.08);
+      --cyan:#7A6848;   --cyan-l:#9A8050;   --cyan-d:rgba(122,104,72,0.1);
+      --emerald:#1a7a52; --emerald-l:#22a06b; --emerald-d:rgba(26,122,82,0.1);
+      --amber:#8B6914;  --amber-l:#A07820;  --amber-d:rgba(139,105,20,0.08);
+      --coral:#c0392b;  --coral-d:rgba(192,57,43,0.1);
+      --blue:#7A6848;   --blue-d:rgba(122,104,72,0.08);
+      --pink:#A07820;   --pink-d:rgba(160,120,32,0.08);
+      --indigo:#8B6914; --orange:#A07820;
+      --gold:#8B6914;   --gold-d:rgba(139,105,20,0.08); --gold-g:rgba(139,105,20,0.25);
+      --purple:#A07820; --green:#1a7a52; --red:#c0392b;
+      --text:#1C1610;   --mid:#5A4A30;   --dim:#9B8A6A;
+      --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
+      --serif:'Cormorant Garamond',serif;
+    }
+
+    /* ── Theme toggle btn ── */
+    .theme-btn { width:30px;height:30px;border-radius:7px;border:1px solid var(--b2);background:var(--card2);color:var(--mid);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0; }
+    .theme-btn:hover { border-color:var(--gold);color:var(--gold);background:var(--gold-d); }
+    .theme-btn svg { width:13px;height:13px; }
 
     /* ── Scrollbar ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -221,7 +257,7 @@
   {% block head %}{% endblock %}
 </head>
 
-<body class="bg-[#0d0d1a] text-[#eeeeff] font-mono antialiased min-h-screen">
+<body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
 
 <!-- ══════════════════════════════════════════════════════════════
      SIDEBAR MASK (overlay para móvil)
@@ -235,10 +271,8 @@
      SIDEBAR
 ════════════════════════════════════════════════════════════════ -->
 <aside id="sidebar"
-       class="fixed top-0 left-0 h-full w-64 border-r border-border z-40
-              flex flex-col
-              -translate-x-full lg:translate-x-0"
-       style="background:#0f0f24;">
+       class="fixed top-0 left-0 h-full w-64 z-40 flex flex-col -translate-x-full lg:translate-x-0"
+       style="background:var(--surf-nav);border-right:1px solid var(--b);">
 
   <!-- Marca -->
   <div class="flex items-center gap-3 px-4 py-4 border-b border-border flex-shrink-0">
@@ -417,7 +451,7 @@
 <div class="lg:pl-64 flex flex-col min-h-screen">
 
   <!-- TOPBAR -->
-  <header class="sticky top-0 z-20 bg-surface border-b border-border flex-shrink-0">
+  <header class="sticky top-0 z-20 flex-shrink-0" style="background:var(--surf-top);border-bottom:1px solid var(--b);backdrop-filter:blur(12px);">
     <div class="flex items-center justify-between px-4 md:px-6 py-3.5">
 
       <!-- Izquierda: hamburger + breadcrumb -->
@@ -442,11 +476,22 @@
         </div>
       </div>
 
-      <!-- Derecha: info de sección -->
+      <!-- Derecha: info de sección + toggle -->
       <div class="flex items-center gap-3">
-        <span class="text-[0.5rem] text-mid tracking-[0.08em] truncate max-w-[140px] sm:max-w-none">
+        <span style="font-size:.5rem;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;">
           {% block topright %}{% endblock %}
         </span>
+        <button class="theme-btn" onclick="toggleTheme()" title="Cambiar tema">
+          <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
       </div>
     </div>
   </header>
@@ -470,6 +515,27 @@
 
 <script>
 lucide.createIcons();
+
+/* ── Theme toggle ── */
+(function(){
+  var t = localStorage.getItem('eu-theme') || 'dark';
+  var moon = document.getElementById('theme-icon-moon');
+  var sun  = document.getElementById('theme-icon-sun');
+  if (t === 'light' && moon && sun) { moon.style.display='none'; sun.style.display=''; }
+})();
+
+function toggleTheme() {
+  var current = localStorage.getItem('eu-theme') || 'dark';
+  var next    = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('eu-theme', next);
+  var h = document.documentElement;
+  if (next === 'light') { h.classList.add('light'); h.classList.remove('dark'); }
+  else                  { h.classList.add('dark');  h.classList.remove('light'); }
+  var moon = document.getElementById('theme-icon-moon');
+  var sun  = document.getElementById('theme-icon-sun');
+  if (moon) moon.style.display = next === 'light' ? 'none' : '';
+  if (sun)  sun.style.display  = next === 'light' ? ''     : 'none';
+}
 
 /* ── Sidebar toggle ─────────────────────────────────────────── */
 const sidebar     = document.getElementById('sidebar');

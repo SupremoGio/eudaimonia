@@ -1,6 +1,6 @@
 // EUDAIMONIA — All Screens
 const { useState, useMemo, useEffect } = React;
-const C = window.EU.c;
+const C = window.EU.getColors();
 
 function todayQuote() {
   return EU.quotes[new Date().getDay() % EU.quotes.length];
@@ -509,12 +509,22 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.gold,marginTop:2}}>
               {xp} / {xpNext} XP
             </div>
-            <a href="/logros" style={{
-              display:'inline-flex',alignItems:'center',gap:4,marginTop:5,
-              fontFamily:'DM Sans,sans-serif',fontSize:9,
-              color:'rgba(201,168,76,0.65)',textDecoration:'none',
-              letterSpacing:'0.08em',
-            }}>🏆 Logros</a>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6,justifyContent:'flex-end'}}>
+              <a href="/logros" style={{
+                display:'inline-flex',alignItems:'center',gap:4,
+                fontFamily:'DM Sans,sans-serif',fontSize:9,
+                color:C.gold,opacity:0.65,textDecoration:'none',
+                letterSpacing:'0.08em',
+              }}>🏆 Logros</a>
+              <button onClick={() => window.euToggleTheme()} style={{
+                width:26,height:26,borderRadius:7,border:`1px solid ${C.goldBorder}`,
+                background:C.goldBg,color:C.gold,cursor:'pointer',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                fontSize:12,lineHeight:1,flexShrink:0,
+              }} title="Cambiar tema">
+                {document.documentElement.classList.contains('light') ? '☀' : '☽'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

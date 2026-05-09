@@ -12,8 +12,28 @@ window.EU = {
     text:      '#F2EDE0',
     textSub:   '#A89880',
     textMuted: '#6A6050',
-    success:   'oklch(65% 0.14 145)',
-    danger:    'oklch(55% 0.18 20)',
+    success:   '#10b981',
+    danger:    '#f43f5e',
+  },
+
+  cLight: {
+    deep:      '#F5F0E7',
+    surface:   '#EDE7D8',
+    card:      '#FFFFFF',
+    cardHover: '#F8F4EC',
+    gold:      '#8B6914',
+    goldLight: '#A07820',
+    goldBg:    'rgba(139,105,20,0.08)',
+    goldBorder:'rgba(139,105,20,0.18)',
+    text:      '#1C1610',
+    textSub:   '#5A4A30',
+    textMuted: '#9B8A6A',
+    success:   '#1a7a52',
+    danger:    '#c0392b',
+  },
+
+  getColors: function() {
+    return document.documentElement.classList.contains('light') ? window.EU.cLight : window.EU.c;
   },
 
   // Must match LEVEL_THRESHOLDS in engine.py exactly

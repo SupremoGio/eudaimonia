@@ -4,13 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>EUDAIMONIA</title>
+
+  <!-- Anti-FOUC -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('eu-theme') || 'dark';
+      var h = document.documentElement;
+      if (t === 'light') { h.classList.remove('dark'); h.classList.add('light'); }
+      else               { h.classList.add('dark');    h.classList.remove('light'); }
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
   <style>
+    :root, html.dark { --bg:#09070F; --text:#F2EDE0; }
+    html.light       { --bg:#F5F0E7; --text:#1C1610; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; overflow-x: hidden; }
-    body { background: #09070F; color: #F2EDE0; }
+    body { background: var(--bg); color: var(--text); transition: background .25s; }
     ::-webkit-scrollbar { display: none; }
     * { scrollbar-width: none; }
 
@@ -34,6 +47,14 @@
   <!-- Server data injected by Flask -->
   <script>
     window.__EUDAIMONIA_DATA__ = {{ eudaimonia_data | tojson | safe }};
+
+    // Theme toggle — reloads so React re-reads the correct color palette
+    window.euToggleTheme = function() {
+      var current = localStorage.getItem('eu-theme') || 'dark';
+      var next    = current === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('eu-theme', next);
+      location.reload();
+    };
   </script>
 
   <!-- React 18 -->
