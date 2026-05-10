@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, jsonify, redirect
 from database import get_db, get_db_status
-from data import get_word_of_day, ACTIVITIES, ACTIVITY_CATEGORIES
+from data import get_word_of_day, get_quote_of_day, get_random_quote, ACTIVITIES, ACTIVITY_CATEGORIES
 from datetime import date, timedelta
 
 dashboard_bp = Blueprint('dashboard', __name__, template_folder='../../templates')
@@ -234,6 +234,7 @@ def _build_eudaimonia_data():
         'max_streak':   max_streak,
         'weeks_active': weeks_active,
         'word_of_day':  get_word_of_day(),
+        'reflexion':    get_quote_of_day(),
         'reminders':    [dict(r) for r in reminders_rows],
         'ec_balance':   ec_balance,
         'deadlines':    _build_deadlines(date.today()),
@@ -309,3 +310,8 @@ def api_xp():
 @dashboard_bp.route('/api/db-status')
 def api_db_status():
     return jsonify(get_db_status())
+
+
+@dashboard_bp.route('/api/quote/refresh')
+def api_quote_refresh():
+    return jsonify(get_random_quote())

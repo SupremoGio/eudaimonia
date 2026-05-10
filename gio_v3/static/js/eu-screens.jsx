@@ -5,6 +5,57 @@ const C = window.EU.getColors();
 function todayQuote() {
   return EU.quotes[new Date().getDay() % EU.quotes.length];
 }
+
+// ═══════════════════════════════════════════════════════════
+// REFLEXION DEL DÍA
+// ═══════════════════════════════════════════════════════════
+function ReflexionDelDia() {
+  const initial = (window.EU._server || {}).reflexion || null;
+  const [quote, setQuote] = useState(initial || todayQuote());
+  const [spinning, setSpinning] = useState(false);
+
+  const CATEGORY_LABEL = { stoic: 'Estoica', motivational: 'Motivacional' };
+  const CATEGORY_COLOR = {
+    stoic:       { text: '#a78bfa', bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.18)' },
+    motivational:{ text: '#34d399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.18)'  },
+  };
+  const cat = CATEGORY_COLOR[quote.category] || CATEGORY_COLOR.stoic;
+
+  async function refresh() {
+    setSpinning(true);
+    try {
+      const r = await fetch('/api/quote/refresh');
+      setQuote(await r.json());
+    } catch(e) {}
+    setSpinning(false);
+  }
+
+  return (
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase'}}>Reflexión del Día</div>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {quote.category && (
+            <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
+              color:cat.text,background:cat.bg,border:`1px solid ${cat.border}`,
+              padding:'2px 8px',borderRadius:100,letterSpacing:'0.06em'}}>
+              {CATEGORY_LABEL[quote.category] || quote.category}
+            </span>
+          )}
+          <button onClick={refresh} style={{
+            background:'transparent',border:'none',cursor:'pointer',
+            color:C.textMuted,fontSize:16,padding:0,lineHeight:1,
+            display:'inline-flex',alignItems:'center',
+            transform:spinning?'rotate(180deg)':'rotate(0deg)',
+            transition:'transform 0.4s ease',
+          }}>↻</button>
+        </div>
+      </div>
+      <QuoteDisplay quote={quote}/>
+    </div>
+  );
+}
 function fmtDate() {
   const d = new Date();
   const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -478,7 +529,6 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
   const { level, xp, xpNext, modules } = appState;
   const lv = EU.levels[level - 1];
   const xpPct = xpNext ? xp / xpNext : 1;
-  const quote = useMemo(todayQuote, []);
   const doneCount = modules.filter(m => m.done).length;
 
   return (
@@ -619,12 +669,8 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           </div>
         </div>
 
-        {/* ── QUOTE ── */}
-        <div style={{marginBottom:14}}>
-          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-            color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Reflexión del Día</div>
-          <QuoteDisplay quote={quote}/>
-        </div>
+        {/* ── REFLEXION ── */}
+        <ReflexionDelDia/>
 
         {/* ── WORD OF THE DAY ── */}
         <WordOfDay/>
