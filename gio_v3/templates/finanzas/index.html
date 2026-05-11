@@ -194,32 +194,52 @@
 
   <!-- PRESUPUESTO -->
   <div class="tile full">
-    <div class="tile-lbl">PRESUPUESTO MENSUAL — RADIOGRAFÍA</div>
-    <div style="display:flex;gap:20px;margin-bottom:16px;font-size:.62rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="tile-lbl" style="margin:0">PRESUPUESTO MENSUAL — RADIOGRAFÍA</div>
+      <a href="/finanzas/budget/{{ mes_actual }}" style="font-size:.5rem;color:var(--gold);letter-spacing:.1em;text-transform:uppercase;opacity:.7;text-decoration:none;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">Editar budget {{ mes_actual }} →</a>
+    </div>
+    <div style="display:flex;gap:20px;margin-bottom:16px;font-size:.62rem;flex-wrap:wrap;">
       <span style="color:var(--dim)">Presupuestado: <span style="color:var(--gold)">${{ "{:,.2f}".format(total_budget) }}</span></span>
-      <span style="color:var(--dim)">Gastado: <span style="color:var(--text)">${{ "{:,.2f}".format(total_spent) }}</span></span>
+      <span style="color:var(--dim)">Gastado real: <span style="color:var(--text)">${{ "{:,.2f}".format(total_spent) }}</span></span>
       {% if total_budget > 0 %}
       {% set uso = (total_spent/total_budget*100)|int %}
       <span style="color:var(--dim)">Uso: <span style="color:{% if uso>90 %}var(--red){% elif uso>70 %}var(--pink){% else %}var(--green){% endif %}">{{ uso }}%</span></span>
+      {% set restante = total_budget - total_spent %}
+      <span style="color:var(--dim)">Restante: <span style="color:{% if restante < 0 %}var(--red){% else %}var(--green){% endif %}">${{ "{:,.2f}".format(restante) }}</span></span>
       {% endif %}
     </div>
+    {% if not budget_items %}
+    <div style="text-align:center;padding:30px;color:var(--dim);font-size:.66rem;border:1px dashed var(--b);border-radius:8px;">
+      No hay partidas de budget para <strong style="color:var(--gold)">{{ mes_actual }}</strong>.<br>
+      <a href="/finanzas/budget/" style="color:var(--gold);margin-top:8px;display:inline-block;">Configura tu Budget →</a>
+    </div>
+    {% else %}
     <div class="budget-grid">
-      {% for c in budget %}
-      {% set pct = [c.spent/c.budgeted*100,100]|min|int if c.budgeted > 0 else 0 %}
-      <div class="bcat" data-id="{{ c.id }}">
-        <div class="bcat-n">{{ c.name }}</div>
-        <div class="bcat-bar"><div class="bcat-fill" style="width:{{ pct }}%;background:{% if pct>90 %}var(--red){% elif pct>70 %}var(--pink){% else %}{{ c.color }}{% endif %}"></div></div>
+      {% for item in budget_items %}
+      {% set gastado = item.monto_real if item.monto_real is not none else 0 %}
+      {% set estimado = item.monto_estimado or 0 %}
+      {% set pct = [gastado/estimado*100, 100]|min|int if estimado > 0 else 0 %}
+      {% if item.categoria == 'necesidades' %}{% set cat_color = 'var(--gold)' %}{% set cat_lbl = 'Necesidad' %}
+      {% elif item.categoria == 'deseos' %}{% set cat_color = 'var(--purple)' %}{% set cat_lbl = 'Deseo' %}
+      {% else %}{% set cat_color = 'var(--green)' %}{% set cat_lbl = 'Ahorro/Deuda' %}{% endif %}
+      <div class="bcat" data-id="{{ item.id }}">
+        <div class="bcat-n">{{ item.nombre }}</div>
+        <div style="font-size:.42rem;color:{{ cat_color }};opacity:.6;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;">{{ cat_lbl }}</div>
+        <div class="bcat-bar"><div class="bcat-fill" style="width:{{ pct }}%;background:{% if pct>90 %}var(--red){% elif pct>70 %}var(--pink){% else %}{{ cat_color }}{% endif %}"></div></div>
         <div class="bcat-vals">
-          <span style="color:var(--text)">${{ "{:,.0f}".format(c.spent) }}</span>
-          <span style="color:var(--dim)">/ ${{ "{:,.0f}".format(c.budgeted) }}</span>
+          <span style="color:var(--text)">${{ "{:,.0f}".format(gastado) }}</span>
+          <span style="color:var(--dim)">/ ${{ "{:,.0f}".format(estimado) }}</span>
         </div>
         <div class="bcat-edit">
-          <input type="number" placeholder="Presupuesto" value="{{ c.budgeted|int }}" onchange="saveBudget({{ c.id }},this)" min="0">
-          <input type="number" placeholder="Gastado"     value="{{ c.spent|int }}"    onchange="saveBudget({{ c.id }},this)" min="0">
+          <input type="number" placeholder="Real gastado"
+                 value="{{ gastado|int if item.monto_real is not none else '' }}"
+                 onchange="saveItemReal({{ item.id }}, this)"
+                 min="0" title="Ingresa lo que realmente gastaste">
         </div>
       </div>
       {% endfor %}
     </div>
+    {% endif %}
   </div>
 
   <!-- RECORDATORIOS -->
@@ -336,11 +356,16 @@ async function delDebt(id, btn) {
   btn.closest('tr').remove(); toast('Eliminado');
 }
 
-async function saveBudget(id, input) {
-  const bc = input.closest('.bcat');
-  const ins = bc.querySelectorAll('input[type=number]');
-  await fetch('/finanzas/api/budget',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,budgeted:ins[0].value,spent:ins[1].value})});
-  toast('Guardado'); setTimeout(()=>location.reload(),800);
+async function saveItemReal(id, input) {
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val < 0) return;
+  const r = await fetch(`/finanzas/budget/api/item/${id}`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({monto_real: val})
+  }).then(r => r.json()).catch(() => null);
+  if (r && r.ok) { toast('Guardado ✓'); setTimeout(() => location.reload(), 700); }
+  else toast('Error al guardar', 'err');
 }
 
 async function lockFin() {

@@ -70,12 +70,17 @@ def add_task():
     if not texto:
         return jsonify({'ok': False, 'error': 'texto requerido'}), 400
     tipo = d.get('tipo', 'tarea')
+    # Ideas go directly to the ideas quadrant (no classification needed)
+    if tipo == 'idea':
+        importante, urgente, cuadrante, status = 0, 0, 'ideas', 'someday'
+    else:
+        importante, urgente, cuadrante, status = None, None, None, 'inbox'
     with get_db() as db:
         db.execute(
             """INSERT INTO gtd_tasks
-               (title, tipo, completado, status, points, created_at, actualizado_en)
-               VALUES (?,?,0,'inbox',4,?,?)""",
-            (texto, tipo, now, now)
+               (title, tipo, completado, status, importante, urgente, cuadrante, points, created_at, actualizado_en)
+               VALUES (?,?,0,?,?,?,?,4,?,?)""",
+            (texto, tipo, status, importante, urgente, cuadrante, now, now)
         )
         db.commit()
         task_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]

@@ -1,6 +1,6 @@
-import os, uuid
+import os, uuid, mimetypes
 from datetime import datetime
-from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response
 from database import get_db
 
 perfil_bp = Blueprint('perfil', __name__, template_folder='../../templates')
@@ -74,13 +74,19 @@ def upload_doc():
     ext = os.path.splitext(f.filename)[1].lower()
     if ext not in ALLOWED_EXT:
         return jsonify({'ok': False, 'error': 'Tipo no permitido'}), 400
-    safe_name = uuid.uuid4().hex + ext
-    f.save(os.path.join(UPLOAD_DIR, safe_name))
+    safe_name    = uuid.uuid4().hex + ext
+    file_content = f.read()
+    # Also save to filesystem as fallback for local dev
+    try:
+        with open(os.path.join(UPLOAD_DIR, safe_name), 'wb') as fp:
+            fp.write(file_content)
+    except OSError:
+        pass
     now = datetime.now().isoformat()
     with get_db() as db:
         db.execute(
-            "INSERT INTO profile_docs (filename, original, uploaded_at, field_key) VALUES (?,?,?,?)",
-            (safe_name, f.filename, now, field_key)
+            "INSERT INTO profile_docs (filename, original, uploaded_at, field_key, content) VALUES (?,?,?,?,?)",
+            (safe_name, f.filename, now, field_key, file_content)
         )
         doc_id = db.execute("SELECT last_insert_rowid() as id").fetchone()["id"]
         db.commit()
@@ -108,6 +114,18 @@ def delete_doc():
 def serve_doc(filename):
     if '..' in filename or '/' in filename:
         abort(400)
+    with get_db() as db:
+        row = db.execute(
+            "SELECT content, original FROM profile_docs WHERE filename=?", (filename,)
+        ).fetchone()
+    if row and row['content']:
+        mime = mimetypes.guess_type(row['original'])[0] or 'application/octet-stream'
+        return Response(
+            bytes(row['content']),
+            mimetype=mime,
+            headers={'Content-Disposition': f'inline; filename="{row["original"]}"'}
+        )
+    # Fallback: serve from filesystem (local dev)
     return send_from_directory(UPLOAD_DIR, filename)
 
 

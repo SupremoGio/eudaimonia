@@ -20,25 +20,38 @@ def payment_alerts():
 def index():
     if not session.get('fin_ok'):
         return render_template('finanzas/lock.html')
+    mes_actual = date.today().strftime('%Y-%m')
     with get_db() as db:
         owe_me  = db.execute("SELECT * FROM debts WHERE type='owe_me' AND settled=0 ORDER BY id DESC").fetchall()
         i_owe   = db.execute("SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY id DESC").fetchall()
-        budget  = db.execute("SELECT * FROM budget_categories ORDER BY id").fetchall()
         settled = db.execute("SELECT * FROM debts WHERE settled=1 ORDER BY id DESC LIMIT 10").fetchall()
-        # payments per debt
         pay_map = {}
         for row in db.execute("SELECT * FROM debt_payments ORDER BY paid_at DESC").fetchall():
             pay_map.setdefault(row["debt_id"], []).append(dict(row))
 
+        # Budget del mes actual desde el módulo de planeación
+        budget_mes_row = db.execute("SELECT * FROM budget_meses WHERE mes=?", (mes_actual,)).fetchone()
+        budget_items = []
+        if budget_mes_row:
+            budget_items = [dict(r) for r in db.execute(
+                "SELECT * FROM budget_items WHERE budget_id=? ORDER BY categoria, nombre",
+                (budget_mes_row['id'],)
+            ).fetchall()]
+
+    total_budget = sum(i['monto_estimado'] or 0 for i in budget_items)
+    total_spent  = sum(i['monto_real'] or 0 for i in budget_items)
+
     return render_template('finanzas/index.html',
-        owe_me=list(owe_me), i_owe=list(i_owe), budget=list(budget), settled=list(settled),
+        owe_me=list(owe_me), i_owe=list(i_owe), settled=list(settled),
         pay_map=pay_map,
+        budget_items=budget_items,
+        mes_actual=mes_actual,
         total_owe_me  = sum(d['monto_restante'] for d in owe_me),
         total_i_owe   = sum(d['monto_restante'] for d in i_owe),
         total_original_owe_me = sum(d['monto_total'] for d in owe_me),
         total_original_i_owe  = sum(d['monto_total'] for d in i_owe),
-        total_budget  = sum(c['budgeted'] for c in budget),
-        total_spent   = sum(c['spent'] for c in budget),
+        total_budget  = total_budget,
+        total_spent   = total_spent,
         alerts=payment_alerts(), today=date.today().isoformat(),
     )
 

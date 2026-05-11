@@ -223,12 +223,16 @@ async function capture() {
   }).then(r => r.json()).catch(() => null);
   inp.disabled = false;
   if (!r || !r.ok) { toast('Error al guardar','err'); return; }
-  tasks.unshift({id:r.id, title:texto, tipo:activeTipo, importante:null, urgente:null,
-    cuadrante:null, completado:false, fecha_completado:null, fecha_limite:null, notas:null});
+  const isIdea   = activeTipo === 'idea';
+  const cuadrante = isIdea ? 'ideas' : null;
+  tasks.unshift({id:r.id, title:texto, tipo:activeTipo,
+    importante: isIdea ? false : null,
+    urgente:    isIdea ? false : null,
+    cuadrante,  completado:false, fecha_completado:null, fecha_limite:null, notas:null});
   inp.value = '';
-  openSecs.add('inbox');
+  openSecs.add(isIdea ? 'ideas' : 'inbox');
   renderAll();
-  toast('Capturado en Inbox ✓');
+  toast(isIdea ? 'Guardado en Banco de Ideas 💡' : 'Capturado en Inbox ✓');
 }
 
 // ── Classify ───────────────────────────────────────────────────────────────

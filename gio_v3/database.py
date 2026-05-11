@@ -918,11 +918,36 @@ def init_db():
         except Exception as e:
             print(f"[DB] gtd_tasks praxis migration warning: {e}")
 
-        # Migrate profile_docs: add field_key column if missing
+        # Deduplicate personal_info rows with same label — keep lowest rowid, migrate docs
+        try:
+            dupes = db.execute(
+                "SELECT label FROM personal_info GROUP BY label HAVING COUNT(*) > 1"
+            ).fetchall()
+            for d in dupes:
+                rows = db.execute(
+                    "SELECT key FROM personal_info WHERE label=? ORDER BY rowid", (d['label'],)
+                ).fetchall()
+                keep_key = rows[0]['key']
+                for row in rows[1:]:
+                    del_key = row['key']
+                    db.execute(
+                        "UPDATE profile_docs SET field_key=? WHERE field_key=?",
+                        (keep_key, del_key)
+                    )
+                    db.execute("DELETE FROM personal_info WHERE key=?", (del_key,))
+            if dupes:
+                db.commit()
+        except Exception as e:
+            print(f"[DB] personal_info dedup warning: {e}")
+
+        # Migrate profile_docs: add field_key and content columns if missing
         try:
             pd_cols = [r["name"] for r in db.execute("PRAGMA table_info(profile_docs)").fetchall()]
             if "field_key" not in pd_cols:
                 db.execute("ALTER TABLE profile_docs ADD COLUMN field_key TEXT DEFAULT NULL")
+                db.commit()
+            if "content" not in pd_cols:
+                db.execute("ALTER TABLE profile_docs ADD COLUMN content BLOB DEFAULT NULL")
                 db.commit()
         except Exception as e:
             print(f"[DB] profile_docs migration warning: {e}")

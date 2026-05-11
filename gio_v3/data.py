@@ -264,6 +264,8 @@ ACTIVITIES = {
     "pliometria":       {"label": "Pliometría",                      "cat": "Salud Física",     "pts": 3, "ec": 1, "tier": "progreso"},
     "partido":          {"label": "Partido",                         "cat": "Salud Física",     "pts": 3, "ec": 1, "tier": "progreso"},
     "gol":              {"label": "Gol (bonus partido)",             "cat": "Salud Física",     "pts": 2, "ec": 0, "tier": "micro"},
+    "abdominales":      {"label": "Abdominales",                     "cat": "Salud Física",     "pts": 2, "ec": 0, "tier": "micro"},
+    "gymbook":          {"label": "GymBook",                         "cat": "Salud Física",     "pts": 2, "ec": 0, "tier": "micro"},
 
     # ── HEGEMONIKON — Salud Base ──────────────────────────────────────────────
     "colacion":         {"label": "Colación saludable",              "cat": "Salud Base",       "pts": 1, "ec": 0, "tier": "micro"},
@@ -300,6 +302,7 @@ ACTIVITIES = {
     "outfit":           {"label": "Outfit cuidado / presencia",      "cat": "Identidad",        "pts": 1, "ec": 0, "tier": "micro"},
     "lenguaje_corporal":{"label": "Lenguaje corporal consciente",    "cat": "Identidad",        "pts": 1, "ec": 0, "tier": "micro"},
     "redes_control":    {"label": "<3.5h redes sociales",            "cat": "Identidad",        "pts": 4, "ec": 1, "tier": "progreso"},
+    "llegar_puntual":   {"label": "Llegar Puntual",                  "cat": "Identidad",        "pts": 4, "ec": 1, "tier": "progreso"},
 
     # ── SÁBADO RESET — solo sábado ────────────────────────────────────────────
     "sat_bloque1":      {"label": "Bloque 1 — Arranque & Limpieza",      "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "progreso", "weekend": "sat"},

@@ -172,7 +172,7 @@
           </button>
 
           <!-- ★ ATTACH BUTTON — solo en campos relevantes -->
-          {% if item.key not in ['nombre', 'telefono', 'email'] %}
+          {% if item.key not in ['telefono', 'email'] %}
           <button class="icon-btn attach-btn {% if field_docs %}has-docs{% endif %}"
             id="attachbtn-{{ item.key }}"
             onclick="toggleDocPanel('{{ item.key }}')"
@@ -192,7 +192,7 @@
         </div>
 
         <!-- ★ PER-FIELD DOCS PANEL -->
-        {% if item.key not in ['nombre', 'telefono', 'email'] %}
+        {% if item.key not in ['telefono', 'email'] %}
         <div class="field-docs-panel" id="fdp-{{ item.key }}">
           <div class="fdp-head">
             <span class="fdp-title">Documentos — {{ item.label }}</span>
