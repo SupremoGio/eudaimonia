@@ -1,4 +1,4 @@
-import os, json as _json, http.client, threading
+import os, json as _json, http.client, threading, base64 as _base64
 from datetime import date, timedelta
 from utils import today_str, today_date
 
@@ -21,10 +21,11 @@ _LOCAL_TMP = os.path.join(_tempfile.gettempdir(), "eudaimonia.db")  # cross-plat
 _tls = threading.local()   # thread-local storage for HTTP connections
 
 def _to_arg(v):
-    if v is None:            return {"type": "null"}
-    if isinstance(v, bool):  return {"type": "integer", "value": str(int(v))}
-    if isinstance(v, int):   return {"type": "integer", "value": str(v)}
-    if isinstance(v, float): return {"type": "float",   "value": v}
+    if v is None:                        return {"type": "null"}
+    if isinstance(v, bool):              return {"type": "integer", "value": str(int(v))}
+    if isinstance(v, int):               return {"type": "integer", "value": str(v)}
+    if isinstance(v, float):             return {"type": "float",   "value": v}
+    if isinstance(v, (bytes, bytearray)): return {"type": "blob",   "value": _base64.b64encode(bytes(v)).decode()}
     return {"type": "text", "value": str(v)}
 
 def _from_cell(cell):
@@ -34,6 +35,7 @@ def _from_cell(cell):
     if t == "null" or v is None:  return None
     if t == "integer":            return int(v)
     if t in ("float", "real"):    return float(v)
+    if t == "blob":               return _base64.b64decode(v) if v else b""
     return v
 
 def _turso_pipeline(host, token, stmts):
@@ -131,6 +133,7 @@ class _HybridConn:
         self._host  = turso_host
         self._token = turso_token
         self._writes = []
+        self._sync_thread = None
 
     def _track(self, sql, args=()):
         u = sql.strip().upper()
@@ -159,12 +162,19 @@ class _HybridConn:
         self._db.commit()
         if self._writes:
             writes, self._writes = self._writes[:], []
-            threading.Thread(
+            # daemon=False: el proceso espera a que termine el sync antes de salir.
+            # Esto evita que Railway mate el thread antes de persistir en Turso.
+            t = threading.Thread(
                 target=_turso_sync, args=(self._host, self._token, writes),
-                daemon=True
-            ).start()
+                daemon=False
+            )
+            t.start()
+            self._sync_thread = t
 
     def close(self):
+        # Esperar el sync pendiente (máx 10 s) antes de cerrar la conexión local.
+        if self._sync_thread and self._sync_thread.is_alive():
+            self._sync_thread.join(timeout=10)
         self._db.close()
 
     def __enter__(self):
@@ -195,7 +205,7 @@ if TURSO_URL and TURSO_TOKEN:
         _DB_PATH      = _LOCAL_TMP
         print("[DB] Modo híbrido: SQLite local (rápido) + Turso (persistencia) ✓")
     except Exception as e:
-        print(f"[DB] Turso falló ({e}), usando SQLite local")
+        print(f"[DB] ⚠️  TURSO FALLÓ ({e}) — usando SQLite local (datos NO persistirán en redeploy)")
 
 def get_db():
     if _USE_HYBRID:

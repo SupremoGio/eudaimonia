@@ -269,7 +269,7 @@ ACTIVITIES = {
 
     # ── HEGEMONIKON — Salud Base ──────────────────────────────────────────────
     "colacion":         {"label": "Colación saludable",              "cat": "Salud Base",       "pts": 1, "ec": 0, "tier": "micro"},
-    "jugo_verde":       {"label": "Jugo verde",                      "cat": "Salud Base",       "pts": 1, "ec": 0, "tier": "micro"},
+    "jugo_verde":       {"label": "Jugo verde",                      "cat": "Salud Base",       "pts": 2, "ec": 0, "tier": "micro"},
     "comer_fruta":      {"label": "Comer fruta",                     "cat": "Salud Base",       "pts": 1, "ec": 0, "tier": "micro"},
     "dormir_8h":        {"label": "Dormir 8 horas",                  "cat": "Salud Base",       "pts": 2, "ec": 0, "tier": "micro"},
     "skincare_noche":   {"label": "Skin Care nocturno",              "cat": "Salud Base",       "pts": 2, "ec": 0, "tier": "micro"},

@@ -118,15 +118,29 @@ def serve_doc(filename):
         row = db.execute(
             "SELECT content, original FROM profile_docs WHERE filename=?", (filename,)
         ).fetchone()
-    if row and row['content']:
-        mime = mimetypes.guess_type(row['original'])[0] or 'application/octet-stream'
-        return Response(
-            bytes(row['content']),
-            mimetype=mime,
-            headers={'Content-Disposition': f'inline; filename="{row["original"]}"'}
-        )
-    # Fallback: serve from filesystem (local dev)
-    return send_from_directory(UPLOAD_DIR, filename)
+    if not row:
+        abort(404)
+    content = row['content'] if row else None
+    if content is not None:
+        # Turso puede restaurar BLOBs como string base64 (datos previos al fix de _to_arg)
+        if isinstance(content, str):
+            try:
+                import base64
+                content = base64.b64decode(content)
+            except Exception:
+                content = None
+        if content:
+            mime = mimetypes.guess_type(row['original'])[0] or 'application/octet-stream'
+            return Response(
+                bytes(content),
+                mimetype=mime,
+                headers={'Content-Disposition': f'inline; filename="{row["original"]}"'}
+            )
+    # Fallback: filesystem local (dev). En Railway el archivo puede no existir.
+    fs_path = os.path.join(UPLOAD_DIR, filename)
+    if os.path.exists(fs_path):
+        return send_from_directory(UPLOAD_DIR, filename)
+    abort(404)
 
 
 # ── Reminders ─────────────────────────────────────────────────────────────────
