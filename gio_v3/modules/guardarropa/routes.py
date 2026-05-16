@@ -1,4 +1,4 @@
-import os, uuid
+import os, uuid, urllib.request
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from database import get_db
@@ -87,12 +87,12 @@ def create_item():
         cur = db.execute(
             """INSERT INTO wardrobe_items
                (nombre,categoria,subcategoria,color_hex,color_name,marca,
-                ocasion,temporada,estado,precio,notas,created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                ocasion,temporada,estado,precio,notas,url,created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (_s(d,'nombre'), _s(d,'categoria','Camisa'), _s(d,'subcategoria'),
              _s(d,'color_hex','#C9A84C'), _s(d,'color_name'), _s(d,'marca'),
              _s(d,'ocasion'), _s(d,'temporada','todo'), _s(d,'estado','bueno'),
-             float(d.get('precio') or 0), _s(d,'notas'), now)
+             float(d.get('precio') or 0), _s(d,'notas'), _s(d,'url'), now)
         )
         db.commit()
         new_id = cur.lastrowid
@@ -107,12 +107,12 @@ def update_item(iid):
         db.execute(
             """UPDATE wardrobe_items SET
                nombre=?,categoria=?,subcategoria=?,color_hex=?,color_name=?,marca=?,
-               ocasion=?,temporada=?,estado=?,precio=?,notas=?
+               ocasion=?,temporada=?,estado=?,precio=?,notas=?,url=?
                WHERE id=?""",
             (_s(d,'nombre'), _s(d,'categoria','Camisa'), _s(d,'subcategoria'),
              _s(d,'color_hex','#C9A84C'), _s(d,'color_name'), _s(d,'marca'),
              _s(d,'ocasion'), _s(d,'temporada','todo'), _s(d,'estado','bueno'),
-             float(d.get('precio') or 0), _s(d,'notas'), iid)
+             float(d.get('precio') or 0), _s(d,'notas'), _s(d,'url'), iid)
         )
         db.commit()
         row = _row(db.execute("SELECT * FROM wardrobe_items WHERE id=?", (iid,)).fetchone())
@@ -231,6 +231,37 @@ def upload_photo(iid):
         db.execute("UPDATE wardrobe_items SET foto=? WHERE id=?", (filename, iid))
         db.commit()
     return jsonify({'ok': True, 'filename': filename})
+
+
+@guardarropa_bp.route('/api/item/<int:iid>/fetch-url-photo', methods=['POST'])
+def fetch_url_photo(iid):
+    d   = request.get_json(force=True)
+    url = d.get('url', '').strip()
+    if not url:
+        return jsonify({'ok': False, 'error': 'URL vacía'}), 400
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            ct = resp.headers.get('Content-Type', '')
+            if 'image' not in ct:
+                return jsonify({'ok': False, 'error': 'La URL no apunta a una imagen'}), 400
+            data = resp.read(5 * 1024 * 1024)
+        if   'png'  in ct: ext = '.png'
+        elif 'webp' in ct: ext = '.webp'
+        else:              ext = '.jpg'
+        filename = uuid.uuid4().hex + ext
+        with open(os.path.join(UPLOAD_DIR, filename), 'wb') as f:
+            f.write(data)
+        with get_db() as db:
+            old = db.execute("SELECT foto FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
+            if old and old['foto']:
+                try: os.remove(os.path.join(UPLOAD_DIR, old['foto']))
+                except OSError: pass
+            db.execute("UPDATE wardrobe_items SET foto=? WHERE id=?", (filename, iid))
+            db.commit()
+        return jsonify({'ok': True, 'filename': filename})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
 
 
 @guardarropa_bp.route('/photos/<filename>')

@@ -281,6 +281,12 @@
         <div><label class="fl">Marca</label><input class="fi" id="im-marca" placeholder="Zara, H&M, Nike…"></div>
       </div>
       <div class="gm-row"><label class="fl">Subcategoría / detalle</label><input class="fi" id="im-sub" placeholder="Oxford, Slim fit, Crew neck…"></div>
+      <div class="gm-row"><label class="fl">Link de referencia</label>
+        <div style="display:flex;gap:8px;">
+          <input class="fi" id="im-url" placeholder="https://zara.com/..." style="flex:1;" oninput="imUrlChanged()">
+          <button type="button" id="im-url-btn" onclick="fetchPhotoFromUrl()" style="display:none;padding:0 14px;border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);font-size:.65rem;cursor:pointer;white-space:nowrap;">Obtener foto</button>
+        </div>
+      </div>
 
       <div class="gm-sec">Color</div>
       <div class="gm-row c2">
@@ -667,7 +673,10 @@ function openItemModal(editId){
   document.getElementById('im-temp').value      = r?.temporada || 'todo';
   document.getElementById('im-estado').value    = r?.estado || 'bueno';
   document.getElementById('im-notas').value     = r?.notas || '';
+  document.getElementById('im-url').value       = r?.url || '';
   document.getElementById('im-err').textContent = '';
+  const urlBtn = document.getElementById('im-url-btn');
+  urlBtn.style.display = (r?.id && r?.url) ? '' : 'none';
   // Occasions
   const ocSet = new Set((r?.ocasion||'').split(',').map(x=>x.trim()).filter(Boolean));
   _selectedOccs = [...ocSet];
@@ -690,6 +699,41 @@ function syncColorName(hex){
   if(p && !nameField.value) nameField.placeholder = p.name;
 }
 
+function imUrlChanged(){
+  const val = document.getElementById('im-url').value.trim();
+  const id  = document.getElementById('im-id').value;
+  document.getElementById('im-url-btn').style.display = (val && id) ? '' : 'none';
+}
+
+async function fetchPhotoFromUrl(){
+  const id  = document.getElementById('im-id').value;
+  const url = document.getElementById('im-url').value.trim();
+  if(!id || !url) return;
+  const btn = document.getElementById('im-url-btn');
+  btn.textContent = '...';
+  btn.disabled = true;
+  try {
+    const res = await fetch(`/guardarropa/api/item/${id}/fetch-url-photo`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({url})
+    });
+    const data = await res.json();
+    if(data.ok){
+      const item = ALL_ITEMS.find(x=>x.id===parseInt(id));
+      if(item) item.foto = data.filename;
+      toast('Foto obtenida ✓');
+      openItemDetail(parseInt(id));
+    } else {
+      document.getElementById('im-err').textContent = data.error || 'No se pudo obtener la foto';
+    }
+  } catch(e){
+    document.getElementById('im-err').textContent = 'Error de conexión';
+  } finally {
+    btn.textContent = 'Obtener foto';
+    btn.disabled = false;
+  }
+}
+
 async function saveItem(){
   const nombre = document.getElementById('im-nombre').value.trim();
   if(!nombre){ document.getElementById('im-err').textContent='El nombre es obligatorio'; return; }
@@ -705,6 +749,7 @@ async function saveItem(){
     estado:      document.getElementById('im-estado').value,
     precio:      parseFloat(document.getElementById('im-precio').value)||0,
     notas:       document.getElementById('im-notas').value.trim(),
+    url:         document.getElementById('im-url').value.trim(),
   };
   const id = document.getElementById('im-id').value;
   const url = id ? `/guardarropa/api/item/${id}` : '/guardarropa/api/item';
