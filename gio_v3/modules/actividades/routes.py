@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify
 from datetime import timedelta, datetime
 from database import get_db
-from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_quote_of_day, get_word_of_day, get_random_quote, get_random_word
+from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_word_of_day, get_random_quote, get_random_word
 from utils import today_str, today_date
 import modules.gamification.engine as engine
 
@@ -94,7 +94,8 @@ def index():
         sat_acts      = sat_acts,
         sun_acts      = sun_acts,
         cats          = ACTIVITY_CATEGORIES,
-        quote         = get_quote_of_day(),
+        quote_stoic   = get_stoic_of_day(),
+        quote_motiv   = get_motivational_of_day(),
         word          = get_word_of_day(),
         payment_alerts= get_payment_alerts(),
         today         = _td.isoformat(),
@@ -259,7 +260,8 @@ def toggle_priority(pid):
 
 @actividades_bp.route('/api/quote/refresh')
 def refresh_quote():
-    return jsonify(get_random_quote())
+    cat = request.args.get('cat')  # 'stoic' | 'motivational' | None
+    return jsonify(get_random_quote(category=cat))
 
 
 @actividades_bp.route('/api/word/refresh')

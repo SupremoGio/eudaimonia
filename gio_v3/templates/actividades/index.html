@@ -435,13 +435,22 @@
       </div>
     </div>
 
-    <!-- Quote -->
+    <!-- Quotes: Estoicismo + Motivación -->
     <div class="q-c">
       <div class="q-inner">
-        <div class="q-t" id="q-t">"{{ quote.text }}"</div>
-        <div class="q-a" id="q-a">— {{ quote.author }}</div>
+        <div style="font-size:.38rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);opacity:.7;margin-bottom:6px;">Estoicismo</div>
+        <div class="q-t" id="q-stoic-t">"{{ quote_stoic.text }}"</div>
+        <div class="q-a" id="q-stoic-a">— {{ quote_stoic.author }}</div>
       </div>
-      <button class="rb" onclick="rQuote()"><i data-lucide="refresh-cw"></i></button>
+      <button class="rb" onclick="rQuote('stoic','q-stoic-t','q-stoic-a')"><i data-lucide="refresh-cw"></i></button>
+    </div>
+    <div class="q-c" style="background:linear-gradient(135deg,rgba(251,191,36,.06),rgba(6,182,212,.03));">
+      <div class="q-inner">
+        <div style="font-size:.38rem;letter-spacing:.18em;text-transform:uppercase;color:var(--violet-l);opacity:.8;margin-bottom:6px;">Motivación</div>
+        <div class="q-t" id="q-motiv-t">"{{ quote_motiv.text }}"</div>
+        <div class="q-a" id="q-motiv-a">— {{ quote_motiv.author }}</div>
+      </div>
+      <button class="rb" onclick="rQuote('motivational','q-motiv-t','q-motiv-a')"><i data-lucide="refresh-cw"></i></button>
     </div>
 
     <!-- Reset Gamificación -->
@@ -636,9 +645,9 @@ async function rWord() {
   }, 240);
 }
 
-async function rQuote() {
-  const d = await (await fetch('/actividades/api/quote/refresh')).json();
-  const qt = document.getElementById('q-t'), qa = document.getElementById('q-a');
+async function rQuote(cat, tId, aId) {
+  const d = await (await fetch(`/actividades/api/quote/refresh?cat=${cat}`)).json();
+  const qt = document.getElementById(tId), qa = document.getElementById(aId);
   qt.style.opacity = 0; qa.style.opacity = 0;
   setTimeout(() => {
     qt.textContent = `"${d.text}"`; qa.textContent = `— ${d.author}`;
@@ -648,8 +657,10 @@ async function rQuote() {
 
 document.getElementById('p-inp').addEventListener('keydown', e => { if(e.key==='Enter') addP(); });
 document.getElementById('pipe-inp').addEventListener('keydown', e => { if(e.key==='Enter') addPipe(); });
-document.getElementById('q-t').style.transition = 'opacity .25s';
-document.getElementById('q-a').style.transition = 'opacity .25s';
+['q-stoic-t','q-stoic-a','q-motiv-t','q-motiv-a'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.style.transition = 'opacity .25s';
+});
 
 // ── Gamification Reset ────────────────────────────────────────────────────────
 function openResetModal() {
