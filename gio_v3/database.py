@@ -14,7 +14,7 @@ _LOCAL     = os.environ.get(
     "DATABASE_PATH",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
 )
-_LOCAL_TMP = os.path.join(_tempfile.gettempdir(), "eudaimonia.db")  # cross-platform temp cache
+_LOCAL_TMP = os.path.join(os.path.dirname(os.path.abspath(__file__)), "eudaimonia_sync.db")  # persistent hybrid cache (no usar tempdir — se borra)
 
 # ── Turso HTTP (writes only) ──────────────────────────────────────────────────
 

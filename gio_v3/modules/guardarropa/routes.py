@@ -1,4 +1,4 @@
-import os, uuid, urllib.request
+import os, uuid, urllib.request, json
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from database import get_db
@@ -269,6 +269,189 @@ def serve_photo(filename):
     if '..' in filename or '/' in filename:
         abort(400)
     return send_from_directory(UPLOAD_DIR, filename)
+
+
+# ── AI Analysis ──────────────────────────────────────────────────────────────
+
+@guardarropa_bp.route('/api/ai-outfit', methods=['POST'])
+def ai_generate_outfit():
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if not api_key or api_key.startswith('sk-ant-REEMPLAZA'):
+        return jsonify({'ok': False, 'error': 'ANTHROPIC_API_KEY no configurada'}), 503
+
+    d = request.get_json(force=True)
+    occasion = d.get('ocasion', 'Casual')
+
+    with get_db() as db:
+        items = [dict(r) for r in db.execute(
+            "SELECT id, nombre, categoria, subcategoria, color_hex, color_name, marca, ocasion, temporada, estado "
+            "FROM wardrobe_items WHERE activo=1 ORDER BY estado DESC"
+        ).fetchall()]
+
+    if not items:
+        return jsonify({'ok': False, 'error': 'No hay prendas en el armario'}), 400
+
+    items_list = '\n'.join([
+        f"ID {i['id']}: {i['nombre']} | {i['categoria']}{(' · '+i['subcategoria']) if i.get('subcategoria') else ''} "
+        f"| hex:{i['color_hex']} {i.get('color_name') or ''} | {i.get('marca') or ''} | estado:{i['estado']}"
+        for i in items
+    ])
+
+    prompt = f"""Eres un coach de imagen personal masculino de élite con 20 años de experiencia vistiendo a ejecutivos y figuras públicas.
+
+INVENTARIO DISPONIBLE ({len(items)} prendas):
+{items_list}
+
+OCASIÓN: {occasion}
+
+Crea el outfit PERFECTO para esta ocasión usando SOLO las prendas del inventario. Aplica:
+- Harmonía de color (análogos, monocromático, contraste tonal, complementarios)
+- Equilibrio de proporciones visuales (proporción áurea en silhouette)
+- Dress code apropiado para la ocasión
+- Prioriza estado "nuevo" o "bueno"
+
+Responde SOLO con JSON (sin markdown, sin ```, sin texto extra):
+{{"nombre":"nombre elegante y descriptivo del look","ocasion":"{occasion}","item_ids":[IDs enteros de las prendas],"harmony":"tipo de harmonía de color específico","why_works":"por qué esta combinación funciona visualmente y psicológicamente — 2-3 líneas directas y concretas","tips":["tip concreto 1","tip concreto 2"],"rating":5}}
+
+REGLAS: item_ids son enteros del inventario · incluye superior + inferior + calzado si disponibles · rating es entero 1-5"""
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model='claude-opus-4-7',
+            max_tokens=600,
+            messages=[{'role': 'user', 'content': prompt}],
+        )
+        raw = msg.content[0].text.strip()
+        if raw.startswith('```'):
+            raw = raw.split('```')[1]
+            if raw.startswith('json'): raw = raw[4:]
+        data = json.loads(raw)
+        data['item_ids'] = [int(x) for x in data.get('item_ids', []) if x]
+        data['ok'] = True
+        return jsonify(data)
+    except json.JSONDecodeError as e:
+        return jsonify({'ok': False, 'error': f'JSON inválido: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@guardarropa_bp.route('/api/capsule/analyze', methods=['POST'])
+def analyze_capsule():
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if not api_key or api_key.startswith('sk-ant-REEMPLAZA'):
+        return jsonify({'ok': False, 'error': 'ANTHROPIC_API_KEY no configurada'}), 503
+
+    with get_db() as db:
+        items = [dict(r) for r in db.execute(
+            "SELECT nombre, categoria, subcategoria, color_hex, color_name, marca, ocasion, estado, precio, veces_usado "
+            "FROM wardrobe_items WHERE activo=1"
+        ).fetchall()]
+
+    if not items:
+        return jsonify({'ok': False, 'error': 'No hay prendas'}), 400
+
+    items_summary = '\n'.join([
+        f"- {i['nombre']} | {i['categoria']}{(' · '+i['subcategoria']) if i.get('subcategoria') else ''} "
+        f"| {i['color_hex']} {i.get('color_name') or ''} | {i.get('marca') or 'sin marca'} | estado:{i['estado']} | usos:{i.get('veces_usado', 0)}"
+        for i in items
+    ])
+
+    prompt = f"""Eres el consultor de imagen personal masculina más riguroso del mundo. Tu metodología combina la ciencia del color de Faber Birren, los principios del armario cápsula de Susie Faux, y los estándares de Permanent Style y Die, Workwear!
+
+ARMARIO A EVALUAR ({len(items)} prendas activas):
+{items_summary}
+
+Evalúa con rigor científico. Responde SOLO con JSON (sin markdown):
+{{"score":85,"score_label":"Avanzado","strengths":["fortaleza específica 1","fortaleza 2","fortaleza 3"],"gaps":[{{"item":"prenda faltante específica","priority":"alta","reason":"por qué es una pieza ancla del armario masculino de élite","versatility_multiplier":8}},{{"item":"segunda prenda","priority":"media","reason":"..."}}],"color_harmony":"análisis de coherencia cromática del armario actual — ¿hay paleta definida?","versatility_index":72,"outfit_combinations_est":45,"elite_verdict":"veredicto directo como coach de élite — 2 líneas, sin filtros, qué falta para el siguiente nivel"}}
+
+Niveles: 0-30=Iniciado | 31-50=Competente | 51-70=Sólido | 71-85=Avanzado | 86-95=Élite | 96-100=Maestro
+
+Criterios científicos:
+1. VERSATILIDAD: cada prenda → mínimo 5 outfits posibles
+2. PALETA 70/20/10: 70% neutros, 20% colores base, 10% acento
+3. DRESS CODES: casual, smart-casual, business casual, formal
+4. PRENDAS ANCLA: blazer navy, camisa blanca, Oxford negro, pantalón gris
+5. COHERENCIA: todas las prendas deben poder combinarse entre sí"""
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model='claude-opus-4-7',
+            max_tokens=900,
+            messages=[{'role': 'user', 'content': prompt}],
+        )
+        raw = msg.content[0].text.strip()
+        if raw.startswith('```'):
+            raw = raw.split('```')[1]
+            if raw.startswith('json'): raw = raw[4:]
+        data = json.loads(raw)
+        data['ok'] = True
+        return jsonify(data)
+    except json.JSONDecodeError:
+        return jsonify({'ok': False, 'error': 'Respuesta IA inválida'}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@guardarropa_bp.route('/api/item/<int:iid>/analyze', methods=['POST'])
+def analyze_item(iid):
+    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
+    if not api_key or api_key.startswith('sk-ant-REEMPLAZA'):
+        return jsonify({'ok': False, 'error': 'ANTHROPIC_API_KEY no configurada'}), 503
+
+    with get_db() as db:
+        row = db.execute("SELECT * FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
+    if not row:
+        return jsonify({'ok': False, 'error': 'Item no encontrado'}), 404
+    r = dict(row)
+
+    prompt = f"""Eres un experto en psicología del color aplicada a la moda masculina.
+Analiza esta prenda y responde ÚNICAMENTE con un objeto JSON válido, sin texto adicional.
+
+Prenda:
+- Nombre: {r.get('nombre', '')}
+- Categoría: {r.get('categoria', '')}
+- Subcategoría: {r.get('subcategoria', '') or 'ninguna'}
+- Color hex: {r.get('color_hex', '#888888')}
+- Marca: {r.get('marca', '') or 'sin marca'}
+- Ocasión registrada: {r.get('ocasion', '') or 'no especificada'}
+- Temporada: {r.get('temporada', 'todo')}
+
+Responde con este JSON exacto (sin markdown, sin ```):
+{{
+  "color_name": "nombre descriptivo del color en español",
+  "psych": "análisis de la psicología del color de esta prenda en contexto de moda masculina (máx 20 palabras)",
+  "rec": "en qué ocasiones específicas usar esta prenda (máx 12 palabras)",
+  "is_sportswear": false,
+  "sport_note": "si es deportiva explica brevemente por qué, si no déjalo vacío"
+}}
+
+Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-fit, lycra, spandex), ropa interior/pijama, calzado deportivo, o nombres como gym, running, yoga, etc."""
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model='claude-opus-4-7',
+            max_tokens=300,
+            messages=[{'role': 'user', 'content': prompt}],
+        )
+        raw = msg.content[0].text.strip()
+        # strip markdown code fences if present
+        if raw.startswith('```'):
+            raw = raw.split('```')[1]
+            if raw.startswith('json'):
+                raw = raw[4:]
+        data = json.loads(raw)
+        data['ok'] = True
+        return jsonify(data)
+    except json.JSONDecodeError:
+        return jsonify({'ok': False, 'error': 'Respuesta IA inválida'}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
