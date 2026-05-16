@@ -56,14 +56,32 @@
       location.reload();
     };
 
-    // Refresh dashboard data when returning to the tab after 30+ seconds away
+    // Refresh dashboard: inmediato si llegó broadcast de actividades, o tras 30s fuera
     (function() {
       var hiddenAt = null;
+      var needsRefresh = false;
+
+      // Escucha broadcasts de otras pestañas (actividades, GTD, etc.)
+      var ch = new BroadcastChannel('eudaimonia');
+      ch.onmessage = function(e) {
+        if (e.data && e.data.type === 'data_changed') {
+          if (document.hidden) {
+            needsRefresh = true;   // reload al volver al tab
+          } else {
+            location.reload();     // ya visible → recarga directa
+          }
+        }
+      };
+
       document.addEventListener('visibilitychange', function() {
         if (document.hidden) {
           hiddenAt = Date.now();
-        } else if (hiddenAt && Date.now() - hiddenAt > 30000) {
-          location.reload();
+        } else {
+          if (needsRefresh || (hiddenAt && Date.now() - hiddenAt > 30000)) {
+            location.reload();
+          }
+          needsRefresh = false;
+          hiddenAt = null;
         }
       });
     })();

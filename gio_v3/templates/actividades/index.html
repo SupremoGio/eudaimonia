@@ -543,6 +543,9 @@ function showCombo(combos) {
   setTimeout(() => pop.classList.remove('show'), 3000);
 }
 
+const _euCh = new BroadcastChannel('eudaimonia');
+function _notifyDashboard() { _euCh.postMessage({type: 'data_changed'}); }
+
 async function logAct(key) {
   try {
     const r = await fetch('/actividades/api/activity/log', {
@@ -570,6 +573,7 @@ async function logAct(key) {
     if (d.gam?.achievements?.length) toast(`🏆 Logro: ${d.gam.achievements[0].name}`, 'win');
     if (d.gam?.badges?.length)       toast(`🥇 Badge: ${d.gam.badges[0].name}`, 'win');
     lucide.createIcons();
+    _notifyDashboard();
   } catch { toast('Sin conexión', 'err'); }
 }
 
@@ -594,6 +598,7 @@ async function toggleP(id) {
     if (d.all3) toast('✦ BONUS +5 XP · +5 EC', 'win');
     updS(d.stats);
     updGam(d.gam?.stats);
+    _notifyDashboard();
   } catch { toast('Sin conexión','err'); }
 }
 
