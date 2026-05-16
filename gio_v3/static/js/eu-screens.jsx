@@ -553,28 +553,30 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             </div>
           </div>
           <div style={{textAlign:'right',paddingTop:2}}>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted}}>
-              {doneCount}/{modules.length} módulos
+            <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:8}}>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted}}>
+                {doneCount}/{modules.length} módulos
+              </div>
+              {!isDesktop && (
+                <button onClick={(e) => { e.stopPropagation(); window.euToggleTheme(); }} style={{
+                  width:26,height:26,borderRadius:7,border:`1px solid ${C.goldBorder}`,
+                  background:C.goldBg,color:C.gold,cursor:'pointer',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                  fontSize:13,lineHeight:1,flexShrink:0,
+                }} title="Cambiar tema">
+                  {document.documentElement.classList.contains('light') ? '☀' : '☽'}
+                </button>
+              )}
             </div>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.gold,marginTop:2}}>
               {xp} / {xpNext} XP
             </div>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginTop:6,justifyContent:'flex-end'}}>
-              <a href="/logros" style={{
-                display:'inline-flex',alignItems:'center',gap:4,
-                fontFamily:'DM Sans,sans-serif',fontSize:9,
-                color:C.gold,opacity:0.65,textDecoration:'none',
-                letterSpacing:'0.08em',
-              }}>🏆 Logros</a>
-              <button onClick={() => window.euToggleTheme()} style={{
-                width:26,height:26,borderRadius:7,border:`1px solid ${C.goldBorder}`,
-                background:C.goldBg,color:C.gold,cursor:'pointer',
-                display:'flex',alignItems:'center',justifyContent:'center',
-                fontSize:12,lineHeight:1,flexShrink:0,
-              }} title="Cambiar tema">
-                {document.documentElement.classList.contains('light') ? '☀' : '☽'}
-              </button>
-            </div>
+            <a href="/logros" style={{
+              display:'inline-flex',alignItems:'center',gap:4,
+              fontFamily:'DM Sans,sans-serif',fontSize:9,
+              color:C.gold,opacity:0.65,textDecoration:'none',
+              letterSpacing:'0.08em',marginTop:6,
+            }}>🏆 Logros</a>
           </div>
         </div>
       </div>

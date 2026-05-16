@@ -110,8 +110,20 @@ function SideNav({ active, onChange }) {
         })}
       </div>
 
-      {/* Link al dashboard clásico */}
-      <div style={{padding:'16px 22px', borderTop:'1px solid rgba(201,168,76,0.07)'}}>
+      {/* Theme toggle + Dashboard clásico */}
+      <div style={{padding:'12px 22px 16px', borderTop:'1px solid rgba(201,168,76,0.07)', display:'flex', flexDirection:'column', gap:10}}>
+        <button onClick={() => window.euToggleTheme()} style={{
+          display:'flex', alignItems:'center', gap:8,
+          background:'transparent', border:`1px solid ${C.goldBorder}`,
+          borderRadius:8, padding:'7px 12px', cursor:'pointer',
+          fontFamily:'DM Sans,sans-serif', fontSize:10, color:C.textMuted,
+          letterSpacing:'0.08em', width:'100%',
+        }}>
+          <span style={{fontSize:14, lineHeight:1}}>
+            {document.documentElement.classList.contains('light') ? '☀' : '☽'}
+          </span>
+          <span>{document.documentElement.classList.contains('light') ? 'Modo día' : 'Modo noche'}</span>
+        </button>
         <a href="/classic" style={{fontFamily:'DM Sans,sans-serif', fontSize:9.5,
           color:C.textMuted, opacity:0.45, textDecoration:'none',
           letterSpacing:'0.08em', display:'flex', alignItems:'center', gap:5}}>
