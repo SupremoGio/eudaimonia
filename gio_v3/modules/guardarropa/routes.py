@@ -14,7 +14,7 @@ CATEGORIAS = [
     'Pantalón', 'Jeans', 'Short', 'Traje / Conjunto',
     'Blazer / Saco', 'Chamarra / Abrigo',
     'Zapatos formales', 'Zapatos casuales', 'Sneakers', 'Botas', 'Sandalias',
-    'Accesorio', 'Ropa deportiva', 'Ropa interior / Pijama',
+    'Accesorio',
 ]
 OCASIONES  = ['Formal', 'Business', 'Casual', 'Social', 'Deportivo', 'Loungewear']
 TEMPORADAS = ['todo', 'verano', 'invierno', 'entretiempo']
