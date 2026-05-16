@@ -1,6 +1,6 @@
 // EUDAIMONIA — App State & Root
 const { useState, useReducer, useEffect } = React;
-const C = window.EU.c;
+const C = window.EU.getColors();
 
 function _xpStateFromTotal(totalXP) {
   const thr = EU.levelThresholds; // [0,200,500,1000,1800,2700,3600,4400,5000,5500]
@@ -64,7 +64,7 @@ function SideNav({ active, onChange }) {
   return (
     <div style={{
       width: 210, flexShrink: 0,
-      background: 'rgba(9,7,15,0.99)',
+      background: EU.rgba('deep', 0.99),
       borderRight: '1px solid rgba(201,168,76,0.1)',
       position: 'fixed', top: 0, left: 0, bottom: 0,
       display: 'flex', flexDirection: 'column',
@@ -206,34 +206,34 @@ function TweaksPanel({ tweaks, onChange, visible }) {
   return (
     <div style={{
       position:'fixed', bottom:90, right:16, zIndex:9000,
-      background:'#1A1627', border:'1px solid rgba(201,168,76,0.25)',
+      background:C.card, border:'1px solid rgba(201,168,76,0.25)',
       borderRadius:14, padding:'16px', width:220,
       boxShadow:'0 8px 32px rgba(0,0,0,0.6)',
       fontFamily:'DM Sans, sans-serif',
     }}>
-      <div style={{fontSize:10, letterSpacing:'0.15em', color:EU.c.gold,
+      <div style={{fontSize:10, letterSpacing:'0.15em', color:C.gold,
         textTransform:'uppercase', marginBottom:14}}>Tweaks</div>
       <label style={{display:'block', marginBottom:12}}>
-        <div style={{fontSize:10, color:EU.c.textMuted, marginBottom:5}}>
+        <div style={{fontSize:10, color:C.textMuted, marginBottom:5}}>
           Demo Nivel: {tweaks.levelDemo}
         </div>
         <input type="range" min={1} max={10} value={tweaks.levelDemo}
           onChange={e => onChange('levelDemo', +e.target.value)}
-          style={{width:'100%', accentColor:EU.c.gold}} />
+          style={{width:'100%', accentColor:C.gold}} />
       </label>
       <label style={{display:'block', marginBottom:12}}>
-        <div style={{fontSize:10, color:EU.c.textMuted, marginBottom:5}}>
+        <div style={{fontSize:10, color:C.textMuted, marginBottom:5}}>
           Color acento (hue): {tweaks.accentHue}°
         </div>
         <input type="range" min={0} max={360} value={tweaks.accentHue}
           onChange={e => onChange('accentHue', +e.target.value)}
-          style={{width:'100%', accentColor:EU.c.gold}} />
+          style={{width:'100%', accentColor:C.gold}} />
       </label>
       <label style={{display:'flex', alignItems:'center', gap:8, cursor:'pointer'}}>
         <input type="checkbox" checked={tweaks.showStreak}
           onChange={e => onChange('showStreak', e.target.checked)}
-          style={{accentColor:EU.c.gold}} />
-        <span style={{fontSize:11, color:EU.c.textSub}}>Mostrar rachas</span>
+          style={{accentColor:C.gold}} />
+        <span style={{fontSize:11, color:C.textSub}}>Mostrar rachas</span>
       </label>
     </div>
   );

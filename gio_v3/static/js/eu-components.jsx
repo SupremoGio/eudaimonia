@@ -1,6 +1,6 @@
 // EUDAIMONIA — UI Primitives
 const { useState, useEffect } = React;
-const C = window.EU.c;
+const C = window.EU.getColors();
 
 // ─── Greek Column XP Visualizer ────────────────────────────
 function GreekColumn({ level = 3, xpPct = 0.65, size = 110 }) {
@@ -242,7 +242,7 @@ function BottomNav({ active, onChange }) {
     <div style={{
       position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',
       width:'100%',maxWidth:430,
-      background:'rgba(9,7,15,0.97)',
+      background:EU.rgba('deep', 0.97),
       backdropFilter:'blur(24px)',
       borderTop:'1px solid rgba(201,168,76,0.12)',
       display:'flex',
@@ -283,7 +283,7 @@ function LevelUpModal({ level, onClose }) {
   return (
     <div style={{
       position:'fixed',inset:0,zIndex:999,
-      background:'rgba(9,7,15,0.95)',
+      background:EU.rgba('deep', 0.95),
       display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
       padding:24,
       animation:'euFadeIn 0.5s ease',

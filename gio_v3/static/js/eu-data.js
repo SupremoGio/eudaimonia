@@ -36,6 +36,14 @@ window.EU = {
     return document.documentElement.classList.contains('light') ? window.EU.cLight : window.EU.c;
   },
 
+  rgba: function(key, alpha) {
+    var hex = window.EU.getColors()[key];
+    var r = parseInt(hex.slice(1,3),16);
+    var g = parseInt(hex.slice(3,5),16);
+    var b = parseInt(hex.slice(5,7),16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+  },
+
   // Must match LEVEL_THRESHOLDS in engine.py exactly
   levelThresholds: [0, 200, 500, 1000, 1800, 2700, 3600, 4400, 5000, 5500],
 

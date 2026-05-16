@@ -107,7 +107,7 @@ function WordOfDay() {
         {word.phonetic}
       </div>
       <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-        fontSize:28,fontWeight:300,color:'#eeeeff',lineHeight:1,marginBottom:10}}>
+        fontSize:28,fontWeight:300,color:C.text,lineHeight:1,marginBottom:10}}>
         {word.word}
       </div>
       <div style={{height:1,background:'linear-gradient(90deg,rgba(201,168,76,0.4),transparent)',marginBottom:10}}/>
@@ -330,7 +330,7 @@ function DeadlineRadar() {
 
                 {/* Nombre */}
                 <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,fontWeight:500,
-                  color:'#e8e8ff',lineHeight:1.3,
+                  color:C.text,lineHeight:1.3,
                   overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}
                   title={dl.label}>
                   {dl.label}
@@ -392,7 +392,7 @@ function DailyScoreCard() {
 
   return (
     <div style={{
-      background:`linear-gradient(140deg,rgba(9,7,15,0.99) 0%,${col}0C 100%)`,
+      background:`linear-gradient(140deg,${EU.rgba('deep',0.99)} 0%,${col}0C 100%)`,
       border:`1px solid ${col}30`,
       borderRadius:16, padding:'16px 18px', marginBottom:14,
       position:'relative', overflow:'hidden',
@@ -538,7 +538,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         position:'sticky',top:0,zIndex:50,
         padding:'env(safe-area-inset-top,16px) 20px 12px',
         paddingTop:'max(env(safe-area-inset-top,16px),16px)',
-        background:'rgba(9,7,15,0.97)',
+        background:EU.rgba('deep', 0.97),
         borderBottom:'1px solid rgba(201,168,76,0.07)',
       }}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
@@ -582,7 +582,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
       <div style={{padding:'0 16px'}}>
         {/* ── LEVEL CARD ── */}
         <div style={{
-          background:'linear-gradient(140deg,#1C1830 0%,#110F20 55%,#0F0D1C 100%)',
+          background:`linear-gradient(140deg,${C.card} 0%,${C.surface} 55%,${C.deep} 100%)`,
           border:'1px solid rgba(201,168,76,0.2)',
           borderRadius:20,padding:'24px 18px 22px',marginBottom:14,
           position:'relative',overflow:'hidden',
@@ -801,7 +801,7 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
       {/* Hero header */}
       <div style={{
         padding: isDesktop ? '28px 24px 28px' : '16px 20px 24px',
-        background:`linear-gradient(170deg,${accDeep} 0%,rgba(9,7,15,0) 100%)`,
+        background:`linear-gradient(170deg,${accDeep} 0%,transparent 100%)`,
         borderBottom:`1px solid ${accMid}`,
       }}>
         <div style={{display:'flex',alignItems:'center',marginBottom:14}}>
@@ -1271,7 +1271,7 @@ function ProfileScreen({ appState, isDesktop }) {
       {/* Level showcase */}
       <div style={{padding:'0 16px 20px'}}>
         <div style={{
-          background:'linear-gradient(135deg,#1C1830,#110F20)',
+          background:`linear-gradient(135deg,${C.card},${C.surface})`,
           border:'1px solid rgba(201,168,76,0.2)',borderRadius:20,
           padding:'24px',textAlign:'center',
           boxShadow:'0 8px 40px rgba(0,0,0,0.5)',
