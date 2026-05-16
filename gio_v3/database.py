@@ -358,6 +358,7 @@ def init_db():
             veces_usado  INTEGER DEFAULT 0,
             foto         TEXT    DEFAULT '',
             notas        TEXT    DEFAULT '',
+            url          TEXT    DEFAULT '',
             activo       INTEGER DEFAULT 1,
             created_at   TEXT    NOT NULL
         );
@@ -970,6 +971,15 @@ def init_db():
                 db.commit()
         except Exception as e:
             print(f"[DB] activity_logs migration warning: {e}")
+
+        # Migrate wardrobe_items: add url column if not present
+        try:
+            wi_cols = [r["name"] for r in db.execute("PRAGMA table_info(wardrobe_items)").fetchall()]
+            if "url" not in wi_cols:
+                db.execute("ALTER TABLE wardrobe_items ADD COLUMN url TEXT DEFAULT ''")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] wardrobe_items migration warning: {e}")
 
         # Seed default special events (inactive by default)
         if db.execute("SELECT COUNT(*) as c FROM special_events").fetchone()["c"] == 0:
