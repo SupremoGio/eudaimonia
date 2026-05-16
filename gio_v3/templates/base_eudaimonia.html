@@ -55,6 +55,18 @@
       localStorage.setItem('eu-theme', next);
       location.reload();
     };
+
+    // Refresh dashboard data when returning to the tab after 30+ seconds away
+    (function() {
+      var hiddenAt = null;
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+          hiddenAt = Date.now();
+        } else if (hiddenAt && Date.now() - hiddenAt > 30000) {
+          location.reload();
+        }
+      });
+    })();
   </script>
 
   <!-- React 18 -->

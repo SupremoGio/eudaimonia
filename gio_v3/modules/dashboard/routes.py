@@ -307,6 +307,11 @@ def api_xp():
     return jsonify(get_gamification_stats())
 
 
+@dashboard_bp.route('/api/data')
+def api_data():
+    return jsonify(_build_eudaimonia_data())
+
+
 @dashboard_bp.route('/api/db-status')
 def api_db_status():
     return jsonify(get_db_status())
