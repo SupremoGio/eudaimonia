@@ -98,6 +98,13 @@
       --serif:'Cormorant Garamond',serif;
     }
 
+    /* Tailwind utility overrides para modo día */
+    html.light .text-dim   { color: var(--dim)  !important; }
+    html.light .text-mid   { color: var(--mid)  !important; }
+    html.light .bg-surface { background-color: var(--surf)  !important; }
+    html.light .bg-card    { background-color: var(--card)  !important; }
+    html.light .bg-card2   { background-color: var(--card2) !important; }
+
     *, *::before, *::after { box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; transition: background .25s, color .25s; }
 
