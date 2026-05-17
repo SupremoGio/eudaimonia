@@ -218,6 +218,11 @@ def upload_photo(iid):
     if not f or not f.filename:
         return jsonify({'ok': False, 'error': 'Sin archivo'}), 400
     ext = os.path.splitext(f.filename)[1].lower()
+    if not ext or ext not in ALLOWED_EXT:
+        # Dragged browser images arrive without extension — use MIME type
+        _mime_map = {'image/jpeg': '.jpg', 'image/png': '.png',
+                     'image/webp': '.webp', 'image/heic': '.heic'}
+        ext = _mime_map.get((f.content_type or '').split(';')[0].strip(), '')
     if ext not in ALLOWED_EXT:
         return jsonify({'ok': False, 'error': 'Tipo no permitido'}), 400
     filename = uuid.uuid4().hex + ext
