@@ -11,7 +11,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 CATEGORIAS = [
     'Camisa', 'Camiseta', 'Polo', 'Sudadera', 'Suéter',
-    'Pantalón', 'Jeans', 'Short', 'Traje / Conjunto',
+    'Pantalón', 'Jeans', 'Pants', 'Short', 'Traje / Conjunto',
     'Blazer / Saco', 'Chamarra / Abrigo',
     'Zapatos formales', 'Zapatos casuales', 'Sneakers', 'Botas', 'Sandalias',
     'Accesorio',
