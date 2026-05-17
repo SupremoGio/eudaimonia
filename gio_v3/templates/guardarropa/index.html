@@ -729,34 +729,37 @@ function setupDragDrop(itemId) {
     dv.classList.remove('drag-over');
     const dt = e.dataTransfer;
 
-    // Caso 1: archivo desde el sistema
+    // Caso 1: URL directa desde otra pestaña (prioridad — más fiable que el virtual file)
+    let imgUrl = (dt.getData('text/uri-list')||'').split('\n').map(s=>s.trim()).find(s=>s.startsWith('http'));
+    if (!imgUrl) {
+      const html = dt.getData('text/html') || '';
+      const m = html.match(/src=["'](https?:[^"']+)["']/i);
+      if (m) imgUrl = m[1];
+    }
+    if (imgUrl) {
+      toast('Descargando imagen…');
+      const res = await fetch(`/guardarropa/api/item/${itemId}/fetch-url-photo`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({url: imgUrl})
+      });
+      const d = await res.json();
+      if (d.ok) { const it = ALL_ITEMS.find(x=>x.id===itemId); if(it) it.foto=d.filename; openItemDetail(itemId); renderGrid(); toast('Foto guardada'); }
+      else toast('Error: ' + (d.error||'No se pudo descargar'));
+      return;
+    }
+
+    // Caso 2: archivo desde el escritorio (file drag)
     const file = Array.from(dt.files || []).find(f => f.type.startsWith('image/'));
     if (file) {
       const fd = new FormData(); fd.append('file', file);
       const res = await fetch(`/guardarropa/api/upload/${itemId}`, {method:'POST', body:fd});
       const d = await res.json();
       if (d.ok) { const it = ALL_ITEMS.find(x=>x.id===itemId); if(it) it.foto=d.filename; openItemDetail(itemId); renderGrid(); toast('Foto guardada'); }
-      else toast('Error subiendo foto');
+      else toast('Error: ' + (d.error||'No se pudo subir'));
       return;
     }
 
-    // Caso 2: imagen arrastrada desde otra pestaña del navegador
-    let imgUrl = (dt.getData('text/uri-list')||'').split('\n')[0].trim();
-    if (!imgUrl) {
-      const html = dt.getData('text/html') || '';
-      const m = html.match(/src=["']([^"']+)["']/i);
-      if (m) imgUrl = m[1];
-    }
-    if (!imgUrl || !imgUrl.startsWith('http')) { toast('No se detectó imagen'); return; }
-
-    toast('Descargando imagen…');
-    const res = await fetch(`/guardarropa/api/item/${itemId}/fetch-url-photo`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({url: imgUrl})
-    });
-    const d = await res.json();
-    if (d.ok) { const it = ALL_ITEMS.find(x=>x.id===itemId); if(it) it.foto=d.filename; openItemDetail(itemId); renderGrid(); toast('Foto guardada'); }
-    else toast('Error: ' + (d.error||'No se pudo descargar'));
+    toast('No se detectó imagen');
   });
 }
 
