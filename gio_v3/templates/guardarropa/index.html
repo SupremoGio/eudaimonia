@@ -586,9 +586,14 @@ function renderGrid(){
 }
 
 function itemCardHTML(r){
-  const visual = r.foto
-    ? `<img src="/guardarropa/photos/${esc(r.foto)}" alt="${esc(r.nombre)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;">`
-    : `<div class="gd-card-swatch" style="background:${esc(r.color_hex||'#333')};"><span class="gd-card-initial">${esc(r.nombre[0]?.toUpperCase()||'?')}</span></div>`;
+  const src = r.foto ? `/guardarropa/photos/${esc(r.foto)}` : (r.url || '');
+  const swatch = `<div class="gd-card-swatch" style="display:none;background:${esc(r.color_hex||'#333')};"><span class="gd-card-initial">${esc(r.nombre[0]?.toUpperCase()||'?')}</span></div>`;
+  const visual = src
+    ? `<img src="${src}" alt="${esc(r.nombre)}" loading="lazy"
+         style="width:100%;height:100%;object-fit:cover;"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+       ${swatch}`
+    : swatch.replace('display:none;','');
   const estadoClass=`chip-estado-${r.estado}`;
   const tempChip=r.temporada&&r.temporada!=='todo'?`<span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">${esc(r.temporada)}</span>`:'';
   return `<div class="gd-card${_activeItemId===r.id?' active':''}" id="icard-${r.id}" onclick="openItemDetail(${r.id})">
@@ -617,9 +622,14 @@ function openItemDetail(id){
   const psych = matchColor(r.color_hex);
   const cpu = r.precio && r.veces_usado>0 ? `$${(r.precio/r.veces_usado).toFixed(0)}` : '—';
   const occs = (r.ocasion||'').split(',').filter(Boolean).map(o=>`<span class="gd-chip" style="background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.18);color:var(--gold);">${esc(o.trim())}</span>`).join('');
-  const visual = r.foto
-    ? `<img src="/guardarropa/photos/${esc(r.foto)}" alt="${esc(r.nombre)}">`
-    : `<div class="gd-dv-swatch" style="background:${esc(r.color_hex||'#333')};"><span class="gd-dv-initial">${esc(r.nombre[0]?.toUpperCase()||'?')}</span></div>`;
+  const detailSrc = r.foto ? `/guardarropa/photos/${esc(r.foto)}` : (r.url || '');
+  const detailSwatch = `<div class="gd-dv-swatch" style="display:none;background:${esc(r.color_hex||'#333')};"><span class="gd-dv-initial">${esc(r.nombre[0]?.toUpperCase()||'?')}</span></div>`;
+  const visual = detailSrc
+    ? `<img src="${detailSrc}" alt="${esc(r.nombre)}"
+         style="width:100%;height:100%;object-fit:cover;"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+       ${detailSwatch}`
+    : detailSwatch.replace('display:none;','');
 
   document.getElementById('gd-detail-empty').style.display='none';
   document.getElementById('gd-detail-content').style.display='block';
