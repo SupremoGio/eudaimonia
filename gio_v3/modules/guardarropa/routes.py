@@ -233,6 +233,42 @@ def upload_photo(iid):
     return jsonify({'ok': True, 'filename': filename})
 
 
+def _extract_image_url(page_url):
+    """Extrae la URL de imagen principal de una página HTML (og:image, twitter:image, etc.)."""
+    import re
+    req = urllib.request.Request(page_url, headers={
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    })
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        ct = resp.headers.get('Content-Type', '')
+        if 'image' in ct:
+            return page_url, ct, resp.read(5 * 1024 * 1024)
+        html = resp.read(150_000).decode('utf-8', errors='ignore')
+
+    # Buscar og:image, twitter:image, itemprop="image"
+    patterns = [
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+        r'<meta[^>]+name=["\']twitter:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+name=["\']twitter:image["\']',
+        r'<meta[^>]+itemprop=["\']image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<link[^>]+rel=["\']image_src["\'][^>]+href=["\']([^"\']+)["\']',
+    ]
+    for pat in patterns:
+        m = re.search(pat, html, re.IGNORECASE)
+        if m:
+            img_url = m.group(1).strip()
+            if img_url.startswith('//'):
+                img_url = 'https:' + img_url
+            elif img_url.startswith('/'):
+                from urllib.parse import urlparse
+                p = urlparse(page_url)
+                img_url = f'{p.scheme}://{p.netloc}{img_url}'
+            return img_url, None, None
+
+    raise ValueError('No se encontró imagen en la página')
+
+
 @guardarropa_bp.route('/api/item/<int:iid>/fetch-url-photo', methods=['POST'])
 def fetch_url_photo(iid):
     d   = request.get_json(force=True)
@@ -240,15 +276,21 @@ def fetch_url_photo(iid):
     if not url:
         return jsonify({'ok': False, 'error': 'URL vacía'}), 400
     try:
-        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            ct = resp.headers.get('Content-Type', '')
-            if 'image' not in ct:
-                return jsonify({'ok': False, 'error': 'La URL no apunta a una imagen'}), 400
-            data = resp.read(5 * 1024 * 1024)
-        if   'png'  in ct: ext = '.png'
-        elif 'webp' in ct: ext = '.webp'
-        else:              ext = '.jpg'
+        img_url, ct, data = _extract_image_url(url)
+
+        # Si _extract_image_url devolvió solo la URL (página HTML), descargar la imagen
+        if data is None:
+            req2 = urllib.request.Request(img_url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
+            with urllib.request.urlopen(req2, timeout=10) as resp2:
+                ct = resp2.headers.get('Content-Type', '')
+                data = resp2.read(5 * 1024 * 1024)
+
+        if   'png'  in (ct or ''): ext = '.png'
+        elif 'webp' in (ct or ''): ext = '.webp'
+        else:                      ext = '.jpg'
+
         filename = uuid.uuid4().hex + ext
         with open(os.path.join(UPLOAD_DIR, filename), 'wb') as f:
             f.write(data)
