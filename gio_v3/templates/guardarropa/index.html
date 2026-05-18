@@ -474,10 +474,10 @@
 {% macro outfit_card(o) %}
 <div class="ot-card" id="ocard-{{ o.id }}" onclick="editOutfitById({{ o.id }})">
   <div class="ot-color-strip">
-    {% for item in o.items[:6] %}
+    {% for item in o['items'][:6] %}
     <div class="ot-color-seg" style="background:{{ item.color_hex }};"></div>
     {% endfor %}
-    {% if not o.items %}<div class="ot-color-seg" style="background:var(--b);"></div>{% endif %}
+    {% if not o['items'] %}<div class="ot-color-seg" style="background:var(--b);"></div>{% endif %}
   </div>
   <div class="ot-card-body">
     <div class="ot-card-name">{{ o.nombre }}</div>
@@ -486,12 +486,12 @@
       <span class="ot-stars">{{ '★' * o.rating }}{{ '☆' * (5 - o.rating) }}</span>
     </div>
     <div class="ot-items-mini">
-      {% for item in o.items[:6] %}
+      {% for item in o['items'][:6] %}
       <div class="ot-item-dot" style="background:{{ item.color_hex }};" title="{{ item.nombre }}">
         {% if item.foto %}<img src="/guardarropa/photos/{{ item.foto }}" alt="{{ item.nombre }}">{% endif %}
       </div>
       {% endfor %}
-      {% if o.items|length > 6 %}<div class="ot-item-dot" style="background:var(--card2);color:var(--dim);">+{{ o.items|length - 6 }}</div>{% endif %}
+      {% if o['items']|length > 6 %}<div class="ot-item-dot" style="background:var(--card2);color:var(--dim);">+{{ o['items']|length - 6 }}</div>{% endif %}
     </div>
   </div>
 </div>
