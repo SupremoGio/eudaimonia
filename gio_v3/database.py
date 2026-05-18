@@ -116,7 +116,7 @@ def _restore_from_turso(host, token):
                 print(f"[DB] restore {name}: {e}")
         local.commit()
         local.close()
-        print(f"[DB] Restored {len(tables)} tables from Turso ✓")
+        print(f"[DB] Restored {len(tables)} tables from Turso OK")
         return True
     except Exception as e:
         print(f"[DB] Restore failed: {e}")
@@ -197,15 +197,15 @@ if TURSO_URL and TURSO_TOKEN:
     try:
         _host = TURSO_URL.replace("libsql://", "")
         _turso_pipeline(_host, TURSO_TOKEN, [{"sql": "SELECT 1", "args": []}])
-        print("[DB] Turso conectado ✓ — restaurando datos locales...")
+        print("[DB] Turso conectado OK - restaurando datos locales...")
         _restore_from_turso(_host, TURSO_TOKEN)
         _USE_HYBRID   = True
         _TURSO_HOST   = _host
         _TURSO_TOKEN_VAL = TURSO_TOKEN
         _DB_PATH      = _LOCAL_TMP
-        print("[DB] Modo híbrido: SQLite local (rápido) + Turso (persistencia) ✓")
+        print("[DB] Modo hibrido: SQLite local (rapido) + Turso (persistencia) OK")
     except Exception as e:
-        print(f"[DB] ⚠️  TURSO FALLÓ ({e}) — usando SQLite local (datos NO persistirán en redeploy)")
+        print(f"[DB] TURSO FALLO ({e}) - usando SQLite local (datos NO persistiran en redeploy)")
 
 def get_db():
     if _USE_HYBRID:
