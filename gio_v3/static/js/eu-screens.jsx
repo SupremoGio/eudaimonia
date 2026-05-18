@@ -650,8 +650,8 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
                   style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:'pointer'}}>
                   <div style={{
                     width:44,height:44,borderRadius:13,
-                    background: mod.done ? accBg : 'rgba(201,168,76,0.04)',
-                    border:`1.5px solid ${mod.done ? acc : 'rgba(201,168,76,0.1)'}`,
+                    background: mod.done ? accBg : C.card,
+                    border:`1.5px solid ${mod.done ? acc : C.goldBorder}`,
                     display:'flex',alignItems:'center',justifyContent:'center',
                     boxShadow: mod.done ? `0 0 14px ${accBg}` : 'none',
                     transition:'all 0.3s',
