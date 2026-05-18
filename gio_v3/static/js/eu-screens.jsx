@@ -845,7 +845,7 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
                       textDecoration:'none', transition:'all 0.2s',
                     }}>
                       <span style={{fontSize:20,lineHeight:1}}>{sub.icon}</span>
-                      <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,flex:1}}>{sub.name}</span>
+                      <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:acc,flex:1}}>{sub.name}</span>
                       <span style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:acc,opacity:0.6}}>→</span>
                     </a>
                   ))}
