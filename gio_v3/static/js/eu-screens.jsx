@@ -1471,7 +1471,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           const pct      = total > 0 ? doneCnt / total : 0;
           const complete = doneCnt === total && total > 0;
           return (
-            <div key={cat} style={{
+            <div key={cat} data-cat={cat} style={{
               background:`oklch(14% 0.03 ${catHue})`,
               border:`1px solid oklch(${complete ? '35% 0.10' : '22% 0.05'} ${catHue})`,
               borderRadius:14, padding:'14px', marginBottom:14,
@@ -1517,6 +1517,22 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
             </div>
           );
         })}
+        {acts.length === 0 && (
+          <EmptyState
+            icon="check-square"
+            title="El día está en blanco"
+            desc="Marcá tu primera virtud para abrir la cuenta de hoy."
+            cta="Empezar"
+            kbd="↓"
+            onAction={() => {
+              const first = document.querySelector('[data-cat]');
+              if (first) {
+                const top = first.getBoundingClientRect().top + window.scrollY - 80;
+                window.scrollTo({ top, behavior: 'smooth' });
+              }
+            }}
+          />
+        )}
       </div>
       <UndoToast
         toast={undoToast.toast}

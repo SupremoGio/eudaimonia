@@ -91,7 +91,13 @@
   </div>
 </div>
 {% else %}
-<div class="empty-s"><i data-lucide="inbox"></i><p>Inbox vacío — mente clara 🧘</p></div>
+{% set empty_icon = 'inbox' %}
+{% set empty_title = 'Inbox vacío' %}
+{% set empty_desc = 'Mente clara. Capturá lo siguiente cuando aparezca.' %}
+{% set empty_cta = 'Capturar' %}
+{% set empty_kbd = 'C' %}
+{% set empty_action = "document.getElementById('tt')?.focus()" %}
+{% include '_partials/empty.html' %}
 {% endfor %}
 
 {% endblock %}
