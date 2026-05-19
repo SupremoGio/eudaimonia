@@ -1235,8 +1235,8 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   const [streak, setStreak] = useState(srv.streak || 0);
   const actCats = srv.actCats || [];
   const { level, xp, xpNext } = appState;
-  const xpToday  = srv.xpToday || 0;
-  const clf       = srv.classification || {};
+  const [xpToday, setXpToday] = useState(srv.xpToday || 0);
+  const [clf, setClf]          = useState(srv.classification || {});
   const XP_GOAL   = 15;
   const xpDayPct  = Math.min(1, xpToday / XP_GOAL);
 
@@ -1248,13 +1248,21 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           setActs(data.activities);
           window.EU._server.activities = data.activities;
         }
-        if (data.pts) {
-          setPts(data.pts);
-          window.EU._server.pts = data.pts;
+        // /api/today devuelve data.xp (no data.pts)
+        if (data.xp) {
+          const newPts = {today: data.xp.today, week: data.xp.week, month: data.xp.month};
+          setPts(newPts);
+          window.EU._server.pts = newPts;
+          setXpToday(data.xp.today);
+          window.EU._server.xpToday = data.xp.today;
         }
         if (data.streak !== undefined) {
           setStreak(data.streak);
           window.EU._server.streak = data.streak;
+        }
+        if (data.classification) {
+          setClf(data.classification);
+          window.EU._server.classification = data.classification;
         }
       })
       .catch(() => {});
@@ -1274,6 +1282,9 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
     .then(r => r.json())
     .then(data => {
       if (data.stats) {
+        const newXp = data.stats.xp_today ?? data.stats.pts_today ?? xpToday;
+        setXpToday(newXp);
+        window.EU._server.xpToday = newXp;
         const newPts = {today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month};
         setPts(newPts);
         window.EU._server.pts = newPts;
@@ -1305,6 +1316,9 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
       .then(r => r.json())
       .then(data => {
         if (data.stats) {
+          const newXp = data.stats.xp_today ?? data.stats.pts_today ?? xpToday;
+          setXpToday(newXp);
+          window.EU._server.xpToday = newXp;
           const newPts = {today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month};
           setPts(newPts);
           window.EU._server.pts = newPts;
