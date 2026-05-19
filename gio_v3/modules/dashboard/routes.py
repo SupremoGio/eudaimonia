@@ -3,6 +3,7 @@ from database import get_db, get_db_status
 from data import get_word_of_day, get_quote_of_day, get_random_quote, ACTIVITIES, ACTIVITY_CATEGORIES
 from datetime import date, timedelta
 from utils import today_str, today_date
+from ec_constants import CATEGORY_HUES
 
 dashboard_bp = Blueprint('dashboard', __name__, template_folder='../../templates')
 
@@ -66,6 +67,32 @@ _MODULE_HABIT_KEYS = {
         [],
     ],
 }
+
+
+def _build_next_actions(done_keys: set) -> list:
+    from collections import Counter
+    pending = [
+        {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts']}
+        for k, v in ACTIVITIES.items()
+        if k not in done_keys and 'weekend' not in v
+    ]
+    done_cats = Counter(ACTIVITIES[k]['cat'] for k in done_keys if k in ACTIVITIES)
+    pending.sort(key=lambda a: (-done_cats.get(a['cat'], 0), -a['pts']))
+    return pending[:3]
+
+
+def _build_suggestion(done_keys: set):
+    from collections import defaultdict
+    by_cat = defaultdict(list)
+    for k, v in ACTIVITIES.items():
+        if 'weekend' not in v:
+            by_cat[v['cat']].append(k)
+    for cat, keys in by_cat.items():
+        pending = [k for k in keys if k not in done_keys]
+        if len(pending) == 1 and len(keys) > 1:
+            v = ACTIVITIES[pending[0]]
+            return {'key': pending[0], 'label': v['label'], 'cat': cat, 'pts': v['pts']}
+    return None
 
 
 def _build_eudaimonia_data():
@@ -235,11 +262,14 @@ def _build_eudaimonia_data():
         'pts_month':    pts_month_val,
         'max_streak':   max_streak,
         'weeks_active': weeks_active,
-        'word_of_day':  get_word_of_day(),
-        'reflexion':    get_quote_of_day(),
-        'reminders':    [dict(r) for r in reminders_rows],
-        'ec_balance':   ec_balance,
-        'deadlines':    _build_deadlines(_today),
+        'word_of_day':    get_word_of_day(),
+        'reflexion':      get_quote_of_day(),
+        'reminders':      [dict(r) for r in reminders_rows],
+        'ec_balance':     ec_balance,
+        'deadlines':      _build_deadlines(_today),
+        'next_actions':   _build_next_actions(today_keys),
+        'suggestion':     _build_suggestion(today_keys),
+        'category_hues':  dict(CATEGORY_HUES),
     }
 
 
