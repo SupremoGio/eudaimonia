@@ -134,12 +134,10 @@
       h.classList.toggle('dark',  next === 'dark');
     };
 
-    // Refresh dashboard: inmediato si llegó broadcast de actividades, o tras 30s fuera
+    // Recarga solo cuando otra pestaña emite data_changed (BroadcastChannel)
     (function() {
-      var hiddenAt = null;
       var needsRefresh = false;
 
-      // Escucha broadcasts de otras pestañas (actividades, GTD, etc.)
       var ch = new BroadcastChannel('eudaimonia');
       ch.onmessage = function(e) {
         if (e.data && e.data.type === 'data_changed') {
@@ -152,14 +150,9 @@
       };
 
       document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-          hiddenAt = Date.now();
-        } else {
-          if (needsRefresh || (hiddenAt && Date.now() - hiddenAt > 30000)) {
-            location.reload();
-          }
+        if (!document.hidden && needsRefresh) {
           needsRefresh = false;
-          hiddenAt = null;
+          location.reload();
         }
       });
     })();
