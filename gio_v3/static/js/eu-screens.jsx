@@ -536,14 +536,10 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
   const XP_GOAL = 15;
   const xpDayPct = Math.min(1, xpToday / XP_GOAL);
 
-  const [nextActions, setNextActions] = React.useState(srv.nextActions || []);
-  const [suggestion,  setSuggestion]  = React.useState(srv.suggestion  || null);
+  const [suggestion, setSuggestion] = React.useState(srv.suggestion || null);
 
   const logActivityFromHome = (key) => {
-    // Optimistic remove from lists
-    setNextActions(prev => prev.filter(a => a.key !== key));
     if (suggestion?.key === key) setSuggestion(null);
-    // Also sync global activities
     const updated = (window.EU._server.activities || []).map(a =>
       a.key === key ? {...a, done: !a.done} : a
     );
@@ -655,37 +651,6 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             </div>
           </div>
         </div>
-
-        {/* ── PRÓXIMAS 3 ACCIONES ── */}
-        {nextActions.length > 0 && (
-          <div style={{marginBottom:14}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-                color:C.textMuted,textTransform:'uppercase'}}>Próximas acciones</div>
-              <a href="/actividades/" style={{fontFamily:'DM Sans,sans-serif',fontSize:10,
-                color:C.gold,opacity:0.75,textDecoration:'none'}}>Ver todas →</a>
-            </div>
-            {nextActions.map(a => {
-              const hue = (EU.catHues || {})[a.cat] || 45;
-              const acc = `oklch(65% 0.15 ${hue})`;
-              return (
-                <div key={a.key} onClick={() => logActivityFromHome(a.key)}
-                  style={{background:C.card,border:`1px solid ${C.goldBorder}`,
-                    borderRadius:10,padding:'12px 14px',marginBottom:6,
-                    display:'flex',alignItems:'center',gap:11,cursor:'pointer'}}>
-                  <div style={{width:18,height:18,borderRadius:5,border:`1.5px solid ${C.goldBorder}`,flexShrink:0}}/>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:13,color:C.text,overflow:'hidden',
-                      textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{a.label}</div>
-                    <div style={{fontSize:10,color:acc,marginTop:2,
-                      letterSpacing:'0.08em',textTransform:'uppercase'}}>{a.cat}</div>
-                  </div>
-                  <span style={{fontSize:12,color:C.gold,flexShrink:0}}>+{a.pts}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
         {/* ── SUGERENCIA DEL DÍA ── */}
         {suggestion && (

@@ -69,18 +69,6 @@ _MODULE_HABIT_KEYS = {
 }
 
 
-def _build_next_actions(done_keys: set) -> list:
-    from collections import Counter
-    pending = [
-        {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts']}
-        for k, v in ACTIVITIES.items()
-        if k not in done_keys and 'weekend' not in v
-    ]
-    done_cats = Counter(ACTIVITIES[k]['cat'] for k in done_keys if k in ACTIVITIES)
-    pending.sort(key=lambda a: (-done_cats.get(a['cat'], 0), -a['pts']))
-    return pending[:3]
-
-
 def _build_suggestion(done_keys: set):
     from collections import defaultdict
     by_cat = defaultdict(list)
@@ -267,7 +255,6 @@ def _build_eudaimonia_data():
         'reminders':      [dict(r) for r in reminders_rows],
         'ec_balance':     ec_balance,
         'deadlines':      _build_deadlines(_today),
-        'next_actions':   _build_next_actions(today_keys),
         'suggestion':     _build_suggestion(today_keys),
         'category_hues':  dict(CATEGORY_HUES),
     }
