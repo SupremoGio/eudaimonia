@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, redirect
 from database import get_db, get_gtd_stats
 from datetime import date, datetime
 import modules.gamification.engine as engine
+from utils import today_str
 
 gtd_bp = Blueprint('gtd', __name__, template_folder='../../templates')
 
@@ -108,7 +109,7 @@ def classify_task(tid):
 
 @gtd_bp.route('/api/task/<int:tid>/complete', methods=['POST'])
 def complete_task(tid):
-    today = date.today().isoformat()
+    today = today_str()
     now = datetime.now().isoformat()
     with get_db() as db:
         task = db.execute("SELECT * FROM gtd_tasks WHERE id=?", (tid,)).fetchone()

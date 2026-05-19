@@ -4,6 +4,7 @@ Budget 50-30-20 — planeación financiera mensual con simulación de deudas.
 from flask import Blueprint, render_template, request, jsonify, session, redirect
 from database import get_db
 from datetime import date, datetime
+from utils import today_str, today_date
 
 budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
 
@@ -91,7 +92,7 @@ def _simular_deuda(saldo, pago_minimo, tasa_mensual, pago_propuesto):
 @budget_bp.route('/<mes>')
 def index(mes=None):
     if not mes:
-        mes = date.today().strftime('%Y-%m')
+        mes = today_date().strftime('%Y-%m')
 
     # Prev / next month
     y, m = int(mes[:4]), int(mes[5:])
@@ -267,9 +268,9 @@ def add_deuda():
 @budget_bp.route('/api/deuda/<int:did>/pago', methods=['POST'])
 def pago_deuda(did):
     data   = request.json or {}
-    mes    = data.get('mes') or date.today().strftime('%Y-%m')
+    mes    = data.get('mes') or today_date().strftime('%Y-%m')
     monto  = float(data.get('monto_pagado') or 0)
-    fecha  = data.get('fecha') or date.today().isoformat()
+    fecha  = data.get('fecha') or today_str()
     nota   = data.get('nota', '')
     now    = datetime.now().isoformat()
     if monto <= 0:

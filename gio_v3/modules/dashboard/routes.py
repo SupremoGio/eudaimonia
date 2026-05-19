@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, jsonify, redirect
 from database import get_db, get_db_status
 from data import get_word_of_day, get_quote_of_day, get_random_quote, ACTIVITIES, ACTIVITY_CATEGORIES
 from datetime import date, timedelta
+from utils import today_str, today_date
 
 dashboard_bp = Blueprint('dashboard', __name__, template_folder='../../templates')
 
@@ -72,7 +73,8 @@ def _build_eudaimonia_data():
     from modules.gamification.engine import get_gamification_stats
 
     stats = get_gamification_stats()
-    today = date.today().isoformat()
+    today = today_str()
+    _today = today_date()
 
     with get_db() as db:
         # Actividades de hoy y su historial para streaks
@@ -108,8 +110,8 @@ def _build_eudaimonia_data():
         ).fetchall()}
 
         # PTS stats
-        week_start  = (date.today() - timedelta(days=date.today().weekday())).isoformat()
-        month_start = date.today().replace(day=1).isoformat()
+        week_start  = (_today - timedelta(days=_today.weekday())).isoformat()
+        month_start = _today.replace(day=1).isoformat()
         pts_today_val  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date=?",   (today,)).fetchone()['s']
         pts_week_val   = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?",  (week_start,)).fetchone()['s']
         pts_month_val  = db.execute("SELECT COALESCE(SUM(pts),0) as s FROM activity_logs WHERE date>=?",  (month_start,)).fetchone()['s']
@@ -137,7 +139,7 @@ def _build_eudaimonia_data():
             AND COALESCE(next_date, target_date, '9999-12-31') <= ?
             ORDER BY COALESCE(next_date, target_date)
             LIMIT 5
-        """, ((date.today() + timedelta(days=7)).isoformat(),)).fetchall()
+        """, ((_today + timedelta(days=7)).isoformat(),)).fetchall()
 
         # Idiomas: test results más recientes por idioma
         lang_rows = db.execute(
@@ -161,7 +163,7 @@ def _build_eudaimonia_data():
     modules = []
     for mod in _EU_MODULES_BASE:
         cats = _MODULE_CATS[mod['id']]
-        streak, check = 0, date.today()
+        streak, check = 0, _today
         while True:
             d = check.isoformat()
             if d in date_cats and date_cats[d] & cats:
@@ -237,7 +239,7 @@ def _build_eudaimonia_data():
         'reflexion':    get_quote_of_day(),
         'reminders':    [dict(r) for r in reminders_rows],
         'ec_balance':   ec_balance,
-        'deadlines':    _build_deadlines(date.today()),
+        'deadlines':    _build_deadlines(_today),
     }
 
 

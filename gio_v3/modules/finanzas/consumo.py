@@ -4,6 +4,7 @@ Consumo Inteligente — trackea productos de uso regular y calcula frecuencias.
 from flask import Blueprint, render_template, request, jsonify, session, redirect
 from database import get_db
 from datetime import date, datetime, timedelta
+from utils import today_str, today_date
 
 consumo_bp = Blueprint(
     'consumo',
@@ -76,7 +77,7 @@ def _generar_insights(prod, compras):
         return insights
 
     # Days since last purchase
-    dias_desde = (date.today() - date.fromisoformat(ultima)).days if ultima else None
+    dias_desde = (today_date() - date.fromisoformat(ultima)).days if ultima else None
 
     if dias_desde is not None:
         dias_restantes = int(freq - dias_desde)
@@ -134,7 +135,7 @@ def _enrich(prod, db):
     p["n_compras"] = len(compras)
     p["dias_desde"] = None
     if p.get("ultima_compra"):
-        p["dias_desde"] = (date.today() - date.fromisoformat(p["ultima_compra"])).days
+        p["dias_desde"] = (today_date() - date.fromisoformat(p["ultima_compra"])).days
 
     # status for visual dot
     freq = p.get("frecuencia_dias")
@@ -163,7 +164,7 @@ def index():
         ).fetchall()
         productos = [_enrich(p, db) for p in productos_raw]
 
-        month_start = date.today().replace(day=1).isoformat()
+        month_start = today_date().replace(day=1).isoformat()
         stats = db.execute(
             "SELECT COUNT(*) as c, COALESCE(SUM(precio_total),0) as s "
             "FROM consumo_compras WHERE fecha_compra >= ?",
@@ -222,7 +223,7 @@ def detalle(pid):
 def registrar_compra():
     data        = request.json or {}
     producto_id = data.get("producto_id")
-    fecha       = data.get("fecha") or date.today().isoformat()
+    fecha       = data.get("fecha") or today_str()
     cantidad    = float(data.get("cantidad") or 1)
     precio      = float(data.get("precio_total") or 0)
     now         = datetime.now().isoformat()
@@ -311,7 +312,7 @@ def desactivar_producto(pid):
 @consumo_bp.route("/api/proximas")
 def proximas_compras():
     """Productos próximos a necesitar — para integración con dashboard/GTD."""
-    today = date.today()
+    today = today_date()
     with get_db() as db:
         productos = db.execute(
             "SELECT * FROM consumo_productos "

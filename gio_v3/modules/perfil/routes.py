@@ -180,9 +180,10 @@ def add_reminder():
 
 @perfil_bp.route('/api/reminder/<int:rid>/done', methods=['POST'])
 def complete_reminder(rid):
-    from datetime import date as _date, timedelta
+    from datetime import timedelta
+    from utils import today_str as _today_str
     import calendar
-    today = _date.today().isoformat()
+    today = _today_str()
     with get_db() as db:
         row = db.execute("SELECT * FROM reminders WHERE id=?", (rid,)).fetchone()
         if not row:

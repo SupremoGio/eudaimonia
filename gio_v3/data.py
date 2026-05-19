@@ -1,4 +1,5 @@
 from datetime import date
+from utils import today_date
 
 # ── QUOTES ────────────────────────────────────────────────────────────────────
 QUOTES = [
@@ -226,16 +227,16 @@ _QUOTES_STOIC = [q for q in QUOTES if q["category"] == "stoic"]
 _QUOTES_MOTIV = [q for q in QUOTES if q["category"] == "motivational"]
 
 def get_quote_of_day():
-    return QUOTES[date.today().toordinal() % len(QUOTES)]
+    return QUOTES[today_date().toordinal() % len(QUOTES)]
 
 def get_stoic_of_day():
-    return _QUOTES_STOIC[date.today().toordinal() % len(_QUOTES_STOIC)]
+    return _QUOTES_STOIC[today_date().toordinal() % len(_QUOTES_STOIC)]
 
 def get_motivational_of_day():
-    return _QUOTES_MOTIV[date.today().toordinal() % len(_QUOTES_MOTIV)]
+    return _QUOTES_MOTIV[today_date().toordinal() % len(_QUOTES_MOTIV)]
 
 def get_word_of_day():
-    return WORDS[date.today().toordinal() % len(WORDS)]
+    return WORDS[today_date().toordinal() % len(WORDS)]
 
 def get_random_word():
     return random.choice(WORDS)

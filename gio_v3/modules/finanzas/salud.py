@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, request, jsonify, session, redirec
 from database import get_db
 from datetime import datetime, date
 from collections import defaultdict
+from utils import today_str, today_date
 
 salud_bp = Blueprint('salud', __name__, template_folder='../../templates')
 
@@ -76,7 +77,7 @@ def index():
         patrimonio_neto   = patrimonio_neto,
         tipo_meta         = TIPO_META,
         bien_meta         = BIEN_META,
-        today             = date.today().strftime('%d %b %Y').upper(),
+        today             = today_date().strftime('%d %b %Y').upper(),
     )
 
 

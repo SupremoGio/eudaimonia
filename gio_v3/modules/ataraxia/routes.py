@@ -3,7 +3,7 @@ from datetime import date, timedelta, datetime
 import os
 from database import get_db
 from data import ACTIVITIES
-from utils import today_str
+from utils import today_str, today_date
 import modules.gamification.engine as engine
 
 ataraxia_bp = Blueprint('ataraxia', __name__, template_folder='../../templates')
@@ -46,7 +46,7 @@ BLOQUE_ICONS = {
 # ── Semana ID — starts Saturday ───────────────────────────────────────────────
 
 def get_semana_id():
-    hoy = date.today()
+    hoy = today_date()
     dias_desde_sabado = (hoy.weekday() - 5) % 7
     sabado = hoy - timedelta(days=dias_desde_sabado)
     return sabado.isoformat()
@@ -123,7 +123,7 @@ def _build_rutina(dia, semana_id):
 
 
 def _get_combo_status(semana_id):
-    hoy = date.today()
+    hoy = today_date()
     dias_desde_sabado = (hoy.weekday() - 5) % 7
     sat_date = (hoy - timedelta(days=dias_desde_sabado)).isoformat()
     sun_date = (hoy - timedelta(days=dias_desde_sabado - 1)).isoformat()
@@ -142,7 +142,7 @@ def _get_combo_status(semana_id):
 @ataraxia_bp.route('/')
 def index():
     semana_id = get_semana_id()
-    dow = date.today().weekday()
+    dow = today_date().weekday()
     default_dia = "domingo" if dow == 6 else "sabado"
     dia = request.args.get('dia', default_dia)
 
@@ -160,7 +160,7 @@ def index():
         sat_combo    = sat_combo,
         sun_combo    = sun_combo,
         is_weekend   = dow in (5, 6),
-        today        = date.today().isoformat(),
+        today        = today_str(),
     )
 
 

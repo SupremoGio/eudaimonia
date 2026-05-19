@@ -2,6 +2,7 @@ import hashlib
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
 from datetime import date, datetime
+from utils import today_str, today_date
 
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 
@@ -9,7 +10,7 @@ PASS_HASH = hashlib.sha256(b'gio2026').hexdigest()   # Change password here
 
 
 def payment_alerts():
-    d = date.today().day
+    d = today_date().day
     alerts = []
     if d == 15: alerts += [{"label":"BBVA","color":"#c5a36c"},{"label":"Invex","color":"#a78bfa"}]
     if d == 30: alerts.append({"label":"HSBC","color":"#60a5fa"})
@@ -20,7 +21,7 @@ def payment_alerts():
 def index():
     if not session.get('fin_ok'):
         return render_template('finanzas/lock.html')
-    mes_actual = date.today().strftime('%Y-%m')
+    mes_actual = today_date().strftime('%Y-%m')
     with get_db() as db:
         owe_me  = db.execute("SELECT * FROM debts WHERE type='owe_me' AND settled=0 ORDER BY id DESC").fetchall()
         i_owe   = db.execute("SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY id DESC").fetchall()
@@ -52,7 +53,7 @@ def index():
         total_original_i_owe  = sum(d['monto_total'] for d in i_owe),
         total_budget  = total_budget,
         total_spent   = total_spent,
-        alerts=payment_alerts(), today=date.today().isoformat(),
+        alerts=payment_alerts(), today=today_str(),
     )
 
 

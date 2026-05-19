@@ -3,6 +3,7 @@ from database import get_db
 from data import get_word_of_day, get_random_word, get_quiz_questions
 from datetime import date, datetime
 import urllib.request, urllib.parse, json
+from utils import today_str, today_date
 
 idiomas_bp = Blueprint('idiomas', __name__, template_folder='../../templates')
 
@@ -19,7 +20,7 @@ def index():
         journal = db.execute("SELECT * FROM lang_journal ORDER BY entry_date DESC LIMIT 20").fetchall()
     return render_template('idiomas/index.html',
         word=get_word_of_day(), tests=tests, journal=journal,
-        today=date.today().isoformat())
+        today=today_str())
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────────
@@ -33,7 +34,7 @@ def add_test():
         db.execute("""INSERT INTO lang_test_results
             (test_type, score, notes, test_date, created_at) VALUES (?,?,?,?,?)""",
             (d['test_type'], str(d['score']), d.get('notes', ''),
-             d.get('test_date', date.today().isoformat()), datetime.now().isoformat()))
+             d.get('test_date', today_str()), datetime.now().isoformat()))
         db.commit()
         rows = db.execute("SELECT * FROM lang_test_results ORDER BY test_date DESC").fetchall()
     return jsonify({'ok': True, 'tests': [dict(r) for r in rows]})
@@ -58,7 +59,7 @@ def add_journal():
         db.execute("""INSERT INTO lang_journal
             (language, entry_text, feedback, entry_date, created_at) VALUES (?,?,?,?,?)""",
             (d.get('language', 'English'), d['entry_text'], '',
-             date.today().isoformat(), datetime.now().isoformat()))
+             today_str(), datetime.now().isoformat()))
         db.commit()
         rows = db.execute("SELECT * FROM lang_journal ORDER BY entry_date DESC LIMIT 20").fetchall()
     return jsonify({'ok': True, 'journal': [dict(r) for r in rows]})

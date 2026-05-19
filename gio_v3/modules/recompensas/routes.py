@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 from datetime import date, datetime, timedelta
 from database import get_db
 from modules.gamification.engine import get_gamification_stats
+from utils import today_str, today_date
 
 recompensas_bp = Blueprint('recompensas', __name__, template_folder='../../templates')
 
@@ -35,8 +36,8 @@ def _can_redeem(reward, ec_balance, current_level):
             datetime.fromisoformat(reward["last_redeemed"]) +
             timedelta(days=reward["cooldown_days"])
         ).date()
-        if date.today() < cooldown_end:
-            days_left = (cooldown_end - date.today()).days
+        if today_date() < cooldown_end:
+            days_left = (cooldown_end - today_date()).days
             return False, f"Cooldown: {days_left} días restantes"
     if reward["badge_required"]:
         with get_db() as db:
@@ -159,7 +160,7 @@ def registrar_gasto():
         db.execute(
             "INSERT INTO coins_ledger (amount, source, description, multiplier, date, created_at)"
             " VALUES (?,?,?,?,?,?)",
-            (-ec, 'gasto', desc, 1.0, date.today().isoformat(), now)
+            (-ec, 'gasto', desc, 1.0, today_str(), now)
         )
         db.commit()
     return jsonify({'ok': True, 'ec_gastado': ec, 'ec_restante': balance - ec})
@@ -199,7 +200,7 @@ def redeem_reward(reward_id):
         db.execute(
             "INSERT INTO coins_ledger (amount, source, description, multiplier, date, created_at)"
             " VALUES (?,?,?,?,?,?)",
-            (-cost, "reward", f"Recompensa: {reward['name']}", 1.0, date.today().isoformat(), now)
+            (-cost, "reward", f"Recompensa: {reward['name']}", 1.0, today_str(), now)
         )
         db.execute(
             "UPDATE rewards SET last_redeemed=?, status='redeemed' WHERE id=?",

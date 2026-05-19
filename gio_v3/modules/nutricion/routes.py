@@ -2,12 +2,13 @@ from flask import Blueprint, render_template, request, jsonify
 from database import get_db
 from data import DAYS_ES, MEAL_TYPES
 from datetime import date, datetime, timedelta
+from utils import today_str, today_date
 
 nutricion_bp = Blueprint('nutricion', __name__, template_folder='../../templates')
 
 
 def current_week_start():
-    today = date.today()
+    today = today_date()
     return (today - timedelta(days=today.weekday())).isoformat()
 
 
@@ -29,7 +30,7 @@ def index():
 
     return render_template('nutricion/index.html',
         calendar=calendar, days=DAYS_ES, meal_types=MEAL_TYPES,
-        week_start=ws, today=date.today().isoformat(),
+        week_start=ws, today=today_str(),
     )
 
 

@@ -2,12 +2,13 @@ from flask import Blueprint, render_template, request, jsonify
 from datetime import date, timedelta
 from database import get_db
 from data import SATURDAY_TASKS
+from utils import today_date
 
 sabado_bp = Blueprint('sabado', __name__, template_folder='../../templates')
 
 
 def week_start():
-    today = date.today()
+    today = today_date()
     days_since_sat = (today.weekday() + 2) % 7
     return (today - timedelta(days=days_since_sat)).isoformat()
 
@@ -23,7 +24,7 @@ def index():
     done_count = sum(1 for t in tasks if t["done"])
     return render_template('sabado/index.html',
         tasks=tasks, done_count=done_count, total=len(SATURDAY_TASKS),
-        week_start=ws, is_saturday=(date.today().weekday() == 5),
+        week_start=ws, is_saturday=(today_date().weekday() == 5),
     )
 
 
