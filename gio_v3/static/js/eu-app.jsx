@@ -1,5 +1,5 @@
 // EUDAIMONIA — App State & Root
-const { useState, useReducer, useEffect } = React;
+const { useState, useReducer, useEffect, useMemo } = React;
 const C = window.EU.getColors();
 
 function _xpStateFromTotal(totalXP) {
@@ -172,6 +172,63 @@ function App() {
     setTab(id);
   };
 
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+
+  // ⌘K global shortcut + custom event from HomeScreen header button
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdkOpen(o => !o);
+      }
+    };
+    const onEv = () => setCmdkOpen(true);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('eu:open-cmdk', onEv);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('eu:open-cmdk', onEv);
+    };
+  }, []);
+
+  const logActivityFromApp = (key) => {
+    const updated = (window.EU._server.activities || []).map(a =>
+      a.key === key ? {...a, done: !a.done} : a
+    );
+    window.EU._server.activities = updated;
+    fetch('/actividades/api/activity/log', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key}),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.gam && (data.gam.xp_delta || data.gam.xp))
+        dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
+    })
+    .catch(() => {});
+  };
+
+  const cmdkItems = useMemo(() => {
+    const pendingActs = (window.EU._server?.activities || [])
+      .filter(a => !a.done)
+      .slice(0, 20);
+    return [
+      { i:'⌂', label:'Ir a Inicio',         sub:'Dashboard',      section:'nav', run: () => handleTabChange('home') },
+      { i:'✦', label:'Ir a Acta Diurna',    sub:'Actividades',    section:'nav', run: () => handleTabChange('gtd') },
+      { i:'◆', label:'Ir a Módulos',         sub:'Command Center', section:'nav', run: () => handleTabChange('modules') },
+      { i:'◎', label:'Ir a Perfil',          sub:'Sistema',        section:'nav', run: () => handleTabChange('profile') },
+      { i:'◐', label:'Cambiar tema',         sub:'Día / Noche',    section:'sys', keys:['⇧','T'], run: () => window.euToggleTheme() },
+      { i:'🏆', label:'Ver Logros',          sub:'Sistema',        section:'sys', run: () => { location.href = '/logros'; } },
+      ...pendingActs.map(a => ({
+        i: '✓',
+        label: `Registrar: ${a.label} (+${a.pts} XP)`,
+        sub:   `Acta · ${a.cat}`,
+        section: 'act',
+        run:   () => logActivityFromApp(a.key),
+      })),
+    ];
+  }, [state.totalXP]);
+
   const props = { appState: state, dispatch: appDispatch, isDesktop };
   const openMod = state.openModuleId
     ? state.modules.find(m => m.id === state.openModuleId)
@@ -196,6 +253,7 @@ function App() {
         {state.leveledUp && (
           <LevelUpModal level={state.level} onClose={() => dispatch({type:'CLEAR_LEVELUP'})} />
         )}
+        <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
       </div>
     );
   }
@@ -211,6 +269,7 @@ function App() {
         <LevelUpModal level={state.level} onClose={() => dispatch({type:'CLEAR_LEVELUP'})} />
       )}
       {!openMod && <BottomNav active={tab} onChange={handleTabChange} />}
+      <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
     </div>
   );
 }
