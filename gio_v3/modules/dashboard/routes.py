@@ -7,10 +7,10 @@ dashboard_bp = Blueprint('dashboard', __name__, template_folder='../../templates
 
 # ── Module → activity category mapping ───────────────────────────────────────
 _MODULE_CATS = {
-    'hegemonikon':    {'Salud Física', 'Salud Mental', 'Salud'},
+    'hegemonikon':    {'Salud Física', 'Salud Mental', 'Salud Base'},
     'oikonomia':      {'Finanzas'},
-    'ataraxia':       {'Sistema', 'Orden', 'Enfoque'},
-    'paideia':        {'Knowledge'},
+    'ataraxia':       {'Orden', 'Sábado Reset', 'Domingo Strategy'},
+    'paideia':        {'Paideia'},
     'cosmopolitismo': {'Idiomas'},
     'logoi':          {'Programación'},
     'eurythmia':      {'Baile'},
