@@ -38,9 +38,8 @@
       to   { width: 0% }
     }
     @keyframes euShimmer {
-      0%   { opacity: 0.4 }
-      50%  { opacity: 0.7 }
-      100% { opacity: 0.4 }
+      0%   { background-position: 200% 0 }
+      100% { background-position: -200% 0 }
     }
     @keyframes euLevelUpRise {
       0%   { transform: translateY(40px) scale(0.7);  opacity: 0; }
@@ -61,6 +60,13 @@
     button { cursor: pointer; }
 
     #root { min-height: 100vh; }
+
+    .sk {
+      background: linear-gradient(90deg,rgba(201,168,76,.03) 0%,rgba(201,168,76,.08) 50%,rgba(201,168,76,.03) 100%);
+      background-size: 200% 100%;
+      animation: euShimmer 1.4s ease-in-out infinite;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
@@ -120,10 +126,10 @@
   <script src="{{ url_for('static', filename='js/eu-data.js') }}?v=20260517d"></script>
 
   <!-- EUDAIMONIA UI components -->
-  <script type="text/babel" src="{{ url_for('static', filename='js/eu-components.jsx') }}?v=20260519d"></script>
-  <script type="text/babel" src="{{ url_for('static', filename='js/eu-screens.jsx') }}?v=20260519d"></script>
-  <script type="text/babel" src="{{ url_for('static', filename='js/cmdk.jsx') }}?v=20260519d"></script>
-  <script type="text/babel" src="{{ url_for('static', filename='js/eu-app.jsx') }}?v=20260519d"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-components.jsx') }}?v=20260519e"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-screens.jsx') }}?v=20260519e"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/cmdk.jsx') }}?v=20260519e"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-app.jsx') }}?v=20260519e"></script>
 
   {% block extra_scripts %}{% endblock %}
 </body>

@@ -97,7 +97,13 @@
       </div>
       {% endfor %}
     {% else %}
-      <div class="empty-s"><i data-lucide="zap"></i><p>Sin next actions — captura algo en Inbox</p></div>
+      {% set empty_icon = 'zap' %}
+      {% set empty_title = 'Sin next actions' %}
+      {% set empty_desc = 'Procesá el Inbox para activar las próximas acciones.' %}
+      {% set empty_cta = 'Ver Inbox' %}
+      {% set empty_kbd = '' %}
+      {% set empty_action = "location.href='/gtd/inbox'" %}
+      {% include '_partials/empty.html' %}
     {% endif %}
   </div>
 

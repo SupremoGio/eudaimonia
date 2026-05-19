@@ -1,0 +1,26 @@
+{# Uso:
+   {% set empty_icon   = 'inbox' %}
+   {% set empty_title  = 'Inbox vacío' %}
+   {% set empty_desc   = 'Capturá ideas para procesar después.' %}
+   {% set empty_cta    = 'Capturar' %}
+   {% set empty_kbd    = 'C' %}
+   {% set empty_action = "document.getElementById('tt')?.focus()" %}
+   {% include '_partials/empty.html' %}
+#}
+<div class="empty-rich">
+  <div class="empty-icon-box">
+    <i data-lucide="{{ empty_icon | default('inbox') }}"></i>
+  </div>
+  {% if empty_title %}
+  <div class="empty-title">{{ empty_title }}</div>
+  {% endif %}
+  {% if empty_desc %}
+  <div class="empty-desc">{{ empty_desc }}</div>
+  {% endif %}
+  {% if empty_cta %}
+  <button class="empty-cta" onclick="{{ empty_action | default('void(0)') }}">
+    {{ empty_cta }}
+    {% if empty_kbd %}<kbd>{{ empty_kbd }}</kbd>{% endif %}
+  </button>
+  {% endif %}
+</div>

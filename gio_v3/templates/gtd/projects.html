@@ -25,7 +25,17 @@
     <button class="btn-r" onclick="delP({{ p.id }},this)">Archivar</button>
   </div>
 </div>
-{% else %}<div class="empty-s" style="grid-column:1/-1"><i data-lucide="folder"></i><p>Sin proyectos activos</p></div>{% endfor %}
+{% else %}
+<div style="grid-column:1/-1">
+{% set empty_icon = 'folder' %}
+{% set empty_title = 'Sin proyectos activos' %}
+{% set empty_desc = 'Un proyecto es cualquier resultado que requiera más de una acción.' %}
+{% set empty_cta = 'Crear proyecto' %}
+{% set empty_kbd = '' %}
+{% set empty_action = "document.getElementById('pn')?.focus()" %}
+{% include '_partials/empty.html' %}
+</div>
+{% endfor %}
 </div>
 {% endblock %}
 {% block scripts %}<script>

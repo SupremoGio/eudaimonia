@@ -15,7 +15,15 @@
     <button class="ai del" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
   </div>
 </div>
-{% else %}<div class="empty-s"><i data-lucide="clock"></i><p>Sin ideas en Someday</p></div>{% endfor %}
+{% else %}
+{% set empty_icon = 'clock' %}
+{% set empty_title = 'Sin ideas en Someday' %}
+{% set empty_desc = 'Guardá aquí lo que no es urgente pero vale la pena explorar.' %}
+{% set empty_cta = 'Agregar idea' %}
+{% set empty_kbd = '' %}
+{% set empty_action = "document.getElementById('tt')?.focus()" %}
+{% include '_partials/empty.html' %}
+{% endfor %}
 {% endblock %}
 {% block scripts %}<script>
 async function addT(){
