@@ -527,7 +527,53 @@ function AchievementSheet({ achievement, onClose }) {
   );
 }
 
+// ─── EmptyState ────────────────────────────────────────────
+function EmptyState({ icon = 'inbox', title, desc, cta, kbd, onAction }) {
+  return (
+    <div style={{
+      textAlign:'center', padding:'48px 24px',
+      display:'flex', flexDirection:'column', alignItems:'center', gap:12,
+    }}>
+      <div style={{
+        width:56, height:56, borderRadius:14,
+        border:`1px solid ${C.goldBorder}`,
+        background: C.card,
+        display:'flex', alignItems:'center', justifyContent:'center',
+        marginBottom:4,
+      }}>
+        <i data-lucide={icon} style={{width:22, height:22, color:C.textMuted, opacity:0.6}}/>
+      </div>
+      {title && (
+        <div style={{fontFamily:'Cormorant Garamond,serif', fontStyle:'italic',
+          fontSize:22, color:C.text, letterSpacing:'0.02em'}}>{title}</div>
+      )}
+      {desc && (
+        <div style={{fontSize:13, color:C.textMuted,
+          maxWidth:320, lineHeight:1.5}}>{desc}</div>
+      )}
+      {cta && (
+        <button onClick={onAction} style={{
+          marginTop:10,
+          background:'rgba(201,168,76,0.08)',
+          border:`1px solid ${C.goldBorder}`,
+          borderRadius:8, padding:'9px 16px',
+          fontFamily:'DM Sans,sans-serif', fontSize:13,
+          color:C.gold, letterSpacing:'0.06em',
+          cursor:'pointer', display:'inline-flex', alignItems:'center', gap:8,
+        }}>
+          {cta}
+          {kbd && (
+            <kbd style={{fontFamily:'monospace', fontSize:10,
+              background:C.card2 || C.card, border:`1px solid ${C.goldBorder}`,
+              borderRadius:4, padding:'1px 6px', color:C.textMuted}}>{kbd}</kbd>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
 Object.assign(window, {
   GreekColumn, ProgressRing, ModuleCard, HabitRow, QuoteDisplay, BottomNav, LevelUpModal,
-  StreakHeatmap, AchievementSheet,
+  StreakHeatmap, AchievementSheet, EmptyState,
 });
