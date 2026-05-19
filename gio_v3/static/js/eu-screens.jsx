@@ -380,6 +380,7 @@ const TIERS = [
 ];
 
 function HomeScreen({ appState, dispatch, isDesktop }) {
+  const { isLight } = useTheme();
   const { level, xp, xpNext, modules } = appState;
   const lv = EU.levels[level - 1];
   const xpPct = xpNext ? xp / xpNext : 1;
@@ -555,8 +556,8 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         {suggestion && (
           <div onClick={() => logActivityFromHome(suggestion.key)}
             style={{
-              background:`oklch(18% 0.04 ${(EU.catHues||{})[suggestion.cat]||45})`,
-              border:`1px solid oklch(35% 0.09 ${(EU.catHues||{})[suggestion.cat]||45})`,
+              background: EU.catTint((EU.catHues||{})[suggestion.cat]||45, 'bg'),
+              border:`1px solid ${EU.catTint((EU.catHues||{})[suggestion.cat]||45, 'border')}`,
               borderRadius:12,padding:'14px 16px',marginBottom:14,cursor:'pointer',
               display:'flex',alignItems:'center',gap:12,
             }}>
@@ -641,7 +642,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none'}}>
             {modules.map(mod => {
               const acc = `oklch(65% 0.15 ${mod.hue})`;
-              const accBg = `oklch(18% 0.04 ${mod.hue})`;
+              const accBg = EU.catTint(mod.hue, 'bg');
               return (
                 <div key={mod.id} onClick={() => dispatch({type:'OPEN_MODULE',id:mod.id})}
                   style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:'pointer'}}>
@@ -1171,6 +1172,7 @@ function UndoToast({ toast, onUndo, onDismiss, isDesktop }) {
 // ACTIVITY BUTTON
 // ═══════════════════════════════════════════════════════════
 function ActivityButton({ act, catHue, onLog }) {
+  const { isLight } = useTheme();
   const [burst, setBurst] = useState(false);
   const isAlto = act.tier === 'alto';
 
@@ -1252,9 +1254,9 @@ function ActivityButton({ act, catHue, onLog }) {
             ? (isAlto
                 ? 'linear-gradient(135deg,rgba(245,158,11,0.5),rgba(234,179,8,0.5))'
                 : 'linear-gradient(135deg,rgba(99,102,241,0.7),rgba(139,92,246,0.7))')
-            : `oklch(18% 0.03 ${catHue})`,
-          color: act.done ? '#fff' : `oklch(55% 0.12 ${catHue})`,
-          border: act.done ? 'none' : `1px solid oklch(28% 0.06 ${catHue})`,
+            : EU.catTint(catHue, 'bg'),
+          color: act.done ? '#fff' : EU.catTint(catHue, 'text'),
+          border: act.done ? 'none' : `1px solid ${EU.catTint(catHue, 'border')}`,
         }}>+{act.pts} XP{act.ec > 0 ? ` · ${act.ec}🪙` : ''}</span>
       </div>
       {/* Burst particles */}

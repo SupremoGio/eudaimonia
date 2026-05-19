@@ -121,10 +121,11 @@ function ProgressRing({ pct = 0, size = 44, stroke = 3, color = C.gold }) {
 
 // ─── Module Card ───────────────────────────────────────────
 function ModuleCard({ mod, onClick, small = false }) {
+  const { isLight } = useTheme();
   const [hov, setHov] = useState(false);
-  const acc = `oklch(65% 0.15 ${mod.hue})`;
-  const accBg = `oklch(18% 0.04 ${mod.hue})`;
-  const accBorder = `oklch(35% 0.09 ${mod.hue})`;
+  const acc       = EU.catTint(mod.hue, 'text');
+  const accBg     = EU.catTint(mod.hue, 'bg');
+  const accBorder = EU.catTint(mod.hue, 'border');
 
   return (
     <div onClick={onClick}
