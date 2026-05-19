@@ -605,8 +605,30 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
 
         {/* ── MÓDULOS HOY ── */}
         <div style={{marginBottom:14}}>
-          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-            color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Hoy</div>
+          <div style={{display:'flex',justifyContent:'space-between',
+            alignItems:'baseline',marginBottom:6}}>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+              letterSpacing:'0.15em',color:C.textMuted,textTransform:'uppercase'}}>
+              Módulos
+            </div>
+            <div style={{fontSize:11,color:C.textMuted}}>
+              {modules.filter(m => m.done).length} de {modules.length}
+            </div>
+          </div>
+          {/* Daily progress mini-strip */}
+          <div style={{
+            display:'flex',gap:3,marginBottom:10,
+            height:3,borderRadius:2,overflow:'hidden',
+            background:'rgba(201,168,76,0.06)',
+          }}>
+            {modules.map(mod => (
+              <div key={mod.id} style={{
+                flex:1,height:'100%',
+                background: mod.done ? `oklch(65% 0.15 ${mod.hue})` : 'transparent',
+                transition:'background 0.4s',
+              }}/>
+            ))}
+          </div>
           <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none'}}>
             {modules.map(mod => {
               const acc = `oklch(65% 0.15 ${mod.hue})`;

@@ -53,20 +53,87 @@ function useIsDesktop() {
   return isDesktop;
 }
 
+// ── Desktop Sidebar Nav helpers ───────────────────────────
+function NavGroup({ title, children }) {
+  return (
+    <div>
+      <div style={{fontSize:11, letterSpacing:'0.2em', color:C.textMuted,
+        padding:'14px 22px 6px', textTransform:'uppercase', opacity:0.55}}>
+        {title}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function NavItem({ active, label, sub, accent, dot, onClick }) {
+  const isMod = dot !== undefined;
+  return (
+    <div onClick={onClick} style={{
+      padding:'10px 22px', cursor:'pointer',
+      borderLeft:`2.5px solid ${active ? C.gold : 'transparent'}`,
+      background: active ? 'rgba(201,168,76,0.05)' : 'transparent',
+      transition:'all 0.2s',
+      display:'flex', alignItems:'center', gap:10,
+    }}>
+      {isMod && (
+        <div style={{
+          width:6, height:6, borderRadius:'50%', flexShrink:0,
+          background: dot ? (accent || C.gold) : 'rgba(201,168,76,0.15)',
+          boxShadow: dot ? `0 0 6px ${accent || C.gold}` : 'none',
+        }}/>
+      )}
+      <div style={{flex:1, minWidth:0}}>
+        <div style={{
+          fontFamily: isMod ? 'DM Sans,sans-serif' : 'Cormorant Garamond,serif',
+          fontSize: isMod ? 13 : 20,
+          color: active ? C.gold : (isMod ? C.text : C.textMuted),
+          fontWeight: isMod ? 500 : 600,
+          letterSpacing: isMod ? '0.04em' : 'inherit',
+          lineHeight: 1.1,
+          whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
+          transition:'color 0.2s',
+        }}>{label}</div>
+        <div style={{
+          fontFamily:'DM Sans,sans-serif', fontSize:11,
+          letterSpacing:'0.1em', textTransform:'uppercase', marginTop:2,
+          color: active ? C.gold : C.textMuted,
+          opacity: active ? 0.75 : 0.45, transition:'all 0.2s',
+        }}>{sub}</div>
+      </div>
+    </div>
+  );
+}
+
+function NavItemLink({ href, label, sub }) {
+  return (
+    <a href={href} style={{
+      padding:'10px 22px', display:'block', textDecoration:'none',
+      borderLeft:'2.5px solid transparent', transition:'all 0.2s',
+    }}
+    onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,168,76,0.04)'}
+    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+      <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:20,
+        color:C.textMuted, lineHeight:1.1}}>{label}</div>
+      <div style={{fontFamily:'DM Sans,sans-serif', fontSize:11,
+        letterSpacing:'0.1em', textTransform:'uppercase', marginTop:2,
+        color:C.textMuted, opacity:0.45}}>{sub}</div>
+    </a>
+  );
+}
+
 // ── Desktop Sidebar Nav ───────────────────────────────────
-function SideNav({ active, onChange }) {
-  const groups = [
-    { title: 'HOY',     tabs: [
-      { id:'home', label:'Ἀρχή', sub:'Inicio' },
-      { id:'acta', label:'Acta', sub:'Diurna' },
-    ]},
-    { title: 'MÓDULOS', tabs: [
-      { id:'modules', label:'Κόσμος', sub:'Módulos' },
-    ]},
-    { title: 'SISTEMA', tabs: [
-      { id:'profile', label:'Αὐτός', sub:'Perfil' },
-    ]},
+function SideNav({ active, onChange, modules, dispatch }) {
+  const todayTabs = [
+    { id:'home', label:'Ἀρχή', sub:'Inicio' },
+    { id:'acta', label:'Acta', sub:'Diurna' },
   ];
+  const systemItems = [
+    { kind:'link', href:'/gtd',    label:'Πρᾶξις', sub:'Praxis · GTD' },
+    { kind:'link', href:'/logros', label:'🏆',     sub:'Logros' },
+    { kind:'tab',  id:'profile',   label:'Αὐτός',  sub:'Perfil' },
+  ];
+
   return (
     <div style={{
       width: 210, flexShrink: 0,
@@ -77,7 +144,7 @@ function SideNav({ active, onChange }) {
       zIndex: 100,
     }}>
       {/* Logo */}
-      <div style={{padding: '28px 22px 24px', borderBottom: '1px solid rgba(201,168,76,0.08)'}}>
+      <div style={{padding:'28px 22px 24px', borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
         <div style={{fontFamily:'DM Sans,sans-serif', fontSize:8, letterSpacing:'0.28em',
           color:C.gold, opacity:0.55, textTransform:'uppercase', marginBottom:5}}>
           SISTEMA PERSONAL
@@ -88,40 +155,41 @@ function SideNav({ active, onChange }) {
         </div>
       </div>
 
-      {/* Nav groups */}
+      {/* Nav scroll area */}
       <div style={{flex:1, paddingTop:8, overflowY:'auto'}}>
-        {groups.map(g => (
-          <div key={g.title}>
-            <div style={{fontSize:11, letterSpacing:'0.2em', color:C.textMuted,
-              padding:'14px 22px 6px', textTransform:'uppercase', opacity:0.55}}>
-              {g.title}
-            </div>
-            {g.tabs.map(t => {
-              const active_ = active === t.id;
-              return (
-                <div key={t.id} onClick={() => onChange(t.id)} style={{
-                  padding: '11px 22px',
-                  cursor: 'pointer',
-                  borderLeft: `2.5px solid ${active_ ? C.gold : 'transparent'}`,
-                  background: active_ ? 'rgba(201,168,76,0.05)' : 'transparent',
-                  transition: 'all 0.2s',
-                }}>
-                  <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:20,
-                    color: active_ ? C.gold : C.textMuted,
-                    transition:'color 0.2s', lineHeight:1}}>
-                    {t.label}
-                  </div>
-                  <div style={{fontFamily:'DM Sans,sans-serif', fontSize:11,
-                    letterSpacing:'0.12em', textTransform:'uppercase', marginTop:3,
-                    color: active_ ? C.gold : C.textMuted,
-                    opacity: active_ ? 0.75 : 0.35, transition:'all 0.2s'}}>
-                    {t.sub}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ))}
+        <NavGroup title="HOY">
+          {todayTabs.map(t => (
+            <NavItem key={t.id} active={active === t.id}
+              label={t.label} sub={t.sub}
+              onClick={() => onChange(t.id)}/>
+          ))}
+        </NavGroup>
+
+        <NavGroup title="MÓDULOS">
+          {(modules || []).map(mod => {
+            const acc = `oklch(65% 0.15 ${mod.hue})`;
+            return (
+              <NavItem key={mod.id}
+                active={false}
+                label={mod.name}
+                sub={mod.concept}
+                accent={acc}
+                dot={mod.done}
+                onClick={() => dispatch({type:'OPEN_MODULE', id: mod.id})}/>
+            );
+          })}
+        </NavGroup>
+
+        <NavGroup title="SISTEMA">
+          {systemItems.map(item => (
+            item.kind === 'link'
+              ? <NavItemLink key={item.href} href={item.href}
+                  label={item.label} sub={item.sub}/>
+              : <NavItem key={item.id} active={active === item.id}
+                  label={item.label} sub={item.sub}
+                  onClick={() => onChange(item.id)}/>
+          ))}
+        </NavGroup>
       </div>
 
       {/* Theme toggle */}
@@ -252,7 +320,8 @@ function App() {
   if (isDesktop) {
     return (
       <div style={{display:'flex', minHeight:'100vh', background:C.deep}}>
-        <SideNav active={tab} onChange={handleTabChange} />
+        <SideNav active={tab} onChange={handleTabChange}
+          modules={state.modules} dispatch={appDispatch}/>
         <div style={{marginLeft:210, flex:1, minHeight:'100vh'}}>
           <div style={{maxWidth:900, margin:'0 auto', padding:'0 8px'}}>
             {screen}
