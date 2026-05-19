@@ -177,6 +177,29 @@ def check_achievements():
     return jsonify({"newly_unlocked": newly, "count": len(newly)})
 
 
+# ── Streak heatmap ───────────────────────────────────────────────────────────
+
+@gamification_bp.route('/api/streak/heatmap')
+def streak_heatmap():
+    """XP por día de los últimos N días (máx 90)."""
+    days = int(request.args.get('days', 21))
+    days = max(7, min(days, 90))
+    end   = today_date()
+    start = end - timedelta(days=days - 1)
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT date, SUM(pts) as xp FROM activity_logs "
+            "WHERE date>=? AND date<=? GROUP BY date",
+            (start.isoformat(), end.isoformat())
+        ).fetchall()
+    by_date = {r['date']: r['xp'] for r in rows}
+    out = []
+    for i in range(days):
+        d = (start + timedelta(days=i)).isoformat()
+        out.append({'date': d, 'xp': by_date.get(d, 0)})
+    return jsonify({'days': out, 'max_xp': max((r['xp'] for r in out), default=0)})
+
+
 # ── Logros Page ──────────────────────────────────────────────────────────────
 
 @gamification_bp.route('/logros')

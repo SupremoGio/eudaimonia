@@ -356,6 +356,75 @@ function LevelUpModal({ level, onClose }) {
   );
 }
 
+// ─── Streak Heatmap ──────────────────────────────────────────
+function StreakHeatmap({ days = 21, compact = false }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/streak/heatmap?days=${days}`)
+      .then(r => r.json())
+      .then(setData)
+      .catch(() => {});
+  }, [days]);
+
+  if (!data) {
+    return (
+      <div style={{
+        height: compact ? 60 : 100,
+        background: C.card, borderRadius: 10,
+        animation: 'euShimmer 1.4s infinite',
+      }}/>
+    );
+  }
+
+  const maxXp     = Math.max(...data.days.map(d => d.xp), 1);
+  const cellSize  = compact ? 14 : 18;
+  const gap       = compact ? 3 : 4;
+  const cols      = Math.ceil(days / 7);
+  const todayStr  = data.days[data.days.length - 1].date;
+
+  const cell = (xp) => {
+    if (xp === 0) return { bg: 'rgba(201,168,76,0.04)', border: C.goldBorder };
+    const t = xp / maxXp;
+    return {
+      bg:     `oklch(${50 + t * 25}% ${0.06 + t * 0.1} 80)`,
+      border: `oklch(${55 + t * 25}% ${0.08 + t * 0.1} 80)`,
+    };
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between',
+        alignItems:'baseline', marginBottom:10}}>
+        <div style={{fontSize:10, letterSpacing:'0.18em', color:C.textMuted,
+          textTransform:'uppercase'}}>Últimos {days} días</div>
+        <div style={{fontSize:11, color:C.gold, opacity:0.7}}>
+          {data.days.filter(d => d.xp > 0).length} días activos
+        </div>
+      </div>
+      <div style={{
+        display:'grid',
+        gridTemplateColumns:`repeat(${cols}, ${cellSize}px)`,
+        gap, justifyContent:'start',
+      }}>
+        {data.days.map(d => {
+          const s = cell(d.xp);
+          const isToday = d.date === todayStr;
+          return (
+            <div key={d.date} title={`${d.date}: ${d.xp} XP`} style={{
+              width: cellSize, height: cellSize, borderRadius: 4,
+              background: s.bg, border: `1px solid ${s.border}`,
+              boxShadow: isToday ? `0 0 8px ${C.gold}66` : 'none',
+              transition: 'all 0.2s',
+            }}/>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 Object.assign(window, {
   GreekColumn, ProgressRing, ModuleCard, HabitRow, QuoteDisplay, BottomNav, LevelUpModal,
+  StreakHeatmap,
 });

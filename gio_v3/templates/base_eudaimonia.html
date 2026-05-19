@@ -37,6 +37,24 @@
       from { width: 100% }
       to   { width: 0% }
     }
+    @keyframes euShimmer {
+      0%   { opacity: 0.4 }
+      50%  { opacity: 0.7 }
+      100% { opacity: 0.4 }
+    }
+    @keyframes euLevelUpRise {
+      0%   { transform: translateY(40px) scale(0.7);  opacity: 0; }
+      60%  { transform: translateY(-8px) scale(1.05); opacity: 1; }
+      100% { transform: translateY(0)    scale(1);    opacity: 1; }
+    }
+    @keyframes euGoldPulse {
+      0%, 100% { opacity: 0.12; transform: scale(1);    }
+      50%      { opacity: 0.22; transform: scale(1.05); }
+    }
+    @keyframes euAchievementRise {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0);    }
+    }
 
     input, button { font-family: inherit; }
     input::placeholder { color: #6A6050; }
