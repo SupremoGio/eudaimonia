@@ -45,19 +45,19 @@ window.EU = {
   },
 
   // Must match LEVEL_THRESHOLDS in engine.py exactly
-  levelThresholds: [0, 200, 500, 1000, 1800, 2700, 3600, 4400, 5000, 5500],
+  levelThresholds: [0, 300, 900, 1800, 3000, 4200, 5000, 5600, 6000, 6500],
 
   levels: [
-    { n:1,  name:'PROKOPTON',     sub:'El que avanza',        xpNext:200  },
-    { n:2,  name:'EFEBO',         sub:'En formación',         xpNext:300  },
-    { n:3,  name:'ASQUETÉS',      sub:'El practicante',       xpNext:500  },
-    { n:4,  name:'ESTRATEGOS',    sub:'El estratega',         xpNext:800  },
-    { n:5,  name:'AUTARKÉS',      sub:'El autosuficiente',    xpNext:900  },
-    { n:6,  name:'POLÍMATA',      sub:'El erudito',           xpNext:900  },
-    { n:7,  name:'ARETÉ',         sub:'La excelencia',        xpNext:800  },
-    { n:8,  name:'HEGEMÓN',       sub:'El rector',            xpNext:600  },
-    { n:9,  name:'SOPHOS',        sub:'El sabio',             xpNext:500  },
-    { n:10, name:'EUDAIMÓN',      sub:'El floreciente',       xpNext:null },
+    { n:1,  name:'PROKOPTON',  sub:'El que avanza — iniciaste el camino',          xpNext:300  },
+    { n:2,  name:'EFEBO',      sub:'El joven — forjando disciplina',               xpNext:600  },
+    { n:3,  name:'ASQUETÉS',   sub:'El asceta — probando el esfuerzo',             xpNext:900  },
+    { n:4,  name:'ESTRATEGOS', sub:'El estratega — ejecutando con intención',      xpNext:1200 },
+    { n:5,  name:'AUTARKÉS',   sub:'El autosuficiente — dueño de ti mismo',        xpNext:1200 },
+    { n:6,  name:'POLÍMATA',   sub:'El polímata — crecimiento en todas virtudes',  xpNext:800  },
+    { n:7,  name:'ARETÉ',      sub:'La excelencia — viviendo con areté',           xpNext:600  },
+    { n:8,  name:'HEGEMÓN',    sub:'El rector — guiando desde dentro',             xpNext:400  },
+    { n:9,  name:'SOPHOS',     sub:'El sabio — equilibrio y maestría',             xpNext:500  },
+    { n:10, name:'EUDAIMÓN',   sub:'La eudaimonía — vida floreciente plena',       xpNext:null },
   ],
 
   // Default modules — streak/done are overridden by server data at runtime
