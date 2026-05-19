@@ -233,11 +233,26 @@ function QuoteDisplay({ quote }) {
 // ─── Bottom Nav ───────────────────────────────────────────
 function BottomNav({ active, onChange }) {
   const tabs = [
-    { id:'home', label:'Ἀρχή', sub:'Inicio' },
-    { id:'modules', label:'Κόσμος', sub:'Módulos' },
-    { id:'gtd', label:'Συνήθεια', sub:'ACTA DIURNA' },
-    { id:'profile', label:'Αὐτός', sub:'Perfil' },
+    { id:'home',    label:'Ἀρχή',     sub:'Inicio'   },
+    { id:'modules', label:'Κόσμος',   sub:'Módulos'  },
+    { id:'gtd',     label:'Συνήθεια', sub:'Acta'     },
+    { id:'profile', label:'Αὐτός',    sub:'Perfil'   },
   ];
+  const isLight = document.documentElement.classList.contains('light');
+  const SunIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41
+               M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+    </svg>
+  );
+  const MoonIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  );
   return (
     <div style={{
       position:'fixed',bottom:0,left:'50%',transform:'translateX(-50%)',
@@ -273,6 +288,22 @@ function BottomNav({ active, onChange }) {
           }}/>}
         </div>
       ))}
+
+      {/* Theme toggle — 5th slot */}
+      <div onClick={() => window.euToggleTheme()} style={{
+        flex:1,display:'flex',flexDirection:'column',alignItems:'center',
+        padding:'10px 4px 6px',cursor:'pointer',
+        color: C.textMuted, transition:'color 0.25s',
+      }}>
+        <div style={{color: C.textMuted, lineHeight:1, transition:'all 0.25s'}}>
+          {isLight ? <SunIcon/> : <MoonIcon/>}
+        </div>
+        <div style={{
+          fontFamily:'DM Sans,sans-serif',fontSize:8,letterSpacing:'0.1em',
+          textTransform:'uppercase',marginTop:3,
+          color:C.textMuted,opacity:0.45,
+        }}>{isLight ? 'Día' : 'Noche'}</div>
+      </div>
     </div>
   );
 }

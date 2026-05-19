@@ -560,16 +560,6 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted}}>
                 {doneCount}/{modules.length} módulos
               </div>
-              {!isDesktop && (
-                <button onClick={(e) => { e.stopPropagation(); window.euToggleTheme(); }} style={{
-                  width:26,height:26,borderRadius:7,border:`1px solid ${C.goldBorder}`,
-                  background:C.goldBg,color:C.gold,cursor:'pointer',
-                  display:'flex',alignItems:'center',justifyContent:'center',
-                  fontSize:13,lineHeight:1,flexShrink:0,
-                }} title="Cambiar tema">
-                  {document.documentElement.classList.contains('light') ? '☀' : '☽'}
-                </button>
-              )}
             </div>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.gold,marginTop:2}}>
               {xp} / {xpNext} XP
