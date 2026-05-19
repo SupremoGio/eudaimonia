@@ -309,45 +309,74 @@ function BottomNav({ active, onChange }) {
 }
 
 // ─── Level Up Modal ───────────────────────────────────────
-function LevelUpModal({ level, onClose }) {
+function LevelUpModal({ level, onClose, rewards = [] }) {
   const lv = EU.levels[level - 1];
   return (
     <div style={{
-      position:'fixed',inset:0,zIndex:999,
-      background:EU.rgba('deep', 0.95),
-      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+      position:'fixed', inset:0, zIndex:999,
+      background: EU.rgba('deep', 0.95),
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       padding:24,
       animation:'euFadeIn 0.5s ease',
     }}>
-      {/* Radial gold burst */}
+      {/* Pulsing radial burst */}
       <div style={{
-        position:'absolute',inset:0,
-        background:`radial-gradient(ellipse at center, rgba(201,168,76,0.12) 0%, transparent 65%)`,
+        position:'absolute', inset:0,
+        background:`radial-gradient(ellipse at center, rgba(201,168,76,0.18) 0%, transparent 60%)`,
+        animation:'euGoldPulse 2.4s ease-in-out infinite',
         pointerEvents:'none',
       }}/>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.25em',
-        color:C.gold,textTransform:'uppercase',marginBottom:12,opacity:0.7}}>
+
+      <div style={{fontFamily:'DM Sans,sans-serif', fontSize:10, letterSpacing:'0.25em',
+        color:C.gold, textTransform:'uppercase', marginBottom:16, opacity:0.7}}>
         ¡SUBISTE DE NIVEL!
       </div>
-      <GreekColumn level={level} xpPct={0} size={120}/>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.2em',
-        color:C.gold,marginTop:20,marginBottom:6,opacity:0.65}}>
+
+      {/* Animated rising column */}
+      <div style={{
+        animation:'euLevelUpRise 1.2s ease-out',
+        filter:'drop-shadow(0 0 24px rgba(201,168,76,0.4))',
+      }}>
+        <GreekColumn level={level} xpPct={1} size={140}/>
+      </div>
+
+      <div style={{fontFamily:'DM Sans,sans-serif', fontSize:10, letterSpacing:'0.2em',
+        color:C.gold, marginTop:20, marginBottom:6, opacity:0.65}}>
         NIVEL {level}
       </div>
-      <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:44,fontWeight:600,
-        color:C.text,letterSpacing:'0.08em',textAlign:'center',
-        animation:'euScaleIn 0.6s ease 0.2s both'}}>
+      <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:44, fontWeight:600,
+        color:C.text, letterSpacing:'0.08em', textAlign:'center',
+        animation:'euScaleIn 0.6s ease 0.3s both'}}>
         {lv?.name}
       </div>
-      <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-        fontSize:18,color:C.textSub,marginTop:6,marginBottom:32}}>
+      <div style={{fontFamily:'Cormorant Garamond,serif', fontStyle:'italic',
+        fontSize:18, color:C.textSub, marginTop:6, marginBottom: rewards.length ? 18 : 32}}>
         {lv?.sub}
       </div>
+
+      {/* Rewards pills — degrade bien si rewards=[] */}
+      {rewards.length > 0 && (
+        <div style={{display:'flex', gap:8, flexWrap:'wrap',
+          justifyContent:'center', marginBottom:28, maxWidth:380}}>
+          {rewards.map((r, i) => (
+            <div key={i} style={{
+              padding:'6px 14px',
+              background:'rgba(201,168,76,0.08)',
+              border:`1px solid ${C.goldBorder}`,
+              borderRadius:100,
+              fontFamily:'DM Sans,sans-serif', fontSize:11,
+              color:C.gold, letterSpacing:'0.06em',
+              animation:`euScaleIn 0.5s ease ${0.5 + i * 0.15}s both`,
+            }}>{r.icon} {r.label}</div>
+          ))}
+        </div>
+      )}
+
       <button onClick={onClose} style={{
-        background:'transparent',border:`1.5px solid rgba(201,168,76,0.4)`,
-        borderRadius:10,padding:'12px 32px',
-        fontFamily:'DM Sans,sans-serif',fontSize:12,letterSpacing:'0.15em',
-        color:C.gold,cursor:'pointer',textTransform:'uppercase',
+        background:'transparent', border:`1.5px solid rgba(201,168,76,0.4)`,
+        borderRadius:10, padding:'12px 32px',
+        fontFamily:'DM Sans,sans-serif', fontSize:12, letterSpacing:'0.15em',
+        color:C.gold, cursor:'pointer', textTransform:'uppercase',
         transition:'all 0.2s',
       }}>
         CONTINUAR
