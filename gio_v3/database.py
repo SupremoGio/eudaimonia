@@ -162,20 +162,17 @@ class _HybridConn:
         self._db.commit()
         if self._writes:
             writes, self._writes = self._writes[:], []
-            # daemon=False: el proceso espera a que termine el sync antes de salir.
-            # Esto evita que Railway mate el thread antes de persistir en Turso.
+            # daemon=True: el proceso no espera este thread al salir.
+            # SQLite ya confirmó — Turso es persistencia de respaldo best-effort.
             t = threading.Thread(
                 target=_turso_sync, args=(self._host, self._token, writes),
-                daemon=False
+                daemon=True
             )
             t.start()
             self._sync_thread = t
 
     def close(self):
-        # Esperar el sync pendiente (máx 10 s) antes de cerrar la conexión local.
-        if self._sync_thread and self._sync_thread.is_alive():
-            self._sync_thread.join(timeout=10)
-        self._db.close()
+        self._db.close()  # retorno inmediato; el sync Turso corre en background
 
     def __enter__(self):
         return self

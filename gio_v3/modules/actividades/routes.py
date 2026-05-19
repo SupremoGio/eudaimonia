@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
 from datetime import timedelta, datetime
+import time
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_word_of_day, get_random_quote, get_random_word
 from utils import today_str, today_date
@@ -150,6 +151,7 @@ def classification():
 
 @actividades_bp.route('/api/activity/log', methods=['POST'])
 def log_activity():
+    _t0 = time.perf_counter()
     key   = request.json.get('key')
     today = today_str()
     if key not in ACTIVITIES:
@@ -174,14 +176,23 @@ def log_activity():
             )
             log_id = cursor.lastrowid
         db.commit()
+    _t1 = time.perf_counter()
 
     if removed_id:
         gam = engine.remove_activity(removed_id)
-        return jsonify({'action': 'removed', 'pts': -pts, 'stats': get_dashboard_stats(), 'gam': gam})
+        _t2 = time.perf_counter()
+        stats = get_dashboard_stats()
+        _t3 = time.perf_counter()
+        print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
+        return jsonify({'action': 'removed', 'pts': -pts, 'stats': stats, 'gam': gam})
 
     gam = engine.process_activity(key, pts, cat, log_id)
+    _t2 = time.perf_counter()
+    stats = get_dashboard_stats()
+    _t3 = time.perf_counter()
+    print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
     return jsonify({'action': 'added', 'pts': pts, 'xp': gam['xp'], 'ec': gam['ec'],
-                    'stats': get_dashboard_stats(), 'gam': gam})
+                    'stats': stats, 'gam': gam})
 
 
 @actividades_bp.route('/api/pipeline', methods=['POST'])
