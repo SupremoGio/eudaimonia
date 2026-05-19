@@ -105,3 +105,9 @@ SECRET_KEY=...
 Claude Code crea worktrees en `.claude/worktrees/<nombre>/`. Estos son clones
 temporales del repo. **Los scripts de datos que tocan la DB deben apuntar
 explícitamente a `gio_v3/pipeline.db` del repo principal**, no al del worktree.
+
+## Deuda técnica UX
+
+- **DEUDA (Sprint 1):** migrar `gio_v3/templates/finanzas/consumo_detalle.html` y
+  `gio_v3/templates/finanzas/lock.html` a `eu/layout_sub.html`, luego borrar
+  `gio_v3/templates/tw/layout.html`.
