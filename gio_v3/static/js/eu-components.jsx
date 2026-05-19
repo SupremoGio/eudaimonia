@@ -20,13 +20,13 @@ function GreekColumn({ level = 3, xpPct = 0.65, size = 110 }) {
     <svg width={size} height={h} viewBox={`0 0 ${size} ${h}`} style={{overflow:'visible'}}>
       <defs>
         <linearGradient id={`gg${uid}`} x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stopColor="#7A5520"/>
-          <stop offset="50%" stopColor="#C9A84C"/>
-          <stop offset="100%" stopColor="#F0D880"/>
+          <stop offset="0%"   style={{stopColor:'color-mix(in srgb, var(--gold) 60%, #000)'}}/>
+          <stop offset="50%"  style={{stopColor:'var(--gold)'}}/>
+          <stop offset="100%" style={{stopColor:'var(--gold-l)'}}/>
         </linearGradient>
         <linearGradient id={`gd${uid}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1E1B2A"/>
-          <stop offset="100%" stopColor="#131120"/>
+          <stop offset="0%"   style={{stopColor:'var(--surf)'}}/>
+          <stop offset="100%" style={{stopColor:'var(--bg)'}}/>
         </linearGradient>
         <filter id={`glow${uid}`} x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="5" result="b"/>
@@ -52,7 +52,7 @@ function GreekColumn({ level = 3, xpPct = 0.65, size = 110 }) {
             <rect
               x={cx - w/2} y={y + 0.5} width={w} height={drumH - 1} rx={0.8}
               fill={filled ? `url(#gg${uid})` : `url(#gd${uid})`}
-              stroke={filled ? 'rgba(201,168,76,0.45)' : 'rgba(201,168,76,0.06)'}
+              stroke={filled ? 'var(--gold-glow)' : 'color-mix(in srgb, var(--gold) 6%, transparent)'}
               strokeWidth={0.5}
               filter={isCurrent ? `url(#sglow${uid})` : undefined}
             />
@@ -84,19 +84,19 @@ function GreekColumn({ level = 3, xpPct = 0.65, size = 110 }) {
       {/* Capital — abacus */}
       <rect x={cx - capW/2} y={shaftTop - h*0.045} width={capW} height={h*0.045} rx={1}
         fill={level >= 10 ? `url(#gg${uid})` : '#1C1829'}
-        stroke="rgba(201,168,76,0.25)" strokeWidth={0.5}/>
+        stroke="color-mix(in srgb, var(--gold) 25%, transparent)" strokeWidth={0.5}/>
       {/* Entablature */}
       <rect x={cx - capW*0.56} y={shaftTop - h*0.06} width={capW*1.12} height={h*0.014} rx={0.5}
-        fill="#191525" stroke="rgba(201,168,76,0.15)" strokeWidth={0.5}/>
+        fill="#191525" stroke="var(--b)" strokeWidth={0.5}/>
 
       {/* Base — torus */}
       <rect x={cx - baseShaftW*0.65} y={shaftBot} width={baseShaftW*1.3} height={h*0.03} rx={1}
-        fill="#1E1B2A" stroke="rgba(201,168,76,0.14)" strokeWidth={0.5}/>
+        fill="#1E1B2A" stroke="var(--b)" strokeWidth={0.5}/>
       {/* Stylobate steps */}
       <rect x={cx - baseW*0.5} y={shaftBot + h*0.031} width={baseW} height={h*0.038} rx={1}
-        fill="#1A1726" stroke="rgba(201,168,76,0.1)" strokeWidth={0.5}/>
+        fill="#1A1726" stroke="var(--gold-bg)" strokeWidth={0.5}/>
       <rect x={cx - baseW*0.62} y={shaftBot + h*0.069} width={baseW*1.24} height={h*0.038} rx={1}
-        fill="#181524" stroke="rgba(201,168,76,0.08)" strokeWidth={0.5}/>
+        fill="#181524" stroke="var(--gold-bg)" strokeWidth={0.5}/>
     </svg>
   );
 }
@@ -108,7 +108,7 @@ function ProgressRing({ pct = 0, size = 44, stroke = 3, color = C.gold }) {
   const cx = size / 2;
   return (
     <svg width={size} height={size} style={{display:'block'}}>
-      <circle cx={cx} cy={cx} r={r} fill="none" stroke="rgba(201,168,76,0.07)" strokeWidth={stroke}/>
+      <circle cx={cx} cy={cx} r={r} fill="none" stroke="color-mix(in srgb, var(--gold) 7%, transparent)" strokeWidth={stroke}/>
       <circle cx={cx} cy={cx} r={r} fill="none"
         stroke={color} strokeWidth={stroke}
         strokeDasharray={`${circ * Math.min(1, pct)} ${circ}`}
@@ -176,10 +176,10 @@ function HabitRow({ label, done, onToggle, xp = 10, accent = C.gold }) {
   const dirs = [[28,-28],[38,0],[28,28],[0,38],[-28,28],[-38,0],[-28,-28],[0,-38]];
   return (
     <div style={{display:'flex',alignItems:'center',gap:12,padding:'11px 0',
-      borderBottom:'1px solid rgba(201,168,76,0.06)',position:'relative'}}>
+      borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)',position:'relative'}}>
       <div onClick={handle} style={{
         width:22,height:22,borderRadius:6,flexShrink:0,cursor:'pointer',
-        border:`1.5px solid ${done ? accent : 'rgba(201,168,76,0.22)'}`,
+        border:`1.5px solid ${done ? accent : 'color-mix(in srgb, var(--gold) 22%, transparent)'}`,
         background: done ? accent : 'transparent',
         display:'flex',alignItems:'center',justifyContent:'center',
         transition:'all 0.2s',
@@ -213,9 +213,9 @@ function QuoteDisplay({ quote }) {
   return (
     <div style={{
       padding:'18px 18px 16px',
-      background:'rgba(201,168,76,0.04)',
-      border:'1px solid rgba(201,168,76,0.1)',
-      borderLeft:'3px solid rgba(201,168,76,0.45)',
+      background:'color-mix(in srgb, var(--gold) 4%, transparent)',
+      border:'1px solid var(--gold-bg)',
+      borderLeft:'3px solid var(--gold-glow)',
       borderRadius:'0 10px 10px 0',
     }}>
       <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
@@ -259,7 +259,7 @@ function BottomNav({ active, onChange }) {
       width:'100%',maxWidth:430,
       background:EU.rgba('deep', 0.97),
       backdropFilter:'blur(24px)',
-      borderTop:'1px solid rgba(201,168,76,0.12)',
+      borderTop:'1px solid color-mix(in srgb, var(--gold) 12%, transparent)',
       display:'flex',
       paddingBottom:'env(safe-area-inset-bottom,8px)',
       zIndex:200,
@@ -322,7 +322,7 @@ function LevelUpModal({ level, onClose, rewards = [] }) {
       {/* Pulsing radial burst */}
       <div style={{
         position:'absolute', inset:0,
-        background:`radial-gradient(ellipse at center, rgba(201,168,76,0.18) 0%, transparent 60%)`,
+        background:`radial-gradient(ellipse at center, var(--gold-border) 0%, transparent 60%)`,
         animation:'euGoldPulse 2.4s ease-in-out infinite',
         pointerEvents:'none',
       }}/>
@@ -335,7 +335,7 @@ function LevelUpModal({ level, onClose, rewards = [] }) {
       {/* Animated rising column */}
       <div style={{
         animation:'euLevelUpRise 1.2s ease-out',
-        filter:'drop-shadow(0 0 24px rgba(201,168,76,0.4))',
+        filter:'drop-shadow(0 0 24px var(--gold-glow))',
       }}>
         <GreekColumn level={level} xpPct={1} size={140}/>
       </div>
@@ -361,7 +361,7 @@ function LevelUpModal({ level, onClose, rewards = [] }) {
           {rewards.map((r, i) => (
             <div key={i} style={{
               padding:'6px 14px',
-              background:'rgba(201,168,76,0.08)',
+              background:'var(--gold-bg)',
               border:`1px solid ${C.goldBorder}`,
               borderRadius:100,
               fontFamily:'DM Sans,sans-serif', fontSize:11,
@@ -373,7 +373,7 @@ function LevelUpModal({ level, onClose, rewards = [] }) {
       )}
 
       <button onClick={onClose} style={{
-        background:'transparent', border:`1.5px solid rgba(201,168,76,0.4)`,
+        background:'transparent', border:`1.5px solid var(--gold-glow)`,
         borderRadius:10, padding:'12px 32px',
         fontFamily:'DM Sans,sans-serif', fontSize:12, letterSpacing:'0.15em',
         color:C.gold, cursor:'pointer', textTransform:'uppercase',
@@ -400,7 +400,7 @@ function StreakHeatmap({ days = 21, compact = false }) {
     return (
       <div style={{
         height: compact ? 60 : 100, borderRadius: 10,
-        background: 'linear-gradient(90deg,rgba(201,168,76,.03) 0%,rgba(201,168,76,.08) 50%,rgba(201,168,76,.03) 100%)',
+        background: 'linear-gradient(90deg,color-mix(in srgb, var(--gold) 3%, transparent) 0%,var(--gold-bg) 50%,color-mix(in srgb, var(--gold) 3%, transparent) 100%)',
         backgroundSize: '200% 100%',
         animation: 'euShimmer 1.4s ease-in-out infinite',
       }}/>
@@ -414,7 +414,7 @@ function StreakHeatmap({ days = 21, compact = false }) {
   const todayStr  = data.days[data.days.length - 1].date;
 
   const cell = (xp) => {
-    if (xp === 0) return { bg: 'rgba(201,168,76,0.04)', border: C.goldBorder };
+    if (xp === 0) return { bg: 'color-mix(in srgb, var(--gold) 4%, transparent)', border: C.goldBorder };
     const t = xp / maxXp;
     return {
       bg:     `oklch(${50 + t * 25}% ${0.06 + t * 0.1} 80)`,
@@ -488,7 +488,7 @@ function AchievementSheet({ achievement, onClose }) {
         <div style={{textAlign:'center'}}>
           <div style={{
             fontSize:64, lineHeight:1, marginBottom:14,
-            filter:'drop-shadow(0 0 16px rgba(201,168,76,0.45))',
+            filter:'drop-shadow(0 0 16px var(--gold-glow))',
           }}>
             {achievement.icon || '🏆'}
           </div>
@@ -507,7 +507,7 @@ function AchievementSheet({ achievement, onClose }) {
           {achievement.xp > 0 && (
             <div style={{
               display:'inline-block', padding:'6px 16px',
-              background:'rgba(201,168,76,0.1)', border:`1px solid ${C.goldBorder}`,
+              background:'var(--gold-bg)', border:`1px solid ${C.goldBorder}`,
               borderRadius:100, fontSize:13, color:C.gold,
               letterSpacing:'0.08em', marginBottom:22,
             }}>
@@ -541,7 +541,7 @@ function Skeleton({ kind = 'card', width, height, style }) {
     ...base,
     width:  width  || base.width,
     height: height || base.height,
-    background: 'linear-gradient(90deg,rgba(201,168,76,.03) 0%,rgba(201,168,76,.08) 50%,rgba(201,168,76,.03) 100%)',
+    background: 'linear-gradient(90deg,color-mix(in srgb, var(--gold) 3%, transparent) 0%,var(--gold-bg) 50%,color-mix(in srgb, var(--gold) 3%, transparent) 100%)',
     backgroundSize: '200% 100%',
     animation: 'euShimmer 1.4s ease-in-out infinite',
     ...style,
@@ -576,7 +576,7 @@ function EmptyState({ icon = 'inbox', title, desc, cta, kbd, onAction }) {
       {cta && (
         <button onClick={onAction} style={{
           marginTop:10,
-          background:'rgba(201,168,76,0.08)',
+          background:'var(--gold-bg)',
           border:`1px solid ${C.goldBorder}`,
           borderRadius:8, padding:'9px 16px',
           fontFamily:'DM Sans,sans-serif', fontSize:13,

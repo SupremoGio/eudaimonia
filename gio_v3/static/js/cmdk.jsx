@@ -34,7 +34,6 @@ function CommandPalette({ open, onClose, items }) {
   if (!open) return null;
 
   const C2 = window.EU.getColors();
-  const isLight = document.documentElement.classList.contains('light');
 
   // Group items into sections
   const navItems  = filtered.filter(i => i.section === 'nav');
@@ -53,12 +52,12 @@ function CommandPalette({ open, onClose, items }) {
           display:'flex', alignItems:'center', gap:12,
           padding:'10px 16px', cursor:'pointer',
           borderLeft: isActive ? `2px solid ${C2.gold}` : '2px solid transparent',
-          background: isActive ? 'rgba(201,168,76,0.07)' : 'transparent',
+          background: isActive ? 'color-mix(in srgb, var(--gold) 7%, transparent)' : 'transparent',
           transition:'background 0.12s',
         }}>
         <span style={{
           width:28, height:28, borderRadius:7, flexShrink:0,
-          background:'rgba(201,168,76,0.07)', border:'1px solid rgba(201,168,76,0.12)',
+          background:'color-mix(in srgb, var(--gold) 7%, transparent)', border:'1px solid color-mix(in srgb, var(--gold) 12%, transparent)',
           display:'flex', alignItems:'center', justifyContent:'center',
           fontSize:13, color:C2.gold,
         }}>{item.i}</span>
@@ -71,7 +70,7 @@ function CommandPalette({ open, onClose, items }) {
           <div style={{display:'flex', gap:3, flexShrink:0}}>
             {item.keys.map(k => (
               <kbd key={k} style={{
-                background:'rgba(201,168,76,0.08)', border:'1px solid rgba(201,168,76,0.18)',
+                background:'var(--gold-bg)', border:'1px solid var(--gold-border)',
                 borderRadius:4, padding:'1px 5px', fontSize:10, color:C2.gold,
                 fontFamily:'DM Sans,sans-serif',
               }}>{k}</kbd>
@@ -92,14 +91,14 @@ function CommandPalette({ open, onClose, items }) {
   return (
     <div onClick={onClose} style={{
       position:'fixed', inset:0, zIndex:900,
-      background: isLight ? 'rgba(28,22,16,0.55)' : 'rgba(9,7,15,0.72)',
+      background: 'color-mix(in srgb, var(--bg) 75%, transparent)',
       backdropFilter:'blur(8px)',
       display:'flex', alignItems:'flex-start', justifyContent:'center',
       padding:'15vh 16px 0',
     }}>
       <div onClick={e => e.stopPropagation()} style={{
         width:'100%', maxWidth:580,
-        background: isLight ? '#FFFFFF' : '#16122A',
+        background: 'var(--card)',
         border:`1px solid ${C2.goldBorder}`,
         borderRadius:12,
         boxShadow:'0 24px 80px rgba(0,0,0,0.6)',
@@ -109,7 +108,7 @@ function CommandPalette({ open, onClose, items }) {
         <div style={{
           display:'flex', alignItems:'center', gap:10,
           padding:'12px 16px',
-          borderBottom:'1px solid rgba(201,168,76,0.1)',
+          borderBottom:'1px solid var(--gold-bg)',
         }}>
           <span style={{color:C2.gold, fontSize:16, flexShrink:0}}>⌘</span>
           <input
@@ -123,7 +122,7 @@ function CommandPalette({ open, onClose, items }) {
             }}
           />
           <kbd onClick={onClose} style={{
-            background:'rgba(201,168,76,0.07)', border:'1px solid rgba(201,168,76,0.18)',
+            background:'color-mix(in srgb, var(--gold) 7%, transparent)', border:'1px solid var(--gold-border)',
             borderRadius:5, padding:'2px 6px', fontSize:10, color:C2.textMuted,
             cursor:'pointer', fontFamily:'DM Sans,sans-serif',
           }}>ESC</kbd>
@@ -144,7 +143,7 @@ function CommandPalette({ open, onClose, items }) {
         {/* Footer */}
         <div style={{
           display:'flex', gap:16, padding:'8px 16px',
-          borderTop:'1px solid rgba(201,168,76,0.07)',
+          borderTop:'1px solid color-mix(in srgb, var(--gold) 7%, transparent)',
           fontSize:10, color:C2.textMuted, opacity:0.6,
         }}>
           <span>↑↓ navegar</span>
