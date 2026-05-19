@@ -267,6 +267,8 @@
     .empty-cta { margin-top:10px; background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.3); border-radius:8px; padding:9px 16px; font-family:var(--sans); font-size:var(--fs-sm); color:var(--gold); letter-spacing:0.06em; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:background 0.15s; }
     .empty-cta:hover { background:rgba(201,168,76,0.14); }
     .empty-cta kbd { font-family:monospace; font-size:10px; background:var(--card2); border:1px solid var(--b); border-radius:4px; padding:1px 6px; color:var(--dim); }
+    @keyframes euShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .sk { background:linear-gradient(90deg,rgba(201,168,76,.03) 0%,rgba(201,168,76,.08) 50%,rgba(201,168,76,.03) 100%); background-size:200% 100%; animation:euShimmer 1.4s ease-in-out infinite; border-radius:8px; }
 
     /* GTD task row */
     .t-row { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--card); border: 1px solid var(--b); border-radius: 6px; margin-bottom: 5px; transition: border-color .14s; }

@@ -1253,6 +1253,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   const { level, xp, xpNext } = appState;
   const [xpToday, setXpToday] = useState(srv.xpToday || 0);
   const [clf, setClf]          = useState(srv.classification || {});
+  const [loaded, setLoaded]    = useState(!!(srv.activities && srv.activities.length > 0));
   const XP_GOAL   = 15;
   const xpDayPct  = Math.min(1, xpToday / XP_GOAL);
 
@@ -1280,8 +1281,9 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           setClf(data.classification);
           window.EU._server.classification = data.classification;
         }
+        setLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => { setLoaded(true); });
   }, []);
 
   const logActivity = (key) => {
@@ -1345,6 +1347,16 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
       .catch(() => {});
     undoToast.dismiss();
   };
+
+  if (!loaded) {
+    return (
+      <div style={{padding: isDesktop ? '28px 24px' : '16px 20px'}}>
+        <Skeleton kind="card" height={180}/>
+        <Skeleton kind="card" height={60}  style={{marginTop:12}}/>
+        {[1,2,3].map(i => <Skeleton key={i} kind="card" height={200} style={{marginTop:12}}/>)}
+      </div>
+    );
+  }
 
   const byCategory = {};
   actCats.forEach(cat => { byCategory[cat] = []; });

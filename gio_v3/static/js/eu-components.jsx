@@ -399,9 +399,10 @@ function StreakHeatmap({ days = 21, compact = false }) {
   if (!data) {
     return (
       <div style={{
-        height: compact ? 60 : 100,
-        background: C.card, borderRadius: 10,
-        animation: 'euShimmer 1.4s infinite',
+        height: compact ? 60 : 100, borderRadius: 10,
+        background: 'linear-gradient(90deg,rgba(201,168,76,.03) 0%,rgba(201,168,76,.08) 50%,rgba(201,168,76,.03) 100%)',
+        backgroundSize: '200% 100%',
+        animation: 'euShimmer 1.4s ease-in-out infinite',
       }}/>
     );
   }
@@ -527,6 +528,27 @@ function AchievementSheet({ achievement, onClose }) {
   );
 }
 
+// ─── Skeleton ──────────────────────────────────────────────
+function Skeleton({ kind = 'card', width, height, style }) {
+  const presets = {
+    card:   { height: 80,  width: '100%',    borderRadius: 12 },
+    line:   { height: 14,  width: '70%',     borderRadius: 6  },
+    circle: { width:  44,  height: 44,        borderRadius: '50%' },
+    title:  { height: 28,  width: '50%',     borderRadius: 6  },
+  };
+  const base = presets[kind] || presets.card;
+  const s = {
+    ...base,
+    width:  width  || base.width,
+    height: height || base.height,
+    background: 'linear-gradient(90deg,rgba(201,168,76,.03) 0%,rgba(201,168,76,.08) 50%,rgba(201,168,76,.03) 100%)',
+    backgroundSize: '200% 100%',
+    animation: 'euShimmer 1.4s ease-in-out infinite',
+    ...style,
+  };
+  return <div style={s}/>;
+}
+
 // ─── EmptyState ────────────────────────────────────────────
 function EmptyState({ icon = 'inbox', title, desc, cta, kbd, onAction }) {
   return (
@@ -575,5 +597,5 @@ function EmptyState({ icon = 'inbox', title, desc, cta, kbd, onAction }) {
 
 Object.assign(window, {
   GreekColumn, ProgressRing, ModuleCard, HabitRow, QuoteDisplay, BottomNav, LevelUpModal,
-  StreakHeatmap, AchievementSheet, EmptyState,
+  StreakHeatmap, AchievementSheet, EmptyState, Skeleton,
 });
