@@ -177,6 +177,52 @@
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
+     HEATMAP 90 DÍAS
+════════════════════════════════════════════════════════════════ -->
+{% set hm_max = heatmap | map(attribute='xp') | max %}
+{% set hm_max = hm_max if hm_max > 0 else 1 %}
+{% set hm_active = heatmap | selectattr('xp', '>', 0) | list | length %}
+<div style="background:var(--card);border:1px solid rgba(201,168,76,0.15);border-radius:14px;padding:20px;margin-bottom:24px;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;">
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:600;color:var(--text);letter-spacing:.04em;">
+      Historial de actividad
+    </h3>
+    <span style="font-family:'DM Sans',sans-serif;font-size:var(--fs-sm);color:var(--dim);">
+      {{ hm_active }} / 90 días activos · racha {{ stats.streak }}d
+    </span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(13,1fr);gap:4px;">
+    {% for cell in heatmap %}
+      {% if cell.xp == 0 %}
+        {% set cell_bg  = 'rgba(201,168,76,0.04)' %}
+        {% set cell_bdr = 'rgba(201,168,76,0.12)' %}
+      {% else %}
+        {% set t = (cell.xp / hm_max) %}
+        {% set l = (50 + t * 25) | int %}
+        {% set c_val = (0.06 + t * 0.1) | round(3) %}
+        {% set cell_bg  = 'oklch(' ~ l ~ '% ' ~ c_val ~ ' 80)' %}
+        {% set cell_bdr = 'oklch(' ~ (l + 5) ~ '% ' ~ (c_val + 0.02) ~ ' 80)' %}
+      {% endif %}
+      <div title="{{ cell.date }}: {{ cell.xp }} XP"
+           style="aspect-ratio:1;border-radius:3px;background:{{ cell_bg }};border:1px solid {{ cell_bdr }};"></div>
+    {% endfor %}
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-top:12px;font-family:'DM Sans',sans-serif;font-size:9px;color:var(--dim);">
+    <span>Menos</span>
+    {% for shade in [0, 0.25, 0.5, 0.75, 1.0] %}
+      {% if shade == 0 %}
+        <div style="width:12px;height:12px;border-radius:3px;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.12);"></div>
+      {% else %}
+        {% set sl = (50 + shade * 25) | int %}
+        {% set sc = (0.06 + shade * 0.1) | round(3) %}
+        <div style="width:12px;height:12px;border-radius:3px;background:oklch({{ sl }}% {{ sc }} 80);border:1px solid oklch({{ sl + 5 }}% {{ sc + 0.02 }} 80);"></div>
+      {% endif %}
+    {% endfor %}
+    <span>Más</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
      LOGROS / ACHIEVEMENTS
 ════════════════════════════════════════════════════════════════ -->
 <div style="margin-bottom:28px;">

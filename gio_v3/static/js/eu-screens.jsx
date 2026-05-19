@@ -636,6 +636,21 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           </div>
         </div>
 
+        {/* ── HEATMAP RACHA ── */}
+        <div style={{
+          background:C.card, border:`1px solid ${C.goldBorder}`,
+          borderRadius:12, padding:'14px 16px', marginBottom:14,
+        }}>
+          <div style={{display:'flex',justifyContent:'space-between',
+            alignItems:'baseline',marginBottom:10}}>
+            <div style={{fontSize:10,letterSpacing:'0.18em',color:C.gold,
+              opacity:0.7,textTransform:'uppercase'}}>Racha · {streak} días</div>
+            <a href="/logros" style={{fontSize:10,color:C.gold,opacity:0.6,
+              textDecoration:'none'}}>Ver historial →</a>
+          </div>
+          <StreakHeatmap days={21} compact={true}/>
+        </div>
+
         {/* ── REFLEXION ── */}
         <ReflexionDelDia/>
 

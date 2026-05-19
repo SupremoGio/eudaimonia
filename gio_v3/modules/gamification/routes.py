@@ -234,6 +234,23 @@ def logros():
 
     badges = get_all_badges()
 
+    # 90-day activity heatmap
+    _hm_days = 90
+    _hm_end   = today_date()
+    _hm_start = _hm_end - timedelta(days=_hm_days - 1)
+    with get_db() as db:
+        _hm_rows = db.execute(
+            "SELECT date, SUM(pts) as xp FROM activity_logs "
+            "WHERE date>=? GROUP BY date",
+            (_hm_start.isoformat(),)
+        ).fetchall()
+    _hm_by_date = {r['date']: r['xp'] for r in _hm_rows}
+    heatmap = [
+        {'date': (_hm_start + timedelta(days=i)).isoformat(),
+         'xp':   _hm_by_date.get((_hm_start + timedelta(days=i)).isoformat(), 0)}
+        for i in range(_hm_days)
+    ]
+
     # Last 7 days classification history
     history = []
     for i in range(6, -1, -1):
@@ -256,6 +273,7 @@ def logros():
         tier_labels=TIER_LABELS,
         xp_log=[dict(r) for r in xp_log],
         history=history,
+        heatmap=heatmap,
     )
 
 
