@@ -7,3 +7,15 @@ GAMIFICATION_VERSION = '3.1'
 EC_RATE = 10          # 1 EC = $10 MXN   (v3.1 — ajuste de $25 a $10 MXN por EC)
 EC_VALUE_MXN = 10     # alias semántico
 EC_VALUE_CHANGELOG = 'v3.1 — ajuste de $25 a $10 MXN por EC (2026-04-29)'
+
+CATEGORY_HUES = {
+    'LOGOI':          120,
+    'HEGEMONIKON':     45,
+    'OIKONOMIA':       80,
+    'COSMOPOLITISMO': 215,
+    'PAIDEIA':        265,
+    'ATARAXIA':       155,
+    'EURYTHMIA':      330,
+    'HARMA':           15,
+    'IDENTIDAD':      280,
+}

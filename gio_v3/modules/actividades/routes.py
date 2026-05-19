@@ -3,6 +3,7 @@ from datetime import timedelta, datetime
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_word_of_day, get_random_quote, get_random_word
 from utils import today_str, today_date
+from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
 
 actividades_bp = Blueprint('actividades', __name__, template_folder='../../templates')
@@ -94,6 +95,7 @@ def index():
         sat_acts      = sat_acts,
         sun_acts      = sun_acts,
         cats          = ACTIVITY_CATEGORIES,
+        category_hues = CATEGORY_HUES,
         quote_stoic   = get_stoic_of_day(),
         quote_motiv   = get_motivational_of_day(),
         word          = get_word_of_day(),
