@@ -75,7 +75,7 @@ function WordOfDay() {
   async function refresh() {
     setSpinning(true);
     try {
-      const r = await fetch('/gtd/api/word/refresh');
+      const r = await fetch('/api/word/refresh');
       setWord(await r.json());
     } catch(e) {}
     setSpinning(false);

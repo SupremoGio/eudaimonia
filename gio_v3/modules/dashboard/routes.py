@@ -349,6 +349,12 @@ def api_db_status():
     return jsonify(get_db_status())
 
 
+@dashboard_bp.route('/api/word/refresh')
+def api_word_refresh():
+    from data import get_random_word
+    return jsonify(get_random_word())
+
+
 @dashboard_bp.route('/api/quote/refresh')
 def api_quote_refresh():
     return jsonify(get_random_quote())
