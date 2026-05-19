@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 from datetime import timedelta, datetime
 import time
 from database import get_db
-from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_word_of_day, get_random_quote, get_random_word
+from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_random_quote
 from utils import today_str, today_date
 from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
@@ -99,7 +99,6 @@ def index():
         category_hues = CATEGORY_HUES,
         quote_stoic   = get_stoic_of_day(),
         quote_motiv   = get_motivational_of_day(),
-        word          = get_word_of_day(),
         payment_alerts= get_payment_alerts(),
         today         = _td.isoformat(),
         today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()],
@@ -277,6 +276,3 @@ def refresh_quote():
     return jsonify(get_random_quote(category=cat))
 
 
-@actividades_bp.route('/api/word/refresh')
-def refresh_word():
-    return jsonify(get_random_word())

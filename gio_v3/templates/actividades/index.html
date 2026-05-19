@@ -413,21 +413,6 @@
       </div>
     </div>
 
-    <!-- Word of the Day -->
-    <div class="tile">
-      <div class="wh2">
-        <div class="sec-t">Word of the Day</div>
-        <button class="rb" onclick="rWord()"><i data-lucide="refresh-cw"></i></button>
-      </div>
-      <div id="wb" style="transition:opacity .24s">
-        <div class="w-ph" id="w-ph">{{ word.phonetic }}</div>
-        <div class="w-w"  id="w-w">{{ word.word }}</div>
-        <div class="w-m"  id="w-m">{{ word.meaning }}</div>
-        <div class="w-ex" id="w-ex">"{{ word.example }}"</div>
-        <span class="w-fr" id="w-fr">🇫🇷 {{ word.french }}</span>
-      </div>
-    </div>
-
     <!-- Quotes: Estoicismo + Motivación -->
     <div class="q-c">
       <div class="q-inner">
@@ -646,19 +631,6 @@ function renderChips(items) {
     `<div class="chip" data-id="${i.id}">${i.text}<button class="dc" onclick="delPipe(${i.id},this)"><i data-lucide="x"></i></button></div>`
   ).join('');
   lucide.createIcons();
-}
-
-async function rWord() {
-  const d = await (await fetch('/actividades/api/word/refresh')).json();
-  const b = document.getElementById('wb'); b.style.opacity = 0;
-  setTimeout(() => {
-    document.getElementById('w-ph').textContent = d.phonetic;
-    document.getElementById('w-w').textContent  = d.word;
-    document.getElementById('w-m').textContent  = d.meaning;
-    document.getElementById('w-ex').textContent = `"${d.example}"`;
-    document.getElementById('w-fr').textContent = `🇫🇷 ${d.french}`;
-    b.style.opacity = 1;
-  }, 240);
 }
 
 async function rQuote(cat, tId, aId) {

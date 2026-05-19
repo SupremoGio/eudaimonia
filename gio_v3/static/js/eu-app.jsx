@@ -1,5 +1,5 @@
 // EUDAIMONIA — App State & Root
-const { useState, useReducer, useEffect } = React;
+const { useState, useReducer, useEffect, useMemo } = React;
 const C = window.EU.getColors();
 
 function _xpStateFromTotal(totalXP) {
@@ -55,11 +55,17 @@ function useIsDesktop() {
 
 // ── Desktop Sidebar Nav ───────────────────────────────────
 function SideNav({ active, onChange }) {
-  const tabs = [
-    { id:'home',    label:'Ἀρχή',      sub:'Inicio'   },
-    { id:'modules', label:'Κόσμος',    sub:'Módulos'  },
-    { id:'gtd',     label:'Συνήθεια',  sub:'Acta Diurna' },
-    { id:'profile', label:'Αὐτός',     sub:'Perfil'   },
+  const groups = [
+    { title: 'HOY',     tabs: [
+      { id:'home', label:'Ἀρχή', sub:'Inicio' },
+      { id:'gtd',  label:'Acta', sub:'Diurna' },
+    ]},
+    { title: 'MÓDULOS', tabs: [
+      { id:'modules', label:'Κόσμος', sub:'Módulos' },
+    ]},
+    { title: 'SISTEMA', tabs: [
+      { id:'profile', label:'Αὐτός', sub:'Perfil' },
+    ]},
   ];
   return (
     <div style={{
@@ -82,36 +88,44 @@ function SideNav({ active, onChange }) {
         </div>
       </div>
 
-      {/* Nav items */}
-      <div style={{flex:1, paddingTop:16}}>
-        {tabs.map(t => {
-          const active_ = active === t.id;
-          return (
-            <div key={t.id} onClick={() => onChange(t.id)} style={{
-              padding: '13px 22px',
-              cursor: 'pointer',
-              borderLeft: `2.5px solid ${active_ ? C.gold : 'transparent'}`,
-              background: active_ ? 'rgba(201,168,76,0.05)' : 'transparent',
-              transition: 'all 0.2s',
-            }}>
-              <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:22,
-                color: active_ ? C.gold : C.textMuted,
-                transition:'color 0.2s', lineHeight:1}}>
-                {t.label}
-              </div>
-              <div style={{fontFamily:'DM Sans,sans-serif', fontSize:8.5,
-                letterSpacing:'0.12em', textTransform:'uppercase', marginTop:3,
-                color: active_ ? C.gold : C.textMuted,
-                opacity: active_ ? 0.75 : 0.35, transition:'all 0.2s'}}>
-                {t.sub}
-              </div>
+      {/* Nav groups */}
+      <div style={{flex:1, paddingTop:8, overflowY:'auto'}}>
+        {groups.map(g => (
+          <div key={g.title}>
+            <div style={{fontSize:11, letterSpacing:'0.2em', color:C.textMuted,
+              padding:'14px 22px 6px', textTransform:'uppercase', opacity:0.55}}>
+              {g.title}
             </div>
-          );
-        })}
+            {g.tabs.map(t => {
+              const active_ = active === t.id;
+              return (
+                <div key={t.id} onClick={() => onChange(t.id)} style={{
+                  padding: '11px 22px',
+                  cursor: 'pointer',
+                  borderLeft: `2.5px solid ${active_ ? C.gold : 'transparent'}`,
+                  background: active_ ? 'rgba(201,168,76,0.05)' : 'transparent',
+                  transition: 'all 0.2s',
+                }}>
+                  <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:20,
+                    color: active_ ? C.gold : C.textMuted,
+                    transition:'color 0.2s', lineHeight:1}}>
+                    {t.label}
+                  </div>
+                  <div style={{fontFamily:'DM Sans,sans-serif', fontSize:11,
+                    letterSpacing:'0.12em', textTransform:'uppercase', marginTop:3,
+                    color: active_ ? C.gold : C.textMuted,
+                    opacity: active_ ? 0.75 : 0.35, transition:'all 0.2s'}}>
+                    {t.sub}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
 
-      {/* Theme toggle + Dashboard clásico */}
-      <div style={{padding:'12px 22px 16px', borderTop:'1px solid rgba(201,168,76,0.07)', display:'flex', flexDirection:'column', gap:10}}>
+      {/* Theme toggle */}
+      <div style={{padding:'12px 22px 16px', borderTop:'1px solid rgba(201,168,76,0.07)'}}>
         <button onClick={() => window.euToggleTheme()} style={{
           display:'flex', alignItems:'center', gap:8,
           background:'transparent', border:`1px solid ${C.goldBorder}`,
@@ -124,11 +138,6 @@ function SideNav({ active, onChange }) {
           </span>
           <span>{document.documentElement.classList.contains('light') ? 'Modo día' : 'Modo noche'}</span>
         </button>
-        <a href="/classic" style={{fontFamily:'DM Sans,sans-serif', fontSize:9.5,
-          color:C.textMuted, opacity:0.45, textDecoration:'none',
-          letterSpacing:'0.08em', display:'flex', alignItems:'center', gap:5}}>
-          ← Dashboard clásico
-        </a>
       </div>
     </div>
   );
@@ -163,6 +172,63 @@ function App() {
     setTab(id);
   };
 
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+
+  // ⌘K global shortcut + custom event from HomeScreen header button
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdkOpen(o => !o);
+      }
+    };
+    const onEv = () => setCmdkOpen(true);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('eu:open-cmdk', onEv);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('eu:open-cmdk', onEv);
+    };
+  }, []);
+
+  const logActivityFromApp = (key) => {
+    const updated = (window.EU._server.activities || []).map(a =>
+      a.key === key ? {...a, done: !a.done} : a
+    );
+    window.EU._server.activities = updated;
+    fetch('/actividades/api/activity/log', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key}),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.gam && (data.gam.xp_delta || data.gam.xp))
+        dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
+    })
+    .catch(() => {});
+  };
+
+  const cmdkItems = useMemo(() => {
+    const pendingActs = (window.EU._server?.activities || [])
+      .filter(a => !a.done)
+      .slice(0, 20);
+    return [
+      { i:'⌂', label:'Ir a Inicio',         sub:'Dashboard',      section:'nav', run: () => handleTabChange('home') },
+      { i:'✦', label:'Ir a Acta Diurna',    sub:'Actividades',    section:'nav', run: () => handleTabChange('gtd') },
+      { i:'◆', label:'Ir a Módulos',         sub:'Command Center', section:'nav', run: () => handleTabChange('modules') },
+      { i:'◎', label:'Ir a Perfil',          sub:'Sistema',        section:'nav', run: () => handleTabChange('profile') },
+      { i:'◐', label:'Cambiar tema',         sub:'Día / Noche',    section:'sys', keys:['⇧','T'], run: () => window.euToggleTheme() },
+      { i:'🏆', label:'Ver Logros',          sub:'Sistema',        section:'sys', run: () => { location.href = '/logros'; } },
+      ...pendingActs.map(a => ({
+        i: '✓',
+        label: `Registrar: ${a.label} (+${a.pts} XP)`,
+        sub:   `Acta · ${a.cat}`,
+        section: 'act',
+        run:   () => logActivityFromApp(a.key),
+      })),
+    ];
+  }, [state.totalXP]);
+
   const props = { appState: state, dispatch: appDispatch, isDesktop };
   const openMod = state.openModuleId
     ? state.modules.find(m => m.id === state.openModuleId)
@@ -187,6 +253,7 @@ function App() {
         {state.leveledUp && (
           <LevelUpModal level={state.level} onClose={() => dispatch({type:'CLEAR_LEVELUP'})} />
         )}
+        <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
       </div>
     );
   }
@@ -202,6 +269,7 @@ function App() {
         <LevelUpModal level={state.level} onClose={() => dispatch({type:'CLEAR_LEVELUP'})} />
       )}
       {!openMod && <BottomNav active={tab} onChange={handleTabChange} />}
+      <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
     </div>
   );
 }

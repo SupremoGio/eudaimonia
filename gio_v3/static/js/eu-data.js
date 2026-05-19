@@ -215,5 +215,7 @@ window.EU = {
     ecBalance:      d.ec_balance      || 0,
     deadlines:      d.deadlines       || [],
     classification: d.classification  || null,
+    suggestion:     d.suggestion      || null,
   };
+  window.EU.catHues = d.category_hues || {};
 })();

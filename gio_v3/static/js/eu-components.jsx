@@ -235,7 +235,7 @@ function BottomNav({ active, onChange }) {
   const tabs = [
     { id:'home',    label:'Ἀρχή',     sub:'Inicio'   },
     { id:'modules', label:'Κόσμος',   sub:'Módulos'  },
-    { id:'gtd',     label:'Συνήθεια', sub:'Acta'     },
+    { id:'gtd',     label:'Acta',     sub:'Diurna'   },
     { id:'profile', label:'Αὐτός',    sub:'Perfil'   },
   ];
   const isLight = document.documentElement.classList.contains('light');
@@ -270,12 +270,12 @@ function BottomNav({ active, onChange }) {
           padding:'10px 4px 6px',cursor:'pointer',
         }}>
           <div style={{
-            fontFamily:'Cormorant Garamond,serif',fontSize:17,
+            fontFamily:'Cormorant Garamond,serif',fontSize:18,
             color: active===t.id ? C.gold : C.textMuted,
             transition:'all 0.25s',lineHeight:1,
           }}>{t.label}</div>
           <div style={{
-            fontFamily:'DM Sans,sans-serif',fontSize:8,letterSpacing:'0.1em',
+            fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.1em',
             textTransform:'uppercase',marginTop:3,
             color: active===t.id ? C.gold : C.textMuted,
             opacity: active===t.id ? 1 : 0.45,
