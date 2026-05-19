@@ -407,6 +407,15 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
       if (data.gam && (data.gam.xp_delta || data.gam.xp))
         dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
       if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
+      if (data.gam?.perfect_day) {
+        window.dispatchEvent(new CustomEvent('eu:perfect-day', {
+          detail: { bonusXp: data.gam.perfect_day.xp || 5, bonusEc: data.gam.perfect_day.ec || 10 }
+        }));
+      } else if (data.gam?.combo_bonuses?.length) {
+        data.gam.combo_bonuses.forEach(c =>
+          window.dispatchEvent(new CustomEvent('eu:combo-bonus', { detail: c }))
+        );
+      }
       if (data.stats) {
         window.EU._server.xpToday = data.stats.xp_today ?? data.stats.pts_today ?? xpToday;
         window.EU._server.streak  = data.stats.streak ?? streak;
@@ -1335,6 +1344,15 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
       }
       if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
       if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
+      if (data.gam?.perfect_day) {
+        window.dispatchEvent(new CustomEvent('eu:perfect-day', {
+          detail: { bonusXp: data.gam.perfect_day.xp || 5, bonusEc: data.gam.perfect_day.ec || 10 }
+        }));
+      } else if (data.gam?.combo_bonuses?.length) {
+        data.gam.combo_bonuses.forEach(c =>
+          window.dispatchEvent(new CustomEvent('eu:combo-bonus', { detail: c }))
+        );
+      }
       if (data.action === 'added' && data.log_id && act) {
         undoToast.show(key, data.log_id, act.label, act.pts);
       } else {

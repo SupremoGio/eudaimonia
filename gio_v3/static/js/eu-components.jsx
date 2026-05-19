@@ -595,7 +595,132 @@ function EmptyState({ icon = 'inbox', title, desc, cta, kbd, onAction }) {
   );
 }
 
+// ─── PerfectDayModal ───────────────────────────────────────
+function PerfectDayModal({ details, onClose }) {
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:999,
+      background:'color-mix(in srgb, var(--bg) 90%, transparent)',
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+      padding:24, animation:'euFadeIn 0.6s ease',
+    }}>
+      <div style={{
+        position:'absolute', inset:0,
+        background:'radial-gradient(ellipse at center, var(--gold-glow) 0%, transparent 65%)',
+        opacity:0.25, animation:'euGoldPulse 2.4s ease-in-out infinite',
+        pointerEvents:'none',
+      }}/>
+      <div style={{fontSize:11, letterSpacing:'0.25em',
+        color:'var(--gold)', textTransform:'uppercase', marginBottom:18, opacity:0.75}}>
+        ✦ Día Perfecto ✦
+      </div>
+      <div style={{
+        fontFamily:'Cormorant Garamond,serif', fontSize:54, fontWeight:600,
+        color:'var(--text)', letterSpacing:'0.06em', textAlign:'center',
+        animation:'euLevelUpRise 1.2s ease-out',
+      }}>
+        Todas las virtudes
+      </div>
+      <div style={{fontFamily:'Cormorant Garamond,serif', fontStyle:'italic',
+        fontSize:18, color:'var(--mid)', marginTop:12, marginBottom:28,
+        textAlign:'center', maxWidth:380, lineHeight:1.5}}>
+        Cumpliste con cada categoría hoy.
+      </div>
+      {(details.bonusXp > 0 || details.bonusEc > 0) && (
+        <div style={{display:'flex', gap:10, marginBottom:32}}>
+          {details.bonusXp > 0 && (
+            <div style={{padding:'8px 18px', background:'var(--gold-bg)',
+              border:'1px solid var(--gold-border)', borderRadius:100,
+              fontSize:13, color:'var(--gold)', letterSpacing:'0.08em'}}>
+              +{details.bonusXp} XP bonus
+            </div>
+          )}
+          {details.bonusEc > 0 && (
+            <div style={{padding:'8px 18px', background:'var(--gold-bg)',
+              border:'1px solid var(--gold-border)', borderRadius:100,
+              fontSize:13, color:'var(--gold)', letterSpacing:'0.08em'}}>
+              +{details.bonusEc} EC bonus
+            </div>
+          )}
+        </div>
+      )}
+      <button onClick={onClose} style={{
+        background:'transparent', border:'1.5px solid var(--gold-border)',
+        borderRadius:10, padding:'12px 32px',
+        fontFamily:'DM Sans,sans-serif', fontSize:12, letterSpacing:'0.18em',
+        color:'var(--gold)', cursor:'pointer', textTransform:'uppercase',
+      }}>Continuar</button>
+    </div>
+  );
+}
+
+// ─── ComboBonusSheet ───────────────────────────────────────
+function ComboBonusSheet({ combo, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:997,
+      background:'color-mix(in srgb, var(--bg) 60%, transparent)',
+      display:'flex', alignItems:'flex-end', justifyContent:'center',
+      animation:'euFadeIn 0.25s ease',
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background:'linear-gradient(180deg, var(--surf), var(--bg))',
+        border:'1px solid var(--gold-border)',
+        borderTopLeftRadius:20, borderTopRightRadius:20,
+        padding:'24px 22px', width:'100%', maxWidth:420,
+        animation:'euAchievementRise 0.4s ease-out',
+        boxShadow:'0 -12px 40px color-mix(in srgb, var(--bg) 50%, black)',
+      }}>
+        {/* Countdown bar */}
+        <div style={{
+          position:'absolute', top:0, left:0, right:0, height:2,
+          background:'var(--gold)', borderRadius:'2px 2px 0 0',
+          animation:'undoCountdown 4s linear forwards',
+        }}/>
+        <div style={{display:'flex', alignItems:'center', gap:14}}>
+          <div style={{fontSize:36, lineHeight:1,
+            filter:'drop-shadow(0 0 12px var(--gold-glow))'}}>
+            {combo.icon || '⚡'}
+          </div>
+          <div style={{flex:1, minWidth:0}}>
+            <div style={{fontSize:10, letterSpacing:'0.2em', color:'var(--gold)',
+              opacity:0.7, textTransform:'uppercase', marginBottom:3}}>
+              Combo desbloqueado
+            </div>
+            <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:20,
+              fontWeight:600, color:'var(--text)', letterSpacing:'0.03em'}}>
+              {combo.name}
+            </div>
+            {combo.description && (
+              <div style={{fontSize:12, color:'var(--mid)', marginTop:2, lineHeight:1.4}}>
+                {combo.description}
+              </div>
+            )}
+          </div>
+          <div style={{textAlign:'right', flexShrink:0}}>
+            {combo.xp > 0 && (
+              <div style={{fontSize:14, color:'var(--gold)', fontWeight:600}}>
+                +{combo.xp} XP
+              </div>
+            )}
+            {combo.ec > 0 && (
+              <div style={{fontSize:11, color:'var(--dim)', marginTop:2}}>
+                +{combo.ec} EC
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 Object.assign(window, {
   GreekColumn, ProgressRing, ModuleCard, HabitRow, QuoteDisplay, BottomNav, LevelUpModal,
-  StreakHeatmap, AchievementSheet, EmptyState, Skeleton,
+  StreakHeatmap, AchievementSheet, EmptyState, Skeleton, PerfectDayModal, ComboBonusSheet,
 });

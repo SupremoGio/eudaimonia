@@ -242,12 +242,26 @@ function App() {
 
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [activeAchievement, setActiveAchievement] = useState(null);
+  const [perfectDay, setPerfectDay] = useState(null);
+  const [comboQueue, setComboQueue] = useState([]);
 
   // Achievement sheet listener
   useEffect(() => {
     const onAch = (e) => setActiveAchievement(e.detail);
     window.addEventListener('eu:achievement-unlocked', onAch);
     return () => window.removeEventListener('eu:achievement-unlocked', onAch);
+  }, []);
+
+  // Perfect day + combo bonus listeners
+  useEffect(() => {
+    const onPerfect = (e) => setPerfectDay(e.detail);
+    const onCombo   = (e) => setComboQueue(q => [...q, e.detail]);
+    window.addEventListener('eu:perfect-day',  onPerfect);
+    window.addEventListener('eu:combo-bonus',  onCombo);
+    return () => {
+      window.removeEventListener('eu:perfect-day',  onPerfect);
+      window.removeEventListener('eu:combo-bonus',  onCombo);
+    };
   }, []);
 
   // ⌘K global shortcut + custom event from HomeScreen header button
@@ -334,6 +348,12 @@ function App() {
           <AchievementSheet achievement={activeAchievement}
             onClose={() => setActiveAchievement(null)}/>
         )}
+        {perfectDay && (
+          <PerfectDayModal details={perfectDay} onClose={() => setPerfectDay(null)}/>
+        )}
+        {comboQueue[0] && (
+          <ComboBonusSheet combo={comboQueue[0]} onClose={() => setComboQueue(q => q.slice(1))}/>
+        )}
         <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
       </div>
     );
@@ -352,6 +372,12 @@ function App() {
       {activeAchievement && (
         <AchievementSheet achievement={activeAchievement}
           onClose={() => setActiveAchievement(null)}/>
+      )}
+      {perfectDay && (
+        <PerfectDayModal details={perfectDay} onClose={() => setPerfectDay(null)}/>
+      )}
+      {comboQueue[0] && (
+        <ComboBonusSheet combo={comboQueue[0]} onClose={() => setComboQueue(q => q.slice(1))}/>
       )}
       {!openMod && <BottomNav active={tab} onChange={handleTabChange} />}
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />

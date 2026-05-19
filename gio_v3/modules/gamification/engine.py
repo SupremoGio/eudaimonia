@@ -222,7 +222,7 @@ def _check_combo_bonus(today, keys_today):
 
     if has_logoi and has_hegemon and has_paideia and not trio_done:
         _award_xp(3, "bonus", "Combo: LOGOI+HEGEMONIKON+PAIDEIA")
-        combos.append({"type": "trio", "label": "LOGOI+HEGEMONIKON+PAIDEIA", "xp": 3})
+        combos.append({"type": "trio", "icon": "⚡", "name": "Trío de virtudes", "description": "Mente, cuerpo y conocimiento en un día", "xp": 3, "ec": 0})
 
     # 5 categorías en un día → +5 XP
     with get_db() as db:
@@ -233,7 +233,7 @@ def _check_combo_bonus(today, keys_today):
 
     if len(cats) >= 5 and not five_done:
         _award_xp(5, "bonus", "Combo: 5 categorías")
-        combos.append({"type": "5cats", "label": "5 Categorías", "xp": 5})
+        combos.append({"type": "5cats", "icon": "🌟", "name": "5 Virtudes", "description": "Cinco categorías distintas en un día", "xp": 5, "ec": 0})
 
     # Weekend: sábado completo → +4 XP bonus
     sat_keys = {"sat_bloque1", "sat_bloque2", "sat_bloque3"}
@@ -246,7 +246,7 @@ def _check_combo_bonus(today, keys_today):
         if not sat_done:
             _award_xp(4, "bonus", "Combo: Sábado Completo")
             _award_coins(2, "bonus", "Combo: Sábado Completo")
-            combos.append({"type": "sat_complete", "label": "Sábado Completo", "xp": 4})
+            combos.append({"type": "sat_complete", "icon": "🔥", "name": "Sábado Completo", "description": "Todos los bloques del sábado completados", "xp": 4, "ec": 2})
 
     # Weekend: domingo completo → +5 XP bonus
     sun_keys = {"sun_reflexion", "sun_diseno", "sun_comidas", "sun_jugos", "sun_planchar"}
@@ -259,7 +259,7 @@ def _check_combo_bonus(today, keys_today):
         if not sun_done:
             _award_xp(5, "bonus", "Combo: Domingo Completo")
             _award_coins(3, "bonus", "Combo: Domingo Completo")
-            combos.append({"type": "sun_complete", "label": "Domingo Completo", "xp": 5})
+            combos.append({"type": "sun_complete", "icon": "✦", "name": "Domingo Completo", "description": "Ritual dominical cumplido en su totalidad", "xp": 5, "ec": 3})
 
     return combos
 
