@@ -191,7 +191,7 @@ def log_activity():
     _t3 = time.perf_counter()
     print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
     return jsonify({'action': 'added', 'pts': pts, 'xp': gam['xp'], 'ec': gam['ec'],
-                    'stats': stats, 'gam': gam})
+                    'log_id': log_id, 'stats': stats, 'gam': gam})
 
 
 @actividades_bp.route('/api/pipeline', methods=['POST'])
@@ -268,6 +268,23 @@ def toggle_priority(pid):
         gam = None
 
     return jsonify({'priorities': rows, 'all3': all3, 'stats': get_dashboard_stats(), 'gam': gam})
+
+
+@actividades_bp.route('/api/activity/undo/<int:log_id>', methods=['POST'])
+def undo_activity(log_id):
+    today = today_str()
+    with get_db() as db:
+        row = db.execute(
+            "SELECT id, activity_key, pts FROM activity_logs WHERE id=? AND date=?",
+            (log_id, today)
+        ).fetchone()
+        if not row:
+            return jsonify({'error': 'not found or not today'}), 404
+        db.execute("DELETE FROM activity_logs WHERE id=?", (log_id,))
+        db.commit()
+    gam   = engine.remove_activity(log_id)
+    stats = get_dashboard_stats()
+    return jsonify({'ok': True, 'stats': stats, 'gam': gam})
 
 
 @actividades_bp.route('/api/quote/refresh')

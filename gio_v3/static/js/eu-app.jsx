@@ -58,7 +58,7 @@ function SideNav({ active, onChange }) {
   const groups = [
     { title: 'HOY',     tabs: [
       { id:'home', label:'Ἀρχή', sub:'Inicio' },
-      { id:'gtd',  label:'Acta', sub:'Diurna' },
+      { id:'acta', label:'Acta', sub:'Diurna' },
     ]},
     { title: 'MÓDULOS', tabs: [
       { id:'modules', label:'Κόσμος', sub:'Módulos' },
@@ -149,7 +149,7 @@ function App() {
   const [tab, setTab] = useState(() => {
     const p = new URLSearchParams(window.location.search);
     const t = p.get('tab');
-    return ['home','modules','gtd','profile'].includes(t) ? t : 'home';
+    return ['home','modules','acta','profile'].includes(t) ? t : 'home';
   });
   const isDesktop = useIsDesktop();
 
@@ -214,7 +214,7 @@ function App() {
       .slice(0, 20);
     return [
       { i:'⌂', label:'Ir a Inicio',         sub:'Dashboard',      section:'nav', run: () => handleTabChange('home') },
-      { i:'✦', label:'Ir a Acta Diurna',    sub:'Actividades',    section:'nav', run: () => handleTabChange('gtd') },
+      { i:'✦', label:'Ir a Acta Diurna',    sub:'Actividades',    section:'nav', run: () => handleTabChange('acta') },
       { i:'◆', label:'Ir a Módulos',         sub:'Command Center', section:'nav', run: () => handleTabChange('modules') },
       { i:'◎', label:'Ir a Perfil',          sub:'Sistema',        section:'nav', run: () => handleTabChange('profile') },
       { i:'◐', label:'Cambiar tema',         sub:'Día / Noche',    section:'sys', keys:['⇧','T'], run: () => window.euToggleTheme() },
@@ -238,7 +238,7 @@ function App() {
     ? <ModuleDetailScreen mod={openMod} {...props} />
     : tab === 'home'    ? <HomeScreen {...props} />
     : tab === 'modules' ? <CommandCenterScreen {...props} />
-    : tab === 'gtd'     ? <GTDScreen {...props} />
+    : tab === 'acta'    ? <ActaDiurnaScreen {...props} />
     : <ProfileScreen {...props} />;
 
   if (isDesktop) {
