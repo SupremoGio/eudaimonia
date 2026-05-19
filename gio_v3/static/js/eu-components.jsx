@@ -235,7 +235,7 @@ function BottomNav({ active, onChange }) {
   const tabs = [
     { id:'home',    label:'Ἀρχή',     sub:'Inicio'   },
     { id:'modules', label:'Κόσμος',   sub:'Módulos'  },
-    { id:'gtd',     label:'Acta',     sub:'Diurna'   },
+    { id:'acta',    label:'Acta',     sub:'Diurna'   },
     { id:'profile', label:'Αὐτός',    sub:'Perfil'   },
   ];
   const isLight = document.documentElement.classList.contains('light');

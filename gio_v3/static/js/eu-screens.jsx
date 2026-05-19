@@ -908,20 +908,153 @@ function ModuleExtra({ id, acc }) {
 }
 
 // ═══════════════════════════════════════════════════════════
-// GTD SCREEN — Acta Diurna
+// PRAXIS INBOX — GTD tabs (extracted, not yet wired to Acta)
 // ═══════════════════════════════════════════════════════════
-function GTDScreen({ appState, dispatch, isDesktop }) {
+function PraxisInbox({ isDesktop }) {
+  const [gtdTab, setGtdTab] = useState('inbox');
+  const [inbox, setInbox]   = useState(EU.gtd.inbox);
+  const [newItem, setNewItem] = useState('');
+
+  const addItem = () => {
+    if (!newItem.trim()) return;
+    setInbox(p => [...p, {id:Date.now(), text:newItem.trim(), context:'@inbox'}]);
+    setNewItem('');
+  };
+
+  const GTD_TABS = [
+    {id:'inbox',    label:'Inbox'},
+    {id:'projects', label:'Proyectos'},
+    {id:'contexts', label:'Contextos'},
+    {id:'review',   label:'Revisión'},
+  ];
+
+  return (
+    <div style={{borderTop:'1px solid rgba(201,168,76,0.1)', marginTop:4}}>
+      <div style={{
+        display:'flex', borderBottom:'1px solid rgba(201,168,76,0.1)',
+        padding: isDesktop ? '0 24px' : '0 20px',
+      }}>
+        {GTD_TABS.map(t => (
+          <div key={t.id} onClick={() => setGtdTab(t.id)} style={{
+            flex:1, padding:'11px 2px', textAlign:'center', cursor:'pointer',
+            fontFamily:'DM Sans,sans-serif', fontSize:11,
+            color: gtdTab===t.id ? C.gold : C.textMuted,
+            borderBottom: gtdTab===t.id ? `2px solid ${C.gold}` : '2px solid transparent',
+            transition:'all 0.2s',
+          }}>{t.label}</div>
+        ))}
+      </div>
+
+      <div style={{padding: isDesktop ? '16px 24px 0' : '16px 20px 0'}}>
+        {gtdTab === 'inbox' && (
+          <div>
+            <div style={{display:'flex',gap:8,marginBottom:14,
+              background:C.card,border:'1px solid rgba(201,168,76,0.14)',
+              borderRadius:10,padding:'4px 4px 4px 14px',alignItems:'center'}}>
+              <input value={newItem} onChange={e=>setNewItem(e.target.value)}
+                onKeyDown={e=>e.key==='Enter'&&addItem()}
+                placeholder="Capturar pensamiento..."
+                style={{flex:1,background:'none',border:'none',outline:'none',
+                  fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}/>
+              <button onClick={addItem} style={{
+                background:C.gold,border:'none',borderRadius:7,width:34,height:34,cursor:'pointer',
+                fontFamily:'DM Sans,sans-serif',fontSize:20,color:C.deep,
+                display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>+</button>
+            </div>
+            {inbox.length === 0
+              ? <div style={{textAlign:'center',padding:'40px 0',
+                  fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
+                  fontSize:17,color:C.textMuted}}>Inbox limpio. Mente clara.</div>
+              : inbox.map(item => (
+                <div key={item.id} style={{display:'flex',alignItems:'center',gap:10,
+                  padding:'11px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+                  <div style={{width:5,height:5,borderRadius:'50%',
+                    background:'rgba(201,168,76,0.28)',flexShrink:0}}/>
+                  <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{item.text}</div>
+                  <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{item.context}</div>
+                  <button onClick={()=>setInbox(p=>p.filter(i=>i.id!==item.id))}
+                    style={{background:'none',border:'none',color:C.textMuted,
+                      cursor:'pointer',fontSize:18,padding:'0 2px',lineHeight:1}}>×</button>
+                </div>
+              ))
+            }
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,
+              textAlign:'center',marginTop:10}}>{inbox.length} elemento{inbox.length!==1?'s':''}</div>
+          </div>
+        )}
+
+        {gtdTab === 'projects' && EU.gtd.projects.map(p => {
+          const pct = p.done / p.actions;
+          return (
+            <div key={p.id} style={{background:C.card,border:'1px solid rgba(201,168,76,0.1)',
+              borderRadius:12,padding:'14px 16px',marginBottom:9}}>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,marginBottom:9}}>{p.name}</div>
+              <div style={{display:'flex',alignItems:'center',gap:10}}>
+                <div style={{flex:1,height:3,background:'rgba(201,168,76,0.08)',borderRadius:2}}>
+                  <div style={{height:'100%',borderRadius:2,background:C.gold,
+                    width:`${pct*100}%`,boxShadow:'0 0 6px rgba(201,168,76,0.5)'}}/>
+                </div>
+                <span style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,
+                  whiteSpace:'nowrap'}}>{p.done}/{p.actions}</span>
+              </div>
+            </div>
+          );
+        })}
+
+        {gtdTab === 'contexts' && (
+          <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:4}}>
+            {EU.gtd.contexts.map(ctx => (
+              <div key={ctx} style={{padding:'8px 14px',
+                background:C.card,border:'1px solid rgba(201,168,76,0.12)',
+                borderRadius:20,fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>
+                {ctx}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {gtdTab === 'review' && (
+          <div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
+              fontSize:15,color:C.textSub,lineHeight:1.65,marginBottom:18,textWrap:'pretty'}}>
+              "La revisión semanal es el mantenimiento del sistema. Sin ella, el GTD colapsa."
+            </div>
+            {EU.gtd.review.map((item,i) => (
+              <div key={i} style={{display:'flex',alignItems:'center',gap:12,
+                padding:'10px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+                <div style={{
+                  width:20,height:20,borderRadius:6,flexShrink:0,
+                  border:`1.5px solid ${item.done?C.gold:'rgba(201,168,76,0.2)'}`,
+                  background:item.done?C.gold:'transparent',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                }}>
+                  {item.done && <svg width={10} height={10} viewBox="0 0 10 10">
+                    <polyline points="2,5 4.5,8 8,2" stroke={C.deep} strokeWidth={1.5}
+                      fill="none" strokeLinecap="round"/>
+                  </svg>}
+                </div>
+                <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,
+                  color:item.done?C.textMuted:C.text,
+                  textDecoration:item.done?'line-through':'none'}}>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// ACTA DIURNA SCREEN
+// ═══════════════════════════════════════════════════════════
+function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   const srv = window.EU._server || {};
   const [acts, setActs] = useState(srv.activities || []);
   const [pts,  setPts]  = useState(srv.pts || {today:0, week:0, month:0});
   const [streak, setStreak] = useState(srv.streak || 0);
   const actCats = srv.actCats || [];
 
-  const [gtdTab, setGtdTab] = useState('inbox');
-  const [inbox, setInbox]   = useState(EU.gtd.inbox);
-  const [newItem, setNewItem] = useState('');
-
-  // Always fetch real done-state from server on mount — same as classic version
   useEffect(() => {
     fetch('/actividades/api/today')
       .then(r => r.json())
@@ -943,11 +1076,9 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
   }, []);
 
   const logActivity = (key) => {
-    // Compute toggle synchronously — must happen before any async work
-    // so navigating away immediately still reads the correct state on remount
     const source = window.EU._server.activities || acts;
     const updated = source.map(a => a.key === key ? {...a, done: !a.done} : a);
-    window.EU._server.activities = updated;  // update in-memory source of truth NOW
+    window.EU._server.activities = updated;
     setActs(updated);
 
     fetch('/actividades/api/activity/log', {
@@ -959,7 +1090,7 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
       if (data.stats) {
         const newPts = {today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month};
         setPts(newPts);
-        window.EU._server.pts    = newPts;
+        window.EU._server.pts = newPts;
         if (data.stats.streak !== undefined) {
           setStreak(data.stats.streak);
           window.EU._server.streak = data.stats.streak;
@@ -970,26 +1101,12 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
     .catch(() => {});
   };
 
-  const addItem = () => {
-    if (!newItem.trim()) return;
-    setInbox(p => [...p, {id:Date.now(), text:newItem.trim(), context:'@inbox'}]);
-    setNewItem('');
-  };
-
-  // Group activities by category order
   const byCategory = {};
   actCats.forEach(cat => { byCategory[cat] = []; });
   acts.forEach(a => {
     if (byCategory[a.cat]) byCategory[a.cat].push(a);
     else { byCategory[a.cat] = [a]; }
   });
-
-  const GTD_TABS = [
-    {id:'inbox',    label:'Inbox'},
-    {id:'projects', label:'Proyectos'},
-    {id:'contexts', label:'Contextos'},
-    {id:'review',   label:'Revisión'},
-  ];
 
   return (
     <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
@@ -1052,122 +1169,6 @@ function GTDScreen({ appState, dispatch, isDesktop }) {
             </div>
           );
         })}
-      </div>
-
-      {/* ── GTD SECTION ── */}
-      <div style={{borderTop:'1px solid rgba(201,168,76,0.1)', marginTop:4}}>
-        {/* Tab bar */}
-        <div style={{
-          display:'flex', borderBottom:'1px solid rgba(201,168,76,0.1)',
-          padding: isDesktop ? '0 24px' : '0 20px',
-        }}>
-          {GTD_TABS.map(t => (
-            <div key={t.id} onClick={() => setGtdTab(t.id)} style={{
-              flex:1, padding:'11px 2px', textAlign:'center', cursor:'pointer',
-              fontFamily:'DM Sans,sans-serif', fontSize:11,
-              color: gtdTab===t.id ? C.gold : C.textMuted,
-              borderBottom: gtdTab===t.id ? `2px solid ${C.gold}` : '2px solid transparent',
-              transition:'all 0.2s',
-            }}>{t.label}</div>
-          ))}
-        </div>
-
-        <div style={{padding: isDesktop ? '16px 24px 0' : '16px 20px 0'}}>
-          {gtdTab === 'inbox' && (
-            <div>
-              <div style={{display:'flex',gap:8,marginBottom:14,
-                background:C.card,border:'1px solid rgba(201,168,76,0.14)',
-                borderRadius:10,padding:'4px 4px 4px 14px',alignItems:'center'}}>
-                <input value={newItem} onChange={e=>setNewItem(e.target.value)}
-                  onKeyDown={e=>e.key==='Enter'&&addItem()}
-                  placeholder="Capturar pensamiento..."
-                  style={{flex:1,background:'none',border:'none',outline:'none',
-                    fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}/>
-                <button onClick={addItem} style={{
-                  background:C.gold,border:'none',borderRadius:7,width:34,height:34,cursor:'pointer',
-                  fontFamily:'DM Sans,sans-serif',fontSize:20,color:C.deep,
-                  display:'flex',alignItems:'center',justifyContent:'center',lineHeight:1}}>+</button>
-              </div>
-              {inbox.length === 0
-                ? <div style={{textAlign:'center',padding:'40px 0',
-                    fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-                    fontSize:17,color:C.textMuted}}>Inbox limpio. Mente clara.</div>
-                : inbox.map(item => (
-                  <div key={item.id} style={{display:'flex',alignItems:'center',gap:10,
-                    padding:'11px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
-                    <div style={{width:5,height:5,borderRadius:'50%',
-                      background:'rgba(201,168,76,0.28)',flexShrink:0}}/>
-                    <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{item.text}</div>
-                    <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{item.context}</div>
-                    <button onClick={()=>setInbox(p=>p.filter(i=>i.id!==item.id))}
-                      style={{background:'none',border:'none',color:C.textMuted,
-                        cursor:'pointer',fontSize:18,padding:'0 2px',lineHeight:1}}>×</button>
-                  </div>
-                ))
-              }
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,
-                textAlign:'center',marginTop:10}}>{inbox.length} elemento{inbox.length!==1?'s':''}</div>
-            </div>
-          )}
-
-          {gtdTab === 'projects' && EU.gtd.projects.map(p => {
-            const pct = p.done / p.actions;
-            return (
-              <div key={p.id} style={{background:C.card,border:'1px solid rgba(201,168,76,0.1)',
-                borderRadius:12,padding:'14px 16px',marginBottom:9}}>
-                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,marginBottom:9}}>{p.name}</div>
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <div style={{flex:1,height:3,background:'rgba(201,168,76,0.08)',borderRadius:2}}>
-                    <div style={{height:'100%',borderRadius:2,background:C.gold,
-                      width:`${pct*100}%`,boxShadow:'0 0 6px rgba(201,168,76,0.5)'}}/>
-                  </div>
-                  <span style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,
-                    whiteSpace:'nowrap'}}>{p.done}/{p.actions}</span>
-                </div>
-              </div>
-            );
-          })}
-
-          {gtdTab === 'contexts' && (
-            <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:4}}>
-              {EU.gtd.contexts.map(ctx => (
-                <div key={ctx} style={{padding:'8px 14px',
-                  background:C.card,border:'1px solid rgba(201,168,76,0.12)',
-                  borderRadius:20,fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>
-                  {ctx}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {gtdTab === 'review' && (
-            <div>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-                fontSize:15,color:C.textSub,lineHeight:1.65,marginBottom:18,textWrap:'pretty'}}>
-                "La revisión semanal es el mantenimiento del sistema. Sin ella, el GTD colapsa."
-              </div>
-              {EU.gtd.review.map((item,i) => (
-                <div key={i} style={{display:'flex',alignItems:'center',gap:12,
-                  padding:'10px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
-                  <div style={{
-                    width:20,height:20,borderRadius:6,flexShrink:0,
-                    border:`1.5px solid ${item.done?C.gold:'rgba(201,168,76,0.2)'}`,
-                    background:item.done?C.gold:'transparent',
-                    display:'flex',alignItems:'center',justifyContent:'center',
-                  }}>
-                    {item.done && <svg width={10} height={10} viewBox="0 0 10 10">
-                      <polyline points="2,5 4.5,8 8,2" stroke={C.deep} strokeWidth={1.5}
-                        fill="none" strokeLinecap="round"/>
-                    </svg>}
-                  </div>
-                  <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,
-                    color:item.done?C.textMuted:C.text,
-                    textDecoration:item.done?'line-through':'none'}}>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -1289,5 +1290,5 @@ function ProfileScreen({ appState, isDesktop }) {
 }
 
 Object.assign(window, {
-  HomeScreen, CommandCenterScreen, ModuleDetailScreen, GTDScreen, ProfileScreen,
+  HomeScreen, CommandCenterScreen, ModuleDetailScreen, ActaDiurnaScreen, PraxisInbox, ProfileScreen,
 });
