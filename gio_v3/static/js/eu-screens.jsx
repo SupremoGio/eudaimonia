@@ -1054,6 +1054,11 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   const [pts,  setPts]  = useState(srv.pts || {today:0, week:0, month:0});
   const [streak, setStreak] = useState(srv.streak || 0);
   const actCats = srv.actCats || [];
+  const { level, xp, xpNext } = appState;
+  const xpToday  = srv.xpToday || 0;
+  const clf       = srv.classification || {};
+  const XP_GOAL   = 15;
+  const xpDayPct  = Math.min(1, xpToday / XP_GOAL);
 
   useEffect(() => {
     fetch('/actividades/api/today')
@@ -1111,22 +1116,106 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   return (
     <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
 
-      {/* ── PTS STATS ── */}
+      {/* ── HERO ACTA ── */}
       <div style={{padding: isDesktop ? '28px 24px 20px' : '16px 20px 16px'}}>
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:8, marginBottom:20}}>
+        <div style={{
+          background:'linear-gradient(140deg,#1C1830,#110F20)',
+          border:'1px solid rgba(201,168,76,0.18)',
+          borderRadius:16, padding:'20px', marginBottom:14,
+          position:'relative', overflow:'hidden',
+        }}>
+          {/* Header row: label + clf chip */}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+            <div style={{fontSize:9,letterSpacing:'0.18em',color:C.gold,
+              opacity:0.6,textTransform:'uppercase'}}>Acta Diurna · XP hoy</div>
+            {clf.rank && (
+              <div style={{display:'flex',alignItems:'center',gap:5,
+                background:'rgba(255,255,255,0.05)',borderRadius:20,padding:'3px 10px'}}>
+                <span style={{fontSize:12}}>{TIERS.find(t=>t.rank===clf.rank)?.icon||'🪨'}</span>
+                <span style={{fontSize:9,color:C.textMuted,letterSpacing:'0.08em',
+                  textTransform:'uppercase'}}>{TIERS.find(t=>t.rank===clf.rank)?.label||'Carbón'}</span>
+              </div>
+            )}
+          </div>
+          {/* XP numeral */}
+          <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:64,
+              lineHeight:1,color:C.goldLight,fontWeight:600}}>{xpToday}</div>
+            <div style={{fontSize:13,color:C.textMuted}}>/ {XP_GOAL} meta</div>
+          </div>
+          {/* Progress bar */}
+          <div style={{height:5,background:'rgba(201,168,76,0.08)',borderRadius:3,overflow:'hidden',marginBottom:12}}>
+            <div style={{
+              height:'100%',borderRadius:3,
+              background:'linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D)',
+              width:`${xpDayPct*100}%`,
+              boxShadow:'0 0 8px rgba(201,168,76,0.45)',
+              transition:'width 0.8s ease',
+            }}/>
+          </div>
+          {/* Tier ladder */}
+          {(() => {
+            const curIdx = TIERS.findIndex(t => t.rank === clf.rank);
+            const ci = curIdx >= 0 ? curIdx : 0;
+            const nt = TIERS[ci + 1] || null;
+            const col = TIERS[ci].color;
+            return (
+              <>
+                <div style={{display:'flex',alignItems:'flex-start',marginBottom:8}}>
+                  {TIERS.map((t, i) => {
+                    const active = i === ci;
+                    const past   = i < ci;
+                    return (
+                      <React.Fragment key={t.rank}>
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
+                          <div style={{
+                            width:active?9:5, height:active?9:5, borderRadius:'50%',
+                            background:active ? col : past ? `${col}55` : 'rgba(255,255,255,0.08)',
+                            boxShadow:active ? `0 0 9px ${col}` : 'none',
+                            transition:'all 0.3s',
+                          }}/>
+                          <div style={{
+                            fontFamily:'DM Sans,sans-serif', fontSize:7,
+                            color:active ? col : C.textMuted,
+                            opacity:active ? 1 : past ? 0.55 : 0.28,
+                            textAlign:'center', lineHeight:1.3,
+                          }}>{t.icon}<br/>{t.label}</div>
+                        </div>
+                        {i < TIERS.length - 1 && (
+                          <div style={{height:1,flex:1,marginTop:4,
+                            background:i < ci ? `${col}35` : 'rgba(255,255,255,0.06)'}}/>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:10}}>
+                  <span style={{color:C.textMuted}}>
+                    {nt ? `${Math.max(0,nt.threshold - xpToday)} XP → ${nt.label}` : '✦ Diamante alcanzado'}
+                  </span>
+                  <span style={{color:C.gold,opacity:0.7}}>
+                    {xpNext ? `${xpNext - xp} XP → ${EU.levels[level]?.name || ''}` : ''}
+                  </span>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+
+        {/* ── SECONDARY STATS ── */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:16}}>
           {[
-            {label:'PTS HOY',    val: pts.today, sub:'meta 1x+'},
-            {label:'PTS SEMANA', val: pts.week,  sub:'meta 50+'},
-            {label:'PTS MES',    val: pts.month, sub:'meta 300+'},
-            {label:'RACHA',      val: streak,    sub:`${streak > 0 ? streak + 'd' : '—'}`},
+            {label:'SEMANA', val: pts.week,                   sub:'meta 50+'},
+            {label:'MES',    val: pts.month,                  sub:'meta 300+'},
+            {label:'RACHA',  val: streak > 0 ? `${streak}d` : '—', sub:'días'},
           ].map(s => (
             <div key={s.label} style={{
-              background:C.card, border:'1px solid rgba(201,168,76,0.1)',
+              background:C.card, border:'1px solid rgba(201,168,76,0.08)',
               borderRadius:10, padding:'10px 8px',
             }}>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:7,letterSpacing:'0.1em',
                 color:C.textMuted,textTransform:'uppercase',marginBottom:2}}>{s.label}</div>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,color:C.gold,lineHeight:1}}>{s.val}</div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:C.gold,lineHeight:1}}>{s.val}</div>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:8,color:C.textMuted,marginTop:2}}>{s.sub}</div>
             </div>
           ))}
