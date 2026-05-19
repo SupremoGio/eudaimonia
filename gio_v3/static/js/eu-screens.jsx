@@ -547,9 +547,12 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
               letterSpacing:'0.22em',color:C.gold,opacity:0.65,textTransform:'uppercase'}}>
               {fmtDate()}
             </div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:24,
-              color:C.text,fontWeight:500,letterSpacing:'0.12em',marginTop:1}}>
-              Ε Υ Δ Α Ι Μ Ο Ν Ι Α
+            <div style={{fontFamily:'Cormorant Garamond,serif',
+              fontSize: isDesktop ? 24 : 20,
+              color:C.text,fontWeight:500,
+              letterSpacing: isDesktop ? '0.12em' : '0.18em',
+              marginTop:1, whiteSpace:'nowrap'}}>
+              {isDesktop ? 'Ε Υ Δ Α Ι Μ Ο Ν Ι Α' : 'ΕΥΔΑΙΜΟΝΙΑ'}
             </div>
           </div>
           <div style={{textAlign:'right',paddingTop:2}}>
