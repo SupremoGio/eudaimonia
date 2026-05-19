@@ -540,23 +540,33 @@ const _euCh = new BroadcastChannel('eudaimonia');
 function _notifyDashboard() { _euCh.postMessage({type: 'data_changed'}); }
 
 async function logAct(key) {
+  const b = document.querySelector(`[data-key="${key}"]`);
+  if (b?.dataset.pending) return;   // evita doble-click mientras el request está en vuelo
+
+  const tier      = b?.querySelector('.pp')?.className?.match(/\b(alto|progreso|micro)\b/)?.[1];
+  const doneClass = tier === 'alto' ? 'done-alto' : 'done';
+  const wasMarked = b?.classList.contains('done') || b?.classList.contains('done-alto');
+
+  // Optimistic: aplica el cambio visual ANTES del fetch
+  if (b) {
+    b.dataset.pending = 'true';
+    b.classList.remove('done', 'done-alto');
+    if (!wasMarked) b.classList.add(doneClass);
+  }
+
   try {
     const r = await fetch('/actividades/api/activity/log', {
       method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({key})
     });
-    if (!r.ok) { toast('Error al registrar', 'err'); return; }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
-    const b = document.querySelector(`[data-key="${key}"]`);
-    if (b) {
-      if (d.action === 'added') {
-        const tier = b.querySelector('.pp')?.className?.match(/\b(alto|progreso|micro)\b/)?.[1];
-        b.classList.remove('done','done-alto');
-        b.classList.add(tier === 'alto' ? 'done-alto' : 'done');
-        toast(`+${d.xp ?? d.pts} XP${d.ec > 0 ? ` · +${d.ec} EC` : ''}`);
-      } else {
-        b.classList.remove('done','done-alto');
-        toast('Removido');
-      }
+
+    if (b) delete b.dataset.pending;
+
+    if (d.action === 'added') {
+      toast(`+${d.xp ?? d.pts} XP${d.ec > 0 ? ` · +${d.ec} EC` : ''}`);
+    } else {
+      toast('Removido');
     }
     updS(d.stats);
     updGam(d.gam?.stats);
@@ -567,7 +577,15 @@ async function logAct(key) {
     if (d.gam?.badges?.length)       toast(`🥇 Badge: ${d.gam.badges[0].name}`, 'win');
     lucide.createIcons();
     _notifyDashboard();
-  } catch { toast('Sin conexión', 'err'); }
+  } catch {
+    // Revierte el estado optimista si el server falla
+    if (b) {
+      delete b.dataset.pending;
+      b.classList.remove('done', 'done-alto');
+      if (wasMarked) b.classList.add(doneClass);
+    }
+    toast('No se pudo registrar', 'err');
+  }
 }
 
 async function addP() {
