@@ -33,6 +33,10 @@
       0%   { opacity: 1; transform: translate(0, 0) scale(1) }
       100% { opacity: 0; transform: translate(var(--dx, 28px), var(--dy, -28px)) scale(0) }
     }
+    @keyframes undoCountdown {
+      from { width: 100% }
+      to   { width: 0% }
+    }
 
     input, button { font-family: inherit; }
     input::placeholder { color: #6A6050; }

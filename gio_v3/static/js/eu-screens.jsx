@@ -1,5 +1,5 @@
 // EUDAIMONIA — All Screens
-const { useState, useMemo, useEffect } = React;
+const { useState, useMemo, useEffect, useRef } = React;
 const C = window.EU.getColors();
 
 function todayQuote() {
@@ -1046,6 +1046,81 @@ function PraxisInbox({ isDesktop }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// UNDO TOAST
+// ═══════════════════════════════════════════════════════════
+function useUndoToast() {
+  const [toast, setToast] = useState(null); // {key, logId, label, pts, id}
+  const timer = useRef(null);
+
+  const show = (key, logId, label, pts) => {
+    if (timer.current) clearTimeout(timer.current);
+    setToast({key, logId, label, pts, id: Date.now()});
+    timer.current = setTimeout(() => setToast(null), 5000);
+  };
+
+  const dismiss = () => {
+    if (timer.current) clearTimeout(timer.current);
+    setToast(null);
+  };
+
+  return { toast, show, dismiss };
+}
+
+function UndoToast({ toast, onUndo, onDismiss, isDesktop }) {
+  if (!toast) return null;
+  return (
+    <div style={{
+      position:'fixed',
+      bottom: isDesktop ? 24 : 88,
+      left:'50%', transform:'translateX(-50%)',
+      zIndex:9999,
+      background: C.card,
+      border:'1px solid rgba(201,168,76,0.25)',
+      borderRadius:12,
+      padding:'12px 16px',
+      boxShadow:'0 8px 32px rgba(0,0,0,0.55)',
+      display:'flex', alignItems:'center', gap:12,
+      minWidth:240, maxWidth:'calc(100vw - 32px)',
+      animation:'euScaleIn 0.2s ease',
+    }}>
+      {/* Text */}
+      <div style={{flex:1}}>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.text,lineHeight:1.3}}>
+          {toast.label}
+        </div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.gold,marginTop:2}}>
+          +{toast.pts} XP registrado
+        </div>
+      </div>
+      {/* Undo button */}
+      <button onClick={onUndo} style={{
+        background:'transparent',
+        border:'1px solid rgba(201,168,76,0.3)',
+        borderRadius:6, padding:'5px 12px',
+        fontFamily:'DM Sans,sans-serif', fontSize:11,
+        color:C.gold, cursor:'pointer', letterSpacing:'0.06em',
+        textTransform:'uppercase', flexShrink:0,
+        transition:'all 0.15s',
+      }}>Deshacer</button>
+      {/* Dismiss */}
+      <button onClick={onDismiss} style={{
+        background:'none', border:'none',
+        color:C.textMuted, cursor:'pointer',
+        fontSize:16, padding:'0 2px', lineHeight:1,
+      }}>×</button>
+      {/* 5s countdown bar — CSS animation keyed to toast.id */}
+      <div key={toast.id} style={{
+        position:'absolute', bottom:0, left:0,
+        height:3, borderRadius:'0 0 12px 12px',
+        background:`linear-gradient(90deg,${C.gold},${C.goldLight})`,
+        animation:'undoCountdown 5s linear forwards',
+        width:'100%',
+      }}/>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // ACTIVITY BUTTON
 // ═══════════════════════════════════════════════════════════
 function ActivityButton({ act, catHue, onLog }) {
@@ -1186,7 +1261,8 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   }, []);
 
   const logActivity = (key) => {
-    const source = window.EU._server.activities || acts;
+    const source  = window.EU._server.activities || acts;
+    const act     = source.find(a => a.key === key);
     const updated = source.map(a => a.key === key ? {...a, done: !a.done} : a);
     window.EU._server.activities = updated;
     setActs(updated);
@@ -1207,8 +1283,36 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
         }
       }
       if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
+      if (data.action === 'added' && data.log_id && act) {
+        undoToast.show(key, data.log_id, act.label, act.pts);
+      } else {
+        undoToast.dismiss();
+      }
     })
     .catch(() => {});
+  };
+
+  const undoToast = useUndoToast();
+
+  const handleUndo = () => {
+    const t = undoToast.toast;
+    if (!t) return;
+    const source = window.EU._server.activities || acts;
+    const restored = source.map(a => a.key === t.key ? {...a, done: false} : a);
+    window.EU._server.activities = restored;
+    setActs(restored);
+    fetch(`/actividades/api/activity/undo/${t.logId}`, {method:'POST'})
+      .then(r => r.json())
+      .then(data => {
+        if (data.stats) {
+          const newPts = {today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month};
+          setPts(newPts);
+          window.EU._server.pts = newPts;
+        }
+        if (data.gam && data.gam.xp_delta) dispatch({type:'ADD_XP', amount: data.gam.xp_delta});
+      })
+      .catch(() => {});
+    undoToast.dismiss();
   };
 
   const byCategory = {};
@@ -1383,6 +1487,12 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           );
         })}
       </div>
+      <UndoToast
+        toast={undoToast.toast}
+        onUndo={handleUndo}
+        onDismiss={undoToast.dismiss}
+        isDesktop={isDesktop}
+      />
     </div>
   );
 }
