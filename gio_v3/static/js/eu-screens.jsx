@@ -1046,6 +1046,111 @@ function PraxisInbox({ isDesktop }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ACTIVITY BUTTON
+// ═══════════════════════════════════════════════════════════
+function ActivityButton({ act, catHue, onLog }) {
+  const [burst, setBurst] = useState(false);
+  const isAlto = act.tier === 'alto';
+
+  const handle = () => {
+    if (!act.done) {
+      setBurst(true);
+      setTimeout(() => setBurst(false), 700);
+    }
+    onLog(act.key);
+  };
+
+  const dirs = [[26,-26],[36,0],[26,26],[0,34],[-26,26],[-36,0],[-26,-26],[0,-34]];
+  const burstColor = isAlto ? '#fbbf24' : `oklch(65% 0.18 ${catHue})`;
+
+  return (
+    <div onClick={handle} style={{
+      display:'flex', flexDirection:'column',
+      padding:'10px 12px', borderRadius:10, cursor:'pointer',
+      background: act.done
+        ? (isAlto ? 'rgba(245,158,11,0.07)' : 'rgba(99,102,241,0.07)')
+        : C.card,
+      border: act.done
+        ? (isAlto ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(99,102,241,0.25)')
+        : `1px solid oklch(22% 0.05 ${catHue})`,
+      minHeight:52, gap:5,
+      transition:'all 0.18s',
+      position:'relative', overflow:'hidden',
+    }}>
+      {/* ALTO IMPACTO ribbon */}
+      {isAlto && (
+        <div style={{
+          position:'absolute', top:0, right:0,
+          background: act.done ? 'rgba(245,158,11,0.35)' : 'rgba(245,158,11,0.14)',
+          color: '#fbbf24',
+          fontSize:7, letterSpacing:'0.1em', textTransform:'uppercase',
+          padding:'2px 7px',
+          borderRadius:'0 10px 0 6px',
+          transition:'background 0.2s',
+        }}>ALTO</div>
+      )}
+      {/* Checkbox row */}
+      <div style={{display:'flex',alignItems:'center',gap:8}}>
+        <div style={{
+          width:16, height:16, borderRadius:5, flexShrink:0,
+          border:`1.5px solid ${act.done
+            ? (isAlto ? '#fbbf24' : 'rgba(99,102,241,0.7)')
+            : `oklch(32% 0.08 ${catHue})`}`,
+          background: act.done
+            ? (isAlto ? '#fbbf24' : 'rgba(99,102,241,0.8)')
+            : 'transparent',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          transition:'all 0.2s',
+          boxShadow: act.done
+            ? (isAlto ? '0 0 8px rgba(245,158,11,0.4)' : '0 0 8px rgba(99,102,241,0.35)')
+            : 'none',
+        }}>
+          {act.done && (
+            <svg width={9} height={9} viewBox="0 0 9 9">
+              <polyline points="1.5,4.5 3.7,7 7.5,1.5"
+                stroke={isAlto ? '#1a1210' : '#fff'}
+                strokeWidth={1.6} fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          )}
+        </div>
+        <span style={{
+          fontFamily:'DM Sans,sans-serif', fontSize:11,
+          color: act.done ? C.textMuted : C.textSub,
+          fontWeight: act.done ? 500 : 400,
+          lineHeight:1.3, flex:1,
+          textDecoration: act.done ? 'none' : 'none',
+        }}>{act.label}</span>
+      </div>
+      {/* XP + EC row */}
+      <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:4}}>
+        <span style={{
+          fontFamily:'DM Sans,sans-serif', fontSize:9,
+          padding:'1px 6px', borderRadius:100,
+          background: act.done
+            ? (isAlto
+                ? 'linear-gradient(135deg,rgba(245,158,11,0.5),rgba(234,179,8,0.5))'
+                : 'linear-gradient(135deg,rgba(99,102,241,0.7),rgba(139,92,246,0.7))')
+            : `oklch(18% 0.03 ${catHue})`,
+          color: act.done ? '#fff' : `oklch(55% 0.12 ${catHue})`,
+          border: act.done ? 'none' : `1px solid oklch(28% 0.06 ${catHue})`,
+        }}>+{act.pts} XP{act.ec > 0 ? ` · ${act.ec}🪙` : ''}</span>
+      </div>
+      {/* Burst particles */}
+      {burst && dirs.map(([dx,dy],i) => (
+        <div key={i} style={{
+          position:'absolute', left:'50%', top:'50%',
+          width:5, height:5, borderRadius:'50%',
+          background:burstColor,
+          transform:`translate(${dx}px,${dy}px)`,
+          opacity:0, animation:'euBurst 0.65s ease-out forwards',
+          animationDelay:`${i*0.025}s`, pointerEvents:'none',
+        }}/>
+      ))}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // ACTA DIURNA SCREEN
 // ═══════════════════════════════════════════════════════════
 function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
@@ -1268,39 +1373,10 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
                   transition:'width 0.5s ease',
                 }}/>
               </div>
-              {/* 2-col grid — buttons upgraded to ActivityButton in commit 4 */}
+              {/* 2-col grid of ActivityButtons */}
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
                 {catActs.map(act => (
-                  <div key={act.key} onClick={() => logActivity(act.key)} style={{
-                    display:'flex', justifyContent:'space-between', alignItems:'center',
-                    padding:'9px 12px', borderRadius:10, cursor:'pointer',
-                    background: act.done
-                      ? (act.tier === 'alto' ? 'rgba(245,158,11,0.07)' : 'rgba(99,102,241,0.07)')
-                      : C.card,
-                    border: act.done
-                      ? (act.tier === 'alto'
-                          ? '1px solid rgba(245,158,11,0.3)'
-                          : '1px solid rgba(99,102,241,0.25)')
-                      : `1px solid oklch(22% 0.05 ${catHue})`,
-                    minHeight:44, gap:6,
-                    transition:'all 0.18s',
-                  }}>
-                    <span style={{
-                      fontFamily:'DM Sans,sans-serif', fontSize:11,
-                      color: act.done ? C.text : C.textSub,
-                      fontWeight: act.done ? 500 : 400,
-                      lineHeight:1.3,
-                    }}>{act.label}</span>
-                    <span style={{
-                      fontFamily:'DM Sans,sans-serif', fontSize:9,
-                      padding:'2px 6px', borderRadius:100, flexShrink:0,
-                      background: act.done
-                        ? 'linear-gradient(135deg,rgba(99,102,241,0.85),rgba(139,92,246,0.85))'
-                        : `oklch(18% 0.03 ${catHue})`,
-                      color: act.done ? '#fff' : `oklch(55% 0.12 ${catHue})`,
-                      border: act.done ? 'none' : `1px solid oklch(28% 0.06 ${catHue})`,
-                    }}>+{act.pts}{act.ec > 0 ? ` · ${act.ec}EC` : ''}</span>
-                  </div>
+                  <ActivityButton key={act.key} act={act} catHue={catHue} onLog={logActivity}/>
                 ))}
               </div>
             </div>
