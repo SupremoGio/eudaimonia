@@ -20,6 +20,9 @@ def index():
         reminders    = db.execute(
             "SELECT * FROM reminders WHERE is_active=1 ORDER BY COALESCE(next_date, target_date, '9999-12-31'), created_at"
         ).fetchall()
+        hist_rows = db.execute(
+            "SELECT key, value, recorded_at FROM body_measurements_history ORDER BY recorded_at DESC"
+        ).fetchall()
 
     # Group docs: general (field_key IS NULL) and per-field
     docs_general = []
@@ -31,9 +34,19 @@ def index():
         else:
             docs_general.append(d)
 
+    # Build history dict: key → last 8 entries (newest first)
+    meas_history = {}
+    for r in hist_rows:
+        k = r["key"]
+        if k not in meas_history:
+            meas_history[k] = []
+        if len(meas_history[k]) < 8:
+            meas_history[k].append({"value": r["value"], "date": r["recorded_at"][:10]})
+
     return render_template('perfil/index.html',
                            info=info,
                            measurements=measurements,
+                           meas_history=meas_history,
                            docs=docs_general,
                            docs_by_field=docs_by_field,
                            reminders=[dict(r) for r in reminders])
@@ -59,10 +72,20 @@ def update_measurement():
     value = d.get('value')
     if not key or value is None:
         return jsonify({'ok': False, 'error': 'key and value required'}), 400
+    now = datetime.now().isoformat()
     with get_db() as db:
         db.execute("UPDATE body_measurements SET value=? WHERE key=?", (str(value), key))
+        db.execute(
+            "INSERT INTO body_measurements_history (key, value, recorded_at) VALUES (?,?,?)",
+            (key, str(value), now)
+        )
         db.commit()
-    return jsonify({'ok': True})
+        hist = db.execute(
+            "SELECT value, recorded_at FROM body_measurements_history WHERE key=? ORDER BY recorded_at DESC LIMIT 8",
+            (key,)
+        ).fetchall()
+    history = [{"value": r["value"], "date": r["recorded_at"][:10]} for r in hist]
+    return jsonify({'ok': True, 'history': history})
 
 
 @perfil_bp.route('/api/upload_doc', methods=['POST'])
@@ -180,7 +203,7 @@ def add_reminder():
 
 @perfil_bp.route('/api/reminder/<int:rid>/done', methods=['POST'])
 def complete_reminder(rid):
-    from datetime import timedelta
+    from datetime import date as _date, timedelta
     from utils import today_str as _today_str
     import calendar
     today = _today_str()

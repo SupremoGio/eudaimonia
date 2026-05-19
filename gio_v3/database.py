@@ -299,6 +299,12 @@ def init_db():
             value   TEXT NOT NULL,
             unit    TEXT DEFAULT ''
         );
+        CREATE TABLE IF NOT EXISTS body_measurements_history (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            key         TEXT NOT NULL,
+            value       TEXT NOT NULL,
+            recorded_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS profile_docs (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             filename    TEXT NOT NULL,

@@ -97,6 +97,25 @@
 .meas-edit{display:none;align-items:center;gap:6px;margin-top:6px;}
 .meas-edit .fi{font-size:.72rem;padding:6px 10px;}
 
+/* ── Measurement trend & history ── */
+.meas-delta{font-size:.52rem;font-weight:600;padding:2px 6px;border-radius:100px;margin-left:2px;white-space:nowrap;}
+.meas-delta.up{background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.25);}
+.meas-delta.down{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.25);}
+.meas-delta.eq{background:var(--gold-d);color:var(--dim);border:1px solid rgba(201,168,76,.15);}
+.meas-hist-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:.44rem;letter-spacing:.08em;
+  text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-top:4px;transition:color .15s;}
+.meas-hist-btn:hover{color:var(--gold);}
+.meas-hist-panel{display:none;margin-top:8px;border-top:1px solid var(--b);padding-top:8px;}
+.meas-hist-panel.open{display:block;}
+.meas-hist-row{display:flex;justify-content:space-between;align-items:center;
+  padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.meas-hist-row:last-child{border-bottom:none;}
+.meas-hist-date{font-size:.44rem;color:var(--dim);}
+.meas-hist-val{font-size:.6rem;color:var(--text);font-weight:500;}
+.meas-hist-chg{font-size:.44rem;font-weight:600;}
+.meas-hist-chg.up{color:#10b981;}.meas-hist-chg.down{color:#f87171;}.meas-hist-chg.eq{color:var(--dim);}
+.meas-hist-empty{font-size:.52rem;color:var(--dim);text-align:center;padding:10px 0;}
+
 /* ── Documents (general) ── */
 .doc-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
 .doc-row:last-child{border-bottom:none;}
@@ -225,17 +244,33 @@
     <div class="sec-hd">
       <div>
         <div class="sec-title">Mediciones Corporales</div>
-        <div class="sec-sub">Tallas y medidas para compras en línea</div>
+        <div class="sec-sub">Tallas · Medidas · Progreso físico</div>
       </div>
       <span class="sec-tag tag-cyan"><i data-lucide="ruler" style="width:10px;height:10px;"></i> Cuerpo</span>
     </div>
     <div class="tile" style="padding:0;overflow:hidden;">
       <div class="meas-grid">
         {% for m in measurements %}
+        {% set hist = meas_history.get(m.key, []) %}
+        {% set prev_val = hist[1].value if hist|length > 1 else None %}
+        {% set curr_num = m.value|float(0) %}
+        {% set prev_num = prev_val|float(0) if prev_val else None %}
+        {% set delta = (curr_num - prev_num)|round(1) if prev_num is not none and curr_num != 0 and prev_num != 0 else None %}
         <div class="meas-cell" style="{% if loop.last and loop.index is odd %}grid-column:span 2;{% endif %}">
           <div class="meas-lbl">{{ m.label }}{% if m.unit %} <span style="opacity:.5;">({{ m.unit }})</span>{% endif %}</div>
           <div class="meas-row" id="mvrow-{{ m.key }}">
             <span class="meas-val" id="mval-{{ m.key }}">{{ m.value }}</span>
+            {% if delta is not none %}
+              {% if delta > 0 %}
+                <span class="meas-delta up" id="mdelta-{{ m.key }}">↑ +{{ delta }}</span>
+              {% elif delta < 0 %}
+                <span class="meas-delta down" id="mdelta-{{ m.key }}">↓ {{ delta }}</span>
+              {% else %}
+                <span class="meas-delta eq" id="mdelta-{{ m.key }}">→</span>
+              {% endif %}
+            {% else %}
+              <span class="meas-delta eq" id="mdelta-{{ m.key }}" style="display:none;"></span>
+            {% endif %}
             <button class="icon-btn" onclick="copyMeasure('{{ m.key }}')" title="Copiar">
               <i data-lucide="copy" style="width:12px;height:12px;"></i>
             </button>
@@ -248,6 +283,30 @@
             <button class="btn-a" style="padding:5px 12px;font-size:.54rem;" onclick="saveM('{{ m.key }}')">OK</button>
             <button class="btn-r" style="padding:5px 9px;" onclick="cancelM('{{ m.key }}')">✕</button>
           </div>
+          {% if hist %}
+          <button class="meas-hist-btn" onclick="toggleHist('{{ m.key }}')" id="mhistbtn-{{ m.key }}">
+            historial ({{ hist|length }})
+          </button>
+          <div class="meas-hist-panel" id="mhist-{{ m.key }}">
+            {% for entry in hist %}
+            {% set entry_num = entry.value|float(0) %}
+            {% set next_entry = hist[loop.index] if loop.index < hist|length else None %}
+            {% set next_num = next_entry.value|float(0) if next_entry else None %}
+            {% set chg = (entry_num - next_num)|round(1) if next_num is not none and entry_num != 0 and next_num != 0 else None %}
+            <div class="meas-hist-row">
+              <span class="meas-hist-date">{{ entry.date }}</span>
+              <span class="meas-hist-val">{{ entry.value }}{% if m.unit %} <span style="color:var(--dim);font-size:.44rem;">{{ m.unit }}</span>{% endif %}</span>
+              {% if chg is not none %}
+                {% if chg > 0 %}<span class="meas-hist-chg up">↑ +{{ chg }}</span>
+                {% elif chg < 0 %}<span class="meas-hist-chg down">↓ {{ chg }}</span>
+                {% else %}<span class="meas-hist-chg eq">→</span>{% endif %}
+              {% else %}<span class="meas-hist-chg eq" style="opacity:.3;">—</span>{% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div style="font-size:.44rem;color:var(--dim);margin-top:4px;opacity:.5;">sin registros aún</div>
+          {% endif %}
         </div>
         {% endfor %}
       </div>
@@ -452,11 +511,50 @@ function cancelM(k){
 }
 async function saveM(k){
   const val=document.getElementById('meinp-'+k).value.trim();if(!val)return;
+  const prevVal=mv[k];
   const r=await fetch('/perfil/api/update_measurement',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:val})});
   const j=await r.json().catch(()=>({}));
   if(!j.ok){toast('Error al guardar ✗');return;}
   mv[k]=val;
   document.getElementById('mval-'+k).textContent=val;
+  document.getElementById('meinp-'+k).value=val;
+  // Update delta badge
+  const deltaEl=document.getElementById('mdelta-'+k);
+  if(deltaEl){
+    const curr=parseFloat(val), prev=parseFloat(prevVal);
+    if(!isNaN(curr)&&!isNaN(prev)&&curr!==0&&prev!==0){
+      const diff=Math.round((curr-prev)*10)/10;
+      if(diff>0){deltaEl.className='meas-delta up';deltaEl.textContent='↑ +'+diff;deltaEl.style.display='';}
+      else if(diff<0){deltaEl.className='meas-delta down';deltaEl.textContent='↓ '+diff;deltaEl.style.display='';}
+      else{deltaEl.className='meas-delta eq';deltaEl.textContent='→';deltaEl.style.display='';}
+    }
+  }
+  // Rebuild history panel
+  if(j.history&&j.history.length){
+    const panel=document.getElementById('mhist-'+k);
+    const btn=document.getElementById('mhistbtn-'+k);
+    if(panel){
+      panel.innerHTML=j.history.map((e,i)=>{
+        const next=j.history[i+1];
+        let chgHtml='<span class="meas-hist-chg eq" style="opacity:.3;">—</span>';
+        if(next){
+          const ec=parseFloat(e.value),nc=parseFloat(next.value);
+          if(!isNaN(ec)&&!isNaN(nc)&&ec!==0&&nc!==0){
+            const d=Math.round((ec-nc)*10)/10;
+            if(d>0)chgHtml=`<span class="meas-hist-chg up">↑ +${d}</span>`;
+            else if(d<0)chgHtml=`<span class="meas-hist-chg down">↓ ${d}</span>`;
+            else chgHtml='<span class="meas-hist-chg eq">→</span>';
+          }
+        }
+        return `<div class="meas-hist-row">
+          <span class="meas-hist-date">${e.date}</span>
+          <span class="meas-hist-val">${e.value}</span>
+          ${chgHtml}
+        </div>`;
+      }).join('');
+    }
+    if(btn) btn.textContent=`historial (${j.history.length})`;
+  }
   cancelM(k);toast('Guardado ✓');
 }
 document.querySelectorAll('[id^=meinp-]').forEach(inp=>{
@@ -466,6 +564,10 @@ document.querySelectorAll('[id^=meinp-]').forEach(inp=>{
     if(e.key==='Escape')cancelM(k);
   });
 });
+function toggleHist(k){
+  const p=document.getElementById('mhist-'+k);
+  if(p) p.classList.toggle('open');
+}
 
 // ── Per-field docs panel ──────────────────────────────────────────────────────
 function toggleDocPanel(k){
