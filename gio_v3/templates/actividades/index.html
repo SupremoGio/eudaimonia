@@ -1,5 +1,6 @@
-{% extends "tw/layout.html" %}{% set pg='actividades' %}
+{% extends "eu/layout_sub.html" %}{% set pg='actividades' %}
 {% block title %}Acta Diurna — Eudaimonia{% endblock %}
+{% block module_title %}Acta Diurna{% endblock %}
 {% block topright %}{{ today_name }} · {{ today }}{% endblock %}
 {% block content %}
 <style>
@@ -12,22 +13,22 @@
 .sc-e::after{background:linear-gradient(90deg,var(--emerald),var(--emerald-l));}
 .sc-a::after{background:linear-gradient(90deg,var(--amber),var(--amber-l));}
 .sc-p::after{background:linear-gradient(90deg,var(--pink),#c026d3);}
-.sc-l{font-size:.44rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px;}
+.sc-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:6px;}
 .sc-n{font-size:2rem;font-weight:600;line-height:1;font-family:var(--serif);font-style:italic;}
 .sc-v .sc-n{color:var(--violet-l);}
 .sc-c .sc-n{color:var(--cyan);}
 .sc-e .sc-n{color:var(--emerald);}
 .sc-a .sc-n{color:var(--amber);}
 .sc-p .sc-n{color:var(--pink);}
-.sc-s{font-size:.48rem;color:var(--dim);margin-top:3px;}
+.sc-s{font-size:var(--fs-xs);color:var(--dim);margin-top:3px;}
 
 /* ── Daily Classification card ───────────────────────────────────────────── */
 .clf-card{border-radius:14px;padding:14px 16px;border:1px solid;position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;}
 .clf-icon{font-size:1.6rem;line-height:1;}
 .clf-body{flex:1;}
 .clf-rank{font-family:var(--serif);font-size:1.2rem;font-style:italic;font-weight:300;}
-.clf-desc{font-size:.48rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
-.clf-progress{margin-top:8px;font-size:.5rem;color:var(--dim);}
+.clf-desc{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
+.clf-progress{margin-top:8px;font-size:var(--fs-xs);color:var(--dim);}
 
 /* ── Level bar ───────────────────────────────────────────────────────────── */
 .lvl-bar{background:var(--card2);border-radius:100px;height:5px;overflow:hidden;margin-top:6px;}
@@ -39,21 +40,13 @@
 /* ── Category blocks ─────────────────────────────────────────────────────── */
 .cat-block{margin-bottom:16px;}
 .cat-block:last-child{margin-bottom:0;}
-.cat-n{display:inline-flex;align-items:center;font-size:.44rem;letter-spacing:.16em;text-transform:uppercase;padding:3px 10px;border-radius:100px;margin-bottom:9px;font-weight:500;}
-.cat-block:nth-child(8n+1) .cat-n{color:#a78bfa;background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);}
-.cat-block:nth-child(8n+2) .cat-n{color:#10b981;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);}
-.cat-block:nth-child(8n+3) .cat-n{color:var(--amber);background:var(--amber-d);border:1px solid rgba(245,158,11,.2);}
-.cat-block:nth-child(8n+4) .cat-n{color:var(--coral);background:var(--coral-d);border:1px solid rgba(244,63,94,.2);}
-.cat-block:nth-child(8n+5) .cat-n{color:#fb923c;background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.2);}
-.cat-block:nth-child(8n+6) .cat-n{color:var(--pink);background:var(--pink-d);border:1px solid rgba(236,72,153,.2);}
-.cat-block:nth-child(8n+7) .cat-n{color:var(--cyan);background:var(--cyan-d);border:1px solid rgba(6,182,212,.2);}
-.cat-block:nth-child(8n+0) .cat-n{color:var(--gold);background:var(--gold-d);border:1px solid rgba(245,158,11,.2);}
+.cat-n{display:inline-flex;align-items:center;font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;padding:3px 10px;border-radius:100px;margin-bottom:9px;font-weight:500;color:oklch(75% 0.13 var(--cat-hue));background:oklch(18% 0.04 var(--cat-hue));border:1px solid oklch(35% 0.09 var(--cat-hue));}
 
 .acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:5px;}
 .ab{
   background:var(--card2);border:1px solid var(--b);
   color:var(--mid);padding:10px 12px;border-radius:10px;
-  font-family:var(--mono);font-size:.6rem;cursor:pointer;
+  font-family:var(--mono);font-size:var(--fs-sm);cursor:pointer;
   display:flex;justify-content:space-between;align-items:center;
   gap:6px;transition:all .15s;text-align:left;line-height:1.3;
   min-height:44px;-webkit-tap-highlight-color:transparent;
@@ -62,7 +55,7 @@
 .ab:hover{border-color:var(--b2);color:var(--text);}
 .ab.done{background:rgba(124,58,237,.08);border-color:rgba(124,58,237,.3);color:var(--text);}
 .ab.done-alto{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.35);color:var(--text);}
-.pp{font-size:.44rem;padding:2px 6px;border-radius:100px;flex-shrink:0;white-space:nowrap;}
+.pp{font-size:var(--fs-xs);padding:2px 6px;border-radius:100px;flex-shrink:0;white-space:nowrap;}
 .pp.micro{background:var(--b);color:var(--dim);}
 .pp.progreso{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);color:#10b981;}
 .pp.alto{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--amber);}
@@ -73,20 +66,20 @@
 .weekend-sat{background:linear-gradient(135deg,rgba(6,182,212,.06),rgba(16,185,129,.04));border:1px solid rgba(6,182,212,.25);}
 .weekend-sun{background:linear-gradient(135deg,rgba(124,58,237,.07),rgba(245,158,11,.04));border:1px solid rgba(124,58,237,.25);}
 .wk-title{font-family:var(--serif);font-size:1.2rem;font-style:italic;font-weight:300;margin-bottom:4px;}
-.wk-sub{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;}
+.wk-sub{font-size:var(--fs-xs);margin-bottom:10px;}
 .weekend-sat .wk-title{color:var(--cyan);}
 .weekend-sat .wk-sub{color:rgba(6,182,212,.6);}
 .weekend-sun .wk-title{color:var(--violet-l);}
 .weekend-sun .wk-sub{color:rgba(167,139,250,.6);}
-.wk-xp-badge{position:absolute;top:14px;right:16px;font-size:.58rem;padding:5px 12px;border-radius:100px;}
+.wk-xp-badge{position:absolute;top:14px;right:16px;font-size:var(--fs-sm);padding:5px 12px;border-radius:100px;}
 .weekend-sat .wk-xp-badge{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);color:var(--cyan);}
 .weekend-sun .wk-xp-badge{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);color:var(--violet-l);}
-.wk-phase{font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;margin-top:12px;}
+.wk-phase{font-size:var(--fs-xs);color:var(--dim);margin-bottom:6px;margin-top:12px;}
 /* Progress bar */
 .wk-prog-wrap{margin-bottom:14px;}
 .wk-prog-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
-.wk-prog-lbl{font-size:.46rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
-.wk-prog-pct{font-size:.52rem;font-weight:700;}
+.wk-prog-lbl{font-size:var(--fs-xs);color:var(--dim);}
+.wk-prog-pct{font-size:var(--fs-sm);font-weight:700;}
 .weekend-sat .wk-prog-pct{color:var(--cyan);}
 .weekend-sun .wk-prog-pct{color:var(--violet-l);}
 .wk-prog-bar{height:4px;border-radius:100px;background:rgba(255,255,255,.07);overflow:hidden;}
@@ -97,22 +90,22 @@
 .wk-complete-badge{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;margin-top:10px;animation:wkPop .35s ease;}
 .weekend-sat .wk-complete-badge{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.35);color:var(--cyan);}
 .weekend-sun .wk-complete-badge{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.35);color:var(--violet-l);}
-.wk-complete-badge span{font-size:.6rem;font-weight:700;}
-.wk-complete-badge .wk-ec{font-size:.52rem;margin-left:auto;opacity:.8;}
+.wk-complete-badge span{font-size:var(--fs-sm);font-weight:700;}
+.wk-complete-badge .wk-ec{font-size:var(--fs-sm);margin-left:auto;opacity:.8;}
 @keyframes wkPop{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
 /* Optional activity badge */
 .ab.optional-act{border-style:dashed;opacity:.85;}
-.opt-tag{font-size:.4rem;color:var(--dim);background:var(--b);border:1px solid var(--b2);border-radius:100px;padding:1px 5px;letter-spacing:.06em;text-transform:uppercase;margin-left:3px;}
+.opt-tag{font-size:var(--fs-xs);color:var(--dim);background:var(--b);border:1px solid var(--b2);border-radius:100px;padding:1px 5px;letter-spacing:.06em;text-transform:uppercase;margin-left:3px;}
 
 /* ── Right column ────────────────────────────────────────────────────────── */
 .rc{display:flex;flex-direction:column;gap:12px;}
 .sec-hd-inner{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .sec-t{font-family:var(--serif);font-size:1rem;font-style:italic;font-weight:300;color:var(--text);}
-.sec-badge{font-size:.42rem;color:var(--gold);background:var(--gold-d);border:1px solid rgba(245,158,11,.2);padding:2px 7px;border-radius:100px;letter-spacing:.06em;}
+.sec-badge{font-size:var(--fs-xs);color:var(--gold);background:var(--gold-d);border:1px solid rgba(245,158,11,.2);padding:2px 7px;border-radius:100px;letter-spacing:.06em;}
 
 /* Prioridades */
 .pi{display:flex;gap:7px;margin-bottom:10px;}
-.pi input{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:.68rem;outline:none;transition:border-color .18s;}
+.pi input{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;transition:border-color .18s;}
 .pi input:focus{border-color:var(--violet-l);}
 .pl{display:flex;flex-direction:column;gap:6px;margin-bottom:8px;}
 .pitem{display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid var(--b);border-radius:10px;cursor:pointer;transition:all .18s;}
@@ -122,24 +115,24 @@
 .pitem.dn .pck{border-color:var(--emerald);background:var(--emerald);}
 .pck svg{width:9px;height:9px;color:#fff;display:none;}
 .pitem.dn .pck svg{display:block;}
-.ptxt{font-size:.68rem;color:var(--mid);}
+.ptxt{font-size:var(--fs-sm);color:var(--mid);}
 .pitem.dn .ptxt{color:var(--emerald);text-decoration:line-through;}
-.bonus{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);color:var(--emerald);font-size:.56rem;padding:8px 12px;border-radius:10px;text-align:center;display:none;}
+.bonus{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);color:var(--emerald);font-size:var(--fs-sm);padding:8px 12px;border-radius:10px;text-align:center;display:none;}
 .bonus.on{display:block;}
 
 /* Racha */
 .str-n{font-size:2.8rem;font-weight:300;font-family:var(--serif);font-style:italic;line-height:1;margin:4px 0 3px;color:var(--amber);}
-.str-s{font-size:.5rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;}
-.str-bdg{margin-top:10px;padding:7px 12px;background:var(--amber-d);border:1px solid rgba(245,158,11,.22);border-radius:10px;font-size:.56rem;color:var(--amber);display:none;}
+.str-s{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;}
+.str-bdg{margin-top:10px;padding:7px 12px;background:var(--amber-d);border:1px solid rgba(245,158,11,.22);border-radius:10px;font-size:var(--fs-sm);color:var(--amber);display:none;}
 .str-bdg.on{display:block;}
 
 /* Word */
 .wh2{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px;}
-.w-ph{font-size:.48rem;color:var(--dim);margin-bottom:2px;}
+.w-ph{font-size:var(--fs-xs);color:var(--dim);margin-bottom:2px;}
 .w-w{font-family:var(--serif);font-size:1.35rem;font-style:italic;font-weight:300;line-height:1;margin-bottom:6px;color:var(--text);}
-.w-m{font-size:.62rem;color:var(--mid);line-height:1.55;margin-bottom:7px;}
-.w-ex{font-size:.58rem;color:var(--dim);font-style:italic;border-left:2px solid var(--cyan);padding-left:8px;line-height:1.55;margin-bottom:8px;}
-.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:.5rem;color:var(--blue);background:var(--blue-d);border:1px solid rgba(59,130,246,.18);padding:3px 8px;border-radius:100px;}
+.w-m{font-size:var(--fs-sm);color:var(--mid);line-height:1.55;margin-bottom:7px;}
+.w-ex{font-size:var(--fs-sm);color:var(--dim);font-style:italic;border-left:2px solid var(--cyan);padding-left:8px;line-height:1.55;margin-bottom:8px;}
+.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-xs);color:var(--blue);background:var(--blue-d);border:1px solid rgba(59,130,246,.18);padding:3px 8px;border-radius:100px;}
 .rb{background:none;border:1px solid var(--b2);color:var(--dim);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0;}
 .rb:hover{border-color:var(--violet-l);color:var(--violet-l);}
 .rb svg{width:10px;height:10px;}
@@ -148,25 +141,25 @@
 .q-c{background:linear-gradient(135deg,rgba(124,58,237,.07),rgba(6,182,212,.03));border:1px solid var(--b2);border-radius:14px;padding:16px;display:flex;align-items:flex-start;gap:10px;}
 .q-inner{flex:1;}
 .q-t{font-family:var(--serif);font-size:.9rem;font-weight:300;font-style:italic;line-height:1.65;color:var(--text);transition:opacity .26s;}
-.q-a{font-size:.46rem;color:var(--violet-l);letter-spacing:.12em;text-transform:uppercase;margin-top:7px;transition:opacity .26s;}
+.q-a{font-size:var(--fs-xs);color:var(--violet-l);margin-top:7px;transition:opacity .26s;font-style:italic;}
 
 /* Pipeline */
 .pipe-r{display:flex;gap:7px;margin-bottom:12px;}
-.pipe-inp{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:.68rem;outline:none;transition:border-color .18s;}
+.pipe-inp{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:8px 11px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;transition:border-color .18s;}
 .pipe-inp:focus{border-color:var(--violet-l);}
 .chips{display:flex;gap:6px;flex-wrap:wrap;}
-.chip{background:var(--card2);border:1px solid var(--b);padding:5px 10px;border-radius:100px;font-size:.6rem;color:var(--mid);display:flex;align-items:center;gap:5px;}
+.chip{background:var(--card2);border:1px solid var(--b);padding:5px 10px;border-radius:100px;font-size:var(--fs-sm);color:var(--mid);display:flex;align-items:center;gap:5px;}
 .dc{background:none;border:none;color:var(--dim);display:flex;align-items:center;padding:0;transition:color .18s;}
 .dc:hover{color:var(--coral);}
 .dc svg{width:9px;height:9px;}
 
 /* Combo toast */
-.combo-popup{position:fixed;bottom:90px;right:20px;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(124,58,237,.1));border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 16px;font-size:.64rem;color:var(--amber);pointer-events:none;z-index:200;opacity:0;transform:translateY(10px);transition:all .3s;}
+.combo-popup{position:fixed;bottom:90px;right:20px;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(124,58,237,.1));border:1px solid rgba(245,158,11,.4);border-radius:12px;padding:12px 16px;font-size:var(--fs-sm);color:var(--amber);pointer-events:none;z-index:200;opacity:0;transform:translateY(10px);transition:all .3s;}
 .combo-popup.show{opacity:1;transform:translateY(0);}
 
 /* Payment alerts */
 .pay-alerts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
-.pay-alert{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.02);font-size:.56rem;letter-spacing:.07em;}
+.pay-alert{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.02);font-size:var(--fs-sm);letter-spacing:.07em;}
 
 /* Responsive */
 @media(max-width:1100px){
@@ -232,29 +225,29 @@
   <div class="clf-card" id="clf-card" style="background:{{ clf.color }}12;border-color:{{ clf.color }}44;">
     <div class="clf-icon">{{ clf.icon }}</div>
     <div class="clf-body">
-      <div style="font-size:.44rem;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px;">Clasificación de hoy</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px;">Clasificación de hoy</div>
       <div class="clf-rank" id="clf-rank" style="color:{{ clf.color }}">{{ clf.label }}</div>
       <div class="clf-desc" id="clf-desc">{{ clf.desc }}</div>
     </div>
     <div style="text-align:right;flex-shrink:0;">
-      <div style="font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;">XP</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;">XP</div>
       <div style="font-family:var(--serif);font-size:1.4rem;font-style:italic;color:{{ clf.color }}" id="clf-xp">{{ clf.xp }}</div>
     </div>
   </div>
   <div class="tile" style="padding:14px 16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
       <div>
-        <div style="font-size:.44rem;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;">Nivel {{ gam.level }}</div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.16em;text-transform:uppercase;">Nivel {{ gam.level }}</div>
         <div style="font-family:var(--serif);font-size:1rem;font-style:italic;color:var(--violet-l);" id="lvl-name">{{ gam.level_name }}</div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:.48rem;color:var(--dim);">Total XP</div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);">Total XP</div>
         <div style="font-family:var(--serif);font-size:1rem;font-style:italic;color:var(--violet-l);" id="lvl-total-xp">{{ gam.total_xp }}</div>
       </div>
     </div>
-    <div style="font-size:.48rem;color:var(--dim);margin-bottom:6px;" id="lvl-sub">{{ gam.level_subtitle }}</div>
+    <div style="font-size:var(--fs-xs);color:var(--dim);margin-bottom:6px;" id="lvl-sub">{{ gam.level_subtitle }}</div>
     <div class="lvl-bar"><div class="lvl-fill" id="lvl-fill" style="width:{{ gam.level_pct }}%"></div></div>
-    <div style="font-size:.46rem;color:var(--dim);margin-top:5px;" id="lvl-next">
+    <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:5px;" id="lvl-next">
       {% if not gam.max_level %}{{ gam.xp_to_next }} XP para siguiente nivel{% else %}EUDAIMÓN — Nivel máximo alcanzado{% endif %}
     </div>
   </div>
@@ -263,17 +256,17 @@
 <!-- Reset Confirmation Modal -->
 <div id="reset-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center;">
   <div style="background:var(--card);border:1px solid rgba(244,63,94,.3);border-radius:16px;padding:28px 32px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5);">
-    <div style="font-size:.44rem;color:var(--coral);letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Acción irreversible</div>
+    <div style="font-size:var(--fs-xs);color:var(--coral);letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;">Acción irreversible</div>
     <div style="font-family:var(--serif);font-size:1.1rem;font-style:italic;color:var(--text);margin-bottom:10px;">Reset de Gamificación</div>
-    <div style="font-size:.6rem;color:var(--mid);line-height:1.6;margin-bottom:20px;">
+    <div style="font-size:var(--fs-sm);color:var(--mid);line-height:1.6;margin-bottom:20px;">
       Se borrarán permanentemente todos los XP, Euda-Credits, logros, badges, rachas y registros de actividades.<br><br>
       <span style="color:var(--dim);">Los rewards de la tienda se conservan.</span>
     </div>
-    <div style="font-size:.52rem;color:var(--dim);margin-bottom:16px;">Escribe <strong style="color:var(--coral);">RESET</strong> para confirmar:</div>
-    <input id="reset-confirm-input" type="text" placeholder="RESET" style="width:100%;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;font-size:.65rem;color:var(--text);font-family:var(--mono);letter-spacing:.08em;box-sizing:border-box;margin-bottom:14px;outline:none;">
+    <div style="font-size:var(--fs-sm);color:var(--dim);margin-bottom:16px;">Escribe <strong style="color:var(--coral);">RESET</strong> para confirmar:</div>
+    <input id="reset-confirm-input" type="text" placeholder="RESET" style="width:100%;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;font-size:var(--fs-sm);color:var(--text);font-family:var(--mono);letter-spacing:.08em;box-sizing:border-box;margin-bottom:14px;outline:none;">
     <div style="display:flex;gap:8px;">
-      <button onclick="closeResetModal()" style="flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:9px;font-size:.52rem;color:var(--mid);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;">Cancelar</button>
-      <button id="reset-confirm-btn" onclick="executeReset()" style="flex:1;background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.3);border-radius:8px;padding:9px;font-size:.52rem;color:var(--coral);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;opacity:.4;transition:opacity .15s;" disabled>Confirmar Reset</button>
+      <button onclick="closeResetModal()" style="flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:9px;font-size:var(--fs-sm);color:var(--mid);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;">Cancelar</button>
+      <button id="reset-confirm-btn" onclick="executeReset()" style="flex:1;background:rgba(244,63,94,.12);border:1px solid rgba(244,63,94,.3);border-radius:8px;padding:9px;font-size:var(--fs-sm);color:var(--coral);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;opacity:.4;transition:opacity .15s;" disabled>Confirmar Reset</button>
     </div>
   </div>
 </div>
@@ -309,7 +302,7 @@
       <div class="wk-complete-badge" id="sat-complete-badge" style="display:none;">
         <span>🎉 ¡Sábado Completo!</span><span class="wk-ec">+4 XP · +2 EC</span>
       </div>
-      <div style="margin-top:12px;padding:8px 12px;background:rgba(6,182,212,.06);border-radius:9px;font-size:.54rem;color:rgba(6,182,212,.7);">
+      <div style="margin-top:12px;padding:8px 12px;background:rgba(6,182,212,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(6,182,212,.7);">
         💡 Completa los 3 bloques para obtener +4 XP bonus automático
       </div>
     </div>
@@ -343,7 +336,7 @@
       <div class="wk-complete-badge" id="sun-complete-badge" style="display:none;">
         <span>🎉 ¡Domingo Completo!</span><span class="wk-ec">+5 XP · +3 EC</span>
       </div>
-      <div style="margin-top:12px;padding:8px 12px;background:rgba(124,58,237,.06);border-radius:9px;font-size:.54rem;color:rgba(167,139,250,.7);">
+      <div style="margin-top:12px;padding:8px 12px;background:rgba(124,58,237,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(167,139,250,.7);">
         💡 Completa todas las fases para +5 XP bonus · Sábado+Domingo = 🏆 Fin de Semana Perfecto
       </div>
     </div>
@@ -353,12 +346,12 @@
     <div class="tile">
       <div style="margin-bottom:16px;">
         <div style="font-family:var(--serif);font-size:1.35rem;font-style:italic;font-weight:300;color:var(--text);">Acta Diurna del Día</div>
-        <div style="font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:3px;">Registro de actividades y virtudes · <span style="color:rgba(16,185,129,.7);">progreso</span> = genera EC · <span style="color:var(--amber);">alto</span> = transformación</div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:3px;">Registro de actividades y virtudes · <span style="color:rgba(16,185,129,.7);">progreso</span> genera EC · <span style="color:var(--amber);">alto</span> es transformación</div>
       </div>
       {% for cat in cats %}
         {% set ca=activities.items()|selectattr('1.cat','equalto',cat)|list %}
         {% if ca %}
-        <div class="cat-block">
+        <div class="cat-block" style="--cat-hue:{{ category_hues.get(cat, 200) }}">
           <div class="cat-n">{{ cat }}</div>
           <div class="acts">
             {% for key,act in ca %}
@@ -413,7 +406,7 @@
       </div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
         {% for milestone in [7, 21, 30] %}
-        <div style="font-size:.48rem;padding:3px 9px;border-radius:100px;{% if stats.streak >= milestone %}background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--amber);{% else %}background:var(--card2);border:1px solid var(--b);color:var(--dim);{% endif %}">
+        <div style="font-size:var(--fs-xs);padding:3px 9px;border-radius:100px;{% if stats.streak >= milestone %}background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--amber);{% else %}background:var(--card2);border:1px solid var(--b);color:var(--dim);{% endif %}">
           {{ milestone }}d{% if stats.streak >= milestone %} ✓{% endif %}
         </div>
         {% endfor %}
@@ -438,7 +431,7 @@
     <!-- Quotes: Estoicismo + Motivación -->
     <div class="q-c">
       <div class="q-inner">
-        <div style="font-size:.38rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);opacity:.7;margin-bottom:6px;">Estoicismo</div>
+        <div style="font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--gold);opacity:.7;margin-bottom:6px;">Estoicismo</div>
         <div class="q-t" id="q-stoic-t">"{{ quote_stoic.text }}"</div>
         <div class="q-a" id="q-stoic-a">— {{ quote_stoic.author }}</div>
       </div>
@@ -446,7 +439,7 @@
     </div>
     <div class="q-c" style="background:linear-gradient(135deg,rgba(251,191,36,.06),rgba(6,182,212,.03));">
       <div class="q-inner">
-        <div style="font-size:.38rem;letter-spacing:.18em;text-transform:uppercase;color:var(--violet-l);opacity:.8;margin-bottom:6px;">Motivación</div>
+        <div style="font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--violet-l);opacity:.8;margin-bottom:6px;">Motivación</div>
         <div class="q-t" id="q-motiv-t">"{{ quote_motiv.text }}"</div>
         <div class="q-a" id="q-motiv-a">— {{ quote_motiv.author }}</div>
       </div>
@@ -455,9 +448,9 @@
 
     <!-- Reset Gamificación -->
     <div style="border:1px solid rgba(244,63,94,.3);border-radius:14px;padding:14px 16px;background:rgba(244,63,94,.04);">
-      <div style="font-size:.44rem;color:var(--coral);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;">Zona de peligro</div>
-      <div style="font-size:.6rem;color:var(--mid);margin-bottom:12px;line-height:1.5;">Borra todo: XP, EC, racha, logros y badges. Empieza desde cero.</div>
-      <button onclick="openResetModal()" style="width:100%;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.4);border-radius:8px;padding:9px;font-size:.52rem;color:var(--coral);cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:background .15s;" onmouseover="this.style.background='rgba(244,63,94,.22)'" onmouseout="this.style.background='rgba(244,63,94,.1)'">Reset Gamificación</button>
+      <div style="font-size:var(--fs-xs);color:var(--coral);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;">Zona de peligro</div>
+      <div style="font-size:var(--fs-sm);color:var(--mid);margin-bottom:12px;line-height:1.5;">Borra todo: XP, EC, racha, logros y badges. Empieza desde cero.</div>
+      <button onclick="openResetModal()" style="width:100%;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.4);border-radius:8px;padding:9px;font-size:var(--fs-sm);color:var(--coral);cursor:pointer;letter-spacing:.1em;text-transform:uppercase;transition:background .15s;" onmouseover="this.style.background='rgba(244,63,94,.22)'" onmouseout="this.style.background='rgba(244,63,94,.1)'">Reset Gamificación</button>
     </div>
 
     <!-- Pipeline -->

@@ -12,63 +12,63 @@
 /* ── Word card ── */
 .w-card{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:18px 20px;}
 .wh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.w-ph{font-size:.5rem;color:var(--dim);margin-bottom:2px;}
+.w-ph{font-size:var(--fs-xs);color:var(--dim);margin-bottom:2px;}
 .w-w{font-family:var(--serif);font-size:1.6rem;font-style:italic;line-height:1;margin-bottom:6px;}
-.w-m{font-size:.66rem;color:var(--mid);line-height:1.5;margin-bottom:9px;}
-.w-ex{font-size:.62rem;color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:8px;line-height:1.5;margin-bottom:9px;}
-.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:.52rem;color:var(--blue);background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);padding:2px 8px;border-radius:100px;}
+.w-m{font-size:var(--fs-sm);color:var(--mid);line-height:1.5;margin-bottom:9px;}
+.w-ex{font-size:var(--fs-sm);color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:8px;line-height:1.5;margin-bottom:9px;}
+.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-sm);color:var(--blue);background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);padding:2px 8px;border-radius:100px;}
 .rb{background:none;border:1px solid var(--b);color:var(--dim);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .17s;}
 .rb:hover{border-color:var(--gold);color:var(--gold);}
 .rb svg{width:11px;height:11px;}
 
 /* ── Journal ── */
-.jtxt{width:100%;background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px;color:var(--text);font-family:var(--mono);font-size:.72rem;outline:none;resize:vertical;min-height:110px;transition:border-color .16s;line-height:1.6;box-sizing:border-box;}
+.jtxt{width:100%;background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;resize:vertical;min-height:110px;transition:border-color .16s;line-height:1.6;box-sizing:border-box;}
 .jtxt:focus{border-color:var(--gold);}
 .j-meta{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end;flex-wrap:wrap;}
 .fb-box{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:14px;margin-top:12px;display:none;}
 .fb-box.on{display:block;}
 .fb-score{font-family:var(--serif);font-size:2rem;color:var(--gold);line-height:1;margin-bottom:2px;}
-.fb-grade{font-size:.58rem;color:var(--mid);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
-.fb-item{font-size:.63rem;color:var(--mid);padding:6px 0;border-bottom:1px solid var(--b);display:flex;gap:8px;align-items:flex-start;}
+.fb-grade{font-size:var(--fs-sm);color:var(--mid);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.fb-item{font-size:var(--fs-sm);color:var(--mid);padding:6px 0;border-bottom:1px solid var(--b);display:flex;gap:8px;align-items:flex-start;}
 .fb-item:last-child{border-bottom:none;}
 .fb-issue{color:var(--red);font-weight:600;}
 .fb-sug{color:var(--green);font-weight:600;}
-.fb-type{font-size:.46rem;padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.07);color:var(--dim);text-transform:uppercase;flex-shrink:0;margin-top:1px;}
+.fb-type{font-size:var(--fs-xs);padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.07);color:var(--dim);text-transform:uppercase;flex-shrink:0;margin-top:1px;}
 
 /* ── Test table ── */
 .test-table{width:100%;border-collapse:collapse;}
-.test-table th{font-size:.46rem;color:var(--dim);letter-spacing:.13em;text-transform:uppercase;padding:0 7px 9px;text-align:left;border-bottom:1px solid var(--b);}
-.test-table td{padding:9px 7px;border-bottom:1px solid var(--b);font-size:.66rem;color:var(--mid);}
+.test-table th{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.13em;text-transform:uppercase;padding:0 7px 9px;text-align:left;border-bottom:1px solid var(--b);}
+.test-table td{padding:9px 7px;border-bottom:1px solid var(--b);font-size:var(--fs-sm);color:var(--mid);}
 .test-table tr:last-child td{border-bottom:none;}
 .score-badge{font-family:var(--serif);font-size:1rem;color:var(--gold);}
-.test-type{font-size:.5rem;padding:2px 7px;border-radius:100px;letter-spacing:.08em;text-transform:uppercase;}
+.test-type{font-size:var(--fs-xs);padding:2px 7px;border-radius:100px;letter-spacing:.08em;text-transform:uppercase;}
 .tt-ielts{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);color:var(--blue);}
 .tt-dalf{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:var(--purple);}
 .tt-other{background:var(--b);color:var(--dim);}
 .jentry{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:11px 13px;margin-bottom:7px;}
 .je-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
-.je-date{font-size:.5rem;color:var(--dim);letter-spacing:.09em;}
-.je-lang{font-size:.48rem;color:var(--gold);background:var(--gold-d);padding:2px 7px;border-radius:100px;}
+.je-date{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.09em;}
+.je-lang{font-size:var(--fs-xs);color:var(--gold);background:var(--gold-d);padding:2px 7px;border-radius:100px;}
 .je-text{font-size:.67rem;color:var(--mid);line-height:1.5;}
 
 /* ── Quiz ── */
-.quiz-lang-btn{padding:6px 18px;border-radius:999px;font-size:.62rem;font-weight:700;border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .15s;letter-spacing:.06em;}
+.quiz-lang-btn{padding:6px 18px;border-radius:999px;font-size:var(--fs-sm);font-weight:700;border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .15s;letter-spacing:.06em;}
 .quiz-lang-btn.on{background:var(--gold);color:#0a0a1a;border-color:var(--gold);}
 .quiz-lang-btn:hover:not(.on){border-color:var(--gold);color:var(--gold);}
 .q-item{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
 .q-word{font-family:var(--serif);font-size:1.1rem;font-style:italic;color:var(--gold);margin-bottom:4px;}
-.q-question{font-size:.68rem;color:var(--mid);margin-bottom:10px;}
+.q-question{font-size:var(--fs-sm);color:var(--mid);margin-bottom:10px;}
 .q-options{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 @media(max-width:480px){.q-options{grid-template-columns:1fr;}}
-.q-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;border:1px solid var(--b);cursor:pointer;transition:all .14s;font-size:.63rem;color:var(--mid);}
+.q-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;border:1px solid var(--b);cursor:pointer;transition:all .14s;font-size:var(--fs-sm);color:var(--mid);}
 .q-opt:hover{border-color:var(--gold);color:var(--text);}
 .q-opt input{accent-color:var(--gold);flex-shrink:0;}
 .q-opt.correct{border-color:#34d399;background:rgba(52,211,153,.08);color:#34d399;}
 .q-opt.wrong{border-color:#f87171;background:rgba(248,113,113,.08);color:#f87171;}
-.q-example{font-size:.58rem;color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:7px;margin-top:8px;}
+.q-example{font-size:var(--fs-sm);color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:7px;margin-top:8px;}
 .quiz-score{text-align:center;padding:20px 0;}
 .quiz-score-n{font-family:var(--serif);font-size:3rem;color:var(--gold);line-height:1;}
-.quiz-score-l{font-size:.6rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;}
+.quiz-score-l{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;}
 </style>
 
 <div class="id-grid">
@@ -78,7 +78,7 @@
     <div class="wh">
       <div class="tile-lbl" style="margin:0">WORD OF THE DAY</div>
       <div style="display:flex;gap:6px;align-items:center;">
-        <span style="font-size:.46rem;color:var(--blue);background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.18);padding:2px 7px;border-radius:100px;">EN → FR</span>
+        <span style="font-size:var(--fs-xs);color:var(--blue);background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.18);padding:2px 7px;border-radius:100px;">EN → FR</span>
         <button class="rb" onclick="rw()"><i data-lucide="refresh-cw"></i></button>
       </div>
     </div>
@@ -113,11 +113,11 @@
           <td><span class="test-type tt-{{ t.test_type.split()[0].lower() }}">{{ t.test_type }}</span></td>
           <td class="score-badge">{{ t.score }}</td>
           <td>{{ t.test_date }}</td>
-          <td style="font-size:.6rem">{{ t.notes or '—' }}</td>
+          <td style="font-size:var(--fs-sm)">{{ t.notes or '—' }}</td>
           <td><button class="btn-r" onclick="delTest({{ t.id }},this)">✕</button></td>
         </tr>
         {% else %}
-        <tr><td colspan="5" style="text-align:center;padding:18px;color:var(--dim);font-size:.62rem;">Sin resultados</td></tr>
+        <tr><td colspan="5" style="text-align:center;padding:18px;color:var(--dim);font-size:var(--fs-sm);">Sin resultados</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -128,7 +128,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
       <div>
         <div class="tile-lbl" style="margin:0;">QUIZ VOCABULARIO C1</div>
-        <div style="font-size:.55rem;color:var(--dim);margin-top:2px;">5 preguntas · palabras de nivel avanzado</div>
+        <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;">5 preguntas · palabras de nivel avanzado</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="quiz-lang-btn on" id="btnEN" onclick="setLang('en')">🇬🇧 English</button>
@@ -137,7 +137,7 @@
       </div>
     </div>
 
-    <div id="quizLoading" style="display:none;text-align:center;padding:20px;color:var(--dim);font-size:.68rem;">
+    <div id="quizLoading" style="display:none;text-align:center;padding:20px;color:var(--dim);font-size:var(--fs-sm);">
       Cargando preguntas…
     </div>
     <div id="quizBody" style="display:none;">
@@ -181,8 +181,8 @@
           <div class="fb-grade" id="fb-grade">—</div>
         </div>
         <div style="text-align:right;">
-          <div style="font-size:.5rem;color:var(--green);font-weight:600;">✓ LanguageTool API</div>
-          <div style="font-size:.48rem;color:var(--dim);" id="fb-wordcount"></div>
+          <div style="font-size:var(--fs-xs);color:var(--green);font-weight:600;">✓ LanguageTool API</div>
+          <div style="font-size:var(--fs-xs);color:var(--dim);" id="fb-wordcount"></div>
         </div>
       </div>
       <div id="fb-corrections"></div>
@@ -197,13 +197,13 @@
             <span class="je-date">{{ e.entry_date }}</span>
             <div style="display:flex;align-items:center;gap:7px;">
               <span class="je-lang">{{ e.language }}</span>
-              <button class="btn-r" onclick="delJournal({{e.id}},this)" style="padding:2px 7px;font-size:.48rem;">✕</button>
+              <button class="btn-r" onclick="delJournal({{e.id}},this)" style="padding:2px 7px;font-size:var(--fs-xs);">✕</button>
             </div>
           </div>
           <div class="je-text">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</div>
         </div>
         {% else %}
-        <div style="font-size:.64rem;color:var(--dim);padding:12px 0;">Sin entradas aún — escribe tu primera</div>
+        <div style="font-size:var(--fs-sm);color:var(--dim);padding:12px 0;">Sin entradas aún — escribe tu primera</div>
         {% endfor %}
       </div>
     </div>
@@ -258,7 +258,7 @@ async function getFeedback(){
       <div class="fb-item">
         <span class="fb-type">${c.type}</span>
         <span>❌ <span class="fb-issue">"${c.issue}"</span>${c.suggestion?' → <span class="fb-sug">"'+c.suggestion+'"</span>':''}
-        <span style="color:var(--dim);font-size:.6rem;"> — ${c.message}</span></span>
+        <span style="color:var(--dim);font-size:var(--fs-sm);"> — ${c.message}</span></span>
       </div>`).join('');
   } else {
     corr.innerHTML='<div class="fb-item" style="color:var(--green);">✓ Sin errores detectados — excelente escritura</div>';

@@ -74,7 +74,7 @@
   .m-show, .show-m { display:block !important; }
   .m-full      { width:100% !important; max-width:100% !important; }
   .m-center    { text-align:center !important; justify-content:center !important; }
-  .m-small     { font-size:.58rem !important; }
+  .m-small     { font-size:var(--fs-sm) !important; }
 
   /* ── Tile padding ── */
   .tile        { padding:14px 12px !important; }
@@ -121,12 +121,12 @@
   .bal-v           { font-size:1.3rem !important; }
   .debt-form       { grid-template-columns:1fr 1fr !important; gap:8px !important; }
   .debt-form > *:last-child { grid-column:1/-1; }
-  .debt-table      { font-size:.56rem; }
+  .debt-table      { font-size:var(--fs-sm); }
   .debt-table thead{ display:none; }
   .debt-table td   { display:block; padding:4px 6px; }
   .debt-table td::before {
     content:attr(data-label);
-    font-size:.44rem; color:var(--dim);
+    font-size:var(--fs-xs); color:var(--dim);
     letter-spacing:.12em; text-transform:uppercase;
     display:block; margin-bottom:1px;
   }
@@ -143,7 +143,7 @@
   .acts-grid       { grid-template-columns:1fr 1fr !important; gap:8px !important; }
 
   /* Topbar */
-  .topbar-r        { font-size:.44rem !important; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .topbar-r        { font-size:var(--fs-xs) !important; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   /* Toast */
   #toast           { left:12px !important; right:12px !important; bottom:82px !important; text-align:center !important; }

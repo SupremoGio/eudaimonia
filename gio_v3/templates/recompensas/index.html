@@ -12,30 +12,30 @@
 .rc.can:hover{border-color:rgba(201,168,76,.55);box-shadow:0 6px 24px rgba(201,168,76,.08);}
 .rc-name{font-family:var(--serif);font-size:1.05rem;font-style:italic;font-weight:400;color:var(--text);}
 .rc-cost{font-family:var(--serif);font-size:1.4rem;font-style:italic;color:var(--gold);}
-.rc-cost small{font-family:var(--sans);font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;display:block;text-align:right;margin-top:1px;}
-.rc-desc{font-size:.6rem;color:var(--mid);line-height:1.55;margin-bottom:10px;}
+.rc-cost small{font-family:var(--sans);font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;display:block;text-align:right;margin-top:1px;}
+.rc-desc{font-size:var(--fs-sm);color:var(--mid);line-height:1.55;margin-bottom:10px;}
 .rc-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
-.rchip{font-size:.44rem;padding:2px 7px;border-radius:100px;letter-spacing:.05em;}
+.rchip{font-size:var(--fs-xs);padding:2px 7px;border-radius:100px;letter-spacing:.05em;}
 .rchip-lvl{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
 .rchip-badge{background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.2);color:var(--mid);}
 .rchip-cool{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
-.btn-redeem{width:100%;padding:9px;border-radius:8px;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;font-family:var(--sans);cursor:pointer;transition:all .18s;border:none;}
+.btn-redeem{width:100%;padding:9px;border-radius:8px;font-size:var(--fs-sm);letter-spacing:.1em;text-transform:uppercase;font-family:var(--sans);cursor:pointer;transition:all .18s;border:none;}
 .btn-redeem.active{background:linear-gradient(135deg,#7A5520,#C9A84C);color:#09070F;font-weight:600;}
 .btn-redeem.active:hover{opacity:.88;transform:translateY(-1px);}
 .btn-redeem.blocked{background:var(--card2);border:1px solid var(--b);color:var(--dim);cursor:not-allowed;}
-.block-msg{font-size:.5rem;color:var(--coral);margin-top:7px;text-align:center;}
-.last-red{font-size:.46rem;color:var(--dim);margin-top:5px;text-align:center;}
+.block-msg{font-size:var(--fs-xs);color:var(--coral);margin-top:7px;text-align:center;}
+.last-red{font-size:var(--fs-xs);color:var(--dim);margin-top:5px;text-align:center;}
 .rc-actions{position:absolute;top:10px;right:10px;display:flex;gap:3px;}
 
 /* ── Gasto libre ── */
 .gasto-row{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:flex-end;margin-bottom:10px;}
-.sep-sym{display:flex;align-items:center;padding-bottom:14px;color:var(--dim);font-size:.7rem;}
+.sep-sym{display:flex;align-items:center;padding-bottom:14px;color:var(--dim);font-size:var(--fs-sm);}
 
 /* ── Historial ── */
 .hrow{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--b);}
 .hrow:last-child{border-bottom:none;}
-.hrow-desc{font-size:.68rem;color:var(--text);}
-.hrow-meta{font-size:.44rem;color:var(--dim);letter-spacing:.06em;margin-top:2px;}
+.hrow-desc{font-size:var(--fs-sm);color:var(--text);}
+.hrow-meta{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.06em;margin-top:2px;}
 .hrow-ec{font-family:var(--serif);font-size:.95rem;font-style:italic;color:var(--coral);white-space:nowrap;}
 
 @media(max-width:600px){
@@ -68,7 +68,7 @@
 <div class="tile" style="padding:12px 16px;margin-bottom:14px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
     <span class="fl" style="margin:0;">Progreso al siguiente nivel</span>
-    <span style="font-size:.58rem;color:var(--gold);">{{ level_info.xp_to_next }} XP → Nivel {{ gam.level + 1 }}</span>
+    <span style="font-size:var(--fs-sm);color:var(--gold);">{{ level_info.xp_to_next }} XP → Nivel {{ gam.level + 1 }}</span>
   </div>
   <div style="background:rgba(255,255,255,.06);border-radius:100px;height:4px;overflow:hidden;">
     <div style="width:{{ level_info.level_pct }}%;height:100%;background:linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D);border-radius:100px;transition:width .5s;"></div>
@@ -82,7 +82,7 @@
       <div style="font-family:var(--serif);font-size:1.05rem;font-style:italic;color:var(--gold);">Gastar EC</div>
       <div class="pg-s">Balance: <strong id="ec-gasto-bal" style="color:var(--gold);">{{ ec_balance }} EC</strong></div>
     </div>
-    <span style="font-size:.46rem;color:var(--dim);letter-spacing:.1em;">1 EC = $10 MXN</span>
+    <span style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;">1 EC = $10 MXN</span>
   </div>
 
   <div class="gasto-row">
@@ -90,14 +90,14 @@
       <label class="fl">Pesos MXN</label>
       <input class="fi" id="g-pesos" type="number" min="0" placeholder="150"
              oninput="syncGasto('pesos')" style="font-size:.85rem;" />
-      <span style="font-size:.44rem;color:var(--dim);margin-top:3px;" id="g-pesos-hint">÷ 10 = EC</span>
+      <span style="font-size:var(--fs-xs);color:var(--dim);margin-top:3px;" id="g-pesos-hint">÷ 10 = EC</span>
     </div>
     <div class="sep-sym">⇄</div>
     <div class="fg">
       <label class="fl">EC a gastar</label>
       <input class="fi" id="g-ec" type="number" min="1" placeholder="15"
              oninput="syncGasto('ec')" style="font-size:.85rem;color:var(--gold);" />
-      <span style="font-size:.44rem;color:var(--dim);margin-top:3px;" id="g-ec-hint">× 10 = pesos</span>
+      <span style="font-size:var(--fs-xs);color:var(--dim);margin-top:3px;" id="g-ec-hint">× 10 = pesos</span>
     </div>
   </div>
 
@@ -185,7 +185,7 @@
     <span class="fl" style="margin:0;">Últimos 60</span>
   </div>
   <div id="historial-list">
-    <div style="font-size:.58rem;color:var(--dim);text-align:center;padding:16px;">Cargando…</div>
+    <div style="font-size:var(--fs-sm);color:var(--dim);text-align:center;padding:16px;">Cargando…</div>
   </div>
 </div>
 
@@ -310,7 +310,7 @@ async function loadHistorial() {
     const gastos = await r.json();
     const el = document.getElementById('historial-list');
     if (!gastos.length) {
-      el.innerHTML = '<div style="font-size:.58rem;color:var(--dim);text-align:center;padding:16px;">Sin gastos registrados</div>';
+      el.innerHTML = '<div style="font-size:var(--fs-sm);color:var(--dim);text-align:center;padding:16px;">Sin gastos registrados</div>';
       return;
     }
     el.innerHTML = gastos.map(g => `

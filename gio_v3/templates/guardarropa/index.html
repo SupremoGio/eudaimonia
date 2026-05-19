@@ -6,7 +6,7 @@
 <style>
 /* ── Tab bar ─────────────────────────────────────────── */
 .gd-tabs{display:flex;gap:2px;margin-bottom:22px;background:var(--card);border:1px solid var(--b);border-radius:10px;padding:3px;}
-.gd-tab{flex:1;padding:8px 0;text-align:center;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;
+.gd-tab{flex:1;padding:8px 0;text-align:center;font-size:var(--fs-sm);letter-spacing:.1em;text-transform:uppercase;
   color:var(--dim);cursor:pointer;border-radius:8px;transition:all .18s;border:none;background:none;font-family:var(--sans);}
 .gd-tab.on{background:var(--gold-d);color:var(--gold);border:1px solid rgba(201,168,76,.25);}
 .gd-tab:hover:not(.on){color:var(--mid);}
@@ -16,9 +16,9 @@
 .gd-search-wrap{position:relative;flex:1;min-width:140px;}
 .gd-search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:12px;height:12px;color:var(--dim);pointer-events:none;}
 .gd-search{width:100%;background:var(--card);border:1px solid var(--b);border-radius:8px;
-  padding:7px 12px 7px 32px;color:var(--text);font-family:var(--sans);font-size:.68rem;outline:none;transition:border-color .16s;}
+  padding:7px 12px 7px 32px;color:var(--text);font-family:var(--sans);font-size:var(--fs-sm);outline:none;transition:border-color .16s;}
 .gd-search:focus{border-color:var(--gold);}
-.cat-pill{padding:4px 11px;border-radius:100px;font-size:.54rem;letter-spacing:.06em;
+.cat-pill{padding:4px 11px;border-radius:100px;font-size:var(--fs-sm);letter-spacing:.06em;
   background:var(--card);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;white-space:nowrap;}
 .cat-pill:hover,.cat-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
 
@@ -38,16 +38,16 @@
 .gd-card-swatch{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
 .gd-card-initial{font-family:var(--serif);font-size:1.8rem;font-weight:600;opacity:.35;color:#fff;}
 .gd-card-body{padding:10px 11px 11px;}
-.gd-card-cat{font-size:.42rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
-.gd-card-name{font-size:.72rem;color:var(--text);font-weight:500;line-height:1.25;margin-bottom:6px;
+.gd-card-cat{font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:3px;}
+.gd-card-name{font-size:var(--fs-sm);color:var(--text);font-weight:500;line-height:1.25;margin-bottom:6px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .gd-card-chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;}
-.gd-chip{font-size:.42rem;padding:2px 6px;border-radius:100px;letter-spacing:.05em;border:1px solid;}
+.gd-chip{font-size:var(--fs-xs);padding:2px 6px;border-radius:100px;letter-spacing:.05em;border:1px solid;}
 .chip-estado-nuevo   {background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:var(--green);}
 .chip-estado-bueno   {background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.2);color:var(--gold);}
 .chip-estado-regular {background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);}
 .chip-estado-donar   {background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.2);color:var(--red);}
-.gd-card-meta{font-size:.46rem;color:var(--dim);display:flex;gap:8px;}
+.gd-card-meta{font-size:var(--fs-xs);color:var(--dim);display:flex;gap:8px;}
 .gd-card-fav{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.55);
   border:none;border-radius:6px;padding:3px;cursor:pointer;color:rgba(255,255,255,.5);
   display:flex;align-items:center;transition:color .14s;backdrop-filter:blur(4px);}
@@ -61,7 +61,7 @@
   position:sticky;top:72px;overflow:hidden;}
 .gd-detail-empty{padding:44px 20px;text-align:center;color:var(--dim);}
 .gd-detail-empty svg{width:38px;height:38px;margin:0 auto 12px;display:block;opacity:.12;}
-.gd-detail-empty p{font-size:.62rem;line-height:1.6;}
+.gd-detail-empty p{font-size:var(--fs-sm);line-height:1.6;}
 /* Detail visual */
 .gd-dv{height:180px;overflow:hidden;position:relative;}
 .gd-dv img{width:100%;height:100%;object-fit:cover;}
@@ -70,7 +70,7 @@
 .gd-dv-upload{position:absolute;bottom:10px;right:10px;}
 .gd-dv-upload label{display:inline-flex;align-items:center;gap:5px;
   background:rgba(0,0,0,.7);border:1px solid rgba(201,168,76,.3);color:var(--gold);
-  font-size:.5rem;padding:4px 9px;border-radius:6px;cursor:pointer;backdrop-filter:blur(4px);
+  font-size:var(--fs-xs);padding:4px 9px;border-radius:6px;cursor:pointer;backdrop-filter:blur(4px);
   letter-spacing:.08em;text-transform:uppercase;transition:background .14s;}
 .gd-dv-upload label:hover{background:rgba(0,0,0,.9);}
 /* Drop zone drag-and-drop */
@@ -78,27 +78,27 @@
   justify-content:center;gap:6px;background:rgba(9,7,15,.72);border:2px dashed rgba(201,168,76,.6);
   opacity:0;transition:opacity .15s;pointer-events:none;z-index:10;}
 .gd-dv.drag-over .gd-dv-dropzone{opacity:1;}
-.gd-dv-dropzone span{font-family:var(--sans);font-size:.55rem;letter-spacing:.1em;
+.gd-dv-dropzone span{font-family:var(--sans);font-size:var(--fs-sm);letter-spacing:.1em;
   text-transform:uppercase;color:var(--gold);}
 .gd-dv-dropzone svg{width:28px;height:28px;opacity:.8;}
 /* Detail body */
 .gd-db{padding:16px 18px;}
 .gd-db-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
 .gd-db-name{font-family:var(--serif);font-size:1.3rem;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:4px;}
-.gd-db-brand{font-size:.6rem;color:var(--mid);margin-bottom:12px;}
+.gd-db-brand{font-size:var(--fs-sm);color:var(--mid);margin-bottom:12px;}
 /* Color psychology panel */
 .gd-psych{margin:12px 0;background:var(--card2);border:1px solid var(--b);border-radius:10px;padding:12px 14px;}
 .gd-psych-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .gd-psych-swatch{width:24px;height:24px;border-radius:6px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);}
-.gd-psych-name{font-size:.56rem;color:var(--text);font-weight:500;}
-.gd-psych-label{font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
-.gd-psych-msg{font-size:.62rem;color:var(--mid);line-height:1.55;margin-bottom:6px;}
-.gd-psych-rec{font-size:.54rem;color:var(--gold);display:flex;align-items:center;gap:5px;}
+.gd-psych-name{font-size:var(--fs-sm);color:var(--text);font-weight:500;}
+.gd-psych-label{font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
+.gd-psych-msg{font-size:var(--fs-sm);color:var(--mid);line-height:1.55;margin-bottom:6px;}
+.gd-psych-rec{font-size:var(--fs-sm);color:var(--gold);display:flex;align-items:center;gap:5px;}
 /* Stats row */
 .gd-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b);border-radius:8px;overflow:hidden;margin:12px 0;}
 .gd-stat{background:var(--card2);padding:10px 12px;text-align:center;}
 .gd-stat-val{font-family:var(--serif);font-size:1.1rem;color:var(--text);line-height:1;}
-.gd-stat-lbl{font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
+.gd-stat-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
 /* Actions */
 .gd-actions{display:flex;gap:7px;margin-top:14px;}
 
@@ -106,32 +106,32 @@
 .ai-gen-panel{background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(201,168,76,.02));
   border:1px solid rgba(201,168,76,.2);border-radius:14px;padding:18px;margin-bottom:20px;}
 .ai-occ-bar{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px;}
-.ai-occ{padding:5px 13px;border-radius:100px;font-size:.54rem;letter-spacing:.06em;
+.ai-occ{padding:5px 13px;border-radius:100px;font-size:var(--fs-sm);letter-spacing:.06em;
   background:var(--card);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;}
 .ai-occ.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
 .ai-result-box{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:16px;margin-top:14px;}
 .ai-result-name{font-family:var(--serif);font-size:1.2rem;color:var(--text);margin-bottom:4px;}
-.ai-result-harmony{font-size:.46rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
-.ai-result-why{font-size:.63rem;color:var(--mid);line-height:1.6;margin-bottom:10px;}
+.ai-result-harmony{font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
+.ai-result-why{font-size:var(--fs-sm);color:var(--mid);line-height:1.6;margin-bottom:10px;}
 .ai-result-tips{margin:8px 0;padding-left:0;list-style:none;}
 .ai-result-tips li{font-size:.57rem;color:var(--dim);padding:3px 0 3px 14px;position:relative;}
 .ai-result-tips li::before{content:'→';position:absolute;left:0;color:var(--gold);}
 .ai-result-items{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
-.ai-item-chip{font-size:.48rem;padding:3px 9px;border-radius:6px;
+.ai-item-chip{font-size:var(--fs-xs);padding:3px 9px;border-radius:6px;
   background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15);color:var(--gold);}
-.ai-confidence{font-size:.44rem;color:var(--dim);margin-top:8px;text-align:right;}
+.ai-confidence{font-size:var(--fs-xs);color:var(--dim);margin-top:8px;text-align:right;}
 
 /* ── Capsule AI result ────────────────────────────────── */
 .cap-ai-card{grid-column:1/-1;background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(201,168,76,.02));
   border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:20px;}
 .cap-gap-row{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(201,168,76,.05);}
 .cap-gap-row:last-child{border-bottom:none;}
-.cap-gap-priority{font-size:.42rem;padding:2px 7px;border-radius:4px;flex-shrink:0;text-transform:uppercase;letter-spacing:.08em;}
+.cap-gap-priority{font-size:var(--fs-xs);padding:2px 7px;border-radius:4px;flex-shrink:0;text-transform:uppercase;letter-spacing:.08em;}
 .cap-gap-high{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--red);}
 .cap-gap-media{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
 .cap-gap-text{flex:1;}
-.cap-gap-item{font-size:.62rem;color:var(--text);font-weight:500;}
-.cap-gap-reason{font-size:.54rem;color:var(--dim);margin-top:2px;line-height:1.4;}
+.cap-gap-item{font-size:var(--fs-sm);color:var(--text);font-weight:500;}
+.cap-gap-reason{font-size:var(--fs-sm);color:var(--dim);margin-top:2px;line-height:1.4;}
 
 /* ── Outfits tab ─────────────────────────────────────── */
 .ot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
@@ -142,7 +142,7 @@
 .ot-color-seg{flex:1;}
 .ot-card-body{padding:12px 14px;}
 .ot-card-name{font-size:.78rem;color:var(--text);font-weight:500;margin-bottom:5px;}
-.ot-card-meta{display:flex;align-items:center;justify-content:space-between;font-size:.52rem;color:var(--dim);}
+.ot-card-meta{display:flex;align-items:center;justify-content:space-between;font-size:var(--fs-sm);color:var(--dim);}
 .ot-stars{color:var(--gold);letter-spacing:-2px;}
 .ot-items-mini{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;}
 .ot-item-dot{width:20px;height:20px;border-radius:5px;border:1px solid rgba(255,255,255,.08);
@@ -153,23 +153,23 @@
 .intel-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px;}
 @media(max-width:700px){.intel-grid{grid-template-columns:1fr;}}
 .intel-card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:18px;}
-.intel-title{font-size:.46rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
+.intel-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
 .color-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .color-dot{width:14px;height:14px;border-radius:4px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);}
-.color-bar-label{font-size:.6rem;color:var(--mid);width:64px;flex-shrink:0;}
+.color-bar-label{font-size:var(--fs-sm);color:var(--mid);width:64px;flex-shrink:0;}
 .color-bar-track{flex:1;height:5px;background:var(--b);border-radius:2px;overflow:hidden;}
 .color-bar-fill{height:100%;border-radius:2px;transition:width .5s;}
-.color-bar-val{font-size:.5rem;color:var(--dim);width:24px;text-align:right;flex-shrink:0;}
+.color-bar-val{font-size:var(--fs-xs);color:var(--dim);width:24px;text-align:right;flex-shrink:0;}
 .gap-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(201,168,76,.05);}
 .gap-row:last-child{border-bottom:none;}
 .gap-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;}
 .gap-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);}
 .gap-miss{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);}
-.gap-text{flex:1;font-size:.62rem;color:var(--mid);}
-.gap-status-ok{font-size:.5rem;color:var(--green);}
-.gap-status-miss{font-size:.5rem;color:var(--red);}
+.gap-text{flex:1;font-size:var(--fs-sm);color:var(--mid);}
+.gap-status-ok{font-size:var(--fs-xs);color:var(--green);}
+.gap-status-miss{font-size:var(--fs-xs);color:var(--red);}
 .cat-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.cat-bar-label{font-size:.56rem;color:var(--mid);width:80px;flex-shrink:0;
+.cat-bar-label{font-size:var(--fs-sm);color:var(--mid);width:80px;flex-shrink:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 /* ── Modals ──────────────────────────────────────────── */
@@ -184,13 +184,13 @@
 .gm-close:hover{color:var(--text);}
 .gm-close svg{width:17px;height:17px;}
 .gm-body{padding:18px 22px 22px;}
-.gm-sec{font-size:.44rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 8px;}
+.gm-sec{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:14px 0 8px;}
 .gm-sec:first-child{margin-top:0;}
 .gm-row{display:grid;gap:8px;margin-bottom:8px;}
 .gm-row.c2{grid-template-columns:1fr 1fr;}
 .gm-row.c3{grid-template-columns:1fr 1fr 1fr;}
 .gm-occ{display:flex;gap:6px;flex-wrap:wrap;}
-.gm-occ-pill{padding:4px 10px;border-radius:100px;font-size:.54rem;
+.gm-occ-pill{padding:4px 10px;border-radius:100px;font-size:var(--fs-sm);
   background:var(--card2);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;}
 .gm-occ-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
 /* Item picker in outfit modal */
@@ -202,8 +202,8 @@
 .ip-color{width:20px;height:20px;border-radius:5px;flex-shrink:0;border:1px solid rgba(255,255,255,.08);}
 .ip-color img{width:100%;height:100%;object-fit:cover;border-radius:4px;}
 .ip-info{flex:1;min-width:0;}
-.ip-name{font-size:.64rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ip-cat{font-size:.48rem;color:var(--dim);}
+.ip-name{font-size:var(--fs-sm);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ip-cat{font-size:var(--fs-xs);color:var(--dim);}
 .ip-check{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--b2);flex-shrink:0;
   display:flex;align-items:center;justify-content:center;transition:all .14s;}
 .ip-row.on .ip-check{background:var(--gold);border-color:var(--gold);}
@@ -213,7 +213,7 @@
 .star-row{display:flex;gap:4px;}
 .star-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--b2);transition:color .12s;padding:0;}
 .star-btn.on{color:var(--gold);}
-.gm-err{color:var(--red);font-size:.58rem;min-height:14px;margin-top:6px;}
+.gm-err{color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:6px;}
 .gm-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
 </style>
 
@@ -221,7 +221,7 @@
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
   <div>
     <div style="font-family:var(--serif);font-size:1.5rem;font-style:italic;font-weight:300;color:var(--text);">Armario de Élite</div>
-    <div style="font-size:.56rem;color:var(--dim);margin-top:3px;">
+    <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:3px;">
       {{ items|length }} prenda{% if items|length != 1 %}s{% endif %} ·
       {{ outfits|length }} outfit{% if outfits|length != 1 %}s{% endif %}
     </div>
@@ -279,11 +279,11 @@
   <div class="ai-gen-panel">
     <div style="display:flex;align-items:center;justify-content:space-between;">
       <div>
-        <div style="font-size:.42rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:3px;">COACH DE IMAGEN · IA</div>
+        <div style="font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:3px;">COACH DE IMAGEN · IA</div>
         <div style="font-size:.82rem;color:var(--text);font-weight:500;font-family:var(--serif);">Generador de Outfits</div>
       </div>
       <div style="display:flex;gap:7px;align-items:center;">
-        <button class="btn-a" onclick="openOutfitModal()" style="font-size:.6rem;">+ Manual</button>
+        <button class="btn-a" onclick="openOutfitModal()" style="font-size:var(--fs-sm);">+ Manual</button>
         <button class="btn-a" id="ai-gen-btn" onclick="generateAIOutfit()" style="background:var(--gold-d);border-color:rgba(201,168,76,.4);color:var(--gold);">✨ Generar</button>
       </div>
     </div>
@@ -343,7 +343,7 @@
       <div class="gm-row"><label class="fl">Link de referencia</label>
         <div style="display:flex;gap:8px;">
           <input class="fi" id="im-url" placeholder="https://flexi.com.mx/producto/... (página o imagen directa)" style="flex:1;" oninput="imUrlChanged()">
-          <button type="button" id="im-url-btn" onclick="fetchPhotoFromUrl()" style="display:none;padding:0 14px;border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);font-size:.65rem;cursor:pointer;white-space:nowrap;">📷 Obtener foto</button>
+          <button type="button" id="im-url-btn" onclick="fetchPhotoFromUrl()" style="display:none;padding:0 14px;border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);font-size:var(--fs-sm);cursor:pointer;white-space:nowrap;">📷 Obtener foto</button>
         </div>
       </div>
 
@@ -673,14 +673,14 @@ function openItemDetail(id){
             <div class="gd-psych-name" id="gd-psych-name">${psych?esc(psych.name):'Analizando...'}</div>
             <div class="gd-psych-label" id="gd-psych-label">Psicología del color · IA</div>
           </div>
-          <div id="gd-psych-ai-badge" style="margin-left:auto;font-size:.4rem;letter-spacing:.1em;padding:2px 6px;border-radius:4px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15);color:var(--gold);text-transform:uppercase;display:none;">IA</div>
+          <div id="gd-psych-ai-badge" style="margin-left:auto;font-size:var(--fs-xs);letter-spacing:.1em;padding:2px 6px;border-radius:4px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15);color:var(--gold);text-transform:uppercase;display:none;">IA</div>
         </div>
-        <div class="gd-psych-msg" id="gd-psych-msg">${psych?esc(psych.psych):'<span style="color:var(--dim);font-size:.54rem;">Cargando análisis...</span>'}</div>
+        <div class="gd-psych-msg" id="gd-psych-msg">${psych?esc(psych.psych):'<span style="color:var(--dim);font-size:var(--fs-sm);">Cargando análisis...</span>'}</div>
         <div class="gd-psych-rec" id="gd-psych-rec">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span id="gd-psych-rec-text">${psych?esc(psych.rec):'...'}</span>
         </div>
-        <div id="gd-sport-badge" style="display:none;margin-top:6px;font-size:.48rem;padding:3px 8px;border-radius:6px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--green);align-items:center;gap:4px;">
+        <div id="gd-sport-badge" style="display:none;margin-top:6px;font-size:var(--fs-xs);padding:3px 8px;border-radius:6px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--green);align-items:center;gap:4px;">
           ⚡ <span id="gd-sport-text"></span>
         </div>
       </div>
@@ -700,7 +700,7 @@ function openItemDetail(id){
         </div>
       </div>
 
-      ${r.notas?`<div style="font-size:.62rem;color:var(--mid);margin-bottom:12px;line-height:1.55;">${esc(r.notas)}</div>`:''}
+      ${r.notas?`<div style="font-size:var(--fs-sm);color:var(--mid);margin-bottom:12px;line-height:1.55;">${esc(r.notas)}</div>`:''}
 
       <button class="btn-g" style="width:100%;margin-bottom:8px;" onclick="registerUso(${r.id})">
         + Registrar uso
@@ -982,7 +982,7 @@ function renderPicker(q){
       <div class="ip-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
     </div>`;
   }).join('');
-  document.getElementById('om-item-picker').innerHTML = html || '<div style="padding:16px;text-align:center;font-size:.62rem;color:var(--dim);">Sin prendas</div>';
+  document.getElementById('om-item-picker').innerHTML = html || '<div style="padding:16px;text-align:center;font-size:var(--fs-sm);color:var(--dim);">Sin prendas</div>';
 }
 function filterPicker(){
   renderPicker(document.getElementById('om-item-search').value.trim().toLowerCase());
@@ -1096,7 +1096,7 @@ const CAPSULE_RULES = [
 function renderIntelligence(){
   const activeItems = ALL_ITEMS.filter(i=>i.activo!==0);
   if(!activeItems.length){
-    document.getElementById('intel-content').innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim);font-size:.68rem;">Añade prendas para ver el análisis</div>`;
+    document.getElementById('intel-content').innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim);font-size:var(--fs-sm);">Añade prendas para ver el análisis</div>`;
     return;
   }
 
@@ -1154,11 +1154,11 @@ function renderIntelligence(){
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
         <div>
           <div class="intel-title" style="margin:0 0 4px;">SCORE DEL ARMARIO CÁPSULA</div>
-          <div style="font-size:.52rem;color:var(--dim);">Basado en principios de moda masculina de élite</div>
+          <div style="font-size:var(--fs-sm);color:var(--dim);">Basado en principios de moda masculina de élite</div>
         </div>
         <div style="text-align:right;">
           <div style="font-family:var(--serif);font-size:2.4rem;font-weight:600;color:${scoreColor};line-height:1;">${score}%</div>
-          <div style="font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;color:${scoreColor};margin-top:2px;">${scoreLabel}</div>
+          <div style="font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:${scoreColor};margin-top:2px;">${scoreLabel}</div>
         </div>
       </div>
       <div style="height:6px;background:var(--b);border-radius:3px;overflow:hidden;margin-bottom:4px;">
@@ -1167,41 +1167,41 @@ function renderIntelligence(){
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b);border-radius:8px;overflow:hidden;margin-top:14px;">
         <div style="background:var(--card2);padding:10px;text-align:center;">
           <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">${activeItems.length}</div>
-          <div style="font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Prendas</div>
+          <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Prendas</div>
         </div>
         <div style="background:var(--card2);padding:10px;text-align:center;">
           <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">$${Math.round(totalVal).toLocaleString()}</div>
-          <div style="font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Valor total</div>
+          <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Valor total</div>
         </div>
         <div style="background:var(--card2);padding:10px;text-align:center;">
           <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">${avgCpu?'$'+Math.round(avgCpu):'—'}</div>
-          <div style="font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Costo/uso prom</div>
+          <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Costo/uso prom</div>
         </div>
       </div>
     </div>
 
     <div class="intel-card">
       <div class="intel-title">DISTRIBUCIÓN DE COLORES</div>
-      ${colorBars||'<div style="font-size:.62rem;color:var(--dim);">Sin datos</div>'}
+      ${colorBars||'<div style="font-size:var(--fs-sm);color:var(--dim);">Sin datos</div>'}
     </div>
 
     <div class="intel-card">
       <div class="intel-title">PRENDAS POR CATEGORÍA</div>
-      ${catBars||'<div style="font-size:.62rem;color:var(--dim);">Sin datos</div>'}
+      ${catBars||'<div style="font-size:var(--fs-sm);color:var(--dim);">Sin datos</div>'}
     </div>
 
     <div class="intel-card" style="grid-column:1/-1;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
         <div class="intel-title" style="margin:0;">CHECKLIST — ARMARIO CÁPSULA DE ÉLITE</div>
-        <div style="font-size:.44rem;color:var(--dim);">Principios: Susie Faux · Faber Birren · Permanent Style</div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);">Principios: Susie Faux · Faber Birren · Permanent Style</div>
       </div>
       ${gapRows}
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-        <a href="/finanzas/prioridades" style="font-size:.58rem;color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+        <a href="/finanzas/prioridades" style="font-size:var(--fs-sm);color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           Ver lista de deseos
         </a>
-        <button class="btn-a" id="cap-ai-btn" onclick="analyzeCapsulaAI()" style="font-size:.58rem;background:var(--gold-d);border-color:rgba(201,168,76,.4);color:var(--gold);">✨ Análisis IA profundo</button>
+        <button class="btn-a" id="cap-ai-btn" onclick="analyzeCapsulaAI()" style="font-size:var(--fs-sm);background:var(--gold-d);border-color:rgba(201,168,76,.4);color:var(--gold);">✨ Análisis IA profundo</button>
       </div>
     </div>
 
@@ -1243,8 +1243,8 @@ async function generateAIOutfit(){
     const itemChips = selectedItems.map(i=>`
       <div style="display:flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:4px 8px;">
         <div style="width:10px;height:10px;border-radius:3px;flex-shrink:0;background:${esc(i.color_hex||'#444')};"></div>
-        <span style="font-size:.52rem;color:var(--text);">${esc(i.nombre)}</span>
-        <span style="font-size:.44rem;color:var(--dim);">${esc(i.categoria)}</span>
+        <span style="font-size:var(--fs-sm);color:var(--text);">${esc(i.nombre)}</span>
+        <span style="font-size:var(--fs-xs);color:var(--dim);">${esc(i.categoria)}</span>
       </div>`).join('');
 
     const stars = '★'.repeat(d.rating||5) + '☆'.repeat(5-(d.rating||5));
@@ -1263,8 +1263,8 @@ async function generateAIOutfit(){
         ${tips?`<ul class="ai-result-tips">${tips}</ul>`:''}
         <div class="ai-result-items">${itemChips}</div>
         <div style="display:flex;gap:8px;margin-top:12px;">
-          <button class="btn-a" style="flex:1;font-size:.6rem;" onclick="saveAIOutfit()">Guardar outfit</button>
-          <button class="btn-g" style="font-size:.6rem;" onclick="generateAIOutfit()">Regenerar</button>
+          <button class="btn-a" style="flex:1;font-size:var(--fs-sm);" onclick="saveAIOutfit()">Guardar outfit</button>
+          <button class="btn-g" style="font-size:var(--fs-sm);" onclick="generateAIOutfit()">Regenerar</button>
         </div>
       </div>`;
     resultBox.style.display = 'block';
@@ -1316,8 +1316,8 @@ async function analyzeCapsulaAI(){
     const scoreColor = (d.score||0)>=86?'var(--green)':(d.score||0)>=71?'var(--gold)':'var(--red)';
     const strengths = (d.strengths||[]).map(s=>`
       <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;">
-        <span style="color:var(--green);font-size:.72rem;flex-shrink:0;">✓</span>
-        <span style="font-size:.62rem;color:var(--mid);">${esc(s)}</span>
+        <span style="color:var(--green);font-size:var(--fs-sm);flex-shrink:0;">✓</span>
+        <span style="font-size:var(--fs-sm);color:var(--mid);">${esc(s)}</span>
       </div>`).join('');
 
     const gaps = (d.gaps||[]).map(g=>`
@@ -1327,54 +1327,54 @@ async function analyzeCapsulaAI(){
           <div class="cap-gap-item">${esc(g.item)}</div>
           <div class="cap-gap-reason">${esc(g.reason)}</div>
         </div>
-        ${g.versatility_multiplier?`<div style="font-size:.5rem;color:var(--gold);flex-shrink:0;">×${g.versatility_multiplier}</div>`:''}
+        ${g.versatility_multiplier?`<div style="font-size:var(--fs-xs);color:var(--gold);flex-shrink:0;">×${g.versatility_multiplier}</div>`:''}
       </div>`).join('');
 
     resultEl.innerHTML = `
       <div class="cap-ai-card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
           <div>
-            <div style="font-size:.42rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">COACH DE IMAGEN · ANÁLISIS IA</div>
+            <div style="font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">COACH DE IMAGEN · ANÁLISIS IA</div>
             <div style="font-family:var(--serif);font-size:1.2rem;color:var(--text);">Diagnóstico Profesional</div>
           </div>
           <div style="text-align:right;">
             <div style="font-family:var(--serif);font-size:2rem;font-weight:600;color:${scoreColor};line-height:1;">${d.score||0}</div>
-            <div style="font-size:.44rem;letter-spacing:.12em;text-transform:uppercase;color:${scoreColor};">${esc(d.score_label||'')}</div>
+            <div style="font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:${scoreColor};">${esc(d.score_label||'')}</div>
           </div>
         </div>
 
         ${d.elite_verdict?`
         <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-          <div style="font-size:.42rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">VEREDICTO DEL COACH</div>
+          <div style="font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">VEREDICTO DEL COACH</div>
           <div style="font-size:.67rem;color:var(--text);line-height:1.6;font-style:italic;">"${esc(d.elite_verdict)}"</div>
         </div>`:''}
 
         ${d.color_harmony?`
         <div style="margin-bottom:14px;">
-          <div style="font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">HARMONÍA CROMÁTICA</div>
-          <div style="font-size:.63rem;color:var(--mid);line-height:1.5;">${esc(d.color_harmony)}</div>
+          <div style="font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:5px;">HARMONÍA CROMÁTICA</div>
+          <div style="font-size:var(--fs-sm);color:var(--mid);line-height:1.5;">${esc(d.color_harmony)}</div>
         </div>`:''}
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
           <div>
-            <div style="font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">FORTALEZAS</div>
-            ${strengths||'<span style="font-size:.6rem;color:var(--dim);">—</span>'}
+            <div style="font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">FORTALEZAS</div>
+            ${strengths||'<span style="font-size:var(--fs-sm);color:var(--dim);">—</span>'}
           </div>
           <div style="display:grid;gap:8px;align-content:start;">
             <div style="background:var(--card);border-radius:8px;padding:10px;text-align:center;">
               <div style="font-family:var(--serif);font-size:1.3rem;color:var(--gold);">${d.versatility_index||0}</div>
-              <div style="font-size:.4rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Índice versatilidad</div>
+              <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Índice versatilidad</div>
             </div>
             <div style="background:var(--card);border-radius:8px;padding:10px;text-align:center;">
               <div style="font-family:var(--serif);font-size:1.3rem;color:var(--text);">~${d.outfit_combinations_est||0}</div>
-              <div style="font-size:.4rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Outfits posibles</div>
+              <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Outfits posibles</div>
             </div>
           </div>
         </div>
 
         ${gaps?`
         <div>
-          <div style="font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">PRENDAS PRIORITARIAS A ADQUIRIR</div>
+          <div style="font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;">PRENDAS PRIORITARIAS A ADQUIRIR</div>
           ${gaps}
         </div>`:''}
       </div>`;

@@ -2,9 +2,9 @@
 {% block title %}Inbox — PRAXIS{% endblock %}{% block topright %}INBOX{% endblock %}
 {% block gtd_body %}
 <style>
-.badge-2m{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:10px;font-size:.6rem;font-weight:700;padding:1px 6px;}
-.badge-ctx{display:inline-flex;align-items:center;gap:2px;background:rgba(197,163,108,.1);color:var(--gold);border-radius:8px;font-size:.6rem;padding:1px 6px;}
-.inbox-tip{background:rgba(197,163,108,.07);border:1px solid rgba(197,163,108,.2);border-radius:8px;padding:8px 12px;font-size:.72rem;color:var(--dim);margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;}
+.badge-2m{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:10px;font-size:var(--fs-sm);font-weight:700;padding:1px 6px;}
+.badge-ctx{display:inline-flex;align-items:center;gap:2px;background:rgba(197,163,108,.1);color:var(--gold);border-radius:8px;font-size:var(--fs-sm);padding:1px 6px;}
+.inbox-tip{background:rgba(197,163,108,.07);border:1px solid rgba(197,163,108,.2);border-radius:8px;padding:8px 12px;font-size:var(--fs-sm);color:var(--dim);margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;}
 .inbox-tip strong{color:var(--gold);}
 </style>
 
@@ -77,7 +77,7 @@
     <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
       {% if mins_val > 0 and mins_val <= 2 %}<span class="badge-2m">⏱ 2-min — ¡hazlo ya!</span>{% endif %}
       {% if ctx_val %}<span class="badge-ctx">{{ ctx_val }}</span>{% endif %}
-      {% if mins_val > 0 and mins_val > 2 %}<span style="color:var(--dim);font-size:.6rem;">{{ mins_val }}min</span>{% endif %}
+      {% if mins_val > 0 and mins_val > 2 %}<span style="color:var(--dim);font-size:var(--fs-sm);">{{ mins_val }}min</span>{% endif %}
     </div>
   </div>
   <div class="t-meta">

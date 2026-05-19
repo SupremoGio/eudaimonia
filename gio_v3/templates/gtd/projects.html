@@ -16,10 +16,10 @@
 <div style="background:var(--card);border:1px solid var(--b);border-radius:8px;padding:16px;transition:border-color .14s;" onmouseover="this.style.borderColor='var(--b2)'" onmouseout="this.style.borderColor='var(--b)'">
   <div style="height:3px;border-radius:100px;background:{{ p.color }};margin-bottom:12px;"></div>
   <div style="font-family:var(--serif);font-size:1.05rem;font-style:italic;margin-bottom:4px;">{{ p.name }}</div>
-  {% if p.objective %}<div style="font-size:.62rem;color:var(--dim);margin-bottom:10px;line-height:1.4;">{{ p.objective }}</div>{% endif %}
-  <div style="font-size:.54rem;color:var(--mid);margin-bottom:8px;">{{ proj_tasks[p.id]|length }} tarea(s) pendiente(s)</div>
+  {% if p.objective %}<div style="font-size:var(--fs-sm);color:var(--dim);margin-bottom:10px;line-height:1.4;">{{ p.objective }}</div>{% endif %}
+  <div style="font-size:var(--fs-sm);color:var(--mid);margin-bottom:8px;">{{ proj_tasks[p.id]|length }} tarea(s) pendiente(s)</div>
   {% for t in proj_tasks[p.id][:4] %}
-  <div style="font-size:.62rem;color:var(--mid);padding:4px 0;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:5px;"><span style="width:4px;height:4px;border-radius:50%;background:var(--dim);flex-shrink:0;"></span>{{ t.title }}</div>
+  <div style="font-size:var(--fs-sm);color:var(--mid);padding:4px 0;border-bottom:1px solid var(--b);display:flex;align-items:center;gap:5px;"><span style="width:4px;height:4px;border-radius:50%;background:var(--dim);flex-shrink:0;"></span>{{ t.title }}</div>
   {% endfor %}
   <div style="display:flex;justify-content:flex-end;margin-top:10px;">
     <button class="btn-r" onclick="delP({{ p.id }},this)">Archivar</button>

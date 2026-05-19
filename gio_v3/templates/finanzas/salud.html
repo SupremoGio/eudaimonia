@@ -12,24 +12,24 @@
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
 .sf-hero{background:linear-gradient(135deg,#0c0a10,#140f1a);border:1px solid var(--b2);border-radius:12px;padding:24px 28px;}
-.sf-pn-label{font-size:.44rem;color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;}
+.sf-pn-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;}
 .sf-pn-value{font-family:var(--serif);font-size:2.6rem;font-weight:300;line-height:1;letter-spacing:.04em;}
-.sf-pn-sub{font-size:.54rem;color:var(--dim);margin-top:6px;}
+.sf-pn-sub{font-size:var(--fs-sm);color:var(--dim);margin-top:6px;}
 .sf-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;}
 .sf-stat{background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:8px;padding:14px 16px;}
 .sf-stat-v{font-family:var(--serif);font-size:1.4rem;font-weight:300;line-height:1;}
-.sf-stat-l{font-size:.44rem;color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:4px;}
-.sf-stat-s{font-size:.5rem;color:var(--dim);margin-top:2px;}
+.sf-stat-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:4px;}
+.sf-stat-s{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
 .sf-bar-wrap{margin-top:20px;}
 .sf-bar-labels{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:7px;}
-.sf-bar-lbl{display:flex;align-items:center;gap:5px;font-size:.5rem;color:var(--mid);}
+.sf-bar-lbl{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:var(--mid);}
 .sf-bar-dot{width:7px;height:7px;border-radius:50%;}
 .sf-bar{height:6px;border-radius:100px;overflow:hidden;background:rgba(255,255,255,.05);display:flex;}
 .sf-bar-seg{height:100%;transition:width .6s;}
 
 /* ── Account groups ───────────────────────────────────────────────────────── */
 .sf-group-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.sf-group-t{font-size:.44rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;}
+.sf-group-t{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.18em;text-transform:uppercase;}
 .sf-group-total{font-family:var(--serif);font-size:1rem;font-weight:300;}
 .sf-accounts{display:flex;flex-direction:column;gap:7px;}
 .sf-account{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card2);border:1px solid var(--b);border-radius:8px;transition:border-color .16s;}
@@ -37,13 +37,13 @@
 .sf-acc-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .sf-acc-icon svg{width:15px;height:15px;}
 .sf-acc-body{flex:1;min-width:0;}
-.sf-acc-name{font-size:.72rem;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.sf-acc-inst{font-size:.52rem;color:var(--dim);}
+.sf-acc-name{font-size:var(--fs-sm);color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sf-acc-inst{font-size:var(--fs-sm);color:var(--dim);}
 .sf-acc-saldo{text-align:right;flex-shrink:0;}
 .sf-acc-amount{font-family:var(--serif);font-size:1.05rem;font-weight:300;line-height:1;}
-.sf-acc-moneda{font-size:.44rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.sf-acc-moneda{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
 .sf-acc-actions{display:flex;gap:4px;flex-shrink:0;}
-.sf-empty{text-align:center;padding:20px;color:var(--dim);font-size:.6rem;border:1px dashed var(--b);border-radius:8px;}
+.sf-empty{text-align:center;padding:20px;color:var(--dim);font-size:var(--fs-sm);border:1px dashed var(--b);border-radius:8px;}
 
 /* ── Bienes ───────────────────────────────────────────────────────────────── */
 .sf-bienes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px;}
@@ -52,26 +52,26 @@
 .sf-bien-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
 .sf-bien-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:100px;font-size:.43rem;letter-spacing:.1em;text-transform:uppercase;}
 .sf-bien-actions{display:flex;gap:3px;}
-.sf-bien-name{font-size:.72rem;color:var(--text);font-weight:500;margin-bottom:2px;}
-.sf-bien-desc{font-size:.52rem;color:var(--dim);margin-bottom:9px;min-height:14px;}
+.sf-bien-name{font-size:var(--fs-sm);color:var(--text);font-weight:500;margin-bottom:2px;}
+.sf-bien-desc{font-size:var(--fs-sm);color:var(--dim);margin-bottom:9px;min-height:14px;}
 .sf-bien-vals{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
 .sf-bien-val{background:rgba(255,255,255,.02);border:1px solid var(--b);border-radius:5px;padding:7px 9px;}
 .sf-bien-val-n{font-family:var(--serif);font-size:.88rem;font-weight:300;line-height:1;}
-.sf-bien-val-l{font-size:.42rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
-.sf-deprec{font-size:.44rem;margin-top:6px;display:flex;align-items:center;gap:4px;}
+.sf-bien-val-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.sf-deprec{font-size:var(--fs-xs);margin-top:6px;display:flex;align-items:center;gap:4px;}
 .sf-deprec svg{width:10px;height:10px;}
 .sf-meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;}
-.sf-meta-chip{font-size:.44rem;color:var(--dim);display:flex;align-items:center;gap:3px;}
+.sf-meta-chip{font-size:var(--fs-xs);color:var(--dim);display:flex;align-items:center;gap:3px;}
 .sf-meta-chip svg{width:10px;height:10px;}
 
 /* ── Historial chart ──────────────────────────────────────────────────────── */
 .sf-hist-wrap{display:flex;align-items:flex-end;gap:6px;height:60px;padding:0 2px;}
 .sf-hist-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
 .sf-hist-bar{border-radius:3px 3px 0 0;min-height:3px;transition:height .4s;width:100%;}
-.sf-hist-lbl{font-size:.38rem;color:var(--dim);text-align:center;}
+.sf-hist-lbl{font-size:var(--fs-xs);color:var(--dim);text-align:center;}
 
 /* ── Snapshot button ──────────────────────────────────────────────────────── */
-.sf-snap-btn{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;padding:6px 14px;border-radius:7px;font-size:.52rem;letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;font-family:var(--sans);}
+.sf-snap-btn{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;padding:6px 14px;border-radius:7px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;font-family:var(--sans);}
 .sf-snap-btn:hover{background:rgba(16,185,129,.18);border-color:rgba(16,185,129,.5);}
 .sf-snap-btn svg{width:11px;height:11px;}
 
@@ -97,7 +97,7 @@
 
 {# ── Nav back ──────────────────────────────────────────────────────────────── #}
 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-  <a href="/finanzas/" style="display:inline-flex;align-items:center;gap:6px;font-size:.52rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:color .16s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--dim)'">
+  <a href="/finanzas/" style="display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-sm);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:color .16s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--dim)'">
     <i data-lucide="arrow-left" style="width:12px;height:12px"></i> Oikonomia
   </a>
   <button class="sf-snap-btn" onclick="tomarSnapshot()">
@@ -121,7 +121,7 @@
     <div style="text-align:right;">
       <div class="sf-pn-label">Distribución</div>
       {% set total_ref = [total_activos, 1]|max %}
-      <div style="font-size:.52rem;color:var(--mid);margin-bottom:6px;">
+      <div style="font-size:var(--fs-sm);color:var(--mid);margin-bottom:6px;">
         Cuentas&nbsp;{{ "{:.0f}".format(activos_cuentas/total_ref*100) }}% · Bienes&nbsp;{{ "{:.0f}".format(total_bienes/total_ref*100) }}% · Pasivos&nbsp;{{ "{:.0f}".format(total_pasivos/total_ref*100) }}%
       </div>
     </div>
@@ -172,12 +172,12 @@
   <div class="sf-group-hd">
     <div>
       <div class="sf-group-t">💵 Activos Líquidos</div>
-      <div style="font-size:.5rem;color:var(--dim);margin-top:1px;">Efectivo y cuentas bancarias</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Efectivo y cuentas bancarias</div>
     </div>
     <div style="text-align:right;">
       {% set liq_total = cuentas_liquido|sum(attribute='saldo') %}
       <div class="sf-group-total" style="color:#60a5fa">${{ "{:,.2f}".format(liq_total) }}</div>
-      <button class="btn-gr" style="font-size:.48rem;padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('efectivo')">+ Agregar</button>
+      <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('efectivo')">+ Agregar</button>
     </div>
   </div>
   <div class="sf-accounts">
@@ -204,7 +204,7 @@
     <div class="sf-empty">
       <i data-lucide="wallet" style="width:20px;height:20px;opacity:.2;display:block;margin:0 auto 7px"></i>
       Sin cuentas líquidas registradas.<br>
-      <button class="btn-gr" style="margin-top:8px;font-size:.5rem;" onclick="openModalCuenta('efectivo')">+ Agregar cuenta</button>
+      <button class="btn-gr" style="margin-top:8px;font-size:var(--fs-xs);" onclick="openModalCuenta('efectivo')">+ Agregar cuenta</button>
     </div>
     {% endfor %}
   </div>
@@ -215,12 +215,12 @@
   <div class="sf-group-hd">
     <div>
       <div class="sf-group-t">📈 Inversiones</div>
-      <div style="font-size:.5rem;color:var(--dim);margin-top:1px;">GBM, CETES, fondos, etc.</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">GBM, CETES, fondos, etc.</div>
     </div>
     <div style="text-align:right;">
       {% set inv_total = cuentas_inversion|sum(attribute='saldo') %}
       <div class="sf-group-total" style="color:#10b981">${{ "{:,.2f}".format(inv_total) }}</div>
-      <button class="btn-gr" style="font-size:.48rem;padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('inversion')">+ Agregar</button>
+      <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('inversion')">+ Agregar</button>
     </div>
   </div>
   <div class="sf-accounts">
@@ -247,7 +247,7 @@
     <div class="sf-empty">
       <i data-lucide="trending-up" style="width:20px;height:20px;opacity:.2;display:block;margin:0 auto 7px"></i>
       Sin inversiones registradas.<br>
-      <button class="btn-gr" style="margin-top:8px;font-size:.5rem;" onclick="openModalCuenta('inversion')">+ Agregar inversión</button>
+      <button class="btn-gr" style="margin-top:8px;font-size:var(--fs-xs);" onclick="openModalCuenta('inversion')">+ Agregar inversión</button>
     </div>
     {% endfor %}
   </div>
@@ -258,11 +258,11 @@
   <div class="sf-group-hd">
     <div>
       <div class="sf-group-t">💳 Pasivos — Tarjetas y Deudas</div>
-      <div style="font-size:.5rem;color:var(--dim);margin-top:1px;">Saldo actual adeudado en tarjetas y préstamos</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Saldo actual adeudado en tarjetas y préstamos</div>
     </div>
     <div style="text-align:right;">
       <div class="sf-group-total" style="color:#f43f5e">-${{ "{:,.2f}".format(total_pasivos) }}</div>
-      <button class="btn-gr" style="font-size:.48rem;padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('tarjeta_credito')">+ Agregar pasivo</button>
+      <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('tarjeta_credito')">+ Agregar pasivo</button>
     </div>
   </div>
   <div class="sf-accounts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:7px;">
@@ -296,7 +296,7 @@
   <div class="sf-group-hd">
     <div>
       <div class="sf-group-t">🏠 Bienes Personales</div>
-      <div style="font-size:.5rem;color:var(--dim);margin-top:1px;">Vehículo, electrodomésticos, muebles, electrónicos</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Vehículo, electrodomésticos, muebles, electrónicos</div>
     </div>
     <div style="text-align:right;">
       <div class="sf-group-total" style="color:var(--gold)">${{ "{:,.2f}".format(total_bienes) }}</div>
@@ -367,7 +367,7 @@
 <div class="tile sf-full">
   <div class="sf-group-hd">
     <div class="sf-group-t">📊 Evolución Patrimonio Neto</div>
-    <span style="font-size:.48rem;color:var(--dim)">Últimos {{ historial|length }} snapshots</span>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Últimos {{ historial|length }} snapshots</span>
   </div>
   {% set max_pn = historial|map(attribute='patrimonio_neto')|max %}
   {% set min_pn = historial|map(attribute='patrimonio_neto')|min %}
@@ -382,8 +382,8 @@
     {% endfor %}
   </div>
   <div style="display:flex;justify-content:space-between;margin-top:8px;">
-    <span style="font-size:.5rem;color:var(--dim)">Primer snapshot: <span style="color:var(--mid)">{{ historial[0].fecha }}</span></span>
-    <span style="font-size:.5rem;color:var(--dim)">Último: <span style="color:{% if historial[-1].patrimonio_neto >= 0 %}var(--green){% else %}var(--red){% endif %}">${{ "{:,.0f}".format(historial[-1].patrimonio_neto) }}</span></span>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Primer snapshot: <span style="color:var(--mid)">{{ historial[0].fecha }}</span></span>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Último: <span style="color:{% if historial[-1].patrimonio_neto >= 0 %}var(--green){% else %}var(--red){% endif %}">${{ "{:,.0f}".format(historial[-1].patrimonio_neto) }}</span></span>
   </div>
 </div>
 {% endif %}
@@ -443,7 +443,7 @@
       </div>
     </div>
 
-    <div id="mc-err" style="color:var(--red);font-size:.6rem;min-height:14px;margin-top:4px;"></div>
+    <div id="mc-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:4px;"></div>
     <div class="modal-actions">
       <button class="btn-g" onclick="closeMCuenta()">Cancelar</button>
       <button class="btn-a" onclick="submitCuenta()">Guardar Cuenta</button>
@@ -515,7 +515,7 @@
       </div>
     </div>
 
-    <div id="mb-err" style="color:var(--red);font-size:.6rem;min-height:14px;margin-top:4px;"></div>
+    <div id="mb-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:4px;"></div>
     <div class="modal-actions">
       <button class="btn-g" onclick="closeMBien()">Cancelar</button>
       <button class="btn-a" onclick="submitBien()">Guardar Bien</button>

@@ -74,9 +74,11 @@
       --indigo:#6366f1; --orange:#fb923c;
       --gold:#f59e0b; --gold-d:rgba(245,158,11,.12); --gold-g:rgba(245,158,11,.3);
       --purple:#a78bfa; --green:#10b981; --red:#f43f5e;
-      --text:#F2EDE0; --mid:#A89880; --dim:#6A6050;
+      --text:#F2EDE0; --mid:#A89880; --dim:#8A7A60;
       --sans:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
       --serif:'Cormorant Garamond',serif;
+      --fs-xs:11px; --fs-sm:13px; --fs-base:15px;
+      --fs-lg:18px; --fs-xl:24px; --fs-2xl:36px;
     }
 
     /* ── Modo DÍA ── */
@@ -150,26 +152,26 @@
 
     /* Tile / Card */
     .tile { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:20px; }
-    .tile-lbl { font-size:.48rem; color:var(--dim); letter-spacing:.2em; text-transform:uppercase; margin-bottom:14px; }
+    .tile-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.2em; text-transform:uppercase; margin-bottom:14px; }
 
     /* Buttons */
-    .btn-a { background:linear-gradient(135deg,var(--violet),var(--indigo)); border:none; color:#fff; padding:8px 18px; border-radius:8px; font-size:.62rem; font-family:var(--mono); cursor:pointer; transition:opacity .18s; }
+    .btn-a { background:linear-gradient(135deg,var(--violet),var(--indigo)); border:none; color:#fff; padding:8px 18px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--mono); cursor:pointer; transition:opacity .18s; }
     .btn-a:hover { opacity:.85; }
-    .btn-g { background:transparent; border:1px solid var(--b2); color:var(--mid); padding:8px 16px; border-radius:8px; font-size:.62rem; font-family:var(--mono); cursor:pointer; letter-spacing:.03em; transition:all .18s; white-space:nowrap; }
+    .btn-g { background:transparent; border:1px solid var(--b2); color:var(--mid); padding:8px 16px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--mono); cursor:pointer; letter-spacing:.03em; transition:all .18s; white-space:nowrap; }
     .btn-g:hover { border-color:var(--violet-l); color:var(--violet-l); }
-    .btn-r { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:.56rem; font-family:var(--mono); cursor:pointer; transition:all .18s; }
+    .btn-r { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:var(--fs-sm); font-family:var(--mono); cursor:pointer; transition:all .18s; }
     .btn-r:hover { border-color:var(--coral); color:var(--coral); }
-    .btn-gr { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:.56rem; font-family:var(--mono); cursor:pointer; transition:all .18s; }
+    .btn-gr { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:var(--fs-sm); font-family:var(--mono); cursor:pointer; transition:all .18s; }
     .btn-gr:hover { border-color:var(--emerald); color:var(--emerald); }
 
     /* Forms */
-    .fi { background:var(--card2); border:1px solid var(--b); border-radius:8px; padding:8px 12px; color:var(--text); font-family:var(--mono); font-size:.72rem; outline:none; width:100%; transition:border-color .18s; }
+    .fi { background:var(--card2); border:1px solid var(--b); border-radius:8px; padding:8px 12px; color:var(--text); font-family:var(--mono); font-size:var(--fs-sm); outline:none; width:100%; transition:border-color .18s; }
     .fi:focus { border-color:var(--violet-l); }
     .fi option { background:var(--card2); }
-    .fl { font-size:.48rem; color:var(--dim); letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; display:block; }
+    .fl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; display:block; }
 
     /* Priority badges */
-    .pri { font-size:.46rem; padding:2px 7px; border-radius:100px; letter-spacing:.07em; text-transform:uppercase; }
+    .pri { font-size:var(--fs-xs); padding:2px 7px; border-radius:100px; letter-spacing:.07em; text-transform:uppercase; }
     .pri-critical  { background:var(--coral-d);  border:1px solid rgba(244,63,94,.25);  color:var(--coral); }
     .pri-important { background:var(--amber-d);  border:1px solid rgba(245,158,11,.25); color:var(--amber); }
     .pri-normal    { background:var(--b); color:var(--dim); }
@@ -183,7 +185,7 @@
 
     /* Action frame (GTD forms) */
     .af { background:var(--card); border:1px solid var(--b2); border-radius:7px; padding:16px; margin-bottom:16px; }
-    .af-lbl { font-size:.48rem; color:var(--dim); letter-spacing:.16em; text-transform:uppercase; margin-bottom:12px; }
+    .af-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.16em; text-transform:uppercase; margin-bottom:12px; }
     .fg  { display:flex; flex-direction:column; gap:3px; }
     .fgrid { display:grid; gap:8px; margin-bottom:8px; }
     .fgrid.c2 { grid-template-columns:1fr 1fr; }
@@ -193,17 +195,17 @@
     /* Page header */
     .pg-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
     .pg-t  { font-family:var(--serif); font-size:1.4rem; font-style:italic; font-weight:300; }
-    .pg-s  { font-size:.56rem; color:var(--dim); margin-top:1px; }
+    .pg-s  { font-size:var(--fs-sm); color:var(--dim); margin-top:1px; }
 
     /* Chips */
     .chips2 { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-    .ch2 { background:var(--card2); border:1px solid var(--b); border-radius:100px; padding:4px 10px; font-size:.58rem; color:var(--mid); cursor:pointer; transition:all .14s; text-decoration:none; }
+    .ch2 { background:var(--card2); border:1px solid var(--b); border-radius:100px; padding:4px 10px; font-size:var(--fs-sm); color:var(--mid); cursor:pointer; transition:all .14s; text-decoration:none; }
     .ch2:hover,.ch2.on { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
 
     /* Empty state */
     .empty-s { text-align:center; padding:36px 18px; color:var(--dim); }
     .empty-s svg { width:26px; height:26px; display:block; margin:0 auto 9px; opacity:.22; }
-    .empty-s p { font-size:.64rem; }
+    .empty-s p { font-size:var(--fs-sm); }
 
     /* GTD task row */
     .t-row { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--card); border:1px solid var(--b); border-radius:6px; margin-bottom:5px; transition:border-color .14s; }
@@ -215,17 +217,17 @@
     .t-dot svg { width:8px; height:8px; color:var(--bg); display:none; }
     .t-dot.ck svg { display:block; }
     .t-main { flex:1; min-width:0; }
-    .t-title { font-size:.7rem; color:var(--text); }
+    .t-title { font-size:var(--fs-sm); color:var(--text); }
     .t-row.faded .t-title { text-decoration:line-through; color:var(--dim); }
-    .t-sub { font-size:.5rem; color:var(--purple); margin-top:1px; }
+    .t-sub { font-size:var(--fs-xs); color:var(--purple); margin-top:1px; }
     .t-meta { display:flex; align-items:center; gap:4px; flex-shrink:0; }
-    .pts-t { font-size:.48rem; color:var(--gold); background:var(--gold-d); padding:2px 5px; border-radius:100px; }
-    .pt { font-size:.46rem; padding:2px 6px; border-radius:100px; letter-spacing:.06em; text-transform:uppercase; }
+    .pts-t { font-size:var(--fs-xs); color:var(--gold); background:var(--gold-d); padding:2px 5px; border-radius:100px; }
+    .pt { font-size:var(--fs-xs); padding:2px 6px; border-radius:100px; letter-spacing:.06em; text-transform:uppercase; }
     .pt-c { background:rgba(248,113,113,.1); border:1px solid rgba(248,113,113,.2); color:var(--red); }
     .pt-i { background:rgba(197,163,108,.1); border:1px solid rgba(197,163,108,.2); color:var(--gold); }
     .pt-n { background:var(--b); color:var(--dim); }
-    .due-t  { font-size:.48rem; color:var(--mid); }
-    .proj-t { font-size:.48rem; color:var(--purple); background:rgba(167,139,250,.08); border:1px solid rgba(167,139,250,.17); padding:2px 5px; border-radius:100px; }
+    .due-t  { font-size:var(--fs-xs); color:var(--mid); }
+    .proj-t { font-size:var(--fs-xs); color:var(--purple); background:rgba(167,139,250,.08); border:1px solid rgba(167,139,250,.17); padding:2px 5px; border-radius:100px; }
     .ai { background:none; border:none; color:var(--dim); padding:3px; border-radius:3px; display:flex; align-items:center; transition:color .14s; cursor:pointer; font-family:var(--mono); }
     .ai:hover { color:var(--gold); }
     .ai.del:hover { color:var(--red); }
@@ -236,19 +238,19 @@
     .gtd-nav { background:var(--surf); border-right:1px solid var(--b); padding:18px 0; display:flex; flex-direction:column; overflow-y:auto; }
     .gn-head { padding:0 14px 14px; border-bottom:1px solid var(--b); }
     .gn-head .t { font-family:var(--serif); font-size:.95rem; font-style:italic; color:var(--gold); }
-    .gn-head .s { font-size:.46rem; color:var(--dim); letter-spacing:.14em; text-transform:uppercase; }
-    .gn-sec { font-size:.44rem; color:var(--dim); letter-spacing:.18em; text-transform:uppercase; padding:10px 14px 3px; }
-    .gl { display:flex; align-items:center; gap:8px; padding:7px 14px; color:var(--mid); font-size:.64rem; text-decoration:none; transition:all .14s; border-left:2px solid transparent; }
+    .gn-head .s { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.14em; text-transform:uppercase; }
+    .gn-sec { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.18em; text-transform:uppercase; padding:10px 14px 3px; }
+    .gl { display:flex; align-items:center; gap:8px; padding:7px 14px; color:var(--mid); font-size:var(--fs-sm); text-decoration:none; transition:all .14s; border-left:2px solid transparent; }
     .gl:hover { color:var(--text); background:var(--gold-d); }
     .gl.on { color:var(--gold); background:var(--gold-d); border-left-color:var(--gold); }
     .gl svg { width:13px; height:13px; flex-shrink:0; }
-    .gl-badge { margin-left:auto; background:var(--b); color:var(--dim); font-size:.44rem; padding:1px 5px; border-radius:100px; }
+    .gl-badge { margin-left:auto; background:var(--b); color:var(--dim); font-size:var(--fs-xs); padding:1px 5px; border-radius:100px; }
     .gl.on .gl-badge { background:var(--gold); color:var(--bg); }
     .gn-foot { padding:12px 14px; margin-top:auto; border-top:1px solid var(--b); }
-    .lv-lbl { font-size:.46rem; color:var(--dim); letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px; }
+    .lv-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px; }
     .lv-bar { background:var(--b); border-radius:100px; height:3px; overflow:hidden; margin-bottom:3px; }
     .lv-fill { height:100%; background:linear-gradient(90deg,var(--gold),#e8c88a); border-radius:100px; transition:width .5s; }
-    .lv-pts { font-size:.44rem; color:var(--dim); }
+    .lv-pts { font-size:var(--fs-xs); color:var(--dim); }
     .gtd-body { overflow-y:auto; padding:20px 24px; scrollbar-width:thin; scrollbar-color:var(--b) transparent; }
 
     @media(min-width:1024px) {
@@ -310,8 +312,8 @@
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="{{ icon }}" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
-        <span class="text-[0.68rem] tracking-wide leading-none">{{ label }}</span>
-        {% if prev %}<span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">{{ prev }}</span>{% endif %}
+        <span class="text-[var(--fs-sm)] tracking-wide leading-none">{{ label }}</span>
+        {% if prev %}<span class="text-[var(--fs-xs)] text-dim mt-0.5 group-hover:text-mid transition-colors">{{ prev }}</span>{% endif %}
       </div>
     </a>
     {% endfor %}
@@ -329,8 +331,8 @@
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="cpu" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0 flex-1">
-        <span class="text-[0.68rem] tracking-wide leading-none">Logoi</span>
-        <span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">Programación</span>
+        <span class="text-[var(--fs-sm)] tracking-wide leading-none">Logoi</span>
+        <span class="text-[var(--fs-xs)] text-dim mt-0.5 group-hover:text-mid transition-colors">Programación</span>
       </div>
       <span class="text-[0.38rem] text-dim border border-border rounded px-1 py-0.5 flex-shrink-0">soon</span>
     </a>
@@ -341,8 +343,8 @@
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="globe" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
-        <span class="text-[0.68rem] tracking-wide leading-none">Cosmopolitismo</span>
-        <span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">Idiomas</span>
+        <span class="text-[var(--fs-sm)] tracking-wide leading-none">Cosmopolitismo</span>
+        <span class="text-[var(--fs-xs)] text-dim mt-0.5 group-hover:text-mid transition-colors">Idiomas</span>
       </div>
     </a>
 
@@ -352,8 +354,8 @@
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="book-open" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0 flex-1">
-        <span class="text-[0.68rem] tracking-wide leading-none">Paideia</span>
-        <span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">Aprendizaje · Libros</span>
+        <span class="text-[var(--fs-sm)] tracking-wide leading-none">Paideia</span>
+        <span class="text-[var(--fs-xs)] text-dim mt-0.5 group-hover:text-mid transition-colors">Aprendizaje · Libros</span>
       </div>
       <span class="text-[0.38rem] text-dim border border-border rounded px-1 py-0.5 flex-shrink-0">soon</span>
     </a>
@@ -364,8 +366,8 @@
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="coins" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
-        <span class="text-[0.68rem] tracking-wide leading-none">Oikonomia</span>
-        <span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">Finanzas</span>
+        <span class="text-[var(--fs-sm)] tracking-wide leading-none">Oikonomia</span>
+        <span class="text-[var(--fs-xs)] text-dim mt-0.5 group-hover:text-mid transition-colors">Finanzas</span>
       </div>
     </a>
     <a href="/finanzas/prioridades"
@@ -387,8 +389,8 @@
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="shield" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
-        <span class="text-[0.68rem] tracking-wide leading-none">Hegemonikon</span>
-        <span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">Salud · Nutrición · Perfil</span>
+        <span class="text-[var(--fs-sm)] tracking-wide leading-none">Hegemonikon</span>
+        <span class="text-[var(--fs-xs)] text-dim mt-0.5 group-hover:text-mid transition-colors">Salud · Nutrición · Perfil</span>
       </div>
     </a>
     <a href="/nutricion"
@@ -422,8 +424,8 @@
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="music" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0 flex-1">
-        <span class="text-[0.68rem] tracking-wide leading-none">Eurythmia</span>
-        <span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">Baile</span>
+        <span class="text-[var(--fs-sm)] tracking-wide leading-none">Eurythmia</span>
+        <span class="text-[var(--fs-xs)] text-dim mt-0.5 group-hover:text-mid transition-colors">Baile</span>
       </div>
       <span class="text-[0.38rem] text-dim border border-border rounded px-1 py-0.5 flex-shrink-0">soon</span>
     </a>
@@ -434,8 +436,8 @@
               flex items-center gap-3 px-3 py-2.5 rounded-xl group">
       <i data-lucide="anchor" class="w-4 h-4 flex-shrink-0"></i>
       <div class="flex flex-col min-w-0">
-        <span class="text-[0.68rem] tracking-wide leading-none">Ataraxia</span>
-        <span class="text-[0.41rem] text-dim mt-0.5 group-hover:text-mid transition-colors">Sábado · Automatización · Consumo</span>
+        <span class="text-[var(--fs-sm)] tracking-wide leading-none">Ataraxia</span>
+        <span class="text-[var(--fs-xs)] text-dim mt-0.5 group-hover:text-mid transition-colors">Sábado · Automatización · Consumo</span>
       </div>
     </a>
     <a href="/sabado"
@@ -451,7 +453,7 @@
   <div class="flex-shrink-0 px-5 py-4 border-t border-border">
     <div class="flex items-center gap-2">
       <span class="status-dot w-2 h-2 rounded-full bg-gio-emerald flex-shrink-0"></span>
-      <span class="text-[0.46rem] text-dim tracking-[0.18em] uppercase">Eudaimonia activa</span>
+      <span class="text-[var(--fs-xs)] text-dim tracking-[0.18em] uppercase">Eudaimonia activa</span>
     </div>
   </div>
 </aside>
@@ -483,13 +485,13 @@
           <img src="{{ url_for('static', filename='img/logo.png') }}" alt="SG"
                class="w-7 h-7 rounded-lg object-cover lg:hidden"
                style="border:1px solid rgba(197,163,108,.2);">
-          <span class="text-[0.52rem] text-dim tracking-[0.18em] uppercase hidden sm:block">E U D A I M O N I A</span>
+          <span class="text-[var(--fs-sm)] text-dim tracking-[0.18em] uppercase hidden sm:block">E U D A I M O N I A</span>
         </div>
       </div>
 
       <!-- Derecha: info de sección + toggle -->
       <div class="flex items-center gap-3">
-        <span style="font-size:.5rem;color:var(--mid);letter-spacing:.08em;text-transform:uppercase;">
+        <span style="font-size:var(--fs-xs);color:var(--mid);letter-spacing:.08em;text-transform:uppercase;">
           {% block topright %}{% endblock %}
         </span>
         <button class="theme-btn" onclick="toggleTheme()" title="Cambiar tema">
@@ -520,7 +522,7 @@
 ════════════════════════════════════════════════════════════════ -->
 <div id="tw-toast"
      class="fixed bottom-6 right-4 z-50 bg-card2 border border-gio-violet text-gio-vl
-            px-4 py-2.5 rounded-xl text-[0.65rem] shadow-lg
+            px-4 py-2.5 rounded-xl text-[var(--fs-sm)] shadow-lg
             opacity-0 translate-y-2 pointer-events-none">
 </div>
 

@@ -3,16 +3,16 @@
 {% block gtd_body %}
 <style>
 .ctx-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
-.ctx-chip{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:.72rem;cursor:pointer;transition:.15s;}
+.ctx-chip{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:var(--fs-sm);cursor:pointer;transition:.15s;}
 .ctx-chip.on{background:var(--gold);color:#111;border-color:var(--gold);font-weight:600;}
 .eng-chips{display:flex;gap:6px;margin-bottom:14px;}
-.eng-chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:.72rem;cursor:pointer;transition:.15s;}
+.eng-chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:var(--fs-sm);cursor:pointer;transition:.15s;}
 .eng-chip.on{border-color:var(--gold);color:var(--gold);font-weight:600;}
 .filter-bar{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
-.filter-label{font-size:.65rem;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
-.badge-2m{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:10px;font-size:.6rem;font-weight:700;padding:1px 6px;letter-spacing:.04em;}
-.badge-ctx{display:inline-flex;align-items:center;gap:2px;background:rgba(197,163,108,.1);color:var(--gold);border-radius:8px;font-size:.6rem;padding:1px 6px;}
-.badge-eng{display:inline-flex;align-items:center;gap:2px;border-radius:8px;font-size:.6rem;padding:1px 6px;}
+.filter-label{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.badge-2m{display:inline-flex;align-items:center;gap:3px;background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3);border-radius:10px;font-size:var(--fs-sm);font-weight:700;padding:1px 6px;letter-spacing:.04em;}
+.badge-ctx{display:inline-flex;align-items:center;gap:2px;background:rgba(197,163,108,.1);color:var(--gold);border-radius:8px;font-size:var(--fs-sm);padding:1px 6px;}
+.badge-eng{display:inline-flex;align-items:center;gap:2px;border-radius:8px;font-size:var(--fs-sm);padding:1px 6px;}
 .badge-eng.high{background:rgba(239,68,68,.12);color:#ef4444;}
 .badge-eng.medium{background:rgba(251,191,36,.12);color:#fbbf24;}
 .badge-eng.low{background:rgba(99,102,241,.12);color:#818cf8;}
@@ -101,8 +101,8 @@
       {% if eng_val == 'high' %}<span class="badge-eng high">🔥 Alta</span>
       {% elif eng_val == 'low' %}<span class="badge-eng low">😌 Baja</span>
       {% else %}<span class="badge-eng medium">⚡ Media</span>{% endif %}
-      {% if mins_val > 0 %}<span style="color:var(--dim);font-size:.6rem;">{{ mins_val }}min</span>{% endif %}
-      {% if t.project_name %}<span class="t-sub" style="font-size:.6rem;">{{ t.project_name }}</span>{% endif %}
+      {% if mins_val > 0 %}<span style="color:var(--dim);font-size:var(--fs-sm);">{{ mins_val }}min</span>{% endif %}
+      {% if t.project_name %}<span class="t-sub" style="font-size:var(--fs-sm);">{{ t.project_name }}</span>{% endif %}
     </div>
   </div>
   <div class="t-meta">

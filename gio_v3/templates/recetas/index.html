@@ -11,11 +11,11 @@
 /* ── Toolbar ─────────────────────────────────────────── */
 .rc-toolbar{display:flex;gap:8px;align-items:center;margin-bottom:18px;flex-wrap:wrap;}
 .rc-search{flex:1;min-width:160px;background:var(--card);border:1px solid var(--b);border-radius:8px;
-  padding:8px 12px 8px 34px;color:var(--text);font-family:var(--sans);font-size:.72rem;outline:none;transition:border-color .16s;}
+  padding:8px 12px 8px 34px;color:var(--text);font-family:var(--sans);font-size:var(--fs-sm);outline:none;transition:border-color .16s;}
 .rc-search:focus{border-color:var(--gold);}
 .rc-search-wrap{position:relative;flex:1;min-width:160px;}
 .rc-search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--dim);pointer-events:none;}
-.cat-pill{padding:4px 11px;border-radius:100px;font-size:.56rem;letter-spacing:.08em;text-transform:uppercase;
+.cat-pill{padding:4px 11px;border-radius:100px;font-size:var(--fs-sm);letter-spacing:.08em;text-transform:uppercase;
   background:var(--card);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;white-space:nowrap;}
 .cat-pill:hover,.cat-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
 
@@ -27,70 +27,70 @@
 .rc-card.active{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,168,76,.2);}
 .rc-card-header{height:5px;}
 .rc-card-body{padding:14px;}
-.rc-card-cat{font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.rc-card-cat{font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
 .rc-card-name{font-family:var(--serif);font-size:1rem;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:8px;}
 .rc-card-macros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
-.macro-chip{font-size:.46rem;padding:2px 7px;border-radius:100px;letter-spacing:.05em;}
+.macro-chip{font-size:var(--fs-xs);padding:2px 7px;border-radius:100px;letter-spacing:.05em;}
 .m-cal{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
 .m-pro{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:var(--green);}
 .m-carb{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:#60a5fa;}
 .m-fat{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:var(--red);}
-.rc-card-meta{display:flex;gap:10px;font-size:.5rem;color:var(--dim);}
+.rc-card-meta{display:flex;gap:10px;font-size:var(--fs-xs);color:var(--dim);}
 .rc-fav{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--dim);
   padding:3px;transition:color .14s;line-height:1;}
 .rc-fav.on{color:var(--gold);}
 .rc-fav svg{width:14px;height:14px;}
 .rc-empty{text-align:center;padding:48px 20px;color:var(--dim);grid-column:1/-1;}
 .rc-empty svg{width:36px;height:36px;margin:0 auto 12px;display:block;opacity:.2;}
-.rc-empty p{font-size:.68rem;}
+.rc-empty p{font-size:var(--fs-sm);}
 
 /* ── Detail Panel ────────────────────────────────────── */
 .rc-detail{background:var(--card);border:1px solid var(--b);border-radius:14px;
   position:sticky;top:72px;overflow:hidden;}
 .rc-detail-empty{padding:48px 24px;text-align:center;color:var(--dim);}
 .rc-detail-empty svg{width:40px;height:40px;margin:0 auto 14px;display:block;opacity:.12;}
-.rc-detail-empty p{font-size:.64rem;line-height:1.6;}
+.rc-detail-empty p{font-size:var(--fs-sm);line-height:1.6;}
 .rd-header{padding:20px 20px 16px;}
-.rd-cat-badge{display:inline-block;font-size:.44rem;letter-spacing:.14em;text-transform:uppercase;
+.rd-cat-badge{display:inline-block;font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;
   padding:2px 9px;border-radius:100px;margin-bottom:10px;}
 .rd-name{font-family:var(--serif);font-size:1.5rem;font-weight:600;color:var(--text);line-height:1.15;margin-bottom:6px;}
-.rd-desc{font-size:.66rem;color:var(--mid);line-height:1.55;margin-bottom:14px;}
+.rd-desc{font-size:var(--fs-sm);color:var(--mid);line-height:1.55;margin-bottom:14px;}
 .rd-meta-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
-.rd-meta-item{display:flex;align-items:center;gap:5px;font-size:.56rem;color:var(--dim);}
+.rd-meta-item{display:flex;align-items:center;gap:5px;font-size:var(--fs-sm);color:var(--dim);}
 .rd-meta-item svg{width:12px;height:12px;}
 .rd-divider{height:1px;background:var(--b);margin:0 0 16px;}
 /* Macro bars */
 .rd-macros{padding:0 20px 16px;}
-.rd-macros-title{font-size:.46rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;}
+.rd-macros-title{font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;}
 .macro-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
-.macro-bar-label{font-size:.54rem;color:var(--mid);width:60px;flex-shrink:0;}
+.macro-bar-label{font-size:var(--fs-sm);color:var(--mid);width:60px;flex-shrink:0;}
 .macro-bar-track{flex:1;height:4px;background:var(--b);border-radius:2px;overflow:hidden;}
 .macro-bar-fill{height:100%;border-radius:2px;transition:width .5s;}
-.macro-bar-val{font-size:.52rem;color:var(--dim);width:36px;text-align:right;flex-shrink:0;}
+.macro-bar-val{font-size:var(--fs-sm);color:var(--dim);width:36px;text-align:right;flex-shrink:0;}
 /* Video */
 .rd-video{margin:0 20px 16px;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:16/9;}
 .rd-video iframe{width:100%;height:100%;border:none;}
 .rd-video-link{display:flex;align-items:center;gap:8px;margin:0 20px 16px;padding:10px 14px;
   background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.18);border-radius:8px;
-  text-decoration:none;color:#f87171;font-size:.6rem;transition:background .14s;}
+  text-decoration:none;color:#f87171;font-size:var(--fs-sm);transition:background .14s;}
 .rd-video-link:hover{background:rgba(248,113,113,.1);}
 .rd-video-link svg{width:16px;height:16px;flex-shrink:0;}
 /* Ingredients */
 .rd-ingredients{padding:0 20px 16px;}
-.rd-section-title{font-size:.46rem;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;}
+.rd-section-title{font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:10px;}
 .ing-row{display:flex;align-items:baseline;gap:8px;padding:7px 0;border-bottom:1px solid rgba(201,168,76,.05);}
 .ing-row:last-child{border-bottom:none;}
 .ing-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:5px;}
-.ing-item{flex:1;font-size:.66rem;color:var(--text);}
-.ing-qty{font-size:.58rem;color:var(--gold);font-family:var(--mono);white-space:nowrap;}
+.ing-item{flex:1;font-size:var(--fs-sm);color:var(--text);}
+.ing-qty{font-size:var(--fs-sm);color:var(--gold);font-family:var(--mono);white-space:nowrap;}
 /* Instructions */
 .rd-instructions{padding:0 20px 20px;}
 .step-row{display:flex;gap:12px;padding:8px 0;cursor:pointer;user-select:none;}
 .step-num{width:22px;height:22px;border-radius:7px;background:var(--card2);border:1px solid var(--b);
-  display:flex;align-items:center;justify-content:center;font-size:.52rem;color:var(--mid);
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-sm);color:var(--mid);
   flex-shrink:0;transition:all .2s;}
 .step-row.done .step-num{background:var(--gold);border-color:var(--gold);color:#09070F;}
-.step-text{font-size:.66rem;color:var(--text);line-height:1.55;padding-top:2px;transition:color .2s;}
+.step-text{font-size:var(--fs-sm);color:var(--text);line-height:1.55;padding-top:2px;transition:color .2s;}
 .step-row.done .step-text{color:var(--dim);text-decoration:line-through;}
 /* Actions */
 .rd-actions{display:flex;gap:8px;padding:0 20px 20px;}
@@ -107,7 +107,7 @@
 .rm-close:hover{color:var(--text);}
 .rm-close svg{width:18px;height:18px;}
 .rm-body{padding:20px 24px 24px;}
-.rm-section{font-size:.44rem;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px;}
+.rm-section{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px;}
 .rm-section:first-child{margin-top:0;}
 .rm-row{display:grid;gap:8px;margin-bottom:8px;}
 .rm-row.c2{grid-template-columns:1fr 1fr;}
@@ -121,7 +121,7 @@
 .dyn-del:hover{color:var(--red);}
 .dyn-del svg{width:13px;height:13px;}
 .btn-add-row{background:none;border:1px dashed var(--b);color:var(--dim);border-radius:7px;padding:6px 12px;
-  font-size:.58rem;cursor:pointer;width:100%;transition:all .16s;font-family:var(--sans);}
+  font-size:var(--fs-sm);cursor:pointer;width:100%;transition:all .16s;font-family:var(--sans);}
 .btn-add-row:hover{border-color:var(--gold);color:var(--gold);}
 .rm-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;}
 </style>
@@ -130,7 +130,7 @@
 <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
   <div>
     <div style="font-family:var(--serif);font-size:1.5rem;font-style:italic;font-weight:300;color:var(--text);">Recetario Personal</div>
-    <div style="font-size:.56rem;color:var(--dim);margin-top:3px;">{{ recetas|length }} receta{% if recetas|length != 1 %}s{% endif %} guardada{% if recetas|length != 1 %}s{% endif %}</div>
+    <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:3px;">{{ recetas|length }} receta{% if recetas|length != 1 %}s{% endif %} guardada{% if recetas|length != 1 %}s{% endif %}</div>
   </div>
   <button class="btn-a" onclick="openModal()">+ Nueva receta</button>
 </div>
@@ -232,13 +232,13 @@
       </div>
 
       <div class="rm-row" style="margin-top:4px;">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.66rem;color:var(--mid);">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:var(--fs-sm);color:var(--mid);">
           <input type="checkbox" id="rm-fav" style="accent-color:var(--gold);width:14px;height:14px;">
           Marcar como favorita
         </label>
       </div>
 
-      <div id="rm-err" style="color:var(--red);font-size:.58rem;min-height:14px;margin-top:6px;"></div>
+      <div id="rm-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:6px;"></div>
       <div class="rm-footer">
         <button class="btn-g" onclick="closeModal()">Cancelar</button>
         <button class="btn-a" onclick="saveRecipe()">Guardar receta</button>
@@ -529,7 +529,7 @@ function addStep(existing){
   row.style.alignItems = 'flex-start';
   row.innerHTML = `
     <div style="width:22px;height:22px;border-radius:7px;background:var(--card2);border:1px solid var(--b);
-      display:flex;align-items:center;justify-content:center;font-size:.52rem;color:var(--mid);flex-shrink:0;margin-top:8px;">${idx}</div>
+      display:flex;align-items:center;justify-content:center;font-size:var(--fs-sm);color:var(--mid);flex-shrink:0;margin-top:8px;">${idx}</div>
     <textarea class="fi" rows="2" style="resize:vertical;" placeholder="Describe el paso…">${esc(typeof existing==='string'?existing:'')}</textarea>
     <button class="dyn-del" style="margin-top:8px;" onclick="this.closest('.dyn-row').remove();renumberSteps()">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>

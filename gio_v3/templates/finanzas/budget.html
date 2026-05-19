@@ -1,22 +1,22 @@
 {% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
 {% block title %}Budget 50-30-20 — {{ mes }}{% endblock %}
 {% block module_title %}PRESUPUESTO{% endblock %}
-{% block topright %}<a href="/finanzas/" style="color:var(--dim);font-size:.52rem;">← OIKONOMIA</a>{% endblock %}
+{% block topright %}<a href="/finanzas/" style="color:var(--dim);font-size:var(--fs-sm);">← OIKONOMIA</a>{% endblock %}
 {% block content %}
 <style>
 /* ── Month nav ───────────────────────────────────────────────── */
 .month-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
-.mn-btn{background:var(--card2);border:1px solid var(--b);color:var(--mid);padding:7px 16px;border-radius:8px;font-size:.6rem;letter-spacing:.05em;transition:all .18s;}
+.mn-btn{background:var(--card2);border:1px solid var(--b);color:var(--mid);padding:7px 16px;border-radius:8px;font-size:var(--fs-sm);letter-spacing:.05em;transition:all .18s;}
 .mn-btn:hover{border-color:var(--b2);color:var(--text);}
 .mn-mes{font-family:var(--sans);font-size:1.2rem;font-weight:700;color:var(--text);}
-.mn-sub{font-size:.5rem;color:var(--dim);letter-spacing:.1em;text-align:center;margin-top:2px;}
+.mn-sub{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-align:center;margin-top:2px;}
 
 /* ── Income card ─────────────────────────────────────────────── */
 .income-card{background:linear-gradient(135deg,rgba(16,185,129,.1),rgba(6,182,212,.06));border:1px solid rgba(16,185,129,.25);border-radius:14px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
-.ic-left .ic-l{font-size:.46rem;color:var(--emerald);letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;}
+.ic-left .ic-l{font-size:var(--fs-xs);color:var(--emerald);letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;}
 .ic-val{font-family:var(--sans);font-size:2.2rem;font-weight:700;background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
 .ic-right{display:flex;gap:8px;align-items:center;}
-.ic-inp{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:.72rem;outline:none;width:160px;transition:border-color .18s;}
+.ic-inp{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;width:160px;transition:border-color .18s;}
 .ic-inp:focus{border-color:var(--emerald);}
 
 /* ── 50-30-20 Summary ────────────────────────────────────────── */
@@ -26,14 +26,14 @@
 .bs-nec::after{background:linear-gradient(90deg,var(--emerald),var(--emerald-l));}
 .bs-des::after{background:linear-gradient(90deg,var(--blue),#93c5fd);}
 .bs-aho::after{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
-.bs-label{font-size:.46rem;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;}
+.bs-label{font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px;}
 .bs-nec .bs-label{color:var(--emerald);}
 .bs-des .bs-label{color:var(--blue);}
 .bs-aho .bs-label{color:var(--violet-l);}
-.bs-pct-target{font-size:.44rem;color:var(--dim);margin-bottom:10px;}
+.bs-pct-target{font-size:var(--fs-xs);color:var(--dim);margin-bottom:10px;}
 .bs-amounts{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px;}
 .bs-real{font-family:var(--sans);font-size:1.4rem;font-weight:700;color:var(--text);}
-.bs-target{font-size:.58rem;color:var(--dim);}
+.bs-target{font-size:var(--fs-sm);color:var(--dim);}
 /* progress bar */
 .bs-bar{height:6px;background:var(--b);border-radius:100px;overflow:hidden;}
 .bs-fill{height:100%;border-radius:100px;transition:width .5s;}
@@ -41,21 +41,21 @@
 .bs-des .bs-fill{background:linear-gradient(90deg,var(--blue),#93c5fd);}
 .bs-aho .bs-fill{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
 .bs-fill.over{background:var(--coral);}
-.bs-status{font-size:.5rem;margin-top:6px;}
+.bs-status{font-size:var(--fs-xs);margin-top:6px;}
 
 /* disponible */
 .disponible-bar{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
-.db-label{font-size:.5rem;color:var(--dim);letter-spacing:.15em;text-transform:uppercase;}
+.db-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.15em;text-transform:uppercase;}
 .db-val{font-family:var(--sans);font-size:1.6rem;font-weight:700;}
 .db-pos{background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .db-neg{color:var(--coral);}
-.db-sub{font-size:.52rem;color:var(--dim);}
+.db-sub{font-size:var(--fs-sm);color:var(--dim);}
 
 /* ── Items grid ──────────────────────────────────────────────── */
 .items-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
 .items-col{}
 .col-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-.col-title{font-size:.5rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;}
+.col-title{font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;font-weight:600;}
 .ct-nec{color:var(--emerald);}
 .ct-des{color:var(--blue);}
 .ct-aho{color:var(--violet-l);}
@@ -65,16 +65,16 @@
 /* item row */
 .item-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--b);}
 .item-row:last-child{border-bottom:none;}
-.ir-nombre{flex:1;font-size:.66rem;color:var(--mid);}
+.ir-nombre{flex:1;font-size:var(--fs-sm);color:var(--mid);}
 .ir-nombre.deuda-item{color:var(--amber);}
-.ir-est{font-size:.6rem;color:var(--dim);width:64px;text-align:right;}
+.ir-est{font-size:var(--fs-sm);color:var(--dim);width:64px;text-align:right;}
 .ir-real{width:80px;}
-.ir-real input{background:transparent;border:none;border-bottom:1px solid var(--b);color:var(--text);font-family:var(--mono);font-size:.64rem;text-align:right;outline:none;width:100%;padding:2px 0;transition:border-color .18s;}
+.ir-real input{background:transparent;border:none;border-bottom:1px solid var(--b);color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);text-align:right;outline:none;width:100%;padding:2px 0;transition:border-color .18s;}
 .ir-real input:focus{border-color:var(--violet-l);}
 .ir-del{background:none;border:none;color:var(--dim);width:18px;height:18px;display:flex;align-items:center;justify-content:center;transition:color .16s;flex-shrink:0;}
 .ir-del:hover{color:var(--coral);}
 .ir-del svg{width:10px;height:10px;}
-.col-total{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--b2);font-size:.6rem;}
+.col-total{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--b2);font-size:var(--fs-sm);}
 .ct-label{color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
 .ct-val{font-weight:600;color:var(--text);}
 
@@ -84,19 +84,19 @@
 .debt-card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;}
 .dc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
 .dc-nombre{font-family:var(--sans);font-size:.9rem;font-weight:600;color:var(--text);}
-.dc-tasa{font-size:.48rem;color:var(--dim);margin-top:2px;}
+.dc-tasa{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
 .dc-saldo{text-align:right;}
-.dc-sl{font-size:.44rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;}
+.dc-sl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;}
 .dc-sv{font-family:var(--sans);font-size:1.3rem;font-weight:700;color:var(--coral);}
 /* progress */
 .dc-bar{height:5px;background:var(--b);border-radius:100px;overflow:hidden;margin-bottom:4px;}
 .dc-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--emerald),var(--cyan));transition:width .5s;}
-.dc-pct{font-size:.46rem;color:var(--dim);}
+.dc-pct{font-size:var(--fs-xs);color:var(--dim);}
 /* payment */
 .dc-pago{display:flex;gap:7px;margin-top:14px;}
-.dc-pago input{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:.68rem;outline:none;transition:border-color .18s;}
+.dc-pago input{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;transition:border-color .18s;}
 .dc-pago input:focus{border-color:var(--amber);}
-.dc-sim{margin-top:10px;font-size:.54rem;color:var(--dim);display:none;}
+.dc-sim{margin-top:10px;font-size:var(--fs-sm);color:var(--dim);display:none;}
 .dc-sim.show{display:block;}
 .sim-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b);}
 .sim-row:last-child{border-bottom:none;}
@@ -108,7 +108,7 @@
 
 /* ── Modals ──────────────────────────────────────────────────── */
 .m-row{display:flex;flex-direction:column;gap:11px;}
-.m-field label{display:block;font-size:.46rem;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px;}
+.m-field label{display:block;font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px;}
 .m-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
 /* ── Responsive ──────────────────────────────────────────────── */
@@ -222,7 +222,7 @@
     </div>
     {% endfor %}
     {% if not items_by_cat[cat] %}
-    <div style="text-align:center;padding:16px 0;font-size:.58rem;color:var(--dim);">Sin ítems — agrega uno</div>
+    <div style="text-align:center;padding:16px 0;font-size:var(--fs-sm);color:var(--dim);">Sin ítems — agrega uno</div>
     {% endif %}
     <div class="col-total">
       <span class="ct-label">Total</span>
@@ -271,25 +271,25 @@
           id="pago-{{ d.id }}"
           placeholder="Monto a pagar..."
           oninput="simularDeuda({{ d.id }}, {{ d.pago_minimo }}, {{ d.tasa_interes or 0 }}, {{ d.saldo_actual }})">
-        <button class="btn-a" style="white-space:nowrap;font-size:.58rem;" onclick="pagarDeuda({{ d.id }})">Registrar pago</button>
+        <button class="btn-a" style="white-space:nowrap;font-size:var(--fs-sm);" onclick="pagarDeuda({{ d.id }})">Registrar pago</button>
       </div>
 
       <!-- Simulation output -->
       <div class="dc-sim" id="sim-{{ d.id }}">
-        <div style="font-size:.46rem;color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;">Proyección de liquidación</div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;">Proyección de liquidación</div>
         <div class="sim-row"><span class="sim-label">Pago mínimo (${{ "{:,.0f}".format(d.pago_minimo) }})</span><span class="sim-val sv-min" id="sim-min-{{ d.id }}">—</span></div>
         <div class="sim-row"><span class="sim-label">Tu pago propuesto</span><span class="sim-val sv-prop" id="sim-prop-{{ d.id }}">—</span></div>
         <div class="sim-row"><span class="sim-label">Pago agresivo (×2)</span><span class="sim-val sv-agr" id="sim-agr-{{ d.id }}">—</span></div>
       </div>
 
       {% if pagos_mes.get(d.id) %}
-      <div style="margin-top:8px;font-size:.54rem;color:var(--emerald);">✓ Este mes: -${{ "{:,.0f}".format(pagos_mes[d.id]) }} pagado</div>
+      <div style="margin-top:8px;font-size:var(--fs-sm);color:var(--emerald);">✓ Este mes: -${{ "{:,.0f}".format(pagos_mes[d.id]) }} pagado</div>
       {% endif %}
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <div style="text-align:center;padding:24px;color:var(--dim);font-size:.64rem;">
+  <div style="text-align:center;padding:24px;color:var(--dim);font-size:var(--fs-sm);">
     Sin deudas registradas — agrega TDC u otras deudas aquí
   </div>
   {% endif %}
