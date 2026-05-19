@@ -83,8 +83,8 @@ function WordOfDay() {
 
   return (
     <div style={{
-      background:'rgba(201,168,76,0.04)',
-      border:'1px solid rgba(201,168,76,0.1)',
+      background:'color-mix(in srgb, var(--gold) 4%, transparent)',
+      border:'1px solid var(--gold-bg)',
       borderRadius:12, padding:'16px 18px', marginBottom:14,
     }}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
@@ -110,17 +110,17 @@ function WordOfDay() {
         fontSize:28,fontWeight:300,color:C.text,lineHeight:1,marginBottom:10}}>
         {word.word}
       </div>
-      <div style={{height:1,background:'linear-gradient(90deg,rgba(201,168,76,0.4),transparent)',marginBottom:10}}/>
+      <div style={{height:1,background:'linear-gradient(90deg,var(--gold-glow),transparent)',marginBottom:10}}/>
       <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textMuted,lineHeight:1.55,marginBottom:8}}>
         {word.meaning}
       </div>
       <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',fontSize:12,
-        color:C.textMuted,borderLeft:'2px solid rgba(201,168,76,0.3)',
+        color:C.textMuted,borderLeft:'2px solid var(--b2)',
         paddingLeft:10,marginBottom:10,lineHeight:1.55,opacity:0.75}}>
         "{word.example}"
       </div>
       <span style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
-        background:'rgba(201,168,76,0.06)',border:'1px solid rgba(201,168,76,0.16)',
+        background:'color-mix(in srgb, var(--gold) 6%, transparent)',border:'1px solid var(--gold-border)',
         color:C.gold,padding:'3px 9px',borderRadius:100,display:'inline-block'}}>
         🇫🇷 {word.french}
       </span>
@@ -168,8 +168,8 @@ function RemindersWidget() {
       <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
         color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Recordatorios</div>
       <div style={{
-        background:'rgba(201,168,76,0.03)',
-        border:'1px solid rgba(201,168,76,0.08)',
+        background:'color-mix(in srgb, var(--gold) 3%, transparent)',
+        border:'1px solid var(--gold-bg)',
         borderRadius:12, overflow:'hidden',
       }}>
         {items.map((r, i) => {
@@ -179,17 +179,17 @@ function RemindersWidget() {
             <div key={r.id} style={{
               display:'flex', alignItems:'center', gap:12,
               padding:'12px 16px',
-              borderBottom: i < items.length - 1 ? '1px solid rgba(201,168,76,0.06)' : 'none',
+              borderBottom: i < items.length - 1 ? '1px solid color-mix(in srgb, var(--gold) 6%, transparent)' : 'none',
               opacity: r._loading ? 0.4 : 1, transition:'opacity 0.2s',
             }}>
               <button onClick={() => !r._loading && handleDone(r.id, r.type)} style={{
-                flexShrink:0, background:'none', border:'1.5px solid rgba(201,168,76,0.25)',
+                flexShrink:0, background:'none', border:'1.5px solid color-mix(in srgb, var(--gold) 25%, transparent)',
                 width:18, height:18, borderRadius:'50%', cursor:'pointer',
                 display:'flex', alignItems:'center', justifyContent:'center',
                 transition:'border-color 0.15s, background 0.15s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(201,168,76,0.7)'; e.currentTarget.style.background='rgba(201,168,76,0.1)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(201,168,76,0.25)'; e.currentTarget.style.background='none'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor='var(--gold)'; e.currentTarget.style.background='var(--gold-bg)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor='color-mix(in srgb, var(--gold) 25%, transparent)'; e.currentTarget.style.background='none'; }}
               />
               <div style={{flex:1, minWidth:0}}>
                 <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,
@@ -380,6 +380,7 @@ const TIERS = [
 ];
 
 function HomeScreen({ appState, dispatch, isDesktop }) {
+  const { isLight } = useTheme();
   const { level, xp, xpNext, modules } = appState;
   const lv = EU.levels[level - 1];
   const xpPct = xpNext ? xp / xpNext : 1;
@@ -407,6 +408,15 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
       if (data.gam && (data.gam.xp_delta || data.gam.xp))
         dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
       if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
+      if (data.gam?.perfect_day) {
+        window.dispatchEvent(new CustomEvent('eu:perfect-day', {
+          detail: { bonusXp: data.gam.perfect_day.xp || 5, bonusEc: data.gam.perfect_day.ec || 10 }
+        }));
+      } else if (data.gam?.combo_bonuses?.length) {
+        data.gam.combo_bonuses.forEach(c =>
+          window.dispatchEvent(new CustomEvent('eu:combo-bonus', { detail: c }))
+        );
+      }
       if (data.stats) {
         window.EU._server.xpToday = data.stats.xp_today ?? data.stats.pts_today ?? xpToday;
         window.EU._server.streak  = data.stats.streak ?? streak;
@@ -423,7 +433,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         padding:'env(safe-area-inset-top,16px) 20px 12px',
         paddingTop:'max(env(safe-area-inset-top,16px),16px)',
         background:EU.rgba('deep', 0.97),
-        borderBottom:'1px solid rgba(201,168,76,0.07)',
+        borderBottom:'1px solid color-mix(in srgb, var(--gold) 7%, transparent)',
       }}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
           <div>
@@ -442,7 +452,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           <div style={{display:'flex',alignItems:'center',gap:10,paddingTop:4}}>
             {isDesktop && (
               <button onClick={() => window.dispatchEvent(new CustomEvent('eu:open-cmdk'))}
-                style={{background:'rgba(201,168,76,0.08)',border:'1px solid rgba(201,168,76,0.2)',
+                style={{background:'var(--gold-bg)',border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
                   borderRadius:6,padding:'3px 8px',color:C.gold,fontSize:10,cursor:'pointer',
                   fontFamily:'DM Sans,sans-serif',letterSpacing:'0.05em'}}>
                 ⌘ K
@@ -471,8 +481,8 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
 
         {/* ── HERO XP DEL DÍA ── */}
         <div style={{
-          background:'linear-gradient(140deg,#1C1830,#110F20)',
-          border:'1px solid rgba(201,168,76,0.18)',
+          background:'linear-gradient(140deg, var(--surf), var(--bg))',
+          border:'1px solid var(--gold-border)',
           borderRadius:16,padding:'20px',marginBottom:14,
           position:'relative',overflow:'hidden',
         }}>
@@ -483,12 +493,12 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
               lineHeight:1,color:C.goldLight,fontWeight:600}}>{xpToday}</div>
             <div style={{fontSize:13,color:C.textMuted}}>/ {XP_GOAL} meta</div>
           </div>
-          <div style={{height:5,background:'rgba(201,168,76,0.08)',borderRadius:3,overflow:'hidden',marginBottom:12}}>
+          <div style={{height:5,background:'var(--gold-bg)',borderRadius:3,overflow:'hidden',marginBottom:12}}>
             <div style={{
               height:'100%',borderRadius:3,
-              background:'linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D)',
+              background:'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, #000), var(--gold), var(--gold-l))',
               width:`${xpDayPct*100}%`,
-              boxShadow:'0 0 8px rgba(201,168,76,0.45)',
+              boxShadow:'0 0 8px var(--gold-glow)',
               transition:'width 0.8s ease',
             }}/>
           </div>
@@ -546,8 +556,8 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         {suggestion && (
           <div onClick={() => logActivityFromHome(suggestion.key)}
             style={{
-              background:`oklch(18% 0.04 ${(EU.catHues||{})[suggestion.cat]||45})`,
-              border:`1px solid oklch(35% 0.09 ${(EU.catHues||{})[suggestion.cat]||45})`,
+              background: EU.catTint((EU.catHues||{})[suggestion.cat]||45, 'bg'),
+              border:`1px solid ${EU.catTint((EU.catHues||{})[suggestion.cat]||45, 'border')}`,
               borderRadius:12,padding:'14px 16px',marginBottom:14,cursor:'pointer',
               display:'flex',alignItems:'center',gap:12,
             }}>
@@ -565,14 +575,14 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         {/* ── LEVEL CARD (compacto) ── */}
         <div style={{
           background:`linear-gradient(140deg,${C.card} 0%,${C.surface} 55%,${C.deep} 100%)`,
-          border:'1px solid rgba(201,168,76,0.2)',
+          border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
           borderRadius:16,padding:'18px 16px',marginBottom:14,
           position:'relative',overflow:'hidden',
-          boxShadow:'0 8px 36px rgba(0,0,0,0.45), inset 0 1px 0 rgba(201,168,76,0.07)',
+          boxShadow:'0 8px 36px rgba(0,0,0,0.45), inset 0 1px 0 color-mix(in srgb, var(--gold) 7%, transparent)',
         }}>
           <div style={{position:'absolute',inset:0,pointerEvents:'none',background:
-            'radial-gradient(ellipse at 15% 85%,rgba(201,168,76,0.05) 0%,transparent 55%),' +
-            'radial-gradient(ellipse at 85% 15%,rgba(201,168,76,0.03) 0%,transparent 45%)'}}/>
+            'radial-gradient(ellipse at 15% 85%,color-mix(in srgb, var(--gold) 5%, transparent) 0%,transparent 55%),' +
+            'radial-gradient(ellipse at 85% 15%,color-mix(in srgb, var(--gold) 3%, transparent) 0%,transparent 45%)'}}/>
           <div style={{display:'flex',alignItems:'flex-end',gap:14}}>
             <div style={{flexShrink:0}}>
               <GreekColumn level={level} xpPct={xpPct} size={72}/>
@@ -590,12 +600,12 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
                 fontSize:12,color:C.textSub,marginTop:3,marginBottom:10}}>
                 {lv?.sub}
               </div>
-              <div style={{height:3,background:'rgba(201,168,76,0.08)',borderRadius:2,overflow:'hidden'}}>
+              <div style={{height:3,background:'var(--gold-bg)',borderRadius:2,overflow:'hidden'}}>
                 <div style={{
                   height:'100%',borderRadius:2,
-                  background:'linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D)',
+                  background:'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, #000), var(--gold), var(--gold-l))',
                   width:`${xpPct*100}%`,
-                  boxShadow:'0 0 8px rgba(201,168,76,0.45)',
+                  boxShadow:'0 0 8px var(--gold-glow)',
                   transition:'width 1.2s ease',
                 }}/>
               </div>
@@ -619,7 +629,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           <div style={{
             display:'flex',gap:3,marginBottom:10,
             height:3,borderRadius:2,overflow:'hidden',
-            background:'rgba(201,168,76,0.06)',
+            background:'color-mix(in srgb, var(--gold) 6%, transparent)',
           }}>
             {modules.map(mod => (
               <div key={mod.id} style={{
@@ -632,7 +642,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none'}}>
             {modules.map(mod => {
               const acc = `oklch(65% 0.15 ${mod.hue})`;
-              const accBg = `oklch(18% 0.04 ${mod.hue})`;
+              const accBg = EU.catTint(mod.hue, 'bg');
               return (
                 <div key={mod.id} onClick={() => dispatch({type:'OPEN_MODULE',id:mod.id})}
                   style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:'pointer'}}>
@@ -710,7 +720,7 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
         {/* Daily XP mini strip */}
         <div style={{
           display:'flex',gap:4,marginTop:14,
-          height:3,borderRadius:2,overflow:'hidden',background:'rgba(201,168,76,0.06)',
+          height:3,borderRadius:2,overflow:'hidden',background:'color-mix(in srgb, var(--gold) 6%, transparent)',
         }}>
           {modules.map(mod => (
             <div key={mod.id} style={{
@@ -731,7 +741,7 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
         <a href="/gtd"
           style={{
             gridColumn:'1/-1',
-            background:C.card,border:'1px solid rgba(201,168,76,0.14)',
+            background:C.card,border:'1px solid var(--b)',
             borderRadius:14,padding:'14px 15px',cursor:'pointer',
             display:'flex',justifyContent:'space-between',alignItems:'center',
             transition:'all 0.25s', textDecoration:'none',
@@ -749,8 +759,8 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
         <a href="/logros"
           style={{
             gridColumn:'1/-1',
-            background:'rgba(201,168,76,0.04)',
-            border:'1px solid rgba(201,168,76,0.14)',
+            background:'color-mix(in srgb, var(--gold) 4%, transparent)',
+            border:'1px solid var(--b)',
             borderRadius:14,padding:'14px 15px',cursor:'pointer',
             display:'flex',justifyContent:'space-between',alignItems:'center',
             transition:'all 0.25s', textDecoration:'none',
@@ -831,7 +841,7 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
                   ))}
                 </div>
               ) : (
-                <div style={{background:accDeep,border:'1px dashed rgba(201,168,76,0.15)',
+                <div style={{background:accDeep,border:'1px dashed var(--b)',
                   borderRadius:12,padding:'18px',textAlign:'center'}}>
                   <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.18em',
                     color:C.textMuted,textTransform:'uppercase',opacity:0.6}}>Próximamente</div>
@@ -867,7 +877,7 @@ function ModuleExtra({ id, acc }) {
           {label:'Deudas activas',   val: deudas,  sub:'saldo actual total'},
         ].map((r,i) => (
           <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
-            padding:'12px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+            padding:'12px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)'}}>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>{r.label}</div>
             <div style={{textAlign:'right'}}>
               <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:acc}}>{r.val}</div>
@@ -895,7 +905,7 @@ function ModuleExtra({ id, acc }) {
                 {l.lvl}{l.entries ? ` · ${l.entries} entradas` : ''}
               </span>
             </div>
-            <div style={{height:3,background:'rgba(201,168,76,0.08)',borderRadius:2}}>
+            <div style={{height:3,background:'var(--gold-bg)',borderRadius:2}}>
               <div style={{height:'100%',borderRadius:2,background:acc,
                 width:`${(l.pct||0)*100}%`,boxShadow:`0 0 6px ${acc}66`}}/>
             </div>
@@ -919,7 +929,7 @@ function ModuleExtra({ id, acc }) {
           color:C.textMuted,textTransform:'uppercase',marginBottom:14}}>Métricas Corporales</div>
         {rows.map((r,i) => (
           <div key={i} style={{display:'flex',justifyContent:'space-between',
-            padding:'11px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+            padding:'11px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)'}}>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>{r.label}</div>
             <div style={{textAlign:'right'}}>
               <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:19,color:acc}}>{r.val}</div>
@@ -967,9 +977,9 @@ function PraxisInbox({ isDesktop }) {
   ];
 
   return (
-    <div style={{borderTop:'1px solid rgba(201,168,76,0.1)', marginTop:4}}>
+    <div style={{borderTop:'1px solid var(--gold-bg)', marginTop:4}}>
       <div style={{
-        display:'flex', borderBottom:'1px solid rgba(201,168,76,0.1)',
+        display:'flex', borderBottom:'1px solid var(--gold-bg)',
         padding: isDesktop ? '0 24px' : '0 20px',
       }}>
         {GTD_TABS.map(t => (
@@ -987,7 +997,7 @@ function PraxisInbox({ isDesktop }) {
         {gtdTab === 'inbox' && (
           <div>
             <div style={{display:'flex',gap:8,marginBottom:14,
-              background:C.card,border:'1px solid rgba(201,168,76,0.14)',
+              background:C.card,border:'1px solid var(--b)',
               borderRadius:10,padding:'4px 4px 4px 14px',alignItems:'center'}}>
               <input value={newItem} onChange={e=>setNewItem(e.target.value)}
                 onKeyDown={e=>e.key==='Enter'&&addItem()}
@@ -1005,9 +1015,9 @@ function PraxisInbox({ isDesktop }) {
                   fontSize:17,color:C.textMuted}}>Inbox limpio. Mente clara.</div>
               : inbox.map(item => (
                 <div key={item.id} style={{display:'flex',alignItems:'center',gap:10,
-                  padding:'11px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+                  padding:'11px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)'}}>
                   <div style={{width:5,height:5,borderRadius:'50%',
-                    background:'rgba(201,168,76,0.28)',flexShrink:0}}/>
+                    background:'color-mix(in srgb, var(--gold) 28%, transparent)',flexShrink:0}}/>
                   <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{item.text}</div>
                   <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{item.context}</div>
                   <button onClick={()=>setInbox(p=>p.filter(i=>i.id!==item.id))}
@@ -1024,13 +1034,13 @@ function PraxisInbox({ isDesktop }) {
         {gtdTab === 'projects' && EU.gtd.projects.map(p => {
           const pct = p.done / p.actions;
           return (
-            <div key={p.id} style={{background:C.card,border:'1px solid rgba(201,168,76,0.1)',
+            <div key={p.id} style={{background:C.card,border:'1px solid var(--gold-bg)',
               borderRadius:12,padding:'14px 16px',marginBottom:9}}>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text,marginBottom:9}}>{p.name}</div>
               <div style={{display:'flex',alignItems:'center',gap:10}}>
-                <div style={{flex:1,height:3,background:'rgba(201,168,76,0.08)',borderRadius:2}}>
+                <div style={{flex:1,height:3,background:'var(--gold-bg)',borderRadius:2}}>
                   <div style={{height:'100%',borderRadius:2,background:C.gold,
-                    width:`${pct*100}%`,boxShadow:'0 0 6px rgba(201,168,76,0.5)'}}/>
+                    width:`${pct*100}%`,boxShadow:'0 0 6px var(--gold-glow)'}}/>
                 </div>
                 <span style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,
                   whiteSpace:'nowrap'}}>{p.done}/{p.actions}</span>
@@ -1043,7 +1053,7 @@ function PraxisInbox({ isDesktop }) {
           <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:4}}>
             {EU.gtd.contexts.map(ctx => (
               <div key={ctx} style={{padding:'8px 14px',
-                background:C.card,border:'1px solid rgba(201,168,76,0.12)',
+                background:C.card,border:'1px solid color-mix(in srgb, var(--gold) 12%, transparent)',
                 borderRadius:20,fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>
                 {ctx}
               </div>
@@ -1059,10 +1069,10 @@ function PraxisInbox({ isDesktop }) {
             </div>
             {EU.gtd.review.map((item,i) => (
               <div key={i} style={{display:'flex',alignItems:'center',gap:12,
-                padding:'10px 0',borderBottom:'1px solid rgba(201,168,76,0.06)'}}>
+                padding:'10px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)'}}>
                 <div style={{
                   width:20,height:20,borderRadius:6,flexShrink:0,
-                  border:`1.5px solid ${item.done?C.gold:'rgba(201,168,76,0.2)'}`,
+                  border:`1.5px solid ${item.done?C.gold:'color-mix(in srgb, var(--gold) 20%, transparent)'}`,
                   background:item.done?C.gold:'transparent',
                   display:'flex',alignItems:'center',justifyContent:'center',
                 }}>
@@ -1113,7 +1123,7 @@ function UndoToast({ toast, onUndo, onDismiss, isDesktop }) {
       left:'50%', transform:'translateX(-50%)',
       zIndex:9999,
       background: C.card,
-      border:'1px solid rgba(201,168,76,0.25)',
+      border:'1px solid color-mix(in srgb, var(--gold) 25%, transparent)',
       borderRadius:12,
       padding:'12px 16px',
       boxShadow:'0 8px 32px rgba(0,0,0,0.55)',
@@ -1133,7 +1143,7 @@ function UndoToast({ toast, onUndo, onDismiss, isDesktop }) {
       {/* Undo button */}
       <button onClick={onUndo} style={{
         background:'transparent',
-        border:'1px solid rgba(201,168,76,0.3)',
+        border:'1px solid var(--b2)',
         borderRadius:6, padding:'5px 12px',
         fontFamily:'DM Sans,sans-serif', fontSize:11,
         color:C.gold, cursor:'pointer', letterSpacing:'0.06em',
@@ -1162,6 +1172,7 @@ function UndoToast({ toast, onUndo, onDismiss, isDesktop }) {
 // ACTIVITY BUTTON
 // ═══════════════════════════════════════════════════════════
 function ActivityButton({ act, catHue, onLog }) {
+  const { isLight } = useTheme();
   const [burst, setBurst] = useState(false);
   const isAlto = act.tier === 'alto';
 
@@ -1243,9 +1254,9 @@ function ActivityButton({ act, catHue, onLog }) {
             ? (isAlto
                 ? 'linear-gradient(135deg,rgba(245,158,11,0.5),rgba(234,179,8,0.5))'
                 : 'linear-gradient(135deg,rgba(99,102,241,0.7),rgba(139,92,246,0.7))')
-            : `oklch(18% 0.03 ${catHue})`,
-          color: act.done ? '#fff' : `oklch(55% 0.12 ${catHue})`,
-          border: act.done ? 'none' : `1px solid oklch(28% 0.06 ${catHue})`,
+            : EU.catTint(catHue, 'bg'),
+          color: act.done ? '#fff' : EU.catTint(catHue, 'text'),
+          border: act.done ? 'none' : `1px solid ${EU.catTint(catHue, 'border')}`,
         }}>+{act.pts} XP{act.ec > 0 ? ` · ${act.ec}🪙` : ''}</span>
       </div>
       {/* Burst particles */}
@@ -1335,6 +1346,15 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
       }
       if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
       if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
+      if (data.gam?.perfect_day) {
+        window.dispatchEvent(new CustomEvent('eu:perfect-day', {
+          detail: { bonusXp: data.gam.perfect_day.xp || 5, bonusEc: data.gam.perfect_day.ec || 10 }
+        }));
+      } else if (data.gam?.combo_bonuses?.length) {
+        data.gam.combo_bonuses.forEach(c =>
+          window.dispatchEvent(new CustomEvent('eu:combo-bonus', { detail: c }))
+        );
+      }
       if (data.action === 'added' && data.log_id && act) {
         undoToast.show(key, data.log_id, act.label, act.pts);
       } else {
@@ -1393,8 +1413,8 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
       {/* ── HERO ACTA ── */}
       <div style={{padding: isDesktop ? '28px 24px 20px' : '16px 20px 16px'}}>
         <div style={{
-          background:'linear-gradient(140deg,#1C1830,#110F20)',
-          border:'1px solid rgba(201,168,76,0.18)',
+          background:'linear-gradient(140deg, var(--surf), var(--bg))',
+          border:'1px solid var(--gold-border)',
           borderRadius:16, padding:'20px', marginBottom:14,
           position:'relative', overflow:'hidden',
         }}>
@@ -1418,12 +1438,12 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
             <div style={{fontSize:13,color:C.textMuted}}>/ {XP_GOAL} meta</div>
           </div>
           {/* Progress bar */}
-          <div style={{height:5,background:'rgba(201,168,76,0.08)',borderRadius:3,overflow:'hidden',marginBottom:12}}>
+          <div style={{height:5,background:'var(--gold-bg)',borderRadius:3,overflow:'hidden',marginBottom:12}}>
             <div style={{
               height:'100%',borderRadius:3,
-              background:'linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D)',
+              background:'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, #000), var(--gold), var(--gold-l))',
               width:`${xpDayPct*100}%`,
-              boxShadow:'0 0 8px rgba(201,168,76,0.45)',
+              boxShadow:'0 0 8px var(--gold-glow)',
               transition:'width 0.8s ease',
             }}/>
           </div>
@@ -1484,7 +1504,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
             {label:'RACHA',  val: streak > 0 ? `${streak}d` : '—', sub:'días'},
           ].map(s => (
             <div key={s.label} style={{
-              background:C.card, border:'1px solid rgba(201,168,76,0.08)',
+              background:C.card, border:'1px solid var(--gold-bg)',
               borderRadius:10, padding:'10px 8px',
             }}>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:7,letterSpacing:'0.1em',
@@ -1601,7 +1621,7 @@ function ProfileScreen({ appState, isDesktop }) {
         {/* Perfil submodule link */}
         <a href="/perfil" style={{
           display:'flex',justifyContent:'space-between',alignItems:'center',
-          background:C.card,border:'1px solid rgba(201,168,76,0.16)',
+          background:C.card,border:'1px solid var(--gold-border)',
           borderRadius:12,padding:'13px 16px',marginBottom:20,
           textDecoration:'none',
         }}>
@@ -1621,7 +1641,7 @@ function ProfileScreen({ appState, isDesktop }) {
       <div style={{padding:'0 16px 20px'}}>
         <div style={{
           background:`linear-gradient(135deg,${C.card},${C.surface})`,
-          border:'1px solid rgba(201,168,76,0.2)',borderRadius:20,
+          border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',borderRadius:20,
           padding:'24px',textAlign:'center',
           boxShadow:'0 8px 40px rgba(0,0,0,0.5)',
         }}>
@@ -1647,8 +1667,8 @@ function ProfileScreen({ appState, isDesktop }) {
           {label:'EC Disponibles',val:`${ecBalance} 🪙`, accent: true, href:'/recompensas'},
         ].map(s => (
           <div key={s.label} onClick={s.href ? ()=>window.location.href=s.href : undefined} style={{
-            background: s.accent ? 'rgba(201,168,76,0.06)' : C.card,
-            border: s.accent ? '1px solid rgba(201,168,76,0.25)' : '1px solid rgba(201,168,76,0.1)',
+            background: s.accent ? 'color-mix(in srgb, var(--gold) 6%, transparent)' : C.card,
+            border: s.accent ? '1px solid color-mix(in srgb, var(--gold) 25%, transparent)' : '1px solid var(--gold-bg)',
             borderRadius:12, padding:'14px',
             cursor: s.href ? 'pointer' : 'default',
           }}>
@@ -1665,12 +1685,12 @@ function ProfileScreen({ appState, isDesktop }) {
           color:C.textMuted,textTransform:'uppercase',marginBottom:12}}>Camino al Eudaimón</div>
         {EU.levels.map(lv => (
           <div key={lv.n} style={{display:'flex',alignItems:'center',gap:12,
-            padding:'9px 0',borderBottom:'1px solid rgba(201,168,76,0.05)',
+            padding:'9px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 5%, transparent)',
             opacity: lv.n > level ? 0.35 : 1,transition:'opacity 0.3s'}}>
             <div style={{
               width:28,height:28,borderRadius:8,flexShrink:0,
-              background: lv.n < level ? C.gold : lv.n===level ? 'rgba(201,168,76,0.15)' : C.card,
-              border:`1.5px solid ${lv.n<=level?C.gold:'rgba(201,168,76,0.1)'}`,
+              background: lv.n < level ? C.gold : lv.n===level ? 'var(--b)' : C.card,
+              border:`1.5px solid ${lv.n<=level?C.gold:'var(--gold-bg)'}`,
               display:'flex',alignItems:'center',justifyContent:'center',
               fontFamily:'DM Sans,sans-serif',fontSize:10,
               color: lv.n < level ? C.deep : C.gold,

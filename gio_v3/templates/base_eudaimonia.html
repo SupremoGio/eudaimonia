@@ -19,11 +19,56 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
   <style>
-    :root, html.dark { --bg:#09070F; --text:#F2EDE0; }
-    html.light       { --bg:#F5F0E7; --text:#1C1610; }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ── Design tokens ──────────────────────────────────── */
+    :root, html.dark {
+      --bg:#09070F; --surf:#0F0C1A; --card:#1A1627; --card2:#221D32;
+      --surf-nav:#0F0C1A; --surf-top:rgba(9,7,15,0.97);
+
+      --b:rgba(201,168,76,0.15);  --b2:rgba(201,168,76,0.30);
+
+      --gold:#C9A84C; --gold-l:#E8C96D;
+      --gold-bg:rgba(201,168,76,0.08); --gold-d:rgba(201,168,76,0.08);
+      --gold-border:rgba(201,168,76,0.18); --gold-glow:rgba(201,168,76,0.45);
+
+      --violet:#a78bfa; --violet-l:#c4b5fd;
+      --cyan:#06b6d4; --emerald:#10b981; --amber:#f59e0b;
+      --coral:#f43f5e; --blue:#3b82f6; --pink:#ec4899;
+
+      --text:#F2EDE0; --mid:#A89880; --dim:#8A7A60; --muted:#6A6050;
+
+      --serif:'Cormorant Garamond',serif;
+      --sans:'DM Sans',sans-serif;
+      --mono:'JetBrains Mono','Menlo',monospace;
+      --fs-xs:11px; --fs-sm:13px; --fs-base:15px;
+      --fs-lg:18px; --fs-xl:24px; --fs-2xl:36px;
+    }
+
+    html.light {
+      --bg:#F5F0E7; --surf:#EDE7D8; --card:#FFFFFF; --card2:#F8F4EC;
+      --surf-nav:#EDE7D8; --surf-top:rgba(245,240,231,0.97);
+
+      --b:rgba(139,105,20,0.16);  --b2:rgba(139,105,20,0.30);
+
+      --gold:#8B6914; --gold-l:#A07820;
+      --gold-bg:rgba(139,105,20,0.08); --gold-d:rgba(139,105,20,0.08);
+      --gold-border:rgba(139,105,20,0.22); --gold-glow:rgba(139,105,20,0.35);
+
+      --violet:#7c3aed; --violet-l:#8B5CF6;
+      --cyan:#0891b2; --emerald:#059669; --amber:#b45309;
+      --coral:#c0392b; --blue:#1d4ed8; --pink:#be185d;
+
+      --text:#1C1610; --mid:#5A4A30; --dim:#7C6A48; --muted:#9B8A6A;
+    }
+
+    /* Crossfade suave al cambiar tema */
+    *, *::before, *::after {
+      box-sizing: border-box; margin: 0; padding: 0;
+      transition: background-color 220ms ease, border-color 220ms ease,
+                  color 220ms ease, box-shadow 220ms ease;
+    }
+
     html, body { height: 100%; overflow-x: hidden; }
-    body { background: var(--bg); color: var(--text); transition: background .25s; }
+    body { background: var(--bg); color: var(--text); }
     ::-webkit-scrollbar { display: none; }
     * { scrollbar-width: none; }
 
@@ -56,13 +101,16 @@
     }
 
     input, button { font-family: inherit; }
-    input::placeholder { color: #6A6050; }
+    input::placeholder { color: var(--muted); }
     button { cursor: pointer; }
 
     #root { min-height: 100vh; }
 
     .sk {
-      background: linear-gradient(90deg,rgba(201,168,76,.03) 0%,rgba(201,168,76,.08) 50%,rgba(201,168,76,.03) 100%);
+      background: linear-gradient(90deg,
+        var(--gold-bg) 0%,
+        color-mix(in srgb, var(--gold) 12%, transparent) 50%,
+        var(--gold-bg) 100%);
       background-size: 200% 100%;
       animation: euShimmer 1.4s ease-in-out infinite;
       border-radius: 8px;
@@ -76,12 +124,14 @@
   <script>
     window.__EUDAIMONIA_DATA__ = {{ eudaimonia_data | tojson | safe }};
 
-    // Theme toggle — reloads so React re-reads the correct color palette
+    // Theme toggle — CSS vars reactive, no reload needed
     window.euToggleTheme = function() {
       var current = localStorage.getItem('eu-theme') || 'dark';
       var next    = current === 'dark' ? 'light' : 'dark';
       localStorage.setItem('eu-theme', next);
-      location.reload();
+      var h = document.documentElement;
+      h.classList.toggle('light', next === 'light');
+      h.classList.toggle('dark',  next === 'dark');
     };
 
     // Refresh dashboard: inmediato si llegó broadcast de actividades, o tras 30s fuera
@@ -94,9 +144,9 @@
       ch.onmessage = function(e) {
         if (e.data && e.data.type === 'data_changed') {
           if (document.hidden) {
-            needsRefresh = true;   // reload al volver al tab
+            needsRefresh = true;
           } else {
-            location.reload();     // ya visible → recarga directa
+            location.reload();
           }
         }
       };
@@ -123,13 +173,13 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- EUDAIMONIA data layer (plain JS, reads from __EUDAIMONIA_DATA__ at end of file) -->
-  <script src="{{ url_for('static', filename='js/eu-data.js') }}?v=20260517d"></script>
+  <script src="{{ url_for('static', filename='js/eu-data.js') }}?v=20260519i"></script>
 
   <!-- EUDAIMONIA UI components -->
-  <script type="text/babel" src="{{ url_for('static', filename='js/eu-components.jsx') }}?v=20260519g"></script>
-  <script type="text/babel" src="{{ url_for('static', filename='js/eu-screens.jsx') }}?v=20260519g"></script>
-  <script type="text/babel" src="{{ url_for('static', filename='js/cmdk.jsx') }}?v=20260519g"></script>
-  <script type="text/babel" src="{{ url_for('static', filename='js/eu-app.jsx') }}?v=20260519g"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-components.jsx') }}?v=20260519i"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-screens.jsx') }}?v=20260519i"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/cmdk.jsx') }}?v=20260519i"></script>
+  <script type="text/babel" src="{{ url_for('static', filename='js/eu-app.jsx') }}?v=20260519i"></script>
 
   {% block extra_scripts %}{% endblock %}
 </body>

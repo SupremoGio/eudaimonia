@@ -72,14 +72,14 @@ function NavItem({ active, label, sub, accent, dot, onClick }) {
     <div onClick={onClick} style={{
       padding:'10px 22px', cursor:'pointer',
       borderLeft:`2.5px solid ${active ? C.gold : 'transparent'}`,
-      background: active ? 'rgba(201,168,76,0.05)' : 'transparent',
+      background: active ? 'color-mix(in srgb, var(--gold) 5%, transparent)' : 'transparent',
       transition:'all 0.2s',
       display:'flex', alignItems:'center', gap:10,
     }}>
       {isMod && (
         <div style={{
           width:6, height:6, borderRadius:'50%', flexShrink:0,
-          background: dot ? (accent || C.gold) : 'rgba(201,168,76,0.15)',
+          background: dot ? (accent || C.gold) : 'var(--b)',
           boxShadow: dot ? `0 0 6px ${accent || C.gold}` : 'none',
         }}/>
       )}
@@ -111,7 +111,7 @@ function NavItemLink({ href, label, sub }) {
       padding:'10px 22px', display:'block', textDecoration:'none',
       borderLeft:'2.5px solid transparent', transition:'all 0.2s',
     }}
-    onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,168,76,0.04)'}
+    onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in srgb, var(--gold) 4%, transparent)'}
     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
       <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:20,
         color:C.textMuted, lineHeight:1.1}}>{label}</div>
@@ -138,13 +138,13 @@ function SideNav({ active, onChange, modules, dispatch }) {
     <div style={{
       width: 210, flexShrink: 0,
       background: EU.rgba('deep', 0.99),
-      borderRight: '1px solid rgba(201,168,76,0.1)',
+      borderRight: '1px solid var(--gold-bg)',
       position: 'fixed', top: 0, left: 0, bottom: 0,
       display: 'flex', flexDirection: 'column',
       zIndex: 100,
     }}>
       {/* Logo */}
-      <div style={{padding:'28px 22px 24px', borderBottom:'1px solid rgba(201,168,76,0.08)'}}>
+      <div style={{padding:'28px 22px 24px', borderBottom:'1px solid var(--gold-bg)'}}>
         <div style={{fontFamily:'DM Sans,sans-serif', fontSize:8, letterSpacing:'0.28em',
           color:C.gold, opacity:0.55, textTransform:'uppercase', marginBottom:5}}>
           SISTEMA PERSONAL
@@ -193,7 +193,7 @@ function SideNav({ active, onChange, modules, dispatch }) {
       </div>
 
       {/* Theme toggle */}
-      <div style={{padding:'12px 22px 16px', borderTop:'1px solid rgba(201,168,76,0.07)'}}>
+      <div style={{padding:'12px 22px 16px', borderTop:'1px solid color-mix(in srgb, var(--gold) 7%, transparent)'}}>
         <button onClick={() => window.euToggleTheme()} style={{
           display:'flex', alignItems:'center', gap:8,
           background:'transparent', border:`1px solid ${C.goldBorder}`,
@@ -242,12 +242,26 @@ function App() {
 
   const [cmdkOpen, setCmdkOpen] = useState(false);
   const [activeAchievement, setActiveAchievement] = useState(null);
+  const [perfectDay, setPerfectDay] = useState(null);
+  const [comboQueue, setComboQueue] = useState([]);
 
   // Achievement sheet listener
   useEffect(() => {
     const onAch = (e) => setActiveAchievement(e.detail);
     window.addEventListener('eu:achievement-unlocked', onAch);
     return () => window.removeEventListener('eu:achievement-unlocked', onAch);
+  }, []);
+
+  // Perfect day + combo bonus listeners
+  useEffect(() => {
+    const onPerfect = (e) => setPerfectDay(e.detail);
+    const onCombo   = (e) => setComboQueue(q => [...q, e.detail]);
+    window.addEventListener('eu:perfect-day',  onPerfect);
+    window.addEventListener('eu:combo-bonus',  onCombo);
+    return () => {
+      window.removeEventListener('eu:perfect-day',  onPerfect);
+      window.removeEventListener('eu:combo-bonus',  onCombo);
+    };
   }, []);
 
   // ⌘K global shortcut + custom event from HomeScreen header button
@@ -334,6 +348,12 @@ function App() {
           <AchievementSheet achievement={activeAchievement}
             onClose={() => setActiveAchievement(null)}/>
         )}
+        {perfectDay && (
+          <PerfectDayModal details={perfectDay} onClose={() => setPerfectDay(null)}/>
+        )}
+        {comboQueue[0] && (
+          <ComboBonusSheet combo={comboQueue[0]} onClose={() => setComboQueue(q => q.slice(1))}/>
+        )}
         <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
       </div>
     );
@@ -352,6 +372,12 @@ function App() {
       {activeAchievement && (
         <AchievementSheet achievement={activeAchievement}
           onClose={() => setActiveAchievement(null)}/>
+      )}
+      {perfectDay && (
+        <PerfectDayModal details={perfectDay} onClose={() => setPerfectDay(null)}/>
+      )}
+      {comboQueue[0] && (
+        <ComboBonusSheet combo={comboQueue[0]} onClose={() => setComboQueue(q => q.slice(1))}/>
       )}
       {!openMod && <BottomNav active={tab} onChange={handleTabChange} />}
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
@@ -385,7 +411,7 @@ function TweaksPanel({ tweaks, onChange, visible }) {
   return (
     <div style={{
       position:'fixed', bottom:90, right:16, zIndex:9000,
-      background:C.card, border:'1px solid rgba(201,168,76,0.25)',
+      background:C.card, border:'1px solid color-mix(in srgb, var(--gold) 25%, transparent)',
       borderRadius:14, padding:'16px', width:220,
       boxShadow:'0 8px 32px rgba(0,0,0,0.6)',
       fontFamily:'DM Sans, sans-serif',

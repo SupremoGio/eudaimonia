@@ -1,47 +1,57 @@
 // EUDAIMONIA — Data & Constants
+
+// Reads a CSS custom property from :root (reactive to class changes on <html>)
+function _euCssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// Getter-based color object — each access reads the current CSS var so theme
+// toggle is instant without location.reload()
+var _euColors = {
+  get gold()       { return _euCssVar('--gold'); },
+  get goldLight()  { return _euCssVar('--gold-l'); },
+  get goldBg()     { return _euCssVar('--gold-bg'); },
+  get goldBorder() { return _euCssVar('--gold-border'); },
+  get goldGlow()   { return _euCssVar('--gold-glow'); },
+  get bg()         { return _euCssVar('--bg'); },
+  get deep()       { return _euCssVar('--bg'); },
+  get card()       { return _euCssVar('--card'); },
+  get card2()      { return _euCssVar('--card2'); },
+  get surface()    { return _euCssVar('--surf'); },
+  get text()       { return _euCssVar('--text'); },
+  get textSub()    { return _euCssVar('--mid'); },
+  get textMuted()  { return _euCssVar('--dim'); },
+  get emerald()    { return _euCssVar('--emerald'); },
+  get amber()      { return _euCssVar('--amber'); },
+  get coral()      { return _euCssVar('--coral'); },
+  get violet()     { return _euCssVar('--violet'); },
+  get cyan()       { return _euCssVar('--cyan'); },
+};
+
 window.EU = {
-  c: {
-    deep:      '#09070F',
-    surface:   '#110E1C',
-    card:      '#1A1627',
-    cardHover: '#221D32',
-    gold:      '#C9A84C',
-    goldLight: '#E8C96D',
-    goldBg:    'rgba(201,168,76,0.08)',
-    goldBorder:'rgba(201,168,76,0.18)',
-    text:      '#F2EDE0',
-    textSub:   '#A89880',
-    textMuted: '#6A6050',
-    success:   '#10b981',
-    danger:    '#f43f5e',
-  },
+  colors: _euColors,
 
-  cLight: {
-    deep:      '#F5F0E7',
-    surface:   '#EDE7D8',
-    card:      '#FFFFFF',
-    cardHover: '#F8F4EC',
-    gold:      '#8B6914',
-    goldLight: '#A07820',
-    goldBg:    'rgba(139,105,20,0.08)',
-    goldBorder:'rgba(139,105,20,0.18)',
-    text:      '#1C1610',
-    textSub:   '#5A4A30',
-    textMuted: '#9B8A6A',
-    success:   '#1a7a52',
-    danger:    '#c0392b',
-  },
-
-  getColors: function() {
-    return document.documentElement.classList.contains('light') ? window.EU.cLight : window.EU.c;
-  },
+  getColors: function() { return _euColors; },
 
   rgba: function(key, alpha) {
-    var hex = window.EU.getColors()[key];
-    var r = parseInt(hex.slice(1,3),16);
-    var g = parseInt(hex.slice(3,5),16);
-    var b = parseInt(hex.slice(5,7),16);
-    return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    var val = _euColors[key] || key;
+    if (val && val[0] === '#') {
+      var r = parseInt(val.slice(1,3),16);
+      var g = parseInt(val.slice(3,5),16);
+      var b = parseInt(val.slice(5,7),16);
+      return 'rgba('+r+','+g+','+b+','+alpha+')';
+    }
+    return val;
+  },
+
+  // Theme-aware oklch tints for per-hue module cards
+  catTint: function(hue, kind) {
+    var light = document.documentElement.classList.contains('light');
+    var p = {
+      dark:  { bg:'oklch(18% 0.04 '+hue+')', border:'oklch(35% 0.09 '+hue+')', text:'oklch(65% 0.15 '+hue+')' },
+      light: { bg:'oklch(93% 0.04 '+hue+')', border:'oklch(70% 0.10 '+hue+')', text:'oklch(40% 0.18 '+hue+')' },
+    };
+    return p[light ? 'light' : 'dark'][kind];
   },
 
   // Must match LEVEL_THRESHOLDS in engine.py exactly
@@ -171,6 +181,24 @@ window.EU = {
     ],
   },
 };
+
+// useTheme hook — re-renders React component when <html> class toggles
+function useTheme() {
+  var _useState = React.useState(function() {
+    return document.documentElement.classList.contains('light');
+  });
+  var isLight = _useState[0];
+  var setIsLight = _useState[1];
+  React.useEffect(function() {
+    var observer = new MutationObserver(function() {
+      setIsLight(document.documentElement.classList.contains('light'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return function() { observer.disconnect(); };
+  }, []);
+  return { isLight: isLight, isDark: !isLight };
+}
+Object.assign(window, { useTheme: useTheme });
 
 // Override with server-injected data when Flask serves this
 ;(function () {
