@@ -1221,37 +1221,85 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           ))}
         </div>
 
-        {/* ── ACTIVITIES BY CATEGORY ── */}
+        {/* ── ACTIVITIES BY CATEGORY — Sprint-2 blocks ── */}
         {(actCats.length > 0 ? actCats : Object.keys(byCategory)).map(cat => {
-          const catActs = byCategory[cat] || [];
+          const catActs  = byCategory[cat] || [];
           if (!catActs.length) return null;
+          const catHue   = (EU.catHues || {})[cat] || 45;
+          const doneCnt  = catActs.filter(a => a.done).length;
+          const total    = catActs.length;
+          const pct      = total > 0 ? doneCnt / total : 0;
+          const complete = doneCnt === total && total > 0;
           return (
-            <div key={cat} style={{marginBottom:16}}>
-              <div style={{
-                display:'inline-block',
-                fontFamily:'DM Sans,sans-serif',fontSize:8,letterSpacing:'0.12em',
-                color:C.textMuted,textTransform:'uppercase',
-                border:'1px solid rgba(201,168,76,0.15)',borderRadius:4,
-                padding:'2px 8px',marginBottom:8,
-              }}>{cat}</div>
-              <div style={{display:'flex',flexWrap:'wrap',gap:7}}>
+            <div key={cat} style={{
+              background:`oklch(14% 0.03 ${catHue})`,
+              border:`1px solid oklch(${complete ? '35% 0.10' : '22% 0.05'} ${catHue})`,
+              borderRadius:14, padding:'14px', marginBottom:14,
+              transition:'border-color 0.3s',
+            }}>
+              {/* Header: dot · name · X/Y */}
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                <div style={{
+                  width:7, height:7, borderRadius:'50%', flexShrink:0,
+                  background: doneCnt > 0
+                    ? `oklch(60% 0.18 ${catHue})`
+                    : `oklch(28% 0.07 ${catHue})`,
+                  boxShadow: doneCnt > 0 ? `0 0 6px oklch(60% 0.18 ${catHue})` : 'none',
+                  transition:'all 0.3s',
+                }}/>
+                <span style={{
+                  fontFamily:'DM Sans,sans-serif', fontSize:10, letterSpacing:'0.14em',
+                  textTransform:'uppercase', flex:1,
+                  color:`oklch(65% 0.14 ${catHue})`,
+                }}>{cat}</span>
+                <span style={{
+                  fontFamily:'DM Sans,sans-serif', fontSize:10,
+                  color: complete ? `oklch(65% 0.14 ${catHue})` : C.textMuted,
+                }}>{doneCnt}/{total}</span>
+              </div>
+              {/* 3px progress bar */}
+              <div style={{height:3,background:`oklch(20% 0.04 ${catHue})`,
+                borderRadius:2,overflow:'hidden',marginBottom:10}}>
+                <div style={{
+                  height:'100%', borderRadius:2,
+                  background:`oklch(55% 0.16 ${catHue})`,
+                  width:`${pct*100}%`,
+                  boxShadow: pct > 0 ? `0 0 5px oklch(55% 0.16 ${catHue})` : 'none',
+                  transition:'width 0.5s ease',
+                }}/>
+              </div>
+              {/* 2-col grid — buttons upgraded to ActivityButton in commit 4 */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
                 {catActs.map(act => (
                   <div key={act.key} onClick={() => logActivity(act.key)} style={{
-                    display:'flex',alignItems:'center',gap:7,
-                    padding:'8px 13px', borderRadius:10, cursor:'pointer',
-                    background: act.done ? 'rgba(201,168,76,0.1)' : C.card,
-                    border: `1.5px solid ${act.done ? 'rgba(201,168,76,0.4)' : 'rgba(201,168,76,0.08)'}`,
-                    transition:'all 0.2s',
-                    boxShadow: act.done ? '0 0 14px rgba(201,168,76,0.12)' : 'none',
+                    display:'flex', justifyContent:'space-between', alignItems:'center',
+                    padding:'9px 12px', borderRadius:10, cursor:'pointer',
+                    background: act.done
+                      ? (act.tier === 'alto' ? 'rgba(245,158,11,0.07)' : 'rgba(99,102,241,0.07)')
+                      : C.card,
+                    border: act.done
+                      ? (act.tier === 'alto'
+                          ? '1px solid rgba(245,158,11,0.3)'
+                          : '1px solid rgba(99,102,241,0.25)')
+                      : `1px solid oklch(22% 0.05 ${catHue})`,
+                    minHeight:44, gap:6,
+                    transition:'all 0.18s',
                   }}>
-                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:12,
-                      color: act.done ? C.gold : C.text,
+                    <span style={{
+                      fontFamily:'DM Sans,sans-serif', fontSize:11,
+                      color: act.done ? C.text : C.textSub,
                       fontWeight: act.done ? 500 : 400,
+                      lineHeight:1.3,
                     }}>{act.label}</span>
-                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
-                      background:'rgba(201,168,76,0.1)',borderRadius:10,padding:'1px 6px',
-                      color: act.done ? C.gold : C.textMuted,
-                    }}>+{act.pts}</span>
+                    <span style={{
+                      fontFamily:'DM Sans,sans-serif', fontSize:9,
+                      padding:'2px 6px', borderRadius:100, flexShrink:0,
+                      background: act.done
+                        ? 'linear-gradient(135deg,rgba(99,102,241,0.85),rgba(139,92,246,0.85))'
+                        : `oklch(18% 0.03 ${catHue})`,
+                      color: act.done ? '#fff' : `oklch(55% 0.12 ${catHue})`,
+                      border: act.done ? 'none' : `1px solid oklch(28% 0.06 ${catHue})`,
+                    }}>+{act.pts}{act.ec > 0 ? ` · ${act.ec}EC` : ''}</span>
                   </div>
                 ))}
               </div>
