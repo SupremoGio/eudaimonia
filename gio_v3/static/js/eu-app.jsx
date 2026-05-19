@@ -173,6 +173,14 @@ function App() {
   };
 
   const [cmdkOpen, setCmdkOpen] = useState(false);
+  const [activeAchievement, setActiveAchievement] = useState(null);
+
+  // Achievement sheet listener
+  useEffect(() => {
+    const onAch = (e) => setActiveAchievement(e.detail);
+    window.addEventListener('eu:achievement-unlocked', onAch);
+    return () => window.removeEventListener('eu:achievement-unlocked', onAch);
+  }, []);
 
   // ⌘K global shortcut + custom event from HomeScreen header button
   useEffect(() => {
@@ -253,6 +261,10 @@ function App() {
         {state.leveledUp && (
           <LevelUpModal level={state.level} onClose={() => dispatch({type:'CLEAR_LEVELUP'})} />
         )}
+        {activeAchievement && (
+          <AchievementSheet achievement={activeAchievement}
+            onClose={() => setActiveAchievement(null)}/>
+        )}
         <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
       </div>
     );
@@ -268,11 +280,29 @@ function App() {
       {state.leveledUp && (
         <LevelUpModal level={state.level} onClose={() => dispatch({type:'CLEAR_LEVELUP'})} />
       )}
+      {activeAchievement && (
+        <AchievementSheet achievement={activeAchievement}
+          onClose={() => setActiveAchievement(null)}/>
+      )}
       {!openMod && <BottomNav active={tab} onChange={handleTabChange} />}
       <CommandPalette open={cmdkOpen} onClose={() => setCmdkOpen(false)} items={cmdkItems} />
     </div>
   );
 }
+
+// ── Achievement dispatch helper (used by screens) ─────────
+// xp >= 30 → sheet; lower → toast only
+window.euFireAchievements = function(achievements) {
+  if (!achievements || !achievements.length) return;
+  const high = achievements.filter(a => (a.xp || 0) >= 30);
+  const low  = achievements.filter(a => (a.xp || 0) < 30);
+  if (high.length) {
+    window.dispatchEvent(new CustomEvent('eu:achievement-unlocked', { detail: high[0] }));
+    // remaining high-tier after first: toast
+    high.slice(1).forEach(a => { if (typeof toast === 'function') toast(`🏆 ${a.name}`, 'win'); });
+  }
+  low.forEach(a => { if (typeof toast === 'function') toast(`🏆 ${a.name}`, 'win'); });
+};
 
 // ── Tweaks ────────────────────────────────────────────────
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{

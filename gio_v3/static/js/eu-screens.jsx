@@ -406,6 +406,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
     .then(data => {
       if (data.gam && (data.gam.xp_delta || data.gam.xp))
         dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
+      if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
       if (data.stats) {
         window.EU._server.xpToday = data.stats.xp_today ?? data.stats.pts_today ?? xpToday;
         window.EU._server.streak  = data.stats.streak ?? streak;
@@ -634,6 +635,21 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
               );
             })}
           </div>
+        </div>
+
+        {/* ── HEATMAP RACHA ── */}
+        <div style={{
+          background:C.card, border:`1px solid ${C.goldBorder}`,
+          borderRadius:12, padding:'14px 16px', marginBottom:14,
+        }}>
+          <div style={{display:'flex',justifyContent:'space-between',
+            alignItems:'baseline',marginBottom:10}}>
+            <div style={{fontSize:10,letterSpacing:'0.18em',color:C.gold,
+              opacity:0.7,textTransform:'uppercase'}}>Racha · {streak} días</div>
+            <a href="/logros" style={{fontSize:10,color:C.gold,opacity:0.6,
+              textDecoration:'none'}}>Ver historial →</a>
+          </div>
+          <StreakHeatmap days={21} compact={true}/>
         </div>
 
         {/* ── REFLEXION ── */}
@@ -1294,6 +1310,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
         }
       }
       if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
+      if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
       if (data.action === 'added' && data.log_id && act) {
         undoToast.show(key, data.log_id, act.label, act.pts);
       } else {

@@ -309,45 +309,74 @@ function BottomNav({ active, onChange }) {
 }
 
 // ─── Level Up Modal ───────────────────────────────────────
-function LevelUpModal({ level, onClose }) {
+function LevelUpModal({ level, onClose, rewards = [] }) {
   const lv = EU.levels[level - 1];
   return (
     <div style={{
-      position:'fixed',inset:0,zIndex:999,
-      background:EU.rgba('deep', 0.95),
-      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+      position:'fixed', inset:0, zIndex:999,
+      background: EU.rgba('deep', 0.95),
+      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
       padding:24,
       animation:'euFadeIn 0.5s ease',
     }}>
-      {/* Radial gold burst */}
+      {/* Pulsing radial burst */}
       <div style={{
-        position:'absolute',inset:0,
-        background:`radial-gradient(ellipse at center, rgba(201,168,76,0.12) 0%, transparent 65%)`,
+        position:'absolute', inset:0,
+        background:`radial-gradient(ellipse at center, rgba(201,168,76,0.18) 0%, transparent 60%)`,
+        animation:'euGoldPulse 2.4s ease-in-out infinite',
         pointerEvents:'none',
       }}/>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.25em',
-        color:C.gold,textTransform:'uppercase',marginBottom:12,opacity:0.7}}>
+
+      <div style={{fontFamily:'DM Sans,sans-serif', fontSize:10, letterSpacing:'0.25em',
+        color:C.gold, textTransform:'uppercase', marginBottom:16, opacity:0.7}}>
         ¡SUBISTE DE NIVEL!
       </div>
-      <GreekColumn level={level} xpPct={0} size={120}/>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.2em',
-        color:C.gold,marginTop:20,marginBottom:6,opacity:0.65}}>
+
+      {/* Animated rising column */}
+      <div style={{
+        animation:'euLevelUpRise 1.2s ease-out',
+        filter:'drop-shadow(0 0 24px rgba(201,168,76,0.4))',
+      }}>
+        <GreekColumn level={level} xpPct={1} size={140}/>
+      </div>
+
+      <div style={{fontFamily:'DM Sans,sans-serif', fontSize:10, letterSpacing:'0.2em',
+        color:C.gold, marginTop:20, marginBottom:6, opacity:0.65}}>
         NIVEL {level}
       </div>
-      <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:44,fontWeight:600,
-        color:C.text,letterSpacing:'0.08em',textAlign:'center',
-        animation:'euScaleIn 0.6s ease 0.2s both'}}>
+      <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:44, fontWeight:600,
+        color:C.text, letterSpacing:'0.08em', textAlign:'center',
+        animation:'euScaleIn 0.6s ease 0.3s both'}}>
         {lv?.name}
       </div>
-      <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-        fontSize:18,color:C.textSub,marginTop:6,marginBottom:32}}>
+      <div style={{fontFamily:'Cormorant Garamond,serif', fontStyle:'italic',
+        fontSize:18, color:C.textSub, marginTop:6, marginBottom: rewards.length ? 18 : 32}}>
         {lv?.sub}
       </div>
+
+      {/* Rewards pills — degrade bien si rewards=[] */}
+      {rewards.length > 0 && (
+        <div style={{display:'flex', gap:8, flexWrap:'wrap',
+          justifyContent:'center', marginBottom:28, maxWidth:380}}>
+          {rewards.map((r, i) => (
+            <div key={i} style={{
+              padding:'6px 14px',
+              background:'rgba(201,168,76,0.08)',
+              border:`1px solid ${C.goldBorder}`,
+              borderRadius:100,
+              fontFamily:'DM Sans,sans-serif', fontSize:11,
+              color:C.gold, letterSpacing:'0.06em',
+              animation:`euScaleIn 0.5s ease ${0.5 + i * 0.15}s both`,
+            }}>{r.icon} {r.label}</div>
+          ))}
+        </div>
+      )}
+
       <button onClick={onClose} style={{
-        background:'transparent',border:`1.5px solid rgba(201,168,76,0.4)`,
-        borderRadius:10,padding:'12px 32px',
-        fontFamily:'DM Sans,sans-serif',fontSize:12,letterSpacing:'0.15em',
-        color:C.gold,cursor:'pointer',textTransform:'uppercase',
+        background:'transparent', border:`1.5px solid rgba(201,168,76,0.4)`,
+        borderRadius:10, padding:'12px 32px',
+        fontFamily:'DM Sans,sans-serif', fontSize:12, letterSpacing:'0.15em',
+        color:C.gold, cursor:'pointer', textTransform:'uppercase',
         transition:'all 0.2s',
       }}>
         CONTINUAR
@@ -356,6 +385,149 @@ function LevelUpModal({ level, onClose }) {
   );
 }
 
+// ─── Streak Heatmap ──────────────────────────────────────────
+function StreakHeatmap({ days = 21, compact = false }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/streak/heatmap?days=${days}`)
+      .then(r => r.json())
+      .then(setData)
+      .catch(() => {});
+  }, [days]);
+
+  if (!data) {
+    return (
+      <div style={{
+        height: compact ? 60 : 100,
+        background: C.card, borderRadius: 10,
+        animation: 'euShimmer 1.4s infinite',
+      }}/>
+    );
+  }
+
+  const maxXp     = Math.max(...data.days.map(d => d.xp), 1);
+  const cellSize  = compact ? 14 : 18;
+  const gap       = compact ? 3 : 4;
+  const cols      = Math.ceil(days / 7);
+  const todayStr  = data.days[data.days.length - 1].date;
+
+  const cell = (xp) => {
+    if (xp === 0) return { bg: 'rgba(201,168,76,0.04)', border: C.goldBorder };
+    const t = xp / maxXp;
+    return {
+      bg:     `oklch(${50 + t * 25}% ${0.06 + t * 0.1} 80)`,
+      border: `oklch(${55 + t * 25}% ${0.08 + t * 0.1} 80)`,
+    };
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between',
+        alignItems:'baseline', marginBottom:10}}>
+        <div style={{fontSize:10, letterSpacing:'0.18em', color:C.textMuted,
+          textTransform:'uppercase'}}>Últimos {days} días</div>
+        <div style={{fontSize:11, color:C.gold, opacity:0.7}}>
+          {data.days.filter(d => d.xp > 0).length} días activos
+        </div>
+      </div>
+      <div style={{
+        display:'grid',
+        gridTemplateColumns:`repeat(${cols}, ${cellSize}px)`,
+        gap, justifyContent:'start',
+      }}>
+        {data.days.map(d => {
+          const s = cell(d.xp);
+          const isToday = d.date === todayStr;
+          return (
+            <div key={d.date} title={`${d.date}: ${d.xp} XP`} style={{
+              width: cellSize, height: cellSize, borderRadius: 4,
+              background: s.bg, border: `1px solid ${s.border}`,
+              boxShadow: isToday ? `0 0 8px ${C.gold}66` : 'none',
+              transition: 'all 0.2s',
+            }}/>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Achievement Sheet ────────────────────────────────────
+function AchievementSheet({ achievement, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 6000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:998,
+      background: EU.rgba('deep', 0.7),
+      display:'flex', alignItems:'flex-end', justifyContent:'center',
+      animation:'euFadeIn 0.3s ease',
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background:'linear-gradient(180deg, #1C1830 0%, #110F20 100%)',
+        border:`1px solid ${C.goldBorder}`,
+        borderTopLeftRadius:24, borderTopRightRadius:24,
+        padding:'32px 28px 40px',
+        width:'100%', maxWidth:460,
+        animation:'euAchievementRise 0.5s ease-out',
+        boxShadow:'0 -20px 60px rgba(0,0,0,0.6)',
+      }}>
+        {/* Countdown bar */}
+        <div style={{
+          position:'absolute', top:0, left:0,
+          height:3, borderRadius:'24px 24px 0 0',
+          background:`linear-gradient(90deg,${C.gold},${C.goldLight})`,
+          animation:'undoCountdown 6s linear forwards',
+          width:'100%',
+        }}/>
+        <div style={{textAlign:'center'}}>
+          <div style={{
+            fontSize:64, lineHeight:1, marginBottom:14,
+            filter:'drop-shadow(0 0 16px rgba(201,168,76,0.45))',
+          }}>
+            {achievement.icon || '🏆'}
+          </div>
+          <div style={{fontSize:10, letterSpacing:'0.22em', color:C.gold,
+            opacity:0.65, textTransform:'uppercase', marginBottom:6}}>
+            Logro desbloqueado
+          </div>
+          <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:28,
+            fontWeight:600, color:C.text, letterSpacing:'0.04em', marginBottom:6}}>
+            {achievement.name}
+          </div>
+          <div style={{fontFamily:'Cormorant Garamond,serif', fontStyle:'italic',
+            fontSize:14, color:C.textSub, marginBottom:18, lineHeight:1.5}}>
+            {achievement.description}
+          </div>
+          {achievement.xp > 0 && (
+            <div style={{
+              display:'inline-block', padding:'6px 16px',
+              background:'rgba(201,168,76,0.1)', border:`1px solid ${C.goldBorder}`,
+              borderRadius:100, fontSize:13, color:C.gold,
+              letterSpacing:'0.08em', marginBottom:22,
+            }}>
+              +{achievement.xp} XP
+            </div>
+          )}
+          <div>
+            <button onClick={onClose} style={{
+              background:'transparent', border:`1.5px solid ${C.goldBorder}`,
+              borderRadius:10, padding:'10px 36px',
+              fontSize:12, letterSpacing:'0.15em', textTransform:'uppercase',
+              color:C.gold, cursor:'pointer', transition:'all 0.2s',
+            }}>Continuar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 Object.assign(window, {
   GreekColumn, ProgressRing, ModuleCard, HabitRow, QuoteDisplay, BottomNav, LevelUpModal,
+  StreakHeatmap, AchievementSheet,
 });

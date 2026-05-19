@@ -177,6 +177,29 @@ def check_achievements():
     return jsonify({"newly_unlocked": newly, "count": len(newly)})
 
 
+# ── Streak heatmap ───────────────────────────────────────────────────────────
+
+@gamification_bp.route('/api/streak/heatmap')
+def streak_heatmap():
+    """XP por día de los últimos N días (máx 90)."""
+    days = int(request.args.get('days', 21))
+    days = max(7, min(days, 90))
+    end   = today_date()
+    start = end - timedelta(days=days - 1)
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT date, SUM(pts) as xp FROM activity_logs "
+            "WHERE date>=? AND date<=? GROUP BY date",
+            (start.isoformat(), end.isoformat())
+        ).fetchall()
+    by_date = {r['date']: r['xp'] for r in rows}
+    out = []
+    for i in range(days):
+        d = (start + timedelta(days=i)).isoformat()
+        out.append({'date': d, 'xp': by_date.get(d, 0)})
+    return jsonify({'days': out, 'max_xp': max((r['xp'] for r in out), default=0)})
+
+
 # ── Logros Page ──────────────────────────────────────────────────────────────
 
 @gamification_bp.route('/logros')
@@ -211,6 +234,23 @@ def logros():
 
     badges = get_all_badges()
 
+    # 90-day activity heatmap
+    _hm_days = 90
+    _hm_end   = today_date()
+    _hm_start = _hm_end - timedelta(days=_hm_days - 1)
+    with get_db() as db:
+        _hm_rows = db.execute(
+            "SELECT date, SUM(pts) as xp FROM activity_logs "
+            "WHERE date>=? GROUP BY date",
+            (_hm_start.isoformat(),)
+        ).fetchall()
+    _hm_by_date = {r['date']: r['xp'] for r in _hm_rows}
+    heatmap = [
+        {'date': (_hm_start + timedelta(days=i)).isoformat(),
+         'xp':   _hm_by_date.get((_hm_start + timedelta(days=i)).isoformat(), 0)}
+        for i in range(_hm_days)
+    ]
+
     # Last 7 days classification history
     history = []
     for i in range(6, -1, -1):
@@ -233,6 +273,7 @@ def logros():
         tier_labels=TIER_LABELS,
         xp_log=[dict(r) for r in xp_log],
         history=history,
+        heatmap=heatmap,
     )
 
 
