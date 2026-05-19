@@ -406,6 +406,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
     .then(data => {
       if (data.gam && (data.gam.xp_delta || data.gam.xp))
         dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
+      if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
       if (data.stats) {
         window.EU._server.xpToday = data.stats.xp_today ?? data.stats.pts_today ?? xpToday;
         window.EU._server.streak  = data.stats.streak ?? streak;
@@ -1309,6 +1310,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
         }
       }
       if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
+      if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
       if (data.action === 'added' && data.log_id && act) {
         undoToast.show(key, data.log_id, act.label, act.pts);
       } else {

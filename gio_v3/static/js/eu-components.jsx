@@ -453,7 +453,81 @@ function StreakHeatmap({ days = 21, compact = false }) {
   );
 }
 
+// ─── Achievement Sheet ────────────────────────────────────
+function AchievementSheet({ achievement, onClose }) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 6000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <div style={{
+      position:'fixed', inset:0, zIndex:998,
+      background: EU.rgba('deep', 0.7),
+      display:'flex', alignItems:'flex-end', justifyContent:'center',
+      animation:'euFadeIn 0.3s ease',
+    }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background:'linear-gradient(180deg, #1C1830 0%, #110F20 100%)',
+        border:`1px solid ${C.goldBorder}`,
+        borderTopLeftRadius:24, borderTopRightRadius:24,
+        padding:'32px 28px 40px',
+        width:'100%', maxWidth:460,
+        animation:'euAchievementRise 0.5s ease-out',
+        boxShadow:'0 -20px 60px rgba(0,0,0,0.6)',
+      }}>
+        {/* Countdown bar */}
+        <div style={{
+          position:'absolute', top:0, left:0,
+          height:3, borderRadius:'24px 24px 0 0',
+          background:`linear-gradient(90deg,${C.gold},${C.goldLight})`,
+          animation:'undoCountdown 6s linear forwards',
+          width:'100%',
+        }}/>
+        <div style={{textAlign:'center'}}>
+          <div style={{
+            fontSize:64, lineHeight:1, marginBottom:14,
+            filter:'drop-shadow(0 0 16px rgba(201,168,76,0.45))',
+          }}>
+            {achievement.icon || '🏆'}
+          </div>
+          <div style={{fontSize:10, letterSpacing:'0.22em', color:C.gold,
+            opacity:0.65, textTransform:'uppercase', marginBottom:6}}>
+            Logro desbloqueado
+          </div>
+          <div style={{fontFamily:'Cormorant Garamond,serif', fontSize:28,
+            fontWeight:600, color:C.text, letterSpacing:'0.04em', marginBottom:6}}>
+            {achievement.name}
+          </div>
+          <div style={{fontFamily:'Cormorant Garamond,serif', fontStyle:'italic',
+            fontSize:14, color:C.textSub, marginBottom:18, lineHeight:1.5}}>
+            {achievement.description}
+          </div>
+          {achievement.xp > 0 && (
+            <div style={{
+              display:'inline-block', padding:'6px 16px',
+              background:'rgba(201,168,76,0.1)', border:`1px solid ${C.goldBorder}`,
+              borderRadius:100, fontSize:13, color:C.gold,
+              letterSpacing:'0.08em', marginBottom:22,
+            }}>
+              +{achievement.xp} XP
+            </div>
+          )}
+          <div>
+            <button onClick={onClose} style={{
+              background:'transparent', border:`1.5px solid ${C.goldBorder}`,
+              borderRadius:10, padding:'10px 36px',
+              fontSize:12, letterSpacing:'0.15em', textTransform:'uppercase',
+              color:C.gold, cursor:'pointer', transition:'all 0.2s',
+            }}>Continuar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 Object.assign(window, {
   GreekColumn, ProgressRing, ModuleCard, HabitRow, QuoteDisplay, BottomNav, LevelUpModal,
-  StreakHeatmap,
+  StreakHeatmap, AchievementSheet,
 });
