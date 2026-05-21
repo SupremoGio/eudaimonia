@@ -1009,6 +1009,42 @@ def init_db():
                 ]
             )
 
+        # ── HEGEMONIKON — Salud médica ───────────────────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS medico_episodios (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo         TEXT    NOT NULL DEFAULT 'enfermedad',
+            titulo       TEXT    NOT NULL,
+            descripcion  TEXT    DEFAULT '',
+            zona_cuerpo  TEXT    DEFAULT '',
+            fecha_inicio TEXT    NOT NULL,
+            fecha_fin    TEXT    DEFAULT NULL,
+            activo       INTEGER DEFAULT 1,
+            created_at   TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS medico_recetas (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            episodio_id  INTEGER NOT NULL,
+            medico       TEXT    DEFAULT '',
+            especialidad TEXT    DEFAULT '',
+            fecha        TEXT    NOT NULL,
+            notas        TEXT    DEFAULT '',
+            created_at   TEXT    NOT NULL,
+            FOREIGN KEY (episodio_id) REFERENCES medico_episodios(id) ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS medico_medicamentos (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            receta_id     INTEGER NOT NULL,
+            nombre        TEXT    NOT NULL,
+            dosis         TEXT    DEFAULT '',
+            frecuencia    TEXT    DEFAULT '',
+            duracion_dias INTEGER DEFAULT NULL,
+            tomando       INTEGER DEFAULT 1,
+            created_at    TEXT    NOT NULL,
+            FOREIGN KEY (receta_id) REFERENCES medico_recetas(id) ON DELETE CASCADE
+        );
+        """)
+
         # ── MIGRATIONS LOG ───────────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS migration_log (

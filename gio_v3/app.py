@@ -23,6 +23,8 @@ from modules.tw.routes       import tw_bp
 from modules.recompensas.routes import recompensas_bp
 from modules.guardarropa.routes import guardarropa_bp
 from modules.guardarropa.wishlist import wishlist_bp
+from modules.bienestar.routes    import bienestar_bp
+from modules.bienestar.salud     import medico_bp
 
 
 def create_app():
@@ -48,6 +50,8 @@ def create_app():
     app.register_blueprint(recompensas_bp, url_prefix='/recompensas')
     app.register_blueprint(guardarropa_bp, url_prefix='/guardarropa')
     app.register_blueprint(wishlist_bp,   url_prefix='/guardarropa/wishlist')
+    app.register_blueprint(bienestar_bp,  url_prefix='/bienestar')
+    app.register_blueprint(medico_bp,     url_prefix='/bienestar/salud')
 
     @app.route('/api/health/v31')
     def health_v31():

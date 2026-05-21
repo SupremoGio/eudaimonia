@@ -83,9 +83,10 @@ window.EU = {
 
   submodules: {
     hegemonikon: [
-      { name:'Nutrición',   icon:'🥗', route:'/nutricion'    },
-      { name:'Recetas',     icon:'👨‍🍳', route:'/recetas'      },
-      { name:'Guardarropa', icon:'👔', route:'/guardarropa'  },
+      { name:'Salud',       icon:'🩺', route:'/bienestar/salud' },
+      { name:'Nutrición',   icon:'🥗', route:'/nutricion'       },
+      { name:'Recetas',     icon:'👨‍🍳', route:'/recetas'         },
+      { name:'Guardarropa', icon:'👔', route:'/guardarropa'     },
     ],
     oikonomia: [
       { name:'Balance',     icon:'💰', route:'/finanzas'              },
