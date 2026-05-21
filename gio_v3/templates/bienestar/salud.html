@@ -1,0 +1,666 @@
+{% extends "eu/layout_sub.html" %}
+{% set pg = 'bienestar' %}
+{% block title %}HEGEMONIKON — Salud{% endblock %}
+{% block module_title %}HEGEMONIKON · Salud{% endblock %}
+
+{% block topright %}
+<button class="btn-a" onclick="openModal('ep')" style="font-size:var(--fs-sm);padding:6px 14px;">
+  + Episodio
+</button>
+{% endblock %}
+
+{% block content %}
+<style>
+/* ── Stats bar ────────────────────────────────────────────────────── */
+.hg-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.hg-stat  { background:var(--card); border:1px solid var(--b); border-radius:12px;
+            padding:16px 18px; }
+.hg-stat-val { font-family:var(--mono); font-size:var(--fs-2xl); font-weight:700;
+               color:var(--gold); line-height:1; }
+.hg-stat-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase;
+               letter-spacing:.08em; margin-top:4px; }
+
+/* ── Tabs ─────────────────────────────────────────────────────────── */
+.hg-tabs { display:flex; gap:2px; background:var(--card); border:1px solid var(--b);
+           border-radius:10px; padding:3px; margin-bottom:16px; width:fit-content; }
+.hg-tab  { font-size:var(--fs-sm); padding:6px 14px; border-radius:8px; cursor:pointer;
+           color:var(--dim); border:1px solid transparent; transition:all .15s; }
+.hg-tab.on { background:var(--card2); color:var(--text); border-color:var(--b); }
+
+/* ── Two-column shell ─────────────────────────────────────────────── */
+.hg-shell { display:grid; grid-template-columns:1fr 400px; gap:16px; align-items:start; }
+
+/* ── Episode list ─────────────────────────────────────────────────── */
+.hg-list  { display:flex; flex-direction:column; gap:8px; }
+
+.hg-card  { background:var(--card); border:1px solid var(--b); border-radius:12px;
+            padding:14px 16px; cursor:pointer; transition:all .18s; }
+.hg-card:hover { border-color:var(--b2); transform:translateY(-1px);
+                 box-shadow:0 4px 20px rgba(0,0,0,.35); }
+.hg-card.active { border-color:var(--gold); box-shadow:0 0 0 1px rgba(201,168,76,.2); }
+
+.hg-card-top  { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.hg-card-icon { font-size:20px; width:36px; height:36px; display:flex; align-items:center;
+                justify-content:center; border-radius:10px; flex-shrink:0; }
+.hg-card-title { font-size:var(--fs-base); font-weight:600; }
+.hg-card-zona  { font-size:var(--fs-xs); color:var(--dim); margin-top:1px; }
+.hg-card-badges { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
+.hg-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600;
+            letter-spacing:.04em; text-transform:uppercase; }
+.hg-badge-activo   { background:rgba(16,185,129,.12); color:#34d399; border:1px solid rgba(16,185,129,.2); }
+.hg-badge-resuelto { background:rgba(148,163,184,.08); color:var(--dim); border:1px solid var(--b); }
+.hg-badge-enf  { background:rgba(244,63,94,.1);  color:#fb7185; border:1px solid rgba(244,63,94,.2); }
+.hg-badge-les  { background:rgba(251,146,60,.1); color:#fb923c; border:1px solid rgba(251,146,60,.2); }
+.hg-badge-con  { background:rgba(6,182,212,.1);  color:#22d3ee; border:1px solid rgba(6,182,212,.2); }
+.hg-card-meta { font-size:var(--fs-xs); color:var(--dim); display:flex; gap:12px; }
+
+/* ── Detail panel ─────────────────────────────────────────────────── */
+.hg-detail { background:var(--card); border:1px solid var(--b); border-radius:14px;
+             position:sticky; top:72px; overflow:hidden; max-height:calc(100vh - 90px);
+             overflow-y:auto; }
+.hg-detail-empty { padding:48px 24px; text-align:center; color:var(--dim);
+                   font-size:var(--fs-sm); }
+.hg-detail-head  { padding:18px 18px 14px; border-bottom:1px solid var(--b); }
+.hg-detail-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:6px; }
+.hg-detail-meta  { font-size:var(--fs-xs); color:var(--dim); display:flex; gap:12px;
+                   flex-wrap:wrap; align-items:center; }
+.hg-detail-body  { padding:16px 18px; }
+
+/* ── Prescription timeline ────────────────────────────────────────── */
+.hg-timeline { display:flex; flex-direction:column; gap:0; }
+.hg-tl-item  { position:relative; padding-left:20px; padding-bottom:20px; }
+.hg-tl-item::before { content:''; position:absolute; left:6px; top:8px; bottom:0;
+                       width:1px; background:var(--b); }
+.hg-tl-item:last-child::before { display:none; }
+.hg-tl-dot  { position:absolute; left:0; top:6px; width:13px; height:13px;
+               border-radius:50%; background:var(--card2); border:2px solid var(--b2); }
+.hg-tl-head { display:flex; justify-content:space-between; align-items:flex-start;
+               margin-bottom:6px; gap:8px; }
+.hg-tl-date { font-size:var(--fs-xs); font-family:var(--mono); color:var(--gold); }
+.hg-tl-dr   { font-size:var(--fs-sm); font-weight:600; }
+.hg-tl-esp  { font-size:var(--fs-xs); color:var(--dim); }
+.hg-tl-notes{ font-size:var(--fs-xs); color:var(--dim); margin-top:4px;
+               font-style:italic; }
+
+/* ── Medication pills ─────────────────────────────────────────────── */
+.hg-meds { display:flex; flex-direction:column; gap:4px; margin-top:8px; }
+.hg-med  { display:flex; align-items:center; gap:8px; padding:7px 10px;
+           background:var(--surf); border:1px solid var(--b); border-radius:8px;
+           transition:all .15s; }
+.hg-med.terminado { opacity:.5; }
+.hg-med-icon { font-size:14px; flex-shrink:0; }
+.hg-med-info { flex:1; min-width:0; }
+.hg-med-name { font-size:var(--fs-sm); font-weight:600; white-space:nowrap;
+               overflow:hidden; text-overflow:ellipsis; }
+.hg-med-sub  { font-size:10px; color:var(--dim); }
+.hg-med-toggle { width:28px; height:16px; border-radius:8px; border:1px solid var(--b);
+                 background:var(--card2); cursor:pointer; position:relative;
+                 transition:background .15s; flex-shrink:0; }
+.hg-med-toggle::after { content:''; position:absolute; top:2px; left:2px; width:10px;
+                         height:10px; border-radius:50%; background:var(--dim);
+                         transition:all .15s; }
+.hg-med-toggle.on { background:rgba(16,185,129,.2); border-color:rgba(16,185,129,.4); }
+.hg-med-toggle.on::after { left:14px; background:#34d399; }
+
+/* ── Section headers ──────────────────────────────────────────────── */
+.hg-section-hdr { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase;
+                  letter-spacing:.1em; font-weight:600; margin:16px 0 8px;
+                  padding-bottom:6px; border-bottom:1px solid var(--b); }
+.hg-empty-sec { font-size:var(--fs-sm); color:var(--dim); text-align:center;
+                padding:20px 0; }
+
+/* ── Action buttons inside detail ─────────────────────────────────── */
+.hg-detail-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+
+/* ── Resolver card ────────────────────────────────────────────────── */
+.hg-resolver { background:rgba(16,185,129,.06); border:1px solid rgba(16,185,129,.18);
+               border-radius:10px; padding:12px 14px; margin-bottom:14px; }
+.hg-resolver-title { font-size:var(--fs-xs); color:#34d399; font-weight:600;
+                     text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+
+/* ── Type icons ───────────────────────────────────────────────────── */
+.icon-enf { background:rgba(244,63,94,.12); }
+.icon-les { background:rgba(251,146,60,.12); }
+.icon-con { background:rgba(6,182,212,.12); }
+
+/* ── Modal overrides ──────────────────────────────────────────────── */
+.hg-modal { width:460px; max-width:96vw; }
+.hg-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:16px; }
+.hg-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+/* ── Mobile ───────────────────────────────────────────────────────── */
+@media(max-width:860px) {
+  .hg-shell  { grid-template-columns:1fr; }
+  .hg-detail { position:static; max-height:none; }
+  .hg-stats  { grid-template-columns:1fr 1fr 1fr; }
+}
+@media(max-width:500px) {
+  .hg-stats { grid-template-columns:1fr; }
+}
+</style>
+
+<script>
+window.__MEDICO__ = {{ episodios | tojson }};
+window.__MED_STATS__ = {{ stats | tojson }};
+</script>
+
+<!-- ── Stats bar ──────────────────────────────────────────────────────── -->
+<div class="hg-stats">
+  <div class="hg-stat">
+    <div class="hg-stat-val" id="stat-activos">{{ stats.activos }}</div>
+    <div class="hg-stat-lbl">Episodios activos</div>
+  </div>
+  <div class="hg-stat">
+    <div class="hg-stat-val" id="stat-meds">{{ stats.meds_activos }}</div>
+    <div class="hg-stat-lbl">Medicamentos activos</div>
+  </div>
+  <div class="hg-stat">
+    <div class="hg-stat-val" id="stat-total">{{ stats.total }}</div>
+    <div class="hg-stat-lbl">Historial total</div>
+  </div>
+</div>
+
+<!-- ── Filter tabs ────────────────────────────────────────────────────── -->
+<div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+  <div class="hg-tabs">
+    <div class="hg-tab on" onclick="setFilter('todos',this)">Todos</div>
+    <div class="hg-tab" onclick="setFilter('activos',this)">Activos</div>
+    <div class="hg-tab" onclick="setFilter('enfermedad',this)">Enfermedades</div>
+    <div class="hg-tab" onclick="setFilter('lesion',this)">Lesiones</div>
+    <div class="hg-tab" onclick="setFilter('consulta',this)">Consultas</div>
+  </div>
+</div>
+
+<!-- ── Main shell ─────────────────────────────────────────────────────── -->
+<div class="hg-shell">
+
+  <!-- Episode list -->
+  <div class="hg-list" id="ep-list">
+    {% for e in episodios %}
+    <div class="hg-card" id="card-{{ e.id }}"
+         data-tipo="{{ e.tipo }}" data-activo="{{ e.activo }}"
+         onclick="selectEp({{ e.id }})">
+      <div class="hg-card-top">
+        <div class="hg-card-icon icon-{{ 'enf' if e.tipo=='enfermedad' else ('les' if e.tipo=='lesion' else 'con') }}">
+          {{ '🤒' if e.tipo=='enfermedad' else ('🦵' if e.tipo=='lesion' else '🩺') }}
+        </div>
+        <div>
+          <div class="hg-card-title">{{ e.titulo }}</div>
+          {% if e.zona_cuerpo %}<div class="hg-card-zona">{{ e.zona_cuerpo }}</div>{% endif %}
+        </div>
+      </div>
+      <div class="hg-card-badges">
+        <span class="hg-badge {{ 'hg-badge-activo' if e.activo else 'hg-badge-resuelto' }}">
+          {{ 'Activo' if e.activo else 'Resuelto' }}
+        </span>
+        <span class="hg-badge {{ 'hg-badge-enf' if e.tipo=='enfermedad' else ('hg-badge-les' if e.tipo=='lesion' else 'hg-badge-con') }}">
+          {{ 'Enfermedad' if e.tipo=='enfermedad' else ('Lesión' if e.tipo=='lesion' else 'Consulta') }}
+        </span>
+      </div>
+      <div class="hg-card-meta">
+        <span>{{ e.fecha_inicio }}</span>
+        {% if not e.activo and e.fecha_fin %}<span>→ {{ e.fecha_fin }}</span>{% endif %}
+        {% if e.num_recetas %}<span>{{ e.num_recetas }} receta{{ 's' if e.num_recetas != 1 }}</span>{% endif %}
+        {% if e.meds_activos %}<span>💊 {{ e.meds_activos }} activo{{ 's' if e.meds_activos != 1 }}</span>{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="hg-empty-sec" id="no-episodes">
+      <div style="font-size:40px;margin-bottom:12px;">🩺</div>
+      <div style="font-weight:600;margin-bottom:6px;">Sin historial médico</div>
+      <div style="font-size:var(--fs-xs);">Registra tu primer episodio con el botón de arriba</div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Detail panel -->
+  <div class="hg-detail" id="detail-panel">
+    <div class="hg-detail-empty" id="detail-empty">
+      <div style="font-size:36px;margin-bottom:12px;">📋</div>
+      <div style="font-weight:600;margin-bottom:4px;">Selecciona un episodio</div>
+      <div style="font-size:var(--fs-xs);">para ver recetas y medicamentos</div>
+    </div>
+    <div id="detail-content" style="display:none;">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ MODAL: Nuevo episodio ══════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-ep">
+  <div class="modal hg-modal">
+    <div class="hg-modal-title">Nuevo episodio médico</div>
+
+    <label class="fl">Tipo</label>
+    <select class="fi" id="ep-tipo" onchange="toggleZona()">
+      <option value="enfermedad">🤒 Enfermedad</option>
+      <option value="lesion">🦵 Lesión / Esguince</option>
+      <option value="consulta">🩺 Consulta médica</option>
+    </select>
+
+    <label class="fl" style="margin-top:10px;">Nombre / Diagnóstico</label>
+    <input class="fi" id="ep-titulo" placeholder="Ej. Gripe, Esguince tobillo, Revisión anual…">
+
+    <div id="zona-row" style="display:none;margin-top:10px;">
+      <label class="fl">Zona del cuerpo</label>
+      <input class="fi" id="ep-zona" placeholder="Ej. Tobillo derecho, Espalda baja, Rodilla…">
+    </div>
+
+    <label class="fl" style="margin-top:10px;">Descripción (opcional)</label>
+    <textarea class="fi" id="ep-desc" rows="2" placeholder="Síntomas, contexto…"></textarea>
+
+    <label class="fl" style="margin-top:10px;">Fecha de inicio</label>
+    <input class="fi" id="ep-fecha" type="date">
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-g" onclick="closeModal('ep')">Cancelar</button>
+      <button class="btn-a" onclick="guardarEpisodio()">Guardar episodio</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Nueva receta ═══════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-rx">
+  <div class="modal hg-modal">
+    <div class="hg-modal-title">Agregar receta médica</div>
+    <input type="hidden" id="rx-ep-id">
+
+    <div class="hg-row2">
+      <div>
+        <label class="fl">Médico</label>
+        <input class="fi" id="rx-medico" placeholder="Dr. García…">
+      </div>
+      <div>
+        <label class="fl">Especialidad</label>
+        <input class="fi" id="rx-esp" placeholder="Traumatología…">
+      </div>
+    </div>
+
+    <label class="fl" style="margin-top:10px;">Fecha de la receta</label>
+    <input class="fi" id="rx-fecha" type="date">
+
+    <label class="fl" style="margin-top:10px;">Notas (opcional)</label>
+    <textarea class="fi" id="rx-notas" rows="2" placeholder="Indicaciones del médico…"></textarea>
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-g" onclick="closeModal('rx')">Cancelar</button>
+      <button class="btn-a" onclick="guardarReceta()">Guardar receta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Nuevo medicamento ══════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-med">
+  <div class="modal hg-modal">
+    <div class="hg-modal-title">Agregar medicamento</div>
+    <input type="hidden" id="med-rx-id">
+
+    <label class="fl">Nombre del medicamento</label>
+    <input class="fi" id="med-nombre" placeholder="Ibuprofeno, Amoxicilina…">
+
+    <div class="hg-row2" style="margin-top:10px;">
+      <div>
+        <label class="fl">Dosis</label>
+        <input class="fi" id="med-dosis" placeholder="400 mg, 500 mg…">
+      </div>
+      <div>
+        <label class="fl">Frecuencia</label>
+        <input class="fi" id="med-freq" placeholder="Cada 8h, 2 veces/día…">
+      </div>
+    </div>
+
+    <label class="fl" style="margin-top:10px;">Duración (días, opcional)</label>
+    <input class="fi" id="med-dias" type="number" min="1" placeholder="5, 7, 10…">
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-g" onclick="closeModal('med')">Cancelar</button>
+      <button class="btn-a" onclick="guardarMedicamento()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Resolver episodio ══════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-resolver">
+  <div class="modal hg-modal">
+    <div class="hg-modal-title">Resolver episodio</div>
+    <input type="hidden" id="res-ep-id">
+    <p style="font-size:var(--fs-sm);color:var(--dim);margin-bottom:14px;">
+      Marca este episodio como resuelto. Quedará en el historial para referencia futura.
+    </p>
+    <label class="fl">Fecha de resolución</label>
+    <input class="fi" id="res-fecha" type="date">
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-g" onclick="closeModal('resolver')">Cancelar</button>
+      <button class="btn-a" onclick="confirmarResolver()" style="background:linear-gradient(135deg,#34d399,#10b981);">
+        Marcar como resuelto
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── State ───────────────────────────────────────────────────────────────────
+let _activeEpId = null;
+let _currentFilter = 'todos';
+const BASE = '/bienestar/salud';
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function todayISO() {
+  return new Date().toISOString().slice(0,10);
+}
+
+function daysBetween(start, end) {
+  const a = new Date(start), b = end ? new Date(end) : new Date();
+  return Math.max(0, Math.round((b - a) / 86400000));
+}
+
+function openModal(key) {
+  document.getElementById('modal-'+key).classList.add('open');
+  const first = document.querySelector('#modal-'+key+' input:not([type=hidden]),#modal-'+key+' select');
+  if (first) setTimeout(() => first.focus(), 80);
+}
+
+function closeModal(key) {
+  document.getElementById('modal-'+key).classList.remove('open');
+}
+
+function toggleZona() {
+  const t = document.getElementById('ep-tipo').value;
+  document.getElementById('zona-row').style.display = t === 'lesion' ? '' : 'none';
+}
+
+// ── Filter ──────────────────────────────────────────────────────────────────
+function setFilter(f, el) {
+  _currentFilter = f;
+  document.querySelectorAll('.hg-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.hg-card').forEach(card => {
+    const tipo   = card.dataset.tipo;
+    const activo = card.dataset.activo === '1';
+    let show = true;
+    if (f === 'activos')         show = activo;
+    else if (f !== 'todos')      show = tipo === f;
+    card.style.display = show ? '' : 'none';
+  });
+}
+
+// ── Select episode ───────────────────────────────────────────────────────────
+async function selectEp(id) {
+  // Toggle: click active → deselect
+  if (_activeEpId === id) {
+    _activeEpId = null;
+    document.querySelectorAll('.hg-card').forEach(c => c.classList.remove('active'));
+    document.getElementById('detail-empty').style.display = '';
+    document.getElementById('detail-content').style.display = 'none';
+    return;
+  }
+  _activeEpId = id;
+  document.querySelectorAll('.hg-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('card-'+id)?.classList.add('active');
+
+  const ep = window.__MEDICO__.find(e => e.id === id);
+  if (!ep) return;
+
+  // Fetch prescriptions
+  const recetas = await fetch(`${BASE}/api/episodios/${id}/detail`).then(r => r.json());
+  renderDetail(ep, recetas);
+}
+
+// ── Render detail panel ──────────────────────────────────────────────────────
+function renderDetail(ep, recetas) {
+  document.getElementById('detail-empty').style.display = 'none';
+  const dc = document.getElementById('detail-content');
+  dc.style.display = '';
+
+  const dias    = daysBetween(ep.fecha_inicio, ep.fecha_fin);
+  const tipoLabel = ep.tipo === 'enfermedad' ? 'Enfermedad' : ep.tipo === 'lesion' ? 'Lesión' : 'Consulta';
+  const tipoEmoji = ep.tipo === 'enfermedad' ? '🤒' : ep.tipo === 'lesion' ? '🦵' : '🩺';
+  const tipoCls   = ep.tipo === 'enfermedad' ? 'hg-badge-enf' : ep.tipo === 'lesion' ? 'hg-badge-les' : 'hg-badge-con';
+
+  let resolverHtml = '';
+  if (ep.activo) {
+    resolverHtml = `
+      <div class="hg-resolver">
+        <div class="hg-resolver-title">✓ ¿Ya te recuperaste?</div>
+        <button class="btn-g" style="font-size:var(--fs-xs);padding:5px 12px;"
+          onclick="abrirResolver(${ep.id})">
+          Marcar como resuelto
+        </button>
+      </div>`;
+  }
+
+  let timelineHtml = '';
+  if (recetas.length === 0) {
+    timelineHtml = `<div class="hg-empty-sec">Sin recetas registradas</div>`;
+  } else {
+    timelineHtml = '<div class="hg-timeline">';
+    for (const r of recetas) {
+      const medsHtml = r.medicamentos.length === 0
+        ? `<div style="font-size:10px;color:var(--dim);margin-top:6px;">Sin medicamentos</div>`
+        : `<div class="hg-meds">${r.medicamentos.map(m => `
+            <div class="hg-med ${m.tomando ? '' : 'terminado'}" id="med-pill-${m.id}">
+              <div class="hg-med-icon">💊</div>
+              <div class="hg-med-info">
+                <div class="hg-med-name">${esc(m.nombre)}</div>
+                <div class="hg-med-sub">
+                  ${[m.dosis, m.frecuencia, m.duracion_dias ? m.duracion_dias+'d' : ''].filter(Boolean).join(' · ') || '—'}
+                </div>
+              </div>
+              <div class="hg-med-toggle ${m.tomando ? 'on' : ''}"
+                   onclick="toggleMed(${m.id},${m.tomando ? 0 : 1},this)"
+                   title="${m.tomando ? 'Marcar terminado' : 'Marcar activo'}"></div>
+              <button class="btn-gr" style="font-size:10px;padding:2px 7px;margin-left:2px;"
+                onclick="eliminarMed(${m.id})">×</button>
+            </div>`).join('')}
+          </div>`;
+
+      timelineHtml += `
+        <div class="hg-tl-item">
+          <div class="hg-tl-dot"></div>
+          <div class="hg-tl-head">
+            <div>
+              <div class="hg-tl-date">📋 ${r.fecha}</div>
+              ${r.medico ? `<div class="hg-tl-dr">Dr. ${esc(r.medico)}</div>` : ''}
+              ${r.especialidad ? `<div class="hg-tl-esp">${esc(r.especialidad)}</div>` : ''}
+              ${r.notas ? `<div class="hg-tl-notes">"${esc(r.notas)}"</div>` : ''}
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0;">
+              <button class="btn-a" style="font-size:10px;padding:3px 9px;"
+                onclick="abrirModalMed(${r.id})">+ Med</button>
+              <button class="btn-gr" style="font-size:10px;padding:3px 7px;"
+                onclick="eliminarReceta(${r.id})">×</button>
+            </div>
+          </div>
+          ${medsHtml}
+        </div>`;
+    }
+    timelineHtml += '</div>';
+  }
+
+  dc.innerHTML = `
+    <div class="hg-detail-head">
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+        <div style="font-size:24px;">${tipoEmoji}</div>
+        <div style="flex:1;">
+          <div class="hg-detail-title">${esc(ep.titulo)}</div>
+          <div class="hg-detail-meta">
+            <span class="hg-badge ${tipoCls}">${tipoLabel}</span>
+            <span class="hg-badge ${ep.activo ? 'hg-badge-activo' : 'hg-badge-resuelto'}">
+              ${ep.activo ? 'Activo' : 'Resuelto'}
+            </span>
+            ${ep.zona_cuerpo ? `<span>${esc(ep.zona_cuerpo)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="hg-detail-meta">
+        <span>Inicio: ${ep.fecha_inicio}</span>
+        ${ep.fecha_fin ? `<span>Fin: ${ep.fecha_fin}</span>` : ''}
+        <span style="color:var(--gold);">${dias} día${dias!==1?'s':''}</span>
+      </div>
+      ${ep.descripcion ? `<div style="font-size:var(--fs-xs);color:var(--dim);margin-top:8px;">${esc(ep.descripcion)}</div>` : ''}
+    </div>
+    <div class="hg-detail-body">
+      ${resolverHtml}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="hg-section-hdr" style="margin:0;">Recetas médicas</div>
+        <button class="btn-a" style="font-size:var(--fs-xs);padding:4px 12px;"
+          onclick="abrirModalRx(${ep.id})">+ Receta</button>
+      </div>
+      ${timelineHtml}
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--b);display:flex;gap:8px;">
+        <button class="btn-gr" style="font-size:var(--fs-xs);padding:5px 12px;"
+          onclick="eliminarEpisodio(${ep.id})">Eliminar episodio</button>
+      </div>
+    </div>`;
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Episodio CRUD ────────────────────────────────────────────────────────────
+async function guardarEpisodio() {
+  const titulo = document.getElementById('ep-titulo').value.trim();
+  if (!titulo) { alert('El nombre es requerido'); return; }
+  const body = {
+    tipo:        document.getElementById('ep-tipo').value,
+    titulo,
+    descripcion: document.getElementById('ep-desc').value.trim(),
+    zona_cuerpo: document.getElementById('ep-zona').value.trim(),
+    fecha_inicio: document.getElementById('ep-fecha').value || todayISO(),
+  };
+  const r = await fetch(`${BASE}/api/episodios`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  }).then(r => r.json());
+  if (r.ok) { toast('Episodio registrado ✓'); setTimeout(() => location.reload(), 500); }
+  else       { toast('Error: '+r.error, 'err'); }
+}
+
+async function eliminarEpisodio(id) {
+  if (!confirm('¿Eliminar este episodio y todas sus recetas?')) return;
+  await fetch(`${BASE}/api/episodios/${id}`, { method:'DELETE' });
+  toast('Eliminado');
+  setTimeout(() => location.reload(), 400);
+}
+
+function abrirResolver(id) {
+  document.getElementById('res-ep-id').value = id;
+  document.getElementById('res-fecha').value = todayISO();
+  openModal('resolver');
+}
+
+async function confirmarResolver() {
+  const id     = document.getElementById('res-ep-id').value;
+  const fecha  = document.getElementById('res-fecha').value;
+  await fetch(`${BASE}/api/episodios/${id}`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ activo:0, fecha_fin: fecha })
+  });
+  toast('Episodio resuelto ✓');
+  setTimeout(() => location.reload(), 500);
+}
+
+// ── Receta CRUD ──────────────────────────────────────────────────────────────
+function abrirModalRx(epId) {
+  document.getElementById('rx-ep-id').value  = epId;
+  document.getElementById('rx-fecha').value  = todayISO();
+  document.getElementById('rx-medico').value = '';
+  document.getElementById('rx-esp').value    = '';
+  document.getElementById('rx-notas').value  = '';
+  openModal('rx');
+}
+
+async function guardarReceta() {
+  const epId = document.getElementById('rx-ep-id').value;
+  const body = {
+    episodio_id: parseInt(epId),
+    medico:      document.getElementById('rx-medico').value.trim(),
+    especialidad:document.getElementById('rx-esp').value.trim(),
+    fecha:       document.getElementById('rx-fecha').value || todayISO(),
+    notas:       document.getElementById('rx-notas').value.trim(),
+  };
+  const r = await fetch(`${BASE}/api/recetas`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  }).then(r => r.json());
+  if (r.ok) {
+    closeModal('rx');
+    toast('Receta agregada ✓');
+    await selectEp(parseInt(epId));
+  } else { toast('Error', 'err'); }
+}
+
+async function eliminarReceta(rid) {
+  if (!confirm('¿Eliminar esta receta y sus medicamentos?')) return;
+  await fetch(`${BASE}/api/recetas/${rid}`, { method:'DELETE' });
+  toast('Receta eliminada');
+  if (_activeEpId) await selectEp(_activeEpId);
+}
+
+// ── Medicamento CRUD ─────────────────────────────────────────────────────────
+function abrirModalMed(rxId) {
+  document.getElementById('med-rx-id').value = rxId;
+  document.getElementById('med-nombre').value = '';
+  document.getElementById('med-dosis').value  = '';
+  document.getElementById('med-freq').value   = '';
+  document.getElementById('med-dias').value   = '';
+  openModal('med');
+}
+
+async function guardarMedicamento() {
+  const rxId  = document.getElementById('med-rx-id').value;
+  const nombre = document.getElementById('med-nombre').value.trim();
+  if (!nombre) { alert('El nombre es requerido'); return; }
+  const body = {
+    receta_id:    parseInt(rxId),
+    nombre,
+    dosis:        document.getElementById('med-dosis').value.trim(),
+    frecuencia:   document.getElementById('med-freq').value.trim(),
+    duracion_dias:parseInt(document.getElementById('med-dias').value) || null,
+  };
+  const r = await fetch(`${BASE}/api/medicamentos`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+  }).then(r => r.json());
+  if (r.ok) {
+    closeModal('med');
+    toast('Medicamento agregado ✓');
+    if (_activeEpId) await selectEp(_activeEpId);
+  } else { toast('Error', 'err'); }
+}
+
+async function toggleMed(id, newVal, toggleEl) {
+  toggleEl.classList.toggle('on', newVal === 1);
+  const pill = document.getElementById('med-pill-'+id);
+  if (pill) pill.classList.toggle('terminado', newVal === 0);
+  await fetch(`${BASE}/api/medicamentos/${id}`, {
+    method:'PATCH', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ tomando: newVal })
+  });
+  toast(newVal ? 'Tomando activo ✓' : 'Marcado terminado');
+}
+
+async function eliminarMed(id) {
+  await fetch(`${BASE}/api/medicamentos/${id}`, { method:'DELETE' });
+  document.getElementById('med-pill-'+id)?.remove();
+  toast('Medicamento eliminado');
+}
+
+// ── Close modal on backdrop click ────────────────────────────────────────────
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('ep-fecha').value  = todayISO();
+  document.getElementById('res-fecha').value = todayISO();
+  document.getElementById('rx-fecha').value  = todayISO();
+  // Auto-open first active episode if only one
+  const activos = window.__MEDICO__.filter(e => e.activo);
+  if (activos.length === 1) selectEp(activos[0].id);
+});
+</script>
+{% endblock %}
