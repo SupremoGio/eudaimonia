@@ -35,6 +35,55 @@ def index():
         meds_activos  = sum(e['meds_activos'] for e in episodios if e['activo'])
         ultimo_inicio = episodios[0]['fecha_inicio'] if episodios else None
 
+        # ── Analytics ────────────────────────────────────────────────────────
+        recovery = [dict(r) for r in db.execute("""
+            SELECT tipo,
+                   ROUND(AVG(julianday(fecha_fin) - julianday(fecha_inicio)), 1) AS avg_dias,
+                   COUNT(*) AS total
+            FROM   medico_episodios
+            WHERE  fecha_fin IS NOT NULL AND activo = 0
+            GROUP  BY tipo
+            ORDER  BY avg_dias DESC
+        """).fetchall()]
+
+        monthly = [dict(r) for r in db.execute("""
+            SELECT strftime('%Y-%m', fecha_inicio) AS mes,
+                   COUNT(*) AS total
+            FROM   medico_episodios
+            WHERE  fecha_inicio >= date('now', '-6 months')
+            GROUP  BY mes
+            ORDER  BY mes
+        """).fetchall()]
+
+        zonas = [dict(r) for r in db.execute("""
+            SELECT zona_cuerpo, COUNT(*) AS cnt
+            FROM   medico_episodios
+            WHERE  zona_cuerpo IS NOT NULL AND zona_cuerpo != ''
+            GROUP  BY LOWER(zona_cuerpo)
+            ORDER  BY cnt DESC
+            LIMIT  5
+        """).fetchall()]
+
+        recurrencia = [dict(r) for r in db.execute("""
+            SELECT titulo,
+                   COUNT(*) AS veces,
+                   MIN(fecha_inicio) AS primera,
+                   MAX(fecha_inicio) AS ultima,
+                   CAST(julianday(MAX(fecha_inicio)) - julianday(MIN(fecha_inicio)) AS INTEGER) AS dias_entre
+            FROM   medico_episodios
+            GROUP  BY LOWER(titulo)
+            HAVING COUNT(*) > 1
+            ORDER  BY veces DESC, dias_entre ASC
+        """).fetchall()]
+
+        top_meds = [dict(r) for r in db.execute("""
+            SELECT m.nombre, COUNT(*) AS cnt
+            FROM   medico_medicamentos m
+            GROUP  BY LOWER(m.nombre)
+            ORDER  BY cnt DESC
+            LIMIT  4
+        """).fetchall()]
+
     return render_template(
         'bienestar/salud.html',
         episodios=episodios,
@@ -43,6 +92,13 @@ def index():
             meds_activos=meds_activos,
             total=len(episodios),
             ultimo=ultimo_inicio,
+        ),
+        analytics=dict(
+            recovery=recovery,
+            monthly=monthly,
+            zonas=zonas,
+            recurrencia=recurrencia,
+            top_meds=top_meds,
         ),
     )
 
