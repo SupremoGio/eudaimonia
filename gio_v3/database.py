@@ -366,13 +366,15 @@ def init_db():
             created_at   TEXT    NOT NULL
         );
         CREATE TABLE IF NOT EXISTS outfits (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre     TEXT    NOT NULL,
-            ocasion    TEXT    DEFAULT '',
-            rating     INTEGER DEFAULT 0,
-            foto       TEXT    DEFAULT '',
-            notas      TEXT    DEFAULT '',
-            created_at TEXT    NOT NULL
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre      TEXT    NOT NULL,
+            ocasion     TEXT    DEFAULT '',
+            rating      INTEGER DEFAULT 0,
+            foto        TEXT    DEFAULT '',
+            notas       TEXT    DEFAULT '',
+            veces_usado INTEGER DEFAULT 0,
+            ultimo_uso  TEXT    DEFAULT NULL,
+            created_at  TEXT    NOT NULL
         );
         CREATE TABLE IF NOT EXISTS outfit_items (
             outfit_id  INTEGER NOT NULL,
@@ -983,6 +985,17 @@ def init_db():
                 db.commit()
         except Exception as e:
             print(f"[DB] wardrobe_items migration warning: {e}")
+
+        # Migrate outfits: add usage tracking columns if not present
+        try:
+            ot_cols = [r["name"] for r in db.execute("PRAGMA table_info(outfits)").fetchall()]
+            if "veces_usado" not in ot_cols:
+                db.execute("ALTER TABLE outfits ADD COLUMN veces_usado INTEGER DEFAULT 0")
+            if "ultimo_uso" not in ot_cols:
+                db.execute("ALTER TABLE outfits ADD COLUMN ultimo_uso TEXT DEFAULT NULL")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] outfits migration warning: {e}")
 
         # Seed default special events (inactive by default)
         if db.execute("SELECT COUNT(*) as c FROM special_events").fetchone()["c"] == 0:

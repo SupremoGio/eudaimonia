@@ -216,6 +216,24 @@ def delete_outfit(oid):
     return jsonify({'ok': True})
 
 
+@guardarropa_bp.route('/api/outfit/<int:oid>/usar', methods=['POST'])
+def usar_outfit(oid):
+    today = datetime.now().strftime('%Y-%m-%d')
+    with get_db() as db:
+        db.execute(
+            "UPDATE outfits SET veces_usado=COALESCE(veces_usado,0)+1, ultimo_uso=? WHERE id=?",
+            (today, oid)
+        )
+        item_ids = [r['item_id'] for r in db.execute(
+            "SELECT item_id FROM outfit_items WHERE outfit_id=?", (oid,)
+        ).fetchall()]
+        for iid in item_ids:
+            db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1 WHERE id=?", (iid,))
+        db.commit()
+        row = _row(db.execute("SELECT * FROM outfits WHERE id=?", (oid,)).fetchone())
+    return jsonify({'ok': True, 'veces_usado': row.get('veces_usado', 1), 'ultimo_uso': today})
+
+
 # ── Photo upload ──────────────────────────────────────────────────────────────
 
 @guardarropa_bp.route('/api/upload/<int:iid>', methods=['POST'])
