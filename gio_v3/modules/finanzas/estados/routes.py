@@ -14,6 +14,7 @@ from flask import (
     session, jsonify, Response, redirect, url_for,
 )
 from database import get_db
+from utils import clean_str
 
 estados_bp = Blueprint(
     'estados',
@@ -121,6 +122,9 @@ def update_transaction(tx_id):
     if not _ok(): return _locked()
     d = request.json or {}
     with get_db() as db:
+        if d.get('descripcion') is not None:
+            db.execute("UPDATE est_movimientos SET descripcion=? WHERE id=?",
+                       (clean_str(d['descripcion'], 300), tx_id))
         if d.get('categoria') is not None:
             db.execute(
                 "UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?",
