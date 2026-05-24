@@ -512,6 +512,12 @@
         <span style="font-size:var(--fs-xs); color:var(--mid); letter-spacing:.08em; text-transform:uppercase;">
           {% block topright %}{% endblock %}
         </span>
+        <button class="theme-btn" id="eu-refresh-btn" onclick="euRefresh()" title="Recargar página">
+          <svg id="eu-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+        </button>
         <button class="theme-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema">
           <!-- Icon updated by JS -->
           <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -549,6 +555,17 @@ lucide.createIcons();
   var t = localStorage.getItem('eu-theme') || 'dark';
   _applyTheme(t);
 })();
+
+function euRefresh() {
+  var icon = document.getElementById('eu-refresh-icon');
+  if (icon) {
+    icon.style.transition = 'transform 0.5s ease';
+    icon.style.transform  = 'rotate(360deg)';
+    setTimeout(function() { location.reload(); }, 350);
+  } else {
+    location.reload();
+  }
+}
 
 function _applyTheme(t) {
   var h = document.documentElement;
