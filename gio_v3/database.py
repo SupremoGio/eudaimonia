@@ -1140,6 +1140,13 @@ def init_db():
         except Exception as e:
             print(f"[DB] rutina_bloques nombres migration warning: {e}")
 
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS app_settings (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+        """)
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
