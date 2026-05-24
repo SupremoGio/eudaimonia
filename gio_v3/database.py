@@ -1150,16 +1150,18 @@ def init_db():
         # ── ESTADOS DE CUENTA (SG Credit Card module) ────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS est_movimientos (
-            id           INTEGER PRIMARY KEY AUTOINCREMENT,
-            fecha        TEXT    NOT NULL,
-            fecha_cargo  TEXT,
-            descripcion  TEXT    NOT NULL,
-            monto        REAL    NOT NULL,
-            banco        TEXT    NOT NULL DEFAULT '',
-            periodo      TEXT,
-            categoria    TEXT    NOT NULL DEFAULT '',
-            subcategoria TEXT    DEFAULT '',
-            tipo         TEXT    NOT NULL DEFAULT 'GASTO'
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha         TEXT    NOT NULL,
+            fecha_cargo   TEXT,
+            descripcion   TEXT    NOT NULL,
+            monto         REAL    NOT NULL,
+            banco         TEXT    NOT NULL DEFAULT '',
+            periodo       TEXT,
+            categoria     TEXT    NOT NULL DEFAULT '',
+            subcategoria  TEXT    DEFAULT '',
+            tipo          TEXT    NOT NULL DEFAULT 'GASTO',
+            mi_parte      REAL    DEFAULT NULL,
+            reembolso_cat TEXT    DEFAULT NULL
         );
         CREATE UNIQUE INDEX IF NOT EXISTS idx_est_mov_dedup
             ON est_movimientos (fecha, descripcion);
@@ -1177,6 +1179,16 @@ def init_db():
             periodo   TEXT    NOT NULL DEFAULT 'monthly'
         );
         """)
+
+        # Migrate existing est_movimientos tables that lack newer columns
+        for col, definition in [
+            ("mi_parte",      "REAL    DEFAULT NULL"),
+            ("reembolso_cat", "TEXT    DEFAULT NULL"),
+        ]:
+            try:
+                db.execute(f"ALTER TABLE est_movimientos ADD COLUMN {col} {definition}")
+            except Exception:
+                pass  # column already exists
 
         db.commit()
   except Exception as e:
