@@ -481,7 +481,7 @@ def create_keyword():
             result = db.execute("""
                 UPDATE est_movimientos
                 SET categoria=?, subcategoria=?
-                WHERE tipo='GASTO' AND UPPER(descripcion) LIKE ? AND categoria='OTROS'
+                WHERE UPPER(descripcion) LIKE ?
             """, (cat, subcat, f'%{kw}%'))
             updated = result.rowcount if hasattr(result, 'rowcount') else 0
         else:
@@ -490,6 +490,26 @@ def create_keyword():
         db.commit()
 
     return jsonify({'ok': True, 'updated_transactions': updated}), 201
+
+
+@estados_bp.route('/api/keywords/apply-all', methods=['POST'])
+def apply_all_keywords():
+    """Re-apply every keyword rule to the entire transaction table."""
+    if not _ok(): return _locked()
+    total_updated = 0
+    with get_db() as db:
+        kw_rows = db.execute(
+            "SELECT keyword, categoria, subcategoria FROM est_keywords"
+        ).fetchall()
+        for kw_row in kw_rows:
+            result = db.execute("""
+                UPDATE est_movimientos
+                SET categoria=?, subcategoria=?
+                WHERE UPPER(descripcion) LIKE ?
+            """, (kw_row['categoria'], kw_row['subcategoria'], f'%{kw_row["keyword"]}%'))
+            total_updated += result.rowcount if hasattr(result, 'rowcount') else 0
+        db.commit()
+    return jsonify({'ok': True, 'updated_transactions': total_updated})
 
 
 @estados_bp.route('/api/keywords/<path:keyword>', methods=['DELETE'])
@@ -578,6 +598,17 @@ def upload_file():
                     m['categoria'], m.get('subcategoria', ''), m['tipo'],
                 ))
                 inserted += 1
+
+            # Apply all user-defined keywords to newly imported records
+            kw_rows = db.execute(
+                "SELECT keyword, categoria, subcategoria FROM est_keywords"
+            ).fetchall()
+            for kw_row in kw_rows:
+                db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria=?, subcategoria=?
+                    WHERE UPPER(descripcion) LIKE ?
+                """, (kw_row['categoria'], kw_row['subcategoria'], f'%{kw_row["keyword"]}%'))
             db.commit()
 
         preview = [
