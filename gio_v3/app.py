@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()  # carga gio_v3/.env en desarrollo local; en Railway no existe y no hace nada
 from flask import Flask, jsonify
 from database import init_db
-from extensions import limiter
+from extensions import limiter, csrf
 
 from modules.dashboard.routes      import dashboard_bp
 from modules.actividades.routes    import actividades_bp
@@ -29,6 +29,7 @@ from modules.guardarropa.routes import guardarropa_bp
 from modules.guardarropa.wishlist import wishlist_bp
 from modules.bienestar.routes    import bienestar_bp
 from modules.bienestar.salud     import medico_bp
+from modules.finanzas.estados.routes import estados_bp
 
 
 def create_app():
@@ -50,6 +51,7 @@ def create_app():
     app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
 
     limiter.init_app(app)
+    csrf.init_app(app)
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(actividades_bp,  url_prefix='/actividades')
@@ -72,6 +74,7 @@ def create_app():
     app.register_blueprint(wishlist_bp,   url_prefix='/guardarropa/wishlist')
     app.register_blueprint(bienestar_bp,  url_prefix='/bienestar')
     app.register_blueprint(medico_bp,     url_prefix='/bienestar/salud')
+    app.register_blueprint(estados_bp,    url_prefix='/finanzas/estados')
 
     @app.route('/api/health/v31')
     def health_v31():
