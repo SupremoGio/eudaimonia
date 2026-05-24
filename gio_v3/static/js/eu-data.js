@@ -94,6 +94,7 @@ window.EU = {
       { name:'Wishlist',    icon:'⭐', route:'/finanzas/prioridades'  },
       { name:'Consumo',     icon:'🛒', route:'/finanzas/consumo'      },
       { name:'Patrimonio',  icon:'🏛️', route:'/finanzas/salud'       },
+      { name:'Estados',     icon:'💳', route:'/finanzas/estados'     },
     ],
     ataraxia: [
       { name:'Ataraxia', icon:'🧘', route:'/ataraxia' },
