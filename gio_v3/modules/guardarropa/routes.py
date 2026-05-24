@@ -479,7 +479,7 @@ Responde SOLO con JSON (sin markdown, sin ```, sin texto extra):
 REGLAS: item_ids son enteros del inventario · incluye superior + inferior + calzado si disponibles · rating es entero 1-5"""
 
     try:
-        raw = _extract_json(_gemini(prompt, max_tokens=600))
+        raw = _extract_json(_gemini(prompt, max_tokens=2000))
         data = json.loads(raw)
         data['item_ids'] = [int(x) for x in data.get('item_ids', []) if x]
         data['ok'] = True
@@ -528,7 +528,7 @@ Criterios científicos:
 5. COHERENCIA: todas las prendas deben poder combinarse entre sí"""
 
     try:
-        raw = _extract_json(_gemini(prompt, max_tokens=900))
+        raw = _extract_json(_gemini(prompt, max_tokens=2000))
         data = json.loads(raw)
         data['ok'] = True
         return jsonify(data)
@@ -573,7 +573,7 @@ Responde con este JSON exacto (sin markdown, sin ```):
 Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-fit, lycra, spandex), ropa interior/pijama, calzado deportivo, o nombres como gym, running, yoga, etc."""
 
     try:
-        raw = _extract_json(_gemini(prompt, max_tokens=300))
+        raw = _extract_json(_gemini(prompt, max_tokens=800))
         data = json.loads(raw)
         data['ok'] = True
         return jsonify(data)
