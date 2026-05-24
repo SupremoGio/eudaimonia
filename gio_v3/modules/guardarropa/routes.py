@@ -371,13 +371,43 @@ def serve_photo(filename):
     return send_from_directory(UPLOAD_DIR, filename)
 
 
+# ── AI helpers ───────────────────────────────────────────────────────────────
+
+def _gemini(prompt, max_tokens=900):
+    """Call Gemini 2.0 Flash via REST. Returns raw text."""
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if not api_key:
+        raise ValueError('GEMINI_API_KEY no configurada')
+    url = (
+        'https://generativelanguage.googleapis.com/v1beta/models/'
+        f'gemini-2.0-flash:generateContent?key={api_key}'
+    )
+    body = json.dumps({
+        'contents': [{'parts': [{'text': prompt}]}],
+        'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7},
+    }).encode()
+    req = urllib.request.Request(url, data=body,
+                                 headers={'Content-Type': 'application/json'})
+    resp = urllib.request.urlopen(req, timeout=30)
+    data = json.loads(resp.read().decode())
+    return data['candidates'][0]['content']['parts'][0]['text'].strip()
+
+
+def _strip_fences(raw):
+    """Remove markdown code fences from IA response."""
+    if raw.startswith('```'):
+        raw = raw.split('```')[1]
+        if raw.startswith('json'):
+            raw = raw[4:]
+    return raw.strip()
+
+
 # ── AI Analysis ──────────────────────────────────────────────────────────────
 
 @guardarropa_bp.route('/api/ai-outfit', methods=['POST'])
 def ai_generate_outfit():
-    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-    if not api_key or api_key.startswith('sk-ant-REEMPLAZA'):
-        return jsonify({'ok': False, 'error': 'ANTHROPIC_API_KEY no configurada'}), 503
+    if not os.environ.get('GEMINI_API_KEY'):
+        return jsonify({'ok': False, 'error': 'GEMINI_API_KEY no configurada'}), 503
 
     d = request.get_json(force=True)
     occasion = d.get('ocasion', 'Casual')
@@ -416,17 +446,7 @@ Responde SOLO con JSON (sin markdown, sin ```, sin texto extra):
 REGLAS: item_ids son enteros del inventario · incluye superior + inferior + calzado si disponibles · rating es entero 1-5"""
 
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model='claude-opus-4-7',
-            max_tokens=600,
-            messages=[{'role': 'user', 'content': prompt}],
-        )
-        raw = msg.content[0].text.strip()
-        if raw.startswith('```'):
-            raw = raw.split('```')[1]
-            if raw.startswith('json'): raw = raw[4:]
+        raw = _strip_fences(_gemini(prompt, max_tokens=600))
         data = json.loads(raw)
         data['item_ids'] = [int(x) for x in data.get('item_ids', []) if x]
         data['ok'] = True
@@ -439,9 +459,8 @@ REGLAS: item_ids son enteros del inventario · incluye superior + inferior + cal
 
 @guardarropa_bp.route('/api/capsule/analyze', methods=['POST'])
 def analyze_capsule():
-    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-    if not api_key or api_key.startswith('sk-ant-REEMPLAZA'):
-        return jsonify({'ok': False, 'error': 'ANTHROPIC_API_KEY no configurada'}), 503
+    if not os.environ.get('GEMINI_API_KEY'):
+        return jsonify({'ok': False, 'error': 'GEMINI_API_KEY no configurada'}), 503
 
     with get_db() as db:
         items = [dict(r) for r in db.execute(
@@ -476,17 +495,7 @@ Criterios científicos:
 5. COHERENCIA: todas las prendas deben poder combinarse entre sí"""
 
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model='claude-opus-4-7',
-            max_tokens=900,
-            messages=[{'role': 'user', 'content': prompt}],
-        )
-        raw = msg.content[0].text.strip()
-        if raw.startswith('```'):
-            raw = raw.split('```')[1]
-            if raw.startswith('json'): raw = raw[4:]
+        raw = _strip_fences(_gemini(prompt, max_tokens=900))
         data = json.loads(raw)
         data['ok'] = True
         return jsonify(data)
@@ -498,9 +507,8 @@ Criterios científicos:
 
 @guardarropa_bp.route('/api/item/<int:iid>/analyze', methods=['POST'])
 def analyze_item(iid):
-    api_key = os.environ.get('ANTHROPIC_API_KEY', '')
-    if not api_key or api_key.startswith('sk-ant-REEMPLAZA'):
-        return jsonify({'ok': False, 'error': 'ANTHROPIC_API_KEY no configurada'}), 503
+    if not os.environ.get('GEMINI_API_KEY'):
+        return jsonify({'ok': False, 'error': 'GEMINI_API_KEY no configurada'}), 503
 
     with get_db() as db:
         row = db.execute("SELECT * FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
@@ -532,19 +540,7 @@ Responde con este JSON exacto (sin markdown, sin ```):
 Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-fit, lycra, spandex), ropa interior/pijama, calzado deportivo, o nombres como gym, running, yoga, etc."""
 
     try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=api_key)
-        msg = client.messages.create(
-            model='claude-opus-4-7',
-            max_tokens=300,
-            messages=[{'role': 'user', 'content': prompt}],
-        )
-        raw = msg.content[0].text.strip()
-        # strip markdown code fences if present
-        if raw.startswith('```'):
-            raw = raw.split('```')[1]
-            if raw.startswith('json'):
-                raw = raw[4:]
+        raw = _strip_fences(_gemini(prompt, max_tokens=300))
         data = json.loads(raw)
         data['ok'] = True
         return jsonify(data)
