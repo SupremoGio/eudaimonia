@@ -380,7 +380,7 @@ def _gemini(prompt, max_tokens=900):
     if not api_key:
         raise ValueError('GEMINI_API_KEY no configurada')
     url = (
-        'https://generativelanguage.googleapis.com/v1beta/models/'
+        'https://generativelanguage.googleapis.com/v1/models/'
         f'gemini-1.5-flash:generateContent?key={api_key}'
     )
     body = json.dumps({
