@@ -380,8 +380,8 @@ def _gemini(prompt, max_tokens=900):
     if not api_key:
         raise ValueError('GEMINI_API_KEY no configurada')
     url = (
-        'https://generativelanguage.googleapis.com/v1/models/'
-        f'gemini-1.5-flash:generateContent?key={api_key}'
+        'https://generativelanguage.googleapis.com/v1beta/models/'
+        f'gemini-1.5-flash-latest:generateContent?key={api_key}'
     )
     body = json.dumps({
         'contents': [{'parts': [{'text': prompt}]}],
@@ -409,6 +409,24 @@ def _strip_fences(raw):
         if raw.startswith('json'):
             raw = raw[4:]
     return raw.strip()
+
+
+@guardarropa_bp.route('/api/ai-models')
+def list_ai_models():
+    """Diagnóstico: lista modelos disponibles para la GEMINI_API_KEY configurada."""
+    import urllib.error
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if not api_key:
+        return jsonify({'error': 'GEMINI_API_KEY no configurada'})
+    try:
+        url = f'https://generativelanguage.googleapis.com/v1beta/models?key={api_key}'
+        req = urllib.request.Request(url)
+        resp = urllib.request.urlopen(req, timeout=10)
+        data = json.loads(resp.read().decode())
+        names = [m['name'] for m in data.get('models', []) if 'generateContent' in m.get('supportedGenerationMethods', [])]
+        return jsonify({'models': names})
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 
 # ── AI Analysis ──────────────────────────────────────────────────────────────
