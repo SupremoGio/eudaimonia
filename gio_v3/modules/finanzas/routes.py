@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
 from extensions import limiter
 from datetime import date, datetime
-from utils import today_str, today_date
+from utils import today_str, today_date, clean_str, safe_float
 
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 
@@ -115,12 +115,17 @@ def lock():
 def add_debt():
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     d = request.json
-    amount = float(d['amount'])
+    amount = safe_float(d.get('amount'), min_val=0.01)
+    if not amount:
+        return jsonify({'error': 'Monto inválido'}), 400
+    person  = clean_str(d.get('person'), 100)
+    concept = clean_str(d.get('concept'), 300)
+    dtype   = clean_str(d.get('type'), 20)
     with get_db() as db:
         db.execute("""INSERT INTO debts
             (type, person, concept, amount, monto_total, monto_restante, created_at)
             VALUES (?,?,?,?,?,?,?)""",
-            (d['type'], d['person'], d['concept'], amount, amount, amount, datetime.now().isoformat()))
+            (dtype, person, concept, amount, amount, amount, datetime.now().isoformat()))
         db.commit()
     return jsonify({'ok':True})
 
@@ -128,8 +133,8 @@ def add_debt():
 @finanzas_bp.route('/api/debt/<int:did>/abonar', methods=['POST'])
 def abonar_debt(did):
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
-    amount = float(request.json.get('amount', 0))
-    note   = request.json.get('note', '')
+    amount = safe_float(request.json.get('amount', 0), min_val=0.0)
+    note   = clean_str(request.json.get('note', ''), 300)
     with get_db() as db:
         debt = db.execute("SELECT * FROM debts WHERE id=?", (did,)).fetchone()
         if not debt: return jsonify({'error':'not found'}), 404

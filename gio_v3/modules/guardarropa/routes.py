@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from werkzeug.utils import secure_filename
 from database import get_db
+from utils import clean_str, safe_float
 
 _log = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ def create_item():
             (_s(d,'nombre'), _s(d,'categoria','Camisa'), _s(d,'subcategoria'),
              _s(d,'color_hex','#C9A84C'), _s(d,'color_name'), _s(d,'marca'),
              _s(d,'ocasion'), _s(d,'temporada','todo'), _s(d,'estado','bueno'),
-             float(d.get('precio') or 0), _s(d,'notas'), _s(d,'url'), now)
+             safe_float(d.get('precio'), min_val=0.0), _s(d,'notas'), _s(d,'url',max_len=1000), now)
         )
         db.commit()
         new_id = cur.lastrowid
@@ -117,7 +118,7 @@ def update_item(iid):
             (_s(d,'nombre'), _s(d,'categoria','Camisa'), _s(d,'subcategoria'),
              _s(d,'color_hex','#C9A84C'), _s(d,'color_name'), _s(d,'marca'),
              _s(d,'ocasion'), _s(d,'temporada','todo'), _s(d,'estado','bueno'),
-             float(d.get('precio') or 0), _s(d,'notas'), _s(d,'url'), iid)
+             safe_float(d.get('precio'), min_val=0.0), _s(d,'notas'), _s(d,'url',max_len=1000), iid)
         )
         db.commit()
         row = _row(db.execute("SELECT * FROM wardrobe_items WHERE id=?", (iid,)).fetchone())
@@ -537,6 +538,5 @@ Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-def _s(d, key, default=''):
-    v = d.get(key, default)
-    return str(v).strip() if v is not None else default
+def _s(d, key, default='', max_len=500):
+    return clean_str(d.get(key, default), max_len=max_len)

@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, redirect
 from database import get_db, get_gtd_stats
 from datetime import date, datetime
 import modules.gamification.engine as engine
-from utils import today_str
+from utils import today_str, clean_str
 
 gtd_bp = Blueprint('gtd', __name__, template_folder='../../templates')
 
@@ -67,7 +67,7 @@ def api_tasks():
 def add_task():
     d = request.json or {}
     now = datetime.now().isoformat()
-    texto = (d.get('texto') or d.get('title') or '').strip()
+    texto = clean_str(d.get('texto') or d.get('title') or '', max_len=500)
     if not texto:
         return jsonify({'ok': False, 'error': 'texto requerido'}), 400
     tipo = d.get('tipo', 'tarea')
