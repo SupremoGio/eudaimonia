@@ -3,12 +3,24 @@
 {% block module_title %}ESTADOS DE CUENTA{% endblock %}
 {% block topright %}<span style="color:var(--gold)">OIKONOMIA · ESTADOS</span>{% endblock %}
 
+{% block head %}
+<style>
+  /* ── iPhone / mobile: topbar overflow fix ── */
+  @media (max-width: 500px) {
+    /* Oculta el label secundario y el link al módulo padre en mobile */
+    header .flex.items-center.gap-3:last-child > span,
+    header .flex.items-center.gap-3:last-child > a { display: none !important; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 <style>
   /* Full-height container for the React SPA */
   #estados-root {
     min-height: calc(100vh - 120px);
     position: relative;
+    overflow-x: hidden;
   }
 
   /* Override React app backgrounds to match Eudaimonia */
@@ -23,6 +35,23 @@
   #estados-root [style*="background: #f8fafc"],
   #estados-root [style*="background:#f8fafc"] {
     background: var(--bg) !important;
+  }
+
+  /* ── Mobile: grids del React SPA que no tienen breakpoints ── */
+  @media (max-width: 600px) {
+    /* Gráfico barras + donut: apila verticalmente en lugar de 1fr 240px */
+    #estados-root div[style*="1fr 240px"] {
+      grid-template-columns: 1fr !important;
+    }
+    /* minWidth fijos que pueden romper el layout en pantallas angostas */
+    #estados-root div[style*="minWidth: 180"],
+    #estados-root div[style*="minWidth:180"],
+    #estados-root div[style*="minWidth: 130"],
+    #estados-root div[style*="minWidth:130"] {
+      min-width: 0 !important;
+    }
+    /* Evita que cualquier hijo del SPA sobresalga horizontalmente */
+    #estados-root > div { max-width: 100%; overflow-x: hidden; }
   }
 </style>
 
