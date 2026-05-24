@@ -390,6 +390,8 @@ def _gemini(prompt, max_tokens=4096):
             'temperature': 0.7,
             'responseMimeType': 'application/json',
         },
+        # Disable thinking tokens — they pollute JSON output when concatenated
+        'thinkingConfig': {'thinkingBudget': 0},
     }).encode()
     req = urllib.request.Request(url, data=body,
                                  headers={'Content-Type': 'application/json'})
@@ -403,9 +405,11 @@ def _gemini(prompt, max_tokens=4096):
             msg = err_body[:200]
         raise ValueError(f'Gemini HTTP {e.code}: {msg}')
     data = json.loads(resp.read().decode())
-    # Concatenate all parts (Gemini can split response across multiple parts)
-    parts = data['candidates'][0]['content']['parts']
-    return ''.join(p.get('text', '') for p in parts).strip()
+    candidate = data['candidates'][0]
+    parts = candidate['content']['parts']
+    # Filter out thought=True parts (internal reasoning tokens from Gemini 2.5)
+    text_parts = [p.get('text', '') for p in parts if not p.get('thought', False)]
+    return ''.join(text_parts).strip()
 
 
 def _extract_json(raw):
