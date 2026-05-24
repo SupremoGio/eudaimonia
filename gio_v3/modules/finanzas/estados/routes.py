@@ -22,11 +22,11 @@ estados_bp = Blueprint(
 )
 
 BANK_META = {
-    "BBVA":     {"color": "#004B96", "type": "Tarjeta de crédito"},
-    "BBVA_DEB": {"color": "#004B96", "type": "Cuenta de débito"},
-    "INVEX":    {"color": "#E30D13", "type": "Tarjeta de crédito"},
-    "HSBC":     {"color": "#DB0011", "type": "Tarjeta de crédito"},
-    "MANUAL":   {"color": "#64748b", "type": "Entrada manual"},
+    "BBVA":     {"color": "#004B96", "type": "Tarjeta de crédito", "icon": "🔵"},
+    "BBVA_DEB": {"color": "#004B96", "type": "Cuenta de débito",   "icon": "🏦"},
+    "INVEX":    {"color": "#E30D13", "type": "Tarjeta de crédito", "icon": "🔴"},
+    "HSBC":     {"color": "#DB0011", "type": "Tarjeta de crédito", "icon": "💳"},
+    "MANUAL":   {"color": "#64748b", "type": "Entrada manual",     "icon": "✏️"},
 }
 
 
@@ -353,6 +353,7 @@ def get_accounts():
             'name':     r['banco'].replace("_", " "),
             'color':    meta['color'],
             'type':     meta['type'],
+            'icon':     meta.get('icon', '💳'),
             'income':   round(income, 2),
             'expense':  round(expense, 2),
             'balance':  round(income - expense, 2),
