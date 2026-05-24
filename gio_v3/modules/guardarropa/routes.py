@@ -375,6 +375,7 @@ def serve_photo(filename):
 
 def _gemini(prompt, max_tokens=900):
     """Call Gemini 2.0 Flash via REST. Returns raw text."""
+    import urllib.error
     api_key = os.environ.get('GEMINI_API_KEY', '')
     if not api_key:
         raise ValueError('GEMINI_API_KEY no configurada')
@@ -388,7 +389,15 @@ def _gemini(prompt, max_tokens=900):
     }).encode()
     req = urllib.request.Request(url, data=body,
                                  headers={'Content-Type': 'application/json'})
-    resp = urllib.request.urlopen(req, timeout=30)
+    try:
+        resp = urllib.request.urlopen(req, timeout=30)
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode('utf-8', errors='replace')
+        try:
+            msg = json.loads(err_body).get('error', {}).get('message', err_body[:200])
+        except Exception:
+            msg = err_body[:200]
+        raise ValueError(f'Gemini HTTP {e.code}: {msg}')
     data = json.loads(resp.read().decode())
     return data['candidates'][0]['content']['parts'][0]['text'].strip()
 
