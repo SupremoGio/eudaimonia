@@ -373,8 +373,8 @@ def serve_photo(filename):
 
 # ── AI helpers ───────────────────────────────────────────────────────────────
 
-def _gemini(prompt, max_tokens=900):
-    """Call Gemini 2.0 Flash via REST. Returns raw text."""
+def _gemini(prompt, max_tokens=4096):
+    """Call Gemini 2.5 Flash via REST. Returns raw text (JSON mode)."""
     import urllib.error
     api_key = os.environ.get('GEMINI_API_KEY', '')
     if not api_key:
@@ -385,12 +385,16 @@ def _gemini(prompt, max_tokens=900):
     )
     body = json.dumps({
         'contents': [{'parts': [{'text': prompt}]}],
-        'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.7},
+        'generationConfig': {
+            'maxOutputTokens': max_tokens,
+            'temperature': 0.7,
+            'responseMimeType': 'application/json',
+        },
     }).encode()
     req = urllib.request.Request(url, data=body,
                                  headers={'Content-Type': 'application/json'})
     try:
-        resp = urllib.request.urlopen(req, timeout=60)
+        resp = urllib.request.urlopen(req, timeout=90)
     except urllib.error.HTTPError as e:
         err_body = e.read().decode('utf-8', errors='replace')
         try:
@@ -399,7 +403,9 @@ def _gemini(prompt, max_tokens=900):
             msg = err_body[:200]
         raise ValueError(f'Gemini HTTP {e.code}: {msg}')
     data = json.loads(resp.read().decode())
-    return data['candidates'][0]['content']['parts'][0]['text'].strip()
+    # Concatenate all parts (Gemini can split response across multiple parts)
+    parts = data['candidates'][0]['content']['parts']
+    return ''.join(p.get('text', '') for p in parts).strip()
 
 
 def _extract_json(raw):
@@ -479,7 +485,7 @@ Responde SOLO con JSON (sin markdown, sin ```, sin texto extra):
 REGLAS: item_ids son enteros del inventario · incluye superior + inferior + calzado si disponibles · rating es entero 1-5"""
 
     try:
-        raw = _extract_json(_gemini(prompt, max_tokens=2000))
+        raw = _extract_json(_gemini(prompt))
         data = json.loads(raw)
         data['item_ids'] = [int(x) for x in data.get('item_ids', []) if x]
         data['ok'] = True
@@ -528,7 +534,7 @@ Criterios científicos:
 5. COHERENCIA: todas las prendas deben poder combinarse entre sí"""
 
     try:
-        raw = _extract_json(_gemini(prompt, max_tokens=2000))
+        raw = _extract_json(_gemini(prompt))
         data = json.loads(raw)
         data['ok'] = True
         return jsonify(data)
@@ -573,7 +579,7 @@ Responde con este JSON exacto (sin markdown, sin ```):
 Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-fit, lycra, spandex), ropa interior/pijama, calzado deportivo, o nombres como gym, running, yoga, etc."""
 
     try:
-        raw = _extract_json(_gemini(prompt, max_tokens=800))
+        raw = _extract_json(_gemini(prompt, max_tokens=1024))
         data = json.loads(raw)
         data['ok'] = True
         return jsonify(data)
