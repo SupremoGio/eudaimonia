@@ -390,7 +390,7 @@ def _gemini(prompt, max_tokens=900):
     req = urllib.request.Request(url, data=body,
                                  headers={'Content-Type': 'application/json'})
     try:
-        resp = urllib.request.urlopen(req, timeout=30)
+        resp = urllib.request.urlopen(req, timeout=60)
     except urllib.error.HTTPError as e:
         err_body = e.read().decode('utf-8', errors='replace')
         try:
@@ -402,13 +402,35 @@ def _gemini(prompt, max_tokens=900):
     return data['candidates'][0]['content']['parts'][0]['text'].strip()
 
 
-def _strip_fences(raw):
-    """Remove markdown code fences from IA response."""
-    if raw.startswith('```'):
-        raw = raw.split('```')[1]
-        if raw.startswith('json'):
-            raw = raw[4:]
-    return raw.strip()
+def _extract_json(raw):
+    """Extract first valid JSON object from IA response, ignoring surrounding text."""
+    raw = raw.strip()
+    # Strip markdown fences
+    if '```' in raw:
+        parts = raw.split('```')
+        for part in parts:
+            part = part.strip()
+            if part.startswith('json'):
+                part = part[4:].strip()
+            if part.startswith('{'):
+                raw = part
+                break
+    # Find outermost { ... }
+    start = raw.find('{')
+    if start == -1:
+        raise ValueError(f'No JSON object in response: {raw[:200]}')
+    depth, end = 0, -1
+    for i, ch in enumerate(raw[start:], start):
+        if ch == '{':
+            depth += 1
+        elif ch == '}':
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+    if end == -1:
+        raise ValueError(f'Unclosed JSON in response: {raw[:200]}')
+    return raw[start:end + 1]
 
 
 
@@ -457,7 +479,7 @@ Responde SOLO con JSON (sin markdown, sin ```, sin texto extra):
 REGLAS: item_ids son enteros del inventario · incluye superior + inferior + calzado si disponibles · rating es entero 1-5"""
 
     try:
-        raw = _strip_fences(_gemini(prompt, max_tokens=600))
+        raw = _extract_json(_gemini(prompt, max_tokens=600))
         data = json.loads(raw)
         data['item_ids'] = [int(x) for x in data.get('item_ids', []) if x]
         data['ok'] = True
@@ -506,7 +528,7 @@ Criterios científicos:
 5. COHERENCIA: todas las prendas deben poder combinarse entre sí"""
 
     try:
-        raw = _strip_fences(_gemini(prompt, max_tokens=900))
+        raw = _extract_json(_gemini(prompt, max_tokens=900))
         data = json.loads(raw)
         data['ok'] = True
         return jsonify(data)
@@ -551,7 +573,7 @@ Responde con este JSON exacto (sin markdown, sin ```):
 Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-fit, lycra, spandex), ropa interior/pijama, calzado deportivo, o nombres como gym, running, yoga, etc."""
 
     try:
-        raw = _strip_fences(_gemini(prompt, max_tokens=300))
+        raw = _extract_json(_gemini(prompt, max_tokens=300))
         data = json.loads(raw)
         data['ok'] = True
         return jsonify(data)
