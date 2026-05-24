@@ -22,6 +22,9 @@ estados_bp = Blueprint(
     template_folder='../../../templates',
 )
 
+# Categories that represent debt payments — never counted as real expenses
+_PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO')"
+
 BANK_META = {
     "BBVA":     {"color": "#004B96", "type": "Tarjeta de crédito", "icon": "🔵"},
     "BBVA_DEB": {"color": "#004B96", "type": "Cuenta de débito",   "icon": "🏦"},
@@ -180,11 +183,11 @@ def overview():
     month_start = datetime.now().replace(day=1).strftime("%Y-%m-%d")
 
     with get_db() as db:
-        row = db.execute("""
+        row = db.execute(f"""
             SELECT
-                SUM(CASE WHEN tipo='INGRESO'    THEN monto ELSE 0 END) AS income,
-                SUM(CASE WHEN tipo='GASTO'      THEN monto ELSE 0 END) AS expense,
-                SUM(CASE WHEN tipo='INVERSION'  THEN monto ELSE 0 END) AS inversion,
+                SUM(CASE WHEN tipo='INGRESO'                          THEN monto ELSE 0 END) AS income,
+                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}           THEN monto ELSE 0 END) AS expense,
+                SUM(CASE WHEN tipo='INVERSION'                        THEN monto ELSE 0 END) AS inversion,
                 COUNT(*) AS tx_count
             FROM est_movimientos WHERE fecha >= ?
         """, (month_start,)).fetchone()
@@ -218,8 +221,8 @@ def monthly_summary():
         rows = db.execute(f"""
             SELECT
                 substr(fecha,1,7) AS ym,
-                SUM(CASE WHEN tipo='INGRESO' THEN monto ELSE 0 END) AS income,
-                SUM(CASE WHEN tipo='GASTO'   THEN monto ELSE 0 END) AS expense
+                SUM(CASE WHEN tipo='INGRESO'                        THEN monto ELSE 0 END) AS income,
+                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}         THEN monto ELSE 0 END) AS expense
             FROM est_movimientos
             WHERE 1=1 {bank_filter}
             GROUP BY ym
@@ -248,7 +251,7 @@ def by_category():
     date_to   = request.args.get('date_to')
     bank      = request.args.get('bank')
 
-    conds  = ["tipo='GASTO'", "fecha >= ?"]
+    conds  = ["tipo='GASTO'", _PAGO_CATS, "fecha >= ?"]
     params = [date_from]
     if date_to:
         conds.append("fecha <= ?"); params.append(date_to)
@@ -284,16 +287,16 @@ def summary_stats():
     with get_db() as db:
         agg = db.execute(f"""
             SELECT
-                SUM(CASE WHEN tipo='GASTO'   THEN monto ELSE 0 END) AS total_expense,
-                SUM(CASE WHEN tipo='INGRESO' THEN monto ELSE 0 END) AS total_income,
-                COUNT(CASE WHEN tipo='GASTO' THEN 1 END)            AS tx_count,
-                COUNT(CASE WHEN tipo='GASTO' AND categoria='OTROS' THEN 1 END) AS unclassified
+                SUM(CASE WHEN tipo='GASTO'   AND {_PAGO_CATS} THEN monto ELSE 0 END) AS total_expense,
+                SUM(CASE WHEN tipo='INGRESO'                   THEN monto ELSE 0 END) AS total_income,
+                COUNT(CASE WHEN tipo='GASTO' AND {_PAGO_CATS} THEN 1 END)            AS tx_count,
+                COUNT(CASE WHEN tipo='GASTO' AND {_PAGO_CATS} AND categoria='OTROS' THEN 1 END) AS unclassified
             FROM est_movimientos WHERE {where}
         """, params).fetchone()
 
         max_row = db.execute(f"""
             SELECT descripcion, monto FROM est_movimientos
-            WHERE tipo='GASTO' AND {where}
+            WHERE tipo='GASTO' AND {_PAGO_CATS} AND {where}
             ORDER BY monto DESC LIMIT 1
         """, params).fetchone()
 
@@ -336,10 +339,10 @@ def banks_list():
 def get_accounts():
     if not _ok(): return _locked()
     with get_db() as db:
-        rows = db.execute("""
+        rows = db.execute(f"""
             SELECT banco,
-                   SUM(CASE WHEN tipo='INGRESO' THEN monto ELSE 0 END) AS income,
-                   SUM(CASE WHEN tipo='GASTO'   THEN monto ELSE 0 END) AS expense,
+                   SUM(CASE WHEN tipo='INGRESO'                  THEN monto ELSE 0 END) AS income,
+                   SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}   THEN monto ELSE 0 END) AS expense,
                    COUNT(*) AS tx_count
             FROM est_movimientos
             WHERE banco IS NOT NULL
@@ -379,10 +382,10 @@ def get_budgets():
         ).fetchall()
 
         spending = {}
-        rows = db.execute("""
+        rows = db.execute(f"""
             SELECT categoria, SUM(monto) AS total
             FROM est_movimientos
-            WHERE tipo='GASTO' AND fecha >= ?
+            WHERE tipo='GASTO' AND {_PAGO_CATS} AND fecha >= ?
             GROUP BY categoria
         """, (month_start,)).fetchall()
         for r in rows:
