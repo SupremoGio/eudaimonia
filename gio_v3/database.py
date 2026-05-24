@@ -1147,6 +1147,37 @@ def init_db():
         );
         """)
 
+        # ── ESTADOS DE CUENTA (SG Credit Card module) ────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS est_movimientos (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha        TEXT    NOT NULL,
+            fecha_cargo  TEXT,
+            descripcion  TEXT    NOT NULL,
+            monto        REAL    NOT NULL,
+            banco        TEXT    NOT NULL DEFAULT '',
+            periodo      TEXT,
+            categoria    TEXT    NOT NULL DEFAULT '',
+            subcategoria TEXT    DEFAULT '',
+            tipo         TEXT    NOT NULL DEFAULT 'GASTO'
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_est_mov_dedup
+            ON est_movimientos (fecha, descripcion);
+        CREATE TABLE IF NOT EXISTS est_keywords (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            keyword      TEXT    NOT NULL UNIQUE,
+            categoria    TEXT    NOT NULL,
+            subcategoria TEXT    NOT NULL DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS est_budgets (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            categoria TEXT    NOT NULL UNIQUE,
+            nombre    TEXT,
+            limite    REAL    NOT NULL,
+            periodo   TEXT    NOT NULL DEFAULT 'monthly'
+        );
+        """)
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

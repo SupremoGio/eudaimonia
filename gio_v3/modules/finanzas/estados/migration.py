@@ -73,11 +73,11 @@ def migrate(source_path: str, dry_run: bool = False) -> None:
         db.commit()
 
     src.close()
-    print(f"\nMigración completada:")
-    print(f"  ✓ Insertadas:  {inserted}")
-    print(f"  ○ Omitidas (duplicados): {skipped}")
+    print(f"\nMigracion completada:")
+    print(f"  [OK] Insertadas:        {inserted}")
+    print(f"  [--] Omitidas (dupls):  {skipped}")
     if errors:
-        print(f"  ✗ Errores:    {errors}")
+        print(f"  [!!] Errores:         {errors}")
 
 
 if __name__ == "__main__":

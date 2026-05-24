@@ -3,7 +3,8 @@ const { useState, useMemo, useEffect, useRef } = React;
 const C = window.EU.getColors();
 
 function todayQuote() {
-  return EU.quotes[new Date().getDay() % EU.quotes.length];
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  return EU.quotes[dayIndex % EU.quotes.length];
 }
 
 // ═══════════════════════════════════════════════════════════
