@@ -1,6 +1,7 @@
 import os, uuid, mimetypes
 from datetime import datetime
-from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response, session
+from werkzeug.security import check_password_hash
 from database import get_db
 
 perfil_bp = Blueprint('perfil', __name__, template_folder='../../templates')
@@ -11,8 +12,37 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXT = {'.pdf', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.xml', '.zip'}
 
 
+def _get_pass_hash():
+    with get_db() as db:
+        row = db.execute(
+            "SELECT value FROM app_settings WHERE key='finanzas_pass_hash'"
+        ).fetchone()
+        return row['value'] if row else None
+
+
+@perfil_bp.route('/unlock', methods=['POST'])
+def unlock():
+    current_hash = _get_pass_hash()
+    if current_hash is None:
+        return jsonify({'ok': False, 'error': 'Configura la contraseña primero en Finanzas'}), 503
+    pw = request.json.get('password', '')
+    if pw and check_password_hash(current_hash, pw):
+        session['fin_ok'] = True
+        session.permanent = True
+        return jsonify({'ok': True})
+    return jsonify({'ok': False, 'error': 'Contraseña incorrecta'}), 401
+
+
+@perfil_bp.route('/lock', methods=['POST'])
+def lock():
+    session.pop('fin_ok', None)
+    return jsonify({'ok': True})
+
+
 @perfil_bp.route('/')
 def index():
+    if not session.get('fin_ok'):
+        return render_template('perfil/lock.html', has_pass=bool(_get_pass_hash()))
     with get_db() as db:
         info         = db.execute("SELECT * FROM personal_info ORDER BY rowid").fetchall()
         measurements = db.execute("SELECT * FROM body_measurements ORDER BY rowid").fetchall()
@@ -54,6 +84,7 @@ def index():
 
 @perfil_bp.route('/api/update', methods=['POST'])
 def update():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     d = request.get_json(force=True, silent=True) or {}
     key = d.get('key', '').strip()
     value = d.get('value')
@@ -67,6 +98,7 @@ def update():
 
 @perfil_bp.route('/api/update_measurement', methods=['POST'])
 def update_measurement():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     d = request.get_json(force=True, silent=True) or {}
     key = d.get('key', '').strip()
     value = d.get('value')
@@ -90,6 +122,7 @@ def update_measurement():
 
 @perfil_bp.route('/api/upload_doc', methods=['POST'])
 def upload_doc():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     f         = request.files.get('file')
     field_key = request.form.get('field_key', '').strip() or None
     if not f or not f.filename:
@@ -119,6 +152,7 @@ def upload_doc():
 
 @perfil_bp.route('/api/delete_doc', methods=['POST'])
 def delete_doc():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     d = request.json
     with get_db() as db:
         row = db.execute("SELECT filename FROM profile_docs WHERE id=?", (d['id'],)).fetchone()
@@ -135,6 +169,7 @@ def delete_doc():
 
 @perfil_bp.route('/docs/<filename>')
 def serve_doc(filename):
+    if not session.get('fin_ok'): abort(403)
     if '..' in filename or '/' in filename:
         abort(400)
     with get_db() as db:
@@ -170,6 +205,7 @@ def serve_doc(filename):
 
 @perfil_bp.route('/api/reminders')
 def get_reminders():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     with get_db() as db:
         rows = db.execute(
             "SELECT * FROM reminders WHERE is_active=1 ORDER BY COALESCE(next_date, target_date, '9999-12-31'), created_at"
@@ -179,6 +215,7 @@ def get_reminders():
 
 @perfil_bp.route('/api/reminder/add', methods=['POST'])
 def add_reminder():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     d = request.get_json(force=True, silent=True) or {}
     desc = (d.get('description') or '').strip()
     if not desc:
@@ -203,6 +240,7 @@ def add_reminder():
 
 @perfil_bp.route('/api/reminder/<int:rid>/done', methods=['POST'])
 def complete_reminder(rid):
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     from datetime import date as _date, timedelta
     from utils import today_str as _today_str
     import calendar
@@ -237,6 +275,7 @@ def complete_reminder(rid):
 
 @perfil_bp.route('/api/reminder/<int:rid>/delete', methods=['POST'])
 def delete_reminder(rid):
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     with get_db() as db:
         db.execute("DELETE FROM reminders WHERE id=?", (rid,))
         db.commit()
