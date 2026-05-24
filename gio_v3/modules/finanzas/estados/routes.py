@@ -24,6 +24,8 @@ estados_bp = Blueprint(
 
 # Categories that represent debt payments — never counted as real expenses
 _PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO')"
+# Use mi_parte when set (shared expense), otherwise full monto
+_MONTO = "COALESCE(mi_parte, monto)"
 
 BANK_META = {
     "BBVA":     {"color": "#004B96", "type": "Tarjeta de crédito", "icon": "🔵"},
@@ -139,6 +141,12 @@ def update_transaction(tx_id):
         if d.get('tipo') is not None:
             db.execute("UPDATE est_movimientos SET tipo=? WHERE id=?",
                        (d['tipo'], tx_id))
+        if 'mi_parte' in d:
+            val = float(d['mi_parte']) if d['mi_parte'] not in (None, '') else None
+            db.execute("UPDATE est_movimientos SET mi_parte=? WHERE id=?", (val, tx_id))
+        if 'reembolso_cat' in d:
+            val = d['reembolso_cat'] or None
+            db.execute("UPDATE est_movimientos SET reembolso_cat=? WHERE id=?", (val, tx_id))
         db.commit()
     return jsonify({'ok': True})
 
@@ -150,6 +158,28 @@ def delete_transaction(tx_id):
         db.execute("DELETE FROM est_movimientos WHERE id=?", (tx_id,))
         db.commit()
     return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/transactions/reembolsos')
+def list_reembolsos():
+    """Return INGRESO transactions tagged as reimbursements for a given category."""
+    if not _ok(): return _locked()
+    cat = request.args.get('category')
+    if not cat:
+        return jsonify({'data': []})
+    conds, params = ['reembolso_cat = ?'], [cat]
+    if request.args.get('date_from'):
+        conds.append("fecha >= ?"); params.append(request.args['date_from'])
+    if request.args.get('date_to'):
+        conds.append("fecha <= ?"); params.append(request.args['date_to'])
+    if request.args.get('bank'):
+        conds.append("banco = ?"); params.append(request.args['bank'])
+    with get_db() as db:
+        rows = db.execute(
+            f"SELECT * FROM est_movimientos WHERE {' AND '.join(conds)} ORDER BY fecha DESC",
+            params,
+        ).fetchall()
+    return jsonify({'data': [dict(r) for r in rows]})
 
 
 @estados_bp.route('/api/transactions/export/csv')
@@ -186,7 +216,7 @@ def overview():
         row = db.execute(f"""
             SELECT
                 SUM(CASE WHEN tipo='INGRESO'                          THEN monto ELSE 0 END) AS income,
-                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}           THEN monto ELSE 0 END) AS expense,
+                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}           THEN {_MONTO} ELSE 0 END) AS expense,
                 SUM(CASE WHEN tipo='INVERSION'                        THEN monto ELSE 0 END) AS inversion,
                 COUNT(*) AS tx_count
             FROM est_movimientos WHERE fecha >= ?
@@ -222,7 +252,7 @@ def monthly_summary():
             SELECT
                 substr(fecha,1,7) AS ym,
                 SUM(CASE WHEN tipo='INGRESO'                        THEN monto ELSE 0 END) AS income,
-                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}         THEN monto ELSE 0 END) AS expense
+                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}         THEN {_MONTO} ELSE 0 END) AS expense
             FROM est_movimientos
             WHERE 1=1 {bank_filter}
             GROUP BY ym
@@ -260,7 +290,8 @@ def by_category():
 
     with get_db() as db:
         rows = db.execute(f"""
-            SELECT categoria, SUM(monto) AS total
+            SELECT categoria,
+                   SUM({_MONTO}) AS total
             FROM est_movimientos
             WHERE {' AND '.join(conds)}
             GROUP BY categoria ORDER BY total DESC
@@ -287,9 +318,9 @@ def summary_stats():
     with get_db() as db:
         agg = db.execute(f"""
             SELECT
-                SUM(CASE WHEN tipo='GASTO'   AND {_PAGO_CATS} THEN monto ELSE 0 END) AS total_expense,
+                SUM(CASE WHEN tipo='GASTO'   AND {_PAGO_CATS} THEN {_MONTO} ELSE 0 END) AS total_expense,
                 SUM(CASE WHEN tipo='INGRESO'                   THEN monto ELSE 0 END) AS total_income,
-                COUNT(CASE WHEN tipo='GASTO' AND {_PAGO_CATS} THEN 1 END)            AS tx_count,
+                COUNT(CASE WHEN tipo='GASTO' AND {_PAGO_CATS} THEN 1 END)              AS tx_count,
                 COUNT(CASE WHEN tipo='GASTO' AND {_PAGO_CATS} AND categoria='OTROS' THEN 1 END) AS unclassified
             FROM est_movimientos WHERE {where}
         """, params).fetchone()
@@ -341,8 +372,8 @@ def get_accounts():
     with get_db() as db:
         rows = db.execute(f"""
             SELECT banco,
-                   SUM(CASE WHEN tipo='INGRESO'                  THEN monto ELSE 0 END) AS income,
-                   SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}   THEN monto ELSE 0 END) AS expense,
+                   SUM(CASE WHEN tipo='INGRESO'                  THEN monto    ELSE 0 END) AS income,
+                   SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}   THEN {_MONTO} ELSE 0 END) AS expense,
                    COUNT(*) AS tx_count
             FROM est_movimientos
             WHERE banco IS NOT NULL
@@ -383,7 +414,7 @@ def get_budgets():
 
         spending = {}
         rows = db.execute(f"""
-            SELECT categoria, SUM(monto) AS total
+            SELECT categoria, SUM({_MONTO}) AS total
             FROM est_movimientos
             WHERE tipo='GASTO' AND {_PAGO_CATS} AND fecha >= ?
             GROUP BY categoria
