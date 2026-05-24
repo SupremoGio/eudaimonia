@@ -2,6 +2,7 @@ import os, uuid, urllib.request, json, ipaddress, logging
 from datetime import datetime
 from urllib.parse import urlparse
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
+from werkzeug.utils import secure_filename
 from database import get_db
 
 _log = logging.getLogger(__name__)
@@ -221,7 +222,7 @@ def upload_photo(iid):
     f = request.files.get('file')
     if not f or not f.filename:
         return jsonify({'ok': False, 'error': 'Sin archivo'}), 400
-    ext = os.path.splitext(f.filename)[1].lower()
+    ext = os.path.splitext(secure_filename(f.filename))[1].lower()
     if not ext or ext not in ALLOWED_EXT:
         # Dragged browser images arrive without extension — use MIME type
         _mime_map = {'image/jpeg': '.jpg', 'image/png': '.png',

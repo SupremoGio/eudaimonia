@@ -2,6 +2,7 @@ import os, uuid, mimetypes
 from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response, session
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 from database import get_db
 from extensions import limiter
 
@@ -129,7 +130,8 @@ def upload_doc():
     field_key = request.form.get('field_key', '').strip() or None
     if not f or not f.filename:
         return jsonify({'ok': False, 'error': 'Sin archivo'}), 400
-    ext = os.path.splitext(f.filename)[1].lower()
+    safe_original = secure_filename(f.filename) or 'archivo'
+    ext = os.path.splitext(safe_original)[1].lower()
     if ext not in ALLOWED_EXT:
         return jsonify({'ok': False, 'error': 'Tipo no permitido'}), 400
     safe_name    = uuid.uuid4().hex + ext
@@ -144,12 +146,12 @@ def upload_doc():
     with get_db() as db:
         db.execute(
             "INSERT INTO profile_docs (filename, original, uploaded_at, field_key, content) VALUES (?,?,?,?,?)",
-            (safe_name, f.filename, now, field_key, file_content)
+            (safe_name, safe_original, now, field_key, file_content)
         )
         doc_id = db.execute("SELECT last_insert_rowid() as id").fetchone()["id"]
         db.commit()
     return jsonify({'ok': True, 'id': doc_id, 'filename': safe_name,
-                    'original': f.filename, 'uploaded_at': now, 'field_key': field_key})
+                    'original': safe_original, 'uploaded_at': now, 'field_key': field_key})
 
 
 @perfil_bp.route('/api/delete_doc', methods=['POST'])
