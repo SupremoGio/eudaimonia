@@ -75,6 +75,7 @@ def create_app():
     app.register_blueprint(bienestar_bp,  url_prefix='/bienestar')
     app.register_blueprint(medico_bp,     url_prefix='/bienestar/salud')
     app.register_blueprint(estados_bp,    url_prefix='/finanzas/estados')
+    csrf.exempt(estados_bp)
 
     @app.route('/api/health/v31')
     def health_v31():
@@ -121,6 +122,11 @@ def create_app():
     @app.errorhandler(429)
     def too_many_requests(e):
         return jsonify({'ok': False, 'error': 'Demasiados intentos. Espera un momento.'}), 429
+
+    from flask_wtf.csrf import CSRFError
+    @app.errorhandler(CSRFError)
+    def csrf_error(e):
+        return jsonify({'ok': False, 'error': 'Token de seguridad inválido. Recarga la página.'}), 400
 
     @app.after_request
     def set_security_headers(response):
