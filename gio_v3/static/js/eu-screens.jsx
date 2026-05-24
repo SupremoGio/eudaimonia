@@ -585,7 +585,13 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             'radial-gradient(ellipse at 15% 85%,color-mix(in srgb, var(--gold) 5%, transparent) 0%,transparent 55%),' +
             'radial-gradient(ellipse at 85% 15%,color-mix(in srgb, var(--gold) 3%, transparent) 0%,transparent 45%)'}}/>
           <div style={{display:'flex',alignItems:'flex-end',gap:14}}>
-            <div style={{flexShrink:0}}>
+            <div style={{flexShrink:0,cursor:'pointer',transition:'opacity 0.15s'}}
+              title="Actualizar dashboard"
+              onClick={()=>window.location.reload()}
+              onMouseDown={e=>e.currentTarget.style.opacity='0.5'}
+              onMouseUp={e=>e.currentTarget.style.opacity='1'}
+              onTouchStart={e=>e.currentTarget.style.opacity='0.5'}
+              onTouchEnd={e=>{e.currentTarget.style.opacity='1';window.location.reload()}}>
               <GreekColumn level={level} xpPct={xpPct} size={72}/>
             </div>
             <div style={{flex:1,paddingBottom:3}}>
