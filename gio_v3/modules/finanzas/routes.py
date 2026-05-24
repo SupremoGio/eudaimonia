@@ -1,4 +1,5 @@
-import hashlib
+import os
+from werkzeug.security import check_password_hash, generate_password_hash
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
 from datetime import date, datetime
@@ -6,7 +7,8 @@ from utils import today_str, today_date
 
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 
-PASS_HASH = hashlib.sha256(b'gio2026').hexdigest()   # Change password here
+_raw_pass = os.environ.get('FINANZAS_PASSWORD', '')
+_PASS_HASH = generate_password_hash(_raw_pass) if _raw_pass else None
 
 
 def payment_alerts():
@@ -59,11 +61,14 @@ def index():
 
 @finanzas_bp.route('/unlock', methods=['POST'])
 def unlock():
-    pw = request.json.get('password','')
-    if hashlib.sha256(pw.encode()).hexdigest() == PASS_HASH:
+    if _PASS_HASH is None:
+        return jsonify({'ok': False, 'error': 'Configura FINANZAS_PASSWORD en .env'}), 503
+    pw = request.json.get('password', '')
+    if pw and check_password_hash(_PASS_HASH, pw):
         session['fin_ok'] = True
-        return jsonify({'ok':True})
-    return jsonify({'ok':False, 'error':'Contraseña incorrecta'}), 401
+        session.permanent = True
+        return jsonify({'ok': True})
+    return jsonify({'ok': False, 'error': 'Contraseña incorrecta'}), 401
 
 
 @finanzas_bp.route('/lock', methods=['POST'])

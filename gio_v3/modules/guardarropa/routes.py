@@ -1,7 +1,10 @@
-import os, uuid, urllib.request, json
+import os, uuid, urllib.request, json, ipaddress, logging
 from datetime import datetime
+from urllib.parse import urlparse
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from database import get_db
+
+_log = logging.getLogger(__name__)
 
 guardarropa_bp = Blueprint('guardarropa', __name__, template_folder='../../templates')
 
@@ -14,6 +17,7 @@ CATEGORIAS = [
     'Pantalón', 'Jeans', 'Pants', 'Short', 'Traje / Conjunto',
     'Blazer / Saco', 'Chamarra / Abrigo',
     'Zapatos formales', 'Zapatos casuales', 'Sneakers', 'Botas', 'Sandalias',
+    'Calcetas',
     'Accesorio',
 ]
 OCASIONES  = ['Formal', 'Business', 'Casual', 'Social', 'Deportivo', 'Loungewear']
@@ -238,9 +242,34 @@ def upload_photo(iid):
     return jsonify({'ok': True, 'filename': filename})
 
 
+_BLOCKED_HOSTS = {'localhost', ''}
+_PRIVATE_PREFIXES = ('127.', '10.', '192.168.', '169.254.', '0.', '::1')
+
+
+def _validate_url(url: str) -> None:
+    """Bloquea URLs privadas/loopback para prevenir SSRF."""
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError('Solo se permiten URLs http/https')
+    host = (parsed.hostname or '').lower()
+    if host in _BLOCKED_HOSTS:
+        raise ValueError('Host no permitido')
+    for prefix in _PRIVATE_PREFIXES:
+        if host.startswith(prefix):
+            raise ValueError('Host no permitido')
+    try:
+        addr = ipaddress.ip_address(host)
+        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+            raise ValueError('IP privada no permitida')
+    except ValueError as exc:
+        if 'no permitid' in str(exc):
+            raise
+
+
 def _extract_image_url(page_url):
     """Extrae la URL de imagen principal de una página HTML (og:image, twitter:image, etc.)."""
     import re
+    _validate_url(page_url)
     req = urllib.request.Request(page_url, headers={
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     })
@@ -285,6 +314,7 @@ def fetch_url_photo(iid):
 
         # Si _extract_image_url devolvió solo la URL (página HTML), descargar la imagen
         if data is None:
+            _validate_url(img_url)
             req2 = urllib.request.Request(img_url, headers={
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
             })
@@ -307,8 +337,11 @@ def fetch_url_photo(iid):
             db.execute("UPDATE wardrobe_items SET foto=? WHERE id=?", (filename, iid))
             db.commit()
         return jsonify({'ok': True, 'filename': filename})
-    except Exception as e:
+    except ValueError as e:
         return jsonify({'ok': False, 'error': str(e)}), 400
+    except Exception as e:
+        _log.error('fetch_url_photo id=%s: %s', iid, e)
+        return jsonify({'ok': False, 'error': 'No se pudo obtener la imagen'}), 400
 
 
 @guardarropa_bp.route('/photos/<filename>')

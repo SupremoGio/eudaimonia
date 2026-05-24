@@ -1,4 +1,7 @@
 import os
+import secrets
+import warnings
+from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()  # carga gio_v3/.env en desarrollo local; en Railway no existe y no hace nada
 from flask import Flask
@@ -29,7 +32,21 @@ from modules.bienestar.salud     import medico_bp
 
 def create_app():
     app = Flask(__name__)
-    app.secret_key = os.environ.get('SECRET_KEY', 'gio-pipeline-dev-only-2026')
+
+    _secret = os.environ.get('SECRET_KEY')
+    if not _secret:
+        _secret = secrets.token_hex(32)
+        warnings.warn(
+            'SECRET_KEY no configurada — usando clave temporal. '
+            'Las sesiones no sobrevivirán reinicios. Añade SECRET_KEY a .env',
+            stacklevel=2,
+        )
+    app.secret_key = _secret
+
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(actividades_bp,  url_prefix='/actividades')
@@ -94,6 +111,14 @@ def create_app():
             'tables': status.get('tables', {}),
             'total_xp': status.get('total_xp', 0),
         }, 200 if ok else 503
+
+    @app.after_request
+    def set_security_headers(response):
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        return response
 
     with app.app_context():
         init_db()
