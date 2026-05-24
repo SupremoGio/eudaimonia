@@ -4,8 +4,9 @@ import warnings
 from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()  # carga gio_v3/.env en desarrollo local; en Railway no existe y no hace nada
-from flask import Flask
+from flask import Flask, jsonify
 from database import init_db
+from extensions import limiter
 
 from modules.dashboard.routes      import dashboard_bp
 from modules.actividades.routes    import actividades_bp
@@ -47,6 +48,8 @@ def create_app():
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
+
+    limiter.init_app(app)
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(actividades_bp,  url_prefix='/actividades')
@@ -111,6 +114,10 @@ def create_app():
             'tables': status.get('tables', {}),
             'total_xp': status.get('total_xp', 0),
         }, 200 if ok else 503
+
+    @app.errorhandler(429)
+    def too_many_requests(e):
+        return jsonify({'ok': False, 'error': 'Demasiados intentos. Espera un momento.'}), 429
 
     @app.after_request
     def set_security_headers(response):

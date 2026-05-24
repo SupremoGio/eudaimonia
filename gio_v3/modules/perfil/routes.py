@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response, session
 from werkzeug.security import check_password_hash
 from database import get_db
+from extensions import limiter
 
 perfil_bp = Blueprint('perfil', __name__, template_folder='../../templates')
 
@@ -21,6 +22,7 @@ def _get_pass_hash():
 
 
 @perfil_bp.route('/unlock', methods=['POST'])
+@limiter.limit("5 per minute; 20 per hour")
 def unlock():
     current_hash = _get_pass_hash()
     if current_hash is None:

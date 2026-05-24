@@ -1,6 +1,7 @@
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
+from extensions import limiter
 from datetime import date, datetime
 from utils import today_str, today_date
 
@@ -73,6 +74,7 @@ def index():
 
 
 @finanzas_bp.route('/unlock', methods=['POST'])
+@limiter.limit("5 per minute; 20 per hour")
 def unlock():
     current_hash = _get_pass_hash()
     if current_hash is None:
@@ -86,6 +88,7 @@ def unlock():
 
 
 @finanzas_bp.route('/setup-password', methods=['POST'])
+@limiter.limit("3 per minute; 10 per hour")
 def setup_password():
     d = request.get_json(force=True)
     new_pw = d.get('password', '')
