@@ -235,8 +235,11 @@ def _check_combo_bonus(today, keys_today):
         _award_xp(5, "bonus", "Combo: 5 categorías")
         combos.append({"type": "5cats", "icon": "🌟", "name": "5 Virtudes", "description": "Cinco categorías distintas en un día", "xp": 5, "ec": 0})
 
-    # Weekend: sábado completo → +4 XP bonus
-    sat_keys = {"sat_bloque1", "sat_bloque2", "sat_bloque3"}
+    # Weekend: sábado completo → +4 XP bonus (7 bloques)
+    sat_keys = {
+        "sat_bloque1", "sat_gym_bloque", "sat_textiles_bloque",
+        "sat_limpieza_bloque", "sat_bano_bloque", "sat_barrido_bloque", "sat_jugos_bloque",
+    }
     if sat_keys.issubset(set(keys_today)):
         with get_db() as db:
             sat_done = db.execute(
@@ -248,8 +251,12 @@ def _check_combo_bonus(today, keys_today):
             _award_coins(2, "bonus", "Combo: Sábado Completo")
             combos.append({"type": "sat_complete", "icon": "🔥", "name": "Sábado Completo", "description": "Todos los bloques del sábado completados", "xp": 4, "ec": 2})
 
-    # Weekend: domingo completo → +5 XP bonus
-    sun_keys = {"sun_reflexion", "sun_diseno", "sun_comidas", "sun_jugos", "sun_planchar"}
+    # Weekend: domingo completo → +5 XP bonus (10 bloques)
+    sun_keys = {
+        "sun_cafe_bloque", "sun_gym_bloque", "sun_nevera_bloque", "sun_comidas_bloque",
+        "sun_guardado_bloque", "sun_planchar_bloque", "sun_planeacion_bloque",
+        "sun_prioridades_bloque", "sun_reset_bloque", "sun_cierre_bloque",
+    }
     if sun_keys.issubset(set(keys_today)):
         with get_db() as db:
             sun_done = db.execute(

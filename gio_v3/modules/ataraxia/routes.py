@@ -14,32 +14,51 @@ BLOQUE_LABELS = {k: v["label"] for k, v in ACTIVITIES.items() if v.get("weekend"
 # ── Reference horarios ────────────────────────────────────────────────────────
 HORARIOS = {
     # ── SÁBADO ──────────────────────────────────────────────────────────────
-    "sat_arranque":   "9:30 – 9:50",
-    "sat_limpieza":   "9:50 – 10:55",
-    "sat_transicion": "10:55 – 11:00",
-    "sat_jugos_r":    "flexible",
-    "sat_ensayo":     "11:00 – 1:00pm",
-    "sat_gym":        "1:30 – 3:15pm",
-    "sat_ropa":       "3:30 – 3:50pm",
-    "sat_cierre":     "5:45 – 6:00pm",
+    "sat_ventilacion":  "Mañana · 5 min",
+    "sat_nespresso":    "Mañana · 10 min",
+    "sat_cocina_r":     "Mañana · 10 min",
+    "sat_despensa":     "Mañana · 20 min",
+    "sat_carga1":       "Antes del gym",
+    "sat_gym":          "12:30 – 2:00 PM",
+    "sat_textiles_r":   "Tarde",
+    "sat_limpieza_r":   "Tarde · 30 min",
+    "sat_bano_r":       "Tarde · 20 min",
+    "sat_barrido_r":    "Tarde · 20 min",
+    "sat_jugos_r":      "Tarde · 30 min",
     # ── DOMINGO ─────────────────────────────────────────────────────────────
-    "sun_arranque":   "8:00 – 8:20",
-    "sun_comidas_r":  "8:20 – 9:20",
-    "sun_planchar_r": "9:20 – 9:40",
-    "sun_finanzas":   "9:50 – 10:30",
-    "sun_planeacion": "10:30 – 11:15",
-    "sun_prioridades": "dentro de planeación",
-    "sun_jugos_r":    "mañana · flexible",
-    "sun_gym_r":      "ver agenda",
-    "sun_cargas":     "2:00 – 2:20",
-    "sun_cierre":     "5:30 – 6:00pm",
+    "sun_cafe":         "8:00 AM",
+    "sun_gym":          "9:30 – 11:00 AM",
+    "sun_nevera":       "Tarde",
+    "sun_comidas":      "Tarde · 1 hora",
+    "sun_guardado":     "Tarde",
+    "sun_planchar":     "Tarde · 20 min",
+    "sun_planeacion":   "10:30 – 11:15 AM",
+    "sun_prioridades":  "Dentro de planeación",
+    "sun_reset":        "Tarde",
+    "sun_cierre":       "5:30 – 6:00 PM",
 }
 
 # ── Bloque icons ──────────────────────────────────────────────────────────────
 BLOQUE_ICONS = {
-    "sat_bloque1": "🧹", "sat_bloque2": "🎸", "sat_bloque3": "🏋️",
-    "sun_reflexion": "🧠", "sun_comidas": "🥗", "sun_planchar": "👔",
-    "sun_diseno": "💰", "sun_jugos": "🥤",
+    # SÁBADO
+    "sat_bloque1":           "🏠",
+    "sat_gym_bloque":        "🏋️",
+    "sat_textiles_bloque":   "👔",
+    "sat_limpieza_bloque":   "🧹",
+    "sat_bano_bloque":       "🚿",
+    "sat_barrido_bloque":    "🫧",
+    "sat_jugos_bloque":      "🥤",
+    # DOMINGO
+    "sun_cafe_bloque":       "☕",
+    "sun_gym_bloque":        "🏋️",
+    "sun_nevera_bloque":     "🧊",
+    "sun_comidas_bloque":    "🥗",
+    "sun_guardado_bloque":   "👕",
+    "sun_planchar_bloque":   "👔",
+    "sun_planeacion_bloque": "📅",
+    "sun_prioridades_bloque":"🎯",
+    "sun_reset_bloque":      "🔄",
+    "sun_cierre_bloque":     "✅",
 }
 
 
@@ -99,26 +118,15 @@ def _build_rutina(dia, semana_id):
                 "ec_total":       sum(t["ec"] for t in tareas if not t["opcional"]),
             })
 
-        # Global progress (required tasks only)
-        all_req = db.execute(
-            "SELECT id FROM rutina_bloques WHERE dia=? AND opcional=0", (dia,)
-        ).fetchall()
-        all_req_ids = [r["id"] for r in all_req]
-        all_done = 0
-        if all_req_ids:
-            ph = ",".join("?" * len(all_req_ids))
-            all_done = db.execute(
-                f"SELECT COUNT(*) as c FROM rutina_progreso WHERE bloque_id IN ({ph}) AND semana_id=? AND completado=1",
-                all_req_ids + [semana_id]
-            ).fetchone()["c"]
-
-    total = len(all_req_ids)
+    # Global progress: count completed BLOQUES (cada bloque = 1 tarea principal)
+    total = len(bloques)
+    done  = sum(1 for bl in bloques if bl["bloque_done"])
     return {
-        "bloques": bloques,
-        "total":   total,
-        "done":    all_done,
-        "pct":     int(all_done / total * 100) if total else 0,
-        "complete": all_done >= total and total > 0,
+        "bloques":  bloques,
+        "total":    total,
+        "done":     done,
+        "pct":      int(done / total * 100) if total else 0,
+        "complete": done >= total and total > 0,
     }
 
 

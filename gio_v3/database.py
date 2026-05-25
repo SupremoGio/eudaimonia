@@ -1124,34 +1124,50 @@ def init_db():
             )
             db.commit()
 
-        # Migrate rutina_bloques: update nombres descriptivos (idempotente)
+        # Migrate rutina_bloques v2 — nueva estructura Sáb/Dom sin Ensayo
         try:
-            _nombre_map = [
-                ("☕ Café · robot sala · 1ª carga de ropa",            "sat_arranque"),
-                ("🧹 Limpieza: baño · buró · cocina · mop · plantas",  "sat_limpieza"),
-                ("👔 Tender ropa · robot recámara",                     "sat_transicion"),
-                ("🥤 Preparar jugos",                                   "sat_jugos_r"),
-                ("🎸 Ensayo",                                           "sat_ensayo"),
-                ("🏋️ Gym (1.5 hrs + traslado)",                        "sat_gym"),
-                ("👔 Recoger ropa · orden general rápido",              "sat_ropa"),
-                ("✅ Cierre: casa limpia · ensayo hecho · gym hecho",    "sat_cierre"),
-                ("☕ Café · enchufar todos los dispositivos",           "sun_arranque"),
-                ("🏋️ Gym",                                             "sun_gym_r"),
-                ("🥗 Preparar comida semanal (1 hora enfocada)",        "sun_comidas_r"),
-                ("👔 Planchar uniforme (20 min)",                       "sun_planchar_r"),
-                ("💰 Finanzas: gastos semana · proyección",             "sun_finanzas"),
-                ("📅 Planeación: agenda · compromisos · GTD",           "sun_planeacion"),
-                ("🎯 3 prioridades de la semana",                       "sun_prioridades"),
-                ("🥤 Preparar jugos",                                   "sun_jugos_r"),
-                ("🔋 Verificar cargas: pila · audífonos · iPad",        "sun_cargas"),
-                ("✅ Cierre: prioridades claras · preparar lunes",       "sun_cierre"),
-            ]
-            for nombre, tid in _nombre_map:
-                db.execute("UPDATE rutina_bloques SET nombre=? WHERE id=? AND nombre!=?",
-                           (nombre, tid, nombre))
-            db.commit()
+            already = db.execute(
+                "SELECT COUNT(*) as c FROM rutina_bloques WHERE id='sat_ventilacion'"
+            ).fetchone()["c"]
+            if not already:
+                db.execute("DELETE FROM rutina_bloques WHERE dia IN ('sabado','domingo')")
+                db.executemany(
+                    """INSERT INTO rutina_bloques
+                       (id, dia, bloque_id, nombre, tier, xp, ec, categoria, opcional, duracion_min, orden)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                    [
+                        # ── SÁBADO — 7 bloques ──────────────────────────────────────────
+                        # Bloque 1: Mantenimiento & Recepción (5 sub-tareas)
+                        ("sat_ventilacion","sabado","sat_bloque1","🪟 Ventilación Fast Track (abrir ventanas)",                        "micro",   0,0,"",       0,  5,  1),
+                        ("sat_nespresso",  "sabado","sat_bloque1","☕ Mantenimiento Nespresso (vaciar cápsulas · enjuagar · bandeja)",  "micro",   0,0,"",       0, 10,  2),
+                        ("sat_cocina_r",   "sabado","sat_bloque1","🍽️ Reset de Cocina (platos lavados · barra limpia)",               "micro",   0,0,"",       0, 10,  3),
+                        ("sat_despensa",   "sabado","sat_bloque1","🛒 Recibir despensa (recibir · desinfectar · acomodar)",            "micro",   0,0,"",       0, 20,  4),
+                        ("sat_carga1",     "sabado","sat_bloque1","👕 Carga Inicial (1ª tanda de ropa en lavadora)",                   "micro",   0,0,"",       0,  5,  5),
+                        # Gym slot (12:30 – 2:00 PM)
+                        ("sat_gym",        "sabado","sat_gym_bloque","🏋️ Gym (entrenamiento de fuerza / hipertrofia)",                 "alto",    4,2,"SOMA",   0, 90,  6),
+                        # Bloque 2: Deep Work Limpieza — cada tarea es su propio bloque
+                        ("sat_textiles_r", "sabado","sat_textiles_bloque","👔 Textiles fuera · cambio de sábanas y toallas · carga 2", "micro",   0,0,"",       0, 15,  7),
+                        ("sat_limpieza_r", "sabado","sat_limpieza_bloque","🧹 Limpieza de arriba a abajo (polvo · escritorios · repisas · setup)", "progreso",3,1,"", 0, 30, 8),
+                        ("sat_bano_r",     "sabado","sat_bano_bloque","🚿 Desinfección de Baño (espejo · lavabo · WC · regadera)",     "progreso",2,1,"",       0, 20,  9),
+                        ("sat_barrido_r",  "sabado","sat_barrido_bloque","🫧 Barrido y Trapeado General",                              "micro",   0,0,"",       0, 20, 10),
+                        ("sat_jugos_r",    "sabado","sat_jugos_bloque","🥤 Preparar jugos de la semana (procesar · guardar)",          "progreso",2,1,"SOMA",   0, 30, 11),
+                        # ── DOMINGO — 10 bloques ─────────────────────────────────────────
+                        ("sun_cafe",       "domingo","sun_cafe_bloque","☕ Café · enchufar todos los dispositivos",                   "micro",   0,0,"",            0, 15,  1),
+                        ("sun_gym",        "domingo","sun_gym_bloque","🏋️ Gym (entrenamiento enfocado · gym vacío)",                  "alto",    4,2,"SOMA",        0, 90,  2),
+                        ("sun_nevera",     "domingo","sun_nevera_bloque","🧊 Nevera y Despensa (revisión rápida · limpieza de repisas)","micro",  0,0,"",            0, 15,  3),
+                        ("sun_comidas",    "domingo","sun_comidas_bloque","🥗 Meal Prep: porcionar proteínas y carbohidratos (1 hora enfocada)","progreso",3,1,"SOMA", 0, 60, 4),
+                        ("sun_guardado",   "domingo","sun_guardado_bloque","👕 Guardado de ropa (doblar ropa limpia del sábado)",      "micro",   0,0,"",            0, 15,  5),
+                        ("sun_planchar",   "domingo","sun_planchar_bloque","👔 Planchado de uniforme para la semana",                  "micro",   0,0,"",            0, 20,  6),
+                        ("sun_planeacion", "domingo","sun_planeacion_bloque","📅 Planeación: agenda · compromisos · GTD",              "alto",    4,2,"HEGEMONIKON",  0, 45,  7),
+                        ("sun_prioridades","domingo","sun_prioridades_bloque","🎯 3 prioridades de la semana",                        "progreso",3,1,"HEGEMONIKON",  0, 15,  8),
+                        ("sun_reset",      "domingo","sun_reset_bloque","🔄 Eudaimonia OS Reset (Notion · finanzas · metas · código)", "progreso",2,1,"HEGEMONIKON",  0, 30,  9),
+                        ("sun_cierre",     "domingo","sun_cierre_bloque","✅ Cierre: prioridades claras · preparar lunes",            "micro",   0,0,"",            0, 15, 10),
+                    ]
+                )
+                db.commit()
+                print("[DB] rutina_bloques v2 migration OK — nueva estructura Sáb/Dom")
         except Exception as e:
-            print(f"[DB] rutina_bloques nombres migration warning: {e}")
+            print(f"[DB] rutina_bloques v2 migration warning: {e}")
 
         db.executescript("""
         CREATE TABLE IF NOT EXISTS app_settings (
