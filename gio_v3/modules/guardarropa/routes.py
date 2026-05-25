@@ -389,9 +389,8 @@ def _gemini(prompt, max_tokens=4096):
             'maxOutputTokens': max_tokens,
             'temperature': 0.7,
             'responseMimeType': 'application/json',
+            'thinkingConfig': {'thinkingBudget': 0},
         },
-        # Disable thinking tokens — they pollute JSON output when concatenated
-        'thinkingConfig': {'thinkingBudget': 0},
     }).encode()
     req = urllib.request.Request(url, data=body,
                                  headers={'Content-Type': 'application/json'})
