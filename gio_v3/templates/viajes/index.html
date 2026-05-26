@@ -1,0 +1,926 @@
+{% extends "eu/layout_sub.html" %}{% set pg='viajes' %}
+{% block title %}Viajes — Eudaimonia{% endblock %}
+{% block module_title %}VIAJES{% endblock %}
+{% block topright %}<span style="color:var(--gold)">VIAJES · OUTFITS · MALETA</span>{% endblock %}
+
+{% block content %}
+<style>
+/* ─── Base ───────────────────────────────────────────────────────────── */
+.vj-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.vj-header-left{display:flex;align-items:center;gap:12px;}
+.vj-back{display:inline-flex;align-items:center;gap:5px;color:var(--dim);font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:color .15s;background:none;border:none;padding:0;}
+.vj-back:hover{color:var(--gold);}
+.vj-title{font-family:var(--serif);font-size:1.15rem;font-weight:300;color:var(--text);}
+
+/* ─── Trip cards ─────────────────────────────────────────────────────── */
+.vj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.vj-card{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:18px 20px;cursor:pointer;transition:border-color .18s,transform .12s;}
+.vj-card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.vj-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.vj-card-name{font-family:var(--serif);font-size:1rem;color:var(--text);font-weight:300;line-height:1.3;}
+.vj-estado{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:100px;border:1px solid;}
+.vj-estado.planificado{color:#60a5fa;border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.08);}
+.vj-estado.activo{color:var(--green);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08);}
+.vj-estado.completado{color:var(--gold);border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.08);}
+.vj-estado.cancelado{color:var(--dim);border-color:var(--b);background:transparent;}
+.vj-card-dest{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;}
+.vj-card-dates{font-size:var(--fs-sm);color:var(--mid);margin-bottom:12px;}
+.vj-card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--b);}
+.vj-card-meta{font-size:var(--fs-xs);color:var(--dim);}
+.vj-ver{font-size:var(--fs-xs);color:var(--gold);letter-spacing:.08em;text-transform:uppercase;}
+.vj-card-new{background:transparent;border:1px dashed var(--b);color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:160px;font-size:var(--fs-sm);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:border-color .18s,color .18s;}
+.vj-card-new:hover{border-color:var(--gold);color:var(--gold);}
+
+/* ─── Detail tabs ────────────────────────────────────────────────────── */
+.vj-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:0;}
+.vj-tab{padding:8px 16px;font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;margin-bottom:-1px;}
+.vj-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.vj-tab:hover:not(.active){color:var(--mid);}
+
+/* ─── Días / Outfits ─────────────────────────────────────────────────── */
+.vj-day-row{display:grid;grid-template-columns:120px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.vj-day-row:last-child{border-bottom:none;}
+.vj-day-date{font-size:var(--fs-xs);color:var(--dim);}
+.vj-day-label{font-size:var(--fs-sm);color:var(--mid);}
+.vj-outfit-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:6px;padding:4px 10px;font-size:var(--fs-xs);color:var(--text);}
+.vj-outfit-chip img{width:20px;height:20px;object-fit:cover;border-radius:3px;}
+.vj-outfit-chip-none{display:inline-flex;align-items:center;gap:4px;color:var(--dim);font-size:var(--fs-xs);cursor:pointer;border:1px dashed var(--b);border-radius:6px;padding:4px 10px;transition:color .15s,border-color .15s;}
+.vj-outfit-chip-none:hover{color:var(--gold);border-color:var(--gold);}
+.vj-day-desc{font-family:var(--serif);font-size:.85rem;color:var(--mid);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ─── Maleta / Checklist ─────────────────────────────────────────────── */
+.vj-maleta-section{margin-bottom:20px;}
+.vj-maleta-cat{font-size:var(--fs-xs);letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--b);}
+.vj-item-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.vj-item-row:last-child{border-bottom:none;}
+.vj-item-chk{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
+.vj-item-name{flex:1;font-size:var(--fs-sm);color:var(--text);}
+.vj-item-name.done{text-decoration:line-through;color:var(--dim);}
+.vj-item-cat-badge{font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;}
+.vj-item-del{background:none;border:none;color:var(--dim);cursor:pointer;padding:2px 5px;border-radius:4px;font-size:12px;transition:color .15s;}
+.vj-item-del:hover{color:var(--red);}
+
+/* ─── Outfit picker modal ────────────────────────────────────────────── */
+.vj-outfit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;max-height:420px;overflow-y:auto;padding:4px 2px;}
+.vj-outfit-card{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:12px;cursor:pointer;transition:border-color .18s,transform .12s;text-align:center;}
+.vj-outfit-card:hover{border-color:var(--gold);transform:translateY(-1px);}
+.vj-outfit-card.selected{border-color:var(--gold);background:rgba(201,168,76,.08);}
+.vj-outfit-photo{width:64px;height:64px;object-fit:cover;border-radius:6px;margin:0 auto 6px;display:block;background:var(--b);}
+.vj-outfit-card-name{font-size:var(--fs-xs);color:var(--text);margin-bottom:3px;}
+.vj-outfit-card-ocasion{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;}
+.vj-outfit-card-prendas{font-size:10px;color:var(--dim);margin-top:4px;line-height:1.3;}
+
+/* ─── Progress bar mini ──────────────────────────────────────────────── */
+.vj-prog{height:3px;background:var(--b);border-radius:100px;overflow:hidden;margin-top:4px;}
+.vj-prog-fill{height:100%;border-radius:100px;background:var(--gold);transition:width .4s;}
+
+/* ─── Regreso banner ─────────────────────────────────────────────────── */
+.vj-regreso-banner{background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:var(--fs-sm);color:#93c5fd;}
+
+/* ─── Empty ──────────────────────────────────────────────────────────── */
+.vj-empty{text-align:center;padding:28px 20px;color:var(--dim);font-size:var(--fs-sm);}
+.vj-empty-icon{font-size:28px;margin-bottom:8px;}
+
+/* ─── Responsive ─────────────────────────────────────────────────────── */
+@media(max-width:600px){
+  .vj-day-row{grid-template-columns:90px 1fr auto;}
+  .vj-grid{grid-template-columns:1fr;}
+}
+</style>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     VISTA 1: LISTA DE VIAJES
+══════════════════════════════════════════════════════════════════════ -->
+<div id="vw-list">
+  <div class="vj-header">
+    <div class="vj-header-left">
+      <span class="vj-title">MIS VIAJES</span>
+    </div>
+    <button class="btn-a" onclick="openTripModal()">
+      <i data-lucide="plus" style="width:12px;height:12px"></i> Nuevo Viaje
+    </button>
+  </div>
+  <div id="trip-grid" class="vj-grid">
+    <div style="padding:40px;color:var(--dim);font-size:var(--fs-sm);">Cargando…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     VISTA 2: DETALLE DE VIAJE
+══════════════════════════════════════════════════════════════════════ -->
+<div id="vw-detail" style="display:none">
+  <div class="vj-header">
+    <div class="vj-header-left">
+      <button class="vj-back" onclick="showList()">
+        <i data-lucide="arrow-left" style="width:12px;height:12px"></i> Mis Viajes
+      </button>
+      <span class="vj-title" id="detail-title">—</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="vj-estado" id="detail-estado-badge"></span>
+      <button class="btn-g" onclick="openTripModal(true)">
+        <i data-lucide="pencil" style="width:11px;height:11px"></i> Editar
+      </button>
+      <button class="btn-r" onclick="confirmDelete()" title="Eliminar viaje">
+        <i data-lucide="trash-2" style="width:11px;height:11px"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Meta row -->
+  <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;">
+    <div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;">Destino</div>
+      <div style="font-size:var(--fs-sm);color:var(--mid);" id="detail-destino">—</div>
+    </div>
+    <div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;">Fechas</div>
+      <div style="font-size:var(--fs-sm);color:var(--mid);" id="detail-fechas">—</div>
+    </div>
+    <div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;">Duración</div>
+      <div style="font-size:var(--fs-sm);color:var(--mid);" id="detail-duracion">—</div>
+    </div>
+    <div id="detail-clima-wrap" style="display:none">
+      <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;">Clima</div>
+      <div style="font-size:var(--fs-sm);color:var(--mid);" id="detail-clima">—</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="vj-tabs">
+    <div class="vj-tab active" id="tab-outfits"   onclick="switchTab('outfits')">
+      <i data-lucide="shirt" style="width:11px;height:11px;margin-right:4px"></i>Outfits por Día
+    </div>
+    <div class="vj-tab" id="tab-maleta"    onclick="switchTab('maleta')">
+      <i data-lucide="briefcase" style="width:11px;height:11px;margin-right:4px"></i>Mi Maleta
+    </div>
+    <div class="vj-tab" id="tab-regreso"   onclick="switchTab('regreso')">
+      <i data-lucide="arrow-left-right" style="width:11px;height:11px;margin-right:4px"></i>Checklist Regreso
+    </div>
+  </div>
+
+  <!-- Tab: Outfits por día -->
+  <div id="pane-outfits">
+    <div class="tile">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div class="tile-lbl" style="margin:0">PLANIFICADOR DE OUTFITS</div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);" id="outfits-progress-txt"></div>
+      </div>
+      <div id="outfits-progress" class="vj-prog" style="margin-bottom:14px;"><div class="vj-prog-fill" id="outfits-prog-fill" style="width:0%"></div></div>
+      <div id="dias-list">
+        <div class="vj-empty">Cargando días…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Maleta -->
+  <div id="pane-maleta" style="display:none">
+    <div class="tile">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div class="tile-lbl" style="margin:0">MI MALETA</div>
+          <div id="maleta-progress-txt" style="font-size:var(--fs-xs);color:var(--dim);margin-top:2px;"></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn-g" onclick="openAddItemModal()">
+            <i data-lucide="plus" style="width:11px;height:11px"></i> Agregar
+          </button>
+          <button class="btn-a" onclick="generarMaleta()" id="btn-generar">
+            <i data-lucide="sparkles" style="width:11px;height:11px"></i> Generar desde outfits
+          </button>
+        </div>
+      </div>
+      <div id="maleta-list">
+        <div class="vj-empty">
+          <div class="vj-empty-icon">🧳</div>
+          <div>Selecciona tus outfits por día y usa <strong>Generar</strong> para crear la lista.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Checklist Regreso -->
+  <div id="pane-regreso" style="display:none">
+    <div class="vj-regreso-banner">
+      <i data-lucide="info" style="width:13px;height:13px;margin-right:4px;vertical-align:middle"></i>
+      Marca cada ítem cuando lo hayas empacado de regreso. ¡No dejes nada atrás!
+    </div>
+    <div class="tile">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <div class="tile-lbl" style="margin:0">CHECKLIST DE REGRESO</div>
+        <div id="regreso-progress-txt" style="font-size:var(--fs-xs);color:var(--dim);"></div>
+      </div>
+      <div id="regreso-list">
+        <div class="vj-empty">
+          <div class="vj-empty-icon">✅</div>
+          <div>Genera tu maleta primero para ver el checklist de regreso.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════
+     MODAL: CREAR / EDITAR VIAJE
+══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="trip-modal">
+  <div class="modal" style="max-width:500px;width:100%;">
+    <div class="modal-title" id="modal-title">Nuevo Viaje</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div style="grid-column:1/-1;">
+        <div class="fl">Nombre del viaje *</div>
+        <input class="fi" id="f-nombre" placeholder="Ej: CDMX – Diciembre 2026" maxlength="200">
+      </div>
+      <div>
+        <div class="fl">Destino</div>
+        <input class="fi" id="f-destino" placeholder="Ej: Ciudad de México" maxlength="100">
+      </div>
+      <div>
+        <div class="fl">Estado</div>
+        <select class="fi" id="f-estado">
+          <option value="planificado">Planificado</option>
+          <option value="activo">Activo (en curso)</option>
+          <option value="completado">Completado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div>
+        <div class="fl">Fecha inicio *</div>
+        <input class="fi" id="f-inicio" type="date">
+      </div>
+      <div>
+        <div class="fl">Fecha fin *</div>
+        <input class="fi" id="f-fin" type="date">
+      </div>
+      <div>
+        <div class="fl">Clima / Temporada</div>
+        <select class="fi" id="f-clima">
+          <option value="">Sin especificar</option>
+          <option value="calor">Calor / Playa</option>
+          <option value="frio">Frío / Nieve</option>
+          <option value="templado">Templado</option>
+          <option value="lluvia">Lluvioso</option>
+        </select>
+      </div>
+      <div>
+        <div class="fl">Tipo de viaje</div>
+        <select class="fi" id="f-ocasion">
+          <option value="">General</option>
+          <option value="negocios">Negocios</option>
+          <option value="casual">Casual / Turismo</option>
+          <option value="playa">Playa / Resort</option>
+          <option value="aventura">Aventura / Outdoor</option>
+          <option value="formal">Evento Formal</option>
+        </select>
+      </div>
+      <div style="grid-column:1/-1;">
+        <div class="fl">Notas (opcional)</div>
+        <textarea class="fi" id="f-notas" rows="2" placeholder="Detalles, recordatorios…" style="resize:vertical;"></textarea>
+      </div>
+    </div>
+    <div id="modal-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:2px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeTripModal()">Cancelar</button>
+      <button class="btn-a" onclick="submitTrip()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════
+     MODAL: PICKER DE OUTFITS
+══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="outfit-picker-modal">
+  <div class="modal" style="max-width:560px;width:100%;">
+    <div class="modal-title" id="picker-title">Seleccionar Outfit</div>
+    <div style="margin-bottom:10px;font-size:var(--fs-xs);color:var(--dim);" id="picker-day-label"></div>
+    <div id="picker-outfit-grid" class="vj-outfit-grid">
+      <div style="padding:20px;color:var(--dim);font-size:var(--fs-sm);">Cargando outfits…</div>
+    </div>
+    <div id="picker-empty" style="display:none;" class="vj-empty">
+      <div class="vj-empty-icon">👔</div>
+      <div>No tienes outfits guardados en <strong>Guardarropa</strong>.<br>
+      <a href="/guardarropa" style="color:var(--gold);">Crea tus outfits aquí →</a></div>
+    </div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn-g" onclick="closeOutfitPicker()">Cancelar</button>
+      <button class="btn-r" id="btn-quitar-outfit" onclick="quitarOutfitDia()" style="display:none;">
+        Quitar outfit del día
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════
+     MODAL: AGREGAR ITEM MANUAL
+══════════════════════════════════════════════════════════════════════ -->
+<div class="modal-bg" id="add-item-modal">
+  <div class="modal" style="max-width:380px;width:100%;">
+    <div class="modal-title">Agregar ítem a la maleta</div>
+    <div style="margin-bottom:10px;">
+      <div class="fl">Nombre del ítem *</div>
+      <input class="fi" id="ai-nombre" placeholder="Ej: Gorra, Bloqueador solar…" maxlength="200">
+    </div>
+    <div style="margin-bottom:10px;">
+      <div class="fl">Categoría</div>
+      <select class="fi" id="ai-cat">
+        <option value="Varios">Varios</option>
+        <option value="Documentos">Documentos</option>
+        <option value="Higiene">Higiene</option>
+        <option value="Tecnología">Tecnología</option>
+        <option value="Salud">Salud</option>
+        <option value="Tops">Tops</option>
+        <option value="Bottoms">Bottoms</option>
+        <option value="Calzado">Calzado</option>
+        <option value="Accesorios">Accesorios</option>
+        <option value="Ropa interior">Ropa interior</option>
+        <option value="Abrigo">Abrigo</option>
+        <option value="Formal">Formal</option>
+      </select>
+    </div>
+    <div id="ai-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeAddItemModal()">Cancelar</button>
+      <button class="btn-a" onclick="submitAddItem()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const API = '/viajes/api';
+const fmtD = s => s ? s.slice(0,10).split('-').reverse().join('/') : '—';
+
+/* ── State ────────────────────────────────────────────────────────────── */
+let _trips      = [];
+let _curId      = null;
+let _curTrip    = null;
+let _dias       = [];
+let _maleta     = [];
+let _outfits    = [];
+let _isEditing  = false;
+let _pickerDia  = null;  // {id, fecha, descripcion}
+let _activeTab  = 'outfits';
+
+/* ── Init ─────────────────────────────────────────────────────────────── */
+async function init() {
+  await loadTrips();
+  renderList();
+}
+
+/* ── Trips list ───────────────────────────────────────────────────────── */
+async function loadTrips() {
+  const r = await fetch(`${API}/trips`);
+  _trips = await r.json();
+}
+
+function renderList() {
+  document.getElementById('vw-list').style.display = '';
+  document.getElementById('vw-detail').style.display = 'none';
+
+  const grid = document.getElementById('trip-grid');
+  if (!_trips.length) {
+    grid.innerHTML = `
+      <div class="vj-card vj-card-new" onclick="openTripModal()">
+        <i data-lucide="plus-circle" style="width:28px;height:28px"></i>
+        <span>Crear primer viaje</span>
+      </div>`;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  const cards = _trips.map(t => {
+    const dias = t.total_dias || 0;
+    const packed = t.items_packed || 0;
+    return `
+      <div class="vj-card" onclick="showDetail(${t.id})">
+        <div class="vj-card-top">
+          <div class="vj-card-name">${t.nombre}</div>
+          <span class="vj-estado ${t.estado}">${t.estado}</span>
+        </div>
+        ${t.destino ? `<div class="vj-card-dest"><i data-lucide="map-pin" style="width:10px;height:10px;margin-right:3px"></i>${t.destino}</div>` : ''}
+        <div class="vj-card-dates">${fmtD(t.fecha_inicio)} — ${fmtD(t.fecha_fin)}</div>
+        <div class="vj-card-footer">
+          <span class="vj-card-meta">${dias} día${dias!==1?'s':''} · ${packed} ítem${packed!==1?'s':''} empacado${packed!==1?'s':''}</span>
+          <span class="vj-ver">Ver →</span>
+        </div>
+      </div>`;
+  });
+
+  cards.push(`
+    <div class="vj-card vj-card-new" onclick="openTripModal()">
+      <i data-lucide="plus-circle" style="width:24px;height:24px"></i>
+      <span>Nuevo Viaje</span>
+    </div>`);
+
+  grid.innerHTML = cards.join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function showList() {
+  _curId = null; _curTrip = null;
+  renderList();
+}
+
+/* ── Trip detail ──────────────────────────────────────────────────────── */
+async function showDetail(id) {
+  _curId = id;
+  document.getElementById('vw-list').style.display   = 'none';
+  document.getElementById('vw-detail').style.display = '';
+
+  const [trip, dias, maleta] = await Promise.all([
+    fetch(`${API}/trips/${id}`).then(r => r.json()),
+    fetch(`${API}/trips/${id}/dias`).then(r => r.json()),
+    fetch(`${API}/trips/${id}/maleta`).then(r => r.json()),
+  ]);
+  _curTrip = trip;
+  _dias    = dias;
+  _maleta  = maleta;
+
+  renderDetailHeader();
+  switchTab(_activeTab);
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderDetailHeader() {
+  const t = _curTrip;
+  document.getElementById('detail-title').textContent   = t.nombre;
+  document.getElementById('detail-destino').textContent = t.destino || '—';
+
+  const inicio = t.fecha_inicio, fin = t.fecha_fin;
+  document.getElementById('detail-fechas').textContent  =
+    `${fmtD(inicio)} — ${fmtD(fin)}`;
+  const noches = Math.round((new Date(fin) - new Date(inicio)) / 86400000);
+  document.getElementById('detail-duracion').textContent =
+    `${t.total_dias} día${t.total_dias!==1?'s':''} / ${noches} noche${noches!==1?'s':''}`;
+
+  const badgeEl = document.getElementById('detail-estado-badge');
+  badgeEl.className = `vj-estado ${t.estado}`;
+  badgeEl.textContent = t.estado;
+
+  if (t.tipo_clima) {
+    document.getElementById('detail-clima-wrap').style.display = '';
+    document.getElementById('detail-clima').textContent = t.tipo_clima;
+  } else {
+    document.getElementById('detail-clima-wrap').style.display = 'none';
+  }
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+function switchTab(tab) {
+  _activeTab = tab;
+  ['outfits','maleta','regreso'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t===tab);
+    document.getElementById(`pane-${t}`).style.display = t===tab ? '' : 'none';
+  });
+  if (tab === 'outfits')  renderOutfitsPane();
+  if (tab === 'maleta')   renderMaletaPane();
+  if (tab === 'regreso')  renderRegresoPane();
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ── Outfits pane ─────────────────────────────────────────────────────── */
+function renderOutfitsPane() {
+  const el = document.getElementById('dias-list');
+  if (!_dias.length) {
+    el.innerHTML = '<div class="vj-empty">No hay días cargados.</div>';
+    return;
+  }
+
+  const conOutfit = _dias.filter(d => d.outfits && d.outfits.length).length;
+  const pct = Math.round(conOutfit / _dias.length * 100);
+  document.getElementById('outfits-progress-txt').textContent =
+    `${conOutfit} de ${_dias.length} días con outfit`;
+  document.getElementById('outfits-prog-fill').style.width = `${pct}%`;
+
+  el.innerHTML = _dias.map(d => {
+    const outfit = d.outfits && d.outfits[0];
+    const outfitChip = outfit
+      ? `<div style="display:flex;align-items:center;gap:8px;">
+           <div class="vj-outfit-chip" onclick="openOutfitPicker(${JSON.stringify(d).replace(/"/g,'&quot;')})">
+             ${outfit.foto
+               ? `<img src="/guardarropa/photos/${outfit.foto}" class="vj-outfit-photo" style="width:20px;height:20px">`
+               : '<i data-lucide="shirt" style="width:12px;height:12px"></i>'}
+             ${outfit.nombre}
+           </div>
+           <button class="vj-item-del" onclick="quitarOutfitFromRow(${d.id})" title="Quitar outfit">×</button>
+         </div>`
+      : `<div class="vj-outfit-chip-none" onclick="openOutfitPicker(${JSON.stringify(d).replace(/"/g,'&quot;')})">
+           <i data-lucide="plus" style="width:10px;height:10px"></i> Elegir outfit
+         </div>`;
+
+    return `<div class="vj-day-row">
+      <div>
+        <div class="vj-day-date">${fmtD(d.fecha)}</div>
+        <div class="vj-day-label">${d.descripcion || ''}</div>
+      </div>
+      <div>${outfitChip}</div>
+      <div></div>
+    </div>`;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+/* ── Outfit picker ────────────────────────────────────────────────────── */
+async function openOutfitPicker(dia) {
+  _pickerDia = dia;
+  document.getElementById('picker-day-label').textContent =
+    `${fmtD(dia.fecha)} — ${dia.descripcion || ''}`;
+  document.getElementById('outfit-picker-modal').classList.add('open');
+  document.getElementById('picker-outfit-grid').innerHTML =
+    '<div style="padding:20px;color:var(--dim);">Cargando…</div>';
+  document.getElementById('picker-empty').style.display = 'none';
+
+  // Mostrar botón "quitar" si ya tiene outfit
+  const tieneOutfit = dia.outfits && dia.outfits.length;
+  document.getElementById('btn-quitar-outfit').style.display = tieneOutfit ? '' : 'none';
+
+  if (!_outfits.length) {
+    const r = await fetch(`${API}/outfits`);
+    _outfits = await r.json();
+  }
+
+  if (!_outfits.length) {
+    document.getElementById('picker-outfit-grid').style.display = 'none';
+    document.getElementById('picker-empty').style.display = '';
+    return;
+  }
+  document.getElementById('picker-outfit-grid').style.display = '';
+
+  const currentOutfitId = dia.outfits && dia.outfits[0] ? dia.outfits[0].id : null;
+
+  document.getElementById('picker-outfit-grid').innerHTML = _outfits.map(o => {
+    const sel = o.id === currentOutfitId ? 'selected' : '';
+    const foto = o.foto
+      ? `<img src="/guardarropa/photos/${o.foto}" class="vj-outfit-photo">`
+      : `<div class="vj-outfit-photo" style="display:flex;align-items:center;justify-content:center;">
+           <i data-lucide="shirt" style="width:24px;height:24px;opacity:.4"></i>
+         </div>`;
+    const prendas = o.items ? o.items.slice(0,3).map(i=>i.nombre).join(' · ') : '';
+    return `<div class="vj-outfit-card ${sel}" onclick="selectOutfit(${o.id})">
+      ${foto}
+      <div class="vj-outfit-card-name">${o.nombre}</div>
+      ${o.ocasion ? `<div class="vj-outfit-card-ocasion">${o.ocasion}</div>` : ''}
+      ${prendas ? `<div class="vj-outfit-card-prendas">${prendas}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+async function selectOutfit(outfitId) {
+  if (!_pickerDia) return;
+  const r = await fetch(`${API}/trips/${_curId}/dias/${_pickerDia.id}/outfit`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({outfit_id: outfitId}),
+  }).then(r => r.json());
+
+  if (r.ok) {
+    closeOutfitPicker();
+    toast('Outfit asignado ✓', 'ok');
+    await refreshDias();
+  } else {
+    toast(r.error || 'Error', 'err');
+  }
+}
+
+async function quitarOutfitDia() {
+  if (!_pickerDia) return;
+  const r = await fetch(`${API}/trips/${_curId}/dias/${_pickerDia.id}/outfit`, {
+    method: 'DELETE',
+  }).then(r => r.json());
+  if (r.ok) {
+    closeOutfitPicker();
+    toast('Outfit quitado');
+    await refreshDias();
+  }
+}
+
+async function quitarOutfitFromRow(diaId) {
+  const r = await fetch(`${API}/trips/${_curId}/dias/${diaId}/outfit`, {
+    method: 'DELETE',
+  }).then(r => r.json());
+  if (r.ok) {
+    toast('Outfit quitado');
+    await refreshDias();
+  }
+}
+
+function closeOutfitPicker() {
+  document.getElementById('outfit-picker-modal').classList.remove('open');
+  _pickerDia = null;
+}
+
+async function refreshDias() {
+  _dias = await fetch(`${API}/trips/${_curId}/dias`).then(r => r.json());
+  renderOutfitsPane();
+}
+
+/* ── Maleta pane ──────────────────────────────────────────────────────── */
+function renderMaletaPane() {
+  const el = document.getElementById('maleta-list');
+  if (!_maleta.length) {
+    el.innerHTML = `<div class="vj-empty">
+      <div class="vj-empty-icon">🧳</div>
+      <div>Selecciona tus outfits por día y pulsa <strong>Generar desde outfits</strong>.</div>
+    </div>`;
+    document.getElementById('maleta-progress-txt').textContent = '';
+    return;
+  }
+
+  const packed  = _maleta.filter(m => m.packed_ida).length;
+  const total   = _maleta.length;
+  const pct     = Math.round(packed / total * 100);
+  document.getElementById('maleta-progress-txt').textContent =
+    `${packed} de ${total} ítems empacados (${pct}%)`;
+
+  // Agrupar por categoría
+  const cats = {};
+  _maleta.forEach(m => {
+    (cats[m.categoria] = cats[m.categoria] || []).push(m);
+  });
+
+  const CAT_ORDER = ['Documentos','Tops','Bottoms','Calzado','Ropa interior',
+    'Formal','Abrigo','Accesorios','Higiene','Tecnología','Salud','Ropa','Varios'];
+
+  const orderedCats = [...CAT_ORDER.filter(c => cats[c]), ...Object.keys(cats).filter(c => !CAT_ORDER.includes(c))];
+
+  el.innerHTML = orderedCats.map(cat => `
+    <div class="vj-maleta-section">
+      <div class="vj-maleta-cat">${cat}</div>
+      ${cats[cat].map(m => `
+        <div class="vj-item-row" id="mitem-${m.id}">
+          <input type="checkbox" class="vj-item-chk"
+            ${m.packed_ida ? 'checked' : ''}
+            onchange="toggleMaleta(${m.id}, 'packed_ida', this.checked)">
+          <span class="vj-item-name ${m.packed_ida ? 'done' : ''}">${m.nombre}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
+          <button class="vj-item-del" onclick="deleteMaletaItem(${m.id})" title="Eliminar">×</button>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+async function generarMaleta() {
+  const btn = document.getElementById('btn-generar');
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader-circle" style="width:11px;height:11px"></i> Generando…';
+
+  const r = await fetch(`${API}/trips/${_curId}/maleta/generar`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+  }).then(r => r.json());
+
+  btn.disabled = false;
+  btn.innerHTML = '<i data-lucide="sparkles" style="width:11px;height:11px"></i> Generar desde outfits';
+
+  if (r.ok) {
+    toast(`Maleta generada — ${r.outfit_items} prenda${r.outfit_items!==1?'s':''} de tus outfits + extras estándar`, 'ok');
+    _maleta = await fetch(`${API}/trips/${_curId}/maleta`).then(r => r.json());
+    renderMaletaPane();
+    if (window.lucide) lucide.createIcons();
+  } else {
+    toast(r.error || 'Error al generar', 'err');
+  }
+}
+
+async function toggleMaleta(itemId, field, checked) {
+  await fetch(`${API}/trips/${_curId}/maleta/${itemId}`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({field}),
+  });
+  const item = _maleta.find(m => m.id === itemId);
+  if (item) item[field] = checked ? 1 : 0;
+
+  // Update visuals inline
+  const nameEl = document.querySelector(`#mitem-${itemId} .vj-item-name`);
+  if (nameEl) nameEl.classList.toggle('done', !!checked);
+
+  // Recount
+  if (field === 'packed_ida') {
+    const packed = _maleta.filter(m => m.packed_ida).length;
+    const total  = _maleta.length;
+    document.getElementById('maleta-progress-txt').textContent =
+      `${packed} de ${total} ítems empacados (${Math.round(packed/total*100)}%)`;
+  }
+}
+
+async function deleteMaletaItem(itemId) {
+  const r = await fetch(`${API}/trips/${_curId}/maleta/${itemId}`, {
+    method: 'DELETE',
+  }).then(r => r.json());
+  if (r.ok) {
+    _maleta = _maleta.filter(m => m.id !== itemId);
+    renderMaletaPane();
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+/* ── Add item modal ───────────────────────────────────────────────────── */
+function openAddItemModal() {
+  document.getElementById('ai-nombre').value = '';
+  document.getElementById('ai-cat').value    = 'Varios';
+  document.getElementById('ai-err').textContent = '';
+  document.getElementById('add-item-modal').classList.add('open');
+  setTimeout(() => document.getElementById('ai-nombre').focus(), 80);
+}
+function closeAddItemModal() {
+  document.getElementById('add-item-modal').classList.remove('open');
+}
+async function submitAddItem() {
+  const nombre = document.getElementById('ai-nombre').value.trim();
+  if (!nombre) { document.getElementById('ai-err').textContent = 'Escribe un nombre'; return; }
+  const r = await fetch(`${API}/trips/${_curId}/maleta/item`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({nombre, categoria: document.getElementById('ai-cat').value}),
+  }).then(r => r.json());
+  if (r.ok) {
+    closeAddItemModal();
+    toast('Ítem agregado ✓', 'ok');
+    _maleta = await fetch(`${API}/trips/${_curId}/maleta`).then(r => r.json());
+    renderMaletaPane();
+    if (window.lucide) lucide.createIcons();
+  } else {
+    document.getElementById('ai-err').textContent = r.error || 'Error';
+  }
+}
+
+/* ── Regreso pane ─────────────────────────────────────────────────────── */
+function renderRegresoPane() {
+  const el = document.getElementById('regreso-list');
+  if (!_maleta.length) {
+    el.innerHTML = `<div class="vj-empty">
+      <div class="vj-empty-icon">✅</div>
+      <div>Genera tu maleta primero para ver el checklist de regreso.</div>
+    </div>`;
+    document.getElementById('regreso-progress-txt').textContent = '';
+    return;
+  }
+
+  const packed  = _maleta.filter(m => m.packed_vuelta).length;
+  const total   = _maleta.length;
+  const pct     = Math.round(packed / total * 100);
+  document.getElementById('regreso-progress-txt').textContent =
+    `${packed} de ${total} ítems empacados de regreso (${pct}%)`;
+
+  const cats = {};
+  _maleta.forEach(m => {
+    (cats[m.categoria] = cats[m.categoria] || []).push(m);
+  });
+
+  const CAT_ORDER = ['Documentos','Tops','Bottoms','Calzado','Ropa interior',
+    'Formal','Abrigo','Accesorios','Higiene','Tecnología','Salud','Ropa','Varios'];
+  const orderedCats = [...CAT_ORDER.filter(c => cats[c]), ...Object.keys(cats).filter(c => !CAT_ORDER.includes(c))];
+
+  el.innerHTML = orderedCats.map(cat => `
+    <div class="vj-maleta-section">
+      <div class="vj-maleta-cat">${cat}</div>
+      ${cats[cat].map(m => `
+        <div class="vj-item-row" id="ritem-${m.id}">
+          <input type="checkbox" class="vj-item-chk"
+            ${m.packed_vuelta ? 'checked' : ''}
+            onchange="toggleRegreso(${m.id}, this.checked)">
+          <span class="vj-item-name ${m.packed_vuelta ? 'done' : ''}">${m.nombre}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+async function toggleRegreso(itemId, checked) {
+  await fetch(`${API}/trips/${_curId}/maleta/${itemId}`, {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({field: 'packed_vuelta'}),
+  });
+  const item = _maleta.find(m => m.id === itemId);
+  if (item) item.packed_vuelta = checked ? 1 : 0;
+
+  const nameEl = document.querySelector(`#ritem-${itemId} .vj-item-name`);
+  if (nameEl) nameEl.classList.toggle('done', !!checked);
+
+  const packed = _maleta.filter(m => m.packed_vuelta).length;
+  const total  = _maleta.length;
+  document.getElementById('regreso-progress-txt').textContent =
+    `${packed} de ${total} ítems empacados de regreso (${Math.round(packed/total*100)}%)`;
+
+  if (checked && packed === total) {
+    toast('¡Todo empacado! Viaje completo 🎉', 'ok');
+  }
+}
+
+/* ── Trip modal ───────────────────────────────────────────────────────── */
+function openTripModal(editing = false) {
+  _isEditing = editing;
+  document.getElementById('modal-title').textContent = editing ? 'Editar Viaje' : 'Nuevo Viaje';
+  document.getElementById('modal-err').textContent   = '';
+
+  if (editing && _curTrip) {
+    const t = _curTrip;
+    document.getElementById('f-nombre').value  = t.nombre;
+    document.getElementById('f-destino').value = t.destino || '';
+    document.getElementById('f-estado').value  = t.estado;
+    document.getElementById('f-inicio').value  = t.fecha_inicio;
+    document.getElementById('f-fin').value     = t.fecha_fin;
+    document.getElementById('f-clima').value   = t.tipo_clima || '';
+    document.getElementById('f-ocasion').value = t.ocasion || '';
+    document.getElementById('f-notas').value   = t.notas || '';
+  } else {
+    document.getElementById('f-nombre').value  = '';
+    document.getElementById('f-destino').value = '';
+    document.getElementById('f-estado').value  = 'planificado';
+    document.getElementById('f-inicio').value  = '';
+    document.getElementById('f-fin').value     = '';
+    document.getElementById('f-clima').value   = '';
+    document.getElementById('f-ocasion').value = '';
+    document.getElementById('f-notas').value   = '';
+  }
+  document.getElementById('trip-modal').classList.add('open');
+  setTimeout(() => document.getElementById('f-nombre').focus(), 80);
+}
+
+function closeTripModal() {
+  document.getElementById('trip-modal').classList.remove('open');
+}
+
+async function submitTrip() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const inicio = document.getElementById('f-inicio').value;
+  const fin    = document.getElementById('f-fin').value;
+  const errEl  = document.getElementById('modal-err');
+
+  if (!nombre) { errEl.textContent = 'El nombre es obligatorio'; return; }
+  if (!inicio) { errEl.textContent = 'Ingresa la fecha de inicio'; return; }
+  if (!fin)    { errEl.textContent = 'Ingresa la fecha de fin'; return; }
+  if (fin < inicio) { errEl.textContent = 'La fecha fin debe ser posterior al inicio'; return; }
+
+  const payload = {
+    nombre, inicio,
+    destino:      document.getElementById('f-destino').value.trim(),
+    fecha_inicio: inicio,
+    fecha_fin:    fin,
+    estado:       document.getElementById('f-estado').value,
+    tipo_clima:   document.getElementById('f-clima').value,
+    ocasion:      document.getElementById('f-ocasion').value,
+    notas:        document.getElementById('f-notas').value.trim(),
+  };
+
+  const url    = _isEditing ? `${API}/trips/${_curId}` : `${API}/trips`;
+  const method = _isEditing ? 'PATCH' : 'POST';
+  const r = await fetch(url, {
+    method, headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload),
+  }).then(res => res.json());
+
+  if (r.ok) {
+    closeTripModal();
+    toast(_isEditing ? 'Viaje actualizado ✓' : 'Viaje creado ✓', 'ok');
+    await loadTrips();
+    if (_isEditing) {
+      await showDetail(_curId);
+    } else {
+      if (r.id) await showDetail(r.id);
+      else renderList();
+    }
+  } else {
+    errEl.textContent = r.error || 'Error al guardar';
+  }
+}
+
+/* ── Delete ───────────────────────────────────────────────────────────── */
+async function confirmDelete() {
+  const name = _curTrip?.nombre || 'este viaje';
+  if (!confirm(`¿Eliminar "${name}"?\n\nSe borrarán los días, outfits y maleta de este viaje.`)) return;
+  const r = await fetch(`${API}/trips/${_curId}`, { method: 'DELETE' }).then(r => r.json());
+  if (r.ok) {
+    toast('Viaje eliminado');
+    await loadTrips();
+    showList();
+  }
+}
+
+/* ── Modal close on backdrop ──────────────────────────────────────────── */
+['trip-modal','outfit-picker-modal','add-item-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', e => {
+    if (e.target === e.currentTarget) {
+      if (id === 'trip-modal')         closeTripModal();
+      if (id === 'outfit-picker-modal') closeOutfitPicker();
+      if (id === 'add-item-modal')     closeAddItemModal();
+    }
+  });
+});
+
+document.getElementById('f-nombre').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitTrip();
+});
+document.getElementById('ai-nombre').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitAddItem();
+});
+
+/* ── Boot ─────────────────────────────────────────────────────────────── */
+init();
+</script>
+{% endblock %}

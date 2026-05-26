@@ -1176,6 +1176,49 @@ def init_db():
         );
         """)
 
+        # ── VIAJES — Outfit planner + maleta ────────────────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS viajes (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre       TEXT    NOT NULL,
+            destino      TEXT    DEFAULT '',
+            fecha_inicio TEXT    NOT NULL,
+            fecha_fin    TEXT    NOT NULL,
+            estado       TEXT    DEFAULT 'planificado',
+            tipo_clima   TEXT    DEFAULT '',
+            ocasion      TEXT    DEFAULT '',
+            notas        TEXT    DEFAULT '',
+            created_at   TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS viaje_dias (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            viaje_id    INTEGER NOT NULL,
+            fecha       TEXT    NOT NULL,
+            descripcion TEXT    DEFAULT '',
+            FOREIGN KEY (viaje_id) REFERENCES viajes(id) ON DELETE CASCADE,
+            UNIQUE (viaje_id, fecha)
+        );
+        CREATE TABLE IF NOT EXISTS viaje_dia_outfits (
+            dia_id    INTEGER NOT NULL,
+            outfit_id INTEGER NOT NULL,
+            PRIMARY KEY (dia_id, outfit_id),
+            FOREIGN KEY (dia_id)    REFERENCES viaje_dias(id) ON DELETE CASCADE,
+            FOREIGN KEY (outfit_id) REFERENCES outfits(id)
+        );
+        CREATE TABLE IF NOT EXISTS viaje_maleta (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            viaje_id      INTEGER NOT NULL,
+            nombre        TEXT    NOT NULL,
+            categoria     TEXT    DEFAULT 'Varios',
+            cantidad      INTEGER DEFAULT 1,
+            packed_ida    INTEGER DEFAULT 0,
+            packed_vuelta INTEGER DEFAULT 0,
+            es_extra      INTEGER DEFAULT 0,
+            item_id       INTEGER DEFAULT NULL,
+            FOREIGN KEY (viaje_id) REFERENCES viajes(id) ON DELETE CASCADE
+        );
+        """)
+
         # ── ESTADOS DE CUENTA (SG Credit Card module) ────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS est_movimientos (
@@ -1190,7 +1233,8 @@ def init_db():
             subcategoria  TEXT    DEFAULT '',
             tipo          TEXT    NOT NULL DEFAULT 'GASTO',
             mi_parte      REAL    DEFAULT NULL,
-            reembolso_cat TEXT    DEFAULT NULL
+            reembolso_cat TEXT    DEFAULT NULL,
+            viaje_id      INTEGER DEFAULT NULL
         );
         CREATE UNIQUE INDEX IF NOT EXISTS idx_est_mov_dedup
             ON est_movimientos (fecha, descripcion);
@@ -1207,12 +1251,24 @@ def init_db():
             limite    REAL    NOT NULL,
             periodo   TEXT    NOT NULL DEFAULT 'monthly'
         );
+        CREATE TABLE IF NOT EXISTS est_viajes (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre       TEXT    NOT NULL,
+            destino      TEXT    DEFAULT '',
+            fecha_inicio TEXT    NOT NULL,
+            fecha_fin    TEXT    NOT NULL,
+            presupuesto  REAL    DEFAULT 0,
+            estado       TEXT    DEFAULT 'planificado',
+            notas        TEXT    DEFAULT '',
+            created_at   TEXT    NOT NULL
+        );
         """)
 
         # Migrate existing est_movimientos tables that lack newer columns
         for col, definition in [
             ("mi_parte",      "REAL    DEFAULT NULL"),
             ("reembolso_cat", "TEXT    DEFAULT NULL"),
+            ("viaje_id",      "INTEGER DEFAULT NULL"),
         ]:
             try:
                 db.execute(f"ALTER TABLE est_movimientos ADD COLUMN {col} {definition}")
