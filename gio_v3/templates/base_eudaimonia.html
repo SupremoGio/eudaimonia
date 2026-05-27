@@ -6,13 +6,15 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>EUDAIMONIA</title>
 
-  <!-- Anti-FOUC -->
+  <!-- Anti-FOUC + scroll reset -->
   <script>
     (function(){
       var t = localStorage.getItem('eu-theme') || 'dark';
       var h = document.documentElement;
       if (t === 'light') { h.classList.remove('dark'); h.classList.add('light'); }
       else               { h.classList.add('dark');    h.classList.remove('light'); }
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      window.scrollTo(0, 0);
     })();
   </script>
 

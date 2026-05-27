@@ -238,6 +238,7 @@ function App() {
   const handleTabChange = (id) => {
     dispatch({ type: 'CLOSE_MODULE' });
     setTab(id);
+    window.scrollTo(0, 0);
   };
 
   const [cmdkOpen, setCmdkOpen] = useState(false);
