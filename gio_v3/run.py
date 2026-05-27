@@ -7,3 +7,4 @@ if __name__ == '__main__':
     # host='0.0.0.0' le dice a Flask que acepte conexiones de cualquier IP en la red local
     debug = os.environ.get('FLASK_ENV') != 'production'
     app.run(host='0.0.0.0', port=5000, debug=debug)
+    

@@ -147,6 +147,9 @@ def update_transaction(tx_id):
         if 'reembolso_cat' in d:
             val = d['reembolso_cat'] or None
             db.execute("UPDATE est_movimientos SET reembolso_cat=? WHERE id=?", (val, tx_id))
+        if 'viaje_id' in d:
+            val = int(d['viaje_id']) if d['viaje_id'] not in (None, '') else None
+            db.execute("UPDATE est_movimientos SET viaje_id=? WHERE id=?", (val, tx_id))
         db.commit()
     return jsonify({'ok': True})
 
@@ -659,3 +662,200 @@ def upload_file():
         return jsonify({'ok': False, 'error': str(e)})
     finally:
         tmp_path.unlink(missing_ok=True)
+
+
+# ── Viajes ────────────────────────────────────────────────────────────────────
+
+# SQL expression that buckets a transaction into a travel concept
+_CONCEPTO_CASE = """
+  CASE
+    WHEN categoria='VIAJES/VUELOS' AND subcategoria='Vuelos' THEN 'Vuelos'
+    WHEN categoria='VIAJES/VUELOS' AND subcategoria='Hotel'  THEN 'Hotel'
+    WHEN categoria='TRANSPORTE'
+      OR (categoria='VIAJES/VUELOS' AND subcategoria='Transporte viaje') THEN 'Transporte'
+    WHEN categoria IN ('COMIDA/REST','CAFE/PAN') THEN 'Comida'
+    WHEN (categoria='VIAJES/VUELOS' AND subcategoria='Tours')
+      OR categoria='ENTRETENIMIENTO' THEN 'Experiencias'
+    ELSE 'Otros'
+  END
+"""
+
+_GASTO_FILTER = "tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO')"
+
+
+@estados_bp.route('/viajes/')
+def viajes_page():
+    if not _ok():
+        return redirect(url_for('finanzas.index'))
+    return render_template('finanzas/viajes.html')
+
+
+@estados_bp.route('/api/trips')
+def list_trips():
+    if not _ok(): return _locked()
+    with get_db() as db:
+        rows = db.execute(f"""
+            SELECT v.*,
+                   COUNT(m.id) AS tx_count,
+                   COALESCE(SUM(
+                       CASE WHEN {_GASTO_FILTER}
+                            THEN COALESCE(m.mi_parte, m.monto) ELSE 0 END
+                   ), 0) AS total_gastado
+            FROM est_viajes v
+            LEFT JOIN est_movimientos m ON m.viaje_id = v.id
+            GROUP BY v.id
+            ORDER BY v.fecha_inicio DESC
+        """).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@estados_bp.route('/api/trips', methods=['POST'])
+def create_trip():
+    if not _ok(): return _locked()
+    d = request.json or {}
+    nombre = (d.get('nombre') or '').strip()
+    if not nombre:
+        return jsonify({'error': 'nombre requerido'}), 400
+    now = datetime.now().isoformat()
+    with get_db() as db:
+        cur = db.execute(
+            """INSERT INTO est_viajes
+               (nombre, destino, fecha_inicio, fecha_fin, presupuesto, estado, notas, created_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
+            (
+                clean_str(nombre, 200),
+                clean_str(d.get('destino', ''), 100),
+                d.get('fecha_inicio', ''),
+                d.get('fecha_fin', ''),
+                float(d.get('presupuesto', 0)),
+                d.get('estado', 'planificado'),
+                clean_str(d.get('notas', ''), 500),
+                now,
+            ),
+        )
+        trip_id = cur.lastrowid
+        db.commit()
+    return jsonify({'ok': True, 'id': trip_id}), 201
+
+
+@estados_bp.route('/api/trips/<int:trip_id>', methods=['PATCH'])
+def update_trip(trip_id):
+    if not _ok(): return _locked()
+    d = request.json or {}
+    fields, params = [], []
+    for key in ('nombre', 'destino', 'fecha_inicio', 'fecha_fin', 'estado', 'notas'):
+        if key in d:
+            fields.append(f"{key}=?")
+            params.append(clean_str(d[key], 500) if key in ('nombre', 'destino', 'notas') else d[key])
+    if 'presupuesto' in d:
+        fields.append("presupuesto=?")
+        params.append(float(d['presupuesto']))
+    if not fields:
+        return jsonify({'ok': True})
+    params.append(trip_id)
+    with get_db() as db:
+        db.execute(f"UPDATE est_viajes SET {', '.join(fields)} WHERE id=?", params)
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/trips/<int:trip_id>', methods=['DELETE'])
+def delete_trip(trip_id):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        db.execute("UPDATE est_movimientos SET viaje_id=NULL WHERE viaje_id=?", (trip_id,))
+        db.execute("DELETE FROM est_viajes WHERE id=?", (trip_id,))
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/trips/<int:trip_id>/summary')
+def trip_summary(trip_id):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        trip = db.execute("SELECT * FROM est_viajes WHERE id=?", (trip_id,)).fetchone()
+        if not trip:
+            return jsonify({'error': 'not found'}), 404
+        breakdown = db.execute(f"""
+            SELECT {_CONCEPTO_CASE} AS concepto,
+                   SUM(COALESCE(mi_parte, monto)) AS total,
+                   COUNT(*) AS n
+            FROM est_movimientos
+            WHERE viaje_id=? AND {_GASTO_FILTER}
+            GROUP BY concepto
+            ORDER BY total DESC
+        """, (trip_id,)).fetchall()
+        total_gastado = sum(r['total'] or 0 for r in breakdown)
+    return jsonify({
+        'trip':          dict(trip),
+        'total_gastado': round(total_gastado, 2),
+        'breakdown': [
+            {'concepto': r['concepto'], 'total': round(r['total'] or 0, 2), 'n': r['n']}
+            for r in breakdown
+        ],
+    })
+
+
+@estados_bp.route('/api/trips/<int:trip_id>/transactions')
+def trip_transactions(trip_id):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM est_movimientos WHERE viaje_id=? ORDER BY fecha ASC, monto DESC",
+            (trip_id,),
+        ).fetchall()
+    return jsonify({'data': [dict(r) for r in rows]})
+
+
+@estados_bp.route('/api/trips/<int:trip_id>/suggest')
+def trip_suggest(trip_id):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        trip = db.execute(
+            "SELECT fecha_inicio, fecha_fin FROM est_viajes WHERE id=?", (trip_id,)
+        ).fetchone()
+        if not trip:
+            return jsonify({'data': []})
+        rows = db.execute(f"""
+            SELECT * FROM est_movimientos
+            WHERE viaje_id IS NULL
+              AND fecha BETWEEN ? AND ?
+              AND {_GASTO_FILTER}
+            ORDER BY fecha ASC, monto DESC
+            LIMIT 100
+        """, (trip['fecha_inicio'], trip['fecha_fin'])).fetchall()
+    return jsonify({'data': [dict(r) for r in rows]})
+
+
+@estados_bp.route('/api/trips/<int:trip_id>/tag', methods=['POST'])
+def tag_transactions(trip_id):
+    if not _ok(): return _locked()
+    tx_ids = request.json.get('tx_ids', []) if request.json else []
+    if not tx_ids:
+        return jsonify({'ok': True, 'tagged': 0})
+    with get_db() as db:
+        if not db.execute("SELECT id FROM est_viajes WHERE id=?", (trip_id,)).fetchone():
+            return jsonify({'error': 'trip not found'}), 404
+        ph = ','.join('?' * len(tx_ids))
+        db.execute(
+            f"UPDATE est_movimientos SET viaje_id=? WHERE id IN ({ph})",
+            [trip_id] + list(tx_ids),
+        )
+        db.commit()
+    return jsonify({'ok': True, 'tagged': len(tx_ids)})
+
+
+@estados_bp.route('/api/trips/<int:trip_id>/untag', methods=['POST'])
+def untag_transactions(trip_id):
+    if not _ok(): return _locked()
+    tx_ids = request.json.get('tx_ids', []) if request.json else []
+    if not tx_ids:
+        return jsonify({'ok': True})
+    with get_db() as db:
+        ph = ','.join('?' * len(tx_ids))
+        db.execute(
+            f"UPDATE est_movimientos SET viaje_id=NULL WHERE id IN ({ph}) AND viaje_id=?",
+            list(tx_ids) + [trip_id],
+        )
+        db.commit()
+    return jsonify({'ok': True})

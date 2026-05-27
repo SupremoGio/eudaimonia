@@ -1,0 +1,621 @@
+{% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
+{% block title %}Viajes — Eudaimonia{% endblock %}
+{% block module_title %}VIAJES{% endblock %}
+{% block topright %}<span style="color:var(--gold)">OIKONOMIA · VIAJES</span>{% endblock %}
+
+{% block content %}
+<style>
+/* ── Layout ────────────────────────────────────────────────────────────── */
+.vj-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.vj-header-left{display:flex;align-items:center;gap:12px;}
+.vj-back{display:inline-flex;align-items:center;gap:5px;color:var(--dim);font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:color .15s;}
+.vj-back:hover{color:var(--gold);}
+.vj-title{font-family:var(--serif);font-size:1.15rem;font-weight:300;color:var(--text);}
+
+/* ── Trip cards grid ───────────────────────────────────────────────────── */
+.vj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+.vj-card{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:18px 20px;cursor:pointer;transition:border-color .18s,transform .12s;}
+.vj-card:hover{border-color:var(--gold);transform:translateY(-2px);}
+.vj-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.vj-card-name{font-family:var(--serif);font-size:1rem;color:var(--text);font-weight:300;line-height:1.3;}
+.vj-estado{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:100px;border:1px solid;}
+.vj-estado.planificado{color:#60a5fa;border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.08);}
+.vj-estado.activo{color:var(--green);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08);}
+.vj-estado.completado{color:var(--gold);border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.08);}
+.vj-estado.cancelado{color:var(--dim);border-color:var(--b);background:transparent;}
+.vj-card-dest{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.vj-card-dates{font-size:var(--fs-sm);color:var(--mid);margin-bottom:12px;}
+.vj-progress-wrap{margin-bottom:6px;}
+.vj-progress-bar{height:4px;background:var(--b);border-radius:100px;overflow:hidden;margin-bottom:5px;}
+.vj-progress-fill{height:100%;border-radius:100px;transition:width .5s;}
+.vj-progress-nums{display:flex;justify-content:space-between;font-size:var(--fs-xs);color:var(--dim);}
+.vj-card-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--b);}
+.vj-tx-count{font-size:var(--fs-xs);color:var(--dim);}
+.vj-ver{font-size:var(--fs-xs);color:var(--gold);letter-spacing:.08em;text-transform:uppercase;}
+
+/* new trip placeholder card */
+.vj-card-new{background:transparent;border:1px dashed var(--b);color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:160px;font-size:var(--fs-sm);letter-spacing:.1em;text-transform:uppercase;transition:border-color .18s,color .18s;}
+.vj-card-new:hover{border-color:var(--gold);color:var(--gold);}
+.vj-card-new svg{opacity:.4;}
+
+/* ── Detail view ───────────────────────────────────────────────────────── */
+.vj-detail-header{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;margin-bottom:20px;}
+.vj-detail-name{font-family:var(--serif);font-size:1.5rem;font-weight:300;color:var(--text);}
+.vj-detail-meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px;}
+.vj-meta-item{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
+.vj-meta-val{color:var(--mid);margin-left:4px;}
+.vj-budget-hero{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:16px 20px;margin-bottom:16px;}
+.vj-budget-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:12px;}
+.vj-bnum-val{font-family:var(--serif);font-size:1.4rem;font-weight:300;line-height:1;}
+.vj-bnum-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
+.vj-big-bar{height:8px;background:var(--b);border-radius:100px;overflow:hidden;}
+.vj-big-fill{height:100%;border-radius:100px;transition:width .6s;}
+
+/* 2-col detail layout */
+.vj-detail-body{display:grid;grid-template-columns:340px 1fr;gap:16px;}
+
+/* Concept breakdown */
+.vj-concept-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--b);}
+.vj-concept-row:last-child{border-bottom:none;}
+.vj-concept-icon{width:28px;text-align:center;font-size:16px;flex-shrink:0;}
+.vj-concept-name{font-size:var(--fs-sm);color:var(--mid);min-width:90px;}
+.vj-concept-bar-wrap{flex:1;}
+.vj-concept-bar{height:4px;background:var(--b);border-radius:100px;overflow:hidden;}
+.vj-concept-fill{height:100%;border-radius:100px;background:var(--gold);}
+.vj-concept-amt{font-family:var(--serif);font-size:.85rem;color:var(--text);text-align:right;min-width:80px;}
+.vj-concept-n{font-size:var(--fs-xs);color:var(--dim);min-width:30px;text-align:right;}
+
+/* Transaction list */
+.vj-tx-table{width:100%;border-collapse:collapse;}
+.vj-tx-table th{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;padding:0 8px 9px;text-align:left;border-bottom:1px solid var(--b);}
+.vj-tx-table td{padding:8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:var(--fs-sm);color:var(--mid);vertical-align:middle;}
+.vj-tx-table tr:last-child td{border-bottom:none;}
+.vj-tx-desc{color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vj-tx-cat{font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;}
+.vj-tx-amt{font-family:var(--serif);color:var(--gold);}
+
+/* Suggest panel */
+.vj-suggest-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.vj-suggest-item:last-child{border-bottom:none;}
+.vj-suggest-chk{width:15px;height:15px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
+.vj-suggest-info{flex:1;}
+.vj-suggest-desc{font-size:var(--fs-sm);color:var(--text);}
+.vj-suggest-meta{font-size:var(--fs-xs);color:var(--dim);}
+.vj-suggest-amt{font-family:var(--serif);font-size:.85rem;color:var(--mid);}
+
+/* Empty states */
+.vj-empty{text-align:center;padding:30px 20px;color:var(--dim);font-size:var(--fs-sm);border:1px dashed var(--b);border-radius:8px;}
+
+/* Responsive */
+@media(max-width:900px){
+  .vj-detail-body{grid-template-columns:1fr;}
+  .vj-budget-nums{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:500px){
+  .vj-budget-nums{grid-template-columns:1fr;}
+  .vj-grid{grid-template-columns:1fr;}
+}
+</style>
+
+<!-- ── LIST VIEW ─────────────────────────────────────────────────────────── -->
+<div id="vw-list">
+  <div class="vj-header">
+    <div class="vj-header-left">
+      <a href="/finanzas/estados/" class="vj-back">
+        <i data-lucide="arrow-left" style="width:12px;height:12px"></i> Estados
+      </a>
+      <span class="vj-title">MIS VIAJES</span>
+    </div>
+    <button class="btn-a" onclick="openTripModal()">
+      <i data-lucide="plus" style="width:12px;height:12px"></i> Nuevo Viaje
+    </button>
+  </div>
+  <div id="trip-grid" class="vj-grid">
+    <div style="padding:40px;color:var(--dim);font-size:var(--fs-sm);">Cargando…</div>
+  </div>
+</div>
+
+<!-- ── DETAIL VIEW (hidden) ──────────────────────────────────────────────── -->
+<div id="vw-detail" style="display:none">
+  <div class="vj-header">
+    <div class="vj-header-left">
+      <button class="vj-back" onclick="showList()">
+        <i data-lucide="arrow-left" style="width:12px;height:12px"></i> Mis Viajes
+      </button>
+      <span class="vj-title" id="detail-title">—</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn-g" onclick="openTripModal(true)">
+        <i data-lucide="pencil" style="width:12px;height:12px"></i> Editar
+      </button>
+      <button class="btn-r" onclick="confirmDelete()">
+        <i data-lucide="trash-2" style="width:12px;height:12px"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Budget hero -->
+  <div class="vj-budget-hero">
+    <div class="vj-budget-nums">
+      <div>
+        <div class="vj-bnum-val" id="detail-gastado" style="color:var(--gold)">—</div>
+        <div class="vj-bnum-lbl">Gastado</div>
+      </div>
+      <div>
+        <div class="vj-bnum-val" id="detail-presupuesto">—</div>
+        <div class="vj-bnum-lbl">Presupuesto</div>
+      </div>
+      <div>
+        <div class="vj-bnum-val" id="detail-restante">—</div>
+        <div class="vj-bnum-lbl">Restante</div>
+      </div>
+    </div>
+    <div class="vj-big-bar">
+      <div class="vj-big-fill" id="detail-pct-fill" style="width:0%"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:5px;font-size:var(--fs-xs);color:var(--dim);">
+      <span id="detail-meta-dest"></span>
+      <span id="detail-pct-txt"></span>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="vj-detail-body">
+
+    <!-- LEFT: concept breakdown -->
+    <div>
+      <div class="tile">
+        <div class="tile-lbl">DESGLOSE POR CONCEPTO</div>
+        <div id="breakdown-list">
+          <div class="vj-empty">Sin transacciones vinculadas</div>
+        </div>
+      </div>
+
+      <!-- Suggestions -->
+      <div class="tile" style="margin-top:14px;" id="suggest-panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="tile-lbl" style="margin:0">SUGERENCIAS</div>
+          <button class="btn-g" style="font-size:var(--fs-xs);" onclick="loadSuggestions()">
+            <i data-lucide="refresh-cw" style="width:10px;height:10px"></i> Recargar
+          </button>
+        </div>
+        <div id="suggest-list">
+          <div class="vj-empty" style="padding:16px;">Calculando…</div>
+        </div>
+        <div id="suggest-footer" style="display:none;margin-top:12px;text-align:right;">
+          <button class="btn-a" onclick="linkSelected()">
+            <i data-lucide="link" style="width:11px;height:11px"></i> Vincular seleccionadas
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: tagged transactions -->
+    <div>
+      <div class="tile">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <div class="tile-lbl" style="margin:0">TRANSACCIONES VINCULADAS <span id="tx-count-badge" style="color:var(--dim);font-size:var(--fs-xs);">(0)</span></div>
+        </div>
+        <div id="tx-list-wrap" style="overflow-x:auto;">
+          <div class="vj-empty">Sin transacciones</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── CREATE / EDIT MODAL ────────────────────────────────────────────────── -->
+<div class="modal-bg" id="trip-modal">
+  <div class="modal" style="max-width:480px;width:100%;">
+    <div class="modal-title" id="modal-title">Nuevo Viaje</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div style="grid-column:1/-1;">
+        <div class="fl">Nombre del viaje *</div>
+        <input class="fi" id="f-nombre" placeholder="Ej: Cancún Mayo 2026" maxlength="200">
+      </div>
+      <div>
+        <div class="fl">Destino</div>
+        <input class="fi" id="f-destino" placeholder="Ej: Cancún, Q.R." maxlength="100">
+      </div>
+      <div>
+        <div class="fl">Estado</div>
+        <select class="fi" id="f-estado">
+          <option value="planificado">Planificado</option>
+          <option value="activo">Activo (en curso)</option>
+          <option value="completado">Completado</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+      <div>
+        <div class="fl">Fecha inicio *</div>
+        <input class="fi" id="f-inicio" type="date">
+      </div>
+      <div>
+        <div class="fl">Fecha fin *</div>
+        <input class="fi" id="f-fin" type="date">
+      </div>
+      <div style="grid-column:1/-1;">
+        <div class="fl">Presupuesto total (MXN)</div>
+        <input class="fi" id="f-presupuesto" type="number" min="0" step="100" placeholder="0.00">
+      </div>
+      <div style="grid-column:1/-1;">
+        <div class="fl">Notas (opcional)</div>
+        <textarea class="fi" id="f-notas" rows="2" placeholder="Detalles del viaje…" style="resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div id="modal-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:2px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeTripModal()">Cancelar</button>
+      <button class="btn-a" onclick="submitTrip()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const API  = '/finanzas/estados/api';
+const fmt  = n => (+n).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtD = s => s ? s.slice(0,10).split('-').reverse().join('/') : '—';
+
+const CONCEPTO_ICON = {
+  'Vuelos':       '✈',
+  'Hotel':        '🏨',
+  'Transporte':   '🚗',
+  'Comida':       '🍽',
+  'Experiencias': '🎭',
+  'Otros':        '📦',
+};
+const CONCEPTO_COLOR = {
+  'Vuelos':       '#60a5fa',
+  'Hotel':        '#a78bfa',
+  'Transporte':   '#34d399',
+  'Comida':       '#fb923c',
+  'Experiencias': '#f472b6',
+  'Otros':        '#94a3b8',
+};
+
+/* ── State ─────────────────────────────────────────────────────────────── */
+let _trips      = [];
+let _currentId  = null;
+let _isEditing  = false;
+let _summary    = null;
+let _tagged     = [];
+let _suggested  = [];
+
+/* ── Init ──────────────────────────────────────────────────────────────── */
+async function init() {
+  await loadTrips();
+  renderList();
+}
+
+/* ── Trips list ────────────────────────────────────────────────────────── */
+async function loadTrips() {
+  const r = await fetch(`${API}/trips`);
+  _trips = await r.json();
+}
+
+function renderList() {
+  document.getElementById('vw-list').style.display = '';
+  document.getElementById('vw-detail').style.display = 'none';
+
+  const grid = document.getElementById('trip-grid');
+  if (!_trips.length) {
+    grid.innerHTML = `
+      <div class="vj-card vj-card-new" onclick="openTripModal()">
+        <i data-lucide="plus-circle" style="width:28px;height:28px"></i>
+        <span>Crear primer viaje</span>
+      </div>`;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  const cards = _trips.map(t => {
+    const pct     = t.presupuesto > 0 ? Math.min(t.total_gastado / t.presupuesto * 100, 100) : 0;
+    const over    = t.total_gastado > t.presupuesto && t.presupuesto > 0;
+    const fillClr = over ? 'var(--red)' : pct > 80 ? 'var(--pink,#f472b6)' : 'var(--gold)';
+    return `
+      <div class="vj-card" onclick="showDetail(${t.id})">
+        <div class="vj-card-top">
+          <div class="vj-card-name">${t.nombre}</div>
+          <span class="vj-estado ${t.estado}">${t.estado}</span>
+        </div>
+        ${t.destino ? `<div class="vj-card-dest">${t.destino}</div>` : ''}
+        <div class="vj-card-dates">${fmtD(t.fecha_inicio)} — ${fmtD(t.fecha_fin)}</div>
+        ${t.presupuesto > 0 ? `
+        <div class="vj-progress-wrap">
+          <div class="vj-progress-bar">
+            <div class="vj-progress-fill" style="width:${pct.toFixed(1)}%;background:${fillClr}"></div>
+          </div>
+          <div class="vj-progress-nums">
+            <span>$${fmt(t.total_gastado)}</span>
+            <span>${pct.toFixed(0)}% de $${fmt(t.presupuesto)}</span>
+          </div>
+        </div>` : `<div style="font-size:var(--fs-xs);color:var(--dim);margin-bottom:6px;">Sin presupuesto definido · $${fmt(t.total_gastado)} gastado</div>`}
+        <div class="vj-card-footer">
+          <span class="vj-tx-count">${t.tx_count} transaccion${t.tx_count !== 1 ? 'es' : ''}</span>
+          <span class="vj-ver">Ver detalles →</span>
+        </div>
+      </div>`;
+  });
+
+  cards.push(`
+    <div class="vj-card vj-card-new" onclick="openTripModal()">
+      <i data-lucide="plus-circle" style="width:24px;height:24px"></i>
+      <span>Nuevo Viaje</span>
+    </div>`);
+
+  grid.innerHTML = cards.join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function showList() {
+  _currentId = null;
+  renderList();
+}
+
+/* ── Trip detail ───────────────────────────────────────────────────────── */
+async function showDetail(id) {
+  _currentId = id;
+  document.getElementById('vw-list').style.display   = 'none';
+  document.getElementById('vw-detail').style.display = '';
+
+  const [sumR, txR] = await Promise.all([
+    fetch(`${API}/trips/${id}/summary`).then(r => r.json()),
+    fetch(`${API}/trips/${id}/transactions`).then(r => r.json()),
+  ]);
+
+  _summary = sumR;
+  _tagged  = txR.data || [];
+
+  renderDetail();
+  await loadSuggestions();
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderDetail() {
+  if (!_summary) return;
+  const { trip, total_gastado, breakdown } = _summary;
+  const pres  = trip.presupuesto || 0;
+  const rest  = pres - total_gastado;
+  const pct   = pres > 0 ? Math.min(total_gastado / pres * 100, 100) : 0;
+  const over  = total_gastado > pres && pres > 0;
+  const clr   = over ? 'var(--red)' : pct > 80 ? '#f472b6' : 'var(--gold)';
+
+  document.getElementById('detail-title').textContent     = trip.nombre;
+  document.getElementById('detail-gastado').textContent   = `$${fmt(total_gastado)}`;
+  document.getElementById('detail-presupuesto').textContent = `$${fmt(pres)}`;
+  document.getElementById('detail-restante').textContent  = pres > 0
+    ? (rest >= 0 ? `$${fmt(rest)}` : `–$${fmt(Math.abs(rest))}`)
+    : '—';
+  document.getElementById('detail-restante').style.color  = pres > 0
+    ? (rest >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--dim)';
+  document.getElementById('detail-pct-fill').style.width  = `${pct.toFixed(1)}%`;
+  document.getElementById('detail-pct-fill').style.background = clr;
+  document.getElementById('detail-pct-txt').textContent   = pres > 0
+    ? `${pct.toFixed(0)}% del presupuesto` : '';
+  document.getElementById('detail-meta-dest').innerHTML   =
+    `<span style="margin-right:14px">${trip.destino || '—'}</span><span>${fmtD(trip.fecha_inicio)} — ${fmtD(trip.fecha_fin)}</span>`;
+
+  // Breakdown
+  const maxTotal = breakdown.length ? breakdown[0].total : 1;
+  const bEl = document.getElementById('breakdown-list');
+  if (!breakdown.length) {
+    bEl.innerHTML = '<div class="vj-empty">Sin transacciones vinculadas aún</div>';
+  } else {
+    bEl.innerHTML = breakdown.map(b => {
+      const barW  = maxTotal > 0 ? (b.total / maxTotal * 100).toFixed(1) : 0;
+      const color = CONCEPTO_COLOR[b.concepto] || '#94a3b8';
+      return `
+        <div class="vj-concept-row">
+          <div class="vj-concept-icon">${CONCEPTO_ICON[b.concepto] || '📦'}</div>
+          <div class="vj-concept-name">${b.concepto}</div>
+          <div class="vj-concept-bar-wrap">
+            <div class="vj-concept-bar">
+              <div class="vj-concept-fill" style="width:${barW}%;background:${color}"></div>
+            </div>
+          </div>
+          <div class="vj-concept-amt">$${fmt(b.total)}</div>
+          <div class="vj-concept-n">${b.n}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // Tagged transactions table
+  const badge = document.getElementById('tx-count-badge');
+  badge.textContent = `(${_tagged.length})`;
+  const wrap = document.getElementById('tx-list-wrap');
+  if (!_tagged.length) {
+    wrap.innerHTML = '<div class="vj-empty">No hay transacciones vinculadas. Usa las Sugerencias para vincularlas.</div>';
+  } else {
+    wrap.innerHTML = `
+      <table class="vj-tx-table">
+        <thead><tr>
+          <th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${_tagged.map(tx => `
+            <tr>
+              <td style="white-space:nowrap;color:var(--dim)">${fmtD(tx.fecha)}</td>
+              <td><div class="vj-tx-desc" title="${tx.descripcion}">${tx.descripcion}</div></td>
+              <td><div class="vj-tx-cat">${tx.categoria}${tx.subcategoria ? ' · '+tx.subcategoria : ''}</div></td>
+              <td class="vj-tx-amt">$${fmt(tx.mi_parte ?? tx.monto)}</td>
+              <td><button class="btn-r" style="padding:2px 6px;font-size:10px;" onclick="untagOne(${tx.id})" title="Desvincular">×</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+}
+
+async function loadSuggestions() {
+  if (!_currentId) return;
+  document.getElementById('suggest-list').innerHTML =
+    '<div class="vj-empty" style="padding:12px;">Buscando transacciones…</div>';
+  const r = await fetch(`${API}/trips/${_currentId}/suggest`).then(r => r.json());
+  _suggested = r.data || [];
+  renderSuggestions();
+}
+
+function renderSuggestions() {
+  const el = document.getElementById('suggest-list');
+  const footer = document.getElementById('suggest-footer');
+  if (!_suggested.length) {
+    el.innerHTML = '<div class="vj-empty" style="padding:12px;">No hay sugerencias para el rango de fechas del viaje.</div>';
+    footer.style.display = 'none';
+    return;
+  }
+  footer.style.display = 'block';
+  el.innerHTML = _suggested.map(tx => `
+    <div class="vj-suggest-item">
+      <input type="checkbox" class="vj-suggest-chk suggest-chk" value="${tx.id}">
+      <div class="vj-suggest-info">
+        <div class="vj-suggest-desc">${tx.descripcion}</div>
+        <div class="vj-suggest-meta">${fmtD(tx.fecha)} · ${tx.banco} · ${tx.categoria}</div>
+      </div>
+      <div class="vj-suggest-amt">$${fmt(tx.mi_parte ?? tx.monto)}</div>
+    </div>`).join('');
+}
+
+async function linkSelected() {
+  const ids = [...document.querySelectorAll('.suggest-chk:checked')].map(c => +c.value);
+  if (!ids.length) { toast('Selecciona al menos una transacción', 'err'); return; }
+  const r = await fetch(`${API}/trips/${_currentId}/tag`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({tx_ids: ids}),
+  }).then(r => r.json());
+  if (r.ok) {
+    toast(`${r.tagged} transaccion${r.tagged !== 1 ? 'es' : ''} vinculada${r.tagged !== 1 ? 's' : ''}`, 'ok');
+    await refreshDetail();
+  } else {
+    toast(r.error || 'Error', 'err');
+  }
+}
+
+async function untagOne(txId) {
+  const r = await fetch(`${API}/trips/${_currentId}/untag`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({tx_ids: [txId]}),
+  }).then(r => r.json());
+  if (r.ok) {
+    toast('Transacción desvinculada');
+    await refreshDetail();
+  }
+}
+
+async function refreshDetail() {
+  await showDetail(_currentId);
+}
+
+/* ── Trip modal ────────────────────────────────────────────────────────── */
+function openTripModal(editing = false) {
+  _isEditing = editing;
+  const modal = document.getElementById('trip-modal');
+  document.getElementById('modal-title').textContent = editing ? 'Editar Viaje' : 'Nuevo Viaje';
+  document.getElementById('modal-err').textContent   = '';
+
+  if (editing && _summary) {
+    const t = _summary.trip;
+    document.getElementById('f-nombre').value      = t.nombre;
+    document.getElementById('f-destino').value     = t.destino || '';
+    document.getElementById('f-estado').value      = t.estado;
+    document.getElementById('f-inicio').value      = t.fecha_inicio;
+    document.getElementById('f-fin').value         = t.fecha_fin;
+    document.getElementById('f-presupuesto').value = t.presupuesto || '';
+    document.getElementById('f-notas').value       = t.notas || '';
+  } else {
+    document.getElementById('f-nombre').value      = '';
+    document.getElementById('f-destino').value     = '';
+    document.getElementById('f-estado').value      = 'planificado';
+    document.getElementById('f-inicio').value      = '';
+    document.getElementById('f-fin').value         = '';
+    document.getElementById('f-presupuesto').value = '';
+    document.getElementById('f-notas').value       = '';
+  }
+  modal.classList.add('open');
+  setTimeout(() => document.getElementById('f-nombre').focus(), 80);
+}
+
+function closeTripModal() {
+  document.getElementById('trip-modal').classList.remove('open');
+}
+
+async function submitTrip() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const inicio = document.getElementById('f-inicio').value;
+  const fin    = document.getElementById('f-fin').value;
+  const errEl  = document.getElementById('modal-err');
+
+  if (!nombre) { errEl.textContent = 'El nombre es obligatorio'; return; }
+  if (!inicio) { errEl.textContent = 'Ingresa la fecha de inicio'; return; }
+  if (!fin)    { errEl.textContent = 'Ingresa la fecha de fin'; return; }
+  if (fin < inicio) { errEl.textContent = 'La fecha fin debe ser posterior al inicio'; return; }
+
+  const payload = {
+    nombre,
+    destino:      document.getElementById('f-destino').value.trim(),
+    fecha_inicio: inicio,
+    fecha_fin:    fin,
+    presupuesto:  parseFloat(document.getElementById('f-presupuesto').value) || 0,
+    estado:       document.getElementById('f-estado').value,
+    notas:        document.getElementById('f-notas').value.trim(),
+  };
+
+  let r;
+  if (_isEditing && _currentId) {
+    r = await fetch(`${API}/trips/${_currentId}`, {
+      method: 'PATCH', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    }).then(res => res.json());
+  } else {
+    r = await fetch(`${API}/trips`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(payload),
+    }).then(res => res.json());
+  }
+
+  if (r.ok) {
+    closeTripModal();
+    toast(_isEditing ? 'Viaje actualizado ✓' : 'Viaje creado ✓', 'ok');
+    await loadTrips();
+    if (_isEditing && _currentId) {
+      await refreshDetail();
+    } else {
+      const newId = r.id;
+      if (newId) {
+        await showDetail(newId);
+      } else {
+        renderList();
+      }
+    }
+  } else {
+    errEl.textContent = r.error || 'Error al guardar';
+  }
+}
+
+async function confirmDelete() {
+  if (!_currentId) return;
+  const name = _summary?.trip?.nombre || 'este viaje';
+  if (!confirm(`¿Eliminar "${name}"?\n\nLas transacciones se desvincularán (no se eliminan).`)) return;
+  const r = await fetch(`${API}/trips/${_currentId}`, { method: 'DELETE' }).then(r => r.json());
+  if (r.ok) {
+    toast('Viaje eliminado');
+    await loadTrips();
+    showList();
+  }
+}
+
+/* ── Modal close on backdrop ───────────────────────────────────────────── */
+document.getElementById('trip-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeTripModal();
+});
+
+document.getElementById('f-nombre').addEventListener('keydown', e => {
+  if (e.key === 'Enter') submitTrip();
+});
+
+/* ── Boot ──────────────────────────────────────────────────────────────── */
+init();
+</script>
+{% endblock %}
