@@ -209,7 +209,6 @@ def serve_doc(filename):
 
 @perfil_bp.route('/api/reminders')
 def get_reminders():
-    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     with get_db() as db:
         rows = db.execute(
             "SELECT * FROM reminders WHERE is_active=1 ORDER BY COALESCE(next_date, target_date, '9999-12-31'), created_at"
@@ -244,7 +243,6 @@ def add_reminder():
 
 @perfil_bp.route('/api/reminder/<int:rid>/done', methods=['POST'])
 def complete_reminder(rid):
-    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     from datetime import date as _date, timedelta
     from utils import today_str as _today_str
     import calendar
