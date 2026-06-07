@@ -61,6 +61,7 @@ def index():
 
     total_owe_me = sum(d['monto_restante'] for d in owe_me)
     total_i_owe  = sum(d['monto_restante'] for d in i_owe)
+    patrimonio_neto_display = pat['patrimonio_neto'] + total_owe_me - total_i_owe
 
     return render_template('finanzas/index.html',
         owe_me=list(owe_me), i_owe=list(i_owe),
@@ -83,7 +84,8 @@ def index():
         activos_cuentas   = pat['activos_cuentas'],
         total_bienes      = pat['total_bienes'],
         total_pasivos     = pat['total_pasivos'],
-        patrimonio_neto   = pat['patrimonio_neto'],
+        patrimonio_neto         = pat['patrimonio_neto'],
+        patrimonio_neto_display = patrimonio_neto_display,
         tipo_meta         = TIPO_META,
         bien_meta         = BIEN_META,
         alerts=payment_alerts(), today=today_str(),

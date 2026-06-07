@@ -155,11 +155,11 @@
   <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
     <div>
       <div class="sf-pn-label">Patrimonio Neto</div>
-      <div class="sf-pn-value {% if patrimonio_neto >= 0 %}pos{% else %}neg{% endif %}">
-        {% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto) }}
+      <div class="sf-pn-value {% if patrimonio_neto_display >= 0 %}pos{% else %}neg{% endif %}">
+        {% if patrimonio_neto_display >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto_display) }}
         <span style="font-size:1rem;color:var(--dim)"> MXN</span>
       </div>
-      <div class="sf-pn-sub">Activos totales menos pasivos · actualizado hoy</div>
+      <div class="sf-pn-sub">Activos − Pasivos + Deudas personales netas · actualizado hoy</div>
     </div>
     <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
       <button class="sf-snap-btn" onclick="tomarSnapshot()">
@@ -349,80 +349,103 @@
   </div>
 </div>
 
-{# ── ME DEBEN ──────────────────────────────────────────────────────────────── #}
-<div class="tile">
-  <span class="section-tag tag-g">✦ Me Deben</span>
-  <div class="tile-lbl">CUENTAS POR COBRAR</div>
-  <div class="debt-form">
-    <div><div class="fl">Persona</div><input class="fi" id="om-person" placeholder="Quién..."></div>
-    <div><div class="fl">Concepto</div><input class="fi" id="om-concept" placeholder="Por qué..."></div>
-    <div><div class="fl">Monto</div><input class="fi" id="om-amount" type="number" placeholder="MXN" min="0"></div>
-    <button class="btn-g" onclick="addDebt('owe_me')">+ ADD</button>
+{# ── DEUDAS PERSONALES ─────────────────────────────────────────────────────── #}
+<div class="tile sf-full">
+  <div class="sf-group-hd" style="margin-bottom:16px;">
+    <div>
+      <div class="sf-group-t">🤝 Deudas Personales</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Activo por cobrar y pasivo interpersonal</div>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;">
+      {% set net_pers = total_owe_me - total_i_owe %}
+      <div style="text-align:right;">
+        <div class="sf-group-total {% if net_pers >= 0 %}pos{% else %}neg{% endif %}">{% if net_pers >= 0 %}+{% endif %}${{ "{:,.2f}".format(net_pers) }}</div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:2px;">posición neta</div>
+      </div>
+    </div>
   </div>
-  <div class="debt-table-wrap">
-  <table class="debt-table">
-    <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
-    <tbody id="tbl-owe-me">
-      {% for d in owe_me %}
-      {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
-      <tr data-id="{{ d.id }}">
-        <td class="dp-name">{{ d.person }}</td>
-        <td>{{ d.concept }}</td>
-        <td>
-          <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--green)"></div></div>
-          <div class="dp-pct">{{ pct }}% cobrado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
-        </td>
-        <td><span class="dp-amount pos">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
-        <td>
-          <div class="dp-actions">
-            <button class="btn-gr" onclick="openAbono({{ d.id }},'owe_me','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
-            <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:var(--fs-xs)">✓ Cobrado</button>
-            <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  </div>
-</div>
 
-{# ── YO DEBO ───────────────────────────────────────────────────────────────── #}
-<div class="tile">
-  <span class="section-tag tag-r">✦ Yo Debo</span>
-  <div class="tile-lbl">CUENTAS POR PAGAR</div>
-  <div class="debt-form">
-    <div><div class="fl">A quién</div><input class="fi" id="io-person" placeholder="Quién..."></div>
-    <div><div class="fl">Concepto</div><input class="fi" id="io-concept" placeholder="Por qué..."></div>
-    <div><div class="fl">Monto</div><input class="fi" id="io-amount" type="number" placeholder="MXN" min="0"></div>
-    <button class="btn-g" onclick="addDebt('i_owe')">+ ADD</button>
-  </div>
-  <div class="debt-table-wrap">
-  <table class="debt-table">
-    <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
-    <tbody id="tbl-i-owe">
-      {% for d in i_owe %}
-      {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
-      <tr data-id="{{ d.id }}">
-        <td class="dp-name">{{ d.person }}</td>
-        <td>{{ d.concept }}</td>
-        <td>
-          <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--gold)"></div></div>
-          <div class="dp-pct">{{ pct }}% pagado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
-        </td>
-        <td><span class="dp-amount neg">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
-        <td>
-          <div class="dp-actions">
-            <button class="btn-g" onclick="openAbono({{ d.id }},'i_owe','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
-            <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:var(--fs-xs)">✓ Pagado</button>
-            <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
-          </div>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span class="section-tag tag-g" style="margin:0;">✦ Me Deben</span>
+        <span style="font-family:var(--serif);font-size:.9rem;color:var(--green)">${{ "{:,.2f}".format(total_owe_me) }}</span>
+      </div>
+      <div class="debt-form">
+        <div><div class="fl">Persona</div><input class="fi" id="om-person" placeholder="Quién..."></div>
+        <div><div class="fl">Concepto</div><input class="fi" id="om-concept" placeholder="Por qué..."></div>
+        <div><div class="fl">Monto</div><input class="fi" id="om-amount" type="number" placeholder="MXN" min="0"></div>
+        <button class="btn-g" onclick="addDebt('owe_me')">+ ADD</button>
+      </div>
+      <div class="debt-table-wrap">
+      <table class="debt-table">
+        <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
+        <tbody id="tbl-owe-me">
+          {% for d in owe_me %}
+          {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
+          <tr data-id="{{ d.id }}">
+            <td class="dp-name">{{ d.person }}</td>
+            <td>{{ d.concept }}</td>
+            <td>
+              <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--green)"></div></div>
+              <div class="dp-pct">{{ pct }}% cobrado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
+            </td>
+            <td><span class="dp-amount pos">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
+            <td>
+              <div class="dp-actions">
+                <button class="btn-gr" onclick="openAbono({{ d.id }},'owe_me','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
+                <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:var(--fs-xs)">✓ Cobrado</button>
+                <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span class="section-tag tag-r" style="margin:0;">✦ Yo Debo</span>
+        <span style="font-family:var(--serif);font-size:.9rem;color:var(--red)">${{ "{:,.2f}".format(total_i_owe) }}</span>
+      </div>
+      <div class="debt-form">
+        <div><div class="fl">A quién</div><input class="fi" id="io-person" placeholder="Quién..."></div>
+        <div><div class="fl">Concepto</div><input class="fi" id="io-concept" placeholder="Por qué..."></div>
+        <div><div class="fl">Monto</div><input class="fi" id="io-amount" type="number" placeholder="MXN" min="0"></div>
+        <button class="btn-g" onclick="addDebt('i_owe')">+ ADD</button>
+      </div>
+      <div class="debt-table-wrap">
+      <table class="debt-table">
+        <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
+        <tbody id="tbl-i-owe">
+          {% for d in i_owe %}
+          {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
+          <tr data-id="{{ d.id }}">
+            <td class="dp-name">{{ d.person }}</td>
+            <td>{{ d.concept }}</td>
+            <td>
+              <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--gold)"></div></div>
+              <div class="dp-pct">{{ pct }}% pagado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
+            </td>
+            <td><span class="dp-amount neg">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
+            <td>
+              <div class="dp-actions">
+                <button class="btn-g" onclick="openAbono({{ d.id }},'i_owe','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
+                <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:var(--fs-xs)">✓ Pagado</button>
+                <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+  </div>{# /inner grid #}
 </div>
 
 {# ── BIENES PERSONALES ─────────────────────────────────────────────────────── #}
