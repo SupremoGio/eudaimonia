@@ -51,6 +51,15 @@
 .db-neg{color:var(--coral);}
 .db-sub{font-size:var(--fs-sm);color:var(--dim);}
 
+/* ── Real vs Plan headline ───────────────────────────────────── */
+.real-headline{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:16px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.rh-stat{text-align:center;}
+.rh-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:3px;}
+.rh-val{font-family:var(--sans);font-size:1.3rem;font-weight:700;color:var(--text);}
+.rh-val.green{background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.rh-val.red{color:var(--coral);}
+.rh-note{font-size:var(--fs-xs);color:var(--dim);text-align:center;margin-top:8px;}
+
 /* ── Items grid ──────────────────────────────────────────────── */
 .items-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;}
 .items-col{}
@@ -68,15 +77,27 @@
 .ir-nombre{flex:1;font-size:var(--fs-sm);color:var(--mid);}
 .ir-nombre.deuda-item{color:var(--amber);}
 .ir-est{font-size:var(--fs-sm);color:var(--dim);width:64px;text-align:right;}
-.ir-real{width:80px;}
-.ir-real input{background:transparent;border:none;border-bottom:1px solid var(--b);color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);text-align:right;outline:none;width:100%;padding:2px 0;transition:border-color .18s;}
-.ir-real input:focus{border-color:var(--violet-l);}
 .ir-del{background:none;border:none;color:var(--dim);width:18px;height:18px;display:flex;align-items:center;justify-content:center;transition:color .16s;flex-shrink:0;}
 .ir-del:hover{color:var(--coral);}
 .ir-del svg{width:10px;height:10px;}
 .col-total{display:flex;justify-content:space-between;margin-top:10px;padding-top:8px;border-top:1px solid var(--b2);font-size:var(--fs-sm);}
 .ct-label{color:var(--dim);letter-spacing:.1em;text-transform:uppercase;}
 .ct-val{font-weight:600;color:var(--text);}
+
+/* plan vs real bar in summary cards */
+.bs-dual{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.bs-real-est{font-size:var(--fs-xs);color:var(--dim);}
+.bs-bars{display:flex;flex-direction:column;gap:4px;margin-bottom:6px;}
+.bs-bar-row{display:flex;align-items:center;gap:6px;}
+.bs-bar-lbl{font-size:10px;color:var(--dim);width:30px;flex-shrink:0;}
+.bs-bar{flex:1;height:5px;background:var(--b);border-radius:100px;overflow:hidden;}
+.bs-fill{height:100%;border-radius:100px;transition:width .5s;}
+.bs-fill.plan{opacity:.4;}
+.bs-nec .bs-fill{background:linear-gradient(90deg,var(--emerald),var(--emerald-l));}
+.bs-des .bs-fill{background:linear-gradient(90deg,var(--blue),#93c5fd);}
+.bs-aho .bs-fill{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+.bs-fill.over{background:var(--coral);}
+.bs-status{font-size:var(--fs-xs);margin-top:4px;}
 
 /* ── Debt section ────────────────────────────────────────────── */
 .debt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
@@ -151,45 +172,86 @@
   </div>
 </div>
 
+<!-- Real vs Plan headline -->
+{% set total_real_gasto = real_por_bucket.values()|sum %}
+{% set disponible_real  = ingreso_real - total_real_gasto %}
+<div class="real-headline">
+  <div class="rh-stat">
+    <div class="rh-label">Ingreso real (estados)</div>
+    <div class="rh-val green">${{ "{:,.0f}".format(ingreso_real) }}</div>
+  </div>
+  <div class="rh-stat">
+    <div class="rh-label">Gasto real (estados)</div>
+    <div class="rh-val">${{ "{:,.0f}".format(total_real_gasto) }}</div>
+  </div>
+  <div class="rh-stat">
+    <div class="rh-label">Disponible real</div>
+    <div class="rh-val {% if disponible_real >= 0 %}green{% else %}red{% endif %}">${{ "{:,.0f}".format(disponible_real) }}</div>
+  </div>
+  <div class="rh-stat">
+    <div class="rh-label">Ingreso plan</div>
+    <div class="rh-val" style="color:var(--dim)">${{ "{:,.0f}".format(resumen.ingreso) }}</div>
+  </div>
+</div>
+<div style="text-align:right;font-size:var(--fs-xs);color:var(--dim);margin-top:-14px;margin-bottom:16px;">Real calculado de tus estados de cuenta</div>
+
 <!-- 50-30-20 Summary -->
 <div class="budget-summary">
   {% set cats = [
-    ('necesidades', 'bs-nec', 'ct-nec', '50% · Necesidades'),
-    ('deseos',      'bs-des', 'ct-des', '30% · Deseos'),
-    ('ahorro_deuda','bs-aho', 'ct-aho', '20% · Ahorro y Deudas'),
+    ('necesidades', 'bs-nec', '50% · Necesidades'),
+    ('deseos',      'bs-des', '30% · Deseos'),
+    ('ahorro_deuda','bs-aho', '20% · Ahorro y Deudas'),
   ] %}
-  {% for cat, cls, _, label in cats %}
-  {% set real   = resumen.totales[cat] %}
-  {% set target = resumen.targets[cat] %}
-  {% set pct    = [[(real / target * 100)|int if target else 0, 0]|max, 100]|min %}
-  {% set over   = real > target %}
+  {% for cat, cls, label in cats %}
+  {% set real_val   = real_por_bucket[cat] %}
+  {% set plan_val   = resumen.totales[cat] %}
+  {% set target     = resumen.targets[cat] %}
+  {% set max_val    = [real_val, plan_val, target, 1]|max %}
+  {% set pct_real   = [[(real_val  / max_val * 100)|int, 0]|max, 100]|min %}
+  {% set pct_plan   = [[(plan_val  / max_val * 100)|int, 0]|max, 100]|min %}
+  {% set over       = real_val > target %}
   <div class="bs-card {{ cls }}">
     <div class="bs-label">{{ label }}</div>
-    <div class="bs-amounts">
-      <div class="bs-real">${{ "{:,.0f}".format(real) }}</div>
-      <div class="bs-target">meta ${{ "{:,.0f}".format(target) }}</div>
+    <div class="bs-dual">
+      <div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);margin-bottom:2px;">REAL</div>
+        <div class="bs-real">${{ "{:,.0f}".format(real_val) }}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:var(--fs-xs);color:var(--dim);margin-bottom:2px;">PLAN / META</div>
+        <div class="bs-real-est">${{ "{:,.0f}".format(plan_val) }} / ${{ "{:,.0f}".format(target) }}</div>
+      </div>
     </div>
-    <div class="bs-bar"><div class="bs-fill {% if over %}over{% endif %}" style="width:{{ pct }}%"></div></div>
-    <div class="bs-status" style="color:{% if over %}var(--coral){% elif pct>=85 %}var(--amber){% else %}var(--emerald){% endif %}">
-      {% if over %}▲ ${{ "{:,.0f}".format(real - target) }} sobre el límite
-      {% elif pct >= 85 %}⚠ Cerca del límite
+    <div class="bs-bars">
+      <div class="bs-bar-row">
+        <span class="bs-bar-lbl">Real</span>
+        <div class="bs-bar"><div class="bs-fill {% if over %}over{% endif %}" style="width:{{ pct_real }}%"></div></div>
+      </div>
+      <div class="bs-bar-row">
+        <span class="bs-bar-lbl">Plan</span>
+        <div class="bs-bar"><div class="bs-fill plan" style="width:{{ pct_plan }}%"></div></div>
+      </div>
+    </div>
+    <div class="bs-status" style="color:{% if over %}var(--coral){% elif pct_real>=85 %}var(--amber){% else %}var(--emerald){% endif %}">
+      {% if over %}▲ ${{ "{:,.0f}".format(real_val - target) }} sobre el límite
+      {% elif pct_real >= 85 %}⚠ Cerca del límite
       {% else %}✓ Dentro del presupuesto{% endif %}
     </div>
   </div>
   {% endfor %}
 </div>
 
-<!-- Disponible -->
+<!-- Disponible (plan) -->
 <div class="disponible-bar">
   <div>
-    <div class="db-label">Dinero disponible este mes</div>
+    <div class="db-label">Disponible según plan</div>
     <div class="db-val {% if resumen.disponible >= 0 %}db-pos{% else %}db-neg{% endif %}" id="db-disponible">
       ${{ "{:,.0f}".format(resumen.disponible) }}
     </div>
   </div>
   <div style="text-align:right">
-    <div class="db-sub">Ingreso: ${{ "{:,.0f}".format(resumen.ingreso) }}</div>
-    <div class="db-sub">Gasto total: ${{ "{:,.0f}".format(resumen.gastado) }}</div>
+    <div class="db-sub">Ingreso plan: ${{ "{:,.0f}".format(resumen.ingreso) }}</div>
+    <div class="db-sub">Gasto estimado: ${{ "{:,.0f}".format(resumen.gastado) }}</div>
   </div>
 </div>
 
@@ -212,12 +274,6 @@
         {{ it.nombre }}{% if it.tipo == 'deuda_pago' %} 💳{% endif %}
       </span>
       <span class="ir-est">${{ "{:,.0f}".format(it.monto_estimado) }}</span>
-      <div class="ir-real">
-        <input type="number" step="0.01" value="{{ it.monto_real if it.monto_real is not none else '' }}"
-          placeholder="{{ it.monto_estimado }}"
-          onchange="updateItem({{ it.id }}, this.value)"
-          onfocus="this.select()">
-      </div>
       <button class="ir-del" onclick="deleteItem({{ it.id }})"><i data-lucide="x"></i></button>
     </div>
     {% endfor %}
@@ -414,14 +470,6 @@ async function submitItem(){
   });
   const d = await r.json();
   if(d.ok){closeModal('m-item');actualizarResumen(d.resumen);toast('Ítem agregado','win');setTimeout(()=>location.reload(),600);}
-}
-async function updateItem(id, val){
-  const r = await fetch(`/finanzas/budget/api/item/${id}`,{
-    method:'PATCH',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({monto_real: val===''?null:parseFloat(val)})
-  });
-  const d = await r.json();
-  if(d.ok) actualizarResumen(d.resumen);
 }
 async function deleteItem(id){
   if(!confirm('¿Eliminar este ítem?'))return;
