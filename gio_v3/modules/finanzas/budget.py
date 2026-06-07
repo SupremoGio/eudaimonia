@@ -11,6 +11,33 @@ budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
 CATEGORIAS = ['necesidades', 'deseos', 'ahorro_deuda']
 PCTS       = {'necesidades': 0.50, 'deseos': 0.30, 'ahorro_deuda': 0.20}
 
+# Maps Estados top-level categories → 50-30-20 bucket (None = exclude)
+CATEGORIA_BUCKET = {
+    'COMIDA/REST':       'deseos',
+    'VIVERES/SUPER':     'necesidades',
+    'CASA/HOGAR':        'necesidades',
+    'GASOLINA/AUTO':     'necesidades',
+    'ROPA':              'deseos',
+    'SALUD':             'necesidades',
+    'TECH/DIGITAL':      'deseos',
+    'SUSCRIPCIONES':     'deseos',
+    'ENTRETENIMIENTO':   'deseos',
+    'SALSA':             'deseos',
+    'VIAJES/VUELOS':     'deseos',
+    'TRANSPORTE':        'necesidades',
+    'APRENDIZAJE':       'deseos',
+    'PUBLICIDAD':        None,
+    'FINANZAS':          None,
+    'INVERSION':         'ahorro_deuda',
+    'CAFE/PAN':          'deseos',
+    'GYM':               'necesidades',
+    'DEPORTE':           'deseos',
+    'REGALO':            'deseos',
+    'OTROS':             'deseos',
+    'PAGO_TDC':          None,
+    'PAGO':              None,
+}
+
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -99,6 +126,8 @@ def index(mes=None):
     prev_mes = f"{y}-{m-1:02d}" if m > 1  else f"{y-1}-12"
     next_mes = f"{y}-{m+1:02d}" if m < 12 else f"{y+1}-01"
 
+    mes_inicio = mes + '-01'
+
     with get_db() as db:
         budget = _get_or_create_mes(mes, db)
         items  = [dict(r) for r in db.execute(
@@ -108,12 +137,34 @@ def index(mes=None):
         deudas = [dict(r) for r in db.execute(
             "SELECT * FROM budget_deudas WHERE activa=1 ORDER BY nombre"
         ).fetchall()]
-        # pagos de este mes por deuda
         pagos_mes = {r['deuda_id']: r['total'] for r in db.execute(
             "SELECT deuda_id, COALESCE(SUM(monto_pagado),0) as total "
             "FROM budget_pagos WHERE mes=? GROUP BY deuda_id",
             (mes,)
         ).fetchall()}
+        # Real spend from Estados (read-only)
+        gastos_rows = db.execute(
+            """SELECT categoria, COALESCE(mi_parte, monto) AS monto
+               FROM est_movimientos
+               WHERE tipo='GASTO'
+                 AND categoria NOT IN ('PAGO_TDC','PAGO')
+                 AND fecha >= ?""",
+            (mes_inicio,)
+        ).fetchall()
+        ingreso_row = db.execute(
+            """SELECT SUM(monto) AS total
+               FROM est_movimientos
+               WHERE tipo='INGRESO' AND fecha >= ?""",
+            (mes_inicio,)
+        ).fetchone()
+
+    real_por_bucket = {c: 0.0 for c in CATEGORIAS}
+    for row in gastos_rows:
+        bucket = CATEGORIA_BUCKET.get(row['categoria'])
+        if bucket:
+            real_por_bucket[bucket] = round(real_por_bucket[bucket] + float(row['monto']), 2)
+
+    ingreso_real = float(ingreso_row['total'] or 0)
 
     resumen = _resumen(budget, items)
     items_by_cat = {c: [i for i in items if i['categoria'] == c] for c in CATEGORIAS}
@@ -129,6 +180,8 @@ def index(mes=None):
         deudas=deudas,
         pagos_mes=pagos_mes,
         resumen=resumen,
+        real_por_bucket=real_por_bucket,
+        ingreso_real=ingreso_real,
     )
 
 
