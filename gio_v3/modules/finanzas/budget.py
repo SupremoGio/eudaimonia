@@ -1,9 +1,10 @@
 """
-Budget 50-30-20 — planeación financiera mensual con simulación de deudas.
+Budget 50-30-20 — radiografía en vivo de est_budgets + est_movimientos.
 """
 from flask import Blueprint, render_template, request, jsonify, session, redirect
 from database import get_db
 from datetime import date, datetime
+import calendar
 from utils import today_str, today_date
 
 budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
@@ -146,22 +147,48 @@ def _simular_deuda(saldo, pago_minimo, tasa_mensual, pago_propuesto):
 @budget_bp.route('/')
 @budget_bp.route('/<mes>')
 def index(mes=None):
+    today = today_date()
     if not mes:
-        mes = today_date().strftime('%Y-%m')
+        mes = today.strftime('%Y-%m')
 
-    # Prev / next month
     y, m = int(mes[:4]), int(mes[5:])
     prev_mes = f"{y}-{m-1:02d}" if m > 1  else f"{y-1}-12"
     next_mes = f"{y}-{m+1:02d}" if m < 12 else f"{y+1}-01"
 
-    mes_inicio = mes + '-01'
+    mes_inicio = f"{mes}-01"
+    mes_fin    = f"{next_mes}-01"
+    dias_mes   = calendar.monthrange(y, m)[1]
+    es_mes_actual = (today.strftime('%Y-%m') == mes)
+    dia_actual = today.day if es_mes_actual else dias_mes
 
     with get_db() as db:
-        budget = _get_or_create_mes(mes, db)
-        items  = [dict(r) for r in db.execute(
-            "SELECT * FROM budget_items WHERE budget_id=? ORDER BY categoria, nombre",
-            (budget['id'],)
-        ).fetchall()]
+        # Category limits from est_budgets
+        budgets_rows = db.execute(
+            "SELECT * FROM est_budgets ORDER BY categoria"
+        ).fetchall()
+        budgets_map = {r['categoria']: dict(r) for r in budgets_rows}
+
+        # Real spending per category this month
+        spending_rows = db.execute(
+            """SELECT categoria, SUM(COALESCE(mi_parte, monto)) AS total
+               FROM est_movimientos
+               WHERE tipo='GASTO'
+                 AND categoria NOT IN ('PAGO_TDC','PAGO')
+                 AND fecha >= ? AND fecha < ?
+               GROUP BY categoria""",
+            (mes_inicio, mes_fin)
+        ).fetchall()
+        spending_map = {r['categoria']: float(r['total'] or 0) for r in spending_rows}
+
+        # Income this month
+        ingreso_row = db.execute(
+            """SELECT SUM(monto) AS total
+               FROM est_movimientos
+               WHERE tipo='INGRESO' AND fecha >= ? AND fecha < ?""",
+            (mes_inicio, mes_fin)
+        ).fetchone()
+
+        # Debt tracker (keep)
         deudas = [dict(r) for r in db.execute(
             "SELECT * FROM budget_deudas WHERE activa=1 ORDER BY nombre"
         ).fetchall()]
@@ -170,46 +197,91 @@ def index(mes=None):
             "FROM budget_pagos WHERE mes=? GROUP BY deuda_id",
             (mes,)
         ).fetchall()}
-        # Real spend from Estados (read-only)
-        gastos_rows = db.execute(
-            """SELECT categoria, COALESCE(mi_parte, monto) AS monto
-               FROM est_movimientos
-               WHERE tipo='GASTO'
-                 AND categoria NOT IN ('PAGO_TDC','PAGO')
-                 AND fecha >= ?""",
-            (mes_inicio,)
-        ).fetchall()
-        ingreso_row = db.execute(
-            """SELECT SUM(monto) AS total
-               FROM est_movimientos
-               WHERE tipo='INGRESO' AND fecha >= ?""",
-            (mes_inicio,)
-        ).fetchone()
-
-    real_por_bucket = {c: 0.0 for c in CATEGORIAS}
-    for row in gastos_rows:
-        bucket = CATEGORIA_BUCKET.get(row['categoria'])
-        if bucket:
-            real_por_bucket[bucket] = round(real_por_bucket[bucket] + float(row['monto']), 2)
 
     ingreso_real = float(ingreso_row['total'] or 0)
 
-    resumen = _resumen(budget, items)
-    items_by_cat = {c: [i for i in items if i['categoria'] == c] for c in CATEGORIAS}
+    # Build per-category list — union of est_budgets + categories with spending
+    all_cats = (set(budgets_map.keys()) | set(spending_map.keys())) - {
+        c for c, b in CATEGORIA_BUCKET.items() if b is None
+    }
+    # Only categories with a known bucket
+    all_cats = {c for c in all_cats if CATEGORIA_BUCKET.get(c) is not None}
+
+    cats_data = []
+    for cat in sorted(all_cats):
+        b       = budgets_map.get(cat, {})
+        limite  = float(b.get('limite', 0)) if b else 0.0
+        gastado = spending_map.get(cat, 0.0)
+        pct     = round(gastado / limite * 100) if limite > 0 else None
+        if pct is None:
+            status = 'nobudget'
+        elif pct >= 100:
+            status = 'over'
+        elif pct >= 80:
+            status = 'warn'
+        else:
+            status = 'ok'
+
+        cats_data.append({
+            'id':        b.get('id'),
+            'categoria': cat,
+            'nombre':    b.get('nombre') or CAT_LABELS.get(cat, cat),
+            'limite':    limite,
+            'gastado':   gastado,
+            'pct':       pct,
+            'bucket':    CATEGORIA_BUCKET[cat],
+            'status':    status,
+        })
+
+    # Group by bucket
+    BUCKET_META = {
+        'necesidades': {'label': 'Necesidades', 'pct_target': 50, 'color': 'var(--emerald)'},
+        'deseos':      {'label': 'Deseos',       'pct_target': 30, 'color': 'var(--blue)'},
+        'ahorro_deuda':{'label': 'Ahorro y Deudas', 'pct_target': 20, 'color': 'var(--violet-l)'},
+    }
+    buckets = {}
+    for bk in CATEGORIAS:
+        bk_cats         = [c for c in cats_data if c['bucket'] == bk]
+        total_gastado   = round(sum(c['gastado'] for c in bk_cats), 2)
+        total_limite    = round(sum(c['limite']  for c in bk_cats), 2)
+        target_monto    = round(ingreso_real * PCTS[bk], 2)
+        pct_vs_target   = round(total_gastado / target_monto * 100) if target_monto > 0 else 0
+        buckets[bk] = {
+            **BUCKET_META[bk],
+            'cats':           bk_cats,
+            'total_gastado':  total_gastado,
+            'total_limite':   total_limite,
+            'target_monto':   target_monto,
+            'pct_vs_target':  min(pct_vs_target, 100),
+            'over':           total_gastado > target_monto,
+        }
+
+    total_gastado = round(sum(c['gastado'] for c in cats_data), 2)
+    disponible    = round(ingreso_real - total_gastado, 2)
+    proyeccion    = round(total_gastado / dia_actual * dias_mes) if dia_actual > 0 else 0
+
+    # Segmented bar widths (% of ingreso)
+    seg = {}
+    for bk in CATEGORIAS:
+        seg[bk] = round(buckets[bk]['total_gastado'] / ingreso_real * 100, 1) if ingreso_real > 0 else 0
 
     return render_template(
         'finanzas/budget.html',
-        budget=budget,
         mes=mes,
         prev_mes=prev_mes,
         next_mes=next_mes,
-        items=items,
-        items_by_cat=items_by_cat,
+        ingreso_real=ingreso_real,
+        total_gastado=total_gastado,
+        disponible=disponible,
+        proyeccion=proyeccion,
+        dia_actual=dia_actual,
+        dias_mes=dias_mes,
+        es_mes_actual=es_mes_actual,
+        buckets=buckets,
+        seg=seg,
         deudas=deudas,
         pagos_mes=pagos_mes,
-        resumen=resumen,
-        real_por_bucket=real_por_bucket,
-        ingreso_real=ingreso_real,
+        mes_inicio=mes_inicio,
     )
 
 
