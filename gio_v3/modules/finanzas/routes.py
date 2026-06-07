@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
 from extensions import limiter
 from datetime import date, datetime
+from collections import defaultdict
 from utils import today_str, today_date, clean_str, safe_float
 
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
@@ -37,38 +38,43 @@ def payment_alerts():
 def index():
     if not session.get('fin_ok'):
         return render_template('finanzas/lock.html', has_pass=bool(_get_pass_hash()))
-    mes_actual = today_date().strftime('%Y-%m')
+    from modules.finanzas.salud import _compute_patrimonio, TIPO_META, BIEN_META, TIPOS_PASIVO
     with get_db() as db:
         owe_me  = db.execute("SELECT * FROM debts WHERE type='owe_me' AND settled=0 ORDER BY id DESC").fetchall()
         i_owe   = db.execute("SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY id DESC").fetchall()
-        settled = db.execute("SELECT * FROM debts WHERE settled=1 ORDER BY id DESC LIMIT 10").fetchall()
         pay_map = {}
         for row in db.execute("SELECT * FROM debt_payments ORDER BY paid_at DESC").fetchall():
             pay_map.setdefault(row["debt_id"], []).append(dict(row))
+    pat = _compute_patrimonio()
+    bienes_por_cat = defaultdict(list)
+    for b in pat['bienes']:
+        bienes_por_cat[b['categoria']].append(b)
 
-        # Budget del mes actual desde el módulo de planeación
-        budget_mes_row = db.execute("SELECT * FROM budget_meses WHERE mes=?", (mes_actual,)).fetchone()
-        budget_items = []
-        if budget_mes_row:
-            budget_items = [dict(r) for r in db.execute(
-                "SELECT * FROM budget_items WHERE budget_id=? ORDER BY categoria, nombre",
-                (budget_mes_row['id'],)
-            ).fetchall()]
-
-    total_budget = sum(i['monto_estimado'] or 0 for i in budget_items)
-    total_spent  = sum(i['monto_real'] or 0 for i in budget_items)
+    total_owe_me = sum(d['monto_restante'] for d in owe_me)
+    total_i_owe  = sum(d['monto_restante'] for d in i_owe)
+    patrimonio_neto_display = pat['patrimonio_neto'] + total_owe_me - total_i_owe
 
     return render_template('finanzas/index.html',
-        owe_me=list(owe_me), i_owe=list(i_owe), settled=list(settled),
+        owe_me=list(owe_me), i_owe=list(i_owe),
         pay_map=pay_map,
-        budget_items=budget_items,
-        mes_actual=mes_actual,
-        total_owe_me  = sum(d['monto_restante'] for d in owe_me),
-        total_i_owe   = sum(d['monto_restante'] for d in i_owe),
+        total_owe_me          = total_owe_me,
+        total_i_owe           = total_i_owe,
         total_original_owe_me = sum(d['monto_total'] for d in owe_me),
         total_original_i_owe  = sum(d['monto_total'] for d in i_owe),
-        total_budget  = total_budget,
-        total_spent   = total_spent,
+        cuentas_liquido   = [c for c in pat['cuentas'] if c['tipo'] in ('efectivo', 'cuenta_banco')],
+        cuentas_inversion = [c for c in pat['cuentas'] if c['tipo'] == 'inversion'],
+        cuentas_pasivo    = [c for c in pat['cuentas'] if c['tipo'] in TIPOS_PASIVO],
+        bienes            = pat['bienes'],
+        bienes_por_cat    = dict(bienes_por_cat),
+        historial         = pat['historial'],
+        total_activos     = pat['total_activos'],
+        activos_cuentas   = pat['activos_cuentas'],
+        total_bienes      = pat['total_bienes'],
+        total_pasivos     = pat['total_pasivos'],
+        patrimonio_neto         = pat['patrimonio_neto'],
+        patrimonio_neto_display = patrimonio_neto_display,
+        tipo_meta         = TIPO_META,
+        bien_meta         = BIEN_META,
         alerts=payment_alerts(), today=today_str(),
     )
 

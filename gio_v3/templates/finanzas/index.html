@@ -1,20 +1,90 @@
 {% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
-{% block title %}Oikonomia — Eudaimonia{% endblock %}
+{% block title %}Patrimonio — Oikonomia{% endblock %}
 {% block module_title %}OIKONOMIA{% endblock %}
-{% block topright %}{{ today }} — <span style="color:var(--gold)">OIKONOMIA · PRIVADO</span>{% endblock %}
+{% block topright %}{{ today }} — <span style="color:var(--gold)">PATRIMONIO</span>{% endblock %}
 {% block content %}
 <style>
-.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:1200px;}
-.full{grid-column:1/-1;}
-.balance-hero{background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:8px;padding:22px 26px;}
-.bal-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-top:14px;}
-.bal-box{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:14px;text-align:center;}
-.bal-v{font-family:var(--serif);font-size:1.8rem;font-weight:300;line-height:1;}
-.bal-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:3px;}
-.bal-s{font-size:var(--fs-sm);color:var(--dim);margin-top:2px;}
+/* ── Grid ─────────────────────────────────────────────────────────────────── */
+.sf-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:1300px;}
+.sf-full{grid-column:1/-1;}
+.sf-left{grid-column:1/2;}
+.sf-right{grid-column:2/3;}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.sf-hero{background:linear-gradient(135deg,#0c0a10,#140f1a);border:1px solid var(--b2);border-radius:12px;padding:24px 28px;margin-bottom:14px;}
+.sf-pn-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;}
+.sf-pn-value{font-family:var(--serif);font-size:2.6rem;font-weight:300;line-height:1;letter-spacing:.04em;}
+.sf-pn-sub{font-size:var(--fs-sm);color:var(--dim);margin-top:6px;}
+.sf-stat-row{display:grid;gap:12px;margin-top:18px;}
+.sf-stat{background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:8px;padding:14px 16px;}
+.sf-stat-v{font-family:var(--serif);font-size:1.4rem;font-weight:300;line-height:1;}
+.sf-stat-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:4px;}
+.sf-stat-s{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
+.sf-bar-wrap{margin-top:20px;}
+.sf-bar-labels{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:7px;}
+.sf-bar-lbl{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:var(--mid);}
+.sf-bar-dot{width:7px;height:7px;border-radius:50%;}
+.sf-bar{height:6px;border-radius:100px;overflow:hidden;background:rgba(255,255,255,.05);display:flex;}
+.sf-bar-seg{height:100%;transition:width .6s;}
+
+/* ── Account groups ───────────────────────────────────────────────────────── */
+.sf-group-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sf-group-t{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.18em;text-transform:uppercase;}
+.sf-group-total{font-family:var(--serif);font-size:1rem;font-weight:300;}
+.sf-accounts{display:flex;flex-direction:column;gap:7px;}
+.sf-account{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card2);border:1px solid var(--b);border-radius:8px;transition:border-color .16s;}
+.sf-account:hover{border-color:var(--b2);}
+.sf-acc-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sf-acc-icon svg{width:15px;height:15px;}
+.sf-acc-body{flex:1;min-width:0;}
+.sf-acc-name{font-size:var(--fs-sm);color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sf-acc-inst{font-size:var(--fs-sm);color:var(--dim);}
+.sf-acc-saldo{text-align:right;flex-shrink:0;}
+.sf-acc-amount{font-family:var(--serif);font-size:1.05rem;font-weight:300;line-height:1;}
+.sf-acc-moneda{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.sf-acc-actions{display:flex;gap:4px;flex-shrink:0;}
+.sf-empty{text-align:center;padding:20px;color:var(--dim);font-size:var(--fs-sm);border:1px dashed var(--b);border-radius:8px;}
+
+/* ── Bienes ───────────────────────────────────────────────────────────────── */
+.sf-bienes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px;}
+.sf-bien{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:13px 14px;transition:border-color .16s;}
+.sf-bien:hover{border-color:var(--b2);}
+.sf-bien-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.sf-bien-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:100px;font-size:.43rem;letter-spacing:.1em;text-transform:uppercase;}
+.sf-bien-actions{display:flex;gap:3px;}
+.sf-bien-name{font-size:var(--fs-sm);color:var(--text);font-weight:500;margin-bottom:2px;}
+.sf-bien-desc{font-size:var(--fs-sm);color:var(--dim);margin-bottom:9px;min-height:14px;}
+.sf-bien-vals{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.sf-bien-val{background:rgba(255,255,255,.02);border:1px solid var(--b);border-radius:5px;padding:7px 9px;}
+.sf-bien-val-n{font-family:var(--serif);font-size:.88rem;font-weight:300;line-height:1;}
+.sf-bien-val-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.sf-deprec{font-size:var(--fs-xs);margin-top:6px;display:flex;align-items:center;gap:4px;}
+.sf-meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;}
+.sf-meta-chip{font-size:var(--fs-xs);color:var(--dim);display:flex;align-items:center;gap:3px;}
+
+/* ── Historial chart ──────────────────────────────────────────────────────── */
+.sf-hist-wrap{display:flex;align-items:flex-end;gap:6px;height:60px;padding:0 2px;}
+.sf-hist-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.sf-hist-bar{border-radius:3px 3px 0 0;min-height:3px;transition:height .4s;width:100%;}
+.sf-hist-lbl{font-size:var(--fs-xs);color:var(--dim);text-align:center;}
+
+/* ── Action buttons ───────────────────────────────────────────────────────── */
+.sf-snap-btn{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;padding:6px 14px;border-radius:7px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;font-family:var(--sans);}
+.sf-snap-btn:hover{background:rgba(16,185,129,.18);border-color:rgba(16,185,129,.5);}
+.sf-snap-btn svg{width:11px;height:11px;}
+.lock-btn{background:transparent;border:1px solid var(--b);color:var(--dim);padding:5px 12px;border-radius:4px;font-family:var(--mono);font-size:var(--fs-sm);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px;}
+.lock-btn:hover{border-color:var(--red);color:var(--red);}
+.lock-btn svg{width:11px;height:11px;}
+
+/* ── Modals ───────────────────────────────────────────────────────────────── */
+.sf-form-row{display:grid;gap:8px;margin-bottom:10px;}
+.sf-form-row.c2{grid-template-columns:1fr 1fr;}
+.sf-form-row.c3{grid-template-columns:1fr 1fr 1fr;}
+.sf-modal-wide{width:520px;}
+
+/* ── Debt tables ──────────────────────────────────────────────────────────── */
 .pos{color:var(--green);}
 .neg{color:var(--red);}
-.neutral{color:var(--gold);}
 .section-tag{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border-radius:100px;margin-bottom:12px;}
 .tag-g{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.25);color:var(--green);}
 .tag-r{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red);}
@@ -26,51 +96,32 @@
 .dp-name{color:var(--text);font-size:var(--fs-sm);}
 .dp-amount{font-family:var(--serif);font-size:.95rem;}
 .dp-actions{display:flex;gap:5px;align-items:center;}
-/* PROGRESS BAR */
 .debt-progress{width:100%;height:5px;background:var(--b);border-radius:100px;overflow:hidden;margin-top:3px;}
 .dp-fill{height:100%;border-radius:100px;transition:width .5s;}
 .dp-pct{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
-/* BUDGET */
-.bcat{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px 14px;}
-.bcat-n{font-size:var(--fs-sm);color:var(--mid);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
-.bcat-bar{background:var(--b);border-radius:100px;height:4px;overflow:hidden;margin-bottom:8px;}
-.bcat-fill{height:100%;border-radius:100px;transition:width .5s;}
-.bcat-vals{display:flex;justify-content:space-between;font-size:var(--fs-sm);margin-bottom:6px;}
-.bcat-edit{display:flex;gap:5px;}
-.bcat-edit input{background:transparent;border-bottom:1px solid var(--b);color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;padding:2px 0;width:100%;transition:border-color .16s;}
-.bcat-edit input:focus{border-color:var(--gold);}
-.budget-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;}
-.pay-rec{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.rec-card{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px 16px;display:flex;align-items:center;gap:10px;}
-.rc-num{font-family:var(--serif);font-size:1.3rem;font-style:italic;line-height:1;min-width:28px;}
-.rc-info{font-size:var(--fs-sm);color:var(--text);}
-.rc-sub{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}
-.lock-btn{background:transparent;border:1px solid var(--b);color:var(--dim);padding:5px 12px;border-radius:4px;font-family:var(--mono);font-size:var(--fs-sm);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px;}
-.lock-btn:hover{border-color:var(--red);color:var(--red);}
-.lock-btn svg{width:11px;height:11px;}
-/* ABONO MODAL */
 .ab-hist{margin-top:12px;border-top:1px solid var(--b);padding-top:10px;}
 .ab-hist-item{display:flex;justify-content:space-between;padding:5px 0;font-size:var(--fs-sm);color:var(--mid);border-bottom:1px solid var(--b);}
 .ab-hist-item:last-child{border-bottom:none;}
 .ab-hist-amt{color:var(--green);}
+
+
 @media(max-width:767px){
-  .f-grid{grid-template-columns:1fr;gap:10px;}
-  .f-grid .full{grid-column:1/-1;}
-  .balance-hero{padding:14px 16px;}
-  .balance-hero>div:first-child{flex-direction:column;align-items:flex-start;gap:10px;}
-  .balance-hero>div:first-child>div:last-child{flex-wrap:wrap;gap:6px;}
-  .bal-row{grid-template-columns:1fr 1fr;gap:8px;}
-  .bal-v{font-size:1.3rem;}
+  .sf-grid{grid-template-columns:1fr;}
+  .sf-full,.sf-left,.sf-right{grid-column:1/-1;}
+  .sf-stat-row{grid-template-columns:1fr 1fr!important;}
+  .sf-pn-value{font-size:1.9rem;}
+  .sf-bienes-grid{grid-template-columns:1fr 1fr;}
+  .sf-form-row.c2,.sf-form-row.c3{grid-template-columns:1fr;}
   .debt-form{grid-template-columns:1fr 1fr;gap:8px;}
   .debt-form>*:last-child{grid-column:1/-1;}
   .debt-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  .pay-rec{grid-template-columns:1fr;gap:8px;}
+  .pay-rec{grid-template-columns:1fr;}
   .budget-grid{grid-template-columns:1fr 1fr;}
-  .lock-btn span{display:none;}
 }
 @media(min-width:768px) and (max-width:1024px){
-  .f-grid{grid-template-columns:1fr;}
-  .bal-row{grid-template-columns:1fr 1fr 1fr;}
+  .sf-grid{grid-template-columns:1fr;}
+  .sf-full,.sf-left,.sf-right{grid-column:1/-1;}
+  .sf-stat-row{grid-template-columns:1fr 1fr!important;}
   .debt-form{grid-template-columns:1fr 1fr auto;}
 }
 </style>
@@ -83,179 +134,395 @@
 </div>
 {% endif %}
 
-<div class="f-grid">
-
-  <!-- BALANCE HERO -->
-  <div class="balance-hero full">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <div class="tile-lbl" style="margin:0">BALANCE GENERAL</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <a href="/finanzas/budget/" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;padding:5px 12px;border-radius:6px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="pie-chart" style="width:11px;height:11px"></i> Budget</a>
-        <a href="/finanzas/consumo/" style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);color:#a78bfa;padding:5px 12px;border-radius:6px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="shopping-cart" style="width:11px;height:11px"></i> Consumo</a>
-        <a href="/finanzas/salud/" style="background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;padding:5px 12px;border-radius:6px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="heart-pulse" style="width:11px;height:11px"></i> Patrimonio</a>
-        <a href="/finanzas/estados/" style="background:rgba(201,168,76,.10);border:1px solid rgba(201,168,76,.35);color:var(--gold);padding:5px 12px;border-radius:6px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="credit-card" style="width:11px;height:11px"></i> Estados</a>
-        <a href="/finanzas/estados/viajes/" style="background:rgba(96,165,250,.10);border:1px solid rgba(96,165,250,.3);color:#93c5fd;padding:5px 12px;border-radius:6px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;"><i data-lucide="plane" style="width:11px;height:11px"></i> Viajes</a>
-        <button class="lock-btn" onclick="lockFin()"><i data-lucide="lock"></i> Bloquear</button>
+{# ── PATRIMONIO HERO ───────────────────────────────────────────────────────── #}
+<div class="sf-hero">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+    <div>
+      <div class="sf-pn-label">Patrimonio Neto</div>
+      <div class="sf-pn-value {% if patrimonio_neto_display >= 0 %}pos{% else %}neg{% endif %}">
+        {% if patrimonio_neto_display >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto_display) }}
+        <span style="font-size:1rem;color:var(--dim)"> MXN</span>
       </div>
+      <div class="sf-pn-sub">Activos − Pasivos + Deudas personales netas · actualizado hoy</div>
     </div>
-    <div class="bal-row">
-      <div class="bal-box">
-        <div class="bal-v pos">${{ "{:,.2f}".format(total_owe_me) }}</div>
-        <div class="bal-l">Me Deben (restante)</div>
-        <div class="bal-s">{{ owe_me|length }} deuda(s)</div>
-      </div>
-      <div class="bal-box">
-        <div class="bal-v neg">${{ "{:,.2f}".format(total_i_owe) }}</div>
-        <div class="bal-l">Debo (restante)</div>
-        <div class="bal-s">{{ i_owe|length }} deuda(s)</div>
-      </div>
-      <div class="bal-box">
-        {% set net = total_owe_me - total_i_owe %}
-        <div class="bal-v {% if net>=0 %}pos{% else %}neg{% endif %}">{% if net>=0 %}+{% endif %}${{ "{:,.2f}".format(net) }}</div>
-        <div class="bal-l">Posición Neta</div>
-        <div class="bal-s">Balance real</div>
-      </div>
+    <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;">
+      <button class="sf-snap-btn" onclick="tomarSnapshot()">
+        <i data-lucide="camera"></i> Snapshot
+      </button>
+      <button class="lock-btn" onclick="lockFin()"><i data-lucide="lock"></i> <span>Bloquear</span></button>
     </div>
   </div>
 
-  <!-- ME DEBEN -->
-  <div class="tile">
-    <span class="section-tag tag-g">✦ Me Deben</span>
-    <div class="tile-lbl">CUENTAS POR COBRAR</div>
-    <div class="debt-form">
-      <div><div class="fl">Persona</div><input class="fi" id="om-person" placeholder="Quién..."></div>
-      <div><div class="fl">Concepto</div><input class="fi" id="om-concept" placeholder="Por qué..."></div>
-      <div><div class="fl">Monto</div><input class="fi" id="om-amount" type="number" placeholder="MXN" min="0"></div>
-      <button class="btn-g" onclick="addDebt('owe_me')">+ ADD</button>
+  <div class="sf-stat-row" style="grid-template-columns:repeat(4,1fr);">
+    <div class="sf-stat">
+      <div class="sf-stat-v" style="color:#10b981">${{ "{:,.0f}".format(total_activos) }}</div>
+      <div class="sf-stat-l">Activos</div>
+      <div class="sf-stat-s">Líquido + Inv + Bienes</div>
     </div>
-    <div class="debt-table-wrap">
-    <table class="debt-table">
-      <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
-      <tbody id="tbl-owe-me">
-        {% for d in owe_me %}
-        {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
-        <tr data-id="{{ d.id }}">
-          <td class="dp-name">{{ d.person }}</td>
-          <td>{{ d.concept }}</td>
-          <td>
-            <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--green)"></div></div>
-            <div class="dp-pct">{{ pct }}% cobrado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
-          </td>
-          <td><span class="dp-amount pos">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
-          <td>
-            <div class="dp-actions">
-              <button class="btn-gr" onclick="openAbono({{ d.id }},'owe_me','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
-              <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:var(--fs-xs)">✓ Cobrado</button>
-              <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="sf-stat">
+      <div class="sf-stat-v" style="color:#f43f5e">-${{ "{:,.0f}".format(total_pasivos) }}</div>
+      <div class="sf-stat-l">Pasivos</div>
+      <div class="sf-stat-s">Tarjetas + Préstamos</div>
+    </div>
+    <div class="sf-stat">
+      <div class="sf-stat-v" style="color:var(--gold)">${{ "{:,.0f}".format(total_bienes) }}</div>
+      <div class="sf-stat-l">Bienes</div>
+      <div class="sf-stat-s">Valor estimado</div>
+    </div>
+    <div class="sf-stat">
+      {% set net_pers = total_owe_me - total_i_owe %}
+      <div class="sf-stat-v {% if net_pers >= 0 %}pos{% else %}neg{% endif %}">{% if net_pers >= 0 %}+{% endif %}${{ "{:,.0f}".format(net_pers) }}</div>
+      <div class="sf-stat-l">Deudas Personales</div>
+      <div class="sf-stat-s">Por cobrar − por pagar</div>
     </div>
   </div>
 
-  <!-- YO DEBO -->
-  <div class="tile">
-    <span class="section-tag tag-r">✦ Yo Debo</span>
-    <div class="tile-lbl">CUENTAS POR PAGAR</div>
-    <div class="debt-form">
-      <div><div class="fl">A quién</div><input class="fi" id="io-person" placeholder="Quién..."></div>
-      <div><div class="fl">Concepto</div><input class="fi" id="io-concept" placeholder="Por qué..."></div>
-      <div><div class="fl">Monto</div><input class="fi" id="io-amount" type="number" placeholder="MXN" min="0"></div>
-      <button class="btn-g" onclick="addDebt('i_owe')">+ ADD</button>
+  {% if total_activos > 0 or total_pasivos > 0 %}
+  {% set total_ref2 = [total_activos + total_pasivos, 1]|max %}
+  <div class="sf-bar-wrap">
+    <div class="sf-bar-labels">
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#60a5fa"></span>Líquido</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#10b981"></span>Inversiones</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:var(--gold)"></span>Bienes</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#f43f5e"></span>Pasivos</span>
     </div>
-    <div class="debt-table-wrap">
-    <table class="debt-table">
-      <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
-      <tbody id="tbl-i-owe">
-        {% for d in i_owe %}
-        {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
-        <tr data-id="{{ d.id }}">
-          <td class="dp-name">{{ d.person }}</td>
-          <td>{{ d.concept }}</td>
-          <td>
-            <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--gold)"></div></div>
-            <div class="dp-pct">{{ pct }}% pagado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
-          </td>
-          <td><span class="dp-amount neg">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
-          <td>
-            <div class="dp-actions">
-              <button class="btn-g" onclick="openAbono({{ d.id }},'i_owe','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
-              <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:var(--fs-xs)">✓ Pagado</button>
-              <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% set liq = cuentas_liquido|sum(attribute='saldo') %}
+    {% set inv = cuentas_inversion|sum(attribute='saldo') %}
+    <div class="sf-bar">
+      <div class="sf-bar-seg" style="background:#60a5fa;width:{{ (liq/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:#10b981;width:{{ (inv/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:var(--gold);width:{{ (total_bienes/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:#f43f5e;width:{{ (total_pasivos/total_ref2*100)|int }}%"></div>
     </div>
   </div>
-
-  <!-- PRESUPUESTO -->
-  <div class="tile full">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="tile-lbl" style="margin:0">PRESUPUESTO MENSUAL — RADIOGRAFÍA</div>
-      <a href="/finanzas/budget/{{ mes_actual }}" style="font-size:var(--fs-xs);color:var(--gold);letter-spacing:.1em;text-transform:uppercase;opacity:.7;text-decoration:none;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">Editar budget {{ mes_actual }} →</a>
-    </div>
-    <div style="display:flex;gap:20px;margin-bottom:16px;font-size:var(--fs-sm);flex-wrap:wrap;">
-      <span style="color:var(--dim)">Presupuestado: <span style="color:var(--gold)">${{ "{:,.2f}".format(total_budget) }}</span></span>
-      <span style="color:var(--dim)">Gastado real: <span style="color:var(--text)">${{ "{:,.2f}".format(total_spent) }}</span></span>
-      {% if total_budget > 0 %}
-      {% set uso = (total_spent/total_budget*100)|int %}
-      <span style="color:var(--dim)">Uso: <span style="color:{% if uso>90 %}var(--red){% elif uso>70 %}var(--pink){% else %}var(--green){% endif %}">{{ uso }}%</span></span>
-      {% set restante = total_budget - total_spent %}
-      <span style="color:var(--dim)">Restante: <span style="color:{% if restante < 0 %}var(--red){% else %}var(--green){% endif %}">${{ "{:,.2f}".format(restante) }}</span></span>
-      {% endif %}
-    </div>
-    {% if not budget_items %}
-    <div style="text-align:center;padding:30px;color:var(--dim);font-size:var(--fs-sm);border:1px dashed var(--b);border-radius:8px;">
-      No hay partidas de budget para <strong style="color:var(--gold)">{{ mes_actual }}</strong>.<br>
-      <a href="/finanzas/budget/" style="color:var(--gold);margin-top:8px;display:inline-block;">Configura tu Budget →</a>
-    </div>
-    {% else %}
-    <div class="budget-grid">
-      {% for item in budget_items %}
-      {% set gastado = item.monto_real if item.monto_real is not none else 0 %}
-      {% set estimado = item.monto_estimado or 0 %}
-      {% set pct = [gastado/estimado*100, 100]|min|int if estimado > 0 else 0 %}
-      {% if item.categoria == 'necesidades' %}{% set cat_color = 'var(--gold)' %}{% set cat_lbl = 'Necesidad' %}
-      {% elif item.categoria == 'deseos' %}{% set cat_color = 'var(--purple)' %}{% set cat_lbl = 'Deseo' %}
-      {% else %}{% set cat_color = 'var(--green)' %}{% set cat_lbl = 'Ahorro/Deuda' %}{% endif %}
-      <div class="bcat" data-id="{{ item.id }}">
-        <div class="bcat-n">{{ item.nombre }}</div>
-        <div style="font-size:var(--fs-xs);color:{{ cat_color }};opacity:.6;margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;">{{ cat_lbl }}</div>
-        <div class="bcat-bar"><div class="bcat-fill" style="width:{{ pct }}%;background:{% if pct>90 %}var(--red){% elif pct>70 %}var(--pink){% else %}{{ cat_color }}{% endif %}"></div></div>
-        <div class="bcat-vals">
-          <span style="color:var(--text)">${{ "{:,.0f}".format(gastado) }}</span>
-          <span style="color:var(--dim)">/ ${{ "{:,.0f}".format(estimado) }}</span>
-        </div>
-        <div class="bcat-edit">
-          <input type="number" placeholder="Real gastado"
-                 value="{{ gastado|int if item.monto_real is not none else '' }}"
-                 onchange="saveItemReal({{ item.id }}, this)"
-                 min="0" title="Ingresa lo que realmente gastaste">
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </div>
-
-  <!-- RECORDATORIOS -->
-  <div class="tile full">
-    <div class="tile-lbl">RECORDATORIOS FIJOS</div>
-    <div class="pay-rec">
-      <div class="rec-card"><div class="rc-num" style="color:var(--gold)">15</div><div><div class="rc-sub">Cada mes</div><div class="rc-info">Pagar <span style="color:var(--gold)">BBVA</span> + <span style="color:var(--purple)">Invex</span></div></div></div>
-      <div class="rec-card"><div class="rc-num" style="color:var(--blue)">30</div><div><div class="rc-sub">Cada mes</div><div class="rc-info">Pagar <span style="color:var(--blue)">HSBC</span></div></div></div>
-    </div>
-  </div>
-
+  {% endif %}
 </div>
 
-<!-- ABONO MODAL -->
+<div class="sf-grid">
+
+{# ── ACTIVOS LÍQUIDOS ──────────────────────────────────────────────────────── #}
+<div class="tile sf-left">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">💵 Activos Líquidos</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Efectivo y cuentas bancarias</div>
+    </div>
+    <div style="text-align:right;">
+      {% set liq_total = cuentas_liquido|sum(attribute='saldo') %}
+      <div class="sf-group-total" style="color:#60a5fa">${{ "{:,.2f}".format(liq_total) }}</div>
+      <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('efectivo')">+ Agregar</button>
+    </div>
+  </div>
+  <div class="sf-accounts">
+    {% for c in cuentas_liquido %}
+    {% set meta = tipo_meta[c.tipo] %}
+    <div class="sf-account" data-cid="{{ c.id }}">
+      <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
+        <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
+      </div>
+      <div class="sf-acc-body">
+        <div class="sf-acc-name">{{ c.nombre }}</div>
+        <div class="sf-acc-inst">{{ c.institucion or meta.label }}</div>
+      </div>
+      <div class="sf-acc-saldo">
+        <div class="sf-acc-amount" style="color:#60a5fa">${{ "{:,.2f}".format(c.saldo) }}</div>
+        <div class="sf-acc-moneda">{{ c.moneda }}</div>
+      </div>
+      <div class="sf-acc-actions">
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+      </div>
+    </div>
+    {% else %}
+    <div class="sf-empty">
+      <i data-lucide="wallet" style="width:20px;height:20px;opacity:.2;display:block;margin:0 auto 7px"></i>
+      Sin cuentas líquidas registradas.<br>
+      <button class="btn-gr" style="margin-top:8px;font-size:var(--fs-xs);" onclick="openModalCuenta('efectivo')">+ Agregar cuenta</button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── INVERSIONES ───────────────────────────────────────────────────────────── #}
+<div class="tile sf-right">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">📈 Inversiones</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">GBM, CETES, fondos, etc.</div>
+    </div>
+    <div style="text-align:right;">
+      {% set inv_total = cuentas_inversion|sum(attribute='saldo') %}
+      <div class="sf-group-total" style="color:#10b981">${{ "{:,.2f}".format(inv_total) }}</div>
+      <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('inversion')">+ Agregar</button>
+    </div>
+  </div>
+  <div class="sf-accounts">
+    {% for c in cuentas_inversion %}
+    {% set meta = tipo_meta[c.tipo] %}
+    <div class="sf-account" data-cid="{{ c.id }}">
+      <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
+        <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
+      </div>
+      <div class="sf-acc-body">
+        <div class="sf-acc-name">{{ c.nombre }}</div>
+        <div class="sf-acc-inst">{{ c.institucion or meta.label }}</div>
+      </div>
+      <div class="sf-acc-saldo">
+        <div class="sf-acc-amount" style="color:#10b981">${{ "{:,.2f}".format(c.saldo) }}</div>
+        <div class="sf-acc-moneda">{{ c.moneda }}</div>
+      </div>
+      <div class="sf-acc-actions">
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+      </div>
+    </div>
+    {% else %}
+    <div class="sf-empty">
+      <i data-lucide="trending-up" style="width:20px;height:20px;opacity:.2;display:block;margin:0 auto 7px"></i>
+      Sin inversiones registradas.<br>
+      <button class="btn-gr" style="margin-top:8px;font-size:var(--fs-xs);" onclick="openModalCuenta('inversion')">+ Agregar inversión</button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── PASIVOS — TARJETAS Y PRÉSTAMOS ────────────────────────────────────────── #}
+<div class="tile sf-full">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">💳 Pasivos — Tarjetas y Deudas</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Saldo actual adeudado en tarjetas y préstamos</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="sf-group-total" style="color:#f43f5e">-${{ "{:,.2f}".format(total_pasivos) }}</div>
+      <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('tarjeta_credito')">+ Agregar pasivo</button>
+    </div>
+  </div>
+  <div class="sf-accounts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:7px;">
+    {% for c in cuentas_pasivo %}
+    {% set meta = tipo_meta[c.tipo] %}
+    <div class="sf-account" data-cid="{{ c.id }}">
+      <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
+        <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
+      </div>
+      <div class="sf-acc-body">
+        <div class="sf-acc-name">{{ c.nombre }}</div>
+        <div class="sf-acc-inst">{{ c.institucion or meta.label }}</div>
+      </div>
+      <div class="sf-acc-saldo">
+        <div class="sf-acc-amount" style="color:#f43f5e">-${{ "{:,.2f}".format(c.saldo) }}</div>
+        <div class="sf-acc-moneda">{{ c.moneda }}</div>
+      </div>
+      <div class="sf-acc-actions">
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+      </div>
+    </div>
+    {% else %}
+    <div class="sf-empty" style="grid-column:1/-1;">Sin pasivos registrados — ¡excelente!</div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── DEUDAS PERSONALES ─────────────────────────────────────────────────────── #}
+<div class="tile sf-full">
+  <div class="sf-group-hd" style="margin-bottom:16px;">
+    <div>
+      <div class="sf-group-t">🤝 Deudas Personales</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Activo por cobrar y pasivo interpersonal</div>
+    </div>
+    <div style="display:flex;gap:16px;align-items:center;">
+      {% set net_pers = total_owe_me - total_i_owe %}
+      <div style="text-align:right;">
+        <div class="sf-group-total {% if net_pers >= 0 %}pos{% else %}neg{% endif %}">{% if net_pers >= 0 %}+{% endif %}${{ "{:,.2f}".format(net_pers) }}</div>
+        <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:2px;">posición neta</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span class="section-tag tag-g" style="margin:0;">✦ Me Deben</span>
+        <span style="font-family:var(--serif);font-size:.9rem;color:var(--green)">${{ "{:,.2f}".format(total_owe_me) }}</span>
+      </div>
+      <div class="debt-form">
+        <div><div class="fl">Persona</div><input class="fi" id="om-person" placeholder="Quién..."></div>
+        <div><div class="fl">Concepto</div><input class="fi" id="om-concept" placeholder="Por qué..."></div>
+        <div><div class="fl">Monto</div><input class="fi" id="om-amount" type="number" placeholder="MXN" min="0"></div>
+        <button class="btn-g" onclick="addDebt('owe_me')">+ ADD</button>
+      </div>
+      <div class="debt-table-wrap">
+      <table class="debt-table">
+        <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
+        <tbody id="tbl-owe-me">
+          {% for d in owe_me %}
+          {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
+          <tr data-id="{{ d.id }}">
+            <td class="dp-name">{{ d.person }}</td>
+            <td>{{ d.concept }}</td>
+            <td>
+              <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--green)"></div></div>
+              <div class="dp-pct">{{ pct }}% cobrado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
+            </td>
+            <td><span class="dp-amount pos">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
+            <td>
+              <div class="dp-actions">
+                <button class="btn-gr" onclick="openAbono({{ d.id }},'owe_me','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
+                <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:var(--fs-xs)">✓ Cobrado</button>
+                <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span class="section-tag tag-r" style="margin:0;">✦ Yo Debo</span>
+        <span style="font-family:var(--serif);font-size:.9rem;color:var(--red)">${{ "{:,.2f}".format(total_i_owe) }}</span>
+      </div>
+      <div class="debt-form">
+        <div><div class="fl">A quién</div><input class="fi" id="io-person" placeholder="Quién..."></div>
+        <div><div class="fl">Concepto</div><input class="fi" id="io-concept" placeholder="Por qué..."></div>
+        <div><div class="fl">Monto</div><input class="fi" id="io-amount" type="number" placeholder="MXN" min="0"></div>
+        <button class="btn-g" onclick="addDebt('i_owe')">+ ADD</button>
+      </div>
+      <div class="debt-table-wrap">
+      <table class="debt-table">
+        <thead><tr><th>Persona</th><th>Concepto</th><th>Progreso</th><th>Restante</th><th></th></tr></thead>
+        <tbody id="tbl-i-owe">
+          {% for d in i_owe %}
+          {% set pct = ((d.monto_total - d.monto_restante) / d.monto_total * 100)|int if d.monto_total > 0 else 0 %}
+          <tr data-id="{{ d.id }}">
+            <td class="dp-name">{{ d.person }}</td>
+            <td>{{ d.concept }}</td>
+            <td>
+              <div class="debt-progress"><div class="dp-fill" style="width:{{ pct }}%;background:var(--gold)"></div></div>
+              <div class="dp-pct">{{ pct }}% pagado · ${{ "{:,.2f}".format(d.monto_total - d.monto_restante) }} de ${{ "{:,.2f}".format(d.monto_total) }}</div>
+            </td>
+            <td><span class="dp-amount neg">${{ "{:,.2f}".format(d.monto_restante) }}</span></td>
+            <td>
+              <div class="dp-actions">
+                <button class="btn-g" onclick="openAbono({{ d.id }},'i_owe','{{ d.person }}',{{ d.monto_restante }},{{ d.monto_total }})">Abonar</button>
+                <button class="btn-gr" onclick="settle({{ d.id }},this)" style="font-size:var(--fs-xs)">✓ Pagado</button>
+                <button class="btn-r"  onclick="delDebt({{ d.id }},this)">✕</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+
+  </div>{# /inner grid #}
+</div>
+
+{# ── BIENES PERSONALES ─────────────────────────────────────────────────────── #}
+<div class="tile sf-full">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">🏠 Bienes Personales</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Vehículo, electrodomésticos, muebles, electrónicos</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="sf-group-total" style="color:var(--gold)">${{ "{:,.2f}".format(total_bienes) }}</div>
+      <button class="btn-a" style="padding:5px 14px;margin-top:5px;" onclick="openModalBien()">+ Agregar bien</button>
+    </div>
+  </div>
+
+  {% if bienes %}
+  <div class="chips2" style="margin-bottom:14px;">
+    <a class="ch2 on" onclick="filtrarCat('todos',this)">Todos ({{ bienes|length }})</a>
+    {% for cat, items in bienes_por_cat.items() %}
+    {% set bm = bien_meta[cat] %}
+    <a class="ch2" onclick="filtrarCat('{{ cat }}',this)">{{ bm.label }} ({{ items|length }})</a>
+    {% endfor %}
+  </div>
+  <div class="sf-bienes-grid" id="bienes-grid">
+    {% for b in bienes %}
+    {% set bm = bien_meta[b.categoria] %}
+    {% set deprec = ((b.valor_actual - b.precio_compra) / b.precio_compra * 100) if b.precio_compra > 0 else 0 %}
+    <div class="sf-bien" data-cat="{{ b.categoria }}" data-bid="{{ b.id }}">
+      <div class="sf-bien-hd">
+        <span class="sf-bien-badge" style="background:{{ bm.color }}18;border:1px solid {{ bm.color }}44;color:{{ bm.color }};">
+          <i data-lucide="{{ bm.icon }}" style="width:9px;height:9px"></i>
+          {{ bm.label }}
+        </span>
+        <div class="sf-bien-actions">
+          <button class="ai" title="Editar" onclick="editBien({{ b.id }},'{{ b.nombre|e }}','{{ b.categoria }}','{{ b.descripcion|e }}',{{ b.precio_compra }},{{ b.valor_actual }},'{{ b.fecha_compra }}','{{ b.lugar_compra|e }}','{{ b.garantia_hasta }}','{{ b.notas|e }}')"><i data-lucide="pencil" style="width:11px;height:11px"></i></button>
+          <button class="ai del" title="Eliminar" onclick="delBien({{ b.id }},this)"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
+        </div>
+      </div>
+      <div class="sf-bien-name">{{ b.nombre }}</div>
+      <div class="sf-bien-desc">{{ b.descripcion or (b.lugar_compra or '') }}</div>
+      <div class="sf-bien-vals">
+        <div class="sf-bien-val">
+          <div class="sf-bien-val-n" style="color:var(--mid)">${{ "{:,.0f}".format(b.precio_compra) }}</div>
+          <div class="sf-bien-val-l">Precio compra</div>
+        </div>
+        <div class="sf-bien-val">
+          <div class="sf-bien-val-n" style="color:var(--gold)">${{ "{:,.0f}".format(b.valor_actual) }}</div>
+          <div class="sf-bien-val-l">Valor actual</div>
+        </div>
+      </div>
+      {% if b.precio_compra > 0 %}
+      <div class="sf-deprec {% if deprec >= 0 %}pos{% else %}neg{% endif %}">
+        <i data-lucide="{% if deprec >= 0 %}trending-up{% else %}trending-down{% endif %}" style="width:10px;height:10px"></i>
+        {% if deprec >= 0 %}+{% endif %}{{ "{:.1f}".format(deprec) }}% valor
+      </div>
+      {% endif %}
+      <div class="sf-meta-row">
+        {% if b.fecha_compra %}<span class="sf-meta-chip"><i data-lucide="calendar" style="width:10px;height:10px"></i>{{ b.fecha_compra }}</span>{% endif %}
+        {% if b.garantia_hasta %}<span class="sf-meta-chip"><i data-lucide="shield-check" style="width:10px;height:10px"></i>Gtía: {{ b.garantia_hasta }}</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="sf-empty" style="padding:36px;">
+    <i data-lucide="package" style="width:28px;height:28px;opacity:.15;display:block;margin:0 auto 10px"></i>
+    Registra tus bienes: carro, lavadora, sofá, refrigerador...<br>
+    <button class="btn-a" style="margin-top:12px;" onclick="openModalBien()">+ Agregar primer bien</button>
+  </div>
+  {% endif %}
+</div>
+
+{# ── HISTORIAL ─────────────────────────────────────────────────────────────── #}
+{% if historial %}
+<div class="tile sf-full">
+  <div class="sf-group-hd">
+    <div class="sf-group-t">📊 Evolución Patrimonio Neto</div>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Últimos {{ historial|length }} snapshots</span>
+  </div>
+  {% set max_pn = historial|map(attribute='patrimonio_neto')|max %}
+  {% set min_pn = historial|map(attribute='patrimonio_neto')|min %}
+  {% set range_pn = [(max_pn - min_pn), 1]|max %}
+  <div class="sf-hist-wrap">
+    {% for h in historial %}
+    {% set pct = ((h.patrimonio_neto - min_pn) / range_pn * 100)|int %}
+    <div class="sf-hist-bar-wrap">
+      <div class="sf-hist-bar" style="height:{{ [pct,4]|max }}%;background:{% if h.patrimonio_neto >= 0 %}#10b981{% else %}#f43f5e{% endif %};opacity:.8;"></div>
+      <div class="sf-hist-lbl">{{ h.fecha[5:] }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="display:flex;justify-content:space-between;margin-top:8px;">
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Primer snapshot: <span style="color:var(--mid)">{{ historial[0].fecha }}</span></span>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Último: <span style="color:{% if historial[-1].patrimonio_neto >= 0 %}var(--green){% else %}var(--red){% endif %}">${{ "{:,.0f}".format(historial[-1].patrimonio_neto) }}</span></span>
+  </div>
+</div>
+{% endif %}
+
+</div>{# /sf-grid #}
+
+
+{# ── ABONO MODAL ───────────────────────────────────────────────────────────── #}
 <div class="modal-bg" id="abono-modal">
   <div class="modal">
     <div class="modal-title">Registrar Abono</div>
@@ -271,7 +538,6 @@
       <div class="fl" style="margin-bottom:5px;">Nota (opcional)</div>
       <input class="fi" id="ab-note" placeholder="Ej: transferencia OXXO...">
     </div>
-    <!-- Payment history -->
     <div class="ab-hist" id="ab-hist-wrap" style="display:none">
       <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px">Historial de abonos</div>
       <div id="ab-hist-list"></div>
@@ -285,7 +551,127 @@
 </div>
 
 
-<a href="/finanzas/consumo">Consumo Inteligente</a>
+{# ── MODAL CUENTA ──────────────────────────────────────────────────────────── #}
+<div class="modal-bg" id="modal-cuenta">
+  <div class="modal sf-modal-wide">
+    <div class="modal-title" id="mcuenta-title">Agregar Cuenta</div>
+    <input type="hidden" id="mc-id" value="">
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Nombre de la cuenta *</label>
+        <input class="fi" id="mc-nombre" placeholder="Ej: BBVA Débito, GBM, Efectivo...">
+      </div>
+      <div class="fg">
+        <label class="fl">Tipo *</label>
+        <select class="fi" id="mc-tipo">
+          <option value="efectivo">Efectivo</option>
+          <option value="cuenta_banco">Cuenta Bancaria</option>
+          <option value="inversion">Inversión</option>
+          <option value="tarjeta_credito">Tarjeta de Crédito</option>
+          <option value="prestamo">Préstamo / Crédito</option>
+        </select>
+      </div>
+    </div>
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Institución / Banco</label>
+        <input class="fi" id="mc-inst" placeholder="Ej: BBVA, GBM, HSBC...">
+      </div>
+      <div class="fg">
+        <label class="fl">Moneda</label>
+        <select class="fi" id="mc-moneda">
+          <option value="MXN">MXN — Pesos</option>
+          <option value="USD">USD — Dólares</option>
+          <option value="EUR">EUR — Euros</option>
+        </select>
+      </div>
+    </div>
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Saldo actual *</label>
+        <input class="fi" id="mc-saldo" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+    </div>
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Notas (opcional)</label>
+        <input class="fi" id="mc-notas" placeholder="Ej: cuenta para gastos fijos...">
+      </div>
+    </div>
+    <div id="mc-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeMCuenta()">Cancelar</button>
+      <button class="btn-a" onclick="submitCuenta()">Guardar Cuenta</button>
+    </div>
+  </div>
+</div>
+
+
+{# ── MODAL BIEN ────────────────────────────────────────────────────────────── #}
+<div class="modal-bg" id="modal-bien">
+  <div class="modal sf-modal-wide">
+    <div class="modal-title" id="mbien-title">Agregar Bien Personal</div>
+    <input type="hidden" id="mb-id" value="">
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Nombre del bien *</label>
+        <input class="fi" id="mb-nombre" placeholder="Ej: Lavadora Samsung, Sofá L-shape...">
+      </div>
+      <div class="fg">
+        <label class="fl">Categoría *</label>
+        <select class="fi" id="mb-categoria">
+          <option value="vehiculo">Vehículo</option>
+          <option value="electrodomestico">Electrodoméstico</option>
+          <option value="mueble">Mueble</option>
+          <option value="electronico">Electrónico</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Descripción breve</label>
+        <input class="fi" id="mb-descripcion" placeholder="Modelo, características principales...">
+      </div>
+    </div>
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Precio de compra (MXN) *</label>
+        <input class="fi" id="mb-precio" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="fg">
+        <label class="fl">Valor actual estimado (MXN)</label>
+        <input class="fi" id="mb-valor" type="number" step="0.01" min="0" placeholder="0.00">
+      </div>
+    </div>
+    <div class="sf-form-row c3">
+      <div class="fg">
+        <label class="fl">Fecha de compra</label>
+        <input class="fi" id="mb-fecha" type="month" placeholder="2024-03">
+      </div>
+      <div class="fg">
+        <label class="fl">Lugar / Tienda</label>
+        <input class="fi" id="mb-lugar" placeholder="Ej: Liverpool, Mercado Libre...">
+      </div>
+      <div class="fg">
+        <label class="fl">Garantía hasta</label>
+        <input class="fi" id="mb-garantia" type="month" placeholder="2026-03">
+      </div>
+    </div>
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Notas</label>
+        <input class="fi" id="mb-notas" placeholder="Número de serie, detalles extra...">
+      </div>
+    </div>
+    <div id="mb-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeMBien()">Cancelar</button>
+      <button class="btn-a" onclick="submitBien()">Guardar Bien</button>
+    </div>
+  </div>
+</div>
+
 
 {% endblock %}
 {% block scripts %}
@@ -293,6 +679,7 @@
 const fmt = n => (+n).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
 let _abono = {};
 
+// ── Abono modal ──────────────────────────────────────────────────────────────
 function openAbono(id, type, person, restante, total) {
   _abono = {id, type};
   document.getElementById('ab-person').textContent   = person;
@@ -301,7 +688,6 @@ function openAbono(id, type, person, restante, total) {
   document.getElementById('ab-note').value   = '';
   document.getElementById('ab-err').textContent = '';
   document.getElementById('abono-modal').classList.add('open');
-  // Load history
   fetch(`/finanzas/api/debt/${id}/payments`).then(r=>r.json()).then(d=>{
     if(d.payments && d.payments.length){
       document.getElementById('ab-hist-wrap').style.display='block';
@@ -315,22 +701,18 @@ function openAbono(id, type, person, restante, total) {
   document.getElementById('ab-amount').focus();
 }
 
-function closeAbono() {
-  document.getElementById('abono-modal').classList.remove('open');
-}
+function closeAbono() { document.getElementById('abono-modal').classList.remove('open'); }
 
 async function submitAbono() {
   const amount = parseFloat(document.getElementById('ab-amount').value);
   const note   = document.getElementById('ab-note').value;
   if (!amount || amount <= 0) { document.getElementById('ab-err').textContent = 'Ingresa un monto válido'; return; }
-
   const r = await fetch(`/finanzas/api/debt/${_abono.id}/abonar`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({amount, note})
   });
   const d = await r.json();
   if (!d.ok) { document.getElementById('ab-err').textContent = d.error; return; }
-
   closeAbono();
   toast(`Abono registrado: $${fmt(amount)}`, d.settled ? 'win' : 'ok');
   if (d.settled) toast('✓ Deuda completamente saldada', 'win');
@@ -358,18 +740,6 @@ async function delDebt(id, btn) {
   btn.closest('tr').remove(); toast('Eliminado');
 }
 
-async function saveItemReal(id, input) {
-  const val = parseFloat(input.value);
-  if (isNaN(val) || val < 0) return;
-  const r = await fetch(`/finanzas/budget/api/item/${id}`, {
-    method: 'PATCH',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({monto_real: val})
-  }).then(r => r.json()).catch(() => null);
-  if (r && r.ok) { toast('Guardado ✓'); setTimeout(() => location.reload(), 700); }
-  else toast('Error al guardar', 'err');
-}
-
 async function lockFin() {
   await fetch('/finanzas/lock',{method:'POST'});
   window.location.href='/finanzas';
@@ -381,5 +751,160 @@ document.getElementById('abono-modal').addEventListener('click', e => {
 document.getElementById('ab-amount').addEventListener('keydown', e => {
   if (e.key === 'Enter') submitAbono();
 });
+
+// ── Modal Cuenta ─────────────────────────────────────────────────────────────
+function openModalCuenta(tipoDefault='cuenta_banco') {
+  document.getElementById('mc-id').value = '';
+  document.getElementById('mcuenta-title').textContent = 'Agregar Cuenta';
+  document.getElementById('mc-nombre').value = '';
+  document.getElementById('mc-tipo').value = tipoDefault;
+  document.getElementById('mc-inst').value = '';
+  document.getElementById('mc-saldo').value = '';
+  document.getElementById('mc-moneda').value = 'MXN';
+  document.getElementById('mc-notas').value = '';
+  document.getElementById('mc-err').textContent = '';
+  document.getElementById('modal-cuenta').classList.add('open');
+  document.getElementById('mc-nombre').focus();
+}
+
+function editCuenta(id, nombre, tipo, institucion, saldo, moneda, notas) {
+  document.getElementById('mc-id').value = id;
+  document.getElementById('mcuenta-title').textContent = 'Editar Cuenta';
+  document.getElementById('mc-nombre').value = nombre;
+  document.getElementById('mc-tipo').value = tipo;
+  document.getElementById('mc-inst').value = institucion;
+  document.getElementById('mc-saldo').value = saldo;
+  document.getElementById('mc-moneda').value = moneda;
+  document.getElementById('mc-notas').value = notas;
+  document.getElementById('mc-err').textContent = '';
+  document.getElementById('modal-cuenta').classList.add('open');
+}
+
+function closeMCuenta() { document.getElementById('modal-cuenta').classList.remove('open'); }
+
+async function submitCuenta() {
+  const id     = document.getElementById('mc-id').value;
+  const nombre = document.getElementById('mc-nombre').value.trim();
+  const saldo  = parseFloat(document.getElementById('mc-saldo').value);
+  if (!nombre) { document.getElementById('mc-err').textContent = 'Ingresa el nombre.'; return; }
+  if (isNaN(saldo)) { document.getElementById('mc-err').textContent = 'Saldo inválido.'; return; }
+  const payload = {
+    nombre,
+    tipo:        document.getElementById('mc-tipo').value,
+    institucion: document.getElementById('mc-inst').value.trim(),
+    saldo,
+    moneda:      document.getElementById('mc-moneda').value,
+    notas:       document.getElementById('mc-notas').value.trim(),
+  };
+  const url    = id ? `/finanzas/salud/api/cuenta/${id}` : '/finanzas/salud/api/cuenta';
+  const method = id ? 'PATCH' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const data = await r.json();
+  if (data.ok) { closeMCuenta(); location.reload(); }
+  else { document.getElementById('mc-err').textContent = data.error || 'Error al guardar.'; }
+}
+
+async function delCuenta(id, btn) {
+  if (!confirm('¿Eliminar esta cuenta?')) return;
+  const r = await fetch(`/finanzas/salud/api/cuenta/${id}`, { method: 'DELETE' });
+  if ((await r.json()).ok) { btn.closest('.sf-account').remove(); location.reload(); }
+}
+
+// ── Modal Bien ───────────────────────────────────────────────────────────────
+function openModalBien() {
+  document.getElementById('mb-id').value = '';
+  document.getElementById('mbien-title').textContent = 'Agregar Bien Personal';
+  ['mb-nombre','mb-descripcion','mb-lugar','mb-notas'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mb-categoria').value = 'electrodomestico';
+  document.getElementById('mb-precio').value = '';
+  document.getElementById('mb-valor').value = '';
+  document.getElementById('mb-fecha').value = '';
+  document.getElementById('mb-garantia').value = '';
+  document.getElementById('mb-err').textContent = '';
+  document.getElementById('modal-bien').classList.add('open');
+  document.getElementById('mb-nombre').focus();
+}
+
+function editBien(id, nombre, categoria, descripcion, precio, valor, fecha, lugar, garantia, notas) {
+  document.getElementById('mb-id').value = id;
+  document.getElementById('mbien-title').textContent = 'Editar Bien';
+  document.getElementById('mb-nombre').value = nombre;
+  document.getElementById('mb-categoria').value = categoria;
+  document.getElementById('mb-descripcion').value = descripcion;
+  document.getElementById('mb-precio').value = precio;
+  document.getElementById('mb-valor').value = valor;
+  document.getElementById('mb-fecha').value = fecha;
+  document.getElementById('mb-lugar').value = lugar;
+  document.getElementById('mb-garantia').value = garantia;
+  document.getElementById('mb-notas').value = notas;
+  document.getElementById('mb-err').textContent = '';
+  document.getElementById('modal-bien').classList.add('open');
+}
+
+function closeMBien() { document.getElementById('modal-bien').classList.remove('open'); }
+
+async function submitBien() {
+  const id     = document.getElementById('mb-id').value;
+  const nombre = document.getElementById('mb-nombre').value.trim();
+  const precio = parseFloat(document.getElementById('mb-precio').value) || 0;
+  const valorRaw = document.getElementById('mb-valor').value;
+  const valor  = valorRaw !== '' ? parseFloat(valorRaw) : precio;
+  if (!nombre) { document.getElementById('mb-err').textContent = 'Ingresa el nombre.'; return; }
+  const payload = {
+    nombre,
+    categoria:     document.getElementById('mb-categoria').value,
+    descripcion:   document.getElementById('mb-descripcion').value.trim(),
+    precio_compra: precio,
+    valor_actual:  valor,
+    fecha_compra:  document.getElementById('mb-fecha').value,
+    lugar_compra:  document.getElementById('mb-lugar').value.trim(),
+    garantia_hasta:document.getElementById('mb-garantia').value,
+    notas:         document.getElementById('mb-notas').value.trim(),
+  };
+  const url    = id ? `/finanzas/salud/api/bien/${id}` : '/finanzas/salud/api/bien';
+  const method = id ? 'PATCH' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  const data = await r.json();
+  if (data.ok) { closeMBien(); location.reload(); }
+  else { document.getElementById('mb-err').textContent = data.error || 'Error al guardar.'; }
+}
+
+async function delBien(id, btn) {
+  if (!confirm('¿Eliminar este bien?')) return;
+  const r = await fetch(`/finanzas/salud/api/bien/${id}`, { method: 'DELETE' });
+  if ((await r.json()).ok) { btn.closest('.sf-bien').remove(); location.reload(); }
+}
+
+function filtrarCat(cat, el) {
+  document.querySelectorAll('.chips2 .ch2').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('#bienes-grid .sf-bien').forEach(b => {
+    b.style.display = (cat === 'todos' || b.dataset.cat === cat) ? '' : 'none';
+  });
+}
+
+async function tomarSnapshot() {
+  const r = await fetch('/finanzas/salud/api/snapshot', { method: 'POST' });
+  const d = await r.json();
+  if (d.ok) {
+    toast(`✓ Snapshot guardado: $${d.patrimonio_neto.toLocaleString('es-MX', {minimumFractionDigits:2})} MXN`, 'win');
+    setTimeout(() => location.reload(), 800);
+  } else {
+    toast(d.error || 'No se pudo guardar el snapshot.', 'err');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeMCuenta(); closeMBien(); closeAbono(); }
+});
+
+document.getElementById('modal-cuenta').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeMCuenta();
+});
+document.getElementById('modal-bien').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeMBien();
+});
+
+lucide.createIcons();
 </script>
 {% endblock %}
