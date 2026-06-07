@@ -53,7 +53,16 @@
       "Bash(py -3.8 -c \"import flask; print\\('flask', flask.__version__\\)\")",
       "Bash(py -3.8 -m pytest tests/test_db_persistence.py -v --tb=short)",
       "Bash(xargs ls *)",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\\\\gio_v3\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5000/viajes/)",
+      "PowerShell(Start-Sleep -Seconds 2; try { \\(Invoke-WebRequest -Uri \"http://localhost:5000/viajes/\" -UseBasicParsing\\).StatusCode } catch { $_.Exception.Response.StatusCode.value__ })",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:5000/viajes/\" -UseBasicParsing; $r.StatusCode; $r.Content.Substring\\(0,300\\))",
+      "PowerShell(Stop-Process -Id 12024 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id 54760 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Start-Sleep -Seconds 5; try { $r = Invoke-WebRequest -Uri \"http://localhost:5000/viajes/\" -UseBasicParsing; $r.StatusCode } catch { \"ERROR: $_\" })",
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:5000/viajes/api/trips/1/dias\" -UseBasicParsing; $r.Content | ConvertFrom-Json | Select-Object id, fecha, descripcion, @{n='outfits';e={$_.outfits.Count}})"
     ]
   }
 }
