@@ -71,31 +71,7 @@ def _compute_patrimonio():
 
 @salud_bp.route('/')
 def index():
-    pat    = _compute_patrimonio()
-    cuentas = pat['cuentas']
-    bienes  = pat['bienes']
-
-    bienes_por_cat = defaultdict(list)
-    for b in bienes:
-        bienes_por_cat[b['categoria']].append(b)
-
-    return render_template(
-        'finanzas/salud.html',
-        cuentas_liquido   = [c for c in cuentas if c['tipo'] in ('efectivo', 'cuenta_banco')],
-        cuentas_inversion = [c for c in cuentas if c['tipo'] == 'inversion'],
-        cuentas_pasivo    = [c for c in cuentas if c['tipo'] in TIPOS_PASIVO],
-        bienes            = bienes,
-        bienes_por_cat    = dict(bienes_por_cat),
-        historial         = pat['historial'],
-        total_activos     = pat['total_activos'],
-        activos_cuentas   = pat['activos_cuentas'],
-        total_bienes      = pat['total_bienes'],
-        total_pasivos     = pat['total_pasivos'],
-        patrimonio_neto   = pat['patrimonio_neto'],
-        tipo_meta         = TIPO_META,
-        bien_meta         = BIEN_META,
-        today             = today_date().strftime('%d %b %Y').upper(),
-    )
+    return redirect('/finanzas/', 301)
 
 
 # ── API Cuentas ────────────────────────────────────────────────────────────────
