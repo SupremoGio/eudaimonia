@@ -1,10 +1,16 @@
 import math
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, session, redirect
 from database import get_db
 from ec_constants import EC_RATE
 import datetime
 
 prioridades_bp = Blueprint('prioridades', __name__, template_folder='../../templates')
+
+
+@prioridades_bp.before_request
+def _require_auth():
+    if not session.get('fin_ok'):
+        return redirect('/finanzas/')
 
 MESES = {
     '01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun',
