@@ -34,8 +34,36 @@ CATEGORIA_BUCKET = {
     'DEPORTE':           'deseos',
     'REGALO':            'deseos',
     'OTROS':             'deseos',
+    'EXPENSE':           'deseos',       # catch-all fallback from parsers
     'PAGO_TDC':          None,
     'PAGO':              None,
+    'TRANSFERENCIA':     None,           # inter-account transfer
+    'SPEI_ENVIADO':      None,           # outgoing SPEI
+    'RETIRO':            None,           # ATM withdrawal
+}
+
+# Human-readable labels for est_budgets categories
+CAT_LABELS = {
+    'COMIDA/REST':     'Comida / Restaurante',
+    'VIVERES/SUPER':   'Víveres / Súper',
+    'CASA/HOGAR':      'Casa / Hogar',
+    'GASOLINA/AUTO':   'Gasolina / Auto',
+    'ROPA':            'Ropa',
+    'SALUD':           'Salud',
+    'TECH/DIGITAL':    'Tech / Digital',
+    'SUSCRIPCIONES':   'Suscripciones',
+    'ENTRETENIMIENTO': 'Entretenimiento',
+    'SALSA':           'Salsa',
+    'VIAJES/VUELOS':   'Viajes / Vuelos',
+    'TRANSPORTE':      'Transporte',
+    'APRENDIZAJE':     'Aprendizaje',
+    'INVERSION':       'Inversión',
+    'CAFE/PAN':        'Café / Pan',
+    'GYM':             'Gym',
+    'DEPORTE':         'Deporte',
+    'REGALO':          'Regalo',
+    'OTROS':           'Otros',
+    'EXPENSE':         'Gasto general',
 }
 
 
