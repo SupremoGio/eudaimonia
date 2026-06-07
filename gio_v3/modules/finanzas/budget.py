@@ -11,6 +11,33 @@ budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
 CATEGORIAS = ['necesidades', 'deseos', 'ahorro_deuda']
 PCTS       = {'necesidades': 0.50, 'deseos': 0.30, 'ahorro_deuda': 0.20}
 
+# Maps Estados top-level categories → 50-30-20 bucket (None = exclude)
+CATEGORIA_BUCKET = {
+    'COMIDA/REST':       'deseos',
+    'VIVERES/SUPER':     'necesidades',
+    'CASA/HOGAR':        'necesidades',
+    'GASOLINA/AUTO':     'necesidades',
+    'ROPA':              'deseos',
+    'SALUD':             'necesidades',
+    'TECH/DIGITAL':      'deseos',
+    'SUSCRIPCIONES':     'deseos',
+    'ENTRETENIMIENTO':   'deseos',
+    'SALSA':             'deseos',
+    'VIAJES/VUELOS':     'deseos',
+    'TRANSPORTE':        'necesidades',
+    'APRENDIZAJE':       'deseos',
+    'PUBLICIDAD':        None,
+    'FINANZAS':          None,
+    'INVERSION':         'ahorro_deuda',
+    'CAFE/PAN':          'deseos',
+    'GYM':               'necesidades',
+    'DEPORTE':           'deseos',
+    'REGALO':            'deseos',
+    'OTROS':             'deseos',
+    'PAGO_TDC':          None,
+    'PAGO':              None,
+}
+
 
 # ── Auth ──────────────────────────────────────────────────────────────────────
 
