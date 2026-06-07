@@ -800,7 +800,7 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
       {/* Hero header */}
       <div style={{
         padding: isDesktop ? '28px 24px 28px' : '16px 20px 24px',
-        background:`linear-gradient(170deg,${accDeep} 0%,transparent 100%)`,
+        background:`linear-gradient(170deg,${EU.catTint(mod.hue, 'bg')} 0%,transparent 100%)`,
         borderBottom:`1px solid ${accMid}`,
       }}>
         <div style={{display:'flex',alignItems:'center',marginBottom:14}}>
@@ -865,36 +865,169 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
   );
 }
 
+function OikonomiaExtra() {
+  const [data, setData]     = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetch('/finanzas/api/oikonomia-summary')
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const fmt = v => (v != null && v !== '') ? `$${Number(v).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
+  const GOLD     = '#E8C96D';
+  const CARD_BG  = 'linear-gradient(150deg,#1a1510,#241d14,#16110b)';
+  const CARD_BR  = '1px solid rgba(232,201,109,0.15)';
+
+  if (loading) return (
+    <div style={{textAlign:'center',padding:'24px 0',fontFamily:'DM Sans,sans-serif',
+      fontSize:11,color:C.textMuted,letterSpacing:'0.1em'}}>cargando…</div>
+  );
+
+  if (!data || data.locked) return (
+    <div style={{background:C.card,border:'1px solid var(--b)',borderRadius:16,
+      padding:'28px 20px',textAlign:'center'}}>
+      <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:26,color:GOLD,marginBottom:8}}>
+        Oikonomia 🔒
+      </div>
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:11,color:C.textMuted,marginBottom:18}}>
+        Activa tu módulo financiero para ver tu patrimonio neto.
+      </div>
+      <a href="/finanzas/" style={{display:'inline-block',background:GOLD,color:'#1a1510',
+        fontFamily:'DM Sans,sans-serif',fontSize:12,fontWeight:600,
+        padding:'10px 24px',borderRadius:10,textDecoration:'none'}}>
+        Desbloquear Oikonomia 🔒
+      </a>
+    </div>
+  );
+
+  const trendPos    = data.trend_pct >= 0;
+  const trendSymbol = trendPos ? '▲' : '▼';
+  const trendColor  = trendPos ? '#4ade80' : '#f87171';
+
+  const spark = (data.spark || []).filter(v => v != null && v !== '');
+  let sparkSvg = null;
+  if (spark.length >= 2) {
+    const min = Math.min(...spark);
+    const max = Math.max(...spark);
+    const range = max - min || 1;
+    const W = 80, H = 24;
+    const pts = spark.map((v,i) => {
+      const x = (i / (spark.length - 1)) * W;
+      const y = H - ((v - min) / range) * (H - 2) - 1;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+    sparkSvg = (
+      <svg width={W} height={H} style={{display:'block'}}>
+        <polyline points={pts} fill="none" stroke={GOLD} strokeWidth="1.5"
+          strokeLinejoin="round" strokeLinecap="round" opacity="0.7"/>
+      </svg>
+    );
+  }
+
+  return (
+    <div>
+      {/* Net-worth black card */}
+      <div style={{background:CARD_BG,borderRadius:16,padding:'20px',
+        marginBottom:16,border:CARD_BR}}>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.18em',
+          color:'rgba(232,201,109,0.55)',textTransform:'uppercase',marginBottom:4}}>
+          Patrimonio Neto
+        </div>
+        <div style={{display:'flex',alignItems:'baseline',gap:12,marginBottom:8}}>
+          <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:36,
+            fontWeight:600,color:GOLD,lineHeight:1}}>
+            {fmt(data.patrimonio_neto)}
+          </div>
+          {data.trend_pct !== 0 && (
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,
+              color:trendColor,fontWeight:500}}>
+              {trendSymbol} {Math.abs(data.trend_pct)}%
+            </div>
+          )}
+        </div>
+        {sparkSvg && <div style={{marginBottom:12,opacity:0.8}}>{sparkSvg}</div>}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,
+          borderTop:'1px solid rgba(232,201,109,0.12)',paddingTop:12}}>
+          {[
+            {label:'Activos', val:fmt(data.activos)},
+            {label:'Pasivos', val:fmt(data.pasivos)},
+            {label:'Líquido', val:fmt(data.liquido)},
+          ].map((item,i) => (
+            <div key={i} style={{textAlign:'center'}}>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+                color:'rgba(232,201,109,0.5)',letterSpacing:'0.1em',
+                textTransform:'uppercase',marginBottom:2}}>{item.label}</div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,
+                color:'rgba(232,201,109,0.85)'}}>{item.val}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Payment alerts */}
+      {data.pay_alerts && data.pay_alerts.length > 0 && (
+        <div style={{background:'rgba(239,68,68,0.08)',
+          border:'1px solid rgba(239,68,68,0.2)',borderRadius:12,
+          padding:'12px 14px',marginBottom:16,display:'flex',gap:8,alignItems:'center'}}>
+          <span style={{fontSize:14}}>⚠️</span>
+          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:11,color:'#fca5a5'}}>
+            Pago hoy:{' '}
+            {data.pay_alerts.map(a => (
+              <span key={a.label} style={{color:a.color,fontWeight:600,marginRight:6}}>{a.label}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 3 pilares */}
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+        color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Núcleo</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8,marginBottom:16}}>
+        {[
+          {icon:'🏛️', label:'Patrimonio',  sub:`${data.n_cuentas} cuentas`, href:'/finanzas/'},
+          {icon:'📊', label:'Presupuesto', sub:'50·30·20',                  href:'/finanzas/budget'},
+          {icon:'💳', label:'Estados',     sub:`${data.n_bancos} bancos`,   href:'/finanzas/estados'},
+        ].map((p,i) => (
+          <a key={i} href={p.href} style={{display:'flex',alignItems:'center',gap:12,
+            background:C.card,border:'1px solid var(--b)',borderRadius:12,padding:'14px',
+            textDecoration:'none',transition:'all 0.2s'}}>
+            <span style={{fontSize:20}}>{p.icon}</span>
+            <div style={{flex:1}}>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{p.label}</div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted}}>{p.sub}</div>
+            </div>
+            <span style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textMuted}}>→</span>
+          </a>
+        ))}
+      </div>
+
+      {/* Accesos */}
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {[
+          {icon:'🛒', label:'Consumo',  href:'/finanzas/consumo'},
+          {icon:'⭐', label:'Wishlist', href:'/finanzas/prioridades'},
+          {icon:'✈️', label:'Viajes',   href:'/finanzas/estados/viajes'},
+        ].map((chip,i) => (
+          <a key={i} href={chip.href} style={{display:'flex',alignItems:'center',gap:6,
+            background:C.card,border:'1px solid var(--b)',borderRadius:20,
+            padding:'8px 14px',textDecoration:'none',
+            fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>
+            <span style={{fontSize:14}}>{chip.icon}</span>
+            {chip.label}
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ModuleExtra({ id, acc }) {
   const srv = (window.EU._server) || {};
 
-  if (id === 'oikonomia') {
-    const fin = srv.financial || {};
-    const gastos  = fin.gastos  ? `$${Number(fin.gastos).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
-    const ingreso = fin.ingreso ? `$${Number(fin.ingreso).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
-    const deudas  = fin.deudas  ? `$${Number(fin.deudas).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
-    const ahorro  = (fin.ingreso && fin.gastos) ? `$${(fin.ingreso - fin.gastos).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
-    return (
-      <div>
-        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-          color:C.textMuted,textTransform:'uppercase',marginBottom:12}}>Resumen Financiero</div>
-        {[
-          {label:'Gastos del mes',   val: gastos,  sub: `de ${ingreso} ingreso`},
-          {label:'Ahorro neto',      val: ahorro,  sub:'ingreso − gastos'},
-          {label:'Deudas activas',   val: deudas,  sub:'saldo actual total'},
-        ].map((r,i) => (
-          <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
-            padding:'12px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)'}}>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>{r.label}</div>
-            <div style={{textAlign:'right'}}>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,color:acc}}>{r.val}</div>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted}}>{r.sub}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  if (id === 'oikonomia') return <OikonomiaExtra />;
 
   if (id === 'cosmopolitismo') {
     const langs = (srv.langStats && srv.langStats.length)
