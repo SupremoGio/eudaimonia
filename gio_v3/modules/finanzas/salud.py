@@ -41,22 +41,39 @@ def _totales(cuentas, bienes):
     return total_activos, activos_cuentas, total_bienes, total_pasivos, total_activos - total_pasivos
 
 
-# ── Vistas ─────────────────────────────────────────────────────────────────────
-
-@salud_bp.route('/')
-def index():
+def _compute_patrimonio():
     with get_db() as db:
-        cuentas   = [dict(r) for r in db.execute(
+        cuentas  = [dict(r) for r in db.execute(
             "SELECT * FROM salud_cuentas WHERE activa=1 ORDER BY tipo, nombre"
         ).fetchall()]
-        bienes    = [dict(r) for r in db.execute(
+        bienes   = [dict(r) for r in db.execute(
             "SELECT * FROM salud_bienes WHERE activo=1 ORDER BY categoria, nombre"
         ).fetchall()]
         historial = [dict(r) for r in db.execute(
             "SELECT * FROM salud_patrimonio_log ORDER BY fecha ASC LIMIT 12"
         ).fetchall()]
-
     total_activos, activos_cuentas, total_bienes, total_pasivos, patrimonio_neto = _totales(cuentas, bienes)
+    liquido = sum(c['saldo'] for c in cuentas if c['tipo'] in ('efectivo', 'cuenta_banco'))
+    return {
+        'patrimonio_neto': patrimonio_neto,
+        'total_activos':   total_activos,
+        'activos_cuentas': activos_cuentas,
+        'total_pasivos':   total_pasivos,
+        'liquido':         liquido,
+        'total_bienes':    total_bienes,
+        'historial':       historial,
+        'cuentas':         cuentas,
+        'bienes':          bienes,
+    }
+
+
+# ── Vistas ─────────────────────────────────────────────────────────────────────
+
+@salud_bp.route('/')
+def index():
+    pat    = _compute_patrimonio()
+    cuentas = pat['cuentas']
+    bienes  = pat['bienes']
 
     bienes_por_cat = defaultdict(list)
     for b in bienes:
@@ -69,12 +86,12 @@ def index():
         cuentas_pasivo    = [c for c in cuentas if c['tipo'] in TIPOS_PASIVO],
         bienes            = bienes,
         bienes_por_cat    = dict(bienes_por_cat),
-        historial         = historial,
-        total_activos     = total_activos,
-        activos_cuentas   = activos_cuentas,
-        total_bienes      = total_bienes,
-        total_pasivos     = total_pasivos,
-        patrimonio_neto   = patrimonio_neto,
+        historial         = pat['historial'],
+        total_activos     = pat['total_activos'],
+        activos_cuentas   = pat['activos_cuentas'],
+        total_bienes      = pat['total_bienes'],
+        total_pasivos     = pat['total_pasivos'],
+        patrimonio_neto   = pat['patrimonio_neto'],
         tipo_meta         = TIPO_META,
         bien_meta         = BIEN_META,
         today             = today_date().strftime('%d %b %Y').upper(),

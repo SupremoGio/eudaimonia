@@ -196,6 +196,48 @@ def delete_debt(did):
     return jsonify({'ok':True})
 
 
+@finanzas_bp.route('/api/oikonomia-summary')
+def oikonomia_summary():
+    if not session.get('fin_ok'):
+        return jsonify({'locked': True})
+    from modules.finanzas.salud import _compute_patrimonio
+    pat  = _compute_patrimonio()
+    hist = pat['historial']
+    if len(hist) >= 2 and hist[-2]['patrimonio_neto']:
+        delta     = pat['patrimonio_neto'] - hist[-2]['patrimonio_neto']
+        delta_pct = round(delta / abs(hist[-2]['patrimonio_neto']) * 100, 1)
+    else:
+        delta, delta_pct = 0, 0
+    mes = today_date().replace(day=1).isoformat()
+    with get_db() as db:
+        flujo = db.execute("""
+            SELECT
+              SUM(CASE WHEN tipo='INGRESO' THEN monto ELSE 0 END) AS ingreso,
+              SUM(CASE WHEN tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO')
+                       THEN COALESCE(mi_parte, monto) ELSE 0 END) AS gasto
+            FROM est_movimientos WHERE fecha >= ?""", (mes,)).fetchone()
+        n_cuentas = db.execute(
+            "SELECT COUNT(*) c FROM salud_cuentas WHERE activa=1"
+        ).fetchone()['c']
+        n_bancos  = db.execute(
+            "SELECT COUNT(DISTINCT banco) c FROM est_movimientos"
+        ).fetchone()['c']
+    return jsonify({
+        'patrimonio_neto': pat['patrimonio_neto'],
+        'activos':         pat['total_activos'],
+        'pasivos':         pat['total_pasivos'],
+        'liquido':         pat['liquido'],
+        'trend_delta':     delta,
+        'trend_pct':       delta_pct,
+        'spark':           [h['patrimonio_neto'] for h in hist[-8:]],
+        'flujo_ingreso':   flujo['ingreso'] or 0,
+        'flujo_gasto':     flujo['gasto']   or 0,
+        'n_cuentas':       n_cuentas,
+        'n_bancos':        n_bancos,
+        'pay_alerts':      payment_alerts(),
+    })
+
+
 @finanzas_bp.route('/api/budget', methods=['POST'])
 def update_budget():
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
