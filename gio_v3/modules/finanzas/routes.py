@@ -39,21 +39,12 @@ def index():
     if not session.get('fin_ok'):
         return render_template('finanzas/lock.html', has_pass=bool(_get_pass_hash()))
     from modules.finanzas.salud import _compute_patrimonio, TIPO_META, BIEN_META, TIPOS_PASIVO
-    mes_actual = today_date().strftime('%Y-%m')
     with get_db() as db:
         owe_me  = db.execute("SELECT * FROM debts WHERE type='owe_me' AND settled=0 ORDER BY id DESC").fetchall()
         i_owe   = db.execute("SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY id DESC").fetchall()
         pay_map = {}
         for row in db.execute("SELECT * FROM debt_payments ORDER BY paid_at DESC").fetchall():
             pay_map.setdefault(row["debt_id"], []).append(dict(row))
-        budget_mes_row = db.execute("SELECT * FROM budget_meses WHERE mes=?", (mes_actual,)).fetchone()
-        budget_items = []
-        if budget_mes_row:
-            budget_items = [dict(r) for r in db.execute(
-                "SELECT * FROM budget_items WHERE budget_id=? ORDER BY categoria, nombre",
-                (budget_mes_row['id'],)
-            ).fetchall()]
-
     pat = _compute_patrimonio()
     bienes_por_cat = defaultdict(list)
     for b in pat['bienes']:
@@ -70,10 +61,6 @@ def index():
         total_i_owe           = total_i_owe,
         total_original_owe_me = sum(d['monto_total'] for d in owe_me),
         total_original_i_owe  = sum(d['monto_total'] for d in i_owe),
-        budget_items  = budget_items,
-        mes_actual    = mes_actual,
-        total_budget  = sum(i['monto_estimado'] or 0 for i in budget_items),
-        total_spent   = sum(i['monto_real'] or 0 for i in budget_items),
         cuentas_liquido   = [c for c in pat['cuentas'] if c['tipo'] in ('efectivo', 'cuenta_banco')],
         cuentas_inversion = [c for c in pat['cuentas'] if c['tipo'] == 'inversion'],
         cuentas_pasivo    = [c for c in pat['cuentas'] if c['tipo'] in TIPOS_PASIVO],
