@@ -282,3 +282,26 @@ def delete_reminder(rid):
         db.execute("DELETE FROM reminders WHERE id=?", (rid,))
         db.commit()
     return jsonify({'ok': True})
+
+
+@perfil_bp.route('/api/reminder/<int:rid>/edit', methods=['POST'])
+def edit_reminder(rid):
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    desc = (d.get('description') or '').strip()
+    if not desc:
+        return jsonify({'ok': False, 'error': 'Descripción requerida'}), 400
+    typ = d.get('type', 'unico')
+    target = d.get('target_date') or None
+    next_d = d.get('next_date') or target
+    with get_db() as db:
+        db.execute(
+            """UPDATE reminders SET description=?, type=?, freq_unit=?, freq_value=?,
+               target_date=?, next_date=? WHERE id=?""",
+            (desc, typ,
+             d.get('freq_unit', ''),
+             int(d.get('freq_value') or 1),
+             target, next_d, rid)
+        )
+        db.commit()
+    return jsonify({'ok': True})

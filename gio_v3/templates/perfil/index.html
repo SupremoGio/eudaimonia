@@ -326,10 +326,12 @@
       </button>
     </div>
 
-    <!-- Form (hidden by default) -->
+    <!-- Form (hidden by default) — compartido para crear y editar -->
     <div id="remForm" style="display:none;margin-bottom:12px;">
       <div class="tile" style="padding:16px 20px;">
+        <input type="hidden" id="remEditId" value="">
         <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:var(--fs-xs);color:var(--gold);letter-spacing:.14em;text-transform:uppercase;" id="remFormLabel">Nuevo recordatorio</div>
           <input class="fi" id="remDesc" placeholder="Ej: Pagar HSBC el día 30" autocomplete="off">
           <div style="display:flex;gap:10px;flex-wrap:wrap;">
             <select class="fi" id="remType" onchange="onRemTypeChange()" style="flex:0 0 140px;">
@@ -349,8 +351,8 @@
             </div>
           </div>
           <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;">
-            <button class="btn-r" style="padding:6px 14px;" onclick="toggleRemForm()">Cancelar</button>
-            <button class="btn-g" style="padding:6px 18px;" onclick="saveReminder()">Guardar</button>
+            <button class="btn-r" style="padding:6px 14px;" onclick="closeRemForm()">Cancelar</button>
+            <button class="btn-g" style="padding:6px 18px;" id="remSaveBtn" onclick="saveReminder()">Guardar</button>
           </div>
         </div>
       </div>
@@ -360,7 +362,13 @@
     <div class="tile" style="padding:4px 20px;" id="remindersList">
       {% if reminders %}
         {% for r in reminders %}
-        <div class="rem-row" id="remrow-{{ r.id }}">
+        <div class="rem-row" id="remrow-{{ r.id }}"
+             data-id="{{ r.id }}"
+             data-desc="{{ r.description | e }}"
+             data-type="{{ r.type }}"
+             data-date="{{ r.next_date or r.target_date or '' }}"
+             data-freqval="{{ r.freq_value or 1 }}"
+             data-frequnit="{{ r.freq_unit or 'dias' }}">
           <div class="rem-check" onclick="doneReminder({{ r.id }}, '{{ r.type }}')" title="Marcar como hecho">
             <i data-lucide="circle" style="width:16px;height:16px;"></i>
           </div>
@@ -376,6 +384,9 @@
               {% endif %}
             </div>
           </div>
+          <button class="icon-btn" onclick="editReminderRow(this)" title="Editar">
+            <i data-lucide="pencil" style="width:12px;height:12px;"></i>
+          </button>
           <button class="icon-btn danger" onclick="deleteReminder({{ r.id }})" title="Eliminar">
             <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
           </button>
@@ -766,8 +777,39 @@ async function deleteDoc(id){
 function toggleRemForm(){
   const f=document.getElementById('remForm');
   const open=f.style.display!=='none';
-  f.style.display=open?'none':'block';
-  if(!open)document.getElementById('remDesc').focus();
+  if(open){closeRemForm();return;}
+  // Abre en modo CREAR
+  document.getElementById('remEditId').value='';
+  document.getElementById('remFormLabel').textContent='Nuevo recordatorio';
+  document.getElementById('remSaveBtn').textContent='Guardar';
+  document.getElementById('remDesc').value='';
+  document.getElementById('remType').value='unico';
+  document.getElementById('remDate').value='';
+  document.getElementById('remFreqVal').value='1';
+  document.getElementById('remFreqUnit').value='dias';
+  onRemTypeChange();
+  f.style.display='block';
+  document.getElementById('remDesc').focus();
+}
+function closeRemForm(){
+  document.getElementById('remForm').style.display='none';
+  document.getElementById('remEditId').value='';
+}
+function editReminderRow(btn){
+  const row=btn.closest('[data-id]');
+  document.getElementById('remEditId').value=row.dataset.id;
+  document.getElementById('remFormLabel').textContent='Editar recordatorio';
+  document.getElementById('remSaveBtn').textContent='Actualizar';
+  document.getElementById('remDesc').value=row.dataset.desc;
+  document.getElementById('remType').value=row.dataset.type;
+  document.getElementById('remDate').value=row.dataset.date||'';
+  document.getElementById('remFreqVal').value=row.dataset.freqval||1;
+  document.getElementById('remFreqUnit').value=row.dataset.frequnit||'dias';
+  onRemTypeChange();
+  const f=document.getElementById('remForm');
+  f.style.display='block';
+  f.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('remDesc').focus();
 }
 function onRemTypeChange(){
   const isPeriodico=document.getElementById('remType').value==='periodico';
@@ -778,13 +820,17 @@ async function saveReminder(){
   if(!desc){toast('Escribe una descripción');return;}
   const type=document.getElementById('remType').value;
   const dateVal=document.getElementById('remDate').value;
+  const editId=document.getElementById('remEditId').value;
   const payload={description:desc,type,target_date:dateVal||null};
   if(type==='periodico'){
     payload.freq_value=parseInt(document.getElementById('remFreqVal').value)||1;
     payload.freq_unit=document.getElementById('remFreqUnit').value;
     payload.next_date=dateVal||null;
   }
-  const r=await fetch('/perfil/api/reminder/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const url=editId
+    ?`/perfil/api/reminder/${editId}/edit`
+    :'/perfil/api/reminder/add';
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const j=await r.json();
   if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
 }
