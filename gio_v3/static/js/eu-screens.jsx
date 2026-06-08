@@ -825,40 +825,6 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
       </div>
 
       <div style={{padding: isDesktop ? '24px 24px 0' : '20px 16px 0'}}>
-        {/* Submodules */}
-        {(() => {
-          const subs = (EU.submodules && EU.submodules[mod.id]) || [];
-          return (
-            <div style={{marginBottom:24}}>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-                color:C.textMuted,textTransform:'uppercase',marginBottom:12}}>Submódulos</div>
-              {subs.length > 0 ? (
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                  {subs.map((sub,i) => (
-                    <a key={i} href={sub.route} style={{
-                      display:'flex',alignItems:'center',gap:10,
-                      background:accDeep, border:`1px solid ${accMid}`,
-                      borderRadius:12, padding:'14px',
-                      textDecoration:'none', transition:'all 0.2s',
-                    }}>
-                      <span style={{fontSize:20,lineHeight:1}}>{sub.icon}</span>
-                      <span style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:acc,flex:1}}>{sub.name}</span>
-                      <span style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:acc,opacity:0.6}}>→</span>
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <div style={{background:accDeep,border:'1px dashed var(--b)',
-                  borderRadius:12,padding:'18px',textAlign:'center'}}>
-                  <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.18em',
-                    color:C.textMuted,textTransform:'uppercase',opacity:0.6}}>Próximamente</div>
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Module-specific content */}
         <ModuleExtra id={mod.id} acc={acc}/>
       </div>
     </div>

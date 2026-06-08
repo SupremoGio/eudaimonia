@@ -81,32 +81,6 @@ window.EU = {
     { id:'eurythmia',      name:'EURYTHMIA',      concept:'Baile',          desc:'Baile · Ritmo · Cuerpo',      hue:330, route:'/actividades', streak:0, done:false },
   ],
 
-  submodules: {
-    hegemonikon: [
-      { name:'Salud',       icon:'🩺', route:'/bienestar/salud' },
-      { name:'Nutrición',   icon:'🥗', route:'/nutricion'       },
-      { name:'Recetas',     icon:'👨‍🍳', route:'/recetas'         },
-      { name:'Guardarropa', icon:'👔', route:'/guardarropa'     },
-    ],
-    oikonomia: [
-      { name:'Patrimonio',  icon:'🏛️', route:'/finanzas/'         },
-      { name:'Presupuesto', icon:'📊', route:'/finanzas/budget'    },
-      { name:'Estados',     icon:'💳', route:'/finanzas/estados'   },
-      { name:'Consumo',     icon:'🛒', route:'/finanzas/consumo'   },
-      { name:'Wishlist',    icon:'⭐', route:'/finanzas/prioridades'},
-      { name:'Viajes',      icon:'✈️', route:'/finanzas/estados/viajes/' },
-    ],
-    ataraxia: [
-      { name:'Ataraxia', icon:'🧘', route:'/ataraxia' },
-    ],
-    paideia:        [],
-    cosmopolitismo: [
-      { name:'Idiomas', icon:'🌐', route:'/idiomas' },
-    ],
-    logoi:    [],
-    eurythmia:[],
-  },
-
   quotes: [
     { text:'Busca dentro. Dentro está la fuente del bien, y siempre brotará, si siempre cavas.', author:'Marco Aurelio · Meditaciones VII' },
     { text:'No turbará tu mente lo que te acontece desde fuera; pues depende solo de tus juicios.', author:'Marco Aurelio · Meditaciones IV' },
