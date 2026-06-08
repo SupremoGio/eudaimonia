@@ -274,7 +274,7 @@
 
 {% for bk, cls, label in bucket_configs %}
 {% set bdata = buckets[bk] %}
-{% set fill_pct = [bdata.pct_vs_target, 100]|min %}
+{% set fill_pct = [bdata.pct_of_target, 100]|min %}
 <div class="tile bucket-section {{ cls }}">
   <div class="bucket-header">
     <span class="bucket-title">{{ label }}</span>

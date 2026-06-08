@@ -1,11 +1,11 @@
 """
-Budget 50-30-20 — radiografía en vivo de est_budgets + est_movimientos.
+Budget 50-30-20 — radiografía en vivo alimentada por est_movimientos.
 
-Fuente de verdad:
-  - Gastos   → est_movimientos (tipo='GASTO')
-  - Ingresos → est_movimientos (tipo='INGRESO', excluye TRANSFERENCIA y PAGO_TDC)
-  - Límites  → est_budgets (editables desde budget.html y el SPA de Estados)
-  - Override → budget_meses.ingreso_total (fallback si no hay movimientos de ingreso)
+Fuente de verdad única:
+  - Gastos   → est_movimientos tipo='GASTO'   (excluye PAGO_TDC, PAGO, TRANSFERENCIA, SPEI_ENVIADO, RETIRO, PUBLICIDAD)
+  - Ingresos → est_movimientos tipo='INGRESO' (excluye TRANSFERENCIA, PAGO_TDC, RETIRO, DEPOSITO, SPEI_RECIBIDO)
+  - Targets  → ingreso × 50/30/20 (sin necesidad de est_budgets)
+  - Límites opcionales por categoría → est_budgets
 """
 from flask import Blueprint, render_template, request, jsonify, session, redirect
 from database import get_db
@@ -15,48 +15,47 @@ from utils import today_str, today_date
 
 budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
 
+# ── Regla 50-30-20 ────────────────────────────────────────────────────────────
 CATEGORIAS = ['necesidades', 'deseos', 'ahorro_deuda']
 PCTS       = {'necesidades': 0.50, 'deseos': 0.30, 'ahorro_deuda': 0.20}
 
-# Maps est_movimientos.categoria → 50-30-20 bucket  (None = excluir del cálculo)
+# Mapeo categoria → bucket (None = excluir del gasto visible)
 CATEGORIA_BUCKET = {
-    'COMIDA/REST':       'deseos',
-    'VIVERES/SUPER':     'necesidades',
-    'CASA/HOGAR':        'necesidades',
-    'GASOLINA/AUTO':     'necesidades',
-    'ROPA':              'deseos',
-    'SALUD':             'necesidades',
-    'TECH/DIGITAL':      'deseos',
-    'SUSCRIPCIONES':     'deseos',
-    'ENTRETENIMIENTO':   'deseos',
-    'SALSA':             'deseos',
-    'VIAJES/VUELOS':     'deseos',
-    'TRANSPORTE':        'necesidades',
-    'APRENDIZAJE':       'deseos',
-    'INVERSION':         'ahorro_deuda',
-    'CAFE/PAN':          'deseos',
-    'GYM':               'necesidades',
-    'DEPORTE':           'deseos',
-    'REGALO':            'deseos',
-    'OTROS':             'deseos',
-    'EXPENSE':           'deseos',       # catch-all del parser
-    # Excluidos — no son gasto de consumo real
-    'PUBLICIDAD':        None,
-    'FINANZAS':          None,           # comisiones bancarias / intereses TDC
-    'NOMINA':            None,           # adelanto de nómina categorizado como gasto
-    'PAGO_TDC':          None,
-    'PAGO':              None,
-    'TRANSFERENCIA':     None,
-    'SPEI_ENVIADO':      None,
-    'RETIRO':            None,
+    'COMIDA/REST':      'deseos',
+    'VIVERES/SUPER':    'necesidades',
+    'CASA/HOGAR':       'necesidades',
+    'GASOLINA/AUTO':    'necesidades',
+    'ROPA':             'deseos',
+    'SALUD':            'necesidades',
+    'TECH/DIGITAL':     'deseos',
+    'SUSCRIPCIONES':    'deseos',
+    'ENTRETENIMIENTO':  'deseos',
+    'SALSA':            'deseos',
+    'VIAJES/VUELOS':    'deseos',
+    'TRANSPORTE':       'necesidades',
+    'APRENDIZAJE':      'deseos',
+    'CAFE/PAN':         'deseos',
+    'GYM':              'necesidades',
+    'DEPORTE':          'deseos',
+    'REGALO':           'deseos',
+    'OTROS':            'deseos',
+    'EXPENSE':          'deseos',
+    # Inversión → ahorro
+    'INVERSION':        'ahorro_deuda',
+    # Excluidos del gasto de consumo
+    'PAGO_TDC':         None,
+    'PAGO':             None,
+    'TRANSFERENCIA':    None,
+    'SPEI_ENVIADO':     None,
+    'RETIRO':           None,
+    'PUBLICIDAD':       None,
+    'FINANZAS':         None,
+    'NOMINA':           None,
 }
 
-# Categorías de INGRESO que NO son ingreso real
-# DEPOSITO/SPEI_RECIBIDO = movilización de efectivo — excluidos hasta que el
-# usuario los reclasifique explícitamente como NOMINA/FIDEICOMISO/etc.
+# Categorías de ingreso que NO son ingreso real
 _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO')
 
-# Etiquetas legibles
 CAT_LABELS = {
     'COMIDA/REST':     'Comida / Restaurante',
     'VIVERES/SUPER':   'Víveres / Súper',
@@ -67,7 +66,7 @@ CAT_LABELS = {
     'TECH/DIGITAL':    'Tech / Digital',
     'SUSCRIPCIONES':   'Suscripciones',
     'ENTRETENIMIENTO': 'Entretenimiento',
-    'SALSA':           'Salsa',
+    'SALSA':           'Salsa / Baile',
     'VIAJES/VUELOS':   'Viajes / Vuelos',
     'TRANSPORTE':      'Transporte',
     'APRENDIZAJE':     'Aprendizaje',
@@ -79,7 +78,23 @@ CAT_LABELS = {
     'OTROS':           'Otros',
     'EXPENSE':         'Gasto general',
     'FINANZAS':        'Cargos bancarios',
-    'NOMINA':          'Nómina / adelanto',
+    'NOMINA':          'Nómina adelanto',
+}
+
+CAT_ICONS = {
+    'COMIDA/REST': '🍔', 'VIVERES/SUPER': '🛒', 'CASA/HOGAR': '🏠',
+    'GASOLINA/AUTO': '⛽', 'ROPA': '👕', 'SALUD': '🏥',
+    'TECH/DIGITAL': '💻', 'SUSCRIPCIONES': '🎬', 'ENTRETENIMIENTO': '🎭',
+    'SALSA': '💃', 'VIAJES/VUELOS': '✈️', 'TRANSPORTE': '🚗',
+    'APRENDIZAJE': '📚', 'INVERSION': '📈', 'CAFE/PAN': '☕',
+    'GYM': '🏋️', 'DEPORTE': '⚽', 'REGALO': '🎁',
+    'OTROS': '📦', 'EXPENSE': '💳',
+}
+
+BUCKET_META = {
+    'necesidades': {'label': 'Necesidades',      'pct_target': 50, 'color': '#2a8a62', 'cls': 'bk-nec'},
+    'deseos':      {'label': 'Deseos',            'pct_target': 30, 'color': '#467aa8', 'cls': 'bk-des'},
+    'ahorro_deuda':{'label': 'Ahorro y Deudas',  'pct_target': 20, 'color': '#7d5c9c', 'cls': 'bk-aho'},
 }
 
 
@@ -91,225 +106,241 @@ def _require_auth():
         return redirect('/finanzas/')
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _last_month_with_data(db):
+    """Devuelve el mes (YYYY-MM) más reciente con ≥5 movimientos."""
+    row = db.execute("""
+        SELECT substr(fecha,1,7) mes, COUNT(*) n
+        FROM est_movimientos
+        GROUP BY mes
+        HAVING n >= 5
+        ORDER BY mes DESC
+        LIMIT 1
+    """).fetchone()
+    return row['mes'] if row else None
+
+
+def _calc_budget(mes, db):
+    """Calcula toda la data del presupuesto para un mes dado."""
+    y, m   = int(mes[:4]), int(mes[5:])
+    next_m = m + 1 if m < 12 else 1
+    next_y = y if m < 12 else y + 1
+    next_mes  = f"{next_y}-{next_m:02d}"
+    mes_inicio = f"{mes}-01"
+    mes_fin    = f"{next_mes}-01"
+
+    excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
+
+    # ── Ingreso real
+    ingreso_row = db.execute(
+        f"""SELECT SUM(monto) AS total
+           FROM est_movimientos
+           WHERE tipo='INGRESO'
+             AND categoria NOT IN ({excl_ph})
+             AND fecha >= ? AND fecha < ?""",
+        list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
+    ).fetchone()
+    ingreso_real = float(ingreso_row['total'] or 0)
+    ingreso_es_override = False
+
+    if ingreso_real == 0:
+        ov = db.execute(
+            "SELECT ingreso_total FROM budget_meses WHERE mes=?", (mes,)
+        ).fetchone()
+        if ov and ov['ingreso_total']:
+            ingreso_real = float(ov['ingreso_total'])
+            ingreso_es_override = True
+
+    # ── Gasto real por categoría
+    spending_rows = db.execute(
+        """SELECT categoria, SUM(COALESCE(mi_parte, monto)) AS total, COUNT(*) AS n
+           FROM est_movimientos
+           WHERE tipo='GASTO'
+             AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
+                                   'SPEI_ENVIADO','RETIRO','PUBLICIDAD')
+             AND fecha >= ? AND fecha < ?
+           GROUP BY categoria
+           ORDER BY total DESC""",
+        (mes_inicio, mes_fin)
+    ).fetchall()
+
+    # ── Límites opcionales (est_budgets)
+    budgets_map = {r['categoria']: float(r['limite'] or 0)
+                   for r in db.execute("SELECT categoria, limite FROM est_budgets").fetchall()}
+
+    # ── Ingresos desglose (para mostrar de dónde viene el ingreso)
+    ingresos_rows = db.execute(
+        f"""SELECT categoria, SUM(monto) AS total
+           FROM est_movimientos
+           WHERE tipo='INGRESO'
+             AND categoria NOT IN ({excl_ph})
+             AND fecha >= ? AND fecha < ?
+           GROUP BY categoria ORDER BY total DESC""",
+        list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
+    ).fetchall()
+
+    # ── DEPOSITO/SPEI sin clasificar
+    sin_clasificar = [dict(r) for r in db.execute(
+        """SELECT id, fecha, descripcion, monto, categoria
+           FROM est_movimientos
+           WHERE tipo='INGRESO'
+             AND categoria IN ('DEPOSITO','SPEI_RECIBIDO')
+             AND fecha >= ? AND fecha < ?
+           ORDER BY fecha DESC""",
+        (mes_inicio, mes_fin)
+    ).fetchall()]
+
+    # ── Conteo total
+    n_movimientos = db.execute(
+        "SELECT COUNT(*) n FROM est_movimientos WHERE fecha >= ? AND fecha < ?",
+        (mes_inicio, mes_fin)
+    ).fetchone()['n']
+
+    # ── Construir cats_data
+    cats_data = []
+    for row in spending_rows:
+        cat     = row['categoria']
+        bucket  = CATEGORIA_BUCKET.get(cat)
+        if bucket is None:
+            bucket = 'deseos'   # catch-all: cualquier categoría no mapeada va a deseos
+        gastado = float(row['total'] or 0)
+        limite  = budgets_map.get(cat, 0.0)
+        target  = round(ingreso_real * PCTS[bucket], 2)  # target del bucket
+
+        if limite > 0:
+            pct    = round(gastado / limite * 100)
+            status = 'over' if pct >= 100 else ('warn' if pct >= 80 else 'ok')
+        else:
+            pct    = None
+            status = 'nobudget'
+
+        cats_data.append({
+            'categoria': cat,
+            'nombre':    CAT_LABELS.get(cat, cat),
+            'icono':     CAT_ICONS.get(cat, '📦'),
+            'limite':    limite,
+            'gastado':   gastado,
+            'n':         int(row['n'] or 0),
+            'pct':       pct,
+            'bucket':    bucket,
+            'status':    status,
+        })
+
+    # ── Agrupar por bucket
+    buckets = {}
+    for bk in CATEGORIAS:
+        bk_cats       = [c for c in cats_data if c['bucket'] == bk]
+        total_gastado = round(sum(c['gastado'] for c in bk_cats), 2)
+        target_monto  = round(ingreso_real * PCTS[bk], 2)
+        pct_of_income = round(total_gastado / ingreso_real * 100, 1) if ingreso_real > 0 else 0
+        pct_of_target = min(round(total_gastado / target_monto * 100) if target_monto > 0 else 0, 999)
+        buckets[bk] = {
+            **BUCKET_META[bk],
+            'cats':           sorted(bk_cats, key=lambda c: -c['gastado']),
+            'total_gastado':  total_gastado,
+            'target_monto':   target_monto,
+            'pct_of_income':  pct_of_income,
+            'pct_of_target':  pct_of_target,
+            'over':           total_gastado > target_monto,
+        }
+
+    total_gastado = round(sum(c['gastado'] for c in cats_data), 2)
+    disponible    = round(ingreso_real - total_gastado, 2)
+
+    # Barra segmentada: % del ingreso gastado en cada bucket
+    seg = {}
+    for bk in CATEGORIAS:
+        seg[bk] = round(buckets[bk]['total_gastado'] / ingreso_real * 100, 1) if ingreso_real > 0 else 0
+
+    dias_mes      = calendar.monthrange(y, m)[1]
+    today         = today_date()
+    es_mes_actual = (today.strftime('%Y-%m') == mes)
+    dia_actual    = today.day if es_mes_actual else dias_mes
+    proyeccion    = round(total_gastado / dia_actual * dias_mes) if dia_actual > 0 and total_gastado > 0 else 0
+
+    return {
+        'ingreso_real':       ingreso_real,
+        'ingreso_es_override':ingreso_es_override,
+        'ingresos_detalle':   [dict(r) for r in ingresos_rows],
+        'n_movimientos':      n_movimientos,
+        'total_gastado':      total_gastado,
+        'disponible':         disponible,
+        'proyeccion':         proyeccion,
+        'dia_actual':         dia_actual,
+        'dias_mes':           dias_mes,
+        'es_mes_actual':      es_mes_actual,
+        'buckets':            buckets,
+        'seg':                seg,
+        'sin_clasificar':     sin_clasificar,
+        'mes_inicio':         mes_inicio,
+    }
+
+
 # ── Vista principal ───────────────────────────────────────────────────────────
 
 @budget_bp.route('/')
 @budget_bp.route('/<mes>')
 def index(mes=None):
     today = today_date()
-    if not mes:
-        mes = today.strftime('%Y-%m')
-
-    y, m = int(mes[:4]), int(mes[5:])
-    prev_mes = f"{y}-{m-1:02d}" if m > 1  else f"{y-1}-12"
-    next_mes = f"{y}-{m+1:02d}" if m < 12 else f"{y+1}-01"
-
-    mes_inicio = f"{mes}-01"
-    mes_fin    = f"{next_mes}-01"
-    dias_mes   = calendar.monthrange(y, m)[1]
-    es_mes_actual = (today.strftime('%Y-%m') == mes)
-    dia_actual = today.day if es_mes_actual else dias_mes
-
-    excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
 
     with get_db() as db:
-        # ── Límites por categoría (est_budgets)
-        budgets_rows = db.execute(
-            "SELECT * FROM est_budgets ORDER BY categoria"
-        ).fetchall()
-        budgets_map = {r['categoria']: dict(r) for r in budgets_rows}
+        if not mes:
+            # Si el mes actual tiene <5 movimientos, ir al último con datos
+            cur_mes = today.strftime('%Y-%m')
+            n_cur   = db.execute(
+                "SELECT COUNT(*) n FROM est_movimientos WHERE fecha >= ? AND fecha < ?",
+                (f"{cur_mes}-01", f"{today.strftime('%Y')}-{today.month+1:02d}-01"
+                 if today.month < 12 else f"{today.year+1}-01-01")
+            ).fetchone()['n']
+            mes = cur_mes if n_cur >= 5 else (_last_month_with_data(db) or cur_mes)
 
-        # ── Gasto real por categoría este mes
-        spending_rows = db.execute(
-            """SELECT categoria, SUM(COALESCE(mi_parte, monto)) AS total
-               FROM est_movimientos
-               WHERE tipo='GASTO'
-                 AND categoria NOT IN ('PAGO_TDC','PAGO')
-                 AND fecha >= ? AND fecha < ?
-               GROUP BY categoria""",
-            (mes_inicio, mes_fin)
-        ).fetchall()
-        spending_map = {r['categoria']: float(r['total'] or 0) for r in spending_rows}
+        y, m = int(mes[:4]), int(mes[5:])
+        prev_mes = f"{y}-{m-1:02d}" if m > 1  else f"{y-1}-12"
+        next_mes = f"{y}-{m+1:02d}" if m < 12 else f"{y+1}-01"
 
-        # ── Ingreso real del mes (excluye transferencias y pagos TDC)
-        ingreso_row = db.execute(
-            f"""SELECT SUM(monto) AS total
-               FROM est_movimientos
-               WHERE tipo='INGRESO'
-                 AND categoria NOT IN ({excl_ph})
-                 AND fecha >= ? AND fecha < ?""",
-            list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
-        ).fetchone()
-        ingreso_real = float(ingreso_row['total'] or 0)
-
-        # ── Fallback: si no hay movimientos de ingreso, usar override manual
-        if ingreso_real == 0:
-            override = db.execute(
-                "SELECT ingreso_total FROM budget_meses WHERE mes=?", (mes,)
-            ).fetchone()
-            if override and override['ingreso_total']:
-                ingreso_real = float(override['ingreso_total'])
-                ingreso_es_override = True
-            else:
-                ingreso_es_override = False
-        else:
-            ingreso_es_override = False
-
-        # ── Tiene movimientos importados?
-        n_movimientos = db.execute(
-            "SELECT COUNT(*) AS n FROM est_movimientos WHERE fecha >= ? AND fecha < ?",
-            (mes_inicio, mes_fin)
-        ).fetchone()['n']
-
-        # ── DEPOSITO / SPEI sin clasificar (pendientes de revisión)
-        sin_clasificar = db.execute(
-            """SELECT id, fecha, descripcion, monto, categoria
-               FROM est_movimientos
-               WHERE tipo='INGRESO'
-                 AND categoria IN ('DEPOSITO','SPEI_RECIBIDO')
-                 AND fecha >= ? AND fecha < ?
-               ORDER BY fecha DESC""",
-            (mes_inicio, mes_fin)
-        ).fetchall()
-        sin_clasificar = [dict(r) for r in sin_clasificar]
-
-    # ── Construir lista de categorías
-    all_cats = (set(budgets_map.keys()) | set(spending_map.keys())) - {
-        c for c, b in CATEGORIA_BUCKET.items() if b is None
-    }
-    all_cats = {c for c in all_cats if CATEGORIA_BUCKET.get(c) is not None}
-
-    cats_data = []
-    for cat in sorted(all_cats):
-        b       = budgets_map.get(cat, {})
-        limite  = float(b.get('limite', 0)) if b else 0.0
-        gastado = spending_map.get(cat, 0.0)
-        pct     = round(gastado / limite * 100) if limite > 0 else None
-        if pct is None:
-            status = 'nobudget'
-        elif pct >= 100:
-            status = 'over'
-        elif pct >= 80:
-            status = 'warn'
-        else:
-            status = 'ok'
-
-        cats_data.append({
-            'id':        b.get('id'),
-            'categoria': cat,
-            'nombre':    b.get('nombre') or CAT_LABELS.get(cat, cat),
-            'limite':    limite,
-            'gastado':   gastado,
-            'pct':       pct,
-            'bucket':    CATEGORIA_BUCKET[cat],
-            'status':    status,
-        })
-
-    # ── Agrupar por bucket
-    BUCKET_META = {
-        'necesidades': {'label': 'Necesidades', 'pct_target': 50},
-        'deseos':      {'label': 'Deseos',       'pct_target': 30},
-        'ahorro_deuda':{'label': 'Ahorro y Deudas', 'pct_target': 20},
-    }
-    buckets = {}
-    for bk in CATEGORIAS:
-        bk_cats       = [c for c in cats_data if c['bucket'] == bk]
-        total_gastado = round(sum(c['gastado'] for c in bk_cats), 2)
-        total_limite  = round(sum(c['limite']  for c in bk_cats), 2)
-        target_monto  = round(ingreso_real * PCTS[bk], 2)
-        pct_vs_target = round(total_gastado / target_monto * 100) if target_monto > 0 else 0
-        buckets[bk] = {
-            **BUCKET_META[bk],
-            'cats':          bk_cats,
-            'total_gastado': total_gastado,
-            'total_limite':  total_limite,
-            'target_monto':  target_monto,
-            'pct_vs_target': min(pct_vs_target, 100),
-            'over':          total_gastado > target_monto,
-        }
-
-    total_gastado = round(sum(c['gastado'] for c in cats_data), 2)
-    disponible    = round(ingreso_real - total_gastado, 2)
-    proyeccion    = round(total_gastado / dia_actual * dias_mes) if dia_actual > 0 else 0
-
-    # ── Barra segmentada (% del ingreso)
-    seg = {}
-    for bk in CATEGORIAS:
-        seg[bk] = round(buckets[bk]['total_gastado'] / ingreso_real * 100, 1) if ingreso_real > 0 else 0
+        data = _calc_budget(mes, db)
 
     return render_template(
         'finanzas/budget.html',
-        mes=mes,
-        prev_mes=prev_mes,
-        next_mes=next_mes,
-        ingreso_real=ingreso_real,
-        ingreso_es_override=ingreso_es_override,
-        n_movimientos=n_movimientos,
-        total_gastado=total_gastado,
-        disponible=disponible,
-        proyeccion=proyeccion,
-        dia_actual=dia_actual,
-        dias_mes=dias_mes,
-        es_mes_actual=es_mes_actual,
-        buckets=buckets,
-        seg=seg,
-        mes_inicio=mes_inicio,
-        sin_clasificar=sin_clasificar,
+        mes=mes, prev_mes=prev_mes, next_mes=next_mes,
+        **data,
     )
 
 
-# ── API: Reclasificar DEPOSITO / SPEI como ingreso real o movilización ────────
+# ── API: Reclasificar DEPOSITO / SPEI ─────────────────────────────────────────
 
 @budget_bp.route('/api/reclasificar/<int:mov_id>', methods=['POST'])
 def reclasificar(mov_id):
-    """
-    Reclasifica un movimiento DEPOSITO/SPEI_RECIBIDO.
-    Body: { "accion": "ingreso"|"excluir", "categoria": "NOMINA"|... }
-      - "ingreso"  → cambia la categoría al valor enviado (NOMINA, FIDEICOMISO, OTROS…)
-      - "excluir"  → cambia el tipo a 'TRANSFERENCIA' para que no cuente
-    """
     if not session.get('fin_ok'):
         return jsonify({'error': 'locked'}), 403
-    data    = request.json or {}
-    accion  = data.get('accion')   # 'ingreso' | 'excluir'
-    cat_new = data.get('categoria', 'OTROS')  # solo si accion=='ingreso'
+    d       = request.json or {}
+    accion  = d.get('accion')
+    cat_new = d.get('categoria', 'OTROS')
 
     with get_db() as db:
-        row = db.execute(
-            "SELECT * FROM est_movimientos WHERE id=?", (mov_id,)
-        ).fetchone()
+        row = db.execute("SELECT * FROM est_movimientos WHERE id=?", (mov_id,)).fetchone()
         if not row:
             return jsonify({'error': 'no encontrado'}), 404
         if row['categoria'] not in ('DEPOSITO', 'SPEI_RECIBIDO'):
-            return jsonify({'error': 'solo se puede reclasificar DEPOSITO / SPEI_RECIBIDO'}), 400
-
+            return jsonify({'error': 'solo DEPOSITO / SPEI_RECIBIDO'}), 400
         if accion == 'ingreso':
-            db.execute(
-                "UPDATE est_movimientos SET categoria=? WHERE id=?",
-                (cat_new, mov_id)
-            )
+            db.execute("UPDATE est_movimientos SET categoria=? WHERE id=?", (cat_new, mov_id))
         elif accion == 'excluir':
-            # Lo marcamos como TRANSFERENCIA → queda excluido del ingreso real
-            db.execute(
-                "UPDATE est_movimientos SET categoria='TRANSFERENCIA' WHERE id=?",
-                (mov_id,)
-            )
+            db.execute("UPDATE est_movimientos SET categoria='TRANSFERENCIA' WHERE id=?", (mov_id,))
         else:
             return jsonify({'error': 'accion inválida'}), 400
-
         db.commit()
-    return jsonify({'ok': True, 'id': mov_id, 'accion': accion})
+    return jsonify({'ok': True})
 
 
-# ── API: Override de ingreso manual ───────────────────────────────────────────
+# ── API: Ingreso manual override ──────────────────────────────────────────────
 
 @budget_bp.route('/api/ingreso', methods=['POST'])
 def set_ingreso_override():
-    """Guarda un ingreso manual para el mes (usado cuando no hay movimientos INGRESO en Estados)."""
-    data  = request.json or {}
-    mes   = data.get('mes')
-    monto = float(data.get('ingreso_total') or 0)
-    now   = datetime.now().isoformat()
+    d     = request.json or {}
+    mes   = d.get('mes')
+    monto = float(d.get('ingreso_total') or 0)
     if not mes:
         return jsonify({'error': 'mes requerido'}), 400
     with get_db() as db:
@@ -317,67 +348,35 @@ def set_ingreso_override():
             INSERT INTO budget_meses (mes, ingreso_total, created_at)
             VALUES (?,?,?)
             ON CONFLICT(mes) DO UPDATE SET ingreso_total=excluded.ingreso_total
-        """, (mes, monto, now))
+        """, (mes, monto, datetime.now().isoformat()))
         db.commit()
     return jsonify({'ok': True, 'mes': mes, 'ingreso_total': monto})
 
 
-# ── API: Mini-resumen para embeber en otros módulos ───────────────────────────
+# ── API: Mini-resumen ─────────────────────────────────────────────────────────
 
 @budget_bp.route('/api/mini-summary')
 @budget_bp.route('/api/mini-summary/<mes>')
 def mini_summary(mes=None):
-    """Retorna el resumen 50-30-20 del mes en JSON — para el widget de Dashboard."""
     if not session.get('fin_ok'):
         return jsonify({'locked': True})
     today = today_date()
     if not mes:
         mes = today.strftime('%Y-%m')
-    next_mes = f"{mes[:4]}-{int(mes[5:])+1:02d}" if int(mes[5:]) < 12 else f"{int(mes[:4])+1}-01"
-    mes_inicio, mes_fin = f"{mes}-01", f"{next_mes}-01"
-    excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
-
     with get_db() as db:
-        ingreso_row = db.execute(
-            f"""SELECT SUM(monto) AS total FROM est_movimientos
-               WHERE tipo='INGRESO' AND categoria NOT IN ({excl_ph})
-               AND fecha >= ? AND fecha < ?""",
-            list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
-        ).fetchone()
-        ingreso = float(ingreso_row['total'] or 0)
-        if ingreso == 0:
-            ov = db.execute("SELECT ingreso_total FROM budget_meses WHERE mes=?", (mes,)).fetchone()
-            if ov:
-                ingreso = float(ov['ingreso_total'] or 0)
-
-        spending_rows = db.execute(
-            """SELECT categoria, SUM(COALESCE(mi_parte, monto)) AS total
-               FROM est_movimientos
-               WHERE tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO')
-               AND fecha >= ? AND fecha < ?
-               GROUP BY categoria""",
-            (mes_inicio, mes_fin)
-        ).fetchall()
-
-    spending_map = {r['categoria']: float(r['total'] or 0) for r in spending_rows}
-    buckets_out  = {}
-    for bk in CATEGORIAS:
-        gastado = sum(
-            spending_map.get(c, 0)
-            for c, b in CATEGORIA_BUCKET.items() if b == bk
-        )
-        target  = round(ingreso * PCTS[bk], 2)
+        data = _calc_budget(mes, db)
+    buckets_out = {}
+    for bk, bd in data['buckets'].items():
         buckets_out[bk] = {
-            'gastado': round(gastado, 2),
-            'target':  target,
-            'pct':     round(gastado / target * 100) if target > 0 else 0,
-            'over':    gastado > target,
+            'gastado': bd['total_gastado'],
+            'target':  bd['target_monto'],
+            'pct':     bd['pct_of_target'],
+            'over':    bd['over'],
         }
-    total_gastado = sum(b['gastado'] for b in buckets_out.values())
     return jsonify({
-        'mes':          mes,
-        'ingreso':      ingreso,
-        'total_gastado': round(total_gastado, 2),
-        'disponible':   round(ingreso - total_gastado, 2),
-        'buckets':      buckets_out,
+        'mes':           mes,
+        'ingreso':       data['ingreso_real'],
+        'total_gastado': data['total_gastado'],
+        'disponible':    data['disponible'],
+        'buckets':       buckets_out,
     })
