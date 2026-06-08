@@ -202,6 +202,35 @@ def delete_debt(did):
     return jsonify({'ok':True})
 
 
+@finanzas_bp.route('/admin/limpiar-duplicados', methods=['POST'])
+def limpiar_duplicados():
+    """Elimina duplicados de est_movimientos usando clave (fecha, monto, banco, tipo).
+    Corre sobre la DB activa — sirve tanto en local como en Railway."""
+    if not session.get('fin_ok'):
+        return jsonify({'error': 'locked'}), 403
+    with get_db() as db:
+        # 1) Duplicados exactos por (fecha, monto, banco, tipo) — monto > 0
+        dups = db.execute('''
+            SELECT MIN(id) keep_id, GROUP_CONCAT(id) all_ids
+            FROM est_movimientos
+            WHERE monto > 0
+            GROUP BY fecha, monto, banco, tipo
+            HAVING COUNT(*) > 1
+        ''').fetchall()
+
+        deleted = 0
+        for row in dups:
+            all_ids = [int(x) for x in row['all_ids'].split(',')]
+            to_del  = [x for x in all_ids if x != row['keep_id']]
+            for did in to_del:
+                db.execute("DELETE FROM est_movimientos WHERE id=?", (did,))
+                deleted += 1
+
+        db.commit()
+
+    return jsonify({'ok': True, 'deleted': deleted})
+
+
 @finanzas_bp.route('/api/oikonomia-summary')
 def oikonomia_summary():
     if not session.get('fin_ok'):
