@@ -1,7 +1,9 @@
 {% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
 {% block title %}Viajes — Eudaimonia{% endblock %}
 {% block module_title %}VIAJES{% endblock %}
-{% block topright %}<a href="/finanzas/estados/" style="color:var(--dim);font-size:var(--fs-sm);">← ESTADOS</a>{% endblock %}
+{% block back_href %}/finanzas/estados/{% endblock %}
+{% block crumb_mid %}<span class="sep">›</span><a href="/finanzas/estados/">Estados</a>{% endblock %}
+{% block topright %}{% endblock %}
 
 {% block content %}
 <style>

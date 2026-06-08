@@ -1,6 +1,9 @@
 {% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
 {% block title %}{{ prod.nombre }} — Consumo{% endblock %}
-{% block topright %}<a href="/finanzas/consumo/" style="color:var(--dim);font-size:var(--fs-sm);">← CONSUMO</a>{% endblock %}
+{% block module_title %}CONSUMO DETALLE{% endblock %}
+{% block back_href %}/finanzas/consumo/{% endblock %}
+{% block crumb_mid %}<span class="sep">›</span><a href="/finanzas/consumo/">Consumo</a>{% endblock %}
+{% block topright %}{% endblock %}
 {% block content %}
 <style>
 /* ── Product hero ────────────────────────────────────────────── */

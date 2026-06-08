@@ -209,6 +209,29 @@
     .theme-btn:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
     .theme-btn svg { width:13px; height:13px; }
 
+    /* === Header nav: breadcrumb + back — UN SOLO LENGUAJE DE NAVEGACIÓN === */
+    .crumb-back {
+      width:34px; height:34px; border-radius:9px; border:1px solid var(--b2);
+      background:var(--card); color:var(--mid); display:flex; align-items:center;
+      justify-content:center; transition:all .18s; flex-shrink:0; text-decoration:none;
+    }
+    .crumb-back:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-d); transform:translateX(-1px); }
+    .crumb-back svg { width:17px; height:17px; }
+    .crumbs { display:flex; align-items:center; gap:9px; min-width:0; }
+    .crumbs a { font-family:var(--sans); font-size:13px; color:var(--dim); text-decoration:none; letter-spacing:.01em; transition:color .16s; white-space:nowrap; }
+    .crumbs a:hover { color:var(--gold); }
+    .crumbs .sep { color:var(--b2); font-size:14px; }
+    .crumb-cur { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text); letter-spacing:.01em; white-space:nowrap; }
+    /* Responsive: breadcrumb en ≥768px, ← + título en <768px */
+    .hdr-mtitle { display:none; flex-direction:column; line-height:1.08; min-width:0; }
+    .mt-eyebrow { font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); }
+    .mt-title { font-family:var(--serif); font-size:17px; font-weight:600; color:var(--text); letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    @media (max-width:767px) {
+      .crumbs    { display:none; }
+      .hdr-mtitle{ display:flex; }
+      .hdr-util  { display:none; }
+    }
+
     /* GTD internal shell */
     .gtd-shell { display:grid; grid-template-columns:180px 1fr; height:calc(100vh - 56px); overflow:hidden; margin:-16px -16px; }
     .gtd-nav { background:var(--surf); border-right:1px solid var(--b); padding:18px 0; display:flex; flex-direction:column; overflow-y:auto; }
@@ -253,45 +276,57 @@
   {% block head %}{% endblock %}
 </head>
 
+{# ── Mapa módulo-padre: (slug, NombreMostrado, URL_del_módulo) ── #}
 {% set _pm = {
-  'finanzas':    ('oikonomia',      'OIKONOMIA'),
-  'nutricion':   ('hegemonikon',    'HEGEMONIKON'),
-  'perfil':      ('hegemonikon',    'HEGEMONIKON'),
-  'recetas':     ('hegemonikon',    'HEGEMONIKON'),
-  'guardarropa': ('hegemonikon',    'HEGEMONIKON'),
-  'viajes':      ('hegemonikon',    'HEGEMONIKON'),
-  'idiomas':     ('cosmopolitismo', 'COSMOPOLITISMO'),
-  'gtd':         ('ataraxia',       'ATARAXIA'),
-  'sabado':      ('ataraxia',       'ATARAXIA'),
-  'ataraxia':    ('ataraxia',       'ATARAXIA'),
-  'prioridades': ('oikonomia',      'OIKONOMIA'),
+  'finanzas':    ('oikonomia',      'Oikonomia',      '/finanzas/'),
+  'nutricion':   ('hegemonikon',    'Hegemonikon',    '/nutricion/'),
+  'perfil':      ('hegemonikon',    'Hegemonikon',    ''),
+  'recetas':     ('hegemonikon',    'Hegemonikon',    ''),
+  'guardarropa': ('hegemonikon',    'Hegemonikon',    ''),
+  'viajes':      ('hegemonikon',    'Hegemonikon',    ''),
+  'idiomas':     ('cosmopolitismo', 'Cosmopolitismo', '/idiomas/'),
+  'gtd':         ('ataraxia',       'Ataraxia',       '/gtd/'),
+  'sabado':      ('ataraxia',       'Ataraxia',       '/sabado/'),
+  'ataraxia':    ('ataraxia',       'Ataraxia',       '/ataraxia/'),
+  'prioridades': ('oikonomia',      'Oikonomia',      '/finanzas/'),
+  'consumo':     ('oikonomia',      'Oikonomia',      '/finanzas/'),
+  'bienestar':   ('hegemonikon',    'Hegemonikon',    ''),
 } %}
+
+{# URL efectiva del módulo padre; si está vacía → hub de módulos #}
+{% set _mod_url = ((_pm[pg][2] if _pm[pg][2] else ('/?tab=modules&open=' ~ _pm[pg][0])) if (pg is defined and pg in _pm) else '/?tab=modules') %}
 
 <body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
 
 <!-- TOPBAR -->
 <header class="sticky top-0 z-20 flex-shrink-0"
         style="background:var(--surf-top); border-bottom:1px solid var(--b); backdrop-filter:blur(12px);">
-  <div class="flex items-center justify-between px-4 md:px-6" style="height:56px;">
-    <div class="flex items-center gap-3">
-      <a href="/?tab=modules" style="font-family:'DM Sans',sans-serif; font-size:9px; letter-spacing:0.22em; color:var(--gold); opacity:0.7; text-transform:uppercase; text-decoration:none;">
-        ← Módulos
+  <div class="flex items-center justify-between px-4 md:px-6" style="height:56px; gap:16px;">
+
+    <!-- IZQUIERDA: botón ← + breadcrumb (una sola ruta) -->
+    <div class="flex items-center" style="gap:11px; min-width:0;">
+      <a href="{% block back_href %}{{ _mod_url }}{% endblock %}" class="crumb-back" aria-label="Volver" title="Volver">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
-      <span style="color:var(--b2); font-size:10px;">/</span>
-      <span style="font-family:'Cormorant Garamond',serif; font-size:16px; color:var(--text); letter-spacing:0.08em; font-weight:600;">
-        {% block module_title %}{% endblock %}
-      </span>
+      <nav class="crumbs" aria-label="Ruta">
+        <a href="/?tab=modules">Módulos</a>
+        {% if pg is defined and pg in _pm %}<span class="sep">›</span><a href="{{ _mod_url }}">{{ _pm[pg][1] }}</a>{% endif %}
+        {% block crumb_mid %}{% endblock %}
+        <span class="sep">›</span>
+        <span class="crumb-cur">{% block module_title %}{% endblock %}</span>
+      </nav>
+      <!-- Móvil: eyebrow + título -->
+      <div class="hdr-mtitle">
+        {% if pg is defined and pg in _pm %}<span class="mt-eyebrow">{{ _pm[pg][1] }}</span>{% endif %}
+        <span class="mt-title">{{ self.module_title() }}</span>
+      </div>
     </div>
+
+    <!-- DERECHA: utilidades opcionales + tema -->
     <div class="flex items-center gap-3">
-      <span style="font-size:var(--fs-xs); color:var(--mid); letter-spacing:.08em; text-transform:uppercase;">
+      <span class="hdr-util" style="font-size:var(--fs-xs); color:var(--mid); letter-spacing:.08em; text-transform:uppercase;">
         {% block topright %}{% endblock %}
       </span>
-      {% if pg is defined and pg in _pm %}
-      <a href="/?tab=modules&open={{ _pm[pg][0] }}"
-         style="font-family:'DM Sans',sans-serif; font-size:9px; letter-spacing:0.22em; color:var(--gold); opacity:0.7; text-transform:uppercase; text-decoration:none; margin-left:4px;">
-        {{ _pm[pg][1] }} →
-      </a>
-      {% endif %}
       <button class="theme-btn" onclick="toggleTheme()" title="Cambiar tema">
         <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -304,6 +339,7 @@
         </svg>
       </button>
     </div>
+
   </div>
 </header>
 
