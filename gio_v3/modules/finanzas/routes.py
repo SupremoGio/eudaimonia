@@ -202,6 +202,46 @@ def delete_debt(did):
     return jsonify({'ok':True})
 
 
+@finanzas_bp.route('/admin/seed-budgets', methods=['POST'])
+def seed_budgets():
+    """Carga los presupuestos reales del Excel SG BUDGET 2026.
+    Idempotente — se puede ejecutar múltiples veces sin duplicar."""
+    if not session.get('fin_ok'):
+        return jsonify({'error': 'locked'}), 403
+    budgets = [
+        ('CASA/HOGAR',       'Casa / Hogar',          6900),
+        ('GASOLINA/AUTO',    'Gasolina / Auto',        1955),
+        ('VIVERES/SUPER',    'Viveres / Super',        2500),
+        ('SUSCRIPCIONES',    'Suscripciones',           830),
+        ('SALUD',            'Salud',                   150),
+        ('SALSA',            'Salsa / Baile',           700),
+        ('COMIDA/REST',      'Comida / Restaurante',   2000),
+        ('ENTRETENIMIENTO',  'Entretenimiento',         300),
+        ('ROPA',             'Ropa',                    500),
+        ('GYM',              'Gym',                     350),
+        ('INVERSION',        'Inversion',              4000),
+        ('APRENDIZAJE',      'Aprendizaje',             300),
+    ]
+    with get_db() as db:
+        for cat, nombre, limite in budgets:
+            existing = db.execute(
+                "SELECT id FROM est_budgets WHERE categoria=?", (cat,)
+            ).fetchone()
+            if existing:
+                db.execute(
+                    "UPDATE est_budgets SET nombre=?, limite=? WHERE categoria=?",
+                    (nombre, limite, cat)
+                )
+            else:
+                db.execute(
+                    "INSERT INTO est_budgets (categoria, nombre, limite, periodo) VALUES (?,?,?,'mensual')",
+                    (cat, nombre, limite)
+                )
+        db.commit()
+        rows = db.execute("SELECT categoria, limite FROM est_budgets ORDER BY limite DESC").fetchall()
+    return jsonify({'ok': True, 'loaded': len(budgets), 'budgets': [dict(r) for r in rows]})
+
+
 @finanzas_bp.route('/admin/limpiar-duplicados', methods=['POST'])
 def limpiar_duplicados():
     """Elimina duplicados de est_movimientos usando clave (fecha, monto, banco, tipo).

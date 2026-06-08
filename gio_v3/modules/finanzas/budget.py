@@ -158,7 +158,7 @@ def _calc_budget(mes, db):
            FROM est_movimientos
            WHERE tipo='GASTO'
              AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
-                                   'SPEI_ENVIADO','RETIRO','PUBLICIDAD')
+                                   'SPEI_ENVIADO','RETIRO','PUBLICIDAD','NOMINA','FINANZAS')
              AND fecha >= ? AND fecha < ?
            GROUP BY categoria
            ORDER BY total DESC""",
