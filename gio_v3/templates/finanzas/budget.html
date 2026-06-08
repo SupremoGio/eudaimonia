@@ -47,31 +47,6 @@
 .cf-proj-text{font-size:var(--fs-sm);color:var(--text);line-height:1.4;}
 .cf-proj-val{color:var(--amber);font-weight:700;}
 
-/* ── Sin clasificar panel ────────────────────────────────── */
-.sc-panel{background:var(--card);border:1px solid rgba(220,100,40,.35);
-  border-left:3px solid #dc6428;border-radius:0 14px 14px 0;padding:14px 16px;margin-bottom:14px;}
-.sc-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;}
-.sc-icon{font-size:1.2rem;flex-shrink:0;margin-top:1px;}
-.sc-title{font-size:var(--fs-sm);font-weight:700;color:var(--text);letter-spacing:.04em;}
-.sc-sub{font-size:11px;color:var(--dim);margin-top:2px;}
-.sc-list{display:flex;flex-direction:column;gap:8px;}
-.sc-row{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--b);
-  border-radius:10px;padding:9px 12px;flex-wrap:wrap;}
-.sc-info{display:flex;align-items:center;gap:7px;flex:1;min-width:0;flex-wrap:wrap;}
-.sc-cat-badge{font-size:10px;font-weight:700;letter-spacing:.08em;padding:2px 7px;border-radius:20px;flex-shrink:0;}
-.sc-DEPOSITO{background:rgba(220,100,40,.15);color:#dc6428;}
-.sc-SPEI_RECIBIDO{background:rgba(96,165,250,.15);color:#60a5fa;}
-.sc-fecha{font-size:11px;color:var(--dim);flex-shrink:0;}
-.sc-desc{font-size:12px;color:var(--mid);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sc-monto{font-size:var(--fs-sm);font-weight:700;color:var(--text);flex-shrink:0;min-width:70px;text-align:right;}
-.sc-actions{display:flex;gap:6px;flex-shrink:0;}
-.sc-btn{padding:4px 11px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid transparent;
-  cursor:pointer;letter-spacing:.03em;transition:opacity .15s;}
-.sc-btn-ingreso{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3);color:#22c55e;}
-.sc-btn-excluir{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.25);color:#ef4444;}
-.sc-btn:hover{opacity:.75;}
-.sc-row.sc-done{opacity:.4;pointer-events:none;}
-
 /* ── Bucket sections ──────────────────────────────────────── */
 .bucket-section{margin-bottom:20px;}
 .bucket-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
@@ -102,14 +77,17 @@
 .st-ok    .cat-fill-bar{background:#2a8a62;}
 .st-warn  .cat-fill-bar{background:var(--amber);}
 .st-over  .cat-fill-bar{background:var(--coral);}
-.st-nobudget .cat-fill-bar{background:var(--b2);width:100%!important;opacity:.4;}
 .cat-foot{display:flex;justify-content:space-between;align-items:center;}
 .cat-pct{font-size:10px;letter-spacing:.04em;font-weight:600;}
+.st-ok    .cat-fill-bar{background:#2a8a62;}
 .st-ok    .cat-pct{color:#2a8a62;}
 .st-warn  .cat-pct{color:var(--amber);}
+.st-warn  .cat-fill-bar{background:var(--amber);}
 .st-over  .cat-pct{color:var(--coral);}
-.st-nobudget .cat-pct{color:var(--dim);}
+.st-over  .cat-fill-bar{background:var(--coral);}
 .cat-note{font-size:10px;color:var(--dim);}
+/* chip: cuántas transacciones */
+.cat-n{font-size:10px;color:var(--dim);background:var(--card2);border:1px solid var(--b);border-radius:20px;padding:1px 7px;margin-left:5px;}
 .cat-vals{text-align:right;flex-shrink:0;}
 .cat-vals .real{font-family:var(--serif);font-size:14px;color:var(--text);display:block;line-height:1.2;}
 .cat-vals .real.over{color:var(--coral);}
@@ -222,43 +200,14 @@
 </div>
 {% endif %}
 
-<!-- ── Depósitos / SPEIs sin clasificar ──────────────────────── -->
-{% if sin_clasificar %}
-<div class="sc-panel" id="sc-panel">
-  <div class="sc-header">
-    <span class="sc-icon">⚠️</span>
-    <div>
-      <div class="sc-title">{{ sin_clasificar|length }} ingreso{{ 's' if sin_clasificar|length > 1 else '' }} sin clasificar</div>
-      <div class="sc-sub">DEPOSITO / SPEI — ¿son ingresos reales o movilización de efectivo?</div>
-    </div>
-  </div>
-  <div class="sc-list" id="sc-list">
-    {% for m in sin_clasificar %}
-    <div class="sc-row" id="sc-row-{{ m.id }}">
-      <div class="sc-info">
-        <span class="sc-cat-badge sc-{{ m.categoria }}">{{ m.categoria }}</span>
-        <span class="sc-fecha">{{ m.fecha }}</span>
-        <span class="sc-desc">{{ m.descripcion[:50] }}</span>
-      </div>
-      <div class="sc-monto">${{ "{:,.0f}".format(m.monto) }}</div>
-      <div class="sc-actions">
-        <button class="sc-btn sc-btn-ingreso" onclick="scReclasificar({{ m.id }}, 'ingreso')">✓ Ingreso real</button>
-        <button class="sc-btn sc-btn-excluir" onclick="scReclasificar({{ m.id }}, 'excluir')">✗ Movilización</button>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-{% endif %}
-
 <!-- Bucket sections -->
 {% set cat_icons = {
   'COMIDA/REST':'🍔','VIVERES/SUPER':'🛒','CASA/HOGAR':'🏠',
   'GASOLINA/AUTO':'⛽','ROPA':'👕','SALUD':'🏥','TECH/DIGITAL':'💻',
   'SUSCRIPCIONES':'🎬','ENTRETENIMIENTO':'🎭','SALSA':'💃',
   'VIAJES/VUELOS':'✈️','TRANSPORTE':'🚗','APRENDIZAJE':'📚',
-  'INVERSION':'🏦','CAFE/PAN':'☕','GYM':'🏋️','DEPORTE':'⚽',
-  'REGALO':'🎁','OTROS':'📦'
+  'INVERSION':'📈','CAFE/PAN':'☕','GYM':'🏋️','DEPORTE':'⚽',
+  'REGALO':'🎁','OTROS':'📦','EXPENSE':'💳'
 } %}
 {% set bk_ic_bg = {
   'necesidades':'rgba(26,122,82,0.14)',
@@ -291,26 +240,37 @@
   {% if bdata.cats %}
   <div class="cats-list">
     {% for cat in bdata.cats %}
+    {# Barra: % del target del bucket que consume esta categoría (siempre tiene valor) #}
+    {% set bar_w = [cat.pct, 100]|min %}
     <div class="cat-card st-{{ cat.status }}" id="cat-{{ cat.categoria }}">
       <div class="cat-ic" style="background:{{ bk_ic_bg[bk] }}">
         {{ cat_icons.get(cat.categoria, '📦') }}
       </div>
       <div class="cat-body">
-        <div class="cat-nombre">{{ cat.nombre }}</div>
+        <div class="cat-nombre">
+          {{ cat.nombre }}
+          <span class="cat-n">{{ cat.n }} mov</span>
+        </div>
         <div class="cat-bar">
-          <div class="cat-fill-bar" style="width:{{ [cat.pct or 0, 100]|min }}%"></div>
+          <div class="cat-fill-bar" style="width:{{ bar_w }}%"></div>
         </div>
         <div class="cat-foot">
-          <span class="cat-pct">{% if cat.pct is not none %}{{ cat.pct }}%{% else %}—{% endif %}</span>
-          <span class="cat-note">de ${{ "{:,.0f}".format(cat.limite) if cat.limite > 0 else 'sin meta' }}</span>
+          {# Muestra el % del presupuesto del bucket que usa esta cat #}
+          <span class="cat-pct">{{ cat.pct }}% del presupuesto</span>
+          {# Si hay límite manual configurado, mostrarlo también #}
+          {% if cat.pct_limite is not none %}
+            <span class="cat-note">${{ "{:,.0f}".format(cat.gastado) }} / ${{ "{:,.0f}".format(cat.limite) }} límite</span>
+          {% else %}
+            <span class="cat-note">de ${{ "{:,.0f}".format(cat.bucket_target) }} disponible</span>
+          {% endif %}
         </div>
       </div>
       <div class="cat-vals">
         <span class="real{% if cat.status == 'over' %} over{% endif %}">${{ "{:,.0f}".format(cat.gastado) }}</span>
         <span class="lim" id="lim-display-{{ cat.categoria }}"
           onclick="editLimite('{{ cat.categoria }}', '{{ cat.nombre }}', {{ cat.limite }})"
-          title="Editar meta">
-          {% if cat.limite > 0 %}${{ "{:,.0f}".format(cat.limite) }} meta{% else %}+ meta{% endif %}
+          title="Editar límite por categoría">
+          {% if cat.limite > 0 %}límite ${{ "{:,.0f}".format(cat.limite) }}{% else %}+ límite{% endif %}
         </span>
       </div>
     </div>
@@ -417,64 +377,5 @@ document.addEventListener('keydown', e => {
 });
 document.getElementById('lim-valor').addEventListener('keydown', e => { if (e.key === 'Enter') saveLimite(); });
 
-/* ── Reclasificar DEPOSITO / SPEI ─────────────────────────── */
-function _scModal(opciones) {
-  return new Promise(resolve => {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999;';
-    const box = document.createElement('div');
-    box.style.cssText = 'background:var(--card);border:1px solid var(--b);border-radius:14px;padding:22px 24px;max-width:320px;width:90%;';
-    box.innerHTML = `<div style="font-size:13px;font-weight:700;margin-bottom:4px;letter-spacing:.06em;">¿QUÉ TIPO DE INGRESO?</div>
-      <div style="font-size:12px;color:var(--dim);margin-bottom:16px;">Selecciona cómo quieres categorizar este depósito.</div>`;
-    opciones.forEach(o => {
-      const btn = document.createElement('button');
-      btn.textContent = o;
-      btn.style.cssText = 'display:block;width:100%;text-align:left;padding:9px 14px;margin-bottom:7px;background:var(--surf);border:1px solid var(--b);border-radius:9px;color:var(--text);font-size:13px;cursor:pointer;';
-      btn.addEventListener('click', () => { overlay.remove(); resolve(o); });
-      box.appendChild(btn);
-    });
-    const cancel = document.createElement('button');
-    cancel.textContent = 'Cancelar';
-    cancel.style.cssText = 'width:100%;padding:7px;background:none;border:none;color:var(--dim);font-size:12px;cursor:pointer;margin-top:4px;';
-    cancel.addEventListener('click', () => { overlay.remove(); resolve(null); });
-    box.appendChild(cancel);
-    overlay.appendChild(box);
-    overlay.addEventListener('click', ev => { if (ev.target === overlay) { overlay.remove(); resolve(null); } });
-    document.body.appendChild(overlay);
-  });
-}
-
-async function scReclasificar(id, accion) {
-  let categoria = 'TRANSFERENCIA';
-  if (accion === 'ingreso') {
-    const elegida = await _scModal(['NOMINA', 'FIDEICOMISO', 'OTROS']);
-    if (!elegida) return;
-    categoria = elegida;
-  }
-
-  try {
-    const res = await fetch(`/finanzas/budget/api/reclasificar/${id}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ accion, categoria }),
-    });
-    const data = await res.json();
-    if (data.ok) {
-      const row = document.getElementById(`sc-row-${id}`);
-      if (row) { row.classList.add('sc-done'); setTimeout(() => row.remove(), 500); }
-      setTimeout(() => {
-        const list = document.getElementById('sc-list');
-        if (list && list.querySelectorAll('.sc-row:not(.sc-done)').length === 0) {
-          document.getElementById('sc-panel')?.remove();
-        }
-      }, 600);
-      toast(accion === 'ingreso' ? `✓ Categorizado como ${categoria}` : '✗ Marcado como movilización', 'ok');
-    } else {
-      toast(data.error || 'Error al reclasificar', 'err');
-    }
-  } catch (e) {
-    toast('Error de red', 'err');
-  }
-}
 </script>
 {% endblock %}

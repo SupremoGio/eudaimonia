@@ -180,17 +180,6 @@ def _calc_budget(mes, db):
         list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
     ).fetchall()
 
-    # ── DEPOSITO/SPEI sin clasificar
-    sin_clasificar = [dict(r) for r in db.execute(
-        """SELECT id, fecha, descripcion, monto, categoria
-           FROM est_movimientos
-           WHERE tipo='INGRESO'
-             AND categoria IN ('DEPOSITO','SPEI_RECIBIDO')
-             AND fecha >= ? AND fecha < ?
-           ORDER BY fecha DESC""",
-        (mes_inicio, mes_fin)
-    ).fetchall()]
-
     # ── Conteo total
     n_movimientos = db.execute(
         "SELECT COUNT(*) n FROM est_movimientos WHERE fecha >= ? AND fecha < ?",
@@ -198,33 +187,42 @@ def _calc_budget(mes, db):
     ).fetchone()['n']
 
     # ── Construir cats_data
+    # pct = gastado / bucket_target → qué % del target del bucket consume esta categoría.
+    # Siempre tiene valor, sin necesidad de límites manuales.
     cats_data = []
     for row in spending_rows:
-        cat     = row['categoria']
-        bucket  = CATEGORIA_BUCKET.get(cat)
-        if bucket is None:
-            bucket = 'deseos'   # catch-all: cualquier categoría no mapeada va a deseos
-        gastado = float(row['total'] or 0)
-        limite  = budgets_map.get(cat, 0.0)
-        target  = round(ingreso_real * PCTS[bucket], 2)  # target del bucket
+        cat          = row['categoria']
+        bucket       = CATEGORIA_BUCKET.get(cat) or 'deseos'
+        gastado      = float(row['total'] or 0)
+        limite       = budgets_map.get(cat, 0.0)
+        bucket_target = round(ingreso_real * PCTS[bucket], 2)
 
-        if limite > 0:
-            pct    = round(gastado / limite * 100)
-            status = 'over' if pct >= 100 else ('warn' if pct >= 80 else 'ok')
+        # % del target del bucket — métrica principal (siempre calculable)
+        pct = round(gastado / bucket_target * 100, 1) if bucket_target > 0 else 0
+
+        # Estado visual por peso relativo dentro del bucket
+        if pct >= 60:
+            status = 'over'
+        elif pct >= 35:
+            status = 'warn'
         else:
-            pct    = None
-            status = 'nobudget'
+            status = 'ok'
+
+        # Si hay límite manual, calcular también ese %
+        pct_limite = round(gastado / limite * 100) if limite > 0 else None
 
         cats_data.append({
-            'categoria': cat,
-            'nombre':    CAT_LABELS.get(cat, cat),
-            'icono':     CAT_ICONS.get(cat, '📦'),
-            'limite':    limite,
-            'gastado':   gastado,
-            'n':         int(row['n'] or 0),
-            'pct':       pct,
-            'bucket':    bucket,
-            'status':    status,
+            'categoria':    cat,
+            'nombre':       CAT_LABELS.get(cat, cat),
+            'icono':        CAT_ICONS.get(cat, '📦'),
+            'limite':       limite,
+            'gastado':      gastado,
+            'n':            int(row['n'] or 0),
+            'pct':          pct,          # % del target del bucket
+            'pct_limite':   pct_limite,   # % del límite manual (si existe)
+            'bucket':       bucket,
+            'bucket_target': bucket_target,
+            'status':       status,
         })
 
     # ── Agrupar por bucket
@@ -272,7 +270,6 @@ def _calc_budget(mes, db):
         'es_mes_actual':      es_mes_actual,
         'buckets':            buckets,
         'seg':                seg,
-        'sin_clasificar':     sin_clasificar,
         'mes_inicio':         mes_inicio,
     }
 
