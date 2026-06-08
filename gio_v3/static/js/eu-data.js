@@ -88,7 +88,14 @@ window.EU = {
       { name:'Recetas',     icon:'👨‍🍳', route:'/recetas'         },
       { name:'Guardarropa', icon:'👔', route:'/guardarropa'     },
     ],
-    oikonomia: [],
+    oikonomia: [
+      { name:'Patrimonio',  icon:'🏛️', route:'/finanzas/'         },
+      { name:'Presupuesto', icon:'📊', route:'/finanzas/budget'    },
+      { name:'Estados',     icon:'💳', route:'/finanzas/estados'   },
+      { name:'Consumo',     icon:'🛒', route:'/finanzas/consumo'   },
+      { name:'Wishlist',    icon:'⭐', route:'/finanzas/prioridades'},
+      { name:'Viajes',      icon:'✈️', route:'/finanzas/estados/viajes/' },
+    ],
     ataraxia: [
       { name:'Ataraxia', icon:'🧘', route:'/ataraxia' },
     ],
