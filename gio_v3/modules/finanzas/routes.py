@@ -218,7 +218,9 @@ def oikonomia_summary():
     with get_db() as db:
         flujo = db.execute("""
             SELECT
-              SUM(CASE WHEN tipo='INGRESO' THEN monto ELSE 0 END) AS ingreso,
+              SUM(CASE WHEN tipo='INGRESO'
+                        AND categoria NOT IN ('TRANSFERENCIA','PAGO_TDC','RETIRO','DEPOSITO','SPEI_RECIBIDO')
+                       THEN monto ELSE 0 END) AS ingreso,
               SUM(CASE WHEN tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO')
                        THEN COALESCE(mi_parte, monto) ELSE 0 END) AS gasto
             FROM est_movimientos WHERE fecha >= ?""", (mes,)).fetchone()

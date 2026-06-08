@@ -26,6 +26,11 @@ estados_bp = Blueprint(
 _PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO')"
 # Use mi_parte when set (shared expense), otherwise full monto
 _MONTO = "COALESCE(mi_parte, monto)"
+# INGRESO categories that are NOT real income (transfers, cash mobilization)
+_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO')
+_INGRESO_EXCLUIR_SQL = "categoria NOT IN ({})".format(
+    ','.join(f"'{c}'" for c in _INGRESO_EXCLUIR)
+)
 
 BANK_META = {
     "BBVA":     {"color": "#004B96", "type": "Tarjeta de crédito", "icon": "🔵"},
@@ -218,9 +223,9 @@ def overview():
     with get_db() as db:
         row = db.execute(f"""
             SELECT
-                SUM(CASE WHEN tipo='INGRESO'                          THEN monto ELSE 0 END) AS income,
-                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}           THEN {_MONTO} ELSE 0 END) AS expense,
-                SUM(CASE WHEN tipo='INVERSION'                        THEN monto ELSE 0 END) AS inversion,
+                SUM(CASE WHEN tipo='INGRESO' AND {_INGRESO_EXCLUIR_SQL} THEN monto ELSE 0 END) AS income,
+                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}              THEN {_MONTO} ELSE 0 END) AS expense,
+                SUM(CASE WHEN tipo='INVERSION'                           THEN monto ELSE 0 END) AS inversion,
                 COUNT(*) AS tx_count
             FROM est_movimientos WHERE fecha >= ?
         """, (month_start,)).fetchone()
@@ -254,8 +259,8 @@ def monthly_summary():
         rows = db.execute(f"""
             SELECT
                 substr(fecha,1,7) AS ym,
-                SUM(CASE WHEN tipo='INGRESO'                        THEN monto ELSE 0 END) AS income,
-                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}         THEN {_MONTO} ELSE 0 END) AS expense
+                SUM(CASE WHEN tipo='INGRESO' AND {_INGRESO_EXCLUIR_SQL} THEN monto ELSE 0 END) AS income,
+                SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}              THEN {_MONTO} ELSE 0 END) AS expense
             FROM est_movimientos
             WHERE 1=1 {bank_filter}
             GROUP BY ym
