@@ -587,11 +587,11 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           <div style={{display:'flex',alignItems:'flex-end',gap:14}}>
             <div style={{flexShrink:0,cursor:'pointer',transition:'opacity 0.15s'}}
               title="Actualizar dashboard"
-              onClick={()=>window.location.reload()}
+              onClick={()=>window.location.replace('/')}
               onMouseDown={e=>e.currentTarget.style.opacity='0.5'}
               onMouseUp={e=>e.currentTarget.style.opacity='1'}
               onTouchStart={e=>e.currentTarget.style.opacity='0.5'}
-              onTouchEnd={e=>{e.currentTarget.style.opacity='1';window.location.reload()}}>
+              onTouchEnd={e=>{e.preventDefault();e.currentTarget.style.opacity='1';window.location.replace('/')}}>
               <GreekColumn level={level} xpPct={xpPct} size={72}/>
             </div>
             <div style={{flex:1,paddingBottom:3}}>
