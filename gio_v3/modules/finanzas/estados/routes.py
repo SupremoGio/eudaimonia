@@ -616,27 +616,32 @@ def upload_file():
             return jsonify({'ok': False, 'error': 'No se encontraron transacciones', 'bank': bank})
 
         # Dedup and insert
-        # Key = (fecha, monto, banco) — robusto ante diferencias de descripción
-        # entre PDF y CSV del mismo banco para la misma transacción.
+        # Key = (fecha, monto, banco, tipo) — robusto ante diferencias de descripción
+        # entre PDF y CSV del mismo banco. Incluye tipo para no confundir un
+        # ingreso y un gasto del mismo monto en el mismo día (caso legítimo).
+        # Solo se aplica cuando monto > 0; montos en cero se insertan siempre.
         inserted = 0
         skipped  = 0
         with get_db() as db:
             existing = set()
             for r in db.execute(
-                "SELECT fecha, monto, banco FROM est_movimientos"
+                "SELECT fecha, monto, banco, tipo FROM est_movimientos WHERE monto > 0"
             ).fetchall():
-                existing.add((r['fecha'], float(r['monto']), r['banco']))
+                existing.add((r['fecha'], float(r['monto']), r['banco'], r['tipo']))
 
             # También rastreamos depósitos/SPEIs nuevos para el response
             review_needed = []
 
             for m in movimientos:
                 m_banco = m.get('banco', bank) or bank
-                key = (m['fecha'], float(m['monto']), m_banco)
-                if key in existing:
+                m_monto = float(m['monto'])
+                # Dedup solo aplica a montos > 0
+                key = (m['fecha'], m_monto, m_banco, m['tipo'])
+                if m_monto > 0 and key in existing:
                     skipped += 1
                     continue
-                existing.add(key)
+                if m_monto > 0:
+                    existing.add(key)
                 db.execute("""
                     INSERT OR IGNORE INTO est_movimientos
                     (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
