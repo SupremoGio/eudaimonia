@@ -52,7 +52,9 @@ CATEGORIA_BUCKET = {
 }
 
 # Categorías de INGRESO que NO son ingreso real
-_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO')
+# DEPOSITO/SPEI_RECIBIDO = movilización de efectivo — excluidos hasta que el
+# usuario los reclasifique explícitamente como NOMINA/FIDEICOMISO/etc.
+_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO')
 
 # Etiquetas legibles
 CAT_LABELS = {
@@ -159,6 +161,18 @@ def index(mes=None):
             (mes_inicio, mes_fin)
         ).fetchone()['n']
 
+        # ── DEPOSITO / SPEI sin clasificar (pendientes de revisión)
+        sin_clasificar = db.execute(
+            """SELECT id, fecha, descripcion, monto, categoria
+               FROM est_movimientos
+               WHERE tipo='INGRESO'
+                 AND categoria IN ('DEPOSITO','SPEI_RECIBIDO')
+                 AND fecha >= ? AND fecha < ?
+               ORDER BY fecha DESC""",
+            (mes_inicio, mes_fin)
+        ).fetchall()
+        sin_clasificar = [dict(r) for r in sin_clasificar]
+
     # ── Construir lista de categorías
     all_cats = (set(budgets_map.keys()) | set(spending_map.keys())) - {
         c for c, b in CATEGORIA_BUCKET.items() if b is None
@@ -240,7 +254,51 @@ def index(mes=None):
         buckets=buckets,
         seg=seg,
         mes_inicio=mes_inicio,
+        sin_clasificar=sin_clasificar,
     )
+
+
+# ── API: Reclasificar DEPOSITO / SPEI como ingreso real o movilización ────────
+
+@budget_bp.route('/api/reclasificar/<int:mov_id>', methods=['POST'])
+def reclasificar(mov_id):
+    """
+    Reclasifica un movimiento DEPOSITO/SPEI_RECIBIDO.
+    Body: { "accion": "ingreso"|"excluir", "categoria": "NOMINA"|... }
+      - "ingreso"  → cambia la categoría al valor enviado (NOMINA, FIDEICOMISO, OTROS…)
+      - "excluir"  → cambia el tipo a 'TRANSFERENCIA' para que no cuente
+    """
+    if not session.get('fin_ok'):
+        return jsonify({'error': 'locked'}), 403
+    data    = request.json or {}
+    accion  = data.get('accion')   # 'ingreso' | 'excluir'
+    cat_new = data.get('categoria', 'OTROS')  # solo si accion=='ingreso'
+
+    with get_db() as db:
+        row = db.execute(
+            "SELECT * FROM est_movimientos WHERE id=?", (mov_id,)
+        ).fetchone()
+        if not row:
+            return jsonify({'error': 'no encontrado'}), 404
+        if row['categoria'] not in ('DEPOSITO', 'SPEI_RECIBIDO'):
+            return jsonify({'error': 'solo se puede reclasificar DEPOSITO / SPEI_RECIBIDO'}), 400
+
+        if accion == 'ingreso':
+            db.execute(
+                "UPDATE est_movimientos SET categoria=? WHERE id=?",
+                (cat_new, mov_id)
+            )
+        elif accion == 'excluir':
+            # Lo marcamos como TRANSFERENCIA → queda excluido del ingreso real
+            db.execute(
+                "UPDATE est_movimientos SET categoria='TRANSFERENCIA' WHERE id=?",
+                (mov_id,)
+            )
+        else:
+            return jsonify({'error': 'accion inválida'}), 400
+
+        db.commit()
+    return jsonify({'ok': True, 'id': mov_id, 'accion': accion})
 
 
 # ── API: Override de ingreso manual ───────────────────────────────────────────

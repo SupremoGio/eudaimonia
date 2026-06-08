@@ -611,15 +611,23 @@ def upload_file():
             return jsonify({'ok': False, 'error': 'No se encontraron transacciones', 'bank': bank})
 
         # Dedup and insert
+        # Key = (fecha, monto, banco) — robusto ante diferencias de descripción
+        # entre PDF y CSV del mismo banco para la misma transacción.
         inserted = 0
         skipped  = 0
         with get_db() as db:
             existing = set()
-            for r in db.execute("SELECT fecha, descripcion FROM est_movimientos").fetchall():
-                existing.add((r['fecha'], r['descripcion']))
+            for r in db.execute(
+                "SELECT fecha, monto, banco FROM est_movimientos"
+            ).fetchall():
+                existing.add((r['fecha'], float(r['monto']), r['banco']))
+
+            # También rastreamos depósitos/SPEIs nuevos para el response
+            review_needed = []
 
             for m in movimientos:
-                key = (m['fecha'], m['descripcion'])
+                m_banco = m.get('banco', bank) or bank
+                key = (m['fecha'], float(m['monto']), m_banco)
                 if key in existing:
                     skipped += 1
                     continue
@@ -631,10 +639,18 @@ def upload_file():
                 """, (
                     m['fecha'], m.get('fecha_cargo', m['fecha']),
                     m['descripcion'], m['monto'],
-                    m.get('banco', bank), m.get('periodo', ''),
+                    m_banco, m.get('periodo', ''),
                     m['categoria'], m.get('subcategoria', ''), m['tipo'],
                 ))
                 inserted += 1
+                # Marcar DEPOSITO / SPEI_RECIBIDO como pendientes de clasificar
+                if m['tipo'] == 'INGRESO' and m['categoria'] in ('DEPOSITO', 'SPEI_RECIBIDO'):
+                    review_needed.append({
+                        'fecha': m['fecha'],
+                        'descripcion': m['descripcion'],
+                        'monto': m['monto'],
+                        'categoria': m['categoria'],
+                    })
 
             # Apply all user-defined keywords to newly imported records
             kw_rows = db.execute(
@@ -656,6 +672,7 @@ def upload_file():
             'ok': True, 'bank': bank,
             'parsed': len(movimientos), 'inserted': inserted,
             'skipped': skipped, 'preview': preview,
+            'review_needed': review_needed,  # DEPOSITO/SPEI pendientes de clasificar
         })
 
     except Exception as e:
