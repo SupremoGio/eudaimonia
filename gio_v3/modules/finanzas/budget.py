@@ -35,7 +35,7 @@ CATEGORIA_BUCKET = {
     'TRANSPORTE':       'necesidades',
     'APRENDIZAJE':      'deseos',
     'CAFE/PAN':         'deseos',
-    'GYM':              'necesidades',
+    'GYM':              'deseos',
     'DEPORTE':          'deseos',
     'REGALO':           'deseos',
     'OTROS':            'deseos',
@@ -187,29 +187,39 @@ def _calc_budget(mes, db):
     ).fetchone()['n']
 
     # ── Construir cats_data
-    # pct = gastado / bucket_target → qué % del target del bucket consume esta categoría.
-    # Siempre tiene valor, sin necesidad de límites manuales.
+    # Lógica de barra:
+    #   - Con presupuesto configurado (limite > 0): pct = gastado/limite → métrica vs. presupuesto real
+    #   - Sin presupuesto: pct = gastado/bucket_target → % del bucket como fallback informativo
     cats_data = []
     for row in spending_rows:
-        cat          = row['categoria']
-        bucket       = CATEGORIA_BUCKET.get(cat) or 'deseos'
-        gastado      = float(row['total'] or 0)
-        limite       = budgets_map.get(cat, 0.0)
+        cat           = row['categoria']
+        bucket        = CATEGORIA_BUCKET.get(cat) or 'deseos'
+        gastado       = float(row['total'] or 0)
+        limite        = budgets_map.get(cat, 0.0)
         bucket_target = round(ingreso_real * PCTS[bucket], 2)
 
-        # % del target del bucket — métrica principal (siempre calculable)
-        pct = round(gastado / bucket_target * 100, 1) if bucket_target > 0 else 0
-
-        # Estado visual por peso relativo dentro del bucket
-        if pct >= 60:
-            status = 'over'
-        elif pct >= 35:
-            status = 'warn'
+        if limite > 0:
+            # Presupuesto real configurado → barra mide gastado/limite
+            pct         = round(gastado / limite * 100, 1)
+            pct_bucket  = round(gastado / bucket_target * 100, 1) if bucket_target > 0 else 0
+            tiene_limite = True
+            if pct >= 100:
+                status = 'over'
+            elif pct >= 80:
+                status = 'warn'
+            else:
+                status = 'ok'
         else:
-            status = 'ok'
-
-        # Si hay límite manual, calcular también ese %
-        pct_limite = round(gastado / limite * 100) if limite > 0 else None
+            # Sin presupuesto → barra mide peso relativo en el bucket
+            pct         = round(gastado / bucket_target * 100, 1) if bucket_target > 0 else 0
+            pct_bucket  = pct
+            tiene_limite = False
+            if pct >= 60:
+                status = 'over'
+            elif pct >= 35:
+                status = 'warn'
+            else:
+                status = 'ok'
 
         cats_data.append({
             'categoria':    cat,
@@ -218,8 +228,9 @@ def _calc_budget(mes, db):
             'limite':       limite,
             'gastado':      gastado,
             'n':            int(row['n'] or 0),
-            'pct':          pct,          # % del target del bucket
-            'pct_limite':   pct_limite,   # % del límite manual (si existe)
+            'pct':          pct,
+            'pct_bucket':   pct_bucket,
+            'tiene_limite': tiene_limite,
             'bucket':       bucket,
             'bucket_target': bucket_target,
             'status':       status,

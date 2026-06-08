@@ -240,7 +240,6 @@
   {% if bdata.cats %}
   <div class="cats-list">
     {% for cat in bdata.cats %}
-    {# Barra: % del target del bucket que consume esta categoría (siempre tiene valor) #}
     {% set bar_w = [cat.pct, 100]|min %}
     <div class="cat-card st-{{ cat.status }}" id="cat-{{ cat.categoria }}">
       <div class="cat-ic" style="background:{{ bk_ic_bg[bk] }}">
@@ -255,13 +254,18 @@
           <div class="cat-fill-bar" style="width:{{ bar_w }}%"></div>
         </div>
         <div class="cat-foot">
-          {# Muestra el % del presupuesto del bucket que usa esta cat #}
-          <span class="cat-pct">{{ cat.pct }}% del presupuesto</span>
-          {# Si hay límite manual configurado, mostrarlo también #}
-          {% if cat.pct_limite is not none %}
-            <span class="cat-note">${{ "{:,.0f}".format(cat.gastado) }} / ${{ "{:,.0f}".format(cat.limite) }} límite</span>
+          {% if cat.tiene_limite %}
+            {# Presupuesto configurado: muestra % vs. presupuesto real #}
+            <span class="cat-pct">{{ cat.pct }}% del presupuesto</span>
+            <span class="cat-note">
+              ${{ "{:,.0f}".format(cat.gastado) }} / ${{ "{:,.0f}".format(cat.limite) }}
+              {% set rest = cat.limite - cat.gastado %}
+              · {% if rest >= 0 %}${{ "{:,.0f}".format(rest) }} restante{% else %}<span style="color:var(--coral)">${{ "{:,.0f}".format(rest|abs) }} excedido</span>{% endif %}
+            </span>
           {% else %}
-            <span class="cat-note">de ${{ "{:,.0f}".format(cat.bucket_target) }} disponible</span>
+            {# Sin presupuesto: muestra peso relativo en el bucket #}
+            <span class="cat-pct">{{ cat.pct }}% del bucket</span>
+            <span class="cat-note">de ${{ "{:,.0f}".format(cat.bucket_target) }} target</span>
           {% endif %}
         </div>
       </div>
@@ -269,8 +273,10 @@
         <span class="real{% if cat.status == 'over' %} over{% endif %}">${{ "{:,.0f}".format(cat.gastado) }}</span>
         <span class="lim" id="lim-display-{{ cat.categoria }}"
           onclick="editLimite('{{ cat.categoria }}', '{{ cat.nombre }}', {{ cat.limite }})"
-          title="Editar límite por categoría">
-          {% if cat.limite > 0 %}límite ${{ "{:,.0f}".format(cat.limite) }}{% else %}+ límite{% endif %}
+          title="Editar presupuesto">
+          {% if cat.limite > 0 %}
+            <span style="color:var(--dim)">de ${{ "{:,.0f}".format(cat.limite) }}</span>
+          {% else %}+ presupuesto{% endif %}
         </span>
       </div>
     </div>
