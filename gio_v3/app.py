@@ -81,6 +81,7 @@ def create_app():
     app.register_blueprint(viajes_bp,     url_prefix='/viajes')
     csrf.exempt(estados_bp)
     csrf.exempt(viajes_bp)
+    csrf.exempt(budget_bp)
 
     @app.route('/api/health/v31')
     def health_v31():

@@ -361,6 +361,64 @@ def set_ingreso_override():
     return jsonify({'ok': True, 'mes': mes, 'ingreso_total': monto})
 
 
+# ── API: Movimientos por categoría (drill-down) ───────────────────────────────
+
+@budget_bp.route('/api/cat-movs/<mes>/<path:categoria>')
+def cat_movimientos(mes, categoria):
+    if not session.get('fin_ok'):
+        return jsonify({'error': 'locked'}), 403
+    y, m   = int(mes[:4]), int(mes[5:])
+    next_m = m + 1 if m < 12 else 1
+    next_y = y if m < 12 else y + 1
+    mes_ini = f"{mes}-01"
+    mes_fin = f"{next_y}-{next_m:02d}-01"
+    with get_db() as db:
+        rows = db.execute("""
+            SELECT id, fecha, descripcion, monto, COALESCE(mi_parte, monto) AS mi_monto,
+                   categoria, banco, tipo
+            FROM est_movimientos
+            WHERE categoria = ?
+              AND tipo IN ('GASTO','INVERSION')
+              AND fecha >= ? AND fecha < ?
+            ORDER BY fecha DESC, id DESC
+        """, (categoria, mes_ini, mes_fin)).fetchall()
+    return jsonify({'movimientos': [dict(r) for r in rows]})
+
+
+# ── API: Editar movimiento (categoría + monto mi_parte) ──────────────────────
+
+@budget_bp.route('/api/mov/<int:mov_id>', methods=['PATCH'])
+def editar_movimiento(mov_id):
+    if not session.get('fin_ok'):
+        return jsonify({'error': 'locked'}), 403
+    d = request.json or {}
+    with get_db() as db:
+        row = db.execute("SELECT * FROM est_movimientos WHERE id=?", (mov_id,)).fetchone()
+        if not row:
+            return jsonify({'error': 'no encontrado'}), 404
+
+        fields, vals = [], []
+        if 'categoria' in d:
+            fields.append('categoria=?'); vals.append(d['categoria'].upper().strip())
+        if 'descripcion' in d:
+            fields.append('descripcion=?'); vals.append(str(d['descripcion'])[:300])
+        if 'mi_parte' in d:
+            mp = float(d['mi_parte'])
+            fields.append('mi_parte=?'); vals.append(mp if mp > 0 else None)
+        # Si cambia a tipo INVERSION, actualizar tipo también
+        if 'tipo' in d and d['tipo'] in ('GASTO', 'INGRESO', 'PAGO', 'INVERSION'):
+            fields.append('tipo=?'); vals.append(d['tipo'])
+
+        if not fields:
+            return jsonify({'error': 'nada que actualizar'}), 400
+
+        vals.append(mov_id)
+        db.execute(f"UPDATE est_movimientos SET {', '.join(fields)} WHERE id=?", vals)
+        db.commit()
+        updated = db.execute("SELECT * FROM est_movimientos WHERE id=?", (mov_id,)).fetchone()
+    return jsonify({'ok': True, 'mov': dict(updated)})
+
+
 # ── API: Mini-resumen ─────────────────────────────────────────────────────────
 
 @budget_bp.route('/api/mini-summary')
