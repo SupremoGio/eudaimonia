@@ -16,108 +16,83 @@
 .mn-mes{font-family:var(--sans);font-size:1.2rem;font-weight:700;color:var(--text);}
 .mn-sub{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-align:center;margin-top:2px;}
 
-/* ── Cashflow hero ────────────────────────────────────────── */
-.cf-hero{background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(6,182,212,.04));border:1px solid rgba(16,185,129,.18);border-radius:16px;padding:22px 24px;margin-bottom:16px;}
-.cf-ingreso-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
-.cf-ing-label{font-size:var(--fs-xs);color:var(--emerald);letter-spacing:.18em;text-transform:uppercase;}
-.cf-ing-val{font-family:var(--sans);font-size:2rem;font-weight:700;background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+/* ── Cashflow hero ─────────────────────────────────────────── */
+.cf-hero{background:var(--card);border:1px solid var(--b);border-radius:16px;padding:20px 22px;margin-bottom:14px;}
+.cf-ingreso-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:8px;}
+.cf-ing-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:4px;}
+.cf-ing-val{font-family:var(--serif);font-size:30px;font-weight:600;color:var(--text);line-height:1;}
 .cf-disp{text-align:right;}
-.cf-disp-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px;}
-.cf-disp-val{font-family:var(--sans);font-size:1.4rem;font-weight:700;}
-.cf-disp-pos{background:linear-gradient(135deg,var(--emerald),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.cf-disp-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;}
+.cf-disp-val{font-family:var(--serif);font-size:24px;font-weight:600;line-height:1;}
+.cf-disp-pos{color:var(--emerald);}
 .cf-disp-neg{color:var(--coral);}
 
-/* segmented bar */
-.cf-segbar-wrap{margin-bottom:12px;}
-.cf-segbar{height:10px;border-radius:100px;background:var(--b);overflow:hidden;display:flex;margin-bottom:6px;}
-.cf-seg-nec{background:var(--emerald);border-radius:100px 0 0 100px;transition:width .6s;}
-.cf-seg-des{background:var(--blue);transition:width .6s;}
-.cf-seg-aho{background:var(--violet-l);border-radius:0 100px 100px 0;transition:width .6s;}
-.cf-seg-legend{display:flex;gap:16px;flex-wrap:wrap;}
-.cf-leg-item{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:var(--mid);}
-.cf-leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
-.cf-gastado-row{font-size:var(--fs-sm);color:var(--dim);margin-top:6px;}
+/* segmented bar — 30px con labels */
+.cf-segbar-wrap{margin-bottom:16px;}
+.cf-segbar{height:30px;border-radius:8px;overflow:hidden;display:flex;border:1px solid var(--b);background:var(--card2);margin-bottom:4px;}
+.cf-seg-nec{background:linear-gradient(180deg,#2a8a62,#1a7a52);transition:width .6s;display:flex;align-items:center;justify-content:center;}
+.cf-seg-des{background:linear-gradient(180deg,#467aa8,#3a5f8a);transition:width .6s;display:flex;align-items:center;justify-content:center;}
+.cf-seg-aho{background:linear-gradient(180deg,#7d5c9c,#6b4d8a);transition:width .6s;display:flex;align-items:center;justify-content:center;}
+.cf-seg-label{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;}
+.seg-marks{position:relative;height:14px;margin-top:3px;margin-bottom:8px;}
+.seg-mark{position:absolute;top:0;transform:translateX(-50%);font-size:9px;color:var(--dim);}
+.seg-mark::before{content:'';position:absolute;top:-4px;left:50%;width:1px;height:4px;background:var(--b2);}
+.cf-gastado-row{font-size:var(--fs-sm);color:var(--dim);margin-top:8px;}
 
-/* ── Projection callout ───────────────────────────────────── */
-.cf-proyeccion{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.22);border-radius:12px;padding:12px 18px;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+/* ── Projection callout ─────────────────────────────────────── */
+.cf-proyeccion{background:rgba(176,125,16,0.07);border:1px solid rgba(176,125,16,0.2);
+  border-left:3px solid var(--amber);border-radius:0 11px 11px 0;
+  padding:12px 15px;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
 .cf-proj-icon{font-size:1.1rem;flex-shrink:0;}
-.cf-proj-text{font-size:var(--fs-sm);color:var(--amber);line-height:1.4;}
-.cf-proj-val{font-weight:700;}
+.cf-proj-text{font-size:var(--fs-sm);color:var(--text);line-height:1.4;}
+.cf-proj-val{color:var(--amber);font-weight:700;}
 
 /* ── Bucket sections ──────────────────────────────────────── */
 .bucket-section{margin-bottom:20px;}
 .bucket-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
 .bucket-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;font-weight:700;}
-.bk-nec .bucket-title{color:var(--emerald);}
-.bk-des .bucket-title{color:var(--blue);}
-.bk-aho .bucket-title{color:var(--violet-l);}
+.bk-nec .bucket-title{color:#2a8a62;}
+.bk-des .bucket-title{color:#467aa8;}
+.bk-aho .bucket-title{color:#7d5c9c;}
 .bucket-nums{font-size:var(--fs-sm);color:var(--dim);}
 .bucket-nums strong{color:var(--text);}
-.bucket-bar{height:5px;background:var(--b);border-radius:100px;overflow:hidden;margin-bottom:14px;}
+.bucket-bar{height:5px;background:var(--b);border-radius:100px;overflow:hidden;margin-bottom:16px;}
 .bucket-fill{height:100%;border-radius:100px;transition:width .5s;}
-.bk-nec .bucket-fill{background:linear-gradient(90deg,var(--emerald),var(--emerald-l));}
-.bk-des .bucket-fill{background:linear-gradient(90deg,var(--blue),#93c5fd);}
-.bk-aho .bucket-fill{background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+.bk-nec .bucket-fill{background:linear-gradient(90deg,#2a8a62,#4aaa82);}
+.bk-des .bucket-fill{background:linear-gradient(90deg,#467aa8,#6090c8);}
+.bk-aho .bucket-fill{background:linear-gradient(90deg,#7d5c9c,#9d7cbc);}
 .bucket-fill.bk-over{background:var(--coral);}
 
-/* category cards grid */
-.cats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
-.cat-card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px;position:relative;transition:border-color .18s;}
+/* category row cards — list layout */
+.cats-list{display:flex;flex-direction:column;}
+.cat-card{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--b);
+  border-radius:12px;padding:12px 14px;margin-bottom:7px;transition:border-color .18s;}
+.cat-card:last-child{margin-bottom:0;}
 .cat-card:hover{border-color:var(--b2);}
-.cat-nombre{font-size:var(--fs-sm);color:var(--mid);margin-bottom:10px;font-weight:500;}
-.cat-amounts{display:flex;align-items:baseline;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
-.cat-gastado-val{font-family:var(--sans);font-size:1.05rem;font-weight:700;color:var(--text);}
-.cat-sep{color:var(--dim);font-size:var(--fs-xs);}
-.cat-limite-val{font-size:var(--fs-sm);color:var(--dim);cursor:pointer;border-bottom:1px dashed var(--b2);transition:color .16s;}
-.cat-limite-val:hover{color:var(--text);}
-.cat-limite-input{background:transparent;border:none;border-bottom:1px solid var(--violet-l);color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);width:80px;outline:none;padding:1px 0;}
-
-/* cat bar */
-.cat-bar{height:4px;background:var(--b);border-radius:100px;overflow:hidden;margin-bottom:6px;}
+.cat-ic{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.cat-body{flex:1;min-width:0;}
+.cat-nombre{font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px;}
+.cat-bar{height:5px;border-radius:100px;background:var(--b);overflow:hidden;margin-bottom:4px;}
 .cat-fill-bar{height:100%;border-radius:100px;transition:width .5s;}
-.st-ok    .cat-fill-bar{background:var(--emerald);}
+.st-ok    .cat-fill-bar{background:#2a8a62;}
 .st-warn  .cat-fill-bar{background:var(--amber);}
 .st-over  .cat-fill-bar{background:var(--coral);}
-.st-nobudget .cat-fill-bar{background:var(--b2);}
-.st-nobudget .cat-fill-bar{width:100%!important;opacity:.3;}
-
-.cat-pct-row{display:flex;justify-content:space-between;align-items:center;}
-.cat-pct{font-size:var(--fs-xs);font-weight:600;}
-.st-ok    .cat-pct{color:var(--emerald);}
+.st-nobudget .cat-fill-bar{background:var(--b2);width:100%!important;opacity:.4;}
+.cat-foot{display:flex;justify-content:space-between;align-items:center;}
+.cat-pct{font-size:10px;letter-spacing:.04em;font-weight:600;}
+.st-ok    .cat-pct{color:#2a8a62;}
 .st-warn  .cat-pct{color:var(--amber);}
 .st-over  .cat-pct{color:var(--coral);}
 .st-nobudget .cat-pct{color:var(--dim);}
-.cat-edit-btn{background:none;border:none;color:var(--dim);padding:0;cursor:pointer;font-size:.7rem;transition:color .15s;letter-spacing:.06em;text-transform:uppercase;}
-.cat-edit-btn:hover{color:var(--violet-l);}
+.cat-note{font-size:10px;color:var(--dim);}
+.cat-vals{text-align:right;flex-shrink:0;}
+.cat-vals .real{font-family:var(--serif);font-size:14px;color:var(--text);display:block;line-height:1.2;}
+.cat-vals .real.over{color:var(--coral);}
+.cat-vals .lim{font-size:10px;color:var(--dim);cursor:pointer;border-bottom:1px dashed var(--b2);transition:color .16s;display:inline-block;margin-top:3px;}
+.cat-vals .lim:hover{color:var(--text);}
 
 /* empty bucket */
 .bucket-empty{text-align:center;padding:20px;font-size:var(--fs-sm);color:var(--dim);background:var(--card);border:1px dashed var(--b);border-radius:12px;}
-
-/* ── Debt section (kept) ──────────────────────────────────── */
-.debt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-.debt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
-.debt-card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;}
-.dc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
-.dc-nombre{font-family:var(--sans);font-size:.9rem;font-weight:600;color:var(--text);}
-.dc-tasa{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
-.dc-saldo{text-align:right;}
-.dc-sl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;}
-.dc-sv{font-family:var(--sans);font-size:1.3rem;font-weight:700;color:var(--coral);}
-.dc-bar{height:5px;background:var(--b);border-radius:100px;overflow:hidden;margin-bottom:4px;}
-.dc-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--emerald),var(--cyan));transition:width .5s;}
-.dc-pct{font-size:var(--fs-xs);color:var(--dim);}
-.dc-pago{display:flex;gap:7px;margin-top:14px;}
-.dc-pago input{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:7px 10px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;transition:border-color .18s;}
-.dc-pago input:focus{border-color:var(--amber);}
-.dc-sim{margin-top:10px;font-size:var(--fs-sm);color:var(--dim);display:none;}
-.dc-sim.show{display:block;}
-.sim-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--b);}
-.sim-row:last-child{border-bottom:none;}
-.sim-label{color:var(--dim);}
-.sim-val{font-weight:600;}
-.sv-min{color:var(--coral);}
-.sv-prop{color:var(--violet-l);}
-.sv-agr{color:var(--emerald);}
 
 /* ── Modals ───────────────────────────────────────────────── */
 .m-row{display:flex;flex-direction:column;gap:11px;}
@@ -126,12 +101,13 @@
 
 /* ── Responsive ───────────────────────────────────────────── */
 @media(max-width:767px){
-  .cats-grid{grid-template-columns:1fr 1fr;}
   .cf-ingreso-row{flex-direction:column;gap:6px;}
   .cf-disp{text-align:left;}
+  .cf-ing-val{font-size:26px;}
 }
 @media(max-width:480px){
-  .cats-grid{grid-template-columns:1fr;}
+  .cat-card{padding:10px 12px;}
+  .cat-ic{width:32px;height:32px;font-size:14px;}
 }
 </style>
 
@@ -149,10 +125,33 @@
 </div>
 
 <!-- Cashflow hero -->
+{% if n_movimientos == 0 %}
+<div style="background:var(--card);border:1px solid var(--b);border-radius:16px;padding:28px 22px;margin-bottom:14px;text-align:center;">
+  <div style="font-size:32px;margin-bottom:12px;">📂</div>
+  <div style="font-family:var(--serif);font-size:20px;color:var(--text);margin-bottom:6px;">Sin movimientos importados</div>
+  <div style="font-size:var(--fs-sm);color:var(--dim);margin-bottom:20px;">Sube tus estados de cuenta para ver la radiografía 50·30·20 en tiempo real.</div>
+  <a href="/finanzas/estados" style="display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#1a1510;font-family:var(--sans);font-size:13px;font-weight:600;padding:11px 22px;border-radius:10px;text-decoration:none;">
+    📤 Importar estados de cuenta
+  </a>
+  {% if ingreso_real == 0 %}
+  <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--b);">
+    <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;margin-bottom:8px;">O ingresa tu ingreso mensual manualmente:</div>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+      <input type="number" id="ingreso-manual-input" placeholder="Ej: 20000"
+        style="background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;width:140px;text-align:right;">
+      <button onclick="guardarIngresoManual()" class="btn-a" style="font-size:var(--fs-sm);">Guardar</button>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
 <div class="cf-hero">
   <div class="cf-ingreso-row">
     <div>
-      <div class="cf-ing-label">Ingreso del mes</div>
+      <div class="cf-ing-label">
+        Ingreso del mes
+        {% if ingreso_es_override %}<span style="font-size:9px;color:var(--amber);letter-spacing:.1em;margin-left:6px;">· manual</span>{% endif %}
+      </div>
       <div class="cf-ing-val">${{ "{:,.0f}".format(ingreso_real) }}</div>
     </div>
     <div class="cf-disp">
@@ -163,21 +162,27 @@
     </div>
   </div>
 
-  <!-- Segmented bar -->
+  <!-- Segmented bar — 30px con labels y tick marks -->
   <div class="cf-segbar-wrap">
     <div class="cf-segbar">
-      <div class="cf-seg-nec" style="width:{{ seg.necesidades }}%"></div>
-      <div class="cf-seg-des" style="width:{{ seg.deseos }}%"></div>
-      <div class="cf-seg-aho" style="width:{{ seg.ahorro_deuda }}%"></div>
+      <div class="cf-seg-nec" style="width:{{ seg.necesidades }}%">
+        {% if seg.necesidades >= 10 %}<span class="cf-seg-label">{{ seg.necesidades }}%</span>{% endif %}
+      </div>
+      <div class="cf-seg-des" style="width:{{ seg.deseos }}%">
+        {% if seg.deseos >= 10 %}<span class="cf-seg-label">{{ seg.deseos }}%</span>{% endif %}
+      </div>
+      <div class="cf-seg-aho" style="width:{{ seg.ahorro_deuda }}%">
+        {% if seg.ahorro_deuda >= 10 %}<span class="cf-seg-label">{{ seg.ahorro_deuda }}%</span>{% endif %}
+      </div>
     </div>
-    <div class="cf-seg-legend">
-      <div class="cf-leg-item"><span class="cf-leg-dot" style="background:var(--emerald)"></span>Nec. ${{ "{:,.0f}".format(buckets.necesidades.total_gastado) }} ({{ seg.necesidades }}%)</div>
-      <div class="cf-leg-item"><span class="cf-leg-dot" style="background:var(--blue)"></span>Des. ${{ "{:,.0f}".format(buckets.deseos.total_gastado) }} ({{ seg.deseos }}%)</div>
-      <div class="cf-leg-item"><span class="cf-leg-dot" style="background:var(--violet-l)"></span>Aho. ${{ "{:,.0f}".format(buckets.ahorro_deuda.total_gastado) }} ({{ seg.ahorro_deuda }}%)</div>
+    <div class="seg-marks">
+      <span class="seg-mark" style="left:50%">ideal 50</span>
+      <span class="seg-mark" style="left:80%">80</span>
     </div>
-    <div class="cf-gastado-row">Gasto total: <strong>${{ "{:,.0f}".format(total_gastado) }}</strong> de ${{ "{:,.0f}".format(ingreso_real) }}</div>
+    <div class="cf-gastado-row">Gasto total: <strong>${{ "{:,.0f}".format(total_gastado) }}</strong> · disponible: <strong>${{ "{:,.0f}".format(disponible) }}</strong></div>
   </div>
 </div>
+{% endif %}{# /if n_movimientos == 0 #}
 
 <!-- Projection (current month only) -->
 {% if es_mes_actual and ingreso_real > 0 and dia_actual > 0 %}
@@ -193,6 +198,20 @@
 {% endif %}
 
 <!-- Bucket sections -->
+{% set cat_icons = {
+  'COMIDA/REST':'🍔','VIVERES/SUPER':'🛒','CASA/HOGAR':'🏠',
+  'GASOLINA/AUTO':'⛽','ROPA':'👕','SALUD':'🏥','TECH/DIGITAL':'💻',
+  'SUSCRIPCIONES':'🎬','ENTRETENIMIENTO':'🎭','SALSA':'💃',
+  'VIAJES/VUELOS':'✈️','TRANSPORTE':'🚗','APRENDIZAJE':'📚',
+  'INVERSION':'🏦','CAFE/PAN':'☕','GYM':'🏋️','DEPORTE':'⚽',
+  'REGALO':'🎁','OTROS':'📦'
+} %}
+{% set bk_ic_bg = {
+  'necesidades':'rgba(26,122,82,0.14)',
+  'deseos':'rgba(58,95,138,0.14)',
+  'ahorro_deuda':'rgba(125,92,156,0.14)'
+} %}
+
 {% set bucket_configs = [
   ('necesidades', 'bk-nec', '50% · NECESIDADES'),
   ('deseos',      'bk-des', '30% · DESEOS'),
@@ -216,27 +235,29 @@
   </div>
 
   {% if bdata.cats %}
-  <div class="cats-grid">
+  <div class="cats-list">
     {% for cat in bdata.cats %}
     <div class="cat-card st-{{ cat.status }}" id="cat-{{ cat.categoria }}">
-      <div class="cat-nombre">{{ cat.nombre }}</div>
-      <div class="cat-amounts">
-        <span class="cat-gastado-val">${{ "{:,.0f}".format(cat.gastado) }}</span>
-        <span class="cat-sep">de</span>
-        <span class="cat-limite-val" id="lim-display-{{ cat.categoria }}"
+      <div class="cat-ic" style="background:{{ bk_ic_bg[bk] }}">
+        {{ cat_icons.get(cat.categoria, '📦') }}
+      </div>
+      <div class="cat-body">
+        <div class="cat-nombre">{{ cat.nombre }}</div>
+        <div class="cat-bar">
+          <div class="cat-fill-bar" style="width:{{ [cat.pct or 0, 100]|min }}%"></div>
+        </div>
+        <div class="cat-foot">
+          <span class="cat-pct">{% if cat.pct is not none %}{{ cat.pct }}%{% else %}—{% endif %}</span>
+          <span class="cat-note">de ${{ "{:,.0f}".format(cat.limite) if cat.limite > 0 else 'sin meta' }}</span>
+        </div>
+      </div>
+      <div class="cat-vals">
+        <span class="real{% if cat.status == 'over' %} over{% endif %}">${{ "{:,.0f}".format(cat.gastado) }}</span>
+        <span class="lim" id="lim-display-{{ cat.categoria }}"
           onclick="editLimite('{{ cat.categoria }}', '{{ cat.nombre }}', {{ cat.limite }})"
-          title="Clic para editar límite">
-          {% if cat.limite > 0 %}${{ "{:,.0f}".format(cat.limite) }}{% else %}sin límite{% endif %}
+          title="Editar meta">
+          {% if cat.limite > 0 %}${{ "{:,.0f}".format(cat.limite) }} meta{% else %}+ meta{% endif %}
         </span>
-      </div>
-      <div class="cat-bar">
-        <div class="cat-fill-bar" style="width:{{ [cat.pct or 0, 100]|min }}%"></div>
-      </div>
-      <div class="cat-pct-row">
-        <span class="cat-pct">
-          {% if cat.pct is not none %}{{ cat.pct }}%{% else %}—{% endif %}
-        </span>
-        <button class="cat-edit-btn" onclick="editLimite('{{ cat.categoria }}', '{{ cat.nombre }}', {{ cat.limite }})">editar límite</button>
       </div>
     </div>
     {% endfor %}
@@ -247,88 +268,16 @@
 </div>
 {% endfor %}
 
-<!-- Debt tracker -->
-<div class="tile">
-  <div class="debt-header">
-    <div class="tile-lbl" style="margin:0">DEUDAS Y TARJETAS DE CRÉDITO</div>
-    <button class="btn-g" onclick="openAddDeuda()">+ Nueva deuda</button>
+<!-- Acceso rápido a Patrimonio (para ver deudas TDC) -->
+<div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--b);border-radius:12px;padding:14px 16px;">
+  <div style="width:36px;height:36px;border-radius:9px;background:rgba(125,92,156,0.14);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">🏦</div>
+  <div style="flex:1">
+    <div style="font-size:13px;font-weight:500;color:var(--text);">Deudas y TDC</div>
+    <div style="font-size:11px;color:var(--dim);margin-top:2px;">Saldos y seguimiento de tarjetas en Patrimonio</div>
   </div>
-  {% if deudas %}
-  <div class="debt-grid">
-    {% for d in deudas %}
-    {% set pagado = d.saldo_inicial - d.saldo_actual %}
-    {% set pct = ((pagado / d.saldo_inicial * 100)|int) if d.saldo_inicial else 0 %}
-    <div class="debt-card" id="dc-{{ d.id }}">
-      <div class="dc-head">
-        <div>
-          <div class="dc-nombre">{{ d.nombre }}</div>
-          <div class="dc-tasa">
-            {% if d.tasa_interes %}Tasa: {{ d.tasa_interes }}%/mes{% else %}Sin tasa{% endif %}
-            · Mín: ${{ "{:,.0f}".format(d.pago_minimo) }}
-          </div>
-        </div>
-        <div class="dc-saldo">
-          <div class="dc-sl">Saldo actual</div>
-          <div class="dc-sv" id="dc-saldo-{{ d.id }}">${{ "{:,.0f}".format(d.saldo_actual) }}</div>
-        </div>
-      </div>
-      <div class="dc-bar">
-        <div class="dc-fill" id="dc-fill-{{ d.id }}" style="width:{{ pct }}%"></div>
-      </div>
-      <div class="dc-pct" id="dc-pct-{{ d.id }}">{{ pct }}% pagado · Inicial: ${{ "{:,.0f}".format(d.saldo_inicial) }}</div>
-      <div class="dc-pago">
-        <input type="number" step="0.01" min="0.01"
-          id="pago-{{ d.id }}"
-          placeholder="Monto a pagar..."
-          oninput="simularDeuda({{ d.id }}, {{ d.pago_minimo }}, {{ d.tasa_interes or 0 }}, {{ d.saldo_actual }})">
-        <button class="btn-a" style="white-space:nowrap;font-size:var(--fs-sm);" onclick="pagarDeuda({{ d.id }})">Registrar pago</button>
-      </div>
-      <div class="dc-sim" id="sim-{{ d.id }}">
-        <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px;">Proyección de liquidación</div>
-        <div class="sim-row"><span class="sim-label">Pago mínimo (${{ "{:,.0f}".format(d.pago_minimo) }})</span><span class="sim-val sv-min" id="sim-min-{{ d.id }}">—</span></div>
-        <div class="sim-row"><span class="sim-label">Tu pago propuesto</span><span class="sim-val sv-prop" id="sim-prop-{{ d.id }}">—</span></div>
-        <div class="sim-row"><span class="sim-label">Pago agresivo (×2)</span><span class="sim-val sv-agr" id="sim-agr-{{ d.id }}">—</span></div>
-      </div>
-      {% if pagos_mes.get(d.id) %}
-      <div style="margin-top:8px;font-size:var(--fs-sm);color:var(--emerald);">✓ Este mes: -${{ "{:,.0f}".format(pagos_mes[d.id]) }} pagado</div>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div style="text-align:center;padding:24px;color:var(--dim);font-size:var(--fs-sm);">Sin deudas — agrega TDC u otras deudas aquí</div>
-  {% endif %}
-</div>
-
-<!-- Modal: nueva deuda -->
-<div class="modal-bg" id="m-deuda">
-  <div class="modal" style="width:400px">
-    <div class="modal-title">Nueva deuda / TDC</div>
-    <div class="m-row">
-      <div class="m-field">
-        <label>Nombre (ej. TDC BBVA)</label>
-        <input class="fi" id="d-nombre" placeholder="TDC BBVA">
-      </div>
-      <div class="m-2col">
-        <div class="m-field">
-          <label>Saldo actual ($)</label>
-          <input class="fi" type="number" step="0.01" id="d-saldo" placeholder="0.00">
-        </div>
-        <div class="m-field">
-          <label>Pago mínimo ($)</label>
-          <input class="fi" type="number" step="0.01" id="d-minimo" placeholder="0.00">
-        </div>
-      </div>
-      <div class="m-field">
-        <label>Tasa interés mensual (%) — opcional</label>
-        <input class="fi" type="number" step="0.01" id="d-tasa" placeholder="ej. 5.5">
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-g" onclick="closeModal('m-deuda')">Cancelar</button>
-      <button class="btn-a" onclick="submitDeuda()">Crear</button>
-    </div>
-  </div>
+  <a href="/finanzas/" style="display:inline-flex;align-items:center;gap:5px;font-family:var(--sans);font-size:11px;color:var(--dim);text-decoration:none;padding:6px 12px;background:var(--card2);border:1px solid var(--b);border-radius:7px;transition:all .18s;" onmouseover="this.style.borderColor='var(--b2)'" onmouseout="this.style.borderColor='var(--b)'">
+    Ver Patrimonio →
+  </a>
 </div>
 
 <!-- Modal: editar límite de categoría -->
@@ -390,64 +339,18 @@ async function saveLimite() {
   }
 }
 
-/* ── Debt section ────────────────────────────────────────── */
-function openAddDeuda() {
-  ['d-nombre','d-saldo','d-minimo','d-tasa'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('m-deuda').classList.add('open');
-  setTimeout(() => document.getElementById('d-nombre').focus(), 50);
-}
-
-async function submitDeuda() {
-  const nombre = document.getElementById('d-nombre').value.trim();
-  const saldo  = parseFloat(document.getElementById('d-saldo').value);
-  const minimo = parseFloat(document.getElementById('d-minimo').value) || 0;
-  const tasa   = parseFloat(document.getElementById('d-tasa').value)   || 0;
-  if (!nombre || !saldo) { toast('Nombre y saldo requeridos', 'err'); return; }
-  const r = await fetch('/finanzas/budget/api/deuda', {
+/* ── Ingreso manual override ─────────────────────────────── */
+async function guardarIngresoManual() {
+  const val = parseFloat(document.getElementById('ingreso-manual-input')?.value);
+  if (!val || val <= 0) { toast('Ingresa un monto válido', 'err'); return; }
+  const r = await fetch('/finanzas/budget/api/ingreso', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nombre, saldo_inicial: saldo, pago_minimo: minimo, tasa_interes: tasa }),
+    body: JSON.stringify({ mes: MES, ingreso_total: val }),
   });
-  const d = await r.json();
-  if (d.ok) { closeModal('m-deuda'); toast('Deuda registrada', 'win'); setTimeout(() => location.reload(), 600); }
-  else toast(d.error, 'err');
+  if ((await r.json()).ok) { toast('Ingreso guardado', 'win'); setTimeout(() => location.reload(), 600); }
+  else toast('Error al guardar', 'err');
 }
 
-async function pagarDeuda(did) {
-  const monto = parseFloat(document.getElementById(`pago-${did}`).value);
-  if (!monto || monto <= 0) { toast('Ingresa un monto válido', 'err'); return; }
-  const r = await fetch(`/finanzas/budget/api/deuda/${did}/pago`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ mes: MES, monto_pagado: monto, fecha: new Date().toISOString().slice(0, 10) }),
-  });
-  const d = await r.json();
-  if (d.ok) {
-    document.getElementById(`dc-saldo-${did}`).textContent = '$' + fmt(d.nuevo_saldo);
-    const ini = d.deuda.saldo_inicial;
-    const pct = Math.min(100, Math.round((ini - d.nuevo_saldo) / ini * 100));
-    document.getElementById(`dc-fill-${did}`).style.width  = pct + '%';
-    document.getElementById(`dc-pct-${did}`).textContent   = pct + '% pagado · Inicial: $' + fmt(ini);
-    document.getElementById(`pago-${did}`).value = '';
-    document.getElementById(`sim-${did}`).classList.remove('show');
-    toast(`-$${fmt(monto)} registrado`, 'win');
-  } else toast(d.error, 'err');
-}
-
-function simularDeuda(did, minimo, tasa_pct, saldo) {
-  const pago = parseFloat(document.getElementById(`pago-${did}`).value) || 0;
-  const tasa = tasa_pct / 100;
-  const sim  = document.getElementById(`sim-${did}`);
-  if (pago <= 0) { sim.classList.remove('show'); return; }
-  sim.classList.add('show');
-  function calc(p) {
-    if (p <= 0) return '∞';
-    let s = saldo, mo = 0;
-    while (s > 0.01 && mo < 600) { s = s * (1 + tasa) - p; mo++; }
-    return mo < 600 ? `${mo} meses (~${(mo / 12).toFixed(1)}a)` : '> 50 años';
-  }
-  document.getElementById(`sim-min-${did}`).textContent  = calc(minimo);
-  document.getElementById(`sim-prop-${did}`).textContent = calc(pago);
-  document.getElementById(`sim-agr-${did}`).textContent  = calc(minimo * 2);
-}
 
 /* ── Utilities ───────────────────────────────────────────── */
 function fmt(n) { return Number(n).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }

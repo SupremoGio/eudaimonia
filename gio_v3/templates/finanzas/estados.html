@@ -55,15 +55,31 @@
   }
 </style>
 
-<!-- Viajes shortcut -->
-<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+<!-- Accesos rápidos -->
+<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+  <a href="/finanzas/budget"
+     style="flex:1;min-width:140px;display:flex;align-items:center;gap:9px;padding:10px 14px;border-radius:10px;
+            background:rgba(26,122,82,.08);border:1px solid rgba(26,122,82,.25);
+            color:var(--text);font-size:var(--fs-sm);text-decoration:none;transition:background .18s;"
+     onmouseover="this.style.background='rgba(26,122,82,.14)'"
+     onmouseout="this.style.background='rgba(26,122,82,.08)'">
+    <span style="font-size:16px;">📊</span>
+    <div>
+      <div style="font-weight:500;font-size:13px;">Presupuesto 50·30·20</div>
+      <div style="font-size:10px;color:var(--dim);margin-top:1px;">Radiografía mensual en tiempo real</div>
+    </div>
+  </a>
   <a href="/finanzas/estados/viajes/"
-     style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;
-            background:rgba(96,165,250,.10);border:1px solid rgba(96,165,250,.3);
-            color:#93c5fd;font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:background .18s;"
-     onmouseover="this.style.background='rgba(96,165,250,.18)'"
-     onmouseout="this.style.background='rgba(96,165,250,.10)'">
-    <i data-lucide="plane" style="width:12px;height:12px"></i> Mis Viajes
+     style="flex:1;min-width:140px;display:flex;align-items:center;gap:9px;padding:10px 14px;border-radius:10px;
+            background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.25);
+            color:var(--text);font-size:var(--fs-sm);text-decoration:none;transition:background .18s;"
+     onmouseover="this.style.background='rgba(96,165,250,.14)'"
+     onmouseout="this.style.background='rgba(96,165,250,.08)'">
+    <span style="font-size:16px;">✈️</span>
+    <div>
+      <div style="font-weight:500;font-size:13px;">Mis Viajes</div>
+      <div style="font-size:10px;color:var(--dim);margin-top:1px;">Gastos por viaje</div>
+    </div>
   </a>
 </div>
 
@@ -93,7 +109,7 @@
 <script type="module" src="/static/finanzas/assets/estados.js"></script>
 
 <script>
-  // Hide the loading skeleton once React mounts
+  // ── Ocultar loading skeleton cuando React monta ──────────────────
   const _obs = new MutationObserver(function() {
     const root = document.getElementById('estados-root');
     if (root && root.children.length > 1) {
@@ -103,5 +119,30 @@
     }
   });
   _obs.observe(document.getElementById('estados-root'), { childList: true, subtree: false });
+
+  // ── Interceptar tab "Presupuestos" del SPA → redirigir a /finanzas/budget ──
+  // El SPA tiene un tab con texto "Presupuestos" — cuando el usuario lo activa,
+  // mostramos una tarjeta de redirección en lugar del contenido del SPA.
+  let _budgetIntercepted = false;
+  const _budgetObserver = new MutationObserver(function() {
+    if (_budgetIntercepted) return;
+    const root = document.getElementById('estados-root');
+    if (!root) return;
+
+    // Buscar tab activo con texto "Presupuesto"
+    const allButtons = root.querySelectorAll('button, [role="tab"]');
+    allButtons.forEach(btn => {
+      if (btn.dataset.euBudgetHooked) return;
+      if ((btn.textContent || '').trim().toLowerCase().includes('presupuesto')) {
+        btn.dataset.euBudgetHooked = '1';
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          window.location.href = '/finanzas/budget';
+        }, true);
+      }
+    });
+  });
+  _budgetObserver.observe(document.getElementById('estados-root'), { childList: true, subtree: true });
 </script>
 {% endblock %}

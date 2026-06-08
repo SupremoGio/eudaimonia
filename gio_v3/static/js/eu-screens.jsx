@@ -866,7 +866,7 @@ function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
 }
 
 function OikonomiaExtra() {
-  const [data, setData]     = React.useState(null);
+  const [data, setData]       = React.useState(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -877,9 +877,9 @@ function OikonomiaExtra() {
   }, []);
 
   const fmt = v => (v != null && v !== '') ? `$${Number(v).toLocaleString('es-MX', {maximumFractionDigits:0})}` : '—';
-  const GOLD     = '#E8C96D';
-  const CARD_BG  = 'linear-gradient(150deg,#1a1510,#241d14,#16110b)';
-  const CARD_BR  = '1px solid rgba(232,201,109,0.15)';
+  const GOLD    = '#E8C96D';
+  const CARD_BG = 'linear-gradient(150deg,#1a1510 0%,#241d14 55%,#16110b 100%)';
+  const CARD_BR = '1px solid rgba(201,168,76,0.28)';
 
   if (loading) return (
     <div style={{textAlign:'center',padding:'24px 0',fontFamily:'DM Sans,sans-serif',
@@ -905,118 +905,183 @@ function OikonomiaExtra() {
 
   const trendPos    = data.trend_pct >= 0;
   const trendSymbol = trendPos ? '▲' : '▼';
-  const trendColor  = trendPos ? '#4ade80' : '#f87171';
+  const trendColor  = trendPos ? '#7BC49A' : '#E59B92';
 
+  // Bar-chart sparkline (matches mockup design)
   const spark = (data.spark || []).filter(v => v != null && v !== '');
-  let sparkSvg = null;
+  let sparkBars = null;
   if (spark.length >= 2) {
-    const min = Math.min(...spark);
-    const max = Math.max(...spark);
+    const min   = Math.min(...spark);
+    const max   = Math.max(...spark);
     const range = max - min || 1;
-    const W = 80, H = 24;
-    const pts = spark.map((v,i) => {
-      const x = (i / (spark.length - 1)) * W;
-      const y = H - ((v - min) / range) * (H - 2) - 1;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
-    sparkSvg = (
-      <svg width={W} height={H} style={{display:'block'}}>
-        <polyline points={pts} fill="none" stroke={GOLD} strokeWidth="1.5"
-          strokeLinejoin="round" strokeLinecap="round" opacity="0.7"/>
-      </svg>
+    sparkBars = (
+      <div style={{display:'flex',alignItems:'flex-end',gap:3,height:36,
+        marginTop:14,marginBottom:2}}>
+        {spark.map((v, i) => {
+          const pct    = Math.max(8, ((v - min) / range) * 92 + 8);
+          const isLast = i === spark.length - 1;
+          return (
+            <div key={i} style={{
+              flex: 1, height:`${pct}%`,
+              background: isLast
+                ? 'linear-gradient(180deg,#E8C96D,rgba(201,168,76,0.3))'
+                : 'linear-gradient(180deg,rgba(201,168,76,0.55),rgba(201,168,76,0.12))',
+              borderRadius:'2px 2px 0 0',
+              boxShadow: isLast ? '0 0 10px rgba(201,168,76,0.5)' : 'none',
+            }}/>
+          );
+        })}
+      </div>
     );
   }
+
+  const pillars = [
+    {icon:'🏛️', label:'Patrimonio',  sub:'Cuentas · deudas · bienes',
+     href:'/finanzas/',       iconBg:'rgba(58,95,138,0.12)',
+     statV: String(data.n_cuentas), statL:'cuentas'},
+    {icon:'📊', label:'Presupuesto', sub:'50 · 30 · 20',
+     href:'/finanzas/budget', iconBg:'rgba(26,122,82,0.12)',
+     statV: null, statL: null},
+    {icon:'💳', label:'Estados',     sub:'Movimientos · análisis',
+     href:'/finanzas/estados',iconBg:'rgba(139,105,20,0.12)',
+     statV: String(data.n_bancos), statL:'bancos'},
+  ];
 
   return (
     <div>
       {/* Net-worth black card */}
-      <div style={{background:CARD_BG,borderRadius:16,padding:'20px',
-        marginBottom:16,border:CARD_BR}}>
-        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.18em',
-          color:'rgba(232,201,109,0.55)',textTransform:'uppercase',marginBottom:4}}>
+      <div style={{position:'relative',overflow:'hidden',background:CARD_BG,
+        borderRadius:18,padding:'22px 22px 20px',marginBottom:14,border:CARD_BR,
+        boxShadow:'0 16px 40px -16px rgba(40,28,8,0.55)'}}>
+        {/* radial highlight */}
+        <div style={{position:'absolute',inset:0,pointerEvents:'none',
+          background:'radial-gradient(ellipse at 88% 10%,rgba(201,168,76,0.12),transparent 55%)'}}/>
+        <div style={{position:'relative',fontFamily:'DM Sans,sans-serif',fontSize:10,
+          letterSpacing:'0.22em',textTransform:'uppercase',
+          color:'rgba(232,201,109,0.7)',marginBottom:8}}>
           Patrimonio Neto
         </div>
-        <div style={{display:'flex',alignItems:'baseline',gap:12,marginBottom:8}}>
-          <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:36,
-            fontWeight:600,color:GOLD,lineHeight:1}}>
+        <div style={{position:'relative',display:'flex',alignItems:'baseline',gap:12}}>
+          <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:46,
+            fontWeight:600,color:GOLD,lineHeight:0.95,letterSpacing:'0.01em'}}>
             {fmt(data.patrimonio_neto)}
           </div>
-          {data.trend_pct !== 0 && (
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,
-              color:trendColor,fontWeight:500}}>
-              {trendSymbol} {Math.abs(data.trend_pct)}%
-            </div>
-          )}
+          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:14,
+            color:'rgba(232,201,109,0.55)'}}>MXN</div>
         </div>
-        {sparkSvg && <div style={{marginBottom:12,opacity:0.8}}>{sparkSvg}</div>}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,
-          borderTop:'1px solid rgba(232,201,109,0.12)',paddingTop:12}}>
+        {data.trend_pct !== 0 && (
+          <div style={{position:'relative',display:'flex',alignItems:'center',gap:6,
+            marginTop:8,fontFamily:'DM Sans,sans-serif',fontSize:12,color:trendColor}}>
+            {trendSymbol} {Math.abs(data.trend_pct)}%
+            {data.trend_delta !== 0 && (
+              <span style={{color:'rgba(242,237,224,0.4)',fontSize:11}}>
+                · {data.trend_delta > 0 ? '+' : ''}{fmt(data.trend_delta)} este mes
+              </span>
+            )}
+          </div>
+        )}
+        {sparkBars}
+        <div style={{position:'relative',display:'flex',justifyContent:'space-between',
+          marginTop:14,paddingTop:13,borderTop:'1px solid rgba(201,168,76,0.14)'}}>
           {[
-            {label:'Activos', val:fmt(data.activos)},
-            {label:'Pasivos', val:fmt(data.pasivos)},
-            {label:'Líquido', val:fmt(data.liquido)},
-          ].map((item,i) => (
-            <div key={i} style={{textAlign:'center'}}>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
-                color:'rgba(232,201,109,0.5)',letterSpacing:'0.1em',
-                textTransform:'uppercase',marginBottom:2}}>{item.label}</div>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,
-                color:'rgba(232,201,109,0.85)'}}>{item.val}</div>
+            {label:'Activos', val:fmt(data.activos),  color:'#7BC49A'},
+            {label:'Pasivos', val:fmt(data.pasivos),  color:'#E59B92'},
+            {label:'Líquido', val:fmt(data.liquido),  color:GOLD},
+          ].map((it,i) => (
+            <div key={i}>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.14em',
+                textTransform:'uppercase',color:'rgba(242,237,224,0.4)',marginBottom:3}}>
+                {it.label}
+              </div>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:17,color:it.color}}>
+                {it.val}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Payment alerts */}
+      {/* Payment alert — gold accent, matches mockup */}
       {data.pay_alerts && data.pay_alerts.length > 0 && (
-        <div style={{background:'rgba(239,68,68,0.08)',
-          border:'1px solid rgba(239,68,68,0.2)',borderRadius:12,
-          padding:'12px 14px',marginBottom:16,display:'flex',gap:8,alignItems:'center'}}>
-          <span style={{fontSize:14}}>⚠️</span>
-          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:11,color:'#fca5a5'}}>
-            Pago hoy:{' '}
+        <div style={{display:'flex',alignItems:'center',gap:11,
+          background:'rgba(139,105,20,0.07)',
+          border:'1px solid rgba(201,168,76,0.3)',
+          borderLeft:'3px solid rgba(201,168,76,0.9)',
+          borderRadius:'0 11px 11px 0',
+          padding:'12px 15px',marginBottom:18}}>
+          <div style={{width:30,height:30,borderRadius:8,
+            background:'rgba(201,168,76,0.12)',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            flexShrink:0,fontSize:14}}>
+            🔔
+          </div>
+          <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>
+            Hoy · pagar{' '}
             {data.pay_alerts.map(a => (
-              <span key={a.label} style={{color:a.color,fontWeight:600,marginRight:6}}>{a.label}</span>
+              <span key={a.label} style={{color:a.color,fontWeight:600,marginRight:4}}>{a.label}</span>
             ))}
           </div>
+          <span style={{fontSize:14,color:'rgba(201,168,76,0.6)'}}>→</span>
         </div>
       )}
 
       {/* 3 pilares */}
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-        color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Núcleo</div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8,marginBottom:16}}>
-        {[
-          {icon:'🏛️', label:'Patrimonio',  sub:`${data.n_cuentas} cuentas`, href:'/finanzas/'},
-          {icon:'📊', label:'Presupuesto', sub:'50·30·20',                  href:'/finanzas/budget'},
-          {icon:'💳', label:'Estados',     sub:`${data.n_bancos} bancos`,   href:'/finanzas/estados'},
-        ].map((p,i) => (
-          <a key={i} href={p.href} style={{display:'flex',alignItems:'center',gap:12,
-            background:C.card,border:'1px solid var(--b)',borderRadius:12,padding:'14px',
-            textDecoration:'none',transition:'all 0.2s'}}>
-            <span style={{fontSize:20}}>{p.icon}</span>
-            <div style={{flex:1}}>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{p.label}</div>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted}}>{p.sub}</div>
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.18em',
+        color:C.textMuted,textTransform:'uppercase',margin:'0 0 10px 2px'}}>Núcleo</div>
+      <div style={{display:'flex',flexDirection:'column',gap:9,marginBottom:20}}>
+        {pillars.map((p,i) => (
+          <a key={i} href={p.href} style={{display:'flex',alignItems:'center',gap:14,
+            background:C.card,border:'1px solid var(--b)',borderRadius:14,
+            padding:'15px 16px',textDecoration:'none',color:'inherit',
+            transition:'all 0.2s'}}>
+            <div style={{width:42,height:42,borderRadius:11,flexShrink:0,
+              display:'flex',alignItems:'center',justifyContent:'center',
+              fontSize:19,background:p.iconBg}}>
+              {p.icon}
             </div>
-            <span style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textMuted}}>→</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:19,fontWeight:600,
+                color:C.text,letterSpacing:'0.02em',lineHeight:1.1}}>
+                {p.label}
+              </div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:11,
+                color:C.textMuted,marginTop:2}}>
+                {p.sub}
+              </div>
+            </div>
+            {p.statV && (
+              <div style={{textAlign:'right',flexShrink:0}}>
+                <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:18,
+                  color:C.text,lineHeight:1}}>
+                  {p.statV}
+                </div>
+                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+                  letterSpacing:'0.1em',textTransform:'uppercase',
+                  color:C.textMuted,marginTop:3}}>
+                  {p.statL}
+                </div>
+              </div>
+            )}
           </a>
         ))}
       </div>
 
       {/* Accesos */}
-      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.18em',
+        color:C.textMuted,textTransform:'uppercase',margin:'0 0 10px 2px'}}>Accesos</div>
+      <div style={{display:'flex',gap:8}}>
         {[
           {icon:'🛒', label:'Consumo',  href:'/finanzas/consumo'},
           {icon:'⭐', label:'Wishlist', href:'/finanzas/prioridades'},
           {icon:'✈️', label:'Viajes',   href:'/finanzas/estados/viajes'},
         ].map((chip,i) => (
-          <a key={i} href={chip.href} style={{display:'flex',alignItems:'center',gap:6,
-            background:C.card,border:'1px solid var(--b)',borderRadius:20,
-            padding:'8px 14px',textDecoration:'none',
-            fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>
-            <span style={{fontSize:14}}>{chip.icon}</span>
-            {chip.label}
+          <a key={i} href={chip.href} style={{flex:1,display:'flex',flexDirection:'column',
+            alignItems:'center',gap:6,background:C.card2,border:'1px solid var(--b)',
+            borderRadius:12,padding:'13px 8px',textDecoration:'none',color:'inherit',
+            transition:'border-color 0.2s'}}>
+            <span style={{fontSize:18}}>{chip.icon}</span>
+            <span style={{fontFamily:'DM Sans,sans-serif',fontSize:11,
+              color:C.textMuted,letterSpacing:'0.04em'}}>{chip.label}</span>
           </a>
         ))}
       </div>

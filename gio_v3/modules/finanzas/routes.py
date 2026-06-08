@@ -244,12 +244,3 @@ def oikonomia_summary():
     })
 
 
-@finanzas_bp.route('/api/budget', methods=['POST'])
-def update_budget():
-    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
-    d = request.json
-    with get_db() as db:
-        db.execute("UPDATE budget_categories SET budgeted=?, spent=? WHERE id=?",
-                   (float(d['budgeted']), float(d['spent']), int(d['id'])))
-        db.commit()
-    return jsonify({'ok':True})
