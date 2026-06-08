@@ -685,6 +685,12 @@ def upload_file():
                 ('CRYPTO','COINBASE'),
                 ('FIBRA', 'FIBRA'),
             ]
+            # Patrones que NUNCA son inversión aunque categoria='INVERSION':
+            # son pagos/transferencias que contienen el nombre de la plataforma
+            # en la descripción pero no son depósitos reales.
+            _NOT_INVERSION = ('SPEI ENVIADO', 'PAGO TDC', 'PAGO TARJETA',
+                               'PAGO CUENTA DE TERCERO', 'CARGO POR TRASPASO')
+
             inv_candidates = db.execute("""
                 SELECT id, descripcion, tipo
                 FROM est_movimientos
@@ -693,6 +699,14 @@ def upload_file():
 
             for row in inv_candidates:
                 desc_up = row['descripcion'].upper()
+                # Excluir transferencias/pagos que no son inversiones reales
+                if any(excl in desc_up for excl in _NOT_INVERSION):
+                    db.execute("""
+                        UPDATE est_movimientos
+                        SET tipo='PAGO', categoria='PAGO_TDC', subcategoria='Pago TDC'
+                        WHERE id=?
+                    """, (row['id'],))
+                    continue
                 plat = 'OTRO'
                 for p, kw in _PLAT_KW:
                     if kw in desc_up:
