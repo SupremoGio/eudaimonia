@@ -242,6 +242,29 @@ def seed_budgets():
     return jsonify({'ok': True, 'loaded': len(budgets), 'budgets': [dict(r) for r in rows]})
 
 
+@finanzas_bp.route('/admin/fix-invex-spei', methods=['POST'])
+def fix_invex_spei():
+    """Corrige SPEI ENVIADO INVEX mal clasificados como INVERSION → PAGO_TDC."""
+    if not session.get('fin_ok'):
+        return jsonify({'error': 'locked'}), 403
+    with get_db() as db:
+        rows = db.execute('''
+            SELECT id FROM est_movimientos
+            WHERE tipo="INVERSION" AND categoria="INVEX"
+              AND UPPER(descripcion) LIKE "%SPEI ENVIADO%"
+        ''').fetchall()
+        fixed = 0
+        for r in rows:
+            db.execute('''
+                UPDATE est_movimientos
+                SET tipo="PAGO", categoria="PAGO_TDC", subcategoria="Invex TDC"
+                WHERE id=?
+            ''', (r['id'],))
+            fixed += 1
+        db.commit()
+    return jsonify({'ok': True, 'fixed': fixed})
+
+
 @finanzas_bp.route('/admin/limpiar-duplicados', methods=['POST'])
 def limpiar_duplicados():
     """Elimina duplicados de est_movimientos usando clave (fecha, monto, banco, tipo).
