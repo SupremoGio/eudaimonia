@@ -667,6 +667,40 @@ def upload_file():
                     SET categoria=?, subcategoria=?
                     WHERE UPPER(descripcion) LIKE ?
                 """, (kw_row['categoria'], kw_row['subcategoria'], f'%{kw_row["keyword"]}%'))
+
+            # ── Post-proceso inversiones ──────────────────────────────────────
+            # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
+            # Plataformas detectadas por keyword en descripción.
+            _PLAT_KW = [
+                ('GBM',   'GBM'),
+                ('INVEX', 'INVEX'),
+                ('CETES', 'CETESDIRECTO'),
+                ('CETES', 'NAFIN'),
+                ('CRYPTO','BITSO'),
+                ('CRYPTO','COINBASE'),
+                ('FIBRA', 'FIBRA'),
+            ]
+            inv_candidates = db.execute("""
+                SELECT id, descripcion, tipo
+                FROM est_movimientos
+                WHERE categoria='INVERSION' AND tipo IN ('INGRESO','GASTO')
+            """).fetchall()
+
+            for row in inv_candidates:
+                desc_up = row['descripcion'].upper()
+                plat = 'OTRO'
+                for p, kw in _PLAT_KW:
+                    if kw in desc_up:
+                        plat = p
+                        break
+                # Dirección: GASTO = dinero sale → APORTACION; INGRESO = dinero entra → RETIRO
+                direction = 'APORTACION' if row['tipo'] == 'GASTO' else 'RETIRO'
+                db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='INVERSION', categoria=?, subcategoria=?
+                    WHERE id=?
+                """, (plat, direction, row['id']))
+
             db.commit()
 
         preview = [

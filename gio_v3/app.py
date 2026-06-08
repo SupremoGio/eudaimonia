@@ -20,6 +20,7 @@ from modules.ataraxia.routes       import ataraxia_bp
 from modules.gamification.routes   import gamification_bp
 from modules.finanzas.consumo      import consumo_bp
 from modules.finanzas.budget       import budget_bp
+from modules.finanzas.inversiones  import inversiones_bp
 from modules.finanzas.prioridades  import prioridades_bp
 from modules.finanzas.salud        import salud_bp
 from modules.recetas.routes        import recetas_bp
@@ -65,7 +66,8 @@ def create_app():
     app.register_blueprint(ataraxia_bp,    url_prefix='/ataraxia')
     app.register_blueprint(gamification_bp)
     app.register_blueprint(consumo_bp,      url_prefix='/finanzas/consumo')
-    app.register_blueprint(budget_bp,       url_prefix='/finanzas/budget')
+    app.register_blueprint(budget_bp,        url_prefix='/finanzas/budget')
+    app.register_blueprint(inversiones_bp,  url_prefix='/finanzas/inversiones')
     app.register_blueprint(prioridades_bp,  url_prefix='/finanzas/prioridades')
     app.register_blueprint(salud_bp,        url_prefix='/finanzas/salud')
     app.register_blueprint(recetas_bp,     url_prefix='/recetas')

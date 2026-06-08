@@ -1,0 +1,345 @@
+{% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
+{% block title %}Inversiones — Eudaimonia{% endblock %}
+{% block module_title %}INVERSIONES{% endblock %}
+{% block topright %}<a href="/finanzas/" style="color:var(--dim);font-size:var(--fs-sm);">← OIKONOMIA</a>{% endblock %}
+
+{% block head %}
+<style>
+/* ── Layout ─────────────────────────────────────────────────── */
+.inv-page{max-width:620px;margin:0 auto;padding-bottom:80px;}
+
+/* ── Hero KPIs ───────────────────────────────────────────────── */
+.inv-hero{background:var(--card);border:1px solid var(--b);border-radius:16px;
+  padding:20px 22px;margin-bottom:14px;}
+.inv-hero-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:14px;}
+.inv-kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+.inv-kpi{text-align:center;}
+.inv-kpi-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
+.inv-kpi-val{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:600;line-height:1;}
+.inv-kpi-val.green{color:#22c55e;}
+.inv-kpi-val.red{color:#f87171;}
+.inv-kpi-val.gold{color:var(--gold);}
+.inv-kpi-val.main{font-size:28px;color:var(--text);}
+
+/* ── Allocation bar ──────────────────────────────────────────── */
+.inv-alloc-bar{height:8px;border-radius:100px;overflow:hidden;
+  display:flex;gap:2px;margin-bottom:6px;}
+.inv-alloc-seg{height:100%;border-radius:100px;transition:width .6s ease;}
+.inv-alloc-legend{display:flex;flex-wrap:wrap;gap:8px 14px;}
+.inv-alloc-dot{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);}
+.inv-alloc-dot span{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+
+/* ── Platform cards ──────────────────────────────────────────── */
+.inv-platforms{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.inv-plat-card{background:var(--card);border:1px solid var(--b);border-radius:13px;
+  padding:14px 16px;display:flex;align-items:center;gap:14px;transition:border-color .18s;}
+.inv-plat-card:hover{border-color:rgba(201,168,76,.3);}
+.inv-plat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.inv-plat-info{flex:1;min-width:0;}
+.inv-plat-name{font-size:var(--fs-sm);font-weight:700;color:var(--text);letter-spacing:.04em;}
+.inv-plat-sub{font-size:11px;color:var(--dim);margin-top:2px;}
+.inv-plat-bar-wrap{margin-top:6px;}
+.inv-plat-bar{height:3px;background:var(--b);border-radius:100px;overflow:hidden;}
+.inv-plat-bar-fill{height:100%;border-radius:100px;transition:width .6s ease;}
+.inv-plat-saldo{text-align:right;flex-shrink:0;}
+.inv-plat-saldo-val{font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:600;color:var(--text);}
+.inv-plat-saldo-label{font-size:10px;color:var(--dim);text-align:right;margin-top:2px;}
+
+/* ── Section header ──────────────────────────────────────────── */
+.inv-section-hdr{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;margin-top:4px;}
+.inv-section-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim);font-weight:700;}
+
+/* ── Add button ──────────────────────────────────────────────── */
+.btn-add-inv{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;
+  background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:8px;
+  color:var(--gold);font-size:var(--fs-xs);letter-spacing:.08em;cursor:pointer;
+  text-transform:uppercase;transition:background .18s;}
+.btn-add-inv:hover{background:rgba(201,168,76,.2);}
+
+/* ── Timeline ────────────────────────────────────────────────── */
+.inv-timeline{display:flex;flex-direction:column;gap:6px;}
+.inv-mov{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--b);border-radius:11px;padding:10px 13px;transition:border-color .18s;}
+.inv-mov:hover{border-color:rgba(255,255,255,.12);}
+.inv-mov-dir{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;
+  justify-content:center;font-size:.8rem;flex-shrink:0;}
+.inv-mov-body{flex:1;min-width:0;}
+.inv-mov-top{display:flex;align-items:center;gap:7px;margin-bottom:2px;}
+.inv-mov-plat{font-size:10px;font-weight:700;letter-spacing:.1em;padding:2px 7px;
+  border-radius:20px;}
+.inv-mov-sub{font-size:10px;letter-spacing:.08em;color:var(--dim);}
+.inv-mov-desc{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.inv-mov-right{text-align:right;flex-shrink:0;}
+.inv-mov-monto{font-size:var(--fs-sm);font-weight:700;}
+.inv-mov-fecha{font-size:10px;color:var(--dim);margin-top:2px;}
+.inv-mov-del{opacity:0;width:22px;height:22px;border-radius:5px;background:rgba(239,68,68,.12);
+  border:none;color:#f87171;cursor:pointer;font-size:12px;display:flex;align-items:center;
+  justify-content:center;transition:opacity .18s;flex-shrink:0;}
+.inv-mov:hover .inv-mov-del{opacity:1;}
+
+/* ── Modal ───────────────────────────────────────────────────── */
+.inv-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);
+  display:flex;align-items:flex-end;justify-content:center;z-index:9999;
+  opacity:0;pointer-events:none;transition:opacity .2s;}
+.inv-modal-overlay.open{opacity:1;pointer-events:all;}
+.inv-modal{background:var(--card);border:1px solid var(--b);border-radius:18px 18px 0 0;
+  width:100%;max-width:480px;padding:24px 22px 32px;transform:translateY(20px);
+  transition:transform .22s ease;}
+.inv-modal-overlay.open .inv-modal{transform:translateY(0);}
+.inv-modal-title{font-size:var(--fs-sm);font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:18px;color:var(--text);}
+.inv-field{margin-bottom:14px;}
+.inv-field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:5px;}
+.inv-field input,.inv-field select{width:100%;background:var(--surf);border:1px solid var(--b);
+  border-radius:8px;padding:9px 12px;color:var(--text);font-size:var(--fs-sm);outline:none;
+  transition:border-color .18s;box-sizing:border-box;}
+.inv-field input:focus,.inv-field select:focus{border-color:rgba(201,168,76,.5);}
+.inv-field select option{background:var(--card);}
+.inv-modal-btns{display:flex;gap:10px;margin-top:18px;}
+.inv-modal-btns button{flex:1;padding:10px;border-radius:9px;font-size:var(--fs-sm);
+  font-weight:600;cursor:pointer;letter-spacing:.06em;border:none;transition:opacity .15s;}
+.inv-modal-btns button:hover{opacity:.8;}
+.btn-save{background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3) !important;
+  border:none;color:var(--gold);}
+.btn-cancel{background:var(--surf);color:var(--dim);}
+
+/* ── Toast ───────────────────────────────────────────────────── */
+.inv-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--card);border:1px solid var(--b);border-radius:10px;
+  padding:9px 18px;font-size:var(--fs-sm);color:var(--text);
+  transition:transform .25s ease,opacity .25s;opacity:0;z-index:10000;white-space:nowrap;}
+.inv-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ── Empty ───────────────────────────────────────────────────── */
+.inv-empty{text-align:center;padding:40px 20px;color:var(--dim);font-size:var(--fs-sm);}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media(max-width:480px){
+  .inv-kpis{grid-template-columns:1fr 1fr;}
+  .inv-kpi:last-child{grid-column:1/-1;}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inv-page">
+
+  <!-- ── Hero KPIs ────────────────────────────────────────────── -->
+  <div class="inv-hero">
+    <div class="inv-hero-title">Portafolio de inversiones</div>
+    <div class="inv-kpis">
+      <div class="inv-kpi">
+        <div class="inv-kpi-label">Aportado</div>
+        <div class="inv-kpi-val green">${{ "{:,.0f}".format(total_aportado) }}</div>
+      </div>
+      <div class="inv-kpi">
+        <div class="inv-kpi-label">Retirado</div>
+        <div class="inv-kpi-val red">${{ "{:,.0f}".format(total_retirado) }}</div>
+      </div>
+      <div class="inv-kpi">
+        <div class="inv-kpi-label">Rendimientos</div>
+        <div class="inv-kpi-val gold">${{ "{:,.0f}".format(total_rendimiento) }}</div>
+      </div>
+    </div>
+
+    <!-- Barra de allocación -->
+    {% if plataformas %}
+    <div class="inv-alloc-bar">
+      {% for p in plataformas %}
+      <div class="inv-alloc-seg"
+           style="width:{{ p.pct }}%;background:{{ p.color }};flex:{{ p.pct }};"></div>
+      {% endfor %}
+    </div>
+    <div class="inv-alloc-legend">
+      {% for p in plataformas %}
+      <div class="inv-alloc-dot">
+        <span style="background:{{ p.color }};"></span>
+        {{ p.label }} · {{ p.pct }}%
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ── Plataformas ───────────────────────────────────────────── -->
+  {% if plataformas %}
+  <div class="inv-section-hdr">
+    <span class="inv-section-title">Por plataforma</span>
+  </div>
+  <div class="inv-platforms">
+    {% for p in plataformas %}
+    <div class="inv-plat-card">
+      <div class="inv-plat-icon" style="background:{{ p.color }}22;">{{ p.icon }}</div>
+      <div class="inv-plat-info">
+        <div class="inv-plat-name">{{ p.label }}</div>
+        <div class="inv-plat-sub">
+          Aportado ${{ "{:,.0f}".format(p.aportado) }}
+          {% if p.retirado > 0 %} · Retirado ${{ "{:,.0f}".format(p.retirado) }}{% endif %}
+          {% if p.rendimiento > 0 %} · Rend. ${{ "{:,.0f}".format(p.rendimiento) }}{% endif %}
+        </div>
+        <div class="inv-plat-bar-wrap">
+          <div class="inv-plat-bar">
+            <div class="inv-plat-bar-fill" style="width:{{ p.pct }}%;background:{{ p.color }};"></div>
+          </div>
+        </div>
+      </div>
+      <div class="inv-plat-saldo">
+        <div class="inv-plat-saldo-val">${{ "{:,.0f}".format(p.saldo) }}</div>
+        <div class="inv-plat-saldo-label">saldo est.</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ── Timeline ─────────────────────────────────────────────── -->
+  <div class="inv-section-hdr" style="margin-top:8px;">
+    <span class="inv-section-title">Movimientos</span>
+    <button class="btn-add-inv" onclick="openModal()">+ Registrar</button>
+  </div>
+
+  {% if movs %}
+  <div class="inv-timeline" id="inv-timeline">
+    {% for m in movs %}
+    {% set sign = '+' if m.subcategoria in ('APORTACION','RENDIMIENTO') else '-' %}
+    {% set col  = m.dir_meta.color %}
+    <div class="inv-mov" id="inv-mov-{{ m.id }}">
+      <div class="inv-mov-dir" style="background:{{ col }}1a;">
+        {% if m.subcategoria == 'APORTACION' %}↑{% elif m.subcategoria == 'RETIRO' %}↓{% else %}✦{% endif %}
+      </div>
+      <div class="inv-mov-body">
+        <div class="inv-mov-top">
+          <span class="inv-mov-plat"
+                style="background:{{ m.plat_meta.color }}1a;color:{{ m.plat_meta.color }};">
+            {{ m.plat_meta.icon }} {{ m.categoria }}
+          </span>
+          <span class="inv-mov-sub">{{ m.dir_meta.label }}</span>
+        </div>
+        <div class="inv-mov-desc">{{ m.descripcion }}</div>
+      </div>
+      <div class="inv-mov-right">
+        <div class="inv-mov-monto" style="color:{{ col }};">
+          {{ sign }}${{ "{:,.0f}".format(m.monto) }}
+        </div>
+        <div class="inv-mov-fecha">{{ m.fecha }}</div>
+      </div>
+      <button class="inv-mov-del" onclick="deleteMov({{ m.id }})" title="Eliminar">✕</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="inv-empty">
+    Sin movimientos registrados.<br>
+    Importa un estado de cuenta o usa el botón + Registrar.
+  </div>
+  {% endif %}
+
+</div><!-- /inv-page -->
+
+<!-- ── Modal Registrar ───────────────────────────────────────── -->
+<div class="inv-modal-overlay" id="inv-modal" onclick="if(event.target===this)closeModal()">
+  <div class="inv-modal">
+    <div class="inv-modal-title">Registrar movimiento</div>
+
+    <div class="inv-field">
+      <label>Fecha</label>
+      <input type="date" id="inv-fecha" value="{{ today }}">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div class="inv-field">
+        <label>Plataforma</label>
+        <select id="inv-plat">
+          {% for p in plataformas_list %}
+          <option value="{{ p }}">{{ plat_meta[p].icon }} {{ plat_meta[p].label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="inv-field">
+        <label>Tipo</label>
+        <select id="inv-dir">
+          {% for d, dm in dir_meta.items() %}
+          <option value="{{ d }}">{{ dm.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="inv-field">
+      <label>Monto (MXN)</label>
+      <input type="number" id="inv-monto" placeholder="0.00" step="0.01" min="0">
+    </div>
+    <div class="inv-field">
+      <label>Descripción (opcional)</label>
+      <input type="text" id="inv-desc" placeholder="Ej: Compra de CETES a 28 días">
+    </div>
+
+    <div class="inv-modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="guardarMov()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ─────────────────────────────────────────────────── -->
+<div class="inv-toast" id="inv-toast"></div>
+
+<script>
+function toast(msg, type) {
+  const t = document.getElementById('inv-toast');
+  t.textContent = msg;
+  t.style.borderColor = type === 'ok' ? 'rgba(34,197,94,.4)' : 'rgba(239,68,68,.4)';
+  t.style.color = type === 'ok' ? '#22c55e' : '#f87171';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function openModal() {
+  document.getElementById('inv-modal').classList.add('open');
+  document.getElementById('inv-monto').focus();
+}
+function closeModal() {
+  document.getElementById('inv-modal').classList.remove('open');
+}
+
+async function guardarMov() {
+  const fecha      = document.getElementById('inv-fecha').value;
+  const plataforma = document.getElementById('inv-plat').value;
+  const direccion  = document.getElementById('inv-dir').value;
+  const monto      = parseFloat(document.getElementById('inv-monto').value);
+  const descripcion= document.getElementById('inv-desc').value;
+
+  if (!monto || monto <= 0) { toast('Ingresa un monto válido', 'err'); return; }
+
+  const res  = await fetch('/finanzas/inversiones/api/mov', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ fecha, plataforma, direccion, monto, descripcion }),
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toast('✓ Movimiento guardado', 'ok');
+    closeModal();
+    setTimeout(() => location.reload(), 800);
+  } else {
+    toast(data.error || 'Error', 'err');
+  }
+}
+
+async function deleteMov(id) {
+  if (!confirm('¿Eliminar este movimiento?')) return;
+  const res  = await fetch(`/finanzas/inversiones/api/mov/${id}`, { method: 'DELETE' });
+  const data = await res.json();
+  if (data.ok) {
+    const el = document.getElementById(`inv-mov-${id}`);
+    if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; el.style.transition = 'all .3s'; setTimeout(() => el.remove(), 300); }
+    toast('Eliminado', 'ok');
+  } else {
+    toast(data.error || 'Error', 'err');
+  }
+}
+</script>
+{% endblock %}
