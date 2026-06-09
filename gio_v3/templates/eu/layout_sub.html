@@ -295,6 +295,11 @@
 
 {# URL efectiva del módulo padre; si está vacía → hub de módulos #}
 {% set _mod_url = ((_pm[pg][2] if _pm[pg][2] else ('/?tab=modules&open=' ~ _pm[pg][0])) if (pg is defined and pg in _pm) else '/?tab=modules') %}
+{# ¿Estamos en la raíz del propio módulo? (evita breadcrumb y back-link circulares) #}
+{% set _rpath = request.path %}
+{% set _is_root = _mod_url and (_rpath == _mod_url or _rpath.rstrip('/') == _mod_url.rstrip('/')) %}
+{# URL real del botón ← : si es raíz → hub de módulos; si no → página padre #}
+{% set _back_url = '/?tab=modules' if _is_root else _mod_url %}
 
 <body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
 
@@ -305,19 +310,20 @@
 
     <!-- IZQUIERDA: botón ← + breadcrumb (una sola ruta) -->
     <div class="flex items-center" style="gap:11px; min-width:0;">
-      <a href="{% block back_href %}{{ _mod_url }}{% endblock %}" class="crumb-back" aria-label="Volver" title="Volver">
+      <a href="{% block back_href %}{{ _back_url }}{% endblock %}" class="crumb-back" aria-label="Volver" title="Volver">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <nav class="crumbs" aria-label="Ruta">
         <a href="/?tab=modules">Módulos</a>
-        {% if pg is defined and pg in _pm %}<span class="sep">›</span><a href="{{ _mod_url }}">{{ _pm[pg][1] }}</a>{% endif %}
+        {# Nivel intermedio solo si NO somos la raíz del módulo #}
+        {% if pg is defined and pg in _pm and not _is_root %}<span class="sep">›</span><a href="{{ _mod_url }}">{{ _pm[pg][1] }}</a>{% endif %}
         {% block crumb_mid %}{% endblock %}
         <span class="sep">›</span>
         <span class="crumb-cur">{% block module_title %}{% endblock %}</span>
       </nav>
-      <!-- Móvil: eyebrow + título -->
+      <!-- Móvil: eyebrow solo si NO somos la raíz (evita "Oikonomia / OIKONOMIA") -->
       <div class="hdr-mtitle">
-        {% if pg is defined and pg in _pm %}<span class="mt-eyebrow">{{ _pm[pg][1] }}</span>{% endif %}
+        {% if pg is defined and pg in _pm and not _is_root %}<span class="mt-eyebrow">{{ _pm[pg][1] }}</span>{% endif %}
         <span class="mt-title">{{ self.module_title() }}</span>
       </div>
     </div>
