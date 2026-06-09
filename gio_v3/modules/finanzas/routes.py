@@ -244,6 +244,101 @@ def seed_budgets():
     return jsonify({'ok': True, 'loaded': len(budgets), 'budgets': [dict(r) for r in rows]})
 
 
+@finanzas_bp.route('/admin/apply-migrations', methods=['POST'])
+def apply_migrations():
+    """Aplica migraciones de datos 2026 a la DB activa (local o Railway).
+    Idempotente — se puede ejecutar varias veces sin duplicar ni corromper."""
+    if not session.get('fin_ok'):
+        return jsonify({'error': 'locked'}), 403
+
+    log = []
+    with get_db() as db:
+
+        # ── 1. Presupuesto exacto Excel 2026 (50-30-20) ───────────────────────
+        db.execute("DELETE FROM est_budgets")
+        budgets = [
+            ('CASA/HOGAR',    'Vivienda',           6000.00),
+            ('SERVICIOS',     'Servicios',          1429.84),
+            ('GASOLINA/AUTO', 'Gasolina / Auto',    1955.41),
+            ('VIVERES/SUPER', 'Víveres / Súper',    2500.00),
+            ('SALUD',         'Personal / Salud',    300.00),
+            ('MENSUALIDAD',   'Mensualidad TDC',    2200.00),
+            ('SALSA',         'Salsa / Baile',       700.00),
+            ('COMIDA/REST',   'Comida / Restaurante',2000.00),
+            ('ENTRETENIMIENTO','Gustos',              300.00),
+            ('ROPA',          'Ropa',                500.00),
+            ('GYM',           'Gym',                 350.00),
+            ('SUSCRIPCIONES', 'Apps / Suscripciones',150.00),
+            ('INVERSION',     'Ahorro',             4000.00),
+            ('APRENDIZAJE',   'Educación',           300.00),
+            ('EXPENSE',       'EXPENSE',               0.00),
+        ]
+        for cat, nombre, limite in budgets:
+            db.execute(
+                "INSERT INTO est_budgets (categoria, nombre, limite, periodo) VALUES (?,?,?,'mensual')",
+                (cat, nombre, limite)
+            )
+        log.append(f'est_budgets: {len(budgets)} categorías cargadas')
+
+        # ── 2. Keyword rules ──────────────────────────────────────────────────
+        keywords = [
+            ('NU MEXICO',              'APORTACION_RENTA', 'Parte renta Nu Mexico'),
+            ('TARJETA DE TERCEROS MBAN','CASA/HOGAR',      'Renta depto 807'),
+            ('5420150016315198',        'CASA/HOGAR',      'Renta depto 807'),
+        ]
+        for kw, cat, sub in keywords:
+            db.execute(
+                "INSERT OR IGNORE INTO est_keywords (keyword, categoria, subcategoria) VALUES (?,?,?)",
+                (kw, cat, sub)
+            )
+        log.append(f'est_keywords: {len(keywords)} reglas aseguradas')
+
+        # ── 3. Reclasificar aportación de renta Nu Mexico ─────────────────────
+        r = db.execute("""
+            UPDATE est_movimientos
+            SET categoria='APORTACION_RENTA', subcategoria='Parte renta Nu Mexico'
+            WHERE tipo='INGRESO'
+              AND UPPER(descripcion) LIKE '%NU MEXICO%'
+              AND UPPER(descripcion) LIKE '%RECIBIDO%'
+        """)
+        log.append(f'APORTACION_RENTA: {r.rowcount} transacciones Nu Mexico reclasificadas')
+
+        # ── 4. Reclasificar pagos de renta depto 807 ─────────────────────────
+        # Patron: PAGO TARJETA DE TERCEROS a cuenta 5420150016315198 (MBAN)
+        # Monto ~12,000-13,000, dias 1-12 de cada mes, BBVA_DEB
+        r = db.execute("""
+            UPDATE est_movimientos
+            SET categoria='CASA/HOGAR',
+                subcategoria='Renta depto 807',
+                tipo='GASTO',
+                mi_parte=6000.0
+            WHERE banco='BBVA_DEB'
+              AND UPPER(descripcion) LIKE '%TARJETA DE TERCEROS%'
+              AND monto BETWEEN 11000 AND 14000
+              AND CAST(substr(fecha,9,2) AS INTEGER) BETWEEN 1 AND 12
+              AND subcategoria != 'Renta depto 807 + deposito'
+        """)
+        log.append(f'Renta depto 807: {r.rowcount} pagos mensuales reclasificados (mi_parte=6000)')
+
+        # Nov-2025: depósito inicial — mi_parte = 7000
+        r = db.execute("""
+            UPDATE est_movimientos
+            SET categoria='CASA/HOGAR',
+                subcategoria='Renta depto 807 + deposito',
+                tipo='GASTO',
+                mi_parte=7000.0
+            WHERE banco='BBVA_DEB'
+              AND UPPER(descripcion) LIKE '%TARJETA DE TERCEROS%'
+              AND monto = 13000
+              AND substr(fecha,1,7) = '2025-11'
+        """)
+        log.append(f'Renta nov-2025 deposito: {r.rowcount} fila(s) mi_parte=7000')
+
+        db.commit()
+
+    return jsonify({'ok': True, 'migrations': log})
+
+
 @finanzas_bp.route('/admin/fix-invex-spei', methods=['POST'])
 def fix_invex_spei():
     """Corrige SPEI ENVIADO INVEX mal clasificados como INVERSION → PAGO_TDC."""
