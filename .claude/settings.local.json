@@ -62,7 +62,30 @@
       "PowerShell(Stop-Process -Id 12024 -Force -ErrorAction SilentlyContinue)",
       "PowerShell(Stop-Process -Id 54760 -Force -ErrorAction SilentlyContinue)",
       "PowerShell(Start-Sleep -Seconds 5; try { $r = Invoke-WebRequest -Uri \"http://localhost:5000/viajes/\" -UseBasicParsing; $r.StatusCode } catch { \"ERROR: $_\" })",
-      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:5000/viajes/api/trips/1/dias\" -UseBasicParsing; $r.Content | ConvertFrom-Json | Select-Object id, fecha, descripcion, @{n='outfits';e={$_.outfits.Count}})"
+      "PowerShell($r = Invoke-WebRequest -Uri \"http://localhost:5000/viajes/api/trips/1/dias\" -UseBasicParsing; $r.Content | ConvertFrom-Json | Select-Object id, fecha, descripcion, @{n='outfits';e={$_.outfits.Count}})",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\\\\gio_v3\\\\modules\\\\finanzas\\\\\" -Recurse | Select-Object FullName | Format-Table -AutoSize)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5000/)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "PowerShell(Start-Process \"chrome.exe\" -ArgumentList \"http://localhost:5000\")",
+      "Bash(cp \"C:\\\\Users\\\\magos\\\\AppData\\\\Local\\\\Temp\\\\Oikonomia Rediseño \\(3\\).html\" \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\\\\design-specs\\\\Oikonomia Redesño.html\")",
+      "Bash(cp \"C:\\\\Users\\\\magos\\\\AppData\\\\Local\\\\Temp\\\\Presupuesto Radiografia \\(4\\).html\" \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\\\\design-specs\\\\Presupuesto Radiografia.html\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5000/finanzas/budget)",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "Bash(curl -sL http://localhost:5000/finanzas/budget/2025-06)",
+      "Bash(python -c \"import sys; html=sys.stdin.read\\(\\); print\\(len\\(html\\), 'chars'\\); print\\(html[:3000]\\)\")",
+      "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" add gio_v3/modules/finanzas/budget.py gio_v3/templates/finanzas/budget.html)",
+      "Bash(git -C 'C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO' commit -m ' *)",
+      "Bash(python -c \"import sys; [print\\(l.rstrip\\(\\)\\) for l in sys.stdin if not l.startswith\\('[DB]'\\) and 'SECRET' not in l and 'UserWarn' not in l and 'Las sesion' not in l]\")",
+      "Bash(python -c \"import sys; [print\\(l.rstrip\\(\\)\\) for l in sys.stdin if not any\\(x in l for x in ['[DB]','SECRET','UserWarn','sesion','Turso']\\)]\")",
+      "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" add gio_v3/modules/finanzas/routes.py gio_v3/modules/finanzas/budget.py)",
+      "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" push)",
+      "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" add gio_v3/modules/finanzas/budget.py gio_v3/templates/finanzas/budget.html gio_v3/app.py)",
+      "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" add gio_v3/modules/finanzas/estados/routes.py)",
+      "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" add gio_v3/modules/finanzas/routes.py)",
+      "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" commit -m \"fix: endpoint admin/fix-invex-spei para corregir Railway DB\")",
+      "Bash(python -c \"import sys; [print\\(l.rstrip\\(\\)\\) for l in sys.stdin]\")"
     ]
   }
 }

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Presupuesto · Radiografía en vivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#F5F0E7; --surf:#EDE7D8; --card:#FFFFFF; --card2:#F8F4EC;
+    --b:rgba(139,105,20,0.16); --b2:rgba(139,105,20,0.30);
+    --gold:#8B6914; --gold-l:#A07820;
+    --text:#1C1610; --mid:#5A4A30; --dim:#7C6A48;
+    --emerald:#1a7a52; --emerald-bg:rgba(26,122,82,0.08);
+    --coral:#c0392b; --coral-bg:rgba(192,57,43,0.07);
+    --amber:#b07d10; --amber-bg:rgba(176,125,16,0.09);
+    --blue:#3a5f8a; --blue-bg:rgba(58,95,138,0.08);
+    --violet:#6b4d8a;
+    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;padding:40px 20px 80px;
+    background-image:radial-gradient(ellipse at 80% 0%,rgba(139,105,20,0.04),transparent 55%);}
+  .wrap{max-width:1140px;margin:0 auto;display:grid;grid-template-columns:520px 1fr;gap:46px;align-items:start;}
+  @media(max-width:1000px){.wrap{grid-template-columns:1fr;}}
+
+  .app{width:520px;max-width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:20px;
+    padding:22px 20px 26px;box-shadow:0 30px 80px -34px rgba(60,40,10,0.35);}
+
+  /* header */
+  .hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .hd .back{font-size:12px;color:var(--dim);}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--emerald);}
+  .live .dot{width:7px;height:7px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 0 rgba(26,122,82,0.5);animation:pulse 2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(26,122,82,0.45);}70%{box-shadow:0 0 0 7px rgba(26,122,82,0);}100%{box-shadow:0 0 0 0 rgba(26,122,82,0);}}
+  .title{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.02em;margin:6px 0 2px;}
+  .subtitle{font-size:11px;color:var(--dim);letter-spacing:.04em;margin-bottom:18px;}
+  .subtitle b{color:var(--gold);}
+
+  /* ── CASHFLOW HERO ── */
+  .flow{background:var(--card);border:1px solid var(--b);border-radius:16px;padding:18px 20px;margin-bottom:14px;}
+  .flow-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;}
+  .ft-l{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
+  .ft-income{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1;}
+  .ft-right{text-align:right;}
+  .ft-disp{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--emerald);line-height:1;}
+  /* 50-30-20 segmented bar */
+  .seg-wrap{margin-bottom:6px;}
+  .seg{height:30px;border-radius:8px;overflow:hidden;display:flex;border:1px solid var(--b);background:var(--card2);}
+  .seg-fill{height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;position:relative;transition:flex .6s;}
+  .seg-nec{background:linear-gradient(180deg,#2a8a62,#1a7a52);}
+  .seg-des{background:linear-gradient(180deg,#467aa8,#3a5f8a);}
+  .seg-aho{background:linear-gradient(180deg,#7d5c9c,#6b4d8a);}
+  .seg-marks{position:relative;height:14px;margin-top:3px;}
+  .mark{position:absolute;top:0;transform:translateX(-50%);font-size:9px;color:var(--dim);}
+  .mark::before{content:'';position:absolute;top:-4px;left:50%;width:1px;height:4px;background:var(--b2);}
+
+  /* ── PROJECTION CALLOUT ── */
+  .proj{display:flex;align-items:center;gap:12px;background:var(--amber-bg);border:1px solid rgba(176,125,16,0.25);
+    border-left:3px solid var(--amber);border-radius:0 11px 11px 0;padding:12px 15px;margin-bottom:20px;}
+  .proj .pic{font-size:18px;}
+  .proj .ptx{flex:1;font-size:12.5px;color:var(--text);line-height:1.45;}
+  .proj .ptx b{color:var(--amber);}
+
+  /* ── BUCKET SECTIONS ── */
+  .bsec{margin-bottom:18px;}
+  .bsec-hd{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:9px;padding:0 2px;}
+  .bsec-name{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .bsec-dot{width:8px;height:8px;border-radius:50%;}
+  .bn-nec{color:var(--emerald);} .bn-nec .bsec-dot{background:var(--emerald);}
+  .bn-des{color:var(--blue);}    .bn-des .bsec-dot{background:var(--blue);}
+  .bn-aho{color:var(--violet);}  .bn-aho .bsec-dot{background:var(--violet);}
+  .bsec-amt{font-size:12px;color:var(--dim);}
+  .bsec-amt b{font-family:var(--serif);font-size:15px;color:var(--text);}
+  .bsec-amt .over{color:var(--coral);}
+
+  /* category card */
+  .cat{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--b);
+    border-radius:12px;padding:12px 14px;margin-bottom:7px;}
+  .cat-ic{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .cat-body{flex:1;min-width:0;}
+  .cat-row1{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+  .cat-name{font-size:13px;font-weight:500;color:var(--text);}
+  .cat-vals{font-size:11px;color:var(--dim);}
+  .cat-vals .real{font-family:var(--serif);font-size:14px;color:var(--text);}
+  .cat-vals .real.over{color:var(--coral);}
+  .cat-bar{height:5px;border-radius:100px;background:var(--b);overflow:hidden;}
+  .cat-fill{height:100%;border-radius:100px;transition:width .6s;}
+  .cat-foot{display:flex;justify-content:space-between;margin-top:4px;}
+  .cat-pct{font-size:10px;letter-spacing:.04em;}
+  .cat-note{font-size:10px;color:var(--dim);}
+
+  /* ── RIGHT: rationale ── */
+  .notes{position:sticky;top:40px;}
+  .tag{display:inline-block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l);margin-bottom:10px;}
+  .notes h1{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.02em;margin-bottom:16px;line-height:1.18;}
+  .lede{font-size:14px;color:var(--mid);line-height:1.6;margin-bottom:24px;max-width:520px;margin-top:0;}
+  .lede b{color:var(--text);}
+  .pr{display:flex;gap:13px;padding:15px 0;border-top:1px solid var(--b);}
+  .pr .n{font-family:var(--serif);font-size:22px;font-style:italic;color:var(--gold);line-height:1;flex-shrink:0;width:28px;}
+  .pr .t{font-size:14px;font-weight:600;margin-bottom:3px;}
+  .pr .d{font-size:13px;color:var(--mid);line-height:1.55;}
+  .pr .d em{color:var(--gold);font-style:normal;}
+  .src{margin-top:22px;padding:14px 16px;background:var(--card2);border:1px solid var(--b);border-radius:11px;
+    font-size:12.5px;color:var(--mid);line-height:1.6;}
+  .src b{color:var(--gold);}
+  code{font-family:ui-monospace,monospace;font-size:11px;background:rgba(139,105,20,0.08);
+    border:1px solid var(--b);padding:1px 5px;border-radius:4px;color:var(--gold-l);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ════════ MOCKUP ════════ -->
+  <div class="app" data-screen-label="Presupuesto radiografía">
+    <div class="hd">
+      <span class="back">← Oikonomia</span>
+      <span class="live"><span class="dot"></span>En vivo</span>
+    </div>
+    <div class="title">Presupuesto</div>
+    <div class="subtitle">Mayo · día 19 de 31 · sincronizado con <b>Estados de cuenta</b></div>
+
+    <!-- CASHFLOW HERO -->
+    <div class="flow">
+      <div class="flow-top">
+        <div>
+          <div class="ft-l">Ingreso del mes</div>
+          <div class="ft-income">$23,000</div>
+        </div>
+        <div class="ft-right">
+          <div class="ft-l">Disponible</div>
+          <div class="ft-disp">$3,400</div>
+        </div>
+      </div>
+      <div class="seg-wrap">
+        <div class="seg">
+          <div class="seg-fill seg-nec" style="flex:0 0 52%">52%</div>
+          <div class="seg-fill seg-des" style="flex:0 0 32%">32%</div>
+          <div class="seg-fill seg-aho" style="flex:0 0 16%">16%</div>
+        </div>
+        <div class="seg-marks">
+          <span class="mark" style="left:50%">ideal 50</span>
+          <span class="mark" style="left:80%">80</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECTION -->
+    <div class="proj">
+      <span class="pic">📉</span>
+      <span class="ptx">A este ritmo terminas el mes en <b>$20,100 gastado</b> · ahorro proyectado <b>13%</b>, bajo tu meta de 20%. El exceso está en <b>Deseos</b>.</span>
+    </div>
+
+    <!-- NECESIDADES -->
+    <div class="bsec">
+      <div class="bsec-hd">
+        <span class="bsec-name bn-nec"><span class="bsec-dot"></span>Necesidades · 50%</span>
+        <span class="bsec-amt"><b>$8,200</b> / $11,500</span>
+      </div>
+      <div class="cat">
+        <div class="cat-ic" style="background:var(--emerald-bg)">🛒</div>
+        <div class="cat-body">
+          <div class="cat-row1"><span class="cat-name">Supermercado</span>
+            <span class="cat-vals"><span class="real">$3,100</span> / $3,500</span></div>
+          <div class="cat-bar"><div class="cat-fill" style="width:89%;background:var(--emerald)"></div></div>
+          <div class="cat-foot"><span class="cat-pct" style="color:var(--emerald)">89%</span><span class="cat-note">$400 disponible</span></div>
+        </div>
+      </div>
+      <div class="cat">
+        <div class="cat-ic" style="background:var(--emerald-bg)">💡</div>
+        <div class="cat-body">
+          <div class="cat-row1"><span class="cat-name">Servicios</span>
+            <span class="cat-vals"><span class="real">$2,400</span> / $2,800</span></div>
+          <div class="cat-bar"><div class="cat-fill" style="width:86%;background:var(--emerald)"></div></div>
+          <div class="cat-foot"><span class="cat-pct" style="color:var(--emerald)">86%</span><span class="cat-note">luz · agua · internet</span></div>
+        </div>
+      </div>
+      <div class="cat">
+        <div class="cat-ic" style="background:var(--emerald-bg)">🚗</div>
+        <div class="cat-body">
+          <div class="cat-row1"><span class="cat-name">Transporte</span>
+            <span class="cat-vals"><span class="real">$1,500</span> / $2,200</span></div>
+          <div class="cat-bar"><div class="cat-fill" style="width:68%;background:var(--emerald)"></div></div>
+          <div class="cat-foot"><span class="cat-pct" style="color:var(--emerald)">68%</span><span class="cat-note">$700 disponible</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESEOS -->
+    <div class="bsec">
+      <div class="bsec-hd">
+        <span class="bsec-name bn-des"><span class="bsec-dot"></span>Deseos · 30%</span>
+        <span class="bsec-amt"><b class="over">$7,400</b> / $6,900 · <span class="over">excedido</span></span>
+      </div>
+      <div class="cat">
+        <div class="cat-ic" style="background:var(--coral-bg)">🍔</div>
+        <div class="cat-body">
+          <div class="cat-row1"><span class="cat-name">Comida / Restaurantes</span>
+            <span class="cat-vals"><span class="real over">$4,200</span> / $3,000</span></div>
+          <div class="cat-bar"><div class="cat-fill" style="width:100%;background:var(--coral)"></div></div>
+          <div class="cat-foot"><span class="cat-pct" style="color:var(--coral)">140% · $1,200 sobre</span><span class="cat-note">tu mayor fuga</span></div>
+        </div>
+      </div>
+      <div class="cat">
+        <div class="cat-ic" style="background:var(--amber-bg)">🎬</div>
+        <div class="cat-body">
+          <div class="cat-row1"><span class="cat-name">Suscripciones</span>
+            <span class="cat-vals"><span class="real">$890</span> / $1,000</span></div>
+          <div class="cat-bar"><div class="cat-fill" style="width:89%;background:var(--amber)"></div></div>
+          <div class="cat-foot"><span class="cat-pct" style="color:var(--amber)">89%</span><span class="cat-note">5 servicios activos</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AHORRO -->
+    <div class="bsec" style="margin-bottom:4px;">
+      <div class="bsec-hd">
+        <span class="bsec-name bn-aho"><span class="bsec-dot"></span>Ahorro / Deuda · 20%</span>
+        <span class="bsec-amt"><b>$3,000</b> / $4,600</span>
+      </div>
+      <div class="cat">
+        <div class="cat-ic" style="background:rgba(107,77,138,0.1)">🏦</div>
+        <div class="cat-body">
+          <div class="cat-row1"><span class="cat-name">Inversión + abono deuda</span>
+            <span class="cat-vals"><span class="real">$3,000</span> / $4,600</span></div>
+          <div class="cat-bar"><div class="cat-fill" style="width:65%;background:var(--violet)"></div></div>
+          <div class="cat-foot"><span class="cat-pct" style="color:var(--violet)">65% de tu meta</span><span class="cat-note">faltan $1,600 para 20%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ RATIONALE ════════ -->
+  <div class="notes">
+    <div class="tag">Rediseño · Presupuesto</div>
+    <h1>Radiografía en vivo</h1>
+    <p class="lede">El presupuesto deja de pedirte que tipees lo que gastaste. <b>Lee tus estados de cuenta en tiempo real</b> (tabla <code>est_budgets</code> + transacciones de Estados) y te dice, sin que muevas un dedo, si vas según plan.</p>
+
+    <div class="pr">
+      <div class="n">I</div>
+      <div class="t" style="flex:1">
+        <div class="t">Una sola fuente de verdad</div>
+        <div class="d">Los límites por categoría viven en <code>est_budgets</code> (el presupuesto que ya tenía Estados). El gasto real sale de tus transacciones importadas. <em>Cero doble captura.</em></div>
+      </div>
+    </div>
+    <div class="pr">
+      <div class="n">II</div>
+      <div class="t" style="flex:1">
+        <div class="t">El marco 50·30·20 como brújula</div>
+        <div class="d">Las categorías se agrupan en Necesidades / Deseos / Ahorro. La barra segmentada muestra tu distribución real vs el <em>ideal</em>. Aquí: deseos al 32%, ligeramente sobre.</div>
+      </div>
+    </div>
+    <div class="pr">
+      <div class="n">III</div>
+      <div class="t" style="flex:1">
+        <div class="t">Proyección, no solo histórico</div>
+        <div class="d">"A este ritmo terminas en $20,100." El cerebro reacciona al <em>futuro</em>, no al pasado. Esto es lo que cambia comportamiento.</div>
+      </div>
+    </div>
+    <div class="pr">
+      <div class="n">IV</div>
+      <div class="t" style="flex:1">
+        <div class="t">Señala la fuga, no juzga</div>
+        <div class="d">"Comida/Restaurantes: tu mayor fuga, $1,200 sobre." Una sola fricción accionable por mes — el resto en verde, en calma.</div>
+      </div>
+    </div>
+
+    <div class="src">
+      <b>Datos, todo real:</b> límites de <code>/estados/api/budgets</code> · gasto en vivo de <code>est_movimientos</code> agrupado por <code>CATEGORIA_BUCKET</code> · ingreso de <code>/summary/overview</code>. Sin tocar el parsing de PDF/Excel.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

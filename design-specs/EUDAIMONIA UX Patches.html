@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EUDAIMONIA · UX Patches</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: #06050B; color: #F2EDE0;
+      font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+    #root { min-height: 100vh; }
+    code {
+      font-family: 'JetBrains Mono', 'Menlo', monospace;
+      font-size: 0.85em;
+      background: rgba(201,168,76,0.08);
+      border: 1px solid rgba(201,168,76,0.15);
+      padding: 1px 6px; border-radius: 4px;
+      color: #E8C96D;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="eu-patches-tokens.jsx"></script>
+  <script type="text/babel" src="eu-patches-acta.jsx"></script>
+  <script type="text/babel" src="eu-patches-nav.jsx"></script>
+  <script type="text/babel" src="eu-patches-celebrate.jsx"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+
+  <script type="text/babel">
+    function App() {
+      return (
+        <DesignCanvas
+          title="EUDAIMONIA · UX Patches"
+          subtitle="Guía visual para Claude Code · ANTES vs DESPUÉS · prioridad por sprint"
+        >
+
+          <DCSection id="tokens" title="① Tokens · Fundamentos"
+            subtitle="Sprint 1 — la base de todo lo demás">
+            <DCArtboard id="type"     label="Escala tipográfica"  width={620} height={760}><TypeScalePatch/></DCArtboard>
+            <DCArtboard id="contrast" label="Contraste WCAG"      width={560} height={540}><ContrastPatch/></DCArtboard>
+            <DCArtboard id="uppercase" label="Dieta de uppercase" width={580} height={760}><UppercaseDietPatch/></DCArtboard>
+            <DCArtboard id="hue"      label="Hue por categoría"   width={580} height={740}><CategoryHuePatch/></DCArtboard>
+          </DCSection>
+
+          <DCSection id="acta" title="② Acta Diurna · Refactor"
+            subtitle="Sprint 2 — la pantalla más usada">
+            <DCArtboard id="hero-before" label="Hero ANTES" width={640} height={600}><ActaHeroBefore/></DCArtboard>
+            <DCArtboard id="hero-after"  label="Hero DESPUÉS" width={640} height={600}><ActaHeroAfter/></DCArtboard>
+            <DCArtboard id="cat-block"   label="Bloque categoría" width={620} height={680}><CategoryBlockPatch/></DCArtboard>
+            <DCArtboard id="act-button"  label="Botón actividad" width={760} height={620}><ActivityButtonPatch/></DCArtboard>
+            <DCArtboard id="undo"        label="Undo toast" width={520} height={620}><UndoToastPatch/></DCArtboard>
+          </DCSection>
+
+          <DCSection id="nav" title="③ Navegación · Nuevo dashboard"
+            subtitle="Sprint 3 — mobile-first y atajos">
+            <DCArtboard id="dashboard"  label="Dashboard /" width={480} height={780}><DashboardHoyPatch/></DCArtboard>
+            <DCArtboard id="bottomnav"  label="Bottom nav mobile" width={500} height={640}><BottomNavPatch/></DCArtboard>
+            <DCArtboard id="cmdk"       label="Command palette (⌘K)" width={620} height={680}><CommandPalettePatch/></DCArtboard>
+            <DCArtboard id="sidebar"    label="Sidebar rediseño" width={760} height={620}><SidebarPatch/></DCArtboard>
+          </DCSection>
+
+          <DCSection id="celebrate" title="④ Celebración · Streak · Clasificación"
+            subtitle="Sprint 4 — el lado emocional">
+            <DCArtboard id="levelup"    label="Level-up modal"  width={440} height={680}><LevelUpModalPatch/></DCArtboard>
+            <DCArtboard id="streak"     label="Streak heatmap"  width={580} height={580}><StreakHeatmapPatch/></DCArtboard>
+            <DCArtboard id="clf"        label="Clasificación"   width={620} height={540}><ClassificationPatch/></DCArtboard>
+          </DCSection>
+
+          <DCSection id="states" title="⑤ Estados · Seguridad"
+            subtitle="Sprint 5 — empty / loading / danger">
+            <DCArtboard id="empty"      label="Empty state" width={600} height={500}><EmptyStatePatch/></DCArtboard>
+            <DCArtboard id="skeleton"   label="Skeleton loader" width={540} height={500}><SkeletonPatch/></DCArtboard>
+            <DCArtboard id="danger"     label="Zona de peligro → /perfil" width={580} height={760}><DangerZonePatch/></DCArtboard>
+          </DCSection>
+
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>

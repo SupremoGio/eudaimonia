@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OIKONOMIA · Rediseño</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#F5F0E7; --surf:#EDE7D8; --card:#FFFFFF; --card2:#F8F4EC;
+    --b:rgba(139,105,20,0.16); --b2:rgba(139,105,20,0.30);
+    --gold:#8B6914; --gold-l:#A07820;
+    --text:#1C1610; --mid:#5A4A30; --dim:#7C6A48;
+    --emerald:#1a7a52; --coral:#c0392b; --blue:#3a5f8a;
+    --serif:'Cormorant Garamond',serif; --sans:'DM Sans',sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--text); font-family:var(--sans);
+    -webkit-font-smoothing:antialiased; padding:40px 20px 80px;
+    background-image:radial-gradient(ellipse at 20% 0%,rgba(139,105,20,0.04),transparent 50%);
+  }
+  .wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:460px 1fr;gap:48px;align-items:start;}
+  @media(max-width:1000px){.wrap{grid-template-columns:1fr;gap:40px;}}
+
+  /* ── PHONE MOCKUP ── */
+  .phone{
+    width:460px;max-width:100%;
+    background:var(--bg);
+    border:1px solid var(--b2);border-radius:22px;
+    padding:22px 20px 26px;
+    box-shadow:0 30px 80px -30px rgba(60,40,10,0.35),0 4px 16px rgba(60,40,10,0.06);
+  }
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .back{font-size:12px;color:var(--dim);letter-spacing:.04em;display:flex;align-items:center;gap:5px;}
+  .lock-pill{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--gold);background:rgba(139,105,20,0.07);
+    border:1px solid var(--b);padding:5px 11px;border-radius:100px;}
+  .eyebrow{font-size:10px;letter-spacing:.24em;color:var(--gold-l);text-transform:uppercase;margin-bottom:6px;}
+  .module-name{font-family:var(--serif);font-size:34px;font-weight:600;letter-spacing:.10em;line-height:1;margin-bottom:22px;}
+
+  /* ── NET WORTH BLACK CARD ── */
+  .nw{
+    position:relative;overflow:hidden;
+    background:linear-gradient(150deg,#1a1510 0%,#241d14 55%,#16110b 100%);
+    border:1px solid rgba(201,168,76,0.28);border-radius:18px;
+    padding:22px 22px 20px;margin-bottom:14px;
+    box-shadow:0 16px 40px -16px rgba(40,28,8,0.55);
+  }
+  .nw::after{content:'';position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse at 88% 10%,rgba(201,168,76,0.12),transparent 55%);}
+  .nw-label{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(232,201,109,0.7);margin-bottom:8px;position:relative;}
+  .nw-row{display:flex;align-items:baseline;gap:12px;position:relative;}
+  .nw-value{font-family:var(--serif);font-size:46px;font-weight:600;color:#E8C96D;line-height:.95;letter-spacing:.01em;}
+  .nw-cur{font-size:14px;color:rgba(232,201,109,0.55);}
+  .nw-trend{position:relative;margin-top:8px;font-size:12px;color:#7BC49A;display:flex;align-items:center;gap:6px;}
+  .nw-trend .muted{color:rgba(242,237,224,0.4);}
+  /* sparkline */
+  .spark{position:relative;margin-top:16px;height:38px;display:flex;align-items:flex-end;gap:4px;}
+  .spark span{flex:1;background:linear-gradient(180deg,rgba(201,168,76,0.55),rgba(201,168,76,0.12));border-radius:2px 2px 0 0;min-height:4px;}
+  .spark span.now{background:linear-gradient(180deg,#E8C96D,rgba(201,168,76,0.3));box-shadow:0 0 10px rgba(201,168,76,0.5);}
+  .nw-foot{position:relative;display:flex;justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid rgba(201,168,76,0.14);}
+  .nw-foot .it{}
+  .nw-foot .it-l{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,237,224,0.4);margin-bottom:3px;}
+  .nw-foot .it-v{font-family:var(--serif);font-size:17px;}
+  .pos{color:#7BC49A;} .neg{color:#E59B92;}
+
+  /* ── ALERT ── */
+  .alert{display:flex;align-items:center;gap:11px;background:rgba(139,105,20,0.07);
+    border:1px solid var(--b2);border-left:3px solid var(--gold);border-radius:0 11px 11px 0;
+    padding:12px 15px;margin-bottom:18px;}
+  .alert .ic{width:30px;height:30px;border-radius:8px;background:rgba(139,105,20,0.12);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+  .alert .tx{flex:1;font-size:13px;color:var(--text);}
+  .alert .tx b{color:var(--gold);}
+  .alert .go{font-size:16px;color:var(--gold);opacity:.6;}
+
+  /* ── SECTION LABEL ── */
+  .sec-l{font-size:10px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;margin:0 0 10px 2px;}
+
+  /* ── PILLAR CARDS ── */
+  .pillars{display:flex;flex-direction:column;gap:9px;margin-bottom:20px;}
+  .pillar{display:flex;align-items:center;gap:14px;background:var(--card);
+    border:1px solid var(--b);border-radius:14px;padding:15px 16px;
+    transition:border-color .2s,transform .2s;cursor:pointer;text-decoration:none;color:inherit;}
+  .pillar:hover{border-color:var(--b2);transform:translateY(-1px);}
+  .p-ic{width:42px;height:42px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;
+    justify-content:center;font-size:19px;}
+  .p-body{flex:1;min-width:0;}
+  .p-name{font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:.02em;line-height:1.1;}
+  .p-sub{font-size:11px;color:var(--dim);margin-top:2px;}
+  .p-stat{text-align:right;flex-shrink:0;}
+  .p-stat-v{font-family:var(--serif);font-size:18px;color:var(--text);line-height:1;}
+  .p-stat-l{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:3px;}
+  /* mini progress */
+  .p-bar{height:4px;border-radius:100px;background:var(--b);overflow:hidden;margin-top:6px;width:64px;margin-left:auto;}
+  .p-fill{height:100%;border-radius:100px;}
+
+  /* ── QUICK LINKS ── */
+  .quick{display:flex;gap:8px;}
+  .ql{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;
+    background:var(--card2);border:1px solid var(--b);border-radius:12px;padding:13px 8px;
+    text-decoration:none;color:inherit;transition:border-color .2s;}
+  .ql:hover{border-color:var(--b2);}
+  .ql-ic{font-size:18px;}
+  .ql-n{font-size:11px;color:var(--mid);letter-spacing:.04em;}
+
+  /* ── ANNOTATIONS PANEL ── */
+  .notes{position:sticky;top:40px;}
+  .notes h1{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:.02em;margin-bottom:6px;}
+  .notes .lede{font-size:14px;color:var(--mid);line-height:1.6;margin-bottom:26px;max-width:540px;}
+  .map{display:flex;flex-direction:column;gap:14px;margin-bottom:30px;}
+  .row{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;}
+  .col{display:flex;flex-direction:column;gap:6px;}
+  .chip{font-size:12px;padding:8px 11px;border-radius:9px;border:1px solid var(--b);background:var(--card);}
+  .chip.old{color:var(--coral);border-color:rgba(192,57,43,0.25);background:rgba(192,57,43,0.04);text-decoration:line-through;text-decoration-color:rgba(192,57,43,0.4);}
+  .chip.keep{color:var(--emerald);border-color:rgba(26,122,82,0.3);background:rgba(26,122,82,0.05);}
+  .chip.new{color:var(--gold);border-color:var(--b2);background:rgba(139,105,20,0.05);font-weight:500;}
+  .arrow{color:var(--dim);font-size:18px;}
+  .principle{display:flex;gap:13px;padding:15px 0;border-top:1px solid var(--b);}
+  .principle .num{font-family:var(--serif);font-size:24px;font-style:italic;color:var(--gold);line-height:1;flex-shrink:0;width:30px;}
+  .principle .pt{flex:1;}
+  .principle .pt-t{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px;}
+  .principle .pt-d{font-size:13px;color:var(--mid);line-height:1.55;}
+  .principle .pt-d em{color:var(--gold);font-style:normal;}
+  .tag{display:inline-block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-l);margin-bottom:10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ════════ MOCKUP ════════ -->
+  <div class="phone" data-screen-label="Oikonomia rediseño">
+    <div class="topbar">
+      <span class="back">← Módulos</span>
+      <span class="lock-pill">🔒 Privado</span>
+    </div>
+    <div class="eyebrow">Finanzas</div>
+    <div class="module-name">OIKONOMIA</div>
+
+    <!-- NET WORTH — the one number -->
+    <div class="nw">
+      <div class="nw-label">Patrimonio neto</div>
+      <div class="nw-row">
+        <span class="nw-value">$487,200</span>
+        <span class="nw-cur">MXN</span>
+      </div>
+      <div class="nw-trend">▲ +2.3% <span class="muted">· +$11,100 este mes</span></div>
+      <div class="spark">
+        <span style="height:42%"></span><span style="height:48%"></span>
+        <span style="height:45%"></span><span style="height:58%"></span>
+        <span style="height:54%"></span><span style="height:66%"></span>
+        <span style="height:72%"></span><span class="now" style="height:88%"></span>
+      </div>
+      <div class="nw-foot">
+        <div class="it"><div class="it-l">Activos</div><div class="it-v pos">$521,400</div></div>
+        <div class="it"><div class="it-l">Pasivos</div><div class="it-v neg">−$34,200</div></div>
+        <div class="it"><div class="it-l">Líquido</div><div class="it-v" style="color:#E8C96D">$98,650</div></div>
+      </div>
+    </div>
+
+    <!-- ONE smart alert -->
+    <div class="alert">
+      <div class="ic">🔔</div>
+      <div class="tx">Hoy 15 · pagar <b>BBVA</b> + <b>Invex</b></div>
+      <div class="go">→</div>
+    </div>
+
+    <!-- 3 PILLARS -->
+    <div class="sec-l">Núcleo</div>
+    <div class="pillars">
+      <a class="pillar">
+        <div class="p-ic" style="background:rgba(58,95,138,0.12);">🏛️</div>
+        <div class="p-body">
+          <div class="p-name">Patrimonio</div>
+          <div class="p-sub">Cuentas · deudas · bienes</div>
+        </div>
+        <div class="p-stat">
+          <div class="p-stat-v">12</div>
+          <div class="p-stat-l">cuentas</div>
+        </div>
+      </a>
+      <a class="pillar">
+        <div class="p-ic" style="background:rgba(26,122,82,0.12);">📊</div>
+        <div class="p-body">
+          <div class="p-name">Presupuesto</div>
+          <div class="p-sub">50 · 30 · 20 — mayo</div>
+        </div>
+        <div class="p-stat">
+          <div class="p-stat-v" style="color:var(--emerald)">68%</div>
+          <div class="p-bar"><div class="p-fill" style="width:68%;background:var(--emerald)"></div></div>
+        </div>
+      </a>
+      <a class="pillar">
+        <div class="p-ic" style="background:rgba(139,105,20,0.12);">💳</div>
+        <div class="p-body">
+          <div class="p-name">Estados</div>
+          <div class="p-sub">Movimientos · análisis</div>
+        </div>
+        <div class="p-stat">
+          <div class="p-stat-v">3</div>
+          <div class="p-stat-l">cuentas</div>
+        </div>
+      </a>
+    </div>
+
+    <!-- SECONDARY quick links -->
+    <div class="sec-l">Accesos</div>
+    <div class="quick">
+      <a class="ql"><span class="ql-ic">🛒</span><span class="ql-n">Consumo</span></a>
+      <a class="ql"><span class="ql-ic">⭐</span><span class="ql-n">Wishlist</span></a>
+      <a class="ql"><span class="ql-ic">✈️</span><span class="ql-n">Viajes</span></a>
+    </div>
+  </div>
+
+  <!-- ════════ ANNOTATIONS ════════ -->
+  <div class="notes">
+    <div class="tag">Rediseño · Oikonomia</div>
+    <h1>De 6 botones planos a 1 cifra y 3 decisiones</h1>
+    <p class="lede">Un banco privado nunca te recibe con seis botones iguales. Te muestra <strong>cuánto vales</strong>, hacia dónde se mueve, y te deja máximo tres caminos. La jerarquía es el producto.</p>
+
+    <div class="map">
+      <div class="row">
+        <div class="col">
+          <div class="chip old">Balance</div>
+          <div class="chip old">Patrimonio</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="col">
+          <div class="chip new">🏛️ Patrimonio</div>
+          <div style="font-size:12px;color:var(--dim);line-height:1.4;">Las deudas "me deben / yo debo" pasan a ser una sección de activos y pasivos. Un solo lugar para "cuánto tengo".</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col"><div class="chip old">Presupuesto duplicado</div></div>
+        <div class="arrow">→</div>
+        <div class="col"><div class="chip new">📊 Presupuesto</div><div style="font-size:12px;color:var(--dim);line-height:1.4;">Se elimina la "radiografía" embebida en Balance. Una sola fuente del budget.</div></div>
+      </div>
+      <div class="row">
+        <div class="col"><div class="chip keep">Estados ✓ intacto</div></div>
+        <div class="arrow">→</div>
+        <div class="col"><div class="chip new">💳 Estados</div></div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <div class="chip old">Wishlist (tile)</div>
+          <div class="chip old">Consumo (tile)</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="col"><div class="chip new">Accesos secundarios</div><div style="font-size:12px;color:var(--dim);line-height:1.4;">No son patrimonio — bajan a chips, no a tiles de primer nivel.</div></div>
+      </div>
+    </div>
+
+    <div class="principle">
+      <div class="num">I</div>
+      <div class="pt">
+        <div class="pt-t">Lidera con el patrimonio neto</div>
+        <div class="pt-d">El "black card" oscuro ancla la pantalla con <em>una</em> cifra y su <em>tendencia</em> (▲ +2.3%). El cerebro busca progreso, no listas.</div>
+      </div>
+    </div>
+    <div class="principle">
+      <div class="num">II</div>
+      <div class="pt">
+        <div class="pt-t">Tres decisiones, no seis</div>
+        <div class="pt-d">Patrimonio (qué tengo) · Presupuesto (qué planeo) · Estados (qué pasó). Cada pilar trae un dato vivo: uso 68%, 12 cuentas.</div>
+      </div>
+    </div>
+    <div class="principle">
+      <div class="num">III</div>
+      <div class="pt">
+        <div class="pt-t">Una sola alerta accionable</div>
+        <div class="pt-d">Solo aparece el día que importa: <em>"Hoy 15 · pagar BBVA + Invex"</em>. Nada de ruido permanente.</div>
+      </div>
+    </div>
+    <div class="principle">
+      <div class="num">IV</div>
+      <div class="pt">
+        <div class="pt-t">Se elimina el "Resumen financiero" huérfano</div>
+        <div class="pt-d">Esos $150 / $22,850 / $2,200 con data rota desaparecen: ahora el net-worth card y cada pilar muestran su propio dato real.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
