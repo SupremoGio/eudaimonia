@@ -27,7 +27,7 @@ _PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO')"
 # Use mi_parte when set (shared expense), otherwise full monto
 _MONTO = "COALESCE(mi_parte, monto)"
 # INGRESO categories that are NOT real income (transfers, cash mobilization)
-_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO')
+_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO', 'APORTACION_RENTA')
 _INGRESO_EXCLUIR_SQL = "categoria NOT IN ({})".format(
     ','.join(f"'{c}'" for c in _INGRESO_EXCLUIR)
 )
@@ -327,7 +327,7 @@ def summary_stats():
         agg = db.execute(f"""
             SELECT
                 SUM(CASE WHEN tipo='GASTO'   AND {_PAGO_CATS} THEN {_MONTO} ELSE 0 END) AS total_expense,
-                SUM(CASE WHEN tipo='INGRESO'                   THEN monto ELSE 0 END) AS total_income,
+                SUM(CASE WHEN tipo='INGRESO' AND {_INGRESO_EXCLUIR_SQL} THEN monto ELSE 0 END) AS total_income,
                 COUNT(CASE WHEN tipo='GASTO' AND {_PAGO_CATS} THEN 1 END)              AS tx_count,
                 COUNT(CASE WHEN tipo='GASTO' AND {_PAGO_CATS} AND categoria='OTROS' THEN 1 END) AS unclassified
             FROM est_movimientos WHERE {where}
@@ -380,8 +380,8 @@ def get_accounts():
     with get_db() as db:
         rows = db.execute(f"""
             SELECT banco,
-                   SUM(CASE WHEN tipo='INGRESO'                  THEN monto    ELSE 0 END) AS income,
-                   SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}   THEN {_MONTO} ELSE 0 END) AS expense,
+                   SUM(CASE WHEN tipo='INGRESO' AND {_INGRESO_EXCLUIR_SQL} THEN monto ELSE 0 END) AS income,
+                   SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}             THEN {_MONTO} ELSE 0 END) AS expense,
                    COUNT(*) AS tx_count
             FROM est_movimientos
             WHERE banco IS NOT NULL

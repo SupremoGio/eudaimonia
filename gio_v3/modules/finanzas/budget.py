@@ -42,6 +42,7 @@ CATEGORIA_BUCKET = {
     'REGALO':           'deseos',
     'OTROS':            'deseos',
     'EXPENSE':          None,            # Informativo – se reembolsa, no afecta buckets
+    'APORTACION_RENTA': None,           # Parte de renta recibida de tercero – no es ingreso propio
     # Inversión → ahorro
     'INVERSION':        'ahorro_deuda',
     # Excluidos del gasto de consumo
@@ -56,7 +57,7 @@ CATEGORIA_BUCKET = {
 }
 
 # Categorías de ingreso que NO son ingreso real
-_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO')
+_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO', 'APORTACION_RENTA')
 
 CAT_LABELS = {
     'COMIDA/REST':     'Comida / Restaurante',
@@ -81,6 +82,7 @@ CAT_LABELS = {
     'REGALO':          'Regalo',
     'OTROS':           'Otros',
     'EXPENSE':         'EXPENSE',
+    'APORTACION_RENTA':'Aportación renta',
     'FINANZAS':        'Cargos bancarios',
     'NOMINA':          'Nómina adelanto',
 }
