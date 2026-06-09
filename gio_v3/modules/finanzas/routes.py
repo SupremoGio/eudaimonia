@@ -257,9 +257,13 @@ def apply_migrations():
 
         # ── 2. Keyword rules ──────────────────────────────────────────────────
         keywords = [
-            ('NU MEXICO',              'APORTACION_RENTA', 'Parte renta Nu Mexico'),
-            ('TARJETA DE TERCEROS MBAN','CASA/HOGAR',      'Renta depto 807'),
-            ('5420150016315198',        'CASA/HOGAR',      'Renta depto 807'),
+            ('NU MEXICO',               'APORTACION_RENTA', 'Parte renta Nu Mexico'),
+            ('TARJETA DE TERCEROS MBAN','CASA/HOGAR',       'Renta depto 807'),
+            ('5420150016315198',         'CASA/HOGAR',      'Renta depto 807'),
+            ('TOTAL PLAY',               'SERVICIOS',       'Internet/TV'),
+            ('TOTALPLAY',                'SERVICIOS',       'Internet/TV'),
+            ('MI ATT A APP',             'SALUD',           'Saldo Celular'),
+            ('ATTAPP',                   'SALUD',           'Saldo Celular'),
         ]
         for kw, cat, sub in keywords:
             db.execute(
@@ -268,7 +272,27 @@ def apply_migrations():
             )
         log.append(f'est_keywords: {len(keywords)} reglas aseguradas')
 
-        # ── 3. Reclasificar aportación de renta Nu Mexico ─────────────────────
+        # ── 3b. Reclasificar TOTAL PLAY → SERVICIOS ───────────────────────────
+        r = db.execute("""
+            UPDATE est_movimientos
+            SET categoria='SERVICIOS', subcategoria='Internet/TV'
+            WHERE (UPPER(descripcion) LIKE '%TOTAL PLAY%'
+                OR UPPER(descripcion) LIKE '%TOTALPLAY%')
+              AND tipo='GASTO'
+        """)
+        log.append(f'TOTAL PLAY → SERVICIOS: {r.rowcount} transacciones reclasificadas')
+
+        # ── 3c. Reclasificar ATT saldo celular → SALUD ────────────────────────
+        r = db.execute("""
+            UPDATE est_movimientos
+            SET categoria='SALUD', subcategoria='Saldo Celular'
+            WHERE (UPPER(descripcion) LIKE '%MI ATT A APP%'
+                OR UPPER(descripcion) LIKE '%ATTAPP%')
+              AND tipo='GASTO'
+        """)
+        log.append(f'ATT saldo celular → SALUD: {r.rowcount} transacciones reclasificadas')
+
+        # ── 3a. Reclasificar aportación de renta Nu Mexico ────────────────────
         r = db.execute("""
             UPDATE est_movimientos
             SET categoria='APORTACION_RENTA', subcategoria='Parte renta Nu Mexico'
