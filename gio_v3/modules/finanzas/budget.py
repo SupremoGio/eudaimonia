@@ -25,6 +25,8 @@ CATEGORIA_BUCKET = {
     'VIVERES/SUPER':    'necesidades',
     'CASA/HOGAR':       'necesidades',
     'GASOLINA/AUTO':    'necesidades',
+    'SERVICIOS':        'necesidades',   # Agua, Luz, Internet, Gas, Garrafón
+    'MENSUALIDAD':      'necesidades',   # Mensualidad TDC
     'ROPA':             'deseos',
     'SALUD':            'necesidades',
     'TECH/DIGITAL':     'deseos',
@@ -33,13 +35,13 @@ CATEGORIA_BUCKET = {
     'SALSA':            'deseos',
     'VIAJES/VUELOS':    'deseos',
     'TRANSPORTE':       'necesidades',
-    'APRENDIZAJE':      'deseos',
+    'APRENDIZAJE':      'ahorro_deuda',
     'CAFE/PAN':         'deseos',
     'GYM':              'deseos',
     'DEPORTE':          'deseos',
     'REGALO':           'deseos',
     'OTROS':            'deseos',
-    'EXPENSE':          'deseos',
+    'EXPENSE':          None,            # Informativo – se reembolsa, no afecta buckets
     # Inversión → ahorro
     'INVERSION':        'ahorro_deuda',
     # Excluidos del gasto de consumo
@@ -59,36 +61,39 @@ _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_REC
 CAT_LABELS = {
     'COMIDA/REST':     'Comida / Restaurante',
     'VIVERES/SUPER':   'Víveres / Súper',
-    'CASA/HOGAR':      'Casa / Hogar',
+    'CASA/HOGAR':      'Vivienda',
     'GASOLINA/AUTO':   'Gasolina / Auto',
+    'SERVICIOS':       'Servicios',
+    'MENSUALIDAD':     'Mensualidad TDC',
     'ROPA':            'Ropa',
-    'SALUD':           'Salud',
+    'SALUD':           'Personal / Salud',
     'TECH/DIGITAL':    'Tech / Digital',
-    'SUSCRIPCIONES':   'Suscripciones',
-    'ENTRETENIMIENTO': 'Entretenimiento',
+    'SUSCRIPCIONES':   'Apps / Suscripciones',
+    'ENTRETENIMIENTO': 'Gustos',
     'SALSA':           'Salsa / Baile',
     'VIAJES/VUELOS':   'Viajes / Vuelos',
     'TRANSPORTE':      'Transporte',
-    'APRENDIZAJE':     'Aprendizaje',
-    'INVERSION':       'Inversión',
+    'APRENDIZAJE':     'Educación',
+    'INVERSION':       'Ahorro',
     'CAFE/PAN':        'Café / Pan',
     'GYM':             'Gym',
     'DEPORTE':         'Deporte',
     'REGALO':          'Regalo',
     'OTROS':           'Otros',
-    'EXPENSE':         'Gasto general',
+    'EXPENSE':         'EXPENSE',
     'FINANZAS':        'Cargos bancarios',
     'NOMINA':          'Nómina adelanto',
 }
 
 CAT_ICONS = {
     'COMIDA/REST': '🍔', 'VIVERES/SUPER': '🛒', 'CASA/HOGAR': '🏠',
-    'GASOLINA/AUTO': '⛽', 'ROPA': '👕', 'SALUD': '🏥',
-    'TECH/DIGITAL': '💻', 'SUSCRIPCIONES': '🎬', 'ENTRETENIMIENTO': '🎭',
+    'GASOLINA/AUTO': '⛽', 'SERVICIOS': '💡', 'MENSUALIDAD': '💳',
+    'ROPA': '👕', 'SALUD': '✂️',
+    'TECH/DIGITAL': '💻', 'SUSCRIPCIONES': '📱', 'ENTRETENIMIENTO': '🎭',
     'SALSA': '💃', 'VIAJES/VUELOS': '✈️', 'TRANSPORTE': '🚗',
     'APRENDIZAJE': '📚', 'INVERSION': '📈', 'CAFE/PAN': '☕',
     'GYM': '🏋️', 'DEPORTE': '⚽', 'REGALO': '🎁',
-    'OTROS': '📦', 'EXPENSE': '💳',
+    'OTROS': '📦', 'EXPENSE': '🧾',
 }
 
 BUCKET_META = {

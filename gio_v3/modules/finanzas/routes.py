@@ -208,37 +208,39 @@ def seed_budgets():
     Idempotente — se puede ejecutar múltiples veces sin duplicar."""
     if not session.get('fin_ok'):
         return jsonify({'error': 'locked'}), 403
+    # Cifras exactas del Excel SG BUDGET 2026 (50-30-20)
+    # Ingreso mensual: $22,796 | Excedente: $110.75
     budgets = [
-        ('CASA/HOGAR',       'Casa / Hogar',          6900),
-        ('GASOLINA/AUTO',    'Gasolina / Auto',        1955),
-        ('VIVERES/SUPER',    'Viveres / Super',        2500),
-        ('SUSCRIPCIONES',    'Suscripciones',           830),
-        ('SALUD',            'Salud',                   150),
-        ('SALSA',            'Salsa / Baile',           700),
-        ('COMIDA/REST',      'Comida / Restaurante',   2000),
-        ('ENTRETENIMIENTO',  'Entretenimiento',         300),
-        ('ROPA',             'Ropa',                    500),
-        ('GYM',              'Gym',                     350),
-        ('INVERSION',        'Inversion',              4000),
-        ('APRENDIZAJE',      'Aprendizaje',             300),
+        # ── NECESIDADES (50%) — total $14,385.25 ──────────────────────
+        ('CASA/HOGAR',    'Vivienda',           6000.00),  # Alquiler
+        ('SERVICIOS',     'Servicios',          1429.84),  # Agua+Luz+Internet+Gas+Garrafón
+        ('GASOLINA/AUTO', 'Gasolina / Auto',    1955.41),  # Seguro+Gasolina
+        ('VIVERES/SUPER', 'Víveres / Súper',    2500.00),  # Víveres+Carnes
+        ('SALUD',         'Personal / Salud',    300.00),  # Saldo Cel+Corte cabello
+        ('MENSUALIDAD',   'Mensualidad TDC',    2200.00),  # Mensualidad TDC
+        # ── DESEOS (30%) — total $4,000.00 ───────────────────────────
+        ('SALSA',          'Salsa / Baile',      700.00),
+        ('COMIDA/REST',    'Comida / Restaurante',2000.00),
+        ('ENTRETENIMIENTO','Gustos',              300.00),
+        ('ROPA',           'Ropa',               500.00),
+        ('GYM',            'Gym',                350.00),
+        ('SUSCRIPCIONES',  'Apps / Suscripciones',150.00),
+        # ── AHORRO Y DEUDAS (20%) — total $4,300.00 ──────────────────
+        ('INVERSION',      'Ahorro',            4000.00),
+        ('APRENDIZAJE',    'Educación',          300.00),
+        # ── EXPENSE (informativo — se reembolsa, sin presupuesto) ─────
+        ('EXPENSE',        'EXPENSE',              0.00),
     ]
     with get_db() as db:
+        # Limpiar y recargar desde cero para garantizar cifras exactas
+        db.execute("DELETE FROM est_budgets")
         for cat, nombre, limite in budgets:
-            existing = db.execute(
-                "SELECT id FROM est_budgets WHERE categoria=?", (cat,)
-            ).fetchone()
-            if existing:
-                db.execute(
-                    "UPDATE est_budgets SET nombre=?, limite=? WHERE categoria=?",
-                    (nombre, limite, cat)
-                )
-            else:
-                db.execute(
-                    "INSERT INTO est_budgets (categoria, nombre, limite, periodo) VALUES (?,?,?,'mensual')",
-                    (cat, nombre, limite)
-                )
+            db.execute(
+                "INSERT INTO est_budgets (categoria, nombre, limite, periodo) VALUES (?,?,?,'mensual')",
+                (cat, nombre, limite)
+            )
         db.commit()
-        rows = db.execute("SELECT categoria, limite FROM est_budgets ORDER BY limite DESC").fetchall()
+        rows = db.execute("SELECT categoria, limite FROM est_budgets ORDER BY id").fetchall()
     return jsonify({'ok': True, 'loaded': len(budgets), 'budgets': [dict(r) for r in rows]})
 
 
