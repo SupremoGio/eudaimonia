@@ -1069,6 +1069,22 @@ function ModuleExtra({ id, acc }) {
       : [{lang:'Alemán',lvl:'B1+',entries:0,pct:0.72},{lang:'Inglés',lvl:'C1',entries:0,pct:0.91},{lang:'Francés',lvl:'A2',entries:0,pct:0.25}];
     return (
       <div>
+        {/* Acceso directo */}
+        <a href="/idiomas/" style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+          background:C.card,border:'1px solid var(--gold-border)',borderRadius:12,
+          padding:'11px 14px',marginBottom:18,textDecoration:'none',transition:'border-color 0.18s'}}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
+          onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:18}}>🌍</span>
+            <div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>Cosmopolitismo</div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>Lecciones · Vocabulario · Práctica</div>
+            </div>
+          </div>
+          <span style={{color:C.textMuted,fontSize:14}}>›</span>
+        </a>
+        {/* Progreso */}
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:C.textMuted,textTransform:'uppercase',marginBottom:14}}>Idiomas en Progreso</div>
         {langs.map((l,i) => (
@@ -1147,16 +1163,105 @@ function ModuleExtra({ id, acc }) {
     );
   }
 
-  if (id === 'paideia') return (
-    <div>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-        color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Lectura Activa</div>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textMuted,
-        padding:'12px 0',fontStyle:'italic'}}>
-        Registra tus libros en la sección de actividades.
+  if (id === 'paideia') {
+    const mkLink = (href, icon, label, sub) => (
+      <a href={href} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+        background:C.card,border:'1px solid var(--gold-border)',borderRadius:12,
+        padding:'11px 14px',marginBottom:8,textDecoration:'none',transition:'border-color 0.18s'}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
+        onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:18}}>{icon}</span>
+          <div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{label}</div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>{sub}</div>
+          </div>
+        </div>
+        <span style={{color:C.textMuted,fontSize:14}}>›</span>
+      </a>
+    );
+    return (
+      <div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
+        {mkLink('/actividades', '📜', 'Acta Diurna', 'Hábitos · Actividades · Logros')}
       </div>
-    </div>
-  );
+    );
+  }
+
+  if (id === 'ataraxia') {
+    const mkLink = (href, icon, label, sub) => (
+      <a href={href} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+        background:C.card,border:'1px solid var(--gold-border)',borderRadius:12,
+        padding:'11px 14px',marginBottom:8,textDecoration:'none',transition:'border-color 0.18s'}}
+        onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
+        onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <span style={{fontSize:18}}>{icon}</span>
+          <div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{label}</div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>{sub}</div>
+          </div>
+        </div>
+        <span style={{color:C.textMuted,fontSize:14}}>›</span>
+      </a>
+    );
+    return (
+      <div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
+        {mkLink('/ataraxia/',  '⚓', 'Ataraxia',      'Checklist semanal · Orden')}
+        {mkLink('/sabado/',    '🧹', 'Sábado Reset',  'Ritual matutino de limpieza')}
+        {mkLink('/gtd/',       '🎯', 'Praxis GTD',    'Inbox · Next Actions · Proyectos')}
+      </div>
+    );
+  }
+
+  if (id === 'logoi') {
+    return (
+      <div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
+        <a href="/actividades" style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+          background:C.card,border:'1px solid var(--gold-border)',borderRadius:12,
+          padding:'11px 14px',marginBottom:8,textDecoration:'none',transition:'border-color 0.18s'}}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
+          onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:18}}>💻</span>
+            <div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>Acta Diurna</div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>Programación · Lógica · Proyectos</div>
+            </div>
+          </div>
+          <span style={{color:C.textMuted,fontSize:14}}>›</span>
+        </a>
+      </div>
+    );
+  }
+
+  if (id === 'eurythmia') {
+    return (
+      <div>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
+        <a href="/actividades" style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+          background:C.card,border:'1px solid var(--gold-border)',borderRadius:12,
+          padding:'11px 14px',marginBottom:8,textDecoration:'none',transition:'border-color 0.18s'}}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
+          onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{fontSize:18}}>🕺</span>
+            <div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>Acta Diurna</div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>Baile · Ritmo · Práctica</div>
+            </div>
+          </div>
+          <span style={{color:C.textMuted,fontSize:14}}>›</span>
+        </a>
+      </div>
+    );
+  }
 
   return null;
 }
