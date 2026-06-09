@@ -1097,10 +1097,42 @@ function ModuleExtra({ id, acc }) {
       {label:'Hombros',   val: b.hombros  || '—', sub: b.manga   ? `Manga: ${b.manga}`    : ''},
       {label:'T. Camisa', val: b.t_camisa || '—', sub: b.t_pantalon ? `Pantalón: ${b.t_pantalon}` : ''},
     ];
+    const subs = [
+      { href:'/bienestar/salud', icon:'🩺', label:'Salud',       sub:'Episodios médicos · Recetas' },
+      { href:'/nutricion/',      icon:'🥗', label:'Nutrición',   sub:'Comidas · Semana' },
+      { href:'/guardarropa/',    icon:'👔', label:'Guardarropa', sub:'Outfits · Presencia' },
+      { href:'/recetas/',        icon:'🍳', label:'Recetas',     sub:'Cocina inteligente' },
+      { href:'/perfil/',         icon:'👤', label:'Perfil',      sub:'Datos personales' },
+    ];
+    const linkStyle = {
+      display:'flex', justifyContent:'space-between', alignItems:'center',
+      background:C.card, border:'1px solid var(--gold-border)',
+      borderRadius:12, padding:'11px 14px', marginBottom:8,
+      textDecoration:'none', transition:'border-color 0.18s',
+    };
     return (
       <div>
+        {/* Sub-módulos */}
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-          color:C.textMuted,textTransform:'uppercase',marginBottom:14}}>Métricas Corporales</div>
+          color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
+        {subs.map((s,i) => (
+          <a key={i} href={s.href} style={linkStyle}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
+            onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <span style={{fontSize:18}}>{s.icon}</span>
+              <div>
+                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{s.label}</div>
+                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>{s.sub}</div>
+              </div>
+            </div>
+            <span style={{color:C.textMuted,fontSize:14}}>›</span>
+          </a>
+        ))}
+
+        {/* Métricas corporales */}
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase',margin:'18px 0 10px'}}>Métricas Corporales</div>
         {rows.map((r,i) => (
           <div key={i} style={{display:'flex',justifyContent:'space-between',
             padding:'11px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)'}}>
