@@ -1,0 +1,145 @@
+{% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
+{% block title %}Oikonomia — Finanzas{% endblock %}
+{% block module_title %}OIKONOMIA{% endblock %}
+{% block topright %}{{ today }}{% endblock %}
+
+{% block content %}
+<style>
+/* ── Patrimonio mini-hero ─────────────────────────────────────────────────── */
+.hub-hero{background:linear-gradient(135deg,#0c0a10,#140f1a);border:1px solid var(--b2);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+.hub-pn-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-bottom:4px;}
+.hub-pn-value{font-family:var(--serif);font-size:2rem;font-weight:300;letter-spacing:.04em;line-height:1;}
+.hub-stat-row{display:flex;gap:16px;}
+.hub-stat{text-align:right;}
+.hub-stat-v{font-family:var(--serif);font-size:1rem;font-weight:300;}
+.hub-stat-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+
+/* ── Sub-module cards ─────────────────────────────────────────────────────── */
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+.hub-card{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--card2);border:1px solid var(--b);border-radius:10px;text-decoration:none;transition:border-color .18s,background .18s;cursor:pointer;}
+.hub-card:hover{border-color:var(--gold);background:rgba(201,168,76,.04);}
+.hub-card-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;}
+.hub-card-body{flex:1;min-width:0;}
+.hub-card-title{font-size:var(--fs-sm);color:var(--text);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;}
+.hub-card-desc{font-size:var(--fs-xs);color:var(--dim);line-height:1.4;}
+.hub-card-arrow{color:var(--dim);flex-shrink:0;transition:color .18s;}
+.hub-card:hover .hub-card-arrow{color:var(--gold);}
+
+/* ── Section divider ─────────────────────────────────────────────────────── */
+.hub-section-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin:20px 0 10px;padding-left:2px;}
+
+/* ── Lock button ─────────────────────────────────────────────────────────── */
+.lock-btn{background:transparent;border:1px solid var(--b);color:var(--dim);padding:5px 12px;border-radius:4px;font-family:var(--mono);font-size:var(--fs-sm);cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:5px;}
+.lock-btn:hover{border-color:var(--red);color:var(--red);}
+
+@media(max-width:600px){
+  .hub-hero{flex-direction:column;align-items:flex-start;}
+  .hub-stat-row{gap:12px;}
+  .hub-pn-value{font-size:1.6rem;}
+  .hub-grid{grid-template-columns:1fr;}
+}
+</style>
+
+{% if alerts %}
+<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;">
+  {% for a in alerts %}
+  <div style="display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid {{a.color}};color:{{a.color}};font-size:var(--fs-sm);letter-spacing:.07em;"><i data-lucide="bell" style="width:12px;height:12px"></i>HOY: PAGAR {{ a.label }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{# ── Mini patrimonio hero ──────────────────────────────────────────────────── #}
+<div class="hub-hero">
+  <div>
+    <div class="hub-pn-label">Patrimonio Neto</div>
+    <div class="hub-pn-value {% if patrimonio_neto >= 0 %}pos{% else %}neg{% endif %}">
+      {% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}
+      <span style="font-size:.85rem;color:var(--dim)"> MXN</span>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;">
+    <div class="hub-stat-row">
+      <div class="hub-stat">
+        <div class="hub-stat-v" style="color:#10b981">${{ "{:,.0f}".format(total_activos) }}</div>
+        <div class="hub-stat-l">Activos</div>
+      </div>
+      <div class="hub-stat">
+        <div class="hub-stat-v" style="color:#f43f5e">-${{ "{:,.0f}".format(total_pasivos) }}</div>
+        <div class="hub-stat-l">Pasivos</div>
+      </div>
+    </div>
+    <button class="lock-btn" onclick="lockFin()"><i data-lucide="lock" style="width:11px;height:11px"></i> Bloquear</button>
+  </div>
+</div>
+
+{# ── Sub-modules ───────────────────────────────────────────────────────────── #}
+<div class="hub-section-label">Módulos</div>
+<div class="hub-grid">
+
+  <a href="/finanzas/salud/" class="hub-card">
+    <div class="hub-card-icon" style="background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);">
+      <i data-lucide="landmark" style="width:18px;height:18px;color:var(--gold)"></i>
+    </div>
+    <div class="hub-card-body">
+      <div class="hub-card-title">Patrimonio</div>
+      <div class="hub-card-desc">Cuentas, inversiones, bienes y deudas personales</div>
+    </div>
+    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
+  </a>
+
+  <a href="/finanzas/budget/" class="hub-card">
+    <div class="hub-card-icon" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);">
+      <i data-lucide="pie-chart" style="width:18px;height:18px;color:#10b981"></i>
+    </div>
+    <div class="hub-card-body">
+      <div class="hub-card-title">Presupuesto</div>
+      <div class="hub-card-desc">Regla 50/30/20 · necesidades, deseos, ahorro</div>
+    </div>
+    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
+  </a>
+
+  <a href="/finanzas/estados/" class="hub-card">
+    <div class="hub-card-icon" style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.22);">
+      <i data-lucide="list" style="width:18px;height:18px;color:#60a5fa"></i>
+    </div>
+    <div class="hub-card-body">
+      <div class="hub-card-title">Estado de Cuenta</div>
+      <div class="hub-card-desc">Movimientos bancarios · clasificación · importar</div>
+    </div>
+    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
+  </a>
+
+  <a href="/finanzas/inversiones/" class="hub-card">
+    <div class="hub-card-icon" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.22);">
+      <i data-lucide="trending-up" style="width:18px;height:18px;color:#a78bfa"></i>
+    </div>
+    <div class="hub-card-body">
+      <div class="hub-card-title">Inversiones</div>
+      <div class="hub-card-desc">Portafolio · rendimientos · historial</div>
+    </div>
+    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
+  </a>
+
+  <a href="/finanzas/consumo/" class="hub-card">
+    <div class="hub-card-icon" style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.22);">
+      <i data-lucide="bar-chart-2" style="width:18px;height:18px;color:#fb923c"></i>
+    </div>
+    <div class="hub-card-body">
+      <div class="hub-card-title">Consumo</div>
+      <div class="hub-card-desc">Análisis de gastos · tendencias · categorías</div>
+    </div>
+    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
+  </a>
+
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function lockFin() {
+  await fetch('/finanzas/lock', { method: 'POST' });
+  window.location.href = '/finanzas/';
+}
+lucide.createIcons();
+</script>
+{% endblock %}
