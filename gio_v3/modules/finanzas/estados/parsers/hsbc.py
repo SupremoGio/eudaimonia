@@ -33,8 +33,8 @@ MSI_LINE_RE = re.compile(
     r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # monto original
     r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # saldo pendiente
     r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # pago requerido  ← usamos este
-    r"\s+\d{1,2}\s+de\s+\d{1,2}"
-    r"(?:\s+[\d.]+%)?"
+    r"\s+\d{1,2}\s*de\s+\d{1,2}"        # OCR puede omitir espacio: "09de 12"
+    r"(?:\s+[\|\s]*[\d.]+%)?"           # tasa opcional con posible artefacto "|"
     r"\s*$",
     re.IGNORECASE,
 )
