@@ -2,6 +2,9 @@
 # Si en Railway > Settings > Root Directory = "gio_v3", este archivo se ignora
 # y el Procfile + requirements.txt de gio_v3/ toman efecto directamente.
 
+[phases.setup]
+aptPkgs = ["tesseract-ocr", "tesseract-ocr-spa"]
+
 [phases.install]
 cmds = ["pip install -r requirements.txt"]
 
