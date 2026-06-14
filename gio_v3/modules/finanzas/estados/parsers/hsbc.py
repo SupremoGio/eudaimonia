@@ -13,6 +13,8 @@ from ..config import get_categoria_subcategoria
 PAYMENT_KW = ["SU PAGO GRACIAS", "PAGO GRACIAS SPEI", "PAGO TDC", "SPEI", "ABONO"]
 
 _OCR_DATE = r"[0-9Oo]{2}[-/][a-zA-Z]{3}[-/][0-9Oo]{2,4}"
+
+# Regular transaction: two dates + description + amount
 HSBC_LINE_RE = re.compile(
     rf"({_OCR_DATE})"
     r"[\s_|]+"
@@ -20,6 +22,19 @@ HSBC_LINE_RE = re.compile(
     r"[\s_|]+"
     r"(.+?)"
     r"\s+\$?\s*([\d,]+\.\d{2})"
+    r"\s*$",
+    re.IGNORECASE,
+)
+
+# MSI installment: one date + description + monto_original + saldo_pendiente + pago_requerido + "N de M" [+ tasa]
+MSI_LINE_RE = re.compile(
+    rf"^({_OCR_DATE})"
+    r"\s+(.+?)"
+    r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # monto original
+    r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # saldo pendiente
+    r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # pago requerido  ← usamos este
+    r"\s+\d{1,2}\s+de\s+\d{1,2}"
+    r"(?:\s+[\d.]+%)?"
     r"\s*$",
     re.IGNORECASE,
 )
@@ -76,51 +91,60 @@ def _ocr_pages(pdf_path: Path) -> str:
 
 def _parse_lines(full_text: str, periodo: str | None) -> list[dict]:
     movimientos = []
-    in_msi = False
 
     for linea in full_text.split("\n"):
         linea = linea.strip()
         if not linea:
             continue
-        lu = linea.upper()
 
-        if "MESES SIN INTERESES" in lu or "A MESES" in lu and "DE 12" in lu:
-            in_msi = True
-            continue
-        if in_msi and ("TARJETA TITULAR" in lu or "TARJETA ADICIONAL" in lu):
-            in_msi = False
-        if in_msi:
-            continue
-
+        # Regular transaction (two dates)
         m = HSBC_LINE_RE.match(linea)
-        if not m:
+        if m:
+            try:
+                monto = float(m.group(4).replace(",", ""))
+            except ValueError:
+                continue
+
+            desc = _clean_hsbc_desc(m.group(3))
+            fecha = parse_fecha(_fix_ocr_date(m.group(1)))
+            fecha_cargo = parse_fecha(_fix_ocr_date(m.group(2)))
+            tipo = "PAGO" if any(k in desc for k in PAYMENT_KW) else "GASTO"
+            cat, subcat = ("PAGO", "") if tipo == "PAGO" else get_categoria_subcategoria(desc)
+
+            movimientos.append({
+                "fecha": fecha,
+                "fecha_cargo": fecha_cargo,
+                "descripcion": desc[:80],
+                "monto": monto,
+                "categoria": cat,
+                "subcategoria": subcat,
+                "tipo": tipo,
+                "periodo": periodo,
+            })
             continue
 
-        try:
-            monto = float(m.group(4).replace(",", ""))
-        except ValueError:
-            continue
+        # MSI installment — captura el "Pago Requerido" (cuota del periodo)
+        m = MSI_LINE_RE.match(linea)
+        if m:
+            try:
+                monto = float(m.group(5).replace(",", ""))  # pago_requerido
+            except ValueError:
+                continue
 
-        desc = _clean_hsbc_desc(m.group(3))
-        fecha = parse_fecha(_fix_ocr_date(m.group(1)))
-        fecha_cargo = parse_fecha(_fix_ocr_date(m.group(2)))
-
-        tipo = "PAGO" if any(k in desc for k in PAYMENT_KW) else "GASTO"
-        if tipo == "GASTO":
+            desc = _clean_hsbc_desc(m.group(2))
+            fecha = parse_fecha(_fix_ocr_date(m.group(1)))
             cat, subcat = get_categoria_subcategoria(desc)
-        else:
-            cat, subcat = "PAGO", ""
 
-        movimientos.append({
-            "fecha": fecha,
-            "fecha_cargo": fecha_cargo,
-            "descripcion": desc[:80],
-            "monto": monto,
-            "categoria": cat,
-            "subcategoria": subcat,
-            "tipo": tipo,
-            "periodo": periodo,
-        })
+            movimientos.append({
+                "fecha": fecha,
+                "fecha_cargo": fecha,
+                "descripcion": desc[:80],
+                "monto": monto,
+                "categoria": cat,
+                "subcategoria": subcat,
+                "tipo": "GASTO",
+                "periodo": periodo,
+            })
 
     return movimientos
 
