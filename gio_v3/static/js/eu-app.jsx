@@ -175,7 +175,9 @@ function SideNav({ active, onChange, modules, dispatch }) {
                 sub={mod.concept}
                 accent={acc}
                 dot={mod.done}
-                onClick={() => dispatch({type:'OPEN_MODULE', id: mod.id})}/>
+                onClick={() => mod.route
+                  ? (window.location.href = mod.route)
+                  : dispatch({type:'OPEN_MODULE', id: mod.id})}/>
             );
           })}
         </NavGroup>

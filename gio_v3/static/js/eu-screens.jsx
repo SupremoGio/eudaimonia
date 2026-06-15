@@ -651,7 +651,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
               const acc = `oklch(65% 0.15 ${mod.hue})`;
               const accBg = EU.catTint(mod.hue, 'bg');
               return (
-                <div key={mod.id} onClick={() => dispatch({type:'OPEN_MODULE',id:mod.id})}
+                <div key={mod.id} onClick={() => mod.route ? (window.location.href = mod.route) : dispatch({type:'OPEN_MODULE',id:mod.id})}
                   style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:'pointer'}}>
                   <div style={{
                     width:44,height:44,borderRadius:13,
@@ -742,7 +742,7 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
       <div style={{padding: isDesktop ? '0 24px' : '0 16px', display:'grid', gridTemplateColumns:cols, gap:10}}>
         {modules.map(mod => (
           <ModuleCard key={mod.id} mod={mod}
-            onClick={() => dispatch({type:'OPEN_MODULE',id:mod.id})}/>
+            onClick={() => mod.route ? (window.location.href = mod.route) : dispatch({type:'OPEN_MODULE',id:mod.id})}/>
         ))}
         {/* PRAXIS + LOGROS — bottom full-width cards */}
         <a href="/gtd"
