@@ -63,7 +63,7 @@
 .vb-stat{background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:11px 13px;}
 .vb-stat-v{font-family:var(--serif);font-size:18px;line-height:1;}
 .vb-stat-l{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:4px;}
-.vb-mods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.vb-mods{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
 .vb-card{display:flex;flex-direction:column;background:var(--card2);border:1px solid var(--b);
   border-radius:13px;padding:17px 18px;cursor:pointer;transition:border-color .18s,transform .18s,background .18s;}
 .vb-card:hover{border-color:var(--b2);transform:translateY(-2px);background:var(--card);}
@@ -80,7 +80,6 @@
 .vb-card-sl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:4px;}
 @media(min-width:820px) and (max-width:1100px){
   .vb-top{grid-template-columns:1fr;}
-  .vb-mods{grid-template-columns:repeat(2,1fr);}
 }
 
 /* ──────────────────── MÓVIL · LEDGER ──────────────────── */
@@ -231,12 +230,6 @@
       <div class="vb-card-desc">Movimientos bancarios · clasificación · importar</div>
       {% if estado_sin_clasificar is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">{{ estado_sin_clasificar }}</div><div class="vb-card-sl">Sin clasificar</div></div>{% if estado_total_movs is defined %}<span class="delta" style="color:var(--dim)">{{ estado_total_movs }} movs</span>{% endif %}</div>{% endif %}
     </a>
-    <a class="vb-card" href="/finanzas/inversiones/">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(167,139,250,.11);border:1px solid rgba(167,139,250,.34);color:#a78bfa"><i data-lucide="trending-up"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
-      <div class="vb-card-name">Inversiones</div>
-      <div class="vb-card-desc">Portafolio · rendimientos · historial</div>
-      <div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(inversiones) }}</div><div class="vb-card-sl">Portafolio</div></div>{% if inversiones_pct is defined %}<span class="delta" style="color:#6ee7b7"><i data-lucide="arrow-up-right"></i>{{ inversiones_pct }}%</span>{% endif %}</div>
-    </a>
     <a class="vb-card" href="/finanzas/consumo/">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Consumo</div>
@@ -307,12 +300,6 @@
       <span class="va-ic" style="background:rgba(96,165,250,.11);border:1px solid rgba(96,165,250,.34);color:#60a5fa"><i data-lucide="list"></i></span>
       <div class="va-main"><div class="va-name">Estado de Cuenta</div><div class="va-sub">Movimientos · clasificación</div></div>
       {% if estado_sin_clasificar is defined %}<div class="va-val"><div class="va-val-n">{{ estado_sin_clasificar }}</div><div class="va-val-l">Sin clasificar</div></div>{% endif %}
-      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
-    </a>
-    <a class="va-row" href="/finanzas/inversiones/">
-      <span class="va-ic" style="background:rgba(167,139,250,.11);border:1px solid rgba(167,139,250,.34);color:#a78bfa"><i data-lucide="trending-up"></i></span>
-      <div class="va-main"><div class="va-name">Inversiones</div><div class="va-sub">Portafolio · rendimientos</div></div>
-      <div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(inversiones) }}</div><div class="va-val-l">Portafolio</div></div>
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
     <a class="va-row" href="/finanzas/consumo/">
