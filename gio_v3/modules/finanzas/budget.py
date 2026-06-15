@@ -301,14 +301,14 @@ def index(mes=None):
 
     with get_db() as db:
         if not mes:
-            # Si el mes actual tiene <5 movimientos, ir al último con datos
+            # Usa el mes actual si tiene ≥1 movimiento; si no, último con datos
             cur_mes = today.strftime('%Y-%m')
             n_cur   = db.execute(
                 "SELECT COUNT(*) n FROM est_movimientos WHERE fecha >= ? AND fecha < ?",
                 (f"{cur_mes}-01", f"{today.strftime('%Y')}-{today.month+1:02d}-01"
                  if today.month < 12 else f"{today.year+1}-01-01")
             ).fetchone()['n']
-            mes = cur_mes if n_cur >= 5 else (_last_month_with_data(db) or cur_mes)
+            mes = cur_mes if n_cur >= 1 else (_last_month_with_data(db) or cur_mes)
 
         y, m = int(mes[:4]), int(mes[5:])
         prev_mes = f"{y}-{m-1:02d}" if m > 1  else f"{y-1}-12"

@@ -67,7 +67,7 @@ def index():
         with get_db() as db:
             n_cur = db.execute("SELECT COUNT(*) n FROM est_movimientos "
                                "WHERE fecha>=? AND fecha<?", (mes_ini, mes_fin)).fetchone()['n']
-            bmes  = cur_mes if n_cur >= 5 else (_last_month_with_data(db) or cur_mes)
+            bmes  = cur_mes if n_cur >= 1 else (_last_month_with_data(db) or cur_mes)
             bd    = _calc_budget(bmes, db)
         extra['presupuesto_disponible'] = bd['disponible']
         if bd['ingreso_real']:
