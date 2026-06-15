@@ -315,6 +315,7 @@ def apply_migrations():
             ('NU MEXICO',               'APORTACION_RENTA', 'Parte renta Nu Mexico'),
             ('TARJETA DE TERCEROS MBAN','CASA/HOGAR',       'Renta depto 807'),
             ('5420150016315198',         'CASA/HOGAR',      'Renta depto 807'),
+            ('TOTAL PLAY CR MEX',        'CASA/HOGAR',      'Internet'),
             ('TOTAL PLAY',               'CASA/HOGAR',      'Internet'),
             ('TOTALPLAY',                'CASA/HOGAR',      'Internet'),
             ('MI ATT A APP',             'SALUD',           'Saldo Celular'),
@@ -333,7 +334,6 @@ def apply_migrations():
             SET categoria='CASA/HOGAR', subcategoria='Internet'
             WHERE (UPPER(descripcion) LIKE '%TOTAL PLAY%'
                 OR UPPER(descripcion) LIKE '%TOTALPLAY%')
-              AND tipo='GASTO'
         """)
         log.append(f'TOTAL PLAY → CASA/HOGAR: {r.rowcount} transacciones reclasificadas')
 

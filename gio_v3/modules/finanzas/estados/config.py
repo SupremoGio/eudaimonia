@@ -239,6 +239,7 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "HBO":                  ("SUSCRIPCIONES", "Streaming video"),
     "DISNEY":               ("SUSCRIPCIONES", "Streaming video"),
     "TOTALPLAY":            ("CASA/HOGAR", "Internet"),
+    "TOTAL PLAY CR MEX":   ("CASA/HOGAR", "Internet"),
     "TOTAL PLAY":           ("CASA/HOGAR", "Internet"),
     "IZZI":                 ("SUSCRIPCIONES", "Internet/TV"),
     "TELMEX":               ("SUSCRIPCIONES", "Internet/TV"),
