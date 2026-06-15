@@ -76,6 +76,13 @@ def index():
     bienes_por_cat = {}
     for b in bienes:
         bienes_por_cat.setdefault(b['categoria'], []).append(b)
+    with get_db() as db:
+        owe_me = [dict(r) for r in db.execute(
+            "SELECT * FROM debts WHERE type='owe_me' AND settled=0 ORDER BY created_at DESC"
+        ).fetchall()]
+        i_owe  = [dict(r) for r in db.execute(
+            "SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY created_at DESC"
+        ).fetchall()]
     return render_template('finanzas/salud.html',
         patrimonio_neto   = pat['patrimonio_neto'],
         total_activos     = pat['total_activos'],
@@ -91,6 +98,8 @@ def index():
         tipo_meta         = TIPO_META,
         bien_meta         = BIEN_META,
         today             = today_str(),
+        owe_me            = owe_me,
+        i_owe             = i_owe,
     )
 
 

@@ -81,6 +81,22 @@
 .sf-form-row.c3{grid-template-columns:1fr 1fr 1fr;}
 .sf-modal-wide{width:520px;}
 
+/* ── Deudas personales ────────────────────────────────────────────────────── */
+.sf-debt-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.sf-debt-panel-hd{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sf-debt-row{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;background:var(--card2);border:1px solid var(--b);border-radius:8px;transition:border-color .16s;margin-bottom:7px;}
+.sf-debt-row:hover{border-color:var(--b2);}
+.sf-debt-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.7rem;font-weight:700;}
+.sf-debt-body{flex:1;min-width:0;}
+.sf-debt-name{font-size:var(--fs-sm);color:var(--text);font-weight:500;}
+.sf-debt-concept{font-size:var(--fs-xs);color:var(--dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sf-debt-bar{height:3px;border-radius:100px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:6px;}
+.sf-debt-bar-fill{height:100%;border-radius:100px;}
+.sf-debt-pct{font-size:10px;color:var(--dim);margin-top:2px;}
+.sf-debt-right{text-align:right;flex-shrink:0;}
+.sf-debt-monto{font-family:var(--serif);font-size:.95rem;font-weight:300;line-height:1;}
+.sf-debt-actions{display:flex;gap:3px;margin-top:5px;justify-content:flex-end;}
+
 @media(max-width:767px){
   .sf-grid{grid-template-columns:1fr;}
   .sf-full,.sf-left,.sf-right{grid-column:1/-1;}
@@ -88,6 +104,7 @@
   .sf-pn-value{font-size:1.9rem;}
   .sf-bienes-grid{grid-template-columns:1fr 1fr;}
   .sf-form-row.c2,.sf-form-row.c3{grid-template-columns:1fr;}
+  .sf-debt-cols{grid-template-columns:1fr;}
 }
 @media(min-width:768px) and (max-width:1024px){
   .sf-grid{grid-template-columns:1fr;}
@@ -388,6 +405,106 @@
 </div>
 {% endif %}
 
+{# ── DEUDAS PERSONALES ─────────────────────────────────────────────────────── #}
+{% set total_owe_me = owe_me|sum(attribute='monto_restante') if owe_me else 0 %}
+{% set total_i_owe  = i_owe|sum(attribute='monto_restante') if i_owe else 0 %}
+<div class="tile sf-full">
+  <div class="sf-group-hd">
+    <div>
+      <div class="sf-group-t">🤝 Deudas Personales</div>
+      <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">
+        Me deben <span style="color:#10b981">${{ "{:,.0f}".format(total_owe_me) }}</span>
+        &nbsp;·&nbsp;Debo <span style="color:#f43f5e">${{ "{:,.0f}".format(total_i_owe) }}</span>
+        &nbsp;·&nbsp;Neto
+        <span style="color:{% if total_owe_me >= total_i_owe %}#10b981{% else %}#f43f5e{% endif %}">
+          {% if total_owe_me >= total_i_owe %}+{% endif %}${{ "{:,.0f}".format(total_owe_me - total_i_owe) }}
+        </span>
+      </div>
+    </div>
+    <button class="btn-a" style="padding:5px 14px;" onclick="openModalDebt()">+ Registrar</button>
+  </div>
+
+  <div class="sf-debt-cols">
+
+    {# ── Me deben (owe_me) ─────────────────────────────────────────────────── #}
+    <div>
+      <div class="sf-debt-panel-hd">
+        <span style="display:flex;align-items:center;gap:5px;color:#10b981;">
+          <i data-lucide="arrow-down-left" style="width:12px;height:12px"></i> Me deben
+        </span>
+        <span style="font-family:var(--serif);font-size:.9rem;font-weight:300;color:#10b981">${{ "{:,.0f}".format(total_owe_me) }}</span>
+      </div>
+      {% for d in owe_me %}
+      {% set pct = ((1 - d.monto_restante / d.monto_total) * 100)|int if d.monto_total > 0 else 0 %}
+      <div class="sf-debt-row" data-did="{{ d.id }}">
+        <div class="sf-debt-avatar" style="background:#10b98118;border:1px solid #10b98140;color:#10b981;">{{ d.person[0]|upper }}</div>
+        <div class="sf-debt-body">
+          <div class="sf-debt-name">{{ d.person }}</div>
+          {% if d.concept %}<div class="sf-debt-concept">{{ d.concept }}</div>{% endif %}
+          {% if d.monto_total > d.monto_restante %}
+          <div class="sf-debt-bar"><div class="sf-debt-bar-fill" style="width:{{ pct }}%;background:#10b981;"></div></div>
+          <div class="sf-debt-pct">{{ pct }}% cobrado · Total ${{ "{:,.0f}".format(d.monto_total) }}</div>
+          {% endif %}
+        </div>
+        <div class="sf-debt-right">
+          <div class="sf-debt-monto" style="color:#10b981">${{ "{:,.0f}".format(d.monto_restante) }}</div>
+          <div class="sf-debt-actions">
+            <button class="ai" title="Registrar cobro" onclick="openModalAbonar({{ d.id }},{{ d.monto_restante }})"><i data-lucide="plus-circle" style="width:11px;height:11px"></i></button>
+            <button class="ai" title="Liquidar" onclick="settleDebt({{ d.id }},this)"><i data-lucide="check-circle" style="width:11px;height:11px"></i></button>
+            <button class="ai del" title="Eliminar" onclick="deleteDebt({{ d.id }},this)"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="sf-empty" style="padding:18px 14px;">
+        <i data-lucide="smile" style="width:20px;height:20px;opacity:.18;display:block;margin:0 auto 7px"></i>
+        Nadie te debe — o ya cobraste todo.
+      </div>
+      {% endfor %}
+      <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 10px;margin-top:2px;width:100%;box-sizing:border-box;" onclick="openModalDebt('owe_me')">+ Me deben</button>
+    </div>
+
+    {# ── Debo (i_owe) ──────────────────────────────────────────────────────── #}
+    <div>
+      <div class="sf-debt-panel-hd">
+        <span style="display:flex;align-items:center;gap:5px;color:#f43f5e;">
+          <i data-lucide="arrow-up-right" style="width:12px;height:12px"></i> Debo
+        </span>
+        <span style="font-family:var(--serif);font-size:.9rem;font-weight:300;color:#f43f5e">${{ "{:,.0f}".format(total_i_owe) }}</span>
+      </div>
+      {% for d in i_owe %}
+      {% set pct = ((1 - d.monto_restante / d.monto_total) * 100)|int if d.monto_total > 0 else 0 %}
+      <div class="sf-debt-row" data-did="{{ d.id }}">
+        <div class="sf-debt-avatar" style="background:#f43f5e18;border:1px solid #f43f5e40;color:#f43f5e;">{{ d.person[0]|upper }}</div>
+        <div class="sf-debt-body">
+          <div class="sf-debt-name">{{ d.person }}</div>
+          {% if d.concept %}<div class="sf-debt-concept">{{ d.concept }}</div>{% endif %}
+          {% if d.monto_total > d.monto_restante %}
+          <div class="sf-debt-bar"><div class="sf-debt-bar-fill" style="width:{{ pct }}%;background:#f43f5e;"></div></div>
+          <div class="sf-debt-pct">{{ pct }}% pagado · Total ${{ "{:,.0f}".format(d.monto_total) }}</div>
+          {% endif %}
+        </div>
+        <div class="sf-debt-right">
+          <div class="sf-debt-monto" style="color:#f43f5e">${{ "{:,.0f}".format(d.monto_restante) }}</div>
+          <div class="sf-debt-actions">
+            <button class="ai" title="Registrar pago" onclick="openModalAbonar({{ d.id }},{{ d.monto_restante }})"><i data-lucide="plus-circle" style="width:11px;height:11px"></i></button>
+            <button class="ai" title="Liquidar" onclick="settleDebt({{ d.id }},this)"><i data-lucide="check-circle" style="width:11px;height:11px"></i></button>
+            <button class="ai del" title="Eliminar" onclick="deleteDebt({{ d.id }},this)"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="sf-empty" style="padding:18px 14px;">
+        <i data-lucide="check-circle" style="width:20px;height:20px;opacity:.18;display:block;margin:0 auto 7px"></i>
+        Sin deudas pendientes — ¡excelente!
+      </div>
+      {% endfor %}
+      <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 10px;margin-top:2px;width:100%;box-sizing:border-box;" onclick="openModalDebt('i_owe')">+ Debo</button>
+    </div>
+
+  </div>
+</div>
+
 </div>{# /sf-grid #}
 
 
@@ -523,6 +640,71 @@
   </div>
 </div>
 
+
+{# ─────────────────────────── MODAL DEUDA ────────────────────────────────── #}
+<div class="modal-bg" id="modal-debt">
+  <div class="modal">
+    <div class="modal-title">Registrar Deuda</div>
+    <div class="sf-form-row c2">
+      <div class="fg">
+        <label class="fl">Tipo *</label>
+        <select class="fi" id="md-type">
+          <option value="owe_me">Me deben</option>
+          <option value="i_owe">Debo</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">Persona *</label>
+        <input class="fi" id="md-person" placeholder="Nombre...">
+      </div>
+    </div>
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Concepto</label>
+        <input class="fi" id="md-concept" placeholder="Ej: préstamo enero, cena, viaje...">
+      </div>
+    </div>
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Monto (MXN) *</label>
+        <input class="fi" id="md-amount" type="number" step="0.01" min="0.01" placeholder="0.00">
+      </div>
+    </div>
+    <div id="md-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeMDebt()">Cancelar</button>
+      <button class="btn-a" onclick="submitDebt()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+{# ─────────────────────────── MODAL ABONAR ───────────────────────────────── #}
+<div class="modal-bg" id="modal-abonar">
+  <div class="modal">
+    <div class="modal-title">Registrar Abono / Cobro</div>
+    <input type="hidden" id="ma-did">
+    <div style="font-size:var(--fs-sm);color:var(--dim);margin-bottom:12px;">
+      Pendiente: <span id="ma-restante" style="color:var(--text);font-family:var(--serif)"></span>
+    </div>
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Monto *</label>
+        <input class="fi" id="ma-amount" type="number" step="0.01" min="0.01" placeholder="0.00">
+      </div>
+    </div>
+    <div class="sf-form-row">
+      <div class="fg">
+        <label class="fl">Nota (opcional)</label>
+        <input class="fi" id="ma-note" placeholder="Ej: transferencia 15 jun...">
+      </div>
+    </div>
+    <div id="ma-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:4px;"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeMAbonar()">Cancelar</button>
+      <button class="btn-a" onclick="submitAbonar()">Registrar</button>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
 {% block scripts %}
@@ -679,11 +861,86 @@ async function tomarSnapshot() {
   }
 }
 
+// ── Modal Deuda ──────────────────────────────────────────────────────────────
+function openModalDebt(type = 'owe_me') {
+  document.getElementById('md-type').value = type;
+  document.getElementById('md-person').value = '';
+  document.getElementById('md-concept').value = '';
+  document.getElementById('md-amount').value = '';
+  document.getElementById('md-err').textContent = '';
+  document.getElementById('modal-debt').classList.add('open');
+  document.getElementById('md-person').focus();
+}
+function closeMDebt() {
+  document.getElementById('modal-debt').classList.remove('open');
+}
+async function submitDebt() {
+  const person = document.getElementById('md-person').value.trim();
+  const amount = parseFloat(document.getElementById('md-amount').value);
+  if (!person) { document.getElementById('md-err').textContent = 'Ingresa el nombre.'; return; }
+  if (!(amount > 0)) { document.getElementById('md-err').textContent = 'Monto inválido.'; return; }
+  const r = await fetch('/finanzas/api/debt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type:    document.getElementById('md-type').value,
+      person,
+      concept: document.getElementById('md-concept').value.trim(),
+      amount,
+    })
+  });
+  const d = await r.json();
+  if (d.ok) { closeMDebt(); location.reload(); }
+  else { document.getElementById('md-err').textContent = d.error || 'Error al guardar.'; }
+}
+
+// ── Modal Abonar ─────────────────────────────────────────────────────────────
+function openModalAbonar(did, restante) {
+  document.getElementById('ma-did').value = did;
+  document.getElementById('ma-restante').textContent =
+    '$' + Number(restante).toLocaleString('es-MX', { minimumFractionDigits: 2 });
+  document.getElementById('ma-amount').value = '';
+  document.getElementById('ma-note').value = '';
+  document.getElementById('ma-err').textContent = '';
+  document.getElementById('modal-abonar').classList.add('open');
+  document.getElementById('ma-amount').focus();
+}
+function closeMAbonar() {
+  document.getElementById('modal-abonar').classList.remove('open');
+}
+async function submitAbonar() {
+  const did    = document.getElementById('ma-did').value;
+  const amount = parseFloat(document.getElementById('ma-amount').value);
+  if (!(amount > 0)) { document.getElementById('ma-err').textContent = 'Monto inválido.'; return; }
+  const r = await fetch(`/finanzas/api/debt/${did}/abonar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount, note: document.getElementById('ma-note').value.trim() })
+  });
+  const d = await r.json();
+  if (d.ok) { closeMAbonar(); location.reload(); }
+  else { document.getElementById('ma-err').textContent = d.error || 'Error.'; }
+}
+
+async function settleDebt(did, btn) {
+  if (!confirm('¿Marcar como liquidada? Se moverá al historial.')) return;
+  const r = await fetch(`/finanzas/api/debt/${did}/settle`, { method: 'POST' });
+  if ((await r.json()).ok) btn.closest('.sf-debt-row').remove();
+}
+
+async function deleteDebt(did, btn) {
+  if (!confirm('¿Eliminar esta deuda? No se puede deshacer.')) return;
+  const r = await fetch(`/finanzas/api/debt/${did}`, { method: 'DELETE' });
+  if ((await r.json()).ok) btn.closest('.sf-debt-row').remove();
+}
+
 // ── Cerrar modales con Escape ─────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeMCuenta();
     closeMBien();
+    closeMDebt();
+    closeMAbonar();
   }
 });
 
