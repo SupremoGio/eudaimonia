@@ -315,27 +315,27 @@ def apply_migrations():
             ('NU MEXICO',               'APORTACION_RENTA', 'Parte renta Nu Mexico'),
             ('TARJETA DE TERCEROS MBAN','CASA/HOGAR',       'Renta depto 807'),
             ('5420150016315198',         'CASA/HOGAR',      'Renta depto 807'),
-            ('TOTAL PLAY',               'SERVICIOS',       'Internet/TV'),
-            ('TOTALPLAY',                'SERVICIOS',       'Internet/TV'),
+            ('TOTAL PLAY',               'CASA/HOGAR',      'Internet'),
+            ('TOTALPLAY',                'CASA/HOGAR',      'Internet'),
             ('MI ATT A APP',             'SALUD',           'Saldo Celular'),
             ('ATTAPP',                   'SALUD',           'Saldo Celular'),
         ]
         for kw, cat, sub in keywords:
             db.execute(
-                "INSERT OR IGNORE INTO est_keywords (keyword, categoria, subcategoria) VALUES (?,?,?)",
+                "INSERT OR REPLACE INTO est_keywords (keyword, categoria, subcategoria) VALUES (?,?,?)",
                 (kw, cat, sub)
             )
         log.append(f'est_keywords: {len(keywords)} reglas aseguradas')
 
-        # ── 3b. Reclasificar TOTAL PLAY → SERVICIOS ───────────────────────────
+        # ── 3b. Reclasificar TOTAL PLAY → CASA/HOGAR ─────────────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='SERVICIOS', subcategoria='Internet/TV'
+            SET categoria='CASA/HOGAR', subcategoria='Internet'
             WHERE (UPPER(descripcion) LIKE '%TOTAL PLAY%'
                 OR UPPER(descripcion) LIKE '%TOTALPLAY%')
               AND tipo='GASTO'
         """)
-        log.append(f'TOTAL PLAY → SERVICIOS: {r.rowcount} transacciones reclasificadas')
+        log.append(f'TOTAL PLAY → CASA/HOGAR: {r.rowcount} transacciones reclasificadas')
 
         # ── 3c. Reclasificar ATT saldo celular → SALUD ────────────────────────
         r = db.execute("""
