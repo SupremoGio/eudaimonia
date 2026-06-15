@@ -165,7 +165,8 @@ def _calc_budget(mes, db):
            FROM est_movimientos
            WHERE tipo='GASTO'
              AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
-                                   'SPEI_ENVIADO','RETIRO','PUBLICIDAD','NOMINA','FINANZAS')
+                                   'SPEI_ENVIADO','RETIRO','PUBLICIDAD','NOMINA','FINANZAS',
+                                   'EXPENSE','APORTACION_RENTA')
              AND fecha >= ? AND fecha < ?
            GROUP BY categoria
            ORDER BY total DESC""",
@@ -199,8 +200,10 @@ def _calc_budget(mes, db):
     #   - Sin presupuesto: pct = gastado/bucket_target → % del bucket como fallback informativo
     cats_data = []
     for row in spending_rows:
-        cat           = row['categoria']
-        bucket        = CATEGORIA_BUCKET.get(cat) or 'deseos'
+        cat    = row['categoria']
+        bucket = CATEGORIA_BUCKET.get(cat, 'deseos')
+        if bucket is None:
+            continue
         gastado       = float(row['total'] or 0)
         limite        = budgets_map.get(cat, 0.0)
         bucket_target = round(ingreso_real * PCTS[bucket], 2)
