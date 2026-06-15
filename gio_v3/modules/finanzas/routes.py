@@ -46,11 +46,66 @@ def index():
     total_owe_me = sum(d['monto_restante'] for d in owe_me)
     total_i_owe  = sum(d['monto_restante'] for d in i_owe)
     patrimonio_neto_display = pat['patrimonio_neto'] + total_owe_me - total_i_owe
+
+    # ── Trend: patrimonio vs snapshot anterior ──
+    hist = pat['historial'] or []
+    pat_delta = pat_delta_pct = None
+    if len(hist) >= 2 and hist[-2]['patrimonio_neto']:
+        pat_delta     = pat['patrimonio_neto'] - hist[-2]['patrimonio_neto']
+        pat_delta_pct = round(pat_delta / abs(hist[-2]['patrimonio_neto']) * 100, 1)
+
+    # ── Métricas por módulo (defensivo: si una tabla falla, esa métrica no aparece) ──
+    today   = today_date()
+    cur_mes = today.strftime('%Y-%m')
+    _nm = 1 if today.month == 12 else today.month + 1
+    _ny = today.year + 1 if today.month == 12 else today.year
+    mes_ini, mes_fin = f"{cur_mes}-01", f"{_ny}-{_nm:02d}-01"
+    extra = {}
+
+    try:  # Presupuesto: disponible + % del ingreso usado (reusa _calc_budget)
+        from modules.finanzas.budget import _calc_budget, _last_month_with_data
+        with get_db() as db:
+            n_cur = db.execute("SELECT COUNT(*) n FROM est_movimientos "
+                               "WHERE fecha>=? AND fecha<?", (mes_ini, mes_fin)).fetchone()['n']
+            bmes  = cur_mes if n_cur >= 5 else (_last_month_with_data(db) or cur_mes)
+            bd    = _calc_budget(bmes, db)
+        extra['presupuesto_disponible'] = bd['disponible']
+        if bd['ingreso_real']:
+            extra['presupuesto_pct'] = round(bd['total_gastado'] / bd['ingreso_real'] * 100)
+    except Exception:
+        pass
+
+    try:  # Estado de cuenta: ingresos pendientes de clasificar + movs del mes
+        with get_db() as db:
+            extra['estado_sin_clasificar'] = db.execute(
+                "SELECT COUNT(*) n FROM est_movimientos "
+                "WHERE tipo='INGRESO' AND categoria IN ('DEPOSITO','SPEI_RECIBIDO')").fetchone()['n']
+            extra['estado_total_movs'] = db.execute(
+                "SELECT COUNT(*) n FROM est_movimientos WHERE fecha>=? AND fecha<?",
+                (mes_ini, mes_fin)).fetchone()['n']
+    except Exception:
+        pass
+
+    try:  # Consumo: gasto del mes (misma fuente que la página de Consumo)
+        with get_db() as db:
+            extra['consumo_mes'] = round(db.execute(
+                "SELECT COALESCE(SUM(precio_total),0) s FROM consumo_compras "
+                "WHERE fecha_compra >= ?", (mes_ini,)).fetchone()['s'], 2)
+    except Exception:
+        pass
+
     return render_template('finanzas/hub.html',
-        patrimonio_neto         = patrimonio_neto_display,
-        total_activos           = pat['total_activos'],
-        total_pasivos           = pat['total_pasivos'],
+        patrimonio_neto = patrimonio_neto_display,
+        total_activos   = pat['total_activos'],
+        total_pasivos   = pat['total_pasivos'],
+        liquido         = pat['liquido'],
+        total_bienes    = pat['total_bienes'],
+        deudas_neto     = total_owe_me - total_i_owe,
+        historial       = pat['historial'],
+        pat_delta       = pat_delta,
+        pat_delta_pct   = pat_delta_pct,
         alerts=payment_alerts(), today=today_str(),
+        **extra,
     )
 
 

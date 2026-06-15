@@ -5,124 +5,323 @@
 
 {% block content %}
 <style>
-/* ── Patrimonio mini-hero ─────────────────────────────────────────────────── */
-.hub-hero{background:linear-gradient(135deg,#0c0a10,#140f1a);border:1px solid var(--b2);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
-.hub-pn-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-bottom:4px;}
-.hub-pn-value{font-family:var(--serif);font-size:2rem;font-weight:300;letter-spacing:.04em;line-height:1;}
-.hub-stat-row{display:flex;gap:16px;}
-.hub-stat{text-align:right;}
-.hub-stat-v{font-family:var(--serif);font-size:1rem;font-weight:300;}
-.hub-stat-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:2px;}
+/* ──────────────────────────────────────────────────────────────
+   OIKONOMIA HUB — responsive
+   PC / laptop (≥820px) → COCKPIT   ·   Celular (<820px) → LEDGER
+   Usa los tokens de layout_sub.html (--gold, --card, --b, etc.)
+   ────────────────────────────────────────────────────────────── */
+.oik .pos{color:#6ee7b7;} .oik .neg{color:#f0a8a8;} .oik .goldv{color:var(--gold-l);}
+.oik .sec-l{font-size:10px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin:0 0 12px 2px;}
+.oik .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.oik .delta{display:inline-flex;align-items:center;gap:4px;font-size:11px;letter-spacing:.02em;}
+.oik .delta svg{width:11px;height:11px;}
+.oik a{text-decoration:none;color:inherit;}
 
-/* ── Sub-module cards ─────────────────────────────────────────────────────── */
-.hub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
-.hub-card{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--card2);border:1px solid var(--b);border-radius:10px;text-decoration:none;transition:border-color .18s,background .18s;cursor:pointer;}
-.hub-card:hover{border-color:var(--gold);background:rgba(201,168,76,.04);}
-.hub-card-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;}
-.hub-card-body{flex:1;min-width:0;}
-.hub-card-title{font-size:var(--fs-sm);color:var(--text);font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:3px;}
-.hub-card-desc{font-size:var(--fs-xs);color:var(--dim);line-height:1.4;}
-.hub-card-arrow{color:var(--dim);flex-shrink:0;transition:color .18s;}
-.hub-card:hover .hub-card-arrow{color:var(--gold);}
+/* ── alertas de pago ── */
+.oik-alerts{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px;}
+.oik-alert{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:6px;
+  background:rgba(255,255,255,.02);font-size:var(--fs-sm);letter-spacing:.07em;}
+.oik-alert svg{width:12px;height:12px;}
 
-/* ── Section divider ─────────────────────────────────────────────────────── */
-.hub-section-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin:20px 0 10px;padding-left:2px;}
-
-/* ── Lock button ─────────────────────────────────────────────────────────── */
-.lock-btn{background:transparent;border:1px solid var(--b);color:var(--dim);padding:5px 12px;border-radius:4px;font-family:var(--mono);font-size:var(--fs-sm);cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:5px;}
-.lock-btn:hover{border-color:var(--red);color:var(--red);}
-
-@media(max-width:600px){
-  .hub-hero{flex-direction:column;align-items:flex-start;}
-  .hub-stat-row{gap:12px;}
-  .hub-pn-value{font-size:1.6rem;}
-  .hub-grid{grid-template-columns:1fr;}
+/* ──────────────────── DESKTOP · COCKPIT ──────────────────── */
+.oik-desktop{display:none;}
+.vb-top{display:grid;grid-template-columns:400px 1fr;gap:16px;margin-bottom:24px;}
+.vb-nw{position:relative;overflow:hidden;background:linear-gradient(150deg,#1a1510,#241d14 55%,#16110b);
+  border:1px solid var(--b2);border-radius:16px;padding:24px;box-shadow:0 16px 44px -18px rgba(0,0,0,.7);
+  display:flex;flex-direction:column;}
+.vb-nw::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 90% 8%,rgba(201,168,76,.14),transparent 55%);}
+.vb-nw-eye{position:relative;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(232,201,109,.7);margin-bottom:9px;}
+.vb-nw-val{position:relative;font-family:var(--serif);font-size:42px;font-weight:600;color:#E8C96D;line-height:.95;white-space:nowrap;}
+.vb-nw-val span{font-size:14px;color:rgba(232,201,109,.5);font-family:var(--sans);}
+.vb-nw-trend{position:relative;margin-top:9px;font-size:12px;color:#7BC49A;display:flex;align-items:center;gap:6px;}
+.vb-nw-trend.neg{color:#E59B92;}
+.vb-nw-trend svg{width:13px;height:13px;}
+.vb-spark{position:relative;display:flex;align-items:flex-end;gap:4px;height:54px;margin-top:auto;padding-top:20px;}
+.vb-spark span{flex:1;background:linear-gradient(180deg,rgba(201,168,76,.5),rgba(201,168,76,.1));border-radius:2px 2px 0 0;min-height:3px;}
+.vb-spark span.now{background:linear-gradient(180deg,#E8C96D,rgba(201,168,76,.3));box-shadow:0 0 10px rgba(201,168,76,.5);}
+.vb-nw-foot{position:relative;display:flex;align-items:center;gap:22px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,.16);}
+.vb-foot-l{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,237,224,.4);margin-bottom:3px;}
+.vb-foot-v{font-family:var(--serif);font-size:18px;}
+.vb-nw-foot .vb-lock{margin-left:auto;width:32px;height:32px;border-radius:8px;border:1px solid var(--b2);
+  background:rgba(201,168,76,.06);color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.vb-nw-foot .vb-lock:hover{border-color:var(--red);color:var(--red);}
+.vb-nw-foot .vb-lock svg{width:13px;height:13px;}
+.vb-alloc{background:var(--card);border:1px solid var(--b);border-radius:16px;padding:22px 24px;}
+.vb-alloc-l{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:18px;}
+.vb-alloc-row{display:flex;align-items:center;gap:30px;margin-bottom:20px;}
+.vb-donut{width:132px;height:132px;border-radius:50%;flex-shrink:0;position:relative;}
+.vb-donut-hole{position:absolute;inset:26px;border-radius:50%;background:var(--card);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.vb-donut-v{font-family:var(--serif);font-size:22px;color:var(--text);line-height:1;}
+.vb-donut-c{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:3px;}
+.vb-legend{flex:1;display:flex;flex-direction:column;gap:11px;}
+.vb-leg{display:flex;align-items:center;gap:10px;}
+.vb-leg-n{flex:1;font-size:13px;color:var(--mid);}
+.vb-leg-p{font-family:var(--serif);font-size:15px;color:var(--text);}
+.vb-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.vb-stat{background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:11px 13px;}
+.vb-stat-v{font-family:var(--serif);font-size:18px;line-height:1;}
+.vb-stat-l{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:4px;}
+.vb-mods{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.vb-card{display:flex;flex-direction:column;background:var(--card2);border:1px solid var(--b);
+  border-radius:13px;padding:17px 18px;cursor:pointer;transition:border-color .18s,transform .18s,background .18s;}
+.vb-card:hover{border-color:var(--b2);transform:translateY(-2px);background:var(--card);}
+.vb-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.vb-ic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;}
+.vb-ic svg{width:17px;height:17px;}
+.vb-chev{color:var(--dim);display:flex;transition:color .18s;}
+.vb-chev svg{width:15px;height:15px;}
+.vb-card:hover .vb-chev{color:var(--gold);}
+.vb-card-name{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--text);letter-spacing:.02em;}
+.vb-card-desc{font-size:11.5px;color:var(--dim);line-height:1.45;margin-top:3px;min-height:33px;}
+.vb-card-foot{display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid var(--b);}
+.vb-card-sv{font-family:var(--serif);font-size:21px;color:var(--text);line-height:1;}
+.vb-card-sl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:4px;}
+@media(min-width:820px) and (max-width:1100px){
+  .vb-top{grid-template-columns:1fr;}
+  .vb-mods{grid-template-columns:repeat(2,1fr);}
 }
+
+/* ──────────────────── MÓVIL · LEDGER ──────────────────── */
+.oik-mobile{display:none;}
+.m-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#0c0a14,#161020);
+  border:1px solid var(--b2);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 18px 50px -24px rgba(0,0,0,.7);}
+.m-hero::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 92% 0%,rgba(201,168,76,.10),transparent 55%);}
+.m-eyebrow{position:relative;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-l);margin-bottom:8px;}
+.m-hero-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.m-value{font-family:var(--serif);font-size:38px;font-weight:600;line-height:.95;color:var(--text);white-space:nowrap;}
+.m-value span{font-size:13px;color:var(--dim);font-family:var(--sans);}
+.m-trend{margin-top:9px;font-size:12.5px;color:#6ee7b7;display:flex;align-items:center;gap:6px;}
+.m-trend.neg{color:#f0a8a8;}
+.m-trend svg{width:13px;height:13px;}
+.m-lock{flex-shrink:0;width:36px;height:36px;border-radius:9px;border:1px solid var(--b2);background:rgba(201,168,76,.06);
+  color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.m-lock svg{width:14px;height:14px;}
+.m-spark{position:relative;width:100%;height:62px;margin-top:16px;display:block;}
+.m-split{position:relative;margin-top:18px;}
+.m-bar{height:9px;border-radius:100px;overflow:hidden;display:flex;gap:2px;}
+.m-bar span{height:100%;border-radius:2px;}
+.m-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:13px;}
+.m-leg{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mid);}
+.m-leg b{color:var(--text);font-weight:500;font-family:var(--serif);font-size:13.5px;}
+.va-mods{display:flex;flex-direction:column;gap:9px;}
+.va-row{display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--card);
+  border:1px solid var(--b);border-radius:13px;cursor:pointer;transition:border-color .18s,background .18s;}
+.va-row:active{border-color:var(--b2);background:var(--card2);}
+.va-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.va-ic svg{width:18px;height:18px;}
+.va-main{flex:1;min-width:0;}
+.va-name{font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:.02em;line-height:1.1;color:var(--text);}
+.va-sub{font-size:11.5px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.va-val{text-align:right;flex-shrink:0;}
+.va-val-n{font-family:var(--serif);font-size:18px;color:var(--text);line-height:1;white-space:nowrap;}
+.va-val-l{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:4px;}
+.va-chev{color:var(--dim);flex-shrink:0;display:flex;}
+.va-chev svg{width:16px;height:16px;}
+
+/* ── BREAKPOINT SWITCH ── */
+@media(min-width:820px){ .oik-desktop{display:block;} .oik-mobile{display:none;} }
+@media(max-width:819px){ .oik-desktop{display:none;}  .oik-mobile{display:block;} }
 </style>
 
+{# ──────────────── DATA PREP (todo desde el contexto que ya calcula la ruta) ──────────────── #}
+{% set inversiones = (total_activos - total_bienes - liquido) if (liquido is defined and total_bienes is defined) else 0 %}
+{% set act_ref     = [total_activos, 1]|max %}
+{% set p_liq = (liquido / act_ref * 100) if liquido is defined else 0 %}
+{% set p_inv = (inversiones / act_ref * 100) %}
+{% set p_bie = (total_bienes / act_ref * 100) if total_bienes is defined else 0 %}
+{% set tot_bar = [liquido|default(0) + inversiones + total_bienes|default(0) + total_pasivos, 1]|max %}
+{% set deudas  = deudas_neto|default(0) %}
+
+{# sparkline desde historial #}
+{% set spark = (historial|map(attribute='patrimonio_neto')|list)[-10:] if historial else [] %}
+{% set has_spark = spark|length >= 2 %}
+{% if has_spark %}
+  {% set smin = spark|min %}{% set smax = spark|max %}{% set srng = (smax - smin) or 1 %}
+  {% set ns = namespace(line='') %}
+  {% for v in spark %}
+    {% set x = loop.index0 * (320 / (spark|length - 1)) %}
+    {% set y = 64 - ((v - smin) / srng * 58) %}
+    {% set ns.line = ns.line ~ (' ' if not loop.first else '') ~ ('M' if loop.first else 'L') ~ ('%.1f'|format(x)) ~ ' ' ~ ('%.1f'|format(y)) %}
+  {% endfor %}
+{% endif %}
+
+<div class="oik">
+
 {% if alerts %}
-<div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px;">
+<div class="oik-alerts">
   {% for a in alerts %}
-  <div style="display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid {{a.color}};color:{{a.color}};font-size:var(--fs-sm);letter-spacing:.07em;"><i data-lucide="bell" style="width:12px;height:12px"></i>HOY: PAGAR {{ a.label }}</div>
+  <div class="oik-alert" style="border:1px solid {{a.color}};color:{{a.color}};"><i data-lucide="bell"></i>HOY: PAGAR {{ a.label }}</div>
   {% endfor %}
 </div>
 {% endif %}
 
-{# ── Mini patrimonio hero ──────────────────────────────────────────────────── #}
-<div class="hub-hero">
-  <div>
-    <div class="hub-pn-label">Patrimonio Neto</div>
-    <div class="hub-pn-value {% if patrimonio_neto >= 0 %}pos{% else %}neg{% endif %}">
-      {% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}
-      <span style="font-size:.85rem;color:var(--dim)"> MXN</span>
+{# ──────────────────────────── DESKTOP · COCKPIT ──────────────────────────── #}
+<div class="oik-desktop">
+  <div class="vb-top">
+
+    <div class="vb-nw">
+      <div class="vb-nw-eye">Patrimonio Neto</div>
+      <div class="vb-nw-val">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></div>
+      {% if pat_delta is defined and pat_delta_pct is defined %}
+      <div class="vb-nw-trend {% if pat_delta < 0 %}neg{% endif %}">
+        <i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i>
+        <span>{% if pat_delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(pat_delta) }} · {{ pat_delta_pct }}% vs anterior</span>
+      </div>
+      {% endif %}
+
+      {% if has_spark %}
+      <div class="vb-spark">
+        {% for v in spark %}
+        <span class="{% if loop.last %}now{% endif %}" style="height:{{ [ (8 + (v - smin) / srng * 92)|round(0,'floor')|int, 4]|max }}%"></span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div class="vb-nw-foot">
+        <div><div class="vb-foot-l">Activos</div><div class="vb-foot-v pos">${{ "{:,.0f}".format(total_activos) }}</div></div>
+        <div><div class="vb-foot-l">Pasivos</div><div class="vb-foot-v neg">−${{ "{:,.0f}".format(total_pasivos) }}</div></div>
+        <button class="vb-lock" onclick="lockFin()" title="Bloquear"><i data-lucide="lock"></i></button>
+      </div>
+    </div>
+
+    <div class="vb-alloc">
+      <div class="vb-alloc-l">Composición de activos</div>
+      <div class="vb-alloc-row">
+        <div class="vb-donut" style="background:conic-gradient(#60a5fa 0 {{ '%.1f'|format(p_liq) }}%,#10b981 {{ '%.1f'|format(p_liq) }}% {{ '%.1f'|format(p_liq + p_inv) }}%,#C9A84C {{ '%.1f'|format(p_liq + p_inv) }}% 100%);">
+          <div class="vb-donut-hole">
+            <div class="vb-donut-v">${{ "{:,.0f}".format(total_activos / 1000) }}K</div>
+            <div class="vb-donut-c">activos</div>
+          </div>
+        </div>
+        <div class="vb-legend">
+          <div class="vb-leg"><span class="dot" style="background:#60a5fa"></span><span class="vb-leg-n">Líquido</span><span class="vb-leg-p">{{ p_liq|round|int }}%</span></div>
+          <div class="vb-leg"><span class="dot" style="background:#10b981"></span><span class="vb-leg-n">Inversiones</span><span class="vb-leg-p">{{ p_inv|round|int }}%</span></div>
+          <div class="vb-leg"><span class="dot" style="background:#C9A84C"></span><span class="vb-leg-n">Bienes</span><span class="vb-leg-p">{{ p_bie|round|int }}%</span></div>
+        </div>
+      </div>
+      <div class="vb-stats">
+        <div class="vb-stat"><div class="vb-stat-v pos">${{ "{:,.0f}".format(total_activos) }}</div><div class="vb-stat-l">Activos</div></div>
+        <div class="vb-stat"><div class="vb-stat-v neg">−${{ "{:,.0f}".format(total_pasivos) }}</div><div class="vb-stat-l">Pasivos</div></div>
+        <div class="vb-stat"><div class="vb-stat-v goldv">${{ "{:,.0f}".format(total_bienes|default(0)) }}</div><div class="vb-stat-l">Bienes</div></div>
+        <div class="vb-stat"><div class="vb-stat-v {% if deudas >= 0 %}pos{% else %}neg{% endif %}">{% if deudas >= 0 %}+{% endif %}${{ "{:,.0f}".format(deudas) }}</div><div class="vb-stat-l">Deudas pers.</div></div>
+      </div>
     </div>
   </div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;">
-    <div class="hub-stat-row">
-      <div class="hub-stat">
-        <div class="hub-stat-v" style="color:#10b981">${{ "{:,.0f}".format(total_activos) }}</div>
-        <div class="hub-stat-l">Activos</div>
-      </div>
-      <div class="hub-stat">
-        <div class="hub-stat-v" style="color:#f43f5e">-${{ "{:,.0f}".format(total_pasivos) }}</div>
-        <div class="hub-stat-l">Pasivos</div>
-      </div>
-    </div>
-    <button class="lock-btn" onclick="lockFin()"><i data-lucide="lock" style="width:11px;height:11px"></i> Bloquear</button>
+
+  <div class="sec-l">Módulos</div>
+  <div class="vb-mods">
+    <a class="vb-card" href="/finanzas/salud/">
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:#C9A84C"><i data-lucide="landmark"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-name">Patrimonio</div>
+      <div class="vb-card-desc">Cuentas · inversiones · bienes · deudas</div>
+      <div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(total_activos) }}</div><div class="vb-card-sl">Activos</div></div></div>
+    </a>
+    <a class="vb-card" href="/finanzas/budget/">
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:#10b981"><i data-lucide="pie-chart"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-name">Presupuesto</div>
+      <div class="vb-card-desc">Regla 50/30/20 · necesidades · deseos · ahorro</div>
+      {% if presupuesto_disponible is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="vb-card-sl">Disponible</div></div>{% if presupuesto_pct is defined %}<span class="delta" style="color:#6ee7b7">{{ presupuesto_pct }}% usado</span>{% endif %}</div>{% endif %}
+    </a>
+    <a class="vb-card" href="/finanzas/estados/">
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(96,165,250,.11);border:1px solid rgba(96,165,250,.34);color:#60a5fa"><i data-lucide="list"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-name">Estado de Cuenta</div>
+      <div class="vb-card-desc">Movimientos bancarios · clasificación · importar</div>
+      {% if estado_sin_clasificar is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">{{ estado_sin_clasificar }}</div><div class="vb-card-sl">Sin clasificar</div></div>{% if estado_total_movs is defined %}<span class="delta" style="color:var(--dim)">{{ estado_total_movs }} movs</span>{% endif %}</div>{% endif %}
+    </a>
+    <a class="vb-card" href="/finanzas/inversiones/">
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(167,139,250,.11);border:1px solid rgba(167,139,250,.34);color:#a78bfa"><i data-lucide="trending-up"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-name">Inversiones</div>
+      <div class="vb-card-desc">Portafolio · rendimientos · historial</div>
+      <div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(inversiones) }}</div><div class="vb-card-sl">Portafolio</div></div>{% if inversiones_pct is defined %}<span class="delta" style="color:#6ee7b7"><i data-lucide="arrow-up-right"></i>{{ inversiones_pct }}%</span>{% endif %}</div>
+    </a>
+    <a class="vb-card" href="/finanzas/consumo/">
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-name">Consumo</div>
+      <div class="vb-card-desc">Análisis de gastos · tendencias · categorías</div>
+      {% if consumo_mes is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="vb-card-sl">Gasto del mes</div></div>{% if consumo_delta_pct is defined %}<span class="delta" style="color:{% if consumo_delta_pct <= 0 %}#f0a8a8{% else %}#6ee7b7{% endif %}">{{ consumo_delta_pct }}% vs mes ant.</span>{% endif %}</div>{% endif %}
+    </a>
   </div>
 </div>
 
-{# ── Sub-modules ───────────────────────────────────────────────────────────── #}
-<div class="hub-section-label">Módulos</div>
-<div class="hub-grid">
+{# ──────────────────────────── MÓVIL · LEDGER ──────────────────────────── #}
+<div class="oik-mobile">
+  <div class="m-hero">
+    <div class="m-eyebrow">Patrimonio Neto</div>
+    <div class="m-hero-top">
+      <div>
+        <div class="m-value">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></div>
+        {% if pat_delta is defined and pat_delta_pct is defined %}
+        <div class="m-trend {% if pat_delta < 0 %}neg{% endif %}"><i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i><span>{% if pat_delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(pat_delta) }} · {{ pat_delta_pct }}%</span></div>
+        {% endif %}
+      </div>
+      <button class="m-lock" onclick="lockFin()" title="Bloquear"><i data-lucide="lock"></i></button>
+    </div>
 
-  <a href="/finanzas/budget/" class="hub-card">
-    <div class="hub-card-icon" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.22);">
-      <i data-lucide="pie-chart" style="width:18px;height:18px;color:#10b981"></i>
-    </div>
-    <div class="hub-card-body">
-      <div class="hub-card-title">Presupuesto</div>
-      <div class="hub-card-desc">Regla 50/30/20 · necesidades, deseos, ahorro</div>
-    </div>
-    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
-  </a>
+    {% if has_spark %}
+    <svg class="m-spark" viewBox="0 0 320 70" preserveAspectRatio="none">
+      <defs><linearGradient id="mFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(201,168,76,.30)"/><stop offset="1" stop-color="rgba(201,168,76,0)"/></linearGradient></defs>
+      <path d="{{ ns.line }} L320 70 L0 70 Z" fill="url(#mFill)" stroke="none"/>
+      <path d="{{ ns.line }}" fill="none" stroke="#E8C96D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    {% endif %}
 
-  <a href="/finanzas/estados/" class="hub-card">
-    <div class="hub-card-icon" style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.22);">
-      <i data-lucide="list" style="width:18px;height:18px;color:#60a5fa"></i>
+    <div class="m-split">
+      <div class="m-bar">
+        <span style="width:{{ '%.1f'|format(liquido|default(0) / tot_bar * 100) }}%;background:#60a5fa"></span>
+        <span style="width:{{ '%.1f'|format(inversiones / tot_bar * 100) }}%;background:#10b981"></span>
+        <span style="width:{{ '%.1f'|format(total_bienes|default(0) / tot_bar * 100) }}%;background:#C9A84C"></span>
+        <span style="width:{{ '%.1f'|format(total_pasivos / tot_bar * 100) }}%;background:#f43f5e"></span>
+      </div>
+      <div class="m-legend">
+        <span class="m-leg"><span class="dot" style="background:#60a5fa"></span>Líquido <b>${{ "{:,.0f}".format(liquido|default(0)) }}</b></span>
+        <span class="m-leg"><span class="dot" style="background:#10b981"></span>Inversiones <b>${{ "{:,.0f}".format(inversiones) }}</b></span>
+        <span class="m-leg"><span class="dot" style="background:#C9A84C"></span>Bienes <b>${{ "{:,.0f}".format(total_bienes|default(0)) }}</b></span>
+        <span class="m-leg"><span class="dot" style="background:#f43f5e"></span>Pasivos <b>${{ "{:,.0f}".format(total_pasivos) }}</b></span>
+      </div>
     </div>
-    <div class="hub-card-body">
-      <div class="hub-card-title">Estado de Cuenta</div>
-      <div class="hub-card-desc">Movimientos bancarios · clasificación · importar</div>
-    </div>
-    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
-  </a>
+  </div>
 
-  <a href="/finanzas/inversiones/" class="hub-card">
-    <div class="hub-card-icon" style="background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.22);">
-      <i data-lucide="trending-up" style="width:18px;height:18px;color:#a78bfa"></i>
-    </div>
-    <div class="hub-card-body">
-      <div class="hub-card-title">Inversiones</div>
-      <div class="hub-card-desc">Portafolio · rendimientos · historial</div>
-    </div>
-    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
-  </a>
-
-  <a href="/finanzas/consumo/" class="hub-card">
-    <div class="hub-card-icon" style="background:rgba(251,146,60,.08);border:1px solid rgba(251,146,60,.22);">
-      <i data-lucide="bar-chart-2" style="width:18px;height:18px;color:#fb923c"></i>
-    </div>
-    <div class="hub-card-body">
-      <div class="hub-card-title">Consumo</div>
-      <div class="hub-card-desc">Análisis de gastos · tendencias · categorías</div>
-    </div>
-    <i data-lucide="chevron-right" class="hub-card-arrow" style="width:16px;height:16px"></i>
-  </a>
-
+  <div class="sec-l">Módulos</div>
+  <div class="va-mods">
+    <a class="va-row" href="/finanzas/salud/">
+      <span class="va-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:#C9A84C"><i data-lucide="landmark"></i></span>
+      <div class="va-main"><div class="va-name">Patrimonio</div><div class="va-sub">Cuentas · inversiones · bienes</div></div>
+      <div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(total_activos) }}</div><div class="va-val-l">Activos</div></div>
+      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
+    </a>
+    <a class="va-row" href="/finanzas/budget/">
+      <span class="va-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:#10b981"><i data-lucide="pie-chart"></i></span>
+      <div class="va-main"><div class="va-name">Presupuesto</div><div class="va-sub">Regla 50/30/20 · ahorro</div></div>
+      {% if presupuesto_disponible is defined %}<div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="va-val-l">Disponible</div></div>{% endif %}
+      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
+    </a>
+    <a class="va-row" href="/finanzas/estados/">
+      <span class="va-ic" style="background:rgba(96,165,250,.11);border:1px solid rgba(96,165,250,.34);color:#60a5fa"><i data-lucide="list"></i></span>
+      <div class="va-main"><div class="va-name">Estado de Cuenta</div><div class="va-sub">Movimientos · clasificación</div></div>
+      {% if estado_sin_clasificar is defined %}<div class="va-val"><div class="va-val-n">{{ estado_sin_clasificar }}</div><div class="va-val-l">Sin clasificar</div></div>{% endif %}
+      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
+    </a>
+    <a class="va-row" href="/finanzas/inversiones/">
+      <span class="va-ic" style="background:rgba(167,139,250,.11);border:1px solid rgba(167,139,250,.34);color:#a78bfa"><i data-lucide="trending-up"></i></span>
+      <div class="va-main"><div class="va-name">Inversiones</div><div class="va-sub">Portafolio · rendimientos</div></div>
+      <div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(inversiones) }}</div><div class="va-val-l">Portafolio</div></div>
+      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
+    </a>
+    <a class="va-row" href="/finanzas/consumo/">
+      <span class="va-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span>
+      <div class="va-main"><div class="va-name">Consumo</div><div class="va-sub">Gastos · tendencias</div></div>
+      {% if consumo_mes is defined %}<div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="va-val-l">Gasto · mes</div></div>{% endif %}
+      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
+    </a>
+  </div>
 </div>
 
+</div>{# /.oik #}
 {% endblock %}
+
 {% block scripts %}
 <script>
 async function lockFin() {
