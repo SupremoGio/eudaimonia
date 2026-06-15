@@ -274,7 +274,7 @@ def seed_budgets():
     return jsonify({'ok': True, 'loaded': len(budgets), 'budgets': [dict(r) for r in rows]})
 
 
-@finanzas_bp.route('/admin/apply-migrations', methods=['POST'])
+@finanzas_bp.route('/admin/apply-migrations', methods=['GET', 'POST'])
 def apply_migrations():
     """Aplica migraciones de datos 2026 a la DB activa (local o Railway).
     Idempotente — se puede ejecutar varias veces sin duplicar ni corromper."""
