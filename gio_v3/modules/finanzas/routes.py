@@ -315,11 +315,11 @@ def apply_migrations():
             ('NU MEXICO',               'APORTACION_RENTA', 'Parte renta Nu Mexico'),
             ('TARJETA DE TERCEROS MBAN','CASA/HOGAR',       'Renta depto 807'),
             ('5420150016315198',         'CASA/HOGAR',      'Renta depto 807'),
-            ('TOTAL PLAY CR MEX',        'CASA/HOGAR',      'Internet'),
-            ('TOTAL PLAY',               'CASA/HOGAR',      'Internet'),
-            ('TOTALPLAY',                'CASA/HOGAR',      'Internet'),
-            ('CFE SUM SERV',             'CASA/HOGAR',      'Luz'),
-            ('CFE',                      'CASA/HOGAR',      'Luz'),
+            ('TOTAL PLAY CR MEX',        'SERVICIOS',       'Internet'),
+            ('TOTAL PLAY',               'SERVICIOS',       'Internet'),
+            ('TOTALPLAY',                'SERVICIOS',       'Internet'),
+            ('CFE SUM SERV',             'SERVICIOS',       'Luz'),
+            ('CFE',                      'SERVICIOS',       'Luz'),
             ('MI ATT A APP',             'SERVICIOS',       'Saldo telefono'),
             ('ATTAPP',                   'SERVICIOS',       'Saldo telefono'),
             ('ATTAPP MICROS',            'SERVICIOS',       'Saldo telefono'),
@@ -331,23 +331,23 @@ def apply_migrations():
             )
         log.append(f'est_keywords: {len(keywords)} reglas aseguradas')
 
-        # ── 3b. Reclasificar TOTAL PLAY → CASA/HOGAR ─────────────────────────
+        # ── 3b. Reclasificar TOTAL PLAY → SERVICIOS/Internet ─────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='CASA/HOGAR', subcategoria='Internet'
+            SET categoria='SERVICIOS', subcategoria='Internet'
             WHERE (UPPER(descripcion) LIKE '%TOTAL PLAY%'
                 OR UPPER(descripcion) LIKE '%TOTALPLAY%')
         """)
-        log.append(f'TOTAL PLAY → CASA/HOGAR: {r.rowcount} transacciones reclasificadas')
+        log.append(f'TOTAL PLAY → SERVICIOS/Internet: {r.rowcount} transacciones reclasificadas')
 
-        # ── 3d. Reclasificar CFE → CASA/HOGAR/Luz ────────────────────────────
+        # ── 3d. Reclasificar CFE → SERVICIOS/Luz ─────────────────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='CASA/HOGAR', subcategoria='Luz'
+            SET categoria='SERVICIOS', subcategoria='Luz'
             WHERE UPPER(descripcion) LIKE '%CFE%'
               AND tipo='GASTO'
         """)
-        log.append(f'CFE → CASA/HOGAR/Luz: {r.rowcount} transacciones reclasificadas')
+        log.append(f'CFE → SERVICIOS/Luz: {r.rowcount} transacciones reclasificadas')
 
         # ── 3c. Reclasificar ATT saldo telefono → SERVICIOS ─────────────────────
         r = db.execute("""
