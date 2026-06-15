@@ -318,6 +318,8 @@ def apply_migrations():
             ('TOTAL PLAY CR MEX',        'CASA/HOGAR',      'Internet'),
             ('TOTAL PLAY',               'CASA/HOGAR',      'Internet'),
             ('TOTALPLAY',                'CASA/HOGAR',      'Internet'),
+            ('CFE SUM SERV',             'CASA/HOGAR',      'Luz'),
+            ('CFE',                      'CASA/HOGAR',      'Luz'),
             ('MI ATT A APP',             'SALUD',           'Saldo Celular'),
             ('ATTAPP',                   'SALUD',           'Saldo Celular'),
         ]
@@ -336,6 +338,15 @@ def apply_migrations():
                 OR UPPER(descripcion) LIKE '%TOTALPLAY%')
         """)
         log.append(f'TOTAL PLAY → CASA/HOGAR: {r.rowcount} transacciones reclasificadas')
+
+        # ── 3d. Reclasificar CFE → CASA/HOGAR/Luz ────────────────────────────
+        r = db.execute("""
+            UPDATE est_movimientos
+            SET categoria='CASA/HOGAR', subcategoria='Luz'
+            WHERE UPPER(descripcion) LIKE '%CFE%'
+              AND tipo='GASTO'
+        """)
+        log.append(f'CFE → CASA/HOGAR/Luz: {r.rowcount} transacciones reclasificadas')
 
         # ── 3c. Reclasificar ATT saldo celular → SALUD ────────────────────────
         r = db.execute("""
