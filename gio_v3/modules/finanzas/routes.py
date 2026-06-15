@@ -320,8 +320,9 @@ def apply_migrations():
             ('TOTALPLAY',                'CASA/HOGAR',      'Internet'),
             ('CFE SUM SERV',             'CASA/HOGAR',      'Luz'),
             ('CFE',                      'CASA/HOGAR',      'Luz'),
-            ('MI ATT A APP',             'SALUD',           'Saldo Celular'),
-            ('ATTAPP',                   'SALUD',           'Saldo Celular'),
+            ('MI ATT A APP',             'SERVICIOS',       'Saldo telefono'),
+            ('ATTAPP',                   'SERVICIOS',       'Saldo telefono'),
+            ('ATTAPP MICROS',            'SERVICIOS',       'Saldo telefono'),
         ]
         for kw, cat, sub in keywords:
             db.execute(
@@ -348,15 +349,15 @@ def apply_migrations():
         """)
         log.append(f'CFE → CASA/HOGAR/Luz: {r.rowcount} transacciones reclasificadas')
 
-        # ── 3c. Reclasificar ATT saldo celular → SALUD ────────────────────────
+        # ── 3c. Reclasificar ATT saldo telefono → SERVICIOS ─────────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='SALUD', subcategoria='Saldo Celular'
+            SET categoria='SERVICIOS', subcategoria='Saldo telefono'
             WHERE (UPPER(descripcion) LIKE '%MI ATT A APP%'
                 OR UPPER(descripcion) LIKE '%ATTAPP%')
               AND tipo='GASTO'
         """)
-        log.append(f'ATT saldo celular → SALUD: {r.rowcount} transacciones reclasificadas')
+        log.append(f'ATT saldo telefono → SERVICIOS: {r.rowcount} transacciones reclasificadas')
 
         # ── 3a. Reclasificar aportación de renta Nu Mexico ────────────────────
         r = db.execute("""
