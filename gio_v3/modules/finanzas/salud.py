@@ -1,9 +1,7 @@
 """Salud Financiera — patrimonio neto: cuentas, inversiones y bienes."""
-from flask import Blueprint, render_template, request, jsonify, session, redirect
-from collections import defaultdict
+from flask import Blueprint, request, jsonify, session, redirect
 from database import get_db
 from datetime import datetime, date
-from collections import defaultdict
 from utils import today_str, today_date
 
 salud_bp = Blueprint('salud', __name__, template_folder='../../templates')
@@ -72,44 +70,7 @@ def _compute_patrimonio():
 
 @salud_bp.route('/')
 def index():
-    from modules.finanzas.routes import payment_alerts
-    from utils import today_str
-    with get_db() as db:
-        owe_me  = db.execute("SELECT * FROM debts WHERE type='owe_me' AND settled=0 ORDER BY id DESC").fetchall()
-        i_owe   = db.execute("SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY id DESC").fetchall()
-        pay_map = {}
-        for row in db.execute("SELECT * FROM debt_payments ORDER BY paid_at DESC").fetchall():
-            pay_map.setdefault(row["debt_id"], []).append(dict(row))
-    pat = _compute_patrimonio()
-    bienes_por_cat = defaultdict(list)
-    for b in pat['bienes']:
-        bienes_por_cat[b['categoria']].append(b)
-    total_owe_me = sum(d['monto_restante'] for d in owe_me)
-    total_i_owe  = sum(d['monto_restante'] for d in i_owe)
-    patrimonio_neto_display = pat['patrimonio_neto'] + total_owe_me - total_i_owe
-    return render_template('finanzas/index.html',
-        owe_me=list(owe_me), i_owe=list(i_owe),
-        pay_map=pay_map,
-        total_owe_me          = total_owe_me,
-        total_i_owe           = total_i_owe,
-        total_original_owe_me = sum(d['monto_total'] for d in owe_me),
-        total_original_i_owe  = sum(d['monto_total'] for d in i_owe),
-        cuentas_liquido   = [c for c in pat['cuentas'] if c['tipo'] in ('efectivo', 'cuenta_banco')],
-        cuentas_inversion = [c for c in pat['cuentas'] if c['tipo'] == 'inversion'],
-        cuentas_pasivo    = [c for c in pat['cuentas'] if c['tipo'] in TIPOS_PASIVO],
-        bienes            = pat['bienes'],
-        bienes_por_cat    = dict(bienes_por_cat),
-        historial         = pat['historial'],
-        total_activos     = pat['total_activos'],
-        activos_cuentas   = pat['activos_cuentas'],
-        total_bienes      = pat['total_bienes'],
-        total_pasivos     = pat['total_pasivos'],
-        patrimonio_neto         = pat['patrimonio_neto'],
-        patrimonio_neto_display = patrimonio_neto_display,
-        tipo_meta         = TIPO_META,
-        bien_meta         = BIEN_META,
-        alerts=payment_alerts(), today=today_str(),
-    )
+    return redirect('/finanzas/')
 
 
 # ── API Cuentas ────────────────────────────────────────────────────────────────
