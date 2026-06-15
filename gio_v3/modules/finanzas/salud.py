@@ -1,5 +1,5 @@
 """Salud Financiera — patrimonio neto: cuentas, inversiones y bienes."""
-from flask import Blueprint, request, jsonify, session, redirect
+from flask import Blueprint, render_template, request, jsonify, session, redirect
 from database import get_db
 from datetime import datetime, date
 from utils import today_str, today_date
@@ -70,7 +70,28 @@ def _compute_patrimonio():
 
 @salud_bp.route('/')
 def index():
-    return redirect('/finanzas/')
+    pat = _compute_patrimonio()
+    cuentas = pat['cuentas']
+    bienes  = pat['bienes']
+    bienes_por_cat = {}
+    for b in bienes:
+        bienes_por_cat.setdefault(b['categoria'], []).append(b)
+    return render_template('finanzas/salud.html',
+        patrimonio_neto   = pat['patrimonio_neto'],
+        total_activos     = pat['total_activos'],
+        activos_cuentas   = pat['activos_cuentas'],
+        total_pasivos     = pat['total_pasivos'],
+        total_bienes      = pat['total_bienes'],
+        historial         = pat['historial'],
+        cuentas_liquido   = [c for c in cuentas if c['tipo'] in ('efectivo', 'cuenta_banco')],
+        cuentas_inversion = [c for c in cuentas if c['tipo'] == 'inversion'],
+        cuentas_pasivo    = [c for c in cuentas if c['tipo'] in TIPOS_PASIVO],
+        bienes            = bienes,
+        bienes_por_cat    = bienes_por_cat,
+        tipo_meta         = TIPO_META,
+        bien_meta         = BIEN_META,
+        today             = today_str(),
+    )
 
 
 # ── API Cuentas ────────────────────────────────────────────────────────────────
