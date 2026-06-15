@@ -243,6 +243,11 @@
       <div class="vb-card-desc">Análisis de gastos · tendencias · categorías</div>
       {% if consumo_mes is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="vb-card-sl">Gasto del mes</div></div>{% if consumo_delta_pct is defined %}<span class="delta" style="color:{% if consumo_delta_pct <= 0 %}#f0a8a8{% else %}#6ee7b7{% endif %}">{{ consumo_delta_pct }}% vs mes ant.</span>{% endif %}</div>{% endif %}
     </a>
+    <a class="vb-card" href="/finanzas/prioridades/">
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:#f59e0b"><i data-lucide="star"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-name">Wishlist</div>
+      <div class="vb-card-desc">Deseos · compras · prioridades</div>
+    </a>
   </div>
 </div>
 
@@ -314,6 +319,11 @@
       <span class="va-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span>
       <div class="va-main"><div class="va-name">Consumo</div><div class="va-sub">Gastos · tendencias</div></div>
       {% if consumo_mes is defined %}<div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="va-val-l">Gasto · mes</div></div>{% endif %}
+      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
+    </a>
+    <a class="va-row" href="/finanzas/prioridades/">
+      <span class="va-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:#f59e0b"><i data-lucide="star"></i></span>
+      <div class="va-main"><div class="va-name">Wishlist</div><div class="va-sub">Deseos · compras · prioridades</div></div>
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
   </div>
