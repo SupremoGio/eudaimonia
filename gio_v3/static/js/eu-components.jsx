@@ -1,5 +1,5 @@
 // EUDAIMONIA — UI Primitives
-const { useState, useEffect } = React;
+const { useState, useEffect, useMemo, useRef, useReducer, useCallback } = React;
 const C = window.EU.getColors();
 
 // ─── Greek Column XP Visualizer ────────────────────────────

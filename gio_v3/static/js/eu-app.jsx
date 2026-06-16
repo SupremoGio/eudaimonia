@@ -1,6 +1,5 @@
 // EUDAIMONIA — App State & Root
-const { useState, useReducer, useEffect, useMemo } = React;
-const C = window.EU.getColors();
+// hooks and C declared in eu-components.jsx (bundled before this file)
 
 function _xpStateFromTotal(totalXP) {
   const thr = EU.levelThresholds; // [0,200,500,1000,1800,2700,3600,4400,5000,5500]

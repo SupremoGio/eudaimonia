@@ -1,6 +1,5 @@
 // EUDAIMONIA — All Screens
-const { useState, useMemo, useEffect, useRef } = React;
-const C = window.EU.getColors();
+// hooks and C declared in eu-components.jsx (bundled before this file)
 
 function todayQuote() {
   const dayIndex = Math.floor(Date.now() / 86400000);
