@@ -122,6 +122,26 @@
 </head>
 <body>
   <div id="root"></div>
+  <div id="js-fallback" style="display:none;color:#fff;background:#1a0a0a;padding:20px;font-family:monospace;white-space:pre-wrap;font-size:13px;min-height:100vh;"></div>
+  <script>
+    setTimeout(function(){
+      if (!document.getElementById('root').hasChildNodes()) {
+        var fb = document.getElementById('js-fallback');
+        fb.style.display = 'block';
+        fb.textContent = 'React no montó. Revisa errores arriba.\n\nSi ves este mensaje, abre DevTools (F12 › Console).';
+      }
+    }, 5000);
+    window.addEventListener('error', function(e){
+      var fb = document.getElementById('js-fallback');
+      fb.style.display = 'block';
+      fb.textContent += '\nERROR: ' + e.message + '\n  en ' + e.filename + ':' + e.lineno;
+    });
+    window.addEventListener('unhandledrejection', function(e){
+      var fb = document.getElementById('js-fallback');
+      fb.style.display = 'block';
+      fb.textContent += '\nPROMISE ERROR: ' + (e.reason && e.reason.message || e.reason);
+    });
+  </script>
 
   <!-- Server data injected by Flask -->
   <script>
