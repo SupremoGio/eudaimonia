@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "pip install -r requirements.txt && npm install -g @babel/core @babel/cli @babel/preset-react && babel static/js/eu-components.jsx -o static/js/eu-components.js --presets @babel/preset-react && babel static/js/eu-screens.jsx -o static/js/eu-screens.js --presets @babel/preset-react && babel static/js/cmdk.jsx -o static/js/cmdk.js --presets @babel/preset-react && babel static/js/eu-app.jsx -o static/js/eu-app.js --presets @babel/preset-react"
+    "buildCommand": "pip install -r requirements.txt && npm install -g @babel/core @babel/cli @babel/preset-react && cat static/js/eu-components.jsx static/js/eu-screens.jsx static/js/cmdk.jsx static/js/eu-app.jsx | babel --filename bundle.jsx --presets @babel/preset-react -o static/js/eu-bundle.js"
   },
   "deploy": {
     "startCommand": "gunicorn \"app:create_app()\" --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --log-level debug --capture-output",
