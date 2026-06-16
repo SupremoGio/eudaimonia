@@ -202,17 +202,14 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 
-  <!-- Babel standalone (transforms JSX at runtime) -->
-  <script src="https://unpkg.com/@babel/standalone@7.23.10/babel.min.js"></script>
-
   <!-- EUDAIMONIA data layer (plain JS, reads from __EUDAIMONIA_DATA__ at end of file) -->
   <script src="{{ url_for('static', filename='js/eu-data.js') }}?v=20260519i"></script>
 
-  <!-- EUDAIMONIA UI components -->
-  <script type="text/babel" data-presets="react" src="{{ url_for('static', filename='js/eu-components.jsx') }}?v=20260519i"></script>
-  <script type="text/babel" data-presets="react" src="{{ url_for('static', filename='js/eu-screens.jsx') }}?v=20260519i"></script>
-  <script type="text/babel" data-presets="react" src="{{ url_for('static', filename='js/cmdk.jsx') }}?v=20260519i"></script>
-  <script type="text/babel" data-presets="react" src="{{ url_for('static', filename='js/eu-app.jsx') }}?v=20260519i"></script>
+  <!-- EUDAIMONIA UI components (pre-compiled JSX → JS at build time) -->
+  <script src="{{ url_for('static', filename='js/eu-components.js') }}?v=20260519i"></script>
+  <script src="{{ url_for('static', filename='js/eu-screens.js') }}?v=20260519i"></script>
+  <script src="{{ url_for('static', filename='js/cmdk.js') }}?v=20260519i"></script>
+  <script src="{{ url_for('static', filename='js/eu-app.js') }}?v=20260519i"></script>
 
   {% block extra_scripts %}{% endblock %}
 </body>
