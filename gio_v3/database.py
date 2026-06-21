@@ -1056,6 +1056,16 @@ def init_db():
             created_at    TEXT    NOT NULL,
             FOREIGN KEY (receta_id) REFERENCES medico_recetas(id) ON DELETE CASCADE
         );
+        CREATE TABLE IF NOT EXISTS medico_documentos (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            episodio_id     INTEGER NOT NULL,
+            tipo            TEXT    NOT NULL DEFAULT 'receta',
+            nombre_archivo  TEXT    NOT NULL,
+            nombre_original TEXT    DEFAULT '',
+            fecha           TEXT    NOT NULL,
+            created_at      TEXT    NOT NULL,
+            FOREIGN KEY (episodio_id) REFERENCES medico_episodios(id) ON DELETE CASCADE
+        );
         """)
 
         # ── MIGRATIONS LOG ───────────────────────────────────────────────────
