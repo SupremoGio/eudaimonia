@@ -161,6 +161,18 @@
 .hg-med-toggle.on { background:rgba(16,185,129,.2); border-color:rgba(16,185,129,.4); }
 .hg-med-toggle.on::after { left:14px; background:#34d399; }
 
+/* ── Documents list ────────────────────────────────────────────────── */
+.hg-docs { display:flex; flex-direction:column; gap:4px; }
+.hg-doc  { display:flex; align-items:center; gap:8px; padding:7px 10px;
+           background:var(--surf); border:1px solid var(--b); border-radius:8px; }
+.hg-doc-link { display:flex; align-items:center; gap:8px; flex:1; min-width:0;
+               text-decoration:none; color:inherit; }
+.hg-doc-icon { font-size:14px; flex-shrink:0; }
+.hg-doc-info { flex:1; min-width:0; display:flex; flex-direction:column; }
+.hg-doc-name { font-size:var(--fs-sm); font-weight:600; white-space:nowrap;
+               overflow:hidden; text-overflow:ellipsis; }
+.hg-doc-sub  { font-size:10px; color:var(--dim); }
+
 /* ── Section headers ──────────────────────────────────────────────── */
 .hg-section-hdr { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase;
                   letter-spacing:.1em; font-weight:600; margin:16px 0 8px;
@@ -491,6 +503,31 @@ window.__MED_STATS__ = {{ stats | tojson }};
   </div>
 </div>
 
+<!-- ═══ MODAL: Subir documento ═════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-doc">
+  <div class="modal hg-modal">
+    <div class="hg-modal-title">Subir receta o estudio</div>
+    <input type="hidden" id="doc-ep-id">
+
+    <label class="fl">Tipo</label>
+    <select class="fi" id="doc-tipo">
+      <option value="receta">Receta médica</option>
+      <option value="estudio">Estudio / análisis</option>
+    </select>
+
+    <label class="fl" style="margin-top:10px;">Fecha</label>
+    <input class="fi" id="doc-fecha" type="date">
+
+    <label class="fl" style="margin-top:10px;">Archivo (imagen o PDF)</label>
+    <input class="fi" id="doc-file" type="file" accept="image/*,.pdf">
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-g" onclick="closeModal('doc')">Cancelar</button>
+      <button class="btn-a" onclick="subirDocumento()">Subir</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MODAL: Resolver episodio ══════════════════════════════════════════ -->
 <div class="modal-bg" id="modal-resolver">
   <div class="modal hg-modal">
@@ -576,13 +613,14 @@ async function selectEp(id) {
   const ep = window.__MEDICO__.find(e => e.id === id);
   if (!ep) return;
 
-  // Fetch prescriptions
-  const recetas = await fetch(`${BASE}/api/episodios/${id}/detail`).then(r => r.json());
-  renderDetail(ep, recetas);
+  // Fetch prescriptions + documents
+  const recetas    = await fetch(`${BASE}/api/episodios/${id}/detail`).then(r => r.json());
+  const documentos = await fetch(`${BASE}/api/episodios/${id}/documentos`).then(r => r.json());
+  renderDetail(ep, recetas, documentos);
 }
 
 // ── Render detail panel ──────────────────────────────────────────────────────
-function renderDetail(ep, recetas) {
+function renderDetail(ep, recetas, documentos) {
   document.getElementById('detail-empty').style.display = 'none';
   const dc = document.getElementById('detail-content');
   dc.style.display = '';
@@ -652,6 +690,28 @@ function renderDetail(ep, recetas) {
     timelineHtml += '</div>';
   }
 
+  let docsHtml = '';
+  if (!documentos || documentos.length === 0) {
+    docsHtml = `<div class="hg-empty-sec">Sin documentos subidos</div>`;
+  } else {
+    docsHtml = '<div class="hg-docs">' + documentos.map(d => {
+      const isPdf = d.nombre_archivo.toLowerCase().endsWith('.pdf');
+      const icon  = isPdf ? '📄' : '🖼️';
+      const label = d.tipo === 'estudio' ? 'Estudio' : 'Receta';
+      return `
+        <div class="hg-doc">
+          <a href="${BASE}/documentos/${d.nombre_archivo}" target="_blank" rel="noopener" class="hg-doc-link">
+            <span class="hg-doc-icon">${icon}</span>
+            <span class="hg-doc-info">
+              <span class="hg-doc-name">${esc(d.nombre_original || d.nombre_archivo)}</span>
+              <span class="hg-doc-sub">${label} · ${d.fecha}</span>
+            </span>
+          </a>
+          <button class="btn-gr" style="font-size:10px;padding:2px 7px;" onclick="eliminarDocumento(${d.id})">×</button>
+        </div>`;
+    }).join('') + '</div>';
+  }
+
   dc.innerHTML = `
     <div class="hg-detail-head">
       <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
@@ -682,6 +742,14 @@ function renderDetail(ep, recetas) {
           onclick="abrirModalRx(${ep.id})">+ Receta</button>
       </div>
       ${timelineHtml}
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 10px;">
+        <div class="hg-section-hdr" style="margin:0;">Documentos (recetas / estudios)</div>
+        <button class="btn-a" style="font-size:var(--fs-xs);padding:4px 12px;"
+          onclick="abrirModalDoc(${ep.id})">+ Documento</button>
+      </div>
+      ${docsHtml}
+
       <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--b);display:flex;gap:8px;">
         <button class="btn-gr" style="font-size:var(--fs-xs);padding:5px 12px;"
           onclick="eliminarEpisodio(${ep.id})">Eliminar episodio</button>
@@ -733,6 +801,42 @@ async function confirmarResolver() {
   });
   toast('Episodio resuelto ✓');
   setTimeout(() => location.reload(), 500);
+}
+
+// ── Documentos CRUD ───────────────────────────────────────────────────────────
+function abrirModalDoc(epId) {
+  document.getElementById('doc-ep-id').value = epId;
+  document.getElementById('doc-tipo').value  = 'receta';
+  document.getElementById('doc-fecha').value = todayISO();
+  document.getElementById('doc-file').value  = '';
+  openModal('doc');
+}
+
+async function subirDocumento() {
+  const epId = document.getElementById('doc-ep-id').value;
+  const file = document.getElementById('doc-file').files[0];
+  if (!file) { alert('Selecciona un archivo'); return; }
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('tipo', document.getElementById('doc-tipo').value);
+  fd.append('fecha', document.getElementById('doc-fecha').value || todayISO());
+  const r = await fetch(`${BASE}/api/episodios/${epId}/documentos`, {
+    method: 'POST', body: fd
+  }).then(r => r.json());
+  if (r.ok) {
+    toast('Documento subido ✓');
+    closeModal('doc');
+    selectEp(parseInt(epId));
+  } else {
+    toast('Error: ' + (r.error || 'no se pudo subir'), 'err');
+  }
+}
+
+async function eliminarDocumento(did) {
+  if (!confirm('¿Eliminar este documento?')) return;
+  await fetch(`${BASE}/api/documentos/${did}`, { method: 'DELETE' });
+  toast('Documento eliminado');
+  if (_activeEpId) selectEp(_activeEpId);
 }
 
 // ── Receta CRUD ──────────────────────────────────────────────────────────────

@@ -1,8 +1,14 @@
-from flask import Blueprint, render_template, request, jsonify
+import os, uuid
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
+from werkzeug.utils import secure_filename
 from database import get_db
 from datetime import datetime
 
 medico_bp = Blueprint('medico', __name__, template_folder='../../templates')
+
+UPLOAD_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'medico')
+ALLOWED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.heic', '.pdf'}
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 def _now():
@@ -178,6 +184,16 @@ def episodio_detail(eid):
     return jsonify(result)
 
 
+@medico_bp.route('/api/episodios/<int:eid>/documentos')
+def episodio_documentos(eid):
+    with get_db() as db:
+        docs = db.execute(
+            "SELECT * FROM medico_documentos WHERE episodio_id=? ORDER BY fecha DESC, id DESC",
+            (eid,),
+        ).fetchall()
+    return jsonify([dict(d) for d in docs])
+
+
 # ── Recetas CRUD ──────────────────────────────────────────────────────────────
 
 @medico_bp.route('/api/recetas', methods=['POST'])
@@ -256,3 +272,58 @@ def eliminar_medicamento(mid):
         db.execute("DELETE FROM medico_medicamentos WHERE id=?", (mid,))
         db.commit()
     return jsonify({'ok': True})
+
+
+# ── Documentos (recetas/estudios escaneados) ──────────────────────────────────
+
+@medico_bp.route('/api/episodios/<int:eid>/documentos', methods=['POST'])
+def subir_documento(eid):
+    f = request.files.get('file')
+    if not f or not f.filename:
+        return jsonify({'ok': False, 'error': 'Sin archivo'}), 400
+    ext = os.path.splitext(secure_filename(f.filename))[1].lower()
+    if not ext or ext not in ALLOWED_EXT:
+        _mime_map = {'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
+                     'image/heic': '.heic', 'application/pdf': '.pdf'}
+        ext = _mime_map.get((f.content_type or '').split(';')[0].strip(), '')
+    if ext not in ALLOWED_EXT:
+        return jsonify({'ok': False, 'error': 'Tipo no permitido (solo imágenes o PDF)'}), 400
+    filename = uuid.uuid4().hex + ext
+    f.save(os.path.join(UPLOAD_DIR, filename))
+    with get_db() as db:
+        cur = db.execute(
+            """INSERT INTO medico_documentos
+                   (episodio_id, tipo, nombre_archivo, nombre_original, fecha, created_at)
+               VALUES (?,?,?,?,?,?)""",
+            (
+                eid,
+                request.form.get('tipo', 'receta'),
+                filename,
+                secure_filename(f.filename),
+                request.form.get('fecha') or _today(),
+                _now(),
+            ),
+        )
+        db.commit()
+    return jsonify({'ok': True, 'id': cur.lastrowid, 'filename': filename})
+
+
+@medico_bp.route('/api/documentos/<int:did>', methods=['DELETE'])
+def eliminar_documento(did):
+    with get_db() as db:
+        doc = db.execute("SELECT * FROM medico_documentos WHERE id=?", (did,)).fetchone()
+        if doc:
+            try:
+                os.remove(os.path.join(UPLOAD_DIR, doc['nombre_archivo']))
+            except OSError:
+                pass
+        db.execute("DELETE FROM medico_documentos WHERE id=?", (did,))
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@medico_bp.route('/documentos/<filename>')
+def serve_documento(filename):
+    if '..' in filename or '/' in filename:
+        abort(400)
+    return send_from_directory(UPLOAD_DIR, filename)
