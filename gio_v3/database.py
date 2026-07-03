@@ -1285,6 +1285,47 @@ def init_db():
             except Exception:
                 pass  # column already exists
 
+        # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS nutricion_semana (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            week_start   TEXT    NOT NULL,
+            day_key      TEXT    NOT NULL,
+            slot         TEXT    NOT NULL,
+            time_str     TEXT    DEFAULT '00:00',
+            name         TEXT    NOT NULL,
+            kcal         INTEGER DEFAULT 0,
+            protein      REAL    DEFAULT 0,
+            tag          TEXT    DEFAULT 'safe',
+            note         TEXT    DEFAULT '',
+            items_json   TEXT    DEFAULT '[]',
+            swap         TEXT    DEFAULT '',
+            custom       INTEGER DEFAULT 0,
+            done         INTEGER DEFAULT 0,
+            symptom      TEXT    DEFAULT NULL,
+            sym_tags_json TEXT   DEFAULT '[]',
+            xp           INTEGER DEFAULT 12,
+            created_at   TEXT    DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS nutricion_deslices (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            date      TEXT    NOT NULL,
+            trig_id   TEXT    NOT NULL,
+            label     TEXT    NOT NULL,
+            glyph     TEXT    DEFAULT '',
+            pen       INTEGER DEFAULT 0,
+            over      INTEGER DEFAULT 0,
+            note      TEXT    DEFAULT '',
+            created_at TEXT   DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS nutricion_bristol (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            date       TEXT    NOT NULL,
+            valor      INTEGER NOT NULL,
+            created_at TEXT    DEFAULT (datetime('now'))
+        );
+        """)
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

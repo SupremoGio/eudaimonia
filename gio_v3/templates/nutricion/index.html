@@ -1,137 +1,915 @@
-{% extends "eu/layout_sub.html" %}{% set pg='nutricion' %}
-{% block title %}Hegemonikon — Eudaimonia{% endblock %}
-{% block module_title %}HEGEMONIKON{% endblock %}
-{% block topright %}SEMANA {{ week_start }}{% endblock %}
-{% block content %}
+{% extends "eu/layout_sub.html" %}
+{% set pg = 'nutricion' %}
+{% block module_title %}Díaita{% endblock %}
+
+{% block head %}
 <style>
-.nu-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;max-width:1400px;margin-bottom:20px;}
-.day-col{background:var(--card);border:1px solid var(--b);border-radius:8px;overflow:hidden;}
-.day-hd{padding:8px 10px;border-bottom:1px solid var(--b);font-size:var(--fs-sm);color:var(--gold);letter-spacing:.1em;text-transform:uppercase;text-align:center;}
-.meal-slot{padding:8px 10px;border-bottom:1px solid var(--b);min-height:64px;position:relative;cursor:pointer;transition:background .14s;}
-.meal-slot:last-child{border-bottom:none;}
-.meal-slot:hover{background:var(--card2);}
-.ms-type{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;}
-.ms-desc{font-size:var(--fs-sm);color:var(--text);line-height:1.35;}
-.ms-empty{font-size:var(--fs-sm);color:var(--b2);font-style:italic;}
-.ms-del{position:absolute;top:5px;right:6px;background:none;border:none;color:var(--b2);cursor:pointer;display:none;transition:color .14s;}
-.meal-slot:hover .ms-del{display:block;}
-.ms-del:hover{color:var(--red);}
-.ms-del svg{width:9px;height:9px;}
-/* ARTICLES */
-.art-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
-.art-card{background:var(--card2);border:1px solid var(--b);border-radius:7px;padding:13px;}
-.art-cat{font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;border-radius:100px;margin-bottom:8px;display:inline-block;}
-.art-t{font-size:var(--fs-sm);color:var(--text);line-height:1.35;margin-bottom:5px;}
-.art-s{font-size:var(--fs-sm);color:var(--dim);line-height:1.4;}
-.art-rt{font-size:var(--fs-xs);color:var(--mid);}
+/* ── FODMAP / DÍAITA tokens ─────────────────────────────────── */
+:root, html.dark {
+  --dt-safe:       oklch(68% 0.13 150);
+  --dt-safe-bg:    oklch(22% 0.05 150);
+  --dt-caution:    var(--gold);
+  --dt-trigger:    oklch(60% 0.17 25);
+  --dt-trigger-bg: oklch(22% 0.07 25);
+  --dt-acc:        oklch(72% 0.11 45);
+  --dt-acc-bg:     oklch(20% 0.04 45);
+}
+html.light {
+  --dt-safe:       oklch(40% 0.14 150);
+  --dt-safe-bg:    oklch(93% 0.03 150);
+  --dt-caution:    var(--gold);
+  --dt-trigger:    oklch(42% 0.18 25);
+  --dt-trigger-bg: oklch(94% 0.04 25);
+  --dt-acc:        oklch(48% 0.16 45);
+  --dt-acc-bg:     oklch(93% 0.04 45);
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+#dt { max-width:430px; margin:0 auto; padding-bottom:90px; }
+.dt-tab { display:none; }
+.dt-tab.active { display:block; }
+
+/* ── Hojas / Sheets ─────────────────────────────────────────── */
+.dt-overlay {
+  display:none; position:fixed; inset:0; z-index:9200;
+  background:rgba(9,7,15,0.72); backdrop-filter:blur(4px);
+  align-items:flex-end; justify-content:center;
+  animation:euFadeIn 0.2s ease;
+}
+.dt-overlay.open { display:flex; }
+.dt-sheet {
+  width:100%; max-width:430px; max-height:92vh; overflow-y:auto;
+  background:var(--surf,#110E1C);
+  border-top:1px solid var(--gold-border,rgba(201,168,76,0.18));
+  border-radius:22px 22px 0 0;
+  padding:10px 20px 34px;
+  animation:euSheetUp 0.32s cubic-bezier(.16,1,.3,1);
+}
+.dt-sheet.trigger-border { border-top-color: var(--dt-trigger); }
+.dt-handle {
+  width:38px; height:4px; border-radius:2px;
+  background:rgba(201,168,76,0.28); margin:0 auto 18px;
+}
+.dt-handle.red { background: color-mix(in srgb, var(--dt-trigger) 55%, transparent); }
+
+/* ── Botones ────────────────────────────────────────────────── */
+.dt-btn-outline {
+  width:100%; background:transparent; border:1px dashed rgba(201,168,76,0.18);
+  border-radius:14px; padding:13px; font-family:var(--sans); font-size:12.5px;
+  color:var(--gold); letter-spacing:0.02em; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.dt-btn-trigger {
+  width:100%; background:transparent;
+  border:1px dashed color-mix(in srgb,var(--dt-trigger) 55%,transparent);
+  border-radius:14px; padding:13px; font-family:var(--sans); font-size:12.5px;
+  color:var(--dt-trigger); letter-spacing:0.02em; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.dt-pill {
+  cursor:pointer; font-family:var(--sans); font-size:11px; border-radius:100px;
+  padding:7px 14px; border:1px solid rgba(201,168,76,0.14); background:transparent;
+  color:var(--mid); transition:all 0.15s;
+}
+.dt-pill.active { background:var(--gold); border-color:var(--gold); color:var(--bg); }
+.dt-card { background:var(--card); border:1px solid rgba(201,168,76,0.1); border-radius:14px; padding:12px 14px; }
+.dt-section-label { font-family:var(--sans); font-size:9px; letter-spacing:0.18em; color:var(--dim); text-transform:uppercase; margin-bottom:10px; }
+
+/* ── Sub-nav ─────────────────────────────────────────────────── */
+#dt-nav { position:fixed; bottom:0; left:0; right:0; z-index:8000; }
+#dt-nav-inner {
+  max-width:430px; margin:0 auto;
+  background:rgba(17,14,28,0.94); backdrop-filter:blur(14px);
+  border-top:1px solid rgba(201,168,76,0.12);
+  display:flex; padding:10px 0 max(14px, env(safe-area-inset-bottom));
+}
+.dt-nav-btn { flex:1; background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.dt-nav-btn .ico { font-size:16px; line-height:1; transition:color 0.2s; }
+.dt-nav-btn .lbl { font-family:var(--sans); font-size:9.5px; letter-spacing:0.06em; transition:color 0.2s; }
+
+/* ── Toast ───────────────────────────────────────────────────── */
+#dt-toast {
+  position:fixed; left:50%; bottom:96px; transform:translateX(-50%);
+  z-index:9500; background:rgba(26,22,39,0.96);
+  border:1px solid rgba(201,168,76,0.18); border-radius:100px;
+  padding:11px 20px; display:flex; align-items:center; gap:10px;
+  box-shadow:0 10px 40px rgba(0,0,0,0.6); backdrop-filter:blur(8px);
+  max-width:360px; white-space:nowrap; pointer-events:none;
+}
+#dt-toast.hidden { display:none; }
+
+/* ── Ring ───────────────────────────────────────────────────── */
+.dt-ring-wrap { position:relative; }
+.dt-ring-wrap svg { transform:rotate(-90deg); }
+.dt-ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+
+/* ── Input ───────────────────────────────────────────────────── */
+.dt-input {
+  width:100%; background:var(--card); border:1px solid rgba(201,168,76,0.1);
+  border-radius:12px; padding:12px 14px; font-family:var(--sans);
+  font-size:12.5px; color:var(--text); outline:none; margin-bottom:9px;
+}
+.dt-input::placeholder { color:var(--dim); }
+
+@keyframes euFadeIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+@keyframes euSheetUp {
+  from { opacity:0; transform:translateY(30px); }
+  to   { opacity:1; transform:translateY(0); }
+}
 </style>
+{% endblock %}
 
-<!-- MEAL CALENDAR -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-  <div>
-    <div style="font-family:var(--serif);font-size:1.4rem;font-style:italic;font-weight:300;">Menú Semanal</div>
-    <div style="font-size:var(--fs-sm);color:var(--dim);">Haz clic en cualquier slot para añadir o editar</div>
-  </div>
-</div>
+{% block content %}
+<div id="dt">
 
-<div class="nu-grid">
-{% for day in days %}
-<div class="day-col">
-  <div class="day-hd">{{ day[:3] }}</div>
-  {% for mt in meal_types %}
-  {% set meal = calendar[day][mt] %}
-  <div class="meal-slot" onclick="openSlot('{{ day }}','{{ mt }}',{{ ('`'+meal.description+'`') if meal else 'null' }},{{ meal.id if meal else 'null' }})">
-    <div class="ms-type">{{ mt }}</div>
-    {% if meal %}
-    <div class="ms-desc">{{ meal.description[:60] }}{% if meal.description|length > 60 %}…{% endif %}</div>
-    {% if meal.video_url %}<div style="font-size:var(--fs-xs);color:var(--blue);margin-top:3px;">▶ video</div>{% endif %}
-    <button class="ms-del" onclick="event.stopPropagation();delMeal({{ meal.id }},this)"><i data-lucide="x"></i></button>
-    {% else %}
-    <div class="ms-empty">+ añadir</div>
-    {% endif %}
-  </div>
-  {% endfor %}
-</div>
-{% endfor %}
-</div>
-
-<!-- ARTICLES -->
-<div style="margin-top:8px;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <div class="tile-lbl" style="margin:0">ARTÍCULOS DE HEGEMONIKON</div>
-    <button class="btn-g" onclick="loadArticles()"><i data-lucide="refresh-cw" style="width:11px;height:11px;margin-right:5px;"></i>Cargar artículos</button>
-  </div>
-  <div class="art-grid" id="art-grid">
-    <div style="font-size:var(--fs-sm);color:var(--dim);padding:12px 0;">Haz clic en "Cargar artículos" para ver contenido de nutrición.</div>
-  </div>
-</div>
-
-<!-- MEAL MODAL -->
-<div class="modal-bg" id="meal-modal">
-  <div class="modal">
-    <div class="modal-title" id="mm-title">Añadir comida</div>
-    <div style="margin-bottom:12px;font-size:var(--fs-sm);color:var(--dim);" id="mm-slot"></div>
-    <div style="margin-bottom:10px;"><div class="fl" style="margin-bottom:5px;">Descripción *</div>
-      <textarea class="fi" id="mm-desc" rows="3" style="resize:vertical;" placeholder="Ej: Avena con plátano y miel..."></textarea></div>
-    <div><div class="fl" style="margin-bottom:5px;">URL de video receta (opcional)</div>
-      <input class="fi" id="mm-video" placeholder="https://youtube.com/..."></div>
-    <div id="mm-err" style="color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:6px;"></div>
-    <div class="modal-actions">
-      <button class="btn-g" onclick="closeMeal()">Cancelar</button>
-      <button class="btn-a" onclick="saveMeal()">Guardar</button>
+  <!-- ── Header: XP / EC / Racha ── -->
+  <div style="padding:0 0 12px">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <div>
+        <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.22em;color:var(--dt-acc);
+          text-transform:uppercase;opacity:0.85;margin-bottom:5px;display:flex;align-items:center;gap:7px">
+          <span style="width:5px;height:5px;border-radius:50%;background:var(--dt-acc);
+            box-shadow:0 0 8px var(--dt-acc);display:inline-block"></span>HEGEMONIKON · Salud
+        </div>
+        <div style="font-family:var(--serif);font-size:34px;font-weight:600;font-style:italic;
+          color:var(--text);line-height:0.95;letter-spacing:0.01em">Díaita</div>
+        <div style="font-family:var(--sans);font-size:10.5px;color:var(--dim);margin-top:5px;
+          letter-spacing:0.03em">δίαιτα — el régimen del cuerpo · bajo en FODMAP</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div id="hd-xp" style="display:flex;align-items:baseline;gap:6px">
+          <div style="font-family:var(--serif);font-size:18px;color:var(--gold);min-width:34px;text-align:right">+0</div>
+          <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">XP hoy</div>
+        </div>
+        <div id="hd-ec" style="display:flex;align-items:baseline;gap:6px">
+          <div style="font-family:var(--serif);font-size:18px;color:var(--dt-acc);min-width:34px;text-align:right">+0</div>
+          <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">EC</div>
+        </div>
+        <div id="hd-streak" style="display:flex;align-items:baseline;gap:6px">
+          <div style="font-family:var(--serif);font-size:18px;color:var(--gold);min-width:34px;text-align:right">0d</div>
+          <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">racha limpia</div>
+        </div>
+      </div>
     </div>
+  </div>
+  <div style="height:1px;background:linear-gradient(90deg,rgba(201,168,76,0.18),transparent);margin-bottom:14px"></div>
+
+  <!-- ══ HOY ══════════════════════════════════════════════════ -->
+  <div id="tab-hoy" class="dt-tab active">
+    <div style="padding:0 0 12px;display:flex;align-items:center;justify-content:space-between">
+      <span id="hoy-day-label" style="font-family:var(--sans);font-size:11px;letter-spacing:0.08em;color:var(--dt-acc);text-transform:uppercase"></span>
+      <span id="hoy-progress" style="font-family:var(--sans);font-size:10px;color:var(--dim)"></span>
+    </div>
+    <div style="margin-bottom:16px">
+      <div style="display:flex;background:var(--card);border:1px solid rgba(201,168,76,0.12);border-radius:100px;padding:3px;gap:2px">
+        <button id="seg-ritmo" onclick="setVariant('ritmo')" style="flex:1;border:none;cursor:pointer;border-radius:100px;padding:7px 4px;font-family:var(--sans);font-size:11px;letter-spacing:0.04em;transition:all 0.2s">Ritmo</button>
+        <button id="seg-proto" onclick="setVariant('protocolo')" style="flex:1;border:none;cursor:pointer;border-radius:100px;padding:7px 4px;font-family:var(--sans);font-size:11px;letter-spacing:0.04em;transition:all 0.2s">Protocolo</button>
+      </div>
+    </div>
+    <div id="hoy-view"></div>
+    <div style="padding-top:6px">
+      <div id="hoy-footer"></div>
+      <button class="dt-btn-trigger" style="margin-top:12px" onclick="openTemptation()"><span style="font-size:14px">✕</span> Caí en la tentación — registrar</button>
+      <button class="dt-btn-outline" style="margin-top:10px" onclick="openAddMeal(S.today)"><span style="font-size:15px">+</span> Agregar comida o colación</button>
+    </div>
+  </div>
+
+  <!-- ══ RECETAS ═══════════════════════════════════════════════ -->
+  <div id="tab-recetas" class="dt-tab">
+    <div id="recetas-filter" style="display:flex;gap:7px;overflow-x:auto;padding-bottom:14px;margin-bottom:4px"></div>
+    <div id="recetas-list"></div>
+    <div style="text-align:center;font-family:var(--sans);font-size:10.5px;color:var(--dim);margin-top:16px;line-height:1.6">
+      Todas verificadas para fase eliminación.<br>Toca <span style="color:var(--gold)">+</span> para sumarlas a tu plan del día.
+    </div>
+  </div>
+
+  <!-- ══ SÍNTOMAS ══════════════════════════════════════════════ -->
+  <div id="tab-sintomas" class="dt-tab">
+    <div class="dt-section-label">Tus disparadores · evitar</div>
+    <div id="sint-triggers" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:22px"></div>
+    <div id="sint-slips"></div>
+    <div class="dt-section-label">Cómo cayeron las comidas</div>
+    <div id="sint-meals"></div>
+    <div class="dt-section-label" style="margin-top:24px">Escala de Bristol · tránsito</div>
+    <div id="bristol-btns" style="display:flex;gap:6px"></div>
+    <div id="bristol-desc" style="font-family:var(--sans);font-size:11.5px;color:var(--dim);margin-top:10px;text-align:center;min-height:20px"></div>
+  </div>
+
+  <!-- ══ SEMANA ════════════════════════════════════════════════ -->
+  <div id="tab-semana" class="dt-tab">
+    <div style="display:flex;gap:12px;margin-bottom:20px">
+      <div class="dt-card" style="flex:1;border-radius:16px;padding:16px 18px">
+        <div id="sem-planned" style="font-family:var(--serif);font-size:34px;color:var(--gold);line-height:1"></div>
+        <div style="font-family:var(--sans);font-size:9.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:6px">días planeados</div>
+      </div>
+      <div class="dt-card" style="flex:1;border-radius:16px;padding:16px 18px">
+        <div id="sem-total" style="font-family:var(--serif);font-size:34px;color:var(--dt-acc);line-height:1"></div>
+        <div style="font-family:var(--sans);font-size:9.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:6px">comidas en la semana</div>
+      </div>
+    </div>
+    <div class="dt-section-label">Planifica tu semana</div>
+    <div id="sem-days" style="display:flex;gap:6px;margin-bottom:20px"></div>
+    <div id="sem-day-content"></div>
+    <div class="dt-section-label" style="margin-top:26px">Cómo ganas XP y EC</div>
+    <div id="sem-rules" class="dt-card" style="border-radius:16px;padding:6px 16px"></div>
+  </div>
+
+</div><!-- #dt -->
+
+<!-- ════ MEAL DETAIL SHEET ════════════════════════════════════ -->
+<div id="ov-meal" class="dt-overlay" onclick="closeSheet('meal')">
+  <div class="dt-sheet" onclick="event.stopPropagation()">
+    <div class="dt-handle"></div>
+    <div id="meal-content"></div>
+  </div>
+</div>
+
+<!-- ════ TEMPTATION SHEET ════════════════════════════════════ -->
+<div id="ov-temp" class="dt-overlay" onclick="closeSheet('temp')">
+  <div class="dt-sheet trigger-border" onclick="event.stopPropagation()">
+    <div class="dt-handle red"></div>
+    <div style="font-family:var(--sans);font-size:10px;letter-spacing:0.18em;color:var(--dt-trigger);text-transform:uppercase;margin-bottom:5px">PROSOCHÉ · atención</div>
+    <div style="font-family:var(--serif);font-size:26px;font-style:italic;color:var(--text);line-height:1.08;margin-bottom:6px">Registrar un desliz</div>
+    <div style="font-family:var(--sans);font-size:12px;color:var(--mid);margin-bottom:18px;line-height:1.5">Anotarlo con honestidad es el acto virtuoso. Rompe la racha limpia y descuenta XP — pero te devuelve la conciencia del hábito.</div>
+    <div class="dt-section-label">¿En qué caíste?</div>
+    <div id="temp-triggers" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px"></div>
+    <div class="dt-section-label">¿Cuánto?</div>
+    <div style="display:flex;gap:9px;margin-bottom:8px">
+      <button id="over-no"  onclick="setOver(false)" style="flex:1;cursor:pointer;border-radius:12px;padding:12px;font-family:var(--sans);font-size:12.5px;transition:all 0.16s;background:var(--card);border:1px solid rgba(201,168,76,0.1);color:var(--mid)">Solo probé</button>
+      <button id="over-yes" onclick="setOver(true)"  style="flex:1;cursor:pointer;border-radius:12px;padding:12px;font-family:var(--sans);font-size:12.5px;transition:all 0.16s;background:var(--card);border:1px solid rgba(201,168,76,0.1);color:var(--mid)">Me pasé</button>
+    </div>
+    <input id="temp-note" class="dt-input" style="margin-top:10px" placeholder="¿Qué lo detonó? (opcional)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:14px">
+      <span style="font-family:var(--sans);font-size:11.5px;color:var(--dim)">Penalización</span>
+      <span id="temp-pen-preview" style="font-family:var(--serif);font-size:24px;font-style:italic;color:var(--dim)">—</span>
+    </div>
+    <button id="temp-submit" onclick="submitTemptation()" disabled style="width:100%;border-radius:14px;padding:15px;font-family:var(--sans);font-size:13.5px;letter-spacing:0.03em;cursor:default;background:transparent;border:1px solid rgba(201,168,76,0.08);color:var(--dim)">Registrar con honestidad</button>
+  </div>
+</div>
+
+<!-- ════ ADD MEAL SHEET ════════════════════════════════════════ -->
+<div id="ov-add" class="dt-overlay" onclick="closeSheet('add')">
+  <div class="dt-sheet" onclick="event.stopPropagation()">
+    <div class="dt-handle"></div>
+    <div id="add-eyebrow" style="font-family:var(--sans);font-size:10px;letter-spacing:0.18em;color:var(--dt-acc);text-transform:uppercase;margin-bottom:5px"></div>
+    <div style="font-family:var(--serif);font-size:26px;font-style:italic;color:var(--text);line-height:1.08;margin-bottom:16px">Comida o colación</div>
+    <div style="display:flex;background:var(--card);border:1px solid rgba(201,168,76,0.12);border-radius:100px;padding:3px;gap:2px;margin-bottom:18px">
+      <button id="mode-banco"  onclick="setAddMode('banco')"  style="flex:1;border:none;cursor:pointer;border-radius:100px;padding:8px 4px;font-family:var(--sans);font-size:11.5px;transition:all 0.2s">Del banco</button>
+      <button id="mode-custom" onclick="setAddMode('custom')" style="flex:1;border:none;cursor:pointer;border-radius:100px;padding:8px 4px;font-family:var(--sans);font-size:11.5px;transition:all 0.2s">Personalizada</button>
+    </div>
+    <div class="dt-section-label">Momento del día · <span id="add-xp-label" style="color:var(--gold)">+12 XP</span></div>
+    <div id="add-slots" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <span style="font-family:var(--sans);font-size:12px;color:var(--mid)">Hora</span>
+      <input type="time" id="add-time" style="background:var(--card);border:1px solid rgba(201,168,76,0.1);border-radius:10px;padding:8px 12px;font-family:var(--sans);font-size:12.5px;color:var(--text);outline:none;color-scheme:dark">
+    </div>
+    <div id="add-banco-section">
+      <div class="dt-section-label">Elige del banco</div>
+      <div id="add-banco-list" style="max-height:210px;overflow-y:auto"></div>
+    </div>
+    <div id="add-custom-section" style="display:none">
+      <div class="dt-section-label">Detalles</div>
+      <input id="add-name" class="dt-input" placeholder="Nombre de la comida">
+      <div style="display:flex;gap:9px">
+        <input id="add-kcal" class="dt-input" style="flex:1" placeholder="kcal" inputmode="numeric">
+        <input id="add-prot" class="dt-input" style="flex:1" placeholder="proteína (g)" inputmode="numeric">
+      </div>
+      <input id="add-ing" class="dt-input" placeholder="Ingredientes, separados por coma">
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button id="ctag-safe" onclick="setCtag('safe')" style="flex:1;cursor:pointer;font-family:var(--sans);font-size:11.5px;border-radius:10px;padding:10px;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--dt-safe-bg);border:1px solid var(--dt-safe);color:var(--dt-safe)">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--dt-safe)"></span>Seguro
+        </button>
+        <button id="ctag-caution" onclick="setCtag('caution')" style="flex:1;cursor:pointer;font-family:var(--sans);font-size:11.5px;border-radius:10px;padding:10px;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--card);border:1px solid rgba(201,168,76,0.1);color:var(--mid)">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--dt-caution)"></span>Porción
+        </button>
+      </div>
+    </div>
+    <button id="add-submit" onclick="submitAddMeal()" disabled style="width:100%;margin-top:22px;border-radius:14px;padding:15px;font-family:var(--sans);font-size:13.5px;letter-spacing:0.03em;background:transparent;border:1px solid rgba(201,168,76,0.08);color:var(--dim);cursor:default">Añadir al plan</button>
+  </div>
+</div>
+
+<!-- ════ TOAST ════════════════════════════════════════════════ -->
+<div id="dt-toast" class="hidden">
+  <span id="toast-v" style="font-family:var(--serif);font-size:19px;font-style:italic;color:var(--gold);text-shadow:0 0 14px rgba(201,168,76,0.5)"></span>
+  <span id="toast-m" style="font-family:var(--sans);font-size:12px;color:var(--mid)"></span>
+</div>
+
+<!-- ════ BOTTOM NAV ══════════════════════════════════════════ -->
+<div id="dt-nav">
+  <div id="dt-nav-inner">
+    <button class="dt-nav-btn" onclick="switchTab('hoy')">
+      <span class="ico" id="nav-ico-hoy">☀</span>
+      <span class="lbl" id="nav-lbl-hoy">Hoy</span>
+    </button>
+    <button class="dt-nav-btn" onclick="switchTab('recetas')">
+      <span class="ico" id="nav-ico-recetas">❦</span>
+      <span class="lbl" id="nav-lbl-recetas">Recetas</span>
+    </button>
+    <button class="dt-nav-btn" onclick="switchTab('sintomas')">
+      <span class="ico" id="nav-ico-sintomas">✎</span>
+      <span class="lbl" id="nav-lbl-sintomas">Síntomas</span>
+    </button>
+    <button class="dt-nav-btn" onclick="switchTab('semana')">
+      <span class="ico" id="nav-ico-semana">◷</span>
+      <span class="lbl" id="nav-lbl-semana">Semana</span>
+    </button>
   </div>
 </div>
 {% endblock %}
-{% block scripts %}<script>
-let _slot={};
-const ART_COLORS={'Muscle':'rgba(197,163,108,.1)|rgba(197,163,108,.2)|var(--gold)','Brain':'rgba(96,165,250,.1)|rgba(96,165,250,.2)|var(--blue)','Metabolismo':'rgba(167,139,250,.1)|rgba(167,139,250,.2)|var(--purple)','Recovery':'rgba(74,222,128,.1)|rgba(74,222,128,.2)|var(--green)','Performance':'rgba(248,113,113,.1)|rgba(248,113,113,.2)|var(--red)'};
 
-function openSlot(day,mt,desc,id){
-  _slot={day,mt,id};
-  document.getElementById('mm-title').textContent=id?'Editar comida':'Añadir comida';
-  document.getElementById('mm-slot').textContent=`${day} — ${mt}`;
-  document.getElementById('mm-desc').value=desc||'';
-  document.getElementById('mm-video').value='';
-  document.getElementById('mm-err').textContent='';
-  document.getElementById('meal-modal').classList.add('open');
-  document.getElementById('mm-desc').focus();
+{% block scripts %}
+<script>
+// ── Estado inicial desde servidor ─────────────────────────────
+let S = {{ state | tojson }};
+S.variant  = 'ritmo';
+S.semDay   = S.today;
+S.activeTab = 'hoy';
+
+// ── Datos estáticos ───────────────────────────────────────────
+const TAGS = {
+  safe:    { label:'Seguro',     color:'var(--dt-safe)',    bg:'var(--dt-safe-bg)',    dot:'var(--dt-safe)' },
+  caution: { label:'Porción',    color:'var(--dt-caution)', bg:'rgba(201,168,76,0.08)',dot:'var(--dt-caution)' },
+  trigger: { label:'Disparador', color:'var(--dt-trigger)', bg:'var(--dt-trigger-bg)', dot:'var(--dt-trigger)' },
+};
+const FEELINGS = [
+  { id:'bien',    label:'Bien',    glyph:'○', color:'var(--dt-safe)' },
+  { id:'regular', label:'Regular', glyph:'◐', color:'var(--dt-caution)' },
+  { id:'mal',     label:'Mal',     glyph:'●', color:'var(--dt-trigger)' },
+];
+const SYMPTOM_TAGS = ['Hinchazón','Dolor','Gases','Urgencia','Reflujo','Náusea'];
+const BRISTOL = [
+  {n:1,d:'Bolitas duras'},{n:2,d:'Grumosa'},{n:3,d:'Con grietas'},
+  {n:4,d:'Lisa y blanda'},{n:5,d:'Blanda, bordes'},{n:6,d:'Pastosa'},{n:7,d:'Líquida'},
+];
+const TEMPTATIONS = [
+  {id:'cafe',    label:'Café de más',       glyph:'☕', pen:5},
+  {id:'pan',     label:'Pan / harina',      glyph:'🥖', pen:12},
+  {id:'galleta', label:'Galleta / dulce',   glyph:'🍪', pen:12},
+  {id:'lacteo',  label:'Lácteo',            glyph:'🥛', pen:10},
+  {id:'frijol',  label:'Frijol / legumbre', glyph:'🫘', pen:8},
+  {id:'alcohol', label:'Alcohol',           glyph:'🍷', pen:12},
+  {id:'otro',    label:'Otro disparador',   glyph:'⚑',  pen:8},
+];
+const TRIGGERS_LIST = ['Café en exceso','Lácteos','Frijol','Harinas refinadas','Galletas'];
+const RECIPES = [
+  {id:'r1',slot:'Desayuno',name:'Omelette de espinaca y papa',         kcal:390,protein:26,tag:'safe',   time:'12 min'},
+  {id:'r2',slot:'Desayuno',name:'Avena sin gluten con fresas',          kcal:340,protein:12,tag:'caution',time:'8 min', note:'Avena en porción ≤ ½ taza'},
+  {id:'r3',slot:'Comida',  name:'Res magra con arroz y zanahoria',      kcal:600,protein:45,tag:'safe',   time:'25 min'},
+  {id:'r4',slot:'Comida',  name:'Pescado blanco + quinoa + calabaza',   kcal:520,protein:38,tag:'safe',   time:'20 min'},
+  {id:'r5',slot:'Cena',    name:'Pavo molido con calabacita',           kcal:440,protein:40,tag:'safe',   time:'18 min'},
+  {id:'r6',slot:'Cena',    name:'Tortilla de maíz con pollo y limón',   kcal:410,protein:34,tag:'safe',   time:'15 min'},
+  {id:'r7',slot:'Colación',name:'Kiwi + puñado de almendras',           kcal:200,protein:7, tag:'safe',   time:'2 min'},
+  {id:'r8',slot:'Colación',name:'Arroz inflado + mantequilla de maní',  kcal:240,protein:9, tag:'safe',   time:'3 min'},
+  {id:'r9',slot:'Colación',name:'Yogur SIN lactosa + semillas chía',    kcal:210,protein:14,tag:'caution',time:'2 min',note:'Solo versión sin lactosa'},
+];
+const RULES = [
+  {icon:'✓',t:'Comida/colación cumplida a tiempo',        v:'+8–14 XP',           pen:false},
+  {icon:'✎',t:'Registrar cómo cayó (síntoma)',             v:'+5 XP',              pen:false},
+  {icon:'☀',t:'Día 100% adherido (protocolo limpio)',      v:'+30 XP bonus',       pen:false},
+  {icon:'◆',t:'Cerrar el día completo',                    v:'+8 EC',              pen:false},
+  {icon:'⚑',t:'Racha de días limpios sin disparador',     v:'multiplica XP',      pen:false},
+  {icon:'✕',t:'Caer en tentación (registrado)',            v:'−5 a −12 XP · rompe racha',pen:true},
+];
+const DAYS = [
+  {k:'L',l:'Lun',full:'Lunes'},{k:'M',l:'Mar',full:'Martes'},
+  {k:'X',l:'Mié',full:'Miércoles'},{k:'J',l:'Jue',full:'Jueves'},
+  {k:'V',l:'Vie',full:'Viernes'},{k:'S',l:'Sáb',full:'Sábado'},
+  {k:'D',l:'Dom',full:'Domingo'},
+];
+const SLOT_TIME = {'Desayuno':'07:00','Colación AM':'10:30','Comida':'14:00','Colación PM':'17:30','Cena':'20:30'};
+const SLOTS_LIST = ['Desayuno','Colación AM','Comida','Colación PM','Cena'];
+
+// ── Helpers ───────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function closeMeal(){document.getElementById('meal-modal').classList.remove('open');}
-async function saveMeal(){
-  const desc=document.getElementById('mm-desc').value.trim();
-  if(!desc){document.getElementById('mm-err').textContent='La descripción es obligatoria';return;}
-  const video=document.getElementById('mm-video').value.trim();
-  if(_slot.id){
-    await fetch(`/nutricion/api/meal/${_slot.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({description:desc,video_url:video})});
-  } else {
-    await fetch('/nutricion/api/meal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({day_name:_slot.day,meal_type:_slot.mt,description:desc,video_url:video})});
-  }
-  closeMeal();toast('Guardado ✓');setTimeout(()=>location.reload(),500);
+function toMin(t) { const [h,m]=(t||'00:00').split(':').map(Number); return h*60+m; }
+function nowMin() { const n=new Date(); return n.getHours()*60+n.getMinutes(); }
+function dotHtml(tag,sz=7) {
+  const c=(TAGS[tag]||TAGS.safe).dot;
+  return `<span style="width:${sz}px;height:${sz}px;border-radius:50%;background:${c};box-shadow:0 0 6px ${c};display:inline-block;flex-shrink:0"></span>`;
 }
-async function delMeal(id,btn){
-  await fetch(`/nutricion/api/meal/${id}`,{method:'DELETE'});
-  const slot=btn.closest('.meal-slot');
-  slot.innerHTML=`<div class="ms-type">${slot.querySelector('.ms-type').textContent}</div><div class="ms-empty">+ añadir</div>`;
-  toast('Eliminado');
+function miniMacro(v,l) {
+  return `<span style="font-family:var(--sans);font-size:10.5px;color:var(--mid)"><span style="color:var(--text)">${esc(v)}</span> ${esc(l)}</span>`;
 }
-async function loadArticles(){
-  const r=await fetch('/nutricion/api/nutrition/articles');
-  const d=await r.json();
-  const grid=document.getElementById('art-grid');
-  grid.innerHTML=d.articles.map(a=>{
-    const cat=a.category;
-    const [bg,brd,col]=(ART_COLORS[cat]||'var(--b)|var(--b2)|var(--mid)').split('|');
-    return `<div class="art-card">
-      <span class="art-cat" style="background:${bg};border:1px solid ${brd};color:${col}">${cat}</span>
-      <div class="art-t">${a.title}</div>
-      <div class="art-s">${a.summary}</div>
-      <div class="art-rt" style="margin-top:6px">⏱ ${a.read_time}</div>
+function symBadge(id) {
+  const f=FEELINGS.find(x=>x.id===id);
+  if(!f) return '';
+  return `<span style="font-family:var(--sans);font-size:10.5px;color:${f.color};display:inline-flex;align-items:center;gap:4px">${f.glyph} ${f.label}</span>`;
+}
+function tagChip(tag) {
+  const t=TAGS[tag]||TAGS.safe;
+  return `<span style="display:inline-flex;align-items:center;gap:5px;font-family:var(--sans);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:${t.color};background:${t.bg};border:1px solid color-mix(in srgb,${t.color} 33%,transparent);border-radius:100px;padding:3px 9px">${dotHtml(tag,6)}${t.label}</span>`;
+}
+function ring(pct,size,stroke,color,inner) {
+  const r=(size-stroke)/2,circ=2*Math.PI*r;
+  return `<div class="dt-ring-wrap" style="width:${size}px;height:${size}px">
+    <svg width="${size}" height="${size}" style="transform:rotate(-90deg)">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="rgba(201,168,76,0.1)" stroke-width="${stroke}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round"
+        stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct)}" style="transition:stroke-dashoffset 0.7s cubic-bezier(.4,0,.2,1)"/>
+    </svg>
+    <div class="dt-ring-center">${inner}</div>
+  </div>`;
+}
+function apiFetch(url,data={}) {
+  return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json());
+}
+
+// ── Header ────────────────────────────────────────────────────
+function updateHeader() {
+  const xp=S.xp_today;
+  const xpEl=document.getElementById('hd-xp').querySelector('div');
+  xpEl.textContent=(xp<0?'':'+')+ xp;
+  xpEl.style.color=xp<0?'var(--dt-trigger)':'var(--gold)';
+  document.getElementById('hd-ec').querySelector('div').textContent='+'+S.ec_today;
+  document.getElementById('hd-streak').querySelector('div').textContent=S.streak+'d';
+}
+
+// ── Tabs ──────────────────────────────────────────────────────
+const TABS=['hoy','recetas','sintomas','semana'];
+function switchTab(t) {
+  TABS.forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('active',id===t);
+    document.getElementById('nav-ico-'+id).style.color=id===t?'var(--gold)':'var(--dim)';
+    document.getElementById('nav-lbl-'+id).style.color=id===t?'var(--gold)':'var(--dim)';
+  });
+  S.activeTab=t;
+  if(t==='hoy')      renderHoy();
+  if(t==='recetas')  renderRecetas();
+  if(t==='sintomas') renderSintomas();
+  if(t==='semana')   renderSemana();
+}
+
+// ── HOY ──────────────────────────────────────────────────────
+function setVariant(v) {
+  S.variant=v;
+  document.getElementById('seg-ritmo').style.cssText+=`;background:${v==='ritmo'?'var(--gold)':'transparent'};color:${v==='ritmo'?'var(--bg)':'var(--mid)'}`;
+  document.getElementById('seg-proto').style.cssText+=`;background:${v==='protocolo'?'var(--gold)':'transparent'};color:${v==='protocolo'?'var(--bg)':'var(--mid)'}`;
+  renderHoyView();
+}
+function renderHoy() {
+  const plan=S.week[S.today]||[];
+  document.getElementById('hoy-day-label').textContent=((DAYS.find(d=>d.k===S.today)||{}).full||'').toUpperCase();
+  document.getElementById('hoy-progress').textContent=`${plan.filter(m=>m.done).length}/${plan.length} cumplidas`;
+  setVariant(S.variant);
+  renderHoyFooter();
+}
+function renderHoyView() { S.variant==='ritmo'?renderRitmo():renderProtocolo(); }
+
+function renderRitmo() {
+  const plan=S.week[S.today]||[], nm=nowMin();
+  let h=`<div style="position:relative"><div style="position:absolute;left:47px;top:14px;bottom:14px;width:1px;background:linear-gradient(180deg,transparent,rgba(201,168,76,0.22) 12%,rgba(201,168,76,0.22) 88%,transparent)"></div>`;
+  plan.forEach(m=>{
+    const past=toMin(m.time)<=nm,done=m.done;
+    const tc=done?'var(--gold)':(past?'var(--mid)':'var(--dim)');
+    const nb=done?'var(--gold)':'var(--card)',nbo=done?'var(--gold)':(past?'var(--dt-acc)':'rgba(201,168,76,0.3)');
+    const cb=done?'rgba(201,168,76,0.05)':'var(--card)',cbo=done?'rgba(201,168,76,0.18)':'rgba(201,168,76,0.1)';
+    h+=`<div style="display:flex;gap:16px;margin-bottom:14px;position:relative">
+      <div style="width:34px;text-align:right;padding-top:14px;flex-shrink:0">
+        <div style="font-family:var(--sans);font-size:11px;color:${tc};font-variant-numeric:tabular-nums">${esc(m.time)}</div>
+      </div>
+      <div style="position:relative;width:14px;flex-shrink:0">
+        <div style="position:absolute;left:0;top:16px;width:14px;height:14px;border-radius:50%;background:${nb};border:2px solid ${nbo};${done?'box-shadow:0 0 12px var(--gold);':''}display:flex;align-items:center;justify-content:center;z-index:2">
+          ${done?'<span style="color:var(--bg);font-size:9px;font-weight:700">✓</span>':''}
+        </div>
+      </div>
+      <button onclick="openMeal(${m.id})" style="flex:1;text-align:left;cursor:pointer;background:${cb};border:1px solid ${cbo};border-radius:14px;padding:12px 14px;transition:all 0.2s;opacity:${done?0.92:1}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:7px">${dotHtml(m.tag,6)}<span style="font-family:var(--sans);font-size:9.5px;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase">${esc(m.slot)}</span></div>
+          <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:${done?'var(--dim)':'var(--gold)'}">
+            ${done?'✓':'+'+m.xp}<span style="font-size:9px"> ${done?'':'XP'}</span></span>
+        </div>
+        <div style="font-family:var(--serif);font-size:18px;color:var(--text);line-height:1.12">${esc(m.name)}</div>
+        <div style="display:flex;gap:12px;margin-top:7px">${miniMacro(m.kcal,'kcal')}${miniMacro(m.protein+'g','prot')}${m.symptom?symBadge(m.symptom):''}</div>
+      </button>
     </div>`;
-  }).join('');
-  lucide.createIcons();
-  toast('Artículos cargados','info');
+  });
+  h+='</div>';
+  document.getElementById('hoy-view').innerHTML=`<div style="padding:4px 0 0">${h}</div>`;
 }
-document.getElementById('meal-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeMeal();});
-document.getElementById('mm-desc').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();saveMeal();}});
-</script>{% endblock %}
+
+function renderProtocolo() {
+  const plan=S.week[S.today]||[],done=plan.filter(m=>m.done).length,pct=plan.length?done/plan.length:0;
+  const cleanSoFar=plan.filter(m=>m.done&&m.symptom!=='mal').length;
+  const inner=`<div style="font-family:var(--serif);font-size:28px;color:var(--gold);line-height:1">${done}<span style="font-size:15px;color:var(--dim)">/${plan.length}</span></div>
+    <div style="font-family:var(--sans);font-size:8px;letter-spacing:0.14em;color:var(--dim);text-transform:uppercase;margin-top:2px">cumplidas</div>`;
+  let h=`<div style="display:flex;gap:16px;align-items:center;background:var(--card);border:1px solid rgba(201,168,76,0.1);border-radius:18px;padding:18px 20px;margin-bottom:18px">
+    ${ring(pct,92,6,'var(--gold)',inner)}
+    <div style="flex:1">
+      <div style="font-family:var(--serif);font-size:20px;font-style:italic;color:var(--text);margin-bottom:8px">${pct===1?'Protocolo limpio':'Protocolo del día'}</div>
+      <div style="display:flex;gap:18px">
+        <div><div style="font-family:var(--serif);font-size:19px;color:var(--gold)">+${S.xp_today}</div><div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">XP hoy</div></div>
+        <div><div style="font-family:var(--serif);font-size:19px;color:var(--dt-acc)">+${S.ec_today}</div><div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">EC</div></div>
+        <div><div style="font-family:var(--serif);font-size:19px;color:var(--dt-safe)">${cleanSoFar}</div><div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">sin síntoma</div></div>
+      </div>
+    </div>
+  </div>`;
+  plan.forEach(m=>{
+    const tc=(TAGS[m.tag]||TAGS.safe).color;
+    h+=`<button onclick="openMeal(${m.id})" style="width:100%;text-align:left;cursor:pointer;display:flex;align-items:stretch;gap:0;margin-bottom:9px;background:var(--card);border:1px solid ${m.done?'rgba(201,168,76,0.18)':'rgba(201,168,76,0.1)'};border-radius:14px;overflow:hidden;transition:all 0.2s">
+      <div style="width:4px;background:${tc};flex-shrink:0"></div>
+      <div style="flex:1;padding:12px 14px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-family:var(--sans);font-size:9.5px;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</span>
+          ${m.symptom?symBadge(m.symptom):''}
+        </div>
+        <div style="font-family:var(--serif);font-size:18px;color:var(--text);line-height:1.12">${esc(m.name)}</div>
+        <div style="display:flex;gap:12px;margin-top:6px">${miniMacro(m.kcal,'kcal')}${miniMacro(m.protein+'g','prot')}</div>
+      </div>
+      <div style="display:flex;align-items:center;padding-right:16px">
+        <div style="width:26px;height:26px;border-radius:50%;background:${m.done?'var(--gold)':'transparent'};border:1.5px solid ${m.done?'var(--gold)':'rgba(201,168,76,0.3)'};display:flex;align-items:center;justify-content:center">
+          ${m.done?'<span style="color:var(--bg);font-size:13px;font-weight:700">✓</span>':
+            `<span style="font-family:var(--serif);font-size:12px;font-style:italic;color:var(--gold)">+${m.xp}</span>`}
+        </div>
+      </div>
+    </button>`;
+  });
+  document.getElementById('hoy-view').innerHTML=h;
+}
+
+function renderHoyFooter() {
+  const plan=S.week[S.today]||[],done=plan.filter(m=>m.done).length,hasSlip=S.slips.length>0;
+  let h='';
+  if(hasSlip){
+    h=`<div style="background:var(--dt-trigger-bg);border:1px solid color-mix(in srgb,var(--dt-trigger) 33%,transparent);border-radius:16px;padding:14px 18px;margin-top:8px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:18px">✕</span>
+      <div><div style="font-family:var(--serif);font-size:18px;font-style:italic;color:var(--dt-trigger)">Racha reiniciada</div>
+      <div style="font-family:var(--sans);font-size:11px;color:var(--mid);margin-top:2px">${S.slips.length} desliz${S.slips.length>1?'es':''} hoy · sin bonus de día limpio. Recomienza.</div></div></div>`;
+  } else if(done===plan.length&&plan.length>0){
+    h=`<div style="background:var(--dt-acc-bg);border:1px solid color-mix(in srgb,var(--dt-acc) 33%,transparent);border-radius:16px;padding:16px 18px;text-align:center;margin-top:8px">
+      <div style="font-family:var(--serif);font-size:20px;font-style:italic;color:var(--dt-acc)">Día cerrado · limpio</div>
+      <div style="font-family:var(--sans);font-size:11.5px;color:var(--mid);margin-top:4px">Protocolo íntegro. +30 XP bonus · +8 EC · racha +1</div></div>`;
+  } else {
+    h=`<div style="text-align:center;font-family:var(--sans);font-size:11px;color:var(--dim);margin-top:10px">${plan.length-done} por cumplir para cerrar el día limpio</div>`;
+  }
+  document.getElementById('hoy-footer').innerHTML=h;
+}
+
+// ── RECETAS ──────────────────────────────────────────────────
+let recetaFilter='Todas';
+function renderRecetas() {
+  const cats=['Todas','Desayuno','Comida','Cena','Colación'];
+  document.getElementById('recetas-filter').innerHTML=cats.map(c=>`<button class="dt-pill ${recetaFilter===c?'active':''}" onclick="setRecetaFilter('${c}')">${c}</button>`).join('');
+  const list=RECIPES.filter(r=>recetaFilter==='Todas'||r.slot===recetaFilter);
+  document.getElementById('recetas-list').innerHTML=list.map(r=>`
+    <div style="display:flex;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
+      <div style="width:52px;height:52px;border-radius:12px;flex-shrink:0;background:repeating-linear-gradient(135deg,var(--card),var(--card) 6px,rgba(201,168,76,0.05) 6px,rgba(201,168,76,0.05) 12px);border:1px solid rgba(201,168,76,0.1);display:flex;align-items:center;justify-content:center">${dotHtml(r.tag,8)}</div>
+      <div style="flex:1">
+        <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">${esc(r.slot)} · ${esc(r.time)}</div>
+        <div style="font-family:var(--serif);font-size:17px;color:var(--text);line-height:1.1">${esc(r.name)}</div>
+        <div style="display:flex;gap:12px;margin-top:4px;align-items:center">
+          ${miniMacro(r.kcal,'kcal')}${miniMacro(r.protein+'g','prot')}
+          ${r.note?`<span style="font-family:var(--sans);font-size:10px;color:var(--dt-caution)">· ${esc(r.note)}</span>`:''}
+        </div>
+      </div>
+      <button onclick='openAddMeal(S.today,${JSON.stringify(r)})' title="Añadir al plan de hoy"
+        style="flex-shrink:0;width:32px;height:32px;border-radius:50%;cursor:pointer;background:transparent;border:1px solid rgba(201,168,76,0.18);color:var(--gold);font-size:18px;display:flex;align-items:center;justify-content:center">+</button>
+    </div>`).join('');
+}
+function setRecetaFilter(c){recetaFilter=c;renderRecetas();}
+
+// ── SÍNTOMAS ─────────────────────────────────────────────────
+function renderSintomas() {
+  document.getElementById('sint-triggers').innerHTML=TRIGGERS_LIST.map(t=>
+    `<span style="font-family:var(--sans);font-size:11.5px;color:var(--dt-trigger);background:var(--dt-trigger-bg);border:1px solid color-mix(in srgb,var(--dt-trigger) 33%,transparent);border-radius:100px;padding:6px 13px;display:inline-flex;align-items:center;gap:6px"><span>⚑</span>${esc(t)}</span>`
+  ).join('');
+  let slipsH='';
+  if(S.slips.length>0){
+    const tot=S.slips.reduce((a,b)=>a+(b.pen||0),0);
+    slipsH=`<div style="margin-bottom:22px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+      <span class="dt-section-label" style="margin-bottom:0">Deslices de hoy</span>
+      <span style="font-family:var(--serif);font-size:15px;font-style:italic;color:var(--dt-trigger)">−${tot} XP</span></div>`+
+      S.slips.map(s=>`<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
+        <span style="font-size:18px;width:22px;text-align:center">${esc(s.glyph||'⚑')}</span>
+        <div style="flex:1"><div style="font-family:var(--sans);font-size:12.5px;color:var(--text)">${esc(s.label)}${s.over?'<span style="color:var(--dt-trigger);font-size:10.5px"> · me pasé</span>':''}</div>
+          ${s.note?`<div style="font-family:var(--sans);font-size:10.5px;color:var(--mid);margin-top:2px">${esc(s.note)}</div>`:''}</div>
+        <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:var(--dt-trigger)">−${s.pen}</span>
+      </div>`).join('')+'</div>';
+  }
+  document.getElementById('sint-slips').innerHTML=slipsH;
+  const logged=(S.week[S.today]||[]).filter(m=>m.symptom);
+  document.getElementById('sint-meals').innerHTML=logged.length===0
+    ?`<div style="font-family:var(--serif);font-size:16px;font-style:italic;color:var(--dim);padding:14px 0 24px">Aún sin registros. Marca cómo te cayó cada comida.</div>`
+    :logged.map(m=>{
+        const f=FEELINGS.find(x=>x.id===m.symptom)||FEELINGS[0];
+        return `<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
+          <span style="font-size:18px;color:${f.color};width:20px;text-align:center">${f.glyph}</span>
+          <div style="flex:1"><div style="font-family:var(--sans);font-size:12.5px;color:var(--text)">${esc(m.slot)} · ${esc(m.time)}</div>
+            ${m.sym_tags&&m.sym_tags.length>0?`<div style="font-family:var(--sans);font-size:10.5px;color:var(--mid);margin-top:2px">${m.sym_tags.map(esc).join(' · ')}</div>`:''}</div>
+          <span style="font-family:var(--sans);font-size:11px;color:${f.color}">${f.label}</span>
+        </div>`;
+      }).join('');
+  renderBristol();
+}
+function renderBristol() {
+  const cur=S.bristol;
+  document.getElementById('bristol-btns').innerHTML=BRISTOL.map(b=>`
+    <button onclick="logBristol(${b.n})" title="${esc(b.d)}" style="flex:1;cursor:pointer;aspect-ratio:1;border-radius:10px;
+      background:${cur===b.n?(b.n===4?'var(--dt-safe-bg)':'var(--card)'):'var(--card)'};
+      border:1px solid ${cur===b.n?(b.n===4?'var(--dt-safe)':'var(--gold)'):'rgba(201,168,76,0.1)'};
+      color:${cur===b.n?(b.n===4?'var(--dt-safe)':'var(--gold)'):'var(--mid)'};
+      font-family:var(--serif);font-size:17px">${b.n}</button>`).join('');
+  if(cur){
+    const b=BRISTOL.find(x=>x.n===cur);
+    document.getElementById('bristol-desc').innerHTML=`<span style="color:${cur===4?'var(--dt-safe)':'var(--mid)'}">Tipo ${cur}: ${esc(b.d)}${cur===4?' · ideal':''}</span>`;
+  } else { document.getElementById('bristol-desc').textContent=''; }
+}
+async function logBristol(v){S.bristol=v;renderBristol();await apiFetch('/nutricion/api/bristol',{valor:v});}
+
+// ── SEMANA ────────────────────────────────────────────────────
+function renderSemana() {
+  const plannedDays=DAYS.filter(d=>(S.week[d.k]||[]).length>0).length;
+  const totalMeals=DAYS.reduce((a,d)=>a+(S.week[d.k]||[]).length,0);
+  document.getElementById('sem-planned').textContent=`${plannedDays}/7`;
+  document.getElementById('sem-total').textContent=totalMeals;
+  document.getElementById('sem-days').innerHTML=DAYS.map(d=>{
+    const n=(S.week[d.k]||[]).length,active=S.semDay===d.k,isToday=d.k===S.today;
+    const bars=[0,1,2,3,4].map(i=>`<div style="width:3px;height:${i<n?10:4}px;border-radius:2px;background:${i<n?'var(--gold)':'rgba(201,168,76,0.15)'}"></div>`).join('');
+    return `<button onclick="setSemDay('${d.k}')" style="flex:1;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0;
+      background:${active?'rgba(201,168,76,0.08)':'transparent'};border:1px solid ${active?'var(--gold)':'rgba(201,168,76,0.1)'};border-radius:12px;transition:all 0.15s">
+      <span style="font-family:var(--sans);font-size:11px;color:${active?'var(--gold)':'var(--mid)'}">${d.l}</span>
+      <div style="display:flex;gap:2px;align-items:flex-end;height:14px">${bars}</div>
+      <span style="width:4px;height:4px;border-radius:50%;background:${isToday?'var(--dt-acc)':'transparent'}"></span>
+    </button>`;
+  }).join('');
+  renderSemDay();
+  document.getElementById('sem-rules').innerHTML=RULES.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:${i<RULES.length-1?'1px solid rgba(201,168,76,0.06)':'none'}">
+      <span style="color:${r.pen?'var(--dt-trigger)':'var(--dt-acc)'};font-size:14px;width:16px;text-align:center">${r.icon}</span>
+      <span style="flex:1;font-family:var(--sans);font-size:12.5px;color:var(--mid)">${esc(r.t)}</span>
+      <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:${r.pen?'var(--dt-trigger)':'var(--gold)'};text-align:right">${esc(r.v)}</span>
+    </div>`).join('');
+}
+function setSemDay(k){S.semDay=k;renderSemana();}
+function renderSemDay() {
+  const k=S.semDay,di=DAYS.find(d=>d.k===k)||{},meals=(S.week[k]||[]).slice().sort((a,b)=>toMin(a.time)-toMin(b.time)),isToday=k===S.today;
+  let h=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+    <div style="font-family:var(--serif);font-size:22px;font-style:italic;color:var(--text)">${esc(di.full||'')}${isToday?`<span style="font-family:var(--sans);font-size:10px;color:var(--dt-acc);letter-spacing:0.1em;margin-left:8px;text-transform:uppercase">hoy</span>`:''}</div>
+    <span style="font-family:var(--sans);font-size:11px;color:var(--dim)">${meals.length}/5</span></div>`;
+  if(meals.length===0){
+    h+=`<div style="text-align:center;padding:22px 0;font-family:var(--serif);font-size:17px;font-style:italic;color:var(--dim)">Día libre. Añade tus comidas.</div>`;
+  } else {
+    meals.forEach(m=>{
+      h+=`<div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
+        ${dotHtml(m.tag,7)}
+        <button onclick="openMeal(${m.id})" style="flex:1;text-align:left;cursor:pointer;background:none;border:none">
+          <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</div>
+          <div style="font-family:var(--serif);font-size:16px;color:var(--text);line-height:1.15">${esc(m.name)}</div>
+        </button>
+        <button onclick="removeMeal(${m.id},'${k}')" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>
+      </div>`;
+    });
+  }
+  h+=`<button class="dt-btn-outline" style="margin-top:14px" onclick="openAddMeal('${k}')"><span style="font-size:15px">+</span> Agregar a ${esc(di.full||'')}</button>`;
+  if(meals.length>0){
+    h+=`<button onclick="repeatTemplate('${k}')" style="width:100%;margin-top:10px;cursor:pointer;background:var(--card);border:1px solid rgba(201,168,76,0.14);border-radius:14px;padding:13px;font-family:var(--sans);font-size:12.5px;color:var(--mid);display:flex;align-items:center;justify-content:center;gap:8px">
+      <span style="font-size:14px;color:var(--gold)">⇄</span> Repetir este plan de Lun a Vie
+    </button>
+    <div style="font-family:var(--sans);font-size:10px;color:var(--dim);text-align:center;margin-top:8px;line-height:1.5">La repetición estable ayuda a identificar tus disparadores.</div>`;
+  }
+  document.getElementById('sem-day-content').innerHTML=h;
+}
+async function repeatTemplate(srcDay){
+  const res=await apiFetch('/nutricion/api/repetir',{src_day:srcDay});
+  if(res.week)S.week=res.week;
+  showToast('Plantilla aplicada','Mismo plan de Lun a Vie');
+  renderSemana();
+}
+
+// ── Meal Detail ───────────────────────────────────────────────
+let currentMeal=null,mealFeeling=null,mealTags=[];
+function findMeal(id){for(const k of Object.keys(S.week)){const m=S.week[k].find(x=>x.id===id);if(m)return m;}return null;}
+function openMeal(id){currentMeal=findMeal(id);mealFeeling=currentMeal?.symptom||null;mealTags=currentMeal?.sym_tags||[];renderMealSheet();openSheet('meal');}
+function renderMealSheet(){
+  const m=currentMeal; if(!m)return;
+  let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <div style="font-family:var(--sans);font-size:10px;letter-spacing:0.16em;color:var(--dt-acc);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</div>${tagChip(m.tag)}</div>
+    <div style="font-family:var(--serif);font-size:26px;font-style:italic;color:var(--text);line-height:1.08;margin-bottom:6px">${esc(m.name)}</div>
+    <div style="font-family:var(--sans);font-size:12px;color:var(--mid);margin-bottom:16px;line-height:1.5">${esc(m.note)}</div>
+    <div style="display:flex;gap:22px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid rgba(201,168,76,0.08)">
+      <div><div style="font-family:var(--serif);font-size:24px;color:var(--text)">${m.kcal}</div>
+        <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase;margin-top:1px">kcal</div></div>
+      <div><div style="font-family:var(--serif);font-size:24px;color:var(--dt-acc)">${m.protein}g</div>
+        <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase;margin-top:1px">proteína</div></div>
+    </div>
+    <div class="dt-section-label">Composición</div>`;
+  (m.items||[]).forEach(it=>{
+    h+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.05)">
+      <div style="margin-top:5px">${dotHtml(it.tag||'safe')}</div>
+      <div style="flex:1"><div style="font-family:var(--sans);font-size:13px;color:var(--text)">${esc(it.t)}</div>
+        ${it.why?`<div style="font-family:var(--sans);font-size:10.5px;color:var(--dt-trigger);margin-top:2px">${esc(it.why)}</div>`:''}</div></div>`;
+  });
+  if(m.swap){
+    h+=`<div style="margin-top:14px;background:var(--dt-acc-bg);border:1px solid color-mix(in srgb,var(--dt-acc) 22%,transparent);border-radius:12px;padding:11px 14px;display:flex;gap:9px">
+      <span style="color:var(--dt-acc);font-family:var(--serif);font-size:16px">⇄</span>
+      <div style="font-family:var(--sans);font-size:11.5px;color:var(--mid);line-height:1.5">${esc(m.swap)}</div></div>`;
+  }
+  if(m.done){
+    h+=`<div style="margin-top:22px"><div class="dt-section-label">¿Cómo te cayó? <span style="color:var(--gold)">+5 XP</span></div>
+      <div style="display:flex;gap:9px;margin-bottom:14px">`;
+    FEELINGS.forEach(f=>{
+      h+=`<button onclick="setMealFeeling('${f.id}')" style="flex:1;background:${mealFeeling===f.id?`color-mix(in srgb,${f.color} 22%,transparent)`:'var(--card)'};
+        border:1px solid ${mealFeeling===f.id?f.color:'rgba(201,168,76,0.1)'};border-radius:12px;padding:12px 4px;cursor:pointer;
+        display:flex;flex-direction:column;align-items:center;gap:5px;transition:all 0.18s">
+        <span style="font-size:18px;color:${f.color}">${f.glyph}</span>
+        <span style="font-family:var(--sans);font-size:11px;color:${mealFeeling===f.id?f.color:'var(--mid)'}">${f.label}</span></button>`;
+    });
+    h+=`</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px">`;
+    SYMPTOM_TAGS.forEach(t=>{
+      h+=`<button onclick="toggleMealTag('${esc(t)}')" style="font-family:var(--sans);font-size:11px;cursor:pointer;
+        background:${mealTags.includes(t)?'var(--dt-trigger-bg)':'transparent'};
+        border:1px solid ${mealTags.includes(t)?'var(--dt-trigger)':'rgba(201,168,76,0.14)'};
+        color:${mealTags.includes(t)?'var(--dt-trigger)':'var(--mid)'};border-radius:100px;padding:6px 12px;transition:all 0.15s">${esc(t)}</button>`;
+    });
+    h+=`</div><button id="meal-save-btn" onclick="saveSintoma()" ${mealFeeling?'':'disabled'}
+      style="width:100%;background:transparent;border:1px solid ${mealFeeling?'rgba(201,168,76,0.18)':'rgba(201,168,76,0.08)'};
+      color:${mealFeeling?'var(--gold)':'var(--dim)'};border-radius:12px;padding:13px;
+      font-family:var(--sans);font-size:13px;letter-spacing:0.04em;cursor:${mealFeeling?'pointer':'default'}">Guardar registro</button></div>`;
+  } else {
+    h+=`<button onclick="cumplirMeal(${m.id})" style="width:100%;margin-top:22px;background:var(--gold);border:none;border-radius:14px;padding:16px;font-family:var(--sans);font-size:14px;font-weight:500;color:var(--bg);letter-spacing:0.03em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 6px 24px rgba(201,168,76,0.22)">
+      Cumplir al pie de la letra <span style="font-family:var(--serif);font-style:italic;font-size:16px">+${m.xp} XP</span></button>`;
+  }
+  if(m.custom){
+    h+=`<button onclick="removeMeal(${m.id},null)" style="width:100%;margin-top:10px;background:transparent;border:none;color:var(--dim);font-family:var(--sans);font-size:11.5px;letter-spacing:0.03em;cursor:pointer;padding:8px">Quitar del plan</button>`;
+  }
+  document.getElementById('meal-content').innerHTML=h;
+}
+function setMealFeeling(id){mealFeeling=id;renderMealSheet();}
+function toggleMealTag(t){mealTags=mealTags.includes(t)?mealTags.filter(x=>x!==t):[...mealTags,t];renderMealSheet();}
+async function cumplirMeal(id){
+  const res=await apiFetch('/nutricion/api/cumplir',{meal_id:id});
+  if(res.error)return;
+  const m=findMeal(id); if(m)m.done=true;
+  S.xp_today=res.total_xp; S.ec_today=res.total_ec; S.streak=res.streak;
+  updateHeader();
+  if(res.bonus_xp>0) showToast('Día cerrado',`+${res.bonus_xp} XP bonus · +${res.bonus_ec} EC · racha +1`);
+  else showToast(`+${res.xp_earned} XP`,'Cumplida al pie de la letra');
+  currentMeal=findMeal(id); mealFeeling=null; mealTags=[];
+  renderMealSheet();
+  if(S.activeTab==='hoy'){renderHoyView();renderHoyFooter();}
+}
+async function saveSintoma(){
+  if(!mealFeeling||!currentMeal)return;
+  const res=await apiFetch('/nutricion/api/sintoma',{meal_id:currentMeal.id,feeling:mealFeeling,tags:mealTags});
+  const m=findMeal(currentMeal.id); if(m){m.symptom=mealFeeling;m.sym_tags=mealTags;}
+  S.xp_today=res.total_xp; updateHeader();
+  const f=FEELINGS.find(x=>x.id===mealFeeling);
+  showToast('+5 XP',`Registro guardado · ${f?.label||''}`);
+  closeSheet('meal');
+  if(S.activeTab==='hoy')renderHoyView();
+  if(S.activeTab==='sintomas')renderSintomas();
+}
+async function removeMeal(id,day){
+  const m=findMeal(id); if(!m)return;
+  const dk=day||Object.keys(S.week).find(k=>S.week[k].some(x=>x.id===id));
+  await fetch(`/nutricion/api/comida/${id}`,{method:'DELETE'});
+  if(dk)S.week[dk]=S.week[dk].filter(x=>x.id!==id);
+  showToast('Quitado',`${m.slot} eliminada`);
+  closeSheet('meal');
+  if(S.activeTab==='hoy')renderHoyView();
+  if(S.activeTab==='semana')renderSemana();
+}
+
+// ── Temptation Sheet ──────────────────────────────────────────
+let tempTrig=null,tempOver=false;
+function openTemptation(){
+  tempTrig=null; tempOver=false;
+  document.getElementById('temp-note').value='';
+  renderTempTriggers(); updateTempState(); openSheet('temp');
+}
+function renderTempTriggers(){
+  document.getElementById('temp-triggers').innerHTML=TEMPTATIONS.map(t=>`
+    <button onclick="setTempTrig('${t.id}')" style="display:flex;align-items:center;gap:9px;cursor:pointer;text-align:left;
+      background:${tempTrig?.id===t.id?'var(--dt-trigger-bg)':'var(--card)'};
+      border:1px solid ${tempTrig?.id===t.id?'var(--dt-trigger)':'rgba(201,168,76,0.1)'};
+      border-radius:12px;padding:11px 12px;transition:all 0.16s">
+      <span style="font-size:17px">${t.glyph}</span>
+      <div style="flex:1">
+        <div style="font-family:var(--sans);font-size:12.5px;color:${tempTrig?.id===t.id?'var(--dt-trigger)':'var(--text)'}">${esc(t.label)}</div>
+        <div style="font-family:var(--sans);font-size:9.5px;color:var(--dim)">−${t.pen} XP</div>
+      </div>
+    </button>`).join('');
+}
+function setTempTrig(id){tempTrig=TEMPTATIONS.find(t=>t.id===id)||null;renderTempTriggers();updateTempState();}
+function setOver(v){
+  tempOver=v;
+  const no=document.getElementById('over-no'),yes=document.getElementById('over-yes');
+  no.style.cssText+=`;background:${!v?'var(--dt-trigger-bg)':'var(--card)'};border-color:${!v?'var(--dt-trigger)':'rgba(201,168,76,0.1)'};color:${!v?'var(--dt-trigger)':'var(--mid)'}`;
+  yes.style.cssText+=`;background:${v?'var(--dt-trigger-bg)':'var(--card)'};border-color:${v?'var(--dt-trigger)':'rgba(201,168,76,0.1)'};color:${v?'var(--dt-trigger)':'var(--mid)'}`;
+  updateTempState();
+}
+function updateTempState(){
+  const pen=tempTrig?Math.round(tempTrig.pen*(tempOver?1.5:1)):0;
+  document.getElementById('temp-pen-preview').textContent=tempTrig?`−${pen} XP`:'—';
+  document.getElementById('temp-pen-preview').style.color=tempTrig?'var(--dt-trigger)':'var(--dim)';
+  const btn=document.getElementById('temp-submit');
+  btn.disabled=!tempTrig;
+  if(tempTrig){btn.style.cssText+=';background:var(--dt-trigger-bg);border-color:var(--dt-trigger);color:var(--dt-trigger);cursor:pointer';}
+  else{btn.style.cssText+=';background:transparent;border-color:rgba(201,168,76,0.08);color:var(--dim);cursor:default';}
+}
+async function submitTemptation(){
+  if(!tempTrig)return;
+  const note=document.getElementById('temp-note').value;
+  const pen=Math.round(tempTrig.pen*(tempOver?1.5:1));
+  const res=await apiFetch('/nutricion/api/desliz',{trig_id:tempTrig.id,over:tempOver,note});
+  S.slips.push(res.slip||{id:Date.now(),label:tempTrig.label,glyph:tempTrig.glyph,pen,over:tempOver,note});
+  S.xp_today=res.total_xp; S.streak=0; updateHeader();
+  showToast(`−${pen} XP`,res.msg||'');
+  closeSheet('temp');
+  if(S.activeTab==='hoy'){renderHoyView();renderHoyFooter();}
+  if(S.activeTab==='sintomas')renderSintomas();
+}
+
+// ── Add Meal Sheet ────────────────────────────────────────────
+let addDay=null,addMode='banco',addSlot='Comida',addPicked=null,addCtag='safe';
+function openAddMeal(day,preset){
+  addDay=day||S.today; addMode='banco';
+  addSlot=preset?(preset.slot==='Colación'?'Colación AM':preset.slot):'Comida';
+  addPicked=preset||null; addCtag='safe';
+  document.getElementById('add-eyebrow').textContent=`Añadir a ${DAYS.find(d=>d.k===addDay)?.full||'tu plan'}`;
+  document.getElementById('add-time').value=SLOT_TIME[addSlot]||'12:00';
+  ['add-name','add-kcal','add-prot','add-ing'].forEach(id=>document.getElementById(id).value='');
+  setAddMode(addMode); renderAddSlots(); renderBancoList(); updateAddSubmit(); openSheet('add');
+}
+function setAddMode(m){
+  addMode=m;
+  document.getElementById('mode-banco').style.cssText+=`;background:${m==='banco'?'var(--gold)':'transparent'};color:${m==='banco'?'var(--bg)':'var(--mid)'}`;
+  document.getElementById('mode-custom').style.cssText+=`;background:${m==='custom'?'var(--gold)':'transparent'};color:${m==='custom'?'var(--bg)':'var(--mid)'}`;
+  document.getElementById('add-banco-section').style.display=m==='banco'?'block':'none';
+  document.getElementById('add-custom-section').style.display=m==='custom'?'block':'none';
+  updateAddSubmit();
+}
+function renderAddSlots(){
+  document.getElementById('add-xp-label').textContent=`+${addSlot.includes('Colación')?8:12} XP`;
+  document.getElementById('add-slots').innerHTML=SLOTS_LIST.map(s=>`<button class="dt-pill ${addSlot===s?'active':''}" onclick="setAddSlot('${s}')">${esc(s)}</button>`).join('');
+}
+function setAddSlot(s){addSlot=s;document.getElementById('add-time').value=SLOT_TIME[s]||'12:00';renderAddSlots();updateAddSubmit();}
+function renderBancoList(){
+  document.getElementById('add-banco-list').innerHTML=RECIPES.map(r=>`
+    <button onclick="setAddPicked('${r.id}')" style="width:100%;text-align:left;cursor:pointer;display:flex;align-items:center;gap:11px;padding:10px 12px;margin-bottom:7px;
+      background:${addPicked?.id===r.id?'rgba(201,168,76,0.08)':'var(--card)'};
+      border:1px solid ${addPicked?.id===r.id?'var(--gold)':'rgba(201,168,76,0.1)'};border-radius:12px;transition:all 0.15s">
+      ${dotHtml(r.tag,7)}
+      <div style="flex:1">
+        <div style="font-family:var(--serif);font-size:16px;color:var(--text);line-height:1.1">${esc(r.name)}</div>
+        <div style="font-family:var(--sans);font-size:10px;color:var(--dim);margin-top:2px">${esc(r.slot)} · ${esc(r.kcal)} kcal · ${esc(r.protein)}g prot</div>
+      </div>
+      ${addPicked?.id===r.id?'<span style="color:var(--gold);font-size:14px">✓</span>':''}
+    </button>`).join('');
+}
+function setAddPicked(id){addPicked=RECIPES.find(r=>r.id===id)||null;renderBancoList();updateAddSubmit();}
+function setCtag(t){
+  addCtag=t;
+  const safe=document.getElementById('ctag-safe'),cau=document.getElementById('ctag-caution');
+  safe.style.cssText+=`;background:${t==='safe'?'var(--dt-safe-bg)':'var(--card)'};border-color:${t==='safe'?'var(--dt-safe)':'rgba(201,168,76,0.1)'};color:${t==='safe'?'var(--dt-safe)':'var(--mid)'}`;
+  cau.style.cssText+=`;background:${t==='caution'?'rgba(201,168,76,0.08)':'var(--card)'};border-color:${t==='caution'?'var(--dt-caution)':'rgba(201,168,76,0.1)'};color:${t==='caution'?'var(--dt-caution)':'var(--mid)'}`;
+}
+function updateAddSubmit(){
+  const canAdd=addMode==='banco'?!!addPicked:(document.getElementById('add-name')?.value||'').trim().length>0;
+  const btn=document.getElementById('add-submit');
+  btn.disabled=!canAdd;
+  btn.style.cssText+=`;background:${canAdd?'var(--gold)':'transparent'};border-color:${canAdd?'var(--gold)':'rgba(201,168,76,0.08)'};color:${canAdd?'var(--bg)':'var(--dim)'};cursor:${canAdd?'pointer':'default'}`;
+}
+document.getElementById('add-name').addEventListener('input',updateAddSubmit);
+async function submitAddMeal(){
+  const time=document.getElementById('add-time').value||SLOT_TIME[addSlot]||'12:00';
+  let payload={day:addDay,slot:addSlot,time};
+  if(addMode==='banco'&&addPicked){
+    payload={...payload,name:addPicked.name,kcal:addPicked.kcal,protein:addPicked.protein,tag:addPicked.tag,note:addPicked.note||'Del banco de recetas seguras.',items:[{t:addPicked.name,tag:addPicked.tag}],swap:null};
+  } else {
+    const name=document.getElementById('add-name').value.trim(); if(!name)return;
+    const ing=document.getElementById('add-ing').value.split(',').map(s=>s.trim()).filter(Boolean);
+    payload={...payload,name,kcal:+document.getElementById('add-kcal').value||0,protein:+document.getElementById('add-prot').value||0,tag:addCtag,note:'Comida personalizada.',items:ing.length?ing.map(t=>({t,tag:addCtag})):[{t:name,tag:addCtag}]};
+  }
+  const res=await apiFetch('/nutricion/api/comida',payload);
+  if(res.meal){if(!S.week[addDay])S.week[addDay]=[];S.week[addDay].push(res.meal);S.week[addDay].sort((a,b)=>toMin(a.time)-toMin(b.time));}
+  showToast('Añadido',`${DAYS.find(d=>d.k===addDay)?.full||''} · ${addSlot} · ${payload.name}`);
+  closeSheet('add');
+  if(S.activeTab==='hoy'&&addDay===S.today)renderHoyView();
+  if(S.activeTab==='semana')renderSemana();
+}
+
+// ── Sheets ────────────────────────────────────────────────────
+function openSheet(id){document.getElementById(`ov-${id}`).classList.add('open');}
+function closeSheet(id){document.getElementById(`ov-${id}`).classList.remove('open');}
+
+// ── Toast ─────────────────────────────────────────────────────
+let toastTimer=null;
+function showToast(v,msg){
+  document.getElementById('toast-v').textContent=v;
+  document.getElementById('toast-m').textContent=msg;
+  const el=document.getElementById('dt-toast');
+  el.classList.remove('hidden');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.add('hidden'),2600);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+updateHeader();
+switchTab('hoy');
+</script>
+{% endblock %}
