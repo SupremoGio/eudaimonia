@@ -882,7 +882,7 @@ function renderSemGrid() {
 
 function rulesHtml(twoCol) {
   return RULES.map((r,i)=>`
-    <div style="display:flex;align-items:center;gap:12px;padding:${twoCol?12:11}px 0;border-bottom:${twoCol?(i<RULES.length-2):(i<RULES.length-1))?'1px solid rgba(201,168,76,0.06)':'none'}">
+    <div style="display:flex;align-items:center;gap:12px;padding:${twoCol?12:11}px 0;border-bottom:${(twoCol?(i<RULES.length-2):(i<RULES.length-1))?'1px solid rgba(201,168,76,0.06)':'none'}">
       <span style="color:${r.pen?'var(--dt-trigger)':'var(--dt-acc)'};font-size:14px;width:16px;text-align:center">${r.icon}</span>
       <span style="flex:1;font-family:var(--sans);font-size:12.5px;color:var(--mid)">${esc(r.t)}</span>
       <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:${r.pen?'var(--dt-trigger)':'var(--gold)'};text-align:right">${esc(r.v)}</span>
