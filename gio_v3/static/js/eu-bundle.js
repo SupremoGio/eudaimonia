@@ -1,3 +1,483 @@
+// EUDAIMONIA — Data & Constants
+
+// Reads a CSS custom property from :root (reactive to class changes on <html>)
+function _euCssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// Getter-based color object — each access reads the current CSS var so theme
+// toggle is instant without location.reload()
+var _euColors = {
+  get gold() {
+    return _euCssVar('--gold');
+  },
+  get goldLight() {
+    return _euCssVar('--gold-l');
+  },
+  get goldBg() {
+    return _euCssVar('--gold-bg');
+  },
+  get goldBorder() {
+    return _euCssVar('--gold-border');
+  },
+  get goldGlow() {
+    return _euCssVar('--gold-glow');
+  },
+  get bg() {
+    return _euCssVar('--bg');
+  },
+  get deep() {
+    return _euCssVar('--bg');
+  },
+  get card() {
+    return _euCssVar('--card');
+  },
+  get card2() {
+    return _euCssVar('--card2');
+  },
+  get surface() {
+    return _euCssVar('--surf');
+  },
+  get text() {
+    return _euCssVar('--text');
+  },
+  get textSub() {
+    return _euCssVar('--mid');
+  },
+  get textMuted() {
+    return _euCssVar('--dim');
+  },
+  get emerald() {
+    return _euCssVar('--emerald');
+  },
+  get amber() {
+    return _euCssVar('--amber');
+  },
+  get coral() {
+    return _euCssVar('--coral');
+  },
+  get violet() {
+    return _euCssVar('--violet');
+  },
+  get cyan() {
+    return _euCssVar('--cyan');
+  }
+};
+window.EU = {
+  colors: _euColors,
+  getColors: function () {
+    return _euColors;
+  },
+  rgba: function (key, alpha) {
+    var val = _euColors[key] || key;
+    if (val && val[0] === '#') {
+      var r = parseInt(val.slice(1, 3), 16);
+      var g = parseInt(val.slice(3, 5), 16);
+      var b = parseInt(val.slice(5, 7), 16);
+      return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    }
+    return val;
+  },
+  // Theme-aware oklch tints for per-hue module cards
+  catTint: function (hue, kind) {
+    var light = document.documentElement.classList.contains('light');
+    var p = {
+      dark: {
+        bg: 'oklch(18% 0.04 ' + hue + ')',
+        border: 'oklch(35% 0.09 ' + hue + ')',
+        text: 'oklch(65% 0.15 ' + hue + ')'
+      },
+      light: {
+        bg: 'oklch(93% 0.04 ' + hue + ')',
+        border: 'oklch(70% 0.10 ' + hue + ')',
+        text: 'oklch(40% 0.18 ' + hue + ')'
+      }
+    };
+    return p[light ? 'light' : 'dark'][kind];
+  },
+  // Must match LEVEL_THRESHOLDS in engine.py exactly
+  levelThresholds: [0, 300, 900, 1800, 3000, 4200, 5000, 5600, 6000, 6500],
+  levels: [{
+    n: 1,
+    name: 'PROKOPTON',
+    sub: 'El que avanza — iniciaste el camino',
+    xpNext: 300
+  }, {
+    n: 2,
+    name: 'EFEBO',
+    sub: 'El joven — forjando disciplina',
+    xpNext: 600
+  }, {
+    n: 3,
+    name: 'ASQUETÉS',
+    sub: 'El asceta — probando el esfuerzo',
+    xpNext: 900
+  }, {
+    n: 4,
+    name: 'ESTRATEGOS',
+    sub: 'El estratega — ejecutando con intención',
+    xpNext: 1200
+  }, {
+    n: 5,
+    name: 'AUTARKÉS',
+    sub: 'El autosuficiente — dueño de ti mismo',
+    xpNext: 1200
+  }, {
+    n: 6,
+    name: 'POLÍMATA',
+    sub: 'El polímata — crecimiento en todas virtudes',
+    xpNext: 800
+  }, {
+    n: 7,
+    name: 'ARETÉ',
+    sub: 'La excelencia — viviendo con areté',
+    xpNext: 600
+  }, {
+    n: 8,
+    name: 'HEGEMÓN',
+    sub: 'El rector — guiando desde dentro',
+    xpNext: 400
+  }, {
+    n: 9,
+    name: 'SOPHOS',
+    sub: 'El sabio — equilibrio y maestría',
+    xpNext: 500
+  }, {
+    n: 10,
+    name: 'EUDAIMÓN',
+    sub: 'La eudaimonía — vida floreciente plena',
+    xpNext: null
+  }],
+  // Default modules — streak/done are overridden by server data at runtime
+  modules: [{
+    id: 'hegemonikon',
+    name: 'HEGEMONIKON',
+    concept: 'Bienestar',
+    desc: 'Salud · Nutrición · Perfil',
+    hue: 45,
+    streak: 0,
+    done: false
+  }, {
+    id: 'oikonomia',
+    name: 'OIKONOMIA',
+    concept: 'Finanzas',
+    desc: 'Finanzas · Gastos · Deudas',
+    hue: 80,
+    route: '/finanzas',
+    streak: 0,
+    done: false
+  }, {
+    id: 'ataraxia',
+    name: 'ATARAXIA',
+    concept: 'Productividad',
+    desc: 'Automatización · Checklist',
+    hue: 155,
+    streak: 0,
+    done: false
+  }, {
+    id: 'paideia',
+    name: 'PAIDEIA',
+    concept: 'Conocimiento',
+    desc: 'Aprendizaje · Libros',
+    hue: 265,
+    streak: 0,
+    done: false
+  }, {
+    id: 'cosmopolitismo',
+    name: 'COSMOPOLITISMO',
+    concept: 'Idiomas',
+    desc: 'Idiomas · Culturas',
+    hue: 215,
+    streak: 0,
+    done: false
+  }, {
+    id: 'logoi',
+    name: 'LOGOI',
+    concept: 'Programación',
+    desc: 'Programación · Lógica',
+    hue: 120,
+    streak: 0,
+    done: false
+  }, {
+    id: 'eurythmia',
+    name: 'EURYTHMIA',
+    concept: 'Baile',
+    desc: 'Baile · Ritmo · Cuerpo',
+    hue: 330,
+    streak: 0,
+    done: false
+  }],
+  quotes: [{
+    text: 'Busca dentro. Dentro está la fuente del bien, y siempre brotará, si siempre cavas.',
+    author: 'Marco Aurelio · Meditaciones VII'
+  }, {
+    text: 'No turbará tu mente lo que te acontece desde fuera; pues depende solo de tus juicios.',
+    author: 'Marco Aurelio · Meditaciones IV'
+  }, {
+    text: 'La felicidad de tu vida depende de la calidad de tus pensamientos.',
+    author: 'Marco Aurelio · Meditaciones V'
+  }, {
+    text: 'Soporta y abstente: ese es el doble mandato de la filosofía estoica.',
+    author: 'Epicteto · Enquiridión'
+  }, {
+    text: 'Pierde el tiempo el que mide el tiempo; aprovéchalo el que lo vive.',
+    author: 'Séneca · Cartas a Lucilio'
+  }, {
+    text: 'Vive conforme a la naturaleza; en eso reside la virtud y la felicidad.',
+    author: 'Zenón de Citio'
+  }, {
+    text: 'Haz cada acto de tu vida como si fuera el último.',
+    author: 'Marco Aurelio · Meditaciones II'
+  }],
+  moduleHabits: {
+    hegemonikon: [{
+      label: 'Registrar comidas del día',
+      xp: 10,
+      done: true
+    }, {
+      label: 'Pesar en ayunas',
+      xp: 5,
+      done: true
+    }, {
+      label: '8,000 pasos mínimo',
+      xp: 15,
+      done: false
+    }, {
+      label: 'Dormir antes de las 11pm',
+      xp: 20,
+      done: false
+    }],
+    oikonomia: [{
+      label: 'Registrar todos los gastos',
+      xp: 10,
+      done: false
+    }, {
+      label: 'Revisar balance de cuentas',
+      xp: 5,
+      done: false
+    }, {
+      label: 'Cero gastos impulsivos hoy',
+      xp: 25,
+      done: false
+    }],
+    ataraxia: [{
+      label: 'Completar checklist de mañana',
+      xp: 20,
+      done: true
+    }, {
+      label: 'Inbox GTD a cero',
+      xp: 15,
+      done: false
+    }, {
+      label: 'Revisión semanal realizada',
+      xp: 30,
+      done: false
+    }],
+    paideia: [{
+      label: 'Leer 30 minutos',
+      xp: 20,
+      done: false
+    }, {
+      label: 'Tomar notas de lo leído',
+      xp: 10,
+      done: false
+    }, {
+      label: 'Aplicar concepto aprendido',
+      xp: 25,
+      done: false
+    }],
+    cosmopolitismo: [{
+      label: 'Lección de idioma (app)',
+      xp: 15,
+      done: true
+    }, {
+      label: 'Podcast en el idioma meta',
+      xp: 10,
+      done: false
+    }, {
+      label: 'Escribir 5 oraciones nuevas',
+      xp: 20,
+      done: true
+    }],
+    logoi: [{
+      label: 'Resolver ejercicio de código',
+      xp: 20,
+      done: false
+    }, {
+      label: 'Avanzar en proyecto personal',
+      xp: 25,
+      done: false
+    }, {
+      label: 'Leer artículo técnico',
+      xp: 10,
+      done: false
+    }],
+    eurythmia: [{
+      label: 'Práctica de baile 30 min',
+      xp: 25,
+      done: false
+    }, {
+      label: 'Aprender nuevo paso/figura',
+      xp: 20,
+      done: false
+    }, {
+      label: 'Analizar música nueva',
+      xp: 10,
+      done: false
+    }]
+  },
+  gtd: {
+    inbox: [{
+      id: 1,
+      text: 'Revisar balances de inversiones Q1',
+      context: '@finanzas'
+    }, {
+      id: 2,
+      text: 'Practicar 30 min vocabulario alemán',
+      context: '@idiomas'
+    }, {
+      id: 3,
+      text: 'Leer capítulo 5 de Meditaciones',
+      context: '@lectura'
+    }, {
+      id: 4,
+      text: 'Configurar automatización de presupuesto',
+      context: '@logoi'
+    }, {
+      id: 5,
+      text: 'Revisar deuda con tarjeta de crédito',
+      context: '@finanzas'
+    }],
+    projects: [{
+      id: 'p1',
+      name: 'Autarquía Financiera 2026',
+      actions: 12,
+      done: 3
+    }, {
+      id: 'p2',
+      name: 'Alemán B2 — Mayo',
+      actions: 8,
+      done: 5
+    }, {
+      id: 'p3',
+      name: 'Sistema de Automatización Personal',
+      actions: 15,
+      done: 7
+    }, {
+      id: 'p4',
+      name: 'Repertorio de Baile Q2',
+      actions: 6,
+      done: 1
+    }, {
+      id: 'p5',
+      name: 'Lectura Filosofía Estoica',
+      actions: 10,
+      done: 6
+    }],
+    contexts: ['@finanzas', '@idiomas', '@lectura', '@logoi', '@cuerpo', '@reflexión', '@sistema', '@energía'],
+    review: [{
+      label: 'Vaciar inbox completamente',
+      done: true
+    }, {
+      label: 'Revisar lista "Siguiente acción"',
+      done: true
+    }, {
+      label: 'Revisar proyectos activos',
+      done: false
+    }, {
+      label: 'Revisar contextos',
+      done: false
+    }, {
+      label: 'Revisar "Algún día / quizás"',
+      done: false
+    }, {
+      label: 'Revisar compromisos del calendario',
+      done: false
+    }, {
+      label: 'Procesar papel y notas físicas',
+      done: false
+    }]
+  }
+};
+
+// useTheme hook — re-renders React component when <html> class toggles
+function useTheme() {
+  var _useState = React.useState(function () {
+    return document.documentElement.classList.contains('light');
+  });
+  var isLight = _useState[0];
+  var setIsLight = _useState[1];
+  React.useEffect(function () {
+    var observer = new MutationObserver(function () {
+      setIsLight(document.documentElement.classList.contains('light'));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    return function () {
+      observer.disconnect();
+    };
+  }, []);
+  return {
+    isLight: isLight,
+    isDark: !isLight
+  };
+}
+Object.assign(window, {
+  useTheme: useTheme
+});
+
+// Override with server-injected data when Flask serves this
+;
+(function () {
+  var d = window.__EUDAIMONIA_DATA__;
+  if (!d) return;
+
+  // Módulos con streak y done reales
+  if (Array.isArray(d.modules)) window.EU.modules = d.modules;
+
+  // GTD inbox real
+  if (Array.isArray(d.gtd_inbox)) window.EU.gtd.inbox = d.gtd_inbox;
+
+  // Hábitos done reales (basados en activity_logs de hoy)
+  if (d.habits_done) {
+    Object.keys(d.habits_done).forEach(function (modId) {
+      var doneList = d.habits_done[modId];
+      if (window.EU.moduleHabits[modId]) {
+        window.EU.moduleHabits[modId] = window.EU.moduleHabits[modId].map(function (h, i) {
+          return Object.assign({}, h, {
+            done: doneList[i] !== undefined ? doneList[i] : h.done
+          });
+        });
+      }
+    });
+  }
+
+  // Datos reales disponibles globalmente para los screens
+  window.EU._server = {
+    financial: d.financial || {},
+    body: d.body || {},
+    langStats: d.lang_stats || [],
+    xpToday: d.xp_today || 0,
+    activities: d.activities || [],
+    actCats: d.act_cats || [],
+    pts: {
+      today: d.pts_today || 0,
+      week: d.pts_week || 0,
+      month: d.pts_month || 0
+    },
+    streak: d.streak || 0,
+    word: d.word_of_day || null,
+    reflexion: d.reflexion || null,
+    reminders: d.reminders || [],
+    ecBalance: d.ec_balance || 0,
+    deadlines: d.deadlines || [],
+    classification: d.classification || null,
+    suggestion: d.suggestion || null
+  };
+  window.EU.catHues = d.category_hues || {};
+})();
 // EUDAIMONIA — UI Primitives
 const {
   useState,
@@ -1232,6 +1712,730 @@ Object.assign(window, {
   PerfectDayModal,
   ComboBonusSheet
 });
+// EUDAIMONIA — App State & Root
+// hooks and C declared in eu-components.jsx (bundled before this file)
+
+function _xpStateFromTotal(totalXP) {
+  const thr = EU.levelThresholds; // [0,200,500,1000,1800,2700,3600,4400,5000,5500]
+  let level = 1;
+  for (let i = 0; i < thr.length; i++) {
+    if (totalXP >= thr[i]) level = i + 1;else break;
+  }
+  level = Math.max(1, Math.min(10, level));
+  const cur = thr[level - 1] || 0;
+  const next = level < 10 ? thr[level] || 5500 : 5500;
+  return {
+    level,
+    xp: totalXP - cur,
+    xpNext: level < 10 ? next - cur : null
+  };
+}
+function initFromServer() {
+  const d = window.__EUDAIMONIA_DATA__ || {};
+  const totalXP = d.total_xp || 0;
+  const {
+    level,
+    xp,
+    xpNext
+  } = _xpStateFromTotal(totalXP);
+  // Merge server modules (dynamic streak/done) with static route info
+  const serverMods = Array.isArray(d.modules) && d.modules.length > 0 ? d.modules : null;
+  const modules = serverMods ? EU.modules.map(m => {
+    const s = serverMods.find(sm => sm.id === m.id);
+    return s ? {
+      ...m,
+      streak: s.streak,
+      done: s.done
+    } : m;
+  }) : EU.modules;
+  return {
+    level,
+    xp,
+    xpNext,
+    totalXP,
+    modules,
+    openModuleId: null,
+    leveledUp: false
+  };
+}
+function reducer(state, action) {
+  switch (action.type) {
+    case 'ADD_XP':
+      {
+        const totalXP = state.totalXP + action.amount;
+        const next = _xpStateFromTotal(totalXP);
+        const leveledUp = next.level > state.level;
+        return {
+          ...state,
+          ...next,
+          totalXP,
+          leveledUp
+        };
+      }
+    case 'CLEAR_LEVELUP':
+      return {
+        ...state,
+        leveledUp: false
+      };
+    case 'OPEN_MODULE':
+      return {
+        ...state,
+        openModuleId: action.id
+      };
+    case 'CLOSE_MODULE':
+      return {
+        ...state,
+        openModuleId: null
+      };
+    case 'SET_TAB':
+      return {
+        ...state,
+        _tab: action.tab
+      };
+    default:
+      return state;
+  }
+}
+
+// ── Responsive hook ───────────────────────────────────────
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+  useEffect(() => {
+    const handler = () => setIsDesktop(window.innerWidth >= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isDesktop;
+}
+
+// ── Desktop Sidebar Nav helpers ───────────────────────────
+function NavGroup({
+  title,
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      letterSpacing: '0.2em',
+      color: C.textMuted,
+      padding: '14px 22px 6px',
+      textTransform: 'uppercase',
+      opacity: 0.55
+    }
+  }, title), children);
+}
+function NavItem({
+  active,
+  label,
+  sub,
+  accent,
+  dot,
+  onClick
+}) {
+  const isMod = dot !== undefined;
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClick,
+    style: {
+      padding: '10px 22px',
+      cursor: 'pointer',
+      borderLeft: `2.5px solid ${active ? C.gold : 'transparent'}`,
+      background: active ? 'color-mix(in srgb, var(--gold) 5%, transparent)' : 'transparent',
+      transition: 'all 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10
+    }
+  }, isMod && /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 6,
+      height: 6,
+      borderRadius: '50%',
+      flexShrink: 0,
+      background: dot ? accent || C.gold : 'var(--b)',
+      boxShadow: dot ? `0 0 6px ${accent || C.gold}` : 'none'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: isMod ? 'DM Sans,sans-serif' : 'Cormorant Garamond,serif',
+      fontSize: isMod ? 13 : 20,
+      color: active ? C.gold : isMod ? C.text : C.textMuted,
+      fontWeight: isMod ? 500 : 600,
+      letterSpacing: isMod ? '0.04em' : 'inherit',
+      lineHeight: 1.1,
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      transition: 'color 0.2s'
+    }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 11,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      marginTop: 2,
+      color: active ? C.gold : C.textMuted,
+      opacity: active ? 0.75 : 0.45,
+      transition: 'all 0.2s'
+    }
+  }, sub)));
+}
+function NavItemLink({
+  href,
+  label,
+  sub
+}) {
+  return /*#__PURE__*/React.createElement("a", {
+    href: href,
+    style: {
+      padding: '10px 22px',
+      display: 'block',
+      textDecoration: 'none',
+      borderLeft: '2.5px solid transparent',
+      transition: 'all 0.2s'
+    },
+    onMouseEnter: e => e.currentTarget.style.background = 'color-mix(in srgb, var(--gold) 4%, transparent)',
+    onMouseLeave: e => e.currentTarget.style.background = 'transparent'
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Cormorant Garamond,serif',
+      fontSize: 20,
+      color: C.textMuted,
+      lineHeight: 1.1
+    }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 11,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      marginTop: 2,
+      color: C.textMuted,
+      opacity: 0.45
+    }
+  }, sub));
+}
+
+// ── Desktop Sidebar Nav ───────────────────────────────────
+function SideNav({
+  active,
+  onChange,
+  modules,
+  dispatch
+}) {
+  const todayTabs = [{
+    id: 'home',
+    label: 'Ἀρχή',
+    sub: 'Inicio'
+  }, {
+    id: 'acta',
+    label: 'Acta',
+    sub: 'Diurna'
+  }];
+  const systemItems = [{
+    kind: 'link',
+    href: '/gtd',
+    label: 'Πρᾶξις',
+    sub: 'Praxis · GTD'
+  }, {
+    kind: 'link',
+    href: '/logros',
+    label: '🏆',
+    sub: 'Logros'
+  }, {
+    kind: 'tab',
+    id: 'profile',
+    label: 'Αὐτός',
+    sub: 'Perfil'
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 210,
+      flexShrink: 0,
+      background: EU.rgba('deep', 0.99),
+      borderRight: '1px solid var(--gold-bg)',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      bottom: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      zIndex: 100
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '28px 22px 24px',
+      borderBottom: '1px solid var(--gold-bg)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 8,
+      letterSpacing: '0.28em',
+      color: C.gold,
+      opacity: 0.55,
+      textTransform: 'uppercase',
+      marginBottom: 5
+    }
+  }, "SISTEMA PERSONAL"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Cormorant Garamond,serif',
+      fontSize: 20,
+      color: C.text,
+      letterSpacing: '0.14em',
+      fontWeight: 600
+    }
+  }, "EUDAIMONIA")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      paddingTop: 8,
+      overflowY: 'auto'
+    }
+  }, /*#__PURE__*/React.createElement(NavGroup, {
+    title: "HOY"
+  }, todayTabs.map(t => /*#__PURE__*/React.createElement(NavItem, {
+    key: t.id,
+    active: active === t.id,
+    label: t.label,
+    sub: t.sub,
+    onClick: () => onChange(t.id)
+  }))), /*#__PURE__*/React.createElement(NavGroup, {
+    title: "MÓDULOS"
+  }, (modules || []).map(mod => {
+    const acc = `oklch(65% 0.15 ${mod.hue})`;
+    return /*#__PURE__*/React.createElement(NavItem, {
+      key: mod.id,
+      active: false,
+      label: mod.name,
+      sub: mod.concept,
+      accent: acc,
+      dot: mod.done,
+      onClick: () => mod.route ? window.location.href = mod.route : dispatch({
+        type: 'OPEN_MODULE',
+        id: mod.id
+      })
+    });
+  })), /*#__PURE__*/React.createElement(NavGroup, {
+    title: "SISTEMA"
+  }, systemItems.map(item => item.kind === 'link' ? /*#__PURE__*/React.createElement(NavItemLink, {
+    key: item.href,
+    href: item.href,
+    label: item.label,
+    sub: item.sub
+  }) : /*#__PURE__*/React.createElement(NavItem, {
+    key: item.id,
+    active: active === item.id,
+    label: item.label,
+    sub: item.sub,
+    onClick: () => onChange(item.id)
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '12px 22px 16px',
+      borderTop: '1px solid color-mix(in srgb, var(--gold) 7%, transparent)'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => window.euToggleTheme(),
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      background: 'transparent',
+      border: `1px solid ${C.goldBorder}`,
+      borderRadius: 8,
+      padding: '7px 12px',
+      cursor: 'pointer',
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 10,
+      color: C.textMuted,
+      letterSpacing: '0.08em',
+      width: '100%'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      lineHeight: 1
+    }
+  }, document.documentElement.classList.contains('light') ? '☀' : '☽'), /*#__PURE__*/React.createElement("span", null, document.documentElement.classList.contains('light') ? 'Modo día' : 'Modo noche'))));
+}
+
+// ── App ───────────────────────────────────────────────────
+function App() {
+  const [state, dispatch] = useReducer(reducer, null, initFromServer);
+  const [tab, setTab] = useState(() => {
+    const p = new URLSearchParams(window.location.search);
+    const t = p.get('tab');
+    return ['home', 'modules', 'acta', 'profile'].includes(t) ? t : 'home';
+  });
+  const isDesktop = useIsDesktop();
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const open = p.get('open');
+    if (open && state.modules.find(m => m.id === open)) {
+      dispatch({
+        type: 'OPEN_MODULE',
+        id: open
+      });
+    }
+  }, []);
+  const appDispatch = action => {
+    if (action.type === 'SET_TAB') setTab(action.tab);
+    dispatch(action);
+  };
+
+  // Closing a module must happen whenever the user switches tabs
+  const handleTabChange = id => {
+    dispatch({
+      type: 'CLOSE_MODULE'
+    });
+    setTab(id);
+    window.scrollTo(0, 0);
+  };
+  const [cmdkOpen, setCmdkOpen] = useState(false);
+  const [activeAchievement, setActiveAchievement] = useState(null);
+  const [perfectDay, setPerfectDay] = useState(null);
+  const [comboQueue, setComboQueue] = useState([]);
+
+  // Achievement sheet listener
+  useEffect(() => {
+    const onAch = e => setActiveAchievement(e.detail);
+    window.addEventListener('eu:achievement-unlocked', onAch);
+    return () => window.removeEventListener('eu:achievement-unlocked', onAch);
+  }, []);
+
+  // Perfect day + combo bonus listeners
+  useEffect(() => {
+    const onPerfect = e => setPerfectDay(e.detail);
+    const onCombo = e => setComboQueue(q => [...q, e.detail]);
+    window.addEventListener('eu:perfect-day', onPerfect);
+    window.addEventListener('eu:combo-bonus', onCombo);
+    return () => {
+      window.removeEventListener('eu:perfect-day', onPerfect);
+      window.removeEventListener('eu:combo-bonus', onCombo);
+    };
+  }, []);
+
+  // ⌘K global shortcut + custom event from HomeScreen header button
+  useEffect(() => {
+    const onKey = e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdkOpen(o => !o);
+      }
+    };
+    const onEv = () => setCmdkOpen(true);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('eu:open-cmdk', onEv);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('eu:open-cmdk', onEv);
+    };
+  }, []);
+  const logActivityFromApp = key => {
+    const updated = (window.EU._server.activities || []).map(a => a.key === key ? {
+      ...a,
+      done: !a.done
+    } : a);
+    window.EU._server.activities = updated;
+    fetch('/actividades/api/activity/log', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        key
+      })
+    }).then(r => r.json()).then(data => {
+      if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({
+        type: 'ADD_XP',
+        amount: data.gam.xp_delta || data.gam.xp
+      });
+    }).catch(() => {});
+  };
+  const cmdkItems = useMemo(() => {
+    const pendingActs = (window.EU._server?.activities || []).filter(a => !a.done).slice(0, 20);
+    return [{
+      i: '⌂',
+      label: 'Ir a Inicio',
+      sub: 'Dashboard',
+      section: 'nav',
+      run: () => handleTabChange('home')
+    }, {
+      i: '✦',
+      label: 'Ir a Acta Diurna',
+      sub: 'Actividades',
+      section: 'nav',
+      run: () => handleTabChange('acta')
+    }, {
+      i: '◆',
+      label: 'Ir a Módulos',
+      sub: 'Command Center',
+      section: 'nav',
+      run: () => handleTabChange('modules')
+    }, {
+      i: '◎',
+      label: 'Ir a Perfil',
+      sub: 'Sistema',
+      section: 'nav',
+      run: () => handleTabChange('profile')
+    }, {
+      i: '◐',
+      label: 'Cambiar tema',
+      sub: 'Día / Noche',
+      section: 'sys',
+      keys: ['⇧', 'T'],
+      run: () => window.euToggleTheme()
+    }, {
+      i: '🏆',
+      label: 'Ver Logros',
+      sub: 'Sistema',
+      section: 'sys',
+      run: () => {
+        location.href = '/logros';
+      }
+    }, ...pendingActs.map(a => ({
+      i: '✓',
+      label: `Registrar: ${a.label} (+${a.pts} XP)`,
+      sub: `Acta · ${a.cat}`,
+      section: 'act',
+      run: () => logActivityFromApp(a.key)
+    }))];
+  }, [state.totalXP]);
+  const props = {
+    appState: state,
+    dispatch: appDispatch,
+    isDesktop
+  };
+  const openMod = state.openModuleId ? state.modules.find(m => m.id === state.openModuleId) : null;
+  const screen = openMod ? /*#__PURE__*/React.createElement(ModuleDetailScreen, {
+    mod: openMod,
+    ...props
+  }) : tab === 'home' ? /*#__PURE__*/React.createElement(HomeScreen, props) : tab === 'modules' ? /*#__PURE__*/React.createElement(CommandCenterScreen, props) : tab === 'acta' ? /*#__PURE__*/React.createElement(ActaDiurnaScreen, props) : /*#__PURE__*/React.createElement(ProfileScreen, props);
+  if (isDesktop) {
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        minHeight: '100vh',
+        background: C.deep
+      }
+    }, /*#__PURE__*/React.createElement(SideNav, {
+      active: tab,
+      onChange: handleTabChange,
+      modules: state.modules,
+      dispatch: appDispatch
+    }), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginLeft: 210,
+        flex: 1,
+        minHeight: '100vh',
+        overflow: 'hidden'
+      }
+    }, screen), state.leveledUp && /*#__PURE__*/React.createElement(LevelUpModal, {
+      level: state.level,
+      onClose: () => dispatch({
+        type: 'CLEAR_LEVELUP'
+      })
+    }), activeAchievement && /*#__PURE__*/React.createElement(AchievementSheet, {
+      achievement: activeAchievement,
+      onClose: () => setActiveAchievement(null)
+    }), perfectDay && /*#__PURE__*/React.createElement(PerfectDayModal, {
+      details: perfectDay,
+      onClose: () => setPerfectDay(null)
+    }), comboQueue[0] && /*#__PURE__*/React.createElement(ComboBonusSheet, {
+      combo: comboQueue[0],
+      onClose: () => setComboQueue(q => q.slice(1))
+    }), /*#__PURE__*/React.createElement(CommandPalette, {
+      open: cmdkOpen,
+      onClose: () => setCmdkOpen(false),
+      items: cmdkItems
+    }));
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 430,
+      margin: '0 auto',
+      minHeight: '100vh',
+      background: C.deep,
+      position: 'relative',
+      fontFamily: 'DM Sans, sans-serif'
+    }
+  }, screen, state.leveledUp && /*#__PURE__*/React.createElement(LevelUpModal, {
+    level: state.level,
+    onClose: () => dispatch({
+      type: 'CLEAR_LEVELUP'
+    })
+  }), activeAchievement && /*#__PURE__*/React.createElement(AchievementSheet, {
+    achievement: activeAchievement,
+    onClose: () => setActiveAchievement(null)
+  }), perfectDay && /*#__PURE__*/React.createElement(PerfectDayModal, {
+    details: perfectDay,
+    onClose: () => setPerfectDay(null)
+  }), comboQueue[0] && /*#__PURE__*/React.createElement(ComboBonusSheet, {
+    combo: comboQueue[0],
+    onClose: () => setComboQueue(q => q.slice(1))
+  }), !openMod && /*#__PURE__*/React.createElement(BottomNav, {
+    active: tab,
+    onChange: handleTabChange
+  }), /*#__PURE__*/React.createElement(CommandPalette, {
+    open: cmdkOpen,
+    onClose: () => setCmdkOpen(false),
+    items: cmdkItems
+  }));
+}
+
+// ── Achievement dispatch helper (used by screens) ─────────
+// xp >= 30 → sheet; lower → toast only
+window.euFireAchievements = function (achievements) {
+  if (!achievements || !achievements.length) return;
+  const high = achievements.filter(a => (a.xp || 0) >= 30);
+  const low = achievements.filter(a => (a.xp || 0) < 30);
+  if (high.length) {
+    window.dispatchEvent(new CustomEvent('eu:achievement-unlocked', {
+      detail: high[0]
+    }));
+    // remaining high-tier after first: toast
+    high.slice(1).forEach(a => {
+      if (typeof toast === 'function') toast(`🏆 ${a.name}`, 'win');
+    });
+  }
+  low.forEach(a => {
+    if (typeof toast === 'function') toast(`🏆 ${a.name}`, 'win');
+  });
+};
+
+// ── Tweaks ────────────────────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accentHue": 45,
+  "levelDemo": 3,
+  "showStreak": true
+} /*EDITMODE-END*/;
+function TweaksPanel({
+  tweaks,
+  onChange,
+  visible
+}) {
+  if (!visible) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'fixed',
+      bottom: 90,
+      right: 16,
+      zIndex: 9000,
+      background: C.card,
+      border: '1px solid color-mix(in srgb, var(--gold) 25%, transparent)',
+      borderRadius: 14,
+      padding: '16px',
+      width: 220,
+      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+      fontFamily: 'DM Sans, sans-serif'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      letterSpacing: '0.15em',
+      color: C.gold,
+      textTransform: 'uppercase',
+      marginBottom: 14
+    }
+  }, "Tweaks"), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: 'block',
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.textMuted,
+      marginBottom: 5
+    }
+  }, "Demo Nivel: ", tweaks.levelDemo), /*#__PURE__*/React.createElement("input", {
+    type: "range",
+    min: 1,
+    max: 10,
+    value: tweaks.levelDemo,
+    onChange: e => onChange('levelDemo', +e.target.value),
+    style: {
+      width: '100%',
+      accentColor: C.gold
+    }
+  })), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: 'block',
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: C.textMuted,
+      marginBottom: 5
+    }
+  }, "Color acento (hue): ", tweaks.accentHue, "°"), /*#__PURE__*/React.createElement("input", {
+    type: "range",
+    min: 0,
+    max: 360,
+    value: tweaks.accentHue,
+    onChange: e => onChange('accentHue', +e.target.value),
+    style: {
+      width: '100%',
+      accentColor: C.gold
+    }
+  })), /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      cursor: 'pointer'
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: tweaks.showStreak,
+    onChange: e => onChange('showStreak', e.target.checked),
+    style: {
+      accentColor: C.gold
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 11,
+      color: C.textSub
+    }
+  }, "Mostrar rachas")));
+}
+function Root() {
+  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
+  const [tweakVisible, setTweakVisible] = useState(false);
+  useEffect(() => {
+    window.addEventListener('message', e => {
+      if (e.data?.type === '__activate_edit_mode') setTweakVisible(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweakVisible(false);
+    });
+    window.parent.postMessage({
+      type: '__edit_mode_available'
+    }, '*');
+  }, []);
+  const handleTweak = (key, val) => {
+    const next = {
+      ...tweaks,
+      [key]: val
+    };
+    setTweaks(next);
+    window.parent.postMessage({
+      type: '__edit_mode_set_keys',
+      edits: next
+    }, '*');
+  };
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(App, {
+    tweaks: tweaks
+  }), /*#__PURE__*/React.createElement(TweaksPanel, {
+    tweaks: tweaks,
+    onChange: handleTweak,
+    visible: tweakVisible
+  }));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Root, null));
 // EUDAIMONIA — All Screens
 // hooks and C declared in eu-components.jsx (bundled before this file)
 
@@ -1967,100 +3171,9 @@ function HomeScreen({
       }
     }).catch(() => {});
   };
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      paddingBottom: isDesktop ? 48 : 100,
-      minHeight: '100vh'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'sticky',
-      top: 0,
-      zIndex: 50,
-      padding: 'env(safe-area-inset-top,16px) 20px 12px',
-      paddingTop: 'max(env(safe-area-inset-top,16px),16px)',
-      background: EU.rgba('deep', 0.97),
-      borderBottom: '1px solid color-mix(in srgb, var(--gold) 7%, transparent)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start'
-    }
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 9,
-      letterSpacing: '0.22em',
-      color: C.gold,
-      opacity: 0.65,
-      textTransform: 'uppercase'
-    }
-  }, fmtDate()), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'Cormorant Garamond,serif',
-      fontSize: isDesktop ? 24 : 20,
-      color: C.text,
-      fontWeight: 500,
-      letterSpacing: isDesktop ? '0.12em' : '0.18em',
-      marginTop: 1,
-      whiteSpace: 'nowrap'
-    }
-  }, isDesktop ? 'Ε Υ Δ Α Ι Μ Ο Ν Ι Α' : 'ΕΥΔΑΙΜΟΝΙΑ')), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      paddingTop: 4
-    }
-  }, isDesktop && /*#__PURE__*/React.createElement("button", {
-    onClick: () => window.dispatchEvent(new CustomEvent('eu:open-cmdk')),
-    style: {
-      background: 'var(--gold-bg)',
-      border: '1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
-      borderRadius: 6,
-      padding: '3px 8px',
-      color: C.gold,
-      fontSize: 10,
-      cursor: 'pointer',
-      fontFamily: 'DM Sans,sans-serif',
-      letterSpacing: '0.05em'
-    }
-  }, "⌘ K"), /*#__PURE__*/React.createElement("a", {
-    href: "/logros",
-    style: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 4,
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 9,
-      color: C.gold,
-      opacity: 0.65,
-      textDecoration: 'none',
-      letterSpacing: '0.08em'
-    }
-  }, "🏆 Logros")))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '0 16px'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '20px 0 12px'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'Cormorant Garamond,serif',
-      fontSize: 22,
-      color: C.text
-    }
-  }, "Buenos días, Gio."), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      color: C.textMuted,
-      marginTop: 2
-    }
-  }, fmtDate(), " · día ", streak, " de tu racha")), /*#__PURE__*/React.createElement("div", {
+
+  // ── Shared blocks ──────────────────────────────────────────
+  const heroXp = /*#__PURE__*/React.createElement("div", {
     style: {
       background: 'linear-gradient(140deg, var(--surf), var(--bg))',
       border: '1px solid var(--gold-border)',
@@ -2111,15 +3224,13 @@ function HomeScreen({
     style: {
       height: '100%',
       borderRadius: 3,
-      background: 'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, #000), var(--gold), var(--gold-l))',
+      background: 'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l))',
       width: `${xpDayPct * 100}%`,
       boxShadow: '0 0 8px var(--gold-glow)',
       transition: 'width 0.8s ease'
     }
   })), (() => {
-    const clfData = clf;
-    const curIdx = TIERS.findIndex(t => t.rank === clfData.rank);
-    const ci = curIdx >= 0 ? curIdx : 0;
+    const ci = Math.max(0, TIERS.findIndex(t => t.rank === clf.rank));
     const nt = TIERS[ci + 1] || null;
     const col = TIERS[ci].color;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
@@ -2129,8 +3240,8 @@ function HomeScreen({
         marginBottom: 8
       }
     }, TIERS.map((t, i) => {
-      const active = i === ci;
-      const past = i < ci;
+      const active = i === ci,
+        past = i < ci;
       return /*#__PURE__*/React.createElement(React.Fragment, {
         key: t.rank
       }, /*#__PURE__*/React.createElement("div", {
@@ -2146,7 +3257,7 @@ function HomeScreen({
           width: active ? 9 : 5,
           height: active ? 9 : 5,
           borderRadius: '50%',
-          background: active ? col : past ? `${col}55` : 'rgba(255,255,255,0.08)',
+          background: active ? col : past ? `${col}55` : 'rgba(128,128,128,0.15)',
           boxShadow: active ? `0 0 9px ${col}` : 'none',
           transition: 'all 0.3s'
         }
@@ -2164,7 +3275,7 @@ function HomeScreen({
           height: 1,
           flex: 1,
           marginTop: 4,
-          background: i < ci ? `${col}35` : 'rgba(255,255,255,0.06)'
+          background: i < ci ? `${col}35` : 'var(--b)'
         }
       }));
     })), /*#__PURE__*/React.createElement("div", {
@@ -2184,52 +3295,16 @@ function HomeScreen({
         opacity: 0.7
       }
     }, xpNext ? `${xpNext - xp} XP → ${EU.levels[level]?.name || ''}` : '')));
-  })()), suggestion && /*#__PURE__*/React.createElement("div", {
-    onClick: () => logActivityFromHome(suggestion.key),
+  })());
+  const levelCard = /*#__PURE__*/React.createElement("div", {
     style: {
-      background: EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'bg'),
-      border: `1px solid ${EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'border')}`,
-      borderRadius: 12,
-      padding: '14px 16px',
-      marginBottom: 14,
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      letterSpacing: '0.16em',
-      textTransform: 'uppercase',
-      color: `oklch(65% 0.15 ${(EU.catHues || {})[suggestion.cat] || 45})`,
-      marginBottom: 4
-    }
-  }, "Un click cierra ", suggestion.cat), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      color: C.text
-    }
-  }, suggestion.label)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: C.gold,
-      fontWeight: 600
-    }
-  }, "+", suggestion.pts, " XP")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: `linear-gradient(140deg,${C.card} 0%,${C.surface} 55%,${C.deep} 100%)`,
+      background: 'linear-gradient(140deg, var(--card), var(--surf) 55%, var(--bg))',
       border: '1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
       borderRadius: 16,
       padding: '18px 16px',
       marginBottom: 14,
       position: 'relative',
-      overflow: 'hidden',
-      boxShadow: '0 8px 36px rgba(0,0,0,0.45), inset 0 1px 0 color-mix(in srgb, var(--gold) 7%, transparent)'
+      overflow: 'hidden'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -2250,15 +3325,9 @@ function HomeScreen({
       cursor: 'pointer',
       transition: 'opacity 0.15s'
     },
-    title: "Actualizar dashboard",
     onClick: () => window.location.reload(),
     onMouseDown: e => e.currentTarget.style.opacity = '0.5',
-    onMouseUp: e => e.currentTarget.style.opacity = '1',
-    onTouchStart: e => e.currentTarget.style.opacity = '0.5',
-    onTouchEnd: e => {
-      e.currentTarget.style.opacity = '1';
-      window.location.reload();
-    }
+    onMouseUp: e => e.currentTarget.style.opacity = '1'
   }, /*#__PURE__*/React.createElement(GreekColumn, {
     level: level,
     xpPct: xpPct,
@@ -2307,12 +3376,13 @@ function HomeScreen({
     style: {
       height: '100%',
       borderRadius: 2,
-      background: 'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, #000), var(--gold), var(--gold-l))',
+      background: 'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l))',
       width: `${xpPct * 100}%`,
       boxShadow: '0 0 8px var(--gold-glow)',
       transition: 'width 1.2s ease'
     }
-  }))))), /*#__PURE__*/React.createElement("div", {
+  })))));
+  const modulesStrip = /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14
     }
@@ -2363,8 +3433,8 @@ function HomeScreen({
       scrollbarWidth: 'none'
     }
   }, modules.map(mod => {
-    const acc = `oklch(65% 0.15 ${mod.hue})`;
-    const accBg = EU.catTint(mod.hue, 'bg');
+    const acc = `oklch(65% 0.15 ${mod.hue})`,
+      accBg = EU.catTint(mod.hue, 'bg');
     return /*#__PURE__*/React.createElement("div", {
       key: mod.id,
       onClick: () => mod.route ? window.location.href = mod.route : dispatch({
@@ -2411,7 +3481,8 @@ function HomeScreen({
         lineHeight: 1.2
       }
     }, mod.name.slice(0, 7)));
-  }))), /*#__PURE__*/React.createElement("div", {
+  })));
+  const heatmapCard = /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
       border: `1px solid ${C.goldBorder}`,
@@ -2445,7 +3516,220 @@ function HomeScreen({
   }, "Ver historial →")), /*#__PURE__*/React.createElement(StreakHeatmap, {
     days: 21,
     compact: true
-  })), /*#__PURE__*/React.createElement(ReflexionDelDia, null), /*#__PURE__*/React.createElement(WordOfDay, null), /*#__PURE__*/React.createElement(DeadlineRadar, null)));
+  }));
+  const suggestionCard = suggestion && /*#__PURE__*/React.createElement("div", {
+    onClick: () => logActivityFromHome(suggestion.key),
+    style: {
+      background: EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'bg'),
+      border: `1px solid ${EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'border')}`,
+      borderRadius: 12,
+      padding: '14px 16px',
+      marginBottom: 14,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      letterSpacing: '0.16em',
+      textTransform: 'uppercase',
+      color: `oklch(65% 0.15 ${(EU.catHues || {})[suggestion.cat] || 45})`,
+      marginBottom: 4
+    }
+  }, "Un click cierra ", suggestion.cat), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: C.text
+    }
+  }, suggestion.label)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: C.gold,
+      fontWeight: 600
+    }
+  }, "+", suggestion.pts, " XP"));
+
+  // ── Desktop 2-column layout ─────────────────────────────────
+  if (isDesktop) {
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        minHeight: '100vh'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        padding: '14px 40px',
+        background: 'var(--surf-top)',
+        borderBottom: '1px solid color-mix(in srgb, var(--gold) 7%, transparent)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 9,
+        letterSpacing: '0.22em',
+        color: C.gold,
+        opacity: 0.65,
+        textTransform: 'uppercase'
+      }
+    }, fmtDate()), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'Cormorant Garamond,serif',
+        fontSize: 22,
+        color: C.text,
+        fontWeight: 500,
+        letterSpacing: '0.14em',
+        marginTop: 1
+      }
+    }, "Ε Υ Δ Α Ι Μ Ο Ν Ι Α")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("button", {
+      onClick: () => window.dispatchEvent(new CustomEvent('eu:open-cmdk')),
+      style: {
+        background: 'var(--gold-bg)',
+        border: '1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
+        borderRadius: 6,
+        padding: '4px 10px',
+        color: C.gold,
+        fontSize: 10,
+        cursor: 'pointer',
+        fontFamily: 'DM Sans,sans-serif',
+        letterSpacing: '0.05em'
+      }
+    }, "⌘ K"), /*#__PURE__*/React.createElement("a", {
+      href: "/logros",
+      style: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 9,
+        color: C.gold,
+        opacity: 0.65,
+        textDecoration: 'none',
+        letterSpacing: '0.08em'
+      }
+    }, "🏆 Logros"))), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 380px',
+        gap: '0 32px',
+        padding: '32px 40px 60px',
+        alignItems: 'start'
+      }
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginBottom: 20
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'Cormorant Garamond,serif',
+        fontSize: 26,
+        color: C.text
+      }
+    }, "Buenos días, Gio."), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 11,
+        color: C.textMuted,
+        marginTop: 3
+      }
+    }, fmtDate(), " · día ", streak, " de tu racha")), heroXp, suggestionCard, levelCard, modulesStrip, /*#__PURE__*/React.createElement(ReflexionDelDia, null)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'sticky',
+        top: 80
+      }
+    }, heatmapCard, /*#__PURE__*/React.createElement(WordOfDay, null), /*#__PURE__*/React.createElement(DeadlineRadar, null))));
+  }
+
+  // ── Mobile layout ───────────────────────────────────────────
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      paddingBottom: 100,
+      minHeight: '100vh'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      padding: 'env(safe-area-inset-top,16px) 20px 12px',
+      paddingTop: 'max(env(safe-area-inset-top,16px),16px)',
+      background: EU.rgba('deep', 0.97),
+      borderBottom: '1px solid color-mix(in srgb, var(--gold) 7%, transparent)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start'
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 9,
+      letterSpacing: '0.22em',
+      color: C.gold,
+      opacity: 0.65,
+      textTransform: 'uppercase'
+    }
+  }, fmtDate()), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Cormorant Garamond,serif',
+      fontSize: 20,
+      color: C.text,
+      fontWeight: 500,
+      letterSpacing: '0.18em',
+      marginTop: 1
+    }
+  }, "ΕΥΔΑΙΜΟΝΙΑ")), /*#__PURE__*/React.createElement("a", {
+    href: "/logros",
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4,
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 9,
+      color: C.gold,
+      opacity: 0.65,
+      textDecoration: 'none',
+      letterSpacing: '0.08em',
+      paddingTop: 4
+    }
+  }, "🏆 Logros"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 16px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '20px 0 12px'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Cormorant Garamond,serif',
+      fontSize: 22,
+      color: C.text
+    }
+  }, "Buenos días, Gio."), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: C.textMuted,
+      marginTop: 2
+    }
+  }, fmtDate(), " · día ", streak, " de tu racha")), heroXp, suggestionCard, levelCard, modulesStrip, heatmapCard, /*#__PURE__*/React.createElement(ReflexionDelDia, null), /*#__PURE__*/React.createElement(WordOfDay, null), /*#__PURE__*/React.createElement(DeadlineRadar, null)));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5096,732 +6380,3 @@ function CommandPalette({
   }, /*#__PURE__*/React.createElement("span", null, "↑↓ navegar"), /*#__PURE__*/React.createElement("span", null, "⏎ seleccionar"), /*#__PURE__*/React.createElement("span", null, "ESC cerrar"))));
 }
 window.CommandPalette = CommandPalette;
-// EUDAIMONIA — App State & Root
-// hooks and C declared in eu-components.jsx (bundled before this file)
-
-function _xpStateFromTotal(totalXP) {
-  const thr = EU.levelThresholds; // [0,200,500,1000,1800,2700,3600,4400,5000,5500]
-  let level = 1;
-  for (let i = 0; i < thr.length; i++) {
-    if (totalXP >= thr[i]) level = i + 1;else break;
-  }
-  level = Math.max(1, Math.min(10, level));
-  const cur = thr[level - 1] || 0;
-  const next = level < 10 ? thr[level] || 5500 : 5500;
-  return {
-    level,
-    xp: totalXP - cur,
-    xpNext: level < 10 ? next - cur : null
-  };
-}
-function initFromServer() {
-  const d = window.__EUDAIMONIA_DATA__ || {};
-  const totalXP = d.total_xp || 0;
-  const {
-    level,
-    xp,
-    xpNext
-  } = _xpStateFromTotal(totalXP);
-  // Merge server modules (dynamic streak/done) with static route info
-  const serverMods = Array.isArray(d.modules) && d.modules.length > 0 ? d.modules : null;
-  const modules = serverMods ? EU.modules.map(m => {
-    const s = serverMods.find(sm => sm.id === m.id);
-    return s ? {
-      ...m,
-      streak: s.streak,
-      done: s.done
-    } : m;
-  }) : EU.modules;
-  return {
-    level,
-    xp,
-    xpNext,
-    totalXP,
-    modules,
-    openModuleId: null,
-    leveledUp: false
-  };
-}
-function reducer(state, action) {
-  switch (action.type) {
-    case 'ADD_XP':
-      {
-        const totalXP = state.totalXP + action.amount;
-        const next = _xpStateFromTotal(totalXP);
-        const leveledUp = next.level > state.level;
-        return {
-          ...state,
-          ...next,
-          totalXP,
-          leveledUp
-        };
-      }
-    case 'CLEAR_LEVELUP':
-      return {
-        ...state,
-        leveledUp: false
-      };
-    case 'OPEN_MODULE':
-      return {
-        ...state,
-        openModuleId: action.id
-      };
-    case 'CLOSE_MODULE':
-      return {
-        ...state,
-        openModuleId: null
-      };
-    case 'SET_TAB':
-      return {
-        ...state,
-        _tab: action.tab
-      };
-    default:
-      return state;
-  }
-}
-
-// ── Responsive hook ───────────────────────────────────────
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-  useEffect(() => {
-    const handler = () => setIsDesktop(window.innerWidth >= 768);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-  return isDesktop;
-}
-
-// ── Desktop Sidebar Nav helpers ───────────────────────────
-function NavGroup({
-  title,
-  children
-}) {
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 11,
-      letterSpacing: '0.2em',
-      color: C.textMuted,
-      padding: '14px 22px 6px',
-      textTransform: 'uppercase',
-      opacity: 0.55
-    }
-  }, title), children);
-}
-function NavItem({
-  active,
-  label,
-  sub,
-  accent,
-  dot,
-  onClick
-}) {
-  const isMod = dot !== undefined;
-  return /*#__PURE__*/React.createElement("div", {
-    onClick: onClick,
-    style: {
-      padding: '10px 22px',
-      cursor: 'pointer',
-      borderLeft: `2.5px solid ${active ? C.gold : 'transparent'}`,
-      background: active ? 'color-mix(in srgb, var(--gold) 5%, transparent)' : 'transparent',
-      transition: 'all 0.2s',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10
-    }
-  }, isMod && /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 6,
-      height: 6,
-      borderRadius: '50%',
-      flexShrink: 0,
-      background: dot ? accent || C.gold : 'var(--b)',
-      boxShadow: dot ? `0 0 6px ${accent || C.gold}` : 'none'
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      minWidth: 0
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: isMod ? 'DM Sans,sans-serif' : 'Cormorant Garamond,serif',
-      fontSize: isMod ? 13 : 20,
-      color: active ? C.gold : isMod ? C.text : C.textMuted,
-      fontWeight: isMod ? 500 : 600,
-      letterSpacing: isMod ? '0.04em' : 'inherit',
-      lineHeight: 1.1,
-      whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      transition: 'color 0.2s'
-    }
-  }, label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 11,
-      letterSpacing: '0.1em',
-      textTransform: 'uppercase',
-      marginTop: 2,
-      color: active ? C.gold : C.textMuted,
-      opacity: active ? 0.75 : 0.45,
-      transition: 'all 0.2s'
-    }
-  }, sub)));
-}
-function NavItemLink({
-  href,
-  label,
-  sub
-}) {
-  return /*#__PURE__*/React.createElement("a", {
-    href: href,
-    style: {
-      padding: '10px 22px',
-      display: 'block',
-      textDecoration: 'none',
-      borderLeft: '2.5px solid transparent',
-      transition: 'all 0.2s'
-    },
-    onMouseEnter: e => e.currentTarget.style.background = 'color-mix(in srgb, var(--gold) 4%, transparent)',
-    onMouseLeave: e => e.currentTarget.style.background = 'transparent'
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'Cormorant Garamond,serif',
-      fontSize: 20,
-      color: C.textMuted,
-      lineHeight: 1.1
-    }
-  }, label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 11,
-      letterSpacing: '0.1em',
-      textTransform: 'uppercase',
-      marginTop: 2,
-      color: C.textMuted,
-      opacity: 0.45
-    }
-  }, sub));
-}
-
-// ── Desktop Sidebar Nav ───────────────────────────────────
-function SideNav({
-  active,
-  onChange,
-  modules,
-  dispatch
-}) {
-  const todayTabs = [{
-    id: 'home',
-    label: 'Ἀρχή',
-    sub: 'Inicio'
-  }, {
-    id: 'acta',
-    label: 'Acta',
-    sub: 'Diurna'
-  }];
-  const systemItems = [{
-    kind: 'link',
-    href: '/gtd',
-    label: 'Πρᾶξις',
-    sub: 'Praxis · GTD'
-  }, {
-    kind: 'link',
-    href: '/logros',
-    label: '🏆',
-    sub: 'Logros'
-  }, {
-    kind: 'tab',
-    id: 'profile',
-    label: 'Αὐτός',
-    sub: 'Perfil'
-  }];
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 210,
-      flexShrink: 0,
-      background: EU.rgba('deep', 0.99),
-      borderRight: '1px solid var(--gold-bg)',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      bottom: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      zIndex: 100
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '28px 22px 24px',
-      borderBottom: '1px solid var(--gold-bg)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 8,
-      letterSpacing: '0.28em',
-      color: C.gold,
-      opacity: 0.55,
-      textTransform: 'uppercase',
-      marginBottom: 5
-    }
-  }, "SISTEMA PERSONAL"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'Cormorant Garamond,serif',
-      fontSize: 20,
-      color: C.text,
-      letterSpacing: '0.14em',
-      fontWeight: 600
-    }
-  }, "EUDAIMONIA")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      paddingTop: 8,
-      overflowY: 'auto'
-    }
-  }, /*#__PURE__*/React.createElement(NavGroup, {
-    title: "HOY"
-  }, todayTabs.map(t => /*#__PURE__*/React.createElement(NavItem, {
-    key: t.id,
-    active: active === t.id,
-    label: t.label,
-    sub: t.sub,
-    onClick: () => onChange(t.id)
-  }))), /*#__PURE__*/React.createElement(NavGroup, {
-    title: "MÓDULOS"
-  }, (modules || []).map(mod => {
-    const acc = `oklch(65% 0.15 ${mod.hue})`;
-    return /*#__PURE__*/React.createElement(NavItem, {
-      key: mod.id,
-      active: false,
-      label: mod.name,
-      sub: mod.concept,
-      accent: acc,
-      dot: mod.done,
-      onClick: () => mod.route ? window.location.href = mod.route : dispatch({
-        type: 'OPEN_MODULE',
-        id: mod.id
-      })
-    });
-  })), /*#__PURE__*/React.createElement(NavGroup, {
-    title: "SISTEMA"
-  }, systemItems.map(item => item.kind === 'link' ? /*#__PURE__*/React.createElement(NavItemLink, {
-    key: item.href,
-    href: item.href,
-    label: item.label,
-    sub: item.sub
-  }) : /*#__PURE__*/React.createElement(NavItem, {
-    key: item.id,
-    active: active === item.id,
-    label: item.label,
-    sub: item.sub,
-    onClick: () => onChange(item.id)
-  })))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: '12px 22px 16px',
-      borderTop: '1px solid color-mix(in srgb, var(--gold) 7%, transparent)'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => window.euToggleTheme(),
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      background: 'transparent',
-      border: `1px solid ${C.goldBorder}`,
-      borderRadius: 8,
-      padding: '7px 12px',
-      cursor: 'pointer',
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 10,
-      color: C.textMuted,
-      letterSpacing: '0.08em',
-      width: '100%'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14,
-      lineHeight: 1
-    }
-  }, document.documentElement.classList.contains('light') ? '☀' : '☽'), /*#__PURE__*/React.createElement("span", null, document.documentElement.classList.contains('light') ? 'Modo día' : 'Modo noche'))));
-}
-
-// ── App ───────────────────────────────────────────────────
-function App() {
-  const [state, dispatch] = useReducer(reducer, null, initFromServer);
-  const [tab, setTab] = useState(() => {
-    const p = new URLSearchParams(window.location.search);
-    const t = p.get('tab');
-    return ['home', 'modules', 'acta', 'profile'].includes(t) ? t : 'home';
-  });
-  const isDesktop = useIsDesktop();
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    const open = p.get('open');
-    if (open && state.modules.find(m => m.id === open)) {
-      dispatch({
-        type: 'OPEN_MODULE',
-        id: open
-      });
-    }
-  }, []);
-  const appDispatch = action => {
-    if (action.type === 'SET_TAB') setTab(action.tab);
-    dispatch(action);
-  };
-
-  // Closing a module must happen whenever the user switches tabs
-  const handleTabChange = id => {
-    dispatch({
-      type: 'CLOSE_MODULE'
-    });
-    setTab(id);
-    window.scrollTo(0, 0);
-  };
-  const [cmdkOpen, setCmdkOpen] = useState(false);
-  const [activeAchievement, setActiveAchievement] = useState(null);
-  const [perfectDay, setPerfectDay] = useState(null);
-  const [comboQueue, setComboQueue] = useState([]);
-
-  // Achievement sheet listener
-  useEffect(() => {
-    const onAch = e => setActiveAchievement(e.detail);
-    window.addEventListener('eu:achievement-unlocked', onAch);
-    return () => window.removeEventListener('eu:achievement-unlocked', onAch);
-  }, []);
-
-  // Perfect day + combo bonus listeners
-  useEffect(() => {
-    const onPerfect = e => setPerfectDay(e.detail);
-    const onCombo = e => setComboQueue(q => [...q, e.detail]);
-    window.addEventListener('eu:perfect-day', onPerfect);
-    window.addEventListener('eu:combo-bonus', onCombo);
-    return () => {
-      window.removeEventListener('eu:perfect-day', onPerfect);
-      window.removeEventListener('eu:combo-bonus', onCombo);
-    };
-  }, []);
-
-  // ⌘K global shortcut + custom event from HomeScreen header button
-  useEffect(() => {
-    const onKey = e => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setCmdkOpen(o => !o);
-      }
-    };
-    const onEv = () => setCmdkOpen(true);
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('eu:open-cmdk', onEv);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('eu:open-cmdk', onEv);
-    };
-  }, []);
-  const logActivityFromApp = key => {
-    const updated = (window.EU._server.activities || []).map(a => a.key === key ? {
-      ...a,
-      done: !a.done
-    } : a);
-    window.EU._server.activities = updated;
-    fetch('/actividades/api/activity/log', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        key
-      })
-    }).then(r => r.json()).then(data => {
-      if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({
-        type: 'ADD_XP',
-        amount: data.gam.xp_delta || data.gam.xp
-      });
-    }).catch(() => {});
-  };
-  const cmdkItems = useMemo(() => {
-    const pendingActs = (window.EU._server?.activities || []).filter(a => !a.done).slice(0, 20);
-    return [{
-      i: '⌂',
-      label: 'Ir a Inicio',
-      sub: 'Dashboard',
-      section: 'nav',
-      run: () => handleTabChange('home')
-    }, {
-      i: '✦',
-      label: 'Ir a Acta Diurna',
-      sub: 'Actividades',
-      section: 'nav',
-      run: () => handleTabChange('acta')
-    }, {
-      i: '◆',
-      label: 'Ir a Módulos',
-      sub: 'Command Center',
-      section: 'nav',
-      run: () => handleTabChange('modules')
-    }, {
-      i: '◎',
-      label: 'Ir a Perfil',
-      sub: 'Sistema',
-      section: 'nav',
-      run: () => handleTabChange('profile')
-    }, {
-      i: '◐',
-      label: 'Cambiar tema',
-      sub: 'Día / Noche',
-      section: 'sys',
-      keys: ['⇧', 'T'],
-      run: () => window.euToggleTheme()
-    }, {
-      i: '🏆',
-      label: 'Ver Logros',
-      sub: 'Sistema',
-      section: 'sys',
-      run: () => {
-        location.href = '/logros';
-      }
-    }, ...pendingActs.map(a => ({
-      i: '✓',
-      label: `Registrar: ${a.label} (+${a.pts} XP)`,
-      sub: `Acta · ${a.cat}`,
-      section: 'act',
-      run: () => logActivityFromApp(a.key)
-    }))];
-  }, [state.totalXP]);
-  const props = {
-    appState: state,
-    dispatch: appDispatch,
-    isDesktop
-  };
-  const openMod = state.openModuleId ? state.modules.find(m => m.id === state.openModuleId) : null;
-  const screen = openMod ? /*#__PURE__*/React.createElement(ModuleDetailScreen, {
-    mod: openMod,
-    ...props
-  }) : tab === 'home' ? /*#__PURE__*/React.createElement(HomeScreen, props) : tab === 'modules' ? /*#__PURE__*/React.createElement(CommandCenterScreen, props) : tab === 'acta' ? /*#__PURE__*/React.createElement(ActaDiurnaScreen, props) : /*#__PURE__*/React.createElement(ProfileScreen, props);
-  if (isDesktop) {
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        minHeight: '100vh',
-        background: C.deep
-      }
-    }, /*#__PURE__*/React.createElement(SideNav, {
-      active: tab,
-      onChange: handleTabChange,
-      modules: state.modules,
-      dispatch: appDispatch
-    }), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginLeft: 210,
-        flex: 1,
-        minHeight: '100vh'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        maxWidth: 900,
-        margin: '0 auto',
-        padding: '0 8px'
-      }
-    }, screen)), state.leveledUp && /*#__PURE__*/React.createElement(LevelUpModal, {
-      level: state.level,
-      onClose: () => dispatch({
-        type: 'CLEAR_LEVELUP'
-      })
-    }), activeAchievement && /*#__PURE__*/React.createElement(AchievementSheet, {
-      achievement: activeAchievement,
-      onClose: () => setActiveAchievement(null)
-    }), perfectDay && /*#__PURE__*/React.createElement(PerfectDayModal, {
-      details: perfectDay,
-      onClose: () => setPerfectDay(null)
-    }), comboQueue[0] && /*#__PURE__*/React.createElement(ComboBonusSheet, {
-      combo: comboQueue[0],
-      onClose: () => setComboQueue(q => q.slice(1))
-    }), /*#__PURE__*/React.createElement(CommandPalette, {
-      open: cmdkOpen,
-      onClose: () => setCmdkOpen(false),
-      items: cmdkItems
-    }));
-  }
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      maxWidth: 430,
-      margin: '0 auto',
-      minHeight: '100vh',
-      background: C.deep,
-      position: 'relative',
-      fontFamily: 'DM Sans, sans-serif'
-    }
-  }, screen, state.leveledUp && /*#__PURE__*/React.createElement(LevelUpModal, {
-    level: state.level,
-    onClose: () => dispatch({
-      type: 'CLEAR_LEVELUP'
-    })
-  }), activeAchievement && /*#__PURE__*/React.createElement(AchievementSheet, {
-    achievement: activeAchievement,
-    onClose: () => setActiveAchievement(null)
-  }), perfectDay && /*#__PURE__*/React.createElement(PerfectDayModal, {
-    details: perfectDay,
-    onClose: () => setPerfectDay(null)
-  }), comboQueue[0] && /*#__PURE__*/React.createElement(ComboBonusSheet, {
-    combo: comboQueue[0],
-    onClose: () => setComboQueue(q => q.slice(1))
-  }), !openMod && /*#__PURE__*/React.createElement(BottomNav, {
-    active: tab,
-    onChange: handleTabChange
-  }), /*#__PURE__*/React.createElement(CommandPalette, {
-    open: cmdkOpen,
-    onClose: () => setCmdkOpen(false),
-    items: cmdkItems
-  }));
-}
-
-// ── Achievement dispatch helper (used by screens) ─────────
-// xp >= 30 → sheet; lower → toast only
-window.euFireAchievements = function (achievements) {
-  if (!achievements || !achievements.length) return;
-  const high = achievements.filter(a => (a.xp || 0) >= 30);
-  const low = achievements.filter(a => (a.xp || 0) < 30);
-  if (high.length) {
-    window.dispatchEvent(new CustomEvent('eu:achievement-unlocked', {
-      detail: high[0]
-    }));
-    // remaining high-tier after first: toast
-    high.slice(1).forEach(a => {
-      if (typeof toast === 'function') toast(`🏆 ${a.name}`, 'win');
-    });
-  }
-  low.forEach(a => {
-    if (typeof toast === 'function') toast(`🏆 ${a.name}`, 'win');
-  });
-};
-
-// ── Tweaks ────────────────────────────────────────────────
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "accentHue": 45,
-  "levelDemo": 3,
-  "showStreak": true
-} /*EDITMODE-END*/;
-function TweaksPanel({
-  tweaks,
-  onChange,
-  visible
-}) {
-  if (!visible) return null;
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'fixed',
-      bottom: 90,
-      right: 16,
-      zIndex: 9000,
-      background: C.card,
-      border: '1px solid color-mix(in srgb, var(--gold) 25%, transparent)',
-      borderRadius: 14,
-      padding: '16px',
-      width: 220,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-      fontFamily: 'DM Sans, sans-serif'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      letterSpacing: '0.15em',
-      color: C.gold,
-      textTransform: 'uppercase',
-      marginBottom: 14
-    }
-  }, "Tweaks"), /*#__PURE__*/React.createElement("label", {
-    style: {
-      display: 'block',
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: C.textMuted,
-      marginBottom: 5
-    }
-  }, "Demo Nivel: ", tweaks.levelDemo), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: 1,
-    max: 10,
-    value: tweaks.levelDemo,
-    onChange: e => onChange('levelDemo', +e.target.value),
-    style: {
-      width: '100%',
-      accentColor: C.gold
-    }
-  })), /*#__PURE__*/React.createElement("label", {
-    style: {
-      display: 'block',
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: C.textMuted,
-      marginBottom: 5
-    }
-  }, "Color acento (hue): ", tweaks.accentHue, "°"), /*#__PURE__*/React.createElement("input", {
-    type: "range",
-    min: 0,
-    max: 360,
-    value: tweaks.accentHue,
-    onChange: e => onChange('accentHue', +e.target.value),
-    style: {
-      width: '100%',
-      accentColor: C.gold
-    }
-  })), /*#__PURE__*/React.createElement("label", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      cursor: 'pointer'
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: tweaks.showStreak,
-    onChange: e => onChange('showStreak', e.target.checked),
-    style: {
-      accentColor: C.gold
-    }
-  }), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: C.textSub
-    }
-  }, "Mostrar rachas")));
-}
-function Root() {
-  const [tweaks, setTweaks] = useState(TWEAK_DEFAULTS);
-  const [tweakVisible, setTweakVisible] = useState(false);
-  useEffect(() => {
-    window.addEventListener('message', e => {
-      if (e.data?.type === '__activate_edit_mode') setTweakVisible(true);
-      if (e.data?.type === '__deactivate_edit_mode') setTweakVisible(false);
-    });
-    window.parent.postMessage({
-      type: '__edit_mode_available'
-    }, '*');
-  }, []);
-  const handleTweak = (key, val) => {
-    const next = {
-      ...tweaks,
-      [key]: val
-    };
-    setTweaks(next);
-    window.parent.postMessage({
-      type: '__edit_mode_set_keys',
-      edits: next
-    }, '*');
-  };
-  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(App, {
-    tweaks: tweaks
-  }), /*#__PURE__*/React.createElement(TweaksPanel, {
-    tweaks: tweaks,
-    onChange: handleTweak,
-    visible: tweakVisible
-  }));
-}
-ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Root, null));

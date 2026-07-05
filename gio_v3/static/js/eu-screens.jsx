@@ -425,9 +425,251 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
     .catch(() => {});
   };
 
+  // ── Shared blocks ──────────────────────────────────────────
+  const heroXp = (
+    <div style={{
+      background:'linear-gradient(140deg, var(--surf), var(--bg))',
+      border:'1px solid var(--gold-border)',
+      borderRadius:16,padding:'20px',marginBottom:14,
+      position:'relative',overflow:'hidden',
+    }}>
+      <div style={{fontSize:9,letterSpacing:'0.18em',color:C.gold,
+        opacity:0.6,textTransform:'uppercase',marginBottom:6}}>XP hoy</div>
+      <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
+        <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:48,
+          lineHeight:1,color:C.goldLight,fontWeight:600}}>{xpToday}</div>
+        <div style={{fontSize:13,color:C.textMuted}}>/ {XP_GOAL} meta</div>
+      </div>
+      <div style={{height:5,background:'var(--gold-bg)',borderRadius:3,overflow:'hidden',marginBottom:12}}>
+        <div style={{
+          height:'100%',borderRadius:3,
+          background:'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l))',
+          width:`${xpDayPct*100}%`,
+          boxShadow:'0 0 8px var(--gold-glow)',
+          transition:'width 0.8s ease',
+        }}/>
+      </div>
+      {(() => {
+        const ci  = Math.max(0, TIERS.findIndex(t => t.rank === clf.rank));
+        const nt  = TIERS[ci + 1] || null;
+        const col = TIERS[ci].color;
+        return (
+          <>
+            <div style={{display:'flex',alignItems:'flex-start',marginBottom:8}}>
+              {TIERS.map((t, i) => {
+                const active = i === ci, past = i < ci;
+                return (
+                  <React.Fragment key={t.rank}>
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
+                      <div style={{width:active?9:5,height:active?9:5,borderRadius:'50%',
+                        background:active?col:past?`${col}55`:'rgba(128,128,128,0.15)',
+                        boxShadow:active?`0 0 9px ${col}`:'none',transition:'all 0.3s'}}/>
+                      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:7,
+                        color:active?col:C.textMuted,opacity:active?1:past?0.55:0.28,
+                        textAlign:'center',lineHeight:1.3}}>{t.icon}<br/>{t.label}</div>
+                    </div>
+                    {i < TIERS.length-1 && (
+                      <div style={{height:1,flex:1,marginTop:4,
+                        background:i<ci?`${col}35`:'var(--b)'}}/>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:10}}>
+              <span style={{color:C.textMuted}}>
+                {nt?`${nt.threshold-xpToday} XP → ${nt.label}`:'✦ Diamante alcanzado'}
+              </span>
+              <span style={{color:C.gold,opacity:0.7}}>
+                {xpNext?`${xpNext-xp} XP → ${EU.levels[level]?.name||''}`:''}
+              </span>
+            </div>
+          </>
+        );
+      })()}
+    </div>
+  );
+
+  const levelCard = (
+    <div style={{
+      background:'linear-gradient(140deg, var(--card), var(--surf) 55%, var(--bg))',
+      border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
+      borderRadius:16,padding:'18px 16px',marginBottom:14,
+      position:'relative',overflow:'hidden',
+    }}>
+      <div style={{position:'absolute',inset:0,pointerEvents:'none',background:
+        'radial-gradient(ellipse at 15% 85%,color-mix(in srgb, var(--gold) 5%, transparent) 0%,transparent 55%),' +
+        'radial-gradient(ellipse at 85% 15%,color-mix(in srgb, var(--gold) 3%, transparent) 0%,transparent 45%)'}}/>
+      <div style={{display:'flex',alignItems:'flex-end',gap:14}}>
+        <div style={{flexShrink:0,cursor:'pointer',transition:'opacity 0.15s'}}
+          onClick={()=>window.location.reload()}
+          onMouseDown={e=>e.currentTarget.style.opacity='0.5'}
+          onMouseUp={e=>e.currentTarget.style.opacity='1'}>
+          <GreekColumn level={level} xpPct={xpPct} size={72}/>
+        </div>
+        <div style={{flex:1,paddingBottom:3}}>
+          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+            letterSpacing:'0.18em',color:C.gold,opacity:0.6,textTransform:'uppercase',marginBottom:2}}>
+            NIVEL {level}
+          </div>
+          <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:28,
+            fontWeight:600,color:C.text,lineHeight:1,letterSpacing:'0.05em'}}>{lv?.name}</div>
+          <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
+            fontSize:12,color:C.textSub,marginTop:3,marginBottom:10}}>{lv?.sub}</div>
+          <div style={{height:3,background:'var(--gold-bg)',borderRadius:2,overflow:'hidden'}}>
+            <div style={{height:'100%',borderRadius:2,
+              background:'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l))',
+              width:`${xpPct*100}%`,boxShadow:'0 0 8px var(--gold-glow)',transition:'width 1.2s ease'}}/>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const modulesStrip = (
+    <div style={{marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+          color:C.textMuted,textTransform:'uppercase'}}>Módulos</div>
+        <div style={{fontSize:11,color:C.textMuted}}>
+          {modules.filter(m=>m.done).length} de {modules.length}
+        </div>
+      </div>
+      <div style={{display:'flex',gap:3,marginBottom:10,height:3,borderRadius:2,overflow:'hidden',
+        background:'color-mix(in srgb, var(--gold) 6%, transparent)'}}>
+        {modules.map(mod=>(
+          <div key={mod.id} style={{flex:1,height:'100%',
+            background:mod.done?`oklch(65% 0.15 ${mod.hue})`:'transparent',transition:'background 0.4s'}}/>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none'}}>
+        {modules.map(mod=>{
+          const acc=`oklch(65% 0.15 ${mod.hue})`, accBg=EU.catTint(mod.hue,'bg');
+          return (
+            <div key={mod.id}
+              onClick={()=>mod.route?(window.location.href=mod.route):dispatch({type:'OPEN_MODULE',id:mod.id})}
+              style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:'pointer'}}>
+              <div style={{width:44,height:44,borderRadius:13,
+                background:mod.done?accBg:C.card,border:`1.5px solid ${mod.done?acc:C.goldBorder}`,
+                display:'flex',alignItems:'center',justifyContent:'center',
+                boxShadow:mod.done?`0 0 14px ${accBg}`:'none',transition:'all 0.3s'}}>
+                <div style={{width:7,height:7,borderRadius:'50%',
+                  background:mod.done?acc:C.textMuted,boxShadow:mod.done?`0 0 6px ${acc}`:'none'}}/>
+              </div>
+              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:7,color:mod.done?acc:C.textMuted,
+                textAlign:'center',letterSpacing:'0.04em',maxWidth:46,lineHeight:1.2}}>
+                {mod.name.slice(0,7)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const heatmapCard = (
+    <div style={{background:C.card,border:`1px solid ${C.goldBorder}`,
+      borderRadius:12,padding:'14px 16px',marginBottom:14}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:10}}>
+        <div style={{fontSize:10,letterSpacing:'0.18em',color:C.gold,
+          opacity:0.7,textTransform:'uppercase'}}>Racha · {streak} días</div>
+        <a href="/logros" style={{fontSize:10,color:C.gold,opacity:0.6,textDecoration:'none'}}>
+          Ver historial →
+        </a>
+      </div>
+      <StreakHeatmap days={21} compact={true}/>
+    </div>
+  );
+
+  const suggestionCard = suggestion && (
+    <div onClick={()=>logActivityFromHome(suggestion.key)} style={{
+      background:EU.catTint((EU.catHues||{})[suggestion.cat]||45,'bg'),
+      border:`1px solid ${EU.catTint((EU.catHues||{})[suggestion.cat]||45,'border')}`,
+      borderRadius:12,padding:'14px 16px',marginBottom:14,cursor:'pointer',
+      display:'flex',alignItems:'center',gap:12,
+    }}>
+      <div style={{flex:1}}>
+        <div style={{fontSize:9,letterSpacing:'0.16em',textTransform:'uppercase',
+          color:`oklch(65% 0.15 ${(EU.catHues||{})[suggestion.cat]||45})`,marginBottom:4}}>
+          Un click cierra {suggestion.cat}
+        </div>
+        <div style={{fontSize:14,color:C.text}}>{suggestion.label}</div>
+      </div>
+      <span style={{fontSize:13,color:C.gold,fontWeight:600}}>+{suggestion.pts} XP</span>
+    </div>
+  );
+
+  // ── Desktop 2-column layout ─────────────────────────────────
+  if (isDesktop) {
+    return (
+      <div style={{minHeight:'100vh'}}>
+        {/* Desktop sticky topbar */}
+        <div style={{
+          position:'sticky',top:0,zIndex:50,
+          padding:'14px 40px',
+          background:'var(--surf-top)',
+          borderBottom:'1px solid color-mix(in srgb, var(--gold) 7%, transparent)',
+          display:'flex',justifyContent:'space-between',alignItems:'center',
+        }}>
+          <div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
+              letterSpacing:'0.22em',color:C.gold,opacity:0.65,textTransform:'uppercase'}}>
+              {fmtDate()}
+            </div>
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,
+              color:C.text,fontWeight:500,letterSpacing:'0.14em',marginTop:1}}>
+              Ε Υ Δ Α Ι Μ Ο Ν Ι Α
+            </div>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <button onClick={()=>window.dispatchEvent(new CustomEvent('eu:open-cmdk'))}
+              style={{background:'var(--gold-bg)',border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
+                borderRadius:6,padding:'4px 10px',color:C.gold,fontSize:10,cursor:'pointer',
+                fontFamily:'DM Sans,sans-serif',letterSpacing:'0.05em'}}>
+              ⌘ K
+            </button>
+            <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:4,
+              fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.gold,opacity:0.65,
+              textDecoration:'none',letterSpacing:'0.08em'}}>🏆 Logros</a>
+          </div>
+        </div>
+
+        {/* 2-column grid */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 380px',gap:'0 32px',
+          padding:'32px 40px 60px',alignItems:'start'}}>
+
+          {/* LEFT — main content */}
+          <div>
+            <div style={{marginBottom:20}}>
+              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:26,color:C.text}}>
+                Buenos días, Gio.
+              </div>
+              <div style={{fontSize:11,color:C.textMuted,marginTop:3}}>
+                {fmtDate()} · día {streak} de tu racha
+              </div>
+            </div>
+            {heroXp}
+            {suggestionCard}
+            {levelCard}
+            {modulesStrip}
+            <ReflexionDelDia/>
+          </div>
+
+          {/* RIGHT — sidebar widgets */}
+          <div style={{position:'sticky',top:80}}>
+            {heatmapCard}
+            <WordOfDay/>
+            <DeadlineRadar/>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Mobile layout ───────────────────────────────────────────
   return (
-    <div style={{paddingBottom: isDesktop ? 48 : 100, minHeight:'100vh'}}>
-      {/* Sticky header */}
+    <div style={{paddingBottom:100, minHeight:'100vh'}}>
+      {/* Mobile sticky header */}
       <div style={{
         position:'sticky',top:0,zIndex:50,
         padding:'env(safe-area-inset-top,16px) 20px 12px',
@@ -441,35 +683,18 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
               letterSpacing:'0.22em',color:C.gold,opacity:0.65,textTransform:'uppercase'}}>
               {fmtDate()}
             </div>
-            <div style={{fontFamily:'Cormorant Garamond,serif',
-              fontSize: isDesktop ? 24 : 20,
-              color:C.text,fontWeight:500,
-              letterSpacing: isDesktop ? '0.12em' : '0.18em',
-              marginTop:1, whiteSpace:'nowrap'}}>
-              {isDesktop ? 'Ε Υ Δ Α Ι Μ Ο Ν Ι Α' : 'ΕΥΔΑΙΜΟΝΙΑ'}
+            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:20,
+              color:C.text,fontWeight:500,letterSpacing:'0.18em',marginTop:1}}>
+              ΕΥΔΑΙΜΟΝΙΑ
             </div>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:10,paddingTop:4}}>
-            {isDesktop && (
-              <button onClick={() => window.dispatchEvent(new CustomEvent('eu:open-cmdk'))}
-                style={{background:'var(--gold-bg)',border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
-                  borderRadius:6,padding:'3px 8px',color:C.gold,fontSize:10,cursor:'pointer',
-                  fontFamily:'DM Sans,sans-serif',letterSpacing:'0.05em'}}>
-                ⌘ K
-              </button>
-            )}
-            <a href="/logros" style={{
-              display:'inline-flex',alignItems:'center',gap:4,
-              fontFamily:'DM Sans,sans-serif',fontSize:9,
-              color:C.gold,opacity:0.65,textDecoration:'none',
-              letterSpacing:'0.08em',
-            }}>🏆 Logros</a>
-          </div>
+          <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:4,
+            fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.gold,opacity:0.65,
+            textDecoration:'none',letterSpacing:'0.08em',paddingTop:4}}>🏆 Logros</a>
         </div>
       </div>
 
       <div style={{padding:'0 16px'}}>
-        {/* ── SALUDO ── */}
         <div style={{padding:'20px 0 12px'}}>
           <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,color:C.text}}>
             Buenos días, Gio.
@@ -478,225 +703,13 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             {fmtDate()} · día {streak} de tu racha
           </div>
         </div>
-
-        {/* ── HERO XP DEL DÍA ── */}
-        <div style={{
-          background:'linear-gradient(140deg, var(--surf), var(--bg))',
-          border:'1px solid var(--gold-border)',
-          borderRadius:16,padding:'20px',marginBottom:14,
-          position:'relative',overflow:'hidden',
-        }}>
-          <div style={{fontSize:9,letterSpacing:'0.18em',color:C.gold,
-            opacity:0.6,textTransform:'uppercase',marginBottom:6}}>XP hoy</div>
-          <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
-            <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:48,
-              lineHeight:1,color:C.goldLight,fontWeight:600}}>{xpToday}</div>
-            <div style={{fontSize:13,color:C.textMuted}}>/ {XP_GOAL} meta</div>
-          </div>
-          <div style={{height:5,background:'var(--gold-bg)',borderRadius:3,overflow:'hidden',marginBottom:12}}>
-            <div style={{
-              height:'100%',borderRadius:3,
-              background:'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, #000), var(--gold), var(--gold-l))',
-              width:`${xpDayPct*100}%`,
-              boxShadow:'0 0 8px var(--gold-glow)',
-              transition:'width 0.8s ease',
-            }}/>
-          </div>
-          {/* ── Tier ladder ── */}
-          {(() => {
-            const clfData = clf;
-            const curIdx  = TIERS.findIndex(t => t.rank === clfData.rank);
-            const ci      = curIdx >= 0 ? curIdx : 0;
-            const nt      = TIERS[ci + 1] || null;
-            const col     = TIERS[ci].color;
-            return (
-              <>
-                <div style={{display:'flex',alignItems:'flex-start',marginBottom:8}}>
-                  {TIERS.map((t, i) => {
-                    const active = i === ci;
-                    const past   = i < ci;
-                    return (
-                      <React.Fragment key={t.rank}>
-                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
-                          <div style={{
-                            width:active?9:5, height:active?9:5, borderRadius:'50%',
-                            background:active ? col : past ? `${col}55` : 'rgba(255,255,255,0.08)',
-                            boxShadow:active ? `0 0 9px ${col}` : 'none',
-                            transition:'all 0.3s',
-                          }}/>
-                          <div style={{
-                            fontFamily:'DM Sans,sans-serif', fontSize:7,
-                            color:active ? col : C.textMuted,
-                            opacity:active ? 1 : past ? 0.55 : 0.28,
-                            textAlign:'center', lineHeight:1.3,
-                          }}>{t.icon}<br/>{t.label}</div>
-                        </div>
-                        {i < TIERS.length - 1 && (
-                          <div style={{height:1,flex:1,marginTop:4,
-                            background:i < ci ? `${col}35` : 'rgba(255,255,255,0.06)'}}/>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:10}}>
-                  <span style={{color:C.textMuted}}>
-                    {nt ? `${nt.threshold - xpToday} XP → ${nt.label}` : '✦ Diamante alcanzado'}
-                  </span>
-                  <span style={{color:C.gold,opacity:0.7}}>
-                    {xpNext ? `${xpNext - xp} XP → ${EU.levels[level]?.name || ''}` : ''}
-                  </span>
-                </div>
-              </>
-            );
-          })()}
-        </div>
-
-        {/* ── SUGERENCIA DEL DÍA ── */}
-        {suggestion && (
-          <div onClick={() => logActivityFromHome(suggestion.key)}
-            style={{
-              background: EU.catTint((EU.catHues||{})[suggestion.cat]||45, 'bg'),
-              border:`1px solid ${EU.catTint((EU.catHues||{})[suggestion.cat]||45, 'border')}`,
-              borderRadius:12,padding:'14px 16px',marginBottom:14,cursor:'pointer',
-              display:'flex',alignItems:'center',gap:12,
-            }}>
-            <div style={{flex:1}}>
-              <div style={{fontSize:9,letterSpacing:'0.16em',textTransform:'uppercase',
-                color:`oklch(65% 0.15 ${(EU.catHues||{})[suggestion.cat]||45})`,marginBottom:4}}>
-                Un click cierra {suggestion.cat}
-              </div>
-              <div style={{fontSize:14,color:C.text}}>{suggestion.label}</div>
-            </div>
-            <span style={{fontSize:13,color:C.gold,fontWeight:600}}>+{suggestion.pts} XP</span>
-          </div>
-        )}
-
-        {/* ── LEVEL CARD (compacto) ── */}
-        <div style={{
-          background:`linear-gradient(140deg,${C.card} 0%,${C.surface} 55%,${C.deep} 100%)`,
-          border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
-          borderRadius:16,padding:'18px 16px',marginBottom:14,
-          position:'relative',overflow:'hidden',
-          boxShadow:'0 8px 36px rgba(0,0,0,0.45), inset 0 1px 0 color-mix(in srgb, var(--gold) 7%, transparent)',
-        }}>
-          <div style={{position:'absolute',inset:0,pointerEvents:'none',background:
-            'radial-gradient(ellipse at 15% 85%,color-mix(in srgb, var(--gold) 5%, transparent) 0%,transparent 55%),' +
-            'radial-gradient(ellipse at 85% 15%,color-mix(in srgb, var(--gold) 3%, transparent) 0%,transparent 45%)'}}/>
-          <div style={{display:'flex',alignItems:'flex-end',gap:14}}>
-            <div style={{flexShrink:0,cursor:'pointer',transition:'opacity 0.15s'}}
-              title="Actualizar dashboard"
-              onClick={()=>window.location.reload()}
-              onMouseDown={e=>e.currentTarget.style.opacity='0.5'}
-              onMouseUp={e=>e.currentTarget.style.opacity='1'}
-              onTouchStart={e=>e.currentTarget.style.opacity='0.5'}
-              onTouchEnd={e=>{e.currentTarget.style.opacity='1';window.location.reload()}}>
-              <GreekColumn level={level} xpPct={xpPct} size={72}/>
-            </div>
-            <div style={{flex:1,paddingBottom:3}}>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
-                letterSpacing:'0.18em',color:C.gold,opacity:0.6,textTransform:'uppercase',marginBottom:2}}>
-                NIVEL {level}
-              </div>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:28,
-                fontWeight:600,color:C.text,lineHeight:1,letterSpacing:'0.05em'}}>
-                {lv?.name}
-              </div>
-              <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-                fontSize:12,color:C.textSub,marginTop:3,marginBottom:10}}>
-                {lv?.sub}
-              </div>
-              <div style={{height:3,background:'var(--gold-bg)',borderRadius:2,overflow:'hidden'}}>
-                <div style={{
-                  height:'100%',borderRadius:2,
-                  background:'linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, #000), var(--gold), var(--gold-l))',
-                  width:`${xpPct*100}%`,
-                  boxShadow:'0 0 8px var(--gold-glow)',
-                  transition:'width 1.2s ease',
-                }}/>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── MÓDULOS HOY ── */}
-        <div style={{marginBottom:14}}>
-          <div style={{display:'flex',justifyContent:'space-between',
-            alignItems:'baseline',marginBottom:6}}>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
-              letterSpacing:'0.15em',color:C.textMuted,textTransform:'uppercase'}}>
-              Módulos
-            </div>
-            <div style={{fontSize:11,color:C.textMuted}}>
-              {modules.filter(m => m.done).length} de {modules.length}
-            </div>
-          </div>
-          {/* Daily progress mini-strip */}
-          <div style={{
-            display:'flex',gap:3,marginBottom:10,
-            height:3,borderRadius:2,overflow:'hidden',
-            background:'color-mix(in srgb, var(--gold) 6%, transparent)',
-          }}>
-            {modules.map(mod => (
-              <div key={mod.id} style={{
-                flex:1,height:'100%',
-                background: mod.done ? `oklch(65% 0.15 ${mod.hue})` : 'transparent',
-                transition:'background 0.4s',
-              }}/>
-            ))}
-          </div>
-          <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none'}}>
-            {modules.map(mod => {
-              const acc = `oklch(65% 0.15 ${mod.hue})`;
-              const accBg = EU.catTint(mod.hue, 'bg');
-              return (
-                <div key={mod.id} onClick={() => mod.route ? (window.location.href = mod.route) : dispatch({type:'OPEN_MODULE',id:mod.id})}
-                  style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:'pointer'}}>
-                  <div style={{
-                    width:44,height:44,borderRadius:13,
-                    background: mod.done ? accBg : C.card,
-                    border:`1.5px solid ${mod.done ? acc : C.goldBorder}`,
-                    display:'flex',alignItems:'center',justifyContent:'center',
-                    boxShadow: mod.done ? `0 0 14px ${accBg}` : 'none',
-                    transition:'all 0.3s',
-                  }}>
-                    <div style={{width:7,height:7,borderRadius:'50%',
-                      background: mod.done ? acc : C.textMuted,
-                      boxShadow: mod.done ? `0 0 6px ${acc}` : 'none'}}/>
-                  </div>
-                  <div style={{fontFamily:'DM Sans,sans-serif',fontSize:7,
-                    color:mod.done?acc:C.textMuted,textAlign:'center',
-                    letterSpacing:'0.04em',maxWidth:46,lineHeight:1.2}}>
-                    {mod.name.slice(0,7)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── HEATMAP RACHA ── */}
-        <div style={{
-          background:C.card, border:`1px solid ${C.goldBorder}`,
-          borderRadius:12, padding:'14px 16px', marginBottom:14,
-        }}>
-          <div style={{display:'flex',justifyContent:'space-between',
-            alignItems:'baseline',marginBottom:10}}>
-            <div style={{fontSize:10,letterSpacing:'0.18em',color:C.gold,
-              opacity:0.7,textTransform:'uppercase'}}>Racha · {streak} días</div>
-            <a href="/logros" style={{fontSize:10,color:C.gold,opacity:0.6,
-              textDecoration:'none'}}>Ver historial →</a>
-          </div>
-          <StreakHeatmap days={21} compact={true}/>
-        </div>
-
-        {/* ── REFLEXION ── */}
+        {heroXp}
+        {suggestionCard}
+        {levelCard}
+        {modulesStrip}
+        {heatmapCard}
         <ReflexionDelDia/>
-
-        {/* ── WORD OF THE DAY ── */}
         <WordOfDay/>
-
-        {/* ── DEADLINE RADAR ── */}
         <DeadlineRadar/>
       </div>
     </div>

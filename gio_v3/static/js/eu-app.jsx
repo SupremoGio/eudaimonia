@@ -338,10 +338,8 @@ function App() {
       <div style={{display:'flex', minHeight:'100vh', background:C.deep}}>
         <SideNav active={tab} onChange={handleTabChange}
           modules={state.modules} dispatch={appDispatch}/>
-        <div style={{marginLeft:210, flex:1, minHeight:'100vh'}}>
-          <div style={{maxWidth:900, margin:'0 auto', padding:'0 8px'}}>
-            {screen}
-          </div>
+        <div style={{marginLeft:210, flex:1, minHeight:'100vh', overflow:'hidden'}}>
+          {screen}
         </div>
         {state.leveledUp && (
           <LevelUpModal level={state.level} onClose={() => dispatch({type:'CLEAR_LEVELUP'})} />
