@@ -2834,8 +2834,9 @@ function DeadlineRadar() {
       ...prev,
       [dl.id]: true
     }));
+    const url = dl.type === 'task' ? `/gtd/api/task/${dl.id}/complete` : `/perfil/api/reminder/${dl.id}/done`;
     try {
-      const res = await fetch(`/perfil/api/reminder/${dl.id}/done`, {
+      const res = await fetch(url, {
         method: 'POST'
       });
       const j = await res.json();
