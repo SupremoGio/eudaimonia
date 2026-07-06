@@ -238,8 +238,11 @@ function DeadlineRadar() {
   async function handleCheck(dl) {
     if (checking[dl.id]) return;
     setChecking(prev => ({...prev, [dl.id]: true}));
+    const url = dl.type === 'task'
+      ? `/gtd/api/task/${dl.id}/complete`
+      : `/perfil/api/reminder/${dl.id}/done`;
     try {
-      const res = await fetch(`/perfil/api/reminder/${dl.id}/done`, {method:'POST'});
+      const res = await fetch(url, {method:'POST'});
       const j = await res.json();
       if (j.ok) {
         setDeadlines(prev => prev.filter(d => d.id !== dl.id));

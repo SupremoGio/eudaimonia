@@ -267,14 +267,14 @@ def index():
 
 
 def _build_deadlines(today_dt: date) -> list:
-    """Recordatorios activos con fecha en los próximos 6 días (o vencidos)."""
+    """Recordatorios y tareas GTD con fecha en los próximos 6 días (o vencidos)."""
     horizon = (today_dt + timedelta(days=6)).isoformat()
     raw = []
 
     with get_db() as db:
         for r in db.execute("""
             SELECT id, description AS label, type AS rem_type,
-                   COALESCE(next_date, target_date) AS fecha
+                   COALESCE(next_date, target_date) AS fecha, 'reminder' AS kind
             FROM reminders
             WHERE is_active=1
               AND COALESCE(next_date, target_date) IS NOT NULL
@@ -283,10 +283,21 @@ def _build_deadlines(today_dt: date) -> list:
         """, (horizon,)).fetchall():
             raw.append(dict(r))
 
+        for r in db.execute("""
+            SELECT id, title AS label, NULL AS rem_type,
+                   fecha_limite AS fecha, 'task' AS kind
+            FROM gtd_tasks
+            WHERE (completado IS NULL OR completado=0)
+              AND fecha_limite IS NOT NULL AND fecha_limite <> ''
+              AND fecha_limite <= ?
+            ORDER BY fecha_limite LIMIT 8
+        """, (horizon,)).fetchall():
+            raw.append(dict(r))
+
     deadlines = []
     for d in raw:
         try:
-            d['type'] = 'reminder'
+            d['type'] = d.pop('kind')
             days = (date.fromisoformat(d['fecha'][:10]) - today_dt).days
             d['days'] = days
             if days < 0:
