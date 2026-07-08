@@ -2841,7 +2841,7 @@ function DeadlineRadar() {
       });
       const j = await res.json();
       if (j.ok) {
-        setDeadlines(prev => prev.filter(d => d.id !== dl.id));
+        setDeadlines(prev => prev.filter(d => !(d.id === dl.id && d.type === dl.type)));
       }
     } catch (e) {}
     setChecking(prev => ({
@@ -2924,12 +2924,9 @@ function DeadlineRadar() {
     }
   }, deadlines.length, " próximos")), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      gap: 10,
-      overflowX: 'auto',
-      paddingBottom: 6,
-      scrollbarWidth: 'none',
-      WebkitOverflowScrolling: 'touch'
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+      gap: 10
     }
   }, deadlines.map((dl, i) => {
     const p = PAL[dl.level] || PAL.green;
@@ -2937,17 +2934,14 @@ function DeadlineRadar() {
     const sublabel = dl.days > 0 ? 'DÍAS' : dl.days === 0 ? 'DEADLINE' : 'EXPIRADO';
     const isChecking = checking[dl.id];
     return /*#__PURE__*/React.createElement("div", {
-      key: dl.id ?? i,
+      key: `${dl.type}-${dl.id ?? i}`,
       style: {
-        flexShrink: 0,
         display: 'flex',
         alignItems: 'stretch',
         borderRadius: 14,
         overflow: 'hidden',
         border: '1px solid rgba(255,255,255,0.05)',
         background: p.bg,
-        minWidth: 185,
-        maxWidth: 215,
         boxShadow: '0 2px 14px rgba(0,0,0,0.32)',
         opacity: isChecking ? 0.5 : 1,
         transition: 'opacity 0.2s'

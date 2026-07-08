@@ -245,7 +245,7 @@ function DeadlineRadar() {
       const res = await fetch(url, {method:'POST'});
       const j = await res.json();
       if (j.ok) {
-        setDeadlines(prev => prev.filter(d => d.id !== dl.id));
+        setDeadlines(prev => prev.filter(d => !(d.id === dl.id && d.type === dl.type)));
       }
     } catch(e) {}
     setChecking(prev => ({...prev, [dl.id]: false}));
@@ -276,9 +276,9 @@ function DeadlineRadar() {
           color:C.textMuted,opacity:0.45}}>{deadlines.length} próximos</div>
       </div>
 
-      {/* Scroll horizontal */}
-      <div style={{display:'flex',gap:10,overflowX:'auto',
-        paddingBottom:6,scrollbarWidth:'none',WebkitOverflowScrolling:'touch'}}>
+      {/* Grid — todas las tarjetas visibles, sin scroll oculto */}
+      <div style={{display:'grid',
+        gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))',gap:10}}>
         {deadlines.map((dl, i) => {
           const p = PAL[dl.level] || PAL.green;
           const urgent = dl.level === 'red';
@@ -286,11 +286,11 @@ function DeadlineRadar() {
 
           const isChecking = checking[dl.id];
           return (
-            <div key={dl.id ?? i} style={{
-              flexShrink:0,display:'flex',alignItems:'stretch',
+            <div key={`${dl.type}-${dl.id ?? i}`} style={{
+              display:'flex',alignItems:'stretch',
               borderRadius:14,overflow:'hidden',
               border:'1px solid rgba(255,255,255,0.05)',
-              background:p.bg,minWidth:185,maxWidth:215,
+              background:p.bg,
               boxShadow:'0 2px 14px rgba(0,0,0,0.32)',
               opacity: isChecking ? 0.5 : 1,
               transition:'opacity 0.2s',
