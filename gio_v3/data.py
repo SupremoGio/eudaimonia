@@ -296,6 +296,11 @@ ACTIVITIES = {
     "eurythmia_session": {"label": "Sesión de práctica (EURYTHMIA)",  "cat": "Baile",            "pts": 20, "ec": 1, "tier": "alto",     "hidden": True},
     "eurythmia_grabado":  {"label": "Grabé mi práctica de baile",     "cat": "Baile",            "pts": 3,  "ec": 1, "tier": "progreso", "hidden": True},
 
+    # ── HARMA — Mecánica (submódulo de Ataraxia) ────────────────────────────────
+    # Escrito automáticamente por modules/harma al registrar un servicio real —
+    # "hidden" lo oculta del checklist manual; ver modules/harma/routes.py.
+    "harma_servicio":   {"label": "Servicio de mantenimiento (HARMA)", "cat": "Mecánica",        "pts": 5,  "ec": 2, "tier": "progreso", "hidden": True},
+
     # ── PAIDEIA — Conocimiento ────────────────────────────────────────────────
     "leer_general":     {"label": "Leer 5 páginas",                  "cat": "Paideia",          "pts": 1, "ec": 0, "tier": "micro"},
     "leer_psico":       {"label": "Leer psicología",                 "cat": "Paideia",          "pts": 1, "ec": 0, "tier": "micro"},
@@ -361,6 +366,7 @@ VIRTUE_CATS = {
     "OIKONOMIA":      ["Finanzas"],
     "ATARAXIA":       ["Orden"],
     "IDENTIDAD":      ["Identidad"],
+    "HARMA":          ["Mecánica"],
 }
 
 # ── SATURDAY TASKS ────────────────────────────────────────────────────────────

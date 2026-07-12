@@ -1355,6 +1355,64 @@ def init_db():
         );
         """)
 
+        # ── HARMA — Mecánica y mantenimiento del carro (submódulo de Ataraxia) ─
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS harma_vehiculo (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre         TEXT    NOT NULL DEFAULT 'Mi carro',
+            marca          TEXT    DEFAULT '',
+            modelo         TEXT    DEFAULT '',
+            anio           INTEGER DEFAULT NULL,
+            placas         TEXT    DEFAULT '',
+            km_actual      INTEGER DEFAULT 0,
+            km_actualizado TEXT    DEFAULT NULL,
+            created_at     TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS harma_servicios (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo            TEXT    NOT NULL DEFAULT 'otro',
+            titulo          TEXT    NOT NULL,
+            descripcion     TEXT    DEFAULT '',
+            km              INTEGER DEFAULT NULL,
+            costo           REAL    DEFAULT 0,
+            taller          TEXT    DEFAULT '',
+            fecha           TEXT    NOT NULL,
+            activity_log_id INTEGER DEFAULT NULL,
+            created_at      TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS harma_recordatorios (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo           TEXT    NOT NULL DEFAULT 'otro',
+            titulo         TEXT    NOT NULL,
+            intervalo_km   INTEGER DEFAULT NULL,
+            intervalo_dias INTEGER DEFAULT NULL,
+            ultimo_km      INTEGER DEFAULT NULL,
+            ultima_fecha   TEXT    DEFAULT NULL,
+            proximo_km     INTEGER DEFAULT NULL,
+            proximo_fecha  TEXT    DEFAULT NULL,
+            activo         INTEGER DEFAULT 1,
+            created_at     TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS harma_documentos (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            tipo              TEXT    NOT NULL DEFAULT 'seguro',
+            titulo            TEXT    NOT NULL,
+            nombre_archivo    TEXT    DEFAULT '',
+            nombre_original   TEXT    DEFAULT '',
+            fecha_vencimiento TEXT    DEFAULT NULL,
+            notas             TEXT    DEFAULT '',
+            created_at        TEXT    NOT NULL
+        );
+        """)
+
+        # Seed vehículo por defecto (una fila — se edita desde la UI)
+        if db.execute("SELECT COUNT(*) as c FROM harma_vehiculo").fetchone()["c"] == 0:
+            import datetime as _dth
+            db.execute(
+                "INSERT INTO harma_vehiculo (nombre, km_actual, created_at) VALUES (?,?,?)",
+                ("Mi carro", 0, _dth.datetime.now().isoformat())
+            )
+
         # Seed repertoire (real starting point: mastery/reps en 0)
         if db.execute("SELECT COUNT(*) as c FROM eury_repertoire").fetchone()["c"] == 0:
             import datetime as _dte
