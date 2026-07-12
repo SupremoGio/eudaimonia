@@ -4751,7 +4751,7 @@ function ModuleExtra({
         textTransform: 'uppercase',
         marginBottom: 10
       }
-    }, "Submódulos"), mkLink('/ataraxia/', '⚓', 'Ataraxia', 'Checklist semanal · Orden'), mkLink('/sabado/', '🧹', 'Sábado Reset', 'Ritual matutino de limpieza'), mkLink('/gtd/', '🎯', 'Praxis GTD', 'Inbox · Next Actions · Proyectos'), mkLink('/harma/', '🔧', 'HARMA', 'Mecánica · Mantenimiento del carro'));
+    }, "Submódulos"), mkLink('/ataraxia/', '⚓', 'Ataraxia', 'Checklist semanal · Orden'), mkLink('/gtd/', '🎯', 'Praxis GTD', 'Inbox · Next Actions · Proyectos'), mkLink('/harma/', '🔧', 'HARMA', 'Mecánica · Mantenimiento del carro'));
   }
   if (id === 'logoi') {
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {

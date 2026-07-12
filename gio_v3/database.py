@@ -309,14 +309,6 @@ def init_db():
             uploaded_at TEXT NOT NULL
         );
 
-        -- ── SÁBADO ───────────────────────────────────────────────────────────
-        CREATE TABLE IF NOT EXISTS saturday_checks (
-            week_start TEXT NOT NULL,
-            task_key   TEXT NOT NULL,
-            done       INTEGER DEFAULT 0,
-            PRIMARY KEY (week_start, task_key)
-        );
-
         -- ── DEBT PAYMENTS (abonos) ──────────────────────────────────────────
         CREATE TABLE IF NOT EXISTS debt_payments (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,

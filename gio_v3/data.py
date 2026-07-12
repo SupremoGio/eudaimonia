@@ -369,24 +369,5 @@ VIRTUE_CATS = {
     "HARMA":          ["Mecánica"],
 }
 
-# ── SATURDAY TASKS ────────────────────────────────────────────────────────────
-SATURDAY_TASKS = [
-    {"key": "vacuum_house",    "label": "🤖 Lancer vacuum robot — casa"},
-    {"key": "hang_clothes",    "label": "👔 Hang clothes / wash second load"},
-    {"key": "clean_bathroom",  "label": "🚿 Clean bathroom"},
-    {"key": "sortir_poubelle", "label": "🗑️ Sortir la poubelle"},
-    {"key": "coffee",          "label": "☕ Make some coffeeee :)"},
-    {"key": "wipeout_tables",  "label": "🧹 Wipeout night table, table & computer"},
-    {"key": "prepare_bkfast",  "label": "🍳 Prepare breakfast"},
-    {"key": "take_bkfast",     "label": "🥣 Take breakfast"},
-    {"key": "plants",          "label": "🌱 Check your plants"},
-    {"key": "vacuum_bedroom",  "label": "🤖 Lancer vacuum robot — bedroom"},
-    {"key": "passer_mop",      "label": "🧺 Passer le mop"},
-    {"key": "wash_clothes",    "label": "👕 Wash clothes"},
-    {"key": "wash_plates",     "label": "🍽️ Wash plates"},
-    {"key": "change_sheets",   "label": "🛏️ Change sheets if applicable"},
-    {"key": "wipeout_kitchen", "label": "🍴 Wipeout kitchen, table & microwave"},
-]
-
 DAYS_ES = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"]
 MEAL_TYPES = ["Desayuno","Comida","Cena","Snack"]

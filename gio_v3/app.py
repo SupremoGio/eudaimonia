@@ -15,7 +15,6 @@ from modules.finanzas.routes       import finanzas_bp
 from modules.idiomas.routes        import idiomas_bp
 from modules.nutricion.routes      import nutricion_bp
 from modules.perfil.routes         import perfil_bp
-from modules.sabado.routes         import sabado_bp
 from modules.ataraxia.routes       import ataraxia_bp
 from modules.gamification.routes   import gamification_bp
 from modules.finanzas.consumo      import consumo_bp
@@ -64,7 +63,6 @@ def create_app():
     app.register_blueprint(idiomas_bp,      url_prefix='/idiomas')
     app.register_blueprint(nutricion_bp,    url_prefix='/nutricion')
     app.register_blueprint(perfil_bp,       url_prefix='/perfil')
-    app.register_blueprint(sabado_bp,       url_prefix='/sabado')
     app.register_blueprint(ataraxia_bp,    url_prefix='/ataraxia')
     app.register_blueprint(gamification_bp)
     app.register_blueprint(consumo_bp,      url_prefix='/finanzas/consumo')
