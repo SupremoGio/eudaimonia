@@ -1369,20 +1369,20 @@ def init_db():
             costo           REAL    DEFAULT 0,
             taller          TEXT    DEFAULT '',
             fecha           TEXT    NOT NULL,
+            plan_item_id    TEXT    DEFAULT NULL,
             activity_log_id INTEGER DEFAULT NULL,
             created_at      TEXT    NOT NULL
         );
-        CREATE TABLE IF NOT EXISTS harma_recordatorios (
-            id             INTEGER PRIMARY KEY AUTOINCREMENT,
-            tipo           TEXT    NOT NULL DEFAULT 'otro',
-            titulo         TEXT    NOT NULL,
-            intervalo_km   INTEGER DEFAULT NULL,
-            intervalo_dias INTEGER DEFAULT NULL,
-            ultimo_km      INTEGER DEFAULT NULL,
-            ultima_fecha   TEXT    DEFAULT NULL,
-            proximo_km     INTEGER DEFAULT NULL,
-            proximo_fecha  TEXT    DEFAULT NULL,
-            activo         INTEGER DEFAULT 1,
+        CREATE TABLE IF NOT EXISTS harma_plan_items (
+            id             TEXT PRIMARY KEY,
+            cat            TEXT    NOT NULL DEFAULT 'motor',
+            name           TEXT    NOT NULL,
+            km_interval    INTEGER NOT NULL,
+            meses_interval INTEGER NOT NULL,
+            last_km        INTEGER DEFAULT 0,
+            last_date      TEXT    DEFAULT NULL,
+            critical       INTEGER DEFAULT 0,
+            desc           TEXT    DEFAULT '',
             created_at     TEXT    NOT NULL
         );
         CREATE TABLE IF NOT EXISTS harma_documentos (
@@ -1433,6 +1433,59 @@ def init_db():
             db.execute(
                 "INSERT INTO harma_vehiculo (nombre, km_actual, created_at) VALUES (?,?,?)",
                 ("Mi carro", 0, _dth.datetime.now().isoformat())
+            )
+
+        # Migrate harma_vehiculo: add motor/color if missing
+        try:
+            hv_cols = [r["name"] for r in db.execute("PRAGMA table_info(harma_vehiculo)").fetchall()]
+            if "motor" not in hv_cols:
+                db.execute("ALTER TABLE harma_vehiculo ADD COLUMN motor TEXT DEFAULT ''")
+            if "color" not in hv_cols:
+                db.execute("ALTER TABLE harma_vehiculo ADD COLUMN color TEXT DEFAULT ''")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] harma_vehiculo motor/color migration warning: {e}")
+
+        # Migrate harma_servicios: add plan_item_id if missing (tablas creadas antes de esta versión)
+        try:
+            hs_cols = [r["name"] for r in db.execute("PRAGMA table_info(harma_servicios)").fetchall()]
+            if "plan_item_id" not in hs_cols:
+                db.execute("ALTER TABLE harma_servicios ADD COLUMN plan_item_id TEXT DEFAULT NULL")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] harma_servicios plan_item_id migration warning: {e}")
+
+        # Seed plan de mantenimiento (catálogo VAG de referencia, arranca desde el km/fecha actual)
+        if db.execute("SELECT COUNT(*) as c FROM harma_plan_items").fetchone()["c"] == 0:
+            import datetime as _dthp
+            _veh = db.execute("SELECT km_actual FROM harma_vehiculo ORDER BY id LIMIT 1").fetchone()
+            _base_km = _veh["km_actual"] if _veh else 0
+            _base_fecha = _dthp.date.today().isoformat()
+            _now_p = _dthp.datetime.now().isoformat()
+            db.executemany(
+                "INSERT INTO harma_plan_items (id, cat, name, km_interval, meses_interval, last_km, last_date, critical, desc, created_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                [
+                    ("aceite",     "motor",      "Aceite motor + filtro",       10000,  12, _base_km, _base_fecha, 1, "5W-30 long-life · filtro original", _now_p),
+                    ("aire",       "motor",      "Filtro de aire",               30000,  24, _base_km, _base_fecha, 0, "Sustitución cada 2 años o intervalo de km", _now_p),
+                    ("habitaculo", "motor",      "Filtro de habitáculo",         15000,  12, _base_km, _base_fecha, 0, "Filtro de polen / antipolvo", _now_p),
+                    ("combust",    "motor",      "Filtro de combustible",        60000,  48, _base_km, _base_fecha, 1, "Crítico en diésel · evita averías de bomba", _now_p),
+                    ("bujias",     "motor",      "Bujías de calentamiento",      60000,  60, _base_km, _base_fecha, 0, "Solo TDI · revisar arranque en frío", _now_p),
+                    ("balDel",     "frenos",     "Balatas delanteras",           40000,  48, _base_km, _base_fecha, 1, "Inspección visual cada 10,000 km", _now_p),
+                    ("balTra",     "frenos",     "Balatas traseras",             70000,  60, _base_km, _base_fecha, 0, "Desgaste menor que delanteras", _now_p),
+                    ("discDel",    "frenos",     "Discos delanteros",            80000,  60, _base_km, _base_fecha, 1, "Cambio recomendado cada 2 juegos de balatas", _now_p),
+                    ("discTra",    "frenos",     "Discos traseros",             120000,  96, _base_km, _base_fecha, 0, "Inspección de espesor mínimo", _now_p),
+                    ("liqFre",     "fluidos",    "Líquido de frenos",            30000,  24, _base_km, _base_fecha, 0, "DOT 4 · higroscópico, caduca por tiempo", _now_p),
+                    ("amort",      "suspension", "Amortiguadores",                80000,  84, _base_km, _base_fecha, 1, "Test de rebote · revisar fugas", _now_p),
+                    ("alineacion", "suspension", "Alineación y balanceo",         10000,  12, _base_km, _base_fecha, 0, "Cada cambio de neumáticos o golpe", _now_p),
+                    ("distrib",    "trans",      "Correa de distribución",       120000,  60, _base_km, _base_fecha, 1, "CRÍTICO · rotura = motor destruido", _now_p),
+                    ("accesorios", "trans",      "Correa de accesorios",          90000,  72, _base_km, _base_fecha, 0, "Alternador, A/C, dirección asistida", _now_p),
+                    ("aceiteCaja", "trans",      "Aceite de caja",                60000,  60, _base_km, _base_fecha, 0, "Manual: 75W · revisar fugas", _now_p),
+                    ("embrague",   "trans",      "Embrague",                     150000, 120, _base_km, _base_fecha, 0, "Solo si hay patinaje o pedal duro", _now_p),
+                    ("neumaticos", "rodaje",     "Neumáticos",                    50000,  60, _base_km, _base_fecha, 1, "Revisar dibujo · TWI · presión semanal", _now_p),
+                    ("bateria",    "rodaje",     "Batería 12V",                   99999,  60, _base_km, _base_fecha, 0, "Test de carga · cambiar cada 4-5 años", _now_p),
+                    ("anticong",   "fluidos",    "Anticongelante",                60000,  48, _base_km, _base_fecha, 0, "G13 · sustitución integral cada 4 años", _now_p),
+                ]
             )
 
         # Seed repertoire (real starting point: mastery/reps en 0)

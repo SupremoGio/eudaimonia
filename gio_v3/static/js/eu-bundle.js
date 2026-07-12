@@ -4870,6 +4870,60 @@ function ModuleExtra({
       }
     }, /*#__PURE__*/React.createElement("span", null, "🕺  Ir a practicar"), /*#__PURE__*/React.createElement("span", null, "→")));
   }
+  if (id === 'harma') {
+    const harma = srv.harmaSummary || {
+      vencidos: 0,
+      urgentes: 0,
+      km_actual: 0
+    };
+    const hasAlert = harma.vencidos > 0 || harma.urgentes > 0;
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 9,
+        letterSpacing: '0.15em',
+        color: C.textMuted,
+        textTransform: 'uppercase',
+        marginBottom: 10
+      }
+    }, "Estado del veh\xEDculo"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${hasAlert ? 'rgba(244,63,94,0.35)' : 'var(--gold-border)'}`,
+        borderRadius: 14,
+        padding: '16px 18px',
+        marginBottom: 12
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'Cormorant Garamond,serif',
+        fontSize: 22,
+        color: hasAlert ? '#f43f5e' : acc,
+        marginBottom: 4
+      }
+    }, hasAlert ? `${harma.vencidos} vencido${harma.vencidos !== 1 ? 's' : ''} · ${harma.urgentes} urgente${harma.urgentes !== 1 ? 's' : ''}` : 'Mantenimiento al día'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 12,
+        color: C.textMuted
+      }
+    }, `${harma.km_actual.toLocaleString('es-MX')} km`)), /*#__PURE__*/React.createElement("a", {
+      href: "/harma/",
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        background: acc,
+        color: '#0d0810',
+        borderRadius: 12,
+        padding: '13px 16px',
+        textDecoration: 'none',
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 13,
+        fontWeight: 600
+      }
+    }, /*#__PURE__*/React.createElement("span", null, "🔧  Ir a HARMA"), /*#__PURE__*/React.createElement("span", null, "→")));
+  }
   return null;
 }
 

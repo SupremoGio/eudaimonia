@@ -16,6 +16,7 @@ _MODULE_CATS = {
     'cosmopolitismo': {'Idiomas'},
     'logoi':          {'Programación'},
     'eurythmia':      {'Baile'},
+    'harma':          {'Mecánica'},
 }
 
 _EU_MODULES_BASE = [
@@ -26,6 +27,7 @@ _EU_MODULES_BASE = [
     {'id': 'cosmopolitismo', 'name': 'COSMOPOLITISMO', 'concept': 'Idiomas',       'desc': 'Idiomas · Culturas',          'hue': 215},
     {'id': 'logoi',          'name': 'LOGOI',          'concept': 'Programación',  'desc': 'Programación · Lógica',       'hue': 120},
     {'id': 'eurythmia',      'name': 'EURYTHMIA',      'concept': 'Baile',         'desc': 'Baile · Ritmo · Cuerpo',      'hue': 330},
+    {'id': 'harma',          'name': 'HARMA',          'concept': 'Mecánica',      'desc': 'Vehículo · Servicios · Km',   'hue': 15,  'route': '/harma'},
 ]
 
 # Habit → activity keys que la marcan como done si se loguearon hoy
@@ -240,6 +242,17 @@ def _build_eudaimonia_data():
         'step':     eury_last_step['step'] if eury_last_step else None,
     }
 
+    # HARMA — resumen real del plan de mantenimiento (vencidos/urgentes, km actual)
+    from modules.harma.routes import _serialize_plan as _harma_plan, _get_vehiculo as _harma_vehiculo
+    with get_db() as db:
+        _hv = _harma_vehiculo(db)
+        _hplan = _harma_plan(db, _hv)
+    harma_summary = {
+        'vencidos':  sum(1 for it in _hplan if it['status'] == 'vencido'),
+        'urgentes':  sum(1 for it in _hplan if it['status'] == 'urgente'),
+        'km_actual': _hv['km_actual'] if _hv else 0,
+    }
+
     return {
         'total_xp':       stats['total_xp'],
         'xp_today':       stats['xp_today'],
@@ -274,6 +287,7 @@ def _build_eudaimonia_data():
         'suggestion':     _build_suggestion(today_keys),
         'category_hues':  dict(CATEGORY_HUES),
         'eury_today':     eury_today,
+        'harma_summary':  harma_summary,
     }
 
 

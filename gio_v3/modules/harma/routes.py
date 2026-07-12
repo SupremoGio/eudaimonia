@@ -1,4 +1,4 @@
-import os, uuid
+import os, re, uuid
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
@@ -15,6 +15,17 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 _SERVICIO_KEY = "harma_servicio"
 _SERVICIO_XP  = 5
 _SERVICIO_EC  = 2
+
+# ── Categorías del plan de mantenimiento ──────────────────────────────────────
+CAT = {
+    'motor':      {'label': 'Motor',       'hue': 15},
+    'frenos':     {'label': 'Frenos',      'hue': 0},
+    'suspension': {'label': 'Suspensión',  'hue': 240},
+    'trans':      {'label': 'Transmisión', 'hue': 280},
+    'rodaje':     {'label': 'Rodaje',      'hue': 195},
+    'fluidos':    {'label': 'Fluidos',     'hue': 175},
+}
+CAT_ORDER = ['motor', 'frenos', 'suspension', 'trans', 'rodaje', 'fluidos']
 
 TIPOS_SERVICIO = [
     {"id": "aceite",       "label": "Cambio de aceite",     "icon": "🛢️"},
@@ -49,7 +60,6 @@ ESTADOS_SINIESTRO = [
     {"id": "rechazado",   "label": "Rechazado"},
 ]
 
-_PROXIMIDAD_KM   = 500
 _PROXIMIDAD_DIAS = 14
 
 
@@ -62,48 +72,54 @@ def _get_vehiculo(db):
     return dict(row) if row else None
 
 
-def _reminder_status(rec, km_actual, today):
-    """'vencido' | 'proximo' | 'ok' — toma el peor de km/fecha si ambos aplican."""
-    status = 'ok'
-    if rec['proximo_km'] is not None and km_actual is not None:
-        if km_actual >= rec['proximo_km']:
-            status = 'vencido'
-        elif km_actual >= rec['proximo_km'] - _PROXIMIDAD_KM and status == 'ok':
-            status = 'proximo'
-    if rec['proximo_fecha']:
-        try:
-            dias_restantes = (datetime.fromisoformat(rec['proximo_fecha']).date() - today).days
-            if dias_restantes < 0:
-                status = 'vencido'
-            elif dias_restantes <= _PROXIMIDAD_DIAS and status != 'vencido':
-                status = 'proximo'
-        except ValueError:
-            pass
-    return status
+def _months_between(iso_date, today):
+    if not iso_date:
+        return 999
+    try:
+        d = datetime.fromisoformat(iso_date).date()
+    except ValueError:
+        return 999
+    return (today.year - d.year) * 12 + (today.month - d.month)
 
 
-def _compute_proximo(intervalo_km, intervalo_dias, base_km, base_fecha):
-    proximo_km = (base_km + intervalo_km) if (intervalo_km and base_km is not None) else None
-    proximo_fecha = None
-    if intervalo_dias and base_fecha:
-        try:
-            proximo_fecha = (datetime.fromisoformat(base_fecha).date() + timedelta(days=intervalo_dias)).isoformat()
-        except ValueError:
-            proximo_fecha = None
-    return proximo_km, proximo_fecha
+def _compute_plan_item(item, km_actual, today):
+    """Progreso doble (km vs. tiempo) — el que llegue primero manda, igual que el fabricante."""
+    km_pct   = (km_actual - item['last_km']) / item['km_interval'] if item['km_interval'] else 0
+    time_pct = _months_between(item['last_date'], today) / item['meses_interval'] if item['meses_interval'] else 0
+    pct      = max(km_pct, time_pct)
+    next_km  = item['last_km'] + item['km_interval']
+    km_left  = next_km - km_actual
+
+    if pct >= 1:      status = 'vencido'
+    elif pct >= 0.85: status = 'urgente'
+    elif pct >= 0.65: status = 'proximo'
+    else:             status = 'nominal'
+
+    return {
+        **item, 'km_pct': km_pct, 'time_pct': time_pct, 'pct': pct,
+        'next_km': next_km, 'km_left': km_left, 'status': status,
+        'cat_label': CAT.get(item['cat'], {}).get('label', item['cat']),
+        'cat_hue':   CAT.get(item['cat'], {}).get('hue', 0),
+    }
 
 
-def _serialize_recordatorios(db, vehiculo):
+def _serialize_plan(db, vehiculo):
     today = today_date()
-    km_actual = vehiculo['km_actual'] if vehiculo else None
-    rows = [dict(r) for r in db.execute(
-        "SELECT * FROM harma_recordatorios WHERE activo=1 ORDER BY id DESC"
-    ).fetchall()]
-    for r in rows:
-        r['status'] = _reminder_status(r, km_actual, today)
-    order = {'vencido': 0, 'proximo': 1, 'ok': 2}
-    rows.sort(key=lambda r: order[r['status']])
-    return rows
+    km_actual = vehiculo['km_actual'] if vehiculo else 0
+    rows = [dict(r) for r in db.execute("SELECT * FROM harma_plan_items ORDER BY id").fetchall()]
+    items = [_compute_plan_item(r, km_actual, today) for r in rows]
+    order = {'vencido': 0, 'urgente': 1, 'proximo': 2, 'nominal': 3}
+    items.sort(key=lambda it: (CAT_ORDER.index(it['cat']) if it['cat'] in CAT_ORDER else 99, order[it['status']]))
+    return items
+
+
+def _slugify(name, db):
+    base = re.sub(r'[^a-z0-9]+', '_', name.strip().lower()).strip('_') or 'servicio'
+    slug, n = base, 2
+    while db.execute("SELECT 1 FROM harma_plan_items WHERE id=?", (slug,)).fetchone():
+        slug = f"{base}_{n}"
+        n += 1
+    return slug
 
 
 def _poliza_status(pol, today):
@@ -138,7 +154,7 @@ def _state():
         servicios = [dict(r) for r in db.execute(
             "SELECT * FROM harma_servicios ORDER BY id DESC LIMIT 40"
         ).fetchall()]
-        recordatorios = _serialize_recordatorios(db, vehiculo)
+        plan = _serialize_plan(db, vehiculo)
         documentos = [dict(r) for r in db.execute(
             "SELECT * FROM harma_documentos ORDER BY id DESC"
         ).fetchall()]
@@ -150,14 +166,20 @@ def _state():
             "SELECT COALESCE(SUM(costo),0) as s FROM harma_servicios"
         ).fetchone()['s']
 
+    counts = {'vencido': 0, 'urgente': 0, 'proximo': 0, 'nominal': 0}
+    for it in plan:
+        counts[it['status']] += 1
+
     return {
         'vehiculo': vehiculo,
         'servicios': servicios,
-        'recordatorios': recordatorios,
+        'plan': plan,
+        'plan_counts': counts,
         'documentos': documentos,
         'polizas': polizas,
         'siniestros': siniestros,
         'total_costo': total_costo,
+        'cat_defs': [{'id': c, **CAT[c]} for c in CAT_ORDER],
         'tipos_servicio': TIPOS_SERVICIO,
         'tipos_documento': TIPOS_DOCUMENTO,
         'tipos_siniestro': TIPOS_SINIESTRO,
@@ -165,8 +187,8 @@ def _state():
     }
 
 
-def _log_servicio(tipo, titulo, descripcion, km, costo, taller, fecha):
-    """Inserta el servicio, actualiza odómetro si aplica, y otorga XP/EC vía el engine."""
+def _log_servicio(tipo, titulo, descripcion, km, costo, taller, fecha, plan_item_id=None):
+    """Inserta el servicio, actualiza odómetro y el plan (si aplica), y otorga XP/EC vía el engine."""
     today = today_str()
     now = _now()
     with get_db() as db:
@@ -177,16 +199,24 @@ def _log_servicio(tipo, titulo, descripcion, km, costo, taller, fecha):
         log_id = cur.lastrowid
         cur2 = db.execute(
             "INSERT INTO harma_servicios (tipo, titulo, descripcion, km, costo, taller, fecha, "
-            "activity_log_id, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
-            (tipo, titulo, descripcion, km, costo, taller, fecha, log_id, now)
+            "plan_item_id, activity_log_id, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (tipo, titulo, descripcion, km, costo, taller, fecha, plan_item_id, log_id, now)
         )
         servicio_id = cur2.lastrowid
 
         vehiculo = _get_vehiculo(db)
-        if vehiculo and km is not None and km > (vehiculo['km_actual'] or 0):
+        km_actual = vehiculo['km_actual'] if vehiculo else None
+        if vehiculo and km is not None and km > (km_actual or 0):
             db.execute(
                 "UPDATE harma_vehiculo SET km_actual=?, km_actualizado=? WHERE id=?",
                 (km, today, vehiculo['id'])
+            )
+            km_actual = km
+
+        if plan_item_id:
+            db.execute(
+                "UPDATE harma_plan_items SET last_km=?, last_date=? WHERE id=?",
+                (km if km is not None else (km_actual or 0), fecha, plan_item_id)
             )
         db.commit()
 
@@ -220,13 +250,15 @@ def api_vehiculo_update():
             except (TypeError, ValueError):
                 return jsonify({'error': 'invalid km'}), 400
         db.execute(
-            "UPDATE harma_vehiculo SET nombre=?, marca=?, modelo=?, anio=?, placas=?, "
+            "UPDATE harma_vehiculo SET nombre=?, marca=?, modelo=?, anio=?, motor=?, color=?, placas=?, "
             "km_actual=?, km_actualizado=? WHERE id=?",
             (
                 str(data.get('nombre', vehiculo['nombre']))[:80],
                 str(data.get('marca', vehiculo['marca']))[:40],
                 str(data.get('modelo', vehiculo['modelo']))[:40],
                 data.get('anio', vehiculo['anio']),
+                str(data.get('motor', vehiculo.get('motor', '')))[:40],
+                str(data.get('color', vehiculo.get('color', '')))[:40],
                 str(data.get('placas', vehiculo['placas']))[:20],
                 km_actual, today_str(), vehiculo['id'],
             )
@@ -252,10 +284,11 @@ def api_servicio_create():
     except (TypeError, ValueError):
         costo = 0
     fecha = data.get('fecha') or today_str()
+    plan_item_id = data.get('plan_item_id') or None
 
     servicio_id, gam = _log_servicio(
         tipo, titulo, str(data.get('descripcion', ''))[:500], km, costo,
-        str(data.get('taller', ''))[:80], fecha,
+        str(data.get('taller', ''))[:80], fecha, plan_item_id,
     )
     return jsonify({'ok': True, 'servicio_id': servicio_id, 'gam': gam, 'state': _state()})
 
@@ -279,55 +312,50 @@ def api_servicio_delete(sid):
     return jsonify({'ok': True, 'gam': gam, 'state': _state()})
 
 
-@harma_bp.route('/api/recordatorio', methods=['POST'])
-def api_recordatorio_create():
+@harma_bp.route('/api/plan', methods=['POST'])
+def api_plan_create():
     data = request.get_json(silent=True) or {}
-    titulo = str(data.get('titulo', '')).strip()[:120]
-    if not titulo:
-        return jsonify({'error': 'titulo requerido'}), 400
-    tipo = data.get('tipo') or 'otro'
-
-    def _int_or_none(v):
-        try:
-            return int(v) if v not in (None, '') else None
-        except (TypeError, ValueError):
-            return None
-
-    intervalo_km = _int_or_none(data.get('intervalo_km'))
-    intervalo_dias = _int_or_none(data.get('intervalo_dias'))
-    if not intervalo_km and not intervalo_dias:
-        return jsonify({'error': 'define al menos un intervalo (km o días)'}), 400
+    name = str(data.get('name', '')).strip()[:120]
+    if not name:
+        return jsonify({'error': 'nombre requerido'}), 400
+    cat = data.get('cat') if data.get('cat') in CAT else 'motor'
+    try:
+        km_interval = int(data.get('km_interval') or 0)
+        meses_interval = int(data.get('meses_interval') or 0)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'intervalo inválido'}), 400
+    if km_interval <= 0 and meses_interval <= 0:
+        return jsonify({'error': 'define al menos un intervalo (km o meses)'}), 400
 
     with get_db() as db:
         vehiculo = _get_vehiculo(db)
-        base_km = _int_or_none(data.get('ultimo_km'))
-        if base_km is None:
-            base_km = vehiculo['km_actual'] if vehiculo else 0
-        base_fecha = data.get('ultima_fecha') or today_str()
-
-        proximo_km, proximo_fecha = _compute_proximo(intervalo_km, intervalo_dias, base_km, base_fecha)
-
+        slug = _slugify(name, db)
         db.execute(
-            "INSERT INTO harma_recordatorios (tipo, titulo, intervalo_km, intervalo_dias, "
-            "ultimo_km, ultima_fecha, proximo_km, proximo_fecha, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?)",
-            (tipo, titulo, intervalo_km, intervalo_dias, base_km, base_fecha,
-             proximo_km, proximo_fecha, _now())
+            "INSERT INTO harma_plan_items (id, cat, name, km_interval, meses_interval, last_km, "
+            "last_date, critical, desc, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (
+                slug, cat, name,
+                km_interval or 999999, meses_interval or 999,
+                vehiculo['km_actual'] if vehiculo else 0, today_str(),
+                1 if data.get('critical') else 0,
+                str(data.get('desc', ''))[:300],
+                _now(),
+            )
         )
         db.commit()
 
-    return jsonify({'ok': True, 'state': _state()})
+    return jsonify({'ok': True, 'id': slug, 'state': _state()})
 
 
-@harma_bp.route('/api/recordatorio/<int:rid>/hecho', methods=['POST'])
-def api_recordatorio_hecho(rid):
-    """Marca el recordatorio como cumplido hoy: registra el servicio real y recalcula el próximo."""
+@harma_bp.route('/api/plan/<item_id>/marcar', methods=['POST'])
+def api_plan_marcar(item_id):
+    """Registra el servicio real correspondiente a este ítem del plan (hoy) y recalcula su progreso."""
     data = request.get_json(silent=True) or {}
     with get_db() as db:
-        rec = db.execute("SELECT * FROM harma_recordatorios WHERE id=?", (rid,)).fetchone()
-        if not rec:
+        item = db.execute("SELECT * FROM harma_plan_items WHERE id=?", (item_id,)).fetchone()
+        if not item:
             return jsonify({'error': 'not found'}), 404
-        rec = dict(rec)
+        item = dict(item)
         vehiculo = _get_vehiculo(db)
 
     km = data.get('km')
@@ -335,28 +363,42 @@ def api_recordatorio_hecho(rid):
         km = int(km) if km not in (None, '') else (vehiculo['km_actual'] if vehiculo else None)
     except (TypeError, ValueError):
         km = vehiculo['km_actual'] if vehiculo else None
-    today = today_str()
 
     servicio_id, gam = _log_servicio(
-        rec['tipo'], rec['titulo'], str(data.get('descripcion', ''))[:500], km,
-        float(data.get('costo') or 0), str(data.get('taller', ''))[:80], today,
+        item['id'], item['name'], str(data.get('descripcion', ''))[:500], km,
+        float(data.get('costo') or 0), str(data.get('taller', ''))[:80], today_str(),
+        plan_item_id=item['id'],
     )
-
-    proximo_km, proximo_fecha = _compute_proximo(rec['intervalo_km'], rec['intervalo_dias'], km, today)
-    with get_db() as db:
-        db.execute(
-            "UPDATE harma_recordatorios SET ultimo_km=?, ultima_fecha=?, proximo_km=?, proximo_fecha=? WHERE id=?",
-            (km, today, proximo_km, proximo_fecha, rid)
-        )
-        db.commit()
-
     return jsonify({'ok': True, 'servicio_id': servicio_id, 'gam': gam, 'state': _state()})
 
 
-@harma_bp.route('/api/recordatorio/<int:rid>', methods=['DELETE'])
-def api_recordatorio_delete(rid):
+@harma_bp.route('/api/plan/<item_id>', methods=['PATCH'])
+def api_plan_update(item_id):
+    """Ajusta manualmente el último km/fecha de servicio de un ítem (para capturar historial conocido)."""
+    data = request.get_json(silent=True) or {}
     with get_db() as db:
-        db.execute("DELETE FROM harma_recordatorios WHERE id=?", (rid,))
+        item = db.execute("SELECT id FROM harma_plan_items WHERE id=?", (item_id,)).fetchone()
+        if not item:
+            return jsonify({'error': 'not found'}), 404
+        fields, vals = [], []
+        if 'last_km' in data:
+            try:
+                fields.append('last_km=?'); vals.append(max(0, int(data['last_km'])))
+            except (TypeError, ValueError):
+                return jsonify({'error': 'km inválido'}), 400
+        if 'last_date' in data:
+            fields.append('last_date=?'); vals.append(data['last_date'] or None)
+        if fields:
+            vals.append(item_id)
+            db.execute(f"UPDATE harma_plan_items SET {', '.join(fields)} WHERE id=?", vals)
+            db.commit()
+    return jsonify({'ok': True, 'state': _state()})
+
+
+@harma_bp.route('/api/plan/<item_id>', methods=['DELETE'])
+def api_plan_delete(item_id):
+    with get_db() as db:
+        db.execute("DELETE FROM harma_plan_items WHERE id=?", (item_id,))
         db.commit()
     return jsonify({'ok': True, 'state': _state()})
 

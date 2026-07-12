@@ -79,6 +79,7 @@ window.EU = {
     { id:'cosmopolitismo', name:'COSMOPOLITISMO', concept:'Idiomas',        desc:'Idiomas · Culturas',          hue:215,                       streak:0, done:false },
     { id:'logoi',          name:'LOGOI',          concept:'Programación',   desc:'Programación · Lógica',       hue:120,                       streak:0, done:false },
     { id:'eurythmia',      name:'EURYTHMIA',      concept:'Baile',          desc:'Baile · Ritmo · Cuerpo',      hue:330,                       streak:0, done:false },
+    { id:'harma',          name:'HARMA',          concept:'Mecánica',      desc:'Vehículo · Servicios · Km',   hue:15,  route:'/harma',       streak:0, done:false },
   ],
 
   quotes: [
@@ -216,6 +217,7 @@ Object.assign(window, { useTheme: useTheme });
     classification: d.classification  || null,
     suggestion:     d.suggestion      || null,
     euryToday:      d.eury_today      || null,
+    harmaSummary:   d.harma_summary   || null,
   };
   window.EU.catHues = d.category_hues || {};
 })();
