@@ -123,11 +123,6 @@ window.EU = {
       { label:'Avanzar en proyecto personal',  xp:25, done:false },
       { label:'Leer artículo técnico',         xp:10, done:false },
     ],
-    eurythmia:     [
-      { label:'Práctica de baile 30 min',      xp:25, done:false },
-      { label:'Aprender nuevo paso/figura',    xp:20, done:false },
-      { label:'Analizar música nueva',         xp:10, done:false },
-    ],
   },
 
   gtd: {
@@ -220,6 +215,7 @@ Object.assign(window, { useTheme: useTheme });
     deadlines:      d.deadlines       || [],
     classification: d.classification  || null,
     suggestion:     d.suggestion      || null,
+    euryToday:      d.eury_today      || null,
   };
   window.EU.catHues = d.category_hues || {};
 })();

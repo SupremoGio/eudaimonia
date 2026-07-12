@@ -85,8 +85,8 @@ def index():
     # Weekend activities separated
     sat_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sat"}
     sun_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sun"}
-    # Regular activities (no weekend field)
-    regular_acts = {k: v for k, v in ACTIVITIES.items() if "weekend" not in v}
+    # Regular activities (no weekend field, no auto-logged/hidden module activities)
+    regular_acts = {k: v for k, v in ACTIVITIES.items() if "weekend" not in v and not v.get("hidden")}
 
     _td = today_date()
     return render_template('actividades/index.html',
@@ -131,7 +131,7 @@ def today_status():
     activities = [
         {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'],
          'ec': v.get('ec', 0), 'tier': v.get('tier', 'micro'), 'done': k in today_keys}
-        for k, v in ACTIVITIES.items()
+        for k, v in ACTIVITIES.items() if not v.get('hidden')
     ]
     return jsonify({
         'activities': activities,
@@ -153,7 +153,7 @@ def log_activity():
     _t0 = time.perf_counter()
     key   = request.json.get('key')
     today = today_str()
-    if key not in ACTIVITIES:
+    if key not in ACTIVITIES or ACTIVITIES[key].get('hidden'):
         return jsonify({'error': 'invalid'}), 400
 
     pts = ACTIVITIES[key]['pts']

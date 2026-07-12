@@ -290,8 +290,11 @@ ACTIVITIES = {
     "skincare_noche":   {"label": "Skin Care nocturno",              "cat": "Salud Base",       "pts": 2, "ec": 0, "tier": "micro"},
 
     # ── EURYTHMIA — Baile ─────────────────────────────────────────────────────
-    "baile":            {"label": "Practicar baile",                 "cat": "Baile",            "pts": 2, "ec": 1, "tier": "progreso"},
-    "grabar_baile":     {"label": "Grabar práctica de baile",        "cat": "Baile",            "pts": 3, "ec": 1, "tier": "progreso"},
+    # Estos dos keys son escritos automáticamente por modules/eurythmia (sesión
+    # guiada real) — "hidden" los oculta del checklist manual de Acta Diurna
+    # para evitar doble-entry; ver modules/eurythmia/routes.py.
+    "eurythmia_session": {"label": "Sesión de práctica (EURYTHMIA)",  "cat": "Baile",            "pts": 20, "ec": 1, "tier": "alto",     "hidden": True},
+    "eurythmia_grabado":  {"label": "Grabé mi práctica de baile",     "cat": "Baile",            "pts": 3,  "ec": 1, "tier": "progreso", "hidden": True},
 
     # ── PAIDEIA — Conocimiento ────────────────────────────────────────────────
     "leer_general":     {"label": "Leer 5 páginas",                  "cat": "Paideia",          "pts": 1, "ec": 0, "tier": "micro"},

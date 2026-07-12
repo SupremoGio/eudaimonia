@@ -32,6 +32,7 @@ from modules.bienestar.routes    import bienestar_bp
 from modules.bienestar.salud     import medico_bp
 from modules.finanzas.estados.routes import estados_bp
 from modules.viajes.routes       import viajes_bp
+from modules.eurythmia.routes    import eurythmia_bp
 
 
 def create_app():
@@ -79,6 +80,7 @@ def create_app():
     app.register_blueprint(medico_bp,     url_prefix='/bienestar/salud')
     app.register_blueprint(estados_bp,    url_prefix='/finanzas/estados')
     app.register_blueprint(viajes_bp,     url_prefix='/viajes')
+    app.register_blueprint(eurythmia_bp,  url_prefix='/eurythmia')
     csrf.exempt(estados_bp)
     csrf.exempt(viajes_bp)
     csrf.exempt(budget_bp)

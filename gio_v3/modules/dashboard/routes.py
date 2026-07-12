@@ -62,8 +62,8 @@ _MODULE_HABIT_KEYS = {
         ['leer_prog'],
     ],
     'eurythmia': [
-        ['baile', 'grabar_baile'],
-        ['grabar_baile'],
+        ['eurythmia_session'],
+        ['eurythmia_grabado'],
         [],
     ],
 }
@@ -73,7 +73,7 @@ def _build_suggestion(done_keys: set):
     from collections import defaultdict
     by_cat = defaultdict(list)
     for k, v in ACTIVITIES.items():
-        if 'weekend' not in v:
+        if 'weekend' not in v and not v.get('hidden'):
             by_cat[v['cat']].append(k)
     for cat, keys in by_cat.items():
         pending = [k for k in keys if k not in done_keys]
@@ -221,8 +221,24 @@ def _build_eudaimonia_data():
 
     activities = [
         {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'], 'done': k in today_keys}
-        for k, v in ACTIVITIES.items()
+        for k, v in ACTIVITIES.items() if not v.get('hidden')
     ]
+
+    # EURYTHMIA — resumen de práctica real de hoy (reemplaza el checklist manual)
+    with get_db() as db:
+        eury_row = db.execute(
+            "SELECT COALESCE(SUM(min),0) as min, COALESCE(SUM(xp),0) as xp, COUNT(*) as sessions "
+            "FROM eury_sessions WHERE date=?", (today,)
+        ).fetchone()
+        eury_last_step = db.execute(
+            "SELECT step FROM eury_sessions WHERE date=? ORDER BY id DESC LIMIT 1", (today,)
+        ).fetchone()
+    eury_today = {
+        'min':      eury_row['min'],
+        'xp':       eury_row['xp'],
+        'sessions': eury_row['sessions'],
+        'step':     eury_last_step['step'] if eury_last_step else None,
+    }
 
     return {
         'total_xp':       stats['total_xp'],
@@ -257,6 +273,7 @@ def _build_eudaimonia_data():
         'deadlines':      _build_deadlines(_today),
         'suggestion':     _build_suggestion(today_keys),
         'category_hues':  dict(CATEGORY_HUES),
+        'eury_today':     eury_today,
     }
 
 

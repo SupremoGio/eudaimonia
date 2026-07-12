@@ -1326,6 +1326,59 @@ def init_db():
         );
         """)
 
+        # ── EURYTHMIA — Salsa ────────────────────────────────────────────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS eury_sessions (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            date            TEXT    NOT NULL,
+            min             INTEGER NOT NULL,
+            split_diso      INTEGER NOT NULL,
+            split_paso      INTEGER NOT NULL,
+            split_improv    INTEGER NOT NULL,
+            step            TEXT    DEFAULT '',
+            flow            INTEGER NOT NULL,
+            improv_note     TEXT    DEFAULT '',
+            xp              INTEGER NOT NULL,
+            grabado         INTEGER DEFAULT 0,
+            activity_log_id INTEGER DEFAULT NULL,
+            created_at      TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS eury_repertoire (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            kind        TEXT    NOT NULL,
+            step_key    TEXT    NOT NULL UNIQUE,
+            name        TEXT    NOT NULL,
+            note        TEXT    DEFAULT '',
+            mastery     INTEGER DEFAULT 0,
+            reps        INTEGER DEFAULT 0,
+            created_at  TEXT    NOT NULL
+        );
+        """)
+
+        # Seed repertoire (real starting point: mastery/reps en 0)
+        if db.execute("SELECT COUNT(*) as c FROM eury_repertoire").fetchone()["c"] == 0:
+            import datetime as _dte
+            _now = _dte.datetime.now().isoformat()
+            db.executemany(
+                "INSERT INTO eury_repertoire (kind, step_key, name, note, mastery, reps, created_at) VALUES (?,?,?,?,0,0,?)",
+                [
+                    ("libres", "guapea",    "Guapea",               "Base del casino",        _now),
+                    ("libres", "basico",    "Paso básico / marcaje","Peso y tiempo",           _now),
+                    ("libres", "suelta",    "Suelta (shine)",       "Footwork en solo",        _now),
+                    ("libres", "despelote", "Despelote",             "Cadera afrocubana",       _now),
+                    ("libres", "son",       "Son básico",            "Contratiempo, elegante",  _now),
+                    ("libres", "rumba",     "Rumba / guaguancó",     "Cuerpo y vacunao",        _now),
+                    ("pareja", "dileque",   "Dile que no",           "Figura fundamental",      _now),
+                    ("pareja", "enchufla",  "Enchufla",              "Cambio y giro",           _now),
+                    ("pareja", "enchufla2", "Enchufla doble",        "Dos giros seguidos",      _now),
+                    ("pareja", "vacilala",  "Vacílala",              "Exhibición de la dama",   _now),
+                    ("pareja", "setenta",   "Setenta",               "Enredo de brazos",        _now),
+                    ("pareja", "sombrero",  "Sombrero",              "Brazos sobre la cabeza",  _now),
+                    ("pareja", "dame",      "Dame una",              "Base de rueda",           _now),
+                    ("pareja", "setenta2",  "Setenta complicado",    "Familia del setenta",     _now),
+                ]
+            )
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

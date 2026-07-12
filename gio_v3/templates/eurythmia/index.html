@@ -1,0 +1,619 @@
+{% extends "eu/layout_sub.html" %}{% set pg='eurythmia' %}
+{% block title %}Eurythmia — Eudaimonia{% endblock %}
+{% block module_title %}EURYTHMIA{% endblock %}
+{% block topright %}Baile · Ritmo · Cuerpo{% endblock %}
+{% block content %}
+<style>
+:root{ --rose: oklch(66% 0.16 350); --rose-l: oklch(74% 0.15 350); --rose-bg: oklch(20% 0.05 350); --rose-b: oklch(38% 0.10 350); }
+html.light{ --rose: oklch(52% 0.17 350); --rose-l: oklch(46% 0.18 350); --rose-bg: oklch(93% 0.04 350); --rose-b: oklch(70% 0.12 350); }
+
+.ey-hero{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
+.ey-title{ font-family:var(--serif); font-size:1.7rem; font-style:italic; color:var(--text); letter-spacing:.03em; }
+.ey-sub{ font-size:var(--fs-sm); color:var(--dim); margin-top:2px; }
+.ey-lv{ text-align:right; }
+.ey-lv-n{ font-family:var(--serif); font-size:1.3rem; font-style:italic; color:var(--rose); line-height:1; }
+.ey-lv-s{ font-size:var(--fs-xs); color:var(--dim); margin-top:3px; }
+
+.ey-tabs{ display:flex; background:var(--card); border:1px solid var(--b); border-radius:100px; padding:3px; gap:2px; max-width:460px; margin-bottom:20px; }
+.ey-tab{ flex:1; border:none; cursor:pointer; border-radius:100px; padding:9px 6px; font-family:var(--sans); font-size:12.5px; letter-spacing:.02em; transition:all .18s; background:transparent; color:var(--dim); }
+.ey-tab.on{ background:var(--rose); color:#0d0810; font-weight:600; }
+.ey-panel{ display:none; max-width:760px; }
+.ey-panel.on{ display:block; }
+
+.ey-presets{ display:flex; gap:8px; margin-bottom:12px; }
+.ey-preset{ flex:1; cursor:pointer; background:var(--card); border:1px solid var(--b); border-radius:14px; padding:13px 0; text-align:center; transition:all .15s; }
+.ey-preset.on{ background:var(--rose-bg); border-color:var(--rose-b); }
+.ey-preset-n{ font-family:var(--serif); font-size:1.7rem; color:var(--text); line-height:1; }
+.ey-preset.on .ey-preset-n{ color:var(--rose-l); }
+.ey-preset-l{ font-size:var(--fs-xs); color:var(--dim); letter-spacing:.1em; text-transform:uppercase; margin-top:3px; }
+input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
+
+.ey-lbl{ font-family:var(--sans); font-size:10.5px; letter-spacing:.16em; color:var(--dim); text-transform:uppercase; margin:18px 0 10px; }
+.ey-phase{ display:flex; overflow:hidden; background:var(--card); border:1px solid var(--b); border-radius:14px; margin-bottom:9px; }
+.ey-phase-bar{ width:5px; flex-shrink:0; }
+.ey-phase-body{ flex:1; padding:12px 15px; }
+.ey-phase-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:3px; }
+.ey-phase-name{ font-family:var(--serif); font-size:1.05rem; color:var(--text); }
+.ey-phase-min{ font-family:var(--serif); font-size:1.25rem; }
+.ey-phase-desc{ font-size:12px; color:var(--mid); line-height:1.45; }
+
+.ey-chips{ display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; }
+.ey-chip{ flex-shrink:0; cursor:pointer; font-family:var(--sans); font-size:12px; border-radius:100px; padding:8px 15px; background:transparent; border:1px solid var(--b); color:var(--mid); white-space:nowrap; }
+.ey-chip.on{ background:var(--gold); border-color:var(--gold); color:#0d0810; font-weight:600; }
+
+.ey-metro{ display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--b); border-radius:14px; padding:13px 16px; margin:18px 0 8px; }
+.ey-sw{ cursor:pointer; flex-shrink:0; width:42px; height:24px; border-radius:100px; border:none; padding:3px; display:flex; transition:all .2s; background:rgba(160,140,110,.25); }
+.ey-sw.on{ background:var(--rose); justify-content:flex-end; }
+.ey-sw span{ width:18px; height:18px; border-radius:50%; background:var(--text); display:block; }
+.ey-bpm{ text-align:right; }
+.ey-bpm-n{ font-family:var(--serif); font-size:1.2rem; color:var(--gold); }
+.ey-bpm-l{ font-size:9px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
+
+.ey-cta{ width:100%; cursor:pointer; background:var(--rose); border:none; border-radius:16px; padding:16px; font-family:var(--sans); font-size:14.5px; font-weight:600; letter-spacing:.02em; color:#0d0810; margin-top:6px; }
+.ey-cta:hover{ opacity:.9; }
+
+/* Repertorio */
+.ey-ministats{ display:flex; gap:26px; margin-bottom:18px; }
+.ey-mn{ font-family:var(--serif); font-size:1.7rem; color:var(--gold); line-height:1; }
+.ey-mn.rose{ color:var(--rose-l); }
+.ey-ml{ font-size:9px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:3px; }
+.ey-fig{ padding:13px 0; border-bottom:1px solid var(--b); }
+.ey-fig-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
+.ey-fig-name{ font-family:var(--serif); font-size:1.05rem; color:var(--text); }
+.ey-fig-tier{ font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; }
+.ey-fig-note{ font-size:11.5px; color:var(--dim); margin-bottom:9px; }
+.ey-fig-row{ display:flex; align-items:center; gap:12px; }
+.ey-mbar{ flex:1; height:5px; background:var(--b); border-radius:3px; overflow:hidden; }
+.ey-mbar-fill{ height:100%; border-radius:3px; transition:width .4s; }
+.ey-drill{ flex-shrink:0; width:30px; height:30px; border-radius:50%; cursor:pointer; background:transparent; border:1px solid var(--b2); color:var(--gold); font-size:17px; line-height:1; display:flex; align-items:center; justify-content:center; }
+.ey-drill:hover{ background:var(--gold-d); }
+
+/* Progreso */
+.ey-hero-card{ background:var(--card); border:1px solid var(--b); border-radius:20px; padding:24px 20px; display:flex; align-items:center; gap:26px; flex-wrap:wrap; margin-bottom:22px; }
+.ey-ring-wrap{ position:relative; width:130px; height:130px; flex-shrink:0; }
+.ey-ring-txt{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.ey-ring-n{ font-size:9px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
+.ey-ring-name{ font-family:var(--serif); font-size:1.35rem; font-style:italic; color:var(--rose-l); line-height:1.05; }
+.ey-forecast{ background:var(--rose-bg); border:1px solid var(--rose-b); border-radius:14px; padding:13px 16px; font-size:12.5px; color:var(--mid); line-height:1.5; margin-top:12px; }
+.ey-rung{ display:flex; align-items:center; gap:13px; padding:10px 0; border-bottom:1px solid var(--b); }
+.ey-rung-badge{ width:32px; height:32px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-size:15px; border:1px solid var(--b2); }
+.ey-sci-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+@media(max-width:600px){ .ey-sci-grid{ grid-template-columns:1fr; } }
+.ey-sci-card{ background:var(--card); border:1px solid var(--b); border-radius:14px; padding:15px 17px; }
+
+/* Bitacora */
+.ey-log-item{ background:var(--card); border:1px solid var(--b); border-radius:14px; padding:15px 17px; margin-bottom:11px; }
+.ey-log-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px; }
+.ey-splitbar{ display:flex; gap:3px; height:5px; border-radius:3px; overflow:hidden; margin-bottom:9px; }
+.ey-quote{ font-family:var(--serif); font-style:italic; font-size:13.5px; color:var(--mid); line-height:1.5; padding-left:10px; border-left:2px solid var(--rose-b); }
+.ey-grabado-chip{ display:inline-flex; align-items:center; gap:7px; cursor:pointer; background:var(--card); border:1px solid var(--b); border-radius:100px; padding:8px 15px; font-size:12.5px; color:var(--mid); margin-bottom:16px; }
+.ey-grabado-chip.on{ background:var(--rose-bg); border-color:var(--rose-b); color:var(--rose-l); }
+
+/* Runner overlay + close sheet */
+.ey-overlay{ position:fixed; inset:0; z-index:9500; background:rgba(6,4,10,.85); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; padding:20px; }
+.ey-overlay.on{ display:flex; }
+.ey-runner{ width:100%; max-width:420px; background:var(--card); border:1px solid var(--rose-b); border-radius:22px; padding:30px 26px; text-align:center; }
+.ey-runner-phase{ font-size:10px; letter-spacing:.18em; color:var(--rose-l); text-transform:uppercase; margin-bottom:8px; }
+.ey-runner-name{ font-family:var(--serif); font-size:1.8rem; font-style:italic; color:var(--text); margin-bottom:6px; }
+.ey-runner-desc{ font-size:12.5px; color:var(--mid); line-height:1.5; margin-bottom:22px; }
+.ey-runner-time{ font-family:var(--serif); font-size:3.2rem; color:var(--rose-l); font-variant-numeric:tabular-nums; line-height:1; margin-bottom:22px; }
+.ey-runner-actions{ display:flex; gap:8px; }
+
+.ey-sheet-bg{ position:fixed; inset:0; z-index:9600; background:rgba(6,4,10,.7); backdrop-filter:blur(6px); display:none; align-items:flex-end; justify-content:center; }
+.ey-sheet-bg.on{ display:flex; }
+.ey-sheet{ width:100%; max-width:460px; max-height:92vh; overflow-y:auto; background:var(--surf); border-top:1px solid var(--rose-b); border-radius:24px 24px 0 0; padding:26px 22px calc(26px + env(safe-area-inset-bottom)); }
+.ey-flow-row{ display:flex; gap:7px; margin-bottom:6px; }
+.ey-flow-btn{ flex:1; cursor:pointer; aspect-ratio:1; border-radius:12px; background:var(--card); border:1px solid var(--b); color:var(--dim); font-family:var(--serif); font-size:20px; }
+.ey-flow-btn.on{ background:var(--rose-bg); border-color:var(--rose-b); color:var(--rose-l); }
+</style>
+
+<div class="ey-hero">
+  <div>
+    <div class="ey-title">Salsa cubana</div>
+    <div class="ey-sub">εὐρυθμία · buen ritmo — {{ state.streak }}d racha · {{ (state.total_min/60)|round(1) }}h acumuladas</div>
+  </div>
+  <div class="ey-lv">
+    <div class="ey-lv-n">{{ state.level.level.name }}</div>
+    <div class="ey-lv-s">Nivel {{ state.level.level.n }} · {{ state.level.level.sub }}</div>
+  </div>
+</div>
+
+<div class="ey-tabs">
+  <button class="ey-tab on" data-tab="sesion">Sesión</button>
+  <button class="ey-tab" data-tab="repertorio">Repertorio</button>
+  <button class="ey-tab" data-tab="progreso">Progreso</button>
+  <button class="ey-tab" data-tab="bitacora">Bitácora</button>
+</div>
+
+<!-- ═══ SESIÓN ═══ -->
+<div class="ey-panel on" id="panel-sesion">
+  <div class="ey-lbl" style="margin-top:0">¿Cuánto tiempo tienes?</div>
+  <div class="ey-presets" id="ey-presets"></div>
+  <input type="range" class="ey-range" id="ey-total-range" min="10" max="75" step="5" value="30">
+
+  <div class="ey-lbl">El bucle · <span id="ey-split-lbl">30 min repartidos</span></div>
+  <div id="ey-phases"></div>
+
+  <div class="ey-lbl">Paso a drillar en la fase técnica</div>
+  <div class="ey-chips" id="ey-step-chips"></div>
+
+  <div class="ey-metro">
+    <button class="ey-sw" id="ey-sound-toggle"><span></span></button>
+    <div style="flex:1">
+      <div style="font-size:12.5px;color:var(--text)">Clave audible</div>
+      <div style="font-size:10.5px;color:var(--dim)">Marca el 8-tiempos del casino</div>
+    </div>
+    <div class="ey-bpm"><div class="ey-bpm-n" id="ey-bpm-n">180</div><div class="ey-bpm-l">bpm</div></div>
+  </div>
+  <input type="range" class="ey-range" id="ey-bpm-range" min="140" max="220" step="2" value="180" style="margin-bottom:20px">
+
+  <button class="ey-cta" id="ey-start-btn">Empezar sesión guiada · <span id="ey-start-min">30</span> min</button>
+</div>
+
+<!-- ═══ REPERTORIO ═══ -->
+<div class="ey-panel" id="panel-repertorio">
+  <div class="ey-tabs" style="max-width:280px">
+    <button class="ey-tab on" data-kind="libres">Pasos libres</button>
+    <button class="ey-tab" data-kind="pareja">En pareja</button>
+  </div>
+  <div class="ey-ministats" id="ey-rep-stats"></div>
+  <div id="ey-rep-list"></div>
+  <div style="text-align:center;font-size:11px;color:var(--dim);margin-top:16px;line-height:1.6">
+    El dominio sube con repeticiones deliberadas.<br>
+    <span style="color:var(--rose-l)">Automatizado</span> = liberas atención para la música.
+  </div>
+</div>
+
+<!-- ═══ PROGRESO ═══ -->
+<div class="ey-panel" id="panel-progreso">
+  <div class="ey-hero-card">
+    <div class="ey-ring-wrap">
+      <svg width="130" height="130" viewBox="0 0 130 130">
+        <circle cx="65" cy="65" r="56" fill="none" stroke="var(--b)" stroke-width="9"/>
+        <circle id="ey-ring-fg" cx="65" cy="65" r="56" fill="none" stroke="var(--rose)" stroke-width="9"
+                stroke-linecap="round" transform="rotate(-90 65 65)"/>
+      </svg>
+      <div class="ey-ring-txt">
+        <div class="ey-ring-n">Nivel {{ state.level.level.n }}</div>
+        <div class="ey-ring-name">{{ state.level.level.name }}</div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:10.5px;letter-spacing:.12em;color:var(--rose-l);text-transform:uppercase;margin-bottom:6px">{{ state.level.level.sub }}</div>
+      <div style="font-family:var(--serif);font-size:1.2rem;color:var(--text);line-height:1.3">{{ (state.total_min/60)|round(1) }} horas de práctica deliberada acumuladas</div>
+      <div class="ey-forecast" id="ey-forecast"></div>
+    </div>
+  </div>
+
+  <div class="ey-lbl">La escalera dancística</div>
+  <div id="ey-ladder"></div>
+
+  <div class="ey-lbl">Por qué funciona</div>
+  <div class="ey-sci-grid">
+    {% for s in science %}
+    <div class="ey-sci-card">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+        <span style="width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:oklch(20% 0.04 {{ s.hue }});border:1px solid oklch(38% 0.09 {{ s.hue }});color:oklch(70% 0.15 {{ s.hue }})">{{ s.icon }}</span>
+        <div>
+          <div style="font-family:var(--serif);font-size:1rem;color:var(--text);line-height:1.1">{{ s.title }}</div>
+          <div style="font-size:9px;letter-spacing:.08em;color:oklch(65% 0.13 {{ s.hue }});text-transform:uppercase;margin-top:2px">{{ s.tag }}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--mid);line-height:1.5">{{ s.body }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ═══ BITÁCORA ═══ -->
+<div class="ey-panel" id="panel-bitacora">
+  <div class="ey-ministats" id="ey-log-stats"></div>
+  <div class="ey-grabado-chip" id="ey-grabado-chip">
+    <span id="ey-grabado-dot">○</span> Grabé mi práctica hoy
+  </div>
+  <div id="ey-log-list"></div>
+</div>
+
+<!-- Runner overlay -->
+<div class="ey-overlay" id="ey-overlay">
+  <div class="ey-runner">
+    <div class="ey-runner-phase" id="ey-r-phase">Fase 1 / 3</div>
+    <div class="ey-runner-name" id="ey-r-name">Disociación</div>
+    <div class="ey-runner-desc" id="ey-r-desc"></div>
+    <div class="ey-runner-time" id="ey-r-time">10:00</div>
+    <div class="ey-runner-actions">
+      <button class="btn-g" style="flex:1" id="ey-r-pause">Pausar</button>
+      <button class="btn-g" style="flex:1" id="ey-r-skip">Siguiente fase →</button>
+    </div>
+    <button class="btn-r" style="margin-top:10px;width:100%" id="ey-r-cancel">Cancelar sesión</button>
+  </div>
+</div>
+
+<!-- Close sheet -->
+<div class="ey-sheet-bg" id="ey-sheet-bg">
+  <div class="ey-sheet">
+    <div style="width:36px;height:4px;border-radius:2px;background:var(--b2);margin:0 auto 18px"></div>
+    <div style="text-align:center;font-size:10px;letter-spacing:.14em;color:var(--rose-l);text-transform:uppercase;margin-bottom:6px">Sesión completada</div>
+    <div style="font-family:var(--serif);font-size:1.7rem;font-style:italic;color:var(--text);text-align:center;margin-bottom:4px"><span id="ey-close-min">30</span> min de práctica</div>
+    <div style="font-size:11.5px;color:var(--dim);text-align:center;margin-bottom:20px" id="ey-close-sub"></div>
+
+    <div class="ey-lbl" style="margin-top:0">¿Cómo se sintió?</div>
+    <div class="ey-flow-row" id="ey-flow-row"></div>
+    <div style="font-size:12px;color:var(--rose-l);text-align:center;margin-bottom:20px" id="ey-flow-lbl">Fluido</div>
+
+    <div class="ey-lbl">Hoy improvisé e hice…</div>
+    <textarea class="fi" id="ey-improv" rows="3" placeholder="Encadené enchufla doble con vacílala sin pensarlo…" style="margin-bottom:14px;resize:vertical"></textarea>
+
+    <div class="ey-grabado-chip" id="ey-close-grabado" style="width:100%;justify-content:center;box-sizing:border-box">
+      <span id="ey-close-grabado-dot">○</span> Grabé esta práctica
+    </div>
+
+    <button class="ey-cta" id="ey-save-btn">Guardar en bitácora · +<span id="ey-close-xp">0</span> XP</button>
+    <button class="btn-g" style="width:100%;margin-top:8px" id="ey-close-cancel">Cancelar</button>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}<script>
+const PHASES      = {{ phases | tojson | safe }};
+const LEVELS       = {{ levels | tojson | safe }};
+const FLOW_LABELS  = {{ flow_labels | tojson | safe }};
+let   STATE        = {{ state | tojson | safe }};
+
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+
+function splitMinutes(total){
+  const base = [10,15,5], sum = 30;
+  const mins = base.map(b => Math.max(1, Math.round(b/sum*total)));
+  const diff = total - mins.reduce((a,b)=>a+b,0);
+  mins[1] = Math.max(1, mins[1] + diff);
+  return mins;
+}
+function allSteps(){
+  return [...STATE.repertoire.libres, ...STATE.repertoire.pareja];
+}
+function fmtTime(sec){
+  const m = Math.floor(sec/60), s = sec%60;
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+/* ── Tabs ── */
+$$('.ey-tabs')[0] && $$('#panel-sesion, #panel-repertorio, #panel-progreso, #panel-bitacora');
+$$('.ey-tab[data-tab]').forEach(btn => btn.addEventListener('click', () => {
+  $$('.ey-tab[data-tab]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  $$('.ey-panel').forEach(p => p.classList.remove('on'));
+  $('#panel-' + btn.dataset.tab).classList.add('on');
+}));
+$$('.ey-tab[data-kind]').forEach(btn => btn.addEventListener('click', () => {
+  $$('.ey-tab[data-kind]').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderRepertorio(btn.dataset.kind);
+}));
+
+/* ══ SESIÓN builder state ══ */
+let total = 30, stepKey = allSteps()[0] ? allSteps()[0].step_key : '';
+let sound = false, bpm = 180;
+let metroTimer = null, audioCtx = null;
+
+function renderPresets(){
+  const box = $('#ey-presets'); box.innerHTML = '';
+  [20,30,45,60].forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'ey-preset' + (p === total ? ' on' : '');
+    d.innerHTML = `<div class="ey-preset-n">${p}</div><div class="ey-preset-l">min</div>`;
+    d.addEventListener('click', () => { total = p; $('#ey-total-range').value = p; renderAll(); });
+    box.appendChild(d);
+  });
+}
+function renderPhases(){
+  const mins = splitMinutes(total);
+  const box = $('#ey-phases'); box.innerHTML = '';
+  PHASES.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'ey-phase';
+    row.innerHTML = `
+      <div class="ey-phase-bar" style="background:oklch(58% 0.14 ${p.hue})"></div>
+      <div class="ey-phase-body">
+        <div class="ey-phase-top">
+          <div class="ey-phase-name">${p.glyph} ${p.short}</div>
+          <div class="ey-phase-min" style="color:oklch(70% 0.15 ${p.hue})">${mins[i]}<span style="font-size:11px;color:var(--dim)"> min</span></div>
+        </div>
+        <div class="ey-phase-desc">${p.principle} — ${p.desc}</div>
+      </div>`;
+    box.appendChild(row);
+  });
+  $('#ey-split-lbl').textContent = total + ' min repartidos';
+  $('#ey-start-min').textContent = total;
+}
+function renderSteps(){
+  const box = $('#ey-step-chips'); box.innerHTML = '';
+  allSteps().forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'ey-chip' + (s.step_key === stepKey ? ' on' : '');
+    b.textContent = s.name;
+    b.addEventListener('click', () => { stepKey = s.step_key; renderSteps(); });
+    box.appendChild(b);
+  });
+}
+function renderAll(){ renderPresets(); renderPhases(); renderSteps(); }
+
+$('#ey-total-range').addEventListener('input', e => { total = +e.target.value; renderAll(); });
+$('#ey-bpm-range').addEventListener('input', e => { bpm = +e.target.value; $('#ey-bpm-n').textContent = bpm; });
+$('#ey-sound-toggle').addEventListener('click', () => {
+  sound = !sound;
+  $('#ey-sound-toggle').classList.toggle('on', sound);
+});
+
+/* Metrónomo — Web Audio, tick simple en cada beat */
+function metroTick(){
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.frequency.value = 1200; gain.gain.value = 0.15;
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.04);
+  } catch(e) {}
+}
+function startMetro(){
+  stopMetro();
+  const interval = 60000 / bpm;
+  metroTimer = setInterval(() => { if (sound) metroTick(); }, interval);
+}
+function stopMetro(){ if (metroTimer) { clearInterval(metroTimer); metroTimer = null; } }
+
+/* ══ Session runner ══ */
+let runner = null; // {phaseIdx, secondsLeft, paused, mins, stepName}
+
+function startRunner(){
+  const mins = splitMinutes(total);
+  runner = { phaseIdx: 0, mins, secondsLeft: mins[0]*60, paused: false,
+             stepName: (allSteps().find(s=>s.step_key===stepKey)||{}).name || '' };
+  $('#ey-overlay').classList.add('on');
+  startMetro();
+  tickRunner();
+  renderRunner();
+}
+function renderRunner(){
+  const p = PHASES[runner.phaseIdx];
+  $('#ey-r-phase').textContent = `Fase ${runner.phaseIdx+1} / 3`;
+  $('#ey-r-name').textContent = p.short + (p.id === 'paso' && runner.stepName ? ' · ' + runner.stepName : '');
+  $('#ey-r-desc').textContent = p.desc;
+  $('#ey-r-time').textContent = fmtTime(runner.secondsLeft);
+}
+let runnerInterval = null;
+function tickRunner(){
+  if (runnerInterval) clearInterval(runnerInterval);
+  runnerInterval = setInterval(() => {
+    if (!runner || runner.paused) return;
+    runner.secondsLeft--;
+    if (runner.secondsLeft < 0) { advancePhase(); return; }
+    $('#ey-r-time').textContent = fmtTime(runner.secondsLeft);
+  }, 1000);
+}
+function advancePhase(){
+  if (runner.phaseIdx >= 2) { finishRunner(); return; }
+  runner.phaseIdx++;
+  runner.secondsLeft = runner.mins[runner.phaseIdx]*60;
+  renderRunner();
+}
+function finishRunner(){
+  clearInterval(runnerInterval); stopMetro();
+  $('#ey-overlay').classList.remove('on');
+  openCloseSheet(total, runner.mins, runner.stepName);
+  runner = null;
+}
+$('#ey-r-skip').addEventListener('click', advancePhase);
+$('#ey-r-pause').addEventListener('click', () => {
+  runner.paused = !runner.paused;
+  $('#ey-r-pause').textContent = runner.paused ? 'Reanudar' : 'Pausar';
+});
+$('#ey-r-cancel').addEventListener('click', () => {
+  clearInterval(runnerInterval); stopMetro();
+  $('#ey-overlay').classList.remove('on');
+  runner = null;
+});
+$('#ey-start-btn').addEventListener('click', startRunner);
+
+/* ══ Close sheet ══ */
+let closeCtx = null, flow = 3, closeGrabado = false;
+function openCloseSheet(mins, split, stepName){
+  closeCtx = { min: mins, split, step: stepName };
+  flow = 3; closeGrabado = false;
+  $('#ey-close-min').textContent = mins;
+  $('#ey-close-sub').textContent = split.join(' · ') + (stepName ? ` · técnica en ${stepName}` : '');
+  $('#ey-improv').value = '';
+  renderFlow();
+  updateCloseXp();
+  $('#ey-close-grabado').classList.remove('on');
+  $('#ey-close-grabado-dot').textContent = '○';
+  $('#ey-sheet-bg').classList.add('on');
+}
+function renderFlow(){
+  const row = $('#ey-flow-row'); row.innerHTML = '';
+  for (let n=1;n<=5;n++){
+    const b = document.createElement('button');
+    b.className = 'ey-flow-btn' + (flow>=n ? ' on' : '');
+    b.textContent = '♪';
+    b.addEventListener('click', () => { flow = n; renderFlow(); updateCloseXp(); });
+    row.appendChild(b);
+  }
+  $('#ey-flow-lbl').textContent = FLOW_LABELS[flow];
+}
+function updateCloseXp(){
+  $('#ey-close-xp').textContent = closeCtx.min + flow*4;
+}
+$('#ey-close-grabado').addEventListener('click', () => {
+  closeGrabado = !closeGrabado;
+  $('#ey-close-grabado').classList.toggle('on', closeGrabado);
+  $('#ey-close-grabado-dot').textContent = closeGrabado ? '●' : '○';
+});
+$('#ey-close-cancel').addEventListener('click', () => $('#ey-sheet-bg').classList.remove('on'));
+
+$('#ey-save-btn').addEventListener('click', () => {
+  const body = {
+    min: closeCtx.min, split: closeCtx.split, step: closeCtx.step,
+    flow, improv: $('#ey-improv').value.trim(), grabado: closeGrabado,
+  };
+  fetch('/eurythmia/api/session', {
+    method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  }).then(r => r.json()).then(data => {
+    if (data.error) { toast('No se pudo guardar la sesión', 'err'); return; }
+    STATE = data.state;
+    $('#ey-sheet-bg').classList.remove('on');
+    toast(`+${data.xp} XP · Sesión guardada`);
+    $$('.ey-tab[data-tab]').forEach(b => b.classList.remove('on'));
+    $('.ey-tab[data-tab="bitacora"]').classList.add('on');
+    $$('.ey-panel').forEach(p => p.classList.remove('on'));
+    $('#panel-bitacora').classList.add('on');
+    renderRepertorio('libres');
+    renderProgreso();
+    renderBitacora();
+  }).catch(() => toast('Error de red', 'err'));
+});
+
+/* ══ Repertorio ══ */
+function masteryState(m){
+  if (m >= 75) return {label:'Automatizado', color:'var(--rose-l)'};
+  if (m >= 34) return {label:'Drillando', color:'var(--gold)'};
+  return {label:'Aprendiendo', color:'var(--dim)'};
+}
+function renderRepertorio(kind){
+  kind = kind || ($('.ey-tab[data-kind].on') || {}).dataset && $('.ey-tab[data-kind].on').dataset.kind || 'libres';
+  const list = STATE.repertoire[kind];
+  const auto = list.filter(s => s.mastery >= 75).length;
+  const totalReps = list.reduce((a,s) => a + s.reps, 0);
+  $('#ey-rep-stats').innerHTML = `
+    <div><div class="ey-mn">${list.length}</div><div class="ey-ml">figuras</div></div>
+    <div><div class="ey-mn rose">${auto}</div><div class="ey-ml">automatizadas</div></div>
+    <div><div class="ey-mn">${totalReps}</div><div class="ey-ml">reps totales</div></div>`;
+  const box = $('#ey-rep-list'); box.innerHTML = '';
+  list.forEach(s => {
+    const st = masteryState(s.mastery);
+    const row = document.createElement('div');
+    row.className = 'ey-fig';
+    row.innerHTML = `
+      <div class="ey-fig-top"><span class="ey-fig-name">${s.name}</span><span class="ey-fig-tier" style="color:${st.color}">${st.label}</span></div>
+      <div class="ey-fig-note">${s.note} · ${s.reps} reps</div>
+      <div class="ey-fig-row">
+        <div class="ey-mbar"><div class="ey-mbar-fill" style="width:${s.mastery}%;background:${st.color}"></div></div>
+        <button class="ey-drill" title="Registrar repeticiones" data-key="${s.step_key}">+</button>
+      </div>`;
+    row.querySelector('.ey-drill').addEventListener('click', () => drill(s.step_key, kind));
+    box.appendChild(row);
+  });
+}
+function drill(stepKeyArg, kind){
+  fetch('/eurythmia/api/drill', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({step_key: stepKeyArg})
+  }).then(r => r.json()).then(data => {
+    if (data.error) return;
+    ['libres','pareja'].forEach(k => {
+      STATE.repertoire[k] = STATE.repertoire[k].map(s => s.step_key === data.step_key
+        ? {...s, mastery: data.mastery, reps: data.reps} : s);
+    });
+    toast(`+10 reps · dominio +3`);
+    renderRepertorio(kind);
+    renderSteps();
+  }).catch(() => toast('Error de red', 'err'));
+}
+
+/* ══ Progreso ══ */
+function levelFromMinutes(totalMin){
+  const hours = totalMin/60;
+  let cur = LEVELS[LEVELS.length-1];
+  for (const lv of LEVELS){ if (hours < lv.h) { cur = lv; break; } }
+  const idx = LEVELS.indexOf(cur);
+  const prevH = idx > 0 ? LEVELS[idx-1].h : 0;
+  const pct = cur.h > prevH ? (hours - prevH)/(cur.h - prevH) : 1;
+  return { level: cur, idx, pct: Math.min(1, Math.max(0, pct)), hoursToNext: Math.max(0, cur.h - hours) };
+}
+function renderProgreso(){
+  const lv = levelFromMinutes(STATE.total_min);
+  const circ = 2 * Math.PI * 56;
+  const ring = $('#ey-ring-fg');
+  ring.setAttribute('stroke-dasharray', circ);
+  ring.setAttribute('stroke-dashoffset', circ * (1 - lv.pct));
+
+  const next = LEVELS[Math.min(lv.idx+1, LEVELS.length-1)];
+  const isMax = lv.idx === LEVELS.length-1;
+  const minsToNext = lv.hoursToNext * 60;
+  const weeks = STATE.avg_daily > 0 ? Math.ceil(minsToNext / STATE.avg_daily / 7) : 0;
+  $('#ey-forecast').innerHTML = isMax
+    ? `Nivel máximo — ahora se trata de refinar.`
+    : `A tu ritmo de <b style="color:var(--text)">${STATE.avg_daily} min/día</b> alcanzas <b style="color:var(--rose-l)">${next.name}</b> en <b style="color:var(--rose-l)">~${weeks} semana${weeks!==1?'s':''}</b>.`;
+
+  const ladder = $('#ey-ladder'); ladder.innerHTML = '';
+  LEVELS.forEach((L, i) => {
+    const done = i < lv.idx, cur = i === lv.idx;
+    const row = document.createElement('div');
+    row.className = 'ey-rung';
+    row.style.opacity = i > lv.idx ? .5 : 1;
+    row.innerHTML = `
+      <div class="ey-rung-badge" style="background:${cur ? 'var(--rose)' : done ? 'var(--rose-bg)' : 'transparent'};
+           color:${cur ? '#0d0810' : done ? 'var(--rose-l)' : 'var(--dim)'}">${done ? '✓' : L.n}</div>
+      <div style="flex:1">
+        <div style="font-family:var(--serif);font-size:1.05rem;color:${cur?'var(--rose-l)':'var(--text)'}">${L.name}</div>
+        <div style="font-size:11px;color:var(--dim)">${L.sub}</div>
+      </div>
+      <div style="font-size:10.5px;color:var(--dim)">${L.h}h</div>`;
+    ladder.appendChild(row);
+  });
+}
+
+/* ══ Bitácora ══ */
+function renderBitacora(){
+  const log = STATE.log;
+  const totalMin = log.reduce((a,l) => a + l.min, 0);
+  const xpLog = log.reduce((a,l) => a + l.xp, 0);
+  $('#ey-log-stats').innerHTML = `
+    <div><div class="ey-mn rose">${log.length}</div><div class="ey-ml">sesiones</div></div>
+    <div><div class="ey-mn">${Math.floor(totalMin/60)}h</div><div class="ey-ml">registradas</div></div>
+    <div><div class="ey-mn">${xpLog}</div><div class="ey-ml">XP en bitácora</div></div>`;
+
+  $('#ey-grabado-chip').classList.toggle('on', STATE.grabado_today);
+  $('#ey-grabado-dot').textContent = STATE.grabado_today ? '●' : '○';
+
+  const box = $('#ey-log-list'); box.innerHTML = '';
+  if (!log.length){
+    box.innerHTML = `<div class="empty-s"><p>Aún no hay sesiones registradas. Empieza en la pestaña Sesión.</p></div>`;
+    return;
+  }
+  log.forEach(l => {
+    const [y,m,d] = l.date.split('-').map(Number);
+    const M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][m-1];
+    const item = document.createElement('div');
+    item.className = 'ey-log-item';
+    item.innerHTML = `
+      <div class="ey-log-top">
+        <div><span style="font-family:var(--serif);font-style:italic;font-size:1.05rem;color:var(--text)">${d} ${M}</span>
+             <span style="font-size:11px;color:var(--dim);margin-left:8px">${l.min} min</span></div>
+        <span style="font-family:var(--serif);font-size:1.05rem;color:var(--rose-l)">+${l.xp} XP</span>
+      </div>
+      <div class="ey-splitbar">
+        ${l.split.map((mn,i) => `<div style="flex:${mn};background:oklch(58% 0.14 ${PHASES[i].hue})"></div>`).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        ${l.step ? `<span class="ey-chip on" style="cursor:default">♪ ${l.step}</span>` : ''}
+        <span style="font-size:11px;color:var(--rose-l)">♪ ${FLOW_LABELS[l.flow]}</span>
+        ${l.grabado ? `<span style="font-size:10.5px;color:var(--dim)">🎥 grabado</span>` : ''}
+      </div>
+      ${l.improv ? `<div class="ey-quote">"${l.improv}"</div>` : ''}`;
+    box.appendChild(item);
+  });
+}
+$('#ey-grabado-chip').addEventListener('click', () => {
+  fetch('/eurythmia/api/grabado/toggle', {method:'POST'}).then(r => r.json()).then(data => {
+    STATE = data.state;
+    renderBitacora();
+    toast(data.action === 'added' ? 'Marcado como grabado' : 'Desmarcado');
+  }).catch(() => toast('Error de red', 'err'));
+});
+
+/* ══ init ══ */
+renderAll();
+renderRepertorio('libres');
+renderProgreso();
+renderBitacora();
+</script>{% endblock %}

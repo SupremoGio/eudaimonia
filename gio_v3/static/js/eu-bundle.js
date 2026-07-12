@@ -4810,6 +4810,13 @@ function ModuleExtra({
     }, "›")));
   }
   if (id === 'eurythmia') {
+    const eury = srv.euryToday || {
+      min: 0,
+      xp: 0,
+      sessions: 0,
+      step: null
+    };
+    const practicedToday = eury.sessions > 0;
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
@@ -4819,51 +4826,49 @@ function ModuleExtra({
         textTransform: 'uppercase',
         marginBottom: 10
       }
-    }, "Submódulos"), /*#__PURE__*/React.createElement("a", {
-      href: "/actividades",
+    }, "Práctica de hoy"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: C.card,
+        border: `1px solid ${practicedToday ? 'var(--gold-border)' : 'var(--b)'}`,
+        borderRadius: 14,
+        padding: '16px 18px',
+        marginBottom: 12
+      }
+    }, practicedToday ? /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'Cormorant Garamond,serif',
+        fontSize: 22,
+        color: acc
+      }
+    }, `${eury.min} min practicados · +${eury.xp} XP`, eury.step && /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 12,
+        color: C.textMuted,
+        marginLeft: 8
+      }
+    }, eury.step)) : /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 13,
+        color: C.textMuted
+      }
+    }, "Aún no has practicado hoy.")), /*#__PURE__*/React.createElement("a", {
+      href: "/eurythmia/",
       style: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: C.card,
-        border: '1px solid var(--gold-border)',
+        background: acc,
+        color: '#0d0810',
         borderRadius: 12,
-        padding: '11px 14px',
-        marginBottom: 8,
+        padding: '13px 16px',
         textDecoration: 'none',
-        transition: 'border-color 0.18s'
-      },
-      onMouseEnter: e => e.currentTarget.style.borderColor = acc,
-      onMouseLeave: e => e.currentTarget.style.borderColor = 'var(--gold-border)'
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 18
-      }
-    }, "🕺"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 13,
-        color: C.text
+        fontWeight: 600
       }
-    }, "Acta Diurna"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'DM Sans,sans-serif',
-        fontSize: 10,
-        color: C.textMuted,
-        marginTop: 1
-      }
-    }, "Baile · Ritmo · Práctica"))), /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: C.textMuted,
-        fontSize: 14
-      }
-    }, "›")));
+    }, /*#__PURE__*/React.createElement("span", null, "🕺  Ir a practicar"), /*#__PURE__*/React.createElement("span", null, "→")));
   }
   return null;
 }
