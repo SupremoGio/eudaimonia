@@ -1403,6 +1403,36 @@ def init_db():
             notas             TEXT    DEFAULT '',
             created_at        TEXT    NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS harma_polizas (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            aseguradora         TEXT    NOT NULL DEFAULT '',
+            numero_poliza       TEXT    DEFAULT '',
+            vigencia_inicio     TEXT    DEFAULT NULL,
+            vigencia_fin        TEXT    DEFAULT NULL,
+            prima               REAL    DEFAULT 0,
+            deducible           REAL    DEFAULT 0,
+            telefono_asistencia TEXT    DEFAULT '',
+            notas               TEXT    DEFAULT '',
+            nombre_archivo      TEXT    DEFAULT '',
+            nombre_original     TEXT    DEFAULT '',
+            created_at          TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS harma_siniestros (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha            TEXT    NOT NULL,
+            tipo             TEXT    NOT NULL DEFAULT 'otro',
+            descripcion      TEXT    DEFAULT '',
+            costo_estimado   REAL    DEFAULT 0,
+            costo_cubierto   REAL    DEFAULT 0,
+            deducible_pagado REAL    DEFAULT 0,
+            taller           TEXT    DEFAULT '',
+            estado           TEXT    NOT NULL DEFAULT 'reportado',
+            poliza_id        INTEGER DEFAULT NULL,
+            nombre_archivo   TEXT    DEFAULT '',
+            nombre_original  TEXT    DEFAULT '',
+            created_at       TEXT    NOT NULL,
+            FOREIGN KEY (poliza_id) REFERENCES harma_polizas(id) ON DELETE SET NULL
+        );
         """)
 
         # Seed vehículo por defecto (una fila — se edita desde la UI)

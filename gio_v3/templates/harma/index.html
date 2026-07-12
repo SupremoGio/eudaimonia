@@ -20,14 +20,16 @@ html.light{ --harma: oklch(50% 0.17 15); --harma-l: oklch(44% 0.18 15); --harma-
 .hm-km-l{ font-size:9px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:3px; }
 
 .hm-card{ background:var(--card); border:1px solid var(--b); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
-.hm-card.vencido{ border-color:rgba(244,63,94,.4); background:rgba(244,63,94,.04); }
+.hm-card.vencido, .hm-card.vencida{ border-color:rgba(244,63,94,.4); background:rgba(244,63,94,.04); }
 .hm-card.proximo{ border-color:rgba(201,168,76,.4); background:rgba(201,168,76,.04); }
 .hm-row-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px; }
 .hm-title{ font-family:var(--serif); font-size:1.05rem; color:var(--text); }
 .hm-badge{ font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; padding:2px 8px; border-radius:100px; flex-shrink:0; }
-.hm-badge.vencido{ background:rgba(244,63,94,.12); border:1px solid rgba(244,63,94,.3); color:var(--coral); }
+.hm-badge.vencido, .hm-badge.vencida{ background:rgba(244,63,94,.12); border:1px solid rgba(244,63,94,.3); color:var(--coral); }
 .hm-badge.proximo{ background:rgba(201,168,76,.12); border:1px solid rgba(201,168,76,.3); color:var(--gold); }
-.hm-badge.ok{ background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); color:var(--emerald); }
+.hm-badge.ok, .hm-badge.vigente{ background:rgba(16,185,129,.1); border:1px solid rgba(16,185,129,.25); color:var(--emerald); }
+.hm-badge.sin_fecha{ background:var(--b); color:var(--dim); border:1px solid var(--b2); }
+.hm-estado-select{ font-size:11px; padding:3px 8px; }
 .hm-meta{ font-size:11.5px; color:var(--dim); line-height:1.6; }
 .hm-actions{ display:flex; gap:6px; margin-top:10px; }
 
@@ -68,6 +70,16 @@ html.light{ --harma: oklch(50% 0.17 15); --harma-l: oklch(44% 0.18 15); --harma-
   <div>
     <div class="hm-lbl">Documentos <button class="hm-add" onclick="openDocModal()">+ Subir</button></div>
     <div id="hm-doc-list"></div>
+  </div>
+
+  <div>
+    <div class="hm-lbl">Póliza de seguro <button class="hm-add" onclick="openPolizaModal()">+ Agregar</button></div>
+    <div id="hm-poliza-list"></div>
+  </div>
+
+  <div>
+    <div class="hm-lbl">Siniestros <button class="hm-add" onclick="openSiniestroModal()">+ Registrar</button></div>
+    <div id="hm-siniestro-list"></div>
   </div>
 
   <div class="hm-full">
@@ -167,7 +179,7 @@ html.light{ --harma: oklch(50% 0.17 15); --harma-l: oklch(44% 0.18 15); --harma-
       </div>
       <div class="fg"><label class="fl">Vence (opcional)</label><input class="fi" id="d-venc" type="date"></div>
     </div>
-    <div class="fg"><label class="fl">Título</label><input class="fi" id="d-titulo" placeholder="Póliza GNP 2026"></div>
+    <div class="fg"><label class="fl">Título</label><input class="fi" id="d-titulo" placeholder="Tarjeta de circulación 2026"></div>
     <div class="fg"><label class="fl">Archivo (imagen o PDF)</label><input class="fi" id="d-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.pdf"></div>
     <div class="modal-actions">
       <button class="btn-g" onclick="closeModal('modal-doc')">Cancelar</button>
@@ -176,18 +188,76 @@ html.light{ --harma: oklch(50% 0.17 15); --harma-l: oklch(44% 0.18 15); --harma-
   </div>
 </div>
 
+<!-- ── Modal: póliza de seguro ── -->
+<div class="modal-bg" id="modal-poliza" onclick="if(event.target===this)closeModal('modal-poliza')">
+  <div class="modal">
+    <div class="modal-title">Agregar póliza de seguro</div>
+    <div class="fgrid c2">
+      <div class="fg"><label class="fl">Aseguradora</label><input class="fi" id="p-aseguradora" placeholder="GNP, Qualitas, AXA…"></div>
+      <div class="fg"><label class="fl">Número de póliza</label><input class="fi" id="p-numero"></div>
+    </div>
+    <div class="fgrid c2">
+      <div class="fg"><label class="fl">Vigencia inicio</label><input class="fi" id="p-vig-ini" type="date"></div>
+      <div class="fg"><label class="fl">Vigencia fin</label><input class="fi" id="p-vig-fin" type="date"></div>
+    </div>
+    <div class="fgrid c3">
+      <div class="fg"><label class="fl">Prima anual</label><input class="fi" id="p-prima" type="number" min="0" step="0.01"></div>
+      <div class="fg"><label class="fl">Deducible</label><input class="fi" id="p-deducible" type="number" min="0" step="0.01"></div>
+      <div class="fg"><label class="fl">Tel. asistencia</label><input class="fi" id="p-tel"></div>
+    </div>
+    <div class="fg"><label class="fl">Notas</label><input class="fi" id="p-notas"></div>
+    <div class="fg"><label class="fl">PDF de la póliza (opcional)</label><input class="fi" id="p-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.pdf"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeModal('modal-poliza')">Cancelar</button>
+      <button class="btn-a" onclick="savePoliza()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: siniestro ── -->
+<div class="modal-bg" id="modal-siniestro" onclick="if(event.target===this)closeModal('modal-siniestro')">
+  <div class="modal">
+    <div class="modal-title">Registrar siniestro</div>
+    <div class="fgrid c2">
+      <div class="fg"><label class="fl">Tipo</label>
+        <select class="fi" id="sn-tipo">{% for t in tipos_siniestro %}<option value="{{ t.id }}">{{ t.icon }} {{ t.label }}</option>{% endfor %}</select>
+      </div>
+      <div class="fg"><label class="fl">Fecha</label><input class="fi" id="sn-fecha" type="date"></div>
+    </div>
+    <div class="fg"><label class="fl">Descripción</label><textarea class="fi" id="sn-desc" rows="2" style="resize:vertical" placeholder="Qué pasó, dónde, con quién…"></textarea></div>
+    <div class="fgrid c3">
+      <div class="fg"><label class="fl">Costo estimado</label><input class="fi" id="sn-costo-est" type="number" min="0" step="0.01"></div>
+      <div class="fg"><label class="fl">Cubierto por seguro</label><input class="fi" id="sn-costo-cub" type="number" min="0" step="0.01"></div>
+      <div class="fg"><label class="fl">Deducible pagado</label><input class="fi" id="sn-deducible" type="number" min="0" step="0.01"></div>
+    </div>
+    <div class="fgrid c2">
+      <div class="fg"><label class="fl">Taller</label><input class="fi" id="sn-taller"></div>
+      <div class="fg"><label class="fl">Póliza asociada</label>
+        <select class="fi" id="sn-poliza"><option value="">— ninguna —</option></select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Documento (reporte, factura…)</label><input class="fi" id="sn-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.pdf"></div>
+    <div class="modal-actions">
+      <button class="btn-g" onclick="closeModal('modal-siniestro')">Cancelar</button>
+      <button class="btn-a" onclick="saveSiniestro()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 {% block scripts %}<script>
-const TIPOS_SERVICIO  = {{ tipos_servicio | tojson | safe }};
-const TIPOS_DOCUMENTO = {{ tipos_documento | tojson | safe }};
+const TIPOS_SERVICIO    = {{ tipos_servicio | tojson | safe }};
+const TIPOS_DOCUMENTO   = {{ tipos_documento | tojson | safe }};
+const TIPOS_SINIESTRO   = {{ tipos_siniestro | tojson | safe }};
+const ESTADOS_SINIESTRO = {{ estados_siniestro | tojson | safe }};
 let   STATE = {{ {
   'vehiculo': vehiculo, 'servicios': servicios, 'recordatorios': recordatorios,
-  'documentos': documentos, 'total_costo': total_costo
+  'documentos': documentos, 'polizas': polizas, 'siniestros': siniestros, 'total_costo': total_costo
 } | tojson | safe }};
 
 const $ = (sel, root) => (root || document).querySelector(sel);
 const tipoLabel = (id, list) => (list.find(t => t.id === id) || {}).label || id;
-const tipoIcon  = (id) => ((TIPOS_SERVICIO.find(t => t.id === id) || {}).icon) || '🔩';
+const tipoIcon  = (id, list) => ((list || TIPOS_SERVICIO).find(t => t.id === id) || {}).icon || '🔩';
 const fmtMoney  = (n) => '$' + Number(n || 0).toLocaleString('es-MX', {maximumFractionDigits: 0});
 const fmtDate   = (iso) => { if (!iso) return ''; const [y,m,d] = iso.slice(0,10).split('-'); const M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${+d} ${M} ${y}`; };
 
@@ -309,7 +379,7 @@ function deleteServicio(sid){
 
 /* ══ Documentos ══ */
 function openDocModal(){
-  $('#d-tipo').value = 'seguro'; $('#d-venc').value = ''; $('#d-titulo').value = ''; $('#d-file').value = '';
+  $('#d-tipo').value = 'tarjeta_circulacion'; $('#d-venc').value = ''; $('#d-titulo').value = ''; $('#d-file').value = '';
   openModal('modal-doc');
 }
 function saveDocumento(){
@@ -334,6 +404,85 @@ function saveDocumento(){
 function deleteDocumento(did){
   fetch(`/harma/api/documentos/${did}`, {method:'DELETE'}).then(r => r.json()).then(data => {
     STATE = data.state; renderAll(); toast('Documento eliminado');
+  }).catch(() => toast('Error de red', 'err'));
+}
+
+/* ══ Póliza de seguro ══ */
+function openPolizaModal(){
+  ['#p-aseguradora','#p-numero','#p-vig-ini','#p-vig-fin','#p-prima','#p-deducible','#p-tel','#p-notas']
+    .forEach(sel => $(sel).value = '');
+  $('#p-file').value = '';
+  openModal('modal-poliza');
+}
+function savePoliza(){
+  const aseguradora = $('#p-aseguradora').value.trim();
+  if (!aseguradora) { toast('Falta la aseguradora', 'err'); return; }
+  const fd = new FormData();
+  fd.append('aseguradora', aseguradora);
+  fd.append('numero_poliza', $('#p-numero').value.trim());
+  fd.append('vigencia_inicio', $('#p-vig-ini').value);
+  fd.append('vigencia_fin', $('#p-vig-fin').value);
+  fd.append('prima', $('#p-prima').value || 0);
+  fd.append('deducible', $('#p-deducible').value || 0);
+  fd.append('telefono_asistencia', $('#p-tel').value.trim());
+  fd.append('notas', $('#p-notas').value.trim());
+  const file = $('#p-file').files[0];
+  if (file) fd.append('file', file);
+  fetch('/harma/api/poliza', {method:'POST', body: fd})
+    .then(r => r.json()).then(data => {
+      if (!data.ok) { toast(data.error || 'Error al guardar', 'err'); return; }
+      STATE = data.state;
+      closeModal('modal-poliza');
+      renderAll();
+      toast('Póliza guardada');
+    }).catch(() => toast('Error de red', 'err'));
+}
+function deletePoliza(pid){
+  fetch(`/harma/api/poliza/${pid}`, {method:'DELETE'}).then(r => r.json()).then(data => {
+    STATE = data.state; renderAll(); toast('Póliza eliminada');
+  }).catch(() => toast('Error de red', 'err'));
+}
+
+/* ══ Siniestros ══ */
+function openSiniestroModal(){
+  $('#sn-tipo').value = 'choque'; $('#sn-fecha').value = new Date().toISOString().slice(0,10);
+  $('#sn-desc').value = ''; $('#sn-costo-est').value = ''; $('#sn-costo-cub').value = '';
+  $('#sn-deducible').value = ''; $('#sn-taller').value = ''; $('#sn-file').value = '';
+  const sel = $('#sn-poliza');
+  sel.innerHTML = '<option value="">— ninguna —</option>' +
+    STATE.polizas.map(p => `<option value="${p.id}">${p.aseguradora}${p.numero_poliza ? ' · ' + p.numero_poliza : ''}</option>`).join('');
+  openModal('modal-siniestro');
+}
+function saveSiniestro(){
+  const fd = new FormData();
+  fd.append('tipo', $('#sn-tipo').value);
+  fd.append('fecha', $('#sn-fecha').value);
+  fd.append('descripcion', $('#sn-desc').value.trim());
+  fd.append('costo_estimado', $('#sn-costo-est').value || 0);
+  fd.append('costo_cubierto', $('#sn-costo-cub').value || 0);
+  fd.append('deducible_pagado', $('#sn-deducible').value || 0);
+  fd.append('taller', $('#sn-taller').value.trim());
+  fd.append('poliza_id', $('#sn-poliza').value);
+  const file = $('#sn-file').files[0];
+  if (file) fd.append('file', file);
+  fetch('/harma/api/siniestro', {method:'POST', body: fd})
+    .then(r => r.json()).then(data => {
+      if (!data.ok) { toast(data.error || 'Error al guardar', 'err'); return; }
+      STATE = data.state;
+      closeModal('modal-siniestro');
+      renderAll();
+      toast('Siniestro registrado');
+    }).catch(() => toast('Error de red', 'err'));
+}
+function updateSiniestroEstado(sid, estado){
+  fetch(`/harma/api/siniestro/${sid}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({estado})})
+    .then(r => r.json()).then(data => {
+      STATE = data.state; renderAll(); toast('Estado actualizado');
+    }).catch(() => toast('Error de red', 'err'));
+}
+function deleteSiniestro(sid){
+  fetch(`/harma/api/siniestro/${sid}`, {method:'DELETE'}).then(r => r.json()).then(data => {
+    STATE = data.state; renderAll(); toast('Siniestro eliminado');
   }).catch(() => toast('Error de red', 'err'));
 }
 
@@ -427,11 +576,74 @@ function renderDocumentos(){
   });
 }
 
+function renderPolizas(){
+  const box = $('#hm-poliza-list'); box.innerHTML = '';
+  if (!STATE.polizas.length){
+    box.innerHTML = '<div class="hm-empty">Sin póliza registrada.</div>';
+    return;
+  }
+  const badgeTxt = {vigente:'Vigente', proximo:'Por vencer', vencida:'Vencida', sin_fecha:'Sin fecha'};
+  STATE.polizas.forEach(p => {
+    const bits = [];
+    if (p.numero_poliza) bits.push(`póliza ${p.numero_poliza}`);
+    if (p.vigencia_fin) bits.push(`vence ${fmtDate(p.vigencia_fin)}`);
+    if (p.deducible) bits.push(`deducible ${fmtMoney(p.deducible)}`);
+    if (p.telefono_asistencia) bits.push(`asistencia: ${p.telefono_asistencia}`);
+    const el = document.createElement('div');
+    el.className = 'hm-card ' + p.status;
+    el.innerHTML = `
+      <div class="hm-row-top">
+        <span class="hm-title">🛡️ ${p.aseguradora}</span>
+        <span class="hm-badge ${p.status}">${badgeTxt[p.status]}</span>
+      </div>
+      <div class="hm-meta">${bits.join(' · ')}</div>
+      <div class="hm-actions">
+        ${p.nombre_archivo ? `<a class="btn-g" href="/harma/documentos/${p.nombre_archivo}" target="_blank" style="text-decoration:none">Ver PDF</a>` : ''}
+        <button class="btn-r" data-act="del">Eliminar</button>
+      </div>`;
+    el.querySelector('[data-act="del"]').addEventListener('click', () => deletePoliza(p.id));
+    box.appendChild(el);
+  });
+}
+
+function renderSiniestros(){
+  const box = $('#hm-siniestro-list'); box.innerHTML = '';
+  if (!STATE.siniestros.length){
+    box.innerHTML = '<div class="hm-empty">Sin siniestros registrados.</div>';
+    return;
+  }
+  STATE.siniestros.forEach(s => {
+    const bits = [fmtDate(s.fecha)];
+    if (s.costo_estimado) bits.push(`estimado ${fmtMoney(s.costo_estimado)}`);
+    if (s.costo_cubierto) bits.push(`cubierto ${fmtMoney(s.costo_cubierto)}`);
+    if (s.taller) bits.push(s.taller);
+    const el = document.createElement('div');
+    el.className = 'hm-card';
+    const estadoOpts = ESTADOS_SINIESTRO.map(e => `<option value="${e.id}" ${e.id===s.estado?'selected':''}>${e.label}</option>`).join('');
+    el.innerHTML = `
+      <div class="hm-row-top">
+        <span class="hm-title">${tipoIcon(s.tipo, TIPOS_SINIESTRO)} ${tipoLabel(s.tipo, TIPOS_SINIESTRO)}</span>
+        <select class="fi hm-estado-select" style="width:auto" data-act="estado">${estadoOpts}</select>
+      </div>
+      <div class="hm-meta">${bits.join(' · ')}</div>
+      ${s.descripcion ? `<div class="hm-meta" style="margin-top:4px;font-style:italic">${s.descripcion}</div>` : ''}
+      <div class="hm-actions">
+        ${s.nombre_archivo ? `<a class="btn-g" href="/harma/documentos/${s.nombre_archivo}" target="_blank" style="text-decoration:none">Ver documento</a>` : ''}
+        <button class="btn-r" data-act="del">Eliminar</button>
+      </div>`;
+    el.querySelector('[data-act="estado"]').addEventListener('change', e => updateSiniestroEstado(s.id, e.target.value));
+    el.querySelector('[data-act="del"]').addEventListener('click', () => deleteSiniestro(s.id));
+    box.appendChild(el);
+  });
+}
+
 function renderAll(){
   renderVehiculo();
   renderRecordatorios();
   renderServicios();
   renderDocumentos();
+  renderPolizas();
+  renderSiniestros();
 }
 renderAll();
 </script>{% endblock %}

@@ -28,11 +28,25 @@ TIPOS_SERVICIO = [
 ]
 
 TIPOS_DOCUMENTO = [
-    {"id": "seguro",               "label": "Póliza de seguro"},
     {"id": "tarjeta_circulacion",  "label": "Tarjeta de circulación"},
     {"id": "verificacion",         "label": "Verificación"},
     {"id": "tenencia",             "label": "Tenencia"},
     {"id": "otro",                 "label": "Otro"},
+]
+
+TIPOS_SINIESTRO = [
+    {"id": "choque",     "label": "Choque",              "icon": "💥"},
+    {"id": "robo",       "label": "Robo",                 "icon": "🚨"},
+    {"id": "cristal",    "label": "Cristal roto",          "icon": "🔺"},
+    {"id": "inundacion", "label": "Inundación / clima",   "icon": "🌧️"},
+    {"id": "otro",       "label": "Otro",                  "icon": "⚠️"},
+]
+
+ESTADOS_SINIESTRO = [
+    {"id": "reportado",   "label": "Reportado"},
+    {"id": "en_proceso",  "label": "En proceso"},
+    {"id": "resuelto",    "label": "Resuelto"},
+    {"id": "rechazado",   "label": "Rechazado"},
 ]
 
 _PROXIMIDAD_KM   = 500
@@ -92,6 +106,32 @@ def _serialize_recordatorios(db, vehiculo):
     return rows
 
 
+def _poliza_status(pol, today):
+    if not pol['vigencia_fin']:
+        return 'sin_fecha'
+    try:
+        dias = (datetime.fromisoformat(pol['vigencia_fin']).date() - today).days
+    except ValueError:
+        return 'sin_fecha'
+    if dias < 0:
+        return 'vencida'
+    if dias <= _PROXIMIDAD_DIAS:
+        return 'proximo'
+    return 'vigente'
+
+
+def _serialize_polizas(db):
+    today = today_date()
+    rows = [dict(r) for r in db.execute(
+        "SELECT * FROM harma_polizas ORDER BY id DESC"
+    ).fetchall()]
+    for p in rows:
+        p['status'] = _poliza_status(p, today)
+    order = {'vencida': 0, 'proximo': 1, 'vigente': 2, 'sin_fecha': 3}
+    rows.sort(key=lambda p: order[p['status']])
+    return rows
+
+
 def _state():
     with get_db() as db:
         vehiculo = _get_vehiculo(db)
@@ -102,6 +142,10 @@ def _state():
         documentos = [dict(r) for r in db.execute(
             "SELECT * FROM harma_documentos ORDER BY id DESC"
         ).fetchall()]
+        polizas = _serialize_polizas(db)
+        siniestros = [dict(r) for r in db.execute(
+            "SELECT * FROM harma_siniestros ORDER BY fecha DESC, id DESC"
+        ).fetchall()]
         total_costo = db.execute(
             "SELECT COALESCE(SUM(costo),0) as s FROM harma_servicios"
         ).fetchone()['s']
@@ -111,9 +155,13 @@ def _state():
         'servicios': servicios,
         'recordatorios': recordatorios,
         'documentos': documentos,
+        'polizas': polizas,
+        'siniestros': siniestros,
         'total_costo': total_costo,
         'tipos_servicio': TIPOS_SERVICIO,
         'tipos_documento': TIPOS_DOCUMENTO,
+        'tipos_siniestro': TIPOS_SINIESTRO,
+        'estados_siniestro': ESTADOS_SINIESTRO,
     }
 
 
@@ -313,6 +361,20 @@ def api_recordatorio_delete(rid):
     return jsonify({'ok': True, 'state': _state()})
 
 
+def _save_upload(f):
+    """Valida y guarda un archivo subido. Devuelve (filename, original) o (None, error_msg)."""
+    ext = os.path.splitext(secure_filename(f.filename))[1].lower()
+    if not ext or ext not in ALLOWED_EXT:
+        _mime_map = {'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
+                     'image/heic': '.heic', 'application/pdf': '.pdf'}
+        ext = _mime_map.get((f.content_type or '').split(';')[0].strip(), '')
+    if ext not in ALLOWED_EXT:
+        return None, 'Tipo no permitido (solo imágenes o PDF)'
+    filename = uuid.uuid4().hex + ext
+    f.save(os.path.join(UPLOAD_DIR, filename))
+    return filename, secure_filename(f.filename)
+
+
 # ── Documentos ────────────────────────────────────────────────────────────────
 
 @harma_bp.route('/api/documentos', methods=['POST'])
@@ -323,23 +385,17 @@ def api_documento_upload():
         return jsonify({'ok': False, 'error': 'Título requerido'}), 400
     if not f or not f.filename:
         return jsonify({'ok': False, 'error': 'Sin archivo'}), 400
-    ext = os.path.splitext(secure_filename(f.filename))[1].lower()
-    if not ext or ext not in ALLOWED_EXT:
-        _mime_map = {'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp',
-                     'image/heic': '.heic', 'application/pdf': '.pdf'}
-        ext = _mime_map.get((f.content_type or '').split(';')[0].strip(), '')
-    if ext not in ALLOWED_EXT:
-        return jsonify({'ok': False, 'error': 'Tipo no permitido (solo imágenes o PDF)'}), 400
+    filename, original_or_err = _save_upload(f)
+    if not filename:
+        return jsonify({'ok': False, 'error': original_or_err}), 400
 
-    filename = uuid.uuid4().hex + ext
-    f.save(os.path.join(UPLOAD_DIR, filename))
     with get_db() as db:
         cur = db.execute(
             "INSERT INTO harma_documentos (tipo, titulo, nombre_archivo, nombre_original, "
             "fecha_vencimiento, notas, created_at) VALUES (?,?,?,?,?,?,?)",
             (
                 request.form.get('tipo', 'otro'), titulo, filename,
-                secure_filename(f.filename),
+                original_or_err,
                 request.form.get('fecha_vencimiento') or None,
                 request.form.get('notas', '')[:300],
                 _now(),
@@ -359,6 +415,137 @@ def api_documento_delete(did):
             except OSError:
                 pass
         db.execute("DELETE FROM harma_documentos WHERE id=?", (did,))
+        db.commit()
+    return jsonify({'ok': True, 'state': _state()})
+
+
+# ── Póliza de seguro ────────────────────────────────────────────────────────
+
+@harma_bp.route('/api/poliza', methods=['POST'])
+def api_poliza_create():
+    aseguradora = request.form.get('aseguradora', '').strip()[:80]
+    if not aseguradora:
+        return jsonify({'ok': False, 'error': 'Aseguradora requerida'}), 400
+
+    filename, original = '', ''
+    f = request.files.get('file')
+    if f and f.filename:
+        filename, original_or_err = _save_upload(f)
+        if not filename:
+            return jsonify({'ok': False, 'error': original_or_err}), 400
+        original = original_or_err
+
+    try:
+        prima = float(request.form.get('prima') or 0)
+        deducible = float(request.form.get('deducible') or 0)
+    except (TypeError, ValueError):
+        prima, deducible = 0, 0
+
+    with get_db() as db:
+        cur = db.execute(
+            "INSERT INTO harma_polizas (aseguradora, numero_poliza, vigencia_inicio, vigencia_fin, "
+            "prima, deducible, telefono_asistencia, notas, nombre_archivo, nombre_original, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                aseguradora,
+                request.form.get('numero_poliza', '').strip()[:60],
+                request.form.get('vigencia_inicio') or None,
+                request.form.get('vigencia_fin') or None,
+                prima, deducible,
+                request.form.get('telefono_asistencia', '').strip()[:40],
+                request.form.get('notas', '')[:300],
+                filename, original,
+                _now(),
+            ),
+        )
+        db.commit()
+    return jsonify({'ok': True, 'id': cur.lastrowid, 'state': _state()})
+
+
+@harma_bp.route('/api/poliza/<int:pid>', methods=['DELETE'])
+def api_poliza_delete(pid):
+    with get_db() as db:
+        pol = db.execute("SELECT * FROM harma_polizas WHERE id=?", (pid,)).fetchone()
+        if pol and pol['nombre_archivo']:
+            try:
+                os.remove(os.path.join(UPLOAD_DIR, pol['nombre_archivo']))
+            except OSError:
+                pass
+        db.execute("DELETE FROM harma_polizas WHERE id=?", (pid,))
+        db.commit()
+    return jsonify({'ok': True, 'state': _state()})
+
+
+# ── Siniestros ────────────────────────────────────────────────────────────────
+
+@harma_bp.route('/api/siniestro', methods=['POST'])
+def api_siniestro_create():
+    descripcion = request.form.get('descripcion', '').strip()[:500]
+    fecha = request.form.get('fecha') or today_str()
+    tipo = request.form.get('tipo') or 'otro'
+    estado = request.form.get('estado') or 'reportado'
+    if estado not in {e['id'] for e in ESTADOS_SINIESTRO}:
+        estado = 'reportado'
+
+    filename, original = '', ''
+    f = request.files.get('file')
+    if f and f.filename:
+        filename, original_or_err = _save_upload(f)
+        if not filename:
+            return jsonify({'ok': False, 'error': original_or_err}), 400
+        original = original_or_err
+
+    def _num(key):
+        try:
+            return float(request.form.get(key) or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    poliza_id = request.form.get('poliza_id')
+    try:
+        poliza_id = int(poliza_id) if poliza_id else None
+    except (TypeError, ValueError):
+        poliza_id = None
+
+    with get_db() as db:
+        cur = db.execute(
+            "INSERT INTO harma_siniestros (fecha, tipo, descripcion, costo_estimado, costo_cubierto, "
+            "deducible_pagado, taller, estado, poliza_id, nombre_archivo, nombre_original, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                fecha, tipo, descripcion,
+                _num('costo_estimado'), _num('costo_cubierto'), _num('deducible_pagado'),
+                request.form.get('taller', '').strip()[:80],
+                estado, poliza_id, filename, original,
+                _now(),
+            ),
+        )
+        db.commit()
+    return jsonify({'ok': True, 'id': cur.lastrowid, 'state': _state()})
+
+
+@harma_bp.route('/api/siniestro/<int:sid>', methods=['PATCH'])
+def api_siniestro_update_estado(sid):
+    data = request.get_json(silent=True) or {}
+    estado = data.get('estado')
+    if estado not in {e['id'] for e in ESTADOS_SINIESTRO}:
+        return jsonify({'error': 'estado inválido'}), 400
+    with get_db() as db:
+        db.execute("UPDATE harma_siniestros SET estado=? WHERE id=?", (estado, sid))
+        db.commit()
+    return jsonify({'ok': True, 'state': _state()})
+
+
+@harma_bp.route('/api/siniestro/<int:sid>', methods=['DELETE'])
+def api_siniestro_delete(sid):
+    with get_db() as db:
+        sin = db.execute("SELECT * FROM harma_siniestros WHERE id=?", (sid,)).fetchone()
+        if sin and sin['nombre_archivo']:
+            try:
+                os.remove(os.path.join(UPLOAD_DIR, sin['nombre_archivo']))
+            except OSError:
+                pass
+        db.execute("DELETE FROM harma_siniestros WHERE id=?", (sid,))
         db.commit()
     return jsonify({'ok': True, 'state': _state()})
 
