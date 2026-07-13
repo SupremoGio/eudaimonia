@@ -457,7 +457,7 @@ function renderStatusStrip(){
 function renderPlan(){
   renderFilters();
   const visible = _filter === 'all' ? STATE.plan
-    : STATE.plan.filter(it => it.status === _filter || (_filter === 'urgente' && it.status === 'vencido'));
+    : STATE.plan.filter(it => it.status === _filter);
 
   const byCat = {};
   visible.forEach(it => { (byCat[it.cat] = byCat[it.cat] || []).push(it); });
