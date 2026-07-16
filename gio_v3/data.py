@@ -329,11 +329,11 @@ ACTIVITIES = {
 
     # ── SÁBADO RESET — 7 bloques ──────────────────────────────────────────────
     "sat_bloque1":           {"label": "Bloque 1 — Mantenimiento & Recepción", "cat": "Sábado Reset", "pts": 0, "ec": 0, "tier": "micro",    "weekend": "sat"},
+    "sat_bano_bloque":       {"label": "Bloque 2 — Baño",                     "cat": "Sábado Reset", "pts": 2, "ec": 1, "tier": "progreso", "weekend": "sat"},
     "sat_gym_bloque":        {"label": "Gym — Fuerza & Hipertrofia",           "cat": "Sábado Reset", "pts": 4, "ec": 2, "tier": "alto",     "weekend": "sat"},
     "sat_textiles_bloque":   {"label": "Textiles & Cambio de Sábanas",         "cat": "Sábado Reset", "pts": 0, "ec": 0, "tier": "micro",    "weekend": "sat"},
     "sat_limpieza_bloque":   {"label": "Limpieza de Arriba a Abajo",           "cat": "Sábado Reset", "pts": 3, "ec": 1, "tier": "progreso", "weekend": "sat"},
-    "sat_bano_bloque":       {"label": "Desinfección de Baño",                 "cat": "Sábado Reset", "pts": 2, "ec": 1, "tier": "progreso", "weekend": "sat"},
-    "sat_barrido_bloque":    {"label": "Barrido y Trapeado General",           "cat": "Sábado Reset", "pts": 0, "ec": 0, "tier": "micro",    "weekend": "sat"},
+    "sat_barrido_bloque":    {"label": "Trapeado",                            "cat": "Sábado Reset", "pts": 0, "ec": 0, "tier": "micro",    "weekend": "sat"},
     "sat_jugos_bloque":      {"label": "Jugos de la Semana",                   "cat": "Sábado Reset", "pts": 2, "ec": 1, "tier": "progreso", "weekend": "sat"},
 
     # ── DOMINGO STRATEGY — 10 bloques ────────────────────────────────────────

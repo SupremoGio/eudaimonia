@@ -235,10 +235,10 @@ def _check_combo_bonus(today, keys_today):
         _award_xp(5, "bonus", "Combo: 5 categorías")
         combos.append({"type": "5cats", "icon": "🌟", "name": "5 Virtudes", "description": "Cinco categorías distintas en un día", "xp": 5, "ec": 0})
 
-    # Weekend: sábado completo → +4 XP bonus (7 bloques)
+    # Weekend: sábado completo → +4 XP bonus (6 bloques requeridos; Jugos es opcional)
     sat_keys = {
         "sat_bloque1", "sat_gym_bloque", "sat_textiles_bloque",
-        "sat_limpieza_bloque", "sat_bano_bloque", "sat_barrido_bloque", "sat_jugos_bloque",
+        "sat_limpieza_bloque", "sat_bano_bloque", "sat_barrido_bloque",
     }
     if sat_keys.issubset(set(keys_today)):
         with get_db() as db:

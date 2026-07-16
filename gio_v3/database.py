@@ -1171,6 +1171,55 @@ def init_db():
         except Exception as e:
             print(f"[DB] rutina_bloques v2 migration warning: {e}")
 
+        # Migrate rutina_bloques v3 — Bloque 2 Baño movido después de Bloque 1;
+        # Baño / Limpieza arriba-abajo / Barrido desglosados en sub-tareas; Jugos opcional
+        try:
+            already = db.execute(
+                "SELECT COUNT(*) as c FROM rutina_bloques WHERE id='sat_bano_vidrio'"
+            ).fetchone()["c"]
+            if not already:
+                db.execute("DELETE FROM rutina_bloques WHERE dia='sabado'")
+                db.executemany(
+                    """INSERT INTO rutina_bloques
+                       (id, dia, bloque_id, nombre, tier, xp, ec, categoria, opcional, duracion_min, orden)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                    [
+                        # Bloque 1: Mantenimiento & Recepción (sin cambios)
+                        ("sat_ventilacion","sabado","sat_bloque1","🪟 Ventilación Fast Track (abrir ventanas)",                        "micro",   0,0,"",       0,  5,  1),
+                        ("sat_nespresso",  "sabado","sat_bloque1","☕ Mantenimiento Nespresso (vaciar cápsulas · enjuagar · bandeja)",  "micro",   0,0,"",       0, 10,  2),
+                        ("sat_cocina_r",   "sabado","sat_bloque1","🍽️ Reset de Cocina (platos lavados · barra limpia)",               "micro",   0,0,"",       0, 10,  3),
+                        ("sat_despensa",   "sabado","sat_bloque1","🛒 Recibir despensa (recibir · desinfectar · acomodar)",            "micro",   0,0,"",       0, 20,  4),
+                        ("sat_carga1",     "sabado","sat_bloque1","👕 Carga Inicial (1ª tanda de ropa en lavadora)",                   "micro",   0,0,"",       0,  5,  5),
+                        # Bloque 2: Baño (nuevo — desglosado en sub-tareas)
+                        ("sat_bano_vidrio",  "sabado","sat_bano_bloque","🪟 Limpieza de vidrio",  "micro",   0,0,"", 0,  4,  6),
+                        ("sat_bano_espejo",  "sabado","sat_bano_bloque","🪞 Limpieza de espejo",  "micro",   0,0,"", 0,  3,  7),
+                        ("sat_bano_lavabo",  "sabado","sat_bano_bloque","🚰 Limpieza de lavabo",  "micro",   0,0,"", 0,  4,  8),
+                        ("sat_bano_wc",      "sabado","sat_bano_bloque","🚽 Limpieza de WC",      "micro",   0,0,"", 0,  5,  9),
+                        ("sat_bano_repisa",  "sabado","sat_bano_bloque","🗄️ Limpieza de repisa", "micro",   0,0,"", 0,  3, 10),
+                        ("sat_bano_trapear", "sabado","sat_bano_bloque","🧽 Trapear",             "progreso",2,1,"", 0,  6, 11),
+                        # Gym slot (12:30 – 2:00 PM)
+                        ("sat_gym",        "sabado","sat_gym_bloque","🏋️ Gym (entrenamiento de fuerza / hipertrofia)",                 "alto",    4,2,"SOMA",   0, 90, 12),
+                        # Textiles
+                        ("sat_textiles_r", "sabado","sat_textiles_bloque","👔 Textiles fuera · cambio de sábanas y toallas · carga 2", "micro",   0,0,"",       0, 15, 13),
+                        # Limpieza de Arriba a Abajo (desglosado en sub-tareas)
+                        ("sat_limpieza_escritorio", "sabado","sat_limpieza_bloque","🗂️ Limpiar Escritorio",  "micro",   0,0,"", 0,  4, 14),
+                        ("sat_limpieza_buro",       "sabado","sat_limpieza_bloque","🛏️ Limpiar Buró",        "micro",   0,0,"", 0,  3, 15),
+                        ("sat_limpieza_mesa",       "sabado","sat_limpieza_bloque","🍽️ Limpiar Mesa",        "micro",   0,0,"", 0,  3, 16),
+                        ("sat_limpieza_microondas", "sabado","sat_limpieza_bloque","♨️ Limpiar Microondas",   "micro",   0,0,"", 0,  4, 17),
+                        ("sat_limpieza_cocina",     "sabado","sat_limpieza_bloque","🍳 Limpiar Cocina",       "progreso",3,1,"", 0,  8, 18),
+                        # Trapeado (antes "Barrido y Trapeado General" — desglosado en sub-tareas)
+                        ("sat_trapear_sala",   "sabado","sat_barrido_bloque","🛋️ Trapear Sala",   "micro", 0,0,"", 0,  7, 19),
+                        ("sat_trapear_cuarto", "sabado","sat_barrido_bloque","🛏️ Trapear Cuarto", "micro", 0,0,"", 0,  7, 20),
+                        ("sat_trapear_bano",   "sabado","sat_barrido_bloque","🚽 Trapear Baño",    "micro", 0,0,"", 0,  6, 21),
+                        # Jugos de la semana — ahora opcional
+                        ("sat_jugos_r",    "sabado","sat_jugos_bloque","🥤 Preparar jugos de la semana (procesar · guardar)",          "progreso",2,1,"SOMA",   1, 30, 22),
+                    ]
+                )
+                db.commit()
+                print("[DB] rutina_bloques v3 migration OK — Bloque 2 Baño + sub-tareas + Jugos opcional")
+        except Exception as e:
+            print(f"[DB] rutina_bloques v3 migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS app_settings (
             key   TEXT PRIMARY KEY,

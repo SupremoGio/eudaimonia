@@ -19,12 +19,23 @@ HORARIOS = {
     "sat_cocina_r":     "Mañana · 10 min",
     "sat_despensa":     "Mañana · 20 min",
     "sat_carga1":       "Antes del gym",
+    "sat_bano_vidrio":  "Tarde · 4 min",
+    "sat_bano_espejo":  "Tarde · 3 min",
+    "sat_bano_lavabo":  "Tarde · 4 min",
+    "sat_bano_wc":      "Tarde · 5 min",
+    "sat_bano_repisa":  "Tarde · 3 min",
+    "sat_bano_trapear": "Tarde · 6 min",
     "sat_gym":          "12:30 – 2:00 PM",
     "sat_textiles_r":   "Tarde",
-    "sat_limpieza_r":   "Tarde · 30 min",
-    "sat_bano_r":       "Tarde · 20 min",
-    "sat_barrido_r":    "Tarde · 20 min",
-    "sat_jugos_r":      "Tarde · 30 min",
+    "sat_limpieza_escritorio": "Tarde · 4 min",
+    "sat_limpieza_buro":       "Tarde · 3 min",
+    "sat_limpieza_mesa":       "Tarde · 3 min",
+    "sat_limpieza_microondas": "Tarde · 4 min",
+    "sat_limpieza_cocina":     "Tarde · 8 min",
+    "sat_trapear_sala":   "Tarde · 7 min",
+    "sat_trapear_cuarto": "Tarde · 7 min",
+    "sat_trapear_bano":   "Tarde · 6 min",
+    "sat_jugos_r":      "Tarde · 30 min (opcional)",
     # ── DOMINGO ─────────────────────────────────────────────────────────────
     "sun_cafe":         "8:00 AM",
     "sun_gym":          "9:30 – 11:00 AM",
@@ -101,7 +112,10 @@ def _build_rutina(dia, semana_id):
                 done_ids = {r["bloque_id"] for r in done_rows}
 
             req_ids = {t["id"] for t in tareas if not t["opcional"]}
-            bloque_done   = req_ids.issubset(done_ids) if req_ids else False
+            all_ids = set(task_ids)
+            # Bloque sin tareas requeridas (todo opcional, ej. Jugos): "done" refleja
+            # si la(s) tarea(s) opcional(es) se marcaron, en vez de quedar vacuamente falso
+            bloque_done   = req_ids.issubset(done_ids) if req_ids else (all_ids.issubset(done_ids) if all_ids else False)
             total_duracion = sum(t["duracion_min"] for t in tareas if not t["opcional"])
 
             bloques.append({
@@ -119,8 +133,11 @@ def _build_rutina(dia, semana_id):
             })
 
     # Global progress: count completed BLOQUES (cada bloque = 1 tarea principal)
-    total = len(bloques)
-    done  = sum(1 for bl in bloques if bl["bloque_done"])
+    # Bloques 100% opcionales (ej. Jugos) no cuentan para el total del día —
+    # no deben bloquear el 100% / el combo "día completo"
+    required_bloques = [bl for bl in bloques if bl["required_count"] > 0]
+    total = len(required_bloques)
+    done  = sum(1 for bl in required_bloques if bl["bloque_done"])
     return {
         "bloques":  bloques,
         "total":    total,
