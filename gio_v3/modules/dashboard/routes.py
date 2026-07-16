@@ -16,7 +16,6 @@ _MODULE_CATS = {
     'cosmopolitismo': {'Idiomas'},
     'logoi':          {'Programación'},
     'eurythmia':      {'Baile'},
-    'harma':          {'Mecánica'},
 }
 
 _EU_MODULES_BASE = [
@@ -27,7 +26,6 @@ _EU_MODULES_BASE = [
     {'id': 'cosmopolitismo', 'name': 'COSMOPOLITISMO', 'concept': 'Idiomas',       'desc': 'Idiomas · Culturas',          'hue': 215},
     {'id': 'logoi',          'name': 'LOGOI',          'concept': 'Programación',  'desc': 'Programación · Lógica',       'hue': 120},
     {'id': 'eurythmia',      'name': 'EURYTHMIA',      'concept': 'Baile',         'desc': 'Baile · Ritmo · Cuerpo',      'hue': 330},
-    {'id': 'harma',          'name': 'HARMA',          'concept': 'Mecánica',      'desc': 'Vehículo · Servicios · Km',   'hue': 15,  'route': '/harma'},
 ]
 
 # Habit → activity keys que la marcan como done si se loguearon hoy
