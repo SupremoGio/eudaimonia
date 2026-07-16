@@ -4936,6 +4936,7 @@ function PraxisInbox({
   const [gtdTab, setGtdTab] = useState('inbox');
   const [inbox, setInbox] = useState(EU.gtd.inbox);
   const [newItem, setNewItem] = useState('');
+  const [inputFocus, setInputFocus] = useState(false);
   const addItem = () => {
     if (!newItem.trim()) return;
     setInbox(p => [...p, {
@@ -4947,10 +4948,12 @@ function PraxisInbox({
   };
   const GTD_TABS = [{
     id: 'inbox',
-    label: 'Inbox'
+    label: 'Inbox',
+    count: inbox.length
   }, {
     id: 'projects',
-    label: 'Proyectos'
+    label: 'Proyectos',
+    count: EU.gtd.projects.length
   }, {
     id: 'contexts',
     label: 'Contextos'
@@ -4979,11 +4982,21 @@ function PraxisInbox({
       cursor: 'pointer',
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 11,
+      fontWeight: gtdTab === t.id ? 700 : 400,
       color: gtdTab === t.id ? C.gold : C.textMuted,
       borderBottom: gtdTab === t.id ? `2px solid ${C.gold}` : '2px solid transparent',
       transition: 'all 0.2s'
     }
-  }, t.label))), /*#__PURE__*/React.createElement("div", {
+  }, t.label, t.count != null && /*#__PURE__*/React.createElement("span", {
+    style: {
+      marginLeft: 5,
+      fontSize: 9,
+      borderRadius: 9,
+      padding: '1px 6px',
+      background: gtdTab === t.id ? C.gold : 'rgba(201,168,76,0.14)',
+      color: gtdTab === t.id ? C.deep : C.textSub
+    }
+  }, t.count)))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: isDesktop ? '16px 24px 0' : '16px 20px 0'
     }
@@ -4993,15 +5006,19 @@ function PraxisInbox({
       gap: 8,
       marginBottom: 14,
       background: C.card,
-      border: '1px solid var(--b)',
+      border: `1.5px solid ${inputFocus ? C.gold : 'var(--b)'}`,
       borderRadius: 10,
       padding: '4px 4px 4px 14px',
-      alignItems: 'center'
+      alignItems: 'center',
+      boxShadow: inputFocus ? '0 0 0 3px rgba(201,168,76,0.12)' : 'none',
+      transition: 'all 0.15s'
     }
   }, /*#__PURE__*/React.createElement("input", {
     value: newItem,
     onChange: e => setNewItem(e.target.value),
     onKeyDown: e => e.key === 'Enter' && addItem(),
+    onFocus: () => setInputFocus(true),
+    onBlur: () => setInputFocus(false),
     placeholder: "Capturar pensamiento...",
     style: {
       flex: 1,

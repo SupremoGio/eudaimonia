@@ -1288,6 +1288,7 @@ function PraxisInbox({ isDesktop }) {
   const [gtdTab, setGtdTab] = useState('inbox');
   const [inbox, setInbox]   = useState(EU.gtd.inbox);
   const [newItem, setNewItem] = useState('');
+  const [inputFocus, setInputFocus] = useState(false);
 
   const addItem = () => {
     if (!newItem.trim()) return;
@@ -1296,8 +1297,8 @@ function PraxisInbox({ isDesktop }) {
   };
 
   const GTD_TABS = [
-    {id:'inbox',    label:'Inbox'},
-    {id:'projects', label:'Proyectos'},
+    {id:'inbox',    label:'Inbox',     count: inbox.length},
+    {id:'projects', label:'Proyectos', count: EU.gtd.projects.length},
     {id:'contexts', label:'Contextos'},
     {id:'review',   label:'Revisión'},
   ];
@@ -1311,11 +1312,15 @@ function PraxisInbox({ isDesktop }) {
         {GTD_TABS.map(t => (
           <div key={t.id} onClick={() => setGtdTab(t.id)} style={{
             flex:1, padding:'11px 2px', textAlign:'center', cursor:'pointer',
-            fontFamily:'DM Sans,sans-serif', fontSize:11,
+            fontFamily:'DM Sans,sans-serif', fontSize:11, fontWeight: gtdTab===t.id?700:400,
             color: gtdTab===t.id ? C.gold : C.textMuted,
             borderBottom: gtdTab===t.id ? `2px solid ${C.gold}` : '2px solid transparent',
             transition:'all 0.2s',
-          }}>{t.label}</div>
+          }}>{t.label}{t.count != null && (
+            <span style={{marginLeft:5,fontSize:9,borderRadius:9,padding:'1px 6px',
+              background: gtdTab===t.id ? C.gold : 'rgba(201,168,76,0.14)',
+              color: gtdTab===t.id ? C.deep : C.textSub}}>{t.count}</span>
+          )}</div>
         ))}
       </div>
 
@@ -1323,10 +1328,12 @@ function PraxisInbox({ isDesktop }) {
         {gtdTab === 'inbox' && (
           <div>
             <div style={{display:'flex',gap:8,marginBottom:14,
-              background:C.card,border:'1px solid var(--b)',
-              borderRadius:10,padding:'4px 4px 4px 14px',alignItems:'center'}}>
+              background:C.card,border:`1.5px solid ${inputFocus?C.gold:'var(--b)'}`,
+              borderRadius:10,padding:'4px 4px 4px 14px',alignItems:'center',
+              boxShadow: inputFocus?'0 0 0 3px rgba(201,168,76,0.12)':'none',transition:'all 0.15s'}}>
               <input value={newItem} onChange={e=>setNewItem(e.target.value)}
                 onKeyDown={e=>e.key==='Enter'&&addItem()}
+                onFocus={()=>setInputFocus(true)} onBlur={()=>setInputFocus(false)}
                 placeholder="Capturar pensamiento..."
                 style={{flex:1,background:'none',border:'none',outline:'none',
                   fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}/>

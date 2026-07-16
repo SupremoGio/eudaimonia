@@ -13,9 +13,13 @@ html.light{ --harma: oklch(50% 0.17 15); --harma-l: oklch(44% 0.18 15); --harma-
 .hm-hero{ padding:2px 0 18px; }
 .hm-hero-tag{ font-family:var(--serif); font-style:italic; font-size:13px; color:var(--dim); margin-top:2px; }
 .hm-hero-desc{ font-size:12px; color:var(--dim); margin-top:8px; max-width:420px; line-height:1.5; }
-.hm-status-strip{ display:flex; gap:24px; margin-top:16px; }
-.hm-status-n{ font-family:var(--serif); font-size:1.7rem; line-height:1; font-weight:600; }
-.hm-status-l{ font-size:9px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:3px; }
+.hm-status-strip{ display:flex; gap:10px; margin-top:16px; }
+.hm-status-box{ flex:1; text-align:center; padding:10px 6px; border-radius:10px; background:rgba(201,168,76,0.04); border:1px solid var(--b); transition:all 0.2s; }
+.hm-status-n{ font-family:var(--serif); font-size:1.4rem; line-height:1; font-weight:600; color:var(--dim); }
+.hm-status-l{ font-size:8px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:4px; }
+
+/* ── CTA sólido (acento del módulo) ── */
+.hm-cta{ background:linear-gradient(135deg, var(--harma), var(--harma-l)); border:none; color:#09070F; box-shadow:0 4px 18px color-mix(in srgb, var(--harma) 35%, transparent); }
 
 /* ── Vehicle card ── */
 .hm-veh{ background:linear-gradient(140deg, var(--card2) 0%, var(--card) 100%); border:1px solid var(--harma-b); border-radius:18px; padding:18px 20px; margin-bottom:18px; }
@@ -105,9 +109,9 @@ html.light{ --harma: oklch(50% 0.17 15); --harma-l: oklch(44% 0.18 15); --harma-
   </div>
   <div class="hm-hero-desc">El auriga gobierna al caballo. Cuidar al caballo es cuidar el viaje. Los intervalos se cumplen por kilometraje o tiempo — lo que llegue primero.</div>
   <div class="hm-status-strip">
-    <div><div class="hm-status-n" style="color:#f43f5e" id="hm-st-vencidos">0</div><div class="hm-status-l">Vencidos</div></div>
-    <div><div class="hm-status-n" style="color:#ea580c" id="hm-st-urgentes">0</div><div class="hm-status-l">Urgentes</div></div>
-    <div><div class="hm-status-n" style="color:var(--emerald)" id="hm-st-nominal">0</div><div class="hm-status-l">Al día</div></div>
+    <div class="hm-status-box" id="hm-stbox-vencidos"><div class="hm-status-n" id="hm-st-vencidos">0</div><div class="hm-status-l">Vencidos</div></div>
+    <div class="hm-status-box" id="hm-stbox-urgentes"><div class="hm-status-n" id="hm-st-urgentes">0</div><div class="hm-status-l">Urgentes</div></div>
+    <div class="hm-status-box" id="hm-stbox-nominal"><div class="hm-status-n" id="hm-st-nominal">0</div><div class="hm-status-l">Al día</div></div>
   </div>
 </div>
 
@@ -126,7 +130,7 @@ html.light{ --harma: oklch(50% 0.17 15); --harma-l: oklch(44% 0.18 15); --harma-
       <div class="hm-km-l">Odómetro</div>
       <div class="hm-km-n" id="hm-veh-km">{{ '{:,}'.format(vehiculo.km_actual or 0) }}<span style="font-size:13px;margin-left:5px;color:var(--dim);font-family:var(--sans)">km</span></div>
     </div>
-    <button class="btn-g" onclick="openVehModal()">+ Registrar km / editar</button>
+    <button class="btn-a hm-cta" onclick="openVehModal()">+ Registrar km / editar</button>
   </div>
 </div>
 
@@ -449,9 +453,18 @@ function renderFilters(){
 
 function renderStatusStrip(){
   const c = STATE.plan_counts;
-  $('#hm-st-vencidos').textContent = c.vencido;
-  $('#hm-st-urgentes').textContent = c.urgente;
-  $('#hm-st-nominal').textContent = c.nominal;
+  const STATUS_BOX = {
+    vencidos: {n: c.vencido,  color:'#f43f5e',       bg:'rgba(244,63,94,.1)'},
+    urgentes: {n: c.urgente,  color:'#ea580c',       bg:'rgba(234,88,12,.1)'},
+    nominal:  {n: c.nominal,  color:'var(--emerald)',bg:'var(--emerald-d)'},
+  };
+  Object.entries(STATUS_BOX).forEach(([key, s]) => {
+    $('#hm-st-' + key).textContent = s.n;
+    $('#hm-st-' + key).style.color = s.n > 0 ? s.color : 'var(--dim)';
+    const box = $('#hm-stbox-' + key);
+    box.style.background = s.n > 0 ? s.bg : 'rgba(201,168,76,0.04)';
+    box.style.borderColor = s.n > 0 ? s.color : 'var(--b)';
+  });
 }
 
 function renderPlan(){
