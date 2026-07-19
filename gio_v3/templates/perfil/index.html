@@ -5,7 +5,27 @@
 {% block content %}
 <style>
 /* ── Layout ── */
-.perf-wrap{max-width:680px;width:100%;}
+.perf-wrap{max-width:1200px;width:100%;}
+
+/* ── Hero ── */
+.perf-hero{padding:2px 0 20px;}
+.perf-hero-tag{font-family:var(--serif);font-style:italic;font-size:13px;color:var(--dim);margin-top:2px;}
+.perf-hero-desc{font-size:12px;color:var(--dim);margin-top:8px;max-width:480px;line-height:1.5;}
+.perf-stat-strip{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;}
+.perf-stat-box{flex:1;min-width:130px;text-align:center;padding:12px 10px;border-radius:10px;
+  background:rgba(201,168,76,0.04);border:1px solid var(--b);transition:all 0.2s;}
+.perf-stat-n{font-family:var(--serif);font-size:1.5rem;line-height:1;font-weight:600;color:var(--gold);}
+.perf-stat-l{font-size:8px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-top:4px;}
+.perf-stat-box.alert{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.3);}
+.perf-stat-box.alert .perf-stat-n{color:var(--coral);}
+
+/* ── Desktop shell: contenido principal + rail lateral ── */
+.perf-shell{display:grid;grid-template-columns:1fr 380px;gap:22px;align-items:start;}
+.perf-side{position:sticky;top:16px;}
+@media(max-width:960px){
+  .perf-shell{grid-template-columns:1fr;}
+  .perf-side{position:static;}
+}
 
 /* ── Section header ── */
 .sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
@@ -130,6 +150,10 @@
 .doc-empty{text-align:center;padding:28px 0;color:var(--dim);font-size:var(--fs-sm);}
 
 .upload-label{cursor:pointer;}
+.gen-upload{
+  display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-sm);
+  padding:6px 14px;cursor:pointer;
+}
 
 /* ── Reminders ── */
 .rem-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
@@ -150,6 +174,36 @@
 </style>
 
 <div class="perf-wrap">
+
+  <!-- ── HERO ──────────────────────────────────────────────────────────── -->
+  <div class="perf-hero">
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <div class="pg-t" style="margin:0">Perfil</div>
+      <div class="perf-hero-tag">αὐτός · el que conoce sus propios datos</div>
+    </div>
+    <div class="perf-hero-desc">Información de identidad, medidas corporales, documentos y recordatorios — todo en un solo lugar, protegido con contraseña.</div>
+    <div class="perf-stat-strip">
+      <div class="perf-stat-box">
+        <div class="perf-stat-n">{{ stats.campos_completos }}/{{ stats.campos_total }}</div>
+        <div class="perf-stat-l">Campos completos</div>
+      </div>
+      <div class="perf-stat-box">
+        <div class="perf-stat-n">{{ stats.medidas_completas }}/{{ stats.medidas_total }}</div>
+        <div class="perf-stat-l">Medidas registradas</div>
+      </div>
+      <div class="perf-stat-box">
+        <div class="perf-stat-n">{{ stats.docs_total }}</div>
+        <div class="perf-stat-l">Documentos</div>
+      </div>
+      <div class="perf-stat-box {% if stats.rem_urgentes > 0 %}alert{% endif %}">
+        <div class="perf-stat-n">{{ stats.rem_total }}</div>
+        <div class="perf-stat-l">{% if stats.rem_urgentes > 0 %}{{ stats.rem_urgentes }} próximo{{ 's' if stats.rem_urgentes != 1 else '' }}{% else %}Recordatorios{% endif %}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="perf-shell">
+  <div class="perf-main">
 
   <!-- ── INFORMACIÓN PERSONAL ─────────────────────────────────────────── -->
   <div style="margin-bottom:28px;">
@@ -313,6 +367,10 @@
     </div>
   </div>
 
+  </div>{# /.perf-main #}
+
+  <div class="perf-side">
+
   <!-- ── RECORDATORIOS ────────────────────────────────────────────────── -->
   <div style="margin-bottom:28px;">
     <div class="sec-hd">
@@ -400,7 +458,35 @@
     </div>
   </div>
 
-</div>
+  <!-- ── DOCUMENTOS GENERALES ─────────────────────────────────────────── -->
+  <div style="margin-bottom:28px;">
+    <div class="sec-hd">
+      <div>
+        <div class="sec-title">Documentos</div>
+        <div class="sec-sub">No ligados a un campo específico</div>
+      </div>
+      <label class="btn-g gen-upload" title="Subir documento">
+        <input type="file" style="display:none;" multiple
+          accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip"
+          onchange="uploadGeneralDoc(this)">
+        <i data-lucide="upload" style="width:12px;height:12px;"></i> Subir
+      </label>
+    </div>
+    <div class="tile" style="padding:4px 20px;" id="docsList">
+      {% if docs %}
+        {% for doc in docs %}
+        {{ gen_doc_row(doc) }}
+        {% endfor %}
+      {% else %}
+        <div class="doc-empty" id="docsEmpty">Aún no hay documentos.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  </div>{# /.perf-side #}
+  </div>{# /.perf-shell #}
+
+</div>{# /.perf-wrap #}
 
 <!-- ── ZONA DE PELIGRO ────────────────────────────────────── -->
 <div style="margin-top:48px; padding-top:32px; border-top:1px solid rgba(244,63,94,0.15);">

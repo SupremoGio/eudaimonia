@@ -1,10 +1,12 @@
 import os, uuid, mimetypes
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response, session
 from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 from database import get_db
 from extensions import limiter
+
+PLACEHOLDER = '— editar —'
 
 perfil_bp = Blueprint('perfil', __name__, template_folder='../../templates')
 
@@ -76,13 +78,34 @@ def index():
         if len(meas_history[k]) < 8:
             meas_history[k].append({"value": r["value"], "date": r["recorded_at"][:10]})
 
+    reminders = [dict(r) for r in reminders]
+
+    # ── Stats para el hero ────────────────────────────────────────────────
+    campos_completos  = sum(1 for i in info if i['value'] != PLACEHOLDER)
+    medidas_completas = sum(1 for m in measurements if m['value'] != PLACEHOLDER)
+    horizon = (date.today() + timedelta(days=3)).isoformat()
+    rem_urgentes = sum(
+        1 for r in reminders
+        if (r.get('next_date') or r.get('target_date')) and (r.get('next_date') or r.get('target_date')) <= horizon
+    )
+    stats = {
+        'campos_completos':  campos_completos,
+        'campos_total':      len(info),
+        'medidas_completas': medidas_completas,
+        'medidas_total':     len(measurements),
+        'docs_total':        len(all_docs),
+        'rem_total':         len(reminders),
+        'rem_urgentes':      rem_urgentes,
+    }
+
     return render_template('perfil/index.html',
                            info=info,
                            measurements=measurements,
                            meas_history=meas_history,
                            docs=docs_general,
                            docs_by_field=docs_by_field,
-                           reminders=[dict(r) for r in reminders])
+                           reminders=reminders,
+                           stats=stats)
 
 
 @perfil_bp.route('/api/update', methods=['POST'])
