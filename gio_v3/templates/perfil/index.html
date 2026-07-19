@@ -155,6 +155,21 @@
   padding:6px 14px;cursor:pointer;
 }
 
+/* ── Password Vault ── */
+.vault-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--b);}
+.vault-row:last-child{border-bottom:none;}
+.vault-icon{width:32px;height:32px;border-radius:8px;flex-shrink:0;background:var(--gold-d);
+  border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;}
+.vault-info{flex:1;min-width:0;}
+.vault-service{font-size:.8rem;color:var(--text);display:flex;align-items:center;gap:6px;}
+.vault-service a{color:var(--dim);display:flex;}
+.vault-service a:hover{color:var(--gold);}
+.vault-user{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
+.vault-pass-row{display:flex;align-items:center;gap:6px;margin-top:4px;}
+.vault-pass{font-size:var(--fs-sm);color:var(--mid);letter-spacing:.1em;font-family:monospace;}
+.vault-notas{font-size:var(--fs-xs);color:var(--dim);margin-top:3px;font-style:italic;opacity:.75;}
+.vault-empty{text-align:center;padding:28px 0;color:var(--dim);font-size:var(--fs-sm);}
+
 /* ── Reminders ── */
 .rem-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
 .rem-row:last-child{border-bottom:none;}
@@ -198,6 +213,10 @@
       <div class="perf-stat-box {% if stats.rem_urgentes > 0 %}alert{% endif %}">
         <div class="perf-stat-n">{{ stats.rem_total }}</div>
         <div class="perf-stat-l">{% if stats.rem_urgentes > 0 %}{{ stats.rem_urgentes }} próximo{{ 's' if stats.rem_urgentes != 1 else '' }}{% else %}Recordatorios{% endif %}</div>
+      </div>
+      <div class="perf-stat-box">
+        <div class="perf-stat-n">{{ stats.vault_total }}</div>
+        <div class="perf-stat-l">Contraseñas</div>
       </div>
     </div>
   </div>
@@ -364,6 +383,82 @@
         </div>
         {% endfor %}
       </div>
+    </div>
+  </div>
+
+  <!-- ── CONTRASEÑAS ───────────────────────────────────────────────────── -->
+  <div style="margin-bottom:28px;">
+    <div class="sec-hd">
+      <div>
+        <div class="sec-title">Contraseñas</div>
+        <div class="sec-sub">Accesos guardados · cifrados en la base de datos</div>
+      </div>
+      <button class="btn-g" style="display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-sm);padding:6px 14px;"
+        onclick="toggleVaultForm()">
+        <i data-lucide="plus" style="width:12px;height:12px;"></i> Nueva
+      </button>
+    </div>
+
+    <!-- Form (hidden by default) — compartido para crear y editar -->
+    <div id="vaultForm" style="display:none;margin-bottom:12px;">
+      <div class="tile" style="padding:16px 20px;">
+        <input type="hidden" id="vaultEditId" value="">
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="font-size:var(--fs-xs);color:var(--gold);letter-spacing:.14em;text-transform:uppercase;" id="vaultFormLabel">Nueva contraseña</div>
+          <input class="fi" id="vaultServicio" placeholder="Servicio (ej. Netflix)" autocomplete="off">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <input class="fi" id="vaultUsuario" placeholder="Usuario / email" autocomplete="off" style="flex:1;min-width:160px;">
+            <input class="fi" id="vaultPassword" placeholder="Contraseña" type="text" autocomplete="off" style="flex:1;min-width:160px;">
+          </div>
+          <input class="fi" id="vaultUrl" placeholder="URL (opcional)" autocomplete="off">
+          <input class="fi" id="vaultNotas" placeholder="Notas (opcional)" autocomplete="off">
+          <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;">
+            <button class="btn-r" style="padding:6px 14px;" onclick="closeVaultForm()">Cancelar</button>
+            <button class="btn-g" style="padding:6px 18px;" id="vaultSaveBtn" onclick="saveVaultEntry()">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- List -->
+    <div class="tile" style="padding:4px 20px;" id="vaultList">
+      {% if vault %}
+        {% for v in vault %}
+        <div class="vault-row" id="vaultrow-{{ v.id }}"
+             data-id="{{ v.id }}"
+             data-servicio="{{ v.servicio | e }}"
+             data-usuario="{{ v.usuario | e }}"
+             data-url="{{ v.url | e }}"
+             data-notas="{{ v.notas | e }}">
+          <div class="vault-icon"><i data-lucide="key-round" style="width:14px;height:14px;color:var(--gold);"></i></div>
+          <div class="vault-info">
+            <div class="vault-service">
+              {{ v.servicio }}
+              {% if v.url %}<a href="{{ v.url }}" target="_blank" title="Abrir"><i data-lucide="external-link" style="width:11px;height:11px;"></i></a>{% endif %}
+            </div>
+            {% if v.usuario %}<div class="vault-user">{{ v.usuario }}</div>{% endif %}
+            <div class="vault-pass-row">
+              <span class="vault-pass" id="vaultpass-{{ v.id }}">••••••••</span>
+              <button class="icon-btn" onclick="vaultReveal({{ v.id }})" title="Mostrar/ocultar" id="vaulteye-{{ v.id }}">
+                <i data-lucide="eye" style="width:12px;height:12px;"></i>
+              </button>
+              <button class="icon-btn" onclick="vaultCopy({{ v.id }})" title="Copiar contraseña">
+                <i data-lucide="copy" style="width:12px;height:12px;"></i>
+              </button>
+            </div>
+            {% if v.notas %}<div class="vault-notas">{{ v.notas }}</div>{% endif %}
+          </div>
+          <button class="icon-btn" onclick="editVaultRow(this)" title="Editar">
+            <i data-lucide="pencil" style="width:12px;height:12px;"></i>
+          </button>
+          <button class="icon-btn danger" onclick="deleteVaultEntry({{ v.id }})" title="Eliminar">
+            <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+          </button>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="vault-empty" id="vaultEmpty">Sin contraseñas guardadas. Usa <strong>Nueva</strong> para agregar.</div>
+      {% endif %}
     </div>
   </div>
 
@@ -947,6 +1042,109 @@ async function deleteReminder(id){
     toast('Eliminado');
     if(!document.querySelector('#remindersList [id^=remrow-]')){
       document.getElementById('remindersList').innerHTML='<div id="remEmpty" style="text-align:center;padding:28px 0;color:var(--dim);font-size:var(--fs-sm);">Sin recordatorios. Usa <strong>Nuevo</strong> para agregar.</div>';
+    }
+  }
+}
+
+// ── Contraseñas (Password Vault) ────────────────────────────────────────────
+const _vaultCache={}; // id -> password revelado (solo en memoria, mientras dura la página)
+
+function toggleVaultForm(){
+  const f=document.getElementById('vaultForm');
+  const open=f.style.display!=='none';
+  if(open){closeVaultForm();return;}
+  document.getElementById('vaultEditId').value='';
+  document.getElementById('vaultFormLabel').textContent='Nueva contraseña';
+  document.getElementById('vaultSaveBtn').textContent='Guardar';
+  document.getElementById('vaultServicio').value='';
+  document.getElementById('vaultUsuario').value='';
+  document.getElementById('vaultPassword').value='';
+  document.getElementById('vaultUrl').value='';
+  document.getElementById('vaultNotas').value='';
+  f.style.display='block';
+  document.getElementById('vaultServicio').focus();
+}
+function closeVaultForm(){
+  document.getElementById('vaultForm').style.display='none';
+  document.getElementById('vaultEditId').value='';
+}
+function editVaultRow(btn){
+  const row=btn.closest('[data-id]');
+  document.getElementById('vaultEditId').value=row.dataset.id;
+  document.getElementById('vaultFormLabel').textContent='Editar contraseña';
+  document.getElementById('vaultSaveBtn').textContent='Actualizar';
+  document.getElementById('vaultServicio').value=row.dataset.servicio;
+  document.getElementById('vaultUsuario').value=row.dataset.usuario;
+  document.getElementById('vaultPassword').value='';
+  document.getElementById('vaultPassword').placeholder='Dejar en blanco para no cambiarla';
+  document.getElementById('vaultUrl').value=row.dataset.url;
+  document.getElementById('vaultNotas').value=row.dataset.notas;
+  const f=document.getElementById('vaultForm');
+  f.style.display='block';
+  f.scrollIntoView({behavior:'smooth',block:'nearest'});
+  document.getElementById('vaultServicio').focus();
+}
+async function saveVaultEntry(){
+  const servicio=document.getElementById('vaultServicio').value.trim();
+  if(!servicio){toast('Escribe el nombre del servicio');return;}
+  const password=document.getElementById('vaultPassword').value;
+  const editId=document.getElementById('vaultEditId').value;
+  if(!editId && !password){toast('Escribe una contraseña');return;}
+  const payload={
+    servicio,
+    usuario:document.getElementById('vaultUsuario').value.trim(),
+    url:document.getElementById('vaultUrl').value.trim(),
+    notas:document.getElementById('vaultNotas').value.trim(),
+  };
+  if(password) payload.password=password;
+  const url=editId?`/perfil/api/vault/${editId}/edit`:'/perfil/api/vault/add';
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
+}
+async function vaultReveal(id){
+  const span=document.getElementById('vaultpass-'+id);
+  const btn=document.getElementById('vaulteye-'+id);
+  const icon=btn.querySelector('i');
+  if(_vaultCache[id]){
+    // ya la teníamos en memoria — solo alterna mostrar/ocultar
+    const showing=span.dataset.showing==='1';
+    span.textContent=showing?'••••••••':_vaultCache[id];
+    span.dataset.showing=showing?'0':'1';
+    icon.setAttribute('data-lucide',showing?'eye':'eye-off');
+    lucide.createIcons({nodes:[icon]});
+    return;
+  }
+  const r=await fetch(`/perfil/api/vault/${id}/reveal`,{method:'POST'});
+  const j=await r.json();
+  if(!j.ok){toast('Error: '+(j.error||'no se pudo descifrar'));return;}
+  _vaultCache[id]=j.password;
+  span.textContent=j.password;
+  span.dataset.showing='1';
+  icon.setAttribute('data-lucide','eye-off');
+  lucide.createIcons({nodes:[icon]});
+}
+async function vaultCopy(id){
+  let pw=_vaultCache[id];
+  if(!pw){
+    const r=await fetch(`/perfil/api/vault/${id}/reveal`,{method:'POST'});
+    const j=await r.json();
+    if(!j.ok){toast('Error: '+(j.error||'no se pudo descifrar'));return;}
+    pw=j.password;
+    _vaultCache[id]=pw;
+  }
+  navigator.clipboard.writeText(pw).then(()=>toast('Copiado ✓'));
+}
+async function deleteVaultEntry(id){
+  if(!confirm('¿Eliminar esta contraseña?'))return;
+  const r=await fetch(`/perfil/api/vault/${id}/delete`,{method:'POST'});
+  const j=await r.json();
+  if(j.ok){
+    document.getElementById('vaultrow-'+id)?.remove();
+    delete _vaultCache[id];
+    toast('Eliminado');
+    if(!document.querySelector('#vaultList [id^=vaultrow-]')){
+      document.getElementById('vaultList').innerHTML='<div class="vault-empty" id="vaultEmpty">Sin contraseñas guardadas. Usa <strong>Nueva</strong> para agregar.</div>';
     }
   }
 }

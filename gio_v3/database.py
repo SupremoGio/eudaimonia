@@ -308,6 +308,18 @@ def init_db():
             original    TEXT NOT NULL,
             uploaded_at TEXT NOT NULL
         );
+        -- password_enc guarda el cifrado Fernet (derivado de SECRET_KEY) del
+        -- password en texto plano — nunca se guarda ni se manda sin cifrar.
+        CREATE TABLE IF NOT EXISTS password_vault (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            servicio     TEXT    NOT NULL,
+            usuario      TEXT    DEFAULT '',
+            password_enc TEXT    NOT NULL,
+            url          TEXT    DEFAULT '',
+            notas        TEXT    DEFAULT '',
+            created_at   TEXT    NOT NULL,
+            updated_at   TEXT    DEFAULT NULL
+        );
 
         -- ── DEBT PAYMENTS (abonos) ──────────────────────────────────────────
         CREATE TABLE IF NOT EXISTS debt_payments (

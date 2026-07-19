@@ -1,8 +1,9 @@
-import os, uuid, mimetypes
+import os, uuid, base64, hashlib, mimetypes
 from datetime import datetime, date, timedelta
-from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response, session
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response, session, current_app
 from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
+from cryptography.fernet import Fernet, InvalidToken
 from database import get_db
 from extensions import limiter
 
@@ -12,6 +13,22 @@ perfil_bp = Blueprint('perfil', __name__, template_folder='../../templates')
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'docs')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+def _vault_fernet():
+    """Deriva una clave Fernet estable a partir de SECRET_KEY.
+    Si SECRET_KEY cambia, las entradas cifradas existentes dejan de poder
+    descifrarse — por eso conviene fijar SECRET_KEY en .env desde el inicio."""
+    key = hashlib.sha256(current_app.secret_key.encode()).digest()
+    return Fernet(base64.urlsafe_b64encode(key))
+
+
+def _vault_encrypt(plaintext):
+    return _vault_fernet().encrypt(plaintext.encode()).decode()
+
+
+def _vault_decrypt(token):
+    return _vault_fernet().decrypt(token.encode()).decode()
 
 ALLOWED_EXT = {'.pdf', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.xml', '.zip'}
 
@@ -58,6 +75,13 @@ def index():
         hist_rows = db.execute(
             "SELECT key, value, recorded_at FROM body_measurements_history ORDER BY recorded_at DESC"
         ).fetchall()
+        vault_rows = db.execute(
+            "SELECT id, servicio, usuario, url, notas FROM password_vault ORDER BY servicio COLLATE NOCASE"
+        ).fetchall()
+
+    # Passwords nunca se descifran aquí — solo id/servicio/usuario/url/notas.
+    # El password real se pide bajo demanda vía /api/vault/reveal/<id>.
+    vault = [dict(v) for v in vault_rows]
 
     # Group docs: general (field_key IS NULL) and per-field
     docs_general = []
@@ -96,6 +120,7 @@ def index():
         'docs_total':        len(all_docs),
         'rem_total':         len(reminders),
         'rem_urgentes':      rem_urgentes,
+        'vault_total':       len(vault),
     }
 
     return render_template('perfil/index.html',
@@ -105,6 +130,7 @@ def index():
                            docs=docs_general,
                            docs_by_field=docs_by_field,
                            reminders=reminders,
+                           vault=vault,
                            stats=stats)
 
 
@@ -326,5 +352,87 @@ def edit_reminder(rid):
              int(d.get('freq_value') or 1),
              target, next_d, rid)
         )
+        db.commit()
+    return jsonify({'ok': True})
+
+
+# ── Password Vault ──────────────────────────────────────────────────────────
+# Los passwords se cifran (Fernet, clave derivada de SECRET_KEY) antes de
+# guardarse y solo se descifran bajo demanda vía /reveal — nunca viajan en
+# el HTML inicial ni en el listado.
+
+@perfil_bp.route('/api/vault/add', methods=['POST'])
+def vault_add():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    servicio = (d.get('servicio') or '').strip()
+    password = d.get('password') or ''
+    if not servicio or not password:
+        return jsonify({'ok': False, 'error': 'Servicio y contraseña requeridos'}), 400
+    now = datetime.now().isoformat()
+    with get_db() as db:
+        db.execute(
+            """INSERT INTO password_vault (servicio, usuario, password_enc, url, notas, created_at)
+               VALUES (?,?,?,?,?,?)""",
+            (servicio, (d.get('usuario') or '').strip(), _vault_encrypt(password),
+             (d.get('url') or '').strip(), (d.get('notas') or '').strip(), now)
+        )
+        vid = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
+        db.commit()
+    return jsonify({'ok': True, 'id': vid, 'servicio': servicio,
+                    'usuario': d.get('usuario') or '', 'url': d.get('url') or '',
+                    'notas': d.get('notas') or ''})
+
+
+@perfil_bp.route('/api/vault/<int:vid>/edit', methods=['POST'])
+def vault_edit(vid):
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    servicio = (d.get('servicio') or '').strip()
+    if not servicio:
+        return jsonify({'ok': False, 'error': 'Servicio requerido'}), 400
+    now = datetime.now().isoformat()
+    with get_db() as db:
+        row = db.execute("SELECT id FROM password_vault WHERE id=?", (vid,)).fetchone()
+        if not row:
+            return jsonify({'ok': False, 'error': 'No encontrado'}), 404
+        new_password = d.get('password')
+        if new_password:
+            db.execute(
+                """UPDATE password_vault SET servicio=?, usuario=?, password_enc=?, url=?,
+                   notas=?, updated_at=? WHERE id=?""",
+                (servicio, (d.get('usuario') or '').strip(), _vault_encrypt(new_password),
+                 (d.get('url') or '').strip(), (d.get('notas') or '').strip(), now, vid)
+            )
+        else:
+            db.execute(
+                """UPDATE password_vault SET servicio=?, usuario=?, url=?, notas=?, updated_at=?
+                   WHERE id=?""",
+                (servicio, (d.get('usuario') or '').strip(),
+                 (d.get('url') or '').strip(), (d.get('notas') or '').strip(), now, vid)
+            )
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@perfil_bp.route('/api/vault/<int:vid>/reveal', methods=['POST'])
+def vault_reveal(vid):
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    with get_db() as db:
+        row = db.execute("SELECT password_enc FROM password_vault WHERE id=?", (vid,)).fetchone()
+    if not row:
+        return jsonify({'ok': False, 'error': 'No encontrado'}), 404
+    try:
+        password = _vault_decrypt(row['password_enc'])
+    except InvalidToken:
+        return jsonify({'ok': False, 'error': 'No se pudo descifrar (¿cambió SECRET_KEY?)'}), 500
+    return jsonify({'ok': True, 'password': password})
+
+
+@perfil_bp.route('/api/vault/<int:vid>/delete', methods=['POST'])
+def vault_delete(vid):
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    with get_db() as db:
+        db.execute("DELETE FROM password_vault WHERE id=?", (vid,))
         db.commit()
     return jsonify({'ok': True})
