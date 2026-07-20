@@ -235,16 +235,28 @@
   background:var(--card2);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;}
 .gm-occ-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
 /* Item picker in outfit modal */
-.item-picker{max-height:220px;overflow-y:auto;border:1px solid var(--b);border-radius:8px;}
+.ip-cat-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.ip-selected-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;
+  border:1px solid rgba(201,168,76,.25);background:rgba(201,168,76,.05);border-radius:8px;}
+.ip-selected-label{font-size:var(--fs-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-right:2px;}
+.ip-sel-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(201,168,76,.12);
+  border:1px solid rgba(201,168,76,.3);color:var(--text);font-size:var(--fs-xs);padding:3px 6px 3px 10px;border-radius:100px;}
+.ip-sel-chip button{background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px;line-height:1;padding:0 2px;}
+.ip-sel-chip button:hover{color:var(--red);}
+.item-picker{max-height:280px;overflow-y:auto;border:1px solid var(--b);border-radius:8px;}
+.ip-group + .ip-group{border-top:1px solid var(--b);}
+.ip-cat-header{position:sticky;top:0;display:flex;align-items:center;gap:5px;background:var(--card);
+  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:6px 12px;
+  border-bottom:1px solid rgba(255,255,255,.05);z-index:1;}
+.ip-cat-count{color:var(--dim);opacity:.55;}
 .ip-row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;transition:background .12s;border-bottom:1px solid rgba(201,168,76,.05);}
-.ip-row:last-child{border-bottom:none;}
+.ip-group:last-child .ip-row:last-child{border-bottom:none;}
 .ip-row:hover{background:var(--gold-d);}
 .ip-row.on{background:rgba(201,168,76,.06);}
 .ip-color{width:20px;height:20px;border-radius:5px;flex-shrink:0;border:1px solid rgba(255,255,255,.08);}
 .ip-color img{width:100%;height:100%;object-fit:cover;border-radius:4px;}
 .ip-info{flex:1;min-width:0;}
 .ip-name{font-size:var(--fs-sm);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ip-cat{font-size:var(--fs-xs);color:var(--dim);}
 .ip-check{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--b2);flex-shrink:0;
   display:flex;align-items:center;justify-content:center;transition:all .14s;}
 .ip-row.on .ip-check{background:var(--gold);border-color:var(--gold);}
@@ -491,6 +503,8 @@
       <div style="margin-bottom:8px;">
         <input class="gd-search" id="om-item-search" placeholder="Filtrar prendas…" style="width:100%;padding-left:12px;" oninput="filterPicker()">
       </div>
+      <div class="ip-cat-pills" id="om-cat-pills"></div>
+      <div class="ip-selected-bar" id="om-selected-bar" style="display:none;"></div>
       <div class="item-picker" id="om-item-picker">
         <!-- rendered by JS -->
       </div>
@@ -566,6 +580,7 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 const ALL_ITEMS   = {{ items   | tojson | safe }};
 const ALL_OUTFITS = {{ outfits | tojson | safe }};
+const CATEGORIA_ORDER = {{ categorias | tojson | safe }};
 let _items = [...ALL_ITEMS];
 let _activeCat = '';
 let _activeItemId = null;
@@ -573,6 +588,7 @@ let _editItemId = null;
 let _editOutfitId = null;
 let _selectedOccs = [];
 let _selectedItemIds = new Set();
+let _pickerCat = '';
 let _rating = 0;
 
 // ── Color Psychology map ──────────────────────────────────────────────────────
@@ -1014,16 +1030,19 @@ function openOutfitModal(editId){
   _editOutfitId = editId||null;
   _rating = 0;
   _selectedItemIds = new Set();
+  _pickerCat = '';
   const o = editId ? ALL_OUTFITS.find(x=>x.id===editId) : null;
   document.getElementById('om-title').textContent = o ? 'Editar Outfit' : 'Nuevo Outfit';
   document.getElementById('om-id').value    = editId||'';
   document.getElementById('om-nombre').value= o?.nombre||'';
   document.getElementById('om-ocasion').value=o?.ocasion||'';
   document.getElementById('om-notas').value = o?.notas||'';
+  document.getElementById('om-item-search').value = '';
   document.getElementById('om-err').textContent='';
   _rating = o?.rating||0;
   renderStars();
   if(o?.items) o.items.forEach(i=>_selectedItemIds.add(i.id));
+  renderPickerCats();
   renderPicker('');
   document.getElementById('outfit-modal').classList.add('open');
 }
@@ -1034,20 +1053,50 @@ function renderStars(){
   document.querySelectorAll('#om-stars .star-btn').forEach((b,i)=>b.classList.toggle('on',i<_rating));
 }
 
+// Quick category filter pills — solo muestra categorías que existen en el armario
+function renderPickerCats(){
+  const present = new Set(ALL_ITEMS.map(r=>r.categoria));
+  const cats = CATEGORIA_ORDER.filter(c=>present.has(c));
+  const pills = [`<button class="cat-pill on" onclick="setPickerCat(this,'')">Todas</button>`]
+    .concat(cats.map(c=>`<button class="cat-pill" onclick="setPickerCat(this,'${esc(c)}')">${esc(c)}</button>`));
+  document.getElementById('om-cat-pills').innerHTML = pills.join('');
+}
+function setPickerCat(btn, cat){
+  _pickerCat = cat;
+  document.querySelectorAll('#om-cat-pills .cat-pill').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  filterPicker();
+}
+
 function renderPicker(q){
-  const items = ALL_ITEMS.filter(r=>!q||r.nombre.toLowerCase().includes(q)||r.categoria.toLowerCase().includes(q));
-  const html = items.map(r=>{
+  let items = ALL_ITEMS.filter(r=>!q||r.nombre.toLowerCase().includes(q)||r.categoria.toLowerCase().includes(q));
+  if(_pickerCat) items = items.filter(r=>r.categoria===_pickerCat);
+
+  // Agrupar por categoría (mismo orden que el armario) para que armar el outfit sea más fácil
+  const groups = {};
+  items.forEach(r=>{ (groups[r.categoria]=groups[r.categoria]||[]).push(r); });
+  const orderedCats = [...CATEGORIA_ORDER.filter(c=>groups[c]), ...Object.keys(groups).filter(c=>!CATEGORIA_ORDER.includes(c))];
+
+  const rowHtml = r => {
     const on = _selectedItemIds.has(r.id);
     const visual = r.foto
       ? `<div class="ip-color"><img src="/guardarropa/photos/${esc(r.foto)}" alt=""></div>`
       : `<div class="ip-color" style="background:${esc(r.color_hex||'#333')};"></div>`;
-    return `<div class="ip-row${on?' on':''}" onclick="togglePickerItem(${r.id},this)">
+    return `<div class="ip-row${on?' on':''}" data-id="${r.id}" onclick="togglePickerItem(${r.id},this)">
       ${visual}
-      <div class="ip-info"><div class="ip-name">${esc(r.nombre)}</div><div class="ip-cat">${esc(r.categoria)}</div></div>
+      <div class="ip-info"><div class="ip-name">${esc(r.nombre)}</div></div>
       <div class="ip-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
     </div>`;
-  }).join('');
+  };
+
+  const html = orderedCats.map(cat => `
+    <div class="ip-group">
+      <div class="ip-cat-header">${esc(cat)} <span class="ip-cat-count">${groups[cat].length}</span></div>
+      ${groups[cat].map(rowHtml).join('')}
+    </div>`).join('');
+
   document.getElementById('om-item-picker').innerHTML = html || '<div style="padding:16px;text-align:center;font-size:var(--fs-sm);color:var(--dim);">Sin prendas</div>';
+  renderSelectedBar();
 }
 function filterPicker(){
   renderPicker(document.getElementById('om-item-search').value.trim().toLowerCase());
@@ -1056,7 +1105,28 @@ function togglePickerItem(id, row){
   if(_selectedItemIds.has(id)) _selectedItemIds.delete(id);
   else _selectedItemIds.add(id);
   row.classList.toggle('on', _selectedItemIds.has(id));
-  row.querySelector('.ip-check').classList?.toggle('on', _selectedItemIds.has(id));
+  row.querySelector('.ip-check').classList.toggle('on', _selectedItemIds.has(id));
+  renderSelectedBar();
+}
+
+// Barra fija con las prendas ya elegidas, visible aunque sigas scrolleando la lista
+function renderSelectedBar(){
+  const bar = document.getElementById('om-selected-bar');
+  const selected = ALL_ITEMS.filter(r=>_selectedItemIds.has(r.id));
+  if(!selected.length){ bar.style.display='none'; bar.innerHTML=''; return; }
+  bar.style.display='flex';
+  bar.innerHTML = `<span class="ip-selected-label">Seleccionadas (${selected.length})</span>` +
+    selected.map(r=>`<span class="ip-sel-chip">${esc(r.nombre)}<button type="button" onclick="removeSelected(${r.id})">×</button></span>`).join('');
+}
+function removeSelected(id){
+  _selectedItemIds.delete(id);
+  const row = document.querySelector(`#om-item-picker .ip-row[data-id="${id}"]`);
+  if(row){
+    row.classList.remove('on');
+    const chk = row.querySelector('.ip-check');
+    if(chk) chk.classList.remove('on');
+  }
+  renderSelectedBar();
 }
 function editOutfitById(id){ openOutfitModal(id); }
 
