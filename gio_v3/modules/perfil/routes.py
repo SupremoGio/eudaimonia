@@ -1,11 +1,9 @@
 import os, uuid, base64, hashlib, mimetypes
 from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, Response, session, current_app
-from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 from cryptography.fernet import Fernet, InvalidToken
 from database import get_db
-from extensions import limiter
 
 PLACEHOLDER = '— editar —'
 
@@ -33,38 +31,8 @@ def _vault_decrypt(token):
 ALLOWED_EXT = {'.pdf', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.xml', '.zip'}
 
 
-def _get_pass_hash():
-    with get_db() as db:
-        row = db.execute(
-            "SELECT value FROM app_settings WHERE key='finanzas_pass_hash'"
-        ).fetchone()
-        return row['value'] if row else None
-
-
-@perfil_bp.route('/unlock', methods=['POST'])
-@limiter.limit("5 per minute; 20 per hour")
-def unlock():
-    current_hash = _get_pass_hash()
-    if current_hash is None:
-        return jsonify({'ok': False, 'error': 'Configura la contraseña primero en Finanzas'}), 503
-    pw = request.json.get('password', '')
-    if pw and check_password_hash(current_hash, pw):
-        session['fin_ok'] = True
-        session.permanent = True
-        return jsonify({'ok': True})
-    return jsonify({'ok': False, 'error': 'Contraseña incorrecta'}), 401
-
-
-@perfil_bp.route('/lock', methods=['POST'])
-def lock():
-    session.pop('fin_ok', None)
-    return jsonify({'ok': True})
-
-
 @perfil_bp.route('/')
 def index():
-    if not session.get('fin_ok'):
-        return render_template('perfil/lock.html', has_pass=bool(_get_pass_hash()))
     with get_db() as db:
         info         = db.execute("SELECT * FROM personal_info ORDER BY rowid").fetchall()
         measurements = db.execute("SELECT * FROM body_measurements ORDER BY rowid").fetchall()

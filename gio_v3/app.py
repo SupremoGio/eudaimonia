@@ -4,10 +4,11 @@ import warnings
 from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()  # carga gio_v3/.env en desarrollo local; en Railway no existe y no hace nada
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, session, redirect, url_for
 from database import init_db
 from extensions import limiter, csrf
 
+from modules.auth.routes           import auth_bp
 from modules.dashboard.routes      import dashboard_bp
 from modules.actividades.routes    import actividades_bp
 from modules.gtd.routes            import gtd_bp
@@ -56,6 +57,7 @@ def create_app():
     limiter.init_app(app)
     csrf.init_app(app)
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(actividades_bp,  url_prefix='/actividades')
     app.register_blueprint(gtd_bp,          url_prefix='/gtd')
@@ -84,6 +86,18 @@ def create_app():
     csrf.exempt(estados_bp)
     csrf.exempt(viajes_bp)
     csrf.exempt(budget_bp)
+
+    PUBLIC_ENDPOINTS = {
+        'auth.login_page', 'auth.login', 'auth.setup', 'auth.logout',
+        'static', 'health', 'health_v31',
+    }
+
+    @app.before_request
+    def require_login():
+        if request.endpoint is None or request.endpoint in PUBLIC_ENDPOINTS:
+            return
+        if not session.get('app_ok'):
+            return redirect(url_for('auth.login_page'))
 
     @app.route('/api/health/v31')
     def health_v31():

@@ -1,7 +1,8 @@
-{% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
-{% block title %}Finanzas — Acceso{% endblock %}
+{% extends "eu/layout_sub.html" %}{% set pg='' %}
+{% block title %}Eudaimonia — Acceso{% endblock %}
 {% block module_title %}ACCESO{% endblock %}
 {% block topright %}{% endblock %}
+{% block back_href %}#{% endblock %}
 {% block content %}
 <style>
 .lock-wrap{display:flex;align-items:center;justify-content:center;height:62vh;}
@@ -19,10 +20,10 @@
 <div class="lock-wrap">
   <div class="lock-card">
     <div class="lock-icon"><i data-lucide="lock"></i></div>
-    <div class="lock-t">Finanzas</div>
+    <div class="lock-t">Eudaimonia</div>
 
     {% if not has_pass %}
-    {# ── Primera vez: crear contraseña ── #}
+    {# ── Primera vez: crear contraseña general ── #}
     <div class="lock-s">Crea tu contraseña</div>
     <input class="pw-inp" type="password" id="pw1" placeholder="Nueva contraseña" maxlength="64">
     <input class="pw-inp" type="password" id="pw2" placeholder="Confirmar contraseña" maxlength="64">
@@ -31,9 +32,9 @@
 
     {% else %}
     {# ── Acceso normal ── #}
-    <div class="lock-s">Módulo Privado</div>
+    <div class="lock-s">Sistema Personal</div>
     <input class="pw-inp" type="password" id="pw" placeholder="••••••••" maxlength="64">
-    <button class="unlock-btn" onclick="unlock()">Desbloquear</button>
+    <button class="unlock-btn" onclick="doLogin()">Entrar</button>
     <div class="lock-err" id="err"></div>
     {% endif %}
   </div>
@@ -47,20 +48,20 @@ async function setupPass(){
   const p2=document.getElementById('pw2').value;
   if(!p1){document.getElementById('err').textContent='Ingresa una contraseña';return;}
   if(p1!==p2){document.getElementById('err').textContent='Las contraseñas no coinciden';return;}
-  const r=await fetch('/finanzas/setup-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
+  const r=await fetch('/login/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
   const d=await r.json();
-  if(d.ok){window.location.href='/finanzas';}
+  if(d.ok){window.location.href='/';}
   else{document.getElementById('err').textContent=d.error;}
 }
 document.getElementById('pw2').addEventListener('keydown',e=>{if(e.key==='Enter')setupPass();});
 {% else %}
-async function unlock(){
-  const r=await fetch('/finanzas/unlock',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value})});
+async function doLogin(){
+  const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value})});
   const d=await r.json();
-  if(d.ok){window.location.href='/finanzas';}
+  if(d.ok){window.location.href='/';}
   else{document.getElementById('err').textContent=d.error;document.getElementById('pw').value='';}
 }
-document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')unlock();});
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 {% endif %}
 </script>
 {% endblock %}

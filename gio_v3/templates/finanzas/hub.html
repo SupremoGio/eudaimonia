@@ -164,7 +164,7 @@
     <div class="vb-nw">
       <div class="vb-nw-eye">Patrimonio Neto</div>
       <div class="vb-nw-val">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></div>
-      {% if pat_delta is defined and pat_delta_pct is defined %}
+      {% if pat_delta is not none and pat_delta_pct is not none %}
       <div class="vb-nw-trend {% if pat_delta < 0 %}neg{% endif %}">
         <i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i>
         <span>{% if pat_delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(pat_delta) }} · {{ pat_delta_pct }}% vs anterior</span>
@@ -182,7 +182,7 @@
       <div class="vb-nw-foot">
         <div><div class="vb-foot-l">Activos</div><div class="vb-foot-v pos">${{ "{:,.0f}".format(total_activos) }}</div></div>
         <div><div class="vb-foot-l">Pasivos</div><div class="vb-foot-v neg">−${{ "{:,.0f}".format(total_pasivos) }}</div></div>
-        <button class="vb-lock" onclick="lockFin()" title="Bloquear"><i data-lucide="lock"></i></button>
+        <button class="vb-lock" onclick="logoutApp()" title="Cerrar sesión"><i data-lucide="lock"></i></button>
       </div>
     </div>
 
@@ -251,11 +251,11 @@
     <div class="m-hero-top">
       <div>
         <div class="m-value">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></div>
-        {% if pat_delta is defined and pat_delta_pct is defined %}
+        {% if pat_delta is not none and pat_delta_pct is not none %}
         <div class="m-trend {% if pat_delta < 0 %}neg{% endif %}"><i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i><span>{% if pat_delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(pat_delta) }} · {{ pat_delta_pct }}%</span></div>
         {% endif %}
       </div>
-      <button class="m-lock" onclick="lockFin()" title="Bloquear"><i data-lucide="lock"></i></button>
+      <button class="m-lock" onclick="logoutApp()" title="Cerrar sesión"><i data-lucide="lock"></i></button>
     </div>
 
     {% if has_spark %}
@@ -321,9 +321,9 @@
 
 {% block scripts %}
 <script>
-async function lockFin() {
-  await fetch('/finanzas/lock', { method: 'POST' });
-  window.location.href = '/finanzas/';
+async function logoutApp() {
+  await fetch('/logout', { method: 'POST' });
+  window.location.href = '/login';
 }
 lucide.createIcons();
 </script>

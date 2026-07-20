@@ -1,29 +1,10 @@
-from werkzeug.security import check_password_hash, generate_password_hash
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
-from extensions import limiter
 from datetime import date, datetime
 from collections import defaultdict
 from utils import today_str, today_date, clean_str, safe_float
 
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
-
-
-def _get_pass_hash():
-    with get_db() as db:
-        row = db.execute(
-            "SELECT value FROM app_settings WHERE key='finanzas_pass_hash'"
-        ).fetchone()
-        return row['value'] if row else None
-
-
-def _set_pass_hash(new_hash: str):
-    with get_db() as db:
-        db.execute(
-            "INSERT OR REPLACE INTO app_settings (key, value) VALUES ('finanzas_pass_hash', ?)",
-            (new_hash,)
-        )
-        db.commit()
 
 
 def payment_alerts():
@@ -36,8 +17,6 @@ def payment_alerts():
 
 @finanzas_bp.route('/')
 def index():
-    if not session.get('fin_ok'):
-        return render_template('finanzas/lock.html', has_pass=bool(_get_pass_hash()))
     from modules.finanzas.salud import _compute_patrimonio
     pat = _compute_patrimonio()
     with get_db() as db:
@@ -107,44 +86,6 @@ def index():
         alerts=payment_alerts(), today=today_str(),
         **extra,
     )
-
-
-@finanzas_bp.route('/unlock', methods=['POST'])
-@limiter.limit("5 per minute; 20 per hour")
-def unlock():
-    current_hash = _get_pass_hash()
-    if current_hash is None:
-        return jsonify({'ok': False, 'error': 'Sin contraseña configurada'}), 503
-    pw = request.json.get('password', '')
-    if pw and check_password_hash(current_hash, pw):
-        session['fin_ok'] = True
-        session.permanent = True
-        return jsonify({'ok': True})
-    return jsonify({'ok': False, 'error': 'Contraseña incorrecta'}), 401
-
-
-@finanzas_bp.route('/setup-password', methods=['POST'])
-@limiter.limit("3 per minute; 10 per hour")
-def setup_password():
-    d = request.get_json(force=True)
-    new_pw = d.get('password', '')
-    if not new_pw or len(new_pw) < 4:
-        return jsonify({'ok': False, 'error': 'Mínimo 4 caracteres'}), 400
-    current_hash = _get_pass_hash()
-    if current_hash is not None and not session.get('fin_ok'):
-        current_pw = d.get('current_password', '')
-        if not current_pw or not check_password_hash(current_hash, current_pw):
-            return jsonify({'ok': False, 'error': 'Contraseña actual incorrecta'}), 401
-    _set_pass_hash(generate_password_hash(new_pw))
-    session['fin_ok'] = True
-    session.permanent = True
-    return jsonify({'ok': True})
-
-
-@finanzas_bp.route('/lock', methods=['POST'])
-def lock():
-    session.pop('fin_ok', None)
-    return jsonify({'ok':True})
 
 
 @finanzas_bp.route('/api/debt', methods=['POST'])
