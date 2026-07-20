@@ -31,6 +31,18 @@
 .vj-card-new{background:transparent;border:1px dashed var(--b);color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:160px;font-size:var(--fs-sm);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:border-color .18s,color .18s;}
 .vj-card-new:hover{border-color:var(--gold);color:var(--gold);}
 
+/* ─── Trip sections (vigentes / próximos / pasados) ─────────────────── */
+.vj-section{margin-bottom:28px;}
+.vj-section:last-child{margin-bottom:0;}
+.vj-section-title{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs);letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--b);}
+.vj-section-title .count{color:var(--gold);}
+.vj-section-title.vigente i,.vj-section-title.vigente .count{color:var(--green);}
+.vj-section-title.proximo i,.vj-section-title.proximo .count{color:#60a5fa;}
+.vj-section-title.pasado{opacity:.7;}
+.vj-section-title.pasado i,.vj-section-title.pasado .count{color:var(--dim);}
+.vj-section.pasado .vj-card{opacity:.65;}
+.vj-section-empty{color:var(--dim);font-size:var(--fs-sm);padding:2px 0 4px;}
+
 /* ─── Detail tabs ────────────────────────────────────────────────────── */
 .vj-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--b);padding-bottom:0;}
 .vj-tab{padding:8px 16px;font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;margin-bottom:-1px;}
@@ -100,7 +112,7 @@
       <i data-lucide="plus" style="width:12px;height:12px"></i> Nuevo Viaje
     </button>
   </div>
-  <div id="trip-grid" class="vj-grid">
+  <div id="trip-sections">
     <div style="padding:40px;color:var(--dim);font-size:var(--fs-sm);">Cargando…</div>
   </div>
 </div>
@@ -377,46 +389,71 @@ async function loadTrips() {
   _trips = await r.json();
 }
 
+function tripCardHtml(t) {
+  const dias = t.total_dias || 0;
+  const packed = t.items_packed || 0;
+  return `
+    <div class="vj-card" onclick="showDetail(${t.id})">
+      <div class="vj-card-top">
+        <div class="vj-card-name">${t.nombre}</div>
+        <span class="vj-estado ${t.estado}">${t.estado}</span>
+      </div>
+      ${t.destino ? `<div class="vj-card-dest"><i data-lucide="map-pin" style="width:10px;height:10px;margin-right:3px"></i>${t.destino}</div>` : ''}
+      <div class="vj-card-dates">${fmtD(t.fecha_inicio)} — ${fmtD(t.fecha_fin)}</div>
+      <div class="vj-card-footer">
+        <span class="vj-card-meta">${dias} día${dias!==1?'s':''} · ${packed} ítem${packed!==1?'s':''} empacado${packed!==1?'s':''}</span>
+        <span class="vj-ver">Ver →</span>
+      </div>
+    </div>`;
+}
+
 function renderList() {
   document.getElementById('vw-list').style.display = '';
   document.getElementById('vw-detail').style.display = 'none';
 
-  const grid = document.getElementById('trip-grid');
+  const container = document.getElementById('trip-sections');
+
   if (!_trips.length) {
-    grid.innerHTML = `
-      <div class="vj-card vj-card-new" onclick="openTripModal()">
-        <i data-lucide="plus-circle" style="width:28px;height:28px"></i>
-        <span>Crear primer viaje</span>
+    container.innerHTML = `
+      <div class="vj-grid">
+        <div class="vj-card vj-card-new" onclick="openTripModal()">
+          <i data-lucide="plus-circle" style="width:28px;height:28px"></i>
+          <span>Crear primer viaje</span>
+        </div>
       </div>`;
     if (window.lucide) lucide.createIcons();
     return;
   }
 
-  const cards = _trips.map(t => {
-    const dias = t.total_dias || 0;
-    const packed = t.items_packed || 0;
-    return `
-      <div class="vj-card" onclick="showDetail(${t.id})">
-        <div class="vj-card-top">
-          <div class="vj-card-name">${t.nombre}</div>
-          <span class="vj-estado ${t.estado}">${t.estado}</span>
-        </div>
-        ${t.destino ? `<div class="vj-card-dest"><i data-lucide="map-pin" style="width:10px;height:10px;margin-right:3px"></i>${t.destino}</div>` : ''}
-        <div class="vj-card-dates">${fmtD(t.fecha_inicio)} — ${fmtD(t.fecha_fin)}</div>
-        <div class="vj-card-footer">
-          <span class="vj-card-meta">${dias} día${dias!==1?'s':''} · ${packed} ítem${packed!==1?'s':''} empacado${packed!==1?'s':''}</span>
-          <span class="vj-ver">Ver →</span>
-        </div>
-      </div>`;
+  const today = new Date().toISOString().slice(0, 10);
+  const groups = { vigente: [], proximo: [], pasado: [] };
+  _trips.forEach(t => {
+    if (t.fecha_fin < today)        groups.pasado.push(t);
+    else if (t.fecha_inicio > today) groups.proximo.push(t);
+    else                              groups.vigente.push(t);
   });
 
-  cards.push(`
-    <div class="vj-card vj-card-new" onclick="openTripModal()">
-      <i data-lucide="plus-circle" style="width:24px;height:24px"></i>
-      <span>Nuevo Viaje</span>
-    </div>`);
+  groups.vigente.sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio));
+  groups.proximo.sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio));
+  groups.pasado.sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio));
 
-  grid.innerHTML = cards.join('');
+  const sections = [
+    { key: 'vigente', label: 'Vigentes',  icon: 'plane',           trips: groups.vigente },
+    { key: 'proximo', label: 'Próximos',  icon: 'calendar-clock',  trips: groups.proximo },
+    { key: 'pasado',  label: 'Pasados',   icon: 'history',         trips: groups.pasado  },
+  ];
+
+  container.innerHTML = sections.map(s => `
+    <div class="vj-section ${s.key}">
+      <div class="vj-section-title ${s.key}">
+        <i data-lucide="${s.icon}" style="width:12px;height:12px"></i>
+        ${s.label} <span class="count">(${s.trips.length})</span>
+      </div>
+      ${s.trips.length
+        ? `<div class="vj-grid">${s.trips.map(tripCardHtml).join('')}</div>`
+        : `<div class="vj-section-empty">Sin viajes ${s.label.toLowerCase()}.</div>`}
+    </div>`).join('');
+
   if (window.lucide) lucide.createIcons();
 }
 
