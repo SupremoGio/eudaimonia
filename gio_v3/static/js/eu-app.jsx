@@ -166,7 +166,7 @@ function SideNav({ active, onChange, modules, dispatch }) {
 
         <NavGroup title="MÓDULOS">
           {(modules || []).map(mod => {
-            const acc = `oklch(65% 0.15 ${mod.hue})`;
+            const acc = EU.catTint(mod.hue, 'text');
             return (
               <NavItem key={mod.id}
                 active={false}

@@ -542,12 +542,12 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         background:'color-mix(in srgb, var(--gold) 6%, transparent)'}}>
         {modules.map(mod=>(
           <div key={mod.id} style={{flex:1,height:'100%',
-            background:mod.done?`oklch(65% 0.15 ${mod.hue})`:'transparent',transition:'background 0.4s'}}/>
+            background:mod.done?EU.catTint(mod.hue,'text'):'transparent',transition:'background 0.4s'}}/>
         ))}
       </div>
       <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none'}}>
         {modules.map(mod=>{
-          const acc=`oklch(65% 0.15 ${mod.hue})`, accBg=EU.catTint(mod.hue,'bg');
+          const acc=EU.catTint(mod.hue,'text'), accBg=EU.catTint(mod.hue,'bg');
           return (
             <div key={mod.id}
               onClick={()=>mod.route?(window.location.href=mod.route):dispatch({type:'OPEN_MODULE',id:mod.id})}
@@ -593,7 +593,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
     }}>
       <div style={{flex:1}}>
         <div style={{fontSize:9,letterSpacing:'0.16em',textTransform:'uppercase',
-          color:`oklch(65% 0.15 ${(EU.catHues||{})[suggestion.cat]||45})`,marginBottom:4}}>
+          color:EU.catTint((EU.catHues||{})[suggestion.cat]||45, 'text'),marginBottom:4}}>
           Un click cierra {suggestion.cat}
         </div>
         <div style={{fontSize:14,color:C.text}}>{suggestion.label}</div>
@@ -747,7 +747,7 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
           {modules.map(mod => (
             <div key={mod.id} style={{
               flex:1,height:'100%',
-              background: mod.done ? `oklch(65% 0.15 ${mod.hue})` : 'transparent',
+              background: mod.done ? EU.catTint(mod.hue, 'text') : 'transparent',
               transition:'background 0.4s',
             }}/>
           ))}
@@ -806,9 +806,8 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
 // MODULE DETAIL
 // ═══════════════════════════════════════════════════════════
 function ModuleDetailScreen({ mod, appState, dispatch, isDesktop }) {
-  const acc    = `oklch(65% 0.15 ${mod.hue})`;
-  const accDeep = `oklch(14% 0.04 ${mod.hue})`;
-  const accMid  = `oklch(28% 0.07 ${mod.hue})`;
+  const acc    = EU.catTint(mod.hue, 'text');
+  const accMid = EU.catTint(mod.hue, 'border');
 
   return (
     <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
@@ -1622,7 +1621,7 @@ function ActivityButton({ act, catHue, onLog }) {
   };
 
   const dirs = [[26,-26],[36,0],[26,26],[0,34],[-26,26],[-36,0],[-26,-26],[0,-34]];
-  const burstColor = isAlto ? '#fbbf24' : `oklch(65% 0.18 ${catHue})`;
+  const burstColor = isAlto ? '#fbbf24' : EU.catTint(catHue, 'text');
 
   return (
     <div onClick={handle} style={{
@@ -1633,7 +1632,7 @@ function ActivityButton({ act, catHue, onLog }) {
         : C.card,
       border: act.done
         ? (isAlto ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(99,102,241,0.25)')
-        : `1px solid oklch(22% 0.05 ${catHue})`,
+        : `1px solid ${EU.catTint(catHue, 'border')}`,
       minHeight:52, gap:5,
       transition:'all 0.18s',
       position:'relative', overflow:'hidden',
@@ -1656,7 +1655,7 @@ function ActivityButton({ act, catHue, onLog }) {
           width:16, height:16, borderRadius:5, flexShrink:0,
           border:`1.5px solid ${act.done
             ? (isAlto ? '#fbbf24' : 'rgba(99,102,241,0.7)')
-            : `oklch(32% 0.08 ${catHue})`}`,
+            : EU.catTint(catHue, 'border')}`,
           background: act.done
             ? (isAlto ? '#fbbf24' : 'rgba(99,102,241,0.8)')
             : 'transparent',

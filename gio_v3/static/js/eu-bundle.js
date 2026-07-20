@@ -2007,7 +2007,7 @@ function SideNav({
   }))), /*#__PURE__*/React.createElement(NavGroup, {
     title: "MÓDULOS"
   }, (modules || []).map(mod => {
-    const acc = `oklch(65% 0.15 ${mod.hue})`;
+    const acc = EU.catTint(mod.hue, 'text');
     return /*#__PURE__*/React.createElement(NavItem, {
       key: mod.id,
       active: false,
@@ -3416,7 +3416,7 @@ function HomeScreen({
     style: {
       flex: 1,
       height: '100%',
-      background: mod.done ? `oklch(65% 0.15 ${mod.hue})` : 'transparent',
+      background: mod.done ? EU.catTint(mod.hue, 'text') : 'transparent',
       transition: 'background 0.4s'
     }
   }))), /*#__PURE__*/React.createElement("div", {
@@ -3428,7 +3428,7 @@ function HomeScreen({
       scrollbarWidth: 'none'
     }
   }, modules.map(mod => {
-    const acc = `oklch(65% 0.15 ${mod.hue})`,
+    const acc = EU.catTint(mod.hue, 'text'),
       accBg = EU.catTint(mod.hue, 'bg');
     return /*#__PURE__*/React.createElement("div", {
       key: mod.id,
@@ -3534,7 +3534,7 @@ function HomeScreen({
       fontSize: 9,
       letterSpacing: '0.16em',
       textTransform: 'uppercase',
-      color: `oklch(65% 0.15 ${(EU.catHues || {})[suggestion.cat] || 45})`,
+      color: EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'text'),
       marginBottom: 4
     }
   }, "Un click cierra ", suggestion.cat), /*#__PURE__*/React.createElement("div", {
@@ -3789,7 +3789,7 @@ function CommandCenterScreen({
     style: {
       flex: 1,
       height: '100%',
-      background: mod.done ? `oklch(65% 0.15 ${mod.hue})` : 'transparent',
+      background: mod.done ? EU.catTint(mod.hue, 'text') : 'transparent',
       transition: 'background 0.4s'
     }
   })))), /*#__PURE__*/React.createElement("div", {
@@ -3896,9 +3896,8 @@ function ModuleDetailScreen({
   dispatch,
   isDesktop
 }) {
-  const acc = `oklch(65% 0.15 ${mod.hue})`;
-  const accDeep = `oklch(14% 0.04 ${mod.hue})`;
-  const accMid = `oklch(28% 0.07 ${mod.hue})`;
+  const acc = EU.catTint(mod.hue, 'text');
+  const accMid = EU.catTint(mod.hue, 'border');
   return /*#__PURE__*/React.createElement("div", {
     style: {
       minHeight: '100vh',
@@ -5530,7 +5529,7 @@ function ActivityButton({
     onLog(act.key);
   };
   const dirs = [[26, -26], [36, 0], [26, 26], [0, 34], [-26, 26], [-36, 0], [-26, -26], [0, -34]];
-  const burstColor = isAlto ? '#fbbf24' : `oklch(65% 0.18 ${catHue})`;
+  const burstColor = isAlto ? '#fbbf24' : EU.catTint(catHue, 'text');
   return /*#__PURE__*/React.createElement("div", {
     onClick: handle,
     style: {
@@ -5540,7 +5539,7 @@ function ActivityButton({
       borderRadius: 10,
       cursor: 'pointer',
       background: act.done ? isAlto ? 'rgba(245,158,11,0.07)' : 'rgba(99,102,241,0.07)' : C.card,
-      border: act.done ? isAlto ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(99,102,241,0.25)' : `1px solid oklch(22% 0.05 ${catHue})`,
+      border: act.done ? isAlto ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(99,102,241,0.25)' : `1px solid ${EU.catTint(catHue, 'border')}`,
       minHeight: 52,
       gap: 5,
       transition: 'all 0.18s',
@@ -5573,7 +5572,7 @@ function ActivityButton({
       height: 16,
       borderRadius: 5,
       flexShrink: 0,
-      border: `1.5px solid ${act.done ? isAlto ? '#fbbf24' : 'rgba(99,102,241,0.7)' : `oklch(32% 0.08 ${catHue})`}`,
+      border: `1.5px solid ${act.done ? isAlto ? '#fbbf24' : 'rgba(99,102,241,0.7)' : EU.catTint(catHue, 'border')}`,
       background: act.done ? isAlto ? '#fbbf24' : 'rgba(99,102,241,0.8)' : 'transparent',
       display: 'flex',
       alignItems: 'center',
