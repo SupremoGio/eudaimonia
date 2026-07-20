@@ -66,6 +66,8 @@
 .vj-item-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);}
 .vj-item-row:last-child{border-bottom:none;}
 .vj-item-chk{width:16px;height:16px;accent-color:var(--gold);cursor:pointer;flex-shrink:0;}
+.vj-item-thumb{width:22px;height:22px;border-radius:5px;flex-shrink:0;object-fit:cover;border:1px solid rgba(255,255,255,.08);background:var(--b);}
+.vj-item-thumb-swatch{width:22px;height:22px;border-radius:5px;flex-shrink:0;border:1px solid rgba(255,255,255,.08);}
 .vj-item-name{flex:1;font-size:var(--fs-sm);color:var(--text);}
 .vj-item-name.done{text-decoration:line-through;color:var(--dim);}
 .vj-item-cat-badge{font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;}
@@ -716,6 +718,13 @@ async function refreshDias() {
   renderOutfitsPane();
 }
 
+// Mini referencia visual de la prenda (foto real, color, o nada para extras genéricos)
+function maletaThumbHtml(m) {
+  if (m.item_foto) return `<img src="/guardarropa/photos/${m.item_foto}" class="vj-item-thumb">`;
+  if (m.item_color) return `<span class="vj-item-thumb-swatch" style="background:${m.item_color};"></span>`;
+  return '';
+}
+
 /* ── Maleta pane ──────────────────────────────────────────────────────── */
 function renderMaletaPane() {
   const el = document.getElementById('maleta-list');
@@ -753,6 +762,7 @@ function renderMaletaPane() {
           <input type="checkbox" class="vj-item-chk"
             ${m.packed_ida ? 'checked' : ''}
             onchange="toggleMaleta(${m.id}, 'packed_ida', this.checked)">
+          ${maletaThumbHtml(m)}
           <span class="vj-item-name ${m.packed_ida ? 'done' : ''}">${m.nombre}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
           <button class="vj-item-del" onclick="deleteMaletaItem(${m.id})" title="Eliminar">×</button>
         </div>`).join('')}
@@ -880,6 +890,7 @@ function renderRegresoPane() {
           <input type="checkbox" class="vj-item-chk"
             ${m.packed_vuelta ? 'checked' : ''}
             onchange="toggleRegreso(${m.id}, this.checked)">
+          ${maletaThumbHtml(m)}
           <span class="vj-item-name ${m.packed_vuelta ? 'done' : ''}">${m.nombre}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
         </div>`).join('')}
     </div>`).join('');

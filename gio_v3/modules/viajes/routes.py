@@ -270,7 +270,10 @@ def api_outfits():
 def api_maleta(vid):
     with get_db() as db:
         items = [_row(r) for r in db.execute(
-            "SELECT * FROM viaje_maleta WHERE viaje_id=? ORDER BY categoria, nombre",
+            """SELECT vm.*, wi.foto AS item_foto, wi.color_hex AS item_color
+               FROM viaje_maleta vm
+               LEFT JOIN wardrobe_items wi ON wi.id = vm.item_id
+               WHERE vm.viaje_id=? ORDER BY vm.categoria, vm.nombre""",
             (vid,),
         ).fetchall()]
     return jsonify(items)
