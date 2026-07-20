@@ -210,6 +210,7 @@ def update_outfit(oid):
 @guardarropa_bp.route('/api/outfit/<int:oid>', methods=['DELETE'])
 def delete_outfit(oid):
     with get_db() as db:
+        db.execute("DELETE FROM viaje_dia_outfits WHERE outfit_id=?", (oid,))
         db.execute("DELETE FROM outfit_items WHERE outfit_id=?", (oid,))
         db.execute("DELETE FROM outfits WHERE id=?", (oid,))
         db.commit()
