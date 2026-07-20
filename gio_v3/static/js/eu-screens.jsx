@@ -1963,8 +1963,8 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           const complete = doneCnt === total && total > 0;
           return (
             <div key={cat} data-cat={cat} style={{
-              background:`oklch(14% 0.03 ${catHue})`,
-              border:`1px solid oklch(${complete ? '35% 0.10' : '22% 0.05'} ${catHue})`,
+              background:EU.catTint(catHue, 'bg'),
+              border:`1px solid ${complete ? EU.catTint(catHue, 'border') : 'var(--b)'}`,
               borderRadius:14, padding:'14px', marginBottom:14,
               transition:'border-color 0.3s',
             }}>
@@ -1972,30 +1972,28 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
               <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
                 <div style={{
                   width:7, height:7, borderRadius:'50%', flexShrink:0,
-                  background: doneCnt > 0
-                    ? `oklch(60% 0.18 ${catHue})`
-                    : `oklch(28% 0.07 ${catHue})`,
-                  boxShadow: doneCnt > 0 ? `0 0 6px oklch(60% 0.18 ${catHue})` : 'none',
+                  background: doneCnt > 0 ? EU.catTint(catHue, 'text') : 'var(--b2)',
+                  boxShadow: doneCnt > 0 ? `0 0 6px ${EU.catTint(catHue, 'text')}` : 'none',
                   transition:'all 0.3s',
                 }}/>
                 <span style={{
                   fontFamily:'DM Sans,sans-serif', fontSize:10, letterSpacing:'0.14em',
                   textTransform:'uppercase', flex:1,
-                  color:`oklch(65% 0.14 ${catHue})`,
+                  color:EU.catTint(catHue, 'text'),
                 }}>{cat}</span>
                 <span style={{
                   fontFamily:'DM Sans,sans-serif', fontSize:10,
-                  color: complete ? `oklch(65% 0.14 ${catHue})` : C.textMuted,
+                  color: complete ? EU.catTint(catHue, 'text') : C.textMuted,
                 }}>{doneCnt}/{total}</span>
               </div>
               {/* 3px progress bar */}
-              <div style={{height:3,background:`oklch(20% 0.04 ${catHue})`,
+              <div style={{height:3,background:'var(--b)',
                 borderRadius:2,overflow:'hidden',marginBottom:10}}>
                 <div style={{
                   height:'100%', borderRadius:2,
-                  background:`oklch(55% 0.16 ${catHue})`,
+                  background:EU.catTint(catHue, 'text'),
                   width:`${pct*100}%`,
-                  boxShadow: pct > 0 ? `0 0 5px oklch(55% 0.16 ${catHue})` : 'none',
+                  boxShadow: pct > 0 ? `0 0 5px ${EU.catTint(catHue, 'text')}` : 'none',
                   transition:'width 0.5s ease',
                 }}/>
               </div>
