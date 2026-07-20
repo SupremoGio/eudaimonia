@@ -217,7 +217,7 @@
       <div id="maleta-list">
         <div class="vj-empty">
           <div class="vj-empty-icon">🧳</div>
-          <div>Selecciona tus outfits por día y usa <strong>Generar</strong> para crear la lista.</div>
+          <div>Asigna outfits a tus días en la pestaña <strong>Outfits por Día</strong> y aquí irán apareciendo las prendas.</div>
         </div>
       </div>
     </div>
@@ -663,6 +663,7 @@ async function selectOutfit(outfitId) {
     closeOutfitPicker();
     toast('Outfit asignado ✓', 'ok');
     await refreshDias();
+    await syncMaletaFromOutfits();
   } else {
     toast(r.error || 'Error', 'err');
   }
@@ -677,6 +678,7 @@ async function quitarOutfitDia() {
     closeOutfitPicker();
     toast('Outfit quitado');
     await refreshDias();
+    await syncMaletaFromOutfits();
   }
 }
 
@@ -687,7 +689,21 @@ async function quitarOutfitFromRow(diaId) {
   if (r.ok) {
     toast('Outfit quitado');
     await refreshDias();
+    await syncMaletaFromOutfits();
   }
+}
+
+// Recalcula la maleta en silencio cada vez que cambian los outfits del viaje,
+// para que las prendas aparezcan en el checklist sin tener que pulsar "Generar".
+async function syncMaletaFromOutfits() {
+  const r = await fetch(`${API}/trips/${_curId}/maleta/generar`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+  }).then(r => r.json());
+  if (!r.ok) return;
+  _maleta = await fetch(`${API}/trips/${_curId}/maleta`).then(r => r.json());
+  if (_activeTab === 'maleta')  renderMaletaPane();
+  if (_activeTab === 'regreso') renderRegresoPane();
 }
 
 function closeOutfitPicker() {
@@ -706,7 +722,7 @@ function renderMaletaPane() {
   if (!_maleta.length) {
     el.innerHTML = `<div class="vj-empty">
       <div class="vj-empty-icon">🧳</div>
-      <div>Selecciona tus outfits por día y pulsa <strong>Generar desde outfits</strong>.</div>
+      <div>Asigna outfits a tus días en la pestaña <strong>Outfits por Día</strong> y aquí irán apareciendo las prendas.</div>
     </div>`;
     document.getElementById('maleta-progress-txt').textContent = '';
     return;

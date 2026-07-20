@@ -300,6 +300,16 @@ def api_generar_maleta(vid):
         fin    = date.fromisoformat(viaje['fecha_fin'])
         noches = (fin - inicio).days
 
+        # Conservar el check de empacado de las prendas que ya estaban (se regenera seguido,
+        # cada vez que se asigna/quita un outfit, así que no debe resetear lo ya marcado)
+        packed_by_item = {
+            r['item_id']: (r['packed_ida'], r['packed_vuelta'])
+            for r in db.execute(
+                "SELECT item_id, packed_ida, packed_vuelta FROM viaje_maleta "
+                "WHERE viaje_id=? AND es_extra=0 AND item_id IS NOT NULL", (vid,)
+            ).fetchall()
+        }
+
         # Eliminar maleta anterior (solo items de outfits; conservar manuales del usuario)
         db.execute(
             "DELETE FROM viaje_maleta WHERE viaje_id=? AND es_extra=0", (vid,)
@@ -312,11 +322,12 @@ def api_generar_maleta(vid):
                 """INSERT INTO viaje_maleta
                    (viaje_id, nombre, categoria, cantidad, packed_ida, packed_vuelta,
                     es_extra, item_id)
-                   VALUES (?,?,?,?,0,0,0,?)""",
+                   VALUES (?,?,?,?,?,?,0,?)""",
                 [
                     (vid, r['nombre'],
                      _categorize(r['categoria']),
                      _smart_quantity(r['categoria'], r['dias_uso'], noches),
+                     *packed_by_item.get(r['id'], (0, 0)),
                      r['id'])
                     for r in outfit_items
                 ],
