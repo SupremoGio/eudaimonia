@@ -1094,7 +1094,6 @@ function HegemonikonExtra({ acc, isDesktop }) {
   const guard = (data && data.guardarropa) || {items:0, outfits:0};
   const rec   = (data && data.recetas)     || {total:0, favoritas:0};
   const futbol = (data && data.futbol)     || {partidos:0, rating:null};
-  const habits = EU.moduleHabits.hegemonikon || [];
 
   const bodyRows = [
     {label:'Peso',      val: b.peso     || '—', sub: b.estatura ? `Estatura: ${b.estatura}` : ''},
@@ -1104,23 +1103,44 @@ function HegemonikonExtra({ acc, isDesktop }) {
   ];
 
   const subs = [
-    { href:'/bienestar/salud', icon:'🩺', label:'Salud',
+    { href:'/bienestar/salud', icon:'🩺', label:'Salud', hue:350,
       sub: salud.episodios_activos > 0
         ? `${salud.episodios_activos} episodio${salud.episodios_activos!==1?'s':''} activo${salud.episodios_activos!==1?'s':''}`
         : 'Al día',
       alert: salud.episodios_activos > 0 },
-    { href:'/nutricion/', icon:'🥗', label:'Nutrición',
+    { href:'/nutricion/', icon:'🥗', label:'Nutrición', hue:140,
       sub: `${nut.comidas_done}/${nut.comidas_total} comidas hoy · racha ${nut.streak}d` },
-    { href:'/guardarropa/', icon:'👔', label:'Guardarropa',
+    { href:'/guardarropa/', icon:'👔', label:'Guardarropa', hue:280,
       sub: `${guard.items} prendas · ${guard.outfits} outfits` },
-    { href:'/recetas/', icon:'🍳', label:'Recetas',
+    { href:'/recetas/', icon:'🍳', label:'Recetas', hue:40,
       sub: `${rec.total} recetas · ${rec.favoritas} favoritas` },
-    { href:'/perfil/', icon:'👤', label:'Perfil', sub:'Datos personales · documentos' },
-    { href:'/bienestar/futbol', icon:'⚽', label:'Fútbol',
+    { href:'/perfil/', icon:'👤', label:'Perfil', hue:220, sub:'Datos personales · documentos' },
+    { href:'/bienestar/futbol', icon:'⚽', label:'Fútbol', hue:170,
       sub: futbol.partidos > 0
         ? `${futbol.partidos} partido${futbol.partidos!==1?'s':''}${futbol.rating ? ` · rating ${futbol.rating}` : ''}`
         : 'Registra tu primer partido' },
   ];
+
+  // ── Sparkline de peso (últimos registros, más viejo→reciente) ──────────
+  const sparkPts = (data && data.peso_spark) || [];
+  const pesoSpark = sparkPts.length >= 2 && (() => {
+    const w = 84, h = 28, pad = 3;
+    const min = Math.min(...sparkPts), max = Math.max(...sparkPts);
+    const range = (max - min) || 1;
+    const step = (w - pad*2) / (sparkPts.length - 1);
+    const pts = sparkPts.map((v,i) => [
+      pad + i*step,
+      pad + (h - pad*2) * (1 - (v - min) / range),
+    ]);
+    const path = pts.map((p,i) => `${i===0?'M':'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    const last = pts[pts.length - 1];
+    return (
+      <svg width={w} height={h} style={{flexShrink:0}}>
+        <path d={path} fill="none" stroke={acc} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" opacity="0.85"/>
+        <circle cx={last[0]} cy={last[1]} r="2.4" fill={acc}/>
+      </svg>
+    );
+  })();
 
   const alertBanner = (salud.episodios_activos > 0 || salud.meds_activos > 0) && (
     <div style={{display:'flex',alignItems:'center',gap:11,
@@ -1137,37 +1157,15 @@ function HegemonikonExtra({ acc, isDesktop }) {
     </div>
   );
 
-  const habitsSection = habits.length > 0 && (
-    <div style={{marginBottom:20}}>
-      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-        color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Hábitos de Hoy</div>
-      {habits.map((h,i) => (
-        <div key={i} style={{display:'flex',alignItems:'center',gap:10,
-          padding:'9px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)'}}>
-          <div style={{width:16,height:16,borderRadius:5,flexShrink:0,
-            border:`1.5px solid ${h.done?acc:'var(--gold-border)'}`,
-            background: h.done ? acc : 'transparent',
-            display:'flex',alignItems:'center',justifyContent:'center'}}>
-            {h.done && <svg width={9} height={9} viewBox="0 0 10 10">
-              <polyline points="2,5 4.5,8 8,2" stroke={C.deep} strokeWidth={1.6} fill="none" strokeLinecap="round"/>
-            </svg>}
-          </div>
-          <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:12.5,
-            color: h.done ? C.textMuted : C.text, textDecoration: h.done?'line-through':'none'}}>{h.label}</div>
-          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:acc,opacity:0.75}}>+{h.xp}</div>
-        </div>
-      ))}
-    </div>
-  );
-
   const bodySection = (
     <div style={{marginBottom:20}}>
       <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
         color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Métricas Corporales</div>
       {bodyRows.map((r,i) => (
-        <div key={i} style={{display:'flex',justifyContent:'space-between',
+        <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
           padding:'11px 0',borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)'}}>
           <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub}}>{r.label}</div>
+          {r.label==='Peso' && pesoSpark}
           <div style={{textAlign:'right'}}>
             <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:19,color:acc,
               display:'flex',alignItems:'baseline',gap:6,justifyContent:'flex-end'}}>
@@ -1190,34 +1188,54 @@ function HegemonikonExtra({ acc, isDesktop }) {
     <div>
       <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
         color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
-      {subs.map((s,i) => (
-        <a key={i} href={s.href} style={{
-            display:'flex', justifyContent:'space-between', alignItems:'center',
-            background:C.card, border:`1px solid ${s.alert ? 'rgba(244,63,94,0.4)' : 'var(--gold-border)'}`,
-            borderRadius:12, padding:'12px 14px', marginBottom:8,
-            textDecoration:'none', transition:'border-color 0.18s'}}
-          onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
-          onMouseLeave={e=>e.currentTarget.style.borderColor= s.alert ? 'rgba(244,63,94,0.4)' : 'var(--gold-border)'}>
-          <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>{s.icon}</span>
-            <div>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{s.label}</div>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,
-                color: s.alert ? '#E59B92' : C.textMuted, marginTop:1}}>{s.sub}</div>
+      {subs.map((s,i) => {
+        const tintBg     = EU.catTint(s.hue, 'bg');
+        const tintBorder = EU.catTint(s.hue, 'border');
+        const tintText   = EU.catTint(s.hue, 'text');
+        return (
+          <a key={i} href={s.href} style={{
+              display:'flex', justifyContent:'space-between', alignItems:'center',
+              background:C.card, border:`1px solid ${s.alert ? 'rgba(244,63,94,0.4)' : 'var(--gold-border)'}`,
+              borderRadius:12, padding:'12px 14px', marginBottom:8,
+              textDecoration:'none', transform:'scale(1)',
+              transition:'border-color 0.18s, transform 0.18s, box-shadow 0.18s',
+              animation:`eu-fade-in 0.3s ease ${i*0.04}s both`}}
+            onMouseEnter={e=>{
+              e.currentTarget.style.borderColor = s.alert ? 'rgba(244,63,94,0.4)' : tintBorder;
+              e.currentTarget.style.transform = 'scale(1.015)';
+              e.currentTarget.style.boxShadow = `0 4px 16px ${tintBg}`;
+            }}
+            onMouseLeave={e=>{
+              e.currentTarget.style.borderColor = s.alert ? 'rgba(244,63,94,0.4)' : 'var(--gold-border)';
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}>
+            <div style={{display:'flex',alignItems:'center',gap:11}}>
+              <div style={{width:34,height:34,borderRadius:10,flexShrink:0,background:tintBg,
+                display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>{s.icon}</div>
+              <div>
+                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{s.label}</div>
+                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,
+                  color: s.alert ? '#E59B92' : C.textMuted, marginTop:1}}>{s.sub}</div>
+              </div>
             </div>
-          </div>
-          <span style={{color:C.textMuted,fontSize:14}}>›</span>
-        </a>
-      ))}
+            <span style={{color: tintText, fontSize:15, opacity:0.7}}>›</span>
+          </a>
+        );
+      })}
     </div>
+  );
+
+  const fadeKeyframes = (
+    <style>{`@keyframes eu-fade-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }`}</style>
   );
 
   if (isDesktop) {
     return (
       <div style={{display:'grid',gridTemplateColumns:'1fr 340px',gap:'0 28px',alignItems:'start'}}>
+        {fadeKeyframes}
         <div>
           {alertBanner}
-          {habitsSection}
           {bodySection}
         </div>
         <div style={{position:'sticky',top:24}}>
@@ -1229,8 +1247,8 @@ function HegemonikonExtra({ acc, isDesktop }) {
 
   return (
     <div>
+      {fadeKeyframes}
       {alertBanner}
-      {habitsSection}
       {subsSection}
       {bodySection}
     </div>

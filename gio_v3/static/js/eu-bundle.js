@@ -4383,325 +4383,200 @@ function OikonomiaExtra() {
     }
   }, chip.label)))));
 }
-function HegemonikonExtra({
-  acc,
-  isDesktop
-}) {
+function HegemonikonExtra({ acc, isDesktop }) {
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   React.useEffect(() => {
-    fetch('/bienestar/api/hegemonikon-summary').then(r => r.json()).then(d => {
+    fetch("/bienestar/api/hegemonikon-summary").then((r) => r.json()).then((d) => {
       setData(d);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
-  if (loading) return /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: 'center',
-      padding: '24px 0',
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 11,
-      color: C.textMuted,
-      letterSpacing: '0.1em'
-    }
-  }, "cargando…");
+  if (loading) return /* @__PURE__ */ React.createElement("div", { style: {
+    textAlign: "center",
+    padding: "24px 0",
+    fontFamily: "DM Sans,sans-serif",
+    fontSize: 11,
+    color: C.textMuted,
+    letterSpacing: "0.1em"
+  } }, "cargando\u2026");
   const b = data && data.body || {};
-  const nut = data && data.nutricion || {
-    comidas_done: 0,
-    comidas_total: 0,
-    streak: 0,
-    xp_today: 0
-  };
-  const salud = data && data.salud || {
-    episodios_activos: 0,
-    meds_activos: 0
-  };
-  const guard = data && data.guardarropa || {
-    items: 0,
-    outfits: 0
-  };
-  const rec = data && data.recetas || {
-    total: 0,
-    favoritas: 0
-  };
-  const futbol = data && data.futbol || {
-    partidos: 0,
-    rating: null
-  };
-  const habits = EU.moduleHabits.hegemonikon || [];
-  const bodyRows = [{
-    label: 'Peso',
-    val: b.peso || '—',
-    sub: b.estatura ? `Estatura: ${b.estatura}` : ''
-  }, {
-    label: 'Pecho',
-    val: b.pecho || '—',
-    sub: b.cintura ? `Cintura: ${b.cintura}` : ''
-  }, {
-    label: 'Hombros',
-    val: b.hombros || '—',
-    sub: b.manga ? `Manga: ${b.manga}` : ''
-  }, {
-    label: 'T. Camisa',
-    val: b.t_camisa || '—',
-    sub: b.t_pantalon ? `Pantalón: ${b.t_pantalon}` : ''
-  }];
-  const subs = [{
-    href: '/bienestar/salud',
-    icon: '🩺',
-    label: 'Salud',
-    sub: salud.episodios_activos > 0 ? `${salud.episodios_activos} episodio${salud.episodios_activos !== 1 ? 's' : ''} activo${salud.episodios_activos !== 1 ? 's' : ''}` : 'Al día',
-    alert: salud.episodios_activos > 0
-  }, {
-    href: '/nutricion/',
-    icon: '🥗',
-    label: 'Nutrición',
-    sub: `${nut.comidas_done}/${nut.comidas_total} comidas hoy · racha ${nut.streak}d`
-  }, {
-    href: '/guardarropa/',
-    icon: '👔',
-    label: 'Guardarropa',
-    sub: `${guard.items} prendas · ${guard.outfits} outfits`
-  }, {
-    href: '/recetas/',
-    icon: '🍳',
-    label: 'Recetas',
-    sub: `${rec.total} recetas · ${rec.favoritas} favoritas`
-  }, {
-    href: '/perfil/',
-    icon: '👤',
-    label: 'Perfil',
-    sub: 'Datos personales · documentos'
-  }, {
-    href: '/bienestar/futbol',
-    icon: '⚽',
-    label: 'Fútbol',
-    sub: futbol.partidos > 0 ? `${futbol.partidos} partido${futbol.partidos !== 1 ? 's' : ''}${futbol.rating ? ` · rating ${futbol.rating}` : ''}` : 'Registra tu primer partido'
-  }];
-  const alertBanner = (salud.episodios_activos > 0 || salud.meds_activos > 0) && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 11,
-      background: 'rgba(244,63,94,0.06)',
-      border: '1px solid rgba(244,63,94,0.25)',
-      borderLeft: '3px solid rgba(244,63,94,0.8)',
-      borderRadius: '0 11px 11px 0',
-      padding: '12px 15px',
-      marginBottom: 18
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 30,
-      height: 30,
-      borderRadius: 8,
-      background: 'rgba(244,63,94,0.12)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-      fontSize: 14
-    }
-  }, "🩺"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 13,
-      color: C.text
-    }
-  }, salud.episodios_activos, " episodio", salud.episodios_activos !== 1 ? 's' : '', " activo", salud.episodios_activos !== 1 ? 's' : '', salud.meds_activos > 0 && ` · ${salud.meds_activos} medicamento${salud.meds_activos !== 1 ? 's' : ''} en curso`), /*#__PURE__*/React.createElement("a", {
-    href: "/bienestar/salud",
-    style: {
-      fontSize: 14,
-      color: 'rgba(244,63,94,0.8)',
-      textDecoration: 'none'
-    }
-  }, "→"));
-  const habitsSection = habits.length > 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 9,
-      letterSpacing: '0.15em',
-      color: C.textMuted,
-      textTransform: 'uppercase',
-      marginBottom: 10
-    }
-  }, "Hábitos de Hoy"), habits.map((h, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      padding: '9px 0',
-      borderBottom: '1px solid color-mix(in srgb, var(--gold) 6%, transparent)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 16,
-      height: 16,
-      borderRadius: 5,
-      flexShrink: 0,
-      border: `1.5px solid ${h.done ? acc : 'var(--gold-border)'}`,
-      background: h.done ? acc : 'transparent',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }
-  }, h.done && /*#__PURE__*/React.createElement("svg", {
-    width: 9,
-    height: 9,
-    viewBox: "0 0 10 10"
-  }, /*#__PURE__*/React.createElement("polyline", {
-    points: "2,5 4.5,8 8,2",
-    stroke: C.deep,
-    strokeWidth: 1.6,
-    fill: "none",
-    strokeLinecap: "round"
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 12.5,
-      color: h.done ? C.textMuted : C.text,
-      textDecoration: h.done ? 'line-through' : 'none'
-    }
-  }, h.label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 9,
-      color: acc,
-      opacity: 0.75
-    }
-  }, "+", h.xp))));
-  const bodySection = /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 9,
-      letterSpacing: '0.15em',
-      color: C.textMuted,
-      textTransform: 'uppercase',
-      marginBottom: 10
-    }
-  }, "Métricas Corporales"), bodyRows.map((r, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      padding: '11px 0',
-      borderBottom: '1px solid color-mix(in srgb, var(--gold) 6%, transparent)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 12,
-      color: C.textSub
-    }
-  }, r.label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: 'right'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'Cormorant Garamond,serif',
-      fontSize: 19,
-      color: acc,
-      display: 'flex',
-      alignItems: 'baseline',
-      gap: 6,
-      justifyContent: 'flex-end'
-    }
-  }, r.val, r.label === 'Peso' && data && data.peso_trend != null && data.peso_trend !== 0 && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 10,
-      color: data.peso_trend < 0 ? '#7BC49A' : '#E59B92'
-    }
-  }, data.peso_trend < 0 ? '▼' : '▲', " ", Math.abs(data.peso_trend))), r.sub && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 9,
-      color: C.textMuted
-    }
-  }, r.sub)))));
-  const subsSection = /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 9,
-      letterSpacing: '0.15em',
-      color: C.textMuted,
-      textTransform: 'uppercase',
-      marginBottom: 10
-    }
-  }, "Submódulos"), subs.map((s, i) => /*#__PURE__*/React.createElement("a", {
-    key: i,
-    href: s.href,
-    style: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      background: C.card,
-      border: `1px solid ${s.alert ? 'rgba(244,63,94,0.4)' : 'var(--gold-border)'}`,
-      borderRadius: 12,
-      padding: '12px 14px',
-      marginBottom: 8,
-      textDecoration: 'none',
-      transition: 'border-color 0.18s'
+  const nut = data && data.nutricion || { comidas_done: 0, comidas_total: 0, streak: 0, xp_today: 0 };
+  const salud = data && data.salud || { episodios_activos: 0, meds_activos: 0 };
+  const guard = data && data.guardarropa || { items: 0, outfits: 0 };
+  const rec = data && data.recetas || { total: 0, favoritas: 0 };
+  const futbol = data && data.futbol || { partidos: 0, rating: null };
+  const bodyRows = [
+    { label: "Peso", val: b.peso || "\u2014", sub: b.estatura ? `Estatura: ${b.estatura}` : "" },
+    { label: "Pecho", val: b.pecho || "\u2014", sub: b.cintura ? `Cintura: ${b.cintura}` : "" },
+    { label: "Hombros", val: b.hombros || "\u2014", sub: b.manga ? `Manga: ${b.manga}` : "" },
+    { label: "T. Camisa", val: b.t_camisa || "\u2014", sub: b.t_pantalon ? `Pantal\xF3n: ${b.t_pantalon}` : "" }
+  ];
+  const subs = [
+    {
+      href: "/bienestar/salud",
+      icon: "\u{1FA7A}",
+      label: "Salud",
+      hue: 350,
+      sub: salud.episodios_activos > 0 ? `${salud.episodios_activos} episodio${salud.episodios_activos !== 1 ? "s" : ""} activo${salud.episodios_activos !== 1 ? "s" : ""}` : "Al d\xEDa",
+      alert: salud.episodios_activos > 0
     },
-    onMouseEnter: e => e.currentTarget.style.borderColor = acc,
-    onMouseLeave: e => e.currentTarget.style.borderColor = s.alert ? 'rgba(244,63,94,0.4)' : 'var(--gold-border)'
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10
+    {
+      href: "/nutricion/",
+      icon: "\u{1F957}",
+      label: "Nutrici\xF3n",
+      hue: 140,
+      sub: `${nut.comidas_done}/${nut.comidas_total} comidas hoy \xB7 racha ${nut.streak}d`
+    },
+    {
+      href: "/guardarropa/",
+      icon: "\u{1F454}",
+      label: "Guardarropa",
+      hue: 280,
+      sub: `${guard.items} prendas \xB7 ${guard.outfits} outfits`
+    },
+    {
+      href: "/recetas/",
+      icon: "\u{1F373}",
+      label: "Recetas",
+      hue: 40,
+      sub: `${rec.total} recetas \xB7 ${rec.favoritas} favoritas`
+    },
+    { href: "/perfil/", icon: "\u{1F464}", label: "Perfil", hue: 220, sub: "Datos personales \xB7 documentos" },
+    {
+      href: "/bienestar/futbol",
+      icon: "\u26BD",
+      label: "F\xFAtbol",
+      hue: 170,
+      sub: futbol.partidos > 0 ? `${futbol.partidos} partido${futbol.partidos !== 1 ? "s" : ""}${futbol.rating ? ` \xB7 rating ${futbol.rating}` : ""}` : "Registra tu primer partido"
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 18
-    }
-  }, s.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 13,
-      color: C.text
-    }
-  }, s.label), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'DM Sans,sans-serif',
-      fontSize: 10,
-      color: s.alert ? '#E59B92' : C.textMuted,
-      marginTop: 1
-    }
-  }, s.sub))), /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: C.textMuted,
-      fontSize: 14
-    }
-  }, "›"))));
+  ];
+  const sparkPts = data && data.peso_spark || [];
+  const pesoSpark = sparkPts.length >= 2 && (() => {
+    const w = 84, h = 28, pad = 3;
+    const min = Math.min(...sparkPts), max = Math.max(...sparkPts);
+    const range = max - min || 1;
+    const step = (w - pad * 2) / (sparkPts.length - 1);
+    const pts = sparkPts.map((v, i) => [
+      pad + i * step,
+      pad + (h - pad * 2) * (1 - (v - min) / range)
+    ]);
+    const path = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+    const last = pts[pts.length - 1];
+    return /* @__PURE__ */ React.createElement("svg", { width: w, height: h, style: { flexShrink: 0 } }, /* @__PURE__ */ React.createElement("path", { d: path, fill: "none", stroke: acc, strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", opacity: "0.85" }), /* @__PURE__ */ React.createElement("circle", { cx: last[0], cy: last[1], r: "2.4", fill: acc }));
+  })();
+  const alertBanner = (salud.episodios_activos > 0 || salud.meds_activos > 0) && /* @__PURE__ */ React.createElement("div", { style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 11,
+    background: "rgba(244,63,94,0.06)",
+    border: "1px solid rgba(244,63,94,0.25)",
+    borderLeft: "3px solid rgba(244,63,94,0.8)",
+    borderRadius: "0 11px 11px 0",
+    padding: "12px 15px",
+    marginBottom: 18
+  } }, /* @__PURE__ */ React.createElement("div", { style: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    background: "rgba(244,63,94,0.12)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+    fontSize: 14
+  } }, "\u{1FA7A}"), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, fontFamily: "DM Sans,sans-serif", fontSize: 13, color: C.text } }, salud.episodios_activos, " episodio", salud.episodios_activos !== 1 ? "s" : "", " activo", salud.episodios_activos !== 1 ? "s" : "", salud.meds_activos > 0 && ` \xB7 ${salud.meds_activos} medicamento${salud.meds_activos !== 1 ? "s" : ""} en curso`), /* @__PURE__ */ React.createElement("a", { href: "/bienestar/salud", style: { fontSize: 14, color: "rgba(244,63,94,0.8)", textDecoration: "none" } }, "\u2192"));
+  const bodySection = /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 20 } }, /* @__PURE__ */ React.createElement("div", { style: {
+    fontFamily: "DM Sans,sans-serif",
+    fontSize: 9,
+    letterSpacing: "0.15em",
+    color: C.textMuted,
+    textTransform: "uppercase",
+    marginBottom: 10
+  } }, "M\xE9tricas Corporales"), bodyRows.map((r, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "11px 0",
+    borderBottom: "1px solid color-mix(in srgb, var(--gold) 6%, transparent)"
+  } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 12, color: C.textSub } }, r.label), r.label === "Peso" && pesoSpark, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { style: {
+    fontFamily: "Cormorant Garamond,serif",
+    fontSize: 19,
+    color: acc,
+    display: "flex",
+    alignItems: "baseline",
+    gap: 6,
+    justifyContent: "flex-end"
+  } }, r.val, r.label === "Peso" && data && data.peso_trend != null && data.peso_trend !== 0 && /* @__PURE__ */ React.createElement("span", { style: {
+    fontFamily: "DM Sans,sans-serif",
+    fontSize: 10,
+    color: data.peso_trend < 0 ? "#7BC49A" : "#E59B92"
+  } }, data.peso_trend < 0 ? "\u25BC" : "\u25B2", " ", Math.abs(data.peso_trend))), r.sub && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 9, color: C.textMuted } }, r.sub)))));
+  const subsSection = /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: {
+    fontFamily: "DM Sans,sans-serif",
+    fontSize: 9,
+    letterSpacing: "0.15em",
+    color: C.textMuted,
+    textTransform: "uppercase",
+    marginBottom: 10
+  } }, "Subm\xF3dulos"), subs.map((s, i) => {
+    const tintBg = EU.catTint(s.hue, "bg");
+    const tintBorder = EU.catTint(s.hue, "border");
+    const tintText = EU.catTint(s.hue, "text");
+    return /* @__PURE__ */ React.createElement(
+      "a",
+      {
+        key: i,
+        href: s.href,
+        style: {
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          background: C.card,
+          border: `1px solid ${s.alert ? "rgba(244,63,94,0.4)" : "var(--gold-border)"}`,
+          borderRadius: 12,
+          padding: "12px 14px",
+          marginBottom: 8,
+          textDecoration: "none",
+          transform: "scale(1)",
+          transition: "border-color 0.18s, transform 0.18s, box-shadow 0.18s",
+          animation: `eu-fade-in 0.3s ease ${i * 0.04}s both`
+        },
+        onMouseEnter: (e) => {
+          e.currentTarget.style.borderColor = s.alert ? "rgba(244,63,94,0.4)" : tintBorder;
+          e.currentTarget.style.transform = "scale(1.015)";
+          e.currentTarget.style.boxShadow = `0 4px 16px ${tintBg}`;
+        },
+        onMouseLeave: (e) => {
+          e.currentTarget.style.borderColor = s.alert ? "rgba(244,63,94,0.4)" : "var(--gold-border)";
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.boxShadow = "none";
+        }
+      },
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 11 } }, /* @__PURE__ */ React.createElement("div", { style: {
+        width: 34,
+        height: 34,
+        borderRadius: 10,
+        flexShrink: 0,
+        background: tintBg,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 16
+      } }, s.icon), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 13, color: C.text } }, s.label), /* @__PURE__ */ React.createElement("div", { style: {
+        fontFamily: "DM Sans,sans-serif",
+        fontSize: 10,
+        color: s.alert ? "#E59B92" : C.textMuted,
+        marginTop: 1
+      } }, s.sub))),
+      /* @__PURE__ */ React.createElement("span", { style: { color: tintText, fontSize: 15, opacity: 0.7 } }, "\u203A")
+    );
+  }));
+  const fadeKeyframes = /* @__PURE__ */ React.createElement("style", null, `@keyframes eu-fade-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }`);
   if (isDesktop) {
-    return /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 340px',
-        gap: '0 28px',
-        alignItems: 'start'
-      }
-    }, /*#__PURE__*/React.createElement("div", null, alertBanner, habitsSection, bodySection), /*#__PURE__*/React.createElement("div", {
-      style: {
-        position: 'sticky',
-        top: 24
-      }
-    }, subsSection));
+    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 340px", gap: "0 28px", alignItems: "start" } }, fadeKeyframes, /* @__PURE__ */ React.createElement("div", null, alertBanner, bodySection), /* @__PURE__ */ React.createElement("div", { style: { position: "sticky", top: 24 } }, subsSection));
   }
-  return /*#__PURE__*/React.createElement("div", null, alertBanner, habitsSection, subsSection, bodySection);
+  return /* @__PURE__ */ React.createElement("div", null, fadeKeyframes, alertBanner, subsSection, bodySection);
 }
 function ModuleExtra({
   id,
