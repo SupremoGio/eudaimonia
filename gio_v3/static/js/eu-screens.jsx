@@ -1255,6 +1255,110 @@ function HegemonikonExtra({ acc, isDesktop }) {
   );
 }
 
+function PaideiaExtra({ acc }) {
+  const [data, setData]       = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [tip, setTip]         = React.useState(null);
+  const [tipSpin, setTipSpin] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch('/paideia/api/summary')
+      .then(r => r.json())
+      .then(d => { setData(d); setTip(d.tip); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const refreshTip = (e) => {
+    e.preventDefault();
+    setTipSpin(true);
+    fetch('/paideia/api/tip/refresh')
+      .then(r => r.json())
+      .then(t => { setTip(t); setTipSpin(false); })
+      .catch(() => setTipSpin(false));
+  };
+
+  if (loading) return (
+    <div style={{textAlign:'center',padding:'24px 0',fontFamily:'DM Sans,sans-serif',
+      fontSize:11,color:C.textMuted,letterSpacing:'0.1em'}}>cargando…</div>
+  );
+
+  const stats = (data && data.stats) || {meta_anual:12, leidos_este_anio:0, total_leidos:0, leyendo:0, por_leer:0, rating_prom:null};
+  const leyendo = data && data.leyendo;
+  const pct = stats.meta_anual > 0 ? Math.min(100, (stats.leidos_este_anio / stats.meta_anual) * 100) : 0;
+
+  return (
+    <div>
+      <style>{`@keyframes eu-fade-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }`}</style>
+
+      {/* Meta de lectura */}
+      <a href="/paideia/" style={{display:'block',textDecoration:'none',
+        background:`linear-gradient(135deg, ${acc}, color-mix(in srgb, ${acc} 60%, white))`,
+        borderRadius:16, padding:'16px 18px', marginBottom:16, animation:'eu-fade-in 0.3s ease both'}}>
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,fontWeight:600,color:'rgba(9,7,15,0.65)',
+          textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Meta de lectura</div>
+        <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:26,fontWeight:700,color:'#09070F',marginBottom:10}}>
+          {stats.leidos_este_anio} / {stats.meta_anual} libros
+        </div>
+        <div style={{height:6,borderRadius:3,background:'rgba(9,7,15,0.15)',overflow:'hidden'}}>
+          <div style={{height:'100%',borderRadius:3,background:'#09070F',width:`${pct}%`,transition:'width 0.6s ease'}}/>
+        </div>
+      </a>
+
+      {/* Leyendo ahora */}
+      {leyendo && (
+        <a href="/paideia/" style={{display:'block',textDecoration:'none',background:C.card,
+          border:'1px solid var(--gold-border)',borderRadius:14,padding:'14px 16px',marginBottom:16,
+          animation:'eu-fade-in 0.3s ease 0.05s both'}}>
+          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.12em',
+            color:C.textMuted,textTransform:'uppercase',marginBottom:8}}>Leyendo ahora</div>
+          <div style={{fontFamily:'DM Sans,sans-serif',fontSize:14,fontWeight:600,color:C.text}}>{leyendo.titulo}</div>
+          {leyendo.autor && <div style={{fontFamily:'DM Sans,sans-serif',fontSize:11,color:C.textMuted,marginTop:1}}>{leyendo.autor}</div>}
+          {leyendo.paginas_totales > 0 && (
+            <div style={{height:4,borderRadius:2,background:'var(--gold-bg, rgba(201,168,76,0.15))',overflow:'hidden',marginTop:9}}>
+              <div style={{height:'100%',borderRadius:2,background:acc,
+                width:`${Math.min(100, (leyendo.paginas_actuales / leyendo.paginas_totales) * 100)}%`}}/>
+            </div>
+          )}
+        </a>
+      )}
+
+      {/* Tip de conocimiento */}
+      {tip && (
+        <div style={{display:'flex',alignItems:'flex-start',gap:10,background:C.card,
+          border:'1px solid var(--gold-border)',borderRadius:14,padding:'14px 16px',marginBottom:16,
+          animation:'eu-fade-in 0.3s ease 0.1s both'}}>
+          <span style={{fontSize:18,flexShrink:0}}>{tip.icon}</span>
+          <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.text,lineHeight:1.5}}>{tip.text}</div>
+          <button onClick={refreshTip} title="Otro tip" style={{background:'none',border:'none',cursor:'pointer',
+            color:C.textMuted,fontSize:14,flexShrink:0,transform:tipSpin?'rotate(180deg)':'none',transition:'transform 0.3s'}}>↻</button>
+        </div>
+      )}
+
+      {/* Submódulos */}
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+        color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
+      <a href="/paideia/" style={{display:'flex',justifyContent:'space-between',alignItems:'center',
+          background:C.card,border:'1px solid var(--gold-border)',borderRadius:12,
+          padding:'12px 14px',textDecoration:'none',transition:'border-color 0.18s, transform 0.18s',
+          animation:'eu-fade-in 0.3s ease 0.15s both'}}
+        onMouseEnter={e=>{e.currentTarget.style.borderColor=acc; e.currentTarget.style.transform='scale(1.01)';}}
+        onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--gold-border)'; e.currentTarget.style.transform='scale(1)';}}>
+        <div style={{display:'flex',alignItems:'center',gap:11}}>
+          <div style={{width:34,height:34,borderRadius:10,flexShrink:0,background:EU.catTint(265,'bg'),
+            display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>📚</div>
+          <div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>Libros</div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>
+              {stats.total_leidos} leídos · {stats.leyendo} leyendo · {stats.por_leer} por leer
+            </div>
+          </div>
+        </div>
+        <span style={{color:EU.catTint(265,'text'),fontSize:15,opacity:0.7}}>›</span>
+      </a>
+    </div>
+  );
+}
+
 function ModuleExtra({ id, acc, isDesktop }) {
   const srv = (window.EU._server) || {};
 
@@ -1304,31 +1408,7 @@ function ModuleExtra({ id, acc, isDesktop }) {
 
   if (id === 'hegemonikon') return <HegemonikonExtra acc={acc} isDesktop={isDesktop}/>;
 
-  if (id === 'paideia') {
-    const mkLink = (href, icon, label, sub) => (
-      <a href={href} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
-        background:C.card,border:'1px solid var(--gold-border)',borderRadius:12,
-        padding:'11px 14px',marginBottom:8,textDecoration:'none',transition:'border-color 0.18s'}}
-        onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
-        onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <span style={{fontSize:18}}>{icon}</span>
-          <div>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{label}</div>
-            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>{sub}</div>
-          </div>
-        </div>
-        <span style={{color:C.textMuted,fontSize:14}}>›</span>
-      </a>
-    );
-    return (
-      <div>
-        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
-          color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
-        {mkLink('/actividades', '📜', 'Acta Diurna', 'Hábitos · Actividades · Logros')}
-      </div>
-    );
-  }
+  if (id === 'paideia') return <PaideiaExtra acc={acc} isDesktop={isDesktop}/>;
 
   if (id === 'ataraxia') {
     const mkLink = (href, icon, label, sub) => (

@@ -1,0 +1,353 @@
+{% extends "eu/layout_sub.html" %}
+{% set pg = 'paideia' %}
+{% block title %}PAIDEIA — Libros{% endblock %}
+{% block module_title %}PAIDEIA · Libros{% endblock %}
+
+{% block topright %}
+<button class="btn-a" onclick="abrirNuevo()" style="font-size:var(--fs-sm);padding:6px 14px;">
+  + Libro
+</button>
+{% endblock %}
+
+{% block content %}
+<style>
+.pd-goal { background:linear-gradient(135deg, var(--gold), #E8C96D); border-radius:20px; padding:22px 26px;
+           margin-bottom:16px; position:relative; overflow:hidden; }
+.pd-goal-label { font-size:11px; font-weight:600; color:rgba(9,7,15,0.6); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+.pd-goal-num { font-size:32px; font-weight:700; color:#09070F; margin-bottom:12px; }
+.pd-goal-track { height:8px; border-radius:4px; background:rgba(9,7,15,0.15); overflow:hidden; }
+.pd-goal-fill { height:100%; border-radius:4px; background:#09070F; transition:width 0.6s ease; }
+.pd-goal-edit { position:absolute; top:16px; right:18px; background:rgba(9,7,15,0.12); border:none;
+                border-radius:8px; padding:5px 10px; font-size:11px; color:#09070F; cursor:pointer; font-weight:600; }
+
+.pd-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+.pd-stat { background:var(--card); border:1px solid var(--b); border-radius:12px; padding:14px 16px; }
+.pd-stat-val { font-family:var(--mono); font-size:var(--fs-xl); font-weight:700; color:var(--gold); line-height:1; }
+.pd-stat-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
+@media(max-width:860px) { .pd-stats { grid-template-columns:repeat(2,1fr); } }
+
+.pd-tip { display:flex; align-items:flex-start; gap:12px; background:var(--card); border:1px solid var(--b);
+          border-radius:14px; padding:16px 18px; margin-bottom:16px; }
+.pd-tip-icon { font-size:22px; flex-shrink:0; }
+.pd-tip-text { flex:1; font-size:var(--fs-sm); color:var(--text); line-height:1.5; }
+.pd-tip-refresh { background:none; border:none; cursor:pointer; color:var(--dim); font-size:15px; flex-shrink:0; }
+.pd-tip-refresh:hover { color:var(--gold); }
+
+.pd-now { background:var(--card); border:1px solid var(--gold-border, var(--b)); border-radius:14px;
+          padding:16px 18px; margin-bottom:16px; }
+.pd-now-label { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; font-weight:700; color:var(--dim); margin-bottom:10px; }
+.pd-now-track { height:6px; border-radius:3px; background:var(--surf, #EDE7D8); overflow:hidden; margin-top:8px; }
+.pd-now-fill { height:100%; border-radius:3px; background:var(--gold); transition:width 0.4s ease; }
+
+.pd-tabs { display:flex; gap:2px; background:var(--card); border:1px solid var(--b); border-radius:10px;
+           padding:3px; margin-bottom:16px; width:fit-content; }
+.pd-tab { font-size:var(--fs-sm); padding:6px 14px; border-radius:8px; cursor:pointer; color:var(--dim);
+          border:1px solid transparent; transition:all .15s; }
+.pd-tab.on { background:var(--card2); color:var(--text); border-color:var(--b); }
+
+.pd-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:12px; }
+.pd-card { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:16px; cursor:pointer;
+           transition:border-color 0.15s, transform 0.15s; }
+.pd-card:hover { border-color:var(--gold); transform:translateY(-2px); }
+.pd-card-badges { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
+.pd-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:700; }
+.pd-badge-estado { background:var(--gold-d, rgba(201,168,76,0.1)); color:var(--gold); }
+.pd-badge-cat { background:var(--card2); color:var(--dim); }
+.pd-card-title { font-weight:700; font-size:15px; color:var(--text); margin-bottom:2px; }
+.pd-card-autor { font-size:12px; color:var(--dim); margin-bottom:10px; }
+.pd-stars { font-size:13px; color:var(--gold); letter-spacing:1px; }
+.pd-empty { text-align:center; padding:48px 0; color:var(--dim); grid-column:1/-1; }
+.pd-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.pd-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.pd-modal { width:460px; max-width:96vw; }
+.pd-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:16px; }
+</style>
+
+<!-- ── Meta anual ────────────────────────────────────────────────────────── -->
+<div class="pd-goal">
+  <button class="pd-goal-edit" onclick="abrirMeta()">Editar meta</button>
+  <div class="pd-goal-label">Meta de lectura {{ now_year }}</div>
+  <div class="pd-goal-num">{{ stats.leidos_este_anio }} / {{ stats.meta_anual }} libros</div>
+  <div class="pd-goal-track">
+    <div class="pd-goal-fill" style="width:{{ [100, (stats.leidos_este_anio / stats.meta_anual * 100) if stats.meta_anual else 0]|min }}%;"></div>
+  </div>
+</div>
+
+<!-- ── Stats ─────────────────────────────────────────────────────────────── -->
+<div class="pd-stats">
+  <div class="pd-stat">
+    <div class="pd-stat-val">{{ stats.total_leidos }}</div>
+    <div class="pd-stat-lbl">Leídos (total)</div>
+  </div>
+  <div class="pd-stat">
+    <div class="pd-stat-val">{{ stats.leyendo }}</div>
+    <div class="pd-stat-lbl">Leyendo</div>
+  </div>
+  <div class="pd-stat">
+    <div class="pd-stat-val">{{ stats.por_leer }}</div>
+    <div class="pd-stat-lbl">Por leer</div>
+  </div>
+  <div class="pd-stat">
+    <div class="pd-stat-val">{{ stats.rating_prom if stats.rating_prom is not none else '—' }}</div>
+    <div class="pd-stat-lbl">Rating prom.</div>
+  </div>
+</div>
+
+<!-- ── Tip del día ───────────────────────────────────────────────────────── -->
+<div class="pd-tip" id="pd-tip">
+  <span class="pd-tip-icon">{{ tip.icon }}</span>
+  <span class="pd-tip-text" id="pd-tip-text">{{ tip.text }}</span>
+  <button class="pd-tip-refresh" onclick="refrescarTip()" title="Otro tip">↻</button>
+</div>
+
+<!-- ── Leyendo ahora ─────────────────────────────────────────────────────── -->
+{% set actual = libros|selectattr('estado', 'equalto', 'leyendo')|first %}
+{% if actual %}
+<div class="pd-now" onclick="abrirEditar({{ actual.id }})" style="cursor:pointer;">
+  <div class="pd-now-label">Leyendo ahora</div>
+  <div style="font-weight:700;font-size:16px;color:var(--text);">{{ actual.titulo }}</div>
+  {% if actual.autor %}<div style="font-size:12px;color:var(--dim);margin-top:2px;">{{ actual.autor }}</div>{% endif %}
+  {% if actual.paginas_totales %}
+  <div class="pd-now-track">
+    <div class="pd-now-fill" style="width:{{ [100, (actual.paginas_actuales / actual.paginas_totales * 100)]|min }}%;"></div>
+  </div>
+  <div style="font-size:11px;color:var(--dim);margin-top:5px;">{{ actual.paginas_actuales }} / {{ actual.paginas_totales }} páginas</div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- ── Filtros ───────────────────────────────────────────────────────────── -->
+<div class="pd-tabs">
+  <div class="pd-tab on" onclick="setFilter('todos',this)">Todos</div>
+  <div class="pd-tab" onclick="setFilter('leyendo',this)">Leyendo</div>
+  <div class="pd-tab" onclick="setFilter('por_leer',this)">Por leer</div>
+  <div class="pd-tab" onclick="setFilter('leido',this)">Leídos</div>
+</div>
+
+<!-- ── Biblioteca ────────────────────────────────────────────────────────── -->
+<div class="pd-grid" id="pd-grid">
+  {% for l in libros %}
+  <div class="pd-card" data-estado="{{ l.estado }}" onclick="abrirEditar({{ l.id }})">
+    <div class="pd-card-badges">
+      <span class="pd-badge pd-badge-estado">{{ 'Leyendo' if l.estado=='leyendo' else ('Por leer' if l.estado=='por_leer' else 'Leído') }}</span>
+      <span class="pd-badge pd-badge-cat">{{ l.categoria }}</span>
+    </div>
+    <div class="pd-card-title">{{ l.titulo }}</div>
+    {% if l.autor %}<div class="pd-card-autor">{{ l.autor }}</div>{% endif %}
+    {% if l.estado == 'leido' and l.rating %}
+    <div class="pd-stars">{{ '★' * l.rating }}{{ '☆' * (5 - l.rating) }}</div>
+    {% elif l.estado == 'leyendo' and l.paginas_totales %}
+    <div class="pd-now-track"><div class="pd-now-fill" style="width:{{ [100, (l.paginas_actuales / l.paginas_totales * 100)]|min }}%;"></div></div>
+    {% endif %}
+  </div>
+  {% else %}
+  <div class="pd-empty">
+    <div style="font-size:40px;margin-bottom:12px;">📚</div>
+    <div style="font-weight:600;margin-bottom:6px;">Tu biblioteca está vacía</div>
+    <div style="font-size:var(--fs-xs);">Registra tu primer libro con el botón de arriba</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ═══ MODAL: Libro ═══════════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-libro">
+  <div class="modal pd-modal">
+    <div class="pd-modal-title" id="lb-modal-title">Nuevo libro</div>
+    <input type="hidden" id="lb-id">
+
+    <label class="fl">Título</label>
+    <input class="fi" id="lb-titulo" placeholder="Ej. Sapiens…">
+
+    <label class="fl" style="margin-top:10px;">Autor</label>
+    <input class="fi" id="lb-autor" placeholder="Ej. Yuval Noah Harari…">
+
+    <div class="pd-row2" style="margin-top:10px;">
+      <div>
+        <label class="fl">Categoría</label>
+        <select class="fi" id="lb-categoria">
+          <option>Psicología</option>
+          <option>Nutrición</option>
+          <option>Ciencia</option>
+          <option>Productividad</option>
+          <option>Ficción</option>
+          <option>Otro</option>
+        </select>
+      </div>
+      <div>
+        <label class="fl">Estado</label>
+        <select class="fi" id="lb-estado" onchange="toggleCamposEstado()">
+          <option value="por_leer">Por leer</option>
+          <option value="leyendo">Leyendo</option>
+          <option value="leido">Leído</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="pd-row2" style="margin-top:10px;">
+      <div>
+        <label class="fl">Páginas totales</label>
+        <input class="fi" id="lb-pag-tot" type="number" min="1" placeholder="Ej. 320">
+      </div>
+      <div id="lb-pag-act-row">
+        <label class="fl">Página actual</label>
+        <input class="fi" id="lb-pag-act" type="number" min="0" placeholder="Ej. 120">
+      </div>
+    </div>
+
+    <div id="lb-rating-row" style="margin-top:10px;display:none;">
+      <label class="fl">Tu calificación</label>
+      <select class="fi" id="lb-rating">
+        <option value="">Sin calificar</option>
+        <option value="1">★☆☆☆☆</option>
+        <option value="2">★★☆☆☆</option>
+        <option value="3">★★★☆☆</option>
+        <option value="4">★★★★☆</option>
+        <option value="5">★★★★★</option>
+      </select>
+    </div>
+
+    <label class="fl" style="margin-top:10px;">Notas (opcional)</label>
+    <textarea class="fi" id="lb-notas" rows="2" placeholder="Ideas, citas, reflexiones…"></textarea>
+
+    <div class="modal-actions" style="margin-top:16px;justify-content:space-between;">
+      <button class="fb-actions" id="lb-delete-btn" onclick="eliminarLibro()" style="background:none;border:1px solid var(--b2);color:#f43f5e;border-radius:8px;padding:8px 14px;cursor:pointer;display:none;">Eliminar</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-g" onclick="closeModal('libro')">Cancelar</button>
+        <button class="btn-a" onclick="guardarLibro()">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Meta anual ═══════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-meta">
+  <div class="modal pd-modal" style="width:340px;">
+    <div class="pd-modal-title">Meta de lectura anual</div>
+    <label class="fl">¿Cuántos libros quieres leer este año?</label>
+    <input class="fi" id="meta-input" type="number" min="1" value="{{ stats.meta_anual }}">
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-g" onclick="closeModal('meta')">Cancelar</button>
+      <button class="btn-a" onclick="guardarMeta()">Guardar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const BASE = '/paideia';
+
+function openModal(key) {
+  document.getElementById('modal-'+key).classList.add('open');
+  const first = document.querySelector('#modal-'+key+' input:not([type=hidden]), #modal-'+key+' select');
+  if (first) setTimeout(() => first.focus(), 80);
+}
+function closeModal(key) {
+  document.getElementById('modal-'+key).classList.remove('open');
+}
+
+function setFilter(f, el) {
+  document.querySelectorAll('.pd-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  document.querySelectorAll('.pd-card').forEach(card => {
+    card.style.display = (f === 'todos' || card.dataset.estado === f) ? '' : 'none';
+  });
+}
+
+function toggleCamposEstado() {
+  const estado = document.getElementById('lb-estado').value;
+  document.getElementById('lb-rating-row').style.display = estado === 'leido' ? '' : 'none';
+  document.getElementById('lb-pag-act-row').style.display = estado === 'por_leer' ? 'none' : '';
+}
+
+function limpiarForm() {
+  document.getElementById('lb-id').value = '';
+  document.getElementById('lb-titulo').value = '';
+  document.getElementById('lb-autor').value = '';
+  document.getElementById('lb-categoria').value = 'Otro';
+  document.getElementById('lb-estado').value = 'por_leer';
+  document.getElementById('lb-pag-tot').value = '';
+  document.getElementById('lb-pag-act').value = '';
+  document.getElementById('lb-rating').value = '';
+  document.getElementById('lb-notas').value = '';
+  document.getElementById('lb-delete-btn').style.display = 'none';
+  toggleCamposEstado();
+}
+
+function abrirNuevo() {
+  limpiarForm();
+  document.getElementById('lb-modal-title').textContent = 'Nuevo libro';
+  openModal('libro');
+}
+
+async function abrirEditar(id) {
+  const data = await fetch(`${BASE}/api/libros`).then(r => r.json());
+  const l = data.libros.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('lb-id').value = l.id;
+  document.getElementById('lb-titulo').value = l.titulo;
+  document.getElementById('lb-autor').value = l.autor || '';
+  document.getElementById('lb-categoria').value = l.categoria || 'Otro';
+  document.getElementById('lb-estado').value = l.estado;
+  document.getElementById('lb-pag-tot').value = l.paginas_totales || '';
+  document.getElementById('lb-pag-act').value = l.paginas_actuales || '';
+  document.getElementById('lb-rating').value = l.rating || '';
+  document.getElementById('lb-notas').value = l.notas || '';
+  document.getElementById('lb-delete-btn').style.display = '';
+  toggleCamposEstado();
+  document.getElementById('lb-modal-title').textContent = 'Editar libro';
+  openModal('libro');
+}
+
+async function guardarLibro() {
+  const titulo = document.getElementById('lb-titulo').value.trim();
+  if (!titulo) { toast('El título es requerido', 'err'); return; }
+  const id = document.getElementById('lb-id').value;
+  const body = {
+    titulo,
+    autor: document.getElementById('lb-autor').value.trim(),
+    categoria: document.getElementById('lb-categoria').value,
+    estado: document.getElementById('lb-estado').value,
+    paginas_totales: document.getElementById('lb-pag-tot').value || null,
+    paginas_actuales: document.getElementById('lb-pag-act').value || 0,
+    rating: document.getElementById('lb-rating').value || null,
+    notas: document.getElementById('lb-notas').value.trim(),
+  };
+  const url = id ? `${BASE}/api/libros/${id}` : `${BASE}/api/libros`;
+  const method = id ? 'PATCH' : 'POST';
+  const r = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }).then(r=>r.json());
+  if (r.ok) { toast(id ? 'Libro actualizado ✓' : 'Libro agregado ✓'); setTimeout(() => location.reload(), 500); }
+  else       { toast('Error: '+r.error, 'err'); }
+}
+
+async function eliminarLibro() {
+  const id = document.getElementById('lb-id').value;
+  if (!id || !confirm('¿Eliminar este libro?')) return;
+  await fetch(`${BASE}/api/libros/${id}`, { method:'DELETE' });
+  toast('Eliminado');
+  setTimeout(() => location.reload(), 400);
+}
+
+function abrirMeta() { openModal('meta'); }
+
+async function guardarMeta() {
+  const meta = document.getElementById('meta-input').value || 12;
+  const r = await fetch(`${BASE}/api/meta`, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({meta})
+  }).then(r=>r.json());
+  if (r.ok) { toast('Meta actualizada ✓'); setTimeout(() => location.reload(), 500); }
+}
+
+async function refrescarTip() {
+  const r = await fetch(`${BASE}/api/tip/refresh`).then(r=>r.json());
+  document.getElementById('pd-tip-text').textContent = r.text;
+  document.querySelector('#pd-tip .pd-tip-icon').textContent = r.icon;
+}
+
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', (e) => { if (e.target === bg) bg.classList.remove('open'); });
+});
+
+toggleCamposEstado();
+</script>
+{% endblock %}

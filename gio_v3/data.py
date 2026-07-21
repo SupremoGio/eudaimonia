@@ -248,6 +248,55 @@ def get_random_quote(category=None):
         return random.choice(_QUOTES_MOTIV)
     return random.choice(QUOTES)
 
+# ── PAIDEIA — Tips de conocimiento (psicología, nutrición, ciencia, productividad) ─
+PAIDEIA_TIPS = [
+    {"cat": "psicologia", "icon": "🧠", "text": "El efecto Zeigarnik: recordamos mejor las tareas inconclusas que las terminadas — por eso una lista de pendientes reduce la ansiedad, libera memoria de trabajo."},
+    {"cat": "psicologia", "icon": "🧠", "text": "La 'regla de las 20 horas' de Josh Kaufman: no se necesitan 10,000 horas para ser competente en algo nuevo, solo unas 20 horas de práctica enfocada."},
+    {"cat": "psicologia", "icon": "🧠", "text": "El sesgo de confirmación nos hace buscar información que confirme lo que ya creemos. Preguntarte '¿qué evidencia refutaría esto?' contrarresta el sesgo."},
+    {"cat": "psicologia", "icon": "🧠", "text": "La habituación hedónica: nos acostumbramos rápido a lo bueno. Practicar gratitud específica (no genérica) ayuda a mantener el disfrute de lo que ya tienes."},
+    {"cat": "psicologia", "icon": "🧠", "text": "El 'efecto Dunning-Kruger' explica por qué principiantes sobreestiman su habilidad: les falta el conocimiento para notar sus propios errores."},
+    {"cat": "psicologia", "icon": "🧠", "text": "Etiquetar una emoción en voz alta o por escrito ('estoy frustrado') reduce su intensidad — se llama 'affect labeling' y regula la amígdala."},
+    {"cat": "psicologia", "icon": "🧠", "text": "La procrastinación no es pereza: suele ser evitación de una emoción incómoda asociada a la tarea (miedo al fracaso, aburrimiento, ansiedad)."},
+    {"cat": "psicologia", "icon": "🧠", "text": "El 'efecto mera exposición': entre más veces ves algo (una canción, una persona, una idea), más te empieza a gustar, incluso sin razón objetiva."},
+    {"cat": "psicologia", "icon": "🧠", "text": "La comparación social ascendente crónica (ver perfiles 'perfectos' en redes) se asocia con menor satisfacción de vida — la comparación con tu propio pasado suele ser más sana."},
+    {"cat": "nutricion", "icon": "🥗", "text": "La fibra soluble (avena, leguminosas, manzana) alimenta a la microbiota intestinal y ayuda a estabilizar el azúcar en sangre después de comer."},
+    {"cat": "nutricion", "icon": "🥗", "text": "Comer proteína al inicio de la comida (antes que carbohidratos) puede reducir el pico de glucosa post-comida hasta un 40% en algunos estudios."},
+    {"cat": "nutricion", "icon": "🥗", "text": "La sed a veces se confunde con hambre: el hipotálamo procesa ambas señales en zonas cercanas. Un vaso de agua antes de comer ayuda a distinguir."},
+    {"cat": "nutricion", "icon": "🥗", "text": "No todas las calorías son metabólicamente iguales: 100 kcal de almendras y 100 kcal de refresco generan respuestas hormonales muy distintas."},
+    {"cat": "nutricion", "icon": "🥗", "text": "El café cortado 90 minutos después de despertar (no inmediatamente) puede alinear mejor con el pico natural de cortisol y evitar el bajón posterior."},
+    {"cat": "nutricion", "icon": "🥗", "text": "Los omega-3 (pescados grasos, nueces, chía) son precursores de moléculas antiinflamatorias — su déficit se asocia con peor estado de ánimo."},
+    {"cat": "nutricion", "icon": "🥗", "text": "El orden de los alimentos importa: verduras → proteína/grasa → carbohidratos, reduce la respuesta glucémica comparado con comerlos revueltos."},
+    {"cat": "nutricion", "icon": "🥗", "text": "Dormir mal una sola noche puede aumentar el hambre y antojos por alimentos altos en calorías al día siguiente, por cambios en grelina y leptina."},
+    {"cat": "nutricion", "icon": "🥗", "text": "La proteína tiene el mayor efecto térmico de los macronutrientes: el cuerpo gasta más energía digiriéndola que digiriendo grasa o carbohidrato."},
+    {"cat": "ciencia", "icon": "🔬", "text": "La luz que ves de las estrellas más lejanas puede tener miles de millones de años de antigüedad — literalmente estás viendo el pasado del universo."},
+    {"cat": "ciencia", "icon": "🔬", "text": "Los pulpos tienen tres corazones y sangre azul (por la hemocianina, que usa cobre en lugar de hierro para transportar oxígeno)."},
+    {"cat": "ciencia", "icon": "🔬", "text": "El efecto placebo puede activar los mismos circuitos de dopamina y opioides que un medicamento real, medible con neuroimagen."},
+    {"cat": "ciencia", "icon": "🔬", "text": "La entropía (segunda ley de la termodinámica) explica por qué el desorden aumenta espontáneamente: hay muchísimos más estados desordenados posibles que ordenados."},
+    {"cat": "ciencia", "icon": "🔬", "text": "Tu cuerpo reemplaza la mayoría de sus células con el tiempo — el esqueleto se remodela por completo cada ~10 años."},
+    {"cat": "ciencia", "icon": "🔬", "text": "El ADN humano es aproximadamente 60% idéntico al de un plátano — la mayoría de nuestros genes codifican procesos celulares básicos compartidos por toda la vida."},
+    {"cat": "ciencia", "icon": "🔬", "text": "La velocidad de la luz no es solo 'muy rápida': es el límite de causalidad del universo, ninguna información puede viajar más rápido."},
+    {"cat": "ciencia", "icon": "🔬", "text": "Los agujeros negros no 'succionan': su gravedad funciona igual que cualquier masa, solo que concentrada en un punto tan denso que ni la luz escapa."},
+    {"cat": "productividad", "icon": "⏱️", "text": "La técnica Pomodoro (25 min de foco + 5 de descanso) funciona porque el cerebro rinde mejor con sprints cortos que con maratones sin pausa."},
+    {"cat": "productividad", "icon": "⏱️", "text": "'Eat the frog': hacer primero la tarea más incómoda del día libera energía mental para todo lo demás — el resto del día se siente más ligero."},
+    {"cat": "productividad", "icon": "⏱️", "text": "El 'costo de cambio de contexto' (context switching) puede consumir hasta 20-40% del tiempo productivo cuando saltas entre tareas no relacionadas."},
+    {"cat": "productividad", "icon": "⏱️", "text": "La regla de los 2 minutos (GTD): si una tarea toma menos de 2 minutos, hazla de inmediato en vez de anotarla — anotarla cuesta más que hacerla."},
+    {"cat": "productividad", "icon": "⏱️", "text": "Planear la noche anterior (en vez de la mañana del mismo día) reduce la fatiga de decisiones y mejora el inicio del día siguiente."},
+    {"cat": "productividad", "icon": "⏱️", "text": "El 'efecto Zeigarnik' aplicado al trabajo: dejar una tarea a la mitad de una oración o paso concreto facilita retomarla al día siguiente."},
+    {"cat": "productividad", "icon": "⏱️", "text": "Agrupar tareas similares (todas las llamadas, todos los correos) reduce la carga cognitiva de cambiar de 'modo mental' constantemente."},
+    {"cat": "productividad", "icon": "⏱️", "text": "Un espacio de trabajo despejado reduce la carga visual en la corteza prefrontal, dejando más capacidad disponible para el foco activo."},
+]
+
+_PAIDEIA_TIPS_BY_CAT = {}
+for _t in PAIDEIA_TIPS:
+    _PAIDEIA_TIPS_BY_CAT.setdefault(_t["cat"], []).append(_t)
+
+def get_paideia_tip_of_day():
+    return PAIDEIA_TIPS[today_date().toordinal() % len(PAIDEIA_TIPS)]
+
+def get_random_paideia_tip(category=None):
+    pool = _PAIDEIA_TIPS_BY_CAT.get(category, PAIDEIA_TIPS) if category else PAIDEIA_TIPS
+    return random.choice(pool)
+
 # ── ACTIVITIES v3.0 ──────────────────────────────────────────────────────────
 #
 # pts  = XP directo (sin multiplicador)

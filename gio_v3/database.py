@@ -1507,6 +1507,24 @@ def init_db():
         );
         """)
 
+        # ── PAIDEIA — Control de lectura (submódulo de Conocimiento) ───────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS paideia_libros (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo           TEXT    NOT NULL,
+            autor            TEXT    DEFAULT '',
+            categoria        TEXT    NOT NULL DEFAULT 'Otro',
+            estado           TEXT    NOT NULL DEFAULT 'por_leer',
+            paginas_totales  INTEGER DEFAULT NULL,
+            paginas_actuales INTEGER DEFAULT 0,
+            rating           INTEGER DEFAULT NULL,
+            fecha_inicio     TEXT    DEFAULT NULL,
+            fecha_fin        TEXT    DEFAULT NULL,
+            notas            TEXT    DEFAULT '',
+            created_at       TEXT    NOT NULL
+        );
+        """)
+
         # Seed vehículo por defecto (una fila — se edita desde la UI)
         if db.execute("SELECT COUNT(*) as c FROM harma_vehiculo").fetchone()["c"] == 0:
             import datetime as _dth
