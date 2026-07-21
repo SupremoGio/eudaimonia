@@ -4424,6 +4424,10 @@ function HegemonikonExtra({
     total: 0,
     favoritas: 0
   };
+  const futbol = data && data.futbol || {
+    partidos: 0,
+    rating: null
+  };
   const habits = EU.moduleHabits.hegemonikon || [];
   const bodyRows = [{
     label: 'Peso',
@@ -4468,6 +4472,11 @@ function HegemonikonExtra({
     icon: '👤',
     label: 'Perfil',
     sub: 'Datos personales · documentos'
+  }, {
+    href: '/bienestar/futbol',
+    icon: '⚽',
+    label: 'Fútbol',
+    sub: futbol.partidos > 0 ? `${futbol.partidos} partido${futbol.partidos !== 1 ? 's' : ''}${futbol.rating ? ` · rating ${futbol.rating}` : ''}` : 'Registra tu primer partido'
   }];
   const alertBanner = (salud.episodios_activos > 0 || salud.meds_activos > 0) && /*#__PURE__*/React.createElement("div", {
     style: {

@@ -1,0 +1,237 @@
+{% extends "eu/layout_sub.html" %}
+{% set pg = 'bienestar' %}
+{% block title %}HEGEMONIKON — Fútbol{% endblock %}
+{% block module_title %}HEGEMONIKON · Fútbol{% endblock %}
+
+{% block topright %}
+<button class="btn-a" onclick="abrirNuevo()" style="font-size:var(--fs-sm);padding:6px 14px;">
+  + Partido
+</button>
+{% endblock %}
+
+{% block content %}
+<style>
+.fb-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+.fb-stat  { background:var(--card); border:1px solid var(--b); border-radius:12px; padding:16px 18px; }
+.fb-stat-val { font-family:var(--mono); font-size:var(--fs-2xl); font-weight:700; color:var(--gold); line-height:1; }
+.fb-stat-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
+@media(max-width:860px) { .fb-stats { grid-template-columns:repeat(2,1fr); } }
+
+.fb-list { display:flex; flex-direction:column; gap:10px; }
+.fb-card { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:14px 16px;
+           display:flex; align-items:center; gap:14px; }
+.fb-card-main { flex:1; min-width:0; }
+.fb-card-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+.fb-card-rival { font-weight:600; font-size:var(--fs-base); color:var(--text); }
+.fb-card-meta { font-size:var(--fs-xs); color:var(--dim); display:flex; gap:10px; flex-wrap:wrap; }
+.fb-gol-badge { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:700;
+                background:rgba(16,185,129,.12); color:#10b981; border:1px solid rgba(16,185,129,.25); }
+.fb-resultado { font-family:var(--mono); font-weight:700; font-size:var(--fs-lg); color:var(--text);
+                flex-shrink:0; text-align:center; min-width:56px; }
+.fb-rating { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+             font-weight:700; font-size:14px; flex-shrink:0; color:#fff; }
+.fb-actions { display:flex; gap:6px; flex-shrink:0; }
+.fb-actions button { background:none; border:none; cursor:pointer; color:var(--dim); padding:4px; }
+.fb-actions button:hover { color:var(--text); }
+.fb-empty { text-align:center; padding:48px 0; color:var(--dim); }
+.fb-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.fb-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+.fb-modal { width:460px; max-width:96vw; }
+.fb-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:16px; }
+</style>
+
+<!-- ── Stats ─────────────────────────────────────────────────────────────── -->
+<div class="fb-stats">
+  <div class="fb-stat">
+    <div class="fb-stat-val">{{ stats.total }}</div>
+    <div class="fb-stat-lbl">Partidos</div>
+  </div>
+  <div class="fb-stat">
+    <div class="fb-stat-val">{{ stats.goles_propios }}</div>
+    <div class="fb-stat-lbl">Goles</div>
+  </div>
+  <div class="fb-stat">
+    <div class="fb-stat-val">{{ stats.rating_prom if stats.rating_prom is not none else '—' }}</div>
+    <div class="fb-stat-lbl">Rating prom.</div>
+  </div>
+  <div class="fb-stat">
+    <div class="fb-stat-val">{{ stats.ganados }}-{{ stats.empatados }}-{{ stats.perdidos }}</div>
+    <div class="fb-stat-lbl">G-E-P</div>
+  </div>
+</div>
+
+<!-- ── Historial ─────────────────────────────────────────────────────────── -->
+<div class="fb-list" id="fb-list">
+  {% for p in partidos %}
+  <div class="fb-card" id="fb-card-{{ p.id }}">
+    <div class="fb-rating" style="background:{{ 'rgb(16,185,129)' if p.rendimiento and p.rendimiento >= 7
+      else 'rgb(234,179,8)' if p.rendimiento and p.rendimiento >= 6
+      else 'rgb(249,115,22)' if p.rendimiento and p.rendimiento >= 5
+      else 'rgb(239,68,68)' if p.rendimiento else 'var(--dim)' }};">
+      {{ '%.1f'|format(p.rendimiento) if p.rendimiento is not none else '—' }}
+    </div>
+    <div class="fb-card-main">
+      <div class="fb-card-top">
+        <span class="fb-card-rival">{{ p.rival if p.rival else 'Partido' }}</span>
+        {% if p.goles_propios %}
+        <span class="fb-gol-badge">⚽ {{ p.goles_propios }}</span>
+        {% endif %}
+      </div>
+      <div class="fb-card-meta">
+        <span>{{ p.fecha }}</span>
+        {% if p.hora %}<span>{{ p.hora }}</span>{% endif %}
+        {% if p.cancha %}<span>📍 {{ p.cancha }}</span>{% endif %}
+        {% if p.minutos_jugados %}<span>{{ p.minutos_jugados }}′</span>{% endif %}
+        {% if p.asistencias %}<span>{{ p.asistencias }} asist.</span>{% endif %}
+      </div>
+    </div>
+    <div class="fb-resultado">{{ p.goles_favor }}-{{ p.goles_contra }}</div>
+    <div class="fb-actions">
+      <button onclick="abrirEditar({{ p.id }})" title="Editar">✏️</button>
+      <button onclick="eliminarPartido({{ p.id }})" title="Eliminar">🗑️</button>
+    </div>
+  </div>
+  {% else %}
+  <div class="fb-empty" id="fb-empty">
+    <div style="font-size:40px;margin-bottom:12px;">⚽</div>
+    <div style="font-weight:600;margin-bottom:6px;">Sin partidos registrados</div>
+    <div style="font-size:var(--fs-xs);">Registra tu primer partido con el botón de arriba</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ═══ MODAL: Partido ═══════════════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-partido">
+  <div class="modal fb-modal">
+    <div class="fb-modal-title" id="pt-modal-title">Nuevo partido</div>
+    <input type="hidden" id="pt-id">
+
+    <div class="fb-row2">
+      <div>
+        <label class="fl">Fecha</label>
+        <input class="fi" id="pt-fecha" type="date">
+      </div>
+      <div>
+        <label class="fl">Hora</label>
+        <input class="fi" id="pt-hora" type="time">
+      </div>
+    </div>
+
+    <label class="fl" style="margin-top:10px;">Cancha</label>
+    <input class="fi" id="pt-cancha" placeholder="Ej. Cancha Municipal…">
+
+    <label class="fl" style="margin-top:10px;">Rival</label>
+    <input class="fi" id="pt-rival" placeholder="Ej. Los Tigres…">
+
+    <label class="fl" style="margin-top:10px;">Resultado (goles a favor - en contra)</label>
+    <div class="fb-row2">
+      <input class="fi" id="pt-gf" type="number" min="0" placeholder="A favor">
+      <input class="fi" id="pt-gc" type="number" min="0" placeholder="En contra">
+    </div>
+
+    <label class="fl" style="margin-top:10px;">Mi rendimiento</label>
+    <div class="fb-row3">
+      <input class="fi" id="pt-goles" type="number" min="0" placeholder="Mis goles">
+      <input class="fi" id="pt-asist" type="number" min="0" placeholder="Asistencias">
+      <input class="fi" id="pt-min" type="number" min="0" max="120" placeholder="Minutos">
+    </div>
+
+    <label class="fl" style="margin-top:10px;">Puntuación del partido (1-10)</label>
+    <input class="fi" id="pt-rating" type="number" min="1" max="10" step="0.1" placeholder="Ej. 6.5">
+
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-g" onclick="closeModal('partido')">Cancelar</button>
+      <button class="btn-a" onclick="guardarPartido()">Guardar partido</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const BASE = '/bienestar/futbol';
+
+function todayISO() { return new Date().toISOString().slice(0,10); }
+
+function openModal(key) {
+  document.getElementById('modal-'+key).classList.add('open');
+  const first = document.querySelector('#modal-'+key+' input:not([type=hidden])');
+  if (first) setTimeout(() => first.focus(), 80);
+}
+function closeModal(key) {
+  document.getElementById('modal-'+key).classList.remove('open');
+}
+
+function limpiarForm() {
+  ['pt-id','pt-cancha','pt-rival','pt-gf','pt-gc','pt-goles','pt-asist','pt-min','pt-rating'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('pt-fecha').value = todayISO();
+  document.getElementById('pt-hora').value = '';
+}
+
+function abrirNuevo() {
+  limpiarForm();
+  document.getElementById('pt-modal-title').textContent = 'Nuevo partido';
+  openModal('partido');
+}
+
+async function abrirEditar(id) {
+  const data = await fetch(`${BASE}/api/partidos`).then(r => r.json());
+  const p = data.partidos.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('pt-id').value = p.id;
+  document.getElementById('pt-fecha').value = p.fecha;
+  document.getElementById('pt-hora').value = p.hora || '';
+  document.getElementById('pt-cancha').value = p.cancha || '';
+  document.getElementById('pt-rival').value = p.rival || '';
+  document.getElementById('pt-gf').value = p.goles_favor || '';
+  document.getElementById('pt-gc').value = p.goles_contra || '';
+  document.getElementById('pt-goles').value = p.goles_propios || '';
+  document.getElementById('pt-asist').value = p.asistencias || '';
+  document.getElementById('pt-min').value = p.minutos_jugados || '';
+  document.getElementById('pt-rating').value = p.rendimiento || '';
+  document.getElementById('pt-modal-title').textContent = 'Editar partido';
+  openModal('partido');
+}
+
+async function guardarPartido() {
+  const fecha = document.getElementById('pt-fecha').value || todayISO();
+  const id = document.getElementById('pt-id').value;
+  const body = {
+    fecha,
+    hora: document.getElementById('pt-hora').value,
+    cancha: document.getElementById('pt-cancha').value.trim(),
+    rival: document.getElementById('pt-rival').value.trim(),
+    goles_favor: document.getElementById('pt-gf').value || 0,
+    goles_contra: document.getElementById('pt-gc').value || 0,
+    goles_propios: document.getElementById('pt-goles').value || 0,
+    asistencias: document.getElementById('pt-asist').value || 0,
+    minutos_jugados: document.getElementById('pt-min').value || null,
+    rendimiento: document.getElementById('pt-rating').value || null,
+  };
+  const url = id ? `${BASE}/api/partidos/${id}` : `${BASE}/api/partidos`;
+  const method = id ? 'PATCH' : 'POST';
+  const r = await fetch(url, {
+    method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
+  }).then(r => r.json());
+  if (r.ok) {
+    toast(id ? 'Partido actualizado ✓' : 'Partido registrado ✓');
+    setTimeout(() => location.reload(), 500);
+  } else {
+    toast('Error: ' + r.error, 'err');
+  }
+}
+
+async function eliminarPartido(id) {
+  if (!confirm('¿Eliminar este partido?')) return;
+  await fetch(`${BASE}/api/partidos/${id}`, { method: 'DELETE' });
+  toast('Eliminado');
+  setTimeout(() => location.reload(), 400);
+}
+
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', (e) => { if (e.target === bg) bg.classList.remove('open'); });
+});
+</script>
+{% endblock %}

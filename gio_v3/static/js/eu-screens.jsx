@@ -1093,6 +1093,7 @@ function HegemonikonExtra({ acc, isDesktop }) {
   const salud = (data && data.salud)       || {episodios_activos:0, meds_activos:0};
   const guard = (data && data.guardarropa) || {items:0, outfits:0};
   const rec   = (data && data.recetas)     || {total:0, favoritas:0};
+  const futbol = (data && data.futbol)     || {partidos:0, rating:null};
   const habits = EU.moduleHabits.hegemonikon || [];
 
   const bodyRows = [
@@ -1115,6 +1116,10 @@ function HegemonikonExtra({ acc, isDesktop }) {
     { href:'/recetas/', icon:'🍳', label:'Recetas',
       sub: `${rec.total} recetas · ${rec.favoritas} favoritas` },
     { href:'/perfil/', icon:'👤', label:'Perfil', sub:'Datos personales · documentos' },
+    { href:'/bienestar/futbol', icon:'⚽', label:'Fútbol',
+      sub: futbol.partidos > 0
+        ? `${futbol.partidos} partido${futbol.partidos!==1?'s':''}${futbol.rating ? ` · rating ${futbol.rating}` : ''}`
+        : 'Registra tu primer partido' },
   ];
 
   const alertBanner = (salud.episodios_activos > 0 || salud.meds_activos > 0) && (

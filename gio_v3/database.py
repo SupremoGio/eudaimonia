@@ -1488,6 +1488,25 @@ def init_db():
         );
         """)
 
+        # ── FÚTBOL — Historial de partidos (submódulo de Hegemonikon) ──────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS futbol_partidos (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha            TEXT    NOT NULL,
+            hora             TEXT    DEFAULT '',
+            cancha           TEXT    DEFAULT '',
+            rival            TEXT    DEFAULT '',
+            goles_favor      INTEGER DEFAULT 0,
+            goles_contra     INTEGER DEFAULT 0,
+            goles_propios    INTEGER DEFAULT 0,
+            asistencias      INTEGER DEFAULT 0,
+            minutos_jugados  INTEGER DEFAULT NULL,
+            rendimiento      REAL    DEFAULT NULL,
+            gol_log_id       INTEGER DEFAULT NULL,
+            created_at       TEXT    NOT NULL
+        );
+        """)
+
         # Seed vehículo por defecto (una fila — se edita desde la UI)
         if db.execute("SELECT COUNT(*) as c FROM harma_vehiculo").fetchone()["c"] == 0:
             import datetime as _dth

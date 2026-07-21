@@ -44,6 +44,12 @@ def hegemonikon_summary():
         n_recetas  = db.execute("SELECT COUNT(*) c FROM recetas").fetchone()['c']
         n_favoritas = db.execute("SELECT COUNT(*) c FROM recetas WHERE favorita=1").fetchone()['c']
 
+        n_partidos = db.execute("SELECT COUNT(*) c FROM futbol_partidos").fetchone()['c']
+        rating_row = db.execute(
+            "SELECT ROUND(AVG(rendimiento), 1) AS r FROM futbol_partidos WHERE rendimiento IS NOT NULL"
+        ).fetchone()
+        futbol_rating = rating_row['r']
+
     peso_spark = []
     for h in reversed(peso_hist):
         try:
@@ -73,5 +79,9 @@ def hegemonikon_summary():
         'recetas': {
             'total':     n_recetas,
             'favoritas': n_favoritas,
+        },
+        'futbol': {
+            'partidos': n_partidos,
+            'rating':   futbol_rating,
         },
     })

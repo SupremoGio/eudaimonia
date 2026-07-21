@@ -30,6 +30,7 @@ from modules.guardarropa.routes import guardarropa_bp
 from modules.guardarropa.wishlist import wishlist_bp
 from modules.bienestar.routes    import bienestar_bp
 from modules.bienestar.salud     import medico_bp
+from modules.bienestar.futbol    import futbol_bp
 from modules.finanzas.estados.routes import estados_bp
 from modules.viajes.routes       import viajes_bp
 from modules.eurythmia.routes    import eurythmia_bp
@@ -79,6 +80,7 @@ def create_app():
     app.register_blueprint(wishlist_bp,   url_prefix='/guardarropa/wishlist')
     app.register_blueprint(bienestar_bp,  url_prefix='/bienestar')
     app.register_blueprint(medico_bp,     url_prefix='/bienestar/salud')
+    app.register_blueprint(futbol_bp,     url_prefix='/bienestar/futbol')
     app.register_blueprint(estados_bp,    url_prefix='/finanzas/estados')
     app.register_blueprint(viajes_bp,     url_prefix='/viajes')
     app.register_blueprint(eurythmia_bp,  url_prefix='/eurythmia')
