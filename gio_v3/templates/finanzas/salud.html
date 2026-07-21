@@ -11,18 +11,23 @@
 .sf-right{grid-column:2/3;}
 
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
+/* La tarjeta de patrimonio siempre es oscura (por diseño), sin importar el tema
+   del sitio — por eso sus textos usan colores fijos en vez de var(--text)/--dim/--mid,
+   que se invierten en modo claro y quedaban casi invisibles sobre este fondo oscuro. */
 .sf-hero{background:linear-gradient(135deg,#0c0a10,#140f1a);border:1px solid var(--b2);border-radius:12px;padding:24px 28px;}
-.sf-pn-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;}
-.sf-pn-value{font-family:var(--serif);font-size:2.6rem;font-weight:300;line-height:1;letter-spacing:.04em;}
-.sf-pn-sub{font-size:var(--fs-sm);color:var(--dim);margin-top:6px;}
+.sf-pn-label{font-size:var(--fs-xs);color:#8A7A60;letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;}
+.sf-pn-value{font-family:var(--serif);font-size:2.6rem;font-weight:300;line-height:1;letter-spacing:.04em;color:#F2EDE0;}
+.sf-pn-value.pos{color:#10b981;}
+.sf-pn-value.neg{color:#f43f5e;}
+.sf-pn-sub{font-size:var(--fs-sm);color:#8A7A60;margin-top:6px;}
 .sf-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;}
 .sf-stat{background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:8px;padding:14px 16px;}
 .sf-stat-v{font-family:var(--serif);font-size:1.4rem;font-weight:300;line-height:1;}
-.sf-stat-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.16em;text-transform:uppercase;margin-top:4px;}
-.sf-stat-s{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
+.sf-stat-l{font-size:var(--fs-xs);color:#8A7A60;letter-spacing:.16em;text-transform:uppercase;margin-top:4px;}
+.sf-stat-s{font-size:var(--fs-xs);color:#8A7A60;margin-top:2px;}
 .sf-bar-wrap{margin-top:20px;}
 .sf-bar-labels{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:7px;}
-.sf-bar-lbl{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:var(--mid);}
+.sf-bar-lbl{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:#A89880;}
 .sf-bar-dot{width:7px;height:7px;border-radius:50%;}
 .sf-bar{height:6px;border-radius:100px;overflow:hidden;background:rgba(255,255,255,.05);display:flex;}
 .sf-bar-seg{height:100%;transition:width .6s;}
@@ -136,14 +141,14 @@
       <div class="sf-pn-label">Patrimonio Neto</div>
       <div class="sf-pn-value {% if patrimonio_neto >= 0 %}pos{% else %}neg{% endif %}">
         {% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto) }}
-        <span style="font-size:1rem;color:var(--dim)"> MXN</span>
+        <span style="font-size:1rem;color:#8A7A60"> MXN</span>
       </div>
       <div class="sf-pn-sub">Activos totales menos pasivos · actualizado hoy</div>
     </div>
     <div style="text-align:right;">
       <div class="sf-pn-label">Distribución</div>
       {% set total_ref = [total_activos, 1]|max %}
-      <div style="font-size:var(--fs-sm);color:var(--mid);margin-bottom:6px;">
+      <div style="font-size:var(--fs-sm);color:#A89880;margin-bottom:6px;">
         Cuentas&nbsp;{{ "{:.0f}".format(activos_cuentas/total_ref*100) }}% · Bienes&nbsp;{{ "{:.0f}".format(total_bienes/total_ref*100) }}% · Pasivos&nbsp;{{ "{:.0f}".format(total_pasivos/total_ref*100) }}%
       </div>
     </div>
