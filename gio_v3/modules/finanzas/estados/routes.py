@@ -146,6 +146,12 @@ def update_transaction(tx_id):
         if d.get('tipo') is not None:
             db.execute("UPDATE est_movimientos SET tipo=? WHERE id=?",
                        (d['tipo'], tx_id))
+        if d.get('fecha') is not None:
+            db.execute("UPDATE est_movimientos SET fecha=?, fecha_cargo=? WHERE id=?",
+                       (d['fecha'], d['fecha'], tx_id))
+        if d.get('banco') is not None:
+            db.execute("UPDATE est_movimientos SET banco=? WHERE id=?",
+                       (d['banco'], tx_id))
         if 'mi_parte' in d:
             val = float(d['mi_parte']) if d['mi_parte'] not in (None, '') else None
             db.execute("UPDATE est_movimientos SET mi_parte=? WHERE id=?", (val, tx_id))
