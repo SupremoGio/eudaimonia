@@ -1948,6 +1948,11 @@ function SideNav({
     label: '🏆',
     sub: 'Logros'
   }, {
+    kind: 'link',
+    href: '/recompensas',
+    label: '🪙',
+    sub: 'Recompensas'
+  }, {
     kind: 'tab',
     id: 'profile',
     label: 'Αὐτός',
@@ -2196,6 +2201,14 @@ function App() {
       section: 'sys',
       run: () => {
         location.href = '/logros';
+      }
+    }, {
+      i: '🪙',
+      label: 'Ver Recompensas',
+      sub: 'Sistema',
+      section: 'sys',
+      run: () => {
+        location.href = '/recompensas';
       }
     }, ...pendingActs.map(a => ({
       i: '✓',
