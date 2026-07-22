@@ -11,91 +11,167 @@
 
 {% block content %}
 <style>
-.fb-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
-.fb-stat  { background:var(--card); border:1px solid var(--b); border-radius:12px; padding:16px 18px; }
+@keyframes fbFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fb-hero{padding:2px 0 20px;}
+.fb-hero-desc{font-size:12px;color:var(--dim);margin-top:6px;max-width:480px;line-height:1.5;}
+
+.fb-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:18px 0 20px; }
+.fb-stat  { background:var(--card); border:1px solid var(--b); border-radius:12px; padding:16px 18px;
+            position:relative; overflow:hidden; animation:fbFadeUp .45s ease both;
+            transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+.fb-stat:nth-child(1){animation-delay:.02s} .fb-stat:nth-child(2){animation-delay:.07s}
+.fb-stat:nth-child(3){animation-delay:.12s} .fb-stat:nth-child(4){animation-delay:.17s}
+.fb-stat:hover{transform:translateY(-3px);border-color:var(--b2);box-shadow:0 10px 26px rgba(0,0,0,.3);}
+.fb-stat-top{display:flex;align-items:center;gap:10px;}
 .fb-stat-val { font-family:var(--mono); font-size:var(--fs-2xl); font-weight:700; color:var(--gold); line-height:1; }
-.fb-stat-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
+.fb-stat-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:8px; display:flex;align-items:center;gap:5px; }
+.fb-stat-lbl svg{width:11px;height:11px;opacity:.7;}
+.fb-ring{width:38px;height:38px;border-radius:50%;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.fb-ring::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--ring-color,var(--gold)) calc(var(--pct)*1%),var(--b) 0);}
+.fb-ring::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--card);}
+.fb-ring b{position:relative;z-index:1;font-size:11px;color:var(--ring-color,var(--gold));font-family:var(--mono);}
+.fb-gep-bar{display:flex;height:8px;border-radius:100px;overflow:hidden;margin-top:8px;background:var(--b);}
+.fb-gep-seg{height:100%;transition:width .4s ease;}
+.fb-gep-legend{display:flex;gap:10px;margin-top:6px;font-size:10px;color:var(--dim);}
+.fb-gep-legend span{display:inline-flex;align-items:center;gap:4px;}
+.fb-gep-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
 @media(max-width:860px) { .fb-stats { grid-template-columns:repeat(2,1fr); } }
+
+.fb-form{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.fb-form-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-right:2px;}
+.fb-form-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;transition:transform .15s;cursor:default;}
+.fb-form-dot:hover{transform:scale(1.3);}
 
 .fb-list { display:flex; flex-direction:column; gap:10px; }
 .fb-card { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:14px 16px;
-           display:flex; align-items:center; gap:14px; }
+           display:flex; align-items:center; gap:14px; animation:fbFadeUp .4s ease both;
+           transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
+.fb-card:hover{transform:translateY(-2px);border-color:var(--b2);box-shadow:0 10px 24px rgba(0,0,0,.28);}
 .fb-card-main { flex:1; min-width:0; }
 .fb-card-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
 .fb-card-rival { font-weight:600; font-size:var(--fs-base); color:var(--text); }
-.fb-card-meta { font-size:var(--fs-xs); color:var(--dim); display:flex; gap:10px; flex-wrap:wrap; }
-.fb-gol-badge { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:700;
+.fb-card-meta { font-size:var(--fs-xs); color:var(--dim); display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.fb-card-meta span{display:inline-flex;align-items:center;gap:4px;}
+.fb-card-meta svg{width:11px;height:11px;opacity:.7;}
+.fb-gol-badge { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:700; display:inline-flex;align-items:center;gap:4px;
                 background:rgba(16,185,129,.12); color:#10b981; border:1px solid rgba(16,185,129,.25); }
-.fb-resultado { font-family:var(--mono); font-weight:700; font-size:var(--fs-lg); color:var(--text);
-                flex-shrink:0; text-align:center; min-width:56px; }
-.fb-rating { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center;
-             font-weight:700; font-size:14px; flex-shrink:0; color:#fff; }
-.fb-actions { display:flex; gap:6px; flex-shrink:0; }
-.fb-actions button { background:none; border:none; cursor:pointer; color:var(--dim); padding:4px; }
-.fb-actions button:hover { color:var(--text); }
-.fb-empty { text-align:center; padding:48px 0; color:var(--dim); }
+.fb-gol-badge svg{width:11px;height:11px;}
+.fb-resultado { font-family:var(--mono); font-weight:700; font-size:var(--fs-lg);
+                flex-shrink:0; text-align:center; min-width:60px; padding:5px 10px; border-radius:8px; }
+.fb-resultado.win{color:#10b981;background:rgba(16,185,129,.1);}
+.fb-resultado.draw{color:var(--mid);background:var(--b);}
+.fb-resultado.loss{color:#f87171;background:rgba(248,113,113,.1);}
+.fb-actions { display:flex; gap:2px; flex-shrink:0; opacity:.5; transition:opacity .18s ease; }
+.fb-card:hover .fb-actions{opacity:1;}
+.fb-actions button { background:none; border:none; cursor:pointer; color:var(--dim); padding:6px; border-radius:6px;
+                      display:flex; align-items:center; transition:color .15s,background .15s; }
+.fb-actions button svg{width:14px;height:14px;}
+.fb-actions button:hover { color:var(--gold); background:var(--gold-d); }
+.fb-actions button.danger:hover { color:var(--coral); background:var(--coral-d); }
+
 .fb-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .fb-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
 .fb-modal { width:460px; max-width:96vw; }
 .fb-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:16px; }
 </style>
 
+<!-- ── Hero ─────────────────────────────────────────────────────────────── -->
+<div class="fb-hero">
+  <div class="pg-t" style="margin:0">Fútbol</div>
+  <div class="fb-hero-desc">Historial de partidos, goles, asistencias y rendimiento — cada gol suma XP a Salud Física.</div>
+</div>
+
 <!-- ── Stats ─────────────────────────────────────────────────────────────── -->
+{% set _r = stats.rating_prom %}
+{% set _ring_color = ('#10b981' if _r and _r >= 7 else '#eab308' if _r and _r >= 6 else '#f97316' if _r and _r >= 5 else '#ef4444' if _r else 'var(--dim)') %}
+{% set _pct = ((_r / 10 * 100) | round(0)) if _r else 0 %}
+{% set _gep_total = (stats.ganados + stats.empatados + stats.perdidos) or 1 %}
 <div class="fb-stats">
   <div class="fb-stat">
-    <div class="fb-stat-val">{{ stats.total }}</div>
-    <div class="fb-stat-lbl">Partidos</div>
+    <div class="fb-stat-top">
+      <div class="fb-stat-val">{{ stats.total }}</div>
+    </div>
+    <div class="fb-stat-lbl"><i data-lucide="calendar" style="width:11px;height:11px;"></i> Partidos</div>
   </div>
   <div class="fb-stat">
-    <div class="fb-stat-val">{{ stats.goles_propios }}</div>
-    <div class="fb-stat-lbl">Goles</div>
+    <div class="fb-stat-top">
+      <div class="fb-stat-val">{{ stats.goles_propios }}</div>
+    </div>
+    <div class="fb-stat-lbl"><i data-lucide="target" style="width:11px;height:11px;"></i> Goles</div>
   </div>
   <div class="fb-stat">
-    <div class="fb-stat-val">{{ stats.rating_prom if stats.rating_prom is not none else '—' }}</div>
-    <div class="fb-stat-lbl">Rating prom.</div>
+    <div class="fb-stat-top">
+      <div class="fb-ring" style="--pct:{{ _pct }};--ring-color:{{ _ring_color }}"><b>{{ '%.1f'|format(_r) if _r is not none else '—' }}</b></div>
+      <div class="fb-stat-val" style="font-size:var(--fs-lg);">{{ '%.1f'|format(_r) if _r is not none else '—' }}</div>
+    </div>
+    <div class="fb-stat-lbl"><i data-lucide="star" style="width:11px;height:11px;"></i> Rating prom.</div>
   </div>
   <div class="fb-stat">
-    <div class="fb-stat-val">{{ stats.ganados }}-{{ stats.empatados }}-{{ stats.perdidos }}</div>
-    <div class="fb-stat-lbl">G-E-P</div>
+    <div class="fb-stat-val" style="font-size:var(--fs-lg);">{{ stats.ganados }}-{{ stats.empatados }}-{{ stats.perdidos }}</div>
+    <div class="fb-gep-bar">
+      <div class="fb-gep-seg" style="width:{{ (stats.ganados / _gep_total * 100) | round(1) }}%;background:#10b981;"></div>
+      <div class="fb-gep-seg" style="width:{{ (stats.empatados / _gep_total * 100) | round(1) }}%;background:var(--mid);"></div>
+      <div class="fb-gep-seg" style="width:{{ (stats.perdidos / _gep_total * 100) | round(1) }}%;background:#f87171;"></div>
+    </div>
+    <div class="fb-gep-legend">
+      <span><span class="fb-gep-dot" style="background:#10b981;"></span>G</span>
+      <span><span class="fb-gep-dot" style="background:var(--mid);"></span>E</span>
+      <span><span class="fb-gep-dot" style="background:#f87171;"></span>P</span>
+    </div>
   </div>
 </div>
+
+<!-- ── Forma reciente ────────────────────────────────────────────────────── -->
+{% if partidos %}
+<div class="fb-form">
+  <span class="fb-form-lbl">Forma reciente</span>
+  {% for p in partidos[:8] %}
+  {% set gf, gc = (p.goles_favor or 0), (p.goles_contra or 0) %}
+  {% set color = ('#10b981' if gf > gc else '#f87171' if gf < gc else 'var(--mid)') %}
+  <span class="fb-form-dot" style="background:{{ color }};" title="{{ p.rival or 'Partido' }} · {{ gf }}-{{ gc }}"></span>
+  {% endfor %}
+</div>
+{% endif %}
 
 <!-- ── Historial ─────────────────────────────────────────────────────────── -->
 <div class="fb-list" id="fb-list">
   {% for p in partidos %}
-  <div class="fb-card" id="fb-card-{{ p.id }}">
-    <div class="fb-rating" style="background:{{ 'rgb(16,185,129)' if p.rendimiento and p.rendimiento >= 7
+  {% set gf, gc = (p.goles_favor or 0), (p.goles_contra or 0) %}
+  {% set res_class = ('win' if gf > gc else 'loss' if gf < gc else 'draw') %}
+  <div class="fb-card" id="fb-card-{{ p.id }}" style="animation-delay:{{ (loop.index0 * 0.03) | round(2) }}s">
+    <div class="fb-ring" style="--pct:{{ ((p.rendimiento / 10 * 100) | round(0)) if p.rendimiento is not none else 0 }};--ring-color:{{ 'rgb(16,185,129)' if p.rendimiento and p.rendimiento >= 7
       else 'rgb(234,179,8)' if p.rendimiento and p.rendimiento >= 6
       else 'rgb(249,115,22)' if p.rendimiento and p.rendimiento >= 5
-      else 'rgb(239,68,68)' if p.rendimiento else 'var(--dim)' }};">
-      {{ '%.1f'|format(p.rendimiento) if p.rendimiento is not none else '—' }}
+      else 'rgb(239,68,68)' if p.rendimiento else 'var(--dim)' }}">
+      <b>{{ '%.1f'|format(p.rendimiento) if p.rendimiento is not none else '—' }}</b>
     </div>
     <div class="fb-card-main">
       <div class="fb-card-top">
         <span class="fb-card-rival">{{ p.rival if p.rival else 'Partido' }}</span>
         {% if p.goles_propios %}
-        <span class="fb-gol-badge">⚽ {{ p.goles_propios }}</span>
+        <span class="fb-gol-badge"><i data-lucide="target"></i> {{ p.goles_propios }}</span>
         {% endif %}
       </div>
       <div class="fb-card-meta">
-        <span>{{ p.fecha }}</span>
-        {% if p.hora %}<span>{{ p.hora }}</span>{% endif %}
-        {% if p.cancha %}<span>📍 {{ p.cancha }}</span>{% endif %}
-        {% if p.minutos_jugados %}<span>{{ p.minutos_jugados }}′</span>{% endif %}
-        {% if p.asistencias %}<span>{{ p.asistencias }} asist.</span>{% endif %}
+        <span><i data-lucide="calendar"></i>{{ p.fecha }}</span>
+        {% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}
+        {% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}
+        {% if p.minutos_jugados %}<span><i data-lucide="timer"></i>{{ p.minutos_jugados }}′</span>{% endif %}
+        {% if p.asistencias %}<span><i data-lucide="users"></i>{{ p.asistencias }} asist.</span>{% endif %}
       </div>
     </div>
-    <div class="fb-resultado">{{ p.goles_favor }}-{{ p.goles_contra }}</div>
+    <div class="fb-resultado {{ res_class }}">{{ p.goles_favor }}-{{ p.goles_contra }}</div>
     <div class="fb-actions">
-      <button onclick="abrirEditar({{ p.id }})" title="Editar">✏️</button>
-      <button onclick="eliminarPartido({{ p.id }})" title="Eliminar">🗑️</button>
+      <button onclick="abrirEditar({{ p.id }})" title="Editar"><i data-lucide="pencil"></i></button>
+      <button class="danger" onclick="eliminarPartido({{ p.id }})" title="Eliminar"><i data-lucide="trash-2"></i></button>
     </div>
   </div>
   {% else %}
-  <div class="fb-empty" id="fb-empty">
-    <div style="font-size:40px;margin-bottom:12px;">⚽</div>
-    <div style="font-weight:600;margin-bottom:6px;">Sin partidos registrados</div>
-    <div style="font-size:var(--fs-xs);">Registra tu primer partido con el botón de arriba</div>
+  <div class="empty-rich" id="fb-empty">
+    <div class="empty-icon-box"><i data-lucide="target"></i></div>
+    <div class="empty-title">Sin partidos registrados</div>
+    <div class="empty-desc">Registra tu primer partido para empezar a ver tu historial, goles y rendimiento.</div>
+    <button class="empty-cta" onclick="abrirNuevo()"><i data-lucide="plus" style="width:12px;height:12px;"></i> Registrar partido</button>
   </div>
   {% endfor %}
 </div>
