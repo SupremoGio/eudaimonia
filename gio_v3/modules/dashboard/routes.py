@@ -323,6 +323,20 @@ def _build_deadlines(today_dt: date) -> list:
         """, (horizon,)).fetchall():
             raw.append(dict(r))
 
+        for r in db.execute("""
+            SELECT id,
+                   ('vs ' || COALESCE(NULLIF(rival, ''), 'rival por confirmar')
+                     || CASE WHEN hora <> '' THEN ' · ' || hora ELSE '' END) AS label,
+                   NULL AS rem_type,
+                   fecha AS fecha, 'partido' AS kind
+            FROM futbol_partidos
+            WHERE estado='programado'
+              AND fecha IS NOT NULL
+              AND fecha <= ?
+            ORDER BY fecha, hora LIMIT 8
+        """, (horizon,)).fetchall():
+            raw.append(dict(r))
+
     deadlines = []
     for d in raw:
         try:

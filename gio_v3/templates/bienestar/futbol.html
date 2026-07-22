@@ -399,5 +399,15 @@ async function eliminarPartido(id) {
 document.querySelectorAll('.modal-bg').forEach(bg => {
   bg.addEventListener('click', (e) => { if (e.target === bg) bg.classList.remove('open'); });
 });
+
+// Deep link desde la campanita/Deadline Radar del dashboard: ?resultado=<id>
+// abre directo el modal de "Registrar resultado" para ese partido.
+(function () {
+  const id = new URLSearchParams(location.search).get('resultado');
+  if (id) {
+    abrirRegistrarResultado(parseInt(id, 10));
+    history.replaceState(null, '', location.pathname);
+  }
+})();
 </script>
 {% endblock %}

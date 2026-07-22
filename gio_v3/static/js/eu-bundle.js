@@ -2673,6 +2673,23 @@ const IconBookOpen = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE_
   x2: "12",
   y2: "19"
 }));
+const IconFutbol = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "12",
+  r: "9"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M12 7.5l3 2.2-1.1 3.6h-3.8L9 9.7z"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M12 3v4.5M12 20.5V16M4.2 9l3.5 1.2M16.3 10.2L19.8 9M5.8 17l2.9-3.1M15.3 13.9l2.9 3.1"
+}));
+const IconArrowRight = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("line", {
+  x1: "4",
+  y1: "12",
+  x2: "18",
+  y2: "12"
+}), /*#__PURE__*/React.createElement("polyline", {
+  points: "12 6 18 12 12 18"
+}));
 const MODULE_ICONS = {
   hegemonikon: IconShieldCheck,
   oikonomia: IconWallet,
@@ -2685,12 +2702,14 @@ const MODULE_ICONS = {
 const DEADLINE_TYPE_ICON = {
   reminder: IconBell,
   task: IconCheckSquare,
-  wishlist: IconShoppingBag
+  wishlist: IconShoppingBag,
+  partido: IconFutbol
 };
 const DEADLINE_TYPE_LABEL = {
   reminder: 'recordatorio',
   task: 'tarea gtd',
-  wishlist: 'wishlist'
+  wishlist: 'wishlist',
+  partido: 'partido'
 };
 const DEADLINE_PAL = {
   red: {
@@ -2727,6 +2746,9 @@ function useDeadlines() {
   const [checking, setChecking] = useState({});
   async function handleCheck(dl) {
     if (checking[dl.id]) return;
+    // Solo reminders/tareas GTD se "marcan cumplidas" con un click — otros
+    // tipos (ej. partidos) tienen su propio flujo, ver DeadlineItemCard.
+    if (dl.type !== 'task' && dl.type !== 'reminder') return;
     setChecking(prev => ({
       ...prev,
       [dl.id]: true
@@ -2818,7 +2840,30 @@ function DeadlineItemCard({
       letterSpacing: '0.12em',
       textTransform: 'uppercase'
     }
-  }, DEADLINE_TYPE_LABEL[dl.type] || dl.type)), /*#__PURE__*/React.createElement("button", {
+  }, DEADLINE_TYPE_LABEL[dl.type] || dl.type)), dl.type === 'partido' ? /*#__PURE__*/React.createElement("a", {
+    href: `/bienestar/futbol?resultado=${dl.id}`,
+    title: "Ir a F\xFAtbol \u2014 registrar resultado",
+    style: {
+      flexShrink: 0,
+      width: 20,
+      height: 20,
+      borderRadius: '50%',
+      border: `1.5px solid ${p.border}`,
+      background: 'transparent',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'background 0.15s'
+    },
+    onMouseEnter: e => e.currentTarget.style.background = p.pill,
+    onMouseLeave: e => e.currentTarget.style.background = 'transparent'
+  }, /*#__PURE__*/React.createElement(IconHoverFx, {
+    Icon: IconArrowRight,
+    fx: "pop",
+    size: 10,
+    color: p.border
+  })) : /*#__PURE__*/React.createElement("button", {
     onClick: () => onCheck(dl),
     title: "Marcar como cumplido",
     style: {

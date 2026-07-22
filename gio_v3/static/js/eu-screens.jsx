@@ -136,13 +136,26 @@ const IconBookOpen = p => (
     <line x1="12" y1="6" x2="12" y2="19"/>
   </EuIcon>
 );
+const IconFutbol = p => (
+  <EuIcon {...p}>
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 7.5l3 2.2-1.1 3.6h-3.8L9 9.7z"/>
+    <path d="M12 3v4.5M12 20.5V16M4.2 9l3.5 1.2M16.3 10.2L19.8 9M5.8 17l2.9-3.1M15.3 13.9l2.9 3.1"/>
+  </EuIcon>
+);
+const IconArrowRight = p => (
+  <EuIcon {...p}>
+    <line x1="4" y1="12" x2="18" y2="12"/>
+    <polyline points="12 6 18 12 12 18"/>
+  </EuIcon>
+);
 
 const MODULE_ICONS = {
   hegemonikon: IconShieldCheck, oikonomia: IconWallet, ataraxia: IconClipboardCheck,
   paideia: IconBookOpen, cosmopolitismo: IconGlobe, logoi: IconTerminal, eurythmia: IconMusic,
 };
-const DEADLINE_TYPE_ICON  = { reminder: IconBell, task: IconCheckSquare, wishlist: IconShoppingBag };
-const DEADLINE_TYPE_LABEL = { reminder: 'recordatorio', task: 'tarea gtd', wishlist: 'wishlist' };
+const DEADLINE_TYPE_ICON  = { reminder: IconBell, task: IconCheckSquare, wishlist: IconShoppingBag, partido: IconFutbol };
+const DEADLINE_TYPE_LABEL = { reminder: 'recordatorio', task: 'tarea gtd', wishlist: 'wishlist', partido: 'partido' };
 const DEADLINE_PAL = {
   red:    { text:'#f87171', bg:'rgba(239,68,68,0.09)',  border:'#ef4444', pill:'rgba(239,68,68,0.20)'  },
   amber:  { text:'#fbbf24', bg:'rgba(245,158,11,0.09)', border:'#f59e0b', pill:'rgba(245,158,11,0.20)' },
@@ -159,6 +172,9 @@ function useDeadlines() {
 
   async function handleCheck(dl) {
     if (checking[dl.id]) return;
+    // Solo reminders/tareas GTD se "marcan cumplidas" con un click — otros
+    // tipos (ej. partidos) tienen su propio flujo, ver DeadlineItemCard.
+    if (dl.type !== 'task' && dl.type !== 'reminder') return;
     setChecking(prev => ({...prev, [dl.id]: true}));
     const url = dl.type === 'task'
       ? `/gtd/api/task/${dl.id}/complete`
@@ -211,22 +227,39 @@ function DeadlineItemCard({ dl, isChecking, onCheck }) {
             <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
               letterSpacing:'0.12em',textTransform:'uppercase'}}>{DEADLINE_TYPE_LABEL[dl.type] || dl.type}</span>
           </div>
-          <button
-            onClick={() => onCheck(dl)}
-            title="Marcar como cumplido"
-            style={{
-              flexShrink:0,width:20,height:20,borderRadius:'50%',
-              border:`1.5px solid ${p.border}`,
-              background:'transparent',cursor:'pointer',
-              display:'flex',alignItems:'center',justifyContent:'center',
-              transition:'background 0.15s',
-              opacity: isChecking ? 0.4 : 1,
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = p.pill}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <IconHoverFx Icon={IconCheck} fx="pop" size={10} color={p.border}/>
-          </button>
+          {dl.type === 'partido' ? (
+            <a href={`/bienestar/futbol?resultado=${dl.id}`}
+              title="Ir a Fútbol — registrar resultado"
+              style={{
+                flexShrink:0,width:20,height:20,borderRadius:'50%',
+                border:`1.5px solid ${p.border}`,
+                background:'transparent',cursor:'pointer',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                transition:'background 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = p.pill}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <IconHoverFx Icon={IconArrowRight} fx="pop" size={10} color={p.border}/>
+            </a>
+          ) : (
+            <button
+              onClick={() => onCheck(dl)}
+              title="Marcar como cumplido"
+              style={{
+                flexShrink:0,width:20,height:20,borderRadius:'50%',
+                border:`1.5px solid ${p.border}`,
+                background:'transparent',cursor:'pointer',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                transition:'background 0.15s',
+                opacity: isChecking ? 0.4 : 1,
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = p.pill}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            >
+              <IconHoverFx Icon={IconCheck} fx="pop" size={10} color={p.border}/>
+            </button>
+          )}
         </div>
 
         {/* Nombre */}
