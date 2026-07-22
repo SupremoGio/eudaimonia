@@ -2452,6 +2452,278 @@ ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.c
 // EUDAIMONIA — All Screens
 // hooks and C declared in eu-components.jsx (bundled before this file)
 
+// ═══════════════════════════════════════════════════════════
+// ICONS — hand-authored line icons (Lucide-style), self-contained
+// so the dashboard has no external icon CDN dependency to fail on.
+// ═══════════════════════════════════════════════════════════
+function EuIcon({
+  children,
+  size = 16,
+  viewBox = '0 0 24 24',
+  fill = 'none',
+  style,
+  ...rest
+}) {
+  return /*#__PURE__*/React.createElement("svg", Object.assign({
+    width: size,
+    height: size,
+    viewBox: viewBox,
+    fill: fill,
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    style: {
+      display: 'block',
+      flexShrink: 0,
+      ...style
+    }
+  }, rest), children);
+}
+const IconCommand = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("rect", {
+  x: "4",
+  y: "4",
+  width: "16",
+  height: "16",
+  rx: "4"
+}), /*#__PURE__*/React.createElement("circle", {
+  cx: "9",
+  cy: "9",
+  r: "1.4",
+  fill: "currentColor",
+  stroke: "none"
+}), /*#__PURE__*/React.createElement("circle", {
+  cx: "15",
+  cy: "9",
+  r: "1.4",
+  fill: "currentColor",
+  stroke: "none"
+}), /*#__PURE__*/React.createElement("circle", {
+  cx: "9",
+  cy: "15",
+  r: "1.4",
+  fill: "currentColor",
+  stroke: "none"
+}), /*#__PURE__*/React.createElement("circle", {
+  cx: "15",
+  cy: "15",
+  r: "1.4",
+  fill: "currentColor",
+  stroke: "none"
+}));
+const IconTrophy = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M8 4h8v5a4 4 0 0 1-8 0V4z"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M8 5H5a2 2 0 0 0 0 4h2"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M16 5h3a2 2 0 0 1 0 4h-2"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "13",
+  x2: "12",
+  y2: "17"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "9",
+  y1: "20",
+  x2: "15",
+  y2: "20"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "17",
+  x2: "12",
+  y2: "20"
+}));
+const IconMountain = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M3 20 9 8 13 15 17 9 21 20z"
+}));
+const IconSwords = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("line", {
+  x1: "5",
+  y1: "19",
+  x2: "19",
+  y2: "5"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "19",
+  y1: "19",
+  x2: "5",
+  y2: "5"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "15",
+  y1: "9",
+  x2: "17",
+  y2: "7"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "9",
+  y1: "9",
+  x2: "7",
+  y2: "7"
+}));
+const IconMedal = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "15",
+  r: "5"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M9 11 6 3M15 11 18 3"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M9.5 15.5l1.3 1.5 2.2-3"
+}));
+const IconGem = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M6 3h12l4 6-10 12L2 9z"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M2 9h20M9 3l3 6-3 12M15 3l-3 6 3 12"
+}));
+const IconZap = p => /*#__PURE__*/React.createElement(EuIcon, Object.assign({}, p, {
+  fill: "currentColor"
+}), /*#__PURE__*/React.createElement("polygon", {
+  points: "13,2 3,14 11,14 9,22 21,10 13,10",
+  stroke: "none"
+}));
+const IconRefreshCw = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M21 12a9 9 0 0 1-15.5 6.5L3 16"
+}), /*#__PURE__*/React.createElement("polyline", {
+  points: "3 21 3 16 8 16"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M3 12a9 9 0 0 1 15.5-6.5L21 8"
+}), /*#__PURE__*/React.createElement("polyline", {
+  points: "21 3 21 8 16 8"
+}));
+const IconBell = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M12 3a5 5 0 0 0-5 5v3.5c0 1-.4 2-1.2 2.8L4 16h16l-1.8-1.7c-.8-.8-1.2-1.8-1.2-2.8V8a5 5 0 0 0-5-5z"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M9.5 19a2.5 2.5 0 0 0 5 0"
+}));
+const IconCheckSquare = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("rect", {
+  x: "3",
+  y: "3",
+  width: "18",
+  height: "18",
+  rx: "3"
+}), /*#__PURE__*/React.createElement("polyline", {
+  points: "7 12 10.5 15.5 17 8.5"
+}));
+const IconShoppingBag = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M6 8h12l-1 12H7z"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M9 8V6a3 3 0 0 1 6 0v2"
+}));
+const IconCheck = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("polyline", {
+  points: "4 12 9.5 17.5 20 6"
+}));
+const IconGlobe = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("circle", {
+  cx: "12",
+  cy: "12",
+  r: "9"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"
+}));
+const IconTerminal = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("rect", {
+  x: "2",
+  y: "4",
+  width: "20",
+  height: "16",
+  rx: "2"
+}), /*#__PURE__*/React.createElement("polyline", {
+  points: "6 9 10 12 6 15"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "15",
+  x2: "17",
+  y2: "15"
+}));
+const IconMusic = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("circle", {
+  cx: "6",
+  cy: "18",
+  r: "2.5"
+}), /*#__PURE__*/React.createElement("circle", {
+  cx: "17",
+  cy: "16",
+  r: "2.5"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M8.5 18V6l11-2v12"
+}));
+const IconShieldCheck = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"
+}), /*#__PURE__*/React.createElement("polyline", {
+  points: "9 12 11 14 15 9.5"
+}));
+const IconWallet = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+}), /*#__PURE__*/React.createElement("path", {
+  d: "M16 12h3v3h-3a1.5 1.5 0 0 1 0-3z"
+}));
+const IconClipboardCheck = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("rect", {
+  x: "5",
+  y: "4",
+  width: "14",
+  height: "17",
+  rx: "2"
+}), /*#__PURE__*/React.createElement("rect", {
+  x: "9",
+  y: "2",
+  width: "6",
+  height: "4",
+  rx: "1"
+}), /*#__PURE__*/React.createElement("polyline", {
+  points: "9 13 11 15 15 10.5"
+}));
+const IconBookOpen = p => /*#__PURE__*/React.createElement(EuIcon, p, /*#__PURE__*/React.createElement("path", {
+  d: "M12 6c-2-1.5-4.5-2-7-2v13c2.5 0 5 .5 7 2 2-1.5 4.5-2 7-2V4c-2.5 0-5 .5-7 2z"
+}), /*#__PURE__*/React.createElement("line", {
+  x1: "12",
+  y1: "6",
+  x2: "12",
+  y2: "19"
+}));
+const MODULE_ICONS = {
+  hegemonikon: IconShieldCheck,
+  oikonomia: IconWallet,
+  ataraxia: IconClipboardCheck,
+  paideia: IconBookOpen,
+  cosmopolitismo: IconGlobe,
+  logoi: IconTerminal,
+  eurythmia: IconMusic
+};
+const DEADLINE_TYPE_ICON = {
+  reminder: IconBell,
+  task: IconCheckSquare,
+  wishlist: IconShoppingBag
+};
+const DEADLINE_TYPE_LABEL = {
+  reminder: 'recordatorio',
+  task: 'tarea gtd',
+  wishlist: 'wishlist'
+};
+
+// ─── Small hover-triggered icon button (wiggle/pop/spin on hover) ─────────
+function IconHoverFx({
+  Icon,
+  size = 14,
+  fx = 'wiggle',
+  color,
+  style,
+  iconStyle
+}) {
+  const [hov, setHov] = useState(false);
+  const FX = {
+    wiggle: 'euIconWiggle 0.5s ease',
+    pop: 'euIconPop 0.4s ease',
+    spin: 'euIconSpinSlow 0.6s linear'
+  };
+  return /*#__PURE__*/React.createElement("span", {
+    onMouseEnter: () => setHov(true),
+    onMouseLeave: () => setHov(false),
+    style: {
+      display: 'inline-flex',
+      color,
+      ...style
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    size: size,
+    style: {
+      animation: hov ? FX[fx] : 'none',
+      ...iconStyle
+    }
+  }));
+}
 function todayQuote() {
   const dayIndex = Math.floor(Date.now() / 86400000);
   return EU.quotes[dayIndex % EU.quotes.length];
@@ -2508,7 +2780,7 @@ function ReflexionDelDia() {
       color: C.textMuted,
       textTransform: 'uppercase'
     }
-  }, "Reflexión del Día"), /*#__PURE__*/React.createElement("div", {
+  }, "Reflexi\xF3n del D\xEDa"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -2532,7 +2804,6 @@ function ReflexionDelDia() {
       border: 'none',
       cursor: 'pointer',
       color: C.textMuted,
-      fontSize: 16,
       padding: 0,
       lineHeight: 1,
       display: 'inline-flex',
@@ -2540,7 +2811,11 @@ function ReflexionDelDia() {
       transform: spinning ? 'rotate(180deg)' : 'rotate(0deg)',
       transition: 'transform 0.4s ease'
     }
-  }, "↻"))), /*#__PURE__*/React.createElement(QuoteDisplay, {
+  }, /*#__PURE__*/React.createElement(IconHoverFx, {
+    Icon: IconRefreshCw,
+    fx: "spin",
+    size: 14
+  })))), /*#__PURE__*/React.createElement(QuoteDisplay, {
     quote: quote
   }));
 }
@@ -2604,16 +2879,16 @@ function WordOfDay() {
       border: '1px solid rgba(96,165,250,0.18)',
       padding: '2px 8px',
       borderRadius: 100,
-      letterSpacing: '0.06em'
+      letterSpacing: '0.06em',
+      whiteSpace: 'nowrap'
     }
-  }, "EN → FR"), /*#__PURE__*/React.createElement("button", {
+  }, "EN \u2192 FR"), /*#__PURE__*/React.createElement("button", {
     onClick: refresh,
     style: {
       background: 'transparent',
       border: 'none',
       cursor: 'pointer',
       color: C.textMuted,
-      fontSize: 16,
       padding: 0,
       lineHeight: 1,
       display: 'inline-flex',
@@ -2621,7 +2896,11 @@ function WordOfDay() {
       transform: spinning ? 'rotate(180deg)' : 'rotate(0deg)',
       transition: 'transform 0.4s ease'
     }
-  }, "↻"))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(IconHoverFx, {
+    Icon: IconRefreshCw,
+    fx: "spin",
+    size: 14
+  })))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 9,
@@ -2633,7 +2912,7 @@ function WordOfDay() {
     style: {
       fontFamily: 'Cormorant Garamond,serif',
       fontStyle: 'italic',
-      fontSize: 28,
+      fontSize: 26,
       fontWeight: 300,
       color: C.text,
       lineHeight: 1,
@@ -2676,7 +2955,7 @@ function WordOfDay() {
       borderRadius: 100,
       display: 'inline-block'
     }
-  }, "🇫🇷 ", word.french));
+  }, "\uD83C\uDDEB\uD83C\uDDF7 ", word.french));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2823,7 +3102,7 @@ function RemindersWidget() {
         borderRadius: 100,
         letterSpacing: '0.06em'
       }
-    }, "único"), dateStr && /*#__PURE__*/React.createElement("span", {
+    }, "\xFAnico"), dateStr && /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 9,
@@ -2888,16 +3167,6 @@ function DeadlineRadar() {
       pill: 'rgba(16,185,129,0.18)'
     }
   };
-  const TYPE_ICON = {
-    reminder: '🔔',
-    task: '☑️',
-    wishlist: '🛍️'
-  };
-  const TYPE_LABEL = {
-    reminder: 'recordatorio',
-    task: 'tarea gtd',
-    wishlist: 'wishlist'
-  };
   return /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: 14
@@ -2935,16 +3204,17 @@ function DeadlineRadar() {
       color: C.textMuted,
       opacity: 0.45
     }
-  }, deadlines.length, " próximos")), /*#__PURE__*/React.createElement("div", {
+  }, deadlines.length, " pr\xF3ximos")), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-      gap: 10
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8
     }
   }, deadlines.map((dl, i) => {
     const p = PAL[dl.level] || PAL.green;
     const urgent = dl.level === 'red';
     const sublabel = dl.days > 0 ? 'DÍAS' : dl.days === 0 ? 'DEADLINE' : 'EXPIRADO';
+    const TypeIcon = DEADLINE_TYPE_ICON[dl.type] || IconBell;
     const isChecking = checking[dl.id];
     return /*#__PURE__*/React.createElement("div", {
       key: `${dl.type}-${dl.id ?? i}`,
@@ -2985,23 +3255,23 @@ function DeadlineRadar() {
       style: {
         display: 'flex',
         alignItems: 'center',
-        gap: 5
+        gap: 5,
+        color: p.text,
+        opacity: 0.75
       }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 10,
-        lineHeight: 1
-      }
-    }, TYPE_ICON[dl.type] || '📌'), /*#__PURE__*/React.createElement("span", {
+    }, /*#__PURE__*/React.createElement(TypeIcon, {
+      size: 10,
+      style: urgent ? {
+        animation: 'euIconWiggle 1.8s ease-in-out infinite'
+      } : undefined
+    }), /*#__PURE__*/React.createElement("span", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 8,
         letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        color: p.text,
-        opacity: 0.65
+        textTransform: 'uppercase'
       }
-    }, TYPE_LABEL[dl.type] || dl.type)), /*#__PURE__*/React.createElement("button", {
+    }, DEADLINE_TYPE_LABEL[dl.type] || dl.type)), /*#__PURE__*/React.createElement("button", {
       onClick: () => handleCheck(dl),
       title: "Marcar como cumplido",
       style: {
@@ -3020,14 +3290,12 @@ function DeadlineRadar() {
       },
       onMouseEnter: e => e.currentTarget.style.background = p.pill,
       onMouseLeave: e => e.currentTarget.style.background = 'transparent'
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        color: p.border,
-        fontSize: 11,
-        lineHeight: 1,
-        fontWeight: 700
-      }
-    }, "✓"))), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(IconHoverFx, {
+      Icon: IconCheck,
+      fx: "pop",
+      size: 10,
+      color: p.border
+    }))), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 12,
@@ -3094,29 +3362,176 @@ function DeadlineRadar() {
 // ═══════════════════════════════════════════════════════════
 const TIERS = [{
   rank: 'carbon',
-  icon: '🪨',
+  Icon: IconMountain,
   label: 'Carbón',
-  color: '#475569',
+  color: '#94a3b8',
   threshold: 0
 }, {
   rank: 'iron',
-  icon: '⚔️',
+  Icon: IconSwords,
   label: 'Hierro',
-  color: '#94a3b8',
+  color: '#eab308',
   threshold: 8
 }, {
   rank: 'gold',
-  icon: '🥇',
+  Icon: IconMedal,
   label: 'Oro',
   color: '#fbbf24',
   threshold: 16
 }, {
   rank: 'diamond',
-  icon: '💎',
+  Icon: IconGem,
   label: 'Diamante',
   color: '#7dd3fc',
   threshold: 20
 }];
+function titleCase(s) {
+  return s.charAt(0) + s.slice(1).toLowerCase();
+}
+function SuggestionCard({
+  suggestion,
+  onClick,
+  tint
+}) {
+  const [hov, setHov] = useState(false);
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClick,
+    onMouseEnter: () => setHov(true),
+    onMouseLeave: () => setHov(false),
+    style: {
+      background: tint.bg,
+      border: `1px solid ${tint.border}`,
+      borderRadius: 12,
+      padding: '14px 16px',
+      marginBottom: 14,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      transform: hov ? 'translateY(-2px)' : 'translateY(0)',
+      boxShadow: hov ? '0 10px 24px rgba(0,0,0,0.3)' : 'none',
+      transition: 'transform 0.18s, box-shadow 0.18s'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 34,
+      height: 34,
+      borderRadius: 9,
+      background: 'rgba(0,0,0,0.15)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement(IconZap, {
+    size: 16,
+    style: {
+      color: tint.text,
+      animation: 'euIconWiggle 2.4s ease-in-out infinite'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      letterSpacing: '0.16em',
+      textTransform: 'uppercase',
+      color: tint.text,
+      marginBottom: 4
+    }
+  }, "Un click cierra ", suggestion.cat), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: C.text
+    }
+  }, suggestion.label)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 13,
+      color: C.gold,
+      fontWeight: 600,
+      flexShrink: 0
+    }
+  }, "+", suggestion.pts, " XP"));
+}
+function ModuleStripCard({
+  mod,
+  onClick
+}) {
+  const [hov, setHov] = useState(false);
+  const acc = EU.catTint(mod.hue, 'text');
+  const Icon = MODULE_ICONS[mod.id] || IconTerminal;
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClick,
+    onMouseEnter: () => setHov(true),
+    onMouseLeave: () => setHov(false),
+    style: {
+      background: C.card,
+      border: `1px solid ${mod.done ? acc : C.goldBorder}`,
+      borderRadius: 13,
+      padding: 14,
+      cursor: 'pointer',
+      boxShadow: mod.done ? `0 0 16px color-mix(in srgb, ${acc} 30%, transparent)` : 'none',
+      transform: hov ? 'translateY(-3px)' : 'translateY(0)',
+      transition: 'transform 0.18s, box-shadow 0.18s, border-color 0.18s'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      marginBottom: 10,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: `color-mix(in srgb, ${acc} 14%, transparent)`,
+      border: `1px solid color-mix(in srgb, ${acc} 35%, transparent)`
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    size: 17,
+    style: {
+      color: acc,
+      animation: mod.done ? 'euIconFloat 2.6s ease-in-out infinite' : hov ? 'euIconPulseScale 0.5s ease' : 'none'
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Cormorant Garamond,serif',
+      fontSize: 15,
+      fontWeight: 600,
+      color: C.text,
+      letterSpacing: '0.02em'
+    }
+  }, titleCase(mod.name)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 9.5,
+      color: C.textMuted,
+      marginTop: 2,
+      lineHeight: 1.35
+    }
+  }, mod.desc), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 5,
+      marginTop: 10,
+      fontSize: 9.5
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 6,
+      height: 6,
+      borderRadius: '50%',
+      background: mod.done ? acc : C.textMuted,
+      flexShrink: 0
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: mod.done ? acc : C.textMuted
+    }
+  }, mod.done ? `${mod.streak} días` : 'pendiente hoy')));
+}
 function HomeScreen({
   appState,
   dispatch,
@@ -3240,52 +3655,60 @@ function HomeScreen({
   })), (() => {
     const ci = Math.max(0, TIERS.findIndex(t => t.rank === clf.rank));
     const nt = TIERS[ci + 1] || null;
-    const col = TIERS[ci].color;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
-        alignItems: 'flex-start',
-        marginBottom: 8
+        alignItems: 'stretch',
+        gap: 6,
+        marginBottom: 10
       }
     }, TIERS.map((t, i) => {
-      const active = i === ci,
-        past = i < ci;
-      return /*#__PURE__*/React.createElement(React.Fragment, {
-        key: t.rank
-      }, /*#__PURE__*/React.createElement("div", {
+      const active = i === ci;
+      const TIcon = t.Icon;
+      return /*#__PURE__*/React.createElement("div", {
+        key: t.rank,
         style: {
+          flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 4,
-          flex: 1
+          gap: 6,
+          padding: '10px 4px',
+          borderRadius: 10,
+          border: `1px solid ${active ? t.color : 'transparent'}`,
+          background: active ? `color-mix(in srgb, ${t.color} 8%, transparent)` : 'transparent',
+          boxShadow: active ? `0 0 16px color-mix(in srgb, ${t.color} 25%, transparent)` : 'none',
+          transition: 'all 0.25s'
         }
       }, /*#__PURE__*/React.createElement("div", {
         style: {
-          width: active ? 9 : 5,
-          height: active ? 9 : 5,
+          width: 26,
+          height: 26,
           borderRadius: '50%',
-          background: active ? col : past ? `${col}55` : 'rgba(128,128,128,0.15)',
-          boxShadow: active ? `0 0 9px ${col}` : 'none',
-          transition: 'all 0.3s'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: active ? t.color : 'rgba(255,255,255,0.04)',
+          boxShadow: active ? `0 0 10px ${t.color}` : 'none',
+          transition: 'all 0.25s'
         }
-      }), /*#__PURE__*/React.createElement("div", {
+      }, /*#__PURE__*/React.createElement(TIcon, {
+        size: 13,
+        style: {
+          color: active ? '#09070F' : C.textMuted,
+          animation: active ? 'euIconPop 0.5s ease 0.1s both, euIconPulseScale 2.2s ease-in-out 1s infinite' : 'none'
+        }
+      })), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'DM Sans,sans-serif',
-          fontSize: 7,
-          color: active ? col : C.textMuted,
-          opacity: active ? 1 : past ? 0.55 : 0.28,
-          textAlign: 'center',
-          lineHeight: 1.3
+          fontSize: 9,
+          letterSpacing: '0.06em',
+          color: active ? t.color : C.textMuted,
+          fontWeight: active ? 600 : 400,
+          opacity: active ? 1 : 0.6,
+          textAlign: 'center'
         }
-      }, t.icon, /*#__PURE__*/React.createElement("br", null), t.label)), i < TIERS.length - 1 && /*#__PURE__*/React.createElement("div", {
-        style: {
-          height: 1,
-          flex: 1,
-          marginTop: 4,
-          background: i < ci ? `${col}35` : 'var(--b)'
-        }
-      }));
+      }, t.label));
     })), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
@@ -3297,12 +3720,12 @@ function HomeScreen({
       style: {
         color: C.textMuted
       }
-    }, nt ? `${nt.threshold - xpToday} XP → ${nt.label}` : '✦ Diamante alcanzado'), /*#__PURE__*/React.createElement("span", {
+    }, "Clasificaci\xF3n de hoy"), /*#__PURE__*/React.createElement("span", {
       style: {
         color: C.gold,
-        opacity: 0.7
+        opacity: 0.8
       }
-    }, xpNext ? `${xpNext - xp} XP → ${EU.levels[level]?.name || ''}` : '')));
+    }, nt ? `${nt.threshold - xpToday} XP → ${nt.label}` : '✦ Diamante alcanzado')));
   })());
   const levelCard = /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3399,7 +3822,7 @@ function HomeScreen({
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'baseline',
-      marginBottom: 6
+      marginBottom: 8
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3409,7 +3832,7 @@ function HomeScreen({
       color: C.textMuted,
       textTransform: 'uppercase'
     }
-  }, "Módulos"), /*#__PURE__*/React.createElement("div", {
+  }, "M\xF3dulos"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.textMuted
@@ -3418,7 +3841,7 @@ function HomeScreen({
     style: {
       display: 'flex',
       gap: 3,
-      marginBottom: 10,
+      marginBottom: 14,
       height: 3,
       borderRadius: 2,
       overflow: 'hidden',
@@ -3434,62 +3857,18 @@ function HomeScreen({
     }
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
-      display: 'flex',
-      gap: 8,
-      overflowX: 'auto',
-      paddingBottom: 4,
-      scrollbarWidth: 'none'
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(150px,1fr))',
+      gap: 10
     }
-  }, modules.map(mod => {
-    const acc = EU.catTint(mod.hue, 'text'),
-      accBg = EU.catTint(mod.hue, 'bg');
-    return /*#__PURE__*/React.createElement("div", {
-      key: mod.id,
-      onClick: () => mod.route ? window.location.href = mod.route : dispatch({
-        type: 'OPEN_MODULE',
-        id: mod.id
-      }),
-      style: {
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 5,
-        cursor: 'pointer'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 44,
-        height: 44,
-        borderRadius: 13,
-        background: mod.done ? accBg : C.card,
-        border: `1.5px solid ${mod.done ? acc : C.goldBorder}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: mod.done ? `0 0 14px ${accBg}` : 'none',
-        transition: 'all 0.3s'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        width: 7,
-        height: 7,
-        borderRadius: '50%',
-        background: mod.done ? acc : C.textMuted,
-        boxShadow: mod.done ? `0 0 6px ${acc}` : 'none'
-      }
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'DM Sans,sans-serif',
-        fontSize: 7,
-        color: mod.done ? acc : C.textMuted,
-        textAlign: 'center',
-        letterSpacing: '0.04em',
-        maxWidth: 46,
-        lineHeight: 1.2
-      }
-    }, mod.name.slice(0, 7)));
-  })));
+  }, modules.map(mod => /*#__PURE__*/React.createElement(ModuleStripCard, {
+    key: mod.id,
+    mod: mod,
+    onClick: () => mod.route ? window.location.href = mod.route : dispatch({
+      type: 'OPEN_MODULE',
+      id: mod.id
+    })
+  }))));
   const heatmapCard = /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
@@ -3513,7 +3892,7 @@ function HomeScreen({
       opacity: 0.7,
       textTransform: 'uppercase'
     }
-  }, "Racha · ", streak, " días"), /*#__PURE__*/React.createElement("a", {
+  }, "Racha \xB7 ", streak, " d\xEDas"), /*#__PURE__*/React.createElement("a", {
     href: "/logros",
     style: {
       fontSize: 10,
@@ -3521,47 +3900,19 @@ function HomeScreen({
       opacity: 0.6,
       textDecoration: 'none'
     }
-  }, "Ver historial →")), /*#__PURE__*/React.createElement(StreakHeatmap, {
+  }, "Ver historial \u2192")), /*#__PURE__*/React.createElement(StreakHeatmap, {
     days: 21,
     compact: true
   }));
-  const suggestionCard = suggestion && /*#__PURE__*/React.createElement("div", {
+  const suggestionCard = suggestion && /*#__PURE__*/React.createElement(SuggestionCard, {
+    suggestion: suggestion,
     onClick: () => logActivityFromHome(suggestion.key),
-    style: {
-      background: EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'bg'),
-      border: `1px solid ${EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'border')}`,
-      borderRadius: 12,
-      padding: '14px 16px',
-      marginBottom: 14,
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12
+    tint: {
+      bg: EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'bg'),
+      border: EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'border'),
+      text: EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'text')
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      letterSpacing: '0.16em',
-      textTransform: 'uppercase',
-      color: EU.catTint((EU.catHues || {})[suggestion.cat] || 45, 'text'),
-      marginBottom: 4
-    }
-  }, "Un click cierra ", suggestion.cat), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 14,
-      color: C.text
-    }
-  }, suggestion.label)), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 13,
-      color: C.gold,
-      fontWeight: 600
-    }
-  }, "+", suggestion.pts, " XP"));
+  });
 
   // ── Desktop 2-column layout ─────────────────────────────────
   if (isDesktop) {
@@ -3599,7 +3950,7 @@ function HomeScreen({
         letterSpacing: '0.14em',
         marginTop: 1
       }
-    }, "Ε Υ Δ Α Ι Μ Ο Ν Ι Α")), /*#__PURE__*/React.createElement("div", {
+    }, "\u0395 \u03A5 \u0394 \u0391 \u0399 \u039C \u039F \u039D \u0399 \u0391")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
@@ -3611,19 +3962,26 @@ function HomeScreen({
         background: 'var(--gold-bg)',
         border: '1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
         borderRadius: 6,
-        padding: '4px 10px',
+        padding: '5px 10px',
         color: C.gold,
-        fontSize: 10,
+        fontSize: 11,
         cursor: 'pointer',
         fontFamily: 'DM Sans,sans-serif',
-        letterSpacing: '0.05em'
+        letterSpacing: '0.05em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5
       }
-    }, "⌘ K"), /*#__PURE__*/React.createElement("a", {
+    }, /*#__PURE__*/React.createElement(IconHoverFx, {
+      Icon: IconCommand,
+      fx: "wiggle",
+      size: 11
+    }), " K"), /*#__PURE__*/React.createElement("a", {
       href: "/logros",
       style: {
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 4,
+        gap: 5,
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 9,
         color: C.gold,
@@ -3631,7 +3989,11 @@ function HomeScreen({
         textDecoration: 'none',
         letterSpacing: '0.08em'
       }
-    }, "🏆 Logros"))), /*#__PURE__*/React.createElement("div", {
+    }, /*#__PURE__*/React.createElement(IconHoverFx, {
+      Icon: IconTrophy,
+      fx: "pop",
+      size: 11
+    }), " Logros"))), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'grid',
         gridTemplateColumns: '1fr 380px',
@@ -3641,7 +4003,8 @@ function HomeScreen({
       }
     }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
-        marginBottom: 20
+        marginBottom: 20,
+        animation: 'euRise 0.5s ease 0.02s both'
       }
     }, /*#__PURE__*/React.createElement("div", {
       style: {
@@ -3649,18 +4012,50 @@ function HomeScreen({
         fontSize: 26,
         color: C.text
       }
-    }, "Buenos días, Gio."), /*#__PURE__*/React.createElement("div", {
+    }, "Buenos d\xEDas, Gio."), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 11,
         color: C.textMuted,
         marginTop: 3
       }
-    }, fmtDate(), " · día ", streak, " de tu racha")), heroXp, suggestionCard, levelCard, modulesStrip, /*#__PURE__*/React.createElement(ReflexionDelDia, null)), /*#__PURE__*/React.createElement("div", {
+    }, fmtDate(), " \xB7 d\xEDa ", streak, " de tu racha")), /*#__PURE__*/React.createElement("div", {
+      style: {
+        animation: 'euRise 0.5s ease 0.06s both'
+      }
+    }, heroXp), suggestionCard && /*#__PURE__*/React.createElement("div", {
+      style: {
+        animation: 'euRise 0.5s ease 0.10s both'
+      }
+    }, suggestionCard), /*#__PURE__*/React.createElement("div", {
+      style: {
+        animation: 'euRise 0.5s ease 0.14s both'
+      }
+    }, levelCard), /*#__PURE__*/React.createElement("div", {
+      style: {
+        animation: 'euRise 0.5s ease 0.18s both'
+      }
+    }, modulesStrip), /*#__PURE__*/React.createElement("div", {
+      style: {
+        animation: 'euRise 0.5s ease 0.24s both'
+      }
+    }, /*#__PURE__*/React.createElement(ReflexionDelDia, null))), /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'sticky',
         top: 80
       }
-    }, heatmapCard, /*#__PURE__*/React.createElement(WordOfDay, null), /*#__PURE__*/React.createElement(DeadlineRadar, null))));
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        animation: 'euRise 0.5s ease 0.08s both'
+      }
+    }, heatmapCard), /*#__PURE__*/React.createElement("div", {
+      style: {
+        animation: 'euRise 0.5s ease 0.14s both'
+      }
+    }, /*#__PURE__*/React.createElement(WordOfDay, null)), /*#__PURE__*/React.createElement("div", {
+      style: {
+        animation: 'euRise 0.5s ease 0.20s both'
+      }
+    }, /*#__PURE__*/React.createElement(DeadlineRadar, null)))));
   }
 
   // ── Mobile layout ───────────────────────────────────────────
@@ -3703,12 +4098,12 @@ function HomeScreen({
       letterSpacing: '0.18em',
       marginTop: 1
     }
-  }, "ΕΥΔΑΙΜΟΝΙΑ")), /*#__PURE__*/React.createElement("a", {
+  }, "\u0395\u03A5\u0394\u0391\u0399\u039C\u039F\u039D\u0399\u0391")), /*#__PURE__*/React.createElement("a", {
     href: "/logros",
     style: {
       display: 'inline-flex',
       alignItems: 'center',
-      gap: 4,
+      gap: 5,
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 9,
       color: C.gold,
@@ -3717,13 +4112,18 @@ function HomeScreen({
       letterSpacing: '0.08em',
       paddingTop: 4
     }
-  }, "🏆 Logros"))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(IconHoverFx, {
+    Icon: IconTrophy,
+    fx: "pop",
+    size: 11
+  }), " Logros"))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 16px'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      padding: '20px 0 12px'
+      padding: '20px 0 12px',
+      animation: 'euRise 0.5s ease 0.02s both'
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3731,13 +4131,45 @@ function HomeScreen({
       fontSize: 22,
       color: C.text
     }
-  }, "Buenos días, Gio."), /*#__PURE__*/React.createElement("div", {
+  }, "Buenos d\xEDas, Gio."), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 11,
       color: C.textMuted,
       marginTop: 2
     }
-  }, fmtDate(), " · día ", streak, " de tu racha")), heroXp, suggestionCard, levelCard, modulesStrip, heatmapCard, /*#__PURE__*/React.createElement(ReflexionDelDia, null), /*#__PURE__*/React.createElement(WordOfDay, null), /*#__PURE__*/React.createElement(DeadlineRadar, null)));
+  }, fmtDate(), " \xB7 d\xEDa ", streak, " de tu racha")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: 'euRise 0.5s ease 0.06s both'
+    }
+  }, heroXp), suggestionCard && /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: 'euRise 0.5s ease 0.10s both'
+    }
+  }, suggestionCard), /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: 'euRise 0.5s ease 0.14s both'
+    }
+  }, levelCard), /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: 'euRise 0.5s ease 0.18s both'
+    }
+  }, modulesStrip), /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: 'euRise 0.5s ease 0.22s both'
+    }
+  }, heatmapCard), /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: 'euRise 0.5s ease 0.26s both'
+    }
+  }, /*#__PURE__*/React.createElement(ReflexionDelDia, null)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: 'euRise 0.5s ease 0.30s both'
+    }
+  }, /*#__PURE__*/React.createElement(WordOfDay, null)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      animation: 'euRise 0.5s ease 0.34s both'
+    }
+  }, /*#__PURE__*/React.createElement(DeadlineRadar, null))));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3780,7 +4212,7 @@ function CommandCenterScreen({
       color: C.text,
       letterSpacing: '0.05em'
     }
-  }, "Módulos"), /*#__PURE__*/React.createElement("div", {
+  }, "M\xF3dulos"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 11,
@@ -3851,14 +4283,14 @@ function CommandCenterScreen({
       textTransform: 'uppercase',
       marginTop: 3
     }
-  }, "Ejecución de la voluntad · GTD")), /*#__PURE__*/React.createElement("div", {
+  }, "Ejecuci\xF3n de la voluntad \xB7 GTD")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'Cormorant Garamond,serif',
       fontSize: 22,
       color: C.gold,
       opacity: 0.5
     }
-  }, "→")), /*#__PURE__*/React.createElement("a", {
+  }, "\u2192")), /*#__PURE__*/React.createElement("a", {
     href: "/logros",
     style: {
       gridColumn: '1/-1',
@@ -3881,7 +4313,7 @@ function CommandCenterScreen({
       color: C.text,
       letterSpacing: '0.08em'
     }
-  }, "🏆 LOGROS"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83C\uDFC6 LOGROS"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 9,
@@ -3890,14 +4322,14 @@ function CommandCenterScreen({
       textTransform: 'uppercase',
       marginTop: 3
     }
-  }, "Trofeos · Clasificación · Historial XP")), /*#__PURE__*/React.createElement("div", {
+  }, "Trofeos \xB7 Clasificaci\xF3n \xB7 Historial XP")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'Cormorant Garamond,serif',
       fontSize: 22,
       color: C.gold,
       opacity: 0.5
     }
-  }, "→"))));
+  }, "\u2192"))));
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -3944,7 +4376,7 @@ function ModuleDetailScreen({
       alignItems: 'center',
       gap: 6
     }
-  }, "← Módulos")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2190 M\xF3dulos")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 9,
@@ -4003,7 +4435,7 @@ function OikonomiaExtra() {
       color: C.textMuted,
       letterSpacing: '0.1em'
     }
-  }, "cargando…");
+  }, "cargando\u2026");
   if (!data || data.locked) return /*#__PURE__*/React.createElement("div", {
     style: {
       background: C.card,
@@ -4019,14 +4451,14 @@ function OikonomiaExtra() {
       color: GOLD,
       marginBottom: 8
     }
-  }, "Oikonomia 🔒"), /*#__PURE__*/React.createElement("div", {
+  }, "Oikonomia \uD83D\uDD12"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 11,
       color: C.textMuted,
       marginBottom: 18
     }
-  }, "Activa tu módulo financiero para ver tu patrimonio neto."), /*#__PURE__*/React.createElement("a", {
+  }, "Activa tu m\xF3dulo financiero para ver tu patrimonio neto."), /*#__PURE__*/React.createElement("a", {
     href: "/finanzas/",
     style: {
       display: 'inline-block',
@@ -4039,7 +4471,7 @@ function OikonomiaExtra() {
       borderRadius: 10,
       textDecoration: 'none'
     }
-  }, "Desbloquear Oikonomia 🔒"));
+  }, "Desbloquear Oikonomia \uD83D\uDD12"));
   const trendPos = data.trend_pct >= 0;
   const trendSymbol = trendPos ? '▲' : '▼';
   const trendColor = trendPos ? '#7BC49A' : '#E59B92';
@@ -4174,7 +4606,7 @@ function OikonomiaExtra() {
       color: 'rgba(242,237,224,0.4)',
       fontSize: 11
     }
-  }, "· ", data.trend_delta > 0 ? '+' : '', fmt(data.trend_delta), " este mes")), sparkBars, /*#__PURE__*/React.createElement("div", {
+  }, "\xB7 ", data.trend_delta > 0 ? '+' : '', fmt(data.trend_delta), " este mes")), sparkBars, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
       display: 'flex',
@@ -4236,14 +4668,14 @@ function OikonomiaExtra() {
       flexShrink: 0,
       fontSize: 14
     }
-  }, "🔔"), /*#__PURE__*/React.createElement("div", {
+  }, "\uD83D\uDD14"), /*#__PURE__*/React.createElement("div", {
     style: {
       flex: 1,
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 13,
       color: C.text
     }
-  }, "Hoy · pagar", ' ', data.pay_alerts.map(a => /*#__PURE__*/React.createElement("span", {
+  }, "Hoy \xB7 pagar", ' ', data.pay_alerts.map(a => /*#__PURE__*/React.createElement("span", {
     key: a.label,
     style: {
       color: a.color,
@@ -4255,7 +4687,7 @@ function OikonomiaExtra() {
       fontSize: 14,
       color: 'rgba(201,168,76,0.6)'
     }
-  }, "→")), /*#__PURE__*/React.createElement("div", {
+  }, "\u2192")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 10,
@@ -4264,7 +4696,7 @@ function OikonomiaExtra() {
       textTransform: 'uppercase',
       margin: '0 0 10px 2px'
     }
-  }, "Núcleo"), /*#__PURE__*/React.createElement("div", {
+  }, "N\xFAcleo"), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -4396,335 +4828,576 @@ function OikonomiaExtra() {
     }
   }, chip.label)))));
 }
-function HegemonikonExtra({ acc, isDesktop }) {
+function HegemonikonExtra({
+  acc,
+  isDesktop
+}) {
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   React.useEffect(() => {
-    fetch("/bienestar/api/hegemonikon-summary").then((r) => r.json()).then((d) => {
+    fetch('/bienestar/api/hegemonikon-summary').then(r => r.json()).then(d => {
       setData(d);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
-  if (loading) return /* @__PURE__ */ React.createElement("div", { style: {
-    textAlign: "center",
-    padding: "24px 0",
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 11,
-    color: C.textMuted,
-    letterSpacing: "0.1em"
-  } }, "cargando\u2026");
-  const b = data && data.body || {};
-  const nut = data && data.nutricion || { comidas_done: 0, comidas_total: 0, streak: 0, xp_today: 0 };
-  const salud = data && data.salud || { episodios_activos: 0, meds_activos: 0 };
-  const guard = data && data.guardarropa || { items: 0, outfits: 0 };
-  const rec = data && data.recetas || { total: 0, favoritas: 0 };
-  const futbol = data && data.futbol || { partidos: 0, rating: null };
-  const bodyRows = [
-    { label: "Peso", val: b.peso || "\u2014", sub: b.estatura ? `Estatura: ${b.estatura}` : "" },
-    { label: "Pecho", val: b.pecho || "\u2014", sub: b.cintura ? `Cintura: ${b.cintura}` : "" },
-    { label: "Hombros", val: b.hombros || "\u2014", sub: b.manga ? `Manga: ${b.manga}` : "" },
-    { label: "T. Camisa", val: b.t_camisa || "\u2014", sub: b.t_pantalon ? `Pantal\xF3n: ${b.t_pantalon}` : "" }
-  ];
-  const subs = [
-    {
-      href: "/bienestar/salud",
-      icon: "\u{1FA7A}",
-      label: "Salud",
-      hue: 350,
-      sub: salud.episodios_activos > 0 ? `${salud.episodios_activos} episodio${salud.episodios_activos !== 1 ? "s" : ""} activo${salud.episodios_activos !== 1 ? "s" : ""}` : "Al d\xEDa",
-      alert: salud.episodios_activos > 0
-    },
-    {
-      href: "/nutricion/",
-      icon: "\u{1F957}",
-      label: "Nutrici\xF3n",
-      hue: 140,
-      sub: `${nut.comidas_done}/${nut.comidas_total} comidas hoy \xB7 racha ${nut.streak}d`
-    },
-    {
-      href: "/guardarropa/",
-      icon: "\u{1F454}",
-      label: "Guardarropa",
-      hue: 280,
-      sub: `${guard.items} prendas \xB7 ${guard.outfits} outfits`
-    },
-    {
-      href: "/recetas/",
-      icon: "\u{1F373}",
-      label: "Recetas",
-      hue: 40,
-      sub: `${rec.total} recetas \xB7 ${rec.favoritas} favoritas`
-    },
-    { href: "/perfil/", icon: "\u{1F464}", label: "Perfil", hue: 220, sub: "Datos personales \xB7 documentos" },
-    {
-      href: "/bienestar/futbol",
-      icon: "\u26BD",
-      label: "F\xFAtbol",
-      hue: 170,
-      sub: futbol.partidos > 0 ? `${futbol.partidos} partido${futbol.partidos !== 1 ? "s" : ""}${futbol.rating ? ` \xB7 rating ${futbol.rating}` : ""}` : "Registra tu primer partido"
+  if (loading) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '24px 0',
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 11,
+      color: C.textMuted,
+      letterSpacing: '0.1em'
     }
-  ];
+  }, "cargando\u2026");
+  const b = data && data.body || {};
+  const nut = data && data.nutricion || {
+    comidas_done: 0,
+    comidas_total: 0,
+    streak: 0,
+    xp_today: 0
+  };
+  const salud = data && data.salud || {
+    episodios_activos: 0,
+    meds_activos: 0
+  };
+  const guard = data && data.guardarropa || {
+    items: 0,
+    outfits: 0
+  };
+  const rec = data && data.recetas || {
+    total: 0,
+    favoritas: 0
+  };
+  const futbol = data && data.futbol || {
+    partidos: 0,
+    rating: null
+  };
+  const bodyRows = [{
+    label: 'Peso',
+    val: b.peso || '—',
+    sub: b.estatura ? `Estatura: ${b.estatura}` : ''
+  }, {
+    label: 'Pecho',
+    val: b.pecho || '—',
+    sub: b.cintura ? `Cintura: ${b.cintura}` : ''
+  }, {
+    label: 'Hombros',
+    val: b.hombros || '—',
+    sub: b.manga ? `Manga: ${b.manga}` : ''
+  }, {
+    label: 'T. Camisa',
+    val: b.t_camisa || '—',
+    sub: b.t_pantalon ? `Pantalón: ${b.t_pantalon}` : ''
+  }];
+  const subs = [{
+    href: '/bienestar/salud',
+    icon: '🩺',
+    label: 'Salud',
+    hue: 350,
+    sub: salud.episodios_activos > 0 ? `${salud.episodios_activos} episodio${salud.episodios_activos !== 1 ? 's' : ''} activo${salud.episodios_activos !== 1 ? 's' : ''}` : 'Al día',
+    alert: salud.episodios_activos > 0
+  }, {
+    href: '/nutricion/',
+    icon: '🥗',
+    label: 'Nutrición',
+    hue: 140,
+    sub: `${nut.comidas_done}/${nut.comidas_total} comidas hoy · racha ${nut.streak}d`
+  }, {
+    href: '/guardarropa/',
+    icon: '👔',
+    label: 'Guardarropa',
+    hue: 280,
+    sub: `${guard.items} prendas · ${guard.outfits} outfits`
+  }, {
+    href: '/recetas/',
+    icon: '🍳',
+    label: 'Recetas',
+    hue: 40,
+    sub: `${rec.total} recetas · ${rec.favoritas} favoritas`
+  }, {
+    href: '/perfil/',
+    icon: '👤',
+    label: 'Perfil',
+    hue: 220,
+    sub: 'Datos personales · documentos'
+  }, {
+    href: '/bienestar/futbol',
+    icon: '⚽',
+    label: 'Fútbol',
+    hue: 170,
+    sub: futbol.partidos > 0 ? `${futbol.partidos} partido${futbol.partidos !== 1 ? 's' : ''}${futbol.rating ? ` · rating ${futbol.rating}` : ''}` : 'Registra tu primer partido'
+  }];
+
+  // ── Sparkline de peso (últimos registros, más viejo→reciente) ──────────
   const sparkPts = data && data.peso_spark || [];
   const pesoSpark = sparkPts.length >= 2 && (() => {
-    const w = 84, h = 28, pad = 3;
-    const min = Math.min(...sparkPts), max = Math.max(...sparkPts);
+    const w = 84,
+      h = 28,
+      pad = 3;
+    const min = Math.min(...sparkPts),
+      max = Math.max(...sparkPts);
     const range = max - min || 1;
     const step = (w - pad * 2) / (sparkPts.length - 1);
-    const pts = sparkPts.map((v, i) => [
-      pad + i * step,
-      pad + (h - pad * 2) * (1 - (v - min) / range)
-    ]);
-    const path = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+    const pts = sparkPts.map((v, i) => [pad + i * step, pad + (h - pad * 2) * (1 - (v - min) / range)]);
+    const path = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
     const last = pts[pts.length - 1];
-    return /* @__PURE__ */ React.createElement("svg", { width: w, height: h, style: { flexShrink: 0 } }, /* @__PURE__ */ React.createElement("path", { d: path, fill: "none", stroke: acc, strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", opacity: "0.85" }), /* @__PURE__ */ React.createElement("circle", { cx: last[0], cy: last[1], r: "2.4", fill: acc }));
+    return /*#__PURE__*/React.createElement("svg", {
+      width: w,
+      height: h,
+      style: {
+        flexShrink: 0
+      }
+    }, /*#__PURE__*/React.createElement("path", {
+      d: path,
+      fill: "none",
+      stroke: acc,
+      strokeWidth: "1.6",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      opacity: "0.85"
+    }), /*#__PURE__*/React.createElement("circle", {
+      cx: last[0],
+      cy: last[1],
+      r: "2.4",
+      fill: acc
+    }));
   })();
-  const alertBanner = (salud.episodios_activos > 0 || salud.meds_activos > 0) && /* @__PURE__ */ React.createElement("div", { style: {
-    display: "flex",
-    alignItems: "center",
-    gap: 11,
-    background: "rgba(244,63,94,0.06)",
-    border: "1px solid rgba(244,63,94,0.25)",
-    borderLeft: "3px solid rgba(244,63,94,0.8)",
-    borderRadius: "0 11px 11px 0",
-    padding: "12px 15px",
-    marginBottom: 18
-  } }, /* @__PURE__ */ React.createElement("div", { style: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    background: "rgba(244,63,94,0.12)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    fontSize: 14
-  } }, "\u{1FA7A}"), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, fontFamily: "DM Sans,sans-serif", fontSize: 13, color: C.text } }, salud.episodios_activos, " episodio", salud.episodios_activos !== 1 ? "s" : "", " activo", salud.episodios_activos !== 1 ? "s" : "", salud.meds_activos > 0 && ` \xB7 ${salud.meds_activos} medicamento${salud.meds_activos !== 1 ? "s" : ""} en curso`), /* @__PURE__ */ React.createElement("a", { href: "/bienestar/salud", style: { fontSize: 14, color: "rgba(244,63,94,0.8)", textDecoration: "none" } }, "\u2192"));
-  const bodySection = /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 20 } }, /* @__PURE__ */ React.createElement("div", { style: {
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 9,
-    letterSpacing: "0.15em",
-    color: C.textMuted,
-    textTransform: "uppercase",
-    marginBottom: 10
-  } }, "M\xE9tricas Corporales"), bodyRows.map((r, i) => /* @__PURE__ */ React.createElement("div", { key: i, style: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "11px 0",
-    borderBottom: "1px solid color-mix(in srgb, var(--gold) 6%, transparent)"
-  } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 12, color: C.textSub } }, r.label), r.label === "Peso" && pesoSpark, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right" } }, /* @__PURE__ */ React.createElement("div", { style: {
-    fontFamily: "Cormorant Garamond,serif",
-    fontSize: 19,
-    color: acc,
-    display: "flex",
-    alignItems: "baseline",
-    gap: 6,
-    justifyContent: "flex-end"
-  } }, r.val, r.label === "Peso" && data && data.peso_trend != null && data.peso_trend !== 0 && /* @__PURE__ */ React.createElement("span", { style: {
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 10,
-    color: data.peso_trend < 0 ? "#7BC49A" : "#E59B92"
-  } }, data.peso_trend < 0 ? "\u25BC" : "\u25B2", " ", Math.abs(data.peso_trend))), r.sub && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 9, color: C.textMuted } }, r.sub)))));
-  const subsSection = /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: {
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 9,
-    letterSpacing: "0.15em",
-    color: C.textMuted,
-    textTransform: "uppercase",
-    marginBottom: 10
-  } }, "Subm\xF3dulos"), subs.map((s, i) => {
-    const tintBg = EU.catTint(s.hue, "bg");
-    const tintBorder = EU.catTint(s.hue, "border");
-    const tintText = EU.catTint(s.hue, "text");
-    return /* @__PURE__ */ React.createElement(
-      "a",
-      {
-        key: i,
-        href: s.href,
-        style: {
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: C.card,
-          border: `1px solid ${s.alert ? "rgba(244,63,94,0.4)" : "var(--gold-border)"}`,
-          borderRadius: 12,
-          padding: "12px 14px",
-          marginBottom: 8,
-          textDecoration: "none",
-          transform: "scale(1)",
-          transition: "border-color 0.18s, transform 0.18s, box-shadow 0.18s",
-          animation: `eu-fade-in 0.3s ease ${i * 0.04}s both`
-        },
-        onMouseEnter: (e) => {
-          e.currentTarget.style.borderColor = s.alert ? "rgba(244,63,94,0.4)" : tintBorder;
-          e.currentTarget.style.transform = "scale(1.015)";
-          e.currentTarget.style.boxShadow = `0 4px 16px ${tintBg}`;
-        },
-        onMouseLeave: (e) => {
-          e.currentTarget.style.borderColor = s.alert ? "rgba(244,63,94,0.4)" : "var(--gold-border)";
-          e.currentTarget.style.transform = "scale(1)";
-          e.currentTarget.style.boxShadow = "none";
-        }
+  const alertBanner = (salud.episodios_activos > 0 || salud.meds_activos > 0) && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 11,
+      background: 'rgba(244,63,94,0.06)',
+      border: '1px solid rgba(244,63,94,0.25)',
+      borderLeft: '3px solid rgba(244,63,94,0.8)',
+      borderRadius: '0 11px 11px 0',
+      padding: '12px 15px',
+      marginBottom: 18
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 30,
+      height: 30,
+      borderRadius: 8,
+      background: 'rgba(244,63,94,0.12)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      fontSize: 14
+    }
+  }, "\uD83E\uDE7A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 13,
+      color: C.text
+    }
+  }, salud.episodios_activos, " episodio", salud.episodios_activos !== 1 ? 's' : '', " activo", salud.episodios_activos !== 1 ? 's' : '', salud.meds_activos > 0 && ` · ${salud.meds_activos} medicamento${salud.meds_activos !== 1 ? 's' : ''} en curso`), /*#__PURE__*/React.createElement("a", {
+    href: "/bienestar/salud",
+    style: {
+      fontSize: 14,
+      color: 'rgba(244,63,94,0.8)',
+      textDecoration: 'none'
+    }
+  }, "\u2192"));
+  const bodySection = /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 9,
+      letterSpacing: '0.15em',
+      color: C.textMuted,
+      textTransform: 'uppercase',
+      marginBottom: 10
+    }
+  }, "M\xE9tricas Corporales"), bodyRows.map((r, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: '11px 0',
+      borderBottom: '1px solid color-mix(in srgb, var(--gold) 6%, transparent)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 12,
+      color: C.textSub
+    }
+  }, r.label), r.label === 'Peso' && pesoSpark, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'right'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Cormorant Garamond,serif',
+      fontSize: 19,
+      color: acc,
+      display: 'flex',
+      alignItems: 'baseline',
+      gap: 6,
+      justifyContent: 'flex-end'
+    }
+  }, r.val, r.label === 'Peso' && data && data.peso_trend != null && data.peso_trend !== 0 && /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 10,
+      color: data.peso_trend < 0 ? '#7BC49A' : '#E59B92'
+    }
+  }, data.peso_trend < 0 ? '▼' : '▲', " ", Math.abs(data.peso_trend))), r.sub && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 9,
+      color: C.textMuted
+    }
+  }, r.sub)))));
+  const subsSection = /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 9,
+      letterSpacing: '0.15em',
+      color: C.textMuted,
+      textTransform: 'uppercase',
+      marginBottom: 10
+    }
+  }, "Subm\xF3dulos"), subs.map((s, i) => {
+    const tintBg = EU.catTint(s.hue, 'bg');
+    const tintBorder = EU.catTint(s.hue, 'border');
+    const tintText = EU.catTint(s.hue, 'text');
+    return /*#__PURE__*/React.createElement("a", {
+      key: i,
+      href: s.href,
+      style: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        background: C.card,
+        border: `1px solid ${s.alert ? 'rgba(244,63,94,0.4)' : 'var(--gold-border)'}`,
+        borderRadius: 12,
+        padding: '12px 14px',
+        marginBottom: 8,
+        textDecoration: 'none',
+        transform: 'scale(1)',
+        transition: 'border-color 0.18s, transform 0.18s, box-shadow 0.18s',
+        animation: `eu-fade-in 0.3s ease ${i * 0.04}s both`
       },
-      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 11 } }, /* @__PURE__ */ React.createElement("div", { style: {
+      onMouseEnter: e => {
+        e.currentTarget.style.borderColor = s.alert ? 'rgba(244,63,94,0.4)' : tintBorder;
+        e.currentTarget.style.transform = 'scale(1.015)';
+        e.currentTarget.style.boxShadow = `0 4px 16px ${tintBg}`;
+      },
+      onMouseLeave: e => {
+        e.currentTarget.style.borderColor = s.alert ? 'rgba(244,63,94,0.4)' : 'var(--gold-border)';
+        e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = 'none';
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 11
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
         width: 34,
         height: 34,
         borderRadius: 10,
         flexShrink: 0,
         background: tintBg,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         fontSize: 16
-      } }, s.icon), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 13, color: C.text } }, s.label), /* @__PURE__ */ React.createElement("div", { style: {
-        fontFamily: "DM Sans,sans-serif",
+      }
+    }, s.icon), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 13,
+        color: C.text
+      }
+    }, s.label), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'DM Sans,sans-serif',
         fontSize: 10,
-        color: s.alert ? "#E59B92" : C.textMuted,
+        color: s.alert ? '#E59B92' : C.textMuted,
         marginTop: 1
-      } }, s.sub))),
-      /* @__PURE__ */ React.createElement("span", { style: { color: tintText, fontSize: 15, opacity: 0.7 } }, "\u203A")
-    );
+      }
+    }, s.sub))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: tintText,
+        fontSize: 15,
+        opacity: 0.7
+      }
+    }, "\u203A"));
   }));
-  const fadeKeyframes = /* @__PURE__ */ React.createElement("style", null, `@keyframes eu-fade-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }`);
+  const fadeKeyframes = /*#__PURE__*/React.createElement("style", null, `@keyframes eu-fade-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }`);
   if (isDesktop) {
-    return /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 340px", gap: "0 28px", alignItems: "start" } }, fadeKeyframes, /* @__PURE__ */ React.createElement("div", null, alertBanner, bodySection), /* @__PURE__ */ React.createElement("div", { style: { position: "sticky", top: 24 } }, subsSection));
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 340px',
+        gap: '0 28px',
+        alignItems: 'start'
+      }
+    }, fadeKeyframes, /*#__PURE__*/React.createElement("div", null, alertBanner, bodySection), /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'sticky',
+        top: 24
+      }
+    }, subsSection));
   }
-  return /* @__PURE__ */ React.createElement("div", null, fadeKeyframes, alertBanner, subsSection, bodySection);
+  return /*#__PURE__*/React.createElement("div", null, fadeKeyframes, alertBanner, subsSection, bodySection);
 }
-function PaideiaExtra({ acc }) {
+function PaideiaExtra({
+  acc
+}) {
   const [data, setData] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [tip, setTip] = React.useState(null);
   const [tipSpin, setTipSpin] = React.useState(false);
   React.useEffect(() => {
-    fetch("/paideia/api/summary").then((r) => r.json()).then((d) => {
+    fetch('/paideia/api/summary').then(r => r.json()).then(d => {
       setData(d);
       setTip(d.tip);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
-  const refreshTip = (e) => {
+  const refreshTip = e => {
     e.preventDefault();
     setTipSpin(true);
-    fetch("/paideia/api/tip/refresh").then((r) => r.json()).then((t) => {
+    fetch('/paideia/api/tip/refresh').then(r => r.json()).then(t => {
       setTip(t);
       setTipSpin(false);
     }).catch(() => setTipSpin(false));
   };
-  if (loading) return /* @__PURE__ */ React.createElement("div", { style: {
-    textAlign: "center",
-    padding: "24px 0",
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 11,
-    color: C.textMuted,
-    letterSpacing: "0.1em"
-  } }, "cargando\u2026");
-  const stats = data && data.stats || { meta_anual: 12, leidos_este_anio: 0, total_leidos: 0, leyendo: 0, por_leer: 0, rating_prom: null };
+  if (loading) return /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: 'center',
+      padding: '24px 0',
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 11,
+      color: C.textMuted,
+      letterSpacing: '0.1em'
+    }
+  }, "cargando\u2026");
+  const stats = data && data.stats || {
+    meta_anual: 12,
+    leidos_este_anio: 0,
+    total_leidos: 0,
+    leyendo: 0,
+    por_leer: 0,
+    rating_prom: null
+  };
   const leyendo = data && data.leyendo;
   const pct = stats.meta_anual > 0 ? Math.min(100, stats.leidos_este_anio / stats.meta_anual * 100) : 0;
-  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("style", null, `@keyframes eu-fade-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }`), /* @__PURE__ */ React.createElement("a", { href: "/paideia/", style: {
-    display: "block",
-    textDecoration: "none",
-    background: `linear-gradient(135deg, ${acc}, color-mix(in srgb, ${acc} 60%, white))`,
-    borderRadius: 16,
-    padding: "16px 18px",
-    marginBottom: 16,
-    animation: "eu-fade-in 0.3s ease both"
-  } }, /* @__PURE__ */ React.createElement("div", { style: {
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 10,
-    fontWeight: 600,
-    color: "rgba(9,7,15,0.65)",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    marginBottom: 6
-  } }, "Meta de lectura"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Cormorant Garamond,serif", fontSize: 26, fontWeight: 700, color: "#09070F", marginBottom: 10 } }, stats.leidos_este_anio, " / ", stats.meta_anual, " libros"), /* @__PURE__ */ React.createElement("div", { style: { height: 6, borderRadius: 3, background: "rgba(9,7,15,0.15)", overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: { height: "100%", borderRadius: 3, background: "#09070F", width: `${pct}%`, transition: "width 0.6s ease" } }))), leyendo && /* @__PURE__ */ React.createElement("a", { href: "/paideia/", style: {
-    display: "block",
-    textDecoration: "none",
-    background: C.card,
-    border: "1px solid var(--gold-border)",
-    borderRadius: 14,
-    padding: "14px 16px",
-    marginBottom: 16,
-    animation: "eu-fade-in 0.3s ease 0.05s both"
-  } }, /* @__PURE__ */ React.createElement("div", { style: {
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 9,
-    letterSpacing: "0.12em",
-    color: C.textMuted,
-    textTransform: "uppercase",
-    marginBottom: 8
-  } }, "Leyendo ahora"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 14, fontWeight: 600, color: C.text } }, leyendo.titulo), leyendo.autor && /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 11, color: C.textMuted, marginTop: 1 } }, leyendo.autor), leyendo.paginas_totales > 0 && /* @__PURE__ */ React.createElement("div", { style: { height: 4, borderRadius: 2, background: "var(--gold-bg, rgba(201,168,76,0.15))", overflow: "hidden", marginTop: 9 } }, /* @__PURE__ */ React.createElement("div", { style: {
-    height: "100%",
-    borderRadius: 2,
-    background: acc,
-    width: `${Math.min(100, leyendo.paginas_actuales / leyendo.paginas_totales * 100)}%`
-  } }))), tip && /* @__PURE__ */ React.createElement("div", { style: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 10,
-    background: C.card,
-    border: "1px solid var(--gold-border)",
-    borderRadius: 14,
-    padding: "14px 16px",
-    marginBottom: 16,
-    animation: "eu-fade-in 0.3s ease 0.1s both"
-  } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 18, flexShrink: 0 } }, tip.icon), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, fontFamily: "DM Sans,sans-serif", fontSize: 12, color: C.text, lineHeight: 1.5 } }, tip.text), /* @__PURE__ */ React.createElement("button", { onClick: refreshTip, title: "Otro tip", style: {
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: C.textMuted,
-    fontSize: 14,
-    flexShrink: 0,
-    transform: tipSpin ? "rotate(180deg)" : "none",
-    transition: "transform 0.3s"
-  } }, "\u21BB")), /* @__PURE__ */ React.createElement("div", { style: {
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 9,
-    letterSpacing: "0.15em",
-    color: C.textMuted,
-    textTransform: "uppercase",
-    marginBottom: 10
-  } }, "Subm\xF3dulos"), /* @__PURE__ */ React.createElement(
-    "a",
-    {
-      href: "/paideia/",
-      style: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        background: C.card,
-        border: "1px solid var(--gold-border)",
-        borderRadius: 12,
-        padding: "12px 14px",
-        textDecoration: "none",
-        transition: "border-color 0.18s, transform 0.18s",
-        animation: "eu-fade-in 0.3s ease 0.15s both"
-      },
-      onMouseEnter: (e) => {
-        e.currentTarget.style.borderColor = acc;
-        e.currentTarget.style.transform = "scale(1.01)";
-      },
-      onMouseLeave: (e) => {
-        e.currentTarget.style.borderColor = "var(--gold-border)";
-        e.currentTarget.style.transform = "scale(1)";
-      }
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("style", null, `@keyframes eu-fade-in { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }`), /*#__PURE__*/React.createElement("a", {
+    href: "/paideia/",
+    style: {
+      display: 'block',
+      textDecoration: 'none',
+      background: `linear-gradient(135deg, ${acc}, color-mix(in srgb, ${acc} 60%, white))`,
+      borderRadius: 16,
+      padding: '16px 18px',
+      marginBottom: 16,
+      animation: 'eu-fade-in 0.3s ease both'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 10,
+      fontWeight: 600,
+      color: 'rgba(9,7,15,0.65)',
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 6
+    }
+  }, "Meta de lectura"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'Cormorant Garamond,serif',
+      fontSize: 26,
+      fontWeight: 700,
+      color: '#09070F',
+      marginBottom: 10
+    }
+  }, stats.leidos_este_anio, " / ", stats.meta_anual, " libros"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 6,
+      borderRadius: 3,
+      background: 'rgba(9,7,15,0.15)',
+      overflow: 'hidden'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      borderRadius: 3,
+      background: '#09070F',
+      width: `${pct}%`,
+      transition: 'width 0.6s ease'
+    }
+  }))), leyendo && /*#__PURE__*/React.createElement("a", {
+    href: "/paideia/",
+    style: {
+      display: 'block',
+      textDecoration: 'none',
+      background: C.card,
+      border: '1px solid var(--gold-border)',
+      borderRadius: 14,
+      padding: '14px 16px',
+      marginBottom: 16,
+      animation: 'eu-fade-in 0.3s ease 0.05s both'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 9,
+      letterSpacing: '0.12em',
+      color: C.textMuted,
+      textTransform: 'uppercase',
+      marginBottom: 8
+    }
+  }, "Leyendo ahora"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 14,
+      fontWeight: 600,
+      color: C.text
+    }
+  }, leyendo.titulo), leyendo.autor && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 11,
+      color: C.textMuted,
+      marginTop: 1
+    }
+  }, leyendo.autor), leyendo.paginas_totales > 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: 4,
+      borderRadius: 2,
+      background: 'var(--gold-bg, rgba(201,168,76,0.15))',
+      overflow: 'hidden',
+      marginTop: 9
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      height: '100%',
+      borderRadius: 2,
+      background: acc,
+      width: `${Math.min(100, leyendo.paginas_actuales / leyendo.paginas_totales * 100)}%`
+    }
+  }))), tip && /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: 10,
+      background: C.card,
+      border: '1px solid var(--gold-border)',
+      borderRadius: 14,
+      padding: '14px 16px',
+      marginBottom: 16,
+      animation: 'eu-fade-in 0.3s ease 0.1s both'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 18,
+      flexShrink: 0
+    }
+  }, tip.icon), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 12,
+      color: C.text,
+      lineHeight: 1.5
+    }
+  }, tip.text), /*#__PURE__*/React.createElement("button", {
+    onClick: refreshTip,
+    title: "Otro tip",
+    style: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      color: C.textMuted,
+      fontSize: 14,
+      flexShrink: 0,
+      transform: tipSpin ? 'rotate(180deg)' : 'none',
+      transition: 'transform 0.3s'
+    }
+  }, "\u21BB")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 9,
+      letterSpacing: '0.15em',
+      color: C.textMuted,
+      textTransform: 'uppercase',
+      marginBottom: 10
+    }
+  }, "Subm\xF3dulos"), /*#__PURE__*/React.createElement("a", {
+    href: "/paideia/",
+    style: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      background: C.card,
+      border: '1px solid var(--gold-border)',
+      borderRadius: 12,
+      padding: '12px 14px',
+      textDecoration: 'none',
+      transition: 'border-color 0.18s, transform 0.18s',
+      animation: 'eu-fade-in 0.3s ease 0.15s both'
     },
-    /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 11 } }, /* @__PURE__ */ React.createElement("div", { style: {
+    onMouseEnter: e => {
+      e.currentTarget.style.borderColor = acc;
+      e.currentTarget.style.transform = 'scale(1.01)';
+    },
+    onMouseLeave: e => {
+      e.currentTarget.style.borderColor = 'var(--gold-border)';
+      e.currentTarget.style.transform = 'scale(1)';
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 11
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
       width: 34,
       height: 34,
       borderRadius: 10,
       flexShrink: 0,
-      background: EU.catTint(265, "bg"),
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
+      background: EU.catTint(265, 'bg'),
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       fontSize: 16
-    } }, "\u{1F4DA}"), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 13, color: C.text } }, "Libros"), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 10, color: C.textMuted, marginTop: 1 } }, stats.total_leidos, " le\xEDdos \xB7 ", stats.leyendo, " leyendo \xB7 ", stats.por_leer, " por leer"))),
-    /* @__PURE__ */ React.createElement("span", { style: { color: EU.catTint(265, "text"), fontSize: 15, opacity: 0.7 } }, "\u203A")
-  ));
+    }
+  }, "\uD83D\uDCDA"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 13,
+      color: C.text
+    }
+  }, "Libros"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontFamily: 'DM Sans,sans-serif',
+      fontSize: 10,
+      color: C.textMuted,
+      marginTop: 1
+    }
+  }, stats.total_leidos, " le\xEDdos \xB7 ", stats.leyendo, " leyendo \xB7 ", stats.por_leer, " por leer"))), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: EU.catTint(265, 'text'),
+      fontSize: 15,
+      opacity: 0.7
+    }
+  }, "\u203A")));
 }
-
 function ModuleExtra({
   id,
   acc,
@@ -4775,7 +5448,7 @@ function ModuleExtra({
       style: {
         fontSize: 18
       }
-    }, "🌍"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, "\uD83C\uDF0D"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 13,
@@ -4788,12 +5461,12 @@ function ModuleExtra({
         color: C.textMuted,
         marginTop: 1
       }
-    }, "Lecciones · Vocabulario · Práctica"))), /*#__PURE__*/React.createElement("span", {
+    }, "Lecciones \xB7 Vocabulario \xB7 Pr\xE1ctica"))), /*#__PURE__*/React.createElement("span", {
       style: {
         color: C.textMuted,
         fontSize: 14
       }
-    }, "›")), /*#__PURE__*/React.createElement("div", {
+    }, "\u203A")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 9,
@@ -4894,7 +5567,7 @@ function ModuleExtra({
         color: C.textMuted,
         fontSize: 14
       }
-    }, "›"));
+    }, "\u203A"));
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
@@ -4904,7 +5577,7 @@ function ModuleExtra({
         textTransform: 'uppercase',
         marginBottom: 10
       }
-    }, "Submódulos"), mkLink('/ataraxia/', '⚓', 'Ataraxia', 'Checklist semanal · Orden'), mkLink('/gtd/', '🎯', 'Praxis GTD', 'Inbox · Next Actions · Proyectos'), mkLink('/harma/', '🔧', 'HARMA', 'Mecánica · Mantenimiento del carro'));
+    }, "Subm\xF3dulos"), mkLink('/ataraxia/', '⚓', 'Ataraxia', 'Checklist semanal · Orden'), mkLink('/sabado/', '🧹', 'Sábado Reset', 'Ritual matutino de limpieza'), mkLink('/gtd/', '🎯', 'Praxis GTD', 'Inbox · Next Actions · Proyectos'));
   }
   if (id === 'logoi') {
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
@@ -4916,7 +5589,7 @@ function ModuleExtra({
         textTransform: 'uppercase',
         marginBottom: 10
       }
-    }, "Submódulos"), /*#__PURE__*/React.createElement("a", {
+    }, "Subm\xF3dulos"), /*#__PURE__*/React.createElement("a", {
       href: "/actividades",
       style: {
         display: 'flex',
@@ -4942,7 +5615,7 @@ function ModuleExtra({
       style: {
         fontSize: 18
       }
-    }, "💻"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCBB"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 13,
@@ -4955,21 +5628,14 @@ function ModuleExtra({
         color: C.textMuted,
         marginTop: 1
       }
-    }, "Programación · Lógica · Proyectos"))), /*#__PURE__*/React.createElement("span", {
+    }, "Programaci\xF3n \xB7 L\xF3gica \xB7 Proyectos"))), /*#__PURE__*/React.createElement("span", {
       style: {
         color: C.textMuted,
         fontSize: 14
       }
-    }, "›")));
+    }, "\u203A")));
   }
   if (id === 'eurythmia') {
-    const eury = srv.euryToday || {
-      min: 0,
-      xp: 0,
-      sessions: 0,
-      step: null
-    };
-    const practicedToday = eury.sessions > 0;
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       style: {
         fontFamily: 'DM Sans,sans-serif',
@@ -4979,103 +5645,51 @@ function ModuleExtra({
         textTransform: 'uppercase',
         marginBottom: 10
       }
-    }, "Práctica de hoy"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        background: C.card,
-        border: `1px solid ${practicedToday ? 'var(--gold-border)' : 'var(--b)'}`,
-        borderRadius: 14,
-        padding: '16px 18px',
-        marginBottom: 12
-      }
-    }, practicedToday ? /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'Cormorant Garamond,serif',
-        fontSize: 22,
-        color: acc
-      }
-    }, `${eury.min} min practicados · +${eury.xp} XP`, eury.step && /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontFamily: 'DM Sans,sans-serif',
-        fontSize: 12,
-        color: C.textMuted,
-        marginLeft: 8
-      }
-    }, eury.step)) : /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'DM Sans,sans-serif',
-        fontSize: 13,
-        color: C.textMuted
-      }
-    }, "Aún no has practicado hoy.")), /*#__PURE__*/React.createElement("a", {
-      href: "/eurythmia/",
+    }, "Subm\xF3dulos"), /*#__PURE__*/React.createElement("a", {
+      href: "/actividades",
       style: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: acc,
-        color: '#0d0810',
-        borderRadius: 12,
-        padding: '13px 16px',
-        textDecoration: 'none',
-        fontFamily: 'DM Sans,sans-serif',
-        fontSize: 13,
-        fontWeight: 600
-      }
-    }, /*#__PURE__*/React.createElement("span", null, "🕺  Ir a practicar"), /*#__PURE__*/React.createElement("span", null, "→")));
-  }
-  if (id === 'harma') {
-    const harma = srv.harmaSummary || {
-      vencidos: 0,
-      urgentes: 0,
-      km_actual: 0
-    };
-    const hasAlert = harma.vencidos > 0 || harma.urgentes > 0;
-    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'DM Sans,sans-serif',
-        fontSize: 9,
-        letterSpacing: '0.15em',
-        color: C.textMuted,
-        textTransform: 'uppercase',
-        marginBottom: 10
-      }
-    }, "Estado del veh\xEDculo"), /*#__PURE__*/React.createElement("div", {
-      style: {
         background: C.card,
-        border: `1px solid ${hasAlert ? 'rgba(244,63,94,0.35)' : 'var(--gold-border)'}`,
-        borderRadius: 14,
-        padding: '16px 18px',
-        marginBottom: 12
-      }
+        border: '1px solid var(--gold-border)',
+        borderRadius: 12,
+        padding: '11px 14px',
+        marginBottom: 8,
+        textDecoration: 'none',
+        transition: 'border-color 0.18s'
+      },
+      onMouseEnter: e => e.currentTarget.style.borderColor = acc,
+      onMouseLeave: e => e.currentTarget.style.borderColor = 'var(--gold-border)'
     }, /*#__PURE__*/React.createElement("div", {
       style: {
-        fontFamily: 'Cormorant Garamond,serif',
-        fontSize: 22,
-        color: hasAlert ? '#f43f5e' : acc,
-        marginBottom: 4
-      }
-    }, hasAlert ? `${harma.vencidos} vencido${harma.vencidos !== 1 ? 's' : ''} · ${harma.urgentes} urgente${harma.urgentes !== 1 ? 's' : ''}` : 'Mantenimiento al día'), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontFamily: 'DM Sans,sans-serif',
-        fontSize: 12,
-        color: C.textMuted
-      }
-    }, `${harma.km_actual.toLocaleString('es-MX')} km`)), /*#__PURE__*/React.createElement("a", {
-      href: "/harma/",
-      style: {
         display: 'flex',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        background: acc,
-        color: '#0d0810',
-        borderRadius: 12,
-        padding: '13px 16px',
-        textDecoration: 'none',
+        gap: 10
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 18
+      }
+    }, "\uD83D\uDD7A"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
         fontFamily: 'DM Sans,sans-serif',
         fontSize: 13,
-        fontWeight: 600
+        color: C.text
       }
-    }, /*#__PURE__*/React.createElement("span", null, "🔧  Ir a HARMA"), /*#__PURE__*/React.createElement("span", null, "→")));
+    }, "Acta Diurna"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontFamily: 'DM Sans,sans-serif',
+        fontSize: 10,
+        color: C.textMuted,
+        marginTop: 1
+      }
+    }, "Baile \xB7 Ritmo \xB7 Pr\xE1ctica"))), /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: C.textMuted,
+        fontSize: 14
+      }
+    }, "\u203A")));
   }
   return null;
 }
@@ -5249,7 +5863,7 @@ function PraxisInbox({
       padding: '0 2px',
       lineHeight: 1
     }
-  }, "×"))), /*#__PURE__*/React.createElement("div", {
+  }, "\xD7"))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'DM Sans,sans-serif',
       fontSize: 9,
@@ -5332,7 +5946,7 @@ function PraxisInbox({
       marginBottom: 18,
       textWrap: 'pretty'
     }
-  }, "\"La revisión semanal es el mantenimiento del sistema. Sin ella, el GTD colapsa.\""), EU.gtd.review.map((item, i) => /*#__PURE__*/React.createElement("div", {
+  }, "\"La revisi\xF3n semanal es el mantenimiento del sistema. Sin ella, el GTD colapsa.\""), EU.gtd.review.map((item, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     style: {
       display: 'flex',
@@ -5471,7 +6085,7 @@ function UndoToast({
       padding: '0 2px',
       lineHeight: 1
     }
-  }, "×"), /*#__PURE__*/React.createElement("div", {
+  }, "\xD7"), /*#__PURE__*/React.createElement("div", {
     key: toast.id,
     style: {
       position: 'absolute',
@@ -5830,7 +6444,7 @@ function ActaDiurnaScreen({
       opacity: 0.6,
       textTransform: 'uppercase'
     }
-  }, "Acta Diurna · XP hoy"), clf.rank && /*#__PURE__*/React.createElement("div", {
+  }, "Acta Diurna \xB7 XP hoy"), clf.rank && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -6086,10 +6700,10 @@ function ActaDiurnaScreen({
     }))));
   }), acts.length === 0 && /*#__PURE__*/React.createElement(EmptyState, {
     icon: "check-square",
-    title: "El día está en blanco",
-    desc: "Marcá tu primera virtud para abrir la cuenta de hoy.",
+    title: "El d\xEDa est\xE1 en blanco",
+    desc: "Marc\xE1 tu primera virtud para abrir la cuenta de hoy.",
     cta: "Empezar",
-    kbd: "↓",
+    kbd: "\u2193",
     onAction: () => {
       const first = document.querySelector('[data-cat]');
       if (first) {
@@ -6147,7 +6761,7 @@ function ProfileScreen({
       opacity: 0.6,
       marginBottom: 4
     }
-  }, "ΑΥΤΟΣ"), /*#__PURE__*/React.createElement("div", {
+  }, "\u0391\u03A5\u03A4\u039F\u03A3"), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'Cormorant Garamond,serif',
       fontSize: 28,
@@ -6187,14 +6801,14 @@ function ProfileScreen({
       marginTop: 3,
       opacity: 0.75
     }
-  }, "Medidas · Datos personales")), /*#__PURE__*/React.createElement("div", {
+  }, "Medidas \xB7 Datos personales")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: 'Cormorant Garamond,serif',
       fontSize: 22,
       color: C.gold,
       opacity: 0.5
     }
-  }, "→"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u2192"))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0 16px 20px'
     }
@@ -6305,7 +6919,7 @@ function ProfileScreen({
       textTransform: 'uppercase',
       marginBottom: 12
     }
-  }, "Camino al Eudaimón"), EU.levels.map(lv => /*#__PURE__*/React.createElement("div", {
+  }, "Camino al Eudaim\xF3n"), EU.levels.map(lv => /*#__PURE__*/React.createElement("div", {
     key: lv.n,
     style: {
       display: 'flex',

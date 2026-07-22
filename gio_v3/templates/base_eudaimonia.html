@@ -102,6 +102,36 @@
       from { transform: translateY(100%); }
       to   { transform: translateY(0);    }
     }
+    @keyframes euRise {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);     }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1;    }
+      50%      { opacity: 0.35; }
+    }
+    @keyframes euIconFloat {
+      0%, 100% { transform: translateY(0);     }
+      50%      { transform: translateY(-3px);  }
+    }
+    @keyframes euIconPulseScale {
+      0%, 100% { transform: scale(1);    }
+      50%      { transform: scale(1.18); }
+    }
+    @keyframes euIconWiggle {
+      0%, 100% { transform: rotate(0deg);   }
+      25%      { transform: rotate(-12deg); }
+      75%      { transform: rotate(12deg);  }
+    }
+    @keyframes euIconPop {
+      0%   { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+      60%  { transform: scale(1.15) rotate(6deg);  opacity: 1; }
+      100% { transform: scale(1) rotate(0deg);     }
+    }
+    @keyframes euIconSpinSlow {
+      from { transform: rotate(0deg);   }
+      to   { transform: rotate(360deg); }
+    }
 
     input, button { font-family: inherit; }
     input::placeholder { color: var(--muted); }

@@ -1,6 +1,167 @@
 // EUDAIMONIA — All Screens
 // hooks and C declared in eu-components.jsx (bundled before this file)
 
+// ═══════════════════════════════════════════════════════════
+// ICONS — hand-authored line icons (Lucide-style), self-contained
+// so the dashboard has no external icon CDN dependency to fail on.
+// ═══════════════════════════════════════════════════════════
+function EuIcon({ children, size = 16, viewBox = '0 0 24 24', fill = 'none', style, ...rest }) {
+  return (
+    <svg width={size} height={size} viewBox={viewBox} fill={fill} stroke="currentColor"
+      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+      style={{ display:'block', flexShrink:0, ...style }} {...rest}>
+      {children}
+    </svg>
+  );
+}
+const IconCommand = p => (
+  <EuIcon {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="4"/>
+    <circle cx="9" cy="9" r="1.4" fill="currentColor" stroke="none"/>
+    <circle cx="15" cy="9" r="1.4" fill="currentColor" stroke="none"/>
+    <circle cx="9" cy="15" r="1.4" fill="currentColor" stroke="none"/>
+    <circle cx="15" cy="15" r="1.4" fill="currentColor" stroke="none"/>
+  </EuIcon>
+);
+const IconTrophy = p => (
+  <EuIcon {...p}>
+    <path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/>
+    <path d="M8 5H5a2 2 0 0 0 0 4h2"/>
+    <path d="M16 5h3a2 2 0 0 1 0 4h-2"/>
+    <line x1="12" y1="13" x2="12" y2="17"/>
+    <line x1="9" y1="20" x2="15" y2="20"/>
+    <line x1="12" y1="17" x2="12" y2="20"/>
+  </EuIcon>
+);
+const IconMountain = p => (
+  <EuIcon {...p}><path d="M3 20 9 8 13 15 17 9 21 20z"/></EuIcon>
+);
+const IconSwords = p => (
+  <EuIcon {...p}>
+    <line x1="5" y1="19" x2="19" y2="5"/>
+    <line x1="19" y1="19" x2="5" y2="5"/>
+    <line x1="15" y1="9" x2="17" y2="7"/>
+    <line x1="9" y1="9" x2="7" y2="7"/>
+  </EuIcon>
+);
+const IconMedal = p => (
+  <EuIcon {...p}>
+    <circle cx="12" cy="15" r="5"/>
+    <path d="M9 11 6 3M15 11 18 3"/>
+    <path d="M9.5 15.5l1.3 1.5 2.2-3"/>
+  </EuIcon>
+);
+const IconGem = p => (
+  <EuIcon {...p}>
+    <path d="M6 3h12l4 6-10 12L2 9z"/>
+    <path d="M2 9h20M9 3l3 6-3 12M15 3l-3 6 3 12"/>
+  </EuIcon>
+);
+const IconZap = p => (
+  <EuIcon {...p} fill="currentColor">
+    <polygon points="13,2 3,14 11,14 9,22 21,10 13,10" stroke="none"/>
+  </EuIcon>
+);
+const IconRefreshCw = p => (
+  <EuIcon {...p}>
+    <path d="M21 12a9 9 0 0 1-15.5 6.5L3 16"/>
+    <polyline points="3 21 3 16 8 16"/>
+    <path d="M3 12a9 9 0 0 1 15.5-6.5L21 8"/>
+    <polyline points="21 3 21 8 16 8"/>
+  </EuIcon>
+);
+const IconBell = p => (
+  <EuIcon {...p}>
+    <path d="M12 3a5 5 0 0 0-5 5v3.5c0 1-.4 2-1.2 2.8L4 16h16l-1.8-1.7c-.8-.8-1.2-1.8-1.2-2.8V8a5 5 0 0 0-5-5z"/>
+    <path d="M9.5 19a2.5 2.5 0 0 0 5 0"/>
+  </EuIcon>
+);
+const IconCheckSquare = p => (
+  <EuIcon {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="3"/>
+    <polyline points="7 12 10.5 15.5 17 8.5"/>
+  </EuIcon>
+);
+const IconShoppingBag = p => (
+  <EuIcon {...p}>
+    <path d="M6 8h12l-1 12H7z"/>
+    <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+  </EuIcon>
+);
+const IconCheck = p => (
+  <EuIcon {...p}><polyline points="4 12 9.5 17.5 20 6"/></EuIcon>
+);
+const IconGlobe = p => (
+  <EuIcon {...p}>
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/>
+  </EuIcon>
+);
+const IconTerminal = p => (
+  <EuIcon {...p}>
+    <rect x="2" y="4" width="20" height="16" rx="2"/>
+    <polyline points="6 9 10 12 6 15"/>
+    <line x1="12" y1="15" x2="17" y2="15"/>
+  </EuIcon>
+);
+const IconMusic = p => (
+  <EuIcon {...p}>
+    <circle cx="6" cy="18" r="2.5"/>
+    <circle cx="17" cy="16" r="2.5"/>
+    <path d="M8.5 18V6l11-2v12"/>
+  </EuIcon>
+);
+const IconShieldCheck = p => (
+  <EuIcon {...p}>
+    <path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/>
+    <polyline points="9 12 11 14 15 9.5"/>
+  </EuIcon>
+);
+const IconWallet = p => (
+  <EuIcon {...p}>
+    <path d="M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <path d="M16 12h3v3h-3a1.5 1.5 0 0 1 0-3z"/>
+  </EuIcon>
+);
+const IconClipboardCheck = p => (
+  <EuIcon {...p}>
+    <rect x="5" y="4" width="14" height="17" rx="2"/>
+    <rect x="9" y="2" width="6" height="4" rx="1"/>
+    <polyline points="9 13 11 15 15 10.5"/>
+  </EuIcon>
+);
+const IconBookOpen = p => (
+  <EuIcon {...p}>
+    <path d="M12 6c-2-1.5-4.5-2-7-2v13c2.5 0 5 .5 7 2 2-1.5 4.5-2 7-2V4c-2.5 0-5 .5-7 2z"/>
+    <line x1="12" y1="6" x2="12" y2="19"/>
+  </EuIcon>
+);
+
+const MODULE_ICONS = {
+  hegemonikon: IconShieldCheck, oikonomia: IconWallet, ataraxia: IconClipboardCheck,
+  paideia: IconBookOpen, cosmopolitismo: IconGlobe, logoi: IconTerminal, eurythmia: IconMusic,
+};
+const DEADLINE_TYPE_ICON  = { reminder: IconBell, task: IconCheckSquare, wishlist: IconShoppingBag };
+const DEADLINE_TYPE_LABEL = { reminder: 'recordatorio', task: 'tarea gtd', wishlist: 'wishlist' };
+
+// ─── Small hover-triggered icon button (wiggle/pop/spin on hover) ─────────
+function IconHoverFx({ Icon, size = 14, fx = 'wiggle', color, style, iconStyle }) {
+  const [hov, setHov] = useState(false);
+  const FX = {
+    wiggle: 'euIconWiggle 0.5s ease',
+    pop:    'euIconPop 0.4s ease',
+    spin:   'euIconSpinSlow 0.6s linear',
+  };
+  return (
+    <span
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{ display:'inline-flex', color, ...style }}>
+      <Icon size={size} style={{ animation: hov ? FX[fx] : 'none', ...iconStyle }}/>
+    </span>
+  );
+}
+
 function todayQuote() {
   const dayIndex = Math.floor(Date.now() / 86400000);
   return EU.quotes[dayIndex % EU.quotes.length];
@@ -45,11 +206,13 @@ function ReflexionDelDia() {
           )}
           <button onClick={refresh} style={{
             background:'transparent',border:'none',cursor:'pointer',
-            color:C.textMuted,fontSize:16,padding:0,lineHeight:1,
+            color:C.textMuted,padding:0,lineHeight:1,
             display:'inline-flex',alignItems:'center',
             transform:spinning?'rotate(180deg)':'rotate(0deg)',
             transition:'transform 0.4s ease',
-          }}>↻</button>
+          }}>
+            <IconHoverFx Icon={IconRefreshCw} fx="spin" size={14}/>
+          </button>
         </div>
       </div>
       <QuoteDisplay quote={quote}/>
@@ -93,21 +256,23 @@ function WordOfDay() {
         <div style={{display:'flex',alignItems:'center',gap:8}}>
           <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,color:'#60a5fa',
             background:'rgba(96,165,250,0.08)',border:'1px solid rgba(96,165,250,0.18)',
-            padding:'2px 8px',borderRadius:100,letterSpacing:'0.06em'}}>EN → FR</span>
+            padding:'2px 8px',borderRadius:100,letterSpacing:'0.06em',whiteSpace:'nowrap'}}>EN → FR</span>
           <button onClick={refresh} style={{
             background:'transparent',border:'none',cursor:'pointer',
-            color:C.textMuted,fontSize:16,padding:0,lineHeight:1,
+            color:C.textMuted,padding:0,lineHeight:1,
             display:'inline-flex',alignItems:'center',
             transform:spinning?'rotate(180deg)':'rotate(0deg)',
             transition:'transform 0.4s ease',
-          }}>↻</button>
+          }}>
+            <IconHoverFx Icon={IconRefreshCw} fx="spin" size={14}/>
+          </button>
         </div>
       </div>
       <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,marginBottom:2,letterSpacing:'0.04em'}}>
         {word.phonetic}
       </div>
       <div style={{fontFamily:'Cormorant Garamond,serif',fontStyle:'italic',
-        fontSize:28,fontWeight:300,color:C.text,lineHeight:1,marginBottom:10}}>
+        fontSize:26,fontWeight:300,color:C.text,lineHeight:1,marginBottom:10}}>
         {word.word}
       </div>
       <div style={{height:1,background:'linear-gradient(90deg,var(--gold-glow),transparent)',marginBottom:10}}/>
@@ -257,8 +422,6 @@ function DeadlineRadar() {
     yellow: { text:'#fde047', bg:'rgba(234,179,8,0.07)',  border:'#eab308', pill:'rgba(234,179,8,0.18)'  },
     green:  { text:'#34d399', bg:'rgba(16,185,129,0.07)', border:'#10b981', pill:'rgba(16,185,129,0.18)' },
   };
-  const TYPE_ICON  = { reminder:'🔔', task:'☑️', wishlist:'🛍️' };
-  const TYPE_LABEL = { reminder:'recordatorio', task:'tarea gtd', wishlist:'wishlist' };
 
   return (
     <div style={{marginBottom:14}}>
@@ -276,13 +439,13 @@ function DeadlineRadar() {
           color:C.textMuted,opacity:0.45}}>{deadlines.length} próximos</div>
       </div>
 
-      {/* Grid — todas las tarjetas visibles, sin scroll oculto */}
-      <div style={{display:'grid',
-        gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))',gap:10}}>
+      {/* Lista — una sola columna, sin scroll oculto */}
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
         {deadlines.map((dl, i) => {
           const p = PAL[dl.level] || PAL.green;
           const urgent = dl.level === 'red';
           const sublabel = dl.days > 0 ? 'DÍAS' : dl.days === 0 ? 'DEADLINE' : 'EXPIRADO';
+          const TypeIcon = DEADLINE_TYPE_ICON[dl.type] || IconBell;
 
           const isChecking = checking[dl.id];
           return (
@@ -307,11 +470,10 @@ function DeadlineRadar() {
 
                 {/* Header: tipo + check */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                  <div style={{display:'flex',alignItems:'center',gap:5}}>
-                    <span style={{fontSize:10,lineHeight:1}}>{TYPE_ICON[dl.type] || '📌'}</span>
+                  <div style={{display:'flex',alignItems:'center',gap:5,color:p.text,opacity:0.75}}>
+                    <TypeIcon size={10} style={urgent ? {animation:'euIconWiggle 1.8s ease-in-out infinite'} : undefined}/>
                     <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
-                      letterSpacing:'0.12em',textTransform:'uppercase',
-                      color:p.text,opacity:0.65}}>{TYPE_LABEL[dl.type] || dl.type}</span>
+                      letterSpacing:'0.12em',textTransform:'uppercase'}}>{DEADLINE_TYPE_LABEL[dl.type] || dl.type}</span>
                   </div>
                   <button
                     onClick={() => handleCheck(dl)}
@@ -327,7 +489,7 @@ function DeadlineRadar() {
                     onMouseEnter={e => e.currentTarget.style.background = p.pill}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <span style={{color:p.border,fontSize:11,lineHeight:1,fontWeight:700}}>✓</span>
+                    <IconHoverFx Icon={IconCheck} fx="pop" size={10} color={p.border}/>
                   </button>
                 </div>
 
@@ -376,11 +538,85 @@ function DeadlineRadar() {
 // HOME SCREEN
 // ═══════════════════════════════════════════════════════════
 const TIERS = [
-  { rank:'carbon',  icon:'🪨', label:'Carbón',   color:'#475569', threshold:0  },
-  { rank:'iron',    icon:'⚔️',  label:'Hierro',   color:'#94a3b8', threshold:8  },
-  { rank:'gold',    icon:'🥇', label:'Oro',      color:'#fbbf24', threshold:16 },
-  { rank:'diamond', icon:'💎', label:'Diamante', color:'#7dd3fc', threshold:20 },
+  { rank:'carbon',  Icon:IconMountain, label:'Carbón',   color:'#94a3b8', threshold:0  },
+  { rank:'iron',    Icon:IconSwords,   label:'Hierro',   color:'#eab308', threshold:8  },
+  { rank:'gold',    Icon:IconMedal,    label:'Oro',      color:'#fbbf24', threshold:16 },
+  { rank:'diamond', Icon:IconGem,      label:'Diamante', color:'#7dd3fc', threshold:20 },
 ];
+
+function titleCase(s) {
+  return s.charAt(0) + s.slice(1).toLowerCase();
+}
+
+function SuggestionCard({ suggestion, onClick, tint }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background:tint.bg, border:`1px solid ${tint.border}`,
+        borderRadius:12,padding:'14px 16px',marginBottom:14,cursor:'pointer',
+        display:'flex',alignItems:'center',gap:12,
+        transform: hov ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: hov ? '0 10px 24px rgba(0,0,0,0.3)' : 'none',
+        transition:'transform 0.18s, box-shadow 0.18s',
+      }}>
+      <div style={{width:34,height:34,borderRadius:9,background:'rgba(0,0,0,0.15)',
+        display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        <IconZap size={16} style={{color:tint.text,animation:'euIconWiggle 2.4s ease-in-out infinite'}}/>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:9,letterSpacing:'0.16em',textTransform:'uppercase',
+          color:tint.text,marginBottom:4}}>
+          Un click cierra {suggestion.cat}
+        </div>
+        <div style={{fontSize:14,color:C.text}}>{suggestion.label}</div>
+      </div>
+      <span style={{fontSize:13,color:C.gold,fontWeight:600,flexShrink:0}}>+{suggestion.pts} XP</span>
+    </div>
+  );
+}
+
+function ModuleStripCard({ mod, onClick }) {
+  const [hov, setHov] = useState(false);
+  const acc = EU.catTint(mod.hue, 'text');
+  const Icon = MODULE_ICONS[mod.id] || IconTerminal;
+  return (
+    <div onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background:C.card, border:`1px solid ${mod.done ? acc : C.goldBorder}`,
+        borderRadius:13,padding:14,cursor:'pointer',
+        boxShadow: mod.done ? `0 0 16px color-mix(in srgb, ${acc} 30%, transparent)` : 'none',
+        transform: hov ? 'translateY(-3px)' : 'translateY(0)',
+        transition:'transform 0.18s, box-shadow 0.18s, border-color 0.18s',
+      }}>
+      <div style={{
+        width:36,height:36,borderRadius:10,marginBottom:10,
+        display:'flex',alignItems:'center',justifyContent:'center',
+        background:`color-mix(in srgb, ${acc} 14%, transparent)`,
+        border:`1px solid color-mix(in srgb, ${acc} 35%, transparent)`,
+      }}>
+        <Icon size={17} style={{
+          color:acc,
+          animation: mod.done
+            ? 'euIconFloat 2.6s ease-in-out infinite'
+            : (hov ? 'euIconPulseScale 0.5s ease' : 'none'),
+        }}/>
+      </div>
+      <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,fontWeight:600,
+        color:C.text,letterSpacing:'0.02em'}}>{titleCase(mod.name)}</div>
+      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9.5,color:C.textMuted,
+        marginTop:2,lineHeight:1.35}}>{mod.desc}</div>
+      <div style={{display:'flex',alignItems:'center',gap:5,marginTop:10,fontSize:9.5}}>
+        <span style={{width:6,height:6,borderRadius:'50%',background:mod.done?acc:C.textMuted,flexShrink:0}}/>
+        <span style={{color:mod.done?acc:C.textMuted}}>{mod.done ? `${mod.streak} días` : 'pendiente hoy'}</span>
+      </div>
+    </div>
+  );
+}
 
 function HomeScreen({ appState, dispatch, isDesktop }) {
   const { isLight } = useTheme();
@@ -453,38 +689,48 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         }}/>
       </div>
       {(() => {
-        const ci  = Math.max(0, TIERS.findIndex(t => t.rank === clf.rank));
-        const nt  = TIERS[ci + 1] || null;
-        const col = TIERS[ci].color;
+        const ci = Math.max(0, TIERS.findIndex(t => t.rank === clf.rank));
+        const nt = TIERS[ci + 1] || null;
         return (
           <>
-            <div style={{display:'flex',alignItems:'flex-start',marginBottom:8}}>
+            <div style={{display:'flex',alignItems:'stretch',gap:6,marginBottom:10}}>
               {TIERS.map((t, i) => {
-                const active = i === ci, past = i < ci;
+                const active = i === ci;
+                const TIcon = t.Icon;
                 return (
-                  <React.Fragment key={t.rank}>
-                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
-                      <div style={{width:active?9:5,height:active?9:5,borderRadius:'50%',
-                        background:active?col:past?`${col}55`:'rgba(128,128,128,0.15)',
-                        boxShadow:active?`0 0 9px ${col}`:'none',transition:'all 0.3s'}}/>
-                      <div style={{fontFamily:'DM Sans,sans-serif',fontSize:7,
-                        color:active?col:C.textMuted,opacity:active?1:past?0.55:0.28,
-                        textAlign:'center',lineHeight:1.3}}>{t.icon}<br/>{t.label}</div>
+                  <div key={t.rank} style={{
+                    flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:6,
+                    padding:'10px 4px',borderRadius:10,
+                    border:`1px solid ${active ? t.color : 'transparent'}`,
+                    background: active ? `color-mix(in srgb, ${t.color} 8%, transparent)` : 'transparent',
+                    boxShadow: active ? `0 0 16px color-mix(in srgb, ${t.color} 25%, transparent)` : 'none',
+                    transition:'all 0.25s',
+                  }}>
+                    <div style={{
+                      width:26,height:26,borderRadius:'50%',
+                      display:'flex',alignItems:'center',justifyContent:'center',
+                      background: active ? t.color : 'rgba(255,255,255,0.04)',
+                      boxShadow: active ? `0 0 10px ${t.color}` : 'none',
+                      transition:'all 0.25s',
+                    }}>
+                      <TIcon size={13} style={{
+                        color: active ? '#09070F' : C.textMuted,
+                        animation: active
+                          ? 'euIconPop 0.5s ease 0.1s both, euIconPulseScale 2.2s ease-in-out 1s infinite'
+                          : 'none',
+                      }}/>
                     </div>
-                    {i < TIERS.length-1 && (
-                      <div style={{height:1,flex:1,marginTop:4,
-                        background:i<ci?`${col}35`:'var(--b)'}}/>
-                    )}
-                  </React.Fragment>
+                    <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.06em',
+                      color: active ? t.color : C.textMuted, fontWeight: active ? 600 : 400,
+                      opacity: active ? 1 : 0.6, textAlign:'center'}}>{t.label}</div>
+                  </div>
                 );
               })}
             </div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:10}}>
-              <span style={{color:C.textMuted}}>
+              <span style={{color:C.textMuted}}>Clasificación de hoy</span>
+              <span style={{color:C.gold,opacity:0.8}}>
                 {nt?`${nt.threshold-xpToday} XP → ${nt.label}`:'✦ Diamante alcanzado'}
-              </span>
-              <span style={{color:C.gold,opacity:0.7}}>
-                {xpNext?`${xpNext-xp} XP → ${EU.levels[level]?.name||''}`:''}
               </span>
             </div>
           </>
@@ -531,41 +777,25 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
 
   const modulesStrip = (
     <div style={{marginBottom:14}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:8}}>
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:C.textMuted,textTransform:'uppercase'}}>Módulos</div>
         <div style={{fontSize:11,color:C.textMuted}}>
           {modules.filter(m=>m.done).length} de {modules.length}
         </div>
       </div>
-      <div style={{display:'flex',gap:3,marginBottom:10,height:3,borderRadius:2,overflow:'hidden',
+      <div style={{display:'flex',gap:3,marginBottom:14,height:3,borderRadius:2,overflow:'hidden',
         background:'color-mix(in srgb, var(--gold) 6%, transparent)'}}>
         {modules.map(mod=>(
           <div key={mod.id} style={{flex:1,height:'100%',
             background:mod.done?EU.catTint(mod.hue,'text'):'transparent',transition:'background 0.4s'}}/>
         ))}
       </div>
-      <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4,scrollbarWidth:'none'}}>
-        {modules.map(mod=>{
-          const acc=EU.catTint(mod.hue,'text'), accBg=EU.catTint(mod.hue,'bg');
-          return (
-            <div key={mod.id}
-              onClick={()=>mod.route?(window.location.href=mod.route):dispatch({type:'OPEN_MODULE',id:mod.id})}
-              style={{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',gap:5,cursor:'pointer'}}>
-              <div style={{width:44,height:44,borderRadius:13,
-                background:mod.done?accBg:C.card,border:`1.5px solid ${mod.done?acc:C.goldBorder}`,
-                display:'flex',alignItems:'center',justifyContent:'center',
-                boxShadow:mod.done?`0 0 14px ${accBg}`:'none',transition:'all 0.3s'}}>
-                <div style={{width:7,height:7,borderRadius:'50%',
-                  background:mod.done?acc:C.textMuted,boxShadow:mod.done?`0 0 6px ${acc}`:'none'}}/>
-              </div>
-              <div style={{fontFamily:'DM Sans,sans-serif',fontSize:7,color:mod.done?acc:C.textMuted,
-                textAlign:'center',letterSpacing:'0.04em',maxWidth:46,lineHeight:1.2}}>
-                {mod.name.slice(0,7)}
-              </div>
-            </div>
-          );
-        })}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(150px,1fr))',gap:10}}>
+        {modules.map(mod=>(
+          <ModuleStripCard key={mod.id} mod={mod}
+            onClick={()=>mod.route?(window.location.href=mod.route):dispatch({type:'OPEN_MODULE',id:mod.id})}/>
+        ))}
       </div>
     </div>
   );
@@ -585,21 +815,12 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
   );
 
   const suggestionCard = suggestion && (
-    <div onClick={()=>logActivityFromHome(suggestion.key)} style={{
-      background:EU.catTint((EU.catHues||{})[suggestion.cat]||45,'bg'),
-      border:`1px solid ${EU.catTint((EU.catHues||{})[suggestion.cat]||45,'border')}`,
-      borderRadius:12,padding:'14px 16px',marginBottom:14,cursor:'pointer',
-      display:'flex',alignItems:'center',gap:12,
-    }}>
-      <div style={{flex:1}}>
-        <div style={{fontSize:9,letterSpacing:'0.16em',textTransform:'uppercase',
-          color:EU.catTint((EU.catHues||{})[suggestion.cat]||45, 'text'),marginBottom:4}}>
-          Un click cierra {suggestion.cat}
-        </div>
-        <div style={{fontSize:14,color:C.text}}>{suggestion.label}</div>
-      </div>
-      <span style={{fontSize:13,color:C.gold,fontWeight:600}}>+{suggestion.pts} XP</span>
-    </div>
+    <SuggestionCard suggestion={suggestion} onClick={()=>logActivityFromHome(suggestion.key)}
+      tint={{
+        bg:     EU.catTint((EU.catHues||{})[suggestion.cat]||45,'bg'),
+        border: EU.catTint((EU.catHues||{})[suggestion.cat]||45,'border'),
+        text:   EU.catTint((EU.catHues||{})[suggestion.cat]||45,'text'),
+      }}/>
   );
 
   // ── Desktop 2-column layout ─────────────────────────────────
@@ -627,13 +848,16 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <button onClick={()=>window.dispatchEvent(new CustomEvent('eu:open-cmdk'))}
               style={{background:'var(--gold-bg)',border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
-                borderRadius:6,padding:'4px 10px',color:C.gold,fontSize:10,cursor:'pointer',
-                fontFamily:'DM Sans,sans-serif',letterSpacing:'0.05em'}}>
-              ⌘ K
+                borderRadius:6,padding:'5px 10px',color:C.gold,fontSize:11,cursor:'pointer',
+                fontFamily:'DM Sans,sans-serif',letterSpacing:'0.05em',
+                display:'inline-flex',alignItems:'center',gap:5}}>
+              <IconHoverFx Icon={IconCommand} fx="wiggle" size={11}/> K
             </button>
-            <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:4,
+            <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:5,
               fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.gold,opacity:0.65,
-              textDecoration:'none',letterSpacing:'0.08em'}}>🏆 Logros</a>
+              textDecoration:'none',letterSpacing:'0.08em'}}>
+              <IconHoverFx Icon={IconTrophy} fx="pop" size={11}/> Logros
+            </a>
           </div>
         </div>
 
@@ -643,7 +867,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
 
           {/* LEFT — main content */}
           <div>
-            <div style={{marginBottom:20}}>
+            <div style={{marginBottom:20,animation:'euRise 0.5s ease 0.02s both'}}>
               <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:26,color:C.text}}>
                 Buenos días, Gio.
               </div>
@@ -651,18 +875,18 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
                 {fmtDate()} · día {streak} de tu racha
               </div>
             </div>
-            {heroXp}
-            {suggestionCard}
-            {levelCard}
-            {modulesStrip}
-            <ReflexionDelDia/>
+            <div style={{animation:'euRise 0.5s ease 0.06s both'}}>{heroXp}</div>
+            {suggestionCard && <div style={{animation:'euRise 0.5s ease 0.10s both'}}>{suggestionCard}</div>}
+            <div style={{animation:'euRise 0.5s ease 0.14s both'}}>{levelCard}</div>
+            <div style={{animation:'euRise 0.5s ease 0.18s both'}}>{modulesStrip}</div>
+            <div style={{animation:'euRise 0.5s ease 0.24s both'}}><ReflexionDelDia/></div>
           </div>
 
           {/* RIGHT — sidebar widgets */}
           <div style={{position:'sticky',top:80}}>
-            {heatmapCard}
-            <WordOfDay/>
-            <DeadlineRadar/>
+            <div style={{animation:'euRise 0.5s ease 0.08s both'}}>{heatmapCard}</div>
+            <div style={{animation:'euRise 0.5s ease 0.14s both'}}><WordOfDay/></div>
+            <div style={{animation:'euRise 0.5s ease 0.20s both'}}><DeadlineRadar/></div>
           </div>
         </div>
       </div>
@@ -691,14 +915,16 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
               ΕΥΔΑΙΜΟΝΙΑ
             </div>
           </div>
-          <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:4,
+          <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:5,
             fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.gold,opacity:0.65,
-            textDecoration:'none',letterSpacing:'0.08em',paddingTop:4}}>🏆 Logros</a>
+            textDecoration:'none',letterSpacing:'0.08em',paddingTop:4}}>
+            <IconHoverFx Icon={IconTrophy} fx="pop" size={11}/> Logros
+          </a>
         </div>
       </div>
 
       <div style={{padding:'0 16px'}}>
-        <div style={{padding:'20px 0 12px'}}>
+        <div style={{padding:'20px 0 12px',animation:'euRise 0.5s ease 0.02s both'}}>
           <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:22,color:C.text}}>
             Buenos días, Gio.
           </div>
@@ -706,14 +932,14 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             {fmtDate()} · día {streak} de tu racha
           </div>
         </div>
-        {heroXp}
-        {suggestionCard}
-        {levelCard}
-        {modulesStrip}
-        {heatmapCard}
-        <ReflexionDelDia/>
-        <WordOfDay/>
-        <DeadlineRadar/>
+        <div style={{animation:'euRise 0.5s ease 0.06s both'}}>{heroXp}</div>
+        {suggestionCard && <div style={{animation:'euRise 0.5s ease 0.10s both'}}>{suggestionCard}</div>}
+        <div style={{animation:'euRise 0.5s ease 0.14s both'}}>{levelCard}</div>
+        <div style={{animation:'euRise 0.5s ease 0.18s both'}}>{modulesStrip}</div>
+        <div style={{animation:'euRise 0.5s ease 0.22s both'}}>{heatmapCard}</div>
+        <div style={{animation:'euRise 0.5s ease 0.26s both'}}><ReflexionDelDia/></div>
+        <div style={{animation:'euRise 0.5s ease 0.30s both'}}><WordOfDay/></div>
+        <div style={{animation:'euRise 0.5s ease 0.34s both'}}><DeadlineRadar/></div>
       </div>
     </div>
   );
