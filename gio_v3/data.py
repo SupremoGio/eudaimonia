@@ -466,7 +466,6 @@ ACTIVITIES = {
     "sun_planchar_bloque":    {"label": "Planchado de Uniforme",         "cat": "Domingo Strategy", "pts": 0, "ec": 0, "tier": "micro",    "weekend": "sun"},
     "sun_planeacion_bloque":  {"label": "Planeación Semanal",            "cat": "Domingo Strategy", "pts": 4, "ec": 2, "tier": "alto",     "weekend": "sun"},
     "sun_prioridades_bloque": {"label": "3 Prioridades de la Semana",    "cat": "Domingo Strategy", "pts": 3, "ec": 1, "tier": "progreso", "weekend": "sun"},
-    "sun_reset_bloque":       {"label": "Eudaimonia OS Reset",           "cat": "Domingo Strategy", "pts": 2, "ec": 1, "tier": "progreso", "weekend": "sun"},
     "sun_cierre_bloque":      {"label": "Cierre Semanal",                "cat": "Domingo Strategy", "pts": 0, "ec": 0, "tier": "micro",    "weekend": "sun"},
 }
 

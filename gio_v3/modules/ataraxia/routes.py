@@ -37,7 +37,12 @@ HORARIOS = {
     "sat_trapear_bano":   "Tarde · 6 min",
     "sat_jugos_r":      "Tarde · 30 min (opcional)",
     # ── DOMINGO ─────────────────────────────────────────────────────────────
-    "sun_cafe":         "8:00 AM",
+    "sun_cafe":              "8:00 AM",
+    "sun_cafe_agua":         "Mañana · 2 min",
+    "sun_cafe_carro":        "Mañana · 2 min",
+    "sun_cafe_audifonos":    "Mañana · 1 min",
+    "sun_cafe_aspiradora":   "Mañana · 2 min",
+    "sun_cafe_pila":         "Mañana · 2 min",
     "sun_gym":          "9:30 – 11:00 AM",
     "sun_nevera":       "Tarde",
     "sun_comidas":      "Tarde · 1 hora",
@@ -45,7 +50,6 @@ HORARIOS = {
     "sun_planchar":     "Tarde · 20 min",
     "sun_planeacion":   "10:30 – 11:15 AM",
     "sun_prioridades":  "Dentro de planeación",
-    "sun_reset":        "Tarde",
     "sun_cierre":       "5:30 – 6:00 PM",
 }
 
@@ -68,7 +72,6 @@ BLOQUE_ICONS = {
     "sun_planchar_bloque":   "👔",
     "sun_planeacion_bloque": "📅",
     "sun_prioridades_bloque":"🎯",
-    "sun_reset_bloque":      "🔄",
     "sun_cierre_bloque":     "✅",
 }
 

@@ -1299,6 +1299,42 @@ def init_db():
         except Exception as e:
             print(f"[DB] rutina_bloques v3 migration warning: {e}")
 
+        # Migrate rutina_bloques v4 — Domingo: "Arranque del Día" desglosado en
+        # sub-tareas (café + cargas) y se elimina el bloque "Eudaimonia OS Reset"
+        try:
+            already = db.execute(
+                "SELECT COUNT(*) as c FROM rutina_bloques WHERE id='sun_cafe_agua'"
+            ).fetchone()["c"]
+            if not already:
+                db.execute("DELETE FROM rutina_bloques WHERE dia='domingo'")
+                db.executemany(
+                    """INSERT INTO rutina_bloques
+                       (id, dia, bloque_id, nombre, tier, xp, ec, categoria, opcional, duracion_min, orden)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                    [
+                        # Bloque 1: Arranque del Día (desglosado en sub-tareas)
+                        ("sun_cafe",            "domingo","sun_cafe_bloque","☕ Café",                            "micro",0,0,"",0,  5,  1),
+                        ("sun_cafe_agua",       "domingo","sun_cafe_bloque","🚰 Cargar dispensador de agua",       "micro",0,0,"",0,  2,  2),
+                        ("sun_cafe_carro",      "domingo","sun_cafe_bloque","🔌 Cargar dispositivo del carro",     "micro",0,0,"",0,  2,  3),
+                        ("sun_cafe_audifonos",  "domingo","sun_cafe_bloque","🎧 Cargar audífonos",                 "micro",0,0,"",0,  1,  4),
+                        ("sun_cafe_aspiradora", "domingo","sun_cafe_bloque","🧹 Cargar aspiradora",                "micro",0,0,"",0,  2,  5),
+                        ("sun_cafe_pila",       "domingo","sun_cafe_bloque","🔋 Cargar pila portátil",             "micro",0,0,"",0,  2,  6),
+                        # Resto de bloques del domingo (sin cambios; "Eudaimonia OS Reset" eliminado)
+                        ("sun_gym",        "domingo","sun_gym_bloque","🏋️ Gym (entrenamiento enfocado · gym vacío)",                  "alto",    4,2,"SOMA",        0, 90,  7),
+                        ("sun_nevera",     "domingo","sun_nevera_bloque","🧊 Nevera y Despensa (revisión rápida · limpieza de repisas)","micro",  0,0,"",            0, 15,  8),
+                        ("sun_comidas",    "domingo","sun_comidas_bloque","🥗 Meal Prep: porcionar proteínas y carbohidratos (1 hora enfocada)","progreso",3,1,"SOMA", 0, 60,  9),
+                        ("sun_guardado",   "domingo","sun_guardado_bloque","👕 Guardado de ropa (doblar ropa limpia del sábado)",      "micro",   0,0,"",            0, 15, 10),
+                        ("sun_planchar",   "domingo","sun_planchar_bloque","👔 Planchado de uniforme para la semana",                  "micro",   0,0,"",            0, 20, 11),
+                        ("sun_planeacion", "domingo","sun_planeacion_bloque","📅 Planeación: agenda · compromisos · GTD",              "alto",    4,2,"HEGEMONIKON",  0, 45, 12),
+                        ("sun_prioridades","domingo","sun_prioridades_bloque","🎯 3 prioridades de la semana",                        "progreso",3,1,"HEGEMONIKON",  0, 15, 13),
+                        ("sun_cierre",     "domingo","sun_cierre_bloque","✅ Cierre: prioridades claras · preparar lunes",            "micro",   0,0,"",            0, 15, 14),
+                    ]
+                )
+                db.commit()
+                print("[DB] rutina_bloques v4 migration OK — Arranque del Día desglosado + Eudaimonia OS Reset eliminado")
+        except Exception as e:
+            print(f"[DB] rutina_bloques v4 migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS app_settings (
             key   TEXT PRIMARY KEY,

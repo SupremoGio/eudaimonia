@@ -251,11 +251,11 @@ def _check_combo_bonus(today, keys_today):
             _award_coins(2, "bonus", "Combo: Sábado Completo")
             combos.append({"type": "sat_complete", "icon": "🔥", "name": "Sábado Completo", "description": "Todos los bloques del sábado completados", "xp": 4, "ec": 2})
 
-    # Weekend: domingo completo → +5 XP bonus (10 bloques)
+    # Weekend: domingo completo → +5 XP bonus (9 bloques)
     sun_keys = {
         "sun_cafe_bloque", "sun_gym_bloque", "sun_nevera_bloque", "sun_comidas_bloque",
         "sun_guardado_bloque", "sun_planchar_bloque", "sun_planeacion_bloque",
-        "sun_prioridades_bloque", "sun_reset_bloque", "sun_cierre_bloque",
+        "sun_prioridades_bloque", "sun_cierre_bloque",
     }
     if sun_keys.issubset(set(keys_today)):
         with get_db() as db:
