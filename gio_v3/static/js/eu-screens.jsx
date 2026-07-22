@@ -1074,7 +1074,7 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
 
       <div style={{padding: isDesktop ? '0 24px' : '0 16px', display:'grid', gridTemplateColumns:cols, gap:10}}>
         {modules.map(mod => (
-          <ModuleCard key={mod.id} mod={mod}
+          <ModuleStripCard key={mod.id} mod={mod}
             onClick={() => mod.route ? (window.location.href = mod.route) : dispatch({type:'OPEN_MODULE',id:mod.id})}/>
         ))}
         {/* PRAXIS + LOGROS — bottom full-width cards */}

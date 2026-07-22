@@ -4427,7 +4427,7 @@ function CommandCenterScreen({
       gridTemplateColumns: cols,
       gap: 10
     }
-  }, modules.map(mod => /*#__PURE__*/React.createElement(ModuleCard, {
+  }, modules.map(mod => /*#__PURE__*/React.createElement(ModuleStripCard, {
     key: mod.id,
     mod: mod,
     onClick: () => mod.route ? window.location.href = mod.route : dispatch({
