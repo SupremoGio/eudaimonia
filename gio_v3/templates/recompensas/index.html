@@ -19,6 +19,7 @@
 .rchip-lvl{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
 .rchip-badge{background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.2);color:var(--mid);}
 .rchip-cool{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
+.rchip-weekend{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.25);color:#60a5fa;}
 .btn-redeem{width:100%;padding:9px;border-radius:8px;font-size:var(--fs-sm);letter-spacing:.1em;text-transform:uppercase;font-family:var(--sans);cursor:pointer;transition:all .18s;border:none;}
 .btn-redeem.active{background:linear-gradient(135deg,#7A5520,#C9A84C);color:#09070F;font-weight:600;}
 .btn-redeem.active:hover{opacity:.88;transform:translateY(-1px);}
@@ -114,7 +115,7 @@
   {% for r in rewards %}
   <div class="tile rc {% if r.can_redeem %}can{% endif %}" data-id="{{ r.id }}">
     <div class="rc-actions">
-      <button class="ai" onclick="editReward({{ r.id }}, '{{ r.name }}', '{{ r.description|replace("'","\\\'") }}', {{ r.ec_cost }}, {{ r.level_required }}, {{ r.cooldown_days }})" title="Editar">
+      <button class="ai" onclick="editReward({{ r.id }}, '{{ r.name }}', '{{ r.description|replace("'","\\\'") }}', {{ r.ec_cost }}, {{ r.level_required }}, {{ r.cooldown_days }}, {{ 'true' if r.weekend_only else 'false' }})" title="Editar">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       </button>
       <button class="ai del" onclick="deleteReward({{ r.id }})" title="Eliminar">
@@ -140,6 +141,9 @@
       {% endif %}
       {% if r.cooldown_days > 0 %}
       <span class="rchip rchip-cool">{{ r.cooldown_days }}d cooldown</span>
+      {% endif %}
+      {% if r.weekend_only %}
+      <span class="rchip rchip-weekend">🗓️ Fin de semana</span>
       {% endif %}
     </div>
 
@@ -171,6 +175,10 @@
   <div class="fg" style="margin-bottom:10px;">
     <label class="fl">Descripción (opcional)</label>
     <input class="fi" id="f-desc" placeholder="Descripción…" />
+  </div>
+  <div class="fg" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+    <input type="checkbox" id="f-weekend" style="width:auto;" />
+    <label class="fl" for="f-weekend" style="margin:0;">Solo fin de semana (evita que se vuelva un hábito diario)</label>
   </div>
   <div class="fa">
     <button class="btn-r" id="cancel-edit-btn" onclick="cancelEdit()" style="display:none;">Cancelar</button>
@@ -254,6 +262,7 @@ async function addReward() {
   const lvl  = parseInt(document.getElementById('f-lvl').value)  || 1;
   const cool = parseInt(document.getElementById('f-cool').value) || 0;
   const desc = document.getElementById('f-desc').value.trim();
+  const weekend = document.getElementById('f-weekend').checked;
   if (!name) { toast('Nombre requerido', 'err'); return; }
 
   const url    = editingId ? `/recompensas/api/rewards/${editingId}` : '/recompensas/api/rewards';
@@ -262,7 +271,7 @@ async function addReward() {
     const r = await fetch(url, {
       method,
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({name, ec_cost: cost, level_required: lvl, cooldown_days: cool, description: desc})
+      body: JSON.stringify({name, ec_cost: cost, level_required: lvl, cooldown_days: cool, description: desc, weekend_only: weekend})
     });
     if (!r.ok) { toast('Error', 'err'); return; }
     cancelEdit();
@@ -271,13 +280,14 @@ async function addReward() {
   } catch { toast('Error', 'err'); }
 }
 
-function editReward(id, name, desc, cost, lvl, cool) {
+function editReward(id, name, desc, cost, lvl, cool, weekend) {
   editingId = id;
   document.getElementById('f-name').value = name;
   document.getElementById('f-cost').value = cost;
   document.getElementById('f-lvl').value  = lvl;
   document.getElementById('f-cool').value = cool;
   document.getElementById('f-desc').value = desc;
+  document.getElementById('f-weekend').checked = !!weekend;
   document.getElementById('add-form-label').textContent = '✎ Editando recompensa';
   document.getElementById('cancel-edit-btn').style.display = '';
   document.getElementById('f-name').focus();
@@ -292,6 +302,7 @@ function cancelEdit() {
   document.getElementById('f-lvl').value   = '1';
   document.getElementById('f-cool').value  = '30';
   document.getElementById('f-desc').value  = '';
+  document.getElementById('f-weekend').checked = false;
   document.getElementById('add-form-label').textContent = '+ Agregar recompensa';
   document.getElementById('cancel-edit-btn').style.display = 'none';
 }

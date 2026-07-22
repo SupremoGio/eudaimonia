@@ -860,6 +860,30 @@ def init_db():
         except Exception as e:
             print(f"[DB] rewards dedup warning: {e}")
 
+        # Migrate rewards: add weekend_only (recompensas de fin de semana, tipo gasto pequeño)
+        try:
+            rw_cols = [r["name"] for r in db.execute("PRAGMA table_info(rewards)").fetchall()]
+            if "weekend_only" not in rw_cols:
+                db.execute("ALTER TABLE rewards ADD COLUMN weekend_only INTEGER DEFAULT 0")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] rewards weekend_only migration warning: {e}")
+
+        # Seed recompensa "Cápsula Nespresso" — fin de semana + cooldown semanal (idempotente)
+        if db.execute("SELECT COUNT(*) as c FROM rewards WHERE LOWER(name)=?", ("cápsula nespresso",)).fetchone()["c"] == 0:
+            import datetime as _dtc
+            db.execute(
+                """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, weekend_only, created_at)
+                   VALUES (?,?,?,?,?,?,?,?)""",
+                (
+                    "Cápsula Nespresso",
+                    "Un café de fin de semana — te la ganaste, no un hábito diario",
+                    8, 1, "", 7, 1,
+                    _dtc.datetime.now().isoformat(),
+                )
+            )
+            db.commit()
+
         # Dedup consumo_productos — keep lowest id per nombre, orphan compras go too
         try:
             db.execute("""

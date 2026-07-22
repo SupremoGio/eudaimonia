@@ -31,6 +31,8 @@ def _can_redeem(reward, ec_balance, current_level):
         return False, "EC insuficientes"
     if current_level < reward["level_required"]:
         return False, f"Nivel {reward['level_required']} requerido"
+    if reward.get("weekend_only") and today_date().weekday() < 5:
+        return False, "Solo disponible en fin de semana"
     if reward["cooldown_days"] > 0 and reward["last_redeemed"]:
         cooldown_end = (
             datetime.fromisoformat(reward["last_redeemed"]) +
@@ -93,8 +95,8 @@ def create_reward():
     now = datetime.now().isoformat()
     with get_db() as db:
         db.execute(
-            """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, created_at)
-               VALUES (?,?,?,?,?,?,?)""",
+            """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, weekend_only, created_at)
+               VALUES (?,?,?,?,?,?,?,?)""",
             (
                 name,
                 data.get("description", ""),
@@ -102,6 +104,7 @@ def create_reward():
                 int(data.get("level_required", 1)),
                 data.get("badge_required", ""),
                 int(data.get("cooldown_days", 0)),
+                int(bool(data.get("weekend_only", False))),
                 now,
             )
         )
@@ -119,7 +122,7 @@ def update_reward(reward_id):
             return jsonify({"error": "not found"}), 404
         db.execute(
             """UPDATE rewards SET name=?, description=?, ec_cost=?, level_required=?,
-               badge_required=?, cooldown_days=? WHERE id=?""",
+               badge_required=?, cooldown_days=?, weekend_only=? WHERE id=?""",
             (
                 data.get("name", row["name"]),
                 data.get("description", row["description"]),
@@ -127,6 +130,7 @@ def update_reward(reward_id):
                 int(data.get("level_required", row["level_required"])),
                 data.get("badge_required", row["badge_required"]),
                 int(data.get("cooldown_days", row["cooldown_days"])),
+                int(bool(data.get("weekend_only", row["weekend_only"]))),
                 reward_id,
             )
         )
