@@ -972,8 +972,13 @@ function cancel(k){
 async function save(k){
   const val=document.getElementById('einp-'+k).value.trim();if(!val)return;
   const r=await fetch('/perfil/api/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k,value:val})});
+  if(r.status===401||r.status===403){
+    toast('Sesión expirada — recargando…','err');
+    setTimeout(()=>location.reload(),1200);
+    return;
+  }
   const j=await r.json().catch(()=>({}));
-  if(!j.ok){toast('Error al guardar ✗');return;}
+  if(!j.ok){toast('Error al guardar ✗','err');return;}
   rv[k]=val;
   const el=document.getElementById('val-'+k);
   el.textContent=priv[k]?'••••••••':val;
