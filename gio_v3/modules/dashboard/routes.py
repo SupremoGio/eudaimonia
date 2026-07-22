@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, jsonify, redirect
 from database import get_db, get_db_status
 from data import get_word_of_day, get_quote_of_day, get_random_quote, ACTIVITIES, ACTIVITY_CATEGORIES
 from datetime import date, timedelta
-from utils import today_str, today_date
+from utils import today_str, today_date, now_local
 from ec_constants import CATEGORY_HUES
 
 dashboard_bp = Blueprint('dashboard', __name__, template_folder='../../templates')
@@ -69,15 +69,41 @@ _MODULE_HABIT_KEYS = {
 }
 
 
+# ── Ventanas horarias para sugerencias "inteligentes" ─────────────────────────
+# weekdays: None = todos los días, o set de now.weekday() (0=lunes .. 6=domingo)
+# start/end: (hora, minuto), inclusive
+_SUGGESTION_WINDOWS = {
+    'gym':            {'weekdays': {0, 1, 2, 3, 4}, 'start': (6, 30),  'end': (23, 0)},
+    'gymbook':        {'weekdays': {0, 1, 2, 3, 4}, 'start': (6, 30),  'end': (23, 0)},
+    'dormir_8h':      {'weekdays': None,            'start': (9, 0),   'end': (11, 0)},
+    'skincare_noche': {'weekdays': None,            'start': (20, 0),  'end': (23, 30)},
+    'tender_cama':    {'weekdays': None,            'start': (9, 0),   'end': (11, 0)},
+}
+
+
+def _suggestion_in_window(key: str, now_dt) -> bool:
+    """True si `key` no tiene ventana definida, o si `now_dt` cae dentro de ella."""
+    win = _SUGGESTION_WINDOWS.get(key)
+    if not win:
+        return True
+    if win['weekdays'] is not None and now_dt.weekday() not in win['weekdays']:
+        return False
+    now_min   = now_dt.hour * 60 + now_dt.minute
+    start_min = win['start'][0] * 60 + win['start'][1]
+    end_min   = win['end'][0] * 60 + win['end'][1]
+    return start_min <= now_min <= end_min
+
+
 def _build_suggestion(done_keys: set):
     from collections import defaultdict
+    now_dt = now_local()
     by_cat = defaultdict(list)
     for k, v in ACTIVITIES.items():
         if 'weekend' not in v and not v.get('hidden'):
             by_cat[v['cat']].append(k)
     for cat, keys in by_cat.items():
         pending = [k for k in keys if k not in done_keys]
-        if len(pending) == 1 and len(keys) > 1:
+        if len(pending) == 1 and len(keys) > 1 and _suggestion_in_window(pending[0], now_dt):
             v = ACTIVITIES[pending[0]]
             return {'key': pending[0], 'label': v['label'], 'cat': cat, 'pts': v['pts']}
     return None
