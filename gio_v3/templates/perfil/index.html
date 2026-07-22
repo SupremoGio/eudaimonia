@@ -136,6 +136,26 @@
 .meas-hist-chg.up{color:#10b981;}.meas-hist-chg.down{color:#f87171;}.meas-hist-chg.eq{color:var(--dim);}
 .meas-hist-empty{font-size:var(--fs-sm);color:var(--dim);text-align:center;padding:10px 0;}
 
+/* ── Body map ── */
+.bmap-wrap{display:grid;grid-template-columns:200px 1fr;gap:26px;padding:20px 22px;align-items:start;
+  border-bottom:1px solid var(--b);}
+@media(max-width:640px){.bmap-wrap{grid-template-columns:1fr;justify-items:center;}}
+.bmap-svg{width:200px;height:auto;display:block;margin:0 auto;}
+.bmap-shape{fill:var(--card2);stroke:var(--b2);stroke-width:1.5;}
+.bmap-dot{fill:var(--card2);stroke:var(--dim);stroke-width:2;cursor:pointer;transition:all .15s;}
+.bmap-dot:hover{stroke:var(--gold);r:8;filter:drop-shadow(0 0 4px var(--gold-d));}
+.bmap-dot.filled{fill:var(--gold);stroke:var(--gold);}
+.bmap-legend{display:flex;align-items:center;gap:16px;margin-top:12px;font-size:var(--fs-xs);color:var(--dim);justify-content:center;}
+.bmap-legend-item{display:flex;align-items:center;gap:6px;}
+.bmap-legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:2px solid var(--dim);}
+.bmap-legend-dot.filled{background:var(--gold);border-color:var(--gold);}
+.bmap-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px;}
+.bmap-stat{background:var(--card2);border:1px solid var(--b);border-radius:10px;padding:12px 14px;}
+.bmap-stat-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
+.bmap-stat-val{font-family:var(--serif);font-size:1.3rem;color:var(--gold);display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;}
+.bmap-stat-unit{font-size:var(--fs-xs);color:var(--dim);}
+.bmap-hint{font-size:var(--fs-xs);color:var(--dim);margin-top:14px;line-height:1.5;max-width:340px;}
+
 /* ── Documents (general) ── */
 .doc-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
 .doc-row:last-child{border-bottom:none;}
@@ -322,6 +342,79 @@
       <span class="sec-tag tag-cyan"><i data-lucide="ruler" style="width:10px;height:10px;"></i> Cuerpo</span>
     </div>
     <div class="tile" style="padding:0;overflow:hidden;">
+
+      <!-- ── Body map: silhouette + vitals ── -->
+      <div class="bmap-wrap">
+        <div>
+          <svg class="bmap-svg" viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg">
+            <!-- Silueta -->
+            <circle class="bmap-shape" cx="100" cy="28" r="20"/>
+            <rect class="bmap-shape" x="92" y="45" width="16" height="14" rx="4"/>
+            <rect class="bmap-shape" x="58" y="55" width="84" height="60" rx="22"/>
+            <rect class="bmap-shape" x="68" y="112" width="64" height="35" rx="18"/>
+            <rect class="bmap-shape" x="62" y="144" width="76" height="32" rx="16"/>
+            <rect class="bmap-shape" x="30" y="58" width="22" height="65" rx="11"/>
+            <rect class="bmap-shape" x="148" y="58" width="22" height="65" rx="11"/>
+            <rect class="bmap-shape" x="25" y="118" width="18" height="60" rx="9"/>
+            <rect class="bmap-shape" x="157" y="118" width="18" height="60" rx="9"/>
+            <rect class="bmap-shape" x="64" y="176" width="30" height="85" rx="15"/>
+            <rect class="bmap-shape" x="106" y="176" width="30" height="85" rx="15"/>
+            <rect class="bmap-shape" x="68" y="258" width="22" height="75" rx="11"/>
+            <rect class="bmap-shape" x="110" y="258" width="22" height="75" rx="11"/>
+
+            <!-- Hotspots -->
+            {% set dots = [
+              ('cuello', 100, 51), ('hombros', 100, 60), ('pecho', 100, 85),
+              ('cintura', 100, 129), ('cadera', 100, 160),
+              ('biceps', 41, 90), ('biceps', 159, 90),
+              ('antebrazo', 34, 148), ('antebrazo', 166, 148),
+              ('muslo', 79, 218), ('muslo', 121, 218),
+              ('pantorrilla', 79, 295), ('pantorrilla', 121, 295),
+            ] %}
+            {% for key, cx, cy in dots %}
+            {% set filled = meas_by_key.get(key) and meas_by_key[key].value != '— editar —' %}
+            <circle class="bmap-dot {% if filled %}filled{% endif %}" cx="{{ cx }}" cy="{{ cy }}" r="6"
+                    onclick="focusMeasurement('{{ key }}')">
+              <title>{{ meas_by_key[key].label if meas_by_key.get(key) else key }}</title>
+            </circle>
+            {% endfor %}
+          </svg>
+          <div class="bmap-legend">
+            <span class="bmap-legend-item"><span class="bmap-legend-dot"></span> Sin medir</span>
+            <span class="bmap-legend-item"><span class="bmap-legend-dot filled"></span> Registrado</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="bmap-stats">
+            {% for key in ['peso', 'grasa_corporal', 'masa_muscular'] %}
+            {% set m = meas_by_key.get(key) %}
+            {% if m %}
+            {% set hist = meas_history.get(key, []) %}
+            {% set prev_val = hist[1].value if hist|length > 1 else None %}
+            {% set curr_num = m.value|float(0) %}
+            {% set prev_num = prev_val|float(0) if prev_val else None %}
+            {% set delta = (curr_num - prev_num)|round(1) if prev_num is not none and curr_num != 0 and prev_num != 0 else None %}
+            <div class="bmap-stat">
+              <div class="bmap-stat-lbl">{{ m.label }}</div>
+              <div class="bmap-stat-val">
+                {{ m.value }}<span class="bmap-stat-unit">{{ m.unit }}</span>
+                {% if delta is not none and delta > 0 %}
+                  <span class="meas-delta up" style="font-size:10px;">↑ +{{ delta }}</span>
+                {% elif delta is not none and delta < 0 %}
+                  <span class="meas-delta down" style="font-size:10px;">↓ {{ delta }}</span>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+          <div class="bmap-hint">
+            Toca un punto del cuerpo para registrar esa medida. Cada actualización queda en tu historial — así ves si subiste o bajaste con el tiempo.
+          </div>
+        </div>
+      </div>
+
       <div class="meas-grid">
         {% for m in measurements %}
         {% set hist = meas_history.get(m.key, []) %}
@@ -329,7 +422,7 @@
         {% set curr_num = m.value|float(0) %}
         {% set prev_num = prev_val|float(0) if prev_val else None %}
         {% set delta = (curr_num - prev_num)|round(1) if prev_num is not none and curr_num != 0 and prev_num != 0 else None %}
-        <div class="meas-cell" style="{% if loop.last and loop.index is odd %}grid-column:span 2;{% endif %}">
+        <div class="meas-cell" id="meas-cell-{{ m.key }}" style="{% if loop.last and loop.index is odd %}grid-column:span 2;{% endif %}">
           <div class="meas-lbl">{{ m.label }}{% if m.unit %} <span style="opacity:.5;">({{ m.unit }})</span>{% endif %}</div>
           <div class="meas-row" id="mvrow-{{ m.key }}">
             <span class="meas-val" id="mval-{{ m.key }}">{{ m.value }}</span>
@@ -714,6 +807,12 @@ document.querySelectorAll('[id^=einp-]').forEach(inp=>{
 });
 
 // ── Mediciones ────────────────────────────────────────────────────────────────
+function focusMeasurement(k){
+  const cell=document.getElementById('meas-cell-'+k);
+  if(!cell)return;
+  cell.scrollIntoView({behavior:'smooth', block:'center'});
+  setTimeout(()=>startEditM(k), 350);
+}
 function copyMeasure(k){navigator.clipboard.writeText(mv[k]).then(()=>toast('Copiado ✓'));}
 function startEditM(k){
   document.getElementById('mvrow-'+k).style.display='none';

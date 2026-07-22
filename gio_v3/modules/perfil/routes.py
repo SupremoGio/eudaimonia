@@ -91,9 +91,12 @@ def index():
         'vault_total':       len(vault),
     }
 
+    meas_by_key = {m['key']: dict(m) for m in measurements}
+
     return render_template('perfil/index.html',
                            info=info,
                            measurements=measurements,
+                           meas_by_key=meas_by_key,
                            meas_history=meas_history,
                            docs=docs_general,
                            docs_by_field=docs_by_field,

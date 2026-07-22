@@ -577,6 +577,21 @@ def init_db():
                 ]
             )
 
+        # Migrate body_measurements: agregar medidas de rendimiento atlético
+        # (idempotente vía INSERT OR IGNORE — key es PRIMARY KEY)
+        db.executemany(
+            "INSERT OR IGNORE INTO body_measurements (key, label, value, unit) VALUES (?,?,?,?)",
+            [
+                ("biceps",         "Bíceps",          "— editar —", "cm"),
+                ("antebrazo",      "Antebrazo",       "— editar —", "cm"),
+                ("muslo",          "Muslo",           "— editar —", "cm"),
+                ("pantorrilla",    "Pantorrilla",     "— editar —", "cm"),
+                ("grasa_corporal", "Grasa corporal",  "— editar —", "%"),
+                ("masa_muscular",  "Masa muscular",   "— editar —", "%"),
+            ]
+        )
+        db.commit()
+
         # Seed personal_info
         if db.execute("SELECT COUNT(*) as c FROM personal_info").fetchone()["c"] == 0:
             db.executemany(
