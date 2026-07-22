@@ -46,6 +46,9 @@ def index():
         vault_rows = db.execute(
             "SELECT id, servicio, usuario, url, notas FROM password_vault ORDER BY servicio COLLATE NOCASE"
         ).fetchall()
+        pliegue_rows = db.execute(
+            "SELECT * FROM pliegue_grasa_log ORDER BY fecha DESC, id DESC"
+        ).fetchall()
 
     # Passwords nunca se descifran aquí — solo id/servicio/usuario/url/notas.
     # El password real se pide bajo demanda vía /api/vault/reveal/<id>.
@@ -93,6 +96,13 @@ def index():
 
     meas_by_key = {m['key']: dict(m) for m in measurements}
 
+    # ── Plicómetro (pliegues cutáneos): calcular deltas contra la lectura previa
+    pliegue_log = [dict(p) for p in pliegue_rows]
+    for i, p in enumerate(pliegue_log):
+        prev = pliegue_log[i + 1] if i + 1 < len(pliegue_log) else None
+        p['delta_pct'] = round(p['porcentaje'] - prev['porcentaje'], 1) if prev else None
+        p['delta_mm']  = round(p['mm'] - prev['mm'], 1) if prev else None
+
     return render_template('perfil/index.html',
                            info=info,
                            measurements=measurements,
@@ -102,6 +112,7 @@ def index():
                            docs_by_field=docs_by_field,
                            reminders=reminders,
                            vault=vault,
+                           pliegue_log=pliegue_log,
                            stats=stats)
 
 
@@ -141,6 +152,36 @@ def update_measurement():
         ).fetchall()
     history = [{"value": r["value"], "date": r["recorded_at"][:10]} for r in hist]
     return jsonify({'ok': True, 'history': history})
+
+
+@perfil_bp.route('/api/pliegue/add', methods=['POST'])
+def pliegue_add():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    try:
+        mm = float(d.get('mm'))
+        porcentaje = float(d.get('porcentaje'))
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'mm y porcentaje son requeridos y deben ser numéricos'}), 400
+    fecha = (d.get('fecha') or '').strip() or date.today().isoformat()
+    categoria = (d.get('categoria') or '').strip()
+    notas = (d.get('notas') or '').strip()
+    with get_db() as db:
+        db.execute(
+            "INSERT INTO pliegue_grasa_log (fecha, mm, porcentaje, categoria, notas, created_at) VALUES (?,?,?,?,?,?)",
+            (fecha, mm, porcentaje, categoria, notas, datetime.now().isoformat())
+        )
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@perfil_bp.route('/api/pliegue/<int:pid>/delete', methods=['POST'])
+def pliegue_delete(pid):
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    with get_db() as db:
+        db.execute("DELETE FROM pliegue_grasa_log WHERE id=?", (pid,))
+        db.commit()
+    return jsonify({'ok': True})
 
 
 @perfil_bp.route('/api/upload_doc', methods=['POST'])

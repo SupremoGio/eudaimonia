@@ -156,6 +156,30 @@
 .bmap-stat-unit{font-size:var(--fs-xs);color:var(--dim);}
 .bmap-hint{font-size:var(--fs-xs);color:var(--dim);margin-top:14px;line-height:1.5;max-width:340px;}
 
+/* ── Plicómetro (grasa corporal) ── */
+.tag-rose{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.25);color:#fb7185;}
+.plg-form{display:flex;flex-direction:column;gap:10px;}
+.plg-form-row{display:flex;gap:10px;flex-wrap:wrap;}
+.plg-form-row .fi{flex:1;min-width:120px;}
+.plg-row{display:grid;grid-template-columns:90px 1fr auto auto;gap:12px;align-items:center;
+  padding:12px 6px;border-bottom:1px solid var(--b);}
+.plg-row:last-child{border-bottom:none;}
+.plg-date{font-size:var(--fs-xs);color:var(--dim);}
+.plg-vals{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.plg-pct{font-family:var(--serif);font-size:1.15rem;color:var(--gold);}
+.plg-mm{font-size:var(--fs-sm);color:var(--dim);}
+.plg-zona{display:inline-flex;align-items:center;font-size:var(--fs-xs);font-weight:600;
+  letter-spacing:.04em;padding:3px 10px;border-radius:100px;white-space:nowrap;}
+.plg-zona.verde{background:rgba(16,185,129,.12);color:#10b981;border:1px solid rgba(16,185,129,.3);}
+.plg-zona.amarilla{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.3);}
+.plg-zona.roja{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.3);}
+.plg-zona.neutra{background:var(--gold-d);color:var(--dim);border:1px solid rgba(201,168,76,.15);}
+.plg-notas{font-size:var(--fs-xs);color:var(--dim);opacity:.7;grid-column:1/-1;margin-top:-4px;}
+.plg-empty{padding:20px;text-align:center;font-size:var(--fs-sm);color:var(--dim);opacity:.6;}
+@media(max-width:640px){.plg-row{grid-template-columns:1fr auto;grid-template-areas:"date zona" "vals vals" "del del";}
+  .plg-row .plg-date{grid-area:date;} .plg-row .plg-zona{grid-area:zona;justify-self:end;}
+  .plg-row .plg-vals{grid-area:vals;} .plg-row .icon-btn{grid-area:del;justify-self:end;}}
+
 /* ── Documents (general) ── */
 .doc-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
 .doc-row:last-child{border-bottom:none;}
@@ -476,6 +500,83 @@
         </div>
         {% endfor %}
       </div>
+    </div>
+  </div>
+
+  <!-- ── GRASA CORPORAL (PLICÓMETRO) ─────────────────────────────────────── -->
+  <div style="margin-bottom:28px;">
+    <div class="sec-hd">
+      <div>
+        <div class="sec-title">Grasa Corporal (Plicómetro)</div>
+        <div class="sec-sub">Pliegues cutáneos · % grasa · historial</div>
+      </div>
+      <button class="btn-g" style="display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-sm);padding:6px 14px;"
+        onclick="togglePliegueForm()">
+        <i data-lucide="plus" style="width:12px;height:12px;"></i> Nueva lectura
+      </button>
+    </div>
+
+    <!-- Form (oculto por defecto) -->
+    <div id="plgForm" style="display:none;margin-bottom:12px;">
+      <div class="tile" style="padding:16px 20px;">
+        <div class="plg-form">
+          <div style="font-size:var(--fs-xs);color:var(--gold);letter-spacing:.14em;text-transform:uppercase;">
+            Nueva lectura de plicómetro
+          </div>
+          <div style="font-size:var(--fs-xs);color:var(--dim);line-height:1.5;">
+            Registra los valores tal como los leíste en tu tabla o dispositivo (mm, % y categoría) — la app no calcula la conversión, solo lleva tu historial.
+          </div>
+          <div class="plg-form-row">
+            <input class="fi" id="plgFecha" type="date" title="Fecha">
+            <input class="fi" id="plgMm" type="number" step="0.1" placeholder="Lectura (mm)" autocomplete="off">
+            <input class="fi" id="plgPct" type="number" step="0.1" placeholder="% grasa estimado" autocomplete="off">
+          </div>
+          <div class="plg-form-row">
+            <input class="fi" id="plgCategoria" placeholder="Categoría (ej. IDEAL — Zona Verde)" autocomplete="off" style="flex:2;">
+            <input class="fi" id="plgNotas" placeholder="Notas (opcional)" autocomplete="off" style="flex:2;">
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;">
+            <button class="btn-r" style="padding:6px 14px;" onclick="closePliegueForm()">Cancelar</button>
+            <button class="btn-g" style="padding:6px 18px;" onclick="savePliegueEntry()">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Historial -->
+    <div class="tile" style="padding:4px 20px;" id="plgList">
+      {% if pliegue_log %}
+        {% for p in pliegue_log %}
+        {% set cat_l = p.categoria|lower %}
+        {% if 'verde' in cat_l or 'ideal' in cat_l %}{% set zona = 'verde' %}
+        {% elif 'amarilla' in cat_l or 'aceptable' in cat_l or 'promedio' in cat_l or 'moderad' in cat_l %}{% set zona = 'amarilla' %}
+        {% elif 'roja' in cat_l or 'riesgo' in cat_l or 'alto' in cat_l or 'alta' in cat_l %}{% set zona = 'roja' %}
+        {% else %}{% set zona = 'neutra' %}
+        {% endif %}
+        <div class="plg-row" id="plgrow-{{ p.id }}">
+          <div class="plg-date">{{ p.fecha }}</div>
+          <div class="plg-vals">
+            <span class="plg-pct">{{ p.porcentaje }}%
+              {% if p.delta_pct is not none and p.delta_pct > 0 %}<span class="meas-delta up" style="font-size:10px;">↑ +{{ p.delta_pct }}</span>
+              {% elif p.delta_pct is not none and p.delta_pct < 0 %}<span class="meas-delta down" style="font-size:10px;">↓ {{ p.delta_pct }}</span>
+              {% endif %}
+            </span>
+            <span class="plg-mm">{{ p.mm }} mm
+              {% if p.delta_mm is not none and p.delta_mm > 0 %}<span style="color:#f87171;">↑{{ p.delta_mm }}</span>
+              {% elif p.delta_mm is not none and p.delta_mm < 0 %}<span style="color:#10b981;">↓{{ p.delta_mm }}</span>
+              {% endif %}
+            </span>
+          </div>
+          {% if p.categoria %}<span class="plg-zona {{ zona }}">{{ p.categoria }}</span>{% else %}<span></span>{% endif %}
+          <button class="icon-btn danger" onclick="deletePliegueEntry({{ p.id }})" title="Eliminar">
+            <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+          </button>
+          {% if p.notas %}<div class="plg-notas">{{ p.notas }}</div>{% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="plg-empty" id="plgEmpty">Sin lecturas registradas. Usa <strong>Nueva lectura</strong> para agregar la primera.</div>
+      {% endif %}
     </div>
   </div>
 
@@ -1233,6 +1334,48 @@ async function vaultCopy(id){
     _vaultCache[id]=pw;
   }
   navigator.clipboard.writeText(pw).then(()=>toast('Copiado ✓'));
+}
+function togglePliegueForm(){
+  const f=document.getElementById('plgForm');
+  const open=f.style.display!=='none';
+  if(open){closePliegueForm();return;}
+  document.getElementById('plgFecha').value=new Date().toISOString().slice(0,10);
+  document.getElementById('plgMm').value='';
+  document.getElementById('plgPct').value='';
+  document.getElementById('plgCategoria').value='';
+  document.getElementById('plgNotas').value='';
+  f.style.display='block';
+  document.getElementById('plgMm').focus();
+}
+function closePliegueForm(){
+  document.getElementById('plgForm').style.display='none';
+}
+async function savePliegueEntry(){
+  const mm=document.getElementById('plgMm').value;
+  const porcentaje=document.getElementById('plgPct').value;
+  if(!mm || !porcentaje){toast('Escribe la lectura en mm y el % de grasa');return;}
+  const payload={
+    fecha:document.getElementById('plgFecha').value,
+    mm:parseFloat(mm),
+    porcentaje:parseFloat(porcentaje),
+    categoria:document.getElementById('plgCategoria').value.trim(),
+    notas:document.getElementById('plgNotas').value.trim(),
+  };
+  const r=await fetch('/perfil/api/pliegue/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
+}
+async function deletePliegueEntry(id){
+  if(!confirm('¿Eliminar esta lectura?'))return;
+  const r=await fetch(`/perfil/api/pliegue/${id}/delete`,{method:'POST'});
+  const j=await r.json();
+  if(j.ok){
+    document.getElementById('plgrow-'+id)?.remove();
+    toast('Eliminado');
+    if(!document.querySelector('#plgList [id^=plgrow-]')){
+      document.getElementById('plgList').innerHTML='<div class="plg-empty" id="plgEmpty">Sin lecturas registradas. Usa <strong>Nueva lectura</strong> para agregar la primera.</div>';
+    }
+  }
 }
 async function deleteVaultEntry(id){
   if(!confirm('¿Eliminar esta contraseña?'))return;

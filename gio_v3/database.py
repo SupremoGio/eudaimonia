@@ -302,6 +302,19 @@ def init_db():
             value       TEXT NOT NULL,
             recorded_at TEXT NOT NULL
         );
+        -- Lectura de plicómetro (calibrador de pliegues cutáneos): el usuario
+        -- registra los 3 valores que ya obtuvo de su propia tabla/dispositivo
+        -- (mm, % de grasa, categoría) — no calculamos la fórmula acá para no
+        -- inventar una conversión que no coincida con su tabla real.
+        CREATE TABLE IF NOT EXISTS pliegue_grasa_log (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha      TEXT NOT NULL,
+            mm         REAL NOT NULL,
+            porcentaje REAL NOT NULL,
+            categoria  TEXT DEFAULT '',
+            notas      TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS profile_docs (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             filename    TEXT NOT NULL,
