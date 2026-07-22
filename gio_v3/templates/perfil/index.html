@@ -19,13 +19,17 @@
 .perf-stat-box.alert{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.3);}
 .perf-stat-box.alert .perf-stat-n{color:var(--coral);}
 
-/* ── Desktop shell: contenido principal + rail lateral ── */
-.perf-shell{display:grid;grid-template-columns:1fr 380px;gap:22px;align-items:start;}
-.perf-side{position:sticky;top:16px;}
-@media(max-width:960px){
-  .perf-shell{grid-template-columns:1fr;}
-  .perf-side{position:static;}
-}
+/* ── Pestañas ── */
+.perf-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;border-bottom:1px solid var(--b);padding-bottom:0;}
+.perf-tab-btn{background:none;border:none;color:var(--dim);font-family:var(--sans);font-size:13px;letter-spacing:.04em;padding:10px 4px;cursor:pointer;position:relative;display:flex;align-items:center;gap:7px;transition:color .18s;}
+.perf-tab-btn+.perf-tab-btn{margin-left:14px;}
+.perf-tab-btn:hover{color:var(--text);}
+.perf-tab-btn.active{color:var(--gold);}
+.perf-tab-btn.active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold);border-radius:2px;}
+.perf-tab-btn .tab-badge{font-size:9.5px;color:var(--dim);background:var(--card2);border:1px solid var(--b);border-radius:100px;padding:1px 6px;}
+.perf-tab-btn.active .tab-badge{color:var(--gold);border-color:rgba(201,168,76,.3);}
+.tab-panel{display:none;animation:fadeUp .35s ease both;}
+.tab-panel.active{display:block;}
 
 /* ── Section header ── */
 .sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
@@ -136,19 +140,7 @@
 .meas-hist-chg.up{color:#10b981;}.meas-hist-chg.down{color:#f87171;}.meas-hist-chg.eq{color:var(--dim);}
 .meas-hist-empty{font-size:var(--fs-sm);color:var(--dim);text-align:center;padding:10px 0;}
 
-/* ── Body map ── */
-.bmap-wrap{display:grid;grid-template-columns:200px 1fr;gap:26px;padding:20px 22px;align-items:start;
-  border-bottom:1px solid var(--b);}
-@media(max-width:640px){.bmap-wrap{grid-template-columns:1fr;justify-items:center;}}
-.bmap-svg{width:200px;height:auto;display:block;margin:0 auto;}
-.bmap-shape{fill:var(--card2);stroke:var(--b2);stroke-width:1.5;}
-.bmap-dot{fill:var(--card2);stroke:var(--dim);stroke-width:2;cursor:pointer;transition:all .15s;}
-.bmap-dot:hover{stroke:var(--gold);r:8;filter:drop-shadow(0 0 4px var(--gold-d));}
-.bmap-dot.filled{fill:var(--gold);stroke:var(--gold);}
-.bmap-legend{display:flex;align-items:center;gap:16px;margin-top:12px;font-size:var(--fs-xs);color:var(--dim);justify-content:center;}
-.bmap-legend-item{display:flex;align-items:center;gap:6px;}
-.bmap-legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:2px solid var(--dim);}
-.bmap-legend-dot.filled{background:var(--gold);border-color:var(--gold);}
+/* ── Vitales ── */
 .bmap-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px;}
 .bmap-stat{background:var(--card2);border:1px solid var(--b);border-radius:10px;padding:12px 14px;}
 .bmap-stat-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px;}
@@ -176,6 +168,9 @@
 .plg-zona.neutra{background:var(--gold-d);color:var(--dim);border:1px solid rgba(201,168,76,.15);}
 .plg-notas{font-size:var(--fs-xs);color:var(--dim);opacity:.7;grid-column:1/-1;margin-top:-4px;}
 .plg-empty{padding:20px;text-align:center;font-size:var(--fs-sm);color:var(--dim);opacity:.6;}
+@media(max-width:640px){.plg-row{grid-template-columns:1fr auto;grid-template-areas:"date zona" "vals vals" "del del";}
+  .plg-row .plg-date{grid-area:date;} .plg-row .plg-zona{grid-area:zona;justify-self:end;}
+  .plg-row .plg-vals{grid-area:vals;} .plg-row .icon-btn{grid-area:del;justify-self:end;}}
 
 /* ── Tallas por marca ── */
 .tm-group{padding:12px 16px;border-bottom:1px solid var(--b);}
@@ -186,9 +181,6 @@
 .tm-talla{font-family:var(--serif);font-size:1rem;color:var(--gold);min-width:36px;text-align:center;}
 .tm-notas{font-size:var(--fs-xs);color:var(--dim);opacity:.7;margin-left:4px;}
 .tm-empty{font-size:var(--fs-xs);color:var(--dim);opacity:.5;}
-@media(max-width:640px){.plg-row{grid-template-columns:1fr auto;grid-template-areas:"date zona" "vals vals" "del del";}
-  .plg-row .plg-date{grid-area:date;} .plg-row .plg-zona{grid-area:zona;justify-self:end;}
-  .plg-row .plg-vals{grid-area:vals;} .plg-row .icon-btn{grid-area:del;justify-self:end;}}
 
 /* ── Documents (general) ── */
 .doc-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--b);}
@@ -240,6 +232,34 @@
   .meas-grid{grid-template-columns:1fr 1fr;}
   .field-edit{flex-wrap:wrap;}
 }
+
+/* ── Vida: animaciones, hover, glow ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.5)}50%{box-shadow:0 0 0 5px rgba(244,63,94,0)}}
+.tile{animation:fadeUp .45s ease both;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;}
+.perf-stat-box{position:relative;overflow:hidden;animation:fadeUp .5s ease both;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,opacity .2s ease;}
+.perf-stat-box:nth-child(1){animation-delay:.02s}
+.perf-stat-box:nth-child(2){animation-delay:.07s}
+.perf-stat-box:nth-child(3){animation-delay:.12s}
+.perf-stat-box:nth-child(4){animation-delay:.17s}
+.perf-stat-box:nth-child(5){animation-delay:.22s}
+.perf-stat-box:hover{transform:translateY(-3px);border-color:var(--b2);box-shadow:0 10px 26px rgba(0,0,0,.3);}
+.perf-stat-box.glow::before{content:'';position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,.2),transparent 70%);top:-30px;right:-20px;pointer-events:none;}
+.perf-stat-box.muted{border-style:dashed;opacity:.72;}
+.perf-stat-box.muted:hover{opacity:1;}
+.perf-ring{width:34px;height:34px;border-radius:50%;position:relative;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;}
+.perf-ring::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--gold) calc(var(--pct)*1%),var(--b) 0);}
+.perf-ring::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--card2);}
+.perf-ring b{position:relative;z-index:1;font-size:8px;color:var(--gold);}
+.perf-pulse{width:6px;height:6px;border-radius:50%;background:var(--coral);display:inline-block;margin-right:5px;animation:pulse 1.8s infinite;}
+.field-row{transition:background .18s ease;border-radius:8px;}
+.field-row:hover{background:rgba(201,168,76,.045);}
+.field-actions{display:inline-flex;align-items:center;gap:2px;opacity:.55;transition:opacity .18s ease;}
+.field-row:hover .field-actions{opacity:1;}
+.rem-check{transition:transform .18s ease,color .15s,background .15s;}
+.rem-row:hover .rem-check{transform:scale(1.15);}
+.vault-row,.plg-row,.doc-row{transition:background .18s ease;border-radius:8px;}
+.vault-row:hover,.plg-row:hover,.doc-row:hover{background:rgba(201,168,76,.04);}
 </style>
 
 <div class="perf-wrap">
@@ -252,32 +272,44 @@
     </div>
     <div class="perf-hero-desc">Información de identidad, medidas corporales, documentos y recordatorios — todo en un solo lugar, protegido con contraseña.</div>
     <div class="perf-stat-strip">
-      <div class="perf-stat-box">
+      <div class="perf-stat-box glow" onclick="switchPerfTab('personal')" style="cursor:pointer">
+        {% set pct_campos = ((stats.campos_completos / stats.campos_total * 100) | round(0)) if stats.campos_total else 0 %}
+        <div class="perf-ring" style="--pct:{{ pct_campos }}"><b>{{ pct_campos }}%</b></div>
         <div class="perf-stat-n">{{ stats.campos_completos }}/{{ stats.campos_total }}</div>
         <div class="perf-stat-l">Campos completos</div>
       </div>
-      <div class="perf-stat-box">
+      <div class="perf-stat-box glow" onclick="switchPerfTab('mediciones')" style="cursor:pointer">
+        {% set pct_medidas = ((stats.medidas_completas / stats.medidas_total * 100) | round(0)) if stats.medidas_total else 0 %}
+        <div class="perf-ring" style="--pct:{{ pct_medidas }}"><b>{{ pct_medidas }}%</b></div>
         <div class="perf-stat-n">{{ stats.medidas_completas }}/{{ stats.medidas_total }}</div>
         <div class="perf-stat-l">Medidas registradas</div>
       </div>
-      <div class="perf-stat-box">
+      <div class="perf-stat-box {% if stats.docs_total == 0 %}muted{% endif %}" onclick="switchPerfTab('documentos')" style="cursor:pointer">
         <div class="perf-stat-n">{{ stats.docs_total }}</div>
         <div class="perf-stat-l">Documentos</div>
+        {% if stats.docs_total == 0 %}<div style="font-size:9px;color:var(--gold);margin-top:3px;">+ subir el primero</div>{% endif %}
       </div>
-      <div class="perf-stat-box {% if stats.rem_urgentes > 0 %}alert{% endif %}">
-        <div class="perf-stat-n">{{ stats.rem_total }}</div>
+      <div class="perf-stat-box {% if stats.rem_urgentes > 0 %}alert{% endif %}" onclick="switchPerfTab('recordatorios')" style="cursor:pointer">
+        <div class="perf-stat-n">{% if stats.rem_urgentes > 0 %}<span class="perf-pulse"></span>{% endif %}{{ stats.rem_total }}</div>
         <div class="perf-stat-l">{% if stats.rem_urgentes > 0 %}{{ stats.rem_urgentes }} próximo{{ 's' if stats.rem_urgentes != 1 else '' }}{% else %}Recordatorios{% endif %}</div>
       </div>
-      <div class="perf-stat-box">
+      <div class="perf-stat-box {% if stats.vault_total == 0 %}muted{% endif %}" onclick="switchPerfTab('contrasenas')" style="cursor:pointer">
         <div class="perf-stat-n">{{ stats.vault_total }}</div>
         <div class="perf-stat-l">Contraseñas</div>
+        {% if stats.vault_total == 0 %}<div style="font-size:9px;color:var(--gold);margin-top:3px;">+ guardar una</div>{% endif %}
       </div>
     </div>
   </div>
 
-  <div class="perf-shell">
-  <div class="perf-main">
+  <div class="perf-tabs" role="tablist">
+    <button class="perf-tab-btn active" data-tab="personal" onclick="switchPerfTab('personal')"><i data-lucide="user" style="width:13px;height:13px;"></i> Perfil Personal</button>
+    <button class="perf-tab-btn" data-tab="documentos" onclick="switchPerfTab('documentos')"><i data-lucide="folder" style="width:13px;height:13px;"></i> Documentos</button>
+    <button class="perf-tab-btn" data-tab="mediciones" onclick="switchPerfTab('mediciones')"><i data-lucide="ruler" style="width:13px;height:13px;"></i> Mediciones</button>
+    <button class="perf-tab-btn" data-tab="recordatorios" onclick="switchPerfTab('recordatorios')"><i data-lucide="bell" style="width:13px;height:13px;"></i> Recordatorios</button>
+    <button class="perf-tab-btn" data-tab="contrasenas" onclick="switchPerfTab('contrasenas')"><i data-lucide="key-round" style="width:13px;height:13px;"></i> Contraseñas</button>
+  </div>
 
+  <div class="tab-panel active" id="tab-personal">
   <!-- ── INFORMACIÓN PERSONAL ─────────────────────────────────────────── -->
   <div style="margin-bottom:28px;">
     <div class="sec-hd">
@@ -298,11 +330,13 @@
         </div>
 
         <div class="field-view" id="vrow-{{ item.key }}">
+          {% if item.key == 'nombre' %}<div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--gold),#7A5520);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i data-lucide="user" style="width:13px;height:13px;color:#09070F;"></i></div>{% endif %}
           <span class="field-val {% if item.private %}is-priv{% endif %}"
             id="val-{{ item.key }}" data-real="{{ item.value }}" data-private="{{ item.private }}">
             {% if item.private %}••••••••{% else %}{{ item.value }}{% endif %}
           </span>
 
+          <span class="field-actions">
           {% if item.private %}
           <button class="icon-btn" onclick="toggleVis('{{ item.key }}')" title="Mostrar/ocultar" id="eyebtn-{{ item.key }}">
             <i data-lucide="eye" style="width:13px;height:13px;"></i>
@@ -329,6 +363,7 @@
             {% endif %}
           </button>
           {% endif %}
+          </span>
         </div>
 
         <div class="field-edit" id="erow-{{ item.key }}">
@@ -366,6 +401,36 @@
     </div>
   </div>
 
+  </div>{# /tab-personal #}
+
+  <div class="tab-panel" id="tab-documentos">
+  <!-- ── DOCUMENTOS GENERALES ─────────────────────────────────────────── -->
+  <div style="margin-bottom:28px;">
+    <div class="sec-hd">
+      <div>
+        <div class="sec-title">Documentos</div>
+        <div class="sec-sub">No ligados a un campo específico</div>
+      </div>
+      <label class="btn-g gen-upload" title="Subir documento">
+        <input type="file" style="display:none;" multiple
+          accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip"
+          onchange="uploadGeneralDoc(this)">
+        <i data-lucide="upload" style="width:12px;height:12px;"></i> Subir
+      </label>
+    </div>
+    <div class="tile" style="padding:4px 20px;" id="docsList">
+      {% if docs %}
+        {% for doc in docs %}
+        {{ gen_doc_row(doc) }}
+        {% endfor %}
+      {% else %}
+        <div class="doc-empty" id="docsEmpty">Aún no hay documentos.</div>
+      {% endif %}
+    </div>
+  </div>
+  </div>{# /tab-documentos #}
+
+  <div class="tab-panel" id="tab-mediciones">
   <!-- ── MEDICIONES CORPORALES ─────────────────────────────────────────── -->
   <div style="margin-bottom:28px;">
     <div class="sec-hd">
@@ -377,50 +442,9 @@
     </div>
     <div class="tile" style="padding:0;overflow:hidden;">
 
-      <!-- ── Body map: silhouette + vitals ── -->
-      <div class="bmap-wrap">
-        <div>
-          <svg class="bmap-svg" viewBox="0 0 200 350" xmlns="http://www.w3.org/2000/svg">
-            <!-- Silueta -->
-            <circle class="bmap-shape" cx="100" cy="28" r="20"/>
-            <rect class="bmap-shape" x="92" y="45" width="16" height="14" rx="4"/>
-            <rect class="bmap-shape" x="58" y="55" width="84" height="60" rx="22"/>
-            <rect class="bmap-shape" x="68" y="112" width="64" height="35" rx="18"/>
-            <rect class="bmap-shape" x="62" y="144" width="76" height="32" rx="16"/>
-            <rect class="bmap-shape" x="30" y="58" width="22" height="65" rx="11"/>
-            <rect class="bmap-shape" x="148" y="58" width="22" height="65" rx="11"/>
-            <rect class="bmap-shape" x="25" y="118" width="18" height="60" rx="9"/>
-            <rect class="bmap-shape" x="157" y="118" width="18" height="60" rx="9"/>
-            <rect class="bmap-shape" x="64" y="176" width="30" height="85" rx="15"/>
-            <rect class="bmap-shape" x="106" y="176" width="30" height="85" rx="15"/>
-            <rect class="bmap-shape" x="68" y="258" width="22" height="75" rx="11"/>
-            <rect class="bmap-shape" x="110" y="258" width="22" height="75" rx="11"/>
-
-            <!-- Hotspots -->
-            {% set dots = [
-              ('cuello', 100, 51), ('hombros', 100, 60), ('pecho', 100, 85),
-              ('cintura', 100, 129), ('cadera', 100, 160),
-              ('biceps', 41, 90), ('biceps', 159, 90),
-              ('antebrazo', 34, 148), ('antebrazo', 166, 148),
-              ('muslo', 79, 218), ('muslo', 121, 218),
-              ('pantorrilla', 79, 295), ('pantorrilla', 121, 295),
-            ] %}
-            {% for key, cx, cy in dots %}
-            {% set filled = meas_by_key.get(key) and meas_by_key[key].value != '— editar —' %}
-            <circle class="bmap-dot {% if filled %}filled{% endif %}" cx="{{ cx }}" cy="{{ cy }}" r="6"
-                    onclick="focusMeasurement('{{ key }}')">
-              <title>{{ meas_by_key[key].label if meas_by_key.get(key) else key }}</title>
-            </circle>
-            {% endfor %}
-          </svg>
-          <div class="bmap-legend">
-            <span class="bmap-legend-item"><span class="bmap-legend-dot"></span> Sin medir</span>
-            <span class="bmap-legend-item"><span class="bmap-legend-dot filled"></span> Registrado</span>
-          </div>
-        </div>
-
-        <div>
-          <div class="bmap-stats">
+      <!-- ── Vitales rápidos ── -->
+      <div style="padding:20px 22px;border-bottom:1px solid var(--b);">
+        <div class="bmap-stats">
             {% for key in ['peso', 'grasa_corporal', 'masa_muscular'] %}
             {% set m = meas_by_key.get(key) %}
             {% if m %}
@@ -444,9 +468,8 @@
             {% endfor %}
           </div>
           <div class="bmap-hint">
-            Toca un punto del cuerpo para registrar esa medida. Cada actualización queda en tu historial — así ves si subiste o bajaste con el tiempo.
+            Toca «Editar» en cualquier medida para registrarla. Cada actualización queda en tu historial — así ves si subiste o bajaste con el tiempo.
           </div>
-        </div>
       </div>
 
       <div class="meas-grid">
@@ -656,6 +679,9 @@
     </div>
   </div>
 
+  </div>{# /tab-mediciones #}
+
+  <div class="tab-panel" id="tab-contrasenas">
   <!-- ── CONTRASEÑAS ───────────────────────────────────────────────────── -->
   <div style="margin-bottom:28px;">
     <div class="sec-hd">
@@ -732,10 +758,9 @@
     </div>
   </div>
 
-  </div>{# /.perf-main #}
+  </div>{# /tab-contrasenas #}
 
-  <div class="perf-side">
-
+  <div class="tab-panel" id="tab-recordatorios">
   <!-- ── RECORDATORIOS ────────────────────────────────────────────────── -->
   <div style="margin-bottom:28px;">
     <div class="sec-hd">
@@ -823,33 +848,7 @@
     </div>
   </div>
 
-  <!-- ── DOCUMENTOS GENERALES ─────────────────────────────────────────── -->
-  <div style="margin-bottom:28px;">
-    <div class="sec-hd">
-      <div>
-        <div class="sec-title">Documentos</div>
-        <div class="sec-sub">No ligados a un campo específico</div>
-      </div>
-      <label class="btn-g gen-upload" title="Subir documento">
-        <input type="file" style="display:none;" multiple
-          accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip"
-          onchange="uploadGeneralDoc(this)">
-        <i data-lucide="upload" style="width:12px;height:12px;"></i> Subir
-      </label>
-    </div>
-    <div class="tile" style="padding:4px 20px;" id="docsList">
-      {% if docs %}
-        {% for doc in docs %}
-        {{ gen_doc_row(doc) }}
-        {% endfor %}
-      {% else %}
-        <div class="doc-empty" id="docsEmpty">Aún no hay documentos.</div>
-      {% endif %}
-    </div>
-  </div>
-
-  </div>{# /.perf-side #}
-  </div>{# /.perf-shell #}
+  </div>{# /tab-recordatorios #}
 
 </div>{# /.perf-wrap #}
 
@@ -938,6 +937,13 @@ const mv={};
 
 // Track open doc panel
 let _openPanel = null;
+
+function switchPerfTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.perf-tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name)?.classList.add('active');
+  document.querySelector('.perf-tab-btn[data-tab="'+name+'"]')?.classList.add('active');
+}
 
 // ── Info personal ─────────────────────────────────────────────────────────────
 function toggleVis(k){
