@@ -143,6 +143,201 @@ const MODULE_ICONS = {
 };
 const DEADLINE_TYPE_ICON  = { reminder: IconBell, task: IconCheckSquare, wishlist: IconShoppingBag };
 const DEADLINE_TYPE_LABEL = { reminder: 'recordatorio', task: 'tarea gtd', wishlist: 'wishlist' };
+const DEADLINE_PAL = {
+  red:    { text:'#f87171', bg:'rgba(239,68,68,0.09)',  border:'#ef4444', pill:'rgba(239,68,68,0.20)'  },
+  amber:  { text:'#fbbf24', bg:'rgba(245,158,11,0.09)', border:'#f59e0b', pill:'rgba(245,158,11,0.20)' },
+  yellow: { text:'#fde047', bg:'rgba(234,179,8,0.07)',  border:'#eab308', pill:'rgba(234,179,8,0.18)'  },
+  green:  { text:'#34d399', bg:'rgba(16,185,129,0.07)', border:'#10b981', pill:'rgba(16,185,129,0.18)' },
+};
+
+// ─── Shared deadlines/reminders state — one source of truth for the ─────────
+// sidebar Deadline Radar and the topbar notification bell.
+function useDeadlines() {
+  const initial = (window.EU._server || {}).deadlines || [];
+  const [deadlines, setDeadlines] = useState(initial);
+  const [checking, setChecking] = useState({});
+
+  async function handleCheck(dl) {
+    if (checking[dl.id]) return;
+    setChecking(prev => ({...prev, [dl.id]: true}));
+    const url = dl.type === 'task'
+      ? `/gtd/api/task/${dl.id}/complete`
+      : `/perfil/api/reminder/${dl.id}/done`;
+    try {
+      const res = await fetch(url, {method:'POST'});
+      const j = await res.json();
+      if (j.ok) {
+        setDeadlines(prev => prev.filter(d => !(d.id === dl.id && d.type === dl.type)));
+      }
+    } catch(e) {}
+    setChecking(prev => ({...prev, [dl.id]: false}));
+  }
+
+  return { deadlines, checking, handleCheck };
+}
+
+// ─── One deadline/reminder card — reused by the sidebar radar and the ──────
+// topbar notification dropdown.
+function DeadlineItemCard({ dl, isChecking, onCheck }) {
+  const p = DEADLINE_PAL[dl.level] || DEADLINE_PAL.green;
+  const urgent = dl.level === 'red';
+  const sublabel = dl.days > 0 ? 'DÍAS' : dl.days === 0 ? 'DEADLINE' : 'EXPIRADO';
+  const TypeIcon = DEADLINE_TYPE_ICON[dl.type] || IconBell;
+
+  return (
+    <div style={{
+      display:'flex',alignItems:'stretch',
+      borderRadius:14,overflow:'hidden',
+      border:'1px solid rgba(255,255,255,0.05)',
+      background:p.bg,
+      boxShadow:'0 2px 14px rgba(0,0,0,0.32)',
+      opacity: isChecking ? 0.5 : 1,
+      transition:'opacity 0.2s',
+    }}>
+      {/* Barra lateral */}
+      <div style={{
+        width:3,flexShrink:0,background:p.border,
+        boxShadow: urgent ? `0 0 9px ${p.border}` : 'none',
+      }}/>
+
+      {/* Contenido */}
+      <div style={{flex:1,padding:'11px 12px',display:'flex',
+        flexDirection:'column',gap:6,minWidth:0}}>
+
+        {/* Header: tipo + check */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div style={{display:'flex',alignItems:'center',gap:5,color:p.text,opacity:0.75}}>
+            <TypeIcon size={10} style={urgent ? {animation:'euIconWiggle 1.8s ease-in-out infinite'} : undefined}/>
+            <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
+              letterSpacing:'0.12em',textTransform:'uppercase'}}>{DEADLINE_TYPE_LABEL[dl.type] || dl.type}</span>
+          </div>
+          <button
+            onClick={() => onCheck(dl)}
+            title="Marcar como cumplido"
+            style={{
+              flexShrink:0,width:20,height:20,borderRadius:'50%',
+              border:`1.5px solid ${p.border}`,
+              background:'transparent',cursor:'pointer',
+              display:'flex',alignItems:'center',justifyContent:'center',
+              transition:'background 0.15s',
+              opacity: isChecking ? 0.4 : 1,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = p.pill}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <IconHoverFx Icon={IconCheck} fx="pop" size={10} color={p.border}/>
+          </button>
+        </div>
+
+        {/* Nombre */}
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,fontWeight:500,
+          color:C.text,lineHeight:1.3,
+          overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}
+          title={dl.label}>
+          {dl.label}
+        </div>
+
+        {/* Badge + pulso */}
+        <div style={{display:'flex',alignItems:'flex-end',
+          justifyContent:'space-between',marginTop:'auto'}}>
+          <div style={{background:p.pill,borderRadius:8,
+            padding:'4px 9px',display:'inline-flex',
+            alignItems:'baseline',gap:4}}>
+            <span style={{
+              fontFamily:'DM Sans,sans-serif',fontWeight:900,lineHeight:1,
+              fontSize:['HOY','VENCIDO'].includes(dl.badge) ? 12 : 17,
+              color:p.text,
+            }}>{dl.badge}</span>
+            <span style={{fontFamily:'DM Sans,sans-serif',fontSize:7,
+              letterSpacing:'0.14em',color:p.text,opacity:0.6}}>{sublabel}</span>
+          </div>
+          {urgent && (
+            <div style={{width:7,height:7,borderRadius:'50%',flexShrink:0,
+              marginBottom:2,background:p.border,
+              boxShadow:`0 0 6px ${p.border}`,
+              animation:'blink 1.4s ease-in-out infinite'}}/>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Topbar notification bell — badge + dropdown, shares state with the ───
+// sidebar Deadline Radar so checking an item off stays in sync everywhere.
+function NotificationBell({ deadlines, checking, onCheck }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const hasUrgent = deadlines.some(d => d.level === 'red');
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    function onKey(e) { if (e.key === 'Escape') setOpen(false); }
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} style={{position:'relative'}}>
+      <button onClick={() => setOpen(o => !o)} title="Notificaciones" style={{
+        position:'relative',background:'var(--gold-bg)',
+        border:'1px solid color-mix(in srgb, var(--gold) 20%, transparent)',
+        borderRadius:6,width:26,height:26,cursor:'pointer',
+        display:'flex',alignItems:'center',justifyContent:'center',
+      }}>
+        <IconHoverFx Icon={IconBell} fx="wiggle" size={13} color="var(--gold)"/>
+        {deadlines.length > 0 && (
+          <span style={{
+            position:'absolute',top:-4,right:-4,minWidth:14,height:14,borderRadius:7,
+            background: hasUrgent ? '#ef4444' : 'var(--gold)',
+            color: hasUrgent ? '#fff' : '#09070F',
+            fontFamily:'DM Sans,sans-serif',fontSize:8,fontWeight:700,lineHeight:1,
+            display:'flex',alignItems:'center',justifyContent:'center',padding:'0 3px',
+            boxShadow: hasUrgent ? '0 0 6px #ef4444' : '0 0 6px var(--gold-glow)',
+            animation: hasUrgent ? 'blink 1.4s ease-in-out infinite' : 'none',
+          }}>{deadlines.length}</span>
+        )}
+      </button>
+
+      {open && (
+        <div style={{
+          position:'absolute',top:'calc(100% + 10px)',right:0,zIndex:60,
+          width:320,maxHeight:420,overflowY:'auto',
+          background:'var(--surf)',border:'1px solid var(--gold-border)',
+          borderRadius:14,padding:14,
+          boxShadow:'0 20px 50px rgba(0,0,0,0.5)',
+          animation:'euIconPop 0.18s ease',
+        }}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
+              color:C.textMuted,textTransform:'uppercase'}}>Notificaciones</div>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.textMuted,opacity:0.45}}>
+              {deadlines.length} próximos
+            </div>
+          </div>
+          {deadlines.length === 0 ? (
+            <div style={{padding:'20px 4px',textAlign:'center',
+              fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textMuted}}>
+              Sin pendientes por ahora ✦
+            </div>
+          ) : (
+            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+              {deadlines.map((dl, i) => (
+                <DeadlineItemCard key={`${dl.type}-${dl.id ?? i}`} dl={dl}
+                  isChecking={checking[dl.id]} onCheck={onCheck}/>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Small hover-triggered icon button (wiggle/pop/spin on hover) ─────────
 function IconHoverFx({ Icon, size = 14, fx = 'wiggle', color, style, iconStyle }) {
@@ -393,35 +588,8 @@ function RemindersWidget() {
 // ═══════════════════════════════════════════════════════════
 // DEADLINE RADAR
 // ═══════════════════════════════════════════════════════════
-function DeadlineRadar() {
-  const initial = (window.EU._server || {}).deadlines || [];
-  const [deadlines, setDeadlines] = useState(initial);
-  const [checking, setChecking] = useState({});
-
+function DeadlineRadar({ deadlines, checking, onCheck }) {
   if (!deadlines.length) return null;
-
-  async function handleCheck(dl) {
-    if (checking[dl.id]) return;
-    setChecking(prev => ({...prev, [dl.id]: true}));
-    const url = dl.type === 'task'
-      ? `/gtd/api/task/${dl.id}/complete`
-      : `/perfil/api/reminder/${dl.id}/done`;
-    try {
-      const res = await fetch(url, {method:'POST'});
-      const j = await res.json();
-      if (j.ok) {
-        setDeadlines(prev => prev.filter(d => !(d.id === dl.id && d.type === dl.type)));
-      }
-    } catch(e) {}
-    setChecking(prev => ({...prev, [dl.id]: false}));
-  }
-
-  const PAL = {
-    red:    { text:'#f87171', bg:'rgba(239,68,68,0.09)',  border:'#ef4444', pill:'rgba(239,68,68,0.20)'  },
-    amber:  { text:'#fbbf24', bg:'rgba(245,158,11,0.09)', border:'#f59e0b', pill:'rgba(245,158,11,0.20)' },
-    yellow: { text:'#fde047', bg:'rgba(234,179,8,0.07)',  border:'#eab308', pill:'rgba(234,179,8,0.18)'  },
-    green:  { text:'#34d399', bg:'rgba(16,185,129,0.07)', border:'#10b981', pill:'rgba(16,185,129,0.18)' },
-  };
 
   return (
     <div style={{marginBottom:14}}>
@@ -441,91 +609,10 @@ function DeadlineRadar() {
 
       {/* Lista — una sola columna, sin scroll oculto */}
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
-        {deadlines.map((dl, i) => {
-          const p = PAL[dl.level] || PAL.green;
-          const urgent = dl.level === 'red';
-          const sublabel = dl.days > 0 ? 'DÍAS' : dl.days === 0 ? 'DEADLINE' : 'EXPIRADO';
-          const TypeIcon = DEADLINE_TYPE_ICON[dl.type] || IconBell;
-
-          const isChecking = checking[dl.id];
-          return (
-            <div key={`${dl.type}-${dl.id ?? i}`} style={{
-              display:'flex',alignItems:'stretch',
-              borderRadius:14,overflow:'hidden',
-              border:'1px solid rgba(255,255,255,0.05)',
-              background:p.bg,
-              boxShadow:'0 2px 14px rgba(0,0,0,0.32)',
-              opacity: isChecking ? 0.5 : 1,
-              transition:'opacity 0.2s',
-            }}>
-              {/* Barra lateral */}
-              <div style={{
-                width:3,flexShrink:0,background:p.border,
-                boxShadow: urgent ? `0 0 9px ${p.border}` : 'none',
-              }}/>
-
-              {/* Contenido */}
-              <div style={{flex:1,padding:'11px 12px',display:'flex',
-                flexDirection:'column',gap:6,minWidth:0}}>
-
-                {/* Header: tipo + check */}
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                  <div style={{display:'flex',alignItems:'center',gap:5,color:p.text,opacity:0.75}}>
-                    <TypeIcon size={10} style={urgent ? {animation:'euIconWiggle 1.8s ease-in-out infinite'} : undefined}/>
-                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:8,
-                      letterSpacing:'0.12em',textTransform:'uppercase'}}>{DEADLINE_TYPE_LABEL[dl.type] || dl.type}</span>
-                  </div>
-                  <button
-                    onClick={() => handleCheck(dl)}
-                    title="Marcar como cumplido"
-                    style={{
-                      flexShrink:0,width:20,height:20,borderRadius:'50%',
-                      border:`1.5px solid ${p.border}`,
-                      background:'transparent',cursor:'pointer',
-                      display:'flex',alignItems:'center',justifyContent:'center',
-                      transition:'background 0.15s',
-                      opacity: isChecking ? 0.4 : 1,
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.background = p.pill}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <IconHoverFx Icon={IconCheck} fx="pop" size={10} color={p.border}/>
-                  </button>
-                </div>
-
-                {/* Nombre */}
-                <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,fontWeight:500,
-                  color:C.text,lineHeight:1.3,
-                  overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}
-                  title={dl.label}>
-                  {dl.label}
-                </div>
-
-                {/* Badge + pulso */}
-                <div style={{display:'flex',alignItems:'flex-end',
-                  justifyContent:'space-between',marginTop:'auto'}}>
-                  <div style={{background:p.pill,borderRadius:8,
-                    padding:'4px 9px',display:'inline-flex',
-                    alignItems:'baseline',gap:4}}>
-                    <span style={{
-                      fontFamily:'DM Sans,sans-serif',fontWeight:900,lineHeight:1,
-                      fontSize:['HOY','VENCIDO'].includes(dl.badge) ? 12 : 17,
-                      color:p.text,
-                    }}>{dl.badge}</span>
-                    <span style={{fontFamily:'DM Sans,sans-serif',fontSize:7,
-                      letterSpacing:'0.14em',color:p.text,opacity:0.6}}>{sublabel}</span>
-                  </div>
-                  {urgent && (
-                    <div style={{width:7,height:7,borderRadius:'50%',flexShrink:0,
-                      marginBottom:2,background:p.border,
-                      boxShadow:`0 0 6px ${p.border}`,
-                      animation:'blink 1.4s ease-in-out infinite'}}/>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {deadlines.map((dl, i) => (
+          <DeadlineItemCard key={`${dl.type}-${dl.id ?? i}`} dl={dl}
+            isChecking={checking[dl.id]} onCheck={onCheck}/>
+        ))}
       </div>
     </div>
   );
@@ -631,6 +718,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
   const xpDayPct = Math.min(1, xpToday / XP_GOAL);
 
   const [suggestion, setSuggestion] = React.useState(srv.suggestion || null);
+  const { deadlines, checking, handleCheck } = useDeadlines();
 
   const logActivityFromHome = (key) => {
     if (suggestion?.key === key) setSuggestion(null);
@@ -853,6 +941,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
                 display:'inline-flex',alignItems:'center',gap:5}}>
               <IconHoverFx Icon={IconCommand} fx="wiggle" size={11}/> K
             </button>
+            <NotificationBell deadlines={deadlines} checking={checking} onCheck={handleCheck}/>
             <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:5,
               fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.gold,opacity:0.65,
               textDecoration:'none',letterSpacing:'0.08em'}}>
@@ -886,7 +975,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
           <div style={{position:'sticky',top:80}}>
             <div style={{animation:'euRise 0.5s ease 0.08s both'}}>{heatmapCard}</div>
             <div style={{animation:'euRise 0.5s ease 0.14s both'}}><WordOfDay/></div>
-            <div style={{animation:'euRise 0.5s ease 0.20s both'}}><DeadlineRadar/></div>
+            <div style={{animation:'euRise 0.5s ease 0.20s both'}}><DeadlineRadar deadlines={deadlines} checking={checking} onCheck={handleCheck}/></div>
           </div>
         </div>
       </div>
@@ -915,11 +1004,14 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
               ΕΥΔΑΙΜΟΝΙΑ
             </div>
           </div>
-          <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:5,
-            fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.gold,opacity:0.65,
-            textDecoration:'none',letterSpacing:'0.08em',paddingTop:4}}>
-            <IconHoverFx Icon={IconTrophy} fx="pop" size={11}/> Logros
-          </a>
+          <div style={{display:'flex',alignItems:'center',gap:10,paddingTop:2}}>
+            <NotificationBell deadlines={deadlines} checking={checking} onCheck={handleCheck}/>
+            <a href="/logros" style={{display:'inline-flex',alignItems:'center',gap:5,
+              fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.gold,opacity:0.65,
+              textDecoration:'none',letterSpacing:'0.08em'}}>
+              <IconHoverFx Icon={IconTrophy} fx="pop" size={11}/> Logros
+            </a>
+          </div>
         </div>
       </div>
 
@@ -939,7 +1031,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         <div style={{animation:'euRise 0.5s ease 0.22s both'}}>{heatmapCard}</div>
         <div style={{animation:'euRise 0.5s ease 0.26s both'}}><ReflexionDelDia/></div>
         <div style={{animation:'euRise 0.5s ease 0.30s both'}}><WordOfDay/></div>
-        <div style={{animation:'euRise 0.5s ease 0.34s both'}}><DeadlineRadar/></div>
+        <div style={{animation:'euRise 0.5s ease 0.34s both'}}><DeadlineRadar deadlines={deadlines} checking={checking} onCheck={handleCheck}/></div>
       </div>
     </div>
   );
