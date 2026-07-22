@@ -49,6 +49,9 @@ def index():
         pliegue_rows = db.execute(
             "SELECT * FROM pliegue_grasa_log ORDER BY fecha DESC, id DESC"
         ).fetchall()
+        tallas_rows = db.execute(
+            "SELECT * FROM tallas_marca ORDER BY prenda, marca COLLATE NOCASE"
+        ).fetchall()
 
     # Passwords nunca se descifran aquí — solo id/servicio/usuario/url/notas.
     # El password real se pide bajo demanda vía /api/vault/reveal/<id>.
@@ -103,6 +106,11 @@ def index():
         p['delta_pct'] = round(p['porcentaje'] - prev['porcentaje'], 1) if prev else None
         p['delta_mm']  = round(p['mm'] - prev['mm'], 1) if prev else None
 
+    # ── Tallas por marca: agrupar por prenda (camisa / playera / pantalón) ──
+    tallas_por_prenda = {}
+    for t in tallas_rows:
+        tallas_por_prenda.setdefault(t['prenda'], []).append(dict(t))
+
     return render_template('perfil/index.html',
                            info=info,
                            measurements=measurements,
@@ -113,6 +121,7 @@ def index():
                            reminders=reminders,
                            vault=vault,
                            pliegue_log=pliegue_log,
+                           tallas_por_prenda=tallas_por_prenda,
                            stats=stats)
 
 
@@ -180,6 +189,37 @@ def pliegue_delete(pid):
     if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
     with get_db() as db:
         db.execute("DELETE FROM pliegue_grasa_log WHERE id=?", (pid,))
+        db.commit()
+    return jsonify({'ok': True})
+
+
+PRENDAS_VALIDAS = ('camisa', 'playera', 'pantalon')
+
+
+@perfil_bp.route('/api/talla/add', methods=['POST'])
+def talla_add():
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    prenda = (d.get('prenda') or '').strip().lower()
+    marca = (d.get('marca') or '').strip()
+    talla = (d.get('talla') or '').strip()
+    notas = (d.get('notas') or '').strip()
+    if prenda not in PRENDAS_VALIDAS or not marca or not talla:
+        return jsonify({'ok': False, 'error': 'prenda, marca y talla son requeridos'}), 400
+    with get_db() as db:
+        db.execute(
+            "INSERT INTO tallas_marca (prenda, marca, talla, notas, created_at) VALUES (?,?,?,?,?)",
+            (prenda, marca, talla, notas, datetime.now().isoformat())
+        )
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@perfil_bp.route('/api/talla/<int:tid>/delete', methods=['POST'])
+def talla_delete(tid):
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    with get_db() as db:
+        db.execute("DELETE FROM tallas_marca WHERE id=?", (tid,))
         db.commit()
     return jsonify({'ok': True})
 

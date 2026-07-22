@@ -315,6 +315,16 @@ def init_db():
             notas      TEXT DEFAULT '',
             created_at TEXT NOT NULL
         );
+        -- Talla de ropa por marca: camisa/playera/pantalón varían de marca a
+        -- marca, por eso es una lista (una fila por marca) y no un valor único.
+        CREATE TABLE IF NOT EXISTS tallas_marca (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            prenda     TEXT NOT NULL,
+            marca      TEXT NOT NULL,
+            talla      TEXT NOT NULL,
+            notas      TEXT DEFAULT '',
+            created_at TEXT NOT NULL
+        );
         CREATE TABLE IF NOT EXISTS profile_docs (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             filename    TEXT NOT NULL,
@@ -585,8 +595,6 @@ def init_db():
                     ("cuello",     "Cuello",         "— editar —", "cm"),
                     ("entrepier",  "Entrepierna",    "— editar —", "cm"),
                     ("pie",        "Pie (talla)",    "— editar —", "MX"),
-                    ("t_camisa",   "Talla camisa",   "— editar —", ""),
-                    ("t_pantalon", "Talla pantalón", "— editar —", ""),
                 ]
             )
 
@@ -595,7 +603,6 @@ def init_db():
         db.executemany(
             "INSERT OR IGNORE INTO body_measurements (key, label, value, unit) VALUES (?,?,?,?)",
             [
-                ("t_playera",      "Talla playera",   "— editar —", ""),
                 ("biceps",         "Bíceps",          "— editar —", "cm"),
                 ("antebrazo",      "Antebrazo",       "— editar —", "cm"),
                 ("muslo",          "Muslo",           "— editar —", "cm"),
@@ -604,6 +611,13 @@ def init_db():
                 ("masa_muscular",  "Masa muscular",   "— editar —", "%"),
             ]
         )
+
+        # Las tallas de ropa (camisa/playera/pantalón) varían por marca, así que
+        # dejaron de ser un valor único en body_measurements y pasaron a
+        # tallas_marca (una fila por marca). Se quitan las llaves viejas si
+        # quedaron de una versión anterior.
+        db.execute("DELETE FROM body_measurements WHERE key IN ('t_camisa','t_playera','t_pantalon')")
+        db.execute("DELETE FROM body_measurements_history WHERE key IN ('t_camisa','t_playera','t_pantalon')")
         db.commit()
 
         # Seed personal_info

@@ -176,6 +176,16 @@
 .plg-zona.neutra{background:var(--gold-d);color:var(--dim);border:1px solid rgba(201,168,76,.15);}
 .plg-notas{font-size:var(--fs-xs);color:var(--dim);opacity:.7;grid-column:1/-1;margin-top:-4px;}
 .plg-empty{padding:20px;text-align:center;font-size:var(--fs-sm);color:var(--dim);opacity:.6;}
+
+/* ── Tallas por marca ── */
+.tm-group{padding:12px 16px;border-bottom:1px solid var(--b);}
+.tm-group:last-child{border-bottom:none;}
+.tm-group-title{font-size:var(--fs-xs);color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
+.tm-row{display:flex;align-items:center;gap:10px;padding:6px 0;}
+.tm-marca{flex:1;font-size:var(--fs-sm);color:var(--text);}
+.tm-talla{font-family:var(--serif);font-size:1rem;color:var(--gold);min-width:36px;text-align:center;}
+.tm-notas{font-size:var(--fs-xs);color:var(--dim);opacity:.7;margin-left:4px;}
+.tm-empty{font-size:var(--fs-xs);color:var(--dim);opacity:.5;}
 @media(max-width:640px){.plg-row{grid-template-columns:1fr auto;grid-template-areas:"date zona" "vals vals" "del del";}
   .plg-row .plg-date{grid-area:date;} .plg-row .plg-zona{grid-area:zona;justify-self:end;}
   .plg-row .plg-vals{grid-area:vals;} .plg-row .icon-btn{grid-area:del;justify-self:end;}}
@@ -500,6 +510,72 @@
         </div>
         {% endfor %}
       </div>
+    </div>
+  </div>
+
+  <!-- ── TALLAS POR MARCA ─────────────────────────────────────────────────── -->
+  <div style="margin-bottom:28px;">
+    <div class="sec-hd">
+      <div>
+        <div class="sec-title">Tallas de Ropa (por marca)</div>
+        <div class="sec-sub">Camisa · Playera · Pantalón — varían según la marca</div>
+      </div>
+      <button class="btn-g" style="display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-sm);padding:6px 14px;"
+        onclick="toggleTallaForm()">
+        <i data-lucide="plus" style="width:12px;height:12px;"></i> Nueva talla
+      </button>
+    </div>
+
+    <!-- Form (oculto por defecto) -->
+    <div id="tallaForm" style="display:none;margin-bottom:12px;">
+      <div class="tile" style="padding:16px 20px;">
+        <div class="plg-form">
+          <div style="font-size:var(--fs-xs);color:var(--gold);letter-spacing:.14em;text-transform:uppercase;">
+            Nueva talla por marca
+          </div>
+          <div class="plg-form-row">
+            <select class="fi" id="tallaPrenda">
+              <option value="camisa">Camisa</option>
+              <option value="playera">Playera</option>
+              <option value="pantalon">Pantalón</option>
+            </select>
+            <input class="fi" id="tallaMarca" placeholder="Marca (ej. Zara)" autocomplete="off">
+            <input class="fi" id="tallaTalla" placeholder="Talla (ej. M, 32)" autocomplete="off">
+          </div>
+          <div class="plg-form-row">
+            <input class="fi" id="tallaNotas" placeholder="Notas (opcional, ej. corte slim)" autocomplete="off" style="flex:2;">
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px;">
+            <button class="btn-r" style="padding:6px 14px;" onclick="closeTallaForm()">Cancelar</button>
+            <button class="btn-g" style="padding:6px 18px;" onclick="saveTallaEntry()">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista agrupada por prenda -->
+    <div class="tile" style="padding:0;" id="tallaList">
+      {% set prendas = [('camisa', 'Camisa'), ('playera', 'Playera'), ('pantalon', 'Pantalón')] %}
+      {% if tallas_por_prenda %}
+        {% for key, label in prendas %}
+        {% if tallas_por_prenda.get(key) %}
+        <div class="tm-group">
+          <div class="tm-group-title">{{ label }}</div>
+          {% for t in tallas_por_prenda[key] %}
+          <div class="tm-row" id="tallarow-{{ t.id }}">
+            <span class="tm-marca">{{ t.marca }}{% if t.notas %}<span class="tm-notas">{{ t.notas }}</span>{% endif %}</span>
+            <span class="tm-talla">{{ t.talla }}</span>
+            <button class="icon-btn danger" onclick="deleteTallaEntry({{ t.id }})" title="Eliminar">
+              <i data-lucide="trash-2" style="width:12px;height:12px;"></i>
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endfor %}
+      {% else %}
+        <div class="plg-empty" id="tallaEmpty">Sin tallas registradas. Usa <strong>Nueva talla</strong> para agregar la primera.</div>
+      {% endif %}
     </div>
   </div>
 
@@ -1334,6 +1410,40 @@ async function vaultCopy(id){
     _vaultCache[id]=pw;
   }
   navigator.clipboard.writeText(pw).then(()=>toast('Copiado ✓'));
+}
+function toggleTallaForm(){
+  const f=document.getElementById('tallaForm');
+  const open=f.style.display!=='none';
+  if(open){closeTallaForm();return;}
+  document.getElementById('tallaPrenda').value='camisa';
+  document.getElementById('tallaMarca').value='';
+  document.getElementById('tallaTalla').value='';
+  document.getElementById('tallaNotas').value='';
+  f.style.display='block';
+  document.getElementById('tallaMarca').focus();
+}
+function closeTallaForm(){
+  document.getElementById('tallaForm').style.display='none';
+}
+async function saveTallaEntry(){
+  const marca=document.getElementById('tallaMarca').value.trim();
+  const talla=document.getElementById('tallaTalla').value.trim();
+  if(!marca || !talla){toast('Escribe la marca y la talla');return;}
+  const payload={
+    prenda:document.getElementById('tallaPrenda').value,
+    marca,
+    talla,
+    notas:document.getElementById('tallaNotas').value.trim(),
+  };
+  const r=await fetch('/perfil/api/talla/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  const j=await r.json();
+  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
+}
+async function deleteTallaEntry(id){
+  if(!confirm('¿Eliminar esta talla?'))return;
+  const r=await fetch(`/perfil/api/talla/${id}/delete`,{method:'POST'});
+  const j=await r.json();
+  if(j.ok){location.reload();}
 }
 function togglePliegueForm(){
   const f=document.getElementById('plgForm');
