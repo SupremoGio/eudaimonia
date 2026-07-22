@@ -1574,6 +1574,18 @@ def init_db():
         );
         """)
 
+        # Migrar futbol_partidos: agregar estado (programado/jugado) — refleja el
+        # flujo real: primero se programa el partido (fecha/hora/cancha/rival que
+        # mandan), y después de jugarlo se registra el resultado y rendimiento.
+        # Las filas existentes ya tienen resultado, así que su default es 'jugado'.
+        try:
+            fb_cols = [r["name"] for r in db.execute("PRAGMA table_info(futbol_partidos)").fetchall()]
+            if "estado" not in fb_cols:
+                db.execute("ALTER TABLE futbol_partidos ADD COLUMN estado TEXT DEFAULT 'jugado'")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] futbol_partidos estado migration warning: {e}")
+
         # ── PAIDEIA — Control de lectura (submódulo de Conocimiento) ───────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS paideia_libros (

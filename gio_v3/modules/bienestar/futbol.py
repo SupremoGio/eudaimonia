@@ -20,14 +20,15 @@ def _row_to_dict(r):
 
 
 def _stats(partidos):
-    total = len(partidos)
-    goles_propios = sum(p['goles_propios'] or 0 for p in partidos)
-    asistencias   = sum(p['asistencias'] or 0 for p in partidos)
-    ratings = [p['rendimiento'] for p in partidos if p['rendimiento'] is not None]
+    jugados = [p for p in partidos if p.get('estado', 'jugado') == 'jugado']
+    total = len(jugados)
+    goles_propios = sum(p['goles_propios'] or 0 for p in jugados)
+    asistencias   = sum(p['asistencias'] or 0 for p in jugados)
+    ratings = [p['rendimiento'] for p in jugados if p['rendimiento'] is not None]
     rating_prom = round(sum(ratings) / len(ratings), 1) if ratings else None
 
     ganados = empatados = perdidos = 0
-    for p in partidos:
+    for p in jugados:
         gf, gc = p['goles_favor'] or 0, p['goles_contra'] or 0
         if gf > gc: ganados += 1
         elif gf < gc: perdidos += 1
@@ -78,8 +79,18 @@ def index():
         rows = db.execute(
             "SELECT * FROM futbol_partidos ORDER BY fecha DESC, id DESC"
         ).fetchall()
-    partidos = [_row_to_dict(r) for r in rows]
-    return render_template('bienestar/futbol.html', partidos=partidos, stats=_stats(partidos))
+    todos = [_row_to_dict(r) for r in rows]
+    jugados = [p for p in todos if p['estado'] == 'jugado']
+    programados = sorted(
+        (p for p in todos if p['estado'] == 'programado'),
+        key=lambda p: (p['fecha'], p['hora'] or '')
+    )
+    return render_template(
+        'bienestar/futbol.html',
+        partidos=jugados,
+        programados=programados,
+        stats=_stats(todos),
+    )
 
 
 @futbol_bp.route('/api/partidos')
@@ -98,16 +109,17 @@ def crear_partido():
     if not d.get('fecha'):
         return jsonify({'ok': False, 'error': 'fecha requerida'}), 400
 
+    estado = d.get('estado') or 'jugado'
     goles_propios = int(d.get('goles_propios') or 0)
-    gol_log_id = _credit_gol_bonus() if goles_propios > 0 else None
+    gol_log_id = _credit_gol_bonus() if (estado == 'jugado' and goles_propios > 0) else None
 
     with get_db() as db:
         cur = db.execute(
             """INSERT INTO futbol_partidos
                    (fecha, hora, cancha, rival, goles_favor, goles_contra,
                     goles_propios, asistencias, minutos_jugados, rendimiento,
-                    gol_log_id, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    gol_log_id, estado, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 d['fecha'],
                 d.get('hora', ''),
@@ -120,6 +132,7 @@ def crear_partido():
                 int(d['minutos_jugados']) if d.get('minutos_jugados') not in (None, '') else None,
                 float(d['rendimiento']) if d.get('rendimiento') not in (None, '') else None,
                 gol_log_id,
+                estado,
                 _now(),
             ),
         )
@@ -137,7 +150,7 @@ def actualizar_partido(pid):
     partido = _row_to_dict(row)
 
     sets, vals = [], []
-    for f in ('fecha', 'hora', 'cancha', 'rival'):
+    for f in ('fecha', 'hora', 'cancha', 'rival', 'estado'):
         if f in d:
             sets.append(f'{f}=?')
             vals.append(d[f])
