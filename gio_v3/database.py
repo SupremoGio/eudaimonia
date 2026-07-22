@@ -595,6 +595,7 @@ def init_db():
         db.executemany(
             "INSERT OR IGNORE INTO body_measurements (key, label, value, unit) VALUES (?,?,?,?)",
             [
+                ("t_playera",      "Talla playera",   "— editar —", ""),
                 ("biceps",         "Bíceps",          "— editar —", "cm"),
                 ("antebrazo",      "Antebrazo",       "— editar —", "cm"),
                 ("muslo",          "Muslo",           "— editar —", "cm"),
