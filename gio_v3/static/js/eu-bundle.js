@@ -6672,27 +6672,32 @@ function ActaDiurnaScreen({
       opacity: 0.6,
       textTransform: 'uppercase'
     }
-  }, "Acta Diurna \xB7 XP hoy"), clf.rank && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 5,
-      background: 'rgba(255,255,255,0.05)',
-      borderRadius: 20,
-      padding: '3px 10px'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12
-    }
-  }, TIERS.find(t => t.rank === clf.rank)?.icon || '🪨'), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 9,
-      color: C.textMuted,
-      letterSpacing: '0.08em',
-      textTransform: 'uppercase'
-    }
-  }, TIERS.find(t => t.rank === clf.rank)?.label || 'Carbón'))), /*#__PURE__*/React.createElement("div", {
+  }, "Acta Diurna \xB7 XP hoy"), clf.rank && (() => {
+    const curTier = TIERS.find(t => t.rank === clf.rank) || TIERS[0];
+    const CurIcon = curTier.Icon;
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+        background: 'rgba(255,255,255,0.05)',
+        borderRadius: 20,
+        padding: '3px 10px'
+      }
+    }, /*#__PURE__*/React.createElement(CurIcon, {
+      size: 12,
+      style: {
+        color: curTier.color
+      }
+    }), /*#__PURE__*/React.createElement("span", {
+      style: {
+        fontSize: 9,
+        color: C.textMuted,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase'
+      }
+    }, curTier.label));
+  })()), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'baseline',
@@ -6743,6 +6748,7 @@ function ActaDiurnaScreen({
     }, TIERS.map((t, i) => {
       const active = i === ci;
       const past = i < ci;
+      const TIcon = t.Icon;
       return /*#__PURE__*/React.createElement(React.Fragment, {
         key: t.rank
       }, /*#__PURE__*/React.createElement("div", {
@@ -6762,6 +6768,12 @@ function ActaDiurnaScreen({
           boxShadow: active ? `0 0 9px ${col}` : 'none',
           transition: 'all 0.3s'
         }
+      }), /*#__PURE__*/React.createElement(TIcon, {
+        size: 9,
+        style: {
+          color: active ? col : C.textMuted,
+          opacity: active ? 1 : past ? 0.55 : 0.28
+        }
       }), /*#__PURE__*/React.createElement("div", {
         style: {
           fontFamily: 'DM Sans,sans-serif',
@@ -6771,7 +6783,7 @@ function ActaDiurnaScreen({
           textAlign: 'center',
           lineHeight: 1.3
         }
-      }, t.icon, /*#__PURE__*/React.createElement("br", null), t.label)), i < TIERS.length - 1 && /*#__PURE__*/React.createElement("div", {
+      }, t.label)), i < TIERS.length - 1 && /*#__PURE__*/React.createElement("div", {
         style: {
           height: 1,
           flex: 1,

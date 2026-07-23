@@ -2312,14 +2312,18 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
             <div style={{fontSize:9,letterSpacing:'0.18em',color:C.gold,
               opacity:0.6,textTransform:'uppercase'}}>Acta Diurna · XP hoy</div>
-            {clf.rank && (
-              <div style={{display:'flex',alignItems:'center',gap:5,
-                background:'rgba(255,255,255,0.05)',borderRadius:20,padding:'3px 10px'}}>
-                <span style={{fontSize:12}}>{TIERS.find(t=>t.rank===clf.rank)?.icon||'🪨'}</span>
-                <span style={{fontSize:9,color:C.textMuted,letterSpacing:'0.08em',
-                  textTransform:'uppercase'}}>{TIERS.find(t=>t.rank===clf.rank)?.label||'Carbón'}</span>
-              </div>
-            )}
+            {clf.rank && (() => {
+              const curTier = TIERS.find(t=>t.rank===clf.rank) || TIERS[0];
+              const CurIcon = curTier.Icon;
+              return (
+                <div style={{display:'flex',alignItems:'center',gap:5,
+                  background:'rgba(255,255,255,0.05)',borderRadius:20,padding:'3px 10px'}}>
+                  <CurIcon size={12} style={{color:curTier.color}}/>
+                  <span style={{fontSize:9,color:C.textMuted,letterSpacing:'0.08em',
+                    textTransform:'uppercase'}}>{curTier.label}</span>
+                </div>
+              );
+            })()}
           </div>
           {/* XP numeral */}
           <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
@@ -2349,6 +2353,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
                   {TIERS.map((t, i) => {
                     const active = i === ci;
                     const past   = i < ci;
+                    const TIcon  = t.Icon;
                     return (
                       <React.Fragment key={t.rank}>
                         <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
@@ -2358,12 +2363,16 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
                             boxShadow:active ? `0 0 9px ${col}` : 'none',
                             transition:'all 0.3s',
                           }}/>
+                          <TIcon size={9} style={{
+                            color:active ? col : C.textMuted,
+                            opacity:active ? 1 : past ? 0.55 : 0.28,
+                          }}/>
                           <div style={{
                             fontFamily:'DM Sans,sans-serif', fontSize:7,
                             color:active ? col : C.textMuted,
                             opacity:active ? 1 : past ? 0.55 : 0.28,
                             textAlign:'center', lineHeight:1.3,
-                          }}>{t.icon}<br/>{t.label}</div>
+                          }}>{t.label}</div>
                         </div>
                         {i < TIERS.length - 1 && (
                           <div style={{height:1,flex:1,marginTop:4,
