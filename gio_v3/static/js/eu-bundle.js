@@ -5805,7 +5805,7 @@ function ModuleExtra({
         textTransform: 'uppercase',
         marginBottom: 10
       }
-    }, "Subm\xF3dulos"), mkLink('/ataraxia/', '⚓', 'Ataraxia', 'Checklist semanal · Orden'), mkLink('/sabado/', '🧹', 'Sábado Reset', 'Ritual matutino de limpieza'), mkLink('/gtd/', '🎯', 'Praxis GTD', 'Inbox · Next Actions · Proyectos'));
+    }, "Subm\xF3dulos"), mkLink('/ataraxia/', '⚓', 'Ataraxia', 'Checklist semanal · Orden'), mkLink('/gtd/', '🎯', 'Praxis GTD', 'Inbox · Next Actions · Proyectos'));
   }
   if (id === 'logoi') {
     return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {

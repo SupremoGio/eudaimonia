@@ -1783,7 +1783,6 @@ function ModuleExtra({ id, acc, isDesktop }) {
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
         {mkLink('/ataraxia/',  '⚓', 'Ataraxia',      'Checklist semanal · Orden')}
-        {mkLink('/sabado/',    '🧹', 'Sábado Reset',  'Ritual matutino de limpieza')}
         {mkLink('/gtd/',       '🎯', 'Praxis GTD',    'Inbox · Next Actions · Proyectos')}
       </div>
     );
