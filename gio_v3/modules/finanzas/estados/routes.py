@@ -622,18 +622,23 @@ def upload_file():
             return jsonify({'ok': False, 'error': 'No se encontraron transacciones', 'bank': bank})
 
         # Dedup and insert
-        # Key = (fecha, monto, banco, tipo) — robusto ante diferencias de descripción
-        # entre PDF y CSV del mismo banco. Incluye tipo para no confundir un
-        # ingreso y un gasto del mismo monto en el mismo día (caso legítimo).
-        # Solo se aplica cuando monto > 0; montos en cero se insertan siempre.
+        # Key = (fecha, monto, tipo) — NO incluye banco: el mismo movimiento
+        # real puede importarse una vez desde un PDF (ej. banco=BBVA_DEB) y
+        # otra desde un CSV/Excel de la misma cuenta que detect_bank() etiqueta
+        # distinto (ej. BBVA_TDC), con descripciones ligeramente distintas
+        # entre parsers (referencia numérica presente/ausente, etc.) — incluir
+        # banco en la key dejaba pasar esos duplicados. Se mantiene tipo para
+        # no confundir un ingreso y un gasto del mismo monto en el mismo día
+        # (caso legítimo). Solo se aplica cuando monto > 0; montos en cero se
+        # insertan siempre.
         inserted = 0
         skipped  = 0
         with get_db() as db:
             existing = set()
             for r in db.execute(
-                "SELECT fecha, monto, banco, tipo FROM est_movimientos WHERE monto > 0"
+                "SELECT fecha, monto, tipo FROM est_movimientos WHERE monto > 0"
             ).fetchall():
-                existing.add((r['fecha'], float(r['monto']), r['banco'], r['tipo']))
+                existing.add((r['fecha'], float(r['monto']), r['tipo']))
 
             # También rastreamos depósitos/SPEIs nuevos para el response
             review_needed = []
@@ -642,7 +647,7 @@ def upload_file():
                 m_banco = m.get('banco', bank) or bank
                 m_monto = float(m['monto'])
                 # Dedup solo aplica a montos > 0
-                key = (m['fecha'], m_monto, m_banco, m['tipo'])
+                key = (m['fecha'], m_monto, m['tipo'])
                 if m_monto > 0 and key in existing:
                     skipped += 1
                     continue

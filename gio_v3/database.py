@@ -1475,6 +1475,55 @@ def init_db():
         except Exception as e:
             print(f"[DB] est_movimientos BBVA_TDC rename warning: {e}")
 
+        # Backfill: limpiar duplicados reales colados antes del fix de dedup
+        # en /api/upload (esa dedup usaba fecha+monto+banco+tipo; el mismo
+        # movimiento real importado una vez desde PDF y otra desde CSV/Excel
+        # de la misma cuenta podía quedar con banco distinto —p.ej. BBVA_DEB
+        # vs BBVA_TDC— y coló ambas filas). Aquí se agrupa por fecha+monto+
+        # tipo (ignorando banco) y, DENTRO de cada grupo, solo se considera
+        # duplicado si la descripción normalizada (sin dígitos ni puntuación)
+        # coincide — así no se borra por accidente una coincidencia real de
+        # dos transacciones distintas el mismo día por el mismo monto. Se
+        # conserva la fila con la descripción más larga (suele traer más
+        # detalle, ej. la referencia numérica) y se borran las demás.
+        try:
+            import re as _re
+
+            def _norm_desc(s):
+                s = _re.sub(r'\d+', '', s or '')
+                s = _re.sub(r'[^A-ZÁÉÍÓÚÑ ]', ' ', s.upper())
+                return _re.sub(r'\s+', ' ', s).strip()
+
+            rows = db.execute("""
+                SELECT id, fecha, monto, tipo, descripcion FROM est_movimientos
+                WHERE monto > 0
+            """).fetchall()
+            groups = {}
+            for r in rows:
+                key = (r['fecha'], round(r['monto'], 2), r['tipo'])
+                groups.setdefault(key, []).append(dict(r))
+
+            to_delete = []
+            for key, items in groups.items():
+                if len(items) < 2:
+                    continue
+                by_norm = {}
+                for it in items:
+                    by_norm.setdefault(_norm_desc(it['descripcion']), []).append(it)
+                for norm, dupes in by_norm.items():
+                    if len(dupes) < 2:
+                        continue
+                    dupes.sort(key=lambda it: (-len(it['descripcion']), it['id']))
+                    to_delete.extend(it['id'] for it in dupes[1:])
+
+            if to_delete:
+                ph = ','.join('?' * len(to_delete))
+                db.execute(f"DELETE FROM est_movimientos WHERE id IN ({ph})", to_delete)
+                db.commit()
+                print(f"[DB] est_movimientos duplicate cleanup: removed {len(to_delete)} rows")
+        except Exception as e:
+            print(f"[DB] est_movimientos duplicate cleanup warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
