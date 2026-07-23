@@ -1444,6 +1444,26 @@ def init_db():
             except Exception:
                 pass  # column already exists
 
+        # Backfill: depósitos de nómina (BBVA) importados antes de que los
+        # parsers reconocieran "PAGO DE NOMINA"/"FIBRA HOTELERA" como NOMINA,
+        # o importados por una vía que no aplicó esa regla, quedaban con
+        # categoria/tipo incorrectos. Los parsers bbva_debit.py y
+        # bbva_libreton.py ya clasifican esto bien para importaciones nuevas
+        # (categoria=NOMINA, tipo=INGRESO por el signo del monto) — este
+        # UPDATE es idempotente y solo corrige lo que ya está en la DB.
+        try:
+            db.execute("""
+                UPDATE est_movimientos
+                SET categoria='NOMINA', tipo='INGRESO'
+                WHERE (UPPER(descripcion) LIKE '%PAGO DE NOMINA%'
+                    OR UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
+                    OR descripcion LIKE '%4206466060%')
+                  AND (categoria != 'NOMINA' OR tipo != 'INGRESO')
+            """)
+            db.commit()
+        except Exception as e:
+            print(f"[DB] est_movimientos nomina backfill warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
