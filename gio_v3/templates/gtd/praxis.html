@@ -65,7 +65,7 @@
 .item-tipo{font-size:var(--fs-xs);padding:2px 7px;border-radius:100px;}
 .tp-tarea{background:rgba(197,163,108,.08);border:1px solid rgba(197,163,108,.2);color:var(--gold);}
 .tp-idea {background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);color:var(--purple);}
-.tp-nota {background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.2);color:var(--mid);}
+.tp-mantenimiento {background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.2);color:var(--mid);}
 .done-when{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
 
 /* Classify panel (inbox) */
@@ -129,7 +129,7 @@
     <div class="px-tipos">
       <button class="px-tipo on" data-tipo="tarea" onclick="setTipo(this,'tarea')">📌 Tarea</button>
       <button class="px-tipo" data-tipo="idea" onclick="setTipo(this,'idea')">💡 Idea</button>
-      <button class="px-tipo" data-tipo="nota" onclick="setTipo(this,'nota')">📝 Nota</button>
+      <button class="px-tipo" data-tipo="mantenimiento" onclick="setTipo(this,'mantenimiento')">🔧 Mantenimiento</button>
     </div>
   </div>
 </div>
@@ -201,8 +201,8 @@ const SECS = [
   { key:'done',    label:'COMPLETADOS',    icon:'✅', accent:'sec-done',    defClosed:true },
 ];
 const Q_LABEL = { hoy:'🔴 HOY', semana:'🔵 ESTA SEMANA', delegar:'🟡 DELEGAR', ideas:'⚪ IDEAS' };
-const TIPO_LABEL = { tarea:'📌 Tarea', idea:'💡 Idea', nota:'📝 Nota' };
-const TIPO_CLS   = { tarea:'tp-tarea', idea:'tp-idea',  nota:'tp-nota'  };
+const TIPO_LABEL = { tarea:'📌 Tarea', idea:'💡 Idea', mantenimiento:'🔧 Mantenimiento' };
+const TIPO_CLS   = { tarea:'tp-tarea', idea:'tp-idea',  mantenimiento:'tp-mantenimiento'  };
 
 // ── Tipo ───────────────────────────────────────────────────────────────────
 function setTipo(el, tipo) {

@@ -1001,6 +1001,9 @@ def init_db():
             db.execute("""UPDATE gtd_tasks SET notas=description
                 WHERE description IS NOT NULL AND description!=''
                 AND (notas IS NULL OR notas='')""")
+            # "Nota" (tipo de captura) se renombró a "Mantenimiento" — mismo flujo
+            # de Inbox/cuadrantes, solo cambia la etiqueta/ícono en Praxis.
+            db.execute("UPDATE gtd_tasks SET tipo='mantenimiento' WHERE tipo='nota'")
             db.commit()
         except Exception as e:
             print(f"[DB] gtd_tasks praxis migration warning: {e}")
