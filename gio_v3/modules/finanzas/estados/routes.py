@@ -33,7 +33,7 @@ _INGRESO_EXCLUIR_SQL = "categoria NOT IN ({})".format(
 )
 
 BANK_META = {
-    "BBVA":     {"color": "#004B96", "type": "Tarjeta de crédito", "icon": "🔵"},
+    "BBVA_TDC": {"color": "#004B96", "type": "Tarjeta de crédito", "icon": "🔵"},
     "BBVA_DEB": {"color": "#004B96", "type": "Cuenta de débito",   "icon": "🏦"},
     "INVEX":    {"color": "#E30D13", "type": "Tarjeta de crédito", "icon": "🔴"},
     "HSBC":     {"color": "#DB0011", "type": "Tarjeta de crédito", "icon": "💳"},

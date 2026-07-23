@@ -1464,6 +1464,17 @@ def init_db():
         except Exception as e:
             print(f"[DB] est_movimientos nomina backfill warning: {e}")
 
+        # Backfill: "BBVA" (bare) siempre fue en realidad la tarjeta de
+        # crédito (TDC) — BBVA_DEB (débito) ya estaba bien separado, pero el
+        # nombre ambiguo "BBVA" vs "BBVA_DEB" no dejaba claro cuál era cuál.
+        # Se renombra a BBVA_TDC en movimientos existentes; los parsers ya
+        # quedaron actualizados para etiquetar así las importaciones nuevas.
+        try:
+            db.execute("UPDATE est_movimientos SET banco='BBVA_TDC' WHERE banco='BBVA'")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] est_movimientos BBVA_TDC rename warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

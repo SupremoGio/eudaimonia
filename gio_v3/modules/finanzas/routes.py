@@ -10,7 +10,7 @@ finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 def payment_alerts():
     d = today_date().day
     alerts = []
-    if d == 15: alerts += [{"label":"BBVA","color":"#c5a36c"},{"label":"Invex","color":"#a78bfa"}]
+    if d == 15: alerts += [{"label":"BBVA TDC","color":"#c5a36c"},{"label":"Invex","color":"#a78bfa"}]
     if d == 30: alerts.append({"label":"HSBC","color":"#60a5fa"})
     return alerts
 

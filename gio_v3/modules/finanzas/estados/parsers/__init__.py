@@ -33,7 +33,7 @@ def _detect_bank_pdf(pdf_path: Path) -> str:
             return "BBVA_LIB"
         if "DETALLES DE MOVIMIENTOS" in text and "SALDO TOTAL" in text:
             return "BBVA_DEB"
-        return "BBVA"
+        return "BBVA_TDC"
     if "INVEX" in text:
         return "INVEX"
     if "HSBC" in text:
@@ -47,7 +47,9 @@ def _detect_bank_pdf(pdf_path: Path) -> str:
     name = pdf_path.stem.upper()
     if "BBVA" in name and ("DEB" in name or "DEBITO" in name or "CHEQUE" in name):
         return "BBVA_DEB"
-    for banco in ("HSBC", "INVEX", "BBVA"):
+    if "BBVA" in name:
+        return "BBVA_TDC"
+    for banco in ("HSBC", "INVEX"):
         if banco in name:
             return banco
 
@@ -60,12 +62,12 @@ def detect_bank(path: Path) -> str:
         from .bbva_csv import detect as bbva_detect
         from .bbva_legacy_csv import detect as legacy_detect
         if bbva_detect(path) or legacy_detect(path):
-            return "BBVA"
+            return "BBVA_TDC"
         return "DESCONOCIDO"
     if ext in (".xlsx", ".xls"):
         from .bbva_csv import detect_excel as bbva_excel_detect
         if bbva_excel_detect(path):
-            return "BBVA"
+            return "BBVA_TDC"
         return "DESCONOCIDO"
     return _detect_bank_pdf(path)
 
@@ -73,7 +75,7 @@ def detect_bank(path: Path) -> str:
 def parse_pdf(pdf_path: Path) -> list[dict]:
     banco = _detect_bank_pdf(pdf_path)
 
-    if banco == "BBVA":
+    if banco == "BBVA_TDC":
         from .bbva import parse
     elif banco == "BBVA_DEB":
         from .bbva_debit import parse
@@ -107,7 +109,7 @@ def parse_csv(path: Path) -> list[dict]:
         print(f"  [!] Formato CSV no reconocido: {path.name}")
         return []
     for m in movimientos:
-        m["banco"] = "BBVA"
+        m["banco"] = "BBVA_TDC"
     return movimientos
 
 
@@ -117,7 +119,7 @@ def parse_excel(path: Path) -> list[dict]:
         print(f"  -> Banco detectado: BBVA (Excel)")
         movimientos = bbva_parse(path)
         for m in movimientos:
-            m["banco"] = "BBVA"
+            m["banco"] = "BBVA_TDC"
         return movimientos
     print(f"  [!] Formato Excel no reconocido: {path.name}")
     return []
