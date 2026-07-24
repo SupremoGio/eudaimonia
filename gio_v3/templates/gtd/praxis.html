@@ -170,7 +170,7 @@
       </div>
     </div>
     <div class="rev-foot">
-      <button class="btn-g" onclick="skipRev()">Saltar →</button>
+      <button class="btn-g" id="rev-skip-btn" onclick="skipRev()">Saltar →</button>
       <button class="btn-g" onclick="closeRev()">✕ Cerrar</button>
     </div>
   </div>
@@ -225,14 +225,20 @@ async function capture() {
   if (!r || !r.ok) { toast('Error al guardar','err'); return; }
   const isIdea   = activeTipo === 'idea';
   const cuadrante = isIdea ? 'ideas' : null;
-  tasks.unshift({id:r.id, title:texto, tipo:activeTipo,
+  const newTask = {id:r.id, title:texto, tipo:activeTipo,
     importante: isIdea ? false : null,
     urgente:    isIdea ? false : null,
-    cuadrante,  completado:false, fecha_completado:null, fecha_limite:null, notas:null});
+    cuadrante,  completado:false, fecha_completado:null, fecha_limite:null, notas:null};
+  tasks.unshift(newTask);
   inp.value = '';
   openSecs.add(isIdea ? 'ideas' : 'inbox');
+  if (isIdea) {
+    toast('Guardado en Banco de Ideas 💡');
+  } else {
+    // En vez de dejarla flotando en Inbox, preguntamos de una vez a dónde va.
+    openClassifyForNew(newTask);
+  }
   renderAll();
-  toast(isIdea ? 'Guardado en Banco de Ideas 💡' : 'Capturado en Inbox ✓');
 }
 
 // ── Classify ───────────────────────────────────────────────────────────────
@@ -427,22 +433,37 @@ function renderAll() {
 }
 
 // ── Review mode ────────────────────────────────────────────────────────────
-let revQ = [], revIdx = 0, revImp = null, revUrg = null;
+let revQ = [], revIdx = 0, revImp = null, revUrg = null, revSingle = false;
 
 function startRev(e) {
   e.stopPropagation();
   revQ = tasks.filter(t => !t.completado && t.cuadrante === null);
   if (!revQ.length) { toast('Inbox vacío 🎉'); return; }
-  revIdx = 0; revImp = null; revUrg = null;
+  revIdx = 0; revImp = null; revUrg = null; revSingle = false;
+  showRevItem();
+  document.getElementById('rev-overlay').style.display = 'flex';
+}
+
+// Se abre justo al capturar una tarea/mantenimiento nuevo — un solo ítem,
+// para saber de una vez a qué cuadrante va en vez de dejarla flotando en Inbox.
+function openClassifyForNew(task) {
+  revQ = [task];
+  revIdx = 0; revImp = null; revUrg = null; revSingle = true;
   showRevItem();
   document.getElementById('rev-overlay').style.display = 'flex';
 }
 
 function showRevItem() {
-  if (revIdx >= revQ.length) { closeRev(); toast('Revisión completa 🎉'); return; }
+  if (revIdx >= revQ.length) {
+    closeRev();
+    if (!revSingle) toast('Revisión completa 🎉');
+    revSingle = false;
+    return;
+  }
   const t = revQ[revIdx];
-  document.getElementById('rev-ctr').textContent = `${revIdx + 1} de ${revQ.length}`;
+  document.getElementById('rev-ctr').textContent = revSingle ? '¿A dónde va?' : `${revIdx + 1} de ${revQ.length}`;
   document.getElementById('rev-txt').textContent = t.title;
+  document.getElementById('rev-skip-btn').textContent = revSingle ? 'Dejar en Inbox' : 'Saltar →';
   ['ri-si','ri-no','ru-si','ru-no'].forEach(id => {
     document.getElementById(id).className = 'rev-qbtn';
   });
@@ -462,6 +483,7 @@ async function revAns(campo, valor) {
 
   if (revImp !== null && revUrg !== null) {
     const t = revQ[revIdx];
+    const wasSingle = revSingle;
     const r = await fetch(`/gtd/api/task/${t.id}/classify`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({importante: revImp, urgente: revUrg})
@@ -469,6 +491,7 @@ async function revAns(campo, valor) {
     if (r && r.ok) {
       const task = tasks.find(x => x.id === t.id);
       if (task) { task.importante = revImp; task.urgente = revUrg; task.cuadrante = r.cuadrante; }
+      if (wasSingle) toast(`→ ${Q_LABEL[r.cuadrante] || r.cuadrante}`);
     }
     await new Promise(res => setTimeout(res, 200));
     revIdx++;
@@ -478,7 +501,7 @@ async function revAns(campo, valor) {
 }
 
 function skipRev() { revIdx++; showRevItem(); }
-function closeRev() { document.getElementById('rev-overlay').style.display = 'none'; renderAll(); }
+function closeRev() { document.getElementById('rev-overlay').style.display = 'none'; revSingle = false; renderAll(); }
 function closeRevIf(e) { if (e.target.id === 'rev-overlay') closeRev(); }
 
 // ── Init ───────────────────────────────────────────────────────────────────
