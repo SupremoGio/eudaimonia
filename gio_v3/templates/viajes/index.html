@@ -93,12 +93,13 @@
 .vj-wi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;max-height:320px;overflow-y:auto;padding:2px;}
 .vj-wi-card{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:8px;cursor:pointer;transition:border-color .18s,transform .12s,opacity .15s;text-align:center;position:relative;}
 .vj-wi-card:hover{border-color:var(--gold);transform:translateY(-1px);}
-.vj-wi-card.added{opacity:.5;cursor:default;border-color:rgba(74,222,128,.4);}
-.vj-wi-card.added:hover{transform:none;}
+.vj-wi-card.added{opacity:.7;border-color:rgba(74,222,128,.4);}
+.vj-wi-card.added:hover{border-color:var(--red);opacity:1;transform:translateY(-1px);}
+.vj-wi-card.added:hover .vj-wi-added-badge{background:var(--red);}
 .vj-wi-photo{width:44px;height:44px;object-fit:cover;border-radius:6px;margin:0 auto 5px;display:block;background:var(--b);}
 .vj-wi-swatch{width:44px;height:44px;border-radius:6px;margin:0 auto 5px;display:block;}
 .vj-wi-name{font-size:10px;color:var(--text);line-height:1.25;}
-.vj-wi-added-badge{position:absolute;top:4px;right:4px;background:var(--green);color:#09070F;border-radius:50%;width:15px;height:15px;font-size:9px;display:flex;align-items:center;justify-content:center;}
+.vj-wi-added-badge{position:absolute;top:4px;right:4px;background:var(--green);color:#09070F;border-radius:50%;width:15px;height:15px;font-size:9px;display:flex;align-items:center;justify-content:center;transition:background .15s;}
 
 /* Mosaico de prendas (varias fotos por outfit, para distinguirlos de un vistazo) */
 .vj-mosaic{height:88px;display:grid;gap:2px;overflow:hidden;border-radius:6px;margin-bottom:8px;background:var(--b);}
@@ -924,12 +925,17 @@ function renderWardrobePicker() {
 
   grid.innerHTML = filtered.map(wi => {
     const added = addedIds.has(wi.id);
-    return `<div class="vj-wi-card ${added ? 'added' : ''}" ${added ? '' : `onclick="addWardrobeItemToMaleta(${wi.id})"`} title="${wi.nombre}">
+    return `<div class="vj-wi-card ${added ? 'added' : ''}" onclick="toggleWardrobeItemInMaleta(${wi.id}, ${added})" title="${added ? 'Quitar de la maleta' : wi.nombre}">
       ${added ? '<span class="vj-wi-added-badge">✓</span>' : ''}
       ${wardrobeThumbHtml(wi)}
       <div class="vj-wi-name">${wi.nombre}</div>
     </div>`;
   }).join('');
+}
+
+function toggleWardrobeItemInMaleta(itemId, isAdded) {
+  if (isAdded) removeWardrobeItemFromMaleta(itemId);
+  else         addWardrobeItemToMaleta(itemId);
 }
 
 async function addWardrobeItemToMaleta(itemId) {
@@ -946,6 +952,21 @@ async function addWardrobeItemToMaleta(itemId) {
     if (window.lucide) lucide.createIcons();
   } else {
     toast(r.error || 'Error', 'err');
+  }
+}
+
+async function removeWardrobeItemFromMaleta(itemId) {
+  const row = _maleta.find(m => m.item_id === itemId);
+  if (!row) return;
+  const r = await fetch(`${API}/trips/${_curId}/maleta/${row.id}`, {
+    method: 'DELETE',
+  }).then(r => r.json());
+  if (r.ok) {
+    _maleta = _maleta.filter(m => m.id !== row.id);
+    toast('Quitada de la maleta');
+    renderWardrobePicker();
+    renderMaletaPane();
+    if (window.lucide) lucide.createIcons();
   }
 }
 
