@@ -264,6 +264,18 @@ def api_outfits():
     return jsonify(outfits)
 
 
+# ── API Prendas del guardarropa (para agregar individualmente a la maleta) ────
+
+@viajes_bp.route('/api/wardrobe-items')
+def api_wardrobe_items():
+    with get_db() as db:
+        items = [_row(r) for r in db.execute(
+            """SELECT id, nombre, categoria, color_hex, foto
+               FROM wardrobe_items WHERE activo=1 ORDER BY categoria, nombre"""
+        ).fetchall()]
+    return jsonify(items)
+
+
 # ── API Maleta ────────────────────────────────────────────────────────────────
 
 @viajes_bp.route('/api/trips/<int:vid>/maleta')
@@ -427,6 +439,33 @@ def api_add_maleta_item(vid):
                (viaje_id, nombre, categoria, cantidad, packed_ida, packed_vuelta, es_extra, item_id)
                VALUES (?,?,?,1,0,0,1,NULL)""",
             (vid, nombre, (d.get('categoria') or 'Varios').strip()),
+        )
+    return jsonify({'ok': True, 'id': cur.lastrowid})
+
+
+@viajes_bp.route('/api/trips/<int:vid>/maleta/item-from-wardrobe', methods=['POST'])
+def api_add_maleta_item_from_wardrobe(vid):
+    """Agrega una prenda puntual del Guardarropa a la maleta, sin pasar por un outfit."""
+    d = request.get_json(silent=True) or {}
+    item_id = d.get('item_id')
+    if not item_id:
+        return jsonify({'ok': False, 'error': 'item_id requerido'}), 400
+    with get_db() as db:
+        wi = db.execute(
+            "SELECT * FROM wardrobe_items WHERE id=? AND activo=1", (item_id,)
+        ).fetchone()
+        if not wi:
+            return jsonify({'ok': False, 'error': 'Prenda no encontrada'}), 404
+        existing = db.execute(
+            "SELECT id FROM viaje_maleta WHERE viaje_id=? AND item_id=?", (vid, item_id)
+        ).fetchone()
+        if existing:
+            return jsonify({'ok': False, 'error': 'Esa prenda ya está en tu maleta'}), 400
+        cur = db.execute(
+            """INSERT INTO viaje_maleta
+               (viaje_id, nombre, categoria, cantidad, packed_ida, packed_vuelta, es_extra, item_id)
+               VALUES (?,?,?,1,0,0,1,?)""",
+            (vid, wi['nombre'], _categorize(wi['categoria']), item_id),
         )
     return jsonify({'ok': True, 'id': cur.lastrowid})
 
