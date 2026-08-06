@@ -3,11 +3,7 @@
 {% block title %}HEGEMONIKON — Fútbol{% endblock %}
 {% block module_title %}HEGEMONIKON · Fútbol{% endblock %}
 
-{% block topright %}
-<button class="btn-a" onclick="abrirNuevo()" style="font-size:var(--fs-sm);padding:6px 14px;">
-  + Programar partido
-</button>
-{% endblock %}
+{% block topright %}{% endblock %}
 
 {% block content %}
 <style>
@@ -98,9 +94,14 @@
 </style>
 
 <!-- ── Hero ─────────────────────────────────────────────────────────────── -->
-<div class="fb-hero">
-  <div class="pg-t" style="margin:0">Fútbol</div>
-  <div class="fb-hero-desc">Historial de partidos, goles, asistencias y rendimiento — cada gol suma XP a Salud Física.</div>
+<div class="fb-hero" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <div class="pg-t" style="margin:0">Fútbol</div>
+    <div class="fb-hero-desc">Historial de partidos, goles, asistencias y rendimiento — cada gol suma XP a Salud Física.</div>
+  </div>
+  <button class="btn-a" onclick="abrirNuevo()" style="font-size:var(--fs-sm);padding:8px 16px;white-space:nowrap;flex-shrink:0;">
+    + Programar partido
+  </button>
 </div>
 
 <!-- ── Stats ─────────────────────────────────────────────────────────────── -->
