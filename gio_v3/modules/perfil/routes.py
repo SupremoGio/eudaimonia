@@ -357,17 +357,27 @@ def complete_reminder(rid):
         else:
             fv = row['freq_value'] or 1
             fu = row['freq_unit'] or 'dias'
-            base = _date.fromisoformat(today)
-            if fu == 'semanas':
-                next_d = (base + timedelta(weeks=fv)).isoformat()
-            elif fu == 'meses':
-                m = base.month + fv
-                y = base.year + (m - 1) // 12
-                m = (m - 1) % 12 + 1
-                d_max = calendar.monthrange(y, m)[1]
-                next_d = _date(y, m, min(base.day, d_max)).isoformat()
-            else:
-                next_d = (base + timedelta(days=fv)).isoformat()
+            # Ancla en la fecha PROGRAMADA (next_date/target_date), no en la fecha
+            # en la que se marca "hecho": si se ancla en hoy, un pago tardío
+            # desplaza el día del mes/semana en cada ciclo (ver bug de recordatorios
+            # que se "mueven").
+            scheduled = row['next_date'] or row['target_date'] or today
+            base = _date.fromisoformat(scheduled)
+            while True:
+                if fu == 'semanas':
+                    cand = base + timedelta(weeks=fv)
+                elif fu == 'meses':
+                    m = base.month + fv
+                    y = base.year + (m - 1) // 12
+                    m = (m - 1) % 12 + 1
+                    d_max = calendar.monthrange(y, m)[1]
+                    cand = _date(y, m, min(base.day, d_max))
+                else:
+                    cand = base + timedelta(days=fv)
+                base = cand
+                if cand.isoformat() > today:
+                    break
+            next_d = cand.isoformat()
             db.execute(
                 "UPDATE reminders SET last_done=?, next_date=? WHERE id=?",
                 (today, next_d, rid)
