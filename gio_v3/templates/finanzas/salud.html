@@ -17,8 +17,8 @@
 .sf-hero{background:linear-gradient(135deg,#0c0a10,#140f1a);border:1px solid var(--b2);border-radius:12px;padding:24px 28px;}
 .sf-pn-label{font-size:var(--fs-xs);color:#8A7A60;letter-spacing:.22em;text-transform:uppercase;margin-bottom:6px;}
 .sf-pn-value{font-family:var(--serif);font-size:2.6rem;font-weight:300;line-height:1;letter-spacing:.04em;color:#F2EDE0;}
-.sf-pn-value.pos{color:#10b981;}
-.sf-pn-value.neg{color:#f43f5e;}
+.sf-pn-value.pos{color:var(--emerald);}
+.sf-pn-value.neg{color:var(--coral);}
 .sf-pn-sub{font-size:var(--fs-sm);color:#8A7A60;margin-top:6px;}
 .sf-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;}
 .sf-stat{background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:8px;padding:14px 16px;}
@@ -76,7 +76,7 @@
 .sf-hist-lbl{font-size:var(--fs-xs);color:var(--dim);text-align:center;}
 
 /* ── Snapshot button ──────────────────────────────────────────────────────── */
-.sf-snap-btn{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;padding:6px 14px;border-radius:7px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;font-family:var(--sans);}
+.sf-snap-btn{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--emerald-l);padding:6px 14px;border-radius:7px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;font-family:var(--sans);}
 .sf-snap-btn:hover{background:rgba(16,185,129,.18);border-color:rgba(16,185,129,.5);}
 .sf-snap-btn svg{width:11px;height:11px;}
 
@@ -123,7 +123,7 @@
     <i data-lucide="arrow-left" style="width:12px;height:12px"></i> Oikonomia
   </a>
   <div style="display:flex;align-items:center;gap:8px;">
-    <a href="/finanzas/inversiones/" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;background:rgba(167,139,250,.10);border:1px solid rgba(167,139,250,.30);color:#a78bfa;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;text-decoration:none;transition:all .18s;" onmouseover="this.style.background='rgba(167,139,250,.18)';this.style.borderColor='rgba(167,139,250,.5)'" onmouseout="this.style.background='rgba(167,139,250,.10)';this.style.borderColor='rgba(167,139,250,.30)'">
+    <a href="/finanzas/inversiones/" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;background:rgba(167,139,250,.10);border:1px solid rgba(167,139,250,.30);color:var(--violet);font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;text-decoration:none;transition:all .18s;" onmouseover="this.style.background='rgba(167,139,250,.18)';this.style.borderColor='rgba(167,139,250,.5)'" onmouseout="this.style.background='rgba(167,139,250,.10)';this.style.borderColor='rgba(167,139,250,.30)'">
       <i data-lucide="trending-up" style="width:11px;height:11px"></i> Inversiones
     </a>
     <button class="sf-snap-btn" onclick="tomarSnapshot()">
@@ -156,17 +156,17 @@
 
   <div class="sf-stat-row">
     <div class="sf-stat">
-      <div class="sf-stat-v" style="color:#10b981">${{ "{:,.0f}".format(total_activos) }}</div>
+      <div class="sf-stat-v" style="color:var(--emerald)">${{ "{:,.0f}".format(total_activos) }}</div>
       <div class="sf-stat-l">Total Activos</div>
       <div class="sf-stat-s">Líquido + Inversiones + Bienes</div>
     </div>
     <div class="sf-stat">
-      <div class="sf-stat-v" style="color:#f43f5e">-${{ "{:,.0f}".format(total_pasivos) }}</div>
+      <div class="sf-stat-v" style="color:var(--coral)">-${{ "{:,.0f}".format(total_pasivos) }}</div>
       <div class="sf-stat-l">Total Pasivos</div>
       <div class="sf-stat-s">Tarjetas + Préstamos</div>
     </div>
     <div class="sf-stat">
-      <div class="sf-stat-v" style="color:#C9A84C">${{ "{:,.0f}".format(total_bienes) }}</div>
+      <div class="sf-stat-v" style="color:var(--gold)">${{ "{:,.0f}".format(total_bienes) }}</div>
       <div class="sf-stat-l">Bienes Personales</div>
       <div class="sf-stat-s">Valor estimado actual</div>
     </div>
@@ -178,17 +178,17 @@
   <div class="sf-bar-wrap">
     <div class="sf-bar-labels">
       <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#60a5fa"></span>Líquido</span>
-      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#10b981"></span>Inversiones</span>
-      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#C9A84C"></span>Bienes</span>
-      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:#f43f5e"></span>Pasivos</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:var(--emerald)"></span>Inversiones</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:var(--gold)"></span>Bienes</span>
+      <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:var(--coral)"></span>Pasivos</span>
     </div>
     {% set liq = cuentas_liquido|sum(attribute='saldo') %}
     {% set inv = cuentas_inversion|sum(attribute='saldo') %}
     <div class="sf-bar">
       <div class="sf-bar-seg" style="background:#60a5fa;width:{{ (liq/total_ref2*100)|int }}%"></div>
-      <div class="sf-bar-seg" style="background:#10b981;width:{{ (inv/total_ref2*100)|int }}%"></div>
-      <div class="sf-bar-seg" style="background:#C9A84C;width:{{ (total_bienes/total_ref2*100)|int }}%"></div>
-      <div class="sf-bar-seg" style="background:#f43f5e;width:{{ (total_pasivos/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:var(--emerald);width:{{ (inv/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:var(--gold);width:{{ (total_bienes/total_ref2*100)|int }}%"></div>
+      <div class="sf-bar-seg" style="background:var(--coral);width:{{ (total_pasivos/total_ref2*100)|int }}%"></div>
     </div>
   </div>
   {% endif %}
@@ -246,7 +246,7 @@
     </div>
     <div style="text-align:right;">
       {% set inv_total = cuentas_inversion|sum(attribute='saldo') %}
-      <div class="sf-group-total" style="color:#10b981">${{ "{:,.2f}".format(inv_total) }}</div>
+      <div class="sf-group-total" style="color:var(--emerald)">${{ "{:,.2f}".format(inv_total) }}</div>
       <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('inversion')">+ Agregar</button>
     </div>
   </div>
@@ -262,7 +262,7 @@
         <div class="sf-acc-inst">{{ c.institucion or meta.label }}</div>
       </div>
       <div class="sf-acc-saldo">
-        <div class="sf-acc-amount" style="color:#10b981">${{ "{:,.2f}".format(c.saldo) }}</div>
+        <div class="sf-acc-amount" style="color:var(--emerald)">${{ "{:,.2f}".format(c.saldo) }}</div>
         <div class="sf-acc-moneda">{{ c.moneda }}</div>
       </div>
       <div class="sf-acc-actions">
@@ -288,7 +288,7 @@
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Saldo actual adeudado en tarjetas y préstamos</div>
     </div>
     <div style="text-align:right;">
-      <div class="sf-group-total" style="color:#f43f5e">-${{ "{:,.2f}".format(total_pasivos) }}</div>
+      <div class="sf-group-total" style="color:var(--coral)">-${{ "{:,.2f}".format(total_pasivos) }}</div>
       <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('tarjeta_credito')">+ Agregar pasivo</button>
     </div>
   </div>
@@ -304,7 +304,7 @@
         <div class="sf-acc-inst">{{ c.institucion or meta.label }}</div>
       </div>
       <div class="sf-acc-saldo">
-        <div class="sf-acc-amount" style="color:#f43f5e">-${{ "{:,.2f}".format(c.saldo) }}</div>
+        <div class="sf-acc-amount" style="color:var(--coral)">-${{ "{:,.2f}".format(c.saldo) }}</div>
         <div class="sf-acc-moneda">{{ c.moneda }}</div>
       </div>
       <div class="sf-acc-actions">
@@ -403,7 +403,7 @@
     {% for h in historial %}
     {% set pct = ((h.patrimonio_neto - min_pn) / range_pn * 100)|int %}
     <div class="sf-hist-bar-wrap">
-      <div class="sf-hist-bar" style="height:{{ [pct,4]|max }}%;background:{% if h.patrimonio_neto >= 0 %}#10b981{% else %}#f43f5e{% endif %};opacity:.8;"></div>
+      <div class="sf-hist-bar" style="height:{{ [pct,4]|max }}%;background:{% if h.patrimonio_neto >= 0 %}var(--emerald){% else %}var(--coral){% endif %};opacity:.8;"></div>
       <div class="sf-hist-lbl">{{ h.fecha[5:] }}</div>
     </div>
     {% endfor %}
@@ -423,10 +423,10 @@
     <div>
       <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="handshake" style="width:13px;height:13px;"></i> Deudas Personales</div>
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">
-        Me deben <span style="color:#10b981">${{ "{:,.0f}".format(total_owe_me) }}</span>
-        &nbsp;·&nbsp;Debo <span style="color:#f43f5e">${{ "{:,.0f}".format(total_i_owe) }}</span>
+        Me deben <span style="color:var(--emerald)">${{ "{:,.0f}".format(total_owe_me) }}</span>
+        &nbsp;·&nbsp;Debo <span style="color:var(--coral)">${{ "{:,.0f}".format(total_i_owe) }}</span>
         &nbsp;·&nbsp;Neto
-        <span style="color:{% if total_owe_me >= total_i_owe %}#10b981{% else %}#f43f5e{% endif %}">
+        <span style="color:{% if total_owe_me >= total_i_owe %}var(--emerald){% else %}var(--coral){% endif %}">
           {% if total_owe_me >= total_i_owe %}+{% endif %}${{ "{:,.0f}".format(total_owe_me - total_i_owe) }}
         </span>
       </div>
@@ -439,25 +439,25 @@
     {# ── Me deben (owe_me) ─────────────────────────────────────────────────── #}
     <div>
       <div class="sf-debt-panel-hd">
-        <span style="display:flex;align-items:center;gap:5px;color:#10b981;">
+        <span style="display:flex;align-items:center;gap:5px;color:var(--emerald);">
           <i data-lucide="arrow-down-left" style="width:12px;height:12px"></i> Me deben
         </span>
-        <span style="font-family:var(--serif);font-size:.9rem;font-weight:300;color:#10b981">${{ "{:,.0f}".format(total_owe_me) }}</span>
+        <span style="font-family:var(--serif);font-size:.9rem;font-weight:300;color:var(--emerald)">${{ "{:,.0f}".format(total_owe_me) }}</span>
       </div>
       {% for d in owe_me %}
       {% set pct = ((1 - d.monto_restante / d.monto_total) * 100)|int if d.monto_total > 0 else 0 %}
       <div class="sf-debt-row" data-did="{{ d.id }}">
-        <div class="sf-debt-avatar" style="background:#10b98118;border:1px solid #10b98140;color:#10b981;">{{ d.person[0]|upper }}</div>
+        <div class="sf-debt-avatar" style="background:#10b98118;border:1px solid #10b98140;color:var(--emerald);">{{ d.person[0]|upper }}</div>
         <div class="sf-debt-body">
           <div class="sf-debt-name">{{ d.person }}</div>
           {% if d.concept %}<div class="sf-debt-concept">{{ d.concept }}</div>{% endif %}
           {% if d.monto_total > d.monto_restante %}
-          <div class="sf-debt-bar"><div class="sf-debt-bar-fill" style="width:{{ pct }}%;background:#10b981;"></div></div>
+          <div class="sf-debt-bar"><div class="sf-debt-bar-fill" style="width:{{ pct }}%;background:var(--emerald);"></div></div>
           <div class="sf-debt-pct">{{ pct }}% cobrado · Total ${{ "{:,.0f}".format(d.monto_total) }}</div>
           {% endif %}
         </div>
         <div class="sf-debt-right">
-          <div class="sf-debt-monto" style="color:#10b981">${{ "{:,.0f}".format(d.monto_restante) }}</div>
+          <div class="sf-debt-monto" style="color:var(--emerald)">${{ "{:,.0f}".format(d.monto_restante) }}</div>
           <div class="sf-debt-actions">
             <button class="ai" title="Registrar cobro" onclick="openModalAbonar({{ d.id }},{{ d.monto_restante }})" aria-label="Registrar cobro"><i data-lucide="plus-circle" style="width:11px;height:11px"></i></button>
             <button class="ai" title="Liquidar" onclick="settleDebt({{ d.id }},this)" aria-label="Liquidar"><i data-lucide="check-circle" style="width:11px;height:11px"></i></button>
@@ -477,25 +477,25 @@
     {# ── Debo (i_owe) ──────────────────────────────────────────────────────── #}
     <div>
       <div class="sf-debt-panel-hd">
-        <span style="display:flex;align-items:center;gap:5px;color:#f43f5e;">
+        <span style="display:flex;align-items:center;gap:5px;color:var(--coral);">
           <i data-lucide="arrow-up-right" style="width:12px;height:12px"></i> Debo
         </span>
-        <span style="font-family:var(--serif);font-size:.9rem;font-weight:300;color:#f43f5e">${{ "{:,.0f}".format(total_i_owe) }}</span>
+        <span style="font-family:var(--serif);font-size:.9rem;font-weight:300;color:var(--coral)">${{ "{:,.0f}".format(total_i_owe) }}</span>
       </div>
       {% for d in i_owe %}
       {% set pct = ((1 - d.monto_restante / d.monto_total) * 100)|int if d.monto_total > 0 else 0 %}
       <div class="sf-debt-row" data-did="{{ d.id }}">
-        <div class="sf-debt-avatar" style="background:#f43f5e18;border:1px solid #f43f5e40;color:#f43f5e;">{{ d.person[0]|upper }}</div>
+        <div class="sf-debt-avatar" style="background:#f43f5e18;border:1px solid #f43f5e40;color:var(--coral);">{{ d.person[0]|upper }}</div>
         <div class="sf-debt-body">
           <div class="sf-debt-name">{{ d.person }}</div>
           {% if d.concept %}<div class="sf-debt-concept">{{ d.concept }}</div>{% endif %}
           {% if d.monto_total > d.monto_restante %}
-          <div class="sf-debt-bar"><div class="sf-debt-bar-fill" style="width:{{ pct }}%;background:#f43f5e;"></div></div>
+          <div class="sf-debt-bar"><div class="sf-debt-bar-fill" style="width:{{ pct }}%;background:var(--coral);"></div></div>
           <div class="sf-debt-pct">{{ pct }}% pagado · Total ${{ "{:,.0f}".format(d.monto_total) }}</div>
           {% endif %}
         </div>
         <div class="sf-debt-right">
-          <div class="sf-debt-monto" style="color:#f43f5e">${{ "{:,.0f}".format(d.monto_restante) }}</div>
+          <div class="sf-debt-monto" style="color:var(--coral)">${{ "{:,.0f}".format(d.monto_restante) }}</div>
           <div class="sf-debt-actions">
             <button class="ai" title="Registrar pago" onclick="openModalAbonar({{ d.id }},{{ d.monto_restante }})" aria-label="Registrar pago"><i data-lucide="plus-circle" style="width:11px;height:11px"></i></button>
             <button class="ai" title="Liquidar" onclick="settleDebt({{ d.id }},this)" aria-label="Liquidar"><i data-lucide="check-circle" style="width:11px;height:11px"></i></button>

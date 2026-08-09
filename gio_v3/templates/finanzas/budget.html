@@ -232,7 +232,7 @@
 {% else %}
 {% set pct_gastado = (total_gastado / ingreso_real * 100) if ingreso_real > 0 else 0 %}
 {% set ring_pct = [pct_gastado, 100]|min %}
-{% set ring_col = '#f43f5e' if pct_gastado > 100 else ('#f59e0b' if pct_gastado >= 80 else '#10b981') %}
+{% set ring_col = 'var(--coral)' if pct_gastado > 100 else ('var(--amber)' if pct_gastado >= 80 else 'var(--emerald)') %}
 <div class="cf-hero">
   <div class="cf-ring-row" style="margin-bottom:18px;">
     <div class="cf-ring" style="background:conic-gradient({{ ring_col }} 0 {{ '%.1f'|format(ring_pct) }}%,var(--b) {{ '%.1f'|format(ring_pct) }}% 100%);" title="{{ pct_gastado|round|int }}% del ingreso gastado">

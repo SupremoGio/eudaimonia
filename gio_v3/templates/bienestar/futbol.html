@@ -54,11 +54,11 @@
 .fb-card-meta span{display:inline-flex;align-items:center;gap:4px;}
 .fb-card-meta svg{width:11px;height:11px;opacity:.7;}
 .fb-gol-badge { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:700; display:inline-flex;align-items:center;gap:4px;
-                background:rgba(16,185,129,.12); color:#10b981; border:1px solid rgba(16,185,129,.25); }
+                background:rgba(16,185,129,.12); color:var(--emerald); border:1px solid rgba(16,185,129,.25); }
 .fb-gol-badge svg{width:11px;height:11px;}
 .fb-resultado { font-family:var(--mono); font-weight:700; font-size:var(--fs-lg);
                 flex-shrink:0; text-align:center; min-width:60px; padding:5px 10px; border-radius:8px; }
-.fb-resultado.win{color:#10b981;background:rgba(16,185,129,.1);}
+.fb-resultado.win{color:var(--emerald);background:rgba(16,185,129,.1);}
 .fb-resultado.draw{color:var(--mid);background:var(--b);}
 .fb-resultado.loss{color:#f87171;background:rgba(248,113,113,.1);}
 .fb-actions { display:flex; gap:2px; flex-shrink:0; opacity:.5; transition:opacity .18s ease; }
@@ -105,7 +105,7 @@
 
 <!-- ── Stats ─────────────────────────────────────────────────────────────── -->
 {% set _r = stats.rating_prom %}
-{% set _ring_color = ('#10b981' if _r and _r >= 7 else '#eab308' if _r and _r >= 6 else '#f97316' if _r and _r >= 5 else '#ef4444' if _r else 'var(--dim)') %}
+{% set _ring_color = ('var(--emerald)' if _r and _r >= 7 else '#eab308' if _r and _r >= 6 else '#f97316' if _r and _r >= 5 else '#ef4444' if _r else 'var(--dim)') %}
 {% set _pct = ((_r / 10 * 100) | round(0)) if _r else 0 %}
 {% set _gep_total = (stats.ganados + stats.empatados + stats.perdidos) or 1 %}
 <div class="fb-stats">
@@ -131,12 +131,12 @@
   <div class="fb-stat">
     <div class="fb-stat-val" style="font-size:var(--fs-lg);">{{ stats.ganados }}-{{ stats.empatados }}-{{ stats.perdidos }}</div>
     <div class="fb-gep-bar">
-      <div class="fb-gep-seg" style="width:{{ (stats.ganados / _gep_total * 100) | round(1) }}%;background:#10b981;"></div>
+      <div class="fb-gep-seg" style="width:{{ (stats.ganados / _gep_total * 100) | round(1) }}%;background:var(--emerald);"></div>
       <div class="fb-gep-seg" style="width:{{ (stats.empatados / _gep_total * 100) | round(1) }}%;background:var(--mid);"></div>
       <div class="fb-gep-seg" style="width:{{ (stats.perdidos / _gep_total * 100) | round(1) }}%;background:#f87171;"></div>
     </div>
     <div class="fb-gep-legend">
-      <span><span class="fb-gep-dot" style="background:#10b981;"></span>G</span>
+      <span><span class="fb-gep-dot" style="background:var(--emerald);"></span>G</span>
       <span><span class="fb-gep-dot" style="background:var(--mid);"></span>E</span>
       <span><span class="fb-gep-dot" style="background:#f87171;"></span>P</span>
     </div>
@@ -178,7 +178,7 @@
   <span class="fb-form-lbl">Forma reciente</span>
   {% for p in partidos[:8] %}
   {% set gf, gc = (p.goles_favor or 0), (p.goles_contra or 0) %}
-  {% set color = ('#10b981' if gf > gc else '#f87171' if gf < gc else 'var(--mid)') %}
+  {% set color = ('var(--emerald)' if gf > gc else '#f87171' if gf < gc else 'var(--mid)') %}
   <span class="fb-form-dot" style="background:{{ color }};" title="{{ p.rival or 'Partido' }} · {{ gf }}-{{ gc }}"></span>
   {% endfor %}
 </div>

@@ -9,7 +9,7 @@
   .pri-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:999px;font-size:var(--fs-sm);font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
   .pri-alta {background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.3);}
   .pri-media{background:rgba(251,191,36,.14);color:#fcd34d;border:1px solid rgba(251,191,36,.3);}
-  .pri-baja {background:rgba(96,165,250,.14);color:#93c5fd;border:1px solid rgba(96,165,250,.3);}
+  .pri-baja {background:rgba(96,165,250,.14);color:var(--blue-l);border:1px solid rgba(96,165,250,.3);}
   /* Modo claro: los tonos pastel de arriba están pensados para fondo oscuro
      y pierden casi todo el contraste sobre el fondo crema — se oscurecen
      solo el texto, manteniendo el mismo tinte de fondo. */
@@ -17,7 +17,7 @@
   html.light .pri-media{color:#92400e;}
   html.light .pri-baja {color:#1d4ed8;}
   .est-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:999px;font-size:var(--fs-sm);font-weight:700;letter-spacing:.04em;}
-  .est-pend {background:rgba(251,191,36,.1);color:#fbbf24;}
+  .est-pend {background:rgba(251,191,36,.1);color:var(--amber-l);}
   .est-comp {background:rgba(52,211,153,.1);color:#34d399;}
   .est-desc {background:rgba(100,116,139,.12);color:#64748b;}
 
@@ -115,7 +115,7 @@
 
   /* ── Protocol wizard ── */
   .proto-prog{height:3px;background:rgba(255,255,255,.06);border-radius:100px;margin-bottom:0;overflow:hidden;}
-  .proto-prog-fill{height:100%;background:linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D);border-radius:100px;transition:width .4s;}
+  .proto-prog-fill{height:100%;background:linear-gradient(90deg,#7A5520,var(--gold),var(--gold-l));border-radius:100px;transition:width .4s;}
   .proto-phases{display:flex;border-bottom:1px solid rgba(197,163,108,.12);margin-bottom:0;}
   .proto-ph{flex:1;text-align:center;padding:9px 4px;font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s;}
   .proto-ph.active{color:var(--gold);border-bottom-color:var(--gold);}
@@ -125,8 +125,8 @@
   .ph-tag{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:100px;font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
   .ph-tag-0{background:rgba(168,152,128,.08);border:1px solid rgba(168,152,128,.18);color:#a89880;}
   .ph-tag-1{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
-  .ph-tag-2{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:#93c5fd;}
-  .ph-tag-3{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);color:#c4b5fd;}
+  .ph-tag-2{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:var(--blue-l);}
+  .ph-tag-3{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);color:var(--violet-l);}
 
   .q-t{font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:5px;line-height:1.3;}
   .q-ins{font-size:var(--fs-sm);color:var(--dim);line-height:1.65;margin-bottom:16px;padding:8px 12px;background:rgba(255,255,255,.02);border-left:2px solid rgba(197,163,108,.25);border-radius:0 5px 5px 0;}
@@ -166,7 +166,7 @@
   .rb-reevaluar{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);color:#fcd34d;}
   .rb-no{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:#fca5a5;}
   .rb-bloqueo{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.28);color:#fca5a5;}
-  .rb-glitch{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);color:#c4b5fd;}
+  .rb-glitch{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);color:var(--violet-l);}
   .res-desc{font-size:var(--fs-sm);color:var(--dim);line-height:1.7;margin-bottom:16px;text-align:center;}
   .reasons-wrap{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;margin-bottom:16px;text-align:left;}
   .reason-row{display:flex;align-items:flex-start;gap:7px;font-size:var(--fs-sm);color:var(--dim);line-height:1.5;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04);}
@@ -191,7 +191,7 @@
   .ec-a-warn{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);color:#fcd34d;}
   .ec-a-no{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.18);color:#fca5a5;}
   .ec-rate-note{font-size:var(--fs-xs);color:var(--dim);text-align:center;margin-bottom:10px;}
-  .btn-ec{width:100%;background:linear-gradient(135deg,#5c3d0a,#9a6f1a,#C9A84C);border:none;color:#0a0a1a;padding:9px 16px;border-radius:9px;font-size:var(--fs-sm);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;font-family:inherit;}
+  .btn-ec{width:100%;background:linear-gradient(135deg,#5c3d0a,#9a6f1a,var(--gold));border:none;color:#0a0a1a;padding:9px 16px;border-radius:9px;font-size:var(--fs-sm);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .15s;font-family:inherit;}
   .btn-ec:hover{opacity:.85;} .btn-ec:disabled{opacity:.32;cursor:not-allowed;}
   .res-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
   .btn-res-add{background:var(--gold);color:#0a0a1a;border:none;padding:9px 22px;border-radius:9px;font-size:var(--fs-sm);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity .15s;font-family:inherit;}
@@ -224,10 +224,10 @@
   </div>
   <div class="stat-card">
     <div class="stat-n" style="color:#fcd34d;">${{ "{:,.0f}".format(summary.media_pend) }}</div>
-    <div class="stat-l"><span class="pdot" style="background:#fbbf24;"></span>Media · pendiente</div>
+    <div class="stat-l"><span class="pdot" style="background:var(--amber-l);"></span>Media · pendiente</div>
   </div>
   <div class="stat-card">
-    <div class="stat-n" style="color:#93c5fd;">${{ "{:,.0f}".format(summary.baja_pend) }}</div>
+    <div class="stat-n" style="color:var(--blue-l);">${{ "{:,.0f}".format(summary.baja_pend) }}</div>
     <div class="stat-l"><span class="pdot" style="background:#60a5fa;"></span>Baja · pendiente</div>
   </div>
   <div class="stat-card">
@@ -241,7 +241,7 @@
   <button class="ftab on" data-f="todos"       onclick="setFilter(this,'todos')">Todos ({{ items|length }})</button>
   <button class="ftab"    data-f="Pendiente"  onclick="setFilter(this,'Pendiente')">Pendiente ({{ summary.pend_count }})</button>
   <button class="ftab"    data-f="Alta"       onclick="setFilter(this,'Alta')"><span class="pdot" style="background:#ef4444;"></span>Alta</button>
-  <button class="ftab"    data-f="Media"      onclick="setFilter(this,'Media')"><span class="pdot" style="background:#fbbf24;"></span>Media</button>
+  <button class="ftab"    data-f="Media"      onclick="setFilter(this,'Media')"><span class="pdot" style="background:var(--amber-l);"></span>Media</button>
   <button class="ftab"    data-f="Baja"       onclick="setFilter(this,'Baja')"><span class="pdot" style="background:#60a5fa;"></span>Baja</button>
   <button class="ftab"    data-f="Comprado"   onclick="setFilter(this,'Comprado')">✅ Comprado ({{ summary.comp_count }})</button>
   <button class="ftab"    data-f="Descartado" onclick="setFilter(this,'Descartado')"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:middle;"></i> Descartado</button>
@@ -986,7 +986,7 @@ async function loadProtoEC() {
   const { balance, ec_rate, ec_sugerido, puede_pagar, pct_balance } = data;
   const pct = Math.min(pct_balance||0, 100);
   const pctDisplay = pct_balance!==null ? pct_balance+'%' : '—';
-  const barCol = pct<=30?'#34d399':pct<=60?'#C9A84C':'#f87171';
+  const barCol = pct<=30?'#34d399':pct<=60?'var(--gold)':'#f87171';
 
   let alertCls, alertTxt;
   if (!precio) { return; }

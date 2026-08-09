@@ -21,7 +21,7 @@
 .rchip-cool{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
 .rchip-weekend{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.25);color:#60a5fa;}
 .btn-redeem{width:100%;padding:9px;border-radius:8px;font-size:var(--fs-sm);letter-spacing:.1em;text-transform:uppercase;font-family:var(--sans);cursor:pointer;transition:all .18s;border:none;}
-.btn-redeem.active{background:linear-gradient(135deg,#7A5520,#C9A84C);color:#09070F;font-weight:600;}
+.btn-redeem.active{background:linear-gradient(135deg,#7A5520,var(--gold));color:#09070F;font-weight:600;}
 .btn-redeem.active:hover{opacity:.88;transform:translateY(-1px);}
 .btn-redeem.blocked{background:var(--card2);border:1px solid var(--b);color:var(--dim);cursor:not-allowed;}
 .block-msg{font-size:var(--fs-xs);color:var(--coral);margin-top:7px;text-align:center;}
@@ -72,7 +72,7 @@
     <span style="font-size:var(--fs-sm);color:var(--gold);">{{ level_info.xp_to_next }} XP → Nivel {{ gam.level + 1 }}</span>
   </div>
   <div style="background:rgba(255,255,255,.06);border-radius:100px;height:4px;overflow:hidden;">
-    <div style="width:{{ level_info.level_pct }}%;height:100%;background:linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D);border-radius:100px;transition:width .5s;"></div>
+    <div style="width:{{ level_info.level_pct }}%;height:100%;background:linear-gradient(90deg,#7A5520,var(--gold),var(--gold-l));border-radius:100px;transition:width .5s;"></div>
   </div>
 </div>
 

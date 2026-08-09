@@ -390,7 +390,7 @@ const fmtMoney  = (n) => '$' + Number(n || 0).toLocaleString('es-MX', {maximumFr
 const fmtKm     = (n) => Number(n || 0).toLocaleString('es-MX') + ' km';
 const fmtDate   = (iso) => { if (!iso) return ''; const [y,m,d] = iso.slice(0,10).split('-'); const M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${+d} ${M} ${y}`; };
 const STATUS_LABEL = {nominal:'AL DÍA', proximo:'PRÓXIMO', urgente:'URGENTE', vencido:'VENCIDO'};
-const STATUS_COLOR = {nominal:'var(--emerald)', proximo:'var(--gold)', urgente:'#ea580c', vencido:'#f43f5e'};
+const STATUS_COLOR = {nominal:'var(--emerald)', proximo:'var(--gold)', urgente:'#ea580c', vencido:'var(--coral)'};
 
 function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
@@ -454,7 +454,7 @@ function renderFilters(){
 function renderStatusStrip(){
   const c = STATE.plan_counts;
   const STATUS_BOX = {
-    vencidos: {n: c.vencido,  color:'#f43f5e',       bg:'rgba(244,63,94,.1)'},
+    vencidos: {n: c.vencido,  color:'var(--coral)',       bg:'rgba(244,63,94,.1)'},
     urgentes: {n: c.urgente,  color:'#ea580c',       bg:'rgba(234,88,12,.1)'},
     nominal:  {n: c.nominal,  color:'var(--emerald)',bg:'var(--emerald-d)'},
   };
