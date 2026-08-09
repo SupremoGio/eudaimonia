@@ -35,6 +35,19 @@
 .cf-ring-c{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px;}
 .cf-ring-row{display:flex;align-items:center;gap:16px;}
 
+/* ── Racha bajo presupuesto ───────────────────────────────────── */
+.cf-racha{background:var(--card);border:1px solid var(--b);border-radius:16px;padding:18px 22px;margin-bottom:14px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+.cf-racha-ic{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(245,158,11,.12);color:var(--amber);}
+.cf-racha-ic svg{width:22px;height:22px;}
+.cf-racha-v{font-family:var(--serif);font-size:26px;font-weight:600;color:var(--text);line-height:1;font-variant-numeric:lining-nums;}
+.cf-racha-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.cf-racha-strip{display:flex;gap:4px;margin-left:auto;}
+.cf-racha-cell{width:14px;height:22px;border-radius:3px;}
+.cf-racha-cell.ok{background:var(--emerald);}
+.cf-racha-cell.over{background:var(--coral);}
+.cf-racha-cell.sin_datos{background:var(--card2);border:1px solid var(--b);}
+@media(max-width:520px){.cf-racha{flex-direction:column;align-items:flex-start;}.cf-racha-strip{margin-left:0;}}
+
 /* segmented bar — 30px con labels */
 .cf-segbar-wrap{margin-bottom:16px;}
 .cf-segbar{height:30px;border-radius:8px;overflow:hidden;display:flex;border:1px solid var(--b);background:var(--card2);margin-bottom:4px;}
@@ -276,6 +289,23 @@
     Proyección al día {{ dias_mes }}:
     <span class="cf-proj-val">${{ "{:,.0f}".format(proyeccion) }}</span>
     ({{ proy_pct }}% del ingreso) — ritmo al día {{ dia_actual }} de {{ dias_mes }}
+  </div>
+</div>
+{% endif %}
+
+<!-- Racha bajo presupuesto -->
+{% if racha_historial|selectattr('status', 'ne', 'sin_datos')|list|length > 0 %}
+{% set meses_es = {'01':'ene','02':'feb','03':'mar','04':'abr','05':'may','06':'jun','07':'jul','08':'ago','09':'sep','10':'oct','11':'nov','12':'dic'} %}
+<div class="cf-racha">
+  <div class="cf-racha-ic"><i data-lucide="flame"></i></div>
+  <div>
+    <div class="cf-racha-v">{{ racha_meses }} {{ 'mes' if racha_meses == 1 else 'meses' }}</div>
+    <div class="cf-racha-l">{% if racha_meses > 0 %}seguidos bajo presupuesto{% else %}racha rota este mes{% endif %}</div>
+  </div>
+  <div class="cf-racha-strip">
+    {% for cell in racha_historial %}
+    <div class="cf-racha-cell {{ cell.status }}" title="{{ meses_es[cell.mes[5:7]] }} {{ cell.mes[:4] }} — {% if cell.status == 'ok' %}bajo presupuesto{% elif cell.status == 'over' %}sobre presupuesto{% else %}sin datos{% endif %}"></div>
+    {% endfor %}
   </div>
 </div>
 {% endif %}
