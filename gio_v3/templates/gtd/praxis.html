@@ -351,7 +351,7 @@ function renderItem(t, secKey) {
         </div>
       </div>
       <div class="item-acts">
-        <button class="ai del" title="Eliminar" onclick="delTask(${t.id})"><i data-lucide="trash-2"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delTask(${t.id})" aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
       </div>
     </div>`;
   }
@@ -365,7 +365,7 @@ function renderItem(t, secKey) {
         ${t.fecha_completado ? `<div class="done-when">Completado ${t.fecha_completado}</div>` : ''}
       </div>
       <div class="item-acts">
-        <button class="ai del" title="Eliminar" onclick="delTask(${t.id})"><i data-lucide="trash-2"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delTask(${t.id})" aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
       </div>
     </div>`;
   }
@@ -383,8 +383,8 @@ function renderItem(t, secKey) {
       </div>
     </div>
     <div class="item-acts">
-      <button class="ai" title="Mover a Inbox" onclick="unclassify(${t.id})"><i data-lucide="inbox"></i></button>
-      <button class="ai del" title="Eliminar" onclick="delTask(${t.id})"><i data-lucide="trash-2"></i></button>
+      <button class="ai" title="Mover a Inbox" onclick="unclassify(${t.id})" aria-label="Mover a Inbox"><i data-lucide="inbox"></i></button>
+      <button class="ai del" title="Eliminar" onclick="delTask(${t.id})" aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
     </div>
   </div>`;
 }

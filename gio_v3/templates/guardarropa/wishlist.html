@@ -952,9 +952,9 @@ function renderList() {
         <div class="wl-item-sub">MXN</div>
       </div>
       <div class="wl-item-actions">
-        ${it.estado !== 'comprado' ? `<button class="btn-gr" title="Marcar como comprado" onclick="markItem(${it.id},'comprado',this)"><i data-lucide="check" style="width:11px;height:11px;"></i></button>` : `<button class="btn-g" title="Desmarcar — regresar a wishlist" onclick="markItem(${it.id},'pendiente',this)"><i data-lucide="undo-2" style="width:11px;height:11px;"></i></button>`}
-        ${it.estado !== 'descartado' ? `<button class="btn-r" title="Descartar" onclick="markItem(${it.id},'descartado',this)"><i data-lucide="x" style="width:11px;height:11px;"></i></button>` : ''}
-        <button class="btn-r" title="Eliminar" onclick="deleteItem(${it.id})"><i data-lucide="trash-2" style="width:11px;height:11px;"></i></button>
+        ${it.estado !== 'comprado' ? `<button class="btn-gr" title="Marcar como comprado" onclick="markItem(${it.id},'comprado',this)" aria-label="Marcar como comprado"><i data-lucide="check" style="width:11px;height:11px;"></i></button>` : `<button class="btn-g" title="Desmarcar — regresar a wishlist" onclick="markItem(${it.id},'pendiente',this)" aria-label="Desmarcar — regresar a wishlist"><i data-lucide="undo-2" style="width:11px;height:11px;"></i></button>`}
+        ${it.estado !== 'descartado' ? `<button class="btn-r" title="Descartar" onclick="markItem(${it.id},'descartado',this)" aria-label="Descartar"><i data-lucide="x" style="width:11px;height:11px;"></i></button>` : ''}
+        <button class="btn-r" title="Eliminar" onclick="deleteItem(${it.id})" aria-label="Eliminar"><i data-lucide="trash-2" style="width:11px;height:11px;"></i></button>
       </div>
     </div>`;
   }).join('')}</div>`;
