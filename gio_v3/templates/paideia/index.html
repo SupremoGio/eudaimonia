@@ -11,7 +11,7 @@
 
 {% block content %}
 <style>
-.pd-goal { background:linear-gradient(135deg, var(--gold), #E8C96D); border-radius:20px; padding:22px 26px;
+.pd-goal { background:linear-gradient(135deg, var(--gold), var(--gold-l)); border-radius:20px; padding:22px 26px;
            margin-bottom:16px; position:relative; overflow:hidden; }
 .pd-goal-label { font-size:11px; font-weight:600; color:rgba(9,7,15,0.6); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
 .pd-goal-num { font-size:32px; font-weight:700; color:#09070F; margin-bottom:12px; }
@@ -210,7 +210,7 @@
     <textarea class="fi" id="lb-notas" rows="2" placeholder="Ideas, citas, reflexiones…"></textarea>
 
     <div class="modal-actions" style="margin-top:16px;justify-content:space-between;">
-      <button class="fb-actions" id="lb-delete-btn" onclick="eliminarLibro()" style="background:none;border:1px solid var(--b2);color:#f43f5e;border-radius:8px;padding:8px 14px;cursor:pointer;display:none;">Eliminar</button>
+      <button class="fb-actions" id="lb-delete-btn" onclick="eliminarLibro()" style="background:none;border:1px solid var(--b2);color:var(--coral);border-radius:8px;padding:8px 14px;cursor:pointer;display:none;">Eliminar</button>
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn-g" onclick="closeModal('libro')">Cancelar</button>
         <button class="btn-a" onclick="guardarLibro()">Guardar</button>

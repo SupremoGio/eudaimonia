@@ -432,7 +432,7 @@
         <div>
           <label class="fl">Color</label>
           <div style="display:flex;gap:8px;align-items:center;">
-            <input type="color" id="im-color-hex" value="#C9A84C" style="width:42px;height:36px;border-radius:7px;border:1px solid var(--b);background:var(--card);cursor:pointer;padding:3px;" oninput="syncColorName(this.value)">
+            <input type="color" id="im-color-hex" value="var(--gold)" style="width:42px;height:36px;border-radius:7px;border:1px solid var(--b);background:var(--card);cursor:pointer;padding:3px;" oninput="syncColorName(this.value)">
             <input class="fi" id="im-color-name" placeholder="Navy, Blanco roto, Camel…" style="flex:1;">
           </div>
         </div>
@@ -916,7 +916,7 @@ function openItemModal(editId){
   document.getElementById('im-categoria').value = r?.categoria || 'Camisa';
   document.getElementById('im-marca').value     = r?.marca || '';
   document.getElementById('im-sub').value       = r?.subcategoria || '';
-  document.getElementById('im-color-hex').value = r?.color_hex || '#C9A84C';
+  document.getElementById('im-color-hex').value = r?.color_hex || 'var(--gold)';
   document.getElementById('im-color-name').value= r?.color_name || '';
   document.getElementById('im-precio').value    = r?.precio || '';
   document.getElementById('im-temp').value      = r?.temporada || 'todo';
@@ -1374,7 +1374,7 @@ function renderIntelligence(){
   const withUso=activeItems.filter(i=>i.precio&&i.veces_usado>0);
   const avgCpu=withUso.length?withUso.reduce((s,i)=>s+(i.precio/i.veces_usado),0)/withUso.length:0;
 
-  const scoreColor = score>=86?'var(--green)':score>=71?'var(--gold)':score>=50?'#f59e0b':'var(--red)';
+  const scoreColor = score>=86?'var(--green)':score>=71?'var(--gold)':score>=50?'var(--amber)':'var(--red)';
   const scoreLabel = score>=96?'Maestro':score>=86?'Élite':score>=71?'Avanzado':score>=51?'Sólido':score>=31?'Competente':'Iniciado';
 
   document.getElementById('intel-content').innerHTML=`

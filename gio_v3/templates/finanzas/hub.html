@@ -10,7 +10,7 @@
    PC / laptop (≥820px) → COCKPIT   ·   Celular (<820px) → LEDGER
    Usa los tokens de layout_sub.html (--gold, --card, --b, etc.)
    ────────────────────────────────────────────────────────────── */
-.oik .pos{color:#6ee7b7;} .oik .neg{color:#f0a8a8;} .oik .goldv{color:var(--gold-l);}
+.oik .pos{color:var(--emerald-l);} .oik .neg{color:#f0a8a8;} .oik .goldv{color:var(--gold-l);}
 .oik .sec-l{font-size:10px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin:0 0 12px 2px;}
 .oik .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .oik .delta{display:inline-flex;align-items:center;gap:4px;font-size:11px;letter-spacing:.02em;}
@@ -32,14 +32,14 @@
 .vb-nw::after{content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse at 90% 8%,rgba(201,168,76,.14),transparent 55%);}
 .vb-nw-eye{position:relative;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:rgba(232,201,109,.7);margin-bottom:9px;}
-.vb-nw-val{position:relative;font-family:var(--serif);font-size:42px;font-weight:600;color:#E8C96D;line-height:.95;white-space:nowrap;}
+.vb-nw-val{position:relative;font-family:var(--serif);font-size:42px;font-weight:600;color:var(--gold-l);line-height:.95;white-space:nowrap;}
 .vb-nw-val span{font-size:14px;color:rgba(232,201,109,.5);font-family:var(--sans);}
 .vb-nw-trend{position:relative;margin-top:9px;font-size:12px;color:#7BC49A;display:flex;align-items:center;gap:6px;}
 .vb-nw-trend.neg{color:#E59B92;}
 .vb-nw-trend svg{width:13px;height:13px;}
 .vb-spark{position:relative;display:flex;align-items:flex-end;gap:4px;height:54px;margin-top:auto;padding-top:20px;}
 .vb-spark span{flex:1;background:linear-gradient(180deg,rgba(201,168,76,.5),rgba(201,168,76,.1));border-radius:2px 2px 0 0;min-height:3px;}
-.vb-spark span.now{background:linear-gradient(180deg,#E8C96D,rgba(201,168,76,.3));box-shadow:0 0 10px rgba(201,168,76,.5);}
+.vb-spark span.now{background:linear-gradient(180deg,var(--gold-l),rgba(201,168,76,.3));box-shadow:0 0 10px rgba(201,168,76,.5);}
 .vb-nw-foot{position:relative;display:flex;align-items:center;gap:22px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,.16);}
 .vb-foot-l{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(242,237,224,.4);margin-bottom:3px;}
 .vb-foot-v{font-family:var(--serif);font-size:18px;}
@@ -92,7 +92,7 @@
 .m-hero-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
 .m-value{font-family:var(--serif);font-size:38px;font-weight:600;line-height:.95;color:var(--text);white-space:nowrap;}
 .m-value span{font-size:13px;color:var(--dim);font-family:var(--sans);}
-.m-trend{margin-top:9px;font-size:12.5px;color:#6ee7b7;display:flex;align-items:center;gap:6px;}
+.m-trend{margin-top:9px;font-size:12.5px;color:var(--emerald-l);display:flex;align-items:center;gap:6px;}
 .m-trend.neg{color:#f0a8a8;}
 .m-trend svg{width:13px;height:13px;}
 .m-lock{flex-shrink:0;width:36px;height:36px;border-radius:9px;border:1px solid var(--b2);background:rgba(201,168,76,.06);
@@ -189,7 +189,7 @@
     <div class="vb-alloc">
       <div class="vb-alloc-l">Composición de activos</div>
       <div class="vb-alloc-row">
-        <div class="vb-donut" style="background:conic-gradient(#60a5fa 0 {{ '%.1f'|format(p_liq) }}%,#10b981 {{ '%.1f'|format(p_liq) }}% {{ '%.1f'|format(p_liq + p_inv) }}%,#C9A84C {{ '%.1f'|format(p_liq + p_inv) }}% 100%);">
+        <div class="vb-donut" style="background:conic-gradient(#60a5fa 0 {{ '%.1f'|format(p_liq) }}%,var(--emerald) {{ '%.1f'|format(p_liq) }}% {{ '%.1f'|format(p_liq + p_inv) }}%,var(--gold) {{ '%.1f'|format(p_liq + p_inv) }}% 100%);">
           <div class="vb-donut-hole">
             <div class="vb-donut-v">${{ "{:,.0f}".format(total_activos / 1000) }}K</div>
             <div class="vb-donut-c">activos</div>
@@ -197,8 +197,8 @@
         </div>
         <div class="vb-legend">
           <div class="vb-leg"><span class="dot" style="background:#60a5fa"></span><span class="vb-leg-n">Líquido</span><span class="vb-leg-p">{{ p_liq|round|int }}%</span></div>
-          <div class="vb-leg"><span class="dot" style="background:#10b981"></span><span class="vb-leg-n">Inversiones</span><span class="vb-leg-p">{{ p_inv|round|int }}%</span></div>
-          <div class="vb-leg"><span class="dot" style="background:#C9A84C"></span><span class="vb-leg-n">Bienes</span><span class="vb-leg-p">{{ p_bie|round|int }}%</span></div>
+          <div class="vb-leg"><span class="dot" style="background:var(--emerald)"></span><span class="vb-leg-n">Inversiones</span><span class="vb-leg-p">{{ p_inv|round|int }}%</span></div>
+          <div class="vb-leg"><span class="dot" style="background:var(--gold)"></span><span class="vb-leg-n">Bienes</span><span class="vb-leg-p">{{ p_bie|round|int }}%</span></div>
         </div>
       </div>
       <div class="vb-stats">
@@ -213,16 +213,16 @@
   <div class="sec-l">Módulos</div>
   <div class="vb-mods">
     <a class="vb-card" href="/finanzas/salud/">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:#C9A84C"><i data-lucide="landmark"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:var(--gold)"><i data-lucide="landmark"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Patrimonio</div>
       <div class="vb-card-desc">Cuentas · inversiones · bienes · deudas</div>
       <div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(total_activos) }}</div><div class="vb-card-sl">Activos</div></div></div>
     </a>
     <a class="vb-card" href="/finanzas/budget/">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:#10b981"><i data-lucide="pie-chart"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:var(--emerald)"><i data-lucide="pie-chart"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Presupuesto</div>
       <div class="vb-card-desc">Regla 50/30/20 · necesidades · deseos · ahorro</div>
-      {% if presupuesto_disponible is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="vb-card-sl">Disponible</div></div>{% if presupuesto_pct is defined %}<span class="delta" style="color:#6ee7b7">{{ presupuesto_pct }}% usado</span>{% endif %}</div>{% endif %}
+      {% if presupuesto_disponible is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="vb-card-sl">Disponible</div></div>{% if presupuesto_pct is defined %}<span class="delta" style="color:var(--emerald-l)">{{ presupuesto_pct }}% usado</span>{% endif %}</div>{% endif %}
     </a>
     <a class="vb-card" href="/finanzas/estados/">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(96,165,250,.11);border:1px solid rgba(96,165,250,.34);color:#60a5fa"><i data-lucide="list"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
@@ -234,10 +234,10 @@
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Consumo</div>
       <div class="vb-card-desc">Análisis de gastos · tendencias · categorías</div>
-      {% if consumo_mes is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="vb-card-sl">Gasto del mes</div></div>{% if consumo_delta_pct is defined %}<span class="delta" style="color:{% if consumo_delta_pct <= 0 %}#f0a8a8{% else %}#6ee7b7{% endif %}">{{ consumo_delta_pct }}% vs mes ant.</span>{% endif %}</div>{% endif %}
+      {% if consumo_mes is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="vb-card-sl">Gasto del mes</div></div>{% if consumo_delta_pct is defined %}<span class="delta" style="color:{% if consumo_delta_pct <= 0 %}#f0a8a8{% else %}var(--emerald-l){% endif %}">{{ consumo_delta_pct }}% vs mes ant.</span>{% endif %}</div>{% endif %}
     </a>
     <a class="vb-card" href="/finanzas/prioridades/">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:#f59e0b"><i data-lucide="star"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
+      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:var(--amber)"><i data-lucide="star"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Wishlist</div>
       <div class="vb-card-desc">Deseos · compras · prioridades</div>
     </a>
@@ -262,22 +262,22 @@
     <svg class="m-spark" viewBox="0 0 320 70" preserveAspectRatio="none">
       <defs><linearGradient id="mFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(201,168,76,.30)"/><stop offset="1" stop-color="rgba(201,168,76,0)"/></linearGradient></defs>
       <path d="{{ ns.line }} L320 70 L0 70 Z" fill="url(#mFill)" stroke="none"/>
-      <path d="{{ ns.line }}" fill="none" stroke="#E8C96D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="{{ ns.line }}" fill="none" stroke="var(--gold-l)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     {% endif %}
 
     <div class="m-split">
       <div class="m-bar">
         <span style="width:{{ '%.1f'|format(liquido|default(0) / tot_bar * 100) }}%;background:#60a5fa"></span>
-        <span style="width:{{ '%.1f'|format(inversiones / tot_bar * 100) }}%;background:#10b981"></span>
-        <span style="width:{{ '%.1f'|format(total_bienes|default(0) / tot_bar * 100) }}%;background:#C9A84C"></span>
-        <span style="width:{{ '%.1f'|format(total_pasivos / tot_bar * 100) }}%;background:#f43f5e"></span>
+        <span style="width:{{ '%.1f'|format(inversiones / tot_bar * 100) }}%;background:var(--emerald)"></span>
+        <span style="width:{{ '%.1f'|format(total_bienes|default(0) / tot_bar * 100) }}%;background:var(--gold)"></span>
+        <span style="width:{{ '%.1f'|format(total_pasivos / tot_bar * 100) }}%;background:var(--coral)"></span>
       </div>
       <div class="m-legend">
         <span class="m-leg"><span class="dot" style="background:#60a5fa"></span>Líquido <b>${{ "{:,.0f}".format(liquido|default(0)) }}</b></span>
-        <span class="m-leg"><span class="dot" style="background:#10b981"></span>Inversiones <b>${{ "{:,.0f}".format(inversiones) }}</b></span>
-        <span class="m-leg"><span class="dot" style="background:#C9A84C"></span>Bienes <b>${{ "{:,.0f}".format(total_bienes|default(0)) }}</b></span>
-        <span class="m-leg"><span class="dot" style="background:#f43f5e"></span>Pasivos <b>${{ "{:,.0f}".format(total_pasivos) }}</b></span>
+        <span class="m-leg"><span class="dot" style="background:var(--emerald)"></span>Inversiones <b>${{ "{:,.0f}".format(inversiones) }}</b></span>
+        <span class="m-leg"><span class="dot" style="background:var(--gold)"></span>Bienes <b>${{ "{:,.0f}".format(total_bienes|default(0)) }}</b></span>
+        <span class="m-leg"><span class="dot" style="background:var(--coral)"></span>Pasivos <b>${{ "{:,.0f}".format(total_pasivos) }}</b></span>
       </div>
     </div>
   </div>
@@ -285,13 +285,13 @@
   <div class="sec-l">Módulos</div>
   <div class="va-mods">
     <a class="va-row" href="/finanzas/salud/">
-      <span class="va-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:#C9A84C"><i data-lucide="landmark"></i></span>
+      <span class="va-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:var(--gold)"><i data-lucide="landmark"></i></span>
       <div class="va-main"><div class="va-name">Patrimonio</div><div class="va-sub">Cuentas · inversiones · bienes</div></div>
       <div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(total_activos) }}</div><div class="va-val-l">Activos</div></div>
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
     <a class="va-row" href="/finanzas/budget/">
-      <span class="va-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:#10b981"><i data-lucide="pie-chart"></i></span>
+      <span class="va-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:var(--emerald)"><i data-lucide="pie-chart"></i></span>
       <div class="va-main"><div class="va-name">Presupuesto</div><div class="va-sub">Regla 50/30/20 · ahorro</div></div>
       {% if presupuesto_disponible is defined %}<div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="va-val-l">Disponible</div></div>{% endif %}
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
@@ -309,7 +309,7 @@
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
     <a class="va-row" href="/finanzas/prioridades/">
-      <span class="va-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:#f59e0b"><i data-lucide="star"></i></span>
+      <span class="va-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:var(--amber)"><i data-lucide="star"></i></span>
       <div class="va-main"><div class="va-name">Wishlist</div><div class="va-sub">Deseos · compras · prioridades</div></div>
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
