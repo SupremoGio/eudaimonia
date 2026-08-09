@@ -118,7 +118,7 @@
     </div>
     <div class="str-row">
       <div class="str-n">{{ stats.streak }}</div>
-      <div><div style="font-size:var(--fs-sm);color:var(--gold)">🔥 Racha</div><div class="str-l">días consecutivos</div></div>
+      <div><div style="font-size:var(--fs-sm);color:var(--gold);display:flex;align-items:center;gap:5px;"><i data-lucide="flame" style="width:13px;height:13px;"></i> Racha</div><div class="str-l">días consecutivos</div></div>
     </div>
     <div class="lv-row"><div class="lv-name">{{ stats.level_name }}</div><div class="lv-n">NIV. {{ stats.level }}</div></div>
     <div class="lv-b"><div class="lv-f" style="width:{{ stats.level_pct }}%"></div></div>
@@ -139,7 +139,7 @@
         <span class="ic-title">{{ t.title }}</span>
         <div class="ic-actions">
           <button class="ic-btn next-btn" onclick="promote({{t.id}},this)">→ Next</button>
-          <button class="ic-btn del-btn"  onclick="del({{t.id}},this)">✕</button>
+          <button class="ic-btn del-btn"  onclick="del({{t.id}},this)"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
         </div>
       </div>
       {% endfor %}
@@ -158,7 +158,7 @@ async function cTask(id, dot){
     euCelebrate(dot);
     dot.classList.add('ck'); row.classList.add('faded'); lucide.createIcons();
     document.getElementById('dpts').textContent = d.stats.pts_today;
-    toast(`+${d.pts} pts${d.bonus ? ` ✦ BONUS +${d.bonus}` : ''}`, d.bonus ? 'win' : 'ok');
+    toast(`+${d.pts} pts${d.bonus ? ` BONUS +${d.bonus}` : ''}`, d.bonus ? 'win' : 'ok');
     euAnnounceAchievements(d.gam);
   }
 }
@@ -178,10 +178,11 @@ async function capture(){
     <span class="ic-title">${t}</span>
     <div class="ic-actions">
       <button class="ic-btn next-btn" onclick="promote(${id},this)">→ Next</button>
-      <button class="ic-btn del-btn"  onclick="del(${id},this)">✕</button>
+      <button class="ic-btn del-btn"  onclick="del(${id},this)"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
     </div>`;
   document.getElementById('ip').prepend(div);
-  inp.value = ''; toast('Capturado ✓');
+  lucide.createIcons();
+  inp.value = ''; toast('Capturado');
 }
 
 async function promote(id, btn){
