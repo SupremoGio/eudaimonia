@@ -553,8 +553,8 @@ $('#hm-detail-edit').addEventListener('click', () => {
   $('#pe-fecha').value = _detailItem.last_date || '';
   openModal('modal-plan-edit');
 });
-$('#hm-detail-del').addEventListener('click', () => {
-  if (!confirm(`¿Quitar "${_detailItem.name}" del plan?`)) return;
+$('#hm-detail-del').addEventListener('click', async () => {
+  if (!(await euConfirm(`¿Quitar "${_detailItem.name}" del plan?`))) return;
   fetch(`/harma/api/plan/${_detailItem.id}`, {method:'DELETE'}).then(r => r.json()).then(data => {
     STATE = data.state; closeModal('modal-detail'); renderAll(); toast('Servicio quitado del plan');
   }).catch(() => toast('Error de red', 'err'));

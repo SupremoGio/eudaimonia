@@ -245,8 +245,8 @@ async function registrarGasto() {
 
 // ── Rewards CRUD ─────────────────────────────────────────────────────────────
 async function redeemReward(id, name, cost) {
-  if (!confirm(`¿Canjear "${name}" por ${cost} EC?`)) return;
   const btn = event && event.currentTarget;
+  if (!(await euConfirm(`¿Canjear "${name}" por ${cost} EC?`, {danger: false, confirmLabel: 'Canjear'}))) return;
   try {
     const r = await fetch(`/recompensas/api/rewards/${id}/redeem`, {method: 'POST'});
     const d = await r.json();
@@ -320,7 +320,7 @@ function cancelEdit() {
 }
 
 async function deleteReward(id) {
-  if (!confirm('¿Eliminar esta recompensa?')) return;
+  if (!(await euConfirm('¿Eliminar esta recompensa?'))) return;
   await fetch(`/recompensas/api/rewards/${id}`, {method: 'DELETE'});
   toast('Eliminada');
   setTimeout(() => location.reload(), 600);

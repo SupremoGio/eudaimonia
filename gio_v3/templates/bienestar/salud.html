@@ -765,7 +765,7 @@ function esc(s) {
 // ── Episodio CRUD ────────────────────────────────────────────────────────────
 async function guardarEpisodio() {
   const titulo = document.getElementById('ep-titulo').value.trim();
-  if (!titulo) { alert('El nombre es requerido'); return; }
+  if (!titulo) { toast('El nombre es requerido', 'err'); return; }
   const body = {
     tipo:        document.getElementById('ep-tipo').value,
     titulo,
@@ -781,7 +781,7 @@ async function guardarEpisodio() {
 }
 
 async function eliminarEpisodio(id) {
-  if (!confirm('¿Eliminar este episodio y todas sus recetas?')) return;
+  if (!(await euConfirm('¿Eliminar este episodio y todas sus recetas?'))) return;
   await fetch(`${BASE}/api/episodios/${id}`, { method:'DELETE' });
   toast('Eliminado');
   setTimeout(() => location.reload(), 400);
@@ -816,7 +816,7 @@ function abrirModalDoc(epId) {
 async function subirDocumento() {
   const epId = document.getElementById('doc-ep-id').value;
   const file = document.getElementById('doc-file').files[0];
-  if (!file) { alert('Selecciona un archivo'); return; }
+  if (!file) { toast('Selecciona un archivo', 'err'); return; }
   const fd = new FormData();
   fd.append('file', file);
   fd.append('tipo', document.getElementById('doc-tipo').value);
@@ -834,7 +834,7 @@ async function subirDocumento() {
 }
 
 async function eliminarDocumento(did) {
-  if (!confirm('¿Eliminar este documento?')) return;
+  if (!(await euConfirm('¿Eliminar este documento?'))) return;
   await fetch(`${BASE}/api/documentos/${did}`, { method: 'DELETE' });
   toast('Documento eliminado');
   if (_activeEpId) selectEp(_activeEpId);
@@ -870,7 +870,7 @@ async function guardarReceta() {
 }
 
 async function eliminarReceta(rid) {
-  if (!confirm('¿Eliminar esta receta y sus medicamentos?')) return;
+  if (!(await euConfirm('¿Eliminar esta receta y sus medicamentos?'))) return;
   await fetch(`${BASE}/api/recetas/${rid}`, { method:'DELETE' });
   toast('Receta eliminada');
   if (_activeEpId) await selectEp(_activeEpId);
@@ -889,7 +889,7 @@ function abrirModalMed(rxId) {
 async function guardarMedicamento() {
   const rxId  = document.getElementById('med-rx-id').value;
   const nombre = document.getElementById('med-nombre').value.trim();
-  if (!nombre) { alert('El nombre es requerido'); return; }
+  if (!nombre) { toast('El nombre es requerido', 'err'); return; }
   const body = {
     receta_id:    parseInt(rxId),
     nombre,

@@ -980,7 +980,7 @@ async function markItem(id, estado, btn) {
 }
 
 async function deleteItem(id) {
-  if (!confirm('¿Eliminar este artículo de tu wishlist?')) return;
+  if (!(await euConfirm('¿Eliminar este artículo de tu wishlist?'))) return;
   await fetch(`/guardarropa/wishlist/api/item/${id}`, { method:'DELETE' });
   toast('Artículo eliminado');
   loadList();

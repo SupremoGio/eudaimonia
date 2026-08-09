@@ -475,7 +475,7 @@ function openEdit(id) {
 function closeEdit() { document.getElementById('modalEdit').style.display = 'none'; }
 function saveEdit() {
   const nombre = document.getElementById('fNombre').value.trim();
-  if (!nombre) { alert('El nombre es requerido'); return; }
+  if (!nombre) { toast('El nombre es requerido', 'err'); return; }
   const id = document.getElementById('editId').value;
   const body = {
     nombre, estado: document.getElementById('fEstado').value,
@@ -513,12 +513,12 @@ document.querySelectorAll('.modal').forEach(m => {
   m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
 });
 
-function descartar(id) {
-  if (!confirm('¿Descartar este artículo?')) return;
+async function descartar(id) {
+  if (!(await euConfirm('¿Descartar este artículo?'))) return;
   fetch(`${BASE}/api/descartar/${id}`, {method:'POST'}).then(() => location.reload());
 }
-function delItem(id) {
-  if (!confirm('¿Eliminar definitivamente este artículo?')) return;
+async function delItem(id) {
+  if (!(await euConfirm('¿Eliminar definitivamente este artículo?'))) return;
   fetch(`${BASE}/api/delete/${id}`, {method:'POST'}).then(() => location.reload());
 }
 
@@ -613,7 +613,7 @@ function stepP0() {
 }
 function nextP0() {
   const nombre = document.getElementById('p0Name').value.trim();
-  if (!nombre) { alert('El nombre es requerido'); return; }
+  if (!nombre) { toast('El nombre es requerido', 'err'); return; }
   pData.nombre         = nombre;
   pData.categoria      = document.getElementById('p0Cat').value;
   pData.prioridad      = document.getElementById('p0Pri').value;
@@ -679,8 +679,8 @@ function selCalm(el, v) {
   el.querySelector('.ch-chk').textContent = '✓';
 }
 function nextP1() {
-  if (_days === null) { alert('Selecciona cuántos días llevas deseando el artículo'); return; }
-  if (_calm === null) { alert('Responde si el deseo persiste en calma'); return; }
+  if (_days === null) { toast('Selecciona cuántos días llevas deseando el artículo', 'err'); return; }
+  if (_calm === null) { toast('Responde si el deseo persiste en calma', 'err'); return; }
   pData.dias_deseo = _days; pData.q1_persiste = _calm;
   pStep = 2; renderProto();
 }
@@ -741,8 +741,8 @@ function selCls(el, v) {
   el.querySelector('.ch-chk').textContent = '✓';
 }
 function nextP2() {
-  if (!_sol) { alert('Indica tu estado financiero'); return; }
-  if (_sol==='inestable' && !_cls) { alert('Clasifica el artículo (CapEx u OpEx)'); return; }
+  if (!_sol) { toast('Indica tu estado financiero', 'err'); return; }
+  if (_sol==='inestable' && !_cls) { toast('Clasifica el artículo (CapEx u OpEx)', 'err'); return; }
   pData.q2_estado_financiero = _sol; pData.q2_clasificacion = _cls;
   pStep = 3; renderProto();
 }
@@ -903,11 +903,11 @@ function calcCPU(precio) {
 }
 
 function nextP3() {
-  if (_util===null) { alert('Responde si el artículo es útil'); return; }
-  if (_util && _dry===null) { alert('Responde el filtro DRY'); return; }
-  if (_util && !_dry && _cpu===null) { alert('Responde el cálculo de CPU'); return; }
-  if (_util && !_dry && _cpu && _mant===null) { alert('Responde la pregunta de mantenimiento'); return; }
-  if (_util && !_dry && _cpu && _mant && _cap===null) { alert('Responde el filtro de costo de oportunidad'); return; }
+  if (_util===null) { toast('Responde si el artículo es útil', 'err'); return; }
+  if (_util && _dry===null) { toast('Responde el filtro DRY', 'err'); return; }
+  if (_util && !_dry && _cpu===null) { toast('Responde el cálculo de CPU', 'err'); return; }
+  if (_util && !_dry && _cpu && _mant===null) { toast('Responde la pregunta de mantenimiento', 'err'); return; }
+  if (_util && !_dry && _cpu && _mant && _cap===null) { toast('Responde el filtro de costo de oportunidad', 'err'); return; }
   pData.q3_es_util=_util; pData.q3_tiene_alternativa=_dry;
   pData.q3_usos_mes=_usos; pData.q3_cpu_ok=_cpu;
   pData.q3_mantenimiento_ok=_mant; pData.q3_costo_oportunidad_ok=_cap;

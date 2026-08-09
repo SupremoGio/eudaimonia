@@ -322,7 +322,7 @@ async function guardarLibro() {
 
 async function eliminarLibro() {
   const id = document.getElementById('lb-id').value;
-  if (!id || !confirm('¿Eliminar este libro?')) return;
+  if (!id || !(await euConfirm('¿Eliminar este libro?'))) return;
   await fetch(`${BASE}/api/libros/${id}`, { method:'DELETE' });
   toast('Eliminado');
   setTimeout(() => location.reload(), 400);

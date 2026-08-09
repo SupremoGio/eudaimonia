@@ -297,7 +297,7 @@ async function completeTask(id, dot) {
 
 // ── Delete ─────────────────────────────────────────────────────────────────
 async function delTask(id) {
-  if (!confirm('¿Eliminar esta tarea?')) return;
+  if (!(await euConfirm('¿Eliminar esta tarea?'))) return;
   await fetch(`/gtd/api/task/${id}`, {method:'DELETE'}).catch(() => {});
   tasks = tasks.filter(t => t.id !== id);
   renderAll();

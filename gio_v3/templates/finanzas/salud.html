@@ -776,7 +776,7 @@ async function submitCuenta() {
 }
 
 async function delCuenta(id, btn) {
-  if (!confirm('¿Eliminar esta cuenta?')) return;
+  if (!(await euConfirm('¿Eliminar esta cuenta?'))) return;
   const r = await fetch(`/finanzas/salud/api/cuenta/${id}`, { method: 'DELETE' });
   if ((await r.json()).ok) { btn.closest('.sf-account').remove(); location.reload(); }
 }
@@ -845,7 +845,7 @@ async function submitBien() {
 }
 
 async function delBien(id, btn) {
-  if (!confirm('¿Eliminar este bien?')) return;
+  if (!(await euConfirm('¿Eliminar este bien?'))) return;
   const r = await fetch(`/finanzas/salud/api/bien/${id}`, { method: 'DELETE' });
   if ((await r.json()).ok) { btn.closest('.sf-bien').remove(); location.reload(); }
 }
@@ -864,10 +864,10 @@ async function tomarSnapshot() {
   const r = await fetch('/finanzas/salud/api/snapshot', { method: 'POST' });
   const d = await r.json();
   if (d.ok) {
-    alert(`✓ Snapshot guardado: $${d.patrimonio_neto.toLocaleString('es-MX', {minimumFractionDigits:2})} MXN`);
-    location.reload();
+    toast(`Snapshot guardado: $${d.patrimonio_neto.toLocaleString('es-MX', {minimumFractionDigits:2})} MXN`, 'win');
+    setTimeout(() => location.reload(), 900);
   } else {
-    alert(d.error || 'No se pudo guardar el snapshot.');
+    toast(d.error || 'No se pudo guardar el snapshot.', 'err');
   }
 }
 
@@ -933,13 +933,13 @@ async function submitAbonar() {
 }
 
 async function settleDebt(did, btn) {
-  if (!confirm('¿Marcar como liquidada? Se moverá al historial.')) return;
+  if (!(await euConfirm('¿Marcar como liquidada? Se moverá al historial.', {danger: false, confirmLabel: 'Marcar liquidada'}))) return;
   const r = await fetch(`/finanzas/api/debt/${did}/settle`, { method: 'POST' });
   if ((await r.json()).ok) btn.closest('.sf-debt-row').remove();
 }
 
 async function deleteDebt(did, btn) {
-  if (!confirm('¿Eliminar esta deuda? No se puede deshacer.')) return;
+  if (!(await euConfirm('¿Eliminar esta deuda? No se puede deshacer.'))) return;
   const r = await fetch(`/finanzas/api/debt/${did}`, { method: 'DELETE' });
   if ((await r.json()).ok) btn.closest('.sf-debt-row').remove();
 }

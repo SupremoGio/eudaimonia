@@ -390,7 +390,7 @@ async function guardarPartido() {
 }
 
 async function eliminarPartido(id) {
-  if (!confirm('¿Eliminar este partido?')) return;
+  if (!(await euConfirm('¿Eliminar este partido?'))) return;
   await fetch(`${BASE}/api/partidos/${id}`, { method: 'DELETE' });
   toast('Eliminado');
   setTimeout(() => location.reload(), 400);
