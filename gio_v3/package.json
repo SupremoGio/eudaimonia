@@ -1,0 +1,15 @@
+{
+  "name": "gio_v3",
+  "version": "1.0.0",
+  "description": "EUDAIMONIA OS — build de CSS (Tailwind compilado, ya no vía CDN)",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/css/tailwind-src.css -o ./static/css/tailwind-built.css --minify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.19"
+  }
+}

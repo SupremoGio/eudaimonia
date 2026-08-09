@@ -39,6 +39,7 @@ Thumbs.db
 htmlcov/
 .coverage
 babel.config.json
+
+# Node (build de Tailwind — ver gio_v3/package.json) — el CSS compilado
+# (gio_v3/static/css/tailwind-built.css) SÍ se commitea como respaldo
 node_modules/
-package.json
-package-lock.json

@@ -19,52 +19,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
 
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            surface : '#110E1C',
-            card    : '#1A1627',
-            card2   : '#221D32',
-            border  : 'rgba(201,168,76,0.15)',
-            border2 : 'rgba(201,168,76,0.28)',
-            dim     : '#6A6050',
-            mid     : '#A89880',
-            gio: {
-              violet : '#C9A84C',
-              vl     : '#E8C96D',
-              vd     : 'rgba(201,168,76,0.08)',
-              cyan   : '#A89880',
-              amber  : '#C9A84C',
-              coral  : '#f43f5e',
-              emerald: '#10b981',
-            },
-          },
-          fontFamily: {
-            mono  : ['"JetBrains Mono"',     'monospace'],
-            sans  : ['"DM Sans"',            'sans-serif'],
-            serif : ['"Cormorant Garamond"',  'serif'],
-          },
-        },
-      },
-    }
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind precompilado en build time (antes: cdn.tailwindcss.com,
+       compila en cada carga del navegador — ver gio_v3/tailwind.config.js) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-built.css') }}">
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="/static/css/app.css">
 
   <style>
     /* Tokens de diseño (paleta, tipografía, tamaños) viven en app.css —
-       enlazado arriba — como fuente única de verdad. */
-
-    /* Tailwind utility overrides para modo día */
-    html.light .text-dim   { color: var(--dim)  !important; }
-    html.light .text-mid   { color: var(--mid)  !important; }
-    html.light .bg-surface { background-color: var(--surf)  !important; }
-    html.light .bg-card    { background-color: var(--card)  !important; }
-    html.light .bg-card2   { background-color: var(--card2) !important; }
+       enlazado arriba — como fuente única de verdad. Las utilidades
+       Tailwind (text-dim, bg-surface...) ya apuntan a esas mismas
+       variables CSS vía tailwind.config.js, así que reaccionan solas
+       al toggle claro/oscuro sin overrides !important. */
 
     *, *::before, *::after { box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; transition: background .25s, color .25s; }
