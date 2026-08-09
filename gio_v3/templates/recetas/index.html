@@ -605,7 +605,7 @@ function editRecipe(id){
 // ── Delete ────────────────────────────────────────────
 async function deleteRecipe(id){
   const r = ALL_RECIPES.find(x=>x.id===id);
-  if(!confirm(`¿Eliminar "${r?.nombre}"?`)) return;
+  if(!(await euConfirm(`¿Eliminar "${r?.nombre}"?`))) return;
   await fetch(`/recetas/api/recipe/${id}`, {method:'DELETE'});
   const idx = ALL_RECIPES.findIndex(x=>x.id===id);
   if(idx>=0) ALL_RECIPES.splice(idx,1);

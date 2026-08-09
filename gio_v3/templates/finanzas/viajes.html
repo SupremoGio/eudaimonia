@@ -599,7 +599,7 @@ async function submitTrip() {
 async function confirmDelete() {
   if (!_currentId) return;
   const name = _summary?.trip?.nombre || 'este viaje';
-  if (!confirm(`¿Eliminar "${name}"?\n\nLas transacciones se desvincularán (no se eliminan).`)) return;
+  if (!(await euConfirm(`¿Eliminar "${name}"?\n\nLas transacciones se desvincularán (no se eliminan).`))) return;
   const r = await fetch(`${API}/trips/${_currentId}`, { method: 'DELETE' }).then(r => r.json());
   if (r.ok) {
     toast('Viaje eliminado');

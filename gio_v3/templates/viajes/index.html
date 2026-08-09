@@ -1133,7 +1133,7 @@ async function submitTrip() {
 /* ── Delete ───────────────────────────────────────────────────────────── */
 async function confirmDelete() {
   const name = _curTrip?.nombre || 'este viaje';
-  if (!confirm(`¿Eliminar "${name}"?\n\nSe borrarán los días, outfits y maleta de este viaje.`)) return;
+  if (!(await euConfirm(`¿Eliminar "${name}"?\n\nSe borrarán los días, outfits y maleta de este viaje.`))) return;
   const r = await fetch(`${API}/trips/${_curId}`, { method: 'DELETE' }).then(r => r.json());
   if (r.ok) {
     toast('Viaje eliminado');

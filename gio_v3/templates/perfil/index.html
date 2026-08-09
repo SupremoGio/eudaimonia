@@ -1178,7 +1178,7 @@ function updateAttachBadge(fieldKey, delta){
 }
 
 async function deleteFieldDoc(id, fieldKey){
-  if(!confirm('¿Eliminar este documento?'))return;
+  if(!(await euConfirm('¿Eliminar este documento?')))return;
   const r=await fetch('/perfil/api/delete_doc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
   const j=await r.json();
   if(j.ok){
@@ -1196,11 +1196,11 @@ async function deleteFieldDoc(id, fieldKey){
 async function uploadGeneralDoc(input){
   const files=[...input.files];if(!files.length)return;
   for(const f of files){
-    if(f.size>20*1024*1024){toast('⚠ '+f.name+' supera 20 MB');continue;}
+    if(f.size>20*1024*1024){toast('⚠ '+f.name+' supera 20 MB', 'err');continue;}
     const fd=new FormData();fd.append('file',f);
     const r=await fetch('/perfil/api/upload_doc',{method:'POST',body:fd});
     const j=await r.json();
-    if(!j.ok){toast('Error: '+j.error);continue;}
+    if(!j.ok){toast('Error: '+j.error, 'err');continue;}
     appendGenDocRow(j);toast('Subido ✓');
   }
   input.value='';
@@ -1229,7 +1229,7 @@ function appendGenDocRow(doc){
   lucide.createIcons();
 }
 async function deleteDoc(id){
-  if(!confirm('¿Eliminar este documento?'))return;
+  if(!(await euConfirm('¿Eliminar este documento?')))return;
   const r=await fetch('/perfil/api/delete_doc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
   const j=await r.json();
   if(j.ok){
@@ -1300,7 +1300,7 @@ async function saveReminder(){
     :'/perfil/api/reminder/add';
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const j=await r.json();
-  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
+  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'), 'err');}
 }
 async function doneReminder(id,type){
   const row=document.getElementById('remrow-'+id);
@@ -1387,7 +1387,7 @@ async function saveVaultEntry(){
   const url=editId?`/perfil/api/vault/${editId}/edit`:'/perfil/api/vault/add';
   const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const j=await r.json();
-  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
+  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'), 'err');}
 }
 async function vaultReveal(id){
   const span=document.getElementById('vaultpass-'+id);
@@ -1448,10 +1448,10 @@ async function saveTallaEntry(){
   };
   const r=await fetch('/perfil/api/talla/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const j=await r.json();
-  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
+  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'), 'err');}
 }
 async function deleteTallaEntry(id){
-  if(!confirm('¿Eliminar esta talla?'))return;
+  if(!(await euConfirm('¿Eliminar esta talla?')))return;
   const r=await fetch(`/perfil/api/talla/${id}/delete`,{method:'POST'});
   const j=await r.json();
   if(j.ok){location.reload();}
@@ -1474,7 +1474,7 @@ function closePliegueForm(){
 async function savePliegueEntry(){
   const mm=document.getElementById('plgMm').value;
   const porcentaje=document.getElementById('plgPct').value;
-  if(!mm || !porcentaje){toast('Escribe la lectura en mm y el % de grasa');return;}
+  if(!mm || !porcentaje){toast('Escribe la lectura en mm y el % de grasa', 'err');return;}
   const payload={
     fecha:document.getElementById('plgFecha').value,
     mm:parseFloat(mm),
@@ -1484,10 +1484,10 @@ async function savePliegueEntry(){
   };
   const r=await fetch('/perfil/api/pliegue/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
   const j=await r.json();
-  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'));}
+  if(j.ok){location.reload();}else{toast('Error: '+(j.error||'?'), 'err');}
 }
 async function deletePliegueEntry(id){
-  if(!confirm('¿Eliminar esta lectura?'))return;
+  if(!(await euConfirm('¿Eliminar esta lectura?')))return;
   const r=await fetch(`/perfil/api/pliegue/${id}/delete`,{method:'POST'});
   const j=await r.json();
   if(j.ok){
@@ -1499,7 +1499,7 @@ async function deletePliegueEntry(id){
   }
 }
 async function deleteVaultEntry(id){
-  if(!confirm('¿Eliminar esta contraseña?'))return;
+  if(!(await euConfirm('¿Eliminar esta contraseña?')))return;
   const r=await fetch(`/perfil/api/vault/${id}/delete`,{method:'POST'});
   const j=await r.json();
   if(j.ok){

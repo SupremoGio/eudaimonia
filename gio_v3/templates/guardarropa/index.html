@@ -1020,7 +1020,7 @@ async function saveItem(){
 
 async function deleteItem(id){
   const r=ALL_ITEMS.find(x=>x.id===id);
-  if(!confirm(`¿Eliminar "${r?.nombre}"?`)) return;
+  if(!(await euConfirm(`¿Eliminar "${r?.nombre}"?`))) return;
   await fetch(`/guardarropa/api/item/${id}`,{method:'DELETE'});
   const idx=ALL_ITEMS.findIndex(x=>x.id===id);
   if(idx>=0) ALL_ITEMS.splice(idx,1);
@@ -1265,7 +1265,7 @@ async function usarOutfit(event, oid){
 async function deleteOutfit(event, oid){
   event.stopPropagation();
   const o = ALL_OUTFITS.find(x=>x.id===oid);
-  if(!confirm(`¿Eliminar el outfit "${o?.nombre}"?\n\nSi está asignado a algún día de un viaje, se quitará de ahí también.`)) return;
+  if(!(await euConfirm(`¿Eliminar el outfit "${o?.nombre}"?\n\nSi está asignado a algún día de un viaje, se quitará de ahí también.`))) return;
   await fetch(`/guardarropa/api/outfit/${oid}`,{method:'DELETE'});
   const idx = ALL_OUTFITS.findIndex(x=>x.id===oid);
   if(idx>=0) ALL_OUTFITS.splice(idx,1);

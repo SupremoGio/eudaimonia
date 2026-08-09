@@ -106,6 +106,96 @@
     setTimeout(close, 4000);
   };
 
+  // Reemplazo temático de window.confirm() — un confirm() nativo del
+  // navegador rompe por completo el lenguaje visual de la app (aparece el
+  // cuadro gris de Chrome encima del dorado/serif). Async por naturaleza
+  // (no hay equivalente síncrono sin bloquear el hilo), así que los call
+  // sites pasan de `if (!confirm(msg)) return;` a
+  // `if (!(await euConfirm(msg))) return;` — la función que lo llama debe
+  // ser async, igual que ya lo son casi todas las que borran/cancelan algo.
+  // opts: { danger = true, confirmLabel, cancelLabel }
+  window.euConfirm = function (message, opts) {
+    opts = opts || {};
+    var danger  = opts.danger !== false;
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var accent  = danger ? 'var(--coral)' : 'var(--gold)';
+
+    return new Promise(function (resolve) {
+      var backdrop = document.createElement('div');
+      backdrop.setAttribute('role', 'alertdialog');
+      backdrop.setAttribute('aria-modal', 'true');
+      backdrop.style.cssText =
+        'position:fixed;inset:0;z-index:998;display:flex;align-items:center;justify-content:center;' +
+        'background:color-mix(in srgb, var(--bg) 70%, transparent);padding:20px;' +
+        (reduced ? '' : 'animation:euFadeIn .2s ease;');
+
+      var card = document.createElement('div');
+      card.style.cssText =
+        'background:var(--card);border:1px solid var(--gold-border, rgba(201,168,76,.18));border-radius:16px;' +
+        'padding:24px 22px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.5);' +
+        (reduced ? '' : 'animation:euScaleIn .2s ease;');
+      card.addEventListener('click', function (e) { e.stopPropagation(); });
+
+      var msg = document.createElement('div');
+      msg.style.cssText =
+        'font-family:var(--serif,\'Cormorant Garamond\',serif);font-size:18px;font-weight:500;' +
+        'color:var(--text);line-height:1.4;margin-bottom:20px;white-space:pre-line;';
+      msg.textContent = message;
+      card.appendChild(msg);
+
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;';
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.textContent = opts.cancelLabel || 'Cancelar';
+      cancelBtn.style.cssText =
+        'background:transparent;border:1px solid var(--gold-border, rgba(201,168,76,.18));border-radius:9px;' +
+        'padding:9px 18px;font-family:var(--sans,\'DM Sans\',sans-serif);font-size:13px;' +
+        'color:var(--dim);cursor:pointer;transition:opacity .15s;';
+
+      var okBtn = document.createElement('button');
+      okBtn.type = 'button';
+      okBtn.textContent = opts.confirmLabel || (danger ? 'Eliminar' : 'Confirmar');
+      okBtn.style.cssText =
+        'background:' + accent + ';border:none;border-radius:9px;' +
+        'padding:9px 18px;font-family:var(--sans,\'DM Sans\',sans-serif);font-size:13px;font-weight:600;' +
+        'color:var(--bg);cursor:pointer;transition:opacity .15s;';
+      okBtn.addEventListener('mouseenter', function () { okBtn.style.opacity = '.85'; });
+      okBtn.addEventListener('mouseleave', function () { okBtn.style.opacity = '1'; });
+
+      row.appendChild(cancelBtn);
+      row.appendChild(okBtn);
+      card.appendChild(row);
+      backdrop.appendChild(card);
+      document.body.appendChild(backdrop);
+
+      var settled = false;
+      function close(result) {
+        if (settled) return;
+        settled = true;
+        document.removeEventListener('keydown', onKey);
+        backdrop.remove();
+        resolve(result);
+      }
+      function onKey(e) {
+        if (e.key === 'Escape') {
+          close(false);
+        } else if (e.key === 'Tab') {
+          // Diálogo de 2 botones: Tab siempre alterna entre ambos.
+          e.preventDefault();
+          (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
+        }
+      }
+      backdrop.addEventListener('click', function () { close(false); });
+      cancelBtn.addEventListener('click', function () { close(false); });
+      okBtn.addEventListener('click', function () { close(true); });
+      document.addEventListener('keydown', onKey);
+      // Foco inicial en Cancelar — default seguro para diálogos destructivos.
+      cancelBtn.focus();
+    });
+  };
+
   // Muchos endpoints (completar tarea GTD, bonos de prioridad/rutina...)
   // ya devuelven `gam.achievements` con los logros recién desbloqueados
   // (engine.check_and_unlock) pero hasta ahora ninguna pantalla lo leía

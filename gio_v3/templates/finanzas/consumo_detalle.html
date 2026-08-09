@@ -237,13 +237,13 @@ async function registrarDesdeDetalle(){
 }
 
 async function desactivar(){
-  if(!confirm('¿Desactivar este producto? Puedes reactivarlo desde la base de datos.')) return;
+  if(!(await euConfirm('¿Desactivar este producto? Puedes reactivarlo desde la base de datos.', {confirmLabel: 'Desactivar'}))) return;
   await fetch('/finanzas/consumo/api/producto/{{ prod.id }}',{method:'DELETE'});
   window.location.href='/finanzas/consumo/';
 }
 
 async function borrarCompra(cid){
-  if(!confirm('¿Eliminar este registro de compra?')) return;
+  if(!(await euConfirm('¿Eliminar este registro de compra?'))) return;
   const r = await fetch(`/finanzas/consumo/api/compra/${cid}`,{method:'DELETE'});
   const d = await r.json();
   if(d.error){toast(d.error,'err');return;}

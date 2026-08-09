@@ -328,7 +328,7 @@ async function guardarMov() {
 }
 
 async function deleteMov(id) {
-  if (!confirm('¿Eliminar este movimiento?')) return;
+  if (!(await euConfirm('¿Eliminar este movimiento?'))) return;
   const res  = await fetch(`/finanzas/inversiones/api/mov/${id}`, { method: 'DELETE' });
   const data = await res.json();
   if (data.ok) {
