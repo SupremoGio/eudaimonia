@@ -497,6 +497,17 @@
      style="background:var(--card); border:1px solid var(--b2); color:var(--gold); transition:transform .22s ease, opacity .22s ease;">
 </div>
 
+<!-- LOADBAR — señal global de "algo está pasando" para cualquier fetch(),
+     sin tener que deshabilitar cada botón uno por uno. Ver el wrapper de
+     window.fetch más abajo. -->
+<div id="eu-loadbar"
+     style="position:fixed; top:0; left:0; height:2px; width:0%; z-index:9999;
+            background:linear-gradient(90deg, var(--gold), var(--gold-l));
+            box-shadow:0 0 8px var(--gold-glow, rgba(201,168,76,.45));
+            opacity:0; pointer-events:none;
+            transition:width .3s ease, opacity .2s ease;">
+</div>
+
 <script src="{{ url_for('static', filename='js/eu-celebrate.js') }}"></script>
 <script>
 lucide.createIcons();
@@ -594,6 +605,33 @@ function toast(msg, type = 'ok') {
 (function(){
   var _f=window.fetch;
   var _t=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
+
+  // Barra de carga global — la mayoría de los botones de la app no se
+  // deshabilitaban ni mostraban ningún indicio de "esto está cargando"
+  // mientras esperaban su fetch(). En vez de retocar cada uno de los
+  // cientos de handlers a mano, se engancha aquí mismo, en el único punto
+  // por donde ya pasa cada llamada a la red.
+  var _bar = document.getElementById('eu-loadbar');
+  var _reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (_bar && _reduced) _bar.style.transition = 'none';
+  var _pending = 0, _hideTimer;
+  function _barStart(){
+    _pending++;
+    clearTimeout(_hideTimer);
+    if (!_bar) return;
+    _bar.style.opacity = '1';
+    _bar.style.width = '70%';
+  }
+  function _barEnd(){
+    _pending = Math.max(0, _pending - 1);
+    if (_pending > 0 || !_bar) return;
+    _bar.style.width = '100%';
+    _hideTimer = setTimeout(function(){
+      _bar.style.opacity = '0';
+      setTimeout(function(){ _bar.style.width = '0%'; }, _reduced ? 0 : 200);
+    }, _reduced ? 0 : 150);
+  }
+
   window.fetch=function(url,opts){
     opts=opts||{};
     var m=(opts.method||'GET').toUpperCase();
@@ -601,7 +639,8 @@ function toast(msg, type = 'ok') {
       if(opts.headers instanceof Headers){opts.headers.set('X-CSRFToken',_t);}
       else{opts.headers=Object.assign({'X-CSRFToken':_t},opts.headers||{});}
     }
-    return _f(url,opts);
+    _barStart();
+    return _f(url,opts).finally(_barEnd);
   };
 })();
 </script>
