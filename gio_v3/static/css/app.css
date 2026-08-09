@@ -1,4 +1,139 @@
 /* ═══════════════════════════════════════════════════════════════
+   EUDAIMONIA — Design tokens (fuente única de verdad)
+   Antes duplicados y divergentes entre base_eudaimonia.html,
+   eu/layout.html y eu/layout_sub.html. Cualquier plantilla que
+   enlace este archivo hereda la misma paleta semántica completa.
+   ═══════════════════════════════════════════════════════════════ */
+:root, html.dark {
+  /* Superficies */
+  --bg:#09070F; --surf:#0F0C1A; --card:#1A1627; --card2:#221D32;
+  --surf-nav:#0F0C1A; --surf-top:rgba(9,7,15,0.97);
+  --b:rgba(201,168,76,0.15); --b2:rgba(201,168,76,0.30);
+
+  /* Dorado de marca */
+  --gold:#C9A84C; --gold-l:#E8C96D;
+  --gold-bg:rgba(201,168,76,0.08); --gold-d:rgba(201,168,76,0.08);
+  --gold-border:rgba(201,168,76,0.18); --gold-glow:rgba(201,168,76,0.45);
+  --gold-g:rgba(201,168,76,0.28);
+
+  /* Tonos semánticos — cada uno distinto, con variante -l (clara) y -d (10% tinte) */
+  --violet:#a78bfa;  --violet-l:#c4b5fd;  --violet-d:rgba(167,139,250,.10);
+  --cyan:#06b6d4;    --cyan-l:#67e8f9;    --cyan-d:rgba(6,182,212,.10);
+  --emerald:#10b981; --emerald-l:#6ee7b7; --emerald-d:rgba(16,185,129,.10);
+  --amber:#f59e0b;   --amber-l:#fbbf24;   --amber-d:rgba(245,158,11,.10);
+  --coral:#f43f5e;   --coral-l:#fb7185;   --coral-d:rgba(244,63,94,.10);
+  --blue:#3b82f6;    --blue-l:#93c5fd;    --blue-d:rgba(59,130,246,.10);
+  --pink:#ec4899;    --pink-l:#f9a8d4;    --pink-d:rgba(236,72,153,.10);
+
+  /* Alias heredados — mismo valor que su tono semántico más cercano,
+     para no romper CSS existente que aún los referencia */
+  --indigo:var(--violet); --orange:var(--amber);
+  --purple:var(--pink);   --green:var(--emerald); --red:var(--coral);
+
+  --text:#F2EDE0; --mid:#A89880; --dim:#8A7A60; --muted:#6A6050;
+
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'JetBrains Mono','Menlo',monospace;
+  --fs-xs:11px; --fs-sm:13px; --fs-base:15px;
+  --fs-lg:18px; --fs-xl:24px; --fs-2xl:36px;
+}
+
+html.light {
+  --bg:#F5F0E7; --surf:#EDE7D8; --card:#FFFFFF; --card2:#F8F4EC;
+  --surf-nav:#EDE7D8; --surf-top:rgba(245,240,231,0.97);
+  --b:rgba(139,105,20,0.16); --b2:rgba(139,105,20,0.30);
+
+  --gold:#8B6914; --gold-l:#A07820;
+  --gold-bg:rgba(139,105,20,0.08); --gold-d:rgba(139,105,20,0.08);
+  --gold-border:rgba(139,105,20,0.22); --gold-glow:rgba(139,105,20,0.35);
+  --gold-g:rgba(139,105,20,0.25);
+
+  --violet:#7c3aed;  --violet-l:#8B5CF6;  --violet-d:rgba(124,58,237,.08);
+  --cyan:#0891b2;    --cyan-l:#0e7490;    --cyan-d:rgba(8,145,178,.08);
+  --emerald:#059669; --emerald-l:#1a7a52; --emerald-d:rgba(5,150,105,.08);
+  --amber:#b45309;   --amber-l:#8B6914;   --amber-d:rgba(180,83,9,.08);
+  --coral:#c0392b;   --coral-l:#e05d4b;   --coral-d:rgba(192,57,43,.08);
+  --blue:#1d4ed8;    --blue-l:#3b82f6;    --blue-d:rgba(29,78,216,.08);
+  --pink:#be185d;    --pink-l:#db2777;    --pink-d:rgba(190,24,93,.08);
+
+  --indigo:var(--violet); --orange:var(--amber);
+  --purple:var(--pink);   --green:var(--emerald); --red:var(--coral);
+
+  --text:#1C1610; --mid:#5A4A30; --dim:#7C6A48; --muted:#9B8A6A;
+
+  --serif:'Cormorant Garamond',serif;
+  --sans:'DM Sans',sans-serif;
+  --mono:'JetBrains Mono','Menlo',monospace;
+}
+
+/* ── Shimmer skeleton (única definición — antes había 3 casi iguales) ── */
+@keyframes euShimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.sk {
+  background: linear-gradient(90deg,
+    var(--gold-bg, var(--gold-d)) 0%,
+    color-mix(in srgb, var(--gold) 12%, transparent) 50%,
+    var(--gold-bg, var(--gold-d)) 100%);
+  background-size: 200% 100%;
+  animation: euShimmer 1.4s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ── Animaciones de refuerzo — antes solo existían en base_eudaimonia.html,
+   ahora disponibles para cualquier plantilla que enlace app.css (GTD,
+   Finanzas, Recompensas, Logros...) ── */
+@keyframes euFadeIn  { from { opacity: 0 } to { opacity: 1 } }
+@keyframes euScaleIn { from { opacity: 0; transform: scale(0.85) } to { opacity: 1; transform: scale(1) } }
+@keyframes euBurst {
+  0%   { opacity: 1; transform: translate(0, 0) scale(1) }
+  100% { opacity: 0; transform: translate(var(--dx, 28px), var(--dy, -28px)) scale(0) }
+}
+@keyframes undoCountdown { from { width: 100% } to { width: 0% } }
+@keyframes euLevelUpRise {
+  0%   { transform: translateY(40px) scale(0.7);  opacity: 0; }
+  60%  { transform: translateY(-8px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0)    scale(1);    opacity: 1; }
+}
+@keyframes euGoldPulse {
+  0%, 100% { opacity: 0.12; transform: scale(1);    }
+  50%      { opacity: 0.22; transform: scale(1.05); }
+}
+@keyframes euAchievementRise {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0);    }
+}
+@keyframes euRise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);     }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1;    }
+  50%      { opacity: 0.35; }
+}
+@keyframes euIconFloat {
+  0%, 100% { transform: translateY(0);     }
+  50%      { transform: translateY(-3px);  }
+}
+@keyframes euIconPulseScale {
+  0%, 100% { transform: scale(1);    }
+  50%      { transform: scale(1.18); }
+}
+@keyframes euIconWiggle {
+  0%, 100% { transform: rotate(0deg);   }
+  25%      { transform: rotate(-12deg); }
+  75%      { transform: rotate(12deg);  }
+}
+@keyframes euIconPop {
+  0%   { transform: scale(0.4) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(6deg);  opacity: 1; }
+  100% { transform: scale(1) rotate(0deg);     }
+}
+@keyframes euIconSpinSlow {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
    GIO PIPELINE — Responsive Grid / Flexbox Utility System
    Mobile-first, 768px breakpoint
    ═══════════════════════════════════════════════════════════════ */
