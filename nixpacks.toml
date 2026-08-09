@@ -4,13 +4,17 @@
 #
 # El CSS de Tailwind se compila localmente (`npm run build:css`) y se
 # commitea ya construido en gio_v3/static/css/tailwind-built.css — no se
-# recompila en el build de Railway, así que este archivo no necesita Node.
+# recompila en el build de Railway.
+#
+# Node sigue detectándose solo (hay un package.json, para ese build local
+# de Tailwind), pero al haber también un requirements.txt, nixpacks elegía
+# un único provider "principal" y dejaba fuera a Python — "pip: command
+# not found" en el build. `providers` fuerza a combinar ambos explícitamente
+# en vez de dejar que nixpacks elija uno solo.
+providers = ["python", "node"]
 
 [phases.setup]
 aptPkgs = ["tesseract-ocr", "tesseract-ocr-spa"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt"]
 
 [start]
 cmd = "gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
