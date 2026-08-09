@@ -515,7 +515,7 @@ function WordOfDay() {
       <span style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
         background:'color-mix(in srgb, var(--gold) 6%, transparent)',border:'1px solid var(--gold-border)',
         color:C.gold,padding:'3px 9px',borderRadius:100,display:'inline-block'}}>
-        🇫🇷 {word.french}
+        FR · {word.french}
       </span>
     </div>
   );
@@ -1140,7 +1140,7 @@ function CommandCenterScreen({ appState, dispatch, isDesktop }) {
           }}>
           <div>
             <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:15,
-              fontWeight:600,color:C.text,letterSpacing:'0.08em'}}>🏆 LOGROS</div>
+              fontWeight:600,color:C.text,letterSpacing:'0.08em',display:'flex',alignItems:'center',gap:6}}><Icon name="trophy" size={15}/> LOGROS</div>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,
               color:C.gold,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:3}}>
               Trofeos · Clasificación · Historial XP
@@ -1220,16 +1220,17 @@ function OikonomiaExtra() {
   if (!data || data.locked) return (
     <div style={{background:C.card,border:'1px solid var(--b)',borderRadius:16,
       padding:'28px 20px',textAlign:'center'}}>
-      <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:26,color:GOLD,marginBottom:8}}>
-        Oikonomia 🔒
+      <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:26,color:GOLD,marginBottom:8,
+        display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+        Oikonomia <Icon name="lock" size={20}/>
       </div>
       <div style={{fontFamily:'DM Sans,sans-serif',fontSize:11,color:C.textMuted,marginBottom:18}}>
         Activa tu módulo financiero para ver tu patrimonio neto.
       </div>
-      <a href="/finanzas/" style={{display:'inline-block',background:GOLD,color:'#1a1510',
+      <a href="/finanzas/" style={{display:'inline-flex',alignItems:'center',gap:6,background:GOLD,color:'#1a1510',
         fontFamily:'DM Sans,sans-serif',fontSize:12,fontWeight:600,
         padding:'10px 24px',borderRadius:10,textDecoration:'none'}}>
-        Desbloquear Oikonomia 🔒
+        Desbloquear Oikonomia <Icon name="lock" size={13}/>
       </a>
     </div>
   );
@@ -1267,16 +1268,16 @@ function OikonomiaExtra() {
   }
 
   const pillars = [
-    {icon:'🏛️', label:'Patrimonio',  sub:'Cuentas · deudas · bienes',
+    {icon:'landmark', label:'Patrimonio',  sub:'Cuentas · deudas · bienes',
      href:'/finanzas/',       iconBg:'rgba(58,95,138,0.12)',
      statV: String(data.n_cuentas), statL:'cuentas'},
-    {icon:'📊', label:'Presupuesto', sub:'50 · 30 · 20',
+    {icon:'bar-chart-2', label:'Presupuesto', sub:'50 · 30 · 20',
      href:'/finanzas/budget', iconBg:'rgba(26,122,82,0.12)',
      statV: null, statL: null},
-    {icon:'📈', label:'Inversiones', sub:'Portafolio · rendimientos',
+    {icon:'trending-up', label:'Inversiones', sub:'Portafolio · rendimientos',
      href:'/finanzas/inversiones', iconBg:'rgba(34,197,94,0.10)',
      statV: null, statL: null},
-    {icon:'💳', label:'Estados',     sub:'Movimientos · análisis',
+    {icon:'credit-card', label:'Estados',     sub:'Movimientos · análisis',
      href:'/finanzas/estados',iconBg:'rgba(139,105,20,0.12)',
      statV: String(data.n_bancos), statL:'bancos'},
   ];
@@ -1347,7 +1348,7 @@ function OikonomiaExtra() {
             background:'rgba(201,168,76,0.12)',
             display:'flex',alignItems:'center',justifyContent:'center',
             flexShrink:0,fontSize:14}}>
-            🔔
+            <Icon name="bell" size={14}/>
           </div>
           <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>
             Hoy · pagar{' '}
@@ -1371,7 +1372,7 @@ function OikonomiaExtra() {
             <div style={{width:42,height:42,borderRadius:11,flexShrink:0,
               display:'flex',alignItems:'center',justifyContent:'center',
               fontSize:19,background:p.iconBg}}>
-              {p.icon}
+              <Icon name={p.icon} size={19}/>
             </div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:19,fontWeight:600,
@@ -1405,15 +1406,15 @@ function OikonomiaExtra() {
         color:C.textMuted,textTransform:'uppercase',margin:'0 0 10px 2px'}}>Accesos</div>
       <div style={{display:'flex',gap:8}}>
         {[
-          {icon:'🛒', label:'Consumo',  href:'/finanzas/consumo'},
-          {icon:'⭐', label:'Wishlist', href:'/finanzas/prioridades'},
-          {icon:'✈️', label:'Viajes',   href:'/finanzas/estados/viajes'},
+          {icon:'shopping-cart', label:'Consumo',  href:'/finanzas/consumo'},
+          {icon:'star', label:'Wishlist', href:'/finanzas/prioridades'},
+          {icon:'plane', label:'Viajes',   href:'/finanzas/estados/viajes'},
         ].map((chip,i) => (
           <a key={i} href={chip.href} style={{flex:1,display:'flex',flexDirection:'column',
             alignItems:'center',gap:6,background:C.card2,border:'1px solid var(--b)',
             borderRadius:12,padding:'13px 8px',textDecoration:'none',color:'inherit',
             transition:'border-color 0.2s'}}>
-            <span style={{fontSize:18}}>{chip.icon}</span>
+            <span style={{fontSize:18}}><Icon name={chip.icon} size={18}/></span>
             <span style={{fontFamily:'DM Sans,sans-serif',fontSize:11,
               color:C.textMuted,letterSpacing:'0.04em'}}>{chip.label}</span>
           </a>
@@ -1454,19 +1455,19 @@ function HegemonikonExtra({ acc, isDesktop }) {
   ];
 
   const subs = [
-    { href:'/bienestar/salud', icon:'🩺', label:'Salud', hue:350,
+    { href:'/bienestar/salud', icon:'stethoscope', label:'Salud', hue:350,
       sub: salud.episodios_activos > 0
         ? `${salud.episodios_activos} episodio${salud.episodios_activos!==1?'s':''} activo${salud.episodios_activos!==1?'s':''}`
         : 'Al día',
       alert: salud.episodios_activos > 0 },
-    { href:'/nutricion/', icon:'🥗', label:'Nutrición', hue:140,
+    { href:'/nutricion/', icon:'salad', label:'Nutrición', hue:140,
       sub: `${nut.comidas_done}/${nut.comidas_total} comidas hoy · racha ${nut.streak}d` },
-    { href:'/guardarropa/', icon:'👔', label:'Guardarropa', hue:280,
+    { href:'/guardarropa/', icon:'shirt', label:'Guardarropa', hue:280,
       sub: `${guard.items} prendas · ${guard.outfits} outfits` },
-    { href:'/recetas/', icon:'🍳', label:'Recetas', hue:40,
+    { href:'/recetas/', icon:'chef-hat', label:'Recetas', hue:40,
       sub: `${rec.total} recetas · ${rec.favoritas} favoritas` },
-    { href:'/perfil/', icon:'👤', label:'Perfil', hue:220, sub:'Datos personales · documentos' },
-    { href:'/bienestar/futbol', icon:'⚽', label:'Fútbol', hue:170,
+    { href:'/perfil/', icon:'user', label:'Perfil', hue:220, sub:'Datos personales · documentos' },
+    { href:'/bienestar/futbol', icon:'volleyball', label:'Fútbol', hue:170,
       sub: futbol.partidos > 0
         ? `${futbol.partidos} partido${futbol.partidos!==1?'s':''}${futbol.rating ? ` · rating ${futbol.rating}` : ''}`
         : 'Registra tu primer partido' },
@@ -1499,7 +1500,7 @@ function HegemonikonExtra({ acc, isDesktop }) {
       borderLeft:'3px solid rgba(244,63,94,0.8)', borderRadius:'0 11px 11px 0',
       padding:'12px 15px', marginBottom:18}}>
       <div style={{width:30,height:30,borderRadius:8,background:'rgba(244,63,94,0.12)',
-        display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:14}}>🩺</div>
+        display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:14}}><Icon name="stethoscope" size={14}/></div>
       <div style={{flex:1,fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>
         {salud.episodios_activos} episodio{salud.episodios_activos!==1?'s':''} activo{salud.episodios_activos!==1?'s':''}
         {salud.meds_activos > 0 && ` · ${salud.meds_activos} medicamento${salud.meds_activos!==1?'s':''} en curso`}
@@ -1563,7 +1564,7 @@ function HegemonikonExtra({ acc, isDesktop }) {
             }}>
             <div style={{display:'flex',alignItems:'center',gap:11}}>
               <div style={{width:34,height:34,borderRadius:10,flexShrink:0,background:tintBg,
-                display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>{s.icon}</div>
+                display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}><Icon name={s.icon} size={17} color={tintText}/></div>
               <div>
                 <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>{s.label}</div>
                 <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,
@@ -1696,7 +1697,7 @@ function PaideiaExtra({ acc }) {
         onMouseLeave={e=>{e.currentTarget.style.borderColor='var(--gold-border)'; e.currentTarget.style.transform='scale(1)';}}>
         <div style={{display:'flex',alignItems:'center',gap:11}}>
           <div style={{width:34,height:34,borderRadius:10,flexShrink:0,background:EU.catTint(265,'bg'),
-            display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}>📚</div>
+            display:'flex',alignItems:'center',justifyContent:'center',fontSize:16}}><Icon name="book-open" size={16}/></div>
           <div>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>Libros</div>
             <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>
@@ -1728,7 +1729,7 @@ function ModuleExtra({ id, acc, isDesktop }) {
           onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
           onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>🌍</span>
+            <span style={{fontSize:18}}><Icon name="globe" size={18}/></span>
             <div>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>Cosmopolitismo</div>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>Lecciones · Vocabulario · Práctica</div>
@@ -1782,8 +1783,8 @@ function ModuleExtra({ id, acc, isDesktop }) {
       <div>
         <div style={{fontFamily:'DM Sans,sans-serif',fontSize:9,letterSpacing:'0.15em',
           color:C.textMuted,textTransform:'uppercase',marginBottom:10}}>Submódulos</div>
-        {mkLink('/ataraxia/',  '⚓', 'Ataraxia',      'Checklist semanal · Orden')}
-        {mkLink('/gtd/',       '🎯', 'Praxis GTD',    'Inbox · Next Actions · Proyectos')}
+        {mkLink('/ataraxia/',  <Icon name="anchor" size={18}/>, 'Ataraxia',      'Checklist semanal · Orden')}
+        {mkLink('/gtd/',       <Icon name="target" size={18}/>, 'Praxis GTD',    'Inbox · Next Actions · Proyectos')}
       </div>
     );
   }
@@ -1799,7 +1800,7 @@ function ModuleExtra({ id, acc, isDesktop }) {
           onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
           onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>💻</span>
+            <span style={{fontSize:18}}><Icon name="code" size={18}/></span>
             <div>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>Acta Diurna</div>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>Programación · Lógica · Proyectos</div>
@@ -1822,7 +1823,7 @@ function ModuleExtra({ id, acc, isDesktop }) {
           onMouseEnter={e=>e.currentTarget.style.borderColor=acc}
           onMouseLeave={e=>e.currentTarget.style.borderColor='var(--gold-border)'}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <span style={{fontSize:18}}>🕺</span>
+            <span style={{fontSize:18}}><Icon name="music" size={18}/></span>
             <div>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:13,color:C.text}}>Acta Diurna</div>
               <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>Baile · Ritmo · Práctica</div>
@@ -2146,7 +2147,7 @@ function ActivityButton({ act, catHue, onLog }) {
             : EU.catTint(catHue, 'bg'),
           color: act.done ? '#fff' : EU.catTint(catHue, 'text'),
           border: act.done ? 'none' : `1px solid ${EU.catTint(catHue, 'border')}`,
-        }}>+{act.pts} XP{act.ec > 0 ? ` · ${act.ec}🪙` : ''}</span>
+        }}>+{act.pts} XP{act.ec > 0 ? ` · ${act.ec} EC` : ''}</span>
       </div>
       {/* Burst particles */}
       {burst && dirs.map(([dx,dy],i) => (
@@ -2560,7 +2561,7 @@ function ProfileScreen({ appState, isDesktop }) {
           {label:'Racha Mayor',   val:`${maxStreak} días`},
           {label:'Hoy',           val:`${modules.filter(m=>m.done).length}/${modules.length} mods`},
           {label:'Semanas activo',val:String(weeksActive)},
-          {label:'EC Disponibles',val:`${ecBalance} 🪙`, accent: true, href:'/recompensas'},
+          {label:'EC Disponibles',val:`${ecBalance} EC`, accent: true, href:'/recompensas'},
         ].map(s => (
           <div key={s.label} onClick={s.href ? ()=>window.location.href=s.href : undefined} style={{
             background: s.accent ? 'color-mix(in srgb, var(--gold) 6%, transparent)' : C.card,
