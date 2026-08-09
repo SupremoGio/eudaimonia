@@ -9,9 +9,11 @@ import modules.gamification.engine as engine
 
 ataraxia_bp = Blueprint('ataraxia', __name__, template_folder='../../templates')
 
-# Algunas tareas de rutina_bloques traen un emoji sembrado al inicio del
-# nombre (dato histórico en la tabla, no en código) — se recorta solo para
-# mostrar, sin tocar el valor guardado en la base de datos.
+# Algunas tareas de rutina_bloques traían un emoji sembrado al inicio del
+# nombre (dato histórico en la tabla, no en código). migrations/migrate_
+# strip_emoji_rutina.py limpia el dato de verdad; este strip se deja como
+# red de seguridad idempotente (no-op sobre datos ya migrados) para
+# instalaciones donde esa migración todavía no se haya corrido.
 _EMOJI_PREFIX_RE = re.compile(r'^[\U0001F300-\U0001FAFF\U00002600-\U000027BF]️?\s*')
 
 
