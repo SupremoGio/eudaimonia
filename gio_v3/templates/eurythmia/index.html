@@ -597,11 +597,12 @@ function renderBitacora(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         ${l.step ? `<span class="ey-chip on" style="cursor:default">♪ ${l.step}</span>` : ''}
         <span style="font-size:11px;color:var(--rose-l)">♪ ${FLOW_LABELS[l.flow]}</span>
-        ${l.grabado ? `<span style="font-size:10.5px;color:var(--dim)">🎥 grabado</span>` : ''}
+        ${l.grabado ? `<span style="font-size:10.5px;color:var(--dim);display:inline-flex;align-items:center;gap:4px;"><i data-lucide="video" style="width:11px;height:11px;"></i> grabado</span>` : ''}
       </div>
       ${l.improv ? `<div class="ey-quote">"${l.improv}"</div>` : ''}`;
     box.appendChild(item);
   });
+  if (window.lucide) lucide.createIcons();
 }
 $('#ey-grabado-chip').addEventListener('click', () => {
   fetch('/eurythmia/api/grabado/toggle', {method:'POST'}).then(r => r.json()).then(data => {
