@@ -28,19 +28,19 @@
   <div class="filter-label">Contexto</div>
   <div class="ctx-chips">
     <span class="ctx-chip on" data-ctx="all" onclick="setCtx(this,'all')">Todos</span>
-    <span class="ctx-chip" data-ctx="computadora" onclick="setCtx(this,'computadora')">💻 Computadora</span>
-    <span class="ctx-chip" data-ctx="llamada" onclick="setCtx(this,'llamada')">📞 Llamada</span>
-    <span class="ctx-chip" data-ctx="casa" onclick="setCtx(this,'casa')">🏠 Casa</span>
-    <span class="ctx-chip" data-ctx="comision" onclick="setCtx(this,'comision')">🚶 Comisión</span>
+    <span class="ctx-chip" data-ctx="computadora" onclick="setCtx(this,'computadora')"><i data-lucide="laptop" style="width:11px;height:11px;vertical-align:middle;"></i> Computadora</span>
+    <span class="ctx-chip" data-ctx="llamada" onclick="setCtx(this,'llamada')"><i data-lucide="phone" style="width:11px;height:11px;vertical-align:middle;"></i> Llamada</span>
+    <span class="ctx-chip" data-ctx="casa" onclick="setCtx(this,'casa')"><i data-lucide="house" style="width:11px;height:11px;vertical-align:middle;"></i> Casa</span>
+    <span class="ctx-chip" data-ctx="comision" onclick="setCtx(this,'comision')"><i data-lucide="footprints" style="width:11px;height:11px;vertical-align:middle;"></i> Comisión</span>
     <span class="ctx-chip" data-ctx="email" onclick="setCtx(this,'email')">✉️ Email</span>
-    <span class="ctx-chip" data-ctx="online" onclick="setCtx(this,'online')">🌐 Online</span>
+    <span class="ctx-chip" data-ctx="online" onclick="setCtx(this,'online')"><i data-lucide="globe" style="width:11px;height:11px;vertical-align:middle;"></i> Online</span>
   </div>
   <div class="filter-label" style="margin-top:8px;">Energía</div>
   <div class="eng-chips">
     <span class="eng-chip on" data-eng="all" onclick="setEng(this,'all')">Todas</span>
-    <span class="eng-chip" data-eng="high" onclick="setEng(this,'high')">🔥 Alta</span>
+    <span class="eng-chip" data-eng="high" onclick="setEng(this,'high')"><i data-lucide="flame" style="width:11px;height:11px;vertical-align:middle;"></i> Alta</span>
     <span class="eng-chip" data-eng="medium" onclick="setEng(this,'medium')">⚡ Media</span>
-    <span class="eng-chip" data-eng="low" onclick="setEng(this,'low')">😌 Baja</span>
+    <span class="eng-chip" data-eng="low" onclick="setEng(this,'low')"><i data-lucide="feather" style="width:11px;height:11px;vertical-align:middle;"></i> Baja</span>
     <span class="eng-chip" data-eng="2min" onclick="setEng(this,'2min')">⏱ 2-min rule</span>
   </div>
 </div>
@@ -57,12 +57,12 @@
     <div class="fg"><div class="fl">Contexto</div>
       <select class="fi" id="tctx">
         <option value="">— Sin contexto —</option>
-        <option value="computadora">💻 Computadora</option>
-        <option value="llamada">📞 Llamada</option>
-        <option value="casa">🏠 Casa</option>
-        <option value="comision">🚶 Comisión</option>
+        <option value="computadora">Computadora</option>
+        <option value="llamada">Llamada</option>
+        <option value="casa">Casa</option>
+        <option value="comision">Comisión</option>
         <option value="email">✉️ Email</option>
-        <option value="online">🌐 Online</option>
+        <option value="online">Online</option>
       </select>
     </div>
     <div class="fg"><div class="fl">Fecha límite</div><input class="fi" type="date" id="td"></div>
@@ -72,8 +72,8 @@
     <div class="fg"><div class="fl">Nivel de energía</div>
       <select class="fi" id="teng">
         <option value="medium">⚡ Media</option>
-        <option value="high">🔥 Alta</option>
-        <option value="low">😌 Baja</option>
+        <option value="high">Alta</option>
+        <option value="low">Baja</option>
       </select>
     </div>
     <div class="fg" style="display:flex;align-items:flex-end;">
@@ -98,8 +98,8 @@
     <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
       {% if mins_val > 0 and mins_val <= 2 %}<span class="badge-2m">⏱ 2-min</span>{% endif %}
       {% if ctx_val %}<span class="badge-ctx">{{ ctx_val }}</span>{% endif %}
-      {% if eng_val == 'high' %}<span class="badge-eng high">🔥 Alta</span>
-      {% elif eng_val == 'low' %}<span class="badge-eng low">😌 Baja</span>
+      {% if eng_val == 'high' %}<span class="badge-eng high"><i data-lucide="flame" style="width:10px;height:10px;vertical-align:middle;"></i> Alta</span>
+      {% elif eng_val == 'low' %}<span class="badge-eng low"><i data-lucide="feather" style="width:10px;height:10px;vertical-align:middle;"></i> Baja</span>
       {% else %}<span class="badge-eng medium">⚡ Media</span>{% endif %}
       {% if mins_val > 0 %}<span style="color:var(--dim);font-size:var(--fs-sm);">{{ mins_val }}min</span>{% endif %}
       {% if t.project_name %}<span class="t-sub" style="font-size:var(--fs-sm);">{{ t.project_name }}</span>{% endif %}
@@ -190,7 +190,7 @@ async function cTask(id,dot){
     dot.classList.add('ck');
     lucide.createIcons();
     toast(`+${d.pts} pts${d.bonus?` ✦ +${d.bonus}`:''}`)
-    if(d.gam && d.gam.levelup) toast(`🏆 Level Up → ${d.gam.level}`,'ok');
+    if(d.gam && d.gam.levelup) toast(`Level Up → ${d.gam.level}`,'ok');
     euAnnounceAchievements(d.gam);
   }
 }
