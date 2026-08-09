@@ -89,6 +89,18 @@
     document.body.appendChild(backdrop);
     if (window.lucide) lucide.createIcons();
 
+    // Momentos de mayor peso (logro/insignia desbloqueada) piden más chispa
+    // que el resto de refuerzos (bono de racha, etc): el ícono hace pop y
+    // dispara el mismo burst de partículas que ya usa HabitRow, esta vez
+    // desde el ícono del sheet en vez de un checkbox.
+    if (opts.burst && !reduced) {
+      var iconWrap = row.firstElementChild;
+      if (iconWrap) {
+        iconWrap.style.animation = 'euIconPop 0.5s cubic-bezier(.2,1.4,.4,1)';
+        window.euCelebrate(iconWrap);
+      }
+    }
+
     var close = function () { backdrop.remove(); };
     backdrop.addEventListener('click', close);
     setTimeout(close, 4000);
@@ -109,6 +121,7 @@
       eyebrow: 'Logro desbloqueado' + (extra > 0 ? ` · +${extra} más` : ''),
       title: first.name,
       desc: first.description + (first.xp ? ` · +${first.xp} XP` : '') + (first.coins ? ` · +${first.coins} EC` : ''),
+      burst: true,
     });
   };
 })();

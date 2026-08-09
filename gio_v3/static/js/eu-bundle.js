@@ -481,7 +481,6 @@ Object.assign(window, {
 
 
 // EUDAIMONIA — UI Primitives
-// EUDAIMONIA — UI Primitives
 const {
   useState,
   useEffect,
@@ -1319,10 +1318,29 @@ function StreakHeatmap({
 }
 
 // ─── Achievement Sheet ────────────────────────────────────
+// Desbloquear un logro/insignia es un momento poco frecuente y de más peso
+// que completar un hábito — merece más chispa que el pop+countdown que ya
+// tenía. Reutiliza el mismo lenguaje de partículas (`euBurst`) que
+// HabitRow, con más partículas y más radio para que se sienta como el
+// evento más grande que es.
+const BURST_DIRS = [[46, 0], [38, 25], [16, 44], [-16, 44], [-38, 25], [-46, 0], [-38, -25], [-16, -44], [16, -44], [38, -25], [0, -48], [0, 48]];
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
+    return () => mq.removeEventListener ? mq.removeEventListener('change', onChange) : mq.removeListener(onChange);
+  }, []);
+  return reduced;
+}
 function AchievementSheet({
   achievement,
   onClose
 }) {
+  const reducedMotion = useReducedMotion();
   useEffect(() => {
     const t = setTimeout(onClose, 6000);
     return () => clearTimeout(t);
@@ -1369,10 +1387,13 @@ function AchievementSheet({
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
+      position: 'relative',
+      display: 'inline-flex',
       fontSize: 64,
       lineHeight: 1,
       marginBottom: 14,
-      filter: 'drop-shadow(0 0 16px var(--gold-glow))'
+      filter: 'drop-shadow(0 0 16px var(--gold-glow))',
+      animation: reducedMotion ? 'none' : 'euIconPop 0.5s cubic-bezier(.2,1.4,.4,1) both'
     }
   }, achievement.icon_lucide ? /*#__PURE__*/React.createElement(Icon, {
     name: achievement.icon_lucide,
@@ -1380,7 +1401,25 @@ function AchievementSheet({
   }) : achievement.icon || /*#__PURE__*/React.createElement(Icon, {
     name: "trophy",
     size: 64
-  })), /*#__PURE__*/React.createElement("div", {
+  }), !reducedMotion && BURST_DIRS.map(([dx, dy], i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      position: 'absolute',
+      left: '50%',
+      top: '50%',
+      width: 6,
+      height: 6,
+      borderRadius: '50%',
+      background: `oklch(75% 0.18 ${30 + i * 27})`,
+      transform: 'translate(-50%,-50%)',
+      '--dx': `${dx}px`,
+      '--dy': `${dy}px`,
+      opacity: 0,
+      animation: 'euBurst 0.85s ease-out forwards',
+      animationDelay: `${0.15 + i * 0.025}s`,
+      pointerEvents: 'none'
+    }
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: 10,
       letterSpacing: '0.22em',
@@ -1788,7 +1827,6 @@ Object.assign(window, {
   ComboBonusSheet
 });
 
-// EUDAIMONIA — App State & Root
 // EUDAIMONIA — App State & Root
 // hooks and C declared in eu-components.jsx (bundled before this file)
 
@@ -2547,7 +2585,6 @@ function Root() {
 }
 ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Root, null));
 
-// EUDAIMONIA — All Screens
 // EUDAIMONIA — All Screens
 // hooks and C declared in eu-components.jsx (bundled before this file)
 
