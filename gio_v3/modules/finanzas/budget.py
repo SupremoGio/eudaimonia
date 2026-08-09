@@ -87,17 +87,6 @@ CAT_LABELS = {
     'NOMINA':          'Nómina adelanto',
 }
 
-CAT_ICONS = {
-    'COMIDA/REST': '🍔', 'VIVERES/SUPER': '🛒', 'CASA/HOGAR': '🏠',
-    'GASOLINA/AUTO': '⛽', 'SERVICIOS': '💡', 'MENSUALIDAD': '💳',
-    'ROPA': '👕', 'SALUD': '✂️',
-    'TECH/DIGITAL': '💻', 'SUSCRIPCIONES': '📱', 'ENTRETENIMIENTO': '🎭',
-    'SALSA': '💃', 'VIAJES/VUELOS': '✈️', 'TRANSPORTE': '🚗',
-    'APRENDIZAJE': '📚', 'INVERSION': '📈', 'CAFE/PAN': '☕',
-    'GYM': '🏋️', 'DEPORTE': '⚽', 'REGALO': '🎁',
-    'OTROS': '📦', 'EXPENSE': '🧾',
-}
-
 BUCKET_META = {
     'necesidades': {'label': 'Necesidades',      'pct_target': 50, 'color': '#2a8a62', 'cls': 'bk-nec'},
     'deseos':      {'label': 'Deseos',            'pct_target': 30, 'color': '#467aa8', 'cls': 'bk-des'},
@@ -126,6 +115,77 @@ def _last_month_with_data(db):
         LIMIT 1
     """).fetchone()
     return row['mes'] if row else None
+
+
+def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
+    """
+    Recorre hacia atrás desde `mes_hasta` (YYYY-MM) mes por mes, comparando
+    ingreso real vs. gasto real (mismos filtros que _calc_budget). Un mes
+    cuenta como "bajo presupuesto" si tuvo datos reales (>=5 movimientos) y
+    gastó <= ingreso. La racha es la cadena de meses consecutivos así desde
+    el mes más reciente con datos; se corta en el primer mes que la rompe o
+    que no tiene datos suficientes.
+
+    Devuelve (racha, meses) donde `meses` es la lista de los últimos
+    `max_meses` (más antiguo primero) con status 'ok' | 'over' | 'sin_datos',
+    para pintar una tira tipo heatmap.
+    """
+    excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
+    y, m = int(mes_hasta[:4]), int(mes_hasta[5:])
+
+    meses = []
+    racha = 0
+    racha_rota = False
+
+    for _ in range(max_meses):
+        mes = f"{y}-{m:02d}"
+        mes_inicio = f"{mes}-01"
+        next_m, next_y = (m + 1, y) if m < 12 else (1, y + 1)
+        mes_fin = f"{next_y}-{next_m:02d}-01"
+
+        n = db.execute(
+            "SELECT COUNT(*) n FROM est_movimientos WHERE fecha >= ? AND fecha < ?",
+            (mes_inicio, mes_fin)
+        ).fetchone()['n']
+
+        if n < 5:
+            meses.append({'mes': mes, 'status': 'sin_datos'})
+            racha_rota = True
+        else:
+            ingreso = db.execute(
+                f"""SELECT COALESCE(SUM(monto),0) t FROM est_movimientos
+                   WHERE tipo='INGRESO' AND categoria NOT IN ({excl_ph})
+                     AND fecha >= ? AND fecha < ?""",
+                list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
+            ).fetchone()['t']
+            gasto = db.execute(
+                """SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
+                   WHERE tipo='GASTO'
+                     AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
+                                           'SPEI_ENVIADO','RETIRO','PUBLICIDAD','NOMINA','FINANZAS',
+                                           'EXPENSE','APORTACION_RENTA')
+                     AND fecha >= ? AND fecha < ?""",
+                (mes_inicio, mes_fin)
+            ).fetchone()['t']
+
+            if ingreso <= 0:
+                meses.append({'mes': mes, 'status': 'sin_datos'})
+                racha_rota = True
+            else:
+                ok = gasto <= ingreso
+                meses.append({'mes': mes, 'status': 'ok' if ok else 'over'})
+                if not ok:
+                    racha_rota = True
+
+        if not racha_rota:
+            racha += 1
+
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+
+    meses.reverse()
+    return racha, meses
 
 
 def _calc_budget(mes, db):
@@ -234,7 +294,6 @@ def _calc_budget(mes, db):
         cats_data.append({
             'categoria':    cat,
             'nombre':       CAT_LABELS.get(cat, cat),
-            'icono':        CAT_ICONS.get(cat, '📦'),
             'limite':       limite,
             'gastado':      gastado,
             'n':            int(row['n'] or 0),
@@ -319,9 +378,21 @@ def index(mes=None):
 
         data = _calc_budget(mes, db)
 
+        # Racha siempre anclada al mes más reciente con datos, no al mes que
+        # se está navegando — para que no "cambie" al ver meses pasados.
+        cur_mes = today.strftime('%Y-%m')
+        n_cur = db.execute(
+            "SELECT COUNT(*) n FROM est_movimientos WHERE fecha >= ? AND fecha < ?",
+            (f"{cur_mes}-01", f"{today.year}-{today.month+1:02d}-01"
+             if today.month < 12 else f"{today.year+1}-01-01")
+        ).fetchone()['n']
+        mes_racha = cur_mes if n_cur >= 1 else (_last_month_with_data(db) or cur_mes)
+        racha_meses, racha_historial = _racha_bajo_presupuesto(db, mes_racha)
+
     return render_template(
         'finanzas/budget.html',
         mes=mes, prev_mes=prev_mes, next_mes=next_mes,
+        racha_meses=racha_meses, racha_historial=racha_historial,
         **data,
     )
 
