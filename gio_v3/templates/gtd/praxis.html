@@ -278,7 +278,7 @@ async function unclassify(id) {
 async function completeTask(id, dot) {
   const task = tasks.find(t => t.id === id);
   if (!task || task.completado) return;
-  if (dot) { dot.disabled = true; dot.classList.add('ck'); }
+  if (dot) { dot.disabled = true; dot.classList.add('ck'); euCelebrate(dot); }
   const r = await fetch(`/gtd/api/task/${id}/complete`, {method:'POST'})
     .then(r => r.json()).catch(() => null);
   if (!r || !r.ok) {

@@ -184,6 +184,7 @@ async function cTask(id,dot){
   const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
   const d=await r.json();
   if(d.ok){
+    euCelebrate(dot);
     const row=dot.closest('.t-row');
     row.classList.add('faded');
     dot.classList.add('ck');

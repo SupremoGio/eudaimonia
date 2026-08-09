@@ -85,6 +85,12 @@
 .st-warn  .cat-fill-bar{background:var(--amber);}
 .st-over  .cat-pct{color:var(--coral);}
 .st-over  .cat-fill-bar{background:var(--coral);}
+
+/* Refuerzo positivo sutil: categorías dentro de meta "respiran" en vez
+   de quedar como una barra estática — goal-gradient / refuerzo continuo */
+@keyframes cfPulseOk { 0%,100%{box-shadow:0 0 0 rgba(42,138,98,0);} 50%{box-shadow:0 0 7px rgba(42,138,98,.6);} }
+.st-ok .cat-fill-bar{ animation:cfPulseOk 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce){ .st-ok .cat-fill-bar{ animation:none; } }
 .cat-note{font-size:10px;color:var(--dim);}
 /* chip: cuántas transacciones */
 .cat-n{font-size:10px;color:var(--dim);background:var(--card2);border:1px solid var(--b);border-radius:20px;padding:1px 7px;margin-left:5px;}

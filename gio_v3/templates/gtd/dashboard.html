@@ -155,6 +155,7 @@ async function cTask(id, dot){
   const r = await fetch(`/gtd/api/task/${id}/complete`, {method:'POST'});
   const d = await r.json();
   if(d.ok){
+    euCelebrate(dot);
     dot.classList.add('ck'); row.classList.add('faded'); lucide.createIcons();
     document.getElementById('dpts').textContent = d.stats.pts_today;
     toast(`+${d.pts} pts${d.bonus ? ` ✦ BONUS +${d.bonus}` : ''}`, d.bonus ? 'win' : 'ok');

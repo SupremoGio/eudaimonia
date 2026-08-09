@@ -246,10 +246,12 @@ async function registrarGasto() {
 // ── Rewards CRUD ─────────────────────────────────────────────────────────────
 async function redeemReward(id, name, cost) {
   if (!confirm(`¿Canjear "${name}" por ${cost} EC?`)) return;
+  const btn = event && event.currentTarget;
   try {
     const r = await fetch(`/recompensas/api/rewards/${id}/redeem`, {method: 'POST'});
     const d = await r.json();
     if (d.error) { toast(d.error, 'err'); return; }
+    if (btn) euCelebrate(btn);
     document.getElementById('ec-display').textContent = d.ec_remaining;
     toast(`✦ ${name} canjeada — -${cost} EC`);
     setTimeout(() => location.reload(), 1200);
