@@ -127,9 +127,9 @@
       <button class="px-add" onclick="capture()">+ Inbox</button>
     </div>
     <div class="px-tipos">
-      <button class="px-tipo on" data-tipo="tarea" onclick="setTipo(this,'tarea')">📌 Tarea</button>
-      <button class="px-tipo" data-tipo="idea" onclick="setTipo(this,'idea')">💡 Idea</button>
-      <button class="px-tipo" data-tipo="mantenimiento" onclick="setTipo(this,'mantenimiento')">🔧 Mantenimiento</button>
+      <button class="px-tipo on" data-tipo="tarea" onclick="setTipo(this,'tarea')"><i data-lucide="pin" style="width:12px;height:12px;vertical-align:middle;"></i> Tarea</button>
+      <button class="px-tipo" data-tipo="idea" onclick="setTipo(this,'idea')"><i data-lucide="lightbulb" style="width:12px;height:12px;vertical-align:middle;"></i> Idea</button>
+      <button class="px-tipo" data-tipo="mantenimiento" onclick="setTipo(this,'mantenimiento')"><i data-lucide="wrench" style="width:12px;height:12px;vertical-align:middle;"></i> Mantenimiento</button>
     </div>
   </div>
 </div>
@@ -193,15 +193,16 @@ tasks.forEach(t => {
 });
 
 const SECS = [
-  { key:'inbox',   label:'INBOX',          icon:'📥', accent:'sec-inbox',   showRev:true  },
-  { key:'hoy',     label:'HOY — URGENTE + IMPORTANTE',  icon:'🔴', accent:'sec-hoy'          },
-  { key:'semana',  label:'ESTA SEMANA — AGÉNDALO',      icon:'🔵', accent:'sec-semana'        },
-  { key:'delegar', label:'DELEGAR — URGENTE SIN IMPACTO',icon:'🟡',accent:'sec-delegar'       },
-  { key:'ideas',   label:'BANCO DE IDEAS', icon:'⚪', accent:'sec-ideas'                    },
+  { key:'inbox',   label:'INBOX',          icon:'inbox', accent:'sec-inbox',   showRev:true  },
+  { key:'hoy',     label:'HOY — URGENTE + IMPORTANTE',  icon:'flame', accent:'sec-hoy'          },
+  { key:'semana',  label:'ESTA SEMANA — AGÉNDALO',      icon:'calendar', accent:'sec-semana'        },
+  { key:'delegar', label:'DELEGAR — URGENTE SIN IMPACTO',icon:'users',accent:'sec-delegar'       },
+  { key:'ideas',   label:'BANCO DE IDEAS', icon:'lightbulb', accent:'sec-ideas'                    },
   { key:'done',    label:'COMPLETADOS',    icon:'✅', accent:'sec-done',    defClosed:true },
 ];
-const Q_LABEL = { hoy:'🔴 HOY', semana:'🔵 ESTA SEMANA', delegar:'🟡 DELEGAR', ideas:'⚪ IDEAS' };
-const TIPO_LABEL = { tarea:'📌 Tarea', idea:'💡 Idea', mantenimiento:'🔧 Mantenimiento' };
+const Q_LABEL = { hoy:'HOY', semana:'ESTA SEMANA', delegar:'DELEGAR', ideas:'IDEAS' };
+const TIPO_LABEL = { tarea:'Tarea', idea:'Idea', mantenimiento:'Mantenimiento' };
+const TIPO_ICON  = { tarea:'pin', idea:'lightbulb', mantenimiento:'wrench' };
 const TIPO_CLS   = { tarea:'tp-tarea', idea:'tp-idea',  mantenimiento:'tp-mantenimiento'  };
 
 // ── Tipo ───────────────────────────────────────────────────────────────────
@@ -233,7 +234,7 @@ async function capture() {
   inp.value = '';
   openSecs.add(isIdea ? 'ideas' : 'inbox');
   if (isIdea) {
-    toast('Guardado en Banco de Ideas 💡');
+    toast('Guardado en Banco de Ideas');
   } else {
     // En vez de dejarla flotando en Inbox, preguntamos de una vez a dónde va.
     openClassifyForNew(newTask);
@@ -334,7 +335,7 @@ function renderItem(t, secKey) {
         <div class="item-text">${esc(t.title)}</div>
         ${t.notas ? `<div class="item-notas">${esc(t.notas)}</div>` : ''}
         <div class="item-meta">
-          <span class="item-tipo ${TIPO_CLS[t.tipo]||'tp-tarea'}">${TIPO_LABEL[t.tipo]||'📌 Tarea'}</span>
+          <span class="item-tipo ${TIPO_CLS[t.tipo]||'tp-tarea'}" style="display:inline-flex;align-items:center;gap:3px;"><i data-lucide="${TIPO_ICON[t.tipo]||'pin'}" style="width:10px;height:10px;"></i>${TIPO_LABEL[t.tipo]||'Tarea'}</span>
         </div>
       </div>
       <div class="cls-panel">
@@ -377,8 +378,8 @@ function renderItem(t, secKey) {
       <div class="item-text">${esc(t.title)}</div>
       ${t.notas ? `<div class="item-notas">${esc(t.notas)}</div>` : ''}
       <div class="item-meta">
-        ${t.fecha_limite ? `<span class="item-date">📅 ${t.fecha_limite}</span>` : ''}
-        <span class="item-tipo ${TIPO_CLS[t.tipo]||'tp-tarea'}">${TIPO_LABEL[t.tipo]||'📌 Tarea'}</span>
+        ${t.fecha_limite ? `<span class="item-date" style="display:inline-flex;align-items:center;gap:3px;"><i data-lucide="calendar" style="width:10px;height:10px;"></i>${t.fecha_limite}</span>` : ''}
+        <span class="item-tipo ${TIPO_CLS[t.tipo]||'tp-tarea'}" style="display:inline-flex;align-items:center;gap:3px;"><i data-lucide="${TIPO_ICON[t.tipo]||'pin'}" style="width:10px;height:10px;"></i>${TIPO_LABEL[t.tipo]||'Tarea'}</span>
       </div>
     </div>
     <div class="item-acts">
@@ -409,7 +410,7 @@ function renderAll() {
     <div class="px-sec ${sec.accent}">
       <div class="px-hd" onclick="toggleSec('${sec.key}')">
         <div class="px-hd-left">
-          <span class="sec-icon">${sec.icon}</span>
+          <span class="sec-icon"><i data-lucide="${sec.icon}" style="width:14px;height:14px;"></i></span>
           <span class="sec-title">${sec.label}</span>
           <span class="sec-badge ${badge?'v':''}">${items.length}</span>
         </div>
@@ -422,7 +423,7 @@ function renderAll() {
       </div>
       <div class="px-body ${isOpen?'open':''}">
         ${items.length === 0
-          ? `<div class="px-empty">${sec.key==='done'?'Aún sin completados.':'Todo limpio aquí 🎉'}</div>`
+          ? `<div class="px-empty">${sec.key==='done'?'Aún sin completados.':'Todo limpio aquí'}</div>`
           : items.map(t => renderItem(t, sec.key)).join('')
         }
       </div>
@@ -439,7 +440,7 @@ let revQ = [], revIdx = 0, revImp = null, revUrg = null, revSingle = false;
 function startRev(e) {
   e.stopPropagation();
   revQ = tasks.filter(t => !t.completado && t.cuadrante === null);
-  if (!revQ.length) { toast('Inbox vacío 🎉'); return; }
+  if (!revQ.length) { toast('Inbox vacío'); return; }
   revIdx = 0; revImp = null; revUrg = null; revSingle = false;
   showRevItem();
   document.getElementById('rev-overlay').style.display = 'flex';
@@ -457,7 +458,7 @@ function openClassifyForNew(task) {
 function showRevItem() {
   if (revIdx >= revQ.length) {
     closeRev();
-    if (!revSingle) toast('Revisión completa 🎉');
+    if (!revSingle) toast('Revisión completa');
     revSingle = false;
     return;
   }
