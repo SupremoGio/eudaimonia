@@ -393,7 +393,8 @@ html.light {
       <button id="over-no"  onclick="setOver(false)" style="flex:1;cursor:pointer;border-radius:12px;padding:12px;font-family:var(--sans);font-size:12.5px;transition:all 0.16s;background:var(--card);border:1px solid rgba(201,168,76,0.1);color:var(--mid)">Solo probé</button>
       <button id="over-yes" onclick="setOver(true)"  style="flex:1;cursor:pointer;border-radius:12px;padding:12px;font-family:var(--sans);font-size:12.5px;transition:all 0.16s;background:var(--card);border:1px solid rgba(201,168,76,0.1);color:var(--mid)">Me pasé</button>
     </div>
-    <input id="temp-note" class="dt-input" style="margin-top:10px" placeholder="¿Qué lo detonó? (opcional)">
+    <label for="temp-note" class="dt-section-label" style="display:block;margin-top:14px;">¿Qué lo detonó? (opcional)</label>
+    <input id="temp-note" class="dt-input" placeholder="Ej: estrés, aburrimiento...">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:14px">
       <span style="font-family:var(--sans);font-size:11.5px;color:var(--dim)">Penalización</span>
       <span id="temp-pen-preview" style="font-family:var(--serif);font-size:24px;font-style:italic;color:var(--dim)">—</span>
@@ -415,7 +416,7 @@ html.light {
     <div class="dt-section-label">Momento del día · <span id="add-xp-label" style="color:var(--gold)">+12 XP</span></div>
     <div id="add-slots" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"></div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
-      <span style="font-family:var(--sans);font-size:12px;color:var(--mid)">Hora</span>
+      <label for="add-time" style="font-family:var(--sans);font-size:12px;color:var(--mid)">Hora</label>
       <input type="time" id="add-time" style="background:var(--card);border:1px solid rgba(201,168,76,0.1);border-radius:10px;padding:8px 12px;font-family:var(--sans);font-size:12.5px;color:var(--text);outline:none;color-scheme:dark">
     </div>
     <div id="add-banco-section">
@@ -424,12 +425,20 @@ html.light {
     </div>
     <div id="add-custom-section" style="display:none">
       <div class="dt-section-label">Detalles</div>
+      <label for="add-name" class="dt-section-label" style="display:block;">Nombre</label>
       <input id="add-name" class="dt-input" placeholder="Nombre de la comida">
-      <div style="display:flex;gap:9px">
-        <input id="add-kcal" class="dt-input" style="flex:1" placeholder="kcal" inputmode="numeric">
-        <input id="add-prot" class="dt-input" style="flex:1" placeholder="proteína (g)" inputmode="numeric">
+      <div style="display:flex;gap:9px;margin-top:10px;">
+        <div style="flex:1">
+          <label for="add-kcal" class="dt-section-label" style="display:block;">Kcal</label>
+          <input id="add-kcal" class="dt-input" placeholder="kcal" inputmode="numeric">
+        </div>
+        <div style="flex:1">
+          <label for="add-prot" class="dt-section-label" style="display:block;">Proteína (g)</label>
+          <input id="add-prot" class="dt-input" placeholder="proteína (g)" inputmode="numeric">
+        </div>
       </div>
-      <input id="add-ing" class="dt-input" placeholder="Ingredientes, separados por coma">
+      <label for="add-ing" class="dt-section-label" style="display:block;margin-top:10px;">Ingredientes</label>
+      <input id="add-ing" class="dt-input" placeholder="Separados por coma">
       <div style="display:flex;gap:8px;margin-top:4px">
         <button id="ctag-safe" onclick="setCtag('safe')" style="flex:1;cursor:pointer;font-family:var(--sans);font-size:11.5px;border-radius:10px;padding:10px;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--dt-safe-bg);border:1px solid var(--dt-safe);color:var(--dt-safe)">
           <span style="width:6px;height:6px;border-radius:50%;background:var(--dt-safe)"></span>Seguro
