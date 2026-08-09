@@ -506,13 +506,13 @@ const BRISTOL = [
   {n:4,d:'Lisa y blanda'},{n:5,d:'Blanda, bordes'},{n:6,d:'Pastosa'},{n:7,d:'Líquida'},
 ];
 const TEMPTATIONS = [
-  {id:'cafe',    label:'Café de más',       glyph:'☕', pen:5},
-  {id:'pan',     label:'Pan / harina',      glyph:'🥖', pen:12},
-  {id:'galleta', label:'Galleta / dulce',   glyph:'🍪', pen:12},
-  {id:'lacteo',  label:'Lácteo',            glyph:'🥛', pen:10},
-  {id:'frijol',  label:'Frijol / legumbre', glyph:'🫘', pen:8},
-  {id:'alcohol', label:'Alcohol',           glyph:'🍷', pen:12},
-  {id:'otro',    label:'Otro disparador',   glyph:'⚑',  pen:8},
+  {id:'cafe',    label:'Café de más',       glyph:'coffee', pen:5},
+  {id:'pan',     label:'Pan / harina',      glyph:'wheat', pen:12},
+  {id:'galleta', label:'Galleta / dulce',   glyph:'cookie', pen:12},
+  {id:'lacteo',  label:'Lácteo',            glyph:'milk', pen:10},
+  {id:'frijol',  label:'Frijol / legumbre', glyph:'bean', pen:8},
+  {id:'alcohol', label:'Alcohol',           glyph:'wine', pen:12},
+  {id:'otro',    label:'Otro disparador',   glyph:'flag', pen:8},
 ];
 const TRIGGERS_LIST = ['Café en exceso','Lácteos','Frijol','Harinas refinadas','Galletas'];
 const RECIPES = [
@@ -799,7 +799,7 @@ function renderSintomas() {
       <span class="dt-section-label" style="margin-bottom:0">Deslices de hoy</span>
       <span style="font-family:var(--serif);font-size:15px;font-style:italic;color:var(--dt-trigger)">−${tot} XP</span></div>`+
       S.slips.map(s=>`<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
-        <span style="font-size:18px;width:22px;text-align:center">${esc(s.glyph||'⚑')}</span>
+        <span style="display:inline-flex;width:22px;justify-content:center;"><i data-lucide="${esc(s.glyph||'flag')}" style="width:15px;height:15px;"></i></span>
         <div style="flex:1"><div style="font-family:var(--sans);font-size:12.5px;color:var(--text)">${esc(s.label)}${s.over?'<span style="color:var(--dt-trigger);font-size:10.5px"> · me pasé</span>':''}</div>
           ${s.note?`<div style="font-family:var(--sans);font-size:10.5px;color:var(--mid);margin-top:2px">${esc(s.note)}</div>`:''}</div>
         <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:var(--dt-trigger)">−${s.pen}</span>
@@ -819,6 +819,7 @@ function renderSintomas() {
         </div>`;
       }).join('');
   renderBristol();
+  if (window.lucide) lucide.createIcons();
 }
 function renderBristol() {
   const cur=S.bristol;
@@ -1044,12 +1045,13 @@ function renderTempTriggers(){
       background:${tempTrig?.id===t.id?'var(--dt-trigger-bg)':'var(--card)'};
       border:1px solid ${tempTrig?.id===t.id?'var(--dt-trigger)':'rgba(201,168,76,0.1)'};
       border-radius:12px;padding:11px 12px;transition:all 0.16s">
-      <span style="font-size:17px">${t.glyph}</span>
+      <span style="display:inline-flex;"><i data-lucide="${t.glyph}" style="width:15px;height:15px;"></i></span>
       <div style="flex:1">
         <div style="font-family:var(--sans);font-size:12.5px;color:${tempTrig?.id===t.id?'var(--dt-trigger)':'var(--text)'}">${esc(t.label)}</div>
         <div style="font-family:var(--sans);font-size:9.5px;color:var(--dim)">−${t.pen} XP</div>
       </div>
     </button>`).join('');
+  if (window.lucide) lucide.createIcons();
 }
 function setTempTrig(id){tempTrig=TEMPTATIONS.find(t=>t.id===id)||null;renderTempTriggers();updateTempState();}
 function setOver(v){
