@@ -198,7 +198,7 @@
 <div class="tile sf-left">
   <div class="sf-group-hd">
     <div>
-      <div class="sf-group-t">💵 Activos Líquidos</div>
+      <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="banknote" style="width:13px;height:13px;"></i> Activos Líquidos</div>
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Efectivo y cuentas bancarias</div>
     </div>
     <div style="text-align:right;">
@@ -241,7 +241,7 @@
 <div class="tile sf-right">
   <div class="sf-group-hd">
     <div>
-      <div class="sf-group-t">📈 Inversiones</div>
+      <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="trending-up" style="width:13px;height:13px;"></i> Inversiones</div>
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">GBM, CETES, fondos, etc.</div>
     </div>
     <div style="text-align:right;">
@@ -284,7 +284,7 @@
 <div class="tile sf-full">
   <div class="sf-group-hd">
     <div>
-      <div class="sf-group-t">💳 Pasivos — Tarjetas y Deudas</div>
+      <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="credit-card" style="width:13px;height:13px;"></i> Pasivos — Tarjetas y Deudas</div>
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Saldo actual adeudado en tarjetas y préstamos</div>
     </div>
     <div style="text-align:right;">
@@ -322,7 +322,7 @@
 <div class="tile sf-full">
   <div class="sf-group-hd">
     <div>
-      <div class="sf-group-t">🏠 Bienes Personales</div>
+      <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="house" style="width:13px;height:13px;"></i> Bienes Personales</div>
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Vehículo, electrodomésticos, muebles, electrónicos</div>
     </div>
     <div style="text-align:right;">
@@ -393,7 +393,7 @@
 {% if historial %}
 <div class="tile sf-full">
   <div class="sf-group-hd">
-    <div class="sf-group-t">📊 Evolución Patrimonio Neto</div>
+    <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="bar-chart-3" style="width:13px;height:13px;"></i> Evolución Patrimonio Neto</div>
     <span style="font-size:var(--fs-xs);color:var(--dim)">Últimos {{ historial|length }} snapshots</span>
   </div>
   {% set max_pn = historial|map(attribute='patrimonio_neto')|max %}
@@ -421,7 +421,7 @@
 <div class="tile sf-full">
   <div class="sf-group-hd">
     <div>
-      <div class="sf-group-t">🤝 Deudas Personales</div>
+      <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="handshake" style="width:13px;height:13px;"></i> Deudas Personales</div>
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">
         Me deben <span style="color:#10b981">${{ "{:,.0f}".format(total_owe_me) }}</span>
         &nbsp;·&nbsp;Debo <span style="color:#f43f5e">${{ "{:,.0f}".format(total_i_owe) }}</span>
