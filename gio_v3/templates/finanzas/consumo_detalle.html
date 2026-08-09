@@ -119,13 +119,13 @@
         {% for ins in insights %}
         <div class="ins-row ir-{{ ins.tipo }}">
           <span class="ir-icon">
-            {% if ins.tipo == 'frecuencia' %}📊
-            {% elif ins.tipo == 'ok' %}✅
-            {% elif ins.tipo == 'proximo' %}⏰
-            {% elif ins.tipo == 'warning' %}🔴
-            {% elif ins.tipo == 'tip' %}💡
-            {% elif ins.tipo == 'trend' %}📈
-            {% else %}ℹ️{% endif %}
+            {% if ins.tipo == 'frecuencia' %}<i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i>
+            {% elif ins.tipo == 'ok' %}<i data-lucide="check-circle" style="width:14px;height:14px;"></i>
+            {% elif ins.tipo == 'proximo' %}<i data-lucide="clock" style="width:14px;height:14px;"></i>
+            {% elif ins.tipo == 'warning' %}<i data-lucide="circle-alert" style="width:14px;height:14px;"></i>
+            {% elif ins.tipo == 'tip' %}<i data-lucide="lightbulb" style="width:14px;height:14px;"></i>
+            {% elif ins.tipo == 'trend' %}<i data-lucide="trending-up" style="width:14px;height:14px;"></i>
+            {% else %}<i data-lucide="info" style="width:14px;height:14px;"></i>{% endif %}
           </span>
           <span>{{ ins.msg }}</span>
         </div>
@@ -206,7 +206,7 @@
         <td>${{ "%.2f"|format(c.precio_total) }}</td>
         <td>{{ c.cantidad|int }}</td>
         <td>{% if c.cantidad > 0 %}${{ "%.2f"|format(c.precio_total / c.cantidad) }}{% else %}—{% endif %}</td>
-        <td><button class="btn-del-c" onclick="borrarCompra({{ c.id }})" title="Eliminar">✕</button></td>
+        <td><button class="btn-del-c" onclick="borrarCompra({{ c.id }})" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
       </tr>
       {% endfor %}
     </tbody>
