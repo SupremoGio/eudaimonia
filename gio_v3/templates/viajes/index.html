@@ -235,7 +235,7 @@
       </div>
       <div id="maleta-list">
         <div class="vj-empty">
-          <div class="vj-empty-icon">🧳</div>
+          <div class="vj-empty-icon" style="display:flex;justify-content:center;"><i data-lucide="luggage" style="width:24px;height:24px;"></i></div>
           <div>Asigna outfits a tus días en la pestaña <strong>Outfits por Día</strong> y aquí irán apareciendo las prendas.</div>
         </div>
       </div>
@@ -342,7 +342,7 @@
       <div style="padding:20px;color:var(--dim);font-size:var(--fs-sm);">Cargando outfits…</div>
     </div>
     <div id="picker-empty" style="display:none;" class="vj-empty">
-      <div class="vj-empty-icon">👔</div>
+      <div class="vj-empty-icon" style="display:flex;justify-content:center;"><i data-lucide="shirt" style="width:24px;height:24px;"></i></div>
       <div>No tienes outfits guardados en <strong>Guardarropa</strong>.<br>
       <a href="/guardarropa" style="color:var(--gold);">Crea tus outfits aquí →</a></div>
     </div>
@@ -375,7 +375,7 @@
         <div style="grid-column:1/-1;padding:16px;color:var(--dim);font-size:var(--fs-sm);">Cargando…</div>
       </div>
       <div id="ai-wi-empty" class="vj-empty" style="display:none;">
-        <div class="vj-empty-icon">👕</div>
+        <div class="vj-empty-icon" style="display:flex;justify-content:center;"><i data-lucide="shirt" style="width:24px;height:24px;"></i></div>
         <div>No tienes prendas en <strong>Guardarropa</strong>.<br>
         <a href="/guardarropa" style="color:var(--gold);">Agrégalas aquí →</a></div>
       </div>
@@ -772,7 +772,7 @@ function renderMaletaPane() {
   const el = document.getElementById('maleta-list');
   if (!_maleta.length) {
     el.innerHTML = `<div class="vj-empty">
-      <div class="vj-empty-icon">🧳</div>
+      <div class="vj-empty-icon" style="display:flex;justify-content:center;"><i data-lucide="luggage" style="width:24px;height:24px;"></i></div>
       <div>Asigna outfits a tus días en la pestaña <strong>Outfits por Día</strong> y aquí irán apareciendo las prendas.</div>
     </div>`;
     document.getElementById('maleta-progress-txt').textContent = '';
@@ -1048,7 +1048,7 @@ async function toggleRegreso(itemId, checked) {
     `${packed} de ${total} ítems empacados de regreso (${Math.round(packed/total*100)}%)`;
 
   if (checked && packed === total) {
-    toast('¡Todo empacado! Viaje completo 🎉', 'ok');
+    toast('¡Todo empacado! Viaje completo', 'ok');
   }
 }
 
