@@ -23,13 +23,17 @@ gio_v3_ACTUALIZADO/          ← raíz del repo
 │   │   └── ...
 │   ├── templates/           ← Jinja2 (espejo de modules/)
 │   ├── static/              ← CSS, JS, imágenes
-│   └── uploads/             ← fotos subidas por el usuario (no se commitean)
+│   ├── uploads/             ← fotos subidas por el usuario (no se commitean)
+│   ├── package.json         ← build local de Tailwind (npm run build:css)
+│   └── nixpacks.toml        ← config Nixpacks — Railway tiene Root Directory
+│                                = "gio_v3", así que nixpacks busca su config
+│                                AQUÍ, no en la raíz del repo (ver Deployment)
 ├── CLAUDE.md                ← este archivo
 ├── README.md
-├── Procfile                 ← gunicorn para Railway/Heroku
+├── Procfile                 ← gunicorn para Heroku/repo-root fallback (no usado
+│                                por el Railway actual, ver Deployment)
 ├── runtime.txt              ← python-3.12.0
 ├── railway.json             ← config Railway (build + deploy)
-├── nixpacks.toml            ← config Nixpacks
 └── .gitignore
 ```
 
@@ -96,9 +100,27 @@ SECRET_KEY=...
 
 ## Deployment (Railway)
 
-- Config activa: `railway.json` en la raíz
-- Build: `pip install -r gio_v3/requirements.txt`
-- Start: `cd gio_v3 && gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 1 --timeout 120`
+**Importante:** el servicio de Railway tiene **Root Directory = `gio_v3`** configurado
+en su dashboard (no en ningún archivo del repo). Esto significa que el contexto de
+build de Railway/nixpacks YA ES el contenido de `gio_v3/` — ninguna ruta en
+`railway.json`, `gio_v3/nixpacks.toml`, o los comandos de build/start debe llevar el
+prefijo `gio_v3/` ni hacer `cd gio_v3`. Si un comando falla con
+`cd: gio_v3: No such file or directory`, esa es la causa.
+
+- `railway.json` (raíz del repo): Railway lo lee de ahí sin importar el Root
+  Directory — controla `buildCommand`/`startCommand`.
+- `gio_v3/nixpacks.toml`: nixpacks busca su propio archivo de config **dentro**
+  del Root Directory configurado, no en la raíz del repo — por eso vive en
+  `gio_v3/`, no junto a `railway.json`. Declara `providers = ["python", "node"]`
+  explícitamente: al haber tanto `requirements.txt` como `package.json` (este
+  último solo para compilar Tailwind localmente), nixpacks elegía un único
+  provider "principal" y dejaba Python fuera del setup phase (`pip: command
+  not found`) si no se fuerza la combinación de ambos.
+- Build: `pip install -r requirements.txt` (sin prefijo — ya estás en `gio_v3/`)
+- Start: `gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 1 --timeout 120`
+- El CSS de Tailwind (`static/css/tailwind-built.css`) se compila localmente
+  con `npm run build:css` y se commitea ya construido — no se recompila en
+  cada deploy de Railway.
 
 ## Worktrees de Claude
 
