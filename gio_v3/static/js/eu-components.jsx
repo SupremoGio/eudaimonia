@@ -2,6 +2,35 @@
 const { useState, useEffect, useMemo, useRef, useReducer, useCallback } = React;
 const C = window.EU.getColors();
 
+// ─── Icon (lucide, React-safe) ──────────────────────────────
+// Renders into an empty leaf <span> via lucide.createElement(), so the SVG
+// lives outside React's virtual DOM and React never diffs/removes it on
+// re-render (the classic conflict when mixing raw lucide.createIcons()
+// DOM mutation with React reconciliation).
+function Icon({ name, size = 16, color, style, className }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !window.lucide || !name) return;
+    const pascal = name.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+    const iconNode = window.lucide.icons[pascal];
+    if (!iconNode) return;
+    el.innerHTML = '';
+    const svg = window.lucide.createElement(iconNode);
+    svg.setAttribute('width', size);
+    svg.setAttribute('height', size);
+    svg.style.display = 'block';
+    el.appendChild(svg);
+  }, [name, size]);
+  return (
+    <span ref={ref} className={className} style={{
+      display:'inline-flex', alignItems:'center', justifyContent:'center',
+      width:size, height:size, color: color || 'currentColor',
+      flexShrink:0, ...style,
+    }}/>
+  );
+}
+
 // ─── Greek Column XP Visualizer ────────────────────────────
 function GreekColumn({ level = 3, xpPct = 0.65, size = 110 }) {
   const totalDrums = 10;
@@ -491,7 +520,9 @@ function AchievementSheet({ achievement, onClose }) {
             fontSize:64, lineHeight:1, marginBottom:14,
             filter:'drop-shadow(0 0 16px var(--gold-glow))',
           }}>
-            {achievement.icon || '🏆'}
+            {achievement.icon_lucide
+              ? <Icon name={achievement.icon_lucide} size={64}/>
+              : (achievement.icon || <Icon name="trophy" size={64}/>)}
           </div>
           <div style={{fontSize:10, letterSpacing:'0.22em', color:C.gold,
             opacity:0.65, textTransform:'uppercase', marginBottom:6}}>
@@ -686,7 +717,7 @@ function ComboBonusSheet({ combo, onClose }) {
         <div style={{display:'flex', alignItems:'center', gap:14}}>
           <div style={{fontSize:36, lineHeight:1,
             filter:'drop-shadow(0 0 12px var(--gold-glow))'}}>
-            {combo.icon || '⚡'}
+            {combo.icon || <Icon name="zap" size={36}/>}
           </div>
           <div style={{flex:1, minWidth:0}}>
             <div style={{fontSize:10, letterSpacing:'0.2em', color:'var(--gold)',

@@ -129,7 +129,7 @@ function SideNav({ active, onChange, modules, dispatch }) {
   ];
   const systemItems = [
     { kind:'link', href:'/gtd',    label:'Πρᾶξις', sub:'Praxis · GTD' },
-    { kind:'link', href:'/logros', label:'🏆',     sub:'Logros' },
+    { kind:'link', href:'/logros', label:<Icon name="trophy" size={20}/>, sub:'Logros' },
     { kind:'tab',  id:'profile',   label:'Αὐτός',  sub:'Perfil' },
   ];
 
@@ -319,7 +319,7 @@ function App() {
       { i:'◆', label:'Ir a Módulos',         sub:'Command Center', section:'nav', run: () => handleTabChange('modules') },
       { i:'◎', label:'Ir a Perfil',          sub:'Sistema',        section:'nav', run: () => handleTabChange('profile') },
       { i:'◐', label:'Cambiar tema',         sub:'Día / Noche',    section:'sys', keys:['⇧','T'], run: () => window.euToggleTheme() },
-      { i:'🏆', label:'Ver Logros',          sub:'Sistema',        section:'sys', run: () => { location.href = '/logros'; } },
+      { i:'◈', label:'Ver Logros',          sub:'Sistema',        section:'sys', run: () => { location.href = '/logros'; } },
       ...pendingActs.map(a => ({
         i: '✓',
         label: `Registrar: ${a.label} (+${a.pts} XP)`,
@@ -403,9 +403,9 @@ window.euFireAchievements = function(achievements) {
   if (high.length) {
     window.dispatchEvent(new CustomEvent('eu:achievement-unlocked', { detail: high[0] }));
     // remaining high-tier after first: toast
-    high.slice(1).forEach(a => { if (typeof toast === 'function') toast(`🏆 ${a.name}`, 'win'); });
+    high.slice(1).forEach(a => { if (typeof toast === 'function') toast(a.name, 'win'); });
   }
-  low.forEach(a => { if (typeof toast === 'function') toast(`🏆 ${a.name}`, 'win'); });
+  low.forEach(a => { if (typeof toast === 'function') toast(a.name, 'win'); });
 };
 
 // ── Tweaks ────────────────────────────────────────────────
