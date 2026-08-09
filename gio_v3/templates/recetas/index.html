@@ -266,9 +266,9 @@
     {% endif %}
     <div class="rc-card-meta">
       {% if r.tiempo_prep or r.tiempo_coccion %}
-      <span>⏱ {{ (r.tiempo_prep or 0) + (r.tiempo_coccion or 0) }} min</span>
+      <span><i data-lucide="clock" style="width:12px;height:12px;"></i> {{ (r.tiempo_prep or 0) + (r.tiempo_coccion or 0) }} min</span>
       {% endif %}
-      {% if r.porciones %}<span>🍽 {{ r.porciones }} porc.</span>{% endif %}
+      {% if r.porciones %}<span><i data-lucide="utensils" style="width:12px;height:12px;"></i> {{ r.porciones }} porc.</span>{% endif %}
     </div>
   </div>
   <button class="rc-fav {% if r.favorita %}on{% endif %}" id="fav-{{ r.id }}"
@@ -330,6 +330,7 @@ function renderGrid(){
     return;
   }
   grid.innerHTML = _recipes.map(r => cardHTML(r)).join('');
+  lucide.createIcons();
 }
 
 function cardHTML(r){
@@ -348,8 +349,8 @@ function cardHTML(r){
       <div class="rc-card-name">${esc(r.nombre)}</div>
       ${macros?`<div class="rc-card-macros">${macros}</div>`:''}
       <div class="rc-card-meta">
-        ${mins?`<span>⏱ ${mins} min</span>`:''}
-        ${r.porciones?`<span>🍽 ${r.porciones} porc.</span>`:''}
+        ${mins?`<span><i data-lucide="clock" style="width:12px;height:12px;"></i> ${mins} min</span>`:''}
+        ${r.porciones?`<span><i data-lucide="utensils" style="width:12px;height:12px;"></i> ${r.porciones} porc.</span>`:''}
       </div>
     </div>
     <button class="rc-fav${r.favorita?' on':''}" id="fav-${r.id}"
@@ -417,7 +418,7 @@ function openDetail(id){
       <div class="rd-meta-row">
         ${r.tiempo_prep?`<div class="rd-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Prep: ${r.tiempo_prep} min</div>`:''}
         ${r.tiempo_coccion?`<div class="rd-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Cocción: ${r.tiempo_coccion} min</div>`:''}
-        ${r.porciones?`<div class="rd-meta-item">🍽 ${r.porciones} porción${r.porciones>1?'es':''}</div>`:''}
+        ${r.porciones?`<div class="rd-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>${r.porciones} porción${r.porciones>1?'es':''}</div>`:''}
       </div>
     </div>
 
@@ -591,7 +592,7 @@ async function saveRecipe(){
   }
   closeModal();
   filterRecipes();
-  toast(`Receta "${saved.nombre}" guardada ✓`);
+  toast(`Receta "${saved.nombre}" guardada`);
   setTimeout(()=>openDetail(saved.id), 80);
 }
 
