@@ -602,7 +602,7 @@ function outfitThumbHtml(outfit) {
   const items = full ? full.items : null;
   const withPhoto = items && items.find(i => i.foto);
   if (withPhoto) {
-    return `<img src="/guardarropa/photos/${withPhoto.foto}" style="width:18px;height:18px;object-fit:cover;border-radius:4px;flex-shrink:0;">`;
+    return `<img src="/guardarropa/photos/${withPhoto.foto}" alt="" style="width:18px;height:18px;object-fit:cover;border-radius:4px;flex-shrink:0;">`;
   }
   const first = items && items[0];
   if (first) {
@@ -762,7 +762,7 @@ async function refreshDias() {
 
 // Mini referencia visual de la prenda (foto real, color, o nada para extras genéricos)
 function maletaThumbHtml(m) {
-  if (m.item_foto) return `<img src="/guardarropa/photos/${m.item_foto}" class="vj-item-thumb">`;
+  if (m.item_foto) return `<img src="/guardarropa/photos/${m.item_foto}" alt="" class="vj-item-thumb">`;
   if (m.item_color) return `<span class="vj-item-thumb-swatch" style="background:${m.item_color};"></span>`;
   return '';
 }
@@ -898,7 +898,7 @@ function switchAddItemTab(mode) {
 }
 
 function wardrobeThumbHtml(wi) {
-  if (wi.foto) return `<img src="/guardarropa/photos/${wi.foto}" class="vj-wi-photo">`;
+  if (wi.foto) return `<img src="/guardarropa/photos/${wi.foto}" alt="" class="vj-wi-photo">`;
   return `<span class="vj-wi-swatch" style="background:${wi.color_hex || 'var(--b)'};"></span>`;
 }
 

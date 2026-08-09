@@ -195,15 +195,24 @@ function SideNav({ active, onChange, modules, dispatch }) {
 
       {/* Theme toggle */}
       <div style={{padding:'12px 22px 16px', borderTop:'1px solid color-mix(in srgb, var(--gold) 7%, transparent)'}}>
-        <button onClick={() => window.euToggleTheme()} style={{
+        <button onClick={() => window.euToggleTheme()}
+          aria-label={document.documentElement.classList.contains('light') ? 'Cambiar a modo noche' : 'Cambiar a modo día'}
+          style={{
           display:'flex', alignItems:'center', gap:8,
           background:'transparent', border:`1px solid ${C.goldBorder}`,
           borderRadius:8, padding:'7px 12px', cursor:'pointer',
           fontFamily:'DM Sans,sans-serif', fontSize:10, color:C.textMuted,
           letterSpacing:'0.08em', width:'100%',
         }}>
-          <span style={{fontSize:14, lineHeight:1}}>
-            {document.documentElement.classList.contains('light') ? '☀' : '☽'}
+          <span style={{display:'flex', lineHeight:1}}>
+            {document.documentElement.classList.contains('light')
+              ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4"/>
+                  <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41 M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+                </svg>
+              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>}
           </span>
           <span>{document.documentElement.classList.contains('light') ? 'Modo día' : 'Modo noche'}</span>
         </button>
