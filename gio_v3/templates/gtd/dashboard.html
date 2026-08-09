@@ -159,6 +159,7 @@ async function cTask(id, dot){
     dot.classList.add('ck'); row.classList.add('faded'); lucide.createIcons();
     document.getElementById('dpts').textContent = d.stats.pts_today;
     toast(`+${d.pts} pts${d.bonus ? ` ✦ BONUS +${d.bonus}` : ''}`, d.bonus ? 'win' : 'ok');
+    euAnnounceAchievements(d.gam);
   }
 }
 

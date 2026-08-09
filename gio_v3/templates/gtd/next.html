@@ -191,6 +191,7 @@ async function cTask(id,dot){
     lucide.createIcons();
     toast(`+${d.pts} pts${d.bonus?` ✦ +${d.bonus}`:''}`)
     if(d.gam && d.gam.levelup) toast(`🏆 Level Up → ${d.gam.level}`,'ok');
+    euAnnounceAchievements(d.gam);
   }
 }
 async function mv(id,st,btn){

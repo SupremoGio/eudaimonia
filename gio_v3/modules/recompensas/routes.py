@@ -1,3 +1,4 @@
+import random
 from flask import Blueprint, render_template, request, jsonify
 from datetime import date, datetime, timedelta
 from database import get_db
@@ -200,12 +201,26 @@ def redeem_reward(reward_id):
     now = datetime.now().isoformat()
     cost = reward["ec_cost"]
 
+    # Refuerzo variable (ratio impredecible, igual que ComboBonusSheet en el
+    # home): ~15% de los canjes devuelven una parte del costo como "racha de
+    # suerte" — el mismo canje se siente distinto cada vez, no es un
+    # descuento fijo que el usuario aprenda a esperar.
+    bonus_ec = 0
+    if random.random() < 0.15:
+        bonus_ec = max(1, round(cost * random.uniform(0.10, 0.20)))
+
     with get_db() as db:
         db.execute(
             "INSERT INTO coins_ledger (amount, source, description, multiplier, date, created_at)"
             " VALUES (?,?,?,?,?,?)",
             (-cost, "reward", f"Recompensa: {reward['name']}", 1.0, today_str(), now)
         )
+        if bonus_ec:
+            db.execute(
+                "INSERT INTO coins_ledger (amount, source, description, multiplier, date, created_at)"
+                " VALUES (?,?,?,?,?,?)",
+                (bonus_ec, "bonus_variable", f"Racha de suerte al canjear: {reward['name']}", 1.0, today_str(), now)
+            )
         db.execute(
             "UPDATE rewards SET last_redeemed=?, status='redeemed' WHERE id=?",
             (now, reward_id)
@@ -216,5 +231,6 @@ def redeem_reward(reward_id):
         "redeemed": True,
         "reward": reward["name"],
         "ec_spent": cost,
-        "ec_remaining": ec_balance - cost,
+        "bonus_ec": bonus_ec,
+        "ec_remaining": ec_balance - cost + bonus_ec,
     })

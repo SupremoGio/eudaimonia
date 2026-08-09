@@ -31,7 +31,7 @@ async function addT(){
   await fetch('/gtd/api/task',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:t,status:'someday'})});
   toast('Añadido');setTimeout(()=>location.reload(),500);
 }
-async function cTask(id,dot){const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});const d=await r.json();if(d.ok){euCelebrate(dot);dot.closest('.t-row').remove();toast(`+${d.pts} pts`);}}
+async function cTask(id,dot){const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});const d=await r.json();if(d.ok){euCelebrate(dot);dot.closest('.t-row').remove();toast(`+${d.pts} pts`);euAnnounceAchievements(d.gam);}}
 async function mv(id,st,btn){await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});btn.closest('.t-row').remove();toast('→ Next Actions');}
 async function dt(id,btn){await fetch(`/gtd/api/task/${id}`,{method:'DELETE'});btn.closest('.t-row').remove();}
 document.getElementById('tt').addEventListener('keydown',e=>{if(e.key==='Enter')addT();});

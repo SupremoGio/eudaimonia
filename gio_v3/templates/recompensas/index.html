@@ -253,8 +253,18 @@ async function redeemReward(id, name, cost) {
     if (d.error) { toast(d.error, 'err'); return; }
     if (btn) euCelebrate(btn);
     document.getElementById('ec-display').textContent = d.ec_remaining;
-    toast(`✦ ${name} canjeada — -${cost} EC`);
-    setTimeout(() => location.reload(), 1200);
+    if (d.bonus_ec > 0) {
+      euRewardSheet({
+        icon: 'sparkles',
+        eyebrow: 'Racha de suerte',
+        title: `+${d.bonus_ec} EC de bono`,
+        desc: `${name} canjeada — el azar te devolvió parte del costo.`,
+      });
+      setTimeout(() => location.reload(), 4200);
+    } else {
+      toast(`✦ ${name} canjeada — -${cost} EC`);
+      setTimeout(() => location.reload(), 1200);
+    }
   } catch { toast('Error al canjear', 'err'); }
 }
 

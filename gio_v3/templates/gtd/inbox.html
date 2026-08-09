@@ -127,7 +127,10 @@ async function addT(st){
 async function cTask(id,dot){
   const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
   const d=await r.json();
-  if(d.ok){euCelebrate(dot);dot.closest('.t-row').remove();toast(`+${d.pts} pts`);}
+  if(d.ok){
+    euCelebrate(dot);dot.closest('.t-row').remove();toast(`+${d.pts} pts`);
+    euAnnounceAchievements(d.gam);
+  }
 }
 async function mv(id,st,btn){
   await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});

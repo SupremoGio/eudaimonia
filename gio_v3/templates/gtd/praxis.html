@@ -291,6 +291,7 @@ async function completeTask(id, dot) {
   renderAll();
   updateStatBars(r.stats);
   toast(`+${r.pts} pts${r.bonus ? ` ✦ BONUS +${r.bonus}` : ''}`);
+  euAnnounceAchievements(r.gam);
 }
 
 // ── Delete ─────────────────────────────────────────────────────────────────
