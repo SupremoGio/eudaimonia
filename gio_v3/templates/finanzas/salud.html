@@ -223,8 +223,8 @@
         <div class="sf-acc-moneda">{{ c.moneda }}</div>
       </div>
       <div class="sf-acc-actions">
-        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
-        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')" aria-label="Editar"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)" aria-label="Eliminar"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
       </div>
     </div>
     {% else %}
@@ -266,8 +266,8 @@
         <div class="sf-acc-moneda">{{ c.moneda }}</div>
       </div>
       <div class="sf-acc-actions">
-        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
-        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')" aria-label="Editar"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)" aria-label="Eliminar"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
       </div>
     </div>
     {% else %}
@@ -308,8 +308,8 @@
         <div class="sf-acc-moneda">{{ c.moneda }}</div>
       </div>
       <div class="sf-acc-actions">
-        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
-        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+        <button class="ai" title="Editar" onclick="editCuenta({{ c.id }},'{{ c.nombre|e }}','{{ c.tipo }}','{{ c.institucion|e }}',{{ c.saldo }},'{{ c.moneda }}','{{ c.notas|e }}')" aria-label="Editar"><i data-lucide="pencil" style="width:12px;height:12px"></i></button>
+        <button class="ai del" title="Eliminar" onclick="delCuenta({{ c.id }},this)" aria-label="Eliminar"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
       </div>
     </div>
     {% else %}
@@ -351,8 +351,8 @@
           {{ bm.label }}
         </span>
         <div class="sf-bien-actions">
-          <button class="ai" title="Editar" onclick="editBien({{ b.id }},'{{ b.nombre|e }}','{{ b.categoria }}','{{ b.descripcion|e }}',{{ b.precio_compra }},{{ b.valor_actual }},'{{ b.fecha_compra }}','{{ b.lugar_compra|e }}','{{ b.garantia_hasta }}','{{ b.notas|e }}')"><i data-lucide="pencil" style="width:11px;height:11px"></i></button>
-          <button class="ai del" title="Eliminar" onclick="delBien({{ b.id }},this)"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
+          <button class="ai" title="Editar" onclick="editBien({{ b.id }},'{{ b.nombre|e }}','{{ b.categoria }}','{{ b.descripcion|e }}',{{ b.precio_compra }},{{ b.valor_actual }},'{{ b.fecha_compra }}','{{ b.lugar_compra|e }}','{{ b.garantia_hasta }}','{{ b.notas|e }}')" aria-label="Editar"><i data-lucide="pencil" style="width:11px;height:11px"></i></button>
+          <button class="ai del" title="Eliminar" onclick="delBien({{ b.id }},this)" aria-label="Eliminar"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
         </div>
       </div>
       <div class="sf-bien-name">{{ b.nombre }}</div>
@@ -459,9 +459,9 @@
         <div class="sf-debt-right">
           <div class="sf-debt-monto" style="color:#10b981">${{ "{:,.0f}".format(d.monto_restante) }}</div>
           <div class="sf-debt-actions">
-            <button class="ai" title="Registrar cobro" onclick="openModalAbonar({{ d.id }},{{ d.monto_restante }})"><i data-lucide="plus-circle" style="width:11px;height:11px"></i></button>
-            <button class="ai" title="Liquidar" onclick="settleDebt({{ d.id }},this)"><i data-lucide="check-circle" style="width:11px;height:11px"></i></button>
-            <button class="ai del" title="Eliminar" onclick="deleteDebt({{ d.id }},this)"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
+            <button class="ai" title="Registrar cobro" onclick="openModalAbonar({{ d.id }},{{ d.monto_restante }})" aria-label="Registrar cobro"><i data-lucide="plus-circle" style="width:11px;height:11px"></i></button>
+            <button class="ai" title="Liquidar" onclick="settleDebt({{ d.id }},this)" aria-label="Liquidar"><i data-lucide="check-circle" style="width:11px;height:11px"></i></button>
+            <button class="ai del" title="Eliminar" onclick="deleteDebt({{ d.id }},this)" aria-label="Eliminar"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
           </div>
         </div>
       </div>
@@ -497,9 +497,9 @@
         <div class="sf-debt-right">
           <div class="sf-debt-monto" style="color:#f43f5e">${{ "{:,.0f}".format(d.monto_restante) }}</div>
           <div class="sf-debt-actions">
-            <button class="ai" title="Registrar pago" onclick="openModalAbonar({{ d.id }},{{ d.monto_restante }})"><i data-lucide="plus-circle" style="width:11px;height:11px"></i></button>
-            <button class="ai" title="Liquidar" onclick="settleDebt({{ d.id }},this)"><i data-lucide="check-circle" style="width:11px;height:11px"></i></button>
-            <button class="ai del" title="Eliminar" onclick="deleteDebt({{ d.id }},this)"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
+            <button class="ai" title="Registrar pago" onclick="openModalAbonar({{ d.id }},{{ d.monto_restante }})" aria-label="Registrar pago"><i data-lucide="plus-circle" style="width:11px;height:11px"></i></button>
+            <button class="ai" title="Liquidar" onclick="settleDebt({{ d.id }},this)" aria-label="Liquidar"><i data-lucide="check-circle" style="width:11px;height:11px"></i></button>
+            <button class="ai del" title="Eliminar" onclick="deleteDebt({{ d.id }},this)" aria-label="Eliminar"><i data-lucide="trash-2" style="width:11px;height:11px"></i></button>
           </div>
         </div>
       </div>

@@ -164,8 +164,8 @@
       <i data-lucide="clipboard-check"></i> Registrar resultado
     </button>
     <div class="fb-actions">
-      <button onclick="abrirEditar({{ p.id }})" title="Editar"><i data-lucide="pencil"></i></button>
-      <button class="danger" onclick="eliminarPartido({{ p.id }})" title="Eliminar"><i data-lucide="trash-2"></i></button>
+      <button onclick="abrirEditar({{ p.id }})" title="Editar" aria-label="Editar"><i data-lucide="pencil"></i></button>
+      <button class="danger" onclick="eliminarPartido({{ p.id }})" title="Eliminar" aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
     </div>
   </div>
   {% endfor %}
@@ -214,8 +214,8 @@
     </div>
     <div class="fb-resultado {{ res_class }}">{{ p.goles_favor }}-{{ p.goles_contra }}</div>
     <div class="fb-actions">
-      <button onclick="abrirEditar({{ p.id }})" title="Editar"><i data-lucide="pencil"></i></button>
-      <button class="danger" onclick="eliminarPartido({{ p.id }})" title="Eliminar"><i data-lucide="trash-2"></i></button>
+      <button onclick="abrirEditar({{ p.id }})" title="Editar" aria-label="Editar"><i data-lucide="pencil"></i></button>
+      <button class="danger" onclick="eliminarPartido({{ p.id }})" title="Eliminar" aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
     </div>
   </div>
   {% else %}
