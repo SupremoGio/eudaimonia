@@ -479,6 +479,8 @@ Object.assign(window, {
   window.EU.catHues = d.category_hues || {};
 })();
 
+
+// EUDAIMONIA — UI Primitives
 // EUDAIMONIA — UI Primitives
 const {
   useState,
@@ -489,6 +491,25 @@ const {
   useCallback
 } = React;
 const C = window.EU.getColors();
+
+// ─── Keyboard-accessible click props ────────────────────────
+// A bare `<div onClick>` is invisible to keyboard/screen-reader users — it
+// never enters the tab order and Enter/Space do nothing. Spread this onto
+// any non-native clickable element to make it behave like a real button
+// without changing its visual markup.
+function clickableProps(onClick) {
+  return {
+    role: 'button',
+    tabIndex: 0,
+    onClick,
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick(e);
+      }
+    }
+  };
+}
 
 // ─── Icon (lucide, React-safe) ──────────────────────────────
 // Renders into an empty leaf <span> via lucide.createElement(), so the SVG
@@ -765,7 +786,7 @@ function ModuleCard({
   const accBg = EU.catTint(mod.hue, 'bg');
   const accBorder = EU.catTint(mod.hue, 'border');
   return /*#__PURE__*/React.createElement("div", {
-    onClick: onClick,
+    ...clickableProps(onClick),
     onMouseEnter: () => setHov(true),
     onMouseLeave: () => setHov(false),
     style: {
@@ -867,7 +888,8 @@ function HabitRow({
       position: 'relative'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    onClick: handle,
+    ...clickableProps(handle),
+    "aria-pressed": done,
     style: {
       width: 22,
       height: 22,
@@ -1029,7 +1051,8 @@ function BottomNav({
     }
   }, tabs.map(t => /*#__PURE__*/React.createElement("div", {
     key: t.id,
-    onClick: () => onChange(t.id),
+    ...clickableProps(() => onChange(t.id)),
+    "aria-current": active === t.id ? 'page' : undefined,
     style: {
       flex: 1,
       display: 'flex',
@@ -1067,7 +1090,7 @@ function BottomNav({
       boxShadow: `0 0 6px ${C.gold}`
     }
   }))), /*#__PURE__*/React.createElement("div", {
-    onClick: () => window.euToggleTheme(),
+    ...clickableProps(() => window.euToggleTheme()),
     style: {
       flex: 1,
       display: 'flex',
@@ -1766,6 +1789,7 @@ Object.assign(window, {
 });
 
 // EUDAIMONIA — App State & Root
+// EUDAIMONIA — App State & Root
 // hooks and C declared in eu-components.jsx (bundled before this file)
 
 function _xpStateFromTotal(totalXP) {
@@ -1887,7 +1911,8 @@ function NavItem({
 }) {
   const isMod = dot !== undefined;
   return /*#__PURE__*/React.createElement("div", {
-    onClick: onClick,
+    ...clickableProps(onClick),
+    "aria-current": active ? 'page' : undefined,
     style: {
       padding: '10px 22px',
       cursor: 'pointer',
@@ -2522,6 +2547,7 @@ function Root() {
 }
 ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(Root, null));
 
+// EUDAIMONIA — All Screens
 // EUDAIMONIA — All Screens
 // hooks and C declared in eu-components.jsx (bundled before this file)
 
@@ -3671,7 +3697,7 @@ function SuggestionCard({
 }) {
   const [hov, setHov] = useState(false);
   return /*#__PURE__*/React.createElement("div", {
-    onClick: onClick,
+    ...clickableProps(onClick),
     onMouseEnter: () => setHov(true),
     onMouseLeave: () => setHov(false),
     style: {
@@ -3739,7 +3765,7 @@ function ModuleStripCard({
   const acc = EU.catTint(mod.hue, 'text');
   const Icon = MODULE_ICONS[mod.id] || IconTerminal;
   return /*#__PURE__*/React.createElement("div", {
-    onClick: onClick,
+    ...clickableProps(onClick),
     onMouseEnter: () => setHov(true),
     onMouseLeave: () => setHov(false),
     style: {
@@ -4032,12 +4058,13 @@ function HomeScreen({
       gap: 14
     }
   }, /*#__PURE__*/React.createElement("div", {
+    ...clickableProps(() => window.location.reload()),
+    "aria-label": "Actualizar",
     style: {
       flexShrink: 0,
       cursor: 'pointer',
       transition: 'opacity 0.15s'
     },
-    onClick: () => window.location.reload(),
     onMouseDown: e => e.currentTarget.style.opacity = '0.5',
     onMouseUp: e => e.currentTarget.style.opacity = '1'
   }, /*#__PURE__*/React.createElement(GreekColumn, {
@@ -6096,7 +6123,8 @@ function PraxisInbox({
     }
   }, GTD_TABS.map(t => /*#__PURE__*/React.createElement("div", {
     key: t.id,
-    onClick: () => setGtdTab(t.id),
+    ...clickableProps(() => setGtdTab(t.id)),
+    "aria-current": gtdTab === t.id ? 'page' : undefined,
     style: {
       flex: 1,
       padding: '11px 2px',
@@ -6478,7 +6506,8 @@ function ActivityButton({
   const dirs = [[26, -26], [36, 0], [26, 26], [0, 34], [-26, 26], [-36, 0], [-26, -26], [0, -34]];
   const burstColor = isAlto ? '#fbbf24' : EU.catTint(catHue, 'text');
   return /*#__PURE__*/React.createElement("div", {
-    onClick: handle,
+    ...clickableProps(handle),
+    "aria-pressed": act.done,
     style: {
       display: 'flex',
       flexDirection: 'column',
@@ -7250,7 +7279,7 @@ function ProfileScreen({
     href: '/recompensas'
   }].map(s => /*#__PURE__*/React.createElement("div", {
     key: s.label,
-    onClick: s.href ? () => window.location.href = s.href : undefined,
+    ...(s.href ? clickableProps(() => window.location.href = s.href) : {}),
     style: {
       background: s.accent ? 'color-mix(in srgb, var(--gold) 6%, transparent)' : C.card,
       border: s.accent ? '1px solid color-mix(in srgb, var(--gold) 25%, transparent)' : '1px solid var(--gold-bg)',

@@ -2,6 +2,25 @@
 const { useState, useEffect, useMemo, useRef, useReducer, useCallback } = React;
 const C = window.EU.getColors();
 
+// ─── Keyboard-accessible click props ────────────────────────
+// A bare `<div onClick>` is invisible to keyboard/screen-reader users — it
+// never enters the tab order and Enter/Space do nothing. Spread this onto
+// any non-native clickable element to make it behave like a real button
+// without changing its visual markup.
+function clickableProps(onClick) {
+  return {
+    role: 'button',
+    tabIndex: 0,
+    onClick,
+    onKeyDown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick(e);
+      }
+    },
+  };
+}
+
 // ─── Icon (lucide, React-safe) ──────────────────────────────
 // Renders into an empty leaf <span> via lucide.createElement(), so the SVG
 // lives outside React's virtual DOM and React never diffs/removes it on
@@ -157,7 +176,7 @@ function ModuleCard({ mod, onClick, small = false }) {
   const accBorder = EU.catTint(mod.hue, 'border');
 
   return (
-    <div onClick={onClick}
+    <div {...clickableProps(onClick)}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -207,7 +226,7 @@ function HabitRow({ label, done, onToggle, xp = 10, accent = C.gold }) {
   return (
     <div style={{display:'flex',alignItems:'center',gap:12,padding:'11px 0',
       borderBottom:'1px solid color-mix(in srgb, var(--gold) 6%, transparent)',position:'relative'}}>
-      <div onClick={handle} style={{
+      <div {...clickableProps(handle)} aria-pressed={done} style={{
         width:22,height:22,borderRadius:6,flexShrink:0,cursor:'pointer',
         border:`1.5px solid ${done ? accent : 'color-mix(in srgb, var(--gold) 22%, transparent)'}`,
         background: done ? accent : 'transparent',
@@ -295,7 +314,7 @@ function BottomNav({ active, onChange }) {
       zIndex:200,
     }}>
       {tabs.map(t => (
-        <div key={t.id} onClick={() => onChange(t.id)} style={{
+        <div key={t.id} {...clickableProps(() => onChange(t.id))} aria-current={active===t.id ? 'page' : undefined} style={{
           flex:1,display:'flex',flexDirection:'column',alignItems:'center',
           padding:'10px 4px 6px',cursor:'pointer',
         }}>
@@ -320,7 +339,7 @@ function BottomNav({ active, onChange }) {
       ))}
 
       {/* Theme toggle — 5th slot */}
-      <div onClick={() => window.euToggleTheme()} style={{
+      <div {...clickableProps(() => window.euToggleTheme())} style={{
         flex:1,display:'flex',flexDirection:'column',alignItems:'center',
         padding:'10px 4px 6px',cursor:'pointer',
         color: C.textMuted, transition:'color 0.25s',
