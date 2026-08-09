@@ -67,6 +67,7 @@
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 18px;text-align:center;}
   .stat-n{font-size:1.4rem;font-weight:800;font-family:'Courier New',monospace;line-height:1;}
   .stat-l{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:4px;}
+  .pdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle;}
 
   /* ── URL link ── */
   .url-lnk{font-size:var(--fs-sm);color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;gap:3px;}
@@ -219,15 +220,15 @@
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
   <div class="stat-card">
     <div class="stat-n" style="color:#fca5a5;">${{ "{:,.0f}".format(summary.alta_pend) }}</div>
-    <div class="stat-l">🔴 Alta · pendiente</div>
+    <div class="stat-l"><span class="pdot" style="background:#ef4444;"></span>Alta · pendiente</div>
   </div>
   <div class="stat-card">
     <div class="stat-n" style="color:#fcd34d;">${{ "{:,.0f}".format(summary.media_pend) }}</div>
-    <div class="stat-l">🟡 Media · pendiente</div>
+    <div class="stat-l"><span class="pdot" style="background:#fbbf24;"></span>Media · pendiente</div>
   </div>
   <div class="stat-card">
     <div class="stat-n" style="color:#93c5fd;">${{ "{:,.0f}".format(summary.baja_pend) }}</div>
-    <div class="stat-l">🔵 Baja · pendiente</div>
+    <div class="stat-l"><span class="pdot" style="background:#60a5fa;"></span>Baja · pendiente</div>
   </div>
   <div class="stat-card">
     <div class="stat-n" style="color:#34d399;">${{ "{:,.0f}".format(summary.gastado) }}</div>
@@ -239,11 +240,11 @@
 <div class="flex flex-wrap gap-2 mb-5">
   <button class="ftab on" data-f="todos"       onclick="setFilter(this,'todos')">Todos ({{ items|length }})</button>
   <button class="ftab"    data-f="Pendiente"  onclick="setFilter(this,'Pendiente')">Pendiente ({{ summary.pend_count }})</button>
-  <button class="ftab"    data-f="Alta"       onclick="setFilter(this,'Alta')">🔴 Alta</button>
-  <button class="ftab"    data-f="Media"      onclick="setFilter(this,'Media')">🟡 Media</button>
-  <button class="ftab"    data-f="Baja"       onclick="setFilter(this,'Baja')">🔵 Baja</button>
+  <button class="ftab"    data-f="Alta"       onclick="setFilter(this,'Alta')"><span class="pdot" style="background:#ef4444;"></span>Alta</button>
+  <button class="ftab"    data-f="Media"      onclick="setFilter(this,'Media')"><span class="pdot" style="background:#fbbf24;"></span>Media</button>
+  <button class="ftab"    data-f="Baja"       onclick="setFilter(this,'Baja')"><span class="pdot" style="background:#60a5fa;"></span>Baja</button>
   <button class="ftab"    data-f="Comprado"   onclick="setFilter(this,'Comprado')">✅ Comprado ({{ summary.comp_count }})</button>
-  <button class="ftab"    data-f="Descartado" onclick="setFilter(this,'Descartado')">🗑 Descartado</button>
+  <button class="ftab"    data-f="Descartado" onclick="setFilter(this,'Descartado')"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:middle;"></i> Descartado</button>
 </div>
 
 {# ── Cards list ── #}
@@ -267,10 +268,10 @@
 
     <div class="meta">
       {% if it.categoria %}<span class="cat-tag">{{ it.categoria }}</span>{% endif %}
-      {% if it.tienda %}<span class="tienda-tag">📍 {{ it.tienda }}</span>{% endif %}
+      {% if it.tienda %}<span class="tienda-tag"><i data-lucide="map-pin" style="width:11px;height:11px;vertical-align:middle;"></i> {{ it.tienda }}</span>{% endif %}
       {% if it.url %}<a href="{{ it.url }}" target="_blank" class="url-lnk"><i data-lucide="external-link" class="w-3 h-3"></i>ver producto</a>{% endif %}
-      {% if it.protocolo_score is not none %}<span class="cat-tag" title="{{ it.protocolo_rec }}">🛡 Score: {{ it.protocolo_score }}</span>{% endif %}
-      {% if it.comprar_con_ec %}<span class="ec-badge-small">🪙 {{ it.ec_pagado }} EC</span>{% endif %}
+      {% if it.protocolo_score is not none %}<span class="cat-tag" title="{{ it.protocolo_rec }}"><i data-lucide="shield" style="width:11px;height:11px;vertical-align:middle;"></i> Score: {{ it.protocolo_score }}</span>{% endif %}
+      {% if it.comprar_con_ec %}<span class="ec-badge-small"><i data-lucide="coins" style="width:11px;height:11px;vertical-align:middle;"></i> {{ it.ec_pagado }} EC</span>{% endif %}
     </div>
     {% if it.notas %}<div class="notas-txt">{{ it.notas }}</div>{% endif %}
 
@@ -288,7 +289,7 @@
         </div>
       {% endif %}
       {% if it.mes_label %}
-        <div class="mes-txt">📅 {{ it.mes_label }}</div>
+        <div class="mes-txt"><i data-lucide="calendar" style="width:11px;height:11px;vertical-align:middle;"></i> {{ it.mes_label }}</div>
       {% endif %}
     </div>
   </div>
@@ -409,7 +410,7 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-3">
       <div>
-        <div style="font-size:var(--fs-xs);color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:2px;">🛡 Protocolo de Compra v2.0</div>
+        <div style="font-size:var(--fs-xs);color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-bottom:2px;"><i data-lucide="shield" style="width:11px;height:11px;vertical-align:middle;"></i> Protocolo de Compra v2.0</div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text);">Supremo Protocolo GIO</div>
       </div>
       <button onclick="closeProto()" style="color:var(--dim);font-size:1.3rem;line-height:1;">&times;</button>
@@ -560,7 +561,7 @@ function renderProto() {
 // ── Step 0: Artículo ───────────────────────────────────────────────────────
 function stepP0() {
   return `
-  <div class="ph-tag ph-tag-0">📦 Registro del Artículo</div>
+  <div class="ph-tag ph-tag-0"><i data-lucide="package" style="width:12px;height:12px;vertical-align:middle;"></i> Registro del Artículo</div>
   <div class="q-t">¿Qué artículo deseas adquirir?</div>
   <div class="q-ins">Define el artículo antes de evaluar. El precio es clave para el cálculo de CPU y EC.</div>
   <div class="grid grid-cols-2 gap-3 mb-3">
@@ -634,13 +635,13 @@ function stepP1() {
   <div class="q-ins">El 68% de las compras impulsivas no se harían si se esperara 24h (Loewenstein, 1996). El umbral mínimo del protocolo es 72 horas.</div>
   <div class="ch-grid">
     ${[
-      {v:0, e:'⚡', t:'Hoy mismo', s:'Alta señal de impulso dopamínico', neg:true},
-      {v:1, e:'🌙', t:'1 a 2 días', s:'Todavía en zona de riesgo', neg:true},
-      {v:3, e:'📅', t:'3 a 7 días', s:'Supera el umbral mínimo de 72h', neg:false},
-      {v:7, e:'🗓️', t:'Más de 7 días', s:'Deseo consolidado — señal sólida', neg:false},
+      {v:0, e:'zap', t:'Hoy mismo', s:'Alta señal de impulso dopamínico', neg:true},
+      {v:1, e:'moon', t:'1 a 2 días', s:'Todavía en zona de riesgo', neg:true},
+      {v:3, e:'calendar', t:'3 a 7 días', s:'Supera el umbral mínimo de 72h', neg:false},
+      {v:7, e:'calendar-days', t:'Más de 7 días', s:'Deseo consolidado — señal sólida', neg:false},
     ].map(o => `
     <button class="ch-btn" data-dv="${o.v}" onclick="selDay(this,${o.v},${o.neg})">
-      <div class="ch-ico" style="background:rgba(201,168,76,.06);">${o.e}</div>
+      <div class="ch-ico" style="background:rgba(201,168,76,.06);"><i data-lucide="${o.e}" style="width:16px;height:16px;"></i></div>
       <div><div class="ch-t">${o.t}</div><div class="ch-s">${o.s}</div></div>
       <div class="ch-chk"></div>
     </button>`).join('')}
@@ -689,12 +690,12 @@ let _sol = null, _cls = null;
 function stepP2() {
   _sol = null; _cls = null;
   return `
-  <div class="ph-tag ph-tag-2">🏦 Fase 2 · Auditoría de Solvencia</div>
+  <div class="ph-tag ph-tag-2"><i data-lucide="landmark" style="width:12px;height:12px;vertical-align:middle;"></i> Fase 2 · Auditoría de Solvencia</div>
   <div class="q-t">¿Cuál es tu estado financiero actual?</div>
   <div class="q-ins">Una compra sabia en abundancia puede ser destructiva en escasez.</div>
   <div class="ch-grid">
     <button class="ch-btn" data-sol="estable" onclick="selSol(this,'estable')">
-      <div class="ch-ico" style="background:rgba(52,211,153,.07);">📈</div>
+      <div class="ch-ico" style="background:rgba(52,211,153,.07);"><i data-lucide="trending-up" style="width:16px;height:16px;"></i></div>
       <div><div class="ch-t">Estable — tengo excedente o ahorros</div><div class="ch-s">Flujo positivo, deudas bajo control</div></div>
       <div class="ch-chk"></div>
     </button>
@@ -709,12 +710,12 @@ function stepP2() {
     <div class="q-ins">CapEx = genera retorno (ingresos, salud, productividad). OpEx = gasto de consumo/ocio.</div>
     <div class="ch-grid">
       <button class="ch-btn" data-cls="capex" onclick="selCls(this,'capex')">
-        <div class="ch-ico" style="background:rgba(201,168,76,.07);">🔧</div>
+        <div class="ch-ico" style="background:rgba(201,168,76,.07);"><i data-lucide="wrench" style="width:16px;height:16px;"></i></div>
         <div><div class="ch-t">CapEx — Inversión productiva</div><div class="ch-s">Genera ingresos, mejora salud o capacidad de trabajo</div></div>
         <div class="ch-chk"></div>
       </button>
       <button class="ch-btn" data-cls="opex" onclick="selCls(this,'opex')">
-        <div class="ch-ico" style="background:rgba(248,113,113,.07);">🎮</div>
+        <div class="ch-ico" style="background:rgba(248,113,113,.07);"><i data-lucide="gamepad-2" style="width:16px;height:16px;"></i></div>
         <div><div class="ch-t">OpEx — Gasto de ocio</div><div class="ch-s">Entretenimiento, moda, colección, estética no esencial</div></div>
         <div class="ch-chk"></div>
       </button>
@@ -918,12 +919,12 @@ function nextP3() {
 function stepP4() {
   const { score, rec, reasons } = pResult;
   const REC = {
-    compra_optima:        {cls:'rb-optima',   icon:'✅', title:'Adquisición Estratégica Óptima', desc:'El artículo supera todos los filtros. La compra está científicamente justificada.'},
-    compra_limitada:      {cls:'rb-limitada', icon:'🔧', title:'Compra Limitada — CapEx Justificado', desc:'Estado inestable pero es inversión productiva. Procede con máxima austeridad.'},
-    reevaluar:            {cls:'rb-reevaluar',icon:'⚠️', title:'Re-evaluar o Rechazar', desc:'El artículo tiene mérito pero el mantenimiento es alto. Busca una alternativa más simple.'},
-    no_compres:           {cls:'rb-no',       icon:'✗',  title:'No Compres', desc:'No superó los filtros del algoritmo lógico. Guarda este análisis y revísalo en 30 días.'},
-    bloqueo_supervivencia:{cls:'rb-bloqueo',  icon:'🚫', title:'Bloqueo por Supervivencia', desc:'Estado inestable + ocio. Esta compra compromete tu estabilidad financiera.'},
-    glitch_emocional:     {cls:'rb-glitch',   icon:'⚡', title:'Glitch Emocional Detectado', desc:'El deseo desaparece en calma. No es una necesidad real — libera el deseo.'},
+    compra_optima:        {cls:'rb-optima',   icon:'check-circle',  title:'Adquisición Estratégica Óptima', desc:'El artículo supera todos los filtros. La compra está científicamente justificada.'},
+    compra_limitada:      {cls:'rb-limitada', icon:'wrench',        title:'Compra Limitada — CapEx Justificado', desc:'Estado inestable pero es inversión productiva. Procede con máxima austeridad.'},
+    reevaluar:            {cls:'rb-reevaluar',icon:'triangle-alert',title:'Re-evaluar o Rechazar', desc:'El artículo tiene mérito pero el mantenimiento es alto. Busca una alternativa más simple.'},
+    no_compres:           {cls:'rb-no',       icon:'x',             title:'No Compres', desc:'No superó los filtros del algoritmo lógico. Guarda este análisis y revísalo en 30 días.'},
+    bloqueo_supervivencia:{cls:'rb-bloqueo',  icon:'ban',           title:'Bloqueo por Supervivencia', desc:'Estado inestable + ocio. Esta compra compromete tu estabilidad financiera.'},
+    glitch_emocional:     {cls:'rb-glitch',   icon:'zap',           title:'Glitch Emocional Detectado', desc:'El deseo desaparece en calma. No es una necesidad real — libera el deseo.'},
   };
   const m = REC[rec] || REC.no_compres;
   const isPositive = rec==='compra_optima'||rec==='compra_limitada';
@@ -936,8 +937,8 @@ function stepP4() {
     const isP = r.startsWith('Deseo verificado')||r.startsWith('El deseo persiste')||r.startsWith('Estado financiero')||r.startsWith('Útil')||r.startsWith('No tienes')||r.startsWith('Costo por uso favorable')||r.startsWith('Bajo')||r.startsWith('El valor del artículo')||r.startsWith('Estado inestable, pero');
     const isW = r.startsWith('Deseo de ')||r.startsWith('Estado inestable');
     const cls = isP?'pass':isW?'warn':'fail';
-    const ico = cls==='pass'?'✓':cls==='warn'?'△':'✗';
-    return `<div class="reason-row ${cls}"><span style="flex-shrink:0;">${ico}</span><span>${r}</span></div>`;
+    const ico = cls==='pass'?'check':cls==='warn'?'triangle-alert':'x';
+    return `<div class="reason-row ${cls}"><span style="flex-shrink:0;display:inline-flex;"><i data-lucide="${ico}" style="width:12px;height:12px;"></i></span><span>${r}</span></div>`;
   }).join('');
 
   return `
@@ -955,7 +956,7 @@ function stepP4() {
         <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:1px;">score</div>
       </div>
     </div>
-    <div class="res-badge ${m.cls}" style="margin:0 auto 10px;">${m.icon} ${m.title}</div>
+    <div class="res-badge ${m.cls}" style="margin:0 auto 10px;display:inline-flex;align-items:center;gap:6px;"><i data-lucide="${m.icon}" style="width:14px;height:14px;"></i> ${m.title}</div>
     <div class="res-desc">${m.desc}</div>
   </div>
   <div class="reasons-wrap">${rHtml}</div>
@@ -1010,7 +1011,7 @@ async function loadProtoEC() {
   wrap.innerHTML = `
   <div class="ec-panel">
     <div class="ec-panel-hd">
-      <div style="font-size:1.2rem;">🪙</div>
+      <div style="display:flex;"><i data-lucide="coins" style="width:19px;height:19px;color:var(--gold);"></i></div>
       <div>
         <div class="ec-panel-title">¿Comprar con Euda-Credits (EC)?</div>
         <div class="ec-panel-sub">Gamificación · 1 EC = $${ec_rate} MXN</div>
@@ -1027,8 +1028,8 @@ async function loadProtoEC() {
     </div>
     <div class="ec-alert ${alertCls}" style="font-size:var(--fs-sm);">${alertTxt}</div>
     <div class="ec-rate-note">$${parseFloat(precio).toLocaleString('es-MX',{minimumFractionDigits:0})} MXN ÷ $${ec_rate}/EC = <strong style="color:var(--gold);margin-left:3px;">${ec_sugerido} EC sugeridos</strong></div>
-    <button class="btn-ec" ${puede_pagar?'':'disabled'} onclick="addFromProtoEC(${ec_sugerido})">
-      🪙 ${puede_pagar ? `Agregar + pagar ${ec_sugerido} EC` : `EC insuficientes (necesitas ${ec_sugerido-balance} más)`}
+    <button class="btn-ec" ${puede_pagar?'':'disabled'} onclick="addFromProtoEC(${ec_sugerido})" style="display:inline-flex;align-items:center;gap:6px;justify-content:center;">
+      <i data-lucide="coins" style="width:14px;height:14px;"></i> ${puede_pagar ? `Agregar + pagar ${ec_sugerido} EC` : `EC insuficientes (necesitas ${ec_sugerido-balance} más)`}
     </button>
   </div>`;
 }
