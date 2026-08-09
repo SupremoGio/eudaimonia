@@ -40,9 +40,6 @@
   padding:3px;transition:color .14s;line-height:1;}
 .rc-fav.on{color:var(--gold);}
 .rc-fav svg{width:14px;height:14px;}
-.rc-empty{text-align:center;padding:48px 20px;color:var(--dim);grid-column:1/-1;}
-.rc-empty svg{width:36px;height:36px;margin:0 auto 12px;display:block;opacity:.2;}
-.rc-empty p{font-size:var(--fs-sm);}
 
 /* ── Detail Panel ────────────────────────────────────── */
 .rc-detail{background:var(--card);border:1px solid var(--b);border-radius:14px;
@@ -157,9 +154,11 @@
       {{ recipe_card(r) }}
       {% endfor %}
       {% if not recetas %}
-      <div class="rc-empty">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2"/><path d="M8 12h8M12 8v8"/></svg>
-        <p>Aún no tienes recetas.<br>Agrega la primera con el botón de arriba.</p>
+      <div style="grid-column:1/-1;">
+        {% set empty_icon = 'cooking-pot' %}
+        {% set empty_title = 'Aún no tienes recetas' %}
+        {% set empty_desc = 'Agrega la primera con el botón de arriba.' %}
+        {% include '_partials/empty.html' %}
       </div>
       {% endif %}
     </div>
@@ -267,9 +266,9 @@
     {% endif %}
     <div class="rc-card-meta">
       {% if r.tiempo_prep or r.tiempo_coccion %}
-      <span>⏱ {{ (r.tiempo_prep or 0) + (r.tiempo_coccion or 0) }} min</span>
+      <span><i data-lucide="clock" style="width:12px;height:12px;"></i> {{ (r.tiempo_prep or 0) + (r.tiempo_coccion or 0) }} min</span>
       {% endif %}
-      {% if r.porciones %}<span>🍽 {{ r.porciones }} porc.</span>{% endif %}
+      {% if r.porciones %}<span><i data-lucide="utensils" style="width:12px;height:12px;"></i> {{ r.porciones }} porc.</span>{% endif %}
     </div>
   </div>
   <button class="rc-fav {% if r.favorita %}on{% endif %}" id="fav-{{ r.id }}"
@@ -323,12 +322,15 @@ function filterRecipes(){
 function renderGrid(){
   const grid = document.getElementById('rc-grid');
   if(!_recipes.length){
-    grid.innerHTML = `<div class="rc-empty" style="grid-column:1/-1">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;margin:0 auto 12px;display:block;opacity:.2;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <p>Sin resultados</p></div>`;
+    grid.innerHTML = `<div class="empty-rich" style="grid-column:1/-1">
+      <div class="empty-icon-box"><i data-lucide="search-x"></i></div>
+      <div class="empty-title">Sin resultados</div>
+      <div class="empty-desc">Ninguna receta coincide con este filtro.</div></div>`;
+    lucide.createIcons();
     return;
   }
   grid.innerHTML = _recipes.map(r => cardHTML(r)).join('');
+  lucide.createIcons();
 }
 
 function cardHTML(r){
@@ -347,8 +349,8 @@ function cardHTML(r){
       <div class="rc-card-name">${esc(r.nombre)}</div>
       ${macros?`<div class="rc-card-macros">${macros}</div>`:''}
       <div class="rc-card-meta">
-        ${mins?`<span>⏱ ${mins} min</span>`:''}
-        ${r.porciones?`<span>🍽 ${r.porciones} porc.</span>`:''}
+        ${mins?`<span><i data-lucide="clock" style="width:12px;height:12px;"></i> ${mins} min</span>`:''}
+        ${r.porciones?`<span><i data-lucide="utensils" style="width:12px;height:12px;"></i> ${r.porciones} porc.</span>`:''}
       </div>
     </div>
     <button class="rc-fav${r.favorita?' on':''}" id="fav-${r.id}"
@@ -416,7 +418,7 @@ function openDetail(id){
       <div class="rd-meta-row">
         ${r.tiempo_prep?`<div class="rd-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Prep: ${r.tiempo_prep} min</div>`:''}
         ${r.tiempo_coccion?`<div class="rd-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Cocción: ${r.tiempo_coccion} min</div>`:''}
-        ${r.porciones?`<div class="rd-meta-item">🍽 ${r.porciones} porción${r.porciones>1?'es':''}</div>`:''}
+        ${r.porciones?`<div class="rd-meta-item"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>${r.porciones} porción${r.porciones>1?'es':''}</div>`:''}
       </div>
     </div>
 
@@ -590,7 +592,7 @@ async function saveRecipe(){
   }
   closeModal();
   filterRecipes();
-  toast(`Receta "${saved.nombre}" guardada ✓`);
+  toast(`Receta "${saved.nombre}" guardada`);
   setTimeout(()=>openDetail(saved.id), 80);
 }
 

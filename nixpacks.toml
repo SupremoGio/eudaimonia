@@ -4,9 +4,13 @@
 
 [phases.setup]
 aptPkgs = ["tesseract-ocr", "tesseract-ocr-spa"]
+nixPkgs = ["nodejs_22"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+cmds = [
+  "pip install -r requirements.txt",
+  "(cd gio_v3 && npm ci && npm run build:css) || echo 'Aviso: no se pudo recompilar Tailwind, sirviendo el CSS ya versionado en el repo'",
+]
 
 [start]
 cmd = "gunicorn 'app:create_app()' --bind 0.0.0.0:$PORT --workers 1 --timeout 120"

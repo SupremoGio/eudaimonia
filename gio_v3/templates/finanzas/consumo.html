@@ -133,7 +133,7 @@
   {% for cat in categorias %}
   <button class="ftab" onclick="filtrar(this,'{{ cat }}')">{{ cat }}</button>
   {% endfor %}
-  <button class="ftab" style="color:var(--coral);border-color:rgba(244,63,94,.3)" onclick="filtrar(this,'__atrasados')">🔴 Atrasados</button>
+  <button class="ftab" style="color:var(--coral);border-color:rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:5px;" onclick="filtrar(this,'__atrasados')"><i data-lucide="circle-alert" style="width:13px;height:13px;"></i> Atrasados</button>
 </div>
 
 <!-- Product grid -->

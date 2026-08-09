@@ -13,7 +13,7 @@
 </div>
 
 <div class="inbox-tip">
-  <span>📥</span>
+  <span style="display:inline-flex;"><i data-lucide="inbox" style="width:14px;height:14px;"></i></span>
   <span><strong>Regla GTD:</strong> Captura todo sin filtrar. Luego procesa: ¿Se hace en menos de 2 min? Hazlo ya. Si no, asígnalo a Next Actions, Someday o un Proyecto.</span>
 </div>
 
@@ -43,20 +43,20 @@
     <div class="fg"><div class="fl">Contexto</div>
       <select class="fi" id="tctx">
         <option value="">— Sin contexto —</option>
-        <option value="computadora">💻 Computadora</option>
-        <option value="llamada">📞 Llamada</option>
-        <option value="casa">🏠 Casa</option>
-        <option value="comision">🚶 Comisión</option>
+        <option value="computadora">Computadora</option>
+        <option value="llamada">Llamada</option>
+        <option value="casa">Casa</option>
+        <option value="comision">Comisión</option>
         <option value="email">✉️ Email</option>
-        <option value="online">🌐 Online</option>
+        <option value="online">Online</option>
       </select>
     </div>
     <div class="fg"><div class="fl">Tiempo estimado (min)</div><input class="fi" type="number" id="tmins" min="0" placeholder="0"></div>
     <div class="fg"><div class="fl">Nivel de energía</div>
       <select class="fi" id="teng">
         <option value="medium">⚡ Media</option>
-        <option value="high">🔥 Alta</option>
-        <option value="low">😌 Baja</option>
+        <option value="high">Alta</option>
+        <option value="low">Baja</option>
       </select>
     </div>
   </div>
@@ -127,7 +127,10 @@ async function addT(st){
 async function cTask(id,dot){
   const r=await fetch(`/gtd/api/task/${id}/complete`,{method:'POST'});
   const d=await r.json();
-  if(d.ok){dot.closest('.t-row').remove();toast(`+${d.pts} pts`);}
+  if(d.ok){
+    euCelebrate(dot);dot.closest('.t-row').remove();toast(`+${d.pts} pts`);
+    euAnnounceAchievements(d.gam);
+  }
 }
 async function mv(id,st,btn){
   await fetch(`/gtd/api/task/${id}/status`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:st})});

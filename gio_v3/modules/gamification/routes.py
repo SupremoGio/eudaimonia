@@ -8,6 +8,7 @@ from modules.gamification.engine import (
 )
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
 from modules.gamification.badges import get_all_badges, check_and_unlock_badges, get_active_perks, BADGE_DEFS, TIER_LABELS
+from modules.gamification.icons import lucide_for
 
 gamification_bp = Blueprint('gamification', __name__, template_folder='../../templates')
 
@@ -220,11 +221,13 @@ def logros():
     for key, defn in ACHIEVEMENT_DEFS.items():
         row = ach_rows.get(key, {})
         unlocked = bool(row.get("unlocked_at"))
+        _icon = defn["icon"] if (not defn["hidden"] or unlocked) else "🔒"
         achievements.append({
             "key":         key,
             "name":        defn["name"] if (not defn["hidden"] or unlocked) else "???",
             "description": defn["description"] if (not defn["hidden"] or unlocked) else "Logro oculto — sigue progresando",
-            "icon":        defn["icon"] if (not defn["hidden"] or unlocked) else "🔒",
+            "icon":        _icon,
+            "icon_lucide": lucide_for(_icon),
             "coins":       defn["coins"],
             "xp":          defn["xp"],
             "hidden":      defn["hidden"],
@@ -233,6 +236,8 @@ def logros():
         })
 
     badges = get_all_badges()
+    for b in badges:
+        b["icon_lucide"] = lucide_for(b["icon"])
 
     # 90-day activity heatmap
     _hm_days = 90
@@ -257,20 +262,26 @@ def logros():
         d = (today_date() - timedelta(days=i))
         cl = get_daily_classification(d.isoformat())
         history.append({
-            "date":  d.isoformat(),
-            "label": d.strftime("%a %d"),
-            "rank":  cl["rank"],
-            "icon":  cl["icon"],
-            "color": cl["color"],
-            "xp":    cl["xp"],
+            "date":        d.isoformat(),
+            "label":       d.strftime("%a %d"),
+            "rank":        cl["rank"],
+            "icon":        cl["icon"],
+            "icon_lucide": lucide_for(cl["icon"]),
+            "color":       cl["color"],
+            "xp":          cl["xp"],
         })
+
+    tier_labels = {
+        k: {**v, "icon_lucide": lucide_for(v["icon"])}
+        for k, v in TIER_LABELS.items()
+    }
 
     return render_template('gamification/logros.html',
         stats=stats,
         classification=classification,
         achievements=achievements,
         badges=badges,
-        tier_labels=TIER_LABELS,
+        tier_labels=tier_labels,
         xp_log=[dict(r) for r in xp_log],
         history=history,
         heatmap=heatmap,

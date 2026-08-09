@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, VIRTUE_CATS
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
+from modules.gamification.icons import lucide_for
 from utils import today_str, today_date
 
 # ── Level System (10 Stoic Levels — 1 año dedicado = nivel 10) ───────────────
@@ -298,6 +299,7 @@ def get_daily_classification(date_str=None):
         rank = "carbon"
 
     info = CLASSIFICATION[rank].copy()
+    info["icon_lucide"] = lucide_for(info["icon"])
     info.update({"rank": rank, "xp": total_xp, "cats": len(cats), "has_alto": has_alto})
     return info
 
@@ -461,6 +463,7 @@ def check_and_unlock():
             "name":        defn["name"],
             "description": defn["description"],
             "icon":        defn["icon"],
+            "icon_lucide": lucide_for(defn["icon"]),
             "coins":       defn["coins"],
             "xp":          defn["xp"],
         })

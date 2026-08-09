@@ -169,7 +169,7 @@
           <option value="Deutsch">Deutsch</option>
         </select>
       </div>
-      <button class="btn-g" onclick="getFeedback()">🔍 Feedback real</button>
+      <button class="btn-g" onclick="getFeedback()"><i data-lucide="search" style="width:12px;height:12px;vertical-align:middle;"></i> Feedback real</button>
       <button class="btn-a" onclick="saveJournal()">Guardar entrada</button>
     </div>
     <textarea class="jtxt" id="j-text" placeholder="Escribe aquí en el idioma que practicas. El feedback usa LanguageTool para detectar errores gramaticales y ortográficos reales…"></textarea>
@@ -325,8 +325,9 @@ async function submitQuiz(){
 function showResults(d){
   document.getElementById('quizBody').style.display='none';
   document.getElementById('quizScoreN').textContent=`${d.score} / ${d.total}`;
-  const medal=d.score===5?'🏆':d.score>=4?'🥇':d.score>=3?'🥈':d.score>=2?'🥉':'💪';
-  document.getElementById('quizScoreN').textContent=`${medal} ${d.score} / ${d.total}`;
+  const medal=d.score===5?'trophy':d.score>=4?'medal':d.score>=3?'award':d.score>=2?'star':'dumbbell';
+  document.getElementById('quizScoreN').innerHTML=`<i data-lucide="${medal}" style="width:16px;height:16px;vertical-align:middle;"></i> ${d.score} / ${d.total}`;
+  if (window.lucide) lucide.createIcons();
   const items=document.getElementById('quizResultItems');
   items.innerHTML=d.results.map(r=>`
     <div class="q-item" style="margin-bottom:8px;">

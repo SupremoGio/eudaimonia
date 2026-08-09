@@ -235,7 +235,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
 {% if analytics.recurrencia or analytics.monthly or analytics.recovery %}
 <details class="hg-analytics" open>
   <summary>
-    <span>📊 Análisis de patrones</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;"><i data-lucide="bar-chart-3" style="width:13px;height:13px;"></i> Análisis de patrones</span>
     <span class="an-arrow">▼</span>
   </summary>
   <div class="hg-analytics-body">
@@ -328,7 +328,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
         <div class="hg-an-title" style="{{ 'margin-top:14px;' if analytics.zonas else '' }}">Medicamentos frecuentes</div>
         <div class="hg-tags">
           {% for m in analytics.top_meds %}
-          <span class="hg-tag">💊 {{ m.nombre }}<span class="hg-tag-cnt">{{ m.cnt }}</span></span>
+          <span class="hg-tag"><i data-lucide="pill" style="width:11px;height:11px;vertical-align:middle;"></i> {{ m.nombre }}<span class="hg-tag-cnt">{{ m.cnt }}</span></span>
           {% endfor %}
         </div>
         {% endif %}
@@ -365,7 +365,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
          onclick="selectEp({{ e.id }})">
       <div class="hg-card-top">
         <div class="hg-card-icon icon-{{ 'enf' if e.tipo=='enfermedad' else ('les' if e.tipo=='lesion' else 'con') }}">
-          {{ '🤒' if e.tipo=='enfermedad' else ('🦵' if e.tipo=='lesion' else '🩺') }}
+          <i data-lucide="{{ 'thermometer' if e.tipo=='enfermedad' else ('activity' if e.tipo=='lesion' else 'stethoscope') }}" style="width:18px;height:18px;"></i>
         </div>
         <div>
           <div class="hg-card-title">{{ e.titulo }}</div>
@@ -384,12 +384,12 @@ window.__MED_STATS__ = {{ stats | tojson }};
         <span>{{ e.fecha_inicio }}</span>
         {% if not e.activo and e.fecha_fin %}<span>→ {{ e.fecha_fin }}</span>{% endif %}
         {% if e.num_recetas %}<span>{{ e.num_recetas }} receta{{ 's' if e.num_recetas != 1 }}</span>{% endif %}
-        {% if e.meds_activos %}<span>💊 {{ e.meds_activos }} activo{{ 's' if e.meds_activos != 1 }}</span>{% endif %}
+        {% if e.meds_activos %}<span style="display:inline-flex;align-items:center;gap:3px;"><i data-lucide="pill" style="width:10px;height:10px;"></i> {{ e.meds_activos }} activo{{ 's' if e.meds_activos != 1 }}</span>{% endif %}
       </div>
     </div>
     {% else %}
     <div class="hg-empty-sec" id="no-episodes">
-      <div style="font-size:40px;margin-bottom:12px;">🩺</div>
+      <div style="display:flex;justify-content:center;margin-bottom:12px;color:var(--dim);"><i data-lucide="stethoscope" style="width:36px;height:36px;"></i></div>
       <div style="font-weight:600;margin-bottom:6px;">Sin historial médico</div>
       <div style="font-size:var(--fs-xs);">Registra tu primer episodio con el botón de arriba</div>
     </div>
@@ -399,7 +399,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
   <!-- Detail panel -->
   <div class="hg-detail" id="detail-panel">
     <div class="hg-detail-empty" id="detail-empty">
-      <div style="font-size:36px;margin-bottom:12px;">📋</div>
+      <div style="display:flex;justify-content:center;margin-bottom:12px;color:var(--dim);"><i data-lucide="clipboard-list" style="width:32px;height:32px;"></i></div>
       <div style="font-weight:600;margin-bottom:4px;">Selecciona un episodio</div>
       <div style="font-size:var(--fs-xs);">para ver recetas y medicamentos</div>
     </div>
@@ -417,9 +417,9 @@ window.__MED_STATS__ = {{ stats | tojson }};
 
     <label class="fl">Tipo</label>
     <select class="fi" id="ep-tipo" onchange="toggleZona()">
-      <option value="enfermedad">🤒 Enfermedad</option>
-      <option value="lesion">🦵 Lesión / Esguince</option>
-      <option value="consulta">🩺 Consulta médica</option>
+      <option value="enfermedad">Enfermedad</option>
+      <option value="lesion">Lesión / Esguince</option>
+      <option value="consulta">Consulta médica</option>
     </select>
 
     <label class="fl" style="margin-top:10px;">Nombre / Diagnóstico</label>
@@ -627,7 +627,7 @@ function renderDetail(ep, recetas, documentos) {
 
   const dias    = daysBetween(ep.fecha_inicio, ep.fecha_fin);
   const tipoLabel = ep.tipo === 'enfermedad' ? 'Enfermedad' : ep.tipo === 'lesion' ? 'Lesión' : 'Consulta';
-  const tipoEmoji = ep.tipo === 'enfermedad' ? '🤒' : ep.tipo === 'lesion' ? '🦵' : '🩺';
+  const tipoEmoji = ep.tipo === 'enfermedad' ? 'thermometer' : ep.tipo === 'lesion' ? 'activity' : 'stethoscope';
   const tipoCls   = ep.tipo === 'enfermedad' ? 'hg-badge-enf' : ep.tipo === 'lesion' ? 'hg-badge-les' : 'hg-badge-con';
 
   let resolverHtml = '';
@@ -652,7 +652,7 @@ function renderDetail(ep, recetas, documentos) {
         ? `<div style="font-size:10px;color:var(--dim);margin-top:6px;">Sin medicamentos</div>`
         : `<div class="hg-meds">${r.medicamentos.map(m => `
             <div class="hg-med ${m.tomando ? '' : 'terminado'}" id="med-pill-${m.id}">
-              <div class="hg-med-icon">💊</div>
+              <div class="hg-med-icon"><i data-lucide="pill" style="width:14px;height:14px;"></i></div>
               <div class="hg-med-info">
                 <div class="hg-med-name">${esc(m.nombre)}</div>
                 <div class="hg-med-sub">
@@ -672,7 +672,7 @@ function renderDetail(ep, recetas, documentos) {
           <div class="hg-tl-dot"></div>
           <div class="hg-tl-head">
             <div>
-              <div class="hg-tl-date">📋 ${r.fecha}</div>
+              <div class="hg-tl-date" style="display:inline-flex;align-items:center;gap:4px;"><i data-lucide="clipboard-list" style="width:11px;height:11px;"></i> ${r.fecha}</div>
               ${r.medico ? `<div class="hg-tl-dr">Dr. ${esc(r.medico)}</div>` : ''}
               ${r.especialidad ? `<div class="hg-tl-esp">${esc(r.especialidad)}</div>` : ''}
               ${r.notas ? `<div class="hg-tl-notes">"${esc(r.notas)}"</div>` : ''}
@@ -696,12 +696,12 @@ function renderDetail(ep, recetas, documentos) {
   } else {
     docsHtml = '<div class="hg-docs">' + documentos.map(d => {
       const isPdf = d.nombre_archivo.toLowerCase().endsWith('.pdf');
-      const icon  = isPdf ? '📄' : '🖼️';
+      const icon  = isPdf ? 'file-text' : 'image';
       const label = d.tipo === 'estudio' ? 'Estudio' : 'Receta';
       return `
         <div class="hg-doc">
           <a href="${BASE}/documentos/${d.nombre_archivo}" target="_blank" rel="noopener" class="hg-doc-link">
-            <span class="hg-doc-icon">${icon}</span>
+            <span class="hg-doc-icon"><i data-lucide="${icon}" style="width:14px;height:14px;"></i></span>
             <span class="hg-doc-info">
               <span class="hg-doc-name">${esc(d.nombre_original || d.nombre_archivo)}</span>
               <span class="hg-doc-sub">${label} · ${d.fecha}</span>
@@ -715,7 +715,7 @@ function renderDetail(ep, recetas, documentos) {
   dc.innerHTML = `
     <div class="hg-detail-head">
       <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
-        <div style="font-size:24px;">${tipoEmoji}</div>
+        <div style="display:flex;"><i data-lucide="${tipoEmoji}" style="width:22px;height:22px;"></i></div>
         <div style="flex:1;">
           <div class="hg-detail-title">${esc(ep.titulo)}</div>
           <div class="hg-detail-meta">
@@ -755,6 +755,7 @@ function renderDetail(ep, recetas, documentos) {
           onclick="eliminarEpisodio(${ep.id})">Eliminar episodio</button>
       </div>
     </div>`;
+  if (window.lucide) lucide.createIcons();
 }
 
 function esc(s) {

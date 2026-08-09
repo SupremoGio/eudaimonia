@@ -7,13 +7,13 @@
 
 /* Hero */
 .hero{background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:14px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
-.h-g{font-family:var(--serif);font-size:1.8rem;font-style:italic;font-weight:300;}
-.h-s{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.11em;text-transform:uppercase;margin-top:3px;}
+.h-g{font-family:var(--serif);font-size:1.8rem;font-style:italic;font-weight:300;color:#F2EDE0;}
+.h-s{font-size:var(--fs-sm);color:#8A7A60;letter-spacing:.11em;text-transform:uppercase;margin-top:3px;}
 .h-stats{display:flex;gap:16px;align-items:center;flex-shrink:0;}
 .hs{text-align:center;}
-.hs-v{font-family:var(--serif);font-size:1.4rem;font-weight:300;color:var(--gold);line-height:1;}
-.hs-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.09em;text-transform:uppercase;margin-top:3px;}
-.vd{width:1px;background:var(--b);height:28px;}
+.hs-v{font-family:var(--serif);font-size:1.4rem;font-weight:300;color:#E8C96D;line-height:1;}
+.hs-l{font-size:var(--fs-xs);color:#8A7A60;letter-spacing:.09em;text-transform:uppercase;margin-top:3px;}
+.vd{width:1px;background:rgba(201,168,76,0.15);height:28px;}
 
 /* Points tile */
 .pts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
@@ -118,7 +118,7 @@
     </div>
     <div class="str-row">
       <div class="str-n">{{ stats.streak }}</div>
-      <div><div style="font-size:var(--fs-sm);color:var(--gold)">🔥 Racha</div><div class="str-l">días consecutivos</div></div>
+      <div><div style="font-size:var(--fs-sm);color:var(--gold);display:flex;align-items:center;gap:5px;"><i data-lucide="flame" style="width:13px;height:13px;"></i> Racha</div><div class="str-l">días consecutivos</div></div>
     </div>
     <div class="lv-row"><div class="lv-name">{{ stats.level_name }}</div><div class="lv-n">NIV. {{ stats.level }}</div></div>
     <div class="lv-b"><div class="lv-f" style="width:{{ stats.level_pct }}%"></div></div>
@@ -139,7 +139,7 @@
         <span class="ic-title">{{ t.title }}</span>
         <div class="ic-actions">
           <button class="ic-btn next-btn" onclick="promote({{t.id}},this)">→ Next</button>
-          <button class="ic-btn del-btn"  onclick="del({{t.id}},this)">✕</button>
+          <button class="ic-btn del-btn"  onclick="del({{t.id}},this)"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
         </div>
       </div>
       {% endfor %}
@@ -155,9 +155,11 @@ async function cTask(id, dot){
   const r = await fetch(`/gtd/api/task/${id}/complete`, {method:'POST'});
   const d = await r.json();
   if(d.ok){
+    euCelebrate(dot);
     dot.classList.add('ck'); row.classList.add('faded'); lucide.createIcons();
     document.getElementById('dpts').textContent = d.stats.pts_today;
-    toast(`+${d.pts} pts${d.bonus ? ` ✦ BONUS +${d.bonus}` : ''}`, d.bonus ? 'win' : 'ok');
+    toast(`+${d.pts} pts${d.bonus ? ` BONUS +${d.bonus}` : ''}`, d.bonus ? 'win' : 'ok');
+    euAnnounceAchievements(d.gam);
   }
 }
 
@@ -176,10 +178,11 @@ async function capture(){
     <span class="ic-title">${t}</span>
     <div class="ic-actions">
       <button class="ic-btn next-btn" onclick="promote(${id},this)">→ Next</button>
-      <button class="ic-btn del-btn"  onclick="del(${id},this)">✕</button>
+      <button class="ic-btn del-btn"  onclick="del(${id},this)"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
     </div>`;
   document.getElementById('ip').prepend(div);
-  inp.value = ''; toast('Capturado ✓');
+  lucide.createIcons();
+  inp.value = ''; toast('Capturado');
 }
 
 async function promote(id, btn){

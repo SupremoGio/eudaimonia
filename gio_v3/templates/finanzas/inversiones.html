@@ -115,8 +115,6 @@
   transition:transform .25s ease,opacity .25s;opacity:0;z-index:10000;white-space:nowrap;}
 .inv-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
 
-/* ── Empty ───────────────────────────────────────────────────── */
-.inv-empty{text-align:center;padding:40px 20px;color:var(--dim);font-size:var(--fs-sm);}
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media(max-width:480px){
@@ -233,10 +231,10 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="inv-empty">
-    Sin movimientos registrados.<br>
-    Importa un estado de cuenta o usa el botón + Registrar.
-  </div>
+  {% set empty_icon = 'trending-up' %}
+  {% set empty_title = 'Sin movimientos registrados' %}
+  {% set empty_desc = 'Importa un estado de cuenta o usa el botón + Registrar.' %}
+  {% include '_partials/empty.html' %}
   {% endif %}
 
 </div><!-- /inv-page -->

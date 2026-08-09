@@ -107,7 +107,7 @@
     <input class="fi" id="g-desc" placeholder="Ej: Helado, ropa Nike, salida al cine…" />
   </div>
 
-  <button class="btn-a" onclick="registrarGasto()">💸 Registrar gasto</button>
+  <button class="btn-a" onclick="registrarGasto()"><i data-lucide="banknote" style="width:14px;height:14px;"></i> Registrar gasto</button>
 </div>
 
 <!-- ── Rewards grid ────────────────────────────────────────────────── -->
@@ -143,13 +143,13 @@
       <span class="rchip rchip-cool">{{ r.cooldown_days }}d cooldown</span>
       {% endif %}
       {% if r.weekend_only %}
-      <span class="rchip rchip-weekend">🗓️ Fin de semana</span>
+      <span class="rchip rchip-weekend"><i data-lucide="calendar" style="width:11px;height:11px;"></i> Fin de semana</span>
       {% endif %}
     </div>
 
     <button class="btn-redeem {% if r.can_redeem %}active{% else %}blocked{% endif %}"
             onclick="{% if r.can_redeem %}redeemReward({{ r.id }}, '{{ r.name }}', {{ r.ec_cost }}){% endif %}">
-      {% if r.can_redeem %}✦ Canjear{% else %}Bloqueada{% endif %}
+      {% if r.can_redeem %}<i data-lucide="sparkles" style="width:13px;height:13px;"></i> Canjear{% else %}Bloqueada{% endif %}
     </button>
     {% if not r.can_redeem %}
     <div class="block-msg">{{ r.block_reason }}</div>
@@ -238,7 +238,7 @@ async function registrarGasto() {
     document.getElementById('g-desc').value  = '';
     document.getElementById('g-pesos-hint').textContent = '÷ 10 = EC';
     document.getElementById('g-ec-hint').textContent    = '× 10 = pesos';
-    toast(`💸 -${ec} EC · ${desc}`);
+    toast(`-${ec} EC · ${desc}`);
     loadHistorial();
   } catch { toast('Error al registrar', 'err'); }
 }
@@ -246,13 +246,25 @@ async function registrarGasto() {
 // ── Rewards CRUD ─────────────────────────────────────────────────────────────
 async function redeemReward(id, name, cost) {
   if (!confirm(`¿Canjear "${name}" por ${cost} EC?`)) return;
+  const btn = event && event.currentTarget;
   try {
     const r = await fetch(`/recompensas/api/rewards/${id}/redeem`, {method: 'POST'});
     const d = await r.json();
     if (d.error) { toast(d.error, 'err'); return; }
+    if (btn) euCelebrate(btn);
     document.getElementById('ec-display').textContent = d.ec_remaining;
-    toast(`✦ ${name} canjeada — -${cost} EC`);
-    setTimeout(() => location.reload(), 1200);
+    if (d.bonus_ec > 0) {
+      euRewardSheet({
+        icon: 'sparkles',
+        eyebrow: 'Racha de suerte',
+        title: `+${d.bonus_ec} EC de bono`,
+        desc: `${name} canjeada — el azar te devolvió parte del costo.`,
+      });
+      setTimeout(() => location.reload(), 4200);
+    } else {
+      toast(`${name} canjeada — -${cost} EC`);
+      setTimeout(() => location.reload(), 1200);
+    }
   } catch { toast('Error al canjear', 'err'); }
 }
 
@@ -275,7 +287,7 @@ async function addReward() {
     });
     if (!r.ok) { toast('Error', 'err'); return; }
     cancelEdit();
-    toast(method === 'POST' ? '✦ Recompensa agregada' : '✦ Actualizada');
+    toast(method === 'POST' ? 'Recompensa agregada' : 'Actualizada');
     setTimeout(() => location.reload(), 800);
   } catch { toast('Error', 'err'); }
 }
@@ -288,7 +300,7 @@ function editReward(id, name, desc, cost, lvl, cool, weekend) {
   document.getElementById('f-cool').value = cool;
   document.getElementById('f-desc').value = desc;
   document.getElementById('f-weekend').checked = !!weekend;
-  document.getElementById('add-form-label').textContent = '✎ Editando recompensa';
+  document.getElementById('add-form-label').textContent = 'Editando recompensa';
   document.getElementById('cancel-edit-btn').style.display = '';
   document.getElementById('f-name').focus();
   document.getElementById('f-name').scrollIntoView({behavior:'smooth', block:'center'});

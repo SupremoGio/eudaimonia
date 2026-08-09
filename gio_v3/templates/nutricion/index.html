@@ -393,7 +393,8 @@ html.light {
       <button id="over-no"  onclick="setOver(false)" style="flex:1;cursor:pointer;border-radius:12px;padding:12px;font-family:var(--sans);font-size:12.5px;transition:all 0.16s;background:var(--card);border:1px solid rgba(201,168,76,0.1);color:var(--mid)">Solo probé</button>
       <button id="over-yes" onclick="setOver(true)"  style="flex:1;cursor:pointer;border-radius:12px;padding:12px;font-family:var(--sans);font-size:12.5px;transition:all 0.16s;background:var(--card);border:1px solid rgba(201,168,76,0.1);color:var(--mid)">Me pasé</button>
     </div>
-    <input id="temp-note" class="dt-input" style="margin-top:10px" placeholder="¿Qué lo detonó? (opcional)">
+    <label for="temp-note" class="dt-section-label" style="display:block;margin-top:14px;">¿Qué lo detonó? (opcional)</label>
+    <input id="temp-note" class="dt-input" placeholder="Ej: estrés, aburrimiento...">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:14px">
       <span style="font-family:var(--sans);font-size:11.5px;color:var(--dim)">Penalización</span>
       <span id="temp-pen-preview" style="font-family:var(--serif);font-size:24px;font-style:italic;color:var(--dim)">—</span>
@@ -415,7 +416,7 @@ html.light {
     <div class="dt-section-label">Momento del día · <span id="add-xp-label" style="color:var(--gold)">+12 XP</span></div>
     <div id="add-slots" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px"></div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
-      <span style="font-family:var(--sans);font-size:12px;color:var(--mid)">Hora</span>
+      <label for="add-time" style="font-family:var(--sans);font-size:12px;color:var(--mid)">Hora</label>
       <input type="time" id="add-time" style="background:var(--card);border:1px solid rgba(201,168,76,0.1);border-radius:10px;padding:8px 12px;font-family:var(--sans);font-size:12.5px;color:var(--text);outline:none;color-scheme:dark">
     </div>
     <div id="add-banco-section">
@@ -424,12 +425,20 @@ html.light {
     </div>
     <div id="add-custom-section" style="display:none">
       <div class="dt-section-label">Detalles</div>
+      <label for="add-name" class="dt-section-label" style="display:block;">Nombre</label>
       <input id="add-name" class="dt-input" placeholder="Nombre de la comida">
-      <div style="display:flex;gap:9px">
-        <input id="add-kcal" class="dt-input" style="flex:1" placeholder="kcal" inputmode="numeric">
-        <input id="add-prot" class="dt-input" style="flex:1" placeholder="proteína (g)" inputmode="numeric">
+      <div style="display:flex;gap:9px;margin-top:10px;">
+        <div style="flex:1">
+          <label for="add-kcal" class="dt-section-label" style="display:block;">Kcal</label>
+          <input id="add-kcal" class="dt-input" placeholder="kcal" inputmode="numeric">
+        </div>
+        <div style="flex:1">
+          <label for="add-prot" class="dt-section-label" style="display:block;">Proteína (g)</label>
+          <input id="add-prot" class="dt-input" placeholder="proteína (g)" inputmode="numeric">
+        </div>
       </div>
-      <input id="add-ing" class="dt-input" placeholder="Ingredientes, separados por coma">
+      <label for="add-ing" class="dt-section-label" style="display:block;margin-top:10px;">Ingredientes</label>
+      <input id="add-ing" class="dt-input" placeholder="Separados por coma">
       <div style="display:flex;gap:8px;margin-top:4px">
         <button id="ctag-safe" onclick="setCtag('safe')" style="flex:1;cursor:pointer;font-family:var(--sans);font-size:11.5px;border-radius:10px;padding:10px;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--dt-safe-bg);border:1px solid var(--dt-safe);color:var(--dt-safe)">
           <span style="width:6px;height:6px;border-radius:50%;background:var(--dt-safe)"></span>Seguro
@@ -497,13 +506,13 @@ const BRISTOL = [
   {n:4,d:'Lisa y blanda'},{n:5,d:'Blanda, bordes'},{n:6,d:'Pastosa'},{n:7,d:'Líquida'},
 ];
 const TEMPTATIONS = [
-  {id:'cafe',    label:'Café de más',       glyph:'☕', pen:5},
-  {id:'pan',     label:'Pan / harina',      glyph:'🥖', pen:12},
-  {id:'galleta', label:'Galleta / dulce',   glyph:'🍪', pen:12},
-  {id:'lacteo',  label:'Lácteo',            glyph:'🥛', pen:10},
-  {id:'frijol',  label:'Frijol / legumbre', glyph:'🫘', pen:8},
-  {id:'alcohol', label:'Alcohol',           glyph:'🍷', pen:12},
-  {id:'otro',    label:'Otro disparador',   glyph:'⚑',  pen:8},
+  {id:'cafe',    label:'Café de más',       glyph:'coffee', pen:5},
+  {id:'pan',     label:'Pan / harina',      glyph:'wheat', pen:12},
+  {id:'galleta', label:'Galleta / dulce',   glyph:'cookie', pen:12},
+  {id:'lacteo',  label:'Lácteo',            glyph:'milk', pen:10},
+  {id:'frijol',  label:'Frijol / legumbre', glyph:'bean', pen:8},
+  {id:'alcohol', label:'Alcohol',           glyph:'wine', pen:12},
+  {id:'otro',    label:'Otro disparador',   glyph:'flag', pen:8},
 ];
 const TRIGGERS_LIST = ['Café en exceso','Lácteos','Frijol','Harinas refinadas','Galletas'];
 const RECIPES = [
@@ -790,7 +799,7 @@ function renderSintomas() {
       <span class="dt-section-label" style="margin-bottom:0">Deslices de hoy</span>
       <span style="font-family:var(--serif);font-size:15px;font-style:italic;color:var(--dt-trigger)">−${tot} XP</span></div>`+
       S.slips.map(s=>`<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
-        <span style="font-size:18px;width:22px;text-align:center">${esc(s.glyph||'⚑')}</span>
+        <span style="display:inline-flex;width:22px;justify-content:center;"><i data-lucide="${esc(s.glyph||'flag')}" style="width:15px;height:15px;"></i></span>
         <div style="flex:1"><div style="font-family:var(--sans);font-size:12.5px;color:var(--text)">${esc(s.label)}${s.over?'<span style="color:var(--dt-trigger);font-size:10.5px"> · me pasé</span>':''}</div>
           ${s.note?`<div style="font-family:var(--sans);font-size:10.5px;color:var(--mid);margin-top:2px">${esc(s.note)}</div>`:''}</div>
         <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:var(--dt-trigger)">−${s.pen}</span>
@@ -810,6 +819,7 @@ function renderSintomas() {
         </div>`;
       }).join('');
   renderBristol();
+  if (window.lucide) lucide.createIcons();
 }
 function renderBristol() {
   const cur=S.bristol;
@@ -1035,12 +1045,13 @@ function renderTempTriggers(){
       background:${tempTrig?.id===t.id?'var(--dt-trigger-bg)':'var(--card)'};
       border:1px solid ${tempTrig?.id===t.id?'var(--dt-trigger)':'rgba(201,168,76,0.1)'};
       border-radius:12px;padding:11px 12px;transition:all 0.16s">
-      <span style="font-size:17px">${t.glyph}</span>
+      <span style="display:inline-flex;"><i data-lucide="${t.glyph}" style="width:15px;height:15px;"></i></span>
       <div style="flex:1">
         <div style="font-family:var(--sans);font-size:12.5px;color:${tempTrig?.id===t.id?'var(--dt-trigger)':'var(--text)'}">${esc(t.label)}</div>
         <div style="font-family:var(--sans);font-size:9.5px;color:var(--dim)">−${t.pen} XP</div>
       </div>
     </button>`).join('');
+  if (window.lucide) lucide.createIcons();
 }
 function setTempTrig(id){tempTrig=TEMPTATIONS.find(t=>t.id===id)||null;renderTempTriggers();updateTempState();}
 function setOver(v){

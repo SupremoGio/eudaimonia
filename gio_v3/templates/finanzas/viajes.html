@@ -263,12 +263,12 @@ const fmt  = n => (+n).toLocaleString('es-MX', {minimumFractionDigits:2, maximum
 const fmtD = s => s ? s.slice(0,10).split('-').reverse().join('/') : '—';
 
 const CONCEPTO_ICON = {
-  'Vuelos':       '✈',
-  'Hotel':        '🏨',
-  'Transporte':   '🚗',
-  'Comida':       '🍽',
-  'Experiencias': '🎭',
-  'Otros':        '📦',
+  'Vuelos':       'plane',
+  'Hotel':        'building',
+  'Transporte':   'car',
+  'Comida':       'utensils',
+  'Experiencias': 'drama',
+  'Otros':        'package',
 };
 const CONCEPTO_COLOR = {
   'Vuelos':       '#60a5fa',
@@ -412,7 +412,7 @@ function renderDetail() {
       const color = CONCEPTO_COLOR[b.concepto] || '#94a3b8';
       return `
         <div class="vj-concept-row">
-          <div class="vj-concept-icon">${CONCEPTO_ICON[b.concepto] || '📦'}</div>
+          <div class="vj-concept-icon"><i data-lucide="${CONCEPTO_ICON[b.concepto] || 'package'}" style="width:15px;height:15px;"></i></div>
           <div class="vj-concept-name">${b.concepto}</div>
           <div class="vj-concept-bar-wrap">
             <div class="vj-concept-bar">
