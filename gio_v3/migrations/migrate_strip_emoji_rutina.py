@@ -55,6 +55,16 @@ def run_migration():
         )
         db.commit()
 
+        # database.get_db() en modo híbrido sincroniza a Turso en un thread
+        # daemon en segundo plano — el proceso normal de la app nunca lo
+        # espera porque vive corriendo horas, pero un script de una sola
+        # corrida como este puede terminar (y matar ese thread) antes de que
+        # la escritura llegue a Turso. Lo esperamos explícitamente aquí para
+        # que "OK" signifique que sí se persistió, no solo que se encoló.
+        sync_thread = getattr(db, "_sync_thread", None)
+        if sync_thread is not None:
+            sync_thread.join(timeout=20)
+
     return {"status": "ok", "version": "strip_emoji_rutina_bloques", "updated": updated}
 
 
