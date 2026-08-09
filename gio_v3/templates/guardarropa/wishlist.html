@@ -167,10 +167,6 @@
 .btn-ec-buy:disabled{opacity:.35;cursor:not-allowed;}
 .ec-spent-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:100px;padding:2px 8px;font-size:var(--fs-xs);color:var(--gold);letter-spacing:.07em;text-transform:uppercase;}
 
-.wl-empty{text-align:center;padding:44px 20px;color:var(--dim);}
-.wl-empty svg{width:30px;height:30px;margin:0 auto 10px;opacity:.18;}
-.wl-empty p{font-size:var(--fs-sm);}
-
 /* ── Filters ──────────────────────────────────────────────────────────────── */
 .wl-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
 .wl-f{background:var(--card2);border:1px solid var(--b);border-radius:100px;padding:4px 12px;font-size:var(--fs-sm);color:var(--mid);cursor:pointer;transition:all .14s;}
@@ -902,7 +898,7 @@ async function loadList() {
 function renderList() {
   const container = document.getElementById('wl-list');
   if (!allItems.length) {
-    container.innerHTML = `<div class="wl-empty"><svg data-lucide="package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"></svg><p>No hay artículos en tu wishlist</p></div>`;
+    container.innerHTML = `<div class="empty-rich"><div class="empty-icon-box"><i data-lucide="package"></i></div><div class="empty-title">Wishlist vacía</div><div class="empty-desc">Los artículos que evalúes desde Guardarropa aparecerán aquí para decidir si conviene comprarlos.</div></div>`;
     lucide.createIcons(); return;
   }
 

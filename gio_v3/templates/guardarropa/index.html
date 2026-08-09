@@ -53,8 +53,6 @@
   display:flex;align-items:center;transition:color .14s;backdrop-filter:blur(4px);}
 .gd-card-fav.on{color:var(--gold);}
 .gd-card-fav svg{width:12px;height:12px;}
-.gd-empty{text-align:center;padding:48px 20px;color:var(--dim);grid-column:1/-1;}
-.gd-empty svg{width:36px;height:36px;margin:0 auto 12px;display:block;opacity:.18;}
 
 /* ── Detail panel ────────────────────────────────────── */
 .gd-detail{background:var(--card);border:1px solid var(--b);border-radius:14px;
@@ -312,9 +310,11 @@
       <div class="gd-grid" id="gd-grid">
         {% for item in items %}{{ item_card(item) }}{% endfor %}
         {% if not items %}
-        <div class="gd-empty">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.86l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
-          <p>Tu armario está vacío.<br>Añade tu primera prenda.</p>
+        <div style="grid-column:1/-1;">
+          {% set empty_icon = 'shirt' %}
+          {% set empty_title = 'Tu armario está vacío' %}
+          {% set empty_desc = 'Añade tu primera prenda.' %}
+          {% include '_partials/empty.html' %}
         </div>
         {% endif %}
       </div>
@@ -670,9 +670,11 @@ function filterItems(){
 function renderGrid(){
   const grid=document.getElementById('gd-grid');
   if(!_items.length){
-    grid.innerHTML=`<div class="gd-empty" style="grid-column:1/-1">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;margin:0 auto 10px;display:block;opacity:.18;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <p>Sin resultados</p></div>`;
+    grid.innerHTML=`<div class="empty-rich" style="grid-column:1/-1">
+      <div class="empty-icon-box"><i data-lucide="search-x"></i></div>
+      <div class="empty-title">Sin resultados</div>
+      <div class="empty-desc">Ninguna prenda coincide con este filtro.</div></div>`;
+    lucide.createIcons();
     return;
   }
   grid.innerHTML = _items.map(r=>itemCardHTML(r)).join('');
@@ -1206,7 +1208,10 @@ function renderOutfitsGrid(){
   document.getElementById('ot-stat-fav').textContent = topOcc;
 
   if(!list.length){
-    grid.innerHTML=`<div class="gd-empty" style="grid-column:1/-1"><p>${_otFilter?'Sin outfits en esta ocasión.':'Sin outfits guardados.<br>Crea tu primer look.'}</p></div>`;
+    grid.innerHTML = _otFilter
+      ? `<div class="empty-rich" style="grid-column:1/-1"><div class="empty-icon-box"><i data-lucide="search-x"></i></div><div class="empty-title">Sin resultados</div><div class="empty-desc">No hay outfits guardados en esta ocasión.</div></div>`
+      : `<div class="empty-rich" style="grid-column:1/-1"><div class="empty-icon-box"><i data-lucide="shirt"></i></div><div class="empty-title">Sin outfits guardados</div><div class="empty-desc">Crea tu primer look.</div></div>`;
+    lucide.createIcons();
     return;
   }
 
