@@ -133,6 +133,29 @@ html.light {
   to   { transform: rotate(360deg); }
 }
 
+/* ── Retroalimentación táctil ───────────────────────────────────────────
+   Un botón real sin :active se siente plano — no hay ninguna señal física
+   de que el click "aterrizó". Antes solo un puñado de clases sueltas
+   (.ab en Actividades, .btn-redeem en Recompensas) tenían su propio
+   :active a mano; esto lo vuelve el comportamiento por default de
+   cualquier <button> o enlace estilizado como botón, sin tener que
+   agregarlo botón por botón. Mismo valor (scale .97) que ya usaba .ab,
+   para no introducir una segunda convención. */
+button:not(:disabled),
+a[class*="btn"] {
+  transition: transform .12s ease;
+}
+button:not(:disabled):active,
+a[class*="btn"]:active {
+  transform: scale(.97);
+}
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled),
+  a[class*="btn"] { transition: none; }
+  button:not(:disabled):active,
+  a[class*="btn"]:active { transform: none; }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    GIO PIPELINE — Responsive Grid / Flexbox Utility System
    Mobile-first, 768px breakpoint
