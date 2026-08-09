@@ -87,7 +87,7 @@
       <div class="w-w"  id="ww">{{ word.word }}</div>
       <div class="w-m"  id="wm">{{ word.meaning }}</div>
       <div class="w-ex" id="we">"{{ word.example }}"</div>
-      <span class="w-fr" id="wf">🇫🇷 {{ word.french }}</span>
+      <span class="w-fr" id="wf">FR · {{ word.french }}</span>
     </div>
   </div>
 
@@ -131,8 +131,8 @@
         <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;">5 preguntas · palabras de nivel avanzado</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="quiz-lang-btn on" id="btnEN" onclick="setLang('en')">🇬🇧 English</button>
-        <button class="quiz-lang-btn"    id="btnFR" onclick="setLang('fr')">🇫🇷 Français</button>
+        <button class="quiz-lang-btn on" id="btnEN" onclick="setLang('en')">English</button>
+        <button class="quiz-lang-btn"    id="btnFR" onclick="setLang('fr')">Français</button>
         <button class="btn-a" onclick="startQuiz()" id="startBtn">▶ Iniciar Quiz</button>
       </div>
     </div>
@@ -221,7 +221,7 @@ async function rw(){
     document.getElementById('ww').textContent=d.word;
     document.getElementById('wm').textContent=d.meaning;
     document.getElementById('we').textContent=`"${d.example}"`;
-    document.getElementById('wf').textContent=`🇫🇷 ${d.french}`;
+    document.getElementById('wf').textContent=`FR · ${d.french}`;
     b.style.opacity=1;
   },240);
 }

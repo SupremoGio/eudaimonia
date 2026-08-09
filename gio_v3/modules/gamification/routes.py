@@ -40,11 +40,13 @@ def achievements():
     result = []
     for key, defn in ACHIEVEMENT_DEFS.items():
         unlocked = key in rows and rows[key]["unlocked_at"] is not None
+        _icon = defn["icon"] if (not defn["hidden"] or unlocked) else "🔒"
         entry = {
             "key":          key,
             "name":         defn["name"] if (not defn["hidden"] or unlocked) else "???",
             "description":  defn["description"] if (not defn["hidden"] or unlocked) else "Logro oculto — sigue progresando",
-            "icon":         defn["icon"] if (not defn["hidden"] or unlocked) else "🔒",
+            "icon":         _icon,
+            "icon_lucide":  lucide_for(_icon),
             "coins":        defn["coins"],
             "xp":           defn["xp"],
             "hidden":       defn["hidden"],
@@ -62,6 +64,8 @@ def achievements():
 @gamification_bp.route('/api/gamification/badges')
 def badges():
     all_badges   = get_all_badges()
+    for b in all_badges:
+        b["icon_lucide"] = lucide_for(b["icon"])
     active_perks = get_active_perks()
     unlocked     = [b for b in all_badges if b["unlocked"]]
     return jsonify({

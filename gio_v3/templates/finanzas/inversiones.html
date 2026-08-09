@@ -172,7 +172,7 @@
   <div class="inv-platforms">
     {% for p in plataformas %}
     <div class="inv-plat-card">
-      <div class="inv-plat-icon" style="background:{{ p.color }}22;">{{ p.icon }}</div>
+      <div class="inv-plat-icon" style="background:{{ p.color }}22;color:{{ p.color }};"><i data-lucide="{{ p.icon }}" style="width:19px;height:19px;"></i></div>
       <div class="inv-plat-info">
         <div class="inv-plat-name">{{ p.label }}</div>
         <div class="inv-plat-sub">
@@ -213,8 +213,8 @@
       <div class="inv-mov-body">
         <div class="inv-mov-top">
           <span class="inv-mov-plat"
-                style="background:{{ m.plat_meta.color }}1a;color:{{ m.plat_meta.color }};">
-            {{ m.plat_meta.icon }} {{ m.categoria }}
+                style="background:{{ m.plat_meta.color }}1a;color:{{ m.plat_meta.color }};display:inline-flex;align-items:center;gap:4px;">
+            <i data-lucide="{{ m.plat_meta.icon }}" style="width:12px;height:12px;"></i> {{ m.categoria }}
           </span>
           <span class="inv-mov-sub">{{ m.dir_meta.label }}</span>
         </div>
@@ -253,7 +253,7 @@
         <label>Plataforma</label>
         <select id="inv-plat">
           {% for p in plataformas_list %}
-          <option value="{{ p }}">{{ plat_meta[p].icon }} {{ plat_meta[p].label }}</option>
+          <option value="{{ p }}">{{ plat_meta[p].label }}</option>
           {% endfor %}
         </select>
       </div>
