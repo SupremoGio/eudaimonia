@@ -458,13 +458,13 @@ PLAN_TEMPLATE = {
 }
 
 TEMPTATIONS_MAP = {
-    'cafe':    {'label': 'Café de más',       'glyph': '☕', 'pen': 5},
-    'pan':     {'label': 'Pan / harina',      'glyph': '🥖', 'pen': 12},
-    'galleta': {'label': 'Galleta / dulce',   'glyph': '🍪', 'pen': 12},
-    'lacteo':  {'label': 'Lácteo',            'glyph': '🥛', 'pen': 10},
-    'frijol':  {'label': 'Frijol / legumbre', 'glyph': '🫘', 'pen': 8},
-    'alcohol': {'label': 'Alcohol',           'glyph': '🍷', 'pen': 12},
-    'otro':    {'label': 'Otro disparador',   'glyph': '⚑',  'pen': 8},
+    'cafe':    {'label': 'Café de más',       'glyph': 'coffee', 'pen': 5},
+    'pan':     {'label': 'Pan / harina',      'glyph': 'wheat',  'pen': 12},
+    'galleta': {'label': 'Galleta / dulce',   'glyph': 'cookie', 'pen': 12},
+    'lacteo':  {'label': 'Lácteo',            'glyph': 'milk',   'pen': 10},
+    'frijol':  {'label': 'Frijol / legumbre', 'glyph': 'bean',   'pen': 8},
+    'alcohol': {'label': 'Alcohol',           'glyph': 'wine',   'pen': 12},
+    'otro':    {'label': 'Otro disparador',   'glyph': 'flag',   'pen': 8},
 }
 
 STOIC_SLIP = [

@@ -24,12 +24,12 @@ PLATAFORMAS = ['GBM', 'INVEX', 'CETES', 'CRYPTO', 'FIBRA', 'OTRO']
 DIRECCIONES = ['APORTACION', 'RETIRO', 'RENDIMIENTO']
 
 PLAT_META = {
-    'GBM':    {'label': 'GBM Homebroker', 'icon': '📈', 'color': '#22c55e'},
-    'INVEX':  {'label': 'Invex',           'icon': '🏦', 'color': '#a78bfa'},
-    'CETES':  {'label': 'CETES Directo',   'icon': '🇲🇽', 'color': '#60a5fa'},
-    'CRYPTO': {'label': 'Crypto',          'icon': '₿',  'color': '#f59e0b'},
-    'FIBRA':  {'label': 'FIBRA / Bienes R.','icon': '🏢', 'color': '#fb923c'},
-    'OTRO':   {'label': 'Otro',            'icon': '💼', 'color': '#94a3b8'},
+    'GBM':    {'label': 'GBM Homebroker', 'icon': 'trending-up',  'color': '#22c55e'},
+    'INVEX':  {'label': 'Invex',           'icon': 'landmark',     'color': '#a78bfa'},
+    'CETES':  {'label': 'CETES Directo',   'icon': 'shield-check', 'color': '#60a5fa'},
+    'CRYPTO': {'label': 'Crypto',          'icon': 'bitcoin',      'color': '#f59e0b'},
+    'FIBRA':  {'label': 'FIBRA / Bienes R.','icon': 'building-2',  'color': '#fb923c'},
+    'OTRO':   {'label': 'Otro',            'icon': 'briefcase',    'color': '#94a3b8'},
 }
 
 DIR_META = {

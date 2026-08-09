@@ -33,11 +33,11 @@ _INGRESO_EXCLUIR_SQL = "categoria NOT IN ({})".format(
 )
 
 BANK_META = {
-    "BBVA_TDC": {"color": "#004B96", "type": "Tarjeta de crédito", "icon": "🔵"},
-    "BBVA_DEB": {"color": "#004B96", "type": "Cuenta de débito",   "icon": "🏦"},
-    "INVEX":    {"color": "#E30D13", "type": "Tarjeta de crédito", "icon": "🔴"},
-    "HSBC":     {"color": "#DB0011", "type": "Tarjeta de crédito", "icon": "💳"},
-    "MANUAL":   {"color": "#64748b", "type": "Entrada manual",     "icon": "✏️"},
+    "BBVA_TDC": {"color": "#004B96", "type": "Tarjeta de crédito", "icon": "credit-card"},
+    "BBVA_DEB": {"color": "#004B96", "type": "Cuenta de débito",   "icon": "landmark"},
+    "INVEX":    {"color": "#E30D13", "type": "Tarjeta de crédito", "icon": "credit-card"},
+    "HSBC":     {"color": "#DB0011", "type": "Tarjeta de crédito", "icon": "credit-card"},
+    "MANUAL":   {"color": "#64748b", "type": "Entrada manual",     "icon": "pencil"},
 }
 
 
@@ -405,7 +405,7 @@ def get_accounts():
             'name':     r['banco'].replace("_", " "),
             'color':    meta['color'],
             'type':     meta['type'],
-            'icon':     meta.get('icon', '💳'),
+            'icon':     meta.get('icon', 'credit-card'),
             'income':   round(income, 2),
             'expense':  round(expense, 2),
             'balance':  round(income - expense, 2),
