@@ -85,7 +85,7 @@
     <!-- Racha -->
     <div style="background:var(--card);border:1px solid rgba(201,168,76,0.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">
       <span style="font-family:'DM Sans',sans-serif;font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);">Racha</span>
-      <span style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#fb923c;line-height:1;">{{ stats.streak }}d</span>
+      <span style="font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:600;color:#fb923c;line-height:1;font-variant-numeric:lining-nums;">{{ stats.streak }}d</span>
       <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:var(--mid);display:inline-flex;align-items:center;gap:4px;">
         {% if stats.streak >= 30 %}<i data-lucide="flame" style="width:11px;height:11px;" stroke-width="2"></i> +10% XP
         {% elif stats.streak >= 7 %}<i data-lucide="zap" style="width:11px;height:11px;" stroke-width="2"></i> +5% XP
