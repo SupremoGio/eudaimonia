@@ -140,12 +140,12 @@
     </div>
     <div class="gp-row">
       <div class="gp-col">
-        <div class="gp-lbl">🧘 Sábado</div>
+        <div class="gp-lbl"><i data-lucide="flower-2" style="width:12px;height:12px;vertical-align:middle;"></i> Sábado</div>
         <div class="gp-bar"><div class="gp-fill-sat {% if sabado.complete %}complete{% endif %}" id="gp-sat-fill" style="width:{{ sabado.pct }}%"></div></div>
         <div class="gp-count gp-sat {% if sabado.complete %}complete{% endif %}" id="gp-sat-cnt">{{ sabado.done }} / {{ sabado.total }}</div>
       </div>
       <div class="gp-col">
-        <div class="gp-lbl">🧠 Domingo</div>
+        <div class="gp-lbl"><i data-lucide="brain" style="width:12px;height:12px;vertical-align:middle;"></i> Domingo</div>
         <div class="gp-bar"><div class="gp-fill-sun {% if domingo.complete %}complete{% endif %}" id="gp-sun-fill" style="width:{{ domingo.pct }}%"></div></div>
         <div class="gp-count gp-sun {% if domingo.complete %}complete{% endif %}" id="gp-sun-cnt">{{ domingo.done }} / {{ domingo.total }}</div>
       </div>
@@ -156,13 +156,13 @@
   <div style="display:flex;gap:8px;margin-bottom:14px;">
     <button class="day-tab {% if dia=='sabado' %}on{% endif %} {% if sabado.complete %}complete{% endif %}"
             id="tab-sabado" onclick="showDia('sabado')">
-      <span>🧘 Sábado</span>
+      <span><i data-lucide="flower-2" style="width:12px;height:12px;vertical-align:middle;"></i> Sábado</span>
       <span class="tab-pct" id="tab-sat-pct">{{ sabado.pct }}%</span>
       <span class="tab-chk" id="tab-sat-chk"{% if not sabado.complete %} style="display:none"{% endif %}>✓</span>
     </button>
     <button class="day-tab {% if dia=='domingo' %}on{% endif %} {% if domingo.complete %}complete{% endif %}"
             id="tab-domingo" onclick="showDia('domingo')">
-      <span>🧠 Domingo</span>
+      <span><i data-lucide="brain" style="width:12px;height:12px;vertical-align:middle;"></i> Domingo</span>
       <span class="tab-pct" id="tab-sun-pct">{{ domingo.pct }}%</span>
       <span class="tab-chk" id="tab-sun-chk"{% if not domingo.complete %} style="display:none"{% endif %}>✓</span>
     </button>
@@ -180,7 +180,7 @@
     </div>
 
     <div class="day-complete" id="sat-day-complete" {% if not sabado.complete %}style="display:none"{% endif %}>
-      <div class="dc-title">🎉 ¡Sábado Completo!</div>
+      <div class="dc-title" style="display:flex;align-items:center;gap:6px;"><i data-lucide="party-popper" style="width:14px;height:14px;"></i> ¡Sábado Completo!</div>
       <div class="dc-sub">Sistema reset activado · fin de semana en orden</div>
     </div>
 
@@ -243,8 +243,8 @@
     </div>
     {% endfor %}
 
-    <div style="margin-top:10px;padding:9px 14px;background:rgba(6,182,212,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(6,182,212,.7);">
-      💡 Completa los {{ sabado.total }} bloques requeridos (Jugos es opcional) para obtener +4 XP +2 EC bonus automático
+    <div style="margin-top:10px;padding:9px 14px;background:rgba(6,182,212,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(6,182,212,.7);display:flex;align-items:center;gap:6px;">
+      <i data-lucide="lightbulb" style="width:13px;height:13px;flex-shrink:0;"></i> Completa los {{ sabado.total }} bloques requeridos (Jugos es opcional) para obtener +4 XP +2 EC bonus automático
     </div>
   </div>
 
@@ -260,7 +260,7 @@
     </div>
 
     <div class="day-complete" id="sun-day-complete" {% if not domingo.complete %}style="display:none"{% endif %}>
-      <div class="dc-title">🎉 ¡Domingo Completo!</div>
+      <div class="dc-title" style="display:flex;align-items:center;gap:6px;"><i data-lucide="party-popper" style="width:14px;height:14px;"></i> ¡Domingo Completo!</div>
       <div class="dc-sub">Semana preparada · estrategia activada</div>
     </div>
 
@@ -320,8 +320,8 @@
     </div>
     {% endfor %}
 
-    <div style="margin-top:10px;padding:9px 14px;background:rgba(124,58,237,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(167,139,250,.7);">
-      💡 Completa los {{ domingo.total }} bloques para +5 XP +3 EC bonus · Sáb+Dom = ⚡ Fin de Semana Perfecto
+    <div style="margin-top:10px;padding:9px 14px;background:rgba(124,58,237,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(167,139,250,.7);display:flex;align-items:center;gap:6px;">
+      <i data-lucide="lightbulb" style="width:13px;height:13px;flex-shrink:0;"></i> Completa los {{ domingo.total }} bloques para +5 XP +3 EC bonus · Sáb+Dom = ⚡ Fin de Semana Perfecto
     </div>
   </div>
 
@@ -490,10 +490,10 @@ async function toggleTarea(subId, bloqueId, dia) {
       if (gam.xp > 0 || gam.ec > 0)
         toast(`+${gam.xp} XP${gam.ec > 0 ? ` · +${gam.ec} EC` : ''}`);
       (gam.combo_bonuses || []).forEach(c =>
-        setTimeout(() => toast(`🎉 ${c.label} +${c.xp} XP`, 'win'), 300)
+        setTimeout(() => toast(`${c.label} +${c.xp} XP`, 'win'), 300)
       );
       (gam.achievements || []).forEach(a =>
-        setTimeout(() => toast(`🏆 Logro: ${a.name}`, 'win'), 500)
+        setTimeout(() => toast(`Logro: ${a.name}`, 'win'), 500)
       );
     }
 
