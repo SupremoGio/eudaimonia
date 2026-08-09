@@ -385,7 +385,7 @@ let   STATE = {{ {
 const $ = (sel, root) => (root || document).querySelector(sel);
 const catDef    = (id) => CAT_DEFS.find(c => c.id === id) || {label: id, hue: 0};
 const tipoLabel = (id, list) => (list.find(t => t.id === id) || {}).label || id;
-const tipoIcon  = (id, list) => ((list || TIPOS_SERVICIO).find(t => t.id === id) || {}).icon || '🔩';
+const tipoIcon  = (id, list) => ((list || TIPOS_SERVICIO).find(t => t.id === id) || {}).icon || 'wrench';
 const fmtMoney  = (n) => '$' + Number(n || 0).toLocaleString('es-MX', {maximumFractionDigits: 0});
 const fmtKm     = (n) => Number(n || 0).toLocaleString('es-MX') + ' km';
 const fmtDate   = (iso) => { if (!iso) return ''; const [y,m,d] = iso.slice(0,10).split('-'); const M = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m-1]; return `${+d} ${M} ${y}`; };
@@ -623,7 +623,7 @@ function renderHistorial(){
     const el = document.createElement('div');
     el.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b)';
     el.innerHTML = `
-      <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:oklch(20% 0.04 ${cat||0});border:1px solid oklch(38% 0.09 ${cat||0});display:flex;align-items:center;justify-content:center;font-family:var(--serif);color:oklch(65% 0.15 ${cat||0})">✓</div>
+      <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:oklch(20% 0.04 ${cat||0});border:1px solid oklch(38% 0.09 ${cat||0});display:flex;align-items:center;justify-content:center;color:oklch(65% 0.15 ${cat||0})"><i data-lucide="check" style="width:16px;height:16px;"></i></div>
       <div style="flex:1">
         <div style="font-size:12.5px;color:var(--text)">${s.titulo}</div>
         <div style="font-size:9.5px;color:var(--dim);margin-top:1px">${s.km ? fmtKm(s.km) + ' · ' : ''}${fmtDate(s.fecha)}</div>
@@ -818,7 +818,7 @@ function renderDocumentos(){
     el.className = 'hm-card';
     el.innerHTML = `
       <div class="hm-doc">
-        <div class="hm-doc-ic">${d.nombre_archivo.endsWith('.pdf') ? '📄' : '🖼️'}</div>
+        <div class="hm-doc-ic"><i data-lucide="${d.nombre_archivo.endsWith('.pdf') ? 'file-text' : 'image'}" style="width:14px;height:14px;"></i></div>
         <div style="flex:1;min-width:0">
           <div class="hm-title" style="font-size:.95rem">${d.titulo}</div>
           <div class="hm-meta">${tipoLabel(d.tipo, TIPOS_DOCUMENTO)}${d.fecha_vencimiento ? ' · vence ' + fmtDate(d.fecha_vencimiento) : ''}</div>
@@ -850,7 +850,7 @@ function renderPolizas(){
     el.className = 'hm-card ' + p.status;
     el.innerHTML = `
       <div class="hm-row-top">
-        <span class="hm-title">🛡️ ${p.aseguradora}</span>
+        <span class="hm-title" style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="shield" style="width:13px;height:13px;"></i> ${p.aseguradora}</span>
         <span class="hm-badge ${p.status}">${badgeTxt[p.status]}</span>
       </div>
       <div class="hm-meta">${bits.join(' · ')}</div>
@@ -879,7 +879,7 @@ function renderSiniestros(){
     const estadoOpts = ESTADOS_SINIESTRO.map(e => `<option value="${e.id}" ${e.id===s.estado?'selected':''}>${e.label}</option>`).join('');
     el.innerHTML = `
       <div class="hm-row-top">
-        <span class="hm-title">${tipoIcon(s.tipo, TIPOS_SINIESTRO)} ${tipoLabel(s.tipo, TIPOS_SINIESTRO)}</span>
+        <span class="hm-title" style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="${tipoIcon(s.tipo, TIPOS_SINIESTRO)}" style="width:13px;height:13px;"></i> ${tipoLabel(s.tipo, TIPOS_SINIESTRO)}</span>
         <select class="fi hm-estado-select" style="width:auto" data-act="estado">${estadoOpts}</select>
       </div>
       <div class="hm-meta">${bits.join(' · ')}</div>
@@ -903,6 +903,7 @@ function renderAll(){
   renderDocumentos();
   renderPolizas();
   renderSiniestros();
+  if (window.lucide) lucide.createIcons();
 }
 renderAll();
 </script>{% endblock %}

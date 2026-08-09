@@ -28,14 +28,14 @@ CAT = {
 CAT_ORDER = ['motor', 'frenos', 'suspension', 'trans', 'rodaje', 'fluidos']
 
 TIPOS_SERVICIO = [
-    {"id": "aceite",       "label": "Cambio de aceite",     "icon": "🛢️"},
-    {"id": "frenos",       "label": "Frenos / balatas",      "icon": "🛑"},
-    {"id": "llantas",      "label": "Llantas",                "icon": "🛞"},
-    {"id": "afinacion",    "label": "Afinación",              "icon": "🔧"},
-    {"id": "bateria",      "label": "Batería",                "icon": "🔋"},
-    {"id": "verificacion", "label": "Verificación",           "icon": "📋"},
-    {"id": "lavado",       "label": "Lavado / detallado",     "icon": "🧼"},
-    {"id": "otro",         "label": "Otro",                   "icon": "🔩"},
+    {"id": "aceite",       "label": "Cambio de aceite",     "icon": "droplet"},
+    {"id": "frenos",       "label": "Frenos / balatas",      "icon": "disc"},
+    {"id": "llantas",      "label": "Llantas",                "icon": "circle"},
+    {"id": "afinacion",    "label": "Afinación",              "icon": "wrench"},
+    {"id": "bateria",      "label": "Batería",                "icon": "battery"},
+    {"id": "verificacion", "label": "Verificación",           "icon": "clipboard-check"},
+    {"id": "lavado",       "label": "Lavado / detallado",     "icon": "droplets"},
+    {"id": "otro",         "label": "Otro",                   "icon": "ellipsis"},
 ]
 
 TIPOS_DOCUMENTO = [
@@ -46,11 +46,11 @@ TIPOS_DOCUMENTO = [
 ]
 
 TIPOS_SINIESTRO = [
-    {"id": "choque",     "label": "Choque",              "icon": "💥"},
-    {"id": "robo",       "label": "Robo",                 "icon": "🚨"},
-    {"id": "cristal",    "label": "Cristal roto",          "icon": "🔺"},
-    {"id": "inundacion", "label": "Inundación / clima",   "icon": "🌧️"},
-    {"id": "otro",       "label": "Otro",                  "icon": "⚠️"},
+    {"id": "choque",     "label": "Choque",              "icon": "octagon-alert"},
+    {"id": "robo",       "label": "Robo",                 "icon": "siren"},
+    {"id": "cristal",    "label": "Cristal roto",          "icon": "circle-alert"},
+    {"id": "inundacion", "label": "Inundación / clima",   "icon": "cloud-rain"},
+    {"id": "otro",       "label": "Otro",                  "icon": "circle-help"},
 ]
 
 ESTADOS_SINIESTRO = [
