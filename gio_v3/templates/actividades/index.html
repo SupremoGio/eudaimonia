@@ -533,7 +533,7 @@ async function logAct(key) {
     updWeekend();
     if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
     if (d.gam?.perfect_day)   toast('✦ DÍA PERFECTO +5 XP · +10 EC', 'win');
-    if (d.gam?.achievements?.length) toast(`Logro: ${d.gam.achievements[0].name}`, 'win');
+    if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
     if (d.gam?.badges?.length)       toast(`Badge: ${d.gam.badges[0].name}`, 'win');
     lucide.createIcons();
     _notifyDashboard();

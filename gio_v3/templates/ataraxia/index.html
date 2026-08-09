@@ -492,9 +492,7 @@ async function toggleTarea(subId, bloqueId, dia) {
       (gam.combo_bonuses || []).forEach(c =>
         setTimeout(() => toast(`${c.label} +${c.xp} XP`, 'win'), 300)
       );
-      (gam.achievements || []).forEach(a =>
-        setTimeout(() => toast(`Logro: ${a.name}`, 'win'), 500)
-      );
+      if (gam.achievements?.length) euAnnounceAchievements(gam);
     }
 
     if (!isDone) {
