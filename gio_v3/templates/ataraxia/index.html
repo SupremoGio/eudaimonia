@@ -120,7 +120,7 @@
 
   {# ── Finde perfecto ── #}
   <div id="finde-banner" class="finde-banner" {% if not (sat_combo and sun_combo) %}style="display:none"{% endif %}>
-    <div class="fb-t">⚡ Fin de Semana Perfecto</div>
+    <div class="fb-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="zap" style="width:15px;height:15px;"></i> Fin de Semana Perfecto</div>
     <div class="fb-s">Sábado + Domingo completados · +15 XP · +30 EC</div>
   </div>
 
@@ -158,13 +158,13 @@
             id="tab-sabado" onclick="showDia('sabado')">
       <span><i data-lucide="flower-2" style="width:12px;height:12px;vertical-align:middle;"></i> Sábado</span>
       <span class="tab-pct" id="tab-sat-pct">{{ sabado.pct }}%</span>
-      <span class="tab-chk" id="tab-sat-chk"{% if not sabado.complete %} style="display:none"{% endif %}>✓</span>
+      <span class="tab-chk" id="tab-sat-chk"{% if not sabado.complete %} style="display:none"{% endif %}><i data-lucide="check" style="width:11px;height:11px;"></i></span>
     </button>
     <button class="day-tab {% if dia=='domingo' %}on{% endif %} {% if domingo.complete %}complete{% endif %}"
             id="tab-domingo" onclick="showDia('domingo')">
       <span><i data-lucide="brain" style="width:12px;height:12px;vertical-align:middle;"></i> Domingo</span>
       <span class="tab-pct" id="tab-sun-pct">{{ domingo.pct }}%</span>
-      <span class="tab-chk" id="tab-sun-chk"{% if not domingo.complete %} style="display:none"{% endif %}>✓</span>
+      <span class="tab-chk" id="tab-sun-chk"{% if not domingo.complete %} style="display:none"{% endif %}><i data-lucide="check" style="width:11px;height:11px;"></i></span>
     </button>
   </div>
 
@@ -189,7 +189,7 @@
     <div class="bl-card {% if is_done %}done collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
 
       <div class="bl-hd" onclick="toggleBloque('{{ bl.bloque_id }}')">
-        <span class="bl-icon">{{ bl.icon }}</span>
+        <span class="bl-icon"><i data-lucide="{{ bl.icon }}" style="width:18px;height:18px;"></i></span>
         <span class="bl-title">{{ bl.label }}</span>
         <div class="bl-meta">
           {% if bl.xp_total > 0 %}<span class="bl-xp">+{{ bl.xp_total }} XP</span>{% endif %}
@@ -236,7 +236,7 @@
         {% endfor %}
 
         <div class="bl-complete" id="blc-{{ bl.bloque_id }}" {% if not bl.bloque_done %}style="display:none"{% endif %}>
-          <span>{{ bl.icon }} {{ bl.label.split(' — ')[0] if ' — ' in bl.label else bl.label }} Completo</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;"><i data-lucide="{{ bl.icon }}" style="width:13px;height:13px;"></i> {{ bl.label.split(' — ')[0] if ' — ' in bl.label else bl.label }} Completo</span>
           {% if bl.xp_total > 0 %}<span class="bc-ec">+{{ bl.xp_total }} XP · +{{ bl.ec_total }} EC</span>{% endif %}
         </div>
       </div>
@@ -269,7 +269,7 @@
     <div class="bl-card {% if is_done %}done collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
 
       <div class="bl-hd" onclick="toggleBloque('{{ bl.bloque_id }}')">
-        <span class="bl-icon">{{ bl.icon }}</span>
+        <span class="bl-icon"><i data-lucide="{{ bl.icon }}" style="width:18px;height:18px;"></i></span>
         <span class="bl-title">{{ bl.label }}</span>
         <div class="bl-meta">
           {% if bl.xp_total > 0 %}<span class="bl-xp">+{{ bl.xp_total }} XP</span>{% endif %}
@@ -313,7 +313,7 @@
         {% endfor %}
 
         <div class="bl-complete" id="blc-{{ bl.bloque_id }}" {% if not bl.bloque_done %}style="display:none"{% endif %}>
-          <span>{{ bl.icon }} {{ bl.label.split(' — ')[0] if ' — ' in bl.label else bl.label }} Completo</span>
+          <span style="display:inline-flex;align-items:center;gap:5px;"><i data-lucide="{{ bl.icon }}" style="width:13px;height:13px;"></i> {{ bl.label.split(' — ')[0] if ' — ' in bl.label else bl.label }} Completo</span>
           {% if bl.xp_total > 0 %}<span class="bc-ec">+{{ bl.xp_total }} XP · +{{ bl.ec_total }} EC</span>{% endif %}
         </div>
       </div>
@@ -321,7 +321,7 @@
     {% endfor %}
 
     <div style="margin-top:10px;padding:9px 14px;background:rgba(124,58,237,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(167,139,250,.7);display:flex;align-items:center;gap:6px;">
-      <i data-lucide="lightbulb" style="width:13px;height:13px;flex-shrink:0;"></i> Completa los {{ domingo.total }} bloques para +5 XP +3 EC bonus · Sáb+Dom = ⚡ Fin de Semana Perfecto
+      <i data-lucide="lightbulb" style="width:13px;height:13px;flex-shrink:0;"></i> Completa los {{ domingo.total }} bloques para +5 XP +3 EC bonus · Sáb+Dom = Fin de Semana Perfecto
     </div>
   </div>
 

@@ -1,12 +1,22 @@
 from flask import Blueprint, render_template, request, jsonify
 from datetime import date, timedelta, datetime
 import os
+import re
 from database import get_db
 from data import ACTIVITIES
 from utils import today_str, today_date
 import modules.gamification.engine as engine
 
 ataraxia_bp = Blueprint('ataraxia', __name__, template_folder='../../templates')
+
+# Algunas tareas de rutina_bloques traen un emoji sembrado al inicio del
+# nombre (dato histórico en la tabla, no en código) — se recorta solo para
+# mostrar, sin tocar el valor guardado en la base de datos.
+_EMOJI_PREFIX_RE = re.compile(r'^[\U0001F300-\U0001FAFF\U00002600-\U000027BF]️?\s*')
+
+
+def _strip_emoji_prefix(nombre):
+    return _EMOJI_PREFIX_RE.sub('', nombre)
 
 # ── Bloque display labels (from ACTIVITIES dict) ──────────────────────────────
 BLOQUE_LABELS = {k: v["label"] for k, v in ACTIVITIES.items() if v.get("weekend")}
@@ -53,26 +63,26 @@ HORARIOS = {
     "sun_cierre":       "5:30 – 6:00 PM",
 }
 
-# ── Bloque icons ──────────────────────────────────────────────────────────────
+# ── Bloque icons (nombres lucide, ver templates/ataraxia/index.html) ──────────
 BLOQUE_ICONS = {
     # SÁBADO
-    "sat_bloque1":           "🏠",
-    "sat_gym_bloque":        "🏋️",
-    "sat_textiles_bloque":   "👔",
-    "sat_limpieza_bloque":   "🧹",
-    "sat_bano_bloque":       "🚿",
-    "sat_barrido_bloque":    "🫧",
-    "sat_jugos_bloque":      "🥤",
+    "sat_bloque1":           "house",
+    "sat_gym_bloque":        "dumbbell",
+    "sat_textiles_bloque":   "shirt",
+    "sat_limpieza_bloque":   "spray-can",
+    "sat_bano_bloque":       "shower-head",
+    "sat_barrido_bloque":    "wind",
+    "sat_jugos_bloque":      "cup-soda",
     # DOMINGO
-    "sun_cafe_bloque":       "☕",
-    "sun_gym_bloque":        "🏋️",
-    "sun_nevera_bloque":     "🧊",
-    "sun_comidas_bloque":    "🥗",
-    "sun_guardado_bloque":   "👕",
-    "sun_planchar_bloque":   "👔",
-    "sun_planeacion_bloque": "📅",
-    "sun_prioridades_bloque":"🎯",
-    "sun_cierre_bloque":     "✅",
+    "sun_cafe_bloque":       "coffee",
+    "sun_gym_bloque":        "dumbbell",
+    "sun_nevera_bloque":     "refrigerator",
+    "sun_comidas_bloque":    "utensils",
+    "sun_guardado_bloque":   "shirt",
+    "sun_planchar_bloque":   "shirt",
+    "sun_planeacion_bloque": "calendar",
+    "sun_prioridades_bloque":"target",
+    "sun_cierre_bloque":     "check-circle",
 }
 
 
@@ -103,6 +113,8 @@ def _build_rutina(dia, semana_id):
                 "SELECT * FROM rutina_bloques WHERE dia=? AND bloque_id=? ORDER BY orden",
                 (dia, bid)
             ).fetchall()]
+            for t in tareas:
+                t["nombre"] = _strip_emoji_prefix(t["nombre"])
 
             task_ids = [t["id"] for t in tareas]
             done_ids = set()
@@ -124,7 +136,7 @@ def _build_rutina(dia, semana_id):
             bloques.append({
                 "bloque_id":      bid,
                 "label":          BLOQUE_LABELS.get(bid, bid),
-                "icon":           BLOQUE_ICONS.get(bid, "🔹"),
+                "icon":           BLOQUE_ICONS.get(bid, "circle"),
                 "tareas":         tareas,
                 "done_ids":       list(done_ids),
                 "bloque_done":    bloque_done,
