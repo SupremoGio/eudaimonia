@@ -2045,6 +2045,7 @@ function SideNav({
     }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => window.euToggleTheme(),
+    'aria-label': document.documentElement.classList.contains('light') ? 'Cambiar a modo noche' : 'Cambiar a modo día',
     style: {
       display: 'flex',
       alignItems: 'center',
@@ -2062,10 +2063,30 @@ function SideNav({
     }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
-      fontSize: 14,
+      display: 'flex',
       lineHeight: 1
     }
-  }, document.documentElement.classList.contains('light') ? '☀' : '☽'), /*#__PURE__*/React.createElement("span", null, document.documentElement.classList.contains('light') ? 'Modo día' : 'Modo noche'))));
+  }, document.documentElement.classList.contains('light') ? /*#__PURE__*/React.createElement("svg", {
+    width: 14,
+    height: 14,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("circle", { cx: 12, cy: 12, r: 4 }), /*#__PURE__*/React.createElement("path", { d: "M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41 M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" })) : /*#__PURE__*/React.createElement("svg", {
+    width: 14,
+    height: 14,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("path", { d: "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" }))), /*#__PURE__*/React.createElement("span", null, document.documentElement.classList.contains('light') ? 'Modo día' : 'Modo noche'))));
 }
 
 // ── App ───────────────────────────────────────────────────

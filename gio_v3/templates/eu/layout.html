@@ -45,7 +45,7 @@
             },
           },
           fontFamily: {
-            mono  : ['"DM Sans"',             'sans-serif'],
+            mono  : ['"JetBrains Mono"',      'monospace'],
             sans  : ['"DM Sans"',             'sans-serif'],
             serif : ['"Cormorant Garamond"',   'serif'],
           },
@@ -75,7 +75,7 @@
       --purple:#E8C96D; --green:#10b981; --red:#f43f5e;
       --text:#F2EDE0;   --mid:#A89880;   --dim:#8A7A60;
       --sans:'DM Sans',sans-serif;
-      --mono:'DM Sans',sans-serif;
+      --mono:'JetBrains Mono','Menlo',monospace;
       --serif:'Cormorant Garamond',serif;
       --fs-xs:11px; --fs-sm:13px; --fs-base:15px;
       --fs-lg:18px; --fs-xl:24px; --fs-2xl:36px;
@@ -98,7 +98,7 @@
       --purple:#A07820; --green:#1a7a52; --red:#c0392b;
       --text:#1C1610;   --mid:#5A4A30;   --dim:#9B8A6A;
       --sans:'DM Sans',sans-serif;
-      --mono:'DM Sans',sans-serif;
+      --mono:'JetBrains Mono','Menlo',monospace;
       --serif:'Cormorant Garamond',serif;
     }
 
@@ -511,7 +511,7 @@
 
       <!-- Left: burger + breadcrumb -->
       <div class="flex items-center gap-3">
-        <button id="eu-burger-btn" onclick="toggleSidebar()"
+        <button id="eu-burger-btn" onclick="toggleSidebar()" aria-label="Abrir menú" aria-expanded="false" aria-controls="eu-sidebar"
                 class="lg:hidden flex flex-col justify-center items-center w-9 h-9 rounded-lg gap-[5px]"
                 style="border:1px solid var(--b2);">
           <span class="burger-line w-5 h-px transition-all duration-300" style="background:var(--mid);"></span>
@@ -539,13 +539,13 @@
         <span class="hdr-util" style="font-size:var(--fs-xs); color:var(--mid); letter-spacing:.08em; text-transform:uppercase;">
           {% block topright %}{% endblock %}
         </span>
-        <button class="theme-btn" id="eu-refresh-btn" onclick="euRefresh()" title="Recargar página">
+        <button class="theme-btn" id="eu-refresh-btn" onclick="euRefresh()" aria-label="Recargar página" title="Recargar página">
           <svg id="eu-refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
           </svg>
         </button>
-        <button class="theme-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema">
+        <button class="theme-btn" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar tema">
           <!-- Icon updated by JS -->
           <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
@@ -631,6 +631,8 @@ function openSidebar() {
   burgerLines[1].style.opacity   = '0';
   burgerLines[2].style.transform = 'translateY(-6px) rotate(-45deg)';
   document.body.style.overflow   = 'hidden';
+  var b = document.getElementById('eu-burger-btn');
+  if (b) { b.setAttribute('aria-expanded','true'); b.setAttribute('aria-label','Cerrar menú'); }
 }
 function closeSidebar() {
   sidebarOpen = false;
@@ -641,6 +643,8 @@ function closeSidebar() {
   burgerLines[1].style.opacity   = '';
   burgerLines[2].style.transform = '';
   document.body.style.overflow   = '';
+  var b = document.getElementById('eu-burger-btn');
+  if (b) { b.setAttribute('aria-expanded','false'); b.setAttribute('aria-label','Abrir menú'); }
 }
 function toggleSidebar() { sidebarOpen ? closeSidebar() : openSidebar(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });

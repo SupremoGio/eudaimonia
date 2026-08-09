@@ -43,7 +43,7 @@
             },
           },
           fontFamily: {
-            mono  : ['"DM Sans"',            'sans-serif'],
+            mono  : ['"JetBrains Mono"',     'monospace'],
             sans  : ['"DM Sans"',            'sans-serif'],
             serif : ['"Cormorant Garamond"',  'serif'],
           },
@@ -73,7 +73,7 @@
       --purple:#E8C96D; --green:#10b981; --red:#f43f5e;
       --text:#F2EDE0;   --mid:#A89880;   --dim:#8A7A60;
       --sans:'DM Sans',sans-serif;
-      --mono:'DM Sans',sans-serif;
+      --mono:'JetBrains Mono','Menlo',monospace;
       --serif:'Cormorant Garamond',serif;
       --fs-xs:11px; --fs-sm:13px; --fs-base:15px;
       --fs-lg:18px; --fs-xl:24px; --fs-2xl:36px;
@@ -96,7 +96,7 @@
       --purple:#A07820; --green:#1a7a52; --red:#c0392b;
       --text:#1C1610;   --mid:#5A4A30;   --dim:#9B8A6A;
       --sans:'DM Sans',sans-serif;
-      --mono:'DM Sans',sans-serif;
+      --mono:'JetBrains Mono','Menlo',monospace;
       --serif:'Cormorant Garamond',serif;
     }
 
@@ -335,7 +335,7 @@
       <span class="hdr-util" style="font-size:var(--fs-xs); color:var(--mid); letter-spacing:.08em; text-transform:uppercase;">
         {% block topright %}{% endblock %}
       </span>
-      <button class="theme-btn" onclick="toggleTheme()" title="Cambiar tema">
+      <button class="theme-btn" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar tema">
         <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
