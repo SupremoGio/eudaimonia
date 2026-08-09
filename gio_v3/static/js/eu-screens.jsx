@@ -671,7 +671,7 @@ function titleCase(s) {
 function SuggestionCard({ suggestion, onClick, tint }) {
   const [hov, setHov] = useState(false);
   return (
-    <div onClick={onClick}
+    <div {...clickableProps(onClick)}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -703,7 +703,7 @@ function ModuleStripCard({ mod, onClick }) {
   const acc = EU.catTint(mod.hue, 'text');
   const Icon = MODULE_ICONS[mod.id] || IconTerminal;
   return (
-    <div onClick={onClick}
+    <div {...clickableProps(onClick)}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
@@ -871,8 +871,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         'radial-gradient(ellipse at 15% 85%,color-mix(in srgb, var(--gold) 5%, transparent) 0%,transparent 55%),' +
         'radial-gradient(ellipse at 85% 15%,color-mix(in srgb, var(--gold) 3%, transparent) 0%,transparent 45%)'}}/>
       <div style={{display:'flex',alignItems:'flex-end',gap:14}}>
-        <div style={{flexShrink:0,cursor:'pointer',transition:'opacity 0.15s'}}
-          onClick={()=>window.location.reload()}
+        <div {...clickableProps(()=>window.location.reload())} aria-label="Actualizar" style={{flexShrink:0,cursor:'pointer',transition:'opacity 0.15s'}}
           onMouseDown={e=>e.currentTarget.style.opacity='0.5'}
           onMouseUp={e=>e.currentTarget.style.opacity='1'}>
           <GreekColumn level={level} xpPct={xpPct} size={72}/>
@@ -1867,7 +1866,7 @@ function PraxisInbox({ isDesktop }) {
         padding: isDesktop ? '0 24px' : '0 20px',
       }}>
         {GTD_TABS.map(t => (
-          <div key={t.id} onClick={() => setGtdTab(t.id)} style={{
+          <div key={t.id} {...clickableProps(() => setGtdTab(t.id))} aria-current={gtdTab===t.id ? 'page' : undefined} style={{
             flex:1, padding:'11px 2px', textAlign:'center', cursor:'pointer',
             fontFamily:'DM Sans,sans-serif', fontSize:11, fontWeight: gtdTab===t.id?700:400,
             color: gtdTab===t.id ? C.gold : C.textMuted,
@@ -2078,7 +2077,7 @@ function ActivityButton({ act, catHue, onLog }) {
   const burstColor = isAlto ? '#fbbf24' : EU.catTint(catHue, 'text');
 
   return (
-    <div onClick={handle} style={{
+    <div {...clickableProps(handle)} aria-pressed={act.done} style={{
       display:'flex', flexDirection:'column',
       padding:'10px 12px', borderRadius:10, cursor:'pointer',
       background: act.done
@@ -2563,7 +2562,7 @@ function ProfileScreen({ appState, isDesktop }) {
           {label:'Semanas activo',val:String(weeksActive)},
           {label:'EC Disponibles',val:`${ecBalance} EC`, accent: true, href:'/recompensas'},
         ].map(s => (
-          <div key={s.label} onClick={s.href ? ()=>window.location.href=s.href : undefined} style={{
+          <div key={s.label} {...(s.href ? clickableProps(()=>window.location.href=s.href) : {})} style={{
             background: s.accent ? 'color-mix(in srgb, var(--gold) 6%, transparent)' : C.card,
             border: s.accent ? '1px solid color-mix(in srgb, var(--gold) 25%, transparent)' : '1px solid var(--gold-bg)',
             borderRadius:12, padding:'14px',

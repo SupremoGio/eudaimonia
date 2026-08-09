@@ -68,7 +68,7 @@ function NavGroup({ title, children }) {
 function NavItem({ active, label, sub, accent, dot, onClick }) {
   const isMod = dot !== undefined;
   return (
-    <div onClick={onClick} style={{
+    <div {...clickableProps(onClick)} aria-current={active ? 'page' : undefined} style={{
       padding:'10px 22px', cursor:'pointer',
       borderLeft:`2.5px solid ${active ? C.gold : 'transparent'}`,
       background: active ? 'color-mix(in srgb, var(--gold) 5%, transparent)' : 'transparent',
