@@ -27,6 +27,14 @@
 .cf-disp-pos{color:var(--emerald);}
 .cf-disp-neg{color:var(--coral);}
 
+/* ── Anillo de progreso (% del ingreso ya gastado) ───────────── */
+.cf-ring{width:76px;height:76px;border-radius:50%;flex-shrink:0;position:relative;}
+.cf-ring-hole{position:absolute;inset:9px;border-radius:50%;background:var(--card);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.cf-ring-v{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text);line-height:1;}
+.cf-ring-c{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px;}
+.cf-ring-row{display:flex;align-items:center;gap:16px;}
+
 /* segmented bar — 30px con labels */
 .cf-segbar-wrap{margin-bottom:16px;}
 .cf-segbar{height:30px;border-radius:8px;overflow:hidden;display:flex;border:1px solid var(--b);background:var(--card2);margin-bottom:4px;}
@@ -164,6 +172,10 @@
   .cf-ingreso-row{flex-direction:column;gap:6px;}
   .cf-disp{text-align:left;}
   .cf-ing-val{font-size:26px;}
+  .cf-ring-row{gap:12px;}
+  .cf-ring{width:58px;height:58px;}
+  .cf-ring-hole{inset:7px;}
+  .cf-ring-v{font-size:12px;}
 }
 @media(max-width:480px){
   .cat-card{padding:10px 12px;}
@@ -205,19 +217,30 @@
   {% endif %}
 </div>
 {% else %}
+{% set pct_gastado = (total_gastado / ingreso_real * 100) if ingreso_real > 0 else 0 %}
+{% set ring_pct = [pct_gastado, 100]|min %}
+{% set ring_col = '#f43f5e' if pct_gastado > 100 else ('#f59e0b' if pct_gastado >= 80 else '#10b981') %}
 <div class="cf-hero">
-  <div class="cf-ingreso-row">
-    <div>
-      <div class="cf-ing-label">
-        Ingreso del mes
-        {% if ingreso_es_override %}<span style="font-size:9px;color:var(--amber);letter-spacing:.1em;margin-left:6px;">· manual</span>{% endif %}
+  <div class="cf-ring-row" style="margin-bottom:18px;">
+    <div class="cf-ring" style="background:conic-gradient({{ ring_col }} 0 {{ '%.1f'|format(ring_pct) }}%,var(--b) {{ '%.1f'|format(ring_pct) }}% 100%);" title="{{ pct_gastado|round|int }}% del ingreso gastado">
+      <div class="cf-ring-hole">
+        <div class="cf-ring-v" style="color:{{ ring_col }};">{{ pct_gastado|round|int }}%</div>
+        <div class="cf-ring-c">gastado</div>
       </div>
-      <div class="cf-ing-val">${{ "{:,.0f}".format(ingreso_real) }}</div>
     </div>
-    <div class="cf-disp">
-      <div class="cf-disp-label">Disponible</div>
-      <div class="cf-disp-val {% if disponible >= 0 %}cf-disp-pos{% else %}cf-disp-neg{% endif %}">
-        ${{ "{:,.0f}".format(disponible) }}
+    <div class="cf-ingreso-row" style="flex:1;margin-bottom:0;">
+      <div>
+        <div class="cf-ing-label">
+          Ingreso del mes
+          {% if ingreso_es_override %}<span style="font-size:9px;color:var(--amber);letter-spacing:.1em;margin-left:6px;">· manual</span>{% endif %}
+        </div>
+        <div class="cf-ing-val">${{ "{:,.0f}".format(ingreso_real) }}</div>
+      </div>
+      <div class="cf-disp">
+        <div class="cf-disp-label">Disponible</div>
+        <div class="cf-disp-val {% if disponible >= 0 %}cf-disp-pos{% else %}cf-disp-neg{% endif %}">
+          ${{ "{:,.0f}".format(disponible) }}
+        </div>
       </div>
     </div>
   </div>
