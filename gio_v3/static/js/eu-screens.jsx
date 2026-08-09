@@ -714,13 +714,16 @@ function ModuleStripCard({ mod, onClick }) {
         transition:'transform 0.18s, box-shadow 0.18s, border-color 0.18s',
       }}>
       <div style={{
-        width:36,height:36,borderRadius:10,marginBottom:10,
+        width:44,height:44,borderRadius:12,marginBottom:10,
         display:'flex',alignItems:'center',justifyContent:'center',
-        background:`color-mix(in srgb, ${acc} 14%, transparent)`,
-        border:`1px solid color-mix(in srgb, ${acc} 35%, transparent)`,
+        background:`linear-gradient(150deg, color-mix(in srgb, ${acc} 28%, transparent) 0%, color-mix(in srgb, ${acc} 10%, transparent) 100%)`,
+        border:`1px solid color-mix(in srgb, ${acc} 48%, transparent)`,
+        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${acc} 35%, transparent), 0 4px 16px color-mix(in srgb, ${acc} ${mod.done ? 32 : (hov ? 26 : 14)}%, transparent)`,
+        transition:'box-shadow 0.25s ease',
       }}>
-        <Icon size={17} style={{
+        <Icon size={21} strokeWidth={2.1} style={{
           color:acc,
+          filter: mod.done ? `drop-shadow(0 0 6px color-mix(in srgb, ${acc} 65%, transparent))` : 'none',
           animation: mod.done
             ? 'euIconFloat 2.6s ease-in-out infinite'
             : (hov ? 'euIconPulseScale 0.5s ease' : 'none'),
