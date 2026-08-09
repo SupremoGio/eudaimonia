@@ -299,6 +299,7 @@ def get_daily_classification(date_str=None):
         rank = "carbon"
 
     info = CLASSIFICATION[rank].copy()
+    info["icon_lucide"] = lucide_for(info["icon"])
     info.update({"rank": rank, "xp": total_xp, "cats": len(cats), "has_alto": has_alto})
     return info
 

@@ -207,7 +207,6 @@ def streak_heatmap():
 def logros():
     stats = get_gamification_stats()
     classification = get_daily_classification()
-    classification["icon_lucide"] = lucide_for(classification["icon"])
 
     # Achievements with ACHIEVEMENT_DEFS metadata merged
     with get_db() as db:
