@@ -14,7 +14,8 @@ from flask import (
     session, jsonify, Response, redirect, url_for,
 )
 from database import get_db
-from utils import clean_str
+from utils import clean_str, today_str
+import modules.gamification.engine as engine
 
 estados_bp = Blueprint(
     'estados',
@@ -708,6 +709,7 @@ def upload_file():
                 WHERE categoria='INVERSION' AND tipo IN ('INGRESO','GASTO')
             """).fetchall()
 
+            gbm_detected = False
             for row in inv_candidates:
                 desc_up = row['descripcion'].upper()
                 # Excluir transferencias/pagos que no son inversiones reales
@@ -723,6 +725,8 @@ def upload_file():
                     if kw in desc_up:
                         plat = p
                         break
+                if plat == 'GBM':
+                    gbm_detected = True
                 # Dirección: GASTO = dinero sale → APORTACION; INGRESO = dinero entra → RETIRO
                 direction = 'APORTACION' if row['tipo'] == 'GASTO' else 'RETIRO'
                 db.execute("""
@@ -732,6 +736,24 @@ def upload_file():
                 """, (plat, direction, row['id']))
 
             db.commit()
+
+            # Auto-log de "Investigar en GBM" (Acta Diurna) — actividad oculta,
+            # se marca sola cuando el import trae un movimiento real de GBM.
+            if gbm_detected:
+                today = today_str()
+                already = db.execute(
+                    "SELECT id FROM activity_logs WHERE activity_key='gbm' AND date=?", (today,)
+                ).fetchone()
+                if not already:
+                    import modules.actividades.activity_defs as adefs
+                    gbm_def = adefs.get_by_key('gbm')
+                    gbm_pts = gbm_def['pts'] if gbm_def else 2
+                    cursor = db.execute(
+                        "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                        ('gbm', today, gbm_pts)
+                    )
+                    db.commit()
+                    engine.process_activity('gbm', gbm_pts, 'Finanzas', cursor.lastrowid)
 
         preview = [
             {k: v for k, v in m.items() if k != 'periodo'}

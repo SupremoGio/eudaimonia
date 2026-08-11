@@ -161,6 +161,91 @@
 .pay-alerts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
 .pay-alert{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:9px;background:rgba(255,255,255,.02);font-size:var(--fs-sm);letter-spacing:.07em;}
 
+/* ── Acta Diurna — sesiones + pilares + foco del mes ────────────────────── */
+.pillars-row{display:flex;justify-content:space-between;gap:4px;}
+.pillar-dot{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.pillar-dot .circ{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--b);color:var(--dim);opacity:.4;transition:all .25s;}
+.pillar-dot.on .circ{opacity:1;color:#fff;border-color:transparent;background:oklch(58% 0.16 var(--p-hue));box-shadow:0 0 10px oklch(58% 0.16 var(--p-hue) / 45%);}
+.pillar-dot .pname{font-size:9px;color:var(--faint,var(--dim));letter-spacing:.02em;text-align:center;}
+.pillar-dot.on .pname{color:var(--text);}
+
+.foco-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;background:var(--card2);border:1px solid var(--b);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:var(--fs-sm);}
+.foco-row{display:flex;align-items:center;gap:8px;}
+.foco-row select{background:var(--card);border:1px solid var(--b);border-radius:8px;color:var(--text);font-size:var(--fs-xs);padding:5px 8px;font-family:var(--mono);}
+.foco-lbl{color:var(--dim);font-size:var(--fs-xs);}
+
+.eury-card{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--card2);border:1px solid var(--b);margin-bottom:14px;}
+.eury-card .eic{width:28px;height:28px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(232,64,148,.10);color:var(--pink);}
+.eury-card .etxt{flex:1;}
+.eury-card .et1{font-size:var(--fs-sm);font-weight:600;color:var(--text);}
+.eury-card .et2{font-size:var(--fs-xs);color:var(--dim);margin-top:1px;}
+.eury-card.done .et2{color:var(--emerald);}
+.eury-card .estatus{font-size:var(--fs-xs);padding:3px 9px;border-radius:100px;background:var(--card);color:var(--dim);}
+.eury-card.done .estatus{background:rgba(16,185,129,.12);color:var(--emerald);}
+
+.now-head{display:flex;align-items:baseline;gap:8px;margin:14px 0 10px;}
+.now-pulse{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.5);animation:sessPulse 2s ease-in-out infinite;flex-shrink:0;}
+@keyframes sessPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.now-title{font-family:var(--serif);font-size:1.05rem;font-style:italic;font-weight:300;color:var(--text);}
+.now-window{font-size:var(--fs-xs);color:var(--dim);margin-left:auto;}
+
+.acts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;margin-bottom:6px;}
+.sact{display:flex;flex-direction:column;gap:5px;padding:11px 12px;border-radius:11px;cursor:pointer;background:var(--card2);border:1px solid var(--b);position:relative;transition:transform .12s ease;--p-c:oklch(58% 0.16 var(--p-hue));}
+.sact:active{transform:scale(.97);}
+.sact.done{background:oklch(58% 0.16 var(--p-hue) / 12%);border-color:oklch(58% 0.16 var(--p-hue) / 45%);}
+.sact .schk{width:17px;height:17px;border-radius:6px;border:1.5px solid oklch(58% 0.16 var(--p-hue) / 55%);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.sact.done .schk{background:var(--p-c);border-color:var(--p-c);}
+.sact .schk svg{display:none;width:9px;height:9px;color:#0a0a0f;}
+.sact.done .schk svg{display:block;}
+.sact .slbl{font-size:var(--fs-sm);color:var(--text);line-height:1.3;}
+.sact.done .slbl{color:var(--dim);text-decoration:line-through;}
+.sact .smeta{display:flex;align-items:center;justify-content:space-between;gap:4px;}
+.sact .spts{font-size:10px;color:var(--p-c);opacity:.9;}
+.sact .sptag{font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:var(--p-c);opacity:.65;}
+.sact .srm{display:none;position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:rgba(220,60,60,.16);color:#e0685f;border:none;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;z-index:2;}
+.editing .sact .srm{display:flex;}
+.editing .sact{padding-right:24px;}
+
+.sact.ancla{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;padding:13px 14px;background:oklch(58% 0.16 var(--p-hue) / 14%);border:1.5px solid oklch(58% 0.16 var(--p-hue) / 55%);}
+.sact.ancla .schk{width:20px;height:20px;}
+.sact.ancla .slbl{font-size:var(--fs-md,13px);font-weight:600;}
+
+.add-tile{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--b);border-radius:11px;min-height:52px;cursor:pointer;color:var(--dim);font-size:var(--fs-xs);font-weight:600;}
+.add-tile:hover{border-color:var(--violet-l);color:var(--violet-l);}
+.add-form{grid-column:1/-1;background:var(--card2);border:1px solid var(--b2);border-radius:11px;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.add-form input,.add-form select{width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);font-size:var(--fs-sm);font-family:var(--mono);}
+.add-form .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.add-form .actions{display:flex;gap:8px;justify-content:flex-end;}
+.add-form button{border:none;border-radius:8px;padding:6px 13px;font-size:var(--fs-xs);font-weight:600;cursor:pointer;}
+.add-form .save{background:var(--violet);color:#fff;}
+.add-form .cancel{background:transparent;color:var(--dim);}
+
+.session-row{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--b);border-radius:11px;padding:10px 14px;margin-bottom:7px;cursor:pointer;}
+.session-row .rinfo{flex:1;min-width:0;}
+.session-row .stitle{font-size:var(--fs-sm);color:var(--mid);font-weight:600;}
+.session-row .swindow{font-size:10px;color:var(--dim);margin-top:1px;}
+.session-row .scount{font-size:10px;color:var(--dim);white-space:nowrap;}
+.session-row .schev{color:var(--dim);transition:transform .2s ease;flex-shrink:0;}
+.session-row.open .schev{transform:rotate(90deg);}
+.session-detail{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease;margin:-4px 0 7px;}
+.session-detail.open{grid-template-rows:1fr;}
+.session-detail-inner{overflow:hidden;}
+.session-detail .acts-grid{padding:4px 2px 8px;}
+
+.anytime-head{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:18px 0 9px;display:flex;align-items:center;gap:8px;}
+.anytime-head::after{content:'';flex:1;height:1px;background:var(--b);}
+
+.occ-head{display:flex;align-items:center;gap:8px;margin:20px 0 8px;}
+.occ-head .lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
+.occ-head .note{font-size:10px;color:var(--dim);opacity:.7;}
+.occ-head::after{content:'';flex:1;height:1px;background:var(--b);}
+.occ-list{display:flex;flex-direction:column;gap:5px;opacity:.85;}
+.occ-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:9px;background:var(--card2);border:1px dashed var(--b);cursor:pointer;}
+.occ-item .ochk{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--b2);flex-shrink:0;}
+.occ-item.done .ochk{background:var(--dim);border-color:var(--dim);}
+.occ-item .olbl{flex:1;font-size:var(--fs-sm);color:var(--mid);}
+.occ-item .opts{font-size:10px;color:var(--dim);}
+
 /* Responsive */
 @media(max-width:1100px){
   .act-grid{grid-template-columns:1fr;}
@@ -253,6 +338,22 @@
   </div>
 </div>
 
+<!-- Cobertura de pilares (Diamante = los 7) -->
+<div class="tile" style="margin-bottom:16px;">
+  <div class="sec-hd-inner">
+    <div class="sec-t">Cobertura de pilares</div>
+    <span class="sec-badge" id="pillars-count">{{ classification.pillars|length }} / 7</span>
+  </div>
+  <div class="pillars-row" id="pillars-row">
+    {% for pk, pm in pillar_meta.items() %}
+    <div class="pillar-dot {% if pk in classification.pillars %}on{% endif %}" data-pillar="{{ pk }}" style="--p-hue:{{ pm.hue }}">
+      <div class="circ"><i data-lucide="{{ {'logoi':'code-2','paideia':'book-open','cosmo':'globe','hege':'heart-pulse','eury':'music-2','atar':'compass','oiko':'wallet'}[pk] }}" style="width:13px;height:13px;"></i></div>
+      <span class="pname">{{ pm.name[:4] }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
 <div class="act-grid">
   <div>
     <!-- Weekend Special Sections -->
@@ -325,28 +426,108 @@
     {% endif %}
 
     <!-- Main Activity Tile -->
-    <div class="tile">
-      <div style="margin-bottom:16px;">
-        <div style="font-family:var(--serif);font-size:1.35rem;font-style:italic;font-weight:300;color:var(--text);">Acta Diurna del Día</div>
-        <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:3px;">Registro de actividades y virtudes · <span style="color:rgba(16,185,129,.7);">progreso</span> genera EC · <span style="color:var(--amber);">alto</span> es transformación</div>
+    {% macro act_card(item) %}
+    <div class="sact {% if item.effective_type=='ancla' %}ancla{% endif %} {% if item.done %}done{% endif %}"
+         data-key="{{ item.key }}" style="--p-hue:{{ pillar_meta.get(item.pillar,{}).get('hue',200) }}"
+         onclick="sessLogAct('{{ item.key }}', this)">
+      <div class="schk"><svg viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8.5 9,2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div style="flex:1;min-width:0;">
+        <div class="slbl">{{ item.label }}</div>
+        <div class="smeta">
+          <span class="spts">+{{ item.pts }}{% if item.ec > 0 %} · {{ item.ec }}EC{% endif %}</span>
+          <span class="sptag">{{ pillar_meta.get(item.pillar,{}).get('name', item.pillar) }}</span>
+        </div>
       </div>
-      {% for cat in cats %}
-        {% set ca=activities.items()|selectattr('1.cat','equalto',cat)|list %}
-        {% if ca %}
-        <div class="cat-block" style="--cat-hue:{{ category_hues.get(cat, 200) }}">
-          <div class="cat-n">{{ cat }}</div>
-          <div class="acts">
-            {% for key,act in ca %}
-            <button class="ab {% if key in stats.done_today %}{% if act.tier=='alto' %}done-alto{% else %}done{% endif %}{% endif %}"
-                    data-key="{{ key }}" onclick="logAct('{{ key }}')">
-              <span>{{ act.label }}</span>
-              <span class="pp {{ act.tier }}">+{{ act.pts }}{% if act.ec > 0 %} · {{ act.ec }}EC{% endif %}</span>
-            </button>
+      <button class="srm" onclick="event.stopPropagation(); delActivity('{{ item.key }}')" title="Quitar">×</button>
+    </div>
+    {% endmacro %}
+
+    <div class="tile">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px;">
+        <div>
+          <div style="font-family:var(--serif);font-size:1.35rem;font-style:italic;font-weight:300;color:var(--text);">Acta Diurna del Día</div>
+          <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:3px;">Sesiones del día · <span style="color:var(--amber);">ancla</span> = sesión larga · touch = mantenimiento rápido</div>
+        </div>
+        <button class="btn-g" id="edit-toggle-btn" onclick="toggleEditMode()">Editar</button>
+      </div>
+
+      <!-- Foco del mes -->
+      {% if foco_candidates %}
+      <div class="foco-bar">
+        <span class="foco-lbl">Foco del mes:</span>
+        {% for pk, items in foco_candidates.items() %}
+        <div class="foco-row">
+          <span class="foco-lbl">{{ pillar_meta.get(pk,{}).get('name', pk) }}</span>
+          <select onchange="setFoco('{{ pk }}', this.value)">
+            <option value="">— sin foco —</option>
+            {% for it in items %}
+            <option value="{{ it.key }}" {% if pillar_focus.get(pk)==it.key %}selected{% endif %}>{{ it.label }}</option>
             {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Eurythmia — recordatorio pasivo -->
+      <div class="eury-card {% if eurythmia_done %}done{% endif %}">
+        <div class="eic"><i data-lucide="music-2" style="width:14px;height:14px;"></i></div>
+        <div class="etxt">
+          <div class="et1">¿Bailaste hoy?</div>
+          <div class="et2">{% if eurythmia_done %}Sesión registrada hoy{% else %}Se llena solo desde Eurythmia — no es un checkbox{% endif %}</div>
+        </div>
+        <span class="estatus">{{ 'Hecho' if eurythmia_done else 'Pendiente' }}</span>
+      </div>
+
+      <!-- AHORA -->
+      <div class="now-head">
+        <span class="now-pulse"></span>
+        <span class="now-title">Ahora · {{ session_meta[now_session].label }}</span>
+        <span class="now-window">{{ session_meta[now_session].window }}</span>
+      </div>
+      <div class="acts-grid" data-session="{{ now_session }}">
+        {% for item in grouped[now_session] %}{{ act_card(item) }}{% endfor %}
+        <div class="add-tile" data-addtile="{{ now_session }}" onclick="showAddForm('{{ now_session }}', this)">+ Agregar actividad</div>
+      </div>
+
+      <!-- Sesiones colapsadas -->
+      {% for sk in ['morning','afternoon','night'] if sk != now_session %}
+      <div class="session-row" data-toggle="{{ sk }}" onclick="toggleSession('{{ sk }}', this)">
+        <div class="rinfo">
+          <div class="stitle">{{ session_meta[sk].label }}</div>
+          <div class="swindow">{{ session_meta[sk].window }}</div>
+        </div>
+        <span class="scount">{{ grouped[sk]|length }} actividades</span>
+        <svg class="schev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
+      </div>
+      <div class="session-detail" data-detail="{{ sk }}">
+        <div class="session-detail-inner">
+          <div class="acts-grid" data-session="{{ sk }}">
+            {% for item in grouped[sk] %}{{ act_card(item) }}{% endfor %}
+            <div class="add-tile" data-addtile="{{ sk }}" onclick="showAddForm('{{ sk }}', this)">+ Agregar actividad</div>
           </div>
         </div>
-        {% endif %}
+      </div>
       {% endfor %}
+
+      <!-- Cualquier momento -->
+      <div class="anytime-head">Cualquier momento</div>
+      <div class="acts-grid" data-session="any">
+        {% for item in grouped['any'] %}{{ act_card(item) }}{% endfor %}
+        <div class="add-tile" data-addtile="any" onclick="showAddForm('any', this)">+ Agregar actividad</div>
+      </div>
+
+      <!-- Ocasional -->
+      <div class="occ-head"><span class="lbl">Ocasional</span><span class="note">no cuenta para tu tier</span></div>
+      <div class="occ-list">
+        {% for item in grouped['ocasional'] %}
+        <div class="occ-item {% if item.done %}done{% endif %}" data-key="{{ item.key }}" onclick="sessLogAct('{{ item.key }}', this)">
+          <div class="ochk"></div>
+          <div class="olbl">{{ item.label }}</div>
+          <div class="opts">+{{ item.pts }} XP · no cuenta</div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
   </div>
 
@@ -439,10 +620,10 @@ const CLF_COLORS = {
   diamond: '#7dd3fc', gold: 'var(--amber-l)', iron: '#94a3b8', carbon: '#475569'
 };
 const CLF_LABELS = {
-  diamond: {label:'Diamante',desc:'20+ XP · ≥1 acción alto impacto'},
-  gold:    {label:'Oro',     desc:'16+ XP · ≥3 categorías'},
-  iron:    {label:'Hierro',  desc:'8–15 XP · ≥2 categorías'},
-  carbon:  {label:'Carbón',  desc:'<7 XP o sin progreso'},
+  diamond: {label:'Diamante',desc:'Oro + cobertura de los 7 pilares'},
+  gold:    {label:'Oro',     desc:'Hierro + ≥50% de tus touches del día'},
+  iron:    {label:'Hierro',  desc:'Completaste tu(s) ancla(s) del día'},
+  carbon:  {label:'Carbón',  desc:'Aún no completas tu ancla del día'},
 };
 
 function updS(s) {
@@ -484,6 +665,118 @@ function updGam(gam) {
   if (nextEl) nextEl.textContent = gam.max_level
     ? 'EUDAIMÓN — Nivel máximo alcanzado'
     : `${gam.xp_to_next ?? 0} XP para siguiente nivel`;
+  if (clf && clf.pillars) updPillars(clf.pillars);
+}
+
+function updPillars(pillars) {
+  const set = new Set(pillars);
+  document.querySelectorAll('.pillar-dot').forEach(d => {
+    d.classList.toggle('on', set.has(d.dataset.pillar));
+  });
+  const countEl = document.getElementById('pillars-count');
+  if (countEl) countEl.textContent = `${pillars.length} / 7`;
+}
+
+// ── Acta Diurna — sesiones, foco del mes, CRUD ────────────────────────────
+async function sessLogAct(key, el) {
+  if (el?.dataset.pending) return;
+  const wasDone = el?.classList.contains('done');
+  if (el) { el.dataset.pending = 'true'; el.classList.toggle('done', !wasDone); }
+  try {
+    const r = await fetch('/actividades/api/activity/log', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (el) delete el.dataset.pending;
+    toast(d.action === 'added' ? `+${d.xp ?? d.pts} XP${d.ec > 0 ? ` · +${d.ec} EC` : ''}` : 'Removido');
+    updS(d.stats);
+    updGam(d.gam?.stats);
+    if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
+    if (d.gam?.perfect_day)   toast('✦ DÍA PERFECTO +5 XP · +10 EC', 'win');
+    if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
+    lucide.createIcons();
+    _notifyDashboard();
+  } catch {
+    if (el) { delete el.dataset.pending; el.classList.toggle('done', wasDone); }
+    toast('No se pudo registrar', 'err');
+  }
+}
+
+function toggleEditMode() {
+  const tile = document.getElementById('edit-toggle-btn').closest('.tile');
+  const on = tile.classList.toggle('editing');
+  document.getElementById('edit-toggle-btn').textContent = on ? 'Listo' : 'Editar';
+}
+
+async function delActivity(key) {
+  if (!confirm('¿Quitar esta actividad de tu checklist?')) return;
+  try {
+    const r = await fetch(`/actividades/api/activity/${key}`, {method:'DELETE'});
+    if (!r.ok) throw new Error();
+    document.querySelector(`.sact[data-key="${key}"]`)?.remove();
+    toast('Actividad quitada');
+  } catch { toast('No se pudo quitar', 'err'); }
+}
+
+function showAddForm(session, tileEl) {
+  if (tileEl.nextElementSibling?.classList?.contains('add-form')) return;
+  const div = document.createElement('div');
+  div.className = 'add-form';
+  div.innerHTML = `
+    <input type="text" placeholder="Nombre de la actividad" data-f="label">
+    <div class="row2">
+      <select data-f="pillar">
+        <option value="logoi">Logoi</option><option value="paideia">Paideia</option>
+        <option value="cosmo">Cosmopolitismo</option><option value="hege">Hegemonikon</option>
+        <option value="eury">Eurythmia</option><option value="atar">Ataraxia</option>
+        <option value="oiko">Oikonomia</option>
+      </select>
+      <select data-f="type"><option value="touch">Touch</option><option value="ancla">Ancla</option></select>
+    </div>
+    <div class="row2">
+      <input type="number" min="1" max="10" value="2" data-f="pts" placeholder="XP">
+      <input type="number" min="0" max="5" value="0" data-f="ec" placeholder="EC">
+    </div>
+    <div class="actions">
+      <button class="cancel" type="button">Cancelar</button>
+      <button class="save" type="button">Guardar</button>
+    </div>`;
+  tileEl.after(div);
+  div.querySelector('.cancel').onclick = () => div.remove();
+  div.querySelector('.save').onclick = async () => {
+    const label  = div.querySelector('[data-f="label"]').value.trim();
+    const pillar = div.querySelector('[data-f="pillar"]').value;
+    const type   = div.querySelector('[data-f="type"]').value;
+    const pts    = parseInt(div.querySelector('[data-f="pts"]').value) || 1;
+    const ec     = parseInt(div.querySelector('[data-f="ec"]').value) || 0;
+    if (!label) { div.querySelector('[data-f="label"]').focus(); return; }
+    try {
+      const r = await fetch('/actividades/api/activity/create', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({label, pillar, type, session, pts, ec})
+      });
+      const d = await r.json();
+      if (d.error) { toast(d.error, 'err'); return; }
+      location.reload();
+    } catch { toast('No se pudo crear', 'err'); }
+  };
+}
+
+async function setFoco(pillar, focusKey) {
+  try {
+    const r = await fetch('/actividades/api/pillar-focus', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({pillar, focus_key: focusKey || null})
+    });
+    if (!r.ok) throw new Error();
+    location.reload();
+  } catch { toast('No se pudo cambiar el foco', 'err'); }
+}
+
+function toggleSession(key, rowEl) {
+  rowEl.classList.toggle('open');
+  document.querySelector(`[data-detail="${key}"]`)?.classList.toggle('open');
 }
 
 function showCombo(combos) {

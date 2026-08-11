@@ -6,8 +6,34 @@ from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivati
 from utils import today_str, today_date
 from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
+import modules.actividades.activity_defs as adefs
 
 actividades_bp = Blueprint('actividades', __name__, template_folder='../../templates')
+
+PILLAR_META = {
+    "logoi":   {"name": "Logoi",          "hue": 265},
+    "paideia": {"name": "Paideia",        "hue": 45},
+    "cosmo":   {"name": "Cosmopolitismo", "hue": 215},
+    "hege":    {"name": "Hegemonikon",    "hue": 155},
+    "eury":    {"name": "Eurythmia",      "hue": 330},
+    "atar":    {"name": "Ataraxia",       "hue": 80},
+    "oiko":    {"name": "Oikonomia",      "hue": 140},
+}
+SESSION_META = {
+    "morning":   {"label": "Mañana", "window": "6:00 – 13:00"},
+    "afternoon": {"label": "Tarde",  "window": "13:00 – 19:00"},
+    "night":     {"label": "Noche",  "window": "19:00 – 23:00"},
+    "any":       {"label": "Cualquier momento", "window": ""},
+}
+
+
+def get_eurythmia_today():
+    with get_db() as db:
+        row = db.execute(
+            "SELECT id FROM activity_logs WHERE activity_key='eurythmia_session' AND date=?",
+            (today_str(),)
+        ).fetchone()
+    return row is not None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -76,23 +102,48 @@ def get_weekend_mode():
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+def _now_session():
+    """Sesión que coincide con la hora real, para expandir esa tarjeta arriba."""
+    hour = datetime.now().hour
+    if 6 <= hour < 13:  return "morning"
+    if 13 <= hour < 19: return "afternoon"
+    if 19 <= hour < 23: return "night"
+    return "afternoon"  # madrugada: se ancla a la sesión más reciente por defecto
+
+
 @actividades_bp.route('/')
 def index():
     stats        = get_dashboard_stats()
     gam          = engine.get_gamification_stats()
     weekend_mode = get_weekend_mode()
 
-    # Weekend activities separated
+    # Weekend activities separated (bloques Sábado/Domingo, sistema aparte)
     sat_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sat"}
     sun_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sun"}
-    # Regular activities (no weekend field, no auto-logged/hidden module activities)
-    regular_acts = {k: v for k, v in ACTIVITIES.items() if "weekend" not in v and not v.get("hidden")}
+
+    grouped   = adefs.get_active_grouped()
+    done_today = set(stats["done_today"])
+    by_pillar = {}
+    for sess_key, items in grouped.items():
+        for item in items:
+            item["done"] = item["key"] in done_today
+            if item["type"] != "ocasional":
+                by_pillar.setdefault(item["pillar"], []).append(item)
+
+    # Pilares con >1 item elegible = candidatos a "foco del mes" (ancla configurable)
+    foco_candidates = {p: items for p, items in by_pillar.items() if len(items) > 1}
 
     _td = today_date()
     return render_template('actividades/index.html',
         stats         = stats,
         gam           = gam,
-        activities    = regular_acts,
+        grouped       = grouped,
+        now_session   = _now_session(),
+        session_meta  = SESSION_META,
+        pillar_meta   = PILLAR_META,
+        pillar_focus  = adefs.get_pillar_focus_map(),
+        foco_candidates = foco_candidates,
+        eurythmia_done= get_eurythmia_today(),
         sat_acts      = sat_acts,
         sun_acts      = sun_acts,
         cats          = ACTIVITY_CATEGORIES,
@@ -153,11 +204,12 @@ def log_activity():
     _t0 = time.perf_counter()
     key   = request.json.get('key')
     today = today_str()
-    if key not in ACTIVITIES or ACTIVITIES[key].get('hidden'):
+    act = adefs.get_by_key(key)
+    if not act or not act['active'] or act['hidden']:
         return jsonify({'error': 'invalid'}), 400
 
-    pts = ACTIVITIES[key]['pts']
-    cat = ACTIVITIES[key]['cat']
+    pts = act['pts']
+    cat = act['cat']
     removed_id = None
     log_id     = None
 
@@ -192,6 +244,68 @@ def log_activity():
     print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
     return jsonify({'action': 'added', 'pts': pts, 'xp': gam['xp'], 'ec': gam['ec'],
                     'log_id': log_id, 'stats': stats, 'gam': gam})
+
+
+# ── CRUD de actividades (Acta Diurna) ───────────────────────────────────────
+
+@actividades_bp.route('/api/activity/create', methods=['POST'])
+def create_activity():
+    data = request.json or {}
+    label = (data.get('label') or '').strip()
+    pillar = data.get('pillar')
+    type_  = data.get('type', 'touch')
+    session = data.get('session')
+    if type_ == 'ocasional':
+        session = None
+    try:
+        pts = int(data.get('pts', 1))
+        ec  = int(data.get('ec', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'pts/ec inválidos'}), 400
+    if not label or pillar not in adefs.PILLARS or type_ not in adefs.TYPES:
+        return jsonify({'error': 'datos incompletos o inválidos'}), 400
+    try:
+        act = adefs.create(label=label, pillar=pillar, type_=type_, session=session, pts=pts, ec=ec)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    return jsonify({'ok': True, 'activity': act})
+
+
+@actividades_bp.route('/api/activity/update/<key>', methods=['POST'])
+def update_activity(key):
+    if not adefs.get_by_key(key):
+        return jsonify({'error': 'not found'}), 404
+    data = request.json or {}
+    fields = {k: v for k, v in data.items() if k in
+              {'label', 'cat', 'pts', 'ec', 'tier', 'session', 'pillar', 'type'}}
+    act = adefs.update(key, **fields)
+    return jsonify({'ok': True, 'activity': act})
+
+
+@actividades_bp.route('/api/activity/<key>', methods=['DELETE'])
+def delete_activity(key):
+    act = adefs.get_by_key(key)
+    if not act:
+        return jsonify({'error': 'not found'}), 404
+    adefs.deactivate(key)
+    return jsonify({'ok': True})
+
+
+@actividades_bp.route('/api/pillar-focus', methods=['GET'])
+def get_pillar_focus():
+    return jsonify(adefs.get_pillar_focus_map())
+
+
+@actividades_bp.route('/api/pillar-focus', methods=['POST'])
+def post_pillar_focus():
+    data = request.json or {}
+    pillar = data.get('pillar')
+    focus_key = data.get('focus_key')
+    try:
+        adefs.set_pillar_focus(pillar, focus_key)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    return jsonify({'ok': True, 'pillar_focus': adefs.get_pillar_focus_map()})
 
 
 @actividades_bp.route('/api/pipeline', methods=['POST'])
