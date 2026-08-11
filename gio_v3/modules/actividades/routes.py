@@ -11,13 +11,15 @@ import modules.actividades.activity_defs as adefs
 actividades_bp = Blueprint('actividades', __name__, template_folder='../../templates')
 
 PILLAR_META = {
-    "logoi":   {"name": "Logoi",          "hue": 265},
-    "paideia": {"name": "Paideia",        "hue": 45},
+    # Hues alineados con window.EU.modules (eu-data.js) — mismo pilar, mismo
+    # color en el Home y en Acta Diurna.
+    "logoi":   {"name": "Logoi",          "hue": 120},
+    "paideia": {"name": "Paideia",        "hue": 265},
     "cosmo":   {"name": "Cosmopolitismo", "hue": 215},
-    "hege":    {"name": "Hegemonikon",    "hue": 155},
+    "hege":    {"name": "Hegemonikon",    "hue": 45},
     "eury":    {"name": "Eurythmia",      "hue": 330},
-    "atar":    {"name": "Ataraxia",       "hue": 80},
-    "oiko":    {"name": "Oikonomia",      "hue": 140},
+    "atar":    {"name": "Ataraxia",       "hue": 155},
+    "oiko":    {"name": "Oikonomia",      "hue": 80},
 }
 SESSION_META = {
     "morning":   {"label": "Mañana", "window": "6:00 – 13:00"},
@@ -111,6 +113,40 @@ def _now_session():
     return "afternoon"  # madrugada: se ancla a la sesión más reciente por defecto
 
 
+def build_acta_diurna_context():
+    """Agrupación de actividades por sesión + foco del mes + Eurythmia pasivo.
+
+    Compartido por la página Jinja (/actividades) y el endpoint JSON que
+    consume la pantalla React (/actividades/api/today) — una sola fuente
+    de verdad para no duplicar (y desincronizar) esta lógica entre las dos.
+    """
+    grouped    = adefs.get_active_grouped()
+    with get_db() as db:
+        done_today = {r["activity_key"] for r in db.execute(
+            "SELECT activity_key FROM activity_logs WHERE date=?", (today_str(),)
+        ).fetchall()}
+
+    by_pillar = {}
+    for items in grouped.values():
+        for item in items:
+            item["done"] = item["key"] in done_today
+            if item["type"] != "ocasional":
+                by_pillar.setdefault(item["pillar"], []).append(item)
+
+    # Pilares con >1 item elegible = candidatos a "foco del mes" (ancla configurable)
+    foco_candidates = {p: items for p, items in by_pillar.items() if len(items) > 1}
+
+    return {
+        "grouped":         grouped,
+        "now_session":     _now_session(),
+        "session_meta":    SESSION_META,
+        "pillar_meta":     PILLAR_META,
+        "pillar_focus":    adefs.get_pillar_focus_map(),
+        "foco_candidates": foco_candidates,
+        "eurythmia_done":  get_eurythmia_today(),
+    }
+
+
 @actividades_bp.route('/')
 def index():
     stats        = get_dashboard_stats()
@@ -121,29 +157,19 @@ def index():
     sat_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sat"}
     sun_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sun"}
 
-    grouped   = adefs.get_active_grouped()
-    done_today = set(stats["done_today"])
-    by_pillar = {}
-    for sess_key, items in grouped.items():
-        for item in items:
-            item["done"] = item["key"] in done_today
-            if item["type"] != "ocasional":
-                by_pillar.setdefault(item["pillar"], []).append(item)
-
-    # Pilares con >1 item elegible = candidatos a "foco del mes" (ancla configurable)
-    foco_candidates = {p: items for p, items in by_pillar.items() if len(items) > 1}
+    ctx = build_acta_diurna_context()
 
     _td = today_date()
     return render_template('actividades/index.html',
         stats         = stats,
         gam           = gam,
-        grouped       = grouped,
-        now_session   = _now_session(),
-        session_meta  = SESSION_META,
-        pillar_meta   = PILLAR_META,
-        pillar_focus  = adefs.get_pillar_focus_map(),
-        foco_candidates = foco_candidates,
-        eurythmia_done= get_eurythmia_today(),
+        grouped       = ctx["grouped"],
+        now_session   = ctx["now_session"],
+        session_meta  = ctx["session_meta"],
+        pillar_meta   = ctx["pillar_meta"],
+        pillar_focus  = ctx["pillar_focus"],
+        foco_candidates = ctx["foco_candidates"],
+        eurythmia_done= ctx["eurythmia_done"],
         sat_acts      = sat_acts,
         sun_acts      = sun_acts,
         cats          = ACTIVITY_CATEGORIES,
@@ -165,9 +191,6 @@ def today_status():
     week_start  = (_today - timedelta(days=_today.weekday())).isoformat()
     month_start = _today.replace(day=1).isoformat()
     with get_db() as db:
-        today_keys = {r['activity_key'] for r in db.execute(
-            "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
-        ).fetchall()}
         xp_today  = db.execute(
             "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=?", (today,)
         ).fetchone()['s']
@@ -179,13 +202,16 @@ def today_status():
             "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=? AND date<=?",
             (month_start, today)
         ).fetchone()['s']
-    activities = [
-        {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'],
-         'ec': v.get('ec', 0), 'tier': v.get('tier', 'micro'), 'done': k in today_keys}
-        for k, v in ACTIVITIES.items() if not v.get('hidden')
-    ]
+
+    ctx = build_acta_diurna_context()
     return jsonify({
-        'activities': activities,
+        'grouped':         ctx["grouped"],
+        'now_session':     ctx["now_session"],
+        'session_meta':    ctx["session_meta"],
+        'pillar_meta':     ctx["pillar_meta"],
+        'pillar_focus':    ctx["pillar_focus"],
+        'foco_candidates': ctx["foco_candidates"],
+        'eurythmia_done':  ctx["eurythmia_done"],
         'xp': {'today': xp_today, 'week': xp_week, 'month': xp_month},
         'streak': engine.get_gamification_streak(),
         'classification': engine.get_daily_classification(today),

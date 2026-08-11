@@ -2167,122 +2167,254 @@ function ActivityButton({ act, catHue, onLog }) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ACTA DIURNA — pilares, sesiones, foco del mes (helpers)
+// ═══════════════════════════════════════════════════════════
+const PILLAR_ICONS = {
+  logoi: IconTerminal, paideia: IconBookOpen, cosmo: IconGlobe,
+  hege: IconShieldCheck, eury: IconMusic, atar: IconClipboardCheck, oiko: IconWallet,
+};
+
+function PillarCoverageRow({ pillarMeta, pillars }) {
+  const covered = new Set(pillars || []);
+  return (
+    <div style={{display:'flex',justifyContent:'space-between',gap:4,marginTop:14}}>
+      {Object.entries(pillarMeta).map(([pk, pm]) => {
+        const on   = covered.has(pk);
+        const Icon = PILLAR_ICONS[pk] || IconCheck;
+        const col  = EU.catTint(pm.hue, 'text');
+        return (
+          <div key={pk} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
+            <div style={{
+              width:26, height:26, borderRadius:'50%', display:'flex',
+              alignItems:'center', justifyContent:'center',
+              border:`1.5px solid ${on ? 'transparent' : 'var(--b2)'}`,
+              background: on ? col : 'transparent',
+              boxShadow: on ? `0 0 8px ${col}` : 'none',
+              transition:'all 0.25s',
+            }}>
+              <Icon size={12} style={{color: on ? '#fff' : C.textMuted, opacity: on ? 1 : 0.5}}/>
+            </div>
+            <span style={{fontSize:7,color: on ? C.text : C.textMuted, textAlign:'center', lineHeight:1.2}}>
+              {pm.name.slice(0,4)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco }) {
+  const entries = Object.entries(focoCandidates || {});
+  if (!entries.length) return null;
+  return (
+    <div style={{
+      display:'flex', flexWrap:'wrap', gap:'8px 14px', alignItems:'center',
+      background:C.card2, border:'1px solid var(--b)', borderRadius:12,
+      padding:'10px 14px', marginBottom:14, fontSize:11,
+    }}>
+      <span style={{color:C.textMuted, fontSize:10}}>Foco del mes:</span>
+      {entries.map(([pk, items]) => (
+        <div key={pk} style={{display:'flex', alignItems:'center', gap:6}}>
+          <span style={{color:C.textMuted, fontSize:10}}>{pillarMeta[pk]?.name || pk}</span>
+          <select
+            value={pillarFocus[pk] || ''}
+            onChange={e => onSetFoco(pk, e.target.value || null)}
+            style={{background:C.card, border:'1px solid var(--b)', borderRadius:8,
+              color:C.text, fontSize:10, padding:'4px 6px'}}>
+            <option value="">— sin foco —</option>
+            {items.map(it => <option key={it.key} value={it.key}>{it.label}</option>)}
+          </select>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EuryCard({ done }) {
+  return (
+    <div style={{
+      display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderRadius:12,
+      background:C.card2, border:'1px solid var(--b)', marginBottom:14,
+    }}>
+      <div style={{width:28, height:28, borderRadius:9, flexShrink:0, display:'flex',
+        alignItems:'center', justifyContent:'center', background:'rgba(232,64,148,0.10)', color:'#e84094'}}>
+        <IconMusic size={14}/>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:600, color:C.text}}>¿Bailaste hoy?</div>
+        <div style={{fontFamily:'DM Sans,sans-serif', fontSize:9, marginTop:1,
+          color: done ? '#4ade80' : C.textMuted}}>
+          {done ? 'Sesión registrada hoy' : 'Se llena solo desde Eurythmia — no es un checkbox'}
+        </div>
+      </div>
+      <span style={{fontFamily:'DM Sans,sans-serif', fontSize:9, padding:'3px 9px', borderRadius:100,
+        background: done ? 'rgba(74,222,128,0.12)' : C.card, color: done ? '#4ade80' : C.textMuted}}>
+        {done ? 'Hecho' : 'Pendiente'}
+      </span>
+    </div>
+  );
+}
+
+function AnchorCard({ act, pillarHue, onLog, editing, onRemove }) {
+  const col = EU.catTint(pillarHue, 'text');
+  return (
+    <div {...clickableProps(() => onLog(act.key))} style={{
+      gridColumn:'1 / -1', display:'flex', alignItems:'center', gap:12, cursor:'pointer',
+      padding:'13px 14px', borderRadius:12, position:'relative',
+      background: act.done ? EU.catTint(pillarHue,'bg') : C.card,
+      border:`1.5px solid ${act.done ? col : EU.catTint(pillarHue,'border')}`,
+    }}>
+      <div style={{width:20, height:20, borderRadius:6, flexShrink:0,
+        border:`1.5px solid ${col}`, background: act.done ? col : 'transparent',
+        display:'flex', alignItems:'center', justifyContent:'center'}}>
+        {act.done && (
+          <svg width={11} height={11} viewBox="0 0 11 11">
+            <polyline points="2,5.5 4.5,8.5 9,2.5" stroke="#fff" strokeWidth={1.8}
+              fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
+      </div>
+      <div style={{flex:1}}>
+        <div style={{fontFamily:'DM Sans,sans-serif', fontSize:13, fontWeight:600, color:C.text}}>{act.label}</div>
+        <div style={{fontFamily:'DM Sans,sans-serif', fontSize:9, color:col, marginTop:2,
+          textTransform:'uppercase', letterSpacing:'.04em'}}>
+          Ancla · +{act.pts} XP{act.ec > 0 ? ` · ${act.ec} EC` : ''}
+        </div>
+      </div>
+      {editing && <RemoveBtn onRemove={() => onRemove(act.key)}/>}
+    </div>
+  );
+}
+
+function RemoveBtn({ onRemove }) {
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => {
+    if (!confirming) return;
+    const t = setTimeout(() => setConfirming(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirming]);
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); confirming ? onRemove() : setConfirming(true); }}
+      style={{
+        position:'absolute', top:6, right:6, height:18, minWidth:18, padding: confirming ? '0 6px' : 0,
+        borderRadius: confirming ? 9 : '50%', background: confirming ? '#d64545' : 'rgba(220,60,60,0.16)',
+        color: confirming ? '#fff' : '#e0685f', border:'none', cursor:'pointer',
+        fontSize: confirming ? 8 : 12, lineHeight:1, display:'flex', alignItems:'center',
+        justifyContent:'center', zIndex:2, letterSpacing:'.02em',
+      }}
+      title="Quitar">{confirming ? '¿SEGURO?' : '×'}</button>
+  );
+}
+
+function OccasionalRow({ act, onLog }) {
+  return (
+    <div {...clickableProps(() => onLog(act.key))} style={{
+      display:'flex', alignItems:'center', gap:9, padding:'8px 12px', borderRadius:9, cursor:'pointer',
+      background:C.card2, border:'1px dashed var(--b)', opacity:0.85,
+    }}>
+      <div style={{width:14, height:14, borderRadius:4, flexShrink:0,
+        border:'1.5px solid var(--b2)', background: act.done ? C.textMuted : 'transparent'}}/>
+      <div style={{flex:1, fontFamily:'DM Sans,sans-serif', fontSize:11, color:C.textSub}}>{act.label}</div>
+      <div style={{fontFamily:'DM Sans,sans-serif', fontSize:9, color:C.textMuted}}>+{act.pts} XP · no cuenta</div>
+    </div>
+  );
+}
+
+const _selStyle = {width:'100%', padding:'7px 9px', borderRadius:8, border:'1px solid var(--b)',
+  background:C.card, color:C.text, fontSize:12, fontFamily:'DM Sans,sans-serif'};
+
+function AddActivityForm({ session, pillarMeta, onCancel, onSave }) {
+  const [label, setLabel] = useState('');
+  const [pillar, setPillar] = useState(Object.keys(pillarMeta)[0]);
+  const [type, setType] = useState('touch');
+  const [pts, setPts] = useState(2);
+  const [ec, setEc] = useState(0);
+  const [err, setErr] = useState('');
+  const submit = () => {
+    if (!label.trim()) { setErr('Ponle un nombre'); return; }
+    onSave({label: label.trim(), pillar, type, session, pts, ec}, setErr);
+  };
+  return (
+    <div style={{gridColumn:'1 / -1', background:C.card2, border:'1px solid var(--gold-border)',
+      borderRadius:11, padding:12, display:'flex', flexDirection:'column', gap:8}}>
+      <input value={label} onChange={e => setLabel(e.target.value)} placeholder="Nombre de la actividad" style={_selStyle}/>
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+        <select value={pillar} onChange={e => setPillar(e.target.value)} style={_selStyle}>
+          {Object.entries(pillarMeta).map(([k,v]) => <option key={k} value={k}>{v.name}</option>)}
+        </select>
+        <select value={type} onChange={e => setType(e.target.value)} style={_selStyle}>
+          <option value="touch">Touch</option><option value="ancla">Ancla</option>
+        </select>
+      </div>
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8}}>
+        <input type="number" min={1} max={10} value={pts} onChange={e => setPts(+e.target.value)} placeholder="XP" style={_selStyle}/>
+        <input type="number" min={0} max={5} value={ec} onChange={e => setEc(+e.target.value)} placeholder="EC" style={_selStyle}/>
+      </div>
+      {err && <div style={{fontSize:10, color:'#e0685f'}}>{err}</div>}
+      <div style={{display:'flex', gap:8, justifyContent:'flex-end'}}>
+        <button onClick={onCancel} style={{background:'transparent', border:'none', color:C.textMuted,
+          fontSize:11, cursor:'pointer', fontFamily:'DM Sans,sans-serif'}}>Cancelar</button>
+        <button onClick={submit} style={{background:C.gold, color:'#fff', border:'none', borderRadius:8,
+          padding:'6px 13px', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'DM Sans,sans-serif'}}>Guardar</button>
+      </div>
+    </div>
+  );
+}
+
+function AddTile({ onClick }) {
+  return (
+    <div {...clickableProps(onClick)} style={{
+      display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+      border:'1.5px dashed var(--b)', borderRadius:11, minHeight:52, cursor:'pointer',
+      color:C.textMuted, fontSize:11, fontWeight:600, fontFamily:'DM Sans,sans-serif',
+    }}>+ Agregar actividad</div>
+  );
+}
+
+function SessionGrid({ sessionKey, items, pillarMeta, onLog, editing, addingIn, onStartAdd, onCancelAdd, onSave, onRemove }) {
+  return (
+    <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:6}}>
+      {items.map(act => {
+        const hue = (pillarMeta[act.pillar] || {}).hue ?? 45;
+        return act.effective_type === 'ancla'
+          ? <AnchorCard key={act.key} act={act} pillarHue={hue} onLog={onLog} editing={editing} onRemove={onRemove}/>
+          : (
+            <div key={act.key} style={{position:'relative'}}>
+              <ActivityButton act={act} catHue={hue} onLog={onLog}/>
+              {editing && <RemoveBtn onRemove={() => onRemove(act.key)}/>}
+            </div>
+          );
+      })}
+      {editing && (addingIn === sessionKey
+        ? <AddActivityForm session={sessionKey} pillarMeta={pillarMeta} onCancel={onCancelAdd} onSave={onSave}/>
+        : <AddTile onClick={() => onStartAdd(sessionKey)}/>)}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
 // ACTA DIURNA SCREEN
 // ═══════════════════════════════════════════════════════════
 function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
-  const srv = window.EU._server || {};
-  const [acts, setActs] = useState(srv.activities || []);
-  const [pts,  setPts]  = useState(srv.pts || {today:0, week:0, month:0});
-  const [streak, setStreak] = useState(srv.streak || 0);
-  const actCats = srv.actCats || [];
   const { level, xp, xpNext } = appState;
-  const [xpToday, setXpToday] = useState(srv.xpToday || 0);
-  const [clf, setClf]          = useState(srv.classification || {});
-  const [loaded, setLoaded]    = useState(!!(srv.activities && srv.activities.length > 0));
-  const XP_GOAL   = 15;
-  const xpDayPct  = Math.min(1, xpToday / XP_GOAL);
-
-  useEffect(() => {
-    fetch('/actividades/api/today')
-      .then(r => r.json())
-      .then(data => {
-        if (data.activities) {
-          setActs(data.activities);
-          window.EU._server.activities = data.activities;
-        }
-        // /api/today devuelve data.xp (no data.pts)
-        if (data.xp) {
-          const newPts = {today: data.xp.today, week: data.xp.week, month: data.xp.month};
-          setPts(newPts);
-          window.EU._server.pts = newPts;
-          setXpToday(data.xp.today);
-          window.EU._server.xpToday = data.xp.today;
-        }
-        if (data.streak !== undefined) {
-          setStreak(data.streak);
-          window.EU._server.streak = data.streak;
-        }
-        if (data.classification) {
-          setClf(data.classification);
-          window.EU._server.classification = data.classification;
-        }
-        setLoaded(true);
-      })
-      .catch(() => { setLoaded(true); });
-  }, []);
-
-  const logActivity = (key) => {
-    const source  = window.EU._server.activities || acts;
-    const act     = source.find(a => a.key === key);
-    const updated = source.map(a => a.key === key ? {...a, done: !a.done} : a);
-    window.EU._server.activities = updated;
-    setActs(updated);
-
-    fetch('/actividades/api/activity/log', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({key}),
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data.stats) {
-        const newXp = data.stats.xp_today ?? data.stats.pts_today ?? xpToday;
-        setXpToday(newXp);
-        window.EU._server.xpToday = newXp;
-        const newPts = {today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month};
-        setPts(newPts);
-        window.EU._server.pts = newPts;
-        if (data.stats.streak !== undefined) {
-          setStreak(data.stats.streak);
-          window.EU._server.streak = data.stats.streak;
-        }
-      }
-      if (data.gam && (data.gam.xp_delta || data.gam.xp)) dispatch({type:'ADD_XP', amount: data.gam.xp_delta || data.gam.xp});
-      if (data.gam?.achievements?.length) window.euFireAchievements(data.gam.achievements);
-      if (data.gam?.perfect_day) {
-        window.dispatchEvent(new CustomEvent('eu:perfect-day', {
-          detail: { bonusXp: data.gam.perfect_day.xp || 5, bonusEc: data.gam.perfect_day.ec || 10 }
-        }));
-      } else if (data.gam?.combo_bonuses?.length) {
-        data.gam.combo_bonuses.forEach(c =>
-          window.dispatchEvent(new CustomEvent('eu:combo-bonus', { detail: c }))
-        );
-      }
-      if (data.action === 'added' && data.log_id && act) {
-        undoToast.show(key, data.log_id, act.label, act.pts);
-      } else {
-        undoToast.dismiss();
-      }
-    })
-    .catch(() => {});
-  };
-
+  const [data, setData]         = useState(null);
+  const [openSessions, setOpen] = useState(() => new Set());
+  const [editing, setEditing]   = useState(false);
+  const [addingIn, setAddingIn] = useState(null);
   const undoToast = useUndoToast();
 
-  const handleUndo = () => {
-    const t = undoToast.toast;
-    if (!t) return;
-    const source = window.EU._server.activities || acts;
-    const restored = source.map(a => a.key === t.key ? {...a, done: false} : a);
-    window.EU._server.activities = restored;
-    setActs(restored);
-    fetch(`/actividades/api/activity/undo/${t.logId}`, {method:'POST'})
+  const loadToday = () => {
+    fetch('/actividades/api/today')
       .then(r => r.json())
-      .then(data => {
-        if (data.stats) {
-          const newXp = data.stats.xp_today ?? data.stats.pts_today ?? xpToday;
-          setXpToday(newXp);
-          window.EU._server.xpToday = newXp;
-          const newPts = {today: data.stats.pts_today, week: data.stats.pts_week, month: data.stats.pts_month};
-          setPts(newPts);
-          window.EU._server.pts = newPts;
-        }
-        if (data.gam && data.gam.xp_delta) dispatch({type:'ADD_XP', amount: data.gam.xp_delta});
-      })
+      .then(d => setData(d))
       .catch(() => {});
-    undoToast.dismiss();
   };
 
-  if (!loaded) {
+  useEffect(() => { loadToday(); }, []);
+
+  if (!data) {
     return (
       <div style={{padding: isDesktop ? '28px 24px' : '16px 20px'}}>
         <Skeleton kind="card" height={180}/>
@@ -2292,12 +2424,107 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
     );
   }
 
-  const byCategory = {};
-  actCats.forEach(cat => { byCategory[cat] = []; });
-  acts.forEach(a => {
-    if (byCategory[a.cat]) byCategory[a.cat].push(a);
-    else { byCategory[a.cat] = [a]; }
-  });
+  const { grouped, now_session, session_meta, pillar_meta, pillar_focus, foco_candidates, eurythmia_done, classification: clf, xp: pts, streak } = data;
+  const xpToday  = pts?.today ?? 0;
+  const XP_GOAL  = 15;
+  const xpDayPct = Math.min(1, xpToday / XP_GOAL);
+  const otherSessions = ['morning','afternoon','night'].filter(s => s !== now_session);
+
+  const findAct = (key) => {
+    for (const items of Object.values(grouped)) {
+      const found = items.find(a => a.key === key);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const logActivity = (key) => {
+    const act = findAct(key);
+    const nextGrouped = {};
+    Object.entries(grouped).forEach(([sk, items]) => {
+      nextGrouped[sk] = items.map(a => a.key === key ? {...a, done: !a.done} : a);
+    });
+    setData(d => ({...d, grouped: nextGrouped}));
+
+    fetch('/actividades/api/activity/log', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key}),
+    })
+    .then(r => r.json())
+    .then(res => {
+      setData(d => ({
+        ...d,
+        xp: res.stats ? {today: res.stats.xp_today, week: res.stats.xp_week, month: res.stats.xp_month} : d.xp,
+        streak: res.stats?.streak ?? d.streak,
+        classification: res.gam?.stats?.classification || d.classification,
+      }));
+      if (res.gam?.achievements?.length) window.euFireAchievements(res.gam.achievements);
+      if (res.gam?.perfect_day) {
+        window.dispatchEvent(new CustomEvent('eu:perfect-day', {
+          detail: { bonusXp: res.gam.perfect_day.xp || 5, bonusEc: res.gam.perfect_day.ec || 10 }
+        }));
+      } else if (res.gam?.combo_bonuses?.length) {
+        res.gam.combo_bonuses.forEach(c => window.dispatchEvent(new CustomEvent('eu:combo-bonus', { detail: c })));
+      }
+      if (res.action === 'added' && res.log_id && act) {
+        undoToast.show(key, res.log_id, act.label, act.pts);
+      } else {
+        undoToast.dismiss();
+      }
+    })
+    .catch(() => {});
+  };
+
+  const handleUndo = () => {
+    const t = undoToast.toast;
+    if (!t) return;
+    const nextGrouped = {};
+    Object.entries(grouped).forEach(([sk, items]) => {
+      nextGrouped[sk] = items.map(a => a.key === t.key ? {...a, done: false} : a);
+    });
+    setData(d => ({...d, grouped: nextGrouped}));
+    fetch(`/actividades/api/activity/undo/${t.logId}`, {method:'POST'})
+      .then(r => r.json())
+      .then(res => {
+        setData(d => ({
+          ...d,
+          xp: res.stats ? {today: res.stats.xp_today, week: res.stats.xp_week, month: res.stats.xp_month} : d.xp,
+        }));
+      })
+      .catch(() => {});
+    undoToast.dismiss();
+  };
+
+  const setFoco = (pillar, focusKey) => {
+    fetch('/actividades/api/pillar-focus', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({pillar, focus_key: focusKey}),
+    }).then(loadToday).catch(() => {});
+  };
+
+  const removeActivity = (key) => {
+    fetch(`/actividades/api/activity/${key}`, {method:'DELETE'}).then(loadToday).catch(() => {});
+  };
+
+  const createActivity = (payload, setErr) => {
+    fetch('/actividades/api/activity/create', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(d2 => {
+      if (d2.error) { setErr(d2.error); return; }
+      setAddingIn(null);
+      loadToday();
+    })
+    .catch(() => setErr('No se pudo crear'));
+  };
+
+  const toggleSession = (sk) => {
+    setOpen(prev => {
+      const next = new Set(prev);
+      next.has(sk) ? next.delete(sk) : next.add(sk);
+      return next;
+    });
+  };
 
   return (
     <div style={{minHeight:'100vh', paddingBottom: isDesktop ? 48 : 100}}>
@@ -2310,11 +2537,10 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           borderRadius:16, padding:'20px', marginBottom:14,
           position:'relative', overflow:'hidden',
         }}>
-          {/* Header row: label + clf chip */}
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
             <div style={{fontSize:9,letterSpacing:'0.18em',color:C.gold,
               opacity:0.6,textTransform:'uppercase'}}>Acta Diurna · XP hoy</div>
-            {clf.rank && (() => {
+            {clf?.rank && (() => {
               const curTier = TIERS.find(t=>t.rank===clf.rank) || TIERS[0];
               const CurIcon = curTier.Icon;
               return (
@@ -2327,13 +2553,11 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
               );
             })()}
           </div>
-          {/* XP numeral */}
           <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:12}}>
             <div style={{fontFamily:'Cormorant Garamond,serif',fontSize:64,
               lineHeight:1,color:C.goldLight,fontWeight:600}}>{xpToday}</div>
             <div style={{fontSize:13,color:C.textMuted}}>/ {XP_GOAL} meta</div>
           </div>
-          {/* Progress bar */}
           <div style={{height:5,background:'var(--gold-bg)',borderRadius:3,overflow:'hidden',marginBottom:12}}>
             <div style={{
               height:'100%',borderRadius:3,
@@ -2345,64 +2569,60 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           </div>
           {/* Tier ladder */}
           {(() => {
-            const curIdx = TIERS.findIndex(t => t.rank === clf.rank);
-            const ci = curIdx >= 0 ? curIdx : 0;
-            const nt = TIERS[ci + 1] || null;
+            const curIdx = TIERS.findIndex(t => t.rank === clf?.rank);
+            const ci  = curIdx >= 0 ? curIdx : 0;
             const col = TIERS[ci].color;
             return (
-              <>
-                <div style={{display:'flex',alignItems:'flex-start',marginBottom:8}}>
-                  {TIERS.map((t, i) => {
-                    const active = i === ci;
-                    const past   = i < ci;
-                    const TIcon  = t.Icon;
-                    return (
-                      <React.Fragment key={t.rank}>
-                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
-                          <div style={{
-                            width:active?9:5, height:active?9:5, borderRadius:'50%',
-                            background:active ? col : past ? `${col}55` : 'rgba(255,255,255,0.08)',
-                            boxShadow:active ? `0 0 9px ${col}` : 'none',
-                            transition:'all 0.3s',
-                          }}/>
-                          <TIcon size={9} style={{
-                            color:active ? col : C.textMuted,
-                            opacity:active ? 1 : past ? 0.55 : 0.28,
-                          }}/>
-                          <div style={{
-                            fontFamily:'DM Sans,sans-serif', fontSize:7,
-                            color:active ? col : C.textMuted,
-                            opacity:active ? 1 : past ? 0.55 : 0.28,
-                            textAlign:'center', lineHeight:1.3,
-                          }}>{t.label}</div>
-                        </div>
-                        {i < TIERS.length - 1 && (
-                          <div style={{height:1,flex:1,marginTop:4,
-                            background:i < ci ? `${col}35` : 'rgba(255,255,255,0.06)'}}/>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </div>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:10}}>
-                  <span style={{color:C.textMuted}}>
-                    {nt ? `${Math.max(0,nt.threshold - xpToday)} XP → ${nt.label}` : '✦ Diamante alcanzado'}
-                  </span>
-                  <span style={{color:C.gold,opacity:0.7}}>
-                    {xpNext ? `${xpNext - xp} XP → ${EU.levels[level]?.name || ''}` : ''}
-                  </span>
-                </div>
-              </>
+              <div style={{display:'flex',alignItems:'flex-start',marginBottom:4}}>
+                {TIERS.map((t, i) => {
+                  const active = i === ci;
+                  const past   = i < ci;
+                  const TIcon  = t.Icon;
+                  return (
+                    <React.Fragment key={t.rank}>
+                      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,flex:1}}>
+                        <div style={{
+                          width:active?9:5, height:active?9:5, borderRadius:'50%',
+                          background:active ? col : past ? `${col}55` : 'rgba(255,255,255,0.08)',
+                          boxShadow:active ? `0 0 9px ${col}` : 'none',
+                          transition:'all 0.3s',
+                        }}/>
+                        <TIcon size={9} style={{
+                          color:active ? col : C.textMuted,
+                          opacity:active ? 1 : past ? 0.55 : 0.28,
+                        }}/>
+                        <div style={{
+                          fontFamily:'DM Sans,sans-serif', fontSize:7,
+                          color:active ? col : C.textMuted,
+                          opacity:active ? 1 : past ? 0.55 : 0.28,
+                          textAlign:'center', lineHeight:1.3,
+                        }}>{t.label}</div>
+                      </div>
+                      {i < TIERS.length - 1 && (
+                        <div style={{height:1,flex:1,marginTop:4,
+                          background:i < ci ? `${col}35` : 'rgba(255,255,255,0.06)'}}/>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             );
           })()}
+          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',fontSize:10,marginBottom:4}}>
+            <span style={{color:C.gold,opacity:0.7}}>
+              {xpNext ? `${xpNext - xp} XP → ${EU.levels[level]?.name || ''}` : ''}
+            </span>
+          </div>
+          {/* Cobertura de pilares */}
+          <PillarCoverageRow pillarMeta={pillar_meta} pillars={clf?.pillars}/>
         </div>
 
         {/* ── SECONDARY STATS ── */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:8,marginBottom:16}}>
           {[
-            {label:'SEMANA', val: pts.week,                   sub:'meta 50+'},
-            {label:'MES',    val: pts.month,                  sub:'meta 300+'},
-            {label:'RACHA',  val: streak > 0 ? `${streak}d` : '—', sub:'días'},
+            {label:'SEMANA', val: pts?.week ?? 0,                   sub:'meta 50+'},
+            {label:'MES',    val: pts?.month ?? 0,                  sub:'meta 300+'},
+            {label:'RACHA',  val: streak > 0 ? `${streak}d` : '—',  sub:'días'},
           ].map(s => (
             <div key={s.label} style={{
               background:C.card, border:'1px solid var(--gold-bg)',
@@ -2416,75 +2636,86 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           ))}
         </div>
 
-        {/* ── ACTIVITIES BY CATEGORY — Sprint-2 blocks ── */}
-        {(actCats.length > 0 ? actCats : Object.keys(byCategory)).map(cat => {
-          const catActs  = byCategory[cat] || [];
-          if (!catActs.length) return null;
-          const catHue   = (EU.catHues || {})[cat] || 45;
-          const doneCnt  = catActs.filter(a => a.done).length;
-          const total    = catActs.length;
-          const pct      = total > 0 ? doneCnt / total : 0;
-          const complete = doneCnt === total && total > 0;
+        <FocoBar focoCandidates={foco_candidates} pillarMeta={pillar_meta} pillarFocus={pillar_focus} onSetFoco={setFoco}/>
+        <EuryCard done={eurythmia_done}/>
+
+        {/* ── Editar toggle ── */}
+        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:10}}>
+          <button {...clickableProps(() => setEditing(v => !v))} style={{
+            display:'flex',alignItems:'center',gap:5,
+            border:'1px solid var(--b)', background: editing ? 'var(--gold-bg)' : C.card2,
+            color: editing ? C.goldLight : C.textMuted, fontSize:10.5, fontWeight:600,
+            padding:'5px 11px', borderRadius:100, cursor:'pointer', fontFamily:'DM Sans,sans-serif',
+          }}>{editing ? 'Listo' : 'Editar'}</button>
+        </div>
+
+        {/* ── AHORA ── */}
+        <div style={{display:'flex',alignItems:'baseline',gap:8,marginBottom:10}}>
+          <span style={{width:7,height:7,borderRadius:'50%',background:C.gold,
+            boxShadow:'0 0 8px var(--gold-glow)',flexShrink:0}}/>
+          <span style={{fontFamily:'Cormorant Garamond,serif',fontSize:16,fontWeight:600,color:C.text}}>
+            Ahora · {session_meta[now_session]?.label}
+          </span>
+          <span style={{fontSize:10,color:C.textMuted,marginLeft:'auto'}}>{session_meta[now_session]?.window}</span>
+        </div>
+        <SessionGrid sessionKey={now_session} items={grouped[now_session] || []} pillarMeta={pillar_meta}
+          onLog={logActivity} editing={editing} addingIn={addingIn}
+          onStartAdd={setAddingIn} onCancelAdd={() => setAddingIn(null)} onSave={createActivity} onRemove={removeActivity}/>
+
+        {/* ── Sesiones colapsadas ── */}
+        {otherSessions.map(sk => {
+          const items = grouped[sk] || [];
+          const open  = openSessions.has(sk);
           return (
-            <div key={cat} data-cat={cat} style={{
-              background:EU.catTint(catHue, 'bg'),
-              border:`1px solid ${complete ? EU.catTint(catHue, 'border') : 'var(--b)'}`,
-              borderRadius:14, padding:'14px', marginBottom:14,
-              transition:'border-color 0.3s',
-            }}>
-              {/* Header: dot · name · X/Y */}
-              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                <div style={{
-                  width:7, height:7, borderRadius:'50%', flexShrink:0,
-                  background: doneCnt > 0 ? EU.catTint(catHue, 'text') : 'var(--b2)',
-                  boxShadow: doneCnt > 0 ? `0 0 6px ${EU.catTint(catHue, 'text')}` : 'none',
-                  transition:'all 0.3s',
-                }}/>
-                <span style={{
-                  fontFamily:'DM Sans,sans-serif', fontSize:10, letterSpacing:'0.14em',
-                  textTransform:'uppercase', flex:1,
-                  color:EU.catTint(catHue, 'text'),
-                }}>{cat}</span>
-                <span style={{
-                  fontFamily:'DM Sans,sans-serif', fontSize:10,
-                  color: complete ? EU.catTint(catHue, 'text') : C.textMuted,
-                }}>{doneCnt}/{total}</span>
+            <div key={sk} style={{marginTop:14}}>
+              <div {...clickableProps(() => toggleSession(sk))} style={{
+                display:'flex',alignItems:'center',gap:10,background:C.card2,border:'1px solid var(--b)',
+                borderRadius:11,padding:'10px 14px',marginBottom: open ? 8 : 0,cursor:'pointer',
+              }}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontFamily:'DM Sans,sans-serif',fontSize:12,color:C.textSub,fontWeight:600}}>
+                    {session_meta[sk]?.label}
+                  </div>
+                  <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted,marginTop:1}}>
+                    {session_meta[sk]?.window}
+                  </div>
+                </div>
+                <span style={{fontFamily:'DM Sans,sans-serif',fontSize:10,color:C.textMuted}}>{items.length} actividades</span>
+                <span style={{color:C.textMuted,transition:'transform .2s',
+                  transform: open ? 'rotate(90deg)' : 'none'}}>›</span>
               </div>
-              {/* 3px progress bar */}
-              <div style={{height:3,background:'var(--b)',
-                borderRadius:2,overflow:'hidden',marginBottom:10}}>
-                <div style={{
-                  height:'100%', borderRadius:2,
-                  background:EU.catTint(catHue, 'text'),
-                  width:`${pct*100}%`,
-                  boxShadow: pct > 0 ? `0 0 5px ${EU.catTint(catHue, 'text')}` : 'none',
-                  transition:'width 0.5s ease',
-                }}/>
-              </div>
-              {/* 2-col grid of ActivityButtons */}
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-                {catActs.map(act => (
-                  <ActivityButton key={act.key} act={act} catHue={catHue} onLog={logActivity}/>
-                ))}
-              </div>
+              {open && (
+                <SessionGrid sessionKey={sk} items={items} pillarMeta={pillar_meta}
+                  onLog={logActivity} editing={editing} addingIn={addingIn}
+                  onStartAdd={setAddingIn} onCancelAdd={() => setAddingIn(null)} onSave={createActivity} onRemove={removeActivity}/>
+              )}
             </div>
           );
         })}
-        {acts.length === 0 && (
-          <EmptyState
-            icon="check-square"
-            title="El día está en blanco"
-            desc="Marcá tu primera virtud para abrir la cuenta de hoy."
-            cta="Empezar"
-            kbd="↓"
-            onAction={() => {
-              const first = document.querySelector('[data-cat]');
-              if (first) {
-                const top = first.getBoundingClientRect().top + window.scrollY - 80;
-                window.scrollTo({ top, behavior: 'smooth' });
-              }
-            }}
-          />
+
+        {/* ── Cualquier momento ── */}
+        <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',
+          color:C.textMuted,margin:'20px 0 10px',display:'flex',alignItems:'center',gap:8}}>
+          Cualquier momento
+          <span style={{flex:1,height:1,background:'var(--b)'}}/>
+        </div>
+        <SessionGrid sessionKey="any" items={grouped.any || []} pillarMeta={pillar_meta}
+          onLog={logActivity} editing={editing} addingIn={addingIn}
+          onStartAdd={setAddingIn} onCancelAdd={() => setAddingIn(null)} onSave={createActivity} onRemove={removeActivity}/>
+
+        {/* ── Ocasional ── */}
+        {(grouped.ocasional || []).length > 0 && (
+          <>
+            <div style={{fontFamily:'DM Sans,sans-serif',fontSize:10,letterSpacing:'0.12em',textTransform:'uppercase',
+              color:C.textMuted,margin:'20px 0 8px',display:'flex',alignItems:'center',gap:8}}>
+              Ocasional
+              <span style={{fontSize:9,opacity:0.7,textTransform:'none',letterSpacing:'normal'}}>no cuenta para tu tier</span>
+              <span style={{flex:1,height:1,background:'var(--b)'}}/>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:5,opacity:0.85}}>
+              {grouped.ocasional.map(act => <OccasionalRow key={act.key} act={act} onLog={logActivity}/>)}
+            </div>
+          </>
         )}
       </div>
       <UndoToast
