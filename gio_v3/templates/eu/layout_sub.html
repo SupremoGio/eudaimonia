@@ -153,7 +153,12 @@
     @media (max-width:767px) {
       .crumbs    { display:none; }
       .hdr-mtitle{ display:flex; }
-      .hdr-util  { display:none; }
+      /* hdr-util nace para esconder texto secundario (fechas, labels) en
+         móvil, pero algunas páginas (Fútbol, Salud, Paideia) meten ahí su
+         botón real de "Agregar" — esconderlo a ciegas lo hacía imposible
+         de tocar. Solo se esconde si NO trae un botón adentro. */
+      .hdr-util:not(:has(button)) { display:none; }
+      .hdr-util:has(button) button { padding:6px 10px !important; white-space:nowrap; }
     }
 
     /* GTD internal shell */
