@@ -1902,6 +1902,31 @@ def init_db():
                 ("logoi", "resolver_codigo")
             )
 
+        # ── ACTA DIURNA Fase 2 — pilar Philia, gratitud, síntesis activa ───────
+        # cadence: 'daily' (default) | 'weekly' — los touches 'weekly' no cuentan
+        # en el % diario de touches del tier (ver engine.get_daily_classification),
+        # solo en la cobertura de pilares si se registran alguna vez en la semana.
+        try:
+            ad_cols = [r["name"] for r in db.execute("PRAGMA table_info(activity_defs)").fetchall()]
+            if "cadence" not in ad_cols:
+                db.execute("ALTER TABLE activity_defs ADD COLUMN cadence TEXT NOT NULL DEFAULT 'daily'")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] activity_defs cadence migration warning: {e}")
+
+        db.executemany(
+            """INSERT OR IGNORE INTO activity_defs
+               (key, label, cat, pts, ec, tier, session, pillar, type, cadence, active, hidden, custom, sort_order)
+               VALUES (?,?,?,?,?,?,?,?,?,?,1,0,0,?)""",
+            [
+                ("conexion_genuina", "Momento de conexión genuina",        "Philia", 1, 0, "micro",    "any",   "philia", "touch", "daily",  9),
+                ("tiempo_calidad",   "Tiempo de calidad sin pantallas",    "Philia", 2, 1, "progreso", "any",   "philia", "touch", "weekly", 10),
+                ("networking",       "Acción de networking real",          "Philia", 2, 1, "progreso", "any",   "philia", "touch", "weekly", 11),
+                ("gratitud_diaria",  "3 cosas por las que estás agradecido","Hegemonikon", 1, 0, "micro", "night", "hege", "touch", "daily",  7),
+                ("sintesis_activa",  "Explicar lo que aprendiste hoy",     "Paideia", 2, 0, "micro",    "night", "paideia", "touch", "daily", 8),
+            ]
+        )
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

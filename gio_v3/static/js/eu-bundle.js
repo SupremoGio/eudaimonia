@@ -1639,6 +1639,7 @@ const IconTerminal = (p) => /* @__PURE__ */ React.createElement(EuIcon, { ...p }
 const IconMusic = (p) => /* @__PURE__ */ React.createElement(EuIcon, { ...p }, /* @__PURE__ */ React.createElement("circle", { cx: "6", cy: "18", r: "2.5" }), /* @__PURE__ */ React.createElement("circle", { cx: "17", cy: "16", r: "2.5" }), /* @__PURE__ */ React.createElement("path", { d: "M8.5 18V6l11-2v12" }));
 const IconShieldCheck = (p) => /* @__PURE__ */ React.createElement(EuIcon, { ...p }, /* @__PURE__ */ React.createElement("path", { d: "M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z" }), /* @__PURE__ */ React.createElement("polyline", { points: "9 12 11 14 15 9.5" }));
 const IconWallet = (p) => /* @__PURE__ */ React.createElement(EuIcon, { ...p }, /* @__PURE__ */ React.createElement("path", { d: "M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" }), /* @__PURE__ */ React.createElement("path", { d: "M16 12h3v3h-3a1.5 1.5 0 0 1 0-3z" }));
+const IconHeartHandshake = (p) => /* @__PURE__ */ React.createElement(EuIcon, { ...p }, /* @__PURE__ */ React.createElement("path", { d: "M19 14c1.5-1.5 3-3.2 3-5.5A4.5 4.5 0 0 0 17.5 4c-1.6 0-2.9.7-3.5 1.8-.6-1.1-1.9-1.8-3.5-1.8A4.5 4.5 0 0 0 6 8.5c0 .5.06.94.17 1.35" }), /* @__PURE__ */ React.createElement("path", { d: "M8 12l-3.5 3.5a1.5 1.5 0 0 0 2.12 2.12L8 16.1" }), /* @__PURE__ */ React.createElement("path", { d: "M8 12l2.5 2.3a1.7 1.7 0 0 0 2.4-.1l.1-.1a1.6 1.6 0 0 0-.1-2.2L10.5 9.5" }), /* @__PURE__ */ React.createElement("path", { d: "M6.6 15.6l1.4 1.4a1.5 1.5 0 0 0 2.1 0" }));
 const IconClipboardCheck = (p) => /* @__PURE__ */ React.createElement(EuIcon, { ...p }, /* @__PURE__ */ React.createElement("rect", { x: "5", y: "4", width: "14", height: "17", rx: "2" }), /* @__PURE__ */ React.createElement("rect", { x: "9", y: "2", width: "6", height: "4", rx: "1" }), /* @__PURE__ */ React.createElement("polyline", { points: "9 13 11 15 15 10.5" }));
 const IconBookOpen = (p) => /* @__PURE__ */ React.createElement(EuIcon, { ...p }, /* @__PURE__ */ React.createElement("path", { d: "M12 6c-2-1.5-4.5-2-7-2v13c2.5 0 5 .5 7 2 2-1.5 4.5-2 7-2V4c-2.5 0-5 .5-7 2z" }), /* @__PURE__ */ React.createElement("line", { x1: "12", y1: "6", x2: "12", y2: "19" }));
 const IconFutbol = (p) => /* @__PURE__ */ React.createElement(EuIcon, { ...p }, /* @__PURE__ */ React.createElement("circle", { cx: "12", cy: "12", r: "9" }), /* @__PURE__ */ React.createElement("path", { d: "M12 7.5l3 2.2-1.1 3.6h-3.8L9 9.7z" }), /* @__PURE__ */ React.createElement("path", { d: "M12 3v4.5M12 20.5V16M4.2 9l3.5 1.2M16.3 10.2L19.8 9M5.8 17l2.9-3.1M15.3 13.9l2.9 3.1" }));
@@ -3824,7 +3825,7 @@ function ActivityButton({ act, catHue, onLog }) {
     lineHeight: 1.3,
     flex: 1,
     textDecoration: act.done ? "none" : "none"
-  } }, act.label)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement("span", { style: {
+  } }, act.label, act.cadence === "weekly" && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 9, color: C.textMuted, fontWeight: 400 } }, " \xB7 ", act.week_count || 0, "/semana"))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement("span", { style: {
     fontFamily: "DM Sans,sans-serif",
     fontSize: 9,
     padding: "1px 6px",
@@ -3854,7 +3855,8 @@ const PILLAR_ICONS = {
   hege: IconShieldCheck,
   eury: IconMusic,
   atar: IconClipboardCheck,
-  oiko: IconWallet
+  oiko: IconWallet,
+  philia: IconHeartHandshake
 };
 function PillarCoverageRow({ pillarMeta, pillars }) {
   const covered = new Set(pillars || []);
@@ -4303,13 +4305,21 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
     marginBottom: 14,
     position: "relative",
     overflow: "hidden"
-  } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 } }, /* @__PURE__ */ React.createElement("div", { style: {
+  } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6, gap: 8 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement("span", { style: {
     fontSize: 9,
     letterSpacing: "0.18em",
     color: C.gold,
     opacity: 0.6,
     textTransform: "uppercase"
-  } }, "Acta Diurna \xB7 XP hoy"), (clf == null ? void 0 : clf.rank) && (() => {
+  } }, "Acta Diurna \xB7 XP hoy"), (clf == null ? void 0 : clf.recovery_week) && /* @__PURE__ */ React.createElement("span", { style: {
+    fontFamily: "DM Sans,sans-serif",
+    fontSize: 9,
+    color: C.cyan,
+    background: "rgba(6,182,212,0.12)",
+    border: "1px solid rgba(6,182,212,0.3)",
+    borderRadius: 100,
+    padding: "1px 7px"
+  } }, "semana de descarga")), (clf == null ? void 0 : clf.rank) && (() => {
     const curTier = TIERS.find((t) => t.rank === clf.rank) || TIERS[0];
     const CurIcon = curTier.Icon;
     return /* @__PURE__ */ React.createElement("div", { style: {

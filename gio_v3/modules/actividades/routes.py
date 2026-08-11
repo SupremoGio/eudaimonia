@@ -20,6 +20,7 @@ PILLAR_META = {
     "eury":    {"name": "Eurythmia",      "hue": 330},
     "atar":    {"name": "Ataraxia",       "hue": 155},
     "oiko":    {"name": "Oikonomia",      "hue": 80},
+    "philia":  {"name": "Philia",         "hue": 10},
 }
 SESSION_META = {
     "morning":   {"label": "Mañana", "window": "6:00 – 13:00"},
@@ -126,10 +127,15 @@ def build_acta_diurna_context():
             "SELECT activity_key FROM activity_logs WHERE date=?", (today_str(),)
         ).fetchall()}
 
+    weekly_keys  = [i["key"] for items in grouped.values() for i in items if i.get("cadence") == "weekly"]
+    week_counts  = adefs.get_week_counts(weekly_keys)
+
     by_pillar = {}
     for items in grouped.values():
         for item in items:
             item["done"] = item["key"] in done_today
+            if item.get("cadence") == "weekly":
+                item["week_count"] = week_counts.get(item["key"], 0)
             if item["type"] != "ocasional":
                 by_pillar.setdefault(item["pillar"], []).append(item)
 

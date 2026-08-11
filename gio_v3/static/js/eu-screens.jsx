@@ -123,6 +123,14 @@ const IconWallet = p => (
     <path d="M16 12h3v3h-3a1.5 1.5 0 0 1 0-3z"/>
   </EuIcon>
 );
+const IconHeartHandshake = p => (
+  <EuIcon {...p}>
+    <path d="M19 14c1.5-1.5 3-3.2 3-5.5A4.5 4.5 0 0 0 17.5 4c-1.6 0-2.9.7-3.5 1.8-.6-1.1-1.9-1.8-3.5-1.8A4.5 4.5 0 0 0 6 8.5c0 .5.06.94.17 1.35"/>
+    <path d="M8 12l-3.5 3.5a1.5 1.5 0 0 0 2.12 2.12L8 16.1"/>
+    <path d="M8 12l2.5 2.3a1.7 1.7 0 0 0 2.4-.1l.1-.1a1.6 1.6 0 0 0-.1-2.2L10.5 9.5"/>
+    <path d="M6.6 15.6l1.4 1.4a1.5 1.5 0 0 0 2.1 0"/>
+  </EuIcon>
+);
 const IconClipboardCheck = p => (
   <EuIcon {...p}>
     <rect x="5" y="4" width="14" height="17" rx="2"/>
@@ -2135,7 +2143,12 @@ function ActivityButton({ act, catHue, onLog }) {
           fontWeight: act.done ? 500 : 400,
           lineHeight:1.3, flex:1,
           textDecoration: act.done ? 'none' : 'none',
-        }}>{act.label}</span>
+        }}>
+          {act.label}
+          {act.cadence === 'weekly' && (
+            <span style={{fontSize:9, color:C.textMuted, fontWeight:400}}> · {act.week_count || 0}/semana</span>
+          )}
+        </span>
       </div>
       {/* XP + EC row */}
       <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:4}}>
@@ -2172,6 +2185,7 @@ function ActivityButton({ act, catHue, onLog }) {
 const PILLAR_ICONS = {
   logoi: IconTerminal, paideia: IconBookOpen, cosmo: IconGlobe,
   hege: IconShieldCheck, eury: IconMusic, atar: IconClipboardCheck, oiko: IconWallet,
+  philia: IconHeartHandshake,
 };
 
 function PillarCoverageRow({ pillarMeta, pillars }) {
@@ -2586,9 +2600,16 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           borderRadius:16, padding:'20px', marginBottom:14,
           position:'relative', overflow:'hidden',
         }}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
-            <div style={{fontSize:9,letterSpacing:'0.18em',color:C.gold,
-              opacity:0.6,textTransform:'uppercase'}}>Acta Diurna · XP hoy</div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6,gap:8}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+              <span style={{fontSize:9,letterSpacing:'0.18em',color:C.gold,
+                opacity:0.6,textTransform:'uppercase'}}>Acta Diurna · XP hoy</span>
+              {clf?.recovery_week && (
+                <span style={{fontFamily:'DM Sans,sans-serif',fontSize:9,color:C.cyan,
+                  background:'rgba(6,182,212,0.12)',border:'1px solid rgba(6,182,212,0.3)',
+                  borderRadius:100,padding:'1px 7px'}}>semana de descarga</span>
+              )}
+            </div>
             {clf?.rank && (() => {
               const curTier = TIERS.find(t=>t.rank===clf.rank) || TIERS[0];
               const CurIcon = curTier.Icon;
