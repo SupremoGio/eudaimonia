@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 import time
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_random_quote
-from utils import today_str, today_date
+from utils import today_str, today_date, now_local
 from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
 import modules.actividades.activity_defs as adefs
@@ -124,8 +124,9 @@ def get_weekend_mode():
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 def _now_session():
-    """Sesión que coincide con la hora real, para expandir esa tarjeta arriba."""
-    hour = datetime.now().hour
+    """Sesión que coincide con la hora real (zona horaria de la app, no la
+    del servidor — Railway corre en UTC), para expandir esa tarjeta arriba."""
+    hour = now_local().hour
     if 6 <= hour < 13:  return "morning"
     if 13 <= hour < 19: return "afternoon"
     if 19 <= hour < 23: return "night"
