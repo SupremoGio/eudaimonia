@@ -2294,7 +2294,9 @@ function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop
   );
 }
 
-function EuryCard({ done }) {
+function EuryCard({ card }) {
+  if (!card) return null;
+  const done = !!card.done;
   return (
     <div style={{
       display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderRadius:12,
@@ -2305,15 +2307,15 @@ function EuryCard({ done }) {
         <IconMusic size={14}/>
       </div>
       <div style={{flex:1}}>
-        <div style={{fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:600, color:C.text}}>¿Bailaste hoy?</div>
+        <div style={{fontFamily:'DM Sans,sans-serif', fontSize:12, fontWeight:600, color:C.text}}>{card.title}</div>
         <div style={{fontFamily:'DM Sans,sans-serif', fontSize:9, marginTop:1,
           color: done ? '#4ade80' : C.textMuted}}>
-          {done ? 'Sesión registrada hoy' : 'Se llena solo desde Eurythmia — no es un checkbox'}
+          {card.subtitle}
         </div>
       </div>
       <span style={{fontFamily:'DM Sans,sans-serif', fontSize:9, padding:'3px 9px', borderRadius:100,
         background: done ? 'rgba(74,222,128,0.12)' : C.card, color: done ? '#4ade80' : C.textMuted}}>
-        {done ? 'Hecho' : 'Pendiente'}
+        {card.badge}
       </span>
     </div>
   );
@@ -2487,7 +2489,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
     );
   }
 
-  const { grouped, now_session, session_meta, pillar_meta, pillar_focus, foco_candidates, eurythmia_done, classification: clf, xp: pts, streak } = data;
+  const { grouped, now_session, session_meta, pillar_meta, pillar_focus, foco_candidates, eurythmia_card, classification: clf, xp: pts, streak } = data;
   const xpToday  = pts?.today ?? 0;
   const XP_GOAL  = 15;
   const xpDayPct = Math.min(1, xpToday / XP_GOAL);
@@ -2707,7 +2709,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
         </div>
 
         <FocoBar focoCandidates={foco_candidates} pillarMeta={pillar_meta} pillarFocus={pillar_focus} onSetFoco={setFoco} isDesktop={isDesktop}/>
-        <EuryCard done={eurythmia_done}/>
+        <EuryCard card={eurythmia_card}/>
 
         {/* ── Editar toggle ── */}
         <div style={{display:'flex',justifyContent:'flex-end',marginBottom:10}}>

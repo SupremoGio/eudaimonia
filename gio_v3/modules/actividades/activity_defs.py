@@ -13,6 +13,22 @@ SESSIONS = ("morning", "afternoon", "night", "any")
 PILLARS  = ("logoi", "paideia", "cosmo", "hege", "eury", "atar", "oiko", "philia")
 TYPES    = ("ancla", "touch", "ocasional")
 CADENCES = ("daily", "weekly")
+DAY_CODES = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+
+
+def weekday_code(d=None):
+    """mon/tue/.../sun para hoy (o la fecha dada) — locale-independiente,
+    a diferencia de strftime('%a')."""
+    d = d or today_date()
+    return DAY_CODES[d.weekday()]
+
+
+def eligible_today(row, wd=None):
+    """True si el item no tiene days_of_week (todos los días) o si hoy está
+    en su lista — usado para anclas semanales rotativas (Fase 3)."""
+    wd = wd or weekday_code()
+    dow = row["days_of_week"]
+    return (not dow) or (wd in dow.split(","))
 
 
 def _slugify(label):
@@ -62,8 +78,10 @@ def _as_dict(row, focus_map):
 
 
 def get_active_grouped():
-    """Actividades activas, visibles (no ocultas), agrupadas por sesión + ocasional."""
+    """Actividades activas, visibles (no ocultas) y elegibles hoy (respeta
+    days_of_week de las anclas semanales rotativas), agrupadas por sesión."""
     focus_map = get_pillar_focus_map()
+    wd = weekday_code()
     with get_db() as db:
         rows = db.execute(
             "SELECT * FROM activity_defs WHERE active=1 AND hidden=0 ORDER BY sort_order, label"
@@ -71,6 +89,8 @@ def get_active_grouped():
     grouped = {s: [] for s in SESSIONS}
     occasional = []
     for r in rows:
+        if not eligible_today(r, wd):
+            continue
         item = _as_dict(r, focus_map)
         if item["type"] == "ocasional":
             occasional.append(item)
