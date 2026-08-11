@@ -3876,40 +3876,96 @@ function PillarCoverageRow({ pillarMeta, pillars }) {
     } }, /* @__PURE__ */ React.createElement(Icon2, { size: 12, style: { color: on ? "#fff" : C.textMuted, opacity: on ? 1 : 0.5 } })), /* @__PURE__ */ React.createElement("span", { style: { fontSize: 7, color: on ? C.text : C.textMuted, textAlign: "center", lineHeight: 1.2 } }, pm.name.slice(0, 4)));
   }));
 }
-function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco }) {
+function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop }) {
   const entries = Object.entries(focoCandidates || {});
+  const [open, setOpen] = useState(!!isDesktop);
   if (!entries.length) return null;
+  const active = entries.filter(([pk]) => pillarFocus[pk]);
+  const summary = active.length ? active.map(([pk]) => {
+    var _a;
+    return ((_a = pillarMeta[pk]) == null ? void 0 : _a.name) || pk;
+  }).join(" \xB7 ") : "Sin foco activo este mes";
   return /* @__PURE__ */ React.createElement("div", { style: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px 14px",
-    alignItems: "center",
     background: C.card2,
     border: "1px solid var(--b)",
-    borderRadius: 12,
-    padding: "10px 14px",
     marginBottom: 14,
-    fontSize: 11
-  } }, /* @__PURE__ */ React.createElement("span", { style: { color: C.textMuted, fontSize: 10 } }, "Foco del mes:"), entries.map(([pk, items]) => {
+    borderRadius: open ? 16 : 100,
+    overflow: "hidden",
+    transition: "border-radius 0.3s cubic-bezier(0.16,1,0.3,1)"
+  } }, /* @__PURE__ */ React.createElement("div", { ...clickableProps(() => setOpen((v) => !v)), style: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "10px 14px",
+    cursor: "pointer"
+  } }, /* @__PURE__ */ React.createElement("div", { style: {
+    width: 22,
+    height: 22,
+    borderRadius: "50%",
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "var(--gold-bg)",
+    color: C.gold
+  } }, /* @__PURE__ */ React.createElement("svg", { width: 11, height: 11, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 }, /* @__PURE__ */ React.createElement("circle", { cx: "12", cy: "12", r: "9" }), /* @__PURE__ */ React.createElement("circle", { cx: "12", cy: "12", r: "4.5" }), /* @__PURE__ */ React.createElement("circle", { cx: "12", cy: "12", r: "1", fill: "currentColor", stroke: "none" }))), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 10, color: C.textMuted, letterSpacing: "0.04em" } }, "Foco del mes"), !open && /* @__PURE__ */ React.createElement("div", { style: {
+    fontFamily: "DM Sans,sans-serif",
+    fontSize: 11,
+    marginTop: 1,
+    color: active.length ? C.text : C.textMuted,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
+  } }, summary)), active.length > 0 && /* @__PURE__ */ React.createElement("span", { style: {
+    fontFamily: "DM Sans,sans-serif",
+    fontSize: 9,
+    padding: "2px 8px",
+    borderRadius: 100,
+    background: "var(--gold-bg)",
+    color: C.gold,
+    flexShrink: 0
+  } }, active.length), /* @__PURE__ */ React.createElement("span", { style: {
+    color: C.textMuted,
+    flexShrink: 0,
+    fontSize: 11,
+    display: "flex",
+    transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
+    transform: open ? "rotate(180deg)" : "none"
+  } }, /* @__PURE__ */ React.createElement("svg", { width: 11, height: 11, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2 }, /* @__PURE__ */ React.createElement("polyline", { points: "6 9 12 15 18 9" })))), /* @__PURE__ */ React.createElement("div", { style: {
+    display: "grid",
+    gridTemplateRows: open ? "1fr" : "0fr",
+    transition: "grid-template-rows 0.35s cubic-bezier(0.16,1,0.3,1)"
+  } }, /* @__PURE__ */ React.createElement("div", { style: { overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8,
+    padding: "2px 14px 12px",
+    opacity: open ? 1 : 0,
+    transition: "opacity 0.25s ease",
+    transitionDelay: open ? "0.1s" : "0s"
+  } }, entries.map(([pk, items]) => {
     var _a;
-    return /* @__PURE__ */ React.createElement("div", { key: pk, style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement("span", { style: { color: C.textMuted, fontSize: 10 } }, ((_a = pillarMeta[pk]) == null ? void 0 : _a.name) || pk), /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { key: pk, style: { display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 10, color: C.textMuted, minWidth: 78, flexShrink: 0 } }, ((_a = pillarMeta[pk]) == null ? void 0 : _a.name) || pk), /* @__PURE__ */ React.createElement(
       "select",
       {
         value: pillarFocus[pk] || "",
         onChange: (e) => onSetFoco(pk, e.target.value || null),
         style: {
+          flex: 1,
+          minWidth: 0,
           background: C.card,
           border: "1px solid var(--b)",
           borderRadius: 8,
           color: C.text,
           fontSize: 10,
-          padding: "4px 6px"
+          padding: "5px 7px",
+          fontFamily: "DM Sans,sans-serif"
         }
       },
       /* @__PURE__ */ React.createElement("option", { value: "" }, "\u2014 sin foco \u2014"),
       items.map((it) => /* @__PURE__ */ React.createElement("option", { key: it.key, value: it.key }, it.label))
     ));
-  }));
+  })))));
 }
 function EuryCard({ done }) {
   return /* @__PURE__ */ React.createElement("div", { style: {
@@ -4330,7 +4386,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
     color: C.textMuted,
     textTransform: "uppercase",
     marginBottom: 2
-  } }, s.label), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Cormorant Garamond,serif", fontSize: 20, color: C.gold, lineHeight: 1 } }, s.val), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 8, color: C.textMuted, marginTop: 2 } }, s.sub)))), /* @__PURE__ */ React.createElement(FocoBar, { focoCandidates: foco_candidates, pillarMeta: pillar_meta, pillarFocus: pillar_focus, onSetFoco: setFoco }), /* @__PURE__ */ React.createElement(EuryCard, { done: eurythmia_done }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { ...clickableProps(() => setEditing((v) => !v)), style: {
+  } }, s.label), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Cormorant Garamond,serif", fontSize: 20, color: C.gold, lineHeight: 1 } }, s.val), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 8, color: C.textMuted, marginTop: 2 } }, s.sub)))), /* @__PURE__ */ React.createElement(FocoBar, { focoCandidates: foco_candidates, pillarMeta: pillar_meta, pillarFocus: pillar_focus, onSetFoco: setFoco, isDesktop }), /* @__PURE__ */ React.createElement(EuryCard, { done: eurythmia_done }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { ...clickableProps(() => setEditing((v) => !v)), style: {
     display: "flex",
     alignItems: "center",
     gap: 5,

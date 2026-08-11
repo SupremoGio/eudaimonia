@@ -2204,29 +2204,78 @@ function PillarCoverageRow({ pillarMeta, pillars }) {
   );
 }
 
-function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco }) {
+function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop }) {
   const entries = Object.entries(focoCandidates || {});
+  const [open, setOpen] = useState(!!isDesktop);
   if (!entries.length) return null;
+
+  const active  = entries.filter(([pk]) => pillarFocus[pk]);
+  const summary = active.length
+    ? active.map(([pk]) => pillarMeta[pk]?.name || pk).join(' · ')
+    : 'Sin foco activo este mes';
+
   return (
     <div style={{
-      display:'flex', flexWrap:'wrap', gap:'8px 14px', alignItems:'center',
-      background:C.card2, border:'1px solid var(--b)', borderRadius:12,
-      padding:'10px 14px', marginBottom:14, fontSize:11,
+      background:C.card2, border:'1px solid var(--b)', marginBottom:14,
+      borderRadius: open ? 16 : 100, overflow:'hidden',
+      transition:'border-radius 0.3s cubic-bezier(0.16,1,0.3,1)',
     }}>
-      <span style={{color:C.textMuted, fontSize:10}}>Foco del mes:</span>
-      {entries.map(([pk, items]) => (
-        <div key={pk} style={{display:'flex', alignItems:'center', gap:6}}>
-          <span style={{color:C.textMuted, fontSize:10}}>{pillarMeta[pk]?.name || pk}</span>
-          <select
-            value={pillarFocus[pk] || ''}
-            onChange={e => onSetFoco(pk, e.target.value || null)}
-            style={{background:C.card, border:'1px solid var(--b)', borderRadius:8,
-              color:C.text, fontSize:10, padding:'4px 6px'}}>
-            <option value="">— sin foco —</option>
-            {items.map(it => <option key={it.key} value={it.key}>{it.label}</option>)}
-          </select>
+      <div {...clickableProps(() => setOpen(v => !v))} style={{
+        display:'flex', alignItems:'center', gap:10, padding:'10px 14px', cursor:'pointer',
+      }}>
+        <div style={{width:22, height:22, borderRadius:'50%', flexShrink:0, display:'flex',
+          alignItems:'center', justifyContent:'center', background:'var(--gold-bg)', color:C.gold}}>
+          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/>
+            <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>
+          </svg>
         </div>
-      ))}
+        <div style={{flex:1, minWidth:0}}>
+          <div style={{fontFamily:'DM Sans,sans-serif', fontSize:10, color:C.textMuted, letterSpacing:'0.04em'}}>
+            Foco del mes
+          </div>
+          {!open && (
+            <div style={{fontFamily:'DM Sans,sans-serif', fontSize:11, marginTop:1,
+              color: active.length ? C.text : C.textMuted,
+              whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{summary}</div>
+          )}
+        </div>
+        {active.length > 0 && (
+          <span style={{fontFamily:'DM Sans,sans-serif', fontSize:9, padding:'2px 8px', borderRadius:100,
+            background:'var(--gold-bg)', color:C.gold, flexShrink:0}}>{active.length}</span>
+        )}
+        <span style={{color:C.textMuted, flexShrink:0, fontSize:11, display:'flex',
+          transition:'transform 0.3s cubic-bezier(0.16,1,0.3,1)', transform: open ? 'rotate(180deg)' : 'none'}}>
+          <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </span>
+      </div>
+      <div style={{display:'grid', gridTemplateRows: open ? '1fr' : '0fr',
+        transition:'grid-template-rows 0.35s cubic-bezier(0.16,1,0.3,1)'}}>
+        <div style={{overflow:'hidden'}}>
+          <div style={{
+            display:'flex', flexDirection:'column', gap:8, padding:'2px 14px 12px',
+            opacity: open ? 1 : 0, transition:'opacity 0.25s ease', transitionDelay: open ? '0.1s' : '0s',
+          }}>
+            {entries.map(([pk, items]) => (
+              <div key={pk} style={{display:'flex', alignItems:'center', gap:8}}>
+                <span style={{fontFamily:'DM Sans,sans-serif', fontSize:10, color:C.textMuted, minWidth:78, flexShrink:0}}>
+                  {pillarMeta[pk]?.name || pk}
+                </span>
+                <select
+                  value={pillarFocus[pk] || ''}
+                  onChange={e => onSetFoco(pk, e.target.value || null)}
+                  style={{flex:1, minWidth:0, background:C.card, border:'1px solid var(--b)', borderRadius:8,
+                    color:C.text, fontSize:10, padding:'5px 7px', fontFamily:'DM Sans,sans-serif'}}>
+                  <option value="">— sin foco —</option>
+                  {items.map(it => <option key={it.key} value={it.key}>{it.label}</option>)}
+                </select>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2636,7 +2685,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           ))}
         </div>
 
-        <FocoBar focoCandidates={foco_candidates} pillarMeta={pillar_meta} pillarFocus={pillar_focus} onSetFoco={setFoco}/>
+        <FocoBar focoCandidates={foco_candidates} pillarMeta={pillar_meta} pillarFocus={pillar_focus} onSetFoco={setFoco} isDesktop={isDesktop}/>
         <EuryCard done={eurythmia_done}/>
 
         {/* ── Editar toggle ── */}
