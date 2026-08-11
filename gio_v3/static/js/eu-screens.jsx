@@ -2269,19 +2269,20 @@ function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop
         transition:'grid-template-rows 0.35s cubic-bezier(0.16,1,0.3,1)'}}>
         <div style={{overflow:'hidden'}}>
           <div style={{
-            display:'flex', flexDirection:'column', gap:8, padding:'2px 14px 12px',
+            display:'grid', gridTemplateColumns: isDesktop ? '1fr 1fr' : '1fr',
+            columnGap:14, rowGap:6, padding:'2px 14px 10px',
             opacity: open ? 1 : 0, transition:'opacity 0.25s ease', transitionDelay: open ? '0.1s' : '0s',
           }}>
             {entries.map(([pk, items]) => (
-              <div key={pk} style={{display:'flex', alignItems:'center', gap:8}}>
-                <span style={{fontFamily:'DM Sans,sans-serif', fontSize:10, color:C.textMuted, minWidth:78, flexShrink:0}}>
+              <div key={pk} style={{display:'flex', alignItems:'center', gap:7, minWidth:0}}>
+                <span style={{fontFamily:'DM Sans,sans-serif', fontSize:10, color:C.textMuted, width:68, flexShrink:0}}>
                   {pillarMeta[pk]?.name || pk}
                 </span>
                 <select
                   value={pillarFocus[pk] || ''}
                   onChange={e => onSetFoco(pk, e.target.value || null)}
-                  style={{flex:1, minWidth:0, background:C.card, border:'1px solid var(--b)', borderRadius:8,
-                    color:C.text, fontSize:10, padding:'5px 7px', fontFamily:'DM Sans,sans-serif'}}>
+                  style={{flex:1, minWidth:0, background:C.card, border:'1px solid var(--b)', borderRadius:7,
+                    color:C.text, fontSize:10, padding:'4px 6px', fontFamily:'DM Sans,sans-serif'}}>
                   <option value="">— sin foco —</option>
                   {items.map(it => <option key={it.key} value={it.key}>{it.label}</option>)}
                 </select>
