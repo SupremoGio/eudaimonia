@@ -3938,16 +3938,17 @@ function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop
     gridTemplateRows: open ? "1fr" : "0fr",
     transition: "grid-template-rows 0.35s cubic-bezier(0.16,1,0.3,1)"
   } }, /* @__PURE__ */ React.createElement("div", { style: { overflow: "hidden" } }, /* @__PURE__ */ React.createElement("div", { style: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-    padding: "2px 14px 12px",
+    display: "grid",
+    gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr",
+    columnGap: 14,
+    rowGap: 6,
+    padding: "2px 14px 10px",
     opacity: open ? 1 : 0,
     transition: "opacity 0.25s ease",
     transitionDelay: open ? "0.1s" : "0s"
   } }, entries.map(([pk, items]) => {
     var _a;
-    return /* @__PURE__ */ React.createElement("div", { key: pk, style: { display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 10, color: C.textMuted, minWidth: 78, flexShrink: 0 } }, ((_a = pillarMeta[pk]) == null ? void 0 : _a.name) || pk), /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { key: pk, style: { display: "flex", alignItems: "center", gap: 7, minWidth: 0 } }, /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 10, color: C.textMuted, width: 68, flexShrink: 0 } }, ((_a = pillarMeta[pk]) == null ? void 0 : _a.name) || pk), /* @__PURE__ */ React.createElement(
       "select",
       {
         value: pillarFocus[pk] || "",
@@ -3957,10 +3958,10 @@ function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop
           minWidth: 0,
           background: C.card,
           border: "1px solid var(--b)",
-          borderRadius: 8,
+          borderRadius: 7,
           color: C.text,
           fontSize: 10,
-          padding: "5px 7px",
+          padding: "4px 6px",
           fontFamily: "DM Sans,sans-serif"
         }
       },
