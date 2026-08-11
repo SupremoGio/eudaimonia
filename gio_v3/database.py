@@ -1927,6 +1927,34 @@ def init_db():
             ]
         )
 
+        # ── ACTA DIURNA Fase 3 — anclas semanales rotativas ─────────────────────
+        # days_of_week: CSV de mon/tue/wed/thu/fri/sat/sun, NULL = todos los días
+        # (comportamiento por default de todo lo sembrado en Fases 1-2). Estas
+        # anclas SÍ ocurren en fin de semana — no chocan con nada porque el
+        # checklist diario manual nunca excluyó sábado/domingo (esa exclusión
+        # solo aplica al sistema aparte de bloques Sábado Reset/Domingo Strategy).
+        # Baile no tiene fila aquí: su "ancla" es eurythmia_session ya existente,
+        # ver EURYTHMIA_ANCLA_DAYS en modules/actividades/routes.py.
+        try:
+            ad_cols2 = [r["name"] for r in db.execute("PRAGMA table_info(activity_defs)").fetchall()]
+            if "days_of_week" not in ad_cols2:
+                db.execute("ALTER TABLE activity_defs ADD COLUMN days_of_week TEXT")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] activity_defs days_of_week migration warning: {e}")
+
+        db.executemany(
+            """INSERT OR IGNORE INTO activity_defs
+               (key, label, cat, pts, ec, tier, session, pillar, type, cadence, days_of_week, active, hidden, custom, sort_order)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,1,0,0,?)""",
+            [
+                ("ancla_ccna_prog",  "CCNA / Programación — sesión profunda", "Programación", 8, 3, "alto", "afternoon", "logoi",   "ancla", "daily", "mon,wed,fri", 16),
+                ("ancla_ingles",     "Inglés — sesión profunda",              "Idiomas",       6, 2, "alto", "afternoon", "cosmo",   "ancla", "daily", "mon,thu",     17),
+                ("ancla_frances",    "Francés — sesión profunda",             "Idiomas",       6, 2, "alto", "afternoon", "cosmo",   "ancla", "daily", "tue,fri",     18),
+                ("ancla_leer_psico", "Leer psicología — sesión profunda",     "Paideia",       6, 2, "alto", "night",     "paideia", "ancla", "daily", "sun",         9),
+            ]
+        )
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

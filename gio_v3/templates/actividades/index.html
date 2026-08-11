@@ -474,14 +474,14 @@
       </div>
       {% endif %}
 
-      <!-- Eurythmia — recordatorio pasivo -->
-      <div class="eury-card {% if eurythmia_done %}done{% endif %}">
+      <!-- Eurythmia — recordatorio pasivo, copy varía si hoy es día-ancla de Baile -->
+      <div class="eury-card {% if eurythmia_card.done %}done{% endif %}">
         <div class="eic"><i data-lucide="music-2" style="width:14px;height:14px;"></i></div>
         <div class="etxt">
-          <div class="et1">¿Bailaste hoy?</div>
-          <div class="et2">{% if eurythmia_done %}Sesión registrada hoy{% else %}Se llena solo desde Eurythmia — no es un checkbox{% endif %}</div>
+          <div class="et1">{{ eurythmia_card.title }}</div>
+          <div class="et2">{{ eurythmia_card.subtitle }}</div>
         </div>
-        <span class="estatus">{{ 'Hecho' if eurythmia_done else 'Pendiente' }}</span>
+        <span class="estatus">{{ eurythmia_card.badge }}</span>
       </div>
 
       <!-- AHORA -->

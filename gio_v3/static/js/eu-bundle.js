@@ -3969,7 +3969,9 @@ function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop
     ));
   })))));
 }
-function EuryCard({ done }) {
+function EuryCard({ card }) {
+  if (!card) return null;
+  const done = !!card.done;
   return /* @__PURE__ */ React.createElement("div", { style: {
     display: "flex",
     alignItems: "center",
@@ -3989,19 +3991,19 @@ function EuryCard({ done }) {
     justifyContent: "center",
     background: "rgba(232,64,148,0.10)",
     color: "#e84094"
-  } }, /* @__PURE__ */ React.createElement(IconMusic, { size: 14 })), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 12, fontWeight: 600, color: C.text } }, "\xBFBailaste hoy?"), /* @__PURE__ */ React.createElement("div", { style: {
+  } }, /* @__PURE__ */ React.createElement(IconMusic, { size: 14 })), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 12, fontWeight: 600, color: C.text } }, card.title), /* @__PURE__ */ React.createElement("div", { style: {
     fontFamily: "DM Sans,sans-serif",
     fontSize: 9,
     marginTop: 1,
     color: done ? "#4ade80" : C.textMuted
-  } }, done ? "Sesi\xF3n registrada hoy" : "Se llena solo desde Eurythmia \u2014 no es un checkbox")), /* @__PURE__ */ React.createElement("span", { style: {
+  } }, card.subtitle)), /* @__PURE__ */ React.createElement("span", { style: {
     fontFamily: "DM Sans,sans-serif",
     fontSize: 9,
     padding: "3px 9px",
     borderRadius: 100,
     background: done ? "rgba(74,222,128,0.12)" : C.card,
     color: done ? "#4ade80" : C.textMuted
-  } }, done ? "Hecho" : "Pendiente"));
+  } }, card.badge));
 }
 function AnchorCard({ act, pillarHue, onLog, editing, onRemove }) {
   const col = EU.catTint(pillarHue, "text");
@@ -4197,7 +4199,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   if (!data) {
     return /* @__PURE__ */ React.createElement("div", { style: { padding: isDesktop ? "28px 24px" : "16px 20px" } }, /* @__PURE__ */ React.createElement(Skeleton, { kind: "card", height: 180 }), /* @__PURE__ */ React.createElement(Skeleton, { kind: "card", height: 60, style: { marginTop: 12 } }), [1, 2, 3].map((i) => /* @__PURE__ */ React.createElement(Skeleton, { key: i, kind: "card", height: 200, style: { marginTop: 12 } })));
   }
-  const { grouped, now_session, session_meta, pillar_meta, pillar_focus, foco_candidates, eurythmia_done, classification: clf, xp: pts, streak } = data;
+  const { grouped, now_session, session_meta, pillar_meta, pillar_focus, foco_candidates, eurythmia_card, classification: clf, xp: pts, streak } = data;
   const xpToday = (_a = pts == null ? void 0 : pts.today) != null ? _a : 0;
   const XP_GOAL = 15;
   const xpDayPct = Math.min(1, xpToday / XP_GOAL);
@@ -4396,7 +4398,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
     color: C.textMuted,
     textTransform: "uppercase",
     marginBottom: 2
-  } }, s.label), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Cormorant Garamond,serif", fontSize: 20, color: C.gold, lineHeight: 1 } }, s.val), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 8, color: C.textMuted, marginTop: 2 } }, s.sub)))), /* @__PURE__ */ React.createElement(FocoBar, { focoCandidates: foco_candidates, pillarMeta: pillar_meta, pillarFocus: pillar_focus, onSetFoco: setFoco, isDesktop }), /* @__PURE__ */ React.createElement(EuryCard, { done: eurythmia_done }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { ...clickableProps(() => setEditing((v) => !v)), style: {
+  } }, s.label), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Cormorant Garamond,serif", fontSize: 20, color: C.gold, lineHeight: 1 } }, s.val), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 8, color: C.textMuted, marginTop: 2 } }, s.sub)))), /* @__PURE__ */ React.createElement(FocoBar, { focoCandidates: foco_candidates, pillarMeta: pillar_meta, pillarFocus: pillar_focus, onSetFoco: setFoco, isDesktop }), /* @__PURE__ */ React.createElement(EuryCard, { card: eurythmia_card }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { ...clickableProps(() => setEditing((v) => !v)), style: {
     display: "flex",
     alignItems: "center",
     gap: 5,

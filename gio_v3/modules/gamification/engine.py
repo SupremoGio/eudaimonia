@@ -288,8 +288,14 @@ def _is_recovery_week(d):
 
 def get_daily_classification(date_str=None):
     today    = date_str or today_str()
+    d_obj    = date.fromisoformat(today)
     defs     = adefs.get_active_flat()
-    recovery = _is_recovery_week(date.fromisoformat(today))
+    recovery = _is_recovery_week(d_obj)
+    # Anclas semanales rotativas (Fase 3): solo cuentan en el denominador del
+    # día si están programadas para ese día de la semana — evita que una
+    # ancla de otro día (ej. Francés en lunes) infle "cuántas anclas hay hoy".
+    wd_today       = adefs.DAY_CODES[d_obj.weekday()]
+    defs_today = {k: v for k, v in defs.items() if adefs.eligible_today(v, wd_today)}
 
     with get_db() as db:
         total_xp = db.execute(
@@ -311,12 +317,12 @@ def get_daily_classification(date_str=None):
     # Harma queda fuera de la cobertura de Diamante a propósito (no es uno de los 8 pilares)
     pillars_today &= set(adefs.PILLARS)
 
-    anchor_defs  = [d for d in defs.values() if d["effective_type"] == "ancla"]
+    anchor_defs  = [d for d in defs_today.values() if d["effective_type"] == "ancla"]
     anchors_done = sum(1 for d in done_today if d["effective_type"] == "ancla")
     # Los touches cadence='weekly' (ej. tiempo de calidad, networking) no se
     # exigen a diario — no cuentan en el % de touches del día, solo dan XP/EC
     # y cobertura de pilar cuando se registran.
-    touch_defs   = [d for d in defs.values() if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"]
+    touch_defs   = [d for d in defs_today.values() if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"]
     touches_done = sum(1 for d in done_today if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily")
 
     gold_pct         = 0.35 if recovery else 0.5
