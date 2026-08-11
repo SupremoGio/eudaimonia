@@ -4223,7 +4223,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key })
     }).then((r) => r.json()).then((res) => {
-      var _a2, _b2, _c2, _d2, _e2;
+      var _a2, _b2, _c2, _d2, _e2, _f2, _g, _h, _i, _j;
       setData((d) => {
         var _a3, _b3, _c3, _d3;
         return {
@@ -4233,12 +4233,18 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
           classification: ((_d3 = (_c3 = res.gam) == null ? void 0 : _c3.stats) == null ? void 0 : _d3.classification) || d.classification
         };
       });
-      if ((_b2 = (_a2 = res.gam) == null ? void 0 : _a2.achievements) == null ? void 0 : _b2.length) window.euFireAchievements(res.gam.achievements);
-      if ((_c2 = res.gam) == null ? void 0 : _c2.perfect_day) {
+      if (res.stats) {
+        window.EU._server.xpToday = (_b2 = (_a2 = res.stats.xp_today) != null ? _a2 : res.stats.pts_today) != null ? _b2 : xpToday;
+        window.EU._server.streak = (_c2 = res.stats.streak) != null ? _c2 : streak;
+      }
+      if ((_e2 = (_d2 = res.gam) == null ? void 0 : _d2.stats) == null ? void 0 : _e2.classification) window.EU._server.classification = res.gam.stats.classification;
+      if (res.gam && (res.gam.xp_delta || res.gam.xp)) dispatch({ type: "ADD_XP", amount: res.gam.xp_delta || res.gam.xp });
+      if ((_g = (_f2 = res.gam) == null ? void 0 : _f2.achievements) == null ? void 0 : _g.length) window.euFireAchievements(res.gam.achievements);
+      if ((_h = res.gam) == null ? void 0 : _h.perfect_day) {
         window.dispatchEvent(new CustomEvent("eu:perfect-day", {
           detail: { bonusXp: res.gam.perfect_day.xp || 5, bonusEc: res.gam.perfect_day.ec || 10 }
         }));
-      } else if ((_e2 = (_d2 = res.gam) == null ? void 0 : _d2.combo_bonuses) == null ? void 0 : _e2.length) {
+      } else if ((_j = (_i = res.gam) == null ? void 0 : _i.combo_bonuses) == null ? void 0 : _j.length) {
         res.gam.combo_bonuses.forEach((c) => window.dispatchEvent(new CustomEvent("eu:combo-bonus", { detail: c })));
       }
       if (res.action === "added" && res.log_id && act) {
@@ -4258,10 +4264,20 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
     });
     setData((d) => ({ ...d, grouped: nextGrouped }));
     fetch(`/actividades/api/activity/undo/${t.logId}`, { method: "POST" }).then((r) => r.json()).then((res) => {
-      setData((d) => ({
-        ...d,
-        xp: res.stats ? { today: res.stats.xp_today, week: res.stats.xp_week, month: res.stats.xp_month } : d.xp
-      }));
+      var _a2, _b2, _c2, _d2, _e2;
+      setData((d) => {
+        var _a3, _b3;
+        return {
+          ...d,
+          xp: res.stats ? { today: res.stats.xp_today, week: res.stats.xp_week, month: res.stats.xp_month } : d.xp,
+          classification: ((_b3 = (_a3 = res.gam) == null ? void 0 : _a3.stats) == null ? void 0 : _b3.classification) || d.classification
+        };
+      });
+      if (res.stats) {
+        window.EU._server.xpToday = (_b2 = (_a2 = res.stats.xp_today) != null ? _a2 : res.stats.pts_today) != null ? _b2 : xpToday;
+        window.EU._server.streak = (_c2 = res.stats.streak) != null ? _c2 : streak;
+      }
+      if ((_e2 = (_d2 = res.gam) == null ? void 0 : _d2.stats) == null ? void 0 : _e2.classification) window.EU._server.classification = res.gam.stats.classification;
     }).catch(() => {
     });
     undoToast.dismiss();

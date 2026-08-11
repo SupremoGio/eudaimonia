@@ -2522,6 +2522,15 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
         streak: res.stats?.streak ?? d.streak,
         classification: res.gam?.stats?.classification || d.classification,
       }));
+      // Dashboard (HomeScreen) lee window.EU._server.* directo en cada
+      // render (no es React state) + appState global vía dispatch — sin
+      // esto, marcar algo aquí no se reflejaba al volver a Inicio.
+      if (res.stats) {
+        window.EU._server.xpToday = res.stats.xp_today ?? res.stats.pts_today ?? xpToday;
+        window.EU._server.streak  = res.stats.streak ?? streak;
+      }
+      if (res.gam?.stats?.classification) window.EU._server.classification = res.gam.stats.classification;
+      if (res.gam && (res.gam.xp_delta || res.gam.xp)) dispatch({type:'ADD_XP', amount: res.gam.xp_delta || res.gam.xp});
       if (res.gam?.achievements?.length) window.euFireAchievements(res.gam.achievements);
       if (res.gam?.perfect_day) {
         window.dispatchEvent(new CustomEvent('eu:perfect-day', {
@@ -2553,7 +2562,13 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
         setData(d => ({
           ...d,
           xp: res.stats ? {today: res.stats.xp_today, week: res.stats.xp_week, month: res.stats.xp_month} : d.xp,
+          classification: res.gam?.stats?.classification || d.classification,
         }));
+        if (res.stats) {
+          window.EU._server.xpToday = res.stats.xp_today ?? res.stats.pts_today ?? xpToday;
+          window.EU._server.streak  = res.stats.streak ?? streak;
+        }
+        if (res.gam?.stats?.classification) window.EU._server.classification = res.gam.stats.classification;
       })
       .catch(() => {});
     undoToast.dismiss();
