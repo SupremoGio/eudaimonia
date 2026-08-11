@@ -11,7 +11,7 @@ Rule hierarchy:
   7. Daily classification: Carbón / Hierro / Oro / Diamante
   8. Hard cap: 3.0× on any multiplier
 """
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from math import ceil
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, VIRTUE_CATS
@@ -276,9 +276,20 @@ def _check_combo_bonus(today, keys_today):
 
 # ── Daily Classification ──────────────────────────────────────────────────────
 
+# Semana del mes (bloques de 7 días, 1-indexed) en la que se relaja el estándar
+# de Oro/Diamante a propósito — ciclo de descanso planeado a nivel sistema, no
+# una decisión manual del usuario cada vez. Configurable.
+RECOVERY_WEEK_OF_MONTH = 4
+
+
+def _is_recovery_week(d):
+    return ((d.day - 1) // 7) + 1 == RECOVERY_WEEK_OF_MONTH
+
+
 def get_daily_classification(date_str=None):
-    today = date_str or today_str()
-    defs  = adefs.get_active_flat()
+    today    = date_str or today_str()
+    defs     = adefs.get_active_flat()
+    recovery = _is_recovery_week(date.fromisoformat(today))
 
     with get_db() as db:
         total_xp = db.execute(
@@ -297,20 +308,31 @@ def get_daily_classification(date_str=None):
     pillars_today = {d["pillar"] for d in done_today if d["effective_type"] != "ocasional"}
     if eury_today:
         pillars_today.add("eury")
-    # Harma queda fuera de la cobertura de Diamante a propósito (no es uno de los 7 pilares)
+    # Harma queda fuera de la cobertura de Diamante a propósito (no es uno de los 8 pilares)
     pillars_today &= set(adefs.PILLARS)
 
-    anchor_defs   = [d for d in defs.values() if d["effective_type"] == "ancla"]
-    anchors_done  = sum(1 for d in done_today if d["effective_type"] == "ancla")
-    touch_defs    = [d for d in defs.values() if d["effective_type"] == "touch"]
-    touches_done  = sum(1 for d in done_today if d["effective_type"] == "touch")
+    anchor_defs  = [d for d in defs.values() if d["effective_type"] == "ancla"]
+    anchors_done = sum(1 for d in done_today if d["effective_type"] == "ancla")
+    # Los touches cadence='weekly' (ej. tiempo de calidad, networking) no se
+    # exigen a diario — no cuentan en el % de touches del día, solo dan XP/EC
+    # y cobertura de pilar cuando se registran.
+    touch_defs   = [d for d in defs.values() if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"]
+    touches_done = sum(1 for d in done_today if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily")
+
+    gold_pct         = 0.35 if recovery else 0.5
+    diamond_pillars  = max(1, len(adefs.PILLARS) - 2) if recovery else len(adefs.PILLARS)
+    # En semana de descarga, Hierro también se alcanza solo con touches —
+    # "menos anclas exigidas" — sin necesidad de completar la sesión larga.
+    hierro_ok = (not anchor_defs) or (anchors_done >= 1) or (
+        recovery and touch_defs and touches_done >= ceil(len(touch_defs) * 0.3)
+    )
 
     rank = "carbon"
-    if not anchor_defs or anchors_done >= 1:
+    if hierro_ok:
         rank = "iron"
-        if not touch_defs or touches_done >= ceil(len(touch_defs) * 0.5):
+        if not touch_defs or touches_done >= ceil(len(touch_defs) * gold_pct):
             rank = "gold"
-            if len(pillars_today) >= len(adefs.PILLARS):
+            if len(pillars_today) >= diamond_pillars:
                 rank = "diamond"
 
     info = CLASSIFICATION[rank].copy()
@@ -320,6 +342,7 @@ def get_daily_classification(date_str=None):
         "cats": len(pillars_today), "pillars": sorted(pillars_today),
         "anchors_done": anchors_done, "anchors_total": len(anchor_defs),
         "touches_done": touches_done, "touches_total": len(touch_defs),
+        "recovery_week": recovery,
     })
     return info
 

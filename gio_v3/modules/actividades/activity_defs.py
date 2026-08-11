@@ -5,11 +5,14 @@ tipo (ancla/touch/ocasional) por actividad, con soporte de "foco del mes"
 """
 import re
 import time
+from datetime import timedelta
 from database import get_db
+from utils import today_str, today_date
 
 SESSIONS = ("morning", "afternoon", "night", "any")
-PILLARS  = ("logoi", "paideia", "cosmo", "hege", "eury", "atar", "oiko")
+PILLARS  = ("logoi", "paideia", "cosmo", "hege", "eury", "atar", "oiko", "philia")
 TYPES    = ("ancla", "touch", "ocasional")
+CADENCES = ("daily", "weekly")
 
 
 def _slugify(label):
@@ -75,6 +78,24 @@ def get_active_grouped():
             grouped[item["session"]].append(item)
     grouped["ocasional"] = occasional
     return grouped
+
+
+def get_week_counts(keys):
+    """Cuántas veces se registró cada key (lista) en la semana actual (lunes–hoy).
+    Usado por items cadence='weekly' para mostrar progreso ("2/semana") sin
+    cambiar la semántica del checkbox, que sigue siendo 'hoy'."""
+    if not keys:
+        return {}
+    _today = today_date()
+    week_start = (_today - timedelta(days=_today.weekday())).isoformat()
+    with get_db() as db:
+        rows = db.execute(
+            f"""SELECT activity_key, COUNT(*) as c FROM activity_logs
+                WHERE date>=? AND date<=? AND activity_key IN ({",".join("?"*len(keys))})
+                GROUP BY activity_key""",
+            (week_start, today_str(), *keys)
+        ).fetchall()
+    return {r["activity_key"]: r["c"] for r in rows}
 
 
 def get_active_flat():
