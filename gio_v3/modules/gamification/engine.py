@@ -12,11 +12,13 @@ Rule hierarchy:
   8. Hard cap: 3.0× on any multiplier
 """
 from datetime import datetime, timedelta
+from math import ceil
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, VIRTUE_CATS
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
 from modules.gamification.icons import lucide_for
 from utils import today_str, today_date
+import modules.actividades.activity_defs as adefs
 
 # ── Level System (10 Stoic Levels — 1 año dedicado = nivel 10) ───────────────
 # Calibrado a 25 XP/día activo × 5 días/semana = nivel 10 en ~52 semanas
@@ -49,13 +51,13 @@ LEVEL_SUBTITLES = {
 # Daily classification thresholds
 CLASSIFICATION = {
     "diamond": {"label": "Diamante", "icon": "💎", "color": "#7dd3fc",
-                "desc": "20+ XP · ≥1 acción alto impacto"},
+                "desc": "Oro + cobertura de los 7 pilares"},
     "gold":    {"label": "Oro",      "icon": "🥇", "color": "#fbbf24",
-                "desc": "16+ XP · ≥3 categorías"},
+                "desc": "Hierro + ≥50% de tus touches del día"},
     "iron":    {"label": "Hierro",   "icon": "⚔️",  "color": "#94a3b8",
-                "desc": "8–15 XP · ≥2 categorías"},
+                "desc": "Completaste tu(s) ancla(s) del día"},
     "carbon":  {"label": "Carbón",   "icon": "🪨",  "color": "#475569",
-                "desc": "<7 XP o sin acciones de progreso"},
+                "desc": "Aún no completas tu ancla del día"},
 }
 
 
@@ -276,6 +278,8 @@ def _check_combo_bonus(today, keys_today):
 
 def get_daily_classification(date_str=None):
     today = date_str or today_str()
+    defs  = adefs.get_active_flat()
+
     with get_db() as db:
         total_xp = db.execute(
             "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=?", (today,)
@@ -284,23 +288,39 @@ def get_daily_classification(date_str=None):
             "SELECT activity_key FROM activity_logs WHERE date=? AND activity_key != 'priority_bonus'",
             (today,)
         ).fetchall()]
+        eury_today = db.execute(
+            "SELECT 1 FROM activity_logs WHERE activity_key='eurythmia_session' AND date=?", (today,)
+        ).fetchone() is not None
 
-    cats       = {ACTIVITIES[k]["cat"] for k in keys if k in ACTIVITIES}
-    has_alto   = any(ACTIVITIES[k].get("tier") == "alto" for k in keys if k in ACTIVITIES)
-    has_progreso = any(ACTIVITIES[k].get("tier") in ("progreso", "alto") for k in keys if k in ACTIVITIES)
+    done_today = [defs[k] for k in keys if k in defs]
 
-    if total_xp >= 20 and has_alto:
-        rank = "diamond"
-    elif total_xp >= 16 and len(cats) >= 3:
-        rank = "gold"
-    elif total_xp >= 8 and len(cats) >= 2 and has_progreso:
+    pillars_today = {d["pillar"] for d in done_today if d["effective_type"] != "ocasional"}
+    if eury_today:
+        pillars_today.add("eury")
+    # Harma queda fuera de la cobertura de Diamante a propósito (no es uno de los 7 pilares)
+    pillars_today &= set(adefs.PILLARS)
+
+    anchor_defs   = [d for d in defs.values() if d["effective_type"] == "ancla"]
+    anchors_done  = sum(1 for d in done_today if d["effective_type"] == "ancla")
+    touch_defs    = [d for d in defs.values() if d["effective_type"] == "touch"]
+    touches_done  = sum(1 for d in done_today if d["effective_type"] == "touch")
+
+    rank = "carbon"
+    if not anchor_defs or anchors_done >= 1:
         rank = "iron"
-    else:
-        rank = "carbon"
+        if not touch_defs or touches_done >= ceil(len(touch_defs) * 0.5):
+            rank = "gold"
+            if len(pillars_today) >= len(adefs.PILLARS):
+                rank = "diamond"
 
     info = CLASSIFICATION[rank].copy()
     info["icon_lucide"] = lucide_for(info["icon"])
-    info.update({"rank": rank, "xp": total_xp, "cats": len(cats), "has_alto": has_alto})
+    info.update({
+        "rank": rank, "xp": total_xp,
+        "cats": len(pillars_today), "pillars": sorted(pillars_today),
+        "anchors_done": anchors_done, "anchors_total": len(anchor_defs),
+        "touches_done": touches_done, "touches_total": len(touch_defs),
+    })
     return info
 
 
@@ -572,7 +592,8 @@ def get_gamification_stats():
 
 def process_activity(key, pts, cat, log_id):
     streak  = get_gamification_streak()
-    ec      = ACTIVITIES.get(key, {}).get("ec", 0)
+    act_def = adefs.get_by_key(key)
+    ec      = act_def["ec"] if act_def else ACTIVITIES.get(key, {}).get("ec", 0)
 
     xp_mult  = _compute_xp_mult(cat, streak)
     final_xp = max(1, int(pts * xp_mult))

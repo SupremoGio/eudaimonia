@@ -1808,6 +1808,100 @@ def init_db():
                 ]
             )
 
+        # ── ACTA DIURNA — Definiciones editables (sesión, pilar, tipo) ─────────
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS activity_defs (
+            key         TEXT PRIMARY KEY,
+            label       TEXT    NOT NULL,
+            cat         TEXT    NOT NULL DEFAULT '',
+            pts         INTEGER NOT NULL DEFAULT 1,
+            ec          INTEGER NOT NULL DEFAULT 0,
+            tier        TEXT    NOT NULL DEFAULT 'micro',
+            session     TEXT,
+            pillar      TEXT    NOT NULL,
+            type        TEXT    NOT NULL DEFAULT 'touch',
+            active      INTEGER NOT NULL DEFAULT 1,
+            hidden      INTEGER NOT NULL DEFAULT 0,
+            custom      INTEGER NOT NULL DEFAULT 0,
+            sort_order  INTEGER NOT NULL DEFAULT 0,
+            created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS pillar_focus (
+            pillar      TEXT PRIMARY KEY,
+            focus_key   TEXT,
+            updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        """)
+
+        if db.execute("SELECT COUNT(*) as c FROM activity_defs").fetchone()["c"] == 0:
+            db.executemany(
+                """INSERT INTO activity_defs
+                   (key, label, cat, pts, ec, tier, session, pillar, type, active, hidden, custom, sort_order)
+                   VALUES (?,?,?,?,?,?,?,?,?,1,0,0,?)""",
+                [
+                    # ── Mañana ───────────────────────────────────────────────
+                    ("tender_cama",         "Tender cama",                      "Orden",         1, 0, "micro",    "morning", "atar",   "touch", 1),
+                    ("jugo_verde",          "Jugo verde",                       "Salud Base",    2, 0, "micro",    "morning", "hege",   "touch", 2),
+                    ("comer_fruta",         "Comer fruta",                      "Salud Base",    1, 0, "micro",    "morning", "hege",   "touch", 3),
+                    ("meditar",             "Meditar",                          "Salud Mental",  2, 0, "micro",    "morning", "hege",   "touch", 4),
+                    ("dormir_8h",           "Dormir 8 horas",                   "Salud Base",    2, 0, "micro",    "morning", "hege",   "touch", 5),
+                    ("outfit",              "Outfit cuidado / presencia",       "Identidad",     1, 0, "micro",    "morning", "eury",   "touch", 6),
+                    ("llegar_puntual",      "Llegar Puntual",                   "Identidad",     4, 1, "progreso", "morning", "atar",   "touch", 7),
+                    ("mit",                 "Most Important Task",              "Ataraxia",      2, 0, "micro",    "morning", "atar",   "touch", 8),
+                    ("recuperacion_fisica", "Recuperación física",              "Hegemonikon",   1, 0, "micro",    "morning", "hege",   "touch", 9),
+                    ("visualizacion",       "Visualización mental",             "Hegemonikon",   1, 0, "micro",    "morning", "hege",   "touch", 10),
+                    # ── Tarde ────────────────────────────────────────────────
+                    ("gym",                 "Ejercicio Gym",                    "Salud Física",  4, 1, "progreso", "afternoon", "hege", "ancla", 1),
+                    ("sololearn",           "Lección SoloLearn / Mimo",         "Programación",  1, 0, "micro",    "afternoon", "logoi","touch", 2),
+                    ("leer_prog",           "Leer programación",                "Programación",  2, 0, "micro",    "afternoon", "logoi","touch", 3),
+                    ("python100",           "Lección 100 Días Python",          "Programación",  2, 1, "progreso", "afternoon", "logoi","touch", 4),
+                    ("ccna",                "Curso CCNA / Frontend",            "Programación",  3, 1, "progreso", "afternoon", "logoi","touch", 5),
+                    ("resolver_codigo",     "Resolver 5 problemas reales",      "Programación",  6, 2, "alto",     "afternoon", "logoi","touch", 6),
+                    ("github",              "Subir proyecto a GitHub",          "Programación",  8, 3, "alto",     "afternoon", "logoi","touch", 7),
+                    ("leccion_idiomas",     "Lecciones idiomas",                "Idiomas",       2, 1, "progreso", "afternoon", "cosmo","touch", 8),
+                    ("conversacion",        "Conversación real 10min+",         "Idiomas",       5, 2, "alto",     "afternoon", "cosmo","touch", 9),
+                    ("pliometria",          "Pliometría",                       "Salud Física",  3, 1, "progreso", "afternoon", "hege", "touch", 10),
+                    ("abdominales",         "Abdominales",                      "Salud Física",  2, 0, "micro",    "afternoon", "hege", "touch", 11),
+                    ("gymbook",             "GymBook",                          "Salud Física",  2, 0, "micro",    "afternoon", "hege", "touch", 12),
+                    ("leer_general",        "Leer 5 páginas",                   "Paideia",       1, 0, "micro",    "afternoon", "paideia","touch", 13),
+                    ("registrar_gastos",    "Registrar gastos",                 "Finanzas",      2, 1, "progreso", "afternoon", "oiko", "touch", 14),
+                    ("planchar",            "Planchar ropa",                    "Orden",         2, 1, "progreso", "afternoon", "atar", "touch", 15),
+                    # ── Noche ────────────────────────────────────────────────
+                    ("skincare_noche",      "Skin Care nocturno",               "Salud Base",    2, 0, "micro",    "night", "hege",     "touch", 1),
+                    ("leer_psico",          "Leer psicología",                  "Paideia",       1, 0, "micro",    "night", "paideia",  "touch", 2),
+                    ("leer_365_dias",       "Leer 365 días",                    "Paideia",       1, 0, "micro",    "night", "paideia",  "touch", 3),
+                    ("brilliant",           "Lección Brilliant",                "Paideia",       2, 1, "progreso", "night", "paideia",  "touch", 4),
+                    ("correccion_diaria",   "Corrección diaria",                "Hegemonikon",   1, 0, "micro",    "night", "hege",     "touch", 5),
+                    ("ritual_nocturno",     "Ritual nocturno de preparación",   "Ataraxia",      1, 0, "micro",    "night", "atar",     "touch", 6),
+                    # ── Cualquier momento ────────────────────────────────────
+                    ("podcast_idiomas",     "Podcast en idiomas",               "Idiomas",       1, 0, "micro",    "any", "cosmo",  "touch", 1),
+                    ("VividVocab",          "Lección VividVocab",               "Idiomas",       1, 0, "micro",    "any", "cosmo",  "touch", 2),
+                    ("colacion",            "Colación saludable",               "Salud Base",    1, 0, "micro",    "any", "hege",   "touch", 3),
+                    ("finanzas_udemy",      "Lección finanzas",                 "Finanzas",      2, 1, "progreso", "any", "oiko",   "touch", 4),
+                    ("ahorrar",             "Ahorrar dinero (mensual)",         "Finanzas",      6, 3, "alto",     "any", "oiko",   "touch", 5),
+                    ("lavar_carro",         "Lavar carro",                      "Orden",         2, 0, "micro",    "any", "atar",   "touch", 6),
+                    ("lenguaje_corporal",   "Lenguaje corporal consciente",     "Identidad",     1, 0, "micro",    "any", "eury",   "touch", 7),
+                    ("redes_control",       "<3.5h redes sociales",             "Identidad",     4, 1, "progreso", "any", "hege",   "touch", 8),
+                    # ── Ocasional — no cuenta para el tier ──────────────────
+                    ("partido",             "Partido",                         "Salud Física",  3, 1, "progreso", None, "hege",  "ocasional", 1),
+                    ("gol",                 "Gol (bonus partido)",              "Salud Física",  2, 0, "micro",    None, "hege",  "ocasional", 2),
+                    ("test_cert",           "Test certificación (DALF/IELTS)",  "Idiomas",       8, 3, "alto",     None, "cosmo", "ocasional", 3),
+                ]
+            )
+            # gbm: auto-log oculto desde el import de estados de cuenta (Finanzas), no checkbox manual
+            db.execute(
+                """INSERT INTO activity_defs
+                   (key, label, cat, pts, ec, tier, session, pillar, type, active, hidden, custom, sort_order)
+                   VALUES (?,?,?,?,?,?,?,?,?,1,1,0,?)""",
+                ("gbm", "Investigar en GBM", "Finanzas", 2, 1, "progreso", None, "oiko", "touch", 1)
+            )
+
+        if db.execute("SELECT COUNT(*) as c FROM pillar_focus").fetchone()["c"] == 0:
+            db.execute(
+                "INSERT INTO pillar_focus (pillar, focus_key) VALUES (?,?)",
+                ("logoi", "resolver_codigo")
+            )
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
