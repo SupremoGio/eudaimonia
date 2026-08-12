@@ -4228,7 +4228,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   const XP_GOAL = 15;
   const xpDayPct = Math.min(1, xpToday / XP_GOAL);
   const otherSessions = ["morning", "afternoon", "night"].filter((s) => s !== now_session);
-  const todaysAnchors = Object.values(grouped).flat().filter((a) => a.effective_type === "ancla");
+  const todaysAnchors = Object.values(grouped).flat().filter((a) => a.effective_type === "ancla" && a.days_of_week);
   const findAct = (key) => {
     for (const items of Object.values(grouped)) {
       const found = items.find((a) => a.key === key);
