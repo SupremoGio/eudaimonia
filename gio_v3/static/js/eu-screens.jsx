@@ -2753,7 +2753,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
         </div>
 
         <FocoBar focoCandidates={foco_candidates} pillarMeta={pillar_meta} pillarFocus={pillar_focus} onSetFoco={setFoco} isDesktop={isDesktop}/>
-        <AnchorsTodayCard anchors={todaysAnchors} eurythmiaCard={eurythmia_card} pillarMeta={pillar_meta} onLog={logActivity}/>
+        <AnchorsTodayCard anchors={todaysAnchors} eurythmiaCard={eurythmia_card && eurythmia_card.ancla_day ? eurythmia_card : null} pillarMeta={pillar_meta} onLog={logActivity}/>
 
         {/* ── Editar toggle ── */}
         <div style={{display:'flex',justifyContent:'flex-end',marginBottom:10}}>
