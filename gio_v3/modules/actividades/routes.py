@@ -129,8 +129,7 @@ def _now_session():
     hour = now_local().hour
     if 6 <= hour < 13:  return "morning"
     if 13 <= hour < 19: return "afternoon"
-    if 19 <= hour < 23: return "night"
-    return "afternoon"  # madrugada: se ancla a la sesión más reciente por defecto
+    return "night"  # 19:00–23:59 y madrugada (0:00–6:00): Noche es la sesión vigente
 
 
 def build_acta_diurna_context():
