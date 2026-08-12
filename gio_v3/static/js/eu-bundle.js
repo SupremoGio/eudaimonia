@@ -3880,7 +3880,7 @@ function PillarCoverageRow({ pillarMeta, pillars }) {
 }
 function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop }) {
   const entries = Object.entries(focoCandidates || {});
-  const [open, setOpen] = useState(!!isDesktop);
+  const [open, setOpen] = useState(false);
   if (!entries.length) return null;
   const active = entries.filter(([pk]) => pillarFocus[pk]);
   const summary = active.length ? active.map(([pk]) => {
@@ -3970,41 +3970,64 @@ function FocoBar({ focoCandidates, pillarMeta, pillarFocus, onSetFoco, isDesktop
     ));
   })))));
 }
-function EuryCard({ card }) {
-  if (!card) return null;
-  const done = !!card.done;
-  return /* @__PURE__ */ React.createElement("div", { style: {
+function AnchorsTodayCard({ anchors, eurythmiaCard, pillarMeta, onLog }) {
+  const total = anchors.length + (eurythmiaCard ? 1 : 0);
+  if (!total) return null;
+  return /* @__PURE__ */ React.createElement("div", { style: { background: C.card2, border: "1px solid var(--b)", borderRadius: 14, padding: "12px 14px", marginBottom: 14 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 9 } }, /* @__PURE__ */ React.createElement("div", { style: {
+    width: 20,
+    height: 20,
+    borderRadius: "50%",
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    padding: "10px 14px",
-    borderRadius: 12,
-    background: C.card2,
-    border: "1px solid var(--b)",
-    marginBottom: 14
-  } }, /* @__PURE__ */ React.createElement("div", { style: {
-    width: 28,
-    height: 28,
-    borderRadius: 9,
+    justifyContent: "center",
+    background: "var(--gold-bg)",
+    color: C.gold,
+    flexShrink: 0
+  } }, /* @__PURE__ */ React.createElement("svg", { width: 10, height: 10, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.5 }, /* @__PURE__ */ React.createElement("path", { d: "M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" }))), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 11, fontWeight: 600, color: C.text } }, "Anclas de hoy"), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 9, color: C.textMuted, marginLeft: "auto" } }, total)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 7 } }, eurythmiaCard && /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 9 } }, /* @__PURE__ */ React.createElement("div", { style: {
+    width: 18,
+    height: 18,
+    borderRadius: 6,
     flexShrink: 0,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     background: "rgba(232,64,148,0.10)",
     color: "#e84094"
-  } }, /* @__PURE__ */ React.createElement(IconMusic, { size: 14 })), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 12, fontWeight: 600, color: C.text } }, card.title), /* @__PURE__ */ React.createElement("div", { style: {
+  } }, /* @__PURE__ */ React.createElement(IconMusic, { size: 10 })), /* @__PURE__ */ React.createElement("span", { style: {
+    flex: 1,
+    fontFamily: "DM Sans,sans-serif",
+    fontSize: 11.5,
+    color: eurythmiaCard.done ? C.textMuted : C.textSub
+  } }, eurythmiaCard.title), /* @__PURE__ */ React.createElement("span", { style: {
     fontFamily: "DM Sans,sans-serif",
     fontSize: 9,
-    marginTop: 1,
-    color: done ? "#4ade80" : C.textMuted
-  } }, card.subtitle)), /* @__PURE__ */ React.createElement("span", { style: {
-    fontFamily: "DM Sans,sans-serif",
-    fontSize: 9,
-    padding: "3px 9px",
+    padding: "2px 7px",
     borderRadius: 100,
-    background: done ? "rgba(74,222,128,0.12)" : C.card,
-    color: done ? "#4ade80" : C.textMuted
-  } }, card.badge));
+    flexShrink: 0,
+    background: eurythmiaCard.done ? "rgba(74,222,128,0.12)" : C.card,
+    color: eurythmiaCard.done ? "#4ade80" : C.textMuted
+  } }, eurythmiaCard.badge)), anchors.map((act) => {
+    var _a;
+    const hue = (_a = (pillarMeta[act.pillar] || {}).hue) != null ? _a : 45;
+    const col = EU.catTint(hue, "text");
+    return /* @__PURE__ */ React.createElement("div", { key: act.key, ...clickableProps(() => onLog(act.key)), style: { display: "flex", alignItems: "center", gap: 9, cursor: "pointer" } }, /* @__PURE__ */ React.createElement("div", { style: {
+      width: 16,
+      height: 16,
+      borderRadius: 5,
+      flexShrink: 0,
+      border: `1.5px solid ${col}`,
+      background: act.done ? col : "transparent",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center"
+    } }, act.done && /* @__PURE__ */ React.createElement("svg", { width: 9, height: 9, viewBox: "0 0 11 11" }, /* @__PURE__ */ React.createElement("polyline", { points: "2,5.5 4.5,8.5 9,2.5", stroke: "#fff", strokeWidth: 1.8, fill: "none", strokeLinecap: "round", strokeLinejoin: "round" }))), /* @__PURE__ */ React.createElement("span", { style: {
+      flex: 1,
+      fontFamily: "DM Sans,sans-serif",
+      fontSize: 11.5,
+      color: act.done ? C.textMuted : C.textSub,
+      textDecoration: act.done ? "line-through" : "none"
+    } }, act.label), /* @__PURE__ */ React.createElement("span", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 9, color: col, flexShrink: 0 } }, "+", act.pts, " XP"));
+  })));
 }
 function AnchorCard({ act, pillarHue, onLog, editing, onRemove }) {
   const col = EU.catTint(pillarHue, "text");
@@ -4205,6 +4228,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
   const XP_GOAL = 15;
   const xpDayPct = Math.min(1, xpToday / XP_GOAL);
   const otherSessions = ["morning", "afternoon", "night"].filter((s) => s !== now_session);
+  const todaysAnchors = Object.values(grouped).flat().filter((a) => a.effective_type === "ancla");
   const findAct = (key) => {
     for (const items of Object.values(grouped)) {
       const found = items.find((a) => a.key === key);
@@ -4415,7 +4439,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
     color: C.textMuted,
     textTransform: "uppercase",
     marginBottom: 2
-  } }, s.label), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Cormorant Garamond,serif", fontSize: 20, color: C.gold, lineHeight: 1 } }, s.val), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 8, color: C.textMuted, marginTop: 2 } }, s.sub)))), /* @__PURE__ */ React.createElement(FocoBar, { focoCandidates: foco_candidates, pillarMeta: pillar_meta, pillarFocus: pillar_focus, onSetFoco: setFoco, isDesktop }), /* @__PURE__ */ React.createElement(EuryCard, { card: eurythmia_card }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { ...clickableProps(() => setEditing((v) => !v)), style: {
+  } }, s.label), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "Cormorant Garamond,serif", fontSize: 20, color: C.gold, lineHeight: 1 } }, s.val), /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,sans-serif", fontSize: 8, color: C.textMuted, marginTop: 2 } }, s.sub)))), /* @__PURE__ */ React.createElement(FocoBar, { focoCandidates: foco_candidates, pillarMeta: pillar_meta, pillarFocus: pillar_focus, onSetFoco: setFoco, isDesktop }), /* @__PURE__ */ React.createElement(AnchorsTodayCard, { anchors: todaysAnchors, eurythmiaCard: eurythmia_card, pillarMeta: pillar_meta, onLog: logActivity }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", marginBottom: 10 } }, /* @__PURE__ */ React.createElement("button", { ...clickableProps(() => setEditing((v) => !v)), style: {
     display: "flex",
     alignItems: "center",
     gap: 5,
