@@ -49,12 +49,12 @@ def get_eurythmia_card():
     done      = get_eurythmia_today()
     ancla_day = adefs.weekday_code() in EURYTHMIA_ANCLA_DAYS
     if ancla_day and not done:
-        return {"title": "Hoy toca Baile — tu ancla semanal", "subtitle": "Se llena solo desde Eurythmia", "badge": "Pendiente", "done": False}
+        return {"title": "Hoy toca Baile — tu ancla semanal", "subtitle": "Se llena solo desde Eurythmia", "badge": "Pendiente", "done": False, "ancla_day": True}
     if ancla_day and done:
-        return {"title": "Baile completado hoy", "subtitle": "Ancla semanal cumplida", "badge": "Hecho", "done": True}
+        return {"title": "Baile completado hoy", "subtitle": "Ancla semanal cumplida", "badge": "Hecho", "done": True, "ancla_day": True}
     if not ancla_day and not done:
-        return {"title": "¿Bailaste hoy?", "subtitle": "No era tu día ancla, pero cuenta si lo hiciste", "badge": "Opcional", "done": False}
-    return {"title": "Bailaste hoy", "subtitle": "Extra — no era tu ancla", "badge": "Extra", "done": True}
+        return {"title": "¿Bailaste hoy?", "subtitle": "No era tu día ancla, pero cuenta si lo hiciste", "badge": "Opcional", "done": False, "ancla_day": False}
+    return {"title": "Bailaste hoy", "subtitle": "Extra — no era tu ancla", "badge": "Extra", "done": True, "ancla_day": False}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
