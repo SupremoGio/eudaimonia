@@ -1955,6 +1955,27 @@ def init_db():
             ]
         )
 
+        # ── ACTA DIURNA Fase 4 — limpieza: retira touches Fase 1 que quedaron
+        # duplicados por las anclas semanales de Fase 3 (mismo tema: CCNA y
+        # sesión profunda de idiomas — 'ccna'/'leccion_idiomas' promovidos a
+        # ancla por el foco del mes chocaban visualmente con 'ancla_ccna_prog'/
+        # 'ancla_ingles'/'ancla_frances', y aparecían incluso los días en que
+        # la ancla semanal no tocaba). También mueve "Leer 5 páginas" a la
+        # sesión Noche (quedó en Tarde desde Fase 1, antes de que existiera
+        # bloque de lectura nocturno). Con guard de migration_log para que
+        # sea de una sola vez y no pelee con ediciones manuales futuras.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='acta_diurna_fase4_cleanup'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET active=0 WHERE key IN ('ccna','leccion_idiomas')")
+            db.execute("DELETE FROM pillar_focus WHERE focus_key IN ('ccna','leccion_idiomas')")
+            db.execute("UPDATE activity_defs SET session='night' WHERE key='leer_general'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("acta_diurna_fase4_cleanup",
+                 "Retira 'ccna'/'leccion_idiomas' (Fase 1, duplicaban anclas Fase 3) y mueve 'Leer 5 páginas' a sesión Noche.")
+            )
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
