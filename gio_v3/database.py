@@ -1993,6 +1993,18 @@ def init_db():
                  "'Podcast en idiomas' pasa de sesión 'any' a 'morning,afternoon,night'.")
             )
 
+        # ── ACTA DIURNA — retira "Planchar ropa" del checklist (soft delete,
+        # el historial en activity_logs queda intacto).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='planchar_ropa_retirado'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET active=0 WHERE key='planchar'")
+            db.execute("DELETE FROM pillar_focus WHERE focus_key='planchar'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("planchar_ropa_retirado", "Retira 'Planchar ropa' del checklist de Acta Diurna.")
+            )
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
