@@ -665,11 +665,16 @@ function DeadlineRadar({ deadlines, checking, onCheck }) {
 // ═══════════════════════════════════════════════════════════
 // HOME SCREEN
 // ═══════════════════════════════════════════════════════════
+// Nota: el rango diario (carbon/iron/gold/diamond) NO se calcula por XP
+// acumulado — depende de anclas/touches/pilares cubiertos (ver
+// get_daily_classification en engine.py). Este array es solo metadata visual
+// (icono/color/label) por rango; el progreso real hacia el siguiente rango
+// viene del servidor en clf.next_hint.
 const TIERS = [
-  { rank:'carbon',  Icon:IconMountain, label:'Carbón',   color:'#94a3b8', threshold:0  },
-  { rank:'iron',    Icon:IconSwords,   label:'Hierro',   color:'#eab308', threshold:8  },
-  { rank:'gold',    Icon:IconMedal,    label:'Oro',      color:'#fbbf24', threshold:16 },
-  { rank:'diamond', Icon:IconGem,      label:'Diamante', color:'#7dd3fc', threshold:20 },
+  { rank:'carbon',  Icon:IconMountain, label:'Carbón',   color:'#94a3b8' },
+  { rank:'iron',    Icon:IconSwords,   label:'Hierro',   color:'#eab308' },
+  { rank:'gold',    Icon:IconMedal,    label:'Oro',      color:'#fbbf24' },
+  { rank:'diamond', Icon:IconGem,      label:'Diamante', color:'#7dd3fc' },
 ];
 
 function titleCase(s) {
@@ -822,7 +827,6 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
       </div>
       {(() => {
         const ci = Math.max(0, TIERS.findIndex(t => t.rank === clf.rank));
-        const nt = TIERS[ci + 1] || null;
         return (
           <>
             <div style={{display:'flex',alignItems:'stretch',gap:6,marginBottom:10}}>
@@ -861,9 +865,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
             </div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:10}}>
               <span style={{color:C.textMuted}}>Clasificación de hoy</span>
-              <span style={{color:C.gold,opacity:0.8}}>
-                {nt?`${nt.threshold-xpToday} XP → ${nt.label}`:'✦ Diamante alcanzado'}
-              </span>
+              <span style={{color:C.gold,opacity:0.8}}>{clf.next_hint || ''}</span>
             </div>
           </>
         );
@@ -2724,8 +2726,9 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
               </div>
             );
           })()}
-          <div style={{display:'flex',justifyContent:'flex-end',alignItems:'center',fontSize:10,marginBottom:4}}>
-            <span style={{color:C.gold,opacity:0.7}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:10,marginBottom:4,gap:8}}>
+            <span style={{color:C.gold,opacity:0.8}}>{clf?.next_hint || ''}</span>
+            <span style={{color:C.gold,opacity:0.7,flexShrink:0}}>
               {xpNext ? `${xpNext - xp} XP → ${EU.levels[level]?.name || ''}` : ''}
             </span>
           </div>

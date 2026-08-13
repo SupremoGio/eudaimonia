@@ -349,8 +349,30 @@ def get_daily_classification(date_str=None):
         "anchors_done": anchors_done, "anchors_total": len(anchor_defs),
         "touches_done": touches_done, "touches_total": len(touch_defs),
         "recovery_week": recovery,
+        "next_hint": _next_rank_hint(rank, anchor_defs, touch_defs, touches_done, gold_pct, diamond_pillars, len(pillars_today)),
     })
     return info
+
+
+# La clasificación diaria depende de anclas/touches/pilares cubiertos, no del
+# XP acumulado — este hint se calcula aquí (no en el cliente) para que el
+# widget de "Clasificación de hoy" nunca muestre una meta de XP inventada que
+# no corresponde a la regla real de ascenso de rango.
+def _next_rank_hint(rank, anchor_defs, touch_defs, touches_done, gold_pct, diamond_pillars, pillars_done):
+    if rank == "diamond":
+        return "✦ Diamante alcanzado"
+    if rank == "gold":
+        faltan = diamond_pillars - pillars_done
+        return f"Cubre {faltan} pilar{'es' if faltan != 1 else ''} más → Diamante"
+    if rank == "iron":
+        faltan = ceil(len(touch_defs) * gold_pct) - touches_done
+        if faltan <= 0:
+            return "Oro alcanzado"
+        return f"Registra {faltan} touch{'es' if faltan != 1 else ''} más → Oro"
+    # carbon
+    if anchor_defs:
+        return "Completa tu ancla del día → Hierro"
+    return "Registra una actividad de hoy → Hierro"
 
 
 # ── Achievement stats + unlock ────────────────────────────────────────────────

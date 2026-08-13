@@ -2189,10 +2189,10 @@ function DeadlineRadar({ deadlines, checking, onCheck }) {
   })));
 }
 const TIERS = [
-  { rank: "carbon", Icon: IconMountain, label: "Carb\xF3n", color: "#94a3b8", threshold: 0 },
-  { rank: "iron", Icon: IconSwords, label: "Hierro", color: "#eab308", threshold: 8 },
-  { rank: "gold", Icon: IconMedal, label: "Oro", color: "#fbbf24", threshold: 16 },
-  { rank: "diamond", Icon: IconGem, label: "Diamante", color: "#7dd3fc", threshold: 20 }
+  { rank: "carbon", Icon: IconMountain, label: "Carb\xF3n", color: "#94a3b8" },
+  { rank: "iron", Icon: IconSwords, label: "Hierro", color: "#eab308" },
+  { rank: "gold", Icon: IconMedal, label: "Oro", color: "#fbbf24" },
+  { rank: "diamond", Icon: IconGem, label: "Diamante", color: "#7dd3fc" }
 ];
 function titleCase(s) {
   return s.charAt(0) + s.slice(1).toLowerCase();
@@ -2369,7 +2369,6 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
     transition: "width 0.8s ease"
   } })), (() => {
     const ci = Math.max(0, TIERS.findIndex((t) => t.rank === clf.rank));
-    const nt = TIERS[ci + 1] || null;
     return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "stretch", gap: 6, marginBottom: 10 } }, TIERS.map((t, i) => {
       const active = i === ci;
       const TIcon = t.Icon;
@@ -2407,7 +2406,7 @@ function HomeScreen({ appState, dispatch, isDesktop }) {
         opacity: active ? 1 : 0.6,
         textAlign: "center"
       } }, t.label));
-    })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { color: C.textMuted } }, "Clasificaci\xF3n de hoy"), /* @__PURE__ */ React.createElement("span", { style: { color: C.gold, opacity: 0.8 } }, nt ? `${nt.threshold - xpToday} XP \u2192 ${nt.label}` : "\u2726 Diamante alcanzado")));
+    })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10 } }, /* @__PURE__ */ React.createElement("span", { style: { color: C.textMuted } }, "Clasificaci\xF3n de hoy"), /* @__PURE__ */ React.createElement("span", { style: { color: C.gold, opacity: 0.8 } }, clf.next_hint || "")));
   })());
   const levelCard = /* @__PURE__ */ React.createElement("div", { style: {
     background: "linear-gradient(140deg, var(--card), var(--surf) 55%, var(--bg))",
@@ -4423,7 +4422,7 @@ function ActaDiurnaScreen({ appState, dispatch, isDesktop }) {
         background: i < ci ? `${col}35` : "rgba(255,255,255,0.06)"
       } }));
     }));
-  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "flex-end", alignItems: "center", fontSize: 10, marginBottom: 4 } }, /* @__PURE__ */ React.createElement("span", { style: { color: C.gold, opacity: 0.7 } }, xpNext ? `${xpNext - xp} XP \u2192 ${((_b = EU.levels[level]) == null ? void 0 : _b.name) || ""}` : "")), /* @__PURE__ */ React.createElement(PillarCoverageRow, { pillarMeta: pillar_meta, pillars: clf == null ? void 0 : clf.pillars })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 } }, [
+  })(), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, marginBottom: 4, gap: 8 } }, /* @__PURE__ */ React.createElement("span", { style: { color: C.gold, opacity: 0.8 } }, (clf == null ? void 0 : clf.next_hint) || ""), /* @__PURE__ */ React.createElement("span", { style: { color: C.gold, opacity: 0.7, flexShrink: 0 } }, xpNext ? `${xpNext - xp} XP \u2192 ${((_b = EU.levels[level]) == null ? void 0 : _b.name) || ""}` : "")), /* @__PURE__ */ React.createElement(PillarCoverageRow, { pillarMeta: pillar_meta, pillars: clf == null ? void 0 : clf.pillars })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 } }, [
     { label: "SEMANA", val: (_c = pts == null ? void 0 : pts.week) != null ? _c : 0, sub: "meta 50+" },
     { label: "MES", val: (_d = pts == null ? void 0 : pts.month) != null ? _d : 0, sub: "meta 300+" },
     { label: "RACHA", val: streak > 0 ? `${streak}d` : "\u2014", sub: "d\xEDas" }
