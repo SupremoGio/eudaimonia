@@ -145,17 +145,27 @@ def build_acta_diurna_context():
             "SELECT activity_key FROM activity_logs WHERE date=?", (today_str(),)
         ).fetchall()}
 
-    weekly_keys  = [i["key"] for items in grouped.values() for i in items if i.get("cadence") == "weekly"]
+    # Un item con session CSV (ej. "morning,afternoon,night") aparece varias
+    # veces en grouped.values() — mismo objeto repetido, una por tarjeta. Se
+    # deduplica por key para no triplicar entradas en foco_candidates/week_counts.
+    seen_keys = set()
+    unique_items = []
+    for items in grouped.values():
+        for item in items:
+            if item["key"] not in seen_keys:
+                seen_keys.add(item["key"])
+                unique_items.append(item)
+
+    weekly_keys  = [i["key"] for i in unique_items if i.get("cadence") == "weekly"]
     week_counts  = adefs.get_week_counts(weekly_keys)
 
     by_pillar = {}
-    for items in grouped.values():
-        for item in items:
-            item["done"] = item["key"] in done_today
-            if item.get("cadence") == "weekly":
-                item["week_count"] = week_counts.get(item["key"], 0)
-            if item["type"] != "ocasional":
-                by_pillar.setdefault(item["pillar"], []).append(item)
+    for item in unique_items:
+        item["done"] = item["key"] in done_today
+        if item.get("cadence") == "weekly":
+            item["week_count"] = week_counts.get(item["key"], 0)
+        if item["type"] != "ocasional":
+            by_pillar.setdefault(item["pillar"], []).append(item)
 
     # Pilares con >1 item elegible = candidatos a "foco del mes" (ancla configurable)
     foco_candidates = {p: items for p, items in by_pillar.items() if len(items) > 1}

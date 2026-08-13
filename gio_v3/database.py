@@ -1976,6 +1976,23 @@ def init_db():
                  "Retira 'ccna'/'leccion_idiomas' (Fase 1, duplicaban anclas Fase 3) y mueve 'Leer 5 páginas' a sesión Noche.")
             )
 
+        # ── ACTA DIURNA — "Podcast en idiomas" pasa de "cualquier momento" a
+        # las tres sesiones fijas (Mañana/Tarde/Noche). El campo session admite
+        # CSV (igual que days_of_week) — get_active_grouped() lo reparte en
+        # cada tarjeta, pero sigue siendo una sola actividad/key: se marca una
+        # vez y aparece completada en las tres a la vez.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='podcast_idiomas_multisesion'"
+        ).fetchone():
+            db.execute(
+                "UPDATE activity_defs SET session='morning,afternoon,night' WHERE key='podcast_idiomas'"
+            )
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("podcast_idiomas_multisesion",
+                 "'Podcast en idiomas' pasa de sesión 'any' a 'morning,afternoon,night'.")
+            )
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

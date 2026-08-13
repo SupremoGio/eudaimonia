@@ -79,7 +79,12 @@ def _as_dict(row, focus_map):
 
 def get_active_grouped():
     """Actividades activas, visibles (no ocultas) y elegibles hoy (respeta
-    days_of_week de las anclas semanales rotativas), agrupadas por sesión."""
+    days_of_week de las anclas semanales rotativas), agrupadas por sesión.
+
+    `session` normalmente es un solo valor, pero admite CSV (igual que
+    days_of_week) para actividades que viven en más de una tarjeta a la vez
+    (ej. "morning,afternoon,night") sin dejar de ser una sola actividad/key:
+    se marca una vez y aparece "done" en cada sesión donde aparece."""
     focus_map = get_pillar_focus_map()
     wd = weekday_code()
     with get_db() as db:
@@ -94,8 +99,10 @@ def get_active_grouped():
         item = _as_dict(r, focus_map)
         if item["type"] == "ocasional":
             occasional.append(item)
-        elif item["session"] in grouped:
-            grouped[item["session"]].append(item)
+        else:
+            for sess in (item["session"] or "").split(","):
+                if sess in grouped:
+                    grouped[sess].append(item)
     grouped["ocasional"] = occasional
     return grouped
 
