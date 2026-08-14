@@ -50,7 +50,7 @@ LEVEL_SUBTITLES = {
 # Daily classification thresholds
 CLASSIFICATION = {
     "diamond": {"label": "Diamante", "icon": "💎", "color": "#7dd3fc",
-                "desc": "Oro + cobertura de los 7 pilares"},
+                "desc": "Oro + cobertura amplia de pilares"},
     "gold":    {"label": "Oro",      "icon": "🥇", "color": "#fbbf24",
                 "desc": "Hierro + touches repartidos a lo largo del día"},
     "iron":    {"label": "Hierro",   "icon": "⚔️",  "color": "#94a3b8",
@@ -84,8 +84,32 @@ RECOVERY_GOLD_MIN_TOUCHES  = 3
 RECOVERY_GOLD_MIN_SESSIONS = 2
 RECOVERY_HIERRO_TOUCHES    = 2
 
+# ── Meta de Diamante: relajada del "8 de 8 pilares" literal ──────────────────
+# La versión original exigía cubrir los 8 pilares el mismo día para Diamante
+# (6 en semana de descarga) — perfección total, sin margen. Dos problemas:
+#   1. "What-the-hell effect" (investigación de dietas/hábitos, Cochran &
+#      Tesser): cuando la meta es todo-o-nada, fallar UN pilar de 8 vuelve el
+#      resto del esfuerzo del día irrelevante para el rango — eso invita a
+#      abandonar el empuje final en vez de seguir sumando.
+#   2. Los badges de gamification/badges.py ("3 días Diamante en una semana",
+#      "5 días Diamante en total") asumen que Diamante es alcanzable con
+#      consistencia real, no un evento casi imposible.
+# Se baja a una mayoría amplia (6/8, no perfección) — sigue siendo el rango
+# más exigente (además de cumplir Oro), pero dentro del "optimal challenge
+# point" de la teoría de flow (Csikszentmihalyi): difícil pero alcanzable, no
+# frustrante.
+DIAMOND_PILLARS_REQUIRED           = 6
+RECOVERY_DIAMOND_PILLARS_REQUIRED  = 4
+
 _SESSION_ORDER  = ("morning", "afternoon", "night", "any")
 _SESSION_LABELS = {"morning": "Mañana", "afternoon": "Tarde", "night": "Noche", "any": "Cualquier momento"}
+
+_PILLAR_ORDER  = adefs.PILLARS
+_PILLAR_LABELS = {
+    "logoi": "Logoi", "paideia": "Paideia", "cosmo": "Cosmopolitismo",
+    "hege": "Hegemonikon", "eury": "Eurythmia", "atar": "Ataraxia",
+    "oiko": "Oikonomia", "philia": "Philia",
+}
 
 
 def _sessions_of(touch_def):
@@ -367,7 +391,7 @@ def get_daily_classification(date_str=None):
         if d["key"] in done_touch_keys:
             sessions_covered |= _sessions_of(d)
 
-    diamond_pillars = max(1, len(adefs.PILLARS) - 2) if recovery else len(adefs.PILLARS)
+    diamond_pillars   = RECOVERY_DIAMOND_PILLARS_REQUIRED if recovery else DIAMOND_PILLARS_REQUIRED
     gold_min_touches  = RECOVERY_GOLD_MIN_TOUCHES  if recovery else GOLD_MIN_TOUCHES
     gold_min_sessions = min(
         (RECOVERY_GOLD_MIN_SESSIONS if recovery else GOLD_MIN_SESSIONS),
@@ -400,7 +424,7 @@ def get_daily_classification(date_str=None):
         "next_hint": _next_rank_hint(
             rank, anchor_defs, touch_defs, touches_done, gold_min_touches,
             sessions_covered, sessions_available, gold_min_sessions,
-            diamond_pillars, len(pillars_today)
+            diamond_pillars, pillars_today
         ),
     })
     return info
@@ -412,11 +436,17 @@ def get_daily_classification(date_str=None):
 # no corresponde a la regla real de ascenso de rango.
 def _next_rank_hint(rank, anchor_defs, touch_defs, touches_done, gold_min_touches,
                      sessions_covered, sessions_available, gold_min_sessions,
-                     diamond_pillars, pillars_done):
+                     diamond_pillars, pillars_today):
     if rank == "diamond":
         return "✦ Diamante alcanzado"
     if rank == "gold":
-        faltan = diamond_pillars - pillars_done
+        faltan = max(0, diamond_pillars - len(pillars_today))
+        if faltan <= 0:
+            return "Diamante alcanzado"
+        missing = [p for p in _PILLAR_ORDER if p not in pillars_today]
+        labels = " y ".join(_PILLAR_LABELS[p] for p in missing[:faltan])
+        if labels:
+            return f"Cubre {labels} → Diamante"
         return f"Cubre {faltan} pilar{'es' if faltan != 1 else ''} más → Diamante"
     if rank == "iron":
         faltan_touches  = max(0, gold_min_touches - touches_done)
