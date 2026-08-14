@@ -12,7 +12,6 @@ Rule hierarchy:
   8. Hard cap: 3.0× on any multiplier
 """
 from datetime import date, datetime, timedelta
-from math import ceil
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, VIRTUE_CATS
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
@@ -53,12 +52,44 @@ CLASSIFICATION = {
     "diamond": {"label": "Diamante", "icon": "💎", "color": "#7dd3fc",
                 "desc": "Oro + cobertura de los 7 pilares"},
     "gold":    {"label": "Oro",      "icon": "🥇", "color": "#fbbf24",
-                "desc": "Hierro + ≥50% de tus touches del día"},
+                "desc": "Hierro + touches repartidos a lo largo del día"},
     "iron":    {"label": "Hierro",   "icon": "⚔️",  "color": "#94a3b8",
                 "desc": "Completaste tu(s) ancla(s) del día"},
     "carbon":  {"label": "Carbón",   "icon": "🪨",  "color": "#475569",
                 "desc": "Aún no completas tu ancla del día"},
 }
+
+# ── Meta de Oro: recalibrada con ciencia del comportamiento ──────────────────
+# La versión original exigía el 50% de TODOS los touches activos definidos en
+# Acta Diurna (ver historial de este archivo). Eso rompía por dos razones:
+#   1. Ley de Goodhart: el umbral crecía cada vez que se agregaba un touch
+#      nuevo (custom o de fase) — trackear más hábitos te alejaba de Oro en
+#      vez de ayudarte, un incentivo perverso contra enriquecer el sistema.
+#   2. Efecto de gradiente de meta (Kivetz, Urminsky & Zheng, 2006): una meta
+#      que sigue lejos incluso tras esfuerzo real (ej. 4/38 → faltan 15) se
+#      percibe como inalcanzable y mata la motivación en vez de acelerarla.
+# La meta nueva usa dos números fijos y pequeños, independientes del tamaño
+# de la librería de touches (a prueba de Goodhart):
+#   - GOLD_MIN_TOUCHES:  un volumen absoluto alcanzable en un día ocupado.
+#   - GOLD_MIN_SESSIONS: cobertura a lo largo del día (mañana/tarde/noche/
+#     cualquier-momento), no un montón de touches fáciles en un solo bloque —
+#     la práctica distribuida a lo largo del día construye el hábito mejor
+#     que la práctica concentrada (distributed practice effect).
+# El hint (_next_rank_hint) nombra el/los bloque(s) concretos que faltan en
+# vez de un conteo abstracto — metas específicas y accionables superan a las
+# vagas (goal-setting theory, Locke & Latham).
+GOLD_MIN_TOUCHES           = 5
+GOLD_MIN_SESSIONS          = 3
+RECOVERY_GOLD_MIN_TOUCHES  = 3
+RECOVERY_GOLD_MIN_SESSIONS = 2
+RECOVERY_HIERRO_TOUCHES    = 2
+
+_SESSION_ORDER  = ("morning", "afternoon", "night", "any")
+_SESSION_LABELS = {"morning": "Mañana", "afternoon": "Tarde", "night": "Noche", "any": "Cualquier momento"}
+
+
+def _sessions_of(touch_def):
+    return set((touch_def.get("session") or "").split(",")) & set(_SESSION_ORDER)
 
 
 def get_level_info(total_xp):
@@ -320,23 +351,39 @@ def get_daily_classification(date_str=None):
     anchor_defs  = [d for d in defs_today.values() if d["effective_type"] == "ancla"]
     anchors_done = sum(1 for d in done_today if d["effective_type"] == "ancla")
     # Los touches cadence='weekly' (ej. tiempo de calidad, networking) no se
-    # exigen a diario — no cuentan en el % de touches del día, solo dan XP/EC
-    # y cobertura de pilar cuando se registran.
+    # exigen a diario — no cuentan en el conteo de touches del día, solo dan
+    # XP/EC y cobertura de pilar cuando se registran.
     touch_defs   = [d for d in defs_today.values() if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"]
-    touches_done = sum(1 for d in done_today if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily")
+    done_touch_keys = {d["key"] for d in done_today if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"}
+    touches_done = len(done_touch_keys)
 
-    gold_pct         = 0.35 if recovery else 0.5
-    diamond_pillars  = max(1, len(adefs.PILLARS) - 2) if recovery else len(adefs.PILLARS)
+    # Cobertura de sesiones (mañana/tarde/noche/cualquier-momento) entre los
+    # touches ya registrados hoy — ver nota de GOLD_MIN_SESSIONS arriba.
+    sessions_available = set()
+    for d in touch_defs:
+        sessions_available |= _sessions_of(d)
+    sessions_covered = set()
+    for d in touch_defs:
+        if d["key"] in done_touch_keys:
+            sessions_covered |= _sessions_of(d)
+
+    diamond_pillars = max(1, len(adefs.PILLARS) - 2) if recovery else len(adefs.PILLARS)
+    gold_min_touches  = RECOVERY_GOLD_MIN_TOUCHES  if recovery else GOLD_MIN_TOUCHES
+    gold_min_sessions = min(
+        (RECOVERY_GOLD_MIN_SESSIONS if recovery else GOLD_MIN_SESSIONS),
+        len(sessions_available)
+    )
     # En semana de descarga, Hierro también se alcanza solo con touches —
     # "menos anclas exigidas" — sin necesidad de completar la sesión larga.
     hierro_ok = (not anchor_defs) or (anchors_done >= 1) or (
-        recovery and touch_defs and touches_done >= ceil(len(touch_defs) * 0.3)
+        recovery and touch_defs and touches_done >= RECOVERY_HIERRO_TOUCHES
     )
 
     rank = "carbon"
     if hierro_ok:
         rank = "iron"
-        if not touch_defs or touches_done >= ceil(len(touch_defs) * gold_pct):
+        gold_ok = touches_done >= gold_min_touches and len(sessions_covered) >= gold_min_sessions
+        if not touch_defs or gold_ok:
             rank = "gold"
             if len(pillars_today) >= diamond_pillars:
                 rank = "diamond"
@@ -348,8 +395,13 @@ def get_daily_classification(date_str=None):
         "cats": len(pillars_today), "pillars": sorted(pillars_today),
         "anchors_done": anchors_done, "anchors_total": len(anchor_defs),
         "touches_done": touches_done, "touches_total": len(touch_defs),
+        "sessions_covered": len(sessions_covered), "sessions_available": len(sessions_available),
         "recovery_week": recovery,
-        "next_hint": _next_rank_hint(rank, anchor_defs, touch_defs, touches_done, gold_pct, diamond_pillars, len(pillars_today)),
+        "next_hint": _next_rank_hint(
+            rank, anchor_defs, touch_defs, touches_done, gold_min_touches,
+            sessions_covered, sessions_available, gold_min_sessions,
+            diamond_pillars, len(pillars_today)
+        ),
     })
     return info
 
@@ -358,17 +410,27 @@ def get_daily_classification(date_str=None):
 # XP acumulado — este hint se calcula aquí (no en el cliente) para que el
 # widget de "Clasificación de hoy" nunca muestre una meta de XP inventada que
 # no corresponde a la regla real de ascenso de rango.
-def _next_rank_hint(rank, anchor_defs, touch_defs, touches_done, gold_pct, diamond_pillars, pillars_done):
+def _next_rank_hint(rank, anchor_defs, touch_defs, touches_done, gold_min_touches,
+                     sessions_covered, sessions_available, gold_min_sessions,
+                     diamond_pillars, pillars_done):
     if rank == "diamond":
         return "✦ Diamante alcanzado"
     if rank == "gold":
         faltan = diamond_pillars - pillars_done
         return f"Cubre {faltan} pilar{'es' if faltan != 1 else ''} más → Diamante"
     if rank == "iron":
-        faltan = ceil(len(touch_defs) * gold_pct) - touches_done
-        if faltan <= 0:
+        faltan_touches  = max(0, gold_min_touches - touches_done)
+        faltan_sesiones = max(0, gold_min_sessions - len(sessions_covered))
+        if not touch_defs or (faltan_touches <= 0 and faltan_sesiones <= 0):
             return "Oro alcanzado"
-        return f"Registra {faltan} touch{'es' if faltan != 1 else ''} más → Oro"
+        if faltan_touches > 0 and faltan_sesiones <= 0:
+            return f"Registra {faltan_touches} touch{'es' if faltan_touches != 1 else ''} más → Oro"
+        missing = [s for s in _SESSION_ORDER if s in sessions_available and s not in sessions_covered]
+        labels = " y ".join(_SESSION_LABELS[s] for s in missing[:faltan_sesiones])
+        sesiones_txt = f"toca {labels}" if labels else f"cubre {faltan_sesiones} sesión{'es' if faltan_sesiones != 1 else ''} más"
+        if faltan_touches > 0:
+            return f"Registra {faltan_touches} touch{'es' if faltan_touches != 1 else ''} y {sesiones_txt} → Oro"
+        return f"{sesiones_txt[0].upper()}{sesiones_txt[1:]} → Oro"
     # carbon
     if anchor_defs:
         return "Completa tu ancla del día → Hierro"
