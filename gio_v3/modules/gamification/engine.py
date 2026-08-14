@@ -50,7 +50,7 @@ LEVEL_SUBTITLES = {
 # Daily classification thresholds
 CLASSIFICATION = {
     "diamond": {"label": "Diamante", "icon": "💎", "color": "#7dd3fc",
-                "desc": "Oro + cobertura amplia de pilares"},
+                "desc": "Oro + todas tus anclas de hoy completas"},
     "gold":    {"label": "Oro",      "icon": "🥇", "color": "#fbbf24",
                 "desc": "Hierro + touches repartidos a lo largo del día"},
     "iron":    {"label": "Hierro",   "icon": "⚔️",  "color": "#94a3b8",
@@ -84,32 +84,27 @@ RECOVERY_GOLD_MIN_TOUCHES  = 3
 RECOVERY_GOLD_MIN_SESSIONS = 2
 RECOVERY_HIERRO_TOUCHES    = 2
 
-# ── Meta de Diamante: relajada del "8 de 8 pilares" literal ──────────────────
-# La versión original exigía cubrir los 8 pilares el mismo día para Diamante
-# (6 en semana de descarga) — perfección total, sin margen. Dos problemas:
-#   1. "What-the-hell effect" (investigación de dietas/hábitos, Cochran &
-#      Tesser): cuando la meta es todo-o-nada, fallar UN pilar de 8 vuelve el
-#      resto del esfuerzo del día irrelevante para el rango — eso invita a
-#      abandonar el empuje final en vez de seguir sumando.
-#   2. Los badges de gamification/badges.py ("3 días Diamante en una semana",
-#      "5 días Diamante en total") asumen que Diamante es alcanzable con
-#      consistencia real, no un evento casi imposible.
-# Se baja a una mayoría amplia (6/8, no perfección) — sigue siendo el rango
-# más exigente (además de cumplir Oro), pero dentro del "optimal challenge
-# point" de la teoría de flow (Csikszentmihalyi): difícil pero alcanzable, no
-# frustrante.
-DIAMOND_PILLARS_REQUIRED           = 6
-RECOVERY_DIAMOND_PILLARS_REQUIRED  = 4
-
+# ── Meta de Diamante: ligada al sistema de anclas rotativas, no a pilares ────
+# Dos intentos previos de Diamante fallaron por el mismo motivo de fondo —
+# medían algo que no tiene relación con cómo está diseñado el resto de Acta
+# Diurna:
+#   v1: 8 de 8 pilares el mismo día (6 en descarga) — perfección total.
+#   v2: se relajó a 6 de 8 — seguía siendo casi imposible, porque el sistema
+#       de anclas semanales rotativas (Fase 3) REPARTE a propósito los focos
+#       fuertes (CCNA, inglés, francés, lectura de psicología) en días
+#       distintos — nunca coinciden los 8 pilares el mismo día por diseño,
+#       así que exigirlos no medía disciplina, medía una coincidencia de
+#       calendario que casi nunca ocurre.
+# v3 mide lo que sí varía intencionalmente por día: completar TODAS las
+# anclas elegibles hoy (2 en un día tranquilo como sábado, hasta 4 en lunes o
+# viernes — ver eligible_today()/days_of_week). Esto respeta el diseño real
+# del sistema de anclas en vez de competir con él, y sigue el principio de
+# "cobertura de la señal correcta" en vez de una proxy ajena — la métrica
+# que se recompensa (anclas completas) es la métrica que ya representa el
+# esfuerzo fuerte del día, no una aproximación.
+# Diamante = Oro + todas las anclas de hoy completas.
 _SESSION_ORDER  = ("morning", "afternoon", "night", "any")
 _SESSION_LABELS = {"morning": "Mañana", "afternoon": "Tarde", "night": "Noche", "any": "Cualquier momento"}
-
-_PILLAR_ORDER  = adefs.PILLARS
-_PILLAR_LABELS = {
-    "logoi": "Logoi", "paideia": "Paideia", "cosmo": "Cosmopolitismo",
-    "hege": "Hegemonikon", "eury": "Eurythmia", "atar": "Ataraxia",
-    "oiko": "Oikonomia", "philia": "Philia",
-}
 
 
 def _sessions_of(touch_def):
@@ -372,8 +367,9 @@ def get_daily_classification(date_str=None):
     # Harma queda fuera de la cobertura de Diamante a propósito (no es uno de los 8 pilares)
     pillars_today &= set(adefs.PILLARS)
 
-    anchor_defs  = [d for d in defs_today.values() if d["effective_type"] == "ancla"]
-    anchors_done = sum(1 for d in done_today if d["effective_type"] == "ancla")
+    anchor_defs      = [d for d in defs_today.values() if d["effective_type"] == "ancla"]
+    done_anchor_keys = {d["key"] for d in done_today if d["effective_type"] == "ancla"}
+    anchors_done     = len(done_anchor_keys)
     # Los touches cadence='weekly' (ej. tiempo de calidad, networking) no se
     # exigen a diario — no cuentan en el conteo de touches del día, solo dan
     # XP/EC y cobertura de pilar cuando se registran.
@@ -391,7 +387,6 @@ def get_daily_classification(date_str=None):
         if d["key"] in done_touch_keys:
             sessions_covered |= _sessions_of(d)
 
-    diamond_pillars   = RECOVERY_DIAMOND_PILLARS_REQUIRED if recovery else DIAMOND_PILLARS_REQUIRED
     gold_min_touches  = RECOVERY_GOLD_MIN_TOUCHES  if recovery else GOLD_MIN_TOUCHES
     gold_min_sessions = min(
         (RECOVERY_GOLD_MIN_SESSIONS if recovery else GOLD_MIN_SESSIONS),
@@ -409,7 +404,7 @@ def get_daily_classification(date_str=None):
         gold_ok = touches_done >= gold_min_touches and len(sessions_covered) >= gold_min_sessions
         if not touch_defs or gold_ok:
             rank = "gold"
-            if len(pillars_today) >= diamond_pillars:
+            if not anchor_defs or anchors_done >= len(anchor_defs):
                 rank = "diamond"
 
     info = CLASSIFICATION[rank].copy()
@@ -422,9 +417,8 @@ def get_daily_classification(date_str=None):
         "sessions_covered": len(sessions_covered), "sessions_available": len(sessions_available),
         "recovery_week": recovery,
         "next_hint": _next_rank_hint(
-            rank, anchor_defs, touch_defs, touches_done, gold_min_touches,
-            sessions_covered, sessions_available, gold_min_sessions,
-            diamond_pillars, pillars_today
+            rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
+            sessions_covered, sessions_available, gold_min_sessions
         ),
     })
     return info
@@ -434,20 +428,16 @@ def get_daily_classification(date_str=None):
 # XP acumulado — este hint se calcula aquí (no en el cliente) para que el
 # widget de "Clasificación de hoy" nunca muestre una meta de XP inventada que
 # no corresponde a la regla real de ascenso de rango.
-def _next_rank_hint(rank, anchor_defs, touch_defs, touches_done, gold_min_touches,
-                     sessions_covered, sessions_available, gold_min_sessions,
-                     diamond_pillars, pillars_today):
+def _next_rank_hint(rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
+                     sessions_covered, sessions_available, gold_min_sessions):
     if rank == "diamond":
         return "✦ Diamante alcanzado"
     if rank == "gold":
-        faltan = max(0, diamond_pillars - len(pillars_today))
-        if faltan <= 0:
+        missing_anchors = [a for a in anchor_defs if a["key"] not in done_anchor_keys]
+        if not missing_anchors:
             return "Diamante alcanzado"
-        missing = [p for p in _PILLAR_ORDER if p not in pillars_today]
-        labels = " y ".join(_PILLAR_LABELS[p] for p in missing[:faltan])
-        if labels:
-            return f"Cubre {labels} → Diamante"
-        return f"Cubre {faltan} pilar{'es' if faltan != 1 else ''} más → Diamante"
+        labels = " y ".join(a["label"] for a in missing_anchors)
+        return f"Completa {labels} → Diamante"
     if rank == "iron":
         faltan_touches  = max(0, gold_min_touches - touches_done)
         faltan_sesiones = max(0, gold_min_sessions - len(sessions_covered))
