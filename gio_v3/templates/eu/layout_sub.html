@@ -272,29 +272,32 @@
 {# ── Mapa módulo-padre: (slug, NombreMostrado, URL_del_módulo) ── #}
 {% set _pm = {
   'finanzas':    ('oikonomia',      'Oikonomia',      '/finanzas/'),
-  'nutricion':   ('hegemonikon',    'Hegemonikon',    '/nutricion/'),
-  'perfil':      ('hegemonikon',    'Hegemonikon',    ''),
-  'recetas':     ('hegemonikon',    'Hegemonikon',    ''),
-  'guardarropa': ('hegemonikon',    'Hegemonikon',    ''),
-  'viajes':      ('hegemonikon',    'Hegemonikon',    ''),
+  'hegemonikon': ('hegemonikon',    'Hegemonikon',    ''),
+  'nutricion':   ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
+  'perfil':      ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
+  'recetas':     ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
+  'guardarropa': ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
+  'viajes':      ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
   'idiomas':     ('cosmopolitismo', 'Cosmopolitismo', '/idiomas/'),
   'gtd':         ('ataraxia',       'Ataraxia',       '/gtd/'),
   'ataraxia':    ('ataraxia',       'Ataraxia',       '/ataraxia/'),
   'prioridades': ('oikonomia',      'Oikonomia',      '/finanzas/'),
   'consumo':     ('oikonomia',      'Oikonomia',      '/finanzas/'),
-  'bienestar':   ('hegemonikon',    'Hegemonikon',    ''),
+  'bienestar':   ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
   'eurythmia':   ('eurythmia',      'Eurythmia',      '/eurythmia/'),
   'harma':       ('harma',          'Harma',          '/harma/'),
   'paideia':     ('paideia',        'Paideia',        '/paideia/'),
 } %}
 
-{# URL efectiva del módulo padre; si está vacía → hub de módulos #}
-{% set _mod_url = ((_pm[pg][2] if _pm[pg][2] else ('/?tab=modules&open=' ~ _pm[pg][0])) if (pg is defined and pg in _pm) else '/?tab=modules') %}
+{# URL efectiva del módulo padre; '' o pg desconocido → '/' (el dashboard ya
+   trae el grid de módulos completo — antes apuntaba a '/?tab=modules',
+   un fragmento de la SPA vieja que ya no existe). #}
+{% set _mod_url = ((_pm[pg][2] if _pm[pg][2] else '/') if (pg is defined and pg in _pm) else '/') %}
 {# ¿Estamos en la raíz del propio módulo? (evita breadcrumb y back-link circulares) #}
 {% set _rpath = request.path %}
 {% set _is_root = _mod_url and (_rpath == _mod_url or _rpath.rstrip('/') == _mod_url.rstrip('/')) %}
 {# URL real del botón ← : si es raíz → hub de módulos; si no → página padre #}
-{% set _back_url = '/?tab=modules' if _is_root else _mod_url %}
+{% set _back_url = '/' if _is_root else _mod_url %}
 
 <body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
 
@@ -310,6 +313,7 @@
     {% for href, icon, label, key, sub in [
       ('/',            'layout-dashboard', 'Dashboard',    'dashboard',   ''),
       ('/actividades', 'scroll',           'Acta Diurna',  'actividades', 'Registro diario'),
+      ('/ataraxia',    'anchor',           'Ataraxia',     'ataraxia',    'Checklist · Rutina'),
       ('/gtd',         'crosshair',        'Praxis',       'gtd',         'Tareas · GTD'),
     ] %}
     <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg == key %} active{% endif %}">
@@ -320,15 +324,15 @@
 
     <div class="eu-sidebar-divider"><div class="rule"></div><span>Módulos</span><div class="rule"></div></div>
 
-    {% for href, icon, label, key, sub in [
-      ('/finanzas',    'wallet',       'Oikonomia',      'finanzas',      'Finanzas · Gastos'),
-      ('/bienestar',   'shield-check', 'Hegemonikon',    'bienestar',     'Salud · Nutrición'),
-      ('/paideia',     'book-open',    'Paideia',        'paideia',       'Aprendizaje'),
-      ('/idiomas',     'globe',        'Cosmopolitismo', 'idiomas',       'Idiomas'),
-      ('/eurythmia',   'music',        'Eurythmia',      'eurythmia',     'Baile · Ritmo'),
-      ('/harma',       'car',          'Harma',          'harma',        'Vehículo'),
+    {% for href, icon, label, keys, sub in [
+      ('/finanzas',    'wallet',       'Oikonomia',      ['finanzas'],                                             'Finanzas · Gastos'),
+      ('/bienestar',   'shield-check', 'Hegemonikon',    ['hegemonikon','bienestar','nutricion','recetas','guardarropa','viajes'], 'Salud · Nutrición'),
+      ('/paideia',     'book-open',    'Paideia',        ['paideia'],                                              'Aprendizaje'),
+      ('/idiomas',     'globe',        'Cosmopolitismo', ['idiomas'],                                              'Idiomas'),
+      ('/eurythmia',   'music',        'Eurythmia',      ['eurythmia'],                                            'Baile · Ritmo'),
+      ('/harma',       'car',          'Harma',          ['harma'],                                                'Vehículo'),
     ] %}
-    <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg == key %} active{% endif %}">
+    <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg in keys %} active{% endif %}">
       <i data-lucide="{{ icon }}"></i>
       <div class="flex flex-col min-w-0"><span class="lbl">{{ label }}</span><span class="sub">{{ sub }}</span></div>
     </a>
@@ -365,7 +369,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </a>
       <nav class="crumbs" aria-label="Ruta">
-        <a href="/?tab=modules">Módulos</a>
+        <a href="/">Módulos</a>
         {# Nivel intermedio solo si NO somos la raíz del módulo #}
         {% if pg is defined and pg in _pm and not _is_root %}<span class="sep">›</span><a href="{{ _mod_url }}">{{ _pm[pg][1] }}</a>{% endif %}
         {% block crumb_mid %}{% endblock %}
@@ -413,7 +417,7 @@
   <a href="/" class="ebn-tab{% if pg == 'dashboard' %} active{% endif %}">
     <span class="ebn-lbl">Ἀρχή</span><span class="ebn-sub">Inicio</span>
   </a>
-  <a href="/?tab=modules" class="ebn-tab">
+  <a href="/" class="ebn-tab">
     <span class="ebn-lbl">Κόσμος</span><span class="ebn-sub">Módulos</span>
   </a>
   <a href="/actividades" class="ebn-tab{% if pg == 'actividades' %} active{% endif %}">

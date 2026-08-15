@@ -1,16 +1,11 @@
-from flask import Blueprint, redirect, jsonify
+from flask import Blueprint, redirect, jsonify, render_template
 from database import get_db
 from utils import today_str
 
 bienestar_bp = Blueprint('bienestar', __name__, template_folder='../../templates')
 
-@bienestar_bp.route('/')
-def index():
-    return redirect('/bienestar/salud')
 
-
-@bienestar_bp.route('/api/hegemonikon-summary')
-def hegemonikon_summary():
+def _hegemonikon_summary_data():
     from modules.nutricion.routes import get_week_start, get_today_key, get_streak, get_xp_today
 
     with get_db() as db:
@@ -58,7 +53,7 @@ def hegemonikon_summary():
             pass
     peso_trend = round(peso_spark[-1] - peso_spark[-2], 1) if len(peso_spark) >= 2 else None
 
-    return jsonify({
+    return {
         'body':        body,
         'peso_trend':  peso_trend,
         'peso_spark':  peso_spark,
@@ -84,4 +79,18 @@ def hegemonikon_summary():
             'partidos': n_partidos,
             'rating':   futbol_rating,
         },
-    })
+    }
+
+
+@bienestar_bp.route('/')
+def index():
+    # Antes redirigía directo a /bienestar/salud — pero Hegemonikon agrupa 6
+    # páginas reales (Salud, Nutrición, Guardarropa, Recetas, Perfil, Fútbol)
+    # y ese redirect las dejaba solo una de ellas alcanzable desde el
+    # dashboard/sidebar. Ahora esto es el hub real del pilar.
+    return render_template('bienestar/index.html', data=_hegemonikon_summary_data())
+
+
+@bienestar_bp.route('/api/hegemonikon-summary')
+def hegemonikon_summary():
+    return jsonify(_hegemonikon_summary_data())
