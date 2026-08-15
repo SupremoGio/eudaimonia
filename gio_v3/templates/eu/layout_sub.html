@@ -199,6 +199,35 @@
       .modal { border-radius:22px 22px 0 0 !important; width:100% !important; max-width:100% !important; max-height:88vh; overflow-y:auto; padding-bottom:calc(16px + env(safe-area-inset-bottom)) !important; }
       .fgrid.c2, .fgrid.c3 { grid-template-columns:1fr !important; }
     }
+
+    /* ── Bottom nav (móvil) ────────────────────────────────────────────
+       Antes, el salto rápido entre módulos (Inicio/Módulos/Acta/Perfil)
+       solo existía en la SPA de '/' — ninguna de las pantallas de módulo
+       que extienden este layout lo heredaba, así que salir de un módulo
+       significaba retroceder por el breadcrumb hasta el hub primero.
+       Misma paleta y tipografía que el BottomNav de la SPA (eu-components.jsx)
+       para que se sienta como el mismo componente, no uno nuevo. */
+    .eu-bottom-nav {
+      position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+      width:100%; max-width:430px; z-index:200;
+      display:flex;
+      background:var(--surf-top);
+      backdrop-filter:blur(24px);
+      border-top:1px solid var(--b);
+      padding-bottom:env(safe-area-inset-bottom, 8px);
+    }
+    .ebn-tab { flex:1; display:flex; flex-direction:column; align-items:center; padding:10px 4px 6px; text-decoration:none; }
+    .ebn-lbl { font-family:var(--serif); font-size:18px; line-height:1; color:var(--mid); transition:color .25s; }
+    .ebn-sub { font-family:var(--sans); font-size:10px; letter-spacing:.1em; text-transform:uppercase; margin-top:3px; color:var(--mid); opacity:.45; transition:all .25s; }
+    .ebn-tab.active .ebn-lbl, .ebn-tab.active .ebn-sub { color:var(--gold); opacity:1; }
+    .ebn-tab.active .ebn-lbl::after {
+      content:''; display:block; width:20px; height:2px; border-radius:1px;
+      background:var(--gold); margin:4px auto 0; box-shadow:0 0 6px var(--gold-glow, rgba(201,168,76,.45));
+    }
+    @media (max-width:1023px) {
+      #eu-main   { padding-bottom:92px; }
+      #tw-toast  { bottom:92px; }
+    }
   </style>
 
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -281,9 +310,27 @@
 </header>
 
 <!-- CONTENT -->
-<main class="p-4 md:p-6 overflow-x-hidden">
+<main id="eu-main" class="p-4 md:p-6 overflow-x-hidden">
   {% block content %}{% endblock %}
 </main>
+
+<!-- BOTTOM NAV — móvil. Ver design-specs/README.md Sprint 3 e
+     inspection-audit F-01: mismos 4 tabs que el BottomNav de la SPA
+     (Inicio/Módulos/Acta/Perfil), ahora también en las pantallas de módulo. -->
+<nav class="eu-bottom-nav lg:hidden" aria-label="Navegación principal">
+  <a href="/" class="ebn-tab">
+    <span class="ebn-lbl">Ἀρχή</span><span class="ebn-sub">Inicio</span>
+  </a>
+  <a href="/?tab=modules" class="ebn-tab">
+    <span class="ebn-lbl">Κόσμος</span><span class="ebn-sub">Módulos</span>
+  </a>
+  <a href="/actividades" class="ebn-tab{% if pg == 'actividades' %} active{% endif %}">
+    <span class="ebn-lbl">Acta</span><span class="ebn-sub">Diurna</span>
+  </a>
+  <a href="/perfil" class="ebn-tab{% if pg == 'perfil' %} active{% endif %}">
+    <span class="ebn-lbl">Αὐτός</span><span class="ebn-sub">Perfil</span>
+  </a>
+</nav>
 
 <!-- TOAST -->
 <div id="tw-toast"
