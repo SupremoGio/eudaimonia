@@ -13,10 +13,11 @@
     margin:-16px -16px 20px; padding-left:16px; padding-right:16px;
   }
   @media (min-width:768px) { .dash-head { margin:-24px -24px 24px; padding:16px 24px; } }
-  .dash-head-row { display:flex; justify-content:space-between; align-items:flex-start; }
-  .dash-eyebrow { font-family:var(--sans); font-size:9px; letter-spacing:.22em; color:var(--gold); opacity:.65; text-transform:uppercase; }
-  .dash-word { font-family:var(--serif); font-size:20px; color:var(--text); font-weight:500; letter-spacing:.16em; margin-top:1px; }
-  .dash-head-actions { display:flex; align-items:center; gap:10px; padding-top:2px; }
+  .dash-head-row { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .dash-head-id { min-width:0; flex:1; }
+  .dash-eyebrow { font-family:var(--sans); font-size:9px; letter-spacing:.22em; color:var(--gold); opacity:.65; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dash-word { font-family:var(--serif); font-size:20px; color:var(--text); font-weight:500; letter-spacing:.16em; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dash-head-actions { display:flex; align-items:center; gap:10px; padding-top:2px; flex-shrink:0; }
   .dash-icon-btn {
     position:relative; background:var(--gold-bg); border:1px solid var(--gold-border);
     border-radius:6px; width:28px; height:28px; cursor:pointer;
@@ -29,6 +30,7 @@
   }
   .dash-badge.urgent { background:#ef4444; color:#fff; animation:blink 1.4s ease-in-out infinite; }
   .dash-logros-link { display:inline-flex; align-items:center; gap:5px; font-family:var(--sans); font-size:9px; color:var(--gold); opacity:.65; text-decoration:none; letter-spacing:.08em; }
+  @media (max-width:480px) { .dash-logros-link .lg-txt { display:none; } }
   .dash-greeting { font-family:var(--serif); font-size:24px; color:var(--text); }
   .dash-greeting-sub { font-size:11px; color:var(--mid); margin-top:3px; }
 
@@ -175,9 +177,9 @@
 
   <div class="dash-head">
     <div class="dash-head-row">
-      <div>
+      <div class="dash-head-id">
         <div class="dash-eyebrow">{{ fecha_larga }}</div>
-        <div class="dash-word">Ε Υ Δ Α Ι Μ Ο Ν Ι Α</div>
+        <div class="dash-word">ΕΥΔΑΙΜΟΝΙΑ</div>
       </div>
       <div class="dash-head-actions">
         <button class="cmdk-btn" onclick="euCmdkOpen()" aria-label="Buscar (Cmd/Ctrl+K)" title="Buscar (Cmd/Ctrl+K)">
@@ -204,7 +206,7 @@
             {% endif %}
           </div>
         </div>
-        <a href="/logros" class="dash-logros-link"><i data-lucide="trophy" style="width:11px;height:11px;"></i> Logros</a>
+        <a href="/logros" class="dash-logros-link" aria-label="Logros"><i data-lucide="trophy" style="width:11px;height:11px;"></i><span class="lg-txt"> Logros</span></a>
       </div>
     </div>
   </div>
