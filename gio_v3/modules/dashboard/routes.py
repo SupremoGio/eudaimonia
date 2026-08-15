@@ -19,13 +19,13 @@ _MODULE_CATS = {
 }
 
 _EU_MODULES_BASE = [
-    {'id': 'hegemonikon',    'name': 'HEGEMONIKON',    'concept': 'Bienestar',     'desc': 'Salud · Nutrición · Fútbol · Perfil',  'hue': 45 },
+    {'id': 'hegemonikon',    'name': 'HEGEMONIKON',    'concept': 'Bienestar',     'desc': 'Salud · Nutrición · Fútbol · Perfil',  'hue': 45,  'route': '/bienestar'},
     {'id': 'oikonomia',      'name': 'OIKONOMIA',      'concept': 'Finanzas',      'desc': 'Finanzas · Gastos · Deudas',  'hue': 80,  'route': '/finanzas'},
-    {'id': 'ataraxia',       'name': 'ATARAXIA',       'concept': 'Productividad', 'desc': 'Automatización · Checklist',  'hue': 155},
-    {'id': 'paideia',        'name': 'PAIDEIA',        'concept': 'Conocimiento',  'desc': 'Aprendizaje · Libros',        'hue': 265},
-    {'id': 'cosmopolitismo', 'name': 'COSMOPOLITISMO', 'concept': 'Idiomas',       'desc': 'Idiomas · Culturas',          'hue': 215},
-    {'id': 'logoi',          'name': 'LOGOI',          'concept': 'Programación',  'desc': 'Programación · Lógica',       'hue': 120},
-    {'id': 'eurythmia',      'name': 'EURYTHMIA',      'concept': 'Baile',         'desc': 'Baile · Ritmo · Cuerpo',      'hue': 330},
+    {'id': 'ataraxia',       'name': 'ATARAXIA',       'concept': 'Productividad', 'desc': 'Automatización · Checklist',  'hue': 155, 'route': '/gtd'},
+    {'id': 'paideia',        'name': 'PAIDEIA',        'concept': 'Conocimiento',  'desc': 'Aprendizaje · Libros',        'hue': 265, 'route': '/paideia'},
+    {'id': 'cosmopolitismo', 'name': 'COSMOPOLITISMO', 'concept': 'Idiomas',       'desc': 'Idiomas · Culturas',          'hue': 215, 'route': '/idiomas'},
+    {'id': 'logoi',          'name': 'LOGOI',          'concept': 'Programación',  'desc': 'Programación · Lógica',       'hue': 120, 'route': '/actividades'},
+    {'id': 'eurythmia',      'name': 'EURYTHMIA',      'concept': 'Baile',         'desc': 'Baile · Ritmo · Cuerpo',      'hue': 330, 'route': '/eurythmia'},
 ]
 
 # Habit → activity keys que la marcan como done si se loguearon hoy
@@ -282,6 +282,7 @@ def _build_eudaimonia_data():
         'xp_today':       stats['xp_today'],
         'level':          stats['level'],
         'level_name':     stats['level_name'],
+        'level_subtitle': stats['level_subtitle'],
         'level_pct':      stats['level_pct'],
         'xp_to_next':     stats['xp_to_next'],
         'streak':         stats['streak'],
@@ -315,10 +316,39 @@ def _build_eudaimonia_data():
     }
 
 
+def _build_streak_heatmap(days: int = 21) -> list:
+    """XP por día de los últimos N días — mismo cálculo que /logros, ventana corta."""
+    end   = today_date()
+    start = end - timedelta(days=days - 1)
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT date, SUM(pts) as xp FROM activity_logs WHERE date>=? AND date<=? GROUP BY date",
+            (start.isoformat(), end.isoformat())
+        ).fetchall()
+    by_date = {r['date']: r['xp'] for r in rows}
+    return [
+        {'date': (start + timedelta(days=i)).isoformat(),
+         'xp':   by_date.get((start + timedelta(days=i)).isoformat(), 0)}
+        for i in range(days)
+    ]
+
+
+_DIAS_ES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+_MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
+             'Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+
 # ── EUDAIMONIA — ruta principal ───────────────────────────────────────────────
 @dashboard_bp.route('/')
 def index():
-    return render_template('base_eudaimonia.html', eudaimonia_data=_build_eudaimonia_data())
+    hoy = today_date()
+    fecha_larga = f"{_DIAS_ES[hoy.weekday()]} {hoy.day} de {_MESES_ES[hoy.month - 1]}"
+    return render_template(
+        'dashboard/index.html',
+        data=_build_eudaimonia_data(),
+        heatmap=_build_streak_heatmap(21),
+        fecha_larga=fecha_larga,
+    )
 
 
 def _build_deadlines(today_dt: date) -> list:

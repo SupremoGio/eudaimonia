@@ -208,13 +208,21 @@
        Misma paleta y tipografía que el BottomNav de la SPA (eu-components.jsx)
        para que se sienta como el mismo componente, no uno nuevo. */
     .eu-bottom-nav {
+      display:none; /* default: oculto — ver @media abajo. NO usar la clase
+        utilitaria lg:hidden de Tailwind aquí: esta regla vive en un <style>
+        que carga DESPUÉS de tailwind-built.css, así que con igual
+        especificidad (0,0,1,0 ambas) esta regla siempre le gana en cascada
+        a .lg\:hidden, sin importar el viewport — quedaba visible también
+        en desktop. Se resuelve con display:none propio + su propio @media. */
       position:fixed; bottom:0; left:50%; transform:translateX(-50%);
       width:100%; max-width:430px; z-index:200;
-      display:flex;
       background:var(--surf-top);
       backdrop-filter:blur(24px);
       border-top:1px solid var(--b);
       padding-bottom:env(safe-area-inset-bottom, 8px);
+    }
+    @media (max-width:1023px) {
+      .eu-bottom-nav { display:flex; }
     }
     .ebn-tab { flex:1; display:flex; flex-direction:column; align-items:center; padding:10px 4px 6px; text-decoration:none; }
     .ebn-lbl { font-family:var(--serif); font-size:18px; line-height:1; color:var(--mid); transition:color .25s; }
@@ -263,6 +271,7 @@
 
 <body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
 
+{% block topbar %}
 <!-- TOPBAR -->
 <header class="sticky top-0 z-20 flex-shrink-0"
         style="background:var(--surf-top); border-bottom:1px solid var(--b); backdrop-filter:blur(12px);">
@@ -308,6 +317,7 @@
 
   </div>
 </header>
+{% endblock %}
 
 <!-- CONTENT -->
 <main id="eu-main" class="p-4 md:p-6 overflow-x-hidden">
@@ -317,8 +327,8 @@
 <!-- BOTTOM NAV — móvil. Ver design-specs/README.md Sprint 3 e
      inspection-audit F-01: mismos 4 tabs que el BottomNav de la SPA
      (Inicio/Módulos/Acta/Perfil), ahora también en las pantallas de módulo. -->
-<nav class="eu-bottom-nav lg:hidden" aria-label="Navegación principal">
-  <a href="/" class="ebn-tab">
+<nav class="eu-bottom-nav" aria-label="Navegación principal">
+  <a href="/" class="ebn-tab{% if pg == 'dashboard' %} active{% endif %}">
     <span class="ebn-lbl">Ἀρχή</span><span class="ebn-sub">Inicio</span>
   </a>
   <a href="/?tab=modules" class="ebn-tab">
