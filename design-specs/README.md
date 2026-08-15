@@ -2,7 +2,7 @@
 
 Esta carpeta contiene la spec visual de **19 mejoras de UI/UX** organizadas en **5 sprints**, para aplicar al repo `gio_v3_ACTUALIZADO`.
 
-> **Estado (2026-08-15):** la mayoría de estos sprints ya está implementada — tokens (Sprint 1), Acta Diurna (Sprint 2), dashboard/bottom-nav/sidebar (Sprint 3, salvo ⌘K), streak heatmap/clasificación (Sprint 4) y estados vacíos/skeletons (Sprint 5). `gio_v3/templates/eu/layout.html`, citado varias veces abajo como el archivo a editar, **nunca llegó a servirse por ningún route y se borró** — el layout base real desde entonces es `eu/layout_sub.html`, con los tokens de diseño en `static/css/app.css`. Las referencias a `eu/layout.html` que quedan abajo son históricas; donde aplica, edita `eu/layout_sub.html` o `app.css` en su lugar. Lo único de este roadmap que sigue pendiente de verdad es el command palette ⌘K (punto 3 del Sprint 3).
+> **Estado (2026-08-15):** todos los sprints de este roadmap ya están implementados — tokens (Sprint 1), Acta Diurna (Sprint 2), dashboard/bottom-nav/sidebar/⌘K (Sprint 3), streak heatmap/clasificación (Sprint 4) y estados vacíos/skeletons (Sprint 5). `gio_v3/templates/eu/layout.html`, citado varias veces abajo como el archivo a editar, **nunca llegó a servirse por ningún route y se borró** — el layout base real desde entonces es `eu/layout_sub.html`, con los tokens de diseño en `static/css/app.css`. Las referencias a `eu/layout.html` que quedan abajo son históricas; donde aplica, edita `eu/layout_sub.html` o `app.css` en su lugar.
 
 ---
 
@@ -142,7 +142,7 @@ Cuando confirmes que se ve bien, mergea a `main` y pasa al siguiente.
 
 2. ✅ **Bottom nav mobile** — implementado en `eu/layout_sub.html` (clase `.eu-bottom-nav`, visible solo `<1024px`, `.active` vía `pg`). Mismos 4 tabs (Inicio/Módulos/Acta/Perfil).
 
-3. ⏳ **Command palette ⌘K** — sigue pendiente. Cuando se implemente: JS vanilla en `static/js/command-palette.js`, atajos `Cmd/Ctrl+K` abrir / `↑↓` navegar / `⏎` ejecutar / `Esc` cerrar, fuzzy search sobre las rutas del sidebar (`eu/layout_sub.html`) + acciones rápidas. Cargarlo en `eu/layout_sub.html` para que esté disponible en toda la app.
+3. ✅ **Command palette ⌘K** — implementado en `eu/layout_sub.html` (JS vanilla, sin archivo aparte). `Cmd/Ctrl+K` abre, `↑↓` navega, `⏎` ejecuta, `Esc` cierra. Los items se leen en vivo del sidebar ya renderizado (`.eu-sidebar-link`), no de una lista de rutas separada.
 
 4. ✅ **Sidebar rediseño** — implementado en `eu/layout_sub.html` (clase `.eu-sidebar`, visible solo `≥1024px`), agrupado HOY/Praxis · MÓDULOS · SISTEMA como se pedía.
 
