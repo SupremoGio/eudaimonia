@@ -1,0 +1,31 @@
+{# Espera `dl` en contexto (un item de data.deadlines) + dicts dl_icons/dl_labels/dl_pal ya definidos en el padre #}
+{% set p = dl_pal[dl.level] or dl_pal.green %}
+{% set urgent = dl.level == 'red' %}
+{% set sublabel = 'DÍAS' if dl.days > 0 else ('DEADLINE' if dl.days == 0 else 'EXPIRADO') %}
+<div class="dl-card" data-key="{{ dl.type }}-{{ dl.id }}" style="--dl-bg:{{ p.bg }};--dl-border:{{ p.border }};--dl-text:{{ p.text }};--dl-pill:{{ p.pill }};">
+  <div class="dl-bar"{% if urgent %} style="box-shadow:0 0 9px {{ p.border }};"{% endif %}></div>
+  <div class="dl-body">
+    <div class="dl-top">
+      <div class="dl-type"><i data-lucide="{{ dl_icons[dl.type] or 'bell' }}"></i><span>{{ dl_labels[dl.type] or dl.type }}</span></div>
+      {% if dl.type == 'partido' %}
+      <a href="/bienestar/futbol?resultado={{ dl.id }}" title="Ir a Fútbol — registrar resultado" class="dl-check" style="text-decoration:none;">
+        <i data-lucide="arrow-right"></i>
+      </a>
+      {% else %}
+      <button class="dl-check" title="Marcar como cumplido"
+        data-type="{{ dl.type }}" data-id="{{ dl.id }}"
+        data-url="{{ '/gtd/api/task/' ~ dl.id ~ '/complete' if dl.type == 'task' else '/perfil/api/reminder/' ~ dl.id ~ '/done' }}">
+        <i data-lucide="check"></i>
+      </button>
+      {% endif %}
+    </div>
+    <div class="dl-name" title="{{ dl.label }}">{{ dl.label }}</div>
+    <div class="dl-foot">
+      <div class="dl-badge">
+        <b{% if dl.badge in ['HOY','VENCIDO'] %} class="small"{% endif %}>{{ dl.badge }}</b>
+        <span>{{ sublabel }}</span>
+      </div>
+      {% if urgent %}<div class="dl-pulse"></div>{% endif %}
+    </div>
+  </div>
+</div>

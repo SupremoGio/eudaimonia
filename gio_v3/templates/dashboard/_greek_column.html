@@ -1,0 +1,27 @@
+{# Columna griega simplificada — versión estática de GreekColumn (eu-components.jsx).
+   10 "tambores" apilados, rellenos hasta `data.level`. Sin entasis ni glow SVG:
+   la pieza original es decorativa, esto conserva la lectura (nivel = altura llena)
+   sin reproducir el filtro de blur/gradiente pixel a pixel. #}
+{% set size = 72 %}
+{% set h = 101 %}
+{% set cx = size / 2 %}
+{% set shaft_w = size * 0.26 %}
+{% set shaft_top = h * 0.07 %}
+{% set shaft_bot = h * 0.80 %}
+{% set shaft_h = shaft_bot - shaft_top %}
+{% set drum_h = shaft_h / 10 %}
+{% set cap_w = size * 0.42 %}
+{% set base_w = size * 0.50 %}
+<svg width="{{ size }}" height="{{ h }}" viewBox="0 0 {{ size }} {{ h }}" style="overflow:visible;">
+  <rect x="{{ cx - cap_w/2 }}" y="1" width="{{ cap_w }}" height="6" rx="1.5" fill="var(--gold)" opacity="0.85"/>
+  {% for i in range(10) %}
+    {% set from_bottom = 9 - i %}
+    {% set filled = from_bottom < data.level %}
+    {% set is_current = from_bottom == data.level - 1 %}
+    <rect x="{{ cx - shaft_w/2 }}" y="{{ shaft_top + i * drum_h }}" width="{{ shaft_w }}" height="{{ drum_h - 1 }}" rx="1"
+      fill="{{ 'var(--gold)' if filled else 'var(--surf)' }}"
+      stroke="{{ 'var(--gold-l)' if is_current else 'var(--b2)' }}" stroke-width="0.6"
+      opacity="{{ '1' if filled else '0.5' }}"/>
+  {% endfor %}
+  <rect x="{{ cx - base_w/2 }}" y="{{ shaft_bot }}" width="{{ base_w }}" height="7" rx="1.5" fill="var(--gold)" opacity="0.85"/>
+</svg>

@@ -1,0 +1,448 @@
+{% extends "eu/layout_sub.html" %}{% set pg='dashboard' %}
+{% block title %}Eudaimonia{% endblock %}
+{% block topbar %}{% endblock %}
+
+{% block head %}
+<style>
+  .dash-wrap { max-width:1400px; margin:0 auto; }
+  .dash-head {
+    position:sticky; top:0; z-index:20;
+    padding:16px 4px 14px;
+    background:var(--surf-top); backdrop-filter:blur(16px);
+    border-bottom:1px solid color-mix(in srgb, var(--gold) 7%, transparent);
+    margin:-16px -16px 20px; padding-left:16px; padding-right:16px;
+  }
+  @media (min-width:768px) { .dash-head { margin:-24px -24px 24px; padding:16px 24px; } }
+  .dash-head-row { display:flex; justify-content:space-between; align-items:flex-start; }
+  .dash-eyebrow { font-family:var(--sans); font-size:9px; letter-spacing:.22em; color:var(--gold); opacity:.65; text-transform:uppercase; }
+  .dash-word { font-family:var(--serif); font-size:20px; color:var(--text); font-weight:500; letter-spacing:.16em; margin-top:1px; }
+  .dash-head-actions { display:flex; align-items:center; gap:10px; padding-top:2px; }
+  .dash-icon-btn {
+    position:relative; background:var(--gold-bg); border:1px solid var(--gold-border);
+    border-radius:6px; width:28px; height:28px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:var(--gold);
+  }
+  .dash-badge {
+    position:absolute; top:-4px; right:-4px; min-width:14px; height:14px; border-radius:7px;
+    background:var(--gold); color:#09070F; font-family:var(--sans); font-size:8px; font-weight:700;
+    display:flex; align-items:center; justify-content:center; padding:0 3px;
+  }
+  .dash-badge.urgent { background:#ef4444; color:#fff; animation:blink 1.4s ease-in-out infinite; }
+  .dash-logros-link { display:inline-flex; align-items:center; gap:5px; font-family:var(--sans); font-size:9px; color:var(--gold); opacity:.65; text-decoration:none; letter-spacing:.08em; }
+  .dash-greeting { font-family:var(--serif); font-size:24px; color:var(--text); }
+  .dash-greeting-sub { font-size:11px; color:var(--mid); margin-top:3px; }
+
+  .dash-grid { display:grid; grid-template-columns:1fr; gap:0; align-items:start; }
+  @media (min-width:1024px) { .dash-grid { grid-template-columns:1fr 380px; gap:0 32px; } }
+  .dash-main, .dash-side { display:flex; flex-direction:column; gap:14px; min-width:0; }
+  .dash-side { margin-top:14px; }
+  @media (min-width:1024px) { .dash-side { position:sticky; top:80px; margin-top:0; } }
+
+  .dash-card { background:var(--card); border:1px solid var(--gold-border); border-radius:14px; padding:16px 18px; }
+  .dash-label { font-family:var(--sans); font-size:9px; letter-spacing:.15em; color:var(--mid); text-transform:uppercase; }
+
+  /* Hero XP */
+  .hero-xp { background:linear-gradient(140deg, var(--surf), var(--bg)); border:1px solid var(--gold-border); border-radius:16px; padding:20px; }
+  .hero-xp-eyebrow { font-size:9px; letter-spacing:.18em; color:var(--gold); opacity:.6; text-transform:uppercase; margin-bottom:6px; }
+  .hero-xp-num { display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
+  .hero-xp-num b { font-family:var(--serif); font-size:48px; line-height:1; color:var(--gold-l); font-weight:600; font-variant-numeric:tabular-nums; }
+  .hero-xp-num span { font-size:13px; color:var(--mid); }
+  .bar-track { height:5px; background:var(--gold-bg); border-radius:3px; overflow:hidden; margin-bottom:12px; }
+  .bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l)); box-shadow:0 0 8px var(--gold-glow); }
+  .tiers { display:flex; align-items:stretch; gap:6px; margin-bottom:10px; }
+  .tier { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border-radius:10px; border:1px solid transparent; }
+  .tier.active { box-shadow:0 0 16px color-mix(in srgb, var(--tc) 25%, transparent); background:color-mix(in srgb, var(--tc) 8%, transparent); border-color:var(--tc); }
+  .tier-dot { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.04); color:var(--mid); }
+  .tier.active .tier-dot { background:var(--tc); color:#09070F; box-shadow:0 0 10px var(--tc); }
+  .tier-lbl { font-family:var(--sans); font-size:9px; letter-spacing:.06em; color:var(--mid); opacity:.6; }
+  .tier.active .tier-lbl { color:var(--tc); font-weight:600; opacity:1; }
+  .tier-row-foot { display:flex; justify-content:space-between; align-items:center; font-size:10px; }
+  .tier-row-foot .l { color:var(--mid); }
+  .tier-row-foot .r { color:var(--gold); opacity:.8; }
+
+  /* Suggestion */
+  .sugg-card { background:oklch(18% 0.04 45); border:1px solid oklch(35% 0.09 45); border-radius:12px; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:transform .15s; }
+  html.light .sugg-card { background:oklch(93% 0.04 45); border-color:oklch(70% 0.10 45); }
+  .sugg-card:hover { transform:translateY(-2px); }
+  .sugg-card:active { transform:translateY(0) scale(.99); }
+  .sugg-icon { width:34px; height:34px; border-radius:9px; background:rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:oklch(65% 0.15 45); }
+  html.light .sugg-icon { color:oklch(40% 0.18 45); }
+  .sugg-eyebrow { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:oklch(65% 0.15 45); margin-bottom:4px; }
+  html.light .sugg-eyebrow { color:oklch(40% 0.18 45); }
+  .sugg-label { font-size:14px; color:var(--text); }
+  .sugg-pts { font-size:13px; color:var(--gold); font-weight:600; flex-shrink:0; }
+
+  /* Level card */
+  .level-card { background:linear-gradient(140deg, var(--card), var(--surf) 55%, var(--bg)); border:1px solid var(--gold-border); border-radius:16px; padding:18px 16px; display:flex; align-items:flex-end; gap:14px; }
+  .level-col { flex-shrink:0; cursor:pointer; }
+  .level-info { flex:1; padding-bottom:3px; min-width:0; }
+  .level-num { font-family:var(--sans); font-size:9px; letter-spacing:.18em; color:var(--gold); opacity:.6; text-transform:uppercase; margin-bottom:2px; }
+  .level-name { font-family:var(--serif); font-size:26px; font-weight:600; color:var(--text); line-height:1; letter-spacing:.05em; }
+  .level-sub { font-family:var(--serif); font-style:italic; font-size:12px; color:var(--mid); margin:3px 0 10px; }
+  .level-bar-track { height:3px; background:var(--gold-bg); border-radius:2px; overflow:hidden; }
+  .level-bar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l)); box-shadow:0 0 8px var(--gold-glow); }
+  .level-xp-next { font-size:10px; color:var(--dim); margin-top:8px; }
+
+  /* Modules */
+  .mods-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .mods-track { display:flex; gap:3px; height:3px; border-radius:2px; overflow:hidden; background:color-mix(in srgb, var(--gold) 6%, transparent); margin-bottom:14px; }
+  .mods-track > div { flex:1; }
+  .mods-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px; }
+  .mod-tile { background:var(--card); border-radius:13px; padding:14px; text-decoration:none; display:block; border:1px solid var(--mtc-border); transition:transform .15s; }
+  .mod-tile:hover { transform:translateY(-3px); }
+  .mod-tile.done { box-shadow:0 0 16px var(--mtc-glow); }
+  .mod-icon-wrap { width:44px; height:44px; border-radius:12px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; background:var(--mtc-bg); border:1px solid var(--mtc-border); }
+  .mod-icon-wrap i { color:var(--mtc-text); width:21px; height:21px; }
+  .mod-title { font-family:var(--serif); font-size:15px; font-weight:600; color:var(--text); letter-spacing:.02em; }
+  .mod-desc { font-family:var(--sans); font-size:9.5px; color:var(--mid); margin-top:2px; line-height:1.35; }
+  .mod-status { display:flex; align-items:center; gap:5px; margin-top:10px; font-size:9.5px; }
+  .mod-status .dot { width:6px; height:6px; border-radius:50%; background:var(--mid); flex-shrink:0; }
+  .mod-tile.done .mod-status .dot { background:var(--mtc-text); }
+  .mod-status span.txt { color:var(--mid); }
+  .mod-tile.done .mod-status span.txt { color:var(--mtc-text); }
+
+  /* Reflexion / Word */
+  .quote-box { padding:18px 18px 16px; background:color-mix(in srgb, var(--gold) 4%, transparent); border:1px solid var(--gold-bg); border-left:3px solid var(--gold-glow); border-radius:0 10px 10px 0; }
+  .quote-text { font-family:var(--serif); font-style:italic; font-size:16px; line-height:1.6; color:var(--text); margin-bottom:10px; text-wrap:pretty; }
+  .quote-author { font-family:var(--sans); font-size:9px; letter-spacing:.12em; color:var(--gold); text-transform:uppercase; opacity:.75; }
+  .refresh-btn { background:transparent; border:none; cursor:pointer; color:var(--mid); padding:0; display:inline-flex; align-items:center; transition:transform .4s ease; }
+  .refresh-btn.spin { transform:rotate(180deg); }
+  .refresh-btn i { width:14px; height:14px; }
+  .pill { font-family:var(--sans); font-size:8px; padding:2px 8px; border-radius:100px; letter-spacing:.06em; }
+  .word-card { background:color-mix(in srgb, var(--gold) 4%, transparent); border:1px solid var(--gold-bg); border-radius:12px; padding:16px 18px; }
+  .word-phon { font-family:var(--sans); font-size:9px; color:var(--mid); margin-bottom:2px; letter-spacing:.04em; }
+  .word-word { font-family:var(--serif); font-style:italic; font-size:26px; font-weight:300; color:var(--text); line-height:1; margin-bottom:10px; }
+  .word-rule { height:1px; background:linear-gradient(90deg,var(--gold-glow),transparent); margin-bottom:10px; }
+  .word-meaning { font-family:var(--sans); font-size:12px; color:var(--mid); line-height:1.55; margin-bottom:8px; }
+  .word-example { font-family:var(--serif); font-style:italic; font-size:12px; color:var(--mid); border-left:2px solid var(--b2); padding-left:10px; margin-bottom:10px; line-height:1.55; opacity:.75; }
+  .word-fr { font-family:var(--sans); font-size:9px; background:color-mix(in srgb, var(--gold) 6%, transparent); border:1px solid var(--gold-border); color:var(--gold); padding:3px 9px; border-radius:100px; display:inline-block; }
+
+  /* Heatmap */
+  .hm-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
+  .hm-title { font-size:10px; letter-spacing:.18em; color:var(--gold); opacity:.7; text-transform:uppercase; }
+  .hm-link { font-size:10px; color:var(--gold); opacity:.6; text-decoration:none; }
+  .hm-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .hm-cell { aspect-ratio:1; border-radius:3px; }
+
+  /* Deadline radar */
+  .dr-head { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .dr-dot { width:6px; height:6px; border-radius:50%; background:#ef4444; box-shadow:0 0 7px #ef4444; animation:blink 1.4s ease-in-out infinite; flex-shrink:0; }
+  .dr-list { display:flex; flex-direction:column; gap:8px; }
+  .dl-card { display:flex; align-items:stretch; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.05); box-shadow:0 2px 14px rgba(0,0,0,0.25); background:var(--dl-bg); transition:opacity .2s; }
+  .dl-bar { width:3px; flex-shrink:0; background:var(--dl-border); }
+  .dl-body { flex:1; padding:11px 12px; display:flex; flex-direction:column; gap:6px; min-width:0; }
+  .dl-top { display:flex; align-items:center; justify-content:space-between; }
+  .dl-type { display:flex; align-items:center; gap:5px; color:var(--dl-text); opacity:.75; }
+  .dl-type i { width:10px; height:10px; }
+  .dl-type span { font-family:var(--sans); font-size:8px; letter-spacing:.12em; text-transform:uppercase; }
+  .dl-check { flex-shrink:0; width:20px; height:20px; border-radius:50%; border:1.5px solid var(--dl-border); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--dl-border); }
+  .dl-check:hover { background:var(--dl-pill); }
+  .dl-check i { width:10px; height:10px; }
+  .dl-name { font-family:var(--sans); font-size:12px; font-weight:500; color:var(--text); line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dl-foot { display:flex; align-items:flex-end; justify-content:space-between; margin-top:auto; }
+  .dl-badge { background:var(--dl-pill); border-radius:8px; padding:4px 9px; display:inline-flex; align-items:baseline; gap:4px; }
+  .dl-badge b { font-family:var(--sans); font-weight:900; line-height:1; font-size:17px; color:var(--dl-text); }
+  .dl-badge b.small { font-size:12px; }
+  .dl-badge span { font-family:var(--sans); font-size:7px; letter-spacing:.14em; color:var(--dl-text); opacity:.6; }
+  .dl-pulse { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-bottom:2px; background:var(--dl-border); box-shadow:0 0 6px var(--dl-border); animation:blink 1.4s ease-in-out infinite; }
+
+  .notif-dropdown { position:absolute; top:calc(100% + 10px); right:0; z-index:60; width:320px; max-width:90vw; max-height:420px; overflow-y:auto; background:var(--surf); border:1px solid var(--gold-border); border-radius:14px; padding:14px; box-shadow:0 20px 50px rgba(0,0,0,0.5); }
+  .notif-empty { padding:20px 4px; text-align:center; font-family:var(--sans); font-size:12px; color:var(--mid); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set clf = data.classification %}
+{% set ci = ['carbon','iron','gold','diamond'].index(clf.rank) if clf.rank in ['carbon','iron','gold','diamond'] else 0 %}
+{% set tiers = [
+  {'rank':'carbon','icon':'mountain','label':'Carbón','color':'#94a3b8'},
+  {'rank':'iron','icon':'swords','label':'Hierro','color':'#eab308'},
+  {'rank':'gold','icon':'medal','label':'Oro','color':'#fbbf24'},
+  {'rank':'diamond','icon':'gem','label':'Diamante','color':'#7dd3fc'},
+] %}
+{% set mod_icons = {'hegemonikon':'shield-check','oikonomia':'wallet','ataraxia':'clipboard-check','paideia':'book-open','cosmopolitismo':'globe','logoi':'terminal','eurythmia':'music'} %}
+{% set dl_icons = {'reminder':'bell','task':'check-square','wishlist':'shopping-bag','partido':'trophy'} %}
+{% set dl_labels = {'reminder':'recordatorio','task':'tarea gtd','wishlist':'wishlist','partido':'partido'} %}
+{% set dl_pal = {
+  'red':    {'text':'#f87171','bg':'rgba(239,68,68,0.09)','border':'#ef4444','pill':'rgba(239,68,68,0.20)'},
+  'amber':  {'text':'#fbbf24','bg':'rgba(245,158,11,0.09)','border':'#f59e0b','pill':'rgba(245,158,11,0.20)'},
+  'yellow': {'text':'#fde047','bg':'rgba(234,179,8,0.07)','border':'#eab308','pill':'rgba(234,179,8,0.18)'},
+  'green':  {'text':'#34d399','bg':'rgba(16,185,129,0.07)','border':'#10b981','pill':'rgba(16,185,129,0.18)'},
+} %}
+{% set hm_max = (heatmap | map(attribute='xp') | max) or 1 %}
+
+<div class="dash-wrap">
+
+  <div class="dash-head">
+    <div class="dash-head-row">
+      <div>
+        <div class="dash-eyebrow">{{ fecha_larga }}</div>
+        <div class="dash-word">Ε Υ Δ Α Ι Μ Ο Ν Ι Α</div>
+      </div>
+      <div class="dash-head-actions">
+        <div style="position:relative;">
+          <button class="dash-icon-btn" id="notif-btn" aria-label="Notificaciones" title="Notificaciones">
+            <i data-lucide="bell" style="width:13px;height:13px;"></i>
+            {% if data.deadlines|length > 0 %}
+            <span class="dash-badge{% if data.deadlines|selectattr('level','equalto','red')|list|length > 0 %} urgent{% endif %}">{{ data.deadlines|length }}</span>
+            {% endif %}
+          </button>
+          <div class="notif-dropdown" id="notif-panel" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <span class="dash-label">Notificaciones</span>
+              <span style="font-family:var(--sans);font-size:9px;color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>
+            </div>
+            {% if not data.deadlines %}
+              <div class="notif-empty">Sin pendientes por ahora ✦</div>
+            {% else %}
+              <div class="dr-list">
+                {% for dl in data.deadlines %}{% include "dashboard/_deadline_card.html" %}{% endfor %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        <a href="/logros" class="dash-logros-link"><i data-lucide="trophy" style="width:11px;height:11px;"></i> Logros</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:0 4px 20px;">
+    <div class="dash-greeting">Buenos días, Gio.</div>
+    <div class="dash-greeting-sub">{{ fecha_larga }} · día {{ data.streak }} de tu racha</div>
+  </div>
+
+  <div class="dash-grid" style="padding:0 4px;">
+    <div class="dash-main">
+
+      <div class="hero-xp">
+        <div class="hero-xp-eyebrow">XP hoy</div>
+        <div class="hero-xp-num"><b>{{ data.xp_today }}</b><span>/ 15 meta</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:{{ [100, (data.xp_today / 15 * 100) | round(1)] | min }}%;"></div></div>
+        <div class="tiers">
+          {% for t in tiers %}
+          <div class="tier{% if loop.index0 == ci %} active{% endif %}" style="--tc:{{ t.color }};">
+            <div class="tier-dot"><i data-lucide="{{ t.icon }}" style="width:13px;height:13px;"></i></div>
+            <div class="tier-lbl">{{ t.label }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="tier-row-foot">
+          <span class="l">Clasificación de hoy</span>
+          <span class="r">{{ clf.next_hint or '' }}</span>
+        </div>
+      </div>
+
+      {% if data.suggestion %}
+      <div class="sugg-card" id="sugg-card" data-key="{{ data.suggestion.key }}">
+        <div class="sugg-icon"><i data-lucide="zap" style="width:16px;height:16px;"></i></div>
+        <div style="flex:1;">
+          <div class="sugg-eyebrow">Un click cierra {{ data.suggestion.cat }}</div>
+          <div class="sugg-label">{{ data.suggestion.label }}</div>
+        </div>
+        <span class="sugg-pts">+{{ data.suggestion.pts }} XP</span>
+      </div>
+      {% endif %}
+
+      <div class="level-card">
+        <div class="level-col" onclick="location.reload()" aria-label="Actualizar" title="Actualizar">
+          {% include "dashboard/_greek_column.html" %}
+        </div>
+        <div class="level-info">
+          <div class="level-num">NIVEL {{ data.level }}</div>
+          <div class="level-name">{{ data.level_name }}</div>
+          <div class="level-sub">{{ data.level_subtitle }}</div>
+          <div class="level-bar-track"><div class="level-bar-fill" style="width:{{ data.level_pct }}%;"></div></div>
+          {% if data.xp_to_next > 0 %}<div class="level-xp-next">{{ data.xp_to_next }} XP para siguiente nivel</div>{% endif %}
+        </div>
+      </div>
+
+      <div>
+        <div class="mods-head">
+          <span class="dash-label">Módulos</span>
+          <span style="font-size:11px;color:var(--mid);">{{ data.modules|selectattr('done')|list|length }} de {{ data.modules|length }}</span>
+        </div>
+        <div class="mods-track">
+          {% for mod in data.modules %}
+          <div style="background:{{ 'oklch(65% 0.15 ' ~ mod.hue ~ ')' if mod.done else 'transparent' }};"></div>
+          {% endfor %}
+        </div>
+        <div class="mods-grid">
+          {% for mod in data.modules %}
+          <a href="{{ mod.route or '#' }}" class="mod-tile{% if mod.done %} done{% endif %}"
+             style="--mtc-bg:linear-gradient(150deg, oklch(35% 0.09 {{ mod.hue }} / .28), oklch(35% 0.09 {{ mod.hue }} / .10));
+                    --mtc-border:{{ 'oklch(65% 0.15 ' ~ mod.hue ~ ')' if mod.done else 'var(--gold-border)' }};
+                    --mtc-text:oklch(65% 0.15 {{ mod.hue }});
+                    --mtc-glow:oklch(65% 0.15 {{ mod.hue }} / .3);">
+            <div class="mod-icon-wrap"><i data-lucide="{{ mod_icons[mod.id] }}"></i></div>
+            <div class="mod-title">{{ mod.name|title }}</div>
+            <div class="mod-desc">{{ mod.desc }}</div>
+            <div class="mod-status">
+              <span class="dot"></span>
+              <span class="txt">{{ (mod.streak ~ ' días') if mod.done else 'pendiente hoy' }}</span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="reflexion-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span class="dash-label">Reflexión del Día</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="pill" id="reflexion-cat"
+              style="{{ 'color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.18);' if data.reflexion.category == 'stoic' else 'color:#34d399;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.18);' }}">
+              {{ 'Estoica' if data.reflexion.category == 'stoic' else 'Motivacional' }}
+            </span>
+            <button class="refresh-btn" id="reflexion-refresh"><i data-lucide="refresh-cw"></i></button>
+          </div>
+        </div>
+        <div class="quote-box">
+          <div class="quote-text" id="reflexion-text">&ldquo;{{ data.reflexion.text }}&rdquo;</div>
+          <div class="quote-author" id="reflexion-author">— {{ data.reflexion.author }}</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="dash-side">
+
+      <div class="dash-card">
+        <div class="hm-head">
+          <span class="hm-title">Racha · {{ data.streak }} días</span>
+          <a href="/logros" class="hm-link">Ver historial →</a>
+        </div>
+        <div class="hm-grid">
+          {% for cell in heatmap %}
+            {% if cell.xp == 0 %}
+              {% set cbg, cbdr = 'rgba(201,168,76,0.04)', 'rgba(201,168,76,0.12)' %}
+            {% else %}
+              {% set t = cell.xp / hm_max %}
+              {% set l = (50 + t * 25) | int %}
+              {% set cv = (0.06 + t * 0.1) | round(3) %}
+              {% set cbg, cbdr = 'oklch(' ~ l ~ '% ' ~ cv ~ ' 80)', 'oklch(' ~ (l+5) ~ '% ' ~ (cv+0.02) ~ ' 80)' %}
+            {% endif %}
+          <div class="hm-cell" title="{{ cell.date }}: {{ cell.xp }} XP" style="background:{{ cbg }};border:1px solid {{ cbdr }};"></div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="word-box">
+        {% if data.word_of_day %}
+        <div class="word-card" id="word-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <span class="dash-label">Word of the Day</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="pill" style="color:#60a5fa;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.18);white-space:nowrap;">EN → FR</span>
+              <button class="refresh-btn" id="word-refresh"><i data-lucide="refresh-cw"></i></button>
+            </div>
+          </div>
+          <div class="word-phon" id="word-phon">{{ data.word_of_day.phonetic }}</div>
+          <div class="word-word" id="word-word">{{ data.word_of_day.word }}</div>
+          <div class="word-rule"></div>
+          <div class="word-meaning" id="word-meaning">{{ data.word_of_day.meaning }}</div>
+          <div class="word-example" id="word-example">&ldquo;{{ data.word_of_day.example }}&rdquo;</div>
+          <span class="word-fr" id="word-fr">FR · {{ data.word_of_day.french }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if data.deadlines %}
+      <div>
+        <div class="dr-head">
+          <span class="dr-dot"></span>
+          <span class="dash-label" style="flex:1;">Deadline Radar</span>
+          <span style="font-family:var(--sans);font-size:9px;color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>
+        </div>
+        <div class="dr-list">
+          {% for dl in data.deadlines %}{% include "dashboard/_deadline_card.html" %}{% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  var notifBtn = document.getElementById('notif-btn');
+  var notifPanel = document.getElementById('notif-panel');
+  if (notifBtn && notifPanel) {
+    notifBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      notifPanel.style.display = notifPanel.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', function(e){
+      if (!notifPanel.contains(e.target) && e.target !== notifBtn) notifPanel.style.display = 'none';
+    });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') notifPanel.style.display = 'none'; });
+  }
+
+  var suggCard = document.getElementById('sugg-card');
+  if (suggCard) {
+    suggCard.addEventListener('click', function(){
+      suggCard.style.opacity = '.5'; suggCard.style.pointerEvents = 'none';
+      fetch('/actividades/api/activity/log', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({key: suggCard.dataset.key}),
+      }).then(function(){ location.reload(); }).catch(function(){ location.reload(); });
+    });
+  }
+
+  function wireRefresh(btnId, url, onData) {
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+      btn.classList.add('spin');
+      fetch(url).then(function(r){ return r.json(); }).then(function(data){
+        onData(data);
+        btn.classList.remove('spin');
+      }).catch(function(){ btn.classList.remove('spin'); });
+    });
+  }
+
+  wireRefresh('reflexion-refresh', '/api/quote/refresh', function(q){
+    document.getElementById('reflexion-text').textContent = '“' + q.text + '”';
+    document.getElementById('reflexion-author').textContent = '— ' + q.author;
+    var cat = document.getElementById('reflexion-cat');
+    if (q.category === 'stoic') {
+      cat.textContent = 'Estoica';
+      cat.style.cssText = 'color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.18);';
+    } else {
+      cat.textContent = 'Motivacional';
+      cat.style.cssText = 'color:#34d399;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.18);';
+    }
+  });
+
+  wireRefresh('word-refresh', '/api/word/refresh', function(w){
+    document.getElementById('word-phon').textContent = w.phonetic;
+    document.getElementById('word-word').textContent = w.word;
+    document.getElementById('word-meaning').textContent = w.meaning;
+    document.getElementById('word-example').textContent = '“' + w.example + '”';
+    document.getElementById('word-fr').textContent = 'FR · ' + w.french;
+  });
+
+  document.querySelectorAll('.dl-check').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var type = btn.dataset.type, id = btn.dataset.id, url = btn.dataset.url;
+      if (btn.disabled) return;
+      btn.disabled = true;
+      fetch(url, {method:'POST'}).then(function(r){ return r.json(); }).then(function(j){
+        if (j.ok) {
+          document.querySelectorAll('.dl-card[data-key="' + type + '-' + id + '"]').forEach(function(el){
+            el.style.opacity = '0'; setTimeout(function(){ el.remove(); }, 200);
+          });
+          var badges = document.querySelectorAll('.dash-badge');
+          badges.forEach(function(b){
+            var n = parseInt(b.textContent, 10) - 1;
+            if (n > 0) { b.textContent = n; } else { b.remove(); }
+          });
+        } else { btn.disabled = false; }
+      }).catch(function(){ btn.disabled = false; });
+    });
+  });
+})();
+</script>
+{% endblock %}
