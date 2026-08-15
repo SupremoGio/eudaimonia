@@ -548,6 +548,22 @@
       </div>
     </div>
 
+    <!-- Pipeline -->
+    <div class="tile">
+      <div class="sec-hd-inner">
+        <div class="sec-t">Pipeline</div>
+      </div>
+      <div class="pipe-r">
+        <input class="pipe-inp" id="pipe-inp" placeholder="Añadir al pipeline...">
+        <button class="btn-g" onclick="addPipe()">+ ADD</button>
+      </div>
+      <div class="chips" id="chips">
+        {% for item in stats.pipeline %}
+        <div class="chip" data-id="{{ item.id }}">{{ item.text }}<button class="dc" onclick="delPipe({{ item.id }},this)"><i data-lucide="x"></i></button></div>
+        {% endfor %}
+      </div>
+    </div>
+
     <!-- Quotes: Estoicismo + Motivación -->
     <div class="q-c">
       <div class="q-inner">
@@ -564,22 +580,6 @@
         <div class="q-a" id="q-motiv-a">— {{ quote_motiv.author }}</div>
       </div>
       <button class="rb" onclick="rQuote('motivational','q-motiv-t','q-motiv-a')"><i data-lucide="refresh-cw"></i></button>
-    </div>
-
-    <!-- Pipeline -->
-    <div class="tile">
-      <div class="sec-hd-inner">
-        <div class="sec-t">Pipeline</div>
-      </div>
-      <div class="pipe-r">
-        <input class="pipe-inp" id="pipe-inp" placeholder="Añadir al pipeline...">
-        <button class="btn-g" onclick="addPipe()">+ ADD</button>
-      </div>
-      <div class="chips" id="chips">
-        {% for item in stats.pipeline %}
-        <div class="chip" data-id="{{ item.id }}">{{ item.text }}<button class="dc" onclick="delPipe({{ item.id }},this)"><i data-lucide="x"></i></button></div>
-        {% endfor %}
-      </div>
     </div>
   </div>
 </div>
