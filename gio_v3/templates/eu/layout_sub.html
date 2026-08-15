@@ -38,6 +38,10 @@
 
     *, *::before, *::after { box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; transition: background .25s, color .25s; }
+    /* min-h-screen (100vh) se corta bajo la barra dinámica de iOS Safari;
+       100dvh se ajusta al viewport visible real. Vía id (no clase Tailwind)
+       porque tailwind-built.css es precompilado y no trae min-h-[100dvh]. */
+    #eu-body { min-height: 100vh; min-height: 100dvh; }
 
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -352,7 +356,7 @@
 {# URL real del botón ← : si es raíz → hub de módulos; si no → página padre #}
 {% set _back_url = '/' if _is_root else _mod_url %}
 
-<body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
+<body id="eu-body" class="font-sans antialiased" style="background:var(--bg);color:var(--text);">
 
 <!-- SIDEBAR — solo desktop (≥1024px); en móvil la navegación es el bottom-nav -->
 <aside class="eu-sidebar">
