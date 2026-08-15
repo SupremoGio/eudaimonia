@@ -154,7 +154,17 @@
 .pillar-dot .pname{font-size:9px;color:var(--faint,var(--dim));letter-spacing:.02em;text-align:center;}
 .pillar-dot.on .pname{color:var(--text);}
 
-.foco-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;border-bottom:1px solid var(--b);padding-bottom:16px;margin-bottom:20px;font-size:var(--fs-sm);max-width:100%;}
+.foco-wrap{border-bottom:1px solid var(--b);margin-bottom:20px;}
+.foco-summary{display:flex;align-items:center;gap:10px;padding:8px 4px;margin-bottom:2px;cursor:pointer;border-radius:8px;transition:background .15s;}
+.foco-summary:hover{background:var(--card2);}
+.foco-summary-lbl{font-size:var(--fs-sm);color:var(--text);}
+.foco-count{font-size:var(--fs-xs);color:var(--dim);}
+.foco-chev{color:var(--dim);margin-left:auto;transition:transform .2s ease;flex-shrink:0;}
+.foco-summary.open .foco-chev{transform:rotate(90deg);}
+.foco-detail{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease;}
+.foco-detail.open{grid-template-rows:1fr;}
+.foco-detail-inner{overflow:hidden;}
+.foco-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:6px 4px 14px;font-size:var(--fs-sm);max-width:100%;}
 .foco-row{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%;}
 .foco-row select{background:var(--card2);border:1px solid var(--b);border-radius:8px;color:var(--text);font-size:var(--fs-xs);padding:5px 8px;font-family:var(--mono);max-width:150px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .foco-lbl{color:var(--dim);font-size:var(--fs-xs);white-space:nowrap;}
@@ -430,21 +440,33 @@
         <button class="btn-g" id="edit-toggle-btn" onclick="toggleEditMode()">Editar</button>
       </div>
 
-      <!-- Foco del mes -->
+      <!-- Foco del mes (colapsado por default — se toca una vez al mes) -->
       {% if foco_candidates %}
-      <div class="foco-bar">
-        <span class="foco-lbl">Foco del mes:</span>
-        {% for pk, items in foco_candidates.items() %}
-        <div class="foco-row">
-          <span class="foco-lbl">{{ pillar_meta.get(pk,{}).get('name', pk) }}</span>
-          <select onchange="setFoco('{{ pk }}', this.value)">
-            <option value="">— sin foco —</option>
-            {% for it in items %}
-            <option value="{{ it.key }}" {% if pillar_focus.get(pk)==it.key %}selected{% endif %}>{{ it.label }}</option>
-            {% endfor %}
-          </select>
+      {% set configured = namespace(n=0) %}
+      {% for pk in foco_candidates %}{% if pillar_focus.get(pk) %}{% set configured.n = configured.n + 1 %}{% endif %}{% endfor %}
+      <div class="foco-wrap">
+        <div class="foco-summary" onclick="toggleFoco(this)">
+          <span class="foco-summary-lbl">Foco del mes</span>
+          <span class="foco-count">{{ configured.n }}/{{ foco_candidates|length }} configurados</span>
+          <svg class="foco-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
         </div>
-        {% endfor %}
+        <div class="foco-detail" id="foco-detail">
+          <div class="foco-detail-inner">
+            <div class="foco-bar">
+              {% for pk, items in foco_candidates.items() %}
+              <div class="foco-row">
+                <span class="foco-lbl">{{ pillar_meta.get(pk,{}).get('name', pk) }}</span>
+                <select onchange="setFoco('{{ pk }}', this.value)">
+                  <option value="">— sin foco —</option>
+                  {% for it in items %}
+                  <option value="{{ it.key }}" {% if pillar_focus.get(pk)==it.key %}selected{% endif %}>{{ it.label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
       </div>
       {% endif %}
 
@@ -746,6 +768,11 @@ async function setFoco(pillar, focusKey) {
 function toggleSession(key, rowEl) {
   rowEl.classList.toggle('open');
   document.querySelector(`[data-detail="${key}"]`)?.classList.toggle('open');
+}
+
+function toggleFoco(summaryEl) {
+  summaryEl.classList.toggle('open');
+  document.getElementById('foco-detail')?.classList.toggle('open');
 }
 
 function showCombo(combos) {
