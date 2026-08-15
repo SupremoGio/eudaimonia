@@ -236,6 +236,33 @@
       #eu-main   { padding-bottom:92px; }
       #tw-toast  { bottom:92px; }
     }
+
+    /* ── Sidebar (desktop) ───────────────────────────────────────────────
+       Complemento del bottom-nav (móvil): en ≥1024px el bottom-nav se
+       oculta y esto ocupa su lugar como navegación persistente entre
+       módulos. Antes solo existía dentro de la SPA vieja (SideNav en
+       eu-app.jsx), retirada — este es el equivalente en el sistema Jinja,
+       visible en las 28 pantallas que ya extienden este layout. */
+    .eu-sidebar { display:none; }
+    .nav-link { transition:background .18s, color .18s; color:var(--dim); font-family:var(--sans); text-decoration:none; }
+    .nav-link.active { background:var(--gold-d); color:var(--gold); border-left-color:var(--gold) !important; }
+    .nav-link:hover:not(.active) { background:var(--gold-d); color:var(--mid); }
+    @media (min-width:1024px) {
+      body { padding-left:256px; }
+      .eu-sidebar {
+        display:flex; flex-direction:column;
+        position:fixed; top:0; left:0; width:256px; height:100vh; z-index:40;
+        background:var(--surf-nav); border-right:1px solid var(--b);
+      }
+      .eu-sidebar-nav { flex:1; overflow-y:auto; padding:12px; }
+      .eu-sidebar-link { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; border-left:2px solid transparent; }
+      .eu-sidebar-link i { width:16px; height:16px; flex-shrink:0; }
+      .eu-sidebar-link .lbl { font-size:var(--fs-sm); letter-spacing:.03em; }
+      .eu-sidebar-link .sub { font-size:var(--fs-xs); color:var(--dim); margin-top:1px; }
+      .eu-sidebar-divider { display:flex; align-items:center; gap:8px; padding:14px 12px 6px; }
+      .eu-sidebar-divider .rule { flex:1; height:1px; background:var(--b); }
+      .eu-sidebar-divider span { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.2em; text-transform:uppercase; flex-shrink:0; }
+    }
   </style>
 
   <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -270,6 +297,61 @@
 {% set _back_url = '/?tab=modules' if _is_root else _mod_url %}
 
 <body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
+
+<!-- SIDEBAR — solo desktop (≥1024px); en móvil la navegación es el bottom-nav -->
+<aside class="eu-sidebar">
+  <div style="padding:22px 20px 18px; border-bottom:1px solid var(--b); flex-shrink:0;">
+    <a href="/" style="text-decoration:none; display:block;">
+      <div style="font-family:var(--sans); font-size:8px; letter-spacing:.28em; color:var(--gold); opacity:.65; text-transform:uppercase; margin-bottom:4px;">Sistema personal</div>
+      <div style="font-family:var(--serif); font-size:19px; color:var(--text); letter-spacing:.14em; font-weight:600;">EUDAIMONIA</div>
+    </a>
+  </div>
+  <nav class="eu-sidebar-nav">
+    {% for href, icon, label, key, sub in [
+      ('/',            'layout-dashboard', 'Dashboard',    'dashboard',   ''),
+      ('/actividades', 'scroll',           'Acta Diurna',  'actividades', 'Registro diario'),
+      ('/gtd',         'crosshair',        'Praxis',       'gtd',         'Tareas · GTD'),
+    ] %}
+    <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg == key %} active{% endif %}">
+      <i data-lucide="{{ icon }}"></i>
+      <div class="flex flex-col min-w-0"><span class="lbl">{{ label }}</span>{% if sub %}<span class="sub">{{ sub }}</span>{% endif %}</div>
+    </a>
+    {% endfor %}
+
+    <div class="eu-sidebar-divider"><div class="rule"></div><span>Módulos</span><div class="rule"></div></div>
+
+    {% for href, icon, label, key, sub in [
+      ('/finanzas',    'wallet',       'Oikonomia',      'finanzas',      'Finanzas · Gastos'),
+      ('/bienestar',   'shield-check', 'Hegemonikon',    'bienestar',     'Salud · Nutrición'),
+      ('/paideia',     'book-open',    'Paideia',        'paideia',       'Aprendizaje'),
+      ('/idiomas',     'globe',        'Cosmopolitismo', 'idiomas',       'Idiomas'),
+      ('/eurythmia',   'music',        'Eurythmia',      'eurythmia',     'Baile · Ritmo'),
+      ('/harma',       'car',          'Harma',          'harma',        'Vehículo'),
+    ] %}
+    <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg == key %} active{% endif %}">
+      <i data-lucide="{{ icon }}"></i>
+      <div class="flex flex-col min-w-0"><span class="lbl">{{ label }}</span><span class="sub">{{ sub }}</span></div>
+    </a>
+    {% endfor %}
+
+    <div class="eu-sidebar-divider"><div class="rule"></div><span>Sistema</span><div class="rule"></div></div>
+
+    {% for href, icon, label, key, sub in [
+      ('/perfil',      'user',   'Perfil',       'perfil',      'Identidad · Datos'),
+      ('/logros',      'trophy', 'Logros',       'logros',      'Clasificación · XP'),
+      ('/recompensas', 'gift',   'Recompensas',  'recompensas', 'Shop · Eudaimonia Coins'),
+    ] %}
+    <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg == key %} active{% endif %}">
+      <i data-lucide="{{ icon }}"></i>
+      <div class="flex flex-col min-w-0"><span class="lbl">{{ label }}</span><span class="sub">{{ sub }}</span></div>
+    </a>
+    {% endfor %}
+  </nav>
+  <div style="padding:14px 20px; border-top:1px solid var(--b); flex-shrink:0; display:flex; align-items:center; gap:8px;">
+    <span style="width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;"></span>
+    <span style="font-size:var(--fs-xs); color:var(--dim); letter-spacing:.14em; text-transform:uppercase;">Eudaimonia activa</span>
+  </div>
+</aside>
 
 {% block topbar %}
 <!-- TOPBAR -->
