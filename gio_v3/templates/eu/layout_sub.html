@@ -22,7 +22,11 @@
   <!-- Tailwind precompilado en build time (antes: cdn.tailwindcss.com,
        compila en cada carga del navegador — ver gio_v3/tailwind.config.js) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-built.css') }}">
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Versión fijada (antes @latest — un release nuevo de Lucide podía cambiar
+       íconos o su API de montaje en producción sin ningún commit de por medio;
+       ver auditoría F-03). Actualizar a mano cuando se quiera la versión nueva,
+       no automáticamente en cada carga. -->
+  <script src="https://unpkg.com/lucide@1.31.0"></script>
   <link rel="stylesheet" href="/static/css/app.css">
 
   <style>
