@@ -115,7 +115,7 @@ def create_transaction():
     fecha = d.get('fecha', '')
     desc  = d.get('descripcion', '')
     with get_db() as db:
-        db.execute(
+        cur = db.execute(
             """INSERT OR IGNORE INTO est_movimientos
                (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
                VALUES (?,?,?,?,?,?,?,?,?)""",
@@ -125,6 +125,16 @@ def create_transaction():
              d.get('tipo', 'GASTO')),
         )
         db.commit()
+        inserted = cur.rowcount
+    if not inserted:
+        # Índice UNIQUE(fecha, descripcion): ya existe un movimiento con esa
+        # misma fecha y descripción exacta — no se guardó. Devolvemos error
+        # real en vez de fingir éxito, para que el cliente pueda avisar.
+        return jsonify({
+            'inserted': 0,
+            'error': 'Ya existe un movimiento con esa fecha y descripción exacta. '
+                     'Cambia la descripción si es una transacción distinta (ej. añade la hora o el monto).',
+        }), 409
     return jsonify({'inserted': 1}), 201
 
 
@@ -632,8 +642,10 @@ def upload_file():
         # no confundir un ingreso y un gasto del mismo monto en el mismo día
         # (caso legítimo). Solo se aplica cuando monto > 0; montos en cero se
         # insertan siempre.
-        inserted = 0
-        skipped  = 0
+        inserted       = 0
+        skipped        = 0
+        dedup_conflict = 0  # chocó con idx_est_mov_dedup (fecha, descripcion) aunque
+                             # el dedup por (fecha, monto, tipo) lo había dejado pasar
         with get_db() as db:
             existing = set()
             for r in db.execute(
@@ -654,7 +666,7 @@ def upload_file():
                     continue
                 if m_monto > 0:
                     existing.add(key)
-                db.execute("""
+                cur = db.execute("""
                     INSERT OR IGNORE INTO est_movimientos
                     (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
                     VALUES (?,?,?,?,?,?,?,?,?)
@@ -664,6 +676,13 @@ def upload_file():
                     m_banco, m.get('periodo', ''),
                     m['categoria'], m.get('subcategoria', ''), m['tipo'],
                 ))
+                if not cur.rowcount:
+                    # Pasó el dedup de (fecha, monto, tipo) pero chocó con el índice
+                    # UNIQUE(fecha, descripcion) — es una transacción real distinta
+                    # (mismo día, misma descripción del banco, otro monto) que NO
+                    # se guardó. No la contamos como "inserted".
+                    dedup_conflict += 1
+                    continue
                 inserted += 1
                 # Marcar DEPOSITO / SPEI_RECIBIDO como pendientes de clasificar
                 if m['tipo'] == 'INGRESO' and m['categoria'] in ('DEPOSITO', 'SPEI_RECIBIDO'):
@@ -762,7 +781,8 @@ def upload_file():
         return jsonify({
             'ok': True, 'bank': bank,
             'parsed': len(movimientos), 'inserted': inserted,
-            'skipped': skipped, 'preview': preview,
+            'skipped': skipped, 'dedup_conflict': dedup_conflict,
+            'preview': preview,
             'review_needed': review_needed,  # DEPOSITO/SPEI pendientes de clasificar
         })
 
