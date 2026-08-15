@@ -118,6 +118,21 @@
 {% block content %}
 <div style="max-width:680px;">
 
+  {# ── Praxis GTD — antes vivía como submódulo de Ataraxia en la SPA vieja;
+       sin este link, /gtd/ solo era alcanzable desde el sidebar (desktop) ── #}
+  <a href="/gtd/" style="display:flex;justify-content:space-between;align-items:center;
+      background:var(--card);border:1px solid var(--gold-border);border-radius:12px;
+      padding:11px 14px;margin-bottom:14px;text-decoration:none;transition:border-color .18s;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <i data-lucide="crosshair" style="width:16px;height:16px;color:var(--gold);"></i>
+      <div>
+        <div style="font-family:var(--sans);font-size:13px;color:var(--text);">Praxis GTD</div>
+        <div style="font-family:var(--sans);font-size:10px;color:var(--dim);margin-top:1px;">Inbox · Next Actions · Proyectos</div>
+      </div>
+    </div>
+    <span style="color:var(--dim);font-size:14px;">›</span>
+  </a>
+
   {# ── Finde perfecto ── #}
   <div id="finde-banner" class="finde-banner" {% if not (sat_combo and sun_combo) %}style="display:none"{% endif %}>
     <div class="fb-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="zap" style="width:15px;height:15px;"></i> Fin de Semana Perfecto</div>
