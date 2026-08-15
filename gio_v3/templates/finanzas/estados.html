@@ -52,6 +52,21 @@
     }
     /* Evita que cualquier hijo del SPA sobresalga horizontalmente */
     #estados-root > div { max-width: 100%; overflow-x: hidden; }
+
+    /* Tab bar (Resumen/Movimientos/Presupuestos/...) declara su propio
+       overflow-x:auto pero sus contenedores flex no tienen ancho fijo,
+       así que crece a su ancho de contenido en vez de encogerse y
+       scrollear — deja tabs invisibles/inalcanzables en pantallas
+       angostas. Forzar min-width:0 en toda la cadena flex hace que
+       min-width:auto (que respeta el contenido) deje de propagar el
+       ancho hacia arriba. */
+    #estados-root div[style*="overflow-x: auto"] {
+      min-width: 0 !important;
+      max-width: 100% !important;
+    }
+    #estados-root div[style*="flex-wrap: wrap"] {
+      min-width: 0 !important;
+    }
   }
 </style>
 
