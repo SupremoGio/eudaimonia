@@ -2,6 +2,8 @@
 
 Esta carpeta contiene la spec visual de **19 mejoras de UI/UX** organizadas en **5 sprints**, para aplicar al repo `gio_v3_ACTUALIZADO`.
 
+> **Estado (2026-08-15):** la mayoría de estos sprints ya está implementada — tokens (Sprint 1), Acta Diurna (Sprint 2), dashboard/bottom-nav/sidebar (Sprint 3, salvo ⌘K), streak heatmap/clasificación (Sprint 4) y estados vacíos/skeletons (Sprint 5). `gio_v3/templates/eu/layout.html`, citado varias veces abajo como el archivo a editar, **nunca llegó a servirse por ningún route y se borró** — el layout base real desde entonces es `eu/layout_sub.html`, con los tokens de diseño en `static/css/app.css`. Las referencias a `eu/layout.html` que quedan abajo son históricas; donde aplica, edita `eu/layout_sub.html` o `app.css` en su lugar. Lo único de este roadmap que sigue pendiente de verdad es el command palette ⌘K (punto 3 del Sprint 3).
+
 ---
 
 ## 📁 Archivos
@@ -45,8 +47,8 @@ Cuando confirmes que se ve bien, mergea a `main` y pasa al siguiente.
 ### ① Sprint 1 — Tokens · Fundamentos
 **Archivo de referencia:** `eu-patches-tokens.jsx`
 
-**Cambios:**
-1. **Escala tipográfica** — añadir en `gio_v3/templates/eu/layout.html` (dentro de `:root`):
+**Cambios:** (✅ ya implementados — ver nota de estado arriba)
+1. ~~**Escala tipográfica** — añadir en `gio_v3/templates/eu/layout.html` (dentro de `:root`)~~ — ya vive en `gio_v3/static/css/app.css`:
    ```css
    --fs-xs:   11px;   /* labels, eyebrows */
    --fs-sm:   13px;   /* UI secundaria */
@@ -57,7 +59,7 @@ Cuando confirmes que se ve bien, mergea a `main` y pasa al siguiente.
    ```
    Buscar y reemplazar TODAS las ocurrencias de `.42rem`, `.44rem`, `.46rem`, `.48rem`, `.5rem`, `.56rem`, `.58rem`, `.6rem`, `.62rem`, `.68rem`, `.7rem` en `templates/**/*.html` y `static/css/app.css` por la variable adecuada.
 
-2. **Contraste WCAG** — en `eu/layout.html`:
+2. **Contraste WCAG** — en `static/css/app.css`:
    ```css
    --dim: #8A7A60;  /* era #6A6050 — ahora 6:1 ratio */
    ```
@@ -91,12 +93,12 @@ Cuando confirmes que se ve bien, mergea a `main` y pasa al siguiente.
 4. **Dieta de uppercase** — quitar `text-transform:uppercase` de descripciones largas y subtítulos. Conservar solo en: eyebrows (etiquetas chicas arriba de títulos) y chips de estado.
 
 **Archivos tocados:**
-- `gio_v3/templates/eu/layout.html`
 - `gio_v3/templates/eu/layout_sub.html`
-- `gio_v3/templates/tw/layout.html` ← **adicional: borrar este archivo y migrar `actividades/index.html` a `eu/layout_sub.html`**
 - `gio_v3/static/css/app.css`
 - `gio_v3/ec_constants.py`
 - `gio_v3/templates/actividades/index.html`
+
+(`gio_v3/templates/eu/layout.html` y `gio_v3/templates/tw/layout.html` ya no existen — se retiraron.)
 
 ---
 
@@ -136,35 +138,13 @@ Cuando confirmes que se ve bien, mergea a `main` y pasa al siguiente.
 ### ③ Sprint 3 — Navegación + Dashboard
 **Archivo de referencia:** `eu-patches-nav.jsx`
 
-1. **Dashboard `/` nuevo** — actualmente vacío (`templates/dashboard/` no tiene templates). Crear `templates/dashboard/index.html` con:
-   - "Buenos días, Gio" + fecha + día de racha
-   - Hero con XP del día (mismo componente que Sprint 2)
-   - "Próximas 3 acciones" (de GTD next)
-   - Sugerencia del día (próximo hábito que falta de la categoría más completa)
-   - Quote del día
+1. ✅ **Dashboard `/` nuevo** — implementado en `templates/dashboard/index.html` (Jinja, no React): XP del día, clasificación, nivel, grid de módulos, racha, reflexión del día, word of the day, deadline radar. `modules/dashboard/routes.py` calcula todo server-side.
 
-   Backend: en `gio_v3/modules/dashboard/routes.py` agregar la query de `next_tasks[:3]` desde GTD y la lógica de "sugerencia del día".
+2. ✅ **Bottom nav mobile** — implementado en `eu/layout_sub.html` (clase `.eu-bottom-nav`, visible solo `<1024px`, `.active` vía `pg`). Mismos 4 tabs (Inicio/Módulos/Acta/Perfil).
 
-2. **Bottom nav mobile** — en `eu/layout.html`, agregar:
-   ```html
-   <nav class="md-bottom-nav lg:hidden">
-     <a href="/"><span class="lbl">Ἀρχή</span><span class="sub">Inicio</span></a>
-     <a href="/actividades"><span class="lbl">Acta</span><span class="sub">Diurna</span></a>
-     <a href="/gtd"><span class="lbl">Πρᾶξις</span><span class="sub">Praxis</span></a>
-     <a href="/perfil"><span class="lbl">Αὐτός</span><span class="sub">Perfil</span></a>
-   </nav>
-   ```
-   CSS: `position:fixed; bottom:0; width:100%; backdrop-filter:blur(20px);`. Marcar `.active` según `pg`. Ver `BottomNavPatch()` para el styling exacto.
+3. ⏳ **Command palette ⌘K** — sigue pendiente. Cuando se implemente: JS vanilla en `static/js/command-palette.js`, atajos `Cmd/Ctrl+K` abrir / `↑↓` navegar / `⏎` ejecutar / `Esc` cerrar, fuzzy search sobre las rutas del sidebar (`eu/layout_sub.html`) + acciones rápidas. Cargarlo en `eu/layout_sub.html` para que esté disponible en toda la app.
 
-   Mover el contenido principal a `padding-bottom: 70px` en mobile para no taparse.
-
-3. **Command palette ⌘K** — nuevo módulo JS en `static/js/command-palette.js`. Atajos: `Cmd/Ctrl+K` abrir, `↑↓` navegar, `⏎` ejecutar, `Esc` cerrar. Fuzzy search sobre:
-   - Rutas (de `eu/layout.html` sidebar)
-   - Acciones rápidas (capturar, log meditar, toggle theme, etc.)
-
-   Cargarlo en `eu/layout.html` para que esté disponible en toda la app.
-
-4. **Sidebar rediseño** — reagrupar links por verbo: HOY · MÓDULOS · SISTEMA. Subir tamaño de fuente: items principales `--fs-base` (15px), subitems `--fs-sm` (13px). Iconos 18px.
+4. ✅ **Sidebar rediseño** — implementado en `eu/layout_sub.html` (clase `.eu-sidebar`, visible solo `≥1024px`), agrupado HOY/Praxis · MÓDULOS · SISTEMA como se pedía.
 
 ---
 
@@ -190,7 +170,7 @@ Cuando confirmes que se ve bien, mergea a `main` y pasa al siguiente.
 
    Ver `EmptyStatePatch()`.
 
-2. **Skeleton loaders** — keyframe `euShimmer` ya existe en `base_eudaimonia.html`. Crear clase `.sk` reutilizable y aplicar mientras `fetch()` está en curso (en lugar del flash blanco).
+2. ✅ **Skeleton loaders** — implementado: `.sk` + `@keyframes euShimmer` en `static/css/app.css`, definición única (antes vivía duplicada en 3 archivos).
 
 3. **Reset → /perfil** — quitar el botón rojo de Acta Diurna. Añadir en `templates/perfil/index.html` una sección "Zona de peligro" al final con el mismo modal de confirmación. Ver `DangerZonePatch()`.
 
@@ -199,7 +179,7 @@ Cuando confirmes que se ve bien, mergea a `main` y pasa al siguiente.
 ## 🎯 Reglas generales para Claude Code
 
 - **No tocar la lógica de gamificación** (engine, thresholds, EC math). Solo presentación.
-- **Mantener compatibilidad con modo claro** — todos los cambios deben funcionar en `html.light` (ver paleta light en `eu/layout.html`).
+- **Mantener compatibilidad con modo claro** — todos los cambios deben funcionar en `html.light` (ver paleta light en `static/css/app.css`).
 - **Mobile-first** — probar cada cambio en viewport 390x844 antes de declararlo listo.
 - **No introducir librerías nuevas** — ya hay Tailwind (CDN), Lucide, fonts Google. Suficiente.
 - **Preservar `data-comment-anchor` si existe** en cualquier elemento que muevas/restructures.
