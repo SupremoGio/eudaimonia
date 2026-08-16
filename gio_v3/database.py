@@ -2021,6 +2021,26 @@ def init_db():
                 ("planchar_ropa_retirado", "Retira 'Planchar ropa' del checklist de Acta Diurna.")
             )
 
+        # ── ACTA DIURNA — reforma de hábitos de Mañana (2026-08):
+        # - "Podcast en idiomas" regresa de las 3 sesiones fijas a solo
+        #   "cualquier momento" (revierte 'podcast_idiomas_multisesion').
+        # - "Comer fruta" pasa de Mañana a "cualquier momento".
+        # - "Jugo verde" se restringe a lunes/miércoles/sábado (days_of_week).
+        # - "Outfit cuidado / presencia" se retira del checklist (soft delete).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='acta_diurna_manana_reshape_2026_08'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET session='any' WHERE key='podcast_idiomas'")
+            db.execute("UPDATE activity_defs SET session='any' WHERE key='comer_fruta'")
+            db.execute("UPDATE activity_defs SET days_of_week='mon,wed,sat' WHERE key='jugo_verde'")
+            db.execute("UPDATE activity_defs SET active=0 WHERE key='outfit'")
+            db.execute("DELETE FROM pillar_focus WHERE focus_key='outfit'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("acta_diurna_manana_reshape_2026_08",
+                 "Podcast en idiomas -> solo 'any'; Comer fruta -> 'any'; Jugo verde -> mon,wed,sat; Outfit retirado.")
+            )
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
