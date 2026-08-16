@@ -103,6 +103,14 @@ def get_active_grouped():
             for sess in (item["session"] or "").split(","):
                 if sess in grouped:
                     grouped[sess].append(item)
+    # Anclas (ya sean fijas o promovidas por el foco del mes) van primero en
+    # cada tarjeta de sesión: como ocupan la fila completa (grid-column:1/-1),
+    # dejarlas al frente evita que corten el empaquetado de 2 columnas de los
+    # touches y que quede un hueco impar. Orden estable: preserva sort_order
+    # dentro de cada grupo (anclas / touches).
+    for sess in grouped:
+        grouped[sess].sort(key=lambda it: 0 if it["effective_type"] == "ancla" else 1)
+
     grouped["ocasional"] = occasional
     return grouped
 
