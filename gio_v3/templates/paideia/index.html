@@ -60,6 +60,17 @@
 .pd-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
 .pd-modal { width:460px; max-width:96vw; }
 .pd-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:16px; }
+
+.pd-search-wrap { position:relative; }
+.pd-search-drop { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card);
+                   border:1px solid var(--b); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.18);
+                   max-height:260px; overflow-y:auto; z-index:20; display:none; }
+.pd-search-drop.show { display:block; }
+.pd-search-item { display:flex; gap:10px; align-items:center; padding:8px 10px; cursor:pointer; }
+.pd-search-item:hover { background:var(--card2); }
+.pd-search-item img, .pd-search-item-noimg { width:28px; height:40px; object-fit:cover; border-radius:3px; flex-shrink:0; background:var(--card2); }
+.pd-search-item-title { font-size:13px; font-weight:600; color:var(--text); line-height:1.3; }
+.pd-search-item-meta { font-size:11px; color:var(--dim); margin-top:2px; }
 </style>
 
 <!-- ── Meta anual ────────────────────────────────────────────────────────── -->
@@ -156,7 +167,11 @@
     <input type="hidden" id="lb-id">
 
     <label class="fl">Título</label>
-    <input class="fi" id="lb-titulo" placeholder="Ej. Sapiens…">
+    <div class="pd-search-wrap">
+      <input class="fi" id="lb-titulo" placeholder="Ej. Sapiens…" autocomplete="off">
+      <div class="pd-search-drop" id="lb-buscar-drop"></div>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-top:4px;">Escribe al menos 3 letras para buscarlo y autocompletar autor/páginas</div>
 
     <label class="fl" style="margin-top:10px;">Autor</label>
     <input class="fi" id="lb-autor" placeholder="Ej. Yuval Noah Harari…">
@@ -271,8 +286,62 @@ function limpiarForm() {
   document.getElementById('lb-rating').value = '';
   document.getElementById('lb-notas').value = '';
   document.getElementById('lb-delete-btn').style.display = 'none';
+  ocultarBusquedaLibro();
   toggleCamposEstado();
 }
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+function ocultarBusquedaLibro() {
+  const drop = document.getElementById('lb-buscar-drop');
+  drop.classList.remove('show');
+  drop.innerHTML = '';
+}
+
+let pdSearchTimer = null;
+document.getElementById('lb-titulo').addEventListener('input', function() {
+  clearTimeout(pdSearchTimer);
+  const q = this.value.trim();
+  if (q.length < 3) { ocultarBusquedaLibro(); return; }
+  pdSearchTimer = setTimeout(() => buscarLibroAPI(q), 450);
+});
+
+async function buscarLibroAPI(q) {
+  const drop = document.getElementById('lb-buscar-drop');
+  let resultados = [];
+  try {
+    const data = await fetch(`${BASE}/api/buscar?q=${encodeURIComponent(q)}`).then(r => r.json());
+    resultados = data.resultados || [];
+  } catch (e) { ocultarBusquedaLibro(); return; }
+  if (!resultados.length) { ocultarBusquedaLibro(); return; }
+  drop.innerHTML = resultados.map((b, i) => `
+    <div class="pd-search-item" data-i="${i}">
+      ${b.portada ? `<img src="${b.portada}" alt="">` : `<div class="pd-search-item-noimg"></div>`}
+      <div>
+        <div class="pd-search-item-title">${escapeHtml(b.titulo)}</div>
+        <div class="pd-search-item-meta">${escapeHtml(b.autor || 'Autor desconocido')}${b.paginas ? ' · ' + b.paginas + ' pág.' : ''}${b.anio ? ' · ' + b.anio : ''}</div>
+      </div>
+    </div>
+  `).join('');
+  drop.classList.add('show');
+  drop.querySelectorAll('.pd-search-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const b = resultados[+el.dataset.i];
+      document.getElementById('lb-titulo').value = b.titulo;
+      if (b.autor) document.getElementById('lb-autor').value = b.autor;
+      if (b.paginas) document.getElementById('lb-pag-tot').value = b.paginas;
+      ocultarBusquedaLibro();
+    });
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.pd-search-wrap')) ocultarBusquedaLibro();
+});
 
 function abrirNuevo() {
   limpiarForm();
@@ -294,6 +363,7 @@ async function abrirEditar(id) {
   document.getElementById('lb-rating').value = l.rating || '';
   document.getElementById('lb-notas').value = l.notas || '';
   document.getElementById('lb-delete-btn').style.display = '';
+  ocultarBusquedaLibro();
   toggleCamposEstado();
   document.getElementById('lb-modal-title').textContent = 'Editar libro';
   openModal('libro');
