@@ -51,6 +51,24 @@
 .je-lang{font-size:var(--fs-xs);color:var(--gold);background:var(--gold-d);padding:2px 7px;border-radius:100px;}
 .je-text{font-size:.67rem;color:var(--mid);line-height:1.5;}
 
+/* ── Plan C1 ── */
+.plan-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+.plan-week{font-family:var(--serif);font-size:1.7rem;color:var(--gold);line-height:1;}
+.plan-week-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.plan-track{height:6px;border-radius:3px;background:var(--card2);overflow:hidden;margin-bottom:16px;}
+.plan-fill{height:100%;border-radius:3px;background:var(--gold);transition:width .5s ease;}
+.plan-cps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+@media(max-width:767px){.plan-cps{grid-template-columns:1fr;}}
+.plan-cp{border:1px solid var(--b);border-radius:8px;padding:11px 12px;cursor:pointer;transition:border-color .15s;}
+.plan-cp:hover{border-color:var(--gold);}
+.plan-cp.done{border-color:#34d399;background:rgba(52,211,153,.06);}
+.plan-cp.vencido{border-color:var(--red, #f87171);}
+.plan-cp-fase{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
+.plan-cp.done .plan-cp-fase{color:#34d399;}
+.plan-cp-nombre{font-size:var(--fs-sm);font-weight:700;color:var(--text);margin-bottom:4px;}
+.plan-cp-semana{font-size:var(--fs-xs);color:var(--dim);margin-bottom:5px;}
+.plan-cp-criterio{font-size:.68rem;color:var(--mid);line-height:1.4;}
+
 /* ── Quiz ── */
 .quiz-lang-btn{padding:6px 18px;border-radius:999px;font-size:var(--fs-sm);font-weight:700;border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .15s;letter-spacing:.06em;}
 .quiz-lang-btn.on{background:var(--gold);color:#0a0a1a;border-color:var(--gold);}
@@ -73,6 +91,22 @@
 
 <div class="id-grid">
 
+  <!-- PLAN C1 · 26 SEMANAS -->
+  <div class="tile full">
+    <div class="plan-head">
+      <div>
+        <div class="tile-lbl" style="margin:0;">PLAN C1 — 26 SEMANAS</div>
+        <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;" id="plan-fase-txt">Cargando…</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="plan-week" id="plan-week">—</div>
+        <div class="plan-week-l" id="plan-week-l">de 26 semanas</div>
+      </div>
+    </div>
+    <div class="plan-track"><div class="plan-fill" id="plan-fill" style="width:0%;"></div></div>
+    <div class="plan-cps" id="plan-cps"></div>
+  </div>
+
   <!-- WORD OF DAY -->
   <div class="w-card">
     <div class="wh">
@@ -94,26 +128,43 @@
   <!-- TEST TRACKING -->
   <div class="tile">
     <div class="tile-lbl">TEST TRACKING — IELTS / DALF</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:7px;margin-bottom:14px;align-items:end;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:7px;margin-bottom:7px;align-items:end;">
       <div><div class="fl">Tipo</div>
         <select class="fi" id="tt-type">
           <option>IELTS</option><option>DALF C1</option><option>DALF C2</option>
-          <option>DELF B2</option><option>TOEFL</option><option>Otro</option>
+          <option>DELF B2</option><option>TOEFL</option><option>Cambridge C1 Advanced</option><option>Otro</option>
+        </select>
+      </div>
+      <div><div class="fl">Idioma</div>
+        <select class="fi" id="tt-idioma">
+          <option value="English">English</option>
+          <option value="Français">Français</option>
+        </select>
+      </div>
+      <div><div class="fl">Destreza</div>
+        <select class="fi" id="tt-destreza">
+          <option value="General">General</option>
+          <option value="Listening">Listening</option>
+          <option value="Reading">Reading</option>
+          <option value="Writing">Writing</option>
+          <option value="Speaking">Speaking</option>
         </select>
       </div>
       <div><div class="fl">Score</div><input class="fi" id="tt-score" placeholder="Ej: 7.5"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:7px;margin-bottom:14px;align-items:end;">
       <div><div class="fl">Fecha</div><input class="fi" type="date" id="tt-date" value="{{ today }}"></div>
       <button class="btn-a" onclick="addTest()">+ ADD</button>
     </div>
     <table class="test-table">
-      <thead><tr><th>Tipo</th><th>Score</th><th>Fecha</th><th>Notas</th><th></th></tr></thead>
+      <thead><tr><th>Tipo</th><th>Idioma / destreza</th><th>Score</th><th>Fecha</th><th></th></tr></thead>
       <tbody id="test-tbody">
         {% for t in tests %}
         <tr data-id="{{ t.id }}">
           <td><span class="test-type tt-{{ t.test_type.split()[0].lower() }}">{{ t.test_type }}</span></td>
+          <td style="font-size:var(--fs-sm)">{{ t.idioma or '—' }}{% if t.destreza %} · {{ t.destreza }}{% endif %}</td>
           <td class="score-badge">{{ t.score }}</td>
           <td>{{ t.test_date }}</td>
-          <td style="font-size:var(--fs-sm)">{{ t.notes or '—' }}</td>
           <td><button class="btn-r" onclick="delTest({{ t.id }},this)">✕</button></td>
         </tr>
         {% else %}
@@ -160,13 +211,31 @@
   <div class="tile full">
     <div class="tile-lbl">WRITING JOURNAL — PRÁCTICA DE IDIOMAS</div>
     <div class="j-meta">
-      <div style="flex:1;min-width:120px;">
+      <div style="flex:1;min-width:110px;">
         <div class="fl">Idioma</div>
         <select class="fi" id="j-lang">
           <option value="English">English</option>
           <option value="Français">Français</option>
           <option value="Español">Español</option>
           <option value="Deutsch">Deutsch</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:110px;">
+        <div class="fl">Fase del plan</div>
+        <select class="fi" id="j-fase">
+          <option value="">Sin fase</option>
+          <option value="1">Fase 1 · Cierre de brechas</option>
+          <option value="2">Fase 2 · Expansión de rango</option>
+          <option value="3">Fase 3 · Producción</option>
+          <option value="4">Fase 4 · Consolidación</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:110px;">
+        <div class="fl">Destreza</div>
+        <select class="fi" id="j-destreza">
+          <option value="Escritura">Escritura</option>
+          <option value="Gramática">Gramática</option>
+          <option value="Vocabulario">Vocabulario</option>
         </select>
       </div>
       <button class="btn-g" onclick="getFeedback()"><i data-lucide="search" style="width:12px;height:12px;vertical-align:middle;"></i> Feedback real</button>
@@ -194,7 +263,7 @@
         {% for e in journal %}
         <div class="jentry" data-id="{{ e.id }}">
           <div class="je-header">
-            <span class="je-date">{{ e.entry_date }}</span>
+            <span class="je-date">{{ e.entry_date }}{% if e.fase %} · Fase {{ e.fase }}{% endif %}{% if e.destreza %} · {{ e.destreza }}{% endif %}</span>
             <div style="display:flex;align-items:center;gap:7px;">
               <span class="je-lang">{{ e.language }}</span>
               <button class="btn-r" onclick="delJournal({{e.id}},this)" style="padding:2px 7px;font-size:var(--fs-xs);">✕</button>
@@ -229,10 +298,12 @@ async function rw(){
 // ── Test ──
 async function addTest(){
   const type=document.getElementById('tt-type').value,
+        idioma=document.getElementById('tt-idioma').value,
+        destreza=document.getElementById('tt-destreza').value,
         score=document.getElementById('tt-score').value.trim(),
         dt=document.getElementById('tt-date').value;
   if(!score){toast('Ingresa el score','err');return;}
-  const d=await(await fetch('/idiomas/api/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({test_type:type,score,test_date:dt})})).json();
+  const d=await(await fetch('/idiomas/api/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({test_type:type,idioma,destreza,score,test_date:dt})})).json();
   if(d.ok){toast('Resultado guardado ✓');setTimeout(()=>location.reload(),500);}
 }
 async function delTest(id,btn){
@@ -269,7 +340,13 @@ async function getFeedback(){
 async function saveJournal(){
   const text=document.getElementById('j-text').value.trim();
   if(!text){toast('Escribe algo primero','err');return;}
-  const d=await(await fetch('/idiomas/api/journal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({language:document.getElementById('j-lang').value,entry_text:text})})).json();
+  const body={
+    language: document.getElementById('j-lang').value,
+    entry_text: text,
+    fase: document.getElementById('j-fase').value || null,
+    destreza: document.getElementById('j-destreza').value,
+  };
+  const d=await(await fetch('/idiomas/api/journal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
   if(d.ok){toast('Entrada guardada ✓','win');document.getElementById('j-text').value='';document.getElementById('fb-box').classList.remove('on');setTimeout(()=>location.reload(),500);}
 }
 async function delJournal(id,btn){
@@ -295,6 +372,7 @@ async function startQuiz(){
   document.getElementById('quizLoading').style.display='none';
   renderQuiz(_quizData);
   document.getElementById('quizBody').style.display='block';
+  if(d.repasando>0) toast(`Repasando ${d.repasando} palabra${d.repasando===1?'':'s'} pendiente${d.repasando===1?'':'s'} de repetición espaciada`);
 }
 
 function renderQuiz(qs){
@@ -318,7 +396,7 @@ async function submitQuiz(){
     return {selected: sel ? parseInt(sel.value) : -1};
   });
   if(answers.some(a=>a.selected===-1)){toast('Responde todas las preguntas','err');return;}
-  const d=await(await fetch('/idiomas/api/quiz/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questions:_quizData,answers})})).json();
+  const d=await(await fetch('/idiomas/api/quiz/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questions:_quizData,answers,lang:_quizLang})})).json();
   showResults(d);
 }
 
@@ -342,4 +420,25 @@ function showResults(d){
     </div>`).join('');
   document.getElementById('quizResult').style.display='block';
 }
+
+// ── Plan C1 · 26 semanas ──
+async function cargarPlan(){
+  const d=await(await fetch('/idiomas/api/plan')).json();
+  document.getElementById('plan-week').textContent=d.semana_actual;
+  document.getElementById('plan-week-l').textContent=`de ${d.total_semanas} semanas · Fase ${d.fase_actual}`;
+  document.getElementById('plan-fase-txt').textContent=`Inicio del plan: ${d.inicio}`;
+  document.getElementById('plan-fill').style.width=d.progreso_pct+'%';
+  document.getElementById('plan-cps').innerHTML=d.checkpoints.map(cp=>`
+    <div class="plan-cp ${cp.completado?'done':cp.vencido?'vencido':''}" onclick="toggleCheckpoint(${cp.id},${cp.completado?0:1})">
+      <div class="plan-cp-fase">${cp.completado?'✓ Completada':'Fase '+cp.fase}</div>
+      <div class="plan-cp-nombre">${cp.nombre}</div>
+      <div class="plan-cp-semana">Hasta semana ${cp.semana_fin} · ${cp.fecha_objetivo}</div>
+      <div class="plan-cp-criterio">${cp.criterio}</div>
+    </div>`).join('');
+}
+async function toggleCheckpoint(id,completado){
+  await fetch(`/idiomas/api/plan/checkpoint/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({completado:!!completado})});
+  cargarPlan();
+}
+cargarPlan();
 </script>{% endblock %}

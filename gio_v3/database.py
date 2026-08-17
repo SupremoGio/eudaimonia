@@ -371,6 +371,26 @@ def init_db():
             entry_date TEXT    NOT NULL,
             created_at TEXT    NOT NULL
         );
+        CREATE TABLE IF NOT EXISTS lang_vocab_srs (
+            word           TEXT    NOT NULL,
+            language       TEXT    NOT NULL,
+            interval_days  INTEGER NOT NULL DEFAULT 1,
+            ease           REAL    NOT NULL DEFAULT 2.3,
+            next_review    TEXT    NOT NULL,
+            correct_count  INTEGER NOT NULL DEFAULT 0,
+            wrong_count    INTEGER NOT NULL DEFAULT 0,
+            last_seen      TEXT,
+            PRIMARY KEY (word, language)
+        );
+        CREATE TABLE IF NOT EXISTS lang_plan_checkpoints (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            fase          INTEGER NOT NULL,
+            nombre        TEXT    NOT NULL,
+            semana_fin    INTEGER NOT NULL,
+            criterio      TEXT    NOT NULL,
+            completado    INTEGER NOT NULL DEFAULT 0,
+            completado_at TEXT
+        );
 
         -- ── GUARDARROPA ──────────────────────────────────────────────────────
         CREATE TABLE IF NOT EXISTS wardrobe_items (
@@ -1738,6 +1758,41 @@ def init_db():
             created_at       TEXT    NOT NULL
         );
         """)
+
+        # Migrate lang_journal / lang_test_results: fase, destreza, idioma explícitos
+        # (antes de esto el progreso de idiomas quedaba como actividad suelta, sin
+        # poder filtrarse por fase de un plan de estudio ni por destreza).
+        try:
+            lj_cols = [r["name"] for r in db.execute("PRAGMA table_info(lang_journal)").fetchall()]
+            if "fase" not in lj_cols:
+                db.execute("ALTER TABLE lang_journal ADD COLUMN fase INTEGER DEFAULT NULL")
+            if "destreza" not in lj_cols:
+                db.execute("ALTER TABLE lang_journal ADD COLUMN destreza TEXT DEFAULT ''")
+            lt_cols = [r["name"] for r in db.execute("PRAGMA table_info(lang_test_results)").fetchall()]
+            if "idioma" not in lt_cols:
+                db.execute("ALTER TABLE lang_test_results ADD COLUMN idioma TEXT DEFAULT ''")
+            if "destreza" not in lt_cols:
+                db.execute("ALTER TABLE lang_test_results ADD COLUMN destreza TEXT DEFAULT ''")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] lang_journal/lang_test_results fase/destreza migration warning: {e}")
+
+        # Seed de las 4 fases del plan C1 (26 semanas) — solo si la tabla está vacía
+        if db.execute("SELECT COUNT(*) as c FROM lang_plan_checkpoints").fetchone()["c"] == 0:
+            db.executemany(
+                "INSERT INTO lang_plan_checkpoints (fase, nombre, semana_fin, criterio) VALUES (?,?,?,?)",
+                [
+                    (1, "Diagnóstico y cierre de brechas", 6,
+                     'Cero recurrencia de tu "top 10" de errores en producción escrita controlada.'),
+                    (2, "Expansión de rango", 14,
+                     "80%+ de comprensión relevante en un podcast nativo estándar, sin apoyo."),
+                    (3, "Producción y automatización", 22,
+                     "Ensayos en banda C1 de corrección de forma consistente (no ocasional)."),
+                    (4, "Consolidación y examen", 26,
+                     "Puntaje de mock exam en rango C1, en inglés y en francés."),
+                ]
+            )
+            db.commit()
 
         # Seed vehículo por defecto (una fila — se edita desde la UI)
         if db.execute("SELECT COUNT(*) as c FROM harma_vehiculo").fetchone()["c"] == 0:
