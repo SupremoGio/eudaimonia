@@ -45,10 +45,6 @@ def _ok():
 
 @inversiones_bp.route('/')
 def index():
-    if not _ok():
-        from modules.finanzas.routes import _get_pass_hash
-        return render_template('finanzas/lock.html', has_pass=bool(_get_pass_hash()))
-
     with get_db() as db:
         # ── Por plataforma
         plat_rows = db.execute("""

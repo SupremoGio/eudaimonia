@@ -107,15 +107,17 @@ def create_app():
     def health_v31():
         from ec_constants import EC_VALUE_MXN, GAMIFICATION_VERSION
         from data import ACTIVITIES
-        sat_keys = {"sat_bloque1", "sat_bloque2", "sat_bloque3"}
-        sun_keys = {"sun_reflexion", "sun_diseno", "sun_comidas", "sun_jugos", "sun_planchar"}
+        sat_keys = {"sat_bloque1", "sat_bano_bloque", "sat_gym_bloque", "sat_textiles_bloque",
+                    "sat_limpieza_bloque", "sat_barrido_bloque", "sat_jugos_bloque"}
+        sun_keys = {"sun_cafe_bloque", "sun_gym_bloque", "sun_nevera_bloque", "sun_comidas_bloque",
+                    "sun_guardado_bloque", "sun_planchar_bloque", "sun_planeacion_bloque",
+                    "sun_prioridades_bloque", "sun_cierre_bloque"}
         checks = {
-            "version":            GAMIFICATION_VERSION,
-            "ec_value_mxn":       EC_VALUE_MXN,
-            "ec_rate_ok":         EC_VALUE_MXN == 10,
-            "sat_jugos_optional": ACTIVITIES.get("sat_jugos", {}).get("optional", False),
-            "sat_keys_ok":        sat_keys.issubset(set(ACTIVITIES)),
-            "sun_keys_ok":        sun_keys.issubset(set(ACTIVITIES)),
+            "version":      GAMIFICATION_VERSION,
+            "ec_value_mxn": EC_VALUE_MXN,
+            "ec_rate_ok":   EC_VALUE_MXN == 10,
+            "sat_keys_ok":  sat_keys.issubset(set(ACTIVITIES)),
+            "sun_keys_ok":  sun_keys.issubset(set(ACTIVITIES)),
         }
         from database import get_db
         try:
