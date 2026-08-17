@@ -1,9 +1,12 @@
+import requests
 from flask import Blueprint, render_template, request, jsonify
 from datetime import datetime
 from database import get_db
 from data import get_paideia_tip_of_day, get_random_paideia_tip
 
 paideia_bp = Blueprint('paideia', __name__, template_folder='../../templates')
+
+_OPENLIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json'
 
 _META_KEY = 'paideia_meta_anual'
 _DEFAULT_META = 12
@@ -87,6 +90,31 @@ def set_meta():
         )
         db.commit()
     return jsonify({'ok': True, 'meta': meta})
+
+
+@paideia_bp.route('/api/buscar')
+def buscar_libro():
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify({'resultados': []})
+    try:
+        r = requests.get(_OPENLIBRARY_SEARCH_URL, params={
+            'q': q,
+            'fields': 'title,author_name,number_of_pages_median,cover_i,first_publish_year',
+            'limit': 6,
+        }, timeout=6)
+        r.raise_for_status()
+        docs = r.json().get('docs', [])
+    except requests.RequestException:
+        return jsonify({'resultados': []})
+    resultados = [{
+        'titulo': d.get('title'),
+        'autor': (d.get('author_name') or [None])[0],
+        'paginas': d.get('number_of_pages_median'),
+        'anio': d.get('first_publish_year'),
+        'portada': f"https://covers.openlibrary.org/b/id/{d['cover_i']}-S.jpg" if d.get('cover_i') else None,
+    } for d in docs if d.get('title')]
+    return jsonify({'resultados': resultados})
 
 
 @paideia_bp.route('/api/libros')
