@@ -368,10 +368,10 @@
   </div>
   <nav class="eu-sidebar-nav">
     {% for href, icon, label, key, sub in [
-      ('/',            'layout-dashboard', 'Dashboard',    'dashboard',   ''),
-      ('/actividades', 'scroll',           'Acta Diurna',  'actividades', 'Registro diario'),
-      ('/ataraxia',    'anchor',           'Ataraxia',     'ataraxia',    'Checklist · Rutina'),
-      ('/gtd',         'crosshair',        'Praxis',       'gtd',         'Tareas · GTD'),
+      ('/',             'layout-dashboard', 'Dashboard',    'dashboard',   ''),
+      ('/actividades/', 'scroll',           'Acta Diurna',  'actividades', 'Registro diario'),
+      ('/ataraxia/',    'anchor',           'Ataraxia',     'ataraxia',    'Checklist · Rutina'),
+      ('/gtd/',         'crosshair',        'Praxis',       'gtd',         'Tareas · GTD'),
     ] %}
     <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg == key %} active{% endif %}">
       <i data-lucide="{{ icon }}"></i>
@@ -382,12 +382,12 @@
     <div class="eu-sidebar-divider"><div class="rule"></div><span>Módulos</span><div class="rule"></div></div>
 
     {% for href, icon, label, keys, sub in [
-      ('/finanzas',    'wallet',       'Oikonomia',      ['finanzas'],                                             'Finanzas · Gastos'),
-      ('/bienestar',   'shield-check', 'Hegemonikon',    ['hegemonikon','bienestar','nutricion','recetas','guardarropa','viajes'], 'Salud · Nutrición'),
-      ('/paideia',     'book-open',    'Paideia',        ['paideia'],                                              'Aprendizaje'),
-      ('/idiomas',     'globe',        'Cosmopolitismo', ['idiomas'],                                              'Idiomas'),
-      ('/eurythmia',   'music',        'Eurythmia',      ['eurythmia'],                                            'Baile · Ritmo'),
-      ('/harma',       'car',          'Harma',          ['harma'],                                                'Vehículo'),
+      ('/finanzas/',    'wallet',       'Oikonomia',      ['finanzas'],                                             'Finanzas · Gastos'),
+      ('/bienestar/',   'shield-check', 'Hegemonikon',    ['hegemonikon','bienestar','nutricion','recetas','guardarropa','viajes'], 'Salud · Nutrición'),
+      ('/paideia/',     'book-open',    'Paideia',        ['paideia'],                                              'Aprendizaje'),
+      ('/idiomas/',     'globe',        'Cosmopolitismo', ['idiomas'],                                              'Idiomas'),
+      ('/eurythmia/',   'music',        'Eurythmia',      ['eurythmia'],                                            'Baile · Ritmo'),
+      ('/harma/',       'car',          'Harma',          ['harma'],                                                'Vehículo'),
     ] %}
     <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg in keys %} active{% endif %}">
       <i data-lucide="{{ icon }}"></i>
