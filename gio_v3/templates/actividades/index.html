@@ -22,13 +22,29 @@
 .hs-n{display:block;font-family:var(--mono);font-size:1.05rem;font-weight:600;color:var(--text);}
 .hs-l{display:block;font-size:9px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px;}
 .hs-sub{display:block;font-size:9px;color:var(--amber);margin-top:2px;}
+.hs-eyebrow{display:block;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);opacity:.7;margin-bottom:2px;}
+.hs-level-name{display:block;font-family:var(--serif);font-style:italic;font-weight:600;font-size:1rem;line-height:1.15;color:var(--gold);}
 .hero-pillars-wrap{margin-top:14px;padding-top:12px;border-top:1px solid var(--b);}
 .hero-pillars-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .hero-pillars-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
 
-/* ── Level bar (reused inside hero) ─────────────────────────────────────────── */
+/* ── Level bar (reused inside hero) — dorado a propósito, distinto del violeta
+   de la barra de XP de hoy, para que a simple vista se lean como dos medidas
+   distintas (meta diaria vs. progreso de nivel) y no como la misma barra
+   repetida. ─────────────────────────────────────────────────────────────── */
 .lvl-bar{background:var(--card2);border-radius:100px;height:5px;overflow:hidden;margin-top:6px;}
-.lvl-fill{height:100%;background:linear-gradient(90deg,var(--violet),var(--violet-l));border-radius:100px;transition:width .5s;}
+.lvl-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:100px;transition:width .5s;transform-origin:left;}
+
+/* ── Entrada del hero: waterfall reveal + fill-in de barras (una sola vez,
+   al cargar la página — no es una animación perpetua). ─────────────────── */
+.hero-card > * { animation:heroRise .5s cubic-bezier(.16,1,.3,1) both; }
+.hero-row1 { animation-delay:.02s; }
+.hero-progress-bar { animation-delay:.08s; }
+.hero-secondary { animation-delay:.14s; }
+.hero-pillars-wrap { animation-delay:.2s; }
+@keyframes heroRise { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+.hero-progress-fill{transform-origin:left;}
+.hero-clf-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 .act-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;align-items:start;}
@@ -288,7 +304,9 @@
       <div class="hero-xp-goal">meta diaria: 15 XP</div>
     </div>
     <div class="hero-clf-chip" id="clf-card" style="background:{{ clf.color }}12;border-color:{{ clf.color }}44;">
-      <i data-lucide="{{ clf.icon_lucide }}" style="width:24px;height:24px;color:{{ clf.color }};flex-shrink:0;"></i>
+      <div class="hero-clf-icon" id="clf-icon-badge" style="background:{{ clf.color }}22;box-shadow:0 0 12px {{ clf.color }}33;">
+        <i data-lucide="{{ clf.icon_lucide }}" style="width:20px;height:20px;color:{{ clf.color }};"></i>
+      </div>
       <div>
         <div style="font-size:9px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
           Hoy
@@ -323,8 +341,9 @@
       <span class="hs-sub" id="s-sub">{% if stats.streak>=7 %}✦ +5% XP{% elif stats.streak>=5 %}{{ 7-stats.streak }}p→bono{% else %}{{ 5-stats.streak }}p→racha{% endif %}</span>
     </div>
     <div class="hs-item">
-      <span class="hs-n" id="lvl-name">{{ gam.level_name }}</span>
-      <span class="hs-l" id="lvl-next">{% if not gam.max_level %}{{ gam.xp_to_next }} XP →{% else %}máx{% endif %}</span>
+      <span class="hs-eyebrow">Nivel {{ gam.level }}</span>
+      <span class="hs-level-name" id="lvl-name">{{ gam.level_name }}</span>
+      <span class="hs-l" id="lvl-next">{% if not gam.max_level %}{{ gam.xp_to_next }} XP para subir{% else %}nivel máximo{% endif %}</span>
       <div class="lvl-bar" style="height:3px;margin-top:4px;"><div class="lvl-fill" id="lvl-fill" style="width:{{ gam.level_pct }}%"></div></div>
     </div>
   </div>
@@ -657,7 +676,7 @@ function updGam(gam) {
   const lvlNameEl = document.getElementById('lvl-name');
   if (lvlNameEl && gam.level_name) lvlNameEl.textContent = gam.level_name;
   const nextEl = document.getElementById('lvl-next');
-  if (nextEl) nextEl.textContent = gam.max_level ? 'máx' : `${gam.xp_to_next ?? 0} XP →`;
+  if (nextEl) nextEl.textContent = gam.max_level ? 'nivel máximo' : `${gam.xp_to_next ?? 0} XP para subir`;
   if (clf && clf.pillars) updPillars(clf.pillars);
 }
 
@@ -943,6 +962,38 @@ function updWeekend() {
   if (sunBadge) sunBadge.style.display = sunDone === 5 ? '' : 'none';
 }
 updWeekend();
+
+// ── Entrada del hero: cuenta ascendente del XP de hoy + relleno de barras ──
+// Solo corre una vez al cargar la página (no interfiere con updS()/updGam(),
+// que siguen actualizando estos mismos elementos tras registrar actividades).
+(function animateHeroEntrance() {
+  const numEl = document.getElementById('v-today');
+  if (numEl) {
+    const target = parseInt(numEl.textContent, 10) || 0;
+    if (target > 0) {
+      numEl.textContent = '0';
+      const t0 = performance.now(), dur = 650;
+      requestAnimationFrame(function step(t) {
+        const p = Math.min(1, (t - t0) / dur);
+        const eased = 1 - Math.pow(1 - p, 3);
+        numEl.textContent = Math.round(eased * target);
+        if (p < 1) requestAnimationFrame(step);
+      });
+    }
+  }
+  ['hero-progress-fill', 'lvl-fill'].forEach(id => {
+    const bar = document.getElementById(id);
+    if (!bar) return;
+    const target = bar.style.width;
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+    bar.getBoundingClientRect(); // fuerza reflow
+    requestAnimationFrame(() => {
+      bar.style.transition = '';
+      bar.style.width = target;
+    });
+  });
+})();
 
 // Midnight reset: schedule an exact reload at the next calendar day boundary
 (function scheduleMidnightReload() {
