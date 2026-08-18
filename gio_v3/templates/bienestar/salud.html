@@ -80,8 +80,8 @@
                letter-spacing:.08em; margin-top:4px; }
 
 /* ── Tabs ─────────────────────────────────────────────────────────── */
-.hg-tabs { display:flex; gap:2px; background:var(--card); border:1px solid var(--b);
-           border-radius:10px; padding:3px; margin-bottom:16px; width:fit-content; }
+.hg-tabs { display:flex; flex-wrap:wrap; gap:2px; background:var(--card); border:1px solid var(--b);
+           border-radius:10px; padding:3px; margin-bottom:16px; max-width:100%; }
 .hg-tab  { font-size:var(--fs-sm); padding:6px 14px; border-radius:8px; cursor:pointer;
            color:var(--dim); border:1px solid transparent; transition:all .15s; }
 .hg-tab.on { background:var(--card2); color:var(--text); border-color:var(--b); }
