@@ -581,7 +581,7 @@
       </div>
       <div class="chips" id="chips">
         {% for item in stats.pipeline %}
-        <div class="chip" data-id="{{ item.id }}">{{ item.text }}<button class="dc" onclick="delPipe({{ item.id }},this)"><i data-lucide="x"></i></button></div>
+        <div class="chip" data-id="{{ item.id }}">{{ item.text }}<button class="dc" onclick="delPipe({{ item.id }},this)" title="Quitar" aria-label="Quitar {{ item.text }} del pipeline"><i data-lucide="x"></i></button></div>
         {% endfor %}
       </div>
     </div>
@@ -593,7 +593,7 @@
         <div class="q-t" id="q-stoic-t">"{{ quote_stoic.text }}"</div>
         <div class="q-a" id="q-stoic-a">— {{ quote_stoic.author }}</div>
       </div>
-      <button class="rb" onclick="rQuote('stoic','q-stoic-t','q-stoic-a')"><i data-lucide="refresh-cw"></i></button>
+      <button class="rb" onclick="rQuote('stoic','q-stoic-t','q-stoic-a')" title="Nueva frase" aria-label="Nueva frase estoica"><i data-lucide="refresh-cw"></i></button>
     </div>
     <div class="q-c" style="background:linear-gradient(135deg,rgba(251,191,36,.06),rgba(6,182,212,.03));">
       <div class="q-inner">
@@ -601,7 +601,7 @@
         <div class="q-t" id="q-motiv-t">"{{ quote_motiv.text }}"</div>
         <div class="q-a" id="q-motiv-a">— {{ quote_motiv.author }}</div>
       </div>
-      <button class="rb" onclick="rQuote('motivational','q-motiv-t','q-motiv-a')"><i data-lucide="refresh-cw"></i></button>
+      <button class="rb" onclick="rQuote('motivational','q-motiv-t','q-motiv-a')" title="Nueva frase" aria-label="Nueva frase de motivación"><i data-lucide="refresh-cw"></i></button>
     </div>
   </div>
 </div>
@@ -892,7 +892,7 @@ async function delPipe(id, btn) {
 
 function renderChips(items) {
   document.getElementById('chips').innerHTML = items.map(i =>
-    `<div class="chip" data-id="${i.id}">${i.text}<button class="dc" onclick="delPipe(${i.id},this)"><i data-lucide="x"></i></button></div>`
+    `<div class="chip" data-id="${i.id}">${i.text}<button class="dc" onclick="delPipe(${i.id},this)" title="Quitar" aria-label="Quitar del pipeline"><i data-lucide="x"></i></button></div>`
   ).join('');
   lucide.createIcons();
 }

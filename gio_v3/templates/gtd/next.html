@@ -113,7 +113,7 @@
   <div style="display:flex;gap:3px;">
     <button class="ai" onclick="mv({{t.id}},'inbox',this)" title="→ Inbox"><i data-lucide="inbox"></i></button>
     <button class="ai" onclick="mv({{t.id}},'someday',this)" title="Someday"><i data-lucide="clock"></i></button>
-    <button class="ai del" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
+    <button class="ai del" title="Eliminar" aria-label="Eliminar" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
   </div>
 </div>
 {% else %}
