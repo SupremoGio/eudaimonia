@@ -112,6 +112,45 @@
 .reset-box-actions{display:flex;gap:8px;justify-content:flex-end;}
 .reset-trigger{background:transparent;border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:4px 10px;font-size:var(--fs-xs);color:var(--dim);cursor:pointer;transition:all .2s;font-family:var(--sans);letter-spacing:.06em;}
 .reset-trigger:hover{border-color:rgba(244,63,94,.4);color:var(--coral);}
+
+/* ── Revisión Semanal Objetiva ── */
+.rs-card{background:var(--card);border:1px solid var(--gold-border);border-radius:14px;margin-top:16px;overflow:hidden;}
+.rs-hd{display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;user-select:none;}
+.rs-icon{color:var(--gold);flex-shrink:0;display:flex;}
+.rs-title-wrap{flex:1;min-width:0;}
+.rs-title{display:block;font-size:var(--fs-sm);font-weight:600;color:var(--text);}
+.rs-sub{display:block;font-size:var(--fs-xs);color:var(--dim);letter-spacing:.06em;margin-top:1px;}
+.rs-chev{font-size:var(--fs-sm);color:var(--dim);transition:transform .2s;flex-shrink:0;}
+.rs-card.collapsed .rs-chev{transform:rotate(-90deg);}
+.rs-body{padding:0 16px 16px;}
+.rs-card.collapsed .rs-body{display:none;}
+
+.rs-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.rs-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:8px 10px;background:var(--card2);border:1px solid var(--b);border-radius:9px;}
+.rs-row-lbl{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--mid);min-width:0;}
+.rs-row-lbl i{color:var(--gold);flex-shrink:0;}
+.rs-row-input{display:flex;align-items:center;gap:5px;}
+.rs-row-input input{width:58px;background:var(--card);border:1px solid var(--b);border-radius:6px;padding:5px 6px;color:var(--text);font-size:.78rem;text-align:right;outline:none;transition:border-color .15s;font-family:var(--mono);-moz-appearance:textfield;}
+.rs-row-input input::-webkit-outer-spin-button,.rs-row-input input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.rs-row-input input:focus{border-color:var(--gold);}
+.rs-unit{font-size:var(--fs-xs);color:var(--dim);min-width:34px;}
+.rs-delta{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-xs);font-weight:600;padding:3px 7px;border-radius:100px;white-space:nowrap;}
+.rs-delta-up{background:rgba(16,185,129,.1);color:var(--emerald);border:1px solid rgba(16,185,129,.25);}
+.rs-delta-down{background:rgba(244,63,94,.08);color:var(--coral);border:1px solid rgba(244,63,94,.22);}
+.rs-delta-same{background:var(--b);color:var(--dim);}
+.rs-delta-none{background:transparent;color:var(--dim);opacity:.55;font-size:10px;}
+
+.rs-notas{width:100%;background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:9px 11px;color:var(--text);font-size:.78rem;font-family:var(--sans);resize:vertical;min-height:44px;outline:none;transition:border-color .15s;margin-bottom:12px;}
+.rs-notas:focus{border-color:var(--gold);}
+
+.rs-actions{display:flex;justify-content:flex-end;margin-bottom:6px;}
+
+.rs-hist{margin-top:14px;padding-top:14px;border-top:1px solid var(--b);}
+.rs-hist-hd{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
+.rs-hist-table{display:flex;flex-direction:column;gap:2px;overflow-x:auto;}
+.rs-hist-row{display:grid;grid-template-columns:52px repeat(5,1fr);gap:6px;font-size:11px;padding:5px 4px;font-family:var(--mono);color:var(--mid);}
+.rs-hist-row:nth-child(even){background:rgba(255,255,255,.02);border-radius:5px;}
+.rs-hist-head{color:var(--dim);font-family:var(--sans);font-size:9px;letter-spacing:.06em;text-transform:uppercase;}
 </style>
 {% endblock %}
 
@@ -338,6 +377,70 @@
     <div style="margin-top:10px;padding:9px 14px;background:rgba(124,58,237,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(167,139,250,.7);display:flex;align-items:center;gap:6px;">
       <i data-lucide="lightbulb" style="width:13px;height:13px;flex-shrink:0;"></i> Completa los {{ domingo.total }} bloques para +5 XP +3 EC bonus · Sáb+Dom = Fin de Semana Perfecto
     </div>
+
+    {# ── Revisión Semanal Objetiva ── #}
+    <div class="rs-card {% if revision.has_data %}collapsed{% endif %}" id="rs-card">
+      <div class="rs-hd" onclick="toggleRevision()">
+        <span class="rs-icon"><i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i></span>
+        <div class="rs-title-wrap">
+          <span class="rs-title">Revisión Semanal Objetiva</span>
+          <span class="rs-sub">{% if revision.has_data %}Guardada — semana {{ semana_id }}{% else %}Datos, no vibras{% endif %}</span>
+        </div>
+        <span class="rs-chev">▼</span>
+      </div>
+      <div class="rs-body">
+        <div class="rs-grid">
+          {% for m in revision.metrics %}
+          <div class="rs-row">
+            <div class="rs-row-lbl">
+              <i data-lucide="{{ m.icon }}" style="width:14px;height:14px;"></i>
+              <span>{{ m.label }}</span>
+            </div>
+            <div class="rs-row-input">
+              <input type="number" step="{{ m.step }}" min="{{ m.min }}" max="{{ m.max }}"
+                     placeholder="{{ m.placeholder }}" id="rs-{{ m.key }}"
+                     value="{{ m.value_str }}">
+              <span class="rs-unit">{{ m.unit }}</span>
+            </div>
+            <div>
+              {% if m.trend == 'better' %}<span class="rs-delta rs-delta-up"><i data-lucide="trending-up" style="width:11px;height:11px;"></i> {{ m.delta_str }}</span>
+              {% elif m.trend == 'worse' %}<span class="rs-delta rs-delta-down"><i data-lucide="trending-down" style="width:11px;height:11px;"></i> {{ m.delta_str }}</span>
+              {% elif m.trend == 'same' %}<span class="rs-delta rs-delta-same">= 0</span>
+              {% else %}<span class="rs-delta rs-delta-none">sin dato previo</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <textarea class="rs-notas" id="rs-notas" placeholder="Notas de la semana (opcional)">{{ revision.notas }}</textarea>
+
+        <div class="rs-actions">
+          <button class="btn-a" onclick="saveRevision()">Guardar revisión</button>
+        </div>
+
+        {% if revision.historial %}
+        <div class="rs-hist">
+          <div class="rs-hist-hd">Últimas semanas</div>
+          <div class="rs-hist-table">
+            <div class="rs-hist-row rs-hist-head">
+              <span>Semana</span><span>Lectura</span><span>Sueño</span><span>Presup.</span><span>Kcal</span><span>Pantalla</span>
+            </div>
+            {% for h in revision.historial %}
+            <div class="rs-hist-row">
+              <span>{{ h.semana_id[5:] }}</span>
+              <span>{{ h.dias_lectura|int if h.dias_lectura is not none else '—' }}</span>
+              <span>{{ h.horas_sueno if h.horas_sueno is not none else '—' }}</span>
+              <span>{{ h.presupuesto_pct|int if h.presupuesto_pct is not none else '—' }}%</span>
+              <span>{{ h.calorias_quemadas|int if h.calorias_quemadas is not none else '—' }}</span>
+              <span>{{ h.screen_time_horas if h.screen_time_horas is not none else '—' }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
 
 </div>
@@ -520,6 +623,33 @@ async function toggleTarea(subId, bloqueId, dia) {
     toast('Sin conexión', 'err');
   } finally {
     _pending.delete(subId);
+  }
+}
+
+function toggleRevision() {
+  document.getElementById('rs-card')?.classList.toggle('collapsed');
+}
+
+const REVISION_KEYS = ['dias_lectura','horas_sueno','presupuesto_pct','calorias_quemadas','screen_time_horas'];
+
+async function saveRevision() {
+  const body = { notas: document.getElementById('rs-notas')?.value || '' };
+  REVISION_KEYS.forEach(k => {
+    const el = document.getElementById(`rs-${k}`);
+    body[k] = el?.value ?? '';
+  });
+  try {
+    const r = await fetch('/ataraxia/api/revision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { toast('Error al guardar', 'err'); return; }
+    toast('Revisión guardada');
+    setTimeout(() => location.reload(), 700);
+  } catch {
+    toast('Sin conexión', 'err');
   }
 }
 

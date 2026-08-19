@@ -2096,6 +2096,20 @@ def init_db():
                  "Podcast en idiomas -> solo 'any'; Comer fruta -> 'any'; Jugo verde -> mon,wed,sat; Outfit retirado.")
             )
 
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS revision_semanal (
+            semana_id         TEXT PRIMARY KEY,
+            dias_lectura      REAL,
+            horas_sueno       REAL,
+            presupuesto_pct   REAL,
+            calorias_quemadas REAL,
+            screen_time_horas REAL,
+            notas             TEXT DEFAULT '',
+            created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        """)
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

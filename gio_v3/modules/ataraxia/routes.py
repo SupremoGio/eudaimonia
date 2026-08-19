@@ -97,6 +97,73 @@ def get_semana_id():
     return sabado.isoformat()
 
 
+# ── Revisión Semanal Objetiva ─────────────────────────────────────────────────
+# Métricas de entrada manual (sin integración automática con Apple Health,
+# Kindle ni redes sociales) — cada una declara su dirección "mejor" para
+# poder colorear el delta contra la semana anterior sin subjetividad.
+
+REVISION_METRICS = [
+    {"key": "dias_lectura",      "label": "Lectura (Kindle)",    "unit": "días",   "icon": "book-open",   "direction": "up",   "step": "1",   "min": "0", "max": "7",    "placeholder": "0–7"},
+    {"key": "horas_sueno",       "label": "Sueño promedio",      "unit": "h/noche","icon": "moon",        "direction": "up",   "step": "0.1", "min": "0", "max": "12",   "placeholder": "7.5"},
+    {"key": "presupuesto_pct",   "label": "Presupuesto usado",   "unit": "%",      "icon": "landmark",    "direction": "down", "step": "1",   "min": "0", "max": "300",  "placeholder": "85"},
+    {"key": "calorias_quemadas", "label": "Calorías quemadas",   "unit": "kcal/d", "icon": "flame",       "direction": "up",   "step": "10",  "min": "0", "max": "6000", "placeholder": "2200"},
+    {"key": "screen_time_horas", "label": "Pantalla en redes",   "unit": "h/día",  "icon": "smartphone",  "direction": "down", "step": "0.1", "min": "0", "max": "12",   "placeholder": "1.5"},
+]
+
+
+def _prev_semana_id(semana_id):
+    d = date.fromisoformat(semana_id)
+    return (d - timedelta(days=7)).isoformat()
+
+
+def _get_revision_row(semana_id):
+    with get_db() as db:
+        row = db.execute("SELECT * FROM revision_semanal WHERE semana_id=?", (semana_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def _fmt_num(v):
+    if v is None:
+        return ""
+    return str(int(v)) if v == int(v) else str(v)
+
+
+def _revision_view(semana_id):
+    actual   = _get_revision_row(semana_id) or {}
+    anterior = _get_revision_row(_prev_semana_id(semana_id)) or {}
+
+    metrics = []
+    for m in REVISION_METRICS:
+        v  = actual.get(m["key"])
+        pv = anterior.get(m["key"])
+        delta = None
+        delta_str = None
+        trend = None
+        if v is not None and pv is not None:
+            delta = round(v - pv, 2)
+            delta_str = f"{delta:+g}"
+            if delta == 0:
+                trend = "same"
+            elif (m["direction"] == "up") == (delta > 0):
+                trend = "better"
+            else:
+                trend = "worse"
+        metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "delta": delta, "delta_str": delta_str, "trend": trend})
+
+    with get_db() as db:
+        hist_rows = db.execute(
+            "SELECT * FROM revision_semanal WHERE semana_id != ? ORDER BY semana_id DESC LIMIT 6",
+            (semana_id,)
+        ).fetchall()
+
+    return {
+        "metrics":   metrics,
+        "has_data":  bool(actual),
+        "notas":     actual.get("notas") or "",
+        "historial": [dict(r) for r in hist_rows],
+    }
+
+
 # ── Data builder ──────────────────────────────────────────────────────────────
 
 def _build_rutina(dia, semana_id):
@@ -203,6 +270,7 @@ def index():
         sun_combo    = sun_combo,
         is_weekend   = dow in (5, 6),
         today        = today_str(),
+        revision     = _revision_view(semana_id),
     )
 
 
@@ -314,6 +382,45 @@ def finde_status():
         "sun_combo":      sun_combo,
         "finde_perfecto": sat_combo and sun_combo,
     })
+
+
+@ataraxia_bp.route('/api/revision', methods=['POST'])
+def save_revision():
+    data = request.json or {}
+    semana_id = get_semana_id()
+
+    valores = {}
+    for m in REVISION_METRICS:
+        raw = data.get(m["key"])
+        try:
+            valores[m["key"]] = float(raw) if raw not in (None, "") else None
+        except (TypeError, ValueError):
+            valores[m["key"]] = None
+    notas = (data.get("notas") or "").strip()
+    now = datetime.now().isoformat()
+
+    with get_db() as db:
+        existing = db.execute(
+            "SELECT semana_id FROM revision_semanal WHERE semana_id=?", (semana_id,)
+        ).fetchone()
+        if existing:
+            db.execute(
+                """UPDATE revision_semanal SET dias_lectura=?, horas_sueno=?, presupuesto_pct=?,
+                   calorias_quemadas=?, screen_time_horas=?, notas=?, updated_at=? WHERE semana_id=?""",
+                (valores["dias_lectura"], valores["horas_sueno"], valores["presupuesto_pct"],
+                 valores["calorias_quemadas"], valores["screen_time_horas"], notas, now, semana_id)
+            )
+        else:
+            db.execute(
+                """INSERT INTO revision_semanal
+                   (semana_id, dias_lectura, horas_sueno, presupuesto_pct, calorias_quemadas, screen_time_horas, notas, created_at, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                (semana_id, valores["dias_lectura"], valores["horas_sueno"], valores["presupuesto_pct"],
+                 valores["calorias_quemadas"], valores["screen_time_horas"], notas, now, now)
+            )
+        db.commit()
+
+    return jsonify({"ok": True, "semana_id": semana_id})
 
 
 @ataraxia_bp.route('/api/rutina/reset', methods=['POST'])
