@@ -15,7 +15,7 @@ _MODULE_CATS = {
     'paideia':        {'Paideia'},
     'cosmopolitismo': {'Idiomas'},
     'logoi':          {'Programación'},
-    'eurythmia':      {'Baile'},
+    'eurythmia':      {'Baile', 'Música'},
 }
 
 _EU_MODULES_BASE = [

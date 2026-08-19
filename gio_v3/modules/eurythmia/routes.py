@@ -46,6 +46,26 @@ _GRABADO_KEY = "eurythmia_grabado"
 _SESSION_KEY = "eurythmia_session"
 _GRABADO_XP  = 3
 
+# ── Música — 100 mejores álbumes ──────────────────────────────────────────────
+_ALBUM_XP = 5
+
+
+def _musica_state():
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM eury_albums ORDER BY rank").fetchall()
+    albumes = [dict(r) for r in rows]
+    escuchados = [a for a in albumes if a["escuchado"]]
+    ranking = sorted(
+        [a for a in escuchados if a["mi_rating"] is not None],
+        key=lambda a: (-a["mi_rating"], a["rank"])
+    )
+    return {
+        "albumes":       albumes,
+        "total":         len(albumes),
+        "escuchados_n":  len(escuchados),
+        "ranking":       ranking,
+    }
+
 
 def _split_minutes(total):
     base, s = [10, 15, 5], 30
@@ -130,6 +150,7 @@ def index():
         'eurythmia/index.html',
         phases=PHASES, levels=LEVELS, flow_labels=FLOW_LABELS, science=SCIENCE,
         state=_state(),
+        musica=_musica_state(),
     )
 
 
@@ -233,6 +254,73 @@ def api_grabado_toggle():
 
     gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', log_id)
     return jsonify({'action': 'added', 'gam': gam, 'state': _state()})
+
+
+@eurythmia_bp.route('/api/album/<int:album_id>', methods=['POST'])
+def api_album_update(album_id):
+    data = request.get_json(silent=True) or {}
+
+    with get_db() as db:
+        row = db.execute("SELECT * FROM eury_albums WHERE id=?", (album_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'not found'}), 404
+    row = dict(row)
+
+    was_escuchado = bool(row['escuchado'])
+    escuchado = bool(data.get('escuchado', was_escuchado))
+
+    rating = data.get('mi_rating', row['mi_rating'])
+    if rating not in (None, ''):
+        try:
+            rating = int(rating)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'invalid rating'}), 400
+        if rating < 1 or rating > 10:
+            return jsonify({'error': 'invalid rating'}), 400
+    else:
+        rating = None
+
+    notas = str(data.get('notas', row['notas']) or '')[:500]
+    escuchado_at = row['escuchado_at']
+
+    gam = None
+    with get_db() as db:
+        if escuchado and not was_escuchado:
+            escuchado_at = datetime.now().isoformat()
+            today = today_str()
+            cur = db.execute(
+                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                (f"eury_album_{album_id}", today, _ALBUM_XP)
+            )
+            log_id = cur.lastrowid
+            db.execute(
+                "UPDATE eury_albums SET escuchado=1, mi_rating=?, notas=?, escuchado_at=? WHERE id=?",
+                (rating, notas, escuchado_at, album_id)
+            )
+            db.commit()
+            gam = engine.process_activity(f"eury_album_{album_id}", _ALBUM_XP, 'Música', log_id)
+        elif not escuchado and was_escuchado:
+            db.execute(
+                "UPDATE eury_albums SET escuchado=0, mi_rating=NULL, notas=?, escuchado_at=NULL WHERE id=?",
+                (notas, album_id)
+            )
+            db.commit()
+            log_row = db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? ORDER BY id DESC LIMIT 1",
+                (f"eury_album_{album_id}",)
+            ).fetchone()
+            if log_row:
+                db.execute("DELETE FROM activity_logs WHERE id=?", (log_row['id'],))
+                db.commit()
+                gam = engine.remove_activity(log_row['id'])
+        else:
+            db.execute(
+                "UPDATE eury_albums SET mi_rating=?, notas=? WHERE id=?",
+                (rating, notas, album_id)
+            )
+            db.commit()
+
+    return jsonify({'ok': True, 'gam': gam, 'musica': _musica_state()})
 
 
 @eurythmia_bp.route('/api/drill', methods=['POST'])
