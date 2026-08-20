@@ -6,16 +6,16 @@
 <style>
 /* ── Hero unificado (XP + clasificación + progreso + stats + pilares) ──────── */
 .hero-card{background:var(--card);border:1px solid var(--b);border-radius:20px;padding:20px 22px;margin-bottom:16px;position:relative;overflow:hidden;}
-.hero-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--violet),var(--violet-l));}
+.hero-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),var(--gold-l));}
 .hero-row1{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .hero-xp-label{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:4px;}
-.hero-xp-num{font-family:var(--serif);font-size:3.4rem;font-weight:600;line-height:1;font-style:italic;color:var(--violet-l);font-variant-numeric:lining-nums;}
+.hero-xp-num{font-family:var(--serif);font-size:3.4rem;font-weight:600;line-height:1;font-style:italic;color:var(--gold-l);font-variant-numeric:lining-nums;}
 .hero-xp-goal{font-size:var(--fs-sm);color:var(--dim);margin-top:6px;}
 .hero-clf-chip{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:1px solid;flex-shrink:0;}
 .hero-clf-rank{font-family:var(--serif);font-size:1.05rem;font-style:italic;font-weight:300;line-height:1.2;}
 .hero-clf-desc{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;max-width:220px;}
 .hero-progress-bar{background:var(--card2);border-radius:100px;height:6px;overflow:hidden;margin-top:16px;}
-.hero-progress-fill{height:100%;background:linear-gradient(90deg,var(--violet),var(--violet-l));border-radius:100px;transition:width .5s;}
+.hero-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:100px;transition:width .5s;}
 .hero-secondary{display:flex;margin-top:16px;border-top:1px solid var(--b);padding-top:14px;}
 .hs-item{flex:1;text-align:center;padding:0 6px;border-right:1px solid var(--b);}
 .hs-item:last-child{border-right:none;}
@@ -28,10 +28,11 @@
 .hero-pillars-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
 .hero-pillars-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;}
 
-/* ── Level bar (reused inside hero) — dorado a propósito, distinto del violeta
-   de la barra de XP de hoy, para que a simple vista se lean como dos medidas
-   distintas (meta diaria vs. progreso de nivel) y no como la misma barra
-   repetida. ─────────────────────────────────────────────────────────────── */
+/* ── Level bar (reused inside hero) — mismo dorado que la barra de XP de hoy
+   (antes violeta: colisionaba con el hue de Paideia en la fila de pilares y
+   desentonaba con el resto de la app). Las dos barras se leen como medidas
+   distintas por tamaño y contexto (número gigante arriba vs. badge de nivel
+   en la fila de stats), no por color. ─────────────────────────────────────── */
 .lvl-bar{background:var(--card2);border-radius:100px;height:5px;overflow:hidden;margin-top:6px;}
 .lvl-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:100px;transition:width .5s;transform-origin:left;}
 
