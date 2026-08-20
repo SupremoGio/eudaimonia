@@ -420,6 +420,10 @@ def get_daily_classification(date_str=None):
             rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
             sessions_covered, sessions_available, gold_min_sessions
         ),
+        "next_pct": _next_rank_pct(
+            rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
+            sessions_covered, gold_min_sessions, recovery
+        ),
     })
     return info
 
@@ -455,6 +459,32 @@ def _next_rank_hint(rank, anchor_defs, done_anchor_keys, touch_defs, touches_don
     if anchor_defs:
         return "Completa tu ancla del día → Hierro"
     return "Registra una actividad de hoy → Hierro"
+
+
+# Progreso (0-100) hacia el SIGUIENTE rango — refleja el cuello de botella real
+# (ej. en Hierro→Oro, el mínimo entre touches y sesiones cubiertas, porque
+# ambos son requisitos y el que va más atrás es el que de verdad te frena).
+# Esto es lo que llena la barra visual junto al hint: la tarjeta deja de
+# mostrar solo "en qué rango estás" y muestra "qué tan cerca estás del que sigue".
+def _next_rank_pct(rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
+                    sessions_covered, gold_min_sessions, recovery):
+    if rank == "diamond":
+        return 100
+    if rank == "gold":
+        if not anchor_defs:
+            return 100
+        return round(100 * len(done_anchor_keys) / len(anchor_defs))
+    if rank == "iron":
+        if not touch_defs:
+            return 100
+        touch_frac = min(1.0, touches_done / gold_min_touches) if gold_min_touches else 1.0
+        sess_frac  = min(1.0, len(sessions_covered) / gold_min_sessions) if gold_min_sessions else 1.0
+        return round(100 * min(touch_frac, sess_frac))
+    # carbon — el ancla es un evento binario (no hay "medio ancla"), así que
+    # el % real es 0 hasta que se completa; el hint de arriba es lo accionable.
+    if recovery and touch_defs:
+        return round(100 * min(1.0, touches_done / RECOVERY_HIERRO_TOUCHES))
+    return 0
 
 
 # ── Achievement stats + unlock ────────────────────────────────────────────────

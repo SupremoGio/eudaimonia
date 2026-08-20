@@ -51,16 +51,20 @@
   .hero-xp-num span { font-size:13px; color:var(--mid); }
   .bar-track { height:5px; background:var(--gold-bg); border-radius:3px; overflow:hidden; margin-bottom:12px; }
   .bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l)); box-shadow:0 0 8px var(--gold-glow); }
-  .tiers { display:flex; align-items:stretch; gap:6px; margin-bottom:10px; }
+  .tiers { display:flex; align-items:stretch; gap:6px; margin-bottom:12px; }
   .tier { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border-radius:10px; border:1px solid transparent; }
   .tier.active { box-shadow:0 0 16px color-mix(in srgb, var(--tc) 25%, transparent); background:color-mix(in srgb, var(--tc) 8%, transparent); border-color:var(--tc); }
   .tier-dot { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.04); color:var(--mid); }
   .tier.active .tier-dot { background:var(--tc); color:#09070F; box-shadow:0 0 10px var(--tc); }
+  .tier.done .tier-dot { background:color-mix(in srgb, var(--tc) 55%, transparent); color:#09070F; }
   .tier-lbl { font-family:var(--sans); font-size:9px; letter-spacing:.06em; color:var(--mid); opacity:.6; }
   .tier.active .tier-lbl { color:var(--tc); font-weight:600; opacity:1; }
-  .tier-row-foot { display:flex; justify-content:space-between; align-items:center; font-size:10px; }
-  .tier-row-foot .l { color:var(--mid); }
-  .tier-row-foot .r { color:var(--gold); opacity:.8; }
+  .tier.done .tier-lbl { color:var(--tc); opacity:.65; }
+  .rank-eyebrow { font-family:var(--sans); font-size:9px; letter-spacing:.15em; color:var(--mid); text-transform:uppercase; margin-bottom:8px; }
+  .rank-hint { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px; line-height:1.35; }
+  .rank-bar-track { height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+  html.light .rank-bar-track { background:rgba(0,0,0,0.07); }
+  .rank-bar-fill { height:100%; border-radius:3px; transition:width .3s ease; }
 
   /* Suggestion */
   .sugg-card { background:oklch(18% 0.04 45); border:1px solid oklch(35% 0.09 45); border-radius:12px; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:transform .15s; }
@@ -223,18 +227,19 @@
         <div class="hero-xp-eyebrow">XP hoy</div>
         <div class="hero-xp-num"><b>{{ data.xp_today }}</b><span>/ 15 meta</span></div>
         <div class="bar-track"><div class="bar-fill" style="width:{{ [100, (data.xp_today / 15 * 100) | round(1)] | min }}%;"></div></div>
+        <div class="rank-eyebrow">Clasificación de hoy</div>
         <div class="tiers">
           {% for t in tiers %}
-          <div class="tier{% if loop.index0 == ci %} active{% endif %}" style="--tc:{{ t.color }};">
-            <div class="tier-dot"><i data-lucide="{{ t.icon }}" style="width:13px;height:13px;"></i></div>
+          <div class="tier{% if loop.index0 == ci %} active{% elif loop.index0 < ci %} done{% endif %}" style="--tc:{{ t.color }};">
+            <div class="tier-dot"><i data-lucide="{{ 'check' if loop.index0 < ci else t.icon }}" style="width:13px;height:13px;"></i></div>
             <div class="tier-lbl">{{ t.label }}</div>
           </div>
           {% endfor %}
         </div>
-        <div class="tier-row-foot">
-          <span class="l">Clasificación de hoy</span>
-          <span class="r">{{ clf.next_hint or '' }}</span>
-        </div>
+        <div class="rank-hint">{{ clf.next_hint or '' }}</div>
+        {% if clf.rank != 'diamond' %}
+        <div class="rank-bar-track"><div class="rank-bar-fill" style="width:{{ clf.next_pct }}%; background:{{ tiers[ci+1].color if ci+1 < tiers|length else tiers[ci].color }};"></div></div>
+        {% endif %}
       </div>
 
       {% if data.suggestion %}
