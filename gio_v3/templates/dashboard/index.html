@@ -166,10 +166,10 @@
 {% set dl_icons = {'reminder':'bell','task':'check-square','wishlist':'shopping-bag','partido':'trophy'} %}
 {% set dl_labels = {'reminder':'recordatorio','task':'tarea gtd','wishlist':'wishlist','partido':'partido'} %}
 {% set dl_pal = {
-  'red':    {'text':'#f87171','bg':'rgba(239,68,68,0.09)','border':'#ef4444','pill':'rgba(239,68,68,0.20)'},
-  'amber':  {'text':'#fbbf24','bg':'rgba(245,158,11,0.09)','border':'#f59e0b','pill':'rgba(245,158,11,0.20)'},
-  'yellow': {'text':'#fde047','bg':'rgba(234,179,8,0.07)','border':'#eab308','pill':'rgba(234,179,8,0.18)'},
-  'green':  {'text':'#34d399','bg':'rgba(16,185,129,0.07)','border':'#10b981','pill':'rgba(16,185,129,0.18)'},
+  'red':    {'text':'var(--dl-red-text)','bg':'rgba(239,68,68,0.09)','border':'#ef4444','pill':'rgba(239,68,68,0.20)'},
+  'amber':  {'text':'var(--dl-amber-text)','bg':'rgba(245,158,11,0.09)','border':'#f59e0b','pill':'rgba(245,158,11,0.20)'},
+  'yellow': {'text':'var(--dl-yellow-text)','bg':'rgba(234,179,8,0.07)','border':'#eab308','pill':'rgba(234,179,8,0.18)'},
+  'green':  {'text':'var(--dl-green-text)','bg':'rgba(16,185,129,0.07)','border':'#10b981','pill':'rgba(16,185,129,0.18)'},
 } %}
 {% set hm_max = (heatmap | map(attribute='xp') | max) or 1 %}
 

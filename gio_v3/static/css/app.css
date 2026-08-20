@@ -32,6 +32,9 @@
 
   --text:#F2EDE0; --mid:#A89880; --dim:#8A7A60; --muted:#6A6050;
 
+  /* Deadline radar (dashboard) — texto de badge por nivel de urgencia */
+  --dl-red-text:#f87171; --dl-amber-text:#fbbf24; --dl-yellow-text:#fde047; --dl-green-text:#34d399;
+
   --serif:'Cormorant Garamond',serif;
   --sans:'DM Sans',sans-serif;
   --mono:'JetBrains Mono','Menlo',monospace;
@@ -61,6 +64,11 @@ html.light {
   --purple:var(--pink);   --green:var(--emerald); --red:var(--coral);
 
   --text:#1C1610; --mid:#5A4A30; --dim:#7C6A48; --muted:#9B8A6A;
+
+  /* Deadline radar — versiones más oscuras/saturadas: las claras del tema
+     oscuro (p.ej. #fde047) pierden casi todo el contraste sobre las
+     píldoras pálidas del fondo crema del tema claro */
+  --dl-red-text:#c0392b; --dl-amber-text:#b45309; --dl-yellow-text:#a16207; --dl-green-text:#059669;
 
   --serif:'Cormorant Garamond',serif;
   --sans:'DM Sans',sans-serif;
