@@ -49,6 +49,20 @@ _GRABADO_XP  = 3
 # ── Música — 100 mejores álbumes ──────────────────────────────────────────────
 _ALBUM_XP = 5
 
+RATING_DIMS = [
+    {"key": "sonido",        "label": "Producción"},
+    {"key": "letras",        "label": "Composición"},
+    {"key": "consistencia",  "label": "Consistencia"},
+    {"key": "replay",        "label": "Replay value"},
+]
+
+
+def _compute_mi_rating(row):
+    vals = [row[f"rating_{d['key']}"] for d in RATING_DIMS if row[f"rating_{d['key']}"] is not None]
+    if not vals:
+        return None
+    return round(sum(vals) / len(vals), 1)
+
 
 def _musica_state():
     with get_db() as db:
@@ -151,6 +165,7 @@ def index():
         phases=PHASES, levels=LEVELS, flow_labels=FLOW_LABELS, science=SCIENCE,
         state=_state(),
         musica=_musica_state(),
+        rating_dims=RATING_DIMS,
     )
 
 
@@ -269,19 +284,26 @@ def api_album_update(album_id):
     was_escuchado = bool(row['escuchado'])
     escuchado = bool(data.get('escuchado', was_escuchado))
 
-    rating = data.get('mi_rating', row['mi_rating'])
-    if rating not in (None, ''):
-        try:
-            rating = int(rating)
-        except (TypeError, ValueError):
-            return jsonify({'error': 'invalid rating'}), 400
-        if rating < 1 or rating > 10:
-            return jsonify({'error': 'invalid rating'}), 400
-    else:
-        rating = None
+    ratings = {}
+    for d in RATING_DIMS:
+        key = f"rating_{d['key']}"
+        val = data.get(key, row[key])
+        if val not in (None, ''):
+            try:
+                val = int(val)
+            except (TypeError, ValueError):
+                return jsonify({'error': f'invalid {key}'}), 400
+            if val < 1 or val > 10:
+                return jsonify({'error': f'invalid {key}'}), 400
+        else:
+            val = None
+        ratings[key] = val
 
+    mi_rating = _compute_mi_rating(ratings)
     notas = str(data.get('notas', row['notas']) or '')[:500]
     escuchado_at = row['escuchado_at']
+    rating_cols = list(ratings.keys())
+    rating_vals = [ratings[k] for k in rating_cols]
 
     gam = None
     with get_db() as db:
@@ -294,14 +316,16 @@ def api_album_update(album_id):
             )
             log_id = cur.lastrowid
             db.execute(
-                "UPDATE eury_albums SET escuchado=1, mi_rating=?, notas=?, escuchado_at=? WHERE id=?",
-                (rating, notas, escuchado_at, album_id)
+                f"UPDATE eury_albums SET escuchado=1, mi_rating=?, notas=?, escuchado_at=?, "
+                f"{', '.join(f'{c}=?' for c in rating_cols)} WHERE id=?",
+                (mi_rating, notas, escuchado_at, *rating_vals, album_id)
             )
             db.commit()
             gam = engine.process_activity(f"eury_album_{album_id}", _ALBUM_XP, 'Música', log_id)
         elif not escuchado and was_escuchado:
             db.execute(
-                "UPDATE eury_albums SET escuchado=0, mi_rating=NULL, notas=?, escuchado_at=NULL WHERE id=?",
+                f"UPDATE eury_albums SET escuchado=0, mi_rating=NULL, notas=?, escuchado_at=NULL, "
+                f"{', '.join(f'{c}=NULL' for c in rating_cols)} WHERE id=?",
                 (notas, album_id)
             )
             db.commit()
@@ -315,8 +339,9 @@ def api_album_update(album_id):
                 gam = engine.remove_activity(log_row['id'])
         else:
             db.execute(
-                "UPDATE eury_albums SET mi_rating=?, notas=? WHERE id=?",
-                (rating, notas, album_id)
+                f"UPDATE eury_albums SET mi_rating=?, notas=?, "
+                f"{', '.join(f'{c}=?' for c in rating_cols)} WHERE id=?",
+                (mi_rating, notas, *rating_vals, album_id)
             )
             db.commit()
 

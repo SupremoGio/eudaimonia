@@ -2116,11 +2116,17 @@ def init_db():
             anio         INTEGER,
             genero       TEXT DEFAULT '',
             escuchado    INTEGER NOT NULL DEFAULT 0,
-            mi_rating    INTEGER,
+            mi_rating    REAL,
             notas        TEXT DEFAULT '',
             escuchado_at TEXT
         );
         """)
+
+        # Migración: sub-ratings cuantitativos (1-10) que promedian a mi_rating
+        ea_cols = [r["name"] for r in db.execute("PRAGMA table_info(eury_albums)").fetchall()]
+        for col in ("rating_sonido", "rating_letras", "rating_consistencia", "rating_replay"):
+            if col not in ea_cols:
+                db.execute(f"ALTER TABLE eury_albums ADD COLUMN {col} INTEGER DEFAULT NULL")
 
         # Seed: Apple Music 100 Best Albums — solo rank/artista/álbum/año/
         # género (dato de referencia). Escuchado/rating/notas son míos, se

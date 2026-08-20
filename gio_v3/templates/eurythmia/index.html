@@ -138,9 +138,23 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
 .mu-artist{ font-size:var(--fs-xs); color:var(--mid); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .mu-meta{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
 .mu-year{ font-size:var(--fs-xs); color:var(--dim); font-family:var(--mono); }
-.mu-rating-input{ width:34px; background:var(--card2); border:1px solid var(--b); border-radius:6px; padding:4px 5px; color:var(--gold); font-size:.75rem; font-family:var(--mono); text-align:center; outline:none; }
-.mu-rating-input:focus{ border-color:var(--gold); }
-.mu-rating-input::-webkit-outer-spin-button,.mu-rating-input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+.mu-rate-trigger{ min-width:36px; background:var(--card2); border:1px solid var(--b); border-radius:6px; padding:4px 7px; color:var(--gold); font-size:.75rem; font-family:var(--mono); text-align:center; cursor:pointer; transition:all .15s; }
+.mu-rate-trigger:hover{ border-color:var(--gold); }
+.mu-rate-trigger.rated{ background:var(--gold-bg); border-color:var(--gold-border); font-weight:700; }
+.mu-rate-trigger:disabled{ opacity:.35; cursor:default; }
+
+.mu-rate-panel{ display:none; max-width:760px; background:var(--card2); border:1px solid var(--b); border-radius:12px; padding:14px 16px 12px; margin:-3px 0 9px; }
+.mu-rate-panel.on{ display:block; }
+.mu-rate-dim{ margin-bottom:11px; }
+.mu-rate-dim-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+.mu-rate-dim-lbl{ font-size:11.5px; color:var(--mid); }
+.mu-rate-dim-val{ font-family:var(--mono); font-size:.75rem; color:var(--gold); }
+.mu-dots{ display:flex; gap:4px; }
+.mu-dot{ flex:1; height:16px; padding:0; border-radius:4px; border:1px solid var(--b); background:transparent; cursor:pointer; transition:all .12s; }
+.mu-dot:hover{ border-color:var(--gold); }
+.mu-dot.on{ background:var(--gold); border-color:var(--gold); }
+.mu-rate-overall{ text-align:center; padding-top:9px; border-top:1px solid var(--b); font-size:12px; color:var(--dim); }
+.mu-rate-overall b{ font-family:var(--serif); font-size:1.15rem; font-style:italic; color:var(--gold); font-weight:400; }
 
 .mu-filters{ display:flex; gap:8px; margin-bottom:14px; max-width:460px; }
 .mu-filter{ flex:1; cursor:pointer; background:var(--card); border:1px solid var(--b); border-radius:100px; padding:7px 6px; font-size:11.5px; color:var(--dim); text-align:center; transition:all .15s; }
@@ -339,6 +353,7 @@ const LEVELS       = {{ levels | tojson | safe }};
 const FLOW_LABELS  = {{ flow_labels | tojson | safe }};
 let   STATE        = {{ state | tojson | safe }};
 let   MUSICA       = {{ musica | tojson | safe }};
+const RATING_DIMS  = {{ rating_dims | tojson | safe }};
 
 const $ = (sel, root) => (root || document).querySelector(sel);
 const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
@@ -379,7 +394,7 @@ function renderMusica(){
             <div class="mu-album-name">${a.album}</div>
             <div class="mu-artist">${a.artista} · #${a.rank} Apple Music</div>
           </div>
-          <div class="mu-rank-score">${a.mi_rating}/10</div>`;
+          <div class="mu-rank-score">${a.mi_rating.toFixed(1)}/10</div>`;
         box.appendChild(row);
       });
     }
@@ -401,16 +416,55 @@ function renderMusica(){
       </div>
       <div class="mu-meta">
         <span class="mu-year">${a.anio || ''}</span>
-        <input type="number" class="mu-rating-input" min="1" max="10" placeholder="—"
-               value="${a.mi_rating ?? ''}" id="mu-rate-${a.id}" ${a.escuchado ? '' : 'disabled'}>
+        <button type="button" class="mu-rate-trigger${a.mi_rating != null ? ' rated' : ''}" id="mu-rate-btn-${a.id}" ${a.escuchado ? '' : 'disabled'}>${a.mi_rating != null ? a.mi_rating.toFixed(1) : '—'}</button>
       </div>`;
     box.appendChild(row);
 
+    const panel = document.createElement('div');
+    panel.className = 'mu-rate-panel';
+    panel.id = `mu-rate-panel-${a.id}`;
+    panel.innerHTML = muRatePanelHtml(a);
+    box.appendChild(panel);
+
     $(`#mu-chk-${a.id}`, row).addEventListener('click', () => muToggleAlbum(a.id));
-    $(`#mu-rate-${a.id}`, row).addEventListener('change', e => muSaveRating(a.id, e.target.value));
+    $(`#mu-rate-btn-${a.id}`, row).addEventListener('click', () => muToggleRatePanel(a.id));
+    panel.addEventListener('click', e => {
+      const dot = e.target.closest('.mu-dot');
+      if (!dot) return;
+      muSetRating(a.id, dot.dataset.dim, parseInt(dot.dataset.val, 10));
+    });
   });
 
   if (window.lucide) lucide.createIcons();
+}
+
+function muRatePanelHtml(a){
+  let html = '';
+  RATING_DIMS.forEach(d => {
+    const val = a['rating_' + d.key];
+    let dots = '';
+    for (let i = 1; i <= 10; i++){
+      dots += `<button type="button" class="mu-dot${val != null && i <= val ? ' on' : ''}" data-dim="${d.key}" data-val="${i}"></button>`;
+    }
+    html += `
+      <div class="mu-rate-dim">
+        <div class="mu-rate-dim-top">
+          <span class="mu-rate-dim-lbl">${d.label}</span>
+          <span class="mu-rate-dim-val">${val ?? '—'}</span>
+        </div>
+        <div class="mu-dots">${dots}</div>
+      </div>`;
+  });
+  html += `<div class="mu-rate-overall">Tu rating · <b>${a.mi_rating != null ? a.mi_rating.toFixed(1) : '—'}</b>/10</div>`;
+  return html;
+}
+
+function muToggleRatePanel(id){
+  const panel = $(`#mu-rate-panel-${id}`);
+  if (!panel) return;
+  const isOpen = panel.classList.contains('on');
+  $$('.mu-rate-panel.on').forEach(p => p.classList.remove('on'));
+  if (!isOpen) panel.classList.add('on');
 }
 
 async function muToggleAlbum(id){
@@ -431,23 +485,29 @@ async function muToggleAlbum(id){
     $('#mu-f-pendientes').textContent = MUSICA.total - MUSICA.escuchados_n;
     $('#mu-f-escuchados').textContent = MUSICA.escuchados_n;
     renderMusica();
+    if (nowEscuchado) muToggleRatePanel(id);
   } catch {
     toast('Sin conexión', 'err');
   }
 }
 
-async function muSaveRating(id, value){
-  const rating = value === '' ? null : Math.max(1, Math.min(10, parseInt(value) || 1));
+async function muSetRating(id, dim, val){
   try {
     const r = await fetch(`/eurythmia/api/album/${id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mi_rating: rating }),
+      body: JSON.stringify({ [`rating_${dim}`]: val }),
     });
     const d = await r.json();
     if (!r.ok || !d.ok) { toast('Error al guardar', 'err'); return; }
     MUSICA = d.musica;
-    toast('Rating guardado');
+    const a = MUSICA.albumes.find(x => x.id === id);
+    const panel = $(`#mu-rate-panel-${id}`);
+    panel.innerHTML = muRatePanelHtml(a);
+    panel.classList.add('on');
+    const btn = $(`#mu-rate-btn-${id}`);
+    btn.textContent = a.mi_rating != null ? a.mi_rating.toFixed(1) : '—';
+    btn.classList.toggle('rated', a.mi_rating != null);
   } catch {
     toast('Sin conexión', 'err');
   }
