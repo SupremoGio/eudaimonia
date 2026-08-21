@@ -225,18 +225,26 @@
 .sact.ancla .schk{width:20px;height:20px;}
 .sact.ancla .slbl{font-size:var(--fs-md,13px);font-weight:600;}
 
-/* Touches reflexivos (gratitud/corrección/síntesis) — el textarea de texto
-   libre solo tiene sentido en escritorio, donde hay espacio para escribir
-   cómodo; en mobile la tarjeta queda igual que cualquier otro touch. */
-.sact-reflect{display:none;}
+/* Touches con texto libre — gratitud/corrección/síntesis son reflexiones de
+   cierre de día, solo tiene sentido escribirlas en escritorio; MIT (.reflect-all)
+   es planeación de la mañana y sí es útil también en mobile. El textarea
+   comparte estilo, solo cambia cuándo se muestra. */
+.sact-reflect{
+  display:none;width:100%;margin-top:8px;padding:8px 10px;min-height:44px;resize:vertical;cursor:text;
+  border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);
+  font-size:var(--fs-xs);font-family:inherit;line-height:1.4;
+}
+.sact-reflect:focus{outline:none;border-color:var(--p-c);}
+.sact-reflect::placeholder{color:var(--dim);opacity:.7;}
+
+.sact.reflect-all{grid-column:1/-1;flex-direction:row;align-items:flex-start;gap:12px;}
+.sact.reflect-all .schk{margin-top:2px;}
+.sact.reflect-all .sact-reflect{display:block;}
+
 @media (min-width:768px){
   .sact.reflect{grid-column:1/-1;flex-direction:row;align-items:flex-start;gap:12px;}
   .sact.reflect .schk{margin-top:2px;}
-  .sact-reflect{display:block;width:100%;margin-top:8px;padding:8px 10px;min-height:44px;resize:vertical;cursor:text;
-    border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);
-    font-size:var(--fs-xs);font-family:inherit;line-height:1.4;}
-  .sact-reflect:focus{outline:none;border-color:var(--p-c);}
-  .sact-reflect::placeholder{color:var(--dim);opacity:.7;}
+  .sact.reflect .sact-reflect{display:block;}
 }
 
 .add-tile{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--b);border-radius:11px;min-height:52px;cursor:pointer;color:var(--dim);font-size:var(--fs-xs);font-weight:600;}
@@ -452,9 +460,12 @@
 
     <!-- Main Activity Tile -->
     {% set REFLECT_KEYS = ['gratitud_diaria', 'correccion_diaria', 'sintesis_activa'] %}
+    {% set REFLECT_ALL_KEYS = ['mit'] %}
+    {% set REFLECT_PLACEHOLDERS = {'mit': '¿Cuál es tu tarea más importante hoy?'} %}
     {% macro act_card(item) %}
-    {% set is_reflect = item.key in REFLECT_KEYS %}
-    <div class="sact {% if item.effective_type=='ancla' %}ancla{% endif %} {% if is_reflect %}reflect{% endif %} {% if item.done %}done{% endif %}"
+    {% set is_reflect_desktop = item.key in REFLECT_KEYS %}
+    {% set is_reflect_all = item.key in REFLECT_ALL_KEYS %}
+    <div class="sact {% if item.effective_type=='ancla' %}ancla{% endif %} {% if is_reflect_desktop %}reflect{% elif is_reflect_all %}reflect-all{% endif %} {% if item.done %}done{% endif %}"
          data-key="{{ item.key }}" style="--p-hue:{{ pillar_meta.get(item.pillar,{}).get('hue',200) }}"
          onclick="sessLogAct('{{ item.key }}', this)">
       <div class="schk"><svg viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8.5 9,2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -464,8 +475,8 @@
           <span class="spts">+{{ item.pts }}{% if item.ec > 0 %} · {{ item.ec }}EC{% endif %}</span>
           <span class="sptag">{{ pillar_meta.get(item.pillar,{}).get('name', item.pillar) }}</span>
         </div>
-        {% if is_reflect %}
-        <textarea class="sact-reflect" data-key="{{ item.key }}" placeholder="Escribe aquí tu reflexión…"
+        {% if is_reflect_desktop or is_reflect_all %}
+        <textarea class="sact-reflect" data-key="{{ item.key }}" placeholder="{{ REFLECT_PLACEHOLDERS.get(item.key, 'Escribe aquí tu reflexión…') }}"
           onclick="event.stopPropagation()" onblur="saveReflexion(this)">{{ item.reflexion or '' }}</textarea>
         {% endif %}
       </div>

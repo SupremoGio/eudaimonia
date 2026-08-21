@@ -35,11 +35,15 @@ SESSION_META = {
 # solo cambia de copy según esto, sigue leyendo eurythmia_session tal cual.
 EURYTHMIA_ANCLA_DAYS = {"tue", "sat"}
 
-# Touches reflexivos que aceptan texto libre además del checkbox (versión
-# desktop) — ver /api/reflexion. Guardar contenido no vacío marca el check
-# automáticamente si aún no estaba (ya se hizo la reflexión, cuenta como
-# cumplido); el checkbox se sigue pudiendo desmarcar a mano como siempre.
-REFLECT_KEYS = {"gratitud_diaria", "correccion_diaria", "sintesis_activa"}
+# Touches que aceptan texto libre además del checkbox — ver /api/reflexion.
+# Guardar contenido no vacío marca el check automáticamente si aún no
+# estaba (ya se hizo/definió, cuenta como cumplido); el checkbox se sigue
+# pudiendo desmarcar a mano como siempre. gratitud_diaria/correccion_diaria/
+# sintesis_activa son reflexiones de cierre de día (solo visibles en
+# desktop en la plantilla); mit (Most Important Task) es planeación de la
+# mañana y sí es editable también en mobile (ver REFLECT_ALL_KEYS en
+# templates/actividades/index.html).
+REFLECT_KEYS = {"gratitud_diaria", "correccion_diaria", "sintesis_activa", "mit"}
 
 
 def get_eurythmia_today():
