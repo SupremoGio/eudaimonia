@@ -2096,6 +2096,32 @@ def init_db():
                  "Podcast en idiomas -> solo 'any'; Comer fruta -> 'any'; Jugo verde -> mon,wed,sat; Outfit retirado.")
             )
 
+        # ── ACTA DIURNA — días de mes (equivalente a days_of_week pero para
+        # touches ligados a fechas del calendario, no del ciclo semanal).
+        # CSV de números de día (1-31) o el token especial "last" (último día
+        # real del mes — 28/29/30/31 según corresponda, ver eligible_today())
+        # para no depender de un número fijo que nunca ocurre en meses cortos.
+        try:
+            ad_cols3 = [r["name"] for r in db.execute("PRAGMA table_info(activity_defs)").fetchall()]
+            if "days_of_month" not in ad_cols3:
+                db.execute("ALTER TABLE activity_defs ADD COLUMN days_of_month TEXT")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] activity_defs days_of_month migration warning: {e}")
+
+        # ── ACTA DIURNA — "Ahorrar dinero (mensual)" solo tiene sentido
+        # revisarlo al cierre del mes (para saber si de verdad se ahorró),
+        # no cualquier día — se restringe al último día del mes.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='ahorrar_fin_de_mes'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET days_of_month='last' WHERE key='ahorrar'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("ahorrar_fin_de_mes",
+                 "'Ahorrar dinero (mensual)' se restringe al último día del mes (days_of_month='last').")
+            )
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,

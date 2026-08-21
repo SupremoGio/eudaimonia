@@ -3,6 +3,7 @@ Definiciones editables de Acta Diurna (tabla activity_defs) — sesión, pilar y
 tipo (ancla/touch/ocasional) por actividad, con soporte de "foco del mes"
 (pillar_focus) que promueve dinámicamente un touch a ancla sin tocar el dato base.
 """
+import calendar
 import re
 import time
 from datetime import timedelta
@@ -23,12 +24,23 @@ def weekday_code(d=None):
     return DAY_CODES[d.weekday()]
 
 
-def eligible_today(row, wd=None):
-    """True si el item no tiene days_of_week (todos los días) o si hoy está
-    en su lista — usado para anclas semanales rotativas (Fase 3)."""
-    wd = wd or weekday_code()
+def eligible_today(row, wd=None, d=None):
+    """True si el item no tiene restricciones de fecha, o si hoy (o la fecha
+    dada) cumple su days_of_week (anclas semanales rotativas, Fase 3) y su
+    days_of_month (touches ligados a fechas del calendario, ej. cierre de
+    mes) — 'last' en days_of_month significa el último día real del mes."""
+    d  = d or today_date()
+    wd = wd or weekday_code(d)
     dow = row["days_of_week"]
-    return (not dow) or (wd in dow.split(","))
+    if dow and wd not in dow.split(","):
+        return False
+    dom = row["days_of_month"]
+    if dom:
+        last_day = calendar.monthrange(d.year, d.month)[1]
+        allowed_days = {last_day if tok == "last" else int(tok) for tok in dom.split(",")}
+        if d.day not in allowed_days:
+            return False
+    return True
 
 
 def _slugify(label):

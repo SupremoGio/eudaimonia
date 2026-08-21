@@ -345,7 +345,7 @@ def get_daily_classification(date_str=None):
     # día si están programadas para ese día de la semana — evita que una
     # ancla de otro día (ej. Francés en lunes) infle "cuántas anclas hay hoy".
     wd_today       = adefs.DAY_CODES[d_obj.weekday()]
-    defs_today = {k: v for k, v in defs.items() if adefs.eligible_today(v, wd_today)}
+    defs_today = {k: v for k, v in defs.items() if adefs.eligible_today(v, wd_today, d_obj)}
 
     with get_db() as db:
         total_xp = db.execute(
