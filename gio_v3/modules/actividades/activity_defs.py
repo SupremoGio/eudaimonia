@@ -6,7 +6,7 @@ tipo (ancla/touch/ocasional) por actividad, con soporte de "foco del mes"
 import calendar
 import re
 import time
-from datetime import timedelta
+from datetime import date, timedelta
 from database import get_db
 from utils import today_str, today_date
 
@@ -26,9 +26,13 @@ def weekday_code(d=None):
 
 def eligible_today(row, wd=None, d=None):
     """True si el item no tiene restricciones de fecha, o si hoy (o la fecha
-    dada) cumple su days_of_week (anclas semanales rotativas, Fase 3) y su
+    dada) cumple su days_of_week (anclas semanales rotativas, Fase 3), su
     days_of_month (touches ligados a fechas del calendario, ej. cierre de
-    mes) — 'last' en days_of_month significa el último día real del mes."""
+    mes — 'last' significa el último día real del mes) y su interval_weeks
+    (touches que no son ni diarios ni semanales fijos, ej. "cada 3 semanas
+    en domingo" — interval_anchor es la fecha de la 1ª aparición; solo es
+    elegible si el día coincide con days_of_week Y cayó un múltiplo exacto
+    de interval_weeks semanas después del ancla)."""
     d  = d or today_date()
     wd = wd or weekday_code(d)
     dow = row["days_of_week"]
@@ -39,6 +43,11 @@ def eligible_today(row, wd=None, d=None):
         last_day = calendar.monthrange(d.year, d.month)[1]
         allowed_days = {last_day if tok == "last" else int(tok) for tok in dom.split(",")}
         if d.day not in allowed_days:
+            return False
+    weeks = row["interval_weeks"]
+    if weeks:
+        anchor = date.fromisoformat(row["interval_anchor"])
+        if d < anchor or (d - anchor).days % (weeks * 7) != 0:
             return False
     return True
 

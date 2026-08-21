@@ -2139,6 +2139,70 @@ def init_db():
         );
         """)
 
+        # ── ACTA DIURNA — "Ritual nocturno de preparación" pasa antes de las
+        # tarjetas de reflexión (Corrección diaria, que ahora ocupa el ancho
+        # completo con su textarea): quedaba una tarjeta compacta encajada
+        # entre dos de ancho completo, se veía desordenado.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='ritual_nocturno_antes_de_reflexion'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET sort_order=5 WHERE key='ritual_nocturno'")
+            db.execute("UPDATE activity_defs SET sort_order=6 WHERE key='correccion_diaria'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("ritual_nocturno_antes_de_reflexion",
+                 "'Ritual nocturno de preparación' se mueve antes de 'Corrección diaria' para agrupar las tarjetas de reflexión (ancho completo) juntas.")
+            )
+
+        # ── ACTA DIURNA — "<3.5h redes sociales" (redes_control) se retira:
+        # es redundante con el campo "Pantalla en redes" (screen_time_horas)
+        # que ya existe en la Revisión Semanal de Ataraxia.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='redes_control_retirado'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET active=0 WHERE key='redes_control'")
+            db.execute("DELETE FROM pillar_focus WHERE focus_key='redes_control'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("redes_control_retirado",
+                 "Retira '<3.5h redes sociales' del checklist — ya cubierto por 'Pantalla en redes' en la Revisión Semanal de Ataraxia.")
+            )
+
+        # ── ACTA DIURNA — intervalo de N semanas anclado a una fecha (para
+        # touches que no son ni diarios ni semanales fijos, ej. "cada 3
+        # semanas"). interval_weeks=NULL = sin restricción de intervalo
+        # (comportamiento actual, solo days_of_week si aplica). Con
+        # interval_weeks seteado, además de cumplir days_of_week, se exige
+        # que (fecha - interval_anchor).days sea múltiplo de interval_weeks*7
+        # — ver eligible_today() en modules/actividades/activity_defs.py.
+        try:
+            ad_cols4 = [r["name"] for r in db.execute("PRAGMA table_info(activity_defs)").fetchall()]
+            if "interval_weeks" not in ad_cols4:
+                db.execute("ALTER TABLE activity_defs ADD COLUMN interval_weeks INTEGER")
+                db.commit()
+            if "interval_anchor" not in ad_cols4:
+                db.execute("ALTER TABLE activity_defs ADD COLUMN interval_anchor TEXT")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] activity_defs interval_weeks migration warning: {e}")
+
+        # ── ACTA DIURNA — "Lavar carro" pasa de "cualquier momento, todos
+        # los días" a cada 3 semanas en domingo, empezando el domingo 23 de
+        # agosto de 2026 (ese domingo cuenta como la 1ª aparición; la
+        # siguiente es 3 domingos después: 13 sep, luego 4 oct, ...).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='lavar_carro_cada_3_domingos'"
+        ).fetchone():
+            db.execute(
+                "UPDATE activity_defs SET session='any', days_of_week='sun', "
+                "interval_weeks=3, interval_anchor='2026-08-23' WHERE key='lavar_carro'"
+            )
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("lavar_carro_cada_3_domingos",
+                 "'Lavar carro' se restringe a domingo cada 3 semanas, ancla 2026-08-23 (siguiente: 2026-09-13).")
+            )
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
