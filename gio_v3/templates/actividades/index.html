@@ -225,6 +225,20 @@
 .sact.ancla .schk{width:20px;height:20px;}
 .sact.ancla .slbl{font-size:var(--fs-md,13px);font-weight:600;}
 
+/* Touches reflexivos (gratitud/corrección/síntesis) — el textarea de texto
+   libre solo tiene sentido en escritorio, donde hay espacio para escribir
+   cómodo; en mobile la tarjeta queda igual que cualquier otro touch. */
+.sact-reflect{display:none;}
+@media (min-width:768px){
+  .sact.reflect{grid-column:1/-1;flex-direction:row;align-items:flex-start;gap:12px;}
+  .sact.reflect .schk{margin-top:2px;}
+  .sact-reflect{display:block;width:100%;margin-top:8px;padding:8px 10px;min-height:44px;resize:vertical;cursor:text;
+    border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);
+    font-size:var(--fs-xs);font-family:inherit;line-height:1.4;}
+  .sact-reflect:focus{outline:none;border-color:var(--p-c);}
+  .sact-reflect::placeholder{color:var(--dim);opacity:.7;}
+}
+
 .add-tile{display:flex;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--b);border-radius:11px;min-height:52px;cursor:pointer;color:var(--dim);font-size:var(--fs-xs);font-weight:600;}
 .add-tile:hover{border-color:var(--violet-l);color:var(--violet-l);}
 .add-form{grid-column:1/-1;background:var(--card2);border:1px solid var(--b2);border-radius:11px;padding:12px;display:flex;flex-direction:column;gap:8px;}
@@ -437,8 +451,10 @@
     {% endif %}
 
     <!-- Main Activity Tile -->
+    {% set REFLECT_KEYS = ['gratitud_diaria', 'correccion_diaria', 'sintesis_activa'] %}
     {% macro act_card(item) %}
-    <div class="sact {% if item.effective_type=='ancla' %}ancla{% endif %} {% if item.done %}done{% endif %}"
+    {% set is_reflect = item.key in REFLECT_KEYS %}
+    <div class="sact {% if item.effective_type=='ancla' %}ancla{% endif %} {% if is_reflect %}reflect{% endif %} {% if item.done %}done{% endif %}"
          data-key="{{ item.key }}" style="--p-hue:{{ pillar_meta.get(item.pillar,{}).get('hue',200) }}"
          onclick="sessLogAct('{{ item.key }}', this)">
       <div class="schk"><svg viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8.5 9,2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -448,6 +464,10 @@
           <span class="spts">+{{ item.pts }}{% if item.ec > 0 %} · {{ item.ec }}EC{% endif %}</span>
           <span class="sptag">{{ pillar_meta.get(item.pillar,{}).get('name', item.pillar) }}</span>
         </div>
+        {% if is_reflect %}
+        <textarea class="sact-reflect" data-key="{{ item.key }}" placeholder="Escribe aquí tu reflexión…"
+          onclick="event.stopPropagation()" onblur="saveReflexion(this)">{{ item.reflexion or '' }}</textarea>
+        {% endif %}
       </div>
       <button class="srm" onclick="event.stopPropagation(); delActivity('{{ item.key }}')" title="Quitar">×</button>
     </div>
@@ -713,6 +733,31 @@ async function sessLogAct(key, el) {
   } catch {
     if (el) { delete el.dataset.pending; el.classList.toggle('done', wasDone); }
     toast('No se pudo registrar', 'err');
+  }
+}
+
+async function saveReflexion(el) {
+  const key   = el.dataset.key;
+  const texto = el.value;
+  try {
+    const r = await fetch('/actividades/api/reflexion', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key, texto})
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    if (d.auto_checked) {
+      el.closest('.sact')?.classList.add('done');
+      toast(`+${d.gam?.xp ?? ''} XP registrado desde tu reflexión`, 'win');
+      if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
+      if (d.gam?.perfect_day)   toast('✦ DÍA PERFECTO +5 XP · +10 EC', 'win');
+      if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
+      lucide.createIcons();
+      _notifyDashboard();
+    }
+    updS(d.stats);
+    if (d.gam?.stats) updGam(d.gam.stats);
+  } catch {
+    toast('No se pudo guardar la reflexión', 'err');
   }
 }
 

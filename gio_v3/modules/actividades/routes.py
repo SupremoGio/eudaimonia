@@ -35,6 +35,12 @@ SESSION_META = {
 # solo cambia de copy según esto, sigue leyendo eurythmia_session tal cual.
 EURYTHMIA_ANCLA_DAYS = {"tue", "sat"}
 
+# Touches reflexivos que aceptan texto libre además del checkbox (versión
+# desktop) — ver /api/reflexion. Guardar contenido no vacío marca el check
+# automáticamente si aún no estaba (ya se hizo la reflexión, cuenta como
+# cumplido); el checkbox se sigue pudiendo desmarcar a mano como siempre.
+REFLECT_KEYS = {"gratitud_diaria", "correccion_diaria", "sintesis_activa"}
+
 
 def get_eurythmia_today():
     with get_db() as db:
@@ -144,6 +150,11 @@ def build_acta_diurna_context():
         done_today = {r["activity_key"] for r in db.execute(
             "SELECT activity_key FROM activity_logs WHERE date=?", (today_str(),)
         ).fetchall()}
+        reflexiones_today = {r["activity_key"]: r["texto"] for r in db.execute(
+            f"""SELECT activity_key, texto FROM reflexion_diaria
+                WHERE date=? AND activity_key IN ({",".join("?" * len(REFLECT_KEYS))})""",
+            (today_str(), *REFLECT_KEYS)
+        ).fetchall()}
 
     # Un item con session CSV (ej. "morning,afternoon,night") aparece varias
     # veces en grouped.values() — mismo objeto repetido, una por tarjeta. Se
@@ -162,6 +173,8 @@ def build_acta_diurna_context():
     by_pillar = {}
     for item in unique_items:
         item["done"] = item["key"] in done_today
+        if item["key"] in REFLECT_KEYS:
+            item["reflexion"] = reflexiones_today.get(item["key"], "")
         if item.get("cadence") == "weekly":
             item["week_count"] = week_counts.get(item["key"], 0)
         if item["type"] != "ocasional":
@@ -307,6 +320,52 @@ def log_activity():
     print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
     return jsonify({'action': 'added', 'pts': pts, 'xp': gam['xp'], 'ec': gam['ec'],
                     'log_id': log_id, 'stats': stats, 'gam': gam})
+
+
+@actividades_bp.route('/api/reflexion', methods=['POST'])
+def save_reflexion():
+    """Guarda el texto libre de un touch reflexivo (gratitud/corrección/
+    síntesis) para hoy. Si el texto no está vacío y el touch todavía no
+    estaba marcado, lo marca automáticamente (misma ruta de XP/EC que un
+    check manual) — ya se hizo la reflexión, cuenta como cumplido. El
+    checkbox se puede seguir desmarcando a mano como siempre; el texto no
+    se borra al hacerlo."""
+    key   = (request.json or {}).get('key')
+    texto = ((request.json or {}).get('texto') or '').strip()
+    if key not in REFLECT_KEYS:
+        return jsonify({'error': 'invalid key'}), 400
+
+    today = today_str()
+    with get_db() as db:
+        db.execute(
+            """INSERT INTO reflexion_diaria (activity_key, date, texto, updated_at)
+               VALUES (?,?,?,datetime('now'))
+               ON CONFLICT(activity_key, date)
+               DO UPDATE SET texto=excluded.texto, updated_at=excluded.updated_at""",
+            (key, today, texto)
+        )
+        db.commit()
+
+    gam = None
+    auto_checked = False
+    if texto:
+        act = adefs.get_by_key(key)
+        with get_db() as db:
+            existing = db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (key, today)
+            ).fetchone()
+        if not existing and act:
+            with get_db() as db:
+                cursor = db.execute(
+                    "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                    (key, today, act['pts'])
+                )
+                log_id = cursor.lastrowid
+                db.commit()
+            gam = engine.process_activity(key, act['pts'], act['cat'], log_id)
+            auto_checked = True
+
+    return jsonify({'ok': True, 'auto_checked': auto_checked, 'stats': get_dashboard_stats(), 'gam': gam})
 
 
 # ── CRUD de actividades (Acta Diurna) ───────────────────────────────────────

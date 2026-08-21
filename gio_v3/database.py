@@ -2122,6 +2122,23 @@ def init_db():
                  "'Ahorrar dinero (mensual)' se restringe al último día del mes (days_of_month='last').")
             )
 
+        # ── ACTA DIURNA — contenido de texto para los touches reflexivos
+        # (gratitud, corrección diaria, síntesis de aprendizaje). Fase 1:
+        # solo captura y persiste el texto (editable, un registro por
+        # key+fecha) para que una fase futura pueda armar un recuento
+        # mensual. No hay reporte mensual todavía.
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS reflexion_diaria (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            activity_key  TEXT NOT NULL,
+            date          TEXT NOT NULL,
+            texto         TEXT NOT NULL DEFAULT '',
+            created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(activity_key, date)
+        );
+        """)
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
