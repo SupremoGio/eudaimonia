@@ -416,7 +416,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
     <div class="hg-modal-title">Nuevo episodio médico</div>
 
     <label class="fl">Tipo</label>
-    <select class="fi" id="ep-tipo" onchange="toggleZona()">
+    <select class="fi" id="ep-tipo">
       <option value="enfermedad">Enfermedad</option>
       <option value="lesion">Lesión / Esguince</option>
       <option value="consulta">Consulta médica</option>
@@ -425,9 +425,9 @@ window.__MED_STATS__ = {{ stats | tojson }};
     <label class="fl" style="margin-top:10px;">Nombre / Diagnóstico</label>
     <input class="fi" id="ep-titulo" placeholder="Ej. Gripe, Esguince tobillo, Revisión anual…">
 
-    <div id="zona-row" style="display:none;margin-top:10px;">
+    <div id="zona-row" style="margin-top:10px;">
       <label class="fl">Zona del cuerpo</label>
-      <input class="fi" id="ep-zona" placeholder="Ej. Tobillo derecho, Espalda baja, Rodilla…">
+      <input class="fi" id="ep-zona" placeholder="Ej. Garganta, Estómago, Tobillo derecho, Espalda baja…">
     </div>
 
     <label class="fl" style="margin-top:10px;">Descripción (opcional)</label>
@@ -574,11 +574,6 @@ function openModal(key) {
 
 function closeModal(key) {
   document.getElementById('modal-'+key).classList.remove('open');
-}
-
-function toggleZona() {
-  const t = document.getElementById('ep-tipo').value;
-  document.getElementById('zona-row').style.display = t === 'lesion' ? '' : 'none';
 }
 
 // ── Filter ──────────────────────────────────────────────────────────────────
