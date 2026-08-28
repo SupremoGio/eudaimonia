@@ -1,6 +1,7 @@
 import os, uuid, urllib.request, json, ipaddress, logging
 from datetime import datetime
 from urllib.parse import urlparse
+from html import unescape
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from werkzeug.utils import secure_filename
 from database import get_db
@@ -9,6 +10,13 @@ from utils import clean_str, safe_float
 _log = logging.getLogger(__name__)
 
 guardarropa_bp = Blueprint('guardarropa', __name__, template_folder='../../templates')
+
+_BROWSER_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'es-MX,es;q=0.9,en;q=0.8',
+}
 
 UPLOAD_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'wardrobe')
 ALLOWED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.heic'}
@@ -291,9 +299,7 @@ def _extract_image_url(page_url):
     """Extrae la URL de imagen principal de una página HTML (og:image, twitter:image, etc.)."""
     import re
     _validate_url(page_url)
-    req = urllib.request.Request(page_url, headers={
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    })
+    req = urllib.request.Request(page_url, headers=_BROWSER_HEADERS)
     with urllib.request.urlopen(req, timeout=10) as resp:
         ct = resp.headers.get('Content-Type', '')
         if 'image' in ct:
@@ -332,7 +338,7 @@ def _extract_meta(html):
         for pat in patterns:
             m = re.search(pat, html, re.IGNORECASE | re.DOTALL)
             if m:
-                return m.group(1).strip()
+                return unescape(m.group(1).strip())
         return ''
 
     title = find(
@@ -359,6 +365,54 @@ def _extract_meta(html):
         r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
     )
     return {'title': title[:200], 'desc': desc[:400], 'price': price, 'brand': brand[:100], 'image': image}
+
+
+def _extract_jsonld_product(html):
+    """Busca datos estructurados schema.org/Product — suelen ser más confiables que los meta tags
+    en sitios que renderizan el resto de la página con JavaScript (muy común en e-commerce)."""
+    import re
+    for m in re.finditer(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        html, re.IGNORECASE | re.DOTALL
+    ):
+        try:
+            data = json.loads(m.group(1).strip())
+        except (json.JSONDecodeError, ValueError):
+            continue
+        blocks = data if isinstance(data, list) else [data]
+        expanded = []
+        for b in blocks:
+            if isinstance(b, dict) and isinstance(b.get('@graph'), list):
+                expanded.extend(b['@graph'])
+            else:
+                expanded.append(b)
+        for b in expanded:
+            if not isinstance(b, dict):
+                continue
+            types = b.get('@type')
+            types = types if isinstance(types, list) else [types]
+            if any(str(t).lower() == 'product' for t in types if t):
+                return b
+    return None
+
+
+def _jsonld_field(product, key):
+    val = product.get(key)
+    if isinstance(val, dict):
+        val = val.get('name') or val.get('url') or ''
+    elif isinstance(val, list) and val:
+        first = val[0]
+        val = first.get('name', '') if isinstance(first, dict) else first
+    return unescape(str(val).strip()) if val else ''
+
+
+def _jsonld_price(product):
+    offers = product.get('offers')
+    if isinstance(offers, list):
+        offers = offers[0] if offers else {}
+    if isinstance(offers, dict):
+        return str(offers.get('price') or offers.get('lowPrice') or '')
+    return ''
 
 
 def _parse_price(raw):
@@ -393,11 +447,9 @@ def parse_url():
 
     try:
         _validate_url(page_url)
-        req = urllib.request.Request(page_url, headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        })
+        req = urllib.request.Request(page_url, headers=_BROWSER_HEADERS)
         with urllib.request.urlopen(req, timeout=10) as resp:
-            html = resp.read(250_000).decode('utf-8', errors='ignore')
+            html = resp.read(300_000).decode('utf-8', errors='ignore')
     except ValueError as e:
         return jsonify({'ok': False, 'error': str(e)}), 400
     except Exception as e:
@@ -405,6 +457,16 @@ def parse_url():
         return jsonify({'ok': False, 'error': 'No se pudo acceder a la página'}), 400
 
     meta = _extract_meta(html)
+    # Los datos estructurados (JSON-LD) suelen ser más confiables que los meta tags,
+    # sobre todo en tiendas que renderizan el resto del contenido con JavaScript.
+    product = _extract_jsonld_product(html)
+    if product:
+        meta['title'] = _jsonld_field(product, 'name') or meta['title']
+        meta['desc']  = _jsonld_field(product, 'description') or meta['desc']
+        meta['brand'] = _jsonld_field(product, 'brand') or meta['brand']
+        meta['image'] = _jsonld_field(product, 'image') or meta['image']
+        meta['price'] = _jsonld_price(product) or meta['price']
+
     image = meta['image']
     if image.startswith('//'):
         image = 'https:' + image
@@ -414,6 +476,7 @@ def parse_url():
 
     result = {
         'ok': True,
+        'suficiente_info': True,
         'nombre': meta['title'][:120],
         'categoria': '',
         'subcategoria': '',
@@ -440,27 +503,36 @@ Categorías válidas: {', '.join(CATEGORIAS)}
 Ocasiones válidas: {', '.join(OCASIONES)}
 Temporadas válidas: {', '.join(TEMPORADAS)}
 
+Si el título/descripción es genérico y NO describe una prenda real (por ejemplo solo dice algo
+como "Producto", "Artículo", "Prenda de Vestir", el nombre de la tienda a secas, un mensaje de
+error o de bloqueo de acceso), responde con "suficiente_info":false y deja el resto de los campos
+vacíos o en 0 — NO inventes categoría, color ni ocasión sin evidencia real en el texto.
+
 Responde SOLO con este JSON (sin markdown, sin texto extra):
-{{"nombre":"nombre corto y claro de la prenda","categoria":"una de las categorías válidas","subcategoria":"detalle breve, ej. Oxford, Slim fit (vacío si no aplica)","marca":"marca si se detecta, vacío si no","color_name":"nombre del color principal en español si se puede inferir, vacío si no","color_hex":"código hex aproximado del color principal, ej #1a2b3c (vacío si no se puede inferir)","precio":numero_o_0,"ocasion":["una o más de las ocasiones válidas"],"temporada":"una de las temporadas válidas","notas":"detalle útil breve, vacío si no aplica"}}"""
+{{"suficiente_info":true,"nombre":"nombre corto y claro de la prenda","categoria":"una de las categorías válidas","subcategoria":"detalle breve, ej. Oxford, Slim fit (vacío si no aplica)","marca":"marca si se detecta, vacío si no","color_name":"nombre del color principal en español si se puede inferir, vacío si no","color_hex":"código hex aproximado del color principal, ej #1a2b3c (vacío si no se puede inferir)","precio":numero_o_0,"ocasion":["una o más de las ocasiones válidas"],"temporada":"una de las temporadas válidas","notas":"detalle útil breve, vacío si no aplica"}}"""
         try:
             raw = _extract_json(_gemini(prompt, max_tokens=512))
             ai = json.loads(raw)
-            if ai.get('nombre'):
-                result['nombre'] = str(ai['nombre'])[:120]
-            if ai.get('categoria') in CATEGORIAS:
-                result['categoria'] = ai['categoria']
-            result['subcategoria'] = clean_str(ai.get('subcategoria', ''), max_len=200)
-            if ai.get('marca'):
-                result['marca'] = clean_str(ai['marca'], max_len=100)
-            result['color_name'] = clean_str(ai.get('color_name', ''), max_len=60)
-            if _valid_hex(ai.get('color_hex')):
-                result['color_hex'] = ai['color_hex']
-            if ai.get('precio'):
-                result['precio'] = safe_float(ai.get('precio'), min_val=0.0)
-            result['ocasion'] = [o for o in (ai.get('ocasion') or []) if o in OCASIONES]
-            if ai.get('temporada') in TEMPORADAS:
-                result['temporada'] = ai['temporada']
-            result['notas'] = clean_str(ai.get('notas', ''), max_len=500)
+            result['suficiente_info'] = bool(ai.get('suficiente_info', True))
+            if result['suficiente_info']:
+                if ai.get('nombre'):
+                    result['nombre'] = str(ai['nombre'])[:120]
+                if ai.get('categoria') in CATEGORIAS:
+                    result['categoria'] = ai['categoria']
+                result['subcategoria'] = clean_str(ai.get('subcategoria', ''), max_len=200)
+                if ai.get('marca'):
+                    result['marca'] = clean_str(ai['marca'], max_len=100)
+                result['color_name'] = clean_str(ai.get('color_name', ''), max_len=60)
+                if _valid_hex(ai.get('color_hex')):
+                    result['color_hex'] = ai['color_hex']
+                if ai.get('precio'):
+                    result['precio'] = safe_float(ai.get('precio'), min_val=0.0)
+                result['ocasion'] = [o for o in (ai.get('ocasion') or []) if o in OCASIONES]
+                if ai.get('temporada') in TEMPORADAS:
+                    result['temporada'] = ai['temporada']
+                result['notas'] = clean_str(ai.get('notas', ''), max_len=500)
+            else:
+                result['notas'] = 'La página no dio suficiente información del producto — completa los datos manualmente.'
         except Exception as e:
             _log.warning('parse_url gemini fallback (usando solo meta tags): %s', e)
 
@@ -479,9 +551,7 @@ def fetch_url_photo(iid):
         # Si _extract_image_url devolvió solo la URL (página HTML), descargar la imagen
         if data is None:
             _validate_url(img_url)
-            req2 = urllib.request.Request(img_url, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            })
+            req2 = urllib.request.Request(img_url, headers=_BROWSER_HEADERS)
             with urllib.request.urlopen(req2, timeout=10) as resp2:
                 ct = resp2.headers.get('Content-Type', '')
                 data = resp2.read(5 * 1024 * 1024)
