@@ -423,6 +423,7 @@
       <div class="gm-row"><label class="fl">Link de referencia</label>
         <div style="display:flex;gap:8px;">
           <input class="fi" id="im-url" placeholder="https://flexi.com.mx/producto/... (página o imagen directa)" style="flex:1;" oninput="imUrlChanged()">
+          <button type="button" id="im-autofill-btn" onclick="autofillFromUrl()" style="display:none;padding:0 14px;border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);font-size:var(--fs-sm);cursor:pointer;white-space:nowrap;"><i data-lucide="sparkles" style="width:13px;height:13px;"></i> Autocompletar</button>
           <button type="button" id="im-url-btn" onclick="fetchPhotoFromUrl()" style="display:none;padding:0 14px;border-radius:8px;border:1px solid var(--b);background:var(--card);color:var(--text);font-size:var(--fs-sm);cursor:pointer;white-space:nowrap;"><i data-lucide="camera" style="width:13px;height:13px;"></i> Obtener foto</button>
         </div>
       </div>
@@ -924,8 +925,10 @@ function openItemModal(editId){
   document.getElementById('im-notas').value     = r?.notas || '';
   document.getElementById('im-url').value       = r?.url || '';
   document.getElementById('im-err').textContent = '';
+  _pendingFotoUrl = '';
   const urlBtn = document.getElementById('im-url-btn');
   urlBtn.style.display = (r?.id && r?.url) ? '' : 'none';
+  document.getElementById('im-autofill-btn').style.display = r?.url ? '' : 'none';
   // Occasions
   const ocSet = new Set((r?.ocasion||'').split(',').map(x=>x.trim()).filter(Boolean));
   _selectedOccs = [...ocSet];
@@ -948,10 +951,56 @@ function syncColorName(hex){
   if(p && !nameField.value) nameField.placeholder = p.name;
 }
 
+let _pendingFotoUrl = '';
+
 function imUrlChanged(){
   const val = document.getElementById('im-url').value.trim();
   const id  = document.getElementById('im-id').value;
   document.getElementById('im-url-btn').style.display = (val && id) ? '' : 'none';
+  document.getElementById('im-autofill-btn').style.display = val ? '' : 'none';
+}
+
+async function autofillFromUrl(){
+  const url = document.getElementById('im-url').value.trim();
+  if(!url) return;
+  const btn = document.getElementById('im-autofill-btn');
+  const orig = btn.innerHTML;
+  btn.textContent = '...';
+  btn.disabled = true;
+  document.getElementById('im-err').textContent = '';
+  try {
+    const res = await fetch('/guardarropa/api/parse-url', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({url})
+    });
+    const data = await res.json();
+    if(!data.ok){
+      document.getElementById('im-err').textContent = data.error || 'No se pudo leer la página';
+      return;
+    }
+    if(data.nombre)       document.getElementById('im-nombre').value = data.nombre;
+    if(data.categoria)    document.getElementById('im-categoria').value = data.categoria;
+    if(data.subcategoria) document.getElementById('im-sub').value = data.subcategoria;
+    if(data.marca)        document.getElementById('im-marca').value = data.marca;
+    if(data.color_name)   document.getElementById('im-color-name').value = data.color_name;
+    if(data.color_hex)    document.getElementById('im-color-hex').value = data.color_hex;
+    if(data.precio)       document.getElementById('im-precio').value = data.precio;
+    if(data.temporada)    document.getElementById('im-temp').value = data.temporada;
+    if(data.notas)        document.getElementById('im-notas').value = data.notas;
+    if(Array.isArray(data.ocasion) && data.ocasion.length){
+      _selectedOccs = [...data.ocasion];
+      document.querySelectorAll('#im-occ .gm-occ-pill').forEach(p=>{
+        p.classList.toggle('on', _selectedOccs.includes(p.dataset.oc));
+      });
+    }
+    _pendingFotoUrl = data.foto_url || '';
+    toast('Información completada ✓ revisa y guarda');
+  } catch(e){
+    document.getElementById('im-err').textContent = 'Error de conexión';
+  } finally {
+    btn.innerHTML = orig;
+    btn.disabled = false;
+  }
 }
 
 async function fetchPhotoFromUrl(){
@@ -1012,6 +1061,21 @@ async function saveItem(){
   } else {
     ALL_ITEMS.unshift(saved);
   }
+  if(_pendingFotoUrl && !saved.foto){
+    try{
+      const res2 = await fetch(`/guardarropa/api/item/${saved.id}/fetch-url-photo`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({url:_pendingFotoUrl})
+      });
+      const data2 = await res2.json();
+      if(data2.ok){
+        saved.foto = data2.filename;
+        const idx2 = ALL_ITEMS.findIndex(x=>x.id===saved.id);
+        if(idx2>=0) ALL_ITEMS[idx2].foto = data2.filename;
+      }
+    } catch(e){ /* la foto es opcional, seguir sin ella */ }
+  }
+  _pendingFotoUrl = '';
   closeItemModal();
   filterItems();
   toast(`"${saved.nombre}" guardado ✓`);

@@ -324,6 +324,149 @@ def _extract_image_url(page_url):
     raise ValueError('No se encontró imagen en la página')
 
 
+def _extract_meta(html):
+    """Extrae título, descripción, precio, marca e imagen de meta tags de una página de producto."""
+    import re
+
+    def find(*patterns):
+        for pat in patterns:
+            m = re.search(pat, html, re.IGNORECASE | re.DOTALL)
+            if m:
+                return m.group(1).strip()
+        return ''
+
+    title = find(
+        r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:title["\']',
+        r'<title>([^<]+)</title>',
+    )
+    desc = find(
+        r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:description["\']',
+        r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']+)["\']',
+    )
+    price = find(
+        r'<meta[^>]+property=["\']product:price:amount["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+property=["\']og:price:amount["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+itemprop=["\']price["\'][^>]+content=["\']([^"\']+)["\']',
+    )
+    brand = find(
+        r'<meta[^>]+property=["\']product:brand["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+itemprop=["\']brand["\'][^>]+content=["\']([^"\']+)["\']',
+    )
+    image = find(
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+    )
+    return {'title': title[:200], 'desc': desc[:400], 'price': price, 'brand': brand[:100], 'image': image}
+
+
+def _parse_price(raw):
+    import re
+    if not raw:
+        return 0.0
+    cleaned = re.sub(r'[^\d.]', '', raw)
+    try:
+        return float(cleaned) if cleaned else 0.0
+    except ValueError:
+        return 0.0
+
+
+_HEX_RE = None
+
+
+def _valid_hex(value):
+    import re
+    global _HEX_RE
+    if _HEX_RE is None:
+        _HEX_RE = re.compile(r'^#[0-9a-fA-F]{6}$')
+    return bool(value) and bool(_HEX_RE.match(value))
+
+
+@guardarropa_bp.route('/api/parse-url', methods=['POST'])
+def parse_url():
+    """Lee una página de producto y propone los campos de la prenda (nombre, categoría, marca, color, precio…)."""
+    d = request.get_json(force=True)
+    page_url = (d.get('url') or '').strip()
+    if not page_url:
+        return jsonify({'ok': False, 'error': 'URL vacía'}), 400
+
+    try:
+        _validate_url(page_url)
+        req = urllib.request.Request(page_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        })
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read(250_000).decode('utf-8', errors='ignore')
+    except ValueError as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
+    except Exception as e:
+        _log.error('parse_url fetch %s: %s', page_url, e)
+        return jsonify({'ok': False, 'error': 'No se pudo acceder a la página'}), 400
+
+    meta = _extract_meta(html)
+    image = meta['image']
+    if image.startswith('//'):
+        image = 'https:' + image
+    elif image.startswith('/'):
+        p = urlparse(page_url)
+        image = f'{p.scheme}://{p.netloc}{image}'
+
+    result = {
+        'ok': True,
+        'nombre': meta['title'][:120],
+        'categoria': '',
+        'subcategoria': '',
+        'marca': meta['brand'],
+        'color_name': '',
+        'color_hex': '',
+        'precio': _parse_price(meta['price']),
+        'ocasion': [],
+        'temporada': '',
+        'notas': '',
+        'foto_url': image,
+    }
+
+    if os.environ.get('GEMINI_API_KEY') and (meta['title'] or meta['desc']):
+        prompt = f"""Eres un asistente que estructura datos de productos de moda masculina para un armario digital.
+
+Texto extraído de una página de producto:
+Título: {meta['title']}
+Descripción: {meta['desc']}
+Marca detectada: {meta['brand'] or 'desconocida'}
+Precio detectado: {meta['price'] or 'desconocido'}
+
+Categorías válidas: {', '.join(CATEGORIAS)}
+Ocasiones válidas: {', '.join(OCASIONES)}
+Temporadas válidas: {', '.join(TEMPORADAS)}
+
+Responde SOLO con este JSON (sin markdown, sin texto extra):
+{{"nombre":"nombre corto y claro de la prenda","categoria":"una de las categorías válidas","subcategoria":"detalle breve, ej. Oxford, Slim fit (vacío si no aplica)","marca":"marca si se detecta, vacío si no","color_name":"nombre del color principal en español si se puede inferir, vacío si no","color_hex":"código hex aproximado del color principal, ej #1a2b3c (vacío si no se puede inferir)","precio":numero_o_0,"ocasion":["una o más de las ocasiones válidas"],"temporada":"una de las temporadas válidas","notas":"detalle útil breve, vacío si no aplica"}}"""
+        try:
+            raw = _extract_json(_gemini(prompt, max_tokens=512))
+            ai = json.loads(raw)
+            if ai.get('nombre'):
+                result['nombre'] = str(ai['nombre'])[:120]
+            if ai.get('categoria') in CATEGORIAS:
+                result['categoria'] = ai['categoria']
+            result['subcategoria'] = clean_str(ai.get('subcategoria', ''), max_len=200)
+            if ai.get('marca'):
+                result['marca'] = clean_str(ai['marca'], max_len=100)
+            result['color_name'] = clean_str(ai.get('color_name', ''), max_len=60)
+            if _valid_hex(ai.get('color_hex')):
+                result['color_hex'] = ai['color_hex']
+            if ai.get('precio'):
+                result['precio'] = safe_float(ai.get('precio'), min_val=0.0)
+            result['ocasion'] = [o for o in (ai.get('ocasion') or []) if o in OCASIONES]
+            if ai.get('temporada') in TEMPORADAS:
+                result['temporada'] = ai['temporada']
+            result['notas'] = clean_str(ai.get('notas', ''), max_len=500)
+        except Exception as e:
+            _log.warning('parse_url gemini fallback (usando solo meta tags): %s', e)
+
+    return jsonify(result)
+
+
 @guardarropa_bp.route('/api/item/<int:iid>/fetch-url-photo', methods=['POST'])
 def fetch_url_photo(iid):
     d   = request.get_json(force=True)
