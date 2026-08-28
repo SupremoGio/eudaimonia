@@ -994,7 +994,11 @@ async function autofillFromUrl(){
       });
     }
     _pendingFotoUrl = data.foto_url || '';
-    toast('Información completada ✓ revisa y guarda');
+    if(data.suficiente_info === false){
+      toast('La página no dio mucha información — completa lo que falte a mano');
+    } else {
+      toast('Información completada ✓ revisa y guarda');
+    }
   } catch(e){
     document.getElementById('im-err').textContent = 'Error de conexión';
   } finally {
