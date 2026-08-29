@@ -2203,6 +2203,30 @@ def init_db():
                  "'Lavar carro' se restringe a domingo cada 3 semanas, ancla 2026-08-23 (siguiente: 2026-09-13).")
             )
 
+        # ── ACTA DIURNA — "Registrar gastos" se retira del checklist diario
+        # (Tarde) y pasa a ser una tarea del bloque "Cierre Semanal" de
+        # Ataraxia (domingo), junto al cierre de la semana.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='registrar_gastos_a_ataraxia_cierre'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET active=0 WHERE key='registrar_gastos'")
+            db.execute("DELETE FROM pillar_focus WHERE focus_key='registrar_gastos'")
+            if not db.execute(
+                "SELECT id FROM rutina_bloques WHERE id='sun_cierre_gastos'"
+            ).fetchone():
+                db.execute(
+                    """INSERT INTO rutina_bloques
+                       (id, dia, bloque_id, nombre, tier, xp, ec, categoria, opcional, duracion_min, orden)
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                    ("sun_cierre_gastos", "domingo", "sun_cierre_bloque", "Registrar gastos",
+                     "progreso", 2, 1, "HEGEMONIKON", 0, 10, 15)
+                )
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("registrar_gastos_a_ataraxia_cierre",
+                 "'Registrar gastos' se retira del checklist diario (Tarde) y se agrega como tarea del bloque 'Cierre Semanal' de Ataraxia (domingo).")
+            )
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
