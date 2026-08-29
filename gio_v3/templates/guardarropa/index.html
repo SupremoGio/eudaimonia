@@ -53,12 +53,16 @@
 /* ── Item grid ───────────────────────────────────────── */
 .gd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
 .gd-card{background:var(--card);border:1px solid var(--b);border-radius:12px;overflow:hidden;
-  cursor:pointer;transition:all .2s;position:relative;}
+  cursor:pointer;transition:border-color .2s,box-shadow .2s,transform .2s;position:relative;
+  opacity:0;animation:cardIn .4s ease forwards;animation-delay:calc(var(--i,0)*30ms);}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@media (prefers-reduced-motion: reduce){.gd-card{animation:none;opacity:1;}}
 .gd-card:hover{border-color:var(--b2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.4);}
 .gd-card.active{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,168,76,.2);}
 /* Color header or photo */
 .gd-card-visual{aspect-ratio:4/5;overflow:hidden;position:relative;flex-shrink:0;background:rgba(0,0,0,.12);}
-.gd-card-visual img{width:100%;height:100%;object-fit:contain;}
+.gd-card-visual img{width:100%;height:100%;object-fit:contain;transition:transform .35s cubic-bezier(.16,1,.3,1);}
+.gd-card:hover .gd-card-visual img{transform:scale(1.045);}
 .gd-card-swatch{width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
 .gd-card-initial{font-family:var(--serif);font-size:1.8rem;font-weight:600;opacity:.35;color:#fff;}
 .gd-card-body{padding:10px 11px 11px;}
@@ -161,7 +165,10 @@
 .ot-stat-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
 .ot-filter-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
 .ot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
-.ot-card{background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;transition:all .2s;}
+.ot-card{background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s,transform .2s;
+  opacity:0;animation:cardIn .4s ease forwards;animation-delay:calc(var(--i,0)*40ms);}
+@media (prefers-reduced-motion: reduce){.ot-card{animation:none;opacity:1;}}
 .ot-card:hover{border-color:var(--b2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.4);}
 /* Photo mosaic header */
 .ot-mosaic{height:210px;display:grid;gap:2px;overflow:hidden;position:relative;cursor:pointer;}
@@ -171,7 +178,8 @@
 .ot-mosaic.c3 .ot-ms-0{grid-row:1/3;}
 .ot-mosaic.c4,.ot-mosaic.c5,.ot-mosaic.c6{grid-template-columns:1fr 1fr 1fr;}
 .ot-ms{background:var(--card2);overflow:hidden;display:flex;align-items:center;justify-content:center;}
-.ot-ms img{width:100%;height:100%;object-fit:cover;}
+.ot-ms img{width:100%;height:100%;object-fit:cover;transition:transform .35s cubic-bezier(.16,1,.3,1);}
+.ot-card:hover .ot-ms img{transform:scale(1.045);}
 .ot-ms-swatch{width:100%;height:100%;}
 .ot-mosaic-occ{position:absolute;bottom:6px;left:6px;font-size:var(--fs-xs);letter-spacing:.08em;
   text-transform:uppercase;background:rgba(0,0,0,.7);color:var(--mid);padding:2px 7px;
@@ -429,6 +437,10 @@
 
 <!-- ══════════════════ TAB: OUTFITS ══════════════════ -->
 <div id="section-outfits" style="display:none;">
+
+  <div class="intel-intro">
+    Repetir un outfit no es un fracaso: es la prueba de que tu armario funciona. Estas cifras te dicen si de verdad estás rotando tus looks o si tienes favoritos acumulando polvo — pásale el mouse a cualquiera para verlo completo antes de decidir.
+  </div>
 
   <!-- Stats bar -->
   <div class="ot-stats-bar" id="ot-stats-bar">
@@ -850,10 +862,10 @@ function renderGrid(){
     lucide.createIcons();
     return;
   }
-  grid.innerHTML = _items.map(r=>itemCardHTML(r)).join('');
+  grid.innerHTML = _items.map((r,i)=>itemCardHTML(r,i)).join('');
 }
 
-function itemCardHTML(r){
+function itemCardHTML(r,i=0){
   const src = r.foto ? `/guardarropa/photos/${esc(r.foto)}` : (r.url || '');
   const swatch = `<div class="gd-card-swatch" style="display:none;background:${esc(r.color_hex||'#333')};"><span class="gd-card-initial">${esc(r.nombre[0]?.toUpperCase()||'?')}</span></div>`;
   const visual = src
@@ -864,7 +876,7 @@ function itemCardHTML(r){
     : swatch.replace('display:none;','');
   const estadoClass=`chip-estado-${r.estado}`;
   const tempChip=r.temporada&&r.temporada!=='todo'?`<span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">${esc(r.temporada)}</span>`:'';
-  return `<div class="gd-card${_activeItemId===r.id?' active':''}" id="icard-${r.id}" onclick="openItemDetail(${r.id})">
+  return `<div class="gd-card${_activeItemId===r.id?' active':''}" id="icard-${r.id}" style="--i:${Math.min(i,24)};" onclick="openItemDetail(${r.id})">
     <div class="gd-card-visual">
       ${visual}
       <div class="gd-card-quick">
@@ -1487,12 +1499,12 @@ function renderOutfitsGrid(){
     return;
   }
 
-  grid.innerHTML = list.map(o=>{
+  grid.innerHTML = list.map((o,i)=>{
     const mosaic = _buildMosaic(o.items||[]);
     const stars = `${'★'.repeat(o.rating||0)}${'☆'.repeat(5-(o.rating||0))}`;
     const uso = o.veces_usado ? `${o.veces_usado}× usado` : 'Nunca usado';
     const lastUso = o.ultimo_uso ? `Último: ${o.ultimo_uso}` : '';
-    return `<div class="ot-card" id="ocard-${o.id}">
+    return `<div class="ot-card" id="ocard-${o.id}" style="--i:${Math.min(i,24)};">
       <div style="position:relative;" onclick="openOutfitView(${o.id})">${mosaic}
         ${o.ocasion?`<div class="ot-mosaic-occ">${esc(o.ocasion)}</div>`:''}
         <div class="ot-mosaic-view">
