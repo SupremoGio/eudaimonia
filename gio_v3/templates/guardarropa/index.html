@@ -22,8 +22,32 @@
   background:var(--card);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;white-space:nowrap;}
 .cat-pill:hover,.cat-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
 
+/* ── Store-style department navigation — "shop by department" instead of
+   a wall of 19 flat category chips wrapping across two lines. ──────── */
+.gd-dept-bar{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--b);
+  padding-bottom:12px;margin-bottom:10px;}
+.gd-dept-pill{padding:8px 16px;border-radius:100px;font-size:var(--fs-sm);font-weight:500;
+  background:none;border:1px solid transparent;color:var(--mid);cursor:pointer;transition:all .16s;white-space:nowrap;}
+.gd-dept-pill:hover:not(.on){color:var(--text);border-color:var(--b);}
+.gd-dept-pill.on{background:var(--text);color:var(--bg);}
+.gd-dept-count{opacity:.55;font-size:var(--fs-xs);margin-left:2px;}
+.gd-dept-pill.on .gd-dept-count{opacity:.7;}
+.gd-subcat-bar{display:flex;gap:6px;flex-wrap:wrap;min-height:1px;margin-bottom:16px;}
+.gd-subcat-bar:empty{margin-bottom:0;}
+
+/* Result count + sort — the toolbar row every store catalog has ────── */
+.gd-toolbar2{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  flex-wrap:wrap;margin-bottom:14px;}
+.gd-result-count{font-size:var(--fs-sm);color:var(--dim);}
+.gd-sort{background:var(--card);border:1px solid var(--b);border-radius:8px;
+  padding:7px 30px 7px 12px;color:var(--text);font-family:var(--sans);font-size:var(--fs-sm);
+  cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8578' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;background-size:14px;transition:border-color .14s;}
+.gd-sort:focus{border-color:var(--gold);}
+
 /* ── Shell: grid + detail ────────────────────────────── */
-.gd-shell{display:grid;grid-template-columns:1fr 400px;gap:18px;align-items:start;}
+.gd-shell{display:grid;grid-template-columns:1fr 420px;gap:20px;align-items:start;}
 @media(max-width:920px){.gd-shell{grid-template-columns:1fr;}}
 
 /* ── Item grid ───────────────────────────────────────── */
@@ -47,12 +71,17 @@
 .chip-estado-bueno   {background:rgba(201,168,76,.08);border-color:rgba(201,168,76,.2);color:var(--gold);}
 .chip-estado-regular {background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);}
 .chip-estado-donar   {background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.2);color:var(--red);}
-.gd-card-meta{font-size:var(--fs-xs);color:var(--dim);display:flex;gap:8px;}
-.gd-card-fav{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.55);
-  border:none;border-radius:6px;padding:3px;cursor:pointer;color:rgba(255,255,255,.5);
-  display:flex;align-items:center;transition:color .14s;backdrop-filter:blur(4px);}
-.gd-card-fav.on{color:var(--gold);}
-.gd-card-fav svg{width:12px;height:12px;}
+.gd-card-meta{font-size:var(--fs-xs);color:var(--dim);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.gd-card-price{color:var(--text);font-weight:600;font-size:var(--fs-sm);}
+/* Hover quick-action — jump straight to editing without opening the detail
+   panel first, the shortcut a store's own catalog admin view would have. */
+.gd-card-quick{position:absolute;top:8px;right:8px;opacity:0;transition:opacity .16s;z-index:2;}
+.gd-card:hover .gd-card-quick{opacity:1;}
+.gd-card-quick button{width:26px;height:26px;border-radius:7px;border:none;background:rgba(0,0,0,.55);
+  color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px);
+  transition:background .14s;}
+.gd-card-quick button:hover{background:rgba(0,0,0,.8);color:var(--gold);}
+.gd-card-quick svg{width:13px;height:13px;}
 
 /* ── Detail panel ────────────────────────────────────── */
 .gd-detail{background:var(--card);border:1px solid var(--b);border-radius:14px;
@@ -81,6 +110,16 @@
 .gd-dv-dropzone svg{width:28px;height:28px;opacity:.8;}
 /* Detail body */
 .gd-db{padding:16px 18px;}
+/* Browse product-to-product without returning to the grid — the "organic
+   navigation" a store's own PDP gives you between items in the same list. */
+.gd-db-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;
+  padding-bottom:12px;border-bottom:1px solid var(--b);}
+.gd-db-nav-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--b);background:var(--card2);
+  color:var(--mid);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .14s;flex-shrink:0;}
+.gd-db-nav-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+.gd-db-nav-btn:disabled{opacity:.3;cursor:not-allowed;}
+.gd-db-nav-btn svg{width:13px;height:13px;}
+.gd-db-nav-count{font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);text-align:center;}
 .gd-db-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
 .gd-db-name{font-family:var(--serif);font-size:1.3rem;font-weight:600;color:var(--text);line-height:1.2;margin-bottom:4px;}
 .gd-db-brand{font-size:var(--fs-sm);color:var(--mid);margin-bottom:12px;}
@@ -322,30 +361,30 @@
 
 <!-- ══════════════════ TAB: ARMARIO ══════════════════ -->
 <div id="section-armario">
-  <div class="gd-toolbar">
-    <div class="gd-search-wrap">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input class="gd-search" id="arm-search" placeholder="Buscar prenda, marca…" oninput="filterItems()">
-    </div>
-    <button class="cat-pill on" data-cat="" onclick="setCat(this,'')">Todas</button>
-    {% for cat in categorias %}
-    <button class="cat-pill" data-cat="{{ cat }}" onclick="setCat(this,'{{ cat }}')">{{ cat }}</button>
-    {% endfor %}
+  <div class="gd-search-wrap" style="max-width:380px;margin-bottom:14px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input class="gd-search" id="arm-search" placeholder="Buscar prenda, marca…" oninput="filterItems()">
   </div>
+
+  <!-- "Shop by department" — replaces the old wall of 19 flat category
+       chips. Populated by JS (renderDeptBar/renderSubcatBar) since the
+       grouping logic lives client-side. -->
+  <div class="gd-dept-bar" id="gd-dept-bar"></div>
+  <div class="gd-subcat-bar" id="gd-subcat-bar"></div>
 
   <div class="gd-shell">
     <div>
-      <div class="gd-grid" id="gd-grid">
-        {% for item in items %}{{ item_card(item) }}{% endfor %}
-        {% if not items %}
-        <div style="grid-column:1/-1;">
-          {% set empty_icon = 'shirt' %}
-          {% set empty_title = 'Tu armario está vacío' %}
-          {% set empty_desc = 'Añade tu primera prenda.' %}
-          {% include '_partials/empty.html' %}
-        </div>
-        {% endif %}
+      <div class="gd-toolbar2">
+        <div class="gd-result-count" id="gd-result-count"></div>
+        <select class="gd-sort" id="gd-sort" onchange="filterItems()">
+          <option value="recientes">Más recientes</option>
+          <option value="precio_desc">Precio: mayor a menor</option>
+          <option value="precio_asc">Precio: menor a mayor</option>
+          <option value="usos_desc">Más usadas</option>
+          <option value="nombre">Nombre A–Z</option>
+        </select>
       </div>
+      <div class="gd-grid" id="gd-grid"></div>
     </div>
 
     <!-- Detail panel -->
@@ -586,31 +625,9 @@
 {% endblock %}
 
 {# ── Jinja macros ───────────────────────────────────── #}
-{% macro item_card(item) %}
-<div class="gd-card" id="icard-{{ item.id }}" onclick="openItemDetail({{ item.id }})">
-  <div class="gd-card-visual">
-    {% if item.foto %}
-    <img src="/guardarropa/photos/{{ item.foto }}" alt="{{ item.nombre }}" loading="lazy">
-    {% else %}
-    <div class="gd-card-swatch" style="background:{{ item.color_hex }};">
-      <span class="gd-card-initial">{{ item.nombre[0]|upper }}</span>
-    </div>
-    {% endif %}
-  </div>
-  <div class="gd-card-body">
-    <div class="gd-card-cat">{{ item.categoria }}</div>
-    <div class="gd-card-name" title="{{ item.nombre }}">{{ item.nombre }}</div>
-    <div class="gd-card-chips">
-      <span class="gd-chip chip-estado-{{ item.estado }}">{{ item.estado }}</span>
-      {% if item.temporada != 'todo' %}<span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">{{ item.temporada }}</span>{% endif %}
-    </div>
-    <div class="gd-card-meta">
-      <span>{{ item.veces_usado }}× uso</span>
-      {% if item.precio %}<span>${{ item.precio|int }}</span>{% endif %}
-    </div>
-  </div>
-</div>
-{% endmacro %}
+{# item_card() removed: the Armario grid is now rendered entirely client-side
+   (itemCardHTML() in the script block below) so there's a single source of
+   truth for the card markup instead of two copies drifting apart. #}
 
 {% macro outfit_card(o) %}
 <div class="ot-card" id="ocard-{{ o.id }}" onclick="editOutfitById({{ o.id }})">
@@ -708,26 +725,94 @@ function switchTab(t){
   if(t==='outfits') renderOutfitsGrid();
 }
 
-// ── Category filter ───────────────────────────────────────────────────────────
-function setCat(btn, cat){
-  document.querySelectorAll('.cat-pill').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  _activeCat = cat;
+// ── Department / category filter — "shop by department" ───────────────────────
+// Groups the flat CATEGORIA_ORDER list into store-style departments so the
+// toolbar isn't a wall of 19 chips. Adjust the `cats` lists if a category is
+// ever added/renamed in modules/guardarropa/routes.py (CATEGORIAS).
+const DEPARTMENTS = [
+  {key:'',           label:'Todo',            cats:null},
+  {key:'superior',   label:'Ropa Superior',   cats:['Camisa','Camiseta','Polo','Sudadera','Suéter']},
+  {key:'inferior',   label:'Ropa Inferior',   cats:['Pantalón','Jeans','Pants','Short']},
+  {key:'exterior',   label:'Sacos y Trajes',  cats:['Blazer / Saco','Chamarra / Abrigo','Traje / Conjunto']},
+  {key:'calzado',    label:'Calzado',         cats:['Zapatos formales','Zapatos casuales','Sneakers','Botas','Sandalias']},
+  {key:'accesorios', label:'Accesorios',      cats:['Calcetas','Accesorio']},
+];
+let _activeDept = '';
+
+function _deptCount(dept){
+  return dept.cats ? ALL_ITEMS.filter(i=>dept.cats.includes(i.categoria)).length : ALL_ITEMS.length;
+}
+
+function renderDeptBar(){
+  document.getElementById('gd-dept-bar').innerHTML = DEPARTMENTS.map(d=>
+    `<button class="gd-dept-pill${_activeDept===d.key?' on':''}" onclick="setDept('${d.key}')">
+      ${esc(d.label)} <span class="gd-dept-count">${_deptCount(d)}</span>
+    </button>`
+  ).join('');
+}
+
+function renderSubcatBar(){
+  const bar  = document.getElementById('gd-subcat-bar');
+  const dept = DEPARTMENTS.find(d=>d.key===_activeDept);
+  if(!dept.cats){ bar.innerHTML=''; return; }
+  const cats = CATEGORIA_ORDER.filter(c=>dept.cats.includes(c) && ALL_ITEMS.some(i=>i.categoria===c));
+  bar.innerHTML = `<button class="cat-pill${!_activeCat?' on':''}" onclick="setSubcat('')">Todas</button>` +
+    cats.map(c=>`<button class="cat-pill${_activeCat===c?' on':''}" onclick="setSubcat('${esc(c)}')">${esc(c)}</button>`).join('');
+}
+
+function setDept(key){
+  _activeDept = key;
+  _activeCat  = '';
+  renderDeptBar();
+  renderSubcatBar();
   filterItems();
 }
+
+function setSubcat(cat){
+  _activeCat = cat;
+  renderSubcatBar();
+  filterItems();
+}
+
 function filterItems(){
-  const q = document.getElementById('arm-search').value.trim().toLowerCase();
+  const q    = document.getElementById('arm-search').value.trim().toLowerCase();
+  const dept = DEPARTMENTS.find(d=>d.key===_activeDept);
+
   _items = ALL_ITEMS.filter(r=>{
+    const md = !dept.cats || dept.cats.includes(r.categoria);
     const mc = !_activeCat || r.categoria===_activeCat;
     const mq = !q || r.nombre.toLowerCase().includes(q) || (r.marca||'').toLowerCase().includes(q);
-    return mc && mq;
+    return md && mc && mq;
   });
+
+  const sortKey = document.getElementById('gd-sort').value;
+  const sorters = {
+    recientes:   (a,b)=>(b.created_at||'').localeCompare(a.created_at||''),
+    precio_desc: (a,b)=>(b.precio||0)-(a.precio||0),
+    precio_asc:  (a,b)=>(a.precio||0)-(b.precio||0),
+    usos_desc:   (a,b)=>(b.veces_usado||0)-(a.veces_usado||0),
+    nombre:      (a,b)=>a.nombre.localeCompare(b.nombre),
+  };
+  _items.sort(sorters[sortKey] || sorters.recientes);
+
+  document.getElementById('gd-result-count').textContent =
+    `${_items.length} prenda${_items.length===1?'':'s'}`;
+
   renderGrid();
 }
 
 // ── Grid render ───────────────────────────────────────────────────────────────
 function renderGrid(){
   const grid=document.getElementById('gd-grid');
+  if(!ALL_ITEMS.length){
+    grid.innerHTML=`<div class="empty-rich" style="grid-column:1/-1">
+      <div class="empty-icon-box"><i data-lucide="shirt"></i></div>
+      <div class="empty-title">Tu armario está vacío</div>
+      <div class="empty-desc">Añade tu primera prenda para empezar a construir tu catálogo.</div>
+      <button class="empty-cta" onclick="openItemModal()">+ Añadir prenda</button></div>`;
+    lucide.createIcons();
+    return;
+  }
   if(!_items.length){
     grid.innerHTML=`<div class="empty-rich" style="grid-column:1/-1">
       <div class="empty-icon-box"><i data-lucide="search-x"></i></div>
@@ -751,7 +836,14 @@ function itemCardHTML(r){
   const estadoClass=`chip-estado-${r.estado}`;
   const tempChip=r.temporada&&r.temporada!=='todo'?`<span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">${esc(r.temporada)}</span>`:'';
   return `<div class="gd-card${_activeItemId===r.id?' active':''}" id="icard-${r.id}" onclick="openItemDetail(${r.id})">
-    <div class="gd-card-visual">${visual}</div>
+    <div class="gd-card-visual">
+      ${visual}
+      <div class="gd-card-quick">
+        <button onclick="event.stopPropagation();openItemModal(${r.id})" title="Editar prenda">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        </button>
+      </div>
+    </div>
     <div class="gd-card-body">
       <div class="gd-card-cat">${esc(r.categoria)}</div>
       <div class="gd-card-name" title="${esc(r.nombre)}">${esc(r.nombre)}</div>
@@ -760,11 +852,18 @@ function itemCardHTML(r){
       </div>
       <div class="gd-card-meta">
         <span>${r.veces_usado}× uso</span>
-        ${r.precio?`<span>$${Math.round(r.precio)}</span>`:''}
+        ${r.precio?`<span class="gd-card-price">$${Math.round(r.precio)}</span>`:''}
       </div>
     </div>
   </div>`;
 }
+
+// Initial paint of the Armario catalog (departments, subcats, grid, count) —
+// the grid used to be server-rendered by a Jinja macro kept in lockstep by
+// hand; now itemCardHTML() above is the only place that markup lives.
+renderDeptBar();
+renderSubcatBar();
+filterItems();
 
 // ── Item Detail panel ─────────────────────────────────────────────────────────
 function openItemDetail(id){
@@ -776,6 +875,23 @@ function openItemDetail(id){
   const psych = matchColor(r.color_hex);
   const cpu = r.precio && r.veces_usado>0 ? `$${(r.precio/r.veces_usado).toFixed(0)}` : '—';
   const occs = (r.ocasion||'').split(',').filter(Boolean).map(o=>`<span class="gd-chip" style="background:rgba(201,168,76,.06);border-color:rgba(201,168,76,.18);color:var(--gold);">${esc(o.trim())}</span>`).join('');
+
+  // Browse to the previous/next item within the current filtered+sorted list
+  // — so once you're looking at one piece you can flip through the rest
+  // without bouncing back to the grid, the way a store's own PDP works.
+  const idx    = _items.findIndex(x=>x.id===id);
+  const prevId = idx>0 ? _items[idx-1].id : null;
+  const nextId = idx>=0 && idx<_items.length-1 ? _items[idx+1].id : null;
+  const navHtml = idx>=0 ? `
+    <div class="gd-db-nav">
+      <button class="gd-db-nav-btn" ${prevId===null?'disabled':''} onclick="openItemDetail(${prevId})" aria-label="Prenda anterior">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="gd-db-nav-count">${idx+1} / ${_items.length}</span>
+      <button class="gd-db-nav-btn" ${nextId===null?'disabled':''} onclick="openItemDetail(${nextId})" aria-label="Prenda siguiente">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>` : '';
   const detailSrc = r.foto ? `/guardarropa/photos/${esc(r.foto)}` : (r.url || '');
   const detailSwatch = `<div class="gd-dv-swatch" style="display:none;background:${esc(r.color_hex||'#333')};"><span class="gd-dv-initial">${esc(r.nombre[0]?.toUpperCase()||'?')}</span></div>`;
   const visual = detailSrc
@@ -804,6 +920,7 @@ function openItemDetail(id){
       </div>
     </div>
     <div class="gd-db">
+      ${navHtml}
       <div class="gd-db-badges" style="margin-bottom:8px;">
         <span class="gd-chip chip-estado-${esc(r.estado)}">${esc(r.estado)}</span>
         <span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">${esc(r.temporada)}</span>
