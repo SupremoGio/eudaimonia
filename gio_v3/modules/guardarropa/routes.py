@@ -1,9 +1,10 @@
-import os, uuid, urllib.request, json, ipaddress, logging
+import os, uuid, urllib.request, json, ipaddress, logging, io
 from datetime import datetime
 from urllib.parse import urlparse
 from html import unescape
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from werkzeug.utils import secure_filename
+from PIL import Image, ImageOps
 from database import get_db
 from utils import clean_str, safe_float
 
@@ -21,6 +22,30 @@ _BROWSER_HEADERS = {
 UPLOAD_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'wardrobe')
 ALLOWED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.heic'}
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Fotos de prendas se muestran siempre como miniaturas (grid, mosaico de
+# outfits) — guardar el archivo tal cual sale de la cámara del celular
+# (varios MB a resolución completa) es lo que hace que tarden segundos en
+# cargar. Se re-comprime a JPEG con un lado máximo de 1600px antes de guardar.
+_MAX_PHOTO_DIM = 1600
+_PHOTO_QUALITY = 85
+
+
+def _optimize_photo(data: bytes, dest_path: str) -> bool:
+    """Redimensiona/comprime `data` como JPEG en `dest_path`. True si tuvo éxito.
+    Falla en formatos que Pillow no puede decodificar de raíz (p.ej. HEIC sin
+    plugin) — el llamador debe guardar los bytes originales en ese caso."""
+    try:
+        img = Image.open(io.BytesIO(data))
+        img = ImageOps.exif_transpose(img)  # corrige la orientación de fotos de celular
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        img.thumbnail((_MAX_PHOTO_DIM, _MAX_PHOTO_DIM), Image.LANCZOS)
+        img.save(dest_path, 'JPEG', quality=_PHOTO_QUALITY, optimize=True)
+        return True
+    except Exception as e:
+        _log.warning('No se pudo optimizar la foto, se guarda el original: %s', e)
+        return False
 
 CATEGORIAS = [
     'Camisa', 'Camiseta', 'Polo', 'Sudadera', 'Suéter',
@@ -258,8 +283,14 @@ def upload_photo(iid):
         ext = _mime_map.get((f.content_type or '').split(';')[0].strip(), '')
     if ext not in ALLOWED_EXT:
         return jsonify({'ok': False, 'error': 'Tipo no permitido'}), 400
-    filename = uuid.uuid4().hex + ext
-    f.save(os.path.join(UPLOAD_DIR, filename))
+
+    data = f.read()
+    filename = uuid.uuid4().hex + '.jpg'
+    if not _optimize_photo(data, os.path.join(UPLOAD_DIR, filename)):
+        # Formato que Pillow no pudo decodificar (p.ej. HEIC) — se guarda tal cual
+        filename = uuid.uuid4().hex + ext
+        with open(os.path.join(UPLOAD_DIR, filename), 'wb') as out:
+            out.write(data)
     with get_db() as db:
         # remove old photo file if exists
         old = db.execute("SELECT foto FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
@@ -556,13 +587,14 @@ def fetch_url_photo(iid):
                 ct = resp2.headers.get('Content-Type', '')
                 data = resp2.read(5 * 1024 * 1024)
 
-        if   'png'  in (ct or ''): ext = '.png'
-        elif 'webp' in (ct or ''): ext = '.webp'
-        else:                      ext = '.jpg'
-
-        filename = uuid.uuid4().hex + ext
-        with open(os.path.join(UPLOAD_DIR, filename), 'wb') as f:
-            f.write(data)
+        filename = uuid.uuid4().hex + '.jpg'
+        if not _optimize_photo(data, os.path.join(UPLOAD_DIR, filename)):
+            if   'png'  in (ct or ''): ext = '.png'
+            elif 'webp' in (ct or ''): ext = '.webp'
+            else:                      ext = '.jpg'
+            filename = uuid.uuid4().hex + ext
+            with open(os.path.join(UPLOAD_DIR, filename), 'wb') as f:
+                f.write(data)
         with get_db() as db:
             old = db.execute("SELECT foto FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
             if old and old['foto']:
