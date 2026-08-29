@@ -125,7 +125,7 @@
 .ot-card{background:var(--card);border:1px solid var(--b);border-radius:14px;overflow:hidden;transition:all .2s;}
 .ot-card:hover{border-color:var(--b2);transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.4);}
 /* Photo mosaic header */
-.ot-mosaic{height:110px;display:grid;gap:2px;overflow:hidden;position:relative;}
+.ot-mosaic{height:210px;display:grid;gap:2px;overflow:hidden;position:relative;cursor:pointer;}
 .ot-mosaic.c1{grid-template-columns:1fr;}
 .ot-mosaic.c2{grid-template-columns:1fr 1fr;}
 .ot-mosaic.c3{grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;}
@@ -137,6 +137,17 @@
 .ot-mosaic-occ{position:absolute;bottom:6px;left:6px;font-size:var(--fs-xs);letter-spacing:.08em;
   text-transform:uppercase;background:rgba(0,0,0,.7);color:var(--mid);padding:2px 7px;
   border-radius:5px;backdrop-filter:blur(4px);}
+/* Hover affordance: the mosaic alone (tiny crops) can't tell you if an outfit
+   works — this is what surfaces "look closer before you commit" as an
+   explicit, discoverable action instead of a bare click nobody expects. */
+.ot-mosaic-view{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:14px;background:linear-gradient(to top,rgba(0,0,0,.6),transparent 55%);
+  opacity:0;transition:opacity .18s;pointer-events:none;}
+.ot-card:hover .ot-mosaic-view{opacity:1;}
+.ot-mosaic-view span{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);
+  letter-spacing:.1em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.45);
+  border:1px solid rgba(255,255,255,.25);padding:5px 12px;border-radius:100px;}
+.ot-mosaic-view svg{width:12px;height:12px;flex-shrink:0;}
 /* Card body */
 .ot-card-body{padding:12px 14px;}
 .ot-card-name{font-size:.8rem;color:var(--text);font-weight:600;margin-bottom:4px;
@@ -270,6 +281,23 @@
 .star-btn.on{color:var(--gold);}
 .gm-err{color:var(--red);font-size:var(--fs-sm);min-height:14px;margin-top:6px;}
 .gm-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+
+/* ── Outfit view modal — a real flat-lay, not a strip of thumbnails ──── */
+.gm-box.wide{width:660px;}
+.ov-subtitle{font-size:var(--fs-sm);color:var(--dim);margin-top:5px;}
+.ov-subtitle .stars{color:var(--gold);letter-spacing:-1px;}
+.gm-sec-row{display:flex;align-items:center;justify-content:space-between;}
+.ov-flatlay{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:12px;margin-bottom:6px;}
+.ov-piece-visual{aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:var(--card2);
+  border:1px solid var(--b);display:flex;align-items:center;justify-content:center;}
+.ov-piece-visual img{width:100%;height:100%;object-fit:contain;}
+.ov-piece-initial{font-family:var(--serif);font-size:1.6rem;font-weight:600;opacity:.4;color:#fff;}
+.ov-piece-cat{font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:7px;}
+.ov-piece-name{font-size:var(--fs-sm);color:var(--text);line-height:1.3;margin-top:1px;
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.ov-notes{background:var(--card2);border:1px solid var(--b);border-radius:10px;padding:11px 14px;
+  font-size:var(--fs-sm);color:var(--mid);line-height:1.55;margin:10px 0 4px;}
+.ov-footer{display:flex;align-items:center;justify-content:space-between;margin-top:18px;}
 </style>
 
 <!-- PAGE HEADER -->
@@ -520,6 +548,36 @@
       <div class="gm-footer">
         <button class="btn-g" onclick="closeOutfitModal()">Cancelar</button>
         <button class="btn-a" onclick="saveOutfit()">Guardar outfit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Outfit view modal: flat-lay grande de cada prenda, para poder juzgar
+     el outfit completo antes de decidir usarlo — el mosaico del grid es
+     demasiado chico para eso. -->
+<div class="gm-overlay" id="outfit-view-modal">
+  <div class="gm-box wide">
+    <div class="gm-head">
+      <div>
+        <div class="gm-title" id="ov-title">Outfit</div>
+        <div class="ov-subtitle" id="ov-subtitle"></div>
+      </div>
+      <button class="gm-close" onclick="closeOutfitViewModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="gm-body">
+      <div class="ov-flatlay" id="ov-flatlay"></div>
+      <div class="ov-notes" id="ov-notes" style="display:none;"></div>
+      <div class="ov-footer">
+        <button class="ot-btn-del" onclick="deleteOutfitFromView()" title="Eliminar outfit">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-g" onclick="editFromView()">Editar</button>
+          <button class="btn-a" id="ov-usar-btn" onclick="usarOutfitFromView()">Usar hoy</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1289,8 +1347,11 @@ function renderOutfitsGrid(){
     const uso = o.veces_usado ? `${o.veces_usado}× usado` : 'Nunca usado';
     const lastUso = o.ultimo_uso ? `Último: ${o.ultimo_uso}` : '';
     return `<div class="ot-card" id="ocard-${o.id}">
-      <div style="position:relative;">${mosaic}
+      <div style="position:relative;" onclick="openOutfitView(${o.id})">${mosaic}
         ${o.ocasion?`<div class="ot-mosaic-occ">${esc(o.ocasion)}</div>`:''}
+        <div class="ot-mosaic-view">
+          <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Ver outfit</span>
+        </div>
       </div>
       <div class="ot-card-body">
         <div class="ot-card-name">${esc(o.nombre)}</div>
@@ -1337,6 +1398,87 @@ async function deleteOutfit(event, oid){
   await fetch(`/guardarropa/api/outfit/${oid}`,{method:'DELETE'});
   const idx = ALL_OUTFITS.findIndex(x=>x.id===oid);
   if(idx>=0) ALL_OUTFITS.splice(idx,1);
+  renderOutfitsGrid();
+  toast('Outfit eliminado');
+}
+
+// ── Outfit view modal — flat-lay completo para decidir con confianza ──────────
+let _ovId = null;
+
+function openOutfitView(id){
+  const o = ALL_OUTFITS.find(x=>x.id===id);
+  if(!o) return;
+  _ovId = id;
+
+  document.getElementById('ov-title').textContent = o.nombre;
+  const stars   = `${'★'.repeat(o.rating||0)}${'☆'.repeat(5-(o.rating||0))}`;
+  const uso     = o.veces_usado ? `${o.veces_usado}× usado` : 'Nunca usado';
+  const lastUso = o.ultimo_uso ? ` · Último: ${esc(o.ultimo_uso)}` : '';
+  document.getElementById('ov-subtitle').innerHTML =
+    `${o.ocasion?esc(o.ocasion)+' · ':''}<span class="stars">${stars}</span> · ${esc(uso)}${lastUso}`;
+
+  const items = o.items||[];
+  document.getElementById('ov-flatlay').innerHTML = items.length ? items.map(i=>{
+    const visual = i.foto
+      ? `<img src="/guardarropa/photos/${esc(i.foto)}" alt="${esc(i.nombre)}">`
+      : `<span class="ov-piece-initial">${esc((i.nombre[0]||'?').toUpperCase())}</span>`;
+    return `<div class="ov-piece">
+      <div class="ov-piece-visual" style="${i.foto?'':'background:'+esc(i.color_hex||'#333')+';'}">${visual}</div>
+      <div class="ov-piece-cat">${esc(i.categoria||'')}</div>
+      <div class="ov-piece-name" title="${esc(i.nombre)}">${esc(i.nombre)}</div>
+    </div>`;
+  }).join('') : `<div style="grid-column:1/-1;color:var(--dim);font-size:var(--fs-sm);padding:6px 0 14px;">Este outfit no tiene prendas asignadas todavía.</div>`;
+
+  const notesEl = document.getElementById('ov-notes');
+  if(o.notas){ notesEl.textContent = o.notas; notesEl.style.display='block'; }
+  else { notesEl.style.display='none'; }
+
+  const usarBtn = document.getElementById('ov-usar-btn');
+  usarBtn.disabled = false;
+  usarBtn.textContent = 'Usar hoy';
+
+  document.getElementById('outfit-view-modal').classList.add('open');
+}
+
+function closeOutfitViewModal(){
+  document.getElementById('outfit-view-modal').classList.remove('open');
+  _ovId = null;
+}
+
+function editFromView(){
+  const id = _ovId;
+  closeOutfitViewModal();
+  editOutfitById(id);
+}
+
+async function usarOutfitFromView(){
+  if(_ovId==null) return;
+  const oid = _ovId;
+  const btn = document.getElementById('ov-usar-btn');
+  btn.disabled = true;
+  btn.textContent = '…';
+  try {
+    const res = await fetch(`/guardarropa/api/outfit/${oid}/usar`, {method:'POST'});
+    const data = await res.json();
+    if(data.ok){
+      const idx = ALL_OUTFITS.findIndex(x=>x.id===oid);
+      if(idx>=0){ ALL_OUTFITS[idx].veces_usado=data.veces_usado; ALL_OUTFITS[idx].ultimo_uso=data.ultimo_uso; }
+      renderOutfitsGrid();
+      toast('Outfit registrado ✓');
+      closeOutfitViewModal();
+    } else { btn.disabled=false; btn.textContent='Usar hoy'; }
+  } catch(e){ btn.disabled=false; btn.textContent='Usar hoy'; }
+}
+
+async function deleteOutfitFromView(){
+  if(_ovId==null) return;
+  const oid = _ovId;
+  const o = ALL_OUTFITS.find(x=>x.id===oid);
+  if(!(await euConfirm(`¿Eliminar el outfit "${o?.nombre}"?\n\nSi está asignado a algún día de un viaje, se quitará de ahí también.`))) return;
+  await fetch(`/guardarropa/api/outfit/${oid}`,{method:'DELETE'});
+  const idx = ALL_OUTFITS.findIndex(x=>x.id===oid);
+  if(idx>=0) ALL_OUTFITS.splice(idx,1);
+  closeOutfitViewModal();
   renderOutfitsGrid();
   toast('Outfit eliminado');
 }
@@ -1688,5 +1830,6 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 
 document.getElementById('item-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeItemModal(); });
 document.getElementById('outfit-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeOutfitModal(); });
+document.getElementById('outfit-view-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeOutfitViewModal(); });
 </script>
 {% endblock %}
