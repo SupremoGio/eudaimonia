@@ -247,23 +247,52 @@
 @media(max-width:700px){.intel-grid{grid-template-columns:1fr;}}
 .intel-card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:18px;}
 .intel-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
+.intel-intro{font-size:var(--fs-sm);color:var(--dim);line-height:1.6;max-width:68ch;margin-bottom:18px;}
 .color-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
 .color-dot{width:14px;height:14px;border-radius:4px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);}
 .color-bar-label{font-size:var(--fs-sm);color:var(--mid);width:64px;flex-shrink:0;}
 .color-bar-track{flex:1;height:5px;background:var(--b);border-radius:2px;overflow:hidden;}
-.color-bar-fill{height:100%;border-radius:2px;transition:width .5s;}
+.color-bar-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.16,1,.3,1);}
 .color-bar-val{font-size:var(--fs-xs);color:var(--dim);width:24px;text-align:right;flex-shrink:0;}
-.gap-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(201,168,76,.05);}
-.gap-row:last-child{border-bottom:none;}
-.gap-icon{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;}
-.gap-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);}
-.gap-miss{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);}
-.gap-text{flex:1;font-size:var(--fs-sm);color:var(--mid);}
-.gap-status-ok{font-size:var(--fs-xs);color:var(--green);}
-.gap-status-miss{font-size:var(--fs-xs);color:var(--red);}
 .cat-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.cat-bar-label{font-size:var(--fs-sm);color:var(--mid);width:80px;flex-shrink:0;
+.cat-bar-label{font-size:var(--fs-sm);color:var(--mid);width:100px;flex-shrink:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* Capsule score — a radial ring reads instantly, a bare percentage doesn't */
+.intel-hero{display:flex;align-items:center;gap:26px;flex-wrap:wrap;}
+.intel-hero-ring{position:relative;width:118px;height:118px;flex-shrink:0;}
+.intel-hero-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+.intel-hero-ring circle{transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1);}
+.intel-hero-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.intel-hero-ring-pct{font-family:var(--serif);font-size:1.7rem;font-weight:600;line-height:1;}
+.intel-hero-ring-lvl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
+.intel-hero-info{flex:1;min-width:220px;}
+
+/* Grouped, didactic checklist — each theme explains itself instead of
+   dumping 14 rules in one flat list with no context for why they exist. */
+.intel-section{margin-bottom:24px;}
+.intel-section:last-child{margin-bottom:0;}
+.intel-section-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+.intel-section-icon{width:32px;height:32px;border-radius:9px;background:var(--gold-d);
+  border:1px solid rgba(201,168,76,.25);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:var(--gold);}
+.intel-section-icon svg{width:15px;height:15px;}
+.intel-section-title{font-family:var(--serif);font-size:1.05rem;color:var(--text);font-weight:600;flex:1;}
+.intel-section-score{font-size:var(--fs-xs);letter-spacing:.06em;color:var(--dim);white-space:nowrap;}
+.intel-section-desc{font-size:var(--fs-sm);color:var(--dim);line-height:1.6;margin:0 0 10px 44px;max-width:62ch;}
+@media(max-width:560px){.intel-section-desc{margin-left:0;}}
+
+.gap-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+  transition:background .14s;opacity:0;animation:gapIn .35s ease forwards;animation-delay:calc(var(--i,0)*45ms);}
+.gap-row:hover{background:var(--card2);}
+@keyframes gapIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+@media (prefers-reduced-motion: reduce){.gap-row{animation:none;opacity:1;}}
+.gap-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;}
+.gap-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:var(--green);}
+.gap-miss{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);color:var(--red);}
+.gap-text{flex:1;font-size:var(--fs-sm);color:var(--mid);line-height:1.4;}
+.gap-status-ok{font-size:var(--fs-xs);color:var(--green);flex-shrink:0;}
+.gap-status-miss{font-size:var(--fs-xs);color:var(--red);flex-shrink:0;}
 
 /* ── Modals ──────────────────────────────────────────── */
 .gm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;
@@ -1605,41 +1634,41 @@ async function deleteOutfitFromView(){
 // (Susie Faux, Permanent Style, Die Workwear!, teoría del color Faber Birren)
 const CAPSULE_RULES = [
   // ── PRENDAS ANCLA (retorno de inversión máximo) ──────────────────
-  {label:'Camisa blanca · la prenda de mayor versatilidad cromática',
+  {section:'anclas', label:'Camisa blanca · la prenda de mayor versatilidad cromática',
    check: items=>items.some(i=>i.categoria==='Camisa'&&/(blanc|white)/i.test((i.color_name||'')+i.color_hex))},
-  {label:'Blazer versátil navy/gris · sube el dress code instantáneamente',
+  {section:'anclas', label:'Blazer versátil navy/gris · sube el dress code instantáneamente',
    check: items=>items.some(i=>i.categoria==='Blazer / Saco')},
-  {label:'Oxford negro · calzado más versátil del armario masculino',
+  {section:'anclas', label:'Oxford negro · calzado más versátil del armario masculino',
    check: items=>items.some(i=>i.categoria==='Zapatos formales'&&/(negr|black|#0|#1|#2)/i.test((i.color_name||'')+i.color_hex))},
-  {label:'Pantalón gris · ancla neutra que combina con todo',
+  {section:'anclas', label:'Pantalón gris · ancla neutra que combina con todo',
    check: items=>items.some(i=>i.categoria==='Pantalón'&&/(gris|gray|grey)/i.test(i.color_name||''))},
 
   // ── PALETA 70/20/10 (Faber Birren) ──────────────────────────────
-  {label:'Base neutra ≥3: blanco + gris + navy en superiores',
+  {section:'paleta', label:'Base neutra ≥3: blanco + gris + navy en superiores',
    check: items=>items.filter(i=>['Camisa','Camiseta','Polo','Suéter'].includes(i.categoria)).length>=3},
-  {label:'Denim de calidad · puente smart-casual indispensable',
+  {section:'paleta', label:'Denim de calidad · puente smart-casual indispensable',
    check: items=>items.some(i=>i.categoria==='Jeans')},
-  {label:'2+ pantalones en neutros (gris, beige, navy, khaki)',
+  {section:'paleta', label:'2+ pantalones en neutros (gris, beige, navy, khaki)',
    check: items=>items.filter(i=>i.categoria==='Pantalón').length>=2},
 
   // ── DRESS CODE COVERAGE ──────────────────────────────────────────
-  {label:'Calzado café/camel · para look diurno y casual sofisticado',
+  {section:'dresscode', label:'Calzado café/camel · para look diurno y casual sofisticado',
    check: items=>items.some(i=>['Zapatos formales','Zapatos casuales','Botas'].includes(i.categoria)&&/(caf|cam[ae]|marr|brow|tan)/i.test(i.color_name||''))},
-  {label:'Sneakers minimalistas · pieza clave del smart-casual moderno',
+  {section:'dresscode', label:'Sneakers minimalistas · pieza clave del smart-casual moderno',
    check: items=>items.some(i=>i.categoria==='Sneakers')},
-  {label:'Capa exterior de calidad (chamarra/abrigo)',
+  {section:'dresscode', label:'Capa exterior de calidad (chamarra/abrigo)',
    check: items=>items.some(i=>i.categoria==='Chamarra / Abrigo')},
 
   // ── AMPLIFICADORES DE LOOK ───────────────────────────────────────
-  {label:'Accesorio de calidad · 20% del outfit, 80% del impacto visual',
+  {section:'amplificadores', label:'Accesorio de calidad · 20% del outfit, 80% del impacto visual',
    check: items=>items.some(i=>i.categoria==='Accesorio')},
-  {label:'Suéter o polo · transiciones de temperatura y capas interiores',
+  {section:'amplificadores', label:'Suéter o polo · transiciones de temperatura y capas interiores',
    check: items=>items.some(i=>['Suéter','Polo'].includes(i.categoria))},
 
   // ── MÉTRICAS DE VOLUMEN ──────────────────────────────────────────
-  {label:'Volumen mínimo: 20+ prendas activas para versatilidad real',
+  {section:'volumen', label:'Volumen mínimo: 20+ prendas activas para versatilidad real',
    check: items=>items.length>=20},
-  {label:'Cobertura multiocasión: formal + casual + business',
+  {section:'volumen', label:'Cobertura multiocasión: formal + casual + business',
    check: items=>{
      const formal  = items.some(i=>['Blazer / Saco','Zapatos formales','Traje / Conjunto'].includes(i.categoria));
      const casual  = items.some(i=>['Camiseta','Jeans','Sneakers'].includes(i.categoria));
@@ -1648,10 +1677,30 @@ const CAPSULE_RULES = [
    }},
 ];
 
+// Section metadata — this is what makes the checklist teach instead of just
+// grade: each group gets an icon and a one-sentence "why" before its rules.
+const CAPSULE_SECTIONS = [
+  {key:'anclas', title:'Prendas ancla', icon:'<path d="M12 22V8"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/><circle cx="12" cy="5" r="3"/>',
+   desc:'Las piezas de mayor retorno de inversión: combinan con casi todo lo demás en tu armario, así que son las primeras que deberían estar cubiertas.'},
+  {key:'paleta', title:'Paleta 70/20/10', icon:'<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2a10 10 0 1 0 0 20 3 3 0 0 0 3-3 2 2 0 0 1 2-2h1a5 5 0 0 0 5-5 10 10 0 0 0-11-10Z"/>',
+   desc:'La regla de Faber Birren: ~70% de tonos neutros como base, 20% de color secundario y 10% de acento — así casi cualquier par de prendas de tu clóset funciona junto.'},
+  {key:'dresscode', title:'Cobertura de dress code', icon:'<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.86l.58-3.57a2 2 0 0 0-1.34-2.23z"/>',
+   desc:'Necesitas piezas que cubran del extremo casual al formal, o te vas a quedar sin qué ponerte en cuanto cambie el contexto del día.'},
+  {key:'amplificadores', title:'Amplificadores de look', icon:'<path d="M12 3v3m0 12v3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1M3 12h3m12 0h3M5.6 18.4l2.1-2.1m8.6-8.6 2.1-2.1"/>',
+   desc:'Piezas que no son la base pero elevan cualquier outfit — el 20% del esfuerzo que se nota en el 80% del impacto visual.'},
+  {key:'volumen', title:'Métricas de volumen', icon:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+   desc:'Un armario cápsula real necesita suficientes piezas y suficiente cobertura de ocasión para sostenerse solo, sin depender de comprar algo nuevo cada semana.'},
+];
+
 function renderIntelligence(){
   const activeItems = ALL_ITEMS.filter(i=>i.activo!==0);
   if(!activeItems.length){
-    document.getElementById('intel-content').innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim);font-size:var(--fs-sm);">Añade prendas para ver el análisis</div>`;
+    document.getElementById('intel-content').innerHTML=`<div class="empty-rich" style="grid-column:1/-1;">
+      <div class="empty-icon-box"><i data-lucide="sparkles"></i></div>
+      <div class="empty-title">Aún no hay nada que analizar</div>
+      <div class="empty-desc">Añade algunas prendas en Armario y esta pestaña te mostrará qué tan cerca estás de un armario cápsula completo, con principios de moda masculina de élite explicados uno por uno.</div>
+    </div>`;
+    lucide.createIcons();
     return;
   }
 
@@ -1685,13 +1734,27 @@ function renderIntelligence(){
       <div class="color-bar-val">${count}</div>
     </div>`).join('');
 
-  // Capsule score
-  const gapRows=CAPSULE_RULES.map(rule=>{
-    const ok=rule.check(activeItems);
-    return `<div class="gap-row">
-      <div class="gap-icon ${ok?'gap-ok':'gap-miss'}">${ok?'✓':'!'}</div>
-      <div class="gap-text">${esc(rule.label)}</div>
-      <div class="${ok?'gap-status-ok':'gap-status-miss'}">${ok?'OK':'Falta'}</div>
+  // Capsule score, grouped into didactic sections instead of one flat list
+  let _rowIdx = 0;
+  const sectionsHtml = CAPSULE_SECTIONS.map(sec=>{
+    const rules = CAPSULE_RULES.filter(r=>r.section===sec.key);
+    const okCount = rules.filter(r=>r.check(activeItems)).length;
+    const rows = rules.map(rule=>{
+      const ok = rule.check(activeItems);
+      return `<div class="gap-row" style="--i:${_rowIdx++};">
+        <div class="gap-icon ${ok?'gap-ok':'gap-miss'}">${ok?'✓':'!'}</div>
+        <div class="gap-text">${esc(rule.label)}</div>
+        <div class="${ok?'gap-status-ok':'gap-status-miss'}">${ok?'OK':'Falta'}</div>
+      </div>`;
+    }).join('');
+    return `<div class="intel-section">
+      <div class="intel-section-head">
+        <div class="intel-section-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">${sec.icon}</svg></div>
+        <div class="intel-section-title">${esc(sec.title)}</div>
+        <div class="intel-section-score">${okCount}/${rules.length}</div>
+      </div>
+      <div class="intel-section-desc">${esc(sec.desc)}</div>
+      ${rows}
     </div>`;
   }).join('');
   const score=Math.round(CAPSULE_RULES.filter(r=>r.check(activeItems)).length/CAPSULE_RULES.length*100);
@@ -1703,34 +1766,41 @@ function renderIntelligence(){
 
   const scoreColor = score>=86?'var(--green)':score>=71?'var(--gold)':score>=50?'var(--amber)':'var(--red)';
   const scoreLabel = score>=96?'Maestro':score>=86?'Élite':score>=71?'Avanzado':score>=51?'Sólido':score>=31?'Competente':'Iniciado';
+  const ringR = 52, ringC = Math.round(2*Math.PI*ringR);
+  const ringOffset = Math.round(ringC * (1 - score/100));
 
   document.getElementById('intel-content').innerHTML=`
     <div class="intel-card" style="grid-column:1/-1;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div>
-          <div class="intel-title" style="margin:0 0 4px;">SCORE DEL ARMARIO CÁPSULA</div>
-          <div style="font-size:var(--fs-sm);color:var(--dim);">Basado en principios de moda masculina de élite</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-family:var(--serif);font-size:2.4rem;font-weight:600;color:${scoreColor};line-height:1;">${score}%</div>
-          <div style="font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:${scoreColor};margin-top:2px;">${scoreLabel}</div>
-        </div>
+      <div class="intel-intro">
+        Tu <strong style="color:var(--text);">score de armario cápsula</strong> mide qué tan preparado está tu clóset para vestir bien todos los días sin comprar de más — evaluado contra principios de moda masculina (Susie Faux · Faber Birren · Permanent Style) que llevan décadas probando su valor. El checklist de abajo explica cada uno.
       </div>
-      <div style="height:6px;background:var(--b);border-radius:3px;overflow:hidden;margin-bottom:4px;">
-        <div style="height:100%;background:${scoreColor};width:${score}%;border-radius:3px;transition:width .8s;"></div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b);border-radius:8px;overflow:hidden;margin-top:14px;">
-        <div style="background:var(--card2);padding:10px;text-align:center;">
-          <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">${activeItems.length}</div>
-          <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Prendas</div>
+      <div class="intel-hero">
+        <div class="intel-hero-ring">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="${ringR}" fill="none" stroke="var(--b)" stroke-width="10"/>
+            <circle cx="60" cy="60" r="${ringR}" fill="none" stroke="${scoreColor}" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="${ringC}" stroke-dashoffset="${ringOffset}"/>
+          </svg>
+          <div class="intel-hero-ring-label">
+            <div class="intel-hero-ring-pct" style="color:${scoreColor};">${score}%</div>
+            <div class="intel-hero-ring-lvl" style="color:${scoreColor};">${esc(scoreLabel)}</div>
+          </div>
         </div>
-        <div style="background:var(--card2);padding:10px;text-align:center;">
-          <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">$${Math.round(totalVal).toLocaleString()}</div>
-          <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Valor total</div>
-        </div>
-        <div style="background:var(--card2);padding:10px;text-align:center;">
-          <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">${avgCpu?'$'+Math.round(avgCpu):'—'}</div>
-          <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Costo/uso prom</div>
+        <div class="intel-hero-info">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b);border-radius:8px;overflow:hidden;">
+            <div style="background:var(--card2);padding:10px;text-align:center;">
+              <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">${activeItems.length}</div>
+              <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Prendas</div>
+            </div>
+            <div style="background:var(--card2);padding:10px;text-align:center;">
+              <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">$${Math.round(totalVal).toLocaleString()}</div>
+              <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Valor total</div>
+            </div>
+            <div style="background:var(--card2);padding:10px;text-align:center;">
+              <div style="font-family:var(--serif);font-size:1.1rem;color:var(--text);">${avgCpu?'$'+Math.round(avgCpu):'—'}</div>
+              <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;">Costo/uso prom</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1746,11 +1816,8 @@ function renderIntelligence(){
     </div>
 
     <div class="intel-card" style="grid-column:1/-1;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div class="intel-title" style="margin:0;">CHECKLIST — ARMARIO CÁPSULA DE ÉLITE</div>
-        <div style="font-size:var(--fs-xs);color:var(--dim);">Principios: Susie Faux · Faber Birren · Permanent Style</div>
-      </div>
-      ${gapRows}
+      <div class="intel-title" style="margin-bottom:18px;">CHECKLIST — ARMARIO CÁPSULA DE ÉLITE</div>
+      ${sectionsHtml}
       <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <a href="/finanzas/prioridades" style="font-size:var(--fs-sm);color:var(--gold);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px;"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
