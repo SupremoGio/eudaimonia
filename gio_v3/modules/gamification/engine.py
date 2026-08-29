@@ -753,10 +753,11 @@ def get_gamification_stats():
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def process_activity(key, pts, cat, log_id):
+def process_activity(key, pts, cat, log_id, ec=None):
     streak  = get_gamification_streak()
-    act_def = adefs.get_by_key(key)
-    ec      = act_def["ec"] if act_def else ACTIVITIES.get(key, {}).get("ec", 0)
+    if ec is None:
+        act_def = adefs.get_by_key(key)
+        ec      = act_def["ec"] if act_def else ACTIVITIES.get(key, {}).get("ec", 0)
 
     xp_mult  = _compute_xp_mult(cat, streak)
     final_xp = max(1, int(pts * xp_mult))

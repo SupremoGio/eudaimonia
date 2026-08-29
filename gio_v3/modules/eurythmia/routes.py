@@ -48,6 +48,7 @@ _GRABADO_XP  = 3
 
 # ── Música — 100 mejores álbumes ──────────────────────────────────────────────
 _ALBUM_XP = 5
+_ALBUM_EC = 2
 
 RATING_DIMS = [
     {"key": "sonido",        "label": "Producción"},
@@ -321,7 +322,7 @@ def api_album_update(album_id):
                 (mi_rating, notas, escuchado_at, *rating_vals, album_id)
             )
             db.commit()
-            gam = engine.process_activity(f"eury_album_{album_id}", _ALBUM_XP, 'Música', log_id)
+            gam = engine.process_activity(f"eury_album_{album_id}", _ALBUM_XP, 'Música', log_id, ec=_ALBUM_EC)
         elif not escuchado and was_escuchado:
             db.execute(
                 f"UPDATE eury_albums SET escuchado=0, mi_rating=NULL, notas=?, escuchado_at=NULL, "
