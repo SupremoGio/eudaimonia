@@ -1,4 +1,4 @@
-import os, json as _json, http.client, threading, base64 as _base64
+import os, json as _json, http.client, threading, base64 as _base64, time as _time
 from datetime import date, timedelta
 from utils import today_str, today_date
 
@@ -38,18 +38,18 @@ def _from_cell(cell):
     if t == "blob":               return _base64.b64decode(v) if v else b""
     return v
 
-def _turso_pipeline(host, token, stmts):
+def _turso_pipeline(host, token, stmts, timeout=15, retries=3):
     reqs = [{"type": "execute", "stmt": s} for s in stmts]
     reqs.append({"type": "close"})
     body = _json.dumps({"requests": reqs}).encode()
     hdrs = {"Authorization": f"Bearer {token}",
             "Content-Type": "application/json", "Connection": "keep-alive"}
-    for attempt in range(3):
+    for attempt in range(retries):
         try:
             # Use a thread-local connection — avoids race conditions between workers
             conn = getattr(_tls, 'conn', None)
             if conn is None:
-                conn = http.client.HTTPSConnection(host, timeout=15)
+                conn = http.client.HTTPSConnection(host, timeout=timeout)
                 _tls.conn = conn
             conn.request("POST", "/v2/pipeline", body=body, headers=hdrs)
             resp = conn.getresponse()
@@ -59,7 +59,7 @@ def _turso_pipeline(host, token, stmts):
             return _json.loads(data.decode())
         except Exception as e:
             _tls.conn = None   # reset only this thread's connection
-            if attempt == 2:
+            if attempt == retries - 1:
                 raise
 
 def _turso_sync(host, token, writes):
@@ -71,8 +71,19 @@ def _turso_sync(host, token, writes):
     except Exception as e:
         print(f"[DB] Turso sync warning: {e}")
 
+_RESTORE_BUDGET_SECS = 25  # tope duro: nunca dejar colgado el boot del server
+
+
 def _restore_from_turso(host, token):
-    """On startup: copy all Turso data into local SQLite."""
+    """On startup: copy all Turso data into local SQLite.
+
+    Acotado a _RESTORE_BUDGET_SECS de reloj: con decenas de tablas, cada una
+    con hasta 3 reintentos de 15s si Turso está lento/inalcanzable, esto podía
+    tardar minutos y colgar el arranque de gunicorn (nunca llega a bindear el
+    puerto -> el hosting mata el deploy por timeout). Si se agota el
+    presupuesto, sigue con lo que ya se restauró en vez de tardar indefinido.
+    """
+    deadline = _time.monotonic() + _RESTORE_BUDGET_SECS
     try:
         out = _turso_pipeline(host, token, [
             {"sql": "SELECT name, sql FROM sqlite_master WHERE type='table' AND sql IS NOT NULL", "args": []}
@@ -87,7 +98,13 @@ def _restore_from_turso(host, token):
 
         local = _sqlite3.connect(_LOCAL_TMP)
         local.execute("PRAGMA journal_mode=WAL")
+        restored, skipped = 0, 0
         for t in tables:
+            if _time.monotonic() > deadline:
+                skipped = len(tables) - restored
+                print(f"[DB] Restore: presupuesto de {_RESTORE_BUDGET_SECS}s agotado, "
+                      f"{restored} tablas restauradas, {skipped} omitidas (arrancando de todos modos)")
+                break
             name, ddl = t.get("name",""), t.get("sql","")
             if not name or not ddl or name.startswith("sqlite_"):
                 continue
@@ -98,7 +115,7 @@ def _restore_from_turso(host, token):
             # Copy rows
             try:
                 dout = _turso_pipeline(host, token,
-                    [{"sql": f"SELECT * FROM [{name}]", "args": []}])
+                    [{"sql": f"SELECT * FROM [{name}]", "args": []}], retries=1)
                 dr = dout["results"][0]
                 if dr["type"] != "ok":
                     continue
@@ -112,11 +129,12 @@ def _restore_from_turso(host, token):
                         local.execute(f"INSERT OR REPLACE INTO [{name}] ({cn}) VALUES ({ph})", vals)
                     except Exception:
                         pass
+                restored += 1
             except Exception as e:
                 print(f"[DB] restore {name}: {e}")
         local.commit()
         local.close()
-        print(f"[DB] Restored {len(tables)} tables from Turso OK")
+        print(f"[DB] Restored {restored}/{len(tables)} tables from Turso OK")
         return True
     except Exception as e:
         print(f"[DB] Restore failed: {e}")
@@ -193,7 +211,10 @@ _DB_PATH = _LOCAL
 if TURSO_URL and TURSO_TOKEN:
     try:
         _host = TURSO_URL.replace("libsql://", "")
-        _turso_pipeline(_host, TURSO_TOKEN, [{"sql": "SELECT 1", "args": []}])
+        # timeout corto + un solo intento: si Turso no responde (host caído,
+        # credenciales de otro entorno, red que no lo alcanza), hay que
+        # saber eso en segundos y arrancar con SQLite local — no en minutos.
+        _turso_pipeline(_host, TURSO_TOKEN, [{"sql": "SELECT 1", "args": []}], timeout=6, retries=1)
         print("[DB] Turso conectado OK - restaurando datos locales...")
         _restore_from_turso(_host, TURSO_TOKEN)
         _USE_HYBRID   = True
