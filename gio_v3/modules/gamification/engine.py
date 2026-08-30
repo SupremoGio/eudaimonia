@@ -428,6 +428,78 @@ def get_daily_classification(date_str=None):
     return info
 
 
+_WEEKDAY_LABELS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+_RANK_POINTS        = {"carbon": 0, "iron": 1, "gold": 2, "diamond": 3}
+_WEEKLY_DESC = {
+    "diamond": "Semana de nivel máximo: la mayoría de tus días fueron Oro o Diamante.",
+    "gold":    "Buena semana: cumpliste tus anclas y touches con constancia.",
+    "iron":    "Semana sólida: completaste tu ancla casi todos los días, pero faltó volumen para Oro.",
+    "carbon":  "Semana floja: la mayoría de los días no llegaste a completar tu ancla.",
+}
+
+
+def get_weekly_classification(monday_str):
+    """Agrega get_daily_classification() sobre los 7 días lunes→domingo que
+    empiezan en `monday_str` — mismo esquema Carbón/Hierro/Oro/Diamante que
+    ya existe por día, aplicado a la semana completa, más el detalle día por
+    día para poder mostrar "qué hiciste cada día de esta semana".
+    Días futuros dentro del rango (semana en curso) se marcan future=True y
+    no cuentan para el promedio."""
+    monday = date.fromisoformat(monday_str)
+    today  = today_date()
+
+    days = []
+    rank_counts  = {"carbon": 0, "iron": 0, "gold": 0, "diamond": 0}
+    total_points = 0
+    total_xp     = 0
+
+    for i in range(7):
+        d     = monday + timedelta(days=i)
+        d_str = d.isoformat()
+        if d > today:
+            days.append({"date": d_str, "weekday": _WEEKDAY_LABELS_ES[i], "future": True, "rank": None})
+            continue
+        info = get_daily_classification(d_str)
+        rank_counts[info["rank"]] += 1
+        total_points += _RANK_POINTS[info["rank"]]
+        total_xp     += info["xp"]
+        days.append({
+            "date": d_str, "weekday": _WEEKDAY_LABELS_ES[i], "future": False,
+            "rank": info["rank"], "label": info["label"], "icon": info["icon"],
+            "icon_lucide": info["icon_lucide"], "color": info["color"], "xp": info["xp"],
+            "anchors_done": info["anchors_done"], "anchors_total": info["anchors_total"],
+            "touches_done": info["touches_done"], "touches_total": info["touches_total"],
+        })
+
+    evaluated  = sum(1 for d in days if not d["future"])
+    avg_points = (total_points / evaluated) if evaluated else 0.0
+
+    if evaluated == 0:
+        weekly_rank = "carbon"
+    elif avg_points >= 2.5:
+        weekly_rank = "diamond"
+    elif avg_points >= 1.75:
+        weekly_rank = "gold"
+    elif avg_points >= 1.0:
+        weekly_rank = "iron"
+    else:
+        weekly_rank = "carbon"
+
+    info = CLASSIFICATION[weekly_rank].copy()
+    info["icon_lucide"] = lucide_for(info["icon"])
+    info.update({
+        "rank": weekly_rank,
+        "desc": _WEEKLY_DESC[weekly_rank],
+        "pct": round(avg_points / 3 * 100) if evaluated else 0,
+        "avg_points": round(avg_points, 2),
+        "rank_counts": rank_counts,
+        "days": days,
+        "days_evaluated": evaluated,
+        "total_xp": total_xp,
+    })
+    return info
+
+
 # La clasificación diaria depende de anclas/touches/pilares cubiertos, no del
 # XP acumulado — este hint se calcula aquí (no en el cliente) para que el
 # widget de "Clasificación de hoy" nunca muestre una meta de XP inventada que
