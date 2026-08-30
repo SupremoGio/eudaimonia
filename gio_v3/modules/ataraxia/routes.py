@@ -156,11 +156,16 @@ def _revision_view(semana_id):
             (semana_id,)
         ).fetchall()
 
+    # semana_id es el sábado de este ciclo (ver get_semana_id) — el lunes de
+    # esa misma semana Lun-Dom es 5 días antes.
+    monday_id = (date.fromisoformat(semana_id) - timedelta(days=5)).isoformat()
+
     return {
         "metrics":   metrics,
         "has_data":  bool(actual),
         "notas":     actual.get("notas") or "",
         "historial": [dict(r) for r in hist_rows],
+        "weekly":    engine.get_weekly_classification(monday_id),
     }
 
 

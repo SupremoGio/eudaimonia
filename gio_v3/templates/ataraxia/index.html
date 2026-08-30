@@ -151,6 +151,25 @@
 .rs-hist-row{display:grid;grid-template-columns:52px repeat(5,1fr);gap:6px;font-size:11px;padding:5px 4px;font-family:var(--mono);color:var(--mid);}
 .rs-hist-row:nth-child(even){background:rgba(255,255,255,.02);border-radius:5px;}
 .rs-hist-head{color:var(--dim);font-family:var(--sans);font-size:9px;letter-spacing:.06em;text-transform:uppercase;}
+
+/* ── Score semanal (Carbón/Hierro/Oro/Diamante) — mismo esquema del rango
+   diario de Acta Diurna, agregado sobre los 7 días lunes→domingo de esta
+   semana. Responde "qué tan productiva fue la semana" con el mismo
+   lenguaje visual que ya conoces del día a día. ── */
+.rs-week-score{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:10px;
+  background:var(--card2);border:1px solid var(--b);border-radius:10px;}
+.rs-week-icon{font-size:1.8rem;line-height:1;flex-shrink:0;}
+.rs-week-info{flex:1;min-width:0;}
+.rs-week-label{font-family:var(--serif);font-size:1.05rem;font-weight:600;}
+.rs-week-desc{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;line-height:1.4;}
+.rs-week-pct{font-family:var(--serif);font-size:1.3rem;font-weight:600;flex-shrink:0;}
+
+.rs-week-days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px;}
+.rs-week-day{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;
+  background:var(--card2);border:1px solid var(--b);border-radius:8px;cursor:default;}
+.rs-week-day.future{opacity:.35;}
+.rs-week-day-lbl{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);}
+.rs-week-day-icon{font-size:1rem;line-height:1;}
 </style>
 {% endblock %}
 
@@ -389,6 +408,29 @@
         <span class="rs-chev">▼</span>
       </div>
       <div class="rs-body">
+        <div class="rs-week-score">
+          <div class="rs-week-icon">{{ revision.weekly.icon }}</div>
+          <div class="rs-week-info">
+            <div class="rs-week-label" style="color:{{ revision.weekly.color }};">Semana {{ revision.weekly.label }}</div>
+            <div class="rs-week-desc">{{ revision.weekly.desc }}</div>
+          </div>
+          <div class="rs-week-pct" style="color:{{ revision.weekly.color }};">{{ revision.weekly.pct }}%</div>
+        </div>
+
+        <div class="rs-week-days">
+          {% for d in revision.weekly.days %}
+          <div class="rs-week-day{% if d.future %} future{% endif %}"
+               {% if not d.future %}title="{{ d.label }} · {{ d.anchors_done }}/{{ d.anchors_total }} anclas · {{ d.touches_done }}/{{ d.touches_total }} touches · {{ d.xp }} XP"{% endif %}>
+            <span class="rs-week-day-lbl">{{ d.weekday }}</span>
+            {% if d.future %}
+            <span class="rs-week-day-icon" style="color:var(--dim);">·</span>
+            {% else %}
+            <span class="rs-week-day-icon">{{ d.icon }}</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
         <div class="rs-grid">
           {% for m in revision.metrics %}
           <div class="rs-row">
