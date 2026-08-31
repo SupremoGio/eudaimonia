@@ -54,6 +54,12 @@ def create_app():
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    # Secure solo cuando corre bajo un hosting real (Railway/Render inyectan
+    # $PORT para el bind de gunicorn; el dev local con run.py no lo define y
+    # sirve por http://localhost, donde una cookie Secure nunca se enviaría
+    # de vuelta y rompería el login). Sin esto, la cookie de sesión viaja sin
+    # el flag Secure y un MITM en red no cifrada podría leerla.
+    app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('PORT'))
     app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
 
     limiter.init_app(app)
@@ -129,23 +135,28 @@ def create_app():
                     "SELECT 1 FROM migration_log WHERE version='3.1'"
                 ).fetchone())
         except Exception as e:
-            checks["db_error"] = str(e)
+            # Este endpoint es público (PUBLIC_ENDPOINTS) para que el hosting
+            # pueda usarlo como health check sin sesión — nunca debe devolver
+            # el texto crudo de la excepción (puede traer fragmentos de SQL o
+            # de esquema) a un visitante no autenticado. El detalle real queda
+            # en el log del proceso, no en la respuesta.
+            print(f"[health_v31] db check failed: {e}")
+            checks["db_error"] = True
         ok = (checks["ec_rate_ok"] and checks["sat_keys_ok"] and
               checks["sun_keys_ok"] and "db_error" not in checks)
         return checks, 200 if ok else 500
 
     @app.route('/health')
     def health():
-        from database import get_db_status, _USE_HYBRID
+        # Público (health check del hosting) — por eso solo expone un status
+        # binario. get_db_status() trae detalle real (rutas de archivo, conteo
+        # de filas por tabla, último activity_key, XP total) que es
+        # información personal del dueño de la app; eso vive en
+        # /dashboard/api/db-status, que sí exige sesión iniciada.
+        from database import get_db_status
         status = get_db_status()
         ok = status.get('db_exists', False) and 'error' not in status
-        return {
-            'status': 'ok' if ok else 'degraded',
-            'mode':   status.get('mode'),
-            'turso':  'connected' if _USE_HYBRID else 'not_configured',
-            'tables': status.get('tables', {}),
-            'total_xp': status.get('total_xp', 0),
-        }, 200 if ok else 503
+        return {'status': 'ok' if ok else 'degraded'}, 200 if ok else 503
 
     @app.errorhandler(429)
     def too_many_requests(e):
