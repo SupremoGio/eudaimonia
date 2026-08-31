@@ -61,7 +61,7 @@ ESTADOS    = ['nuevo', 'bueno', 'regular', 'donar']
 
 
 def _row(r):
-    return dict(r)
+    return dict(r) if r is not None else None
 
 
 # ── Pages ─────────────────────────────────────────────────────────────────────
@@ -155,22 +155,28 @@ def update_item(iid):
         )
         db.commit()
         row = _row(db.execute("SELECT * FROM wardrobe_items WHERE id=?", (iid,)).fetchone())
+    if not row:
+        return jsonify({'error': 'not found'}), 404
     return jsonify(row)
 
 
 @guardarropa_bp.route('/api/item/<int:iid>', methods=['DELETE'])
 def delete_item(iid):
     with get_db() as db:
-        db.execute("UPDATE wardrobe_items SET activo=0 WHERE id=?", (iid,))
+        cur = db.execute("UPDATE wardrobe_items SET activo=0 WHERE id=?", (iid,))
         db.commit()
+    if not cur.rowcount:
+        return jsonify({'error': 'not found'}), 404
     return jsonify({'ok': True})
 
 
 @guardarropa_bp.route('/api/item/<int:iid>/uso', methods=['POST'])
 def register_uso(iid):
     with get_db() as db:
-        db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1 WHERE id=?", (iid,))
+        cur = db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1 WHERE id=?", (iid,))
         db.commit()
+        if not cur.rowcount:
+            return jsonify({'error': 'not found'}), 404
         row = db.execute("SELECT veces_usado FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
     return jsonify({'veces_usado': row['veces_usado']})
 
@@ -233,6 +239,8 @@ def update_outfit(oid):
             except Exception: pass
         db.commit()
         row = _row(db.execute("SELECT * FROM outfits WHERE id=?", (oid,)).fetchone())
+        if not row:
+            return jsonify({'error': 'not found'}), 404
         row['items'] = [_row(r) for r in db.execute(
             "SELECT oi.outfit_id, wi.id, wi.nombre, wi.categoria, wi.color_hex, wi.foto "
             "FROM outfit_items oi JOIN wardrobe_items wi ON oi.item_id=wi.id WHERE oi.outfit_id=?", (oid,)
@@ -245,8 +253,10 @@ def delete_outfit(oid):
     with get_db() as db:
         db.execute("DELETE FROM viaje_dia_outfits WHERE outfit_id=?", (oid,))
         db.execute("DELETE FROM outfit_items WHERE outfit_id=?", (oid,))
-        db.execute("DELETE FROM outfits WHERE id=?", (oid,))
+        cur = db.execute("DELETE FROM outfits WHERE id=?", (oid,))
         db.commit()
+    if not cur.rowcount:
+        return jsonify({'error': 'not found'}), 404
     return jsonify({'ok': True})
 
 
@@ -254,10 +264,12 @@ def delete_outfit(oid):
 def usar_outfit(oid):
     today = datetime.now().strftime('%Y-%m-%d')
     with get_db() as db:
-        db.execute(
+        cur = db.execute(
             "UPDATE outfits SET veces_usado=COALESCE(veces_usado,0)+1, ultimo_uso=? WHERE id=?",
             (today, oid)
         )
+        if not cur.rowcount:
+            return jsonify({'error': 'not found'}), 404
         item_ids = [r['item_id'] for r in db.execute(
             "SELECT item_id FROM outfit_items WHERE outfit_id=?", (oid,)
         ).fetchall()]
@@ -287,7 +299,14 @@ def upload_photo(iid):
     data = f.read()
     filename = uuid.uuid4().hex + '.jpg'
     if not _optimize_photo(data, os.path.join(UPLOAD_DIR, filename)):
-        # Formato que Pillow no pudo decodificar (p.ej. HEIC) — se guarda tal cual
+        # HEIC es el único formato permitido que Pillow puede no saber
+        # decodificar de raíz (sin plugin) pese a ser una foto real — para
+        # ese caso se guarda tal cual. Cualquier otra extensión "permitida"
+        # (jpg/png/webp) que Pillow no pueda abrir casi seguro no es
+        # realmente una imagen de ese tipo — se rechaza en vez de guardar
+        # bytes sin validar.
+        if ext != '.heic':
+            return jsonify({'ok': False, 'error': 'No se pudo leer la imagen'}), 400
         filename = uuid.uuid4().hex + ext
         with open(os.path.join(UPLOAD_DIR, filename), 'wb') as out:
             out.write(data)
@@ -589,12 +608,11 @@ def fetch_url_photo(iid):
 
         filename = uuid.uuid4().hex + '.jpg'
         if not _optimize_photo(data, os.path.join(UPLOAD_DIR, filename)):
-            if   'png'  in (ct or ''): ext = '.png'
-            elif 'webp' in (ct or ''): ext = '.webp'
-            else:                      ext = '.jpg'
-            filename = uuid.uuid4().hex + ext
-            with open(os.path.join(UPLOAD_DIR, filename), 'wb') as f:
-                f.write(data)
+            # A diferencia de la subida local, aquí no hay caso legítimo de
+            # HEIC-sin-plugin — es una URL externa, así que si Pillow no
+            # puede decodificarla como imagen, se rechaza en vez de guardar
+            # bytes sin validar de un origen no confiable.
+            return jsonify({'ok': False, 'error': 'La URL no devolvió una imagen válida'}), 400
         with get_db() as db:
             old = db.execute("SELECT foto FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
             if old and old['foto']:
