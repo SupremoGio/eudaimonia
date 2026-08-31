@@ -14,7 +14,7 @@ from flask import (
     session, jsonify, Response, redirect, url_for,
 )
 from database import get_db
-from utils import clean_str, today_str
+from utils import clean_str, today_str, safe_float
 import modules.gamification.engine as engine
 
 estados_bp = Blueprint(
@@ -119,7 +119,7 @@ def create_transaction():
             """INSERT OR IGNORE INTO est_movimientos
                (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
                VALUES (?,?,?,?,?,?,?,?,?)""",
-            (fecha, fecha, desc, float(d.get('monto', 0)),
+            (fecha, fecha, desc, safe_float(d.get('monto', 0)),
              d.get('banco', 'MANUAL'), '',
              d.get('categoria', 'OTROS'), d.get('subcategoria', ''),
              d.get('tipo', 'GASTO')),
@@ -153,7 +153,7 @@ def update_transaction(tx_id):
             )
         if d.get('monto') is not None:
             db.execute("UPDATE est_movimientos SET monto=? WHERE id=?",
-                       (float(d['monto']), tx_id))
+                       (safe_float(d['monto']), tx_id))
         if d.get('tipo') is not None:
             db.execute("UPDATE est_movimientos SET tipo=? WHERE id=?",
                        (d['tipo'], tx_id))
@@ -164,7 +164,7 @@ def update_transaction(tx_id):
             db.execute("UPDATE est_movimientos SET banco=? WHERE id=?",
                        (d['banco'], tx_id))
         if 'mi_parte' in d:
-            val = float(d['mi_parte']) if d['mi_parte'] not in (None, '') else None
+            val = safe_float(d['mi_parte']) if d['mi_parte'] not in (None, '') else None
             db.execute("UPDATE est_movimientos SET mi_parte=? WHERE id=?", (val, tx_id))
         if 'reembolso_cat' in d:
             val = d['reembolso_cat'] or None
@@ -469,7 +469,7 @@ def create_budget():
             INSERT INTO est_budgets (categoria, nombre, limite)
             VALUES (?,?,?)
             ON CONFLICT(categoria) DO UPDATE SET nombre=excluded.nombre, limite=excluded.limite
-        """, (d.get('categoria'), d.get('nombre') or d.get('categoria'), float(d.get('limite', 0))))
+        """, (d.get('categoria'), d.get('nombre') or d.get('categoria'), safe_float(d.get('limite', 0), min_val=0)))
         db.commit()
     return jsonify({'ok': True}), 201
 
@@ -482,7 +482,7 @@ def update_budget(bid):
         if d.get('nombre') is not None:
             db.execute("UPDATE est_budgets SET nombre=? WHERE id=?", (d['nombre'], bid))
         if d.get('limite') is not None:
-            db.execute("UPDATE est_budgets SET limite=? WHERE id=?", (float(d['limite']), bid))
+            db.execute("UPDATE est_budgets SET limite=? WHERE id=?", (safe_float(d['limite'], min_val=0), bid))
         db.commit()
     return jsonify({'ok': True})
 
@@ -855,7 +855,7 @@ def create_trip():
                 clean_str(d.get('destino', ''), 100),
                 d.get('fecha_inicio', ''),
                 d.get('fecha_fin', ''),
-                float(d.get('presupuesto', 0)),
+                safe_float(d.get('presupuesto', 0), min_val=0),
                 d.get('estado', 'planificado'),
                 clean_str(d.get('notas', ''), 500),
                 now,
@@ -877,7 +877,7 @@ def update_trip(trip_id):
             params.append(clean_str(d[key], 500) if key in ('nombre', 'destino', 'notas') else d[key])
     if 'presupuesto' in d:
         fields.append("presupuesto=?")
-        params.append(float(d['presupuesto']))
+        params.append(safe_float(d['presupuesto'], min_val=0))
     if not fields:
         return jsonify({'ok': True})
     params.append(trip_id)

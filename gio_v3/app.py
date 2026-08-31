@@ -173,6 +173,10 @@ def create_app():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        # Mismo guard que SESSION_COOKIE_SECURE: solo bajo hosting real (donde
+        # TLS está garantizado), nunca en el dev local por http://localhost.
+        if bool(os.environ.get('PORT')):
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
 
     with app.app_context():
