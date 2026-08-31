@@ -45,6 +45,17 @@
 .tb-xp{background:var(--gold-d);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
 .tb-ec{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--emerald);}
 .tb-soma{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.2);color:var(--coral);}
+
+/* ── Prioridades de la semana — se capturan aquí y se siembran en el
+   widget "Prioridades" de Acta Diurna para toda la semana que sigue. ── */
+.prio-form{display:flex;flex-direction:column;gap:6px;padding:6px 10px 10px 37px;margin-bottom:3px;}
+.prio-input{background:var(--card2);border:1px solid var(--b);border-radius:7px;padding:7px 10px;
+  color:var(--text);font-size:var(--fs-sm);font-family:var(--sans);outline:none;transition:border-color .15s;}
+.prio-input:focus{border-color:var(--gold);}
+.prio-save{align-self:flex-start;margin-top:2px;background:var(--gold-d);border:1px solid rgba(201,168,76,.35);
+  border-radius:7px;padding:7px 12px;color:var(--gold);font-size:var(--fs-xs);letter-spacing:.02em;
+  cursor:pointer;transition:all .16s;font-family:var(--sans);}
+.prio-save:hover{background:rgba(201,168,76,.2);border-color:var(--gold);}
 .tb-hege{background:rgba(124,58,237,.07);border:1px solid rgba(124,58,237,.2);color:var(--violet);}
 .tb-paid{background:rgba(6,182,212,.07);border:1px solid rgba(6,182,212,.2);color:var(--cyan);}
 .opt-pill{font-size:var(--fs-xs);padding:1px 5px;border-radius:100px;background:var(--b);color:var(--dim);border:1px solid var(--b2);}
@@ -383,6 +394,14 @@
           {% set hora = horarios.get(t.id, '') %}
           {% if hora %}<span class="task-hora">{{ hora }}</span>{% endif %}
         </div>
+        {% if t.id == 'sun_prioridades' %}
+        <div class="prio-form">
+          <input class="prio-input" id="prio-1" placeholder="Prioridad 1…" maxlength="200" value="{{ weekly_priorities.p1 or '' }}">
+          <input class="prio-input" id="prio-2" placeholder="Prioridad 2…" maxlength="200" value="{{ weekly_priorities.p2 or '' }}">
+          <input class="prio-input" id="prio-3" placeholder="Prioridad 3…" maxlength="200" value="{{ weekly_priorities.p3 or '' }}">
+          <button class="prio-save" onclick="guardarPrioridadesSemana()">Guardar → aparecen toda la semana en Acta Diurna</button>
+        </div>
+        {% endif %}
         {% endfor %}
 
         <div class="bl-complete" id="blc-{{ bl.bloque_id }}" {% if not bl.bloque_done %}style="display:none"{% endif %}>
@@ -665,6 +684,32 @@ async function toggleTarea(subId, bloqueId, dia) {
     toast('Sin conexión', 'err');
   } finally {
     _pending.delete(subId);
+  }
+}
+
+async function guardarPrioridadesSemana() {
+  const p1 = document.getElementById('prio-1').value.trim();
+  const p2 = document.getElementById('prio-2').value.trim();
+  const p3 = document.getElementById('prio-3').value.trim();
+  if (!p1 && !p2 && !p3) { toast('Escribe al menos una prioridad', 'err'); return; }
+
+  try {
+    const r = await fetch('/ataraxia/api/prioridades-semana', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p1, p2, p3 }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { toast('Error al guardar', 'err'); return; }
+
+    toast('Guardadas — ya aparecen en Acta Diurna toda la semana', 'win');
+
+    const row = document.getElementById('trow-sun_prioridades');
+    if (row && !row.classList.contains('done')) {
+      toggleTarea('sun_prioridades', 'sun_prioridades_bloque', 'domingo');
+    }
+  } catch {
+    toast('Sin conexión', 'err');
   }
 }
 
