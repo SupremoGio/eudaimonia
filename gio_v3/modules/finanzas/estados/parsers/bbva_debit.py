@@ -128,6 +128,30 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
         if fechas:
             periodo = f"{min(fechas)} al {max(fechas)}"
 
+    # Pre-compute each entry's inline description so a neighbour can look
+    # ahead/behind to decide who owns the single line that sits between two
+    # date rows (see _entry_has_own_desc below).
+    inline_by_idx: list[str] = []
+    dm_by_idx: list[re.Match | None] = []
+    for pos in date_positions:
+        dm = DATE_LINE_RE.match(lines[pos])
+        if dm:
+            inline_by_idx.append((dm.group(4) or "").strip())
+        else:
+            m0 = DATE_ONLY_RE.match(lines[pos])
+            inline_by_idx.append((m0.group(4) or "").strip())
+        dm_by_idx.append(dm)
+
+    def _entry_has_own_desc(inline: str) -> bool:
+        # BBVA renders every movement as "TIPO DE MOVIMIENTO / referencia".
+        # An inline description that already contains that "/" separator
+        # (e.g. "RETIRO SIN TARJETA QR / ******7852") is the complete unit —
+        # pdfplumber didn't need to split it across the surrounding lines.
+        # Empty, or a "/"-less fragment (a reference-number continuation
+        # like "0056645672 072 3107260honorarios", or "RFC: ... AUT:"),
+        # means the real description lives partly on the line before/after.
+        return "/" in inline
+
     movimientos = []
     for idx, pos in enumerate(date_positions):
         next_pos = date_positions[idx + 1] if idx + 1 < len(date_positions) else len(lines)
@@ -135,19 +159,22 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
         d, mes, y = m.group(1), m.group(2).lower(), m.group(3)
         fecha = f"{y}-{MESES.get(mes, '00')}-{d.zfill(2)}"
 
-        dm = DATE_LINE_RE.match(lines[pos])
+        dm = dm_by_idx[idx]
+        inline_desc = inline_by_idx[idx]
         if dm:
             monto = _parse_monto(dm.group(5))
-            inline_desc = (dm.group(4) or "").strip()
         else:
             block = lines[pos:next_pos]
             monto, region_start = _find_amount_in_block(block)
             if monto is None:
                 continue
-            inline_desc = (m.group(4) or "").strip()
 
         desc_parts = []
-        if pos > 0 and (pos - 1) not in date_pos_set:
+        if (
+            pos > 0
+            and (pos - 1) not in date_pos_set
+            and not _entry_has_own_desc(inline_desc)
+        ):
             desc_parts.append(lines[pos - 1])
 
         if inline_desc:
@@ -155,7 +182,16 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
 
         is_last = (idx + 1 >= len(date_positions))
         if dm:
-            post_end = next_pos if is_last else (next_pos - 1 if next_pos > pos + 1 else pos + 1)
+            if is_last:
+                post_end = next_pos
+            elif next_pos > pos + 1:
+                # Only cede the boundary line to the next entry if that
+                # entry actually needs it as its "before" description —
+                # otherwise it's this entry's own trailing continuation.
+                next_needs_before = not _entry_has_own_desc(inline_by_idx[idx + 1])
+                post_end = (next_pos - 1) if next_needs_before else next_pos
+            else:
+                post_end = pos + 1
             for bline in lines[pos + 1 : post_end]:
                 if not DATE_ONLY_RE.match(bline):
                     desc_parts.append(bline)

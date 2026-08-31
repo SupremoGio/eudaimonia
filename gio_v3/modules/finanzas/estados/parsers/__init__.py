@@ -65,6 +65,9 @@ def detect_bank(path: Path) -> str:
             return "BBVA_TDC"
         return "DESCONOCIDO"
     if ext in (".xlsx", ".xls"):
+        from .bbva_debit_xlsx import detect_excel as bbva_deb_excel_detect
+        if bbva_deb_excel_detect(path):
+            return "BBVA_DEB"
         from .bbva_csv import detect_excel as bbva_excel_detect
         if bbva_excel_detect(path):
             return "BBVA_TDC"
@@ -114,6 +117,14 @@ def parse_csv(path: Path) -> list[dict]:
 
 
 def parse_excel(path: Path) -> list[dict]:
+    from .bbva_debit_xlsx import detect_excel as bbva_deb_detect, parse_excel as bbva_deb_parse
+    if bbva_deb_detect(path):
+        print(f"  -> Banco detectado: BBVA_DEB (Excel)")
+        movimientos = bbva_deb_parse(path)
+        for m in movimientos:
+            m["banco"] = "BBVA_DEB"
+        return movimientos
+
     from .bbva_csv import detect_excel as bbva_detect, parse_excel as bbva_parse
     if bbva_detect(path):
         print(f"  -> Banco detectado: BBVA (Excel)")
