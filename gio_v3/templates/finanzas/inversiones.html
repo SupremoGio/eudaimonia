@@ -164,7 +164,10 @@
       <div class="inv-hero-main">
         <div class="inv-hero-main-label"><i data-lucide="wallet" style="width:11px;height:11px;"></i> Saldo total</div>
         <div class="inv-hero-main-val">${{ "{:,.0f}".format(saldo_total) }}</div>
-        <div class="inv-hero-main-sub">{{ plataformas|length }} plataforma{% if plataformas|length != 1 %}s{% endif %} activa{% if plataformas|length != 1 %}s{% endif %}</div>
+        <div class="inv-hero-main-sub">
+          {{ plataformas|length }} plataforma{% if plataformas|length != 1 %}s{% endif %} activa{% if plataformas|length != 1 %}s{% endif %}
+          {% if total_ajuste != 0 %} · incluye {{ '+' if total_ajuste > 0 else '−' }}${{ "{:,.0f}".format(total_ajuste|abs) }} en ajustes{% endif %}
+        </div>
       </div>
       <div class="inv-kpis">
         <div class="inv-kpi">
@@ -222,6 +225,7 @@
           Aportado ${{ "{:,.0f}".format(p.aportado) }}
           {% if p.retirado > 0 %} · Retirado ${{ "{:,.0f}".format(p.retirado) }}{% endif %}
           {% if p.rendimiento > 0 %} · Rend. ${{ "{:,.0f}".format(p.rendimiento) }}{% endif %}
+          {% if p.ajuste != 0 %} · Ajuste {{ '+' if p.ajuste > 0 else '−' }}${{ "{:,.0f}".format(p.ajuste|abs) }}{% endif %}
         </div>
         <div class="inv-plat-bar-wrap">
           <div class="inv-plat-bar">
@@ -253,11 +257,15 @@
   {% if movs %}
   <div class="inv-timeline" id="inv-timeline">
     {% for m in movs %}
-    {% set sign = '+' if m.subcategoria in ('APORTACION','RENDIMIENTO') else '-' %}
+    {% if m.subcategoria == 'AJUSTE' %}
+      {% set sign = '+' if m.monto >= 0 else '−' %}
+    {% else %}
+      {% set sign = '+' if m.subcategoria in ('APORTACION','RENDIMIENTO') else '-' %}
+    {% endif %}
     {% set col  = m.dir_meta.color %}
     <div class="inv-mov" id="inv-mov-{{ m.id }}" style="--i:{{ loop.index0 }}">
       <div class="inv-mov-dir" style="background:{{ col }}1a;">
-        {% if m.subcategoria == 'APORTACION' %}↑{% elif m.subcategoria == 'RETIRO' %}↓{% else %}✦{% endif %}
+        {% if m.subcategoria == 'APORTACION' %}↑{% elif m.subcategoria == 'RETIRO' %}↓{% elif m.subcategoria == 'AJUSTE' %}⚖{% else %}✦{% endif %}
       </div>
       <div class="inv-mov-body">
         <div class="inv-mov-top">
@@ -271,7 +279,7 @@
       </div>
       <div class="inv-mov-right">
         <div class="inv-mov-monto" style="color:{{ col }};">
-          {{ sign }}${{ "{:,.0f}".format(m.monto) }}
+          {{ sign }}${{ "{:,.0f}".format(m.monto|abs) }}
         </div>
         <div class="inv-mov-fecha">{{ m.fecha }}</div>
       </div>
@@ -315,6 +323,13 @@
         </select>
       </div>
     </div>
+    <div class="inv-field" id="inv-ajuste-sentido-field" style="display:none;">
+      <label>Sentido del ajuste</label>
+      <select id="inv-ajuste-sentido">
+        <option value="sumar">+ Sumar al saldo</option>
+        <option value="restar">− Restar al saldo</option>
+      </select>
+    </div>
     <div class="inv-field">
       <label>Monto (MXN)</label>
       <input type="number" id="inv-monto" placeholder="0.00" step="0.01" min="0">
@@ -346,20 +361,30 @@ function toast(msg, type) {
 
 function openModal() {
   document.getElementById('inv-modal').classList.add('open');
+  toggleAjusteField();
   document.getElementById('inv-monto').focus();
 }
 function closeModal() {
   document.getElementById('inv-modal').classList.remove('open');
 }
+function toggleAjusteField() {
+  const esAjuste = document.getElementById('inv-dir').value === 'AJUSTE';
+  document.getElementById('inv-ajuste-sentido-field').style.display = esAjuste ? '' : 'none';
+}
+document.getElementById('inv-dir').addEventListener('change', toggleAjusteField);
 
 async function guardarMov() {
   const fecha      = document.getElementById('inv-fecha').value;
   const plataforma = document.getElementById('inv-plat').value;
   const direccion  = document.getElementById('inv-dir').value;
-  const monto      = parseFloat(document.getElementById('inv-monto').value);
   const descripcion= document.getElementById('inv-desc').value;
+  let monto        = parseFloat(document.getElementById('inv-monto').value);
 
   if (!monto || monto <= 0) { toast('Ingresa un monto válido', 'err'); return; }
+
+  if (direccion === 'AJUSTE' && document.getElementById('inv-ajuste-sentido').value === 'restar') {
+    monto = -monto;
+  }
 
   const res  = await fetch('/finanzas/inversiones/api/mov', {
     method: 'POST',

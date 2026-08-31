@@ -4,14 +4,20 @@ Inversiones — vista dedicada para movimientos tipo='INVERSION'.
 Modelo de datos (reutiliza est_movimientos):
   tipo        = 'INVERSION'
   categoria   = plataforma  (GBM | INVEX | CETES | CRYPTO | FIBRA | OTRO)
-  subcategoria= dirección   (APORTACION | RETIRO | RENDIMIENTO)
-  monto       = monto positivo
+  subcategoria= dirección   (APORTACION | RETIRO | RENDIMIENTO | AJUSTE)
+  monto       = monto positivo, EXCEPTO en AJUSTE que puede ser negativo
 
 La net position por plataforma:
-  aportado  = SUM(monto) WHERE subcategoria='APORTACION'
-  retirado  = SUM(monto) WHERE subcategoria='RETIRO'
+  aportado   = SUM(monto) WHERE subcategoria='APORTACION'
+  retirado   = SUM(monto) WHERE subcategoria='RETIRO'
   rendimiento= SUM(monto) WHERE subcategoria='RENDIMIENTO'
-  saldo_est = aportado - retirado + rendimiento
+  ajuste     = SUM(monto) WHERE subcategoria='AJUSTE'   (con signo)
+  saldo_est  = aportado - retirado + rendimiento + ajuste
+
+AJUSTE existe para cuando el saldo estimado no cuadra con el saldo real
+de la plataforma (un retiro que nunca se capturó, comisiones, una
+ganancia/pérdida de mercado no reflejada) — se registra la diferencia
+directamente en vez de intentar reconstruir el movimiento original.
 """
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
@@ -21,7 +27,7 @@ from datetime import datetime
 inversiones_bp = Blueprint('inversiones', __name__, template_folder='../../templates')
 
 PLATAFORMAS = ['GBM', 'INVEX', 'CETES', 'CRYPTO', 'FIBRA', 'OTRO']
-DIRECCIONES = ['APORTACION', 'RETIRO', 'RENDIMIENTO']
+DIRECCIONES = ['APORTACION', 'RETIRO', 'RENDIMIENTO', 'AJUSTE']
 
 PLAT_META = {
     'GBM':    {'label': 'GBM Homebroker', 'icon': 'trending-up',  'color': '#22c55e'},
@@ -33,9 +39,15 @@ PLAT_META = {
 }
 
 DIR_META = {
-    'APORTACION':   {'label': 'Aportación',   'sign': +1, 'color': '#22c55e'},
-    'RETIRO':       {'label': 'Retiro',        'sign': -1, 'color': '#f87171'},
-    'RENDIMIENTO':  {'label': 'Rendimiento',   'sign': +1, 'color': '#fbbf24'},
+    'APORTACION':   {'label': 'Aportación',   'sign': +1,  'color': '#22c55e'},
+    'RETIRO':       {'label': 'Retiro',        'sign': -1,  'color': '#f87171'},
+    'RENDIMIENTO':  {'label': 'Rendimiento',   'sign': +1,  'color': '#fbbf24'},
+    # Corrección manual para que el saldo estimado cuadre con el saldo real
+    # de la plataforma (retiros no capturados, comisiones, ganancias o
+    # pérdidas de mercado no reflejadas en aportación/rendimiento, etc).
+    # A diferencia de las otras direcciones, su monto puede ser negativo —
+    # el signo lo decide quien lo registra, no la dirección en sí.
+    'AJUSTE':       {'label': 'Ajuste',        'sign': None, 'color': '#94a3b8'},
 }
 
 
@@ -71,16 +83,19 @@ def index():
         cat = r['categoria'] if r['categoria'] in PLATAFORMAS else 'OTRO'
         sub = r['subcategoria'] if r['subcategoria'] in DIRECCIONES else 'APORTACION'
         if cat not in port:
-            port[cat] = {'aportado': 0, 'retirado': 0, 'rendimiento': 0}
+            port[cat] = {'aportado': 0, 'retirado': 0, 'rendimiento': 0, 'ajuste': 0}
         if sub == 'APORTACION':
             port[cat]['aportado'] += float(r['total'] or 0)
         elif sub == 'RETIRO':
             port[cat]['retirado'] += float(r['total'] or 0)
         elif sub == 'RENDIMIENTO':
             port[cat]['rendimiento'] += float(r['total'] or 0)
+        elif sub == 'AJUSTE':
+            # monto ya viene con signo (positivo o negativo) desde add_mov()
+            port[cat]['ajuste'] += float(r['total'] or 0)
 
     plataformas_data = []
-    total_aportado = total_retirado = total_rendimiento = 0
+    total_aportado = total_retirado = total_rendimiento = total_ajuste = 0
     for plat in PLATAFORMAS:
         if plat not in port:
             continue
@@ -88,15 +103,18 @@ def index():
         aportado    = round(p['aportado'], 2)
         retirado    = round(p['retirado'], 2)
         rendimiento = round(p['rendimiento'], 2)
-        saldo       = round(aportado - retirado + rendimiento, 2)
+        ajuste      = round(p['ajuste'], 2)
+        saldo       = round(aportado - retirado + rendimiento + ajuste, 2)
         total_aportado    += aportado
         total_retirado    += retirado
         total_rendimiento += rendimiento
+        total_ajuste      += ajuste
         plataformas_data.append({
             'id':          plat,
             'aportado':    aportado,
             'retirado':    retirado,
             'rendimiento': rendimiento,
+            'ajuste':      ajuste,
             'saldo':       saldo,
             **PLAT_META.get(plat, PLAT_META['OTRO']),
         })
@@ -104,7 +122,8 @@ def index():
     total_aportado    = round(total_aportado, 2)
     total_retirado    = round(total_retirado, 2)
     total_rendimiento = round(total_rendimiento, 2)
-    saldo_total       = round(total_aportado - total_retirado + total_rendimiento, 2)
+    total_ajuste      = round(total_ajuste, 2)
+    saldo_total       = round(total_aportado - total_retirado + total_rendimiento + total_ajuste, 2)
 
     # Pct allocation para barra
     for p in plataformas_data:
@@ -132,6 +151,7 @@ def index():
         total_aportado=total_aportado,
         total_retirado=total_retirado,
         total_rendimiento=total_rendimiento,
+        total_ajuste=total_ajuste,
         saldo_total=saldo_total,
         plataformas_list=PLATAFORMAS,
         plat_meta=PLAT_META,
@@ -148,17 +168,25 @@ def add_mov():
         return jsonify({'error': 'locked'}), 403
     d = request.json or {}
     fecha       = d.get('fecha', today_str())
-    monto       = safe_float(d.get('monto'), min_val=0.01)
     plataforma  = clean_str(d.get('plataforma'), 20)
     direccion   = clean_str(d.get('direccion'), 20)
     descripcion = clean_str(d.get('descripcion', ''), 200) or f'{direccion} {plataforma}'
+
+    if direccion not in DIRECCIONES:
+        return jsonify({'error': 'Dirección inválida'}), 400
+
+    if direccion == 'AJUSTE':
+        # A diferencia de aportación/retiro/rendimiento, un ajuste puede ser
+        # negativo (ej. dinero retirado que nunca se capturó) — el signo lo
+        # decide quien lo registra.
+        monto = safe_float(d.get('monto'))
+    else:
+        monto = safe_float(d.get('monto'), min_val=0.01)
 
     if not monto:
         return jsonify({'error': 'Monto inválido'}), 400
     if plataforma not in PLATAFORMAS:
         return jsonify({'error': 'Plataforma inválida'}), 400
-    if direccion not in DIRECCIONES:
-        return jsonify({'error': 'Dirección inválida'}), 400
 
     with get_db() as db:
         db.execute("""
