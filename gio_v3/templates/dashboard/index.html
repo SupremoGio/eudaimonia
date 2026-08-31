@@ -202,7 +202,11 @@
               <span style="font-family:var(--sans);font-size:9px;color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>
             </div>
             {% if not data.deadlines %}
-              <div class="notif-empty">Sin pendientes por ahora ✦</div>
+              <div class="empty-rich" style="padding:20px 8px;">
+                <div class="empty-icon-box"><i data-lucide="bell-off"></i></div>
+                <div class="empty-title">Sin pendientes</div>
+                <div class="empty-desc">No hay recordatorios ni vencimientos próximos por ahora.</div>
+              </div>
             {% else %}
               <div class="dr-list">
                 {% for dl in data.deadlines %}{% include "dashboard/_deadline_card.html" %}{% endfor %}
@@ -353,21 +357,37 @@
           <div class="word-example" id="word-example">&ldquo;{{ data.word_of_day.example }}&rdquo;</div>
           <span class="word-fr" id="word-fr">FR · {{ data.word_of_day.french }}</span>
         </div>
+        {% else %}
+        <div class="dash-card">
+          <div class="empty-rich" style="padding:14px 8px;">
+            <div class="empty-icon-box"><i data-lucide="languages"></i></div>
+            <div class="empty-title">Sin palabra hoy</div>
+            <div class="empty-desc">Todavía no hay una palabra del día cargada. Vuelve más tarde o revisa el módulo de Idiomas.</div>
+          </div>
+        </div>
         {% endif %}
       </div>
 
-      {% if data.deadlines %}
       <div>
         <div class="dr-head">
-          <span class="dr-dot"></span>
+          {% if data.deadlines %}<span class="dr-dot"></span>{% endif %}
           <span class="dash-label" style="flex:1;">Deadline Radar</span>
-          <span style="font-family:var(--sans);font-size:9px;color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>
+          {% if data.deadlines %}<span style="font-family:var(--sans);font-size:9px;color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>{% endif %}
         </div>
+        {% if data.deadlines %}
         <div class="dr-list">
           {% for dl in data.deadlines %}{% include "dashboard/_deadline_card.html" %}{% endfor %}
         </div>
+        {% else %}
+        <div class="dash-card">
+          <div class="empty-rich" style="padding:14px 8px;">
+            <div class="empty-icon-box"><i data-lucide="calendar-check"></i></div>
+            <div class="empty-title">Nada en el radar</div>
+            <div class="empty-desc">No tienes recordatorios, tareas ni vencimientos próximos. Disfruta la calma.</div>
+          </div>
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
 
     </div>
   </div>

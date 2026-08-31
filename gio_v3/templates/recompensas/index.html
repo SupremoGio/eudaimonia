@@ -38,6 +38,8 @@
 .hrow-desc{font-size:var(--fs-sm);color:var(--text);}
 .hrow-meta{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.06em;margin-top:2px;}
 .hrow-ec{font-family:var(--serif);font-size:.95rem;font-style:italic;color:var(--coral);white-space:nowrap;}
+.hrow-anim{opacity:0;animation:rowInRec .4s ease forwards;animation-delay:calc(var(--i,0)*30ms);}
+@keyframes rowInRec{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
 @media(max-width:600px){
   .gasto-row{grid-template-columns:1fr;} .sep-sym{display:none;}
@@ -112,8 +114,9 @@
 
 <!-- ── Rewards grid ────────────────────────────────────────────────── -->
 <div class="rc-grid" id="rewards-grid">
+  {% if rewards %}
   {% for r in rewards %}
-  <div class="tile rc {% if r.can_redeem %}can{% endif %}" data-id="{{ r.id }}">
+  <div class="tile rc {% if r.can_redeem %}can{% endif %}" data-id="{{ r.id }}" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:{{ (loop.index0 * 0.035) }}s;">
     <div class="rc-actions">
       <button class="ai" onclick="editReward({{ r.id }}, '{{ r.name }}', '{{ r.description|replace("'","\\\'") }}', {{ r.ec_cost }}, {{ r.level_required }}, {{ r.cooldown_days }}, {{ 'true' if r.weekend_only else 'false' }})" title="Editar">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -159,6 +162,14 @@
     {% endif %}
   </div>
   {% endfor %}
+  {% else %}
+  <div class="empty-rich" style="grid-column:1/-1">
+    <div class="empty-icon-box"><i data-lucide="gift"></i></div>
+    <div class="empty-title">Aún no hay recompensas</div>
+    <div class="empty-desc">Crea tu primera recompensa y empieza a convertir tu esfuerzo en algo tangible.</div>
+    <button class="empty-cta" onclick="document.getElementById('f-name').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('f-name').focus();">+ Agregar recompensa</button>
+  </div>
+  {% endif %}
 </div>
 
 <!-- ── Agregar recompensa ──────────────────────────────────────────── -->
@@ -333,11 +344,16 @@ async function loadHistorial() {
     const gastos = await r.json();
     const el = document.getElementById('historial-list');
     if (!gastos.length) {
-      el.innerHTML = '<div style="font-size:var(--fs-sm);color:var(--dim);text-align:center;padding:16px;">Sin gastos registrados</div>';
+      el.innerHTML = `<div class="empty-rich">
+        <div class="empty-icon-box"><i data-lucide="receipt"></i></div>
+        <div class="empty-title">Sin gastos aún</div>
+        <div class="empty-desc">Registra en qué gastaste tus EC y aquí quedará el rastro.</div>
+      </div>`;
+      if (window.lucide) lucide.createIcons();
       return;
     }
-    el.innerHTML = gastos.map(g => `
-      <div class="hrow">
+    el.innerHTML = gastos.map((g, i) => `
+      <div class="hrow hrow-anim" style="--i:${i}">
         <div>
           <div class="hrow-desc">${g.description}</div>
           <div class="hrow-meta">${g.date} · $${g.ec * 10} MXN</div>

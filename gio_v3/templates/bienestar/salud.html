@@ -11,8 +11,18 @@
 
 {% block content %}
 <style>
-/* ── Stats bar ────────────────────────────────────────────────────── */
-.hg-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+/* ── Stats bar — asymmetric hero (episodios activos, el número que más
+   importa ahora mismo) junto a dos estadísticas de soporte ────────────── */
+.hg-stats { display:grid; grid-template-columns:1.8fr 1fr 1fr; gap:12px; margin-bottom:28px; }
+.hg-stat-hero { display:flex; align-items:center; gap:16px; padding:18px 20px; }
+.hg-stat-hero-icon { width:52px; height:52px; border-radius:14px; display:flex; align-items:center;
+  justify-content:center; flex-shrink:0; }
+.hg-stat-hero-icon svg { width:24px; height:24px; }
+.hg-stat-hero-body { min-width:0; }
+.hg-stat-hero-val { font-family:var(--serif); font-size:2.4rem; font-weight:600; line-height:1; }
+.hg-stat-hero-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase;
+  letter-spacing:.1em; margin-top:6px; }
+.hg-stat-hero-sub { font-size:var(--fs-sm); color:var(--dim); margin-top:2px; }
 
 /* ── Analytics panel ──────────────────────────────────────────────── */
 .hg-analytics { border:1px solid var(--b); border-radius:14px; margin-bottom:20px;
@@ -32,7 +42,7 @@
 .hg-alert strong { font-weight:600; }
 .hg-alert-icon { font-size:16px; flex-shrink:0; margin-top:1px; }
 
-.hg-an-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+.hg-an-grid { display:grid; grid-template-columns:1.2fr 1fr 0.9fr; gap:12px; }
 .hg-an-card { background:var(--card); border:1px solid var(--b); border-radius:12px;
               padding:14px 16px; }
 .hg-an-title { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.12em;
@@ -199,11 +209,23 @@
 .hg-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:16px; }
 .hg-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 
+/* ── Entrada escalonada de las tarjetas de episodios ──────────────────── */
+.hg-card { opacity:0; animation:cardInSaludB .4s ease forwards; animation-delay:calc(var(--i,0)*30ms); }
+@keyframes cardInSaludB { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+@media (prefers-reduced-motion: reduce) { .hg-card { animation:none; opacity:1; } }
+
+/* ── Section eyebrow (department-style grouping header) ───────────────── */
+.hg-section-eyebrow { display:flex; align-items:center; gap:8px; margin:8px 0 14px; }
+.hg-section-eyebrow svg { width:13px; height:13px; color:var(--gold); flex-shrink:0; }
+.hg-section-eyebrow-t { font-size:var(--fs-xs); letter-spacing:.22em; text-transform:uppercase; color:var(--dim); }
+.hg-section-eyebrow-d { font-size:var(--fs-xs); color:var(--dim); opacity:.65; }
+
 /* ── Mobile ───────────────────────────────────────────────────────── */
 @media(max-width:860px) {
   .hg-shell  { grid-template-columns:1fr; }
   .hg-detail { position:static; max-height:none; }
-  .hg-stats  { grid-template-columns:1fr 1fr 1fr; }
+  .hg-stats  { grid-template-columns:1fr 1fr; }
+  .hg-stat-hero { grid-column:1/-1; }
 }
 @media(max-width:500px) {
   .hg-stats { grid-template-columns:1fr; }
@@ -215,11 +237,19 @@ window.__MEDICO__ = {{ episodios | tojson }};
 window.__MED_STATS__ = {{ stats | tojson }};
 </script>
 
-<!-- ── Stats bar ──────────────────────────────────────────────────────── -->
+<!-- ── Stats bar — hero: el número que importa ahora mismo ──────────────── -->
+{% set hg_ok = stats.activos == 0 %}
+{% set hg_hero_color = 'var(--emerald)' if hg_ok else 'var(--coral)' %}
 <div class="hg-stats">
-  <div class="hg-stat">
-    <div class="hg-stat-val" id="stat-activos">{{ stats.activos }}</div>
-    <div class="hg-stat-lbl">Episodios activos</div>
+  <div class="hg-stat hg-stat-hero">
+    <div class="hg-stat-hero-icon" style="background:{{ 'rgba(16,185,129,.12)' if hg_ok else 'rgba(244,63,94,.12)' }};">
+      <i data-lucide="{{ 'shield-check' if hg_ok else 'activity' }}" style="color:{{ hg_hero_color }};"></i>
+    </div>
+    <div class="hg-stat-hero-body">
+      <div class="hg-stat-hero-val" id="stat-activos" style="color:{{ hg_hero_color }};">{{ stats.activos }}</div>
+      <div class="hg-stat-hero-lbl">Episodios activos</div>
+      <div class="hg-stat-hero-sub">{{ 'Todo bajo control' if hg_ok else 'requieren seguimiento ahora' }}</div>
+    </div>
   </div>
   <div class="hg-stat">
     <div class="hg-stat-val" id="stat-meds">{{ stats.meds_activos }}</div>
@@ -343,6 +373,13 @@ window.__MED_STATS__ = {{ stats | tojson }};
 </details>
 {% endif %}
 
+<!-- ── Grupo: Historial médico ────────────────────────────────────────── -->
+<div class="hg-section-eyebrow">
+  <i data-lucide="clipboard-list"></i>
+  <span class="hg-section-eyebrow-t">Historial médico</span>
+  <span class="hg-section-eyebrow-d">— episodios, recetas y medicamentos</span>
+</div>
+
 <!-- ── Filter tabs ────────────────────────────────────────────────────── -->
 <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
   <div class="hg-tabs">
@@ -362,6 +399,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
     {% for e in episodios %}
     <div class="hg-card" id="card-{{ e.id }}"
          data-tipo="{{ e.tipo }}" data-activo="{{ e.activo }}"
+         style="--i:{{ loop.index0 }};"
          onclick="selectEp({{ e.id }})">
       <div class="hg-card-top">
         <div class="hg-card-icon icon-{{ 'enf' if e.tipo=='enfermedad' else ('les' if e.tipo=='lesion' else 'con') }}">

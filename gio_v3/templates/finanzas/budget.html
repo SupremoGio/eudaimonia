@@ -211,23 +211,23 @@
 
 <!-- Cashflow hero -->
 {% if n_movimientos == 0 %}
-<div style="background:var(--card);border:1px solid var(--b);border-radius:16px;padding:28px 22px;margin-bottom:14px;text-align:center;">
-  <div style="display:flex;justify-content:center;margin-bottom:12px;color:var(--dim);"><i data-lucide="folder-open" style="width:32px;height:32px;"></i></div>
-  <div style="font-family:var(--serif);font-size:20px;color:var(--text);margin-bottom:6px;">Sin movimientos importados</div>
-  <div style="font-size:var(--fs-sm);color:var(--dim);margin-bottom:20px;">Sube tus estados de cuenta para ver la radiografía 50·30·20 en tiempo real.</div>
-  <a href="/finanzas/estados" style="display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#1a1510;font-family:var(--sans);font-size:13px;font-weight:600;padding:11px 22px;border-radius:10px;text-decoration:none;">
-    <i data-lucide="upload" style="width:14px;height:14px;"></i> Importar estados de cuenta
-  </a>
-  {% if ingreso_real == 0 %}
-  <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--b);">
-    <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;margin-bottom:8px;">O ingresa tu ingreso mensual manualmente:</div>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
-      <input type="number" id="ingreso-manual-input" placeholder="Ej: 20000"
-        style="background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;width:140px;text-align:right;">
-      <button onclick="guardarIngresoManual()" class="btn-a" style="font-size:var(--fs-sm);">Guardar</button>
+<div style="background:var(--card);border:1px solid var(--b);border-radius:16px;margin-bottom:14px;">
+  <div class="empty-rich">
+    <div class="empty-icon-box"><i data-lucide="wallet"></i></div>
+    <div class="empty-title">Sin movimientos importados</div>
+    <div class="empty-desc">Sube tus estados de cuenta para ver la radiografía 50·30·20 en tiempo real.</div>
+    <a href="/finanzas/estados" class="empty-cta"><i data-lucide="upload" style="width:14px;height:14px;"></i> Importar estados de cuenta</a>
+    {% if ingreso_real == 0 %}
+    <div style="margin-top:4px;padding-top:16px;border-top:1px solid var(--b);width:100%;max-width:320px;">
+      <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;margin-bottom:8px;">O ingresa tu ingreso mensual manualmente:</div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <input type="number" id="ingreso-manual-input" placeholder="Ej: 20000"
+          style="background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;width:140px;text-align:right;">
+        <button onclick="guardarIngresoManual()" class="btn-a" style="font-size:var(--fs-sm);">Guardar</button>
+      </div>
     </div>
+    {% endif %}
   </div>
-  {% endif %}
 </div>
 {% else %}
 {% set pct_gastado = (total_gastado / ingreso_real * 100) if ingreso_real > 0 else 0 %}
@@ -398,7 +398,11 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="bucket-empty">Sin categorías con gasto en este mes</div>
+  <div class="empty-rich" style="padding:28px 24px;">
+    <div class="empty-icon-box"><i data-lucide="piggy-bank"></i></div>
+    <div class="empty-title">Sin gasto registrado</div>
+    <div class="empty-desc">Aún no hay movimientos en este bucket para {{ mes }}. Importa tus estados de cuenta para verlos aquí.</div>
+  </div>
   {% endif %}
 </div>
 {% endfor %}
@@ -578,7 +582,12 @@ async function _loadMovs(cat) {
 function _renderMovs(movs) {
   const body = document.getElementById('dd-body');
   if (!movs.length) {
-    body.innerHTML = '<div class="dd-loading">Sin movimientos en este mes</div>';
+    body.innerHTML = `<div class="empty-rich" style="padding:32px 20px;">
+      <div class="empty-icon-box"><i data-lucide="receipt"></i></div>
+      <div class="empty-title">Sin movimientos</div>
+      <div class="empty-desc">Esta categoría no tiene movimientos registrados en ${MES}.</div>
+    </div>`;
+    if (window.lucide) lucide.createIcons();
     return;
   }
   const total = movs.reduce((s, m) => s + m.mi_monto, 0);

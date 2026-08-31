@@ -20,8 +20,21 @@
 .sf-pn-value.pos{color:var(--emerald);}
 .sf-pn-value.neg{color:var(--coral);}
 .sf-pn-sub{font-size:var(--fs-sm);color:#8A7A60;margin-top:6px;}
-.sf-stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px;}
-.sf-stat{background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:8px;padding:14px 16px;}
+.sf-pn-dist{font-size:var(--fs-xs);color:var(--mid);margin-top:8px;}
+
+/* ── Hero row: ring + patrimonio (asymmetric, wide) alongside 3 supporting
+   stats — replaces the old uniform repeat(3,1fr) stat strip. ─────────── */
+.sf-hero-top{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:14px;align-items:center;margin-top:18px;}
+.sf-hero-primary{display:flex;align-items:center;gap:18px;background:rgba(255,255,255,.025);
+  border:1px solid var(--b);border-radius:8px;padding:14px 18px;height:100%;box-sizing:border-box;}
+.sf-hero-ring{position:relative;width:84px;height:84px;flex-shrink:0;}
+.sf-hero-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+.sf-hero-ring circle{transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1);}
+.sf-hero-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.sf-hero-ring-pct{font-family:var(--serif);font-size:1.05rem;font-weight:600;line-height:1;}
+.sf-hero-ring-lvl{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:2px;}
+.sf-hero-primary-info{min-width:0;}
+.sf-stat{background:rgba(255,255,255,.025);border:1px solid var(--b);border-radius:8px;padding:14px 16px;height:100%;box-sizing:border-box;}
 .sf-stat-v{font-family:var(--serif);font-size:1.4rem;font-weight:300;line-height:1;}
 .sf-stat-l{font-size:var(--fs-xs);color:#8A7A60;letter-spacing:.16em;text-transform:uppercase;margin-top:4px;}
 .sf-stat-s{font-size:var(--fs-xs);color:#8A7A60;margin-top:2px;}
@@ -31,6 +44,19 @@
 .sf-bar-dot{width:7px;height:7px;border-radius:50%;}
 .sf-bar{height:6px;border-radius:100px;overflow:hidden;background:rgba(255,255,255,.05);display:flex;}
 .sf-bar-seg{height:100%;transition:width .6s;}
+
+/* ── Department grouping — an eyebrow header above related tile pairs,
+   giving the page visual sections instead of uniform tiles back-to-back. ── */
+.sf-dept-label{grid-column:1/-1;display:flex;align-items:center;gap:8px;margin:22px 0 -2px;}
+.sf-dept-label svg{width:13px;height:13px;color:var(--gold);flex-shrink:0;}
+.sf-dept-label-t{font-size:var(--fs-xs);letter-spacing:.22em;text-transform:uppercase;color:var(--dim);}
+.sf-dept-label-d{font-size:var(--fs-xs);color:var(--dim);opacity:.65;}
+.sf-grid>.sf-dept-label:first-child{margin-top:0;}
+
+/* ── Staggered entrance for server-rendered list/card content ────────────── */
+@keyframes cardInSaludF{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.sf-account,.sf-bien,.sf-debt-row{opacity:0;animation:cardInSaludF .4s ease forwards;animation-delay:calc(var(--i,0)*30ms);}
+@media (prefers-reduced-motion: reduce){.sf-account,.sf-bien,.sf-debt-row{animation:none;opacity:1;}}
 
 /* ── Account groups ───────────────────────────────────────────────────────── */
 .sf-group-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
@@ -105,7 +131,8 @@
 @media(max-width:767px){
   .sf-grid{grid-template-columns:1fr;}
   .sf-full,.sf-left,.sf-right{grid-column:1/-1;}
-  .sf-stat-row{grid-template-columns:1fr 1fr;}
+  .sf-hero-top{grid-template-columns:1fr;gap:10px;margin-top:14px;}
+  .sf-hero-primary{flex-direction:column;align-items:flex-start;text-align:left;}
   .sf-pn-value{font-size:1.9rem;}
   .sf-bienes-grid{grid-template-columns:1fr 1fr;}
   .sf-form-row.c2,.sf-form-row.c3{grid-template-columns:1fr;}
@@ -114,6 +141,8 @@
 @media(min-width:768px) and (max-width:1024px){
   .sf-grid{grid-template-columns:1fr;}
   .sf-full,.sf-left,.sf-right{grid-column:1/-1;}
+  .sf-hero-top{grid-template-columns:1fr 1fr;}
+  .sf-hero-primary{grid-column:1/-1;}
 }
 </style>
 
@@ -136,25 +165,42 @@
 
 {# ── PATRIMONIO NETO HERO ──────────────────────────────────────────────────── #}
 <div class="sf-hero sf-full">
-  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
-    <div>
-      <div class="sf-pn-label">Patrimonio Neto</div>
-      <div class="sf-pn-value {% if patrimonio_neto >= 0 %}pos{% else %}neg{% endif %}">
-        {% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto) }}
-        <span style="font-size:1rem;color:#8A7A60"> MXN</span>
-      </div>
-      <div class="sf-pn-sub">Activos totales menos pasivos · actualizado hoy</div>
-    </div>
-    <div style="text-align:right;">
-      <div class="sf-pn-label">Distribución</div>
-      {% set total_ref = [total_activos, 1]|max %}
-      <div style="font-size:var(--fs-sm);color:#A89880;margin-bottom:6px;">
-        Cuentas&nbsp;{{ "{:.0f}".format(activos_cuentas/total_ref*100) }}% · Bienes&nbsp;{{ "{:.0f}".format(total_bienes/total_ref*100) }}% · Pasivos&nbsp;{{ "{:.0f}".format(total_pasivos/total_ref*100) }}%
-      </div>
-    </div>
-  </div>
 
-  <div class="sf-stat-row">
+  {# Solvencia = qué proporción de (activos+pasivos) son activos — puramente
+     derivado de los mismos totales que ya llegan al template, para el anillo
+     del hero; no depende de ninguna variable nueva del backend. #}
+  {% set total_ref = [total_activos, 1]|max %}
+  {% set solv_denom = [total_activos + total_pasivos, 1]|max %}
+  {% set solvencia = (total_activos / solv_denom * 100) %}
+  {% set solv_color = 'var(--emerald)' if solvencia >= 70 else ('var(--gold)' if solvencia >= 40 else 'var(--coral)') %}
+  {% set ring_c = 251 %} {# 2·π·40, r fijo #}
+  {% set ring_off = (ring_c * (1 - solvencia/100)) | round(0) | int %}
+
+  <div class="sf-hero-top">
+    <div class="sf-hero-primary">
+      <div class="sf-hero-ring">
+        <svg viewBox="0 0 96 96">
+          <circle cx="48" cy="48" r="40" fill="none" stroke="var(--b2)" stroke-width="8"/>
+          <circle cx="48" cy="48" r="40" fill="none" stroke="{{ solv_color }}" stroke-width="8"
+            stroke-linecap="round" stroke-dasharray="{{ ring_c }}" stroke-dashoffset="{{ ring_off }}"/>
+        </svg>
+        <div class="sf-hero-ring-label">
+          <div class="sf-hero-ring-pct" style="color:{{ solv_color }}">{{ "{:.0f}".format(solvencia) }}%</div>
+          <div class="sf-hero-ring-lvl">Activos</div>
+        </div>
+      </div>
+      <div class="sf-hero-primary-info">
+        <div class="sf-pn-label">Patrimonio Neto</div>
+        <div class="sf-pn-value {% if patrimonio_neto >= 0 %}pos{% else %}neg{% endif %}">
+          {% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto) }}
+          <span style="font-size:1rem;color:#8A7A60"> MXN</span>
+        </div>
+        <div class="sf-pn-sub">Activos totales menos pasivos · actualizado hoy</div>
+        <div class="sf-pn-dist">
+          Cuentas&nbsp;{{ "{:.0f}".format(activos_cuentas/total_ref*100) }}% · Bienes&nbsp;{{ "{:.0f}".format(total_bienes/total_ref*100) }}% · Pasivos&nbsp;{{ "{:.0f}".format(total_pasivos/total_ref*100) }}%
+        </div>
+      </div>
+    </div>
     <div class="sf-stat">
       <div class="sf-stat-v" style="color:var(--emerald)">${{ "{:,.0f}".format(total_activos) }}</div>
       <div class="sf-stat-l">Total Activos</div>
@@ -194,6 +240,13 @@
   {% endif %}
 </div>
 
+{# ── Grupo: Cuentas ────────────────────────────────────────────────────────── #}
+<div class="sf-dept-label">
+  <i data-lucide="wallet"></i>
+  <span class="sf-dept-label-t">Cuentas</span>
+  <span class="sf-dept-label-d">— efectivo, banco e inversiones</span>
+</div>
+
 {# ── ACTIVOS LÍQUIDOS ──────────────────────────────────────────────────────── #}
 <div class="tile sf-left">
   <div class="sf-group-hd">
@@ -210,7 +263,7 @@
   <div class="sf-accounts">
     {% for c in cuentas_liquido %}
     {% set meta = tipo_meta[c.tipo] %}
-    <div class="sf-account" data-cid="{{ c.id }}">
+    <div class="sf-account" data-cid="{{ c.id }}" style="--i:{{ loop.index0 }};">
       <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
         <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
       </div>
@@ -253,7 +306,7 @@
   <div class="sf-accounts">
     {% for c in cuentas_inversion %}
     {% set meta = tipo_meta[c.tipo] %}
-    <div class="sf-account" data-cid="{{ c.id }}">
+    <div class="sf-account" data-cid="{{ c.id }}" style="--i:{{ loop.index0 }};">
       <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
         <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
       </div>
@@ -280,6 +333,13 @@
   </div>
 </div>
 
+{# ── Grupo: Patrimonio ─────────────────────────────────────────────────────── #}
+<div class="sf-dept-label">
+  <i data-lucide="landmark"></i>
+  <span class="sf-dept-label-t">Patrimonio</span>
+  <span class="sf-dept-label-d">— lo que debes y lo que posees en especie</span>
+</div>
+
 {# ── PASIVOS ───────────────────────────────────────────────────────────────── #}
 <div class="tile sf-full">
   <div class="sf-group-hd">
@@ -295,7 +355,7 @@
   <div class="sf-accounts" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:7px;">
     {% for c in cuentas_pasivo %}
     {% set meta = tipo_meta[c.tipo] %}
-    <div class="sf-account" data-cid="{{ c.id }}">
+    <div class="sf-account" data-cid="{{ c.id }}" style="--i:{{ loop.index0 }};">
       <div class="sf-acc-icon" style="background:{{ meta.color }}22;border:1px solid {{ meta.color }}44;">
         <i data-lucide="{{ meta.icon }}" style="width:15px;height:15px;color:{{ meta.color }}"></i>
       </div>
@@ -344,7 +404,7 @@
     {% for b in bienes %}
     {% set bm = bien_meta[b.categoria] %}
     {% set deprec = ((b.valor_actual - b.precio_compra) / b.precio_compra * 100) if b.precio_compra > 0 else 0 %}
-    <div class="sf-bien" data-cat="{{ b.categoria }}" data-bid="{{ b.id }}">
+    <div class="sf-bien" data-cat="{{ b.categoria }}" data-bid="{{ b.id }}" style="--i:{{ loop.index0 }};">
       <div class="sf-bien-hd">
         <span class="sf-bien-badge" style="background:{{ bm.color }}18;border:1px solid {{ bm.color }}44;color:{{ bm.color }};">
           <i data-lucide="{{ bm.icon }}" style="width:9px;height:9px"></i>
@@ -415,6 +475,13 @@
 </div>
 {% endif %}
 
+{# ── Grupo: Compromisos ────────────────────────────────────────────────────── #}
+<div class="sf-dept-label">
+  <i data-lucide="handshake"></i>
+  <span class="sf-dept-label-t">Compromisos</span>
+  <span class="sf-dept-label-d">— dinero entre tú y otras personas</span>
+</div>
+
 {# ── DEUDAS PERSONALES ─────────────────────────────────────────────────────── #}
 {% set total_owe_me = owe_me|sum(attribute='monto_restante') if owe_me else 0 %}
 {% set total_i_owe  = i_owe|sum(attribute='monto_restante') if i_owe else 0 %}
@@ -446,7 +513,7 @@
       </div>
       {% for d in owe_me %}
       {% set pct = ((1 - d.monto_restante / d.monto_total) * 100)|int if d.monto_total > 0 else 0 %}
-      <div class="sf-debt-row" data-did="{{ d.id }}">
+      <div class="sf-debt-row" data-did="{{ d.id }}" style="--i:{{ loop.index0 }};">
         <div class="sf-debt-avatar" style="background:#10b98118;border:1px solid #10b98140;color:var(--emerald);">{{ d.person[0]|upper }}</div>
         <div class="sf-debt-body">
           <div class="sf-debt-name">{{ d.person }}</div>
@@ -484,7 +551,7 @@
       </div>
       {% for d in i_owe %}
       {% set pct = ((1 - d.monto_restante / d.monto_total) * 100)|int if d.monto_total > 0 else 0 %}
-      <div class="sf-debt-row" data-did="{{ d.id }}">
+      <div class="sf-debt-row" data-did="{{ d.id }}" style="--i:{{ loop.index0 }};">
         <div class="sf-debt-avatar" style="background:#f43f5e18;border:1px solid #f43f5e40;color:var(--coral);">{{ d.person[0]|upper }}</div>
         <div class="sf-debt-body">
           <div class="sf-debt-name">{{ d.person }}</div>

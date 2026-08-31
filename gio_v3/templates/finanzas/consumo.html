@@ -33,8 +33,12 @@
 /* ── Product grid ────────────────────���────────────────────────��� */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
 
-.prod-card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;transition:border-color .2s;}
-.prod-card:hover{border-color:var(--b2);}
+/* stagger reveal on load — distinct name to avoid colliding with the
+   guardarropa-style cardIn used elsewhere */
+@keyframes cardInConsumo{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.prod-card{background:var(--card);border:1px solid var(--b);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;transition:border-color .2s, transform .2s;opacity:0;animation:cardInConsumo .4s ease forwards;animation-delay:calc(var(--i,0)*30ms);}
+.prod-card:hover{border-color:var(--b2);transform:translateY(-2px);}
+@media(prefers-reduced-motion:reduce){.prod-card{animation:none;opacity:1;}}
 .prod-card.status-atrasado{border-color:rgba(244,63,94,.35);}
 .prod-card.status-proximo {border-color:rgba(245,158,11,.35);}
 .prod-card.status-ok      {border-color:rgba(16,185,129,.18);}
@@ -141,7 +145,7 @@
 <div class="prod-grid" id="prod-grid">
   {% for p in productos %}
   {% set ci = cat_colors.get(p.categoria, loop.index0 % 6) %}
-  <div class="prod-card status-{{ p.status }}" data-cat="{{ p.categoria }}" data-status="{{ p.status }}" data-id="{{ p.id }}">
+  <div class="prod-card status-{{ p.status }}" style="--i:{{ loop.index0 }}" data-cat="{{ p.categoria }}" data-status="{{ p.status }}" data-id="{{ p.id }}">
     <div class="pc-head">
       <div>
         <div class="pc-nombre">{{ p.nombre }}</div>
@@ -188,6 +192,13 @@
       <a href="/finanzas/consumo/producto/{{ p.id }}" class="btn-det">Ver detalle</a>
       <button class="btn-reg" onclick="openRegistrar({{ p.id }},'{{ p.nombre|e }}')">+ Registrar compra</button>
     </div>
+  </div>
+  {% else %}
+  <div class="empty-rich" style="grid-column:1/-1">
+    <div class="empty-icon-box"><i data-lucide="shopping-cart"></i></div>
+    <div class="empty-title">Sin productos registrados</div>
+    <div class="empty-desc">Agrega los productos que compras de forma recurrente para llevar seguimiento de su frecuencia y gasto.</div>
+    <button class="empty-cta" onclick="openNuevo()">+ Nuevo producto</button>
   </div>
   {% endfor %}
 </div>

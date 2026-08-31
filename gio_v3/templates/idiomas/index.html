@@ -9,6 +9,39 @@
 .full{grid-column:1/-1;}
 @media(max-width:767px){.id-grid{grid-template-columns:1fr;}}
 
+/* ── Hero row — progreso del Plan C1 (titular) + 2 stats secundarios ────
+   Antes el plan vivía como un tile más, del mismo peso visual que Test
+   Tracking o el Journal. Es el metro objetivo de fluidez de todo el
+   módulo, así que ahora lleva un ring SVG y una columna lateral propia
+   en vez de competir en el mismo grid 1fr/1fr genérico. ──────────────── */
+.id-sec-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.id-sec-icon{width:30px;height:30px;border-radius:9px;background:var(--gold-d);
+  border:1px solid rgba(201,168,76,.25);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:var(--gold);}
+.id-sec-icon svg{width:14px;height:14px;}
+.id-sec-desc{font-size:var(--fs-sm);color:var(--dim);margin-top:2px;line-height:1.5;}
+
+.id-hero-row{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;margin-bottom:16px;max-width:1200px;}
+@media(max-width:767px){.id-hero-row{grid-template-columns:1fr;}}
+.id-hero-top{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.id-hero-ring{position:relative;width:92px;height:92px;flex-shrink:0;}
+.id-hero-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+.id-hero-ring circle{transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1);}
+.id-hero-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.id-hero-ring-week{font-family:var(--serif);font-size:1.5rem;font-weight:600;line-height:1;color:var(--gold);}
+.id-hero-ring-lvl{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-top:2px;text-align:center;max-width:70px;line-height:1.3;}
+.id-hero-info{flex:1;min-width:170px;}
+
+.id-side{display:flex;flex-direction:column;gap:12px;}
+.id-side-stat{flex:1;display:flex;flex-direction:column;justify-content:center;}
+.id-side-stat-val{font-family:var(--serif);font-size:1.8rem;font-weight:600;line-height:1;}
+.id-side-stat-lbl{font-size:var(--fs-xs);color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;}
+
+/* ── Entrada escalonada ── */
+.cardInIdiomas{opacity:0;animation:cardInIdiomas .45s ease forwards;animation-delay:calc(var(--i,0)*60ms);}
+@keyframes cardInIdiomas{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:translateY(0);}}
+@media (prefers-reduced-motion: reduce){.cardInIdiomas{animation:none;opacity:1;}}
+
 /* ── Word card ── */
 .w-card{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:18px 20px;}
 .wh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
@@ -89,26 +122,53 @@
 .quiz-score-l{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;}
 </style>
 
-<div class="id-grid">
-
-  <!-- PLAN C1 · 26 SEMANAS -->
-  <div class="tile full">
-    <div class="plan-head">
-      <div>
-        <div class="tile-lbl" style="margin:0;">PLAN C1 — 26 SEMANAS</div>
-        <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;" id="plan-fase-txt">Cargando…</div>
+<!-- PLAN C1 · 26 SEMANAS — titular del módulo: progreso de fluidez -->
+<div class="id-sec-head">
+  <div class="id-sec-icon"><i data-lucide="route"></i></div>
+  <div>
+    <div class="tile-lbl" style="margin:0;">PLAN C1 — 26 SEMANAS</div>
+    <div class="id-sec-desc">Ruta de dominio del idioma, dividida en fases con checkpoints objetivos.</div>
+  </div>
+</div>
+<div class="id-hero-row">
+  <div class="tile id-hero-main cardInIdiomas" style="--i:0">
+    <div class="id-hero-top">
+      <div class="id-hero-ring">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--b)" stroke-width="8"/>
+          <circle id="plan-ring-fg" cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="8"
+                  stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
+        </svg>
+        <div class="id-hero-ring-label">
+          <div class="id-hero-ring-week" id="plan-week">—</div>
+          <div class="id-hero-ring-lvl" id="plan-week-l">de 26 semanas</div>
+        </div>
       </div>
-      <div style="text-align:right;">
-        <div class="plan-week" id="plan-week">—</div>
-        <div class="plan-week-l" id="plan-week-l">de 26 semanas</div>
+      <div class="id-hero-info">
+        <div style="font-size:var(--fs-sm);color:var(--dim);" id="plan-fase-txt">Cargando…</div>
+        <div class="plan-track" style="margin-top:12px;"><div class="plan-fill" id="plan-fill" style="width:0%;"></div></div>
       </div>
     </div>
-    <div class="plan-track"><div class="plan-fill" id="plan-fill" style="width:0%;"></div></div>
-    <div class="plan-cps" id="plan-cps"></div>
   </div>
+  <div class="id-side">
+    <div class="tile id-side-stat cardInIdiomas" style="--i:1">
+      <div class="id-side-stat-val" style="color:var(--blue);">{{ tests|length }}</div>
+      <div class="id-side-stat-lbl">Tests registrados</div>
+    </div>
+    <div class="tile id-side-stat cardInIdiomas" style="--i:2">
+      <div class="id-side-stat-val" style="color:var(--gold);">{{ journal|length }}</div>
+      <div class="id-side-stat-lbl">Entradas de journal</div>
+    </div>
+  </div>
+</div>
+<div class="tile full cardInIdiomas" style="--i:3;margin-bottom:16px;">
+  <div class="plan-cps" id="plan-cps"></div>
+</div>
+
+<div class="id-grid">
 
   <!-- WORD OF DAY -->
-  <div class="w-card">
+  <div class="w-card cardInIdiomas" style="--i:4">
     <div class="wh">
       <div class="tile-lbl" style="margin:0">WORD OF THE DAY</div>
       <div style="display:flex;gap:6px;align-items:center;">
@@ -126,7 +186,7 @@
   </div>
 
   <!-- TEST TRACKING -->
-  <div class="tile">
+  <div class="tile cardInIdiomas" style="--i:5">
     <div class="tile-lbl">TEST TRACKING — IELTS / DALF</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:7px;margin-bottom:7px;align-items:end;">
       <div><div class="fl">Tipo</div>
@@ -175,11 +235,14 @@
   </div>
 
   <!-- QUIZ C1 -->
-  <div class="tile full">
+  <div class="tile full cardInIdiomas" style="--i:6">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-      <div>
-        <div class="tile-lbl" style="margin:0;">QUIZ VOCABULARIO C1</div>
-        <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;">5 preguntas · palabras de nivel avanzado</div>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div class="id-sec-icon"><i data-lucide="graduation-cap"></i></div>
+        <div>
+          <div class="tile-lbl" style="margin:0;">QUIZ VOCABULARIO C1</div>
+          <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;">5 preguntas · palabras de nivel avanzado</div>
+        </div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <button class="quiz-lang-btn on" id="btnEN" onclick="setLang('en')">English</button>
@@ -208,8 +271,14 @@
   </div>
 
   <!-- JOURNAL -->
-  <div class="tile full">
-    <div class="tile-lbl">WRITING JOURNAL — PRÁCTICA DE IDIOMAS</div>
+  <div class="tile full cardInIdiomas" style="--i:7">
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;">
+      <div class="id-sec-icon"><i data-lucide="pen-line"></i></div>
+      <div>
+        <div class="tile-lbl" style="margin:0;">WRITING JOURNAL — PRÁCTICA DE IDIOMAS</div>
+        <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;">Escribe y recibe feedback gramatical real vía LanguageTool</div>
+      </div>
+    </div>
     <div class="j-meta">
       <div style="flex:1;min-width:110px;">
         <div class="fl">Idioma</div>
@@ -261,7 +330,7 @@
       <div class="tile-lbl">ENTRADAS ANTERIORES</div>
       <div id="j-entries">
         {% for e in journal %}
-        <div class="jentry" data-id="{{ e.id }}">
+        <div class="jentry cardInIdiomas" data-id="{{ e.id }}" style="--i:{{ loop.index0 }}">
           <div class="je-header">
             <span class="je-date">{{ e.entry_date }}{% if e.fase %} · Fase {{ e.fase }}{% endif %}{% if e.destreza %} · {{ e.destreza }}{% endif %}</span>
             <div style="display:flex;align-items:center;gap:7px;">
@@ -272,7 +341,11 @@
           <div class="je-text">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</div>
         </div>
         {% else %}
-        <div style="font-size:var(--fs-sm);color:var(--dim);padding:12px 0;">Sin entradas aún — escribe tu primera</div>
+        <div class="empty-rich" style="padding:24px 12px;">
+          <div class="empty-icon-box"><i data-lucide="pen-line"></i></div>
+          <div class="empty-title" style="font-size:16px;">Sin entradas aún</div>
+          <div class="empty-desc">Escribe tu primera entrada arriba y guárdala.</div>
+        </div>
         {% endfor %}
       </div>
     </div>
@@ -428,13 +501,16 @@ async function cargarPlan(){
   document.getElementById('plan-week-l').textContent=`de ${d.total_semanas} semanas · Fase ${d.fase_actual}`;
   document.getElementById('plan-fase-txt').textContent=`Inicio del plan: ${d.inicio}`;
   document.getElementById('plan-fill').style.width=d.progreso_pct+'%';
-  document.getElementById('plan-cps').innerHTML=d.checkpoints.map(cp=>`
-    <div class="plan-cp ${cp.completado?'done':cp.vencido?'vencido':''}" onclick="toggleCheckpoint(${cp.id},${cp.completado?0:1})">
+  const ring=document.getElementById('plan-ring-fg');
+  if(ring){ const circ=263.9; ring.style.strokeDashoffset = circ - (Math.min(100,d.progreso_pct)/100)*circ; }
+  document.getElementById('plan-cps').innerHTML=d.checkpoints.map((cp,i)=>`
+    <div class="plan-cp cardInIdiomas ${cp.completado?'done':cp.vencido?'vencido':''}" style="--i:${i}" onclick="toggleCheckpoint(${cp.id},${cp.completado?0:1})">
       <div class="plan-cp-fase">${cp.completado?'✓ Completada':'Fase '+cp.fase}</div>
       <div class="plan-cp-nombre">${cp.nombre}</div>
       <div class="plan-cp-semana">Hasta semana ${cp.semana_fin} · ${cp.fecha_objetivo}</div>
       <div class="plan-cp-criterio">${cp.criterio}</div>
     </div>`).join('');
+  if (window.lucide) lucide.createIcons();
 }
 async function toggleCheckpoint(id,completado){
   await fetch(`/idiomas/api/plan/checkpoint/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({completado:!!completado})});
