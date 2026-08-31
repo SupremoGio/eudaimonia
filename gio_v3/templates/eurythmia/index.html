@@ -357,6 +357,7 @@ const RATING_DIMS  = {{ rating_dims | tojson | safe }};
 
 const $ = (sel, root) => (root || document).querySelector(sel);
 const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ── Submódulos: Baile / Música ── */
 $$('.eu-mod-tab').forEach(btn => btn.addEventListener('click', () => {
@@ -852,11 +853,11 @@ function renderBitacora(){
         ${l.split.map((mn,i) => `<div style="flex:${mn};background:oklch(58% 0.14 ${PHASES[i].hue})"></div>`).join('')}
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-        ${l.step ? `<span class="ey-chip on" style="cursor:default">♪ ${l.step}</span>` : ''}
+        ${l.step ? `<span class="ey-chip on" style="cursor:default">♪ ${esc(l.step)}</span>` : ''}
         <span style="font-size:11px;color:var(--rose-l)">♪ ${FLOW_LABELS[l.flow]}</span>
         ${l.grabado ? `<span style="font-size:10.5px;color:var(--dim);display:inline-flex;align-items:center;gap:4px;"><i data-lucide="video" style="width:11px;height:11px;"></i> grabado</span>` : ''}
       </div>
-      ${l.improv ? `<div class="ey-quote">"${l.improv}"</div>` : ''}`;
+      ${l.improv ? `<div class="ey-quote">"${esc(l.improv)}"</div>` : ''}`;
     box.appendChild(item);
   });
   if (window.lucide) lucide.createIcons();

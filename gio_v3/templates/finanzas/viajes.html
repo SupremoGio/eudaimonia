@@ -261,6 +261,7 @@
 const API  = '/finanzas/estados/api';
 const fmt  = n => (+n).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
 const fmtD = s => s ? s.slice(0,10).split('-').reverse().join('/') : '—';
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 const CONCEPTO_ICON = {
   'Vuelos':       'plane',
@@ -321,10 +322,10 @@ function renderList() {
     return `
       <div class="vj-card" onclick="showDetail(${t.id})">
         <div class="vj-card-top">
-          <div class="vj-card-name">${t.nombre}</div>
+          <div class="vj-card-name">${esc(t.nombre)}</div>
           <span class="vj-estado ${t.estado}">${t.estado}</span>
         </div>
-        ${t.destino ? `<div class="vj-card-dest">${t.destino}</div>` : ''}
+        ${t.destino ? `<div class="vj-card-dest">${esc(t.destino)}</div>` : ''}
         <div class="vj-card-dates">${fmtD(t.fecha_inicio)} — ${fmtD(t.fecha_fin)}</div>
         ${t.presupuesto > 0 ? `
         <div class="vj-progress-wrap">
@@ -399,7 +400,7 @@ function renderDetail() {
   document.getElementById('detail-pct-txt').textContent   = pres > 0
     ? `${pct.toFixed(0)}% del presupuesto` : '';
   document.getElementById('detail-meta-dest').innerHTML   =
-    `<span style="margin-right:14px">${trip.destino || '—'}</span><span>${fmtD(trip.fecha_inicio)} — ${fmtD(trip.fecha_fin)}</span>`;
+    `<span style="margin-right:14px">${esc(trip.destino || '—')}</span><span>${fmtD(trip.fecha_inicio)} — ${fmtD(trip.fecha_fin)}</span>`;
 
   // Breakdown
   const maxTotal = breakdown.length ? breakdown[0].total : 1;
@@ -441,7 +442,7 @@ function renderDetail() {
           ${_tagged.map(tx => `
             <tr>
               <td style="white-space:nowrap;color:var(--dim)">${fmtD(tx.fecha)}</td>
-              <td><div class="vj-tx-desc" title="${tx.descripcion}">${tx.descripcion}</div></td>
+              <td><div class="vj-tx-desc" title="${esc(tx.descripcion)}">${esc(tx.descripcion)}</div></td>
               <td><div class="vj-tx-cat">${tx.categoria}${tx.subcategoria ? ' · '+tx.subcategoria : ''}</div></td>
               <td class="vj-tx-amt">$${fmt(tx.mi_parte ?? tx.monto)}</td>
               <td><button class="btn-r" style="padding:2px 6px;font-size:10px;" onclick="untagOne(${tx.id})" title="Desvincular">×</button></td>
@@ -473,7 +474,7 @@ function renderSuggestions() {
     <div class="vj-suggest-item">
       <input type="checkbox" class="vj-suggest-chk suggest-chk" value="${tx.id}">
       <div class="vj-suggest-info">
-        <div class="vj-suggest-desc">${tx.descripcion}</div>
+        <div class="vj-suggest-desc">${esc(tx.descripcion)}</div>
         <div class="vj-suggest-meta">${fmtD(tx.fecha)} · ${tx.banco} · ${tx.categoria}</div>
       </div>
       <div class="vj-suggest-amt">$${fmt(tx.mi_parte ?? tx.monto)}</div>

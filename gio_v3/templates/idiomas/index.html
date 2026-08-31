@@ -354,6 +354,7 @@
 </div>
 {% endblock %}
 {% block scripts %}<script>
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 // ── Word ──
 async function rw(){
   const d=await(await fetch('/idiomas/api/word/refresh')).json();
@@ -400,9 +401,9 @@ async function getFeedback(){
   if(d.corrections.length){
     corr.innerHTML=d.corrections.map(c=>`
       <div class="fb-item">
-        <span class="fb-type">${c.type}</span>
-        <span>❌ <span class="fb-issue">"${c.issue}"</span>${c.suggestion?' → <span class="fb-sug">"'+c.suggestion+'"</span>':''}
-        <span style="color:var(--dim);font-size:var(--fs-sm);"> — ${c.message}</span></span>
+        <span class="fb-type">${esc(c.type)}</span>
+        <span>❌ <span class="fb-issue">"${esc(c.issue)}"</span>${c.suggestion?' → <span class="fb-sug">"'+esc(c.suggestion)+'"</span>':''}
+        <span style="color:var(--dim);font-size:var(--fs-sm);"> — ${esc(c.message)}</span></span>
       </div>`).join('');
   } else {
     corr.innerHTML='<div class="fb-item" style="color:var(--green);">✓ Sin errores detectados — excelente escritura</div>';

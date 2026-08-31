@@ -212,6 +212,7 @@
 
 {% block scripts %}
 <script>
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 let editingId = null;
 
 // ── Pesos ↔ EC sync ──────────────────────────────────────────────────────────
@@ -355,7 +356,7 @@ async function loadHistorial() {
     el.innerHTML = gastos.map((g, i) => `
       <div class="hrow hrow-anim" style="--i:${i}">
         <div>
-          <div class="hrow-desc">${g.description}</div>
+          <div class="hrow-desc">${esc(g.description)}</div>
           <div class="hrow-meta">${g.date} · $${g.ec * 10} MXN</div>
         </div>
         <div class="hrow-ec">-${g.ec} EC</div>

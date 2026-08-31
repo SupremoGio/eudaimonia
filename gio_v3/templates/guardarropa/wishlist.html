@@ -231,6 +231,7 @@
 {% block scripts %}
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const CATS = {{ categorias | tojson }};
 let step = 0;       // 0-4
 let itemId = null;
@@ -281,7 +282,7 @@ function renderStep() {
 
 // ── STEP 0: Item form ───────────────────────────────────────────────────────
 function stepItem() {
-  const catOpts = CATS.map(c => `<option value="${c}">${c}</option>`).join('');
+  const catOpts = CATS.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
   return `
   <div class="phase-tag p0"><i data-lucide="package" style="width:11px;height:11px;"></i>Registro del Artículo</div>
   <div class="q-title">¿Qué artículo deseas adquirir?</div>
@@ -289,7 +290,7 @@ function stepItem() {
   <div class="wl-form-grid">
     <div class="fg">
       <label class="fl">Nombre del artículo *</label>
-      <input class="fi" id="f-nombre" placeholder="ej. MacBook Pro 14" value="${quizData.nombre||''}">
+      <input class="fi" id="f-nombre" placeholder="ej. MacBook Pro 14" value="${esc(quizData.nombre||'')}">
     </div>
   </div>
   <div class="wl-form-grid c2">
@@ -308,17 +309,17 @@ function stepItem() {
   <div class="wl-form-grid c2">
     <div class="fg">
       <label class="fl">Marca / Modelo</label>
-      <input class="fi" id="f-marca" placeholder="ej. Apple" value="${quizData.marca||''}">
+      <input class="fi" id="f-marca" placeholder="ej. Apple" value="${esc(quizData.marca||'')}">
     </div>
     <div class="fg">
       <label class="fl">URL (opcional)</label>
-      <input class="fi" id="f-url" placeholder="https://..." value="${quizData.url||''}">
+      <input class="fi" id="f-url" placeholder="https://..." value="${esc(quizData.url||'')}">
     </div>
   </div>
   <div class="wl-form-grid">
     <div class="fg">
       <label class="fl">Descripción breve</label>
-      <input class="fi" id="f-desc" placeholder="¿Para qué lo usarías?" value="${quizData.descripcion||''}">
+      <input class="fi" id="f-desc" placeholder="¿Para qué lo usarías?" value="${esc(quizData.descripcion||'')}">
     </div>
   </div>
   <div class="quiz-nav">
@@ -923,7 +924,7 @@ function renderList() {
     const scoreColor = !hasScore ? 'var(--dim)' : score >= 70 ? 'var(--emerald)' : score >= 45 ? 'var(--gold)' : 'var(--coral)';
     const circum = 2 * Math.PI * 16;
     const offset = hasScore ? circum - (score / 100) * circum : circum;
-    const recBadge = it.recomendacion ? `<span class="wl-badge ${REC_BADGE[it.recomendacion]||'wl-b-eval'}">${REC_LABEL[it.recomendacion]||it.recomendacion}</span>` : '';
+    const recBadge = it.recomendacion ? `<span class="wl-badge ${REC_BADGE[it.recomendacion]||'wl-b-eval'}">${esc(REC_LABEL[it.recomendacion]||it.recomendacion)}</span>` : '';
     const overBadge = it.decision_override ? `<span class="wl-badge wl-b-over wl-b-pend">override</span>` : '';
     const precio = it.precio_estimado ? '$' + parseFloat(it.precio_estimado).toLocaleString('es-MX', {minimumFractionDigits:0}) : '—';
     return `
@@ -939,10 +940,10 @@ function renderList() {
         </svg>
       </div>
       <div style="min-width:0;">
-        <div class="wl-item-name">${it.nombre}</div>
-        <div class="wl-item-meta">${it.categoria||'—'} ${it.marca ? '· '+it.marca : ''} ${hasScore ? '· Score: '+score : '· Sin evaluar'}</div>
+        <div class="wl-item-name">${esc(it.nombre)}</div>
+        <div class="wl-item-meta">${esc(it.categoria||'—')} ${it.marca ? '· '+esc(it.marca) : ''} ${hasScore ? '· Score: '+score : '· Sin evaluar'}</div>
         <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;">
-          <span class="wl-badge ${ESTADO_BADGE[it.estado]||'wl-b-eval'}">${ESTADO_LABEL[it.estado]||it.estado}</span>
+          <span class="wl-badge ${ESTADO_BADGE[it.estado]||'wl-b-eval'}">${esc(ESTADO_LABEL[it.estado]||it.estado)}</span>
           ${recBadge}${overBadge}
           ${it.comprar_con_ec ? `<span class="ec-spent-badge"><i data-lucide="coins" style="width:10px;height:10px;"></i> ${it.ec_pagado} EC</span>` : ''}
         </div>

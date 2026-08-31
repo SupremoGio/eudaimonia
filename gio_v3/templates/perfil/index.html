@@ -946,6 +946,7 @@
 {% endmacro %}
 
 {% block scripts %}<script>
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const rv={};
 {% for item in info %}rv['{{ item.key }}']='{{ item.value|replace("'","\\'") }}';{% endfor %}
 const priv={};
@@ -1067,8 +1068,8 @@ async function saveM(k){
           }
         }
         return `<div class="meas-hist-row">
-          <span class="meas-hist-date">${e.date}</span>
-          <span class="meas-hist-val">${e.value}</span>
+          <span class="meas-hist-date">${esc(e.date)}</span>
+          <span class="meas-hist-val">${esc(e.value)}</span>
           ${chgHtml}
         </div>`;
       }).join('');
@@ -1149,7 +1150,7 @@ function appendFieldDocRow(doc, fieldKey){
   const iconType=docType(doc.original);
   let iconHTML;
   if(isImg){
-    iconHTML=`<img class="img-thumb" src="/perfil/docs/${doc.filename}" alt="${doc.original}" loading="lazy">`;
+    iconHTML=`<img class="img-thumb" src="/perfil/docs/${doc.filename}" alt="${esc(doc.original)}" loading="lazy">`;
   } else {
     iconHTML=`<div class="fdp-icon ${iconType}">
       <i data-lucide="${docLucide(doc.original)}" style="width:13px;height:13px;color:${docColor(doc.original)};"></i>
@@ -1158,7 +1159,7 @@ function appendFieldDocRow(doc, fieldKey){
   const html=`<div class="fdp-row" id="fdprow-${doc.id}">
     ${iconHTML}
     <div class="fdp-name">
-      <div class="fdp-filename" title="${doc.original}">${doc.original}</div>
+      <div class="fdp-filename" title="${esc(doc.original)}">${esc(doc.original)}</div>
       <div class="fdp-date">${date}</div>
     </div>
     <div class="fdp-actions">
@@ -1229,7 +1230,7 @@ function appendGenDocRow(doc){
   const date=doc.uploaded_at?doc.uploaded_at.substring(0,10):'';
   let iconHTML;
   if(isImg){
-    iconHTML=`<img class="doc-thumb" src="/perfil/docs/${doc.filename}" alt="${doc.original}" loading="lazy">`;
+    iconHTML=`<img class="doc-thumb" src="/perfil/docs/${doc.filename}" alt="${esc(doc.original)}" loading="lazy">`;
   } else {
     iconHTML=`<div class="doc-icon-wrap ${docType(doc.original)}">
       <i data-lucide="${docLucide(doc.original)}" style="width:14px;height:14px;color:${docColor(doc.original)};"></i>
@@ -1237,7 +1238,7 @@ function appendGenDocRow(doc){
   }
   const html=`<div class="doc-row" id="docrow-${doc.id}">
     ${iconHTML}
-    <a class="doc-name" href="/perfil/docs/${doc.filename}" target="_blank">${doc.original}</a>
+    <a class="doc-name" href="/perfil/docs/${doc.filename}" target="_blank">${esc(doc.original)}</a>
     <span class="doc-date">${date}</span>
     <button class="icon-btn danger" onclick="deleteDoc(${doc.id})" title="Eliminar">
       <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
