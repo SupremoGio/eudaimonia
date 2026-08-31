@@ -2390,6 +2390,25 @@ def init_db():
                 ]
             )
 
+        # ── Prioridades de la semana (ritual dominical de Ataraxia) — un solo
+        # lugar donde se capturan las 3 prioridades, que luego se siembran en
+        # `priorities` (el widget diario "Prioridades" de Acta Diurna) para
+        # cada día de la semana que arranca el lunes siguiente. `semana_id`
+        # en `priorities` marca cuáles filas vienen de este sembrado, para
+        # poder re-guardar sin duplicar ni pisar prioridades sueltas del día.
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS weekly_priorities (
+            semana_id  TEXT PRIMARY KEY,
+            p1         TEXT,
+            p2         TEXT,
+            p3         TEXT,
+            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        """)
+        pr_cols = [r["name"] for r in db.execute("PRAGMA table_info(priorities)").fetchall()]
+        if "semana_id" not in pr_cols:
+            db.execute("ALTER TABLE priorities ADD COLUMN semana_id TEXT")
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

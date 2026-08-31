@@ -122,6 +122,23 @@ def _get_revision_row(semana_id):
     return dict(row) if row else None
 
 
+# ── Prioridades de la semana (ritual dominical) ───────────────────────────────
+# semana_id es el sábado del ciclo (ver get_semana_id); las 3 prioridades que
+# se capturan aquí gobiernan la semana laboral que arranca el lunes siguiente
+# a ese sábado, no la que ya terminó — por eso +2 días, no -5 como en
+# get_weekly_classification (que sí mira la semana retrospectiva).
+
+def _semana_siguiente_dias(semana_id):
+    lunes = date.fromisoformat(semana_id) + timedelta(days=2)
+    return [(lunes + timedelta(days=i)).isoformat() for i in range(7)]
+
+
+def _get_weekly_priorities(semana_id):
+    with get_db() as db:
+        row = db.execute("SELECT * FROM weekly_priorities WHERE semana_id=?", (semana_id,)).fetchone()
+    return dict(row) if row else {}
+
+
 def _fmt_num(v):
     if v is None:
         return ""
@@ -276,7 +293,44 @@ def index():
         is_weekend   = dow in (5, 6),
         today        = today_str(),
         revision     = _revision_view(semana_id),
+        weekly_priorities = _get_weekly_priorities(semana_id),
     )
+
+
+@ataraxia_bp.route('/api/prioridades-semana', methods=['POST'])
+def save_prioridades_semana():
+    data      = request.json or {}
+    semana_id = get_semana_id()
+    textos    = [(data.get(f'p{i}') or '').strip()[:200] for i in (1, 2, 3)]
+    textos    = [t for t in textos if t]
+    now       = datetime.now().isoformat()
+
+    dias = _semana_siguiente_dias(semana_id)
+
+    with get_db() as db:
+        db.execute(
+            """INSERT INTO weekly_priorities (semana_id, p1, p2, p3, updated_at) VALUES (?,?,?,?,?)
+               ON CONFLICT(semana_id) DO UPDATE SET
+                 p1=excluded.p1, p2=excluded.p2, p3=excluded.p3, updated_at=excluded.updated_at""",
+            (semana_id,
+             textos[0] if len(textos) > 0 else None,
+             textos[1] if len(textos) > 1 else None,
+             textos[2] if len(textos) > 2 else None,
+             now)
+        )
+        # Limpia lo sembrado antes por esta misma semana (re-guardar no debe
+        # duplicar) sin tocar prioridades sueltas que el usuario haya tecleado
+        # ese día directamente en Acta Diurna (semana_id NULL en esas filas).
+        db.execute("DELETE FROM priorities WHERE semana_id=?", (semana_id,))
+        for d in dias:
+            for t in textos:
+                db.execute(
+                    "INSERT INTO priorities (date, text, done, semana_id) VALUES (?,?,0,?)",
+                    (d, t, semana_id)
+                )
+        db.commit()
+
+    return jsonify({'ok': True, 'textos': textos, 'dias': dias})
 
 
 @ataraxia_bp.route('/api/rutina/<dia>')
