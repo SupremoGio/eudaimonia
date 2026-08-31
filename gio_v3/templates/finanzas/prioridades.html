@@ -454,6 +454,7 @@
 <script>
 const BASE = '/finanzas/prioridades';
 const EC_RATE = 10; // 1 EC = $10 MXN (v3.1)
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── Filters ────────────────────────────────────────────────────────────────
 function setFilter(btn, f) {
@@ -585,7 +586,7 @@ function stepP0() {
   <div class="grid grid-cols-2 gap-3 mb-3">
     <div style="grid-column:1/-1;">
       <label class="tile-lbl block mb-1">Nombre del artículo *</label>
-      <input id="p0Name" class="fi" placeholder="ej. MacBook Pro 14" value="${pData.nombre||''}">
+      <input id="p0Name" class="fi" placeholder="ej. MacBook Pro 14" value="${esc(pData.nombre||'')}">
     </div>
     <div>
       <label class="tile-lbl block mb-1">Categoría</label>
@@ -613,15 +614,15 @@ function stepP0() {
     </div>
     <div>
       <label class="tile-lbl block mb-1">Tienda</label>
-      <input id="p0Tienda" class="fi" placeholder="Amazon, Liverpool..." value="${pData.tienda||''}">
+      <input id="p0Tienda" class="fi" placeholder="Amazon, Liverpool..." value="${esc(pData.tienda||'')}">
     </div>
     <div style="grid-column:1/-1;">
       <label class="tile-lbl block mb-1">URL del producto</label>
-      <input id="p0Url" type="url" class="fi" placeholder="https://..." value="${pData.url||''}">
+      <input id="p0Url" type="url" class="fi" placeholder="https://..." value="${esc(pData.url||'')}">
     </div>
     <div style="grid-column:1/-1;">
       <label class="tile-lbl block mb-1">Notas</label>
-      <input id="p0Notas" class="fi" placeholder="color, talla, modelo específico..." value="${pData.notas||''}">
+      <input id="p0Notas" class="fi" placeholder="color, talla, modelo específico..." value="${esc(pData.notas||'')}">
     </div>
   </div>
   <div class="proto-nav">

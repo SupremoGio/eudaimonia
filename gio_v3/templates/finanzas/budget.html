@@ -466,6 +466,7 @@
 {% block scripts %}
 <script>
 const MES = '{{ mes }}';
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ── Limit editor ────────────────────────────────────────── */
 function editLimite(cat, nombre, currentVal) {
@@ -598,8 +599,8 @@ function _renderMovs(movs) {
     <div class="mov-row" id="mov-row-${m.id}">
       <div class="mov-summary" onclick="_toggleEdit(${m.id})">
         <span class="mov-fecha">${m.fecha.slice(5)}</span>
-        <span class="mov-desc" title="${m.descripcion}">${m.descripcion}</span>
-        <span class="mov-cat-badge" onclick="event.stopPropagation();_quickCat(${m.id},'${m.categoria}')">${m.categoria}</span>
+        <span class="mov-desc" title="${esc(m.descripcion)}">${esc(m.descripcion)}</span>
+        <span class="mov-cat-badge" onclick="event.stopPropagation();_quickCat(${m.id},'${esc(m.categoria)}')">${esc(m.categoria)}</span>
         <span class="mov-monto">$${fmt(m.mi_monto)}</span>
         <span class="mov-edit-chevron">▾</span>
       </div>
@@ -613,7 +614,7 @@ function _renderMovs(movs) {
           </div>
           <div class="me-field">
             <label>Descripción</label>
-            <input type="text" id="me-desc-${m.id}" value="${m.descripcion.replace(/"/g,'&quot;')}" maxlength="200">
+            <input type="text" id="me-desc-${m.id}" value="${esc(m.descripcion)}" maxlength="200">
           </div>
         </div>
         <div class="me-actions">

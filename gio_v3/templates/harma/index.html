@@ -386,6 +386,7 @@ let   STATE = {{ {
   'documentos': documentos, 'polizas': polizas, 'siniestros': siniestros, 'total_costo': total_costo
 } | tojson | safe }};
 
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 const $ = (sel, root) => (root || document).querySelector(sel);
 const catDef    = (id) => CAT_DEFS.find(c => c.id === id) || {label: id, hue: 0};
 const tipoLabel = (id, list) => (list.find(t => t.id === id) || {}).label || id;
@@ -508,7 +509,7 @@ function renderServiceRow(it, i){
     ${it.critical ? '<div class="hm-srow-crit">Crítico</div>' : ''}
     <div class="hm-srow-top" style="padding-right:${it.critical?52:0}px">
       <div>
-        <div class="hm-srow-name">${it.name}</div>
+        <div class="hm-srow-name">${esc(it.name)}</div>
         <div class="hm-srow-cat" style="color:${acc}">${it.cat_label}</div>
       </div>
       <span class="hm-srow-badge" style="background:${STATUS_COLOR[it.status]}22;color:${STATUS_COLOR[it.status]}">${STATUS_LABEL[it.status]}</span>
@@ -642,7 +643,7 @@ function renderHistorial(){
     el.innerHTML = `
       <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:oklch(20% 0.04 ${cat||0});border:1px solid oklch(38% 0.09 ${cat||0});display:flex;align-items:center;justify-content:center;color:oklch(65% 0.15 ${cat||0})"><i data-lucide="check" style="width:16px;height:16px;"></i></div>
       <div style="flex:1">
-        <div style="font-size:12.5px;color:var(--text)">${s.titulo}</div>
+        <div style="font-size:12.5px;color:var(--text)">${esc(s.titulo)}</div>
         <div style="font-size:9.5px;color:var(--dim);margin-top:1px">${s.km ? fmtKm(s.km) + ' · ' : ''}${fmtDate(s.fecha)}</div>
       </div>
       <div style="font-family:var(--serif);color:var(--harma-l)">${fmtMoney(s.costo)}</div>`;
@@ -755,7 +756,7 @@ function openSiniestroModal(){
   $('#sn-deducible').value = ''; $('#sn-taller').value = ''; $('#sn-file').value = '';
   const sel = $('#sn-poliza');
   sel.innerHTML = '<option value="">— ninguna —</option>' +
-    STATE.polizas.map(p => `<option value="${p.id}">${p.aseguradora}${p.numero_poliza ? ' · ' + p.numero_poliza : ''}</option>`).join('');
+    STATE.polizas.map(p => `<option value="${p.id}">${esc(p.aseguradora)}${p.numero_poliza ? ' · ' + esc(p.numero_poliza) : ''}</option>`).join('');
   openModal('modal-siniestro');
 }
 function saveSiniestro(){
@@ -817,13 +818,13 @@ function renderServicios(){
     el.style.setProperty('--i', i);
     el.innerHTML = `
       <div class="hm-row-top">
-        <span class="hm-title">${s.titulo}</span>
+        <span class="hm-title">${esc(s.titulo)}</span>
         <span style="font-family:var(--serif);font-size:1.05rem;color:var(--harma-l)">${fmtMoney(s.costo)}</span>
       </div>
       <div class="hm-meta">
-        ${fmtDate(s.fecha)}${s.km ? ' · ' + fmtKm(s.km) : ''}${s.taller ? ' · ' + s.taller : ''}
+        ${fmtDate(s.fecha)}${s.km ? ' · ' + fmtKm(s.km) : ''}${s.taller ? ' · ' + esc(s.taller) : ''}
       </div>
-      ${s.descripcion ? `<div class="hm-meta" style="margin-top:4px;font-style:italic">${s.descripcion}</div>` : ''}
+      ${s.descripcion ? `<div class="hm-meta" style="margin-top:4px;font-style:italic">${esc(s.descripcion)}</div>` : ''}
       <div class="hm-actions"><button class="btn-r" data-act="del">Eliminar</button></div>`;
     el.querySelector('[data-act="del"]').addEventListener('click', () => deleteServicio(s.id));
     box.appendChild(el);
@@ -849,7 +850,7 @@ function renderDocumentos(){
       <div class="hm-doc">
         <div class="hm-doc-ic"><i data-lucide="${d.nombre_archivo.endsWith('.pdf') ? 'file-text' : 'image'}" style="width:14px;height:14px;"></i></div>
         <div style="flex:1;min-width:0">
-          <div class="hm-title" style="font-size:.95rem">${d.titulo}</div>
+          <div class="hm-title" style="font-size:.95rem">${esc(d.titulo)}</div>
           <div class="hm-meta">${tipoLabel(d.tipo, TIPOS_DOCUMENTO)}${d.fecha_vencimiento ? ' · vence ' + fmtDate(d.fecha_vencimiento) : ''}</div>
         </div>
       </div>
@@ -876,16 +877,16 @@ function renderPolizas(){
   const badgeTxt = {vigente:'Vigente', proximo:'Por vencer', vencida:'Vencida', sin_fecha:'Sin fecha'};
   STATE.polizas.forEach((p, i) => {
     const bits = [];
-    if (p.numero_poliza) bits.push(`póliza ${p.numero_poliza}`);
+    if (p.numero_poliza) bits.push(`póliza ${esc(p.numero_poliza)}`);
     if (p.vigencia_fin) bits.push(`vence ${fmtDate(p.vigencia_fin)}`);
     if (p.deducible) bits.push(`deducible ${fmtMoney(p.deducible)}`);
-    if (p.telefono_asistencia) bits.push(`asistencia: ${p.telefono_asistencia}`);
+    if (p.telefono_asistencia) bits.push(`asistencia: ${esc(p.telefono_asistencia)}`);
     const el = document.createElement('div');
     el.className = 'hm-card hm-anim ' + p.status;
     el.style.setProperty('--i', i);
     el.innerHTML = `
       <div class="hm-row-top">
-        <span class="hm-title" style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="shield" style="width:13px;height:13px;"></i> ${p.aseguradora}</span>
+        <span class="hm-title" style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="shield" style="width:13px;height:13px;"></i> ${esc(p.aseguradora)}</span>
         <span class="hm-badge ${p.status}">${badgeTxt[p.status]}</span>
       </div>
       <div class="hm-meta">${bits.join(' · ')}</div>
@@ -913,7 +914,7 @@ function renderSiniestros(){
     const bits = [fmtDate(s.fecha)];
     if (s.costo_estimado) bits.push(`estimado ${fmtMoney(s.costo_estimado)}`);
     if (s.costo_cubierto) bits.push(`cubierto ${fmtMoney(s.costo_cubierto)}`);
-    if (s.taller) bits.push(s.taller);
+    if (s.taller) bits.push(esc(s.taller));
     const el = document.createElement('div');
     el.className = 'hm-card hm-anim';
     el.style.setProperty('--i', i);
@@ -924,7 +925,7 @@ function renderSiniestros(){
         <select class="fi hm-estado-select" style="width:auto" data-act="estado">${estadoOpts}</select>
       </div>
       <div class="hm-meta">${bits.join(' · ')}</div>
-      ${s.descripcion ? `<div class="hm-meta" style="margin-top:4px;font-style:italic">${s.descripcion}</div>` : ''}
+      ${s.descripcion ? `<div class="hm-meta" style="margin-top:4px;font-style:italic">${esc(s.descripcion)}</div>` : ''}
       <div class="hm-actions">
         ${s.nombre_archivo ? `<a class="btn-g" href="/harma/documentos/${s.nombre_archivo}" target="_blank" style="text-decoration:none">Ver documento</a>` : ''}
         <button class="btn-r" data-act="del">Eliminar</button>

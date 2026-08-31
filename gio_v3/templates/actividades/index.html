@@ -677,6 +677,8 @@
 {% endblock %}
 {% block scripts %}
 <script>
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 const CLF_COLORS = {
   diamond: '#7dd3fc', gold: 'var(--amber-l)', iron: '#94a3b8', carbon: '#475569'
 };
@@ -958,7 +960,7 @@ function renderP(ps) {
   document.getElementById('p-list').innerHTML = ps.length ? ps.map(p =>
     `<div class="pitem ${p.done?'dn':''}" onclick="toggleP(${p.id})">
       <div class="pck"><i data-lucide="check"></i></div>
-      <span class="ptxt">${p.text}</span>
+      <span class="ptxt">${esc(p.text)}</span>
     </div>`
   ).join('') : `<div class="empty-rich" style="padding:22px 10px;">
       <div class="empty-icon-box"><i data-lucide="target"></i></div>
@@ -990,7 +992,7 @@ async function delPipe(id, btn) {
 
 function renderChips(items) {
   document.getElementById('chips').innerHTML = items.length ? items.map(i =>
-    `<div class="chip" data-id="${i.id}">${i.text}<button class="dc" onclick="delPipe(${i.id},this)" title="Quitar" aria-label="Quitar del pipeline"><i data-lucide="x"></i></button></div>`
+    `<div class="chip" data-id="${i.id}">${esc(i.text)}<button class="dc" onclick="delPipe(${i.id},this)" title="Quitar" aria-label="Quitar del pipeline"><i data-lucide="x"></i></button></div>`
   ).join('') : `<div class="empty-rich" style="padding:22px 10px;">
       <div class="empty-icon-box"><i data-lucide="layers"></i></div>
       <div class="empty-title">Pipeline vacío</div>

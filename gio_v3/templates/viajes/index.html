@@ -419,6 +419,7 @@
 <script>
 const API = '/viajes/api';
 const fmtD = s => s ? s.slice(0,10).split('-').reverse().join('/') : '—';
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 /* ── State ────────────────────────────────────────────────────────────── */
 let _trips      = [];
@@ -451,10 +452,10 @@ function tripCardHtml(t) {
   return `
     <div class="vj-card" onclick="showDetail(${t.id})">
       <div class="vj-card-top">
-        <div class="vj-card-name">${t.nombre}</div>
+        <div class="vj-card-name">${esc(t.nombre)}</div>
         <span class="vj-estado ${t.estado}">${t.estado}</span>
       </div>
-      ${t.destino ? `<div class="vj-card-dest"><i data-lucide="map-pin" style="width:10px;height:10px;margin-right:3px"></i>${t.destino}</div>` : ''}
+      ${t.destino ? `<div class="vj-card-dest"><i data-lucide="map-pin" style="width:10px;height:10px;margin-right:3px"></i>${esc(t.destino)}</div>` : ''}
       <div class="vj-card-dates">${fmtD(t.fecha_inicio)} — ${fmtD(t.fecha_fin)}</div>
       <div class="vj-card-footer">
         <span class="vj-card-meta">${dias} día${dias!==1?'s':''} · ${packed} ítem${packed!==1?'s':''} empacado${packed!==1?'s':''}</span>
@@ -591,8 +592,8 @@ function buildOutfitMosaic(items) {
   const cls = n === 1 ? 'c1' : n === 2 ? 'c2' : n === 3 ? 'c3' : `c${Math.min(n, 6)}`;
   const cells = all.map((i, idx) => {
     const base = `vj-ms vj-ms-${idx}`;
-    if (i.foto) return `<div class="${base}"><img src="/guardarropa/photos/${i.foto}" alt=""></div>`;
-    return `<div class="${base}"><div class="vj-ms-swatch" style="background:${i.color_hex || '#333'};"></div></div>`;
+    if (i.foto) return `<div class="${base}"><img src="/guardarropa/photos/${esc(i.foto)}" alt=""></div>`;
+    return `<div class="${base}"><div class="vj-ms-swatch" style="background:${esc(i.color_hex || '#333')};"></div></div>`;
   }).join('');
   return `<div class="vj-mosaic ${cls}">${cells}</div>`;
 }
@@ -603,11 +604,11 @@ function outfitThumbHtml(outfit) {
   const items = full ? full.items : null;
   const withPhoto = items && items.find(i => i.foto);
   if (withPhoto) {
-    return `<img src="/guardarropa/photos/${withPhoto.foto}" alt="" style="width:18px;height:18px;object-fit:cover;border-radius:4px;flex-shrink:0;">`;
+    return `<img src="/guardarropa/photos/${esc(withPhoto.foto)}" alt="" style="width:18px;height:18px;object-fit:cover;border-radius:4px;flex-shrink:0;">`;
   }
   const first = items && items[0];
   if (first) {
-    return `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${first.color_hex || '#333'};flex-shrink:0;"></span>`;
+    return `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:${esc(first.color_hex || '#333')};flex-shrink:0;"></span>`;
   }
   return '<i data-lucide="shirt" style="width:12px;height:12px"></i>';
 }
@@ -637,7 +638,7 @@ function renderOutfitsPane() {
       ? `<div style="display:flex;align-items:center;gap:8px;">
            <div class="vj-outfit-chip" onclick="openOutfitPicker(${JSON.stringify(d).replace(/"/g,'&quot;')})">
              ${outfitThumbHtml(outfit)}
-             ${outfit.nombre}
+             ${esc(outfit.nombre)}
            </div>
            <button class="vj-item-del" onclick="quitarOutfitFromRow(${d.id})" title="Quitar outfit">×</button>
          </div>`
@@ -648,7 +649,7 @@ function renderOutfitsPane() {
     return `<div class="vj-day-row">
       <div>
         <div class="vj-day-date">${fmtD(d.fecha)}</div>
-        <div class="vj-day-label">${d.descripcion || ''}</div>
+        <div class="vj-day-label">${esc(d.descripcion || '')}</div>
       </div>
       <div>${outfitChip}</div>
       <div></div>
@@ -689,11 +690,11 @@ async function openOutfitPicker(dia) {
   document.getElementById('picker-outfit-grid').innerHTML = _outfits.map(o => {
     const sel = o.id === currentOutfitId ? 'selected' : '';
     const mosaic = buildOutfitMosaic(o.items || []);
-    const prendas = o.items ? o.items.slice(0,3).map(i=>i.nombre).join(' · ') : '';
+    const prendas = o.items ? o.items.slice(0,3).map(i=>esc(i.nombre)).join(' · ') : '';
     return `<div class="vj-outfit-card ${sel}" onclick="selectOutfit(${o.id})">
       ${mosaic}
-      <div class="vj-outfit-card-name">${o.nombre}</div>
-      ${o.ocasion ? `<div class="vj-outfit-card-ocasion">${o.ocasion}</div>` : ''}
+      <div class="vj-outfit-card-name">${esc(o.nombre)}</div>
+      ${o.ocasion ? `<div class="vj-outfit-card-ocasion">${esc(o.ocasion)}</div>` : ''}
       ${prendas ? `<div class="vj-outfit-card-prendas">${prendas}</div>` : ''}
     </div>`;
   }).join('');
@@ -768,8 +769,8 @@ async function refreshDias() {
 
 // Mini referencia visual de la prenda (foto real, color, o nada para extras genéricos)
 function maletaThumbHtml(m) {
-  if (m.item_foto) return `<img src="/guardarropa/photos/${m.item_foto}" alt="" class="vj-item-thumb">`;
-  if (m.item_color) return `<span class="vj-item-thumb-swatch" style="background:${m.item_color};"></span>`;
+  if (m.item_foto) return `<img src="/guardarropa/photos/${esc(m.item_foto)}" alt="" class="vj-item-thumb">`;
+  if (m.item_color) return `<span class="vj-item-thumb-swatch" style="background:${esc(m.item_color)};"></span>`;
   return '';
 }
 
@@ -804,14 +805,14 @@ function renderMaletaPane() {
 
   el.innerHTML = orderedCats.map(cat => `
     <div class="vj-maleta-section">
-      <div class="vj-maleta-cat">${cat}</div>
+      <div class="vj-maleta-cat">${esc(cat)}</div>
       ${cats[cat].map(m => `
         <div class="vj-item-row" id="mitem-${m.id}">
           <input type="checkbox" class="vj-item-chk"
             ${m.packed_ida ? 'checked' : ''}
             onchange="toggleMaleta(${m.id}, 'packed_ida', this.checked)">
           ${maletaThumbHtml(m)}
-          <span class="vj-item-name ${m.packed_ida ? 'done' : ''}">${m.nombre}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
+          <span class="vj-item-name ${m.packed_ida ? 'done' : ''}">${esc(m.nombre)}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
           <button class="vj-item-del" onclick="deleteMaletaItem(${m.id})" title="Eliminar">×</button>
         </div>`).join('')}
     </div>`).join('');
@@ -904,8 +905,8 @@ function switchAddItemTab(mode) {
 }
 
 function wardrobeThumbHtml(wi) {
-  if (wi.foto) return `<img src="/guardarropa/photos/${wi.foto}" alt="" class="vj-wi-photo">`;
-  return `<span class="vj-wi-swatch" style="background:${wi.color_hex || 'var(--b)'};"></span>`;
+  if (wi.foto) return `<img src="/guardarropa/photos/${esc(wi.foto)}" alt="" class="vj-wi-photo">`;
+  return `<span class="vj-wi-swatch" style="background:${esc(wi.color_hex || 'var(--b)')};"></span>`;
 }
 
 function renderWardrobePicker() {
@@ -925,16 +926,16 @@ function renderWardrobePicker() {
   const filtered = q ? _wardrobeItems.filter(wi => wi.nombre.toLowerCase().includes(q)) : _wardrobeItems;
 
   if (!filtered.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;padding:16px;color:var(--dim);font-size:var(--fs-sm);text-align:center;">Sin resultados para "${q}"</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1;padding:16px;color:var(--dim);font-size:var(--fs-sm);text-align:center;">Sin resultados para "${esc(q)}"</div>`;
     return;
   }
 
   grid.innerHTML = filtered.map(wi => {
     const added = addedIds.has(wi.id);
-    return `<div class="vj-wi-card ${added ? 'added' : ''}" onclick="toggleWardrobeItemInMaleta(${wi.id}, ${added})" title="${added ? 'Quitar de la maleta' : wi.nombre}">
+    return `<div class="vj-wi-card ${added ? 'added' : ''}" onclick="toggleWardrobeItemInMaleta(${wi.id}, ${added})" title="${added ? 'Quitar de la maleta' : esc(wi.nombre)}">
       ${added ? '<span class="vj-wi-added-badge">✓</span>' : ''}
       ${wardrobeThumbHtml(wi)}
-      <div class="vj-wi-name">${wi.nombre}</div>
+      <div class="vj-wi-name">${esc(wi.nombre)}</div>
     </div>`;
   }).join('');
 }
@@ -1026,14 +1027,14 @@ function renderRegresoPane() {
 
   el.innerHTML = orderedCats.map(cat => `
     <div class="vj-maleta-section">
-      <div class="vj-maleta-cat">${cat}</div>
+      <div class="vj-maleta-cat">${esc(cat)}</div>
       ${cats[cat].map(m => `
         <div class="vj-item-row" id="ritem-${m.id}">
           <input type="checkbox" class="vj-item-chk"
             ${m.packed_vuelta ? 'checked' : ''}
             onchange="toggleRegreso(${m.id}, this.checked)">
           ${maletaThumbHtml(m)}
-          <span class="vj-item-name ${m.packed_vuelta ? 'done' : ''}">${m.nombre}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
+          <span class="vj-item-name ${m.packed_vuelta ? 'done' : ''}">${esc(m.nombre)}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
         </div>`).join('')}
     </div>`).join('');
 }
