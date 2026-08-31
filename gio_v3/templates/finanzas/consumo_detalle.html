@@ -53,6 +53,10 @@
 .hist-table tr:last-child td{border-bottom:none;}
 .hist-table tr:hover td{background:var(--card2);}
 .hist-table td:first-child{color:var(--text);}
+/* stagger reveal for history rows on load */
+@keyframes rowInConsumo{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.hist-table tbody tr{opacity:0;animation:rowInConsumo .35s ease forwards;animation-delay:calc(var(--i,0)*25ms);}
+@media(prefers-reduced-motion:reduce){.hist-table tbody tr{animation:none;opacity:1;}}
 .btn-del-c{background:none;border:none;color:var(--dim);cursor:pointer;padding:3px 6px;border-radius:5px;font-size:var(--fs-sm);transition:color .15s;}
 .btn-del-c:hover{color:var(--coral);}
 
@@ -132,7 +136,11 @@
         {% endfor %}
       </div>
       {% else %}
-      <div class="no-data">Registra compras para ver análisis</div>
+      <div class="empty-rich" style="padding:28px 20px;">
+        <div class="empty-icon-box"><i data-lucide="lightbulb"></i></div>
+        <div class="empty-title">Sin análisis todavía</div>
+        <div class="empty-desc">Registra compras de este producto para ver frecuencia, tendencia de precio y recomendaciones.</div>
+      </div>
       {% endif %}
     </div>
 
@@ -201,7 +209,7 @@
     </thead>
     <tbody id="hist-tbody">
       {% for c in compras %}
-      <tr id="row-{{ c.id }}">
+      <tr id="row-{{ c.id }}" style="--i:{{ loop.index0 }}">
         <td>{{ c.fecha_compra }}</td>
         <td>${{ "%.2f"|format(c.precio_total) }}</td>
         <td>{{ c.cantidad|int }}</td>
@@ -212,7 +220,11 @@
     </tbody>
   </table>
   {% else %}
-  <div class="no-data">Sin compras registradas aún</div>
+  <div class="empty-rich" style="padding:32px 20px;">
+    <div class="empty-icon-box"><i data-lucide="shopping-cart"></i></div>
+    <div class="empty-title">Sin compras registradas</div>
+    <div class="empty-desc">Registra tu primera compra de {{ prod.nombre }} para empezar a ver su historial y frecuencia.</div>
+  </div>
   {% endif %}
 </div>
 

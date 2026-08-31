@@ -20,11 +20,37 @@
 .pd-goal-edit { position:absolute; top:16px; right:18px; background:rgba(9,7,15,0.12); border:none;
                 border-radius:8px; padding:5px 10px; font-size:11px; color:#09070F; cursor:pointer; font-weight:600; }
 
-.pd-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+/* ── Hero row — meta anual (titular, ya existía) ahora pareada con 4
+   stats secundarios en grid fraccional 1.6fr/1fr, en vez de vivir como
+   un bloque separado seguido de una fila repeat(4,1fr) plana. ──────── */
+.pd-hero-row { display:grid; grid-template-columns:1.6fr 1fr; gap:14px; margin-bottom:16px; align-items:stretch; }
+.pd-goal { margin-bottom:0; }
+.pd-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
 .pd-stat { background:var(--card); border:1px solid var(--b); border-radius:12px; padding:14px 16px; }
 .pd-stat-val { font-family:var(--mono); font-size:var(--fs-xl); font-weight:700; color:var(--gold); line-height:1; }
 .pd-stat-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
-@media(max-width:860px) { .pd-stats { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:860px) { .pd-hero-row { grid-template-columns:1fr; } }
+
+/* ── Section header — icono + descripción ── */
+.pd-sec-head { display:flex; align-items:flex-start; gap:10px; margin-bottom:12px; }
+.pd-sec-icon { width:30px; height:30px; border-radius:9px; background:var(--gold-d, rgba(201,168,76,.1));
+  border:1px solid var(--gold-border, rgba(201,168,76,.25)); display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; color:var(--gold); }
+.pd-sec-icon svg { width:14px; height:14px; }
+.pd-sec-desc { font-size:var(--fs-sm); color:var(--dim); margin-top:2px; line-height:1.5; }
+
+/* ── Entrada escalonada de la biblioteca ── */
+.pd-card { opacity:0; animation:cardInPaideia .4s ease forwards; animation-delay:calc(var(--i,0)*35ms); }
+@keyframes cardInPaideia { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+@media (prefers-reduced-motion: reduce) { .pd-card { animation:none; opacity:1; } }
+
+/* ── Star rating — Lucide en vez de ★/☆ Unicode ── */
+.pd-stars { display:flex; gap:2px; align-items:center; }
+.star-ico { width:12px; height:12px; color:var(--b2); }
+.star-ico.filled { color:var(--gold); fill:currentColor; }
+
+/* ── Tip del día — icono Lucide por categoría en vez de emoji ── */
+.pd-tip-icon i, .pd-tip-icon svg { width:20px; height:20px; color:var(--gold); }
 
 .pd-tip { display:flex; align-items:flex-start; gap:12px; background:var(--card); border:1px solid var(--b);
           border-radius:14px; padding:16px 18px; margin-bottom:16px; }
@@ -55,7 +81,6 @@
 .pd-badge-cat { background:var(--card2); color:var(--dim); }
 .pd-card-title { font-weight:700; font-size:15px; color:var(--text); margin-bottom:2px; }
 .pd-card-autor { font-size:12px; color:var(--dim); margin-bottom:10px; }
-.pd-stars { font-size:13px; color:var(--gold); letter-spacing:1px; }
 .pd-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .pd-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
 .pd-modal { width:460px; max-width:96vw; }
@@ -73,39 +98,40 @@
 .pd-search-item-meta { font-size:11px; color:var(--dim); margin-top:2px; }
 </style>
 
-<!-- ── Meta anual ────────────────────────────────────────────────────────── -->
-<div class="pd-goal">
-  <button class="pd-goal-edit" onclick="abrirMeta()">Editar meta</button>
-  <div class="pd-goal-label">Meta de lectura {{ now_year }}</div>
-  <div class="pd-goal-num">{{ stats.leidos_este_anio }} / {{ stats.meta_anual }} libros</div>
-  <div class="pd-goal-track">
-    <div class="pd-goal-fill" style="width:{{ [100, (stats.leidos_este_anio / stats.meta_anual * 100) if stats.meta_anual else 0]|min }}%;"></div>
+<!-- ── Meta anual (titular) + stats secundarios ────────────────────────────── -->
+<div class="pd-hero-row">
+  <div class="pd-goal">
+    <button class="pd-goal-edit" onclick="abrirMeta()">Editar meta</button>
+    <div class="pd-goal-label">Meta de lectura {{ now_year }}</div>
+    <div class="pd-goal-num">{{ stats.leidos_este_anio }} / {{ stats.meta_anual }} libros</div>
+    <div class="pd-goal-track">
+      <div class="pd-goal-fill" style="width:{{ [100, (stats.leidos_este_anio / stats.meta_anual * 100) if stats.meta_anual else 0]|min }}%;"></div>
+    </div>
   </div>
-</div>
-
-<!-- ── Stats ─────────────────────────────────────────────────────────────── -->
-<div class="pd-stats">
-  <div class="pd-stat">
-    <div class="pd-stat-val">{{ stats.total_leidos }}</div>
-    <div class="pd-stat-lbl">Leídos (total)</div>
-  </div>
-  <div class="pd-stat">
-    <div class="pd-stat-val">{{ stats.leyendo }}</div>
-    <div class="pd-stat-lbl">Leyendo</div>
-  </div>
-  <div class="pd-stat">
-    <div class="pd-stat-val">{{ stats.por_leer }}</div>
-    <div class="pd-stat-lbl">Por leer</div>
-  </div>
-  <div class="pd-stat">
-    <div class="pd-stat-val">{{ stats.rating_prom if stats.rating_prom is not none else '—' }}</div>
-    <div class="pd-stat-lbl">Rating prom.</div>
+  <div class="pd-stats">
+    <div class="pd-stat">
+      <div class="pd-stat-val">{{ stats.total_leidos }}</div>
+      <div class="pd-stat-lbl">Leídos (total)</div>
+    </div>
+    <div class="pd-stat">
+      <div class="pd-stat-val">{{ stats.leyendo }}</div>
+      <div class="pd-stat-lbl">Leyendo</div>
+    </div>
+    <div class="pd-stat">
+      <div class="pd-stat-val">{{ stats.por_leer }}</div>
+      <div class="pd-stat-lbl">Por leer</div>
+    </div>
+    <div class="pd-stat">
+      <div class="pd-stat-val">{{ stats.rating_prom if stats.rating_prom is not none else '—' }}</div>
+      <div class="pd-stat-lbl">Rating prom.</div>
+    </div>
   </div>
 </div>
 
 <!-- ── Tip del día ───────────────────────────────────────────────────────── -->
+{% set tip_icon_map = {'psicologia':'brain','nutricion':'salad','ciencia':'flask-conical','productividad':'zap'} %}
 <div class="pd-tip" id="pd-tip">
-  <span class="pd-tip-icon">{{ tip.icon }}</span>
+  <span class="pd-tip-icon"><i data-lucide="{{ tip_icon_map.get(tip.cat, 'lightbulb') }}"></i></span>
   <span class="pd-tip-text" id="pd-tip-text">{{ tip.text }}</span>
   <button class="pd-tip-refresh" onclick="refrescarTip()" title="Otro tip">↻</button>
 </div>
@@ -127,6 +153,15 @@
 </div>
 {% endif %}
 
+<!-- ── Biblioteca ────────────────────────────────────────────────────────── -->
+<div class="pd-sec-head">
+  <div class="pd-sec-icon"><i data-lucide="library"></i></div>
+  <div>
+    <div class="tile-lbl" style="margin:0;">Tu biblioteca</div>
+    <div class="pd-sec-desc">Filtra por estado de lectura y entra a cualquier libro para actualizar tu progreso.</div>
+  </div>
+</div>
+
 <!-- ── Filtros ───────────────────────────────────────────────────────────── -->
 <div class="pd-tabs">
   <div class="pd-tab on" onclick="setFilter('todos',this)">Todos</div>
@@ -138,7 +173,7 @@
 <!-- ── Biblioteca ────────────────────────────────────────────────────────── -->
 <div class="pd-grid" id="pd-grid">
   {% for l in libros %}
-  <div class="pd-card" data-estado="{{ l.estado }}" onclick="abrirEditar({{ l.id }})">
+  <div class="pd-card" data-estado="{{ l.estado }}" onclick="abrirEditar({{ l.id }})" style="--i:{{ loop.index0 }}">
     <div class="pd-card-badges">
       <span class="pd-badge pd-badge-estado">{{ 'Leyendo' if l.estado=='leyendo' else ('Por leer' if l.estado=='por_leer' else 'Leído') }}</span>
       <span class="pd-badge pd-badge-cat">{{ l.categoria }}</span>
@@ -146,7 +181,9 @@
     <div class="pd-card-title">{{ l.titulo }}</div>
     {% if l.autor %}<div class="pd-card-autor">{{ l.autor }}</div>{% endif %}
     {% if l.estado == 'leido' and l.rating %}
-    <div class="pd-stars">{{ '★' * l.rating }}{{ '☆' * (5 - l.rating) }}</div>
+    <div class="pd-stars">
+      {% for i in range(1,6) %}<i data-lucide="star" class="star-ico{% if i <= l.rating %} filled{% endif %}"></i>{% endfor %}
+    </div>
     {% elif l.estado == 'leyendo' and l.paginas_totales %}
     {% set l_pct = [100, (l.paginas_actuales / l.paginas_totales * 100)]|min %}
     <div class="pd-now-track"><div class="pd-now-fill" style="width:{{ l_pct }}%;"></div></div>
@@ -411,10 +448,12 @@ async function guardarMeta() {
   if (r.ok) { toast('Meta actualizada ✓'); setTimeout(() => location.reload(), 500); }
 }
 
+const TIP_ICON_MAP = {psicologia:'brain',nutricion:'salad',ciencia:'flask-conical',productividad:'zap'};
 async function refrescarTip() {
   const r = await fetch(`${BASE}/api/tip/refresh`).then(r=>r.json());
   document.getElementById('pd-tip-text').textContent = r.text;
-  document.querySelector('#pd-tip .pd-tip-icon').textContent = r.icon;
+  document.querySelector('#pd-tip .pd-tip-icon').innerHTML = `<i data-lucide="${TIP_ICON_MAP[r.cat] || 'lightbulb'}"></i>`;
+  if (window.lucide) lucide.createIcons();
 }
 
 document.querySelectorAll('.modal-bg').forEach(bg => {

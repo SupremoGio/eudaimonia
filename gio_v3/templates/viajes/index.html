@@ -254,9 +254,10 @@
         <div id="regreso-progress-txt" style="font-size:var(--fs-xs);color:var(--dim);"></div>
       </div>
       <div id="regreso-list">
-        <div class="vj-empty">
-          <div class="vj-empty-icon">✅</div>
-          <div>Genera tu maleta primero para ver el checklist de regreso.</div>
+        <div class="empty-rich">
+          <div class="empty-icon-box"><i data-lucide="package-check"></i></div>
+          <div class="empty-title">Nada que revisar aún</div>
+          <div class="empty-desc">Genera tu maleta primero, en la pestaña Mi Maleta, para ver aquí el checklist de regreso.</div>
         </div>
       </div>
     </div>
@@ -615,7 +616,12 @@ function outfitThumbHtml(outfit) {
 function renderOutfitsPane() {
   const el = document.getElementById('dias-list');
   if (!_dias.length) {
-    el.innerHTML = '<div class="vj-empty">No hay días cargados.</div>';
+    el.innerHTML = `<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="calendar-x"></i></div>
+      <div class="empty-title">Sin días cargados</div>
+      <div class="empty-desc">Este viaje aún no tiene un itinerario de días para planificar outfits.</div>
+    </div>`;
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
@@ -993,10 +999,12 @@ async function submitAddItem() {
 function renderRegresoPane() {
   const el = document.getElementById('regreso-list');
   if (!_maleta.length) {
-    el.innerHTML = `<div class="vj-empty">
-      <div class="vj-empty-icon">✅</div>
-      <div>Genera tu maleta primero para ver el checklist de regreso.</div>
+    el.innerHTML = `<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="package-check"></i></div>
+      <div class="empty-title">Nada que revisar aún</div>
+      <div class="empty-desc">Genera tu maleta primero, en la pestaña Mi Maleta, para ver aquí el checklist de regreso.</div>
     </div>`;
+    if (window.lucide) lucide.createIcons();
     document.getElementById('regreso-progress-txt').textContent = '';
     return;
   }

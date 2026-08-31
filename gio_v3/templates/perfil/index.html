@@ -424,7 +424,12 @@
         {{ gen_doc_row(doc) }}
         {% endfor %}
       {% else %}
-        <div class="doc-empty" id="docsEmpty">Aún no hay documentos.</div>
+        <div class="empty-rich" id="docsEmpty">
+          <div class="empty-icon-box"><i data-lucide="file-text"></i></div>
+          <div class="empty-title">Aún no hay documentos</div>
+          <div class="empty-desc">Sube contratos, identificaciones o cualquier archivo que quieras tener siempre a la mano.</div>
+          <button class="empty-cta" onclick="document.querySelector('.gen-upload input[type=file]').click()">+ Subir documento</button>
+        </div>
       {% endif %}
     </div>
   </div>
@@ -597,7 +602,12 @@
         {% endif %}
         {% endfor %}
       {% else %}
-        <div class="plg-empty" id="tallaEmpty">Sin tallas registradas. Usa <strong>Nueva talla</strong> para agregar la primera.</div>
+        <div class="empty-rich" id="tallaEmpty">
+          <div class="empty-icon-box"><i data-lucide="ruler"></i></div>
+          <div class="empty-title">Sin tallas registradas</div>
+          <div class="empty-desc">Anota la talla que usas en cada marca para no adivinar la próxima vez que compres.</div>
+          <button class="empty-cta" onclick="toggleTallaForm()">+ Nueva talla</button>
+        </div>
       {% endif %}
     </div>
   </div>
@@ -753,7 +763,12 @@
         </div>
         {% endfor %}
       {% else %}
-        <div class="vault-empty" id="vaultEmpty">Sin contraseñas guardadas. Usa <strong>Nueva</strong> para agregar.</div>
+        <div class="empty-rich" id="vaultEmpty">
+          <div class="empty-icon-box"><i data-lucide="key-round"></i></div>
+          <div class="empty-title">El cofre está vacío</div>
+          <div class="empty-desc">Guarda tus accesos aquí, cifrados, para no volver a perseguirlos por tu memoria.</div>
+          <button class="empty-cta" onclick="toggleVaultForm()">+ Nueva contraseña</button>
+        </div>
       {% endif %}
     </div>
   </div>
@@ -841,8 +856,11 @@
         </div>
         {% endfor %}
       {% else %}
-        <div id="remEmpty" style="text-align:center;padding:28px 0;color:var(--dim);font-size:var(--fs-sm);">
-          Sin recordatorios. Usa <strong>Nuevo</strong> para agregar.
+        <div class="empty-rich" id="remEmpty">
+          <div class="empty-icon-box"><i data-lucide="list-todo"></i></div>
+          <div class="empty-title">Nada pendiente</div>
+          <div class="empty-desc">Crea un recordatorio único o periódico y la app se encargará de avisarte a tiempo.</div>
+          <button class="empty-cta" onclick="toggleRemForm()">+ Nuevo recordatorio</button>
         </div>
       {% endif %}
     </div>
@@ -1236,7 +1254,13 @@ async function deleteDoc(id){
     document.getElementById('docrow-'+id)?.remove();
     toast('Eliminado');
     if(!document.querySelector('#docsList [id^=docrow-]')){
-      document.getElementById('docsList').innerHTML='<div class="doc-empty" id="docsEmpty">Aún no hay documentos.</div>';
+      document.getElementById('docsList').innerHTML=`<div class="empty-rich" id="docsEmpty">
+        <div class="empty-icon-box"><i data-lucide="file-text"></i></div>
+        <div class="empty-title">Aún no hay documentos</div>
+        <div class="empty-desc">Sube contratos, identificaciones o cualquier archivo que quieras tener siempre a la mano.</div>
+        <button class="empty-cta" onclick="document.querySelector('.gen-upload input[type=file]').click()">+ Subir documento</button>
+      </div>`;
+      lucide.createIcons();
     }
   }
 }
@@ -1311,7 +1335,13 @@ async function doneReminder(id,type){
     if(type==='unico'){
       row?.remove();
       if(!document.querySelector('#remindersList [id^=remrow-]')){
-        document.getElementById('remindersList').innerHTML='<div id="remEmpty" style="text-align:center;padding:28px 0;color:var(--dim);font-size:var(--fs-sm);">Sin recordatorios. Usa <strong>Nuevo</strong> para agregar.</div>';
+        document.getElementById('remindersList').innerHTML=`<div class="empty-rich" id="remEmpty">
+          <div class="empty-icon-box"><i data-lucide="list-todo"></i></div>
+          <div class="empty-title">Nada pendiente</div>
+          <div class="empty-desc">Crea un recordatorio único o periódico y la app se encargará de avisarte a tiempo.</div>
+          <button class="empty-cta" onclick="toggleRemForm()">+ Nuevo recordatorio</button>
+        </div>`;
+        lucide.createIcons();
       }
     } else {
       location.reload();
@@ -1328,7 +1358,13 @@ async function deleteReminder(id){
     document.getElementById('remrow-'+id)?.remove();
     toast('Eliminado');
     if(!document.querySelector('#remindersList [id^=remrow-]')){
-      document.getElementById('remindersList').innerHTML='<div id="remEmpty" style="text-align:center;padding:28px 0;color:var(--dim);font-size:var(--fs-sm);">Sin recordatorios. Usa <strong>Nuevo</strong> para agregar.</div>';
+      document.getElementById('remindersList').innerHTML=`<div class="empty-rich" id="remEmpty">
+        <div class="empty-icon-box"><i data-lucide="list-todo"></i></div>
+        <div class="empty-title">Nada pendiente</div>
+        <div class="empty-desc">Crea un recordatorio único o periódico y la app se encargará de avisarte a tiempo.</div>
+        <button class="empty-cta" onclick="toggleRemForm()">+ Nuevo recordatorio</button>
+      </div>`;
+      lucide.createIcons();
     }
   }
 }
@@ -1507,7 +1543,13 @@ async function deleteVaultEntry(id){
     delete _vaultCache[id];
     toast('Eliminado');
     if(!document.querySelector('#vaultList [id^=vaultrow-]')){
-      document.getElementById('vaultList').innerHTML='<div class="vault-empty" id="vaultEmpty">Sin contraseñas guardadas. Usa <strong>Nueva</strong> para agregar.</div>';
+      document.getElementById('vaultList').innerHTML=`<div class="empty-rich" id="vaultEmpty">
+        <div class="empty-icon-box"><i data-lucide="key-round"></i></div>
+        <div class="empty-title">El cofre está vacío</div>
+        <div class="empty-desc">Guarda tus accesos aquí, cifrados, para no volver a perseguirlos por tu memoria.</div>
+        <button class="empty-cta" onclick="toggleVaultForm()">+ Nueva contraseña</button>
+      </div>`;
+      lucide.createIcons();
     }
   }
 }

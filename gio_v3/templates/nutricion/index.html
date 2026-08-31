@@ -644,6 +644,16 @@ function renderHoyView() { S.variant==='ritmo'?renderRitmo():renderProtocolo(); 
 
 function renderRitmo() {
   const plan=S.week[S.today]||[], nm=nowMin();
+  if(plan.length===0){
+    document.getElementById('hoy-view').innerHTML=`<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="utensils"></i></div>
+      <div class="empty-title">Día sin plan</div>
+      <div class="empty-desc">Aún no agregaste comidas para hoy. Elige una del banco de recetas o crea una personalizada.</div>
+      <button class="empty-cta" onclick="openAddMeal(S.today)">+ Añadir comida</button>
+    </div>`;
+    if(window.lucide) lucide.createIcons();
+    return;
+  }
   let h=`<div style="position:relative"><div style="position:absolute;left:47px;top:14px;bottom:14px;width:1px;background:linear-gradient(180deg,transparent,rgba(201,168,76,0.22) 12%,rgba(201,168,76,0.22) 88%,transparent)"></div>`;
   plan.forEach(m=>{
     const past=toMin(m.time)<=nm, done=m.done;
@@ -675,6 +685,16 @@ function renderRitmo() {
 
 function renderProtocolo() {
   const plan=S.week[S.today]||[], done=plan.filter(m=>m.done).length, pct=plan.length?done/plan.length:0;
+  if(plan.length===0){
+    document.getElementById('hoy-view').innerHTML=`<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="utensils"></i></div>
+      <div class="empty-title">Día sin plan</div>
+      <div class="empty-desc">Aún no agregaste comidas para hoy. Elige una del banco de recetas o crea una personalizada.</div>
+      <button class="empty-cta" onclick="openAddMeal(S.today)">+ Añadir comida</button>
+    </div>`;
+    if(window.lucide) lucide.createIcons();
+    return;
+  }
   let h='';
   if(!isDesktop()){
     const cleanSoFar=plan.filter(m=>m.done&&m.symptom!=='mal').length;
@@ -808,7 +828,11 @@ function renderSintomas() {
   document.getElementById('sint-slips').innerHTML=slipsH;
   const logged=(S.week[S.today]||[]).filter(m=>m.symptom);
   document.getElementById('sint-meals').innerHTML=logged.length===0
-    ?`<div style="font-family:var(--serif);font-size:16px;font-style:italic;color:var(--dim);padding:14px 0 24px">Aún sin registros. Marca cómo te cayó cada comida.</div>`
+    ?`<div class="empty-rich" style="padding:20px 8px 28px">
+        <div class="empty-icon-box"><i data-lucide="notebook-pen"></i></div>
+        <div class="empty-title">Aún sin registros</div>
+        <div class="empty-desc">Marca cómo te cayó cada comida desde el plan del día para llevar tu diario de síntomas.</div>
+      </div>`
     :logged.map(m=>{
         const f=FEELINGS.find(x=>x.id===m.symptom)||FEELINGS[0];
         return `<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">

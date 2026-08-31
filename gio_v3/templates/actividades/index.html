@@ -603,6 +603,13 @@
           <div class="pck"><i data-lucide="check"></i></div>
           <span class="ptxt">{{ p.text }}</span>
         </div>
+        {% else %}
+        <div class="empty-rich" style="padding:22px 10px;">
+          <div class="empty-icon-box"><i data-lucide="target"></i></div>
+          <div class="empty-title">Sin prioridades hoy</div>
+          <div class="empty-desc">Elige hasta 3 cosas que de verdad importan hoy y quedarán aquí arriba de todo.</div>
+          <button class="empty-cta" onclick="document.getElementById('p-inp').focus()">+ Añadir prioridad</button>
+        </div>
         {% endfor %}
       </div>
       <div class="bonus {% if stats.priorities|length==3 and stats.priorities|selectattr('done')|list|length==3 %}on{% endif %}" id="bonus">✦ BONUS +5 XP · 5 EC — 3/3 completadas</div>
@@ -635,6 +642,13 @@
       <div class="chips" id="chips">
         {% for item in stats.pipeline %}
         <div class="chip" data-id="{{ item.id }}">{{ item.text }}<button class="dc" onclick="delPipe({{ item.id }},this)" title="Quitar" aria-label="Quitar {{ item.text }} del pipeline"><i data-lucide="x"></i></button></div>
+        {% else %}
+        <div class="empty-rich" style="padding:22px 10px;">
+          <div class="empty-icon-box"><i data-lucide="layers"></i></div>
+          <div class="empty-title">Pipeline vacío</div>
+          <div class="empty-desc">Guarda aquí ideas y pendientes futuros para no perderlos de vista.</div>
+          <button class="empty-cta" onclick="document.getElementById('pipe-inp').focus()">+ Añadir al pipeline</button>
+        </div>
         {% endfor %}
       </div>
     </div>
@@ -941,12 +955,17 @@ async function toggleP(id) {
 }
 
 function renderP(ps) {
-  document.getElementById('p-list').innerHTML = ps.map(p =>
+  document.getElementById('p-list').innerHTML = ps.length ? ps.map(p =>
     `<div class="pitem ${p.done?'dn':''}" onclick="toggleP(${p.id})">
       <div class="pck"><i data-lucide="check"></i></div>
       <span class="ptxt">${p.text}</span>
     </div>`
-  ).join('');
+  ).join('') : `<div class="empty-rich" style="padding:22px 10px;">
+      <div class="empty-icon-box"><i data-lucide="target"></i></div>
+      <div class="empty-title">Sin prioridades hoy</div>
+      <div class="empty-desc">Elige hasta 3 cosas que de verdad importan hoy y quedarán aquí arriba de todo.</div>
+      <button class="empty-cta" onclick="document.getElementById('p-inp').focus()">+ Añadir prioridad</button>
+    </div>`;
   document.getElementById('bonus').classList.toggle('on', ps.length===3 && ps.every(p=>p.done));
   lucide.createIcons();
 }
@@ -965,13 +984,19 @@ async function addPipe() {
 
 async function delPipe(id, btn) {
   btn.closest('.chip').remove();
+  if (!document.querySelector('#chips .chip')) renderChips([]);
   fetch(`/actividades/api/pipeline/${id}`, {method:'DELETE'}).catch(()=>{});
 }
 
 function renderChips(items) {
-  document.getElementById('chips').innerHTML = items.map(i =>
+  document.getElementById('chips').innerHTML = items.length ? items.map(i =>
     `<div class="chip" data-id="${i.id}">${i.text}<button class="dc" onclick="delPipe(${i.id},this)" title="Quitar" aria-label="Quitar del pipeline"><i data-lucide="x"></i></button></div>`
-  ).join('');
+  ).join('') : `<div class="empty-rich" style="padding:22px 10px;">
+      <div class="empty-icon-box"><i data-lucide="layers"></i></div>
+      <div class="empty-title">Pipeline vacío</div>
+      <div class="empty-desc">Guarda aquí ideas y pendientes futuros para no perderlos de vista.</div>
+      <button class="empty-cta" onclick="document.getElementById('pipe-inp').focus()">+ Añadir al pipeline</button>
+    </div>`;
   lucide.createIcons();
 }
 

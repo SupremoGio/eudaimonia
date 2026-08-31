@@ -13,7 +13,20 @@
   padding:20px 22px;margin-bottom:14px;}
 .inv-hero-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;
   color:var(--dim);margin-bottom:14px;}
-.inv-kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;}
+
+/* ── Hero row — patrimonio total (asimétrico) + 3 KPIs secundarios ──────
+   Antes eran 4 números en una fila repeat(3,1fr) sin jerarquía. Ahora el
+   saldo total (ya calculado en el backend pero nunca mostrado) es el
+   titular; los 3 KPIs existentes quedan como contexto secundario.
+   `.inv-kpis` pasa a display:contents para que sus 3 hijos `.inv-kpi`
+   se vuelvan celdas directas del mismo grid sin tocar su markup. ────── */
+.inv-hero-top{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:16px;align-items:end;margin-bottom:16px;}
+.inv-hero-main{border-right:1px solid var(--b);padding-right:16px;}
+.inv-hero-main-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;
+  display:flex;align-items:center;gap:5px;}
+.inv-hero-main-val{font-family:var(--serif);font-size:clamp(26px,6vw,36px);font-weight:600;line-height:1;color:var(--gold);}
+.inv-hero-main-sub{font-size:11px;color:var(--dim);margin-top:6px;}
+.inv-kpis{display:contents;}
 .inv-kpi{text-align:center;}
 .inv-kpi-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
 .inv-kpi-val{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1;}
@@ -47,11 +60,26 @@
 .inv-plat-saldo-val{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--text);}
 .inv-plat-saldo-label{font-size:10px;color:var(--dim);text-align:right;margin-top:2px;}
 
-/* ── Section header ──────────────────────────────────────────── */
+/* ── Entrada escalonada — plataformas y movimientos (render server-side,
+   por eso el delay se fija con --i inline en el loop Jinja, no con JS) ── */
+.inv-plat-card,.inv-mov{opacity:0;animation:cardInInv .4s ease forwards;animation-delay:calc(var(--i,0)*45ms);}
+@keyframes cardInInv{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@media (prefers-reduced-motion: reduce){.inv-plat-card,.inv-mov{animation:none;opacity:1;}}
+
+/* ── Section header — icono + descripción, no solo un título suelto ──── */
 .inv-section-hdr{display:flex;align-items:center;justify-content:space-between;
   margin-bottom:10px;margin-top:4px;}
 .inv-section-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;
   color:var(--dim);font-weight:700;}
+.inv-sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:12px;margin-top:6px;}
+.inv-sec-head-l{display:flex;align-items:flex-start;gap:10px;min-width:0;}
+.inv-sec-icon{width:30px;height:30px;border-radius:9px;background:var(--gold-d);
+  border:1px solid rgba(201,168,76,.25);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:var(--gold);}
+.inv-sec-icon svg{width:14px;height:14px;}
+.inv-sec-text{min-width:0;}
+.inv-sec-desc{font-size:11px;color:var(--dim);margin-top:2px;line-height:1.4;}
 
 /* ── Add button ──────────────────────────────────────────────── */
 .btn-add-inv{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;
@@ -118,7 +146,9 @@
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media(max-width:480px){
-  .inv-kpis{grid-template-columns:1fr 1fr;}
+  .inv-hero-top{grid-template-columns:1fr 1fr;}
+  .inv-hero-main{grid-column:1/-1;border-right:none;border-bottom:1px solid var(--b);
+    padding-right:0;padding-bottom:12px;}
   .inv-kpi:last-child{grid-column:1/-1;}
 }
 </style>
@@ -130,18 +160,25 @@
   <!-- ── Hero KPIs ────────────────────────────────────────────── -->
   <div class="inv-hero">
     <div class="inv-hero-title">Portafolio de inversiones</div>
-    <div class="inv-kpis">
-      <div class="inv-kpi">
-        <div class="inv-kpi-label">Aportado</div>
-        <div class="inv-kpi-val green">${{ "{:,.0f}".format(total_aportado) }}</div>
+    <div class="inv-hero-top">
+      <div class="inv-hero-main">
+        <div class="inv-hero-main-label"><i data-lucide="wallet" style="width:11px;height:11px;"></i> Saldo total</div>
+        <div class="inv-hero-main-val">${{ "{:,.0f}".format(saldo_total) }}</div>
+        <div class="inv-hero-main-sub">{{ plataformas|length }} plataforma{% if plataformas|length != 1 %}s{% endif %} activa{% if plataformas|length != 1 %}s{% endif %}</div>
       </div>
-      <div class="inv-kpi">
-        <div class="inv-kpi-label">Retirado</div>
-        <div class="inv-kpi-val red">${{ "{:,.0f}".format(total_retirado) }}</div>
-      </div>
-      <div class="inv-kpi">
-        <div class="inv-kpi-label">Rendimientos</div>
-        <div class="inv-kpi-val gold">${{ "{:,.0f}".format(total_rendimiento) }}</div>
+      <div class="inv-kpis">
+        <div class="inv-kpi">
+          <div class="inv-kpi-label">Aportado</div>
+          <div class="inv-kpi-val green">${{ "{:,.0f}".format(total_aportado) }}</div>
+        </div>
+        <div class="inv-kpi">
+          <div class="inv-kpi-label">Retirado</div>
+          <div class="inv-kpi-val red">${{ "{:,.0f}".format(total_retirado) }}</div>
+        </div>
+        <div class="inv-kpi">
+          <div class="inv-kpi-label">Rendimientos</div>
+          <div class="inv-kpi-val gold">${{ "{:,.0f}".format(total_rendimiento) }}</div>
+        </div>
       </div>
     </div>
 
@@ -166,12 +203,18 @@
 
   <!-- ── Plataformas ───────────────────────────────────────────── -->
   {% if plataformas %}
-  <div class="inv-section-hdr">
-    <span class="inv-section-title">Por plataforma</span>
+  <div class="inv-sec-head">
+    <div class="inv-sec-head-l">
+      <div class="inv-sec-icon"><i data-lucide="layers"></i></div>
+      <div class="inv-sec-text">
+        <div class="inv-section-title">Por plataforma</div>
+        <div class="inv-sec-desc">Saldo estimado de cada cuenta activa</div>
+      </div>
+    </div>
   </div>
   <div class="inv-platforms">
     {% for p in plataformas %}
-    <div class="inv-plat-card">
+    <div class="inv-plat-card" style="--i:{{ loop.index0 }}">
       <div class="inv-plat-icon" style="background:{{ p.color }}22;color:{{ p.color }};"><i data-lucide="{{ p.icon }}" style="width:19px;height:19px;"></i></div>
       <div class="inv-plat-info">
         <div class="inv-plat-name">{{ p.label }}</div>
@@ -196,8 +239,14 @@
   {% endif %}
 
   <!-- ── Timeline ─────────────────────────────────────────────── -->
-  <div class="inv-section-hdr" style="margin-top:8px;">
-    <span class="inv-section-title">Movimientos</span>
+  <div class="inv-sec-head" style="margin-top:10px;">
+    <div class="inv-sec-head-l">
+      <div class="inv-sec-icon"><i data-lucide="history"></i></div>
+      <div class="inv-sec-text">
+        <div class="inv-section-title">Movimientos</div>
+        <div class="inv-sec-desc">Aportaciones, retiros y rendimientos registrados</div>
+      </div>
+    </div>
     <button class="btn-add-inv" onclick="openModal()">+ Registrar</button>
   </div>
 
@@ -206,7 +255,7 @@
     {% for m in movs %}
     {% set sign = '+' if m.subcategoria in ('APORTACION','RENDIMIENTO') else '-' %}
     {% set col  = m.dir_meta.color %}
-    <div class="inv-mov" id="inv-mov-{{ m.id }}">
+    <div class="inv-mov" id="inv-mov-{{ m.id }}" style="--i:{{ loop.index0 }}">
       <div class="inv-mov-dir" style="background:{{ col }}1a;">
         {% if m.subcategoria == 'APORTACION' %}↑{% elif m.subcategoria == 'RETIRO' %}↓{% else %}✦{% endif %}
       </div>

@@ -93,6 +93,10 @@ html.light{ --harma: oklch(50% 0.17 15); --harma-l: oklch(44% 0.18 15); --harma-
 
 .hm-empty{ text-align:center; padding:24px 10px; color:var(--dim); font-size:12.5px; }
 .hm-doc{ display:flex; align-items:center; gap:10px; }
+
+/* ── Stagger reveal (JS-rendered rows/cards) ── */
+.hm-anim{ opacity:0; animation:cardInHarma .4s ease forwards; animation-delay:calc(var(--i,0)*35ms); }
+@keyframes cardInHarma{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
 .hm-doc-ic{ width:32px; height:32px; border-radius:8px; background:var(--harma-bg); border:1px solid var(--harma-b); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:15px; }
 
 .hm-nota{ margin-top:22px; padding:14px 16px; background:var(--harma-bg); border:1px solid var(--harma-b); border-left:3px solid var(--harma); border-radius:0 10px 10px 0; }
@@ -476,6 +480,7 @@ function renderPlan(){
   visible.forEach(it => { (byCat[it.cat] = byCat[it.cat] || []).push(it); });
 
   const box = $('#hm-plan-cats'); box.innerHTML = '';
+  let idx = 0;
   CAT_DEFS.forEach(c => {
     const list = byCat[c.id];
     if (!list || !list.length) return;
@@ -484,16 +489,21 @@ function renderPlan(){
     hd.innerHTML = `<span class="hm-cat-dot" style="background:oklch(65% 0.15 ${c.hue})"></span>
       <span class="hm-cat-lbl">${c.label}</span><span class="hm-cat-rule"></span>`;
     box.appendChild(hd);
-    list.sort((a,b) => b.pct - a.pct).forEach(it => box.appendChild(renderServiceRow(it)));
+    list.sort((a,b) => b.pct - a.pct).forEach(it => box.appendChild(renderServiceRow(it, idx++)));
   });
-  if (!visible.length) box.innerHTML = '<div class="hm-empty">Nada en este filtro.</div>';
+  if (!visible.length) box.innerHTML = `<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="search-x"></i></div>
+      <div class="empty-title">Nada en este filtro</div>
+      <div class="empty-desc">Prueba con otro filtro o agrega un servicio al plan de mantenimiento.</div>
+    </div>`;
 }
 
-function renderServiceRow(it){
+function renderServiceRow(it, i){
   const acc = `oklch(65% 0.15 ${it.cat_hue})`;
   const pctVisual = Math.min(1, it.pct) * 100;
   const el = document.createElement('div');
-  el.className = 'hm-srow st-' + it.status;
+  el.className = 'hm-srow hm-anim st-' + it.status;
+  el.style.setProperty('--i', i || 0);
   el.innerHTML = `
     ${it.critical ? '<div class="hm-srow-crit">Crítico</div>' : ''}
     <div class="hm-srow-top" style="padding-right:${it.critical?52:0}px">
@@ -615,13 +625,20 @@ function renderHistorial(){
   const box = $('#hm-historial'); box.innerHTML = '';
   const recientes = [...STATE.servicios].slice(0, 5);
   if (!recientes.length){
-    box.innerHTML = '<div class="hm-empty">Aún no hay servicios registrados.</div>';
+    box.innerHTML = `<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="history"></i></div>
+      <div class="empty-title">Aún no hay historial</div>
+      <div class="empty-desc">Registra tu primer servicio y aquí quedará el rastro completo.</div>
+      <button class="empty-cta" onclick="openServModal()">+ Registrar servicio</button>
+    </div>`;
     return;
   }
-  recientes.forEach(s => {
+  recientes.forEach((s, i) => {
     const cat = s.plan_item_id ? (STATE.plan.find(p => p.id === s.plan_item_id) || {}).cat_hue : 0;
     const el = document.createElement('div');
-    el.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b)';
+    el.className = 'hm-anim';
+    el.style.setProperty('--i', i);
+    el.style.cssText += ';display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--b)';
     el.innerHTML = `
       <div style="width:32px;height:32px;border-radius:8px;flex-shrink:0;background:oklch(20% 0.04 ${cat||0});border:1px solid oklch(38% 0.09 ${cat||0});display:flex;align-items:center;justify-content:center;color:oklch(65% 0.15 ${cat||0})"><i data-lucide="check" style="width:16px;height:16px;"></i></div>
       <div style="flex:1">
@@ -786,12 +803,18 @@ function renderServicios(){
   $('#hm-cost-total').textContent = fmtMoney(STATE.total_costo) + ' total';
   const box = $('#hm-serv-list'); box.innerHTML = '';
   if (!STATE.servicios.length){
-    box.innerHTML = '<div class="hm-empty">Aún no hay servicios registrados.</div>';
+    box.innerHTML = `<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="wrench"></i></div>
+      <div class="empty-title">Bitácora vacía</div>
+      <div class="empty-desc">Cada servicio que registres construye el historial completo del vehículo.</div>
+      <button class="empty-cta" onclick="openServModal()">+ Ad hoc</button>
+    </div>`;
     return;
   }
-  STATE.servicios.forEach(s => {
+  STATE.servicios.forEach((s, i) => {
     const el = document.createElement('div');
-    el.className = 'hm-card';
+    el.className = 'hm-card hm-anim';
+    el.style.setProperty('--i', i);
     el.innerHTML = `
       <div class="hm-row-top">
         <span class="hm-title">${s.titulo}</span>
@@ -810,12 +833,18 @@ function renderServicios(){
 function renderDocumentos(){
   const box = $('#hm-doc-list'); box.innerHTML = '';
   if (!STATE.documentos.length){
-    box.innerHTML = '<div class="hm-empty">Sin documentos.</div>';
+    box.innerHTML = `<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="file-text"></i></div>
+      <div class="empty-title">Sin documentos</div>
+      <div class="empty-desc">Sube tarjeta de circulación, factura o cualquier papel importante del vehículo.</div>
+      <button class="empty-cta" onclick="openDocModal()">+ Subir</button>
+    </div>`;
     return;
   }
-  STATE.documentos.forEach(d => {
+  STATE.documentos.forEach((d, i) => {
     const el = document.createElement('div');
-    el.className = 'hm-card';
+    el.className = 'hm-card hm-anim';
+    el.style.setProperty('--i', i);
     el.innerHTML = `
       <div class="hm-doc">
         <div class="hm-doc-ic"><i data-lucide="${d.nombre_archivo.endsWith('.pdf') ? 'file-text' : 'image'}" style="width:14px;height:14px;"></i></div>
@@ -836,18 +865,24 @@ function renderDocumentos(){
 function renderPolizas(){
   const box = $('#hm-poliza-list'); box.innerHTML = '';
   if (!STATE.polizas.length){
-    box.innerHTML = '<div class="hm-empty">Sin póliza registrada.</div>';
+    box.innerHTML = `<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="shield"></i></div>
+      <div class="empty-title">Sin póliza registrada</div>
+      <div class="empty-desc">Agrega los datos de tu seguro para tenerlos a la mano cuando los necesites.</div>
+      <button class="empty-cta" onclick="openPolizaModal()">+ Agregar</button>
+    </div>`;
     return;
   }
   const badgeTxt = {vigente:'Vigente', proximo:'Por vencer', vencida:'Vencida', sin_fecha:'Sin fecha'};
-  STATE.polizas.forEach(p => {
+  STATE.polizas.forEach((p, i) => {
     const bits = [];
     if (p.numero_poliza) bits.push(`póliza ${p.numero_poliza}`);
     if (p.vigencia_fin) bits.push(`vence ${fmtDate(p.vigencia_fin)}`);
     if (p.deducible) bits.push(`deducible ${fmtMoney(p.deducible)}`);
     if (p.telefono_asistencia) bits.push(`asistencia: ${p.telefono_asistencia}`);
     const el = document.createElement('div');
-    el.className = 'hm-card ' + p.status;
+    el.className = 'hm-card hm-anim ' + p.status;
+    el.style.setProperty('--i', i);
     el.innerHTML = `
       <div class="hm-row-top">
         <span class="hm-title" style="display:inline-flex;align-items:center;gap:6px;"><i data-lucide="shield" style="width:13px;height:13px;"></i> ${p.aseguradora}</span>
@@ -866,16 +901,22 @@ function renderPolizas(){
 function renderSiniestros(){
   const box = $('#hm-siniestro-list'); box.innerHTML = '';
   if (!STATE.siniestros.length){
-    box.innerHTML = '<div class="hm-empty">Sin siniestros registrados.</div>';
+    box.innerHTML = `<div class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="shield-alert"></i></div>
+      <div class="empty-title">Sin siniestros</div>
+      <div class="empty-desc">Ojalá se mantenga así. Aquí quedará registrado cualquier accidente o incidente.</div>
+      <button class="empty-cta" onclick="openSiniestroModal()">+ Registrar</button>
+    </div>`;
     return;
   }
-  STATE.siniestros.forEach(s => {
+  STATE.siniestros.forEach((s, i) => {
     const bits = [fmtDate(s.fecha)];
     if (s.costo_estimado) bits.push(`estimado ${fmtMoney(s.costo_estimado)}`);
     if (s.costo_cubierto) bits.push(`cubierto ${fmtMoney(s.costo_cubierto)}`);
     if (s.taller) bits.push(s.taller);
     const el = document.createElement('div');
-    el.className = 'hm-card';
+    el.className = 'hm-card hm-anim';
+    el.style.setProperty('--i', i);
     const estadoOpts = ESTADOS_SINIESTRO.map(e => `<option value="${e.id}" ${e.id===s.estado?'selected':''}>${e.label}</option>`).join('');
     el.innerHTML = `
       <div class="hm-row-top">

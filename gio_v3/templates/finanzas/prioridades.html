@@ -332,7 +332,12 @@
 
 </div>
 {% else %}
-<div class="text-center py-16 text-dim text-xs">No hay artículos. Agrega el primero.</div>
+<div class="empty-rich">
+  <div class="empty-icon-box"><i data-lucide="star"></i></div>
+  <div class="empty-title">Sin artículos en la lista</div>
+  <div class="empty-desc">Registra lo que quieres comprar y evalúalo con el Protocolo de Compra antes de decidir.</div>
+  <button class="empty-cta" onclick="openAdd()"><i data-lucide="plus" style="width:13px;height:13px;"></i> Nuevo artículo</button>
+</div>
 {% endfor %}
 </div>
 

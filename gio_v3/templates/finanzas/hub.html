@@ -212,41 +212,41 @@
 
   <div class="sec-l">Módulos</div>
   <div class="vb-mods">
-    <a class="vb-card" href="/finanzas/salud/">
+    <a class="vb-card" href="/finanzas/salud/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:0s;">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:var(--gold)"><i data-lucide="landmark"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Patrimonio</div>
       <div class="vb-card-desc">Cuentas · inversiones · bienes · deudas</div>
       <div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(total_activos) }}</div><div class="vb-card-sl">Activos</div></div></div>
     </a>
-    <a class="vb-card" href="/finanzas/budget/">
+    <a class="vb-card" href="/finanzas/budget/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.035s;">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:var(--emerald)"><i data-lucide="pie-chart"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Presupuesto</div>
       <div class="vb-card-desc">Regla 50/30/20 · necesidades · deseos · ahorro</div>
       {% if presupuesto_disponible is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="vb-card-sl">Disponible</div></div>{% if presupuesto_pct is defined %}<span class="delta" style="color:var(--emerald-l)">{{ presupuesto_pct }}% usado</span>{% endif %}</div>{% endif %}
     </a>
-    <a class="vb-card" href="/finanzas/estados/">
+    <a class="vb-card" href="/finanzas/estados/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.07s;">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(96,165,250,.11);border:1px solid rgba(96,165,250,.34);color:#60a5fa"><i data-lucide="list"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Estado de Cuenta</div>
       <div class="vb-card-desc">Movimientos bancarios · clasificación · importar</div>
       {% if estado_sin_clasificar is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">{{ estado_sin_clasificar }}</div><div class="vb-card-sl">Sin clasificar</div></div>{% if estado_total_movs is defined %}<span class="delta" style="color:var(--dim)">{{ estado_total_movs }} movs</span>{% endif %}</div>{% endif %}
     </a>
-    <a class="vb-card" href="/finanzas/consumo/">
+    <a class="vb-card" href="/finanzas/consumo/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.105s;">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Consumo</div>
       <div class="vb-card-desc">Análisis de gastos · tendencias · categorías</div>
       {% if consumo_mes is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="vb-card-sl">Gasto del mes</div></div>{% if consumo_delta_pct is defined %}<span class="delta" style="color:{% if consumo_delta_pct <= 0 %}#f0a8a8{% else %}var(--emerald-l){% endif %}">{{ consumo_delta_pct }}% vs mes ant.</span>{% endif %}</div>{% endif %}
     </a>
-    <a class="vb-card" href="/finanzas/prioridades/">
+    <a class="vb-card" href="/finanzas/prioridades/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.14s;">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:var(--amber)"><i data-lucide="star"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Wishlist</div>
       <div class="vb-card-desc">Deseos · compras · prioridades</div>
     </a>
-    <a class="vb-card" href="/finanzas/inversiones/">
+    <a class="vb-card" href="/finanzas/inversiones/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.175s;">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(34,197,94,.11);border:1px solid rgba(34,197,94,.34);color:#22c55e"><i data-lucide="trending-up"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Inversiones</div>
       <div class="vb-card-desc">Portafolio · rendimientos</div>
     </a>
-    <a class="vb-card" href="/finanzas/estados/viajes/">
+    <a class="vb-card" href="/finanzas/estados/viajes/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.21s;">
       <div class="vb-card-top"><span class="vb-ic" style="background:rgba(34,211,238,.11);border:1px solid rgba(34,211,238,.34);color:#22d3ee"><i data-lucide="plane"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
       <div class="vb-card-name">Viajes</div>
       <div class="vb-card-desc">Presupuesto y gasto por viaje</div>
@@ -294,41 +294,41 @@
 
   <div class="sec-l">Módulos</div>
   <div class="va-mods">
-    <a class="va-row" href="/finanzas/salud/">
+    <a class="va-row" href="/finanzas/salud/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:0s;">
       <span class="va-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:var(--gold)"><i data-lucide="landmark"></i></span>
       <div class="va-main"><div class="va-name">Patrimonio</div><div class="va-sub">Cuentas · inversiones · bienes</div></div>
       <div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(total_activos) }}</div><div class="va-val-l">Activos</div></div>
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
-    <a class="va-row" href="/finanzas/budget/">
+    <a class="va-row" href="/finanzas/budget/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.03s;">
       <span class="va-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:var(--emerald)"><i data-lucide="pie-chart"></i></span>
       <div class="va-main"><div class="va-name">Presupuesto</div><div class="va-sub">Regla 50/30/20 · ahorro</div></div>
       {% if presupuesto_disponible is defined %}<div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="va-val-l">Disponible</div></div>{% endif %}
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
-    <a class="va-row" href="/finanzas/estados/">
+    <a class="va-row" href="/finanzas/estados/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.06s;">
       <span class="va-ic" style="background:rgba(96,165,250,.11);border:1px solid rgba(96,165,250,.34);color:#60a5fa"><i data-lucide="list"></i></span>
       <div class="va-main"><div class="va-name">Estado de Cuenta</div><div class="va-sub">Movimientos · clasificación</div></div>
       {% if estado_sin_clasificar is defined %}<div class="va-val"><div class="va-val-n">{{ estado_sin_clasificar }}</div><div class="va-val-l">Sin clasificar</div></div>{% endif %}
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
-    <a class="va-row" href="/finanzas/consumo/">
+    <a class="va-row" href="/finanzas/consumo/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.09s;">
       <span class="va-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span>
       <div class="va-main"><div class="va-name">Consumo</div><div class="va-sub">Gastos · tendencias</div></div>
       {% if consumo_mes is defined %}<div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="va-val-l">Gasto · mes</div></div>{% endif %}
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
-    <a class="va-row" href="/finanzas/prioridades/">
+    <a class="va-row" href="/finanzas/prioridades/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.12s;">
       <span class="va-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:var(--amber)"><i data-lucide="star"></i></span>
       <div class="va-main"><div class="va-name">Wishlist</div><div class="va-sub">Deseos · compras · prioridades</div></div>
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
-    <a class="va-row" href="/finanzas/inversiones/">
+    <a class="va-row" href="/finanzas/inversiones/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.15s;">
       <span class="va-ic" style="background:rgba(34,197,94,.11);border:1px solid rgba(34,197,94,.34);color:#22c55e"><i data-lucide="trending-up"></i></span>
       <div class="va-main"><div class="va-name">Inversiones</div><div class="va-sub">Portafolio · rendimientos</div></div>
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>
     </a>
-    <a class="va-row" href="/finanzas/estados/viajes/">
+    <a class="va-row" href="/finanzas/estados/viajes/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.18s;">
       <span class="va-ic" style="background:rgba(34,211,238,.11);border:1px solid rgba(34,211,238,.34);color:#22d3ee"><i data-lucide="plane"></i></span>
       <div class="va-main"><div class="va-name">Viajes</div><div class="va-sub">Presupuesto por viaje</div></div>
       <span class="va-chev"><i data-lucide="chevron-right"></i></span>

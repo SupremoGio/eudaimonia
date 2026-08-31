@@ -37,7 +37,8 @@
 .qi-btn{background:var(--gold);color:#0a0a1a;font-weight:700;font-size:var(--fs-sm);padding:11px 16px;border-radius:8px;border:none;cursor:pointer;white-space:nowrap;min-height:44px;}
 
 /* Inbox quick items */
-.ic{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card2);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;font-size:var(--fs-sm);}
+.ic{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card2);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;font-size:var(--fs-sm);opacity:0;animation:icInGtd .4s ease forwards;animation-delay:calc(var(--i,0)*30ms);}
+@keyframes icInGtd{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 .ic-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .ic-actions{display:flex;gap:4px;flex-shrink:0;}
 .ic-btn{font-size:var(--fs-sm);color:var(--dim);padding:6px 10px;background:var(--card);border:1px solid var(--b);border-radius:6px;cursor:pointer;transition:all .14s;white-space:nowrap;min-height:34px;display:flex;align-items:center;}
@@ -84,7 +85,7 @@
     </div>
     {% if next_tasks %}
       {% for t in next_tasks %}
-      <div class="t-row {% if t.id in done_ids %}faded{% endif %}">
+      <div class="t-row {% if t.id in done_ids %}faded{% endif %}" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:{{ (loop.index0 * 0.035) }}s;">
         <div class="t-dot {% if t.id in done_ids %}ck{% endif %}" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
         <div class="t-main">
           <div class="t-title">{{ t.title }}</div>
@@ -135,12 +136,19 @@
     <a href="/gtd/inbox" style="display:block;text-align:right;margin-bottom:10px;" class="see-all-lnk">VER SI SIRVE → Next</a>
     <div id="ip">
       {% for t in inbox_tasks %}
-      <div class="ic" data-id="{{ t.id }}">
+      <div class="ic" data-id="{{ t.id }}" style="--i:{{ loop.index0 }}">
         <span class="ic-title">{{ t.title }}</span>
         <div class="ic-actions">
           <button class="ic-btn next-btn" onclick="promote({{t.id}},this)">→ Next</button>
           <button class="ic-btn del-btn"  onclick="del({{t.id}},this)"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
         </div>
+      </div>
+      {% else %}
+      <div id="ip-empty">
+        {% set empty_icon = 'inbox' %}
+        {% set empty_title = 'Inbox al día' %}
+        {% set empty_desc = 'No hay capturas sin procesar en este momento.' %}
+        {% include '_partials/empty.html' %}
       </div>
       {% endfor %}
     </div>
@@ -172,8 +180,9 @@ async function capture(){
   });
   const data = await r.json();
   const id = data.id;
+  document.getElementById('ip-empty')?.remove();
   const div = document.createElement('div');
-  div.className = 'ic'; div.dataset.id = id;
+  div.className = 'ic'; div.dataset.id = id; div.style.setProperty('--i', 0);
   div.innerHTML = `
     <span class="ic-title">${t}</span>
     <div class="ic-actions">
@@ -191,11 +200,29 @@ async function promote(id, btn){
     body: JSON.stringify({status:'next'})
   });
   btn.closest('.ic').remove(); toast('→ Next Actions');
+  const ip = document.getElementById('ip');
+  if(!ip.querySelector('.ic')){
+    ip.innerHTML = `<div id="ip-empty" class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="inbox"></i></div>
+      <div class="empty-title">Inbox al día</div>
+      <div class="empty-desc">No hay capturas sin procesar en este momento.</div>
+    </div>`;
+    lucide.createIcons();
+  }
 }
 
 async function del(id, btn){
   await fetch(`/gtd/api/task/${id}`, {method:'DELETE'});
   btn.closest('.ic').remove();
+  const ip = document.getElementById('ip');
+  if(!ip.querySelector('.ic')){
+    ip.innerHTML = `<div id="ip-empty" class="empty-rich">
+      <div class="empty-icon-box"><i data-lucide="inbox"></i></div>
+      <div class="empty-title">Inbox al día</div>
+      <div class="empty-desc">No hay capturas sin procesar en este momento.</div>
+    </div>`;
+    lucide.createIcons();
+  }
 }
 
 document.getElementById('qi').addEventListener('keydown', e => { if(e.key==='Enter') capture(); });
