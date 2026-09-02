@@ -2248,6 +2248,35 @@ def init_db():
                  "'Registrar gastos' se retira del checklist diario (Tarde) y se agrega como tarea del bloque 'Cierre Semanal' de Ataraxia (domingo).")
             )
 
+        # ── ACTA DIURNA — "Ahorrar dinero (mensual)" pasa de days_of_month=
+        # 'last' (último día real del mes, 28/29/30/31 según corresponda) a
+        # los días 30 y 31 explícitos: el usuario quiere revisarlo en esas
+        # fechas de cierre puntuales para saber si hubo ahorro real, no en
+        # el último día calendario de cualquier mes.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='ahorrar_dias_30_31'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET days_of_month='30,31' WHERE key='ahorrar'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("ahorrar_dias_30_31",
+                 "'Ahorrar dinero (mensual)' se restringe a los días 30 y 31 del mes (antes: days_of_month='last').")
+            )
+
+        # ── ACTA DIURNA — "Lavar carro" pasa de cada 3 domingos a cada 2
+        # domingos. Sigue en Ataraxia (pillar='atar', sin cambios) y en
+        # domingo (days_of_week='sun'); mismo ancla 2026-08-23 — con
+        # interval_weeks=2 el siguiente ciclo cae 2026-09-06.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='lavar_carro_cada_2_domingos'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET interval_weeks=2 WHERE key='lavar_carro'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("lavar_carro_cada_2_domingos",
+                 "'Lavar carro' pasa de cada 3 domingos a cada 2 domingos (interval_weeks: 3→2), mismo ancla 2026-08-23.")
+            )
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
