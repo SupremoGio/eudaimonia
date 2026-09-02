@@ -741,6 +741,22 @@ function updPillars(pillars) {
 async function sessLogAct(key, el) {
   if (el?.dataset.pending) return;
   const wasDone = el?.classList.contains('done');
+
+  // Tarjetas con textarea de reflexión (ej. MIT): al hacer click en el check
+  // justo después de escribir, el blur del textarea dispara saveReflexion()
+  // (que auto-marca el check si el texto no está vacío) casi al mismo
+  // tiempo que este click dispara el toggle de abajo — ambos pegan a la
+  // misma fila de activity_logs en paralelo y el check queda "revertido"
+  // al azar según cuál request llegue primero al servidor. Si hay un guardado
+  // en vuelo, lo esperamos antes de decidir: si ya cumplió la intención de
+  // este click (auto-check de algo que no estaba hecho), no lo deshacemos
+  // con un toggle extra.
+  const ta = el?.querySelector('.sact-reflect');
+  if (ta?._pendingSave) {
+    try { await ta._pendingSave; } catch {}
+    if (!wasDone && el.classList.contains('done')) return;
+  }
+
   if (el) { el.dataset.pending = 'true'; el.classList.toggle('done', !wasDone); }
   try {
     const r = await fetch('/actividades/api/activity/log', {
@@ -763,7 +779,17 @@ async function sessLogAct(key, el) {
   }
 }
 
-async function saveReflexion(el) {
+function saveReflexion(el) {
+  // Expone la promesa en el propio elemento (síncronamente, antes de
+  // cualquier await) para que sessLogAct pueda esperarla si el click que
+  // disparó este blur también intenta togglear el check — ver ahí.
+  const p = _saveReflexion(el);
+  el._pendingSave = p;
+  p.finally(() => { if (el._pendingSave === p) delete el._pendingSave; });
+  return p;
+}
+
+async function _saveReflexion(el) {
   const key   = el.dataset.key;
   const texto = el.value;
   try {
