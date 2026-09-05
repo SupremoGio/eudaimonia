@@ -65,6 +65,8 @@
   .rank-bar-track { height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
   html.light .rank-bar-track { background:rgba(0,0,0,0.07); }
   .rank-bar-fill { height:100%; border-radius:3px; transition:width .3s ease; }
+  .rank-meta { display:flex; gap:12px; margin-top:8px; font-size:9px; color:var(--mid); letter-spacing:.02em; }
+  .rank-meta b { color:var(--text); font-weight:600; }
 
   /* Suggestion */
   .sugg-card { background:oklch(18% 0.04 45); border:1px solid oklch(35% 0.09 45); border-radius:12px; padding:14px 16px; display:flex; align-items:center; gap:12px; cursor:pointer; transition:transform .15s; }
@@ -243,6 +245,12 @@
         <div class="rank-hint">{{ clf.next_hint or '' }}</div>
         {% if clf.rank != 'diamond' %}
         <div class="rank-bar-track"><div class="rank-bar-fill" style="width:{{ clf.next_pct }}%; background:{{ tiers[ci+1].color if ci+1 < tiers|length else tiers[ci].color }};"></div></div>
+        {% endif %}
+        {% if clf.anchors_total > 0 or clf.touches_total > 0 %}
+        <div class="rank-meta">
+          {% if clf.anchors_total > 0 %}<span>Anclas <b>{{ clf.anchors_done }}/{{ clf.anchors_total }}</b></span>{% endif %}
+          {% if clf.touches_total > 0 %}<span>Touches <b>{{ clf.touches_done }}/{{ clf.touches_total }}</b></span>{% endif %}
+        </div>
         {% endif %}
       </div>
 

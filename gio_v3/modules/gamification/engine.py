@@ -392,6 +392,21 @@ def get_daily_classification(date_str=None):
         (RECOVERY_GOLD_MIN_SESSIONS if recovery else GOLD_MIN_SESSIONS),
         len(sessions_available)
     )
+    # Anclas extra cuentan para Oro: la 1ª ancla del día ya la exige Hierro,
+    # pero hasta ahora cualquier ancla adicional (días con 2-4 elegibles, ver
+    # nota de Diamante arriba) no daba NINGÚN crédito hacia Oro pese a ser el
+    # touch de mayor esfuerzo del sistema — un usuario podía completar TODAS
+    # sus anclas del día y seguir en Hierro solo por no repartir touches, lo
+    # cual castiga precisamente el esfuerzo que el propio diseño de Diamante
+    # ya trata como la señal fuerte del día ("anclas completas"). Cada ancla
+    # extra descuenta 1 touch y 1 sesión exigidos para Oro (piso de 1 en
+    # ambos): sigue haciendo falta repartir esfuerzo en el día para llegar a
+    # Oro, pero ya no se ignora lo que sí hiciste con tus anclas.
+    extra_anchors = max(0, anchors_done - 1) if anchor_defs else 0
+    if extra_anchors:
+        gold_min_touches  = max(1, gold_min_touches - extra_anchors)
+        if sessions_available:
+            gold_min_sessions = max(1, gold_min_sessions - extra_anchors)
     # En semana de descarga, Hierro también se alcanza solo con touches —
     # "menos anclas exigidas" — sin necesidad de completar la sesión larga.
     hierro_ok = (not anchor_defs) or (anchors_done >= 1) or (
