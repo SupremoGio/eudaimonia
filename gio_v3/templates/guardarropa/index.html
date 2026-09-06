@@ -323,6 +323,17 @@
 .gm-occ-pill{padding:4px 10px;border-radius:100px;font-size:var(--fs-sm);
   background:var(--card2);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;}
 .gm-occ-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+/* Paleta de colores comunes de ropa — evita tener que adivinar/buscar el hex
+   de cada prenda a mano; el picker nativo y el gotero quedan como fallback
+   para colores exactos que no están en la paleta. */
+.cs-swatches{display:flex;flex-wrap:wrap;gap:7px;}
+.cs-sw{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);transition:transform .12s,border-color .12s;flex-shrink:0;padding:0;}
+.cs-sw:hover{transform:scale(1.14);}
+.cs-sw.on{border-color:var(--gold);box-shadow:0 0 0 2px var(--card),0 0 0 3px var(--gold);}
+.cs-eyedrop{width:36px;height:36px;border-radius:7px;border:1px solid var(--b);background:var(--card);
+  color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .14s;}
+.cs-eyedrop:hover{border-color:var(--gold);color:var(--gold);}
 /* Item picker in outfit modal */
 .ip-cat-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
 .ip-selected-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px;padding:8px 10px;
@@ -540,9 +551,13 @@
       <div class="gm-row c2">
         <div>
           <label class="fl">Color</label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="color" id="im-color-hex" value="var(--gold)" style="width:42px;height:36px;border-radius:7px;border:1px solid var(--b);background:var(--card);cursor:pointer;padding:3px;" oninput="syncColorName(this.value)">
+          <div class="cs-swatches" id="cs-swatches"></div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+            <input type="color" id="im-color-hex" value="#C9A84C" style="width:36px;height:36px;border-radius:7px;border:1px solid var(--b);background:var(--card);cursor:pointer;padding:3px;flex-shrink:0;" oninput="onCustomColorPick(this.value)" title="Color exacto (rueda)">
             <input class="fi" id="im-color-name" placeholder="Navy, Blanco roto, Camel…" style="flex:1;">
+            <button type="button" id="im-eyedrop-btn" class="cs-eyedrop" onclick="pickColorFromScreen()" style="display:none;" title="Tomar el color exacto de la pantalla con el gotero">
+              <i data-lucide="pipette" style="width:15px;height:15px;"></i>
+            </button>
           </div>
         </div>
         <div><label class="fl">Precio pagado ($)</label><input class="fi" id="im-precio" type="number" min="0" step="0.01" placeholder="0"></div>
@@ -721,7 +736,9 @@ const COLOR_PSYCH = {
   azul:    {name:'Azul',    hex:'#2563eb', psych:'Calma · Inteligencia · Accesibilidad',    rec:'Trabajo colaborativo, casual smart'},
   cafe:    {name:'Café',    hex:'#92400e', psych:'Calidez · Fiabilidad · Tierra',           rec:'Casual, otoño, eventos informales'},
   beige:   {name:'Beige',   hex:'#d4b896', psych:'Sofisticación sutil · Calma',             rec:'Business casual, verano, look europeo'},
+  caqui:   {name:'Caqui',   hex:'#8a8360', psych:'Practicidad · Look outdoor sofisticado',  rec:'Casual, fin de semana, looks utilitarios'},
   camel:   {name:'Camel',   hex:'#C19A6B', psych:'Lujo accesible · Calidez intelectual',    rec:'Outerwear premium, look business casual'},
+  mostaza: {name:'Mostaza', hex:'#c9962c', psych:'Calidez vibrante · Personalidad',         rec:'Acentos, suéteres, accesorios de temporada'},
   borgona: {name:'Borgoña', hex:'#7C2D41', psych:'Madurez · Lujo · Confianza sutil',        rec:'Cenas selectas, eventos sociales nocturnos'},
   verde:   {name:'Verde',   hex:'#16a34a', psych:'Vitalidad · Crecimiento · Armonía',       rec:'Casual, actividades al aire libre, creatividad'},
   rojo:    {name:'Rojo',    hex:'#dc2626', psych:'Energía · Poder · Atención inmediata',    rec:'Presentaciones, eventos sociales, impacto visual'},
@@ -917,6 +934,7 @@ function itemCardHTML(r,i=0){
 renderDeptBar();
 renderSubcatBar();
 filterItems();
+renderColorSwatches();
 
 // ── Item Detail panel ─────────────────────────────────────────────────────────
 function openItemDetail(id){
@@ -1145,8 +1163,9 @@ function openItemModal(editId){
   document.getElementById('im-categoria').value = r?.categoria || 'Camisa';
   document.getElementById('im-marca').value     = r?.marca || '';
   document.getElementById('im-sub').value       = r?.subcategoria || '';
-  document.getElementById('im-color-hex').value = r?.color_hex || 'var(--gold)';
+  document.getElementById('im-color-hex').value = r?.color_hex || '#C9A84C';
   document.getElementById('im-color-name').value= r?.color_name || '';
+  highlightSwatch(r?.color_hex);
   document.getElementById('im-precio').value    = r?.precio || '';
   document.getElementById('im-temp').value      = r?.temporada || 'todo';
   document.getElementById('im-estado').value    = r?.estado || 'bueno';
@@ -1177,6 +1196,59 @@ function syncColorName(hex){
   const p = matchColor(hex);
   const nameField = document.getElementById('im-color-name');
   if(p && !nameField.value) nameField.placeholder = p.name;
+}
+
+// ── Paleta de colores ─────────────────────────────────────────────────────────
+// Un solo click pone hex + nombre correctos — nadie debería tener que ir a
+// buscar el código RGB/hex de "gris" o "navy" a mano. La rueda nativa y el
+// gotero (si el navegador lo soporta) quedan para el color exacto de una
+// prenda que no calza con la paleta.
+function renderColorSwatches(){
+  const grid = document.getElementById('cs-swatches');
+  if(!grid) return;
+  grid.innerHTML = Object.values(COLOR_PSYCH).map(v =>
+    `<button type="button" class="cs-sw" data-hex="${v.hex}" data-name="${esc(v.name)}"
+       style="background:${v.hex};" title="${esc(v.name)}" onclick="pickSwatch(this)"></button>`
+  ).join('');
+}
+
+function pickSwatch(btn){
+  document.getElementById('im-color-hex').value  = btn.dataset.hex;
+  document.getElementById('im-color-name').value = btn.dataset.name;
+  document.querySelectorAll('#cs-swatches .cs-sw').forEach(b => b.classList.toggle('on', b === btn));
+}
+
+function highlightSwatch(hex){
+  const h = String(hex || '').toLowerCase();
+  document.querySelectorAll('#cs-swatches .cs-sw').forEach(b =>
+    b.classList.toggle('on', b.dataset.hex.toLowerCase() === h));
+}
+
+// Rueda nativa: se trata como "personalizado" — sugiere el nombre más cercano
+// vía placeholder (sin pisar lo que el usuario ya haya escrito) y apaga
+// cualquier swatch marcado, porque ya no coincide con la paleta exacta.
+function onCustomColorPick(hex){
+  syncColorName(hex);
+  document.querySelectorAll('#cs-swatches .cs-sw').forEach(b => b.classList.remove('on'));
+}
+
+// Gotero del sistema (EyeDropper API): toma el color exacto de cualquier
+// pixel de la pantalla — la única forma realmente práctica de igualar el
+// color real de una prenda sin adivinar. Solo Chrome/Edge de escritorio lo
+// soportan por ahora, así que el botón se oculta si no está disponible.
+if (window.EyeDropper) {
+  const eyedropBtn = document.getElementById('im-eyedrop-btn');
+  if (eyedropBtn) eyedropBtn.style.display = 'flex';
+}
+async function pickColorFromScreen(){
+  if (!window.EyeDropper) return;
+  try {
+    const result = await new EyeDropper().open();
+    document.getElementById('im-color-hex').value = result.sRGBHex;
+    onCustomColorPick(result.sRGBHex);
+  } catch {
+    // el usuario canceló el gotero (Esc / click fuera) — no es un error
+  }
 }
 
 let _pendingFotoUrl = '';
