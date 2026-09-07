@@ -518,9 +518,6 @@ async function guardarIngresoManual() {
 /* ── Utilities ───────────────────────────────────────────── */
 function fmt(n) { return Number(n).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-bg').forEach(bg => {
-  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
-});
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-bg.open').forEach(m => m.classList.remove('open'));

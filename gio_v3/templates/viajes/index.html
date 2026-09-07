@@ -1151,16 +1151,6 @@ async function confirmDelete() {
   }
 }
 
-/* ── Modal close on backdrop ──────────────────────────────────────────── */
-['trip-modal','outfit-picker-modal','add-item-modal'].forEach(id => {
-  document.getElementById(id).addEventListener('click', e => {
-    if (e.target === e.currentTarget) {
-      if (id === 'trip-modal')         closeTripModal();
-      if (id === 'outfit-picker-modal') closeOutfitPicker();
-      if (id === 'add-item-modal')     closeAddItemModal();
-    }
-  });
-});
 
 document.getElementById('f-nombre').addEventListener('keydown', e => {
   if (e.key === 'Enter') submitTrip();

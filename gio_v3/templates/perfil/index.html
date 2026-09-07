@@ -1571,7 +1571,6 @@ async function deleteVaultEntry(id){
     setTimeout(() => input.focus(), 50);
   };
   cancel.onclick = () => { modal.style.display = 'none'; };
-  modal.onclick  = (e) => { if (e.target === modal) modal.style.display = 'none'; };
 
   input.oninput = () => {
     const ok = input.value.trim() === 'RESET';

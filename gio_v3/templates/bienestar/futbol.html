@@ -396,10 +396,6 @@ async function eliminarPartido(id) {
   setTimeout(() => location.reload(), 400);
 }
 
-document.querySelectorAll('.modal-bg').forEach(bg => {
-  bg.addEventListener('click', (e) => { if (e.target === bg) bg.classList.remove('open'); });
-});
-
 // Deep link desde la campanita/Deadline Radar del dashboard: ?resultado=<id>
 // abre directo el modal de "Registrar resultado" para ese partido.
 (function () {

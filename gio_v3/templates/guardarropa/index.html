@@ -2120,8 +2120,5 @@ async function analyzeCapsulaAI(){
 // ── Utility ───────────────────────────────────────────────────────────────────
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-document.getElementById('item-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeItemModal(); });
-document.getElementById('outfit-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeOutfitModal(); });
-document.getElementById('outfit-view-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeOutfitViewModal(); });
 </script>
 {% endblock %}

@@ -630,6 +630,43 @@ function toast(msg, type = 'ok') {
 
 <script>
 (function(){
+  // Modales: un click accidental en el fondo NO debe cerrarlos y tirar lo ya
+  // escrito en el formulario — cada pantalla de la app (Paideia, Guardarropa,
+  // Harma, Finanzas, Ataraxia, Recetas, Perfil, Viajes...) reimplementaba su
+  // propio "cerrar si el click cayó justo en el overlay", así que en vez de
+  // arreglarlo modal por modal se neutraliza una sola vez aquí, en fase de
+  // captura (antes de que el click le llegue al propio overlay y dispare su
+  // onclick/listener original). La única salida "accidental" que queda es
+  // Escape — el botón Cancelar de cada modal sigue funcionando igual.
+  //
+  // Cualquier modal nuevo que use uno de estos overlays hereda esto gratis;
+  // si agregas un contenedor de overlay con un nombre distinto, súmalo aquí.
+  var OVERLAY_SELECTOR = [
+    '.modal-bg', '.modal', '.gm-overlay', '.inv-modal-overlay',
+    '.reset-modal', '#reset-modal', '.rm-overlay'
+  ].join(',');
+
+  document.addEventListener('click', function (e) {
+    if (e.target.matches && e.target.matches(OVERLAY_SELECTOR)) {
+      e.stopPropagation();
+    }
+  }, true);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll(OVERLAY_SELECTOR).forEach(function (el) {
+      var isOpen = el.classList.contains('open') ||
+        (el.style.display && el.style.display !== 'none');
+      if (!isOpen) return;
+      el.classList.remove('open');
+      if (el.style.display) el.style.display = 'none';
+    });
+  });
+})();
+</script>
+
+<script>
+(function(){
   if (navigator.platform && /Mac|iPhone|iPad/.test(navigator.platform)) {
     var hint = document.getElementById('cmdk-hint');
     if (hint) hint.textContent = '⌘K';

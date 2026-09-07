@@ -609,11 +609,6 @@ async function confirmDelete() {
   }
 }
 
-/* ── Modal close on backdrop ───────────────────────────────────────────── */
-document.getElementById('trip-modal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeTripModal();
-});
-
 document.getElementById('f-nombre').addEventListener('keydown', e => {
   if (e.key === 'Enter') submitTrip();
 });

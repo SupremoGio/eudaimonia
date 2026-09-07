@@ -456,10 +456,6 @@ async function refrescarTip() {
   if (window.lucide) lucide.createIcons();
 }
 
-document.querySelectorAll('.modal-bg').forEach(bg => {
-  bg.addEventListener('click', (e) => { if (e.target === bg) bg.classList.remove('open'); });
-});
-
 toggleCamposEstado();
 </script>
 {% endblock %}

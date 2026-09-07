@@ -957,11 +957,6 @@ async function eliminarMed(id) {
   toast('Medicamento eliminado');
 }
 
-// ── Close modal on backdrop click ────────────────────────────────────────────
-document.querySelectorAll('.modal-bg').forEach(bg => {
-  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
-});
-
 // ── Init ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('ep-fecha').value  = todayISO();

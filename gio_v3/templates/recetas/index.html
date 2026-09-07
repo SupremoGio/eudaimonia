@@ -683,9 +683,5 @@ async function deleteRecipe(id){
 // ── Utility ───────────────────────────────────────────
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-// Close on backdrop
-document.getElementById('rm-overlay').addEventListener('click', e=>{
-  if(e.target === e.currentTarget) closeModal();
-});
 </script>
 {% endblock %}
