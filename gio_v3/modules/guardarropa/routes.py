@@ -859,4 +859,9 @@ Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def _s(d, key, default='', max_len=500):
-    return clean_str(d.get(key, default), max_len=max_len)
+    # dict.get(key, default) solo usa `default` si la llave falta — un payload
+    # que mande explícitamente "" (p.ej. categoria/temporada/estado/color_hex
+    # sin seleccionar) lo dejaba pasar tal cual, saltándose el default previsto
+    # y colando filas con esos campos vacíos (ver auditoría de "categoría en
+    # blanco" en Guardarropa → Inteligencia). `or default` cierra ese hueco.
+    return clean_str(d.get(key, default), max_len=max_len) or default

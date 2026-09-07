@@ -265,7 +265,8 @@
 .color-bar-track{flex:1;height:5px;background:var(--b);border-radius:2px;overflow:hidden;}
 .color-bar-fill{height:100%;border-radius:2px;transition:width .8s cubic-bezier(.16,1,.3,1);}
 .color-bar-val{font-size:var(--fs-xs);color:var(--dim);width:24px;text-align:right;flex-shrink:0;}
-.cat-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.cat-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;cursor:pointer;border-radius:6px;padding:3px 4px;margin-left:-4px;transition:background .15s;}
+.cat-bar-row:hover{background:rgba(201,168,76,.06);}
 .cat-bar-label{font-size:var(--fs-sm);color:var(--mid);width:100px;flex-shrink:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
@@ -438,6 +439,7 @@
       <div class="gd-toolbar2">
         <div class="gd-result-count" id="gd-result-count"></div>
         <button class="gd-color-filter-chip" id="gd-color-filter-chip" style="display:none;" onclick="clearColorFilter()"></button>
+        <button class="gd-color-filter-chip" id="gd-cat-filter-chip" style="display:none;" onclick="clearCatFilter()"></button>
         <select class="gd-sort" id="gd-sort" onchange="filterItems()">
           <option value="recientes">Más recientes</option>
           <option value="precio_desc">Precio: mayor a menor</option>
@@ -741,6 +743,7 @@ let _selectedItemIds = new Set();
 let _pickerCat = '';
 let _rating = 0;
 let _activeColorFilter = '';
+let _activeCatFilter = null; // null = sin filtro; '' es un valor real (categoria en blanco)
 
 // ── Color Psychology map ──────────────────────────────────────────────────────
 const COLOR_PSYCH = {
@@ -881,7 +884,8 @@ function filterItems(){
     const mc   = !_activeCat || r.categoria===_activeCat;
     const mq   = !q || r.nombre.toLowerCase().includes(q) || (r.marca||'').toLowerCase().includes(q) || (r.color_name||'').toLowerCase().includes(q);
     const mcol = !_activeColorFilter || (matchColor(r.color_hex)?.name || 'Otro') === _activeColorFilter;
-    return md && mc && mq && mcol;
+    const mcatf= _activeCatFilter===null || r.categoria === _activeCatFilter;
+    return md && mc && mq && mcol && mcatf;
   });
 
   const sortKey = document.getElementById('gd-sort').value;
@@ -905,6 +909,14 @@ function filterItems(){
     chip.style.display = 'none';
   }
 
+  const catChip = document.getElementById('gd-cat-filter-chip');
+  if(_activeCatFilter!==null){
+    catChip.textContent = _activeCatFilter || 'Sin categoría';
+    catChip.style.display = '';
+  } else {
+    catChip.style.display = 'none';
+  }
+
   renderGrid();
 }
 
@@ -921,6 +933,23 @@ function filterByColorBucket(name){
 
 function clearColorFilter(){
   _activeColorFilter = '';
+  filterItems();
+}
+
+// Mismo patrón que filterByColorBucket pero para "Prendas por categoría" —
+// usa _activeCatFilter (con null como "sin filtro") en vez de _activeCat
+// (el de los pills de departamento) porque ese último ya trata '' como
+// "sin filtro", y aquí '' es un valor real: la categoría en blanco que
+// reveló este bug.
+function filterByCatBucket(cat){
+  _activeCatFilter = cat;
+  switchTab('armario');
+  document.getElementById('arm-search').value = '';
+  filterItems();
+}
+
+function clearCatFilter(){
+  _activeCatFilter = null;
   filterItems();
 }
 
@@ -1886,12 +1915,19 @@ function renderIntelligence(){
   activeItems.forEach(i=>{ catMap[i.categoria]=(catMap[i.categoria]||0)+1; });
   const sortedCats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
   const maxCat=sortedCats[0]?.[1]||1;
-  const catBars=sortedCats.map(([cat,count])=>`
-    <div class="cat-bar-row">
-      <div class="cat-bar-label" title="${esc(cat)}">${esc(cat)}</div>
+  const catBars=sortedCats.map(([cat,count])=>{
+    // categoria no está validada contra CATEGORIAS en el backend — un valor
+    // en blanco (o cualquier texto libre) igual se guarda. Antes eso salía
+    // como una fila sin texto en el gráfico; ahora se etiqueta explícito
+    // para que se note en vez de parecer un renglón vacío/roto.
+    const label = cat || 'Sin categoría';
+    return `
+    <div class="cat-bar-row" data-cat="${esc(cat)}" title="Ver estas ${count} prenda${count===1?'':'s'} en Armario">
+      <div class="cat-bar-label" title="${esc(label)}">${esc(label)}</div>
       <div class="color-bar-track"><div class="color-bar-fill" style="width:${Math.round(count/maxCat*100)}%;background:var(--gold);"></div></div>
       <div class="color-bar-val">${count}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   // Capsule score, grouped into didactic sections instead of one flat list
   let _rowIdx = 0;
@@ -1987,6 +2023,14 @@ function renderIntelligence(){
     </div>
 
     <div id="cap-ai-result" style="display:none;grid-column:1/-1;"></div>`;
+
+  // Clic en una barra de "Prendas por categoría" → Armario filtrado a esa
+  // categoría exacta (incluida "Sin categoría"). Vía data-attribute + listener
+  // en vez de onclick inline porque categoria es texto libre sin validar en
+  // el backend — no es seguro interpolarlo directo dentro de un string JS.
+  document.querySelectorAll('.cat-bar-row').forEach(el=>{
+    el.addEventListener('click', ()=> filterByCatBucket(el.dataset.cat));
+  });
 }
 
 // ── AI Outfit Generator ────────────────────────────────────────────────────────
