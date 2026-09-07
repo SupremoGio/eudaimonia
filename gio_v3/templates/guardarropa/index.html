@@ -1565,8 +1565,17 @@ function _buildMosaic(items){
   const cls = n===1?'c1':n===2?'c2':n===3?'c3':`c${Math.min(n,6)}`;
   const cells = all.map((i,idx)=>{
     const base = `ot-ms ot-ms-${idx}`;
-    if(i.foto) return `<div class="${base}"><img src="/guardarropa/photos/${esc(i.foto)}" alt=""></div>`;
-    return `<div class="${base}"><div class="ot-ms-swatch" style="background:${esc(i.color_hex||'#333')};"></div></div>`;
+    const swatch = `<div class="ot-ms-swatch" style="background:${esc(i.color_hex||'#333')};"></div>`;
+    if(i.foto){
+      // Si el archivo de la foto no carga (borrado, subida fallida...) el
+      // mosaico se quedaba con un ícono de imagen rota invisible en vez de
+      // avisar — igual que ya hace el grid del Armario, cae al swatch de
+      // color de la prenda en vez de dejar el hueco en blanco.
+      return `<div class="${base}"><img src="/guardarropa/photos/${esc(i.foto)}" alt=""
+        onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div class="ot-ms-swatch" style="display:none;background:${esc(i.color_hex||'#333')};"></div></div>`;
+    }
+    return `<div class="${base}">${swatch}</div>`;
   }).join('');
   return `<div class="ot-mosaic ${cls}">${cells}</div>`;
 }
