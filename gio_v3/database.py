@@ -2248,6 +2248,25 @@ def init_db():
                  "'Registrar gastos' se retira del checklist diario (Tarde) y se agrega como tarea del bloque 'Cierre Semanal' de Ataraxia (domingo).")
             )
 
+        # ── ACTA DIURNA — "Lavar carro" y "Ahorrar dinero (mensual)" se
+        # retiran del checklist: ambos quedan duplicados con seguimiento que
+        # ya existe en Ataraxia — "Lavar carro" con el servicio "Lavado /
+        # detallado" de Harma (registro real con fecha/costo, no un simple
+        # check diario), y "Ahorrar dinero" con "Finanzas: gastos semana ·
+        # proyección" del bloque Domingo, que ya cubre la proyección de
+        # ahorro mensual como parte del cierre semanal.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='lavar_carro_y_ahorrar_retirados'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET active=0 WHERE key IN ('lavar_carro','ahorrar')")
+            db.execute("DELETE FROM pillar_focus WHERE focus_key IN ('lavar_carro','ahorrar')")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("lavar_carro_y_ahorrar_retirados",
+                 "'Lavar carro' y 'Ahorrar dinero (mensual)' se retiran del checklist diario — ya cubiertos por el "
+                 "servicio 'Lavado / detallado' de Harma y por 'Finanzas: gastos semana · proyección' de Ataraxia (domingo).")
+            )
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
