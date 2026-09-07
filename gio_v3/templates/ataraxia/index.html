@@ -159,7 +159,7 @@
 .rs-hist{margin-top:14px;padding-top:14px;border-top:1px solid var(--b);}
 .rs-hist-hd{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
 .rs-hist-table{display:flex;flex-direction:column;gap:2px;overflow-x:auto;}
-.rs-hist-row{display:grid;grid-template-columns:52px repeat(5,1fr);gap:6px;font-size:11px;padding:5px 4px;font-family:var(--mono);color:var(--mid);}
+.rs-hist-row{display:grid;grid-template-columns:52px repeat(6,1fr);gap:6px;font-size:11px;padding:5px 4px;font-family:var(--mono);color:var(--mid);}
 .rs-hist-row:nth-child(even){background:rgba(255,255,255,.02);border-radius:5px;}
 .rs-hist-head{color:var(--dim);font-family:var(--sans);font-size:9px;letter-spacing:.06em;text-transform:uppercase;}
 
@@ -557,7 +557,7 @@
           <div class="rs-hist-hd">Últimas semanas</div>
           <div class="rs-hist-table">
             <div class="rs-hist-row rs-hist-head">
-              <span>Semana</span><span>Lectura</span><span>Sueño</span><span>Presup.</span><span>Kcal</span><span>Pantalla</span>
+              <span>Semana</span><span>Lectura</span><span>Sueño</span><span>Presup.</span><span>Kcal</span><span>Pasos</span><span>Pantalla</span>
             </div>
             {% for h in revision.historial %}
             <div class="rs-hist-row">
@@ -566,6 +566,7 @@
               <span>{{ h.horas_sueno if h.horas_sueno is not none else '—' }}</span>
               <span>{{ h.presupuesto_pct|int if h.presupuesto_pct is not none else '—' }}%</span>
               <span>{{ h.calorias_quemadas|int if h.calorias_quemadas is not none else '—' }}</span>
+              <span>{{ h.pasos_promedio|int if h.pasos_promedio is not none else '—' }}</span>
               <span>{{ h.screen_time_horas if h.screen_time_horas is not none else '—' }}</span>
             </div>
             {% endfor %}
@@ -789,7 +790,7 @@ function toggleRevision() {
   document.getElementById('rs-card')?.classList.toggle('collapsed');
 }
 
-const REVISION_KEYS = ['dias_lectura','horas_sueno','presupuesto_pct','calorias_quemadas','screen_time_horas'];
+const REVISION_KEYS = ['dias_lectura','horas_sueno','presupuesto_pct','calorias_quemadas','pasos_promedio','screen_time_horas'];
 
 async function saveRevision() {
   const body = { notas: document.getElementById('rs-notas')?.value || '' };

@@ -2409,6 +2409,12 @@ def init_db():
         if "semana_id" not in pr_cols:
             db.execute("ALTER TABLE priorities ADD COLUMN semana_id TEXT")
 
+        # Pasos promedio/día — nueva métrica de la Revisión Semanal Objetiva,
+        # junto a calorías quemadas (ver modules/ataraxia/routes.py).
+        rs_cols = [r["name"] for r in db.execute("PRAGMA table_info(revision_semanal)").fetchall()]
+        if "pasos_promedio" not in rs_cols:
+            db.execute("ALTER TABLE revision_semanal ADD COLUMN pasos_promedio REAL")
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

@@ -107,6 +107,7 @@ REVISION_METRICS = [
     {"key": "horas_sueno",       "label": "Sueño promedio",      "unit": "h/noche","icon": "moon",        "direction": "up",   "step": "0.1", "min": "0", "max": "12",   "placeholder": "7.5"},
     {"key": "presupuesto_pct",   "label": "Presupuesto usado",   "unit": "%",      "icon": "landmark",    "direction": "down", "step": "1",   "min": "0", "max": "300",  "placeholder": "85"},
     {"key": "calorias_quemadas", "label": "Calorías quemadas",   "unit": "kcal/d", "icon": "flame",       "direction": "up",   "step": "10",  "min": "0", "max": "6000", "placeholder": "2200"},
+    {"key": "pasos_promedio",    "label": "Pasos promedio",      "unit": "pasos/d","icon": "footprints",  "direction": "up",   "step": "100", "min": "0", "max": "30000","placeholder": "8000"},
     {"key": "screen_time_horas", "label": "Pantalla en redes",   "unit": "h/día",  "icon": "smartphone",  "direction": "down", "step": "0.1", "min": "0", "max": "12",   "placeholder": "1.5"},
 ]
 
@@ -180,6 +181,7 @@ _WELLNESS_ABS_FLAGS = [
     ("screen_time_horas", lambda v: v >= 3.5, lambda v: f"Pantalla en redes en {v:g}h/día — por encima del umbral de tu propio sistema de badges (3.5h). Compite directo con tus touches."),
     ("presupuesto_pct",   lambda v: v > 100,  lambda v: f"Te pasaste del presupuesto semanal ({v:g}%). Revísalo en Finanzas antes de que se acumule."),
     ("dias_lectura",      lambda v: v == 0,   lambda v: "Cero días de lectura esta semana — la primera métrica que se cae cuando la semana se pone pesada."),
+    ("pasos_promedio",    lambda v: v < 5000, lambda v: f"Pasos promedio de {v:,.0f}/día — por debajo del umbral sedentario (5,000). Súmalos con caminatas cortas repartidas, no una sola sesión larga."),
 ]
 
 
@@ -590,17 +592,17 @@ def save_revision():
         if existing:
             db.execute(
                 """UPDATE revision_semanal SET dias_lectura=?, horas_sueno=?, presupuesto_pct=?,
-                   calorias_quemadas=?, screen_time_horas=?, notas=?, updated_at=? WHERE semana_id=?""",
+                   calorias_quemadas=?, pasos_promedio=?, screen_time_horas=?, notas=?, updated_at=? WHERE semana_id=?""",
                 (valores["dias_lectura"], valores["horas_sueno"], valores["presupuesto_pct"],
-                 valores["calorias_quemadas"], valores["screen_time_horas"], notas, now, semana_id)
+                 valores["calorias_quemadas"], valores["pasos_promedio"], valores["screen_time_horas"], notas, now, semana_id)
             )
         else:
             db.execute(
                 """INSERT INTO revision_semanal
-                   (semana_id, dias_lectura, horas_sueno, presupuesto_pct, calorias_quemadas, screen_time_horas, notas, created_at, updated_at)
-                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                   (semana_id, dias_lectura, horas_sueno, presupuesto_pct, calorias_quemadas, pasos_promedio, screen_time_horas, notas, created_at, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
                 (semana_id, valores["dias_lectura"], valores["horas_sueno"], valores["presupuesto_pct"],
-                 valores["calorias_quemadas"], valores["screen_time_horas"], notas, now, now)
+                 valores["calorias_quemadas"], valores["pasos_promedio"], valores["screen_time_horas"], notas, now, now)
             )
         db.commit()
 
