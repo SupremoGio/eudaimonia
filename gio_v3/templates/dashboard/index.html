@@ -24,7 +24,6 @@
   .dash-head-quote { display:flex; align-items:center; gap:8px; flex:2; min-width:0; margin:0 4px; align-self:center; }
   .dhq-text { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-family:var(--serif); font-style:italic; font-size:13px; color:var(--text); }
   .dhq-author { flex-shrink:0; font-family:var(--sans); font-size:9px; color:var(--mid); letter-spacing:.04em; }
-  .dash-head-quote .pill { flex-shrink:0; }
   .dash-head-quote .refresh-btn { flex-shrink:0; }
   @media (max-width:900px) { .dash-head-quote { display:none; } }
   /* <900px: la del header desaparece (no hay espacio) — esta toma su lugar,
@@ -203,10 +202,6 @@
         <div class="dash-word">ΕΥΔΑΙΜΟΝΙΑ</div>
       </div>
       <div class="dash-head-quote">
-        <span class="pill reflexion-cat"
-          style="{{ 'color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.18);' if data.reflexion.category == 'stoic' else 'color:#34d399;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.18);' }}">
-          {{ 'Estoica' if data.reflexion.category == 'stoic' else 'Motivacional' }}
-        </span>
         <span class="dhq-text reflexion-text" title="{{ data.reflexion.text }}">&ldquo;{{ data.reflexion.text }}&rdquo;</span>
         <span class="dhq-author reflexion-author">— {{ data.reflexion.author }}</span>
         <button class="refresh-btn reflexion-refresh" aria-label="Nueva reflexión" title="Nueva reflexión"><i data-lucide="refresh-cw"></i></button>
