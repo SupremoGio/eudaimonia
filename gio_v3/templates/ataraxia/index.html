@@ -181,6 +181,30 @@
 .rs-week-day.future{opacity:.35;}
 .rs-week-day-lbl{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);}
 .rs-week-day-icon{font-size:1rem;line-height:1;}
+
+/* ── Análisis de Élite — veredicto + plan de acción derivados de los mismos
+   datos del rango semanal, sin narrativa inventada (100% trazable). ── */
+.rs-an-verdict{padding:12px 14px;background:color-mix(in srgb, var(--gold) 5%, transparent);
+  border:1px solid var(--gold-border);border-radius:10px;margin-bottom:8px;}
+.rs-an-title{font-family:var(--serif);font-size:1rem;font-weight:600;color:var(--text);margin-bottom:4px;}
+.rs-an-body{font-size:var(--fs-sm);color:var(--dim);line-height:1.5;}
+.rs-an-vsprev{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:var(--dim);margin-bottom:10px;padding:0 2px;}
+.rs-an-vsprev-up{color:var(--emerald);}
+.rs-an-vsprev-down{color:var(--coral);}
+.rs-an-days{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.rs-an-day{padding:8px 10px;background:var(--card2);border:1px solid var(--b);border-radius:9px;display:flex;flex-direction:column;gap:2px;}
+.rs-an-day-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);}
+.rs-an-day-val{font-size:var(--fs-sm);color:var(--text);font-weight:600;}
+.rs-an-day-best{border-color:rgba(16,185,129,.25);}
+.rs-an-day-worst{border-color:rgba(244,63,94,.22);}
+.rs-an-flags{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.rs-an-flag{display:flex;align-items:flex-start;gap:6px;font-size:var(--fs-xs);color:var(--coral);
+  background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.18);border-radius:8px;padding:7px 9px;line-height:1.4;}
+.rs-an-flag i{flex-shrink:0;margin-top:1px;}
+.rs-an-plan{padding:10px 12px;background:var(--card2);border:1px solid var(--b);border-radius:9px;margin-bottom:14px;}
+.rs-an-plan-hd{font-size:var(--fs-xs);color:var(--gold);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.rs-an-plan-list{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;}
+.rs-an-plan-list li{font-size:var(--fs-sm);color:var(--text);line-height:1.4;}
 </style>
 {% endblock %}
 
@@ -422,7 +446,7 @@
         <span class="rs-icon"><i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i></span>
         <div class="rs-title-wrap">
           <span class="rs-title">Revisión Semanal Objetiva</span>
-          <span class="rs-sub">{% if revision.has_data %}Guardada — semana {{ semana_id }}{% else %}Datos, no vibras{% endif %}</span>
+          <span class="rs-sub">{% if revision.has_data %}Guardada — semana {{ semana_id }}{% else %}Datos, no vibras{% endif %} · Semana {{ revision.semana_num }}/52</span>
         </div>
         <span class="rs-chev">▼</span>
       </div>
@@ -449,6 +473,54 @@
           </div>
           {% endfor %}
         </div>
+
+        {# ── Análisis de Élite: veredicto cuantitativo + plan para la próxima semana ── #}
+        {% set an = revision.analysis %}
+        <div class="rs-an-verdict">
+          <div class="rs-an-title">{{ an.verdict_title }}</div>
+          <div class="rs-an-body">{{ an.verdict_body }}</div>
+        </div>
+
+        {% if an.vs_prev.text %}
+        <div class="rs-an-vsprev rs-an-vsprev-{{ an.vs_prev.trend }}">
+          <i data-lucide="{{ 'trending-up' if an.vs_prev.trend=='up' else ('trending-down' if an.vs_prev.trend=='down' else 'minus') }}" style="width:12px;height:12px;"></i>
+          {{ an.vs_prev.text }}
+        </div>
+        {% endif %}
+
+        {% if an.best_day or an.worst_day %}
+        <div class="rs-an-days">
+          {% if an.best_day %}
+          <div class="rs-an-day rs-an-day-best">
+            <span class="rs-an-day-lbl">Mejor día</span>
+            <span class="rs-an-day-val">{{ an.best_day.icon }} {{ an.best_day.weekday }} · {{ an.best_day.label }}</span>
+          </div>
+          {% endif %}
+          {% if an.worst_day %}
+          <div class="rs-an-day rs-an-day-worst">
+            <span class="rs-an-day-lbl">Día más flojo</span>
+            <span class="rs-an-day-val">{{ an.worst_day.icon }} {{ an.worst_day.weekday }} · {{ an.worst_day.label }}</span>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if an.wellness_flags %}
+        <div class="rs-an-flags">
+          {% for f in an.wellness_flags %}
+          <div class="rs-an-flag"><i data-lucide="alert-triangle" style="width:12px;height:12px;"></i> {{ f.text }}</div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if an.action_plan %}
+        <div class="rs-an-plan">
+          <div class="rs-an-plan-hd">Plan para la próxima semana</div>
+          <ol class="rs-an-plan-list">
+            {% for a in an.action_plan %}<li>{{ a }}</li>{% endfor %}
+          </ol>
+        </div>
+        {% endif %}
 
         <div class="rs-grid">
           {% for m in revision.metrics %}

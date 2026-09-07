@@ -145,6 +145,126 @@ def _fmt_num(v):
     return str(int(v)) if v == int(v) else str(v)
 
 
+# ── Análisis de Élite ──────────────────────────────────────────────────────────
+# Lectura cuantitativa de la semana: combina el rango semanal ya calculado por
+# el motor de gamificación (get_weekly_classification) con las métricas de
+# bienestar de esta misma Revisión Semanal, y entrega un veredicto + plan de
+# acción concreto para la siguiente — el mismo ritmo semana-a-semana del
+# sistema de niveles (~52 semanas/año, ver engine.LEVEL_THRESHOLDS), pero
+# aterrizado en "qué hago distinto la próxima semana" en vez de solo XP.
+# Todo es determinista (sin IA) para que el "veredicto" sea 100% trazable a
+# los datos — cuantitativo de verdad, no una narrativa inventada.
+_RANK_ORDER = ["carbon", "iron", "gold", "diamond"]
+
+_VERDICT_COPY = {
+    "diamond": {
+        "title": "Semana ÉLITE — Diamante",
+        "body":  "La mayoría de tus días fueron Oro o Diamante: es exactamente el nivel de consistencia que compone. Sostenlo unas semanas más y deja de sentirse como esfuerzo — se vuelve identidad.",
+    },
+    "gold": {
+        "title": "Semana sólida — Oro",
+        "body":  "Cumpliste tus anclas con constancia y sumaste volumen real de touches. Lo que te separa de Diamante no es más esfuerzo, es cobertura: cerrar el 100% de tus anclas los días que ya estás en Oro.",
+    },
+    "iron": {
+        "title": "Semana base — Hierro",
+        "body":  "Completaste el mínimo casi todos los días, pero sin profundidad. Esto mantiene la racha viva — no construye margen. El salto a Oro está en repartir touches a lo largo del día, no en sumar más anclas.",
+    },
+    "carbon": {
+        "title": "Semana de alerta — Carbón",
+        "body":  "La mayoría de los días no llegaste ni a tu ancla mínima. Antes de pensar en Oro o Diamante, la única prioridad real es asegurar Hierro todos los días de la próxima semana.",
+    },
+}
+
+_WELLNESS_ABS_FLAGS = [
+    ("horas_sueno",       lambda v: v < 7,    lambda v: f"Sueño promedio de {v:g}h — bajo el mínimo de 7h. Es la palanca con más impacto directo en tu rendimiento diario."),
+    ("screen_time_horas", lambda v: v >= 3.5, lambda v: f"Pantalla en redes en {v:g}h/día — por encima del umbral de tu propio sistema de badges (3.5h). Compite directo con tus touches."),
+    ("presupuesto_pct",   lambda v: v > 100,  lambda v: f"Te pasaste del presupuesto semanal ({v:g}%). Revísalo en Finanzas antes de que se acumule."),
+    ("dias_lectura",      lambda v: v == 0,   lambda v: "Cero días de lectura esta semana — la primera métrica que se cae cuando la semana se pone pesada."),
+]
+
+
+def _week_num_of(monday_id):
+    return date.fromisoformat(monday_id).isocalendar()[1]
+
+
+def _best_worst_day(days):
+    evaluated = [d for d in days if not d["future"]]
+    if not evaluated:
+        return None, None
+    scored = [(_RANK_ORDER.index(d["rank"]), d["xp"], d) for d in evaluated]
+    best  = max(scored, key=lambda t: (t[0], t[1]))[2]
+    worst = min(scored, key=lambda t: (t[0], t[1]))[2]
+    return best, worst
+
+
+def _wellness_flags(metrics):
+    by_key = {m["key"]: m for m in metrics}
+    flags = []
+    for key, cond, msg in _WELLNESS_ABS_FLAGS:
+        m = by_key.get(key)
+        if m and m["value"] is not None and cond(m["value"]):
+            flags.append({"key": key, "label": m["label"], "text": msg(m["value"])})
+    # Cualquier métrica con tendencia negativa marcada que no haya entrado ya
+    # por umbral absoluto — evita mostrar el mismo dato dos veces.
+    flagged_keys = {f["key"] for f in flags}
+    for m in metrics:
+        if m["key"] in flagged_keys or m["trend"] != "worse" or m["delta"] is None:
+            continue
+        flags.append({
+            "key": m["key"], "label": m["label"],
+            "text": f"{m['label']} empeoró {abs(m['delta']):g}{m['unit']} vs la semana pasada.",
+        })
+    return flags[:3]
+
+
+def _action_plan(weekly, worst_day, flags):
+    plan = []
+    if weekly["rank"] in ("carbon", "iron"):
+        plan.append("Prioridad #1: completa tu ancla del día TODOS los días — sin eso, Oro no es matemáticamente posible.")
+    if weekly["rank"] == "iron":
+        plan.append("Reparte al menos 3 touches en 2 momentos distintos del día (no los dejes todos para la noche) — así es como Hierro se convierte en Oro.")
+    if weekly["rank"] == "gold":
+        plan.append("Ya tienes el volumen — enfócate en cerrar el 100% de tus anclas los días que sí llegas a Oro. Eso es lo único que falta para Diamante.")
+    if weekly["rank"] == "diamond":
+        plan.append("Sostén el mismo patrón — el riesgo en una semana de élite no es bajar el esfuerzo, es no anotar qué lo hizo funcionar para poder repetirlo.")
+    if flags:
+        plan.append(flags[0]["text"])
+    if worst_day:
+        plan.append(f"Tu día más flojo fue {worst_day['weekday']} ({worst_day['label']}) — identifica qué lo bloqueó y arma un plan mínimo específico para ese día.")
+    return plan[:3]
+
+
+def _analyze_week(weekly, prev_weekly, metrics):
+    verdict = _VERDICT_COPY.get(weekly["rank"], _VERDICT_COPY["carbon"])
+    best_day, worst_day = _best_worst_day(weekly["days"])
+
+    vs_prev = {"trend": None, "delta_pts": None, "text": None}
+    if prev_weekly and prev_weekly.get("days_evaluated"):
+        delta = round(weekly["avg_points"] - prev_weekly["avg_points"], 2)
+        vs_prev["delta_pts"] = delta
+        if abs(delta) < 0.05:
+            vs_prev["trend"] = "same"
+            vs_prev["text"] = "Nivel casi idéntico al de la semana pasada."
+        elif delta > 0:
+            vs_prev["trend"] = "up"
+            vs_prev["text"] = f"Subiste vs la semana pasada (fue {prev_weekly['label']})."
+        else:
+            vs_prev["trend"] = "down"
+            vs_prev["text"] = f"Bajaste vs la semana pasada (fue {prev_weekly['label']})."
+
+    flags = _wellness_flags(metrics)
+
+    return {
+        "verdict_title":  verdict["title"],
+        "verdict_body":   verdict["body"],
+        "best_day":       best_day,
+        "worst_day":      worst_day,
+        "vs_prev":        vs_prev,
+        "wellness_flags": flags,
+        "action_plan":    _action_plan(weekly, worst_day, flags),
+    }
+
+
 def _revision_view(semana_id):
     actual   = _get_revision_row(semana_id) or {}
     anterior = _get_revision_row(_prev_semana_id(semana_id)) or {}
@@ -175,14 +295,19 @@ def _revision_view(semana_id):
 
     # semana_id es el sábado de este ciclo (ver get_semana_id) — el lunes de
     # esa misma semana Lun-Dom es 5 días antes.
-    monday_id = (date.fromisoformat(semana_id) - timedelta(days=5)).isoformat()
+    monday_id      = (date.fromisoformat(semana_id) - timedelta(days=5)).isoformat()
+    prev_monday_id = (date.fromisoformat(monday_id) - timedelta(days=7)).isoformat()
+    weekly         = engine.get_weekly_classification(monday_id)
+    prev_weekly    = engine.get_weekly_classification(prev_monday_id)
 
     return {
-        "metrics":   metrics,
-        "has_data":  bool(actual),
-        "notas":     actual.get("notas") or "",
-        "historial": [dict(r) for r in hist_rows],
-        "weekly":    engine.get_weekly_classification(monday_id),
+        "metrics":    metrics,
+        "has_data":   bool(actual),
+        "notas":      actual.get("notas") or "",
+        "historial":  [dict(r) for r in hist_rows],
+        "weekly":     weekly,
+        "analysis":   _analyze_week(weekly, prev_weekly, metrics),
+        "semana_num": _week_num_of(monday_id),
     }
 
 
