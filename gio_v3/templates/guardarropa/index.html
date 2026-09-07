@@ -256,7 +256,10 @@
 .intel-card{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:18px;}
 .intel-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;}
 .intel-intro{font-size:var(--fs-sm);color:var(--dim);line-height:1.6;max-width:68ch;margin-bottom:18px;}
-.color-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.color-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;cursor:pointer;border-radius:6px;padding:3px 4px;margin-left:-4px;transition:background .15s;}
+.color-bar-row:hover{background:rgba(201,168,76,.06);}
+.gd-color-filter-chip{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:var(--gold);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);border-radius:100px;padding:3px 10px;cursor:pointer;}
+.gd-color-filter-chip::after{content:'✕';opacity:.6;}
 .color-dot{width:14px;height:14px;border-radius:4px;flex-shrink:0;border:1px solid rgba(255,255,255,.1);}
 .color-bar-label{font-size:var(--fs-sm);color:var(--mid);width:64px;flex-shrink:0;}
 .color-bar-track{flex:1;height:5px;background:var(--b);border-radius:2px;overflow:hidden;}
@@ -435,6 +438,7 @@
     <div>
       <div class="gd-toolbar2">
         <div class="gd-result-count" id="gd-result-count"></div>
+        <button class="gd-color-filter-chip" id="gd-color-filter-chip" style="display:none;" onclick="clearColorFilter()"></button>
         <select class="gd-sort" id="gd-sort" onchange="filterItems()">
           <option value="recientes">Más recientes</option>
           <option value="precio_desc">Precio: mayor a menor</option>
@@ -737,6 +741,7 @@ let _selectedOccs = [];
 let _selectedItemIds = new Set();
 let _pickerCat = '';
 let _rating = 0;
+let _activeColorFilter = '';
 
 // ── Color Psychology map ──────────────────────────────────────────────────────
 const COLOR_PSYCH = {
@@ -754,6 +759,10 @@ const COLOR_PSYCH = {
   verde:   {name:'Verde',   hex:'#16a34a', psych:'Vitalidad · Crecimiento · Armonía',       rec:'Casual, actividades al aire libre, creatividad'},
   rojo:    {name:'Rojo',    hex:'#dc2626', psych:'Energía · Poder · Atención inmediata',    rec:'Presentaciones, eventos sociales, impacto visual'},
   blanco_roto:{name:'Blanco roto',hex:'#ede8dc',psych:'Elegancia cálida · Sofisticación',   rec:'Business casual, look intelectual'},
+  amarillo:{name:'Amarillo',hex:'#eab308', psych:'Optimismo · Energía creativa · Calidez',  rec:'Acentos veraniegos, looks casuales llamativos'},
+  turquesa:{name:'Turquesa',hex:'#0d9488', psych:'Frescura · Originalidad · Calma vibrante',rec:'Casual creativo, verano, acentos statement'},
+  morado:  {name:'Morado',  hex:'#7c3aed', psych:'Creatividad · Distinción · Lujo moderno', rec:'Eventos nocturnos, acentos statement'},
+  rosa:    {name:'Rosa',    hex:'#db2777', psych:'Confianza · Calidez · Personalidad',      rec:'Casual smart, looks statement de temporada'},
 };
 
 function matchColor(hex){
@@ -792,6 +801,15 @@ function matchColor(hex){
   }
   if(hue>=340||hue<=10)  return lum<90 ? COLOR_PSYCH.borgona : COLOR_PSYCH.rojo;
   if(hue>=80&&hue<=160)  return COLOR_PSYCH.verde;
+  // Los siguientes tres rangos de matiz (amarillo/mostaza, turquesa, morado/rosa)
+  // no tenían cubeta propia — cualquier prenda con un tono ahí caía en el
+  // catch-all "Color personalizado" aunque sí tuviera un color real y
+  // reconocible. Sin esto, prendas de matices muy distintos entre sí (un
+  // amarillo, un turquesa, un morado) se agrupaban en la misma barra del
+  // gráfico, mostrando un solo swatch que no representaba a ninguna de ellas.
+  if(hue>45&&hue<80)   return lum<140 ? COLOR_PSYCH.mostaza : COLOR_PSYCH.amarillo;
+  if(hue>160&&hue<200) return COLOR_PSYCH.turquesa;
+  if(hue>260&&hue<340) return hue<300 ? COLOR_PSYCH.morado : COLOR_PSYCH.rosa;
   return {name:'Color personalizado',psych:'Expresa tu personalidad única',rec:'Accesorios y prendas statement'};
 }
 
@@ -860,10 +878,11 @@ function filterItems(){
   const dept = DEPARTMENTS.find(d=>d.key===_activeDept);
 
   _items = ALL_ITEMS.filter(r=>{
-    const md = !dept.cats || dept.cats.includes(r.categoria);
-    const mc = !_activeCat || r.categoria===_activeCat;
-    const mq = !q || r.nombre.toLowerCase().includes(q) || (r.marca||'').toLowerCase().includes(q) || (r.color_name||'').toLowerCase().includes(q);
-    return md && mc && mq;
+    const md   = !dept.cats || dept.cats.includes(r.categoria);
+    const mc   = !_activeCat || r.categoria===_activeCat;
+    const mq   = !q || r.nombre.toLowerCase().includes(q) || (r.marca||'').toLowerCase().includes(q) || (r.color_name||'').toLowerCase().includes(q);
+    const mcol = !_activeColorFilter || (matchColor(r.color_hex)?.name || 'Otro') === _activeColorFilter;
+    return md && mc && mq && mcol;
   });
 
   const sortKey = document.getElementById('gd-sort').value;
@@ -879,7 +898,31 @@ function filterItems(){
   document.getElementById('gd-result-count').textContent =
     `${_items.length} prenda${_items.length===1?'':'s'}`;
 
+  const chip = document.getElementById('gd-color-filter-chip');
+  if(_activeColorFilter){
+    chip.textContent = _activeColorFilter;
+    chip.style.display = '';
+  } else {
+    chip.style.display = 'none';
+  }
+
   renderGrid();
+}
+
+// Clic en una barra de "Distribución de colores" (pestaña Intel) → salta a
+// Armario ya filtrado por ese color exacto. Es la forma de auditar qué
+// prendas concretas caen en cada cubeta (incluida "Color personalizado",
+// el catch-all para matices sin nombre propio) sin tener que adivinar.
+function filterByColorBucket(name){
+  _activeColorFilter = name;
+  switchTab('armario');
+  document.getElementById('arm-search').value = '';
+  filterItems();
+}
+
+function clearColorFilter(){
+  _activeColorFilter = '';
+  filterItems();
 }
 
 // ── Grid render ───────────────────────────────────────────────────────────────
@@ -1832,7 +1875,7 @@ function renderIntelligence(){
   const sortedColors=Object.entries(colorMap).sort((a,b)=>b[1].count-a[1].count);
   const maxColor=sortedColors[0]?.[1]?.count||1;
   const colorBars=sortedColors.map(([name,{count,hex}])=>`
-    <div class="color-bar-row">
+    <div class="color-bar-row" onclick="filterByColorBucket('${name}')" title="Ver estas ${count} prenda${count===1?'':'s'} en Armario">
       <div class="color-dot" style="background:${esc(hex)};"></div>
       <div class="color-bar-label">${esc(name)}</div>
       <div class="color-bar-track"><div class="color-bar-fill" style="width:${Math.round(count/maxColor*100)}%;background:${esc(hex)};"></div></div>
