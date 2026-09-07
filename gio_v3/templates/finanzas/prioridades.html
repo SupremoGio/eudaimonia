@@ -25,6 +25,11 @@
   .ftab{padding:5px 14px;border-radius:999px;font-size:var(--fs-sm);font-weight:600;border:1px solid var(--b);color:var(--dim);cursor:pointer;transition:all .15s;white-space:nowrap;}
   .ftab.on{background:var(--gold);color:#0a0a1a;border-color:var(--gold);}
   .ftab:hover:not(.on){border-color:var(--gold);color:var(--gold);}
+  /* Pills con ícono (Comprado/Descartado): flex en vez de vertical-align — el
+     ícono queda perfectamente centrado contra el texto en cualquier tamaño,
+     en vez de depender de la línea base del botón. */
+  .ftab.has-icon{display:inline-flex;align-items:center;gap:5px;}
+  .ftab.has-icon i{flex-shrink:0;}
 
   /* ── Item cards ── */
   .p-card{
@@ -256,8 +261,8 @@
   <button class="ftab"    data-f="Alta"       onclick="setFilter(this,'Alta')"><span class="pdot" style="background:#ef4444;"></span>Alta</button>
   <button class="ftab"    data-f="Media"      onclick="setFilter(this,'Media')"><span class="pdot" style="background:var(--amber-l);"></span>Media</button>
   <button class="ftab"    data-f="Baja"       onclick="setFilter(this,'Baja')"><span class="pdot" style="background:#60a5fa;"></span>Baja</button>
-  <button class="ftab"    data-f="Comprado"   onclick="setFilter(this,'Comprado')"><i data-lucide="check-circle-2" style="width:12px;height:12px;vertical-align:middle;"></i> Comprado ({{ summary.comp_count }})</button>
-  <button class="ftab"    data-f="Descartado" onclick="setFilter(this,'Descartado')"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:middle;"></i> Descartado</button>
+  <button class="ftab has-icon" data-f="Comprado"   onclick="setFilter(this,'Comprado')"><i data-lucide="check-circle-2" style="width:13px;height:13px;"></i>Comprado ({{ summary.comp_count }})</button>
+  <button class="ftab has-icon" data-f="Descartado" onclick="setFilter(this,'Descartado')"><i data-lucide="trash-2" style="width:13px;height:13px;"></i>Descartado ({{ summary.desc_count }})</button>
 </div>
 
 {# ── Cards list ── #}

@@ -46,7 +46,7 @@ def index():
 
     summary = {
         'alta_pend': 0, 'media_pend': 0, 'baja_pend': 0,
-        'gastado': 0, 'pend_count': 0, 'comp_count': 0,
+        'gastado': 0, 'pend_count': 0, 'comp_count': 0, 'desc_count': 0,
     }
     for r in raw:
         if r['estado'] == 'Pendiente':
@@ -57,6 +57,8 @@ def index():
         elif r['estado'] == 'Comprado':
             summary['comp_count'] += r['cnt']
             summary['gastado']    += r['tr']
+        elif r['estado'] == 'Descartado':
+            summary['desc_count'] += r['cnt']
 
     items_dict = []
     for it in items:
