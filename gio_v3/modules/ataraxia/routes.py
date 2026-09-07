@@ -589,6 +589,7 @@ def save_revision():
         existing = db.execute(
             "SELECT semana_id FROM revision_semanal WHERE semana_id=?", (semana_id,)
         ).fetchone()
+        is_first_save = existing is None
         if existing:
             db.execute(
                 """UPDATE revision_semanal SET dias_lectura=?, horas_sueno=?, presupuesto_pct=?,
@@ -606,7 +607,25 @@ def save_revision():
             )
         db.commit()
 
-    return jsonify({"ok": True, "semana_id": semana_id})
+    # XP/EC solo en el primer guardado de la semana — editar una revisión ya
+    # guardada (ajustar un dato, agregar notas) no debe volver a pagar. Usa
+    # los mismos valores ya calibrados en data.py (ACTIVITIES['revision_semanal'],
+    # tier "alto") en vez de inventar un número nuevo — así queda dentro de la
+    # misma economía de XP/EC que el resto del sistema, no una excepción aparte.
+    gam = None
+    if is_first_save:
+        act = ACTIVITIES["revision_semanal"]
+        today = today_str()
+        with get_db() as db:
+            cursor = db.execute(
+                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                ("revision_semanal", today, act["pts"])
+            )
+            log_id = cursor.lastrowid
+            db.commit()
+        gam = engine.process_activity("revision_semanal", act["pts"], act["cat"], log_id, ec=act["ec"])
+
+    return jsonify({"ok": True, "semana_id": semana_id, "first_save": is_first_save, "gam": gam})
 
 
 @ataraxia_bp.route('/api/rutina/reset', methods=['POST'])

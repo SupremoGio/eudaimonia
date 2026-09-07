@@ -806,8 +806,14 @@ async function saveRevision() {
     });
     const d = await r.json();
     if (!r.ok || !d.ok) { toast('Error al guardar', 'err'); return; }
-    toast('Revisión guardada');
-    setTimeout(() => location.reload(), 700);
+    if (d.first_save && d.gam) {
+      toast(`Revisión guardada · +${d.gam.xp} XP · +${d.gam.ec} EC`, 'win');
+      if (d.gam.achievements?.length) euAnnounceAchievements(d.gam);
+      if (d.gam.badges?.length) toast(`Badge: ${d.gam.badges[0].name}`, 'win');
+    } else {
+      toast('Revisión guardada');
+    }
+    setTimeout(() => location.reload(), 900);
   } catch {
     toast('Sin conexión', 'err');
   }
