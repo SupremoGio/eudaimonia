@@ -194,16 +194,6 @@
 .foco-row select{background:var(--card2);border:1px solid var(--b);border-radius:8px;color:var(--text);font-size:var(--fs-xs);padding:5px 8px;font-family:var(--mono);max-width:150px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .foco-lbl{color:var(--dim);font-size:var(--fs-xs);white-space:nowrap;}
 
-.eury-card{display:flex;align-items:center;gap:10px;padding:6px 4px 6px 14px;border-left:2px solid rgba(232,64,148,.35);margin-bottom:20px;}
-.eury-card.done{border-left-color:rgba(16,185,129,.4);}
-.eury-card .eic{width:26px;height:26px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(232,64,148,.10);color:var(--pink);}
-.eury-card .etxt{flex:1;}
-.eury-card .et1{font-size:var(--fs-sm);font-weight:600;color:var(--text);}
-.eury-card .et2{font-size:var(--fs-xs);color:var(--dim);margin-top:1px;}
-.eury-card.done .et2{color:var(--emerald);}
-.eury-card .estatus{font-size:var(--fs-xs);padding:3px 9px;border-radius:100px;background:var(--card2);color:var(--dim);}
-.eury-card.done .estatus{background:rgba(16,185,129,.12);color:var(--emerald);}
-
 .now-head{display:flex;align-items:baseline;gap:8px;margin:0 0 12px;}
 .now-pulse{width:7px;height:7px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px rgba(245,158,11,.5);animation:sessPulse 2s ease-in-out infinite;flex-shrink:0;}
 @keyframes sessPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
@@ -537,16 +527,6 @@
         </div>
       </div>
       {% endif %}
-
-      <!-- Eurythmia — recordatorio pasivo, copy varía si hoy es día-ancla de Baile -->
-      <div class="eury-card {% if eurythmia_card.done %}done{% endif %}">
-        <div class="eic"><i data-lucide="music-2" style="width:14px;height:14px;"></i></div>
-        <div class="etxt">
-          <div class="et1">{{ eurythmia_card.title }}</div>
-          <div class="et2">{{ eurythmia_card.subtitle }}</div>
-        </div>
-        <span class="estatus">{{ eurythmia_card.badge }}</span>
-      </div>
 
       <!-- AHORA -->
       <div class="now-head">

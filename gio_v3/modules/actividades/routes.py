@@ -30,11 +30,6 @@ SESSION_META = {
 }
 
 
-# Días en que Baile es la ancla semanal (sesión profunda) — ver calendario
-# de Fase 3. No es una fila de activity_defs: el card pasivo de Eurythmia
-# solo cambia de copy según esto, sigue leyendo eurythmia_session tal cual.
-EURYTHMIA_ANCLA_DAYS = {"tue", "sat"}
-
 # Touches que aceptan texto libre además del checkbox — ver /api/reflexion.
 # Guardar contenido no vacío marca el check automáticamente si aún no
 # estaba (ya se hizo/definió, cuenta como cumplido); el checkbox se sigue
@@ -53,18 +48,6 @@ def get_eurythmia_today():
             (today_str(),)
         ).fetchone()
     return row is not None
-
-
-def get_eurythmia_card():
-    done      = get_eurythmia_today()
-    ancla_day = adefs.weekday_code() in EURYTHMIA_ANCLA_DAYS
-    if ancla_day and not done:
-        return {"title": "Hoy toca Baile — tu ancla semanal", "subtitle": "Se llena solo desde Eurythmia", "badge": "Pendiente", "done": False, "ancla_day": True}
-    if ancla_day and done:
-        return {"title": "Baile completado hoy", "subtitle": "Ancla semanal cumplida", "badge": "Hecho", "done": True, "ancla_day": True}
-    if not ancla_day and not done:
-        return {"title": "¿Bailaste hoy?", "subtitle": "No era tu día ancla, pero cuenta si lo hiciste", "badge": "Opcional", "done": False, "ancla_day": False}
-    return {"title": "Bailaste hoy", "subtitle": "Extra — no era tu ancla", "badge": "Extra", "done": True, "ancla_day": False}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -195,7 +178,6 @@ def build_acta_diurna_context():
         "pillar_focus":    adefs.get_pillar_focus_map(),
         "foco_candidates": foco_candidates,
         "eurythmia_done":  get_eurythmia_today(),
-        "eurythmia_card":  get_eurythmia_card(),
     }
 
 
@@ -222,7 +204,6 @@ def index():
         pillar_focus  = ctx["pillar_focus"],
         foco_candidates = ctx["foco_candidates"],
         eurythmia_done= ctx["eurythmia_done"],
-        eurythmia_card= ctx["eurythmia_card"],
         sat_acts      = sat_acts,
         sun_acts      = sun_acts,
         cats          = ACTIVITY_CATEGORIES,
@@ -265,7 +246,6 @@ def today_status():
         'pillar_focus':    ctx["pillar_focus"],
         'foco_candidates': ctx["foco_candidates"],
         'eurythmia_done':  ctx["eurythmia_done"],
-        'eurythmia_card':  ctx["eurythmia_card"],
         'xp': {'today': xp_today, 'week': xp_week, 'month': xp_month},
         'streak': engine.get_gamification_streak(),
         'classification': engine.get_daily_classification(today),
