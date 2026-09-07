@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, request, jsonify, send_from_direct
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
 from database import get_db
-from utils import clean_str, safe_float
+from utils import clean_str, safe_float, uploads_base_dir
 
 _log = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ _BROWSER_HEADERS = {
     'Accept-Language': 'es-MX,es;q=0.9,en;q=0.8',
 }
 
-UPLOAD_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'wardrobe')
+UPLOAD_DIR  = os.path.join(uploads_base_dir(), 'wardrobe')
 ALLOWED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.heic'}
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 

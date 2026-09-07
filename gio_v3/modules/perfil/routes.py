@@ -4,12 +4,13 @@ from flask import Blueprint, render_template, request, jsonify, send_from_direct
 from werkzeug.utils import secure_filename
 from cryptography.fernet import Fernet, InvalidToken
 from database import get_db
+from utils import uploads_base_dir
 
 PLACEHOLDER = '— editar —'
 
 perfil_bp = Blueprint('perfil', __name__, template_folder='../../templates')
 
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'docs')
+UPLOAD_DIR = os.path.join(uploads_base_dir(), 'docs')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 

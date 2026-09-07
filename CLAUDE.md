@@ -60,6 +60,24 @@ cd gio_v3 && python tu_script.py
 (fue eliminado en la limpieza del 2026-05-15) y si vuelve a aparecer es una copia
 obsoleta generada accidentalmente.
 
+## Uploads (fotos y documentos subidos por el usuario)
+
+**Regla crítica:** el directorio base de uploads lo resuelve `utils.uploads_base_dir()`,
+nunca lo hardcodees relativo a `__file__` en un módulo nuevo.
+
+- Prioridad: env var `UPLOADS_DIR` > directorio hermano de `DATABASE_PATH` (mismo
+  volumen de Railway que ya usa la DB) > `gio_v3/uploads` local (dev, en .gitignore).
+- Los módulos que suben archivos (`guardarropa`, `perfil`, `harma`, `bienestar/salud`)
+  construyen su `UPLOAD_DIR` como `os.path.join(uploads_base_dir(), '<subdir>')`.
+- **Por qué existe esto:** hasta 2026-09-07 cada módulo hardcodeaba su `UPLOAD_DIR`
+  relativo a su propia ubicación en el código (`gio_v3/uploads/...`), fuera del volumen
+  persistente de Railway (que solo cubría `DATABASE_PATH`, ej. `/data/pipeline.db`).
+  Cada redeploy crea un contenedor con filesystem nuevo, así que las fotos subidas
+  desaparecían (el usuario las reportó como "efímeras") aunque la DB sí persistía y
+  seguía referenciando el nombre de archivo ya perdido. Al derivar `UPLOADS_DIR` del
+  mismo volumen que `DATABASE_PATH`, los uploads persisten igual que la DB sin
+  necesitar configurar nada nuevo en Railway.
+
 ## Cómo arrancar la app localmente
 
 ```bash

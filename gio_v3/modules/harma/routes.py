@@ -3,12 +3,12 @@ from flask import Blueprint, render_template, request, jsonify, send_from_direct
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from database import get_db
-from utils import today_str, today_date
+from utils import today_str, today_date, uploads_base_dir
 import modules.gamification.engine as engine
 
 harma_bp = Blueprint('harma', __name__, template_folder='../../templates')
 
-UPLOAD_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'harma')
+UPLOAD_DIR  = os.path.join(uploads_base_dir(), 'harma')
 ALLOWED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.heic', '.pdf'}
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 

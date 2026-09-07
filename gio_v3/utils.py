@@ -21,6 +21,25 @@ def today_date():
     return now_local().date()
 
 
+def uploads_base_dir() -> str:
+    """Directorio base para archivos subidos por el usuario (fotos, docs).
+
+    Prioridad: UPLOADS_DIR env var > directorio hermano de DATABASE_PATH
+    (Railway Volume — así los uploads persisten entre deploys igual que la
+    DB, que ya usa ese mismo volumen) > gio_v3/uploads local (dev, gitignored).
+    Sin esto, en Railway cada redeploy crea un contenedor con filesystem
+    nuevo y los uploads (guardados hasta ahora en una ruta relativa al
+    código, fuera del volumen) desaparecían aunque la DB sí persistiera.
+    """
+    env_dir = os.environ.get("UPLOADS_DIR")
+    if env_dir:
+        return env_dir
+    db_path = os.environ.get("DATABASE_PATH")
+    if db_path:
+        return os.path.join(os.path.dirname(os.path.abspath(db_path)), "uploads")
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+
+
 def clean_str(value, max_len: int = 500) -> str:
     """Strip whitespace and truncate to max_len. Returns '' for None."""
     if value is None:
