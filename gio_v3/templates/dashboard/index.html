@@ -27,6 +27,10 @@
   .dash-head-quote .pill { flex-shrink:0; }
   .dash-head-quote .refresh-btn { flex-shrink:0; }
   @media (max-width:900px) { .dash-head-quote { display:none; } }
+  /* <900px: la del header desaparece (no hay espacio) — esta toma su lugar,
+     nunca las dos visibles a la vez. */
+  .reflexion-card-mobile { display:none; background:var(--card); border:1px solid var(--gold-border); border-radius:14px; padding:16px 18px; margin-top:14px; }
+  @media (max-width:900px) { .reflexion-card-mobile { display:block; } }
   .dash-head-actions { display:flex; align-items:center; gap:10px; padding-top:2px; flex-shrink:0; }
   .dash-icon-btn {
     position:relative; background:var(--gold-bg); border:1px solid var(--gold-border);
@@ -119,11 +123,15 @@
   .mod-status span.txt { color:var(--mid); }
   .mod-tile.done .mod-status span.txt { color:var(--mtc-text); }
 
-  /* Word of the day (Reflexión ahora vive en el header, ver .dash-head-quote) */
+  /* Word of the day / Reflexión — la Reflexión vive en el header (≥901px, ver
+     .dash-head-quote) y en .reflexion-card-mobile (<900px); estas reglas las
+     comparten ambas. */
   .refresh-btn { background:transparent; border:none; cursor:pointer; color:var(--mid); padding:0; display:inline-flex; align-items:center; transition:transform .4s ease; }
   .refresh-btn.spin { transform:rotate(180deg); }
   .refresh-btn i { width:14px; height:14px; }
   .pill { font-family:var(--sans); font-size:8px; padding:2px 8px; border-radius:100px; letter-spacing:.06em; }
+  .quote-text { font-family:var(--serif); font-style:italic; font-size:14px; color:var(--text); line-height:1.5; }
+  .quote-author { font-family:var(--sans); font-size:10px; color:var(--mid); margin-top:6px; letter-spacing:.04em; }
   .word-card { background:color-mix(in srgb, var(--gold) 4%, transparent); border:1px solid var(--gold-bg); border-radius:12px; padding:16px 18px; }
   .word-phon { font-family:var(--sans); font-size:9px; color:var(--mid); margin-bottom:2px; letter-spacing:.04em; }
   .word-word { font-family:var(--serif); font-style:italic; font-size:26px; font-weight:300; color:var(--text); line-height:1; margin-bottom:10px; }
@@ -194,14 +202,14 @@
         <div class="dash-eyebrow">{{ fecha_larga }}</div>
         <div class="dash-word">ΕΥΔΑΙΜΟΝΙΑ</div>
       </div>
-      <div class="dash-head-quote" id="reflexion-box">
-        <span class="pill" id="reflexion-cat"
+      <div class="dash-head-quote">
+        <span class="pill reflexion-cat"
           style="{{ 'color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.18);' if data.reflexion.category == 'stoic' else 'color:#34d399;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.18);' }}">
           {{ 'Estoica' if data.reflexion.category == 'stoic' else 'Motivacional' }}
         </span>
-        <span class="dhq-text" id="reflexion-text" title="{{ data.reflexion.text }}">&ldquo;{{ data.reflexion.text }}&rdquo;</span>
-        <span class="dhq-author" id="reflexion-author">— {{ data.reflexion.author }}</span>
-        <button class="refresh-btn" id="reflexion-refresh" aria-label="Nueva reflexión" title="Nueva reflexión"><i data-lucide="refresh-cw"></i></button>
+        <span class="dhq-text reflexion-text" title="{{ data.reflexion.text }}">&ldquo;{{ data.reflexion.text }}&rdquo;</span>
+        <span class="dhq-author reflexion-author">— {{ data.reflexion.author }}</span>
+        <button class="refresh-btn reflexion-refresh" aria-label="Nueva reflexión" title="Nueva reflexión"><i data-lucide="refresh-cw"></i></button>
       </div>
       <div class="dash-head-actions">
         <button class="cmdk-btn" onclick="euCmdkOpen()" aria-label="Buscar (Cmd/Ctrl+K)" title="Buscar (Cmd/Ctrl+K)">
@@ -240,6 +248,20 @@
   <div style="padding:0 4px 20px;">
     <div class="dash-greeting">Buenos días, Gio.</div>
     <div class="dash-greeting-sub">{{ fecha_larga }} · día {{ data.streak }} de tu racha</div>
+    {# En <900px la versión del header (.dash-head-quote) se oculta por falta
+       de espacio — esta es la que se ve ahí, nunca las dos a la vez. #}
+    <div class="reflexion-card-mobile">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span class="dash-label">Reflexión del Día</span>
+        <span class="pill reflexion-cat"
+          style="{{ 'color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.18);' if data.reflexion.category == 'stoic' else 'color:#34d399;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.18);' }}">
+          {{ 'Estoica' if data.reflexion.category == 'stoic' else 'Motivacional' }}
+        </span>
+      </div>
+      <div class="quote-text reflexion-text">&ldquo;{{ data.reflexion.text }}&rdquo;</div>
+      <div class="quote-author reflexion-author">— {{ data.reflexion.author }}</div>
+      <button class="refresh-btn reflexion-refresh" aria-label="Nueva reflexión" title="Nueva reflexión" style="margin-top:8px;"><i data-lucide="refresh-cw"></i></button>
+    </div>
   </div>
 
   <div class="dash-grid" style="padding:0 4px;">
@@ -440,19 +462,37 @@
     });
   }
 
-  wireRefresh('reflexion-refresh', '/api/quote/refresh', function(q){
-    var reflexionText = document.getElementById('reflexion-text');
-    reflexionText.textContent = '“' + q.text + '”';
-    reflexionText.title = q.text;
-    document.getElementById('reflexion-author').textContent = '— ' + q.author;
-    var cat = document.getElementById('reflexion-cat');
-    if (q.category === 'stoic') {
-      cat.textContent = 'Estoica';
-      cat.style.cssText = 'color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.18);';
-    } else {
-      cat.textContent = 'Motivacional';
-      cat.style.cssText = 'color:#34d399;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.18);';
-    }
+  function wireRefreshAll(btnClass, url, onData) {
+    var btns = document.querySelectorAll('.' + btnClass);
+    if (!btns.length) return;
+    btns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        btns.forEach(function(b){ b.classList.add('spin'); });
+        fetch(url).then(function(r){ return r.json(); }).then(function(data){
+          onData(data);
+          btns.forEach(function(b){ b.classList.remove('spin'); });
+        }).catch(function(){ btns.forEach(function(b){ b.classList.remove('spin'); }); });
+      });
+    });
+  }
+
+  wireRefreshAll('reflexion-refresh', '/api/quote/refresh', function(q){
+    document.querySelectorAll('.reflexion-text').forEach(function(el){
+      el.textContent = '“' + q.text + '”';
+      el.title = q.text;
+    });
+    document.querySelectorAll('.reflexion-author').forEach(function(el){
+      el.textContent = '— ' + q.author;
+    });
+    document.querySelectorAll('.reflexion-cat').forEach(function(cat){
+      if (q.category === 'stoic') {
+        cat.textContent = 'Estoica';
+        cat.style.cssText = 'color:#a78bfa;background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.18);';
+      } else {
+        cat.textContent = 'Motivacional';
+        cat.style.cssText = 'color:#34d399;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.18);';
+      }
+    });
   });
 
   wireRefresh('word-refresh', '/api/word/refresh', function(w){
