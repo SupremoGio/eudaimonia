@@ -675,9 +675,31 @@ function toast(msg, type = 'ok') {
   var overlay = document.getElementById('cmdk-overlay');
   var input   = document.getElementById('cmdk-input');
   var list    = document.getElementById('cmdk-list');
-  var items   = null;   // [{href, label, sub, icon}] — construido al abrir, desde el sidebar ya renderizado
+  var items   = null;   // [{href, label, sub, icon}] — sidebar (módulos) + SUBMODULES (páginas dentro de un módulo)
   var active  = 0;
   var shown   = [];
+
+  // El sidebar solo renderiza un link por MÓDULO (ej. "Hegemonikon"), no por
+  // cada submódulo que vive debajo de él (Guardarropa, Recetas, Nutrición,
+  // Wishlist...) — así que buscar "guardarropa" no encontraba nada aunque la
+  // página exista. Esta lista es la única fuente para esas páginas hijas;
+  // agregar una ruta nueva aquí basta para que ⌘K la encuentre.
+  var SUBMODULES = [
+    { href:'/finanzas/estados/',        label:'Estados de Cuenta', sub:'Oikonomia · Movimientos y categorías', icon:'receipt' },
+    { href:'/finanzas/consumo/',        label:'Consumo',           sub:'Oikonomia · Detalle de gasto',         icon:'shopping-cart' },
+    { href:'/finanzas/budget/',         label:'Presupuesto',       sub:'Oikonomia · Regla 50-30-20',           icon:'pie-chart' },
+    { href:'/finanzas/inversiones/',    label:'Inversiones',       sub:'Oikonomia',                            icon:'trending-up' },
+    { href:'/finanzas/prioridades/',    label:'Wishlist',          sub:'Oikonomia · Compras planeadas',        icon:'list-checks' },
+    { href:'/finanzas/salud/',          label:'Salud Financiera',  sub:'Oikonomia · Patrimonio y cuentas',     icon:'heart-pulse' },
+    { href:'/finanzas/estados/viajes/', label:'Viajes',            sub:'Oikonomia · Presupuesto de viaje',     icon:'plane' },
+    { href:'/bienestar/salud/',         label:'Salud',             sub:'Hegemonikon · Médico',                 icon:'stethoscope' },
+    { href:'/bienestar/futbol/',        label:'Fútbol',            sub:'Hegemonikon · Partidos',               icon:'trophy' },
+    { href:'/nutricion/',               label:'Nutrición',         sub:'Hegemonikon · Díaita',                 icon:'salad' },
+    { href:'/recetas/',                 label:'Recetas',           sub:'Hegemonikon',                          icon:'chef-hat' },
+    { href:'/guardarropa/',             label:'Guardarropa',       sub:'Hegemonikon · Armario y outfits',      icon:'shirt' },
+    { href:'/guardarropa/wishlist/',    label:'Wishlist Ropa',     sub:'Guardarropa · Protocolo de compra',    icon:'shopping-bag' },
+    { href:'/viajes/',                  label:'Viajes',            sub:'Hegemonikon · Outfits y maleta',       icon:'luggage' },
+  ];
 
   function collectItems() {
     var out = [];
@@ -690,6 +712,7 @@ function toast(msg, type = 'ok') {
         icon:  icon ? icon.getAttribute('data-lucide') : 'circle',
       });
     });
+    out = out.concat(SUBMODULES);
     out.push({ href:null, label:'Cambiar tema', sub:'Día / Noche', icon:'moon', action:'theme' });
     return out;
   }
