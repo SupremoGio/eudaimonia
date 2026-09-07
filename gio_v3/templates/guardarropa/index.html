@@ -362,6 +362,17 @@
 .ip-row.on .ip-check{background:var(--gold);border-color:var(--gold);}
 .ip-check svg{width:9px;height:9px;color:#09070F;display:none;}
 .ip-row.on .ip-check svg{display:block;}
+/* En escritorio hay espacio de sobra en el modal (660px) — las miniaturas de
+   20px eran ilegibles para distinguir una prenda de otra en la lista de
+   selección. Se mantienen compactas en móvil (donde el ancho manda) y crecen
+   a un tamaño real solo cuando el viewport ya no es angosto. */
+@media(min-width:640px){
+  .ip-color{width:42px;height:42px;border-radius:8px;}
+  .ip-color img{border-radius:7px;}
+  .ip-row{gap:12px;padding:9px 14px;}
+  .ip-name{font-size:.92rem;}
+  .item-picker{max-height:360px;}
+}
 /* Star rating */
 .star-row{display:flex;gap:4px;}
 .star-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--b2);transition:color .12s;padding:0;}
