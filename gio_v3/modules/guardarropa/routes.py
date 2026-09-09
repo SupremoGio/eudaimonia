@@ -212,6 +212,14 @@ def create_outfit():
         )
         db.commit()
         oid = cur.lastrowid
+        # SQLite no aplica la FK de outfit_items.item_id (no hay PRAGMA
+        # foreign_keys=ON), así que un id inexistente (p.ej. inventado por la
+        # IA) se insertaba igual y luego desaparecía en silencio: el JOIN a
+        # wardrobe_items lo descarta al leer, dejando el outfit sin prendas
+        # y el mosaico en blanco. Se filtra contra el inventario real antes
+        # de insertar.
+        valid_ids = {r[0] for r in db.execute("SELECT id FROM wardrobe_items").fetchall()}
+        ids = [iid for iid in ids if iid in valid_ids]
         for iid in ids:
             try: db.execute("INSERT INTO outfit_items (outfit_id,item_id) VALUES (?,?)", (oid, iid))
             except Exception: pass
@@ -234,6 +242,8 @@ def update_outfit(oid):
             (_s(d,'nombre'), _s(d,'ocasion'), int(d.get('rating') or 0), _s(d,'notas'), oid)
         )
         db.execute("DELETE FROM outfit_items WHERE outfit_id=?", (oid,))
+        valid_ids = {r[0] for r in db.execute("SELECT id FROM wardrobe_items").fetchall()}
+        ids = [iid for iid in ids if iid in valid_ids]
         for iid in ids:
             try: db.execute("INSERT INTO outfit_items (outfit_id,item_id) VALUES (?,?)", (oid, iid))
             except Exception: pass
@@ -751,10 +761,16 @@ Responde SOLO con JSON (sin markdown, sin ```, sin texto extra):
 
 REGLAS: item_ids son enteros del inventario · incluye superior + inferior + calzado si disponibles · rating es entero 1-5"""
 
+    valid_ids = {i['id'] for i in items}
     try:
         raw = _extract_json(_gemini(prompt))
         data = json.loads(raw)
-        data['item_ids'] = [int(x) for x in data.get('item_ids', []) if x]
+        # La IA a veces inventa o recuerda mal un ID que no existe en el
+        # inventario real; si no se filtra, el outfit se guarda apuntando a
+        # una prenda que no existe y el mosaico queda en blanco al recargar.
+        data['item_ids'] = [i for i in (int(x) for x in data.get('item_ids', []) if x) if i in valid_ids]
+        if not data['item_ids']:
+            return jsonify({'ok': False, 'error': 'La IA no pudo armar un outfit con prendas válidas del inventario, intenta de nuevo'}), 502
         data['ok'] = True
         return jsonify(data)
     except json.JSONDecodeError as e:

@@ -2116,11 +2116,13 @@ async function saveAIOutfit(){
     })
   });
   const saved = await res.json();
-  if(saved.id){
+  if(res.ok && saved.id){
     ALL_OUTFITS.unshift(saved);
     renderOutfitsGrid();
     document.getElementById('ai-outfit-result').style.display = 'none';
     toast('Outfit guardado ✓');
+  } else {
+    toast('Error al guardar: ' + (saved.error || 'desconocido'));
   }
 }
 
