@@ -112,7 +112,7 @@ def buscar_libro():
         'autor': (d.get('author_name') or [None])[0],
         'paginas': d.get('number_of_pages_median'),
         'anio': d.get('first_publish_year'),
-        'portada': f"https://covers.openlibrary.org/b/id/{d['cover_i']}-S.jpg" if d.get('cover_i') else None,
+        'portada': f"https://covers.openlibrary.org/b/id/{d['cover_i']}-M.jpg" if d.get('cover_i') else None,
     } for d in docs if d.get('title')]
     return jsonify({'resultados': resultados})
 
@@ -138,8 +138,8 @@ def crear_libro():
         cur = db.execute(
             """INSERT INTO paideia_libros
                    (titulo, autor, categoria, estado, paginas_totales, paginas_actuales,
-                    rating, fecha_inicio, fecha_fin, notas, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                    rating, fecha_inicio, fecha_fin, notas, portada, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 d['titulo'].strip(),
                 d.get('autor', '').strip(),
@@ -151,6 +151,7 @@ def crear_libro():
                 fecha_inicio,
                 fecha_fin,
                 d.get('notas', '').strip(),
+                d.get('portada') or None,
                 _now(),
             ),
         )
@@ -162,7 +163,7 @@ def crear_libro():
 def actualizar_libro(lid):
     d = request.json or {}
     sets, vals = [], []
-    for f in ('titulo', 'autor', 'categoria', 'estado', 'fecha_inicio', 'fecha_fin', 'notas'):
+    for f in ('titulo', 'autor', 'categoria', 'estado', 'fecha_inicio', 'fecha_fin', 'notas', 'portada'):
         if f in d:
             sets.append(f'{f}=?')
             vals.append(d[f])
