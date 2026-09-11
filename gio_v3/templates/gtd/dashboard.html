@@ -34,7 +34,9 @@
 .qi-row{display:flex;gap:8px;margin-bottom:10px;}
 .qi{flex:1;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--text);font-size:.78rem;outline:none;transition:border-color .16s;min-height:44px;}
 .qi:focus{border-color:var(--gold);}
-.qi-btn{background:var(--gold);color:#0a0a1a;font-weight:700;font-size:var(--fs-sm);padding:11px 16px;border-radius:8px;border:none;cursor:pointer;white-space:nowrap;min-height:44px;}
+.qi-btn{background:var(--gold);color:#0a0a1a;font-weight:700;font-size:var(--fs-sm);padding:11px 16px;border-radius:8px;border:none;cursor:pointer;white-space:nowrap;min-height:44px;transition:opacity .15s, transform .12s;}
+.qi-btn:hover{opacity:.85;}
+.qi-btn:active{transform:scale(.96);}
 
 /* Inbox quick items */
 .ic{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card2);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;font-size:var(--fs-sm);opacity:0;animation:icInGtd .4s ease forwards;animation-delay:calc(var(--i,0)*30ms);}
@@ -45,6 +47,7 @@
 .ic-btn.next-btn{color:var(--gold);border-color:rgba(197,163,108,.3);}
 .ic-btn.next-btn:hover{background:var(--gold);color:#0a0a1a;}
 .ic-btn.del-btn:hover{color:var(--red);border-color:rgba(248,113,113,.3);}
+.ic-btn:active{transform:scale(.93);}
 
 /* Inbox items in task list */
 .see-all-lnk{font-size:var(--fs-sm);color:var(--gold);letter-spacing:.07em;text-decoration:none;}
