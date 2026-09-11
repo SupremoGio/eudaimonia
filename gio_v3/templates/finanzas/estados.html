@@ -37,6 +37,15 @@
     background: var(--bg) !important;
   }
 
+  /* Sección "Cuentas" del tab Resumen — redundante con el tab "Cuentas"
+     propio (misma barra de navegación), el usuario pidió quitarla de
+     acá. .resumen-grid es una clase real (no inline style) del SPA,
+     su primer hijo de la primera columna es exactamente este bloque
+     (header "Cuentas" + fila de tarjetas de cuenta). */
+  #estados-root .resumen-grid > div:first-child > div:first-child {
+    display: none !important;
+  }
+
   /* ── Mobile: grids del React SPA que no tienen breakpoints ──────────────
      Los selectores anteriores apuntaban a los NOMBRES DE VARIABLE JS
      (minWidth, "1fr 240px") en vez del atributo style ya serializado por
