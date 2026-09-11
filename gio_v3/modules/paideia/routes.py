@@ -40,6 +40,12 @@ def _row_to_dict(r):
     return dict(r)
 
 
+def _clamp_pct(v):
+    if v in (None, ''):
+        return None
+    return max(0, min(100, int(v)))
+
+
 # ── Rutas ─────────────────────────────────────────────────────────────────────
 
 @paideia_bp.route('/')
@@ -138,8 +144,8 @@ def crear_libro():
         cur = db.execute(
             """INSERT INTO paideia_libros
                    (titulo, autor, categoria, estado, paginas_totales, paginas_actuales,
-                    rating, fecha_inicio, fecha_fin, notas, portada, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    rating, fecha_inicio, fecha_fin, notas, portada, progreso_pct, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 d['titulo'].strip(),
                 d.get('autor', '').strip(),
@@ -152,6 +158,7 @@ def crear_libro():
                 fecha_fin,
                 d.get('notas', '').strip(),
                 d.get('portada') or None,
+                _clamp_pct(d.get('progreso_pct')),
                 _now(),
             ),
         )
@@ -171,6 +178,9 @@ def actualizar_libro(lid):
         if f in d:
             sets.append(f'{f}=?')
             vals.append(int(d[f]) if d[f] not in (None, '') else None)
+    if 'progreso_pct' in d:
+        sets.append('progreso_pct=?')
+        vals.append(_clamp_pct(d['progreso_pct']))
 
     # Transiciones automáticas de fecha al cambiar de estado
     if d.get('estado') == 'leyendo' and not d.get('fecha_inicio'):
