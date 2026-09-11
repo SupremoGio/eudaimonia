@@ -59,6 +59,41 @@
     #estados-root [style*="min-width: 130px"] {
       min-width: 0 !important;
     }
+
+    /* ── Filtros de "Movimientos" — antes 6 controles en flex-wrap que
+       terminaban uno por fila (el texto de cada <select>, p.ej. "Todos
+       los bancos", excede su flex-basis y fuerza el salto de línea),
+       dejando una pared de filtros angosta antes de ver un solo
+       movimiento. Se reordena a grid: buscador a todo el ancho, los 3
+       selects en 2 columnas, y el rango Desde/Hasta lado a lado. ── */
+    #estados-root [style*="flex-wrap: wrap"][style*="margin-bottom: 8px"] {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    #estados-root [style*="flex-wrap: wrap"][style*="margin-bottom: 8px"] > div:first-child {
+      grid-column: 1 / -1 !important;
+    }
+    #estados-root [style*="flex-wrap: wrap"][style*="margin-bottom: 8px"] select {
+      width: 100% !important;
+    }
+    #estados-root [style*="flex-wrap: wrap"][style*="margin-bottom: 16px"][style*="align-items: center"] {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+    }
+    #estados-root [style*="flex-wrap: wrap"][style*="margin-bottom: 16px"][style*="align-items: center"] input[type="date"] {
+      width: 100% !important;
+    }
+
+    /* Grid de stats de "Reportes" (Total gastado, Promedio diario, etc.):
+       con un número impar de tarjetas (5, cuando no hay ingresos) la
+       última queda sola en su fila — se extiende a todo el ancho en
+       vez de dejar un hueco vacío al lado. */
+    #estados-root [style*="repeat(auto-fit, minmax(155px, 1fr))"] > div:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+
     /* Evita que cualquier hijo del SPA sobresalga horizontalmente */
     #estados-root > div { max-width: 100%; overflow-x: hidden; }
 
