@@ -145,6 +145,18 @@
 .pd-bump-btn:disabled { opacity:.35; cursor:default; }
 .pd-now .pd-bump-row { margin-top:8px; }
 
+/* ── Selector de modo de progreso — páginas vs. porcentaje (el conteo de
+   páginas de un Kindle/ebook casi nunca coincide con el de la edición
+   física que se registró, así que el % es una alternativa directa) ── */
+.pd-modo-toggle { display:flex; gap:2px; background:var(--card2); border:1px solid var(--b); border-radius:8px;
+                   padding:2px; width:fit-content; }
+.pd-modo-btn { font:inherit; font-size:12px; padding:6px 12px; border-radius:6px; cursor:pointer; color:var(--dim);
+               background:none; border:1px solid transparent; transition:all .15s; }
+.pd-modo-btn.on { background:var(--card); color:var(--gold); border-color:var(--gold-border, var(--b)); font-weight:600; }
+.pd-pct-input-wrap { position:relative; }
+.pd-pct-input-wrap .fi { padding-right:30px; }
+.pd-pct-suffix { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--dim); pointer-events:none; }
+
 /* ── Selector de rating — estrellas tocables en vez de <select> de texto ── */
 .pd-rating-picker { display:flex; gap:4px; }
 .pd-star-btn { background:none; border:none; padding:6px; cursor:pointer; color:var(--b2); line-height:0;
@@ -232,7 +244,19 @@
     <div class="pd-now-label">Leyendo ahora</div>
     <div class="pd-now-title">{{ actual.titulo }}</div>
     {% if actual.autor %}<div style="font-size:12px;color:var(--dim);margin-top:3px;">{{ actual.autor }}</div>{% endif %}
-    {% if actual.paginas_totales %}
+    {% if actual.progreso_pct is not none %}
+    <div class="pd-now-track">
+      <div class="pd-now-fill" id="pd-now-fill" style="width:{{ actual.progreso_pct }}%;"></div>
+    </div>
+    <div class="pd-bump-row">
+      <span style="font-size:11px;color:var(--dim);" id="pd-now-pct-text">{{ actual.progreso_pct }}% leído</span>
+      <button type="button" class="pd-bump-btn" aria-label="Sumar 5% de progreso"
+              data-mode="pct" data-id="{{ actual.id }}" data-current="{{ actual.progreso_pct }}"
+              data-fill="pd-now-fill" data-text="pd-now-pct-text" data-format="full"
+              onclick="bumpProgress(event, this)"
+              {% if actual.progreso_pct >= 100 %}disabled{% endif %}>+5%</button>
+    </div>
+    {% elif actual.paginas_totales %}
     {% set actual_pct = [100, (actual.paginas_actuales / actual.paginas_totales * 100)]|min %}
     <div class="pd-now-track">
       <div class="pd-now-fill" id="pd-now-fill" style="width:{{ actual_pct }}%;"></div>
@@ -240,7 +264,7 @@
     <div class="pd-bump-row">
       <span style="font-size:11px;color:var(--dim);" id="pd-now-pct-text">{{ actual.paginas_actuales }} / {{ actual.paginas_totales }} páginas · {{ actual_pct|round|int }}%</span>
       <button type="button" class="pd-bump-btn" aria-label="Sumar 10 páginas de progreso"
-              data-id="{{ actual.id }}" data-total="{{ actual.paginas_totales }}" data-current="{{ actual.paginas_actuales }}"
+              data-mode="paginas" data-id="{{ actual.id }}" data-total="{{ actual.paginas_totales }}" data-current="{{ actual.paginas_actuales }}"
               data-fill="pd-now-fill" data-text="pd-now-pct-text" data-format="full"
               onclick="bumpProgress(event, this)"
               {% if actual.paginas_actuales >= actual.paginas_totales %}disabled{% endif %}>+10 págs</button>
@@ -288,13 +312,23 @@
       <div class="pd-stars">
         {% for i in range(1,6) %}<i data-lucide="star" class="star-ico{% if i <= l.rating %} filled{% endif %}"></i>{% endfor %}
       </div>
+      {% elif l.estado == 'leyendo' and l.progreso_pct is not none %}
+      <div class="pd-now-track"><div class="pd-now-fill" id="pd-card-fill-{{ l.id }}" style="width:{{ l.progreso_pct }}%;"></div></div>
+      <div class="pd-bump-row">
+        <span style="font-size:11px;color:var(--dim);" id="pd-card-pct-{{ l.id }}">{{ l.progreso_pct }}% leído</span>
+        <button type="button" class="pd-bump-btn" aria-label="Sumar 5% de progreso a {{ l.titulo }}"
+                data-mode="pct" data-id="{{ l.id }}" data-current="{{ l.progreso_pct }}"
+                data-fill="pd-card-fill-{{ l.id }}" data-text="pd-card-pct-{{ l.id }}" data-format="pct"
+                onclick="bumpProgress(event, this)"
+                {% if l.progreso_pct >= 100 %}disabled{% endif %}>+5%</button>
+      </div>
       {% elif l.estado == 'leyendo' and l.paginas_totales %}
       {% set l_pct = [100, (l.paginas_actuales / l.paginas_totales * 100)]|min %}
       <div class="pd-now-track"><div class="pd-now-fill" id="pd-card-fill-{{ l.id }}" style="width:{{ l_pct }}%;"></div></div>
       <div class="pd-bump-row">
         <span style="font-size:11px;color:var(--dim);" id="pd-card-pct-{{ l.id }}">{{ l_pct|round|int }}% leído</span>
         <button type="button" class="pd-bump-btn" aria-label="Sumar 10 páginas de progreso a {{ l.titulo }}"
-                data-id="{{ l.id }}" data-total="{{ l.paginas_totales }}" data-current="{{ l.paginas_actuales }}"
+                data-mode="paginas" data-id="{{ l.id }}" data-total="{{ l.paginas_totales }}" data-current="{{ l.paginas_actuales }}"
                 data-fill="pd-card-fill-{{ l.id }}" data-text="pd-card-pct-{{ l.id }}" data-format="pct"
                 onclick="bumpProgress(event, this)"
                 {% if l.paginas_actuales >= l.paginas_totales %}disabled{% endif %}>+10</button>
@@ -360,14 +394,32 @@
       </div>
     </div>
 
-    <div class="pd-row2" style="margin-top:10px;">
-      <div>
-        <label class="fl" for="lb-pag-tot">Páginas totales</label>
-        <input class="fi" id="lb-pag-tot" type="number" min="1" placeholder="Ej. 320">
+    <div id="lb-progreso-section" style="margin-top:10px;">
+      <label class="fl">Seguimiento de progreso</label>
+      <input type="hidden" id="lb-progreso-modo" value="paginas">
+      <div class="pd-modo-toggle" role="radiogroup" aria-label="Modo de seguimiento de progreso">
+        <button type="button" class="pd-modo-btn on" data-modo="paginas" onclick="setProgresoModo('paginas')">Páginas</button>
+        <button type="button" class="pd-modo-btn" data-modo="pct" onclick="setProgresoModo('pct')">Porcentaje</button>
       </div>
-      <div id="lb-pag-act-row">
-        <label class="fl" for="lb-pag-act">Página actual</label>
-        <input class="fi" id="lb-pag-act" type="number" min="0" placeholder="Ej. 120">
+      <div style="font-size:11px;color:var(--dim);margin-top:4px;">¿El conteo de páginas de tu Kindle no coincide con esta edición? Usa porcentaje.</div>
+
+      <div class="pd-row2" id="lb-paginas-fields" style="margin-top:8px;">
+        <div>
+          <label class="fl" for="lb-pag-tot">Páginas totales</label>
+          <input class="fi" id="lb-pag-tot" type="number" min="1" placeholder="Ej. 320">
+        </div>
+        <div id="lb-pag-act-row">
+          <label class="fl" for="lb-pag-act">Página actual</label>
+          <input class="fi" id="lb-pag-act" type="number" min="0" placeholder="Ej. 120">
+        </div>
+      </div>
+
+      <div id="lb-pct-field" style="display:none;margin-top:8px;">
+        <label class="fl" for="lb-pct">Porcentaje leído</label>
+        <div class="pd-pct-input-wrap">
+          <input class="fi" id="lb-pct" type="number" min="0" max="100" placeholder="Ej. 56">
+          <span class="pd-pct-suffix">%</span>
+        </div>
       </div>
     </div>
 
@@ -437,6 +489,16 @@ function toggleCamposEstado() {
   const estado = document.getElementById('lb-estado').value;
   document.getElementById('lb-rating-row').style.display = estado === 'leido' ? '' : 'none';
   document.getElementById('lb-pag-act-row').style.display = estado === 'por_leer' ? 'none' : '';
+  document.getElementById('lb-pct-field').style.display =
+    (estado === 'por_leer' || document.getElementById('lb-progreso-modo').value !== 'pct') ? 'none' : '';
+}
+
+// ── Modo de seguimiento de progreso — páginas o porcentaje ──────────────────
+function setProgresoModo(modo) {
+  document.getElementById('lb-progreso-modo').value = modo;
+  document.querySelectorAll('.pd-modo-btn').forEach(b => b.classList.toggle('on', b.dataset.modo === modo));
+  document.getElementById('lb-paginas-fields').style.display = modo === 'paginas' ? '' : 'none';
+  toggleCamposEstado();
 }
 
 function limpiarForm() {
@@ -448,10 +510,12 @@ function limpiarForm() {
   document.getElementById('lb-estado').value = 'por_leer';
   document.getElementById('lb-pag-tot').value = '';
   document.getElementById('lb-pag-act').value = '';
+  document.getElementById('lb-pct').value = '';
   document.getElementById('lb-notas').value = '';
   document.getElementById('lb-delete-btn').style.display = 'none';
   setRating(null);
   setCoverPreview(null);
+  setProgresoModo('paginas');
   ocultarBusquedaLibro();
   toggleCamposEstado();
 }
@@ -513,27 +577,37 @@ document.querySelectorAll('.eu-activate').forEach(el => {
 async function bumpProgress(event, btn) {
   event.stopPropagation();
   const id = btn.dataset.id;
-  const total = parseInt(btn.dataset.total, 10);
+  const mode = btn.dataset.mode || 'paginas';
   const current = parseInt(btn.dataset.current, 10);
-  const nuevo = Math.min(total, current + 10);
-  const pct = Math.min(100, Math.round(nuevo / total * 100));
 
   const fillEl = document.getElementById(btn.dataset.fill);
   const textEl = document.getElementById(btn.dataset.text);
   const prevFillWidth = fillEl.style.width;
   const prevText = textEl.textContent;
 
+  let nuevo, pct, patchBody;
+  if (mode === 'pct') {
+    nuevo = Math.min(100, current + 5);
+    pct = nuevo;
+    patchBody = { progreso_pct: nuevo };
+    textEl.textContent = `${pct}% leído`;
+  } else {
+    const total = parseInt(btn.dataset.total, 10);
+    nuevo = Math.min(total, current + 10);
+    pct = Math.min(100, Math.round(nuevo / total * 100));
+    patchBody = { paginas_actuales: nuevo };
+    textEl.textContent = btn.dataset.format === 'full'
+      ? `${nuevo} / ${total} páginas · ${pct}%`
+      : `${pct}% leído`;
+  }
   fillEl.style.width = pct + '%';
-  textEl.textContent = btn.dataset.format === 'full'
-    ? `${nuevo} / ${total} páginas · ${pct}%`
-    : `${pct}% leído`;
   btn.dataset.current = nuevo;
-  if (nuevo >= total) btn.disabled = true;
+  if (nuevo >= (mode === 'pct' ? 100 : parseInt(btn.dataset.total, 10))) btn.disabled = true;
 
   try {
     const r = await fetch(`${BASE}/api/libros/${id}`, {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paginas_actuales: nuevo }),
+      body: JSON.stringify(patchBody),
     }).then(r => r.json());
     if (!r.ok) throw new Error(r.error || 'error');
   } catch (e) {
@@ -649,10 +723,12 @@ async function abrirEditar(id) {
   document.getElementById('lb-estado').value = l.estado;
   document.getElementById('lb-pag-tot').value = l.paginas_totales || '';
   document.getElementById('lb-pag-act').value = l.paginas_actuales || '';
+  document.getElementById('lb-pct').value = l.progreso_pct ?? '';
   setRating(l.rating || null);
   document.getElementById('lb-notas').value = l.notas || '';
   document.getElementById('lb-delete-btn').style.display = '';
   ocultarBusquedaLibro();
+  setProgresoModo(l.progreso_pct !== null && l.progreso_pct !== undefined ? 'pct' : 'paginas');
   toggleCamposEstado();
   document.getElementById('lb-modal-title').textContent = 'Editar libro';
   openModal('libro');
@@ -662,13 +738,15 @@ async function guardarLibro() {
   const titulo = document.getElementById('lb-titulo').value.trim();
   if (!titulo) { toast('El título es requerido', 'err'); return; }
   const id = document.getElementById('lb-id').value;
+  const modo = document.getElementById('lb-progreso-modo').value;
   const body = {
     titulo,
     autor: document.getElementById('lb-autor').value.trim(),
     categoria: document.getElementById('lb-categoria').value,
     estado: document.getElementById('lb-estado').value,
-    paginas_totales: document.getElementById('lb-pag-tot').value || null,
-    paginas_actuales: document.getElementById('lb-pag-act').value || 0,
+    paginas_totales: modo === 'pct' ? null : (document.getElementById('lb-pag-tot').value || null),
+    paginas_actuales: modo === 'pct' ? 0 : (document.getElementById('lb-pag-act').value || 0),
+    progreso_pct: modo === 'pct' ? (document.getElementById('lb-pct').value || 0) : null,
     rating: document.getElementById('lb-rating').value || null,
     notas: document.getElementById('lb-notas').value.trim(),
     portada: document.getElementById('lb-portada').value || null,
