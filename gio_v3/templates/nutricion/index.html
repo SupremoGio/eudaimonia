@@ -1,6 +1,6 @@
 {% extends "eu/layout_sub.html" %}
 {% set pg = 'nutricion' %}
-{% block module_title %}Díaita{% endblock %}
+{% block module_title %}DÍAITA{% endblock %}
 
 {% block head %}
 <style>
@@ -289,7 +289,7 @@ html.light {
           <div id="hoy-rail-ring" class="dt-card" style="border-radius:18px;display:flex;flex-direction:column;align-items:center;padding:22px 20px"></div>
           <div id="hoy-rail-footer"></div>
           <div>
-            <button class="dt-btn-trigger" onclick="openTemptation()"><span style="font-size:14px">✕</span> Caí en la tentación — registrar</button>
+            <button class="dt-btn-trigger" onclick="openTemptation()"><i data-lucide="x" style="width:14px;height:14px;vertical-align:middle;"></i> Caí en la tentación — registrar</button>
             <button class="dt-btn-outline" style="margin-top:10px" onclick="openAddMeal(S.today)"><span style="font-size:15px">+</span> Agregar comida o colación</button>
           </div>
         </div>
@@ -297,7 +297,7 @@ html.light {
       <!-- Mobile bottom: footer + actions -->
       <div id="hoy-mobile-bot" style="padding-top:6px">
         <div id="hoy-footer"></div>
-        <button class="dt-btn-trigger" style="margin-top:12px" onclick="openTemptation()"><span style="font-size:14px">✕</span> Caí en la tentación — registrar</button>
+        <button class="dt-btn-trigger" style="margin-top:12px" onclick="openTemptation()"><i data-lucide="x" style="width:14px;height:14px;vertical-align:middle;"></i> Caí en la tentación — registrar</button>
         <button class="dt-btn-outline" style="margin-top:10px" onclick="openAddMeal(S.today)"><span style="font-size:15px">+</span> Agregar comida o colación</button>
       </div>
     </div>
@@ -666,7 +666,7 @@ function renderRitmo() {
       </div>
       <div style="position:relative;width:14px;flex-shrink:0">
         <div style="position:absolute;left:0;top:16px;width:14px;height:14px;border-radius:50%;background:${nb};border:2px solid ${nbo};${done?'box-shadow:0 0 12px var(--gold);':''}display:flex;align-items:center;justify-content:center;z-index:2">
-          ${done?'<span style="color:var(--bg);font-size:9px;font-weight:700">✓</span>':''}
+          ${done?'<i data-lucide="check" style="width:9px;height:9px;color:var(--bg);"></i>':''}
         </div>
       </div>
       <button onclick="openMeal(${m.id})" style="flex:1;text-align:left;cursor:pointer;background:${cb};border:1px solid ${cbo};border-radius:14px;padding:12px 14px;transition:all 0.2s;opacity:${done?0.92:1}">
@@ -681,6 +681,7 @@ function renderRitmo() {
   });
   h+='</div>';
   document.getElementById('hoy-view').innerHTML=`<div style="padding:4px 0 0">${h}</div>`;
+  if (window.lucide) lucide.createIcons();
 }
 
 function renderProtocolo() {
@@ -726,13 +727,14 @@ function renderProtocolo() {
       </div>
       <div style="display:flex;align-items:center;padding-right:16px">
         <div style="width:26px;height:26px;border-radius:50%;background:${m.done?'var(--gold)':'transparent'};border:1.5px solid ${m.done?'var(--gold)':'rgba(201,168,76,0.3)'};display:flex;align-items:center;justify-content:center">
-          ${m.done?'<span style="color:var(--bg);font-size:13px;font-weight:700">✓</span>':
+          ${m.done?'<i data-lucide="check" style="width:13px;height:13px;color:var(--bg);"></i>':
             `<span style="font-family:var(--serif);font-size:12px;font-style:italic;color:var(--gold)">+${m.xp}</span>`}
         </div>
       </div>
     </button>`;
   });
   document.getElementById('hoy-view').innerHTML=h;
+  if (window.lucide) lucide.createIcons();
 }
 
 function renderHoyFooter() {
@@ -1142,8 +1144,9 @@ function renderBancoList(){
         <div style="font-family:var(--serif);font-size:16px;color:var(--text);line-height:1.1">${esc(r.name)}</div>
         <div style="font-family:var(--sans);font-size:10px;color:var(--dim);margin-top:2px">${esc(r.slot)} · ${esc(r.kcal)} kcal · ${esc(r.protein)}g prot</div>
       </div>
-      ${addPicked?.id===r.id?'<span style="color:var(--gold);font-size:14px">✓</span>':''}
+      ${addPicked?.id===r.id?'<i data-lucide="check" style="width:14px;height:14px;color:var(--gold);"></i>':''}
     </button>`).join('');
+  if (window.lucide) lucide.createIcons();
 }
 function setAddPicked(id){addPicked=RECIPES.find(r=>r.id===id)||null;renderBancoList();updateAddSubmit();}
 function setCtag(t){

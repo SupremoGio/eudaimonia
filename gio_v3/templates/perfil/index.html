@@ -1,6 +1,6 @@
 {% extends "eu/layout_sub.html" %}{% set pg='perfil' %}
 {% block title %}Perfil — Eudaimonia{% endblock %}
-{% block module_title %}Perfil{% endblock %}
+{% block module_title %}PERFIL{% endblock %}
 {% block topright %}{% endblock %}
 {% block content %}
 <style>
@@ -124,7 +124,7 @@
 /* ── Measurement trend & history ── */
 .meas-delta{font-size:var(--fs-sm);font-weight:600;padding:2px 6px;border-radius:100px;margin-left:2px;white-space:nowrap;}
 .meas-delta.up{background:rgba(16,185,129,.12);color:var(--emerald);border:1px solid rgba(16,185,129,.25);}
-.meas-delta.down{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.25);}
+.meas-delta.down{background:rgba(248,113,113,.12);color:var(--coral);border:1px solid rgba(248,113,113,.25);}
 .meas-delta.eq{background:var(--gold-d);color:var(--dim);border:1px solid rgba(201,168,76,.15);}
 .meas-hist-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:var(--fs-xs);letter-spacing:.08em;
   text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-top:4px;transition:color .15s;}
@@ -137,7 +137,7 @@
 .meas-hist-date{font-size:var(--fs-xs);color:var(--dim);}
 .meas-hist-val{font-size:var(--fs-sm);color:var(--text);font-weight:500;}
 .meas-hist-chg{font-size:var(--fs-xs);font-weight:600;}
-.meas-hist-chg.up{color:var(--emerald);}.meas-hist-chg.down{color:#f87171;}.meas-hist-chg.eq{color:var(--dim);}
+.meas-hist-chg.up{color:var(--emerald);}.meas-hist-chg.down{color:var(--coral);}.meas-hist-chg.eq{color:var(--dim);}
 .meas-hist-empty{font-size:var(--fs-sm);color:var(--dim);text-align:center;padding:10px 0;}
 
 /* ── Vitales ── */
@@ -164,7 +164,7 @@
   letter-spacing:.04em;padding:3px 10px;border-radius:100px;white-space:nowrap;}
 .plg-zona.verde{background:rgba(16,185,129,.12);color:var(--emerald);border:1px solid rgba(16,185,129,.3);}
 .plg-zona.amarilla{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
-.plg-zona.roja{background:rgba(248,113,113,.12);color:#f87171;border:1px solid rgba(248,113,113,.3);}
+.plg-zona.roja{background:rgba(248,113,113,.12);color:var(--coral);border:1px solid rgba(248,113,113,.3);}
 .plg-zona.neutra{background:var(--gold-d);color:var(--dim);border:1px solid rgba(201,168,76,.15);}
 .plg-notas{font-size:var(--fs-xs);color:var(--dim);opacity:.7;grid-column:1/-1;margin-top:-4px;}
 .plg-empty{padding:20px;text-align:center;font-size:var(--fs-sm);color:var(--dim);opacity:.6;}
@@ -671,7 +671,7 @@
               {% endif %}
             </span>
             <span class="plg-mm">{{ p.mm }} mm
-              {% if p.delta_mm is not none and p.delta_mm > 0 %}<span style="color:#f87171;">↑{{ p.delta_mm }}</span>
+              {% if p.delta_mm is not none and p.delta_mm > 0 %}<span style="color:var(--coral);">↑{{ p.delta_mm }}</span>
               {% elif p.delta_mm is not none and p.delta_mm < 0 %}<span style="color:var(--emerald);">↓{{ p.delta_mm }}</span>
               {% endif %}
             </span>

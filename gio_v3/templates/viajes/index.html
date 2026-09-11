@@ -19,7 +19,7 @@
 .vj-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
 .vj-card-name{font-family:var(--serif);font-size:1rem;color:var(--text);font-weight:300;line-height:1.3;}
 .vj-estado{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:2px 7px;border-radius:100px;border:1px solid;}
-.vj-estado.planificado{color:#60a5fa;border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.08);}
+.vj-estado.planificado{color:var(--blue);border-color:rgba(96,165,250,.35);background:rgba(96,165,250,.08);}
 .vj-estado.activo{color:var(--green);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.08);}
 .vj-estado.completado{color:var(--gold);border-color:rgba(201,168,76,.35);background:rgba(201,168,76,.08);}
 .vj-estado.cancelado{color:var(--dim);border-color:var(--b);background:transparent;}
@@ -37,7 +37,7 @@
 .vj-section-title{display:flex;align-items:center;gap:7px;font-size:var(--fs-xs);letter-spacing:.15em;text-transform:uppercase;color:var(--dim);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--b);}
 .vj-section-title .count{color:var(--gold);}
 .vj-section-title.vigente i,.vj-section-title.vigente .count{color:var(--green);}
-.vj-section-title.proximo i,.vj-section-title.proximo .count{color:#60a5fa;}
+.vj-section-title.proximo i,.vj-section-title.proximo .count{color:var(--blue);}
 .vj-section-title.pasado{opacity:.7;}
 .vj-section-title.pasado i,.vj-section-title.pasado .count{color:var(--dim);}
 .vj-section.pasado .vj-card{opacity:.65;}
@@ -888,6 +888,7 @@ async function openAddItemModal() {
     _wardrobeItems = await fetch(`${API}/wardrobe-items`).then(r => r.json());
   }
   renderWardrobePicker();
+  if (window.lucide) lucide.createIcons();
 }
 function closeAddItemModal() {
   document.getElementById('add-item-modal').classList.remove('open');
@@ -933,7 +934,7 @@ function renderWardrobePicker() {
   grid.innerHTML = filtered.map(wi => {
     const added = addedIds.has(wi.id);
     return `<div class="vj-wi-card eu-activate ${added ? 'added' : ''}" role="button" tabindex="0" aria-pressed="${added}" onclick="toggleWardrobeItemInMaleta(${wi.id}, ${added})" title="${added ? 'Quitar de la maleta' : esc(wi.nombre)}" aria-label="${added ? 'Quitar de la maleta' : esc(wi.nombre)}">
-      ${added ? '<span class="vj-wi-added-badge">✓</span>' : ''}
+      ${added ? '<span class="vj-wi-added-badge"><i data-lucide="check" style="width:9px;height:9px;"></i></span>' : ''}
       ${wardrobeThumbHtml(wi)}
       <div class="vj-wi-name">${esc(wi.nombre)}</div>
     </div>`;
