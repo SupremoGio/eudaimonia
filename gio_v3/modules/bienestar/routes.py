@@ -45,6 +45,14 @@ def _hegemonikon_summary_data():
         ).fetchone()
         futbol_rating = rating_row['r']
 
+        n_viajes = db.execute(
+            "SELECT COUNT(*) c FROM viajes WHERE estado != 'cancelado'"
+        ).fetchone()['c']
+        n_viajes_proximos = db.execute(
+            "SELECT COUNT(*) c FROM viajes WHERE estado != 'cancelado' AND fecha_fin >= ?",
+            (today_str(),)
+        ).fetchone()['c']
+
     peso_spark = []
     for h in reversed(peso_hist):
         try:
@@ -79,13 +87,17 @@ def _hegemonikon_summary_data():
             'partidos': n_partidos,
             'rating':   futbol_rating,
         },
+        'viajes': {
+            'total':    n_viajes,
+            'proximos': n_viajes_proximos,
+        },
     }
 
 
 @bienestar_bp.route('/')
 def index():
     # Antes redirigía directo a /bienestar/salud — pero Hegemonikon agrupa 6
-    # páginas reales (Salud, Nutrición, Guardarropa, Recetas, Perfil, Fútbol)
+    # páginas reales (Salud, Nutrición, Guardarropa, Recetas, Viajes, Fútbol)
     # y ese redirect las dejaba solo una de ellas alcanzable desde el
     # dashboard/sidebar. Ahora esto es el hub real del pilar.
     return render_template('bienestar/index.html', data=_hegemonikon_summary_data())
