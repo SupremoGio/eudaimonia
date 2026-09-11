@@ -62,7 +62,7 @@
 .macro-chip{font-size:var(--fs-xs);padding:2px 7px;border-radius:100px;letter-spacing:.05em;}
 .m-cal{background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);color:var(--gold);}
 .m-pro{background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);color:var(--green);}
-.m-carb{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:#60a5fa;}
+.m-carb{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.2);color:var(--blue);}
 .m-fat{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);color:var(--red);}
 .rc-card-meta{display:flex;gap:10px;font-size:var(--fs-xs);color:var(--dim);}
 .rc-fav{position:absolute;top:10px;right:10px;background:none;border:none;cursor:pointer;color:var(--dim);
@@ -98,7 +98,7 @@
 .rd-video iframe{width:100%;height:100%;border:none;}
 .rd-video-link{display:flex;align-items:center;gap:8px;margin:0 20px 16px;padding:10px 14px;
   background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.18);border-radius:8px;
-  text-decoration:none;color:#f87171;font-size:var(--fs-sm);transition:background .14s;}
+  text-decoration:none;color:var(--coral);font-size:var(--fs-sm);transition:background .14s;}
 .rd-video-link:hover{background:rgba(248,113,113,.1);}
 .rd-video-link svg{width:16px;height:16px;flex-shrink:0;}
 /* Ingredients */
@@ -491,7 +491,7 @@ function openDetail(id){
       <div class="rd-macros-title">Macros por porción</div>
       ${r.calorias?`<div class="macro-bar-row"><div class="macro-bar-label" style="color:var(--gold)">Calorías</div><div class="macro-bar-track"><div class="macro-bar-fill" style="width:100%;background:var(--gold);"></div></div><div class="macro-bar-val">${r.calorias} kcal</div></div>`:''}
       ${r.proteina?`<div class="macro-bar-row"><div class="macro-bar-label" style="color:var(--green)">Proteína</div><div class="macro-bar-track"><div class="macro-bar-fill" style="width:${Math.round(r.proteina/maxMacro*100)}%;background:var(--green);"></div></div><div class="macro-bar-val">${r.proteina}g</div></div>`:''}
-      ${r.carbos?`<div class="macro-bar-row"><div class="macro-bar-label" style="color:#60a5fa">Carbos</div><div class="macro-bar-track"><div class="macro-bar-fill" style="width:${Math.round(r.carbos/maxMacro*100)}%;background:#60a5fa;"></div></div><div class="macro-bar-val">${r.carbos}g</div></div>`:''}
+      ${r.carbos?`<div class="macro-bar-row"><div class="macro-bar-label" style="color:var(--blue)">Carbos</div><div class="macro-bar-track"><div class="macro-bar-fill" style="width:${Math.round(r.carbos/maxMacro*100)}%;background:var(--blue);"></div></div><div class="macro-bar-val">${r.carbos}g</div></div>`:''}
       ${r.grasa?`<div class="macro-bar-row"><div class="macro-bar-label" style="color:var(--red)">Grasa</div><div class="macro-bar-track"><div class="macro-bar-fill" style="width:${Math.round(r.grasa/maxMacro*100)}%;background:var(--red);"></div></div><div class="macro-bar-val">${r.grasa}g</div></div>`:''}
     </div>` : ''}
 

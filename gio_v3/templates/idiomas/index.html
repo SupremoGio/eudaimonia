@@ -94,16 +94,16 @@
 @media(max-width:767px){.plan-cps{grid-template-columns:1fr;}}
 .plan-cp{border:1px solid var(--b);border-radius:8px;padding:11px 12px;cursor:pointer;transition:border-color .15s;}
 .plan-cp:hover{border-color:var(--gold);}
-.plan-cp.done{border-color:#34d399;background:rgba(52,211,153,.06);}
-.plan-cp.vencido{border-color:var(--red, #f87171);}
+.plan-cp.done{border-color:var(--emerald);background:var(--emerald-d);}
+.plan-cp.vencido{border-color:var(--coral);}
 .plan-cp-fase{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
-.plan-cp.done .plan-cp-fase{color:#34d399;}
+.plan-cp.done .plan-cp-fase{color:var(--emerald);}
 .plan-cp-nombre{font-size:var(--fs-sm);font-weight:700;color:var(--text);margin-bottom:4px;}
 .plan-cp-semana{font-size:var(--fs-xs);color:var(--dim);margin-bottom:5px;}
 .plan-cp-criterio{font-size:.68rem;color:var(--mid);line-height:1.4;}
 
 /* ── Quiz ── */
-.quiz-lang-btn{padding:6px 18px;border-radius:999px;font-size:var(--fs-sm);font-weight:700;border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .15s;letter-spacing:.06em;}
+.quiz-lang-btn{padding:6px 18px;border-radius:999px;font-size:var(--fs-sm);font-weight:700;border:1px solid var(--b);color:var(--dim);cursor:pointer;transition:all .15s;letter-spacing:.06em;}
 .quiz-lang-btn.on{background:var(--gold);color:#0a0a1a;border-color:var(--gold);}
 .quiz-lang-btn:hover:not(.on){border-color:var(--gold);color:var(--gold);}
 .q-item{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
@@ -114,8 +114,8 @@
 .q-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;border:1px solid var(--b);cursor:pointer;transition:all .14s;font-size:var(--fs-sm);color:var(--mid);}
 .q-opt:hover{border-color:var(--gold);color:var(--text);}
 .q-opt input{accent-color:var(--gold);flex-shrink:0;}
-.q-opt.correct{border-color:#34d399;background:rgba(52,211,153,.08);color:#34d399;}
-.q-opt.wrong{border-color:#f87171;background:rgba(248,113,113,.08);color:#f87171;}
+.q-opt.correct{border-color:var(--emerald);background:var(--emerald-d);color:var(--emerald);}
+.q-opt.wrong{border-color:var(--coral);background:var(--coral-d);color:var(--coral);}
 .q-example{font-size:var(--fs-sm);color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:7px;margin-top:8px;}
 .quiz-score{text-align:center;padding:20px 0;}
 .quiz-score-n{font-family:var(--serif);font-size:3rem;color:var(--gold);line-height:1;}
@@ -479,20 +479,21 @@ function showResults(d){
   document.getElementById('quizScoreN').textContent=`${d.score} / ${d.total}`;
   const medal=d.score===5?'trophy':d.score>=4?'medal':d.score>=3?'award':d.score>=2?'star':'dumbbell';
   document.getElementById('quizScoreN').innerHTML=`<i data-lucide="${medal}" style="width:16px;height:16px;vertical-align:middle;"></i> ${d.score} / ${d.total}`;
-  if (window.lucide) lucide.createIcons();
   const items=document.getElementById('quizResultItems');
+  const mark=ok=>`<i data-lucide="${ok?'check':'x'}" style="width:11px;height:11px;vertical-align:middle;"></i>`;
   items.innerHTML=d.results.map(r=>`
     <div class="q-item" style="margin-bottom:8px;">
-      <div class="q-word" style="color:${r.correct?'#34d399':'#f87171'}">${r.correct?'✓':'✗'} ${r.word}</div>
+      <div class="q-word" style="color:${r.correct?'var(--emerald)':'var(--coral)'}">${mark(r.correct)} ${r.word}</div>
       <div class="q-options">
         ${r.options.map((opt,j)=>`
           <div class="q-opt ${j===r.answer?'correct':j===r.selected&&!r.correct?'wrong':''}" style="cursor:default;">
-            ${j===r.answer?'✓':j===r.selected&&!r.correct?'✗':''} ${opt}
+            ${j===r.answer?mark(true):j===r.selected&&!r.correct?mark(false):''} ${opt}
           </div>`).join('')}
       </div>
       ${r.example?`<div class="q-example">"${r.example}"</div>`:''}
     </div>`).join('');
   document.getElementById('quizResult').style.display='block';
+  if (window.lucide) lucide.createIcons();
 }
 
 // ── Plan C1 · 26 semanas ──
@@ -506,7 +507,7 @@ async function cargarPlan(){
   if(ring){ const circ=263.9; ring.style.strokeDashoffset = circ - (Math.min(100,d.progreso_pct)/100)*circ; }
   document.getElementById('plan-cps').innerHTML=d.checkpoints.map((cp,i)=>`
     <div class="plan-cp cardInIdiomas eu-activate ${cp.completado?'done':cp.vencido?'vencido':''}" role="button" tabindex="0" aria-pressed="${!!cp.completado}" aria-label="${cp.nombre}" style="--i:${i}" onclick="toggleCheckpoint(${cp.id},${cp.completado?0:1})">
-      <div class="plan-cp-fase">${cp.completado?'✓ Completada':'Fase '+cp.fase}</div>
+      <div class="plan-cp-fase">${cp.completado?'<i data-lucide="check" style="width:10px;height:10px;vertical-align:middle;"></i> Completada':'Fase '+cp.fase}</div>
       <div class="plan-cp-nombre">${cp.nombre}</div>
       <div class="plan-cp-semana">Hasta semana ${cp.semana_fin} · ${cp.fecha_objetivo}</div>
       <div class="plan-cp-criterio">${cp.criterio}</div>

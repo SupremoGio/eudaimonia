@@ -116,7 +116,7 @@
 .hg-card-badges { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
 .hg-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600;
             letter-spacing:.04em; text-transform:uppercase; }
-.hg-badge-activo   { background:rgba(16,185,129,.12); color:#34d399; border:1px solid rgba(16,185,129,.2); }
+.hg-badge-activo   { background:rgba(16,185,129,.12); color:var(--emerald); border:1px solid rgba(16,185,129,.2); }
 .hg-badge-resuelto { background:rgba(148,163,184,.08); color:var(--dim); border:1px solid var(--b); }
 .hg-badge-enf  { background:rgba(244,63,94,.1);  color:var(--coral-l); border:1px solid rgba(244,63,94,.2); }
 .hg-badge-les  { background:rgba(251,146,60,.1); color:#fb923c; border:1px solid rgba(251,146,60,.2); }
@@ -169,7 +169,7 @@
                          height:10px; border-radius:50%; background:var(--dim);
                          transition:all .15s; }
 .hg-med-toggle.on { background:rgba(16,185,129,.2); border-color:rgba(16,185,129,.4); }
-.hg-med-toggle.on::after { left:14px; background:#34d399; }
+.hg-med-toggle.on::after { left:14px; background:var(--emerald); }
 
 /* ── Documents list ────────────────────────────────────────────────── */
 .hg-docs { display:flex; flex-direction:column; gap:4px; }
@@ -196,7 +196,7 @@
 /* ── Resolver card ────────────────────────────────────────────────── */
 .hg-resolver { background:rgba(16,185,129,.06); border:1px solid rgba(16,185,129,.18);
                border-radius:10px; padding:12px 14px; margin-bottom:14px; }
-.hg-resolver-title { font-size:var(--fs-xs); color:#34d399; font-weight:600;
+.hg-resolver-title { font-size:var(--fs-xs); color:var(--emerald); font-weight:600;
                      text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
 
 /* ── Type icons ───────────────────────────────────────────────────── */
@@ -578,7 +578,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
     <input class="fi" id="res-fecha" type="date">
     <div class="modal-actions" style="margin-top:16px;">
       <button class="btn-g" onclick="closeModal('resolver')">Cancelar</button>
-      <button class="btn-a" onclick="confirmarResolver()" style="background:linear-gradient(135deg,#34d399,var(--emerald));">
+      <button class="btn-a" onclick="confirmarResolver()" style="background:linear-gradient(135deg,var(--emerald-l),var(--emerald));">
         Marcar como resuelto
       </button>
     </div>

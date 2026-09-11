@@ -2,13 +2,33 @@
 {% set pg = 'logros' %}
 
 {% block title %}Logros · Eudaimonia{% endblock %}
-{% block module_title %}Logros & Clasificación{% endblock %}
+{% block module_title %}LOGROS · CLASIFICACIÓN{% endblock %}
 {% block topright %}{% endblock %}
 
 {% block content %}
+<style>
+/* ── Grillas responsivas — antes clases utilitarias de Tailwind
+   (grid grid-cols-1 lg:grid-cols-3, etc.), único módulo de la app que
+   las usaba en vez del <style> con clases propias de cada página. ── */
+.lg-header{margin-bottom:24px;}
+.lg-top-row{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:24px;}
+.lg-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.lg-cards-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+@media(min-width:640px){
+  .lg-stats-grid{grid-template-columns:repeat(4,1fr);}
+  .lg-cards-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(min-width:1024px){
+  .lg-top-row{grid-template-columns:repeat(3,1fr);}
+  .lg-stats-grid{grid-column:span 2;}
+}
+@media(min-width:1280px){
+  .lg-cards-grid{grid-template-columns:repeat(3,1fr);}
+}
+</style>
 
 <!-- ── Encabezado ───────────────────────────────────────────── -->
-<div class="mb-6">
+<div class="lg-header">
   <div style="font-family:var(--sans);font-size:9px;letter-spacing:.22em;color:var(--gold);opacity:.6;text-transform:uppercase;margin-bottom:4px;">
     Sistema Eudaimonia
   </div>
@@ -23,7 +43,7 @@
 <!-- ══════════════════════════════════════════════════════════════
      FILA SUPERIOR — Clasificación hoy + stats
 ════════════════════════════════════════════════════════════════ -->
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+<div class="lg-top-row">
 
   <!-- Card clasificación hoy -->
   {% set rc = classification.rank %}
@@ -54,7 +74,7 @@
   </div>
 
   <!-- Stats -->
-  <div class="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+  <div class="lg-stats-grid">
 
     <!-- Nivel -->
     <div style="background:var(--card);border:1px solid rgba(201,168,76,0.15);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">
@@ -236,7 +256,7 @@
       {{ achievements | selectattr('unlocked') | list | length }} / {{ achievements | length }} desbloqueados
     </span>
   </div>
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+  <div class="lg-cards-grid">
     {% for ach in achievements %}
     <div style="background:{% if ach.unlocked %}rgba(201,168,76,0.06){% else %}var(--card){% endif %};
                 border:1px solid {% if ach.unlocked %}rgba(201,168,76,0.25){% else %}rgba(201,168,76,0.1){% endif %};
@@ -291,7 +311,7 @@
       <span style="font-family:var(--sans);font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:500;color:{{ tier_col }};">{{ tier_labels[tier_key].label }}</span>
       <div style="flex:1;height:1px;background:{{ tier_col }}1a;"></div>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+    <div class="lg-cards-grid">
       {% for badge in tier_badges %}
       <div style="background:{% if badge.unlocked %}{{ tier_col }}0f{% else %}var(--card){% endif %};
                   border:1px solid {% if badge.unlocked %}{{ tier_col }}44{% else %}rgba(201,168,76,0.1){% endif %};
