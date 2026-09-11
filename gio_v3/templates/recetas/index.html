@@ -301,7 +301,7 @@
 {% macro recipe_card(r, i=0) %}
 {% set cat_hue = {'Desayuno':'45','Almuerzo':'80','Cena':'265','Snack':'155','Meal Prep':'215','Post-Entrenamiento':'330'} %}
 {% set hue = cat_hue.get(r.categoria, '45') %}
-<div class="rc-card" id="card-{{ r.id }}" onclick="openDetail({{ r.id }})" style="--i:{{ i }}">
+<div class="rc-card eu-activate" id="card-{{ r.id }}" role="button" tabindex="0" aria-label="Ver receta {{ r.nombre }}" onclick="openDetail({{ r.id }})" style="--i:{{ i }}">
   <div class="rc-card-header" style="background:oklch(55% 0.12 {{ hue }});"></div>
   <div class="rc-card-body">
     <div class="rc-card-cat">{{ r.categoria }}</div>
@@ -405,7 +405,7 @@ function cardHTML(r,i){
     ${r.grasa?`<span class="macro-chip m-fat">${Math.round(r.grasa)}g G</span>`:''}` : '';
   const mins = (r.tiempo_prep||0) + (r.tiempo_coccion||0);
   const favFill = r.favorita ? 'currentColor' : 'none';
-  return `<div class="rc-card${_activeId===r.id?' active':''}" id="card-${r.id}" onclick="openDetail(${r.id})" style="--i:${i||0}">
+  return `<div class="rc-card eu-activate${_activeId===r.id?' active':''}" id="card-${r.id}" role="button" tabindex="0" aria-label="Ver receta ${esc(r.nombre)}" onclick="openDetail(${r.id})" style="--i:${i||0}">
     <div class="rc-card-header" style="background:${catColor(r.categoria)};"></div>
     <div class="rc-card-body">
       <div class="rc-card-cat">${r.categoria}</div>
@@ -463,7 +463,7 @@ function openDetail(id){
 
   // Steps
   const steps = (r.instrucciones||[]).map((s,i)=>`
-    <div class="step-row" id="step-${id}-${i}" onclick="toggleStep(this)">
+    <div class="step-row eu-activate" id="step-${id}-${i}" role="button" tabindex="0" aria-label="Marcar paso ${i+1} como hecho" onclick="toggleStep(this)">
       <div class="step-num">${i+1}</div>
       <div class="step-text">${esc(s)}</div>
     </div>`).join('');

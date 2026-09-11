@@ -383,11 +383,11 @@ window.__MED_STATS__ = {{ stats | tojson }};
 <!-- ── Filter tabs ────────────────────────────────────────────────────── -->
 <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
   <div class="hg-tabs">
-    <div class="hg-tab on" onclick="setFilter('todos',this)">Todos</div>
-    <div class="hg-tab" onclick="setFilter('activos',this)">Activos</div>
-    <div class="hg-tab" onclick="setFilter('enfermedad',this)">Enfermedades</div>
-    <div class="hg-tab" onclick="setFilter('lesion',this)">Lesiones</div>
-    <div class="hg-tab" onclick="setFilter('consulta',this)">Consultas</div>
+    <div class="hg-tab on eu-activate" role="button" tabindex="0" onclick="setFilter('todos',this)">Todos</div>
+    <div class="hg-tab eu-activate" role="button" tabindex="0" onclick="setFilter('activos',this)">Activos</div>
+    <div class="hg-tab eu-activate" role="button" tabindex="0" onclick="setFilter('enfermedad',this)">Enfermedades</div>
+    <div class="hg-tab eu-activate" role="button" tabindex="0" onclick="setFilter('lesion',this)">Lesiones</div>
+    <div class="hg-tab eu-activate" role="button" tabindex="0" onclick="setFilter('consulta',this)">Consultas</div>
   </div>
 </div>
 
@@ -397,7 +397,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
   <!-- Episode list -->
   <div class="hg-list" id="ep-list">
     {% for e in episodios %}
-    <div class="hg-card" id="card-{{ e.id }}"
+    <div class="hg-card eu-activate" id="card-{{ e.id }}" role="button" tabindex="0" aria-label="Ver {{ e.titulo }}"
          data-tipo="{{ e.tipo }}" data-activo="{{ e.activo }}"
          style="--i:{{ loop.index0 }};"
          onclick="selectEp({{ e.id }})">
@@ -692,11 +692,13 @@ function renderDetail(ep, recetas, documentos) {
                   ${[m.dosis, m.frecuencia, m.duracion_dias ? m.duracion_dias+'d' : ''].filter(Boolean).join(' · ') || '—'}
                 </div>
               </div>
-              <div class="hg-med-toggle ${m.tomando ? 'on' : ''}"
+              <div class="hg-med-toggle eu-activate ${m.tomando ? 'on' : ''}"
+                   role="button" tabindex="0" aria-pressed="${!!m.tomando}"
                    onclick="toggleMed(${m.id},${m.tomando ? 0 : 1},this)"
-                   title="${m.tomando ? 'Marcar terminado' : 'Marcar activo'}"></div>
+                   title="${m.tomando ? 'Marcar terminado' : 'Marcar activo'}"
+                   aria-label="${m.tomando ? 'Marcar terminado' : 'Marcar activo'}"></div>
               <button class="btn-gr" style="font-size:10px;padding:2px 7px;margin-left:2px;"
-                onclick="eliminarMed(${m.id})">×</button>
+                onclick="eliminarMed(${m.id})" aria-label="Eliminar ${esc(m.nombre)}">×</button>
             </div>`).join('')}
           </div>`;
 
@@ -740,7 +742,7 @@ function renderDetail(ep, recetas, documentos) {
               <span class="hg-doc-sub">${label} · ${d.fecha}</span>
             </span>
           </a>
-          <button class="btn-gr" style="font-size:10px;padding:2px 7px;" onclick="eliminarDocumento(${d.id})">×</button>
+          <button class="btn-gr" style="font-size:10px;padding:2px 7px;" onclick="eliminarDocumento(${d.id})" aria-label="Eliminar ${esc(d.nombre_original || d.nombre_archivo)}">×</button>
         </div>`;
     }).join('') + '</div>';
   }

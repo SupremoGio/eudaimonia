@@ -87,6 +87,14 @@ html.light {
   border-radius: 8px;
 }
 
+/* ── Foco de teclado para tarjetas/widgets clicables (convención
+   .eu-activate + role="button", ver eu/layout_sub.html para el handler
+   de Enter/Espacio). Antes solo PAIDEIA definía su propio outline. ── */
+.eu-activate:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 /* ── Animaciones de refuerzo — antes solo existían en base_eudaimonia.html,
    ahora disponibles para cualquier plantilla que enlace app.css (GTD,
    Finanzas, Recompensas, Logros...) ── */

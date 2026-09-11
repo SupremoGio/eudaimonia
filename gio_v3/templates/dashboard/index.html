@@ -299,7 +299,7 @@
       {% endif %}
 
       <div class="level-card">
-        <div class="level-col" onclick="location.reload()" aria-label="Actualizar" title="Actualizar">
+        <div class="level-col eu-activate" role="button" tabindex="0" onclick="location.reload()" aria-label="Actualizar" title="Actualizar">
           {% include "dashboard/_greek_column.html" %}
         </div>
         <div class="level-info">
@@ -371,7 +371,7 @@
             <span class="dash-label">Word of the Day</span>
             <div style="display:flex;align-items:center;gap:8px;">
               <span class="pill" style="color:#60a5fa;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.18);white-space:nowrap;">EN → FR</span>
-              <button class="refresh-btn" id="word-refresh"><i data-lucide="refresh-cw"></i></button>
+              <button class="refresh-btn" id="word-refresh" aria-label="Otra palabra" title="Otra palabra"><i data-lucide="refresh-cw"></i></button>
             </div>
           </div>
           <div class="word-phon" id="word-phon">{{ data.word_of_day.phonetic }}</div>

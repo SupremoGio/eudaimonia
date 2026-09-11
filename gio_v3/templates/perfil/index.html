@@ -272,28 +272,28 @@
     </div>
     <div class="perf-hero-desc">Información de identidad, medidas corporales, documentos y recordatorios — todo en un solo lugar, protegido con contraseña.</div>
     <div class="perf-stat-strip">
-      <div class="perf-stat-box glow" onclick="switchPerfTab('personal')" style="cursor:pointer">
+      <div class="perf-stat-box glow eu-activate" role="button" tabindex="0" aria-label="Ver información personal" onclick="switchPerfTab('personal')" style="cursor:pointer">
         {% set pct_campos = ((stats.campos_completos / stats.campos_total * 100) | round(0)) if stats.campos_total else 0 %}
         <div class="perf-ring" style="--pct:{{ pct_campos }}"><b>{{ pct_campos }}%</b></div>
         <div class="perf-stat-n">{{ stats.campos_completos }}/{{ stats.campos_total }}</div>
         <div class="perf-stat-l">Campos completos</div>
       </div>
-      <div class="perf-stat-box glow" onclick="switchPerfTab('mediciones')" style="cursor:pointer">
+      <div class="perf-stat-box glow eu-activate" role="button" tabindex="0" aria-label="Ver mediciones" onclick="switchPerfTab('mediciones')" style="cursor:pointer">
         {% set pct_medidas = ((stats.medidas_completas / stats.medidas_total * 100) | round(0)) if stats.medidas_total else 0 %}
         <div class="perf-ring" style="--pct:{{ pct_medidas }}"><b>{{ pct_medidas }}%</b></div>
         <div class="perf-stat-n">{{ stats.medidas_completas }}/{{ stats.medidas_total }}</div>
         <div class="perf-stat-l">Medidas registradas</div>
       </div>
-      <div class="perf-stat-box {% if stats.docs_total == 0 %}muted{% endif %}" onclick="switchPerfTab('documentos')" style="cursor:pointer">
+      <div class="perf-stat-box eu-activate {% if stats.docs_total == 0 %}muted{% endif %}" role="button" tabindex="0" aria-label="Ver documentos" onclick="switchPerfTab('documentos')" style="cursor:pointer">
         <div class="perf-stat-n">{{ stats.docs_total }}</div>
         <div class="perf-stat-l">Documentos</div>
         {% if stats.docs_total == 0 %}<div style="font-size:9px;color:var(--gold);margin-top:3px;">+ subir el primero</div>{% endif %}
       </div>
-      <div class="perf-stat-box {% if stats.rem_urgentes > 0 %}alert{% endif %}" onclick="switchPerfTab('recordatorios')" style="cursor:pointer">
+      <div class="perf-stat-box eu-activate {% if stats.rem_urgentes > 0 %}alert{% endif %}" role="button" tabindex="0" aria-label="Ver recordatorios" onclick="switchPerfTab('recordatorios')" style="cursor:pointer">
         <div class="perf-stat-n">{% if stats.rem_urgentes > 0 %}<span class="perf-pulse"></span>{% endif %}{{ stats.rem_total }}</div>
         <div class="perf-stat-l">{% if stats.rem_urgentes > 0 %}{{ stats.rem_urgentes }} próximo{{ 's' if stats.rem_urgentes != 1 else '' }}{% else %}Recordatorios{% endif %}</div>
       </div>
-      <div class="perf-stat-box {% if stats.vault_total == 0 %}muted{% endif %}" onclick="switchPerfTab('contrasenas')" style="cursor:pointer">
+      <div class="perf-stat-box eu-activate {% if stats.vault_total == 0 %}muted{% endif %}" role="button" tabindex="0" aria-label="Ver contraseñas" onclick="switchPerfTab('contrasenas')" style="cursor:pointer">
         <div class="perf-stat-n">{{ stats.vault_total }}</div>
         <div class="perf-stat-l">Contraseñas</div>
         {% if stats.vault_total == 0 %}<div style="font-size:9px;color:var(--gold);margin-top:3px;">+ guardar una</div>{% endif %}
@@ -369,7 +369,7 @@
         <div class="field-edit" id="erow-{{ item.key }}">
           <input class="fi" style="flex:1;" id="einp-{{ item.key }}" value="{{ item.value }}" aria-label="{{ item.label }}" autocomplete="off">
           <button class="btn-a" style="padding:6px 14px;font-size:var(--fs-sm);white-space:nowrap;" onclick="save('{{ item.key }}')">Guardar</button>
-          <button class="btn-r" style="padding:6px 11px;" onclick="cancel('{{ item.key }}')">✕</button>
+          <button class="btn-r" style="padding:6px 11px;" onclick="cancel('{{ item.key }}')" aria-label="Cancelar">✕</button>
         </div>
 
         <!-- ★ PER-FIELD DOCS PANEL -->
@@ -509,7 +509,7 @@
           <div class="meas-edit" id="merow-{{ m.key }}">
             <input class="fi" style="flex:1;min-width:0;" id="meinp-{{ m.key }}" value="{{ m.value }}" aria-label="{{ m.label }}" autocomplete="off">
             <button class="btn-a" style="padding:5px 12px;font-size:var(--fs-sm);" onclick="saveM('{{ m.key }}')">OK</button>
-            <button class="btn-r" style="padding:5px 9px;" onclick="cancelM('{{ m.key }}')">✕</button>
+            <button class="btn-r" style="padding:5px 9px;" onclick="cancelM('{{ m.key }}')" aria-label="Cancelar">✕</button>
           </div>
           {% if hist %}
           <button class="meas-hist-btn" onclick="toggleHist('{{ m.key }}')" id="mhistbtn-{{ m.key }}">
@@ -832,7 +832,7 @@
              data-date="{{ r.next_date or r.target_date or '' }}"
              data-freqval="{{ r.freq_value or 1 }}"
              data-frequnit="{{ r.freq_unit or 'dias' }}">
-          <div class="rem-check" onclick="doneReminder({{ r.id }}, '{{ r.type }}')" title="Marcar como hecho">
+          <div class="rem-check eu-activate" role="button" tabindex="0" aria-label="Marcar como hecho" onclick="doneReminder({{ r.id }}, '{{ r.type }}')" title="Marcar como hecho">
             <i data-lucide="circle" style="width:16px;height:16px;"></i>
           </div>
           <div class="rem-info">

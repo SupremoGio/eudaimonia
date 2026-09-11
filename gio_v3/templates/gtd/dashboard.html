@@ -86,7 +86,7 @@
     {% if next_tasks %}
       {% for t in next_tasks %}
       <div class="t-row {% if t.id in done_ids %}faded{% endif %}" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:{{ (loop.index0 * 0.035) }}s;">
-        <div class="t-dot {% if t.id in done_ids %}ck{% endif %}" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
+        <div class="t-dot eu-activate {% if t.id in done_ids %}ck{% endif %}" role="button" tabindex="0" aria-label="Marcar como completada" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
         <div class="t-main">
           <div class="t-title">{{ t.title }}</div>
           {% if t.project_name %}<div class="t-sub">{{ t.project_name }}</div>{% endif %}
@@ -140,7 +140,7 @@
         <span class="ic-title">{{ t.title }}</span>
         <div class="ic-actions">
           <button class="ic-btn next-btn" onclick="promote({{t.id}},this)">→ Next</button>
-          <button class="ic-btn del-btn"  onclick="del({{t.id}},this)"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
+          <button class="ic-btn del-btn" onclick="del({{t.id}},this)" aria-label="Eliminar" title="Eliminar"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
         </div>
       </div>
       {% else %}
@@ -189,7 +189,7 @@ async function capture(){
     <span class="ic-title">${esc(t)}</span>
     <div class="ic-actions">
       <button class="ic-btn next-btn" onclick="promote(${id},this)">→ Next</button>
-      <button class="ic-btn del-btn"  onclick="del(${id},this)"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
+      <button class="ic-btn del-btn" onclick="del(${id},this)" aria-label="Eliminar" title="Eliminar"><i data-lucide="x" style="width:12px;height:12px;"></i></button>
     </div>`;
   document.getElementById('ip').prepend(div);
   lucide.createIcons();

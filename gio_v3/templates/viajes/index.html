@@ -191,13 +191,13 @@
 
   <!-- Tabs -->
   <div class="vj-tabs">
-    <div class="vj-tab active" id="tab-outfits"   onclick="switchTab('outfits')">
+    <div class="vj-tab active eu-activate" id="tab-outfits" role="button" tabindex="0" onclick="switchTab('outfits')">
       <i data-lucide="shirt" style="width:11px;height:11px;margin-right:4px"></i>Outfits por Día
     </div>
-    <div class="vj-tab" id="tab-maleta"    onclick="switchTab('maleta')">
+    <div class="vj-tab eu-activate" id="tab-maleta" role="button" tabindex="0" onclick="switchTab('maleta')">
       <i data-lucide="briefcase" style="width:11px;height:11px;margin-right:4px"></i>Mi Maleta
     </div>
-    <div class="vj-tab" id="tab-regreso"   onclick="switchTab('regreso')">
+    <div class="vj-tab eu-activate" id="tab-regreso" role="button" tabindex="0" onclick="switchTab('regreso')">
       <i data-lucide="arrow-left-right" style="width:11px;height:11px;margin-right:4px"></i>Checklist Regreso
     </div>
   </div>
@@ -365,8 +365,8 @@
     <div class="modal-title">Agregar ítem a la maleta</div>
 
     <div class="vj-ai-tabs">
-      <div class="vj-ai-tab active" id="ai-tab-wardrobe" onclick="switchAddItemTab('wardrobe')">Prenda del guardarropa</div>
-      <div class="vj-ai-tab" id="ai-tab-generic" onclick="switchAddItemTab('generic')">Ítem genérico</div>
+      <div class="vj-ai-tab active eu-activate" id="ai-tab-wardrobe" role="button" tabindex="0" onclick="switchAddItemTab('wardrobe')">Prenda del guardarropa</div>
+      <div class="vj-ai-tab eu-activate" id="ai-tab-generic" role="button" tabindex="0" onclick="switchAddItemTab('generic')">Ítem genérico</div>
     </div>
 
     <!-- Panel: prenda existente del guardarropa -->
@@ -450,7 +450,7 @@ function tripCardHtml(t) {
   const dias = t.total_dias || 0;
   const packed = t.items_packed || 0;
   return `
-    <div class="vj-card" onclick="showDetail(${t.id})">
+    <div class="vj-card eu-activate" role="button" tabindex="0" aria-label="Ver detalle de ${esc(t.nombre)}" onclick="showDetail(${t.id})">
       <div class="vj-card-top">
         <div class="vj-card-name">${esc(t.nombre)}</div>
         <span class="vj-estado ${t.estado}">${t.estado}</span>
@@ -473,7 +473,7 @@ function renderList() {
   if (!_trips.length) {
     container.innerHTML = `
       <div class="vj-grid">
-        <div class="vj-card vj-card-new" onclick="openTripModal()">
+        <div class="vj-card vj-card-new eu-activate" role="button" tabindex="0" aria-label="Crear primer viaje" onclick="openTripModal()">
           <i data-lucide="plus-circle" style="width:28px;height:28px"></i>
           <span>Crear primer viaje</span>
         </div>
@@ -636,13 +636,13 @@ function renderOutfitsPane() {
     const outfit = d.outfits && d.outfits[0];
     const outfitChip = outfit
       ? `<div style="display:flex;align-items:center;gap:8px;">
-           <div class="vj-outfit-chip" onclick="openOutfitPicker(${JSON.stringify(d).replace(/"/g,'&quot;')})">
+           <div class="vj-outfit-chip eu-activate" role="button" tabindex="0" aria-label="Cambiar outfit" onclick="openOutfitPicker(${JSON.stringify(d).replace(/"/g,'&quot;')})">
              ${outfitThumbHtml(outfit)}
              ${esc(outfit.nombre)}
            </div>
-           <button class="vj-item-del" onclick="quitarOutfitFromRow(${d.id})" title="Quitar outfit">×</button>
+           <button class="vj-item-del" onclick="quitarOutfitFromRow(${d.id})" title="Quitar outfit" aria-label="Quitar outfit">×</button>
          </div>`
-      : `<div class="vj-outfit-chip-none" onclick="openOutfitPicker(${JSON.stringify(d).replace(/"/g,'&quot;')})">
+      : `<div class="vj-outfit-chip-none eu-activate" role="button" tabindex="0" onclick="openOutfitPicker(${JSON.stringify(d).replace(/"/g,'&quot;')})">
            <i data-lucide="plus" style="width:10px;height:10px"></i> Elegir outfit
          </div>`;
 
@@ -691,7 +691,7 @@ async function openOutfitPicker(dia) {
     const sel = o.id === currentOutfitId ? 'selected' : '';
     const mosaic = buildOutfitMosaic(o.items || []);
     const prendas = o.items ? o.items.slice(0,3).map(i=>esc(i.nombre)).join(' · ') : '';
-    return `<div class="vj-outfit-card ${sel}" onclick="selectOutfit(${o.id})">
+    return `<div class="vj-outfit-card eu-activate ${sel}" role="button" tabindex="0" aria-pressed="${sel==='selected'}" aria-label="Elegir outfit ${esc(o.nombre)}" onclick="selectOutfit(${o.id})">
       ${mosaic}
       <div class="vj-outfit-card-name">${esc(o.nombre)}</div>
       ${o.ocasion ? `<div class="vj-outfit-card-ocasion">${esc(o.ocasion)}</div>` : ''}
@@ -813,7 +813,7 @@ function renderMaletaPane() {
             onchange="toggleMaleta(${m.id}, 'packed_ida', this.checked)">
           ${maletaThumbHtml(m)}
           <span class="vj-item-name ${m.packed_ida ? 'done' : ''}">${esc(m.nombre)}${m.cantidad>1 ? ` <span style="color:var(--dim);">×${m.cantidad}</span>` : ''}</span>
-          <button class="vj-item-del" onclick="deleteMaletaItem(${m.id})" title="Eliminar">×</button>
+          <button class="vj-item-del" onclick="deleteMaletaItem(${m.id})" title="Eliminar" aria-label="Eliminar">×</button>
         </div>`).join('')}
     </div>`).join('');
 }
@@ -932,7 +932,7 @@ function renderWardrobePicker() {
 
   grid.innerHTML = filtered.map(wi => {
     const added = addedIds.has(wi.id);
-    return `<div class="vj-wi-card ${added ? 'added' : ''}" onclick="toggleWardrobeItemInMaleta(${wi.id}, ${added})" title="${added ? 'Quitar de la maleta' : esc(wi.nombre)}">
+    return `<div class="vj-wi-card eu-activate ${added ? 'added' : ''}" role="button" tabindex="0" aria-pressed="${added}" onclick="toggleWardrobeItemInMaleta(${wi.id}, ${added})" title="${added ? 'Quitar de la maleta' : esc(wi.nombre)}" aria-label="${added ? 'Quitar de la maleta' : esc(wi.nombre)}">
       ${added ? '<span class="vj-wi-added-badge">✓</span>' : ''}
       ${wardrobeThumbHtml(wi)}
       <div class="vj-wi-name">${esc(wi.nombre)}</div>

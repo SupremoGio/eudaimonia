@@ -539,7 +539,13 @@
 
 <script src="{{ url_for('static', filename='js/eu-celebrate.js') }}"></script>
 <script>
-lucide.createIcons();
+/* Envuelto en try/catch: si el CDN de lucide falla o tarda (red lenta,
+   bloqueo corporativo, caída puntual), esta llamada lanzaba una excepción
+   que detenía TODO el resto de este bloque — incluido el theme toggle,
+   toast() y la activación por teclado de .eu-activate — porque son
+   sentencias sueltas, no declaraciones con hoisting como las funciones
+   de abajo. Un ícono roto no debería tumbar el resto de la app. */
+try { lucide.createIcons(); } catch (e) { console.warn('lucide.createIcons() falló:', e); }
 
 /* ── Theme toggle ── */
 (function initTheme() {
@@ -582,6 +588,21 @@ function toast(msg, type = 'ok') {
     t.classList.remove('opacity-100','translate-y-0');
   }, 2500);
 }
+
+/* ── Activación por teclado para tarjetas/widgets clicables marcados
+   role="button" + class="eu-activate" (convención compartida por todos
+   los módulos). Delegado en document en vez de registrar un listener por
+   elemento, así cubre contenido agregado dinámicamente (ej. listas
+   renderizadas por fetch) sin volver a inicializarse. Ignora el evento si
+   no vino directo del propio elemento (ej. un botón anidado como "+10" o
+   "Eliminar"), para no disparar su acción y la del contenedor a la vez. */
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target.closest('.eu-activate');
+  if (!el || e.target !== el) return;
+  e.preventDefault();
+  el.click();
+});
 </script>
 
 <script>

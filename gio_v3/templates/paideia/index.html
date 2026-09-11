@@ -560,18 +560,8 @@ function setRating(val) {
   document.getElementById('lb-rating-clear-btn').style.display = val ? '' : 'none';
 }
 
-// ── Activación por teclado para tarjetas/widgets clicables (role="button") ──
-// Ignora el evento si viene de un control anidado (ej. el botón "+10") para
-// no disparar la apertura del modal a la vez que su propia acción.
-document.querySelectorAll('.eu-activate').forEach(el => {
-  el.addEventListener('keydown', (e) => {
-    if (e.target !== el) return;
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      el.click();
-    }
-  });
-});
+// La activación por teclado (Enter/Espacio) de .eu-activate ahora vive
+// delegada en eu/layout_sub.html — cubre este módulo sin duplicar el handler.
 
 // ── Bump rápido de progreso — sin abrir el modal completo ───────────────────
 async function bumpProgress(event, btn) {
