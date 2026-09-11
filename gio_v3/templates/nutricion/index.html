@@ -899,7 +899,7 @@ function renderSemGrid() {
         <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
           ${dotHtml(m.tag,5)}
           <span style="font-family:var(--sans);font-size:8px;letter-spacing:0.06em;color:var(--dim);text-transform:uppercase">${esc(m.time)}</span>
-          <button onclick="removeMeal(${m.id},'${d.k}')" style="margin-left:auto;background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px;line-height:1;padding:0">×</button>
+          <button onclick="removeMeal(${m.id},'${d.k}')" aria-label="Quitar ${esc(m.name)}" style="margin-left:auto;background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px;line-height:1;padding:0">×</button>
         </div>
         <button onclick="openMeal(${m.id})" style="background:none;border:none;text-align:left;cursor:pointer;padding:0;width:100%">
           <div style="font-family:var(--serif);font-size:13px;color:var(--text);line-height:1.15">${esc(m.name)}</div>
@@ -941,7 +941,7 @@ function renderSemDay() {
           <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</div>
           <div style="font-family:var(--serif);font-size:16px;color:var(--text);line-height:1.15">${esc(m.name)}</div>
         </button>
-        <button onclick="removeMeal(${m.id},'${k}')" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>
+        <button onclick="removeMeal(${m.id},'${k}')" aria-label="Quitar ${esc(m.name)}" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>
       </div>`;
     });
   }

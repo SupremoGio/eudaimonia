@@ -214,7 +214,7 @@
         <td>${{ "%.2f"|format(c.precio_total) }}</td>
         <td>{{ c.cantidad|int }}</td>
         <td>{% if c.cantidad > 0 %}${{ "%.2f"|format(c.precio_total / c.cantidad) }}{% else %}—{% endif %}</td>
-        <td><button class="btn-del-c" onclick="borrarCompra({{ c.id }})" title="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
+        <td><button class="btn-del-c" onclick="borrarCompra({{ c.id }})" title="Eliminar" aria-label="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
       </tr>
       {% endfor %}
     </tbody>

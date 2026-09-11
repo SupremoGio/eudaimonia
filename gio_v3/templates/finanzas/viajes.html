@@ -307,7 +307,7 @@ function renderList() {
   const grid = document.getElementById('trip-grid');
   if (!_trips.length) {
     grid.innerHTML = `
-      <div class="vj-card vj-card-new" onclick="openTripModal()">
+      <div class="vj-card vj-card-new eu-activate" role="button" tabindex="0" aria-label="Crear primer viaje" onclick="openTripModal()">
         <i data-lucide="plus-circle" style="width:28px;height:28px"></i>
         <span>Crear primer viaje</span>
       </div>`;
@@ -320,7 +320,7 @@ function renderList() {
     const over    = t.total_gastado > t.presupuesto && t.presupuesto > 0;
     const fillClr = over ? 'var(--red)' : pct > 80 ? 'var(--pink,#f472b6)' : 'var(--gold)';
     return `
-      <div class="vj-card" onclick="showDetail(${t.id})">
+      <div class="vj-card eu-activate" role="button" tabindex="0" aria-label="Ver detalle de ${esc(t.nombre)}" onclick="showDetail(${t.id})">
         <div class="vj-card-top">
           <div class="vj-card-name">${esc(t.nombre)}</div>
           <span class="vj-estado ${t.estado}">${t.estado}</span>
@@ -345,7 +345,7 @@ function renderList() {
   });
 
   cards.push(`
-    <div class="vj-card vj-card-new" onclick="openTripModal()">
+    <div class="vj-card vj-card-new eu-activate" role="button" tabindex="0" aria-label="Nuevo viaje" onclick="openTripModal()">
       <i data-lucide="plus-circle" style="width:24px;height:24px"></i>
       <span>Nuevo Viaje</span>
     </div>`);
@@ -445,7 +445,7 @@ function renderDetail() {
               <td><div class="vj-tx-desc" title="${esc(tx.descripcion)}">${esc(tx.descripcion)}</div></td>
               <td><div class="vj-tx-cat">${tx.categoria}${tx.subcategoria ? ' · '+tx.subcategoria : ''}</div></td>
               <td class="vj-tx-amt">$${fmt(tx.mi_parte ?? tx.monto)}</td>
-              <td><button class="btn-r" style="padding:2px 6px;font-size:10px;" onclick="untagOne(${tx.id})" title="Desvincular">×</button></td>
+              <td><button class="btn-r" style="padding:2px 6px;font-size:10px;" onclick="untagOne(${tx.id})" title="Desvincular" aria-label="Desvincular">×</button></td>
             </tr>`).join('')}
         </tbody>
       </table>`;

@@ -296,7 +296,7 @@
     {% set is_done = bl.bloque_done %}
     <div class="bl-card {% if is_done %}done collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
 
-      <div class="bl-hd" onclick="toggleBloque('{{ bl.bloque_id }}')">
+      <div class="bl-hd eu-activate" role="button" tabindex="0" aria-label="Expandir {{ bl.label }}" onclick="toggleBloque('{{ bl.bloque_id }}')">
         <span class="bl-icon"><i data-lucide="{{ bl.icon }}" style="width:18px;height:18px;"></i></span>
         <span class="bl-title">{{ bl.label }}</span>
         <div class="bl-meta">
@@ -315,14 +315,15 @@
         <div class="timer-strip">
           <div class="timer-display" id="timer-{{ bl.bloque_id }}">00:00:00</div>
           <span class="timer-ref">ref: {{ bl.total_duracion }} min</span>
-          <button class="timer-btn" id="tbtn-{{ bl.bloque_id }}"
+          <button class="timer-btn" id="tbtn-{{ bl.bloque_id }}" aria-label="Iniciar temporizador"
                   onclick="toggleTimer('{{ bl.bloque_id }}', {{ bl.total_duracion * 60 }})">▶</button>
-          <button class="timer-btn" onclick="resetTimer('{{ bl.bloque_id }}')">↺</button>
+          <button class="timer-btn" onclick="resetTimer('{{ bl.bloque_id }}')" aria-label="Reiniciar temporizador">↺</button>
         </div>
 
         {% for t in bl.tareas %}
         {% set tdone = t.id in bl.done_ids %}
-        <div class="task-row {% if tdone %}done{% endif %}" id="trow-{{ t.id }}"
+        <div class="task-row eu-activate {% if tdone %}done{% endif %}" id="trow-{{ t.id }}"
+             role="button" tabindex="0" aria-pressed="{{ 'true' if tdone else 'false' }}"
              onclick="toggleTarea('{{ t.id }}', '{{ bl.bloque_id }}', 'sabado')">
           <div class="task-chk {% if tdone %}ck{% endif %}" id="tchk-{{ t.id }}">
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
@@ -376,7 +377,7 @@
     {% set is_done = bl.bloque_done %}
     <div class="bl-card {% if is_done %}done collapsed{% endif %}" id="blcard-{{ bl.bloque_id }}">
 
-      <div class="bl-hd" onclick="toggleBloque('{{ bl.bloque_id }}')">
+      <div class="bl-hd eu-activate" role="button" tabindex="0" aria-label="Expandir {{ bl.label }}" onclick="toggleBloque('{{ bl.bloque_id }}')">
         <span class="bl-icon"><i data-lucide="{{ bl.icon }}" style="width:18px;height:18px;"></i></span>
         <span class="bl-title">{{ bl.label }}</span>
         <div class="bl-meta">
@@ -395,14 +396,15 @@
         <div class="timer-strip">
           <div class="timer-display" id="timer-{{ bl.bloque_id }}">00:00:00</div>
           <span class="timer-ref">ref: {{ bl.total_duracion }} min</span>
-          <button class="timer-btn" id="tbtn-{{ bl.bloque_id }}"
+          <button class="timer-btn" id="tbtn-{{ bl.bloque_id }}" aria-label="Iniciar temporizador"
                   onclick="toggleTimer('{{ bl.bloque_id }}', {{ bl.total_duracion * 60 }})">▶</button>
-          <button class="timer-btn" onclick="resetTimer('{{ bl.bloque_id }}')">↺</button>
+          <button class="timer-btn" onclick="resetTimer('{{ bl.bloque_id }}')" aria-label="Reiniciar temporizador">↺</button>
         </div>
 
         {% for t in bl.tareas %}
         {% set tdone = t.id in bl.done_ids %}
-        <div class="task-row {% if tdone %}done{% endif %}" id="trow-{{ t.id }}"
+        <div class="task-row eu-activate {% if tdone %}done{% endif %}" id="trow-{{ t.id }}"
+             role="button" tabindex="0" aria-pressed="{{ 'true' if tdone else 'false' }}"
              onclick="toggleTarea('{{ t.id }}', '{{ bl.bloque_id }}', 'domingo')">
           <div class="task-chk {% if tdone %}ck{% endif %}" id="tchk-{{ t.id }}">
             <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
@@ -442,7 +444,7 @@
 
     {# ── Revisión Semanal Objetiva ── #}
     <div class="rs-card {% if revision.has_data %}collapsed{% endif %}" id="rs-card">
-      <div class="rs-hd" onclick="toggleRevision()">
+      <div class="rs-hd eu-activate" role="button" tabindex="0" aria-label="Expandir revisión semanal" onclick="toggleRevision()">
         <span class="rs-icon"><i data-lucide="bar-chart-3" style="width:18px;height:18px;"></i></span>
         <div class="rs-title-wrap">
           <span class="rs-title">Revisión Semanal Objetiva</span>
@@ -629,7 +631,11 @@ function toggleTimer(bloqueId, refSecs) {
     }, 1000);
   }
   const btn = document.getElementById(`tbtn-${bloqueId}`);
-  if (btn) { btn.textContent = t.running ? '⏸' : '▶'; btn.classList.toggle('running', t.running); }
+  if (btn) {
+    btn.textContent = t.running ? '⏸' : '▶';
+    btn.classList.toggle('running', t.running);
+    btn.setAttribute('aria-label', t.running ? 'Pausar temporizador' : 'Iniciar temporizador');
+  }
 }
 
 function resetTimer(bloqueId) {

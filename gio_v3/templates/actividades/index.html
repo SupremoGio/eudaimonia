@@ -485,7 +485,7 @@
           onclick="event.stopPropagation()" onblur="saveReflexion(this)">{{ item.reflexion or '' }}</textarea>
         {% endif %}
       </div>
-      <button class="srm" onclick="event.stopPropagation(); delActivity('{{ item.key }}')" title="Quitar">×</button>
+      <button class="srm" onclick="event.stopPropagation(); delActivity('{{ item.key }}')" title="Quitar" aria-label="Quitar">×</button>
     </div>
     {% endmacro %}
 
@@ -503,7 +503,7 @@
       {% set configured = namespace(n=0) %}
       {% for pk in foco_candidates %}{% if pillar_focus.get(pk) %}{% set configured.n = configured.n + 1 %}{% endif %}{% endfor %}
       <div class="foco-wrap">
-        <div class="foco-summary" onclick="toggleFoco(this)">
+        <div class="foco-summary eu-activate" role="button" tabindex="0" aria-label="Expandir foco del mes" onclick="toggleFoco(this)">
           <span class="foco-summary-lbl">Foco del mes</span>
           <span class="foco-count">{{ configured.n }}/{{ foco_candidates|length }} configurados</span>
           <svg class="foco-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 6 15 12 9 18"/></svg>
@@ -536,12 +536,12 @@
       </div>
       <div class="acts-grid" data-session="{{ now_session }}">
         {% for item in grouped[now_session] %}{{ act_card(item) }}{% endfor %}
-        <div class="add-tile" data-addtile="{{ now_session }}" onclick="showAddForm('{{ now_session }}', this)">+ Agregar actividad</div>
+        <div class="add-tile eu-activate" role="button" tabindex="0" data-addtile="{{ now_session }}" onclick="showAddForm('{{ now_session }}', this)">+ Agregar actividad</div>
       </div>
 
       <!-- Sesiones colapsadas -->
       {% for sk in ['morning','afternoon','night'] if sk != now_session %}
-      <div class="session-row" data-toggle="{{ sk }}" onclick="toggleSession('{{ sk }}', this)">
+      <div class="session-row eu-activate" role="button" tabindex="0" aria-label="Expandir {{ session_meta[sk].label }}" data-toggle="{{ sk }}" onclick="toggleSession('{{ sk }}', this)">
         <div class="rinfo">
           <div class="stitle">{{ session_meta[sk].label }}</div>
           <div class="swindow">{{ session_meta[sk].window }}</div>
@@ -553,7 +553,7 @@
         <div class="session-detail-inner">
           <div class="acts-grid" data-session="{{ sk }}">
             {% for item in grouped[sk] %}{{ act_card(item) }}{% endfor %}
-            <div class="add-tile" data-addtile="{{ sk }}" onclick="showAddForm('{{ sk }}', this)">+ Agregar actividad</div>
+            <div class="add-tile eu-activate" role="button" tabindex="0" data-addtile="{{ sk }}" onclick="showAddForm('{{ sk }}', this)">+ Agregar actividad</div>
           </div>
         </div>
       </div>
@@ -563,14 +563,14 @@
       <div class="anytime-head">Cualquier momento</div>
       <div class="acts-grid" data-session="any">
         {% for item in grouped['any'] %}{{ act_card(item) }}{% endfor %}
-        <div class="add-tile" data-addtile="any" onclick="showAddForm('any', this)">+ Agregar actividad</div>
+        <div class="add-tile eu-activate" role="button" tabindex="0" data-addtile="any" onclick="showAddForm('any', this)">+ Agregar actividad</div>
       </div>
 
       <!-- Ocasional -->
       <div class="occ-head"><span class="lbl">Ocasional</span><span class="note">no cuenta para tu tier</span></div>
       <div class="occ-list">
         {% for item in grouped['ocasional'] %}
-        <div class="occ-item {% if item.done %}done{% endif %}" data-key="{{ item.key }}" onclick="sessLogAct('{{ item.key }}', this)">
+        <div class="occ-item eu-activate {% if item.done %}done{% endif %}" role="button" tabindex="0" aria-pressed="{{ 'true' if item.done else 'false' }}" aria-label="{{ item.label }}" data-key="{{ item.key }}" onclick="sessLogAct('{{ item.key }}', this)">
           <div class="ochk"></div>
           <div class="olbl">{{ item.label }}</div>
           <div class="opts">+{{ item.pts }} XP · no cuenta</div>
@@ -594,7 +594,7 @@
       </div>
       <div class="pl" id="p-list">
         {% for p in stats.priorities %}
-        <div class="pitem {% if p.done %}dn{% endif %}" onclick="toggleP({{ p.id }})">
+        <div class="pitem eu-activate {% if p.done %}dn{% endif %}" role="button" tabindex="0" aria-pressed="{{ 'true' if p.done else 'false' }}" aria-label="{{ p.text }}" onclick="toggleP({{ p.id }})">
           <div class="pck"><i data-lucide="check"></i></div>
           <span class="ptxt">{{ p.text }}</span>
         </div>
@@ -1015,7 +1015,7 @@ async function toggleP(id) {
 
 function renderP(ps) {
   document.getElementById('p-list').innerHTML = ps.length ? ps.map(p =>
-    `<div class="pitem ${p.done?'dn':''}" onclick="toggleP(${p.id})">
+    `<div class="pitem eu-activate ${p.done?'dn':''}" role="button" tabindex="0" aria-pressed="${!!p.done}" aria-label="${esc(p.text)}" onclick="toggleP(${p.id})">
       <div class="pck"><i data-lucide="check"></i></div>
       <span class="ptxt">${esc(p.text)}</span>
     </div>`

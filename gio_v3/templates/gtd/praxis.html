@@ -331,7 +331,8 @@ function renderItem(t, secKey) {
   if (secKey === 'inbox') {
     return `
     <div class="px-item" data-id="${t.id}">
-      <div class="item-main" onclick="this.closest('.px-item').classList.toggle('mob-expanded')">
+      <div class="item-main eu-activate" role="button" tabindex="0" aria-label="Expandir tarea"
+           onclick="this.closest('.px-item').classList.toggle('mob-expanded')">
         <div class="item-text">${esc(t.title)}</div>
         ${t.notas ? `<div class="item-notas">${esc(t.notas)}</div>` : ''}
         <div class="item-meta">
@@ -373,7 +374,7 @@ function renderItem(t, secKey) {
   // Quadrant items (hoy / semana / delegar / ideas)
   return `
   <div class="px-item" data-id="${t.id}">
-    <div class="item-dot" onclick="completeTask(${t.id},this)"><i data-lucide="check"></i></div>
+    <div class="item-dot eu-activate" role="button" tabindex="0" aria-label="Marcar como completada" onclick="completeTask(${t.id},this)"><i data-lucide="check"></i></div>
     <div class="item-main">
       <div class="item-text">${esc(t.title)}</div>
       ${t.notas ? `<div class="item-notas">${esc(t.notas)}</div>` : ''}
@@ -408,7 +409,7 @@ function renderAll() {
 
     html += `
     <div class="px-sec ${sec.accent}">
-      <div class="px-hd" onclick="toggleSec('${sec.key}')">
+      <div class="px-hd eu-activate" role="button" tabindex="0" aria-expanded="${isOpen}" aria-label="${sec.label}" onclick="toggleSec('${sec.key}')">
         <div class="px-hd-left">
           <span class="sec-icon"><i data-lucide="${sec.icon}" style="width:14px;height:14px;"></i></span>
           <span class="sec-title">${sec.label}</span>

@@ -504,7 +504,7 @@
 
   <!-- AI Generator (collapsible) -->
   <div class="ai-gen-wrap" style="margin-top:24px;">
-    <div class="ai-gen-toggle" id="ai-gen-toggle" onclick="toggleAIPanel()">
+    <div class="ai-gen-toggle eu-activate" id="ai-gen-toggle" role="button" tabindex="0" aria-label="Mostrar u ocultar el generador de outfits con IA" onclick="toggleAIPanel()">
       <span class="ai-gen-toggle-label">✨ Coach de imagen · IA — Generador de outfits</span>
       <span class="ai-gen-toggle-arrow">▼</span>
     </div>
@@ -702,7 +702,7 @@
    truth for the card markup instead of two copies drifting apart. #}
 
 {% macro outfit_card(o) %}
-<div class="ot-card" id="ocard-{{ o.id }}" onclick="editOutfitById({{ o.id }})">
+<div class="ot-card eu-activate" id="ocard-{{ o.id }}" role="button" tabindex="0" aria-label="Editar outfit {{ o.nombre }}" onclick="editOutfitById({{ o.id }})">
   <div class="ot-color-strip">
     {% for item in o['items'][:6] %}
     <div class="ot-color-seg" style="background:{{ item.color_hex }};"></div>
@@ -987,11 +987,11 @@ function itemCardHTML(r,i=0){
     : swatch.replace('display:none;','');
   const estadoClass=`chip-estado-${r.estado}`;
   const tempChip=r.temporada&&r.temporada!=='todo'?`<span class="gd-chip" style="background:rgba(168,152,128,.08);border-color:rgba(168,152,128,.2);color:var(--mid);">${esc(r.temporada)}</span>`:'';
-  return `<div class="gd-card${_activeItemId===r.id?' active':''}" id="icard-${r.id}" style="--i:${Math.min(i,24)};" onclick="openItemDetail(${r.id})">
+  return `<div class="gd-card eu-activate${_activeItemId===r.id?' active':''}" id="icard-${r.id}" role="button" tabindex="0" aria-label="Ver detalle de ${esc(r.nombre)}" style="--i:${Math.min(i,24)};" onclick="openItemDetail(${r.id})">
     <div class="gd-card-visual">
       ${visual}
       <div class="gd-card-quick">
-        <button onclick="event.stopPropagation();openItemModal(${r.id})" title="Editar prenda">
+        <button onclick="event.stopPropagation();openItemModal(${r.id})" title="Editar prenda" aria-label="Editar prenda">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
         </button>
       </div>
@@ -1538,7 +1538,7 @@ function renderPicker(q){
     const visual = r.foto
       ? `<div class="ip-color"><img src="/guardarropa/photos/${esc(r.foto)}" alt=""></div>`
       : `<div class="ip-color" style="background:${esc(r.color_hex||'#333')};"></div>`;
-    return `<div class="ip-row${on?' on':''}" data-id="${r.id}" onclick="togglePickerItem(${r.id},this)">
+    return `<div class="ip-row eu-activate${on?' on':''}" data-id="${r.id}" role="button" tabindex="0" aria-pressed="${on}" aria-label="${esc(r.nombre)}" onclick="togglePickerItem(${r.id},this)">
       ${visual}
       <div class="ip-info"><div class="ip-name">${esc(r.nombre)}</div></div>
       <div class="ip-check"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -1572,7 +1572,7 @@ function renderSelectedBar(){
   if(!selected.length){ bar.style.display='none'; bar.innerHTML=''; return; }
   bar.style.display='flex';
   bar.innerHTML = `<span class="ip-selected-label">Seleccionadas (${selected.length})</span>` +
-    selected.map(r=>`<span class="ip-sel-chip">${esc(r.nombre)}<button type="button" onclick="removeSelected(${r.id})">×</button></span>`).join('');
+    selected.map(r=>`<span class="ip-sel-chip">${esc(r.nombre)}<button type="button" onclick="removeSelected(${r.id})" aria-label="Quitar ${esc(r.nombre)}">×</button></span>`).join('');
 }
 function removeSelected(id){
   _selectedItemIds.delete(id);
@@ -1680,7 +1680,7 @@ function renderOutfitsGrid(){
     const uso = o.veces_usado ? `${o.veces_usado}× usado` : 'Nunca usado';
     const lastUso = o.ultimo_uso ? `Último: ${o.ultimo_uso}` : '';
     return `<div class="ot-card" id="ocard-${o.id}" style="--i:${Math.min(i,24)};">
-      <div style="position:relative;" onclick="openOutfitView(${o.id})">${mosaic}
+      <div class="eu-activate" role="button" tabindex="0" aria-label="Ver outfit ${esc(o.nombre)}" style="position:relative;" onclick="openOutfitView(${o.id})">${mosaic}
         ${o.ocasion?`<div class="ot-mosaic-occ">${esc(o.ocasion)}</div>`:''}
         <div class="ot-mosaic-view">
           <span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Ver outfit</span>
@@ -1903,7 +1903,7 @@ function renderIntelligence(){
   const sortedColors=Object.entries(colorMap).sort((a,b)=>b[1].count-a[1].count);
   const maxColor=sortedColors[0]?.[1]?.count||1;
   const colorBars=sortedColors.map(([name,{count,hex}])=>`
-    <div class="color-bar-row" onclick="filterByColorBucket('${name}')" title="Ver estas ${count} prenda${count===1?'':'s'} en Armario">
+    <div class="color-bar-row eu-activate" role="button" tabindex="0" onclick="filterByColorBucket('${name}')" title="Ver estas ${count} prenda${count===1?'':'s'} en Armario" aria-label="Ver estas ${count} prenda${count===1?'':'s'} en Armario">
       <div class="color-dot" style="background:${esc(hex)};"></div>
       <div class="color-bar-label">${esc(name)}</div>
       <div class="color-bar-track"><div class="color-bar-fill" style="width:${Math.round(count/maxColor*100)}%;background:${esc(hex)};"></div></div>

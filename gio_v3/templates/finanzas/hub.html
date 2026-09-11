@@ -85,26 +85,26 @@
 /* ──────────────────── MÓVIL · LEDGER ──────────────────── */
 .oik-mobile{display:none;}
 .m-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#0c0a14,#161020);
-  border:1px solid var(--b2);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 18px 50px -24px rgba(0,0,0,.7);}
+  border:1px solid rgba(201,168,76,.25);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 18px 50px -24px rgba(0,0,0,.7);}
 .m-hero::after{content:'';position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse at 92% 0%,rgba(201,168,76,.10),transparent 55%);}
-.m-eyebrow{position:relative;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-l);margin-bottom:8px;}
+.m-eyebrow{position:relative;font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:#E8C96D;margin-bottom:8px;}
 .m-hero-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
-.m-value{font-family:var(--serif);font-size:38px;font-weight:600;line-height:.95;color:var(--text);white-space:nowrap;}
-.m-value span{font-size:13px;color:var(--dim);font-family:var(--sans);}
-.m-trend{margin-top:9px;font-size:12.5px;color:var(--emerald-l);display:flex;align-items:center;gap:6px;}
+.m-value{font-family:var(--serif);font-size:38px;font-weight:600;line-height:.95;color:#F2EDE0;white-space:nowrap;}
+.m-value span{font-size:13px;color:#8A7A60;font-family:var(--sans);}
+.m-trend{margin-top:9px;font-size:12.5px;color:#6ee7b7;display:flex;align-items:center;gap:6px;}
 .m-trend.neg{color:#f0a8a8;}
 .m-trend svg{width:13px;height:13px;}
-.m-lock{flex-shrink:0;width:36px;height:36px;border-radius:9px;border:1px solid var(--b2);background:rgba(201,168,76,.06);
-  color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.m-lock{flex-shrink:0;width:36px;height:36px;border-radius:9px;border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.06);
+  color:#8A7A60;display:flex;align-items:center;justify-content:center;cursor:pointer;}
 .m-lock svg{width:14px;height:14px;}
 .m-spark{position:relative;width:100%;height:62px;margin-top:16px;display:block;}
 .m-split{position:relative;margin-top:18px;}
 .m-bar{height:9px;border-radius:100px;overflow:hidden;display:flex;gap:2px;}
 .m-bar span{height:100%;border-radius:2px;}
 .m-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:13px;}
-.m-leg{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mid);}
-.m-leg b{color:var(--text);font-weight:500;font-family:var(--serif);font-size:13.5px;}
+.m-leg{display:flex;align-items:center;gap:7px;font-size:12px;color:#A89880;}
+.m-leg b{color:#F2EDE0;font-weight:500;font-family:var(--serif);font-size:13.5px;}
 .va-mods{display:flex;flex-direction:column;gap:9px;}
 .va-row{display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--card);
   border:1px solid var(--b);border-radius:13px;cursor:pointer;transition:border-color .18s,background .18s;}
@@ -182,7 +182,7 @@
       <div class="vb-nw-foot">
         <div><div class="vb-foot-l">Activos</div><div class="vb-foot-v pos">${{ "{:,.0f}".format(total_activos) }}</div></div>
         <div><div class="vb-foot-l">Pasivos</div><div class="vb-foot-v neg">−${{ "{:,.0f}".format(total_pasivos) }}</div></div>
-        <button class="vb-lock" onclick="logoutApp()" title="Cerrar sesión"><i data-lucide="lock"></i></button>
+        <button class="vb-lock" onclick="logoutApp()" title="Cerrar sesión" aria-label="Cerrar sesión"><i data-lucide="lock"></i></button>
       </div>
     </div>
 
@@ -265,7 +265,7 @@
         <div class="m-trend {% if pat_delta < 0 %}neg{% endif %}"><i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i><span>{% if pat_delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(pat_delta) }} · {{ pat_delta_pct }}%</span></div>
         {% endif %}
       </div>
-      <button class="m-lock" onclick="logoutApp()" title="Cerrar sesión"><i data-lucide="lock"></i></button>
+      <button class="m-lock" onclick="logoutApp()" title="Cerrar sesión" aria-label="Cerrar sesión"><i data-lucide="lock"></i></button>
     </div>
 
     {% if has_spark %}

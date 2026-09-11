@@ -275,7 +275,7 @@
         </div>
         <div class="inv-mov-fecha">{{ m.fecha }}</div>
       </div>
-      <button class="inv-mov-del" onclick="deleteMov({{ m.id }})" title="Eliminar">✕</button>
+      <button class="inv-mov-del" onclick="deleteMov({{ m.id }})" title="Eliminar" aria-label="Eliminar">✕</button>
     </div>
     {% endfor %}
   </div>

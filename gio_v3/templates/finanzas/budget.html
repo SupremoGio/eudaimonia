@@ -430,7 +430,7 @@
         <div class="dd-header-title" id="dd-title"></div>
         <div class="dd-header-sub" id="dd-sub"></div>
       </div>
-      <button class="dd-close" onclick="closeDrillDown()">✕</button>
+      <button class="dd-close" onclick="closeDrillDown()" aria-label="Cerrar">✕</button>
     </div>
     <div class="dd-body" id="dd-body">
       <div class="dd-loading">Cargando movimientos…</div>
@@ -594,7 +594,7 @@ function _renderMovs(movs) {
 
   body.innerHTML = movs.map(m => `
     <div class="mov-row" id="mov-row-${m.id}">
-      <div class="mov-summary" onclick="_toggleEdit(${m.id})">
+      <div class="mov-summary eu-activate" role="button" tabindex="0" aria-label="Editar movimiento" onclick="_toggleEdit(${m.id})">
         <span class="mov-fecha">${m.fecha.slice(5)}</span>
         <span class="mov-desc" title="${esc(m.descripcion)}">${esc(m.descripcion)}</span>
         <span class="mov-cat-badge" onclick="event.stopPropagation();_quickCat(${m.id},'${esc(m.categoria)}')">${esc(m.categoria)}</span>

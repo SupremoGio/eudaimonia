@@ -92,7 +92,7 @@
      data-ctx="{{ ctx_val }}"
      data-eng="{{ eng_val }}"
      data-mins="{{ mins_val }}">
-  <div class="t-dot" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
+  <div class="t-dot eu-activate" role="button" tabindex="0" aria-label="Marcar como completada" onclick="cTask({{t.id}},this)"><i data-lucide="check"></i></div>
   <div class="t-main">
     <div class="t-title">{{ t.title }}</div>
     <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
@@ -111,8 +111,8 @@
     <span class="pts-t">+{{t.points}}</span>
   </div>
   <div style="display:flex;gap:3px;">
-    <button class="ai" onclick="mv({{t.id}},'inbox',this)" title="→ Inbox"><i data-lucide="inbox"></i></button>
-    <button class="ai" onclick="mv({{t.id}},'someday',this)" title="Someday"><i data-lucide="clock"></i></button>
+    <button class="ai" onclick="mv({{t.id}},'inbox',this)" title="→ Inbox" aria-label="Mover a Inbox"><i data-lucide="inbox"></i></button>
+    <button class="ai" onclick="mv({{t.id}},'someday',this)" title="Someday" aria-label="Mover a Someday"><i data-lucide="clock"></i></button>
     <button class="ai del" title="Eliminar" aria-label="Eliminar" onclick="dt({{t.id}},this)"><i data-lucide="trash-2"></i></button>
   </div>
 </div>

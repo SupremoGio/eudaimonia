@@ -225,7 +225,7 @@
           <td style="font-size:var(--fs-sm)">{{ t.idioma or '—' }}{% if t.destreza %} · {{ t.destreza }}{% endif %}</td>
           <td class="score-badge">{{ t.score }}</td>
           <td>{{ t.test_date }}</td>
-          <td><button class="btn-r" onclick="delTest({{ t.id }},this)">✕</button></td>
+          <td><button class="btn-r" onclick="delTest({{ t.id }},this)" aria-label="Eliminar">✕</button></td>
         </tr>
         {% else %}
         <tr><td colspan="5" style="text-align:center;padding:18px;color:var(--dim);font-size:var(--fs-sm);">Sin resultados</td></tr>
@@ -335,7 +335,7 @@
             <span class="je-date">{{ e.entry_date }}{% if e.fase %} · Fase {{ e.fase }}{% endif %}{% if e.destreza %} · {{ e.destreza }}{% endif %}</span>
             <div style="display:flex;align-items:center;gap:7px;">
               <span class="je-lang">{{ e.language }}</span>
-              <button class="btn-r" onclick="delJournal({{e.id}},this)" style="padding:2px 7px;font-size:var(--fs-xs);">✕</button>
+              <button class="btn-r" onclick="delJournal({{e.id}},this)" style="padding:2px 7px;font-size:var(--fs-xs);" aria-label="Eliminar">✕</button>
             </div>
           </div>
           <div class="je-text">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</div>
@@ -505,7 +505,7 @@ async function cargarPlan(){
   const ring=document.getElementById('plan-ring-fg');
   if(ring){ const circ=263.9; ring.style.strokeDashoffset = circ - (Math.min(100,d.progreso_pct)/100)*circ; }
   document.getElementById('plan-cps').innerHTML=d.checkpoints.map((cp,i)=>`
-    <div class="plan-cp cardInIdiomas ${cp.completado?'done':cp.vencido?'vencido':''}" style="--i:${i}" onclick="toggleCheckpoint(${cp.id},${cp.completado?0:1})">
+    <div class="plan-cp cardInIdiomas eu-activate ${cp.completado?'done':cp.vencido?'vencido':''}" role="button" tabindex="0" aria-pressed="${!!cp.completado}" aria-label="${cp.nombre}" style="--i:${i}" onclick="toggleCheckpoint(${cp.id},${cp.completado?0:1})">
       <div class="plan-cp-fase">${cp.completado?'✓ Completada':'Fase '+cp.fase}</div>
       <div class="plan-cp-nombre">${cp.nombre}</div>
       <div class="plan-cp-semana">Hasta semana ${cp.semana_fin} · ${cp.fecha_objetivo}</div>
