@@ -37,17 +37,26 @@
     background: var(--bg) !important;
   }
 
-  /* ── Mobile: grids del React SPA que no tienen breakpoints ── */
-  @media (max-width: 600px) {
-    /* Gráfico barras + donut: apila verticalmente en lugar de 1fr 240px */
-    #estados-root div[style*="1fr 240px"] {
+  /* ── Mobile: grids del React SPA que no tienen breakpoints ──────────────
+     Los selectores anteriores apuntaban a los NOMBRES DE VARIABLE JS
+     (minWidth, "1fr 240px") en vez del atributo style ya serializado por
+     el navegador — que siempre es kebab-case con espacio tras los dos
+     puntos ("min-width: 130px") y nunca contiene "1fr 240px" (el valor
+     real es "1fr 1fr"). Por eso ningún selector coincidía con nada y la
+     tarjeta "Gastos por categoría" + "Tendencia mensual" seguía en 2
+     columnas en el celular, desbordando el contenido de la segunda. ── */
+  @media (max-width: 767px) {
+    /* Pares de tarjetas/campos en grid 1fr 1fr (Gastos por categoría +
+       Tendencia mensual; los inputs del modal de nueva transacción):
+       apilar en 1 columna. */
+    #estados-root [style*="1fr 1fr"] {
       grid-template-columns: 1fr !important;
     }
-    /* minWidth fijos que pueden romper el layout en pantallas angostas */
-    #estados-root div[style*="minWidth: 180"],
-    #estados-root div[style*="minWidth:180"],
-    #estados-root div[style*="minWidth: 130"],
-    #estados-root div[style*="minWidth:130"] {
+    /* Selects con min-width fijo (banco, etc.) que no caben en pantallas
+       angostas — la restricción "div" del selector original tampoco
+       aplicaba porque son <select>, no <div>. */
+    #estados-root [style*="min-width: 180px"],
+    #estados-root [style*="min-width: 130px"] {
       min-width: 0 !important;
     }
     /* Evita que cualquier hijo del SPA sobresalga horizontalmente */
@@ -60,11 +69,11 @@
        angostas. Forzar min-width:0 en toda la cadena flex hace que
        min-width:auto (que respeta el contenido) deje de propagar el
        ancho hacia arriba. */
-    #estados-root div[style*="overflow-x: auto"] {
+    #estados-root [style*="overflow-x: auto"] {
       min-width: 0 !important;
       max-width: 100% !important;
     }
-    #estados-root div[style*="flex-wrap: wrap"] {
+    #estados-root [style*="flex-wrap: wrap"] {
       min-width: 0 !important;
     }
   }
