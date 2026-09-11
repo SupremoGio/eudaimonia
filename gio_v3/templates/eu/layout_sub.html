@@ -53,14 +53,18 @@
     .tile { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:20px; }
     .tile-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.2em; text-transform:uppercase; margin-bottom:14px; font-family:var(--sans); }
 
-    .btn-a { background:linear-gradient(135deg,#7A5520,var(--gold)); border:none; color:#09070F; padding:8px 18px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:opacity .18s; font-weight:500; }
+    .btn-a { background:linear-gradient(135deg,#7A5520,var(--gold)); border:none; color:#09070F; padding:8px 18px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:opacity .18s, transform .12s; font-weight:500; }
     .btn-a:hover { opacity:.85; }
+    .btn-a:active { transform:scale(.97); }
     .btn-g { background:transparent; border:1px solid var(--b2); color:var(--mid); padding:8px 16px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; white-space:nowrap; }
     .btn-g:hover { border-color:var(--gold); color:var(--gold); }
+    .btn-g:active { transform:scale(.97); }
     .btn-r { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; }
     .btn-r:hover { border-color:var(--coral); color:var(--coral); }
+    .btn-r:active { transform:scale(.95); }
     .btn-gr { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; }
     .btn-gr:hover { border-color:var(--emerald); color:var(--emerald); }
+    .btn-gr:active { transform:scale(.95); }
 
     .fi { background:var(--card2); border:1px solid var(--b); border-radius:8px; padding:8px 12px; color:var(--text); font-family:var(--sans); font-size:.8rem; outline:none; width:100%; transition:border-color .18s; }
     .fi:focus { border-color:var(--gold); }
@@ -93,6 +97,7 @@
     .chips2 { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
     .ch2 { background:var(--card2); border:1px solid var(--b); border-radius:100px; padding:4px 10px; font-size:var(--fs-sm); color:var(--mid); cursor:pointer; transition:all .14s; text-decoration:none; font-family:var(--sans); }
     .ch2:hover, .ch2.on { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
+    .ch2:active { transform:scale(.95); }
 
     .empty-s { text-align:center; padding:36px 18px; color:var(--dim); }
     .empty-s svg { width:26px; height:26px; display:block; margin:0 auto 9px; opacity:.22; }

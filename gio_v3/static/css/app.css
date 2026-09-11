@@ -87,10 +87,14 @@ html.light {
   border-radius: 8px;
 }
 
-/* ── Foco de teclado para tarjetas/widgets clicables (convención
-   .eu-activate + role="button", ver eu/layout_sub.html para el handler
-   de Enter/Espacio). Antes solo PAIDEIA definía su propio outline. ── */
-.eu-activate:focus-visible {
+/* ── Foco de teclado — línea base para TODO elemento interactivo.
+   Antes solo PAIDEIA (y luego .eu-activate) definían su propio outline;
+   el resto de la app dependía del outline azul por defecto del navegador,
+   inconsistente con el tema. .fi ya tiene su propio indicador de foco
+   (cambio de border-color) — el outline aquí lo refuerza, no lo pisa. ── */
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible,
+[tabindex]:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }

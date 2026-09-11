@@ -394,10 +394,10 @@
   {% if bienes %}
   {# Tabs por categoría #}
   <div class="chips2" style="margin-bottom:14px;">
-    <a class="ch2 on" onclick="filtrarCat('todos',this)">Todos ({{ bienes|length }})</a>
+    <a class="ch2 on eu-activate" role="button" tabindex="0" aria-pressed="true" onclick="filtrarCat('todos',this)">Todos ({{ bienes|length }})</a>
     {% for cat, items in bienes_por_cat.items() %}
     {% set bm = bien_meta[cat] %}
-    <a class="ch2" onclick="filtrarCat('{{ cat }}',this)">{{ bm.label }} ({{ items|length }})</a>
+    <a class="ch2 eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="filtrarCat('{{ cat }}',this)">{{ bm.label }} ({{ items|length }})</a>
     {% endfor %}
   </div>
   <div class="sf-bienes-grid" id="bienes-grid">
@@ -919,8 +919,9 @@ async function delBien(id, btn) {
 
 // ── Filtro bienes ────────────────────────────────────────────────────────────
 function filtrarCat(cat, el) {
-  document.querySelectorAll('.chips2 .ch2').forEach(c => c.classList.remove('on'));
+  document.querySelectorAll('.chips2 .ch2').forEach(c => {c.classList.remove('on'); c.setAttribute('aria-pressed','false');});
   el.classList.add('on');
+  el.setAttribute('aria-pressed','true');
   document.querySelectorAll('#bienes-grid .sf-bien').forEach(b => {
     b.style.display = (cat === 'todos' || b.dataset.cat === cat) ? '' : 'none';
   });

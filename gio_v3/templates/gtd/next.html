@@ -4,9 +4,13 @@
 <style>
 .ctx-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
 .ctx-chip{padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:var(--fs-sm);cursor:pointer;transition:.15s;}
+.ctx-chip:hover{border-color:var(--b2);color:var(--text);}
+.ctx-chip:active{transform:scale(.94);}
 .ctx-chip.on{background:var(--gold);color:#111;border-color:var(--gold);font-weight:600;}
 .eng-chips{display:flex;gap:6px;margin-bottom:14px;}
 .eng-chip{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--dim);font-size:var(--fs-sm);cursor:pointer;transition:.15s;}
+.eng-chip:hover{border-color:var(--b2);color:var(--text);}
+.eng-chip:active{transform:scale(.94);}
 .eng-chip.on{border-color:var(--gold);color:var(--gold);font-weight:600;}
 .filter-bar{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
 .filter-label{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
@@ -27,21 +31,21 @@
 <div class="filter-bar">
   <div class="filter-label">Contexto</div>
   <div class="ctx-chips">
-    <span class="ctx-chip on" data-ctx="all" onclick="setCtx(this,'all')">Todos</span>
-    <span class="ctx-chip" data-ctx="computadora" onclick="setCtx(this,'computadora')"><i data-lucide="laptop" style="width:11px;height:11px;vertical-align:middle;"></i> Computadora</span>
-    <span class="ctx-chip" data-ctx="llamada" onclick="setCtx(this,'llamada')"><i data-lucide="phone" style="width:11px;height:11px;vertical-align:middle;"></i> Llamada</span>
-    <span class="ctx-chip" data-ctx="casa" onclick="setCtx(this,'casa')"><i data-lucide="house" style="width:11px;height:11px;vertical-align:middle;"></i> Casa</span>
-    <span class="ctx-chip" data-ctx="comision" onclick="setCtx(this,'comision')"><i data-lucide="footprints" style="width:11px;height:11px;vertical-align:middle;"></i> Comisión</span>
-    <span class="ctx-chip" data-ctx="email" onclick="setCtx(this,'email')">✉️ Email</span>
-    <span class="ctx-chip" data-ctx="online" onclick="setCtx(this,'online')"><i data-lucide="globe" style="width:11px;height:11px;vertical-align:middle;"></i> Online</span>
+    <span class="ctx-chip on eu-activate" role="button" tabindex="0" aria-pressed="true" data-ctx="all" onclick="setCtx(this,'all')">Todos</span>
+    <span class="ctx-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-ctx="computadora" onclick="setCtx(this,'computadora')"><i data-lucide="laptop" style="width:11px;height:11px;vertical-align:middle;"></i> Computadora</span>
+    <span class="ctx-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-ctx="llamada" onclick="setCtx(this,'llamada')"><i data-lucide="phone" style="width:11px;height:11px;vertical-align:middle;"></i> Llamada</span>
+    <span class="ctx-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-ctx="casa" onclick="setCtx(this,'casa')"><i data-lucide="house" style="width:11px;height:11px;vertical-align:middle;"></i> Casa</span>
+    <span class="ctx-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-ctx="comision" onclick="setCtx(this,'comision')"><i data-lucide="footprints" style="width:11px;height:11px;vertical-align:middle;"></i> Comisión</span>
+    <span class="ctx-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-ctx="email" onclick="setCtx(this,'email')">✉️ Email</span>
+    <span class="ctx-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-ctx="online" onclick="setCtx(this,'online')"><i data-lucide="globe" style="width:11px;height:11px;vertical-align:middle;"></i> Online</span>
   </div>
   <div class="filter-label" style="margin-top:8px;">Energía</div>
   <div class="eng-chips">
-    <span class="eng-chip on" data-eng="all" onclick="setEng(this,'all')">Todas</span>
-    <span class="eng-chip" data-eng="high" onclick="setEng(this,'high')"><i data-lucide="flame" style="width:11px;height:11px;vertical-align:middle;"></i> Alta</span>
-    <span class="eng-chip" data-eng="medium" onclick="setEng(this,'medium')">⚡ Media</span>
-    <span class="eng-chip" data-eng="low" onclick="setEng(this,'low')"><i data-lucide="feather" style="width:11px;height:11px;vertical-align:middle;"></i> Baja</span>
-    <span class="eng-chip" data-eng="2min" onclick="setEng(this,'2min')">⏱ 2-min rule</span>
+    <span class="eng-chip on eu-activate" role="button" tabindex="0" aria-pressed="true" data-eng="all" onclick="setEng(this,'all')">Todas</span>
+    <span class="eng-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-eng="high" onclick="setEng(this,'high')"><i data-lucide="flame" style="width:11px;height:11px;vertical-align:middle;"></i> Alta</span>
+    <span class="eng-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-eng="medium" onclick="setEng(this,'medium')">⚡ Media</span>
+    <span class="eng-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-eng="low" onclick="setEng(this,'low')"><i data-lucide="feather" style="width:11px;height:11px;vertical-align:middle;"></i> Baja</span>
+    <span class="eng-chip eu-activate" role="button" tabindex="0" aria-pressed="false" data-eng="2min" onclick="setEng(this,'2min')">⏱ 2-min rule</span>
   </div>
 </div>
 
@@ -152,14 +156,16 @@ function applyFilters(){
 }
 
 function setCtx(btn, val){
-  document.querySelectorAll('.ctx-chip').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.ctx-chip').forEach(b=>{b.classList.remove('on'); b.setAttribute('aria-pressed','false');});
   btn.classList.add('on');
+  btn.setAttribute('aria-pressed','true');
   activeCtx = val;
   applyFilters();
 }
 function setEng(btn, val){
-  document.querySelectorAll('.eng-chip').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.eng-chip').forEach(b=>{b.classList.remove('on'); b.setAttribute('aria-pressed','false');});
   btn.classList.add('on');
+  btn.setAttribute('aria-pressed','true');
   activeEng = val;
   applyFilters();
 }

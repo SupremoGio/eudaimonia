@@ -21,6 +21,7 @@
 .cat-pill{padding:4px 11px;border-radius:100px;font-size:var(--fs-sm);letter-spacing:.06em;
   background:var(--card);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;white-space:nowrap;}
 .cat-pill:hover,.cat-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+.cat-pill:active{transform:scale(.94);}
 
 /* ── Store-style department navigation — "shop by department" instead of
    a wall of 19 flat category chips wrapping across two lines. ──────── */
@@ -232,6 +233,8 @@
 .ai-occ{padding:5px 13px;border-radius:100px;font-size:var(--fs-sm);letter-spacing:.06em;
   background:var(--card);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;}
 .ai-occ.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+.ai-occ:hover{border-color:var(--b2);}
+.ai-occ:active{transform:scale(.94);}
 .ai-result-box{background:var(--card);border:1px solid var(--b);border-radius:12px;padding:16px;margin-top:14px;}
 .ai-result-name{font-family:var(--serif);font-size:1.2rem;color:var(--text);margin-bottom:4px;}
 .ai-result-harmony{font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
@@ -327,6 +330,8 @@
 .gm-occ-pill{padding:4px 10px;border-radius:100px;font-size:var(--fs-sm);
   background:var(--card2);border:1px solid var(--b);color:var(--mid);cursor:pointer;transition:all .14s;}
 .gm-occ-pill.on{background:var(--gold-d);border-color:var(--gold);color:var(--gold);}
+.gm-occ-pill:hover{border-color:var(--b2);}
+.gm-occ-pill:active{transform:scale(.94);}
 /* Paleta de colores comunes de ropa — evita tener que adivinar/buscar el hex
    de cada prenda a mano; el picker nativo y el gotero quedan como fallback
    para colores exactos que no están en la paleta. */
@@ -488,13 +493,13 @@
   <!-- Occasion filter + add button -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
     <div class="ot-filter-bar" id="ot-filter-bar" style="margin-bottom:0;flex:1;">
-      <span class="cat-pill on" onclick="filterOutfits(this,'')">Todos</span>
-      <span class="cat-pill" onclick="filterOutfits(this,'Formal')">Formal</span>
-      <span class="cat-pill" onclick="filterOutfits(this,'Business')">Business</span>
-      <span class="cat-pill" onclick="filterOutfits(this,'Casual')">Casual</span>
-      <span class="cat-pill" onclick="filterOutfits(this,'Social')">Social</span>
-      <span class="cat-pill" onclick="filterOutfits(this,'Deportivo')">Deportivo</span>
-      <span class="cat-pill" onclick="filterOutfits(this,'Cita')">Cita</span>
+      <span class="cat-pill on eu-activate" role="button" tabindex="0" aria-pressed="true" onclick="filterOutfits(this,'')">Todos</span>
+      <span class="cat-pill eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="filterOutfits(this,'Formal')">Formal</span>
+      <span class="cat-pill eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="filterOutfits(this,'Business')">Business</span>
+      <span class="cat-pill eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="filterOutfits(this,'Casual')">Casual</span>
+      <span class="cat-pill eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="filterOutfits(this,'Social')">Social</span>
+      <span class="cat-pill eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="filterOutfits(this,'Deportivo')">Deportivo</span>
+      <span class="cat-pill eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="filterOutfits(this,'Cita')">Cita</span>
     </div>
     <button class="btn-a" onclick="openOutfitModal()" style="font-size:var(--fs-sm);white-space:nowrap;">+ Nuevo outfit</button>
   </div>
@@ -510,13 +515,13 @@
     </div>
     <div class="ai-gen-panel" id="ai-gen-panel">
       <div class="ai-occ-bar">
-        <span class="ai-occ on" onclick="selectAIOcc(this,'Casual')">Casual</span>
-        <span class="ai-occ" onclick="selectAIOcc(this,'Business')">Business</span>
-        <span class="ai-occ" onclick="selectAIOcc(this,'Formal')">Formal</span>
-        <span class="ai-occ" onclick="selectAIOcc(this,'Social')">Social</span>
-        <span class="ai-occ" onclick="selectAIOcc(this,'Cita')">Cita</span>
-        <span class="ai-occ" onclick="selectAIOcc(this,'Reunión importante')">Reunión</span>
-        <span class="ai-occ" onclick="selectAIOcc(this,'Fin de semana')">Fin de semana</span>
+        <span class="ai-occ on eu-activate" role="button" tabindex="0" aria-pressed="true" onclick="selectAIOcc(this,'Casual')">Casual</span>
+        <span class="ai-occ eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="selectAIOcc(this,'Business')">Business</span>
+        <span class="ai-occ eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="selectAIOcc(this,'Formal')">Formal</span>
+        <span class="ai-occ eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="selectAIOcc(this,'Social')">Social</span>
+        <span class="ai-occ eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="selectAIOcc(this,'Cita')">Cita</span>
+        <span class="ai-occ eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="selectAIOcc(this,'Reunión importante')">Reunión</span>
+        <span class="ai-occ eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="selectAIOcc(this,'Fin de semana')">Fin de semana</span>
       </div>
       <button class="btn-a" id="ai-gen-btn" onclick="generateAIOutfit()" style="background:var(--gold-d);border-color:rgba(201,168,76,.4);color:var(--gold);">✨ Generar look</button>
       <div id="ai-outfit-result" style="display:none;margin-top:14px;"></div>
@@ -582,7 +587,7 @@
       <div class="gm-sec">Ocasión</div>
       <div class="gm-occ" id="im-occ">
         {% for oc in ocasiones %}
-        <span class="gm-occ-pill" data-oc="{{ oc }}" onclick="toggleOcc(this)">{{ oc }}</span>
+        <span class="gm-occ-pill eu-activate" role="button" tabindex="0" aria-pressed="false" data-oc="{{ oc }}" onclick="toggleOcc(this)">{{ oc }}</span>
         {% endfor %}
       </div>
 
@@ -1270,6 +1275,7 @@ function openItemModal(editId){
 function closeItemModal(){ document.getElementById('item-modal').classList.remove('open'); }
 function toggleOcc(btn){
   btn.classList.toggle('on');
+  btn.setAttribute('aria-pressed', btn.classList.contains('on') ? 'true' : 'false');
   const oc = btn.dataset.oc;
   if(btn.classList.contains('on')) _selectedOccs.push(oc);
   else _selectedOccs = _selectedOccs.filter(x=>x!==oc);
@@ -1615,8 +1621,9 @@ let _otFilter = '';
 
 function filterOutfits(el, occ){
   _otFilter = occ;
-  document.querySelectorAll('#ot-filter-bar .cat-pill').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('#ot-filter-bar .cat-pill').forEach(p=>{p.classList.remove('on'); p.setAttribute('aria-pressed','false');});
   el.classList.add('on');
+  el.setAttribute('aria-pressed','true');
   renderOutfitsGrid();
 }
 
@@ -2037,8 +2044,9 @@ function renderIntelligence(){
 let _aiOccasion = 'Casual';
 let _lastAIOutfit = null;
 function selectAIOcc(el, occ){
-  document.querySelectorAll('.ai-occ').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.ai-occ').forEach(b=>{b.classList.remove('on'); b.setAttribute('aria-pressed','false');});
   el.classList.add('on');
+  el.setAttribute('aria-pressed','true');
   _aiOccasion = occ;
 }
 
