@@ -11,14 +11,29 @@
 
 {% block content %}
 <style>
-.pd-goal { background:linear-gradient(135deg, var(--gold), var(--gold-l)); border-radius:20px; padding:22px 26px;
-           margin-bottom:16px; position:relative; overflow:hidden; }
-.pd-goal-label { font-size:11px; font-weight:600; color:rgba(9,7,15,0.6); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-.pd-goal-num { font-size:32px; font-weight:700; color:#09070F; margin-bottom:12px; }
-.pd-goal-track { height:8px; border-radius:4px; background:rgba(9,7,15,0.15); overflow:hidden; }
-.pd-goal-fill { height:100%; border-radius:4px; background:#09070F; transition:width 0.6s ease; }
+.pd-goal {
+  background:
+    radial-gradient(120% 160% at 12% -20%, rgba(255,255,255,.38), transparent 55%),
+    linear-gradient(135deg, var(--gold-l), var(--gold) 60%, #8f7025 100%);
+  border-radius:24px; padding:24px 28px; margin-bottom:16px; position:relative; overflow:hidden;
+  box-shadow:0 22px 48px -22px rgba(201,168,76,.55);
+}
+/* ── Motivo de "canto de páginas" — evoca un libro abierto, sutil ── */
+.pd-goal::after {
+  content:''; position:absolute; right:-18px; bottom:-40px; width:150px; height:150px;
+  background:repeating-linear-gradient(115deg, rgba(9,7,15,.07) 0 2px, transparent 2px 10px);
+  opacity:.55; pointer-events:none;
+}
+.pd-goal-label { font-size:11px; font-weight:600; color:rgba(9,7,15,0.62); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; position:relative; }
+.pd-goal-num { font-family:var(--serif); font-style:italic; font-size:42px; font-weight:600; letter-spacing:-.01em;
+               color:#09070F; margin-bottom:14px; position:relative; line-height:1; }
+.pd-goal-track { height:8px; border-radius:4px; background:rgba(9,7,15,0.15); overflow:hidden; position:relative; }
+.pd-goal-fill { height:100%; border-radius:4px; background:#09070F; transition:width 0.6s cubic-bezier(.16,1,.3,1); }
 .pd-goal-edit { position:absolute; top:16px; right:18px; background:rgba(9,7,15,0.12); border:none;
-                border-radius:8px; padding:5px 10px; font-size:11px; color:#09070F; cursor:pointer; font-weight:600; }
+                border-radius:8px; padding:5px 10px; font-size:11px; color:#09070F; cursor:pointer; font-weight:600;
+                transition:background .15s, transform .12s; }
+.pd-goal-edit:hover { background:rgba(9,7,15,0.2); }
+.pd-goal-edit:active { transform:scale(.96); }
 
 /* ── Hero row — meta anual (titular, ya existía) ahora pareada con 4
    stats secundarios en grid fraccional 1.6fr/1fr, en vez de vivir como
@@ -26,7 +41,8 @@
 .pd-hero-row { display:grid; grid-template-columns:1.6fr 1fr; gap:14px; margin-bottom:16px; align-items:stretch; }
 .pd-goal { margin-bottom:0; }
 .pd-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-.pd-stat { background:var(--card); border:1px solid var(--b); border-radius:12px; padding:14px 16px; }
+.pd-stat { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:14px 16px;
+           box-shadow:0 10px 24px -18px rgba(0,0,0,.5); }
 .pd-stat-val { font-family:var(--mono); font-size:var(--fs-xl); font-weight:700; color:var(--gold); line-height:1; }
 .pd-stat-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:4px; }
 @media(max-width:860px) { .pd-hero-row { grid-template-columns:1fr; } }
@@ -42,51 +58,75 @@
 /* ── Entrada escalonada de la biblioteca ── */
 .pd-card { opacity:0; animation:cardInPaideia .4s ease forwards; animation-delay:calc(var(--i,0)*35ms); }
 @keyframes cardInPaideia { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
-@media (prefers-reduced-motion: reduce) { .pd-card { animation:none; opacity:1; } }
+
+/* ── Revelación escalonada de la fila superior al cargar la página ── */
+.pd-hero-row, .pd-tip, .pd-now { animation:pdRise .5s cubic-bezier(.16,1,.3,1) backwards; }
+.pd-tip { animation-delay:.07s; }
+.pd-now { animation-delay:.14s; }
+@keyframes pdRise { from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-card, .pd-hero-row, .pd-tip, .pd-now { animation:none; opacity:1; }
+}
 
 /* ── Star rating — Lucide en vez de ★/☆ Unicode ── */
 .pd-stars { display:flex; gap:2px; align-items:center; }
 .star-ico { width:12px; height:12px; color:var(--b2); }
 .star-ico.filled { color:var(--gold); fill:currentColor; }
 
-/* ── Tip del día — icono Lucide por categoría en vez de emoji ── */
-.pd-tip-icon i, .pd-tip-icon svg { width:20px; height:20px; color:var(--gold); }
+/* ── Tip del día — cita editorial (serif itálica + canto dorado) en vez
+   de caja de notificación genérica con ícono ── */
+.pd-tip-icon i, .pd-tip-icon svg { width:18px; height:18px; color:var(--gold); }
 
-.pd-tip { display:flex; align-items:flex-start; gap:12px; background:var(--card); border:1px solid var(--b);
-          border-radius:14px; padding:16px 18px; margin-bottom:16px; }
-.pd-tip-icon { font-size:22px; flex-shrink:0; }
-.pd-tip-text { flex:1; font-size:var(--fs-sm); color:var(--text); line-height:1.5; }
-.pd-tip-refresh { background:none; border:none; cursor:pointer; color:var(--dim); font-size:15px; flex-shrink:0; }
-.pd-tip-refresh:hover { color:var(--gold); }
+.pd-tip { display:flex; align-items:flex-start; gap:14px; background:linear-gradient(180deg, var(--card), var(--card2));
+          border:1px solid var(--b); border-left:3px solid var(--gold); border-radius:4px 14px 14px 4px;
+          padding:16px 20px; margin-bottom:16px; }
+.pd-tip-icon { flex-shrink:0; margin-top:2px; opacity:.85; }
+.pd-tip-text { flex:1; font-family:var(--serif); font-style:italic; font-size:17px; color:var(--text); line-height:1.55; }
+.pd-tip-refresh { background:none; border:none; cursor:pointer; color:var(--dim); font-size:15px; flex-shrink:0;
+                   border-radius:6px; padding:4px; transition:color .15s, transform .3s; }
+.pd-tip-refresh:hover { color:var(--gold); transform:rotate(50deg); }
+.pd-tip-refresh:active { transform:rotate(90deg) scale(.92); }
 
-.pd-now { background:var(--card); border:1px solid var(--gold-border, var(--b)); border-radius:14px;
-          padding:16px 18px; margin-bottom:16px; }
+.pd-now { background:linear-gradient(160deg, var(--card), var(--card2)); border:1px solid var(--gold-border, var(--b));
+          border-radius:16px; padding:18px 20px; margin-bottom:16px; transition:border-color .15s, transform .15s, box-shadow .15s; }
+.pd-now:hover { border-color:var(--gold); box-shadow:0 16px 36px -18px var(--gold-glow, rgba(201,168,76,.4)); }
+.pd-now:active { transform:scale(.995); }
 .pd-now-label { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; font-weight:700; color:var(--dim); margin-bottom:10px; }
+.pd-now-title { font-family:var(--serif); font-weight:600; font-size:19px; color:var(--text); line-height:1.25; }
+.pd-now-cover { width:64px; height:94px; object-fit:cover; border-radius:7px; flex-shrink:0; background:var(--card2);
+                 box-shadow:0 10px 24px -8px rgba(0,0,0,.5); }
+.pd-now-cover-empty { width:64px; height:94px; border-radius:7px; flex-shrink:0; display:flex; align-items:center;
+                       justify-content:center; color:var(--gold); font-family:var(--serif); font-style:italic;
+                       font-size:26px; font-weight:600; box-shadow:0 10px 24px -8px rgba(0,0,0,.5);
+                       background:linear-gradient(150deg, var(--gold-d, rgba(201,168,76,.14)), var(--card2)); }
 .pd-now-track { height:6px; border-radius:3px; background:var(--surf, #EDE7D8); overflow:hidden; margin-top:8px; }
-.pd-now-fill { height:100%; border-radius:3px; background:var(--gold); transition:width 0.4s ease; }
+.pd-now-fill { height:100%; border-radius:3px; background:linear-gradient(90deg, var(--gold), var(--gold-l)); transition:width 0.4s cubic-bezier(.16,1,.3,1); }
 
 .pd-tabs { display:flex; gap:2px; background:var(--card); border:1px solid var(--b); border-radius:10px;
            padding:3px; margin-bottom:16px; width:fit-content; max-width:100%; overflow-x:auto; }
 .pd-tab { font: inherit; font-size:var(--fs-sm); padding:8px 14px; border-radius:8px; cursor:pointer; color:var(--dim);
           background:none; border:1px solid transparent; transition:all .15s; white-space:nowrap; }
 .pd-tab.on { background:var(--card2); color:var(--text); border-color:var(--b); }
+.pd-tab:active { transform:scale(.96); }
 .pd-tab-count { opacity:.6; font-variant-numeric:tabular-nums; margin-left:2px; }
 
 .pd-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px; }
 .pd-card { background:var(--card); border:1px solid var(--b); border-radius:14px; cursor:pointer; overflow:hidden;
-           transition:border-color 0.15s, transform 0.15s; text-align:left; padding:0; font:inherit; color:inherit;
+           transition:border-color 0.15s, transform 0.15s, box-shadow 0.15s; text-align:left; padding:0; font:inherit; color:inherit;
            display:block; width:100%; }
-.pd-card:hover { border-color:var(--gold); transform:translateY(-2px); }
+.pd-card:hover { border-color:var(--gold); transform:translateY(-3px); box-shadow:0 18px 34px -16px var(--gold-glow, rgba(201,168,76,.4)); }
+.pd-card:active { transform:translateY(-1px) scale(.98); }
 .pd-card-cover { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--card2); }
-.pd-card-cover-empty { display:flex; align-items:center; justify-content:center; color:var(--dim);
-                        background:linear-gradient(135deg, var(--card2), var(--gold-d, rgba(201,168,76,.08))); }
-.pd-card-cover-empty i, .pd-card-cover-empty svg { width:30px; height:30px; opacity:.45; }
+.pd-card-cover-empty { display:flex; align-items:center; justify-content:center; color:var(--gold);
+                        font-family:var(--serif); font-style:italic; font-weight:600; font-size:42px;
+                        background:linear-gradient(150deg, var(--gold-d, rgba(201,168,76,.14)), var(--card2)); }
 .pd-card-body { padding:14px 16px; }
 .pd-card-badges { display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
 .pd-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:700; }
 .pd-badge-estado { background:var(--gold-d, rgba(201,168,76,0.1)); color:var(--gold); }
 .pd-badge-cat { background:var(--card2); color:var(--dim); }
-.pd-card-title { font-weight:700; font-size:15px; color:var(--text); margin-bottom:2px; }
+.pd-card-title { font-family:var(--serif); font-weight:600; font-size:17px; color:var(--text); margin-bottom:2px; line-height:1.25; }
 .pd-card-autor { font-size:12px; color:var(--dim); margin-bottom:10px; }
 
 .pd-card:focus-visible, .pd-tab:focus-visible, .pd-now:focus-visible,
@@ -101,6 +141,7 @@
                border:1px solid var(--gold-border, rgba(201,168,76,.25)); border-radius:20px; padding:7px 12px;
                cursor:pointer; transition:opacity .15s; flex-shrink:0; min-height:30px; }
 .pd-bump-btn:hover { opacity:.75; }
+.pd-bump-btn:active:not(:disabled) { transform:scale(.94); }
 .pd-bump-btn:disabled { opacity:.35; cursor:default; }
 .pd-now .pd-bump-row { margin-top:8px; }
 
@@ -181,16 +222,16 @@
 <!-- ── Leyendo ahora ─────────────────────────────────────────────────────── -->
 {% set actual = libros|selectattr('estado', 'equalto', 'leyendo')|first %}
 {% if actual %}
-<div class="pd-now eu-activate" role="button" tabindex="0" aria-label="Editar {{ actual.titulo }}" onclick="abrirEditar({{ actual.id }})" style="cursor:pointer;display:flex;gap:14px;align-items:flex-start;">
+<div class="pd-now eu-activate" role="button" tabindex="0" aria-label="Editar {{ actual.titulo }}" onclick="abrirEditar({{ actual.id }})" style="cursor:pointer;display:flex;gap:16px;align-items:flex-start;">
   {% if actual.portada %}
-  <img src="{{ actual.portada }}" alt="" loading="lazy" style="width:52px;height:76px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--card2);">
+  <img class="pd-now-cover" src="{{ actual.portada }}" alt="" loading="lazy">
   {% else %}
-  <div style="width:52px;height:76px;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--dim);background:linear-gradient(135deg, var(--card2), var(--gold-d, rgba(201,168,76,.08)));"><i data-lucide="book" style="width:22px;height:22px;opacity:.45;"></i></div>
+  <div class="pd-now-cover-empty">{{ actual.titulo[0]|upper }}</div>
   {% endif %}
   <div style="flex:1;min-width:0;">
     <div class="pd-now-label">Leyendo ahora</div>
-    <div style="font-weight:700;font-size:16px;color:var(--text);">{{ actual.titulo }}</div>
-    {% if actual.autor %}<div style="font-size:12px;color:var(--dim);margin-top:2px;">{{ actual.autor }}</div>{% endif %}
+    <div class="pd-now-title">{{ actual.titulo }}</div>
+    {% if actual.autor %}<div style="font-size:12px;color:var(--dim);margin-top:3px;">{{ actual.autor }}</div>{% endif %}
     {% if actual.paginas_totales %}
     {% set actual_pct = [100, (actual.paginas_actuales / actual.paginas_totales * 100)]|min %}
     <div class="pd-now-track">
@@ -234,7 +275,7 @@
     {% if l.portada %}
     <img class="pd-card-cover" src="{{ l.portada }}" alt="" loading="lazy">
     {% else %}
-    <div class="pd-card-cover pd-card-cover-empty"><i data-lucide="book"></i></div>
+    <div class="pd-card-cover pd-card-cover-empty">{{ l.titulo[0]|upper }}</div>
     {% endif %}
     <div class="pd-card-body">
       <div class="pd-card-badges">
