@@ -1379,6 +1379,29 @@ def init_db():
         except Exception as e:
             print(f"[DB] rutina_bloques v4 migration warning: {e}")
 
+        # ── ACTA SÁBADO — se agregan "Robot aspiradora sala" y "Robot
+        # aspiradora cuarto" al Bloque 1 (Mantenimiento & Recepción), y
+        # "Cambiar toallas" al Bloque 2 (Baño).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='sat_robot_aspiradora_y_toallas'"
+        ).fetchone():
+            db.executemany(
+                """INSERT INTO rutina_bloques
+                   (id, dia, bloque_id, nombre, tier, xp, ec, categoria, opcional, duracion_min, orden)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                [
+                    ("sat_robot_sala",   "sabado","sat_bloque1",    "Robot aspiradora sala",   "micro",0,0,"",0,5, 6),
+                    ("sat_robot_cuarto", "sabado","sat_bloque1",    "Robot aspiradora cuarto", "micro",0,0,"",0,5, 7),
+                    ("sat_bano_toallas", "sabado","sat_bano_bloque","Cambiar toallas",         "micro",0,0,"",0,3,12),
+                ]
+            )
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("sat_robot_aspiradora_y_toallas",
+                 "Agrega 'Robot aspiradora sala' y 'Robot aspiradora cuarto' al Bloque 1, y 'Cambiar toallas' al Bloque 2 (Baño) del sábado.")
+            )
+            db.commit()
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS app_settings (
             key   TEXT PRIMARY KEY,
