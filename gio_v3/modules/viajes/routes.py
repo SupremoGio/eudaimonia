@@ -160,6 +160,10 @@ def api_update_trip(vid):
 @viajes_bp.route('/api/trips/<int:vid>', methods=['DELETE'])
 def api_delete_trip(vid):
     with get_db() as db:
+        # `viajes` es la tabla compartida con el presupuesto de viaje
+        # (modules/finanzas/estados/routes.py) — desvincular sus movimientos
+        # tageados antes de borrar, igual que hace ese módulo.
+        db.execute("UPDATE est_movimientos SET viaje_id=NULL WHERE viaje_id=?", (vid,))
         db.execute("DELETE FROM viaje_maleta    WHERE viaje_id=?", (vid,))
         db.execute("DELETE FROM viaje_dia_outfits WHERE dia_id IN "
                    "(SELECT id FROM viaje_dias WHERE viaje_id=?)", (vid,))

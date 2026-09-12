@@ -829,7 +829,7 @@ def list_trips():
                        CASE WHEN {_GASTO_FILTER}
                             THEN COALESCE(m.mi_parte, m.monto) ELSE 0 END
                    ), 0) AS total_gastado
-            FROM est_viajes v
+            FROM viajes v
             LEFT JOIN est_movimientos m ON m.viaje_id = v.id
             GROUP BY v.id
             ORDER BY v.fecha_inicio DESC
@@ -847,7 +847,7 @@ def create_trip():
     now = datetime.now().isoformat()
     with get_db() as db:
         cur = db.execute(
-            """INSERT INTO est_viajes
+            """INSERT INTO viajes
                (nombre, destino, fecha_inicio, fecha_fin, presupuesto, estado, notas, created_at)
                VALUES (?,?,?,?,?,?,?,?)""",
             (
@@ -882,7 +882,7 @@ def update_trip(trip_id):
         return jsonify({'ok': True})
     params.append(trip_id)
     with get_db() as db:
-        db.execute(f"UPDATE est_viajes SET {', '.join(fields)} WHERE id=?", params)
+        db.execute(f"UPDATE viajes SET {', '.join(fields)} WHERE id=?", params)
         db.commit()
     return jsonify({'ok': True})
 
@@ -892,7 +892,14 @@ def delete_trip(trip_id):
     if not _ok(): return _locked()
     with get_db() as db:
         db.execute("UPDATE est_movimientos SET viaje_id=NULL WHERE viaje_id=?", (trip_id,))
-        db.execute("DELETE FROM est_viajes WHERE id=?", (trip_id,))
+        # `viajes` es la tabla compartida con el planner de maleta/outfits
+        # (modules/viajes/routes.py) — borrar el viaje aquí debe limpiar
+        # también su maleta y outfits asignados, igual que hace ese módulo.
+        db.execute("DELETE FROM viaje_maleta      WHERE viaje_id=?", (trip_id,))
+        db.execute("DELETE FROM viaje_dia_outfits WHERE dia_id IN "
+                   "(SELECT id FROM viaje_dias WHERE viaje_id=?)", (trip_id,))
+        db.execute("DELETE FROM viaje_dias        WHERE viaje_id=?", (trip_id,))
+        db.execute("DELETE FROM viajes            WHERE id=?", (trip_id,))
         db.commit()
     return jsonify({'ok': True})
 
@@ -901,7 +908,7 @@ def delete_trip(trip_id):
 def trip_summary(trip_id):
     if not _ok(): return _locked()
     with get_db() as db:
-        trip = db.execute("SELECT * FROM est_viajes WHERE id=?", (trip_id,)).fetchone()
+        trip = db.execute("SELECT * FROM viajes WHERE id=?", (trip_id,)).fetchone()
         if not trip:
             return jsonify({'error': 'not found'}), 404
         breakdown = db.execute(f"""
@@ -940,7 +947,7 @@ def trip_suggest(trip_id):
     if not _ok(): return _locked()
     with get_db() as db:
         trip = db.execute(
-            "SELECT fecha_inicio, fecha_fin FROM est_viajes WHERE id=?", (trip_id,)
+            "SELECT fecha_inicio, fecha_fin FROM viajes WHERE id=?", (trip_id,)
         ).fetchone()
         if not trip:
             return jsonify({'data': []})
@@ -962,7 +969,7 @@ def tag_transactions(trip_id):
     if not tx_ids:
         return jsonify({'ok': True, 'tagged': 0})
     with get_db() as db:
-        if not db.execute("SELECT id FROM est_viajes WHERE id=?", (trip_id,)).fetchone():
+        if not db.execute("SELECT id FROM viajes WHERE id=?", (trip_id,)).fetchone():
             return jsonify({'error': 'trip not found'}), 404
         ph = ','.join('?' * len(tx_ids))
         db.execute(

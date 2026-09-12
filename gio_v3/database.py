@@ -1452,6 +1452,24 @@ def init_db():
         );
         """)
 
+        # ── VIAJES — unificación: "Presupuesto de viaje" (Oikonomia) tenía su
+        # propia tabla est_viajes, separada de esta `viajes` (Hegemonikon,
+        # outfits/maleta) — dos módulos de viaje independientes, cada uno con
+        # su propio "crear viaje": un mismo viaje real había que darlo de
+        # alta dos veces y ninguna pantalla se enteraba de la otra. Se
+        # agrega la columna `presupuesto` que traía est_viajes para que
+        # modules/finanzas/estados/routes.py lea/escriba esta misma tabla en
+        # vez de la suya — un solo viaje, visible en ambas pantallas.
+        # est_viajes se deja de usar (se conserva vacía, sin lectura/escritura,
+        # por si algún entorno viejo aún la tiene creada — no se borra).
+        try:
+            v_cols = [r["name"] for r in db.execute("PRAGMA table_info(viajes)").fetchall()]
+            if "presupuesto" not in v_cols:
+                db.execute("ALTER TABLE viajes ADD COLUMN presupuesto REAL DEFAULT 0")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] viajes presupuesto migration warning: {e}")
+
         # ── ESTADOS DE CUENTA (SG Credit Card module) ────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS est_movimientos (
