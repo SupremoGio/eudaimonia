@@ -804,6 +804,11 @@ async function sessLogAct(key, el) {
     if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
     lucide.createIcons();
     _notifyDashboard();
+    // Actividad "solo una vez": el servidor ya la desactivó al marcarla —
+    // se quita de la tarjeta tras un momento para que se alcance a ver el check.
+    if (d.one_time && el) {
+      setTimeout(() => el.remove(), 700);
+    }
   } catch {
     if (el) { delete el.dataset.pending; el.classList.toggle('done', wasDone); }
     toast('No se pudo registrar', 'err');
@@ -861,6 +866,8 @@ async function delActivity(key) {
   } catch { toast('No se pudo quitar', 'err'); }
 }
 
+const FREQ_DAYS = [['mon','L'],['tue','M'],['wed','X'],['thu','J'],['fri','V'],['sat','S'],['sun','D']];
+
 function showAddForm(session, tileEl) {
   if (tileEl.nextElementSibling?.classList?.contains('add-form')) return;
   const div = document.createElement('div');
@@ -880,23 +887,45 @@ function showAddForm(session, tileEl) {
       <input type="number" min="1" max="10" value="2" data-f="pts" placeholder="XP">
       <input type="number" min="0" max="5" value="0" data-f="ec" placeholder="EC">
     </div>
+    <select data-f="freq">
+      <option value="daily">Todos los días</option>
+      <option value="days">Días específicos...</option>
+      <option value="once">Solo una vez</option>
+    </select>
+    <div class="row2" data-freq-days style="display:none;grid-template-columns:repeat(7,1fr);gap:4px;">
+      ${FREQ_DAYS.map(([code,lbl]) => `
+        <label style="display:flex;flex-direction:column;align-items:center;gap:2px;font-size:var(--fs-xs);color:var(--dim);cursor:pointer;">
+          <input type="checkbox" value="${code}" data-freq-day style="width:auto;">${lbl}
+        </label>`).join('')}
+    </div>
     <div class="actions">
       <button class="cancel" type="button">Cancelar</button>
       <button class="save" type="button">Guardar</button>
     </div>`;
   tileEl.after(div);
   div.querySelector('.cancel').onclick = () => div.remove();
+  div.querySelector('[data-f="freq"]').onchange = (e) => {
+    div.querySelector('[data-freq-days]').style.display = e.target.value === 'days' ? 'grid' : 'none';
+  };
   div.querySelector('.save').onclick = async () => {
     const label  = div.querySelector('[data-f="label"]').value.trim();
     const pillar = div.querySelector('[data-f="pillar"]').value;
     const type   = div.querySelector('[data-f="type"]').value;
     const pts    = parseInt(div.querySelector('[data-f="pts"]').value) || 1;
     const ec     = parseInt(div.querySelector('[data-f="ec"]').value) || 0;
+    const freq   = div.querySelector('[data-f="freq"]').value;
     if (!label) { div.querySelector('[data-f="label"]').focus(); return; }
+    let one_time = false, days_of_week = null;
+    if (freq === 'once') {
+      one_time = true;
+    } else if (freq === 'days') {
+      days_of_week = [...div.querySelectorAll('[data-freq-day]:checked')].map(c => c.value);
+      if (!days_of_week.length) { toast('Elige al menos un día', 'err'); return; }
+    }
     try {
       const r = await fetch('/actividades/api/activity/create', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({label, pillar, type, session, pts, ec})
+        body: JSON.stringify({label, pillar, type, session, pts, ec, one_time, days_of_week})
       });
       const d = await r.json();
       if (d.error) { toast(d.error, 'err'); return; }

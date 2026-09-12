@@ -170,13 +170,25 @@ def get_by_key(key):
     return _as_dict(row, get_pillar_focus_map())
 
 
-def create(label, pillar, type_="touch", session=None, pts=1, ec=0, cat="", tier="micro"):
+def create(label, pillar, type_="touch", session=None, pts=1, ec=0, cat="", tier="micro",
+           one_time=False, days_of_week=None):
     if pillar not in PILLARS:
         raise ValueError(f"pilar inválido: {pillar}")
     if type_ not in TYPES:
         raise ValueError(f"tipo inválido: {type_}")
     if type_ != "ocasional" and session not in SESSIONS:
         raise ValueError("sesión requerida para actividades touch/ancla")
+
+    if isinstance(days_of_week, (list, tuple)):
+        days_of_week = ",".join(days_of_week)
+    days_of_week = days_of_week or None
+    if days_of_week:
+        codes = days_of_week.split(",")
+        if any(c not in DAY_CODES for c in codes):
+            raise ValueError("days_of_week inválido")
+    one_time = bool(one_time)
+    if one_time:
+        days_of_week = None
 
     base_key = "custom_" + _slugify(label)
     key = base_key
@@ -193,9 +205,11 @@ def create(label, pillar, type_="touch", session=None, pts=1, ec=0, cat="", tier
 
         db.execute(
             """INSERT INTO activity_defs
-               (key, label, cat, pts, ec, tier, session, pillar, type, active, hidden, custom, sort_order)
-               VALUES (?,?,?,?,?,?,?,?,?,1,0,1,?)""",
-            (key, label.strip(), cat, pts, ec, tier, session, pillar, type_, max_sort + 1)
+               (key, label, cat, pts, ec, tier, session, pillar, type, active, hidden, custom, sort_order,
+                one_time, days_of_week)
+               VALUES (?,?,?,?,?,?,?,?,?,1,0,1,?,?,?)""",
+            (key, label.strip(), cat, pts, ec, tier, session, pillar, type_, max_sort + 1,
+             int(one_time), days_of_week)
         )
         db.commit()
     return get_by_key(key)

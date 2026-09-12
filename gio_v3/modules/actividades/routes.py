@@ -299,11 +299,14 @@ def log_activity():
 
     gam = engine.process_activity(key, pts, cat, log_id)
     _t2 = time.perf_counter()
+    one_time = bool(act.get('one_time'))
+    if one_time:
+        adefs.deactivate(key)
     stats = get_dashboard_stats()
     _t3 = time.perf_counter()
     print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
     return jsonify({'action': 'added', 'pts': pts, 'xp': gam['xp'], 'ec': gam['ec'],
-                    'log_id': log_id, 'stats': stats, 'gam': gam})
+                    'log_id': log_id, 'stats': stats, 'gam': gam, 'one_time': one_time})
 
 
 @actividades_bp.route('/api/reflexion', methods=['POST'])
@@ -370,8 +373,15 @@ def create_activity():
         return jsonify({'error': 'pts/ec inválidos'}), 400
     if not label or pillar not in adefs.PILLARS or type_ not in adefs.TYPES:
         return jsonify({'error': 'datos incompletos o inválidos'}), 400
+
+    one_time = bool(data.get('one_time'))
+    days_of_week = data.get('days_of_week')
+    if isinstance(days_of_week, list):
+        days_of_week = ",".join(days_of_week)
+
     try:
-        act = adefs.create(label=label, pillar=pillar, type_=type_, session=session, pts=pts, ec=ec)
+        act = adefs.create(label=label, pillar=pillar, type_=type_, session=session, pts=pts, ec=ec,
+                            one_time=one_time, days_of_week=days_of_week)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     return jsonify({'ok': True, 'activity': act})

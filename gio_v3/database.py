@@ -2287,6 +2287,19 @@ def init_db():
                  "servicio 'Lavado / detallado' de Harma y por 'Finanzas: gastos semana · proyección' de Ataraxia (domingo).")
             )
 
+        # ── ACTA DIURNA — "solo una vez": actividades creadas desde el form
+        # de "+ Agregar actividad" que no se repiten. one_time=1 hace que
+        # log_activity() (modules/actividades/routes.py) desactive la
+        # actividad automáticamente en cuanto se marca como hecha, en vez de
+        # quedar en el checklist para siempre como las recurrentes.
+        try:
+            ad_cols5 = [r["name"] for r in db.execute("PRAGMA table_info(activity_defs)").fetchall()]
+            if "one_time" not in ad_cols5:
+                db.execute("ALTER TABLE activity_defs ADD COLUMN one_time INTEGER NOT NULL DEFAULT 0")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] activity_defs one_time migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
