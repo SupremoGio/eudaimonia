@@ -491,6 +491,25 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
     </div>
     {% endmacro %}
 
+    {# Baile vive en su propio módulo (/eurythmia/ — sesiones con minutos,
+       fases y nivel), no como checkbox de activity_defs: esta tarjeta solo
+       enlaza ahí y refleja si ya se logueó una sesión hoy
+       (eurythmia_done, ver get_eurythmia_today() en actividades/routes.py). #}
+    {% macro eurythmia_card() %}
+    <a href="/eurythmia/" class="sact ancla {% if eurythmia_done %}done{% endif %}"
+       style="--p-hue:{{ pillar_meta.get('eury',{}).get('hue',330) }}"
+       aria-label="Ir a Eurythmia a registrar tu práctica de baile de hoy">
+      <div class="schk"><svg viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8.5 9,2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div style="flex:1;min-width:0;">
+        <div class="slbl">Baile — práctica en Eurythmia</div>
+        <div class="smeta">
+          <span class="spts">{{ 'Hecho hoy · ver detalle' if eurythmia_done else 'Registrar sesión de hoy →' }}</span>
+          <span class="sptag">Eurythmia</span>
+        </div>
+      </div>
+    </a>
+    {% endmacro %}
+
     <div class="tile">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:14px;">
         <div>
@@ -538,6 +557,7 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
       </div>
       <div class="acts-grid" data-session="{{ now_session }}">
         {% for item in grouped[now_session] %}{{ act_card(item) }}{% endfor %}
+        {% if now_session == 'night' %}{{ eurythmia_card() }}{% endif %}
         <div class="add-tile eu-activate" role="button" tabindex="0" data-addtile="{{ now_session }}" onclick="showAddForm('{{ now_session }}', this)">+ Agregar actividad</div>
       </div>
 
@@ -555,6 +575,7 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
         <div class="session-detail-inner">
           <div class="acts-grid" data-session="{{ sk }}">
             {% for item in grouped[sk] %}{{ act_card(item) }}{% endfor %}
+            {% if sk == 'night' %}{{ eurythmia_card() }}{% endif %}
             <div class="add-tile eu-activate" role="button" tabindex="0" data-addtile="{{ sk }}" onclick="showAddForm('{{ sk }}', this)">+ Agregar actividad</div>
           </div>
         </div>

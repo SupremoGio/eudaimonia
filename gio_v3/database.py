@@ -2341,6 +2341,23 @@ def init_db():
         except Exception as e:
             print(f"[DB] activity_defs one_time migration warning: {e}")
 
+        # ── ACTA DIURNA — "Leer psicología — sesión profunda" se duplica a
+        # Martes además de Domingo (no se mueve): paideia sube a 2 sesiones
+        # profundas semanales sin perder la de domingo, que cuesta menos
+        # esfuerzo real aunque en la tabla de anclas por día se vea vacía.
+        # Martes era el día más flojo en anclas (6 pts, solo francés) pero
+        # con pocas horas libres reales — se acepta esa carga porque es la
+        # única forma de subir paideia a 2x/semana sin tocar domingo.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='ancla_leer_psico_martes_domingo'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET days_of_week='tue,sun' WHERE key='ancla_leer_psico'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("ancla_leer_psico_martes_domingo",
+                 "'Leer psicología — sesión profunda' pasa de days_of_week='sun' a 'tue,sun' (duplicación, no movimiento).")
+            )
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
