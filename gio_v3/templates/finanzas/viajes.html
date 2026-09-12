@@ -127,6 +127,9 @@
       <span class="vj-title" id="detail-title">—</span>
     </div>
     <div style="display:flex;gap:8px;">
+      <a class="btn-g" id="detail-maleta-link" href="#" style="display:inline-flex;align-items:center;gap:5px;text-decoration:none;">
+        <i data-lucide="luggage" style="width:12px;height:12px"></i> Maleta
+      </a>
       <button class="btn-g" onclick="openTripModal(true)">
         <i data-lucide="pencil" style="width:12px;height:12px"></i> Editar
       </button>
@@ -291,6 +294,11 @@ let _suggested  = [];
 /* ── Init ──────────────────────────────────────────────────────────────── */
 async function init() {
   await loadTrips();
+  const tripParam = new URLSearchParams(location.search).get('trip');
+  if (tripParam && _trips.some(t => t.id === Number(tripParam))) {
+    showDetail(Number(tripParam));
+    return;
+  }
   renderList();
 }
 
@@ -388,6 +396,9 @@ function renderDetail() {
   const clr   = over ? 'var(--red)' : pct > 80 ? '#f472b6' : 'var(--gold)';
 
   document.getElementById('detail-title').textContent     = trip.nombre;
+  // Mismo viaje, misma fila en la tabla `viajes` — la maleta/outfits se
+  // administran en el módulo de Viajes (Hegemonikon), acá solo cruzamos el link.
+  document.getElementById('detail-maleta-link').href = `/viajes/?trip=${trip.id}`;
   document.getElementById('detail-gastado').textContent   = `$${fmt(total_gastado)}`;
   document.getElementById('detail-presupuesto').textContent = `$${fmt(pres)}`;
   document.getElementById('detail-restante').textContent  = pres > 0

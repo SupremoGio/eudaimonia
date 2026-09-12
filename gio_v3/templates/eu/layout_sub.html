@@ -717,14 +717,18 @@ document.addEventListener('keydown', (e) => {
     { href:'/finanzas/inversiones/',    label:'Inversiones',       sub:'Oikonomia',                            icon:'trending-up' },
     { href:'/finanzas/prioridades/',    label:'Wishlist',          sub:'Oikonomia · Compras planeadas',        icon:'list-checks' },
     { href:'/finanzas/salud/',          label:'Salud Financiera',  sub:'Oikonomia · Patrimonio y cuentas',     icon:'heart-pulse' },
-    { href:'/finanzas/estados/viajes/', label:'Viajes',            sub:'Oikonomia · Presupuesto de viaje',     icon:'plane' },
     { href:'/bienestar/salud/',         label:'Salud',             sub:'Hegemonikon · Médico',                 icon:'stethoscope' },
     { href:'/bienestar/futbol/',        label:'Fútbol',            sub:'Hegemonikon · Partidos',               icon:'trophy' },
     { href:'/nutricion/',               label:'Nutrición',         sub:'Hegemonikon · Díaita',                 icon:'salad' },
     { href:'/recetas/',                 label:'Recetas',           sub:'Hegemonikon',                          icon:'chef-hat' },
     { href:'/guardarropa/',             label:'Guardarropa',       sub:'Hegemonikon · Armario y outfits',      icon:'shirt' },
     { href:'/guardarropa/wishlist/',    label:'Wishlist Ropa',     sub:'Guardarropa · Protocolo de compra',    icon:'shopping-bag' },
-    { href:'/viajes/',                  label:'Viajes',            sub:'Hegemonikon · Outfits y maleta',       icon:'luggage' },
+    // Un solo viaje, dos vistas (maleta y presupuesto) sobre la misma tabla
+    // `viajes` — antes eran dos entradas separadas aquí (Oikonomia y
+    // Hegemonikon) que abrían pantallas sin relación entre sí para el
+    // mismo viaje. Se deja una sola entrada; el presupuesto se alcanza
+    // desde el detalle del viaje (botón "Ver presupuesto").
+    { href:'/viajes/',                  label:'Viajes',            sub:'Outfits, maleta y presupuesto',        icon:'luggage' },
   ];
 
   function collectItems() {

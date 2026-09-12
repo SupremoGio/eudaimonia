@@ -160,6 +160,9 @@
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <span class="vj-estado" id="detail-estado-badge"></span>
+      <a class="btn-g" id="detail-presupuesto-link" href="#" style="display:inline-flex;align-items:center;gap:5px;text-decoration:none;">
+        <i data-lucide="wallet" style="width:11px;height:11px"></i> Presupuesto
+      </a>
       <button class="btn-g" onclick="openTripModal(true)">
         <i data-lucide="pencil" style="width:11px;height:11px"></i> Editar
       </button>
@@ -437,6 +440,11 @@ let _aiMode     = 'wardrobe';
 /* ── Init ─────────────────────────────────────────────────────────────── */
 async function init() {
   await loadTrips();
+  const tripParam = new URLSearchParams(location.search).get('trip');
+  if (tripParam && _trips.some(t => t.id === Number(tripParam))) {
+    showDetail(Number(tripParam));
+    return;
+  }
   renderList();
 }
 
@@ -556,6 +564,10 @@ function renderDetailHeader() {
   const badgeEl = document.getElementById('detail-estado-badge');
   badgeEl.className = `vj-estado ${t.estado}`;
   badgeEl.textContent = t.estado;
+
+  // Mismo viaje, misma fila en la tabla `viajes` — el presupuesto se
+  // administra en Estados de Cuenta (Oikonomia), acá solo cruzamos el link.
+  document.getElementById('detail-presupuesto-link').href = `/finanzas/estados/viajes/?trip=${t.id}`;
 
   if (t.tipo_clima) {
     document.getElementById('detail-clima-wrap').style.display = '';
