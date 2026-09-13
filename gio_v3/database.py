@@ -1557,6 +1557,25 @@ def init_db():
         except Exception as e:
             print(f"[DB] est_movimientos BBVA_TDC rename warning: {e}")
 
+        # Backfill: "CAFE/SOCIAL" y "CAFE/PAN" eran la misma categoría con dos
+        # nombres — CAFE/SOCIAL es un código huérfano (ninguna regla de
+        # config.py ni de est_keywords actual la genera) que se quedó en
+        # movimientos viejos y aparecía sin mapeo en el front (ícono genérico,
+        # nombre en mayúsculas sin formatear) en vez de fusionarse con
+        # "Café & Pan". Se reclasifican movimientos y reglas de palabra clave
+        # existentes; el budget de CAFE/SOCIAL se elimina si ya hay uno para
+        # CAFE/PAN (categoria es UNIQUE en est_budgets) o si no, se renombra.
+        try:
+            db.execute("UPDATE est_movimientos SET categoria='CAFE/PAN' WHERE categoria='CAFE/SOCIAL'")
+            db.execute("UPDATE est_keywords SET categoria='CAFE/PAN' WHERE categoria='CAFE/SOCIAL'")
+            if db.execute("SELECT 1 FROM est_budgets WHERE categoria='CAFE/PAN'").fetchone():
+                db.execute("DELETE FROM est_budgets WHERE categoria='CAFE/SOCIAL'")
+            else:
+                db.execute("UPDATE est_budgets SET categoria='CAFE/PAN' WHERE categoria='CAFE/SOCIAL'")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] est_movimientos CAFE/SOCIAL merge warning: {e}")
+
         # Backfill: limpiar duplicados reales colados antes del fix de dedup
         # en /api/upload (esa dedup usaba fecha+monto+banco+tipo; el mismo
         # movimiento real importado una vez desde PDF y otra desde CSV/Excel
