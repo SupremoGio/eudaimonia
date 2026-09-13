@@ -96,10 +96,16 @@
 .sf-meta-chip svg{width:10px;height:10px;}
 
 /* ── Historial chart ──────────────────────────────────────────────────────── */
-.sf-hist-wrap{display:flex;align-items:flex-end;gap:6px;height:60px;padding:0 2px;}
-.sf-hist-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
-.sf-hist-bar{border-radius:3px 3px 0 0;min-height:3px;transition:height .4s;width:100%;}
-.sf-hist-lbl{font-size:var(--fs-xs);color:var(--dim);text-align:center;}
+.sf-hist-svg-wrap{width:100%;height:120px;}
+.sf-hist-svg-wrap svg{width:100%;height:100%;display:block;overflow:visible;}
+.sf-hist-dot{transition:r .15s;cursor:default;}
+.sf-hist-dot:hover{r:5;}
+.sf-hist-labels{display:flex;justify-content:space-between;margin-top:6px;padding:0 2px;}
+.sf-hist-lbl{font-size:var(--fs-xs);color:var(--dim);text-align:center;flex:1;}
+.sf-hist-delta{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-xs);font-weight:600;padding:2px 8px;border-radius:100px;}
+.sf-hist-delta svg{width:11px;height:11px;}
+.sf-hist-delta.pos{color:var(--emerald);background:rgba(16,185,129,.12);}
+.sf-hist-delta.neg{color:var(--coral);background:rgba(244,63,94,.12);}
 
 /* ── Snapshot button ──────────────────────────────────────────────────────── */
 .sf-snap-btn{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--emerald-l);padding:6px 14px;border-radius:7px;font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;display:inline-flex;align-items:center;gap:5px;cursor:pointer;transition:all .18s;font-family:var(--sans);}
@@ -451,26 +457,65 @@
 
 {# ── HISTORIAL PATRIMONIO ──────────────────────────────────────────────────── #}
 {% if historial %}
+{% set primero = historial[0].patrimonio_neto %}
+{% set ultimo  = historial[-1].patrimonio_neto %}
+{% set delta   = ultimo - primero %}
+{% set delta_pct = (delta / primero * 100) if primero != 0 else 0 %}
+{% set max_pn = historial|map(attribute='patrimonio_neto')|max %}
+{% set min_pn = historial|map(attribute='patrimonio_neto')|min %}
+{% set range_pn = [(max_pn - min_pn), 1]|max %}
+{% set n = historial|length %}
+{% set denom = [(n - 1), 1]|max %}
+{% set ns = namespace(line=[]) %}
+{% for h in historial %}
+  {% set x = (10 + loop.index0 * (580 / denom))|round(1) %}
+  {% set y = (16 + (1 - (h.patrimonio_neto - min_pn) / range_pn) * 108)|round(1) %}
+  {% set ns.line = ns.line + [x|string + ',' + y|string] %}
+{% endfor %}
+{% set line_pts = ns.line|join(' ') %}
+{% set last_x = (10 + (n - 1) * (580 / denom))|round(1) %}
+{% set area_pts = '10,140 ' + line_pts + ' ' + last_x|string + ',140' %}
 <div class="tile sf-full">
   <div class="sf-group-hd">
     <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="bar-chart-3" style="width:13px;height:13px;"></i> Evolución Patrimonio Neto</div>
-    <span style="font-size:var(--fs-xs);color:var(--dim)">Últimos {{ historial|length }} snapshots</span>
-  </div>
-  {% set max_pn = historial|map(attribute='patrimonio_neto')|max %}
-  {% set min_pn = historial|map(attribute='patrimonio_neto')|min %}
-  {% set range_pn = [(max_pn - min_pn), 1]|max %}
-  <div class="sf-hist-wrap">
-    {% for h in historial %}
-    {% set pct = ((h.patrimonio_neto - min_pn) / range_pn * 100)|int %}
-    <div class="sf-hist-bar-wrap">
-      <div class="sf-hist-bar" style="height:{{ [pct,4]|max }}%;background:{% if h.patrimonio_neto >= 0 %}var(--emerald){% else %}var(--coral){% endif %};opacity:.8;"></div>
-      <div class="sf-hist-lbl">{{ h.fecha[5:] }}</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="sf-hist-delta {% if delta >= 0 %}pos{% else %}neg{% endif %}">
+        <i data-lucide="{% if delta >= 0 %}trending-up{% else %}trending-down{% endif %}"></i>
+        {% if delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(delta) }} ({% if delta_pct >= 0 %}+{% endif %}{{ "%.1f"|format(delta_pct) }}%)
+      </span>
+      <span style="font-size:var(--fs-xs);color:var(--dim)">Últimos {{ n }} snapshots</span>
     </div>
+  </div>
+
+  <div class="sf-hist-svg-wrap">
+    <svg viewBox="0 0 600 140" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="pnFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="{% if delta >= 0 %}var(--emerald){% else %}var(--coral){% endif %}" stop-opacity=".28"/>
+          <stop offset="100%" stop-color="{% if delta >= 0 %}var(--emerald){% else %}var(--coral){% endif %}" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <polygon points="{{ area_pts }}" fill="url(#pnFill)" stroke="none"/>
+      <polyline points="{{ line_pts }}" fill="none" stroke="{% if delta >= 0 %}var(--emerald){% else %}var(--coral){% endif %}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+      {% for h in historial %}
+      {% set x = (10 + loop.index0 * (580 / denom))|round(1) %}
+      {% set y = (16 + (1 - (h.patrimonio_neto - min_pn) / range_pn) * 108)|round(1) %}
+      <circle class="sf-hist-dot" cx="{{ x }}" cy="{{ y }}" r="{% if loop.last %}4{% else %}2.5{% endif %}" fill="{% if h.patrimonio_neto >= 0 %}var(--emerald){% else %}var(--coral){% endif %}" vector-effect="non-scaling-stroke">
+        <title>{{ h.fecha }}: ${{ "{:,.2f}".format(h.patrimonio_neto) }}</title>
+      </circle>
+      {% endfor %}
+    </svg>
+  </div>
+
+  <div class="sf-hist-labels">
+    {% for h in historial %}
+    <span class="sf-hist-lbl">{{ h.fecha[5:] }}</span>
     {% endfor %}
   </div>
+
   <div style="display:flex;justify-content:space-between;margin-top:8px;">
-    <span style="font-size:var(--fs-xs);color:var(--dim)">Primer snapshot: <span style="color:var(--mid)">{{ historial[0].fecha }}</span></span>
-    <span style="font-size:var(--fs-xs);color:var(--dim)">Último: <span style="color:{% if historial[-1].patrimonio_neto >= 0 %}var(--green){% else %}var(--red){% endif %}">${{ "{:,.0f}".format(historial[-1].patrimonio_neto) }}</span></span>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Primer snapshot: <span style="color:var(--mid)">{{ historial[0].fecha }} · ${{ "{:,.0f}".format(primero) }}</span></span>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Último: <span style="color:{% if ultimo >= 0 %}var(--emerald){% else %}var(--coral){% endif %}">${{ "{:,.0f}".format(ultimo) }}</span></span>
   </div>
 </div>
 {% endif %}
