@@ -2358,6 +2358,27 @@ def init_db():
                  "'Leer psicología — sesión profunda' pasa de days_of_week='sun' a 'tue,sun' (duplicación, no movimiento).")
             )
 
+        # ── ACTA DIURNA — Philia se quedó con un solo touch activo
+        # ('conexion_genuina'), por lo que dejó de calificar para "Foco del
+        # mes" (requiere >1 ítem elegible en el pilar, ver foco_candidates
+        # en build_acta_diurna_context()). 'tiempo_calidad' y 'networking'
+        # se sembraron en Fase 2 con INSERT OR IGNORE, que nunca reactiva
+        # una fila existente que se haya desactivado a mano — este bloque sí
+        # la reactiva, una sola vez, sin pelear con una desactivación manual
+        # posterior a esta fecha.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='philia_touches_reactivar_2026_09'"
+        ).fetchone():
+            db.execute(
+                "UPDATE activity_defs SET active=1 WHERE key IN ('tiempo_calidad','networking') AND active=0"
+            )
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("philia_touches_reactivar_2026_09",
+                 "Reactiva 'tiempo_calidad' y 'networking' (pilar philia) si estaban desactivados, para que "
+                 "el pilar vuelva a calificar para 'Foco del mes' (necesita >1 ítem elegible).")
+            )
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
