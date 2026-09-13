@@ -88,9 +88,24 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
 .weekend-sat .wk-sub{color:rgba(6,182,212,.6);}
 .weekend-sun .wk-title{color:var(--violet-l);}
 .weekend-sun .wk-sub{color:rgba(167,139,250,.6);}
-.wk-xp-badge{position:absolute;top:14px;right:16px;font-size:var(--fs-sm);padding:5px 12px;border-radius:100px;}
+/* wk-xp-badge vivía en position:absolute con coordenadas fijas (top/right),
+   fuera del flujo del flex row que ya tenía justify-content:space-between —
+   en pantallas angostas el título italic serif podía extenderse justo hasta
+   esas coordenadas y el badge quedaba superpuesto encima del texto ("letras
+   cruzadas"). Ahora es un hijo flex normal: nunca se superpone porque el
+   layout lo reserva, sea cual sea el ancho del título. */
+.wk-xp-badge{flex-shrink:0;white-space:nowrap;font-size:var(--fs-sm);padding:5px 12px;border-radius:100px;}
 .weekend-sat .wk-xp-badge{background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.3);color:var(--cyan);}
 .weekend-sun .wk-xp-badge{background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.3);color:var(--violet-l);}
+/* ── Plegado en mobile — el bloque de fin de semana es alto (progreso +
+   lista de bloques + tip) y "roba espacio" arriba del contenido del día en
+   pantallas chicas. Colapsado por default solo en mobile (JS decide al
+   cargar); el header con título/badge sigue siempre visible como resumen. */
+.wk-toggle{background:none;border:none;cursor:pointer;display:flex;align-items:center;padding:4px;flex-shrink:0;color:inherit;opacity:.6;transition:opacity .15s,transform .25s;}
+.wk-toggle:hover{opacity:1;}
+.weekend-section.collapsed .wk-toggle{transform:rotate(-90deg);}
+.weekend-section.collapsed .wk-body{display:none;}
+.weekend-section.collapsed .wk-sub{margin-bottom:0;}
 .wk-phase{font-size:var(--fs-xs);color:var(--dim);margin-bottom:6px;margin-top:12px;}
 /* Progress bar */
 .wk-prog-wrap{margin-bottom:14px;}
@@ -400,12 +415,14 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
     {% if weekend_mode == 'sat' %}
     <div class="weekend-section weekend-sat" id="wk-sat">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
-        <div>
-          <a href="/ataraxia/" class="wk-title" style="display:flex;align-items:center;gap:6px;text-decoration:none;color:inherit;"><i data-lucide="flower-2" style="width:14px;height:14px;"></i> Sábado — ATARAXIA RESET</a>
+        <div style="min-width:0;flex:1;">
+          <a href="/ataraxia/" class="wk-title" style="display:flex;align-items:center;gap:6px;text-decoration:none;color:inherit;"><i data-lucide="flower-2" style="width:14px;height:14px;flex-shrink:0;"></i> Sábado — ATARAXIA RESET</a>
           <div class="wk-sub">Sistema de reset semanal · orden · calma</div>
         </div>
         <div class="wk-xp-badge">máx 20 XP</div>
+        <button class="wk-toggle" onclick="toggleWeekendSection('wk-sat')" aria-label="Mostrar u ocultar detalle"><i data-lucide="chevron-down" style="width:16px;height:16px;"></i></button>
       </div>
+      <div class="wk-body">
       <div class="wk-prog-wrap">
         <div class="wk-prog-hd">
           <span class="wk-prog-lbl">BLOQUES DE RESET</span>
@@ -428,18 +445,21 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
       <div style="margin-top:12px;padding:8px 12px;background:rgba(6,182,212,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(6,182,212,.7);display:flex;align-items:center;gap:6px;">
         <i data-lucide="lightbulb" style="width:13px;height:13px;flex-shrink:0;"></i> Completa los 3 bloques para obtener +4 XP bonus automático
       </div>
+      </div>
     </div>
     {% endif %}
 
     {% if weekend_mode == 'sun' %}
     <div class="weekend-section weekend-sun" id="wk-sun">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
-        <div>
-          <div class="wk-title" style="display:flex;align-items:center;gap:6px;"><i data-lucide="brain" style="width:14px;height:14px;"></i> Domingo — EUDAIMONIA STRATEGY</div>
+        <div style="min-width:0;flex:1;">
+          <div class="wk-title" style="display:flex;align-items:center;gap:6px;"><i data-lucide="brain" style="width:14px;height:14px;flex-shrink:0;"></i> Domingo — EUDAIMONIA STRATEGY</div>
           <div class="wk-sub">Sistema de preparación estratégica semanal</div>
         </div>
         <div class="wk-xp-badge">máx 20 XP</div>
+        <button class="wk-toggle" onclick="toggleWeekendSection('wk-sun')" aria-label="Mostrar u ocultar detalle"><i data-lucide="chevron-down" style="width:16px;height:16px;"></i></button>
       </div>
+      <div class="wk-body">
       <div class="wk-prog-wrap">
         <div class="wk-prog-hd">
           <span class="wk-prog-lbl">FASES ESTRATÉGICAS</span>
@@ -461,6 +481,7 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
       </div>
       <div style="margin-top:12px;padding:8px 12px;background:rgba(124,58,237,.06);border-radius:9px;font-size:var(--fs-sm);color:rgba(167,139,250,.7);display:flex;align-items:center;gap:6px;">
         <i data-lucide="lightbulb" style="width:13px;height:13px;flex-shrink:0;"></i> Completa todas las fases para +5 XP bonus · Sábado+Domingo = Fin de Semana Perfecto <i data-lucide="trophy" style="width:12px;height:12px;flex-shrink:0;"></i>
+      </div>
       </div>
     </div>
     {% endif %}
@@ -1177,6 +1198,29 @@ updWeekend();
       bar.style.transition = '';
       bar.style.width = target;
     });
+  });
+})();
+
+// Fin de semana: la sección de Sábado/Domingo es alta (progreso + lista de
+// bloques + tip) y en mobile "roba espacio" arriba del contenido del día.
+// Se colapsa por default solo en pantallas angostas; el usuario puede
+// expandir/colapsar con el chevron y su preferencia se recuerda por sección.
+function toggleWeekendSection(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  try { localStorage.setItem('wk-collapsed-' + id, collapsed ? '1' : '0'); } catch {}
+}
+(function initWeekendCollapse() {
+  document.querySelectorAll('.weekend-section').forEach(el => {
+    let collapsed;
+    try {
+      const saved = localStorage.getItem('wk-collapsed-' + el.id);
+      collapsed = saved !== null ? saved === '1' : window.innerWidth < 768;
+    } catch {
+      collapsed = window.innerWidth < 768;
+    }
+    el.classList.toggle('collapsed', collapsed);
   });
 })();
 
