@@ -21,6 +21,8 @@
 .sf-pn-value.neg{color:var(--coral);}
 .sf-pn-sub{font-size:var(--fs-sm);color:#8A7A60;margin-top:6px;}
 .sf-pn-dist{font-size:var(--fs-xs);color:var(--mid);margin-top:8px;}
+.sf-fx-warning{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:#e0b566;background:rgba(224,181,102,.1);border:1px solid rgba(224,181,102,.25);border-radius:6px;padding:5px 9px;margin-top:9px;max-width:fit-content;}
+.sf-fx-warning svg{width:11px;height:11px;flex-shrink:0;}
 
 /* ── Hero row: ring + patrimonio (asymmetric, wide) alongside 3 supporting
    stats — replaces the old uniform repeat(3,1fr) stat strip. ─────────── */
@@ -73,16 +75,22 @@
 .sf-acc-saldo{text-align:right;flex-shrink:0;}
 .sf-acc-amount{font-family:var(--serif);font-size:1.05rem;font-weight:300;line-height:1;}
 .sf-acc-moneda{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
-.sf-acc-actions{display:flex;gap:4px;flex-shrink:0;}
+.sf-acc-actions{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+/* ── Objetivos de toque accesibles ────────────────────────────────────────────
+   El .ai global (eu/layout_sub.html) es solo padding:3px → ~18-21px de área
+   de toque real (icono 11-15px + 3px), muy por debajo del mínimo recomendado
+   para touch (~44px). Se amplía aquí sin tocar el tamaño visual del icono. */
+.sf-account .ai, .sf-debt-row .ai{min-width:44px;min-height:44px;justify-content:center;}
+.sf-bien .ai{min-width:32px;min-height:32px;justify-content:center;}
 .sf-empty{text-align:center;padding:20px;color:var(--dim);font-size:var(--fs-sm);border:1px dashed var(--b);border-radius:8px;}
 
 /* ── Bienes ───────────────────────────────────────────────────────────────── */
 .sf-bienes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:9px;}
 .sf-bien{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:13px 14px;transition:border-color .16s;}
 .sf-bien:hover{border-color:var(--b2);}
-.sf-bien-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.sf-bien-hd{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
 .sf-bien-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:100px;font-size:.43rem;letter-spacing:.1em;text-transform:uppercase;}
-.sf-bien-actions{display:flex;gap:3px;}
+.sf-bien-actions{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;}
 .sf-bien-name{font-size:var(--fs-sm);color:var(--text);font-weight:500;margin-bottom:2px;}
 .sf-bien-desc{font-size:var(--fs-sm);color:var(--dim);margin-bottom:9px;min-height:14px;}
 .sf-bien-vals{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
@@ -132,7 +140,7 @@
 .sf-debt-pct{font-size:10px;color:var(--dim);margin-top:2px;}
 .sf-debt-right{text-align:right;flex-shrink:0;}
 .sf-debt-monto{font-family:var(--serif);font-size:.95rem;font-weight:300;line-height:1;}
-.sf-debt-actions{display:flex;gap:3px;margin-top:5px;justify-content:flex-end;}
+.sf-debt-actions{display:flex;gap:6px;margin-top:5px;justify-content:flex-end;flex-wrap:wrap;}
 
 @media(max-width:767px){
   .sf-grid{grid-template-columns:1fr;}
@@ -161,8 +169,8 @@
     <a href="/finanzas/inversiones/" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;background:rgba(167,139,250,.10);border:1px solid rgba(167,139,250,.30);color:var(--violet);font-size:var(--fs-sm);letter-spacing:.07em;text-transform:uppercase;text-decoration:none;transition:all .18s;" onmouseover="this.style.background='rgba(167,139,250,.18)';this.style.borderColor='rgba(167,139,250,.5)'" onmouseout="this.style.background='rgba(167,139,250,.10)';this.style.borderColor='rgba(167,139,250,.30)'">
       <i data-lucide="trending-up" style="width:11px;height:11px"></i> Inversiones
     </a>
-    <button class="sf-snap-btn" onclick="tomarSnapshot()">
-      <i data-lucide="camera"></i> Guardar Snapshot
+    <button class="sf-snap-btn" onclick="tomarSnapshot()" title="Guarda el patrimonio de hoy para poder ver su evolución más abajo">
+      <i data-lucide="camera"></i> Registrar Hoy
     </button>
   </div>
 </div>
@@ -179,12 +187,13 @@
   {% set solv_denom = [total_activos + total_pasivos, 1]|max %}
   {% set solvencia = (total_activos / solv_denom * 100) %}
   {% set solv_color = 'var(--emerald)' if solvencia >= 70 else ('var(--gold)' if solvencia >= 40 else 'var(--coral)') %}
+  {% set solv_estado = 'Saludable' if solvencia >= 70 else ('Moderado' if solvencia >= 40 else 'Atención') %}
   {% set ring_c = 251 %} {# 2·π·40, r fijo #}
   {% set ring_off = (ring_c * (1 - solvencia/100)) | round(0) | int %}
 
   <div class="sf-hero-top">
     <div class="sf-hero-primary">
-      <div class="sf-hero-ring">
+      <div class="sf-hero-ring" title="Solvencia = Activos ÷ (Activos + Pasivos) = {{ "{:.0f}".format(solvencia) }}%. 70% o más: saludable · 40-69%: moderado · menos de 40%: atención">
         <svg viewBox="0 0 96 96">
           <circle cx="48" cy="48" r="40" fill="none" stroke="var(--b2)" stroke-width="8"/>
           <circle cx="48" cy="48" r="40" fill="none" stroke="{{ solv_color }}" stroke-width="8"
@@ -192,7 +201,7 @@
         </svg>
         <div class="sf-hero-ring-label">
           <div class="sf-hero-ring-pct" style="color:{{ solv_color }}">{{ "{:.0f}".format(solvencia) }}%</div>
-          <div class="sf-hero-ring-lvl">Activos</div>
+          <div class="sf-hero-ring-lvl" style="color:{{ solv_color }}">{{ solv_estado }}</div>
         </div>
       </div>
       <div class="sf-hero-primary-info">
@@ -205,6 +214,14 @@
         <div class="sf-pn-dist">
           Cuentas&nbsp;{{ "{:.0f}".format(activos_cuentas/total_ref*100) }}% · Bienes&nbsp;{{ "{:.0f}".format(total_bienes/total_ref*100) }}% · Pasivos&nbsp;{{ "{:.0f}".format(total_pasivos/total_ref*100) }}%
         </div>
+        {% if otras_monedas %}
+        <div class="sf-fx-warning">
+          <i data-lucide="alert-triangle"></i>
+          No incluido arriba:
+          {% for m, info in otras_monedas.items() %}${{ "{:,.2f}".format(info.total) }} {{ m }} ({{ info.cuentas|join(', ') }}){% if not loop.last %}, {% endif %}{% endfor %}
+          — sin conversión automática de moneda todavía.
+        </div>
+        {% endif %}
       </div>
     </div>
     <div class="sf-stat">
@@ -234,8 +251,8 @@
       <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:var(--gold)"></span>Bienes</span>
       <span class="sf-bar-lbl"><span class="sf-bar-dot" style="background:var(--coral)"></span>Pasivos</span>
     </div>
-    {% set liq = cuentas_liquido|sum(attribute='saldo') %}
-    {% set inv = cuentas_inversion|sum(attribute='saldo') %}
+    {% set liq = cuentas_liquido|rejectattr('moneda','in',['USD','EUR'])|sum(attribute='saldo') %}
+    {% set inv = cuentas_inversion|rejectattr('moneda','in',['USD','EUR'])|sum(attribute='saldo') %}
     <div class="sf-bar">
       <div class="sf-bar-seg" style="background:#60a5fa;width:{{ (liq/total_ref2*100)|int }}%"></div>
       <div class="sf-bar-seg" style="background:var(--emerald);width:{{ (inv/total_ref2*100)|int }}%"></div>
@@ -261,7 +278,7 @@
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">Efectivo y cuentas bancarias</div>
     </div>
     <div style="text-align:right;">
-      {% set liq_total = cuentas_liquido|sum(attribute='saldo') %}
+      {% set liq_total = cuentas_liquido|rejectattr('moneda','in',['USD','EUR'])|sum(attribute='saldo') %}
       <div class="sf-group-total" style="color:#60a5fa">${{ "{:,.2f}".format(liq_total) }}</div>
       <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('efectivo')">+ Agregar</button>
     </div>
@@ -304,7 +321,7 @@
       <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:1px;">GBM, CETES, fondos, etc.</div>
     </div>
     <div style="text-align:right;">
-      {% set inv_total = cuentas_inversion|sum(attribute='saldo') %}
+      {% set inv_total = cuentas_inversion|rejectattr('moneda','in',['USD','EUR'])|sum(attribute='saldo') %}
       <div class="sf-group-total" style="color:var(--emerald)">${{ "{:,.2f}".format(inv_total) }}</div>
       <button class="btn-gr" style="font-size:var(--fs-xs);padding:4px 9px;margin-top:5px;" onclick="openModalCuenta('inversion')">+ Agregar</button>
     </div>
@@ -723,8 +740,8 @@
 
     <div class="sf-form-row c2">
       <div class="fg">
-        <label class="fl">Precio de compra (MXN) *</label>
-        <input class="fi" id="mb-precio" type="number" step="0.01" min="0" placeholder="0.00">
+        <label class="fl">Precio de compra (MXN)</label>
+        <input class="fi" id="mb-precio" type="number" step="0.01" min="0" placeholder="0.00 — opcional, para calcular depreciación">
       </div>
       <div class="fg">
         <label class="fl">Valor actual estimado (MXN)</label>
@@ -888,7 +905,7 @@ async function submitCuenta() {
 }
 
 async function delCuenta(id, btn) {
-  if (!(await euConfirm('¿Eliminar esta cuenta?'))) return;
+  if (!(await euConfirm('¿Eliminar esta cuenta? No se puede deshacer.'))) return;
   const r = await fetch(`/finanzas/salud/api/cuenta/${id}`, { method: 'DELETE' });
   if ((await r.json()).ok) { btn.closest('.sf-account').remove(); location.reload(); }
 }
@@ -957,7 +974,7 @@ async function submitBien() {
 }
 
 async function delBien(id, btn) {
-  if (!(await euConfirm('¿Eliminar este bien?'))) return;
+  if (!(await euConfirm('¿Eliminar este bien? No se puede deshacer.'))) return;
   const r = await fetch(`/finanzas/salud/api/bien/${id}`, { method: 'DELETE' });
   if ((await r.json()).ok) { btn.closest('.sf-bien').remove(); location.reload(); }
 }
@@ -977,10 +994,11 @@ async function tomarSnapshot() {
   const r = await fetch('/finanzas/salud/api/snapshot', { method: 'POST' });
   const d = await r.json();
   if (d.ok) {
-    toast(`Snapshot guardado: $${d.patrimonio_neto.toLocaleString('es-MX', {minimumFractionDigits:2})} MXN`, 'win');
+    const accion = d.actualizado ? 'Registro de hoy actualizado' : 'Registro de hoy guardado';
+    toast(`${accion}: $${d.patrimonio_neto.toLocaleString('es-MX', {minimumFractionDigits:2})} MXN`, 'win');
     setTimeout(() => location.reload(), 900);
   } else {
-    toast(d.error || 'No se pudo guardar el snapshot.', 'err');
+    toast(d.error || 'No se pudo guardar el registro.', 'err');
   }
 }
 
