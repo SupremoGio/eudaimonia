@@ -3,6 +3,7 @@ Flask blueprint for Estados de Cuenta — embedded React SPA + full REST API.
 All data lives in Eudaimonia's existing database (Turso-backed → persistent on Railway).
 Tables are prefixed with est_ to avoid conflicts.
 """
+import calendar
 import csv
 import io
 import tempfile
@@ -53,6 +54,27 @@ def _ok():
 
 # ── Filter builder ────────────────────────────────────────────────────────────
 
+def _days_in_month(year_month: str) -> int:
+    """Días calendario de un 'YYYY-MM' — el mes actual cuenta solo los días
+    transcurridos hasta hoy (igual que un rango 'este mes' sin fecha final)."""
+    year, month = (int(p) for p in year_month.split('-'))
+    today = datetime.now().date()
+    if (year, month) == (today.year, today.month):
+        return today.day
+    return calendar.monthrange(year, month)[1]
+
+
+def _months_condition(args) -> tuple[str | None, list]:
+    """Filtro por meses sueltos (no necesariamente consecutivos), ej.
+    months=2026-01,2026-08 — usado por el selector "Personalizado" del
+    front en vez de un rango continuo date_from/date_to."""
+    months = [m.strip() for m in (args.get('months') or '').split(',') if m.strip()]
+    if not months:
+        return None, []
+    placeholders = ','.join('?' for _ in months)
+    return f"substr(fecha,1,7) IN ({placeholders})", months
+
+
 def _build_filters(args) -> tuple[list[str], list]:
     conditions, params = [], []
     if args.get('bank'):
@@ -67,12 +89,17 @@ def _build_filters(args) -> tuple[list[str], list]:
     if args.get('search'):
         conditions.append("UPPER(descripcion) LIKE ?")
         params.append(f"%{args['search'].upper()}%")
-    if args.get('date_from'):
-        conditions.append("fecha >= ?")
-        params.append(args['date_from'])
-    if args.get('date_to'):
-        conditions.append("fecha <= ?")
-        params.append(args['date_to'])
+    months_cond, months_params = _months_condition(args)
+    if months_cond:
+        conditions.append(months_cond)
+        params.extend(months_params)
+    else:
+        if args.get('date_from'):
+            conditions.append("fecha >= ?")
+            params.append(args['date_from'])
+        if args.get('date_to'):
+            conditions.append("fecha <= ?")
+            params.append(args['date_to'])
     return conditions, params
 
 
@@ -302,14 +329,20 @@ def monthly_summary():
 @estados_bp.route('/api/summary/by-category')
 def by_category():
     if not _ok(): return _locked()
-    date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
-    date_to   = request.args.get('date_to')
-    bank      = request.args.get('bank')
+    bank = request.args.get('bank')
 
-    conds  = ["tipo='GASTO'", _PAGO_CATS, "fecha >= ?"]
-    params = [date_from]
-    if date_to:
-        conds.append("fecha <= ?"); params.append(date_to)
+    conds  = ["tipo='GASTO'", _PAGO_CATS]
+    params = []
+    months_cond, months_params = _months_condition(request.args)
+    if months_cond:
+        conds.append(months_cond)
+        params.extend(months_params)
+    else:
+        date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        date_to   = request.args.get('date_to')
+        conds.append("fecha >= ?"); params.append(date_from)
+        if date_to:
+            conds.append("fecha <= ?"); params.append(date_to)
     if bank:
         conds.append("banco = ?"); params.append(bank)
 
@@ -328,17 +361,27 @@ def by_category():
 @estados_bp.route('/api/summary/stats')
 def summary_stats():
     if not _ok(): return _locked()
-    date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
-    date_to   = request.args.get('date_to')
-    bank      = request.args.get('bank')
+    bank = request.args.get('bank')
 
-    conds  = ["fecha >= ?"]
-    params = [date_from]
-    if date_to:
-        conds.append("fecha <= ?"); params.append(date_to)
+    months_cond, months_params = _months_condition(request.args)
+    if months_cond:
+        conds   = [months_cond]
+        params  = list(months_params)
+        days    = sum(_days_in_month(m) for m in months_params)
+    else:
+        date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        date_to   = request.args.get('date_to')
+        conds  = ["fecha >= ?"]
+        params = [date_from]
+        if date_to:
+            conds.append("fecha <= ?"); params.append(date_to)
+        d_from = datetime.strptime(date_from, "%Y-%m-%d").date()
+        d_to   = datetime.strptime(date_to, "%Y-%m-%d").date() if date_to else datetime.now().date()
+        days   = max((d_to - d_from).days + 1, 1)
     if bank:
         conds.append("banco = ?"); params.append(bank)
     where = " AND ".join(conds)
+    days  = max(days, 1)
 
     with get_db() as db:
         agg = db.execute(f"""
@@ -359,10 +402,6 @@ def summary_stats():
     expense  = agg['total_expense'] or 0
     income   = agg['total_income']  or 0
     tx_count = agg['tx_count']      or 0
-
-    d_from = datetime.strptime(date_from, "%Y-%m-%d").date()
-    d_to   = datetime.strptime(date_to, "%Y-%m-%d").date() if date_to else datetime.now().date()
-    days   = max((d_to - d_from).days + 1, 1)
 
     return jsonify({
         'total_expense':  round(expense, 2),
