@@ -372,7 +372,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "REGALO":          ["General", "Cumpleaños", "Navidad", "Boda", "Flores"],
     "ROPA":            ["Ropa", "Calzado", "Ropa deportiva"],
     "SALSA":           ["Clases", "Evento", "Congreso"],
-    "SALUD":           ["Médico", "Farmacia", "Laboratorio", "Corte de cabello"],
+    "SALUD":           ["Médico", "Farmacia", "Laboratorio", "Corte de cabello", "Higiene personal"],
     "SUSCRIPCIONES":   ["Streaming video", "Música", "Diseño", "Telefonía", "Internet/TV", "Productividad", "Digital", "Gym"],
     "TECH/DIGITAL":    ["Deudas MSI", "Accesorios", "Software"],
     "TRANSPORTE":      ["Taxi", "Aeropuerto", "Autobús"],
