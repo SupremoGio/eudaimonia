@@ -472,14 +472,27 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
     {% macro act_card(item) %}
     {% set is_reflect_desktop = item.key in REFLECT_KEYS %}
     {% set is_reflect_all = item.key in REFLECT_ALL_KEYS %}
-    <div class="sact {% if item.effective_type=='ancla' %}ancla{% endif %} {% if is_reflect_desktop %}reflect{% elif is_reflect_all %}reflect-all{% endif %} {% if item.done %}done{% endif %}"
+    {# Cualquier actividad del pilar 'eury' que no sea el touch base
+       'lenguaje_corporal' se trata como proxy de una sesión real de baile
+       (ej. la actividad custom "Dance"): en vez de auto-marcarse con un
+       clic, lleva al módulo /eurythmia/ (sesiones con minutos/fases/nivel)
+       y solo se ve "hecha" cuando ahí se registró una sesión hoy
+       (eurythmia_done, ver get_eurythmia_today() en actividades/routes.py).
+       Así no hay doble registro del mismo evento real bajo dos claves. #}
+    {% set is_eury_proxy = item.pillar == 'eury' and item.key != 'lenguaje_corporal' %}
+    {% set is_done = eurythmia_done if is_eury_proxy else item.done %}
+    <div class="sact {% if item.effective_type=='ancla' %}ancla{% endif %} {% if is_reflect_desktop %}reflect{% elif is_reflect_all %}reflect-all{% endif %} {% if is_done %}done{% endif %}"
          data-key="{{ item.key }}" style="--p-hue:{{ pillar_meta.get(item.pillar,{}).get('hue',200) }}"
-         onclick="sessLogAct('{{ item.key }}', this)">
+         onclick="{% if is_eury_proxy %}window.location.href='/eurythmia/'{% else %}sessLogAct('{{ item.key }}', this){% endif %}">
       <div class="schk"><svg viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8.5 9,2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div style="flex:1;min-width:0;">
         <div class="slbl">{{ item.label }}{% if item.cadence == 'weekly' %} <span style="font-size:9px;color:var(--faint,var(--dim));font-weight:400;">· {{ item.week_count or 0 }}/semana</span>{% endif %}</div>
         <div class="smeta">
+          {% if is_eury_proxy %}
+          <span class="spts">{{ 'Hecho hoy · ver detalle' if eurythmia_done else 'Ir a Eurythmia →' }}</span>
+          {% else %}
           <span class="spts">+{{ item.pts }}{% if item.ec > 0 %} · {{ item.ec }}EC{% endif %}</span>
+          {% endif %}
           <span class="sptag">{{ pillar_meta.get(item.pillar,{}).get('name', item.pillar) }}</span>
         </div>
         {% if is_reflect_desktop or is_reflect_all %}
@@ -489,25 +502,6 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
       </div>
       <button class="srm" onclick="event.stopPropagation(); delActivity('{{ item.key }}')" title="Quitar" aria-label="Quitar">×</button>
     </div>
-    {% endmacro %}
-
-    {# Baile vive en su propio módulo (/eurythmia/ — sesiones con minutos,
-       fases y nivel), no como checkbox de activity_defs: esta tarjeta solo
-       enlaza ahí y refleja si ya se logueó una sesión hoy
-       (eurythmia_done, ver get_eurythmia_today() en actividades/routes.py). #}
-    {% macro eurythmia_card() %}
-    <a href="/eurythmia/" class="sact ancla {% if eurythmia_done %}done{% endif %}"
-       style="--p-hue:{{ pillar_meta.get('eury',{}).get('hue',330) }}"
-       aria-label="Ir a Eurythmia a registrar tu práctica de baile de hoy">
-      <div class="schk"><svg viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8.5 9,2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div style="flex:1;min-width:0;">
-        <div class="slbl">Baile — práctica en Eurythmia</div>
-        <div class="smeta">
-          <span class="spts">{{ 'Hecho hoy · ver detalle' if eurythmia_done else 'Registrar sesión de hoy →' }}</span>
-          <span class="sptag">Eurythmia</span>
-        </div>
-      </div>
-    </a>
     {% endmacro %}
 
     <div class="tile">
@@ -557,7 +551,6 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
       </div>
       <div class="acts-grid" data-session="{{ now_session }}">
         {% for item in grouped[now_session] %}{{ act_card(item) }}{% endfor %}
-        {% if now_session == 'night' %}{{ eurythmia_card() }}{% endif %}
         <div class="add-tile eu-activate" role="button" tabindex="0" data-addtile="{{ now_session }}" onclick="showAddForm('{{ now_session }}', this)">+ Agregar actividad</div>
       </div>
 
@@ -575,7 +568,6 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
         <div class="session-detail-inner">
           <div class="acts-grid" data-session="{{ sk }}">
             {% for item in grouped[sk] %}{{ act_card(item) }}{% endfor %}
-            {% if sk == 'night' %}{{ eurythmia_card() }}{% endif %}
             <div class="add-tile eu-activate" role="button" tabindex="0" data-addtile="{{ sk }}" onclick="showAddForm('{{ sk }}', this)">+ Agregar actividad</div>
           </div>
         </div>
