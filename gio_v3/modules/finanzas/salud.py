@@ -49,8 +49,8 @@ def _compute_patrimonio():
             "SELECT * FROM salud_bienes WHERE activo=1 ORDER BY categoria, nombre"
         ).fetchall()]
         historial = [dict(r) for r in db.execute(
-            "SELECT * FROM salud_patrimonio_log ORDER BY fecha ASC LIMIT 12"
-        ).fetchall()]
+            "SELECT * FROM salud_patrimonio_log ORDER BY fecha DESC LIMIT 12"
+        ).fetchall()][::-1]
     total_activos, activos_cuentas, total_bienes, total_pasivos, patrimonio_neto = _totales(cuentas, bienes)
     liquido = sum(c['saldo'] for c in cuentas if c['tipo'] in ('efectivo', 'cuenta_banco'))
     return {
