@@ -813,6 +813,10 @@ def upload_file():
                     db.commit()
                     engine.process_activity('gbm', gbm_pts, 'Finanzas', cursor.lastrowid)
 
+        # XP + EC por importar un estado de cuenta — solo si trajo movimientos
+        # NUEVOS de verdad (evita farmear re-subiendo el mismo archivo/duplicados).
+        gam = engine.process_estado_import(inserted, bank) if inserted > 0 else None
+
         preview = [
             {k: v for k, v in m.items() if k != 'periodo'}
             for m in movimientos[:5]
@@ -821,6 +825,7 @@ def upload_file():
             'ok': True, 'bank': bank,
             'parsed': len(movimientos), 'inserted': inserted,
             'skipped': skipped, 'dedup_conflict': dedup_conflict,
+            'gamification': ({'xp': gam['xp'], 'ec': gam['ec']} if gam else None),
             'preview': preview,
             'review_needed': review_needed,  # DEPOSITO/SPEI pendientes de clasificar
         })

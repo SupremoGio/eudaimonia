@@ -1006,6 +1006,41 @@ def process_gtd_task(task_id, priority):
     }
 
 
+# Importar un estado de cuenta es la acción que mantiene viva la sección
+# Oikonomia: reconciliar movimientos reales en vez de dejarlos sin registrar.
+# Fija (no por transacción) para no premiar subir el mismo PDF trozado en
+# muchas partes — solo se otorga cuando el import trajo movimientos NUEVOS
+# (ver `inserted` en estados/routes.py), así que re-subir un archivo ya
+# importado no genera XP/EC de más. "progreso" tier, a la par de
+# registrar_gastos (2/1) pero un poco más alto por cubrir todo un periodo
+# de una sola vez en vez de una transacción suelta.
+IMPORT_ESTADO_XP = 4
+IMPORT_ESTADO_EC = 2
+
+
+def process_estado_import(inserted_count, bank=None):
+    streak   = get_gamification_streak()
+    xp_mult  = _compute_xp_mult('Finanzas', streak)
+    final_xp = max(1, int(IMPORT_ESTADO_XP * xp_mult))
+
+    desc = "Importar estado de cuenta" + (f" ({bank})" if bank else "")
+    _award_xp(final_xp, "import", desc, None, xp_mult)
+    _award_coins(IMPORT_ESTADO_EC, "import", desc, None, 1.0)
+
+    new_ach    = check_and_unlock()
+    new_badges = _check_badges_safe()
+
+    return {
+        "xp":           final_xp,
+        "ec":           IMPORT_ESTADO_EC,
+        "xp_mult":      xp_mult,
+        "inserted":     inserted_count,
+        "achievements": new_ach,
+        "badges":       new_badges,
+        "stats":        get_gamification_stats(),
+    }
+
+
 def process_gtd_daily_bonus():
     _award_xp(5,    "bonus", "Bonus diario GTD (3 tareas)")
     _award_coins(3, "bonus", "Bonus diario GTD (3 tareas)")
