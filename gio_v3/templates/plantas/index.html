@@ -76,6 +76,11 @@ html.light{ --pl: oklch(48% 0.15 155); --pl-l: oklch(42% 0.16 155); --pl-bg: okl
 .pl-photo-preview-empty i{ width:22px; height:22px; opacity:.4; }
 .pl-photo-info{ flex:1; font-size:11px; color:var(--dim); }
 .pl-photo-btn{ font-size:11px; color:var(--pl-l); background:none; border:none; cursor:pointer; text-decoration:underline; padding:4px 0; }
+
+.pl-sugerencia{ display:flex; align-items:center; gap:8px; background:var(--pl-bg); border:1px solid var(--pl-b); border-radius:9px; padding:8px 10px; font-size:11.5px; color:var(--pl-l); }
+.pl-sugerencia i{ width:14px; height:14px; flex-shrink:0; }
+.pl-sugerencia b{ font-weight:700; }
+.pl-sugerencia-btn{ margin-left:auto; flex-shrink:0; background:var(--pl-l); color:var(--bg); border:none; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; }
 </style>
 
 <div class="pl-wrap">
@@ -139,6 +144,8 @@ html.light{ --pl: oklch(48% 0.15 155); --pl-l: oklch(42% 0.16 155); --pl-bg: okl
         <input class="fi" id="pl-ubicacion" placeholder="Ej. Sala">
       </div>
     </div>
+
+    <div id="pl-sugerencia" class="pl-sugerencia" style="display:none;margin-top:10px;"></div>
 
     <div class="pl-row2" style="margin-top:10px;">
       <div>
@@ -316,7 +323,47 @@ function limpiarFormPlanta(){
   document.getElementById('pl-delete-btn').style.display = 'none';
   plFotoFile = null;
   setFotoPreview(null);
+  ocultarSugerenciaPlanta();
 }
+
+/* ── Sugerencia de riego/trasplante por especie (tabla local, sin API) ──────
+   Se dispara al escribir en Nombre o Especie; nunca sobreescribe los
+   campos sola, solo ofrece un chip con botón "Usar". ── */
+let plSugerenciaTimer = null;
+
+function ocultarSugerenciaPlanta(){
+  document.getElementById('pl-sugerencia').style.display = 'none';
+}
+
+async function consultarSugerenciaPlanta(){
+  const q = (document.getElementById('pl-especie').value || document.getElementById('pl-nombre').value).trim();
+  if (q.length < 3) { ocultarSugerenciaPlanta(); return; }
+  try {
+    const s = await fetch(`${BASE}/api/sugerir?q=${encodeURIComponent(q)}`).then(r => r.json());
+    if (!s.match) { ocultarSugerenciaPlanta(); return; }
+    const box = document.getElementById('pl-sugerencia');
+    box.innerHTML = `
+      <i data-lucide="lightbulb"></i>
+      <span>Sugerencia para "${escapeHtml(s.match)}": <b>cada ${s.dias_riego}d</b> riego · <b>cada ${s.meses_trasplante}m</b> trasplante</span>
+      <button type="button" class="pl-sugerencia-btn" onclick="aplicarSugerenciaPlanta(${s.dias_riego}, ${s.meses_trasplante})">Usar</button>`;
+    box.style.display = 'flex';
+    if (window.lucide) lucide.createIcons();
+  } catch { ocultarSugerenciaPlanta(); }
+}
+
+function aplicarSugerenciaPlanta(diasRiego, mesesTrasplante){
+  document.getElementById('pl-dias-riego').value = diasRiego;
+  document.getElementById('pl-meses-trasplante').value = mesesTrasplante;
+  ocultarSugerenciaPlanta();
+  toast('Intervalos aplicados');
+}
+
+['pl-nombre', 'pl-especie'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    clearTimeout(plSugerenciaTimer);
+    plSugerenciaTimer = setTimeout(consultarSugerenciaPlanta, 450);
+  });
+});
 
 function abrirNuevaPlanta(){
   limpiarFormPlanta();

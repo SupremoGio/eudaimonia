@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from database import get_db
 from utils import today_str, today_date, uploads_base_dir
+from modules.plantas.care_data import suggest_care
 import modules.gamification.engine as engine
 
 plantas_bp = Blueprint('plantas', __name__, template_folder='../../templates')
@@ -137,6 +138,17 @@ def index():
 @plantas_bp.route('/api/state')
 def api_state():
     return jsonify(_state())
+
+
+@plantas_bp.route('/api/sugerir')
+def api_sugerir():
+    """Sugerencia de riego/trasplante por especie — tabla local curada, sin
+    API externa. Se consulta con lo que el usuario escriba en Nombre o
+    Especie; el resultado es un punto de partida editable, no se aplica
+    solo (el frontend lo ofrece como sugerencia con botón 'Usar')."""
+    q = request.args.get('q', '')
+    result = suggest_care(q)
+    return jsonify(result or {})
 
 
 @plantas_bp.route('/api/plantas', methods=['POST'])
