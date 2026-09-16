@@ -1860,6 +1860,30 @@ def init_db():
         except Exception as e:
             print(f"[DB] paideia_libros progreso_pct migration warning: {e}")
 
+        # Ranking de películas dentro de PAIDEIA — mismo patrón que eury_albums
+        # (Música dentro de EURYTHMIA): tabla propia + sub-ratings 1-10 que
+        # promedian a mi_rating + XP/EC al calificar. A diferencia de álbumes
+        # (semilla fija del Top 100 de Apple Music) no hay lista canónica de
+        # películas, así que aquí sí se agregan/borran a mano desde la UI.
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS paideia_peliculas (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            titulo       TEXT    NOT NULL,
+            director     TEXT    DEFAULT '',
+            anio         INTEGER,
+            genero       TEXT    DEFAULT '',
+            vista        INTEGER NOT NULL DEFAULT 0,
+            mi_rating    REAL,
+            notas        TEXT    DEFAULT '',
+            vista_at     TEXT,
+            rating_guion      INTEGER DEFAULT NULL,
+            rating_actuacion  INTEGER DEFAULT NULL,
+            rating_direccion  INTEGER DEFAULT NULL,
+            rating_rewatch    INTEGER DEFAULT NULL,
+            created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        """)
+
         # Migrate lang_journal / lang_test_results: fase, destreza, idioma explícitos
         # (antes de esto el progreso de idiomas quedaba como actividad suelta, sin
         # poder filtrarse por fase de un plan de estudio ni por destreza).

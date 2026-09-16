@@ -3,6 +3,7 @@ from flask import Blueprint, render_template, request, jsonify
 from datetime import datetime
 from database import get_db
 from data import get_paideia_tip_of_day, get_random_paideia_tip
+import modules.gamification.engine as engine
 
 paideia_bp = Blueprint('paideia', __name__, template_folder='../../templates')
 
@@ -10,6 +11,41 @@ _OPENLIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json'
 
 _META_KEY = 'paideia_meta_anual'
 _DEFAULT_META = 12
+
+# ── Películas — ranking personal (mismo patrón que Música dentro de EURYTHMIA) ─
+_PELI_XP = 5
+_PELI_EC = 2
+
+PELI_RATING_DIMS = [
+    {"key": "guion",      "label": "Guion"},
+    {"key": "actuacion",  "label": "Actuación"},
+    {"key": "direccion",  "label": "Dirección"},
+    {"key": "rewatch",    "label": "Rewatch value"},
+]
+
+
+def _compute_mi_rating_peli(row):
+    vals = [row[f"rating_{d['key']}"] for d in PELI_RATING_DIMS if row[f"rating_{d['key']}"] is not None]
+    if not vals:
+        return None
+    return round(sum(vals) / len(vals), 1)
+
+
+def _peliculas_state():
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM paideia_peliculas ORDER BY created_at DESC, id DESC").fetchall()
+    peliculas = [dict(r) for r in rows]
+    vistas = [p for p in peliculas if p["vista"]]
+    ranking = sorted(
+        [p for p in vistas if p["mi_rating"] is not None],
+        key=lambda p: -p["mi_rating"]
+    )
+    return {
+        "peliculas": peliculas,
+        "total":     len(peliculas),
+        "vistas_n":  len(vistas),
+        "ranking":   ranking,
+    }
 
 
 def _now():
@@ -60,6 +96,7 @@ def index():
     return render_template(
         'paideia/index.html', libros=libros, stats=_stats(libros),
         tip=get_paideia_tip_of_day(), now_year=datetime.now().year,
+        peliculas=_peliculas_state(), peli_rating_dims=PELI_RATING_DIMS,
     )
 
 
@@ -209,3 +246,128 @@ def eliminar_libro(lid):
         db.execute("DELETE FROM paideia_libros WHERE id=?", (lid,))
         db.commit()
     return jsonify({'ok': True})
+
+
+# ── Películas ─────────────────────────────────────────────────────────────────
+
+@paideia_bp.route('/api/peliculas')
+def list_peliculas():
+    return jsonify(_peliculas_state())
+
+
+@paideia_bp.route('/api/peliculas', methods=['POST'])
+def crear_pelicula():
+    d = request.json or {}
+    titulo = (d.get('titulo') or '').strip()
+    if not titulo:
+        return jsonify({'ok': False, 'error': 'título requerido'}), 400
+    with get_db() as db:
+        cur = db.execute(
+            "INSERT INTO paideia_peliculas (titulo, director, anio, genero) VALUES (?,?,?,?)",
+            (
+                titulo,
+                (d.get('director') or '').strip(),
+                int(d['anio']) if d.get('anio') not in (None, '') else None,
+                (d.get('genero') or '').strip(),
+            ),
+        )
+        db.commit()
+    return jsonify({'ok': True, 'id': cur.lastrowid, 'peliculas': _peliculas_state()}), 201
+
+
+@paideia_bp.route('/api/peliculas/<int:pid>', methods=['POST'])
+def actualizar_pelicula(pid):
+    data = request.get_json(silent=True) or {}
+
+    with get_db() as db:
+        row = db.execute("SELECT * FROM paideia_peliculas WHERE id=?", (pid,)).fetchone()
+    if not row:
+        return jsonify({'error': 'not found'}), 404
+    row = dict(row)
+
+    was_vista = bool(row['vista'])
+    vista = bool(data.get('vista', was_vista))
+
+    ratings = {}
+    for dim in PELI_RATING_DIMS:
+        key = f"rating_{dim['key']}"
+        val = data.get(key, row[key])
+        if val not in (None, ''):
+            try:
+                val = int(val)
+            except (TypeError, ValueError):
+                return jsonify({'error': f'invalid {key}'}), 400
+            if val < 1 or val > 10:
+                return jsonify({'error': f'invalid {key}'}), 400
+        else:
+            val = None
+        ratings[key] = val
+
+    mi_rating = _compute_mi_rating_peli(ratings)
+    notas = str(data.get('notas', row['notas']) or '')[:500]
+    vista_at = row['vista_at']
+    rating_cols = list(ratings.keys())
+    rating_vals = [ratings[k] for k in rating_cols]
+
+    gam = None
+    with get_db() as db:
+        if vista and not was_vista:
+            vista_at = datetime.now().isoformat()
+            today = datetime.now().date().isoformat()
+            cur = db.execute(
+                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                (f"paideia_pelicula_{pid}", today, _PELI_XP)
+            )
+            log_id = cur.lastrowid
+            db.execute(
+                f"UPDATE paideia_peliculas SET vista=1, mi_rating=?, notas=?, vista_at=?, "
+                f"{', '.join(f'{c}=?' for c in rating_cols)} WHERE id=?",
+                (mi_rating, notas, vista_at, *rating_vals, pid)
+            )
+            db.commit()
+            gam = engine.process_activity(f"paideia_pelicula_{pid}", _PELI_XP, 'Cine', log_id, ec=_PELI_EC)
+        elif not vista and was_vista:
+            db.execute(
+                f"UPDATE paideia_peliculas SET vista=0, mi_rating=NULL, notas=?, vista_at=NULL, "
+                f"{', '.join(f'{c}=NULL' for c in rating_cols)} WHERE id=?",
+                (notas, pid)
+            )
+            db.commit()
+            log_row = db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? ORDER BY id DESC LIMIT 1",
+                (f"paideia_pelicula_{pid}",)
+            ).fetchone()
+            if log_row:
+                db.execute("DELETE FROM activity_logs WHERE id=?", (log_row['id'],))
+                db.commit()
+                gam = engine.remove_activity(log_row['id'])
+        else:
+            db.execute(
+                f"UPDATE paideia_peliculas SET mi_rating=?, notas=?, "
+                f"{', '.join(f'{c}=?' for c in rating_cols)} WHERE id=?",
+                (mi_rating, notas, *rating_vals, pid)
+            )
+            db.commit()
+
+    return jsonify({'ok': True, 'gam': gam, 'peliculas': _peliculas_state()})
+
+
+@paideia_bp.route('/api/peliculas/<int:pid>', methods=['DELETE'])
+def eliminar_pelicula(pid):
+    with get_db() as db:
+        row = db.execute("SELECT vista FROM paideia_peliculas WHERE id=?", (pid,)).fetchone()
+        if not row:
+            return jsonify({'error': 'not found'}), 404
+        log_row = None
+        if row['vista']:
+            log_row = db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? ORDER BY id DESC LIMIT 1",
+                (f"paideia_pelicula_{pid}",)
+            ).fetchone()
+            if log_row:
+                db.execute("DELETE FROM activity_logs WHERE id=?", (log_row['id'],))
+        db.execute("DELETE FROM paideia_peliculas WHERE id=?", (pid,))
+        db.commit()
+    if log_row:
+        engine.remove_activity(log_row['id'])
+    return jsonify({'ok': True, 'peliculas': _peliculas_state()})

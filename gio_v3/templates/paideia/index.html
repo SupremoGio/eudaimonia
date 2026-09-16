@@ -191,6 +191,67 @@
 .pd-search-item img, .pd-search-item-noimg { width:28px; height:40px; object-fit:cover; border-radius:3px; flex-shrink:0; background:var(--card2); }
 .pd-search-item-title { font-size:13px; font-weight:600; color:var(--text); line-height:1.3; }
 .pd-search-item-meta { font-size:11px; color:var(--dim); margin-top:2px; }
+
+/* ── Submódulos: Libros / Películas ── */
+.pai-mod-tabs{ display:flex; gap:8px; margin-bottom:16px; max-width:460px; }
+.pai-mod-tab{ flex:1; display:flex; align-items:center; justify-content:center; gap:7px; cursor:pointer; background:var(--card); border:1px solid var(--b); border-radius:14px; padding:11px 10px; font-family:var(--sans); font-size:13px; font-weight:600; color:var(--dim); transition:all .18s; }
+.pai-mod-tab i{ width:15px; height:15px; }
+.pai-mod-tab.on{ background:var(--gold-d, rgba(201,168,76,.1)); border-color:var(--gold-border, rgba(201,168,76,.25)); color:var(--gold); }
+.pai-mod-panel{ display:none; }
+.pai-mod-panel.on{ display:block; }
+
+/* ── Películas — ranking personal ── */
+.pe-hero{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; flex-wrap:wrap; }
+.pe-title{ font-family:var(--serif); font-size:1.7rem; font-style:italic; color:var(--text); letter-spacing:.03em; }
+.pe-sub{ font-size:var(--fs-sm); color:var(--dim); margin-top:2px; }
+.pe-count{ text-align:right; }
+.pe-count-n{ font-family:var(--serif); font-size:1.3rem; font-style:italic; color:var(--gold); line-height:1; }
+.pe-count-s{ font-size:var(--fs-xs); color:var(--dim); margin-top:3px; }
+.pe-bar-wrap{ height:4px; border-radius:100px; background:rgba(255,255,255,.07); overflow:hidden; margin-bottom:16px; max-width:760px; }
+.pe-bar-fill{ height:100%; border-radius:100px; background:linear-gradient(90deg,var(--gold),var(--gold-l)); transition:width .4s; }
+
+.pe-add-row{ margin-bottom:14px; }
+
+.pe-item{ display:flex; align-items:center; gap:12px; padding:11px 13px; background:var(--card); border:1px solid var(--b); border-radius:12px; margin-bottom:7px; max-width:760px; transition:border-color .15s; }
+.pe-item.done{ border-color:rgba(201,168,76,.3); background:var(--gold-d, rgba(201,168,76,.06)); }
+.pe-check{ width:22px; height:22px; border:1.5px solid var(--dim); border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .16s; }
+.pe-check:hover{ border-color:var(--gold); }
+.pe-check.on{ background:var(--gold); border-color:var(--gold); }
+.pe-check svg{ width:11px; height:11px; color:var(--bg); display:none; }
+.pe-check.on svg{ display:block; }
+.pe-info{ flex:1; min-width:0; }
+.pe-item-title{ font-size:var(--fs-sm); color:var(--text); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pe-item-sub{ font-size:var(--fs-xs); color:var(--mid); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pe-meta{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.pe-year{ font-size:var(--fs-xs); color:var(--dim); font-family:var(--mono); }
+.pe-rate-trigger{ min-width:36px; background:var(--card2); border:1px solid var(--b); border-radius:6px; padding:4px 7px; color:var(--gold); font-size:.75rem; font-family:var(--mono); text-align:center; cursor:pointer; transition:all .15s; }
+.pe-rate-trigger:hover{ border-color:var(--gold); }
+.pe-rate-trigger.rated{ background:var(--gold-d, rgba(201,168,76,.1)); border-color:var(--gold-border, rgba(201,168,76,.25)); font-weight:700; }
+.pe-rate-trigger:disabled{ opacity:.35; cursor:default; }
+.pe-del{ background:none; border:none; color:var(--dim); cursor:pointer; padding:4px; display:flex; flex-shrink:0; transition:color .15s; }
+.pe-del:hover{ color:var(--coral); }
+.pe-del svg{ width:15px; height:15px; }
+
+.pe-rate-panel{ display:none; max-width:760px; background:var(--card2); border:1px solid var(--b); border-radius:12px; padding:14px 16px 12px; margin:-3px 0 9px; }
+.pe-rate-panel.on{ display:block; }
+.pe-rate-dim{ margin-bottom:11px; }
+.pe-rate-dim-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
+.pe-rate-dim-lbl{ font-size:11.5px; color:var(--mid); }
+.pe-rate-dim-val{ font-family:var(--mono); font-size:.75rem; color:var(--gold); }
+.pe-dots{ display:flex; gap:4px; }
+.pe-dot{ flex:1; height:16px; padding:0; border-radius:4px; border:1px solid var(--b); background:transparent; cursor:pointer; transition:all .12s; }
+.pe-dot:hover{ border-color:var(--gold); }
+.pe-dot.on{ background:var(--gold); border-color:var(--gold); }
+.pe-rate-overall{ text-align:center; padding-top:9px; border-top:1px solid var(--b); font-size:12px; color:var(--dim); }
+.pe-rate-overall b{ font-family:var(--serif); font-size:1.15rem; font-style:italic; color:var(--gold); font-weight:400; }
+
+.pe-filters{ display:flex; gap:8px; margin-bottom:14px; max-width:520px; flex-wrap:wrap; }
+.pe-filter{ flex:1; cursor:pointer; background:var(--card); border:1px solid var(--b); border-radius:100px; padding:7px 6px; font-size:11.5px; color:var(--dim); text-align:center; transition:all .15s; white-space:nowrap; }
+.pe-filter.on{ background:var(--gold-d, rgba(201,168,76,.1)); border-color:var(--gold-border, rgba(201,168,76,.25)); color:var(--gold); font-weight:600; }
+
+.pe-rank-item{ display:flex; align-items:center; gap:10px; padding:9px 12px; border-bottom:1px solid var(--b); }
+.pe-rank-pos{ font-family:var(--serif); font-size:1.1rem; font-style:italic; color:var(--gold); width:22px; flex-shrink:0; }
+.pe-rank-score{ font-family:var(--mono); font-size:.85rem; color:var(--gold); font-weight:700; margin-left:auto; flex-shrink:0; }
 </style>
 
 <!-- ── Meta anual (titular) + stats secundarios ────────────────────────────── -->
@@ -230,6 +291,14 @@
   <span class="pd-tip-text" id="pd-tip-text">{{ tip.text }}</span>
   <button class="pd-tip-refresh" onclick="refrescarTip()" title="Otro tip" aria-label="Mostrar otro tip">↻</button>
 </div>
+
+<!-- ── Submódulos: Libros / Películas ── -->
+<div class="pai-mod-tabs">
+  <button class="pai-mod-tab on" data-mod="libros"><i data-lucide="library"></i> Libros</button>
+  <button class="pai-mod-tab" data-mod="peliculas"><i data-lucide="clapperboard"></i> Películas</button>
+</div>
+
+<div class="pai-mod-panel on" id="mod-libros">
 
 <!-- ── Leyendo ahora ─────────────────────────────────────────────────────── -->
 {% set actual = libros|selectattr('estado', 'equalto', 'leyendo')|first %}
@@ -344,6 +413,63 @@
     {% include '_partials/empty.html' %}
   </div>
   {% endfor %}
+</div>
+
+</div>
+<!-- ═══ /mod-libros ═══ -->
+
+<!-- ═══ PELÍCULAS ═══ -->
+<div class="pai-mod-panel" id="mod-peliculas">
+  <div class="pe-hero">
+    <div>
+      <div class="pe-title">Mi ranking de películas</div>
+      <div class="pe-sub">Calificar lo que ya vi · cultura general</div>
+    </div>
+    <div class="pe-count">
+      <div class="pe-count-n" id="pe-count-n">{{ peliculas.vistas_n }}/{{ peliculas.total }}</div>
+      <div class="pe-count-s">vistas</div>
+    </div>
+  </div>
+  <div class="pe-bar-wrap"><div class="pe-bar-fill" id="pe-bar-fill" style="width:{{ (peliculas.vistas_n / peliculas.total * 100)|round(1) if peliculas.total else 0 }}%"></div></div>
+
+  <div class="pe-add-row">
+    <button type="button" class="btn-a" style="font-size:var(--fs-sm);padding:6px 14px;" onclick="abrirNuevaPelicula()">+ Película</button>
+  </div>
+
+  <div class="pe-filters">
+    <button class="pe-filter on" data-f="todos">Todas (<span id="pe-f-todos">{{ peliculas.total }}</span>)</button>
+    <button class="pe-filter" data-f="pendientes">Pendientes (<span id="pe-f-pendientes">{{ peliculas.total - peliculas.vistas_n }}</span>)</button>
+    <button class="pe-filter" data-f="vistas">Vistas (<span id="pe-f-vistas">{{ peliculas.vistas_n }}</span>)</button>
+    <button class="pe-filter" data-f="ranking">Mi ranking</button>
+  </div>
+
+  <div id="pe-list"></div>
+</div>
+<!-- ═══ /mod-peliculas ═══ -->
+
+<!-- ═══ MODAL: Nueva película ═══════════════════════════════════════════ -->
+<div class="modal-bg" id="modal-pelicula">
+  <div class="modal pd-modal" style="width:380px;">
+    <div class="pd-modal-title">Nueva película</div>
+    <label class="fl" for="pe-titulo">Título</label>
+    <input class="fi" id="pe-titulo" placeholder="Ej. Blade Runner…">
+    <div class="pd-row2" style="margin-top:10px;">
+      <div>
+        <label class="fl" for="pe-director">Director</label>
+        <input class="fi" id="pe-director" placeholder="Opcional">
+      </div>
+      <div>
+        <label class="fl" for="pe-anio">Año</label>
+        <input class="fi" id="pe-anio" type="number" min="1888" placeholder="Opcional">
+      </div>
+    </div>
+    <label class="fl" for="pe-genero" style="margin-top:10px;">Género</label>
+    <input class="fi" id="pe-genero" placeholder="Opcional">
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="btn-g" onclick="closeModal('pelicula')">Cancelar</button>
+      <button class="btn-a" onclick="guardarPelicula()">Agregar</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ MODAL: Libro ═══════════════════════════════════════════════════ -->
@@ -774,6 +900,233 @@ async function refrescarTip() {
   if (window.lucide) lucide.createIcons();
 }
 
+/* ── Submódulos: Libros / Películas ── */
+document.querySelectorAll('.pai-mod-tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.pai-mod-tab').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.pai-mod-panel').forEach(p => p.classList.remove('on'));
+  document.getElementById('mod-' + btn.dataset.mod).classList.add('on');
+  if (btn.dataset.mod === 'peliculas') renderPeliculas();
+}));
+
+/* ── Películas — ranking personal ────────────────────────────────────────── */
+let PELICULAS = {{ peliculas | tojson | safe }};
+const PELI_RATING_DIMS = {{ peli_rating_dims | tojson | safe }};
+let peFilter = 'todos';
+
+function peFilteredPeliculas(){
+  if (peFilter === 'pendientes') return PELICULAS.peliculas.filter(p => !p.vista);
+  if (peFilter === 'vistas')     return PELICULAS.peliculas.filter(p => p.vista);
+  if (peFilter === 'ranking')    return PELICULAS.ranking;
+  return PELICULAS.peliculas;
+}
+
+function renderPeliculas(){
+  const box = document.getElementById('pe-list'); box.innerHTML = '';
+  const items = peFilteredPeliculas();
+
+  if (peFilter === 'ranking') {
+    if (!items.length) {
+      box.innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--dim);font-size:12px;">Aún no calificaste ninguna película vista.</div>';
+    } else {
+      items.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'pe-rank-item';
+        row.innerHTML = `
+          <div class="pe-rank-pos">${i+1}</div>
+          <div class="pe-info">
+            <div class="pe-item-title">${escapeHtml(p.titulo)}</div>
+            <div class="pe-item-sub">${escapeHtml(p.director || '')}${p.anio ? (p.director ? ' · ' : '') + p.anio : ''}</div>
+          </div>
+          <div class="pe-rank-score">${p.mi_rating.toFixed(1)}/10</div>`;
+        box.appendChild(row);
+      });
+    }
+    return;
+  }
+
+  if (!items.length) {
+    box.innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--dim);font-size:12px;">Aún no agregas ninguna película.</div>';
+  }
+
+  items.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'pe-item' + (p.vista ? ' done' : '');
+    row.id = `pe-row-${p.id}`;
+    row.innerHTML = `
+      <div class="pe-check${p.vista ? ' on' : ''}" id="pe-chk-${p.id}">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
+      </div>
+      <div class="pe-info">
+        <div class="pe-item-title">${escapeHtml(p.titulo)}</div>
+        <div class="pe-item-sub">${escapeHtml(p.director || '')}${p.genero ? (p.director ? ' · ' : '') + escapeHtml(p.genero) : ''}</div>
+      </div>
+      <div class="pe-meta">
+        <span class="pe-year">${p.anio || ''}</span>
+        <button type="button" class="pe-rate-trigger${p.mi_rating != null ? ' rated' : ''}" id="pe-rate-btn-${p.id}" ${p.vista ? '' : 'disabled'}>${p.mi_rating != null ? p.mi_rating.toFixed(1) : '—'}</button>
+        <button type="button" class="pe-del" id="pe-del-${p.id}" aria-label="Eliminar ${escapeHtml(p.titulo)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+        </button>
+      </div>`;
+    box.appendChild(row);
+
+    const panel = document.createElement('div');
+    panel.className = 'pe-rate-panel';
+    panel.id = `pe-rate-panel-${p.id}`;
+    panel.innerHTML = peRatePanelHtml(p);
+    box.appendChild(panel);
+
+    document.getElementById(`pe-chk-${p.id}`).addEventListener('click', () => peTogglePelicula(p.id));
+    document.getElementById(`pe-rate-btn-${p.id}`).addEventListener('click', () => peToggleRatePanel(p.id));
+    document.getElementById(`pe-del-${p.id}`).addEventListener('click', () => eliminarPelicula(p.id));
+    panel.addEventListener('click', e => {
+      const dot = e.target.closest('.pe-dot');
+      if (!dot) return;
+      peSetRating(p.id, dot.dataset.dim, parseInt(dot.dataset.val, 10));
+    });
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function peRatePanelHtml(p){
+  let html = '';
+  PELI_RATING_DIMS.forEach(d => {
+    const val = p['rating_' + d.key];
+    let dots = '';
+    for (let i = 1; i <= 10; i++){
+      dots += `<button type="button" class="pe-dot${val != null && i <= val ? ' on' : ''}" data-dim="${d.key}" data-val="${i}"></button>`;
+    }
+    html += `
+      <div class="pe-rate-dim">
+        <div class="pe-rate-dim-top">
+          <span class="pe-rate-dim-lbl">${d.label}</span>
+          <span class="pe-rate-dim-val">${val ?? '—'}</span>
+        </div>
+        <div class="pe-dots">${dots}</div>
+      </div>`;
+  });
+  html += `<div class="pe-rate-overall">Tu rating · <b>${p.mi_rating != null ? p.mi_rating.toFixed(1) : '—'}</b>/10</div>`;
+  return html;
+}
+
+function peToggleRatePanel(id){
+  const panel = document.getElementById(`pe-rate-panel-${id}`);
+  if (!panel) return;
+  const isOpen = panel.classList.contains('on');
+  document.querySelectorAll('.pe-rate-panel.on').forEach(p => p.classList.remove('on'));
+  if (!isOpen) panel.classList.add('on');
+}
+
+function peSyncCounters(){
+  document.getElementById('pe-count-n').textContent = `${PELICULAS.vistas_n}/${PELICULAS.total}`;
+  document.getElementById('pe-bar-fill').style.width = `${PELICULAS.total ? (PELICULAS.vistas_n / PELICULAS.total * 100) : 0}%`;
+  document.getElementById('pe-f-todos').textContent = PELICULAS.total;
+  document.getElementById('pe-f-pendientes').textContent = PELICULAS.total - PELICULAS.vistas_n;
+  document.getElementById('pe-f-vistas').textContent = PELICULAS.vistas_n;
+}
+
+async function peTogglePelicula(id){
+  const p = PELICULAS.peliculas.find(x => x.id === id);
+  const nowVista = !p.vista;
+  try {
+    const r = await fetch(`${BASE}/api/peliculas/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vista: nowVista }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { toast('Error al guardar', 'err'); return; }
+    PELICULAS = d.peliculas;
+    if (d.gam && d.gam.xp) toast(`+${d.gam.xp} XP · +${d.gam.ec} EC`);
+    peSyncCounters();
+    renderPeliculas();
+    if (nowVista) peToggleRatePanel(id);
+  } catch {
+    toast('Sin conexión', 'err');
+  }
+}
+
+async function peSetRating(id, dim, val){
+  try {
+    const r = await fetch(`${BASE}/api/peliculas/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [`rating_${dim}`]: val }),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { toast('Error al guardar', 'err'); return; }
+    PELICULAS = d.peliculas;
+    const p = PELICULAS.peliculas.find(x => x.id === id);
+    const panel = document.getElementById(`pe-rate-panel-${id}`);
+    panel.innerHTML = peRatePanelHtml(p);
+    panel.classList.add('on');
+    const btn = document.getElementById(`pe-rate-btn-${id}`);
+    btn.textContent = p.mi_rating != null ? p.mi_rating.toFixed(1) : '—';
+    btn.classList.toggle('rated', p.mi_rating != null);
+  } catch {
+    toast('Sin conexión', 'err');
+  }
+}
+
+async function eliminarPelicula(id){
+  const p = PELICULAS.peliculas.find(x => x.id === id);
+  if (!p || !(await euConfirm(`¿Eliminar "${p.titulo}"?`))) return;
+  try {
+    const r = await fetch(`${BASE}/api/peliculas/${id}`, { method: 'DELETE' });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { toast('Error al eliminar', 'err'); return; }
+    PELICULAS = d.peliculas;
+    peSyncCounters();
+    renderPeliculas();
+    toast('Película eliminada');
+  } catch {
+    toast('Sin conexión', 'err');
+  }
+}
+
+document.querySelectorAll('.pe-filter').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.pe-filter').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  peFilter = btn.dataset.f;
+  renderPeliculas();
+}));
+
+function abrirNuevaPelicula(){
+  document.getElementById('pe-titulo').value = '';
+  document.getElementById('pe-director').value = '';
+  document.getElementById('pe-anio').value = '';
+  document.getElementById('pe-genero').value = '';
+  openModal('pelicula');
+  setTimeout(() => document.getElementById('pe-titulo').focus(), 80);
+}
+
+async function guardarPelicula(){
+  const titulo = document.getElementById('pe-titulo').value.trim();
+  if (!titulo) { toast('El título es requerido', 'err'); return; }
+  const body = {
+    titulo,
+    director: document.getElementById('pe-director').value.trim(),
+    anio: document.getElementById('pe-anio').value || null,
+    genero: document.getElementById('pe-genero').value.trim(),
+  };
+  try {
+    const r = await fetch(`${BASE}/api/peliculas`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) { toast('Error: ' + (d.error || 'no se pudo guardar'), 'err'); return; }
+    PELICULAS = d.peliculas;
+    closeModal('pelicula');
+    peSyncCounters();
+    renderPeliculas();
+    toast('Película agregada ✓');
+  } catch {
+    toast('Sin conexión', 'err');
+  }
+}
+
+renderPeliculas();
 toggleCamposEstado();
 </script>
 {% endblock %}
