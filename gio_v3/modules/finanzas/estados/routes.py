@@ -24,12 +24,17 @@ estados_bp = Blueprint(
     template_folder='../../../templates',
 )
 
-# Categories that represent debt payments — never counted as real expenses
-_PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO')"
+# Categories that represent debt payments — never counted as real expenses.
+# PRESTAMOS incluido: dinero que prestas y te regresan no es un gasto/ingreso
+# real, solo un movimiento de efectivo — se excluye de ambos lados (ver
+# también _INGRESO_EXCLUIR abajo) para que no infle Balance Neto ni Gastos
+# por categoría. Se agrega/quita a mano en "Categoría" al editar el
+# movimiento (el selector de Tipo del modal no expone Préstamo/Cobro).
+_PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO', 'PRESTAMOS')"
 # Use mi_parte when set (shared expense), otherwise full monto
 _MONTO = "COALESCE(mi_parte, monto)"
 # INGRESO categories that are NOT real income (transfers, cash mobilization)
-_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO', 'APORTACION_RENTA')
+_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO', 'APORTACION_RENTA', 'PRESTAMOS')
 _INGRESO_EXCLUIR_SQL = "categoria NOT IN ({})".format(
     ','.join(f"'{c}'" for c in _INGRESO_EXCLUIR)
 )
@@ -624,17 +629,26 @@ def remove_keyword(keyword):
 @estados_bp.route('/api/loans')
 def loans():
     if not _ok(): return _locked()
+    # Dos formas de marcar un préstamo, por compatibilidad:
+    #   1. tipo='PRESTAMO'/'COBRO_PRESTAMO' — nunca alcanzable desde el modal
+    #      "Editar movimiento" (su selector de Tipo solo ofrece Gasto/Ingreso/
+    #      Pago), se dejó por si algún día se expone ahí o se setea por API.
+    #   2. categoria='PRESTAMOS' — sí seleccionable en "Categoría" del modal;
+    #      la dirección (prestado/cobrado) la da el tipo real (GASTO/INGRESO)
+    #      que ya trae el movimiento, sin necesidad de cambiarlo.
     with get_db() as db:
-        prestado = db.execute(
-            "SELECT SUM(monto) FROM est_movimientos WHERE tipo='PRESTAMO'"
-        ).fetchone()[0] or 0
-        cobrado = db.execute(
-            "SELECT SUM(monto) FROM est_movimientos WHERE tipo='COBRO_PRESTAMO'"
-        ).fetchone()[0] or 0
+        prestado = db.execute("""
+            SELECT SUM(monto) FROM est_movimientos
+            WHERE tipo='PRESTAMO' OR (categoria='PRESTAMOS' AND tipo='GASTO')
+        """).fetchone()[0] or 0
+        cobrado = db.execute("""
+            SELECT SUM(monto) FROM est_movimientos
+            WHERE tipo='COBRO_PRESTAMO' OR (categoria='PRESTAMOS' AND tipo='INGRESO')
+        """).fetchone()[0] or 0
         detalle = db.execute("""
             SELECT descripcion, tipo, SUM(monto) AS total, COUNT(*) AS n
             FROM est_movimientos
-            WHERE tipo IN ('PRESTAMO','COBRO_PRESTAMO')
+            WHERE tipo IN ('PRESTAMO','COBRO_PRESTAMO') OR categoria='PRESTAMOS'
             GROUP BY descripcion, tipo
             ORDER BY total DESC
         """).fetchall()

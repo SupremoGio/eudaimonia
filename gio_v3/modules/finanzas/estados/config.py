@@ -368,6 +368,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "GYM":             ["Membresía anual"],
     "INVERSION":       ["Ahorro", "Inversión", "Crypto", "Fondo viaje", "Fondo emergencias"],
     "OTROS":           [""],
+    "PRESTAMOS":       ["Prestado", "Cobrado"],
     "PUBLICIDAD":      ["Meta Ads", "Reclutamiento", "Marketing digital"],
     "REGALO":          ["General", "Cumpleaños", "Navidad", "Boda", "Flores"],
     "ROPA":            ["Ropa", "Calzado", "Ropa deportiva"],
