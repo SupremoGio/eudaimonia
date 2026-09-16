@@ -266,6 +266,22 @@
 .pe-rank-score{ font-family:var(--mono); font-size:.85rem; color:var(--gold); font-weight:700; margin-left:auto; flex-shrink:0; }
 </style>
 
+<!-- ── Submódulos: Libros / Películas ── -->
+<div class="pai-mod-tabs">
+  <button class="pai-mod-tab on" data-mod="libros"><i data-lucide="library"></i> Libros</button>
+  <button class="pai-mod-tab" data-mod="peliculas"><i data-lucide="clapperboard"></i> Películas</button>
+</div>
+
+<!-- ── Tip del día ───────────────────────────────────────────────────────── -->
+{% set tip_icon_map = {'psicologia':'brain','nutricion':'salad','ciencia':'flask-conical','productividad':'zap'} %}
+<div class="pd-tip" id="pd-tip">
+  <span class="pd-tip-icon"><i data-lucide="{{ tip_icon_map.get(tip.cat, 'lightbulb') }}"></i></span>
+  <span class="pd-tip-text" id="pd-tip-text">{{ tip.text }}</span>
+  <button class="pd-tip-refresh" onclick="refrescarTip()" title="Otro tip" aria-label="Mostrar otro tip">↻</button>
+</div>
+
+<div class="pai-mod-panel on" id="mod-libros">
+
 <!-- ── Meta anual (titular) + stats secundarios ────────────────────────────── -->
 <div class="pd-hero-row">
   <div class="pd-goal">
@@ -295,22 +311,6 @@
     </div>
   </div>
 </div>
-
-<!-- ── Tip del día ───────────────────────────────────────────────────────── -->
-{% set tip_icon_map = {'psicologia':'brain','nutricion':'salad','ciencia':'flask-conical','productividad':'zap'} %}
-<div class="pd-tip" id="pd-tip">
-  <span class="pd-tip-icon"><i data-lucide="{{ tip_icon_map.get(tip.cat, 'lightbulb') }}"></i></span>
-  <span class="pd-tip-text" id="pd-tip-text">{{ tip.text }}</span>
-  <button class="pd-tip-refresh" onclick="refrescarTip()" title="Otro tip" aria-label="Mostrar otro tip">↻</button>
-</div>
-
-<!-- ── Submódulos: Libros / Películas ── -->
-<div class="pai-mod-tabs">
-  <button class="pai-mod-tab on" data-mod="libros"><i data-lucide="library"></i> Libros</button>
-  <button class="pai-mod-tab" data-mod="peliculas"><i data-lucide="clapperboard"></i> Películas</button>
-</div>
-
-<div class="pai-mod-panel on" id="mod-libros">
 
 <!-- ── Leyendo ahora ─────────────────────────────────────────────────────── -->
 {% set actual = libros|selectattr('estado', 'equalto', 'leyendo')|first %}
