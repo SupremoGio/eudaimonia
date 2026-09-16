@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from cryptography.fernet import Fernet, InvalidToken
 from database import get_db
 from utils import uploads_base_dir
+import modules.gamification.engine as engine
 
 PLACEHOLDER = '— editar —'
 
@@ -12,6 +13,13 @@ perfil_bp = Blueprint('perfil', __name__, template_folder='../../templates')
 
 UPLOAD_DIR = os.path.join(uploads_base_dir(), 'docs')
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Recordatorios — mismo tier "progreso" que registrar_gastos/riego de
+# plantas (acción administrativa rápida). Se otorga cada vez que se marca
+# cumplido, incluidos los recurrentes (pagar una tarjeta cada mes sí
+# cuenta cada vez, no es un logro de una sola vez como un álbum/película).
+_RECORDATORIO_XP = 3
+_RECORDATORIO_EC = 1
 
 
 def _vault_fernet():
@@ -383,8 +391,15 @@ def complete_reminder(rid):
                 "UPDATE reminders SET last_done=?, next_date=? WHERE id=?",
                 (today, next_d, rid)
             )
+        cur = db.execute(
+            "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+            (f"recordatorio_{rid}", today, _RECORDATORIO_XP)
+        )
+        log_id = cur.lastrowid
         db.commit()
-    return jsonify({'ok': True})
+
+    gam = engine.process_activity(f"recordatorio_{rid}", _RECORDATORIO_XP, 'Recordatorios', log_id, ec=_RECORDATORIO_EC)
+    return jsonify({'ok': True, 'gam': gam})
 
 
 @perfil_bp.route('/api/reminder/<int:rid>/delete', methods=['POST'])

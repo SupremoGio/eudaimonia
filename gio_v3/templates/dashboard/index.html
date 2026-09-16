@@ -520,6 +520,7 @@
             var n = parseInt(b.textContent, 10) - 1;
             if (n > 0) { b.textContent = n; } else { b.remove(); }
           });
+          if (j.gam && j.gam.xp) toast('+' + j.gam.xp + ' XP' + (j.gam.ec ? ' · +' + j.gam.ec + ' EC' : ''));
         } else { btn.disabled = false; }
       }).catch(function(){ btn.disabled = false; });
     });
