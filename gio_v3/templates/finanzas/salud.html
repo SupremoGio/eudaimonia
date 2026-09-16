@@ -19,6 +19,7 @@
 .sf-pn-value{font-family:var(--serif);font-size:2.6rem;font-weight:300;line-height:1;letter-spacing:.04em;color:#F2EDE0;}
 .sf-pn-value.pos{color:var(--emerald);}
 .sf-pn-value.neg{color:var(--coral);}
+.sf-pn-value .nw-mask{color:#F2EDE0;}
 .sf-pn-sub{font-size:var(--fs-sm);color:#8A7A60;margin-top:6px;}
 .sf-pn-dist{font-size:var(--fs-xs);color:var(--mid);margin-top:8px;}
 .sf-fx-warning{display:flex;align-items:center;gap:5px;font-size:var(--fs-xs);color:#e0b566;background:rgba(224,181,102,.1);border:1px solid rgba(224,181,102,.25);border-radius:6px;padding:5px 9px;margin-top:9px;max-width:fit-content;}
@@ -207,8 +208,8 @@
       <div class="sf-hero-primary-info">
         <div class="sf-pn-label">Patrimonio Neto</div>
         <div class="sf-pn-value {% if patrimonio_neto >= 0 %}pos{% else %}neg{% endif %}">
-          {% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto) }}
-          <span style="font-size:1rem;color:#8A7A60"> MXN</span>
+          <span class="nw-real">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.2f}".format(patrimonio_neto) }}
+          <span style="font-size:1rem;color:#8A7A60"> MXN</span></span><span class="nw-mask">••••••</span>
         </div>
         <div class="sf-pn-sub">Activos totales menos pasivos · actualizado hoy</div>
         <div class="sf-pn-dist">
@@ -225,7 +226,7 @@
       </div>
     </div>
     <div class="sf-stat">
-      <div class="sf-stat-v" style="color:var(--emerald)">${{ "{:,.0f}".format(total_activos) }}</div>
+      <div class="sf-stat-v" style="color:var(--emerald)"><span class="nw-real">${{ "{:,.0f}".format(total_activos) }}</span><span class="nw-mask">••••</span></div>
       <div class="sf-stat-l">Total Activos</div>
       <div class="sf-stat-s">Líquido + Inversiones + Bienes</div>
     </div>
@@ -287,7 +288,7 @@
   <div class="sf-group-hd">
     <div class="sf-group-t" style="display:flex;align-items:center;gap:6px;"><i data-lucide="bar-chart-3" style="width:13px;height:13px;"></i> Evolución Patrimonio Neto</div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <span class="sf-hist-delta {% if delta >= 0 %}pos{% else %}neg{% endif %}">
+      <span class="sf-hist-delta nw-hide-block {% if delta >= 0 %}pos{% else %}neg{% endif %}">
         <i data-lucide="{% if delta >= 0 %}trending-up{% else %}trending-down{% endif %}"></i>
         {% if delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(delta) }} ({% if delta_pct >= 0 %}+{% endif %}{{ "%.1f"|format(delta_pct) }}%)
       </span>
@@ -322,8 +323,8 @@
   </div>
 
   <div style="display:flex;justify-content:space-between;margin-top:8px;">
-    <span style="font-size:var(--fs-xs);color:var(--dim)">Primer snapshot: <span style="color:var(--mid)">{{ historial[0].fecha }} · ${{ "{:,.0f}".format(primero) }}</span></span>
-    <span style="font-size:var(--fs-xs);color:var(--dim)">Último: <span style="color:{% if ultimo >= 0 %}var(--emerald){% else %}var(--coral){% endif %}">${{ "{:,.0f}".format(ultimo) }}</span></span>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Primer snapshot: <span style="color:var(--mid)">{{ historial[0].fecha }} · <span class="nw-real">${{ "{:,.0f}".format(primero) }}</span><span class="nw-mask">••••</span></span></span>
+    <span style="font-size:var(--fs-xs);color:var(--dim)">Último: <span style="color:{% if ultimo >= 0 %}var(--emerald){% else %}var(--coral){% endif %}"><span class="nw-real">${{ "{:,.0f}".format(ultimo) }}</span><span class="nw-mask">••••</span></span></span>
   </div>
 </div>
 {% endif %}
