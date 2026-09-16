@@ -37,6 +37,10 @@
 .vb-nw-trend{position:relative;margin-top:9px;font-size:12px;color:#7BC49A;display:flex;align-items:center;gap:6px;}
 .vb-nw-trend.neg{color:#E59B92;}
 .vb-nw-trend svg{width:13px;height:13px;}
+.nw-mask{display:none;letter-spacing:2px;}
+.nw-hidden .nw-real{display:none;}
+.nw-hidden .nw-mask{display:inline;}
+.nw-hidden .vb-nw-trend,.nw-hidden .m-trend{display:none;}
 .vb-spark{position:relative;display:flex;align-items:flex-end;gap:4px;height:54px;margin-top:auto;padding-top:20px;}
 .vb-spark span{flex:1;background:linear-gradient(180deg,rgba(201,168,76,.5),rgba(201,168,76,.1));border-radius:2px 2px 0 0;min-height:3px;}
 .vb-spark span.now{background:linear-gradient(180deg,var(--gold-l),rgba(201,168,76,.3));box-shadow:0 0 10px rgba(201,168,76,.5);}
@@ -163,7 +167,7 @@
 
     <div class="vb-nw">
       <div class="vb-nw-eye">Patrimonio Neto</div>
-      <div class="vb-nw-val">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></div>
+      <div class="vb-nw-val"><span class="nw-real">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></span><span class="nw-mask">••••••</span></div>
       {% if pat_delta is not none and pat_delta_pct is not none %}
       <div class="vb-nw-trend {% if pat_delta < 0 %}neg{% endif %}">
         <i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i>
@@ -182,7 +186,7 @@
       <div class="vb-nw-foot">
         <div><div class="vb-foot-l">Activos</div><div class="vb-foot-v pos">${{ "{:,.0f}".format(total_activos) }}</div></div>
         <div><div class="vb-foot-l">Pasivos</div><div class="vb-foot-v neg">−${{ "{:,.0f}".format(total_pasivos) }}</div></div>
-        <button class="vb-lock" onclick="logoutApp()" title="Cerrar sesión" aria-label="Cerrar sesión"><i data-lucide="lock"></i></button>
+        <button class="vb-lock" onclick="toggleNetWorth()" title="Ocultar patrimonio" aria-label="Ocultar patrimonio"><i data-lucide="eye"></i></button>
       </div>
     </div>
 
@@ -260,12 +264,12 @@
     <div class="m-eyebrow">Patrimonio Neto</div>
     <div class="m-hero-top">
       <div>
-        <div class="m-value">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></div>
+        <div class="m-value"><span class="nw-real">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></span><span class="nw-mask">••••••</span></div>
         {% if pat_delta is not none and pat_delta_pct is not none %}
         <div class="m-trend {% if pat_delta < 0 %}neg{% endif %}"><i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i><span>{% if pat_delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(pat_delta) }} · {{ pat_delta_pct }}%</span></div>
         {% endif %}
       </div>
-      <button class="m-lock" onclick="logoutApp()" title="Cerrar sesión" aria-label="Cerrar sesión"><i data-lucide="lock"></i></button>
+      <button class="m-lock" onclick="toggleNetWorth()" title="Ocultar patrimonio" aria-label="Ocultar patrimonio"><i data-lucide="eye"></i></button>
     </div>
 
     {% if has_spark %}
@@ -341,10 +345,27 @@
 
 {% block scripts %}
 <script>
-async function logoutApp() {
-  await fetch('/logout', { method: 'POST' });
-  window.location.href = '/login';
+function setNetWorthHidden(hidden) {
+  const oik = document.querySelector('.oik');
+  if (oik) oik.classList.toggle('nw-hidden', hidden);
+  document.querySelectorAll('.vb-lock i, .m-lock i').forEach(i => i.setAttribute('data-lucide', hidden ? 'eye-off' : 'eye'));
+  document.querySelectorAll('.vb-lock, .m-lock').forEach(btn => {
+    const label = hidden ? 'Mostrar patrimonio' : 'Ocultar patrimonio';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  });
+  lucide.createIcons();
+  try { localStorage.setItem('oik_nw_hidden', hidden ? '1' : '0'); } catch (e) {}
 }
+function toggleNetWorth() {
+  const oik = document.querySelector('.oik');
+  setNetWorthHidden(!(oik && oik.classList.contains('nw-hidden')));
+}
+(function () {
+  let hidden = false;
+  try { hidden = localStorage.getItem('oik_nw_hidden') === '1'; } catch (e) {}
+  if (hidden) setNetWorthHidden(true);
+})();
 lucide.createIcons();
 </script>
 {% endblock %}
