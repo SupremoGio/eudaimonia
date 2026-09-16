@@ -352,8 +352,12 @@ def index():
 
 
 def _build_deadlines(today_dt: date) -> list:
-    """Recordatorios y tareas GTD con fecha en los próximos 6 días (o vencidos)."""
+    """Recordatorios y tareas GTD con fecha en los próximos 6 días (o vencidos).
+    Plantas usa un horizonte más corto (3 días) a propósito — el usuario lo
+    pidió así para no ver el riego "venir" con tanta anticipación como el
+    resto de los pendientes."""
     horizon = (today_dt + timedelta(days=6)).isoformat()
+    plant_horizon = (today_dt + timedelta(days=3)).isoformat()
     raw = []
 
     with get_db() as db:
@@ -411,7 +415,7 @@ def _build_deadlines(today_dt: date) -> list:
             FROM plantas
             WHERE date(COALESCE(last_riego, ?), '+' || CAST(MAX(1, ROUND(dias_riego * ?)) AS INTEGER) || ' days') <= ?
             ORDER BY fecha LIMIT 8
-        """, (today_iso, _riego_factor, today_iso, _riego_factor, horizon)).fetchall():
+        """, (today_iso, _riego_factor, today_iso, _riego_factor, plant_horizon)).fetchall():
             raw.append(dict(r))
 
         for r in db.execute("""
@@ -421,7 +425,7 @@ def _build_deadlines(today_dt: date) -> list:
             FROM plantas
             WHERE date(COALESCE(last_trasplante, ?), '+' || meses_trasplante || ' months') <= ?
             ORDER BY fecha LIMIT 8
-        """, (today_iso, today_iso, horizon)).fetchall():
+        """, (today_iso, today_iso, plant_horizon)).fetchall():
             raw.append(dict(r))
 
     deadlines = []

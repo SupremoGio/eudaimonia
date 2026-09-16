@@ -64,8 +64,12 @@ def _compute_planta(row, today, riego_factor):
     el dias_riego que configuró el usuario — así se afloja solo en
     temporada de lluvias y se aprieta solo en temporada seca/calurosa.
     Trasplante no se ajusta por clima (no depende del mes igual que el
-    riego)."""
-    riego_interval_efectivo = max(1, round(row['dias_riego'] * riego_factor))
+    riego). El redondeo es "mitad hacia arriba" (int(x + 0.5)) a propósito
+    — round() de Python redondea .5 al par más cercano (12.5 -> 12), pero
+    el ROUND() de SQLite que usa modules/dashboard/routes.py._build_deadlines
+    para este mismo cálculo redondea .5 hacia arriba (12.5 -> 13). Sin esto
+    ambos discrepaban un día en los intervalos que caen justo en .5."""
+    riego_interval_efectivo = max(1, int(row['dias_riego'] * riego_factor + 0.5))
     riego_pct = _days_since(row['last_riego'], today) / riego_interval_efectivo if riego_interval_efectivo else 0
     trasplante_pct = _months_since(row['last_trasplante'], today) / row['meses_trasplante'] if row['meses_trasplante'] else 0
     riego_status = _status_from_pct(riego_pct)
