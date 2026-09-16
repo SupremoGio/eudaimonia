@@ -212,27 +212,35 @@
 
 .pe-add-row{ margin-bottom:14px; }
 
-.pe-item{ display:flex; align-items:center; gap:12px; padding:11px 13px; background:var(--card); border:1px solid var(--b); border-radius:12px; margin-bottom:7px; max-width:760px; transition:border-color .15s; }
-.pe-item.done{ border-color:rgba(201,168,76,.3); background:var(--gold-d, rgba(201,168,76,.06)); }
+/* ── Grid de tarjetas con póster — mismo lenguaje visual que pd-grid/pd-card
+   de Libros (portada arriba, badges + título + footer de acciones abajo). ── */
+.pe-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:12px; }
+.pe-card{ background:var(--card); border:1px solid var(--b); border-radius:14px; overflow:hidden; transition:border-color .15s; }
+.pe-card.done{ border-color:rgba(201,168,76,.3); }
+.pe-card-cover{ width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--card2); }
+.pe-card-cover-empty{ width:100%; aspect-ratio:2/3; display:flex; align-items:center; justify-content:center; color:var(--gold);
+                       font-family:var(--serif); font-style:italic; font-weight:600; font-size:42px;
+                       background:linear-gradient(150deg, var(--gold-d, rgba(201,168,76,.14)), var(--card2)); }
+.pe-card-body{ padding:12px 13px; }
+.pe-card-badges{ display:flex; gap:6px; margin-bottom:7px; flex-wrap:wrap; }
+.pe-card-title{ font-family:var(--serif); font-weight:600; font-size:15px; color:var(--text); margin-bottom:2px; line-height:1.25;
+                 overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pe-card-sub{ font-size:11.5px; color:var(--dim); margin-bottom:9px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pe-card-footer{ display:flex; align-items:center; gap:6px; }
 .pe-check{ width:22px; height:22px; border:1.5px solid var(--dim); border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .16s; }
 .pe-check:hover{ border-color:var(--gold); }
 .pe-check.on{ background:var(--gold); border-color:var(--gold); }
 .pe-check svg{ width:11px; height:11px; color:var(--bg); display:none; }
 .pe-check.on svg{ display:block; }
-.pe-info{ flex:1; min-width:0; }
-.pe-item-title{ font-size:var(--fs-sm); color:var(--text); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pe-item-sub{ font-size:var(--fs-xs); color:var(--mid); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.pe-meta{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
-.pe-year{ font-size:var(--fs-xs); color:var(--dim); font-family:var(--mono); }
-.pe-rate-trigger{ min-width:36px; background:var(--card2); border:1px solid var(--b); border-radius:6px; padding:4px 7px; color:var(--gold); font-size:.75rem; font-family:var(--mono); text-align:center; cursor:pointer; transition:all .15s; }
+.pe-rate-trigger{ flex:1; min-width:0; background:var(--card2); border:1px solid var(--b); border-radius:6px; padding:4px 6px; color:var(--gold); font-size:.72rem; font-family:var(--mono); text-align:center; cursor:pointer; transition:all .15s; }
 .pe-rate-trigger:hover{ border-color:var(--gold); }
 .pe-rate-trigger.rated{ background:var(--gold-d, rgba(201,168,76,.1)); border-color:var(--gold-border, rgba(201,168,76,.25)); font-weight:700; }
 .pe-rate-trigger:disabled{ opacity:.35; cursor:default; }
-.pe-del{ background:none; border:none; color:var(--dim); cursor:pointer; padding:4px; display:flex; flex-shrink:0; transition:color .15s; }
+.pe-del{ background:none; border:none; color:var(--dim); cursor:pointer; padding:2px; display:flex; flex-shrink:0; transition:color .15s; }
 .pe-del:hover{ color:var(--coral); }
-.pe-del svg{ width:15px; height:15px; }
+.pe-del svg{ width:14px; height:14px; }
 
-.pe-rate-panel{ display:none; max-width:760px; background:var(--card2); border:1px solid var(--b); border-radius:12px; padding:14px 16px 12px; margin:-3px 0 9px; }
+.pe-rate-panel{ display:none; background:var(--card2); border-top:1px solid var(--b); padding:12px 13px 10px; }
 .pe-rate-panel.on{ display:block; }
 .pe-rate-dim{ margin-bottom:11px; }
 .pe-rate-dim-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px; }
@@ -249,8 +257,11 @@
 .pe-filter{ flex:1; cursor:pointer; background:var(--card); border:1px solid var(--b); border-radius:100px; padding:7px 6px; font-size:11.5px; color:var(--dim); text-align:center; transition:all .15s; white-space:nowrap; }
 .pe-filter.on{ background:var(--gold-d, rgba(201,168,76,.1)); border-color:var(--gold-border, rgba(201,168,76,.25)); color:var(--gold); font-weight:600; }
 
-.pe-rank-item{ display:flex; align-items:center; gap:10px; padding:9px 12px; border-bottom:1px solid var(--b); }
+.pe-rank-item{ display:flex; align-items:center; gap:10px; padding:9px 12px; border-bottom:1px solid var(--b); max-width:760px; }
 .pe-rank-pos{ font-family:var(--serif); font-size:1.1rem; font-style:italic; color:var(--gold); width:22px; flex-shrink:0; }
+.pe-rank-info{ flex:1; min-width:0; }
+.pe-rank-title{ font-size:var(--fs-sm); color:var(--text); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pe-rank-sub{ font-size:var(--fs-xs); color:var(--mid); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .pe-rank-score{ font-family:var(--mono); font-size:.85rem; color:var(--gold); font-weight:700; margin-left:auto; flex-shrink:0; }
 </style>
 
@@ -451,8 +462,24 @@
 <div class="modal-bg" id="modal-pelicula">
   <div class="modal pd-modal" style="width:380px;">
     <div class="pd-modal-title">Nueva película</div>
+    <input type="hidden" id="pe-portada">
+
+    <div class="pd-cover-preview-row" id="pe-cover-row" style="display:none;">
+      <img class="pd-cover-preview" id="pe-cover-img" src="" alt="" style="display:none;">
+      <div class="pd-cover-preview pd-cover-preview-empty" id="pe-cover-empty"><i data-lucide="clapperboard"></i></div>
+      <div class="pd-cover-preview-info">
+        <span id="pe-cover-caption">Sin póster — búscala por título para autocompletarlo</span><br>
+        <button type="button" class="pd-cover-preview-clear" id="pe-cover-clear" onclick="limpiarPortadaPelicula()">Quitar póster</button>
+      </div>
+    </div>
+
     <label class="fl" for="pe-titulo">Título</label>
-    <input class="fi" id="pe-titulo" placeholder="Ej. Blade Runner…">
+    <div class="pd-search-wrap">
+      <input class="fi" id="pe-titulo" placeholder="Ej. Blade Runner…" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="pe-buscar-drop" aria-autocomplete="list">
+      <div class="pd-search-drop" id="pe-buscar-drop" role="listbox"></div>
+    </div>
+    <div style="font-size:11px;color:var(--dim);margin-top:4px;">Escribe al menos 3 letras para buscarla y autocompletar año/género/póster</div>
+
     <div class="pd-row2" style="margin-top:10px;">
       <div>
         <label class="fl" for="pe-director">Director</label>
@@ -924,6 +951,7 @@ function peFilteredPeliculas(){
 function renderPeliculas(){
   const box = document.getElementById('pe-list'); box.innerHTML = '';
   const items = peFilteredPeliculas();
+  box.classList.toggle('pe-grid', peFilter !== 'ranking');
 
   if (peFilter === 'ranking') {
     if (!items.length) {
@@ -934,9 +962,9 @@ function renderPeliculas(){
         row.className = 'pe-rank-item';
         row.innerHTML = `
           <div class="pe-rank-pos">${i+1}</div>
-          <div class="pe-info">
-            <div class="pe-item-title">${escapeHtml(p.titulo)}</div>
-            <div class="pe-item-sub">${escapeHtml(p.director || '')}${p.anio ? (p.director ? ' · ' : '') + p.anio : ''}</div>
+          <div class="pe-rank-info">
+            <div class="pe-rank-title">${escapeHtml(p.titulo)}</div>
+            <div class="pe-rank-sub">${escapeHtml(p.director || '')}${p.anio ? (p.director ? ' · ' : '') + p.anio : ''}</div>
           </div>
           <div class="pe-rank-score">${p.mi_rating.toFixed(1)}/10</div>`;
         box.appendChild(row);
@@ -946,39 +974,53 @@ function renderPeliculas(){
   }
 
   if (!items.length) {
-    box.innerHTML = '<div style="text-align:center;padding:30px 10px;color:var(--dim);font-size:12px;">Aún no agregas ninguna película.</div>';
+    const wrap = document.createElement('div');
+    wrap.style.gridColumn = '1/-1';
+    wrap.innerHTML = `
+      <div style="text-align:center;padding:40px 10px;color:var(--dim);">
+        <i data-lucide="clapperboard" style="width:32px;height:32px;opacity:.4;margin-bottom:10px;"></i>
+        <div style="font-family:var(--serif);font-size:16px;color:var(--text);margin-bottom:4px;">Aún no agregas ninguna película</div>
+        <div style="font-size:12px;">Agrega la primera con el botón de arriba.</div>
+      </div>`;
+    box.appendChild(wrap);
+    if (window.lucide) lucide.createIcons();
+    return;
   }
 
   items.forEach(p => {
-    const row = document.createElement('div');
-    row.className = 'pe-item' + (p.vista ? ' done' : '');
-    row.id = `pe-row-${p.id}`;
-    row.innerHTML = `
-      <div class="pe-check${p.vista ? ' on' : ''}" id="pe-chk-${p.id}">
-        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
+    const card = document.createElement('div');
+    card.className = 'pe-card' + (p.vista ? ' done' : '');
+    card.id = `pe-row-${p.id}`;
+    card.innerHTML = `
+      ${p.portada
+        ? `<img class="pe-card-cover" src="${p.portada}" alt="" loading="lazy">`
+        : `<div class="pe-card-cover-empty">${escapeHtml(p.titulo[0] || '?').toUpperCase()}</div>`}
+      <div class="pe-card-body">
+        <div class="pe-card-badges">
+          <span class="pd-badge pd-badge-estado">${p.vista ? 'Vista' : 'Pendiente'}</span>
+          ${p.genero ? `<span class="pd-badge pd-badge-cat">${escapeHtml(p.genero)}</span>` : ''}
+        </div>
+        <div class="pe-card-title">${escapeHtml(p.titulo)}</div>
+        <div class="pe-card-sub">${escapeHtml(p.director || '')}${p.anio ? (p.director ? ' · ' : '') + p.anio : ''}</div>
+        <div class="pe-card-footer">
+          <div class="pe-check${p.vista ? ' on' : ''}" id="pe-chk-${p.id}">
+            <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2,6 5,9 10,3"/></svg>
+          </div>
+          <button type="button" class="pe-rate-trigger${p.mi_rating != null ? ' rated' : ''}" id="pe-rate-btn-${p.id}" ${p.vista ? '' : 'disabled'}>${p.mi_rating != null ? p.mi_rating.toFixed(1) : '—'}</button>
+          <button type="button" class="pe-del" id="pe-del-${p.id}" aria-label="Eliminar ${escapeHtml(p.titulo)}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+          </button>
+        </div>
       </div>
-      <div class="pe-info">
-        <div class="pe-item-title">${escapeHtml(p.titulo)}</div>
-        <div class="pe-item-sub">${escapeHtml(p.director || '')}${p.genero ? (p.director ? ' · ' : '') + escapeHtml(p.genero) : ''}</div>
-      </div>
-      <div class="pe-meta">
-        <span class="pe-year">${p.anio || ''}</span>
-        <button type="button" class="pe-rate-trigger${p.mi_rating != null ? ' rated' : ''}" id="pe-rate-btn-${p.id}" ${p.vista ? '' : 'disabled'}>${p.mi_rating != null ? p.mi_rating.toFixed(1) : '—'}</button>
-        <button type="button" class="pe-del" id="pe-del-${p.id}" aria-label="Eliminar ${escapeHtml(p.titulo)}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
-        </button>
-      </div>`;
-    box.appendChild(row);
+      <div class="pe-rate-panel" id="pe-rate-panel-${p.id}"></div>`;
+    box.appendChild(card);
 
-    const panel = document.createElement('div');
-    panel.className = 'pe-rate-panel';
-    panel.id = `pe-rate-panel-${p.id}`;
+    const panel = card.querySelector(`#pe-rate-panel-${p.id}`);
     panel.innerHTML = peRatePanelHtml(p);
-    box.appendChild(panel);
 
-    document.getElementById(`pe-chk-${p.id}`).addEventListener('click', () => peTogglePelicula(p.id));
-    document.getElementById(`pe-rate-btn-${p.id}`).addEventListener('click', () => peToggleRatePanel(p.id));
-    document.getElementById(`pe-del-${p.id}`).addEventListener('click', () => eliminarPelicula(p.id));
+    card.querySelector(`#pe-chk-${p.id}`).addEventListener('click', () => peTogglePelicula(p.id));
+    card.querySelector(`#pe-rate-btn-${p.id}`).addEventListener('click', () => peToggleRatePanel(p.id));
+    card.querySelector(`#pe-del-${p.id}`).addEventListener('click', () => eliminarPelicula(p.id));
     panel.addEventListener('click', e => {
       const dot = e.target.closest('.pe-dot');
       if (!dot) return;
@@ -1092,11 +1134,124 @@ document.querySelectorAll('.pe-filter').forEach(btn => btn.addEventListener('cli
   renderPeliculas();
 }));
 
+/* ── Búsqueda de películas (iTunes Search API) + preview de póster ───────────
+   Mismo patrón que la búsqueda de libros (OpenLibrary): autocompleta año,
+   género y póster; director no lo da la API (no aplica), se llena a mano. ── */
+function setCoverPreviewPelicula(url) {
+  document.getElementById('pe-portada').value = url || '';
+  const row = document.getElementById('pe-cover-row');
+  const img = document.getElementById('pe-cover-img');
+  const empty = document.getElementById('pe-cover-empty');
+  const caption = document.getElementById('pe-cover-caption');
+  const clearBtn = document.getElementById('pe-cover-clear');
+  row.style.display = 'flex';
+  if (url) {
+    img.src = url;
+    img.style.display = '';
+    empty.style.display = 'none';
+    caption.textContent = 'Póster encontrado';
+    clearBtn.style.display = '';
+  } else {
+    img.style.display = 'none';
+    img.src = '';
+    empty.style.display = 'flex';
+    caption.textContent = 'Sin póster — búscala por título para autocompletarlo';
+    clearBtn.style.display = 'none';
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function limpiarPortadaPelicula() {
+  setCoverPreviewPelicula(null);
+}
+
+function ocultarBusquedaPelicula() {
+  const drop = document.getElementById('pe-buscar-drop');
+  drop.classList.remove('show');
+  drop.innerHTML = '';
+  peSearchActive = -1;
+  document.getElementById('pe-titulo').setAttribute('aria-expanded', 'false');
+}
+
+let peSearchTimer = null;
+let peSearchResultados = [];
+let peSearchActive = -1;
+const peTituloInput = document.getElementById('pe-titulo');
+
+peTituloInput.addEventListener('input', function() {
+  clearTimeout(peSearchTimer);
+  const q = this.value.trim();
+  if (q.length < 3) { ocultarBusquedaPelicula(); return; }
+  peSearchTimer = setTimeout(() => buscarPeliculaAPI(q), 450);
+});
+
+peTituloInput.addEventListener('keydown', (e) => {
+  const drop = document.getElementById('pe-buscar-drop');
+  if (!drop.classList.contains('show')) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); moverSeleccionBusquedaPelicula(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); moverSeleccionBusquedaPelicula(-1); }
+  else if (e.key === 'Enter' && peSearchActive >= 0) { e.preventDefault(); elegirResultadoBusquedaPelicula(peSearchActive); }
+  else if (e.key === 'Escape') { ocultarBusquedaPelicula(); }
+});
+
+function moverSeleccionBusquedaPelicula(delta) {
+  const items = document.querySelectorAll('#pe-buscar-drop .pd-search-item');
+  if (!items.length) return;
+  peSearchActive = (peSearchActive + delta + items.length) % items.length;
+  items.forEach((el, i) => {
+    el.classList.toggle('active', i === peSearchActive);
+    el.setAttribute('aria-selected', i === peSearchActive ? 'true' : 'false');
+  });
+  items[peSearchActive].scrollIntoView({ block: 'nearest' });
+}
+
+function elegirResultadoBusquedaPelicula(i) {
+  const m = peSearchResultados[i];
+  if (!m) return;
+  document.getElementById('pe-titulo').value = m.titulo;
+  if (m.anio) document.getElementById('pe-anio').value = m.anio;
+  if (m.genero) document.getElementById('pe-genero').value = m.genero;
+  setCoverPreviewPelicula(m.portada || null);
+  ocultarBusquedaPelicula();
+}
+
+async function buscarPeliculaAPI(q) {
+  const drop = document.getElementById('pe-buscar-drop');
+  let resultados = [];
+  try {
+    const data = await fetch(`${BASE}/api/buscar_pelicula?q=${encodeURIComponent(q)}`).then(r => r.json());
+    resultados = data.resultados || [];
+  } catch (e) { ocultarBusquedaPelicula(); return; }
+  if (!resultados.length) { ocultarBusquedaPelicula(); return; }
+  peSearchResultados = resultados;
+  peSearchActive = -1;
+  drop.innerHTML = resultados.map((m, i) => `
+    <div class="pd-search-item" data-i="${i}" role="option" aria-selected="false">
+      ${m.portada ? `<img src="${m.portada}" alt="">` : `<div class="pd-search-item-noimg"></div>`}
+      <div>
+        <div class="pd-search-item-title">${escapeHtml(m.titulo)}</div>
+        <div class="pd-search-item-meta">${escapeHtml(m.genero || 'Género desconocido')}${m.anio ? ' · ' + m.anio : ''}</div>
+      </div>
+    </div>
+  `).join('');
+  drop.classList.add('show');
+  peTituloInput.setAttribute('aria-expanded', 'true');
+  drop.querySelectorAll('.pd-search-item').forEach(el => {
+    el.addEventListener('click', () => elegirResultadoBusquedaPelicula(+el.dataset.i));
+  });
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#modal-pelicula .pd-search-wrap')) ocultarBusquedaPelicula();
+});
+
 function abrirNuevaPelicula(){
   document.getElementById('pe-titulo').value = '';
   document.getElementById('pe-director').value = '';
   document.getElementById('pe-anio').value = '';
   document.getElementById('pe-genero').value = '';
+  setCoverPreviewPelicula(null);
+  ocultarBusquedaPelicula();
   openModal('pelicula');
   setTimeout(() => document.getElementById('pe-titulo').focus(), 80);
 }
@@ -1109,6 +1264,7 @@ async function guardarPelicula(){
     director: document.getElementById('pe-director').value.trim(),
     anio: document.getElementById('pe-anio').value || null,
     genero: document.getElementById('pe-genero').value.trim(),
+    portada: document.getElementById('pe-portada').value || null,
   };
   try {
     const r = await fetch(`${BASE}/api/peliculas`, {

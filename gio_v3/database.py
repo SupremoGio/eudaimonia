@@ -1884,6 +1884,16 @@ def init_db():
         );
         """)
 
+        # Migrate paideia_peliculas: portada (póster vía iTunes Search API,
+        # mismo patrón que paideia_libros + OpenLibrary Covers)
+        try:
+            pp_cols = [r["name"] for r in db.execute("PRAGMA table_info(paideia_peliculas)").fetchall()]
+            if "portada" not in pp_cols:
+                db.execute("ALTER TABLE paideia_peliculas ADD COLUMN portada TEXT DEFAULT NULL")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] paideia_peliculas portada migration warning: {e}")
+
         # Migrate lang_journal / lang_test_results: fase, destreza, idioma explícitos
         # (antes de esto el progreso de idiomas quedaba como actividad suelta, sin
         # poder filtrarse por fase de un plan de estudio ni por destreza).

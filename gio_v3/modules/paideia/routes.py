@@ -8,6 +8,7 @@ import modules.gamification.engine as engine
 paideia_bp = Blueprint('paideia', __name__, template_folder='../../templates')
 
 _OPENLIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json'
+_ITUNES_SEARCH_URL = 'https://itunes.apple.com/search'
 
 _META_KEY = 'paideia_meta_anual'
 _DEFAULT_META = 12
@@ -160,6 +161,49 @@ def buscar_libro():
     return jsonify({'resultados': resultados})
 
 
+@paideia_bp.route('/api/buscar_pelicula')
+def buscar_pelicula():
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify({'resultados': []})
+    try:
+        r = requests.get(_ITUNES_SEARCH_URL, params={
+            'term': q,
+            'media': 'movie',
+            'country': 'US',
+            'limit': 6,
+        }, timeout=6)
+        r.raise_for_status()
+        docs = r.json().get('results', [])
+    except requests.RequestException:
+        return jsonify({'resultados': []})
+
+    resultados = []
+    for d in docs:
+        titulo = d.get('trackName')
+        if not titulo:
+            continue
+        anio = None
+        if d.get('releaseDate'):
+            try:
+                anio = int(d['releaseDate'][:4])
+            except (TypeError, ValueError):
+                anio = None
+        # iTunes solo da miniaturas 100x100 — se pide la misma URL en
+        # mayor resolución cambiando el segmento del tamaño (patrón
+        # estable de Apple, no requiere otra llamada ni API key).
+        portada = d.get('artworkUrl100')
+        if portada:
+            portada = portada.replace('100x100bb', '600x600bb')
+        resultados.append({
+            'titulo': titulo,
+            'anio': anio,
+            'genero': d.get('primaryGenreName'),
+            'portada': portada,
+        })
+    return jsonify({'resultados': resultados})
+
+
 @paideia_bp.route('/api/libros')
 def list_libros():
     with get_db() as db:
@@ -263,12 +307,13 @@ def crear_pelicula():
         return jsonify({'ok': False, 'error': 'título requerido'}), 400
     with get_db() as db:
         cur = db.execute(
-            "INSERT INTO paideia_peliculas (titulo, director, anio, genero) VALUES (?,?,?,?)",
+            "INSERT INTO paideia_peliculas (titulo, director, anio, genero, portada) VALUES (?,?,?,?,?)",
             (
                 titulo,
                 (d.get('director') or '').strip(),
                 int(d['anio']) if d.get('anio') not in (None, '') else None,
                 (d.get('genero') or '').strip(),
+                d.get('portada') or None,
             ),
         )
         db.commit()
