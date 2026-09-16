@@ -145,6 +145,38 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
+<script>
+  // El bundle de React (estados.js) es un build minificado sin fuente en
+  // este repo — no se puede tocar para agregarle el aviso de XP/EC ganados
+  // al importar. En vez de eso, se intercepta window.fetch aquí ANTES de
+  // que el bundle cargue: como sigue siendo el mismo window.fetch global,
+  // esto también captura las llamadas que hace el SPA, sin modificarlo.
+  (function () {
+    var origFetch = window.fetch;
+    window.fetch = function (input, init) {
+      var url = (typeof input === 'string') ? input : (input && input.url) || '';
+      var isUpload = url.indexOf('/finanzas/estados/api/upload') !== -1;
+      var promise = origFetch.apply(this, arguments);
+      if (!isUpload) return promise;
+      return promise.then(function (res) {
+        res.clone().json().then(function (data) {
+          var gam = data && data.gamification;
+          if (!gam || (!gam.xp && !gam.ec) || !window.euRewardSheet) return;
+          var n = data.inserted || 0;
+          window.euRewardSheet({
+            icon: 'sparkles',
+            eyebrow: 'Estado de cuenta importado',
+            title: `+${gam.xp} XP · +${gam.ec} EC`,
+            desc: `${n} movimiento${n === 1 ? '' : 's'} nuevo${n === 1 ? '' : 's'} registrado${n === 1 ? '' : 's'}`,
+            burst: true,
+          });
+        }).catch(function () {});
+        return res;
+      });
+    };
+  })();
+</script>
+
 <!-- React SPA assets (built with: npm run build:eu) -->
 <script type="module" src="/static/finanzas/assets/estados.js"></script>
 
