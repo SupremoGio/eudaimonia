@@ -369,6 +369,7 @@
   'eurythmia':   ('eurythmia',      'Eurythmia',      '/eurythmia/'),
   'harma':       ('harma',          'Harma',          '/harma/'),
   'paideia':     ('paideia',        'Paideia',        '/paideia/'),
+  'plantas':     ('plantas',        'Plantas',        '/plantas/'),
 } %}
 
 {# URL efectiva del módulo padre; '' o pg desconocido → '/' (el dashboard ya
@@ -413,6 +414,7 @@
       ('/idiomas/',     'globe',        'Cosmopolitismo', ['idiomas'],                                              'Idiomas'),
       ('/eurythmia/',   'music',        'Eurythmia',      ['eurythmia'],                                            'Baile · Ritmo'),
       ('/harma/',       'car',          'Harma',          ['harma'],                                                'Vehículo'),
+      ('/plantas/',     'flower-2',     'Plantas',        ['plantas'],                                              'Riego · Trasplante'),
     ] %}
     <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg in keys %} active{% endif %}">
       <i data-lucide="{{ icon }}"></i>

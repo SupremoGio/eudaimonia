@@ -394,6 +394,31 @@ def _build_deadlines(today_dt: date) -> list:
         """, (horizon,)).fetchall():
             raw.append(dict(r))
 
+        # Plantas — próxima fecha de riego/trasplante calculada con las
+        # funciones date() de SQLite (no hay columna de "próxima fecha"
+        # guardada, se deriva de last_* + intervalo, igual que el estado
+        # que ya calcula modules/plantas/routes.py._compute_planta).
+        today_iso = today_dt.isoformat()
+        for r in db.execute("""
+            SELECT id, ('Regar ' || nombre) AS label, NULL AS rem_type,
+                   date(COALESCE(last_riego, ?), '+' || dias_riego || ' days') AS fecha,
+                   'planta_riego' AS kind
+            FROM plantas
+            WHERE date(COALESCE(last_riego, ?), '+' || dias_riego || ' days') <= ?
+            ORDER BY fecha LIMIT 8
+        """, (today_iso, today_iso, horizon)).fetchall():
+            raw.append(dict(r))
+
+        for r in db.execute("""
+            SELECT id, ('Trasplantar ' || nombre) AS label, NULL AS rem_type,
+                   date(COALESCE(last_trasplante, ?), '+' || meses_trasplante || ' months') AS fecha,
+                   'planta_trasplante' AS kind
+            FROM plantas
+            WHERE date(COALESCE(last_trasplante, ?), '+' || meses_trasplante || ' months') <= ?
+            ORDER BY fecha LIMIT 8
+        """, (today_iso, today_iso, horizon)).fetchall():
+            raw.append(dict(r))
+
     deadlines = []
     for d in raw:
         try:

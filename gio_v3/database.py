@@ -1791,6 +1791,40 @@ def init_db():
         );
         """)
 
+        # ── PLANTAS — riego/trasplante (submódulo de Ataraxia, como HARMA) ─────
+        # Mismo patrón que harma_plan_items pero cada planta tiene DOS
+        # calendarios independientes en vez de uno con doble métrica (km/
+        # tiempo) — riego (días) y trasplante (meses) no comparten "el que
+        # llegue primero manda", son dos cuidados distintos con su propio
+        # last_*/intervalo. El estado (nominal/próximo/urgente/vencido) de
+        # cada uno se calcula igual que en HARMA: pct = tiempo_transcurrido
+        # / intervalo.
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS plantas (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre           TEXT    NOT NULL,
+            especie          TEXT    DEFAULT '',
+            ubicacion        TEXT    DEFAULT '',
+            foto             TEXT    DEFAULT NULL,
+            dias_riego       INTEGER NOT NULL DEFAULT 7,
+            meses_trasplante INTEGER NOT NULL DEFAULT 12,
+            last_riego       TEXT    DEFAULT NULL,
+            last_trasplante  TEXT    DEFAULT NULL,
+            notas            TEXT    DEFAULT '',
+            created_at       TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS plantas_bitacora (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            planta_id       INTEGER NOT NULL,
+            tipo            TEXT    NOT NULL,
+            fecha           TEXT    NOT NULL,
+            notas           TEXT    DEFAULT '',
+            activity_log_id INTEGER DEFAULT NULL,
+            created_at      TEXT    NOT NULL,
+            FOREIGN KEY (planta_id) REFERENCES plantas(id) ON DELETE CASCADE
+        );
+        """)
+
         # ── FÚTBOL — Historial de partidos (submódulo de Hegemonikon) ──────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS futbol_partidos (

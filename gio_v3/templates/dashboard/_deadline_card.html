@@ -14,7 +14,10 @@
       {% else %}
       <button class="dl-check" title="Marcar como cumplido"
         data-type="{{ dl.type }}" data-id="{{ dl.id }}"
-        data-url="{{ '/gtd/api/task/' ~ dl.id ~ '/complete' if dl.type == 'task' else '/perfil/api/reminder/' ~ dl.id ~ '/done' }}">
+        data-url="{{ '/gtd/api/task/' ~ dl.id ~ '/complete' if dl.type == 'task'
+          else '/plantas/api/plantas/' ~ dl.id ~ '/riego' if dl.type == 'planta_riego'
+          else '/plantas/api/plantas/' ~ dl.id ~ '/trasplante' if dl.type == 'planta_trasplante'
+          else '/perfil/api/reminder/' ~ dl.id ~ '/done' }}">
         <i data-lucide="check"></i>
       </button>
       {% endif %}
