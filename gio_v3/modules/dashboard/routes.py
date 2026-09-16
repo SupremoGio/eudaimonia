@@ -397,16 +397,21 @@ def _build_deadlines(today_dt: date) -> list:
         # Plantas — próxima fecha de riego/trasplante calculada con las
         # funciones date() de SQLite (no hay columna de "próxima fecha"
         # guardada, se deriva de last_* + intervalo, igual que el estado
-        # que ya calcula modules/plantas/routes.py._compute_planta).
+        # que ya calcula modules/plantas/routes.py._compute_planta). El
+        # riego usa dias_riego * factor de temporada (Guadalajara) — mismo
+        # ajuste estacional que ya aplica esa función, para que el widget
+        # del dashboard no contradiga lo que muestra /plantas/.
+        from modules.plantas.care_data import seasonal_factor as _plantas_factor
         today_iso = today_dt.isoformat()
+        _riego_factor = _plantas_factor(today_dt.month)['factor']
         for r in db.execute("""
             SELECT id, ('Regar ' || nombre) AS label, NULL AS rem_type,
-                   date(COALESCE(last_riego, ?), '+' || dias_riego || ' days') AS fecha,
+                   date(COALESCE(last_riego, ?), '+' || CAST(MAX(1, ROUND(dias_riego * ?)) AS INTEGER) || ' days') AS fecha,
                    'planta_riego' AS kind
             FROM plantas
-            WHERE date(COALESCE(last_riego, ?), '+' || dias_riego || ' days') <= ?
+            WHERE date(COALESCE(last_riego, ?), '+' || CAST(MAX(1, ROUND(dias_riego * ?)) AS INTEGER) || ' days') <= ?
             ORDER BY fecha LIMIT 8
-        """, (today_iso, today_iso, horizon)).fetchall():
+        """, (today_iso, _riego_factor, today_iso, _riego_factor, horizon)).fetchall():
             raw.append(dict(r))
 
         for r in db.execute("""

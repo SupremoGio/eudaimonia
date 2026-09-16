@@ -15,6 +15,9 @@ html.light{ --pl: oklch(48% 0.15 155); --pl-l: oklch(42% 0.16 155); --pl-bg: okl
 .pl-wrap{ max-width:1100px; }
 .pl-hero{ padding:2px 0 18px; }
 .pl-hero-tag{ font-family:var(--serif); font-style:italic; font-size:13px; color:var(--dim); margin-top:2px; }
+.pl-temporada{ display:flex; align-items:center; gap:8px; margin-top:12px; background:var(--pl-bg); border:1px solid var(--pl-b);
+               border-radius:9px; padding:8px 12px; font-size:11.5px; color:var(--pl-l); max-width:520px; }
+.pl-temporada i{ width:15px; height:15px; flex-shrink:0; }
 
 .pl-status-strip{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
 .pl-status-box{ flex:1; min-width:80px; text-align:center; padding:10px 6px; border-radius:10px; background:rgba(16,185,129,0.04); border:1px solid var(--b); }
@@ -86,6 +89,15 @@ html.light{ --pl: oklch(48% 0.15 155); --pl-l: oklch(42% 0.16 155); --pl-bg: okl
 <div class="pl-wrap">
   <div class="pl-hero">
     <div class="pl-hero-tag">Riego y trasplante — sin identificación de especies, solo recordatorios</div>
+    {% if temporada.label %}
+    <div class="pl-temporada">
+      <i data-lucide="{{ 'cloud-rain' if temporada.factor > 1.05 else ('sun' if temporada.factor < 0.95 else 'leaf') }}"></i>
+      <span>{{ temporada.label }} en Guadalajara — riego ajustado automáticamente
+        {%- if temporada.factor > 1 %} (~{{ ((temporada.factor - 1) * 100)|round|int }}% menos seguido)
+        {%- elif temporada.factor < 1 %} (~{{ ((1 - temporada.factor) * 100)|round|int }}% más seguido)
+        {%- endif %}.</span>
+    </div>
+    {% endif %}
     <div class="pl-status-strip">
       <div class="pl-status-box{{ ' on-vencido' if counts.vencido else '' }}">
         <div class="pl-status-n">{{ counts.vencido }}</div>
@@ -247,7 +259,7 @@ function renderPlantas(){
         </div>
         <div class="pl-card-sub">${escapeHtml(p.especie || '')}${p.ubicacion ? (p.especie ? ' · ' : '') + escapeHtml(p.ubicacion) : ''}</div>
         <div class="pl-care">
-          ${careRowHtml(p, 'riego', 'droplet', 'Riego', 'riego_status', `cada ${p.dias_riego}d`)}
+          ${careRowHtml(p, 'riego', 'droplet', 'Riego', 'riego_status', p.riego_interval_efectivo !== p.dias_riego ? `cada ${p.riego_interval_efectivo}d (ajustado)` : `cada ${p.dias_riego}d`)}
           ${careRowHtml(p, 'trasplante', 'sprout', 'Trasplante', 'trasplante_status', `cada ${p.meses_trasplante}m`)}
         </div>
       </div>`;

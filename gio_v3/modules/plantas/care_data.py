@@ -124,3 +124,36 @@ def suggest_care(query: str):
                 'meses_trasplante': meses_trasplante,
             }
     return None
+
+
+# ── Ajuste estacional de riego para Guadalajara, Jalisco ─────────────────────
+# Clima subtropical de altura (Köppen Cwa/Cwb): seco todo el año salvo
+# junio-septiembre (temporada de lluvias, muy húmeda), con el pico de calor
+# y evaporación justo ANTES de las lluvias (marzo-mayo) — no en pleno
+# verano, al revés de climas templados. No es un API de clima en vivo: es
+# un patrón anual estable de la ciudad, así que no hay nada que pueda
+# fallar en producción como pasó con la búsqueda de iTunes.
+#
+# factor > 1  → intervalo efectivo MÁS LARGO (riega menos seguido)
+# factor < 1  → intervalo efectivo MÁS CORTO (riega más seguido)
+# El factor se aplica sobre dias_riego para calcular el "vencido/próximo/
+# urgente", nunca sobreescribe el valor base que configuró el usuario.
+SEASONAL_FACTOR_GDL: dict[int, tuple[float, str]] = {
+    1:  (1.15, "Seca y fresca"),
+    2:  (1.15, "Seca y fresca"),
+    3:  (0.90, "Empieza el calor, aún seca"),
+    4:  (0.80, "Calor fuerte y seco — pico de evaporación"),
+    5:  (0.85, "Calor fuerte, previo a lluvias"),
+    6:  (1.20, "Inicio de temporada de lluvias"),
+    7:  (1.30, "Lluvias plenas — mucha humedad"),
+    8:  (1.30, "Lluvias plenas — mucha humedad"),
+    9:  (1.25, "Lluvias, aún húmedo"),
+    10: (1.10, "Fin de lluvias, transición"),
+    11: (1.15, "Seca y fresca"),
+    12: (1.20, "Seca y fría"),
+}
+
+
+def seasonal_factor(month: int):
+    factor, label = SEASONAL_FACTOR_GDL.get(month, (1.0, ""))
+    return {'factor': factor, 'label': label}

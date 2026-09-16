@@ -4,7 +4,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 from database import get_db
 from utils import today_str, today_date, uploads_base_dir
-from modules.plantas.care_data import suggest_care
+from modules.plantas.care_data import suggest_care, seasonal_factor
 import modules.gamification.engine as engine
 
 plantas_bp = Blueprint('plantas', __name__, template_folder='../../templates')
@@ -53,12 +53,20 @@ def _status_from_pct(pct):
     return 'nominal'
 
 
-def _compute_planta(row, today):
+def _compute_planta(row, today, riego_factor):
     """Cada planta tiene DOS calendarios independientes (a diferencia del
     plan de HARMA, que usa una sola métrica doble km/tiempo por ítem) —
     riego y trasplante no comparten "el que llegue primero manda", cada
-    uno se calcula y se marca por separado."""
-    riego_pct = _days_since(row['last_riego'], today) / row['dias_riego'] if row['dias_riego'] else 0
+    uno se calcula y se marca por separado.
+
+    El riego usa un intervalo EFECTIVO (dias_riego * riego_factor del mes
+    actual en Guadalajara) para decidir vencido/próximo/urgente, sin tocar
+    el dias_riego que configuró el usuario — así se afloja solo en
+    temporada de lluvias y se aprieta solo en temporada seca/calurosa.
+    Trasplante no se ajusta por clima (no depende del mes igual que el
+    riego)."""
+    riego_interval_efectivo = max(1, round(row['dias_riego'] * riego_factor))
+    riego_pct = _days_since(row['last_riego'], today) / riego_interval_efectivo if riego_interval_efectivo else 0
     trasplante_pct = _months_since(row['last_trasplante'], today) / row['meses_trasplante'] if row['meses_trasplante'] else 0
     riego_status = _status_from_pct(riego_pct)
     trasplante_status = _status_from_pct(trasplante_pct)
@@ -66,26 +74,28 @@ def _compute_planta(row, today):
     return {
         **row,
         'riego_pct': round(min(riego_pct, 2), 2), 'riego_status': riego_status,
+        'riego_interval_efectivo': riego_interval_efectivo,
         'trasplante_pct': round(min(trasplante_pct, 2), 2), 'trasplante_status': trasplante_status,
         'status': peor,
     }
 
 
-def _serialize_plantas(db):
+def _serialize_plantas(db, riego_factor):
     today = today_date()
     rows = [dict(r) for r in db.execute("SELECT * FROM plantas ORDER BY id").fetchall()]
-    plantas = [_compute_planta(r, today) for r in rows]
+    plantas = [_compute_planta(r, today, riego_factor) for r in rows]
     plantas.sort(key=lambda p: _STATUS_ORDER[p['status']])
     return plantas
 
 
 def _state():
+    temporada = seasonal_factor(today_date().month)
     with get_db() as db:
-        plantas = _serialize_plantas(db)
+        plantas = _serialize_plantas(db, temporada['factor'])
     counts = {'vencido': 0, 'urgente': 0, 'proximo': 0, 'nominal': 0}
     for p in plantas:
         counts[p['status']] += 1
-    return {'plantas': plantas, 'counts': counts, 'total': len(plantas)}
+    return {'plantas': plantas, 'counts': counts, 'total': len(plantas), 'temporada': temporada}
 
 
 def _log_cuidado(planta_id, tipo, notas=''):
