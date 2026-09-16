@@ -1,3 +1,4 @@
+import os
 import requests
 from flask import Blueprint, render_template, request, jsonify
 from datetime import datetime
@@ -8,7 +9,16 @@ import modules.gamification.engine as engine
 paideia_bp = Blueprint('paideia', __name__, template_folder='../../templates')
 
 _OPENLIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json'
-_ITUNES_SEARCH_URL = 'https://itunes.apple.com/search'
+
+# Búsqueda de películas — OMDb en vez de iTunes Search API: Apple suele
+# bloquear/limitar peticiones servidor-a-servidor desde IPs de nube (Railway)
+# a itunes.apple.com aunque funcione desde un navegador normal. OMDb está
+# hecho justo para uso server-side y de paso trae Director (iTunes no lo
+# daba). Requiere API key gratis (omdbapi.com/apikey.aspx, sin tarjeta) en
+# la variable de entorno OMDB_API_KEY — sin ella la búsqueda degrada a
+# "sin resultados" en vez de romper el modal de alta manual.
+_OMDB_URL = 'https://www.omdbapi.com/'
+_OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '')
 
 _META_KEY = 'paideia_meta_anual'
 _DEFAULT_META = 12
@@ -161,47 +171,66 @@ def buscar_libro():
     return jsonify({'resultados': resultados})
 
 
+def _omdb_year(y):
+    if not y:
+        return None
+    digits = ''.join(c for c in y[:4] if c.isdigit())
+    return int(digits) if len(digits) == 4 else None
+
+
+def _omdb_clean(v):
+    return None if v in (None, 'N/A', '') else v
+
+
 @paideia_bp.route('/api/buscar_pelicula')
 def buscar_pelicula():
     q = request.args.get('q', '').strip()
-    if not q:
+    if not q or not _OMDB_API_KEY:
         return jsonify({'resultados': []})
     try:
-        r = requests.get(_ITUNES_SEARCH_URL, params={
-            'term': q,
-            'media': 'movie',
-            'country': 'US',
-            'limit': 6,
+        r = requests.get(_OMDB_URL, params={
+            'apikey': _OMDB_API_KEY, 's': q, 'type': 'movie',
         }, timeout=6)
         r.raise_for_status()
-        docs = r.json().get('results', [])
+        data = r.json()
     except requests.RequestException:
         return jsonify({'resultados': []})
 
-    resultados = []
-    for d in docs:
-        titulo = d.get('trackName')
-        if not titulo:
-            continue
-        anio = None
-        if d.get('releaseDate'):
-            try:
-                anio = int(d['releaseDate'][:4])
-            except (TypeError, ValueError):
-                anio = None
-        # iTunes solo da miniaturas 100x100 — se pide la misma URL en
-        # mayor resolución cambiando el segmento del tamaño (patrón
-        # estable de Apple, no requiere otra llamada ni API key).
-        portada = d.get('artworkUrl100')
-        if portada:
-            portada = portada.replace('100x100bb', '600x600bb')
-        resultados.append({
-            'titulo': titulo,
-            'anio': anio,
-            'genero': d.get('primaryGenreName'),
-            'portada': portada,
-        })
+    if data.get('Response') != 'True':
+        return jsonify({'resultados': []})
+
+    resultados = [{
+        'imdb_id': d.get('imdbID'),
+        'titulo':  d.get('Title'),
+        'anio':    _omdb_year(d.get('Year')),
+        'portada': _omdb_clean(d.get('Poster')),
+    } for d in data.get('Search', [])[:6] if d.get('Title') and d.get('imdbID')]
     return jsonify({'resultados': resultados})
+
+
+@paideia_bp.route('/api/pelicula_detalle')
+def pelicula_detalle():
+    """Detalle completo por imdbID — la búsqueda (s=) de OMDb no trae
+    Director/Genre, solo título/año/póster; se pide aparte y solo cuando
+    el usuario elige un resultado (no por cada item del dropdown)."""
+    imdb_id = request.args.get('id', '').strip()
+    if not imdb_id or not _OMDB_API_KEY:
+        return jsonify({'error': 'no disponible'}), 400
+    try:
+        r = requests.get(_OMDB_URL, params={'apikey': _OMDB_API_KEY, 'i': imdb_id}, timeout=6)
+        r.raise_for_status()
+        d = r.json()
+    except requests.RequestException:
+        return jsonify({'error': 'sin conexión'}), 502
+    if d.get('Response') != 'True':
+        return jsonify({'error': d.get('Error', 'no encontrado')}), 404
+    return jsonify({
+        'titulo':   d.get('Title'),
+        'anio':     _omdb_year(d.get('Year')),
+        'director': _omdb_clean(d.get('Director')),
+        'genero':   _omdb_clean(d.get('Genre')),
+        'portada':  _omdb_clean(d.get('Poster')),
+    })
 
 
 @paideia_bp.route('/api/libros')

@@ -1205,14 +1205,22 @@ function moverSeleccionBusquedaPelicula(delta) {
   items[peSearchActive].scrollIntoView({ block: 'nearest' });
 }
 
-function elegirResultadoBusquedaPelicula(i) {
+async function elegirResultadoBusquedaPelicula(i) {
   const m = peSearchResultados[i];
   if (!m) return;
   document.getElementById('pe-titulo').value = m.titulo;
   if (m.anio) document.getElementById('pe-anio').value = m.anio;
-  if (m.genero) document.getElementById('pe-genero').value = m.genero;
   setCoverPreviewPelicula(m.portada || null);
   ocultarBusquedaPelicula();
+  // La búsqueda (s=) de OMDb no trae Director/Género — se pide el detalle
+  // completo solo para la película elegida, no por cada item del dropdown.
+  if (!m.imdb_id) return;
+  try {
+    const det = await fetch(`${BASE}/api/pelicula_detalle?id=${encodeURIComponent(m.imdb_id)}`).then(r => r.json());
+    if (det.director) document.getElementById('pe-director').value = det.director;
+    if (det.genero) document.getElementById('pe-genero').value = det.genero;
+    if (det.portada) setCoverPreviewPelicula(det.portada);
+  } catch { /* datos base ya están puestos, el detalle es un extra */ }
 }
 
 async function buscarPeliculaAPI(q) {
@@ -1230,7 +1238,7 @@ async function buscarPeliculaAPI(q) {
       ${m.portada ? `<img src="${m.portada}" alt="">` : `<div class="pd-search-item-noimg"></div>`}
       <div>
         <div class="pd-search-item-title">${escapeHtml(m.titulo)}</div>
-        <div class="pd-search-item-meta">${escapeHtml(m.genero || 'Género desconocido')}${m.anio ? ' · ' + m.anio : ''}</div>
+        <div class="pd-search-item-meta">${m.anio || ''}</div>
       </div>
     </div>
   `).join('');
