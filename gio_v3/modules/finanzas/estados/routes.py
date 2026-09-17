@@ -88,6 +88,9 @@ def _build_filters(args) -> tuple[list[str], list]:
     if args.get('category'):
         conditions.append("categoria = ?")
         params.append(args['category'])
+    if args.get('subcategoria'):
+        conditions.append("subcategoria = ?")
+        params.append(args['subcategoria'])
     if args.get('tipo'):
         conditions.append("tipo = ?")
         params.append(args['tipo'])
@@ -119,12 +122,21 @@ def index():
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
+_SORT_COLUMNS = {
+    'fecha_desc':  'fecha DESC',
+    'fecha_asc':   'fecha ASC',
+    'monto_desc':  'ABS(monto) DESC',
+    'monto_asc':   'ABS(monto) ASC',
+}
+
+
 @estados_bp.route('/api/transactions')
 def list_transactions():
     if not _ok(): return _locked()
 
     limit  = min(int(request.args.get('limit', 200)), 2000)
     offset = int(request.args.get('offset', 0))
+    order_by = _SORT_COLUMNS.get(request.args.get('sort'), 'fecha DESC')
     conds, params = _build_filters(request.args)
     where = f"WHERE {' AND '.join(conds)}" if conds else ""
 
@@ -133,7 +145,7 @@ def list_transactions():
             f"SELECT COUNT(*) FROM est_movimientos {where}", params
         ).fetchone()[0]
         rows = db.execute(
-            f"SELECT * FROM est_movimientos {where} ORDER BY fecha DESC LIMIT ? OFFSET ?",
+            f"SELECT * FROM est_movimientos {where} ORDER BY {order_by} LIMIT ? OFFSET ?",
             params + [limit, offset],
         ).fetchall()
 
@@ -364,6 +376,45 @@ def by_category():
         """, params).fetchall()
 
     return jsonify([{'categoria': r['categoria'], 'total': round(r['total'] or 0, 2)} for r in rows])
+
+
+@estados_bp.route('/api/summary/by-subcategory')
+def by_subcategory():
+    if not _ok(): return _locked()
+    category = request.args.get('category')
+    if not category:
+        return jsonify({'error': 'category requerida'}), 400
+    bank = request.args.get('bank')
+
+    conds  = ["tipo='GASTO'", _PAGO_CATS, "categoria = ?"]
+    params = [category]
+    months_cond, months_params = _months_condition(request.args)
+    if months_cond:
+        conds.append(months_cond)
+        params.extend(months_params)
+    else:
+        date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        date_to   = request.args.get('date_to')
+        conds.append("fecha >= ?"); params.append(date_from)
+        if date_to:
+            conds.append("fecha <= ?"); params.append(date_to)
+    if bank:
+        conds.append("banco = ?"); params.append(bank)
+
+    with get_db() as db:
+        rows = db.execute(f"""
+            SELECT COALESCE(NULLIF(subcategoria, ''), 'Sin subcategoría') AS subcategoria,
+                   SUM({_MONTO}) AS total,
+                   COUNT(*) AS n
+            FROM est_movimientos
+            WHERE {' AND '.join(conds)}
+            GROUP BY subcategoria ORDER BY total DESC
+        """, params).fetchall()
+
+    return jsonify([
+        {'subcategoria': r['subcategoria'], 'total': round(r['total'] or 0, 2), 'n': r['n']}
+        for r in rows
+    ])
 
 
 @estados_bp.route('/api/summary/stats')
