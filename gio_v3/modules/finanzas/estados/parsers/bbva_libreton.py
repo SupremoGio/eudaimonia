@@ -2,15 +2,25 @@
 BBVA Libretón Básico Cuenta Digital — Estado de cuenta débito.
 """
 import re
+from itertools import combinations
 from pathlib import Path
 
 from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA
 from ._base import open_pdf
 
 ABONO_KW = [
-    "SPEI RECIBIDO", "PAGO DE NOMINA", "DEPOSITO EFECTIVO",
-    "SU PAGO", "SITH", "ABONO",
+    "SPEI RECIBIDO", "PAGO DE NOMINA", "DEPOSITO EFECTIVO", "DEPOSITO DE TERCERO",
+    "SU PAGO", "SITH", "ABONO", "DEVUELTO",
 ]
+
+# "PAGO CUENTA DE TERCERO" es la única descripción que de verdad puede ser
+# cargo O abono según el caso — BBVA no lo distingue en el texto (a
+# diferencia de "SPEI ENVIADO"/"SPEI RECIBIDO", que sí son inequívocos por
+# nombre). Adivinar por palabra clave le atinaba la mayoría de las veces
+# pero fallaba en silencio en el resto — ver commit "Verificar cargo/abono
+# de PAGO CUENTA DE TERCERO contra el saldo del PDF". Para estas líneas se
+# verifica el signo contra el saldo impreso en vez de adivinar.
+AMBIGUOUS_KW = ["PAGO CUENTA DE TERCERO"]
 
 CATS_LIBRETON = {
     "NOMINA":        ["PAGO DE NOMINA", "NOMINA", "FIBRA HOTELERA"],
@@ -42,7 +52,7 @@ SKIP_KW = [
 
 TXN_RE = re.compile(
     r"^(\d{2}/[A-Z]{3})\s+(\d{2}/[A-Z]{3})\s+(.+?)\s+([\d,]+\.\d{2})"
-    r"(?:\s+[\d,]+\.\d{2}(?:\s+[\d,]+\.\d{2})?)?\s*$",
+    r"(?:\s+([\d,]+\.\d{2})(?:\s+[\d,]+\.\d{2})?)?\s*$",
     re.IGNORECASE,
 )
 
@@ -51,6 +61,7 @@ PERIODO_RE = re.compile(
     re.IGNORECASE,
 )
 CORTE_RE = re.compile(r"fecha\s+de\s+corte\s+\d{2}/\d{2}/(\d{4})", re.IGNORECASE)
+SALDO_ANTERIOR_RE = re.compile(r"saldo\s+anterior\s+([\d,]+\.\d{2})", re.IGNORECASE)
 
 
 def _extract_year_bounds(full_text: str) -> tuple[int, int, int, int]:
@@ -129,6 +140,72 @@ def _should_skip(line: str) -> bool:
     return any(k.upper() in lu for k in SKIP_KW)
 
 
+_MAX_PENDIENTES_COMBINATORIA = 14  # 2**14 = 16384 combinaciones, de sobra para una racha real
+
+
+def _resolve_ambiguous_tipos(movimientos: list[dict], saldos: list[float | None],
+                              ambiguos: list[bool], saldo_inicial: float | None) -> None:
+    """Verifica contra el saldo impreso el tipo de las líneas ambiguas
+    (AMBIGUOUS_KW), en vez de dejarlas en el default GASTO.
+
+    Recorre los movimientos en orden acumulando un saldo esperado. Las
+    líneas confiables (no ambiguas) aportan su monto con el signo ya
+    determinado por palabra clave. Las líneas ambiguas se acumulan como
+    "pendientes" (signo desconocido, sin aportar al saldo esperado)
+    hasta la siguiente línea que trae saldo impreso (un "checkpoint").
+    Ahí se compara, asumiendo GASTO por default para todas las pendientes,
+    el saldo esperado contra el saldo real impreso. Si no cuadra, se
+    prueban todos los subconjuntos de pendientes que — de voltearse a
+    INGRESO — explican exactamente esa diferencia (cada uno vale 2×monto
+    porque pasa de restar a sumar). Si hay una única combinación que
+    cuadra, se aplica; si no hay ninguna o hay varias (ambiguo, no se
+    puede saber cuál de las combinaciones es la real), no se adivina: se
+    deja el default y esas líneas quedan sin verificar — ninguna peor que
+    antes de este cambio, solo sin confirmar.
+
+    Muta movimientos[i]["tipo"] in place cuando corrige.
+    """
+    if saldo_inicial is None:
+        return  # no se pudo leer "Saldo Anterior" — no hay con qué verificar
+
+    saldo_esperado = saldo_inicial
+    pendientes: list[int] = []  # índices de movimientos ambiguos sin verificar aún
+
+    for i, mov in enumerate(movimientos):
+        signo = 1 if mov["tipo"] == "INGRESO" else -1
+        if ambiguos[i]:
+            pendientes.append(i)
+        else:
+            saldo_esperado += signo * mov["monto"]
+
+        saldo_real = saldos[i]
+        if saldo_real is None:
+            continue  # esta línea no trae saldo impreso — no hay checkpoint aquí
+
+        # saldo_esperado asume GASTO (signo -1) para cada pendiente sin resolver
+        esperado_con_pendientes = saldo_esperado - sum(movimientos[j]["monto"] for j in pendientes)
+        diff = round(saldo_real - esperado_con_pendientes, 2)
+
+        if abs(diff) < 0.01:
+            pass  # el default ya cuadra — nada que corregir
+        elif pendientes and len(pendientes) <= _MAX_PENDIENTES_COMBINATORIA:
+            montos = [movimientos[j]["monto"] for j in pendientes]
+            matches = [
+                combo
+                for r in range(len(pendientes) + 1)
+                for combo in combinations(range(len(pendientes)), r)
+                if abs(sum(2 * montos[k] for k in combo) - diff) < 0.01
+            ]
+            if len(matches) == 1:
+                for k in matches[0]:
+                    movimientos[pendientes[k]]["tipo"] = "INGRESO"
+            # 0 o >1 combinaciones cuadran: no se puede atribuir con
+            # certeza — se deja tal cual (sin adivinar).
+
+        saldo_esperado = saldo_real  # el saldo impreso es siempre la verdad
+        pendientes = []
+
+
 def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str | None) -> list[dict]:
     lines = [l.strip() for l in full_text.split("\n") if l.strip()]
 
@@ -140,7 +217,10 @@ def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str 
     if not txn_positions:
         return []
 
-    movimientos = []
+    movimientos: list[dict] = []
+    saldos: list[float | None] = []
+    ambiguos: list[bool] = []
+
     for idx, pos in enumerate(txn_positions):
         next_pos = txn_positions[idx + 1] if idx + 1 < len(txn_positions) else len(lines)
 
@@ -149,6 +229,7 @@ def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str 
         fecha_cargo = _parse_date(m.group(2), bounds)
         desc_main   = m.group(3).strip()
         monto       = float(m.group(4).replace(",", ""))
+        saldo_op    = float(m.group(5).replace(",", "")) if m.group(5) else None
 
         cont_extra = ""
         for bline in lines[pos + 1 : next_pos]:
@@ -162,6 +243,7 @@ def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str 
         full_desc = (desc_main + " " + cont_extra).strip() if cont_extra else desc_main
         du = full_desc.upper()
         tipo = "INGRESO" if any(k in du for k in ABONO_KW) else "GASTO"
+        es_ambiguo = any(k in du for k in AMBIGUOUS_KW) and not any(k in du for k in ABONO_KW)
         categoria = _categorize(full_desc)
         desc = _clean(full_desc)
 
@@ -175,6 +257,12 @@ def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str 
             "tipo":         tipo,
             "periodo":      periodo,
         })
+        saldos.append(saldo_op)
+        ambiguos.append(es_ambiguo)
+
+    saldo_inicial_m = SALDO_ANTERIOR_RE.search(full_text)
+    saldo_inicial = float(saldo_inicial_m.group(1).replace(",", "")) if saldo_inicial_m else None
+    _resolve_ambiguous_tipos(movimientos, saldos, ambiguos, saldo_inicial)
 
     return movimientos
 
