@@ -359,7 +359,7 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
 SUBCATEGORIAS: dict[str, list[str]] = {
     "APRENDIZAJE":     ["Cursos online", "Idiomas", "Libros", "Papelería"],
     "CAFE/PAN":        ["Café", "Pan", "Social"],
-    "CASA/HOGAR":      ["Alquiler", "Luz", "Agua", "Gas", "Internet", "Decoración", "Muebles", "Mantenimiento", "Envíos", "Hogar general"],
+    "CASA/HOGAR":      ["Alquiler", "Luz", "Agua", "Gas", "Internet", "Decoración", "Muebles", "Mantenimiento", "Envíos", "Plantas", "Hogar general"],
     "COMIDA/REST":     ["Restaurante", "Delivery", "Café"],
     "DEPORTE":         ["Deporte general"],
     "ENTRETENIMIENTO": ["Bar & Antro", "Eventos", "Salidas", "Golf", "Cultura", "Cine"],
