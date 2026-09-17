@@ -47,20 +47,46 @@ TXN_RE = re.compile(
 )
 
 PERIODO_RE = re.compile(
-    r"periodo\s+del\s+\d{2}/\d{2}/(\d{4})\s+al\s+\d{2}/\d{2}/(\d{4})",
+    r"periodo\s+del\s+\d{2}/(\d{2})/(\d{4})\s+al\s+\d{2}/(\d{2})/(\d{4})",
     re.IGNORECASE,
 )
 CORTE_RE = re.compile(r"fecha\s+de\s+corte\s+\d{2}/\d{2}/(\d{4})", re.IGNORECASE)
 
 
-def _extract_year(full_text: str) -> int:
+def _extract_year_bounds(full_text: str) -> tuple[int, int, int, int]:
+    """Devuelve (mes_inicio, anio_inicio, mes_fin, anio_fin) del periodo.
+
+    El periodo de un Libretón siempre corta a mediados de mes (ej. "DEL
+    07/12/2024 AL 06/01/2025"), así que en diciembre-enero el año de inicio
+    y el de fin son distintos. Aplicar un solo año a todas las fechas del
+    estado de cuenta (como hacía la versión anterior) desplazaba un año
+    completo cada movimiento de diciembre — se colaban en el "2025-12" del
+    año siguiente en vez de "2024-12", y por lo tanto desaparecían al
+    filtrar por 2024 en la app.
+    """
     m = PERIODO_RE.search(full_text)
     if m:
-        return int(m.group(2))
+        mes_ini, anio_ini, mes_fin, anio_fin = m.groups()
+        return int(mes_ini), int(anio_ini), int(mes_fin), int(anio_fin)
     m = CORTE_RE.search(full_text)
     if m:
-        return int(m.group(1))
-    return 2025
+        anio = int(m.group(1))
+        return 1, anio, 12, anio
+    return 1, 2025, 12, 2025
+
+
+def _year_for_month(mon_abbr: str, bounds: tuple[int, int, int, int]) -> int:
+    mes_ini, anio_ini, mes_fin, anio_fin = bounds
+    if anio_ini == anio_fin:
+        return anio_ini
+    mes = int(MESES.get(mon_abbr.lower(), "0") or "0")
+    if mes == mes_ini:
+        return anio_ini
+    if mes == mes_fin:
+        return anio_fin
+    # Mes fuera de lo esperado (no debería pasar en un periodo de ~1 mes):
+    # nos quedamos con el año cuyo mes de borde está más cerca.
+    return anio_fin if mes <= mes_fin else anio_ini
 
 
 def _extract_periodo(full_text: str) -> str | None:
@@ -72,9 +98,10 @@ def _extract_periodo(full_text: str) -> str | None:
     return None
 
 
-def _parse_date(s: str, year: int) -> str:
+def _parse_date(s: str, bounds: tuple[int, int, int, int]) -> str:
     day, mon = s.split("/")
     mm = MESES.get(mon.lower(), "00")
+    year = _year_for_month(mon, bounds)
     return f"{year}-{mm}-{day.zfill(2)}"
 
 
@@ -102,7 +129,7 @@ def _should_skip(line: str) -> bool:
     return any(k.upper() in lu for k in SKIP_KW)
 
 
-def _parse_text(full_text: str, year: int, periodo: str | None) -> list[dict]:
+def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str | None) -> list[dict]:
     lines = [l.strip() for l in full_text.split("\n") if l.strip()]
 
     txn_positions = []
@@ -118,8 +145,8 @@ def _parse_text(full_text: str, year: int, periodo: str | None) -> list[dict]:
         next_pos = txn_positions[idx + 1] if idx + 1 < len(txn_positions) else len(lines)
 
         m = TXN_RE.match(lines[pos])
-        fecha_oper  = _parse_date(m.group(1), year)
-        fecha_cargo = _parse_date(m.group(2), year)
+        fecha_oper  = _parse_date(m.group(1), bounds)
+        fecha_cargo = _parse_date(m.group(2), bounds)
         desc_main   = m.group(3).strip()
         monto       = float(m.group(4).replace(",", ""))
 
@@ -157,9 +184,9 @@ def parse(pdf_path: Path) -> list[dict]:
     try:
         with open_pdf(pdf_path, PDF_PASSWORD, PDF_PASSWORD_BBVA) as pdf:
             full_text = "\n".join(p.extract_text() or "" for p in pdf.pages)
-            year    = _extract_year(full_text)
+            bounds  = _extract_year_bounds(full_text)
             periodo = _extract_periodo(full_text)
-            movimientos = _parse_text(full_text, year, periodo)
+            movimientos = _parse_text(full_text, bounds, periodo)
     except Exception as e:
         print(f"  [ERROR BBVA_LIB] {e}")
     return movimientos
