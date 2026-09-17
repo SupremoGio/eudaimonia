@@ -1557,6 +1557,19 @@ def init_db():
         except Exception as e:
             print(f"[DB] est_movimientos BBVA_TDC rename warning: {e}")
 
+        # Backfill: "BBVA_LIB" (formato Libretón) y "BBVA_DEB" (el otro
+        # formato de débito) son la misma cuenta, solo cambia la plantilla
+        # del PDF — se unifican bajo "BBVA_DEB". El valor "BBVA_LIB" no
+        # estaba en las opciones del <select> de Banco del front (mostraba
+        # la primera opción, "BBVA_TDC", en vez del banco real) y quedaba
+        # fuera de las reglas de categorización que filtran por
+        # banco='BBVA_DEB' (nómina, renta depto 807, etc.).
+        try:
+            db.execute("UPDATE est_movimientos SET banco='BBVA_DEB' WHERE banco='BBVA_LIB'")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] est_movimientos BBVA_LIB->BBVA_DEB merge warning: {e}")
+
         # Backfill: "CAFE/SOCIAL" y "CAFE/PAN" eran la misma categoría con dos
         # nombres — CAFE/SOCIAL es un código huérfano (ninguna regla de
         # config.py ni de est_keywords actual la genera) que se quedó en

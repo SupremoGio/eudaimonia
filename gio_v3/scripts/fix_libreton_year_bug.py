@@ -19,8 +19,13 @@ Uso:
   cd gio_v3 && python scripts/fix_libreton_year_bug.py            # dry-run (no escribe nada)
   cd gio_v3 && python scripts/fix_libreton_year_bug.py --apply    # aplica los cambios
 
-Solo toca filas con banco='BBVA_LIB'. Es seguro correrlo varias veces
-(idempotente): una fila ya corregida no vuelve a aparecer como afectada.
+Solo toca filas con banco IN ('BBVA_LIB','BBVA_DEB') — se aceptan ambos
+valores porque el backfill que unifica BBVA_LIB en BBVA_DEB (ver
+database.py) puede haber corrido ya antes que este script; el filtro real
+de "es Libretón" es el formato del `periodo` guardado ("DD/MM/YYYY al
+DD/MM/YYYY"), así que un BBVA_DEB de otro formato simplemente no matchea
+y se ignora. Es seguro correrlo varias veces (idempotente): una fila ya
+corregida no vuelve a aparecer como afectada.
 """
 import sys, os, re, argparse
 
@@ -55,7 +60,8 @@ def main():
     with get_db() as db:
         rows = db.execute(
             "SELECT id, fecha, fecha_cargo, descripcion, monto, tipo, periodo "
-            "FROM est_movimientos WHERE banco='BBVA_LIB' AND periodo IS NOT NULL AND periodo != ''"
+            "FROM est_movimientos WHERE banco IN ('BBVA_LIB','BBVA_DEB') "
+            "AND periodo IS NOT NULL AND periodo != ''"
         ).fetchall()
 
         fixes = []      # (id, nueva_fecha, nueva_fecha_cargo, fila)
@@ -85,7 +91,7 @@ def main():
 
             fixes.append((r["id"], nueva_fecha, nueva_fecha_cargo, r))
 
-        print(f"Filas BBVA_LIB con periodo cruzando año: revisadas {len(rows)}")
+        print(f"Filas BBVA_LIB/BBVA_DEB con periodo Libretón: revisadas {len(rows)}")
         print(f"Filas a corregir: {len(fixes)}")
         for _id, nf, nfc, r in fixes:
             print(f"  #{_id}  {r['fecha']} -> {nf}   (liq {r['fecha_cargo']} -> {nfc})   "
