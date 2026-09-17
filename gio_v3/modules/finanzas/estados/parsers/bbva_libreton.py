@@ -62,6 +62,15 @@ PERIODO_RE = re.compile(
 )
 CORTE_RE = re.compile(r"fecha\s+de\s+corte\s+\d{2}/\d{2}/(\d{4})", re.IGNORECASE)
 SALDO_ANTERIOR_RE = re.compile(r"saldo\s+anterior\s+([\d,]+\.\d{2})", re.IGNORECASE)
+SALDO_FINAL_RE = re.compile(r"saldo\s+final\s+([\d,]+\.\d{2})", re.IGNORECASE)
+TOTAL_CARGOS_RE = re.compile(
+    r"total\s+importe\s+cargos\s+([\d,]+\.\d{2})\s+total\s+movimientos\s+cargos\s+(\d+)",
+    re.IGNORECASE,
+)
+TOTAL_ABONOS_RE = re.compile(
+    r"total\s+importe\s+abonos\s+([\d,]+\.\d{2})\s+total\s+movimientos\s+abonos\s+(\d+)",
+    re.IGNORECASE,
+)
 
 
 def _extract_year_bounds(full_text: str) -> tuple[int, int, int, int]:

@@ -850,19 +850,27 @@ def upload_file():
         tmp_path.unlink(missing_ok=True)
 
 
-@estados_bp.route('/admin/audit-tipo', methods=['POST'])
-def audit_tipo():
-    """Audita un estado de cuenta YA importado contra lo que hay en la DB.
+@estados_bp.route('/admin/audit-montos', methods=['POST'])
+def audit_montos():
+    """Audita que los MONTOS de un estado de cuenta YA importado cuadren
+    contra lo que hay en la DB — no toca ni compara categoría/tipo (el
+    usuario los reclasifica a mano y eso no se debe pisar). Es de solo
+    lectura: nunca escribe nada, solo reporta.
 
-    No inserta nada (a diferencia de /api/upload) — vuelve a parsear el PDF
-    con el parser actual (que puede haber mejorado desde que se importó,
-    ej. la verificación de cargo/abono contra saldo de bbva_libreton.py) y
-    compara, para cada movimiento parseado, el `tipo` recién calculado
-    contra el que ya está guardado en la fila con la misma (fecha,
-    descripcion) — la misma clave que usa el índice UNIQUE. Reporta
-    discrepancias sin tocar nada; con ?apply=1 corrige el tipo de las
-    filas donde también coincide el monto (evita tocar una fila que solo
-    coincide en fecha+descripcion por casualidad)."""
+    Vuelve a parsear el PDF (sin insertar nada, a diferencia de
+    /api/upload) y compara, para el mismo periodo, contra las filas ya
+    guardadas en la DB (banco='BBVA_DEB', mismo `periodo` textual que
+    quedó grabado al importar):
+      - movimientos del PDF que no aparecen en la DB (posible falta),
+      - filas de la DB de este periodo que no corresponden a ningún
+        movimiento del PDF (posible fantasma/duplicado),
+      - pares que sí matchean por (fecha, descripcion) pero el monto no
+        coincide,
+      - los totales agregados (suma de cargos/abonos) del PDF, de la DB
+        para este periodo, y los oficiales que el propio PDF reporta en
+        su resumen ("Total Importe Cargos/Abonos", "Saldo Final") — para
+        poder ver de un vistazo si todo cuadra en conjunto aunque no haya
+        diferencias línea por línea."""
     if not _ok(): return _locked()
 
     file = request.files.get('file')
@@ -881,43 +889,99 @@ def audit_tipo():
         if not movimientos:
             return jsonify({'ok': False, 'error': 'No se encontraron transacciones', 'bank': bank})
 
-        apply_changes = request.args.get('apply') == '1'
+        periodo = movimientos[0].get('periodo')
+
+        # Totales oficiales que el propio PDF reporta — solo disponibles
+        # para el formato Libretón (bbva_libreton.py); en cualquier otro
+        # formato se omiten y la auditoría se queda con la comparación
+        # línea por línea contra la DB.
+        oficiales = None
+        try:
+            from .parsers import bbva_libreton as _lib
+            from .parsers._base import open_pdf as _open_pdf
+            from .config import PDF_PASSWORD, PDF_PASSWORD_BBVA
+            with _open_pdf(tmp_path, PDF_PASSWORD, PDF_PASSWORD_BBVA) as _pdf:
+                _text = "\n".join(p.extract_text() or "" for p in _pdf.pages)
+            _tc = _lib.TOTAL_CARGOS_RE.search(_text)
+            _ta = _lib.TOTAL_ABONOS_RE.search(_text)
+            _sf = _lib.SALDO_FINAL_RE.search(_text)
+            _sa = _lib.SALDO_ANTERIOR_RE.search(_text)
+            if _tc and _ta:
+                oficiales = {
+                    'total_cargos': float(_tc.group(1).replace(",", "")),
+                    'n_cargos': int(_tc.group(2)),
+                    'total_abonos': float(_ta.group(1).replace(",", "")),
+                    'n_abonos': int(_ta.group(2)),
+                    'saldo_anterior': float(_sa.group(1).replace(",", "")) if _sa else None,
+                    'saldo_final': float(_sf.group(1).replace(",", "")) if _sf else None,
+                }
+        except Exception:
+            pass
+
+        pdf_por_clave = {}
+        for m in movimientos:
+            pdf_por_clave.setdefault((m['fecha'], m['descripcion']), []).append(m)
 
         with get_db() as db:
-            discrepancias = []
-            sin_encontrar = 0
-            corregidas = 0
-            for m in movimientos:
-                row = db.execute(
-                    "SELECT id, monto, tipo FROM est_movimientos WHERE fecha=? AND descripcion=?",
-                    (m['fecha'], m['descripcion']),
-                ).fetchone()
-                if not row:
-                    sin_encontrar += 1
-                    continue
-                if row['tipo'] == m['tipo']:
-                    continue
-                monto_coincide = abs(float(row['monto']) - float(m['monto'])) < 0.01
-                item = {
-                    'id': row['id'], 'fecha': m['fecha'], 'descripcion': m['descripcion'],
-                    'monto_guardado': row['monto'], 'monto_pdf': m['monto'],
-                    'tipo_guardado': row['tipo'], 'tipo_correcto': m['tipo'],
-                    'monto_coincide': monto_coincide,
-                }
-                discrepancias.append(item)
-                if apply_changes and monto_coincide:
-                    db.execute("UPDATE est_movimientos SET tipo=? WHERE id=?", (m['tipo'], row['id']))
-                    corregidas += 1
+            db_rows = db.execute(
+                "SELECT id, fecha, descripcion, monto, tipo FROM est_movimientos "
+                "WHERE banco='BBVA_DEB' AND periodo=?",
+                (periodo,),
+            ).fetchall() if periodo else []
 
-            if apply_changes:
-                db.commit()
+        db_por_clave = {}
+        for r in db_rows:
+            db_por_clave.setdefault((r['fecha'], r['descripcion']), []).append(dict(r))
+
+        faltan_en_db = []       # está en el PDF, no hay fila en la DB para esa clave
+        monto_no_coincide = []  # misma clave, pero el monto guardado es distinto
+        for clave, pdf_movs in pdf_por_clave.items():
+            db_movs = db_por_clave.get(clave, [])
+            if not db_movs:
+                faltan_en_db.extend({
+                    'fecha': m['fecha'], 'descripcion': m['descripcion'], 'monto_pdf': m['monto'],
+                } for m in pdf_movs)
+                continue
+            # Compara ordenado por monto — cubre el caso normal (una fila
+            # por clave) y el de varias filas iguales del mismo día.
+            for pm, dm in zip(sorted(pdf_movs, key=lambda x: x['monto']),
+                               sorted(db_movs, key=lambda x: x['monto'])):
+                if abs(pm['monto'] - dm['monto']) >= 0.01:
+                    monto_no_coincide.append({
+                        'id': dm['id'], 'fecha': pm['fecha'], 'descripcion': pm['descripcion'],
+                        'monto_pdf': pm['monto'], 'monto_guardado': dm['monto'],
+                    })
+            if len(pdf_movs) > len(db_movs):
+                faltan_en_db.extend({
+                    'fecha': m['fecha'], 'descripcion': m['descripcion'], 'monto_pdf': m['monto'],
+                } for m in sorted(pdf_movs, key=lambda x: x['monto'])[len(db_movs):])
+
+        fantasmas_en_db = []  # está en la DB con este periodo, no matchea ningún movimiento del PDF
+        for clave, db_movs in db_por_clave.items():
+            pdf_movs = pdf_por_clave.get(clave, [])
+            if len(db_movs) > len(pdf_movs):
+                fantasmas_en_db.extend({
+                    'id': r['id'], 'fecha': r['fecha'], 'descripcion': r['descripcion'],
+                    'monto': r['monto'], 'tipo': r['tipo'],
+                } for r in sorted(db_movs, key=lambda x: x['monto'])[len(pdf_movs):])
+
+        total_pdf_cargos  = sum(m['monto'] for m in movimientos if m['tipo'] != 'INGRESO')
+        total_pdf_abonos  = sum(m['monto'] for m in movimientos if m['tipo'] == 'INGRESO')
+        total_db_cargos   = sum(r['monto'] for r in db_rows if r['tipo'] != 'INGRESO')
+        total_db_abonos   = sum(r['monto'] for r in db_rows if r['tipo'] == 'INGRESO')
 
         return jsonify({
-            'ok': True, 'bank': bank, 'apply': apply_changes,
-            'parseados': len(movimientos),
-            'sin_encontrar_en_db': sin_encontrar,
-            'discrepancias': discrepancias,
-            'corregidas': corregidas if apply_changes else 0,
+            'ok': True, 'bank': bank, 'periodo': periodo,
+            'parseados_en_pdf': len(movimientos),
+            'encontrados_en_db_este_periodo': len(db_rows),
+            'oficiales_segun_pdf': oficiales,
+            'totales': {
+                'pdf_cargos': round(total_pdf_cargos, 2), 'pdf_abonos': round(total_pdf_abonos, 2),
+                'db_cargos': round(total_db_cargos, 2), 'db_abonos': round(total_db_abonos, 2),
+            },
+            'faltan_en_db': faltan_en_db,
+            'monto_no_coincide': monto_no_coincide,
+            'fantasmas_en_db': fantasmas_en_db,
         })
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)})
