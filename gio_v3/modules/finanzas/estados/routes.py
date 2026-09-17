@@ -933,37 +933,46 @@ def audit_montos():
         for r in db_rows:
             db_por_clave.setdefault((r['fecha'], r['descripcion']), []).append(dict(r))
 
-        faltan_en_db = []       # está en el PDF, no hay fila en la DB para esa clave
-        monto_no_coincide = []  # misma clave, pero el monto guardado es distinto
-        for clave, pdf_movs in pdf_por_clave.items():
-            db_movs = db_por_clave.get(clave, [])
-            if not db_movs:
-                faltan_en_db.extend({
-                    'fecha': m['fecha'], 'descripcion': m['descripcion'], 'monto_pdf': m['monto'],
-                } for m in pdf_movs)
-                continue
-            # Compara ordenado por monto — cubre el caso normal (una fila
-            # por clave) y el de varias filas iguales del mismo día.
-            for pm, dm in zip(sorted(pdf_movs, key=lambda x: x['monto']),
-                               sorted(db_movs, key=lambda x: x['monto'])):
-                if abs(pm['monto'] - dm['monto']) >= 0.01:
-                    monto_no_coincide.append({
-                        'id': dm['id'], 'fecha': pm['fecha'], 'descripcion': pm['descripcion'],
-                        'monto_pdf': pm['monto'], 'monto_guardado': dm['monto'],
-                    })
-            if len(pdf_movs) > len(db_movs):
-                faltan_en_db.extend({
-                    'fecha': m['fecha'], 'descripcion': m['descripcion'], 'monto_pdf': m['monto'],
-                } for m in sorted(pdf_movs, key=lambda x: x['monto'])[len(db_movs):])
+        faltan_en_db = []       # está en el PDF, no hay fila en la DB para ese monto exacto
+        monto_no_coincide = []  # misma clave, un solo sobrante de cada lado: mismo movimiento, monto distinto
+        fantasmas_en_db = []    # está en la DB con este periodo, no matchea ningún movimiento del PDF
+        claves = set(pdf_por_clave) | set(db_por_clave)
+        for clave in claves:
+            pdf_movs = list(pdf_por_clave.get(clave, []))
+            db_movs = list(db_por_clave.get(clave, []))
+            # Primero empareja por monto EXACTO (misma fecha+descripción
+            # puede tener varias transacciones reales distintas el mismo
+            # día — nunca se debe adivinar cuál del PDF corresponde a cuál
+            # de la DB por posición/orden). Lo que empareja exacto se
+            # descarta de ambos lados; solo lo que sobra se reporta.
+            pdf_restantes, db_restantes = [], list(db_movs)
+            for pm in pdf_movs:
+                match = next((dm for dm in db_restantes if abs(dm['monto'] - pm['monto']) < 0.01), None)
+                if match:
+                    db_restantes.remove(match)
+                else:
+                    pdf_restantes.append(pm)
 
-        fantasmas_en_db = []  # está en la DB con este periodo, no matchea ningún movimiento del PDF
-        for clave, db_movs in db_por_clave.items():
-            pdf_movs = pdf_por_clave.get(clave, [])
-            if len(db_movs) > len(pdf_movs):
+            if len(pdf_restantes) == 1 and len(db_restantes) == 1:
+                # Único sobrante de cada lado: es inequívoco que es el
+                # mismo movimiento con el monto guardado distinto.
+                pm, dm = pdf_restantes[0], db_restantes[0]
+                monto_no_coincide.append({
+                    'id': dm['id'], 'fecha': pm['fecha'], 'descripcion': pm['descripcion'],
+                    'monto_pdf': pm['monto'], 'monto_guardado': dm['monto'],
+                })
+            else:
+                # 0, o >1 de cada lado: no hay forma de saber cuál sobrante
+                # del PDF "es" cuál sobrante de la DB — se reportan como
+                # faltantes/fantasmas por separado en vez de adivinar un
+                # emparejamiento.
+                faltan_en_db.extend({
+                    'fecha': m['fecha'], 'descripcion': m['descripcion'], 'monto_pdf': m['monto'],
+                } for m in pdf_restantes)
                 fantasmas_en_db.extend({
                     'id': r['id'], 'fecha': r['fecha'], 'descripcion': r['descripcion'],
                     'monto': r['monto'], 'tipo': r['tipo'],
-                } for r in sorted(db_movs, key=lambda x: x['monto'])[len(pdf_movs):])
+                } for r in db_restantes)
 
         total_pdf_cargos  = sum(m['monto'] for m in movimientos if m['tipo'] != 'INGRESO')
         total_pdf_abonos  = sum(m['monto'] for m in movimientos if m['tipo'] == 'INGRESO')
