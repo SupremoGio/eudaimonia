@@ -850,6 +850,58 @@ def upload_file():
         tmp_path.unlink(missing_ok=True)
 
 
+def _comparar_pdf_vs_db(movimientos: list, db_rows: list) -> tuple:
+    """Compara movimientos parseados del PDF contra filas ya guardadas en
+    la DB para el mismo periodo, agrupando por (fecha, descripcion) y
+    emparejando dentro de cada clave por monto EXACTO — nunca por
+    orden/posición, porque una misma fecha+descripción puede tener más de
+    una transacción real distinta el mismo día (ver migración
+    idx_est_mov_dedup en database.py, que por eso amplió el índice único
+    para incluir también el monto).
+
+    Devuelve (faltan, monto_no_coincide, fantasmas):
+      - faltan: movimientos completos del PDF (dict con todas sus claves,
+        listos para insertarse) sin match en la DB.
+      - monto_no_coincide: lista de {'pdf': movimiento, 'db': fila} donde,
+        para una misma clave, sobra exactamente una fila de cada lado tras
+        el emparejamiento exacto — inequívocamente el mismo movimiento con
+        el monto guardado distinto.
+      - fantasmas: filas de la DB (dict) sin match en el PDF.
+
+    Si sobra más de una fila de un lado (o de ambos) para la misma clave,
+    NUNCA se adivina cuál le corresponde a cuál — se reportan por separado
+    como faltantes/fantasmas en vez de emparejarlas por posición."""
+    pdf_por_clave: dict = {}
+    for m in movimientos:
+        pdf_por_clave.setdefault((m['fecha'], m['descripcion']), []).append(m)
+
+    db_por_clave: dict = {}
+    for r in db_rows:
+        r = dict(r)
+        db_por_clave.setdefault((r['fecha'], r['descripcion']), []).append(r)
+
+    faltan, monto_no_coincide, fantasmas = [], [], []
+    claves = set(pdf_por_clave) | set(db_por_clave)
+    for clave in claves:
+        pdf_movs = list(pdf_por_clave.get(clave, []))
+        db_movs = list(db_por_clave.get(clave, []))
+        pdf_restantes, db_restantes = [], list(db_movs)
+        for pm in pdf_movs:
+            match = next((dm for dm in db_restantes if abs(dm['monto'] - pm['monto']) < 0.01), None)
+            if match:
+                db_restantes.remove(match)
+            else:
+                pdf_restantes.append(pm)
+
+        if len(pdf_restantes) == 1 and len(db_restantes) == 1:
+            monto_no_coincide.append({'pdf': pdf_restantes[0], 'db': db_restantes[0]})
+        else:
+            faltan.extend(pdf_restantes)
+            fantasmas.extend(db_restantes)
+
+    return faltan, monto_no_coincide, fantasmas
+
+
 @estados_bp.route('/admin/audit-montos', methods=['POST'])
 def audit_montos():
     """Audita que los MONTOS de un estado de cuenta YA importado cuadren
@@ -918,10 +970,6 @@ def audit_montos():
         except Exception:
             pass
 
-        pdf_por_clave = {}
-        for m in movimientos:
-            pdf_por_clave.setdefault((m['fecha'], m['descripcion']), []).append(m)
-
         with get_db() as db:
             db_rows = db.execute(
                 "SELECT id, fecha, descripcion, monto, tipo FROM est_movimientos "
@@ -929,50 +977,21 @@ def audit_montos():
                 (periodo,),
             ).fetchall() if periodo else []
 
-        db_por_clave = {}
-        for r in db_rows:
-            db_por_clave.setdefault((r['fecha'], r['descripcion']), []).append(dict(r))
-
-        faltan_en_db = []       # está en el PDF, no hay fila en la DB para ese monto exacto
-        monto_no_coincide = []  # misma clave, un solo sobrante de cada lado: mismo movimiento, monto distinto
-        fantasmas_en_db = []    # está en la DB con este periodo, no matchea ningún movimiento del PDF
-        claves = set(pdf_por_clave) | set(db_por_clave)
-        for clave in claves:
-            pdf_movs = list(pdf_por_clave.get(clave, []))
-            db_movs = list(db_por_clave.get(clave, []))
-            # Primero empareja por monto EXACTO (misma fecha+descripción
-            # puede tener varias transacciones reales distintas el mismo
-            # día — nunca se debe adivinar cuál del PDF corresponde a cuál
-            # de la DB por posición/orden). Lo que empareja exacto se
-            # descarta de ambos lados; solo lo que sobra se reporta.
-            pdf_restantes, db_restantes = [], list(db_movs)
-            for pm in pdf_movs:
-                match = next((dm for dm in db_restantes if abs(dm['monto'] - pm['monto']) < 0.01), None)
-                if match:
-                    db_restantes.remove(match)
-                else:
-                    pdf_restantes.append(pm)
-
-            if len(pdf_restantes) == 1 and len(db_restantes) == 1:
-                # Único sobrante de cada lado: es inequívoco que es el
-                # mismo movimiento con el monto guardado distinto.
-                pm, dm = pdf_restantes[0], db_restantes[0]
-                monto_no_coincide.append({
-                    'id': dm['id'], 'fecha': pm['fecha'], 'descripcion': pm['descripcion'],
-                    'monto_pdf': pm['monto'], 'monto_guardado': dm['monto'],
-                })
-            else:
-                # 0, o >1 de cada lado: no hay forma de saber cuál sobrante
-                # del PDF "es" cuál sobrante de la DB — se reportan como
-                # faltantes/fantasmas por separado en vez de adivinar un
-                # emparejamiento.
-                faltan_en_db.extend({
-                    'fecha': m['fecha'], 'descripcion': m['descripcion'], 'monto_pdf': m['monto'],
-                } for m in pdf_restantes)
-                fantasmas_en_db.extend({
-                    'id': r['id'], 'fecha': r['fecha'], 'descripcion': r['descripcion'],
-                    'monto': r['monto'], 'tipo': r['tipo'],
-                } for r in db_restantes)
+        faltan, pares_no_coinciden, fantasmas = _comparar_pdf_vs_db(movimientos, db_rows)
+        faltan_en_db = [
+            {'fecha': m['fecha'], 'descripcion': m['descripcion'], 'monto_pdf': m['monto']}
+            for m in faltan
+        ]
+        monto_no_coincide = [
+            {'id': p['db']['id'], 'fecha': p['pdf']['fecha'], 'descripcion': p['pdf']['descripcion'],
+             'monto_pdf': p['pdf']['monto'], 'monto_guardado': p['db']['monto']}
+            for p in pares_no_coinciden
+        ]
+        fantasmas_en_db = [
+            {'id': r['id'], 'fecha': r['fecha'], 'descripcion': r['descripcion'],
+             'monto': r['monto'], 'tipo': r['tipo']}
+            for r in fantasmas
+        ]
 
         total_pdf_cargos  = sum(m['monto'] for m in movimientos if m['tipo'] != 'INGRESO')
         total_pdf_abonos  = sum(m['monto'] for m in movimientos if m['tipo'] == 'INGRESO')
@@ -991,6 +1010,83 @@ def audit_montos():
             'faltan_en_db': faltan_en_db,
             'monto_no_coincide': monto_no_coincide,
             'fantasmas_en_db': fantasmas_en_db,
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
+@estados_bp.route('/admin/recover-montos', methods=['POST'])
+def recover_montos():
+    """Inserta las transacciones que audit-montos reporta como
+    'faltan_en_db' para un estado de cuenta YA importado: movimientos
+    reales del PDF que nunca se guardaron porque, antes de que
+    idx_est_mov_dedup incluyera el monto (ver migración en database.py),
+    colisionaban en (fecha, descripcion) con otra transacción distinta del
+    mismo día y el INSERT OR IGNORE del importador las descartaba en
+    silencio.
+
+    Nunca toca una fila existente — no hay UPDATE ni DELETE, solo INSERT
+    OR IGNORE de las filas que _comparar_pdf_vs_db confirma que genuinamente
+    faltan (nunca las de 'monto_no_coincide' ni 'fantasmas_en_db', que son
+    casos ambiguos y requieren revisión humana, no inserción automática).
+    Por default es un dry-run — agrega ?apply=1 para insertar de verdad."""
+    if not _ok(): return _locked()
+
+    file = request.files.get('file')
+    if not file:
+        return jsonify({'ok': False, 'error': 'No se recibió archivo'}), 400
+
+    suffix = Path(file.filename or 'file.pdf').suffix.lower()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        file.save(tmp.name)
+        tmp_path = Path(tmp.name)
+
+    try:
+        from .parsers import parse_file, detect_bank
+        bank = detect_bank(tmp_path)
+        movimientos = parse_file(tmp_path)
+        if not movimientos:
+            return jsonify({'ok': False, 'error': 'No se encontraron transacciones', 'bank': bank})
+
+        periodo = movimientos[0].get('periodo')
+        apply_changes = request.args.get('apply') == '1'
+
+        with get_db() as db:
+            db_rows = db.execute(
+                "SELECT id, fecha, descripcion, monto, tipo FROM est_movimientos "
+                "WHERE banco='BBVA_DEB' AND periodo=?",
+                (periodo,),
+            ).fetchall() if periodo else []
+
+            faltan, _pares, _fantasmas = _comparar_pdf_vs_db(movimientos, db_rows)
+
+            insertados = []
+            if apply_changes:
+                for m in faltan:
+                    cur = db.execute(
+                        "INSERT OR IGNORE INTO est_movimientos "
+                        "(fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo) "
+                        "VALUES (?,?,?,?,?,?,?,?,?)",
+                        (m['fecha'], m.get('fecha_cargo'), m['descripcion'], m['monto'],
+                         m.get('banco') or bank, m.get('periodo') or periodo,
+                         m.get('categoria', ''), m.get('subcategoria', ''), m.get('tipo', 'GASTO')),
+                    )
+                    if cur.rowcount == 1:
+                        insertados.append({
+                            'id': cur.lastrowid, 'fecha': m['fecha'], 'descripcion': m['descripcion'],
+                            'monto': m['monto'], 'tipo': m.get('tipo'),
+                        })
+                db.commit()
+
+        return jsonify({
+            'ok': True, 'bank': bank, 'periodo': periodo, 'apply': apply_changes,
+            'a_recuperar': [
+                {'fecha': m['fecha'], 'descripcion': m['descripcion'], 'monto': m['monto'], 'tipo': m.get('tipo')}
+                for m in faltan
+            ],
+            'insertados': insertados,
         })
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)})
