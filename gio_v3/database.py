@@ -180,17 +180,22 @@ class _HybridConn:
         self._db.commit()
         if self._writes:
             writes, self._writes = self._writes[:], []
-            # daemon=True: el proceso no espera este thread al salir.
-            # SQLite ya confirmó — Turso es persistencia de respaldo best-effort.
-            t = threading.Thread(
-                target=_turso_sync, args=(self._host, self._token, writes),
-                daemon=True
-            )
-            t.start()
-            self._sync_thread = t
+            # Síncrono a propósito: _restore_from_turso reconstruye el
+            # SQLite local DESDE Turso en cada arranque del contenedor (el
+            # archivo local vive en el filesystem efímero del contenedor,
+            # no en el volumen persistente de Railway) — si el redeploy
+            # ocurre antes de que un sync en background termine, esos
+            # writes nunca llegan a Turso y el próximo arranque los borra
+            # sin aviso, aunque SQLite local ya los haya confirmado. Un
+            # caso real: ~50 filas recuperadas por /admin/recover-montos
+            # se perdieron así al redesplegar minutos después. Bloquear
+            # aquí hasta que Turso confirme el escrito es la única forma
+            # de que "ya se guardó" signifique lo mismo para el usuario
+            # que para el próximo arranque del contenedor.
+            _turso_sync(self._host, self._token, writes)
 
     def close(self):
-        self._db.close()  # retorno inmediato; el sync Turso corre en background
+        self._db.close()
 
     def __enter__(self):
         return self
