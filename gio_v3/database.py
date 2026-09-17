@@ -1488,7 +1488,7 @@ def init_db():
             viaje_id      INTEGER DEFAULT NULL
         );
         CREATE UNIQUE INDEX IF NOT EXISTS idx_est_mov_dedup
-            ON est_movimientos (fecha, descripcion);
+            ON est_movimientos (fecha, descripcion, monto);
         CREATE TABLE IF NOT EXISTS est_keywords (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
             keyword      TEXT    NOT NULL UNIQUE,
@@ -1569,6 +1569,30 @@ def init_db():
             db.commit()
         except Exception as e:
             print(f"[DB] est_movimientos BBVA_LIB->BBVA_DEB merge warning: {e}")
+
+        # Migración: idx_est_mov_dedup solo consideraba (fecha, descripcion)
+        # — dos transacciones reales el mismo día con la misma descripción
+        # pero distinto monto (ej. dos "PAGO CUENTA DE TERCERO ... TRANSF A
+        # X" el mismo día) colisionaban en el índice único, y la segunda se
+        # perdía en silencio vía INSERT OR IGNORE al importar (confirmado
+        # auditando estados de cuenta reales contra sus propios totales
+        # oficiales — ver /admin/audit-montos y /admin/recover-montos). Se
+        # amplía el índice para incluir también el monto; los datos
+        # existentes ya cumplen la restricción vieja (más estricta), así
+        # que siempre cumplen la nueva (más laxa) — no puede fallar por
+        # duplicados al recrearlo.
+        try:
+            idx = db.execute(
+                "SELECT sql FROM sqlite_master WHERE type='index' AND name='idx_est_mov_dedup'"
+            ).fetchone()
+            if idx and idx["sql"] and "monto" not in idx["sql"]:
+                db.execute("DROP INDEX idx_est_mov_dedup")
+                db.execute(
+                    "CREATE UNIQUE INDEX idx_est_mov_dedup ON est_movimientos (fecha, descripcion, monto)"
+                )
+                db.commit()
+        except Exception as e:
+            print(f"[DB] idx_est_mov_dedup widen migration warning: {e}")
 
         # Backfill: "CAFE/SOCIAL" y "CAFE/PAN" eran la misma categoría con dos
         # nombres — CAFE/SOCIAL es un código huérfano (ninguna regla de
