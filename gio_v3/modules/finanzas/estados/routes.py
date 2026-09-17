@@ -859,31 +859,42 @@ def fix_libreton_years():
     cruza de año, ej. "07/12/2024 al 06/01/2025" — diciembre quedaba
     guardado con el año siguiente). Usa la misma lógica que
     scripts/fix_libreton_year_bug.py. GET = dry-run (no escribe nada),
-    POST = aplica los cambios."""
+    POST = corrige fechas; agrega ?delete_duplicates=1 para además borrar
+    las filas viejas que sean duplicado confirmado (mismo monto y tipo) de
+    una fila que ya quedó con la fecha correcta — pasa cuando el mismo
+    estado de cuenta se subió dos veces, antes y después del fix."""
     if not _ok(): return _locked()
 
     from scripts.fix_libreton_year_bug import find_fixes
 
     with get_db() as db:
-        rows, fixes, collisions = find_fixes(db)
+        rows, fixes, duplicates, review = find_fixes(db)
 
-        preview = [
+        fixes_preview = [
             {'id': _id, 'fecha_antes': r['fecha'], 'fecha_despues': nf,
              'fecha_cargo_antes': r['fecha_cargo'], 'fecha_cargo_despues': nfc,
              'monto': r['monto'], 'tipo': r['tipo'], 'descripcion': r['descripcion']}
             for _id, nf, nfc, r in fixes
         ]
-        collision_info = [
+        duplicates_preview = [
+            {'id_viejo': r['id'], 'id_correcto': existing['id'],
+             'fecha_vieja': r['fecha'], 'monto': r['monto'], 'tipo': r['tipo'],
+             'descripcion': r['descripcion']}
+            for r, existing in duplicates
+        ]
+        review_preview = [
             {'id': r['id'], 'fecha_antes': r['fecha'], 'fecha_a_corregir': nf,
              'choca_con_id': existing['id'], 'descripcion': r['descripcion']}
-            for r, nf, existing in collisions
+            for r, nf, existing in review
         ]
 
         if request.method == 'GET':
             return jsonify({
                 'ok': True, 'dry_run': True,
                 'revisadas': len(rows), 'a_corregir': len(fixes),
-                'fixes': preview, 'colisiones': collision_info,
+                'fixes': fixes_preview,
+                'duplicados_confirmados': duplicates_preview,
+                'revisar_a_mano': review_preview,
             })
 
         for _id, nf, nfc, _r in fixes:
@@ -891,11 +902,20 @@ def fix_libreton_years():
                 "UPDATE est_movimientos SET fecha=?, fecha_cargo=? WHERE id=?",
                 (nf, nfc, _id),
             )
+
+        borrar_duplicados = request.args.get('delete_duplicates') == '1'
+        if borrar_duplicados:
+            for r, _existing in duplicates:
+                db.execute("DELETE FROM est_movimientos WHERE id=?", (r['id'],))
+
         db.commit()
 
     return jsonify({
         'ok': True, 'dry_run': False,
-        'corregidas': len(fixes), 'fixes': preview, 'colisiones': collision_info,
+        'corregidas': len(fixes), 'fixes': fixes_preview,
+        'duplicados_confirmados': duplicates_preview,
+        'duplicados_borrados': len(duplicates) if borrar_duplicados else 0,
+        'revisar_a_mano': review_preview,
     })
 
 
