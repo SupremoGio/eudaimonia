@@ -13,14 +13,17 @@ ABONO_KW = [
     "SU PAGO", "SITH", "ABONO", "DEVUELTO",
 ]
 
-# "PAGO CUENTA DE TERCERO" es la única descripción que de verdad puede ser
-# cargo O abono según el caso — BBVA no lo distingue en el texto (a
-# diferencia de "SPEI ENVIADO"/"SPEI RECIBIDO", que sí son inequívocos por
-# nombre). Adivinar por palabra clave le atinaba la mayoría de las veces
-# pero fallaba en silencio en el resto — ver commit "Verificar cargo/abono
-# de PAGO CUENTA DE TERCERO contra el saldo del PDF". Para estas líneas se
-# verifica el signo contra el saldo impreso en vez de adivinar.
-AMBIGUOUS_KW = ["PAGO CUENTA DE TERCERO"]
+# "PAGO CUENTA DE TERCERO" y "CORRECCION" son descripciones que de verdad
+# pueden ser cargo O abono según el caso — BBVA no lo distingue en el texto
+# (a diferencia de "SPEI ENVIADO"/"SPEI RECIBIDO", que sí son inequívocos
+# por nombre). Adivinar por palabra clave le atinaba la mayoría de las
+# veces pero fallaba en silencio en el resto — ver commit "Verificar
+# cargo/abono de PAGO CUENTA DE TERCERO contra el saldo del PDF" (y, para
+# "CORRECCION COMPRA TIEMPO", un caso real confirmado contra Total Importe
+# Cargos/Abonos: una reversión de cargo que el parser tenía por default en
+# GASTO). Para estas líneas se verifica el signo contra el saldo impreso
+# en vez de adivinar.
+AMBIGUOUS_KW = ["PAGO CUENTA DE TERCERO", "CORRECCION"]
 
 CATS_LIBRETON = {
     "NOMINA":        ["PAGO DE NOMINA", "NOMINA", "FIBRA HOTELERA"],

@@ -115,6 +115,44 @@ def test_deposito_de_tercero_and_devuelto_are_reliably_ingreso_by_keyword():
     assert by_desc["DEPOSITO DE TERCERO FDO AHORRO 2024 BMRCASH"]["tipo"] == "INGRESO"
     assert by_desc["SPEI DEVUELTONAFIN"]["tipo"] == "INGRESO"
 
+# "CORRECCION COMPRA TIEMPO" — confirmado en un estado de cuenta real
+# (07/10/2024 al 06/11/2024): el parser la clasificaba GASTO por default,
+# lo que dejaba Total Importe Cargos/Abonos del PDF sin cuadrar contra la
+# suma de movimientos parseados (por exactamente 2×monto de la línea mal
+# clasificada). Es una reversión de un cargo previo (aquí, de la línea
+# "RECARGAS Y PAQUETES BMOV" inmediata anterior por el mismo monto) — BBVA
+# tampoco distingue en el texto si una "corrección" es cargo o abono, así
+# que se agregó a AMBIGUOUS_KW para que se verifique contra el saldo
+# impreso igual que "PAGO CUENTA DE TERCERO".
+SAMPLE_TEXT_CORRECCION = """Periodo DEL 07/10/2024 AL 06/11/2024
+Fecha de Corte 06/11/2024
+Saldo Anterior 2,000.00
+Detalle de Movimientos Realizados
+FECHA SALDO
+OPER LIQ DESCRIPCION REFERENCIA CARGOS ABONOS OPERACION LIQUIDACION
+02/NOV 04/NOV RECARGAS Y PAQUETES BMOV 10.00
+ 02/NOV 15:54 AUT: Referencia ******5725
+02/NOV 04/NOV CORRECCION COMPRA TIEMPO 10.00
+02/NOV 04/NOV RETIRO SIN TARJETA 200.00
+ Referencia ******5351
+02/NOV 04/NOV PAGO CUENTA DE TERCERO 700.00
+ BNET 2862948753 tequila y 1 giovan Referencia 9556882707
+02/NOV 04/NOV RECARGAS Y PAQUETES BMOV 10.00
+ 02/NOV 20:08 AUT: Referencia ******5725
+02/NOV 04/NOV SPEI ENVIADO ARCUS 300.00 790.00 790.00"""
+
+
+def test_correccion_is_flipped_to_ingreso_when_balance_requires_it():
+    bounds = _extract_year_bounds(SAMPLE_TEXT_CORRECCION)
+    movs = _parse_text(SAMPLE_TEXT_CORRECCION, bounds, periodo=None)
+    by_desc = {m["descripcion"]: m for m in movs}
+
+    assert by_desc["CORRECCION COMPRA TIEMPO"]["tipo"] == "INGRESO"
+    # El monto ($700) es demasiado grande para explicar el faltante de
+    # $20 en el saldo — debe quedarse en el default GASTO, no adivinar.
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TEQUILA Y 1 GIOVAN"]["tipo"] == "GASTO"
+
+
 SAMPLE_TEXT_CROSS_YEAR = """Periodo DEL 07/12/2024 AL 06/01/2025
 Fecha de Corte 06/01/2025
 Detalle de Movimientos Realizados
