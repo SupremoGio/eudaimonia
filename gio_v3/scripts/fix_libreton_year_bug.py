@@ -52,44 +52,56 @@ def _fix_date(fecha: str, m1: int, y1: int, m2: int, y2: int) -> str | None:
     return None
 
 
+def find_fixes(db):
+    """Escanea est_movimientos y devuelve (rows, fixes, collisions).
+
+    fixes: lista de (id, nueva_fecha, nueva_fecha_cargo, fila) a corregir.
+    collisions: lista de (fila, nueva_fecha, fila_existente_que_choca) que
+    no se tocan automáticamente. No escribe nada en la DB — solo lee.
+    """
+    rows = db.execute(
+        "SELECT id, fecha, fecha_cargo, descripcion, monto, tipo, periodo "
+        "FROM est_movimientos WHERE banco IN ('BBVA_LIB','BBVA_DEB') "
+        "AND periodo IS NOT NULL AND periodo != ''"
+    ).fetchall()
+
+    fixes = []      # (id, nueva_fecha, nueva_fecha_cargo, fila)
+    collisions = [] # filas que no se pueden corregir sin chocar con otra ya existente
+    for r in rows:
+        pm = PERIODO_RE.search(r["periodo"] or "")
+        if not pm:
+            continue
+        d1, m1, y1, d2, m2, y2 = pm.groups()
+        m1, y1, m2, y2 = int(m1), int(y1), int(m2), int(y2)
+        if y1 == y2:
+            continue  # periodo dentro de un solo año: no puede estar afectado
+
+        nueva_fecha = _fix_date(r["fecha"], m1, y1, m2, y2) or r["fecha"]
+        nueva_fecha_cargo = _fix_date(r["fecha_cargo"], m1, y1, m2, y2) or r["fecha_cargo"]
+        if nueva_fecha == r["fecha"] and nueva_fecha_cargo == r["fecha_cargo"]:
+            continue  # esta fila ya está bien
+
+        if nueva_fecha != r["fecha"]:
+            existing = db.execute(
+                "SELECT id, monto, tipo FROM est_movimientos WHERE fecha=? AND descripcion=? AND id != ?",
+                (nueva_fecha, r["descripcion"], r["id"]),
+            ).fetchone()
+            if existing:
+                collisions.append((r, nueva_fecha, existing))
+                continue
+
+        fixes.append((r["id"], nueva_fecha, nueva_fecha_cargo, r))
+
+    return rows, fixes, collisions
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="Aplica los cambios (por defecto solo muestra qué cambiaría).")
     args = ap.parse_args()
 
     with get_db() as db:
-        rows = db.execute(
-            "SELECT id, fecha, fecha_cargo, descripcion, monto, tipo, periodo "
-            "FROM est_movimientos WHERE banco IN ('BBVA_LIB','BBVA_DEB') "
-            "AND periodo IS NOT NULL AND periodo != ''"
-        ).fetchall()
-
-        fixes = []      # (id, nueva_fecha, nueva_fecha_cargo, fila)
-        collisions = [] # filas que no se pueden corregir sin chocar con otra ya existente
-        for r in rows:
-            pm = PERIODO_RE.search(r["periodo"] or "")
-            if not pm:
-                continue
-            d1, m1, y1, d2, m2, y2 = pm.groups()
-            m1, y1, m2, y2 = int(m1), int(y1), int(m2), int(y2)
-            if y1 == y2:
-                continue  # periodo dentro de un solo año: no puede estar afectado
-
-            nueva_fecha = _fix_date(r["fecha"], m1, y1, m2, y2) or r["fecha"]
-            nueva_fecha_cargo = _fix_date(r["fecha_cargo"], m1, y1, m2, y2) or r["fecha_cargo"]
-            if nueva_fecha == r["fecha"] and nueva_fecha_cargo == r["fecha_cargo"]:
-                continue  # esta fila ya está bien
-
-            if nueva_fecha != r["fecha"]:
-                existing = db.execute(
-                    "SELECT id, monto, tipo FROM est_movimientos WHERE fecha=? AND descripcion=? AND id != ?",
-                    (nueva_fecha, r["descripcion"], r["id"]),
-                ).fetchone()
-                if existing:
-                    collisions.append((r, nueva_fecha, existing))
-                    continue
-
-            fixes.append((r["id"], nueva_fecha, nueva_fecha_cargo, r))
+        rows, fixes, collisions = find_fixes(db)
 
         print(f"Filas BBVA_LIB/BBVA_DEB con periodo Libretón: revisadas {len(rows)}")
         print(f"Filas a corregir: {len(fixes)}")

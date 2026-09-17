@@ -852,6 +852,53 @@ def upload_file():
 
 # ── Viajes ────────────────────────────────────────────────────────────────────
 
+@estados_bp.route('/admin/fix-libreton-years', methods=['GET', 'POST'])
+def fix_libreton_years():
+    """Corrige movimientos BBVA Libretón cuyo año quedó mal por el bug
+    arreglado en parsers/bbva_libreton.py (estados de cuenta cuyo periodo
+    cruza de año, ej. "07/12/2024 al 06/01/2025" — diciembre quedaba
+    guardado con el año siguiente). Usa la misma lógica que
+    scripts/fix_libreton_year_bug.py. GET = dry-run (no escribe nada),
+    POST = aplica los cambios."""
+    if not _ok(): return _locked()
+
+    from scripts.fix_libreton_year_bug import find_fixes
+
+    with get_db() as db:
+        rows, fixes, collisions = find_fixes(db)
+
+        preview = [
+            {'id': _id, 'fecha_antes': r['fecha'], 'fecha_despues': nf,
+             'fecha_cargo_antes': r['fecha_cargo'], 'fecha_cargo_despues': nfc,
+             'monto': r['monto'], 'tipo': r['tipo'], 'descripcion': r['descripcion']}
+            for _id, nf, nfc, r in fixes
+        ]
+        collision_info = [
+            {'id': r['id'], 'fecha_antes': r['fecha'], 'fecha_a_corregir': nf,
+             'choca_con_id': existing['id'], 'descripcion': r['descripcion']}
+            for r, nf, existing in collisions
+        ]
+
+        if request.method == 'GET':
+            return jsonify({
+                'ok': True, 'dry_run': True,
+                'revisadas': len(rows), 'a_corregir': len(fixes),
+                'fixes': preview, 'colisiones': collision_info,
+            })
+
+        for _id, nf, nfc, _r in fixes:
+            db.execute(
+                "UPDATE est_movimientos SET fecha=?, fecha_cargo=? WHERE id=?",
+                (nf, nfc, _id),
+            )
+        db.commit()
+
+    return jsonify({
+        'ok': True, 'dry_run': False,
+        'corregidas': len(fixes), 'fixes': preview, 'colisiones': collision_info,
+    })
+
+
 # SQL expression that buckets a transaction into a travel concept
 _CONCEPTO_CASE = """
   CASE
