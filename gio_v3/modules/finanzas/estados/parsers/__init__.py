@@ -56,6 +56,19 @@ def _detect_bank_pdf(pdf_path: Path) -> str:
     return "DESCONOCIDO"
 
 
+# "BBVA_LIB" (Libretón) y "BBVA_DEB" (otro formato de débito) son la misma
+# cuenta — solo cambia la plantilla del PDF que usa BBVA, así que cada una
+# necesita su propio parser (_detect_bank_pdf sigue distinguiéndolas para
+# elegir cuál llamar), pero de cara a la DB y a la UI se guardan/muestran
+# como un solo banco. Sin este mapeo, los movimientos Libretón quedaban con
+# "BBVA_LIB" — un valor que el <select> de Banco en el front ni siquiera
+# lista como opción, así que el dropdown mostraba la primera opción
+# ("BBVA_TDC") en vez del banco real — y quedaban fuera de las reglas de
+# categorización que sí filtran por banco='BBVA_DEB' (ej. nómina, renta).
+def _display_banco(banco: str) -> str:
+    return "BBVA_DEB" if banco == "BBVA_LIB" else banco
+
+
 def detect_bank(path: Path) -> str:
     ext = path.suffix.lower()
     if ext == ".csv":
@@ -72,7 +85,7 @@ def detect_bank(path: Path) -> str:
         if bbva_excel_detect(path):
             return "BBVA_TDC"
         return "DESCONOCIDO"
-    return _detect_bank_pdf(path)
+    return _display_banco(_detect_bank_pdf(path))
 
 
 def parse_pdf(pdf_path: Path) -> list[dict]:
@@ -92,10 +105,11 @@ def parse_pdf(pdf_path: Path) -> list[dict]:
         print(f"  [!] Banco no reconocido en: {pdf_path.name}")
         return []
 
-    print(f"  -> Banco detectado: {banco}")
+    banco_final = _display_banco(banco)
+    print(f"  -> Banco detectado: {banco_final}")
     movimientos = parse(pdf_path)
     for m in movimientos:
-        m["banco"] = banco
+        m["banco"] = banco_final
     return movimientos
 
 
