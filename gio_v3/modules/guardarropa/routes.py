@@ -763,6 +763,76 @@ REGLAS: item_ids son enteros del inventario · incluye superior + inferior + cal
         return jsonify({'ok': False, 'error': str(e)}), 500
 
 
+@guardarropa_bp.route('/api/ai-outfit-from-item', methods=['POST'])
+def ai_generate_outfit_from_item():
+    if not os.environ.get('GEMINI_API_KEY'):
+        return jsonify({'ok': False, 'error': 'GEMINI_API_KEY no configurada'}), 503
+
+    d = request.get_json(force=True)
+    anchor_id = d.get('item_id')
+    occasion = d.get('ocasion', 'Casual')
+    if not anchor_id:
+        return jsonify({'ok': False, 'error': 'Falta item_id'}), 400
+
+    with get_db() as db:
+        items = [dict(r) for r in db.execute(
+            "SELECT id, nombre, categoria, subcategoria, color_hex, color_name, marca, ocasion, temporada, estado "
+            "FROM wardrobe_items WHERE activo=1 ORDER BY estado DESC"
+        ).fetchall()]
+
+    anchor = next((i for i in items if i['id'] == int(anchor_id)), None)
+    if not anchor:
+        return jsonify({'ok': False, 'error': 'Prenda no encontrada'}), 404
+
+    others = [i for i in items if i['id'] != anchor['id']]
+    if not others:
+        return jsonify({'ok': False, 'error': 'Necesitas más prendas en el armario para combinar'}), 400
+
+    items_list = '\n'.join([
+        f"ID {i['id']}: {i['nombre']} | {i['categoria']}{(' · '+i['subcategoria']) if i.get('subcategoria') else ''} "
+        f"| hex:{i['color_hex']} {i.get('color_name') or ''} | {i.get('marca') or ''} | estado:{i['estado']}"
+        for i in others
+    ])
+    anchor_line = (
+        f"ID {anchor['id']}: {anchor['nombre']} | {anchor['categoria']}"
+        f"{(' · '+anchor['subcategoria']) if anchor.get('subcategoria') else ''} "
+        f"| hex:{anchor['color_hex']} {anchor.get('color_name') or ''} | {anchor.get('marca') or ''}"
+    )
+
+    prompt = f"""Eres un coach de imagen personal masculino de élite con 20 años de experiencia vistiendo a ejecutivos y figuras públicas.
+
+PRENDA ANCLA (el usuario ya la tiene y quiere saber cómo combinarla):
+{anchor_line}
+
+RESTO DEL INVENTARIO DISPONIBLE ({len(others)} prendas):
+{items_list}
+
+OCASIÓN: {occasion}
+
+Arma el outfit PERFECTO alrededor de la prenda ancla, usando SOLO prendas del resto del inventario para completarlo (parte superior, inferior y calzado según corresponda — la prenda ancla ya cubre una de esas categorías, no la repitas). Aplica:
+- Harmonía de color (análogos, monocromático, contraste tonal, complementarios) con la prenda ancla como punto de partida
+- Equilibrio de proporciones visuales (proporción áurea en silhouette)
+- Dress code apropiado para la ocasión
+- Prioriza estado "nuevo" o "bueno"
+
+Responde SOLO con JSON (sin markdown, sin ```, sin texto extra):
+{{"nombre":"nombre elegante y descriptivo del look","ocasion":"{occasion}","item_ids":[IDs enteros de las prendas del RESTO del inventario que completan el look],"harmony":"tipo de harmonía de color específico","why_works":"por qué esta combinación funciona con la prenda ancla — 2-3 líneas directas y concretas","tips":["tip concreto 1","tip concreto 2"],"rating":5}}
+
+REGLAS: item_ids son enteros del RESTO del inventario, NO incluyas el ID {anchor['id']} (se agrega aparte) · incluye las piezas necesarias para completar el look (lo que falte de superior/inferior/calzado) · rating es entero 1-5"""
+
+    try:
+        raw = _extract_json(_gemini(prompt))
+        data = json.loads(raw)
+        combo_ids = [int(x) for x in data.get('item_ids', []) if x]
+        data['item_ids'] = [anchor['id']] + [x for x in combo_ids if x != anchor['id']]
+        data['ok'] = True
+        return jsonify(data)
+    except json.JSONDecodeError as e:
+        return jsonify({'ok': False, 'error': f'JSON inválido: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
 @guardarropa_bp.route('/api/capsule/analyze', methods=['POST'])
 def analyze_capsule():
     if not os.environ.get('GEMINI_API_KEY'):

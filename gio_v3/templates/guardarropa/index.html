@@ -515,6 +515,16 @@
     </div>
     <div class="ai-gen-panel" id="ai-gen-panel">
       <div class="ai-occ-bar">
+        <span class="ai-occ ai-mode on eu-activate" role="button" tabindex="0" aria-pressed="true" onclick="setAIMode('ocasion',this)">Por ocasión</span>
+        <span class="ai-occ ai-mode eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="setAIMode('item',this)">Desde una prenda</span>
+      </div>
+      <div id="ai-item-picker-wrap" style="display:none;margin-bottom:10px;">
+        <label class="fl">¿Qué prenda quieres combinar?</label>
+        <select class="fi" id="ai-anchor-select" onchange="selectAIAnchor(this.value)">
+          <option value="">— elegir prenda —</option>
+        </select>
+      </div>
+      <div class="ai-occ-bar" id="ai-occ-bar">
         <span class="ai-occ on eu-activate" role="button" tabindex="0" aria-pressed="true" onclick="selectAIOcc(this,'Casual')">Casual</span>
         <span class="ai-occ eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="selectAIOcc(this,'Business')">Business</span>
         <span class="ai-occ eu-activate" role="button" tabindex="0" aria-pressed="false" onclick="selectAIOcc(this,'Formal')">Formal</span>
@@ -2043,8 +2053,41 @@ function renderIntelligence(){
 // ── AI Outfit Generator ────────────────────────────────────────────────────────
 let _aiOccasion = 'Casual';
 let _lastAIOutfit = null;
+let _aiMode = 'ocasion';
+let _aiAnchorItemId = null;
+
+function setAIMode(mode, el){
+  _aiMode = mode;
+  document.querySelectorAll('.ai-mode').forEach(b=>{b.classList.remove('on'); b.setAttribute('aria-pressed','false');});
+  el.classList.add('on');
+  el.setAttribute('aria-pressed','true');
+  document.getElementById('ai-item-picker-wrap').style.display = mode === 'item' ? 'block' : 'none';
+  document.getElementById('ai-gen-btn').textContent = mode === 'item' ? '✨ Combinar con IA' : '✨ Generar look';
+  document.getElementById('ai-outfit-result').style.display = 'none';
+  if (mode === 'item') populateAIAnchorSelect();
+}
+
+function populateAIAnchorSelect(){
+  const sel = document.getElementById('ai-anchor-select');
+  if (!sel || sel.dataset.filled) return;
+  const byCat = {};
+  ALL_ITEMS.forEach(i => { (byCat[i.categoria] = byCat[i.categoria] || []).push(i); });
+  let html = '<option value="">— elegir prenda —</option>';
+  Object.keys(byCat).sort().forEach(cat => {
+    html += `<optgroup label="${esc(cat)}">`;
+    byCat[cat].forEach(i => { html += `<option value="${i.id}">${esc(i.nombre)}</option>`; });
+    html += '</optgroup>';
+  });
+  sel.innerHTML = html;
+  sel.dataset.filled = '1';
+}
+
+function selectAIAnchor(val){
+  _aiAnchorItemId = val ? parseInt(val) : null;
+}
+
 function selectAIOcc(el, occ){
-  document.querySelectorAll('.ai-occ').forEach(b=>{b.classList.remove('on'); b.setAttribute('aria-pressed','false');});
+  document.querySelectorAll('#ai-occ-bar .ai-occ').forEach(b=>{b.classList.remove('on'); b.setAttribute('aria-pressed','false');});
   el.classList.add('on');
   el.setAttribute('aria-pressed','true');
   _aiOccasion = occ;
@@ -2053,60 +2096,74 @@ function selectAIOcc(el, occ){
 async function generateAIOutfit(){
   const btn = document.getElementById('ai-gen-btn');
   const resultBox = document.getElementById('ai-outfit-result');
+
+  if (_aiMode === 'item' && !_aiAnchorItemId) {
+    toast('Elige una prenda para combinar');
+    return;
+  }
+
   btn.disabled = true;
-  btn.textContent = '⏳ Generando...';
+  btn.textContent = _aiMode === 'item' ? '⏳ Combinando...' : '⏳ Generando...';
   resultBox.style.display = 'none';
 
   try {
-    const res = await fetch('/guardarropa/api/ai-outfit', {
+    const endpoint = _aiMode === 'item' ? '/guardarropa/api/ai-outfit-from-item' : '/guardarropa/api/ai-outfit';
+    const body = _aiMode === 'item'
+      ? {item_id: _aiAnchorItemId, ocasion: _aiOccasion}
+      : {ocasion: _aiOccasion};
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ocasion: _aiOccasion})
+      body: JSON.stringify(body)
     });
     const d = await res.json();
     if(!d.ok){ toast('Error IA: ' + (d.error||'desconocido')); return; }
-
-    _lastAIOutfit = d;
-    // Map item_ids to item names/colors
-    const selectedItems = (d.item_ids||[]).map(id=>{
-      const item = ALL_ITEMS.find(x=>x.id===id);
-      return item ? {id, nombre:item.nombre, color_hex:item.color_hex, categoria:item.categoria} : null;
-    }).filter(Boolean);
-
-    const itemChips = selectedItems.map(i=>`
-      <div style="display:flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:4px 8px;">
-        <div style="width:10px;height:10px;border-radius:3px;flex-shrink:0;background:${esc(i.color_hex||'#444')};"></div>
-        <span style="font-size:var(--fs-sm);color:var(--text);">${esc(i.nombre)}</span>
-        <span style="font-size:var(--fs-xs);color:var(--dim);">${esc(i.categoria)}</span>
-      </div>`).join('');
-
-    const stars = '★'.repeat(d.rating||5) + '☆'.repeat(5-(d.rating||5));
-    const tips = (d.tips||[]).map(t=>`<li>${esc(t)}</li>`).join('');
-
-    resultBox.innerHTML = `
-      <div class="ai-result-box">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px;">
-          <div>
-            <div class="ai-result-name">${esc(d.nombre||'Look '+_aiOccasion)}</div>
-            <div class="ai-result-harmony">${esc(d.harmony||'')}</div>
-          </div>
-          <div style="color:var(--gold);font-size:.82rem;flex-shrink:0;">${stars}</div>
-        </div>
-        <div class="ai-result-why">${esc(d.why_works||'')}</div>
-        ${tips?`<ul class="ai-result-tips">${tips}</ul>`:''}
-        <div class="ai-result-items">${itemChips}</div>
-        <div style="display:flex;gap:8px;margin-top:12px;">
-          <button class="btn-a" style="flex:1;font-size:var(--fs-sm);" onclick="saveAIOutfit()">Guardar outfit</button>
-          <button class="btn-g" style="font-size:var(--fs-sm);" onclick="generateAIOutfit()">Regenerar</button>
-        </div>
-      </div>`;
-    resultBox.style.display = 'block';
+    renderAIResult(d);
   } catch(e){
     toast('Error al conectar con IA');
   } finally {
     btn.disabled = false;
-    btn.textContent = '✨ Generar';
+    btn.textContent = _aiMode === 'item' ? '✨ Combinar con IA' : '✨ Generar look';
   }
+}
+
+function renderAIResult(d){
+  const resultBox = document.getElementById('ai-outfit-result');
+  _lastAIOutfit = d;
+  // Map item_ids to item names/colors
+  const selectedItems = (d.item_ids||[]).map(id=>{
+    const item = ALL_ITEMS.find(x=>x.id===id);
+    return item ? {id, nombre:item.nombre, color_hex:item.color_hex, categoria:item.categoria} : null;
+  }).filter(Boolean);
+
+  const itemChips = selectedItems.map(i=>`
+    <div style="display:flex;align-items:center;gap:5px;background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:4px 8px;">
+      <div style="width:10px;height:10px;border-radius:3px;flex-shrink:0;background:${esc(i.color_hex||'#444')};"></div>
+      <span style="font-size:var(--fs-sm);color:var(--text);">${esc(i.nombre)}</span>
+      <span style="font-size:var(--fs-xs);color:var(--dim);">${esc(i.categoria)}</span>
+    </div>`).join('');
+
+  const stars = '★'.repeat(d.rating||5) + '☆'.repeat(5-(d.rating||5));
+  const tips = (d.tips||[]).map(t=>`<li>${esc(t)}</li>`).join('');
+
+  resultBox.innerHTML = `
+    <div class="ai-result-box">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px;">
+        <div>
+          <div class="ai-result-name">${esc(d.nombre||'Look '+_aiOccasion)}</div>
+          <div class="ai-result-harmony">${esc(d.harmony||'')}</div>
+        </div>
+        <div style="color:var(--gold);font-size:.82rem;flex-shrink:0;">${stars}</div>
+      </div>
+      <div class="ai-result-why">${esc(d.why_works||'')}</div>
+      ${tips?`<ul class="ai-result-tips">${tips}</ul>`:''}
+      <div class="ai-result-items">${itemChips}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn-a" style="flex:1;font-size:var(--fs-sm);" onclick="saveAIOutfit()">Guardar outfit</button>
+        <button class="btn-g" style="font-size:var(--fs-sm);" onclick="generateAIOutfit()">Regenerar</button>
+      </div>
+    </div>`;
+  resultBox.style.display = 'block';
 }
 
 async function saveAIOutfit(){
