@@ -23,6 +23,136 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from modules.finanzas.estados.parsers.bbva_libreton import _extract_year_bounds, _parse_text
 
+# ── "PAGO CUENTA DE TERCERO" cargo/abono verification ──────────────────────────
+#
+# BBVA doesn't indicate direction in the text for "PAGO CUENTA DE TERCERO"
+# lines (unlike "SPEI ENVIADO"/"SPEI RECIBIDO", which are unambiguous by
+# name) — the old parser guessed GASTO by default and was silently wrong
+# whenever a transfer was actually incoming. Real statements confirmed this:
+# a "Transf a X" line and a same-amount "expense" line both defaulted to
+# GASTO, but the printed running balance showed one of each was actually an
+# abono. The parser now verifies these against the balance printed after
+# each transaction (SALDO OPERACION) instead of guessing, only applying a
+# correction when exactly one sign-flip combination of the still-unresolved
+# ambiguous lines explains the observed balance jump — never when the
+# explanation is ambiguous between multiple candidates.
+SAMPLE_TEXT_AMBIGUOUS_TIPOS = """Periodo DEL 07/01/2025 AL 06/02/2025
+Fecha de Corte 06/02/2025
+Comportamiento
+Saldo Anterior 1,000.00
+Detalle de Movimientos Realizados
+FECHA SALDO
+OPER LIQ DESCRIPCION REFERENCIA CARGOS ABONOS OPERACION LIQUIDACION
+01/ENE 01/ENE PAGO CUENTA DE TERCERO 100.00 900.00 900.00
+ BNET 1111111111 Transf a AMIGO A Referencia 1111111111
+02/ENE 02/ENE PAGO CUENTA DE TERCERO 50.00 950.00 950.00
+ BNET 2222222222 Transf a AMIGO B Referencia 2222222222
+03/ENE 03/ENE PAGO CUENTA DE TERCERO 10.00
+ BNET 3333333333 Transf a C1 Referencia 3333333333
+03/ENE 03/ENE PAGO CUENTA DE TERCERO 20.00
+ BNET 4444444444 Transf a C2 Referencia 4444444444
+03/ENE 03/ENE PAGO CUENTA DE TERCERO 30.00 1,010.00 1,010.00
+ BNET 5555555555 Transf a C3 Referencia 5555555555
+04/ENE 04/ENE PAGO CUENTA DE TERCERO 15.00
+ BNET 6666666666 Transf a E1 Referencia 6666666666
+04/ENE 04/ENE PAGO CUENTA DE TERCERO 15.00 1,000.00 1,000.00
+ BNET 7777777777 Transf a E2 Referencia 7777777777"""
+
+
+def test_default_gasto_kept_when_it_already_matches_the_printed_balance():
+    bounds = _extract_year_bounds(SAMPLE_TEXT_AMBIGUOUS_TIPOS)
+    movs = _parse_text(SAMPLE_TEXT_AMBIGUOUS_TIPOS, bounds, periodo=None)
+    by_desc = {m["descripcion"]: m for m in movs}
+
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TRANSF A AMIGO A"]["tipo"] == "GASTO"
+
+
+def test_single_ambiguous_line_is_flipped_to_ingreso_when_balance_requires_it():
+    bounds = _extract_year_bounds(SAMPLE_TEXT_AMBIGUOUS_TIPOS)
+    movs = _parse_text(SAMPLE_TEXT_AMBIGUOUS_TIPOS, bounds, periodo=None)
+    by_desc = {m["descripcion"]: m for m in movs}
+
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TRANSF A AMIGO B"]["tipo"] == "INGRESO"
+
+
+def test_multiple_ambiguous_lines_all_flip_together_when_uniquely_explained():
+    bounds = _extract_year_bounds(SAMPLE_TEXT_AMBIGUOUS_TIPOS)
+    movs = _parse_text(SAMPLE_TEXT_AMBIGUOUS_TIPOS, bounds, periodo=None)
+    by_desc = {m["descripcion"]: m for m in movs}
+
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TRANSF A C1"]["tipo"] == "INGRESO"
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TRANSF A C2"]["tipo"] == "INGRESO"
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TRANSF A C3"]["tipo"] == "INGRESO"
+
+
+def test_ambiguous_lines_stay_at_default_when_the_flip_is_not_uniquely_attributable():
+    # E1 and E2 have the same monto, so a balance jump matching "flip one of
+    # them" can't tell which one — must not guess either way.
+    bounds = _extract_year_bounds(SAMPLE_TEXT_AMBIGUOUS_TIPOS)
+    movs = _parse_text(SAMPLE_TEXT_AMBIGUOUS_TIPOS, bounds, periodo=None)
+    by_desc = {m["descripcion"]: m for m in movs}
+
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TRANSF A E1"]["tipo"] == "GASTO"
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TRANSF A E2"]["tipo"] == "GASTO"
+
+
+SAMPLE_TEXT_RELIABLE_KEYWORDS = """Periodo DEL 07/01/2025 AL 06/02/2025
+Fecha de Corte 06/02/2025
+Detalle de Movimientos Realizados
+FECHA SALDO
+OPER LIQ DESCRIPCION REFERENCIA CARGOS ABONOS OPERACION LIQUIDACION
+07/ENE 07/ENE DEPOSITO DE TERCERO 74,657.10
+ FDO AHORRO 2024 BMRCASH Referencia REFBNTC00308757
+03/FEB 04/FEB SPEI DEVUELTONAFIN 25,130.00
+ 1712240giovany ene 25 Referencia 0079616016 135"""
+
+
+def test_deposito_de_tercero_and_devuelto_are_reliably_ingreso_by_keyword():
+    bounds = _extract_year_bounds(SAMPLE_TEXT_RELIABLE_KEYWORDS)
+    movs = _parse_text(SAMPLE_TEXT_RELIABLE_KEYWORDS, bounds, periodo=None)
+    by_desc = {m["descripcion"]: m for m in movs}
+
+    assert by_desc["DEPOSITO DE TERCERO FDO AHORRO 2024 BMRCASH"]["tipo"] == "INGRESO"
+    assert by_desc["SPEI DEVUELTONAFIN"]["tipo"] == "INGRESO"
+
+# "CORRECCION COMPRA TIEMPO" — confirmado en un estado de cuenta real
+# (07/10/2024 al 06/11/2024): el parser la clasificaba GASTO por default,
+# lo que dejaba Total Importe Cargos/Abonos del PDF sin cuadrar contra la
+# suma de movimientos parseados (por exactamente 2×monto de la línea mal
+# clasificada). Es una reversión de un cargo previo (aquí, de la línea
+# "RECARGAS Y PAQUETES BMOV" inmediata anterior por el mismo monto) — BBVA
+# tampoco distingue en el texto si una "corrección" es cargo o abono, así
+# que se agregó a AMBIGUOUS_KW para que se verifique contra el saldo
+# impreso igual que "PAGO CUENTA DE TERCERO".
+SAMPLE_TEXT_CORRECCION = """Periodo DEL 07/10/2024 AL 06/11/2024
+Fecha de Corte 06/11/2024
+Saldo Anterior 2,000.00
+Detalle de Movimientos Realizados
+FECHA SALDO
+OPER LIQ DESCRIPCION REFERENCIA CARGOS ABONOS OPERACION LIQUIDACION
+02/NOV 04/NOV RECARGAS Y PAQUETES BMOV 10.00
+ 02/NOV 15:54 AUT: Referencia ******5725
+02/NOV 04/NOV CORRECCION COMPRA TIEMPO 10.00
+02/NOV 04/NOV RETIRO SIN TARJETA 200.00
+ Referencia ******5351
+02/NOV 04/NOV PAGO CUENTA DE TERCERO 700.00
+ BNET 2862948753 tequila y 1 giovan Referencia 9556882707
+02/NOV 04/NOV RECARGAS Y PAQUETES BMOV 10.00
+ 02/NOV 20:08 AUT: Referencia ******5725
+02/NOV 04/NOV SPEI ENVIADO ARCUS 300.00 790.00 790.00"""
+
+
+def test_correccion_is_flipped_to_ingreso_when_balance_requires_it():
+    bounds = _extract_year_bounds(SAMPLE_TEXT_CORRECCION)
+    movs = _parse_text(SAMPLE_TEXT_CORRECCION, bounds, periodo=None)
+    by_desc = {m["descripcion"]: m for m in movs}
+
+    assert by_desc["CORRECCION COMPRA TIEMPO"]["tipo"] == "INGRESO"
+    # El monto ($700) es demasiado grande para explicar el faltante de
+    # $20 en el saldo — debe quedarse en el default GASTO, no adivinar.
+    assert by_desc["PAGO CUENTA DE TERCERO BNET TEQUILA Y 1 GIOVAN"]["tipo"] == "GASTO"
+
+
 SAMPLE_TEXT_CROSS_YEAR = """Periodo DEL 07/12/2024 AL 06/01/2025
 Fecha de Corte 06/01/2025
 Detalle de Movimientos Realizados
