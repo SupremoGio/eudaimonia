@@ -152,7 +152,7 @@ def create_transaction():
                (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
                VALUES (?,?,?,?,?,?,?,?,?)""",
             (fecha, fecha, desc, safe_float(d.get('monto', 0)),
-             d.get('banco', 'MANUAL'), '',
+             d.get('banco', 'MANUAL'), d.get('periodo', ''),
              d.get('categoria', 'OTROS'), d.get('subcategoria', ''),
              d.get('tipo', 'GASTO')),
         )
@@ -195,6 +195,9 @@ def update_transaction(tx_id):
         if d.get('banco') is not None:
             db.execute("UPDATE est_movimientos SET banco=? WHERE id=?",
                        (d['banco'], tx_id))
+        if d.get('periodo') is not None:
+            db.execute("UPDATE est_movimientos SET periodo=? WHERE id=?",
+                       (d['periodo'], tx_id))
         if 'mi_parte' in d:
             val = safe_float(d['mi_parte']) if d['mi_parte'] not in (None, '') else None
             db.execute("UPDATE est_movimientos SET mi_parte=? WHERE id=?", (val, tx_id))
