@@ -850,6 +850,81 @@ def upload_file():
         tmp_path.unlink(missing_ok=True)
 
 
+@estados_bp.route('/admin/audit-tipo', methods=['POST'])
+def audit_tipo():
+    """Audita un estado de cuenta YA importado contra lo que hay en la DB.
+
+    No inserta nada (a diferencia de /api/upload) — vuelve a parsear el PDF
+    con el parser actual (que puede haber mejorado desde que se importó,
+    ej. la verificación de cargo/abono contra saldo de bbva_libreton.py) y
+    compara, para cada movimiento parseado, el `tipo` recién calculado
+    contra el que ya está guardado en la fila con la misma (fecha,
+    descripcion) — la misma clave que usa el índice UNIQUE. Reporta
+    discrepancias sin tocar nada; con ?apply=1 corrige el tipo de las
+    filas donde también coincide el monto (evita tocar una fila que solo
+    coincide en fecha+descripcion por casualidad)."""
+    if not _ok(): return _locked()
+
+    file = request.files.get('file')
+    if not file:
+        return jsonify({'ok': False, 'error': 'No se recibió archivo'}), 400
+
+    suffix = Path(file.filename or 'file.pdf').suffix.lower()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        file.save(tmp.name)
+        tmp_path = Path(tmp.name)
+
+    try:
+        from .parsers import parse_file, detect_bank
+        bank = detect_bank(tmp_path)
+        movimientos = parse_file(tmp_path)
+        if not movimientos:
+            return jsonify({'ok': False, 'error': 'No se encontraron transacciones', 'bank': bank})
+
+        apply_changes = request.args.get('apply') == '1'
+
+        with get_db() as db:
+            discrepancias = []
+            sin_encontrar = 0
+            corregidas = 0
+            for m in movimientos:
+                row = db.execute(
+                    "SELECT id, monto, tipo FROM est_movimientos WHERE fecha=? AND descripcion=?",
+                    (m['fecha'], m['descripcion']),
+                ).fetchone()
+                if not row:
+                    sin_encontrar += 1
+                    continue
+                if row['tipo'] == m['tipo']:
+                    continue
+                monto_coincide = abs(float(row['monto']) - float(m['monto'])) < 0.01
+                item = {
+                    'id': row['id'], 'fecha': m['fecha'], 'descripcion': m['descripcion'],
+                    'monto_guardado': row['monto'], 'monto_pdf': m['monto'],
+                    'tipo_guardado': row['tipo'], 'tipo_correcto': m['tipo'],
+                    'monto_coincide': monto_coincide,
+                }
+                discrepancias.append(item)
+                if apply_changes and monto_coincide:
+                    db.execute("UPDATE est_movimientos SET tipo=? WHERE id=?", (m['tipo'], row['id']))
+                    corregidas += 1
+
+            if apply_changes:
+                db.commit()
+
+        return jsonify({
+            'ok': True, 'bank': bank, 'apply': apply_changes,
+            'parseados': len(movimientos),
+            'sin_encontrar_en_db': sin_encontrar,
+            'discrepancias': discrepancias,
+            'corregidas': corregidas if apply_changes else 0,
+        })
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 # ── Viajes ────────────────────────────────────────────────────────────────────
 
 @estados_bp.route('/admin/fix-libreton-years', methods=['GET', 'POST'])
