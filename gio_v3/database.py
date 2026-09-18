@@ -2383,6 +2383,43 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_taxonomia_2026_09_sprint3 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — revivir CAFE/PAN como categoria propia (a
+        #    petición explícita del usuario: el Sprint 3 de taxonomía la había
+        #    fusionado dentro de ALIMENTACION/Café y ALIMENTACION/Pan; café y
+        #    pan son un "deseo" distinto de comprar despensa o comer fuera) ──
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_cafe_pan_categoria_propia_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='CAFE/PAN'
+                    WHERE categoria='ALIMENTACION' AND subcategoria IN ('Café', 'Pan')
+                """)
+                n_cafe_pan = cur.rowcount
+
+                db.executemany(
+                    "INSERT OR IGNORE INTO est_categoria_naturaleza (categoria, subcategoria, naturaleza) VALUES (?,?,?)",
+                    [
+                        ('CAFE/PAN', 'Café', 'VARIABLE'),
+                        ('CAFE/PAN', 'Pan', 'VARIABLE'),
+                        ('CAFE/PAN', '', 'VARIABLE'),
+                    ],
+                )
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_cafe_pan_categoria_propia_2026_09",
+                     f"CAFE/PAN revivida como categoria propia a petición explícita del "
+                     f"usuario. {n_cafe_pan} filas reclasificadas de "
+                     f"categoria='ALIMENTACION' (subcategoria Café/Pan) de vuelta a "
+                     f"categoria='CAFE/PAN' -- se conserva la subcategoria Café/Pan tal "
+                     f"cual. est_categoria_naturaleza sembrada con los códigos CAFE/PAN "
+                     f"(VARIABLE, igual que en la semilla original pre-Sprint-3).")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_cafe_pan_categoria_propia_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

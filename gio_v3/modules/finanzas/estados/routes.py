@@ -1562,7 +1562,7 @@ _CONCEPTO_CASE = """
     WHEN categoria='VIAJES' AND subcategoria='Transporte' THEN 'Transporte'
     WHEN categoria='TRANSPORTE' THEN 'Transporte'
     WHEN categoria='VIAJES' AND subcategoria='Comida' THEN 'Comida'
-    WHEN categoria='ALIMENTACION' THEN 'Comida'
+    WHEN categoria IN ('ALIMENTACION','CAFE/PAN') THEN 'Comida'
     WHEN categoria IN ('OCIO','SALSA') THEN 'Experiencias'
     ELSE 'Otros'
   END

@@ -23,17 +23,22 @@ PCTS       = {'necesidades': 0.50, 'deseos': 0.30, 'ahorro_deuda': 0.20}
 #
 # NOTA taxonomía 2026-09 (sprint de categorías): antes VIVERES/SUPER
 # (necesidades) y COMIDA/REST + CAFE/PAN (deseos) eran categorías separadas.
-# Ahora todo vive en una sola categoria ALIMENTACION (Súper/Conveniencia/
-# Café/Pan/Restaurante/Fast Food/Delivery) porque así se pidió a nivel de
-# taxonomía de gasto -- este mapeo por bucket ya no puede distinguir
-# "víveres" de "comer fuera" dentro de esa categoria. Se dejó en
+# Se fusionaron en una sola categoria ALIMENTACION (Súper/Conveniencia/
+# Restaurante/Fast Food/Delivery) -- este mapeo por bucket ya no puede
+# distinguir "víveres" de "comer fuera" dentro de esa categoria. Se dejó en
 # 'necesidades' (la comida en sí es una necesidad, se coma en casa o
-# fuera) pero si se quiere recuperar el split de antes, hay que hacer
-# CATEGORIA_BUCKET y _calc_budget conscientes de subcategoria, no solo
-# categoria -- no se hizo aquí porque no se pidió, para no ampliar el
+# fuera) pero si se quiere recuperar el split completo de antes, hay que
+# hacer CATEGORIA_BUCKET y _calc_budget conscientes de subcategoria, no
+# solo categoria -- no se hizo aquí porque no se pidió, para no ampliar el
 # alcance de lo confirmado.
+#
+# CAFE/PAN sí se revivió como categoria propia (2026-09, a petición
+# explícita) -- café y pan son un "deseo" distinto de comprar despensa o
+# comer en restaurante, así que se sacó de ALIMENTACION otra vez.
 CATEGORIA_BUCKET = {
     'ALIMENTACION':      'necesidades',
+    'CAFE/PAN':          'deseos',  # revivida como categoria propia -- café/pan
+                                     # siempre fue "deseo" aquí, no necesidad
     'VIVIENDA':          'necesidades',
     'TRANSPORTE':        'necesidades',
     'SALUD':             'necesidades',
@@ -68,6 +73,7 @@ _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_REC
 
 CAT_LABELS = {
     'ALIMENTACION':     'Alimentación',
+    'CAFE/PAN':         'Café & Pan',
     'VIVIENDA':         'Vivienda',
     'TRANSPORTE':       'Transporte',
     'SALUD':            'Salud',
