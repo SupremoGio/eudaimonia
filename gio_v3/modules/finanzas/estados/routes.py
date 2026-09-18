@@ -219,6 +219,12 @@ def update_transaction(tx_id):
         if 'viaje_id' in d:
             val = int(d['viaje_id']) if d['viaje_id'] not in (None, '') else None
             db.execute("UPDATE est_movimientos SET viaje_id=? WHERE id=?", (val, tx_id))
+        if 'estatus_reembolso' in d:
+            val = d['estatus_reembolso'] or None
+            db.execute("UPDATE est_movimientos SET estatus_reembolso=? WHERE id=?", (val, tx_id))
+        if 'fecha_reembolso' in d:
+            val = d['fecha_reembolso'] or None
+            db.execute("UPDATE est_movimientos SET fecha_reembolso=? WHERE id=?", (val, tx_id))
         db.commit()
     return jsonify({'ok': True})
 
