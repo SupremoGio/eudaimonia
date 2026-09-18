@@ -2529,6 +2529,44 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_ingreso_subcategorias_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — nómina auto-detectada por fecha+monto (a
+        #    petición explícita del usuario) ─────────────────────────────────
+        # Un ingreso que menciona FIBRA HOTELERA/NOMINA, cae en los primeros
+        # (1-3) o últimos (29-31) días del mes -- cuando normalmente paga la
+        # nómina -- y su monto está entre $10,000 y $12,000 (rango típico de
+        # la quincena/mensualidad), se marca categoria=NOMINA,
+        # subcategoria='Pago nominal'. La misma regla corre también en cada
+        # import futuro (ver _auto_clasificar_nomina en estados/routes.py).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_nomina_pago_nominal_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Pago nominal'
+                    WHERE tipo='INGRESO'
+                      AND (UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
+                           OR UPPER(descripcion) LIKE '%NOMINA%'
+                           OR UPPER(descripcion) LIKE '%NÓMINA%')
+                      AND ((CAST(strftime('%d', fecha) AS INTEGER) BETWEEN 1 AND 3)
+                           OR (CAST(strftime('%d', fecha) AS INTEGER) BETWEEN 29 AND 31))
+                      AND monto BETWEEN 10000 AND 12000
+                """)
+                n_nomina = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_nomina_pago_nominal_2026_09",
+                     f"Auto-clasificación de nómina a petición del usuario: ingresos que "
+                     f"mencionan FIBRA HOTELERA/NOMINA, caen en los días 1-3 o 29-31 del "
+                     f"mes, y su monto está entre $10,000 y $12,000 -> "
+                     f"categoria=NOMINA, subcategoria='Pago nominal'. "
+                     f"{n_nomina} filas reclasificadas. La misma regla corre en cada "
+                     f"import futuro (_auto_clasificar_nomina en estados/routes.py).")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_nomina_pago_nominal_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
