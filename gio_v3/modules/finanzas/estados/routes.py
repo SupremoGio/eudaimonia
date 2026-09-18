@@ -1092,14 +1092,18 @@ def _detectar_posibles_duplicados(db, ids: list) -> list:
 def _auto_clasificar_nomina(db, ids: list) -> int:
     """A petición explícita del usuario: un ingreso que menciona FIBRA
     HOTELERA/NOMINA y cuyo monto está en el rango típico de la quincena/
-    mensualidad ($10,000-$12,000) se clasifica como categoria=NOMINA,
-    subcategoria='Pago nominal'. (Ajustado: la primera versión también
-    exigía que la fecha cayera en los días 1-3/29-31 del mes, pero un caso
-    real de nómina confirmado llegó el día 13 -- el día de pago varía
-    según cuándo procesa el banco, así que se quitó esa condición y se
-    dejó solo texto+monto.) Solo corre sobre las filas recién insertadas
-    (`ids`) -- para el histórico existente ver la migración
-    finanzas_nomina_pago_nominal_v2_2026_09 en database.py."""
+    mensualidad se clasifica como categoria=NOMINA, subcategoria='Pago
+    nominal'. (Ajustado: la primera versión también exigía que la fecha
+    cayera en los días 1-3/29-31 del mes, pero un caso real de nómina
+    confirmado llegó el día 13 -- el día de pago varía según cuándo
+    procesa el banco, así que se quitó esa condición y se dejó solo
+    texto+monto.) El rango de monto empezó siendo $10,000-$12,000, pero
+    el sueldo de 2025 (antes de un aumento) caía entre $9,000 y $11,000
+    -- se amplió a $9,000-$12,000 para cubrir ambos años con una sola
+    regla. Solo corre sobre las filas recién insertadas (`ids`) -- para
+    el histórico existente ver las migraciones finanzas_nomina_pago_
+    nominal_v2_2026_09 (rango original) y finanzas_nomina_pago_nominal_
+    v3_2026_09 (rango ampliado a 2025) en database.py."""
     if not ids:
         return 0
     placeholders = ','.join('?' * len(ids))
@@ -1110,7 +1114,7 @@ def _auto_clasificar_nomina(db, ids: list) -> int:
           AND (UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
                OR UPPER(descripcion) LIKE '%NOMINA%'
                OR UPPER(descripcion) LIKE '%NÓMINA%')
-          AND monto BETWEEN 10000 AND 12000
+          AND monto BETWEEN 9000 AND 12000
     """, ids)
     return cur.rowcount
 

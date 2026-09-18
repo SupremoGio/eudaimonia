@@ -2605,6 +2605,44 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_nomina_pago_nominal_v2_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — nómina auto-detectada, v3 con rango de monto
+        #    ampliado para cubrir 2025 (a petición explícita del usuario) ──────
+        # v1/v2 usaban el rango $10,000-$12,000, que calza con el sueldo de
+        # 2026. El sueldo de 2025 (antes de un aumento) caía entre $9,000 y
+        # $11,000 -- fuera del piso de $10,000 -- así que esos ingresos de
+        # nómina de 2025 nunca se reclasificaron aunque el texto (FIBRA
+        # HOTELERA/NOMINA) sí calzaba. Se amplía el rango a $9,000-$12,000
+        # para cubrir ambos años con una sola regla. Se corre como migración
+        # nueva (no se reescribe v1/v2) porque esas ya pudieron haber corrido
+        # en producción antes de este ajuste.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_nomina_pago_nominal_v3_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Pago nominal'
+                    WHERE tipo='INGRESO'
+                      AND (UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
+                           OR UPPER(descripcion) LIKE '%NOMINA%'
+                           OR UPPER(descripcion) LIKE '%NÓMINA%')
+                      AND monto BETWEEN 9000 AND 12000
+                """)
+                n_nomina_v3 = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_nomina_pago_nominal_v3_2026_09",
+                     f"Ajuste a la regla de auto-clasificación de nómina: se amplía el "
+                     f"rango de monto de $10,000-$12,000 (v1/v2) a $9,000-$12,000 para "
+                     f"cubrir el sueldo de 2025 (antes de un aumento), que caía entre "
+                     f"$9,000 y $11,000. "
+                     f"{n_nomina_v3} filas adicionales reclasificadas a "
+                     f"categoria=NOMINA, subcategoria='Pago nominal'.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_nomina_pago_nominal_v3_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
