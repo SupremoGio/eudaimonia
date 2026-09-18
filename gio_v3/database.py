@@ -2567,6 +2567,44 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_nomina_pago_nominal_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — nómina auto-detectada, v2 sin filtro de
+        #    fecha (a petición explícita del usuario) ────────────────────────
+        # La v1 (finanzas_nomina_pago_nominal_2026_09) exigía también que la
+        # fecha cayera en los días 1-3/29-31 del mes. Un caso real confirmado
+        # (PAGO DE NOMINA FIBRA HOTELERA SC, $10,422.25, 02/13/2026) llegó el
+        # día 13 -- el banco no siempre paga en fechas fijas -- así que se
+        # quita esa condición y se deja solo texto+monto. Se corre como
+        # migración nueva (no se reescribe la v1) porque la v1 pudo haber
+        # corrido ya en producción antes de este ajuste.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_nomina_pago_nominal_v2_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Pago nominal'
+                    WHERE tipo='INGRESO'
+                      AND (UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
+                           OR UPPER(descripcion) LIKE '%NOMINA%'
+                           OR UPPER(descripcion) LIKE '%NÓMINA%')
+                      AND monto BETWEEN 10000 AND 12000
+                """)
+                n_nomina_v2 = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_nomina_pago_nominal_v2_2026_09",
+                     f"Ajuste a la regla de auto-clasificación de nómina: se quita la "
+                     f"condición de día del mes (1-3/29-31) de la v1 -- el banco no "
+                     f"siempre paga en fechas fijas, y un caso real (02/13/2026) no "
+                     f"calzaba con esa ventana. Ahora solo se exige texto (FIBRA "
+                     f"HOTELERA/NOMINA) + monto ($10,000-$12,000). "
+                     f"{n_nomina_v2} filas adicionales reclasificadas a "
+                     f"categoria=NOMINA, subcategoria='Pago nominal'.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_nomina_pago_nominal_v2_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

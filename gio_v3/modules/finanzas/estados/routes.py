@@ -1024,12 +1024,15 @@ def _sugerir_reembolsos(db, ids: list) -> list:
 
 def _auto_clasificar_nomina(db, ids: list) -> int:
     """A petición explícita del usuario: un ingreso que menciona FIBRA
-    HOTELERA/NOMINA, cae en los primeros o últimos días del mes (cuando
-    normalmente paga la nómina) y su monto está en el rango típico de la
-    quincena/mensualidad, se clasifica como categoria=NOMINA,
-    subcategoria='Pago nominal'. Solo corre sobre las filas recién
-    insertadas (`ids`) -- para el histórico existente ver la migración
-    finanzas_nomina_pago_nominal_2026_09 en database.py."""
+    HOTELERA/NOMINA y cuyo monto está en el rango típico de la quincena/
+    mensualidad ($10,000-$12,000) se clasifica como categoria=NOMINA,
+    subcategoria='Pago nominal'. (Ajustado: la primera versión también
+    exigía que la fecha cayera en los días 1-3/29-31 del mes, pero un caso
+    real de nómina confirmado llegó el día 13 -- el día de pago varía
+    según cuándo procesa el banco, así que se quitó esa condición y se
+    dejó solo texto+monto.) Solo corre sobre las filas recién insertadas
+    (`ids`) -- para el histórico existente ver la migración
+    finanzas_nomina_pago_nominal_v2_2026_09 en database.py."""
     if not ids:
         return 0
     placeholders = ','.join('?' * len(ids))
@@ -1040,8 +1043,6 @@ def _auto_clasificar_nomina(db, ids: list) -> int:
           AND (UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
                OR UPPER(descripcion) LIKE '%NOMINA%'
                OR UPPER(descripcion) LIKE '%NÓMINA%')
-          AND ((CAST(strftime('%d', fecha) AS INTEGER) BETWEEN 1 AND 3)
-               OR (CAST(strftime('%d', fecha) AS INTEGER) BETWEEN 29 AND 31))
           AND monto BETWEEN 10000 AND 12000
     """, ids)
     return cur.rowcount
