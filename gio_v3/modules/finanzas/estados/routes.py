@@ -168,15 +168,40 @@ def create_transaction():
     fecha = d.get('fecha', '')
     desc  = d.get('descripcion', '')
     categoria = d.get('categoria', 'OTROS')
+    monto = safe_float(d.get('monto', 0))
+    tipo = d.get('tipo', 'GASTO')
     with get_db() as db:
+        # Mismo día + mismo monto + mismo tipo, sin importar la descripción,
+        # suele ser el mismo movimiento real capturado dos veces (ver
+        # /admin/audit-duplicados) -- el índice UNIQUE(fecha,descripcion,monto)
+        # de abajo no lo detecta cuando la descripción difiere. Se bloquea
+        # por default; force=true lo permite (puede ser una coincidencia
+        # legítima, ej. dos compras iguales el mismo día).
+        if monto > 0 and not d.get('force'):
+            dup = db.execute(
+                "SELECT id, descripcion, banco FROM est_movimientos "
+                "WHERE fecha=? AND ROUND(monto,2)=ROUND(?,2) AND tipo=?",
+                (fecha, monto, tipo),
+            ).fetchone()
+            if dup:
+                return jsonify({
+                    'inserted': 0,
+                    'possible_duplicate': True,
+                    'existing': dict(dup),
+                    'error': f'Ya existe un movimiento del mismo día, monto y tipo '
+                             f'("{dup["descripcion"]}", {dup["banco"]}) — puede ser el mismo '
+                             f'movimiento real capturado dos veces con otra descripción. '
+                             f'Revísalo antes de guardar uno nuevo igual.',
+                }), 409
+
         cur = db.execute(
             """INSERT OR IGNORE INTO est_movimientos
                (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
                VALUES (?,?,?,?,?,?,?,?,?)""",
-            (fecha, fecha, desc, safe_float(d.get('monto', 0)),
+            (fecha, fecha, desc, monto,
              d.get('banco', 'MANUAL'), d.get('periodo', ''),
              categoria, _normalize_subcategoria(categoria, d.get('subcategoria', '')),
-             d.get('tipo', 'GASTO')),
+             tipo),
         )
         db.commit()
         inserted = cur.rowcount
@@ -1022,6 +1047,48 @@ def _sugerir_reembolsos(db, ids: list) -> list:
     return sugerencias
 
 
+def _detectar_posibles_duplicados(db, ids: list) -> list:
+    """Bug real confirmado por el usuario: el mismo movimiento real
+    (mismo día, mismo monto) se coló dos veces con descripción Y tipo
+    distintos (una vez tipo=GASTO por una mala detección de banco, luego
+    reclasificado a mano a INGRESO) — el dedup de /api/upload por
+    (fecha, monto, tipo) nunca lo iba a atrapar porque el tipo también
+    difería en el momento del import.
+
+    Esta función SOLO avisa -- nunca bloquea el import ni borra nada --
+    buscando, para cada fila recién insertada, otras filas ya existentes
+    con la misma fecha y el mismo monto (redondeado a centavos) SIN
+    importar el tipo. Puede haber falsos positivos legítimos (dos compras
+    reales de mismo monto el mismo día), así que queda para que el
+    usuario decida con /admin/audit-duplicados o borrando la fila
+    sobrante desde la UI."""
+    if not ids:
+        return []
+    placeholders = ','.join('?' * len(ids))
+    nuevas = db.execute(
+        f"""SELECT id, fecha, descripcion, monto, tipo, banco FROM est_movimientos
+            WHERE id IN ({placeholders}) AND monto != 0""",
+        ids,
+    ).fetchall()
+    if not nuevas:
+        return []
+    avisos = []
+    for tx in nuevas:
+        otras = db.execute(
+            """SELECT id, descripcion, tipo, banco FROM est_movimientos
+               WHERE fecha=? AND ROUND(monto,2)=ROUND(?,2) AND id != ?""",
+            (tx['fecha'], tx['monto'], tx['id']),
+        ).fetchall()
+        for otra in otras:
+            avisos.append({
+                'id': tx['id'], 'descripcion': tx['descripcion'], 'monto': tx['monto'],
+                'fecha': tx['fecha'], 'banco': tx['banco'], 'tipo': tx['tipo'],
+                'posible_duplicado_id': otra['id'], 'posible_duplicado_descripcion': otra['descripcion'],
+                'posible_duplicado_tipo': otra['tipo'], 'posible_duplicado_banco': otra['banco'],
+            })
+    return avisos
+
+
 def _auto_clasificar_nomina(db, ids: list) -> int:
     """A petición explícita del usuario: un ingreso que menciona FIBRA
     HOTELERA/NOMINA y cuyo monto está en el rango típico de la quincena/
@@ -1114,7 +1181,12 @@ def upload_file():
             for r in db.execute(
                 "SELECT fecha, monto, tipo FROM est_movimientos WHERE monto > 0"
             ).fetchall():
-                existing.add((r['fecha'], float(r['monto']), r['tipo']))
+                # Redondeado a centavos: dos parsers pueden calcular el mismo
+                # monto por caminos distintos (división vs. parseo directo
+                # del string) y no siempre caen en el mismo float exacto —
+                # comparar con round() evita que ese detalle deje pasar un
+                # duplicado real.
+                existing.add((r['fecha'], round(float(r['monto']), 2), r['tipo']))
 
             # También rastreamos depósitos/SPEIs nuevos para el response
             review_needed = []
@@ -1124,7 +1196,7 @@ def upload_file():
                 m_banco = m.get('banco', bank) or bank
                 m_monto = float(m['monto'])
                 # Dedup solo aplica a montos > 0
-                key = (m['fecha'], m_monto, m['tipo'])
+                key = (m['fecha'], round(m_monto, 2), m['tipo'])
                 if m_monto > 0 and key in existing:
                     skipped += 1
                     continue
@@ -1230,6 +1302,7 @@ def upload_file():
             sugerencias_viaje_tabasco = _sugerir_viaje_tabasco(db, new_ids)
             sugerencias_reembolso = _sugerir_reembolsos(db, new_ids)
             _auto_clasificar_nomina(db, new_ids)
+            avisos_posible_duplicado = _detectar_posibles_duplicados(db, new_ids)
             db.commit()
 
             # Auto-log de "Investigar en GBM" (Acta Diurna) — actividad oculta,
@@ -1269,6 +1342,7 @@ def upload_file():
             'avisos_msi': avisos_msi,                         # posible doble conteo de MSI, revisar manual
             'sugerencias_viaje_tabasco': sugerencias_viaje_tabasco,  # nunca se asignan solas
             'sugerencias_reembolso': sugerencias_reembolso,          # confirmar en /api/expenses/<id>/conciliar
+            'avisos_posible_duplicado': avisos_posible_duplicado,    # mismo día+monto, tipo distinto -- revisar manual
         })
 
     except Exception as e:
@@ -1327,6 +1401,52 @@ def _comparar_pdf_vs_db(movimientos: list, db_rows: list) -> tuple:
             fantasmas.extend(db_restantes)
 
     return faltan, monto_no_coincide, fantasmas
+
+
+@estados_bp.route('/admin/audit-duplicados')
+def audit_duplicados():
+    """Bug real confirmado por el usuario: el mismo movimiento real se
+    coló dos veces con descripción y/o tipo distintos (ej. "PAGO DE
+    NOMINA HH" vía BBVA_DEB y "PAGO DE NOMINA / HH 4206466060 FIBRA
+    HOTELERA..." vía BBVA_TDC, mismo día, mismo monto) — ninguno de los
+    dos guardarraíles existentes lo atrapa: el índice UNIQUE(fecha,
+    descripcion,monto) exige coincidencia exacta de descripción, y el
+    dedup de /api/upload por (fecha,monto,tipo) no aplica si el tipo
+    también terminó distinto (ej. una fila mal detectada como GASTO y
+    luego reclasificada a mano a INGRESO).
+
+    Reporte de solo lectura -- NUNCA borra ni modifica nada. Agrupa TODOS
+    los movimientos por (fecha, monto redondeado a centavos), sin
+    importar tipo/categoría/banco, y devuelve cada grupo con más de una
+    fila para que el usuario decida cuál(es) borrar desde la UI (icono de
+    basura en el modal de editar). Puede haber falsos positivos legítimos
+    (dos compras reales del mismo monto el mismo día) -- no se adivina
+    cuál es cuál."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        rows = db.execute("""
+            SELECT id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo
+            FROM est_movimientos
+            WHERE monto != 0
+            ORDER BY fecha, ROUND(monto, 2)
+        """).fetchall()
+
+    grupos: dict = {}
+    for r in rows:
+        key = (r['fecha'], round(float(r['monto']), 2))
+        grupos.setdefault(key, []).append(dict(r))
+
+    duplicados = [
+        {'fecha': fecha, 'monto': monto, 'movimientos': movs}
+        for (fecha, monto), movs in grupos.items() if len(movs) > 1
+    ]
+    duplicados.sort(key=lambda g: g['fecha'])
+
+    return jsonify({
+        'grupos_duplicados': len(duplicados),
+        'total_filas_involucradas': sum(len(g['movimientos']) for g in duplicados),
+        'duplicados': duplicados,
+    })
 
 
 @estados_bp.route('/admin/audit-montos', methods=['POST'])
