@@ -43,8 +43,34 @@ gio_v3_ACTUALIZADO/          ← raíz del repo
 
 - `database.py` resuelve el path relativo a su propia ubicación (`__file__`), por eso
   el DB siempre está en `gio_v3/pipeline.db` sin importar desde dónde se arranque el proceso.
-- En producción Railway usa la variable de entorno `DATABASE_PATH` (volumen montado).
-- Turso (cloud) se sincroniza en escritura si `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN` están definidos.
+- En producción Railway usa la variable de entorno `DATABASE_PATH`, que **debe** apuntar
+  a un volumen persistente montado (ver "Volumen de Railway" abajo) — es la fuente de
+  verdad: sobrevive redeploys por sí solo.
+- Turso (cloud) es un **respaldo asíncrono fuera del camino crítico** cuando hay volumen
+  (`DATABASE_PATH` definido): cada escritura se confirma primero en el volumen y el push a
+  Turso corre en background — si Turso está lento o caído, la app no se entera. Si el
+  volumen aparece vacío al arrancar (primer deploy o volumen nuevo), se hace un bootstrap
+  restaurando desde Turso una sola vez; nunca se pisa un volumen que ya tiene datos.
+- **Sin `DATABASE_PATH`** (dev local sin volumen) el filesystem es efímero, así que si
+  Turso está configurado el comportamiento es el modo previo: cada escritura bloquea hasta
+  que Turso la confirma, porque es la única copia que sobrevive un reinicio.
+- Diagnóstico: `get_db_status()` en `database.py` expone el modo activo
+  (`"volume + Turso backup (async)"` / `"hybrid (SQLite + Turso, sync)"` / `"local SQLite only"`).
+
+### Volumen de Railway — configuración manual (una sola vez)
+
+Esto **no se puede hacer desde el repo**, es un recurso del dashboard de Railway:
+
+1. En el servicio de Railway → pestaña **Volumes** → crear un volumen, mount path
+   sugerido `/data` (cualquier ruta escribible del contenedor sirve).
+2. Variable de entorno del servicio: `DATABASE_PATH=/data/pipeline.db` (debe apuntar a un
+   archivo *dentro* del mount path, no al directorio).
+3. Redeploy. En los logs de arranque debe aparecer
+   `[DB] Modo: SQLite en volumen (fuente de verdad) + Turso backup async OK` — si sale
+   `Modo hibrido: ... (sync)` es que `DATABASE_PATH` no llegó a definirse o el volumen no
+   quedó montado ahí.
+- Los uploads (`UPLOADS_DIR`, ver sección de Uploads) ya usan el mismo volumen vía
+  `uploads_base_dir()` — no hace falta un volumen aparte para eso.
 
 **Cuando necesites ejecutar un script que toca la DB:**
 

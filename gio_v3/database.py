@@ -74,8 +74,8 @@ def _turso_sync(host, token, writes):
 _RESTORE_BUDGET_SECS = 25  # tope duro: nunca dejar colgado el boot del server
 
 
-def _restore_from_turso(host, token):
-    """On startup: copy all Turso data into local SQLite.
+def _restore_from_turso(host, token, target_path):
+    """On startup: copy all Turso data into local SQLite at `target_path`.
 
     Acotado a _RESTORE_BUDGET_SECS de reloj: con decenas de tablas, cada una
     con hasta 3 reintentos de 15s si Turso está lento/inalcanzable, esto podía
@@ -96,7 +96,7 @@ def _restore_from_turso(host, token):
         tables   = [dict(zip(tbl_cols, [_from_cell(c) for c in row]))
                     for row in r.get("rows", [])]
 
-        local = _sqlite3.connect(_LOCAL_TMP)
+        local = _sqlite3.connect(target_path)
         local.execute("PRAGMA journal_mode=WAL")
         restored, skipped = 0, 0
         for t in tables:
@@ -144,7 +144,7 @@ def _restore_from_turso(host, token):
 # ── Hybrid connection: local SQLite reads + async Turso writes ────────────────
 
 class _HybridConn:
-    def __init__(self, db_path, turso_host, turso_token):
+    def __init__(self, db_path, turso_host, turso_token, async_sync=False):
         self._db    = _sqlite3.connect(db_path)
         self._db.row_factory = _sqlite3.Row
         self._db.execute("PRAGMA journal_mode=WAL")
@@ -152,6 +152,13 @@ class _HybridConn:
         self._token = turso_token
         self._writes = []
         self._sync_thread = None
+        # True cuando db_path vive en un volumen persistente de Railway (ver
+        # selección de backend más abajo): el SQLite local ya sobrevive un
+        # redeploy por sí solo, así que Turso es un respaldo fuera del camino
+        # crítico y el commit no necesita esperarlo. False (default) preserva
+        # el comportamiento síncrono de siempre para cuando NO hay volumen y
+        # el filesystem local es efímero -- ahí sí hay que esperar a Turso.
+        self._async_sync = async_sync
 
     def _track(self, sql, args=()):
         u = sql.strip().upper()
@@ -180,19 +187,31 @@ class _HybridConn:
         self._db.commit()
         if self._writes:
             writes, self._writes = self._writes[:], []
-            # Síncrono a propósito: _restore_from_turso reconstruye el
-            # SQLite local DESDE Turso en cada arranque del contenedor (el
-            # archivo local vive en el filesystem efímero del contenedor,
-            # no en el volumen persistente de Railway) — si el redeploy
-            # ocurre antes de que un sync en background termine, esos
-            # writes nunca llegan a Turso y el próximo arranque los borra
-            # sin aviso, aunque SQLite local ya los haya confirmado. Un
-            # caso real: ~50 filas recuperadas por /admin/recover-montos
-            # se perdieron así al redesplegar minutos después. Bloquear
-            # aquí hasta que Turso confirme el escrito es la única forma
-            # de que "ya se guardó" signifique lo mismo para el usuario
-            # que para el próximo arranque del contenedor.
-            _turso_sync(self._host, self._token, writes)
+            if self._async_sync:
+                # db_path vive en un volumen persistente de Railway: el
+                # commit de arriba YA es durable por sí solo y sobrevive un
+                # redeploy sin ayuda de Turso. Empujar a Turso en background
+                # evita que la latencia de red a Turso (o que esté caído)
+                # bloquee cada escritura de la app -- si el push falla o
+                # tarda, el dato ya está a salvo en el volumen; Turso solo
+                # pierde ese respaldo puntual y se pone al día en el
+                # siguiente write.
+                threading.Thread(
+                    target=_turso_sync, args=(self._host, self._token, writes),
+                    daemon=True,
+                ).start()
+            else:
+                # Síncrono a propósito: sin volumen, el SQLite local vive en
+                # el filesystem efímero del contenedor -- si el redeploy
+                # ocurre antes de que un sync en background termine, esos
+                # writes nunca llegan a Turso y el próximo arranque los borra
+                # sin aviso, aunque SQLite local ya los haya confirmado. Un
+                # caso real: ~50 filas recuperadas por /admin/recover-montos
+                # se perdieron así al redesplegar minutos después. Bloquear
+                # aquí hasta que Turso confirme el escrito es la única forma
+                # de que "ya se guardó" signifique lo mismo para el usuario
+                # que para el próximo arranque del contenedor.
+                _turso_sync(self._host, self._token, writes)
 
     def close(self):
         self._db.close()
@@ -207,11 +226,16 @@ class _HybridConn:
 
 # ── Backend selection ─────────────────────────────────────────────────────────
 
-_USE_HYBRID = False
-_TURSO_HOST = ""
+_USE_HYBRID  = False
+_TURSO_HOST  = ""
 _TURSO_TOKEN_VAL = ""
-_DB_PATH = _LOCAL
+_DB_PATH     = _LOCAL
+_TURSO_ASYNC = False
 
+# DATABASE_PATH solo se define en Railway cuando hay un volumen persistente
+# montado (ver CLAUDE.md) -- su presencia es la señal de que el SQLite local
+# sobrevive un redeploy por sí mismo y puede ser la fuente de verdad.
+_HAS_VOLUME = bool(os.environ.get("DATABASE_PATH"))
 
 if TURSO_URL and TURSO_TOKEN:
     try:
@@ -220,19 +244,39 @@ if TURSO_URL and TURSO_TOKEN:
         # credenciales de otro entorno, red que no lo alcanza), hay que
         # saber eso en segundos y arrancar con SQLite local — no en minutos.
         _turso_pipeline(_host, TURSO_TOKEN, [{"sql": "SELECT 1", "args": []}], timeout=6, retries=1)
-        print("[DB] Turso conectado OK - restaurando datos locales...")
-        _restore_from_turso(_host, TURSO_TOKEN)
-        _USE_HYBRID   = True
-        _TURSO_HOST   = _host
+        _USE_HYBRID      = True
+        _TURSO_HOST      = _host
         _TURSO_TOKEN_VAL = TURSO_TOKEN
-        _DB_PATH      = _LOCAL_TMP
-        print("[DB] Modo hibrido: SQLite local (rapido) + Turso (persistencia) OK")
+
+        if _HAS_VOLUME:
+            # Volumen de Railway presente: el SQLite en _LOCAL (DATABASE_PATH)
+            # es la fuente de verdad, Turso es un respaldo async fuera del
+            # camino crítico (ver _HybridConn.commit). Solo se restaura DESDE
+            # Turso si el volumen está vacío (primer deploy o volumen nuevo)
+            # -- nunca se pisa un volumen que ya tiene datos con una copia de
+            # Turso que podría ser más vieja que lo último escrito local.
+            _DB_PATH     = _LOCAL
+            _TURSO_ASYNC = True
+            if not os.path.exists(_LOCAL):
+                print("[DB] Volumen vacio - restaurando bootstrap desde Turso...")
+                _restore_from_turso(_host, TURSO_TOKEN, _LOCAL)
+            print("[DB] Modo: SQLite en volumen (fuente de verdad) + Turso backup async OK")
+        else:
+            # Sin DATABASE_PATH no hay volumen montado -- el filesystem del
+            # contenedor es efímero y Turso es la única copia que sobrevive
+            # un redeploy, así que el write debe bloquear hasta que Turso lo
+            # confirme (ver rama síncrona en _HybridConn.commit).
+            print("[DB] Turso conectado OK - restaurando datos locales (sin volumen, modo sync)...")
+            _restore_from_turso(_host, TURSO_TOKEN, _LOCAL_TMP)
+            _DB_PATH = _LOCAL_TMP
+            print("[DB] Modo hibrido: SQLite local (rapido) + Turso (persistencia, sync) OK")
     except Exception as e:
-        print(f"[DB] TURSO FALLO ({e}) - usando SQLite local (datos NO persistiran en redeploy)")
+        print(f"[DB] TURSO FALLO ({e}) - usando SQLite local"
+              f"{' en volumen' if _HAS_VOLUME else ' (datos NO persistiran en redeploy)'}")
 
 def get_db():
     if _USE_HYBRID:
-        return _HybridConn(_DB_PATH, _TURSO_HOST, _TURSO_TOKEN_VAL)
+        return _HybridConn(_DB_PATH, _TURSO_HOST, _TURSO_TOKEN_VAL, async_sync=_TURSO_ASYNC)
     c = _sqlite3.connect(_DB_PATH)
     c.row_factory = _sqlite3.Row
     return c
@@ -2915,8 +2959,12 @@ def get_gtd_stats():
 
 def get_db_status():
     """Diagnostic snapshot: persistence mode, table row counts, last activity."""
+    if _USE_HYBRID:
+        _mode = "volume + Turso backup (async)" if _TURSO_ASYNC else "hybrid (SQLite + Turso, sync)"
+    else:
+        _mode = "local SQLite only"
     status = {
-        "mode":        "hybrid (SQLite + Turso)" if _USE_HYBRID else "local SQLite only",
+        "mode":        _mode,
         "turso_url":   TURSO_URL[:40] + "..." if TURSO_URL else "NOT SET",
         "db_path":     _DB_PATH,
         "db_exists":   os.path.exists(_DB_PATH),
