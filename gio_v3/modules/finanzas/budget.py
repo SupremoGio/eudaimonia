@@ -20,71 +20,74 @@ CATEGORIAS = ['necesidades', 'deseos', 'ahorro_deuda']
 PCTS       = {'necesidades': 0.50, 'deseos': 0.30, 'ahorro_deuda': 0.20}
 
 # Mapeo categoria → bucket (None = excluir del gasto visible)
+#
+# NOTA taxonomía 2026-09 (sprint de categorías): antes VIVERES/SUPER
+# (necesidades) y COMIDA/REST + CAFE/PAN (deseos) eran categorías separadas.
+# Ahora todo vive en una sola categoria ALIMENTACION (Súper/Conveniencia/
+# Café/Pan/Restaurante/Fast Food/Delivery) porque así se pidió a nivel de
+# taxonomía de gasto -- este mapeo por bucket ya no puede distinguir
+# "víveres" de "comer fuera" dentro de esa categoria. Se dejó en
+# 'necesidades' (la comida en sí es una necesidad, se coma en casa o
+# fuera) pero si se quiere recuperar el split de antes, hay que hacer
+# CATEGORIA_BUCKET y _calc_budget conscientes de subcategoria, no solo
+# categoria -- no se hizo aquí porque no se pidió, para no ampliar el
+# alcance de lo confirmado.
 CATEGORIA_BUCKET = {
-    'COMIDA/REST':      'deseos',
-    'VIVERES/SUPER':    'necesidades',
-    'CASA/HOGAR':       'necesidades',
-    'GASOLINA/AUTO':    'necesidades',
-    'SERVICIOS':        'necesidades',   # Agua, Luz, Internet, Gas, Garrafón
-    'MENSUALIDAD':      'necesidades',   # Mensualidad TDC
-    'ROPA':             'deseos',
-    'SALUD':            'necesidades',
-    'TECH/DIGITAL':     'deseos',
-    'SUSCRIPCIONES':    'deseos',
-    'ENTRETENIMIENTO':  'deseos',
-    'SALSA':            'deseos',
-    'VIAJES/VUELOS':    'deseos',
-    'TRANSPORTE':       'necesidades',
-    'APRENDIZAJE':      'ahorro_deuda',
-    'CAFE/PAN':         'deseos',
-    'GYM':              'deseos',
-    'DEPORTE':          'deseos',
-    'REGALO':           'deseos',
-    'OTROS':            'deseos',
-    'EXPENSE':          None,            # Informativo – se reembolsa, no afecta buckets
-    'APORTACION_RENTA': None,           # Parte de renta recibida de tercero – no es ingreso propio
-    # Inversión → ahorro
-    'INVERSION':        'ahorro_deuda',
-    # Excluidos del gasto de consumo
-    'PAGO_TDC':         None,
-    'PAGO':             None,
-    'TRANSFERENCIA':    None,
-    'SPEI_ENVIADO':     None,
-    'RETIRO':           None,
-    'PUBLICIDAD':       None,
-    'FINANZAS':         None,
-    'NOMINA':           None,
+    'ALIMENTACION':      'necesidades',
+    'VIVIENDA':          'necesidades',
+    'TRANSPORTE':        'necesidades',
+    'SALUD':             'necesidades',
+    'CUIDADO_PERSONAL':  'deseos',
+    'ROPA':              'deseos',
+    'DIGITAL':           'deseos',
+    'DEPORTE':           'deseos',
+    'OCIO':              'deseos',
+    'SALSA':             'deseos',
+    'VIAJES':            'deseos',
+    'FAMILIA_REGALOS':   'deseos',
+    'OTROS':             'deseos',
+    'APRENDIZAJE':       'ahorro_deuda',
+    'INVERSION':         'ahorro_deuda',
+    'COSTOS_FINANCIEROS':'ahorro_deuda',  # intereses/comisiones/penalizaciones -- gasto evitable real, sí debe verse
+    'EXPENSE':           None,            # Informativo – se reembolsa, no afecta buckets
+    'APORTACION_RENTA':  None,            # legado -- ya no se genera, ahora es VIVIENDA/Renta
+    'PROYECTOS':         None,            # gastos de proyectos/trabajo (hosting, ads), no personales
+    'PUBLICIDAD':        None,            # legado, ver PROYECTOS
+    # Excluidos del gasto de consumo (movimientos, no gasto real)
+    'PAGO_TDC':          None,
+    'PAGO':              None,
+    'TRANSFERENCIA':     None,
+    'SPEI_ENVIADO':      None,
+    'RETIRO':            None,
+    'FINANZAS':          None,
+    'NOMINA':            None,
 }
 
 # Categorías de ingreso que NO son ingreso real
 _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO', 'APORTACION_RENTA')
 
 CAT_LABELS = {
-    'COMIDA/REST':     'Comida / Restaurante',
-    'VIVERES/SUPER':   'Víveres / Súper',
-    'CASA/HOGAR':      'Vivienda',
-    'GASOLINA/AUTO':   'Gasolina / Auto',
-    'SERVICIOS':       'Servicios',
-    'MENSUALIDAD':     'Mensualidad TDC',
-    'ROPA':            'Ropa',
-    'SALUD':           'Personal / Salud',
-    'TECH/DIGITAL':    'Tech / Digital',
-    'SUSCRIPCIONES':   'Apps / Suscripciones',
-    'ENTRETENIMIENTO': 'Gustos',
-    'SALSA':           'Salsa / Baile',
-    'VIAJES/VUELOS':   'Viajes / Vuelos',
-    'TRANSPORTE':      'Transporte',
-    'APRENDIZAJE':     'Educación',
-    'INVERSION':       'Ahorro',
-    'CAFE/PAN':        'Café / Pan',
-    'GYM':             'Gym',
-    'DEPORTE':         'Deporte',
-    'REGALO':          'Regalo',
-    'OTROS':           'Otros',
-    'EXPENSE':         'EXPENSE',
-    'APORTACION_RENTA':'Aportación renta',
-    'FINANZAS':        'Cargos bancarios',
-    'NOMINA':          'Nómina adelanto',
+    'ALIMENTACION':     'Alimentación',
+    'VIVIENDA':         'Vivienda',
+    'TRANSPORTE':       'Transporte',
+    'SALUD':            'Salud',
+    'CUIDADO_PERSONAL': 'Cuidado personal',
+    'ROPA':             'Ropa',
+    'DIGITAL':          'Digital',
+    'DEPORTE':          'Deporte',
+    'OCIO':             'Ocio',
+    'SALSA':            'Salsa / Baile',
+    'VIAJES':           'Viajes',
+    'FAMILIA_REGALOS':  'Familia y regalos',
+    'PROYECTOS':        'Proyectos',
+    'COSTOS_FINANCIEROS':'Costos financieros',
+    'APRENDIZAJE':      'Aprendizaje',
+    'INVERSION':        'Ahorro',
+    'OTROS':            'Otros',
+    'EXPENSE':          'EXPENSE',
+    'APORTACION_RENTA': 'Aportación renta',
+    'FINANZAS':         'Cargos bancarios',
+    'NOMINA':           'Nómina adelanto',
 }
 
 BUCKET_META = {
@@ -162,7 +165,7 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
                 """SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
                    WHERE tipo='GASTO'
                      AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
-                                           'SPEI_ENVIADO','RETIRO','PUBLICIDAD','NOMINA','FINANZAS',
+                                           'SPEI_ENVIADO','RETIRO','PROYECTOS','PUBLICIDAD','NOMINA','FINANZAS',
                                            'EXPENSE','APORTACION_RENTA')
                      AND fecha >= ? AND fecha < ?""",
                 (mes_inicio, mes_fin)
@@ -225,7 +228,7 @@ def _calc_budget(mes, db):
            FROM est_movimientos
            WHERE tipo='GASTO'
              AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
-                                   'SPEI_ENVIADO','RETIRO','PUBLICIDAD','NOMINA','FINANZAS',
+                                   'SPEI_ENVIADO','RETIRO','PROYECTOS','PUBLICIDAD','NOMINA','FINANZAS',
                                    'EXPENSE','APORTACION_RENTA')
              AND fecha >= ? AND fecha < ?
            GROUP BY categoria

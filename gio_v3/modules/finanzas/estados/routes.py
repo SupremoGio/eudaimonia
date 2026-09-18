@@ -1217,16 +1217,20 @@ def fix_libreton_years():
     })
 
 
-# SQL expression that buckets a transaction into a travel concept
+# SQL expression that buckets a transaction into a travel concept.
+# Taxonomía 2026-09: VIAJES ya trae sus propias subcategorias (Transporte,
+# Hospedaje, Comida, Otros) para lo que se etiquetó directamente como parte
+# del viaje; TRANSPORTE/ALIMENTACION/OCIO/SALSA cubren transacciones de otras
+# categorias que igual se asignaron a un viaje_id (ej. gasolina de carretera,
+# clases de salsa del congreso).
 _CONCEPTO_CASE = """
   CASE
-    WHEN categoria='VIAJES/VUELOS' AND subcategoria='Vuelos' THEN 'Vuelos'
-    WHEN categoria='VIAJES/VUELOS' AND subcategoria='Hotel'  THEN 'Hotel'
-    WHEN categoria='TRANSPORTE'
-      OR (categoria='VIAJES/VUELOS' AND subcategoria='Transporte viaje') THEN 'Transporte'
-    WHEN categoria IN ('COMIDA/REST','CAFE/PAN') THEN 'Comida'
-    WHEN (categoria='VIAJES/VUELOS' AND subcategoria='Tours')
-      OR categoria='ENTRETENIMIENTO' THEN 'Experiencias'
+    WHEN categoria='VIAJES' AND subcategoria='Hospedaje' THEN 'Hotel'
+    WHEN categoria='VIAJES' AND subcategoria='Transporte' THEN 'Transporte'
+    WHEN categoria='TRANSPORTE' THEN 'Transporte'
+    WHEN categoria='VIAJES' AND subcategoria='Comida' THEN 'Comida'
+    WHEN categoria='ALIMENTACION' THEN 'Comida'
+    WHEN categoria IN ('OCIO','SALSA') THEN 'Experiencias'
     ELSE 'Otros'
   END
 """

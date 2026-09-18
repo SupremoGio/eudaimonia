@@ -315,12 +315,17 @@
 
 <!-- Bucket sections -->
 {% set cat_icons = {
+  'ALIMENTACION':'utensils','VIVIENDA':'house','TRANSPORTE':'car','SALUD':'stethoscope',
+  'CUIDADO_PERSONAL':'scissors','ROPA':'shirt','DIGITAL':'laptop','DEPORTE':'circle-dot',
+  'OCIO':'drama','SALSA':'music','VIAJES':'plane','FAMILIA_REGALOS':'gift',
+  'PROYECTOS':'briefcase','COSTOS_FINANCIEROS':'triangle-alert','APRENDIZAJE':'book-open',
+  'INVERSION':'trending-up','OTROS':'package','EXPENSE':'credit-card',
   'COMIDA/REST':'utensils','VIVERES/SUPER':'shopping-cart','CASA/HOGAR':'house',
-  'GASOLINA/AUTO':'fuel','ROPA':'shirt','SALUD':'stethoscope','TECH/DIGITAL':'laptop',
-  'SUSCRIPCIONES':'clapperboard','ENTRETENIMIENTO':'drama','SALSA':'music',
-  'VIAJES/VUELOS':'plane','TRANSPORTE':'car','APRENDIZAJE':'book-open',
-  'INVERSION':'trending-up','CAFE/PAN':'coffee','GYM':'dumbbell','DEPORTE':'circle-dot',
-  'REGALO':'gift','OTROS':'package','EXPENSE':'credit-card'
+  'GASOLINA/AUTO':'fuel','TECH/DIGITAL':'laptop',
+  'SUSCRIPCIONES':'clapperboard','ENTRETENIMIENTO':'drama',
+  'VIAJES/VUELOS':'plane',
+  'CAFE/PAN':'coffee','GYM':'dumbbell',
+  'REGALO':'gift'
 } %}
 {% set bk_ic_bg = {
   'necesidades':'rgba(26,122,82,0.14)',
@@ -532,9 +537,9 @@ document.getElementById('lim-valor').addEventListener('keydown', e => { if (e.ke
 
 /* ── Drill-down — movimientos por categoría ─────────────── */
 const CATEGORIAS_OPTS = [
-  'COMIDA/REST','VIVERES/SUPER','CASA/HOGAR','GASOLINA/AUTO','ROPA','SALUD',
-  'TECH/DIGITAL','SUSCRIPCIONES','ENTRETENIMIENTO','SALSA','VIAJES/VUELOS',
-  'TRANSPORTE','APRENDIZAJE','CAFE/PAN','GYM','DEPORTE','REGALO','OTROS',
+  'ALIMENTACION','VIVIENDA','TRANSPORTE','SALUD','CUIDADO_PERSONAL','ROPA',
+  'DIGITAL','DEPORTE','OCIO','SALSA','VIAJES','FAMILIA_REGALOS','PROYECTOS',
+  'COSTOS_FINANCIEROS','APRENDIZAJE','OTROS',
   'EXPENSE','INVERSION','PAGO_TDC','TRANSFERENCIA','SPEI_ENVIADO','RETIRO'
 ];
 

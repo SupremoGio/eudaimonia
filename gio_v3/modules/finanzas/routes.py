@@ -183,22 +183,20 @@ def seed_budgets():
     # Ingreso mensual: $22,796 | Excedente: $110.75
     budgets = [
         # ── NECESIDADES (50%) — total $14,385.25 ──────────────────────
-        ('CASA/HOGAR',    'Vivienda',           6000.00),  # Alquiler
-        ('SERVICIOS',     'Servicios',          1429.84),  # Agua+Luz+Internet+Gas+Garrafón
-        ('GASOLINA/AUTO', 'Gasolina / Auto',    1955.41),  # Seguro+Gasolina
-        ('VIVERES/SUPER', 'Víveres / Súper',    2500.00),  # Víveres+Carnes
-        ('SALUD',         'Personal / Salud',    300.00),  # Saldo Cel+Corte cabello
-        ('MENSUALIDAD',   'Mensualidad TDC',    2200.00),  # Mensualidad TDC
+        ('VIVIENDA',    'Vivienda',            7429.84),  # Alquiler+Agua+Luz+Internet+Gas+Garrafón (antes CASA/HOGAR+SERVICIOS)
+        ('TRANSPORTE',  'Gasolina / Auto',     1955.41),  # Seguro+Gasolina (antes GASOLINA/AUTO)
+        ('ALIMENTACION','Alimentación',        4500.00),  # Víveres+Carnes+Comida/Restaurante (antes VIVERES/SUPER $2500 + COMIDA/REST $2000, ahora una sola categoria)
+        ('SALUD',       'Personal / Salud',     300.00),  # Saldo Cel+Corte cabello
+        ('MENSUALIDAD', 'Mensualidad TDC',     2200.00),  # Mensualidad TDC
         # ── DESEOS (30%) — total $4,000.00 ───────────────────────────
-        ('SALSA',          'Salsa / Baile',      700.00),
-        ('COMIDA/REST',    'Comida / Restaurante',2000.00),
-        ('ENTRETENIMIENTO','Gustos',              300.00),
-        ('ROPA',           'Ropa',               500.00),
-        ('GYM',            'Gym',                350.00),
-        ('SUSCRIPCIONES',  'Apps / Suscripciones',150.00),
+        ('SALSA',   'Salsa / Baile',        700.00),
+        ('OCIO',    'Gustos',               300.00),   # antes ENTRETENIMIENTO
+        ('ROPA',    'Ropa',                 500.00),
+        ('DEPORTE', 'Gym',                  350.00),   # antes GYM
+        ('DIGITAL', 'Apps / Suscripciones', 150.00),   # antes SUSCRIPCIONES
         # ── AHORRO Y DEUDAS (20%) — total $4,300.00 ──────────────────
-        ('INVERSION',      'Ahorro',            4000.00),
-        ('APRENDIZAJE',    'Educación',          300.00),
+        ('INVERSION',    'Ahorro',    4000.00),
+        ('APRENDIZAJE',  'Educación',  300.00),
         # ── EXPENSE (informativo — se reembolsa, sin presupuesto) ─────
         ('EXPENSE',        'EXPENSE',              0.00),
     ]
@@ -228,21 +226,19 @@ def apply_migrations():
         # ── 1. Presupuesto exacto Excel 2026 (50-30-20) ───────────────────────
         db.execute("DELETE FROM est_budgets")
         budgets = [
-            ('CASA/HOGAR',    'Vivienda',           6000.00),
-            ('SERVICIOS',     'Servicios',          1429.84),
-            ('GASOLINA/AUTO', 'Gasolina / Auto',    1955.41),
-            ('VIVERES/SUPER', 'Víveres / Súper',    2500.00),
-            ('SALUD',         'Personal / Salud',    300.00),
-            ('MENSUALIDAD',   'Mensualidad TDC',    2200.00),
-            ('SALSA',         'Salsa / Baile',       700.00),
-            ('COMIDA/REST',   'Comida / Restaurante',2000.00),
-            ('ENTRETENIMIENTO','Gustos',              300.00),
-            ('ROPA',          'Ropa',                500.00),
-            ('GYM',           'Gym',                 350.00),
-            ('SUSCRIPCIONES', 'Apps / Suscripciones',150.00),
-            ('INVERSION',     'Ahorro',             4000.00),
-            ('APRENDIZAJE',   'Educación',           300.00),
-            ('EXPENSE',       'EXPENSE',               0.00),
+            ('VIVIENDA',     'Vivienda',            7429.84),
+            ('TRANSPORTE',   'Gasolina / Auto',     1955.41),
+            ('ALIMENTACION', 'Alimentación',        4500.00),
+            ('SALUD',        'Personal / Salud',     300.00),
+            ('MENSUALIDAD',  'Mensualidad TDC',     2200.00),
+            ('SALSA',        'Salsa / Baile',        700.00),
+            ('OCIO',         'Gustos',               300.00),
+            ('ROPA',         'Ropa',                 500.00),
+            ('DEPORTE',      'Gym',                  350.00),
+            ('DIGITAL',      'Apps / Suscripciones', 150.00),
+            ('INVERSION',    'Ahorro',              4000.00),
+            ('APRENDIZAJE',  'Educación',            300.00),
+            ('EXPENSE',      'EXPENSE',                0.00),
         ]
         for cat, nombre, limite in budgets:
             db.execute(
@@ -253,17 +249,17 @@ def apply_migrations():
 
         # ── 2. Keyword rules ──────────────────────────────────────────────────
         keywords = [
-            ('NU MEXICO',               'APORTACION_RENTA', 'Parte renta Nu Mexico'),
-            ('TARJETA DE TERCEROS MBAN','CASA/HOGAR',       'Renta depto 807'),
-            ('5420150016315198',         'CASA/HOGAR',      'Renta depto 807'),
-            ('TOTAL PLAY CR MEX',        'SERVICIOS',       'Internet'),
-            ('TOTAL PLAY',               'SERVICIOS',       'Internet'),
-            ('TOTALPLAY',                'SERVICIOS',       'Internet'),
-            ('CFE SUM SERV',             'SERVICIOS',       'Luz'),
-            ('CFE',                      'SERVICIOS',       'Luz'),
-            ('MI ATT A APP',             'SERVICIOS',       'Saldo telefono'),
-            ('ATTAPP',                   'SERVICIOS',       'Saldo telefono'),
-            ('ATTAPP MICROS',            'SERVICIOS',       'Saldo telefono'),
+            ('NU MEXICO',               'VIVIENDA', 'Renta'),
+            ('TARJETA DE TERCEROS MBAN','VIVIENDA',  'Renta'),
+            ('5420150016315198',         'VIVIENDA', 'Renta'),
+            ('TOTAL PLAY CR MEX',        'VIVIENDA', 'Internet'),
+            ('TOTAL PLAY',               'VIVIENDA', 'Internet'),
+            ('TOTALPLAY',                'VIVIENDA', 'Internet'),
+            ('CFE SUM SERV',             'VIVIENDA', 'Luz'),
+            ('CFE',                      'VIVIENDA', 'Luz'),
+            ('MI ATT A APP',             'DIGITAL',  'Celular'),
+            ('ATTAPP',                   'DIGITAL',  'Celular'),
+            ('ATTAPP MICROS',            'DIGITAL',  'Celular'),
         ]
         for kw, cat, sub in keywords:
             db.execute(
@@ -272,66 +268,66 @@ def apply_migrations():
             )
         log.append(f'est_keywords: {len(keywords)} reglas aseguradas')
 
-        # ── 3b. Reclasificar TOTAL PLAY → SERVICIOS/Internet ─────────────────
+        # ── 3b. Reclasificar TOTAL PLAY → VIVIENDA/Internet ─────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='SERVICIOS', subcategoria='Internet'
+            SET categoria='VIVIENDA', subcategoria='Internet'
             WHERE (UPPER(descripcion) LIKE '%TOTAL PLAY%'
                 OR UPPER(descripcion) LIKE '%TOTALPLAY%')
         """)
-        log.append(f'TOTAL PLAY → SERVICIOS/Internet: {r.rowcount} transacciones reclasificadas')
+        log.append(f'TOTAL PLAY → VIVIENDA/Internet: {r.rowcount} transacciones reclasificadas')
 
-        # ── 3d. Reclasificar CFE → SERVICIOS/Luz ─────────────────────────────
+        # ── 3d. Reclasificar CFE → VIVIENDA/Luz ─────────────────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='SERVICIOS', subcategoria='Luz'
+            SET categoria='VIVIENDA', subcategoria='Luz'
             WHERE UPPER(descripcion) LIKE '%CFE%'
               AND tipo='GASTO'
         """)
-        log.append(f'CFE → SERVICIOS/Luz: {r.rowcount} transacciones reclasificadas')
+        log.append(f'CFE → VIVIENDA/Luz: {r.rowcount} transacciones reclasificadas')
 
-        # ── 3c. Reclasificar ATT saldo telefono → SERVICIOS ─────────────────────
+        # ── 3c. Reclasificar ATT saldo telefono → DIGITAL/Celular ────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='SERVICIOS', subcategoria='Saldo telefono'
+            SET categoria='DIGITAL', subcategoria='Celular'
             WHERE (UPPER(descripcion) LIKE '%MI ATT A APP%'
                 OR UPPER(descripcion) LIKE '%ATTAPP%')
               AND tipo='GASTO'
         """)
-        log.append(f'ATT saldo telefono → SERVICIOS: {r.rowcount} transacciones reclasificadas')
+        log.append(f'ATT saldo telefono → DIGITAL/Celular: {r.rowcount} transacciones reclasificadas')
 
         # ── 3a. Reclasificar aportación de renta Nu Mexico ────────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='APORTACION_RENTA', subcategoria='Parte renta Nu Mexico'
+            SET categoria='VIVIENDA', subcategoria='Renta'
             WHERE tipo='INGRESO'
               AND UPPER(descripcion) LIKE '%NU MEXICO%'
               AND UPPER(descripcion) LIKE '%RECIBIDO%'
         """)
-        log.append(f'APORTACION_RENTA: {r.rowcount} transacciones Nu Mexico reclasificadas')
+        log.append(f'Aportación renta Nu Mexico → VIVIENDA/Renta: {r.rowcount} transacciones reclasificadas')
 
         # ── 4. Reclasificar pagos de renta depto 807 ─────────────────────────
         # Patron: PAGO TARJETA DE TERCEROS a cuenta 5420150016315198 (MBAN)
         # Monto ~12,000-13,000, dias 1-12 de cada mes, BBVA_DEB
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='CASA/HOGAR',
-                subcategoria='Renta depto 807',
+            SET categoria='VIVIENDA',
+                subcategoria='Renta',
                 tipo='GASTO',
                 mi_parte=6000.0
             WHERE banco='BBVA_DEB'
               AND UPPER(descripcion) LIKE '%TARJETA DE TERCEROS%'
               AND monto BETWEEN 11000 AND 14000
               AND CAST(substr(fecha,9,2) AS INTEGER) BETWEEN 1 AND 12
-              AND subcategoria != 'Renta depto 807 + deposito'
+              AND subcategoria NOT IN ('Renta depto 807 + deposito', 'Renta + deposito')
         """)
         log.append(f'Renta depto 807: {r.rowcount} pagos mensuales reclasificados (mi_parte=6000)')
 
         # Nov-2025: depósito inicial — mi_parte = 7000
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='CASA/HOGAR',
-                subcategoria='Renta depto 807 + deposito',
+            SET categoria='VIVIENDA',
+                subcategoria='Renta + deposito',
                 tipo='GASTO',
                 mi_parte=7000.0
             WHERE banco='BBVA_DEB'

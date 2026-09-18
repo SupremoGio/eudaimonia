@@ -2028,6 +2028,361 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_taxonomia_2026_09_sprint2 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — Sprint 3 taxonomía (árbol de categorías nuevo:
+        # Vivienda, Alimentación, Transporte, Salud, Cuidado personal, Ropa,
+        # Digital, Deporte, Ocio, Salsa, Viajes, Familia y regalos, Proyectos,
+        # Costos financieros, Aprendizaje) — reemplaza CASA/HOGAR, COMIDA/REST,
+        # CAFE/PAN, VIVERES/SUPER, GASOLINA/AUTO, TECH/DIGITAL, SUSCRIPCIONES,
+        # ENTRETENIMIENTO, GYM, REGALO, PUBLICIDAD, VIAJES/VUELOS y parte de
+        # FINANZAS/SERVICIOS. Mapeo confirmado transacción por transacción con
+        # el usuario vía CSV de dry-run antes de escribir esto. Corre sobre lo
+        # que ya trae la DB en ese momento (después de sprint 1-2), guardado
+        # por migration_log. config.py ya clasifica así las importaciones
+        # nuevas -- esto solo pone al día lo que ya estaba en la DB.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_taxonomia_2026_09_sprint3'"
+        ).fetchone():
+            try:
+                _S3_EXCLUIDAS = ('PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_ENVIADO',
+                                 'TRANSFERENCIA', 'PRESTAMOS', 'PAGO', 'OTROS', 'EXPENSE')
+
+                _S3_FAST_FOOD_KW = ["BURGER KING", "CARLS JR", "KFC", "LITTLE CAESAR", "SUBWAY",
+                                     "MCDONALDS", "WINGSTOP", "DAIRY QUEEN", "DOMINO",
+                                     "HAMBURGUESAS AL CARBON", "BOSTONS PIZZA", "PIZZERIA", "WINGMAN"]
+                _S3_DELIVERY_KW = ["RAPPI", "UBER EATS", "COM RAP", "STR RAPPI", "APP FOODS"]
+                _S3_MOVIMIENTO_KW = ["RETIRO", "SPEI ENVIADO", "TRANSFERENCIA", "PRSTAMO"]
+
+                def _s3_classify_comida(desc, existing_sub):
+                    du = desc.upper()
+                    if any(k in du for k in _S3_FAST_FOOD_KW): return "Fast Food"
+                    if existing_sub == 'Delivery': return "Delivery"
+                    if existing_sub == 'Restaurante': return "Restaurante"
+                    if any(k in du for k in _S3_DELIVERY_KW): return "Delivery"
+                    if any(k in du for k in _S3_MOVIMIENTO_KW): return ""
+                    return "Restaurante"
+
+                # (keywords, categoria_nueva, subcategoria_nueva) -- solo se aplica
+                # cuando el mapeo base (_S3_M) dejo la subcategoria en blanco.
+                _S3_KEYWORD_RULES = [
+                    (["APPLE.COM/BILL"], "DIGITAL", "Suscripciones entretenimiento"),
+                    (["AMAZON PRIME"], "DIGITAL", "Suscripciones entretenimiento"),
+                    (["SPOTIFY"], "DIGITAL", "Suscripciones entretenimiento"),
+                    (["RAILWAY"], "PROYECTOS", "Hosting"),
+                    (["PROTON AG"], "DIGITAL", "Suscripciones IA/productividad"),
+                    (["ACCES CONTROL EXPERT"], "DIGITAL", "Suscripciones entretenimiento"),
+                    (["TRAINING INNOVATION"], "DEPORTE", "Gym"),
+                    (["WEB TICKETS"], "OCIO", "Eventos y congresos"),
+                    (["D LOCAL UDEMY", "UDEMY"], "APRENDIZAJE", "Cursos"),
+                    (["AMAZON", "STRIPE AMAZON", "STR AMAZON", "MACSTORE"], "DIGITAL", "Accesorios tech"),
+                    (["TEMU.COM", "DLO TDA TEMU", "DOLLARCITY", "MISC DOLLA", "SODIMAC"], "VIVIENDA", "Artículos del hogar"),
+                    (["MERPAGO LAGARRAFERIA", "MERPAGO VIVOINTERIOR"], "VIVIENDA", "Artículos del hogar"),
+                    (["INIMEX", "BPK MISC ALTA PROTGAMA", "ZTL ZAIRAAXZAYMENDOZAM", "COMERCIO MONARCA 01",
+                      "MISC 5004 DOLLA"], "VIVIENDA", "Artículos del hogar"),
+                    (["MERPAGO FLORERIAOLGA"], "FAMILIA_REGALOS", "Regalos"),
+                    (["TRANSF A AURORA EL"], "FAMILIA_REGALOS", "Apoyo familiar"),
+                    (["COLECTA"], "FAMILIA_REGALOS", "Colectas"),
+                    (["BNET AYUDA"], "FAMILIA_REGALOS", "Apoyo familiar"),
+                    (["PRESTAMO MOMMITA"], "REGALO", "PENDIENTE_REVISION"),
+                    (["BNET REGA", "REGALITOS DI", "BNET REGALO", "LAS LENIS", "BNET MARTHA", "CP ISAYMON",
+                      "GLADYS CORTES VEJAR", "MOMMITAS DAY", "PAGO FLORES GIOVAN", "CARPINTERIA ALBERT",
+                      "COMIDA CUMPLE", "FLORES GIO", "A JUDITH A RETIRO", "BNET PASTEL",
+                      "PAGO CUENTA DE TERCERO"], "FAMILIA_REGALOS", "Regalos"),
+                    (["ARBITRAJE", "ARBITEAJE", "FUTBOL SOCCER", "CUENTA GIO", "SPEI ENVIADO BANAMEX",
+                      "SPEI ENVIADO BANORTE"], "DEPORTE", "Fútbol"),
+                    (["DECATHLON", "INNOVASPORT"], "DEPORTE", "Equipo"),
+                    (["CINEPOLIS"], "OCIO", "Cine"),
+                    (["RECORCHOLIS", "MAGNO BOLICHE", "LA MAESTRANZA"], "OCIO", "Salidas"),
+                    (["MEDICAMENTOS", "HONORARIOS MEDICOS", "DRA ", "SALUD DIGNA"], "SALUD", "Consultas"),
+                    (["FARMACIAS ARMO", "FARMACIASBE", "FARMACIA ISLA DORADA", "FARMACIA ARROCHA"], "SALUD", "Farmacia"),
+                    (["VIVA AEROBUS", "VIVAAEROBUS", "SIMFIY.COM"], "VIAJES", "Transporte"),
+                    (["AIRBNB"], "VIAJES", "Hospedaje"),
+                    (["AFRICAM", "PARQUE SENDELA"], "VIAJES", "Otros"),
+                    (["CENTRO TAB", "ISSET CENTRO", "ALEC S CAFE", "MERPAGO LACASITA", "MERCADOP MELIMAS"], "VIAJES", "Comida"),
+                    (["IGLESIA"], "VIAJES", "Otros"),
+                    (["BNET VIAJE", "BNET VACACIONES", "BNET VIAJESITO", "BNET VACA"], "VIAJES", "Otros"),
+                    (["CLASE GIO", "CLASES GIO", "CLASEGIO", "CLASEGIOVANY", "TRANSF A DAVID YAE",
+                      "SPEI ENVIADO BANREGIO", "SPEI ENVIADO SANTANDER", "SPEI ENVIADO AZTECA", "BUGALO",
+                      "AME 970109GW0", "CMA 120606QG1", "CCE 090505CXA"], "SALSA", "Clases"),
+                    (["TRANSF A JENNIFER"], "SALSA", "Social"),
+                ]
+
+                def _s3_keyword_rules(desc, cn, sn):
+                    if cn and sn:
+                        return None
+                    du = desc.upper()
+                    for kws, cn2, sn2 in _S3_KEYWORD_RULES:
+                        if any(k in du for k in kws):
+                            return cn2, sn2
+                    return None
+
+                _S3_M = {}
+                def _s3_m(cv, sv, cn, sn):
+                    _S3_M[(cv, sv)] = (cn, sn)
+                _s3_m("APORTACION_RENTA", "Parte renta Nu Mexico", "VIVIENDA", "Renta")
+                _s3_m("CASA/HOGAR", "", "VIVIENDA", "")
+                _s3_m("CASA/HOGAR", "Agua", "VIVIENDA", "Agua")
+                _s3_m("CASA/HOGAR", "Alquiler", "VIVIENDA", "")
+                _s3_m("CASA/HOGAR", "Decoración", "VIVIENDA", "Artículos del hogar")
+                _s3_m("CASA/HOGAR", "Envíos", "VIVIENDA", "Artículos del hogar")
+                _s3_m("CASA/HOGAR", "Hogar general", "VIVIENDA", "Artículos del hogar")
+                _s3_m("CASA/HOGAR", "Internet", "VIVIENDA", "Internet")
+                _s3_m("CASA/HOGAR", "Mantenimiento", "VIVIENDA", "Artículos del hogar")
+                _s3_m("CASA/HOGAR", "Muebles", "VIVIENDA", "Artículos del hogar")
+                _s3_m("CASA/HOGAR", "Plantas", "VIVIENDA", "Artículos del hogar")
+                _s3_m("CASA/HOGAR", "Renta depto 807", "VIVIENDA", "Renta")
+                _s3_m("CASA/HOGAR", "Renta depto 807 + deposito", "VIVIENDA", "Renta")
+                _s3_m("CASA/HOGAR", "Supermercado", "ALIMENTACION", "Súper")
+                _s3_m("SERVICIOS", "Internet", "VIVIENDA", "Internet")
+                _s3_m("SERVICIOS", "Luz", "VIVIENDA", "Luz")
+                _s3_m("CAFE/PAN", "", "ALIMENTACION", "Café")
+                _s3_m("CAFE/PAN", "Café", "ALIMENTACION", "Café")
+                _s3_m("COMIDA/REST", "Café", "ALIMENTACION", "Café")
+                _s3_m("VIVERES/SUPER", "", "ALIMENTACION", "Súper")
+                _s3_m("VIVERES/SUPER", "Conveniencia", "ALIMENTACION", "Conveniencia")
+                _s3_m("VIVERES/SUPER", "Supermercado", "ALIMENTACION", "Súper")
+                _s3_m("GASOLINA/AUTO", "", "TRANSPORTE", "Gasolina")
+                _s3_m("GASOLINA/AUTO", "Gasolina", "TRANSPORTE", "Gasolina")
+                _s3_m("GASOLINA/AUTO", "Mantenimiento", "TRANSPORTE", "Mantenimiento auto")
+                _s3_m("GASOLINA/AUTO", "Seguro", "TRANSPORTE", "Seguro auto")
+                _s3_m("GASOLINA/AUTO", "Seguro Carro", "TRANSPORTE", "Seguro auto")
+                _s3_m("GASOLINA/AUTO", "Tenencia & Trámites", "TRANSPORTE", "Mantenimiento auto")
+                _s3_m("TRANSPORTE", "", "TRANSPORTE", "Taxi/apps")
+                _s3_m("TRANSPORTE", "Aeropuerto", "TRANSPORTE", "Taxi/apps")
+                _s3_m("TRANSPORTE", "Autobús", "TRANSPORTE", "Taxi/apps")
+                _s3_m("TRANSPORTE", "Taxi", "TRANSPORTE", "Taxi/apps")
+                _s3_m("SALUD", "", "SALUD", "")
+                _s3_m("SALUD", "Farmacia", "SALUD", "Farmacia")
+                _s3_m("SALUD", "Laboratorio", "SALUD", "Estudios")
+                _s3_m("SALUD", "Médico", "SALUD", "Consultas")
+                _s3_m("SALUD", "Corte de cabello", "CUIDADO_PERSONAL", "Barbería")
+                _s3_m("ROPA", "", "ROPA", "Ropa")
+                _s3_m("ROPA", "Calzado", "ROPA", "Calzado")
+                _s3_m("ROPA", "Ropa", "ROPA", "Ropa")
+                _s3_m("ROPA", "Ropa deportiva", "ROPA", "Ropa deportiva")
+                _s3_m("SERVICIOS", "Saldo telefono", "DIGITAL", "Celular")
+                _s3_m("SUSCRIPCIONES", "", "DIGITAL", "")
+                _s3_m("SUSCRIPCIONES", "Digital", "DIGITAL", "Suscripciones entretenimiento")
+                _s3_m("SUSCRIPCIONES", "Diseño", "DIGITAL", "Suscripciones IA/productividad")
+                _s3_m("SUSCRIPCIONES", "Gym", "DEPORTE", "Gym")
+                _s3_m("SUSCRIPCIONES", "Internet/TV", "DIGITAL", "Suscripciones entretenimiento")
+                _s3_m("SUSCRIPCIONES", "Música", "DIGITAL", "Suscripciones entretenimiento")
+                _s3_m("SUSCRIPCIONES", "Productividad", "DIGITAL", "Suscripciones IA/productividad")
+                _s3_m("SUSCRIPCIONES", "Tech", "PROYECTOS", "Hosting")
+                _s3_m("SUSCRIPCIONES", "Telefonía", "DIGITAL", "Celular")
+                _s3_m("TECH/DIGITAL", "", "DIGITAL", "")
+                _s3_m("TECH/DIGITAL", "Accesorios", "DIGITAL", "Accesorios tech")
+                _s3_m("TECH/DIGITAL", "Deudas MSI", "TECH/DIGITAL", "Deudas MSI")
+                _s3_m("TECH/DIGITAL", "Software", "DIGITAL", "Suscripciones IA/productividad")
+                _s3_m("DEPORTE", "", "DEPORTE", "")
+                _s3_m("DEPORTE", "Uniforme Fut", "DEPORTE", "Equipo")
+                _s3_m("GYM", "Gym", "DEPORTE", "Gym")
+                _s3_m("ENTRETENIMIENTO", "", "OCIO", "")
+                _s3_m("ENTRETENIMIENTO", "Bar & Antro", "OCIO", "Salidas")
+                _s3_m("ENTRETENIMIENTO", "Cine", "OCIO", "Cine")
+                _s3_m("ENTRETENIMIENTO", "Cultura", "OCIO", "Salidas")
+                _s3_m("ENTRETENIMIENTO", "Eventos", "OCIO", "Eventos y congresos")
+                _s3_m("ENTRETENIMIENTO", "Golf", "OCIO", "Salidas")
+                _s3_m("ENTRETENIMIENTO", "Salidas", "OCIO", "Salidas")
+                _s3_m("SALSA", "", "SALSA", "")
+                _s3_m("SALSA", "Clases", "SALSA", "Clases")
+                _s3_m("SALSA", "Congreso", "SALSA", "Congreso")
+                _s3_m("SALSA", "Evento", "SALSA", "Social")
+                _s3_m("SALSA", "Música", "SALSA", "")
+                _s3_m("SALSA", "Autobús", "VIAJES", "Transporte")
+                _s3_m("SALSA", "Café", "VIAJES", "Comida")
+                _s3_m("SALSA", "Transporte", "VIAJES", "Transporte")
+                _s3_m("SALSA", "Parte renta Nu Mexico", "SALSA", "Congreso")
+                _s3_m("SALSA", "PENDIENTE_REVISION", "SALSA", "PENDIENTE_REVISION")
+                _s3_m("VIAJES/VUELOS", "", "VIAJES", "Otros")
+                _s3_m("VIAJES/VUELOS", "Hogar general", "VIAJES", "Otros")
+                _s3_m("VIAJES/VUELOS", "Hotel", "VIAJES", "Hospedaje")
+                _s3_m("VIAJES/VUELOS", "Restaurante", "VIAJES", "Comida")
+                _s3_m("VIAJES/VUELOS", "Salidas", "VIAJES", "Otros")
+                _s3_m("VIAJES/VUELOS", "Supermercado", "VIAJES", "Comida")
+                _s3_m("VIAJES/VUELOS", "Vuelos", "VIAJES", "Transporte")
+                _s3_m("VIAJES/VUELOS", "telefono", "VIAJES", "Otros")
+                _s3_m("REGALO", "", "FAMILIA_REGALOS", "")
+                _s3_m("REGALO", "Anillo a cornelius", "FAMILIA_REGALOS", "Regalos")
+                _s3_m("REGALO", "anillo", "FAMILIA_REGALOS", "Regalos")
+                _s3_m("REGALO", "Boda", "FAMILIA_REGALOS", "Regalos")
+                _s3_m("REGALO", "Cumpleaños", "FAMILIA_REGALOS", "Regalos")
+                _s3_m("REGALO", "Decoración", "FAMILIA_REGALOS", "Regalos")
+                _s3_m("REGALO", "Hogar general", "FAMILIA_REGALOS", "Regalos")
+                _s3_m("REGALO", "Libros", "FAMILIA_REGALOS", "Regalos")
+                _s3_m("REGALO", "PENDIENTE_REVISION", "REGALO", "PENDIENTE_REVISION")
+                _s3_m("PUBLICIDAD", "", "PROYECTOS", "Publicidad")
+                _s3_m("PUBLICIDAD", "Meta Ads", "PROYECTOS", "Publicidad")
+                _s3_m("PUBLICIDAD", "Reclutamiento", "PROYECTOS", "Reclutamiento")
+                _s3_m("FINANZAS", "Cargos bancarios", "COSTOS_FINANCIEROS", "Comisiones")
+                _s3_m("FINANZAS", "Retiro efectivo", "FINANZAS", "")
+                _s3_m("FINANZAS", "Transferencia", "FINANZAS", "")
+                _s3_m("APRENDIZAJE", "", "APRENDIZAJE", "")
+                _s3_m("APRENDIZAJE", "Cursos online", "APRENDIZAJE", "Cursos")
+                _s3_m("APRENDIZAJE", "Idiomas", "APRENDIZAJE", "Cursos")
+                _s3_m("APRENDIZAJE", "Papelería", "APRENDIZAJE", "Papelería")
+
+                # Overrides puntuales por transaccion exacta (fecha, descripcion,
+                # monto), confirmados por el usuario en el chat -- ganan sobre
+                # todo lo demas.
+                _S3_OVERRIDES = {
+                    ("2024-03-19", "AQUAMATIC PABLO NERUDA (2)", 41.0):  ("VIVIENDA", "Lavandería", "GASTO"),
+                    ("2024-03-19", "AQUAMATIC PABLO NERUDA", 83.0):      ("VIVIENDA", "Lavandería", "GASTO"),
+                    ("2024-07-14", "BBV CAJERO E281", 300.0):            ("ALIMENTACION", "Restaurante", "GASTO"),
+                    ("2023-10-07", "BBV CAJERO A019", 1000.0):           ("VIVIENDA", "Mudanza", "GASTO"),
+                    ("2025-12-19", "PAGOS INTERBANCARIOS. [-|", 1800.0): ("PAGO_TDC", "", "MOVIMIENTO_INTERNO"),
+                    ("2025-10-01", "PAGOS INTERBANCARIOS [-|", 1200.0):  ("PAGO_TDC", "", "MOVIMIENTO_INTERNO"),
+                    ("2025-09-01", "PAGOS INTERBANCARIOS [|", 1400.0):   ("PAGO_TDC", "", "MOVIMIENTO_INTERNO"),
+                    ("2024-12-29", "SERVIFACIL GORDO Y SAN", 300.0):     ("TRANSPORTE", "Gasolina", "GASTO"),
+                    ("2022-04-04", "SERVIFACIL VILLA FRONT", 100.0):     ("TRANSPORTE", "Gasolina", "GASTO"),
+                    ("2026-05-25", "SPEI ENVIADO NU MEXICO 638 0805260SALSA FUSION GIO", 2150.0): ("SALSA", "Congreso", "GASTO"),
+                    ("2026-05-15", "SPEI ENVIADO NU MEXICO 638 1404260FUSION GIO", 1734.0):        ("SALSA", "Congreso", "GASTO"),
+                    ("2026-05-24", "ROLL BITS", 671.71):                              ("VIAJES", "Transporte", "GASTO"),
+                    ("2025-06-18", "PAGO CUENTA DE TERCERO BNET WEN", 415.0):         ("SALSA", "Congreso", "GASTO"),
+                    ("2026-05-30", "CASADETONO PATRIOTISMO", 176.0):                  ("VIAJES", "Comida", "GASTO"),
+                    ("2026-05-30", "COURTYARD BY MARRIOTT", 120.0):                   ("SALSA", "Social", "GASTO"),
+                }
+                # Las filas de "comida pagada en efectivo" (retiro/SPEI, ya
+                # etiquetadas COMIDA/REST) van a Restaurante por default --
+                # confirmado con el usuario: sabemos que fue comida, no el lugar.
+                _S3_ALIMENTACION_EFECTIVO_DEFAULT = "Restaurante"
+
+                _s3_rows = db.execute(
+                    "SELECT id, fecha, descripcion, monto, categoria, subcategoria FROM est_movimientos"
+                ).fetchall()
+
+                n_updated = 0
+                for r in _s3_rows:
+                    key = (r['fecha'], r['descripcion'], float(r['monto']))
+                    cat, sub = (r['categoria'] or '').strip(), (r['subcategoria'] or '').strip()
+
+                    if key in _S3_OVERRIDES:
+                        new_cat, new_sub, new_tipo = _S3_OVERRIDES[key]
+                        db.execute(
+                            "UPDATE est_movimientos SET categoria=?, subcategoria=?, tipo=? WHERE id=?",
+                            (new_cat, new_sub, new_tipo, r['id']),
+                        )
+                        n_updated += 1
+                        continue
+
+                    if cat == 'COMIDA/REST' and sub != 'Café':
+                        new_sub = _s3_classify_comida(r['descripcion'], sub)
+                        if new_sub == '':
+                            new_sub = _S3_ALIMENTACION_EFECTIVO_DEFAULT
+                        db.execute(
+                            "UPDATE est_movimientos SET categoria='ALIMENTACION', subcategoria=? WHERE id=?",
+                            (new_sub, r['id']),
+                        )
+                        n_updated += 1
+                        continue
+
+                    if cat in _S3_EXCLUIDAS:
+                        continue
+
+                    new_cat, new_sub = _S3_M.get((cat, sub), (cat, sub))
+                    kw = _s3_keyword_rules(r['descripcion'], new_cat, new_sub)
+                    if kw is not None:
+                        new_cat, new_sub = kw
+                    if (new_cat, new_sub) != (cat, sub):
+                        db.execute(
+                            "UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?",
+                            (new_cat, new_sub, r['id']),
+                        )
+                        n_updated += 1
+
+                # Re-sembrar el catalogo de naturaleza con los codigos nuevos --
+                # el de sprint 1 usaba los codigos viejos (CASA/HOGAR, COMIDA/REST,
+                # etc.), ya no aplican a la taxonomia actual.
+                db.execute("DELETE FROM est_categoria_naturaleza")
+                naturaleza_seed_v2 = [
+                    ('VIVIENDA', 'Renta', 'FIJO'),
+                    ('VIVIENDA', 'Luz', 'FIJO'),
+                    ('VIVIENDA', 'Agua', 'FIJO'),
+                    ('VIVIENDA', 'Internet', 'FIJO'),
+                    ('VIVIENDA', 'Artículos del hogar', 'IRREGULAR'),
+                    ('VIVIENDA', 'Lavandería', 'VARIABLE'),
+                    ('VIVIENDA', 'Mudanza', 'IRREGULAR'),
+                    ('VIVIENDA', '', 'FIJO'),
+                    ('ALIMENTACION', 'Súper', 'VARIABLE'),
+                    ('ALIMENTACION', 'Conveniencia', 'VARIABLE'),
+                    ('ALIMENTACION', 'Café', 'VARIABLE'),
+                    ('ALIMENTACION', 'Pan', 'VARIABLE'),
+                    ('ALIMENTACION', 'Delivery', 'VARIABLE'),
+                    ('ALIMENTACION', 'Restaurante', 'VARIABLE'),
+                    ('ALIMENTACION', 'Fast Food', 'VARIABLE'),
+                    ('TRANSPORTE', 'Gasolina', 'VARIABLE'),
+                    ('TRANSPORTE', 'Seguro auto', 'FIJO'),
+                    ('TRANSPORTE', 'Mantenimiento auto', 'IRREGULAR'),
+                    ('TRANSPORTE', 'Taxi/apps', 'VARIABLE'),
+                    ('SALUD', 'Consultas', 'VARIABLE'),
+                    ('SALUD', 'Farmacia', 'VARIABLE'),
+                    ('SALUD', 'Estudios', 'VARIABLE'),
+                    ('SALUD', '', 'VARIABLE'),
+                    ('CUIDADO_PERSONAL', 'Barbería', 'VARIABLE'),
+                    ('CUIDADO_PERSONAL', 'Higiene', 'VARIABLE'),
+                    ('ROPA', 'Ropa', 'VARIABLE'),
+                    ('ROPA', 'Ropa deportiva', 'VARIABLE'),
+                    ('ROPA', 'Calzado', 'VARIABLE'),
+                    ('DIGITAL', 'Celular', 'FIJO'),
+                    ('DIGITAL', 'Suscripciones IA/productividad', 'FIJO'),
+                    ('DIGITAL', 'Suscripciones entretenimiento', 'FIJO'),
+                    ('DIGITAL', 'Accesorios tech', 'VARIABLE'),
+                    ('DIGITAL', '', 'FIJO'),
+                    ('DEPORTE', 'Gym', 'FIJO'),
+                    ('DEPORTE', 'Fútbol', 'VARIABLE'),
+                    ('DEPORTE', 'Equipo', 'VARIABLE'),
+                    ('OCIO', 'Eventos y congresos', 'VARIABLE'),
+                    ('OCIO', 'Cine', 'VARIABLE'),
+                    ('OCIO', 'Salidas', 'VARIABLE'),
+                    ('OCIO', 'Videojuegos', 'VARIABLE'),
+                    ('OCIO', '', 'VARIABLE'),
+                    ('SALSA', 'Clases', 'VARIABLE'),
+                    ('SALSA', 'Congreso', 'VARIABLE'),
+                    ('SALSA', 'Social', 'VARIABLE'),
+                    ('SALSA', 'Taller', 'VARIABLE'),
+                    ('SALSA', 'App', 'VARIABLE'),
+                    ('SALSA', '', 'VARIABLE'),
+                    ('FAMILIA_REGALOS', 'Regalos', 'IRREGULAR'),
+                    ('FAMILIA_REGALOS', 'Apoyo familiar', 'IRREGULAR'),
+                    ('FAMILIA_REGALOS', 'Colectas', 'IRREGULAR'),
+                    ('FAMILIA_REGALOS', '', 'IRREGULAR'),
+                    ('VIAJES', 'Transporte', 'IRREGULAR'),
+                    ('VIAJES', 'Hospedaje', 'IRREGULAR'),
+                    ('VIAJES', 'Comida', 'IRREGULAR'),
+                    ('VIAJES', 'Otros', 'IRREGULAR'),
+                    ('PROYECTOS', 'Publicidad', 'VARIABLE'),
+                    ('PROYECTOS', 'Hosting', 'VARIABLE'),
+                    ('PROYECTOS', 'Software', 'VARIABLE'),
+                    ('PROYECTOS', 'Reclutamiento', 'VARIABLE'),
+                    ('COSTOS_FINANCIEROS', 'Intereses', 'EVITABLE'),
+                    ('COSTOS_FINANCIEROS', 'Comisiones', 'EVITABLE'),
+                    ('COSTOS_FINANCIEROS', 'Penalizaciones', 'EVITABLE'),
+                    ('APRENDIZAJE', 'Cursos', 'VARIABLE'),
+                    ('APRENDIZAJE', 'Libros', 'VARIABLE'),
+                    ('APRENDIZAJE', 'Papelería', 'VARIABLE'),
+                    ('APRENDIZAJE', '', 'VARIABLE'),
+                ]
+                db.executemany(
+                    "INSERT OR IGNORE INTO est_categoria_naturaleza (categoria, subcategoria, naturaleza) VALUES (?,?,?)",
+                    naturaleza_seed_v2,
+                )
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_taxonomia_2026_09_sprint3",
+                     f"Sprint 3 taxonomía finanzas: nuevo árbol de categorías (Vivienda, "
+                     f"Alimentación, Transporte, Salud, Cuidado personal, Ropa, Digital, "
+                     f"Deporte, Ocio, Salsa, Viajes, Familia y regalos, Proyectos, Costos "
+                     f"financieros, Aprendizaje) reemplaza a CASA/HOGAR, COMIDA/REST, "
+                     f"CAFE/PAN, VIVERES/SUPER, GASOLINA/AUTO, TECH/DIGITAL, SUSCRIPCIONES, "
+                     f"ENTRETENIMIENTO, GYM, REGALO, PUBLICIDAD, VIAJES/VUELOS y parte de "
+                     f"FINANZAS/SERVICIOS. {n_updated} filas reclasificadas. Mapeo confirmado "
+                     f"con el usuario transacción por transacción vía CSV de dry-run. "
+                     f"est_categoria_naturaleza resembrada con los códigos nuevos.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_taxonomia_2026_09_sprint3 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
