@@ -7,7 +7,7 @@ import calendar
 import csv
 import io
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import (
@@ -352,6 +352,19 @@ def monthly_summary():
     return jsonify(result)
 
 
+def _prev_period_range(date_from: str, date_to: str | None) -> tuple[str, str]:
+    """Rango [prev_from, prev_to] de igual duración, inmediatamente anterior
+    a [date_from, date_to] — usado para calcular tendencia (% de cambio) de
+    un periodo contra el que le precede. `date_to` ausente se toma como hoy,
+    igual que hace by-category para el rango en curso."""
+    d_from = datetime.strptime(date_from, "%Y-%m-%d").date()
+    d_to = datetime.strptime(date_to, "%Y-%m-%d").date() if date_to else datetime.now().date()
+    span = (d_to - d_from).days + 1
+    prev_to = d_from - timedelta(days=1)
+    prev_from = prev_to - timedelta(days=span - 1)
+    return prev_from.isoformat(), prev_to.isoformat()
+
+
 @estados_bp.route('/api/summary/by-category')
 def by_category():
     if not _ok(): return _locked()
@@ -360,6 +373,7 @@ def by_category():
     conds  = ["tipo='GASTO'", _PAGO_CATS]
     params = []
     months_cond, months_params = _months_condition(request.args)
+    prev_from = prev_to = None
     if months_cond:
         conds.append(months_cond)
         params.extend(months_params)
@@ -369,6 +383,11 @@ def by_category():
         conds.append("fecha >= ?"); params.append(date_from)
         if date_to:
             conds.append("fecha <= ?"); params.append(date_to)
+        # Sin months= (rango continuo) sí se puede calcular "el periodo
+        # anterior de igual duración" — con months= (meses sueltos, no
+        # necesariamente consecutivos) no hay un "anterior" bien definido,
+        # así que ahí se deja sin tendencia en vez de inventar una comparación.
+        prev_from, prev_to = _prev_period_range(date_from, date_to)
     if bank:
         conds.append("banco = ?"); params.append(bank)
 
@@ -381,7 +400,114 @@ def by_category():
             GROUP BY categoria ORDER BY total DESC
         """, params).fetchall()
 
-    return jsonify([{'categoria': r['categoria'], 'total': round(r['total'] or 0, 2)} for r in rows])
+        prev_totals = {}
+        if prev_from is not None:
+            prev_conds = ["tipo='GASTO'", _PAGO_CATS, "fecha >= ?", "fecha <= ?"]
+            prev_params = [prev_from, prev_to]
+            if bank:
+                prev_conds.append("banco = ?"); prev_params.append(bank)
+            prev_rows = db.execute(f"""
+                SELECT categoria, SUM({_MONTO}) AS total
+                FROM est_movimientos
+                WHERE {' AND '.join(prev_conds)}
+                GROUP BY categoria
+            """, prev_params).fetchall()
+            prev_totals = {r['categoria']: (r['total'] or 0) for r in prev_rows}
+
+    result = []
+    for r in rows:
+        total = round(r['total'] or 0, 2)
+        prev = prev_totals.get(r['categoria'])
+        pct_change = round((total - prev) / prev * 100, 1) if prev else None
+        result.append({
+            'categoria': r['categoria'],
+            'total': total,
+            'prev_total': round(prev, 2) if prev is not None else None,
+            'pct_change': pct_change,
+        })
+    return jsonify(result)
+
+
+@estados_bp.route('/api/summary/by-naturaleza')
+def by_naturaleza():
+    """Desglose de gasto por naturaleza (FIJO/VARIABLE/IRREGULAR/EVITABLE),
+    a partir de est_categoria_naturaleza (sembrada en la migración de
+    Sprint 1, nunca antes consumida por ninguna vista). Una transacción sin
+    match exacto (categoria, subcategoria) en esa tabla — p. ej. subcategoria
+    en blanco para una categoría sin fila de fallback — cae en
+    SIN_CLASIFICAR en vez de adivinar."""
+    if not _ok(): return _locked()
+    bank = request.args.get('bank')
+
+    conds  = ["m.tipo='GASTO'", "m.categoria NOT IN ('PAGO_TDC','PAGO','PRESTAMOS')"]
+    params = []
+    months_cond, months_params = _months_condition(request.args)
+    if months_cond:
+        conds.append(months_cond.replace('fecha', 'm.fecha'))
+        params.extend(months_params)
+    else:
+        date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        date_to   = request.args.get('date_to')
+        conds.append("m.fecha >= ?"); params.append(date_from)
+        if date_to:
+            conds.append("m.fecha <= ?"); params.append(date_to)
+    if bank:
+        conds.append("m.banco = ?"); params.append(bank)
+
+    with get_db() as db:
+        rows = db.execute(f"""
+            SELECT COALESCE(n.naturaleza, 'SIN_CLASIFICAR') AS naturaleza,
+                   SUM(COALESCE(m.mi_parte, m.monto)) AS total
+            FROM est_movimientos m
+            LEFT JOIN est_categoria_naturaleza n
+              ON n.categoria = m.categoria AND n.subcategoria = m.subcategoria
+            WHERE {' AND '.join(conds)}
+            GROUP BY naturaleza ORDER BY total DESC
+        """, params).fetchall()
+
+    return jsonify([{'naturaleza': r['naturaleza'], 'total': round(r['total'] or 0, 2)} for r in rows])
+
+
+@estados_bp.route('/api/summary/pendientes')
+def summary_pendientes():
+    """Reembolsos (EXPENSE) pendientes y deuda restante estimada en compras
+    a MSI activas — datos de los Sprints 1/3 que hasta ahora no se
+    resumían en ningún lado."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        reembolsos = db.execute("""
+            SELECT COUNT(*) AS n, COALESCE(SUM(ABS(monto)), 0) AS total
+            FROM est_movimientos
+            WHERE categoria='EXPENSE' AND estatus_reembolso='PENDIENTE'
+        """).fetchone()
+
+        # Por cada compra a MSI: cuotas restantes = total de mensualidades
+        # de la compra menos las que ya se han visto en algún import: cada
+        # una que falta por aparecer sigue siendo un cargo futuro real.
+        msi_rows = db.execute("""
+            SELECT compra_msi_id,
+                   MAX(parcialidad_total) AS total_cuotas,
+                   COUNT(DISTINCT parcialidad_num) AS cuotas_vistas,
+                   AVG(monto) AS monto_cuota
+            FROM est_movimientos
+            WHERE compra_msi_id IS NOT NULL
+            GROUP BY compra_msi_id
+        """).fetchall()
+
+    msi_restante = 0.0
+    msi_compras_activas = 0
+    for r in msi_rows:
+        faltan = (r['total_cuotas'] or 0) - (r['cuotas_vistas'] or 0)
+        if faltan > 0:
+            msi_restante += faltan * (r['monto_cuota'] or 0)
+            msi_compras_activas += 1
+
+    return jsonify({
+        'reembolsos_pendientes_count': reembolsos['n'] or 0,
+        'reembolsos_pendientes_total': round(reembolsos['total'] or 0, 2),
+        'msi_compras_activas': msi_compras_activas,
+        'msi_restante_total': round(msi_restante, 2),
+    })
 
 
 @estados_bp.route('/api/summary/by-subcategory')
