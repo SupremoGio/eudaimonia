@@ -229,13 +229,33 @@ class _HybridConn:
 _USE_HYBRID  = False
 _TURSO_HOST  = ""
 _TURSO_TOKEN_VAL = ""
-_DB_PATH     = _LOCAL
 _TURSO_ASYNC = False
 
 # DATABASE_PATH solo se define en Railway cuando hay un volumen persistente
 # montado (ver CLAUDE.md) -- su presencia es la señal de que el SQLite local
 # sobrevive un redeploy por sí mismo y puede ser la fuente de verdad.
 _HAS_VOLUME = bool(os.environ.get("DATABASE_PATH"))
+
+# Verificación real, no solo confiar en que la env var está puesta: si
+# DATABASE_PATH apunta a una carpeta que no existe en el contenedor, el
+# volumen de Railway NO está montado ahí (mount path mal configurado o
+# distinto al de la variable) -- sqlite3.connect() fallaría con
+# "unable to open database file" en cada request. Mejor caer al modo
+# síncrono de siempre (que sí funciona, aunque sin volumen) que arrancar
+# "en modo volumen" creyendo tener persistencia y no tenerla.
+if _HAS_VOLUME and not os.path.isdir(os.path.dirname(_LOCAL) or "."):
+    print(f"[DB] AVISO: DATABASE_PATH={_LOCAL!r} pero esa carpeta no existe en "
+          f"el contenedor -- el volumen de Railway no está montado ahí "
+          f"(revisa el Mount Path del volumen en Railway y que coincida con "
+          f"DATABASE_PATH). Usando modo sin volumen por ahora para no romper "
+          f"la app ni perder datos silenciosamente.")
+    _HAS_VOLUME = False
+    # _LOCAL apuntaba a una carpeta inexistente (DATABASE_PATH roto) -- cae
+    # al mismo path que se usaría si DATABASE_PATH nunca se hubiera definido,
+    # para que _DB_PATH (más abajo) y todo lo demás quede consistente.
+    _LOCAL = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'pipeline.db')
+
+_DB_PATH = _LOCAL
 
 if TURSO_URL and TURSO_TOKEN:
     try:
