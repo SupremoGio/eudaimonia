@@ -1,6 +1,7 @@
 """
 Shared parsing utilities for text-based statements (BBVA, INVEX).
 """
+import hashlib
 import re
 import pdfplumber
 from pathlib import Path
@@ -34,7 +35,20 @@ LINE_RE = re.compile(
     re.IGNORECASE,
 )
 
-_MSI_INSTALLMENT_RE = re.compile(r"^\d{1,2}\s+DE\s+\d{1,2}\b", re.IGNORECASE)
+_MSI_INSTALLMENT_RE = re.compile(r"^(\d{1,2})\s+DE\s+(\d{1,2})\b", re.IGNORECASE)
+
+
+def msi_group_id(desc_limpia: str, monto: float) -> str | None:
+    """ID estable para agrupar las mensualidades de una misma compra a MSI
+    (mismo comercio + mismo monto de cuota, sin importar en qué mes del
+    plan llegue cada una). `desc_limpia` debe ser la descripción YA pasada
+    por clean_desc (o equivalente) para que "3 DE 12 WALMART" y
+    "7 DE 12 WALMART" — mismo comercio, prefijo de mensualidad distinto —
+    produzcan el mismo id."""
+    if not desc_limpia:
+        return None
+    key = f"{desc_limpia.strip().upper()}|{abs(round(monto, 2)):.2f}"
+    return hashlib.sha1(key.encode("utf-8")).hexdigest()[:16]
 
 _DATE_LINE_RE = re.compile(
     r"^(\d{2}-[a-zA-Z]{3}-\d{2,4})\s+(\d{2}-[a-zA-Z]{3}-\d{2,4})\s+(.+)$",
@@ -161,6 +175,8 @@ def parse_text_statement(
             in_msi = True
             continue
 
+        msi_m = None
+
         if in_msi:
             if any(e in lu for e in MSI_END):
                 in_msi = False
@@ -168,21 +184,28 @@ def parse_text_statement(
             m = LINE_RE.match(linea)
             if not m:
                 continue
-            if _MSI_INSTALLMENT_RE.match(m.group(3).strip()):
-                continue
-            in_msi = False
+            msi_m = _MSI_INSTALLMENT_RE.match(m.group(3).strip())
+            if not msi_m:
+                in_msi = False
         else:
             m = LINE_RE.match(linea)
             if not m:
                 continue
-            if _MSI_INSTALLMENT_RE.match(m.group(3).strip()):
-                continue
+            msi_m = _MSI_INSTALLMENT_RE.match(m.group(3).strip())
 
         signo = m.group(4)
         monto = float(m.group(5).replace(",", ""))
         desc = clean_desc(m.group(3))
         fecha = parse_fecha(m.group(1))
         fecha_cargo = parse_fecha(m.group(2))
+
+        # Una mensualidad de MSI siempre es un cargo real de ese periodo
+        # (nunca un pago/abono) — se procesa como GASTO normal, ya no se
+        # descarta: antes de este cambio estas líneas se tiraban por
+        # completo y el gasto mensual real de compras a MSI (PDFs vía BBVA
+        # TDC/INVEX) nunca llegaba a la DB.
+        parcialidad_num = int(msi_m.group(1)) if msi_m else None
+        parcialidad_total = int(msi_m.group(2)) if msi_m else None
 
         tipo = "PAGO" if (signo == "-" or any(k in desc for k in payment_keywords)) else "GASTO"
         if signo == "-":
@@ -202,6 +225,9 @@ def parse_text_statement(
             "subcategoria": subcat,
             "tipo": tipo,
             "periodo": periodo,
+            "parcialidad_num": parcialidad_num,
+            "parcialidad_total": parcialidad_total,
+            "compra_msi_id": msi_group_id(desc, monto) if parcialidad_num else None,
         })
 
     return movimientos

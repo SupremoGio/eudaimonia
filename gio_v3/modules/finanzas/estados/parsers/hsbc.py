@@ -7,7 +7,7 @@ import re
 import io
 from pathlib import Path
 
-from ._base import parse_fecha, clean_desc, extract_periodo
+from ._base import parse_fecha, clean_desc, extract_periodo, msi_group_id
 from ..config import get_categoria_subcategoria
 
 PAYMENT_KW = ["SU PAGO GRACIAS", "PAGO GRACIAS SPEI", "PAGO TDC", "SPEI", "ABONO"]
@@ -33,7 +33,7 @@ MSI_LINE_RE = re.compile(
     r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # monto original
     r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # saldo pendiente
     r"\s+[\[\|]?\$?\s*([\d,]+\.\d{2})"   # pago requerido  ← usamos este
-    r"\s+\d{1,2}\s*de\s+\d{1,2}"        # OCR puede omitir espacio: "09de 12"
+    r"\s+(\d{1,2})\s*de\s+(\d{1,2})"    # OCR puede omitir espacio: "09de 12"
     r"(?:\s+[\|\s]*[\d.]+%)?"           # tasa opcional con posible artefacto "|"
     r"\s*$",
     re.IGNORECASE,
@@ -134,6 +134,8 @@ def _parse_lines(full_text: str, periodo: str | None) -> list[dict]:
             desc = _clean_hsbc_desc(m.group(2))
             fecha = parse_fecha(_fix_ocr_date(m.group(1)))
             cat, subcat = get_categoria_subcategoria(desc)
+            parcialidad_num = int(m.group(6))
+            parcialidad_total = int(m.group(7))
 
             movimientos.append({
                 "fecha": fecha,
@@ -144,6 +146,9 @@ def _parse_lines(full_text: str, periodo: str | None) -> list[dict]:
                 "subcategoria": subcat,
                 "tipo": "GASTO",
                 "periodo": periodo,
+                "parcialidad_num": parcialidad_num,
+                "parcialidad_total": parcialidad_total,
+                "compra_msi_id": msi_group_id(desc, monto),
             })
 
     return movimientos

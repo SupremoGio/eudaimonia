@@ -715,6 +715,193 @@ def loans():
     })
 
 
+# ── Reglas automáticas al importar (Sprint 3 original: "Reglas automáticas
+#    al importar" — distinto de los sprints de taxonomía ya aplicados) ────────
+#
+# Antes, cada parser (parsers/*.py) decidía por su cuenta, con su propia
+# lista payment_keywords, si una descripción era "MOVIMIENTO_INTERNO"
+# (pago de tarjeta de crédito, no un gasto real) — lo que dejaba
+# inconsistencias entre bancos/formatos (ver migración one-time
+# finanzas_taxonomia_2026_09_sprint1, que tuvo que corregirlo
+# retroactivamente). Esta regla corre en cada import, sobre las filas
+# recién insertadas (`new_ids`), sin importar qué parser las produjo —
+# nunca toca filas fuera de ese conjunto, para no reescribir clasificaciones
+# manuales ni las de sprints anteriores.
+_MOVIMIENTO_INTERNO_KW = ("PAGO TARJETA DE CREDITO", "PAGO INTERBANCARIO", "PAGOS INTERBANCARIOS")
+
+
+def _es_movimiento_interno(desc_upper: str) -> bool:
+    if any(kw in desc_upper for kw in _MOVIMIENTO_INTERNO_KW):
+        return True
+    return "SPEI" in desc_upper and "TDC" in desc_upper
+
+
+def _unify_movimiento_interno(db, ids: list) -> int:
+    """Reclasifica, entre las filas recién insertadas (`ids`), las que en
+    realidad son pago de tarjeta de crédito / SPEI hacia la TDC — dinero
+    moviéndose entre mis propias cuentas, no un gasto real. Devuelve cuántas
+    se reclasificaron."""
+    if not ids:
+        return 0
+    placeholders = ','.join('?' * len(ids))
+    rows = db.execute(
+        f"SELECT id, descripcion FROM est_movimientos WHERE id IN ({placeholders})",
+        ids,
+    ).fetchall()
+    updated = 0
+    for r in rows:
+        if _es_movimiento_interno((r['descripcion'] or '').upper()):
+            db.execute(
+                "UPDATE est_movimientos SET categoria='PAGO_TDC', subcategoria='', "
+                "tipo='MOVIMIENTO_INTERNO' WHERE id=?",
+                (r['id'],),
+            )
+            updated += 1
+    if updated:
+        db.commit()
+    return updated
+
+
+def _detectar_avisos_msi(db) -> list:
+    """Revisa TODOS los grupos de compra_msi_id en la DB (no solo el import
+    actual) en busca de señales de doble conteo de una compra a meses sin
+    intereses: más mensualidades distintas de las que la compra debería
+    tener (parcialidad_total), o el mismo número de mensualidad repetido
+    dentro del mismo grupo. Solo avisa — nunca corrige ni borra nada solo,
+    queda para revisión manual."""
+    grupos = db.execute("""
+        SELECT compra_msi_id, descripcion,
+               COUNT(*) AS n_filas,
+               COUNT(DISTINCT parcialidad_num) AS n_distintas,
+               MAX(parcialidad_total) AS total_esperado
+        FROM est_movimientos
+        WHERE compra_msi_id IS NOT NULL
+        GROUP BY compra_msi_id
+    """).fetchall()
+    avisos = []
+    for g in grupos:
+        if g['n_filas'] > g['n_distintas']:
+            avisos.append({
+                'compra_msi_id': g['compra_msi_id'],
+                'descripcion': g['descripcion'],
+                'tipo': 'PARCIALIDAD_REPETIDA',
+                'detalle': (f"{g['n_filas']} filas pero solo {g['n_distintas']} número(s) de "
+                            "mensualidad distintos — posible doble conteo."),
+            })
+        elif g['total_esperado'] and g['n_distintas'] > g['total_esperado']:
+            avisos.append({
+                'compra_msi_id': g['compra_msi_id'],
+                'descripcion': g['descripcion'],
+                'tipo': 'MAS_MENSUALIDADES_DE_LAS_ESPERADAS',
+                'detalle': (f"{g['n_distintas']} mensualidades distintas registradas, pero la "
+                            f"compra es a {g['total_esperado']} — revisar."),
+            })
+    return avisos
+
+
+# Merchants/menciones de Tabasco — solo para SUGERIR (nunca asignar solo) un
+# viaje "familia en Tabasco" por rango de fechas. "VSA " con espacio final
+# evita falsos positivos con palabras que solo contienen "vsa" como substring.
+_TABASCO_KW = ("VILLAHERMOSA", "VSA ", "TABASCO")
+
+
+def _sugerir_viaje_tabasco(db, ids: list) -> list:
+    """Para gastos recién importados que mencionan Villahermosa/VSA/Tabasco
+    y que aún no tienen viaje asignado, sugiere (nunca asigna solo) un viaje
+    existente marcado como FAMILIA_TABASCO (o cuyo destino/nombre lo
+    mencione) cuyo rango de fechas cubra la transacción."""
+    if not ids:
+        return []
+    placeholders = ','.join('?' * len(ids))
+    rows = db.execute(
+        f"""SELECT id, fecha, descripcion, monto FROM est_movimientos
+            WHERE id IN ({placeholders}) AND tipo='GASTO' AND viaje_id IS NULL""",
+        ids,
+    ).fetchall()
+    candidatos = [r for r in rows if any(kw in (r['descripcion'] or '').upper() for kw in _TABASCO_KW)]
+    if not candidatos:
+        return []
+    viajes = db.execute("""
+        SELECT id, nombre, fecha_inicio, fecha_fin FROM viajes
+        WHERE tipo_viaje='FAMILIA_TABASCO'
+           OR UPPER(destino) LIKE '%TABASCO%' OR UPPER(destino) LIKE '%VILLAHERMOSA%'
+           OR UPPER(nombre) LIKE '%TABASCO%' OR UPPER(nombre) LIKE '%VILLAHERMOSA%'
+    """).fetchall()
+    if not viajes:
+        return []
+    sugerencias = []
+    for tx in candidatos:
+        for v in viajes:
+            if v['fecha_inicio'] <= tx['fecha'] <= v['fecha_fin']:
+                sugerencias.append({
+                    'id': tx['id'], 'descripcion': tx['descripcion'],
+                    'monto': tx['monto'], 'fecha': tx['fecha'],
+                    'viaje_id': v['id'], 'viaje_nombre': v['nombre'],
+                })
+                break
+    return sugerencias
+
+
+def _sugerir_reembolsos(db, ids: list) -> list:
+    """Para depósitos/ingresos recién importados, sugiere (nunca marca solo)
+    conciliarlos contra gastos EXPENSE pendientes de reembolso
+    (estatus_reembolso='PENDIENTE') cuyo monto coincida dentro de ±1%. La
+    confirmación real la hace el usuario vía /api/expenses/<id>/conciliar."""
+    if not ids:
+        return []
+    placeholders = ','.join('?' * len(ids))
+    depositos = db.execute(
+        f"""SELECT id, fecha, descripcion, monto FROM est_movimientos
+            WHERE id IN ({placeholders}) AND tipo='INGRESO'""",
+        ids,
+    ).fetchall()
+    if not depositos:
+        return []
+    pendientes = db.execute("""
+        SELECT id, fecha, descripcion, monto FROM est_movimientos
+        WHERE categoria='EXPENSE' AND estatus_reembolso='PENDIENTE'
+    """).fetchall()
+    if not pendientes:
+        return []
+    sugerencias = []
+    for dep in depositos:
+        for exp in pendientes:
+            monto_exp = abs(exp['monto'])
+            if monto_exp == 0:
+                continue
+            if abs(dep['monto'] - monto_exp) <= monto_exp * 0.01:
+                sugerencias.append({
+                    'deposito_id': dep['id'], 'deposito_descripcion': dep['descripcion'],
+                    'deposito_monto': dep['monto'], 'deposito_fecha': dep['fecha'],
+                    'expense_id': exp['id'], 'expense_descripcion': exp['descripcion'],
+                    'expense_monto': exp['monto'],
+                })
+    return sugerencias
+
+
+@estados_bp.route('/api/expenses/<int:mov_id>/conciliar', methods=['POST'])
+def conciliar_expense(mov_id):
+    """Confirma una sugerencia de _sugerir_reembolsos: marca un EXPENSE
+    pendiente como PAGADO. Nunca ocurre solo al importar — requiere esta
+    confirmación explícita del usuario."""
+    if not _ok(): return _locked()
+    d = request.get_json(silent=True) or {}
+    fecha_reembolso = d.get('fecha_reembolso') or today_str()
+    with get_db() as db:
+        row = db.execute(
+            "SELECT id FROM est_movimientos WHERE id=? AND categoria='EXPENSE'",
+            (mov_id,),
+        ).fetchone()
+        if not row:
+            return jsonify({'ok': False, 'error': 'Expense no encontrado'}), 404
+        db.execute(
+            "UPDATE est_movimientos SET estatus_reembolso='PAGADO', fecha_reembolso=? WHERE id=?",
+            (fecha_reembolso, mov_id),
+        )
+        db.commit()
+    return jsonify({'ok': True})
+
+
 # ── Upload ────────────────────────────────────────────────────────────────────
 
 @estados_bp.route('/api/upload', methods=['POST'])
@@ -762,6 +949,7 @@ def upload_file():
 
             # También rastreamos depósitos/SPEIs nuevos para el response
             review_needed = []
+            new_ids = []  # ids recién insertados — para las reglas automáticas de abajo
 
             for m in movimientos:
                 m_banco = m.get('banco', bank) or bank
@@ -775,13 +963,15 @@ def upload_file():
                     existing.add(key)
                 cur = db.execute("""
                     INSERT OR IGNORE INTO est_movimientos
-                    (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
-                    VALUES (?,?,?,?,?,?,?,?,?)
+                    (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo,
+                     parcialidad_num, parcialidad_total, compra_msi_id)
+                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
                 """, (
                     m['fecha'], m.get('fecha_cargo', m['fecha']),
                     m['descripcion'], m['monto'],
                     m_banco, m.get('periodo', ''),
                     m['categoria'], m.get('subcategoria', ''), m['tipo'],
+                    m.get('parcialidad_num'), m.get('parcialidad_total'), m.get('compra_msi_id'),
                 ))
                 if not cur.rowcount:
                     # Pasó el dedup de (fecha, monto, tipo) pero chocó con el índice
@@ -791,6 +981,7 @@ def upload_file():
                     dedup_conflict += 1
                     continue
                 inserted += 1
+                new_ids.append(cur.lastrowid)
                 # Marcar DEPOSITO / SPEI_RECIBIDO como pendientes de clasificar
                 if m['tipo'] == 'INGRESO' and m['categoria'] in ('DEPOSITO', 'SPEI_RECIBIDO'):
                     review_needed.append({
@@ -863,6 +1054,12 @@ def upload_file():
 
             db.commit()
 
+            # ── Reglas automáticas al importar (Sprint 3 original) ────────────
+            n_movimiento_interno = _unify_movimiento_interno(db, new_ids)
+            avisos_msi = _detectar_avisos_msi(db)
+            sugerencias_viaje_tabasco = _sugerir_viaje_tabasco(db, new_ids)
+            sugerencias_reembolso = _sugerir_reembolsos(db, new_ids)
+
             # Auto-log de "Investigar en GBM" (Acta Diurna) — actividad oculta,
             # se marca sola cuando el import trae un movimiento real de GBM.
             if gbm_detected:
@@ -896,6 +1093,10 @@ def upload_file():
             'gamification': ({'xp': gam['xp'], 'ec': gam['ec']} if gam else None),
             'preview': preview,
             'review_needed': review_needed,  # DEPOSITO/SPEI pendientes de clasificar
+            'movimiento_interno_reclasificados': n_movimiento_interno,
+            'avisos_msi': avisos_msi,                         # posible doble conteo de MSI, revisar manual
+            'sugerencias_viaje_tabasco': sugerencias_viaje_tabasco,  # nunca se asignan solas
+            'sugerencias_reembolso': sugerencias_reembolso,          # confirmar en /api/expenses/<id>/conciliar
         })
 
     except Exception as e:
