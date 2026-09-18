@@ -2487,6 +2487,48 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_sin_subcategoria_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — limpieza de subcategorias del lado de ingreso
+        #    (a petición explícita del usuario) ───────────────────────────────
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_ingreso_subcategorias_2026_09'"
+        ).fetchone():
+            try:
+                # 1) Un ingreso (pago de seguro) había quedado con
+                #    categoria=TRANSPORTE, subcategoria='Gasolina' -- se
+                #    reclasifica a la subcategoria que ya existe para esto
+                #    ('Seguro auto'), sin tocar los GASTO reales de gasolina.
+                cur1 = db.execute("""
+                    UPDATE est_movimientos SET subcategoria='Seguro auto'
+                    WHERE tipo='INGRESO' AND categoria='TRANSPORTE' AND subcategoria='Gasolina'
+                """)
+                n_seguro = cur1.rowcount
+
+                # 2) Ingresos de VIVIENDA/Renta (alguien aportando para la
+                #    renta) se distinguen del GASTO real de renta -- solo se
+                #    toca el lado INGRESO.
+                cur2 = db.execute("""
+                    UPDATE est_movimientos SET subcategoria='Aportación renta'
+                    WHERE tipo='INGRESO' AND categoria='VIVIENDA' AND subcategoria='Renta'
+                """)
+                n_aportacion = cur2.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_ingreso_subcategorias_2026_09",
+                     f"Limpieza de subcategorias del lado de ingreso a petición del "
+                     f"usuario: {n_seguro} fila(s) INGRESO de TRANSPORTE/Gasolina -> "
+                     f"TRANSPORTE/Seguro auto (era un pago de seguro, no gasolina real). "
+                     f"{n_aportacion} fila(s) INGRESO de VIVIENDA/Renta -> VIVIENDA/"
+                     f"Aportación renta (aporte de alguien más, no la renta que paga el "
+                     f"usuario). SUBCATEGORIAS también gana NOMINA:[Pago nominal, Bono] "
+                     f"y VIVIENDA gana 'Aportación renta' como opción -- sin tocar "
+                     f"transacciones existentes de nómina/bono, se pidió solo agregar "
+                     f"las opciones.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_ingreso_subcategorias_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

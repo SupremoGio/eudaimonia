@@ -370,6 +370,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "FAMILIA_REGALOS":   ["Regalos", "Apoyo familiar", "Colectas"],
     "FINANZAS":          ["Deudas MSI", "Cargos bancarios", "Transferencia", "Retiro efectivo", "Reembolsable", "Pago servicios"],
     "INVERSION":         ["Ahorro", "Inversión", "Crypto", "Fondo viaje", "Fondo emergencias"],
+    "NOMINA":            ["Pago nominal", "Bono"],
     "OCIO":              ["Eventos y congresos", "Cine", "Salidas", "Videojuegos"],
     "OTROS":             [""],
     "PRESTAMOS":         ["Prestado", "Cobrado"],
@@ -380,7 +381,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "TECH/DIGITAL":      ["Deudas MSI", "Accesorios", "Software"],
     "TRANSPORTE":        ["Gasolina", "Seguro auto", "Mantenimiento auto", "Taxi/apps", "Estacionamiento"],
     "VIAJES":            ["Transporte", "Hospedaje", "Comida", "Otros"],
-    "VIVIENDA":          ["Renta", "Luz", "Agua", "Gas", "Internet", "Artículos del hogar", "Lavandería", "Mudanza"],
+    "VIVIENDA":          ["Renta", "Aportación renta", "Luz", "Agua", "Gas", "Internet", "Artículos del hogar", "Lavandería", "Mudanza"],
 }
 
 BLACKLIST = [
