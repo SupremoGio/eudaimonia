@@ -2420,6 +2420,35 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_cafe_pan_categoria_propia_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — Qin/Tortas planchadas/Gorditas a Fast Food (a
+        #    petición explícita del usuario) ─────────────────────────────────
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_fast_food_qin_tortas_gorditas_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET subcategoria='Fast Food'
+                    WHERE categoria='ALIMENTACION' AND subcategoria='Restaurante'
+                      AND (UPPER(descripcion) LIKE '%QIN%'
+                           OR UPPER(descripcion) LIKE '%TOR PLANCHADAS%'
+                           OR UPPER(descripcion) LIKE '%GORDITAS%')
+                """)
+                n_fast_food = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_fast_food_qin_tortas_gorditas_2026_09",
+                     f"Reclasificación a petición del usuario: transacciones de Qin "
+                     f"(comida china), tortas planchadas y gorditas que estaban en "
+                     f"ALIMENTACION/Restaurante pasan a ALIMENTACION/Fast Food. "
+                     f"{n_fast_food} filas actualizadas. config.py también actualizado "
+                     f"(REST QIN, TOR PLANCHADAS, GORDITAS) para que las próximas "
+                     f"importaciones clasifiquen ahí directamente.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_fast_food_qin_tortas_gorditas_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
