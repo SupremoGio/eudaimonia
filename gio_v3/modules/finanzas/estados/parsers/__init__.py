@@ -33,6 +33,16 @@ def _detect_bank_pdf(pdf_path: Path) -> str:
             return "BBVA_LIB"
         if "DETALLES DE MOVIMIENTOS" in text and "SALDO TOTAL" in text:
             return "BBVA_DEB"
+        # Ninguna firma de encabezado conocida (ni LIB ni DEB) calzó, pero el
+        # texto sí trae "BBVA". Antes esto se asumía TDC a ciegas -- un
+        # estado de cuenta de débito con una plantilla/extracción de texto
+        # distinta a la esperada se colaba como TDC, y el mismo depósito de
+        # nómina terminaba importado dos veces con tipo/banco distinto (ver
+        # commit "cerrar hueco de duplicados"). Antes de asumir nada, se
+        # revisa si el nombre del archivo trae una pista explícita.
+        name_hint = pdf_path.stem.upper()
+        if "DEB" in name_hint or "DEBITO" in name_hint or "CHEQUE" in name_hint:
+            return "BBVA_DEB"
         return "BBVA_TDC"
     if "INVEX" in text:
         return "INVEX"
