@@ -1930,6 +1930,104 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_taxonomia_2026_09_sprint1 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — Sprint 2 taxonomía (marcado de pendientes,
+        # préstamos por descripción, viaje de mayo 2026) ───────────────────
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_taxonomia_2026_09_sprint2'"
+        ).fetchone():
+            try:
+                # 1) TRANSFERENCIA/PRESTAMOS con "PRESTAMO" literal en la
+                #    descripción -> tipo PRESTAMO. Se excluye a propósito la
+                #    fila del 11-sep-2026 ($4500, "...BNET PRESTAMO") porque
+                #    el usuario mismo señaló que no sabe si es préstamo
+                #    otorgado o un pago -- ya quedó PENDIENTE_REVISION en el
+                #    sprint 1 y no se le adivina la dirección aquí.
+                db.execute("""
+                    UPDATE est_movimientos SET tipo='PRESTAMO'
+                    WHERE categoria IN ('TRANSFERENCIA','PRESTAMOS')
+                      AND UPPER(descripcion) LIKE '%PRESTAMO%'
+                      AND NOT (fecha='2026-09-11' AND monto=4500.0
+                               AND descripcion='PAGO CUENTA DE TERCERO BNET PRESTAMO')
+                """)
+
+                # 2) DEPOSITO, SPEI_ENVIADO y el RETIRO que no encaja con su
+                #    propia categoría -> PENDIENTE_REVISION, tal como se
+                #    pidió (no se reclasifican a ciegas: mezclan gasto real,
+                #    transferencias a personas y movimientos entre cuentas
+                #    bajo la misma descripción genérica "PAGO CUENTA DE
+                #    TERCERO BNET ..." / "SPEI ENVIADO ...").
+                db.execute("""
+                    UPDATE est_movimientos SET subcategoria='PENDIENTE_REVISION'
+                    WHERE categoria IN ('DEPOSITO','SPEI_ENVIADO')
+                """)
+                db.execute("""
+                    UPDATE est_movimientos SET subcategoria='PENDIENTE_REVISION'
+                    WHERE categoria='RETIRO' AND tipo='GASTO'
+                      AND UPPER(descripcion) NOT LIKE 'RETIRO%'
+                """)
+
+                # 3) Viaje de mayo 2026 encontrado al auditar SALSA: del
+                #    24 al 31-may-2026 hay un cluster claro de autobús
+                #    (PRIMERA PLUS), hotel (COURTYARD BY MARRIOTT) y
+                #    comercios de CDMX (CASADETONO PATRIOTISMO, CAFEBRERIA
+                #    PENDULO POL) -- coincide con lo que el usuario describió
+                #    como "el viaje de mayo 2026" a agrupar. Se crea el viaje
+                #    (reusa la tabla `viajes` compartida con el planner de
+                #    maleta/outfits, ver Sprint 1) y se asignan por
+                #    fecha+descripcion+monto exactos las 8 transacciones de
+                #    esa ventana -- incluida la de $2150 "SALSA FUSION GIO"
+                #    que ya quedó PENDIENTE_REVISION en el sprint 1 (el
+                #    viaje y el estado de revisión son cosas independientes).
+                trip = db.execute(
+                    "SELECT id FROM viajes WHERE nombre='Salsa Fusion CDMX - Mayo 2026'"
+                ).fetchone()
+                if trip:
+                    trip_id = trip['id']
+                else:
+                    cur = db.execute(
+                        """INSERT INTO viajes
+                           (nombre, destino, fecha_inicio, fecha_fin, presupuesto,
+                            estado, tipo_viaje, notas, created_at)
+                           VALUES (?,?,?,?,?,?,?,?,datetime('now'))""",
+                        ("Salsa Fusion CDMX - Mayo 2026", "Ciudad de México",
+                         "2026-05-24", "2026-05-31", 0, "planificado",
+                         "OCIO_EVENTO",
+                         "Creado automáticamente al agrupar los movimientos de "
+                         "categoría SALSA del 24 al 31 de mayo de 2026 "
+                         "(auditoría de taxonomía finanzas, sprint 2)."),
+                    )
+                    trip_id = cur.lastrowid
+
+                viaje_mayo = [
+                    ("2026-05-31", "PRIMERA PLUS", 1198.12),
+                    ("2026-05-31", "DTM WEB CYBER", 1411.07),
+                    ("2026-05-30", "COURTYARD BY MARRIOTT", 120.0),
+                    ("2026-05-30", "CASADETONO PATRIOTISMO", 176.0),
+                    ("2026-05-29", "CAFEBRERIA PENDULO POL", 335.5),
+                    ("2026-05-26", "SPEI ENVIADO SANTANDER 014 0805260GIO DEM", 85.0),
+                    ("2026-05-25", "SPEI ENVIADO NU MEXICO 638 0805260SALSA FUSION GIO", 2150.0),
+                    ("2026-05-24", "ROLL BITS", 671.71),
+                ]
+                for fecha, desc, monto in viaje_mayo:
+                    db.execute(
+                        """UPDATE est_movimientos SET viaje_id=?
+                           WHERE fecha=? AND descripcion=? AND monto=? AND categoria='SALSA'""",
+                        (trip_id, fecha, desc, monto),
+                    )
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_taxonomia_2026_09_sprint2",
+                     "Sprint 2 taxonomía finanzas: TRANSFERENCIA/PRESTAMOS con 'PRESTAMO' en "
+                     "descripción a tipo=PRESTAMO (excluyendo la fila ambigua ya marcada "
+                     "PENDIENTE_REVISION); DEPOSITO, SPEI_ENVIADO y el RETIRO suelto marcados "
+                     "PENDIENTE_REVISION; viaje 'Salsa Fusion CDMX - Mayo 2026' creado y 8 "
+                     "transacciones de esa semana agrupadas bajo su viaje_id.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_taxonomia_2026_09_sprint2 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
