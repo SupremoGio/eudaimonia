@@ -122,6 +122,15 @@ def index():
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
+def _normalize_subcategoria(categoria: str, subcategoria: str) -> str:
+    """EXPENSE es una categoria plana -- a petición explícita del usuario
+    nunca lleva subcategoria ("va todo junto en uno solo"), sin importar
+    qué venga en la request. Se aplica en cada punto de escritura
+    (transacción manual, edición, reglas de keyword) para que no se pueda
+    volver a acumular basura ahí."""
+    return '' if categoria == 'EXPENSE' else subcategoria
+
+
 _SORT_COLUMNS = {
     'fecha_desc':  'fecha DESC',
     'fecha_asc':   'fecha ASC',
@@ -158,6 +167,7 @@ def create_transaction():
     d = request.json or {}
     fecha = d.get('fecha', '')
     desc  = d.get('descripcion', '')
+    categoria = d.get('categoria', 'OTROS')
     with get_db() as db:
         cur = db.execute(
             """INSERT OR IGNORE INTO est_movimientos
@@ -165,7 +175,7 @@ def create_transaction():
                VALUES (?,?,?,?,?,?,?,?,?)""",
             (fecha, fecha, desc, safe_float(d.get('monto', 0)),
              d.get('banco', 'MANUAL'), d.get('periodo', ''),
-             d.get('categoria', 'OTROS'), d.get('subcategoria', ''),
+             categoria, _normalize_subcategoria(categoria, d.get('subcategoria', '')),
              d.get('tipo', 'GASTO')),
         )
         db.commit()
@@ -193,7 +203,7 @@ def update_transaction(tx_id):
         if d.get('categoria') is not None:
             db.execute(
                 "UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?",
-                (d['categoria'], d.get('subcategoria', ''), tx_id),
+                (d['categoria'], _normalize_subcategoria(d['categoria'], d.get('subcategoria', '')), tx_id),
             )
         if d.get('monto') is not None:
             db.execute("UPDATE est_movimientos SET monto=? WHERE id=?",
@@ -754,7 +764,7 @@ def create_keyword():
     d = request.json or {}
     kw     = (d.get('keyword') or '').strip().upper()
     cat    = d.get('categoria', 'OTROS')
-    subcat = d.get('subcategoria', '')
+    subcat = _normalize_subcategoria(cat, d.get('subcategoria', ''))
 
     if not kw:
         return jsonify({'error': 'keyword requerido'}), 400
@@ -795,7 +805,8 @@ def apply_all_keywords():
                 UPDATE est_movimientos
                 SET categoria=?, subcategoria=?
                 WHERE UPPER(descripcion) LIKE ?
-            """, (kw_row['categoria'], kw_row['subcategoria'], f'%{kw_row["keyword"]}%'))
+            """, (kw_row['categoria'], _normalize_subcategoria(kw_row['categoria'], kw_row['subcategoria']),
+                  f'%{kw_row["keyword"]}%'))
             total_updated += result.rowcount if hasattr(result, 'rowcount') else 0
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
@@ -1132,7 +1143,8 @@ def upload_file():
                     UPDATE est_movimientos
                     SET categoria=?, subcategoria=?
                     WHERE UPPER(descripcion) LIKE ?
-                """, (kw_row['categoria'], kw_row['subcategoria'], f'%{kw_row["keyword"]}%'))
+                """, (kw_row['categoria'], _normalize_subcategoria(kw_row['categoria'], kw_row['subcategoria']),
+                      f'%{kw_row["keyword"]}%'))
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.

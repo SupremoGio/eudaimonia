@@ -2449,6 +2449,44 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_fast_food_qin_tortas_gorditas_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — EXPENSE es una categoria plana, sin
+        #    subcategoria (a petición explícita del usuario: "va todo junto
+        #    en uno solo"). Se habían acumulado subcategorias inconsistentes
+        #    (de edición manual y de reglas de keyword personalizadas) — se
+        #    limpian aquí, y create_transaction/update_transaction/
+        #    create_keyword/apply_all_keywords/el aplicador de keywords al
+        #    importar (routes.py) ahora fuerzan subcategoria='' cada vez que
+        #    categoria='EXPENSE', para que no se vuelva a acumular basura ─
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_sin_subcategoria_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET subcategoria=''
+                    WHERE categoria='EXPENSE' AND subcategoria IS NOT NULL AND subcategoria != ''
+                """)
+                n_expense_limpiadas = cur.rowcount
+
+                cur2 = db.execute("""
+                    UPDATE est_keywords SET subcategoria=''
+                    WHERE categoria='EXPENSE' AND subcategoria IS NOT NULL AND subcategoria != ''
+                """)
+                n_keywords_limpiadas = cur2.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_sin_subcategoria_2026_09",
+                     f"EXPENSE es una categoria plana, sin subcategoria (a petición del "
+                     f"usuario). {n_expense_limpiadas} movimientos y "
+                     f"{n_keywords_limpiadas} reglas de keyword con categoria='EXPENSE' "
+                     f"tenían subcategoria y se limpiaron. routes.py ahora fuerza "
+                     f"subcategoria='' en cada punto de escritura cuando "
+                     f"categoria='EXPENSE'.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_expense_sin_subcategoria_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
