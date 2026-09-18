@@ -1683,6 +1683,189 @@ def init_db():
         except Exception as e:
             print(f"[DB] est_movimientos duplicate cleanup warning: {e}")
 
+        # ── ESTADOS DE CUENTA — Sprint 1 taxonomía (reembolsos, MSI, viajes,
+        # préstamos, naturaleza del gasto) ──────────────────────────────────
+        # Solo columnas/tablas nuevas (aditivo, no destructivo) + backfills
+        # deterministas de casos NO ambiguos. Los casos ambiguos (ver auditoría
+        # sobre transacciones_1.csv) se dejan tal cual o se marcan
+        # PENDIENTE_REVISION — no se inventan clasificaciones.
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS est_categoria_naturaleza (
+            categoria    TEXT NOT NULL,
+            subcategoria TEXT NOT NULL DEFAULT '',
+            naturaleza   TEXT NOT NULL,
+            PRIMARY KEY (categoria, subcategoria)
+        );
+        CREATE TABLE IF NOT EXISTS est_prestamos (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            contraparte      TEXT    NOT NULL,
+            direccion        TEXT    NOT NULL DEFAULT 'OTORGADO',
+            monto            REAL    NOT NULL,
+            fecha            TEXT    NOT NULL,
+            notas            TEXT    DEFAULT '',
+            movimiento_id    INTEGER DEFAULT NULL,
+            created_at       TEXT    NOT NULL,
+            FOREIGN KEY (movimiento_id) REFERENCES est_movimientos(id)
+        );
+        """)
+
+        for col, definition in [
+            ("estatus_reembolso", "TEXT    DEFAULT NULL"),
+            ("fecha_reembolso",   "TEXT    DEFAULT NULL"),
+            ("parcialidad_num",   "INTEGER DEFAULT NULL"),
+            ("parcialidad_total", "INTEGER DEFAULT NULL"),
+            ("compra_msi_id",     "TEXT    DEFAULT NULL"),
+        ]:
+            try:
+                db.execute(f"ALTER TABLE est_movimientos ADD COLUMN {col} {definition}")
+            except Exception:
+                pass  # columna ya existe
+
+        try:
+            v_cols = [r["name"] for r in db.execute("PRAGMA table_info(viajes)").fetchall()]
+            if "tipo_viaje" not in v_cols:
+                db.execute("ALTER TABLE viajes ADD COLUMN tipo_viaje TEXT DEFAULT ''")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] viajes tipo_viaje migration warning: {e}")
+
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_taxonomia_2026_09_sprint1'"
+        ).fetchone():
+            try:
+                # 1) Normalizar duplicados de subcategoria por mayúsculas/typos
+                #    confirmados en la auditoría (no cambia categoría, solo grafía).
+                norm_fixes = [
+                    ("GASOLINA/AUTO",  "seguro carro", "Seguro Carro"),
+                    ("ENTRETENIMIENTO","cine",         "Cine"),
+                    ("SUSCRIPCIONES",  "Telefonia",    "Telefonía"),
+                    ("SALSA",          "tranporte",    "Transporte"),
+                ]
+                for cat, old, new in norm_fixes:
+                    db.execute(
+                        "UPDATE est_movimientos SET subcategoria=? WHERE categoria=? AND subcategoria=?",
+                        (new, cat, old),
+                    )
+
+                # 2) EXPENSE: estatus_reembolso a partir de reembolso_cat, tal
+                #    como se pidió — PAGADO si ya tiene reembolso_cat, si no
+                #    PENDIENTE. No se toca tipo/categoria (ver nota más abajo).
+                db.execute("""
+                    UPDATE est_movimientos
+                    SET estatus_reembolso='PAGADO'
+                    WHERE categoria='EXPENSE' AND reembolso_cat IS NOT NULL AND reembolso_cat != ''
+                """)
+                db.execute("""
+                    UPDATE est_movimientos
+                    SET estatus_reembolso='PENDIENTE'
+                    WHERE categoria='EXPENSE' AND (reembolso_cat IS NULL OR reembolso_cat = '')
+                """)
+
+                # 3) Movimientos que no son gasto real: pago de tarjeta de
+                #    crédito (PAGO_TDC, siempre "PAGO TARJETA DE CREDITO" /
+                #    "PAGO INTERBANCARIO TDC" / SPEI con "TDC" en la
+                #    descripción — nunca ambiguo) y retiros de efectivo
+                #    (descripción empieza con "RETIRO" — cajero o QR).
+                #    NO se tocan TRANSFERENCIA, SPEI_ENVIADO, DEPOSITO ni
+                #    PRESTAMOS/PAGO: la auditoría encontró que esas categorías
+                #    mezclan gasto real (tacos, regalos, uniformes) con
+                #    movimientos entre cuentas bajo la misma descripción
+                #    genérica "PAGO CUENTA DE TERCERO BNET ..." — reclasificar
+                #    en bloque ahí inventaría datos. Quedan para revisión manual.
+                db.execute("""
+                    UPDATE est_movimientos SET tipo='MOVIMIENTO_INTERNO'
+                    WHERE categoria='PAGO_TDC' AND tipo='GASTO'
+                """)
+                db.execute("""
+                    UPDATE est_movimientos SET tipo='MOVIMIENTO_INTERNO'
+                    WHERE categoria='RETIRO' AND tipo='GASTO'
+                      AND UPPER(descripcion) LIKE 'RETIRO%'
+                """)
+
+                # 4) Casos explícitamente ambiguos señalados por el usuario:
+                #    se marcan PENDIENTE_REVISION en vez de adivinar.
+                pendientes = [
+                    ("2026-07-18", "601 2206260INVERSION GIO RETIRO SIN TARJETA QR ******7852", 5500.0),
+                    ("2026-09-11", "PAGO CUENTA DE TERCERO BNET PRESTAMO", 4500.0),
+                    ("2026-05-25", "SPEI ENVIADO NU MEXICO 638 0805260SALSA FUSION GIO", 2150.0),
+                ]
+                for fecha, desc, monto in pendientes:
+                    db.execute(
+                        """UPDATE est_movimientos SET subcategoria='PENDIENTE_REVISION'
+                           WHERE fecha=? AND descripcion=? AND monto=?""",
+                        (fecha, desc, monto),
+                    )
+
+                # 5) Catálogo naturaleza (FIJO/VARIABLE/IRREGULAR/EVITABLE) por
+                #    (categoria, subcategoria) — primera propuesta a partir de
+                #    la taxonomía que dio el usuario, mapeada sobre las
+                #    categorías reales que ya existen en config.py (no se
+                #    reemplaza el árbol de categorías existente). subcategoria
+                #    '' = default para esa categoria cuando no hay fila más
+                #    específica. Tabla nueva, no la lee ningún código todavía
+                #    — no cambia ningún total actual. Pendiente de revisión
+                #    del usuario antes de usarse en dashboards (Sprint 4).
+                naturaleza_seed = [
+                    ('APORTACION_RENTA', '', 'FIJO'),
+                    ('APRENDIZAJE', '', 'VARIABLE'),
+                    ('CAFE/PAN', '', 'VARIABLE'),
+                    ('CASA/HOGAR', 'Alquiler', 'FIJO'),
+                    ('CASA/HOGAR', 'Renta depto 807', 'FIJO'),
+                    ('CASA/HOGAR', 'Renta depto 807 + deposito', 'FIJO'),
+                    ('CASA/HOGAR', 'Agua', 'FIJO'),
+                    ('CASA/HOGAR', 'Internet', 'FIJO'),
+                    ('CASA/HOGAR', '', 'IRREGULAR'),
+                    ('COMIDA/REST', '', 'VARIABLE'),
+                    ('DEPORTE', '', 'VARIABLE'),
+                    ('ENTRETENIMIENTO', '', 'VARIABLE'),
+                    ('FINANZAS', 'Cargos bancarios', 'EVITABLE'),
+                    ('GASOLINA/AUTO', 'Gasolina', 'VARIABLE'),
+                    ('GASOLINA/AUTO', 'Seguro', 'FIJO'),
+                    ('GASOLINA/AUTO', 'Seguro Carro', 'FIJO'),
+                    ('GASOLINA/AUTO', 'Mantenimiento', 'IRREGULAR'),
+                    ('GASOLINA/AUTO', 'Tenencia & Trámites', 'IRREGULAR'),
+                    ('GASOLINA/AUTO', '', 'VARIABLE'),
+                    ('GYM', '', 'FIJO'),
+                    ('REGALO', '', 'IRREGULAR'),
+                    ('ROPA', '', 'VARIABLE'),
+                    ('SALSA', 'Clases', 'VARIABLE'),
+                    ('SALSA', 'Evento', 'VARIABLE'),
+                    ('SALSA', 'Congreso', 'VARIABLE'),
+                    ('SALSA', 'Música', 'VARIABLE'),
+                    ('SALSA', 'Café', 'VARIABLE'),
+                    ('SALSA', '', 'VARIABLE'),
+                    ('SALUD', '', 'VARIABLE'),
+                    ('SERVICIOS', 'Internet', 'FIJO'),
+                    ('SERVICIOS', 'Luz', 'FIJO'),
+                    ('SERVICIOS', 'Saldo telefono', 'FIJO'),
+                    ('SERVICIOS', '', 'FIJO'),
+                    ('SUSCRIPCIONES', '', 'FIJO'),
+                    ('TECH/DIGITAL', 'Accesorios', 'VARIABLE'),
+                    ('TECH/DIGITAL', 'Software', 'FIJO'),
+                    ('TECH/DIGITAL', '', 'VARIABLE'),
+                    ('TRANSPORTE', '', 'VARIABLE'),
+                    ('VIAJES/VUELOS', '', 'IRREGULAR'),
+                    ('VIVERES/SUPER', '', 'VARIABLE'),
+                ]
+                db.executemany(
+                    "INSERT OR IGNORE INTO est_categoria_naturaleza (categoria, subcategoria, naturaleza) VALUES (?,?,?)",
+                    naturaleza_seed,
+                )
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_taxonomia_2026_09_sprint1",
+                     "Sprint 1 taxonomía finanzas: tablas est_categoria_naturaleza y est_prestamos, "
+                     "columnas estatus_reembolso/fecha_reembolso/parcialidad_*/compra_msi_id en "
+                     "est_movimientos, tipo_viaje en viajes, normalización de 4 subcategorias "
+                     "duplicadas, backfill de estatus_reembolso en EXPENSE, reclasificación de "
+                     "PAGO_TDC y RETIRO a tipo=MOVIMIENTO_INTERNO, y marcado PENDIENTE_REVISION "
+                     "de 3 transacciones ambiguas señaladas por el usuario.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_taxonomia_2026_09_sprint1 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
