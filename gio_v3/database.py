@@ -1600,20 +1600,50 @@ def init_db():
         # o importados por una vía que no aplicó esa regla, quedaban con
         # categoria/tipo incorrectos. Los parsers bbva_debit.py y
         # bbva_libreton.py ya clasifican esto bien para importaciones nuevas
-        # (categoria=NOMINA, tipo=INGRESO por el signo del monto) — este
-        # UPDATE es idempotente y solo corrige lo que ya está en la DB.
-        try:
-            db.execute("""
-                UPDATE est_movimientos
-                SET categoria='NOMINA', tipo='INGRESO'
-                WHERE (UPPER(descripcion) LIKE '%PAGO DE NOMINA%'
-                    OR UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
-                    OR descripcion LIKE '%4206466060%')
-                  AND (categoria != 'NOMINA' OR tipo != 'INGRESO')
-            """)
-            db.commit()
-        except Exception as e:
-            print(f"[DB] est_movimientos nomina backfill warning: {e}")
+        # (categoria=NOMINA, tipo=INGRESO por el signo del monto).
+        #
+        # BUG REAL (2026-09, confirmado por el usuario con screenshot): a
+        # diferencia de TODAS las demás migraciones de este archivo, este
+        # bloque nunca estuvo protegido por migration_log -- corría en
+        # CADA arranque de la app. Sin filtro de monto y forzando
+        # tipo='INGRESO' a cualquier cosa que mencionara "FIBRA HOTELERA"
+        # (un retiro en efectivo, un SPEI enviado, una compra de comida),
+        # terminó marcando como NOMINA/INGRESO movimientos que claramente
+        # no eran sueldo (ej. "RETIRO SIN TARJETA... FIBRA HOTELERA SC"
+        # $500.00, "SPEI ENVIADO SANTANDER... FIBRA HOTELERA SC" $750.00).
+        # Peor: como no tenía guardarraíl, si el usuario corregía una de
+        # estas filas a mano, el siguiente arranque se la revertía sola.
+        # Se congela con migration_log para que corra esta última vez
+        # (mismo comportamiento que ya tenía) y nunca más -- deja de
+        # pisar correcciones manuales futuras. Las filas ya afectadas por
+        # las corridas anteriores (sin guardarraíl) se exponen para
+        # revisión manual en /admin/audit-nomina-sospechosa (ver
+        # estados/routes.py) en vez de adivinar su tipo/categoria correcta.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_nomina_backfill_legacy_frozen_2026_09'"
+        ).fetchone():
+            try:
+                db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='NOMINA', tipo='INGRESO'
+                    WHERE (UPPER(descripcion) LIKE '%PAGO DE NOMINA%'
+                        OR UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
+                        OR descripcion LIKE '%4206466060%')
+                      AND (categoria != 'NOMINA' OR tipo != 'INGRESO')
+                """)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_nomina_backfill_legacy_frozen_2026_09",
+                     "Congela el backfill legacy de nómina (antes corría sin guardarraíl en "
+                     "cada arranque, sin filtro de monto, forzando tipo=INGRESO a cualquier "
+                     "cosa que mencionara FIBRA HOTELERA -- incluyendo retiros y SPEI "
+                     "enviados que no eran sueldo, y revirtiendo correcciones manuales del "
+                     "usuario en cada deploy). Corre esta última vez con el mismo "
+                     "comportamiento de siempre y queda protegido por migration_log.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_nomina_backfill_legacy_frozen_2026_09 migration warning: {e}")
 
         # Backfill: "BBVA" (bare) siempre fue en realidad la tarjeta de
         # crédito (TDC) — BBVA_DEB (débito) ya estaba bien separado, pero el

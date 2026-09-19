@@ -1506,6 +1506,38 @@ def audit_duplicados():
     })
 
 
+@estados_bp.route('/admin/audit-nomina-sospechosa')
+def audit_nomina_sospechosa():
+    """Bug real confirmado por el usuario con screenshot: un backfill legacy
+    en database.py (ahora congelado -- ver
+    finanzas_nomina_backfill_legacy_frozen_2026_09) corrió sin filtro de
+    monto durante mucho tiempo, marcando como categoria=NOMINA,
+    tipo=INGRESO cualquier movimiento que mencionara "FIBRA HOTELERA" --
+    incluyendo retiros y SPEI enviados que claramente no eran sueldo (ej.
+    "RETIRO SIN TARJETA... FIBRA HOTELERA SC" $500.00).
+
+    Congelar el backfill detiene el problema hacia adelante, pero no
+    corrige las filas que YA quedaron mal etiquetadas por corridas
+    anteriores. No se adivina aquí cuál es el tipo/categoria correcto de
+    cada una (podría ser FINANZAS/Retiro efectivo, FINANZAS/Transferencia,
+    ALIMENTACION, etc. según el caso) -- reporte de solo lectura, NUNCA
+    borra ni modifica nada, para que el usuario revise y corrija cada una
+    desde el modal de editar en Movimientos."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        rows = db.execute("""
+            SELECT id, fecha, descripcion, monto, banco, subcategoria, tipo
+            FROM est_movimientos
+            WHERE categoria='NOMINA' AND monto NOT BETWEEN 9000 AND 12000
+            ORDER BY ABS(monto) ASC
+        """).fetchall()
+
+    return jsonify({
+        'total_sospechosas': len(rows),
+        'movimientos': [dict(r) for r in rows],
+    })
+
+
 @estados_bp.route('/admin/audit-montos', methods=['POST'])
 def audit_montos():
     """Audita que los MONTOS de un estado de cuenta YA importado cuadren
