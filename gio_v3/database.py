@@ -2679,6 +2679,98 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_ingreso_reembolsable_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — categorías legacy de movimientos bancarios ->
+        #    FINANZAS (a petición explícita del usuario) ───────────────────────
+        # El sprint de taxonomía anterior (finanzas_taxonomia_2026_09_sprint3)
+        # ya reemplazó las categorías de consumo viejas (CASA/HOGAR,
+        # COMIDA/REST, GASOLINA/AUTO, VIVERES/SUPER, ENTRETENIMIENTO, GYM,
+        # VIAJES/VUELOS, SUSCRIPCIONES, REGALO, PUBLICIDAD) pero nunca tocó
+        # las categorías legacy de "movimiento bancario, no gasto/ingreso
+        # real": DEPOSITO, FIDEICOMISO, SPEI_RECIBIDO, SPEI_ENVIADO,
+        # TRANSFERENCIA, RETIRO, PAGO, PAGO_TDC. El usuario las vio mezcladas
+        # con la taxonomía nueva en el dropdown y confirmó mandarlas todas a
+        # FINANZAS, con la subcategoria que más calza:
+        #   DEPOSITO, FIDEICOMISO, SPEI_RECIBIDO, SPEI_ENVIADO, TRANSFERENCIA
+        #     -> FINANZAS / Transferencia
+        #   RETIRO -> FINANZAS / Retiro efectivo
+        #   PAGO, PAGO_TDC -> FINANZAS / Pago servicios
+        # budget.py ya excluye FINANZAS del lado de gasto (bucket=None y en
+        # la lista NOT IN de _calc_budget) -- pero _INGRESO_EXCLUIR NO tenía
+        # 'FINANZAS' listado, solo los nombres viejos (TRANSFERENCIA,
+        # PAGO_TDC, RETIRO, DEPOSITO, SPEI_RECIBIDO) uno por uno. Sin
+        # agregar 'FINANZAS' ahí, estos movimientos de ingreso que hoy están
+        # excluidos del ingreso real del presupuesto habrían empezado a
+        # contarse de más en cuanto cambiara su categoria -- exactamente el
+        # "sumando de más" que el usuario pidió evitar. Se corrige en el
+        # mismo cambio (ver _INGRESO_EXCLUIR en budget.py).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_legacy_bancario_a_finanzas_2026_09'"
+        ).fetchone():
+            try:
+                mapeo = [
+                    ('DEPOSITO',      'Transferencia'),
+                    ('FIDEICOMISO',   'Transferencia'),
+                    ('SPEI_RECIBIDO', 'Transferencia'),
+                    ('SPEI_ENVIADO',  'Transferencia'),
+                    ('TRANSFERENCIA', 'Transferencia'),
+                    ('RETIRO',        'Retiro efectivo'),
+                    ('PAGO',          'Pago servicios'),
+                    ('PAGO_TDC',      'Pago servicios'),
+                ]
+                total_reclasificados = 0
+                detalle = []
+                for categoria_vieja, subcategoria_nueva in mapeo:
+                    cur = db.execute(
+                        "UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? "
+                        "WHERE categoria=?",
+                        (subcategoria_nueva, categoria_vieja),
+                    )
+                    if cur.rowcount:
+                        detalle.append(f"{categoria_vieja}->{subcategoria_nueva} ({cur.rowcount})")
+                    total_reclasificados += cur.rowcount
+
+                # Auditoría de duplicados pedida explícitamente por el
+                # usuario: entre TODAS las filas reclasificadas (sin importar
+                # de qué categoria vieja vinieron), busca si alguna comparte
+                # fecha + monto (redondeado a centavos) con otra fila ya
+                # existente en la tabla -- misma lógica que
+                # _detectar_posibles_duplicados/admin/audit-duplicados en
+                # estados/routes.py, para no dejar pasar en silencio un
+                # movimiento real contado dos veces bajo categorías viejas
+                # distintas.
+                categorias_viejas = [c for c, _ in mapeo]
+                placeholders = ','.join('?' * len(categorias_viejas))
+                dup_rows = db.execute(f"""
+                    SELECT fecha, ROUND(monto,2) AS monto_r, COUNT(*) AS n
+                    FROM est_movimientos
+                    WHERE monto != 0
+                    GROUP BY fecha, monto_r
+                    HAVING COUNT(*) > 1
+                """).fetchall()
+                n_grupos_duplicados = len(dup_rows)
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_legacy_bancario_a_finanzas_2026_09",
+                     f"Categorías legacy de movimiento bancario (DEPOSITO, FIDEICOMISO, "
+                     f"SPEI_RECIBIDO, SPEI_ENVIADO, TRANSFERENCIA, RETIRO, PAGO, PAGO_TDC) "
+                     f"-> categoria=FINANZAS con subcategoria correspondiente. "
+                     f"{total_reclasificados} filas reclasificadas ({', '.join(detalle) or 'ninguna'}). "
+                     f"Se agregó 'FINANZAS' a _INGRESO_EXCLUIR en budget.py para que estos "
+                     f"movimientos sigan excluidos del ingreso real (antes lo estaban por "
+                     f"nombre de categoria vieja) y no se cuenten de más. "
+                     f"Auditoría de duplicados (fecha+monto en TODA la tabla, no solo lo "
+                     f"reclasificado): {n_grupos_duplicados} grupo(s) con más de una fila -- "
+                     f"revisar en /admin/audit-duplicados o la tab Reglas si n_grupos_duplicados > 0.")
+                )
+                db.commit()
+                if n_grupos_duplicados:
+                    print(f"[DB] finanzas_legacy_bancario_a_finanzas_2026_09: "
+                          f"{n_grupos_duplicados} grupo(s) de posibles duplicados detectados "
+                          f"en toda la tabla -- revisar en /admin/audit-duplicados")
+            except Exception as e:
+                print(f"[DB] finanzas_legacy_bancario_a_finanzas_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

@@ -69,7 +69,18 @@ CATEGORIA_BUCKET = {
 }
 
 # Categorías de ingreso que NO son ingreso real
-_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO', 'APORTACION_RENTA')
+#
+# NOTA (2026-09, a petición del usuario): DEPOSITO, SPEI_RECIBIDO,
+# TRANSFERENCIA, PAGO_TDC y RETIRO eran categorías legacy que ya no se
+# generan -- la migración finanzas_legacy_bancario_a_finanzas_2026_09 las
+# reclasifica todas a categoria='FINANZAS'. Se agrega 'FINANZAS' aquí para
+# que sigan excluidas del ingreso real (igual que EXPENSE/FINANZAS ya
+# están excluidas del lado de gasto arriba); sin este agregado, en cuanto
+# cambiara su categoria habrían empezado a contarse de más como ingreso
+# real -- el usuario pidió explícitamente evitar eso. Se dejan también los
+# nombres viejos por si queda alguna fila sin migrar.
+_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO',
+                     'APORTACION_RENTA', 'FINANZAS')
 
 CAT_LABELS = {
     'ALIMENTACION':     'Alimentación',
@@ -92,7 +103,7 @@ CAT_LABELS = {
     'OTROS':            'Otros',
     'EXPENSE':          'EXPENSE',
     'APORTACION_RENTA': 'Aportación renta',
-    'FINANZAS':         'Cargos bancarios',
+    'FINANZAS':         'Finanzas / Movimientos bancarios',
     'NOMINA':           'Nómina adelanto',
 }
 
