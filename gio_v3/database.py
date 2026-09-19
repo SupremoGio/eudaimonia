@@ -3727,6 +3727,59 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_barrido_comida_viajes_legacy_2026_09 migration warning: {e}")
 
+        # El usuario reportó que CASA/HOGAR y VIVERES/SUPER seguían
+        # reapareciendo pese a las migraciones de barrido anteriores
+        # (finanzas_ejecuta_esto_batch_2026_09,
+        # finanzas_barrido_comida_viajes_legacy_2026_09, etc.): "vivienda
+        # y casa/hogar es lo mismo... misma cosa con viveres/super...
+        # esas categorias viejas no deben exisitir cuantas veces te lo
+        # debo repetir". Causa raíz: barrer solo est_movimientos no basta
+        # -- reglas guardadas en est_keywords ANTES del retiro de estas
+        # categorías todavía tenían categoria=<vieja>, y cada "Aplicar
+        # todas a lo existente" o import nuevo las revivía en
+        # est_movimientos, deshaciendo el barrido. Esta migración corrige
+        # AMBAS tablas de una vez para las 4 categorías legacy conocidas
+        # (CASA/HOGAR, VIVERES/SUPER, COMIDA/REST, VIAJES/VUELOS); el
+        # blindaje contra recurrencia futura (_corregir_categorias_legacy,
+        # wireado en apply_all_keywords y upload_file) vive en
+        # modules/finanzas/estados/routes.py.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_unifica_categorias_legacy_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+                _legacy_map = [
+                    ('CASA/HOGAR',    'VIVIENDA',     'Renta'),
+                    ('VIVERES/SUPER', 'ALIMENTACION', 'Súper'),
+                    ('COMIDA/REST',   'ALIMENTACION', 'Restaurante'),
+                    ('VIAJES/VUELOS', 'VIAJES',       'Otros'),
+                ]
+                for legacy, cat, sub in _legacy_map:
+                    cur = db.execute(
+                        "UPDATE est_keywords SET categoria=?, subcategoria=? WHERE categoria=?",
+                        (cat, sub, legacy),
+                    )
+                    if cur.rowcount:
+                        detalle.append(f"est_keywords {legacy}->{cat}/{sub}: {cur.rowcount}")
+                    cur = db.execute(
+                        "UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE categoria=?",
+                        (cat, sub, legacy),
+                    )
+                    if cur.rowcount:
+                        detalle.append(f"est_movimientos {legacy}->{cat}/{sub}: {cur.rowcount}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_unifica_categorias_legacy_2026_09",
+                     "Barrido definitivo de categorías legacy (CASA/HOGAR, VIVERES/SUPER, "
+                     "COMIDA/REST, VIAJES/VUELOS) en est_movimientos Y est_keywords -- las "
+                     "migraciones anteriores solo tocaban est_movimientos y reglas guardadas "
+                     "las revivían. " + (" | ".join(detalle) if detalle else "nada que corregir"))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_unifica_categorias_legacy_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

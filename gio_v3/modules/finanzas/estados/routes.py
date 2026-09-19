@@ -205,6 +205,44 @@ def _corregir_far_guad(db) -> int:
     return cur1.rowcount + cur2.rowcount
 
 
+_LEGACY_CATEGORIA_MAP = {
+    'CASA/HOGAR':    ('VIVIENDA', 'Renta'),
+    'VIVERES/SUPER': ('ALIMENTACION', 'Súper'),
+    'COMIDA/REST':   ('ALIMENTACION', 'Restaurante'),
+    'VIAJES/VUELOS': ('VIAJES', 'Otros'),
+}
+
+
+def _corregir_categorias_legacy(db) -> int:
+    """CASA/HOGAR, VIVERES/SUPER, COMIDA/REST y VIAJES/VUELOS fueron
+    retiradas del selector (Fc en estados.js) y de config.py hace tiempo,
+    con su propia migración de barrido -- pero el usuario reportó que
+    CASA/HOGAR y VIVERES/SUPER seguían reapareciendo pese a eso: "esas
+    categorias viejas no deben exisitir cuantas veces te lo debo
+    repetir". Causa raíz (mismo patrón ya diagnosticado en
+    _corregir_fusion_gio): reglas de keyword guardadas por el usuario en
+    est_keywords ANTES del retiro todavía tenían categoria=<vieja>, y
+    cada "Aplicar todas a lo existente" o import nuevo las revivía,
+    deshaciendo cualquier barrido de datos hecho por migración. Se
+    corrigen AMBAS tablas para blindarlo de verdad: est_keywords (para
+    que ninguna regla guardada vuelva a producir la categoria vieja) y
+    est_movimientos (por si alguna fila se cuela antes de que la regla
+    se corrija)."""
+    total = 0
+    for legacy, (cat, sub) in _LEGACY_CATEGORIA_MAP.items():
+        cur = db.execute(
+            "UPDATE est_keywords SET categoria=?, subcategoria=? WHERE categoria=?",
+            (cat, sub, legacy),
+        )
+        total += cur.rowcount
+        cur = db.execute(
+            "UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE categoria=?",
+            (cat, sub, legacy),
+        )
+        total += cur.rowcount
+    return total
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -974,6 +1012,7 @@ def apply_all_keywords():
         """)
         _corregir_fusion_gio(db)
         _corregir_far_guad(db)
+        _corregir_categorias_legacy(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -1446,6 +1485,7 @@ def upload_file():
             """)
             _corregir_fusion_gio(db)
             _corregir_far_guad(db)
+            _corregir_categorias_legacy(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
