@@ -155,6 +155,19 @@ def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -
     return categoria, subcategoria
 
 
+def _corregir_renta_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
+    """El usuario confirmó que "Aportación renta" y "Renta" en un ingreso
+    son el mismo concepto real (alguien te deposita su parte de la renta,
+    ej. vía Nu) y pidió unificarlos -- "aportacion renta y parte renta Nu
+    son lo mismo unificalo". VIVIENDA/Renta es la subcategoria correcta
+    del lado GASTO (tú pagando la renta); VIVIENDA/Aportación renta es la
+    del lado INGRESO (alguien más aportando). Si categoria=VIVIENDA,
+    subcategoria='Renta' y tipo=INGRESO, se corrige a 'Aportación renta'."""
+    if categoria == 'VIVIENDA' and subcategoria == 'Renta' and tipo == 'INGRESO':
+        return categoria, 'Aportación renta'
+    return categoria, subcategoria
+
+
 _SORT_COLUMNS = {
     'fecha_desc':  'fecha DESC',
     'fecha_asc':   'fecha ASC',
@@ -195,6 +208,7 @@ def create_transaction():
     monto = safe_float(d.get('monto', 0))
     tipo = d.get('tipo', 'GASTO')
     categoria, subcategoria_in = _corregir_expense_en_ingreso(categoria, d.get('subcategoria', ''), tipo)
+    categoria, subcategoria_in = _corregir_renta_en_ingreso(categoria, subcategoria_in, tipo)
     with get_db() as db:
         # Mismo día + mismo monto + mismo tipo, sin importar la descripción,
         # suele ser el mismo movimiento real capturado dos veces (ver
@@ -285,17 +299,21 @@ def update_transaction(tx_id):
         if 'fecha_reembolso' in d:
             val = d['fecha_reembolso'] or None
             db.execute("UPDATE est_movimientos SET fecha_reembolso=? WHERE id=?", (val, tx_id))
-        # El PATCH aplica los campos por separado (categoria y tipo pueden
-        # llegar en requests distintos), así que la corrección de
-        # _corregir_expense_en_ingreso se revisa aquí sobre el estado ya
+        # El PATCH aplica los campos por separado (categoria/subcategoria/
+        # tipo pueden llegar en requests distintos), así que las
+        # correcciones de _corregir_expense_en_ingreso y
+        # _corregir_renta_en_ingreso se revisan aquí sobre el estado ya
         # actualizado, leyendo la fila completa en vez de solo lo que
         # llegó en este request.
-        row = db.execute("SELECT categoria, tipo FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
-        if row and row['categoria'] == 'EXPENSE' and row['tipo'] == 'INGRESO':
-            db.execute(
-                "UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable' WHERE id=?",
-                (tx_id,),
-            )
+        row = db.execute("SELECT categoria, subcategoria, tipo FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
+        if row:
+            cat, sub = _corregir_expense_en_ingreso(row['categoria'], row['subcategoria'], row['tipo'])
+            cat, sub = _corregir_renta_en_ingreso(cat, sub, row['tipo'])
+            if cat != row['categoria'] or sub != row['subcategoria']:
+                db.execute(
+                    "UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?",
+                    (cat, sub, tx_id),
+                )
         db.commit()
     return jsonify({'ok': True})
 
@@ -870,12 +888,17 @@ def apply_all_keywords():
                   f'%{kw_row["keyword"]}%'))
             total_updated += result.rowcount if hasattr(result, 'rowcount') else 0
         # Una regla de keyword no distingue tipo -- si alguna quedó
-        # aplicada a un ingreso con categoria=EXPENSE (ver
-        # _corregir_expense_en_ingreso), se corrige aquí igual que en
+        # aplicada a un ingreso con categoria=EXPENSE, o con VIVIENDA/
+        # Renta (ver _corregir_expense_en_ingreso y
+        # _corregir_renta_en_ingreso), se corrige aquí igual que en
         # create/update_transaction.
         db.execute("""
             UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
             WHERE categoria='EXPENSE' AND tipo='INGRESO'
+        """)
+        db.execute("""
+            UPDATE est_movimientos SET subcategoria='Aportación renta'
+            WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
         """)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
@@ -1293,12 +1316,17 @@ def upload_file():
                       f'%{kw_row["keyword"]}%'))
 
             # Una regla de keyword no distingue tipo -- si alguna quedó
-            # aplicada a un ingreso con categoria=EXPENSE (ver
-            # _corregir_expense_en_ingreso), se corrige aquí igual que en
+            # aplicada a un ingreso con categoria=EXPENSE, o con VIVIENDA/
+            # Renta (ver _corregir_expense_en_ingreso y
+            # _corregir_renta_en_ingreso), se corrige aquí igual que en
             # create/update_transaction y apply_all_keywords.
             db.execute("""
                 UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
                 WHERE categoria='EXPENSE' AND tipo='INGRESO'
+            """)
+            db.execute("""
+                UPDATE est_movimientos SET subcategoria='Aportación renta'
+                WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
             """)
 
             # ── Post-proceso inversiones ──────────────────────────────────────

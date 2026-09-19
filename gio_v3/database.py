@@ -2842,6 +2842,41 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_aportacion_renta_legacy_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — VIVIENDA/Renta en un ingreso -> Aportación
+        #    renta (a petición explícita del usuario) ───────────────────────
+        # El usuario confirmó, con screenshot: "aportacion renta y parte
+        # renta Nu son lo mismo unificalo" -- un depósito de alguien
+        # aportando a la renta (ej. vía Nu) quedó con subcategoria='Renta'
+        # en vez de 'Aportación renta' en algún movimiento tipo=INGRESO,
+        # probablemente de antes del fix que filtra el dropdown de
+        # subcategoria por tipo (VIVIENDA/Renta es la del lado GASTO). Se
+        # unifica: cualquier categoria=VIVIENDA, subcategoria='Renta',
+        # tipo=INGRESO -> subcategoria='Aportación renta'. La misma
+        # corrección corre hacia adelante en create_transaction,
+        # update_transaction, apply_all_keywords y el import (ver
+        # _corregir_renta_en_ingreso en estados/routes.py).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_renta_ingreso_unificada_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET subcategoria='Aportación renta'
+                    WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
+                """)
+                n_renta_ingreso = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_renta_ingreso_unificada_2026_09",
+                     f"Unifica 'Aportación renta' y 'Renta' en el lado de ingreso (el mismo "
+                     f"concepto real -- alguien aportando a la renta): categoria=VIVIENDA, "
+                     f"subcategoria='Renta', tipo=INGRESO -> subcategoria='Aportación renta'. "
+                     f"{n_renta_ingreso} filas reclasificadas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_renta_ingreso_unificada_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
