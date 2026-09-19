@@ -3483,6 +3483,36 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_dedup_nafin_tdc_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — borrado puntual, explícitamente confirmado
+        #    por el usuario (id 2318, $50,000 del 16/07/2026) ─────────────────
+        # Única excepción a "nunca borrar automático" de esta sesión: el
+        # usuario confirmó directamente, tras revisar su propia DB, que esta
+        # fila es un duplicado real de algo que ya tiene registrado como
+        # INGRESO/REGALO -- "2318 NO ES PAGO YA LO TENEMOS EN INGRESO BORRA
+        # ESE DE PAGO". No es una migración automática adivinando: es un
+        # borrado de una fila puntual, identificada por id, con confirmación
+        # explícita del usuario sobre su propia base de datos.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_borra_2318_duplicado_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    DELETE FROM est_movimientos
+                    WHERE id=2318 AND UPPER(descripcion) LIKE '%IGUAL TQM%'
+                """)
+                n = cur.rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_borra_2318_duplicado_2026_09",
+                     f"Borrado puntual confirmado explícitamente por el usuario: id 2318 "
+                     f"($50,000, 16/07/2026, 'PAGO CUENTA DE TERCERO...IGUAL TQM') es un "
+                     f"duplicado de una fila que ya tiene registrada como INGRESO/REGALO. "
+                     f"{n} filas borradas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_borra_2318_duplicado_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
