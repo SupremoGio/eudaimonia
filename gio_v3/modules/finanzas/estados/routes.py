@@ -566,10 +566,29 @@ def _prev_period_range(date_from: str, date_to: str | None) -> tuple[str, str]:
 
 @estados_bp.route('/api/summary/by-category')
 def by_category():
+    """El usuario reportó que el modal de detalle de una categoría (clic
+    en una fila de "Gastos por categoría") mezclaba filas tipo=INGRESO
+    junto con las de GASTO bajo la misma categoria/subcategoria (ej.
+    "Familia y regalos" con un +$50,000 verde de ingreso al lado de gastos
+    reales), aunque el total agregado de arriba SOLO cuenta GASTO -- "aqui
+    veo ingresos y gastos en lo mismo". Ese modal (api/transactions) ya
+    soportaba filtrar por tipo, solo le faltaba que el front se lo pidiera
+    (ver EuReports/$p en estados.js). Este endpoint ahora acepta
+    tipo=GASTO|INGRESO (default GASTO) para poder alimentar tanto la vista
+    de gastos como una de ingresos por categoría con el mismo query, cada
+    una con su propia definición de "categoria real" (_PAGO_CATS excluye
+    movimientos internos del lado gasto; _INGRESO_EXCLUIR_SQL excluye
+    transferencias/retiros del lado ingreso, igual que /api/summary/stats)
+    y su propio monto (mi_parte aplica solo a gasto compartido)."""
     if not _ok(): return _locked()
     bank = request.args.get('bank')
+    tipo = request.args.get('tipo', 'GASTO').upper()
+    if tipo not in ('GASTO', 'INGRESO'):
+        tipo = 'GASTO'
+    tipo_cond   = _PAGO_CATS if tipo == 'GASTO' else _INGRESO_EXCLUIR_SQL
+    monto_expr  = _MONTO if tipo == 'GASTO' else 'monto'
 
-    conds  = ["tipo='GASTO'", _PAGO_CATS]
+    conds  = [f"tipo='{tipo}'", tipo_cond]
     params = []
     months_cond, months_params = _months_condition(request.args)
     prev_from = prev_to = None
@@ -593,7 +612,7 @@ def by_category():
     with get_db() as db:
         rows = db.execute(f"""
             SELECT categoria,
-                   SUM({_MONTO}) AS total
+                   SUM({monto_expr}) AS total
             FROM est_movimientos
             WHERE {' AND '.join(conds)}
             GROUP BY categoria ORDER BY total DESC
@@ -601,12 +620,12 @@ def by_category():
 
         prev_totals = {}
         if prev_from is not None:
-            prev_conds = ["tipo='GASTO'", _PAGO_CATS, "fecha >= ?", "fecha <= ?"]
+            prev_conds = [f"tipo='{tipo}'", tipo_cond, "fecha >= ?", "fecha <= ?"]
             prev_params = [prev_from, prev_to]
             if bank:
                 prev_conds.append("banco = ?"); prev_params.append(bank)
             prev_rows = db.execute(f"""
-                SELECT categoria, SUM({_MONTO}) AS total
+                SELECT categoria, SUM({monto_expr}) AS total
                 FROM est_movimientos
                 WHERE {' AND '.join(prev_conds)}
                 GROUP BY categoria
