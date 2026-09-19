@@ -2910,6 +2910,37 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_renta_depto807_unificada_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — ZEPELIN (hot dogs) -> ALIMENTACION/Fast Food
+        #    (a petición explícita del usuario) ───────────────────────────────
+        # ZEPELIN es una cadena de hot dogs/fast food -- estaba mal mapeada
+        # como TRANSPORTE/Mantenimiento auto (keyword "CLIP MX MEC ZEPELIN",
+        # el prefijo "MEC" del terminal de pago se leyó como "mecánico").
+        # El usuario mandó varias filas confirmando el patrón real: "CLIP MX
+        # MEC ZEPELIN EN ...", "PAYCLIP MEC ZEPELIN EN ..." por distintos
+        # bancos (INVEX, BBVA_TDC, HSBC), siempre ~$105. config.py ya se
+        # corrigió (keyword "ZEPELIN" -> Fast Food, reemplazando la entrada
+        # vieja) -- esto reclasifica lo que ya estaba importado.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_zepelin_fast_food_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='ALIMENTACION', subcategoria='Fast Food'
+                    WHERE UPPER(descripcion) LIKE '%ZEPELIN%'
+                """)
+                n_zepelin = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_zepelin_fast_food_2026_09",
+                     f"ZEPELIN (hot dogs) estaba mal mapeado como TRANSPORTE/Mantenimiento "
+                     f"auto (el prefijo 'MEC' del terminal de pago se leyó como 'mecánico') "
+                     f"-> ALIMENTACION/Fast Food. {n_zepelin} filas reclasificadas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_zepelin_fast_food_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

@@ -17,6 +17,7 @@ MESES = {
 
 CATEGORIAS: dict[str, tuple[str, str]] = {
     "BURGER":               ("ALIMENTACION", "Fast Food"),
+    "ZEPELIN":              ("ALIMENTACION", "Fast Food"),
     "KFC":                  ("ALIMENTACION", "Fast Food"),
     "LITTLE CAESAR":        ("ALIMENTACION", "Fast Food"),
     "SUBWAY":               ("ALIMENTACION", "Fast Food"),
@@ -206,7 +207,6 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "AUTOZONE":             ("TRANSPORTE", "Mantenimiento auto"),
     "TALLER ERICKS":        ("TRANSPORTE", "Mantenimiento auto"),
     "PAYCLIP MEC TRANSCLIM":("TRANSPORTE", "Mantenimiento auto"),
-    "CLIP MX MEC ZEPELIN":  ("TRANSPORTE", "Mantenimiento auto"),
     "RECAUDADORA":          ("TRANSPORTE", "Mantenimiento auto"),
     "TEMU":                 ("VIVIENDA", "Artículos del hogar"),
     "CRISTAL":              ("VIVIENDA", "Artículos del hogar"),
