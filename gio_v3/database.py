@@ -3658,6 +3658,75 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_far_guad_por_monto_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — barrido final de COMIDA/REST y VIAJES/VUELOS
+        #    (categorías legacy que ya "reemplazaba" finanzas_taxonomia_
+        #    2026_09_sprint3, pero -- mismo patrón que CASA/HOGAR, VIVERES/
+        #    SUPER y REGALO esta sesión -- dejó filas sin migrar) ────────────
+        # "borra las viejas categorias de categoria me confunden hay comida
+        # y luego alimentancion tambien esta el viejo de viajes/vuelos y el
+        # nuevo". Se barre lo que haya quedado sin necesidad de reconstruir
+        # el mapeo exacto de sprint3 (_S3_M): cualquier COMIDA/REST->
+        # ALIMENTACION (Café se respeta si ya lo tenía, el resto a
+        # Restaurante, el mismo default que usaba sprint3) y cualquier
+        # VIAJES/VUELOS->VIAJES (con el mismo mapeo de subcategoria que
+        # sprint3 ya usaba, más un catch-all a "Otros" para cualquier
+        # subcategoria no contemplada ahí).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_barrido_comida_viajes_legacy_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='ALIMENTACION'
+                    WHERE categoria='COMIDA/REST' AND subcategoria='Café'
+                """)
+                detalle.append(f"COMIDA/REST Café->ALIMENTACION/Café: {cur.rowcount}")
+
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='ALIMENTACION', subcategoria='Restaurante'
+                    WHERE categoria='COMIDA/REST'
+                """)
+                detalle.append(f"COMIDA/REST (resto)->ALIMENTACION/Restaurante: {cur.rowcount}")
+
+                _viajes_mapeo = [
+                    ('Hotel',       'Hospedaje'),
+                    ('Restaurante', 'Comida'),
+                    ('Supermercado','Comida'),
+                    ('Vuelos',      'Transporte'),
+                    ('Hogar general', 'Otros'),
+                    ('Salidas',     'Otros'),
+                    ('telefono',    'Otros'),
+                    ('',            'Otros'),
+                ]
+                for sub_vieja, sub_nueva in _viajes_mapeo:
+                    cur = db.execute("""
+                        UPDATE est_movimientos SET categoria='VIAJES', subcategoria=?
+                        WHERE categoria='VIAJES/VUELOS' AND subcategoria=?
+                    """, (sub_nueva, sub_vieja))
+                    if cur.rowcount:
+                        detalle.append(f"VIAJES/VUELOS '{sub_vieja}'->VIAJES/{sub_nueva}: {cur.rowcount}")
+
+                # Catch-all: cualquier VIAJES/VUELOS que sobreviva con una
+                # subcategoria no contemplada arriba.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='VIAJES', subcategoria='Otros'
+                    WHERE categoria='VIAJES/VUELOS'
+                """)
+                if cur.rowcount:
+                    detalle.append(f"VIAJES/VUELOS (subcategoria no contemplada)->VIAJES/Otros: {cur.rowcount}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_barrido_comida_viajes_legacy_2026_09",
+                     "Barrido final de COMIDA/REST->ALIMENTACION y VIAJES/VUELOS->VIAJES "
+                     "(sprint3 las 'reemplazó' pero dejó filas sin migrar, mismo patrón que "
+                     "CASA/HOGAR/VIVERES/SUPER/REGALO). " + " | ".join(detalle))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_barrido_comida_viajes_legacy_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
