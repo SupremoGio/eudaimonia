@@ -1640,6 +1640,68 @@ def audit_buscar():
     })
 
 
+def _meses_en_rango(desde: str, hasta: str) -> list:
+    """Lista de 'YYYY-MM' desde el mes de `desde` hasta el mes de `hasta`,
+    inclusive. `desde`/`hasta` son fechas 'YYYY-MM-DD'."""
+    d = datetime.strptime(desde[:7], '%Y-%m')
+    h = datetime.strptime(hasta[:7], '%Y-%m')
+    meses = []
+    while d <= h:
+        meses.append(d.strftime('%Y-%m'))
+        y, m = d.year, d.month + 1
+        if m > 12:
+            y, m = y + 1, 1
+        d = d.replace(year=y, month=m)
+    return meses
+
+
+@estados_bp.route('/admin/audit-periodos-faltantes')
+def audit_periodos_faltantes():
+    """Diagnóstico de solo lectura -- NUNCA borra ni modifica nada. El
+    usuario sabe que hay huecos en 2026 y quiere saber qué periodos
+    (ene-sep) no se han subido, banco por banco, para ir a buscar esos
+    estados de cuenta.
+
+    Por cada banco que sube estado de cuenta (BBVA_DEB, BBVA_TDC, HSBC,
+    INVEX -- se excluye MANUAL, que son altas sueltas, no estados de
+    cuenta con periodo fijo), se listan los meses calendario dentro del
+    rango que NO tienen ninguna fila importada. No es prueba definitiva
+    de que falte el PDF completo (un mes puede tener pocas transacciones
+    reales, o el corte de tarjeta de crédito no calza con el mes
+    calendario), pero es la señal más directa disponible sin poder leer
+    la DB de producción directamente."""
+    if not _ok(): return _locked()
+    desde = request.args.get('desde', '2026-01-01')
+    hasta = request.args.get('hasta', today_str())
+    bancos = ['BBVA_DEB', 'BBVA_TDC', 'HSBC', 'INVEX']
+    todos_los_meses = _meses_en_rango(desde, hasta)
+
+    resultado = {}
+    with get_db() as db:
+        for banco in bancos:
+            rows = db.execute("""
+                SELECT fecha FROM est_movimientos
+                WHERE banco=? AND fecha BETWEEN ? AND ?
+            """, (banco, desde, hasta)).fetchall()
+            meses_con_datos = sorted({(r['fecha'] or '')[:7] for r in rows if r['fecha']})
+            meses_faltantes = [m for m in todos_los_meses if m not in meses_con_datos]
+            fechas = sorted(r['fecha'] for r in rows if r['fecha'])
+            resultado[banco] = {
+                'total_filas': len(rows),
+                'primera_fecha': fechas[0] if fechas else None,
+                'ultima_fecha': fechas[-1] if fechas else None,
+                'meses_con_datos': meses_con_datos,
+                'meses_faltantes': meses_faltantes,
+            }
+
+    return jsonify({
+        'desde': desde,
+        'hasta': hasta,
+        'todos_los_meses_en_rango': todos_los_meses,
+        'por_banco': resultado,
+    })
+
+
 @estados_bp.route('/admin/audit-duplicados')
 def audit_duplicados():
     """Bug real confirmado por el usuario: el mismo movimiento real se
