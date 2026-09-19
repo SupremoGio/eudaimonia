@@ -3513,6 +3513,38 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_borra_2318_duplicado_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — borrado de los duplicados DEB/TDC
+        #    confirmados por el usuario ("SI SON DUPLICADOS SOLO DEJA EL QUE
+        #    ESTA EN BBVA DEB LOS DEMAS ELIMINALOS") ────────────────────────────
+        # Los 8 ids de abajo son el lado BBVA_TDC de cada par que
+        # finanzas_audit_duplicados_dic_2026_09 / finanzas_dedup_nafin_tdc_2026_09
+        # habían marcado (categoria=FINANZAS, subcategoria='Posible
+        # duplicado...') en vez de borrar -- el usuario ya los revisó y
+        # confirmó que sí son el mismo movimiento repetido, lado BBVA_DEB
+        # incluido (2121/2238, que tenían fechas distintas). Se borran solo
+        # estos ids puntuales, nunca por patrón de texto/fecha/monto.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_borra_duplicados_confirmados_2026_09'"
+        ).fetchone():
+            try:
+                ids_a_borrar = (2387, 2321, 2234, 2237, 2239, 2236, 2235, 2238)
+                cur = db.execute(
+                    f"DELETE FROM est_movimientos WHERE id IN ({','.join('?' * len(ids_a_borrar))})",
+                    ids_a_borrar,
+                )
+                n = cur.rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_borra_duplicados_confirmados_2026_09",
+                     f"Borrado de los 8 duplicados BBVA_TDC confirmados explícitamente por el "
+                     f"usuario (ids 2387,2321,2234,2237,2239,2236,2235,2238) -- se queda solo "
+                     f"el lado BBVA_DEB de cada par (2383,2308,2137,2144,2148,2143,2139,2121). "
+                     f"{n} filas borradas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_borra_duplicados_confirmados_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

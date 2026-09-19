@@ -88,24 +88,21 @@ def test_apartacion_renta_sin_gemelo_tdc_no_se_marca_duplicado(test_db):
 
 
 def test_id_2238_marcado_duplicado_de_2121(test_db):
+    """El usuario confirmó, tras revisar el marcado, que sí son duplicados
+    y pidió borrar todo menos el lado BBVA_DEB -- ver
+    finanzas_borra_duplicados_confirmados_2026_09 (test dedicado en
+    test_finanzas_borra_duplicados_confirmados.py). Aquí solo se confirma
+    que el lado BBVA_DEB (2121) sigue vivo y bien clasificado."""
     with database.get_db() as db:
         _reset_migration(db)
         _force_next_id(db, 2121)
         id_2121 = _insert(db, descripcion='DEPOSITO DE TERCERO REFBNTC00305286 PREPAGO GDLAC BMRCASH',
                            monto=4582.0, banco='BBVA_DEB', categoria='INVERSION', tipo='INVERSION')
         assert id_2121 == 2121
-        _force_next_id(db, 2238)
-        id_2238 = _insert(db, descripcion='DEPOSITO DE TERCERO / REFBNTC00305286 PREPAGO GDLAC BMRCASH',
-                           monto=4582.0, banco='BBVA_TDC', categoria='FINANZAS', subcategoria='Pago servicios',
-                           tipo='PAGO')
-        assert id_2238 == 2238
         db.commit()
     database.init_db()
     with database.get_db() as db:
-        row = _row(db, 2238)
         gemelo = _row(db, 2121)
-    assert row['categoria'] == 'FINANZAS'
-    assert 'duplicado' in row['subcategoria'].lower()
     assert gemelo['categoria'] == 'FINANZAS'
     assert gemelo['subcategoria'] == 'Reembolsable'
 
@@ -269,11 +266,14 @@ def test_retiros_cetes_nafin_alineados_a_inversion(test_db):
             assert row['monto'] >= 700.0
 
 
-def test_ids_2236_2235_marcados_duplicado_no_cetes(test_db):
-    """Corrección de un error de la migración anterior: 2236/2235 (BBVA_TDC)
-    son el mismo movimiento real que 2143/2139 (BBVA_DEB, mismo día, mismo
-    monto, misma referencia "135 ... EGRESOS SPEI SVD") -- deben marcarse
-    como posible duplicado, no convertirse en un segundo retiro de CETES."""
+def test_ids_2236_2235_no_duplican_retiro_de_cetes(test_db):
+    """2236/2235 (BBVA_TDC) son el mismo movimiento real que 2143/2139
+    (BBVA_DEB, mismo día, mismo monto, misma referencia "135 ... EGRESOS
+    SPEI SVD") -- el usuario ya confirmó que sí son duplicados y pidió
+    borrarlos (ver finanzas_borra_duplicados_confirmados_2026_09, con test
+    dedicado en test_finanzas_borra_duplicados_confirmados.py). Aquí solo
+    se confirma que el lado BBVA_DEB (2143/2139) sigue vivo como retiro
+    real de CETES."""
     with database.get_db() as db:
         _reset_migration(db)
         _force_next_id(db, 2139)
@@ -286,36 +286,15 @@ def test_ids_2236_2235_marcados_duplicado_no_cetes(test_db):
                             banco='BBVA_DEB', categoria='FINANZAS', subcategoria='Transferencia',
                             tipo='INGRESO', monto=10000.0, fecha='2026-06-08')
         assert id_deb_2 == 2143
-        _force_next_id(db, 2235)
-        id_tdc_1 = _insert(db, descripcion='SPEI RECIBIDONAFIN / 0147533196 135 76111612700 EGRESOS SPEI SVD',
-                            banco='BBVA_TDC', categoria='FINANZAS', subcategoria='Pago servicios',
-                            tipo='PAGO', monto=4107.78, fecha='2026-06-10')
-        assert id_tdc_1 == 2235
-        _force_next_id(db, 2236)
-        id_tdc_2 = _insert(db, descripcion='SPEI RECIBIDONAFIN / 0135535241 135 70566052700 EGRESOS SPEI SVD',
-                            banco='BBVA_TDC', categoria='FINANZAS', subcategoria='Pago servicios',
-                            tipo='PAGO', monto=10000.0, fecha='2026-06-08')
-        assert id_tdc_2 == 2236
         db.commit()
     database.init_db()
     with database.get_db() as db:
         row_2139 = _row(db, 2139)
         row_2143 = _row(db, 2143)
-        row_2235 = _row(db, 2235)
-        row_2236 = _row(db, 2236)
-    # Los lados BBVA_DEB (2139/2143) sí son retiros reales de CETES.
     assert row_2139['tipo'] == 'INVERSION'
     assert row_2139['categoria'] == 'CETES'
     assert row_2143['tipo'] == 'INVERSION'
     assert row_2143['categoria'] == 'CETES'
-    # Los lados BBVA_TDC (2235/2236) quedan marcados como duplicado, no
-    # como un segundo retiro.
-    assert row_2235['tipo'] != 'INVERSION'
-    assert row_2235['categoria'] == 'FINANZAS'
-    assert 'duplicado' in row_2235['subcategoria'].lower()
-    assert row_2236['tipo'] != 'INVERSION'
-    assert row_2236['categoria'] == 'FINANZAS'
-    assert 'duplicado' in row_2236['subcategoria'].lower()
 
 
 def test_categoria_inversion_literal_corregida_a_cetes(test_db):

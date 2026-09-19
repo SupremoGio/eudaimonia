@@ -1315,6 +1315,27 @@ def upload_file():
                 # duplicado real.
                 existing.add((r['fecha'], round(float(r['monto']), 2), r['tipo']))
 
+            # Blindaje adicional (auditoría "AUDITA PORQUE HAY MONTOS Y DIAS
+            # REPETIDOS..."): el mismo SPEI recibido / depósito de tercero
+            # real, importado una vez como BBVA_DEB y otra como BBVA_TDC/
+            # HSBC/INVEX, a veces llega con tipo distinto entre ambos lados
+            # (uno como INGRESO, el otro como PAGO/GASTO según cómo lo lea
+            # el parser del banco emisor) -- el dedup de arriba, que exige
+            # tipo igual, no lo atrapa. Para este patrón específico (el
+            # usuario confirmó: "estos ingresos nunca van a TDC, siempre son
+            # depositos en debito") se ignora tipo: cualquier fila nueva que
+            # NO sea BBVA_DEB, con "SPEI RECIBIDO" o "DEPOSITO DE TERCERO" en
+            # la descripción, se descarta si ya existe una fila BBVA_DEB con
+            # el mismo día y monto (sin importar su tipo).
+            existing_deb_spei = set()
+            for r in db.execute("""
+                SELECT fecha, monto FROM est_movimientos
+                WHERE banco='BBVA_DEB'
+                  AND (UPPER(descripcion) LIKE '%SPEI RECIBIDO%'
+                       OR UPPER(descripcion) LIKE '%DEPOSITO DE TERCERO%')
+            """).fetchall():
+                existing_deb_spei.add((r['fecha'], round(float(r['monto']), 2)))
+
             # También rastreamos depósitos/SPEIs nuevos para el response
             review_needed = []
             new_ids = []  # ids recién insertados — para las reglas automáticas de abajo
@@ -1322,13 +1343,21 @@ def upload_file():
             for m in movimientos:
                 m_banco = m.get('banco', bank) or bank
                 m_monto = float(m['monto'])
+                m_desc_upper = (m['descripcion'] or '').upper()
                 # Dedup solo aplica a montos > 0
                 key = (m['fecha'], round(m_monto, 2), m['tipo'])
                 if m_monto > 0 and key in existing:
                     skipped += 1
                     continue
+                if (m_monto > 0 and m_banco != 'BBVA_DEB'
+                        and ('SPEI RECIBIDO' in m_desc_upper or 'DEPOSITO DE TERCERO' in m_desc_upper)
+                        and (m['fecha'], round(m_monto, 2)) in existing_deb_spei):
+                    skipped += 1
+                    continue
                 if m_monto > 0:
                     existing.add(key)
+                    if m_banco == 'BBVA_DEB' and ('SPEI RECIBIDO' in m_desc_upper or 'DEPOSITO DE TERCERO' in m_desc_upper):
+                        existing_deb_spei.add((m['fecha'], round(m_monto, 2)))
                 cur = db.execute("""
                     INSERT OR IGNORE INTO est_movimientos
                     (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo,
