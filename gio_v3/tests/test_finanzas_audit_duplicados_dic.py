@@ -36,6 +36,7 @@ def _insert(db, **kw):
 
 def _reset_migration(db):
     db.execute("DELETE FROM migration_log WHERE version='finanzas_audit_duplicados_dic_2026_09'")
+    db.execute("DELETE FROM migration_log WHERE version='finanzas_dedup_nafin_tdc_2026_09'")
 
 
 def _row(db, tx_id):
@@ -243,7 +244,11 @@ def test_fideicomiso_unificado_por_id(test_db):
 # ── 7) Retiros de CETES (NAFIN) alineados al modelo INVERSION ──────────────
 
 def test_retiros_cetes_nafin_alineados_a_inversion(test_db):
-    ids_reales = [1842, 1961, 2573, 2572, 2576, 2575, 2139, 2143, 2076, 2236, 2235]
+    # 2236 y 2235 se excluyen de aquí a propósito: son los duplicados
+    # BBVA_TDC de 2143/2139 (ver test_ids_2236_2235_marcados_duplicado_no_cetes
+    # abajo) -- no deben terminar como un retiro de CETES real más, o
+    # duplicarían el monto retirado en la vista de Inversiones.
+    ids_reales = [1842, 1961, 2573, 2572, 2576, 2575, 2139, 2143, 2076]
     tx_ids = []
     with database.get_db() as db:
         _reset_migration(db)
@@ -262,6 +267,55 @@ def test_retiros_cetes_nafin_alineados_a_inversion(test_db):
             assert row['categoria'] == 'CETES'
             assert row['subcategoria'] == 'RETIRO'
             assert row['monto'] >= 700.0
+
+
+def test_ids_2236_2235_marcados_duplicado_no_cetes(test_db):
+    """Corrección de un error de la migración anterior: 2236/2235 (BBVA_TDC)
+    son el mismo movimiento real que 2143/2139 (BBVA_DEB, mismo día, mismo
+    monto, misma referencia "135 ... EGRESOS SPEI SVD") -- deben marcarse
+    como posible duplicado, no convertirse en un segundo retiro de CETES."""
+    with database.get_db() as db:
+        _reset_migration(db)
+        _force_next_id(db, 2139)
+        id_deb_1 = _insert(db, descripcion='SPEI RECIBIDONAFIN 135 EGRESOS SPEI SVD',
+                            banco='BBVA_DEB', categoria='FINANZAS', subcategoria='Transferencia',
+                            tipo='INGRESO', monto=4107.78, fecha='2026-06-10')
+        assert id_deb_1 == 2139
+        _force_next_id(db, 2143)
+        id_deb_2 = _insert(db, descripcion='SPEI RECIBIDONAFIN 135 EGRESOS SPEI SVD DOS',
+                            banco='BBVA_DEB', categoria='FINANZAS', subcategoria='Transferencia',
+                            tipo='INGRESO', monto=10000.0, fecha='2026-06-08')
+        assert id_deb_2 == 2143
+        _force_next_id(db, 2235)
+        id_tdc_1 = _insert(db, descripcion='SPEI RECIBIDONAFIN / 0147533196 135 76111612700 EGRESOS SPEI SVD',
+                            banco='BBVA_TDC', categoria='FINANZAS', subcategoria='Pago servicios',
+                            tipo='PAGO', monto=4107.78, fecha='2026-06-10')
+        assert id_tdc_1 == 2235
+        _force_next_id(db, 2236)
+        id_tdc_2 = _insert(db, descripcion='SPEI RECIBIDONAFIN / 0135535241 135 70566052700 EGRESOS SPEI SVD',
+                            banco='BBVA_TDC', categoria='FINANZAS', subcategoria='Pago servicios',
+                            tipo='PAGO', monto=10000.0, fecha='2026-06-08')
+        assert id_tdc_2 == 2236
+        db.commit()
+    database.init_db()
+    with database.get_db() as db:
+        row_2139 = _row(db, 2139)
+        row_2143 = _row(db, 2143)
+        row_2235 = _row(db, 2235)
+        row_2236 = _row(db, 2236)
+    # Los lados BBVA_DEB (2139/2143) sí son retiros reales de CETES.
+    assert row_2139['tipo'] == 'INVERSION'
+    assert row_2139['categoria'] == 'CETES'
+    assert row_2143['tipo'] == 'INVERSION'
+    assert row_2143['categoria'] == 'CETES'
+    # Los lados BBVA_TDC (2235/2236) quedan marcados como duplicado, no
+    # como un segundo retiro.
+    assert row_2235['tipo'] != 'INVERSION'
+    assert row_2235['categoria'] == 'FINANZAS'
+    assert 'duplicado' in row_2235['subcategoria'].lower()
+    assert row_2236['tipo'] != 'INVERSION'
+    assert row_2236['categoria'] == 'FINANZAS'
+    assert 'duplicado' in row_2236['subcategoria'].lower()
 
 
 def test_categoria_inversion_literal_corregida_a_cetes(test_db):
@@ -487,5 +541,13 @@ def test_migration_logged_once(test_db):
     with database.get_db() as db:
         rows = db.execute(
             "SELECT id FROM migration_log WHERE version='finanzas_audit_duplicados_dic_2026_09'"
+        ).fetchall()
+    assert len(rows) == 1
+
+
+def test_dedup_nafin_tdc_migration_logged_once(test_db):
+    with database.get_db() as db:
+        rows = db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_dedup_nafin_tdc_2026_09'"
         ).fetchall()
     assert len(rows) == 1

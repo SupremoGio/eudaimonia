@@ -3449,6 +3449,40 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_audit_duplicados_dic_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — corrección de la migración anterior: ids
+        #    2236/2235 (usuario preguntó "cuales son esos que dices que no
+        #    tocaste pero que estan repetidos", lo que llevó a re-revisar la
+        #    lista completa) ──────────────────────────────────────────────────
+        # finanzas_audit_duplicados_dic_2026_09 metió los ids 2236/2235
+        # (SPEI RECIBIDONAFIN, banco=BBVA_TDC) en el mismo lote que sus
+        # gemelos reales 2143/2139 (banco=BBVA_DEB, mismo día, mismo monto,
+        # misma referencia "135 ... EGRESOS SPEI SVD") -- los cuatro
+        # terminaron con tipo=INVERSION/categoria=CETES/subcategoria=RETIRO,
+        # duplicando el monto "retirado" en la vista de Inversiones en vez
+        # de marcar el lado TDC como duplicado (como sí se hizo con el par
+        # 2121/2238, que sigue el mismo patrón). Se corrige aquí sin
+        # reescribir la migración ya aplicada.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_dedup_nafin_tdc_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='PAGO', categoria='FINANZAS', subcategoria='Posible duplicado (ver id 2143/2139)'
+                    WHERE id IN (2236, 2235)
+                """)
+                n = cur.rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_dedup_nafin_tdc_2026_09",
+                     f"Corrige finanzas_audit_duplicados_dic_2026_09: ids 2236/2235 (BBVA_TDC, "
+                     f"gemelos de 2143/2139 en BBVA_DEB) se sacan de CETES/RETIRO y se marcan "
+                     f"como posible duplicado en vez de duplicar el monto retirado. {n} filas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_dedup_nafin_tdc_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
