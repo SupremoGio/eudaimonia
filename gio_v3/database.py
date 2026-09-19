@@ -3780,6 +3780,56 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_unifica_categorias_legacy_2026_09 migration warning: {e}")
 
+        # El usuario reportó dos reclasificaciones puntuales el mismo día:
+        # 1) "REGALO" (categoria plana legacy, mismo patrón que CASA/HOGAR
+        #    etc. -- el usuario incluso lo marcó explícitamente: "mismo
+        #    problema repetiste regalo ya tenemos familia regalo") es
+        #    enteramente el pago a CRISTAL VILLAHERMOSA a 12 meses (un
+        #    anillo): "manda eso a familia y regalos a la subcategoria
+        #    Anillo Cornelius". Se unifica igual que los demás legacy --
+        #    est_movimientos Y est_keywords, por la misma causa raíz.
+        # 2) STEAMGAMES.COM caía en DIGITAL/Suscripciones IA/productividad
+        #    en vez de OCIO/Videojuegos (ya existente como subcategoria):
+        #    "manda estos a Entretenimiento y crea una subcategoria de
+        #    videojuegos". Blindaje futuro (_corregir_steamgames, wireado
+        #    en apply_all_keywords/upload_file) y keyword nueva en
+        #    config.py viven fuera de esta migración -- aquí solo el
+        #    backfill histórico.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_regalo_steamgames_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+
+                cur = db.execute(
+                    "UPDATE est_keywords SET categoria='FAMILIA_REGALOS', subcategoria='Anillo Cornelius' WHERE categoria='REGALO'"
+                )
+                if cur.rowcount:
+                    detalle.append(f"est_keywords REGALO->FAMILIA_REGALOS/Anillo Cornelius: {cur.rowcount}")
+                cur = db.execute(
+                    "UPDATE est_movimientos SET categoria='FAMILIA_REGALOS', subcategoria='Anillo Cornelius' WHERE categoria='REGALO'"
+                )
+                if cur.rowcount:
+                    detalle.append(f"est_movimientos REGALO->FAMILIA_REGALOS/Anillo Cornelius: {cur.rowcount}")
+
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='OCIO', subcategoria='Videojuegos'
+                    WHERE UPPER(descripcion) LIKE '%STEAMGAMES%'
+                      AND (categoria != 'OCIO' OR subcategoria != 'Videojuegos')
+                """)
+                if cur.rowcount:
+                    detalle.append(f"STEAMGAMES.COM->OCIO/Videojuegos: {cur.rowcount}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_regalo_steamgames_2026_09",
+                     "REGALO (legacy)->FAMILIA_REGALOS/Anillo Cornelius y STEAMGAMES.COM->"
+                     "OCIO/Videojuegos. " + (" | ".join(detalle) if detalle else "nada que corregir"))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_regalo_steamgames_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

@@ -105,6 +105,32 @@ def test_viajes_vuelos_va_a_viajes_otros(test_db):
     assert row['subcategoria'] == 'Otros'
 
 
+def test_regalo_va_a_familia_regalos_anillo_cornelius(test_db):
+    """El usuario marcó esto explícitamente como el mismo problema de
+    CASA/HOGAR/VIVERES/SUPER: "mismo problema repetiste regalo ya tenemos
+    familia regalo manda eso a familia y regalos a la subcategoria Anillo
+    Cornelius"."""
+    with database.get_db() as db:
+        tx_id = _insert_tx(db, categoria='REGALO', subcategoria='Anillo a cornelius')
+        db.commit()
+        _corregir_categorias_legacy(db)
+        db.commit()
+        row = db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
+    assert row['categoria'] == 'FAMILIA_REGALOS'
+    assert row['subcategoria'] == 'Anillo Cornelius'
+
+
+def test_regla_regalo_guardada_se_corrige(test_db):
+    with database.get_db() as db:
+        kw_id = _insert_kw(db, 'CRISTAL VILLAHERMOSA', 'REGALO', 'Anillo a cornelius')
+        db.commit()
+        _corregir_categorias_legacy(db)
+        db.commit()
+        row = db.execute("SELECT categoria, subcategoria FROM est_keywords WHERE id=?", (kw_id,)).fetchone()
+    assert row['categoria'] == 'FAMILIA_REGALOS'
+    assert row['subcategoria'] == 'Anillo Cornelius'
+
+
 def test_categorias_vigentes_no_se_tocan(test_db):
     with database.get_db() as db:
         tx_id = _insert_tx(db, categoria='VIVIENDA', subcategoria='Renta')

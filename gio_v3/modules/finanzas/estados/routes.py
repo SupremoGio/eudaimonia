@@ -210,6 +210,12 @@ _LEGACY_CATEGORIA_MAP = {
     'VIVERES/SUPER': ('ALIMENTACION', 'Súper'),
     'COMIDA/REST':   ('ALIMENTACION', 'Restaurante'),
     'VIAJES/VUELOS': ('VIAJES', 'Otros'),
+    # 'REGALO' (categoria plana legacy) es enteramente el pago a
+    # CRISTAL VILLAHERMOSA a 12 meses (un anillo) -- el usuario confirmó
+    # "ya tenemos familia regalo manda eso a familia y regalos a la
+    # subcategoria Anillo Cornelius". Mismo patrón que los demás: una
+    # regla vieja en est_keywords lo seguía reviviendo.
+    'REGALO':        ('FAMILIA_REGALOS', 'Anillo Cornelius'),
 }
 
 
@@ -241,6 +247,23 @@ def _corregir_categorias_legacy(db) -> int:
         )
         total += cur.rowcount
     return total
+
+
+def _corregir_steamgames(db) -> int:
+    """El usuario pidió mover las compras de STEAMGAMES.COM que estaban
+    cayendo en DIGITAL/Suscripciones IA/productividad a OCIO/Videojuegos
+    ("manda estos a Entretenimiento y crea una subcategoria de
+    videojuegos" -- OCIO ya existe con esa subcategoria, mostrada como
+    "Ocio" en el selector). No hay keyword "STEAMGAMES" en config.py, así
+    que además de esta corrección se agregó ahí para que futuras compras
+    se clasifiquen bien desde el import; esta función es el blindaje para
+    cualquier fila que ya se haya colado con otra categoria."""
+    cur = db.execute("""
+        UPDATE est_movimientos SET categoria='OCIO', subcategoria='Videojuegos'
+        WHERE UPPER(descripcion) LIKE '%STEAMGAMES%'
+          AND (categoria != 'OCIO' OR subcategoria != 'Videojuegos')
+    """)
+    return cur.rowcount
 
 
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
@@ -1032,6 +1055,7 @@ def apply_all_keywords():
         _corregir_fusion_gio(db)
         _corregir_far_guad(db)
         _corregir_categorias_legacy(db)
+        _corregir_steamgames(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -1505,6 +1529,7 @@ def upload_file():
             _corregir_fusion_gio(db)
             _corregir_far_guad(db)
             _corregir_categorias_legacy(db)
+            _corregir_steamgames(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
