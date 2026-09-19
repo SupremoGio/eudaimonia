@@ -209,6 +209,7 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "PAYCLIP MEC TRANSCLIM":("TRANSPORTE", "Mantenimiento auto"),
     "RECAUDADORA":          ("TRANSPORTE", "Mantenimiento auto"),
     "TEMU":                 ("VIVIENDA", "Artículos del hogar"),
+    "CRISTAL VILLAHERMOSA": ("FAMILIA_REGALOS", "Regalos"),
     "CRISTAL":              ("VIVIENDA", "Artículos del hogar"),
     "MONARCA":              ("VIVIENDA", "Artículos del hogar"),
     "MINISO":               ("VIVIENDA", "Artículos del hogar"),
