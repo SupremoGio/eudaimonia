@@ -1524,6 +1524,54 @@ def _comparar_pdf_vs_db(movimientos: list, db_rows: list) -> tuple:
     return faltan, monto_no_coincide, fantasmas
 
 
+@estados_bp.route('/admin/audit-buscar')
+def audit_buscar():
+    """Diagnóstico de solo lectura -- NUNCA borra ni modifica nada. El
+    usuario reportó pagos de renta de depto 807 (~$12,000/mes, "PAGO
+    TARJETA DE TERCEROS MBAN") que ve para may-sep 2026 pero no para
+    ene-abr 2026, aunque confirma que sí los había importado antes
+    ("ya los tenia ahi"). Investigando el código se encontró
+    est_dedup_backfill_v1_done: un backfill automático (no protegido por
+    migration_log como el resto, sino por app_settings) que ya corrió
+    UNA VEZ en el pasado y borra duplicados usando una descripción
+    normalizada (quita dígitos y símbolos) agrupada por (fecha, monto,
+    tipo) -- si dos variantes de la misma transacción coincidían en esa
+    clave normalizada, se borraba todo menos la de descripción más larga.
+
+    Este endpoint da evidencia concreta en vez de más hipótesis:
+      - si ese backfill llegó a correr en esta base (bandera en
+        app_settings)
+      - una búsqueda de texto libre (?q=) SIN ningún filtro de categoría/
+        tipo/fecha, agrupada por mes, para ver en qué meses SÍ hay algo
+        y en cuáles no hay absolutamente nada -- descarta que un filtro
+        esté ocultando filas que siguen ahí."""
+    if not _ok(): return _locked()
+    q = request.args.get('q', 'TERCEROS').strip()
+    with get_db() as db:
+        dedup_corrio = db.execute(
+            "SELECT value FROM app_settings WHERE key='est_dedup_backfill_v1_done'"
+        ).fetchone()
+        rows = db.execute("""
+            SELECT id, fecha, fecha_cargo, descripcion, monto, banco, categoria, subcategoria, tipo
+            FROM est_movimientos
+            WHERE UPPER(descripcion) LIKE ?
+            ORDER BY fecha
+        """, (f'%{q.upper()}%',)).fetchall()
+
+    por_mes: dict = {}
+    for r in rows:
+        mes = (r['fecha'] or '')[:7]
+        por_mes.setdefault(mes, []).append(dict(r))
+
+    return jsonify({
+        'query': q,
+        'dedup_backfill_v1_corrio_en_esta_db': bool(dedup_corrio),
+        'total_filas_encontradas': len(rows),
+        'meses_con_datos': sorted(por_mes.keys()),
+        'por_mes': por_mes,
+    })
+
+
 @estados_bp.route('/admin/audit-duplicados')
 def audit_duplicados():
     """Bug real confirmado por el usuario: el mismo movimiento real se
