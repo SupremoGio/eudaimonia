@@ -3624,6 +3624,40 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_lote_super_reembolsable_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — FAR GUAD por monto (a petición explícita
+        #    del usuario) ──────────────────────────────────────────────────────
+        # "todo lo que venga de FAR GUAD y es menor a 200 pesos es
+        # alimentacion subcategoria conveniencia todo lo que sea mayor a eso
+        # seguramente son medicamentos e iria en salud subcategoria
+        # farmacia". Backfill del histórico ya importado; el mismo criterio
+        # corre hacia adelante en cada import/aplicación de reglas (ver
+        # _corregir_far_guad en estados/routes.py).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_far_guad_por_monto_2026_09'"
+        ).fetchone():
+            try:
+                cur1 = db.execute("""
+                    UPDATE est_movimientos SET categoria='ALIMENTACION', subcategoria='Conveniencia'
+                    WHERE UPPER(descripcion) LIKE '%FAR GUAD%'
+                      AND ABS(monto) < 200
+                      AND categoria != 'EXPENSE'
+                """)
+                cur2 = db.execute("""
+                    UPDATE est_movimientos SET categoria='SALUD', subcategoria='Farmacia'
+                    WHERE UPPER(descripcion) LIKE '%FAR GUAD%'
+                      AND ABS(monto) >= 200
+                      AND categoria != 'EXPENSE'
+                """)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_far_guad_por_monto_2026_09",
+                     f"FAR GUAD < $200 -> ALIMENTACION/Conveniencia ({cur1.rowcount} filas), "
+                     f">= $200 -> SALUD/Farmacia ({cur2.rowcount} filas). No toca categoria=EXPENSE.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_far_guad_por_monto_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

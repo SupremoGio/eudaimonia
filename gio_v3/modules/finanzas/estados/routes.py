@@ -175,6 +175,36 @@ def _corregir_fusion_gio(db) -> int:
     return cur.rowcount
 
 
+_FAR_GUAD_UMBRAL = 200.0
+
+
+def _corregir_far_guad(db) -> int:
+    """FAR GUAD (Farmacias Guadalajara) vende tanto conveniencia/snacks
+    como medicamentos bajo el mismo comercio, así que texto de descripción
+    solo no alcanza para distinguirlos -- el usuario pidió blindar por
+    monto: "todo lo que venga de FAR GUAD y es menor a 200 pesos es
+    alimentacion subcategoria conveniencia todo lo que sea mayor a eso
+    seguramente son medicamentos e iria en salud subcategoria farmacia".
+    No toca categoria='EXPENSE' (reembolsable) -- eso es una decisión
+    explícita del usuario en cada compra, no algo que se deba adivinar
+    por monto."""
+    cur1 = db.execute("""
+        UPDATE est_movimientos SET categoria='ALIMENTACION', subcategoria='Conveniencia'
+        WHERE UPPER(descripcion) LIKE '%FAR GUAD%'
+          AND ABS(monto) < ?
+          AND categoria != 'EXPENSE'
+          AND (categoria != 'ALIMENTACION' OR subcategoria != 'Conveniencia')
+    """, (_FAR_GUAD_UMBRAL,))
+    cur2 = db.execute("""
+        UPDATE est_movimientos SET categoria='SALUD', subcategoria='Farmacia'
+        WHERE UPPER(descripcion) LIKE '%FAR GUAD%'
+          AND ABS(monto) >= ?
+          AND categoria != 'EXPENSE'
+          AND (categoria != 'SALUD' OR subcategoria != 'Farmacia')
+    """, (_FAR_GUAD_UMBRAL,))
+    return cur1.rowcount + cur2.rowcount
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -943,6 +973,7 @@ def apply_all_keywords():
             WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
         """)
         _corregir_fusion_gio(db)
+        _corregir_far_guad(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -1414,6 +1445,7 @@ def upload_file():
                 WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
             """)
             _corregir_fusion_gio(db)
+            _corregir_far_guad(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
