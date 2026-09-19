@@ -38,16 +38,29 @@ LINE_RE = re.compile(
 _MSI_INSTALLMENT_RE = re.compile(r"^(\d{1,2})\s+DE\s+(\d{1,2})\b", re.IGNORECASE)
 
 
+_MSI_GROUP_PREFIX_LEN = 15
+
+
 def msi_group_id(desc_limpia: str, monto: float) -> str | None:
     """ID estable para agrupar las mensualidades de una misma compra a MSI
     (mismo comercio + mismo monto de cuota, sin importar en qué mes del
     plan llegue cada una). `desc_limpia` debe ser la descripción YA pasada
     por clean_desc (o equivalente) para que "3 DE 12 WALMART" y
     "7 DE 12 WALMART" — mismo comercio, prefijo de mensualidad distinto —
-    produzcan el mismo id."""
+    produzcan el mismo id.
+
+    Usa solo los primeros _MSI_GROUP_PREFIX_LEN caracteres de la
+    descripción (a petición explícita del usuario, con caso real
+    confirmado): el banco no siempre trunca la descripción igual entre
+    mensualidades de la misma compra -- "WALMART VENTA EN L" vs "WALMART
+    VENTA EN LIN3" son la misma compra pero, con el hash de la
+    descripción completa, producían compra_msi_id distintos y partían
+    una secuencia de 20 cuotas en dos grupos, cada uno reiniciando su
+    propia numeración (se veían "18 de 20" y "19 de 20" repetidos)."""
     if not desc_limpia:
         return None
-    key = f"{desc_limpia.strip().upper()}|{abs(round(monto, 2)):.2f}"
+    prefix = desc_limpia.strip().upper()[:_MSI_GROUP_PREFIX_LEN]
+    key = f"{prefix}|{abs(round(monto, 2)):.2f}"
     return hashlib.sha1(key.encode("utf-8")).hexdigest()[:16]
 
 _DATE_LINE_RE = re.compile(

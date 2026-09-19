@@ -3000,6 +3000,51 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_merpago_panaderia_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — re-agrupar compra_msi_id con prefijo corto
+        #    (a petición explícita del usuario, con caso real confirmado) ─────
+        # El usuario mandó un caso real de Walmart a 20 meses ($509 c/u):
+        # el banco no siempre trunca la descripción igual entre
+        # mensualidades ("WALMART VENTA EN L" vs "WALMART VENTA EN
+        # LIN3"), así que msi_group_id (hash de descripción completa +
+        # monto) las partía en dos compra_msi_id distintos -- cada grupo
+        # reiniciaba su propia numeración, por eso se veían "18 de 20" y
+        # "19 de 20" repetidos en vez de una sola secuencia de 20.
+        # msi_group_id ahora usa solo los primeros 15 caracteres (ver
+        # parsers/_base.py) -- esto recalcula compra_msi_id para las
+        # filas ya importadas con la fórmula vieja.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_msi_group_id_prefijo_2026_09'"
+        ).fetchone():
+            try:
+                import hashlib as _hashlib
+                _MSI_PREFIX_LEN = 15
+                filas_msi = db.execute("""
+                    SELECT id, descripcion, monto FROM est_movimientos
+                    WHERE parcialidad_num IS NOT NULL
+                """).fetchall()
+                n_regrupadas = 0
+                for fila in filas_msi:
+                    prefix = (fila['descripcion'] or '').strip().upper()[:_MSI_PREFIX_LEN]
+                    key = f"{prefix}|{abs(round(fila['monto'], 2)):.2f}"
+                    nuevo_id = _hashlib.sha1(key.encode('utf-8')).hexdigest()[:16]
+                    db.execute(
+                        "UPDATE est_movimientos SET compra_msi_id=? WHERE id=?",
+                        (nuevo_id, fila['id']),
+                    )
+                    n_regrupadas += 1
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_msi_group_id_prefijo_2026_09",
+                     f"Recalcula compra_msi_id con prefijo de 15 caracteres + monto (antes "
+                     f"usaba la descripción completa, que se partía en grupos distintos "
+                     f"cuando el banco truncaba la descripción de forma inconsistente entre "
+                     f"mensualidades). {n_regrupadas} filas de MSI recalculadas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_msi_group_id_prefijo_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
