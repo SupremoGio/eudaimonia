@@ -3545,6 +3545,85 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_borra_duplicados_confirmados_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — lote "MANDA A SUBCATEGORIA SUPER" (7
+        #    correcciones puntuales + unificación Cobrado/Reembolsable) ────────
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_lote_super_reembolsable_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+
+                # 1) ZTL ZAIRAAXZAYMENDOZAM (ids 1988, 1612) -> subcategoria Súper.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET subcategoria='Súper'
+                    WHERE id IN (1988, 1612)
+                """)
+                detalle.append(f"ZTL (ids 1988,1612)->ALIMENTACION/Súper: {cur.rowcount}")
+
+                # 2) FIDEICOMISO F 1596 -- "cambia eso de fideicomiso a expense
+                #    pagado, ya lo habiamos hablado": se unifica al mismo
+                #    destino que un reembolso de EXPENSE cobrado.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
+                    WHERE id IN (2580,2529,2494,2371,2247,2104,2057,2006,1726,1625)
+                """)
+                detalle.append(f"FIDEICOMISO F 1596 (10 ids)->FINANZAS/Reembolsable: {cur.rowcount}")
+
+                # 3) id 3228: corrige la decisión anterior (se había mandado a
+                #    PRESTAMOS) -- el usuario confirmó que es "ingreso pago
+                #    expense", no un cobro de préstamo.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
+                    WHERE id=3228
+                """)
+                detalle.append(f"id 3228 (PRESTAMOS->FINANZAS/Reembolsable): {cur.rowcount}")
+
+                # 4) id 2079 -> subcategoria Regalos.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET subcategoria='Regalos'
+                    WHERE id=2079
+                """)
+                detalle.append(f"id 2079->FAMILIA_REGALOS/Regalos: {cur.rowcount}")
+
+                # 5) CETES: "DOMICILIACION"/"ENVIADO" es dinero saliendo de la
+                #    cuenta para invertir (APORTACION), no un RETIRO -- ver el
+                #    fix en upload_file() (misma lógica, para nuevas
+                #    importaciones). Corrige el histórico ya importado con la
+                #    lógica vieja (dirección por tipo, no por texto).
+                cur = db.execute("""
+                    UPDATE est_movimientos SET subcategoria='APORTACION'
+                    WHERE id IN (1605,1621,1632,1653,1926,2021,2099,2248)
+                      AND subcategoria='RETIRO'
+                """)
+                detalle.append(f"CETES RETIRO->APORTACION (8 ids, ENVIADO/DOMICILIACION): {cur.rowcount}")
+
+                # 6) id 1679: préstamo a la hermana del usuario.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria=''
+                    WHERE id=1679
+                """)
+                detalle.append(f"id 1679->PRESTAMOS: {cur.rowcount}")
+
+                # 7) "COBRADO Y REEMBOLSABLE ES LO MISMO UNIFICA": cualquier
+                #    fila PRESTAMOS/Cobrado que exista se unifica al mismo
+                #    destino (ver también config.py::SUBCATEGORIAS, donde
+                #    "Cobrado" ya se quitó de las opciones de PRESTAMOS).
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
+                    WHERE categoria='PRESTAMOS' AND subcategoria='Cobrado'
+                """)
+                detalle.append(f"PRESTAMOS/Cobrado->FINANZAS/Reembolsable: {cur.rowcount}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_lote_super_reembolsable_2026_09",
+                     "Lote de correcciones puntuales ('MANDA A SUBCATEGORIA SUPER' y "
+                     "siguientes) + unificación Cobrado/Reembolsable. " + " | ".join(detalle))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_lote_super_reembolsable_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

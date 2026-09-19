@@ -1417,19 +1417,27 @@ def upload_file():
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
-            # Plataformas detectadas por keyword en descripción.
+            # Plataformas detectadas por keyword en descripción. "STP" se agregó
+            # tras confirmar con datos reales que es el riel de pago que usa este
+            # usuario para sus aportaciones a CETESDirecto ("SPEI ENVIADO STP").
             _PLAT_KW = [
                 ('GBM',   'GBM'),
                 ('INVEX', 'INVEX'),
                 ('CETES', 'CETESDIRECTO'),
                 ('CETES', 'NAFIN'),
+                ('CETES', 'STP'),
                 ('CRYPTO','BITSO'),
                 ('CRYPTO','COINBASE'),
                 ('FIBRA', 'FIBRA'),
             ]
             # Patrones que NUNCA son inversión aunque categoria='INVERSION':
             # son pagos/transferencias que contienen el nombre de la plataforma
-            # en la descripción pero no son depósitos reales.
+            # en la descripción pero no son depósitos reales. Solo se aplica
+            # cuando NO se detectó ninguna plataforma de inversión conocida --
+            # antes esto se revisaba primero y excluía a ciegas cualquier "SPEI
+            # ENVIADO" hacia GBM/CETESDirecto/STP (una aportación real, dinero
+            # saliendo de la cuenta para invertir) como si fuera un pago de
+            # TDC, aunque sí trajera una plataforma reconocida.
             _NOT_INVERSION = ('SPEI ENVIADO', 'PAGO TDC', 'PAGO TARJETA',
                                'PAGO CUENTA DE TERCERO', 'CARGO POR TRASPASO')
 
@@ -1442,23 +1450,33 @@ def upload_file():
             gbm_detected = False
             for row in inv_candidates:
                 desc_up = row['descripcion'].upper()
-                # Excluir transferencias/pagos que no son inversiones reales
-                if any(excl in desc_up for excl in _NOT_INVERSION):
+                plat = 'OTRO'
+                for p, kw in _PLAT_KW:
+                    if kw in desc_up:
+                        plat = p
+                        break
+                # Excluir transferencias/pagos que no son inversiones reales --
+                # solo si no se reconoció ninguna plataforma de inversión.
+                if plat == 'OTRO' and any(excl in desc_up for excl in _NOT_INVERSION):
                     db.execute("""
                         UPDATE est_movimientos
                         SET tipo='PAGO', categoria='PAGO_TDC', subcategoria='Pago TDC'
                         WHERE id=?
                     """, (row['id'],))
                     continue
-                plat = 'OTRO'
-                for p, kw in _PLAT_KW:
-                    if kw in desc_up:
-                        plat = p
-                        break
                 if plat == 'GBM':
                     gbm_detected = True
-                # Dirección: GASTO = dinero sale → APORTACION; INGRESO = dinero entra → RETIRO
-                direction = 'APORTACION' if row['tipo'] == 'GASTO' else 'RETIRO'
+                # Dirección por texto, no por tipo: el usuario confirmó que
+                # "DOMICILIACION"/"ENVIADO" es dinero saliendo de su cuenta
+                # para invertir (APORTACION) y "RECIBIDO" es dinero volviendo
+                # (RETIRO) -- tipo (INGRESO/GASTO) no es confiable aquí, puede
+                # venir mal por cómo el banco emisor reportó el movimiento.
+                if 'ENVIADO' in desc_up or 'DOMICILIACION' in desc_up:
+                    direction = 'APORTACION'
+                elif 'RECIBIDO' in desc_up:
+                    direction = 'RETIRO'
+                else:
+                    direction = 'APORTACION' if row['tipo'] == 'GASTO' else 'RETIRO'
                 db.execute("""
                     UPDATE est_movimientos
                     SET tipo='INVERSION', categoria=?, subcategoria=?

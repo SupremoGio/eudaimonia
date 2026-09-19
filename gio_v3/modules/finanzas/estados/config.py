@@ -374,7 +374,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "NOMINA":            ["Pago nominal", "Bono"],
     "OCIO":              ["Eventos y congresos", "Cine", "Salidas", "Videojuegos"],
     "OTROS":             [""],
-    "PRESTAMOS":         ["Prestado", "Cobrado"],
+    "PRESTAMOS":         ["Prestado"],
     "PROYECTOS":         ["Publicidad", "Hosting", "Software", "Reclutamiento"],
     "ROPA":              ["Ropa", "Calzado", "Ropa deportiva"],
     "SALSA":             ["Clases", "Congreso", "Social", "Taller", "App"],
