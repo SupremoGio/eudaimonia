@@ -411,9 +411,9 @@ def oikonomia_summary():
         flujo = db.execute("""
             SELECT
               SUM(CASE WHEN tipo='INGRESO'
-                        AND categoria NOT IN ('TRANSFERENCIA','PAGO_TDC','RETIRO','DEPOSITO','SPEI_RECIBIDO')
+                        AND categoria NOT IN ('TRANSFERENCIA','PAGO_TDC','RETIRO','DEPOSITO','SPEI_RECIBIDO','FINANZAS')
                        THEN monto ELSE 0 END) AS ingreso,
-              SUM(CASE WHEN tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO')
+              SUM(CASE WHEN tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO','FINANZAS')
                        THEN COALESCE(mi_parte, monto) ELSE 0 END) AS gasto
             FROM est_movimientos WHERE fecha >= ?""", (mes,)).fetchone()
         n_cuentas = db.execute(

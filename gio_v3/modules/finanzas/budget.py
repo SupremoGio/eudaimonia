@@ -436,7 +436,14 @@ def reclasificar(mov_id):
         if accion == 'ingreso':
             db.execute("UPDATE est_movimientos SET categoria=? WHERE id=?", (cat_new, mov_id))
         elif accion == 'excluir':
-            db.execute("UPDATE est_movimientos SET categoria='TRANSFERENCIA' WHERE id=?", (mov_id,))
+            # 'TRANSFERENCIA' era el marcador legacy -- se usa 'FINANZAS' /
+            # 'Transferencia' ahora, igual que la migración
+            # finanzas_legacy_bancario_a_finanzas_2026_09, para no volver a
+            # generar la categoria vieja que ya se quitó del dropdown.
+            db.execute(
+                "UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Transferencia' WHERE id=?",
+                (mov_id,),
+            )
         else:
             return jsonify({'error': 'accion inválida'}), 400
         db.commit()

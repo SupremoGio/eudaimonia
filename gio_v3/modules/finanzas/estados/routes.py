@@ -30,11 +30,21 @@ estados_bp = Blueprint(
 # también _INGRESO_EXCLUIR abajo) para que no infle Balance Neto ni Gastos
 # por categoría. Se agrega/quita a mano en "Categoría" al editar el
 # movimiento (el selector de Tipo del modal no expone Préstamo/Cobro).
-_PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO', 'PRESTAMOS')"
+#
+# 'FINANZAS' agregado 2026-09: DEPOSITO/FIDEICOMISO/SPEI_RECIBIDO/
+# SPEI_ENVIADO/TRANSFERENCIA/RETIRO/PAGO/PAGO_TDC se reclasificaron todos
+# a categoria=FINANZAS (finanzas_legacy_bancario_a_finanzas_2026_09). Esta
+# lista es una copia independiente de la de budget.py -- sin este cambio,
+# los movimientos que antes se excluían aquí por su nombre viejo se
+# hubieran empezado a contar de más en Reportes ("Total Gastado"/"Total
+# Ingreso" en /api/summary/stats) en cuanto cambiara su categoria, aunque
+# budget.py ya estuviera corregido. Bug real confirmado por el usuario.
+_PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO', 'PRESTAMOS', 'FINANZAS')"
 # Use mi_parte when set (shared expense), otherwise full monto
 _MONTO = "COALESCE(mi_parte, monto)"
 # INGRESO categories that are NOT real income (transfers, cash mobilization)
-_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO', 'APORTACION_RENTA', 'PRESTAMOS')
+_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO',
+                     'APORTACION_RENTA', 'PRESTAMOS', 'FINANZAS')
 _INGRESO_EXCLUIR_SQL = "categoria NOT IN ({})".format(
     ','.join(f"'{c}'" for c in _INGRESO_EXCLUIR)
 )
@@ -500,7 +510,7 @@ def by_naturaleza():
     if not _ok(): return _locked()
     bank = request.args.get('bank')
 
-    conds  = ["m.tipo='GASTO'", "m.categoria NOT IN ('PAGO_TDC','PAGO','PRESTAMOS')"]
+    conds  = ["m.tipo='GASTO'", "m.categoria NOT IN ('PAGO_TDC','PAGO','PRESTAMOS','FINANZAS')"]
     params = []
     months_cond, months_params = _months_condition(request.args)
     if months_cond:
@@ -1775,7 +1785,7 @@ _CONCEPTO_CASE = """
   END
 """
 
-_GASTO_FILTER = "tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO')"
+_GASTO_FILTER = "tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO','FINANZAS')"
 
 
 @estados_bp.route('/viajes/')
