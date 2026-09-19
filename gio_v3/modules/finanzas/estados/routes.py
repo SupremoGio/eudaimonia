@@ -132,13 +132,28 @@ def index():
 
 # ── Transactions ──────────────────────────────────────────────────────────────
 
+_RENTA_VARIANTES = ('Renta + deposito', 'Renta depto 807 + deposito')
+
+
 def _normalize_subcategoria(categoria: str, subcategoria: str) -> str:
     """EXPENSE es una categoria plana -- a petición explícita del usuario
     nunca lleva subcategoria ("va todo junto en uno solo"), sin importar
     qué venga en la request. Se aplica en cada punto de escritura
     (transacción manual, edición, reglas de keyword) para que no se pueda
-    volver a acumular basura ahí."""
-    return '' if categoria == 'EXPENSE' else subcategoria
+    volver a acumular basura ahí.
+
+    También unifica variantes de "Renta" bajo VIVIENDA: el script de
+    /admin/apply-migrations (modules/finanzas/routes.py) generó "Renta +
+    deposito" y "Renta depto 807 + deposito" para capturar que un pago
+    puntual incluía el depósito inicial -- pero eso ya vive en mi_parte
+    (6000 normal vs 7000 con depósito), no hace falta una subcategoria
+    aparte. El usuario pidió explícitamente unificarlo, igual que
+    Aportación renta/Renta del lado ingreso: "tambien renta depto 807"."""
+    if categoria == 'EXPENSE':
+        return ''
+    if categoria == 'VIVIENDA' and subcategoria in _RENTA_VARIANTES:
+        return 'Renta'
+    return subcategoria
 
 
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:

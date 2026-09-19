@@ -2877,6 +2877,39 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_renta_ingreso_unificada_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — variantes de VIVIENDA/Renta unificadas (a
+        #    petición explícita del usuario) ─────────────────────────────────
+        # El script /admin/apply-migrations (modules/finanzas/routes.py)
+        # generó "Renta + deposito" y "Renta depto 807 + deposito" para
+        # distinguir el pago mensual normal del pago de nov-2025 que
+        # incluía el depósito inicial -- pero esa distinción ya vive en
+        # mi_parte (6000 vs 7000), no hace falta una subcategoria aparte.
+        # El usuario pidió unificarlo: "tambien renta depto 807" (mismo
+        # pedido que Aportación renta/Renta del lado ingreso). Se
+        # reclasifican a subcategoria='Renta' sin tocar mi_parte.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_renta_depto807_unificada_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET subcategoria='Renta'
+                    WHERE categoria='VIVIENDA'
+                      AND subcategoria IN ('Renta + deposito', 'Renta depto 807 + deposito')
+                """)
+                n_renta_variantes = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_renta_depto807_unificada_2026_09",
+                     f"Unifica variantes de VIVIENDA/Renta ('Renta + deposito', 'Renta depto "
+                     f"807 + deposito') a subcategoria='Renta' -- la distinción del depósito "
+                     f"queda en mi_parte, no en la subcategoria. {n_renta_variantes} filas "
+                     f"reclasificadas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_renta_depto807_unificada_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

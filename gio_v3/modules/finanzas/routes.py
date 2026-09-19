@@ -319,15 +319,20 @@ def apply_migrations():
               AND UPPER(descripcion) LIKE '%TARJETA DE TERCEROS%'
               AND monto BETWEEN 11000 AND 14000
               AND CAST(substr(fecha,9,2) AS INTEGER) BETWEEN 1 AND 12
-              AND subcategoria NOT IN ('Renta depto 807 + deposito', 'Renta + deposito')
+              AND NOT (monto = 13000 AND substr(fecha,1,7) = '2025-11')
         """)
         log.append(f'Renta depto 807: {r.rowcount} pagos mensuales reclasificados (mi_parte=6000)')
 
-        # Nov-2025: depósito inicial — mi_parte = 7000
+        # Nov-2025: depósito inicial — mi_parte = 7000. El depósito se
+        # distingue por mi_parte (7000 vs 6000), no por su propia
+        # subcategoria -- "Renta + deposito"/"Renta depto 807 + deposito"
+        # eran variantes de lo mismo que el usuario pidió unificar
+        # ("tambien renta depto 807"), igual que Aportación renta/Renta
+        # del lado ingreso.
         r = db.execute("""
             UPDATE est_movimientos
             SET categoria='VIVIENDA',
-                subcategoria='Renta + deposito',
+                subcategoria='Renta',
                 tipo='GASTO',
                 mi_parte=7000.0
             WHERE banco='BBVA_DEB'
