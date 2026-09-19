@@ -156,6 +156,25 @@ def _normalize_subcategoria(categoria: str, subcategoria: str) -> str:
     return subcategoria
 
 
+def _corregir_fusion_gio(db) -> int:
+    """El usuario reportó DOS VECES que "...FUSION GIO" (SPEI enviado a
+    NU MEXICO para un congreso de salsa) seguía cayendo en APORTACION_
+    RENTA/VIVIENDA: "esto por que sigue ahí ya habiamos dicho que es
+    Salsa subcategoria congreso". Causa: una regla de keyword más amplia
+    (custom_kw en est_keywords, ej. algo con "NU MEXICO") tiene prioridad
+    sobre el keyword genérico "SALSA" de config.py (custom_kw se revisa
+    primero en get_categoria_subcategoria) y la intercepta antes de que
+    el texto "SALSA"/"FUSION GIO" pueda clasificarla bien. Se corrige por
+    texto directamente, después de aplicar cualquier regla de keyword,
+    para que ninguna la vuelva a pisar."""
+    cur = db.execute("""
+        UPDATE est_movimientos SET categoria='SALSA', subcategoria='Congreso'
+        WHERE UPPER(descripcion) LIKE '%FUSION GIO%'
+          AND (categoria != 'SALSA' OR subcategoria != 'Congreso')
+    """)
+    return cur.rowcount
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -915,6 +934,7 @@ def apply_all_keywords():
             UPDATE est_movimientos SET subcategoria='Aportación renta'
             WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
         """)
+        _corregir_fusion_gio(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -1343,6 +1363,7 @@ def upload_file():
                 UPDATE est_movimientos SET subcategoria='Aportación renta'
                 WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
             """)
+            _corregir_fusion_gio(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.

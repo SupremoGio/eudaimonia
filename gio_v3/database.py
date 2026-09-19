@@ -2941,6 +2941,65 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_zepelin_fast_food_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — FUSION GIO -> SALSA/Congreso (a petición
+        #    explícita del usuario, reportado DOS VECES) ───────────────────────
+        # "esto por que sigue ahí ya habiamos dicho que es Salsa
+        # subcategoria congreso" -- SPEI ENVIADO NU MEXICO ...FUSION GIO
+        # (un congreso de salsa) seguía cayendo en APORTACION_RENTA/
+        # VIVIENDA porque una regla de keyword más amplia (custom_kw en
+        # est_keywords, prioritaria sobre el keyword genérico "SALSA" de
+        # config.py) la interceptaba antes. Se corrige por texto
+        # directamente. La misma corrección corre hacia adelante después
+        # de aplicar reglas de keyword (ver _corregir_fusion_gio en
+        # estados/routes.py) para que ninguna regla la vuelva a pisar.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_fusion_gio_salsa_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='SALSA', subcategoria='Congreso'
+                    WHERE UPPER(descripcion) LIKE '%FUSION GIO%'
+                """)
+                n_fusion_gio = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_fusion_gio_salsa_2026_09",
+                     f"FUSION GIO (congreso de salsa) -> categoria=SALSA, "
+                     f"subcategoria='Congreso'. {n_fusion_gio} filas reclasificadas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_fusion_gio_salsa_2026_09 migration warning: {e}")
+
+        # ── ESTADOS DE CUENTA — MERPAGO PANADERIA -> CAFE/PAN/Pan (a
+        #    petición explícita del usuario) ─────────────────────────────────
+        # "esto mandalo a cafe y pan subcategoria pan" -- MERPAGO PANADERIA
+        # se quedó como ALIMENTACION (import de antes de que existiera el
+        # keyword "PANADERIA" -> CAFE/PAN/Pan en config.py, o de antes de
+        # la revivida de CAFE/PAN como categoria propia). Se reclasifica
+        # cualquier fila con "PANADERIA" en la descripción que no esté ya
+        # en CAFE/PAN.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_merpago_panaderia_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='CAFE/PAN', subcategoria='Pan'
+                    WHERE UPPER(descripcion) LIKE '%PANADERIA%' AND categoria != 'CAFE/PAN'
+                """)
+                n_panaderia = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_merpago_panaderia_2026_09",
+                     f"PANADERIA (ej. MERPAGO PANADERIA) -> categoria=CAFE/PAN, "
+                     f"subcategoria='Pan'. {n_panaderia} filas reclasificadas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_merpago_panaderia_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
