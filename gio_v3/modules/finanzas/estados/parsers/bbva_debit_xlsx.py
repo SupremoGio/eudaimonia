@@ -89,7 +89,7 @@ def _parse_df(raw: pd.DataFrame) -> list[dict]:
             continue
 
         desc_flat = re.sub(r"\s*/\s*", " ", desc_raw)
-        categoria = _categorize(desc_flat)
+        categoria, subcategoria = _categorize(desc_flat, es_gasto=(tipo == "GASTO"))
         desc = _clean(desc_flat)
 
         movimientos.append({
@@ -98,7 +98,7 @@ def _parse_df(raw: pd.DataFrame) -> list[dict]:
             "descripcion":  desc or "SIN DESCRIPCION",
             "monto":        monto,
             "categoria":    categoria,
-            "subcategoria": "",
+            "subcategoria": subcategoria,
             "tipo":         tipo,
             "periodo":      None,
         })

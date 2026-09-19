@@ -1005,13 +1005,26 @@ def loans():
 # recién insertadas (`new_ids`), sin importar qué parser las produjo —
 # nunca toca filas fuera de ese conjunto, para no reescribir clasificaciones
 # manuales ni las de sprints anteriores.
-_MOVIMIENTO_INTERNO_KW = ("PAGO TARJETA DE CREDITO", "PAGO INTERBANCARIO", "PAGOS INTERBANCARIOS")
+_MOVIMIENTO_INTERNO_KW = (
+    "PAGO TARJETA DE CREDITO", "PAGO INTERBANCARIO", "PAGOS INTERBANCARIOS",
+    "PAGO TDC", "PAGO GRACIAS", "PAGO POR SPEI",
+)
 
 
 def _es_movimiento_interno(desc_upper: str) -> bool:
+    """HSBC e INVEX en esta app son exclusivamente los bancos emisores de
+    tarjeta de crédito (ver BANK_META) -- un "SPEI ENVIADO" hacia
+    cualquiera de los dos SIEMPRE es un pago para abonar a esa TDC, nunca
+    un gasto real (la compra real ya se contó cuando se importó el cargo
+    en la TDC). Se agregó tras auditar filas históricas donde este patrón
+    (y "PAGO TDC"/"PAGO GRACIAS"/"PAGO POR SPEI", las distintas formas en
+    que BBVA/HSBC/INVEX describen el abono) seguía cayendo en
+    FINANZAS/Pago servicios en vez de MOVIMIENTO_INTERNO/PAGO_TDC."""
     if any(kw in desc_upper for kw in _MOVIMIENTO_INTERNO_KW):
         return True
-    return "SPEI" in desc_upper and "TDC" in desc_upper
+    if "SPEI" in desc_upper and "TDC" in desc_upper:
+        return True
+    return "SPEI ENVIADO" in desc_upper and ("HSBC" in desc_upper or "INVEX" in desc_upper)
 
 
 def _unify_movimiento_interno(db, ids: list) -> int:

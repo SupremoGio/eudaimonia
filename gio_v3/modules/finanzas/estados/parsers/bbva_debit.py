@@ -4,7 +4,7 @@ BBVA Débito — Estado de cuenta de cheques/débito.
 import re
 from pathlib import Path
 
-from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA
+from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA, get_categoria_subcategoria
 from ._base import extract_periodo, open_pdf
 
 DATE_LINE_RE = re.compile(
@@ -22,9 +22,19 @@ DATE_ONLY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# NOTA: estas son categorías-cajón para movimientos bancarios que
+# get_categoria_subcategoria() (config.py) no reconoce por texto de
+# comercio -- se remapean a la taxonomía unificada de FINANZAS en
+# _remap_legacy() de abajo, nunca se guardan literalmente en la DB.
+# "INVERSION" se quitó de aquí: como categoria de salida rompía el modelo
+# de inversiones (categoria debe ser la plataforma, ej. CETES/GBM, no la
+# palabra "INVERSION") -- ver auditoría finanzas_audit_duplicados_dic_2026_09.
+# "NOMINA" se angostó a solo "PAGO DE NOMINA": "FIBRA HOTELERA" solo
+# (sin ese prefijo) también hacía match con depósitos de reembolso de
+# EXPENSE del mismo empleador (ej. "FIBRA HOTELERA SC PAGO CUENTA DE
+# TERCERO BNET"), clasificándolos como nómina real por error.
 CATS_DEBIT = {
-    "NOMINA":           ["PAGO DE NOMINA", "NOMINA", "FIBRA HOTELERA"],
-    "INVERSION":        ["FONDO", "CETES", "GBM", "BITSO"],
+    "NOMINA":           ["PAGO DE NOMINA"],
     "PAGO_TDC":         ["PAGO TARJETA DE CREDITO", "PAGO TARJETA DE TERCEROS"],
     "SPEI_ENVIADO":     ["SPEI ENVIADO"],
     "SPEI_RECIBIDO":    ["SPEI RECIBIDO"],
@@ -32,6 +42,21 @@ CATS_DEBIT = {
     "DEPOSITO":         ["DEPOSITO EFECTIVO"],
     "FIDEICOMISO":      ["FIDEICOMISO", "SITH"],
     "TRANSFERENCIA":    ["PAGO CUENTA DE TERCERO", "BNET"],
+}
+
+# Remapea las categorías-cajón legacy de arriba a la taxonomía unificada
+# (ver finanzas_legacy_bancario_a_finanzas_2026_09): todas menos NOMINA y
+# PAGO_TDC pasan a categoria=FINANZAS con una subcategoria descriptiva, en
+# vez de guardar el nombre legacy directo en la DB.
+_LEGACY_REMAP = {
+    "NOMINA":        ("NOMINA", "Pago nominal"),
+    "PAGO_TDC":      ("PAGO_TDC", ""),
+    "SPEI_ENVIADO":  ("FINANZAS", "Transferencia enviada"),
+    "SPEI_RECIBIDO": ("FINANZAS", "Transferencia recibida"),
+    "RETIRO":        ("FINANZAS", "Retiro efectivo"),
+    "DEPOSITO":      ("FINANZAS", "Depósito"),
+    "FIDEICOMISO":   ("FINANZAS", "Fideicomiso"),
+    "TRANSFERENCIA": ("FINANZAS", "Transferencia"),
 }
 
 SKIP_KW = [
@@ -59,12 +84,23 @@ def _parse_monto(raw: str) -> float:
     return sign * float(f"{digits[:-2]}.{digits[-2:]}")
 
 
-def _categorize(desc: str) -> str:
+def _categorize(desc: str, es_gasto: bool) -> tuple[str, str]:
+    # get_categoria_subcategoria() (config.py) tiene todo el conocimiento
+    # acumulado de comercios/keywords específicos (CRISTAL VILLAHERMOSA,
+    # ZEPELIN, SALSA, etc.) -- se prueba primero, solo para GASTO (igual
+    # que parsers/_base.py::parse_text_statement, config.py está pensado
+    # para texto de comercio, no de movimientos de ingreso). Solo se cae
+    # al cajón legacy de este archivo (movimientos bancarios genéricos que
+    # config.py no puede reconocer por texto de comercio) si no hubo match.
+    if es_gasto:
+        cat, subcat = get_categoria_subcategoria(desc)
+        if cat != "OTROS":
+            return cat, subcat
     du = desc.upper()
-    for cat, kws in CATS_DEBIT.items():
+    for legacy_cat, kws in CATS_DEBIT.items():
         if any(k in du for k in kws):
-            return cat
-    return "OTROS"
+            return _LEGACY_REMAP[legacy_cat]
+    return "OTROS", ""
 
 
 def _clean(desc: str) -> str:
@@ -203,9 +239,9 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
                     desc_parts.append(bline)
 
         desc_raw = " ".join(p for p in desc_parts if p)
-        categoria = _categorize(desc_raw)
-        desc = _clean(desc_raw)
         tipo = "INGRESO" if monto >= 0 else "GASTO"
+        categoria, subcategoria = _categorize(desc_raw, es_gasto=(tipo == "GASTO"))
+        desc = _clean(desc_raw)
 
         movimientos.append({
             "fecha":        fecha,
@@ -213,7 +249,7 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
             "descripcion":  desc or "SIN DESCRIPCION",
             "monto":        abs(monto),
             "categoria":    categoria,
-            "subcategoria": "",
+            "subcategoria": subcategoria,
             "tipo":         tipo,
             "periodo":      periodo,
         })

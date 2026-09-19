@@ -3185,6 +3185,270 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_ejecuta_esto_batch_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — auditoría a detalle de duplicados DEB/TDC +
+        #    lote de reclasificaciones (mensaje "AUDITA PORQUE HAY MONTOS Y
+        #    DIAS REPETIDOS..." con ~18 sub-auditorías y datos reales
+        #    fila por fila) ───────────────────────────────────────────────────
+        # Root cause de los duplicados DEB/TDC: bbva_debit.py y
+        # bbva_libreton.py (parsers/) tienen su propio diccionario de
+        # categorización (CATS_DEBIT/CATS_LIBRETON) que nunca pasaba por
+        # get_categoria_subcategoria() de config.py -- así que un mismo
+        # movimiento real, importado una vez desde un PDF/CSV con
+        # descripción ligeramente distinta (ej. con/sin número de
+        # referencia), podía colarse dos veces bajo dos bancos distintos.
+        # El fix de código (más abajo, ver parsers/bbva_debit.py y
+        # bbva_libreton.py) corrige la causa hacia adelante; esta migración
+        # limpia el histórico ya importado.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_audit_duplicados_dic_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+
+                # 1) Marcar como "posible duplicado" cualquier fila
+                #    BBVA_TDC de SPEI RECIBIDO que tenga una fila gemela en
+                #    BBVA_DEB con la misma fecha y el mismo monto exacto --
+                #    el usuario confirmó que este tipo de ingreso nunca
+                #    llega por TDC, siempre es débito. No se borra (regla
+                #    del usuario: nunca borrar automático): se marca fuera
+                #    de FINANZAS (ya excluido de Total Ingreso/Gasto) para
+                #    que deje de inflar los totales, visible para revisión
+                #    manual.
+                cur = db.execute("""
+                    UPDATE est_movimientos AS t
+                    SET categoria='FINANZAS', subcategoria='Posible duplicado (mismo día/monto en BBVA_DEB)'
+                    WHERE t.banco='BBVA_TDC'
+                      AND UPPER(t.descripcion) LIKE '%SPEI RECIBIDO%'
+                      AND t.subcategoria != 'Posible duplicado (mismo día/monto en BBVA_DEB)'
+                      AND EXISTS (
+                          SELECT 1 FROM est_movimientos d
+                          WHERE d.banco='BBVA_DEB'
+                            AND d.fecha=t.fecha
+                            AND ROUND(d.monto,2)=ROUND(t.monto,2)
+                            AND UPPER(d.descripcion) LIKE '%SPEI RECIBIDO%'
+                      )
+                """)
+                detalle.append(f"Posibles duplicados BBVA_TDC de SPEI RECIBIDO marcados: {cur.rowcount}")
+
+                # 1b) Mismo patrón pero confirmado puntualmente por el
+                #     usuario en un caso que no dice "SPEI RECIBIDO": id
+                #     2238 es la misma REFBNTC00305286/PREPAGO GDLAC BMRCASH
+                #     que el id 2121 (BBVA_DEB), solo que importada también
+                #     como BBVA_TDC.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='FINANZAS', subcategoria='Posible duplicado (ver id 2121)'
+                    WHERE id=2238
+                """)
+                detalle.append(f"id 2238 (duplicado de 2121) marcado: {cur.rowcount}")
+
+                # 2) Unificar todo lo que sigue en categoria=APORTACION_RENTA
+                #    (legacy) a VIVIENDA/Aportación renta -- lo mismo que se
+                #    unificó antes para otras filas de renta ("ESTO MANDALO
+                #    TAMBIEN A APORTE RENTA A LA CLASIFICACION QUE
+                #    UNIFICAMOS"). Solo toca lo que sobrevivió al paso 1
+                #    (los duplicados ya salieron de esta categoria).
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='VIVIENDA', subcategoria='Aportación renta', tipo='INGRESO', monto=ABS(monto)
+                    WHERE categoria='APORTACION_RENTA'
+                """)
+                detalle.append(f"APORTACION_RENTA (legacy, sobrevivientes)->VIVIENDA/Aportación renta: {cur.rowcount}")
+
+                # 3) Mojibake en subcategoria de una fila ya migrada
+                #    (id 2541): "AportaciÃ³n renta" -> "Aportación renta".
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET subcategoria='Aportación renta'
+                    WHERE categoria='VIVIENDA' AND subcategoria='AportaciÃ³n renta'
+                """)
+                detalle.append(f"Mojibake 'AportaciÃ³n renta' corregido: {cur.rowcount}")
+
+                # 4) Filas de renta (depto 807 / "PAGO TARJETA DE TERCEROS
+                #    ... MBAN" / "DEPTO 807") que la migración anterior
+                #    (finanzas_ejecuta_esto_batch_2026_09, con su filtro
+                #    demasiado estrecho de monto=12000 exacto) dejó
+                #    incorrectamente en VIVIENDA/Artículos del hogar, o que
+                #    seguían en CASA/HOGAR sin migrar -- se re-barren con un
+                #    patrón de texto más amplio a VIVIENDA/Renta.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='VIVIENDA', subcategoria='Renta'
+                    WHERE (categoria='CASA/HOGAR' OR (categoria='VIVIENDA' AND subcategoria='Artículos del hogar'))
+                      AND (
+                          UPPER(descripcion) LIKE '%TERCEROS%MBAN%'
+                          OR UPPER(descripcion) LIKE '%DEPTO 807%'
+                          OR UPPER(descripcion) LIKE '%RENTA%'
+                      )
+                """)
+                detalle.append(f"Filas de renta re-barridas a VIVIENDA/Renta: {cur.rowcount}")
+
+                # 5) id 2312: "DEPOSITO EFECTIVO ... RENTA A178 FOLIO" --
+                #    depósito de renta que el usuario señaló como GASTO,
+                #    no INGRESO (misma terminal/patrón que otras filas de
+                #    renta que él paga). Se voltea signo y clasificación.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='VIVIENDA', subcategoria='Renta', tipo='GASTO', monto=-ABS(monto)
+                    WHERE categoria='FINANZAS' AND tipo='INGRESO'
+                      AND UPPER(descripcion) LIKE '%DEPOSITO EFECTIVO%RENTA%'
+                """)
+                detalle.append(f"Depósitos de renta mal marcados INGRESO->GASTO/VIVIENDA/Renta: {cur.rowcount}")
+
+                # 6) Reembolsos de EXPENSE que llegaron mal etiquetados
+                #    (FINANZAS/Transferencia, o categoria=NOMINA por el
+                #    keyword "FIBRA HOTELERA" de bbva_debit.py/CATS_DEBIT
+                #    que también hacía match con estos depósitos de
+                #    reembolso del mismo empleador) -- se unifican al mismo
+                #    destino que usa _corregir_expense_en_ingreso().
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='FINANZAS', subcategoria='Reembolsable'
+                    WHERE id IN (1810,1975,1909,1955,1831,2123,2023,2390,1852,1976,1905,2124,1921)
+                """)
+                detalle.append(f"Reembolsos de EXPENSE mal etiquetados->FINANZAS/Reembolsable: {cur.rowcount}")
+
+                # 7) FIDEICOMISO F 1596 -- ingresos recurrentes de un
+                #    fideicomiso, con subcategoria inconsistente
+                #    (Reembolsable/Transferencia mezclados). Se unifica a
+                #    su propia subcategoria clara.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='FINANZAS', subcategoria='Fideicomiso'
+                    WHERE id IN (2580,2529,2494,2371,2247,2057,2006,1625,2104,1726)
+                """)
+                detalle.append(f"FIDEICOMISO F 1596 unificado a FINANZAS/Fideicomiso: {cur.rowcount}")
+
+                # 8) Depósitos de retiro de CETES (SPEI RECIBIDONAFIN) que
+                #    llegaron como FINANZAS/Transferencia -- el usuario
+                #    confirmó que son dinero saliendo de su inversión en
+                #    CETES, no un ingreso regular. Se alinean al modelo de
+                #    INVERSION (categoria=plataforma, subcategoria=
+                #    dirección) igual que la fila 3220, que ya estaba bien.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='INVERSION', categoria='CETES', subcategoria='RETIRO', monto=ABS(monto)
+                    WHERE id IN (1842,1961,2573,2572,2576,2575,2139,2143,2076,2236,2235)
+                """)
+                detalle.append(f"Retiros de CETES (NAFIN) alineados al modelo INVERSION: {cur.rowcount}")
+
+                # 9) Filas ya tipo=INVERSION pero con categoria='INVERSION'
+                #    literal (formato inválido del modelo -- categoria debe
+                #    ser la plataforma, ej. CETES/GBM, no la palabra
+                #    "INVERSION") -- se corrige a CETES/RETIRO.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='CETES', subcategoria='RETIRO'
+                    WHERE tipo='INVERSION' AND categoria='INVERSION'
+                """)
+                detalle.append(f"categoria='INVERSION' literal corregida a CETES/RETIRO: {cur.rowcount}")
+
+                # 10) id 2121: mal quedó como INVERSION -- el usuario
+                #     confirmó que es un ingreso de expense, no inversión.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='INGRESO', categoria='FINANZAS', subcategoria='Reembolsable', monto=ABS(monto)
+                    WHERE id=2121
+                """)
+                detalle.append(f"id 2121 (INVERSION mal etiquetada)->INGRESO/FINANZAS/Reembolsable: {cur.rowcount}")
+
+                # 11) id 1886: "SPEI ENVIADO INVEX" -- confirmado como pago
+                #     de TDC Invex, no inversión.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='MOVIMIENTO_INTERNO', categoria='PAGO_TDC', subcategoria=''
+                    WHERE id=1886
+                """)
+                detalle.append(f"id 1886 (INVERSION mal etiquetada)->MOVIMIENTO_INTERNO/PAGO_TDC: {cur.rowcount}")
+
+                # 12) NOMINA nunca debe ir a BBVA_TDC -- el usuario confirmó
+                #     que la nómina siempre cae en débito.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET banco='BBVA_DEB'
+                    WHERE categoria='NOMINA' AND banco='BBVA_TDC'
+                """)
+                detalle.append(f"NOMINA con banco=BBVA_TDC corregido a BBVA_DEB: {cur.rowcount}")
+
+                # 13) id 3228: transferencia a Giovany -- confirmado como
+                #     pago de préstamo recibido.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='PRESTAMOS', subcategoria=''
+                    WHERE id=3228
+                """)
+                detalle.append(f"id 3228 (TRANSFERENCIA legacy)->PRESTAMOS: {cur.rowcount}")
+
+                # 14) Unificar todas las filas ya tipo=MOVIMIENTO_INTERNO a
+                #     categoria=PAGO_TDC sin subcategoria ("AQUÍ SI TODOS
+                #     SON PAGOS A TDC PERO TUS CATEGORIAS SON CONFUSAS
+                #     DEJALOS TODOS EN PAGO_TDC").
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET categoria='PAGO_TDC', subcategoria=''
+                    WHERE tipo='MOVIMIENTO_INTERNO'
+                      AND (categoria != 'PAGO_TDC' OR subcategoria != '')
+                """)
+                detalle.append(f"MOVIMIENTO_INTERNO unificado a PAGO_TDC: {cur.rowcount}")
+
+                # 15) Pagos/abonos de TDC identificables por patrón de texto
+                #     (BMOVIL.PAGO TDC, PAGO TARJETA DE CREDITO, SU/SUPAGO
+                #     GRACIAS SPEI, SU PAGO POR SPEI_T, SPEI ENVIADO
+                #     HSBC/INVEX, INTERN.PAGO TDC) -- se pasan a
+                #     MOVIMIENTO_INTERNO/PAGO_TDC. Al no ser ni GASTO ni
+                #     INGRESO, tipo=MOVIMIENTO_INTERNO queda automáticamente
+                #     fuera de toda suma de Total Gastado/Total Ingreso
+                #     (esas solo suman tipo='GASTO'/'INGRESO'), sin importar
+                #     el signo con que haya quedado guardado el monto --
+                #     así se resuelve "no estes corrompiendo o sumando los
+                #     negativos" sin necesidad de casar manualmente cada par
+                #     positivo/negativo. Se excluyen explícitamente los
+                #     ajustes de tipo de cambio (no son pagos de TDC) y los
+                #     casos ya tratados aparte (aportación de renta del
+                #     roomie, retiro de efectivo, restaurante).
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='MOVIMIENTO_INTERNO', categoria='PAGO_TDC', subcategoria=''
+                    WHERE tipo='PAGO'
+                      AND id NOT IN (2445, 2440, 1812, 2077)
+                      AND UPPER(descripcion) NOT LIKE '%AJUSTE TIPO CAMBIO%'
+                      AND (
+                          UPPER(descripcion) LIKE '%PAGO TDC%'
+                          OR UPPER(descripcion) LIKE '%PAGO TARJETA DE CREDITO%'
+                          OR UPPER(descripcion) LIKE '%PAGO GRACIAS%'
+                          OR UPPER(descripcion) LIKE '%PAGO POR SPEI%'
+                          OR UPPER(descripcion) LIKE '%SPEI ENVIADO HSBC%'
+                          OR UPPER(descripcion) LIKE '%SPEI ENVIADO INVEX%'
+                          OR (banco='MANUAL' AND UPPER(descripcion)='TDC')
+                          OR (UPPER(descripcion) LIKE '%TARJETA DE CREDITO%' AND UPPER(descripcion) LIKE '%PAGO CUENTA DE TERCERO%')
+                          OR (UPPER(descripcion) LIKE '%GIOVANY%' AND UPPER(descripcion) LIKE '%SPEI ENVIADO%'
+                              AND (UPPER(descripcion) LIKE '%HSBC%' OR UPPER(descripcion) LIKE '%INVEX%'))
+                      )
+                """)
+                detalle.append(f"Pagos de TDC (PAGO, texto reconocido)->MOVIMIENTO_INTERNO/PAGO_TDC: {cur.rowcount}")
+
+                # 16) ids 2445/2440: NO son pago de TDC -- son la
+                #     aportación de renta del roomie, mal clasificada
+                #     porque coincidía con un patrón de SPEI recibido en
+                #     TDC (ver punto 1, pero estas dos SÍ son reales, sin
+                #     fila gemela en BBVA_DEB).
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='INGRESO', categoria='VIVIENDA', subcategoria='Aportación renta', monto=ABS(monto)
+                    WHERE id IN (2445, 2440)
+                """)
+                detalle.append(f"ids 2445/2440 (aportación renta roomie, no PAGO)->VIVIENDA/Aportación renta: {cur.rowcount}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_audit_duplicados_dic_2026_09",
+                     "Auditoría a detalle de duplicados BBVA_DEB/BBVA_TDC (mismo día/monto) "
+                     "y lote de ~16 reclasificaciones puntuales pedidas por el usuario, con "
+                     "datos reales fila por fila. " + " | ".join(detalle))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_audit_duplicados_dic_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (

@@ -156,6 +156,43 @@ def test_es_movimiento_interno_does_not_match_regular_gasto():
     assert not _es_movimiento_interno("WALMART VENTA EN LINEA")
 
 
+# Ampliado tras auditar "AQUÍ SI TODOS SON PAGOS A TDC PERO TUS CATEGORIAS
+# SON CONFUSAS DEJALOS TODOS EN PAGO_TDC": HSBC e INVEX en esta app son
+# exclusivamente bancos emisores de TDC (ver BANK_META), así que un "SPEI
+# ENVIADO" hacia cualquiera de los dos siempre es un abono a esa tarjeta,
+# nunca un gasto real -- y BBVA/HSBC/INVEX describen ese mismo abono con
+# varias frases distintas (BMOVIL.PAGO TDC, [SU PAGO GRACIAS SPEI, SU PAGO
+# POR SPEI_T) que antes caían en FINANZAS/Pago servicios en vez de
+# MOVIMIENTO_INTERNO/PAGO_TDC.
+
+def test_es_movimiento_interno_matches_spei_enviado_hsbc():
+    assert _es_movimiento_interno("SPEI ENVIADO HSBC")
+
+
+def test_es_movimiento_interno_matches_spei_enviado_invex():
+    assert _es_movimiento_interno("A GIOVANY A SPEI ENVIADO INVEX")
+
+
+def test_es_movimiento_interno_matches_bmovil_pago_tdc():
+    assert _es_movimiento_interno("BMOVIL.PAGO TDC")
+
+
+def test_es_movimiento_interno_matches_pago_gracias_variantes():
+    assert _es_movimiento_interno("[SU PAGO GRACIAS SPEI")
+    assert _es_movimiento_interno("SUPAGO GRACIAS SPEI")
+    assert _es_movimiento_interno("SU PAGO GRACIAS SPEL")  # typo real del banco
+
+
+def test_es_movimiento_interno_matches_pago_por_spei():
+    assert _es_movimiento_interno("SU PAGO POR SPEI_T 8045")
+
+
+def test_es_movimiento_interno_does_not_match_spei_enviado_a_persona():
+    # SPEI enviado a otro banco/persona que no sea HSBC/INVEX no debe
+    # marcarse como pago interno de TDC.
+    assert not _es_movimiento_interno("SPEI ENVIADO NU MEXICO 638 REGALO PARA ANA")
+
+
 def test_unify_reclassifies_only_the_given_ids(test_db):
     import database
     with database.get_db() as db:

@@ -5,7 +5,7 @@ import re
 from itertools import combinations
 from pathlib import Path
 
-from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA
+from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA, get_categoria_subcategoria
 from ._base import open_pdf
 
 ABONO_KW = [
@@ -25,9 +25,18 @@ ABONO_KW = [
 # en vez de adivinar.
 AMBIGUOUS_KW = ["PAGO CUENTA DE TERCERO", "CORRECCION"]
 
+# NOTA: igual que en bbva_debit.py::CATS_DEBIT (mismo bug, mismo fix) --
+# estas son categorías-cajón para movimientos bancarios que
+# get_categoria_subcategoria() (config.py) no reconoce por texto de
+# comercio, remapeadas en _remap_legacy() de abajo, nunca guardadas
+# literalmente. "INVERSION" se quitó (rompía el modelo de inversiones:
+# categoria debe ser la plataforma, ej. CETES/GBM -- "NAFIN" en esta lista
+# hacía que retiros de CETES vía Nacional Financiera quedaran con
+# categoria='INVERSION' literal). "NOMINA" se angostó a solo "PAGO DE
+# NOMINA" por la misma razón que en bbva_debit.py (ver
+# finanzas_audit_duplicados_dic_2026_09).
 CATS_LIBRETON = {
-    "NOMINA":        ["PAGO DE NOMINA", "NOMINA", "FIBRA HOTELERA"],
-    "INVERSION":     ["CETES", "GBM", "BITSO", "NAFIN", "FONDO"],
+    "NOMINA":        ["PAGO DE NOMINA"],
     "PAGO_TDC":      ["PAGO TARJETA DE CREDITO", "PAGO TARJETA DE TERCEROS",
                       "PAGO INTERBANCARIO"],
     "SPEI_ENVIADO":  ["SPEI ENVIADO"],
@@ -36,6 +45,17 @@ CATS_LIBRETON = {
     "DEPOSITO":      ["DEPOSITO EFECTIVO"],
     "FIDEICOMISO":   ["FIDEICOMISO", "SITH"],
     "TRANSFERENCIA": ["PAGO CUENTA DE TERCERO", "BNET"],
+}
+
+_LEGACY_REMAP = {
+    "NOMINA":        ("NOMINA", "Pago nominal"),
+    "PAGO_TDC":      ("PAGO_TDC", ""),
+    "SPEI_ENVIADO":  ("FINANZAS", "Transferencia enviada"),
+    "SPEI_RECIBIDO": ("FINANZAS", "Transferencia recibida"),
+    "RETIRO":        ("FINANZAS", "Retiro efectivo"),
+    "DEPOSITO":      ("FINANZAS", "Depósito"),
+    "FIDEICOMISO":   ("FINANZAS", "Fideicomiso"),
+    "TRANSFERENCIA": ("FINANZAS", "Transferencia"),
 }
 
 SKIP_KW = [
@@ -128,12 +148,18 @@ def _parse_date(s: str, bounds: tuple[int, int, int, int]) -> str:
     return f"{year}-{mm}-{day.zfill(2)}"
 
 
-def _categorize(desc: str) -> str:
+def _categorize(desc: str, es_gasto: bool) -> tuple[str, str]:
+    # Ver bbva_debit.py::_categorize -- mismo orden (config.py primero,
+    # solo para GASTO, luego el cajón legacy de este archivo).
+    if es_gasto:
+        cat, subcat = get_categoria_subcategoria(desc)
+        if cat != "OTROS":
+            return cat, subcat
     du = desc.upper()
-    for cat, kws in CATS_LIBRETON.items():
+    for legacy_cat, kws in CATS_LIBRETON.items():
         if any(k in du for k in kws):
-            return cat
-    return "OTROS"
+            return _LEGACY_REMAP[legacy_cat]
+    return "OTROS", ""
 
 
 def _clean(desc: str) -> str:
@@ -256,7 +282,7 @@ def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str 
         du = full_desc.upper()
         tipo = "INGRESO" if any(k in du for k in ABONO_KW) else "GASTO"
         es_ambiguo = any(k in du for k in AMBIGUOUS_KW) and not any(k in du for k in ABONO_KW)
-        categoria = _categorize(full_desc)
+        categoria, subcategoria = _categorize(full_desc, es_gasto=(tipo == "GASTO"))
         desc = _clean(full_desc)
 
         movimientos.append({
@@ -265,7 +291,7 @@ def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str 
             "descripcion":  desc or "SIN DESCRIPCION",
             "monto":        monto,
             "categoria":    categoria,
-            "subcategoria": "",
+            "subcategoria": subcategoria,
             "tipo":         tipo,
             "periodo":      periodo,
         })
