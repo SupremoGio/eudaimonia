@@ -2643,6 +2643,42 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_nomina_pago_nominal_v3_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — EXPENSE mal usado en ingresos (a petición
+        #    explícita del usuario) ──────────────────────────────────────────
+        # EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
+        # te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos).
+        # El usuario confirmó que por costumbre le pone EXPENSE también al
+        # depósito que le regresan; como EXPENSE nunca lleva subcategoria
+        # (_normalize_subcategoria en estados/routes.py), ese ingreso le
+        # quedaba "sin categoría". Se reclasifica cualquier movimiento
+        # tipo=INGRESO con categoria=EXPENSE existente a FINANZAS/
+        # Reembolsable -- la categoría real pensada para un reembolso
+        # recibido. La misma corrección corre también hacia adelante en
+        # create_transaction, update_transaction, apply_all_keywords y el
+        # import (ver _corregir_expense_en_ingreso en estados/routes.py).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_ingreso_reembolsable_2026_09'"
+        ).fetchone():
+            try:
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
+                    WHERE tipo='INGRESO' AND categoria='EXPENSE'
+                """)
+                n_expense_ingreso = cur.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_ingreso_reembolsable_2026_09",
+                     f"Reclasificación de EXPENSE mal usado en ingresos: EXPENSE es solo "
+                     f"para el gasto original que se va a reembolsar, no para el depósito "
+                     f"que regresa. Movimientos tipo=INGRESO con categoria=EXPENSE -> "
+                     f"categoria=FINANZAS, subcategoria='Reembolsable'. "
+                     f"{n_expense_ingreso} filas reclasificadas.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_expense_ingreso_reembolsable_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
