@@ -40,8 +40,26 @@ estados_bp = Blueprint(
 # Ingreso" en /api/summary/stats) en cuanto cambiara su categoria, aunque
 # budget.py ya estuviera corregido. Bug real confirmado por el usuario.
 _PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO', 'PRESTAMOS', 'FINANZAS')"
-# Use mi_parte when set (shared expense), otherwise full monto
-_MONTO = "COALESCE(mi_parte, monto)"
+# Use mi_parte when set (shared expense), otherwise full monto. mi_parte se
+# captura y guarda como magnitud positiva ("pon aquí solo lo que te
+# corresponde a ti", ver update_transaction) sin importar el signo de monto
+# (negativo en GASTO, positivo en INGRESO) -- un COALESCE(mi_parte, monto)
+# ingenuo sustituye un monto negativo por un mi_parte positivo, invirtiendo
+# el signo de esa fila dentro de un SUM() y cancelando gasto real contra el
+# resto (usuario lo confirmó en vivo: un solo gasto de $4,048 con mi_parte
+# $1,349.33 hizo que "Total gastado" de 3 movimientos cayera a $149.33 en
+# vez de ~$2,549). Se normaliza el signo de mi_parte al de monto antes de
+# usarlo, para cualquier SUM que combine filas con y sin mi_parte.
+_MONTO = "CASE WHEN mi_parte IS NOT NULL THEN (CASE WHEN monto < 0 THEN -ABS(mi_parte) ELSE ABS(mi_parte) END) ELSE monto END"
+
+
+def _monto_expr(prefix: str = '') -> str:
+    """Igual que _MONTO pero con un prefijo de tabla (ej. 'm.' en un JOIN)."""
+    return (f"CASE WHEN {prefix}mi_parte IS NOT NULL THEN "
+            f"(CASE WHEN {prefix}monto < 0 THEN -ABS({prefix}mi_parte) ELSE ABS({prefix}mi_parte) END) "
+            f"ELSE {prefix}monto END")
+
+
 # INGRESO categories that are NOT real income (transfers, cash mobilization)
 _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO',
                      'APORTACION_RENTA', 'PRESTAMOS', 'FINANZAS')
@@ -698,7 +716,7 @@ def by_naturaleza():
     with get_db() as db:
         rows = db.execute(f"""
             SELECT COALESCE(n.naturaleza, 'SIN_CLASIFICAR') AS naturaleza,
-                   SUM(COALESCE(m.mi_parte, m.monto)) AS total
+                   SUM({_monto_expr('m.')}) AS total
             FROM est_movimientos m
             LEFT JOIN est_categoria_naturaleza n
               ON n.categoria = m.categoria AND n.subcategoria = m.subcategoria
@@ -2194,7 +2212,7 @@ def list_trips():
                    COUNT(m.id) AS tx_count,
                    COALESCE(SUM(
                        CASE WHEN {_GASTO_FILTER}
-                            THEN COALESCE(m.mi_parte, m.monto) ELSE 0 END
+                            THEN {_monto_expr('m.')} ELSE 0 END
                    ), 0) AS total_gastado
             FROM viajes v
             LEFT JOIN est_movimientos m ON m.viaje_id = v.id
@@ -2280,7 +2298,7 @@ def trip_summary(trip_id):
             return jsonify({'error': 'not found'}), 404
         breakdown = db.execute(f"""
             SELECT {_CONCEPTO_CASE} AS concepto,
-                   SUM(COALESCE(mi_parte, monto)) AS total,
+                   SUM({_MONTO}) AS total,
                    COUNT(*) AS n
             FROM est_movimientos
             WHERE viaje_id=? AND {_GASTO_FILTER}
