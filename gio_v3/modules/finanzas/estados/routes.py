@@ -399,10 +399,18 @@ def export_csv():
         writer.writeheader()
         writer.writerows([dict(r) for r in rows])
 
+    # BOM UTF-8 al inicio: el usuario reportó acentos rotos ("ArtÃ¬culos
+    # del hogar" en vez de "Artículos del hogar") al abrir el CSV en
+    # Excel -- sin BOM, Excel asume ANSI/Windows-1252 en vez de UTF-8 y
+    # descompone cada carácter acentuado en dos. El BOM le indica a Excel
+    # explícitamente que el archivo es UTF-8.
     return Response(
-        output.getvalue(),
+        '﻿' + output.getvalue(),
         mimetype='text/csv',
-        headers={'Content-Disposition': 'attachment; filename=transacciones.csv'},
+        headers={
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': 'attachment; filename=transacciones.csv',
+        },
     )
 
 

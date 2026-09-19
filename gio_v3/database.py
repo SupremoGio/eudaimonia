@@ -3045,6 +3045,146 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_msi_group_id_prefijo_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — lote "EJECUTA ESTO" (batch de 12 correcciones
+        #    puntuales pedidas explícitamente por el usuario con datos reales
+        #    fila por fila) ────────────────────────────────────────────────────
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_ejecuta_esto_batch_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+
+                # 1) AMAZON MEXICO marcado como EXPENSE reembolsable, pero es
+                #    gasto normal de casa -> VIVIENDA/Artículos del hogar.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Artículos del hogar'
+                    WHERE categoria='EXPENSE' AND UPPER(descripcion) LIKE '%AMAZON MEXICO%'
+                """)
+                detalle.append(f"AMAZON MEXICO EXPENSE->VIVIENDA/Artículos del hogar: {cur.rowcount}")
+
+                # 2) CRISTAL VILLAHERMOSA -> FAMILIA_REGALOS/Regalos, sin
+                #    importar la categoria actual.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='FAMILIA_REGALOS', subcategoria='Regalos'
+                    WHERE UPPER(descripcion) LIKE '%CRISTAL VILLAHERMOSA%'
+                """)
+                detalle.append(f"CRISTAL VILLAHERMOSA->FAMILIA_REGALOS/Regalos: {cur.rowcount}")
+
+                # 3) Unificación general: categoria=REGALO ya no debe existir,
+                #    todo lo que quedó ahí también va a FAMILIA_REGALOS/Regalos.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='FAMILIA_REGALOS', subcategoria='Regalos'
+                    WHERE categoria='REGALO'
+                """)
+                detalle.append(f"REGALO (legacy)->FAMILIA_REGALOS/Regalos: {cur.rowcount}")
+
+                # 4) PRESTAMOS puntuales -> se quedan como PRESTAMOS, sin
+                #    subcategoria ("no pongas subcategoria").
+                cur = db.execute("""
+                    UPDATE est_movimientos SET subcategoria=''
+                    WHERE id IN (2571, 2306, 2130)
+                """)
+                detalle.append(f"PRESTAMOS (ids 2571,2306,2130) subcategoria limpiada: {cur.rowcount}")
+
+                # 5) RAILWAY -> PROYECTOS/Hosting (no existe categoria
+                #    "SUSCRIPCIONES" en la taxonomía; se mantiene PROYECTOS,
+                #    que ya es la categoria correcta, y se agrega la
+                #    subcategoria pedida).
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='PROYECTOS', subcategoria='Hosting'
+                    WHERE UPPER(descripcion) LIKE '%RAILWAY%'
+                """)
+                detalle.append(f"RAILWAY->PROYECTOS/Hosting: {cur.rowcount}")
+
+                # 6) ZTL ZAIRAAXZAYMENDOZAM puntuales -> ALIMENTACION
+                #    ("mandala a comida").
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='ALIMENTACION', subcategoria=''
+                    WHERE id IN (1988, 1612)
+                """)
+                detalle.append(f"ZTL ZAIRAAXZAYMENDOZAM (ids 1988,1612)->ALIMENTACION: {cur.rowcount}")
+
+                # 7) SPEI ENVIADO STP puntual -> INVERSION/GBM/APORTACION.
+                #    Modelo de inversiones guarda monto siempre positivo
+                #    (ver inversiones.py), el signo lo da la dirección.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='INVERSION', categoria='GBM', subcategoria='APORTACION', monto=ABS(monto)
+                    WHERE id=3239
+                """)
+                detalle.append(f"SPEI ENVIADO STP (id 3239)->INVERSION/GBM/APORTACION: {cur.rowcount}")
+
+                # 8) SPEI ENVIADO INVEX puntual -> PAGO/PAGO_TDC/Invex TDC.
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='PAGO', categoria='PAGO_TDC', subcategoria='Invex TDC'
+                    WHERE id=3224
+                """)
+                detalle.append(f"SPEI ENVIADO INVEX (id 3224)->PAGO/PAGO_TDC/Invex TDC: {cur.rowcount}")
+
+                # 9) RECARGAS Y PAQUETES BMOV puntuales -> DIGITAL/Saldo
+                #    telefono (no existe categoria "SERVICIO" en la
+                #    taxonomía; DIGITAL es el equivalente más cercano ya
+                #    existente).
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='DIGITAL', subcategoria='Saldo telefono'
+                    WHERE id IN (1983, 1751, 1663)
+                """)
+                detalle.append(f"RECARGAS Y PAQUETES BMOV (ids 1983,1751,1663)->DIGITAL/Saldo telefono: {cur.rowcount}")
+
+                # 10) PLANTITA puntual -> EXPENSE ("esto es pago expense").
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='EXPENSE', subcategoria=''
+                    WHERE id=3235
+                """)
+                detalle.append(f"PLANTITA (id 3235)->EXPENSE: {cur.rowcount}")
+
+                # 11) GIOVANY puntual -> es INGRESO, no GASTO
+                #     (FINANZAS/Transferencia, monto positivo).
+                cur = db.execute("""
+                    UPDATE est_movimientos
+                    SET tipo='INGRESO', categoria='FINANZAS', subcategoria='Transferencia', monto=ABS(monto)
+                    WHERE id=3225
+                """)
+                detalle.append(f"GIOVANY (id 3225)->INGRESO/FINANZAS/Transferencia: {cur.rowcount}")
+
+                # 12) VIVERES/SUPER (legacy) -> ALIMENTACION/Súper.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='ALIMENTACION', subcategoria='Súper'
+                    WHERE categoria='VIVERES/SUPER'
+                """)
+                detalle.append(f"VIVERES/SUPER (legacy)->ALIMENTACION/Súper: {cur.rowcount}")
+
+                # 13) CASA/HOGAR (legacy) -> se unifica con VIVIENDA. Las
+                #     filas que son en realidad el pago de renta ("PAGO
+                #     TARJETA DE TERCEROS MBAN" por $12,000) se marcan
+                #     VIVIENDA/Renta; el resto va a VIVIENDA/Artículos del
+                #     hogar.
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta'
+                    WHERE categoria='CASA/HOGAR'
+                      AND UPPER(descripcion) LIKE '%PAGO TARJETA DE TERCEROS%MBAN%'
+                      AND ABS(monto)=12000
+                """)
+                detalle.append(f"CASA/HOGAR (renta $12,000 MBAN)->VIVIENDA/Renta: {cur.rowcount}")
+
+                cur = db.execute("""
+                    UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Artículos del hogar'
+                    WHERE categoria='CASA/HOGAR'
+                """)
+                detalle.append(f"CASA/HOGAR (resto, legacy)->VIVIENDA/Artículos del hogar: {cur.rowcount}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_ejecuta_esto_batch_2026_09",
+                     "Lote de 13 correcciones puntuales pedidas explícitamente por el "
+                     "usuario (mensaje 'EJECUTA ESTO', con ids/descripciones/montos "
+                     "reales fila por fila). " + " | ".join(detalle))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_ejecuta_esto_batch_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
