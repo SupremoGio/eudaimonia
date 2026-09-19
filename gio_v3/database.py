@@ -2771,6 +2771,47 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_legacy_bancario_a_finanzas_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — APORTACION_RENTA (categoria legacy) ->
+        #    VIVIENDA (a petición explícita del usuario) ─────────────────────
+        # El usuario vio, en el filtro "Sin subcategoría" de Ingresos, una
+        # fila "SPEI RECIBIDONUBANK... Aportación renta +$5,000.00" y
+        # reportó que quedaba sin subcategoría. Causa: APORTACION_RENTA es
+        # una categoria de NIVEL SUPERIOR legacy (con ese mismo nombre de
+        # display "Aportación renta") que quedó fuera de la migración
+        # finanzas_legacy_bancario_a_finanzas_2026_09 -- una colisión de
+        # nombre con la subcategoria NUEVA "Aportación renta" que se
+        # agregó bajo VIVIENDA (finanzas_ingreso_subcategorias_2026_09).
+        # Ya no se genera en ningún import (ningún keyword en config.py
+        # apunta a ella), es puro remanente histórico. Se reclasifica según
+        # tipo, igual que el resto de VIVIENDA: INGRESO -> Aportación
+        # renta, GASTO -> Renta (por si quedó alguna fila así).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_aportacion_renta_legacy_2026_09'"
+        ).fetchone():
+            try:
+                cur_ingreso = db.execute("""
+                    UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Aportación renta'
+                    WHERE categoria='APORTACION_RENTA' AND tipo='INGRESO'
+                """)
+                cur_gasto = db.execute("""
+                    UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta'
+                    WHERE categoria='APORTACION_RENTA' AND tipo='GASTO'
+                """)
+                total_ar = cur_ingreso.rowcount + cur_gasto.rowcount
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_aportacion_renta_legacy_2026_09",
+                     f"Categoria legacy APORTACION_RENTA (nivel superior, colisionaba de "
+                     f"nombre con la subcategoria nueva VIVIENDA/Aportación renta) -> "
+                     f"categoria=VIVIENDA. {cur_ingreso.rowcount} fila(s) INGRESO -> "
+                     f"subcategoria='Aportación renta', {cur_gasto.rowcount} fila(s) GASTO -> "
+                     f"subcategoria='Renta'. {total_ar} filas reclasificadas en total.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_aportacion_renta_legacy_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
