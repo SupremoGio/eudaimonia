@@ -1792,9 +1792,12 @@ def _meses_en_rango(desde: str, hasta: str) -> list:
 @estados_bp.route('/admin/audit-periodos-faltantes')
 def audit_periodos_faltantes():
     """Diagnóstico de solo lectura -- NUNCA borra ni modifica nada. El
-    usuario sabe que hay huecos en 2026 y quiere saber qué periodos
-    (ene-sep) no se han subido, banco por banco, para ir a buscar esos
-    estados de cuenta.
+    usuario sabe que hay huecos (originalmente reportado para 2026) y
+    quiere saber qué periodos no se han subido, banco por banco, para ir
+    a buscar esos estados de cuenta. Default `desde` ampliado a 2023-01-01
+    (antes 2026-01-01) a petición del usuario para poder ver huecos de
+    BBVA de 2023 a la fecha sin tener que escribir el querystring a mano
+    cada vez.
 
     Por cada banco que sube estado de cuenta (BBVA_DEB, BBVA_TDC, HSBC,
     INVEX -- se excluye MANUAL, que son altas sueltas, no estados de
@@ -1805,7 +1808,7 @@ def audit_periodos_faltantes():
     calendario), pero es la señal más directa disponible sin poder leer
     la DB de producción directamente."""
     if not _ok(): return _locked()
-    desde = request.args.get('desde', '2026-01-01')
+    desde = request.args.get('desde', '2023-01-01')
     hasta = request.args.get('hasta', today_str())
     bancos = ['BBVA_DEB', 'BBVA_TDC', 'HSBC', 'INVEX']
     todos_los_meses = _meses_en_rango(desde, hasta)

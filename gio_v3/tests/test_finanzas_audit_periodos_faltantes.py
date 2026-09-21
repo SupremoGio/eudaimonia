@@ -83,7 +83,9 @@ def test_banco_manual_no_se_incluye(client, test_db):
 def test_rango_por_default_cubre_hasta_hoy(client, test_db):
     resp = client.get('/finanzas/estados/admin/audit-periodos-faltantes')
     data = resp.get_json()
-    assert data['desde'] == '2026-01-01'
+    # Ampliado a 2023-01-01 (antes 2026-01-01) para poder ver huecos de
+    # BBVA desde 2023 sin tener que pasar `desde` a mano.
+    assert data['desde'] == '2023-01-01'
     import utils
     assert data['hasta'] == utils.today_str()
 
