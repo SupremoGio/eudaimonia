@@ -120,6 +120,28 @@
     #estados-root [style*="flex-wrap: wrap"] {
       min-width: 0 !important;
     }
+
+    /* Modal de detalle de categoría (desglose + lista de movimientos en
+       2 columnas lado a lado): en pantalla angosta cae a apilado, con
+       el modal completo como única región de scroll -- las columnas
+       pierden su propio overflow/alto fijo para no competir con el
+       scroll del modal (dos scrolls anidados en tan poco espacio es
+       peor que uno). */
+    .eu-modal-row {
+      flex-direction: column !important;
+      overflow-y: auto !important;
+    }
+    .eu-modal-col-left, .eu-modal-col-right {
+      overflow: visible !important;
+      max-height: none !important;
+      min-height: 0 !important;
+      flex: 0 0 auto !important;
+    }
+    .eu-modal-col-left {
+      border-right: none !important;
+      padding-right: 0 !important;
+      margin-bottom: 12px;
+    }
   }
 </style>
 
