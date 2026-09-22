@@ -804,7 +804,7 @@ async function sessLogAct(key, el) {
     updS(d.stats);
     updGam(d.gam?.stats);
     if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
-    if (d.gam?.perfect_day)   toast('✦ DÍA PERFECTO +5 XP · +10 EC', 'win');
+    if (d.gam?.perfect_day)   euPerfectDay(d.gam.perfect_day);
     if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
     lucide.createIcons();
     _notifyDashboard();
@@ -842,7 +842,7 @@ async function _saveReflexion(el) {
       el.closest('.sact')?.classList.add('done');
       toast(`+${d.gam?.xp ?? ''} XP registrado desde tu reflexión`, 'win');
       if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
-      if (d.gam?.perfect_day)   toast('✦ DÍA PERFECTO +5 XP · +10 EC', 'win');
+      if (d.gam?.perfect_day)   euPerfectDay(d.gam.perfect_day);
       if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
       lucide.createIcons();
       _notifyDashboard();
@@ -1005,7 +1005,7 @@ async function logAct(key) {
     updGam(d.gam?.stats);
     updWeekend();
     if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
-    if (d.gam?.perfect_day)   toast('✦ DÍA PERFECTO +5 XP · +10 EC', 'win');
+    if (d.gam?.perfect_day)   euPerfectDay(d.gam.perfect_day);
     if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
     if (d.gam?.badges?.length)       toast(`Badge: ${d.gam.badges[0].name}`, 'win');
     lucide.createIcons();

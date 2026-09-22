@@ -196,6 +196,73 @@
     });
   };
 
+  // "Día Perfecto" (Acta Diurna) era un toast plano idéntico a cualquier
+  // otro +XP — el momento más raro del día (como mucho una vez) se sentía
+  // igual que marcar una casilla suelta. En vez de traer una librería de
+  // animación nueva (Lottie) solo para este instante, se compone con lo
+  // que ya existe: el ícono hace euIconPop + un pulso continuo, y dispara
+  // el mismo burst de partículas que ya usa HabitRow (euCelebrate), esta
+  // vez en dorado para que se lea como el momento más importante del día.
+  // opts: { xp, ec }
+  window.euPerfectDay = function (opts) {
+    opts = opts || {};
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var backdrop = document.createElement('div');
+    backdrop.setAttribute('role', 'status');
+    backdrop.setAttribute('aria-live', 'polite');
+    backdrop.style.cssText =
+      'position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;' +
+      'background:color-mix(in srgb, var(--bg) 75%, transparent);padding:20px;' +
+      (reduced ? '' : 'animation:euFadeIn .25s ease;');
+
+    var card = document.createElement('div');
+    card.style.cssText =
+      'position:relative;text-align:center;overflow:hidden;' +
+      'background:radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--gold) 16%, var(--card)) 0%, var(--card) 65%);' +
+      'border:1px solid var(--gold-border, rgba(201,168,76,.3));border-radius:22px;' +
+      'padding:34px 28px 28px;width:100%;max-width:320px;box-shadow:0 24px 60px rgba(0,0,0,.5);' +
+      (reduced ? '' : 'animation:euScaleIn .3s cubic-bezier(.2,1.4,.4,1);');
+    card.addEventListener('click', function (e) { e.stopPropagation(); });
+
+    var iconWrap = document.createElement('div');
+    iconWrap.style.cssText =
+      'display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;' +
+      'border-radius:50%;background:color-mix(in srgb, var(--gold) 14%, transparent);margin-bottom:16px;' +
+      'filter:drop-shadow(0 0 18px var(--gold-glow, rgba(201,168,76,.5)));' +
+      (reduced ? '' : 'animation:euIconPop .5s cubic-bezier(.2,1.4,.4,1), euIconPulseScale 2.4s ease-in-out .5s infinite;');
+    iconWrap.innerHTML = '<i data-lucide="sparkles" style="width:30px;height:30px;color:var(--gold);" stroke-width="1.5"></i>';
+    card.appendChild(iconWrap);
+
+    var title = document.createElement('div');
+    title.style.cssText =
+      'font-family:var(--serif,\'Cormorant Garamond\',serif);font-size:24px;font-weight:600;' +
+      'color:var(--text);letter-spacing:.02em;margin-bottom:4px;';
+    title.textContent = 'Día Perfecto';
+    card.appendChild(title);
+
+    var sub = document.createElement('div');
+    sub.style.cssText =
+      'font-family:var(--sans,\'DM Sans\',sans-serif);font-size:13px;color:var(--gold);font-weight:600;letter-spacing:.04em;';
+    var parts = [];
+    if (opts.xp) parts.push('+' + opts.xp + ' XP');
+    if (opts.ec) parts.push('+' + opts.ec + ' EC');
+    sub.textContent = parts.join(' · ');
+    card.appendChild(sub);
+
+    backdrop.appendChild(card);
+    document.body.appendChild(backdrop);
+    if (window.lucide) lucide.createIcons();
+
+    if (!reduced) {
+      setTimeout(function () { window.euCelebrate(iconWrap, { color: 'var(--gold)' }); }, 120);
+    }
+
+    var close = function () { backdrop.remove(); };
+    backdrop.addEventListener('click', close);
+    setTimeout(close, 4200);
+  };
+
   // Muchos endpoints (completar tarea GTD, bonos de prioridad/rutina...)
   // ya devuelven `gam.achievements` con los logros recién desbloqueados
   // (engine.check_and_unlock) pero hasta ahora ninguna pantalla lo leía
