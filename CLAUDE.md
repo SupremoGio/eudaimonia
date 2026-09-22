@@ -91,10 +91,16 @@ obsoleta generada accidentalmente.
 **Regla crítica:** el directorio base de uploads lo resuelve `utils.uploads_base_dir()`,
 nunca lo hardcodees relativo a `__file__` en un módulo nuevo.
 
-- Prioridad: env var `UPLOADS_DIR` > directorio hermano de `DATABASE_PATH` (mismo
-  volumen de Railway que ya usa la DB) > `gio_v3/uploads` local (dev, en .gitignore).
-- Los módulos que suben archivos (`guardarropa`, `perfil`, `harma`, `bienestar/salud`)
-  construyen su `UPLOAD_DIR` como `os.path.join(uploads_base_dir(), '<subdir>')`.
+- Prioridad: env var `UPLOADS_DIR` > **mismo directorio** que contiene el archivo de
+  `DATABASE_PATH` (mismo volumen de Railway que ya usa la DB) > `gio_v3/uploads` local
+  (dev, en .gitignore).
+- Los módulos que suben archivos (`guardarropa`, `perfil`, `plantas`, `harma`,
+  `bienestar/salud`) construyen su `UPLOAD_DIR` como
+  `os.path.join(uploads_base_dir(), '<subdir>')` — esa subcarpeta (`wardrobe/`, `docs/`,
+  `harma/`, `medico/`, `plantas/`) vive **directamente** dentro del directorio de
+  `DATABASE_PATH`, sin un nivel intermedio `uploads/` (en producción el volumen ya
+  está montado en una carpeta llamada `uploads`, ej. `DATABASE_PATH=/app/uploads/pipeline.db`
+  y las fotos están en `/app/uploads/wardrobe/...`).
 - **Por qué existe esto:** hasta 2026-09-07 cada módulo hardcodeaba su `UPLOAD_DIR`
   relativo a su propia ubicación en el código (`gio_v3/uploads/...`), fuera del volumen
   persistente de Railway (que solo cubría `DATABASE_PATH`, ej. `/data/pipeline.db`).
@@ -103,6 +109,15 @@ nunca lo hardcodees relativo a `__file__` en un módulo nuevo.
   seguía referenciando el nombre de archivo ya perdido. Al derivar `UPLOADS_DIR` del
   mismo volumen que `DATABASE_PATH`, los uploads persisten igual que la DB sin
   necesitar configurar nada nuevo en Railway.
+- **Bug corregido 2026-09-22:** la primera versión de `uploads_base_dir()` unía un
+  `uploads` extra al directorio de `DATABASE_PATH` (`dirname(DATABASE_PATH)/uploads`),
+  asumiendo que el volumen se llamaría algo distinto a "uploads". En este deploy real
+  el volumen SÍ se llama `uploads`, así que esa ruta nunca existió
+  (`/app/uploads/uploads/wardrobe`) y las 89 fotos de Guardarropa se veían rotas en la
+  app aunque los archivos originales seguían intactos un nivel arriba
+  (`/app/uploads/wardrobe/`). Diagnosticado con el endpoint de solo lectura
+  `/guardarropa/admin/audit-fotos` (busca cada foto por nombre en todo el volumen antes
+  de darla por perdida). Cero fotos se perdieron — fue puramente un bug de ruta.
 
 ## Cómo arrancar la app localmente
 

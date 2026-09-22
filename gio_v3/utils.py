@@ -24,19 +24,32 @@ def today_date():
 def uploads_base_dir() -> str:
     """Directorio base para archivos subidos por el usuario (fotos, docs).
 
-    Prioridad: UPLOADS_DIR env var > directorio hermano de DATABASE_PATH
-    (Railway Volume — así los uploads persisten entre deploys igual que la
-    DB, que ya usa ese mismo volumen) > gio_v3/uploads local (dev, gitignored).
+    Prioridad: UPLOADS_DIR env var > directorio de DATABASE_PATH (Railway
+    Volume — así los uploads persisten entre deploys igual que la DB, que
+    ya usa ese mismo volumen) > gio_v3/uploads local (dev, gitignored).
     Sin esto, en Railway cada redeploy crea un contenedor con filesystem
     nuevo y los uploads (guardados hasta ahora en una ruta relativa al
     código, fuera del volumen) desaparecían aunque la DB sí persistiera.
+
+    IMPORTANTE: se usa el MISMO directorio que contiene el archivo de
+    DATABASE_PATH, no un subdirectorio "uploads" dentro de él. En el volumen
+    real de Railway de este proyecto, DATABASE_PATH ya apunta a
+    /app/uploads/pipeline.db (el volumen se llama "uploads"), y las
+    subcarpetas de cada módulo (wardrobe/, docs/, harma/, etc.) viven
+    directamente ahí -- /app/uploads/wardrobe/... Unir un "uploads" extra
+    aquí generaba /app/uploads/uploads/wardrobe, una ruta que nunca existió
+    y que hacía que TODAS las fotos ya subidas se vieran rotas en la app
+    aunque los archivos originales seguían intactos en el volumen
+    (confirmado 2026-09-22 vía /guardarropa/admin/audit-fotos: 89/89
+    fotos "perdidas" aparecieron en /app/uploads/wardrobe/, un nivel
+    arriba de donde el código las buscaba).
     """
     env_dir = os.environ.get("UPLOADS_DIR")
     if env_dir:
         return env_dir
     db_path = os.environ.get("DATABASE_PATH")
     if db_path:
-        return os.path.join(os.path.dirname(os.path.abspath(db_path)), "uploads")
+        return os.path.dirname(os.path.abspath(db_path))
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 
 
