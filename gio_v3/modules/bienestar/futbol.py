@@ -1,14 +1,12 @@
 from flask import Blueprint, render_template, request, jsonify
 from datetime import datetime
 from database import get_db
-from utils import today_str
 import modules.gamification.engine as engine
 
 futbol_bp = Blueprint('futbol', __name__, template_folder='../../templates')
 
-_GOL_KEY = 'gol'
-_GOL_PTS = 2
-_GOL_CAT = 'Salud Física'
+_RESULTADO_KEY = 'partido_resultado'
+_RESULTADO_CAT = 'Salud Física'
 
 
 def _now():
@@ -45,30 +43,63 @@ def _stats(partidos):
     }
 
 
-def _credit_gol_bonus():
-    """Credita el bonus 'Gol (bonus partido)' de Salud Física si no se ha dado hoy. Devuelve el log_id o None."""
-    today = today_str()
-    with get_db() as db:
-        existing = db.execute(
-            "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (_GOL_KEY, today)
-        ).fetchone()
-        if existing:
-            return None
-        cur = db.execute(
-            "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
-            (_GOL_KEY, today, _GOL_PTS)
-        )
-        log_id = cur.lastrowid
-        db.commit()
-    engine.process_activity(_GOL_KEY, _GOL_PTS, _GOL_CAT, log_id)
-    return log_id
+def _calcular_liquidacion(p):
+    """Tabulador de XP/EC de un partido jugado. Premia jugar, cada gol y cada
+    asistencia sin tope (XP crece libre con el desempeño real), y reserva el EC
+    (moneda canjeable) para señales de calidad — ganar y una buena calificación —
+    en vez de repartirlo por cada gol, para no inflar la economía de recompensas."""
+    goles = p.get('goles_propios') or 0
+    asist = p.get('asistencias') or 0
+    gf, gc = p.get('goles_favor') or 0, p.get('goles_contra') or 0
+    rating = p.get('rendimiento')
+
+    xp, ec = 3, 0          # por jugar el partido
+
+    xp += goles * 2        # por cada gol propio
+    xp += asist * 1        # por cada asistencia
+
+    if gf > gc:
+        xp += 2; ec += 1   # victoria
+    elif gf == gc:
+        xp += 1            # empate
+
+    if rating is not None:
+        if rating >= 9.0:
+            xp += 4; ec += 2    # actuación de crack
+        elif rating >= 7.5:
+            xp += 2; ec += 1    # muy buena actuación
+        elif rating >= 6.0:
+            xp += 1              # actuación sólida
+
+    return xp, ec
 
 
-def _remove_gol_bonus(log_id):
+def _revertir_liquidacion(log_id):
+    if not log_id:
+        return
     with get_db() as db:
         db.execute("DELETE FROM activity_logs WHERE id=?", (log_id,))
         db.commit()
     engine.remove_activity(log_id)
+
+
+def _liquidar_partido(partido, fecha):
+    """Otorga el XP/EC de un partido jugado según _calcular_liquidacion.
+    Devuelve el log_id a guardar en futbol_partidos.gol_log_id (reutilizada
+    como referencia genérica de liquidación, ya no solo de goles) para poder
+    revertir si el partido se edita o se borra."""
+    xp, ec = _calcular_liquidacion(partido)
+    if xp <= 0 and ec <= 0:
+        return None
+    with get_db() as db:
+        cur = db.execute(
+            "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+            (_RESULTADO_KEY, fecha, xp)
+        )
+        log_id = cur.lastrowid
+        db.commit()
+    engine.process_activity(_RESULTADO_KEY, xp, _RESULTADO_CAT, log_id, ec=ec)
+    return log_id
 
 
 # ── Rutas ─────────────────────────────────────────────────────────────────────
@@ -110,8 +141,14 @@ def crear_partido():
         return jsonify({'ok': False, 'error': 'fecha requerida'}), 400
 
     estado = d.get('estado') or 'jugado'
-    goles_propios = int(d.get('goles_propios') or 0)
-    gol_log_id = _credit_gol_bonus() if (estado == 'jugado' and goles_propios > 0) else None
+    partido = {
+        'goles_favor':   int(d.get('goles_favor') or 0),
+        'goles_contra':  int(d.get('goles_contra') or 0),
+        'goles_propios': int(d.get('goles_propios') or 0),
+        'asistencias':   int(d.get('asistencias') or 0),
+        'rendimiento':   float(d['rendimiento']) if d.get('rendimiento') not in (None, '') else None,
+    }
+    log_id = _liquidar_partido(partido, d['fecha']) if estado == 'jugado' else None
 
     with get_db() as db:
         cur = db.execute(
@@ -125,19 +162,19 @@ def crear_partido():
                 d.get('hora', ''),
                 d.get('cancha', '').strip(),
                 d.get('rival', '').strip(),
-                int(d.get('goles_favor') or 0),
-                int(d.get('goles_contra') or 0),
-                goles_propios,
-                int(d.get('asistencias') or 0),
+                partido['goles_favor'],
+                partido['goles_contra'],
+                partido['goles_propios'],
+                partido['asistencias'],
                 int(d['minutos_jugados']) if d.get('minutos_jugados') not in (None, '') else None,
-                float(d['rendimiento']) if d.get('rendimiento') not in (None, '') else None,
-                gol_log_id,
+                partido['rendimiento'],
+                log_id,
                 estado,
                 _now(),
             ),
         )
         db.commit()
-    return jsonify({'ok': True, 'id': cur.lastrowid, 'gol_credited': gol_log_id is not None})
+    return jsonify({'ok': True, 'id': cur.lastrowid, 'liquidado': log_id is not None})
 
 
 @futbol_bp.route('/api/partidos/<int:pid>', methods=['PATCH'])
@@ -154,7 +191,7 @@ def actualizar_partido(pid):
         if f in d:
             sets.append(f'{f}=?')
             vals.append(d[f])
-    for f in ('goles_favor', 'goles_contra', 'asistencias', 'minutos_jugados'):
+    for f in ('goles_favor', 'goles_contra', 'goles_propios', 'asistencias', 'minutos_jugados'):
         if f in d:
             sets.append(f'{f}=?')
             vals.append(int(d[f]) if d[f] not in (None, '') else None)
@@ -162,21 +199,29 @@ def actualizar_partido(pid):
         sets.append('rendimiento=?')
         vals.append(float(d['rendimiento']) if d['rendimiento'] not in (None, '') else None)
 
-    gol_log_id = partido['gol_log_id']
-    if 'goles_propios' in d:
-        nuevos_goles = int(d['goles_propios'] or 0)
-        if nuevos_goles > 0 and partido['goles_propios'] == 0:
-            gol_log_id = _credit_gol_bonus()
-        elif nuevos_goles == 0 and partido['goles_propios'] > 0 and gol_log_id:
-            _remove_gol_bonus(gol_log_id)
-            gol_log_id = None
-        sets.append('goles_propios=?')
-        vals.append(nuevos_goles)
-        sets.append('gol_log_id=?')
-        vals.append(gol_log_id)
-
     if not sets:
         return jsonify({'ok': False, 'error': 'nada que actualizar'}), 400
+
+    # Si cambió algo que afecta el tabulador de XP/EC (o el estado del partido),
+    # se revierte la liquidación anterior y se recalcula desde cero sobre los
+    # valores ya actualizados — más simple y a prueba de errores que ajustar
+    # la diferencia a mano.
+    LIQUIDACION_FIELDS = ('goles_favor', 'goles_contra', 'goles_propios', 'asistencias', 'rendimiento', 'estado')
+    if any(f in d for f in LIQUIDACION_FIELDS):
+        nuevo = dict(partido)
+        for f in ('goles_favor', 'goles_contra', 'goles_propios', 'asistencias'):
+            if f in d:
+                nuevo[f] = int(d[f]) if d[f] not in (None, '') else 0
+        if 'rendimiento' in d:
+            nuevo['rendimiento'] = float(d['rendimiento']) if d['rendimiento'] not in (None, '') else None
+        nuevo_estado = d.get('estado', partido['estado'])
+
+        if partido['gol_log_id']:
+            _revertir_liquidacion(partido['gol_log_id'])
+        log_id = _liquidar_partido(nuevo, d.get('fecha', partido['fecha'])) if nuevo_estado == 'jugado' else None
+
+        sets.append('gol_log_id=?')
+        vals.append(log_id)
 
     vals.append(pid)
     with get_db() as db:
@@ -190,7 +235,7 @@ def eliminar_partido(pid):
     with get_db() as db:
         row = db.execute("SELECT gol_log_id FROM futbol_partidos WHERE id=?", (pid,)).fetchone()
         if row and row['gol_log_id']:
-            _remove_gol_bonus(row['gol_log_id'])
+            _revertir_liquidacion(row['gol_log_id'])
         db.execute("DELETE FROM futbol_partidos WHERE id=?", (pid,))
         db.commit()
     return jsonify({'ok': True})
