@@ -4405,6 +4405,24 @@ def init_db():
                  "Retira 'ccna'/'leccion_idiomas' (Fase 1, duplicaban anclas Fase 3) y mueve 'Leer 5 páginas' a sesión Noche.")
             )
 
+        # ── ACTA DIURNA — separa 'python100' de 'ancla_ccna_prog' (2026-09):
+        # 'python100' ("Lección 100 Días Python") se quedó sin restricción de
+        # días desde Fase 1, así que aparecía TODOS los días — incluyendo
+        # lunes/miércoles/viernes, cuando además toca 'ancla_ccna_prog' ("CCNA
+        # / Programación — sesión profunda"). Dos sesiones de programación
+        # pesadas el mismo día. Se reparten en días alternos sin choque:
+        # CCNA lun/mié/vie, Python mar/jue/sáb, domingo libre de programación.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='python_ccna_dias_alternos_2026_09'"
+        ).fetchone():
+            db.execute("UPDATE activity_defs SET days_of_week='tue,thu,sat' WHERE key='python100'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("python_ccna_dias_alternos_2026_09",
+                 "'python100' pasa de sin restricción a days_of_week='tue,thu,sat' para no chocar con "
+                 "'ancla_ccna_prog' (mon,wed,fri).")
+            )
+
         # ── ACTA DIURNA — "Podcast en idiomas" pasa de "cualquier momento" a
         # las tres sesiones fijas (Mañana/Tarde/Noche). El campo session admite
         # CSV (igual que days_of_week) — get_active_grouped() lo reparte en
