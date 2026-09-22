@@ -14,22 +14,20 @@
 .hero-clf-chip{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:1px solid;flex-shrink:0;}
 .hero-clf-rank{font-family:var(--serif);font-size:1.05rem;font-style:italic;font-weight:300;line-height:1.2;}
 .hero-clf-desc{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;max-width:220px;}
-.hero-clf-hint{font-size:9.5px;color:var(--dim);margin-top:6px;line-height:1.35;max-width:220px;}
+.hero-clf-hint{font-size:var(--fs-12);color:var(--dim);margin-top:6px;line-height:1.35;max-width:220px;}
 .hero-clf-bar-track{height:3px;background:var(--card2);border-radius:100px;overflow:hidden;margin-top:6px;max-width:220px;}
 .hero-clf-bar-fill{height:100%;border-radius:100px;transition:width .4s ease;}
-.hero-clf-meta{display:flex;gap:10px;margin-top:8px;font-size:9px;color:var(--dim);letter-spacing:.02em;}
+.hero-clf-meta{display:flex;gap:10px;margin-top:8px;font-size:var(--fs-12);color:var(--dim);letter-spacing:.02em;}
 .hero-clf-meta b{color:var(--text);font-weight:600;}
-@keyframes clfNearPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.02);}}
-.hero-clf-chip.near-next{animation:clfNearPulse 1.8s ease-in-out infinite;}
 .hero-progress-bar{background:var(--card2);border-radius:100px;height:6px;overflow:hidden;margin-top:16px;}
 .hero-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-l));border-radius:100px;transition:width .5s;}
 .hero-secondary{display:flex;margin-top:16px;border-top:1px solid var(--b);padding-top:14px;}
 .hs-item{flex:1;text-align:center;padding:0 6px;border-right:1px solid var(--b);}
 .hs-item:last-child{border-right:none;}
 .hs-n{display:block;font-family:var(--mono);font-size:1.05rem;font-weight:600;color:var(--text);}
-.hs-l{display:block;font-size:9px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px;}
-.hs-sub{display:block;font-size:9px;color:var(--amber);margin-top:2px;}
-.hs-eyebrow{display:block;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);opacity:.7;margin-bottom:2px;}
+.hs-l{display:block;font-size:var(--fs-11);color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px;}
+.hs-sub{display:block;font-size:var(--fs-12);color:var(--amber);margin-top:2px;}
+.hs-eyebrow{display:block;font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);opacity:.7;margin-bottom:2px;}
 .hs-level-name{display:block;font-family:var(--serif);font-style:italic;font-weight:600;font-size:1rem;line-height:1.15;color:var(--gold);}
 .hero-pillars-wrap{margin-top:14px;padding-top:12px;border-top:1px solid var(--b);}
 .hero-pillars-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
@@ -178,7 +176,7 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
 .pillar-dot{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
 .pillar-dot .circ{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--b);color:var(--dim);opacity:.4;transition:all .25s;}
 .pillar-dot.on .circ{opacity:1;color:#fff;border-color:transparent;background:oklch(58% 0.16 var(--p-hue));box-shadow:0 0 10px oklch(58% 0.16 var(--p-hue) / 45%);}
-.pillar-dot .pname{font-size:9px;color:var(--faint,var(--dim));letter-spacing:.02em;text-align:center;}
+.pillar-dot .pname{font-size:var(--fs-12);color:var(--faint,var(--dim));letter-spacing:.02em;text-align:center;}
 .pillar-dot.on .pname{color:var(--text);}
 
 .foco-wrap{border-bottom:1px solid var(--b);margin-bottom:20px;}
@@ -213,8 +211,8 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
 .sact .slbl{font-size:var(--fs-sm);color:var(--text);line-height:1.3;}
 .sact.done .slbl{color:var(--dim);text-decoration:line-through;}
 .sact .smeta{display:flex;align-items:center;justify-content:space-between;gap:4px;}
-.sact .spts{font-size:10px;color:var(--p-c);opacity:.9;}
-.sact .sptag{font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:var(--p-c-text);}
+.sact .spts{font-size:var(--fs-12);color:var(--p-c);opacity:.9;}
+.sact .sptag{font-size:var(--fs-11);letter-spacing:.03em;text-transform:uppercase;color:var(--p-c-text);}
 .sact .srm{display:none;position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:rgba(220,60,60,.16);color:#e0685f;border:none;align-items:center;justify-content:center;cursor:pointer;font-size:12px;line-height:1;z-index:2;}
 .sact .srm::after{content:'';position:absolute;inset:-10px;}
 .editing .sact .srm{display:flex;}
@@ -260,8 +258,8 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
 .session-row:hover,.session-row.open{background:var(--card2);}
 .session-row .rinfo{flex:1;min-width:0;}
 .session-row .stitle{font-size:var(--fs-sm);color:var(--mid);font-weight:600;}
-.session-row .swindow{font-size:10px;color:var(--dim);margin-top:1px;}
-.session-row .scount{font-size:10px;color:var(--dim);white-space:nowrap;}
+.session-row .swindow{font-size:var(--fs-12);color:var(--dim);margin-top:1px;}
+.session-row .scount{font-size:var(--fs-12);color:var(--dim);white-space:nowrap;}
 .session-row .schev{color:var(--dim);transition:transform .2s ease;flex-shrink:0;}
 .session-row.open .schev{transform:rotate(90deg);}
 .session-detail{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease;}
@@ -269,12 +267,12 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
 .session-detail-inner{overflow:hidden;}
 .session-detail .acts-grid{padding:12px 2px 14px;}
 
-.anytime-head{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:26px 0 12px;display:flex;align-items:center;gap:8px;}
+.anytime-head{font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:26px 0 12px;display:flex;align-items:center;gap:8px;}
 .anytime-head::after{content:'';flex:1;height:1px;background:var(--b);}
 
 .occ-head{display:flex;align-items:center;gap:8px;margin:26px 0 10px;}
-.occ-head .lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
-.occ-head .note{font-size:10px;color:var(--dim);opacity:.7;}
+.occ-head .lbl{font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);}
+.occ-head .note{font-size:var(--fs-12);color:var(--dim);opacity:.7;}
 .occ-head::after{content:'';flex:1;height:1px;background:var(--b);}
 .occ-list{display:flex;flex-direction:column;opacity:.85;}
 .occ-item{display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px dashed var(--b);cursor:pointer;transition:background .15s;}
@@ -283,7 +281,7 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
 .occ-item .ochk{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--b2);flex-shrink:0;}
 .occ-item.done .ochk{background:var(--dim);border-color:var(--dim);}
 .occ-item .olbl{flex:1;font-size:var(--fs-sm);color:var(--mid);}
-.occ-item .opts{font-size:10px;color:var(--dim);}
+.occ-item .opts{font-size:var(--fs-12);color:var(--dim);}
 
 /* Responsive */
 @media(max-width:1100px){
@@ -330,10 +328,10 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
         <i data-lucide="{{ clf.icon_lucide }}" style="width:20px;height:20px;color:{{ clf.color }};"></i>
       </div>
       <div>
-        <div style="font-size:9px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
+        <div style="font-size:var(--fs-11);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-bottom:2px;display:flex;align-items:center;gap:6px;">
           Hoy
           {% if classification.recovery_week %}
-          <span id="recovery-badge" style="font-size:9px;letter-spacing:.04em;text-transform:none;color:var(--cyan);background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.3);border-radius:100px;padding:1px 7px;">descarga</span>
+          <span id="recovery-badge" style="font-size:var(--fs-12);letter-spacing:.04em;text-transform:none;color:var(--cyan);background:rgba(6,182,212,.12);border:1px solid rgba(6,182,212,.3);border-radius:100px;padding:1px 7px;">descarga</span>
           {% endif %}
         </div>
         <div class="hero-clf-rank" id="clf-rank" style="color:{{ clf.color }}">{{ clf.label }}</div>
@@ -486,7 +484,7 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
          onclick="{% if is_eury_proxy %}window.location.href='/eurythmia/'{% else %}sessLogAct('{{ item.key }}', this){% endif %}">
       <div class="schk"><svg viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8.5 9,2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div style="flex:1;min-width:0;">
-        <div class="slbl">{{ item.label }}{% if item.cadence == 'weekly' %} <span style="font-size:9px;color:var(--faint,var(--dim));font-weight:400;">· {{ item.week_count or 0 }}/semana</span>{% endif %}</div>
+        <div class="slbl">{{ item.label }}{% if item.cadence == 'weekly' %} <span style="font-size:var(--fs-12);color:var(--faint,var(--dim));font-weight:400;">· {{ item.week_count or 0 }}/semana</span>{% endif %}</div>
         <div class="smeta">
           {% if is_eury_proxy %}
           <span class="spts">{{ 'Hecho hoy · ver detalle' if eurythmia_done else 'Ir a Eurythmia →' }}</span>

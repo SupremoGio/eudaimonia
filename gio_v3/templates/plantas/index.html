@@ -22,7 +22,7 @@ html.light{ --pl: oklch(48% 0.15 155); --pl-l: oklch(42% 0.16 155); --pl-bg: okl
 .pl-status-strip{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
 .pl-status-box{ flex:1; min-width:80px; text-align:center; padding:10px 6px; border-radius:10px; background:rgba(16,185,129,0.04); border:1px solid var(--b); }
 .pl-status-n{ font-family:var(--serif); font-size:1.4rem; line-height:1; font-weight:600; color:var(--dim); }
-.pl-status-l{ font-size:8px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:4px; }
+.pl-status-l{ font-size:var(--fs-11); letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:4px; }
 .pl-status-box.on-vencido .pl-status-n{ color:#ef4444; }
 .pl-status-box.on-urgente .pl-status-n{ color:#f59e0b; }
 .pl-status-box.on-nominal .pl-status-n{ color:#10b981; }
@@ -51,9 +51,9 @@ html.light{ --pl: oklch(48% 0.15 155); --pl-l: oklch(42% 0.16 155); --pl-bg: okl
 .pl-care-icon{ width:24px; height:24px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .pl-care-icon i{ width:13px; height:13px; }
 .pl-care-info{ flex:1; min-width:0; }
-.pl-care-lbl{ font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; }
+.pl-care-lbl{ font-size:var(--fs-11); color:var(--dim); text-transform:uppercase; letter-spacing:.06em; }
 .pl-care-badge{ font-size:11px; font-weight:700; font-family:var(--mono); }
-.pl-care-btn{ background:var(--card2); border:1px solid var(--b); border-radius:7px; padding:5px 9px; font-size:10.5px; font-weight:600;
+.pl-care-btn{ background:var(--card2); border:1px solid var(--b); border-radius:7px; padding:5px 9px; font-size:var(--fs-12); font-weight:600;
               color:var(--dim); cursor:pointer; transition:all .15s; white-space:nowrap; }
 .pl-care-btn:hover{ border-color:var(--pl-b); color:var(--pl-l); }
 

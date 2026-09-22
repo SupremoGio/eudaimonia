@@ -15,7 +15,7 @@
 .perf-stat-box{flex:1;min-width:130px;text-align:center;padding:12px 10px;border-radius:10px;
   background:rgba(201,168,76,0.04);border:1px solid var(--b);transition:all 0.2s;}
 .perf-stat-n{font-family:var(--serif);font-size:1.5rem;line-height:1;font-weight:600;color:var(--gold);}
-.perf-stat-l{font-size:8px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-top:4px;}
+.perf-stat-l{font-size:var(--fs-11);letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-top:4px;}
 .perf-stat-box.alert{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.3);}
 .perf-stat-box.alert .perf-stat-n{color:var(--coral);}
 
@@ -26,7 +26,7 @@
 .perf-tab-btn:hover{color:var(--text);}
 .perf-tab-btn.active{color:var(--gold);}
 .perf-tab-btn.active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--gold);border-radius:2px;}
-.perf-tab-btn .tab-badge{font-size:9.5px;color:var(--dim);background:var(--card2);border:1px solid var(--b);border-radius:100px;padding:1px 6px;}
+.perf-tab-btn .tab-badge{font-size:var(--fs-12);color:var(--dim);background:var(--card2);border:1px solid var(--b);border-radius:100px;padding:1px 6px;}
 .perf-tab-btn.active .tab-badge{color:var(--gold);border-color:rgba(201,168,76,.3);}
 .tab-panel{display:none;animation:fadeUp .35s ease both;}
 .tab-panel.active{display:block;}
@@ -58,7 +58,7 @@
 
 /* attach badge */
 .attach-badge{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#09070F;
-  font-size:8px;font-weight:700;width:14px;height:14px;border-radius:50%;
+  font-size:var(--fs-11);font-weight:700;width:16px;height:16px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none;}
 
 .field-edit{display:none;align-items:center;gap:7px;margin-top:6px;}
@@ -69,7 +69,7 @@
   display:none;
   margin-top:10px;
   background:var(--card2);
-  border:1px solid rgba(201,168,76,.15);
+  border:1px solid var(--border-default);
   border-radius:10px;
   overflow:hidden;
 }
@@ -125,7 +125,7 @@
 .meas-delta{font-size:var(--fs-sm);font-weight:600;padding:2px 6px;border-radius:100px;margin-left:2px;white-space:nowrap;}
 .meas-delta.up{background:rgba(16,185,129,.12);color:var(--emerald);border:1px solid rgba(16,185,129,.25);}
 .meas-delta.down{background:rgba(248,113,113,.12);color:var(--coral);border:1px solid rgba(248,113,113,.25);}
-.meas-delta.eq{background:var(--gold-d);color:var(--dim);border:1px solid rgba(201,168,76,.15);}
+.meas-delta.eq{background:var(--gold-d);color:var(--dim);border:1px solid var(--border-default);}
 .meas-hist-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:var(--fs-xs);letter-spacing:.08em;
   text-transform:uppercase;padding:2px 5px;border-radius:4px;margin-top:4px;transition:color .15s;}
 .meas-hist-btn:hover{color:var(--gold);}
@@ -165,7 +165,7 @@
 .plg-zona.verde{background:rgba(16,185,129,.12);color:var(--emerald);border:1px solid rgba(16,185,129,.3);}
 .plg-zona.amarilla{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
 .plg-zona.roja{background:rgba(248,113,113,.12);color:var(--coral);border:1px solid rgba(248,113,113,.3);}
-.plg-zona.neutra{background:var(--gold-d);color:var(--dim);border:1px solid rgba(201,168,76,.15);}
+.plg-zona.neutra{background:var(--gold-d);color:var(--dim);border:1px solid var(--border-default);}
 .plg-notas{font-size:var(--fs-xs);color:var(--dim);opacity:.7;grid-column:1/-1;margin-top:-4px;}
 .plg-empty{padding:20px;text-align:center;font-size:var(--fs-sm);color:var(--dim);opacity:.6;}
 @media(max-width:640px){.plg-row{grid-template-columns:1fr auto;grid-template-areas:"date zona" "vals vals" "del del";}
@@ -250,7 +250,7 @@
 .perf-ring{width:34px;height:34px;border-radius:50%;position:relative;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;}
 .perf-ring::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--gold) calc(var(--pct)*1%),var(--b) 0);}
 .perf-ring::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--card2);}
-.perf-ring b{position:relative;z-index:1;font-size:8px;color:var(--gold);}
+.perf-ring b{position:relative;z-index:1;font-size:var(--fs-12);color:var(--gold);}
 .perf-pulse{width:6px;height:6px;border-radius:50%;background:var(--coral);display:inline-block;margin-right:5px;animation:pulse 1.8s infinite;}
 .field-row{transition:background .18s ease;border-radius:8px;}
 .field-row:hover{background:rgba(201,168,76,.045);}
@@ -287,7 +287,7 @@
       <div class="perf-stat-box eu-activate {% if stats.docs_total == 0 %}muted{% endif %}" role="button" tabindex="0" aria-label="Ver documentos" onclick="switchPerfTab('documentos')" style="cursor:pointer">
         <div class="perf-stat-n">{{ stats.docs_total }}</div>
         <div class="perf-stat-l">Documentos</div>
-        {% if stats.docs_total == 0 %}<div style="font-size:9px;color:var(--gold);margin-top:3px;">+ subir el primero</div>{% endif %}
+        {% if stats.docs_total == 0 %}<div style="font-size:var(--fs-12);color:var(--gold);margin-top:3px;">+ subir el primero</div>{% endif %}
       </div>
       <div class="perf-stat-box eu-activate {% if stats.rem_urgentes > 0 %}alert{% endif %}" role="button" tabindex="0" aria-label="Ver recordatorios" onclick="switchPerfTab('recordatorios')" style="cursor:pointer">
         <div class="perf-stat-n">{% if stats.rem_urgentes > 0 %}<span class="perf-pulse"></span>{% endif %}{{ stats.rem_total }}</div>
@@ -296,7 +296,7 @@
       <div class="perf-stat-box eu-activate {% if stats.vault_total == 0 %}muted{% endif %}" role="button" tabindex="0" aria-label="Ver contraseñas" onclick="switchPerfTab('contrasenas')" style="cursor:pointer">
         <div class="perf-stat-n">{{ stats.vault_total }}</div>
         <div class="perf-stat-l">Contraseñas</div>
-        {% if stats.vault_total == 0 %}<div style="font-size:9px;color:var(--gold);margin-top:3px;">+ guardar una</div>{% endif %}
+        {% if stats.vault_total == 0 %}<div style="font-size:var(--fs-12);color:var(--gold);margin-top:3px;">+ guardar una</div>{% endif %}
       </div>
     </div>
   </div>
@@ -463,9 +463,9 @@
               <div class="bmap-stat-val">
                 {{ m.value }}<span class="bmap-stat-unit">{{ m.unit }}</span>
                 {% if delta is not none and delta > 0 %}
-                  <span class="meas-delta up" style="font-size:10px;">↑ +{{ delta }}</span>
+                  <span class="meas-delta up" style="font-size:var(--fs-12);">↑ +{{ delta }}</span>
                 {% elif delta is not none and delta < 0 %}
-                  <span class="meas-delta down" style="font-size:10px;">↓ {{ delta }}</span>
+                  <span class="meas-delta down" style="font-size:var(--fs-12);">↓ {{ delta }}</span>
                 {% endif %}
               </div>
             </div>
@@ -666,8 +666,8 @@
           <div class="plg-date">{{ p.fecha }}</div>
           <div class="plg-vals">
             <span class="plg-pct">{{ p.porcentaje }}%
-              {% if p.delta_pct is not none and p.delta_pct > 0 %}<span class="meas-delta up" style="font-size:10px;">↑ +{{ p.delta_pct }}</span>
-              {% elif p.delta_pct is not none and p.delta_pct < 0 %}<span class="meas-delta down" style="font-size:10px;">↓ {{ p.delta_pct }}</span>
+              {% if p.delta_pct is not none and p.delta_pct > 0 %}<span class="meas-delta up" style="font-size:var(--fs-12);">↑ +{{ p.delta_pct }}</span>
+              {% elif p.delta_pct is not none and p.delta_pct < 0 %}<span class="meas-delta down" style="font-size:var(--fs-12);">↓ {{ p.delta_pct }}</span>
               {% endif %}
             </span>
             <span class="plg-mm">{{ p.mm }} mm

@@ -223,7 +223,7 @@
   margin-bottom:0;transition:border-color .15s;}
 .ai-gen-toggle:hover{border-color:rgba(201,168,76,.35);}
 .ai-gen-toggle-label{font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);}
-.ai-gen-toggle-arrow{color:var(--dim);transition:transform .2s;font-size:.65rem;}
+.ai-gen-toggle-arrow{color:var(--dim);transition:transform .2s;font-size:var(--fs-12);}
 .ai-gen-toggle.open .ai-gen-toggle-arrow{transform:rotate(180deg);}
 .ai-gen-panel{border-radius:0 0 10px 10px;border:1px solid var(--b);border-top:none;
   padding:16px;display:none;background:linear-gradient(135deg,rgba(201,168,76,.06),rgba(201,168,76,.02));}
@@ -240,17 +240,17 @@
 .ai-result-harmony{font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;}
 .ai-result-why{font-size:var(--fs-sm);color:var(--mid);line-height:1.6;margin-bottom:10px;}
 .ai-result-tips{margin:8px 0;padding-left:0;list-style:none;}
-.ai-result-tips li{font-size:.57rem;color:var(--dim);padding:3px 0 3px 14px;position:relative;}
+.ai-result-tips li{font-size:var(--fs-12);color:var(--dim);padding:3px 0 3px 14px;position:relative;}
 .ai-result-tips li::before{content:'→';position:absolute;left:0;color:var(--gold);}
 .ai-result-items{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;}
 .ai-item-chip{font-size:var(--fs-xs);padding:3px 9px;border-radius:6px;
-  background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15);color:var(--gold);}
+  background:rgba(201,168,76,.08);border:1px solid var(--border-default);color:var(--gold);}
 .ai-confidence{font-size:var(--fs-xs);color:var(--dim);margin-top:8px;text-align:right;}
 /* (keep old item-dot for picker modal) */
 .ot-color-strip{display:flex;height:6px;}
 .ot-color-seg{flex:1;}
 .ot-item-dot{width:20px;height:20px;border-radius:5px;border:1px solid rgba(255,255,255,.08);
-  display:flex;align-items:center;justify-content:center;font-size:8px;overflow:hidden;}
+  display:flex;align-items:center;justify-content:center;font-size:var(--fs-12);overflow:hidden;}
 .ot-item-dot img{width:100%;height:100%;object-fit:cover;}
 
 /* ── Intelligence tab ────────────────────────────────── */
@@ -280,7 +280,7 @@
 .intel-hero-ring circle{transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1);}
 .intel-hero-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
 .intel-hero-ring-pct{font-family:var(--serif);font-size:1.7rem;font-weight:600;line-height:1;}
-.intel-hero-ring-lvl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
+.intel-hero-ring-lvl{font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;margin-top:3px;}
 .intel-hero-info{flex:1;min-width:220px;}
 
 /* Grouped, didactic checklist — each theme explains itself instead of
@@ -355,7 +355,7 @@
 .item-picker{max-height:280px;overflow-y:auto;border:1px solid var(--b);border-radius:8px;}
 .ip-group + .ip-group{border-top:1px solid var(--b);}
 .ip-cat-header{position:sticky;top:0;display:flex;align-items:center;gap:5px;background:var(--card);
-  font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:6px 12px;
+  font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);padding:6px 12px;
   border-bottom:1px solid rgba(255,255,255,.05);z-index:1;}
 .ip-cat-count{color:var(--dim);opacity:.55;}
 .ip-row{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;transition:background .12s;border-bottom:1px solid rgba(201,168,76,.05);}
@@ -1104,7 +1104,7 @@ function openItemDetail(id){
             <div class="gd-psych-name" id="gd-psych-name">${psych?esc(psych.name):'Analizando...'}</div>
             <div class="gd-psych-label" id="gd-psych-label">Psicología del color · IA</div>
           </div>
-          <div id="gd-psych-ai-badge" style="margin-left:auto;font-size:var(--fs-xs);letter-spacing:.1em;padding:2px 6px;border-radius:4px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.15);color:var(--gold);text-transform:uppercase;display:none;">IA</div>
+          <div id="gd-psych-ai-badge" style="margin-left:auto;font-size:var(--fs-xs);letter-spacing:.1em;padding:2px 6px;border-radius:4px;background:rgba(201,168,76,.08);border:1px solid var(--border-default);color:var(--gold);text-transform:uppercase;display:none;">IA</div>
         </div>
         <div class="gd-psych-msg" id="gd-psych-msg">${psych?esc(psych.psych):'<span style="color:var(--dim);font-size:var(--fs-sm);">Cargando análisis...</span>'}</div>
         <div class="gd-psych-rec" id="gd-psych-rec">
@@ -2236,7 +2236,7 @@ async function analyzeCapsulaAI(){
         ${d.elite_verdict?`
         <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
           <div style="font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">VEREDICTO DEL COACH</div>
-          <div style="font-size:.67rem;color:var(--text);line-height:1.6;font-style:italic;">"${esc(d.elite_verdict)}"</div>
+          <div style="font-size:var(--fs-12);color:var(--text);line-height:1.6;font-style:italic;">"${esc(d.elite_verdict)}"</div>
         </div>`:''}
 
         ${d.color_harmony?`

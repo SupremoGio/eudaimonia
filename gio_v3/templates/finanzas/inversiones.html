@@ -22,13 +22,13 @@
    se vuelvan celdas directas del mismo grid sin tocar su markup. ────── */
 .inv-hero-top{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:16px;align-items:end;margin-bottom:16px;}
 .inv-hero-main{border-right:1px solid var(--b);padding-right:16px;}
-.inv-hero-main-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;
+.inv-hero-main-label{font-size:var(--fs-11);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;
   display:flex;align-items:center;gap:5px;}
 .inv-hero-main-val{font-family:var(--serif);font-size:clamp(26px,6vw,36px);font-weight:600;line-height:1;color:var(--gold);}
 .inv-hero-main-sub{font-size:11px;color:var(--dim);margin-top:6px;}
 .inv-kpis{display:contents;}
 .inv-kpi{text-align:center;}
-.inv-kpi-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
+.inv-kpi-label{font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
 .inv-kpi-val{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1;}
 .inv-kpi-val.green{color:#22c55e;}
 .inv-kpi-val.red{color:#f87171;}
@@ -58,7 +58,7 @@
 .inv-plat-bar-fill{height:100%;border-radius:100px;transition:width .6s ease;}
 .inv-plat-saldo{text-align:right;flex-shrink:0;}
 .inv-plat-saldo-val{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--text);}
-.inv-plat-saldo-label{font-size:10px;color:var(--dim);text-align:right;margin-top:2px;}
+.inv-plat-saldo-label{font-size:var(--fs-12);color:var(--dim);text-align:right;margin-top:2px;}
 
 /* ── Entrada escalonada — plataformas y movimientos (render server-side,
    por eso el delay se fija con --i inline en el loop Jinja, no con JS) ── */
@@ -97,13 +97,13 @@
   justify-content:center;font-size:.8rem;flex-shrink:0;}
 .inv-mov-body{flex:1;min-width:0;}
 .inv-mov-top{display:flex;align-items:center;gap:7px;margin-bottom:2px;}
-.inv-mov-plat{font-size:10px;font-weight:700;letter-spacing:.1em;padding:2px 7px;
+.inv-mov-plat{font-size:var(--fs-12);font-weight:700;letter-spacing:.1em;padding:2px 7px;
   border-radius:20px;}
-.inv-mov-sub{font-size:10px;letter-spacing:.08em;color:var(--dim);}
+.inv-mov-sub{font-size:var(--fs-12);letter-spacing:.08em;color:var(--dim);}
 .inv-mov-desc{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .inv-mov-right{text-align:right;flex-shrink:0;}
 .inv-mov-monto{font-size:var(--fs-sm);font-weight:700;}
-.inv-mov-fecha{font-size:10px;color:var(--dim);margin-top:2px;}
+.inv-mov-fecha{font-size:var(--fs-12);color:var(--dim);margin-top:2px;}
 .inv-mov-del{opacity:0;width:22px;height:22px;border-radius:5px;background:rgba(239,68,68,.12);
   border:none;color:#f87171;cursor:pointer;font-size:12px;display:flex;align-items:center;
   justify-content:center;transition:opacity .18s;flex-shrink:0;}

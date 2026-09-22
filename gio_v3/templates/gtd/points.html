@@ -15,11 +15,11 @@
   <div style="flex:1;">
     <div style="font-family:var(--serif);font-size:1.4rem;font-style:italic;margin-bottom:5px;color:#F2EDE0;">{{ stats.level_name }}</div>
     <div style="background:rgba(201,168,76,0.15);border-radius:100px;height:5px;overflow:hidden;margin-bottom:5px;"><div style="width:{{ stats.level_pct }}%;height:100%;background:linear-gradient(90deg,var(--gold),#e8c88a);border-radius:100px;transition:width .8s;"></div></div>
-    <div style="font-size:var(--fs-sm);color:#8A7A60;">{{ stats.level_pct }}% hacia Nivel {{ stats.level+1 }} — {{ stats.xp_to_next }} XP restantes</div>
+    <div style="font-size:var(--fs-sm);color:var(--fg-3);">{{ stats.level_pct }}% hacia Nivel {{ stats.level+1 }} — {{ stats.xp_to_next }} XP restantes</div>
   </div>
   <div style="text-align:center;">
     <div style="font-family:var(--serif);font-size:2.2rem;color:var(--gold-l);font-style:italic;font-variant-numeric:lining-nums;">{{ stats.streak }}</div>
-    <div style="font-size:var(--fs-xs);color:#8A7A60;letter-spacing:.1em;text-transform:uppercase;">Racha días</div>
+    <div style="font-size:var(--fs-xs);color:var(--fg-3);letter-spacing:.1em;text-transform:uppercase;">Racha días</div>
   </div>
 </div>
 <div class="tile">

@@ -28,7 +28,7 @@ html.light{ --rose: oklch(52% 0.17 350); --rose-l: oklch(46% 0.18 350); --rose-b
 .ey-preset-l{ font-size:var(--fs-xs); color:var(--dim); letter-spacing:.1em; text-transform:uppercase; margin-top:3px; }
 input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
 
-.ey-lbl{ font-family:var(--sans); font-size:10.5px; letter-spacing:.16em; color:var(--dim); text-transform:uppercase; margin:18px 0 10px; }
+.ey-lbl{ font-family:var(--sans); font-size:var(--fs-11); letter-spacing:.16em; color:var(--dim); text-transform:uppercase; margin:18px 0 10px; }
 .ey-phase{ display:flex; overflow:hidden; background:var(--card); border:1px solid var(--b); border-radius:14px; margin-bottom:9px; }
 .ey-phase-bar{ width:5px; flex-shrink:0; }
 .ey-phase-body{ flex:1; padding:12px 15px; }
@@ -47,7 +47,7 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
 .ey-sw span{ width:18px; height:18px; border-radius:50%; background:var(--text); display:block; }
 .ey-bpm{ text-align:right; }
 .ey-bpm-n{ font-family:var(--serif); font-size:1.2rem; color:var(--gold); }
-.ey-bpm-l{ font-size:9px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
+.ey-bpm-l{ font-size:var(--fs-11); letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
 
 .ey-cta{ width:100%; cursor:pointer; background:var(--rose); border:none; border-radius:16px; padding:16px; font-family:var(--sans); font-size:14.5px; font-weight:600; letter-spacing:.02em; color:#0d0810; margin-top:6px; }
 .ey-cta:hover{ opacity:.9; }
@@ -56,11 +56,11 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
 .ey-ministats{ display:flex; gap:26px; margin-bottom:18px; }
 .ey-mn{ font-family:var(--serif); font-size:1.7rem; color:var(--gold); line-height:1; }
 .ey-mn.rose{ color:var(--rose-l); }
-.ey-ml{ font-size:9px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:3px; }
+.ey-ml{ font-size:var(--fs-11); letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:3px; }
 .ey-fig{ padding:13px 0; border-bottom:1px solid var(--b); }
 .ey-fig-top{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:3px; }
 .ey-fig-name{ font-family:var(--serif); font-size:1.05rem; color:var(--text); }
-.ey-fig-tier{ font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; }
+.ey-fig-tier{ font-size:var(--fs-11); letter-spacing:.06em; text-transform:uppercase; }
 .ey-fig-note{ font-size:11.5px; color:var(--dim); margin-bottom:9px; }
 .ey-fig-row{ display:flex; align-items:center; gap:12px; }
 .ey-mbar{ flex:1; height:5px; background:var(--b); border-radius:3px; overflow:hidden; }
@@ -72,7 +72,7 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
 .ey-hero-card{ background:var(--card); border:1px solid var(--b); border-radius:20px; padding:24px 20px; display:flex; align-items:center; gap:26px; flex-wrap:wrap; margin-bottom:22px; }
 .ey-ring-wrap{ position:relative; width:130px; height:130px; flex-shrink:0; }
 .ey-ring-txt{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-.ey-ring-n{ font-size:9px; letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
+.ey-ring-n{ font-size:var(--fs-11); letter-spacing:.1em; color:var(--dim); text-transform:uppercase; }
 .ey-ring-name{ font-family:var(--serif); font-size:1.35rem; font-style:italic; color:var(--rose-l); line-height:1.05; }
 .ey-forecast{ background:var(--rose-bg); border:1px solid var(--rose-b); border-radius:14px; padding:13px 16px; font-size:12.5px; color:var(--mid); line-height:1.5; margin-top:12px; }
 .ey-rung{ display:flex; align-items:center; gap:13px; padding:10px 0; border-bottom:1px solid var(--b); }
@@ -93,7 +93,7 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
 .ey-overlay{ position:fixed; inset:0; z-index:9500; background:rgba(6,4,10,.85); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; padding:20px; }
 .ey-overlay.on{ display:flex; }
 .ey-runner{ width:100%; max-width:420px; background:var(--card); border:1px solid var(--rose-b); border-radius:22px; padding:30px 26px; text-align:center; }
-.ey-runner-phase{ font-size:10px; letter-spacing:.18em; color:var(--rose-l); text-transform:uppercase; margin-bottom:8px; }
+.ey-runner-phase{ font-size:var(--fs-11); letter-spacing:.18em; color:var(--rose-l); text-transform:uppercase; margin-bottom:8px; }
 .ey-runner-name{ font-family:var(--serif); font-size:1.8rem; font-style:italic; color:var(--text); margin-bottom:6px; }
 .ey-runner-desc{ font-size:12.5px; color:var(--mid); line-height:1.5; margin-bottom:22px; }
 .ey-runner-time{ font-family:var(--serif); font-size:3.2rem; color:var(--rose-l); font-variant-numeric:tabular-nums; line-height:1; margin-bottom:22px; }
@@ -206,7 +206,7 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
     <button class="ey-sw" id="ey-sound-toggle"><span></span></button>
     <div style="flex:1">
       <div style="font-size:12.5px;color:var(--text)">Clave audible</div>
-      <div style="font-size:10.5px;color:var(--dim)">Marca el 8-tiempos del casino</div>
+      <div style="font-size:var(--fs-12);color:var(--dim)">Marca el 8-tiempos del casino</div>
     </div>
     <div class="ey-bpm"><div class="ey-bpm-n" id="ey-bpm-n">180</div><div class="ey-bpm-l">bpm</div></div>
   </div>
@@ -244,7 +244,7 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
       </div>
     </div>
     <div style="flex:1;min-width:200px">
-      <div style="font-size:10.5px;letter-spacing:.12em;color:var(--rose-l);text-transform:uppercase;margin-bottom:6px">{{ state.level.level.sub }}</div>
+      <div style="font-size:var(--fs-11);letter-spacing:.12em;color:var(--rose-l);text-transform:uppercase;margin-bottom:6px">{{ state.level.level.sub }}</div>
       <div style="font-family:var(--serif);font-size:1.2rem;color:var(--text);line-height:1.3">{{ (state.total_min/60)|round(1) }} horas de práctica deliberada acumuladas</div>
       <div class="ey-forecast" id="ey-forecast"></div>
     </div>
@@ -261,7 +261,7 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
         <span style="width:28px;height:28px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:oklch(20% 0.04 {{ s.hue }});border:1px solid oklch(38% 0.09 {{ s.hue }});color:oklch(70% 0.15 {{ s.hue }})">{{ s.icon }}</span>
         <div>
           <div style="font-family:var(--serif);font-size:1rem;color:var(--text);line-height:1.1">{{ s.title }}</div>
-          <div style="font-size:9px;letter-spacing:.08em;color:oklch(65% 0.13 {{ s.hue }});text-transform:uppercase;margin-top:2px">{{ s.tag }}</div>
+          <div style="font-size:var(--fs-11);letter-spacing:.08em;color:oklch(65% 0.13 {{ s.hue }});text-transform:uppercase;margin-top:2px">{{ s.tag }}</div>
         </div>
       </div>
       <div style="font-size:12px;color:var(--mid);line-height:1.5">{{ s.body }}</div>
@@ -326,7 +326,7 @@ input[type=range].ey-range{ width:100%; accent-color:var(--rose); }
 <div class="ey-sheet-bg" id="ey-sheet-bg">
   <div class="ey-sheet">
     <div style="width:36px;height:4px;border-radius:2px;background:var(--b2);margin:0 auto 18px"></div>
-    <div style="text-align:center;font-size:10px;letter-spacing:.14em;color:var(--rose-l);text-transform:uppercase;margin-bottom:6px">Sesión completada</div>
+    <div style="text-align:center;font-size:var(--fs-11);letter-spacing:.14em;color:var(--rose-l);text-transform:uppercase;margin-bottom:6px">Sesión completada</div>
     <div style="font-family:var(--serif);font-size:1.7rem;font-style:italic;color:var(--text);text-align:center;margin-bottom:4px"><span id="ey-close-min">30</span> min de práctica</div>
     <div style="font-size:11.5px;color:var(--dim);text-align:center;margin-bottom:20px" id="ey-close-sub"></div>
 
@@ -815,7 +815,7 @@ function renderProgreso(){
         <div style="font-family:var(--serif);font-size:1.05rem;color:${cur?'var(--rose-l)':'var(--text)'}">${L.name}</div>
         <div style="font-size:11px;color:var(--dim)">${L.sub}</div>
       </div>
-      <div style="font-size:10.5px;color:var(--dim)">${L.h}h</div>`;
+      <div style="font-size:var(--fs-12);color:var(--dim)">${L.h}h</div>`;
     ladder.appendChild(row);
   });
 }
@@ -855,7 +855,7 @@ function renderBitacora(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         ${l.step ? `<span class="ey-chip on" style="cursor:default">♪ ${esc(l.step)}</span>` : ''}
         <span style="font-size:11px;color:var(--rose-l)">♪ ${FLOW_LABELS[l.flow]}</span>
-        ${l.grabado ? `<span style="font-size:10.5px;color:var(--dim);display:inline-flex;align-items:center;gap:4px;"><i data-lucide="video" style="width:11px;height:11px;"></i> grabado</span>` : ''}
+        ${l.grabado ? `<span style="font-size:var(--fs-12);color:var(--dim);display:inline-flex;align-items:center;gap:4px;"><i data-lucide="video" style="width:11px;height:11px;"></i> grabado</span>` : ''}
       </div>
       ${l.improv ? `<div class="ey-quote">"${esc(l.improv)}"</div>` : ''}`;
     box.appendChild(item);

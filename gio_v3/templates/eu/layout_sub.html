@@ -17,7 +17,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
   <!-- Tailwind precompilado en build time (antes: cdn.tailwindcss.com,
        compila en cada carga del navegador — ver gio_v3/tailwind.config.js) -->
@@ -109,7 +109,7 @@
     .empty-desc { font-size:var(--fs-sm); color:var(--dim); max-width:320px; line-height:1.5; }
     .empty-cta { margin-top:10px; background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.3); border-radius:8px; padding:9px 16px; font-family:var(--sans); font-size:var(--fs-sm); color:var(--gold); letter-spacing:0.06em; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:background 0.15s; }
     .empty-cta:hover { background:rgba(201,168,76,0.14); }
-    .empty-cta kbd { font-family:monospace; font-size:10px; background:var(--card2); border:1px solid var(--b); border-radius:4px; padding:1px 6px; color:var(--dim); }
+    .empty-cta kbd { font-family:monospace; font-size:var(--fs-12); background:var(--card2); border:1px solid var(--b); border-radius:4px; padding:1px 6px; color:var(--dim); }
     /* .sk (shimmer skeleton) vive en app.css */
 
     .t-row { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--card); border:1px solid var(--b); border-radius:6px; margin-bottom:5px; transition:border-color .14s; }
@@ -175,8 +175,11 @@
     .crumbs .sep { color:var(--b2); font-size:14px; }
     .crumb-cur { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text); letter-spacing:.01em; white-space:nowrap; }
     /* Responsive: breadcrumb en ≥768px, ← + título en <768px */
+    .crumb-fn { font-weight:400; color:var(--fg-3); }
+    /* móvil: función debajo del título, 11px (DS V2 · Topbar) */
+    .mt-fn { font-family:var(--font-ui); font-size:var(--fs-11); color:var(--fg-3); margin-top:2px; white-space:nowrap; }
     .hdr-mtitle { display:none; flex-direction:column; line-height:1.08; min-width:0; }
-    .mt-eyebrow { font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); }
+    .mt-eyebrow { font-size:var(--fs-11); letter-spacing:.2em; text-transform:uppercase; color:var(--gold); }
     .mt-title { font-family:var(--serif); font-size:17px; font-weight:600; color:var(--text); letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     @media (max-width:767px) {
       .crumbs    { display:none; }
@@ -228,62 +231,42 @@
       .fgrid.c2, .fgrid.c3 { grid-template-columns:1fr !important; }
     }
 
-    /* ── Bottom nav (móvil) ────────────────────────────────────────────
-       Antes, el salto rápido entre módulos (Inicio/Módulos/Acta/Perfil)
-       solo existía en la SPA de '/' — ninguna de las pantallas de módulo
-       que extienden este layout lo heredaba, así que salir de un módulo
-       significaba retroceder por el breadcrumb hasta el hub primero.
-       Misma paleta y tipografía que el BottomNav de la SPA (eu-components.jsx)
-       para que se sienta como el mismo componente, no uno nuevo. */
-    .eu-bottom-nav {
-      display:none; /* default: oculto — ver @media abajo. NO usar la clase
-        utilitaria lg:hidden de Tailwind aquí: esta regla vive en un <style>
-        que carga DESPUÉS de tailwind-built.css, así que con igual
-        especificidad (0,0,1,0 ambas) esta regla siempre le gana en cascada
-        a .lg\:hidden, sin importar el viewport — quedaba visible también
-        en desktop. Se resuelve con display:none propio + su propio @media. */
-      position:fixed; bottom:0; left:50%; transform:translateX(-50%);
-      width:100%; max-width:430px; z-index:200;
-      background:var(--surf-top);
-      backdrop-filter:blur(24px);
-      border-top:1px solid var(--b);
-      padding-bottom:env(safe-area-inset-bottom, 8px);
+    /* ── Bottom nav (móvil) — DS V2 ──────────────────────────────────────
+       5 pestañas: Inicio · Acta · Praxis · Módulos (sheet) · Tú. Clases
+       .eu-bnav/.eu-sheet/.eu-scrim copiadas de
+       docs/design/design-system-v2/css/components.css hasta que ese archivo
+       se integre completo (Fase 2). Oculto en ≥1024px: ahí manda el sidebar.
+       display:none propio (no lg:hidden de Tailwind: este <style> carga
+       después de tailwind-built.css y le ganaría en cascada). */
+    .eu-bnav{height:calc(var(--bottomnav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg-glass);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border-top:1px solid var(--border-subtle)}
+    .eu-bnav a,.eu-bnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--fg-3);font:var(--fw-medium) 11px/1 var(--font-ui);min-height:44px;text-decoration:none;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .eu-bnav a svg,.eu-bnav button svg{width:22px;height:22px;stroke-width:1.5}
+    .eu-bnav a[aria-current=page],.eu-bnav .is-active{color:var(--fg-brand)}
+    .eu-bnav a[aria-current=page] svg,.eu-bnav .is-active svg{stroke-width:2}
+    .eu-bnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:200}
+    @media (max-width:1023px){
+      .eu-bnav{display:grid}
+      #eu-main  { padding-bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 24px); }
+      #tw-toast { bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 12px); }
     }
-    @media (max-width:1023px) {
-      .eu-bottom-nav { display:flex; }
-    }
-    .ebn-tab {
-      flex:1; display:flex; flex-direction:column; align-items:center;
-      padding:10px 4px 6px; text-decoration:none; position:relative;
-      -webkit-tap-highlight-color:transparent;
-    }
-    .ebn-tab::before {
-      content:''; position:absolute; inset:2px 6px; border-radius:14px;
-      background:var(--gold-d); opacity:0; transform:scale(.85);
-      transition:opacity .32s cubic-bezier(.16,1,.3,1), transform .32s cubic-bezier(.16,1,.3,1);
-    }
-    .ebn-tab.active::before { opacity:1; transform:scale(1); }
-    .ebn-tab:active { transform:scale(.94); transition:transform .12s ease; }
-    .ebn-lbl {
-      font-family:var(--serif); font-size:18px; line-height:1; color:var(--mid);
-      position:relative; z-index:1; transition:color .25s, transform .32s cubic-bezier(.16,1,.3,1);
-    }
-    .ebn-sub {
-      font-family:var(--sans); font-size:10px; letter-spacing:.1em; text-transform:uppercase;
-      margin-top:3px; color:var(--mid); opacity:.45; position:relative; z-index:1; transition:all .25s;
-    }
-    .ebn-tab.active .ebn-lbl, .ebn-tab.active .ebn-sub { color:var(--gold); opacity:1; }
-    .ebn-tab.active .ebn-lbl { transform:translateY(-1px); }
-    .ebn-tab.active .ebn-lbl::after {
-      content:''; display:block; width:20px; height:2px; border-radius:1px;
-      background:var(--gold); margin:4px auto 0; box-shadow:0 0 6px var(--gold-glow, rgba(201,168,76,.45));
-      animation:ebnGrow .35s cubic-bezier(.16,1,.3,1) both;
-    }
-    @keyframes ebnGrow { from { transform:scaleX(0); opacity:0; } to { transform:scaleX(1); opacity:1; } }
-    @media (max-width:1023px) {
-      #eu-main   { padding-bottom:92px; }
-      #tw-toast  { bottom:92px; }
-    }
+
+    .eu-scrim{position:fixed;inset:0;background:var(--bg-overlay);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:210;display:flex;align-items:flex-end;justify-content:center}
+    .eu-scrim[hidden]{display:none}
+    .eu-sheet{width:100%;max-width:560px;background:var(--bg-surface);border:1px solid var(--border-default);border-bottom:0;border-radius:var(--r-xl) var(--r-xl) 0 0;box-shadow:var(--e-3);padding:var(--sp-2) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));animation:euSheetIn var(--dur-base) var(--ease-enter)}
+    .eu-sheet-grab{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:0 auto var(--sp-4)}
+    @keyframes euSheetIn{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+    .eu-sheet-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4)}
+    .eu-sheet-title{font-family:var(--font-display);font-size:var(--fs-20);font-weight:600;color:var(--fg-1)}
+    .eu-sheet-close{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--fg-3);background:none;border:0;cursor:pointer}
+    .eu-sheet-close svg{width:20px;height:20px}
+    .eu-modgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-1) 0}
+    .eu-modgrid a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:var(--sp-3) 0;min-width:0;border-radius:var(--r-md);text-decoration:none;color:var(--fg-2);font:var(--fw-medium) var(--fs-12)/1.2 var(--font-ui);text-align:center;min-height:44px}
+    .eu-modgrid a:hover,.eu-modgrid a:focus-visible{background:var(--bg-hover)}
+    .eu-modgrid a[aria-current=page]{color:var(--fg-brand);background:var(--brand-subtle)}
+    .eu-modgrid .ic{width:44px;height:44px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;background:var(--bg-raised);border:1px solid var(--border-subtle)}
+    .eu-modgrid .ic svg{width:22px;height:22px;stroke-width:1.5}
+    .eu-modgrid .fn{font-weight:400;font-size:var(--fs-11);color:var(--fg-3)}
+    @media (min-width:1024px){ .eu-scrim#eu-mod-sheet{display:none} }
 
     /* ── Sidebar (desktop) ───────────────────────────────────────────────
        Complemento del bottom-nav (móvil): en ≥1024px el bottom-nav se
@@ -325,7 +308,7 @@
     }
     .cmdk-btn:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
     .cmdk-btn kbd {
-      font-family:var(--mono); font-size:10px; background:var(--b); border-radius:4px;
+      font-family:var(--mono); font-size:var(--fs-12); background:var(--b); border-radius:4px;
       padding:1px 5px; color:var(--mid); line-height:1.4;
     }
     .cmdk-overlay {
@@ -348,7 +331,7 @@
       font-family:var(--sans); font-size:15px;
     }
     .cmdk-input::placeholder { color:var(--dim); }
-    .cmdk-esc { font-family:var(--mono); font-size:10px; color:var(--dim); background:var(--b); border-radius:4px; padding:2px 6px; flex-shrink:0; }
+    .cmdk-esc { font-family:var(--mono); font-size:var(--fs-12); color:var(--dim); background:var(--b); border-radius:4px; padding:2px 6px; flex-shrink:0; }
     .cmdk-list { overflow-y:auto; padding:8px; }
     .cmdk-empty { padding:24px 12px; text-align:center; color:var(--dim); font-size:13px; font-family:var(--sans); }
     .cmdk-item {
@@ -396,6 +379,16 @@
 {% set _is_root = _mod_url and (_rpath == _mod_url or _rpath.rstrip('/') == _mod_url.rstrip('/')) %}
 {# URL real del botón ← : si es raíz → hub de módulos; si no → página padre #}
 {% set _back_url = '/' if _is_root else _mod_url %}
+{# DS V2 — nombre griego + función en español en el encabezado de cada página
+   («Oikonomia · Finanzas»). Solo para títulos que son un nombre griego a secas;
+   los que ya traen su función («HEGEMONIKON · Fútbol») se dejan tal cual. #}
+{% set _fn_map = {
+  'OIKONOMIA': 'Finanzas',     'HEGEMONIKON': 'Salud',    'ATARAXIA': 'Rutina',
+  'EURYTHMIA': 'Baile',        'HARMA': 'Vehículo',       'COSMOPOLITISMO': 'Idiomas',
+  'PRAXIS': 'Tareas',          'DÍAITA': 'Nutrición',     'PAIDEIA': 'Aprendizaje',
+} %}
+{% set _mt = self.module_title()|trim %}
+{% set _mt_fn = _fn_map.get(_mt|upper) %}
 
 <body id="eu-body" class="font-sans antialiased" style="background:var(--bg);color:var(--text);">
 
@@ -403,7 +396,7 @@
 <aside class="eu-sidebar">
   <div style="padding:22px 20px 18px; border-bottom:1px solid var(--b); flex-shrink:0;">
     <a href="/" style="text-decoration:none; display:block;">
-      <div style="font-family:var(--sans); font-size:8px; letter-spacing:.28em; color:var(--gold); opacity:.65; text-transform:uppercase; margin-bottom:4px;">Sistema personal</div>
+      <div style="font-family:var(--sans); font-size:var(--fs-11); letter-spacing:.28em; color:var(--gold); opacity:.65; text-transform:uppercase; margin-bottom:4px;">Sistema personal</div>
       <div style="font-family:var(--serif); font-size:19px; color:var(--text); letter-spacing:.14em; font-weight:600;">EUDAIMONIA</div>
     </a>
   </div>
@@ -473,12 +466,12 @@
         {% if pg is defined and pg in _pm and not _is_root %}<span class="sep">›</span><a href="{{ _mod_url }}">{{ _pm[pg][1] }}</a>{% endif %}
         {% block crumb_mid %}{% endblock %}
         <span class="sep">›</span>
-        <span class="crumb-cur">{% block module_title %}{% endblock %}</span>
+        <span class="crumb-cur">{% if _mt_fn %}{{ _mt|title }}<span class="crumb-fn"> · {{ _mt_fn }}</span>{% else %}{% block module_title %}{% endblock %}{% endif %}</span>
       </nav>
       <!-- Móvil: eyebrow solo si NO somos la raíz (evita "Oikonomia / OIKONOMIA") -->
       <div class="hdr-mtitle">
         {% if pg is defined and pg in _pm and not _is_root %}<span class="mt-eyebrow">{{ _pm[pg][1] }}</span>{% endif %}
-        <span class="mt-title">{{ self.module_title() }}</span>
+        <span class="mt-title">{% if _mt_fn %}{{ _mt|title }}{% else %}{{ _mt }}{% endif %}</span>{% if _mt_fn %}<span class="mt-fn">{{ _mt_fn }}</span>{% endif %}
       </div>
     </div>
 
@@ -517,23 +510,52 @@
   {% block content %}{% endblock %}
 </main>
 
-<!-- BOTTOM NAV — móvil. Ver docs/design/ux-patches/README.md Sprint 3 e
-     inspection-audit F-01: mismos 4 tabs que el BottomNav de la SPA
-     (Inicio/Módulos/Acta/Perfil), ahora también en las pantallas de módulo. -->
-<nav class="eu-bottom-nav" aria-label="Navegación principal">
-  <a href="/" class="ebn-tab{% if pg == 'dashboard' %} active{% endif %}">
-    <span class="ebn-lbl">Ἀρχή</span><span class="ebn-sub">Inicio</span>
-  </a>
-  <a href="/gtd/" class="ebn-tab{% if pg == 'gtd' %} active{% endif %}">
-    <span class="ebn-lbl">Praxis</span><span class="ebn-sub">GTD</span>
-  </a>
-  <a href="/actividades/" class="ebn-tab{% if pg == 'actividades' %} active{% endif %}">
-    <span class="ebn-lbl">Acta</span><span class="ebn-sub">Diurna</span>
-  </a>
-  <a href="/perfil/" class="ebn-tab{% if pg == 'perfil' %} active{% endif %}">
-    <span class="ebn-lbl">Αὐτός</span><span class="ebn-sub">Perfil</span>
-  </a>
+<!-- BOTTOM NAV — móvil (DS V2): Inicio · Acta · Praxis · Módulos · Tú.
+     «Módulos» no navega: abre el sheet #eu-mod-sheet con el grid de módulos. -->
+{% set _tu_keys = ['perfil','logros','recompensas'] %}
+{% set _mod_keys = ['finanzas','prioridades','consumo','hegemonikon','bienestar','nutricion','recetas','guardarropa','viajes','idiomas','eurythmia','harma','paideia','plantas','ataraxia'] %}
+<nav class="eu-bnav" aria-label="Navegación principal">
+  <a href="/"{% if pg == 'dashboard' %} aria-current="page"{% endif %}><i data-lucide="house"></i><span>Inicio</span></a>
+  <a href="/actividades/"{% if pg == 'actividades' %} aria-current="page"{% endif %}><i data-lucide="scroll-text"></i><span>Acta</span></a>
+  <a href="/gtd/"{% if pg == 'gtd' %} aria-current="page"{% endif %}><i data-lucide="list-checks"></i><span>Praxis</span></a>
+  <button type="button" id="eu-mod-btn" class="{% if pg in _mod_keys %}is-active{% endif %}"
+          aria-haspopup="dialog" aria-controls="eu-mod-sheet" aria-expanded="false" onclick="euModSheet(true)">
+    <i data-lucide="layout-grid"></i><span>Módulos</span>
+  </button>
+  <a href="/perfil/"{% if pg in _tu_keys %} aria-current="page"{% endif %}><i data-lucide="user-round"></i><span>Tú</span></a>
 </nav>
+
+<!-- SHEET «Módulos» (móvil) — grid 4×3 -->
+<div class="eu-scrim" id="eu-mod-sheet" hidden onclick="if(event.target===this) euModSheet(false)">
+  <div class="eu-sheet" role="dialog" aria-modal="true" aria-labelledby="eu-mod-title">
+    <div class="eu-sheet-grab" aria-hidden="true"></div>
+    <div class="eu-sheet-hd">
+      <div class="eu-sheet-title" id="eu-mod-title">Módulos</div>
+      <button type="button" class="eu-sheet-close" aria-label="Cerrar" onclick="euModSheet(false)"><i data-lucide="x"></i></button>
+    </div>
+    <nav class="eu-modgrid" aria-label="Módulos">
+      {% for href, icon, label, fn, keys in [
+        ('/ataraxia/',    'sun-dim',     'Ataraxia',       'Rutina',      ['ataraxia']),
+        ('/finanzas/',    'landmark',    'Oikonomia',      'Finanzas',    ['finanzas','prioridades','consumo']),
+        ('/bienestar/',   'heart-pulse', 'Hegemonikon',    'Salud',       ['hegemonikon','bienestar','nutricion','recetas']),
+        ('/paideia/',     'book-open',   'Paideia',        'Aprendizaje', ['paideia']),
+        ('/idiomas/',     'languages',   'Cosmopo\u00adlitismo', 'Idiomas',     ['idiomas']),
+        ('/eurythmia/',   'music-2',     'Eurythmia',      'Baile',       ['eurythmia']),
+        ('/guardarropa/', 'shirt',       'Guardarropa',    'Ropa',        ['guardarropa']),
+        ('/viajes/',      'plane',       'Viajes',         'Itinerarios', ['viajes']),
+        ('/harma/',       'car',         'Harma',          'Vehículo',    ['harma']),
+        ('/plantas/',     'sprout',      'Plantas',        'Riego',       ['plantas']),
+        ('/logros',       'trophy',      'Logros',         'XP · Nivel',  ['logros']),
+        ('/recompensas',  'gift',        'Recompensas',    'Tienda EC',   ['recompensas']),
+      ] %}
+      <a href="{{ href }}"{% if pg in keys %} aria-current="page"{% endif %}>
+        <span class="ic"><i data-lucide="{{ icon }}"></i></span>
+        <span>{{ label }}</span><span class="fn">{{ fn }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+  </div>
+</div>
 
 <!-- COMMAND PALETTE (⌘K) — items leídos de .eu-sidebar-link en tiempo real -->
 <div class="cmdk-overlay" id="cmdk-overlay" onclick="if(event.target===this) euCmdkClose()">
@@ -564,6 +586,23 @@
             transition:width .3s ease, opacity .2s ease;">
 </div>
 
+<script>
+/* Sheet «Módulos» de la bottom nav: role=dialog, cierre con Esc/scrim/✕,
+   el foco va al primer módulo al abrir y regresa al botón al cerrar. */
+function euModSheet(open){
+  var sh=document.getElementById('eu-mod-sheet'), btn=document.getElementById('eu-mod-btn');
+  if(!sh) return;
+  sh.hidden=!open;
+  if(btn) btn.setAttribute('aria-expanded', open?'true':'false');
+  document.documentElement.style.overflow = open ? 'hidden' : '';
+  if(open){ var f=sh.querySelector('.eu-modgrid a'); if(f) f.focus(); }
+  else if(btn){ btn.focus(); }
+}
+document.addEventListener('keydown',function(e){
+  var sh=document.getElementById('eu-mod-sheet');
+  if(e.key==='Escape' && sh && !sh.hidden) euModSheet(false);
+});
+</script>
 <script src="{{ url_for('static', filename='js/eu-celebrate.js') }}"></script>
 <script>
 /* Envuelto en try/catch: si el CDN de lucide falla o tarda (red lenta,

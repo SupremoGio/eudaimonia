@@ -92,7 +92,7 @@ html.light {
 }
 .dt-pill.active { background: var(--gold); border-color: var(--gold); color: var(--bg); }
 .dt-card { background: var(--card); border: 1px solid rgba(201,168,76,0.1); border-radius: 14px; padding: 12px 14px; }
-.dt-section-label { font-family: var(--sans); font-size: 9px; letter-spacing: 0.18em; color: var(--dim); text-transform: uppercase; margin-bottom: 10px; }
+.dt-section-label { font-family: var(--sans); font-size: var(--fs-11); letter-spacing: 0.18em; color: var(--dim); text-transform: uppercase; margin-bottom: 10px; }
 
 /* ── Bottom nav (mobile) ───────────────────────────────────── */
 #dt-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 8000; }
@@ -104,7 +104,7 @@ html.light {
 }
 .dt-nav-btn { flex: 1; background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .dt-nav-btn .ico { font-size: 16px; line-height: 1; transition: color 0.2s; }
-.dt-nav-btn .lbl { font-family: var(--sans); font-size: 9.5px; letter-spacing: 0.06em; transition: color 0.2s; }
+.dt-nav-btn .lbl { font-family: var(--sans); font-size: var(--fs-12); letter-spacing: 0.06em; transition: color 0.2s; }
 
 /* ── Toast ─────────────────────────────────────────────────── */
 #dt-toast {
@@ -188,11 +188,11 @@ html.light {
 <!-- ════ SIDEBAR (desktop only) ════════════════════════════════ -->
 <aside id="dt-sidebar">
   <div style="margin-bottom:34px">
-    <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.22em;color:var(--dt-acc);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px">
+    <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.22em;color:var(--dt-acc);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:7px">
       <span style="width:5px;height:5px;border-radius:50%;background:var(--dt-acc);box-shadow:0 0 8px var(--dt-acc);display:inline-block"></span>HEGEMONIKON
     </div>
     <div style="font-family:var(--serif);font-size:38px;font-style:italic;color:var(--text);line-height:0.95">Díaita</div>
-    <div style="font-family:var(--sans);font-size:10.5px;color:var(--dim);margin-top:6px">δίαιτα · bajo en FODMAP</div>
+    <div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim);margin-top:6px">δίαιτα · bajo en FODMAP</div>
   </div>
   <nav style="display:flex;flex-direction:column;gap:4px">
     <button id="sb-nav-hoy"      class="sb-nav-btn active" onclick="switchTab('hoy')">
@@ -211,15 +211,15 @@ html.light {
   <div style="margin-top:auto;padding-top:22px;border-top:1px solid rgba(201,168,76,0.1);display:flex;justify-content:space-between">
     <div>
       <div id="sb-xp" style="font-family:var(--serif);font-size:20px;color:var(--gold)">+0</div>
-      <div style="font-family:var(--sans);font-size:8px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:2px">XP hoy</div>
+      <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:2px">XP hoy</div>
     </div>
     <div>
       <div id="sb-ec" style="font-family:var(--serif);font-size:20px;color:var(--dt-acc)">+0</div>
-      <div style="font-family:var(--sans);font-size:8px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:2px">EC</div>
+      <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:2px">EC</div>
     </div>
     <div>
       <div id="sb-streak" style="font-family:var(--serif);font-size:20px;color:var(--text)">0d</div>
-      <div style="font-family:var(--sans);font-size:8px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:2px">racha</div>
+      <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:2px">racha</div>
     </div>
   </div>
 </aside>
@@ -231,24 +231,24 @@ html.light {
   <div id="dt-mobile-header" style="padding:0 0 12px">
     <div style="display:flex;align-items:flex-start;justify-content:space-between">
       <div>
-        <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.22em;color:var(--dt-acc);text-transform:uppercase;opacity:0.85;margin-bottom:5px;display:flex;align-items:center;gap:7px">
+        <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.22em;color:var(--dt-acc);text-transform:uppercase;opacity:0.85;margin-bottom:5px;display:flex;align-items:center;gap:7px">
           <span style="width:5px;height:5px;border-radius:50%;background:var(--dt-acc);box-shadow:0 0 8px var(--dt-acc);display:inline-block"></span>HEGEMONIKON · Salud
         </div>
         <div style="font-family:var(--serif);font-size:34px;font-weight:600;font-style:italic;color:var(--text);line-height:0.95;letter-spacing:0.01em">Díaita</div>
-        <div style="font-family:var(--sans);font-size:10.5px;color:var(--dim);margin-top:5px;letter-spacing:0.03em">δίαιτα — el régimen del cuerpo · bajo en FODMAP</div>
+        <div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim);margin-top:5px;letter-spacing:0.03em">δίαιτα — el régimen del cuerpo · bajo en FODMAP</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
         <div id="hd-xp" style="display:flex;align-items:baseline;gap:6px">
           <div style="font-family:var(--serif);font-size:18px;color:var(--gold);min-width:34px;text-align:right">+0</div>
-          <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">XP hoy</div>
+          <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">XP hoy</div>
         </div>
         <div id="hd-ec" style="display:flex;align-items:baseline;gap:6px">
           <div style="font-family:var(--serif);font-size:18px;color:var(--dt-acc);min-width:34px;text-align:right">+0</div>
-          <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">EC</div>
+          <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">EC</div>
         </div>
         <div id="hd-streak" style="display:flex;align-items:baseline;gap:6px">
           <div style="font-family:var(--serif);font-size:18px;color:var(--gold);min-width:34px;text-align:right">0d</div>
-          <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">racha limpia</div>
+          <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;width:52px">racha limpia</div>
         </div>
       </div>
     </div>
@@ -269,7 +269,7 @@ html.light {
       <!-- Mobile: day label + progress -->
       <div id="hoy-mobile-top" style="padding:0 0 12px;display:flex;align-items:center;justify-content:space-between">
         <span id="hoy-day-label" style="font-family:var(--sans);font-size:11px;letter-spacing:0.08em;color:var(--dt-acc);text-transform:uppercase"></span>
-        <span id="hoy-progress" style="font-family:var(--sans);font-size:10px;color:var(--dim)"></span>
+        <span id="hoy-progress" style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim)"></span>
       </div>
       <!-- Segmented row (desktop: flex row with day title) -->
       <div id="hoy-seg-row">
@@ -306,7 +306,7 @@ html.light {
     <div id="tab-recetas" class="dt-tab">
       <div id="recetas-filter" style="display:flex;gap:7px;overflow-x:auto;padding-bottom:14px;margin-bottom:4px"></div>
       <div id="recetas-list"></div>
-      <div style="text-align:center;font-family:var(--sans);font-size:10.5px;color:var(--dim);margin-top:16px;line-height:1.6">
+      <div style="text-align:center;font-family:var(--sans);font-size:var(--fs-12);color:var(--dim);margin-top:16px;line-height:1.6">
         Todas verificadas para fase eliminación.<br>Toca <span style="color:var(--gold)">+</span> para sumarlas a tu plan del día.
       </div>
     </div>
@@ -335,11 +335,11 @@ html.light {
       <div style="display:flex;gap:12px;margin-bottom:20px">
         <div class="dt-card" style="flex:1;border-radius:16px;padding:16px 18px">
           <div id="sem-planned" style="font-family:var(--serif);font-size:34px;color:var(--gold);line-height:1"></div>
-          <div style="font-family:var(--sans);font-size:9.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:6px">días planeados</div>
+          <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:6px">días planeados</div>
         </div>
         <div class="dt-card" style="flex:1;border-radius:16px;padding:16px 18px">
           <div id="sem-total" style="font-family:var(--serif);font-size:34px;color:var(--dt-acc);line-height:1"></div>
-          <div style="font-family:var(--sans);font-size:9.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:6px">comidas en la semana</div>
+          <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase;margin-top:6px">comidas en la semana</div>
         </div>
         <!-- Desktop-only guide card -->
         <div id="sem-guide" style="flex:2;background:var(--dt-acc-bg);border:1px solid color-mix(in srgb,var(--dt-acc) 22%,transparent);border-radius:16px;padding:16px 20px;align-items:center;gap:14px">
@@ -383,7 +383,7 @@ html.light {
 <div id="ov-temp" class="dt-overlay" onclick="closeSheet('temp')">
   <div class="dt-sheet trigger-border" onclick="event.stopPropagation()">
     <div class="dt-handle red"></div>
-    <div style="font-family:var(--sans);font-size:10px;letter-spacing:0.18em;color:var(--dt-trigger);text-transform:uppercase;margin-bottom:5px">PROSOCHÉ · atención</div>
+    <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.18em;color:var(--dt-trigger);text-transform:uppercase;margin-bottom:5px">PROSOCHÉ · atención</div>
     <div style="font-family:var(--serif);font-size:26px;font-style:italic;color:var(--text);line-height:1.08;margin-bottom:6px">Registrar un desliz</div>
     <div style="font-family:var(--sans);font-size:12px;color:var(--mid);margin-bottom:18px;line-height:1.5">Anotarlo con honestidad es el acto virtuoso. Rompe la racha limpia y descuenta XP — pero te devuelve la conciencia del hábito.</div>
     <div class="dt-section-label">¿En qué caíste?</div>
@@ -407,7 +407,7 @@ html.light {
 <div id="ov-add" class="dt-overlay" onclick="closeSheet('add')">
   <div class="dt-sheet" onclick="event.stopPropagation()">
     <div class="dt-handle"></div>
-    <div id="add-eyebrow" style="font-family:var(--sans);font-size:10px;letter-spacing:0.18em;color:var(--dt-acc);text-transform:uppercase;margin-bottom:5px"></div>
+    <div id="add-eyebrow" style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.18em;color:var(--dt-acc);text-transform:uppercase;margin-bottom:5px"></div>
     <div style="font-family:var(--serif);font-size:26px;font-style:italic;color:var(--text);line-height:1.08;margin-bottom:16px">Comida o colación</div>
     <div style="display:flex;background:var(--card);border:1px solid rgba(201,168,76,0.12);border-radius:100px;padding:3px;gap:2px;margin-bottom:18px">
       <button id="mode-banco"  onclick="setAddMode('banco')"  style="flex:1;border:none;cursor:pointer;border-radius:100px;padding:8px 4px;font-family:var(--sans);font-size:11.5px;transition:all 0.2s">Del banco</button>
@@ -556,15 +556,15 @@ function dotHtml(tag,sz=7) {
   return `<span style="width:${sz}px;height:${sz}px;border-radius:50%;background:${c};box-shadow:0 0 6px ${c};display:inline-block;flex-shrink:0"></span>`;
 }
 function miniMacro(v,l) {
-  return `<span style="font-family:var(--sans);font-size:10.5px;color:var(--mid)"><span style="color:var(--text)">${esc(v)}</span> ${esc(l)}</span>`;
+  return `<span style="font-family:var(--sans);font-size:var(--fs-12);color:var(--mid)"><span style="color:var(--text)">${esc(v)}</span> ${esc(l)}</span>`;
 }
 function symBadge(id) {
   const f=FEELINGS.find(x=>x.id===id); if(!f) return '';
-  return `<span style="font-family:var(--sans);font-size:10.5px;color:${f.color};display:inline-flex;align-items:center;gap:4px">${f.glyph} ${f.label}</span>`;
+  return `<span style="font-family:var(--sans);font-size:var(--fs-12);color:${f.color};display:inline-flex;align-items:center;gap:4px">${f.glyph} ${f.label}</span>`;
 }
 function tagChip(tag) {
   const t=TAGS[tag]||TAGS.safe;
-  return `<span style="display:inline-flex;align-items:center;gap:5px;font-family:var(--sans);font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:${t.color};background:${t.bg};border:1px solid color-mix(in srgb,${t.color} 33%,transparent);border-radius:100px;padding:3px 9px">${dotHtml(tag,6)}${t.label}</span>`;
+  return `<span style="display:inline-flex;align-items:center;gap:5px;font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.08em;text-transform:uppercase;color:${t.color};background:${t.bg};border:1px solid color-mix(in srgb,${t.color} 33%,transparent);border-radius:100px;padding:3px 9px">${dotHtml(tag,6)}${t.label}</span>`;
 }
 function ring(pct,size,stroke,color,inner) {
   const r=(size-stroke)/2, circ=2*Math.PI*r;
@@ -635,7 +635,7 @@ function renderHoy() {
   document.getElementById('hoy-day-label').textContent=dayFull.toUpperCase();
   document.getElementById('hoy-progress').textContent=`${done}/${plan.length} cumplidas`;
   document.getElementById('hoy-desktop-title').innerHTML=
-    `${esc(dayFull)}<span style="font-family:var(--sans);font-size:10px;color:var(--dt-acc);letter-spacing:0.1em;margin-left:10px;text-transform:uppercase">hoy</span>`;
+    `${esc(dayFull)}<span style="font-family:var(--sans);font-size:var(--fs-11);color:var(--dt-acc);letter-spacing:0.1em;margin-left:10px;text-transform:uppercase">hoy</span>`;
   setVariant(S.variant);
   renderHoyFooter();
   if(isDesktop()) renderHoyRail();
@@ -671,8 +671,8 @@ function renderRitmo() {
       </div>
       <button onclick="openMeal(${m.id})" style="flex:1;text-align:left;cursor:pointer;background:${cb};border:1px solid ${cbo};border-radius:14px;padding:12px 14px;transition:all 0.2s;opacity:${done?0.92:1}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-          <div style="display:flex;align-items:center;gap:7px">${dotHtml(m.tag,6)}<span style="font-family:var(--sans);font-size:9.5px;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase">${esc(m.slot)}</span></div>
-          <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:${done?'var(--dim)':'var(--gold)'}">${done?'✓':'+'+m.xp}<span style="font-size:9px"> ${done?'':'XP'}</span></span>
+          <div style="display:flex;align-items:center;gap:7px">${dotHtml(m.tag,6)}<span style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.12em;color:var(--dim);text-transform:uppercase">${esc(m.slot)}</span></div>
+          <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:${done?'var(--dim)':'var(--gold)'}">${done?'✓':'+'+m.xp}<span style="font-size:var(--fs-12)"> ${done?'':'XP'}</span></span>
         </div>
         <div style="font-family:var(--serif);font-size:18px;color:var(--text);line-height:1.12">${esc(m.name)}</div>
         <div style="display:flex;gap:12px;margin-top:7px">${miniMacro(m.kcal,'kcal')}${miniMacro(m.protein+'g','prot')}${m.symptom?symBadge(m.symptom):''}</div>
@@ -700,15 +700,15 @@ function renderProtocolo() {
   if(!isDesktop()){
     const cleanSoFar=plan.filter(m=>m.done&&m.symptom!=='mal').length;
     const inner=`<div style="font-family:var(--serif);font-size:28px;color:var(--gold);line-height:1">${done}<span style="font-size:15px;color:var(--dim)">/${plan.length}</span></div>
-      <div style="font-family:var(--sans);font-size:8px;letter-spacing:0.14em;color:var(--dim);text-transform:uppercase;margin-top:2px">cumplidas</div>`;
+      <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.14em;color:var(--dim);text-transform:uppercase;margin-top:2px">cumplidas</div>`;
     h+=`<div style="display:flex;gap:16px;align-items:center;background:var(--card);border:1px solid rgba(201,168,76,0.1);border-radius:18px;padding:18px 20px;margin-bottom:18px">
       ${ring(pct,92,6,'var(--gold)',inner)}
       <div style="flex:1">
         <div style="font-family:var(--serif);font-size:20px;font-style:italic;color:var(--text);margin-bottom:8px">${pct===1?'Protocolo limpio':'Protocolo del día'}</div>
         <div style="display:flex;gap:18px">
-          <div><div style="font-family:var(--serif);font-size:19px;color:var(--gold)">+${S.xp_today}</div><div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">XP hoy</div></div>
-          <div><div style="font-family:var(--serif);font-size:19px;color:var(--dt-acc)">+${S.ec_today}</div><div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">EC</div></div>
-          <div><div style="font-family:var(--serif);font-size:19px;color:var(--dt-safe)">${cleanSoFar}</div><div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">sin síntoma</div></div>
+          <div><div style="font-family:var(--serif);font-size:19px;color:var(--gold)">+${S.xp_today}</div><div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">XP hoy</div></div>
+          <div><div style="font-family:var(--serif);font-size:19px;color:var(--dt-acc)">+${S.ec_today}</div><div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">EC</div></div>
+          <div><div style="font-family:var(--serif);font-size:19px;color:var(--dt-safe)">${cleanSoFar}</div><div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">sin síntoma</div></div>
         </div>
       </div>
     </div>`;
@@ -719,7 +719,7 @@ function renderProtocolo() {
       <div style="width:4px;background:${tc};flex-shrink:0"></div>
       <div style="flex:1;padding:12px 14px">
         <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-          <span style="font-family:var(--sans);font-size:9.5px;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</span>
+          <span style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.12em;color:var(--dim);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</span>
           ${m.symptom?symBadge(m.symptom):''}
         </div>
         <div style="font-family:var(--serif);font-size:18px;color:var(--text);line-height:1.12">${esc(m.name)}</div>
@@ -764,7 +764,7 @@ function renderHoyRail() {
   const xp=S.xp_today, ec=S.ec_today;
   const inner=`
     <div style="font-family:var(--serif);font-size:38px;color:var(--gold);line-height:1">${done}<span style="font-size:20px;color:var(--dim)">/${plan.length}</span></div>
-    <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.14em;color:var(--dim);text-transform:uppercase;margin-top:3px">cumplidas</div>`;
+    <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.14em;color:var(--dim);text-transform:uppercase;margin-top:3px">cumplidas</div>`;
   const railRing=document.getElementById('hoy-rail-ring');
   if(!railRing) return;
   railRing.innerHTML=`
@@ -772,15 +772,15 @@ function renderHoyRail() {
     <div style="display:flex;gap:26px;margin-top:20px">
       <div style="text-align:center">
         <div style="font-family:var(--serif);font-size:22px;color:${xp<0?'var(--dt-trigger)':'var(--gold)'}">${xp<0?'':'+'}${xp}</div>
-        <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">XP</div>
+        <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">XP</div>
       </div>
       <div style="text-align:center">
         <div style="font-family:var(--serif);font-size:22px;color:var(--dt-acc)">+${ec}</div>
-        <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">EC</div>
+        <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">EC</div>
       </div>
       <div style="text-align:center">
         <div style="font-family:var(--serif);font-size:22px;color:var(--dt-safe)">${cleanSoFar}</div>
-        <div style="font-family:var(--sans);font-size:8.5px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">limpias</div>
+        <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">limpias</div>
       </div>
     </div>`;
 }
@@ -796,11 +796,11 @@ function renderRecetas() {
     <div style="display:flex;gap:14px;align-items:center;padding:13px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
       <div style="width:52px;height:52px;border-radius:12px;flex-shrink:0;background:repeating-linear-gradient(135deg,var(--card),var(--card) 6px,rgba(201,168,76,0.05) 6px,rgba(201,168,76,0.05) 12px);border:1px solid rgba(201,168,76,0.1);display:flex;align-items:center;justify-content:center">${dotHtml(r.tag,8)}</div>
       <div style="flex:1">
-        <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">${esc(r.slot)} · ${esc(r.time)}</div>
+        <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">${esc(r.slot)} · ${esc(r.time)}</div>
         <div style="font-family:var(--serif);font-size:17px;color:var(--text);line-height:1.1">${esc(r.name)}</div>
         <div style="display:flex;gap:12px;margin-top:4px;align-items:center">
           ${miniMacro(r.kcal,'kcal')}${miniMacro(r.protein+'g','prot')}
-          ${r.note?`<span style="font-family:var(--sans);font-size:10px;color:var(--dt-caution)">· ${esc(r.note)}</span>`:''}
+          ${r.note?`<span style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dt-caution)">· ${esc(r.note)}</span>`:''}
         </div>
       </div>
       <button onclick='openAddMeal(S.today,${JSON.stringify(r)})' title="Añadir al plan de hoy"
@@ -822,8 +822,8 @@ function renderSintomas() {
       <span style="font-family:var(--serif);font-size:15px;font-style:italic;color:var(--dt-trigger)">−${tot} XP</span></div>`+
       S.slips.map(s=>`<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
         <span style="display:inline-flex;width:22px;justify-content:center;"><i data-lucide="${esc(s.glyph||'flag')}" style="width:15px;height:15px;"></i></span>
-        <div style="flex:1"><div style="font-family:var(--sans);font-size:12.5px;color:var(--text)">${esc(s.label)}${s.over?'<span style="color:var(--dt-trigger);font-size:10.5px"> · me pasé</span>':''}</div>
-          ${s.note?`<div style="font-family:var(--sans);font-size:10.5px;color:var(--mid);margin-top:2px">${esc(s.note)}</div>`:''}</div>
+        <div style="flex:1"><div style="font-family:var(--sans);font-size:12.5px;color:var(--text)">${esc(s.label)}${s.over?'<span style="color:var(--dt-trigger);font-size:var(--fs-12)"> · me pasé</span>':''}</div>
+          ${s.note?`<div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--mid);margin-top:2px">${esc(s.note)}</div>`:''}</div>
         <span style="font-family:var(--serif);font-size:14px;font-style:italic;color:var(--dt-trigger)">−${s.pen}</span>
       </div>`).join('')+'</div>';
   }
@@ -840,7 +840,7 @@ function renderSintomas() {
         return `<div style="display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
           <span style="font-size:18px;color:${f.color};width:20px;text-align:center">${f.glyph}</span>
           <div style="flex:1"><div style="font-family:var(--sans);font-size:12.5px;color:var(--text)">${esc(m.slot)} · ${esc(m.time)}</div>
-            ${m.sym_tags&&m.sym_tags.length>0?`<div style="font-family:var(--sans);font-size:10.5px;color:var(--mid);margin-top:2px">${m.sym_tags.map(esc).join(' · ')}</div>`:''}</div>
+            ${m.sym_tags&&m.sym_tags.length>0?`<div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--mid);margin-top:2px">${m.sym_tags.map(esc).join(' · ')}</div>`:''}</div>
           <span style="font-family:var(--sans);font-size:11px;color:${f.color}">${f.label}</span>
         </div>`;
       }).join('');
@@ -893,14 +893,14 @@ function renderSemGrid() {
     let h=`<div style="background:${isToday?'rgba(201,168,76,0.04)':'transparent'};border:1px solid ${isToday?'rgba(201,168,76,0.18)':'rgba(201,168,76,0.08)'};border-radius:14px;padding:12px 10px;min-height:280px;display:flex;flex-direction:column;gap:8px">
       <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px">
         <span style="font-family:var(--sans);font-size:11px;letter-spacing:0.06em;color:${isToday?'var(--dt-acc)':'var(--mid)'};text-transform:uppercase;font-weight:${isToday?600:400}">${d.l}</span>
-        <span style="font-family:var(--sans);font-size:9.5px;color:var(--dim)">${meals.length}/5</span>
+        <span style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim)">${meals.length}/5</span>
       </div>`;
-    if(meals.length===0) h+=`<div style="font-family:var(--sans);font-size:10px;color:var(--dim);font-style:italic;padding:8px 2px">Libre</div>`;
+    if(meals.length===0) h+=`<div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim);font-style:italic;padding:8px 2px">Libre</div>`;
     meals.forEach(m=>{
       h+=`<div style="background:var(--card);border:1px solid ${m.tag==='trigger'?'color-mix(in srgb,var(--dt-trigger) 33%,transparent)':'rgba(201,168,76,0.1)'};border-radius:10px;padding:8px 9px">
         <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
           ${dotHtml(m.tag,5)}
-          <span style="font-family:var(--sans);font-size:8px;letter-spacing:0.06em;color:var(--dim);text-transform:uppercase">${esc(m.time)}</span>
+          <span style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.06em;color:var(--dim);text-transform:uppercase">${esc(m.time)}</span>
           <button onclick="removeMeal(${m.id},'${d.k}')" aria-label="Quitar ${esc(m.name)}" style="margin-left:auto;background:none;border:none;color:var(--dim);cursor:pointer;font-size:13px;line-height:1;padding:0">×</button>
         </div>
         <button onclick="openMeal(${m.id})" style="background:none;border:none;text-align:left;cursor:pointer;padding:0;width:100%">
@@ -909,7 +909,7 @@ function renderSemGrid() {
       </div>`;
     });
     h+=`<button onclick="openAddMeal('${d.k}')" style="margin-top:auto;cursor:pointer;background:transparent;border:1px dashed rgba(201,168,76,0.18);border-radius:9px;padding:8px;font-family:var(--sans);font-size:11px;color:var(--gold)">+ Añadir</button>`;
-    if(meals.length>0) h+=`<button onclick="repeatTemplate('${d.k}')" style="cursor:pointer;background:none;border:none;color:var(--dim);font-family:var(--sans);font-size:9.5px;letter-spacing:0.03em;padding:2px">⇄ Repetir L–V</button>`;
+    if(meals.length>0) h+=`<button onclick="repeatTemplate('${d.k}')" style="cursor:pointer;background:none;border:none;color:var(--dim);font-family:var(--sans);font-size:var(--fs-12);letter-spacing:0.03em;padding:2px">⇄ Repetir L–V</button>`;
     h+='</div>';
     return h;
   }).join('');
@@ -931,7 +931,7 @@ function renderSemDay() {
   const meals=(S.week[k]||[]).slice().sort((a,b)=>toMin(a.time)-toMin(b.time));
   const isToday=k===S.today;
   let h=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
-    <div style="font-family:var(--serif);font-size:22px;font-style:italic;color:var(--text)">${esc(di.full||'')}${isToday?`<span style="font-family:var(--sans);font-size:10px;color:var(--dt-acc);letter-spacing:0.1em;margin-left:8px;text-transform:uppercase">hoy</span>`:''}</div>
+    <div style="font-family:var(--serif);font-size:22px;font-style:italic;color:var(--text)">${esc(di.full||'')}${isToday?`<span style="font-family:var(--sans);font-size:var(--fs-11);color:var(--dt-acc);letter-spacing:0.1em;margin-left:8px;text-transform:uppercase">hoy</span>`:''}</div>
     <span style="font-family:var(--sans);font-size:11px;color:var(--dim)">${meals.length}/5</span></div>`;
   if(meals.length===0){
     h+=`<div style="text-align:center;padding:22px 0;font-family:var(--serif);font-size:17px;font-style:italic;color:var(--dim)">Día libre. Añade tus comidas.</div>`;
@@ -940,7 +940,7 @@ function renderSemDay() {
       h+=`<div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid rgba(201,168,76,0.06)">
         ${dotHtml(m.tag,7)}
         <button onclick="openMeal(${m.id})" style="flex:1;text-align:left;cursor:pointer;background:none;border:none">
-          <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</div>
+          <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.1em;color:var(--dim);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</div>
           <div style="font-family:var(--serif);font-size:16px;color:var(--text);line-height:1.15">${esc(m.name)}</div>
         </button>
         <button onclick="removeMeal(${m.id},'${k}')" aria-label="Quitar ${esc(m.name)}" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:18px;padding:0 4px;line-height:1">×</button>
@@ -952,7 +952,7 @@ function renderSemDay() {
     h+=`<button onclick="repeatTemplate('${k}')" style="width:100%;margin-top:10px;cursor:pointer;background:var(--card);border:1px solid rgba(201,168,76,0.14);border-radius:14px;padding:13px;font-family:var(--sans);font-size:12.5px;color:var(--mid);display:flex;align-items:center;justify-content:center;gap:8px">
       <span style="font-size:14px;color:var(--gold)">⇄</span> Repetir este plan de Lun a Vie
     </button>
-    <div style="font-family:var(--sans);font-size:10px;color:var(--dim);text-align:center;margin-top:8px;line-height:1.5">La repetición estable ayuda a identificar tus disparadores.</div>`;
+    <div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim);text-align:center;margin-top:8px;line-height:1.5">La repetición estable ayuda a identificar tus disparadores.</div>`;
   }
   document.getElementById('sem-day-content').innerHTML=h;
 }
@@ -971,21 +971,21 @@ function openMeal(id){currentMeal=findMeal(id);mealFeeling=currentMeal?.symptom|
 function renderMealSheet(){
   const m=currentMeal; if(!m)return;
   let h=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-    <div style="font-family:var(--sans);font-size:10px;letter-spacing:0.16em;color:var(--dt-acc);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</div>${tagChip(m.tag)}</div>
+    <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.16em;color:var(--dt-acc);text-transform:uppercase">${esc(m.slot)} · ${esc(m.time)}</div>${tagChip(m.tag)}</div>
     <div style="font-family:var(--serif);font-size:26px;font-style:italic;color:var(--text);line-height:1.08;margin-bottom:6px">${esc(m.name)}</div>
     <div style="font-family:var(--sans);font-size:12px;color:var(--mid);margin-bottom:16px;line-height:1.5">${esc(m.note)}</div>
     <div style="display:flex;gap:22px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid rgba(201,168,76,0.08)">
       <div><div style="font-family:var(--serif);font-size:24px;color:var(--text)">${m.kcal}</div>
-        <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase;margin-top:1px">kcal</div></div>
+        <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.12em;color:var(--dim);text-transform:uppercase;margin-top:1px">kcal</div></div>
       <div><div style="font-family:var(--serif);font-size:24px;color:var(--dt-acc)">${m.protein}g</div>
-        <div style="font-family:var(--sans);font-size:9px;letter-spacing:0.12em;color:var(--dim);text-transform:uppercase;margin-top:1px">proteína</div></div>
+        <div style="font-family:var(--sans);font-size:var(--fs-11);letter-spacing:0.12em;color:var(--dim);text-transform:uppercase;margin-top:1px">proteína</div></div>
     </div>
     <div class="dt-section-label">Composición</div>`;
   (m.items||[]).forEach(it=>{
     h+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(201,168,76,0.05)">
       <div style="margin-top:5px">${dotHtml(it.tag||'safe')}</div>
       <div style="flex:1"><div style="font-family:var(--sans);font-size:13px;color:var(--text)">${esc(it.t)}</div>
-        ${it.why?`<div style="font-family:var(--sans);font-size:10.5px;color:var(--dt-trigger);margin-top:2px">${esc(it.why)}</div>`:''}</div></div>`;
+        ${it.why?`<div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dt-trigger);margin-top:2px">${esc(it.why)}</div>`:''}</div></div>`;
   });
   if(m.swap){
     h+=`<div style="margin-top:14px;background:var(--dt-acc-bg);border:1px solid color-mix(in srgb,var(--dt-acc) 22%,transparent);border-radius:12px;padding:11px 14px;display:flex;gap:9px">
@@ -1074,7 +1074,7 @@ function renderTempTriggers(){
       <span style="display:inline-flex;"><i data-lucide="${t.glyph}" style="width:15px;height:15px;"></i></span>
       <div style="flex:1">
         <div style="font-family:var(--sans);font-size:12.5px;color:${tempTrig?.id===t.id?'var(--dt-trigger)':'var(--text)'}">${esc(t.label)}</div>
-        <div style="font-family:var(--sans);font-size:9.5px;color:var(--dim)">−${t.pen} XP</div>
+        <div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim)">−${t.pen} XP</div>
       </div>
     </button>`).join('');
   if (window.lucide) lucide.createIcons();
@@ -1142,7 +1142,7 @@ function renderBancoList(){
       ${dotHtml(r.tag,7)}
       <div style="flex:1">
         <div style="font-family:var(--serif);font-size:16px;color:var(--text);line-height:1.1">${esc(r.name)}</div>
-        <div style="font-family:var(--sans);font-size:10px;color:var(--dim);margin-top:2px">${esc(r.slot)} · ${esc(r.kcal)} kcal · ${esc(r.protein)}g prot</div>
+        <div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim);margin-top:2px">${esc(r.slot)} · ${esc(r.kcal)} kcal · ${esc(r.protein)}g prot</div>
       </div>
       ${addPicked?.id===r.id?'<i data-lucide="check" style="width:14px;height:14px;color:var(--gold);"></i>':''}
     </button>`).join('');

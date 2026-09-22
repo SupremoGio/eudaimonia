@@ -32,7 +32,7 @@
   font-size:var(--fs-xs); letter-spacing:.14em; text-transform:uppercase; color:var(--gold);
   font-weight:600; gap:8px; }
 .hg-analytics summary::-webkit-details-marker { display:none; }
-.hg-analytics summary .an-arrow { transition:transform .2s; font-size:10px; color:var(--dim); }
+.hg-analytics summary .an-arrow { transition:transform .2s; font-size:var(--fs-12); color:var(--dim); }
 .hg-analytics[open] summary .an-arrow { transform:rotate(180deg); }
 .hg-analytics-body { padding:0 18px 18px; }
 
@@ -51,12 +51,12 @@
 
 /* Bar chart */
 .hg-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-.hg-bar-lbl { font-size:10px; color:var(--dim); font-family:var(--mono); width:24px;
+.hg-bar-lbl { font-size:var(--fs-12); color:var(--dim); font-family:var(--mono); width:24px;
               flex-shrink:0; text-align:right; }
 .hg-bar-track { flex:1; height:6px; background:var(--b); border-radius:3px; overflow:hidden; }
 .hg-bar-fill  { height:100%; background:linear-gradient(90deg,var(--gold),var(--gold-l));
                 border-radius:3px; transition:width .6s ease; min-width:2px; }
-.hg-bar-val   { font-size:10px; color:var(--gold); font-family:var(--mono);
+.hg-bar-val   { font-size:var(--fs-12); color:var(--gold); font-family:var(--mono);
                 width:16px; flex-shrink:0; text-align:right; }
 
 /* Recovery rows */
@@ -70,14 +70,14 @@
 .hg-curr-row { display:flex; align-items:center; gap:8px; padding:7px 0;
                border-bottom:1px solid var(--b); font-size:var(--fs-sm); }
 .hg-curr-row:last-child { border-bottom:none; }
-.hg-curr-badge { font-size:10px; padding:2px 7px; border-radius:20px; font-weight:700;
+.hg-curr-badge { font-size:var(--fs-12); padding:2px 7px; border-radius:20px; font-weight:700;
                  flex-shrink:0; }
 .hg-curr-warn  { background:rgba(244,63,94,.1); color:var(--coral-l); border:1px solid rgba(244,63,94,.2); }
 .hg-curr-ok    { background:rgba(201,168,76,.08); color:var(--gold); border:1px solid rgba(201,168,76,.18); }
 
 /* Zone + med tags */
 .hg-tags { display:flex; flex-wrap:wrap; gap:6px; }
-.hg-tag  { font-size:10px; padding:3px 10px; border-radius:20px;
+.hg-tag  { font-size:var(--fs-12); padding:3px 10px; border-radius:20px;
            background:var(--card2); border:1px solid var(--b); color:var(--dim); }
 .hg-tag-cnt { color:var(--gold); margin-left:4px; font-family:var(--mono); }
 
@@ -114,7 +114,7 @@
 .hg-card-title { font-size:var(--fs-base); font-weight:600; }
 .hg-card-zona  { font-size:var(--fs-xs); color:var(--dim); margin-top:1px; }
 .hg-card-badges { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:6px; }
-.hg-badge { font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600;
+.hg-badge { font-size:var(--fs-11); padding:2px 8px; border-radius:20px; font-weight:600;
             letter-spacing:.04em; text-transform:uppercase; }
 .hg-badge-activo   { background:rgba(16,185,129,.12); color:var(--emerald); border:1px solid rgba(16,185,129,.2); }
 .hg-badge-resuelto { background:rgba(148,163,184,.08); color:var(--dim); border:1px solid var(--b); }
@@ -161,7 +161,7 @@
 .hg-med-info { flex:1; min-width:0; }
 .hg-med-name { font-size:var(--fs-sm); font-weight:600; white-space:nowrap;
                overflow:hidden; text-overflow:ellipsis; }
-.hg-med-sub  { font-size:10px; color:var(--dim); }
+.hg-med-sub  { font-size:var(--fs-12); color:var(--dim); }
 .hg-med-toggle { width:28px; height:16px; border-radius:8px; border:1px solid var(--b);
                  background:var(--card2); cursor:pointer; position:relative;
                  transition:background .15s; flex-shrink:0; }
@@ -181,7 +181,7 @@
 .hg-doc-info { flex:1; min-width:0; display:flex; flex-direction:column; }
 .hg-doc-name { font-size:var(--fs-sm); font-weight:600; white-space:nowrap;
                overflow:hidden; text-overflow:ellipsis; }
-.hg-doc-sub  { font-size:10px; color:var(--dim); }
+.hg-doc-sub  { font-size:var(--fs-12); color:var(--dim); }
 
 /* ── Section headers ──────────────────────────────────────────────── */
 .hg-section-hdr { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase;
@@ -336,7 +336,7 @@ window.__MED_STATS__ = {{ stats | tojson }};
             {{ r.veces }}×
           </span>
           {% if r.dias_entre %}
-          <span style="font-size:10px;color:var(--dim);flex-shrink:0;">{{ r.dias_entre }}d</span>
+          <span style="font-size:var(--fs-12);color:var(--dim);flex-shrink:0;">{{ r.dias_entre }}d</span>
           {% endif %}
         </div>
         {% endfor %}
@@ -682,7 +682,7 @@ function renderDetail(ep, recetas, documentos) {
     timelineHtml = '<div class="hg-timeline">';
     for (const r of recetas) {
       const medsHtml = r.medicamentos.length === 0
-        ? `<div style="font-size:10px;color:var(--dim);margin-top:6px;">Sin medicamentos</div>`
+        ? `<div style="font-size:var(--fs-12);color:var(--dim);margin-top:6px;">Sin medicamentos</div>`
         : `<div class="hg-meds">${r.medicamentos.map(m => `
             <div class="hg-med ${m.tomando ? '' : 'terminado'}" id="med-pill-${m.id}">
               <div class="hg-med-icon"><i data-lucide="pill" style="width:14px;height:14px;"></i></div>
@@ -697,7 +697,7 @@ function renderDetail(ep, recetas, documentos) {
                    onclick="toggleMed(${m.id},${m.tomando ? 0 : 1},this)"
                    title="${m.tomando ? 'Marcar terminado' : 'Marcar activo'}"
                    aria-label="${m.tomando ? 'Marcar terminado' : 'Marcar activo'}"></div>
-              <button class="btn-gr" style="font-size:10px;padding:2px 7px;margin-left:2px;"
+              <button class="btn-gr" style="font-size:var(--fs-12);padding:2px 7px;margin-left:2px;"
                 onclick="eliminarMed(${m.id})" aria-label="Eliminar ${esc(m.nombre)}">×</button>
             </div>`).join('')}
           </div>`;
@@ -713,9 +713,9 @@ function renderDetail(ep, recetas, documentos) {
               ${r.notas ? `<div class="hg-tl-notes">"${esc(r.notas)}"</div>` : ''}
             </div>
             <div style="display:flex;gap:4px;flex-shrink:0;">
-              <button class="btn-a" style="font-size:10px;padding:3px 9px;"
+              <button class="btn-a" style="font-size:var(--fs-12);padding:3px 9px;"
                 onclick="abrirModalMed(${r.id})">+ Med</button>
-              <button class="btn-gr" style="font-size:10px;padding:3px 7px;"
+              <button class="btn-gr" style="font-size:var(--fs-12);padding:3px 7px;"
                 onclick="eliminarReceta(${r.id})">×</button>
             </div>
           </div>
@@ -742,7 +742,7 @@ function renderDetail(ep, recetas, documentos) {
               <span class="hg-doc-sub">${label} · ${d.fecha}</span>
             </span>
           </a>
-          <button class="btn-gr" style="font-size:10px;padding:2px 7px;" onclick="eliminarDocumento(${d.id})" aria-label="Eliminar ${esc(d.nombre_original || d.nombre_archivo)}">×</button>
+          <button class="btn-gr" style="font-size:var(--fs-12);padding:2px 7px;" onclick="eliminarDocumento(${d.id})" aria-label="Eliminar ${esc(d.nombre_original || d.nombre_archivo)}">×</button>
         </div>`;
     }).join('') + '</div>';
   }

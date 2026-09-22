@@ -149,7 +149,7 @@
 .rs-delta-up{background:rgba(16,185,129,.1);color:var(--emerald);border:1px solid rgba(16,185,129,.25);}
 .rs-delta-down{background:rgba(244,63,94,.08);color:var(--coral);border:1px solid rgba(244,63,94,.22);}
 .rs-delta-same{background:var(--b);color:var(--dim);}
-.rs-delta-none{background:transparent;color:var(--dim);opacity:.55;font-size:10px;}
+.rs-delta-none{background:transparent;color:var(--dim);opacity:.55;font-size:var(--fs-12);}
 
 .rs-notas{width:100%;background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:9px 11px;color:var(--text);font-size:.78rem;font-family:var(--sans);resize:vertical;min-height:44px;outline:none;transition:border-color .15s;margin-bottom:12px;}
 .rs-notas:focus{border-color:var(--gold);}
@@ -161,7 +161,7 @@
 .rs-hist-table{display:flex;flex-direction:column;gap:2px;overflow-x:auto;}
 .rs-hist-row{display:grid;grid-template-columns:52px repeat(6,1fr);gap:6px;font-size:11px;padding:5px 4px;font-family:var(--mono);color:var(--mid);}
 .rs-hist-row:nth-child(even){background:rgba(255,255,255,.02);border-radius:5px;}
-.rs-hist-head{color:var(--dim);font-family:var(--sans);font-size:9px;letter-spacing:.06em;text-transform:uppercase;}
+.rs-hist-head{color:var(--dim);font-family:var(--sans);font-size:var(--fs-11);letter-spacing:.06em;text-transform:uppercase;}
 
 /* ── Score semanal (Carbón/Hierro/Oro/Diamante) — mismo esquema del rango
    diario de Acta Diurna, agregado sobre los 7 días lunes→domingo de esta
@@ -179,7 +179,7 @@
 .rs-week-day{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px;
   background:var(--card2);border:1px solid var(--b);border-radius:8px;cursor:default;}
 .rs-week-day.future{opacity:.35;}
-.rs-week-day-lbl{font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);}
+.rs-week-day-lbl{font-size:var(--fs-11);letter-spacing:.06em;text-transform:uppercase;color:var(--dim);}
 .rs-week-day-icon{font-size:1rem;line-height:1;}
 
 /* ── Análisis de Élite — veredicto + plan de acción derivados de los mismos
@@ -193,7 +193,7 @@
 .rs-an-vsprev-down{color:var(--coral);}
 .rs-an-days{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
 .rs-an-day{padding:8px 10px;background:var(--card2);border:1px solid var(--b);border-radius:9px;display:flex;flex-direction:column;gap:2px;}
-.rs-an-day-lbl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);}
+.rs-an-day-lbl{font-size:var(--fs-11);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);}
 .rs-an-day-val{font-size:var(--fs-sm);color:var(--text);font-weight:600;}
 .rs-an-day-best{border-color:rgba(16,185,129,.25);}
 .rs-an-day-worst{border-color:rgba(244,63,94,.22);}
@@ -220,7 +220,7 @@
       <i data-lucide="crosshair" style="width:16px;height:16px;color:var(--gold);"></i>
       <div>
         <div style="font-family:var(--sans);font-size:13px;color:var(--text);">Praxis GTD</div>
-        <div style="font-family:var(--sans);font-size:10px;color:var(--dim);margin-top:1px;">Inbox · Next Actions · Proyectos</div>
+        <div style="font-family:var(--sans);font-size:var(--fs-12);color:var(--dim);margin-top:1px;">Inbox · Next Actions · Proyectos</div>
       </div>
     </div>
     <span style="color:var(--dim);font-size:14px;">›</span>

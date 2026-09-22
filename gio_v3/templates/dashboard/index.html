@@ -15,7 +15,7 @@
   @media (min-width:768px) { .dash-head { margin:-24px -24px 24px; padding:16px 24px; } }
   .dash-head-row { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
   .dash-head-id { min-width:0; flex:1; }
-  .dash-eyebrow { font-family:var(--sans); font-size:9px; letter-spacing:.22em; color:var(--gold); opacity:.65; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dash-eyebrow { font-family:var(--sans); font-size:var(--fs-11); letter-spacing:.22em; color:var(--gold); opacity:.65; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .dash-word { font-family:var(--serif); font-size:20px; color:var(--text); font-weight:500; letter-spacing:.16em; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   /* Reflexión del día — reubicada al hueco vacío del header sticky (antes
      vivía hasta el fondo de la columna principal). Versión de una sola
@@ -23,7 +23,7 @@
      "sticky", así que el texto completo queda en el title="" para hover. */
   .dash-head-quote { display:flex; align-items:center; gap:8px; flex:2; min-width:0; margin:0 4px; align-self:center; }
   .dhq-text { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-family:var(--serif); font-style:italic; font-size:13px; color:var(--text); }
-  .dhq-author { flex-shrink:0; font-family:var(--sans); font-size:9px; color:var(--mid); letter-spacing:.04em; }
+  .dhq-author { flex-shrink:0; font-family:var(--sans); font-size:var(--fs-12); color:var(--mid); letter-spacing:.04em; }
   .dash-head-quote .refresh-btn { flex-shrink:0; }
   @media (max-width:900px) { .dash-head-quote { display:none; } }
   /* <900px: la del header desaparece (no hay espacio) — esta toma su lugar,
@@ -37,12 +37,12 @@
     display:flex; align-items:center; justify-content:center; color:var(--gold);
   }
   .dash-badge {
-    position:absolute; top:-4px; right:-4px; min-width:14px; height:14px; border-radius:7px;
-    background:var(--gold); color:#09070F; font-family:var(--sans); font-size:8px; font-weight:700;
+    position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; border-radius:8px;
+    background:var(--gold); color:#09070F; font-family:var(--sans); font-size:var(--fs-11); font-weight:700;
     display:flex; align-items:center; justify-content:center; padding:0 3px;
   }
   .dash-badge.urgent { background:#ef4444; color:#fff; animation:blink 1.4s ease-in-out infinite; }
-  .dash-logros-link { display:inline-flex; align-items:center; gap:5px; font-family:var(--sans); font-size:9px; color:var(--gold); opacity:.65; text-decoration:none; letter-spacing:.08em; }
+  .dash-logros-link { display:inline-flex; align-items:center; gap:5px; font-family:var(--sans); font-size:var(--fs-12); color:var(--gold); opacity:.65; text-decoration:none; letter-spacing:.08em; }
   @media (max-width:480px) { .dash-logros-link .lg-txt { display:none; } }
   .dash-greeting { font-family:var(--serif); font-size:24px; color:var(--text); }
   .dash-greeting-sub { font-size:11px; color:var(--mid); margin-top:3px; }
@@ -54,11 +54,11 @@
   @media (min-width:1024px) { .dash-side { position:sticky; top:80px; margin-top:0; } }
 
   .dash-card { background:var(--card); border:1px solid var(--gold-border); border-radius:14px; padding:16px 18px; }
-  .dash-label { font-family:var(--sans); font-size:9px; letter-spacing:.15em; color:var(--mid); text-transform:uppercase; }
+  .dash-label { font-family:var(--sans); font-size:var(--fs-11); letter-spacing:.15em; color:var(--mid); text-transform:uppercase; }
 
   /* Hero XP */
   .hero-xp { background:linear-gradient(140deg, var(--surf), var(--bg)); border:1px solid var(--gold-border); border-radius:16px; padding:20px; }
-  .hero-xp-eyebrow { font-size:9px; letter-spacing:.18em; color:var(--gold); opacity:.6; text-transform:uppercase; margin-bottom:6px; }
+  .hero-xp-eyebrow { font-size:var(--fs-11); letter-spacing:.18em; color:var(--gold); opacity:.6; text-transform:uppercase; margin-bottom:6px; }
   .hero-xp-num { display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
   /* Mono, no serif: el "1" de Cormorant Garamond a 48px casi no tiene resto
      de gancho y se lee como una "I" suelta (p.ej. "15" -> "I 5") -- mismo
@@ -73,15 +73,15 @@
   .tier-dot { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.04); color:var(--mid); }
   .tier.active .tier-dot { background:var(--tc); color:#09070F; box-shadow:0 0 10px var(--tc); }
   .tier.done .tier-dot { background:color-mix(in srgb, var(--tc) 55%, transparent); color:#09070F; }
-  .tier-lbl { font-family:var(--sans); font-size:9px; letter-spacing:.06em; color:var(--mid); opacity:.6; }
+  .tier-lbl { font-family:var(--sans); font-size:var(--fs-12); letter-spacing:.06em; color:var(--mid); opacity:.6; }
   .tier.active .tier-lbl { color:var(--tc); font-weight:600; opacity:1; }
   .tier.done .tier-lbl { color:var(--tc); opacity:.65; }
-  .rank-eyebrow { font-family:var(--sans); font-size:9px; letter-spacing:.15em; color:var(--mid); text-transform:uppercase; margin-bottom:8px; }
+  .rank-eyebrow { font-family:var(--sans); font-size:var(--fs-11); letter-spacing:.15em; color:var(--mid); text-transform:uppercase; margin-bottom:8px; }
   .rank-hint { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text); margin-bottom:8px; line-height:1.35; }
   .rank-bar-track { height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
   html.light .rank-bar-track { background:rgba(0,0,0,0.07); }
   .rank-bar-fill { height:100%; border-radius:3px; transition:width .3s ease; }
-  .rank-meta { display:flex; gap:12px; margin-top:8px; font-size:9px; color:var(--mid); letter-spacing:.02em; }
+  .rank-meta { display:flex; gap:12px; margin-top:8px; font-size:var(--fs-12); color:var(--mid); letter-spacing:.02em; }
   .rank-meta b { color:var(--text); font-weight:600; }
 
   /* Suggestion */
@@ -91,7 +91,7 @@
   .sugg-card:active { transform:translateY(0) scale(.99); }
   .sugg-icon { width:34px; height:34px; border-radius:9px; background:rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:oklch(65% 0.15 45); }
   html.light .sugg-icon { color:oklch(40% 0.18 45); }
-  .sugg-eyebrow { font-size:9px; letter-spacing:.16em; text-transform:uppercase; color:oklch(65% 0.15 45); margin-bottom:4px; }
+  .sugg-eyebrow { font-size:var(--fs-11); letter-spacing:.16em; text-transform:uppercase; color:oklch(65% 0.15 45); margin-bottom:4px; }
   html.light .sugg-eyebrow { color:oklch(40% 0.18 45); }
   .sugg-label { font-size:14px; color:var(--text); }
   .sugg-pts { font-size:13px; color:var(--gold); font-weight:600; flex-shrink:0; }
@@ -102,12 +102,12 @@
   .level-col:hover { opacity:.8; }
   .level-col:active { transform:scale(.94); }
   .level-info { flex:1; padding-bottom:3px; min-width:0; }
-  .level-num { font-family:var(--sans); font-size:9px; letter-spacing:.18em; color:var(--gold); opacity:.6; text-transform:uppercase; margin-bottom:2px; }
+  .level-num { font-family:var(--sans); font-size:var(--fs-11); letter-spacing:.18em; color:var(--gold); opacity:.6; text-transform:uppercase; margin-bottom:2px; }
   .level-name { font-family:var(--serif); font-size:26px; font-weight:600; color:var(--text); line-height:1; letter-spacing:.05em; }
   .level-sub { font-family:var(--serif); font-style:italic; font-size:12px; color:var(--mid); margin:3px 0 10px; }
   .level-bar-track { height:3px; background:var(--gold-bg); border-radius:2px; overflow:hidden; }
   .level-bar-fill { height:100%; border-radius:2px; background:linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l)); box-shadow:0 0 8px var(--gold-glow); }
-  .level-xp-next { font-size:10px; color:var(--dim); margin-top:8px; }
+  .level-xp-next { font-size:var(--fs-12); color:var(--dim); margin-top:8px; }
 
   /* Modules */
   .mods-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
@@ -122,8 +122,8 @@
   .mod-icon-wrap { width:44px; height:44px; border-radius:12px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; background:var(--mtc-bg); border:1px solid var(--mtc-border); }
   .mod-icon-wrap i { color:var(--mtc-text); width:21px; height:21px; }
   .mod-title { font-family:var(--serif); font-size:15px; font-weight:600; color:var(--text); letter-spacing:.02em; }
-  .mod-desc { font-family:var(--sans); font-size:9.5px; color:var(--mid); margin-top:2px; line-height:1.35; }
-  .mod-status { display:flex; align-items:center; gap:5px; margin-top:10px; font-size:9.5px; }
+  .mod-desc { font-family:var(--sans); font-size:var(--fs-12); color:var(--mid); margin-top:2px; line-height:1.35; }
+  .mod-status { display:flex; align-items:center; gap:5px; margin-top:10px; font-size:var(--fs-12); }
   .mod-status .dot { width:6px; height:6px; border-radius:50%; background:var(--mid); flex-shrink:0; }
   .mod-tile.done .mod-status .dot { background:var(--mtc-text); }
   .mod-status span.txt { color:var(--mid); }
@@ -137,25 +137,25 @@
   .refresh-btn:active { transform:scale(.85); }
   .refresh-btn.spin { transform:rotate(180deg); }
   .refresh-btn i { width:14px; height:14px; }
-  .pill { font-family:var(--sans); font-size:8px; padding:2px 8px; border-radius:100px; letter-spacing:.06em; }
+  .pill { font-family:var(--sans); font-size:var(--fs-12); padding:2px 8px; border-radius:100px; letter-spacing:.06em; }
   /* Reflexión del día (mobile) — antes 14px sin acento visual, se perdía
      entre el label y el pill. Mismo motivo editorial que .word-example
      (idiomas): cita en serif itálica con regla vertical, pero en dorado
      porque aquí es la pieza protagonista de la tarjeta, no una nota al margen. */
   .quote-text { font-family:var(--serif); font-style:italic; font-size:17px; color:var(--text); line-height:1.6; border-left:2px solid var(--gold-border); padding-left:14px; }
-  .quote-author { font-family:var(--sans); font-size:10.5px; color:var(--mid); margin-top:8px; margin-left:16px; letter-spacing:.05em; }
+  .quote-author { font-family:var(--sans); font-size:var(--fs-12); color:var(--mid); margin-top:8px; margin-left:16px; letter-spacing:.05em; }
   .word-card { background:color-mix(in srgb, var(--gold) 4%, transparent); border:1px solid var(--gold-bg); border-radius:12px; padding:16px 18px; }
-  .word-phon { font-family:var(--sans); font-size:9px; color:var(--mid); margin-bottom:2px; letter-spacing:.04em; }
+  .word-phon { font-family:var(--sans); font-size:var(--fs-12); color:var(--mid); margin-bottom:2px; letter-spacing:.04em; }
   .word-word { font-family:var(--serif); font-style:italic; font-size:26px; font-weight:300; color:var(--text); line-height:1; margin-bottom:10px; }
   .word-rule { height:1px; background:linear-gradient(90deg,var(--gold-glow),transparent); margin-bottom:10px; }
   .word-meaning { font-family:var(--sans); font-size:12px; color:var(--mid); line-height:1.55; margin-bottom:8px; }
   .word-example { font-family:var(--serif); font-style:italic; font-size:12px; color:var(--mid); border-left:2px solid var(--b2); padding-left:10px; margin-bottom:10px; line-height:1.55; opacity:.75; }
-  .word-fr { font-family:var(--sans); font-size:9px; background:color-mix(in srgb, var(--gold) 6%, transparent); border:1px solid var(--gold-border); color:var(--gold); padding:3px 9px; border-radius:100px; display:inline-block; }
+  .word-fr { font-family:var(--sans); font-size:var(--fs-12); background:color-mix(in srgb, var(--gold) 6%, transparent); border:1px solid var(--gold-border); color:var(--gold); padding:3px 9px; border-radius:100px; display:inline-block; }
 
   /* Heatmap */
   .hm-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; }
-  .hm-title { font-size:10px; letter-spacing:.18em; color:var(--gold); opacity:.7; text-transform:uppercase; }
-  .hm-link { font-size:10px; color:var(--gold); opacity:.6; text-decoration:none; }
+  .hm-title { font-size:var(--fs-11); letter-spacing:.18em; color:var(--gold); opacity:.7; text-transform:uppercase; }
+  .hm-link { font-size:var(--fs-12); color:var(--gold); opacity:.6; text-decoration:none; }
   .hm-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
   .hm-cell { aspect-ratio:1; border-radius:3px; }
 
@@ -169,7 +169,7 @@
   .dl-top { display:flex; align-items:center; justify-content:space-between; }
   .dl-type { display:flex; align-items:center; gap:5px; color:var(--dl-text); opacity:.75; }
   .dl-type i { width:10px; height:10px; }
-  .dl-type span { font-family:var(--sans); font-size:8px; letter-spacing:.12em; text-transform:uppercase; }
+  .dl-type span { font-family:var(--sans); font-size:var(--fs-11); letter-spacing:.12em; text-transform:uppercase; }
   .dl-check { flex-shrink:0; width:20px; height:20px; border-radius:50%; border:1.5px solid var(--dl-border); background:transparent; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--dl-border); transition:background .15s, transform .12s; }
   .dl-check:hover { background:var(--dl-pill); }
   .dl-check:active { transform:scale(.85); }
@@ -179,7 +179,7 @@
   .dl-badge { background:var(--dl-pill); border-radius:8px; padding:4px 9px; display:inline-flex; align-items:baseline; gap:4px; }
   .dl-badge b { font-family:var(--sans); font-weight:900; line-height:1; font-size:17px; color:var(--dl-text); }
   .dl-badge b.small { font-size:12px; }
-  .dl-badge span { font-family:var(--sans); font-size:7px; letter-spacing:.14em; color:var(--dl-text); opacity:.6; }
+  .dl-badge span { font-family:var(--sans); font-size:var(--fs-12); letter-spacing:.14em; color:var(--dl-text); opacity:.6; }
   .dl-pulse { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-bottom:2px; background:var(--dl-border); box-shadow:0 0 6px var(--dl-border); animation:blink 1.4s ease-in-out infinite; }
 
   .notif-dropdown { position:absolute; top:calc(100% + 10px); right:0; z-index:60; width:320px; max-width:90vw; max-height:420px; overflow-y:auto; background:var(--surf); border:1px solid var(--gold-border); border-radius:14px; padding:14px; box-shadow:0 20px 50px rgba(0,0,0,0.5); }
@@ -234,7 +234,7 @@
           <div class="notif-dropdown" id="notif-panel" style="display:none;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
               <span class="dash-label">Notificaciones</span>
-              <span style="font-family:var(--sans);font-size:9px;color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>
+              <span style="font-family:var(--sans);font-size:var(--fs-12);color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>
             </div>
             {% if not data.deadlines %}
               <div class="empty-rich" style="padding:20px 8px;">
@@ -410,7 +410,7 @@
         <div class="dr-head">
           {% if data.deadlines %}<span class="dr-dot"></span>{% endif %}
           <span class="dash-label" style="flex:1;">Deadline Radar</span>
-          {% if data.deadlines %}<span style="font-family:var(--sans);font-size:9px;color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>{% endif %}
+          {% if data.deadlines %}<span style="font-family:var(--sans);font-size:var(--fs-12);color:var(--mid);opacity:.45;">{{ data.deadlines|length }} próximos</span>{% endif %}
         </div>
         {% if data.deadlines %}
         <div class="dr-list">

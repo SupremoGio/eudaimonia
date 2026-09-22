@@ -80,7 +80,7 @@
         (opts.icon ? '<i data-lucide="' + opts.icon + '" style="width:36px;height:36px;color:var(--gold);" stroke-width="1.5"></i>' : '') +
       '</div>' +
       '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:10px;letter-spacing:.2em;color:var(--gold);opacity:.7;text-transform:uppercase;margin-bottom:3px;font-family:var(--sans,\'DM Sans\',sans-serif);">' + (opts.eyebrow || '') + '</div>' +
+        '<div style="font-size:var(--fs-11);letter-spacing:.2em;color:var(--gold);opacity:.7;text-transform:uppercase;margin-bottom:3px;font-family:var(--sans,\'DM Sans\',sans-serif);">' + (opts.eyebrow || '') + '</div>' +
         '<div style="font-family:var(--serif,\'Cormorant Garamond\',serif);font-size:20px;font-weight:600;color:var(--text);letter-spacing:.03em;">' + (opts.title || '') + '</div>' +
         (opts.desc ? '<div style="font-size:12px;color:var(--mid);margin-top:3px;">' + opts.desc + '</div>' : '') +
       '</div>';
@@ -200,7 +200,7 @@
   // otro +XP — el momento más raro del día (como mucho una vez) se sentía
   // igual que marcar una casilla suelta. En vez de traer una librería de
   // animación nueva (Lottie) solo para este instante, se compone con lo
-  // que ya existe: el ícono hace euIconPop + un pulso continuo, y dispara
+  // que ya existe: el ícono hace euIconPop (sin pulso en reposo — DS V2), y dispara
   // el mismo burst de partículas que ya usa HabitRow (euCelebrate), esta
   // vez en dorado para que se lea como el momento más importante del día.
   // opts: { xp, ec }
@@ -230,7 +230,7 @@
       'display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;' +
       'border-radius:50%;background:color-mix(in srgb, var(--gold) 14%, transparent);margin-bottom:16px;' +
       'filter:drop-shadow(0 0 18px var(--gold-glow, rgba(201,168,76,.5)));' +
-      (reduced ? '' : 'animation:euIconPop .5s cubic-bezier(.2,1.4,.4,1), euIconPulseScale 2.4s ease-in-out .5s infinite;');
+      (reduced ? '' : 'animation:euIconPop .5s cubic-bezier(.2,1.4,.4,1);');
     iconWrap.innerHTML = '<i data-lucide="sparkles" style="width:30px;height:30px;color:var(--gold);" stroke-width="1.5"></i>';
     card.appendChild(iconWrap);
 
