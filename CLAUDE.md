@@ -168,6 +168,22 @@ SECRET_KEY=...
 
 Lista completa de rutas en `README.md` y `docs/PROJECT_CONTEXT.md`.
 
+## Navegación y UI (Design System V2)
+
+- **Navegación = una sola fuente:** `gio_v3/modules/nav.py` (`NAV`, `ACTIONS`,
+  `BOTTOM_NAV`). Un context processor (`app.py`) lo inyecta en todas las
+  plantillas; sidebar, bottom nav, sheet de Módulos, breadcrumb/título de la
+  topbar y ⌘K se generan desde ahí. Para agregar o renombrar una página, se
+  edita `nav.py`, no `layout_sub.html`. Las etiquetas pueden cambiar; las URLs no.
+- **CSS:** tokens en `static/css/app.css`; componentes `eu-*`, shell de
+  navegación, aliases V1→V2 (`.btn-a`, `.tile`, `.fi`…) y CSS legacy compartido
+  en `static/css/components.css`, que se compila dentro de `tailwind-built.css`
+  (`cd gio_v3 && npm run build:css`, y commitear el resultado). Si una clase
+  nueva de `components.css` solo aparece armada dinámicamente o puesta por JS,
+  agrégala al `safelist` de `tailwind.config.js` o Tailwind la purga.
+- **Macros:** `templates/_ui/macros.html` (`{% import '_ui/macros.html' as ui %}`).
+- Referencia de diseño: `docs/design/design-system-v2/` (README + `PROMPTS.md`).
+
 ## Limpieza del repo
 
 - Scripts de un solo uso: una vez aplicados en producción se **borran** (quedan en el

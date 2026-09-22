@@ -158,6 +158,12 @@ def create_app():
         ok = status.get('db_exists', False) and 'error' not in status
         return {'status': 'ok' if ok else 'degraded'}, 200 if ok else 503
 
+    # Navegación V2: NAV/ACTIONS (modules/nav.py) + la página actual resuelta,
+    # disponibles en todas las plantillas → sidebar, bottom nav, sheet de
+    # Módulos, breadcrumb y ⌘K salen de una sola fuente.
+    from modules.nav import nav_context
+    app.context_processor(nav_context)
+
     @app.errorhandler(429)
     def too_many_requests(e):
         return jsonify({'ok': False, 'error': 'Demasiados intentos. Espera un momento.'}), 429

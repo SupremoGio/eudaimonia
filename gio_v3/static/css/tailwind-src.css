@@ -1,3 +1,8 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Entrada de Tailwind (npm run build:css → tailwind-built.css).
+   components.css envuelve su contenido en @layer components: queda entre
+   los componentes de Tailwind y las utilidades, así que una utilidad
+   (p-4, hidden…) siempre puede sobreescribir un componente eu-*. */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "./components.css";
+@import "tailwindcss/utilities";

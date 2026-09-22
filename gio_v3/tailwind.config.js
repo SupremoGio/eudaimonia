@@ -6,6 +6,17 @@ module.exports = {
     './static/js/**/*.js',
     './static/js/**/*.jsx',
   ],
+  // Clases de components.css (@layer components) que Tailwind purgaría por
+  // no aparecer literales en templates: los macros de _ui/ arman nombres
+  // ('eu-btn--' ~ variant), Lucide agrega .lucide en runtime y hay estados
+  // que solo pone JS (is-gaining, is-on, today…).
+  safelist: [
+    { pattern: /^eu-/ },
+    { pattern: /^t-(hero|page|section|card|body|ui|meta|eyebrow|quote|data|data-xl|greek)$/ },
+    { pattern: /^fg-/ },
+    'num', 'kbd', 'lucide', 'is-gaining', 'is-on', 'is-now', 'is-past', 'is-earned',
+    'is-locked', 'is-active', 'today', 'up', 'down', 'neg', 'pos', 'grow', 'ct', 'gr', 'r', 'fn',
+  ],
   theme: {
     extend: {
       colors: {

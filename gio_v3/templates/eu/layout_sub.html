@@ -12,6 +12,7 @@
       var h = document.documentElement;
       if (t === 'light') { h.classList.remove('dark'); h.classList.add('light'); }
       else               { h.classList.add('dark');    h.classList.remove('light'); }
+      try { if (localStorage.getItem('eu-sb-rail') === '1') h.classList.add('sb-rail'); } catch (e) {}
     })();
   </script>
 
@@ -30,478 +31,114 @@
   <link rel="stylesheet" href="/static/css/app.css">
 
   <style>
-    /* Tokens de diseño (paleta, tipografía, tamaños) viven en app.css —
-       enlazado arriba — como fuente única de verdad. Las utilidades
-       Tailwind (text-dim, bg-surface...) ya apuntan a esas mismas
-       variables CSS vía tailwind.config.js, así que reaccionan solas
-       al toggle claro/oscuro sin overrides !important. */
-
+    /* Tokens → static/css/app.css. Componentes eu-*, shell de navegación,
+       aliases V1→V2 y el CSS legacy compartido → static/css/components.css
+       (compilado dentro de tailwind-built.css). Aquí solo queda la base. */
     *, *::before, *::after { box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; transition: background .25s, color .25s; }
     /* min-h-screen (100vh) se corta bajo la barra dinámica de iOS Safari;
-       100dvh se ajusta al viewport visible real. Vía id (no clase Tailwind)
-       porque tailwind-built.css es precompilado y no trae min-h-[100dvh]. */
+       100dvh se ajusta al viewport visible real. */
     #eu-body { min-height: 100vh; min-height: 100dvh; }
 
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
     * { scrollbar-width: thin; scrollbar-color: rgba(201,168,76,0.2) transparent; }
-
-    header, .tile, .af, .modal, #tw-toast { transition: background .25s, border-color .25s, color .25s; }
-
-    .tile { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:20px; }
-    .tile-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.2em; text-transform:uppercase; margin-bottom:14px; font-family:var(--sans); }
-
-    .btn-a { background:linear-gradient(135deg,#7A5520,var(--gold)); border:none; color:#09070F; padding:8px 18px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:opacity .18s, transform .12s; font-weight:500; }
-    .btn-a:hover { opacity:.85; }
-    .btn-a:active { transform:scale(.97); }
-    .btn-g { background:transparent; border:1px solid var(--b2); color:var(--mid); padding:8px 16px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; white-space:nowrap; }
-    .btn-g:hover { border-color:var(--gold); color:var(--gold); }
-    .btn-g:active { transform:scale(.97); }
-    .btn-r { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; }
-    .btn-r:hover { border-color:var(--coral); color:var(--coral); }
-    .btn-r:active { transform:scale(.95); }
-    .btn-gr { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; }
-    .btn-gr:hover { border-color:var(--emerald); color:var(--emerald); }
-    .btn-gr:active { transform:scale(.95); }
-
-    .fi { background:var(--card2); border:1px solid var(--b); border-radius:8px; padding:8px 12px; color:var(--text); font-family:var(--sans); font-size:.8rem; outline:none; width:100%; transition:border-color .18s; }
-    .fi:focus { border-color:var(--gold); }
-    .fi option { background:var(--card2); }
-    .fl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; display:block; font-family:var(--sans); }
-
-    .pri { font-size:var(--fs-xs); padding:2px 7px; border-radius:100px; letter-spacing:.07em; text-transform:uppercase; }
-    .pri-critical  { background:var(--coral-d);  border:1px solid rgba(244,63,94,.25);  color:var(--coral); }
-    .pri-important { background:var(--amber-d);  border:1px solid rgba(201,168,76,.25); color:var(--amber); }
-    .pri-normal    { background:var(--b);         color:var(--dim); }
-
-    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:500; display:none; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px); }
-    .modal-bg.open { display:flex; }
-    .modal { background:var(--card); border:1px solid var(--b2); border-radius:16px; padding:28px; width:440px; max-width:100%; box-shadow:0 24px 80px rgba(0,0,0,0.7); }
-    .modal-title { font-family:var(--serif); font-size:1.3rem; font-weight:600; margin-bottom:18px; color:var(--text); letter-spacing:.06em; }
-    .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
-
-    .af { background:var(--card); border:1px solid var(--b2); border-radius:7px; padding:16px; margin-bottom:16px; }
-    .af-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.16em; text-transform:uppercase; margin-bottom:12px; font-family:var(--sans); }
-    .fg  { display:flex; flex-direction:column; gap:3px; }
-    .fgrid { display:grid; gap:8px; margin-bottom:8px; }
-    .fgrid.c2 { grid-template-columns:1fr 1fr; }
-    .fgrid.c3 { grid-template-columns:1fr 1fr 1fr; }
-    .fa { display:flex; gap:7px; justify-content:flex-end; margin-top:4px; }
-
-    .pg-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-    .pg-t  { font-family:var(--serif); font-size:1.6rem; font-style:italic; font-weight:400; color:var(--text); letter-spacing:.06em; }
-    .pg-s  { font-size:var(--fs-sm); color:var(--dim); margin-top:1px; font-family:var(--sans); }
-
-    .chips2 { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-    .ch2 { background:var(--card2); border:1px solid var(--b); border-radius:100px; padding:4px 10px; font-size:var(--fs-sm); color:var(--mid); cursor:pointer; transition:all .14s; text-decoration:none; font-family:var(--sans); }
-    .ch2:hover, .ch2.on { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
-    .ch2:active { transform:scale(.95); }
-
-    .empty-s { text-align:center; padding:36px 18px; color:var(--dim); }
-    .empty-s svg { width:26px; height:26px; display:block; margin:0 auto 9px; opacity:.22; }
-    .empty-s p { font-size:var(--fs-sm); }
-    .empty-rich { text-align:center; padding:48px 24px; display:flex; flex-direction:column; align-items:center; gap:12px; }
-    .empty-icon-box { width:56px; height:56px; border-radius:14px; border:1px solid var(--b); background:var(--card); display:flex; align-items:center; justify-content:center; margin-bottom:4px; }
-    .empty-icon-box svg { width:22px; height:22px; color:var(--dim); opacity:0.6; }
-    .empty-title { font-family:var(--serif); font-style:italic; font-size:22px; color:var(--text); letter-spacing:0.02em; }
-    .empty-desc { font-size:var(--fs-sm); color:var(--dim); max-width:320px; line-height:1.5; }
-    .empty-cta { margin-top:10px; background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.3); border-radius:8px; padding:9px 16px; font-family:var(--sans); font-size:var(--fs-sm); color:var(--gold); letter-spacing:0.06em; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:background 0.15s; }
-    .empty-cta:hover { background:rgba(201,168,76,0.14); }
-    .empty-cta kbd { font-family:monospace; font-size:var(--fs-12); background:var(--card2); border:1px solid var(--b); border-radius:4px; padding:1px 6px; color:var(--dim); }
-    /* .sk (shimmer skeleton) vive en app.css */
-
-    .t-row { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--card); border:1px solid var(--b); border-radius:6px; margin-bottom:5px; transition:border-color .14s; }
-    .t-row:hover { border-color:var(--b2); }
-    .t-row.faded { opacity:.4; border-style:dashed; }
-    .t-dot { width:14px; height:14px; border:1px solid var(--dim); border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .16s; }
-    .t-dot:hover { border-color:var(--gold); }
-    .t-dot.ck { background:var(--gold); border-color:var(--gold); }
-    .t-dot svg { width:8px; height:8px; color:var(--bg); display:none; }
-    .t-dot.ck svg { display:block; }
-    .t-main { flex:1; min-width:0; }
-    .t-title { font-size:var(--fs-sm); color:var(--text); font-family:var(--sans); }
-    .t-row.faded .t-title { text-decoration:line-through; color:var(--dim); }
-    .t-sub { font-size:var(--fs-xs); color:var(--gold); margin-top:1px; font-family:var(--sans); }
-    .t-meta { display:flex; align-items:center; gap:4px; flex-shrink:0; }
-    .pts-t { font-size:var(--fs-xs); color:var(--gold); background:var(--gold-d); padding:2px 5px; border-radius:100px; }
-    .pt { font-size:var(--fs-xs); padding:2px 6px; border-radius:100px; letter-spacing:.06em; text-transform:uppercase; }
-    .pt-c { background:rgba(244,63,94,.1);    border:1px solid rgba(244,63,94,.2);    color:var(--red); }
-    .pt-i { background:rgba(201,168,76,.1);   border:1px solid rgba(201,168,76,.2);   color:var(--gold); }
-    .pt-n { background:var(--b); color:var(--dim); }
-    .due-t  { font-size:var(--fs-xs); color:var(--mid); font-family:var(--sans); }
-    .proj-t { font-size:var(--fs-xs); color:var(--gold); background:rgba(201,168,76,.07); border:1px solid rgba(201,168,76,.18); padding:2px 5px; border-radius:100px; }
-    .ai { background:none; border:none; color:var(--dim); padding:3px; border-radius:3px; display:flex; align-items:center; transition:color .14s; cursor:pointer; font-family:var(--sans); }
-    .ai:hover { color:var(--gold); }
-    .ai.del:hover { color:var(--red); }
-    .ai svg { width:11px; height:11px; }
-
-    /* Theme toggle */
-    .theme-btn {
-      width:30px; height:30px; border-radius:7px; border:1px solid var(--b2);
-      background:var(--card2); color:var(--mid); cursor:pointer;
-      display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0;
-    }
-    .theme-btn:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
-    .theme-btn svg { width:13px; height:13px; }
-
-    /* Logout */
-    .logout-btn {
-      width:30px; height:30px; border-radius:7px; border:1px solid var(--b2);
-      background:var(--card2); color:var(--mid); cursor:pointer;
-      display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0;
-    }
-    .logout-btn:hover { border-color:var(--red); color:var(--red); }
-    .logout-btn svg { width:13px; height:13px; }
-
-    /* Ocultar patrimonio neto / total activos (módulo Finanzas) */
-    .nw-mask { display:none; letter-spacing:2px; }
-    body.nw-hidden .nw-real { display:none; }
-    body.nw-hidden .nw-mask { display:inline; }
-    body.nw-hidden .nw-hide-block { display:none !important; }
-
-    /* === Header nav: breadcrumb + back — UN SOLO LENGUAJE DE NAVEGACIÓN === */
-    .crumb-back {
-      width:34px; height:34px; border-radius:9px; border:1px solid var(--b2);
-      background:var(--card); color:var(--mid); display:flex; align-items:center;
-      justify-content:center; transition:all .18s; flex-shrink:0; text-decoration:none;
-    }
-    .crumb-back:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-d); transform:translateX(-1px); }
-    .crumb-back svg { width:17px; height:17px; }
-    .crumbs { display:flex; align-items:center; gap:9px; min-width:0; }
-    .crumbs a { font-family:var(--sans); font-size:13px; color:var(--dim); text-decoration:none; letter-spacing:.01em; transition:color .16s; white-space:nowrap; }
-    .crumbs a:hover { color:var(--gold); }
-    .crumbs .sep { color:var(--b2); font-size:14px; }
-    .crumb-cur { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text); letter-spacing:.01em; white-space:nowrap; }
-    /* Responsive: breadcrumb en ≥768px, ← + título en <768px */
-    .crumb-fn { font-weight:400; color:var(--fg-3); }
-    /* móvil: función debajo del título, 11px (DS V2 · Topbar) */
-    .mt-fn { font-family:var(--font-ui); font-size:var(--fs-11); color:var(--fg-3); margin-top:2px; white-space:nowrap; }
-    .hdr-mtitle { display:none; flex-direction:column; line-height:1.08; min-width:0; }
-    .mt-eyebrow { font-size:var(--fs-11); letter-spacing:.2em; text-transform:uppercase; color:var(--gold); }
-    .mt-title { font-family:var(--serif); font-size:17px; font-weight:600; color:var(--text); letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    @media (max-width:767px) {
-      .crumbs    { display:none; }
-      .hdr-mtitle{ display:flex; }
-      /* hdr-util nace para esconder texto secundario (fechas, labels) en
-         móvil, pero algunas páginas (Fútbol, Salud, Paideia) meten ahí su
-         botón real de "Agregar" — esconderlo a ciegas lo hacía imposible
-         de tocar. Solo se esconde si NO trae un botón adentro. */
-      .hdr-util:not(:has(button)) { display:none; }
-      .hdr-util:has(button) button { padding:6px 10px !important; white-space:nowrap; }
-    }
-
-    /* GTD internal shell */
-    .gtd-shell { display:grid; grid-template-columns:180px 1fr; height:calc(100vh - 56px); overflow:hidden; margin:-16px -16px; }
-    .gtd-nav { background:var(--surf); border-right:1px solid var(--b); padding:18px 0; display:flex; flex-direction:column; overflow-y:auto; }
-    .gn-head { padding:0 14px 14px; border-bottom:1px solid var(--b); }
-    .gn-head .t { font-family:var(--serif); font-size:.95rem; font-style:italic; color:var(--gold); }
-    .gn-head .s { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.14em; text-transform:uppercase; font-family:var(--sans); }
-    .gn-sec { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.18em; text-transform:uppercase; padding:10px 14px 3px; font-family:var(--sans); }
-    .gl { display:flex; align-items:center; gap:8px; padding:7px 14px; color:var(--mid); font-size:var(--fs-sm); text-decoration:none; transition:all .14s; border-left:2px solid transparent; font-family:var(--sans); }
-    .gl:hover { color:var(--text); background:var(--gold-d); }
-    .gl.on { color:var(--gold); background:var(--gold-d); border-left-color:var(--gold); }
-    .gl svg { width:13px; height:13px; flex-shrink:0; }
-    .gl-badge { margin-left:auto; background:var(--b); color:var(--dim); font-size:var(--fs-xs); padding:1px 5px; border-radius:100px; font-family:var(--sans); }
-    .gl.on .gl-badge { background:var(--gold); color:var(--bg); }
-    .gn-foot { padding:12px 14px; margin-top:auto; border-top:1px solid var(--b); }
-    .lv-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px; font-family:var(--sans); }
-    .lv-bar { background:var(--b); border-radius:100px; height:3px; overflow:hidden; margin-bottom:3px; }
-    .lv-fill { height:100%; background:linear-gradient(90deg,#7A5520,var(--gold),var(--gold-l)); border-radius:100px; transition:width .5s; }
-    .lv-pts { font-size:var(--fs-xs); color:var(--dim); font-family:var(--sans); }
-    .gtd-body { overflow-y:auto; padding:20px 24px; scrollbar-width:thin; scrollbar-color:var(--b) transparent; }
-
-    @media(min-width:1024px) {
-      .gtd-shell { height:calc(100vh - 56px); margin:-24px -24px; }
-      .gtd-body  { padding:22px 26px; }
-    }
-    @media(max-width:767px) {
-      .gtd-shell { grid-template-columns:1fr; grid-template-rows:auto 1fr; height:calc(100vh - 48px); }
-      .gtd-nav   { flex-direction:row; overflow-x:auto; overflow-y:hidden; border-right:none; border-bottom:1px solid var(--b); padding:8px 12px; gap:4px; height:auto; scrollbar-width:none; }
-      .gtd-nav::-webkit-scrollbar { display:none; }
-      .gn-head, .gn-sec, .gn-foot { display:none; }
-      .gl { flex-shrink:0; flex-direction:column; border-left:none; border-bottom:2px solid transparent; border-radius:10px; padding:8px 14px; font-size:var(--fs-sm); gap:3px; min-width:60px; text-align:center; justify-content:center; }
-      .gl svg { width:16px; height:16px; }
-      .gl.on { border-bottom-color:var(--gold); background:var(--gold-d); }
-      .gl-badge { margin-left:0; margin-top:2px; }
-      .gtd-body { padding:14px 14px; }
-      .modal-bg.open { align-items:flex-end !important; padding:0 !important; }
-      .modal { border-radius:22px 22px 0 0 !important; width:100% !important; max-width:100% !important; max-height:88vh; overflow-y:auto; padding-bottom:calc(16px + env(safe-area-inset-bottom)) !important; }
-      .fgrid.c2, .fgrid.c3 { grid-template-columns:1fr !important; }
-    }
-
-    /* ── Bottom nav (móvil) — DS V2 ──────────────────────────────────────
-       5 pestañas: Inicio · Acta · Praxis · Módulos (sheet) · Tú. Clases
-       .eu-bnav/.eu-sheet/.eu-scrim copiadas de
-       docs/design/design-system-v2/css/components.css hasta que ese archivo
-       se integre completo (Fase 2). Oculto en ≥1024px: ahí manda el sidebar.
-       display:none propio (no lg:hidden de Tailwind: este <style> carga
-       después de tailwind-built.css y le ganaría en cascada). */
-    .eu-bnav{height:calc(var(--bottomnav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg-glass);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border-top:1px solid var(--border-subtle)}
-    .eu-bnav a,.eu-bnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--fg-3);font:var(--fw-medium) 11px/1 var(--font-ui);min-height:44px;text-decoration:none;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-    .eu-bnav a svg,.eu-bnav button svg{width:22px;height:22px;stroke-width:1.5}
-    .eu-bnav a[aria-current=page],.eu-bnav .is-active{color:var(--fg-brand)}
-    .eu-bnav a[aria-current=page] svg,.eu-bnav .is-active svg{stroke-width:2}
-    .eu-bnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:200}
-    @media (max-width:1023px){
-      .eu-bnav{display:grid}
-      #eu-main  { padding-bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 24px); }
-      #tw-toast { bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 12px); }
-    }
-
-    .eu-scrim{position:fixed;inset:0;background:var(--bg-overlay);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:210;display:flex;align-items:flex-end;justify-content:center}
-    .eu-scrim[hidden]{display:none}
-    .eu-sheet{width:100%;max-width:560px;background:var(--bg-surface);border:1px solid var(--border-default);border-bottom:0;border-radius:var(--r-xl) var(--r-xl) 0 0;box-shadow:var(--e-3);padding:var(--sp-2) var(--sp-4) calc(var(--sp-4) + env(safe-area-inset-bottom));animation:euSheetIn var(--dur-base) var(--ease-enter)}
-    .eu-sheet-grab{width:36px;height:4px;border-radius:2px;background:var(--border-strong);margin:0 auto var(--sp-4)}
-    @keyframes euSheetIn{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
-    .eu-sheet-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4)}
-    .eu-sheet-title{font-family:var(--font-display);font-size:var(--fs-20);font-weight:600;color:var(--fg-1)}
-    .eu-sheet-close{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);color:var(--fg-3);background:none;border:0;cursor:pointer}
-    .eu-sheet-close svg{width:20px;height:20px}
-    .eu-modgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-1) 0}
-    .eu-modgrid a{display:flex;flex-direction:column;align-items:center;gap:6px;padding:var(--sp-3) 0;min-width:0;border-radius:var(--r-md);text-decoration:none;color:var(--fg-2);font:var(--fw-medium) var(--fs-12)/1.2 var(--font-ui);text-align:center;min-height:44px}
-    .eu-modgrid a:hover,.eu-modgrid a:focus-visible{background:var(--bg-hover)}
-    .eu-modgrid a[aria-current=page]{color:var(--fg-brand);background:var(--brand-subtle)}
-    .eu-modgrid .ic{width:44px;height:44px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;background:var(--bg-raised);border:1px solid var(--border-subtle)}
-    .eu-modgrid .ic svg{width:22px;height:22px;stroke-width:1.5}
-    .eu-modgrid .fn{font-weight:400;font-size:var(--fs-11);color:var(--fg-3)}
-    @media (min-width:1024px){ .eu-scrim#eu-mod-sheet{display:none} }
-
-    /* ── Sidebar (desktop) ───────────────────────────────────────────────
-       Complemento del bottom-nav (móvil): en ≥1024px el bottom-nav se
-       oculta y esto ocupa su lugar como navegación persistente entre
-       módulos. Antes solo existía dentro de la SPA vieja (SideNav en
-       eu-app.jsx), retirada — este es el equivalente en el sistema Jinja,
-       visible en las 28 pantallas que ya extienden este layout. */
-    .eu-sidebar { display:none; }
-    .nav-link { transition:background .18s, color .18s; color:var(--dim); font-family:var(--sans); text-decoration:none; }
-    .nav-link.active { background:var(--gold-d); color:var(--gold); border-left-color:var(--gold) !important; }
-    .nav-link:hover:not(.active) { background:var(--gold-d); color:var(--mid); }
-    @media (min-width:1024px) {
-      body { padding-left:256px; }
-      .eu-sidebar {
-        display:flex; flex-direction:column;
-        position:fixed; top:0; left:0; width:256px; height:100vh; z-index:40;
-        background:var(--surf-nav); border-right:1px solid var(--b);
-      }
-      .eu-sidebar-nav { flex:1; overflow-y:auto; padding:12px; }
-      .eu-sidebar-link { display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; border-left:2px solid transparent; }
-      .eu-sidebar-link i { width:16px; height:16px; flex-shrink:0; }
-      .eu-sidebar-link .lbl { font-size:var(--fs-sm); letter-spacing:.03em; }
-      .eu-sidebar-link .sub { font-size:var(--fs-xs); color:var(--dim); margin-top:1px; }
-      .eu-sidebar-divider { display:flex; align-items:center; gap:8px; padding:14px 12px 6px; }
-      .eu-sidebar-divider .rule { flex:1; height:1px; background:var(--b); }
-      .eu-sidebar-divider span { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.2em; text-transform:uppercase; flex-shrink:0; }
-    }
-
-    /* ── Command palette (⌘K) ─────────────────────────────────────────────
-       Última pieza del roadmap de navegación (docs/design/ux-patches Sprint 3). Lee
-       sus items directo del sidebar ya renderizado (.eu-sidebar-link) —
-       una sola fuente de verdad para "qué páginas existen", no una lista
-       separada que se desincroniza. */
-    .cmdk-btn {
-      display:flex; align-items:center; gap:6px;
-      background:var(--card2); border:1px solid var(--b2); border-radius:7px;
-      padding:5px 9px; color:var(--dim); cursor:pointer; flex-shrink:0;
-      font-family:var(--sans); font-size:11px; transition:all .2s;
-    }
-    .cmdk-btn:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
-    .cmdk-btn kbd {
-      font-family:var(--mono); font-size:var(--fs-12); background:var(--b); border-radius:4px;
-      padding:1px 5px; color:var(--mid); line-height:1.4;
-    }
-    .cmdk-overlay {
-      display:none; position:fixed; inset:0; z-index:600;
-      background:rgba(0,0,0,.6); backdrop-filter:blur(3px);
-      align-items:flex-start; justify-content:center;
-      padding:12vh 16px 16px;
-    }
-    .cmdk-overlay.open { display:flex; }
-    .cmdk-panel {
-      width:100%; max-width:560px; max-height:60vh;
-      background:var(--surf); border:1px solid var(--gold-border); border-radius:16px;
-      box-shadow:0 24px 80px rgba(0,0,0,.6); overflow:hidden;
-      display:flex; flex-direction:column;
-    }
-    .cmdk-input-row { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--b); flex-shrink:0; }
-    .cmdk-input-row i { width:16px; height:16px; color:var(--dim); flex-shrink:0; }
-    .cmdk-input {
-      flex:1; background:none; border:none; outline:none; color:var(--text);
-      font-family:var(--sans); font-size:15px;
-    }
-    .cmdk-input::placeholder { color:var(--dim); }
-    .cmdk-esc { font-family:var(--mono); font-size:var(--fs-12); color:var(--dim); background:var(--b); border-radius:4px; padding:2px 6px; flex-shrink:0; }
-    .cmdk-list { overflow-y:auto; padding:8px; }
-    .cmdk-empty { padding:24px 12px; text-align:center; color:var(--dim); font-size:13px; font-family:var(--sans); }
-    .cmdk-item {
-      display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px;
-      cursor:pointer; text-decoration:none; color:inherit;
-    }
-    .cmdk-item i { width:16px; height:16px; color:var(--dim); flex-shrink:0; }
-    .cmdk-item .lbl { font-family:var(--sans); font-size:14px; color:var(--text); }
-    .cmdk-item .sub { font-family:var(--sans); font-size:11px; color:var(--dim); margin-top:1px; }
-    .cmdk-item.on { background:var(--gold-d); }
-    .cmdk-item.on i { color:var(--gold); }
   </style>
 
   <meta name="csrf-token" content="{{ csrf_token() }}">
   {% block head %}{% endblock %}
 </head>
 
-{# ── Mapa módulo-padre: (slug, NombreMostrado, URL_del_módulo) ── #}
-{% set _pm = {
-  'finanzas':    ('oikonomia',      'Oikonomia',      '/finanzas/'),
-  'hegemonikon': ('hegemonikon',    'Hegemonikon',    ''),
-  'nutricion':   ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
-  'perfil':      ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
-  'recetas':     ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
-  'guardarropa': ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
-  'viajes':      ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
-  'idiomas':     ('cosmopolitismo', 'Cosmopolitismo', '/idiomas/'),
-  'gtd':         ('ataraxia',       'Ataraxia',       '/gtd/'),
-  'ataraxia':    ('ataraxia',       'Ataraxia',       '/ataraxia/'),
-  'prioridades': ('oikonomia',      'Oikonomia',      '/finanzas/'),
-  'consumo':     ('oikonomia',      'Oikonomia',      '/finanzas/'),
-  'bienestar':   ('hegemonikon',    'Hegemonikon',    '/bienestar/'),
-  'eurythmia':   ('eurythmia',      'Eurythmia',      '/eurythmia/'),
-  'harma':       ('harma',          'Harma',          '/harma/'),
-  'paideia':     ('paideia',        'Paideia',        '/paideia/'),
-  'plantas':     ('plantas',        'Plantas',        '/plantas/'),
-} %}
-
-{# URL efectiva del módulo padre; '' o pg desconocido → '/' (el dashboard ya
-   trae el grid de módulos completo — antes apuntaba a '/?tab=modules',
-   un fragmento de la SPA vieja que ya no existe). #}
-{% set _mod_url = ((_pm[pg][2] if _pm[pg][2] else '/') if (pg is defined and pg in _pm) else '/') %}
-{# ¿Estamos en la raíz del propio módulo? (evita breadcrumb y back-link circulares) #}
-{% set _rpath = request.path %}
-{% set _is_root = _mod_url and (_rpath == _mod_url or _rpath.rstrip('/') == _mod_url.rstrip('/')) %}
-{# URL real del botón ← : si es raíz → hub de módulos; si no → página padre #}
-{% set _back_url = '/' if _is_root else _mod_url %}
-{# DS V2 — nombre griego + función en español en el encabezado de cada página
-   («Oikonomia · Finanzas»). Solo para títulos que son un nombre griego a secas;
-   los que ya traen su función («HEGEMONIKON · Fútbol») se dejan tal cual. #}
-{% set _fn_map = {
-  'OIKONOMIA': 'Finanzas',     'HEGEMONIKON': 'Salud',    'ATARAXIA': 'Rutina',
-  'EURYTHMIA': 'Baile',        'HARMA': 'Vehículo',       'COSMOPOLITISMO': 'Idiomas',
-  'PRAXIS': 'Tareas',          'DÍAITA': 'Nutrición',     'PAIDEIA': 'Aprendizaje',
-} %}
+{# Navegación: todo sale de NAV (modules/nav.py, context processor):
+   nav_here / nav_crumbs / nav_title / nav_sub / nav_back / nav_sheet…
+   Páginas fuera de NAV (login) usan su bloque module_title como título. #}
 {% set _mt = self.module_title()|trim %}
-{% set _mt_fn = _fn_map.get(_mt|upper) %}
+{% set _nh = nav_here %}
 
 <body id="eu-body" class="font-sans antialiased" style="background:var(--bg);color:var(--text);">
 
-<!-- SIDEBAR — solo desktop (≥1024px); en móvil la navegación es el bottom-nav -->
-<aside class="eu-sidebar">
-  <div style="padding:22px 20px 18px; border-bottom:1px solid var(--b); flex-shrink:0;">
-    <a href="/" style="text-decoration:none; display:block;">
-      <div style="font-family:var(--sans); font-size:var(--fs-11); letter-spacing:.28em; color:var(--gold); opacity:.65; text-transform:uppercase; margin-bottom:4px;">Sistema personal</div>
-      <div style="font-family:var(--serif); font-size:19px; color:var(--text); letter-spacing:.14em; font-weight:600;">EUDAIMONIA</div>
-    </a>
-  </div>
-  <nav class="eu-sidebar-nav">
-    {% for href, icon, label, key, sub in [
-      ('/',             'layout-dashboard', 'Dashboard',    'dashboard',   ''),
-      ('/actividades/', 'scroll',           'Acta Diurna',  'actividades', 'Registro diario'),
-      ('/ataraxia/',    'anchor',           'Ataraxia',     'ataraxia',    'Checklist · Rutina'),
-      ('/gtd/',         'crosshair',        'Praxis',       'gtd',         'Tareas · GTD'),
-    ] %}
-    <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg == key %} active{% endif %}">
-      <i data-lucide="{{ icon }}"></i>
-      <div class="flex flex-col min-w-0"><span class="lbl">{{ label }}</span>{% if sub %}<span class="sub">{{ sub }}</span>{% endif %}</div>
-    </a>
-    {% endfor %}
-
-    <div class="eu-sidebar-divider"><div class="rule"></div><span>Módulos</span><div class="rule"></div></div>
-
-    {% for href, icon, label, keys, sub in [
-      ('/finanzas/',    'wallet',       'Oikonomia',      ['finanzas'],                                             'Finanzas · Gastos'),
-      ('/bienestar/',   'shield-check', 'Hegemonikon',    ['hegemonikon','bienestar','nutricion','recetas','guardarropa','viajes'], 'Salud · Nutrición'),
-      ('/paideia/',     'book-open',    'Paideia',        ['paideia'],                                              'Aprendizaje'),
-      ('/idiomas/',     'globe',        'Cosmopolitismo', ['idiomas'],                                              'Idiomas'),
-      ('/eurythmia/',   'music',        'Eurythmia',      ['eurythmia'],                                            'Baile · Ritmo'),
-      ('/harma/',       'car',          'Harma',          ['harma'],                                                'Vehículo'),
-      ('/plantas/',     'flower-2',     'Plantas',        ['plantas'],                                              'Riego · Trasplante'),
-    ] %}
-    <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg in keys %} active{% endif %}">
-      <i data-lucide="{{ icon }}"></i>
-      <div class="flex flex-col min-w-0"><span class="lbl">{{ label }}</span><span class="sub">{{ sub }}</span></div>
-    </a>
-    {% endfor %}
-
-    <div class="eu-sidebar-divider"><div class="rule"></div><span>Sistema</span><div class="rule"></div></div>
-
-    {% for href, icon, label, key, sub in [
-      ('/perfil',      'user',   'Perfil',       'perfil',      'Identidad · Datos'),
-      ('/logros',      'trophy', 'Logros',       'logros',      'Clasificación · XP'),
-      ('/recompensas', 'gift',   'Recompensas',  'recompensas', 'Shop · Eudaimonia Coins'),
-    ] %}
-    <a href="{{ href }}" class="nav-link eu-sidebar-link{% if pg == key %} active{% endif %}">
-      <i data-lucide="{{ icon }}"></i>
-      <div class="flex flex-col min-w-0"><span class="lbl">{{ label }}</span><span class="sub">{{ sub }}</span></div>
-    </a>
+<!-- SIDEBAR (≥1024) — DS V2: grupos Hoy · Virtudes · Vida · Tú (NAV) -->
+<aside class="eu-sidebar" aria-label="Navegación">
+  <a class="eu-sb-brand" href="/" style="text-decoration:none">
+    <span class="eu-sb-mark"><i data-lucide="landmark"></i></span><b>EUDAIMONIA</b>
+  </a>
+  <nav class="eu-sb-body">
+    {% for g in NAV %}
+    <div class="eu-sb-group">
+      <div class="eu-sb-glbl">{{ g.group }}</div>
+      {% for it in g['items'] %}
+      {% set _open = _nh['item'] and _nh['item'].id == it.id %}
+      <a class="eu-sb-item" href="{{ it.url }}" title="{{ it.label }}{{ ' · ' ~ it.fn if it.fn }}"
+         {% if _open and not _nh['child'] %}aria-current="page"{% endif %}>
+        <i data-lucide="{{ it.icon }}"></i><span class="lbl">{{ it.label }}</span>{% if it.greek %}<span class="gr">{{ it.greek }}</span>{% endif %}
+      </a>
+      {% if _open and it.children %}
+        {% set _kids = it.children %}
+        {% set _cur = _nh['child'] %}
+        {% for ch in _kids %}
+          {% set _is_cur = _cur and _cur.id == ch.id %}
+          <a class="eu-sb-item eu-sb-sub{% if loop.index > nav_sb_max and not _is_cur %} eu-sb-extra{% endif %}" href="{{ ch.url }}"
+             {% if loop.index > nav_sb_max and not _is_cur %}hidden{% endif %}{% if _is_cur %} aria-current="page"{% endif %}><span class="lbl">{{ ch.label }}</span></a>
+        {% endfor %}
+        {% if _kids|length > nav_sb_max %}
+          <button type="button" class="eu-sb-item eu-sb-sub eu-sb-more" onclick="euSbMore(this)" aria-expanded="false"><span class="lbl">Más…</span></button>
+        {% endif %}
+      {% endif %}
+      {% endfor %}
+    </div>
     {% endfor %}
   </nav>
-  <div style="padding:14px 20px; border-top:1px solid var(--b); flex-shrink:0; display:flex; align-items:center; gap:8px;">
-    <span style="width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;"></span>
-    <span style="font-size:var(--fs-xs); color:var(--dim); letter-spacing:.14em; text-transform:uppercase;">Eudaimonia activa</span>
+  <div class="eu-sb-foot">
+    <div class="eu-sb-foot-row eu-sb-lvl">
+      <span class="t-meta" id="eu-sb-level">Nivel —</span>
+      <span class="num fg-xp" style="font-size:var(--fs-12)" id="eu-sb-pct"></span>
+    </div>
+    <div class="eu-xpbar eu-sb-lvl" role="progressbar" aria-label="Progreso al siguiente nivel" aria-valuemax="100" aria-valuenow="0"><i id="eu-sb-bar" style="width:0%"></i></div>
+    <div class="eu-sb-foot-row">
+      <a class="eu-badge eu-badge--ec" href="/recompensas/" title="Euda-Credits"><i data-lucide="coins"></i><span class="eu-ec-val">—</span> EC</a>
+      <div style="display:flex">
+        <button type="button" class="eu-iconbtn" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar tema"><i data-lucide="moon" class="eu-ic-moon"></i><i data-lucide="sun" class="eu-ic-sun"></i></button>
+        <button type="button" class="eu-iconbtn" onclick="logoutApp()" aria-label="Cerrar sesión" title="Cerrar sesión"><i data-lucide="log-out"></i></button>
+        <button type="button" class="eu-iconbtn eu-sb-collapse" onclick="euSbRail()" aria-label="Colapsar menú" title="Colapsar menú"><i data-lucide="panel-left-close"></i></button>
+      </div>
+    </div>
   </div>
 </aside>
 
 {% block topbar %}
-<!-- TOPBAR -->
-<header class="sticky top-0 z-20 flex-shrink-0"
-        style="background:var(--surf-top); border-bottom:1px solid var(--b); backdrop-filter:blur(12px);">
-  <div class="flex items-center justify-between px-4 md:px-6" style="height:56px; gap:16px;">
+<!-- TOPBAR — desktop: breadcrumb (NAV) + búsqueda ⌘K + XP/EC + avatar ·
+     móvil: ← + título/función + EC + buscar -->
+<header class="eu-topbar">
+  <a class="eu-iconbtn eu-tb-back" href="{% block back_href %}{{ nav_back }}{% endblock %}" aria-label="Volver" title="Volver"><i data-lucide="chevron-left"></i></a>
 
-    <!-- IZQUIERDA: botón ← + breadcrumb (una sola ruta) -->
-    <div class="flex items-center" style="gap:11px; min-width:0;">
-      <a href="{% block back_href %}{{ _back_url }}{% endblock %}" class="crumb-back" aria-label="Volver" title="Volver">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      </a>
-      <nav class="crumbs" aria-label="Ruta">
-        <a href="/">Módulos</a>
-        {# Nivel intermedio solo si NO somos la raíz del módulo #}
-        {% if pg is defined and pg in _pm and not _is_root %}<span class="sep">›</span><a href="{{ _mod_url }}">{{ _pm[pg][1] }}</a>{% endif %}
-        {% block crumb_mid %}{% endblock %}
-        <span class="sep">›</span>
-        <span class="crumb-cur">{% if _mt_fn %}{{ _mt|title }}<span class="crumb-fn"> · {{ _mt_fn }}</span>{% else %}{% block module_title %}{% endblock %}{% endif %}</span>
-      </nav>
-      <!-- Móvil: eyebrow solo si NO somos la raíz (evita "Oikonomia / OIKONOMIA") -->
-      <div class="hdr-mtitle">
-        {% if pg is defined and pg in _pm and not _is_root %}<span class="mt-eyebrow">{{ _pm[pg][1] }}</span>{% endif %}
-        <span class="mt-title">{% if _mt_fn %}{{ _mt|title }}{% else %}{{ _mt }}{% endif %}</span>{% if _mt_fn %}<span class="mt-fn">{{ _mt_fn }}</span>{% endif %}
-      </div>
-    </div>
+  <nav class="eu-crumb" aria-label="Ruta">
+    {% if nav_crumbs %}
+      {% for c in nav_crumbs %}
+        {% if c.current %}<span aria-current="page">{{ c.label }}{% if c.fn %}<span class="fn"> · {{ c.fn }}</span>{% endif %}</span>
+        {% elif c.url %}<a href="{{ c.url }}">{{ c.label }}</a><i data-lucide="chevron-right"></i>
+        {% else %}<span>{{ c.label }}</span><i data-lucide="chevron-right"></i>{% endif %}
+      {% endfor %}
+    {% else %}
+      <span aria-current="page">{% block module_title %}{% endblock %}</span>
+    {% endif %}
+  </nav>
 
-    <!-- DERECHA: utilidades opcionales + tema -->
-    <div class="flex items-center gap-3">
-      <span class="hdr-util" style="font-size:var(--fs-xs); color:var(--mid); letter-spacing:.08em; text-transform:uppercase;">
-        {% block topright %}{% endblock %}
-      </span>
-      <button class="cmdk-btn" onclick="euCmdkOpen()" aria-label="Buscar (Cmd/Ctrl+K)" title="Buscar (Cmd/Ctrl+K)">
-        <i data-lucide="search" style="width:12px;height:12px;"></i><kbd id="cmdk-hint">Ctrl K</kbd>
-      </button>
-      <button class="theme-btn" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar tema">
-        <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
-        <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
-      </button>
-      <button class="logout-btn" onclick="logoutApp()" aria-label="Cerrar sesión" title="Cerrar sesión">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
-      </button>
-    </div>
-
+  <div class="eu-mtitle">
+    <b>{{ nav_title or _mt }}</b>
+    {% if nav_sub %}<span>{{ nav_sub }}</span>{% endif %}
   </div>
+
+  <div style="flex:1" class="hidden md:block"></div>
+  <span class="eu-tb-util">{% block topright %}{% endblock %}</span>
+
+  <button type="button" class="eu-search" onclick="euCmdkOpen()" aria-label="Buscar o ejecutar (Cmd/Ctrl+K)">
+    <i data-lucide="search"></i>Buscar o ejecutar…<span class="kbd" data-cmdk-hint>Ctrl K</span>
+  </button>
+  <span class="eu-badge eu-badge--xp eu-tb-xp" title="XP de hoy / meta diaria"><span class="eu-xp-today">—</span>&nbsp;/ {{ XP_DAILY_GOAL }} XP</span>
+  <a class="eu-badge eu-badge--ec" href="/recompensas/" title="Euda-Credits"><i data-lucide="coins"></i><span class="eu-ec-val">—</span></a>
+  <button type="button" class="eu-iconbtn eu-tb-search-m" onclick="euCmdkOpen()" aria-label="Buscar"><i data-lucide="search"></i></button>
+  <a class="eu-tb-avatar" href="/perfil/" aria-label="Tu perfil" title="Tu perfil"><i data-lucide="user-round"></i></a>
 </header>
 {% endblock %}
 
@@ -510,64 +147,59 @@
   {% block content %}{% endblock %}
 </main>
 
-<!-- BOTTOM NAV — móvil (DS V2): Inicio · Acta · Praxis · Módulos · Tú.
-     «Módulos» no navega: abre el sheet #eu-mod-sheet con el grid de módulos. -->
-{% set _tu_keys = ['perfil','logros','recompensas'] %}
-{% set _mod_keys = ['finanzas','prioridades','consumo','hegemonikon','bienestar','nutricion','recetas','guardarropa','viajes','idiomas','eurythmia','harma','paideia','plantas','ataraxia'] %}
+<!-- BOTTOM NAV — móvil (NAV_BOTTOM): Inicio · Acta · Praxis · Módulos · Tú.
+     «Módulos» no navega: abre el sheet #eu-mod-sheet. -->
 <nav class="eu-bnav" aria-label="Navegación principal">
-  <a href="/"{% if pg == 'dashboard' %} aria-current="page"{% endif %}><i data-lucide="house"></i><span>Inicio</span></a>
-  <a href="/actividades/"{% if pg == 'actividades' %} aria-current="page"{% endif %}><i data-lucide="scroll-text"></i><span>Acta</span></a>
-  <a href="/gtd/"{% if pg == 'gtd' %} aria-current="page"{% endif %}><i data-lucide="list-checks"></i><span>Praxis</span></a>
-  <button type="button" id="eu-mod-btn" class="{% if pg in _mod_keys %}is-active{% endif %}"
-          aria-haspopup="dialog" aria-controls="eu-mod-sheet" aria-expanded="false" onclick="euModSheet(true)">
-    <i data-lucide="layout-grid"></i><span>Módulos</span>
-  </button>
-  <a href="/perfil/"{% if pg in _tu_keys %} aria-current="page"{% endif %}><i data-lucide="user-round"></i><span>Tú</span></a>
+  {% for b in NAV_BOTTOM %}
+    {% if b.url %}
+    <a href="{{ b.url }}"{% if nav_bottom_active == b.id %} aria-current="page" class="is-active"{% endif %}><i data-lucide="{{ b.icon }}"></i><span>{{ b.label }}</span></a>
+    {% else %}
+    <button type="button" id="eu-mod-btn"{% if nav_bottom_active == b.id %} class="is-active"{% endif %}
+            aria-haspopup="dialog" aria-controls="eu-mod-sheet" aria-expanded="false" onclick="euModSheet(true)">
+      <i data-lucide="{{ b.icon }}"></i><span>{{ b.label }}</span>
+    </button>
+    {% endif %}
+  {% endfor %}
 </nav>
 
-<!-- SHEET «Módulos» (móvil) — grid 4×3 -->
-<div class="eu-scrim" id="eu-mod-sheet" hidden onclick="if(event.target===this) euModSheet(false)">
+<!-- SHEET «Módulos» (móvil) — grid 4×3 desde NAV -->
+<div class="eu-scrim eu-scrim--sheet" id="eu-mod-sheet" hidden onclick="if(event.target===this) euModSheet(false)">
   <div class="eu-sheet" role="dialog" aria-modal="true" aria-labelledby="eu-mod-title">
     <div class="eu-sheet-grab" aria-hidden="true"></div>
     <div class="eu-sheet-hd">
-      <div class="eu-sheet-title" id="eu-mod-title">Módulos</div>
-      <button type="button" class="eu-sheet-close" aria-label="Cerrar" onclick="euModSheet(false)"><i data-lucide="x"></i></button>
+      <div class="t-section" id="eu-mod-title">Módulos</div>
+      <button type="button" class="eu-iconbtn" aria-label="Cerrar" onclick="euModSheet(false)"><i data-lucide="x"></i></button>
     </div>
     <nav class="eu-modgrid" aria-label="Módulos">
-      {% for href, icon, label, fn, keys in [
-        ('/ataraxia/',    'sun-dim',     'Ataraxia',       'Rutina',      ['ataraxia']),
-        ('/finanzas/',    'landmark',    'Oikonomia',      'Finanzas',    ['finanzas','prioridades','consumo']),
-        ('/bienestar/',   'heart-pulse', 'Hegemonikon',    'Salud',       ['hegemonikon','bienestar','nutricion','recetas']),
-        ('/paideia/',     'book-open',   'Paideia',        'Aprendizaje', ['paideia']),
-        ('/idiomas/',     'languages',   'Cosmopo\u00adlitismo', 'Idiomas',     ['idiomas']),
-        ('/eurythmia/',   'music-2',     'Eurythmia',      'Baile',       ['eurythmia']),
-        ('/guardarropa/', 'shirt',       'Guardarropa',    'Ropa',        ['guardarropa']),
-        ('/viajes/',      'plane',       'Viajes',         'Itinerarios', ['viajes']),
-        ('/harma/',       'car',         'Harma',          'Vehículo',    ['harma']),
-        ('/plantas/',     'sprout',      'Plantas',        'Riego',       ['plantas']),
-        ('/logros',       'trophy',      'Logros',         'XP · Nivel',  ['logros']),
-        ('/recompensas',  'gift',        'Recompensas',    'Tienda EC',   ['recompensas']),
-      ] %}
-      <a href="{{ href }}"{% if pg in keys %} aria-current="page"{% endif %}>
-        <span class="ic"><i data-lucide="{{ icon }}"></i></span>
-        <span>{{ label }}</span><span class="fn">{{ fn }}</span>
+      {% for it in nav_sheet %}
+      <a href="{{ it.url }}"{% if _nh['item'] and _nh['item'].id == it.id %} aria-current="page"{% endif %}>
+        <span class="ic"{% if it.cat %} data-cat="{{ it.cat }}"{% endif %}><i data-lucide="{{ it.icon }}"></i></span>
+        <span>{{ it.label|replace('Cosmopolitismo', 'Cosmopo­litismo') }}</span><span class="fn">{{ it.fn }}</span>
       </a>
       {% endfor %}
     </nav>
   </div>
 </div>
 
-<!-- COMMAND PALETTE (⌘K) — items leídos de .eu-sidebar-link en tiempo real -->
-<div class="cmdk-overlay" id="cmdk-overlay" onclick="if(event.target===this) euCmdkClose()">
-  <div class="cmdk-panel">
-    <div class="cmdk-input-row">
+<!-- COMMAND PALETTE (⌘K) — Acciones · Páginas · Recientes · Sistema (NAV) -->
+<div class="eu-cmdk-scrim" id="eu-cmdk" hidden onclick="if(event.target===this) euCmdkClose()">
+  <div class="eu-cmdk" role="dialog" aria-modal="true" aria-label="Buscar o ejecutar">
+    <div class="eu-cmdk-in">
       <i data-lucide="search"></i>
-      <input type="text" class="cmdk-input" id="cmdk-input" placeholder="Ir a…" autocomplete="off" spellcheck="false">
-      <span class="cmdk-esc">Esc</span>
+      <input type="text" id="eu-cmdk-input" placeholder="Buscar páginas o acciones… (griego o español)" autocomplete="off" spellcheck="false"
+             role="combobox" aria-expanded="true" aria-controls="eu-cmdk-list" aria-autocomplete="list">
+      <span class="kbd">esc</span>
     </div>
-    <div class="cmdk-list" id="cmdk-list"></div>
+    <div class="eu-cmdk-list" id="eu-cmdk-list" role="listbox"></div>
+    <div class="eu-cmdk-ft">
+      <span><span class="kbd">↑</span><span class="kbd">↓</span>navegar</span>
+      <span><span class="kbd">↵</span>abrir</span>
+      <span><span class="kbd" data-cmdk-mod>Ctrl</span><span class="kbd">↵</span>nueva pestaña</span>
+    </div>
   </div>
 </div>
+<script type="application/json" id="eu-nav-data">{{ nav_cmdk|tojson }}</script>
+<script type="application/json" id="eu-nav-here">{{ {'title': nav_title or _mt, 'url': request.path, 'icon': (_nh['child'].icon if _nh['child'] and _nh['child'].icon else (_nh['item'].icon if _nh['item'] else 'file'))}|tojson }}</script>
 
 <!-- TOAST -->
 <div id="tw-toast"
@@ -587,8 +219,8 @@
 </div>
 
 <script>
-/* Sheet «Módulos» de la bottom nav: role=dialog, cierre con Esc/scrim/✕,
-   el foco va al primer módulo al abrir y regresa al botón al cerrar. */
+/* ── Sheet «Módulos» (móvil): role=dialog, Esc/scrim/✕, el foco va al primer
+   módulo al abrir y regresa al botón al cerrar. ── */
 function euModSheet(open){
   var sh=document.getElementById('eu-mod-sheet'), btn=document.getElementById('eu-mod-btn');
   if(!sh) return;
@@ -602,6 +234,33 @@ document.addEventListener('keydown',function(e){
   var sh=document.getElementById('eu-mod-sheet');
   if(e.key==='Escape' && sh && !sh.hidden) euModSheet(false);
 });
+
+/* ── Sidebar: «Más…» despliega el resto de subpáginas; colapsar a riel ── */
+function euSbMore(btn){
+  btn.parentNode.querySelectorAll('.eu-sb-extra').forEach(function(a){ a.hidden=false; });
+  btn.remove();
+}
+function euSbRail(){
+  var on=document.documentElement.classList.toggle('sb-rail');
+  try{ localStorage.setItem('eu-sb-rail', on?'1':'0'); }catch(e){}
+}
+
+/* ── XP del día, nivel y EC para topbar y pie del sidebar. Se piden después
+   de pintar (no retrasan el render) a /api/xp, el mismo endpoint del
+   dashboard. Si falla, los badges se quedan en «—». ── */
+(function(){
+  if(!document.querySelector('.eu-ec-val')) return;
+  fetch('/api/xp',{credentials:'same-origin'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
+    if(!d) return;
+    var fmt=function(n){ return Number(n||0).toLocaleString('es-MX'); };
+    document.querySelectorAll('.eu-ec-val').forEach(function(el){ el.textContent=fmt(d.total_coins); });
+    document.querySelectorAll('.eu-xp-today').forEach(function(el){ el.textContent=fmt(d.xp_today); });
+    var lv=document.getElementById('eu-sb-level'); if(lv) lv.textContent='Nivel '+d.level+' · '+(d.level_name||'').charAt(0)+(d.level_name||'').slice(1).toLowerCase();
+    var pct=Math.max(0,Math.min(100,Math.round(d.level_pct||0)));
+    var pc=document.getElementById('eu-sb-pct'); if(pc) pc.textContent=pct+'%';
+    var bar=document.getElementById('eu-sb-bar'); if(bar){ bar.style.width=pct+'%'; bar.parentNode.setAttribute('aria-valuenow',pct); }
+  }).catch(function(){});
+})();
 </script>
 <script src="{{ url_for('static', filename='js/eu-celebrate.js') }}"></script>
 <script>
@@ -620,18 +279,10 @@ try { lucide.createIcons(); } catch (e) { console.warn('lucide.createIcons() fal
 })();
 
 function _applyTheme(t) {
-  var h    = document.documentElement;
-  var moon = document.getElementById('theme-icon-moon');
-  var sun  = document.getElementById('theme-icon-sun');
-  if (t === 'light') {
-    h.classList.add('light'); h.classList.remove('dark');
-    if (moon) moon.style.display = 'none';
-    if (sun)  sun.style.display  = '';
-  } else {
-    h.classList.add('dark'); h.classList.remove('light');
-    if (moon) moon.style.display = '';
-    if (sun)  sun.style.display  = 'none';
-  }
+  /* El ícono luna/sol del botón se resuelve por CSS (html.light / .eu-ic-*) */
+  var h = document.documentElement;
+  if (t === 'light') { h.classList.add('light'); h.classList.remove('dark'); }
+  else               { h.classList.add('dark');  h.classList.remove('light'); }
 }
 
 function toggleTheme() {
@@ -779,126 +430,127 @@ document.addEventListener('keydown', (e) => {
 </script>
 
 <script>
+/* ── Command palette (⌘K) — datos desde NAV/ACTIONS (modules/nav.py) ──────
+   Grupos: Recientes (últimas 5 visitas) · Acciones · Páginas · Sistema.
+   Busca en griego y en español, sin acentos: «finanzas» encuentra Oikonomia. */
 (function(){
-  if (navigator.platform && /Mac|iPhone|iPad/.test(navigator.platform)) {
-    var hint = document.getElementById('cmdk-hint');
-    if (hint) hint.textContent = '⌘K';
+  var isMac = navigator.platform && /Mac|iPhone|iPad/.test(navigator.platform);
+  document.querySelectorAll('[data-cmdk-hint]').forEach(function(el){ el.textContent = isMac ? '⌘K' : 'Ctrl K'; });
+  document.querySelectorAll('[data-cmdk-mod]').forEach(function(el){ el.textContent = isMac ? '⌘' : 'Ctrl'; });
+  var legacyHint = document.getElementById('cmdk-hint');   // botón suelto del dashboard
+  if (legacyHint && isMac) legacyHint.textContent = '⌘K';
+
+  var DATA = {pages:[], actions:[]}, HERE = null;
+  try { DATA = JSON.parse(document.getElementById('eu-nav-data').textContent); } catch(e){}
+  try { HERE = JSON.parse(document.getElementById('eu-nav-here').textContent); } catch(e){}
+
+  // Recientes: se registra cada visita (máx. 5, sin repetir)
+  var RKEY = 'eu-recent';
+  function recents(){ try { return JSON.parse(localStorage.getItem(RKEY) || '[]'); } catch(e){ return []; } }
+  if (HERE && HERE.title) {
+    try {
+      var r = recents().filter(function(x){ return x.url !== HERE.url; });
+      r.unshift({label: HERE.title, url: HERE.url, icon: HERE.icon || 'history'});
+      localStorage.setItem(RKEY, JSON.stringify(r.slice(0, 6)));
+    } catch(e){}
   }
 
-  var overlay = document.getElementById('cmdk-overlay');
-  var input   = document.getElementById('cmdk-input');
-  var list    = document.getElementById('cmdk-list');
-  var items   = null;   // [{href, label, sub, icon}] — sidebar (módulos) + SUBMODULES (páginas dentro de un módulo)
-  var active  = 0;
-  var shown   = [];
-
-  // El sidebar solo renderiza un link por MÓDULO (ej. "Hegemonikon"), no por
-  // cada submódulo que vive debajo de él (Guardarropa, Recetas, Nutrición,
-  // Wishlist...) — así que buscar "guardarropa" no encontraba nada aunque la
-  // página exista. Esta lista es la única fuente para esas páginas hijas;
-  // agregar una ruta nueva aquí basta para que ⌘K la encuentre.
-  var SUBMODULES = [
-    { href:'/finanzas/estados/',        label:'Estados de Cuenta', sub:'Oikonomia · Movimientos y categorías', icon:'receipt' },
-    { href:'/finanzas/consumo/',        label:'Consumo',           sub:'Oikonomia · Detalle de gasto',         icon:'shopping-cart' },
-    { href:'/finanzas/budget/',         label:'Presupuesto',       sub:'Oikonomia · Regla 50-30-20',           icon:'pie-chart' },
-    { href:'/finanzas/inversiones/',    label:'Inversiones',       sub:'Oikonomia',                            icon:'trending-up' },
-    { href:'/finanzas/prioridades/',    label:'Wishlist',          sub:'Oikonomia · Compras planeadas',        icon:'list-checks' },
-    { href:'/finanzas/salud/',          label:'Salud Financiera',  sub:'Oikonomia · Patrimonio y cuentas',     icon:'heart-pulse' },
-    { href:'/bienestar/salud/',         label:'Salud',             sub:'Hegemonikon · Médico',                 icon:'stethoscope' },
-    { href:'/bienestar/futbol/',        label:'Fútbol',            sub:'Hegemonikon · Partidos',               icon:'trophy' },
-    { href:'/nutricion/',               label:'Nutrición',         sub:'Hegemonikon · Díaita',                 icon:'salad' },
-    { href:'/recetas/',                 label:'Recetas',           sub:'Hegemonikon',                          icon:'chef-hat' },
-    { href:'/guardarropa/',             label:'Guardarropa',       sub:'Hegemonikon · Armario y outfits',      icon:'shirt' },
-    { href:'/guardarropa/wishlist/',    label:'Wishlist Ropa',     sub:'Guardarropa · Protocolo de compra',    icon:'shopping-bag' },
-    // Un solo viaje, dos vistas (maleta y presupuesto) sobre la misma tabla
-    // `viajes` — antes eran dos entradas separadas aquí (Oikonomia y
-    // Hegemonikon) que abrían pantallas sin relación entre sí para el
-    // mismo viaje. Se deja una sola entrada; el presupuesto se alcanza
-    // desde el detalle del viaje (botón "Ver presupuesto").
-    { href:'/viajes/',                  label:'Viajes',            sub:'Outfits, maleta y presupuesto',        icon:'luggage' },
+  var SYSTEM = [
+    {label:'Cambiar tema', icon:'sun-moon', q:'tema claro oscuro dia noche theme', run:function(){ toggleTheme(); }},
+    {label:'Ocultar / mostrar patrimonio', icon:'eye-off', q:'patrimonio ocultar mostrar privacidad', run:function(){ toggleNetWorth(); }},
+    {label:'Cerrar sesión', icon:'log-out', q:'salir logout cerrar sesion', run:function(){ logoutApp(); }},
   ];
 
-  function collectItems() {
-    var out = [];
-    document.querySelectorAll('.eu-sidebar-link').forEach(function(a){
-      var icon = a.querySelector('i');
-      out.push({
-        href:  a.getAttribute('href'),
-        label: (a.querySelector('.lbl') || {}).textContent || '',
-        sub:   (a.querySelector('.sub') || {}).textContent || '',
-        icon:  icon ? icon.getAttribute('data-lucide') : 'circle',
-      });
-    });
-    out = out.concat(SUBMODULES);
-    out.push({ href:null, label:'Cambiar tema', sub:'Día / Noche', icon:'moon', action:'theme' });
-    return out;
-  }
+  var scrim = document.getElementById('eu-cmdk');
+  var input = document.getElementById('eu-cmdk-input');
+  var list  = document.getElementById('eu-cmdk-list');
+  var shown = [], active = 0, opener = null;
 
-  function render(query) {
-    var q = (query || '').trim().toLowerCase();
-    var words = q.split(/\s+/).filter(Boolean);
-    shown = items.filter(function(it){
-      var hay = (it.label + ' ' + it.sub).toLowerCase();
-      return words.every(function(w){ return hay.indexOf(w) !== -1; });
-    });
-    active = 0;
-    if (!shown.length) {
-      list.innerHTML = '<div class="cmdk-empty">Sin resultados</div>';
-      return;
+  function norm(t){ return (t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  function esc(t){ return String(t||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function hit(it, words){ var h = norm(it.q || it.label); return words.every(function(w){ return h.indexOf(w) !== -1; }); }
+
+  function render(query){
+    var words = norm(query).split(/\s+/).filter(Boolean);
+    var groups = [];
+    if (!words.length) {
+      var rec = recents().filter(function(x){ return !HERE || x.url !== HERE.url; }).slice(0,5);
+      if (rec.length) groups.push(['Recientes', rec.map(function(x){ return {label:x.label, url:x.url, icon:x.icon}; })]);
+      groups.push(['Acciones', DATA.actions]);
+      groups.push(['Páginas', DATA.pages]);
+      groups.push(['Sistema', SYSTEM]);
+    } else {
+      groups.push(['Acciones', DATA.actions.filter(function(it){ return hit(it, words); })]);
+      groups.push(['Páginas',  DATA.pages.filter(function(it){ return hit(it, words); })]);
+      groups.push(['Sistema',  SYSTEM.filter(function(it){ return hit(it, words); })]);
     }
-    list.innerHTML = shown.map(function(it, i){
-      return '<a href="' + (it.href || '#') + '" class="cmdk-item' + (i===0 ? ' on' : '') + '" data-i="' + i + '">' +
-        '<i data-lucide="' + it.icon + '"></i>' +
-        '<div><div class="lbl">' + it.label + '</div>' +
-        (it.sub ? '<div class="sub">' + it.sub + '</div>' : '') + '</div></a>';
-    }).join('');
-    if (window.lucide) lucide.createIcons();
-    list.querySelectorAll('.cmdk-item').forEach(function(el){
-      el.addEventListener('mouseenter', function(){ setActive(parseInt(el.dataset.i, 10)); });
-      el.addEventListener('click', function(e){
-        var it = shown[parseInt(el.dataset.i, 10)];
-        if (it.action === 'theme') { e.preventDefault(); window.euToggleTheme ? euToggleTheme() : toggleTheme(); euCmdkClose(); }
+    shown = []; var html = '';
+    groups.forEach(function(g){
+      if (!g[1].length) return;
+      html += '<div class="eu-cmdk-g" role="presentation">' + g[0] + '</div>';
+      g[1].forEach(function(it){
+        var i = shown.length; shown.push(it);
+        html += '<a class="eu-cmdk-it" role="option" id="eu-cmdk-o' + i + '" data-i="' + i + '" href="' + esc(it.url || '#') + '">' +
+                '<i data-lucide="' + esc(it.icon || 'circle') + '"></i><span class="lbl">' + esc(it.label) + '</span>' +
+                (it.hint ? ' <span class="gr">' + esc(it.hint) + '</span>' : '') + '</a>';
       });
     });
+    list.innerHTML = html || '<div class="eu-cmdk-empty">Sin resultados para «' + esc(query) + '»</div>';
+    try { lucide.createIcons(); } catch(e){}
+    setActive(0);
   }
 
-  function setActive(i) {
-    var els = list.querySelectorAll('.cmdk-item');
-    if (!els.length) return;
+  function setActive(i){
+    var els = list.querySelectorAll('.eu-cmdk-it');
+    if (!els.length) { input.removeAttribute('aria-activedescendant'); return; }
     active = (i + els.length) % els.length;
-    els.forEach(function(el, j){ el.classList.toggle('on', j === active); });
-    els[active].scrollIntoView({ block:'nearest' });
+    els.forEach(function(el, j){ el.setAttribute('aria-selected', j === active ? 'true' : 'false'); });
+    input.setAttribute('aria-activedescendant', els[active].id);
+    els[active].scrollIntoView({block:'nearest'});
   }
 
-  window.euCmdkOpen = function() {
-    items = collectItems();
-    overlay.classList.add('open');
-    input.value = '';
-    render('');
+  function run(i, newTab){
+    var it = shown[i]; if (!it) return;
+    if (it.run) { euCmdkClose(); it.run(); return; }
+    if (newTab) { window.open(it.url, '_blank'); return; }
+    window.location.href = it.url;
+  }
+
+  list.addEventListener('mousemove', function(e){
+    var a = e.target.closest('.eu-cmdk-it'); if (a) setActive(parseInt(a.dataset.i, 10));
+  });
+  list.addEventListener('click', function(e){
+    var a = e.target.closest('.eu-cmdk-it'); if (!a) return;
+    var it = shown[parseInt(a.dataset.i, 10)];
+    if (it && it.run) { e.preventDefault(); run(parseInt(a.dataset.i, 10)); }
+  });
+
+  window.euCmdkOpen = function(){
+    opener = document.activeElement;
+    scrim.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    input.value = ''; render('');
     setTimeout(function(){ input.focus(); }, 10);
   };
-  window.euCmdkClose = function() {
-    overlay.classList.remove('open');
+  window.euCmdkClose = function(){
+    if (scrim.hidden) return;
+    scrim.hidden = true;
+    document.documentElement.style.overflow = '';
+    if (opener && opener.focus) opener.focus();
   };
 
   input.addEventListener('input', function(){ render(input.value); });
   input.addEventListener('keydown', function(e){
     if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
-    else if (e.key === 'Enter') {
-      e.preventDefault();
-      var it = shown[active];
-      if (!it) return;
-      if (it.action === 'theme') { window.euToggleTheme ? euToggleTheme() : toggleTheme(); euCmdkClose(); }
-      else if (it.href) { window.location.href = it.href; }
-    } else if (e.key === 'Escape') { euCmdkClose(); }
+    else if (e.key === 'Enter') { e.preventDefault(); run(active, e.metaKey || e.ctrlKey); }
+    else if (e.key === 'Escape') { e.preventDefault(); euCmdkClose(); }
+    else if (e.key === 'Tab') { e.preventDefault(); }   // foco atrapado en el input
   });
-
   document.addEventListener('keydown', function(e){
-    var k = e.key.toLowerCase();
-    if ((e.metaKey || e.ctrlKey) && k === 'k') {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      overlay.classList.contains('open') ? euCmdkClose() : euCmdkOpen();
+      scrim.hidden ? euCmdkOpen() : euCmdkClose();
     }
   });
 })();
