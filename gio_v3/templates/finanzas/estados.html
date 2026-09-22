@@ -103,6 +103,21 @@
       grid-column: 1 / -1;
     }
 
+    /* Dona "Gastos por categoría" (tab Reportes): es un <svg width="160"
+       height="160"> sin wrapper propio, hijo directo de la tarjeta -- en
+       desktop esa tarjeta es la mitad de un grid a 2 columnas y el hueco
+       sobrante a la derecha del SVG pasa desapercibido, pero en mobile la
+       tarjeta pasa a ocupar el ancho completo (ver regla "1fr 1fr" de
+       arriba) y el SVG, al no tener márgenes ni texto-align que lo
+       centren, queda pegado a la izquierda con toda esa franja vacía al
+       lado -- se ve como si "se moviera" según cuánto texto tenga la
+       leyenda de al lado. Se fija centrado y como bloque para que no
+       dependa del contenido circundante. */
+    #estados-root svg[width="160"][height="160"] {
+      display: block;
+      margin: 0 auto;
+    }
+
     /* Evita que cualquier hijo del SPA sobresalga horizontalmente */
     #estados-root > div { max-width: 100%; overflow-x: hidden; }
 
