@@ -28,7 +28,7 @@
   @media (max-width:900px) { .dash-head-quote { display:none; } }
   /* <900px: la del header desaparece (no hay espacio) — esta toma su lugar,
      nunca las dos visibles a la vez. */
-  .reflexion-card-mobile { display:none; background:var(--card); border:1px solid var(--gold-border); border-radius:14px; padding:16px 18px; margin-top:14px; }
+  .reflexion-card-mobile { display:none; background:var(--card); border:1px solid var(--gold-border); border-radius:14px; padding:18px 20px; margin-top:14px; }
   @media (max-width:900px) { .reflexion-card-mobile { display:block; } }
   .dash-head-actions { display:flex; align-items:center; gap:10px; padding-top:2px; flex-shrink:0; }
   .dash-icon-btn {
@@ -60,7 +60,10 @@
   .hero-xp { background:linear-gradient(140deg, var(--surf), var(--bg)); border:1px solid var(--gold-border); border-radius:16px; padding:20px; }
   .hero-xp-eyebrow { font-size:9px; letter-spacing:.18em; color:var(--gold); opacity:.6; text-transform:uppercase; margin-bottom:6px; }
   .hero-xp-num { display:flex; align-items:baseline; gap:8px; margin-bottom:12px; }
-  .hero-xp-num b { font-family:var(--serif); font-size:48px; line-height:1; color:var(--gold-l); font-weight:600; font-variant-numeric:tabular-nums; }
+  /* Mono, no serif: el "1" de Cormorant Garamond a 48px casi no tiene resto
+     de gancho y se lee como una "I" suelta (p.ej. "15" -> "I 5") -- mismo
+     criterio que ya usa Fútbol para sus números de stat (.fb-stat-val). */
+  .hero-xp-num b { font-family:var(--mono); font-size:44px; line-height:1; color:var(--gold-l); font-weight:600; font-variant-numeric:tabular-nums; }
   .hero-xp-num span { font-size:13px; color:var(--mid); }
   .bar-track { height:5px; background:var(--gold-bg); border-radius:3px; overflow:hidden; margin-bottom:12px; }
   .bar-fill { height:100%; border-radius:3px; background:linear-gradient(90deg, color-mix(in srgb, var(--gold) 60%, transparent), var(--gold), var(--gold-l)); box-shadow:0 0 8px var(--gold-glow); }
@@ -135,8 +138,12 @@
   .refresh-btn.spin { transform:rotate(180deg); }
   .refresh-btn i { width:14px; height:14px; }
   .pill { font-family:var(--sans); font-size:8px; padding:2px 8px; border-radius:100px; letter-spacing:.06em; }
-  .quote-text { font-family:var(--serif); font-style:italic; font-size:14px; color:var(--text); line-height:1.5; }
-  .quote-author { font-family:var(--sans); font-size:10px; color:var(--mid); margin-top:6px; letter-spacing:.04em; }
+  /* Reflexión del día (mobile) — antes 14px sin acento visual, se perdía
+     entre el label y el pill. Mismo motivo editorial que .word-example
+     (idiomas): cita en serif itálica con regla vertical, pero en dorado
+     porque aquí es la pieza protagonista de la tarjeta, no una nota al margen. */
+  .quote-text { font-family:var(--serif); font-style:italic; font-size:17px; color:var(--text); line-height:1.6; border-left:2px solid var(--gold-border); padding-left:14px; }
+  .quote-author { font-family:var(--sans); font-size:10.5px; color:var(--mid); margin-top:8px; margin-left:16px; letter-spacing:.05em; }
   .word-card { background:color-mix(in srgb, var(--gold) 4%, transparent); border:1px solid var(--gold-bg); border-radius:12px; padding:16px 18px; }
   .word-phon { font-family:var(--sans); font-size:9px; color:var(--mid); margin-bottom:2px; letter-spacing:.04em; }
   .word-word { font-family:var(--serif); font-style:italic; font-size:26px; font-weight:300; color:var(--text); line-height:1; margin-bottom:10px; }
