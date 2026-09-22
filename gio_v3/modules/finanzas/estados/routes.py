@@ -2163,7 +2163,13 @@ def debug_pdf():
 
         bank = detect_bank(tmp_path)
         with _open_pdf(tmp_path, PDF_PASSWORD, PDF_PASSWORD_BBVA) as pdf:
-            text = "\n".join(p.extract_text() or "" for p in pdf.pages[:2])
+            # Las primeras páginas de un estado de cuenta suelen ser solo
+            # carátula (límite de crédito, fecha de corte, resumen) -- el
+            # detalle de movimientos real puede empezar varias páginas
+            # después. Se recorren TODAS las páginas en vez de solo las
+            # primeras 2 (el primer intento de este diagnóstico solo vio
+            # la carátula del usuario, cero líneas de movimientos reales).
+            all_pages_text = [p.extract_text() or "" for p in pdf.pages]
 
         def _redact(line: str) -> str:
             line = _re.sub(r'\d', '#', line)
@@ -2174,15 +2180,43 @@ def debug_pdf():
             )
             return line
 
-        lineas = [l for l in text.split('\n') if l.strip()]
-        redactadas = [_redact(l) for l in lineas[:25]]
+        # Puntuar cada página por qué tan probable es que sea la tabla de
+        # movimientos: cuenta líneas con "$" y al menos 2 dígitos seguidos
+        # (fecha o monto) -- más confiable que buscar un encabezado literal
+        # como "DETALLE", que varía entre formatos/años de BBVA.
+        def _score(text: str) -> int:
+            return sum(
+                1 for line in text.split('\n')
+                if '$' in line and _re.search(r'\d{2}', line)
+            )
+
+        paginas = []
+        for i, t in enumerate(all_pages_text):
+            nonempty = [l for l in t.split('\n') if l.strip()]
+            paginas.append({'num': i + 1, 'lineas': len(nonempty), 'score': _score(t), 'texto': nonempty})
+
+        resumen = '\n'.join(f"Página {p['num']}: {p['lineas']} líneas, score={p['score']}" for p in paginas)
+
+        # Mostrar las 2 páginas con mayor score (más probables de ser la
+        # tabla real) además de la página 1 (contexto/carátula) si no quedó
+        # ya incluida.
+        top = sorted(paginas, key=lambda p: -p['score'])[:2]
+        top_nums = {p['num'] for p in top}
+        mostrar = list(top)
+        if paginas and paginas[0]['num'] not in top_nums:
+            mostrar.insert(0, paginas[0])
+
+        bloques = []
+        for p in mostrar:
+            redactadas = [_redact(l) for l in p['texto'][:30]]
+            bloques.append(f"--- Página {p['num']} (score={p['score']}) ---\n" + '\n'.join(redactadas))
 
         html = (
             '<!doctype html><html><head><meta charset="utf-8"><title>Debug PDF</title></head>'
             '<body style="font-family:monospace;max-width:800px;margin:40px auto;white-space:pre-wrap;">'
-            f'<p style="font-family:sans-serif;">Banco detectado: <b>{bank}</b> · '
-            f'{len(lineas)} líneas con texto en las primeras 2 páginas.</p>'
-            '<hr>' + '\n'.join(redactadas) + '</body></html>'
+            f'<p style="font-family:sans-serif;">Banco detectado: <b>{bank}</b> · {len(paginas)} páginas en total.</p>'
+            f'<p style="font-family:sans-serif;">{resumen}</p>'
+            '<hr>' + '\n\n'.join(bloques) + '</body></html>'
         )
         return html
     except Exception as e:
