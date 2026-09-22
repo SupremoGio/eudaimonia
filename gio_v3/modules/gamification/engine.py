@@ -527,7 +527,14 @@ def _next_rank_hint(rank, anchor_defs, done_anchor_keys, touch_defs, touches_don
         missing_anchors = [a for a in anchor_defs if a["key"] not in done_anchor_keys]
         if not missing_anchors:
             return "Diamante alcanzado"
-        labels = " y ".join(a["label"] for a in missing_anchors)
+        # Temprano en el día pueden faltar 5-7 anclas a la vez -- unirlas todas
+        # con " y " producía una oración de varias líneas en la tarjeta móvil.
+        # Con más de 2 se condensa a las primeras dos + contador.
+        names = [a["label"] for a in missing_anchors]
+        if len(names) <= 2:
+            labels = " y ".join(names)
+        else:
+            labels = f"{names[0]}, {names[1]} y {len(names) - 2} más"
         return f"Completa {labels} → Diamante"
     if rank == "iron":
         faltan_touches  = max(0, gold_min_touches - touches_done)

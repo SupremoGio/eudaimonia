@@ -279,16 +279,22 @@ a[class*="btn"]:active {
 
   /* ══ PAGE-SPECIFIC ══════════════════════════════════════════ */
 
-  /* Dashboard */
-  .d-grid          { grid-template-columns:1fr !important; gap:10px !important; }
-  .d-grid .full    { grid-column:1/-1; }
-  .hero            { flex-direction:column !important; align-items:flex-start !important; gap:12px !important; padding:16px !important; }
-  .h-t             { font-size:1.5rem !important; }
-  .h-stats         { flex-wrap:wrap !important; gap:10px !important; }
-  .vd              { display:none !important; }
-  .hs              { min-width:60px; }
+  /* Perfil — última celda de medidas corporales (grid-column:span 2 inline,
+     ver templates/perfil/index.html) cuando el total es impar y sobra hueco
+     en la fila; en móvil se fuerza de vuelta a 1 columna. (El resto de este
+     bloque, etiquetado "Dashboard", apuntaba a clases de una versión anterior
+     del dashboard -- .d-grid/.hero/.h-t/.h-stats/.vd/.hs/.pts-grid -- que ya
+     no existen en ningún template; se retiró en 2026-09.) */
   [style*="grid-column:span 2"] { grid-column:span 1 !important; }
-  .pts-grid        { grid-template-columns:1fr 1fr !important; }
+
+  /* Dashboard — antes sin ningún ajuste propio de teléfono: de 1024px para
+     abajo todo caía a 1 columna con los mismos tamaños de tablet. Funcionaba
+     de casualidad más que por diseño; esto le da un paso real. */
+  .hero-xp    { padding:16px !important; }
+  .tiers      { gap:4px !important; }
+  .tier       { padding:8px 3px !important; }
+  .level-card { padding:14px 12px !important; }
+  .mods-grid  { gap:8px !important; }
 
   /* Finanzas */
   .f-grid          { grid-template-columns:1fr !important; gap:10px !important; }
