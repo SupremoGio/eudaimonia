@@ -45,6 +45,48 @@ SCIENCE = [
 _GRABADO_KEY = "eurythmia_grabado"
 _SESSION_KEY = "eurythmia_session"
 _GRABADO_XP  = 3
+_GRABADO_EC  = 1
+
+# ── Racha de días bailando — bono único al alcanzar el hito (no se repite
+# hasta que la racha se rompe y se vuelve a formar otra vez) ────────────────
+_STREAK_EC_BONUS = {3: 2, 7: 3, 14: 5, 30: 8}
+
+
+def _session_ec(minutes, flow):
+    """EC de una sesión de práctica: antes era 1 fijo sin importar duración o
+    fluidez. Ahora premia la calidad del movimiento (flow, 1-5, ya capturado
+    en cada sesión) y la dedicación (sesiones largas), en vez de dar lo mismo
+    por 10 minutos trabados que por 45 en la música."""
+    ec = 0
+    if flow >= 5:
+        ec += 2      # despelote total
+    elif flow >= 3:
+        ec += 1      # fluido / en la música
+    if minutes >= 45:
+        ec += 1      # sesión larga, dedicación real
+    return ec
+
+
+def _maybe_award_dance_streak(streak, today):
+    """Bono de EC al alcanzar un hito de racha de días bailando seguidos.
+    Se da una sola vez el día en que se alcanza cada hito (dedupe por fecha)."""
+    bonus_ec = _STREAK_EC_BONUS.get(streak)
+    if not bonus_ec:
+        return None
+    key = f"eurythmia_streak_{streak}"
+    with get_db() as db:
+        if db.execute(
+            "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (key, today)
+        ).fetchone():
+            return None
+        cur = db.execute(
+            "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+            (key, today, 0)
+        )
+        log_id = cur.lastrowid
+        db.commit()
+    return engine.process_activity(key, 0, 'Baile', log_id, ec=bonus_ec)
+
 
 # ── Música — 100 mejores álbumes ──────────────────────────────────────────────
 _ALBUM_XP = 5
@@ -224,7 +266,7 @@ def api_session():
         session_id = cur2.lastrowid
         db.commit()
 
-    gam = engine.process_activity(_SESSION_KEY, xp, 'Baile', log_id)
+    gam = engine.process_activity(_SESSION_KEY, xp, 'Baile', log_id, ec=_session_ec(minutes, flow))
 
     grabado_gam = None
     if grabado:
@@ -239,11 +281,13 @@ def api_session():
                 )
                 grabado_log_id = cur3.lastrowid
                 db.commit()
-                grabado_gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', grabado_log_id)
+                grabado_gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', grabado_log_id, ec=_GRABADO_EC)
+
+    streak_gam = _maybe_award_dance_streak(_eury_streak(), today)
 
     return jsonify({
         'ok': True, 'session_id': session_id, 'xp': xp,
-        'gam': gam, 'grabado_gam': grabado_gam,
+        'gam': gam, 'grabado_gam': grabado_gam, 'streak_gam': streak_gam,
         'state': _state(),
     })
 
@@ -268,7 +312,7 @@ def api_grabado_toggle():
         log_id = cur.lastrowid
         db.commit()
 
-    gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', log_id)
+    gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', log_id, ec=_GRABADO_EC)
     return jsonify({'action': 'added', 'gam': gam, 'state': _state()})
 
 
