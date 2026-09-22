@@ -199,6 +199,62 @@
   })();
 </script>
 
+<script>
+  // El modal "Nueva transacción"/"Editar movimiento" del SPA no resetea el
+  // campo de Subcategoría cuando cambia la Categoría -- el usuario lo
+  // reportó con capturas (cambiar de FINANZAS a VIVIENDA deja escrito
+  // "Transferencia enviada", que ni siquiera es una subcategoría de
+  // VIVIENDA). Revisando el bundle (estados.js, sin fuente en este repo):
+  // Subcategoría NO es un <select>, es un <input list="eu-subcat-list">
+  // de texto libre con autocompletado -- por eso nadie limpia su valor al
+  // cambiar de categoría, simplemente no existe ese código. Al ser un
+  // <input> de verdad (no un <select> controlado más rígido), sí se puede
+  // interceptar desde fuera: se observa cuándo aparece ese input (el modal
+  // se abrió), se ubica el <select> de Categoría que vive en el mismo
+  // formulario (su contenedor hermano inmediato, primer <select> ahí --
+  // ver el layout fijo del modal: Categoría y Banco son el único par de
+  // <select> antes del campo Subcategoría) y se limpia el input cuando esa
+  // categoría cambia, disparando un 'input' real para que React lo
+  // registre por el mismo canal que si el usuario lo hubiera borrado.
+  (function () {
+    var setValue = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+
+    function wire(subInput) {
+      if (subInput._euWired) return;
+      var fieldWrap = subInput.closest('div');
+      var formWrap = fieldWrap && fieldWrap.parentElement;
+      var catSelect = formWrap && formWrap.querySelector('select');
+      if (!catSelect) return; // el DOM del modal aún no terminó de montar -- se reintenta en la próxima mutación
+      subInput._euWired = true;
+      var lastCategoria = catSelect.value;
+      catSelect.addEventListener('change', function () {
+        if (catSelect.value === lastCategoria) return;
+        lastCategoria = catSelect.value;
+        // setTimeout, no ejecución directa: disparar el 'input' de
+        // Subcategoría de forma síncrona AQUÍ lo anida dentro del mismo
+        // despacho del 'change' de Categoría -- React todavía está a
+        // mitad de procesar ese evento (fase de burbujeo hacia el
+        // contenedor raíz donde React delega sus listeners) y un segundo
+        // evento sintético intercalado en ese punto le hace perder la
+        // actualización de categoria (confirmado con Playwright: el
+        // <select> volvía a mostrar el valor viejo). Se espera a que el
+        // event loop libere el hilo -- React ya habrá confirmado el
+        // cambio de categoría para entonces -- antes de limpiar.
+        setTimeout(function () {
+          setValue.call(subInput, '');
+          subInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }, 0);
+      });
+    }
+
+    var root = document.getElementById('estados-root');
+    new MutationObserver(function () {
+      var el = root.querySelector('input[list="eu-subcat-list"]');
+      if (el) wire(el);
+    }).observe(root, { childList: true, subtree: true });
+  })();
+</script>
+
 <!-- React SPA assets (built with: npm run build:eu) -->
 <script type="module" src="/static/finanzas/assets/estados.js"></script>
 
