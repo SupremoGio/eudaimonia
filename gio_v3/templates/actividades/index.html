@@ -581,17 +581,6 @@ a.wk-title:hover{opacity:.75;text-decoration:underline;}
         <div class="add-tile eu-activate" role="button" tabindex="0" data-addtile="any" onclick="showAddForm('any', this)">+ Agregar actividad</div>
       </div>
 
-      <!-- Ocasional -->
-      <div class="occ-head"><span class="lbl">Ocasional</span><span class="note">no cuenta para tu tier</span></div>
-      <div class="occ-list">
-        {% for item in grouped['ocasional'] %}
-        <div class="occ-item eu-activate {% if item.done %}done{% endif %}" role="button" tabindex="0" aria-pressed="{{ 'true' if item.done else 'false' }}" aria-label="{{ item.label }}" data-key="{{ item.key }}" onclick="sessLogAct('{{ item.key }}', this)">
-          <div class="ochk"></div>
-          <div class="olbl">{{ item.label }}</div>
-          <div class="opts">+{{ item.pts }} XP · no cuenta</div>
-        </div>
-        {% endfor %}
-      </div>
     </div>
   </div>
 
