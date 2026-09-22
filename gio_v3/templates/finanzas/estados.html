@@ -46,6 +46,26 @@
     display: none !important;
   }
 
+  /* Listas con scroll interno (leyenda de "Gastos por categoría" en
+     Reportes, columnas del modal de detalle de categoría) declaran solo
+     overflow-y:auto en su style inline -- pero la spec de CSS Overflow
+     dice que si un eje es "visible" y el otro no, el "visible" se
+     recalcula como "auto" también. O sea: overflow-y:auto SIN
+     overflow-x explícito hace que el eje X también quede "auto" en la
+     práctica (confirmado con getComputedStyle: overflow-x sale "auto"
+     aunque el inline style nunca lo puso). El usuario reportó "la tabla
+     se mueve cuando hago touch": esa lista se puede arrastrar
+     horizontalmente apenas su contenido (nombre + monto + % + flechita
+     de tendencia) se pasa por un par de píxeles del ancho disponible,
+     revelando/cortando el lado derecho -- exactamente el efecto de la
+     captura (montos truncados a media cifra). No afecta la tabla de
+     movimientos del modal, que ya declara su propio overflow-x:auto en
+     un wrapper aparte para el <table> -- ese selector no matchea aquí
+     porque no tiene "overflow-y" en su style. */
+  #estados-root [style*="overflow-y: auto"] {
+    overflow-x: hidden;
+  }
+
   /* ── Mobile: grids del React SPA que no tienen breakpoints ──────────────
      Los selectores anteriores apuntaban a los NOMBRES DE VARIABLE JS
      (minWidth, "1fr 240px") en vez del atributo style ya serializado por
