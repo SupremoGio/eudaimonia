@@ -255,6 +255,69 @@
   })();
 </script>
 
+<script>
+  // Buscador en el modal de detalle de categoría (el que se abre al hacer
+  // clic en una categoría en "Gastos por categoría", ej. "Vivienda" -- ver
+  // captura del usuario). Ese modal solo trae selects de
+  // subcategoría/orden, sin campo de texto libre. Mismo problema que el
+  // bloque anterior: es parte del bundle React sin fuente en este repo, así
+  // que se inyecta el <input> desde afuera. Se ancla junto a esos selects
+  // (su contenedor -- localizado buscando el primer <select> dentro de la
+  // tarjeta del modal, en vez de una posición fija en el árbol, porque esa
+  // fila no existe todavía si el modal aún no cargó movimientos) y filtra
+  // las filas de la tabla de movimientos (columna derecha, `.eu-modal-col-right`)
+  // por coincidencia de texto -- sin tocar el estado interno de React, solo
+  // oculta/muestra cada <tr> vía style.display. Como React vuelve a crear
+  // esas filas en cada re-render (cambiar el orden, la subcategoría, etc.),
+  // el filtro se reaplica con un MutationObserver en vez de aplicarse una
+  // sola vez.
+  (function () {
+    function norm(s) {
+      return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function wireSearch(controlsRow, colRight) {
+      if (controlsRow._euSearchWired) return;
+      controlsRow._euSearchWired = true;
+
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Buscar…';
+      input.className = 'fi';
+      input.style.flex = '1 1 140px';
+      input.style.width = 'auto';
+      controlsRow.insertBefore(input, controlsRow.firstChild);
+
+      function applyFilter() {
+        var q = norm(input.value);
+        colRight.querySelectorAll('tbody tr').forEach(function (tr) {
+          tr.style.display = !q || norm(tr.textContent).indexOf(q) !== -1 ? '' : 'none';
+        });
+      }
+
+      input.addEventListener('input', applyFilter);
+
+      // Reaplica el filtro cuando React re-pinta las filas -- si no, se
+      // pierde en cuanto el usuario toca cualquier otro control del modal.
+      new MutationObserver(function () {
+        if (input.value) applyFilter();
+      }).observe(colRight, { childList: true, subtree: true });
+    }
+
+    var root = document.getElementById('estados-root');
+    new MutationObserver(function () {
+      var modalRow = root.querySelector('.eu-modal-row');
+      if (!modalRow) return;
+      var selects = modalRow.parentElement.querySelectorAll('select');
+      if (!selects.length) return; // modal recién abierto, sin movimientos cargados aún
+      var controlsRow = selects[0].parentElement;
+      var colRight = modalRow.querySelector('.eu-modal-col-right');
+      if (!controlsRow || !colRight || controlsRow._euSearchWired) return;
+      wireSearch(controlsRow, colRight);
+    }).observe(root, { childList: true, subtree: true });
+  })();
+</script>
+
 <!-- React SPA assets (built with: npm run build:eu) -->
 <script type="module" src="/static/finanzas/assets/estados.js"></script>
 
