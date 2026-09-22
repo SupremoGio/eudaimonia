@@ -407,6 +407,102 @@ def _corregir_servicios_legacy(db) -> int:
     return total
 
 
+_SUSCRIPCIONES_SUBCAT_MAP = {
+    '':              ('DIGITAL',   ''),
+    'Digital':       ('DIGITAL',   'Suscripciones entretenimiento'),
+    'Diseño':        ('DIGITAL',   'Suscripciones IA/productividad'),
+    'Gym':           ('DEPORTE',   'Gym'),
+    'Internet/TV':   ('DIGITAL',   'Suscripciones entretenimiento'),
+    'Música':        ('DIGITAL',   'Suscripciones entretenimiento'),
+    'Productividad': ('DIGITAL',   'Suscripciones IA/productividad'),
+    'Tech':          ('PROYECTOS', 'Hosting'),
+    'Telefonía':     ('DIGITAL',   'Celular'),
+}
+_SUSCRIPCIONES_TELEFONO_KW = ('TELEFON', 'SALDO', 'CELULAR')
+
+
+def _corregir_suscripciones_legacy(db) -> int:
+    """"SUSCRIPCIONES" es otra categoria plana legacy, mismo patrón que
+    CASA/HOGAR y SERVICIOS: el sprint de taxonomía en database.py ya la
+    mapea (SUSCRIPCIONES/Telefonía -> DIGITAL/Celular, /Digital y
+    /Internet/TV y /Música -> DIGITAL/Suscripciones entretenimiento,
+    /Diseño y /Productividad -> DIGITAL/Suscripciones IA/productividad,
+    /Gym -> DEPORTE/Gym, /Tech -> PROYECTOS/Hosting), pero nunca tuvo
+    blindaje contra recurrencia -- el usuario reportó "saldo teléfono"
+    partido entre SERVICIOS y SUSCRIPCIONES, mismo síntoma que ya se vio
+    con _corregir_servicios_legacy: reglas guardadas en est_keywords
+    ANTES de esa migración la seguían reviviendo en cada import o
+    "Aplicar todas a lo existente". El destino elegido para saldo/plan de
+    teléfono es DIGITAL/Celular en los dos casos (Servicios y
+    Suscripciones), para que quede en un solo lugar."""
+    from .config import SUBCATEGORIAS
+    total = 0
+
+    for sub_vieja, (cat, sub) in _SUSCRIPCIONES_SUBCAT_MAP.items():
+        cur = db.execute(
+            "UPDATE est_keywords SET categoria=?, subcategoria=? "
+            "WHERE UPPER(categoria)='SUSCRIPCIONES' AND UPPER(COALESCE(subcategoria,''))=?",
+            (cat, sub, sub_vieja.upper()),
+        )
+        total += cur.rowcount
+        cur = db.execute(
+            "UPDATE est_movimientos SET categoria=?, subcategoria=? "
+            "WHERE UPPER(categoria)='SUSCRIPCIONES' AND UPPER(COALESCE(subcategoria,''))=?",
+            (cat, sub, sub_vieja.upper()),
+        )
+        total += cur.rowcount
+
+    # Variantes de "saldo teléfono" no cubiertas por el mapeo exacto
+    # (typos, sin acento, etc.) -- cualquier subcategoria que mencione
+    # teléfono/saldo/celular se va a DIGITAL/Celular, igual que en
+    # _corregir_servicios_legacy.
+    for row in db.execute(
+        "SELECT rowid, subcategoria FROM est_keywords WHERE UPPER(categoria)='SUSCRIPCIONES'"
+    ).fetchall():
+        sub_u = (row['subcategoria'] or '').upper()
+        if any(kw in sub_u for kw in _SUSCRIPCIONES_TELEFONO_KW):
+            db.execute(
+                "UPDATE est_keywords SET categoria='DIGITAL', subcategoria='Celular' WHERE rowid=?",
+                (row['rowid'],),
+            )
+            total += 1
+    for row in db.execute(
+        "SELECT id, subcategoria FROM est_movimientos WHERE UPPER(categoria)='SUSCRIPCIONES'"
+    ).fetchall():
+        sub_u = (row['subcategoria'] or '').upper()
+        if any(kw in sub_u for kw in _SUSCRIPCIONES_TELEFONO_KW):
+            db.execute(
+                "UPDATE est_movimientos SET categoria='DIGITAL', subcategoria='Celular' WHERE id=?",
+                (row['id'],),
+            )
+            total += 1
+
+    # Catch-all: cualquier fila que siga en SUSCRIPCIONES -- se sube a
+    # DIGITAL de todos modos; conserva la subcategoria solo si ya es
+    # válida ahí, si no se blanquea en vez de adivinar.
+    validas_digital = set(SUBCATEGORIAS.get('DIGITAL', []))
+    for row in db.execute(
+        "SELECT rowid, subcategoria FROM est_keywords WHERE UPPER(categoria)='SUSCRIPCIONES'"
+    ).fetchall():
+        sub = (row['subcategoria'] or '').strip()
+        db.execute(
+            "UPDATE est_keywords SET categoria='DIGITAL', subcategoria=? WHERE rowid=?",
+            (sub if sub in validas_digital else '', row['rowid']),
+        )
+        total += 1
+    for row in db.execute(
+        "SELECT id, subcategoria FROM est_movimientos WHERE UPPER(categoria)='SUSCRIPCIONES'"
+    ).fetchall():
+        sub = (row['subcategoria'] or '').strip()
+        db.execute(
+            "UPDATE est_movimientos SET categoria='DIGITAL', subcategoria=? WHERE id=?",
+            (sub if sub in validas_digital else '', row['id']),
+        )
+        total += 1
+
+    return total
+
+
 def _corregir_steamgames(db) -> int:
     """El usuario pidió mover las compras de STEAMGAMES.COM que estaban
     cayendo en DIGITAL/Suscripciones IA/productividad a OCIO/Videojuegos
@@ -1240,6 +1336,7 @@ def apply_all_keywords():
         _corregir_far_guad(db)
         _corregir_categorias_legacy(db)
         _corregir_servicios_legacy(db)
+        _corregir_suscripciones_legacy(db)
         _corregir_steamgames(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
@@ -1715,6 +1812,7 @@ def upload_file():
             _corregir_far_guad(db)
             _corregir_categorias_legacy(db)
             _corregir_servicios_legacy(db)
+            _corregir_suscripciones_legacy(db)
             _corregir_steamgames(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────

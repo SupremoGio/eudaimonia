@@ -3936,6 +3936,112 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_unifica_servicios_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — unifica "Suscripciones" dentro de Digital ───────
+        # Mismo patrón que finanzas_unifica_servicios_2026_09, aplicado a otra
+        # categoria plana legacy: SUSCRIPCIONES. El sprint de taxonomía de
+        # arriba (finanzas_taxonomia_2026_09_sprint3) ya trae el mapeo por
+        # subcategoria (Telefonía->Digital/Celular, Digital/Internet-TV/
+        # Música->Digital/Suscripciones entretenimiento, Diseño/Productividad
+        # ->Digital/Suscripciones IA-productividad, Gym->Deporte/Gym,
+        # Tech->Proyectos/Hosting) pero -- igual que con SERVICIOS -- nunca
+        # tuvo blindaje contra recurrencia, así que reglas guardadas en
+        # est_keywords ANTES de esa migración la seguían reviviendo. El
+        # usuario reportó ver "saldo teléfono" partido entre SERVICIOS y
+        # SUSCRIPCIONES; se unifica el teléfono en DIGITAL/Celular en ambos
+        # casos (mismo destino que ya usa SERVICIOS) y de paso se termina de
+        # barrer toda la categoria SUSCRIPCIONES, no solo el pedazo de
+        # teléfono, para que no vuelva a aparecer partida por otra
+        # subcategoria. El blindaje contra recurrencia futura
+        # (_corregir_suscripciones_legacy, wireado en apply_all_keywords y
+        # upload_file) vive en modules/finanzas/estados/routes.py.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_unifica_suscripciones_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+                _suscripciones_subcat_map = [
+                    ('',              'DIGITAL',   ''),
+                    ('Digital',       'DIGITAL',   'Suscripciones entretenimiento'),
+                    ('Diseño',        'DIGITAL',   'Suscripciones IA/productividad'),
+                    ('Gym',           'DEPORTE',   'Gym'),
+                    ('Internet/TV',   'DIGITAL',   'Suscripciones entretenimiento'),
+                    ('Música',        'DIGITAL',   'Suscripciones entretenimiento'),
+                    ('Productividad', 'DIGITAL',   'Suscripciones IA/productividad'),
+                    ('Tech',          'PROYECTOS', 'Hosting'),
+                    ('Telefonía',     'DIGITAL',   'Celular'),
+                ]
+                for sub_vieja, cat, sub in _suscripciones_subcat_map:
+                    cur = db.execute(
+                        "UPDATE est_keywords SET categoria=?, subcategoria=? "
+                        "WHERE UPPER(categoria)='SUSCRIPCIONES' AND UPPER(COALESCE(subcategoria,''))=?",
+                        (cat, sub, sub_vieja.upper()),
+                    )
+                    if cur.rowcount:
+                        detalle.append(f"est_keywords SUSCRIPCIONES/{sub_vieja or '(vacío)'}->{cat}/{sub}: {cur.rowcount}")
+                    cur = db.execute(
+                        "UPDATE est_movimientos SET categoria=?, subcategoria=? "
+                        "WHERE UPPER(categoria)='SUSCRIPCIONES' AND UPPER(COALESCE(subcategoria,''))=?",
+                        (cat, sub, sub_vieja.upper()),
+                    )
+                    if cur.rowcount:
+                        detalle.append(f"est_movimientos SUSCRIPCIONES/{sub_vieja or '(vacío)'}->{cat}/{sub}: {cur.rowcount}")
+
+                # Variantes de "saldo teléfono" no cubiertas por el mapeo
+                # exacto (typos, sin acento, etc.) -- cualquier subcategoria
+                # que mencione teléfono/saldo/celular se va a DIGITAL/Celular,
+                # igual que en SERVICIOS.
+                _telefono_kw = ('TELEFON', 'SALDO', 'CELULAR')
+                n_tel = 0
+                for tabla, pk in (('est_keywords', 'rowid'), ('est_movimientos', 'id')):
+                    rows = db.execute(
+                        f"SELECT {pk} AS pk, subcategoria FROM {tabla} WHERE UPPER(categoria)='SUSCRIPCIONES'"
+                    ).fetchall()
+                    for row in rows:
+                        sub_u = (row['subcategoria'] or '').upper()
+                        if any(kw in sub_u for kw in _telefono_kw):
+                            db.execute(
+                                f"UPDATE {tabla} SET categoria='DIGITAL', subcategoria='Celular' WHERE {pk}=?",
+                                (row['pk'],),
+                            )
+                            n_tel += 1
+                if n_tel:
+                    detalle.append(f"variantes 'saldo teléfono' no exactas -> DIGITAL/Celular: {n_tel}")
+
+                # Catch-all: cualquier fila que siga en SUSCRIPCIONES -- se
+                # sube a DIGITAL de todos modos; conserva la subcategoria
+                # solo si ya es válida ahí, si no se blanquea.
+                _validas_digital = {
+                    "Celular", "Suscripciones IA/productividad",
+                    "Suscripciones entretenimiento", "Accesorios tech",
+                }
+                n_sobrantes = 0
+                for tabla, pk in (('est_keywords', 'rowid'), ('est_movimientos', 'id')):
+                    rows = db.execute(
+                        f"SELECT {pk} AS pk, subcategoria FROM {tabla} WHERE UPPER(categoria)='SUSCRIPCIONES'"
+                    ).fetchall()
+                    for row in rows:
+                        sub = (row['subcategoria'] or '').strip()
+                        db.execute(
+                            f"UPDATE {tabla} SET categoria='DIGITAL', subcategoria=? WHERE {pk}=?",
+                            (sub if sub in _validas_digital else '', row['pk']),
+                        )
+                        n_sobrantes += 1
+                if n_sobrantes:
+                    detalle.append(f"SUSCRIPCIONES sobrantes->DIGITAL: {n_sobrantes}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_unifica_suscripciones_2026_09",
+                     "Unifica la categoría legacy SUSCRIPCIONES dentro de DIGITAL (o "
+                     "DEPORTE/Gym, PROYECTOS/Hosting según subcategoria) -- corrige "
+                     "est_keywords Y est_movimientos, y consolida 'saldo teléfono' en "
+                     "DIGITAL/Celular igual que ya hace SERVICIOS. " +
+                     (" | ".join(detalle) if detalle else "nada que corregir"))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_unifica_suscripciones_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
