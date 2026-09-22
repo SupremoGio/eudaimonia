@@ -385,7 +385,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
                            "Retiro efectivo", "Depósito", "Fideicomiso",
                            "Reembolsable", "Pago servicios"],
     "INVERSION":         ["Ahorro", "Inversión", "Crypto", "Fondo viaje", "Fondo emergencias"],
-    "NOMINA":            ["Pago nominal", "Bono"],
+    "NOMINA":            ["Pago nominal", "Bono", "PTU", "Fondo de ahorro"],
     "OCIO":              ["Eventos y congresos", "Cine", "Salidas", "Videojuegos"],
     "OTROS":             [""],
     "PRESTAMOS":         ["Prestado"],
