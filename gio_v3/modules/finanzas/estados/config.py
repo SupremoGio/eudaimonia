@@ -370,7 +370,20 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "DEPORTE":           ["Gym", "Fútbol", "Equipo"],
     "DIGITAL":           ["Celular", "Suscripciones IA/productividad", "Suscripciones entretenimiento", "Accesorios tech"],
     "FAMILIA_REGALOS":   ["Regalos", "Apoyo familiar", "Colectas", "Anillo Cornelius"],
-    "FINANZAS":          ["Deudas MSI", "Cargos bancarios", "Transferencia", "Retiro efectivo", "Reembolsable", "Pago servicios"],
+    # "Transferencia enviada"/"Transferencia recibida"/"Depósito"/"Fideicomiso"
+    # son los strings reales que escriben los parsers bbva_debit.py y
+    # bbva_libreton.py para SPEI/depósitos/fideicomiso (no el "Transferencia"
+    # genérico de más abajo, que solo sale del keyword "TRANSFERENCIA" a
+    # secas) -- faltaban aquí, así que el <select> de Subcategoría del SPA
+    # (estados.js) no los reconocía como opción válida para FINANZAS, lo que
+    # se veía como el valor "atorado" reportado por el usuario al cambiar de
+    # categoría. También hubiera hecho que el validador de subcategoria de
+    # routes.py (_normalize_subcategoria) borrara esos valores reales en
+    # cualquier edición futura de esas filas por no reconocerlos como válidos.
+    "FINANZAS":          ["Deudas MSI", "Cargos bancarios", "Transferencia",
+                           "Transferencia enviada", "Transferencia recibida",
+                           "Retiro efectivo", "Depósito", "Fideicomiso",
+                           "Reembolsable", "Pago servicios"],
     "INVERSION":         ["Ahorro", "Inversión", "Crypto", "Fondo viaje", "Fondo emergencias"],
     "NOMINA":            ["Pago nominal", "Bono"],
     "OCIO":              ["Eventos y congresos", "Cine", "Salidas", "Videojuegos"],

@@ -53,7 +53,22 @@ estados_bp = Blueprint(
 # subcategoría, no por categoría completa -- y esta es la ÚNICA copia de
 # esta regla en todo el archivo (antes había 4 copias idénticas
 # desincronizándose una de otra cada vez que se corregía solo una).
-_FINANZAS_NO_GASTO_SUBCATS = ('Transferencia', 'Reembolsable')
+#
+# Corregido otra vez el mismo día: la primera versión de esta lista solo
+# tenía el string 'Transferencia' de config.py (el genérico por keyword
+# "TRANSFERENCIA"), pero los parsers que de verdad generan la mayoría de
+# estas filas (bbva_debit.py, bbva_libreton.py, un SPEI real en el estado
+# de cuenta) escriben 'Transferencia enviada'/'Transferencia recibida' --
+# strings DISTINTOS que no matcheaban, así que los SPEI reales (ej. "SPEI
+# ENVIADO NAFIN"/"BANORTE" del reporte original del usuario) seguían
+# contando como gasto real tras el fix anterior, sin que nadie lo pidiera.
+# Se agregan todas las variantes que los parsers realmente escriben para
+# FINANZAS (Depósito/Fideicomiso incluidos por completitud, aunque casi
+# siempre llegan como INGRESO y no pasan por este filtro de GASTO).
+_FINANZAS_NO_GASTO_SUBCATS = (
+    'Transferencia', 'Transferencia enviada', 'Transferencia recibida',
+    'Depósito', 'Fideicomiso', 'Reembolsable',
+)
 
 
 def _pago_cats_sql(prefix: str = '') -> str:
@@ -190,11 +205,28 @@ def _normalize_subcategoria(categoria: str, subcategoria: str) -> str:
     puntual incluía el depósito inicial -- pero eso ya vive en mi_parte
     (6000 normal vs 7000 con depósito), no hace falta una subcategoria
     aparte. El usuario pidió explícitamente unificarlo, igual que
-    Aportación renta/Renta del lado ingreso: "tambien renta depto 807"."""
+    Aportación renta/Renta del lado ingreso: "tambien renta depto 807".
+
+    Y previene una combinación inválida: el modal "Editar movimiento" del
+    SPA (estados.js, bundle sin fuente en este repo -- no se puede arreglar
+    el <select> ahí) tiene un bug real reportado con capturas: al cambiar
+    "Categoría" el <select> de "Subcategoría" no se resetea y se queda
+    mostrando el valor de la categoría anterior (ej. cambiar de FINANZAS a
+    VIVIENDA deja seleccionado "Transferencia enviada", que no es una
+    subcategoría válida de VIVIENDA). Si esa combinación llega a guardarse
+    tal cual, se limpia aquí a subcategoria='' en vez de persistir una
+    subcategoría que no le corresponde a la categoría nueva -- más honesto
+    que dejar basura mezclada, y evita que quede huérfana de cualquier
+    filtro/exclusión que dependa de la combinación categoria+subcategoria."""
     if categoria == 'EXPENSE':
         return ''
     if categoria == 'VIVIENDA' and subcategoria in _RENTA_VARIANTES:
         return 'Renta'
+    if subcategoria:
+        from .config import SUBCATEGORIAS
+        validas = SUBCATEGORIAS.get(categoria)
+        if validas and subcategoria not in validas:
+            return ''
     return subcategoria
 
 
