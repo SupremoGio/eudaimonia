@@ -635,16 +635,43 @@ def serve_photo(filename):
     return send_from_directory(UPLOAD_DIR, filename)
 
 
+_AUDIT_WALK_MAX_ENTRIES = 50_000  # tope de archivos a inspeccionar por raíz, por seguridad
+
+
+def _buscar_en_disco(nombres_buscados: set, raices: list) -> dict:
+    """Recorre cada raíz en `raices` buscando archivos cuyo *basename* esté
+    en `nombres_buscados`. Solo lectura (os.walk). Devuelve
+    {nombre_archivo: ruta_completa_encontrada} para los que sí aparecen."""
+    encontrados = {}
+    pendientes = set(nombres_buscados)
+    for raiz in raices:
+        if not pendientes or not raiz or not os.path.isdir(raiz):
+            continue
+        vistos = 0
+        for dirpath, _dirnames, filenames in os.walk(raiz):
+            for fn in filenames:
+                vistos += 1
+                if fn in pendientes:
+                    encontrados[fn] = os.path.join(dirpath, fn)
+                    pendientes.discard(fn)
+            if vistos >= _AUDIT_WALK_MAX_ENTRIES or not pendientes:
+                break
+    return encontrados
+
+
 @guardarropa_bp.route('/admin/audit-fotos')
 def audit_fotos():
     """Diagnóstico de solo lectura -- NUNCA borra ni modifica nada. El
     usuario reportó ver "?" rotos en las fotos de un outfit. Este entorno
     no tiene acceso al filesystem/volumen de Railway en producción, así
-    que este endpoint corre EN LA APP DESPLEGADA y compara, para cada
-    prenda con foto registrada en la DB, si el archivo sigue existiendo
-    en el UPLOAD_DIR resuelto ahora mismo (uploads_base_dir()) -- da
-    evidencia concreta de cuántas fotos se perdieron y de si el proceso
-    corre sobre el volumen persistente o sobre el fallback efímero."""
+    que este endpoint corre EN LA APP DESPLEGADA: primero compara cada
+    prenda con foto registrada contra el UPLOAD_DIR resuelto ahora mismo
+    (uploads_base_dir()), y para las que faltan ahí, además RECORRE el
+    volumen (raíz de DATABASE_PATH y su directorio padre) buscando el
+    archivo por nombre en cualquier subcarpeta -- así se distingue un
+    archivo realmente perdido de uno que sigue en disco pero en una ruta
+    distinta a la que el código está resolviendo (p.ej. un doble
+    "uploads/uploads" si el propio volumen ya se llama "uploads")."""
     env_uploads_dir = os.environ.get('UPLOADS_DIR')
     env_database_path = os.environ.get('DATABASE_PATH')
     if env_uploads_dir:
@@ -680,11 +707,28 @@ def audit_fotos():
                 'outfits_afectados': outfit_map.get(r['id'], []),
             })
 
+    raices_busqueda = []
+    if env_database_path:
+        vol_dir = os.path.dirname(os.path.abspath(env_database_path))
+        raices_busqueda.append(vol_dir)
+        raices_busqueda.append(os.path.dirname(vol_dir))
+    raices_busqueda.append(os.path.dirname(os.path.abspath(__file__)))  # ubicación del fallback viejo
+
+    encontrados_en_otro_lado = {}
+    if faltantes:
+        nombres = {f['foto'] for f in faltantes}
+        encontrados_en_otro_lado = _buscar_en_disco(nombres, raices_busqueda)
+        for f in faltantes:
+            f['encontrado_en'] = encontrados_en_otro_lado.get(f['foto'])
+
     return jsonify({
         'upload_dir_resuelto': UPLOAD_DIR,
         'modo_resolucion': modo,
+        'raices_de_busqueda_en_disco': raices_busqueda,
         'total_prendas_con_foto': len(items),
-        'total_fotos_faltantes': len(faltantes),
+        'total_fotos_faltantes_en_upload_dir': len(faltantes),
+        'total_recuperables_en_otra_ruta': len(encontrados_en_otro_lado),
+        'total_realmente_perdidas': len(faltantes) - len(encontrados_en_otro_lado),
         'faltantes': faltantes,
     })
 
