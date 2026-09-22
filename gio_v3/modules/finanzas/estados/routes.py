@@ -321,12 +321,38 @@ _SORT_COLUMNS = {
 
 @estados_bp.route('/api/transactions')
 def list_transactions():
+    """El usuario reportó "veo Finanzas en Top gastos pero no aparece en
+    ninguna otra parte" -- el tab Reportes de estados.js (bundle sin fuente
+    en este repo, no se puede tocar ahí) pide aquí mismo
+    tipo=GASTO&limit=2000&date_from=...&date_to=... para traerse TODO el
+    período y calcular en el cliente tanto "Top N gastos" como el desglose
+    por comercio. A diferencia de by-category/overview/monthly/summary_stats
+    (que todos excluyen PAGO_TDC/PAGO/PRESTAMOS/FINANZAS vía _PAGO_CATS por
+    ser transferencias/pagos internos, no gasto real), este endpoint genérico
+    no aplicaba ese filtro -- así que una transferencia de $55,000 a NAFIN
+    aparecía como el "gasto" más grande del período sin poder encontrarse en
+    ningún desglose por categoría del resto del dashboard.
+
+    Se aplica la misma exclusión aquí, pero SOLO cuando (a) no se pidió una
+    categoría explícita y (b) el limit es grande (>=500) -- la firma real
+    del fetch masivo de Reportes. El tab Movimientos pagina con limit=50 (ver
+    sniff de red), así que nunca entra por esta rama; y si alguien sí filtra
+    por category=FINANZAS a propósito (para revisar/reclasificar esas
+    transferencias) tampoco se le oculta nada."""
     if not _ok(): return _locked()
 
     limit  = min(int(request.args.get('limit', 200)), 2000)
     offset = int(request.args.get('offset', 0))
     order_by = _SORT_COLUMNS.get(request.args.get('sort'), 'fecha DESC')
     conds, params = _build_filters(request.args)
+
+    if limit >= 500 and not request.args.get('category'):
+        tipo_arg = request.args.get('tipo', '').upper()
+        if tipo_arg == 'GASTO':
+            conds.append(_PAGO_CATS)
+        elif tipo_arg == 'INGRESO':
+            conds.append(_INGRESO_EXCLUIR_SQL)
+
     where = f"WHERE {' AND '.join(conds)}" if conds else ""
 
     with get_db() as db:
