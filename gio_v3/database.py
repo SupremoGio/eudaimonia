@@ -5065,36 +5065,6 @@ def init_db():
 
 # ── Shared stat helpers ───────────────────────────────────────────────────────
 
-def get_activity_streak():
-    with get_db() as db:
-        dates = [r["date"] for r in db.execute(
-            "SELECT DISTINCT date FROM activity_logs ORDER BY date DESC"
-        ).fetchall()]
-        streak, check = 0, today_date()
-        for d in dates:
-            if d == check.isoformat():
-                streak += 1
-                check -= timedelta(days=1)
-            else:
-                break
-        return streak
-
-
-def get_gtd_streak():
-    with get_db() as db:
-        dates = [r["date"] for r in db.execute(
-            "SELECT DISTINCT date FROM gtd_points_log ORDER BY date DESC"
-        ).fetchall()]
-        streak, check = 0, today_date()
-        for d in dates:
-            if d == check.isoformat():
-                streak += 1
-                check -= timedelta(days=1)
-            else:
-                break
-        return streak
-
-
 def get_gtd_stats():
     # Deferred import to avoid circular dependency (engine.py imports database.py)
     from modules.gamification.engine import get_level_info, get_gamification_streak

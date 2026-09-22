@@ -1,9 +1,0 @@
-__pycache__/
-*.py[cod]
-*.db
-*.db-journal
-uploads/docs/*
-!uploads/docs/.gitkeep
-pipeline_backup.db
-.env
-*.log

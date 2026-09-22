@@ -74,19 +74,20 @@ openpyxl==3.1.5       pytest==9.1.1           pytest-flask==1.3.0
 eudaimonia/                         ← raíz del repo
 ├── CLAUDE.md                       ← reglas para IAs (DB, uploads, deploy) — LEER
 ├── README.md                       ← reglas de gamificación (XP, niveles, EC, combos)
-├── PROJECT_CONTEXT.md              ← este documento
 ├── railway.json                    ← build/start de Railway
 ├── Procfile, runtime.txt, requirements.txt, run.py   ← fallback raíz (no usados por Railway actual)
-├── .env.example                    ← plantilla de variables de entorno
-├── EUDAIMONIA APP/                 ← PROTOTIPO React original (no servido): eu-app.jsx, eu-components.jsx,
-│                                     eu-screens.jsx, eu-data.js, screenshots/ — referencia histórica de diseño
-├── design-specs/                   ← specs visuales de rediseños (HTML + JSX de referencia, NO se importan)
-│   ├── README.md                   ← roadmap UX de 5 sprints (todos implementados a 2026-08-15)
-│   ├── EUDAIMONIA UX Patches.html, Oikonomia Redesño.html, Presupuesto Radiografia.html
-│   └── eu-patches-{tokens,acta,nav,celebrate}.jsx, design-canvas.jsx
-├── tests/test_db_persistence.py    ← test suelto a nivel raíz
+├── docs/
+│   ├── PROJECT_CONTEXT.md          ← este documento
+│   └── design/                     ← referencia visual (NO se sirve ni se importa)
+│       ├── prototipo-app/          ← PROTOTIPO React original: eu-app.jsx, eu-components.jsx,
+│       │                             eu-screens.jsx, eu-data.js, screenshots/ — referencia histórica
+│       └── ux-patches/             ← specs visuales de rediseños (HTML + JSX de referencia)
+│           ├── README.md           ← roadmap UX de 5 sprints (todos implementados a 2026-08-15)
+│           ├── EUDAIMONIA UX Patches.html, Oikonomia Redesño.html, Presupuesto Radiografia.html
+│           └── eu-patches-{tokens,acta,nav,celebrate}.jsx, design-canvas.jsx
 └── gio_v3/                         ← TODO el código de la app vive aquí (Root Directory en Railway)
-    ├── app.py                      ← create_app(): registra 29 blueprints, login obligatorio, /health
+    ├── .env.example                ← plantilla de variables de entorno
+    ├── app.py                      ← create_app(): registra 28 blueprints, login obligatorio, /health
     ├── database.py                 ← (~5 200 líneas) esquema (86 CREATE TABLE), migraciones,
     │                                 conexión SQLite + réplica Turso, helpers de consulta
     ├── data.py                     ← catálogo de ACTIVITIES (XP/EC/tier/categoría)
@@ -110,7 +111,7 @@ eudaimonia/                         ← raíz del repo
     │   │   ├── consumo.py          ← seguimiento de consumo de productos
     │   │   ├── inversiones.py, prioridades.py, salud.py (salud financiera/patrimonio)
     │   │   └── estados/            ← estados de cuenta: routes.py (~2 800 líneas, 46 rutas),
-    │   │                             config.py (taxonomía/keywords), migration.py,
+    │   │                             config.py (taxonomía/keywords),
     │   │                             parsers/ (bbva, bbva_csv, bbva_debit, bbva_debit_xlsx,
     │   │                             bbva_legacy_csv, bbva_libreton, hsbc, invex)
     │   ├── bienestar/              ← "Hegemonikon": hub, salud.py (médico), futbol.py
@@ -122,8 +123,7 @@ eudaimonia/                         ← raíz del repo
     │   ├── eurythmia/              ← baile: repertorio, sesiones, álbumes
     │   ├── harma/                  ← vehículo: servicios, pólizas, siniestros, documentos
     │   ├── plantas/                ← riego/trasplante + care_data.py
-    │   ├── perfil/                 ← datos personales, medidas corporales, documentos, vault
-    │   └── tw/                     ← redirects legacy (/tw, /logoi → /)
+    │   └── perfil/                 ← datos personales, medidas corporales, documentos, vault
     ├── templates/                  ← Jinja2 (espejo de modules/)
     │   ├── eu/layout_sub.html      ← LAYOUT BASE ÚNICO (sidebar, topbar, bottom-nav, ⌘K, toast, loadbar)
     │   ├── gtd_base.html           ← sub-layout de GTD (extiende layout_sub)
@@ -135,12 +135,11 @@ eudaimonia/                         ← raíz del repo
     │   ├── css/app.css             ← TOKENS DE DISEÑO (fuente única) + utilidades grid + animaciones
     │   ├── css/tailwind-src.css → tailwind-built.css
     │   ├── js/eu-celebrate.js      ← partículas/celebración (vanilla)
-    │   ├── finanzas/index.html + assets/estados.js   ← SPA React compilada
+    │   ├── finanzas/assets/estados.js   ← SPA React compilada (la monta templates/finanzas/estados.html)
     │   └── img/logo.png
-    ├── migrations/                 ← scripts de migración de datos puntuales
+    ├── migrations/                 ← migraciones versionadas (registran en migration_log)
     ├── scripts/                    ← pre_deploy_check.py, fixes puntuales
-    ├── archive/                    ← scripts viejos (migrate_to_turso, fix_tz…)
-    ├── tests/                      ← ~50 archivos pytest (mayoría finanzas)
+    ├── tests/                      ← 56 archivos pytest (mayoría finanzas) — único directorio de tests
     └── uploads/                    ← fotos/documentos locales (gitignored; en prod viven en el volumen)
 ```
 
@@ -236,7 +235,7 @@ No hay sistema de componentes formal (ni macros Jinja significativas). La reutil
 
 Legacy → redirect: `/classic`, `/v2`, `/tw`, `/logoi` → `/`; `/gtd/inbox|next|someday|projects` → `/gtd/`.
 Rutas `*/admin/*` (auditorías y fixes de datos de Finanzas) y ~260 endpoints `*/api/*` JSON.
-En total hay **~330 rutas** en 29 blueprints.
+En total hay **~330 rutas** en 28 blueprints.
 
 ### Cómo navega el usuario
 - **Móvil (<1024 px)**: bottom-nav fijo (Inicio · Praxis · Acta · Perfil) + botón ← en el topbar
@@ -356,12 +355,12 @@ la SPA de Finanzas es un artefacto compilado sin `package.json` ni fuentes en el
 ### Librerías importantes
 - **Runtime Python**: ver lista completa en §2 (`gio_v3/requirements.txt`).
 - **CDN en el navegador**: Lucide `1.31.0` (unpkg), Google Fonts. React/ReactDOM vienen **embebidos** en `estados.js`.
-- **Servicios externos**: Turso (libSQL por HTTP) como respaldo de la DB. `.env.example` declara
-  `ANTHROPIC_API_KEY` pero **ningún módulo lo usa actualmente**.
+- **Servicios externos**: Turso (libSQL por HTTP) como respaldo de la DB; Google Gemini (`GEMINI_API_KEY`)
+  para análisis de prendas en Guardarropa.
 - **Binario del sistema**: Tesseract (para `pytesseract`, OCR de estados de cuenta escaneados).
 
 ### Variables de entorno
-`SECRET_KEY`, `DATABASE_PATH` (volumen Railway), `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `UPLOADS_DIR` (opcional),
+`SECRET_KEY`, `DATABASE_PATH` (volumen Railway), `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `GEMINI_API_KEY`, `UPLOADS_DIR` (opcional),
 `PORT` (lo inyecta el hosting; activa cookies Secure y HSTS).
 
 ---
@@ -378,14 +377,13 @@ la SPA de Finanzas es un artefacto compilado sin `package.json` ni fuentes en el
   `mi_parte` (gastos compartidos), MSI, presupuestos, reportes, viajes, patrimonio, deudas, inversiones.
 - Más de 15 módulos de vida con CRUD funcional; uploads de fotos/documentos persistentes en el volumen.
 - Tema claro/oscuro, navegación responsive (sidebar/bottom-nav/⌘K), skeletons y estados vacíos.
-- Tests: **435 pasan / 27 fallan** (corrida local 2026-09-22, ver riesgos).
+- Tests: **435 pasan / 18 fallan** (corrida local 2026-09-22, tras la limpieza; ver riesgos).
 
 ### Qué falta
 - Código fuente de la SPA de Finanzas (solo existe el bundle minificado).
 - Sistema de componentes / design system documentado; unificación visual de Finanzas.
 - CI automatizado (no hay workflows de GitHub Actions para correr tests).
 - Tests de frontend / E2E (ninguno).
-- Uso de la API de Anthropic prevista en `.env.example` (análisis de guardarropa) no implementada.
 - PWA/offline, notificaciones push de deadlines (no existen).
 
 ### Riesgos técnicos
@@ -393,9 +391,8 @@ la SPA de Finanzas es un artefacto compilado sin `package.json` ni fuentes en el
    sin build reproducible; nombres minificados (`s.jsx`, `U()`, `o`…).
 2. **Archivos monolíticos**: `database.py` (~5 200 líneas), `finanzas/estados/routes.py` (~2 800),
    templates de 1 000–2 300 líneas con CSS+JS inline → difícil de mantener y revisar.
-3. **Tests desactualizados**: 27 fallos — 13 en `test_gamification_v31.py` (catálogo de actividades de fin de
-   semana cambió), 9 en `test_midnight_reset.py` (importa `fix_tz_dates`, movido a `archive/`) y 5 en tests
-   de Finanzas (reportes/taxonomía/renta/ingresos: montos esperados divergentes). Sin CI, nadie lo detecta.
+3. **Tests desactualizados**: 18 fallos — 13 en `test_gamification_v31.py` (catálogo de actividades de fin de
+   semana cambió con la rutina v4) y 5 en tests de Finanzas (reportes/taxonomía/renta/ingresos: montos esperados divergentes). Sin CI, nadie lo detecta.
 4. **Single-user, 1 worker Gunicorn**, rate-limiter en memoria, SQLite: correcto para uso personal, no escala.
 5. **Migraciones ad-hoc** dentro de `database.py` y endpoints `/admin/*` que corrigen datos en producción
    (sin framework de migraciones versionado tipo Alembic).

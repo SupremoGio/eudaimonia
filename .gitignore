@@ -2,6 +2,7 @@
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
 *.sqlite
 *.sqlite3
 instance/
@@ -43,3 +44,9 @@ babel.config.json
 # Node (build de Tailwind — ver gio_v3/package.json) — el CSS compilado
 # (gio_v3/static/css/tailwind-built.css) SÍ se commitea como respaldo
 node_modules/
+
+# Claude Code — clones temporales de sesiones
+.claude/worktrees/
+
+# Logs
+*.log

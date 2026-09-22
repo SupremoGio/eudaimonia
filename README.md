@@ -295,12 +295,21 @@ Si >3 perks seguidos activos: **-10% XP** por 2 días.
 | `/` | Dashboard principal |
 | `/actividades` | **Acta Diurna** — registro de actividades diarias |
 | `/recompensas` | **Tienda EC** — canjear Euda-Credits |
-| `/gtd` | Sistema GTD — inbox, next, proyectos |
-| `/finanzas` | Presupuesto, deudas, consumo |
+| `/logros` | Badges y logros |
+| `/gtd` | Sistema GTD — inbox, next, proyectos, someday, points |
+| `/finanzas` | Oikonomia — presupuesto, estados de cuenta, deudas, inversiones |
 | `/idiomas` | Journal de idiomas, tests |
 | `/nutricion` | Plan semanal de comidas |
-| `/perfil` | Datos personales, medidas |
-| `/sabado` | Checklist sábado (módulo legacy) |
+| `/recetas` | Recetario |
+| `/bienestar` | Hegemonikon — salud, fútbol, expediente médico |
+| `/ataraxia` | Rutina de fin de semana y prioridades |
+| `/eurythmia` | Baile — repertorio, sesiones |
+| `/paideia` | Libros y películas |
+| `/guardarropa` | Guardarropa + wishlist |
+| `/harma` | Vehículo — servicios, pólizas, siniestros |
+| `/plantas` | Plantas y cuidados |
+| `/viajes` | Viajes |
+| `/perfil` | Datos personales, medidas, documentos |
 | `/api/gamification/stats` | JSON: stats de gamificación |
 | `/api/gamification/badges` | JSON: badges y perks activos |
 | `/api/gamification/classification` | JSON: clasificación del día |
@@ -309,7 +318,7 @@ Si >3 perks seguidos activos: **-10% XP** por 2 días.
 
 ## Stack Técnico
 
-- **Backend:** Python 3 + Flask
+- **Backend:** Python 3.12 + Flask 3.1
 - **Base de datos:** SQLite local + Turso (híbrido async)
 - **Frontend:** HTML + CSS custom + Lucide icons + Vanilla JS
 - **Layout:** Sistema de diseño propio (dark theme, tokens CSS)
@@ -329,7 +338,8 @@ DATABASE_PATH=/data/pipeline.db
 
 ```bash
 cd gio_v3
-pip install flask
+pip install -r requirements.txt
+cp .env.example .env   # y rellena los valores
 python run.py
 # → http://localhost:5000/actividades
 ```

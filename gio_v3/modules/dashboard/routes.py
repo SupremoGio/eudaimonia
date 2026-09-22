@@ -460,6 +460,8 @@ def _build_deadlines(today_dt: date) -> list:
 # ── Redirecciones de compatibilidad ──────────────────────────────────────────
 @dashboard_bp.route('/classic')
 @dashboard_bp.route('/v2')
+@dashboard_bp.route('/tw')
+@dashboard_bp.route('/logoi')
 def legacy_redirect():
     return redirect('/', 301)
 

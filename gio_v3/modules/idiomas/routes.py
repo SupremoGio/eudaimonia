@@ -1,7 +1,7 @@
 import random
 from flask import Blueprint, render_template, request, jsonify
 from database import get_db
-from data import get_word_of_day, get_random_word, get_quiz_questions, QUIZ_EN, QUIZ_FR
+from data import get_word_of_day, get_random_word, QUIZ_EN, QUIZ_FR
 from datetime import date, datetime, timedelta
 import urllib.request, urllib.parse, json
 from utils import today_str, today_date

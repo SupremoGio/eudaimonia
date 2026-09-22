@@ -288,11 +288,6 @@ QUIZ_FR = [
     {"word":"Acrimonieux","question":"Un échange 'acrimonieux' est :","options":["Agréable et cordial","Plein d'amertume et d'hostilité","Très formel","Très bref"],"answer":1,"example":"La réunion tourna à l'échange acrimonieux entre les deux parties."},
 ]
 
-def get_quiz_questions(lang='en', n=5):
-    import random
-    pool = QUIZ_EN if lang == 'en' else QUIZ_FR
-    return random.sample(pool, min(n, len(pool)))
-
 import random
 
 _QUOTES_STOIC = [q for q in QUOTES if q["category"] == "stoic"]

@@ -24,10 +24,19 @@ gio_v3_ACTUALIZADO/          ← raíz del repo
 │   ├── templates/           ← Jinja2 (espejo de modules/)
 │   ├── static/              ← CSS, JS, imágenes
 │   ├── uploads/             ← fotos subidas por el usuario (no se commitean)
+│   ├── tests/               ← pytest (TODOS los tests viven aquí: cd gio_v3 && pytest)
+│   ├── migrations/          ← migraciones versionadas (registran en migration_log)
+│   ├── scripts/             ← utilidades de mantenimiento (pre_deploy_check, fixes)
+│   ├── .env.example         ← plantilla de variables de entorno
 │   ├── package.json         ← build local de Tailwind (npm run build:css)
 │   └── nixpacks.toml        ← config Nixpacks — Railway tiene Root Directory
 │                                = "gio_v3", así que nixpacks busca su config
 │                                AQUÍ, no en la raíz del repo (ver Deployment)
+├── docs/
+│   ├── PROJECT_CONTEXT.md   ← contexto técnico completo (para otras IAs)
+│   └── design/              ← referencia visual, NO se sirve ni se importa
+│       ├── prototipo-app/   ← prototipo React original
+│       └── ux-patches/      ← specs de los sprints UX (todos ya aplicados)
 ├── CLAUDE.md                ← este archivo
 ├── README.md
 ├── Procfile                 ← gunicorn para Heroku/repo-root fallback (no usado
@@ -133,7 +142,7 @@ App disponible en `http://localhost:5000`.
 
 ## Variables de entorno
 
-Crea `gio_v3/.env` (nunca se commitea). Usa `gio_v3/.env.example` como plantilla si existe.
+Crea `gio_v3/.env` (nunca se commitea). Usa `gio_v3/.env.example` como plantilla.
 
 ```
 TURSO_DATABASE_URL=libsql://...
@@ -156,6 +165,15 @@ SECRET_KEY=...
 | Recetas | `/recetas` | `modules/recetas/routes.py` |
 | Recompensas | `/recompensas` | `modules/recompensas/routes.py` |
 | Perfil | `/perfil` | `modules/perfil/routes.py` |
+
+Lista completa de rutas en `README.md` y `docs/PROJECT_CONTEXT.md`.
+
+## Limpieza del repo
+
+- Scripts de un solo uso: una vez aplicados en producción se **borran** (quedan en el
+  historial de git), no se archivan en carpetas `archive/`.
+- Carpetas de IDE (`.idea/`), clones de Claude (`.claude/worktrees/`) y `__pycache__`
+  están en `.gitignore` — no los agregues con `git add -A`.
 
 ## Deployment (Railway)
 
