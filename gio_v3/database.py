@@ -4864,6 +4864,32 @@ def init_db():
                  "'Leer psicología — sesión profunda' pasa de days_of_week='sun' a 'tue,sun' (duplicación, no movimiento).")
             )
 
+        # ── ACTA DIURNA — quita el foco del mes de Cosmopolitismo ────────────
+        # El usuario reportó dos anclas a la vez en Cosmopolitismo: "Francés —
+        # sesión profunda" (ancla real, custom) y "Conversación real 10min+"
+        # (touch normal en el seed base -- ver activity_defs, session
+        # "afternoon" -- que se muestra como ancla solo porque pillar_focus
+        # la tiene marcada como foco del mes de "cosmo"; ver _effective_type
+        # en modules/actividades/activity_defs.py: un touch cuyo key coincide
+        # con el focus_key de su pilar se pinta como ancla sin cambiar su
+        # tipo real). Pidió dejarla como touch normal y moverla a "Cualquier
+        # momento": se quita el foco del mes de cosmo (deja de promoverse a
+        # ancla) y se cambia su session de "afternoon" a "any".
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='acta_diurna_conversacion_a_cualquier_momento'"
+        ).fetchone():
+            db.execute("DELETE FROM pillar_focus WHERE pillar='cosmo' AND focus_key='conversacion'")
+            db.execute("UPDATE activity_defs SET session='any' WHERE key='conversacion'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("acta_diurna_conversacion_a_cualquier_momento",
+                 "'Conversación real 10min+' deja de ser el foco del mes de Cosmopolitismo "
+                 "(deja de mostrarse como ancla) y pasa de session='afternoon' a session='any' "
+                 "(Cualquier momento). 'Francés — sesión profunda' queda como la única ancla "
+                 "de Cosmopolitismo.")
+            )
+            db.commit()
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
