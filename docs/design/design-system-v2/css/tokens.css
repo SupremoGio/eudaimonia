@@ -1,0 +1,135 @@
+/* ═══════════════════════════════════════════════════════════════
+   EUDAIMONIA OS — Design Tokens V2
+   Reemplaza el bloque de variables de static/css/app.css.
+   Capa 1: primitivas · Capa 2: semánticas · Capa 3: alias legacy
+   ═══════════════════════════════════════════════════════════════ */
+:root,html.dark{
+/* ── 1 · PRIMITIVAS ─────────────────────────────────────────── */
+--ink-950:#09070F;--ink-900:#0F0C1A;--ink-850:#15111F;--ink-800:#1A1627;--ink-750:#221D32;--ink-700:#2B2540;--ink-600:#3A3352;--ink-500:#524A6B;
+--parch-50:#F2EDE0;--parch-200:#C2B69E;--parch-400:#978870;--parch-600:#6A6050;
+--gold-50:#F7EDCF;--gold-100:#F0DFA6;--gold-200:#E8C96D;--gold-300:#D9B85B;--gold-400:#C9A84C;--gold-500:#A88A3A;--gold-600:#8B6914;--gold-700:#6B5010;--gold-800:#4A370B;--gold-900:#2A1F08;
+
+/* ── 2 · SEMÁNTICAS · Superficies ───────────────────────────── */
+--bg-canvas:var(--ink-950);      /* fondo de app */
+--bg-sunken:var(--ink-900);      /* nav, zonas hundidas */
+--bg-surface:var(--ink-800);     /* tarjetas */
+--bg-raised:var(--ink-750);      /* inputs, tarjeta anidada, popovers */
+--bg-hover:var(--ink-700);
+--bg-press:var(--ink-600);
+--bg-overlay:rgba(9,7,15,.72);
+--bg-glass:rgba(9,7,15,.82);
+
+/* Bordes — neutros por defecto; el oro es énfasis, no estructura */
+--border-subtle:rgba(242,237,224,.06);
+--border-default:rgba(242,237,224,.10);
+--border-strong:rgba(242,237,224,.18);
+--border-brand:rgba(201,168,76,.34);
+--border-focus:var(--gold-400);
+
+/* Texto (ratios sobre --bg-surface #1A1627) */
+--fg-1:var(--parch-50);   /* 15.6:1  títulos, cuerpo */
+--fg-2:var(--parch-200);  /* 9.4:1   secundario */
+--fg-3:var(--parch-400);  /* 5.1:1   terciario, meta (AA) */
+--fg-4:var(--parch-600);  /* 2.9:1   SOLO deshabilitado/decorativo */
+--fg-brand:var(--gold-400);        /* 7.7:1 */
+--fg-brand-strong:var(--gold-200); /* 10.6:1 cifras héroe */
+--fg-on-brand:#09070F;             /* 8.7:1 sobre oro */
+
+/* Marca */
+--brand:var(--gold-400);--brand-hover:var(--gold-300);--brand-press:var(--gold-500);
+--brand-subtle:rgba(201,168,76,.08);--brand-muted:rgba(201,168,76,.14);--brand-strong-bg:rgba(201,168,76,.22);
+
+/* Estados */
+--success-fg:oklch(.79 .12 158);--success-bg:oklch(.25 .04 158);--success-border:oklch(.42 .07 158);
+--warning-fg:oklch(.84 .12 82);--warning-bg:oklch(.26 .04 82);--warning-border:oklch(.45 .07 82);
+--danger-fg:oklch(.74 .14 22);--danger-bg:oklch(.25 .05 22);--danger-border:oklch(.44 .09 22);
+--info-fg:oklch(.79 .08 240);--info-bg:oklch(.25 .035 240);--info-border:oklch(.43 .06 240);
+
+/* Gamificación */
+--xp-fg:var(--gold-200);--xp-track:rgba(201,168,76,.12);
+--xp-fill:linear-gradient(90deg,var(--gold-500),var(--gold-400) 55%,var(--gold-200));
+--ec-fg:#D9D0AE;--ec-bg:rgba(217,208,174,.09);            /* electrum: moneda ≠ progreso */
+--tier-carbon:#9A93A6;--tier-hierro:#AEB8C6;--tier-oro:var(--gold-200);--tier-diamante:#A9DDE8;
+--rare-bronce:#CF9A73;--rare-plata:#C9CED6;--rare-oro:var(--gold-200);--rare-especial:#A9DDE8;
+
+/* Categorías — hue desde ec_constants.CATEGORY_HUES */
+--h-logoi:120;--h-hegemonikon:45;--h-oikonomia:80;--h-cosmopolitismo:215;--h-paideia:265;--h-ataraxia:155;--h-eurythmia:330;--h-harma:15;--h-identidad:280;
+--cat-l-fg:.80;--cat-c-fg:.09;--cat-l-bg:.24;--cat-c-bg:.035;--cat-l-bd:.40;--cat-c-bd:.06;
+
+/* ── Tipografía ─────────────────────────────────────────────── */
+--font-display:'Cormorant Garamond',Georgia,serif;
+--font-ui:'DM Sans',system-ui,sans-serif;
+--font-data:'JetBrains Mono',ui-monospace,Menlo,monospace;
+--fs-11:11px;--fs-12:12px;--fs-13:13px;--fs-15:15px;--fs-17:17px;--fs-20:20px;--fs-24:24px;--fs-28:28px;--fs-32:32px;--fs-40:40px;--fs-56:56px;
+--fw-regular:400;--fw-medium:500;--fw-semibold:600;
+--lh-tight:1.05;--lh-snug:1.2;--lh-normal:1.45;--lh-relaxed:1.6;
+--ls-display:-.01em;--ls-normal:0;--ls-eyebrow:.14em;--ls-brand:.18em;
+
+/* ── Espaciado · base 4, escala 8 ───────────────────────────── */
+--sp-0:0;--sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:20px;--sp-6:24px;--sp-8:32px;--sp-10:40px;--sp-12:48px;--sp-16:64px;--sp-20:80px;
+--gutter:16px;--card-pad:16px;--stack:12px;--section:32px;
+
+/* ── Radios ─────────────────────────────────────────────────── */
+--r-xs:4px;--r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:24px;--r-full:999px;
+
+/* ── Elevación — oscuro: luminosidad + filo; sombra solo en flotantes */
+--e-0:none;
+--e-1:inset 0 1px 0 rgba(242,237,224,.035);
+--e-2:0 1px 0 rgba(242,237,224,.04) inset,0 8px 24px -8px rgba(0,0,0,.55);
+--e-3:0 1px 0 rgba(242,237,224,.05) inset,0 24px 64px -16px rgba(0,0,0,.7);
+--glow-brand:0 0 0 1px rgba(201,168,76,.35),0 0 24px -4px rgba(201,168,76,.35);
+
+/* ── Motion ─────────────────────────────────────────────────── */
+--dur-instant:80ms;--dur-fast:140ms;--dur-base:220ms;--dur-slow:360ms;--dur-deliberate:600ms;--dur-ceremony:1200ms;
+--ease-standard:cubic-bezier(.2,0,0,1);
+--ease-enter:cubic-bezier(0,0,.2,1);
+--ease-exit:cubic-bezier(.4,0,1,1);
+--ease-emphasis:cubic-bezier(.3,0,0,1);
+--ease-settle:cubic-bezier(.34,1.25,.64,1);  /* overshoot ≤4% — recompensas */
+
+/* ── Layout ─────────────────────────────────────────────────── */
+--topbar-h:56px;--sidebar-w:256px;--sidebar-rail:64px;--bottomnav-h:64px;--content-max:1200px;--reading-max:680px;
+--z-base:0;--z-sticky:20;--z-nav:40;--z-overlay:60;--z-modal:70;--z-toast:80;--z-cmdk:90;
+color-scheme:dark;
+}
+@media (min-width:768px){:root,html.dark,html.light{--gutter:32px;--card-pad:20px;--section:48px}}
+@media (min-width:1280px){:root,html.dark,html.light{--gutter:40px}}
+
+html.light{
+--bg-canvas:#F5F0E7;--bg-sunken:#EDE7D8;--bg-surface:#FFFFFF;--bg-raised:#FBF8F1;--bg-hover:#F1EBDD;--bg-press:#E6DDCA;
+--bg-overlay:rgba(28,22,16,.36);--bg-glass:rgba(245,240,231,.85);
+--border-subtle:rgba(28,22,16,.06);--border-default:rgba(28,22,16,.11);--border-strong:rgba(28,22,16,.20);--border-brand:rgba(139,105,20,.38);--border-focus:var(--gold-600);
+--fg-1:#1C1610;--fg-2:#4F4230;--fg-3:#6E5E42;--fg-4:#A0927A;
+--fg-brand:var(--gold-600);--fg-brand-strong:var(--gold-700);--fg-on-brand:#FFFFFF;
+--brand:var(--gold-600);--brand-hover:#7A5C10;--brand-press:var(--gold-700);
+--brand-subtle:rgba(139,105,20,.07);--brand-muted:rgba(139,105,20,.12);--brand-strong-bg:rgba(139,105,20,.18);
+--success-fg:oklch(.46 .11 158);--success-bg:oklch(.95 .03 158);--success-border:oklch(.80 .07 158);
+--warning-fg:oklch(.50 .11 70);--warning-bg:oklch(.95 .04 82);--warning-border:oklch(.82 .08 82);
+--danger-fg:oklch(.50 .16 25);--danger-bg:oklch(.95 .03 22);--danger-border:oklch(.82 .07 22);
+--info-fg:oklch(.47 .10 245);--info-bg:oklch(.95 .02 240);--info-border:oklch(.82 .05 240);
+--xp-fg:var(--gold-600);--xp-track:rgba(139,105,20,.12);--xp-fill:linear-gradient(90deg,var(--gold-600),var(--gold-500) 60%,var(--gold-400));
+--ec-fg:#6E6030;--ec-bg:rgba(110,96,48,.08);
+--tier-carbon:#5E5868;--tier-hierro:#5A6778;--tier-oro:var(--gold-600);--tier-diamante:#2F7F90;
+--rare-bronce:#9A5E36;--rare-plata:#626A76;--rare-oro:var(--gold-600);--rare-especial:#2F7F90;
+--cat-l-fg:.46;--cat-c-fg:.10;--cat-l-bg:.955;--cat-c-bg:.025;--cat-l-bd:.84;--cat-c-bd:.05;
+--e-1:0 1px 2px rgba(28,22,16,.04);--e-2:0 6px 20px -6px rgba(28,22,16,.14);--e-3:0 24px 56px -16px rgba(28,22,16,.28);
+--glow-brand:0 0 0 1px rgba(139,105,20,.35),0 6px 20px -6px rgba(139,105,20,.35);
+color-scheme:light;
+}
+
+/* Categoría: cualquier elemento con data-cat obtiene --cat-fg/bg/border */
+[data-cat]{--cat-fg:oklch(var(--cat-l-fg) var(--cat-c-fg) var(--h));--cat-bg:oklch(var(--cat-l-bg) var(--cat-c-bg) var(--h));--cat-border:oklch(var(--cat-l-bd) var(--cat-c-bd) var(--h))}
+[data-cat=logoi]{--h:var(--h-logoi)}[data-cat=hegemonikon]{--h:var(--h-hegemonikon)}[data-cat=oikonomia]{--h:var(--h-oikonomia)}[data-cat=cosmopolitismo]{--h:var(--h-cosmopolitismo)}[data-cat=paideia]{--h:var(--h-paideia)}[data-cat=ataraxia]{--h:var(--h-ataraxia)}[data-cat=eurythmia]{--h:var(--h-eurythmia)}[data-cat=harma]{--h:var(--h-harma)}[data-cat=identidad]{--h:var(--h-identidad)}
+
+@media (prefers-reduced-motion:reduce){:root{--dur-fast:1ms;--dur-base:1ms;--dur-slow:1ms;--dur-deliberate:1ms;--dur-ceremony:1ms}}
+
+/* ── 3 · ALIAS LEGACY (Fase 1: no romper templates actuales) ── */
+:root,html.dark,html.light{
+--bg:var(--bg-canvas);--surf:var(--bg-sunken);--card:var(--bg-surface);--card2:var(--bg-raised);
+--b:var(--border-default);--b2:var(--border-brand);
+--gold:var(--brand);--gold-l:var(--fg-brand-strong);--gold-d:var(--brand-subtle);--gold-bg:var(--brand-subtle);--gold-border:var(--border-brand);
+--text:var(--fg-1);--mid:var(--fg-2);--dim:var(--fg-3);--muted:var(--fg-4);
+--serif:var(--font-display);--sans:var(--font-ui);--mono:var(--font-data);
+--fs-xs:var(--fs-11);--fs-sm:var(--fs-13);--fs-base:var(--fs-15);--fs-lg:var(--fs-20);--fs-xl:var(--fs-24);--fs-2xl:var(--fs-40);
+--emerald:var(--success-fg);--coral:var(--danger-fg);--amber:var(--warning-fg);--blue:var(--info-fg);
+}

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="design_doc_mode" content="canvas">
+<title>Eudaimonia OS — Pantallas V2 · B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ds-v2/tokens.css">
+<link rel="stylesheet" href="ds-v2/components.css">
+<link rel="stylesheet" href="ds-v2/screens.css">
+<script src="https://unpkg.com/lucide@1.31.0"></script>
+<style>
+.wallet{position:relative;border-radius:var(--r-lg);padding:20px;overflow:hidden;background:radial-gradient(120% 100% at 100% 0%,oklch(.30 .05 80 / .55),transparent 60%),linear-gradient(160deg,var(--bg-raised),var(--bg-surface));border:1px solid var(--border-default)}
+.acct{min-width:150px;padding:14px;border-radius:14px;border:1px solid var(--border-subtle);background:var(--bg-surface);display:flex;flex-direction:column;gap:10px}
+.acct .bank{font:600 11px var(--font-ui);letter-spacing:.08em;color:var(--fg-3)}
+.day{font:500 12px var(--font-ui);color:var(--fg-3);padding:12px 16px 6px;display:flex;justify-content:space-between}
+.drawer{width:400px;border-left:1px solid var(--border-subtle);background:var(--bg-sunken);display:flex;flex-direction:column}
+.cat-opt{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-surface);font-size:12px;color:var(--fg-2)}
+.cat-opt svg{width:18px;height:18px}
+.cat-opt.on{border-color:var(--border-brand);background:var(--brand-subtle);color:var(--fg-1)}
+.cat-opt.on svg{color:var(--fg-brand)}
+.garment{display:flex;flex-direction:column;gap:8px}
+.garment .ph{aspect-ratio:3/4}
+</style>
+</head>
+<body>
+
+<!-- ═════════ 6 · OIKONOMIA HUB ═════════ -->
+<div class="lbl" style="left:100px;top:40px"><b>06 · Oikonomia Hub</b>Patrimonio · deudas · submódulos</div>
+<div class="mob" data-screen-label="06 Oikonomia móvil" style="left:100px;top:90px">
+<div data-shell="status"></div>
+<div class="m-top" style="padding-left:8px"><button class="eu-iconbtn" aria-label="Volver"><i data-lucide="chevron-left"></i></button><div class="eu-mtitle"><b>Oikonomia</b><span>Finanzas</span></div><button class="eu-iconbtn" aria-pressed="false" aria-label="Ocultar patrimonio"><i data-lucide="eye"></i></button></div>
+<div class="m-body">
+<div class="wallet vstack" style="gap:6px"><div class="t-meta">Patrimonio neto</div><div class="t-data-xl" style="font-size:36px">$284,120</div><div class="hstack"><span class="eu-stat-delta up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+$6,840</span><span class="t-meta">vs agosto</span></div>
+<div class="g3" style="margin-top:14px;gap:8px"><div><div class="t-meta">Activos</div><div class="t-data" style="font-size:14px">$341.2k</div></div><div><div class="t-meta">Deudas</div><div class="t-data" style="font-size:14px">$57.1k</div></div><div><div class="t-meta">Ahorro</div><div class="t-data fg-success" style="font-size:14px">21%</div></div></div></div>
+<div class="eu-card vstack" style="gap:10px;padding:14px"><div class="between"><span class="t-ui">Septiembre</span><span class="t-data" style="font-size:13px">$18,420 <span class="fg-3">/ $24,000</span></span></div><div class="eu-progress eu-progress--brand"><i style="width:77%"></i></div><div class="t-meta">Quedan $5,580 · 8 días</div></div>
+<div class="between" style="margin-top:2px"><div class="t-section" style="font-size:18px">Deudas</div><a class="t-meta">Todas</a></div>
+<div class="eu-card eu-card--flush"><div class="eu-list" id="m-debts"></div></div>
+<div class="eu-card eu-card--flush"><div class="eu-list" id="m-subs"></div></div>
+</div>
+<div data-shell="bnav" data-active="modulos" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="06 Oikonomia desktop" style="left:560px;top:90px">
+<aside data-shell="sidebar" data-active="oikonomia" data-sub="Resumen"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Virtudes > Oikonomia"></div>
+<div class="d-body">
+<div class="d-hd"><div><div class="t-eyebrow">Oikonomia · Finanzas</div><div class="t-page">Resumen</div></div><div class="hstack"><button class="eu-btn eu-btn--ghost"><i data-lucide="eye-off"></i>Ocultar cifras</button><button class="eu-btn eu-btn--secondary"><i data-lucide="upload"></i>Subir estado</button><button class="eu-btn eu-btn--primary"><i data-lucide="plus"></i>Registrar gasto</button></div></div>
+<div style="display:grid;grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:16px">
+<div class="wallet vstack" style="gap:8px;padding:24px"><div class="t-meta">Patrimonio neto</div><div class="t-data-xl" style="font-size:44px">$284,120</div><div class="hstack"><span class="eu-stat-delta up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+$6,840 (2.5%)</span><span class="t-meta">vs agosto</span></div></div>
+<div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="arrow-down-left"></i>Ingresos</div><div class="eu-stat-val">$65.0k</div><div class="t-meta">2 nóminas</div></div>
+<div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="arrow-up-right"></i>Gastos</div><div class="eu-stat-val">$18.4k</div><div class="eu-stat-delta down">77% del presupuesto</div></div>
+<div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="piggy-bank"></i>Tasa de ahorro</div><div class="eu-stat-val fg-success">21%</div><div class="t-meta">Meta 25%</div></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start">
+<div class="eu-card eu-card--flush"><div class="between" style="padding:18px 20px 8px"><div class="t-card">Deudas</div><span class="t-meta num">$57,140 total</span></div><table class="eu-table" id="d-debts"></table></div>
+<div class="eu-card vstack" style="gap:14px"><div class="between"><div class="t-card">Presupuesto · septiembre</div><a class="t-meta">Editar</a></div><div id="d-budget" class="vstack" style="gap:14px"></div></div>
+</div>
+<div class="g4" style="grid-template-columns:repeat(6,minmax(0,1fr));gap:12px" id="d-subs"></div>
+</div></div></div>
+
+<!-- ═════════ 7 · FINANZAS · RESUMEN (ESTADOS) ═════════ -->
+<div class="lbl" style="left:100px;top:1100px"><b>07 · Finance Dashboard</b>Movimientos · pestaña Resumen (SPA reconstruida con tokens)</div>
+<div class="mob" data-screen-label="07 Finanzas móvil" style="left:100px;top:1150px">
+<div data-shell="status"></div>
+<div class="m-top" style="padding-left:8px"><button class="eu-iconbtn" aria-label="Volver"><i data-lucide="chevron-left"></i></button><div class="eu-mtitle"><b>Movimientos</b><span>Oikonomia · septiembre</span></div><button class="eu-iconbtn" aria-label="Subir"><i data-lucide="upload"></i></button></div>
+<div style="padding:0 16px"><div class="eu-tabs" style="gap:20px"><button aria-selected="true">Resumen</button><button>Movimientos</button><button>Cuentas</button><button>Presupuestos</button><button>Reglas</button></div></div>
+<div class="m-body" style="padding-top:16px">
+<div class="vstack" style="gap:4px"><div class="t-meta">Gastado en septiembre</div><div class="hstack" style="align-items:baseline;gap:8px"><span class="t-data-xl">$18,420</span><span class="eu-stat-delta down">+12%</span></div><div class="t-meta">Tu parte · sin transferencias internas</div></div>
+<div class="eu-card" style="padding:14px"><div class="bars" style="height:96px" id="m-flow"></div></div>
+<div class="between"><div class="t-section" style="font-size:18px">Por categoría</div><div class="eu-seg"><button aria-selected="true">Mes</button><button>Año</button></div></div>
+<div class="eu-card eu-card--flush"><div class="eu-list" id="m-cats"></div></div>
+</div>
+<div data-shell="bnav" data-active="modulos" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="07 Finanzas desktop" style="left:560px;top:1150px">
+<aside data-shell="sidebar" data-active="oikonomia" data-sub="Movimientos"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Virtudes > Oikonomia > Movimientos"></div>
+<div class="d-body" style="gap:20px">
+<div class="d-hd"><div><div class="t-eyebrow">Oikonomia · Finanzas</div><div class="t-page">Movimientos</div></div><div class="hstack"><div class="eu-seg"><button>Ago</button><button aria-selected="true">Sep</button><button>Trimestre</button><button>Año</button></div><button class="eu-btn eu-btn--secondary"><i data-lucide="upload"></i>Subir estado de cuenta</button></div></div>
+<div class="eu-tabs"><button aria-selected="true">Resumen</button><button>Movimientos</button><button>Cuentas</button><button>Presupuestos</button><button>Reglas</button><button>Reportes</button><button>Gastos de viaje</button></div>
+<div class="g4">
+<div class="eu-card eu-stat"><div class="eu-stat-lbl">Gastado · tu parte</div><div class="eu-stat-val">$18,420</div><div class="eu-stat-delta down">+12% vs ago</div></div>
+<div class="eu-card eu-stat"><div class="eu-stat-lbl">Ingresos</div><div class="eu-stat-val">$65,000</div><div class="t-meta">Nómina ×2</div></div>
+<div class="eu-card eu-stat"><div class="eu-stat-lbl">MSI activos</div><div class="eu-stat-val">$4,212<span class="t-meta">/mes</span></div><div class="t-meta">5 compras · termina mar 27</div></div>
+<div class="eu-card eu-stat"><div class="eu-stat-lbl">Sin categoría</div><div class="eu-stat-val fg-warning">7</div><a class="t-meta fg-brand">Categorizar ahora →</a></div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start">
+<div class="eu-card vstack" style="gap:16px"><div class="between"><div class="t-card">Flujo · 6 meses</div><div class="hstack t-meta" style="gap:14px"><span class="hstack" style="gap:6px"><i style="width:8px;height:8px;border-radius:2px;background:var(--success-fg)"></i>Ingreso</span><span class="hstack" style="gap:6px"><i style="width:8px;height:8px;border-radius:2px;background:var(--brand)"></i>Gasto</span></div></div><div class="bars" style="height:150px;gap:20px" id="d-flow"></div></div>
+<div class="eu-card eu-card--flush"><div class="between" style="padding:18px 20px 6px"><div class="t-card">Por categoría</div><span class="t-meta">vs presupuesto</span></div><div class="eu-list" id="d-cats"></div></div>
+</div>
+<div class="eu-card eu-card--flush"><div class="between" style="padding:18px 20px 6px"><div class="t-card">Cuentas</div><a class="t-meta">Administrar</a></div><div style="display:flex;gap:12px;padding:8px 20px 20px" id="d-accts"></div></div>
+</div></div></div>
+
+<!-- ═════════ 8 · TRANSACTION ANALYSIS ═════════ -->
+<div class="lbl" style="left:100px;top:2160px"><b>08 · Transaction Analysis</b>Lista + categorización en sheet/drawer</div>
+<div class="mob" data-screen-label="08 Movimientos móvil" style="left:100px;top:2210px">
+<div data-shell="status"></div>
+<div class="m-top" style="padding-left:8px"><button class="eu-iconbtn" aria-label="Volver"><i data-lucide="chevron-left"></i></button><div class="eu-mtitle"><b>Movimientos</b><span>412 este mes · 7 sin categoría</span></div><button class="eu-iconbtn" aria-label="Filtros"><i data-lucide="sliders-horizontal"></i></button></div>
+<div class="m-body" style="padding:8px 0 0;gap:10px">
+<div style="padding:0 16px" class="vstack"><div class="eu-input-wrap"><i data-lucide="search"></i><input class="eu-input" placeholder="Buscar comercio, monto o nota" style="font-size:16px"></div>
+<div class="eu-chips"><button class="eu-chip" aria-pressed="true">Todo</button><button class="eu-chip">Sin categoría <span class="ct">7</span></button><button class="eu-chip">Tu parte <span class="ct">19</span></button><button class="eu-chip">MSI</button></div></div>
+<div id="m-tx" style="background:var(--bg-surface);border-top:1px solid var(--border-subtle)"></div>
+<div style="position:absolute;inset:0;background:var(--bg-overlay)"></div>
+<div class="eu-sheet" style="position:absolute;left:0;right:0;bottom:0;padding-bottom:20px">
+<div class="eu-sheet-grab"></div>
+<div class="between"><div><div class="t-section">Oxxo Insurgentes</div><div class="t-meta">17 sep · BBVA ··4821 · «OXXO INSURGENTES SUR CDMX»</div></div><div class="t-data" style="font-size:18px">−$186</div></div>
+<div class="t-meta" style="margin:16px 0 8px">Categoría · sugerida por regla</div>
+<div class="g4" style="gap:8px" id="m-catpick"></div>
+<div class="hstack" style="margin-top:14px;padding:12px;border-radius:12px;background:var(--bg-raised)"><i data-lucide="wand-2" style="width:16px;height:16px;color:var(--fg-brand)"></i><span class="t-ui" style="flex:1">Aplicar siempre a «OXXO»</span><span style="width:40px;height:24px;border-radius:12px;background:var(--brand);position:relative"><span style="position:absolute;right:3px;top:3px;width:18px;height:18px;border-radius:50%;background:var(--fg-on-brand)"></span></span></div>
+<button class="eu-btn eu-btn--primary eu-btn--lg eu-btn--block" style="margin-top:14px">Guardar · +1 XP</button>
+</div></div>
+<div data-shell="bnav" data-active="modulos" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="08 Movimientos desktop" style="left:560px;top:2210px">
+<aside data-shell="sidebar" data-active="oikonomia" data-sub="Movimientos"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Virtudes > Oikonomia > Movimientos"></div>
+<div style="flex:1;display:flex;min-height:0">
+<div style="flex:1;min-width:0;padding:24px 32px;display:flex;flex-direction:column;gap:16px;overflow:hidden">
+<div class="eu-tabs"><button>Resumen</button><button aria-selected="true">Movimientos</button><button>Cuentas</button><button>Presupuestos</button><button>Reglas</button><button>Reportes</button></div>
+<div class="between"><div class="hstack" style="gap:12px;flex:1;min-width:0"><div class="eu-input-wrap" style="width:220px;flex-shrink:0"><i data-lucide="search"></i><input class="eu-input" placeholder="Buscar comercio o monto" style="height:36px"></div><div class="eu-chips" style="min-width:0;flex-shrink:1"><button class="eu-chip" aria-pressed="true">Todo <span class="ct">412</span></button><button class="eu-chip">Sin categoría <span class="ct">7</span></button><button class="eu-chip"><i data-lucide="users"></i>Tu parte <span class="ct">19</span></button><button class="eu-chip">MSI <span class="ct">5</span></button></div></div></div>
+<div class="between t-meta"><span>412 movimientos · septiembre</span><span>Total filtrado <b class="num fg-1" style="font-weight:500">−$18,420.00</b></span></div>
+<div class="eu-card eu-card--flush" style="padding-top:14px;flex:1;overflow:hidden"><table class="eu-table" id="d-tx"></table></div>
+</div>
+<div class="drawer">
+<div class="between" style="padding:20px 20px 0"><span class="t-eyebrow">Movimiento</span><div class="hstack" style="gap:2px"><button class="eu-iconbtn" aria-label="Anterior"><i data-lucide="chevron-up"></i></button><button class="eu-iconbtn" aria-label="Siguiente"><i data-lucide="chevron-down"></i></button><button class="eu-iconbtn" aria-label="Cerrar"><i data-lucide="x"></i></button></div></div>
+<div class="vstack" style="padding:12px 20px 20px;gap:18px;overflow:hidden">
+<div><div class="t-section">Pujol</div><div class="t-data-xl" style="margin-top:10px">−$2,480.00</div><div class="t-meta" style="margin-top:6px">18 sep 2026 · 21:42 · BBVA Azul ··4821</div><div class="t-meta" style="font-family:var(--font-data);font-size:11px;margin-top:4px">PUJOL POLANCO CDMX MX</div></div>
+<div class="vstack" style="gap:8px"><span class="eu-label">Categoría</span><div class="g3" style="gap:8px" id="d-catpick"></div><div class="eu-field" style="margin-top:4px"><select class="eu-select" style="height:40px"><option>Restaurantes · cena</option></select></div></div>
+<div class="eu-card vstack" style="gap:12px;padding:14px;background:var(--bg-surface)"><div class="between"><span class="t-ui">Tu parte</span><span class="eu-seg"><button>Todo</button><button aria-selected="true">50%</button><button>Monto</button></span></div><div class="between"><span class="t-meta">Tú pagas</span><span class="t-data">$1,240.00</span></div><div class="between"><span class="t-meta">Por cobrar · Ana</span><span class="t-data fg-3">$1,240.00</span></div></div>
+<div class="eu-field"><label class="eu-label">Nota</label><input class="eu-input" value="Aniversario" style="height:40px"></div>
+<div class="hstack" style="padding:12px;border-radius:12px;border:1px dashed var(--border-strong)"><i data-lucide="wand-2" style="width:16px;height:16px;color:var(--fg-brand)"></i><span class="t-meta" style="flex:1;color:var(--fg-2)">Crear regla: «PUJOL» → Restaurantes</span><button class="eu-btn eu-btn--ghost eu-btn--sm">Crear</button></div>
+<div class="hstack" style="justify-content:flex-end"><button class="eu-btn eu-btn--ghost">Dividir</button><button class="eu-btn eu-btn--primary">Guardar <span class="kbd" style="background:transparent;border-color:rgba(9,7,15,.25);color:var(--fg-on-brand)">⌘↵</span></button></div>
+</div></div></div></div></div>
+
+<!-- ═════════ 9 · GUARDARROPA ═════════ -->
+<div class="lbl" style="left:100px;top:3220px"><b>09 · Guardarropa</b>Prendas · outfits · wishlist (fotos = placeholders)</div>
+<div class="mob" data-screen-label="09 Guardarropa móvil" style="left:100px;top:3270px">
+<div data-shell="status"></div>
+<div class="m-top" style="padding-left:8px"><button class="eu-iconbtn" aria-label="Volver"><i data-lucide="chevron-left"></i></button><div class="eu-mtitle"><b>Guardarropa</b><span>Vida · 89 prendas</span></div><button class="eu-iconbtn" aria-label="Buscar"><i data-lucide="search"></i></button></div>
+<div class="m-body">
+<div class="eu-seg" style="display:grid;grid-template-columns:repeat(3,1fr)"><button aria-selected="true">Prendas</button><button>Outfits</button><button>Wishlist</button></div>
+<div class="eu-chips"><button class="eu-chip" aria-pressed="true">Todo <span class="ct">89</span></button><button class="eu-chip">Camisas <span class="ct">24</span></button><button class="eu-chip">Pantalones <span class="ct">14</span></button><button class="eu-chip">Calzado <span class="ct">11</span></button></div>
+<div class="eu-card hstack" style="gap:12px;padding:12px"><div class="ph" style="width:44px;height:56px;padding:0"></div><div style="flex:1"><div class="t-meta">Outfit de hoy · 24°, nublado</div><div style="font-size:14px">Oxford azul + chino arena</div></div><span class="eu-badge eu-badge--xp">+1 XP</span></div>
+<div class="g2" id="m-wr"></div>
+<a class="fab" aria-label="Nueva prenda"><i data-lucide="plus"></i></a>
+</div>
+<div data-shell="bnav" data-active="modulos" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="09 Guardarropa desktop" style="left:560px;top:3270px">
+<aside data-shell="sidebar" data-active="guardarropa" data-sub="Prendas"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Vida > Guardarropa > Prendas"></div>
+<div class="d-body" style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-content:start">
+<div class="vstack" style="gap:18px">
+<div class="d-hd"><div><div class="t-eyebrow">Vida · Estilo</div><div class="t-page">Guardarropa</div></div><div class="hstack"><div class="eu-seg"><button aria-selected="true"><i data-lucide="layout-grid" style="width:14px;height:14px;vertical-align:-2px"></i></button><button><i data-lucide="list" style="width:14px;height:14px;vertical-align:-2px"></i></button></div><button class="eu-btn eu-btn--primary"><i data-lucide="plus"></i>Nueva prenda</button></div></div>
+<div class="between"><div class="eu-chips"><button class="eu-chip" aria-pressed="true">Todo <span class="ct">89</span></button><button class="eu-chip">Camisas <span class="ct">24</span></button><button class="eu-chip">Pantalones <span class="ct">14</span></button><button class="eu-chip">Chamarras <span class="ct">8</span></button><button class="eu-chip">Calzado <span class="ct">11</span></button><button class="eu-chip">Accesorios <span class="ct">19</span></button></div><span class="t-meta">Orden: menos usadas</span></div>
+<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px" id="d-wr"></div>
+</div>
+<div class="vstack" style="gap:16px">
+<div class="eu-card vstack" style="gap:12px"><div class="t-eyebrow">Outfit de hoy</div><div class="g2" style="gap:8px"><div class="ph" style="aspect-ratio:3/4">camisa</div><div class="ph" style="aspect-ratio:3/4">pantalón</div></div><div><div style="font-size:15px">Oxford azul + chino arena</div><div class="t-meta">24° nublado · oficina</div></div><button class="eu-btn eu-btn--secondary eu-btn--block">Usar hoy · +1 XP</button></div>
+<div class="eu-card vstack" style="gap:12px"><div class="t-card">Uso · 90 días</div><div class="between t-meta"><span>Rotación</span><span class="num fg-2">62%</span></div><div class="eu-progress eu-progress--brand"><i style="width:62%"></i></div><div class="t-meta">34 prendas sin usar · candidatas a donar</div></div>
+<div class="eu-card vstack" style="gap:8px"><div class="between"><div class="t-card">Wishlist</div><span class="t-meta num">$6,480</span></div><div class="t-meta">4 artículos · 1 canjeable con EC</div></div>
+</div></div></div></div>
+
+<!-- ═════════ 10 · PERFIL ═════════ -->
+<div class="lbl" style="left:100px;top:4280px"><b>10 · Perfil</b>Tú · datos, medidas, documentos, vault</div>
+<div class="mob" data-screen-label="10 Perfil móvil" style="left:100px;top:4330px">
+<div data-shell="status"></div>
+<div class="m-top"><div class="eu-mtitle"><b style="font-size:22px">Tú</b><span>Αὐτός</span></div><button class="eu-iconbtn" aria-label="Ajustes"><i data-lucide="settings-2"></i></button></div>
+<div class="m-body">
+<div class="hstack" style="gap:14px;padding:4px 0 8px"><div style="width:64px;height:64px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--border-brand);display:flex;align-items:center;justify-content:center;font:600 26px var(--font-display);color:var(--fg-brand)">G</div><div style="flex:1"><div class="t-section">Giovany</div><div class="t-meta">Nivel 4 · Estrategos · 23 d de racha</div></div></div>
+<div class="g2" style="gap:8px"><a class="eu-card hstack" style="gap:10px;padding:14px"><i data-lucide="trophy" style="width:18px;height:18px;color:var(--fg-brand)"></i><div><div class="t-ui">Logros</div><div class="t-meta">7 / 16</div></div></a><a class="eu-card hstack" style="gap:10px;padding:14px"><i data-lucide="gift" style="width:18px;height:18px;color:var(--ec-fg)"></i><div><div class="t-ui">Recompensas</div><div class="t-meta num">148 EC</div></div></a></div>
+<div class="eu-card eu-card--flush"><div class="eu-list" id="m-prof"></div></div>
+<div class="eu-card eu-card--flush"><div class="eu-list">
+<div class="eu-row"><div class="eu-row-ic"><i data-lucide="moon"></i></div><div class="eu-row-main"><div class="eu-row-t">Tema</div></div><div class="eu-seg"><button aria-selected="true">Noche</button><button>Día</button></div></div>
+<div class="eu-row eu-row--interactive"><div class="eu-row-ic" style="color:var(--danger-fg)"><i data-lucide="log-out"></i></div><div class="eu-row-main"><div class="eu-row-t" style="color:var(--danger-fg)">Cerrar sesión</div></div></div>
+</div></div>
+</div>
+<div data-shell="bnav" data-active="tu" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="10 Perfil desktop" style="left:560px;top:4330px">
+<aside data-shell="sidebar" data-active="perfil"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Tú > Perfil"></div>
+<div class="d-body" style="display:grid;grid-template-columns:280px minmax(0,1fr);gap:32px;align-content:start">
+<div class="vstack" style="gap:16px">
+<div class="eu-card vstack" style="gap:12px;align-items:center;text-align:center;padding:24px"><div style="width:88px;height:88px;border-radius:50%;background:var(--bg-raised);border:1px solid var(--border-brand);display:flex;align-items:center;justify-content:center;font:600 36px var(--font-display);color:var(--fg-brand)">G</div><div><div class="t-section">Giovany</div><div class="t-meta">CDMX · desde abril 2026</div></div><div class="eu-xpbar" style="width:100%;height:4px"><i style="width:74.5%"></i></div><div class="t-meta">Nivel 4 · Estrategos</div></div>
+<nav class="vstack" style="gap:2px"><a class="eu-sb-item" aria-current="page" style="position:relative"><i data-lucide="user-round"></i>Datos personales</a><a class="eu-sb-item"><i data-lucide="ruler"></i>Medidas corporales</a><a class="eu-sb-item"><i data-lucide="folder"></i>Documentos<span class="kbd" style="margin-left:auto">12</span></a><a class="eu-sb-item"><i data-lucide="key-round"></i>Vault</a><a class="eu-sb-item"><i data-lucide="settings-2"></i>Ajustes</a></nav>
+</div>
+<div class="vstack" style="gap:20px">
+<div class="d-hd"><div><div class="t-eyebrow">Tú · Αὐτός</div><div class="t-page">Perfil</div></div><button class="eu-btn eu-btn--secondary"><i data-lucide="pencil"></i>Editar</button></div>
+<div class="eu-card"><div class="t-card" style="margin-bottom:16px">Datos personales</div><div class="g3" style="gap:20px 16px" id="d-data"></div></div>
+<div class="eu-card"><div class="between" style="margin-bottom:16px"><div class="t-card">Medidas corporales</div><span class="t-meta">Actualizado 1 sep</span></div><div class="g4" style="grid-template-columns:repeat(6,minmax(0,1fr));gap:12px" id="d-meas"></div></div>
+<div class="g2" style="gap:16px">
+<div class="eu-card eu-card--flush"><div class="between" style="padding:18px 20px 6px"><div class="t-card">Documentos</div><a class="t-meta">Ver 12</a></div><div class="eu-list" id="d-docs"></div></div>
+<div class="eu-card vstack" style="gap:12px"><div class="hstack"><i data-lucide="key-round" style="width:18px;height:18px;color:var(--fg-brand)"></i><div class="t-card">Vault</div></div><p class="t-meta" style="margin:0">24 contraseñas cifradas. Se bloquea tras 5 minutos inactivo.</p><div class="eu-field"><label class="eu-label">Contraseña maestra</label><div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input" type="password" value="••••••••" style="height:40px"></div></div><button class="eu-btn eu-btn--secondary">Desbloquear</button></div>
+</div></div></div></div></div>
+
+<script src="ds-v2/shell.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const DEBTS=[['BBVA Azul','Tarjeta · corte 3','$8,420','$1,260','Hoy','danger'],['HSBC Zero','Tarjeta · corte 12','$12,300','$1,845','9 d','warning'],['Invex Volaris','MSI · 7 de 12','$6,420','$918','14 d',''],['Crédito auto','Harma · 22 de 48','$30,000','$4,150','20 d','']];
+$('m-debts').innerHTML=DEBTS.slice(0,3).map(([n,s,t,m,d,k])=>`<div class="eu-row"><div class="eu-row-main"><div class="eu-row-t">${n}</div><div class="eu-row-s">${s} · mín ${m}</div></div><div class="eu-row-end"><div class="eu-amt">${t}</div><span class="eu-badge eu-badge--status${k?' eu-badge--'+k:''}" style="margin-top:4px">${d}</span></div></div>`).join('');
+$('d-debts').innerHTML=`<thead><tr><th>Acreedor</th><th class="r">Saldo</th><th class="r">Mínimo</th><th>Vence</th><th></th></tr></thead><tbody>${DEBTS.map(([n,s,t,m,d,k])=>`<tr><td><div>${n}</div><div class="t-meta">${s}</div></td><td class="r num">${t}</td><td class="r num fg-2">${m}</td><td><span class="eu-badge eu-badge--status${k?' eu-badge--'+k:''}">${d}</span></td><td class="r"><button class="eu-btn eu-btn--ghost eu-btn--sm">Pagar</button></td></tr>`).join('')}</tbody>`;
+const SUBS=[['layout-list','Movimientos','412 este mes'],['pie-chart','Presupuesto','77% usado'],['package','Consumo','3 por reponer'],['trending-up','Inversiones','$96.4k · +4.1%'],['scale','Patrimonio','$284.1k'],['plane','Gastos de viaje','Oaxaca · $7.2k']];
+$('m-subs').innerHTML=SUBS.map(([i,n,s])=>`<a class="eu-row eu-row--interactive"><div class="eu-row-ic"><i data-lucide="${i}"></i></div><div class="eu-row-main"><div class="eu-row-t">${n}</div><div class="eu-row-s">${s}</div></div><i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--fg-3)"></i></a>`).join('');
+$('d-subs').innerHTML=SUBS.map(([i,n,s])=>`<a class="eu-card eu-card--interactive vstack" style="gap:10px;padding:16px"><i data-lucide="${i}" style="width:20px;height:20px;color:var(--fg-brand)"></i><div><div class="t-ui" style="font-size:14px">${n}</div><div class="t-meta">${s}</div></div></a>`).join('');
+const CATS=[['utensils','Comida',4120,6000],['home','Casa y servicios',5800,6200],['car','Transporte',1910,2000],['clapperboard','Ocio',3400,2500],['shirt','Ropa',1240,2000],['heart-pulse','Salud',1950,3000]];
+const pc=(v,b)=>v>b?'danger':v/b>=.9?'warning':'brand';
+$('d-budget').innerHTML=CATS.slice(0,5).map(([i,n,v,b])=>`<div class="vstack" style="gap:6px"><div class="between"><span class="t-ui hstack" style="gap:8px"><i data-lucide="${i}" style="width:15px;height:15px;color:var(--fg-3)"></i>${n}</span><span class="num" style="font-size:12px;color:var(--${pc(v,b)==='brand'?'fg-2':pc(v,b)+'-fg'})">$${v.toLocaleString('en')} <span class="fg-3">/ ${b.toLocaleString('en')}</span></span></div><div class="eu-progress eu-progress--${pc(v,b)}"><i style="width:${Math.min(100,v/b*100)}%"></i></div></div>`).join('');
+const catRow=([i,n,v,b])=>`<div class="eu-row" style="flex-wrap:wrap;row-gap:8px"><div class="eu-row-ic"><i data-lucide="${i}"></i></div><div class="eu-row-main"><div class="eu-row-t">${n}</div><div class="eu-row-s">${Math.round(v/b*100)}% de $${b.toLocaleString('en')}</div></div><div class="eu-amt" style="color:var(--${pc(v,b)==='brand'?'fg-1':pc(v,b)+'-fg'})">$${v.toLocaleString('en')}</div><div class="eu-progress eu-progress--thin eu-progress--${pc(v,b)}" style="flex-basis:100%;margin-left:48px"><i style="width:${Math.min(100,v/b*100)}%"></i></div></div>`;
+$('m-cats').innerHTML=CATS.slice(0,4).map(catRow).join('');$('d-cats').innerHTML=CATS.slice(0,4).map(catRow).join('');
+const FLOW=[['Abr',62,21],['May',65,19.8],['Jun',65,24.1],['Jul',68,17.2],['Ago',65,16.4],['Sep',65,18.4]];
+$('m-flow').innerHTML=FLOW.map(([m,i,g],k)=>`<div><i style="height:${g/25*100}%;background:${k===5?'var(--brand)':'var(--bg-hover)'}"></i><span>${m}</span></div>`).join('');
+$('d-flow').innerHTML=FLOW.map(([m,i,g],k)=>`<div><div style="display:flex;gap:4px;align-items:flex-end;height:100%;width:100%"><i style="height:${i/70*100}%;background:color-mix(in oklab,var(--success-fg) ${k===5?80:35}%,var(--bg-raised))"></i><i style="height:${g/70*100}%;background:${k===5?'var(--brand)':'color-mix(in oklab,var(--brand) 40%,var(--bg-raised))'}"></i></div><span>${m}</span></div>`).join('');
+$('d-accts').innerHTML=[['BBVA','Azul ··4821','−$8,420','Crédito'],['BBVA','Débito ··0917','$42,610','Débito'],['HSBC','Zero ··3302','−$12,300','Crédito'],['Invex','Volaris ··7710','−$6,420','Crédito'],['GBM','Inversión','$96,400','Inversión']].map(([b,n,v,t])=>`<div class="acct" style="flex:1"><div class="between"><span class="bank">${b}</span><span class="t-meta">${t}</span></div><div class="t-ui">${n}</div><div class="t-data">${v}</div></div>`).join('');
+const TX=[['Hoy · 22 sep','',[['coffee','Starbucks','Comida','BBVA ··4821','−$92',''],['help-circle','OXXO Insurgentes','Sin categoría','BBVA ··4821','−$186','warn']]],['Ayer · 21 sep','−$2,904',[['utensils','Pujol','Restaurantes','Tu parte 50%','−$1,240','share'],['car','Uber','Transporte','HSBC ··3302','−$164',''],['plane','Aeroméxico','Viajes','MSI 3/12','−$712','msi'],['shopping-bag','Amazon','Casa','Invex ··7710','−$788','']]]];
+$('m-tx').innerHTML=TX.map(([d,t,rows])=>`<div class="day"><span>${d}</span><span class="num">${t}</span></div>${rows.map(([i,n,c,s,a,f])=>`<div class="eu-row eu-row--interactive"><div class="eu-row-ic"${f==='warn'?' style="color:var(--warning-fg)"':''}><i data-lucide="${i}"></i></div><div class="eu-row-main"><div class="eu-row-t">${n}</div><div class="eu-row-s">${f==='warn'?'<span class="eu-badge eu-badge--warning">Sin categoría</span>':c}${f==='share'?' <span class="eu-badge eu-badge--info">Tu parte</span>':f==='msi'?' <span class="eu-badge eu-badge--info">MSI 3/12</span>':''}</div></div><div class="eu-amt">${a}</div></div>`).join('')}`).join('');
+const DTX=[['22 sep','coffee','Starbucks','Comida','BBVA Azul','','−$92.00'],['22 sep','help-circle','OXXO Insurgentes','—','BBVA Azul','warn','−$186.00'],['21 sep','utensils','Pujol','Restaurantes','BBVA Azul','share','−$1,240.00'],['21 sep','car','Uber','Transporte','HSBC Zero','','−$164.00'],['21 sep','plane','Aeroméxico','Viajes','Invex','msi','−$712.00'],['21 sep','shopping-bag','Amazon','Casa','Invex','','−$788.00'],['20 sep','fuel','Pemex','Transporte','BBVA Azul','','−$900.00'],['20 sep','music-2','Salsa Candela','Eurythmia','BBVA Débito','','−$450.00'],['19 sep','dumbbell','Smart Fit','Salud','BBVA Débito','','−$599.00'],['18 sep','arrow-down-left','Nómina','Ingreso','BBVA Débito','in','+$32,500.00'],['18 sep','zap','CFE','Casa y servicios','BBVA Débito','','−$1,120.00'],['17 sep','film','Cinépolis','Ocio','HSBC Zero','share','−$210.00']];
+$('d-tx').innerHTML=`<thead><tr><th style="width:80px">Fecha</th><th>Comercio</th><th>Categoría</th><th>Cuenta</th><th></th><th class="r">Monto</th></tr></thead><tbody>${DTX.map(([d,i,n,c,a,f,m])=>`<tr${n==='Pujol'?' aria-selected="true"':''}><td class="num fg-3" style="font-size:12px">${d}</td><td><span class="hstack" style="gap:10px"><i data-lucide="${i}" style="width:16px;height:16px;color:${f==='warn'?'var(--warning-fg)':'var(--fg-3)'}"></i>${n}</span></td><td>${f==='warn'?'<span class="eu-badge eu-badge--warning">Sin categoría</span>':`<span class="eu-badge">${c}</span>`}</td><td class="fg-3" style="font-size:12px">${a}</td><td>${f==='share'?'<span class="eu-badge eu-badge--info">Tu parte 50%</span>':f==='msi'?'<span class="eu-badge eu-badge--info">MSI 3/12</span>':''}</td><td class="r num${f==='in'?' fg-success':''}">${m}</td></tr>`).join('')}</tbody>`;
+const PICK=[['utensils','Comida'],['shopping-cart','Súper',1],['car','Transporte'],['home','Casa'],['clapperboard','Ocio'],['heart-pulse','Salud'],['shirt','Ropa'],['more-horizontal','Otra']];
+$('m-catpick').innerHTML=PICK.map(([i,n,on])=>`<div class="cat-opt${on?' on':''}"><i data-lucide="${i}"></i>${n}</div>`).join('');
+$('d-catpick').innerHTML=[['utensils','Restaurantes',1],['shopping-cart','Súper'],['clapperboard','Ocio'],['car','Transporte'],['home','Casa'],['more-horizontal','Otra']].map(([i,n,on])=>`<div class="cat-opt${on?' on':''}"><i data-lucide="${i}"></i>${n}</div>`).join('');
+const WR=[['Oxford azul','Camisa','12 usos'],['Chino arena','Pantalón','9 usos'],['Overshirt olivo','Chamarra','4 usos'],['Tenis blancos','Calzado','31 usos'],['Polo negra','Camisa','0 usos · 90 d'],['Jeans raw','Pantalón','17 usos'],['Blazer marino','Saco','2 usos'],['Suéter gris','Tejido','6 usos'],['Botas café','Calzado','8 usos'],['Lino blanca','Camisa','3 usos']];
+const wr=([n,c,u])=>`<div class="garment"><div class="ph">foto · ${c.toLowerCase()}</div><div><div class="t-ui" style="font-size:14px">${n}</div><div class="t-meta" style="${u.startsWith('0')?'color:var(--warning-fg)':''}">${c} · ${u}</div></div></div>`;
+$('m-wr').innerHTML=WR.slice(0,4).map(wr).join('');$('d-wr').innerHTML=WR.map(wr).join('');
+$('m-prof').innerHTML=[['user-round','Datos personales','Nombre, contacto, emergencia'],['ruler','Medidas corporales','78.4 kg · 1 sep'],['folder','Documentos','12 archivos'],['key-round','Vault','24 contraseñas · bloqueado']].map(([i,n,s])=>`<a class="eu-row eu-row--interactive"><div class="eu-row-ic"><i data-lucide="${i}"></i></div><div class="eu-row-main"><div class="eu-row-t">${n}</div><div class="eu-row-s">${s}</div></div><i data-lucide="chevron-right" style="width:16px;height:16px;color:var(--fg-3)"></i></a>`).join('');
+$('d-data').innerHTML=[['Nombre','Giovany'],['Nacimiento','14 mar 1996'],['Ciudad','Ciudad de México'],['Correo','gio@correo.mx'],['Teléfono','55 •••• 2210'],['Tipo de sangre','O+']].map(([k,v])=>`<div><div class="t-meta">${k}</div><div style="font-size:15px;margin-top:4px">${v}</div></div>`).join('');
+$('d-meas').innerHTML=[['Peso','78.4','kg','−0.6'],['Cintura','84','cm','−1'],['Pecho','101','cm','+1'],['Brazo','35','cm','+0.5'],['Grasa','17.2','%','−0.4'],['Estatura','178','cm','']].map(([k,v,u,d])=>`<div class="eu-card eu-card--inset" style="padding:14px"><div class="t-meta">${k}</div><div class="t-data" style="font-size:20px;margin-top:6px">${v}<span class="t-meta"> ${u}</span></div>${d?`<div class="t-meta num" style="margin-top:4px">${d} vs jul</div>`:''}</div>`).join('');
+$('d-docs').innerHTML=[['file-badge','INE','Vence 2031'],['book-user','Pasaporte','Vence 2028'],['file-text','Constancia SAT','Ago 2026'],['stethoscope','Estudios médicos','Hegemonikon · 3']].map(([i,n,s])=>`<a class="eu-row eu-row--interactive"><div class="eu-row-ic"><i data-lucide="${i}"></i></div><div class="eu-row-main"><div class="eu-row-t" style="font-size:14px">${n}</div><div class="eu-row-s">${s}</div></div></a>`).join('');
+EU_SHELL.render();
+</script>
+</body>
+</html>

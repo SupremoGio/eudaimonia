@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eudaimonia OS — Design System V2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ds-v2/tokens.css">
+<link rel="stylesheet" href="ds-v2/components.css">
+<script src="https://unpkg.com/lucide@1.31.0"></script>
+<style>
+.doc{display:grid;grid-template-columns:220px minmax(0,1fr);min-height:100vh}
+.toc{position:sticky;top:0;height:100vh;overflow:auto;border-right:1px solid var(--border-subtle);background:var(--bg-sunken);padding:24px 16px;display:flex;flex-direction:column;gap:2px}
+.toc a{display:block;padding:7px 10px;border-radius:8px;color:var(--fg-3);font-size:13px}
+.toc a:hover{background:var(--bg-hover);color:var(--fg-1)}
+.toc .g{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3);padding:16px 10px 6px}
+main{padding:0 var(--gutter) 120px;max-width:1160px;width:100%}
+@media(max-width:900px){.doc{grid-template-columns:1fr}.toc{display:none}}
+.cover{padding:72px 0 48px;border-bottom:1px solid var(--border-subtle);display:grid;gap:24px}
+.cover h1{margin:0}
+.cover p{margin:0;max-width:620px;color:var(--fg-2);font-size:17px;line-height:1.6;text-wrap:pretty}
+.principles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:8px}
+.principles .eu-card{display:flex;flex-direction:column;gap:6px}
+.principles p{font-size:13px;color:var(--fg-3);margin:0;line-height:1.5}
+section.s{padding:64px 0 16px;scroll-margin-top:16px}
+.s-hd{display:flex;flex-direction:column;gap:8px;margin-bottom:28px;max-width:720px}
+.s-hd h2{margin:0}.s-hd p{margin:0;color:var(--fg-2);text-wrap:pretty}
+h3.sub{font:600 17px/1.2 var(--font-display);margin:36px 0 14px;color:var(--fg-1);display:flex;align-items:baseline;gap:10px}
+h3.sub small{font:400 12px var(--font-ui);color:var(--fg-3)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.sw{border-radius:12px;border:1px solid var(--border-subtle);overflow:hidden;background:var(--bg-surface)}
+.sw-c{height:64px;display:flex;align-items:flex-end;padding:8px 10px;font:500 13px var(--font-ui)}
+.sw-m{padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.sw-m b{font:500 12px var(--font-ui);color:var(--fg-1)}
+.sw-m code{font:11px var(--font-data);color:var(--fg-3)}
+.ratio{font:500 11px var(--font-data);display:inline-flex;gap:4px;align-items:center}
+.ratio.ok{color:var(--success-fg)}.ratio.bad{color:var(--danger-fg)}
+.ramp{display:grid;grid-template-columns:repeat(10,1fr);border-radius:12px;overflow:hidden;border:1px solid var(--border-subtle)}
+.ramp div{height:56px;display:flex;align-items:flex-end;padding:6px;font:10px var(--font-data)}
+.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.pair-c{border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--border-subtle)}
+.pair-c .ln{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.type-row{display:grid;grid-template-columns:180px minmax(0,1fr) 220px;gap:20px;align-items:baseline;padding:18px 0;border-bottom:1px solid var(--border-subtle)}
+.type-row .k{font:500 12px var(--font-ui);color:var(--fg-2)}.type-row .k small{display:block;color:var(--fg-3);font-weight:400;margin-top:3px}
+.type-row .spec{font:12px/1.5 var(--font-data);color:var(--fg-3)}
+@media(max-width:800px){.type-row{grid-template-columns:1fr;gap:6px}}
+.sp-row{display:grid;grid-template-columns:70px 60px minmax(0,1fr) minmax(0,1.4fr);gap:16px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-subtle);font-size:13px}
+.sp-row code{font:12px var(--font-data);color:var(--fg-brand)}
+.sp-bar{height:12px;background:var(--brand-muted);border:1px solid var(--border-brand);border-radius:2px}
+@media(max-width:700px){.sp-row{grid-template-columns:60px 50px 1fr}.sp-row>:last-child{display:none}}
+.demo{background:var(--bg-sunken);border:1px solid var(--border-subtle);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px}
+.demo-lbl{font:500 11px var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3)}
+.comp{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;padding:28px 0;border-top:1px solid var(--border-subtle)}
+@media(max-width:960px){.comp{grid-template-columns:1fr}}
+.comp-t{grid-column:1/-1;display:flex;align-items:baseline;gap:12px}
+.comp-t h3{margin:0;font:600 22px/1 var(--font-display)}
+.comp-t code{font:12px var(--font-data);color:var(--fg-3)}
+.spec{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px 14px;font-size:13px;line-height:1.5;align-content:start}
+.spec dt{color:var(--fg-3);font-size:12px}
+.spec dd{margin:0;color:var(--fg-2);text-wrap:pretty}
+.spec dd code{font:12px var(--font-data);color:var(--fg-brand);background:var(--brand-subtle);padding:1px 5px;border-radius:4px}
+.theme-fab{position:fixed;top:16px;right:16px;z-index:100;display:flex;gap:8px}
+.tok{font:12px/1.6 var(--font-data);color:var(--fg-2);background:var(--bg-sunken);border:1px solid var(--border-subtle);border-radius:12px;padding:16px;overflow:auto;white-space:pre;margin:0}
+.tok b{color:var(--fg-brand);font-weight:500}.tok i{color:var(--fg-3);font-style:normal}
+.mo-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.mo-card{position:relative;min-height:240px;overflow:hidden}
+.mo-stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-height:150px}
+.xp-float{position:absolute;font:500 15px var(--font-data);color:var(--xp-fg);opacity:0}
+.halo{position:absolute;width:96px;height:96px;border-radius:50%;border:1px solid var(--rare-oro);opacity:0}
+.ic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ic-cell{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--bg-surface);border:1px solid var(--border-subtle);font-size:13px}
+.ic-cell[data-cat] svg{color:var(--cat-fg)}
+.ic-cell small{display:block;font-size:11px;color:var(--fg-3)}
+.dont{border-color:var(--danger-border)!important}
+.do{border-color:var(--success-border)!important}
+.mini-phone{width:100%;max-width:340px;border-radius:24px;border:1px solid var(--border-default);overflow:hidden;background:var(--bg-canvas)}
+</style>
+</head>
+<body>
+<div class="theme-fab"><div class="eu-seg" role="tablist"><button aria-selected="true" onclick="setTheme('dark',this)">Noche</button><button onclick="setTheme('light',this)">Día</button></div></div>
+<div class="doc">
+<nav class="toc">
+<div class="eu-sb-brand" style="border:0;padding:0 10px 12px;height:auto"><div class="eu-sb-mark"><i data-lucide="landmark"></i></div><b>EUDAIMONIA</b></div>
+<div class="g">Fundamentos</div>
+<a href="#principios">Principios</a><a href="#color">Color</a><a href="#tipografia">Tipografía</a><a href="#espaciado">Espaciado</a><a href="#radios">Radios y elevación</a><a href="#motion">Motion</a><a href="#iconos">Iconografía</a>
+<div class="g">Componentes</div>
+<a href="#c-acciones">Acciones</a><a href="#c-tarjetas">Tarjetas</a><a href="#c-gamificacion">Gamificación</a><a href="#c-seleccion">Selección</a><a href="#c-formularios">Formularios</a><a href="#c-datos">Datos</a><a href="#c-overlays">Overlays</a><a href="#c-estados">Estados</a>
+<div class="g">Siguiente</div>
+<a href="DS V2 — Navegación, Auditoría y Migración.html">Navegación · Auditoría · Migración</a>
+<a href="Pantallas V2 — A.html">Pantallas A</a><a href="Pantallas V2 — B.html">Pantallas B</a>
+</nav>
+<main>
+<header class="cover" id="principios">
+<div class="t-eyebrow">Design System V2 · Septiembre 2026</div>
+<h1 class="t-hero">Quiet power.<br><span style="font-style:italic;font-weight:400;color:var(--fg-2)">Un templo, no un tablero.</span></h1>
+<p>V2 conserva la noche violácea, el oro, la serif clásica y el vocabulario griego. Lo que cambia es la ejecución: bordes neutros en lugar de oro por todas partes, una sola escala de texto con mínimo 12&nbsp;px, espaciado en múltiplos de 4 y animación solo cuando hay una recompensa.</p>
+<div class="principles">
+<div class="eu-card"><div class="t-eyebrow">01</div><div class="t-card">El oro se gana</div><p>El oro marca marca, foco, XP y logros. Nunca bordes estructurales ni texto decorativo.</p></div>
+<div class="eu-card"><div class="t-eyebrow">02</div><div class="t-card">Griego + función</div><p>Cada nombre griego viaja con su traducción: «Oikonomia · Finanzas». Reconocimiento antes que recuerdo.</p></div>
+<div class="eu-card"><div class="t-eyebrow">03</div><div class="t-card">Quietud por defecto</div><p>Nada se mueve en reposo. El movimiento es la respuesta a una acción.</p></div>
+<div class="eu-card"><div class="t-eyebrow">04</div><div class="t-card">Números en mono</div><p>XP, EC y MXN en JetBrains Mono tabular. Las cifras se leen y se comparan.</p></div>
+<div class="eu-card"><div class="t-eyebrow">05</div><div class="t-card">Un solo sistema</div><p>Finanzas usa los mismos tokens que el resto. Sin paleta slate ni overrides <code>!important</code>.</p></div>
+</div>
+</header>
+
+<!-- ═════════ COLOR ═════════ -->
+<section class="s" id="color">
+<div class="s-hd"><div class="t-eyebrow">Fundamentos · 01</div><h2 class="t-page">Color</h2><p>Tres capas: primitivas (rampas), semánticas (lo que usan los componentes) y alias legacy para que los templates actuales sigan funcionando. El contraste se calcula en vivo con el tema activo.</p></div>
+<h3 class="sub">Rampa Ink <small>superficies · hue 280</small></h3>
+<div class="ramp" id="ramp-ink"></div>
+<h3 class="sub">Rampa Gold <small>marca · #C9A84C = gold-400</small></h3>
+<div class="ramp" id="ramp-gold"></div>
+<h3 class="sub">Superficies <small>semánticas</small></h3>
+<div class="sw-grid" id="sw-surf"></div>
+<h3 class="sub">Texto sobre tarjeta <small>AA ≥ 4.5 : 1 · calculado en vivo</small></h3>
+<div class="pair" id="text-pairs"></div>
+<h3 class="sub">Estado <small>fg · bg · borde</small></h3>
+<div class="grid3" id="status-sw"></div>
+<h3 class="sub">Gamificación <small>XP = oro (progreso) · EC = electrum (moneda)</small></h3>
+<div class="sw-grid" id="sw-game"></div>
+<h3 class="sub">Categorías <small>hue en ec_constants.CATEGORY_HUES → oklch()</small></h3>
+<div class="grid3" id="cat-sw"></div>
+<pre class="tok" style="margin-top:16px"><i>&lt;!-- Jinja: el hue viaja en el dato, nunca en :nth-child --&gt;</i>
+&lt;span class="eu-badge eu-badge--cat" <b>data-cat</b>="{{ act.categoria|lower }}"&gt;{{ act.categoria|title }}&lt;/span&gt;</pre>
+</section>
+
+<!-- ═════════ TIPOGRAFÍA ═════════ -->
+<section class="s" id="tipografia">
+<div class="s-hd"><div class="t-eyebrow">Fundamentos · 02</div><h2 class="t-page">Tipografía</h2><p>Cormorant Garamond da la voz: títulos, nombres griegos y citas. DM Sans lleva toda la interfaz. JetBrains Mono, todas las cifras. Mínimo 12 px; 11 px solo en eyebrows en mayúsculas.</p></div>
+<div id="type-rows"></div>
+<div class="grid2" style="margin-top:24px">
+<div class="eu-card do"><div class="t-eyebrow" style="color:var(--success-fg)">Mayúsculas · permitido</div><p class="t-body fg-2" style="margin:8px 0 0">Eyebrows (una por bloque), chips de estado (PAGADO, VENCE HOY), atajos. Máximo 2 niveles en mayúsculas por pantalla.</p></div>
+<div class="eu-card dont"><div class="t-eyebrow" style="color:var(--danger-fg)">Mayúsculas · prohibido</div><p class="t-body fg-2" style="margin:8px 0 0">Subtítulos, descripciones, labels de formulario, navegación, botones, tablas. Tampoco tracking &gt; .18em.</p></div>
+</div>
+</section>
+
+<!-- ═════════ ESPACIADO ═════════ -->
+<section class="s" id="espaciado">
+<div class="s-hd"><div class="t-eyebrow">Fundamentos · 03</div><h2 class="t-page">Espaciado</h2><p>Base 4 px, pasos de 8 px. Solo existen estos valores; cualquier otro (10, 14, 18, 22…) es un error de lint.</p></div>
+<div id="sp-rows"></div>
+<h3 class="sub">Reglas de layout</h3>
+<div class="grid3">
+<div class="eu-card"><div class="t-card">Componente</div><dl class="spec" style="margin-top:12px"><dt>Icono ↔ texto</dt><dd><code>sp-2</code> 8</dd><dt>Controles</dt><dd><code>sp-2</code> 8 entre botones</dd><dt>Padding tarjeta</dt><dd><code>sp-4</code> móvil · <code>sp-5</code> ≥768</dd><dt>Label ↔ input</dt><dd>6 (excepción documentada)</dd></dl></div>
+<div class="eu-card"><div class="t-card">Layout</div><dl class="spec" style="margin-top:12px"><dt>Gutter</dt><dd>16 · 32 (≥768) · 40 (≥1280)</dd><dt>Entre tarjetas</dt><dd><code>sp-3</code> 12 móvil · <code>sp-4</code> 16</dd><dt>Máx contenido</dt><dd>1200 · lectura 680</dd><dt>Grid desktop</dt><dd>12 col, gap 16</dd></dl></div>
+<div class="eu-card"><div class="t-card">Secciones</div><dl class="spec" style="margin-top:12px"><dt>Entre secciones</dt><dd><code>sp-8</code> 32 · <code>sp-12</code> 48</dd><dt>Título ↔ contenido</dt><dd><code>sp-4</code> 16</dd><dt>Encabezado página</dt><dd><code>sp-6</code> arriba · <code>sp-8</code> abajo</dd><dt>Dashboard</dt><dd>2 col: 1fr + 360, gap 24</dd></dl></div>
+</div>
+<p class="t-meta" style="margin-top:12px">Breakpoints unificados (hoy hay 500/767/768/1023): <b class="fg-2">sm 640 · md 768 · lg 1024 · xl 1280</b>. Tailwind ya los trae por defecto.</p>
+</section>
+
+<!-- ═════════ RADIOS / ELEVACIÓN ═════════ -->
+<section class="s" id="radios">
+<div class="s-hd"><div class="t-eyebrow">Fundamentos · 04</div><h2 class="t-page">Radios y elevación</h2><p>En oscuro la profundidad se construye con luminosidad de superficie y un filo superior de 1 px, no con sombras. La sombra se reserva para lo que flota.</p></div>
+<div class="grid3" id="radii"></div>
+<h3 class="sub">Elevación</h3>
+<div class="grid3" id="elev"></div>
+</section>
+
+<!-- ═════════ MOTION ═════════ -->
+<section class="s" id="motion">
+<div class="s-hd"><div class="t-eyebrow">Fundamentos · 05</div><h2 class="t-page">Motion</h2><p>El movimiento responde a una acción y se asienta sin rebotar. Se eliminan las animaciones infinitas decorativas (float, wiggle y pulse en íconos de reposo). <code>prefers-reduced-motion</code> reduce todo a cambios de opacidad.</p></div>
+<div class="grid2">
+<div class="stack"><div class="demo-lbl">Duración</div><div class="eu-card eu-card--flush"><table class="eu-table" id="dur-t"></table></div></div>
+<div class="stack"><div class="demo-lbl">Easing</div><div class="eu-card eu-card--flush"><table class="eu-table" id="ease-t"></table></div></div>
+</div>
+<h3 class="sub">Coreografías de recompensa <small>pulsa para reproducir</small></h3>
+<div class="mo-row">
+<div class="demo mo-card"><div class="demo-lbl">XP ganada · 1.2 s</div>
+<div class="mo-stage" style="flex-direction:column;gap:14px;align-items:stretch">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span class="t-meta">Hoy</span><span class="t-data fg-xp"><span id="xp-n">11</span> <span class="fg-3">/ 15 XP</span></span></div>
+<div class="eu-xpbar" id="xp-bar"><i style="width:73%"></i></div>
+<div style="position:relative;height:52px"><button class="eu-act" data-cat="hegemonikon" id="xp-act" aria-pressed="false" style="position:absolute;inset:0"><span class="eu-act-check"><i data-lucide="check"></i></span><span class="eu-act-t">Ejercicio Gym</span><span class="eu-act-xp">+4 XP · +1 EC</span></button><span class="xp-float" id="xp-fl" style="right:16px;top:-6px">+4 XP</span></div>
+</div>
+<p class="t-meta" style="margin:0">Check 220 ms settle → «+4» sube 600 ms → barra 1.2 s emphasis con brillo → contador tabular.</p>
+<button class="eu-btn eu-btn--secondary eu-btn--sm" onclick="playXP()"><i data-lucide="play"></i>Reproducir</button></div>
+
+<div class="demo mo-card"><div class="demo-lbl">Logro desbloqueado · 1.2 s</div>
+<div class="mo-stage"><div class="halo" id="halo"></div>
+<div class="eu-ach is-earned" data-rarity="oro" id="ach-demo" style="width:240px;align-items:center;text-align:center"><div class="eu-ach-seal"><i data-lucide="shield-check"></i></div><div class="eu-ach-rar">Oro</div><div class="t-card">Stoic Commander</div><div class="t-meta">Racha 30 d + nivel 7</div></div></div>
+<p class="t-meta" style="margin:0">El sello escala .86→1 (settle), un halo de 1 px se expande una vez. Sin confeti.</p>
+<button class="eu-btn eu-btn--secondary eu-btn--sm" onclick="playAch()"><i data-lucide="play"></i>Reproducir</button></div>
+
+<div class="demo mo-card"><div class="demo-lbl">Subida de nivel · 2.4 s</div>
+<div class="mo-stage" id="lvl-stage" style="border-radius:12px;background:var(--bg-canvas)">
+<div id="lvl-demo" style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+<div class="t-eyebrow">Nivel 5</div>
+<div class="t-page" style="font-size:36px;letter-spacing:.12em">AUTARKÉS</div>
+<div class="t-quote" style="font-size:15px">«Autosuficiente.»</div>
+</div></div>
+<p class="t-meta" style="margin:0">Scrim 360 ms → eyebrow → nombre con tracking que se cierra (.3em→.12em, 1.2 s) → cita. Se descarta al tocar.</p>
+<button class="eu-btn eu-btn--secondary eu-btn--sm" onclick="playLvl()"><i data-lucide="play"></i>Reproducir</button></div>
+</div>
+<h3 class="sub">Transiciones de página</h3>
+<div class="grid3">
+<div class="eu-card"><div class="t-card">Entrada de página</div><p class="t-meta">Contenido: fade + 8 px de subida, 360 ms enter. Stagger 40 ms, máx. 6 hijos. El resto aparece sin retraso.</p></div>
+<div class="eu-card"><div class="t-card">Hub → subpágina</div><p class="t-meta">Loadbar dorada 2 px arriba (ya existe). Sin slides laterales: la app es SSR y recarga.</p></div>
+<div class="eu-card"><div class="t-card">Sheet / modal</div><p class="t-meta">Sheet: translateY 100%→0, 360 ms emphasis. Modal: scale .98 + fade, 220 ms. Salida con exit a 140 ms.</p></div>
+</div>
+</section>
+
+<!-- ═════════ ICONOS ═════════ -->
+<section class="s" id="iconos">
+<div class="s-hd"><div class="t-eyebrow">Fundamentos · 06</div><h2 class="t-page">Iconografía</h2><p>Un solo set: <b>Lucide 1.31</b> (ya está en el repo), trazo 1.5, tamaños 16 / 20 / 24. Se retiran emojis, Flaticon y SVG inline sueltos. El icono de módulo toma el color de su categoría; los de la interfaz, <code>--fg-2</code>/<code>--fg-3</code>.</p></div>
+<div class="ic-grid" id="ic-grid"></div>
+</section>
+
+<!-- ═════════ COMPONENTES ═════════ -->
+<section class="s" id="c-acciones">
+<div class="s-hd"><div class="t-eyebrow">Componentes · Acciones</div><h2 class="t-page">Botones</h2><p>Cada componente es una clase <code>eu-*</code> en <code>@layer components</code> y un macro Jinja en <code>_ui/macros.html</code>.</p></div>
+<div class="comp"><div class="comp-t"><h3>Button</h3><code>.eu-btn · {{ ui.button() }}</code></div>
+<div class="demo">
+<div class="demo-lbl">Variantes</div><div class="row"><button class="eu-btn eu-btn--primary"><i data-lucide="plus"></i>Registrar gasto</button><button class="eu-btn eu-btn--secondary">Secundario</button><button class="eu-btn eu-btn--ghost">Ghost</button><button class="eu-btn eu-btn--danger"><i data-lucide="trash-2"></i>Eliminar</button></div>
+<div class="demo-lbl">Tamaños</div><div class="row"><button class="eu-btn eu-btn--primary eu-btn--sm">Small 32</button><button class="eu-btn eu-btn--primary">Medium 40</button><button class="eu-btn eu-btn--primary eu-btn--lg">Large 48</button></div>
+<div class="demo-lbl">Estados</div><div class="row"><button class="eu-btn eu-btn--primary" aria-busy="true">Guardar</button><button class="eu-btn eu-btn--secondary" aria-busy="true">Guardar</button><button class="eu-btn eu-btn--primary" disabled>Deshabilitado</button></div>
+</div>
+<dl class="spec" data-spec="button"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Icon Button</h3><code>.eu-iconbtn</code></div>
+<div class="demo"><div class="row"><button class="eu-iconbtn" aria-label="Buscar"><i data-lucide="search"></i></button><button class="eu-iconbtn eu-iconbtn--outline" aria-label="Volver"><i data-lucide="chevron-left"></i></button><button class="eu-iconbtn eu-iconbtn--brand" aria-label="Añadir"><i data-lucide="plus"></i></button><button class="eu-iconbtn" aria-pressed="true" aria-label="Ocultar patrimonio"><i data-lucide="eye-off"></i></button></div></div>
+<dl class="spec" data-spec="iconbtn"></dl></div>
+</section>
+
+<section class="s" id="c-tarjetas">
+<div class="s-hd"><div class="t-eyebrow">Componentes · Contenedores</div><h2 class="t-page">Tarjetas</h2></div>
+<div class="comp"><div class="comp-t"><h3>Card</h3><code>.eu-card · --interactive · --featured · --inset</code></div>
+<div class="grid2" style="gap:12px">
+<div class="eu-card"><div class="t-eyebrow" style="color:var(--fg-3)">Default</div><div class="t-card" style="margin-top:8px">Palabra del día</div><p class="t-meta" style="margin:4px 0 0">Superficie + filo de 1 px.</p></div>
+<div class="eu-card eu-card--interactive" tabindex="0"><div class="t-eyebrow" style="color:var(--fg-3)">Interactive</div><div class="t-card" style="margin-top:8px">Paideia · Conocimiento</div><p class="t-meta" style="margin:4px 0 0">Hover: borde fuerte + superficie.</p></div>
+<div class="eu-card eu-card--featured"><div class="t-eyebrow">Featured</div><div class="t-card" style="margin-top:8px">Sugerencia del momento</div><p class="t-meta" style="margin:4px 0 0">Una por pantalla, máximo.</p></div>
+<div class="eu-card eu-card--inset"><div class="t-eyebrow" style="color:var(--fg-3)">Inset</div><div class="t-card" style="margin-top:8px">Zona hundida</div><p class="t-meta" style="margin:4px 0 0">Filtros, totales, pies.</p></div>
+</div>
+<dl class="spec" data-spec="card"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Stat Card</h3><code>.eu-stat</code></div>
+<div class="grid3" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+<div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="flame"></i>Racha</div><div class="eu-stat-val">23<span class="t-meta"> d</span></div><div class="eu-stat-delta up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+5% XP</div></div>
+<div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="coins"></i>Euda-Credits</div><div class="eu-stat-val fg-ec">148</div><div class="t-meta">≈ $1,480</div></div>
+<div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="wallet"></i>Gasto mes</div><div class="eu-stat-val">$18.4k</div><div class="eu-stat-delta down"><i data-lucide="trending-up" style="width:12px;height:12px"></i>12% vs ago</div></div>
+</div>
+<dl class="spec" data-spec="stat"></dl></div>
+</section>
+
+<section class="s" id="c-gamificacion">
+<div class="s-hd"><div class="t-eyebrow">Componentes · Gamificación</div><h2 class="t-page">XP, logros y actividad</h2></div>
+<div class="comp"><div class="comp-t"><h3>XP Card</h3><code>.eu-xpbar · .eu-tiers · .eu-level-seal</code></div>
+<div class="eu-card eu-card--featured" style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;gap:16px;align-items:center"><div class="eu-level-seal"><i data-lucide="columns-3"></i></div><div style="flex:1"><div class="t-eyebrow">Nivel 4 · Estrategos</div><div class="t-data-xl fg-xp" style="margin-top:6px">1,342 <span class="t-meta" style="font-family:var(--font-ui)">/ 1,800 XP</span></div></div></div>
+<div class="eu-xpbar"><i style="width:74.5%"></i></div>
+<div class="eu-tiers"><div class="eu-tier is-past" data-t="carbon">Carbón<b>0–7</b></div><div class="eu-tier is-now" data-t="hierro">Hierro<b>8–15</b></div><div class="eu-tier" data-t="oro">Oro<b>16+</b></div><div class="eu-tier" data-t="diamante">Diamante<b>20+</b></div></div>
+</div>
+<dl class="spec" data-spec="xp"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Achievement Card</h3><code>.eu-ach[data-rarity]</code></div>
+<div class="grid3" style="grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+<div class="eu-ach is-earned" data-rarity="plata"><div class="eu-ach-seal"><i data-lucide="waves"></i></div><div><div class="eu-ach-rar">Plata</div><div class="t-card" style="margin-top:6px">Maestro del Flow</div></div><div class="t-meta">Desbloqueado 12 sep</div></div>
+<div class="eu-ach" data-rarity="oro"><div class="eu-ach-seal"><i data-lucide="shield-check"></i></div><div><div class="eu-ach-rar">Oro</div><div class="t-card" style="margin-top:6px">Stoic Commander</div></div><div class="eu-progress eu-progress--thin eu-progress--brand"><i style="width:76%"></i></div><div class="t-meta">23 / 30 días</div></div>
+<div class="eu-ach is-locked" data-rarity="especial"><div class="eu-ach-seal"><i data-lucide="lock"></i></div><div><div class="eu-ach-rar">Especial</div><div class="t-card" style="margin-top:6px">Eudaimonia Sync</div></div><div class="t-meta">Sábado + domingo completos</div></div>
+</div>
+<dl class="spec" data-spec="ach"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Activity Toggle</h3><code>.eu-act[aria-pressed] · Acta Diurna</code></div>
+<div class="demo" style="gap:8px">
+<button class="eu-act" data-cat="hegemonikon" aria-pressed="true" onclick="tg(this)"><span class="eu-act-check"><i data-lucide="check"></i></span><span class="eu-act-t">Meditar</span><span class="eu-act-xp">+2 XP</span></button>
+<button class="eu-act" data-cat="logoi" aria-pressed="false" onclick="tg(this)"><span class="eu-act-check"><i data-lucide="check"></i></span><span class="eu-act-t">Resolver 5 problemas reales</span><span class="eu-act-xp"><span>+6 XP</span><span class="fg-ec">+2 EC</span></span></button>
+<button class="eu-act" data-cat="paideia" aria-pressed="false" onclick="tg(this)"><span class="eu-act-check"><i data-lucide="check"></i></span><span class="eu-act-t">Leer 5 páginas</span><span class="eu-act-xp">+1 XP</span></button>
+</div>
+<dl class="spec" data-spec="act"></dl></div>
+</section>
+
+<section class="s" id="c-seleccion">
+<div class="s-hd"><div class="t-eyebrow">Componentes · Selección</div><h2 class="t-page">Chips, filtros, badges y tabs</h2></div>
+<div class="comp"><div class="comp-t"><h3>Filter Chips</h3><code>.eu-chip[aria-pressed]</code></div>
+<div class="demo"><div class="eu-chips"><button class="eu-chip" aria-pressed="true">Todo <span class="ct">412</span></button><button class="eu-chip"><i data-lucide="utensils"></i>Comida <span class="ct">86</span></button><button class="eu-chip"><i data-lucide="car"></i>Transporte <span class="ct">41</span></button><button class="eu-chip"><i data-lucide="users"></i>Tu parte <span class="ct">19</span></button><button class="eu-chip"><i data-lucide="sliders-horizontal"></i>Más filtros</button></div></div>
+<dl class="spec" data-spec="chip"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Badge</h3><code>.eu-badge--*</code></div>
+<div class="demo"><div class="row"><span class="eu-badge">Neutral</span><span class="eu-badge eu-badge--brand">Marca</span><span class="eu-badge eu-badge--success eu-badge--status"><span class="eu-dot"></span>Pagado</span><span class="eu-badge eu-badge--warning eu-badge--status">Vence hoy</span><span class="eu-badge eu-badge--danger eu-badge--status">Vencido</span><span class="eu-badge eu-badge--info">MSI 3/12</span></div>
+<div class="row"><span class="eu-badge eu-badge--xp">+4 XP</span><span class="eu-badge eu-badge--ec">+1 EC</span><span class="eu-badge eu-badge--cat" data-cat="oikonomia">Oikonomia</span><span class="eu-badge eu-badge--cat" data-cat="eurythmia">Eurythmia</span><span class="eu-badge eu-badge--cat" data-cat="cosmopolitismo">Cosmopolitismo</span></div></div>
+<dl class="spec" data-spec="badge"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Tabs y Segmented</h3><code>.eu-tabs · .eu-seg</code></div>
+<div class="demo"><div class="eu-tabs" role="tablist"><button aria-selected="true">Resumen</button><button>Movimientos</button><button>Cuentas</button><button>Presupuestos</button><button>Reglas</button><button>Reportes</button></div>
+<div class="eu-seg" role="tablist"><button aria-selected="true">Mes</button><button>Trimestre</button><button>Año</button></div></div>
+<dl class="spec" data-spec="tabs"></dl></div>
+</section>
+
+<section class="s" id="c-formularios">
+<div class="s-hd"><div class="t-eyebrow">Componentes · Formularios</div><h2 class="t-page">Inputs, selects y text areas</h2></div>
+<div class="comp"><div class="comp-t"><h3>Field</h3><code>.eu-field · {{ ui.field() }}</code></div>
+<div class="demo" style="gap:18px">
+<div class="eu-field"><label class="eu-label" for="d1">Concepto</label><input class="eu-input" id="d1" placeholder="Ej. Cena con Ana"></div>
+<div class="grid2" style="grid-template-columns:1fr 1fr;gap:12px"><div class="eu-field"><label class="eu-label" for="d2">Monto</label><input class="eu-input eu-input--money" id="d2" value="1,240.00"></div><div class="eu-field"><label class="eu-label" for="d3">Categoría</label><select class="eu-select" id="d3"><option>Comida</option></select></div></div>
+<div class="eu-field"><label class="eu-label" for="d4">Tu parte</label><input class="eu-input eu-input--money" id="d4" value="2,000.00" aria-invalid="true" aria-describedby="d4e"><div class="eu-err" id="d4e"><i data-lucide="alert-circle" style="width:14px;height:14px"></i>No puede superar el monto total.</div></div>
+<div class="eu-field"><label class="eu-label" for="d5">Reflexión</label><textarea class="eu-textarea" id="d5" placeholder="¿Qué dependió de ti hoy?"></textarea><div class="eu-help">Opcional · se guarda en tu diario.</div></div>
+</div>
+<dl class="spec" data-spec="field"></dl></div>
+</section>
+
+<section class="s" id="c-datos">
+<div class="s-hd"><div class="t-eyebrow">Componentes · Datos</div><h2 class="t-page">Filas, tablas, progreso y heatmap</h2></div>
+<div class="comp"><div class="comp-t"><h3>List Row</h3><code>.eu-row</code></div>
+<div class="eu-card eu-card--flush"><div class="eu-list">
+<div class="eu-row eu-row--interactive"><div class="eu-row-ic"><i data-lucide="utensils"></i></div><div class="eu-row-main"><div class="eu-row-t">Pujol</div><div class="eu-row-s">Comida · BBVA ··4821 <span class="eu-badge eu-badge--info">Tu parte 50%</span></div></div><div class="eu-row-end"><div class="eu-amt">−$1,240</div><div class="t-meta">de $2,480</div></div></div>
+<div class="eu-row eu-row--interactive"><div class="eu-row-ic"><i data-lucide="plane"></i></div><div class="eu-row-main"><div class="eu-row-t">Aeroméxico</div><div class="eu-row-s">Viajes · Invex <span class="eu-badge eu-badge--info">MSI 3/12</span></div></div><div class="eu-row-end"><div class="eu-amt">−$712</div><div class="t-meta">18 sep</div></div></div>
+<div class="eu-row eu-row--interactive"><div class="eu-row-ic" style="color:var(--success-fg)"><i data-lucide="arrow-down-left"></i></div><div class="eu-row-main"><div class="eu-row-t">Nómina</div><div class="eu-row-s">Ingreso · BBVA Débito</div></div><div class="eu-row-end"><div class="eu-amt pos">+$32,500</div><div class="t-meta">15 sep</div></div></div>
+</div></div>
+<dl class="spec" data-spec="row"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Table</h3><code>.eu-table</code></div>
+<div class="eu-card eu-card--flush" style="padding-top:16px;overflow-x:auto"><table class="eu-table"><thead><tr><th>Fecha</th><th>Comercio</th><th>Categoría</th><th class="r">Monto</th></tr></thead><tbody>
+<tr><td class="num fg-3">18 sep</td><td>Pujol</td><td><span class="eu-badge">Comida</span></td><td class="r num">−$1,240.00</td></tr>
+<tr aria-selected="true"><td class="num fg-3">17 sep</td><td>Uber</td><td><span class="eu-badge">Transporte</span></td><td class="r num">−$186.50</td></tr>
+<tr><td class="num fg-3">15 sep</td><td>Nómina</td><td><span class="eu-badge eu-badge--success">Ingreso</span></td><td class="r num fg-success">+$32,500.00</td></tr>
+</tbody></table></div>
+<dl class="spec" data-spec="table"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Progress Bar</h3><code>.eu-progress--*</code></div>
+<div class="demo">
+<div class="stack" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="t-ui">Comida</span><span class="t-data" style="font-size:13px">$4,120 <span class="fg-3">/ $6,000</span></span></div><div class="eu-progress eu-progress--brand"><i style="width:68%"></i></div></div>
+<div class="stack" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="t-ui">Transporte</span><span class="t-data" style="font-size:13px;color:var(--warning-fg)">$1,910 <span class="fg-3">/ $2,000</span></span></div><div class="eu-progress eu-progress--warning"><i style="width:95%"></i></div></div>
+<div class="stack" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="t-ui">Ocio</span><span class="t-data" style="font-size:13px;color:var(--danger-fg)">$3,400 <span class="fg-3">/ $2,500</span></span></div><div class="eu-progress eu-progress--danger"><i style="width:100%"></i></div></div>
+</div>
+<dl class="spec" data-spec="progress"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Heatmap</h3><code>.eu-heat i[data-l]</code></div>
+<div class="demo"><div class="row" style="justify-content:space-between"><span class="t-ui">Constancia · 12 semanas</span><div class="eu-heat-legend">Menos <i style="background:var(--bg-raised)"></i><i style="background:color-mix(in oklab,var(--brand) 22%,var(--bg-raised))"></i><i style="background:color-mix(in oklab,var(--brand) 45%,var(--bg-raised))"></i><i style="background:color-mix(in oklab,var(--brand) 72%,var(--bg-raised))"></i><i style="background:var(--fg-brand-strong)"></i> Más</div></div><div class="eu-heat" id="heat" role="img" aria-label="Heatmap de 12 semanas; racha actual de 23 días"></div></div>
+<dl class="spec" data-spec="heat"></dl></div>
+</section>
+
+<section class="s" id="c-overlays">
+<div class="s-hd"><div class="t-eyebrow">Componentes · Overlays</div><h2 class="t-page">Modal, bottom sheet y toast</h2></div>
+<div class="comp"><div class="comp-t"><h3>Modal / Bottom Sheet</h3><code>.eu-modal · .eu-sheet · {{ ui.modal() }}</code></div>
+<div class="grid2" style="gap:12px">
+<div class="demo" style="padding:16px;background:var(--bg-overlay)"><div class="eu-modal" style="max-width:none"><div class="eu-modal-hd"><div><div class="t-eyebrow">Oikonomia</div><div class="t-section" style="margin-top:6px">Nueva deuda</div></div><button class="eu-iconbtn" aria-label="Cerrar"><i data-lucide="x"></i></button></div><div class="eu-modal-bd"><div class="eu-field"><label class="eu-label">Acreedor</label><input class="eu-input" value="HSBC Zero"></div></div><div class="eu-modal-ft"><button class="eu-btn eu-btn--ghost">Cancelar</button><button class="eu-btn eu-btn--primary">Guardar</button></div></div></div>
+<div class="demo" style="padding:16px 16px 0;background:var(--bg-overlay);justify-content:flex-end"><div class="eu-sheet"><div class="eu-sheet-grab"></div><div class="t-section">Marcar actividad</div><p class="t-meta" style="margin:4px 0 16px">Hegemonikon · hoy</p><button class="eu-btn eu-btn--primary eu-btn--lg eu-btn--block">Confirmar · +4 XP</button></div></div>
+</div>
+<dl class="spec" data-spec="modal"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Toast</h3><code>toast(msg, type, {undo})</code></div>
+<div class="demo">
+<div class="eu-toast eu-toast--xp" style="position:relative"><i data-lucide="sparkles"></i><span class="grow"><b style="font-weight:500">Ejercicio Gym</b> · <span class="fg-xp num">+4 XP</span> <span class="fg-ec num">+1 EC</span></span><button class="eu-btn eu-btn--ghost eu-btn--sm">Deshacer</button><span class="eu-toast-timer" style="transform:scaleX(.6)"></span></div>
+<div class="eu-toast eu-toast--success"><i data-lucide="check-circle-2"></i><span class="grow">Estado de cuenta importado · 84 movimientos</span></div>
+<div class="eu-toast eu-toast--danger"><i data-lucide="alert-triangle"></i><span class="grow">No se pudo leer el PDF.</span><button class="eu-btn eu-btn--ghost eu-btn--sm">Reintentar</button></div>
+</div>
+<dl class="spec" data-spec="toast"></dl></div>
+</section>
+
+<section class="s" id="c-estados">
+<div class="s-hd"><div class="t-eyebrow">Componentes · Estados</div><h2 class="t-page">Vacíos y carga</h2></div>
+<div class="comp"><div class="comp-t"><h3>Empty State</h3><code>_partials/empty.html</code></div>
+<div class="eu-card"><div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="file-text"></i></div><div class="t-card">Aún no hay estados de cuenta</div><p>Sube el PDF de BBVA, HSBC o Invex y categorizamos los movimientos por ti.</p><button class="eu-btn eu-btn--primary"><i data-lucide="upload"></i>Subir estado de cuenta</button><span class="t-meta">o arrastra el archivo · <span class="kbd">U</span></span></div></div>
+<dl class="spec" data-spec="empty"></dl></div>
+<div class="comp"><div class="comp-t"><h3>Skeleton</h3><code>.eu-skel</code></div>
+<div class="eu-card stack"><div class="row"><div class="eu-skel" style="width:36px;height:36px"></div><div class="stack" style="flex:1;gap:8px"><div class="eu-skel" style="height:12px;width:60%"></div><div class="eu-skel" style="height:10px;width:35%"></div></div><div class="eu-skel" style="width:64px;height:14px"></div></div><div class="row"><div class="eu-skel" style="width:36px;height:36px"></div><div class="stack" style="flex:1;gap:8px"><div class="eu-skel" style="height:12px;width:48%"></div><div class="eu-skel" style="height:10px;width:28%"></div></div><div class="eu-skel" style="width:56px;height:14px"></div></div></div>
+<dl class="spec" data-spec="skel"></dl></div>
+<p class="t-meta" style="margin-top:32px">Navegación (sidebar, bottom nav, topbar, ⌘K) → <a href="DS V2 — Navegación, Auditoría y Migración.html">Navegación · Auditoría · Migración</a></p>
+</section>
+</main>
+</div>
+<script src="ds-v2/ds-doc.js"></script>
+</body>
+</html>
