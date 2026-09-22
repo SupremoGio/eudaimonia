@@ -72,7 +72,23 @@
 .fb-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .fb-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
 .fb-modal { width:460px; max-width:96vw; }
-.fb-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:16px; }
+.fb-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:0; }
+.fb-modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.fb-modal-x { width:44px; height:44px; margin:-10px -10px 0 0; flex-shrink:0; background:none; border:none;
+  color:var(--dim); cursor:pointer; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  transition:color .15s,background .15s; }
+.fb-modal-x:hover { color:var(--gold); background:var(--gold-d); }
+.fb-modal-x svg { width:18px; height:18px; }
+.fb-modal-handle { display:none; }
+.fb-minilabel { font-size:10px; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; display:block; margin-bottom:4px; }
+
+@media(max-width:767px) {
+  .fb-modal-handle { display:block; width:36px; height:4px; border-radius:100px; background:var(--b2); margin:0 auto 14px; }
+  .fb-modal .fi { padding:12px 12px; }
+  .fb-row3 { gap:8px; }
+  .fb-modal-actions { flex-direction:column; gap:10px; }
+  .fb-modal-actions .btn-a, .fb-modal-actions .btn-g { width:100%; padding:13px 16px; font-size:var(--fs-base); text-align:center; }
+}
 
 /* ── Sección: título ── */
 .fb-sec-title{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;
@@ -236,7 +252,11 @@
 <!-- ═══ MODAL: Partido ═══════════════════════════════════════════════════ -->
 <div class="modal-bg" id="modal-partido">
   <div class="modal fb-modal">
-    <div class="fb-modal-title" id="pt-modal-title">Programar partido</div>
+    <div class="fb-modal-handle"></div>
+    <div class="fb-modal-head">
+      <div class="fb-modal-title" id="pt-modal-title">Programar partido</div>
+      <button type="button" class="fb-modal-x" aria-label="Cerrar" onclick="closeModal('partido')"><i data-lucide="x"></i></button>
+    </div>
     <input type="hidden" id="pt-id">
     <input type="hidden" id="pt-estado" value="programado">
 
@@ -260,22 +280,37 @@
     <div id="fb-result-section" style="display:none;">
       <label class="fl" style="margin-top:10px;">Resultado (goles a favor - en contra)</label>
       <div class="fb-row2">
-        <input class="fi" id="pt-gf" type="number" min="0" placeholder="A favor">
-        <input class="fi" id="pt-gc" type="number" min="0" placeholder="En contra">
+        <div>
+          <span class="fb-minilabel">A favor</span>
+          <input class="fi" id="pt-gf" type="number" inputmode="numeric" min="0" placeholder="0">
+        </div>
+        <div>
+          <span class="fb-minilabel">En contra</span>
+          <input class="fi" id="pt-gc" type="number" inputmode="numeric" min="0" placeholder="0">
+        </div>
       </div>
 
       <label class="fl" style="margin-top:10px;">Mi rendimiento</label>
       <div class="fb-row3">
-        <input class="fi" id="pt-goles" type="number" min="0" placeholder="Mis goles">
-        <input class="fi" id="pt-asist" type="number" min="0" placeholder="Asistencias">
-        <input class="fi" id="pt-min" type="number" min="0" max="120" placeholder="Minutos">
+        <div>
+          <span class="fb-minilabel">Goles</span>
+          <input class="fi" id="pt-goles" type="number" inputmode="numeric" min="0" placeholder="0">
+        </div>
+        <div>
+          <span class="fb-minilabel">Asist.</span>
+          <input class="fi" id="pt-asist" type="number" inputmode="numeric" min="0" placeholder="0">
+        </div>
+        <div>
+          <span class="fb-minilabel">Minutos</span>
+          <input class="fi" id="pt-min" type="number" inputmode="numeric" min="0" max="120" placeholder="0">
+        </div>
       </div>
 
       <label class="fl" style="margin-top:10px;">Puntuación del partido (1-10)</label>
-      <input class="fi" id="pt-rating" type="number" min="1" max="10" step="0.1" placeholder="Ej. 6.5">
+      <input class="fi" id="pt-rating" type="number" inputmode="decimal" min="1" max="10" step="0.1" placeholder="Ej. 6.5">
     </div>
 
-    <div class="modal-actions" style="margin-top:16px;">
+    <div class="modal-actions fb-modal-actions" style="margin-top:16px;">
       <button class="btn-g" onclick="closeModal('partido')">Cancelar</button>
       <button class="btn-a" id="pt-save-btn" onclick="guardarPartido()">Programar partido</button>
     </div>
