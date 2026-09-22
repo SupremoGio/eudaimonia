@@ -792,7 +792,11 @@ async function sessLogAct(key, el) {
     if (!wasDone && el.classList.contains('done')) return;
   }
 
-  if (el) { el.dataset.pending = 'true'; el.classList.toggle('done', !wasDone); }
+  if (el) {
+    el.dataset.pending = 'true';
+    el.classList.toggle('done', !wasDone);
+    if (!wasDone) _popCheck(el.querySelector('.schk') || el);
+  }
   try {
     const r = await fetch('/actividades/api/activity/log', {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key})
@@ -806,7 +810,7 @@ async function sessLogAct(key, el) {
     if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
     if (d.gam?.perfect_day)   euPerfectDay(d.gam.perfect_day);
     if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
     _notifyDashboard();
     // Actividad "solo una vez": el servidor ya la desactivó al marcarla —
     // se quita de la tarjeta tras un momento para que se alcance a ver el check.
@@ -839,12 +843,14 @@ async function _saveReflexion(el) {
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const d = await r.json();
     if (d.auto_checked) {
-      el.closest('.sact')?.classList.add('done');
+      const tile = el.closest('.sact');
+      tile?.classList.add('done');
+      _popCheck(tile?.querySelector('.schk') || tile);
       toast(`+${d.gam?.xp ?? ''} XP registrado desde tu reflexión`, 'win');
       if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
       if (d.gam?.perfect_day)   euPerfectDay(d.gam.perfect_day);
       if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
       _notifyDashboard();
     }
     updS(d.stats);
@@ -972,6 +978,19 @@ function showCombo(combos) {
 const _euCh = new BroadcastChannel('eudaimonia');
 function _notifyDashboard() { _euCh.postMessage({type: 'data_changed'}); }
 
+// Pop + burst de partículas al MARCAR (no al desmarcar) una actividad --
+// hasta ahora el único refuerzo era el cambio de color de fondo del check,
+// silencioso comparado con GTD (que ya usa euCelebrate en su check) o el
+// festejo de Día Perfecto. Mismo lenguaje visual, reutilizando lo que ya
+// existe (euIconPop + euCelebrate) sin animación nueva que mantener.
+function _popCheck(target, color) {
+  if (!target || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  target.style.animation = 'none';
+  void target.offsetWidth; // fuerza reflow para poder re-disparar en clics sucesivos
+  target.style.animation = 'euIconPop .4s cubic-bezier(.2,1.4,.4,1)';
+  if (window.euCelebrate) euCelebrate(target, { color: color || getComputedStyle(target).backgroundColor });
+}
+
 async function logAct(key) {
   const b = document.querySelector(`[data-key="${key}"]`);
   if (b?.dataset.pending) return;   // evita doble-click mientras el request está en vuelo
@@ -984,7 +1003,10 @@ async function logAct(key) {
   if (b) {
     b.dataset.pending = 'true';
     b.classList.remove('done', 'done-alto');
-    if (!wasMarked) b.classList.add(doneClass);
+    if (!wasMarked) {
+      b.classList.add(doneClass);
+      _popCheck(b, doneClass === 'done-alto' ? 'var(--amber)' : 'var(--violet)');
+    }
   }
 
   try {
@@ -1008,7 +1030,7 @@ async function logAct(key) {
     if (d.gam?.perfect_day)   euPerfectDay(d.gam.perfect_day);
     if (d.gam?.achievements?.length) euAnnounceAchievements(d.gam);
     if (d.gam?.badges?.length)       toast(`Badge: ${d.gam.badges[0].name}`, 'win');
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
     _notifyDashboard();
   } catch {
     // Revierte el estado optimista si el server falla
