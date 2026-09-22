@@ -152,6 +152,14 @@ textarea:focus-visible {
   from { transform: rotate(0deg);   }
   to   { transform: rotate(360deg); }
 }
+/* Acta Diurna: ícono real de la actividad (cama, libro, pesas...) saliendo
+   del check al marcarla -- pop con leve giro y sube desvaneciéndose. */
+@keyframes euFlyIcon {
+  0%   { transform: translateY(4px)   scale(.4)  rotate(-8deg); opacity: 0; }
+  35%  { transform: translateY(-10px) scale(1.15) rotate(4deg); opacity: 1; }
+  70%  { transform: translateY(-26px) scale(1)    rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-46px) scale(.85)  rotate(0deg); opacity: 0; }
+}
 
 /* ── Retroalimentación táctil ───────────────────────────────────────────
    Un botón real sin :active se siente plano — no hay ninguna señal física

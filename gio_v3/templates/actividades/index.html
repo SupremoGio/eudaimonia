@@ -795,7 +795,7 @@ async function sessLogAct(key, el) {
   if (el) {
     el.dataset.pending = 'true';
     el.classList.toggle('done', !wasDone);
-    if (!wasDone) _popCheck(el.querySelector('.schk') || el);
+    if (!wasDone) _popCheck(el, key);
   }
   try {
     const r = await fetch('/actividades/api/activity/log', {
@@ -845,7 +845,7 @@ async function _saveReflexion(el) {
     if (d.auto_checked) {
       const tile = el.closest('.sact');
       tile?.classList.add('done');
-      _popCheck(tile?.querySelector('.schk') || tile);
+      _popCheck(tile, key);
       toast(`+${d.gam?.xp ?? ''} XP registrado desde tu reflexión`, 'win');
       if (d.gam?.combo_bonuses) showCombo(d.gam.combo_bonuses);
       if (d.gam?.perfect_day)   euPerfectDay(d.gam.perfect_day);
@@ -983,12 +983,67 @@ function _notifyDashboard() { _euCh.postMessage({type: 'data_changed'}); }
 // silencioso comparado con GTD (que ya usa euCelebrate en su check) o el
 // festejo de Día Perfecto. Mismo lenguaje visual, reutilizando lo que ya
 // existe (euIconPop + euCelebrate) sin animación nueva que mantener.
-function _popCheck(target, color) {
-  if (!target || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-  target.style.animation = 'none';
-  void target.offsetWidth; // fuerza reflow para poder re-disparar en clics sucesivos
-  target.style.animation = 'euIconPop .4s cubic-bezier(.2,1.4,.4,1)';
-  if (window.euCelebrate) euCelebrate(target, { color: color || getComputedStyle(target).backgroundColor });
+// Un paso más de contexto: para las actividades con un ícono obvio (tender
+// cama -> cama, leer -> libro, gym -> pesas...) en vez del burst abstracto
+// sale volando el ícono real de esa actividad desde el check. Las que no
+// tienen match (bloques de fin de semana, actividades personalizadas del
+// usuario) caen al burst de siempre -- nunca se queda sin refuerzo.
+const ACTIVITY_ICONS = {
+  tender_cama: 'bed', dormir_8h: 'moon',
+  leer_general: 'book-open', leer_psico: 'book-open', leer_365_dias: 'book-open', leer_prog: 'book-open',
+  brilliant: 'graduation-cap', meditar: 'brain',
+  gym: 'dumbbell', pliometria: 'dumbbell', abdominales: 'dumbbell', gymbook: 'notebook-pen',
+  partido: 'trophy', gol: 'target',
+  colacion: 'apple', comer_fruta: 'apple', jugo_verde: 'cup-soda', skincare_noche: 'sparkles',
+  sololearn: 'code', python100: 'code', ccna: 'network', resolver_codigo: 'terminal', github: 'github',
+  podcast_idiomas: 'headphones', VividVocab: 'languages', leccion_idiomas: 'languages',
+  conversacion: 'message-circle', test_cert: 'award',
+  registrar_gastos: 'receipt', finanzas_udemy: 'landmark', gbm: 'trending-up', ahorrar: 'piggy-bank',
+  planchar: 'shirt', prep_comida: 'utensils', limpieza: 'sparkles', lavar_carro: 'car',
+  revision_semanal: 'clipboard-check', outfit: 'shirt', lenguaje_corporal: 'person-standing',
+  redes_control: 'smartphone', llegar_puntual: 'clock',
+};
+
+// Pop + refuerzo visual al MARCAR (no al desmarcar) una actividad -- hasta
+// ahora el único refuerzo era el cambio de color de fondo del check,
+// silencioso comparado con GTD (que ya usa euCelebrate en su check) o el
+// festejo de Día Perfecto. El check siempre hace euIconPop; además, sale el
+// ícono propio de la actividad (o el burst de partículas si no hay match).
+function _popCheck(tile, key, fallbackColor) {
+  if (!tile) return;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const chk = tile.querySelector('.schk') || tile;
+  if (!reduced) {
+    chk.style.animation = 'none';
+    void chk.offsetWidth; // fuerza reflow para poder re-disparar en clics sucesivos
+    chk.style.animation = 'euIconPop .4s cubic-bezier(.2,1.4,.4,1)';
+  }
+  if (reduced) return;
+  const color = fallbackColor || getComputedStyle(chk).backgroundColor;
+  const icon = ACTIVITY_ICONS[key];
+  if (icon && window.lucide) _flyIcon(chk, icon, color);
+  else if (window.euCelebrate) euCelebrate(chk, { color });
+}
+
+// Ícono real (bed, book-open, dumbbell...) que sale del check, hace un
+// pequeño salto con giro y se desvanece flotando hacia arriba -- vive aquí
+// porque solo Acta Diurna tiene el mapeo actividad -> ícono; el resto de
+// pantallas sigue usando euCelebrate/euIconPop desde eu-celebrate.js.
+function _flyIcon(anchor, iconName, color) {
+  const rect = anchor.getBoundingClientRect();
+  const size = 30;
+  const el = document.createElement('div');
+  el.style.cssText =
+    'position:fixed;left:' + (rect.left + rect.width / 2 - size / 2) + 'px;' +
+    'top:' + (rect.top + rect.height / 2 - size / 2) + 'px;' +
+    'width:' + size + 'px;height:' + size + 'px;z-index:9998;pointer-events:none;' +
+    'display:flex;align-items:center;justify-content:center;color:' + color + ';' +
+    'filter:drop-shadow(0 2px 6px rgba(0,0,0,.35));' +
+    'animation:euFlyIcon .8s cubic-bezier(.2,.9,.3,1) forwards;';
+  el.innerHTML = '<i data-lucide="' + iconName + '" style="width:' + size + 'px;height:' + size + 'px;" stroke-width="1.6"></i>';
+  document.body.appendChild(el);
+  lucide.createIcons();
+  setTimeout(() => el.remove(), 850);
 }
 
 async function logAct(key) {
@@ -1005,7 +1060,7 @@ async function logAct(key) {
     b.classList.remove('done', 'done-alto');
     if (!wasMarked) {
       b.classList.add(doneClass);
-      _popCheck(b, doneClass === 'done-alto' ? 'var(--amber)' : 'var(--violet)');
+      _popCheck(b, key, doneClass === 'done-alto' ? 'var(--amber)' : 'var(--violet)');
     }
   }
 
