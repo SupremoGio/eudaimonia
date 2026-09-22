@@ -2111,6 +2111,86 @@ def audit_montos():
         tmp_path.unlink(missing_ok=True)
 
 
+@estados_bp.route('/admin/debug-pdf', methods=['GET', 'POST'])
+def debug_pdf():
+    """El usuario reportó "No se encontraron transacciones" al subir un
+    estado de cuenta BBVA crédito -- el parser (bbva.py + LINE_RE en
+    _base.py) exige que cada línea de movimiento tenga DOS fechas
+    "DD-Mon-YY", una descripción, un signo +/- y un monto con "$" y 2
+    decimales, todo en la MISMA línea de texto extraída por pdfplumber.
+    Si BBVA cambió el formato de ese PDF en particular (una sola fecha,
+    sin signo explícito, columnas en otro orden...) esa línea nunca
+    matchea y se descarta en silencio -- sin poder ver el PDF real no hay
+    forma de saber qué cambió.
+
+    Diagnóstico de solo lectura, NUNCA guarda el archivo ni inserta nada
+    en la DB: abre el PDF (con las mismas contraseñas que /api/upload),
+    extrae el texto de las primeras páginas y devuelve las líneas
+    REDACTADAS -- todos los dígitos se cambian por # y las palabras de
+    4+ letras se acortan a su primera letra + "x" -- para ver la
+    ESTRUCTURA real (cuántas fechas trae, dónde va el signo, cuántos
+    espacios) sin exponer montos, fechas ni nombres de comercios reales."""
+    if not _ok(): return _locked()
+
+    if request.method == 'GET':
+        return (
+            '<!doctype html><html><head><meta charset="utf-8">'
+            '<title>Debug PDF</title></head><body style="font-family:sans-serif;max-width:600px;margin:40px auto;">'
+            '<h3>Diagnóstico de estado de cuenta (solo lectura)</h3>'
+            '<p>Sube el mismo PDF que te dio "No se encontraron transacciones". '
+            'No se guarda el archivo ni se inserta nada en la base de datos -- '
+            'solo se muestra la estructura del texto con números y nombres tapados.</p>'
+            '<form method="POST" enctype="multipart/form-data">'
+            '<input type="file" name="file" accept=".pdf" required> '
+            '<button type="submit">Analizar</button>'
+            '</form></body></html>'
+        )
+
+    file = request.files.get('file')
+    if not file:
+        return jsonify({'ok': False, 'error': 'No se recibió archivo'}), 400
+
+    suffix = Path(file.filename or 'file.pdf').suffix.lower()
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        file.save(tmp.name)
+        tmp_path = Path(tmp.name)
+
+    try:
+        import re as _re
+        from .parsers import detect_bank
+        from .parsers._base import open_pdf as _open_pdf
+        from .config import PDF_PASSWORD, PDF_PASSWORD_BBVA
+
+        bank = detect_bank(tmp_path)
+        with _open_pdf(tmp_path, PDF_PASSWORD, PDF_PASSWORD_BBVA) as pdf:
+            text = "\n".join(p.extract_text() or "" for p in pdf.pages[:2])
+
+        def _redact(line: str) -> str:
+            line = _re.sub(r'\d', '#', line)
+            line = _re.sub(
+                r'[A-Za-zÁÉÍÓÚÑáéíóúñ]{4,}',
+                lambda m: m.group(0)[0] + 'x' * (len(m.group(0)) - 1),
+                line,
+            )
+            return line
+
+        lineas = [l for l in text.split('\n') if l.strip()]
+        redactadas = [_redact(l) for l in lineas[:25]]
+
+        html = (
+            '<!doctype html><html><head><meta charset="utf-8"><title>Debug PDF</title></head>'
+            '<body style="font-family:monospace;max-width:800px;margin:40px auto;white-space:pre-wrap;">'
+            f'<p style="font-family:sans-serif;">Banco detectado: <b>{bank}</b> · '
+            f'{len(lineas)} líneas con texto en las primeras 2 páginas.</p>'
+            '<hr>' + '\n'.join(redactadas) + '</body></html>'
+        )
+        return html
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)})
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 @estados_bp.route('/admin/recover-montos', methods=['POST'])
 def recover_montos():
     """Inserta las transacciones que audit-montos reporta como
