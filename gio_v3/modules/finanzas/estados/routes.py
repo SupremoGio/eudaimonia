@@ -323,6 +323,90 @@ def _corregir_categorias_legacy(db) -> int:
     return total
 
 
+_SERVICIOS_SUBCAT_MAP = {
+    'Internet':       ('VIVIENDA', 'Internet'),
+    'Luz':            ('VIVIENDA', 'Luz'),
+    'Agua':           ('VIVIENDA', 'Agua'),
+    'Gas':            ('VIVIENDA', 'Gas'),
+    'Saldo telefono': ('DIGITAL',  'Celular'),
+    '':               ('VIVIENDA', ''),
+}
+
+
+def _corregir_servicios_legacy(db) -> int:
+    """"SERVICIOS" es una categoria plana legacy (de antes de que Vivienda
+    tuviera subcategorías propias por servicio). El sprint de taxonomía
+    en database.py solo migró sus filas con subcategoria Internet/Luz/
+    Saldo telefono, dejando Agua/Gas/'' sin tocar, y sin blindaje contra
+    recurrencia -- mismo patrón ya diagnosticado en
+    _corregir_categorias_legacy: reglas guardadas en est_keywords ANTES
+    de esa migración la seguían reviviendo en cada import o "Aplicar
+    todas a lo existente". El usuario reportó ver el mismo gasto
+    duplicado entre categoria=SERVICIOS y VIVIENDA con
+    subcategoria='Servicios' (tampoco es una subcategoría real de
+    Vivienda -- no existe en SUBCATEGORIAS de config.py). Se unifica todo
+    bajo VIVIENDA con la subcategoría específica cuando se puede inferir
+    de la subcategoria vieja; si no hay pista suficiente se deja
+    subcategoria='' en vez de adivinar mal (el usuario la completa a
+    mano una vez, igual que cualquier transacción nueva sin regla)."""
+    from .config import SUBCATEGORIAS
+    total = 0
+
+    for sub_vieja, (cat, sub) in _SERVICIOS_SUBCAT_MAP.items():
+        cur = db.execute(
+            "UPDATE est_keywords SET categoria=?, subcategoria=? "
+            "WHERE UPPER(categoria)='SERVICIOS' AND UPPER(COALESCE(subcategoria,''))=?",
+            (cat, sub, sub_vieja.upper()),
+        )
+        total += cur.rowcount
+        cur = db.execute(
+            "UPDATE est_movimientos SET categoria=?, subcategoria=? "
+            "WHERE UPPER(categoria)='SERVICIOS' AND UPPER(COALESCE(subcategoria,''))=?",
+            (cat, sub, sub_vieja.upper()),
+        )
+        total += cur.rowcount
+
+    # Catch-all: cualquier fila que siga en SERVICIOS con una subcategoria
+    # no contemplada arriba (typo, variante no prevista) -- se sube a
+    # VIVIENDA de todos modos; conserva la subcategoria solo si ya es
+    # válida ahí, si no se blanquea en vez de adivinar.
+    validas_vivienda = set(SUBCATEGORIAS.get('VIVIENDA', []))
+    for row in db.execute(
+        "SELECT rowid, subcategoria FROM est_keywords WHERE UPPER(categoria)='SERVICIOS'"
+    ).fetchall():
+        sub = (row['subcategoria'] or '').strip()
+        db.execute(
+            "UPDATE est_keywords SET categoria='VIVIENDA', subcategoria=? WHERE rowid=?",
+            (sub if sub in validas_vivienda else '', row['rowid']),
+        )
+        total += 1
+    for row in db.execute(
+        "SELECT id, subcategoria FROM est_movimientos WHERE UPPER(categoria)='SERVICIOS'"
+    ).fetchall():
+        sub = (row['subcategoria'] or '').strip()
+        db.execute(
+            "UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria=? WHERE id=?",
+            (sub if sub in validas_vivienda else '', row['id']),
+        )
+        total += 1
+
+    # VIVIENDA/Servicios genérico: no es una subcategoría real y no hay
+    # pista distinta a "Servicios" para inferir cuál sub específica le
+    # toca -- se blanquea.
+    cur = db.execute(
+        "UPDATE est_keywords SET subcategoria='' "
+        "WHERE UPPER(categoria)='VIVIENDA' AND UPPER(subcategoria)='SERVICIOS'"
+    )
+    total += cur.rowcount
+    cur = db.execute(
+        "UPDATE est_movimientos SET subcategoria='' "
+        "WHERE UPPER(categoria)='VIVIENDA' AND UPPER(subcategoria)='SERVICIOS'"
+    )
+    total += cur.rowcount
+
+    return total
+
+
 def _corregir_steamgames(db) -> int:
     """El usuario pidió mover las compras de STEAMGAMES.COM que estaban
     cayendo en DIGITAL/Suscripciones IA/productividad a OCIO/Videojuegos
@@ -1155,6 +1239,7 @@ def apply_all_keywords():
         _corregir_fusion_gio(db)
         _corregir_far_guad(db)
         _corregir_categorias_legacy(db)
+        _corregir_servicios_legacy(db)
         _corregir_steamgames(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
@@ -1629,6 +1714,7 @@ def upload_file():
             _corregir_fusion_gio(db)
             _corregir_far_guad(db)
             _corregir_categorias_legacy(db)
+            _corregir_servicios_legacy(db)
             _corregir_steamgames(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────

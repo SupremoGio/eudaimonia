@@ -3830,6 +3830,112 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_regalo_steamgames_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — unifica "Servicios" dentro de Vivienda ──────────
+        # El usuario reportó los mismos gastos de servicios del hogar (luz,
+        # agua, gas, internet...) partidos en dos lugares: categoria='SERVICIOS'
+        # (categoria plana legacy -- el sprint de taxonomía de arriba
+        # (finanzas_taxonomia_2026_09_sprint3) solo migró sus filas con
+        # subcategoria Internet/Luz/Saldo telefono, dejando Agua/Gas/'' sin
+        # tocar) y VIVIENDA con subcategoria='Servicios' (genérica, no es una
+        # subcategoría válida del árbol actual -- ver SUBCATEGORIAS en
+        # config.py). Confirmado con el usuario: parte viene de reglas
+        # personalizadas en est_keywords, parte de datos ya guardados en
+        # est_movimientos -- se corrigen ambas tablas de una vez, igual que
+        # finanzas_unifica_categorias_legacy_2026_09 hizo con CASA/HOGAR y
+        # compañía. El blindaje contra recurrencia futura
+        # (_corregir_servicios_legacy, wireado en apply_all_keywords y
+        # upload_file) vive en modules/finanzas/estados/routes.py.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_unifica_servicios_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+                _servicios_subcat_map = [
+                    ('Internet',       'VIVIENDA', 'Internet'),
+                    ('Luz',            'VIVIENDA', 'Luz'),
+                    ('Agua',           'VIVIENDA', 'Agua'),
+                    ('Gas',            'VIVIENDA', 'Gas'),
+                    ('Saldo telefono', 'DIGITAL',  'Celular'),
+                    ('',               'VIVIENDA', ''),
+                ]
+                for sub_vieja, cat, sub in _servicios_subcat_map:
+                    cur = db.execute(
+                        "UPDATE est_keywords SET categoria=?, subcategoria=? "
+                        "WHERE UPPER(categoria)='SERVICIOS' AND UPPER(COALESCE(subcategoria,''))=?",
+                        (cat, sub, sub_vieja.upper()),
+                    )
+                    if cur.rowcount:
+                        detalle.append(f"est_keywords SERVICIOS/{sub_vieja or '(vacío)'}->{cat}/{sub}: {cur.rowcount}")
+                    cur = db.execute(
+                        "UPDATE est_movimientos SET categoria=?, subcategoria=? "
+                        "WHERE UPPER(categoria)='SERVICIOS' AND UPPER(COALESCE(subcategoria,''))=?",
+                        (cat, sub, sub_vieja.upper()),
+                    )
+                    if cur.rowcount:
+                        detalle.append(f"est_movimientos SERVICIOS/{sub_vieja or '(vacío)'}->{cat}/{sub}: {cur.rowcount}")
+
+                # Catch-all: cualquier fila que siga en SERVICIOS con una
+                # subcategoria no contemplada arriba -- se sube a VIVIENDA de
+                # todos modos; conserva la subcategoria solo si ya es válida
+                # ahí (VIVIENDA sí trae "Plantas" para esta fecha), si no se
+                # blanquea en vez de adivinar.
+                _validas_vivienda = {
+                    "Renta", "Aportación renta", "Luz", "Agua", "Gas", "Internet",
+                    "Artículos del hogar", "Lavandería", "Mudanza", "Plantas",
+                }
+                sobrantes_kw = db.execute(
+                    "SELECT rowid, subcategoria FROM est_keywords WHERE UPPER(categoria)='SERVICIOS'"
+                ).fetchall()
+                for row in sobrantes_kw:
+                    sub = (row['subcategoria'] or '').strip()
+                    db.execute(
+                        "UPDATE est_keywords SET categoria='VIVIENDA', subcategoria=? WHERE rowid=?",
+                        (sub if sub in _validas_vivienda else '', row['rowid']),
+                    )
+                if sobrantes_kw:
+                    detalle.append(f"est_keywords SERVICIOS sobrantes->VIVIENDA: {len(sobrantes_kw)}")
+
+                sobrantes_mov = db.execute(
+                    "SELECT id, subcategoria FROM est_movimientos WHERE UPPER(categoria)='SERVICIOS'"
+                ).fetchall()
+                for row in sobrantes_mov:
+                    sub = (row['subcategoria'] or '').strip()
+                    db.execute(
+                        "UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria=? WHERE id=?",
+                        (sub if sub in _validas_vivienda else '', row['id']),
+                    )
+                if sobrantes_mov:
+                    detalle.append(f"est_movimientos SERVICIOS sobrantes->VIVIENDA: {len(sobrantes_mov)}")
+
+                # VIVIENDA/Servicios genérico: no es una subcategoría real y
+                # no hay pista distinta a "Servicios" para inferir cuál sub
+                # específica le toca -- se blanquea.
+                cur = db.execute(
+                    "UPDATE est_keywords SET subcategoria='' "
+                    "WHERE UPPER(categoria)='VIVIENDA' AND UPPER(subcategoria)='SERVICIOS'"
+                )
+                if cur.rowcount:
+                    detalle.append(f"est_keywords VIVIENDA/Servicios->VIVIENDA/(vacío): {cur.rowcount}")
+                cur = db.execute(
+                    "UPDATE est_movimientos SET subcategoria='' "
+                    "WHERE UPPER(categoria)='VIVIENDA' AND UPPER(subcategoria)='SERVICIOS'"
+                )
+                if cur.rowcount:
+                    detalle.append(f"est_movimientos VIVIENDA/Servicios->VIVIENDA/(vacío): {cur.rowcount}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_unifica_servicios_2026_09",
+                     "Unifica la categoría legacy SERVICIOS y VIVIENDA/subcategoria "
+                     "'Servicios' (genérica, inválida) dentro de VIVIENDA con subcategorías "
+                     "específicas (Luz/Agua/Gas/Internet) o DIGITAL/Celular para saldo "
+                     "telefónico -- corrige est_keywords Y est_movimientos. " +
+                     (" | ".join(detalle) if detalle else "nada que corregir"))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_unifica_servicios_2026_09 migration warning: {e}")
+
         # ── DÍAITA — Nutrición FODMAP ────────────────────────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS nutricion_semana (
