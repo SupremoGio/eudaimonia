@@ -635,6 +635,60 @@ def serve_photo(filename):
     return send_from_directory(UPLOAD_DIR, filename)
 
 
+@guardarropa_bp.route('/admin/audit-fotos')
+def audit_fotos():
+    """Diagnóstico de solo lectura -- NUNCA borra ni modifica nada. El
+    usuario reportó ver "?" rotos en las fotos de un outfit. Este entorno
+    no tiene acceso al filesystem/volumen de Railway en producción, así
+    que este endpoint corre EN LA APP DESPLEGADA y compara, para cada
+    prenda con foto registrada en la DB, si el archivo sigue existiendo
+    en el UPLOAD_DIR resuelto ahora mismo (uploads_base_dir()) -- da
+    evidencia concreta de cuántas fotos se perdieron y de si el proceso
+    corre sobre el volumen persistente o sobre el fallback efímero."""
+    env_uploads_dir = os.environ.get('UPLOADS_DIR')
+    env_database_path = os.environ.get('DATABASE_PATH')
+    if env_uploads_dir:
+        modo = 'UPLOADS_DIR explícita'
+    elif env_database_path:
+        modo = 'derivada de DATABASE_PATH (volumen Railway)'
+    else:
+        modo = 'fallback local junto al código (efímero en Railway)'
+
+    with get_db() as db:
+        items = db.execute(
+            "SELECT id, nombre, categoria, foto FROM wardrobe_items "
+            "WHERE foto IS NOT NULL AND foto != ''"
+        ).fetchall()
+        outfit_map = {}
+        for r in db.execute(
+            "SELECT oi.item_id, o.id AS outfit_id, o.nombre AS outfit_nombre "
+            "FROM outfit_items oi JOIN outfits o ON oi.outfit_id = o.id"
+        ).fetchall():
+            outfit_map.setdefault(r['item_id'], []).append(
+                {'outfit_id': r['outfit_id'], 'outfit_nombre': r['outfit_nombre']}
+            )
+
+    faltantes = []
+    for r in items:
+        path = os.path.join(UPLOAD_DIR, r['foto'])
+        if not os.path.exists(path):
+            faltantes.append({
+                'item_id': r['id'],
+                'nombre': r['nombre'],
+                'categoria': r['categoria'],
+                'foto': r['foto'],
+                'outfits_afectados': outfit_map.get(r['id'], []),
+            })
+
+    return jsonify({
+        'upload_dir_resuelto': UPLOAD_DIR,
+        'modo_resolucion': modo,
+        'total_prendas_con_foto': len(items),
+        'total_fotos_faltantes': len(faltantes),
+        'faltantes': faltantes,
+    })
+
+
 # ── AI helpers ───────────────────────────────────────────────────────────────
 
 def _gemini(prompt, max_tokens=4096):
