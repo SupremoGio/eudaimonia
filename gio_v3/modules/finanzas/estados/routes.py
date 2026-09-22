@@ -39,7 +39,31 @@ estados_bp = Blueprint(
 # hubieran empezado a contar de más en Reportes ("Total Gastado"/"Total
 # Ingreso" en /api/summary/stats) en cuanto cambiara su categoria, aunque
 # budget.py ya estuviera corregido. Bug real confirmado por el usuario.
-_PAGO_CATS = "categoria NOT IN ('PAGO_TDC', 'PAGO', 'PRESTAMOS', 'FINANZAS')"
+#
+# Corregido 2026-09-22: FINANZAS es una categoría paraguas con subcategorías
+# muy distintas entre sí (ver config.py) -- Transferencia y Reembolsable son
+# movimiento interno real (mover dinero entre tus propias cuentas, o dinero
+# que ya vuelve) y con razón no cuentan como gasto/ingreso. Pero Retiro
+# efectivo, Cargos bancarios, Pago servicios y Deudas MSI SÍ son gasto real
+# -- el usuario reportó ver 51 movimientos "RETIRO SIN TARJETA" en
+# Movimientos que no aparecían en absoluto en "Gastos por categoría" ni en
+# ningún reporte, como si ese dinero hubiera desaparecido. Excluir la
+# categoría FINANZAS completa escondía ese gasto real junto con las
+# transferencias genuinas. Ahora la exclusión de FINANZAS es por
+# subcategoría, no por categoría completa -- y esta es la ÚNICA copia de
+# esta regla en todo el archivo (antes había 4 copias idénticas
+# desincronizándose una de otra cada vez que se corregía solo una).
+_FINANZAS_NO_GASTO_SUBCATS = ('Transferencia', 'Reembolsable')
+
+
+def _pago_cats_sql(prefix: str = '') -> str:
+    """Igual que _PAGO_CATS pero con un prefijo de tabla (ej. 'm.' en un JOIN)."""
+    subcats = ",".join(f"'{s}'" for s in _FINANZAS_NO_GASTO_SUBCATS)
+    return (f"{prefix}categoria NOT IN ('PAGO_TDC','PAGO','PRESTAMOS') "
+            f"AND NOT ({prefix}categoria='FINANZAS' AND {prefix}subcategoria IN ({subcats}))")
+
+
+_PAGO_CATS = _pago_cats_sql()
 # Use mi_parte when set (shared expense), otherwise full monto. mi_parte se
 # captura y guarda como magnitud positiva ("pon aquí solo lo que te
 # corresponde a ti", ver update_transaction) sin importar el signo de monto
@@ -724,7 +748,7 @@ def by_naturaleza():
     if not _ok(): return _locked()
     bank = request.args.get('bank')
 
-    conds  = ["m.tipo='GASTO'", "m.categoria NOT IN ('PAGO_TDC','PAGO','PRESTAMOS','FINANZAS')"]
+    conds  = ["m.tipo='GASTO'", _pago_cats_sql('m.')]
     params = []
     months_cond, months_params = _months_condition(request.args)
     if months_cond:
@@ -2219,7 +2243,7 @@ _CONCEPTO_CASE = """
   END
 """
 
-_GASTO_FILTER = "tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO','FINANZAS')"
+_GASTO_FILTER = f"tipo='GASTO' AND {_PAGO_CATS}"
 
 
 @estados_bp.route('/viajes/')
