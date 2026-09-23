@@ -4,7 +4,7 @@ Consumo Inteligente — trackea productos de uso regular y calcula frecuencias.
 from flask import Blueprint, render_template, request, jsonify, session, redirect
 from database import get_db
 from datetime import date, datetime, timedelta
-from utils import today_str, today_date
+from utils import today_str, today_date, csv_response
 
 consumo_bp = Blueprint(
     'consumo',
@@ -187,6 +187,37 @@ def index():
         proximos=proximos,
         today=today_str(),
     )
+
+
+_ESTADO_LABEL = {"ok": "Al día", "proximo": "Próximo", "atrasado": "Atrasado", "sin_datos": "Sin datos"}
+
+
+@consumo_bp.route("/export.csv")
+def export_csv():
+    """Productos con su costo estimado por mes y por año, para armar el
+    presupuesto: precio promedio × (30 / frecuencia en días). Sin
+    frecuencia (menos de 2 compras) no hay estimado."""
+    with get_db() as db:
+        productos = [_enrich(p, db) for p in db.execute(
+            "SELECT * FROM consumo_productos WHERE activo=1 ORDER BY categoria, nombre").fetchall()]
+    rows, total_mes = [], 0.0
+    for p in productos:
+        freq, precio = p.get("frecuencia_dias"), float(p.get("precio_promedio") or 0)
+        mensual = round(precio * 30 / freq, 2) if freq else None
+        total_mes += mensual or 0
+        rows.append([
+            p["categoria"] or "Sin categoría", p["nombre"], p["n_compras"], round(precio, 2),
+            freq if freq is not None else "", mensual if mensual is not None else "",
+            round(mensual * 12, 2) if mensual is not None else "",
+            p.get("ultima_compra") or "", p["dias_desde"] if p["dias_desde"] is not None else "",
+            _ESTADO_LABEL.get(p["status"], p["status"]),
+        ])
+    rows.append([])
+    rows.append(["TOTAL (productos con frecuencia)", "", "", "", "", round(total_mes, 2), round(total_mes * 12, 2), "", "", ""])
+    return csv_response(
+        ["Categoría", "Producto", "Compras", "Precio promedio", "Frecuencia (días)",
+         "Estimado mensual", "Estimado anual", "Última compra", "Días desde última", "Estado"],
+        rows, f"consumo_{today_str()}.csv")
 
 
 @consumo_bp.route("/producto/<int:pid>")

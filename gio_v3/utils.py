@@ -73,3 +73,21 @@ def safe_float(value, default: float = 0.0, min_val=None, max_val: float = 10_00
     if max_val is not None and f > max_val:
         return default
     return f
+
+
+def csv_response(header, rows, filename):
+    """Descarga CSV lista para Excel/Sheets: UTF-8 con BOM (sin él Excel
+    lee ANSI y rompe los acentos) y números sin separador de miles."""
+    import csv, io
+    from flask import Response
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(header)
+    w.writerows(rows)
+    return Response(
+        '﻿' + out.getvalue(),
+        headers={
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': f'attachment; filename="{filename}"',
+        },
+    )

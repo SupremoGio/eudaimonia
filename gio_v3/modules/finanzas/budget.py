@@ -11,7 +11,7 @@ from flask import Blueprint, render_template, request, jsonify, session, redirec
 from database import get_db
 from datetime import datetime
 import calendar
-from utils import today_str, today_date
+from utils import today_str, today_date, csv_response
 
 budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
 
@@ -415,6 +415,58 @@ def index(mes=None):
         racha_meses=racha_meses, racha_historial=racha_historial,
         **data,
     )
+
+
+# ── Exportar CSV ──────────────────────────────────────────────────────────────
+
+@budget_bp.route('/api/export')
+def export_csv():
+    """Gasto por categoría de los últimos `n` meses (hasta `hasta`, incluido)
+    con promedio y límite configurado, más ingreso/gasto/disponible por mes:
+    la base para armar el presupuesto en una hoja de cálculo."""
+    hasta = request.args.get('hasta') or today_date().strftime('%Y-%m')
+    try:
+        y, m = int(hasta[:4]), int(hasta[5:7])
+        n = max(1, min(int(request.args.get('n', 6)), 24))
+    except ValueError:
+        return jsonify({'error': 'parámetros inválidos'}), 400
+    meses = []
+    for _ in range(n):
+        meses.insert(0, f"{y}-{m:02d}")
+        y, m = (y, m - 1) if m > 1 else (y - 1, 12)
+
+    with get_db() as db:
+        datos = {mes: _calc_budget(mes, db) for mes in meses}
+        limites = {r['categoria']: float(r['limite'] or 0)
+                   for r in db.execute("SELECT categoria, limite FROM est_budgets").fetchall()}
+
+    # categoria → {mes: gastado}, agrupado por bucket en el orden 50/30/20
+    gasto = {}
+    for mes, d in datos.items():
+        for bk in CATEGORIAS:
+            for c in d['buckets'][bk]['cats']:
+                gasto.setdefault((bk, c['categoria']), {})[mes] = c['gastado']
+
+    def fila(label_bk, label_cat, vals, limite=''):
+        prom = round(sum(vals) / len(vals), 2) if vals else 0
+        return [label_bk, label_cat, *[round(v, 2) for v in vals], prom, limite]
+
+    rows = []
+    for bk in CATEGORIAS:
+        cats = sorted((c for (b, c) in gasto if b == bk),
+                      key=lambda c: -sum(gasto[(bk, c)].values()))
+        for cat in cats:
+            vals = [gasto[(bk, cat)].get(mes, 0) for mes in meses]
+            rows.append(fila(BUCKET_META[bk]['label'], CAT_LABELS.get(cat, cat), vals, limites.get(cat) or ''))
+        rows.append(fila(BUCKET_META[bk]['label'], f"Subtotal (meta {BUCKET_META[bk]['pct_target']} % del ingreso)",
+                         [datos[mes]['buckets'][bk]['total_gastado'] for mes in meses]))
+    rows.append([])
+    rows.append(fila('Resumen', 'Ingreso', [datos[mes]['ingreso_real'] for mes in meses]))
+    rows.append(fila('Resumen', 'Gasto total', [datos[mes]['total_gastado'] for mes in meses]))
+    rows.append(fila('Resumen', 'Disponible', [datos[mes]['disponible'] for mes in meses]))
+
+    return csv_response(['Grupo', 'Categoría', *meses, 'Promedio', 'Límite mensual'],
+                        rows, f"presupuesto_{meses[0]}_a_{meses[-1]}.csv")
 
 
 # ── API: Reclasificar DEPOSITO / SPEI ─────────────────────────────────────────

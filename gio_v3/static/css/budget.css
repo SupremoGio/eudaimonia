@@ -7,6 +7,8 @@
 .bg-hd .t-page{margin-top:var(--sp-2)}
 @media (max-width:767px){.bg-hd .t-eyebrow,.bg-hd .t-page{display:none}}
 .bg-live{display:inline-flex;align-items:center;gap:var(--sp-2)}
+.bg-hd-act{flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:767px){.bg-hd-act{width:100%;justify-content:space-between}}
 .bg-live-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:bg-pulse 2s ease-in-out infinite}
 @keyframes bg-pulse{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.bg-live-dot{animation:none}}

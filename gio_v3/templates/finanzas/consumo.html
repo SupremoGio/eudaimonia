@@ -6,14 +6,17 @@
 {% block module_title %}CONSUMO{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/consumo.css') }}">{% endblock %}
 {% block mtitle %}<b>Consumo</b><span>Oikonomia · {{ productos|length }} producto{{ 's' if productos|length != 1 }}</span>{% endblock %}
-{% block topright %}<button type="button" class="eu-iconbtn js-nuevo" aria-label="Nuevo producto"><i data-lucide="plus"></i></button>{% endblock %}
+{% block topright %}<a class="eu-iconbtn" href="/finanzas/consumo/export.csv" download aria-label="Descargar CSV de productos"><i data-lucide="download"></i></a><button type="button" class="eu-iconbtn js-nuevo" aria-label="Nuevo producto"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
 <div class="ci" id="ci" data-cat="oikonomia" data-today="{{ today }}">
   <header class="ci-hd">
     <div><div class="t-eyebrow">Oikonomia · Consumo inteligente</div><h1 class="t-page">Compras recurrentes</h1>
       <p class="t-meta ci-lead">Registra lo que compras seguido y el sistema aprende cada cuánto lo necesitas y cuánto te cuesta.</p></div>
-    <button type="button" class="eu-btn eu-btn--primary js-nuevo"><i data-lucide="plus"></i>Nuevo producto</button>
+    <div class="eu-hstack ci-hd-act">
+      <a class="eu-btn eu-btn--ghost" href="/finanzas/consumo/export.csv" download title="Productos con su costo estimado por mes y por año"><i data-lucide="download"></i>Descargar CSV</a>
+      <button type="button" class="eu-btn eu-btn--primary js-nuevo"><i data-lucide="plus"></i>Nuevo producto</button>
+    </div>
   </header>
 
   <div class="eu-grid-4 ci-stats">
