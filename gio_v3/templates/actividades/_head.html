@@ -1,0 +1,26 @@
+{# Encabezado: fecha, título, selector de vista, editar y filtros #}
+<header class="acta-hd">
+  <div class="acta-hd-txt">
+    <div class="t-eyebrow">{{ fecha_larga }}</div>
+    <h1 class="t-page">Acta Diurna</h1>
+    <p class="t-meta acta-lead">Registro de actividades por virtud. <b class="fg-2">Ancla</b> = sesión larga que sube tu clasificación; <b class="fg-2">touch</b> = mantenimiento rápido.</p>
+  </div>
+  <div class="eu-hstack acta-hd-tools">
+    <div class="eu-seg" role="tablist" aria-label="Vista">
+      <button type="button" role="tab" aria-selected="true" data-view="virtue">Por virtud</button>
+      <button type="button" role="tab" aria-selected="false" data-view="session">Por sesión</button>
+    </div>
+    <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-edit" aria-pressed="false"><i data-lucide="pencil"></i><span>Editar</span></button>
+  </div>
+</header>
+<div class="eu-xpbar acta-mbar" role="progressbar" aria-label="XP de hoy" aria-valuemax="{{ XP_DAILY_GOAL }}" aria-valuenow="{{ stats.xp_today }}"><i class="js-xp-bar" style="width:{{ [100, (stats.xp_today / XP_DAILY_GOAL * 100)|round(1)]|min }}%"></i></div>
+<div class="eu-chips acta-filters" role="group" aria-label="Filtrar actividades">
+  <button type="button" class="eu-chip" aria-pressed="true" data-filter="all">Todas <span class="ct js-ct-all">0</span></button>
+  <button type="button" class="eu-chip" aria-pressed="false" data-filter="pending">Pendientes <span class="ct js-ct-pending">0</span></button>
+  <button type="button" class="eu-chip" aria-pressed="false" data-filter="done">Hechas <span class="ct js-ct-done">0</span></button>
+  <button type="button" class="eu-chip" aria-pressed="false" data-filter="ancla"><i data-lucide="anchor"></i>Anclas <span class="ct js-ct-ancla">0</span></button>
+</div>
+<div class="acta-editbar" hidden>
+  <span class="t-meta">Modo edición: quita actividades con ✕ o agrega una nueva.</span>
+  <button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-add" data-session="{{ now_session }}"><i data-lucide="plus"></i>Nueva actividad</button>
+</div>

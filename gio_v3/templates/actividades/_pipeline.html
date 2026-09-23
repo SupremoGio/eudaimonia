@@ -1,0 +1,14 @@
+{# Pipeline: ideas y pendientes futuros #}
+<section class="eu-card eu-vstack acta-pipe" aria-labelledby="acta-pipe-t">
+  <h2 class="t-card" id="acta-pipe-t">Pipeline</h2>
+  <form class="eu-hstack js-pipe-form" autocomplete="off">
+    <input class="eu-input eu-grow" id="pipe-inp" placeholder="Añadir al pipeline…" aria-label="Nuevo elemento del pipeline" maxlength="160">
+    <button type="submit" class="eu-iconbtn eu-iconbtn--outline" aria-label="Añadir al pipeline"><i data-lucide="plus"></i></button>
+  </form>
+  <div class="eu-chips acta-pipe-chips js-pipe-list">
+    {% for it in stats.pipeline %}
+    <span class="eu-chip acta-pipe-chip" data-id="{{ it.id }}">{{ it.text }}<button type="button" class="acta-chip-x js-pipe-del" data-id="{{ it.id }}" aria-label="Quitar «{{ it.text }}» del pipeline"><i data-lucide="x"></i></button></span>
+    {% endfor %}
+  </div>
+  <p class="t-meta acta-p js-pipe-empty"{% if stats.pipeline %} hidden{% endif %}>Guarda aquí ideas y pendientes futuros para no perderlos de vista.</p>
+</section>

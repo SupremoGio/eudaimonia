@@ -1,0 +1,22 @@
+{# Prioridades del día (máx. 3; las 3 hechas dan bono) #}
+<section class="eu-card eu-vstack acta-prio" aria-labelledby="acta-prio-t">
+  <div class="eu-between">
+    <h2 class="t-card" id="acta-prio-t">Prioridades</h2>
+    <span class="eu-badge">máx 3</span>
+  </div>
+  <form class="eu-hstack js-prio-form" autocomplete="off">
+    <input class="eu-input eu-grow" id="p-inp" placeholder="Añadir prioridad…" aria-label="Nueva prioridad" maxlength="120">
+    <button type="submit" class="eu-iconbtn eu-iconbtn--outline" aria-label="Añadir prioridad"><i data-lucide="plus"></i></button>
+  </form>
+  <div class="eu-vstack eu-gap-2 js-prio-list">
+    {% for p in stats.priorities %}
+    <button type="button" class="eu-act acta-prio-it js-prio" aria-pressed="{{ 'true' if p.done else 'false' }}" data-id="{{ p.id }}">
+      <span class="eu-act-check"><i data-lucide="check"></i></span><span class="eu-act-t">{{ p.text }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  <div class="js-prio-empty"{% if stats.priorities %} hidden{% endif %}>
+    <p class="t-meta acta-p">Elige hasta 3 cosas que de verdad importan hoy.</p>
+  </div>
+  <div class="eu-badge eu-badge--success js-prio-bonus"{% if not (stats.priorities|length == 3 and stats.priorities|selectattr('done')|list|length == 3) %} hidden{% endif %}><i data-lucide="sparkles"></i>Bono +5 XP · +5 EC — 3/3</div>
+</section>

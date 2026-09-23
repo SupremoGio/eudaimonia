@@ -1,0 +1,22 @@
+{# Vista «Por virtud» (predeterminada): un bloque por pilar con su XP de hoy #}
+<div class="acta-view acta-virtues" data-view-panel="virtue" role="tabpanel">
+  {% for p in acta_pillars %}
+  <section class="eu-card acta-pillar" data-cat="{{ p.cat }}" data-pillar="{{ p.id }}" aria-labelledby="ap-{{ p.id }}">
+    <header class="eu-between acta-pillar-hd">
+      <div class="eu-hstack eu-gap-3">
+        <div class="eu-mod-ic"><i data-lucide="{{ p.icon }}"></i></div>
+        <div><h2 class="t-card" id="ap-{{ p.id }}">{{ p.name }}</h2><div class="t-meta">{{ p.fn }}</div></div>
+      </div>
+      <div class="eu-right">
+        <div class="t-data acta-pillar-xp js-pxp">+{{ p.xp_done }} XP</div>
+        <div class="t-meta num js-pcount">{{ p.done }}/{{ p.total }}</div>
+      </div>
+    </header>
+    <div class="acta-list">
+      {% for item in p['items'] %}{% include "actividades/_item.html" %}{% endfor %}
+    </div>
+  </section>
+  {% else %}
+  {{ ui.empty('scroll-text', 'Sin actividades', 'Tu checklist está vacío. Activa el modo edición para agregar la primera.') }}
+  {% endfor %}
+</div>

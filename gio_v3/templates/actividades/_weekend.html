@@ -1,0 +1,32 @@
+{# Bloques de fin de semana (data.ACTIVITIES weekend=sat/sun) — sistema aparte
+   de las sesiones; completar todos los obligatorios da el combo del día. #}
+{% if weekend_mode in ['sat', 'sun'] %}
+{% set wk_sat = weekend_mode == 'sat' %}
+{% set wk_acts = sat_acts if wk_sat else sun_acts %}
+<section class="eu-card eu-vstack acta-weekend" data-cat="{{ 'ataraxia' if wk_sat else 'paideia' }}" aria-labelledby="acta-wk-t">
+  <div class="eu-between">
+    <div class="eu-hstack eu-gap-3">
+      <div class="eu-mod-ic"><i data-lucide="{{ 'flower-2' if wk_sat else 'brain' }}"></i></div>
+      <div>
+        <h2 class="t-card" id="acta-wk-t">{{ 'Sábado · Ataraxia Reset' if wk_sat else 'Domingo · Eudaimonia Strategy' }}</h2>
+        <div class="t-meta">{{ 'Reset semanal: orden y calma' if wk_sat else 'Preparación estratégica de la semana' }}</div>
+      </div>
+    </div>
+    {% if wk_sat %}<a class="eu-link" href="/ataraxia/">Rutina →</a>{% endif %}
+  </div>
+  <div class="eu-between t-meta"><span>Bloques obligatorios</span><span class="num js-wk-count">0 / 0</span></div>
+  <div class="eu-progress eu-progress--thin eu-progress--cat" role="progressbar" aria-label="Bloques completados"><i class="js-wk-bar" style="width:0%"></i></div>
+  <div class="acta-list">
+    {% for key, act in wk_acts.items() %}
+    <div class="acta-item acta-item--wk" data-key="{{ key }}" data-type="weekend" {% if act.get('optional') %}data-optional="1"{% endif %}>
+      <button type="button" class="eu-act js-act" aria-pressed="{{ 'true' if key in stats.done_today else 'false' }}" data-key="{{ key }}">
+        <span class="eu-act-check"><i data-lucide="check"></i></span>
+        <span class="eu-act-t"><span class="acta-lbl">{{ act.label }}</span>{% if act.get('optional') %}<span class="acta-sub"><span class="t-meta">opcional</span></span>{% endif %}</span>
+        <span class="eu-act-xp"><span>+{{ act.pts }} XP</span>{% if act.ec %}<span class="fg-ec">+{{ act.ec }} EC</span>{% endif %}</span>
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="eu-badge eu-badge--success js-wk-done" hidden><i data-lucide="party-popper"></i>{{ '¡Sábado completo! +4 XP · +2 EC' if wk_sat else '¡Domingo completo! +5 XP · +3 EC' }}</div>
+</section>
+{% endif %}

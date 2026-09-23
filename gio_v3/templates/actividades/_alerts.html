@@ -1,0 +1,8 @@
+{# Recordatorio de pago de tarjetas (días 15 y 30) #}
+{% if payment_alerts %}
+<div class="eu-hstack acta-alerts" role="status">
+  {% for a in payment_alerts %}
+  <span class="eu-badge eu-badge--warning eu-badge--status"><i data-lucide="bell"></i>Hoy: pagar {{ a.label }}</span>
+  {% endfor %}
+</div>
+{% endif %}

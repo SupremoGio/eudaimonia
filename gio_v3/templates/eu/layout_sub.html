@@ -237,6 +237,50 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape' && sh && !sh.hidden) euModSheet(false);
 });
 
+/* ── Modales V2 (macro ui.modal): <div class="eu-scrim" id hidden> ─────────
+   euModal.open(id) / euModal.close(id). role=dialog, foco atrapado, Esc
+   cierra, el foco vuelve a quien lo abrió. En <768px se ve como bottom
+   sheet (mismo markup, ver components.css). ── */
+window.euModal = (function(){
+  var stack = [];
+  function focusables(el){
+    return [].slice.call(el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+      .filter(function(n){ return n.offsetParent !== null; });
+  }
+  function open(id){
+    var sc = document.getElementById(id); if (!sc || !sc.hidden) return;
+    stack.push({id: id, opener: document.activeElement});
+    sc.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    var f = focusables(sc); var first = f.find(function(n){ return /INPUT|SELECT|TEXTAREA/.test(n.tagName); }) || f[0];
+    if (first) setTimeout(function(){ first.focus(); }, 10);
+    if (!sc._euBound) {
+      sc._euBound = true;
+      sc.addEventListener('mousedown', function(e){ if (e.target === sc) close(id); });
+    }
+  }
+  function close(id){
+    var sc = document.getElementById(id); if (!sc || sc.hidden) return;
+    sc.hidden = true;
+    var i = -1; stack.forEach(function(s, k){ if (s.id === id) i = k; });
+    var entry = i >= 0 ? stack.splice(i, 1)[0] : null;
+    if (!stack.length) document.documentElement.style.overflow = '';
+    if (entry && entry.opener && entry.opener.focus) entry.opener.focus();
+  }
+  document.addEventListener('keydown', function(e){
+    if (!stack.length) return;
+    var top = document.getElementById(stack[stack.length - 1].id);
+    if (e.key === 'Escape') { e.preventDefault(); close(top.id); return; }
+    if (e.key === 'Tab') {
+      var f = focusables(top); if (!f.length) return;
+      var a = f[0], z = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+      else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+    }
+  });
+  return {open: open, close: close};
+})();
+
 /* ── Sidebar: «Más…» despliega el resto de subpáginas; colapsar a riel ── */
 function euSbMore(btn){
   btn.parentNode.querySelectorAll('.eu-sb-extra').forEach(function(a){ a.hidden=false; });

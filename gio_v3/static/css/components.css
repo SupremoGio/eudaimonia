@@ -372,6 +372,18 @@ html.light .eu-ic-moon,html:not(.light) .eu-ic-sun{display:none}
   #tw-toast{bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 12px)}
 }
 
+/* [hidden] siempre gana sobre el display de los componentes (badge, chip,
+   botón, tarjeta, fila…), así el JS puede mostrar/ocultar con .hidden */
+[class*="eu-"][hidden]{display:none!important}
+
+/* Modal V2 (ui.modal): centrado ≥768; bottom sheet en móvil */
+.eu-scrim:not(.eu-scrim--sheet){z-index:500}
+.eu-modal{max-height:calc(100dvh - 48px);overflow-y:auto}
+@media (max-width:767px){
+  .eu-scrim:not(.eu-scrim--sheet){align-items:flex-end;padding:0}
+  .eu-scrim:not(.eu-scrim--sheet) .eu-modal{max-width:none;border-radius:var(--r-xl) var(--r-xl) 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom);animation:euSheetIn var(--dur-base) var(--ease-enter)}
+}
+
 /* Sheet de Módulos (móvil) */
 .eu-scrim[hidden]{display:none}
 .eu-scrim--sheet{z-index:210;align-items:flex-end;padding:0;-webkit-backdrop-filter:blur(4px)}

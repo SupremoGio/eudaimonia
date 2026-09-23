@@ -1,0 +1,122 @@
+/* ═══════════════════════════════════════════════════════════════
+   Acta Diurna (/actividades/) — Design System V2 · pantalla 03
+   Solo tokens y componentes eu-*. Desktop: grid 1fr / 320px.
+   Filtros por atributos: #acta[data-filter] × .acta-item[data-done].
+   ═══════════════════════════════════════════════════════════════ */
+.acta{display:flex;flex-direction:column;gap:var(--sp-4)}
+.acta-main,.acta-side{display:flex;flex-direction:column;gap:var(--sp-4)}
+.acta h2{margin:0}
+.acta-p{margin:0}
+@media (min-width:1024px){
+  .acta{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:var(--sp-6);align-items:start}
+  .acta-main{gap:var(--sp-5)}
+}
+
+/* ── Encabezado ──────────────────────────────────────────────── */
+.acta-hd{display:flex;flex-direction:column;gap:var(--sp-3)}
+.acta-hd .t-page{margin:var(--sp-2) 0 0}
+.acta-lead{margin:var(--sp-2) 0 0;max-width:var(--reading-max)}
+.acta-hd-tools{flex-wrap:wrap}
+.acta-mbar{height:4px}
+@media (max-width:767px){.acta-hd-txt{display:none}}
+@media (min-width:768px){
+  .acta-hd{flex-direction:row;align-items:flex-end;justify-content:space-between}
+  .acta-mbar{display:none}
+}
+.acta-editbar{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px dashed var(--border-brand);border-radius:var(--r-md);background:var(--brand-subtle)}
+.acta-editbar[hidden],.acta-view[hidden],.acta-days[hidden]{display:none}
+.acta-alerts{flex-wrap:wrap}
+
+/* ── Vistas ──────────────────────────────────────────────────── */
+.acta-virtues{display:grid;gap:var(--sp-5)}
+@media (min-width:768px){.acta-virtues{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4);align-items:start}}
+@media (max-width:767px){.acta-pillar{background:none;border:0;box-shadow:none;padding:0}}
+.acta-pillar-hd{margin-bottom:var(--sp-3)}
+.acta-pillar-xp{font-size:var(--fs-13);color:var(--cat-fg)}
+.acta-list{display:flex;flex-direction:column;gap:var(--sp-2)}
+
+.acta-sessions{display:flex;flex-direction:column;gap:var(--sp-3)}
+.acta-session summary,.acta-foco summary{list-style:none;cursor:pointer;min-height:44px}
+.acta-session summary::-webkit-details-marker,.acta-foco summary::-webkit-details-marker{display:none}
+.acta-session[open] .acta-session-hd{margin-bottom:var(--sp-3)}
+.acta-chev{width:16px;height:16px;color:var(--fg-3);transition:transform var(--dur-fast) var(--ease-standard)}
+details[open] > summary .acta-chev{transform:rotate(180deg)}
+.acta-add{align-self:flex-start}
+
+/* ── Actividad ───────────────────────────────────────────────── */
+.acta-item{position:relative;display:flex;flex-direction:column;gap:var(--sp-1)}
+.acta-item .eu-act{text-decoration:none}
+.eu-act.is-done{background:var(--cat-bg,var(--brand-subtle));border-color:var(--cat-border,var(--border-brand))}
+.eu-act.is-done .eu-act-check{background:var(--cat-fg,var(--brand));border-color:transparent;color:var(--bg-canvas)}
+.eu-act.is-done .eu-act-check svg{opacity:1;transform:scale(1)}
+.eu-act[aria-busy=true]{opacity:.72}
+.acta-lbl{display:block}
+.acta-sub{display:flex;align-items:center;gap:var(--sp-2);margin-top:2px;flex-wrap:wrap}
+.acta-tag{height:18px;padding:0 6px;font-size:var(--fs-11)}
+.acta-reflect{min-height:64px;font-size:var(--fs-13)}
+.is-reflect-desk .acta-reflect{display:none}
+@media (min-width:1024px){.is-reflect-desk .acta-reflect{display:block}}
+.acta-rm{position:absolute;top:var(--sp-1);right:var(--sp-1);display:none;background:var(--bg-surface);border-color:var(--border-default)}
+.acta.is-editing .acta-rm{display:inline-flex}
+.acta.is-editing .acta-item .eu-act{padding-right:var(--sp-12)}
+.acta.is-editing .acta-item--wk .eu-act{padding-right:var(--sp-3)}
+.eu-act-check.is-pop{animation:euSealIn var(--dur-base) var(--ease-settle)}
+.acta-xpfloat{position:fixed;z-index:var(--z-toast);pointer-events:none;font:var(--fw-medium) var(--fs-13)/1 var(--font-data);color:var(--xp-fg);animation:euXpFloat var(--dur-deliberate) var(--ease-standard) forwards}
+
+/* Filtros */
+.acta[data-filter=pending] .acta-item[data-done="1"],
+.acta[data-filter=done] .acta-item[data-done="0"],
+.acta[data-filter=ancla] .acta-item:not(.is-ancla){display:none}
+.acta[data-filter=pending] .acta-pillar:not(:has(.acta-item[data-done="0"])),
+.acta[data-filter=done] .acta-pillar:not(:has(.acta-item[data-done="1"])),
+.acta[data-filter=ancla] .acta-pillar:not(:has(.acta-item.is-ancla)){display:none}
+.acta[data-filter]:not([data-filter=all]) .acta-add{display:none}
+
+/* ── Fin de semana, foco, alertas ────────────────────────────── */
+.acta-weekend{border-color:var(--cat-border)}
+.acta-foco-grid{display:grid;gap:var(--sp-3);margin-top:var(--sp-4)}
+@media (min-width:768px){.acta-foco-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.acta-foco summary svg:first-child{width:16px;height:16px;color:var(--fg-brand)}
+
+/* ── Panel lateral ───────────────────────────────────────────── */
+.acta-xp .t-meta{font-family:var(--font-ui);font-size:var(--fs-13);letter-spacing:0}
+.acta-clf{border-top:1px solid var(--border-subtle);padding-top:var(--sp-3)}
+.acta-tier[data-t=carbon]{color:var(--tier-carbon)}
+.acta-tier[data-t=hierro]{color:var(--tier-hierro)}
+.acta-tier[data-t=oro]{color:var(--tier-oro)}
+.acta-tier[data-t=diamante]{color:var(--tier-diamante)}
+.acta-thin{height:4px}
+.acta-cover-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-3) var(--sp-1)}
+.acta-cover-it{display:flex;flex-direction:column;align-items:center;gap:var(--sp-1);min-width:0}
+.acta-cover-it:not(.is-on) .eu-mod-ic{background:var(--bg-raised);border-color:var(--border-subtle);color:var(--fg-4)}
+.acta-cover-n{font-size:var(--fs-12);color:var(--fg-3);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acta-cover-it.is-on .acta-cover-n{color:var(--fg-2)}
+.acta-prio-it{min-height:44px}
+.acta-prio-it .eu-act-t{font-size:var(--fs-13)}
+.acta-prio-it[aria-pressed=true] .eu-act-t{color:var(--fg-3);text-decoration:line-through}
+.acta-ec-link{text-decoration:none}
+.acta-pipe-chips{flex-wrap:wrap;overflow:visible}
+.acta-pipe-chip{cursor:default;padding-right:var(--sp-1)}
+.acta-chip-x{width:24px;height:24px;border:0;background:none;color:var(--fg-3);display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-full);cursor:pointer}
+.acta-chip-x:hover{color:var(--danger-fg);background:var(--danger-bg)}
+.acta-chip-x svg{width:14px;height:14px}
+.acta-quote-t{margin:0;font-size:var(--fs-17)}
+.acta-eyebrow-2{color:var(--fg-3)}
+.acta-quote .js-q-text,.acta-quote .js-q-author{transition:opacity var(--dur-base) var(--ease-standard)}
+.acta-quote.is-swapping .js-q-text,.acta-quote.is-swapping .js-q-author{opacity:0}
+.eu-iconbtn.is-spinning svg{animation:euSpin .7s linear infinite}
+@media (max-width:1023px){.acta-keys{display:none}}
+
+/* ── Modal de alta ───────────────────────────────────────────── */
+.acta-days{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:var(--sp-2)}
+.acta-day{cursor:pointer}
+.acta-day input{accent-color:var(--brand);margin:0}
+
+/* ── Toast con Deshacer ──────────────────────────────────────── */
+.acta-toast-wrap{position:fixed;left:var(--sp-3);right:var(--sp-3);bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-3));z-index:var(--z-toast);display:flex;justify-content:center;pointer-events:none}
+@media (min-width:1024px){.acta-toast-wrap{bottom:var(--sp-6);right:var(--sp-6);left:auto}}
+.acta-toast{position:relative;pointer-events:auto;width:100%;max-width:420px;overflow:hidden}
+.acta-toast[hidden]{display:none}
+.acta-toast .eu-toast-timer{transform-origin:left}
+.acta-toast.is-running .eu-toast-timer{animation:actaTimer 5s linear forwards}
+@keyframes actaTimer{from{transform:scaleX(1)}to{transform:scaleX(0)}}

@@ -1,0 +1,21 @@
+{# Vista «Por sesión»: la sesión de ahora abierta arriba, luego las demás #}
+{% set order = [now_session] + (['morning', 'afternoon', 'night']|reject('equalto', now_session)|list) + ['any'] %}
+<div class="acta-view acta-sessions" data-view-panel="session" role="tabpanel" hidden>
+  {% for sk in order %}
+  {% set items = grouped.get(sk, []) %}
+  <details class="eu-card acta-session" data-session="{{ sk }}"{% if sk == now_session or sk == 'any' %} open{% endif %}>
+    <summary class="eu-between acta-session-hd">
+      <span class="eu-hstack eu-gap-2">
+        {% if sk == now_session %}<span class="eu-badge eu-badge--brand">Ahora</span>{% endif %}
+        <span class="t-card">{{ session_meta[sk].label }}</span>
+        {% if session_meta[sk].window %}<span class="t-meta">{{ session_meta[sk].window }}</span>{% endif %}
+      </span>
+      <span class="eu-hstack"><span class="t-meta num">{{ items|selectattr('done_ui')|list|length }}/{{ items|length }}</span><i data-lucide="chevron-down" class="acta-chev"></i></span>
+    </summary>
+    <div class="acta-list">
+      {% for item in items %}{% include "actividades/_item.html" %}{% endfor %}
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm acta-add js-add" data-session="{{ sk }}"><i data-lucide="plus"></i>Agregar actividad</button>
+    </div>
+  </details>
+  {% endfor %}
+</div>

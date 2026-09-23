@@ -1,0 +1,24 @@
+{# Resumen del día + clasificación (Carbón → Diamante) #}
+{% set tiers = {'carbon': 'carbon', 'iron': 'hierro', 'gold': 'oro', 'diamond': 'diamante'} %}
+<section class="eu-card eu-card--featured eu-vstack acta-summary" aria-labelledby="acta-sum-t">
+  <div class="eu-between">
+    <div class="t-eyebrow" id="acta-sum-t">Resumen del día</div>
+    {% if clf.recovery_week %}<span class="eu-badge eu-badge--info" title="Semana de descarga: se exige menos para Hierro y Oro">Descarga</span>{% endif %}
+  </div>
+  <div class="t-data-xl fg-xp acta-xp"><span class="js-xp-today js-countup">{{ stats.xp_today }}</span><span class="t-meta"> / {{ XP_DAILY_GOAL }} XP</span></div>
+  <div class="eu-xpbar" role="progressbar" aria-label="XP de hoy" aria-valuemax="{{ XP_DAILY_GOAL }}" aria-valuenow="{{ stats.xp_today }}"><i class="js-xp-bar" style="width:{{ [100, (stats.xp_today / XP_DAILY_GOAL * 100)|round(1)]|min }}%"></i></div>
+  <div class="eu-grid-3 eu-gap-2">
+    <div><div class="t-data js-done-n">0</div><div class="t-meta">Hechas</div></div>
+    <div><div class="t-data js-pillars-n">{{ clf.pillars|length }}</div><div class="t-meta">Virtudes</div></div>
+    <div><div class="t-data fg-ec">+<span class="js-ec-today">{{ gam.coins_today }}</span></div><div class="t-meta">EC hoy</div></div>
+  </div>
+  <div class="acta-clf eu-vstack eu-gap-2">
+    <div class="eu-between">
+      <span class="eu-badge acta-tier js-clf-badge" data-t="{{ tiers.get(clf.rank, 'carbon') }}"><span class="eu-dot"></span><span class="js-clf-label">{{ clf.label }}</span></span>
+      <span class="t-meta num js-clf-meta">{% if clf.anchors_total > 0 %}Anclas {{ clf.anchors_done }}/{{ clf.anchors_total }}{% endif %}{% if clf.anchors_total > 0 and clf.touches_total > 0 %} · {% endif %}{% if clf.touches_total > 0 %}Touches {{ clf.touches_done }}/{{ clf.touches_total }}{% endif %}</span>
+    </div>
+    <p class="t-meta acta-p js-clf-desc">{{ clf.desc }}</p>
+    <p class="t-ui acta-p js-clf-hint">{{ clf.next_hint or '' }}</p>
+    <div class="eu-progress eu-progress--thin eu-progress--brand js-clf-track" role="progressbar" aria-label="Progreso al siguiente nivel del día"{% if clf.rank == 'diamond' %} hidden{% endif %}><i class="js-clf-bar" style="width:{{ clf.next_pct }}%"></i></div>
+  </div>
+</section>

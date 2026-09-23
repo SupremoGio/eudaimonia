@@ -193,8 +193,34 @@ def index():
 
     ctx = build_acta_diurna_context()
 
+    # Vista «Por virtud» (DS V2): los mismos items de las sesiones, sin
+    # duplicar los que viven en varias sesiones, agrupados por pilar.
+    seen, by_pillar = set(), {}
+    for sk in adefs.SESSIONS:
+        for item in ctx["grouped"].get(sk, []):
+            if item["key"] in seen:
+                continue
+            seen.add(item["key"])
+            # Actividades de baile que no son el touch base se registran en
+            # /eurythmia/ (sesiones reales): se ven hechas si ahí hubo sesión hoy.
+            item["eury_proxy"] = item["pillar"] == "eury" and item["key"] != "lenguaje_corporal"
+            item["done_ui"] = ctx["eurythmia_done"] if item["eury_proxy"] else bool(item.get("done"))
+            by_pillar.setdefault(item["pillar"], []).append(item)
+    acta_pillars = []
+    for pid in adefs.PILLAR_ORDER:
+        items = by_pillar.get(pid, [])
+        if not items:
+            continue
+        done = [i for i in items if i["done_ui"]]
+        acta_pillars.append({**adefs.PILLAR_UI[pid], "id": pid, "items": items,
+                             "done": len(done), "total": len(items),
+                             "xp_done": sum(i.get("pts") or 0 for i in done)})
+
     _td = today_date()
     return render_template('actividades/index.html',
+        acta_pillars  = acta_pillars,
+        pillar_ui     = adefs.PILLAR_UI,
+        acta_total    = len(seen),
         stats         = stats,
         gam           = gam,
         grouped       = ctx["grouped"],
@@ -213,6 +239,10 @@ def index():
         payment_alerts= get_payment_alerts(),
         today         = _td.isoformat(),
         today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()],
+        fecha_larga   = "{} {} de {}".format(
+            ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()], _td.day,
+            ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre",
+             "octubre","noviembre","diciembre"][_td.month - 1]),
         weekend_mode  = weekend_mode,
         classification= gam["classification"],
     )

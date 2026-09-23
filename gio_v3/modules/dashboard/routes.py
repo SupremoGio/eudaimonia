@@ -317,19 +317,6 @@ def _build_eudaimonia_data():
 
 
 # ── Dashboard V2 (Design System V2 · pantalla 02) ────────────────────────────
-# Los 8 pilares reales de Acta Diurna (activity_defs.PILLARS) con su nombre de
-# categoría en tokens.css (data-cat), función, ícono Lucide y a dónde lleva.
-_VIRTUES = [
-    ('logoi',   'logoi',          'Logoi',          'Programación', 'code-2',          '/actividades/'),
-    ('hege',    'hegemonikon',    'Hegemonikon',    'Salud',        'heart-pulse',     '/bienestar/'),
-    ('paideia', 'paideia',        'Paideia',        'Conocimiento', 'book-open',       '/paideia/'),
-    ('cosmo',   'cosmopolitismo', 'Cosmopolitismo', 'Idiomas',      'languages',       '/idiomas/'),
-    ('oiko',    'oikonomia',      'Oikonomia',      'Finanzas',     'landmark',        '/finanzas/'),
-    ('atar',    'ataraxia',       'Ataraxia',       'Orden',        'sun-dim',         '/ataraxia/'),
-    ('eury',    'eurythmia',      'Eurythmia',      'Baile',        'music-2',         '/eurythmia/'),
-    ('philia',  'philia',         'Philia',         'Vínculos',     'heart-handshake', '/actividades/'),
-]
-
 # Categoría de data.ACTIVITIES (la que usa la sugerencia) → data-cat del token
 _ACT_CAT_TO_VIRTUE = {
     'Programación': 'logoi', 'Idiomas': 'cosmopolitismo', 'Salud Mental': 'hegemonikon',
@@ -342,7 +329,7 @@ _RADAR_TONE = {'red': 'danger', 'amber': 'warning', 'yellow': 'info', 'green': '
 
 
 def _build_virtues_today() -> list:
-    """XP de hoy por pilar (activity_logs × activity_defs), en el orden de _VIRTUES."""
+    """XP de hoy por pilar (activity_logs × activity_defs), en el orden de activity_defs.PILLAR_ORDER."""
     from modules.actividades import activity_defs as adefs
     defs = adefs.get_active_flat()
     today = today_str()
@@ -356,9 +343,9 @@ def _build_virtues_today() -> list:
             pillar = 'eury' if key == 'eurythmia_session' else (defs.get(key) or {}).get('pillar')
             if pillar:
                 xp[pillar] = xp.get(pillar, 0) + (r['pts'] or 0)
-    return [{'id': pid, 'cat': cat, 'label': label, 'fn': fn, 'icon': icon, 'url': url,
-             'xp': xp.get(pid, 0), 'done': pid in xp}
-            for pid, cat, label, fn, icon, url in _VIRTUES]
+    return [{'id': pid, 'cat': ui['cat'], 'label': ui['name'], 'fn': ui['fn'], 'icon': ui['icon'],
+             'url': ui['url'], 'xp': xp.get(pid, 0), 'done': pid in xp}
+            for pid in adefs.PILLAR_ORDER for ui in [adefs.PILLAR_UI[pid]]]
 
 
 def _build_heat_16w(goal: int = 15) -> list:

@@ -1,0 +1,35 @@
+{# Una actividad. Espera `item` (activity_defs + done_ui/eury_proxy),
+   `pillar_ui` y REFLECT_* en contexto. El mismo key puede aparecer en varias
+   sesiones y en las dos vistas: el JS sincroniza todas las copias. #}
+{% set pu = pillar_ui.get(item.pillar, {}) %}
+{% set reflect_desk = item.key in REFLECT_KEYS %}
+{% set reflect_all = item.key in REFLECT_ALL_KEYS %}
+{% set is_ancla = item.effective_type == 'ancla' %}
+<div class="acta-item{% if is_ancla %} is-ancla{% endif %}{% if reflect_desk %} is-reflect-desk{% endif %}"
+     data-key="{{ item.key }}" data-cat="{{ pu.cat }}" data-pillar="{{ item.pillar }}" data-type="{{ item.effective_type }}" data-pts="{{ item.pts }}">
+  {% if item.eury_proxy %}
+  <a class="eu-act{% if item.done_ui %} is-done{% endif %}" href="/eurythmia/">
+  {% else %}
+  <button type="button" class="eu-act js-act" aria-pressed="{{ 'true' if item.done_ui else 'false' }}" data-key="{{ item.key }}">
+  {% endif %}
+    <span class="eu-act-check"><i data-lucide="check"></i></span>
+    <span class="eu-act-t">
+      <span class="acta-lbl">{{ item.label }}</span>
+      {% if is_ancla or item.cadence == 'weekly' or item.eury_proxy %}
+      <span class="acta-sub">
+        {% if is_ancla %}<span class="eu-badge eu-badge--cat acta-tag">Ancla</span>{% endif %}
+        {% if item.cadence == 'weekly' %}<span class="t-meta">{{ item.week_count or 0 }}/semana</span>{% endif %}
+        {% if item.eury_proxy %}<span class="t-meta">{{ 'Hecho hoy · ver detalle' if item.done_ui else 'Registrar en Eurythmia →' }}</span>{% endif %}
+      </span>
+      {% endif %}
+    </span>
+    {% if not item.eury_proxy %}
+    <span class="eu-act-xp"><span>+{{ item.pts }} XP</span>{% if item.ec %}<span class="fg-ec">+{{ item.ec }} EC</span>{% endif %}</span>
+    {% endif %}
+  {% if item.eury_proxy %}</a>{% else %}</button>{% endif %}
+  {% if reflect_desk or reflect_all %}
+  <textarea class="eu-textarea acta-reflect js-reflect" data-key="{{ item.key }}" rows="2"
+    aria-label="Reflexión: {{ item.label }}" placeholder="{{ REFLECT_PLACEHOLDERS.get(item.key, 'Escribe aquí tu reflexión…') }}">{{ item.reflexion or '' }}</textarea>
+  {% endif %}
+  <button type="button" class="eu-iconbtn acta-rm js-rm" data-key="{{ item.key }}" aria-label="Quitar «{{ item.label }}» del checklist" title="Quitar"><i data-lucide="x"></i></button>
+</div>

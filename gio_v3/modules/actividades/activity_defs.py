@@ -13,6 +13,20 @@ from utils import today_str, today_date
 SESSIONS = ("morning", "afternoon", "night", "any")
 PILLARS  = ("logoi", "paideia", "cosmo", "hege", "eury", "atar", "oiko", "philia")
 TYPES    = ("ancla", "touch", "ocasional")
+
+# Presentación de cada pilar en la UI V2 (Acta Diurna, Dashboard): categoría
+# de tokens.css (data-cat), nombre, función, ícono Lucide y a dónde lleva.
+PILLAR_UI = {
+    "logoi":   {"cat": "logoi",          "name": "Logoi",          "fn": "Programación", "icon": "code-2",          "url": "/actividades/"},
+    "hege":    {"cat": "hegemonikon",    "name": "Hegemonikon",    "fn": "Salud",        "icon": "heart-pulse",     "url": "/bienestar/"},
+    "paideia": {"cat": "paideia",        "name": "Paideia",        "fn": "Conocimiento", "icon": "book-open",       "url": "/paideia/"},
+    "cosmo":   {"cat": "cosmopolitismo", "name": "Cosmopolitismo", "fn": "Idiomas",      "icon": "languages",       "url": "/idiomas/"},
+    "oiko":    {"cat": "oikonomia",      "name": "Oikonomia",      "fn": "Finanzas",     "icon": "landmark",        "url": "/finanzas/"},
+    "atar":    {"cat": "ataraxia",       "name": "Ataraxia",       "fn": "Orden",        "icon": "sun-dim",         "url": "/ataraxia/"},
+    "eury":    {"cat": "eurythmia",      "name": "Eurythmia",      "fn": "Baile",        "icon": "music-2",         "url": "/eurythmia/"},
+    "philia":  {"cat": "philia",         "name": "Philia",         "fn": "Vínculos",     "icon": "heart-handshake", "url": "/actividades/"},
+}
+PILLAR_ORDER = ("logoi", "hege", "paideia", "cosmo", "oiko", "atar", "eury", "philia")
 CADENCES = ("daily", "weekly")
 DAY_CODES = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 
