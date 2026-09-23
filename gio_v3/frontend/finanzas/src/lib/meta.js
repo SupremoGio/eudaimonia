@@ -67,6 +67,13 @@ export const tipoName = (id) => (TIPOS.find((t) => t.id === id) || { name: id })
  * sistema separados en el círculo cromático, asignados por rango. */
 export const RANK_TONES = ['hegemonikon', 'cosmopolitismo', 'eurythmia', 'ataraxia', 'paideia', 'harma', 'logoi'];
 
+/* Tonos (hue OKLCH) para el ranking de la dona de Reportes: 10 colores, uno
+   por puesto. No reutiliza los tonos de categoría porque varios quedan casi
+   iguales entre sí (philia 10 / harma 15, identidad 280 / paideia 265); estos
+   se reparten en todo el círculo y alternan para que dos puestos seguidos
+   nunca se parezcan. Misma luz/croma que --cat-fg en ambos temas. */
+export const RANK_HUES = [45, 215, 330, 155, 265, 15, 120, 190, 85, 300];
+
 export const NATURALEZA = {
   FIJO: { name: 'Fijo', tone: 'info' },
   VARIABLE: { name: 'Variable', tone: 'brand' },

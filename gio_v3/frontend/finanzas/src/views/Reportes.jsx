@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { MONTHS, PRESETS, fmtDate, money, monthLabel, pct, presetRange } from '../lib/format.js';
-import { BANKS, RANK_TONES, bankName, catMeta } from '../lib/meta.js';
+import { BANKS, RANK_HUES, bankName, catMeta } from '../lib/meta.js';
 import { CatIcon, Empty, ErrorNote, Icon, Skel, useLoad, useMedia } from '../components/ui.jsx';
 import FlowBars from '../components/FlowBars.jsx';
 
-const DONUT_MAX = 6;
+const DONUT_MAX = RANK_HUES.length; // 10 con color; del 11.º en adelante van juntas en gris
 
 /** ['2024','2025','2026'] → «2024, 2025 y 2026». */
 const listJoin = (a) => (a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} y ${a[a.length - 1]}`);
@@ -22,7 +22,8 @@ function Donut({ items, total, label }) {
           const frac = total > 0 ? it.value / total : 0;
           const len = Math.max(0, frac * C - (items.length > 1 ? 2 : 0));
           const el = (
-            <circle key={it.key} className="fz-donut-seg" data-cat={it.tone || undefined} data-rest={it.tone ? undefined : ''}
+            <circle key={it.key} className="fz-donut-seg" data-cat={it.hue != null ? '' : undefined} data-rest={it.hue != null ? undefined : ''}
+              style={it.hue != null ? { '--h': it.hue } : undefined}
               cx="70" cy="70" r={R} strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-acc * C} />
           );
           acc += frac;
@@ -92,10 +93,10 @@ export default function Reportes() {
   const s = stats.data || {};
   const cats = (bycat.data || []).filter((c) => Math.abs(c.total) > 0);
   const catTotal = cats.reduce((a, c) => a + Math.abs(c.total), 0);
-  const donut = cats.slice(0, DONUT_MAX).map((c, i) => ({ key: c.categoria, value: Math.abs(c.total), tone: RANK_TONES[i % RANK_TONES.length] }));
+  const donut = cats.slice(0, DONUT_MAX).map((c, i) => ({ key: c.categoria, value: Math.abs(c.total), hue: RANK_HUES[i] }));
   const rest = cats.slice(DONUT_MAX).reduce((a, c) => a + Math.abs(c.total), 0);
-  if (rest > 0) donut.push({ key: '__rest', value: rest, tone: null });
-  const toneOf = (i) => (i < DONUT_MAX ? RANK_TONES[i % RANK_TONES.length] : null);
+  if (rest > 0) donut.push({ key: '__rest', value: rest, hue: null });
+  const hueOf = (i) => (i < DONUT_MAX ? RANK_HUES[i] : null);
 
   const openCat = (categoria, tipo = view) => app.openCategory({ categoria, tipo, period, bank, periodLabel });
   const toggleMonth = (mi) => setMonths((m) => { const n = new Set(m); if (n.has(mi)) n.delete(mi); else n.add(mi); return n; });
@@ -185,7 +186,8 @@ export default function Reportes() {
                 {cats.map((c, i) => (
                   <li key={c.categoria}>
                     <button type="button" className="fz-cat-legend-btn" onClick={() => openCat(c.categoria)}>
-                      <i className="fz-dot" data-cat={toneOf(i) || undefined} data-rest={toneOf(i) ? undefined : ''} />
+                      <i className="fz-dot" data-cat={hueOf(i) != null ? '' : undefined} data-rest={hueOf(i) != null ? undefined : ''}
+                        style={hueOf(i) != null ? { '--h': hueOf(i) } : undefined} />
                       <span className="eu-grow fz-ellipsis t-ui">{catMeta(c.categoria).name}</span>
                       {c.pct_change != null && (
                         <span className={`t-meta fz-nowrap ${(c.pct_change > 0) === (view === 'GASTO') ? 'fg-danger' : 'fg-success'}`} title="vs periodo anterior">
