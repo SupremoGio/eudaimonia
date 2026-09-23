@@ -249,6 +249,7 @@
 .fz-modal .eu-modal-hd .eu-grow{min-width:0}
 .fz-modal .eu-modal-ft .fz-ft-start{margin-right:auto}
 @media (min-width:768px){.fz-modal--wide{max-width:880px}}
+@media (min-width:1024px){.fz-modal--wide{max-width:min(1120px,calc(100vw - 64px))}}
 .fz-fieldset{border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:var(--sp-3) var(--sp-4) var(--sp-4);margin:0;display:flex;flex-direction:column;gap:var(--sp-3)}
 .fz-fieldset legend{padding:0 var(--sp-1)}
 @media (max-width:479px){.fz-modal .eu-modal-bd>.eu-grid-2{grid-template-columns:minmax(0,1fr)}}
@@ -266,7 +267,8 @@
 /* Modal de categoría */
 .fz-cm-sum{display:flex;align-items:center;gap:var(--sp-3)}
 .fz-cm-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-5)}
-@media (min-width:768px){.fz-cm-grid{grid-template-columns:minmax(0,260px) minmax(0,1fr)}}
+@media (min-width:768px){.fz-cm-grid{grid-template-columns:minmax(0,240px) minmax(0,1fr)}}
+@media (min-width:1024px){.fz-cm-grid{grid-template-columns:minmax(0,280px) minmax(0,1fr);gap:var(--sp-6)}}
 .fz-cm-left,.fz-cm-right{display:flex;flex-direction:column;gap:var(--sp-3);min-width:0}
 @media (min-width:768px){.fz-cm-left{max-height:56vh;overflow-y:auto;overflow-x:hidden;padding-right:var(--sp-1)}}
 .fz-bd-list{display:flex;flex-direction:column;gap:var(--sp-1)}
@@ -278,9 +280,18 @@
 .fz-cm-tools>*{flex:1 1 150px;min-width:0}
 .fz-cm-tools .fz-grow-2{flex:2 1 200px}
 .fz-cm-tools .eu-chip{max-width:100%}
-.fz-cm-right .fz-table-wrap{max-height:52vh;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:var(--r-md)}
+.fz-cm-right .fz-table-wrap{max-height:56vh;overflow:hidden auto;border:1px solid var(--border-subtle);border-radius:var(--r-md)}
+/* Tabla del detalle: anchos fijos para que Monto nunca quede fuera; el
+   establecimiento absorbe el resto y se corta con «…» (title lleva el texto). */
+.fz-cm-table{table-layout:fixed}
+.fz-cm-table .c-date{width:80px}
+.fz-cm-table .c-sub{width:24%}
+.fz-cm-table .c-amt{width:132px}
+.fz-cm-table td{padding-block:var(--sp-2)}
+.fz-cm-table .fz-td-desc{display:block;max-width:none}
+.fz-cm-table .fz-td-sub{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fz-cm-table td.r .num{font-variant-numeric:tabular-nums;white-space:nowrap}
 .fz-cm-right .eu-table thead th{position:sticky;top:0;background:var(--bg-surface);z-index:1}
-.fz-cm-right .fz-td-desc{max-width:280px}
 .fz-cm-right .eu-table td .eu-badge{margin-top:var(--sp-1)}
 
 /* Reportes */

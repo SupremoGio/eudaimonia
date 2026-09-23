@@ -167,12 +167,16 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
 
               {rows.length === 0 ? <div className="t-meta fz-pad">Nada coincide con «{q}».</div> : wide ? (
                 <div className="fz-table-wrap">
-                  <table className="eu-table">
+                  <table className="eu-table fz-cm-table">
+                    {/* Con una subcategoría ya filtrada, su columna solo repetiría el mismo valor. */}
+                    <colgroup>
+                      <col className="c-date" /><col />{!sub && <col className="c-sub" />}<col className="c-amt" />
+                    </colgroup>
                     <thead>
                       <tr>
                         {sortTh('fecha', 'Fecha')}
                         {sortTh('estab', 'Establecimiento')}
-                        <th>Subcategoría</th>
+                        {!sub && <th>Subcategoría</th>}
                         {sortTh('monto', 'Monto', 'r')}
                       </tr>
                     </thead>
@@ -182,10 +186,10 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
                           onKeyDown={(e) => { if (e.key === 'Enter') onOpenTx(t); }}>
                           <td className="num fg-3 fz-td-date">{fmtDate(t.fecha, true)}</td>
                           <td>
-                            <span className="fz-ellipsis fz-td-desc">{t.descripcion}</span>
+                            <span className="fz-ellipsis fz-td-desc" title={t.descripcion}>{t.descripcion}</span>
                             {t.parcialidad_num && t.parcialidad_total ? <span className="eu-badge eu-badge--info">MSI {t.parcialidad_num}/{t.parcialidad_total}</span> : null}
                           </td>
-                          <td className="fg-3">{t.subcategoria || '—'}</td>
+                          {!sub && <td className="fg-3"><span className="fz-td-sub" title={t.subcategoria || ''}>{t.subcategoria || '—'}</span></td>}
                           <td className="r">
                             <span className="num">{money(t.monto)}</span>
                             {t.mi_parte != null && Math.abs(t.mi_parte) !== Math.abs(t.monto) && (
