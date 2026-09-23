@@ -1,0 +1,97 @@
+{# Modales de Paideia: libro, película y meta anual #}
+{% macro cover_preview(pfx, icon, caption, clear_lbl) -%}
+<div class="pd-cprev" id="{{ pfx }}-cover-row" hidden>
+  <img class="pd-cprev-img" id="{{ pfx }}-cover-img" alt="" hidden>
+  <span class="pd-cprev-img pd-cover--empty" id="{{ pfx }}-cover-empty" aria-hidden="true"><i data-lucide="{{ icon }}"></i></span>
+  <div class="eu-vstack pd-cprev-info"><span class="t-meta" id="{{ pfx }}-cover-caption">{{ caption }}</span>
+    <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm pd-cprev-clear" id="{{ pfx }}-cover-clear" hidden>{{ clear_lbl }}</button></div>
+</div>
+{%- endmacro %}
+
+{% call ui.modal('m-libro', 'Nuevo libro', eyebrow='Paideia · Libros') %}
+<form class="eu-modal-bd" id="f-libro" autocomplete="off" novalidate>
+  <input type="hidden" id="lb-id"><input type="hidden" id="lb-portada">
+  {{ cover_preview('lb', 'book', 'Sin portada — búscalo por título para autocompletarla', 'Quitar portada') }}
+  <div class="eu-field">
+    <label class="eu-label" for="lb-titulo">Título *</label>
+    <div class="pd-search">
+      <input class="eu-input" id="lb-titulo" placeholder="Ej. Sapiens…" role="combobox" aria-expanded="false" aria-controls="lb-drop" aria-autocomplete="list" aria-describedby="lb-titulo-h">
+      <div class="pd-drop" id="lb-drop" role="listbox" hidden></div>
+    </div>
+    <div class="eu-help" id="lb-titulo-h">Escribe al menos 3 letras para buscarlo y autocompletar autor, páginas y portada.</div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="lb-autor">Autor</label><input class="eu-input" id="lb-autor" placeholder="Ej. Yuval Noah Harari…"></div>
+  <div class="eu-grid-2 pd-fgrid">
+    <div class="eu-field"><label class="eu-label" for="lb-categoria">Categoría</label>
+      <select class="eu-select" id="lb-categoria">{% for c in ['Psicología','Nutrición','Ciencia','Productividad','Ficción','Otro'] %}<option>{{ c }}</option>{% endfor %}</select></div>
+    <div class="eu-field"><label class="eu-label" for="lb-estado">Estado</label>
+      <select class="eu-select" id="lb-estado"><option value="por_leer">Por leer</option><option value="leyendo">Leyendo</option><option value="leido">Leído</option></select></div>
+  </div>
+  <div class="eu-field" id="lb-prog-sec">
+    <span class="eu-label" id="lb-modo-l">Seguimiento de progreso</span>
+    <input type="hidden" id="lb-modo" value="paginas">
+    <div class="eu-seg pd-seg-full" role="group" aria-labelledby="lb-modo-l">
+      <button type="button" data-modo="paginas" aria-pressed="true">Páginas</button><button type="button" data-modo="pct" aria-pressed="false">Porcentaje</button>
+    </div>
+    <div class="eu-help">¿El conteo de páginas de tu Kindle no coincide con esta edición? Usa porcentaje.</div>
+  </div>
+  <div class="eu-grid-2 pd-fgrid" id="lb-pag-fields">
+    <div class="eu-field"><label class="eu-label" for="lb-pag-tot">Páginas totales</label><input class="eu-input eu-input--money" id="lb-pag-tot" type="number" min="1" inputmode="numeric" placeholder="Ej. 320"></div>
+    <div class="eu-field" id="lb-pag-act-row"><label class="eu-label" for="lb-pag-act">Página actual</label><input class="eu-input eu-input--money" id="lb-pag-act" type="number" min="0" inputmode="numeric" placeholder="Ej. 120"></div>
+  </div>
+  <div class="eu-field" id="lb-pct-field" hidden>
+    <label class="eu-label" for="lb-pct">Porcentaje leído</label>
+    <div class="eu-input-wrap pd-pct"><input class="eu-input eu-input--money" id="lb-pct" type="number" min="0" max="100" inputmode="numeric" placeholder="Ej. 56"><span class="t-meta">%</span></div>
+  </div>
+  <div class="eu-field" id="lb-rating-row" hidden>
+    <span class="eu-label" id="lb-rating-l">Tu calificación</span>
+    <input type="hidden" id="lb-rating">
+    <div class="pd-rating" role="radiogroup" aria-labelledby="lb-rating-l" id="lb-rating-picker">
+      {% for i in range(1,6) %}<button type="button" class="eu-iconbtn pd-star" data-val="{{ i }}" role="radio" aria-checked="false" aria-label="{{ i }} estrella{{ 's' if i != 1 }}"><i data-lucide="star"></i></button>{% endfor %}
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" id="lb-rating-clear" hidden>Quitar</button>
+    </div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="lb-notas">Notas (opcional)</label><textarea class="eu-textarea" id="lb-notas" rows="2" placeholder="Ideas, citas, reflexiones…"></textarea></div>
+</form>
+<div class="eu-modal-ft pd-ft">
+  <button type="button" class="eu-btn eu-btn--danger" id="lb-delete" hidden><i data-lucide="trash-2"></i>Eliminar</button>
+  <span class="eu-grow"></span>
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-libro')">Cancelar</button>
+  <button type="submit" form="f-libro" class="eu-btn eu-btn--primary">Guardar</button>
+</div>
+{% endcall %}
+
+{% call ui.modal('m-peli', 'Nueva película', eyebrow='Paideia · Películas') %}
+<form class="eu-modal-bd" id="f-peli" autocomplete="off" novalidate>
+  <input type="hidden" id="pe-portada">
+  {{ cover_preview('pe', 'clapperboard', 'Sin póster — búscala por título para autocompletarlo', 'Quitar póster') }}
+  <div class="eu-field">
+    <label class="eu-label" for="pe-titulo">Título *</label>
+    <div class="pd-search">
+      <input class="eu-input" id="pe-titulo" placeholder="Ej. Blade Runner…" role="combobox" aria-expanded="false" aria-controls="pe-drop" aria-autocomplete="list" aria-describedby="pe-titulo-h">
+      <div class="pd-drop" id="pe-drop" role="listbox" hidden></div>
+    </div>
+    <div class="eu-help" id="pe-titulo-h">Escribe al menos 3 letras para buscarla y autocompletar año, género y póster.</div>
+  </div>
+  <div class="eu-grid-2 pd-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pe-director">Director</label><input class="eu-input" id="pe-director" placeholder="Opcional"></div>
+    <div class="eu-field"><label class="eu-label" for="pe-anio">Año</label><input class="eu-input eu-input--money" id="pe-anio" type="number" min="1888" inputmode="numeric" placeholder="Opcional"></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="pe-genero">Género</label><input class="eu-input" id="pe-genero" placeholder="Opcional"></div>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-peli')">Cancelar</button>
+  <button type="submit" form="f-peli" class="eu-btn eu-btn--primary">Agregar</button>
+</div>
+{% endcall %}
+
+{% call ui.modal('m-meta', 'Meta de lectura anual', eyebrow='Paideia · ' ~ now_year) %}
+<form class="eu-modal-bd" id="f-meta" novalidate>
+  <div class="eu-field"><label class="eu-label" for="meta-input">¿Cuántos libros quieres leer este año?</label>
+    <input class="eu-input eu-input--money" id="meta-input" type="number" min="1" inputmode="numeric" value="{{ stats.meta_anual }}"></div>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-meta')">Cancelar</button>
+  <button type="submit" form="f-meta" class="eu-btn eu-btn--primary">Guardar</button>
+</div>
+{% endcall %}
