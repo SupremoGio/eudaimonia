@@ -1,0 +1,89 @@
+{# Baile: stats, sub-pestañas Sesión / Repertorio / Progreso / Bitácora #}
+{% set SCI_CAT = ['eurythmia', 'oikonomia', 'harma', 'cosmopolitismo'] %}
+<div class="eu-grid-4 ey-stats">
+  {{ ui.stat('Racha', state.streak ~ ' d', icon='flame') }}
+  {{ ui.stat('Horas', (state.total_min/60)|round(1), icon='clock') }}
+  {{ ui.stat('Sesiones', state.sessions, icon='calendar-check') }}
+  {{ ui.stat('Nivel ' ~ state.level.level.n, state.level.level.name, icon='trophy', meta=state.level.level.sub) }}
+</div>
+
+<div class="eu-seg ey-subtabs" role="tablist" aria-label="Secciones de baile">
+  {% for k, lbl in [('sesion','Sesión'),('repertorio','Repertorio'),('progreso','Progreso'),('bitacora','Bitácora')] %}
+  <button type="button" role="tab" id="st-{{ k }}" data-tab="{{ k }}" aria-selected="{{ 'true' if loop.first else 'false' }}" aria-controls="panel-{{ k }}">{{ lbl }}</button>
+  {% endfor %}
+</div>
+
+{# ── Sesión ── #}
+<div class="ey-panel" id="panel-sesion" role="tabpanel" aria-labelledby="st-sesion">
+  <div class="ey-session">
+    <div class="eu-card eu-vstack ey-block">
+      <div class="eu-between"><h2 class="t-card">¿Cuánto tiempo tienes?</h2><span class="t-data fg-brand"><span id="ey-total-n">30</span> min</span></div>
+      <div class="eu-seg ey-presets" role="group" aria-label="Duración rápida" id="ey-presets">
+        {% for p in [20,30,45,60] %}<button type="button" data-min="{{ p }}" aria-pressed="{{ 'true' if p == 30 else 'false' }}">{{ p }} min</button>{% endfor %}
+      </div>
+      <input type="range" class="ey-range" id="ey-total-range" min="10" max="75" step="5" value="30" aria-label="Duración de la sesión en minutos">
+      <div class="eu-between"><h3 class="t-eyebrow">El bucle</h3><span class="t-meta" id="ey-split-lbl">30 min repartidos</span></div>
+      <ol class="ey-phases" id="ey-phases"></ol>
+    </div>
+    <div class="eu-vstack ey-side">
+      <div class="eu-card eu-vstack ey-block">
+        <h2 class="t-card">Paso a drillar en la fase técnica</h2>
+        <div class="ey-stepchips" role="group" aria-label="Paso a drillar" id="ey-step-chips"></div>
+      </div>
+      <div class="eu-card eu-vstack ey-block">
+        <div class="ey-metro">
+          <button type="button" class="ey-switch" id="ey-sound-toggle" role="switch" aria-checked="false" aria-labelledby="ey-sound-l"><span></span></button>
+          <div class="eu-grow"><div class="t-ui" id="ey-sound-l">Clave audible</div><div class="t-meta">Marca el 8-tiempos del casino</div></div>
+          <div class="ey-bpm"><span class="t-data" id="ey-bpm-n">180</span><span class="t-meta">bpm</span></div>
+        </div>
+        <input type="range" class="ey-range" id="ey-bpm-range" min="140" max="220" step="2" value="180" aria-label="Tempo en bpm">
+      </div>
+      <button type="button" class="eu-btn eu-btn--primary eu-btn--lg eu-btn--block" id="ey-start-btn"><i data-lucide="play"></i>Empezar sesión guiada · <span id="ey-start-min">30</span> min</button>
+    </div>
+  </div>
+</div>
+
+{# ── Repertorio ── #}
+<div class="ey-panel eu-vstack" id="panel-repertorio" role="tabpanel" aria-labelledby="st-repertorio" hidden>
+  <div class="eu-chips" role="group" aria-label="Tipo de figuras">
+    {{ ui.chip('Pasos libres', pressed=True, **{'data-kind': 'libres'}) }}
+    {{ ui.chip('En pareja', **{'data-kind': 'pareja'}) }}
+  </div>
+  <div class="eu-grid-3 ey-mini" id="ey-rep-stats"></div>
+  <div class="ey-figs" id="ey-rep-list"></div>
+  <p class="t-meta ey-note">El dominio sube con repeticiones deliberadas. <b class="fg-brand">Automatizado</b> = liberas atención para la música.</p>
+</div>
+
+{# ── Progreso ── #}
+<div class="ey-panel eu-vstack" id="panel-progreso" role="tabpanel" aria-labelledby="st-progreso" hidden>
+  <div class="eu-card ey-level">
+    <div class="ey-ring">
+      <svg viewBox="0 0 130 130" aria-hidden="true"><circle class="ey-ring-bg" cx="65" cy="65" r="56"/><circle class="ey-ring-fg" id="ey-ring-fg" cx="65" cy="65" r="56" transform="rotate(-90 65 65)"/></svg>
+      <div class="ey-ring-txt"><span class="t-meta">Nivel {{ state.level.level.n }}</span><span class="t-card">{{ state.level.level.name }}</span></div>
+    </div>
+    <div class="eu-vstack ey-level-bd">
+      <div class="t-eyebrow">{{ state.level.level.sub }}</div>
+      <p class="t-section">{{ (state.total_min/60)|round(1) }} horas de práctica deliberada acumuladas</p>
+      <p class="t-body ey-forecast" id="ey-forecast"></p>
+    </div>
+  </div>
+  <h2 class="t-card">La escalera dancística</h2>
+  <ol class="eu-card eu-card--flush eu-list ey-ladder" id="ey-ladder"></ol>
+  <h2 class="t-card">Por qué funciona</h2>
+  <div class="eu-grid-2 ey-sci">
+    {% for s in science %}
+    <article class="eu-card ey-sci-card" data-cat="{{ SCI_CAT[loop.index0 % 4] }}">
+      <div class="eu-hstack"><span class="ey-glyph" aria-hidden="true">{{ s.icon }}</span>
+        <div><div class="t-card">{{ s.title }}</div><div class="t-eyebrow ey-sci-tag">{{ s.tag }}</div></div></div>
+      <p class="t-body">{{ s.body }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</div>
+
+{# ── Bitácora ── #}
+<div class="ey-panel eu-vstack" id="panel-bitacora" role="tabpanel" aria-labelledby="st-bitacora" hidden>
+  <div class="eu-grid-3 ey-mini" id="ey-log-stats"></div>
+  <div><button type="button" class="eu-chip" id="ey-grabado-chip" aria-pressed="false"><i data-lucide="video"></i>Grabé mi práctica hoy</button></div>
+  <div class="eu-vstack ey-log" id="ey-log-list"></div>
+</div>
