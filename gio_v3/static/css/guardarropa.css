@@ -26,17 +26,27 @@
 .gr-viewseg svg{width:15px;height:15px}
 .gr-viewseg button[aria-pressed=true],.gr-ai-mode button[aria-pressed=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
 .gr-root:not([data-tab=prendas]) .gr-viewseg{display:none}
-.gr-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-self:flex-start}
-.gr-tabs > a{height:30px;padding:0 var(--sp-3);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;gap:6px;color:var(--fg-3);font:var(--fw-medium) var(--fs-13)/1 var(--font-ui);text-decoration:none;white-space:nowrap}
-.gr-tabs > button{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
-.gr-tabs > a:hover,.gr-tabs > button:hover{color:var(--fg-1)}
-.gr-tabs .num{font-size:var(--fs-11);color:var(--fg-3)}
+/* Pestañas: segmented control flex. Los botones viven dentro de .gr-tablist
+   (role=tablist) y Wishlist queda fuera como enlace, tras un divisor. */
+.gr-tabs{display:inline-flex;align-items:center;align-self:flex-start;max-width:100%}
+.gr-tablist{display:flex;gap:2px;min-width:0}
+.gr-tabs button,.gr-tabs-link{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.gr-tabs-link{position:relative;height:30px;margin-left:7px;padding:0 var(--sp-3);border-radius:6px;color:var(--fg-3);font:var(--fw-medium) var(--fs-13)/1 var(--font-ui);text-decoration:none}
+.gr-tabs-link::before{content:"";position:absolute;left:-5px;top:7px;bottom:7px;width:1px;background:var(--border-default)}
+.gr-tabs-link svg{width:13px;height:13px;margin-left:-2px;opacity:.7}
+.gr-tabs button:hover,.gr-tabs-link:hover{color:var(--fg-1)}
+.gr-tabs-link:hover{background:var(--bg-hover)}
+.gr-tabs .num{min-width:20px;height:18px;padding:0 5px;border-radius:999px;background:var(--bg-hover);color:var(--fg-2);font:var(--fw-semibold) var(--fs-11)/18px var(--font-ui);font-variant-numeric:tabular-nums;text-align:center}
+.gr-tabs [aria-selected=true] .num{background:var(--bg-sunken);color:var(--fg-1)}
 @media (max-width:767px){
   .gr-hd{display:none}  /* el título va en la topbar; «+» es el FAB */
-  .gr-tabs{align-self:stretch}
-  .gr-tabs > a,.gr-tabs > button{padding:0 var(--sp-1)}
+  .gr-tabs{display:flex;align-self:stretch}
+  .gr-tablist{flex:1 1 auto}
+  .gr-tablist button{flex:1 1 auto;min-width:0;padding:0 6px;gap:5px}
+  .gr-tabs-link{flex:0 0 auto;padding:0 6px;gap:5px}
+  .gr-tabs .num{min-width:18px;padding:0 4px}
+  .gr-tabs-link svg{display:none}
 }
-@media (min-width:768px){.gr-tabs{display:inline-grid}}
 
 /* ── Barra de herramientas ── */
 .gr-toolbar{display:flex;gap:var(--sp-3);align-items:center}
@@ -278,4 +288,3 @@ body:has(#gr[data-tab=analisis]) .gr-fab{display:none}
   .gr-sort .eu-select{max-width:none;height:36px}
 }
 
-.gr-tablist{display:inline-flex;gap:2px}
