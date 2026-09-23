@@ -228,7 +228,7 @@ def _log_servicio(tipo, titulo, descripcion, km, costo, taller, fecha, plan_item
 
 @harma_bp.route('/')
 def index():
-    return render_template('harma/index.html', **_state())
+    return render_template('harma/index.html', today=today_str(), **_state())
 
 
 @harma_bp.route('/api/state')

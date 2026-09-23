@@ -1,0 +1,107 @@
+{# Modales de Harma: vehículo, plan, detalle, registrar, último servicio, ad hoc, documento, póliza, siniestro #}
+{% macro f(id, label, type='text', ph='', attrs='') -%}
+<div class="eu-field"><label class="eu-label" for="{{ id }}">{{ label }}</label><input class="eu-input{{ ' eu-input--money' if type == 'number' }}" id="{{ id }}" type="{{ type }}"{% if ph %} placeholder="{{ ph }}"{% endif %}{% if type == 'number' %} inputmode="decimal"{% endif %} {{ attrs|safe }}></div>
+{%- endmacro %}
+{% macro ta(id, label, ph='') -%}
+<div class="eu-field"><label class="eu-label" for="{{ id }}">{{ label }}</label><textarea class="eu-textarea" id="{{ id }}" rows="2"{% if ph %} placeholder="{{ ph }}"{% endif %}></textarea></div>
+{%- endmacro %}
+{% macro sel(id, label, opts) -%}
+<div class="eu-field"><label class="eu-label" for="{{ id }}">{{ label }}</label><select class="eu-select" id="{{ id }}">{% for o in opts %}<option value="{{ o.id }}">{{ o.label }}</option>{% endfor %}</select></div>
+{%- endmacro %}
+{% macro ft(id, label, xp=False) -%}
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('{{ id }}')">Cancelar</button><button type="submit" form="f-{{ id }}" class="eu-btn eu-btn--primary">{{ label }}{% if xp %} · <span class="num">+5 XP</span>{% endif %}</button></div>
+{%- endmacro %}
+
+{% call ui.modal('m-veh', 'Editar vehículo', eyebrow='Harma') %}
+<form class="eu-modal-bd" id="f-m-veh" autocomplete="off" novalidate>
+  <div class="eu-grid-2 hm-fgrid">{{ f('v-nombre', 'Nombre', ph='Mi carro') }}{{ f('v-placas', 'Placas') }}</div>
+  <div class="eu-grid-3 hm-fgrid">{{ f('v-marca', 'Marca') }}{{ f('v-modelo', 'Modelo') }}{{ f('v-anio', 'Año', 'number') }}</div>
+  <div class="eu-grid-2 hm-fgrid">{{ f('v-motor', 'Motor', ph='1.6 TDI') }}{{ f('v-color', 'Color') }}</div>
+  {{ f('v-km', 'Kilometraje actual', 'number', attrs='min="0"') }}
+</form>
+{{ ft('m-veh', 'Guardar') }}
+{% endcall %}
+
+{% call ui.modal('m-plan', 'Agregar servicio al plan', eyebrow='Plan de mantenimiento') %}
+<form class="eu-modal-bd" id="f-m-plan" autocomplete="off" novalidate>
+  <div class="eu-grid-2 hm-fgrid">{{ sel('pl-cat', 'Categoría', cat_defs) }}{{ f('pl-name', 'Nombre *', ph='Filtro de polen') }}</div>
+  <div class="eu-grid-2 hm-fgrid">{{ f('pl-km', 'Cada (km)', 'number', '15000', 'min="0"') }}{{ f('pl-meses', 'Cada (meses)', 'number', '12', 'min="0"') }}</div>
+  {{ f('pl-desc', 'Descripción') }}
+  <label class="hm-check"><input type="checkbox" id="pl-critical"><span>Marcar como crítico</span></label>
+</form>
+{{ ft('m-plan', 'Agregar') }}
+{% endcall %}
+
+{% call ui.modal('m-detail', 'Servicio', eyebrow='Plan') %}
+<div class="eu-modal-bd hm-detail" id="hm-detail">
+  <p class="t-body hm-detail-desc" id="hm-detail-desc"></p>
+  <div class="eu-grid-2 hm-dstats" id="hm-detail-stats"></div>
+  <div class="eu-vstack hm-dbars" id="hm-detail-bars"></div>
+  <div class="eu-vstack hm-dactions">
+    <button type="button" class="eu-btn eu-btn--primary eu-btn--block" id="hm-detail-mark"><i data-lucide="check"></i>Registrar servicio</button>
+    <div class="eu-grid-2 hm-fgrid">
+      <button type="button" class="eu-btn eu-btn--secondary" id="hm-detail-edit"><i data-lucide="history"></i>Último servicio</button>
+      <button type="button" class="eu-btn eu-btn--danger" id="hm-detail-del"><i data-lucide="trash-2"></i>Quitar del plan</button>
+    </div>
+  </div>
+</div>
+{% endcall %}
+
+{% call ui.modal('m-marcar', 'Registrar servicio', eyebrow='Plan') %}
+<form class="eu-modal-bd" id="f-m-marcar" autocomplete="off" novalidate>
+  {{ f('mk-km', 'Km actual', 'number', attrs='min="0"') }}
+  <div class="eu-grid-2 hm-fgrid">{{ f('mk-costo', 'Costo', 'number', attrs='min="0" step="0.01"') }}{{ f('mk-taller', 'Taller') }}</div>
+  {{ ta('mk-desc', 'Notas') }}
+</form>
+{{ ft('m-marcar', 'Guardar', True) }}
+{% endcall %}
+
+{% call ui.modal('m-plan-edit', 'Último servicio conocido', eyebrow='Plan') %}
+<form class="eu-modal-bd" id="f-m-plan-edit" novalidate>
+  {{ f('pe-km', 'Km del último servicio', 'number', attrs='min="0"') }}
+  {{ f('pe-fecha', 'Fecha del último servicio', 'date') }}
+</form>
+{{ ft('m-plan-edit', 'Guardar') }}
+{% endcall %}
+
+{% call ui.modal('m-serv', 'Registrar servicio', eyebrow='Bitácora') %}
+<form class="eu-modal-bd" id="f-m-serv" autocomplete="off" novalidate>
+  <div class="eu-grid-2 hm-fgrid">{{ sel('s-tipo', 'Tipo', tipos_servicio) }}{{ f('s-fecha', 'Fecha', 'date') }}</div>
+  {{ f('s-titulo', 'Título *', ph='Lavado y detallado') }}
+  <div class="eu-grid-3 hm-fgrid">{{ f('s-km', 'Km', 'number', attrs='min="0"') }}{{ f('s-costo', 'Costo', 'number', attrs='min="0" step="0.01"') }}{{ f('s-taller', 'Taller') }}</div>
+  {{ ta('s-desc', 'Notas') }}
+</form>
+{{ ft('m-serv', 'Guardar', True) }}
+{% endcall %}
+
+{% call ui.modal('m-doc', 'Subir documento', eyebrow='Papeles') %}
+<form class="eu-modal-bd" id="f-m-doc" autocomplete="off" novalidate>
+  <div class="eu-grid-2 hm-fgrid">{{ sel('d-tipo', 'Tipo', tipos_documento) }}{{ f('d-venc', 'Vence (opcional)', 'date') }}</div>
+  {{ f('d-titulo', 'Título *', ph='Tarjeta de circulación 2026') }}
+  <div class="eu-field"><label class="eu-label" for="d-file">Archivo (imagen o PDF) *</label><input class="eu-input hm-file" id="d-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.pdf"></div>
+</form>
+{{ ft('m-doc', 'Subir') }}
+{% endcall %}
+
+{% call ui.modal('m-poliza', 'Agregar póliza de seguro', eyebrow='Papeles') %}
+<form class="eu-modal-bd" id="f-m-poliza" autocomplete="off" novalidate>
+  <div class="eu-grid-2 hm-fgrid">{{ f('p-aseguradora', 'Aseguradora *', ph='GNP, Qualitas, AXA…') }}{{ f('p-numero', 'Número de póliza') }}</div>
+  <div class="eu-grid-2 hm-fgrid">{{ f('p-vig-ini', 'Vigencia inicio', 'date') }}{{ f('p-vig-fin', 'Vigencia fin', 'date') }}</div>
+  <div class="eu-grid-3 hm-fgrid">{{ f('p-prima', 'Prima anual', 'number', attrs='min="0" step="0.01"') }}{{ f('p-deducible', 'Deducible', 'number', attrs='min="0" step="0.01"') }}{{ f('p-tel', 'Tel. asistencia', 'tel') }}</div>
+  {{ f('p-notas', 'Notas') }}
+  <div class="eu-field"><label class="eu-label" for="p-file">PDF de la póliza (opcional)</label><input class="eu-input hm-file" id="p-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.pdf"></div>
+</form>
+{{ ft('m-poliza', 'Guardar') }}
+{% endcall %}
+
+{% call ui.modal('m-siniestro', 'Registrar siniestro', eyebrow='Papeles') %}
+<form class="eu-modal-bd" id="f-m-siniestro" autocomplete="off" novalidate>
+  <div class="eu-grid-2 hm-fgrid">{{ sel('sn-tipo', 'Tipo', tipos_siniestro) }}{{ f('sn-fecha', 'Fecha', 'date') }}</div>
+  {{ ta('sn-desc', 'Descripción', 'Qué pasó, dónde, con quién…') }}
+  <div class="eu-grid-3 hm-fgrid">{{ f('sn-costo-est', 'Costo estimado', 'number', attrs='min="0" step="0.01"') }}{{ f('sn-costo-cub', 'Cubierto por seguro', 'number', attrs='min="0" step="0.01"') }}{{ f('sn-deducible', 'Deducible pagado', 'number', attrs='min="0" step="0.01"') }}</div>
+  <div class="eu-grid-2 hm-fgrid">{{ f('sn-taller', 'Taller') }}
+    <div class="eu-field"><label class="eu-label" for="sn-poliza">Póliza asociada</label><select class="eu-select" id="sn-poliza"><option value="">— ninguna —</option></select></div></div>
+  <div class="eu-field"><label class="eu-label" for="sn-file">Documento (reporte, factura…)</label><input class="eu-input hm-file" id="sn-file" type="file" accept=".jpg,.jpeg,.png,.webp,.heic,.pdf"></div>
+</form>
+{{ ft('m-siniestro', 'Guardar') }}
+{% endcall %}
