@@ -1,0 +1,5 @@
+{# Progreso de nivel: varias recompensas se desbloquean por nivel #}
+<section class="eu-card eu-vstack rw-level" aria-label="Progreso de nivel">
+  <div class="eu-between t-meta"><span>Nivel {{ level_info.level }} · <b class="fg-2">{{ level_info.level_name|title }}</b></span><span class="num">{{ level_info.xp_to_next }} XP → nivel {{ level_info.level + 1 }}</span></div>
+  {{ ui.xpbar(level_info.level_pct, 100, label='% del nivel') }}
+</section>

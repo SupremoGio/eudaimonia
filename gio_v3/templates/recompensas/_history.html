@@ -1,0 +1,13 @@
+{# Canjes y gastos recientes (coins_ledger negativos) #}
+<section class="eu-card eu-card--flush rw-hist" aria-labelledby="rw-hist-t">
+  <div class="eu-between rw-hist-hd"><h2 class="t-card" id="rw-hist-t">Canjes y gastos</h2><span class="t-meta">últimos 60</span></div>
+  <div class="eu-list js-hist">
+    {% for g in history %}
+    <div class="eu-row">
+      <div class="eu-row-main"><div class="eu-row-t">{{ g.description }}</div><div class="eu-row-s">{{ g.date }} · ${{ '{:,}'.format(g.ec * ec_rate) }} MXN</div></div>
+      <span class="eu-amt rw-minus">−{{ g.ec }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="js-hist-empty"{% if history %} hidden{% endif %}>{{ ui.empty('receipt', 'Sin canjes aún', 'Lo que canjees o gastes quedará registrado aquí.') }}</div>
+</section>

@@ -1,0 +1,47 @@
+{# Tarjetas de recompensa: costo en EC y MXN, nivel, cooldown, progreso hacia el costo #}
+<div class="rw-grid">
+  {% for r in rewards %}
+  {% set need = 'Requiere nivel ' ~ r.level_required if r.status == 'level'
+      else ('Faltan ' ~ (r.ec_cost - ec_balance) ~ ' EC' if r.status == 'ec'
+      else (r.block_reason if r.status == 'wait'
+      else ('Cooldown ' ~ r.cooldown_days ~ ' d' if r.cooldown_days else 'Sin cooldown'))) %}
+  <article class="eu-card eu-vstack rw-card is-{{ r.status }}" data-status="{{ r.status }}" data-id="{{ r.id }}"
+           data-name="{{ r.name }}" data-desc="{{ r.description or '' }}" data-cost="{{ r.ec_cost }}"
+           data-level="{{ r.level_required }}" data-cool="{{ r.cooldown_days }}" data-weekend="{{ 1 if r.weekend_only else 0 }}">
+    <div class="eu-hstack eu-gap-3">
+      <div class="eu-row-ic rw-ic"><i data-lucide="{{ 'lock' if r.status == 'level' else r.icon }}"></i></div>
+      <div class="eu-grow">
+        <h2 class="rw-name">{{ r.name }}</h2>
+        <div class="t-meta">Nivel {{ r.level_required }}+ · {{ need }}</div>
+      </div>
+    </div>
+    {% if r.description %}<p class="t-meta rw-desc">{{ r.description }}</p>{% endif %}
+    <div class="eu-hstack rw-tags">
+      {% if r.weekend_only %}<span class="eu-badge eu-badge--info"><i data-lucide="calendar-days"></i>Fin de semana</span>{% endif %}
+      {% if r.badge_required %}<span class="eu-badge"><i data-lucide="award"></i>{{ r.badge_required }}</span>{% endif %}
+      {% if r.last_redeemed %}<span class="t-meta">Último canje {{ r.last_redeemed[:10] }}</span>{% endif %}
+    </div>
+    <div class="eu-between rw-price">
+      <span class="t-data fg-ec rw-cost">{{ r.ec_cost }} <span class="t-meta">EC</span></span>
+      <span class="eu-hstack rw-tools">
+        <span class="t-meta num">${{ '{:,}'.format(r.ec_cost * ec_rate) }}</span>
+        <button type="button" class="eu-iconbtn js-edit" aria-label="Editar {{ r.name }}" title="Editar"><i data-lucide="pencil"></i></button>
+        <button type="button" class="eu-iconbtn js-del" aria-label="Eliminar {{ r.name }}" title="Eliminar"><i data-lucide="trash-2"></i></button>
+      </span>
+    </div>
+    {% if r.status == 'ec' %}
+    <div class="eu-progress eu-progress--thin rw-progress" role="progressbar" aria-label="EC reunidos para {{ r.name }}" aria-valuenow="{{ r.ec_pct }}" aria-valuemax="100"><i style="width:{{ r.ec_pct }}%"></i></div>
+    {% endif %}
+    {% if r.status == 'available' %}
+    <button type="button" class="eu-btn eu-btn--primary eu-btn--sm eu-btn--block js-redeem"><i data-lucide="sparkles"></i>Canjear</button>
+    {% else %}
+    <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm eu-btn--block" disabled>{{ 'Bloqueada' if r.status == 'level' else ('Reuniendo EC' if r.status == 'ec' else 'En espera') }}</button>
+    {% endif %}
+  </article>
+  {% else %}
+  <div class="rw-empty">
+    {{ ui.empty('gift', 'Aún no hay recompensas', 'Crea tu primera recompensa y convierte tu esfuerzo en algo tangible.') }}
+  </div>
+  {% endfor %}
+</div>
+<div class="js-filter-empty" hidden>{{ ui.empty('filter', 'Nada con este filtro', 'Prueba con otro estado.') }}</div>

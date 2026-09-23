@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from database import get_db
 from modules.gamification.engine import get_gamification_stats
 from utils import today_str, today_date
+from ec_constants import EC_RATE
 
 recompensas_bp = Blueprint('recompensas', __name__, template_folder='../../templates')
 
@@ -53,6 +54,36 @@ def _can_redeem(reward, ec_balance, current_level):
     return True, "ok"
 
 
+# Ícono Lucide por palabras del nombre (la tabla rewards no guarda ícono)
+_REWARD_ICONS = [
+    (("libro", "book", "kindle", "lectura"), "book-open"), (("ropa", "nike", "tenis", "camisa"), "shirt"),
+    (("viaje", "vuelo", "trip"), "plane"), (("watch", "reloj"), "watch"), (("tablet", "ipad"), "tablet"),
+    (("salida", "cine", "experiencia", "concierto"), "ticket"), (("cena", "comida", "restaurante", "helado"), "utensils"),
+    (("juego", "game", "steam"), "gamepad-2"), (("café", "cafe"), "coffee"), (("masaje", "spa"), "flower-2"),
+]
+
+
+def _reward_icon(name):
+    n = (name or "").lower()
+    for words, icon in _REWARD_ICONS:
+        if any(w in n for w in words):
+            return icon
+    return "gift"
+
+
+def _reward_status(r, ec_balance, current_level):
+    """available · level (bloqueada por nivel) · wait (cooldown, fin de semana,
+    badge) · ec (solo faltan EC) — los filtros de la tienda V2."""
+    if r["can_redeem"]:
+        return "available"
+    if current_level < r["level_required"]:
+        return "level"
+    if ec_balance < r["ec_cost"]:
+        can_otherwise, _ = _can_redeem(r, 10 ** 9, current_level)
+        return "ec" if can_otherwise else "wait"
+    return "wait"
+
+
 @recompensas_bp.route('/')
 def index():
     ec_balance    = _get_ec_balance()
@@ -64,12 +95,32 @@ def index():
         can, reason = _can_redeem(r, ec_balance, current_level)
         r["can_redeem"] = can
         r["block_reason"] = reason if not can else ""
+        r["status"] = _reward_status(r, ec_balance, current_level)
+        r["icon"] = _reward_icon(r["name"])
+        r["ec_pct"] = min(100, round(ec_balance / r["ec_cost"] * 100)) if r["ec_cost"] else 100
+
+    today = today_date()
+    week_start = (today - timedelta(days=today.weekday())).isoformat()
+    month_ago = (today - timedelta(days=29)).isoformat()
+    with get_db() as db:
+        ec_week = db.execute("SELECT COALESCE(SUM(amount),0) s FROM coins_ledger WHERE amount>0 AND date>=?",
+                             (week_start,)).fetchone()["s"]
+        ec_30 = db.execute("SELECT COALESCE(SUM(amount),0) s FROM coins_ledger WHERE amount>0 AND date>=?",
+                           (month_ago,)).fetchone()["s"]
+        history = [dict(r) for r in db.execute(
+            "SELECT id, ABS(amount) AS ec, description, date, source FROM coins_ledger "
+            "WHERE amount < 0 ORDER BY id DESC LIMIT 60").fetchall()]
 
     return render_template('recompensas/index.html',
         rewards      = rewards,
         ec_balance   = ec_balance,
         level_info   = level_info,
         gam          = get_gamification_stats(),
+        ec_rate      = EC_RATE,
+        ec_week      = ec_week,
+        ec_daily     = round(ec_30 / 30, 1),
+        history      = history,
+        counts       = {k: sum(1 for r in rewards if r["status"] == k) for k in ("available", "level", "wait", "ec")},
     )
 
 

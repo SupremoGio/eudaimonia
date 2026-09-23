@@ -1,0 +1,67 @@
+/* ═══════════════════════════════════════════════════════════════
+   Recompensas (/recompensas/) — Design System V2 · pantalla 05
+   Desktop: grid 1fr / 320px (saldo, nivel, gasto libre, historial).
+   Móvil: saldo arriba, chips, tarjetas y luego el panel.
+   ═══════════════════════════════════════════════════════════════ */
+.rw{display:flex;flex-direction:column;gap:var(--sp-4)}
+.rw h1,.rw h2{margin:0}
+.rw-main,.rw-side{display:flex;flex-direction:column;gap:var(--sp-4)}
+@media (min-width:1024px){
+  .rw{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:var(--sp-6);align-items:start}
+  .rw-main{gap:var(--sp-5)}
+}
+/* El saldo va arriba en móvil y en el panel en desktop */
+.rw-side .rw-balance{display:none}
+@media (min-width:1024px){.rw-main .rw-balance{display:none}.rw-side .rw-balance{display:flex}}
+
+.rw-hd{display:flex;flex-direction:column;gap:var(--sp-3)}
+.rw-hd .t-page{margin-top:var(--sp-2)}
+.rw-lead{margin:var(--sp-2) 0 0;color:var(--fg-2)}
+@media (max-width:767px){.rw-hd > div{display:none}.rw-hd .eu-btn{align-self:flex-start}}
+@media (min-width:768px){.rw-hd{flex-direction:row;align-items:flex-end;justify-content:space-between}}
+
+/* Saldo: radial electrum */
+.rw-balance{gap:6px;padding:var(--sp-5);background:radial-gradient(100% 120% at 100% 0%,var(--ec-bg),transparent 60%),var(--bg-surface)}
+.rw-balance-n{align-items:baseline;gap:var(--sp-2)}
+.rw-balance-n .t-data-xl{font-size:var(--fs-40)}
+.rw-balance-more{display:flex;flex-direction:column;gap:var(--sp-2);border-top:1px solid var(--border-subtle);padding-top:var(--sp-3);margin-top:var(--sp-2)}
+
+/* Filtros */
+.rw-filters{flex-wrap:nowrap}
+.rw[data-filter=available] .rw-card:not(.is-available),
+.rw[data-filter=ec] .rw-card:not(.is-ec),
+.rw[data-filter=level] .rw-card:not(.is-level),
+.rw[data-filter=wait] .rw-card:not(.is-wait){display:none}
+
+/* Tarjetas */
+.rw-grid{display:grid;gap:var(--sp-3)}
+@media (min-width:768px){.rw-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4)}}
+@media (min-width:1280px){.rw-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.rw-empty{grid-column:1/-1}
+.rw-card{gap:var(--sp-3)}
+.rw-card.is-available{border-color:var(--border-brand)}
+.rw-card.is-available .rw-ic{color:var(--fg-brand);background:var(--brand-subtle)}
+.rw-card.is-level .rw-name{color:var(--fg-2)}
+.rw-name{font:var(--fw-regular) var(--fs-15)/1.3 var(--font-ui);color:var(--fg-1)}
+.rw-desc{margin:0}
+.rw-tags{flex-wrap:wrap}
+.rw-tags:empty{display:none}
+.rw-tools{gap:0;flex-shrink:0}
+.rw-tools .t-meta{margin-right:var(--sp-1)}
+.rw-tools .eu-iconbtn{width:32px;height:32px;color:var(--fg-3)}
+.rw-tools .eu-iconbtn svg{width:16px;height:16px}
+@media (pointer:coarse){.rw-tools .eu-iconbtn{width:44px;height:44px}}
+.rw-price{margin-top:auto}
+.rw-cost{font-size:var(--fs-20)}
+.rw-cost .t-meta{font-family:var(--font-ui)}
+.rw-progress > i{background:var(--ec-fg)}
+
+/* Nivel, gasto libre, historial */
+.rw-spend-row{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:var(--sp-2);align-items:end}
+.rw-swap{width:16px;height:16px;color:var(--fg-3);margin-bottom:14px}
+.rw-hist-hd{padding:var(--sp-4) var(--sp-4) var(--sp-1)}
+.rw-hist .eu-row-t{font-size:var(--fs-13)}
+.rw-minus{color:var(--fg-3);font-size:var(--fs-13)}
+.rw-hist .js-hist{max-height:420px;overflow-y:auto}
+.rw-check{cursor:pointer;flex-wrap:wrap}
+.rw-check input{accent-color:var(--brand);width:18px;height:18px;margin:0}

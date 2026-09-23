@@ -1,0 +1,10 @@
+{# Saldo de Euda-Credits (se incluye dos veces: arriba en móvil, en el panel en desktop) #}
+<section class="eu-card eu-vstack rw-balance" aria-label="Saldo de EC">
+  <div class="t-meta">Saldo</div>
+  <div class="eu-hstack rw-balance-n"><span class="t-data-xl fg-ec js-ec">{{ ec_balance }}</span><span class="t-ui fg-3">EC</span></div>
+  <div class="t-meta num">≈ $<span class="js-ec-mxn">{{ '{:,}'.format(ec_balance * ec_rate) }}</span> MXN</div>
+  <div class="rw-balance-more">
+    <div class="eu-between t-meta"><span>Esta semana</span><span class="num fg-2">+{{ ec_week }} EC</span></div>
+    <div class="eu-between t-meta"><span>Promedio diario · 30 d</span><span class="num fg-2">{{ ec_daily }} EC</span></div>
+  </div>
+</section>

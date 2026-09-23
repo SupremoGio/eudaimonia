@@ -1,0 +1,17 @@
+{# Alta / edición de recompensa (POST · PUT /recompensas/api/rewards) #}
+{% call ui.modal('rw-modal', 'Nueva recompensa', eyebrow='Tienda') %}
+<form class="eu-modal-bd js-rw-form" autocomplete="off">
+  {{ ui.field('name', 'Nombre', placeholder='Ej. Ropa Nike', maxlength=80) }}
+  <div class="eu-grid-2">
+    {{ ui.field('cost', 'Costo (EC)', type='number', value='50', min=0) }}
+    {{ ui.field('lvl', 'Nivel requerido', type='number', value='1', min=1, max=10) }}
+    {{ ui.field('cool', 'Cooldown (días)', type='number', value='30', min=0) }}
+  </div>
+  {{ ui.field('desc', 'Descripción', placeholder='Opcional', maxlength=200) }}
+  <label class="eu-hstack rw-check"><input type="checkbox" id="f-weekend"> <span class="t-ui">Solo fin de semana</span> <span class="t-meta">· evita que se vuelva hábito diario</span></label>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('rw-modal')">Cancelar</button>
+  <button type="button" class="eu-btn eu-btn--primary js-rw-save"><i data-lucide="check"></i>Guardar</button>
+</div>
+{% endcall %}
