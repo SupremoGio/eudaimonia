@@ -4995,6 +4995,12 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_prestamos_tipo_real_2026_09 migration warning: {e}")
 
+        # Meta mínima del grupo Ahorro y deudas en la Radiografía (piso, no
+        # tope): valor inicial $4,000. INSERT OR IGNORE: nunca pisa el valor
+        # que el usuario ya haya configurado.
+        db.execute("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('presupuesto_meta_ahorro', '4000')")
+        db.commit()
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,

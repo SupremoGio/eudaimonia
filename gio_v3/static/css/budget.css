@@ -114,3 +114,9 @@
 .bg-me-act{display:flex;justify-content:flex-end;gap:var(--sp-2)}
 .bg-dd-ft{align-items:center}
 #m-dd .eu-empty{padding:var(--sp-8) var(--sp-6)}
+
+/* Ahorro y deudas: meta mínima (piso) */
+.bg-bk-bar--meta[data-tone=success]>i{background:var(--success-fg)}
+.bg-bk-bar--meta[data-tone=danger]>i{background:var(--danger-fg)}
+.bg-bk-ref{margin:var(--sp-1) 0 0}
+.bg-meta-edit{margin-left:var(--sp-1)}

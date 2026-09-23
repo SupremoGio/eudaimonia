@@ -14,4 +14,13 @@
 </form>
 <div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-limite')">Cancelar</button><button type="submit" form="f-limite" class="eu-btn eu-btn--primary">Guardar</button></div>
 {% endcall %}
+
+{% call ui.modal('m-meta', 'Meta mínima de ahorro', eyebrow='Ahorro y deudas') %}
+<form class="eu-modal-bd" id="f-meta" novalidate>
+  <div class="eu-field"><label class="eu-label" for="meta-valor">Cuánto quieres apartar al mes (MXN)</label>
+    <input class="eu-input eu-input--money" type="number" step="100" min="0" inputmode="decimal" id="meta-valor" placeholder="4000">
+    <div class="eu-help">Es un piso: el grupo se pinta en verde al alcanzarla o superarla y en rojo si queda por debajo.</div></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-meta')">Cancelar</button><button type="submit" form="f-meta" class="eu-btn eu-btn--primary">Guardar</button></div>
+{% endcall %}
 </div>

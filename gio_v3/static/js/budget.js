@@ -37,7 +37,22 @@
       euModal.open('m-limite'); setTimeout(function () { $('lim-valor').focus(); }, 20);
       return;
     }
+    var mt = e.target.closest('[data-meta]');
+    if (mt) {
+      $('meta-valor').value = +mt.dataset.meta > 0 ? mt.dataset.meta : '';
+      euModal.open('m-meta'); setTimeout(function () { $('meta-valor').focus(); }, 20);
+      return;
+    }
     var d = e.target.closest('[data-dd]'); if (d) openDD(d);
+  });
+  $('f-meta').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = parseFloat($('meta-valor').value);
+    if (!v || v <= 0) { toast('Ingresa un monto válido', 'err'); $('meta-valor').focus(); return; }
+    post('/finanzas/budget/api/meta-ahorro', { valor: v }).then(function (r) {
+      if (!r.ok) { toast('Error al guardar', 'err'); return; }
+      euModal.close('m-meta'); toast('Meta guardada', 'win'); setTimeout(function () { location.reload(); }, 600);
+    }).catch(function () { toast('Sin conexión', 'err'); });
   });
   $('f-limite').addEventListener('submit', function (e) {
     e.preventDefault();

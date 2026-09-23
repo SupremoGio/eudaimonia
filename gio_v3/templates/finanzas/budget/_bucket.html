@@ -1,11 +1,23 @@
 {# Un bucket 50-30-20 con sus categorías (abren el drill-down de movimientos) #}
 {% set bdata = buckets[bk] %}
 <section class="eu-card bg-bucket" data-cat="{{ bcat }}" aria-labelledby="bk-{{ bk }}">
+  {% if bk == 'ahorro_deuda' %}
+  {#- Meta mínima (piso): verde al alcanzarla, rojo por debajo; el 20 % queda de referencia. -#}
+  <div class="eu-between bg-bk-hd">
+    <h2 class="t-eyebrow bg-bk-t" id="bk-{{ bk }}">{{ label }}</h2>
+    <span class="t-meta bg-bk-nums"><b class="t-data">{{ money(bdata.total_gastado) }}</b> / meta mínima {{ money(bdata.meta_minima) }}
+      {% if bdata.cumple_meta %}<span class="eu-badge eu-badge--success">meta cumplida</span>{% else %}<span class="eu-badge eu-badge--danger">debajo de la meta</span>{% endif %}
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm bg-meta-edit" data-meta="{{ bdata.meta_minima }}" aria-label="Editar meta mínima de ahorro"><i data-lucide="pencil"></i>Meta</button></span>
+  </div>
+  <div class="eu-progress bg-bk-bar bg-bk-bar--meta" data-tone="{{ 'success' if bdata.cumple_meta else 'danger' }}" role="progressbar" aria-label="{{ label }}: {{ bdata.pct_of_meta }}% de la meta mínima" aria-valuenow="{{ bdata.pct_of_meta }}" aria-valuemax="100"><i style="width:{{ [bdata.pct_of_meta, 100]|min }}%"></i></div>
+  <p class="t-meta bg-bk-ref">Referencia 20 % del ingreso recurrente: {{ money(bdata.target_monto) }}</p>
+  {% else %}
   <div class="eu-between bg-bk-hd">
     <h2 class="t-eyebrow bg-bk-t" id="bk-{{ bk }}">{{ label }}</h2>
     <span class="t-meta bg-bk-nums"><b class="t-data">{{ money(bdata.total_gastado) }}</b> / meta {{ money(bdata.target_monto) }}{% if bdata.over %} <span class="eu-badge eu-badge--danger">sobre la meta</span>{% endif %}</span>
   </div>
   <div class="eu-progress eu-progress--cat bg-bk-bar{{ ' is-over' if bdata.over }}" role="progressbar" aria-label="{{ label }}: {{ bdata.pct_of_target }}% de la meta" aria-valuenow="{{ bdata.pct_of_target }}" aria-valuemax="100"><i style="width:{{ [bdata.pct_of_target, 100]|min }}%"></i></div>
+  {% endif %}
   {% if bdata.cats %}
   <ul class="bg-cats">
     {% for cat in bdata.cats %}

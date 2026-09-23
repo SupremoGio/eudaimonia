@@ -134,3 +134,31 @@ def test_racha_no_se_salva_con_un_ingreso_extraordinario(test_db):
             _mov(db, 'OCIO', 500, fecha=f'2026-09-0{i + 2}')
         _, meses = _racha_bajo_presupuesto(db, '2026-09', max_meses=1)
     assert meses[-1]['status'] == 'over'
+
+
+# ── 4. Meta mínima de Ahorro y deudas (piso, no tope) ────────────────────────
+
+def test_meta_minima_inicial_4000_decide_el_color(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 20000, tipo='INGRESO', sub='Pago nominal')
+        _mov(db, 'GBM', 3000, tipo='INVERSION', sub='APORTACION')
+        d = _calc_budget('2026-09', db)
+        ah = d['buckets']['ahorro_deuda']
+        assert (ah['meta_minima'], ah['cumple_meta'], ah['over']) == (4000, False, True)
+        assert ah['target_monto'] == 4000          # 20 % del recurrente, de referencia
+        _mov(db, 'CETES', 1500, tipo='INVERSION', sub='APORTACION')
+        ah = _calc_budget('2026-09', db)['buckets']['ahorro_deuda']
+    assert (ah['cumple_meta'], ah['over'], ah['pct_of_meta']) == (True, False, 112)
+
+
+def test_meta_configurable_y_la_migracion_no_la_pisa(test_db):
+    from app import create_app
+    app = create_app(); app.config['TESTING'] = True
+    with app.test_client() as c:
+        with c.session_transaction() as s:
+            s['app_ok'] = True; s['fin_ok'] = True
+        assert c.post('/finanzas/budget/api/meta-ahorro', json={'valor': 0}).status_code == 400
+        assert c.post('/finanzas/budget/api/meta-ahorro', json={'valor': 2500}).get_json()['ok']
+    database.init_db()          # correr otra vez no regresa a 4000
+    with database.get_db() as db:
+        assert _calc_budget('2026-09', db)['buckets']['ahorro_deuda']['meta_minima'] == 2500

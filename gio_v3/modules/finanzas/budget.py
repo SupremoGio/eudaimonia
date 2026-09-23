@@ -168,6 +168,21 @@ def _ingresos_mes(db, mes, desde, hasta):
             'extraordinario': round(total - recurrente, 2), 'base': base, 'es_override': es_override}
 
 
+# Meta mínima del grupo Ahorro y deudas: es un piso (verde al alcanzarla o
+# superarla, rojo por debajo), a diferencia de Necesidades/Deseos cuya meta
+# es un tope. El 20 % del ingreso recurrente se sigue mostrando de referencia.
+META_AHORRO_KEY = 'presupuesto_meta_ahorro'
+META_AHORRO_DEFAULT = 4000.0
+
+
+def _meta_ahorro(db) -> float:
+    r = db.execute("SELECT value FROM app_settings WHERE key=?", (META_AHORRO_KEY,)).fetchone()
+    try:
+        return float(r['value']) if r else META_AHORRO_DEFAULT
+    except (TypeError, ValueError):
+        return META_AHORRO_DEFAULT
+
+
 # Categorías de GASTO que no son consumo y nunca entran a la Radiografía
 # (misma lista para el cálculo del mes y para la racha). PRESTAMOS: dinero
 # prestado no es gasto -- se sigue en «Por cobrar»; antes caía en Deseos por
@@ -426,6 +441,15 @@ def _calc_budget(mes, db):
             'over':           total_gastado > target_monto,
         }
 
+    # Ahorro y deudas: la meta mínima decide el color (piso, no tope). 'over'
+    # conserva su sentido de «en rojo» para el hero y el mini-resumen.
+    ah = buckets['ahorro_deuda']
+    meta = _meta_ahorro(db)
+    ah['meta_minima'] = meta
+    ah['cumple_meta'] = ah['total_gastado'] >= meta
+    ah['over'] = not ah['cumple_meta']
+    ah['pct_of_meta'] = max(min(round(ah['total_gastado'] / meta * 100) if meta > 0 else 100, 999), 0)
+
     total_gastado = round(sum(c['gastado'] for c in cats_data), 2)
     disponible    = round(ingreso_real - total_gastado, 2)
 
@@ -557,6 +581,21 @@ def export_csv():
 
     return csv_response(['Grupo', 'Categoría', *meses, 'Promedio', 'Límite mensual'],
                         rows, f"presupuesto_{meses[0]}_a_{meses[-1]}.csv")
+
+
+@budget_bp.route('/api/meta-ahorro', methods=['POST'])
+def set_meta_ahorro():
+    d = request.get_json(silent=True) or {}
+    try:
+        valor = round(float(d.get('valor')), 2)
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Monto inválido'}), 400
+    if valor <= 0 or valor > 10_000_000:
+        return jsonify({'ok': False, 'error': 'La meta debe ser mayor a 0'}), 400
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)", (META_AHORRO_KEY, str(valor)))
+        db.commit()
+    return jsonify({'ok': True, 'valor': valor})
 
 
 # ── API: Reclasificar DEPOSITO / SPEI ─────────────────────────────────────────
