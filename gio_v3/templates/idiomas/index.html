@@ -1,522 +1,121 @@
-{% extends "eu/layout_sub.html" %}{% set pg='idiomas' %}
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'idiomas' %}
 {% block title %}Cosmopolitismo — Eudaimonia{% endblock %}
 {% block module_title %}COSMOPOLITISMO{% endblock %}
-{% block topright %}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/idiomas.css') }}">{% endblock %}
+{% block mtitle %}<b>Cosmopolitismo</b><span>Idiomas · plan C1</span>{% endblock %}
+
 {% block content %}
-<style>
-/* ── Grid ── */
-.id-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:1200px;}
-.full{grid-column:1/-1;}
-@media(max-width:767px){.id-grid{grid-template-columns:1fr;}}
+<div class="id" id="id" data-cat="cosmopolitismo">
+  <header class="id-hd">
+    <div class="t-eyebrow">Virtudes · Idiomas</div><h1 class="t-page">Cosmopolitismo</h1>
+    <p class="t-meta id-lead">Ruta a C1 en 26 semanas: vocabulario diario, tests oficiales, quiz con repetición espaciada y escritura con feedback real.</p>
+  </header>
 
-/* ── Hero row — progreso del Plan C1 (titular) + 2 stats secundarios ────
-   Antes el plan vivía como un tile más, del mismo peso visual que Test
-   Tracking o el Journal. Es el metro objetivo de fluidez de todo el
-   módulo, así que ahora lleva un ring SVG y una columna lateral propia
-   en vez de competir en el mismo grid 1fr/1fr genérico. ──────────────── */
-.id-sec-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
-.id-sec-icon{width:30px;height:30px;border-radius:9px;background:var(--gold-d);
-  border:1px solid rgba(201,168,76,.25);display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:var(--gold);}
-.id-sec-icon svg{width:14px;height:14px;}
-.id-sec-desc{font-size:var(--fs-sm);color:var(--dim);margin-top:2px;line-height:1.5;}
-
-.id-hero-row{display:grid;grid-template-columns:1.7fr 1fr;gap:16px;margin-bottom:16px;max-width:1200px;}
-@media(max-width:767px){.id-hero-row{grid-template-columns:1fr;}}
-.id-hero-top{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
-.id-hero-ring{position:relative;width:92px;height:92px;flex-shrink:0;}
-.id-hero-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
-.id-hero-ring circle{transition:stroke-dashoffset 1s cubic-bezier(.16,1,.3,1);}
-.id-hero-ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.id-hero-ring-week{font-family:var(--serif);font-size:1.5rem;font-weight:600;line-height:1;color:var(--gold);}
-.id-hero-ring-lvl{font-size:var(--fs-11);letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-top:2px;text-align:center;max-width:70px;line-height:1.3;}
-.id-hero-info{flex:1;min-width:170px;}
-
-.id-side{display:flex;flex-direction:column;gap:12px;}
-.id-side-stat{flex:1;display:flex;flex-direction:column;justify-content:center;}
-.id-side-stat-val{font-family:var(--serif);font-size:1.8rem;font-weight:600;line-height:1;}
-.id-side-stat-lbl{font-size:var(--fs-xs);color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:4px;}
-
-/* ── Entrada escalonada ── */
-.cardInIdiomas{opacity:0;animation:cardInIdiomas .45s ease forwards;animation-delay:calc(var(--i,0)*60ms);}
-@keyframes cardInIdiomas{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:translateY(0);}}
-@media (prefers-reduced-motion: reduce){.cardInIdiomas{animation:none;opacity:1;}}
-
-/* ── Word card ── */
-.w-card{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:18px 20px;}
-.wh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
-.w-ph{font-size:var(--fs-xs);color:var(--dim);margin-bottom:2px;}
-.w-w{font-family:var(--serif);font-size:1.6rem;font-style:italic;line-height:1;margin-bottom:6px;}
-.w-m{font-size:var(--fs-sm);color:var(--mid);line-height:1.5;margin-bottom:9px;}
-.w-ex{font-size:var(--fs-sm);color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:8px;line-height:1.5;margin-bottom:9px;}
-.w-fr{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-sm);color:var(--blue);background:rgba(96,165,250,.07);border:1px solid rgba(96,165,250,.15);padding:2px 8px;border-radius:100px;}
-.rb{background:none;border:1px solid var(--b);color:var(--dim);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .17s;}
-.rb:hover{border-color:var(--gold);color:var(--gold);}
-.rb svg{width:11px;height:11px;}
-
-/* ── Journal ── */
-.jtxt{width:100%;background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:12px;color:var(--text);font-family:var(--mono);font-size:var(--fs-sm);outline:none;resize:vertical;min-height:110px;transition:border-color .16s;line-height:1.6;box-sizing:border-box;}
-.jtxt:focus{border-color:var(--gold);}
-.j-meta{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end;flex-wrap:wrap;}
-.fb-box{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:14px;margin-top:12px;display:none;}
-.fb-box.on{display:block;}
-.fb-score{font-family:var(--serif);font-size:2rem;color:var(--gold);line-height:1;margin-bottom:2px;}
-.fb-grade{font-size:var(--fs-sm);color:var(--mid);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
-.fb-item{font-size:var(--fs-sm);color:var(--mid);padding:6px 0;border-bottom:1px solid var(--b);display:flex;gap:8px;align-items:flex-start;}
-.fb-item:last-child{border-bottom:none;}
-.fb-issue{color:var(--red);font-weight:600;}
-.fb-sug{color:var(--green);font-weight:600;}
-.fb-type{font-size:var(--fs-xs);padding:1px 5px;border-radius:4px;background:rgba(255,255,255,.07);color:var(--dim);text-transform:uppercase;flex-shrink:0;margin-top:1px;}
-
-/* ── Test table ── */
-.test-table{width:100%;border-collapse:collapse;}
-.test-table th{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.13em;text-transform:uppercase;padding:0 7px 9px;text-align:left;border-bottom:1px solid var(--b);}
-.test-table td{padding:9px 7px;border-bottom:1px solid var(--b);font-size:var(--fs-sm);color:var(--mid);}
-.test-table tr:last-child td{border-bottom:none;}
-.score-badge{font-family:var(--serif);font-size:1rem;color:var(--gold);}
-.test-type{font-size:var(--fs-xs);padding:2px 7px;border-radius:100px;letter-spacing:.08em;text-transform:uppercase;}
-.tt-ielts{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);color:var(--blue);}
-.tt-dalf{background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);color:var(--purple);}
-.tt-other{background:var(--b);color:var(--dim);}
-.jentry{background:var(--card2);border:1px solid var(--b);border-radius:6px;padding:11px 13px;margin-bottom:7px;}
-.je-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
-.je-date{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.09em;}
-.je-lang{font-size:var(--fs-xs);color:var(--gold);background:var(--gold-d);padding:2px 7px;border-radius:100px;}
-.je-text{font-size:var(--fs-12);color:var(--mid);line-height:1.5;}
-
-/* ── Plan C1 ── */
-.plan-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
-.plan-week{font-family:var(--serif);font-size:1.7rem;color:var(--gold);line-height:1;}
-.plan-week-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
-.plan-track{height:6px;border-radius:3px;background:var(--card2);overflow:hidden;margin-bottom:16px;}
-.plan-fill{height:100%;border-radius:3px;background:var(--gold);transition:width .5s ease;}
-.plan-cps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-@media(max-width:767px){.plan-cps{grid-template-columns:1fr;}}
-.plan-cp{border:1px solid var(--b);border-radius:8px;padding:11px 12px;cursor:pointer;transition:border-color .15s;}
-.plan-cp:hover{border-color:var(--gold);}
-.plan-cp.done{border-color:var(--emerald);background:var(--emerald-d);}
-.plan-cp.vencido{border-color:var(--coral);}
-.plan-cp-fase{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
-.plan-cp.done .plan-cp-fase{color:var(--emerald);}
-.plan-cp-nombre{font-size:var(--fs-sm);font-weight:700;color:var(--text);margin-bottom:4px;}
-.plan-cp-semana{font-size:var(--fs-xs);color:var(--dim);margin-bottom:5px;}
-.plan-cp-criterio{font-size:var(--fs-12);color:var(--mid);line-height:1.4;}
-
-/* ── Quiz ── */
-.quiz-lang-btn{padding:6px 18px;border-radius:999px;font-size:var(--fs-sm);font-weight:700;border:1px solid var(--b);color:var(--dim);cursor:pointer;transition:all .15s;letter-spacing:.06em;}
-.quiz-lang-btn.on{background:var(--gold);color:#0a0a1a;border-color:var(--gold);}
-.quiz-lang-btn:hover:not(.on){border-color:var(--gold);color:var(--gold);}
-.q-item{background:var(--card2);border:1px solid var(--b);border-radius:8px;padding:14px 16px;margin-bottom:10px;}
-.q-word{font-family:var(--serif);font-size:1.1rem;font-style:italic;color:var(--gold);margin-bottom:4px;}
-.q-question{font-size:var(--fs-sm);color:var(--mid);margin-bottom:10px;}
-.q-options{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-@media(max-width:480px){.q-options{grid-template-columns:1fr;}}
-.q-opt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;border:1px solid var(--b);cursor:pointer;transition:all .14s;font-size:var(--fs-sm);color:var(--mid);}
-.q-opt:hover{border-color:var(--gold);color:var(--text);}
-.q-opt input{accent-color:var(--gold);flex-shrink:0;}
-.q-opt.correct{border-color:var(--emerald);background:var(--emerald-d);color:var(--emerald);}
-.q-opt.wrong{border-color:var(--coral);background:var(--coral-d);color:var(--coral);}
-.q-example{font-size:var(--fs-sm);color:var(--dim);font-style:italic;border-left:2px solid var(--gold);padding-left:7px;margin-top:8px;}
-.quiz-score{text-align:center;padding:20px 0;}
-.quiz-score-n{font-family:var(--serif);font-size:3rem;color:var(--gold);line-height:1;}
-.quiz-score-l{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-top:4px;}
-</style>
-
-<!-- PLAN C1 · 26 SEMANAS — titular del módulo: progreso de fluidez -->
-<div class="id-sec-head">
-  <div class="id-sec-icon"><i data-lucide="route"></i></div>
-  <div>
-    <div class="tile-lbl" style="margin:0;">PLAN C1 — 26 SEMANAS</div>
-    <div class="id-sec-desc">Ruta de dominio del idioma, dividida en fases con checkpoints objetivos.</div>
-  </div>
-</div>
-<div class="id-hero-row">
-  <div class="tile id-hero-main cardInIdiomas" style="--i:0">
-    <div class="id-hero-top">
-      <div class="id-hero-ring">
-        <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--b)" stroke-width="8"/>
-          <circle id="plan-ring-fg" cx="50" cy="50" r="42" fill="none" stroke="var(--gold)" stroke-width="8"
-                  stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9"/>
-        </svg>
-        <div class="id-hero-ring-label">
-          <div class="id-hero-ring-week" id="plan-week">—</div>
-          <div class="id-hero-ring-lvl" id="plan-week-l">de 26 semanas</div>
-        </div>
+  {# ── Plan C1 ── #}
+  <section class="eu-card id-plan" aria-labelledby="id-plan-t">
+    <div class="id-plan-top">
+      <div class="id-ring" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="id-ring-bg" cx="50" cy="50" r="42"/><circle class="id-ring-fg" id="plan-ring" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg>
+        <div class="id-ring-c"><span class="t-data num" id="plan-week">—</span><span class="t-meta">semana</span></div></div>
+      <div class="eu-vstack id-plan-info">
+        <h2 class="t-card" id="id-plan-t">Plan C1 · 26 semanas</h2>
+        <div class="t-meta" id="plan-fase">Cargando…</div>
+        <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Progreso del plan"><i id="plan-fill" style="width:0%"></i></div>
+        <div class="t-meta" id="plan-inicio"></div>
       </div>
-      <div class="id-hero-info">
-        <div style="font-size:var(--fs-sm);color:var(--dim);" id="plan-fase-txt">Cargando…</div>
-        <div class="plan-track" style="margin-top:12px;"><div class="plan-fill" id="plan-fill" style="width:0%;"></div></div>
+      <div class="id-plan-stats">
+        <div class="eu-stat"><div class="eu-stat-lbl">Tests</div><div class="eu-stat-val">{{ tests|length }}</div></div>
+        <div class="eu-stat"><div class="eu-stat-lbl">Journal</div><div class="eu-stat-val">{{ journal|length }}</div></div>
       </div>
     </div>
-  </div>
-  <div class="id-side">
-    <div class="tile id-side-stat cardInIdiomas" style="--i:1">
-      <div class="id-side-stat-val" style="color:var(--blue);">{{ tests|length }}</div>
-      <div class="id-side-stat-lbl">Tests registrados</div>
-    </div>
-    <div class="tile id-side-stat cardInIdiomas" style="--i:2">
-      <div class="id-side-stat-val" style="color:var(--gold);">{{ journal|length }}</div>
-      <div class="id-side-stat-lbl">Entradas de journal</div>
-    </div>
-  </div>
-</div>
-<div class="tile full cardInIdiomas" style="--i:3;margin-bottom:16px;">
-  <div class="plan-cps" id="plan-cps"></div>
-</div>
+    <div class="id-cps" id="plan-cps" aria-label="Checkpoints del plan"></div>
+  </section>
 
-<div class="id-grid">
-
-  <!-- WORD OF DAY -->
-  <div class="w-card cardInIdiomas" style="--i:4">
-    <div class="wh">
-      <div class="tile-lbl" style="margin:0">WORD OF THE DAY</div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <span style="font-size:var(--fs-xs);color:var(--blue);background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.18);padding:2px 7px;border-radius:100px;">EN → FR</span>
-        <button class="rb" onclick="rw()" title="Nueva palabra" aria-label="Nueva palabra"><i data-lucide="refresh-cw"></i></button>
+  <div class="id-grid">
+    {# ── Palabra del día ── #}
+    <section class="eu-card eu-vstack id-word" aria-labelledby="id-word-t">
+      <div class="eu-between"><h2 class="t-eyebrow" id="id-word-t">Word of the day</h2>
+        <span class="eu-hstack id-gap"><span class="eu-badge eu-badge--cat">EN → FR</span><button type="button" class="eu-iconbtn js-word" aria-label="Otra palabra"><i data-lucide="refresh-cw"></i></button></span></div>
+      <div class="id-word-b" id="wb" aria-live="polite">
+        <div class="t-meta" id="wph">{{ word.phonetic }}</div>
+        <div class="id-w" id="ww">{{ word.word }}</div>
+        <p class="t-body fg-2" id="wm">{{ word.meaning }}</p>
+        <blockquote class="t-quote id-ex" id="we">«{{ word.example }}»</blockquote>
+        <span class="eu-badge" id="wf">FR · {{ word.french }}</span>
       </div>
-    </div>
-    <div id="wb" style="transition:opacity .24s">
-      <div class="w-ph" id="wph">{{ word.phonetic }}</div>
-      <div class="w-w"  id="ww">{{ word.word }}</div>
-      <div class="w-m"  id="wm">{{ word.meaning }}</div>
-      <div class="w-ex" id="we">"{{ word.example }}"</div>
-      <span class="w-fr" id="wf">FR · {{ word.french }}</span>
-    </div>
+    </section>
+
+    {# ── Tests ── #}
+    <section class="eu-card eu-card--flush id-tests" aria-labelledby="id-tests-t">
+      <div class="id-card-hd"><h2 class="t-card" id="id-tests-t">Tests · IELTS / DALF</h2></div>
+      <form class="id-test-form" id="f-test" autocomplete="off">
+        <div class="eu-field"><label class="eu-label" for="tt-type">Tipo</label><select class="eu-select" id="tt-type">{% for t in ['IELTS', 'DALF C1', 'DALF C2', 'DELF B2', 'TOEFL', 'Cambridge C1 Advanced', 'Otro'] %}<option>{{ t }}</option>{% endfor %}</select></div>
+        <div class="eu-field"><label class="eu-label" for="tt-idioma">Idioma</label><select class="eu-select" id="tt-idioma"><option>English</option><option>Français</option></select></div>
+        <div class="eu-field"><label class="eu-label" for="tt-destreza">Destreza</label><select class="eu-select" id="tt-destreza">{% for d in ['General', 'Listening', 'Reading', 'Writing', 'Speaking'] %}<option>{{ d }}</option>{% endfor %}</select></div>
+        <div class="eu-field"><label class="eu-label" for="tt-score">Score</label><input class="eu-input" id="tt-score" placeholder="7.5"></div>
+        <div class="eu-field"><label class="eu-label" for="tt-date">Fecha</label><input class="eu-input" type="date" id="tt-date" value="{{ today }}"></div>
+        <button type="submit" class="eu-btn eu-btn--secondary id-test-add"><i data-lucide="plus"></i>Agregar</button>
+      </form>
+      {% if tests %}
+      <div class="id-table-wrap"><table class="eu-table">
+        <thead><tr><th scope="col">Tipo</th><th scope="col">Idioma · destreza</th><th scope="col" class="r">Score</th><th scope="col">Fecha</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+        <tbody>{% for t in tests %}<tr data-id="{{ t.id }}">
+          <td><span class="eu-badge eu-badge--cat">{{ t.test_type }}</span></td><td class="fg-2">{{ t.idioma or '—' }}{% if t.destreza %} · {{ t.destreza }}{% endif %}</td>
+          <td class="r num fg-brand">{{ t.score }}</td><td class="num fg-3">{{ t.test_date }}</td>
+          <td class="r"><button type="button" class="eu-iconbtn id-danger js-del-test" data-id="{{ t.id }}" aria-label="Eliminar {{ t.test_type }}"><i data-lucide="trash-2"></i></button></td></tr>{% endfor %}</tbody>
+      </table></div>
+      {% else %}<p class="t-meta id-none">Aún no registras resultados.</p>{% endif %}
+    </section>
   </div>
 
-  <!-- TEST TRACKING -->
-  <div class="tile cardInIdiomas" style="--i:5">
-    <div class="tile-lbl">TEST TRACKING — IELTS / DALF</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:7px;margin-bottom:7px;align-items:end;">
-      <div><div class="fl">Tipo</div>
-        <select class="fi" id="tt-type">
-          <option>IELTS</option><option>DALF C1</option><option>DALF C2</option>
-          <option>DELF B2</option><option>TOEFL</option><option>Cambridge C1 Advanced</option><option>Otro</option>
-        </select>
+  {# ── Quiz ── #}
+  <section class="eu-card eu-vstack id-quiz" aria-labelledby="id-quiz-t">
+    <div class="id-quiz-hd">
+      <div class="eu-hstack id-gap"><span class="eu-row-ic id-ic"><i data-lucide="graduation-cap"></i></span><div><h2 class="t-card" id="id-quiz-t">Quiz de vocabulario C1</h2><div class="t-meta">5 preguntas · repite primero las palabras vencidas</div></div></div>
+      <div class="eu-hstack id-gap">
+        <div class="eu-seg" role="group" aria-label="Idioma del quiz"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="fr" aria-pressed="false">Français</button></div>
+        <button type="button" class="eu-btn eu-btn--primary js-quiz"><i data-lucide="play"></i>Iniciar</button>
       </div>
-      <div><div class="fl">Idioma</div>
-        <select class="fi" id="tt-idioma">
-          <option value="English">English</option>
-          <option value="Français">Français</option>
-        </select>
-      </div>
-      <div><div class="fl">Destreza</div>
-        <select class="fi" id="tt-destreza">
-          <option value="General">General</option>
-          <option value="Listening">Listening</option>
-          <option value="Reading">Reading</option>
-          <option value="Writing">Writing</option>
-          <option value="Speaking">Speaking</option>
-        </select>
-      </div>
-      <div><div class="fl">Score</div><input class="fi" id="tt-score" placeholder="Ej: 7.5"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr auto;gap:7px;margin-bottom:14px;align-items:end;">
-      <div><div class="fl">Fecha</div><input class="fi" type="date" id="tt-date" value="{{ today }}"></div>
-      <button class="btn-a" onclick="addTest()">+ ADD</button>
+    <div id="quiz-body" hidden><div class="eu-vstack id-qs" id="quiz-qs"></div><button type="button" class="eu-btn eu-btn--primary js-check">Verificar respuestas</button></div>
+    <div id="quiz-res" hidden>
+      <div class="id-score"><span class="t-data num" id="quiz-score"></span><span class="t-meta">correctas</span></div>
+      <div class="eu-vstack id-qs" id="quiz-items"></div>
+      <button type="button" class="eu-btn eu-btn--secondary js-quiz"><i data-lucide="rotate-ccw"></i>Nuevo quiz</button>
     </div>
-    <table class="test-table">
-      <thead><tr><th>Tipo</th><th>Idioma / destreza</th><th>Score</th><th>Fecha</th><th></th></tr></thead>
-      <tbody id="test-tbody">
-        {% for t in tests %}
-        <tr data-id="{{ t.id }}">
-          <td><span class="test-type tt-{{ t.test_type.split()[0].lower() }}">{{ t.test_type }}</span></td>
-          <td style="font-size:var(--fs-sm)">{{ t.idioma or '—' }}{% if t.destreza %} · {{ t.destreza }}{% endif %}</td>
-          <td class="score-badge">{{ t.score }}</td>
-          <td>{{ t.test_date }}</td>
-          <td><button class="btn-r" onclick="delTest({{ t.id }},this)" aria-label="Eliminar">✕</button></td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" style="text-align:center;padding:18px;color:var(--dim);font-size:var(--fs-sm);">Sin resultados</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  </section>
 
-  <!-- QUIZ C1 -->
-  <div class="tile full cardInIdiomas" style="--i:6">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
-      <div style="display:flex;align-items:flex-start;gap:10px;">
-        <div class="id-sec-icon"><i data-lucide="graduation-cap"></i></div>
-        <div>
-          <div class="tile-lbl" style="margin:0;">QUIZ VOCABULARIO C1</div>
-          <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;">5 preguntas · palabras de nivel avanzado</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button class="quiz-lang-btn on" id="btnEN" onclick="setLang('en')">English</button>
-        <button class="quiz-lang-btn"    id="btnFR" onclick="setLang('fr')">Français</button>
-        <button class="btn-a" onclick="startQuiz()" id="startBtn">▶ Iniciar Quiz</button>
-      </div>
+  {# ── Journal ── #}
+  <section class="eu-card eu-vstack id-journal" aria-labelledby="id-j-t">
+    <div class="eu-hstack id-gap"><span class="eu-row-ic id-ic"><i data-lucide="pen-line"></i></span><div><h2 class="t-card" id="id-j-t">Writing journal</h2><div class="t-meta">Escribe y recibe feedback gramatical real con LanguageTool</div></div></div>
+    <div class="eu-grid-3 id-jmeta">
+      <div class="eu-field"><label class="eu-label" for="j-lang">Idioma</label><select class="eu-select" id="j-lang"><option>English</option><option>Français</option><option>Español</option><option>Deutsch</option></select></div>
+      <div class="eu-field"><label class="eu-label" for="j-fase">Fase del plan</label><select class="eu-select" id="j-fase"><option value="">Sin fase</option><option value="1">1 · Cierre de brechas</option><option value="2">2 · Expansión de rango</option><option value="3">3 · Producción</option><option value="4">4 · Consolidación</option></select></div>
+      <div class="eu-field"><label class="eu-label" for="j-destreza">Destreza</label><select class="eu-select" id="j-destreza"><option>Escritura</option><option>Gramática</option><option>Vocabulario</option></select></div>
     </div>
-
-    <div id="quizLoading" style="display:none;text-align:center;padding:20px;color:var(--dim);font-size:var(--fs-sm);">
-      Cargando preguntas…
+    <textarea class="eu-textarea id-jtxt" id="j-text" aria-label="Texto del journal" placeholder="Escribe en el idioma que practicas…"></textarea>
+    <div class="eu-hstack id-jact"><button type="button" class="eu-btn eu-btn--secondary js-fb"><i data-lucide="spell-check"></i>Feedback real</button><button type="button" class="eu-btn eu-btn--primary js-save-j"><i data-lucide="save"></i>Guardar entrada</button></div>
+    <div class="eu-card eu-card--inset eu-vstack id-fb" id="fb-box" hidden aria-live="polite">
+      <div class="eu-between"><div><div class="t-data num fg-brand id-fb-score" id="fb-score"></div><div class="t-meta" id="fb-grade"></div></div><div class="t-meta" id="fb-words"></div></div>
+      <ul class="id-fb-list" id="fb-list"></ul>
     </div>
-    <div id="quizBody" style="display:none;">
-      <div id="quizQuestions"></div>
-      <button class="btn-a" onclick="submitQuiz()" id="submitBtn" style="margin-top:4px;">Verificar respuestas</button>
+    <div class="eu-vstack id-entries">
+      <div class="t-eyebrow">Entradas anteriores</div>
+      {% for e in journal %}
+      <article class="id-entry" data-id="{{ e.id }}">
+        <div class="eu-between"><span class="t-meta num">{{ e.entry_date }}{% if e.fase %} · Fase {{ e.fase }}{% endif %}{% if e.destreza %} · {{ e.destreza }}{% endif %}</span>
+          <span class="eu-hstack id-gap"><span class="eu-badge eu-badge--cat">{{ e.language }}</span><button type="button" class="eu-iconbtn id-danger js-del-j" data-id="{{ e.id }}" aria-label="Eliminar entrada"><i data-lucide="trash-2"></i></button></span></div>
+        <p class="t-body fg-2">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</p>
+      </article>
+      {% else %}
+      <p class="t-meta">Sin entradas aún. Escribe la primera arriba.</p>
+      {% endfor %}
     </div>
-    <div id="quizResult" style="display:none;">
-      <div class="quiz-score">
-        <div class="quiz-score-n" id="quizScoreN">—</div>
-        <div class="quiz-score-l">de 5 correctas</div>
-      </div>
-      <div id="quizResultItems"></div>
-      <div style="text-align:center;margin-top:14px;">
-        <button class="btn-a" onclick="startQuiz()">↻ Nuevo quiz</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- JOURNAL -->
-  <div class="tile full cardInIdiomas" style="--i:7">
-    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;">
-      <div class="id-sec-icon"><i data-lucide="pen-line"></i></div>
-      <div>
-        <div class="tile-lbl" style="margin:0;">WRITING JOURNAL — PRÁCTICA DE IDIOMAS</div>
-        <div style="font-size:var(--fs-sm);color:var(--dim);margin-top:2px;">Escribe y recibe feedback gramatical real vía LanguageTool</div>
-      </div>
-    </div>
-    <div class="j-meta">
-      <div style="flex:1;min-width:110px;">
-        <div class="fl">Idioma</div>
-        <select class="fi" id="j-lang">
-          <option value="English">English</option>
-          <option value="Français">Français</option>
-          <option value="Español">Español</option>
-          <option value="Deutsch">Deutsch</option>
-        </select>
-      </div>
-      <div style="flex:1;min-width:110px;">
-        <div class="fl">Fase del plan</div>
-        <select class="fi" id="j-fase">
-          <option value="">Sin fase</option>
-          <option value="1">Fase 1 · Cierre de brechas</option>
-          <option value="2">Fase 2 · Expansión de rango</option>
-          <option value="3">Fase 3 · Producción</option>
-          <option value="4">Fase 4 · Consolidación</option>
-        </select>
-      </div>
-      <div style="flex:1;min-width:110px;">
-        <div class="fl">Destreza</div>
-        <select class="fi" id="j-destreza">
-          <option value="Escritura">Escritura</option>
-          <option value="Gramática">Gramática</option>
-          <option value="Vocabulario">Vocabulario</option>
-        </select>
-      </div>
-      <button class="btn-g" onclick="getFeedback()"><i data-lucide="search" style="width:12px;height:12px;vertical-align:middle;"></i> Feedback real</button>
-      <button class="btn-a" onclick="saveJournal()">Guardar entrada</button>
-    </div>
-    <textarea class="jtxt" id="j-text" placeholder="Escribe aquí en el idioma que practicas. El feedback usa LanguageTool para detectar errores gramaticales y ortográficos reales…"></textarea>
-
-    <div class="fb-box" id="fb-box">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-        <div>
-          <div class="fb-score" id="fb-score">—</div>
-          <div class="fb-grade" id="fb-grade">—</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:var(--fs-xs);color:var(--green);font-weight:600;">✓ LanguageTool API</div>
-          <div style="font-size:var(--fs-xs);color:var(--dim);" id="fb-wordcount"></div>
-        </div>
-      </div>
-      <div id="fb-corrections"></div>
-    </div>
-
-    <div style="margin-top:18px;border-top:1px solid var(--b);padding-top:14px;">
-      <div class="tile-lbl">ENTRADAS ANTERIORES</div>
-      <div id="j-entries">
-        {% for e in journal %}
-        <div class="jentry cardInIdiomas" data-id="{{ e.id }}" style="--i:{{ loop.index0 }}">
-          <div class="je-header">
-            <span class="je-date">{{ e.entry_date }}{% if e.fase %} · Fase {{ e.fase }}{% endif %}{% if e.destreza %} · {{ e.destreza }}{% endif %}</span>
-            <div style="display:flex;align-items:center;gap:7px;">
-              <span class="je-lang">{{ e.language }}</span>
-              <button class="btn-r" onclick="delJournal({{e.id}},this)" style="padding:2px 7px;font-size:var(--fs-xs);" aria-label="Eliminar">✕</button>
-            </div>
-          </div>
-          <div class="je-text">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</div>
-        </div>
-        {% else %}
-        <div class="empty-rich" style="padding:24px 12px;">
-          <div class="empty-icon-box"><i data-lucide="pen-line"></i></div>
-          <div class="empty-title" style="font-size:16px;">Sin entradas aún</div>
-          <div class="empty-desc">Escribe tu primera entrada arriba y guárdala.</div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
+  </section>
 </div>
 {% endblock %}
-{% block scripts %}<script>
-function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-// ── Word ──
-async function rw(){
-  const d=await(await fetch('/idiomas/api/word/refresh')).json();
-  const b=document.getElementById('wb');b.style.opacity=0;
-  setTimeout(()=>{
-    document.getElementById('wph').textContent=d.phonetic;
-    document.getElementById('ww').textContent=d.word;
-    document.getElementById('wm').textContent=d.meaning;
-    document.getElementById('we').textContent=`"${d.example}"`;
-    document.getElementById('wf').textContent=`FR · ${d.french}`;
-    b.style.opacity=1;
-  },240);
-}
 
-// ── Test ──
-async function addTest(){
-  const type=document.getElementById('tt-type').value,
-        idioma=document.getElementById('tt-idioma').value,
-        destreza=document.getElementById('tt-destreza').value,
-        score=document.getElementById('tt-score').value.trim(),
-        dt=document.getElementById('tt-date').value;
-  if(!score){toast('Ingresa el score','err');return;}
-  const d=await(await fetch('/idiomas/api/test',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({test_type:type,idioma,destreza,score,test_date:dt})})).json();
-  if(d.ok){toast('Resultado guardado ✓');setTimeout(()=>location.reload(),500);}
-}
-async function delTest(id,btn){
-  await fetch(`/idiomas/api/test/${id}`,{method:'DELETE'});
-  btn.closest('tr').remove();toast('Eliminado');
-}
-
-// ── Journal feedback (LanguageTool) ──
-async function getFeedback(){
-  const text=document.getElementById('j-text').value.trim();
-  if(!text){toast('Escribe algo primero','err');return;}
-  const lang=document.getElementById('j-lang').value;
-  toast('Revisando con LanguageTool…');
-  const r=await fetch('/idiomas/api/language/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,language:lang})});
-  const d=await r.json();
-  if(!d.ok){toast(d.error||'Error al conectar','err');return;}
-  document.getElementById('fb-score').textContent=d.score+' / 100';
-  document.getElementById('fb-grade').textContent=`Nivel estimado: ${d.grade} · ${d.total_issues} ${d.total_issues===1?'error':'errores'} detectados`;
-  document.getElementById('fb-wordcount').textContent=`${d.word_count} palabras`;
-  const corr=document.getElementById('fb-corrections');
-  if(d.corrections.length){
-    corr.innerHTML=d.corrections.map(c=>`
-      <div class="fb-item">
-        <span class="fb-type">${esc(c.type)}</span>
-        <span>❌ <span class="fb-issue">"${esc(c.issue)}"</span>${c.suggestion?' → <span class="fb-sug">"'+esc(c.suggestion)+'"</span>':''}
-        <span style="color:var(--dim);font-size:var(--fs-sm);"> — ${esc(c.message)}</span></span>
-      </div>`).join('');
-  } else {
-    corr.innerHTML='<div class="fb-item" style="color:var(--green);">✓ Sin errores detectados — excelente escritura</div>';
-  }
-  document.getElementById('fb-box').classList.add('on');
-}
-
-async function saveJournal(){
-  const text=document.getElementById('j-text').value.trim();
-  if(!text){toast('Escribe algo primero','err');return;}
-  const body={
-    language: document.getElementById('j-lang').value,
-    entry_text: text,
-    fase: document.getElementById('j-fase').value || null,
-    destreza: document.getElementById('j-destreza').value,
-  };
-  const d=await(await fetch('/idiomas/api/journal',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
-  if(d.ok){toast('Entrada guardada ✓','win');document.getElementById('j-text').value='';document.getElementById('fb-box').classList.remove('on');setTimeout(()=>location.reload(),500);}
-}
-async function delJournal(id,btn){
-  await fetch(`/idiomas/api/journal/${id}`,{method:'DELETE'});
-  btn.closest('.jentry').remove();toast('Eliminado');
-}
-
-// ── Quiz ──
-let _quizLang='en', _quizData=[];
-
-function setLang(l){
-  _quizLang=l;
-  document.getElementById('btnEN').classList.toggle('on',l==='en');
-  document.getElementById('btnFR').classList.toggle('on',l==='fr');
-}
-
-async function startQuiz(){
-  document.getElementById('quizBody').style.display='none';
-  document.getElementById('quizResult').style.display='none';
-  document.getElementById('quizLoading').style.display='block';
-  const d=await(await fetch(`/idiomas/api/quiz?lang=${_quizLang}`)).json();
-  _quizData=d.questions;
-  document.getElementById('quizLoading').style.display='none';
-  renderQuiz(_quizData);
-  document.getElementById('quizBody').style.display='block';
-  if(d.repasando>0) toast(`Repasando ${d.repasando} palabra${d.repasando===1?'':'s'} pendiente${d.repasando===1?'':'s'} de repetición espaciada`);
-}
-
-function renderQuiz(qs){
-  const container=document.getElementById('quizQuestions');
-  container.innerHTML=qs.map((q,i)=>`
-    <div class="q-item" id="qitem${i}">
-      <div class="q-word">${q.word}</div>
-      <div class="q-question">${q.question}</div>
-      <div class="q-options">
-        ${q.options.map((opt,j)=>`
-          <label class="q-opt" id="qopt${i}_${j}">
-            <input type="radio" name="q${i}" value="${j}"> ${opt}
-          </label>`).join('')}
-      </div>
-    </div>`).join('');
-}
-
-async function submitQuiz(){
-  const answers=_quizData.map((_,i)=>{
-    const sel=document.querySelector(`input[name="q${i}"]:checked`);
-    return {selected: sel ? parseInt(sel.value) : -1};
-  });
-  if(answers.some(a=>a.selected===-1)){toast('Responde todas las preguntas','err');return;}
-  const d=await(await fetch('/idiomas/api/quiz/check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questions:_quizData,answers,lang:_quizLang})})).json();
-  showResults(d);
-}
-
-function showResults(d){
-  document.getElementById('quizBody').style.display='none';
-  document.getElementById('quizScoreN').textContent=`${d.score} / ${d.total}`;
-  const medal=d.score===5?'trophy':d.score>=4?'medal':d.score>=3?'award':d.score>=2?'star':'dumbbell';
-  document.getElementById('quizScoreN').innerHTML=`<i data-lucide="${medal}" style="width:16px;height:16px;vertical-align:middle;"></i> ${d.score} / ${d.total}`;
-  const items=document.getElementById('quizResultItems');
-  const mark=ok=>`<i data-lucide="${ok?'check':'x'}" style="width:11px;height:11px;vertical-align:middle;"></i>`;
-  items.innerHTML=d.results.map(r=>`
-    <div class="q-item" style="margin-bottom:8px;">
-      <div class="q-word" style="color:${r.correct?'var(--emerald)':'var(--coral)'}">${mark(r.correct)} ${r.word}</div>
-      <div class="q-options">
-        ${r.options.map((opt,j)=>`
-          <div class="q-opt ${j===r.answer?'correct':j===r.selected&&!r.correct?'wrong':''}" style="cursor:default;">
-            ${j===r.answer?mark(true):j===r.selected&&!r.correct?mark(false):''} ${opt}
-          </div>`).join('')}
-      </div>
-      ${r.example?`<div class="q-example">"${r.example}"</div>`:''}
-    </div>`).join('');
-  document.getElementById('quizResult').style.display='block';
-  if (window.lucide) lucide.createIcons();
-}
-
-// ── Plan C1 · 26 semanas ──
-async function cargarPlan(){
-  const d=await(await fetch('/idiomas/api/plan')).json();
-  document.getElementById('plan-week').textContent=d.semana_actual;
-  document.getElementById('plan-week-l').textContent=`de ${d.total_semanas} semanas · Fase ${d.fase_actual}`;
-  document.getElementById('plan-fase-txt').textContent=`Inicio del plan: ${d.inicio}`;
-  document.getElementById('plan-fill').style.width=d.progreso_pct+'%';
-  const ring=document.getElementById('plan-ring-fg');
-  if(ring){ const circ=263.9; ring.style.strokeDashoffset = circ - (Math.min(100,d.progreso_pct)/100)*circ; }
-  document.getElementById('plan-cps').innerHTML=d.checkpoints.map((cp,i)=>`
-    <div class="plan-cp cardInIdiomas eu-activate ${cp.completado?'done':cp.vencido?'vencido':''}" role="button" tabindex="0" aria-pressed="${!!cp.completado}" aria-label="${cp.nombre}" style="--i:${i}" onclick="toggleCheckpoint(${cp.id},${cp.completado?0:1})">
-      <div class="plan-cp-fase">${cp.completado?'<i data-lucide="check" style="width:10px;height:10px;vertical-align:middle;"></i> Completada':'Fase '+cp.fase}</div>
-      <div class="plan-cp-nombre">${cp.nombre}</div>
-      <div class="plan-cp-semana">Hasta semana ${cp.semana_fin} · ${cp.fecha_objetivo}</div>
-      <div class="plan-cp-criterio">${cp.criterio}</div>
-    </div>`).join('');
-  if (window.lucide) lucide.createIcons();
-}
-async function toggleCheckpoint(id,completado){
-  await fetch(`/idiomas/api/plan/checkpoint/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({completado:!!completado})});
-  cargarPlan();
-}
-cargarPlan();
-</script>{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/idiomas.js') }}"></script>
+{% endblock %}
