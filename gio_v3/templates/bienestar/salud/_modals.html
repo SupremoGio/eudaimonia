@@ -1,0 +1,58 @@
+{% call ui.modal('m-ep', 'Nuevo episodio', eyebrow='Salud') %}
+<form class="eu-modal-bd" id="f-ep" autocomplete="off">
+  <div class="eu-field"><label class="eu-label" for="ep-tipo">Tipo</label>
+    <select class="eu-select" id="ep-tipo"><option value="enfermedad">Enfermedad</option><option value="lesion">Lesión / esguince</option><option value="consulta">Consulta médica</option></select></div>
+  <div class="eu-field"><label class="eu-label" for="ep-titulo">Nombre / diagnóstico *</label><input class="eu-input" id="ep-titulo" placeholder="Gripe, esguince de tobillo, revisión anual…"></div>
+  <div class="eu-field"><label class="eu-label" for="ep-zona">Zona del cuerpo</label><input class="eu-input" id="ep-zona" placeholder="Garganta, tobillo derecho, espalda baja…"></div>
+  <div class="eu-field"><label class="eu-label" for="ep-desc">Descripción</label><textarea class="eu-textarea" id="ep-desc" rows="2" placeholder="Síntomas, contexto… (opcional)"></textarea></div>
+  <div class="eu-field"><label class="eu-label" for="ep-fecha">Fecha de inicio</label><input class="eu-input" id="ep-fecha" type="date"></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-ep')">Cancelar</button><button type="submit" form="f-ep" class="eu-btn eu-btn--primary">Guardar episodio</button></div>
+{% endcall %}
+
+{% call ui.modal('m-rx', 'Agregar receta', eyebrow='Salud') %}
+<form class="eu-modal-bd" id="f-rx" autocomplete="off">
+  <input type="hidden" id="rx-ep-id">
+  <div class="eu-grid-2 sl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="rx-medico">Médico</label><input class="eu-input" id="rx-medico" placeholder="Dra. García…"></div>
+    <div class="eu-field"><label class="eu-label" for="rx-esp">Especialidad</label><input class="eu-input" id="rx-esp" placeholder="Traumatología…"></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="rx-fecha">Fecha de la receta</label><input class="eu-input" id="rx-fecha" type="date"></div>
+  <div class="eu-field"><label class="eu-label" for="rx-notas">Notas</label><textarea class="eu-textarea" id="rx-notas" rows="2" placeholder="Indicaciones del médico… (opcional)"></textarea></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-rx')">Cancelar</button><button type="submit" form="f-rx" class="eu-btn eu-btn--primary">Guardar receta</button></div>
+{% endcall %}
+
+{% call ui.modal('m-med', 'Agregar medicamento', eyebrow='Receta') %}
+<form class="eu-modal-bd" id="f-med" autocomplete="off">
+  <input type="hidden" id="med-rx-id">
+  <div class="eu-field"><label class="eu-label" for="med-nombre">Medicamento *</label><input class="eu-input" id="med-nombre" placeholder="Ibuprofeno, amoxicilina…"></div>
+  <div class="eu-grid-2 sl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="med-dosis">Dosis</label><input class="eu-input" id="med-dosis" placeholder="400 mg"></div>
+    <div class="eu-field"><label class="eu-label" for="med-freq">Frecuencia</label><input class="eu-input" id="med-freq" placeholder="Cada 8 h"></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="med-dias">Duración (días)</label><input class="eu-input" id="med-dias" type="number" min="1" inputmode="numeric" placeholder="Opcional"></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-med')">Cancelar</button><button type="submit" form="f-med" class="eu-btn eu-btn--primary">Agregar</button></div>
+{% endcall %}
+
+{% call ui.modal('m-doc', 'Subir receta o estudio', eyebrow='Documentos') %}
+<form class="eu-modal-bd" id="f-doc" autocomplete="off">
+  <input type="hidden" id="doc-ep-id">
+  <div class="eu-grid-2 sl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="doc-tipo">Tipo</label><select class="eu-select" id="doc-tipo"><option value="receta">Receta médica</option><option value="estudio">Estudio / análisis</option></select></div>
+    <div class="eu-field"><label class="eu-label" for="doc-fecha">Fecha</label><input class="eu-input" id="doc-fecha" type="date"></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="doc-file">Archivo (imagen o PDF)</label><input class="eu-input sl-file" id="doc-file" type="file" accept="image/*,.pdf"></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-doc')">Cancelar</button><button type="submit" form="f-doc" class="eu-btn eu-btn--primary">Subir</button></div>
+{% endcall %}
+
+{% call ui.modal('m-res', 'Resolver episodio', eyebrow='Salud') %}
+<form class="eu-modal-bd" id="f-res" autocomplete="off">
+  <input type="hidden" id="res-ep-id">
+  <p class="t-meta">Queda en el historial como resuelto para referencia futura.</p>
+  <div class="eu-field"><label class="eu-label" for="res-fecha">Fecha de resolución</label><input class="eu-input" id="res-fecha" type="date"></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-res')">Cancelar</button><button type="submit" form="f-res" class="eu-btn eu-btn--primary"><i data-lucide="check"></i>Marcar resuelto</button></div>
+{% endcall %}

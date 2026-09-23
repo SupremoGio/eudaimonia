@@ -1,0 +1,38 @@
+{# Análisis de patrones: recurrencias rápidas, episodios por mes, recuperación, zonas y medicamentos #}
+{% set an = analytics %}
+{% for r in an.recurrencia if r.dias_entre is not none and 0 < r.dias_entre < 90 %}
+<div class="eu-card sl-alert" role="status"><i data-lucide="alert-triangle"></i>
+  <p><b>{{ r.titulo }}</b> ha recurrido {{ r.veces }} veces — en promedio cada <b>{{ (r.dias_entre // (r.veces - 1)) if r.veces > 1 else r.dias_entre }} días</b>. Consulta a un especialista para prevenirlo.</p></div>
+{% endfor %}
+{% if an.recurrencia or an.monthly or an.recovery %}
+<details class="eu-card eu-card--flush sl-an" open>
+  <summary class="sl-an-sum"><span class="eu-row-ic"><i data-lucide="bar-chart-3"></i></span><span class="t-card eu-grow">Análisis de patrones</span><i data-lucide="chevron-down" class="sl-chev sl-an-chev"></i></summary>
+  <div class="sl-an-grid">
+    <div class="eu-vstack sl-an-col">
+      <div class="t-eyebrow">Episodios por mes</div>
+      {% if an.monthly %}{% set max_m = an.monthly|map(attribute='total')|max %}
+      {% for m in an.monthly %}
+      <div class="sl-bar"><span class="t-meta num">{{ m.mes[5:] }}</span><span class="sl-bar-t"><i style="width:{{ (m.total / max_m * 100)|int }}%"></i></span><span class="t-meta num">{{ m.total }}</span></div>
+      {% endfor %}{% else %}<p class="t-meta">Sin datos aún.</p>{% endif %}
+    </div>
+    <div class="eu-vstack sl-an-col">
+      <div class="t-eyebrow">Recuperación promedio</div>
+      {% for r in an.recovery %}
+      <div class="eu-between"><span><span class="t-ui">{{ TIPO.get(r.tipo, TIPO.consulta)[0] }}</span><span class="t-meta"> · {{ r.total }} resuelto{{ 's' if r.total != 1 }}</span></span><span class="t-data num">{{ r.avg_dias }} d</span></div>
+      {% else %}<p class="t-meta">Sin episodios resueltos aún.</p>{% endfor %}
+      {% if an.recurrencia %}
+      <div class="t-eyebrow sl-mt">Recurrencias</div>
+      {% for r in an.recurrencia %}
+      <div class="eu-between"><span class="t-meta sl-ellip">{{ r.titulo }}</span><span class="eu-hstack sl-gap"><span class="eu-badge{{ ' eu-badge--warning' if r.dias_entre and r.dias_entre < 90 }}">{{ r.veces }}×</span>{% if r.dias_entre %}<span class="t-meta num">{{ r.dias_entre }} d</span>{% endif %}</span></div>
+      {% endfor %}{% endif %}
+    </div>
+    <div class="eu-vstack sl-an-col">
+      {% if an.zonas %}<div class="t-eyebrow">Zonas más afectadas</div>
+      <div class="sl-tags">{% for z in an.zonas %}<span class="eu-badge">{{ z.zona_cuerpo }} <span class="num">{{ z.cnt }}</span></span>{% endfor %}</div>{% endif %}
+      {% if an.top_meds %}<div class="t-eyebrow{{ ' sl-mt' if an.zonas }}">Medicamentos frecuentes</div>
+      <div class="sl-tags">{% for m in an.top_meds %}<span class="eu-badge"><i data-lucide="pill"></i>{{ m.nombre }} <span class="num">{{ m.cnt }}</span></span>{% endfor %}</div>{% endif %}
+      {% if not an.zonas and not an.top_meds %}<p class="t-meta">Registra episodios para ver patrones.</p>{% endif %}
+    </div>
+  </div>
+</details>
+{% endif %}

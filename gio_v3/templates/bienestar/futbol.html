@@ -1,444 +1,96 @@
 {% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
 {% set pg = 'bienestar' %}
-{% block title %}HEGEMONIKON — Fútbol{% endblock %}
+{% block title %}Fútbol — Hegemonikon{% endblock %}
 {% block module_title %}HEGEMONIKON · Fútbol{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/futbol.css') }}">{% endblock %}
+{% block mtitle %}<b>Fútbol</b><span>Hegemonikon · {{ stats.total }} partido{{ 's' if stats.total != 1 }}</span>{% endblock %}
+{% block topright %}<button type="button" class="eu-iconbtn js-new" aria-label="Programar partido"><i data-lucide="plus"></i></button>{% endblock %}
 
-{% block topright %}
-<button class="btn-a" onclick="abrirNuevo()" style="font-size:var(--fs-sm);padding:6px 14px;">
-  + Programar partido
-</button>
-{% endblock %}
+{# tono del rating 1–10: ≥7 success · ≥6 brand · ≥5 warning · <5 danger #}
+{% macro tone(r) -%}{{ 'none' if r is none else ('success' if r >= 7 else ('brand' if r >= 6 else ('warning' if r >= 5 else 'danger'))) }}{%- endmacro %}
+{% macro res(p) -%}{%- set gf, gc = (p.goles_favor or 0), (p.goles_contra or 0) -%}{{ 'win' if gf > gc else ('loss' if gf < gc else 'draw') }}{%- endmacro %}
 
 {% block content %}
-<style>
-@keyframes fbFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.fb-hero{padding:2px 0 20px;}
-.fb-hero-desc{font-size:12px;color:var(--dim);margin-top:6px;max-width:480px;line-height:1.5;}
+<div class="fb" id="fb" data-cat="hegemonikon">
+  <header class="fb-hd">
+    <div><div class="t-eyebrow">Hegemonikon · Fútbol</div><h1 class="t-page">Fútbol</h1>
+      <p class="t-meta fb-lead">Partidos, goles, asistencias y rendimiento. Cada gol suma XP a la salud física.</p></div>
+    <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="calendar-plus"></i>Programar partido</button>
+  </header>
 
-.fb-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:18px 0 20px; }
-.fb-stat  { background:var(--card); border:1px solid var(--b); border-radius:12px; padding:16px 18px;
-            position:relative; overflow:hidden; animation:fbFadeUp .45s ease both;
-            transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
-.fb-stat:nth-child(1){animation-delay:.02s} .fb-stat:nth-child(2){animation-delay:.07s}
-.fb-stat:nth-child(3){animation-delay:.12s} .fb-stat:nth-child(4){animation-delay:.17s}
-.fb-stat:hover{transform:translateY(-3px);border-color:var(--b2);box-shadow:0 10px 26px rgba(0,0,0,.3);}
-.fb-stat-top{display:flex;align-items:center;gap:10px;}
-.fb-stat-val { font-family:var(--mono); font-size:var(--fs-2xl); font-weight:700; color:var(--gold); line-height:1; }
-.fb-stat-lbl { font-size:var(--fs-xs); color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-top:8px; display:flex;align-items:center;gap:5px; }
-.fb-stat-lbl svg{width:11px;height:11px;opacity:.7;}
-.fb-ring{width:38px;height:38px;border-radius:50%;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
-.fb-ring::before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--ring-color,var(--gold)) calc(var(--pct)*1%),var(--b) 0);}
-.fb-ring::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--card);}
-.fb-ring b{position:relative;z-index:1;font-size:11px;color:var(--ring-color,var(--gold));font-family:var(--mono);}
-.fb-gep-bar{display:flex;height:8px;border-radius:100px;overflow:hidden;margin-top:8px;background:var(--b);}
-.fb-gep-seg{height:100%;transition:width .4s ease;}
-.fb-gep-legend{display:flex;gap:10px;margin-top:6px;font-size:var(--fs-12);color:var(--dim);}
-.fb-gep-legend span{display:inline-flex;align-items:center;gap:4px;}
-.fb-gep-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
-@media(max-width:860px) { .fb-stats { grid-template-columns:repeat(2,1fr); } }
-
-.fb-form{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
-.fb-form-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-right:2px;}
-.fb-form-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0;transition:transform .15s;cursor:default;}
-.fb-form-dot:hover{transform:scale(1.3);}
-
-.fb-list { display:flex; flex-direction:column; gap:10px; }
-.fb-card { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:14px 16px;
-           display:flex; align-items:center; gap:14px; animation:fbFadeUp .4s ease both;
-           transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
-.fb-card:hover{transform:translateY(-2px);border-color:var(--b2);box-shadow:0 10px 24px rgba(0,0,0,.28);}
-.fb-card-main { flex:1; min-width:0; }
-.fb-card-top { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
-.fb-card-rival { font-weight:600; font-size:var(--fs-base); color:var(--text); }
-.fb-card-meta { font-size:var(--fs-xs); color:var(--dim); display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-.fb-card-meta span{display:inline-flex;align-items:center;gap:4px;}
-.fb-card-meta svg{width:11px;height:11px;opacity:.7;}
-.fb-gol-badge { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:700; display:inline-flex;align-items:center;gap:4px;
-                background:rgba(16,185,129,.12); color:var(--emerald); border:1px solid rgba(16,185,129,.25); }
-.fb-gol-badge svg{width:11px;height:11px;}
-.fb-resultado { font-family:var(--mono); font-weight:700; font-size:var(--fs-lg);
-                flex-shrink:0; text-align:center; min-width:60px; padding:5px 10px; border-radius:8px; }
-.fb-resultado.win{color:var(--emerald);background:rgba(16,185,129,.1);}
-.fb-resultado.draw{color:var(--mid);background:var(--b);}
-.fb-resultado.loss{color:var(--coral);background:rgba(248,113,113,.1);}
-.fb-actions { display:flex; gap:2px; flex-shrink:0; opacity:.5; transition:opacity .18s ease; }
-.fb-card:hover .fb-actions{opacity:1;}
-.fb-actions button { background:none; border:none; cursor:pointer; color:var(--dim); padding:6px; border-radius:6px;
-                      display:flex; align-items:center; transition:color .15s,background .15s; }
-.fb-actions button svg{width:14px;height:14px;}
-.fb-actions button:hover { color:var(--gold); background:var(--gold-d); }
-.fb-actions button.danger:hover { color:var(--coral); background:var(--coral-d); }
-
-.fb-row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.fb-row3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
-.fb-modal { width:460px; max-width:96vw; }
-.fb-modal-title { font-size:var(--fs-lg); font-weight:700; margin-bottom:0; }
-.fb-modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
-.fb-modal-x { width:44px; height:44px; margin:-10px -10px 0 0; flex-shrink:0; background:none; border:none;
-  color:var(--dim); cursor:pointer; border-radius:10px; display:flex; align-items:center; justify-content:center;
-  transition:color .15s,background .15s; }
-.fb-modal-x:hover { color:var(--gold); background:var(--gold-d); }
-.fb-modal-x svg { width:18px; height:18px; }
-.fb-modal-handle { display:none; }
-.fb-minilabel { font-size:var(--fs-11); color:var(--muted); letter-spacing:.06em; text-transform:uppercase; display:block; margin-bottom:4px; }
-
-@media(max-width:767px) {
-  .fb-modal-handle { display:block; width:36px; height:4px; border-radius:100px; background:var(--b2); margin:0 auto 14px; }
-  .fb-modal .fi { padding:12px 12px; }
-  .fb-row3 { gap:8px; }
-  .fb-modal-actions { flex-direction:column; gap:10px; }
-  .fb-modal-actions .btn-a, .fb-modal-actions .btn-g { width:100%; padding:13px 16px; font-size:var(--fs-base); text-align:center; }
-}
-
-/* ── Sección: título ── */
-.fb-sec-title{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;
-  margin:22px 0 10px;display:flex;align-items:center;gap:6px;}
-.fb-sec-title svg{width:11px;height:11px;opacity:.7;}
-
-/* ── Próximos partidos (programados) ── */
-.fb-prox-card { background:var(--card); border:1px solid rgba(201,168,76,.25); border-radius:14px; padding:14px 16px;
-                display:flex; align-items:center; gap:14px; animation:fbFadeUp .4s ease both;
-                transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease; }
-.fb-prox-card:hover{transform:translateY(-2px);border-color:rgba(201,168,76,.4);box-shadow:0 10px 24px rgba(0,0,0,.28);}
-.fb-prox-card .fb-actions{opacity:.5;}
-.fb-prox-card:hover .fb-actions{opacity:1;}
-.fb-prox-icon{width:38px;height:38px;border-radius:50%;flex-shrink:0;background:var(--gold-d);
-  border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;}
-.fb-prox-icon svg{width:16px;height:16px;color:var(--gold);}
-.fb-prox-main{flex:1;min-width:0;}
-.fb-prox-cta{display:inline-flex;align-items:center;gap:6px;background:var(--gold-d);
-  border:1px solid rgba(201,168,76,.3);color:var(--gold);border-radius:8px;padding:8px 14px;
-  font-size:var(--fs-sm);font-weight:600;cursor:pointer;flex-shrink:0;transition:background .15s;white-space:nowrap;}
-.fb-prox-cta:hover{background:rgba(201,168,76,.18);}
-.fb-prox-cta svg{width:13px;height:13px;}
-</style>
-
-<!-- ── Hero ─────────────────────────────────────────────────────────────── -->
-<div class="fb-hero">
-  <div class="pg-t" style="margin:0">Fútbol</div>
-  <div class="fb-hero-desc">Historial de partidos, goles, asistencias y rendimiento — cada gol suma XP a Salud Física.</div>
-</div>
-
-<!-- ── Stats ─────────────────────────────────────────────────────────────── -->
-{% set _r = stats.rating_prom %}
-{% set _ring_color = ('var(--emerald)' if _r and _r >= 7 else '#eab308' if _r and _r >= 6 else '#f97316' if _r and _r >= 5 else 'var(--coral)' if _r else 'var(--dim)') %}
-{% set _pct = ((_r / 10 * 100) | round(0)) if _r else 0 %}
-{% set _gep_total = (stats.ganados + stats.empatados + stats.perdidos) or 1 %}
-<div class="fb-stats">
-  <div class="fb-stat">
-    <div class="fb-stat-top">
-      <div class="fb-stat-val">{{ stats.total }}</div>
-    </div>
-    <div class="fb-stat-lbl"><i data-lucide="calendar" style="width:11px;height:11px;"></i> Partidos</div>
+  {% set r = stats.rating_prom %}
+  {% set gep = (stats.ganados + stats.empatados + stats.perdidos) or 1 %}
+  <div class="eu-grid-4 fb-stats">
+    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="calendar"></i>Partidos</div><div class="eu-stat-val">{{ stats.total }}</div></div>
+    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="target"></i>Goles</div><div class="eu-stat-val">{{ stats.goles_propios }}</div><div class="t-meta">{{ stats.asistencias }} asistencia{{ 's' if stats.asistencias != 1 }}</div></div>
+    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="star"></i>Rating promedio</div><div class="eu-stat-val fb-tone--{{ tone(r) }}">{{ '%.1f'|format(r) if r is not none else '—' }}</div></div>
+    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="swords"></i>G · E · P</div><div class="eu-stat-val num">{{ stats.ganados }}-{{ stats.empatados }}-{{ stats.perdidos }}</div>
+      <div class="fb-gep" role="img" aria-label="{{ stats.ganados }} ganados, {{ stats.empatados }} empatados, {{ stats.perdidos }} perdidos">
+        <i class="is-win" style="width:{{ (stats.ganados / gep * 100)|round(1) }}%"></i><i class="is-draw" style="width:{{ (stats.empatados / gep * 100)|round(1) }}%"></i><i class="is-loss" style="width:{{ (stats.perdidos / gep * 100)|round(1) }}%"></i></div></div>
   </div>
-  <div class="fb-stat">
-    <div class="fb-stat-top">
-      <div class="fb-stat-val">{{ stats.goles_propios }}</div>
-    </div>
-    <div class="fb-stat-lbl"><i data-lucide="target" style="width:11px;height:11px;"></i> Goles</div>
-  </div>
-  <div class="fb-stat">
-    <div class="fb-stat-top">
-      <div class="fb-ring" style="--pct:{{ _pct }};--ring-color:{{ _ring_color }}"><b>{{ '%.1f'|format(_r) if _r is not none else '—' }}</b></div>
-      <div class="fb-stat-val" style="font-size:var(--fs-lg);">{{ '%.1f'|format(_r) if _r is not none else '—' }}</div>
-    </div>
-    <div class="fb-stat-lbl"><i data-lucide="star" style="width:11px;height:11px;"></i> Rating prom.</div>
-  </div>
-  <div class="fb-stat">
-    <div class="fb-stat-val" style="font-size:var(--fs-lg);">{{ stats.ganados }}-{{ stats.empatados }}-{{ stats.perdidos }}</div>
-    <div class="fb-gep-bar">
-      <div class="fb-gep-seg" style="width:{{ (stats.ganados / _gep_total * 100) | round(1) }}%;background:var(--emerald);"></div>
-      <div class="fb-gep-seg" style="width:{{ (stats.empatados / _gep_total * 100) | round(1) }}%;background:var(--mid);"></div>
-      <div class="fb-gep-seg" style="width:{{ (stats.perdidos / _gep_total * 100) | round(1) }}%;background:var(--coral);"></div>
-    </div>
-    <div class="fb-gep-legend">
-      <span><span class="fb-gep-dot" style="background:var(--emerald);"></span>G</span>
-      <span><span class="fb-gep-dot" style="background:var(--mid);"></span>E</span>
-      <span><span class="fb-gep-dot" style="background:var(--coral);"></span>P</span>
-    </div>
-  </div>
-</div>
 
-<!-- ── Próximos partidos (programados, sin resultado aún) ──────────────────── -->
-{% if programados %}
-<div class="fb-sec-title"><i data-lucide="calendar-clock"></i> Próximos partidos</div>
-<div class="fb-list" style="margin-bottom:8px;">
-  {% for p in programados %}
-  <div class="fb-prox-card" id="fb-prox-{{ p.id }}" style="animation-delay:{{ (loop.index0 * 0.03) | round(2) }}s">
-    <div class="fb-prox-icon"><i data-lucide="calendar"></i></div>
-    <div class="fb-prox-main">
-      <div class="fb-card-top">
-        <span class="fb-card-rival">{{ p.rival if p.rival else 'Partido' }}</span>
-      </div>
-      <div class="fb-card-meta">
-        <span><i data-lucide="calendar"></i>{{ p.fecha }}</span>
-        {% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}
-        {% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}
-      </div>
-    </div>
-    <button class="fb-prox-cta" onclick="abrirRegistrarResultado({{ p.id }})">
-      <i data-lucide="clipboard-check"></i> Registrar resultado
-    </button>
-    <div class="fb-actions">
-      <button onclick="abrirEditar({{ p.id }})" title="Editar" aria-label="Editar"><i data-lucide="pencil"></i></button>
-      <button class="danger" onclick="eliminarPartido({{ p.id }})" title="Eliminar" aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
-    </div>
-  </div>
-  {% endfor %}
-</div>
-{% endif %}
+  {% if programados %}
+  <section class="eu-vstack fb-sec" aria-labelledby="fb-prox-t">
+    <h2 class="t-eyebrow" id="fb-prox-t">Próximos partidos</h2>
+    {% for p in programados %}
+    <article class="eu-card fb-card fb-card--prox" id="fb-prox-{{ p.id }}">
+      <span class="eu-row-ic fb-ic"><i data-lucide="calendar-clock"></i></span>
+      <div class="fb-card-main"><div class="t-ui">{{ p.rival or 'Partido' }}</div>
+        <div class="fb-meta t-meta"><span><i data-lucide="calendar"></i>{{ p.fecha }}</span>{% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}{% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}</div></div>
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-result" data-id="{{ p.id }}"><i data-lucide="clipboard-check"></i>Registrar resultado</button>
+      <div class="fb-acts"><button type="button" class="eu-iconbtn js-edit" data-id="{{ p.id }}" aria-label="Editar"><i data-lucide="pencil"></i></button>
+        <button type="button" class="eu-iconbtn fb-danger js-del" data-id="{{ p.id }}" aria-label="Eliminar"><i data-lucide="trash-2"></i></button></div>
+    </article>
+    {% endfor %}
+  </section>
+  {% endif %}
 
-<!-- ── Forma reciente ────────────────────────────────────────────────────── -->
-{% if partidos %}
-<div class="fb-form">
-  <span class="fb-form-lbl">Forma reciente</span>
-  {% for p in partidos[:8] %}
-  {% set gf, gc = (p.goles_favor or 0), (p.goles_contra or 0) %}
-  {% set color = ('var(--emerald)' if gf > gc else 'var(--coral)' if gf < gc else 'var(--mid)') %}
-  <span class="fb-form-dot" style="background:{{ color }};" title="{{ p.rival or 'Partido' }} · {{ gf }}-{{ gc }}"></span>
-  {% endfor %}
-</div>
-{% endif %}
-
-<!-- ── Historial ─────────────────────────────────────────────────────────── -->
-{% if programados %}<div class="fb-sec-title"><i data-lucide="history"></i> Historial</div>{% endif %}
-<div class="fb-list" id="fb-list">
-  {% for p in partidos %}
-  {% set gf, gc = (p.goles_favor or 0), (p.goles_contra or 0) %}
-  {% set res_class = ('win' if gf > gc else 'loss' if gf < gc else 'draw') %}
-  <div class="fb-card" id="fb-card-{{ p.id }}" style="animation-delay:{{ (loop.index0 * 0.03) | round(2) }}s">
-    <div class="fb-ring" style="--pct:{{ ((p.rendimiento / 10 * 100) | round(0)) if p.rendimiento is not none else 0 }};--ring-color:{{ 'rgb(16,185,129)' if p.rendimiento and p.rendimiento >= 7
-      else 'rgb(234,179,8)' if p.rendimiento and p.rendimiento >= 6
-      else 'rgb(249,115,22)' if p.rendimiento and p.rendimiento >= 5
-      else 'rgb(239,68,68)' if p.rendimiento else 'var(--dim)' }}">
-      <b>{{ '%.1f'|format(p.rendimiento) if p.rendimiento is not none else '—' }}</b>
-    </div>
-    <div class="fb-card-main">
-      <div class="fb-card-top">
-        <span class="fb-card-rival">{{ p.rival if p.rival else 'Partido' }}</span>
-        {% if p.goles_propios %}
-        <span class="fb-gol-badge"><i data-lucide="target"></i> {{ p.goles_propios }}</span>
-        {% endif %}
-      </div>
-      <div class="fb-card-meta">
-        <span><i data-lucide="calendar"></i>{{ p.fecha }}</span>
-        {% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}
-        {% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}
-        {% if p.minutos_jugados %}<span><i data-lucide="timer"></i>{{ p.minutos_jugados }}′</span>{% endif %}
-        {% if p.asistencias %}<span><i data-lucide="users"></i>{{ p.asistencias }} asist.</span>{% endif %}
-      </div>
-    </div>
-    <div class="fb-resultado {{ res_class }}">{{ p.goles_favor }}-{{ p.goles_contra }}</div>
-    <div class="fb-actions">
-      <button onclick="abrirEditar({{ p.id }})" title="Editar" aria-label="Editar"><i data-lucide="pencil"></i></button>
-      <button class="danger" onclick="eliminarPartido({{ p.id }})" title="Eliminar" aria-label="Eliminar"><i data-lucide="trash-2"></i></button>
-    </div>
-  </div>
-  {% else %}
-  <div class="empty-rich" id="fb-empty">
-    <div class="empty-icon-box"><i data-lucide="target"></i></div>
-    {% if programados %}
-    <div class="empty-title">Aún sin resultados</div>
-    <div class="empty-desc">Tienes {{ programados|length }} partido{{ 's' if programados|length != 1 else '' }} programado{{ 's' if programados|length != 1 else '' }} arriba — regístralo cuando termines de jugar.</div>
+  <section class="eu-vstack fb-sec" aria-labelledby="fb-hist-t">
+    <div class="eu-between"><h2 class="t-eyebrow" id="fb-hist-t">Historial</h2>
+      {% if partidos %}<span class="eu-hstack fb-form" aria-label="Forma reciente"><span class="t-meta">Forma</span>{% for p in partidos[:8] %}<span class="fb-dot is-{{ res(p) }}" title="{{ p.rival or 'Partido' }} · {{ p.goles_favor or 0 }}-{{ p.goles_contra or 0 }}"></span>{% endfor %}</span>{% endif %}</div>
+    {% for p in partidos %}
+    <article class="eu-card fb-card" id="fb-card-{{ p.id }}">
+      <span class="fb-ring fb-tone--{{ tone(p.rendimiento) }}" style="--pct:{{ ((p.rendimiento / 10 * 100)|round(0)) if p.rendimiento is not none else 0 }}"><b class="num">{{ '%.1f'|format(p.rendimiento) if p.rendimiento is not none else '—' }}</b></span>
+      <div class="fb-card-main"><div class="eu-hstack fb-card-top"><span class="t-ui">{{ p.rival or 'Partido' }}</span>{% if p.goles_propios %}<span class="eu-badge eu-badge--brand"><i data-lucide="target"></i>{{ p.goles_propios }}</span>{% endif %}</div>
+        <div class="fb-meta t-meta"><span><i data-lucide="calendar"></i>{{ p.fecha }}</span>{% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}{% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}{% if p.minutos_jugados %}<span><i data-lucide="timer"></i>{{ p.minutos_jugados }}′</span>{% endif %}{% if p.asistencias %}<span><i data-lucide="users"></i>{{ p.asistencias }} asist.</span>{% endif %}</div></div>
+      <span class="t-data num fb-score is-{{ res(p) }}">{{ p.goles_favor }}-{{ p.goles_contra }}</span>
+      <div class="fb-acts"><button type="button" class="eu-iconbtn js-edit" data-id="{{ p.id }}" aria-label="Editar"><i data-lucide="pencil"></i></button>
+        <button type="button" class="eu-iconbtn fb-danger js-del" data-id="{{ p.id }}" aria-label="Eliminar"><i data-lucide="trash-2"></i></button></div>
+    </article>
     {% else %}
-    <div class="empty-title">Sin partidos programados</div>
-    <div class="empty-desc">Programa tu próximo partido para empezar a ver tu historial, goles y rendimiento.</div>
-    <button class="empty-cta" onclick="abrirNuevo()"><i data-lucide="plus" style="width:12px;height:12px;"></i> Programar partido</button>
-    {% endif %}
-  </div>
-  {% endfor %}
+    <div class="eu-card">{% if programados %}{{ ui.empty('target', 'Aún sin resultados', 'Tienes partidos programados arriba: registra el resultado cuando termines de jugar.') }}{% else %}{{ ui.empty('target', 'Sin partidos', 'Programa tu próximo partido para empezar tu historial de goles y rendimiento.', cta='Programar partido', cta_icon='calendar-plus') }}{% endif %}</div>
+    {% endfor %}
+  </section>
 </div>
 
-<!-- ═══ MODAL: Partido ═══════════════════════════════════════════════════ -->
-<div class="modal-bg" id="modal-partido">
-  <div class="modal fb-modal">
-    <div class="fb-modal-handle"></div>
-    <div class="fb-modal-head">
-      <div class="fb-modal-title" id="pt-modal-title">Programar partido</div>
-      <button type="button" class="fb-modal-x" aria-label="Cerrar" onclick="closeModal('partido')"><i data-lucide="x"></i></button>
-    </div>
-    <input type="hidden" id="pt-id">
-    <input type="hidden" id="pt-estado" value="programado">
-
-    <div class="fb-row2">
-      <div>
-        <label class="fl">Fecha</label>
-        <input class="fi" id="pt-fecha" type="date">
-      </div>
-      <div>
-        <label class="fl">Hora</label>
-        <input class="fi" id="pt-hora" type="time">
-      </div>
-    </div>
-
-    <label class="fl" style="margin-top:10px;">Cancha</label>
-    <input class="fi" id="pt-cancha" placeholder="Ej. Cancha Municipal…">
-
-    <label class="fl" style="margin-top:10px;">Rival</label>
-    <input class="fi" id="pt-rival" placeholder="Ej. Los Tigres…">
-
-    <div id="fb-result-section" style="display:none;">
-      <label class="fl" style="margin-top:10px;">Resultado (goles a favor - en contra)</label>
-      <div class="fb-row2">
-        <div>
-          <span class="fb-minilabel">A favor</span>
-          <input class="fi" id="pt-gf" type="number" inputmode="numeric" min="0" placeholder="0">
-        </div>
-        <div>
-          <span class="fb-minilabel">En contra</span>
-          <input class="fi" id="pt-gc" type="number" inputmode="numeric" min="0" placeholder="0">
-        </div>
-      </div>
-
-      <label class="fl" style="margin-top:10px;">Mi rendimiento</label>
-      <div class="fb-row3">
-        <div>
-          <span class="fb-minilabel">Goles</span>
-          <input class="fi" id="pt-goles" type="number" inputmode="numeric" min="0" placeholder="0">
-        </div>
-        <div>
-          <span class="fb-minilabel">Asist.</span>
-          <input class="fi" id="pt-asist" type="number" inputmode="numeric" min="0" placeholder="0">
-        </div>
-        <div>
-          <span class="fb-minilabel">Minutos</span>
-          <input class="fi" id="pt-min" type="number" inputmode="numeric" min="0" max="120" placeholder="0">
-        </div>
-      </div>
-
-      <label class="fl" style="margin-top:10px;">Puntuación del partido (1-10)</label>
-      <input class="fi" id="pt-rating" type="number" inputmode="decimal" min="1" max="10" step="0.1" placeholder="Ej. 6.5">
-    </div>
-
-    <div class="modal-actions fb-modal-actions" style="margin-top:16px;">
-      <button class="btn-g" onclick="closeModal('partido')">Cancelar</button>
-      <button class="btn-a" id="pt-save-btn" onclick="guardarPartido()">Programar partido</button>
-    </div>
+{% call ui.modal('m-pt', 'Programar partido', eyebrow='Fútbol') %}
+<form class="eu-modal-bd" id="f-pt" autocomplete="off">
+  <input type="hidden" id="pt-id"><input type="hidden" id="pt-estado" value="programado">
+  <div class="eu-grid-2 fb-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pt-fecha">Fecha</label><input class="eu-input" id="pt-fecha" type="date"></div>
+    <div class="eu-field"><label class="eu-label" for="pt-hora">Hora</label><input class="eu-input" id="pt-hora" type="time"></div>
   </div>
-</div>
+  <div class="eu-field"><label class="eu-label" for="pt-cancha">Cancha</label><input class="eu-input" id="pt-cancha" placeholder="Cancha municipal…"></div>
+  <div class="eu-field"><label class="eu-label" for="pt-rival">Rival</label><input class="eu-input" id="pt-rival" placeholder="Los Tigres…"></div>
+  <fieldset class="eu-vstack fb-result" id="pt-result" hidden>
+    <legend class="t-eyebrow">Resultado</legend>
+    <div class="eu-grid-2 fb-fgrid">
+      <div class="eu-field"><label class="eu-label" for="pt-gf">Goles a favor</label><input class="eu-input eu-input--money" id="pt-gf" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+      <div class="eu-field"><label class="eu-label" for="pt-gc">Goles en contra</label><input class="eu-input eu-input--money" id="pt-gc" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+    </div>
+    <div class="eu-grid-3 fb-fgrid">
+      <div class="eu-field"><label class="eu-label" for="pt-goles">Mis goles</label><input class="eu-input eu-input--money" id="pt-goles" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+      <div class="eu-field"><label class="eu-label" for="pt-asist">Asistencias</label><input class="eu-input eu-input--money" id="pt-asist" type="number" inputmode="numeric" min="0" placeholder="0"></div>
+      <div class="eu-field"><label class="eu-label" for="pt-min">Minutos</label><input class="eu-input eu-input--money" id="pt-min" type="number" inputmode="numeric" min="0" max="120" placeholder="0"></div>
+    </div>
+    <div class="eu-field"><label class="eu-label" for="pt-rating">Puntuación del partido (1–10)</label><input class="eu-input eu-input--money" id="pt-rating" type="number" inputmode="decimal" min="1" max="10" step="0.1" placeholder="6.5"></div>
+  </fieldset>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-pt')">Cancelar</button><button type="submit" form="f-pt" class="eu-btn eu-btn--primary" id="pt-save">Programar partido</button></div>
+{% endcall %}
 {% endblock %}
 
 {% block scripts %}
-<script>
-const BASE = '/bienestar/futbol';
-
-function todayISO() { return new Date().toISOString().slice(0,10); }
-
-function openModal(key) {
-  document.getElementById('modal-'+key).classList.add('open');
-  const first = document.querySelector('#modal-'+key+' input:not([type=hidden])');
-  if (first) setTimeout(() => first.focus(), 80);
-}
-function closeModal(key) {
-  document.getElementById('modal-'+key).classList.remove('open');
-}
-
-function limpiarForm() {
-  ['pt-id','pt-cancha','pt-rival','pt-gf','pt-gc','pt-goles','pt-asist','pt-min','pt-rating'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('pt-fecha').value = todayISO();
-  document.getElementById('pt-hora').value = '';
-}
-
-function llenarFormDesde(p) {
-  document.getElementById('pt-id').value = p.id;
-  document.getElementById('pt-fecha').value = p.fecha;
-  document.getElementById('pt-hora').value = p.hora || '';
-  document.getElementById('pt-cancha').value = p.cancha || '';
-  document.getElementById('pt-rival').value = p.rival || '';
-  document.getElementById('pt-gf').value = p.goles_favor || '';
-  document.getElementById('pt-gc').value = p.goles_contra || '';
-  document.getElementById('pt-goles').value = p.goles_propios || '';
-  document.getElementById('pt-asist').value = p.asistencias || '';
-  document.getElementById('pt-min').value = p.minutos_jugados || '';
-  document.getElementById('pt-rating').value = p.rendimiento || '';
-}
-
-// Paso 1: solo el partido programado (fecha/hora/cancha/rival) — el resultado
-// todavía no se conoce, así que ese bloque del formulario permanece oculto.
-function abrirNuevo() {
-  limpiarForm();
-  document.getElementById('pt-estado').value = 'programado';
-  document.getElementById('fb-result-section').style.display = 'none';
-  document.getElementById('pt-modal-title').textContent = 'Programar partido';
-  document.getElementById('pt-save-btn').textContent = 'Programar partido';
-  openModal('partido');
-}
-
-// Editar: si el partido ya se jugó se ven también los campos de resultado;
-// si sigue programado, solo los campos de agenda (fecha/hora/cancha/rival).
-async function abrirEditar(id) {
-  const data = await fetch(`${BASE}/api/partidos`).then(r => r.json());
-  const p = data.partidos.find(x => x.id === id);
-  if (!p) return;
-  llenarFormDesde(p);
-  document.getElementById('pt-estado').value = p.estado || 'jugado';
-  const jugado = (p.estado || 'jugado') === 'jugado';
-  document.getElementById('fb-result-section').style.display = jugado ? 'block' : 'none';
-  document.getElementById('pt-modal-title').textContent = jugado ? 'Editar partido' : 'Editar partido programado';
-  document.getElementById('pt-save-btn').textContent = 'Guardar';
-  openModal('partido');
-}
-
-// Paso 2: el partido programado ya se jugó — se abre el mismo modal pero
-// ahora mostrando el bloque de resultado/rendimiento para completarlo.
-async function abrirRegistrarResultado(id) {
-  const data = await fetch(`${BASE}/api/partidos`).then(r => r.json());
-  const p = data.partidos.find(x => x.id === id);
-  if (!p) return;
-  llenarFormDesde(p);
-  document.getElementById('pt-estado').value = 'jugado';
-  document.getElementById('fb-result-section').style.display = 'block';
-  document.getElementById('pt-modal-title').textContent = `Registrar resultado — vs ${p.rival || 'rival'}`;
-  document.getElementById('pt-save-btn').textContent = 'Guardar resultado';
-  openModal('partido');
-}
-
-async function guardarPartido() {
-  const fecha = document.getElementById('pt-fecha').value || todayISO();
-  const id = document.getElementById('pt-id').value;
-  const body = {
-    fecha,
-    hora: document.getElementById('pt-hora').value,
-    cancha: document.getElementById('pt-cancha').value.trim(),
-    rival: document.getElementById('pt-rival').value.trim(),
-    estado: document.getElementById('pt-estado').value,
-    goles_favor: document.getElementById('pt-gf').value || 0,
-    goles_contra: document.getElementById('pt-gc').value || 0,
-    goles_propios: document.getElementById('pt-goles').value || 0,
-    asistencias: document.getElementById('pt-asist').value || 0,
-    minutos_jugados: document.getElementById('pt-min').value || null,
-    rendimiento: document.getElementById('pt-rating').value || null,
-  };
-  const url = id ? `${BASE}/api/partidos/${id}` : `${BASE}/api/partidos`;
-  const method = id ? 'PATCH' : 'POST';
-  const r = await fetch(url, {
-    method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
-  }).then(r => r.json());
-  if (r.ok) {
-    toast(id ? 'Guardado ✓' : 'Partido programado ✓');
-    setTimeout(() => location.reload(), 500);
-  } else {
-    toast('Error: ' + r.error, 'err');
-  }
-}
-
-async function eliminarPartido(id) {
-  if (!(await euConfirm('¿Eliminar este partido?'))) return;
-  await fetch(`${BASE}/api/partidos/${id}`, { method: 'DELETE' });
-  toast('Eliminado');
-  setTimeout(() => location.reload(), 400);
-}
-
-// Deep link desde la campanita/Deadline Radar del dashboard: ?resultado=<id>
-// abre directo el modal de "Registrar resultado" para ese partido.
-(function () {
-  const id = new URLSearchParams(location.search).get('resultado');
-  if (id) {
-    abrirRegistrarResultado(parseInt(id, 10));
-    history.replaceState(null, '', location.pathname);
-  }
-})();
-</script>
+<script src="{{ url_for('static', filename='js/futbol.js') }}"></script>
 {% endblock %}
