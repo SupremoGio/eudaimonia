@@ -162,3 +162,32 @@ def test_meta_configurable_y_la_migracion_no_la_pisa(test_db):
     database.init_db()          # correr otra vez no regresa a 4000
     with database.get_db() as db:
         assert _calc_budget('2026-09', db)['buckets']['ahorro_deuda']['meta_minima'] == 2500
+
+
+# ── 5. Proyectos: Hosting/Software cuentan; Publicidad/Reclutamiento no ──────
+
+def test_proyectos_hosting_y_software_en_deseos_publicidad_fuera(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 20000, tipo='INGRESO', sub='Pago nominal')
+        _mov(db, 'PROYECTOS', 300, sub='Hosting')
+        _mov(db, 'PROYECTOS', 200, sub='Software')
+        _mov(db, 'PROYECTOS', 900, sub='Publicidad')
+        _mov(db, 'PROYECTOS', 700, sub='Reclutamiento')
+        d = _calc_budget('2026-09', db)
+    proy = [c for c in d['buckets']['deseos']['cats'] if c['categoria'] == 'PROYECTOS']
+    assert proy and proy[0]['gastado'] == 500 and proy[0]['n'] == 2
+    assert d['total_gastado'] == 500
+
+
+def test_detalle_de_proyectos_cuadra_con_la_fila(test_db):
+    from app import create_app
+    with database.get_db() as db:
+        _mov(db, 'PROYECTOS', 300, sub='Hosting')
+        _mov(db, 'PROYECTOS', 900, sub='Publicidad')
+        db.commit()
+    app = create_app(); app.config['TESTING'] = True
+    with app.test_client() as c:
+        with c.session_transaction() as s:
+            s['app_ok'] = True; s['fin_ok'] = True
+        movs = c.get('/finanzas/budget/api/cat-movs/2026-09/PROYECTOS').get_json()['movimientos']
+    assert [m['mi_monto'] for m in movs] == [300]

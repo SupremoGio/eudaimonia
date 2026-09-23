@@ -61,7 +61,7 @@ CATEGORIA_BUCKET = {
     'COSTOS_FINANCIEROS':'ahorro_deuda',  # intereses/comisiones/penalizaciones -- gasto evitable real, sí debe verse
     'EXPENSE':           None,            # Informativo – se reembolsa, no afecta buckets
     'APORTACION_RENTA':  None,            # legado -- ya no se genera, ahora es VIVIENDA/Renta
-    'PROYECTOS':         None,            # gastos de proyectos/trabajo (hosting, ads), no personales
+    'PROYECTOS':         'deseos',        # Hosting/Software; Publicidad y Reclutamiento se excluyen (_GASTO_WHERE)
     'PUBLICIDAD':        None,            # legado, ver PROYECTOS
     # Excluidos del gasto de consumo (movimientos, no gasto real)
     'PAGO_TDC':          None,
@@ -188,9 +188,15 @@ def _meta_ahorro(db) -> float:
 # prestado no es gasto -- se sigue en «Por cobrar»; antes caía en Deseos por
 # no tener bucket (CATEGORIA_BUCKET.get(cat, 'deseos')).
 _GASTO_EXCLUIR = ('PAGO_TDC', 'PAGO', 'TRANSFERENCIA', 'SPEI_ENVIADO', 'RETIRO',
-                  'PROYECTOS', 'PUBLICIDAD', 'NOMINA', 'FINANZAS', 'EXPENSE',
+                  'PUBLICIDAD', 'NOMINA', 'FINANZAS', 'EXPENSE',
                   'APORTACION_RENTA', 'PRESTAMOS')
-_GASTO_WHERE = "categoria NOT IN (" + ",".join(f"'{c}'" for c in _GASTO_EXCLUIR) + ")"
+# PROYECTOS ya no se excluye entero: Hosting y Software son gasto propio y
+# cuentan en Deseos; Publicidad y Reclutamiento son gasto de trabajo y quedan
+# fuera, igual que EXPENSE.
+_PROYECTOS_EXCLUIR = ('Publicidad', 'Reclutamiento')
+_GASTO_WHERE = ("categoria NOT IN (" + ",".join(f"'{c}'" for c in _GASTO_EXCLUIR) + ")"
+                " AND NOT (categoria='PROYECTOS' AND COALESCE(subcategoria,'') IN ("
+                + ",".join(f"'{s}'" for s in _PROYECTOS_EXCLUIR) + "))")
 
 BUCKET_META = {
     'necesidades': {'label': 'Necesidades',      'pct_target': 50, 'color': '#2a8a62', 'cls': 'bk-nec'},
@@ -662,13 +668,15 @@ def cat_movimientos(mes, categoria):
     mes_ini = f"{mes}-01"
     mes_fin = f"{next_y}-{next_m:02d}-01"
     with get_db() as db:
-        rows = db.execute("""
+        # Mismo filtro que la fila de la Radiografía (p. ej. Proyectos sin Publicidad).
+        rows = db.execute(f"""
             SELECT id, fecha, descripcion, monto, COALESCE(mi_parte, monto) AS mi_monto,
                    categoria, banco, tipo
             FROM est_movimientos
             WHERE categoria = ?
               AND tipo IN ('GASTO','INVERSION')
               AND fecha >= ? AND fecha < ?
+              AND {_GASTO_WHERE}
             ORDER BY fecha DESC, id DESC
         """, (categoria, mes_ini, mes_fin)).fetchall()
     return jsonify({'movimientos': [dict(r) for r in rows]})
