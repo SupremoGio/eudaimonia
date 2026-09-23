@@ -8,6 +8,9 @@ import FlowBars from '../components/FlowBars.jsx';
 
 const DONUT_MAX = 6;
 
+/** ['2024','2025','2026'] → «2024, 2025 y 2026». */
+const listJoin = (a) => (a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} y ${a[a.length - 1]}`);
+
 function Donut({ items, total, label }) {
   const R = 52, C = 2 * Math.PI * R;
   let acc = 0;
@@ -50,7 +53,9 @@ export default function Reportes() {
   const wide = useMedia('(min-width: 768px)');
   const now = new Date();
   const [preset, setPreset] = useState('this_month');
-  const [year, setYear] = useState(now.getFullYear());
+  // Personalizado: uno o varios años × (opcional) meses del año. Los meses
+  // elegidos se aplican a cada año seleccionado (ej. ene–mar de 2024 y 2025).
+  const [years, setYears] = useState(() => new Set([now.getFullYear()]));
   const [months, setMonths] = useState(() => new Set());
   const [bank, setBank] = useState('');
   const [banks, setBanks] = useState([]);
@@ -58,14 +63,22 @@ export default function Reportes() {
   const [trendN, setTrendN] = useState(6);
   useEffect(() => { api.get('/summary/banks').then((b) => setBanks(b || [])).catch(() => {}); }, []);
 
-  const monthsKey = [...months].sort().join(',');
+  const yearList = [...years].sort((a, b) => a - b);
+  const monthList = [...months].sort((a, b) => a - b);
+  const yearsKey = yearList.join(','), monthsKey = monthList.join(',');
+  const contiguous = yearList.every((y, i) => i === 0 || y === yearList[i - 1] + 1);
   const period = useMemo(() => {
     if (preset !== 'custom') return presetRange(preset);
-    if (monthsKey) return { months: monthsKey };
-    return { date_from: `${year}-01-01`, date_to: `${year}-12-31` };
-  }, [preset, monthsKey, year]);
+    if (!monthList.length && contiguous) return { date_from: `${yearList[0]}-01-01`, date_to: `${yearList[yearList.length - 1]}-12-31` };
+    const cur = now.getFullYear(), curM = now.getMonth() + 1;
+    const ms = monthList.length ? monthList : Array.from({ length: 12 }, (_, i) => i + 1);
+    const yms = yearList.flatMap((y) => ms.filter((m) => y < cur || m <= curM).map((m) => `${y}-${String(m).padStart(2, '0')}`));
+    return { months: yms.join(',') };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preset, yearsKey, monthsKey]);
+  const yearsText = listJoin(yearList.map(String));
   const periodLabel = preset === 'custom'
-    ? (monthsKey ? [...months].sort().map(monthLabel).join(', ') : `Todo ${year}`)
+    ? (monthList.length ? `${monthList.map((m) => MONTHS[m - 1]).join(', ')} · ${yearsText}` : `Todo ${yearsText}`)
     : PRESETS.find((p) => p.id === preset).label;
   const params = { ...period, bank };
   const pk = JSON.stringify(params);
@@ -85,8 +98,17 @@ export default function Reportes() {
   const toneOf = (i) => (i < DONUT_MAX ? RANK_TONES[i % RANK_TONES.length] : null);
 
   const openCat = (categoria, tipo = view) => app.openCategory({ categoria, tipo, period, bank, periodLabel });
-  const toggleMonth = (ym) => setMonths((m) => { const n = new Set(m); if (n.has(ym)) n.delete(ym); else n.add(ym); return n; });
-  const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+  const toggleMonth = (mi) => setMonths((m) => { const n = new Set(m); if (n.has(mi)) n.delete(mi); else n.add(mi); return n; });
+  // Siempre queda al menos un año elegido.
+  // Si solo queda el año en curso, se sueltan los meses que aún no llegan.
+  const toggleYear = (y) => {
+    const n = new Set(years);
+    if (n.has(y)) { if (n.size > 1) n.delete(y); } else n.add(y);
+    setYears(n);
+    if (n.size === 1 && n.has(now.getFullYear())) setMonths((m) => new Set([...m].filter((mi) => mi <= now.getMonth() + 1)));
+  };
+  const yearOpts = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+  const onlyCurrent = yearList.length === 1 && yearList[0] === now.getFullYear();
   const bankOpts = [...new Set([...BANKS.map((b) => b.id), ...banks])];
 
   return (
@@ -97,22 +119,21 @@ export default function Reportes() {
         </div>
         {preset === 'custom' && (
           <div className="eu-vstack fz-gap-2">
-            <div className="eu-chips" role="group" aria-label="Año">
-              {years.map((y) => {
-                const n = [...months].filter((m) => m.startsWith(`${y}-`)).length;
-                return <button key={y} type="button" className="eu-chip" aria-pressed={year === y} onClick={() => setYear(y)}>{y}{n > 0 && <span className="ct">{n}</span>}</button>;
-              })}
+            <div className="eu-chips" role="group" aria-label="Años (puedes elegir varios)">
+              {yearOpts.map((y) => (
+                <button key={y} type="button" className="eu-chip" aria-pressed={years.has(y)} onClick={() => toggleYear(y)}>{y}</button>
+              ))}
             </div>
-            <div className="fz-months" role="group" aria-label={`Meses de ${year}`}>
-              {MONTHS.map((m, i) => {
-                const ym = `${year}-${String(i + 1).padStart(2, '0')}`;
-                const future = year === now.getFullYear() && i > now.getMonth();
-                return <button key={ym} type="button" className="eu-chip" aria-pressed={months.has(ym)} disabled={future} onClick={() => toggleMonth(ym)}>{m}</button>;
-              })}
+            <div className="fz-months" role="group" aria-label={`Meses de ${yearsText}`}>
+              {MONTHS.map((m, i) => (
+                <button key={m} type="button" className="eu-chip" aria-pressed={months.has(i + 1)} disabled={onlyCurrent && i > now.getMonth()} onClick={() => toggleMonth(i + 1)}>{m}</button>
+              ))}
             </div>
             <div className="eu-between t-meta">
-              <span>{monthsKey ? `${months.size} mes${months.size === 1 ? '' : 'es'} seleccionado${months.size === 1 ? '' : 's'}` : `Sin meses elegidos: se usa todo ${year}`}</span>
-              {monthsKey && <button type="button" className="fz-link" onClick={() => setMonths(new Set())}>Quitar selección</button>}
+              <span>{monthList.length
+                ? `${monthList.length} mes${monthList.length === 1 ? '' : 'es'}${yearList.length > 1 ? ` en cada año (${yearsText})` : ` de ${yearsText}`}`
+                : `Sin meses elegidos: se usa todo ${yearsText}`}</span>
+              {(monthList.length > 0 || yearList.length > 1) && <button type="button" className="fz-link" onClick={() => { setMonths(new Set()); setYears(new Set([now.getFullYear()])); }}>Quitar selección</button>}
             </div>
           </div>
         )}
