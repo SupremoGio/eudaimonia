@@ -1,392 +1,107 @@
-{% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
-{% block title %}Inversiones — Eudaimonia{% endblock %}
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'finanzas' %}
+{% set PCAT = {'GBM':'hegemonikon','INVEX':'paideia','CETES':'cosmopolitismo','CRYPTO':'oikonomia','FIBRA':'harma','OTRO':'identidad'} %}
+{% set DIR = {'APORTACION':('success','arrow-up-right','+'),'RETIRO':('danger','arrow-down-right','−'),'RENDIMIENTO':('warning','sparkles','+')} %}
+{% macro hide(v) -%}<span class="nw-real">{{ v }}</span><span class="nw-mask">••••</span>{%- endmacro %}
+{% macro money(n) -%}${{ "{:,.0f}".format(n) }}{%- endmacro %}
+{% block title %}Inversiones — Oikonomia{% endblock %}
 {% block module_title %}INVERSIONES{% endblock %}
-{% block topright %}{% endblock %}
-
-{% block head %}
-<style>
-/* ── Layout ─────────────────────────────────────────────────── */
-.inv-page{max-width:620px;margin:0 auto;padding-bottom:80px;}
-
-/* ── Hero KPIs ───────────────────────────────────────────────── */
-.inv-hero{background:var(--card);border:1px solid var(--b);border-radius:16px;
-  padding:20px 22px;margin-bottom:14px;}
-.inv-hero-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;
-  color:var(--dim);margin-bottom:14px;}
-
-/* ── Hero row — patrimonio total (asimétrico) + 3 KPIs secundarios ──────
-   Antes eran 4 números en una fila repeat(3,1fr) sin jerarquía. Ahora el
-   saldo total (ya calculado en el backend pero nunca mostrado) es el
-   titular; los 3 KPIs existentes quedan como contexto secundario.
-   `.inv-kpis` pasa a display:contents para que sus 3 hijos `.inv-kpi`
-   se vuelvan celdas directas del mismo grid sin tocar su markup. ────── */
-.inv-hero-top{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:16px;align-items:end;margin-bottom:16px;}
-.inv-hero-main{border-right:1px solid var(--b);padding-right:16px;}
-.inv-hero-main-label{font-size:var(--fs-11);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;
-  display:flex;align-items:center;gap:5px;}
-.inv-hero-main-val{font-family:var(--serif);font-size:clamp(26px,6vw,36px);font-weight:600;line-height:1;color:var(--gold);}
-.inv-hero-main-sub{font-size:11px;color:var(--dim);margin-top:6px;}
-.inv-kpis{display:contents;}
-.inv-kpi{text-align:center;}
-.inv-kpi-label{font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px;}
-.inv-kpi-val{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1;}
-.inv-kpi-val.green{color:#22c55e;}
-.inv-kpi-val.red{color:#f87171;}
-.inv-kpi-val.gold{color:var(--gold);}
-.inv-kpi-val.main{font-size:28px;color:var(--text);}
-
-/* ── Allocation bar ──────────────────────────────────────────── */
-.inv-alloc-bar{height:8px;border-radius:100px;overflow:hidden;
-  display:flex;gap:2px;margin-bottom:6px;}
-.inv-alloc-seg{height:100%;border-radius:100px;transition:width .6s ease;}
-.inv-alloc-legend{display:flex;flex-wrap:wrap;gap:8px 14px;}
-.inv-alloc-dot{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim);}
-.inv-alloc-dot span{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
-
-/* ── Platform cards ──────────────────────────────────────────── */
-.inv-platforms{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
-.inv-plat-card{background:var(--card);border:1px solid var(--b);border-radius:13px;
-  padding:14px 16px;display:flex;align-items:center;gap:14px;transition:border-color .18s;}
-.inv-plat-card:hover{border-color:rgba(201,168,76,.3);}
-.inv-plat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;
-  justify-content:center;font-size:1.2rem;flex-shrink:0;}
-.inv-plat-info{flex:1;min-width:0;}
-.inv-plat-name{font-size:var(--fs-sm);font-weight:700;color:var(--text);letter-spacing:.04em;}
-.inv-plat-sub{font-size:11px;color:var(--dim);margin-top:2px;}
-.inv-plat-bar-wrap{margin-top:6px;}
-.inv-plat-bar{height:3px;background:var(--b);border-radius:100px;overflow:hidden;}
-.inv-plat-bar-fill{height:100%;border-radius:100px;transition:width .6s ease;}
-.inv-plat-saldo{text-align:right;flex-shrink:0;}
-.inv-plat-saldo-val{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--text);}
-.inv-plat-saldo-label{font-size:var(--fs-12);color:var(--dim);text-align:right;margin-top:2px;}
-
-/* ── Entrada escalonada — plataformas y movimientos (render server-side,
-   por eso el delay se fija con --i inline en el loop Jinja, no con JS) ── */
-.inv-plat-card,.inv-mov{opacity:0;animation:cardInInv .4s ease forwards;animation-delay:calc(var(--i,0)*45ms);}
-@keyframes cardInInv{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-@media (prefers-reduced-motion: reduce){.inv-plat-card,.inv-mov{animation:none;opacity:1;}}
-
-/* ── Section header — icono + descripción, no solo un título suelto ──── */
-.inv-section-hdr{display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:10px;margin-top:4px;}
-.inv-section-title{font-size:var(--fs-xs);letter-spacing:.18em;text-transform:uppercase;
-  color:var(--dim);font-weight:700;}
-.inv-sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
-  margin-bottom:12px;margin-top:6px;}
-.inv-sec-head-l{display:flex;align-items:flex-start;gap:10px;min-width:0;}
-.inv-sec-icon{width:30px;height:30px;border-radius:9px;background:var(--gold-d);
-  border:1px solid rgba(201,168,76,.25);display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;color:var(--gold);}
-.inv-sec-icon svg{width:14px;height:14px;}
-.inv-sec-text{min-width:0;}
-.inv-sec-desc{font-size:11px;color:var(--dim);margin-top:2px;line-height:1.4;}
-
-/* ── Add button ──────────────────────────────────────────────── */
-.btn-add-inv{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;
-  background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:8px;
-  color:var(--gold);font-size:var(--fs-xs);letter-spacing:.08em;cursor:pointer;
-  text-transform:uppercase;transition:background .18s;}
-.btn-add-inv:hover{background:rgba(201,168,76,.2);}
-
-/* ── Timeline ────────────────────────────────────────────────── */
-.inv-timeline{display:flex;flex-direction:column;gap:6px;}
-.inv-mov{display:flex;align-items:center;gap:12px;background:var(--card);
-  border:1px solid var(--b);border-radius:11px;padding:10px 13px;transition:border-color .18s;}
-.inv-mov:hover{border-color:rgba(255,255,255,.12);}
-.inv-mov-dir{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;
-  justify-content:center;font-size:.8rem;flex-shrink:0;}
-.inv-mov-body{flex:1;min-width:0;}
-.inv-mov-top{display:flex;align-items:center;gap:7px;margin-bottom:2px;}
-.inv-mov-plat{font-size:var(--fs-12);font-weight:700;letter-spacing:.1em;padding:2px 7px;
-  border-radius:20px;}
-.inv-mov-sub{font-size:var(--fs-12);letter-spacing:.08em;color:var(--dim);}
-.inv-mov-desc{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.inv-mov-right{text-align:right;flex-shrink:0;}
-.inv-mov-monto{font-size:var(--fs-sm);font-weight:700;}
-.inv-mov-fecha{font-size:var(--fs-12);color:var(--dim);margin-top:2px;}
-.inv-mov-del{opacity:0;width:22px;height:22px;border-radius:5px;background:rgba(239,68,68,.12);
-  border:none;color:#f87171;cursor:pointer;font-size:12px;display:flex;align-items:center;
-  justify-content:center;transition:opacity .18s;flex-shrink:0;}
-.inv-mov:hover .inv-mov-del{opacity:1;}
-
-/* ── Modal ───────────────────────────────────────────────────── */
-.inv-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);
-  display:flex;align-items:flex-end;justify-content:center;z-index:9999;
-  opacity:0;pointer-events:none;transition:opacity .2s;}
-.inv-modal-overlay.open{opacity:1;pointer-events:all;}
-.inv-modal{background:var(--card);border:1px solid var(--b);border-radius:18px 18px 0 0;
-  width:100%;max-width:480px;padding:24px 22px 32px;transform:translateY(20px);
-  transition:transform .22s ease;}
-.inv-modal-overlay.open .inv-modal{transform:translateY(0);}
-.inv-modal-title{font-size:var(--fs-sm);font-weight:700;letter-spacing:.1em;
-  text-transform:uppercase;margin-bottom:18px;color:var(--text);}
-.inv-field{margin-bottom:14px;}
-.inv-field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--dim);margin-bottom:5px;}
-.inv-field input,.inv-field select{width:100%;background:var(--surf);border:1px solid var(--b);
-  border-radius:8px;padding:9px 12px;color:var(--text);font-size:var(--fs-sm);outline:none;
-  transition:border-color .18s;box-sizing:border-box;}
-.inv-field input:focus,.inv-field select:focus{border-color:rgba(201,168,76,.5);}
-.inv-field select option{background:var(--card);}
-.inv-modal-btns{display:flex;gap:10px;margin-top:18px;}
-.inv-modal-btns button{flex:1;padding:10px;border-radius:9px;font-size:var(--fs-sm);
-  font-weight:600;cursor:pointer;letter-spacing:.06em;border:none;transition:opacity .15s;}
-.inv-modal-btns button:hover{opacity:.8;}
-.btn-save{background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3) !important;
-  border:none;color:var(--gold);}
-.btn-cancel{background:var(--surf);color:var(--dim);}
-
-/* ── Toast ───────────────────────────────────────────────────── */
-.inv-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);
-  background:var(--card);border:1px solid var(--b);border-radius:10px;
-  padding:9px 18px;font-size:var(--fs-sm);color:var(--text);
-  transition:transform .25s ease,opacity .25s;opacity:0;z-index:10000;white-space:nowrap;}
-.inv-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
-
-
-/* ── Responsive ──────────────────────────────────────────────── */
-@media(max-width:480px){
-  .inv-hero-top{grid-template-columns:1fr 1fr;}
-  .inv-hero-main{grid-column:1/-1;border-right:none;border-bottom:1px solid var(--b);
-    padding-right:0;padding-bottom:12px;}
-  .inv-kpi:last-child{grid-column:1/-1;}
-}
-</style>
-{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/inversiones.css') }}">{% endblock %}
+{% block mtitle %}<b>Inversiones</b><span>Oikonomia · portafolio</span>{% endblock %}
+{% block topright %}<button type="button" class="eu-iconbtn js-nw-toggle" aria-pressed="false" aria-label="Ocultar cifras"><i data-lucide="eye"></i></button>{% endblock %}
 
 {% block content %}
-<div class="inv-page">
+<div class="iv" id="iv" data-cat="oikonomia">
+  <header class="iv-hd">
+    <div><div class="t-eyebrow">Oikonomia · Inversiones</div><h1 class="t-page">Portafolio</h1>
+      <p class="t-meta iv-lead">Aportaciones, retiros y rendimientos por plataforma. El saldo es una estimación a partir de los movimientos registrados.</p></div>
+    <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Registrar movimiento</button>
+  </header>
 
-  <!-- ── Hero KPIs ────────────────────────────────────────────── -->
-  <div class="inv-hero">
-    <div class="inv-hero-title">Portafolio de inversiones</div>
-    <div class="inv-hero-top">
-      <div class="inv-hero-main">
-        <div class="inv-hero-main-label"><i data-lucide="wallet" style="width:11px;height:11px;"></i> Saldo total</div>
-        <div class="inv-hero-main-val">${{ "{:,.0f}".format(saldo_total) }}</div>
-        <div class="inv-hero-main-sub">{{ plataformas|length }} plataforma{% if plataformas|length != 1 %}s{% endif %} activa{% if plataformas|length != 1 %}s{% endif %}</div>
+  <section class="eu-card iv-hero" aria-labelledby="iv-saldo-l">
+    <div class="iv-hero-top">
+      <div class="iv-main">
+        <div class="t-eyebrow" id="iv-saldo-l"><i data-lucide="wallet"></i>Saldo total</div>
+        <div class="t-data iv-main-v">{{ hide(money(saldo_total)) }}</div>
+        <div class="t-meta">{{ plataformas|length }} plataforma{{ 's' if plataformas|length != 1 }} activa{{ 's' if plataformas|length != 1 }}</div>
       </div>
-      <div class="inv-kpis">
-        <div class="inv-kpi">
-          <div class="inv-kpi-label">Aportado</div>
-          <div class="inv-kpi-val green">${{ "{:,.0f}".format(total_aportado) }}</div>
-        </div>
-        <div class="inv-kpi">
-          <div class="inv-kpi-label">Retirado</div>
-          <div class="inv-kpi-val red">${{ "{:,.0f}".format(total_retirado) }}</div>
-        </div>
-        <div class="inv-kpi">
-          <div class="inv-kpi-label">Rendimientos</div>
-          <div class="inv-kpi-val gold">${{ "{:,.0f}".format(total_rendimiento) }}</div>
-        </div>
-      </div>
+      <dl class="iv-kpis">
+        <div data-tone="success"><dt class="t-meta">Aportado</dt><dd class="t-data">{{ hide(money(total_aportado)) }}</dd></div>
+        <div data-tone="danger"><dt class="t-meta">Retirado</dt><dd class="t-data">{{ hide(money(total_retirado)) }}</dd></div>
+        <div data-tone="warning"><dt class="t-meta">Rendimientos</dt><dd class="t-data">{{ hide(money(total_rendimiento)) }}</dd></div>
+      </dl>
     </div>
-
-    <!-- Barra de allocación -->
     {% if plataformas %}
-    <div class="inv-alloc-bar">
-      {% for p in plataformas %}
-      <div class="inv-alloc-seg"
-           style="width:{{ p.pct }}%;background:{{ p.color }};flex:{{ p.pct }};"></div>
-      {% endfor %}
+    <div class="iv-alloc" role="img" aria-label="Distribución: {% for p in plataformas %}{{ p.label }} {{ p.pct }}%{{ ', ' if not loop.last }}{% endfor %}">
+      {% for p in plataformas %}<span class="iv-seg" data-cat="{{ PCAT.get(p.id, 'identidad') }}" style="flex:{{ p.pct }}"></span>{% endfor %}
     </div>
-    <div class="inv-alloc-legend">
-      {% for p in plataformas %}
-      <div class="inv-alloc-dot">
-        <span style="background:{{ p.color }};"></span>
-        {{ p.label }} · {{ p.pct }}%
-      </div>
-      {% endfor %}
-    </div>
+    <ul class="iv-legend">
+      {% for p in plataformas %}<li data-cat="{{ PCAT.get(p.id, 'identidad') }}"><span class="iv-dot"></span>{{ p.label }} · <span class="num">{{ p.pct }}%</span></li>{% endfor %}
+    </ul>
     {% endif %}
-  </div>
+  </section>
 
-  <!-- ── Plataformas ───────────────────────────────────────────── -->
   {% if plataformas %}
-  <div class="inv-sec-head">
-    <div class="inv-sec-head-l">
-      <div class="inv-sec-icon"><i data-lucide="layers"></i></div>
-      <div class="inv-sec-text">
-        <div class="inv-section-title">Por plataforma</div>
-        <div class="inv-sec-desc">Saldo estimado de cada cuenta activa</div>
-      </div>
-    </div>
-  </div>
-  <div class="inv-platforms">
-    {% for p in plataformas %}
-    <div class="inv-plat-card" style="--i:{{ loop.index0 }}">
-      <div class="inv-plat-icon" style="background:{{ p.color }}22;color:{{ p.color }};"><i data-lucide="{{ p.icon }}" style="width:19px;height:19px;"></i></div>
-      <div class="inv-plat-info">
-        <div class="inv-plat-name">{{ p.label }}</div>
-        <div class="inv-plat-sub">
-          Aportado ${{ "{:,.0f}".format(p.aportado) }}
-          {% if p.retirado > 0 %} · Retirado ${{ "{:,.0f}".format(p.retirado) }}{% endif %}
-          {% if p.rendimiento > 0 %} · Rend. ${{ "{:,.0f}".format(p.rendimiento) }}{% endif %}
+  <section class="eu-vstack iv-sec" aria-labelledby="iv-plat-t">
+    <div><h2 class="t-card" id="iv-plat-t">Por plataforma</h2><p class="t-meta">Saldo estimado de cada cuenta activa</p></div>
+    <div class="iv-plats">
+      {% for p in plataformas %}
+      <article class="eu-card iv-plat" data-cat="{{ PCAT.get(p.id, 'identidad') }}">
+        <span class="eu-row-ic iv-plat-ic"><i data-lucide="{{ p.icon }}"></i></span>
+        <div class="eu-grow iv-plat-bd">
+          <div class="eu-between"><span class="t-ui">{{ p.label }}</span><span class="t-data iv-plat-v">{{ hide(money(p.saldo)) }}</span></div>
+          <div class="t-meta nw-hide-block">Aportado {{ money(p.aportado) }}{% if p.retirado > 0 %} · retirado {{ money(p.retirado) }}{% endif %}{% if p.rendimiento > 0 %} · rend. {{ money(p.rendimiento) }}{% endif %}</div>
+          {{ ui.progress(p.pct, 100, variant='cat', thin=True, cat=PCAT.get(p.id, 'identidad'), label='Porcentaje aportado en ' ~ p.label) }}
         </div>
-        <div class="inv-plat-bar-wrap">
-          <div class="inv-plat-bar">
-            <div class="inv-plat-bar-fill" style="width:{{ p.pct }}%;background:{{ p.color }};"></div>
-          </div>
-        </div>
-      </div>
-      <div class="inv-plat-saldo">
-        <div class="inv-plat-saldo-val">${{ "{:,.0f}".format(p.saldo) }}</div>
-        <div class="inv-plat-saldo-label">saldo est.</div>
-      </div>
+      </article>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
+  </section>
   {% endif %}
 
-  <!-- ── Timeline ─────────────────────────────────────────────── -->
-  <div class="inv-sec-head" style="margin-top:10px;">
-    <div class="inv-sec-head-l">
-      <div class="inv-sec-icon"><i data-lucide="history"></i></div>
-      <div class="inv-sec-text">
-        <div class="inv-section-title">Movimientos</div>
-        <div class="inv-sec-desc">Aportaciones, retiros y rendimientos registrados</div>
-      </div>
+  <section class="eu-vstack iv-sec" aria-labelledby="iv-mov-t">
+    <div class="eu-between iv-sec-hd">
+      <div><h2 class="t-card" id="iv-mov-t">Movimientos</h2><p class="t-meta">Aportaciones, retiros y rendimientos registrados</p></div>
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-new"><i data-lucide="plus"></i>Registrar</button>
     </div>
-    <button class="btn-add-inv" onclick="openModal()">+ Registrar</button>
-  </div>
-
-  {% if movs %}
-  <div class="inv-timeline" id="inv-timeline">
-    {% for m in movs %}
-    {% set sign = '+' if m.subcategoria in ('APORTACION','RENDIMIENTO') else '-' %}
-    {% set col  = m.dir_meta.color %}
-    <div class="inv-mov" id="inv-mov-{{ m.id }}" style="--i:{{ loop.index0 }}">
-      <div class="inv-mov-dir" style="background:{{ col }}1a;">
-        {% if m.subcategoria == 'APORTACION' %}↑{% elif m.subcategoria == 'RETIRO' %}↓{% else %}✦{% endif %}
-      </div>
-      <div class="inv-mov-body">
-        <div class="inv-mov-top">
-          <span class="inv-mov-plat"
-                style="background:{{ m.plat_meta.color }}1a;color:{{ m.plat_meta.color }};display:inline-flex;align-items:center;gap:4px;">
-            <i data-lucide="{{ m.plat_meta.icon }}" style="width:12px;height:12px;"></i> {{ m.categoria }}
-          </span>
-          <span class="inv-mov-sub">{{ m.dir_meta.label }}</span>
-        </div>
-        <div class="inv-mov-desc">{{ m.descripcion }}</div>
-      </div>
-      <div class="inv-mov-right">
-        <div class="inv-mov-monto" style="color:{{ col }};">
-          {{ sign }}${{ "{:,.0f}".format(m.monto) }}
-        </div>
-        <div class="inv-mov-fecha">{{ m.fecha }}</div>
-      </div>
-      <button class="inv-mov-del" onclick="deleteMov({{ m.id }})" title="Eliminar" aria-label="Eliminar">✕</button>
-    </div>
-    {% endfor %}
-  </div>
-  {% else %}
-  {% set empty_icon = 'trending-up' %}
-  {% set empty_title = 'Sin movimientos registrados' %}
-  {% set empty_desc = 'Importa un estado de cuenta o usa el botón + Registrar.' %}
-  {% include '_partials/empty.html' %}
-  {% endif %}
-
-</div><!-- /inv-page -->
-
-<!-- ── Modal Registrar ───────────────────────────────────────── -->
-<div class="inv-modal-overlay" id="inv-modal">
-  <div class="inv-modal">
-    <div class="inv-modal-title">Registrar movimiento</div>
-
-    <div class="inv-field">
-      <label>Fecha</label>
-      <input type="date" id="inv-fecha" value="{{ today }}">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-      <div class="inv-field">
-        <label>Plataforma</label>
-        <select id="inv-plat">
-          {% for p in plataformas_list %}
-          <option value="{{ p }}">{{ plat_meta[p].label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="inv-field">
-        <label>Tipo</label>
-        <select id="inv-dir">
-          {% for d, dm in dir_meta.items() %}
-          <option value="{{ d }}">{{ dm.label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-    </div>
-    <div class="inv-field">
-      <label>Monto (MXN)</label>
-      <input type="number" id="inv-monto" placeholder="0.00" step="0.01" min="0">
-    </div>
-    <div class="inv-field">
-      <label>Descripción (opcional)</label>
-      <input type="text" id="inv-desc" placeholder="Ej: Compra de CETES a 28 días">
-    </div>
-
-    <div class="inv-modal-btns">
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn-save" onclick="guardarMov()">Guardar</button>
-    </div>
-  </div>
+    {% if movs %}
+    <ol class="eu-card eu-card--flush eu-list iv-movs" id="iv-movs">
+      {% for m in movs %}
+      {% set d = DIR.get(m.subcategoria, DIR['APORTACION']) %}
+      <li class="eu-row iv-mov" id="inv-mov-{{ m.id }}" data-tone="{{ d[0] }}">
+        <span class="eu-row-ic iv-dir" aria-hidden="true"><i data-lucide="{{ d[1] }}"></i></span>
+        <span class="eu-grow iv-mov-bd">
+          <span class="iv-mov-top"><span class="eu-badge eu-badge--cat" data-cat="{{ PCAT.get(m.categoria, 'identidad') }}"><i data-lucide="{{ m.plat_meta.icon }}"></i>{{ m.categoria }}</span><span class="t-meta">{{ m.dir_meta.label }}</span></span>
+          <span class="t-ui iv-mov-desc">{{ m.descripcion }}</span>
+        </span>
+        <span class="iv-mov-r"><span class="t-data iv-amt">{{ d[2] }}{{ hide(money(m.monto)) }}</span><span class="t-meta num">{{ m.fecha }}</span></span>
+        <button type="button" class="eu-iconbtn iv-del" data-del="{{ m.id }}" aria-label="Eliminar movimiento: {{ m.descripcion }}"><i data-lucide="trash-2"></i></button>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <div class="eu-card">{{ ui.empty('trending-up', 'Sin movimientos registrados', 'Importa un estado de cuenta o usa el botón Registrar.') }}</div>
+    {% endif %}
+  </section>
 </div>
 
-<!-- ── Toast ─────────────────────────────────────────────────── -->
-<div class="inv-toast" id="inv-toast"></div>
+<div data-cat="oikonomia">
+{% call ui.modal('m-inv', 'Registrar movimiento', eyebrow='Inversiones') %}
+<form class="eu-modal-bd" id="f-inv" autocomplete="off" novalidate>
+  <div class="eu-field"><label class="eu-label" for="inv-fecha">Fecha</label><input class="eu-input" type="date" id="inv-fecha" value="{{ today }}"></div>
+  <div class="eu-grid-2 iv-fgrid">
+    <div class="eu-field"><label class="eu-label" for="inv-plat">Plataforma</label><select class="eu-select" id="inv-plat">{% for p in plataformas_list %}<option value="{{ p }}">{{ plat_meta[p].label }}</option>{% endfor %}</select></div>
+    <div class="eu-field"><label class="eu-label" for="inv-dir">Tipo</label><select class="eu-select" id="inv-dir">{% for d, dm in dir_meta.items() %}<option value="{{ d }}">{{ dm.label }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="inv-monto">Monto (MXN) *</label><input class="eu-input eu-input--money" type="number" id="inv-monto" placeholder="0.00" step="0.01" min="0" inputmode="decimal"></div>
+  <div class="eu-field"><label class="eu-label" for="inv-desc">Descripción (opcional)</label><input class="eu-input" id="inv-desc" placeholder="Ej: Compra de CETES a 28 días"></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-inv')">Cancelar</button><button type="submit" form="f-inv" class="eu-btn eu-btn--primary">Guardar</button></div>
+{% endcall %}
+</div>
+{% endblock %}
 
-<script>
-function toast(msg, type) {
-  const t = document.getElementById('inv-toast');
-  t.textContent = msg;
-  t.style.borderColor = type === 'ok' ? 'rgba(34,197,94,.4)' : 'rgba(239,68,68,.4)';
-  t.style.color = type === 'ok' ? '#22c55e' : '#f87171';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
-}
-
-function openModal() {
-  document.getElementById('inv-modal').classList.add('open');
-  document.getElementById('inv-monto').focus();
-}
-function closeModal() {
-  document.getElementById('inv-modal').classList.remove('open');
-}
-
-async function guardarMov() {
-  const fecha      = document.getElementById('inv-fecha').value;
-  const plataforma = document.getElementById('inv-plat').value;
-  const direccion  = document.getElementById('inv-dir').value;
-  const monto      = parseFloat(document.getElementById('inv-monto').value);
-  const descripcion= document.getElementById('inv-desc').value;
-
-  if (!monto || monto <= 0) { toast('Ingresa un monto válido', 'err'); return; }
-
-  const res  = await fetch('/finanzas/inversiones/api/mov', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ fecha, plataforma, direccion, monto, descripcion }),
-  });
-  const data = await res.json();
-  if (data.ok) {
-    toast('✓ Movimiento guardado', 'ok');
-    closeModal();
-    setTimeout(() => location.reload(), 800);
-  } else {
-    toast(data.error || 'Error', 'err');
-  }
-}
-
-async function deleteMov(id) {
-  if (!(await euConfirm('¿Eliminar este movimiento?'))) return;
-  const res  = await fetch(`/finanzas/inversiones/api/mov/${id}`, { method: 'DELETE' });
-  const data = await res.json();
-  if (data.ok) {
-    const el = document.getElementById(`inv-mov-${id}`);
-    if (el) { el.style.opacity = '0'; el.style.transform = 'translateX(20px)'; el.style.transition = 'all .3s'; setTimeout(() => el.remove(), 300); }
-    toast('Eliminado', 'ok');
-  } else {
-    toast(data.error || 'Error', 'err');
-  }
-}
-</script>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/inversiones.js') }}"></script>
 {% endblock %}

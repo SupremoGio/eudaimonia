@@ -1,0 +1,48 @@
+/* Oikonomia · Inversiones — Design System V2 */
+.iv{display:flex;flex-direction:column;gap:var(--sp-4)}
+.iv h1,.iv h2,.iv p,.iv dl,.iv dd,.iv ul,.iv ol{margin:0}
+.iv-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.iv-hd .t-page{margin-top:var(--sp-2)}
+.iv-lead{margin-top:var(--sp-2);color:var(--fg-2);max-width:640px}
+@media (max-width:767px){.iv-hd{display:none}}
+[data-tone=danger]{--tone-fg:var(--danger-fg);--tone-bg:var(--danger-bg)}
+[data-tone=warning]{--tone-fg:var(--warning-fg);--tone-bg:var(--warning-bg)}
+[data-tone=success]{--tone-fg:var(--success-fg);--tone-bg:var(--success-bg)}
+.iv-hero{display:flex;flex-direction:column;gap:var(--sp-4);border-top:3px solid var(--cat-fg)}
+.iv-hero-top{display:flex;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap;align-items:flex-end}
+.iv-main{display:flex;flex-direction:column;gap:var(--sp-1)}
+.iv-main .t-eyebrow{display:inline-flex;align-items:center;gap:var(--sp-1)}
+.iv-main .t-eyebrow svg{width:12px;height:12px}
+.iv-main-v{font-size:var(--fs-40,var(--fs-32));line-height:1.1;color:var(--fg-1)}
+@media (max-width:767px){.iv-main-v{font-size:var(--fs-32)}}
+.iv-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-3) var(--sp-5)}
+.iv-kpis>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.iv-kpis .t-data{font-size:var(--fs-20);color:var(--tone-fg)}
+@media (max-width:479px){.iv-kpis{width:100%}.iv-kpis .t-data{font-size:var(--fs-15)}}
+.iv-alloc{display:flex;gap:2px;height:10px;border-radius:var(--r-full);overflow:hidden;background:var(--bg-sunken)}
+.iv-seg{display:block;min-width:4px;background:var(--cat-fg)}
+.iv-legend{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4);font-size:var(--fs-12,var(--fs-13));color:var(--fg-2)}
+.iv-legend li{display:inline-flex;align-items:center;gap:var(--sp-2)}
+.iv-dot{width:8px;height:8px;border-radius:50%;background:var(--cat-fg)}
+.iv-sec{gap:var(--sp-3)}
+.iv-sec-hd{align-items:flex-end;flex-wrap:wrap}
+.iv-plats{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-3)}
+@media (min-width:768px){.iv-plats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.iv-plat{display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-4);border-left:3px solid var(--cat-fg)}
+.iv-plat-ic{background:var(--cat-bg);color:var(--cat-fg)}
+.iv-plat-bd{display:flex;flex-direction:column;gap:var(--sp-2)}
+.iv-plat-v{font-size:var(--fs-15)}
+.iv-movs{list-style:none;padding:0}
+.iv-mov:last-child{border-bottom:0}
+.iv-dir{background:var(--tone-bg);color:var(--tone-fg)}
+.iv-mov-bd{display:flex;flex-direction:column;gap:var(--sp-1)}
+.iv-mov-top{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+.iv-mov-top .eu-badge svg{width:12px;height:12px}
+.iv-mov-desc{overflow-wrap:anywhere}
+.iv-mov-r{display:flex;flex-direction:column;align-items:flex-end;gap:2px;flex-shrink:0}
+.iv-amt{color:var(--tone-fg);font-size:var(--fs-15)}
+.iv-del{opacity:.6}
+.iv-del:hover,.iv-del:focus-visible{opacity:1;color:var(--danger-fg)}
+@media (max-width:479px){.iv-mov{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:start;padding-top:var(--sp-3);padding-bottom:var(--sp-3)}.iv-mov-r{grid-column:2;grid-row:2;flex-direction:row;gap:var(--sp-3);align-items:baseline}.iv-del{grid-column:3;grid-row:1}}
+.iv-fgrid{gap:var(--sp-3)}
+@media (max-width:379px){.iv-fgrid{grid-template-columns:minmax(0,1fr)}}
