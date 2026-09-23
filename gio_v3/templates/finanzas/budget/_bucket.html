@@ -10,6 +10,19 @@
   <ul class="bg-cats">
     {% for cat in bdata.cats %}
     {% set tone = 'danger' if cat.status == 'over' else ('warning' if cat.status == 'warn' else 'success') %}
+    {% if cat.inversion %}
+    {#- Fila sintética: aportaciones − retiros de GBM/CETES/… del mes; su detalle vive en Inversiones. -#}
+    <li class="bg-cat" data-tone="{{ tone }}" id="cat-inversiones">
+      <a class="bg-cat-open" href="/finanzas/inversiones/" aria-label="Ver inversiones">
+        <span class="eu-row-ic bg-cat-ic"><i data-lucide="trending-up"></i></span>
+        <span class="bg-cat-bd">
+          <span class="eu-between"><span class="t-ui">{{ cat.nombre }} <span class="t-meta num bg-cat-n">{{ cat.n }} mov</span></span><span class="t-data bg-cat-v">{{ money(cat.gastado) }}</span></span>
+          <span class="eu-progress eu-progress--thin bg-cat-bar" aria-hidden="true"><i style="width:{{ [[cat.pct, 0]|max, 100]|min }}%"></i></span>
+          <span class="t-meta bg-cat-ft">Aportado {{ money(cat.inversion.aportado) }} · retirado {{ money(cat.inversion.retirado) }}</span>
+        </span>
+      </a>
+    </li>
+    {% else %}
     <li class="bg-cat" data-tone="{{ tone }}" id="cat-{{ cat.categoria }}">
       <button type="button" class="bg-cat-open" data-dd="{{ cat.categoria }}" data-nombre="{{ cat.nombre }}" data-ic="{{ cat_icons.get(cat.categoria, 'package') }}" aria-label="Ver movimientos de {{ cat.nombre }}">
         <span class="eu-row-ic bg-cat-ic"><i data-lucide="{{ cat_icons.get(cat.categoria, 'package') }}"></i></span>
@@ -19,11 +32,13 @@
           <span class="t-meta bg-cat-ft">
             {% if cat.tiene_limite %}{% set rest = cat.limite - cat.gastado %}<span class="num">{{ cat.pct }}% del presupuesto</span> · {{ money(cat.gastado) }} / {{ money(cat.limite) }} · {% if rest >= 0 %}{{ money(rest) }} restante{% else %}<span class="bg-over">{{ money(rest|abs) }} excedido</span>{% endif %}
             {% else %}<span class="num">{{ cat.pct }}% del bucket</span> · de {{ money(cat.bucket_target) }} target{% endif %}
+            {% if cat.perdido %} · incluye {{ money(cat.perdido) }} de préstamos perdidos{% endif %}
           </span>
         </span>
       </button>
       <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm bg-lim" data-lim="{{ cat.categoria }}" data-nombre="{{ cat.nombre }}" data-val="{{ cat.limite }}" aria-label="Editar presupuesto de {{ cat.nombre }}">{% if cat.limite > 0 %}<i data-lucide="pencil"></i>{{ money(cat.limite) }}{% else %}<i data-lucide="plus"></i>Presupuesto{% endif %}</button>
     </li>
+    {% endif %}
     {% endfor %}
   </ul>
   {% else %}

@@ -88,6 +88,9 @@ CATEGORIA_BUCKET = {
 _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO',
                      'APORTACION_RENTA', 'FINANZAS')
 
+# Fila sintética de la Radiografía: aportaciones − retiros de tipo INVERSION.
+INVERSIONES_NETAS = '__INVERSIONES__'
+
 CAT_LABELS = {
     'SUPER':            'Súper',
     'COMIDA_FUERA':     'Comida fuera',
@@ -109,11 +112,25 @@ CAT_LABELS = {
     'APRENDIZAJE':      'Aprendizaje',
     'INVERSION':        'Ahorro',
     'OTROS':            'Otros',
+    INVERSIONES_NETAS:  'Inversiones (neto)',
     'EXPENSE':          'EXPENSE',
     'APORTACION_RENTA': 'Aportación renta',
     'FINANZAS':         'Finanzas / Movimientos bancarios',
     'NOMINA':           'Nómina adelanto',
 }
+
+
+def _inversiones_mes(db, desde, hasta):
+    r = db.execute("""
+        SELECT COALESCE(SUM(CASE WHEN subcategoria='APORTACION' THEN ABS(monto) END), 0) AS aport,
+               COALESCE(SUM(CASE WHEN subcategoria='RETIRO'     THEN ABS(monto) END), 0) AS ret,
+               COUNT(*) AS n
+        FROM est_movimientos
+        WHERE tipo='INVERSION' AND subcategoria IN ('APORTACION', 'RETIRO')
+          AND fecha >= ? AND fecha < ?""", (desde, hasta)).fetchone()
+    aport, ret = round(float(r['aport']), 2), round(float(r['ret']), 2)
+    return {'aportado': aport, 'retirado': ret, 'neto': round(aport - ret, 2), 'n': int(r['n'])}
+
 
 # Categorías de GASTO que no son consumo y nunca entran a la Radiografía
 # (misma lista para el cálculo del mes y para la racha). PRESTAMOS: dinero
@@ -201,7 +218,8 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
                      AND {_GASTO_WHERE}
                      AND fecha >= ? AND fecha < ?""",
                 (mes_inicio, mes_fin)
-            ).fetchone()['t'] + perdidos_en_rango(db, mes_inicio, mes_fin)
+            ).fetchone()['t'] + perdidos_en_rango(db, mes_inicio, mes_fin) \
+              + _inversiones_mes(db, mes_inicio, mes_fin)['neto']
 
             if ingreso <= 0:
                 meses.append({'mes': mes, 'status': 'sin_datos'})
@@ -274,8 +292,9 @@ def _calc_budget(mes, db):
         fam = next((r for r in spending_rows if r['categoria'] == 'FAMILIA_REGALOS'), None)
         if fam:
             fam['total'] = float(fam['total'] or 0) + perdido
+            fam['perdido'] = perdido
         else:
-            spending_rows.append({'categoria': 'FAMILIA_REGALOS', 'total': perdido, 'n': 0})
+            spending_rows.append({'categoria': 'FAMILIA_REGALOS', 'total': perdido, 'n': 0, 'perdido': perdido})
 
     # ── Límites opcionales (est_budgets)
     budgets_map = {r['categoria']: float(r['limite'] or 0)
@@ -341,12 +360,36 @@ def _calc_budget(mes, db):
             'limite':       limite,
             'gastado':      gastado,
             'n':            int(row['n'] or 0),
+            'perdido':      row.get('perdido', 0),
             'pct':          pct,
             'pct_bucket':   pct_bucket,
             'tiene_limite': tiene_limite,
             'bucket':       bucket,
             'bucket_target': bucket_target,
             'status':       status,
+        })
+
+    # ── Inversiones del mes (tipo INVERSION, categoría = plataforma GBM/CETES…):
+    #    aportaciones − retiros, con la dirección tomada de la subcategoría
+    #    (el signo del monto no es confiable). RENDIMIENTO no cuenta: no es
+    #    dinero que el usuario aparta. No se cruza con los gastos de categoría
+    #    INVERSION (tipo GASTO), que siguen como su propia fila: tipos distintos,
+    #    así que nada se cuenta dos veces. El neto puede ser negativo.
+    inv = _inversiones_mes(db, mes_inicio, mes_fin)
+    if inv['n']:
+        cats_data.append({
+            'categoria':    INVERSIONES_NETAS,
+            'nombre':       CAT_LABELS[INVERSIONES_NETAS],
+            'limite':       0.0,
+            'gastado':      inv['neto'],
+            'n':            inv['n'],
+            'pct':          round(inv['neto'] / (ingreso_real * PCTS['ahorro_deuda']) * 100, 1) if ingreso_real > 0 else 0,
+            'pct_bucket':   0,
+            'tiene_limite': False,
+            'bucket':       'ahorro_deuda',
+            'bucket_target': round(ingreso_real * PCTS['ahorro_deuda'], 2),
+            'status':       'ok' if inv['neto'] >= 0 else 'over',
+            'inversion':    inv,
         })
 
     # ── Agrupar por bucket
@@ -373,13 +416,16 @@ def _calc_budget(mes, db):
     # Barra segmentada: % del ingreso gastado en cada bucket
     seg = {}
     for bk in CATEGORIAS:
-        seg[bk] = round(buckets[bk]['total_gastado'] / ingreso_real * 100, 1) if ingreso_real > 0 else 0
+        seg[bk] = max(round(buckets[bk]['total_gastado'] / ingreso_real * 100, 1), 0) if ingreso_real > 0 else 0
 
     dias_mes      = calendar.monthrange(y, m)[1]
     today         = today_date()
     es_mes_actual = (today.strftime('%Y-%m') == mes)
     dia_actual    = today.day if es_mes_actual else dias_mes
-    proyeccion    = round(total_gastado / dia_actual * dias_mes) if dia_actual > 0 and total_gastado > 0 else 0
+    # La proyección extrapola solo el consumo; las inversiones son aportaciones
+    # puntuales y se suman tal cual.
+    consumo       = total_gastado - inv['neto']
+    proyeccion    = round(consumo / dia_actual * dias_mes + inv['neto']) if dia_actual > 0 and total_gastado > 0 else 0
 
     return {
         'ingreso_real':       ingreso_real,

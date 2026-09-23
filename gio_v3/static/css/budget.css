@@ -71,7 +71,7 @@
 .bg-bk-bar.is-over>i{background:var(--danger-fg)}
 .bg-cats{list-style:none;padding:0;display:flex;flex-direction:column}
 .bg-cat{display:flex;align-items:center;gap:var(--sp-2);border-top:1px solid var(--border-subtle)}
-.bg-cat-open{flex:1;min-width:0;display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-3) var(--sp-1);border:0;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer;border-radius:var(--r-sm)}
+.bg-cat-open{flex:1;min-width:0;display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-3) var(--sp-1);border:0;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer;text-decoration:none;border-radius:var(--r-sm)}
 .bg-cat-open:hover{background:var(--bg-sunken)}
 .bg-cat-open:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
 .bg-cat-ic{background:var(--cat-bg);color:var(--cat-fg)}
