@@ -1,6 +1,7 @@
 from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, request, jsonify
 from database import get_db
+from utils import today_str
 
 viajes_bp = Blueprint('viajes', __name__, template_folder='../../templates')
 
@@ -47,7 +48,7 @@ def _gen_dias(viaje_id, fecha_inicio_str, fecha_fin_str, db):
 
 @viajes_bp.route('/')
 def index():
-    return render_template('viajes/index.html')
+    return render_template('viajes/index.html', today=today_str())
 
 
 # ── API Trips ─────────────────────────────────────────────────────────────────

@@ -1,0 +1,16 @@
+{# Vista 1: lista de viajes agrupada en vigentes / próximos / pasados #}
+<section class="vj-view eu-vstack" id="vw-list" aria-labelledby="vj-list-t">
+  <header class="vj-hd">
+    <div><div class="t-eyebrow">Vida · Viajes</div><h1 class="t-page" id="vj-list-t">Mis viajes</h1>
+      <p class="t-meta vj-lead">Planea un outfit por día, arma la maleta desde tu guardarropa y revisa que nada se quede al regresar.</p></div>
+    <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nuevo viaje</button>
+  </header>
+  <div class="eu-grid-3 vj-stats" id="vj-stats">
+    {{ ui.stat('Vigentes', '—', icon='plane') }}
+    {{ ui.stat('Próximos', '—', icon='calendar-clock') }}
+    {{ ui.stat('Pasados', '—', icon='history') }}
+  </div>
+  <div class="eu-vstack vj-sections" id="trip-sections" aria-live="polite">
+    <div class="eu-card"><p class="t-meta">Cargando…</p></div>
+  </div>
+</section>
