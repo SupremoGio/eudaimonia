@@ -91,7 +91,7 @@ ACTIONS = [
      'keywords': 'pdf banco bbva hsbc invex importar'},
     {'id': 'tarea', 'label': 'Nueva tarea', 'icon': 'list-plus', 'url': '/gtd/',
      'keywords': 'praxis gtd inbox'},
-    {'id': 'prenda', 'label': 'Nueva prenda', 'icon': 'shirt', 'url': '/guardarropa/',
+    {'id': 'prenda', 'label': 'Nueva prenda', 'icon': 'shirt', 'url': '/guardarropa/?nueva=1',
      'keywords': 'ropa guardarropa'},
 ]
 

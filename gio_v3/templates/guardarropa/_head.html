@@ -1,0 +1,21 @@
+{# Encabezado: título, pestañas (Prendas · Outfits · Análisis · Wishlist) y acciones #}
+<header class="gr-hd">
+  <div class="gr-hd-t">
+    <div class="t-eyebrow">Vida · Estilo</div>
+    <h1 class="t-page">Guardarropa</h1>
+  </div>
+  <div class="eu-hstack gr-hd-act">
+    <div class="eu-seg gr-viewseg" role="group" aria-label="Vista de prendas">
+      <button type="button" data-view-set="grid" aria-pressed="true" aria-label="Cuadrícula"><i data-lucide="layout-grid"></i></button>
+      <button type="button" data-view-set="list" aria-pressed="false" aria-label="Lista"><i data-lucide="list"></i></button>
+    </div>
+    <button type="button" class="eu-btn eu-btn--primary js-new-item" data-for="prendas"><i data-lucide="plus"></i>Nueva prenda</button>
+    <button type="button" class="eu-btn eu-btn--primary js-new-outfit" data-for="outfits" hidden><i data-lucide="plus"></i>Nuevo outfit</button>
+  </div>
+</header>
+<nav class="eu-seg gr-tabs" role="tablist" aria-label="Secciones del guardarropa">
+  <button type="button" role="tab" data-tab-set="prendas" aria-selected="true" aria-controls="gr-prendas">Prendas <span class="num">{{ items|length }}</span></button>
+  <button type="button" role="tab" data-tab-set="outfits" aria-selected="false" aria-controls="gr-outfits">Outfits <span class="num">{{ outfits|length }}</span></button>
+  <button type="button" role="tab" data-tab-set="analisis" aria-selected="false" aria-controls="gr-analisis">Análisis</button>
+  <a href="/guardarropa/wishlist/">Wishlist{% if wish.n %} <span class="num">{{ wish.n }}</span>{% endif %}</a>
+</nav>

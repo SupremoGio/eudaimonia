@@ -1,0 +1,23 @@
+{# Panel lateral: outfit de hoy (+XP), rotación de 90 días y wishlist #}
+<section class="eu-card eu-vstack gr-today" aria-labelledby="gr-today-t" hidden>
+  <div class="eu-between"><h2 class="t-eyebrow" id="gr-today-t">Outfit de hoy</h2>
+    <button type="button" class="eu-iconbtn js-today-next" aria-label="Otra sugerencia" title="Otra sugerencia"><i data-lucide="refresh-cw"></i></button></div>
+  <button type="button" class="gr-today-pieces js-today-view" aria-label="Ver outfit completo"></button>
+  <div><div class="gr-today-name t-ui"></div><div class="t-meta gr-today-sub"></div></div>
+  <button type="button" class="eu-btn eu-btn--secondary eu-btn--block js-today-use"></button>
+</section>
+<section class="eu-card eu-vstack gr-today-empty" aria-label="Outfit de hoy" hidden>
+  <div class="t-eyebrow">Outfit de hoy</div>
+  <p class="t-meta">Guarda tu primer outfit y aquí te sugeriremos uno cada día.</p>
+  <button type="button" class="eu-btn eu-btn--secondary eu-btn--block js-new-outfit"><i data-lucide="plus"></i>Nuevo outfit</button>
+</section>
+<section class="eu-card eu-vstack gr-rot" aria-labelledby="gr-rot-t">
+  <h2 class="t-card" id="gr-rot-t">Uso · 90 días</h2>
+  <div class="eu-between t-meta"><span>Rotación</span><span class="num fg-2" id="gr-rot-pct">—</span></div>
+  <div class="eu-progress eu-progress--brand" role="progressbar" aria-label="Rotación de 90 días" id="gr-rot-bar"><i></i></div>
+  <button type="button" class="gr-rot-idle t-meta js-idle-filter" id="gr-rot-idle"></button>
+</section>
+<a class="eu-card eu-vstack gr-wish" href="/guardarropa/wishlist/">
+  <div class="eu-between"><span class="t-card">Wishlist</span><span class="t-meta num">${{ '{:,.0f}'.format(wish.total) }}</span></div>
+  <div class="t-meta">{% if wish.n %}{{ wish.n }} artículo{{ 's' if wish.n != 1 }}{% if wish.canjeables %} · {{ wish.canjeables }} canjeable{{ 's' if wish.canjeables != 1 }} con EC{% endif %}{% else %}Sin artículos en evaluación{% endif %}</div>
+</a>

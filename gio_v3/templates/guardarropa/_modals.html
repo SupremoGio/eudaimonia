@@ -1,0 +1,110 @@
+{# Modales: detalle de prenda, alta/edición de prenda, alta/edición de outfit y vista de outfit #}
+
+{# ── Detalle de prenda (lo llena guardarropa.js) ── #}
+<div class="eu-scrim gr-scrim-wide" id="gr-detail" hidden>
+  <div class="eu-modal gr-detail" role="dialog" aria-modal="true" aria-labelledby="gr-detail-t">
+    <div class="eu-modal-hd">
+      <div class="eu-hstack gr-dnav">
+        <button type="button" class="eu-iconbtn js-d-prev" aria-label="Prenda anterior"><i data-lucide="chevron-left"></i></button>
+        <span class="t-meta num" id="gr-d-pos"></span>
+        <button type="button" class="eu-iconbtn js-d-next" aria-label="Prenda siguiente"><i data-lucide="chevron-right"></i></button>
+      </div>
+      <button type="button" class="eu-iconbtn" onclick="euModal.close('gr-detail')" aria-label="Cerrar"><i data-lucide="x"></i></button>
+    </div>
+    <div class="gr-d-bd" id="gr-d-bd"></div>
+  </div>
+</div>
+
+{# ── Alta / edición de prenda ── #}
+{% call ui.modal('gr-item', 'Nueva prenda', eyebrow='Guardarropa') %}
+<form class="eu-modal-bd gr-form" id="gr-item-form" autocomplete="off" novalidate>
+  <input type="hidden" id="im-id">
+  <div class="eu-field"><label class="eu-label" for="im-url">Link de referencia</label>
+    <div class="eu-hstack gr-url">
+      <input class="eu-input" id="im-url" type="url" placeholder="https://… (página del producto o imagen)">
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-autofill" hidden><i data-lucide="sparkles"></i>Autocompletar</button>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-url-photo" hidden><i data-lucide="camera"></i>Foto</button>
+    </div>
+    <div class="eu-help">Pega el link de la tienda y autocompleta nombre, marca, color y precio.</div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="im-nombre">Nombre *</label><input class="eu-input" id="im-nombre" placeholder="Camisa Oxford azul celeste…" required></div>
+  <div class="eu-grid-2 gr-fgrid">
+    <div class="eu-field"><label class="eu-label" for="im-categoria">Categoría</label>
+      <select class="eu-select" id="im-categoria">{% for c in categorias %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select></div>
+    <div class="eu-field"><label class="eu-label" for="im-marca">Marca</label><input class="eu-input" id="im-marca" placeholder="Zara, H&M, Nike…"></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="im-sub">Subcategoría / detalle</label><input class="eu-input" id="im-sub" placeholder="Oxford, slim fit, crew neck…"></div>
+
+  <fieldset class="eu-field gr-fs"><legend class="eu-label">Color</legend>
+    <div class="gr-swatches" id="im-swatches" role="group" aria-label="Paleta"></div>
+    <div class="eu-hstack gr-color-row">
+      <input type="color" id="im-color-hex" value="#C9A84C" class="gr-color-wheel" aria-label="Color exacto">
+      <input class="eu-input" id="im-color-name" placeholder="Navy, blanco roto, camel…" aria-label="Nombre del color">
+      <button type="button" class="eu-iconbtn js-eyedrop" aria-label="Tomar color de la pantalla" title="Gotero" hidden><i data-lucide="pipette"></i></button>
+    </div>
+  </fieldset>
+
+  <div class="eu-grid-2 gr-fgrid">
+    <div class="eu-field"><label class="eu-label" for="im-precio">Precio pagado</label><input class="eu-input eu-input--money" id="im-precio" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0"></div>
+    <div class="eu-field"><label class="eu-label" for="im-temp">Temporada</label>
+      <select class="eu-select" id="im-temp">{% for t in temporadas %}<option value="{{ t }}">{{ t|capitalize }}</option>{% endfor %}</select></div>
+  </div>
+  <fieldset class="eu-field gr-fs"><legend class="eu-label">Ocasión</legend>
+    <div class="eu-chips gr-wrapchips" id="im-occ">
+      {% for oc in ocasiones %}<button type="button" class="eu-chip" data-oc="{{ oc }}" aria-pressed="false">{{ oc }}</button>{% endfor %}
+    </div>
+  </fieldset>
+  <div class="eu-field"><label class="eu-label" for="im-estado">Estado</label>
+    <select class="eu-select" id="im-estado">{% for e in estados %}<option value="{{ e }}">{{ e|capitalize }}</option>{% endfor %}</select></div>
+  <div class="eu-field"><label class="eu-label" for="im-notas">Notas</label><textarea class="eu-textarea" id="im-notas" rows="2" placeholder="Combina bien con pantalón beige…"></textarea></div>
+  <div class="eu-err" id="im-err" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('gr-item')">Cancelar</button>
+  <button type="submit" form="gr-item-form" class="eu-btn eu-btn--primary">Guardar prenda</button>
+</div>
+{% endcall %}
+
+{# ── Alta / edición de outfit ── #}
+{% call ui.modal('gr-outfit', 'Nuevo outfit', eyebrow='Outfits') %}
+<form class="eu-modal-bd gr-form" id="gr-outfit-form" autocomplete="off" novalidate>
+  <input type="hidden" id="om-id">
+  <div class="eu-field"><label class="eu-label" for="om-nombre">Nombre *</label><input class="eu-input" id="om-nombre" placeholder="Look reunión de trabajo…" required></div>
+  <div class="eu-grid-2 gr-fgrid">
+    <div class="eu-field"><label class="eu-label" for="om-ocasion">Ocasión</label>
+      <select class="eu-select" id="om-ocasion"><option value="">— elegir —</option>{% for oc in ocasiones %}<option value="{{ oc }}">{{ oc }}</option>{% endfor %}</select></div>
+    <fieldset class="eu-field gr-fs"><legend class="eu-label">Confianza</legend>
+      <div class="gr-stars" id="om-stars" role="radiogroup" aria-label="Rating de confianza">
+        {% for i in range(1, 6) %}<button type="button" role="radio" aria-checked="false" data-val="{{ i }}" aria-label="{{ i }} de 5"><i data-lucide="star"></i></button>{% endfor %}
+      </div>
+    </fieldset>
+  </div>
+  <fieldset class="eu-field gr-fs"><legend class="eu-label">Prendas del outfit</legend>
+    <div class="eu-input-wrap"><i data-lucide="search"></i><input class="eu-input" id="om-q" type="search" placeholder="Filtrar prendas…" aria-label="Filtrar prendas"></div>
+    <div class="eu-chips" id="om-cats" role="group" aria-label="Categoría"></div>
+    <div class="gr-picked" id="om-picked" hidden></div>
+    <div class="gr-picker" id="om-picker"></div>
+  </fieldset>
+  <div class="eu-field"><label class="eu-label" for="om-notas">Notas</label><textarea class="eu-textarea" id="om-notas" rows="2" placeholder="Ideal para presentaciones formales…"></textarea></div>
+  <div class="eu-err" id="om-err" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('gr-outfit')">Cancelar</button>
+  <button type="submit" form="gr-outfit-form" class="eu-btn eu-btn--primary">Guardar outfit</button>
+</div>
+{% endcall %}
+
+{# ── Vista de outfit: flat-lay grande para decidir ── #}
+{% call ui.modal('gr-oview', 'Outfit', eyebrow='Outfit') %}
+<div class="eu-modal-bd">
+  <div class="t-meta" id="ov-sub"></div>
+  <div class="gr-flatlay" id="ov-flat"></div>
+  <p class="t-body fg-2 gr-ov-notes" id="ov-notes" hidden></p>
+</div>
+<div class="eu-modal-ft gr-ov-ft">
+  <button type="button" class="eu-iconbtn gr-danger js-ov-del" aria-label="Eliminar outfit"><i data-lucide="trash-2"></i></button>
+  <span class="eu-grow"></span>
+  <button type="button" class="eu-btn eu-btn--ghost js-ov-edit">Editar</button>
+  <button type="button" class="eu-btn eu-btn--primary js-ov-use">Usar hoy</button>
+</div>
+{% endcall %}

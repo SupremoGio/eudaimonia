@@ -1,0 +1,27 @@
+{# Pestaña Prendas: búsqueda, orden, departamentos, subcategorías y grid/lista (render en JS) #}
+<section class="gr-panel eu-vstack" data-panel="prendas" id="gr-prendas" aria-label="Prendas">
+  {% include "guardarropa/_today_compact.html" %}
+  <div class="gr-toolbar">
+    <div class="eu-input-wrap gr-search"><i data-lucide="search"></i>
+      <input class="eu-input" id="gr-q" type="search" placeholder="Buscar prenda, marca, color…" aria-label="Buscar prenda" autocomplete="off">
+    </div>
+    <label class="gr-sort"><span class="t-meta">Orden</span>
+      <select class="eu-select" id="gr-sort" aria-label="Ordenar prendas">
+        <option value="menos_usadas">Menos usadas</option>
+        <option value="recientes">Más recientes</option>
+        <option value="usos_desc">Más usadas</option>
+        <option value="precio_desc">Precio: mayor a menor</option>
+        <option value="precio_asc">Precio: menor a mayor</option>
+        <option value="nombre">Nombre A–Z</option>
+      </select>
+    </label>
+  </div>
+  <div class="eu-chips" id="gr-depts" role="group" aria-label="Departamentos"></div>
+  <div class="eu-chips gr-subcats" id="gr-subcats" role="group" aria-label="Categorías" hidden></div>
+  <div class="eu-hstack gr-result">
+    <span class="t-meta num" id="gr-count"></span>
+    <button type="button" class="eu-chip gr-filter js-clear-color" aria-pressed="true" hidden></button>
+    <button type="button" class="eu-chip gr-filter js-clear-cat" aria-pressed="true" hidden></button>
+  </div>
+  <div class="gr-grid" id="gr-grid" aria-live="polite"></div>
+</section>

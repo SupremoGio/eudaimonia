@@ -6,7 +6,8 @@ from flask import Blueprint, render_template, request, jsonify, send_from_direct
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
 from database import get_db
-from utils import clean_str, safe_float, uploads_base_dir
+from utils import clean_str, safe_float, uploads_base_dir, today_str
+from ec_constants import EC_RATE
 
 _log = logging.getLogger(__name__)
 
@@ -94,7 +95,39 @@ def index():
     return render_template('guardarropa/index.html',
                            items=items, outfits=outfits,
                            categorias=CATEGORIAS, ocasiones=OCASIONES,
-                           temporadas=TEMPORADAS, estados=ESTADOS)
+                           temporadas=TEMPORADAS, estados=ESTADOS,
+                           today=today_str(), outfit_xp=_outfit_xp_state(),
+                           wish=_wishlist_summary())
+
+
+def _outfit_xp_state():
+    """Actividad «outfit» (+1 XP) del Acta: si existe y si ya se marcó hoy.
+    «Usar hoy · +1 XP» del panel la marca vía /actividades/api/activity/log."""
+    try:
+        import modules.actividades.activity_defs as adefs
+        act = adefs.get_by_key('outfit')
+        if not act or not act['active'] or act['hidden']:
+            return {'key': None, 'pts': 0, 'done': False}
+        with get_db() as db:
+            done = db.execute("SELECT 1 FROM activity_logs WHERE activity_key='outfit' AND date=?",
+                              (today_str(),)).fetchone() is not None
+        return {'key': 'outfit', 'pts': act['pts'], 'done': done}
+    except Exception:
+        return {'key': None, 'pts': 0, 'done': False}
+
+
+def _wishlist_summary():
+    """Resumen de la wishlist activa para el panel lateral."""
+    try:
+        with get_db() as db:
+            rows = db.execute("SELECT precio_estimado FROM wishlist_items "
+                              "WHERE estado IN ('evaluando','pendiente')").fetchall()
+            balance = max(0, db.execute("SELECT COALESCE(SUM(amount),0) AS s FROM coins_ledger").fetchone()['s'])
+        precios = [r['precio_estimado'] or 0 for r in rows]
+        canjeables = sum(1 for p in precios if p > 0 and -(-p // EC_RATE) <= balance)
+        return {'n': len(precios), 'total': sum(precios), 'canjeables': canjeables}
+    except Exception:
+        return {'n': 0, 'total': 0, 'canjeables': 0}
 
 
 # ── Wardrobe items API ────────────────────────────────────────────────────────
@@ -173,12 +206,14 @@ def delete_item(iid):
 @guardarropa_bp.route('/api/item/<int:iid>/uso', methods=['POST'])
 def register_uso(iid):
     with get_db() as db:
-        cur = db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1 WHERE id=?", (iid,))
+        today = today_str()
+        cur = db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1, ultimo_uso=? WHERE id=?",
+                         (today, iid))
         db.commit()
         if not cur.rowcount:
             return jsonify({'error': 'not found'}), 404
         row = db.execute("SELECT veces_usado FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
-    return jsonify({'veces_usado': row['veces_usado']})
+    return jsonify({'veces_usado': row['veces_usado'], 'ultimo_uso': today})
 
 
 # ── Outfits API ───────────────────────────────────────────────────────────────
@@ -262,7 +297,7 @@ def delete_outfit(oid):
 
 @guardarropa_bp.route('/api/outfit/<int:oid>/usar', methods=['POST'])
 def usar_outfit(oid):
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = today_str()
     with get_db() as db:
         cur = db.execute(
             "UPDATE outfits SET veces_usado=COALESCE(veces_usado,0)+1, ultimo_uso=? WHERE id=?",
@@ -274,10 +309,12 @@ def usar_outfit(oid):
             "SELECT item_id FROM outfit_items WHERE outfit_id=?", (oid,)
         ).fetchall()]
         for iid in item_ids:
-            db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1 WHERE id=?", (iid,))
+            db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1, ultimo_uso=? WHERE id=?",
+                       (today, iid))
         db.commit()
         row = _row(db.execute("SELECT * FROM outfits WHERE id=?", (oid,)).fetchone())
-    return jsonify({'ok': True, 'veces_usado': row.get('veces_usado', 1), 'ultimo_uso': today})
+    return jsonify({'ok': True, 'veces_usado': row.get('veces_usado', 1), 'ultimo_uso': today,
+                    'item_ids': item_ids})
 
 
 # ── Photo upload ──────────────────────────────────────────────────────────────

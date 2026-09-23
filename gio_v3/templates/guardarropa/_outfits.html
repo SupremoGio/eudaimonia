@@ -1,0 +1,40 @@
+{# Pestaña Outfits: cifras, filtro por ocasión, grid y generador IA #}
+<section class="gr-panel eu-vstack" data-panel="outfits" id="gr-outfits" aria-label="Outfits" hidden>
+  <p class="t-meta gr-lead">Repetir un outfit no es un fracaso: es la prueba de que tu armario funciona. Abre cualquiera para verlo completo antes de decidir.</p>
+  <div class="eu-grid-3 gr-ostats">
+    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="layers"></i>Outfits</div><div class="eu-stat-val" id="ot-total">0</div></div>
+    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="calendar-check"></i>Usados · semana</div><div class="eu-stat-val" id="ot-week">0</div></div>
+    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="star"></i>Ocasión favorita</div><div class="eu-stat-val gr-stat-txt" id="ot-fav">—</div></div>
+  </div>
+  <div class="eu-chips" id="ot-filters" role="group" aria-label="Filtrar por ocasión">
+    {% for oc in ['', 'Formal', 'Business', 'Casual', 'Social', 'Deportivo', 'Cita'] %}
+    <button type="button" class="eu-chip" data-occ="{{ oc }}" aria-pressed="{{ 'true' if not oc else 'false' }}">{{ oc or 'Todos' }}</button>
+    {% endfor %}
+  </div>
+  <div class="gr-ogrid" id="ot-grid"></div>
+
+  <details class="eu-card gr-ai" id="ai-gen">
+    <summary class="eu-hstack gr-ai-sum">
+      <span class="eu-row-ic fg-brand"><i data-lucide="sparkles"></i></span>
+      <span class="eu-grow"><span class="t-card">Coach de imagen · IA</span><span class="t-meta">Genera un look por ocasión o a partir de una prenda</span></span>
+      <i data-lucide="chevron-down" class="gr-ai-chev"></i>
+    </summary>
+    <div class="eu-vstack gr-ai-bd">
+      <div class="eu-seg gr-ai-mode" role="group" aria-label="Modo">
+        <button type="button" data-ai-mode="ocasion" aria-pressed="true">Por ocasión</button>
+        <button type="button" data-ai-mode="item" aria-pressed="false">Desde una prenda</button>
+      </div>
+      <div class="eu-field" id="ai-anchor-wrap" hidden>
+        <label class="eu-label" for="ai-anchor">¿Qué prenda quieres combinar?</label>
+        <select class="eu-select" id="ai-anchor"><option value="">— elegir prenda —</option></select>
+      </div>
+      <div class="eu-chips" id="ai-occs" role="group" aria-label="Ocasión">
+        {% for oc, lbl in [('Casual','Casual'), ('Business','Business'), ('Formal','Formal'), ('Social','Social'), ('Cita','Cita'), ('Reunión importante','Reunión'), ('Fin de semana','Fin de semana')] %}
+        <button type="button" class="eu-chip" data-ai-occ="{{ oc }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ lbl }}</button>
+        {% endfor %}
+      </div>
+      <button type="button" class="eu-btn eu-btn--secondary gr-ai-go" id="ai-go"><i data-lucide="sparkles"></i><span>Generar look</span></button>
+      <div id="ai-result" hidden></div>
+    </div>
+  </details>
+</section>

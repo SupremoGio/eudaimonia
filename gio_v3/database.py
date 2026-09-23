@@ -496,6 +496,7 @@ def init_db():
             estado       TEXT    DEFAULT 'bueno',
             precio       REAL    DEFAULT 0,
             veces_usado  INTEGER DEFAULT 0,
+            ultimo_uso   TEXT    DEFAULT NULL,
             foto         TEXT    DEFAULT '',
             notas        TEXT    DEFAULT '',
             url          TEXT    DEFAULT '',
@@ -1166,6 +1167,11 @@ def init_db():
             wi_cols = [r["name"] for r in db.execute("PRAGMA table_info(wardrobe_items)").fetchall()]
             if "url" not in wi_cols:
                 db.execute("ALTER TABLE wardrobe_items ADD COLUMN url TEXT DEFAULT ''")
+                db.commit()
+            # ultimo_uso: fecha del último uso (para «sin usar en 90 días»).
+            # Las prendas previas a esta columna quedan en NULL.
+            if "ultimo_uso" not in wi_cols:
+                db.execute("ALTER TABLE wardrobe_items ADD COLUMN ultimo_uso TEXT DEFAULT NULL")
                 db.commit()
         except Exception as e:
             print(f"[DB] wardrobe_items migration warning: {e}")
