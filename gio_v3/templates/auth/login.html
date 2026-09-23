@@ -11,7 +11,7 @@
 <main class="au">
   {# ── Hero (desktop) ── #}
   <section class="au-hero" aria-label="Eudaimonia">
-    <div class="eu-hstack au-brand"><span class="eu-sb-mark"><i data-lucide="landmark"></i></span><b>EUDAIMONIA</b></div>
+    <div class="eu-hstack au-brand"><span class="eu-sb-mark eu-sb-mark--logo"><img src="{{ url_for('static', filename='icons/favicon-64.png') }}" alt="" width="28" height="28"></span><b>EUDAIMONIA</b></div>
     <div class="eu-vstack au-hero-copy">
       <div class="t-eyebrow">{{ hero.fecha }} · Día {{ hero.dia }}</div>
       <h1 class="t-hero au-hero-t">Cada día,<br><span>un acto de carácter.</span></h1>

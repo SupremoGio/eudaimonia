@@ -19,7 +19,7 @@
 <!-- SIDEBAR (≥1024) — DS V2: grupos Hoy · Virtudes · Vida · Tú (NAV) -->
 <aside class="eu-sidebar" aria-label="Navegación">
   <a class="eu-sb-brand" href="/" style="text-decoration:none">
-    <span class="eu-sb-mark"><i data-lucide="landmark"></i></span><b>EUDAIMONIA</b>
+    <span class="eu-sb-mark eu-sb-mark--logo"><img src="{{ url_for('static', filename='icons/favicon-64.png') }}" alt="" width="28" height="28"></span><b>EUDAIMONIA</b>
   </a>
   <nav class="eu-sb-body">
     {% for g in NAV %}
