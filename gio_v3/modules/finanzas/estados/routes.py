@@ -17,6 +17,7 @@ from flask import (
 from database import get_db
 from utils import clean_str, today_str, safe_float
 import modules.gamification.engine as engine
+from . import prestamos as _prest
 
 estados_bp = Blueprint(
     'estados',
@@ -1355,6 +1356,7 @@ def apply_all_keywords():
         _corregir_far_guad(db)
         _corregir_categorias_legacy(db)
         _corregir_alimentacion_split(db)
+        _prest.reafirmar_categorias(db)
         _corregir_servicios_legacy(db)
         _corregir_suscripciones_legacy(db)
         _corregir_steamgames(db)
@@ -1406,6 +1408,136 @@ def loans():
         'pendiente': round(float(prestado) - float(cobrado), 2),
         'detalle':   [dict(r) for r in detalle],
     })
+
+
+# ── Préstamos por cobrar (seguimiento por persona) ────────────────────────────
+# /api/loans (arriba) se queda igual: es el resumen agregado que usa Resumen.
+# Esto es el seguimiento detallado de la pestaña «Por cobrar»; la lógica vive
+# en prestamos.py porque la Radiografía (budget.py) también la usa.
+
+
+def _mov(db, mov_id):
+    return db.execute("SELECT * FROM est_movimientos WHERE id=?", (mov_id,)).fetchone()
+
+
+@estados_bp.route('/api/prestamos')
+def prestamos_resumen():
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_prest.resumen(db))
+
+
+@estados_bp.route('/api/prestamos/candidatos')
+def prestamos_candidatos():
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_prest.candidatos(db))
+
+
+@estados_bp.route('/api/prestamos/duplicados')
+def prestamos_duplicados():
+    """Solo lectura: grupos de movimientos de préstamo con mismo día y monto,
+    para que el usuario confirme antes de borrar nada (desde Movimientos)."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_prest.duplicados(db))
+
+
+@estados_bp.route('/api/prestamos', methods=['POST'])
+def prestamos_crear():
+    """Crea un préstamo desde el movimiento con el que se prestó. El
+    movimiento queda como PRESTAMOS/GASTO (fuera del gasto en todos lados)."""
+    if not _ok(): return _locked()
+    d = request.get_json(silent=True) or {}
+    persona = clean_str(d.get('persona'), 80)
+    if not persona:
+        return jsonify({'error': 'Indica a quién le prestaste.'}), 400
+    try:
+        mov_id = int(d.get('movimiento_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Falta el movimiento del préstamo.'}), 400
+    with get_db() as db:
+        m = _mov(db, mov_id)
+        if not m or m['tipo'] != 'GASTO':
+            return jsonify({'error': 'El movimiento no existe o no es un gasto.'}), 400
+        if db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (mov_id,)).fetchone():
+            return jsonify({'error': 'Ese movimiento ya tiene un préstamo.'}), 409
+        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado' WHERE id=?", (mov_id,))
+        pid = db.execute(
+            "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at) "
+            "VALUES (?, 'OTORGADO', ?, ?, ?, ?, ?)",
+            (persona, abs(float(m['monto'])), m['fecha'], clean_str(d.get('notas'), 300), mov_id, _prest.ahora())
+        ).lastrowid
+        db.commit()
+    return jsonify({'ok': True, 'id': pid}), 201
+
+
+@estados_bp.route('/api/prestamos/<int:pid>', methods=['PATCH'])
+def prestamos_editar(pid):
+    """Persona/notas, y marcar o desmarcar «Perdido» (guarda la fecha de hoy)."""
+    if not _ok(): return _locked()
+    d = request.get_json(silent=True) or {}
+    with get_db() as db:
+        if not db.execute("SELECT 1 FROM est_prestamos WHERE id=?", (pid,)).fetchone():
+            return jsonify({'error': 'Préstamo no encontrado.'}), 404
+        if 'persona' in d:
+            persona = clean_str(d.get('persona'), 80)
+            if not persona:
+                return jsonify({'error': 'La persona no puede quedar vacía.'}), 400
+            db.execute("UPDATE est_prestamos SET contraparte=? WHERE id=?", (persona, pid))
+        if 'notas' in d:
+            db.execute("UPDATE est_prestamos SET notas=? WHERE id=?", (clean_str(d.get('notas'), 300), pid))
+        if 'perdido' in d:
+            db.execute("UPDATE est_prestamos SET perdido_fecha=? WHERE id=?",
+                       (today_str() if d.get('perdido') else None, pid))
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/prestamos/<int:pid>', methods=['DELETE'])
+def prestamos_borrar(pid):
+    """Borra el registro del préstamo y sus ligas; los movimientos bancarios
+    no se tocan."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        db.execute("DELETE FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,))
+        db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/prestamos/<int:pid>/devoluciones', methods=['POST'])
+def prestamos_ligar(pid):
+    """Liga un ingreso como devolución: queda como PRESTAMOS/INGRESO, así que
+    deja de contar como ingreso y solo baja el pendiente."""
+    if not _ok(): return _locked()
+    d = request.get_json(silent=True) or {}
+    try:
+        mov_id = int(d.get('movimiento_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Falta el movimiento de la devolución.'}), 400
+    with get_db() as db:
+        if not db.execute("SELECT 1 FROM est_prestamos WHERE id=?", (pid,)).fetchone():
+            return jsonify({'error': 'Préstamo no encontrado.'}), 404
+        m = _mov(db, mov_id)
+        if not m or m['tipo'] != 'INGRESO':
+            return jsonify({'error': 'El movimiento no existe o no es un ingreso.'}), 400
+        if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (mov_id,)).fetchone():
+            return jsonify({'error': 'Ese ingreso ya está ligado a un préstamo.'}), 409
+        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (mov_id,))
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+                   (pid, mov_id, _prest.ahora()))
+        db.commit()
+    return jsonify({'ok': True}), 201
+
+
+@estados_bp.route('/api/prestamos/<int:pid>/devoluciones/<int:mov_id>', methods=['DELETE'])
+def prestamos_desligar(pid, mov_id):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        db.execute("DELETE FROM est_prestamo_devoluciones WHERE prestamo_id=? AND movimiento_id=?", (pid, mov_id))
+        db.commit()
+    return jsonify({'ok': True})
 
 
 # ── Reglas automáticas al importar (Sprint 3 original: "Reglas automáticas
@@ -1832,6 +1964,7 @@ def upload_file():
             _corregir_far_guad(db)
             _corregir_categorias_legacy(db)
             _corregir_alimentacion_split(db)
+            _prest.reafirmar_categorias(db)
             _corregir_servicios_legacy(db)
             _corregir_suscripciones_legacy(db)
             _corregir_steamgames(db)

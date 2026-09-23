@@ -316,3 +316,23 @@
 .fz-dot[data-rest]{background:var(--border-strong)}
 .fz-pct{min-width:36px;text-align:right}
 @media (max-width:479px){.fz-cat-legend .fz-nowrap{display:none}}
+
+/* Por cobrar (préstamos) — solo PC */
+.fz-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (max-width:767px){.fz-tabs .fz-tablist .fz-tab-desk{display:none}}
+.fz-pc-stats{gap:var(--sp-3);align-items:stretch}
+.fz-pc-stats .eu-stat{min-width:220px}
+.fz-pc-dups{display:flex;flex-direction:column;gap:var(--sp-2);margin:0;padding:0;list-style:none}
+.fz-pc-dups li{display:flex;align-items:baseline;gap:var(--sp-3);flex-wrap:wrap}
+.fz-pc-table{table-layout:fixed}
+.fz-pc-table .c-date{width:80px}
+.fz-pc-table .c-amt{width:112px}
+.fz-pc-table .c-st{width:132px}
+.fz-pc-table .c-act{width:268px}
+.fz-pc-table td{vertical-align:top}
+.fz-pc-table .fz-td-desc{display:block;max-width:none}
+.fz-pc-devs{margin:var(--sp-1) 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:2px}
+.fz-pc-devs li{display:flex;align-items:center;gap:var(--sp-1)}
+.fz-pc-x{width:22px;height:22px;min-height:0}
+.fz-pc-acts{white-space:nowrap}
+.fz-pc-acts>*{margin-left:var(--sp-1)}

@@ -1807,7 +1807,27 @@ def init_db():
             created_at       TEXT    NOT NULL,
             FOREIGN KEY (movimiento_id) REFERENCES est_movimientos(id)
         );
+        -- Devoluciones de un préstamo (est_prestamos): cada movimiento de
+        -- ingreso se liga a lo más a un préstamo; un préstamo puede tener
+        -- varias. Ligada, la devolución no cuenta como ingreso: solo baja el
+        -- pendiente (ver modules/finanzas/estados/prestamos.py).
+        CREATE TABLE IF NOT EXISTS est_prestamo_devoluciones (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            prestamo_id   INTEGER NOT NULL,
+            movimiento_id INTEGER NOT NULL UNIQUE,
+            created_at    TEXT    NOT NULL,
+            FOREIGN KEY (prestamo_id)   REFERENCES est_prestamos(id),
+            FOREIGN KEY (movimiento_id) REFERENCES est_movimientos(id)
+        );
         """)
+
+        # «Perdido» es manual y guarda cuándo se marcó: ese mes el pendiente
+        # cuenta como gasto en Familia y regalos (solo en la Radiografía).
+        try:
+            if "perdido_fecha" not in [r["name"] for r in db.execute("PRAGMA table_info(est_prestamos)").fetchall()]:
+                db.execute("ALTER TABLE est_prestamos ADD COLUMN perdido_fecha TEXT DEFAULT NULL")
+        except Exception as e:
+            print(f"[DB] est_prestamos perdido_fecha migration warning: {e}")
 
         for col, definition in [
             ("estatus_reembolso", "TEXT    DEFAULT NULL"),
@@ -4951,6 +4971,29 @@ def init_db():
                 db.commit()
             except Exception as e:
                 print(f"[DB] finanzas_separa_alimentacion_2026_09 migration warning: {e}")
+
+        # Préstamos: había dos formas de marcarlos (tipo PRESTAMO/COBRO_PRESTAMO,
+        # que el editor de movimientos no expone, y categoria PRESTAMOS con el
+        # tipo real). El usuario pidió unificarlas en la segunda: categoría
+        # PRESTAMOS y tipo GASTO (presté) / INGRESO (me devolvieron), para que
+        # se puedan editar desde la app y la dirección no se pierda. No toca
+        # fecha/descripcion/monto (la llave única de est_movimientos).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_prestamos_tipo_real_2026_09'"
+        ).fetchone():
+            try:
+                n1 = db.execute("UPDATE est_movimientos SET tipo='GASTO', categoria='PRESTAMOS' "
+                                "WHERE tipo='PRESTAMO'").rowcount
+                n2 = db.execute("UPDATE est_movimientos SET tipo='INGRESO', categoria='PRESTAMOS' "
+                                "WHERE tipo='COBRO_PRESTAMO'").rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_prestamos_tipo_real_2026_09",
+                     f"tipo PRESTAMO -> GASTO/PRESTAMOS: {n1} | tipo COBRO_PRESTAMO -> INGRESO/PRESTAMOS: {n2}")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_prestamos_tipo_real_2026_09 migration warning: {e}")
 
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (

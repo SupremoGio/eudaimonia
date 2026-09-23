@@ -10,6 +10,7 @@ import Cuentas from './views/Cuentas.jsx';
 import Presupuestos from './views/Presupuestos.jsx';
 import Reglas from './views/Reglas.jsx';
 import Reportes from './views/Reportes.jsx';
+import PorCobrar from './views/PorCobrar.jsx';
 import TxEditor from './components/TxEditor.jsx';
 import ImportModal from './components/ImportModal.jsx';
 import CategoryModal from './components/CategoryModal.jsx';
@@ -21,6 +22,7 @@ const TABS = [
   { id: 'presupuestos', label: 'Presupuestos' },
   { id: 'reglas', label: 'Reglas' },
   { id: 'reportes', label: 'Reportes' },
+  { id: 'porcobrar', label: 'Por cobrar', desk: true }, // solo PC (se oculta < 768)
 ];
 const VIAJES_URL = '/finanzas/estados/viajes/';
 
@@ -91,6 +93,7 @@ export default function App() {
     case 'presupuestos': view = <Presupuestos />; break;
     case 'reglas': view = <Reglas />; break;
     case 'reportes': view = <Reportes />; break;
+    case 'porcobrar': view = <PorCobrar />; break;
     default: view = <Resumen />;
   }
 
@@ -122,6 +125,7 @@ export default function App() {
           <div className="fz-tablist" role="tablist" aria-label="Secciones de estados de cuenta">
           {TABS.map((t) => (
             <button key={t.id} type="button" role="tab" id={`fz-tab-${t.id}`} aria-selected={tab === t.id}
+              className={t.desk ? 'fz-tab-desk' : undefined}
               aria-controls="fz-panel" onClick={() => selectTab(t.id)}>
               {t.label}
               {t.id === 'movimientos' && unclassified > 0 && (

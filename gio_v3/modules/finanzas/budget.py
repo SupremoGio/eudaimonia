@@ -12,6 +12,7 @@ from database import get_db
 from datetime import datetime
 import calendar
 from utils import today_str, today_date, csv_response
+from modules.finanzas.estados.prestamos import perdidos_en_rango
 
 budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
 
@@ -200,7 +201,7 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
                      AND {_GASTO_WHERE}
                      AND fecha >= ? AND fecha < ?""",
                 (mes_inicio, mes_fin)
-            ).fetchone()['t']
+            ).fetchone()['t'] + perdidos_en_rango(db, mes_inicio, mes_fin)
 
             if ingreso <= 0:
                 meses.append({'mes': mes, 'status': 'sin_datos'})
@@ -264,6 +265,17 @@ def _calc_budget(mes, db):
            ORDER BY total DESC""",
         (mes_inicio, mes_fin)
     ).fetchall()
+    spending_rows = [dict(r) for r in spending_rows]
+
+    # ── Préstamos marcados como «Perdido» este mes: su pendiente es gasto en
+    #    Familia y regalos (registro interno, no hay movimiento bancario).
+    perdido = perdidos_en_rango(db, mes_inicio, mes_fin)
+    if perdido > 0:
+        fam = next((r for r in spending_rows if r['categoria'] == 'FAMILIA_REGALOS'), None)
+        if fam:
+            fam['total'] = float(fam['total'] or 0) + perdido
+        else:
+            spending_rows.append({'categoria': 'FAMILIA_REGALOS', 'total': perdido, 'n': 0})
 
     # ── Límites opcionales (est_budgets)
     budgets_map = {r['categoria']: float(r['limite'] or 0)
