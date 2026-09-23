@@ -1,67 +1,73 @@
-{% extends "eu/layout_sub.html" %}{% set pg='' %}
-{% block title %}Eudaimonia — Acceso{% endblock %}
-{% block module_title %}ACCESO{% endblock %}
-{% block topright %}{% endblock %}
-{% block back_href %}#{% endblock %}
-{% block content %}
-<style>
-.lock-wrap{display:flex;align-items:center;justify-content:center;height:62vh;}
-.lock-card{background:var(--card);border:1px solid var(--b);border-radius:10px;padding:44px 36px;width:320px;text-align:center;}
-.lock-icon{color:var(--gold);display:flex;justify-content:center;margin-bottom:20px;}
-.lock-icon svg{width:30px;height:30px;}
-.lock-t{font-family:var(--serif);font-size:1.7rem;font-style:italic;margin-bottom:4px;}
-.lock-s{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.12em;text-transform:uppercase;margin-bottom:28px;}
-.pw-inp{width:100%;background:transparent;border:none;border-bottom:1px solid var(--b);padding:9px 0;color:var(--text);font-family:var(--mono);font-size:.9rem;outline:none;text-align:center;letter-spacing:.2em;margin-bottom:18px;transition:border-color .16s;}
-.pw-inp:focus{border-color:var(--gold);}
-.unlock-btn{width:100%;background:transparent;border:1px solid var(--gold);color:var(--gold);padding:11px;border-radius:4px;font-family:var(--mono);font-size:var(--fs-sm);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .22s;}
-.unlock-btn:hover{background:var(--gold);color:var(--bg);}
-.lock-err{color:var(--red);font-size:var(--fs-sm);margin-top:9px;min-height:15px;}
-</style>
-<div class="lock-wrap">
-  <div class="lock-card">
-    <div class="lock-icon"><i data-lucide="lock"></i></div>
-    <div class="lock-t">Eudaimonia</div>
-
-    {% if not has_pass %}
-    {# ── Primera vez: crear contraseña general ── #}
-    <div class="lock-s">Crea tu contraseña</div>
-    <input class="pw-inp" type="password" id="pw1" placeholder="Nueva contraseña" maxlength="64">
-    <input class="pw-inp" type="password" id="pw2" placeholder="Confirmar contraseña" maxlength="64">
-    <button class="unlock-btn" onclick="setupPass()">Guardar y entrar</button>
-    <div class="lock-err" id="err"></div>
-
-    {% else %}
-    {# ── Acceso normal ── #}
-    <div class="lock-s">Sistema Personal</div>
-    <input class="pw-inp" type="password" id="pw" placeholder="••••••••" maxlength="64">
-    <button class="unlock-btn" onclick="doLogin()">Entrar</button>
-    <div class="lock-err" id="err"></div>
+{# Login — Design System V2 · pantalla 01. Pantalla sin shell (sin sidebar
+   ni bottom nav): comparte solo el <head> con layout_sub.html. #}
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <title>Acceso — Eudaimonia</title>
+  {% include "eu/_head.html" %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body class="au-body">
+<main class="au">
+  {# ── Hero (desktop) ── #}
+  <section class="au-hero" aria-label="Eudaimonia">
+    <div class="eu-hstack au-brand"><span class="eu-sb-mark"><i data-lucide="landmark"></i></span><b>EUDAIMONIA</b></div>
+    <div class="eu-vstack au-hero-copy">
+      <div class="t-eyebrow">{{ hero.fecha }} · Día {{ hero.dia }}</div>
+      <h1 class="t-hero au-hero-t">Cada día,<br><span>un acto de carácter.</span></h1>
+      <p class="t-body au-hero-p">Hábitos, finanzas, salud y aprendizaje en un solo lugar. Cada acción suma XP hacia Eudaimón.</p>
+    </div>
+    {% if hero.stats %}
+    <dl class="eu-hstack au-stats">
+      <div><dt class="t-meta">XP acumulada</dt><dd class="t-data">{{ '{:,}'.format(hero.stats.xp) }}</dd></div>
+      <div><dt class="t-meta">Racha</dt><dd class="t-data">{{ hero.stats.streak }} d</dd></div>
+      <div><dt class="t-meta">Nivel · {{ hero.stats.level_name|title }}</dt><dd class="t-data">{{ hero.stats.level }} / {{ hero.stats.levels }}</dd></div>
+    </dl>
+    {% else %}<div aria-hidden="true"></div>{# mantiene la frase centrada #}
     {% endif %}
-  </div>
-</div>
-{% endblock %}
-{% block scripts %}
-<script>
-{% if not has_pass %}
-async function setupPass(){
-  const p1=document.getElementById('pw1').value;
-  const p2=document.getElementById('pw2').value;
-  if(!p1){document.getElementById('err').textContent='Ingresa una contraseña';return;}
-  if(p1!==p2){document.getElementById('err').textContent='Las contraseñas no coinciden';return;}
-  const r=await fetch('/login/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p1})});
-  const d=await r.json();
-  if(d.ok){window.location.href='/';}
-  else{document.getElementById('err').textContent=d.error;}
-}
-document.getElementById('pw2').addEventListener('keydown',e=>{if(e.key==='Enter')setupPass();});
-{% else %}
-async function doLogin(){
-  const r=await fetch('/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:document.getElementById('pw').value})});
-  const d=await r.json();
-  if(d.ok){window.location.href='/';}
-  else{document.getElementById('err').textContent=d.error;document.getElementById('pw').value='';}
-}
-document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
-{% endif %}
-</script>
-{% endblock %}
+  </section>
+
+  {# ── Formulario ── #}
+  <section class="au-panel">
+    <div class="au-mob">
+      <div class="eu-level-seal au-seal" aria-hidden="true"><i data-lucide="landmark"></i></div>
+      <div class="au-word">EUDAIMONIA</div>
+      <blockquote class="t-quote au-mob-q">«La felicidad de tu vida depende de la calidad de tus pensamientos.»</blockquote>
+      <div class="t-meta">Marco Aurelio · Meditaciones V.16</div>
+    </div>
+
+    <form class="eu-vstack au-form" id="au-form" data-mode="{{ 'login' if has_pass else 'setup' }}" novalidate>
+      <div class="au-head">
+        <h2 class="t-page">{{ 'Bienvenido de vuelta' if has_pass else 'Crea tu contraseña' }}</h2>
+        <p class="t-meta">{{ 'Introduce tu contraseña para continuar.' if has_pass else 'Es la primera vez: define la contraseña general de la app (mínimo 4 caracteres).' }}</p>
+      </div>
+      {# Usuario fijo e invisible: ayuda a los gestores de contraseñas a guardar el acceso #}
+      <input type="text" name="username" value="eudaimonia" autocomplete="username" hidden>
+      {% if has_pass %}
+      <div class="eu-field">
+        <label class="eu-label" for="au-pw">Contraseña</label>
+        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw" type="password" maxlength="64" autocomplete="current-password" autofocus aria-describedby="au-err"></div>
+      </div>
+      {% else %}
+      <div class="eu-field">
+        <label class="eu-label" for="au-pw">Nueva contraseña</label>
+        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw" type="password" maxlength="64" autocomplete="new-password" autofocus aria-describedby="au-err"></div>
+      </div>
+      <div class="eu-field">
+        <label class="eu-label" for="au-pw2">Confirmar contraseña</label>
+        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw2" type="password" maxlength="64" autocomplete="new-password" aria-describedby="au-err"></div>
+      </div>
+      {% endif %}
+      <div class="eu-err au-err" id="au-err" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>
+      <button type="submit" class="eu-btn eu-btn--primary eu-btn--lg eu-btn--block" id="au-submit">
+        {{ 'Entrar' if has_pass else 'Guardar y entrar' }}<span class="kbd au-kbd" aria-hidden="true">↵</span>
+      </button>
+      <div class="t-meta au-secure"><i data-lucide="shield-check"></i>Sesión segura · 8 horas</div>
+      <blockquote class="t-quote au-q">«No es que tengamos poco tiempo, sino que perdemos mucho.»<cite class="t-meta">Séneca</cite></blockquote>
+    </form>
+  </section>
+</main>
+<script>lucide.createIcons();</script>
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+</body>
+</html>

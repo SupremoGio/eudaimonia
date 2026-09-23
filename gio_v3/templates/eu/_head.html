@@ -1,0 +1,46 @@
+{# <head> común: layout_sub.html y pantallas sin shell (login). El <title> lo pone cada plantilla. #}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <!-- Anti-FOUC: apply saved theme before first paint -->
+  <script>
+    (function(){
+      var t = localStorage.getItem('eu-theme') || 'dark';
+      var h = document.documentElement;
+      if (t === 'light') { h.classList.remove('dark'); h.classList.add('light'); }
+      else               { h.classList.add('dark');    h.classList.remove('light'); }
+      try { if (localStorage.getItem('eu-sb-rail') === '1') h.classList.add('sb-rail'); } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind precompilado en build time (antes: cdn.tailwindcss.com,
+       compila en cada carga del navegador — ver gio_v3/tailwind.config.js) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-built.css') }}">
+  <!-- Versión fijada (antes @latest — un release nuevo de Lucide podía cambiar
+       íconos o su API de montaje en producción sin ningún commit de por medio;
+       ver auditoría F-03). Actualizar a mano cuando se quiera la versión nueva,
+       no automáticamente en cada carga. -->
+  <script src="https://unpkg.com/lucide@1.31.0"></script>
+  <link rel="stylesheet" href="/static/css/app.css">
+
+  <style>
+    /* Tokens → static/css/app.css. Componentes eu-*, shell de navegación,
+       aliases V1→V2 y el CSS legacy compartido → static/css/components.css
+       (compilado dentro de tailwind-built.css). Aquí solo queda la base. */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; transition: background .25s, color .25s; }
+    /* min-h-screen (100vh) se corta bajo la barra dinámica de iOS Safari;
+       100dvh se ajusta al viewport visible real. */
+    #eu-body { min-height: 100vh; min-height: 100dvh; }
+
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
+    * { scrollbar-width: thin; scrollbar-color: rgba(201,168,76,0.2) transparent; }
+  </style>
+
+  <meta name="csrf-token" content="{{ csrf_token() }}">
