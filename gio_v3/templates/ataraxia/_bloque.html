@@ -1,0 +1,49 @@
+{# Un bloque de la rutina. Espera bl, dia, horarios, weekly_priorities #}
+<section class="eu-card eu-card--flush at-bl" id="blcard-{{ bl.bloque_id }}" data-done="{{ 'true' if bl.bloque_done else 'false' }}">
+  <button type="button" class="at-bl-hd" aria-expanded="{{ 'false' if bl.bloque_done else 'true' }}" aria-controls="blbody-{{ bl.bloque_id }}" data-bl-toggle="{{ bl.bloque_id }}">
+    <span class="eu-row-ic at-bl-ic"><i data-lucide="{{ bl.icon }}"></i></span>
+    <span class="at-bl-t"><span class="t-ui">{{ bl.label }}</span>
+      <span class="t-meta"><span class="num" id="blprog-{{ bl.bloque_id }}">{{ bl.done_count }}/{{ bl.required_count }}</span>{% if bl.total_duracion %} · {{ bl.total_duracion }} min{% endif %}</span></span>
+    {% if bl.xp_total > 0 %}<span class="eu-badge eu-badge--xp">+{{ bl.xp_total }} XP</span>{% endif %}
+    <span class="eu-badge eu-badge--success at-bl-ok"><i data-lucide="check"></i>Listo</span>
+    <i data-lucide="chevron-down" class="at-chev"></i>
+  </button>
+  <span class="eu-progress eu-progress--thin at-bl-bar"><i id="blbar-{{ bl.bloque_id }}" style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%"></i></span>
+  <div class="at-bl-bd" id="blbody-{{ bl.bloque_id }}"{% if bl.bloque_done %} hidden{% endif %}>
+    {% if bl.total_duracion %}
+    <div class="at-timer" data-timer="{{ bl.bloque_id }}" data-ref="{{ bl.total_duracion * 60 }}">
+      <i data-lucide="timer"></i><span class="t-data num at-timer-v" id="timer-{{ bl.bloque_id }}">00:00:00</span>
+      <span class="t-meta">ref. {{ bl.total_duracion }} min</span>
+      <span class="eu-grow"></span>
+      <button type="button" class="eu-iconbtn js-timer" aria-label="Iniciar temporizador"><i data-lucide="play"></i></button>
+      <button type="button" class="eu-iconbtn js-timer-reset" aria-label="Reiniciar temporizador"><i data-lucide="rotate-ccw"></i></button>
+    </div>
+    {% endif %}
+    <ul class="at-tasks">
+      {% for t in bl.tareas %}
+      {% set tdone = t.id in bl.done_ids %}
+      <li>
+        <button type="button" class="at-task js-task" id="trow-{{ t.id }}" data-task="{{ t.id }}" data-bl="{{ bl.bloque_id }}" data-dia="{{ dia }}" aria-pressed="{{ 'true' if tdone else 'false' }}">
+          <span class="eu-act-check"><i data-lucide="check"></i></span>
+          <span class="at-task-main"><span class="at-task-t">{{ t.nombre }}</span>
+            <span class="at-task-meta">
+              {% set hora = horarios.get(t.id, '') %}{% if hora %}<span class="t-meta">{{ hora }}</span>{% endif %}
+              {% if t.opcional %}<span class="eu-badge">opcional</span>{% endif %}
+              {% if t.categoria in ['SOMA', 'HEGEMONIKON', 'PAIDEIA'] %}<span class="eu-badge eu-badge--cat" data-cat="{{ {'SOMA': 'hegemonikon', 'HEGEMONIKON': 'hegemonikon', 'PAIDEIA': 'paideia'}[t.categoria] }}">{{ {'SOMA': 'Soma', 'HEGEMONIKON': 'Hegemonikon', 'PAIDEIA': 'Paideia'}[t.categoria] }}</span>{% endif %}
+            </span></span>
+          {% if t.xp > 0 or t.ec > 0 %}<span class="at-task-rw num">{% if t.xp > 0 %}+{{ t.xp }} XP{% endif %}{% if t.ec > 0 %} · +{{ t.ec }} EC{% endif %}</span>{% endif %}
+        </button>
+        {% if t.id == 'sun_prioridades' %}
+        <form class="eu-card eu-card--inset eu-vstack at-prio" id="prio-form" autocomplete="off">
+          <div class="t-meta">Tus 3 prioridades aparecen toda la semana en el Acta Diurna.</div>
+          {% for n in [1, 2, 3] %}
+          <input class="eu-input" id="prio-{{ n }}" placeholder="Prioridad {{ n }}…" maxlength="200" aria-label="Prioridad {{ n }}" value="{{ weekly_priorities['p' ~ n] or '' }}">
+          {% endfor %}
+          <button type="submit" class="eu-btn eu-btn--secondary"><i data-lucide="save"></i>Guardar prioridades</button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</section>

@@ -1,0 +1,91 @@
+{# Revisión semanal objetiva: clasificación de la semana, análisis, métricas e historial #}
+{% set rv = revision %}{% set an = rv.analysis %}{% set wk = rv.weekly %}
+<details class="eu-card eu-card--flush at-rev" id="rs-card"{% if not rv.has_data %} open{% endif %}>
+  <summary class="at-bl-hd">
+    <span class="eu-row-ic at-bl-ic"><i data-lucide="bar-chart-3"></i></span>
+    <span class="at-bl-t"><span class="t-ui">Revisión semanal objetiva</span>
+      <span class="t-meta">{% if rv.has_data %}Guardada · {% endif %}Datos, no vibras · semana {{ rv.semana_num }}/52</span></span>
+    <i data-lucide="chevron-down" class="at-chev"></i>
+  </summary>
+  <div class="eu-vstack at-rev-bd">
+    <div class="at-wk at-tier" data-t="{{ TIER.get(wk.rank, 'carbon') }}">
+      <span class="at-wk-ic"><i data-lucide="{{ wk.icon_lucide or 'circle' }}"></i></span>
+      <div class="eu-grow"><div class="t-section at-tier-fg">Semana {{ wk.label }}</div><div class="t-meta">{{ wk.desc }}</div></div>
+      <span class="t-data at-tier-fg at-wk-pct">{{ wk.pct }}%</span>
+    </div>
+    <div class="at-wk-days">
+      {% for d in wk.days %}
+      <span class="at-wk-day at-tier{{ ' is-future' if d.future }}" data-t="{{ TIER.get(d.rank, 'carbon') if not d.future else '' }}"{% if not d.future %} title="{{ d.label }} · {{ d.anchors_done }}/{{ d.anchors_total }} anclas · {{ d.touches_done }}/{{ d.touches_total }} touches · {{ d.xp }} XP"{% endif %}>
+        <span class="t-meta">{{ d.weekday }}</span>{% if d.future %}<span class="t-meta">·</span>{% else %}<i data-lucide="{{ d.icon_lucide or 'circle' }}" class="at-tier-fg"></i>{% endif %}
+      </span>
+      {% endfor %}
+    </div>
+
+    <div class="eu-card eu-card--inset eu-vstack at-verdict">
+      <div class="t-ui">{{ an.verdict_title }}</div>
+      <p class="t-meta fg-2">{{ an.verdict_body }}</p>
+      {% if an.vs_prev.text %}<p class="t-meta at-vs is-{{ an.vs_prev.trend }}"><i data-lucide="{{ 'trending-up' if an.vs_prev.trend == 'up' else ('trending-down' if an.vs_prev.trend == 'down' else 'minus') }}"></i>{{ an.vs_prev.text }}</p>{% endif %}
+    </div>
+
+    {% if an.best_day or an.worst_day %}
+    <div class="eu-grid-2 at-bw">
+      {% if an.best_day %}<div class="eu-card eu-card--inset"><div class="t-meta">Mejor día</div><div class="t-ui">{{ an.best_day.weekday }} · {{ an.best_day.label }}</div></div>{% endif %}
+      {% if an.worst_day %}<div class="eu-card eu-card--inset"><div class="t-meta">Día más flojo</div><div class="t-ui">{{ an.worst_day.weekday }} · {{ an.worst_day.label }}</div></div>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if an.wellness_flags %}
+    <ul class="at-flags">{% for f in an.wellness_flags %}<li class="t-meta"><i data-lucide="alert-triangle"></i>{{ f.text }}</li>{% endfor %}</ul>
+    {% endif %}
+
+    {% if an.action_plan %}
+    <div><div class="t-eyebrow">Plan para la próxima semana</div>
+      <ol class="at-plan">{% for a in an.action_plan %}<li>{{ a }}</li>{% endfor %}</ol></div>
+    {% endif %}
+
+    <form class="eu-vstack at-rev-form" id="rev-form" autocomplete="off">
+      <div class="at-metrics">
+        {% for m in rv.metrics %}
+        <div class="eu-field at-metric">
+          <label class="eu-label" for="rs-{{ m.key }}"><i data-lucide="{{ m.icon }}"></i>{{ m.label }}</label>
+          <div class="eu-hstack at-metric-in">
+            <input class="eu-input eu-input--money" type="number" step="{{ m.step }}" min="{{ m.min }}" max="{{ m.max }}" inputmode="decimal" placeholder="{{ m.placeholder }}" id="rs-{{ m.key }}" data-metric="{{ m.key }}" value="{{ m.value_str }}">
+            <span class="t-meta">{{ m.unit }}</span>
+          </div>
+          {% if m.trend == 'better' %}<span class="eu-stat-delta up"><i data-lucide="trending-up"></i>{{ m.delta_str }} vs anterior</span>
+          {% elif m.trend == 'worse' %}<span class="eu-stat-delta down"><i data-lucide="trending-down"></i>{{ m.delta_str }} vs anterior</span>
+          {% elif m.trend == 'same' %}<span class="t-meta">= igual que la anterior</span>
+          {% else %}<span class="t-meta">Sin dato previo</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      <div class="eu-field"><label class="eu-label" for="rs-notas">Notas de la semana</label>
+        <textarea class="eu-textarea" id="rs-notas" rows="3" placeholder="Opcional">{{ rv.notas }}</textarea></div>
+      <button type="submit" class="eu-btn eu-btn--primary at-rev-save"><i data-lucide="save"></i>Guardar revisión</button>
+    </form>
+
+    {% if rv.historial %}
+    <div class="eu-vstack at-hist">
+      <div class="t-eyebrow">Últimas semanas</div>
+      <div class="at-table-wrap">
+        <table class="eu-table">
+          <thead><tr><th scope="col">Semana</th><th scope="col" class="r">Lectura</th><th scope="col" class="r">Sueño</th><th scope="col" class="r">Presup.</th><th scope="col" class="r">Kcal</th><th scope="col" class="r">Pasos</th><th scope="col" class="r">Pantalla</th></tr></thead>
+          <tbody>
+            {% for h in rv.historial %}
+            <tr>
+              <td class="num fg-3">{{ h.semana_id[5:] }}</td>
+              <td class="r num">{{ h.dias_lectura|int if h.dias_lectura is not none else '—' }}</td>
+              <td class="r num">{{ h.horas_sueno if h.horas_sueno is not none else '—' }}</td>
+              <td class="r num">{{ (h.presupuesto_pct|int ~ '%') if h.presupuesto_pct is not none else '—' }}</td>
+              <td class="r num">{{ h.calorias_quemadas|int if h.calorias_quemadas is not none else '—' }}</td>
+              <td class="r num">{{ h.pasos_promedio|int if h.pasos_promedio is not none else '—' }}</td>
+              <td class="r num">{{ h.screen_time_horas if h.screen_time_horas is not none else '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</details>
