@@ -1,0 +1,64 @@
+/* Oikonomia · Gastos de viaje — Design System V2 */
+.gv{display:flex;flex-direction:column;gap:var(--sp-4)}
+.gv h1,.gv h2,.gv p,.gv dl,.gv dd,.gv ul{margin:0}
+.gv [hidden],#m-trip [hidden]{display:none!important}
+.gv-view{gap:var(--sp-4)}
+.gv-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.gv-hd .t-page{margin-top:var(--sp-2)}
+.gv-lead{margin-top:var(--sp-2);color:var(--fg-2)}
+.gv-back{padding-left:0;margin-bottom:var(--sp-2)}
+@media (max-width:767px){.gv-hd{display:none}}
+@media (min-width:768px){.eu-topbar .js-new{display:none}}
+.gv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+[data-tone=danger]{--tone-fg:var(--danger-fg)}
+[data-tone=warning]{--tone-fg:var(--warning-fg)}
+[data-tone=success]{--tone-fg:var(--success-fg)}
+[data-tone=brand]{--tone-fg:var(--brand)}
+.gv-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-3)}
+@media (min-width:640px){.gv-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
+.gv-span{grid-column:1/-1}
+.gv-cta{display:flex;justify-content:center;padding-bottom:var(--sp-6)}
+.gv-card{display:flex;flex-direction:column;gap:var(--sp-2);width:100%;padding:var(--sp-4);text-align:left;font:inherit;color:inherit;cursor:pointer;border-top:3px solid var(--tone-fg)}
+.gv-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.gv-card-top{align-items:flex-start}
+.gv-card-t{overflow-wrap:anywhere}
+.gv-dest,.gv-go{display:inline-flex;align-items:center;gap:var(--sp-1)}
+.gv-dest svg,.gv-go svg{width:12px;height:12px}
+.gv-dates{font-size:var(--fs-13);color:var(--fg-2)}
+.gv-prog>i,.gv-bar>i{background:var(--tone-fg)}
+.gv-card-ft{margin-top:var(--sp-1);padding-top:var(--sp-2);border-top:1px solid var(--border-subtle)}
+.gv-dhd{display:flex;flex-direction:column;align-items:flex-start}
+.gv-dhd-row{width:100%}
+.gv-dhd-row{align-items:flex-end;flex-wrap:wrap}
+.gv-dhd .t-page{margin-top:var(--sp-1);overflow-wrap:anywhere}
+.gv-actions{gap:var(--sp-2);flex-wrap:wrap}
+@media (max-width:767px){.gv-dhd-row{flex-direction:column;align-items:stretch}.gv-dhd .t-page{font-size:var(--fs-24)}}
+.gv-budget{display:flex;flex-direction:column;gap:var(--sp-3);border-top:3px solid var(--tone-fg)}
+.gv-nums{gap:var(--sp-3)}
+.gv-nums>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.gv-nums .t-data{font-size:var(--fs-24)}
+@media (max-width:479px){.gv-nums .t-data{font-size:var(--fs-15)}}
+.gv-rest{color:var(--tone-fg,var(--fg-3))}
+.gv-bar{height:10px}
+.gv-body{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-4);align-items:start}
+@media (min-width:1024px){.gv-body{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}}
+.gv-col,.gv-box{gap:var(--sp-3)}
+.gv-concepts{list-style:none;padding:0;display:flex;flex-direction:column;gap:var(--sp-3)}
+.gv-concept{display:flex;align-items:center;gap:var(--sp-3)}
+.gv-c-ic{background:var(--cat-bg);color:var(--cat-fg)}
+.gv-c-bd{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--sp-1)}
+.gv-sugs{display:flex;flex-direction:column;max-height:420px;overflow-y:auto}
+.gv-sug{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-1);border-bottom:1px solid var(--border-subtle);cursor:pointer}
+.gv-sug:last-child{border-bottom:0}
+.gv-sug:hover{background:var(--bg-sunken)}
+.gv-chk{width:18px;height:18px;accent-color:var(--brand);flex-shrink:0}
+.gv-sug-bd{display:flex;flex-direction:column;gap:2px}
+.gv-desc{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.gv-sug-ft{display:flex;justify-content:space-between;gap:var(--sp-2);flex-wrap:wrap;padding-top:var(--sp-2);border-top:1px solid var(--border-subtle)}
+.gv-tx-t{padding:var(--sp-4) var(--sp-4) var(--sp-2)}
+.gv-table-wrap{overflow-x:auto}
+.gv-table{width:100%}
+.gv-table td:nth-child(2){max-width:260px}
+.gv-nowrap{white-space:nowrap}
+.gv-fgrid{gap:var(--sp-3)}
+@media (max-width:479px){.gv-fgrid{grid-template-columns:minmax(0,1fr)}}
