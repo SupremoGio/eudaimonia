@@ -1,0 +1,17 @@
+{# Drill-down de movimientos por categoría y editor de límite #}
+<div data-cat="oikonomia">
+{% call ui.modal('m-dd', 'Movimientos', eyebrow=mes) %}
+<div class="eu-modal-bd bg-dd" id="dd-body" aria-live="polite"></div>
+<div class="eu-modal-ft bg-dd-ft"><span class="t-meta num" id="dd-footer-n"></span><span class="eu-grow"></span><span class="t-data" id="dd-footer-total"></span></div>
+{% endcall %}
+
+{% call ui.modal('m-limite', 'Editar presupuesto', eyebrow='Límite por categoría') %}
+<form class="eu-modal-bd" id="f-limite" novalidate>
+  <input type="hidden" id="lim-cat"><input type="hidden" id="lim-nombre">
+  <div class="eu-field"><label class="eu-label" for="lim-valor" id="lim-cat-label">Categoría</label>
+    <input class="eu-input eu-input--money" type="number" step="100" min="0" inputmode="decimal" id="lim-valor" placeholder="0.00">
+    <div class="eu-help">El límite actualiza también la vista de Estados de Cuenta.</div></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-limite')">Cancelar</button><button type="submit" form="f-limite" class="eu-btn eu-btn--primary">Guardar</button></div>
+{% endcall %}
+</div>

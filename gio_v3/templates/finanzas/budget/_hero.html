@@ -1,0 +1,62 @@
+{# Cashflow: anillo de % gastado, ingreso/disponible, barra 50-30-20, proyección y racha #}
+{% if n_movimientos == 0 %}
+<section class="eu-card bg-empty">
+  {{ ui.empty('wallet', 'Sin movimientos importados', 'Sube tus estados de cuenta para ver la radiografía 50·30·20 en tiempo real.', cta='Importar estados de cuenta', cta_href='/finanzas/estados/', cta_icon='upload') }}
+  {% if ingreso_real == 0 %}
+  <form class="bg-manual" id="f-ingreso" novalidate>
+    <label class="eu-label" for="ingreso-manual-input">O ingresa tu ingreso mensual manualmente</label>
+    <div class="eu-hstack bg-manual-row"><input class="eu-input eu-input--money" type="number" min="0" inputmode="decimal" id="ingreso-manual-input" placeholder="Ej: 20000"><button type="submit" class="eu-btn eu-btn--primary">Guardar</button></div>
+  </form>
+  {% endif %}
+</section>
+{% else %}
+{% set pct_gastado = (total_gastado / ingreso_real * 100) if ingreso_real > 0 else 0 %}
+{% set ring_pct = [pct_gastado, 100]|min %}
+{% set tone = 'danger' if pct_gastado > 100 else ('warning' if pct_gastado >= 80 else 'success') %}
+<section class="eu-card bg-hero" data-tone="{{ tone }}" aria-label="Flujo del mes">
+  <div class="bg-hero-top">
+    <div class="bg-ring" role="img" aria-label="{{ pct_gastado|round|int }}% del ingreso gastado">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="bg-ring-bg" cx="60" cy="60" r="52"/><circle class="bg-ring-fg" cx="60" cy="60" r="52" pathLength="100" stroke-dasharray="{{ '%.1f'|format(ring_pct) }} 100"/></svg>
+      <div class="bg-ring-c"><span class="t-data bg-ring-v">{{ pct_gastado|round|int }}%</span><span class="t-meta">gastado</span></div>
+    </div>
+    <dl class="bg-flow">
+      <div><dt class="t-meta">Ingreso del mes{% if ingreso_es_override %} <span class="eu-badge eu-badge--warning">manual</span>{% endif %}</dt><dd class="t-data bg-ing">{{ money(ingreso_real) }}</dd></div>
+      <div><dt class="t-meta">Disponible</dt><dd class="t-data bg-disp" data-tone="{{ 'success' if disponible >= 0 else 'danger' }}">{{ money(disponible) }}</dd></div>
+      <div><dt class="t-meta">Gasto total</dt><dd class="t-data">{{ money(total_gastado) }}</dd></div>
+    </dl>
+  </div>
+  <div class="bg-seg-wrap">
+    <div class="bg-seg" role="img" aria-label="Gasto sobre el ingreso: necesidades {{ seg.necesidades }}%, deseos {{ seg.deseos }}%, ahorro {{ seg.ahorro_deuda }}%">
+      {% for k, c in [('necesidades','ataraxia'),('deseos','cosmopolitismo'),('ahorro_deuda','paideia')] %}
+      <span class="bg-seg-part" data-cat="{{ c }}" style="width:{{ [seg[k], 100]|min }}%">{% if seg[k] >= 10 %}<span class="num">{{ seg[k] }}%</span>{% endif %}</span>
+      {% endfor %}
+    </div>
+    <div class="bg-marks" aria-hidden="true"><span class="bg-mark bg-mark--50">ideal 50</span><span class="bg-mark bg-mark--80">80</span></div>
+    <ul class="bg-legend">
+      <li data-cat="ataraxia"><span class="bg-dot"></span>Necesidades</li><li data-cat="cosmopolitismo"><span class="bg-dot"></span>Deseos</li><li data-cat="paideia"><span class="bg-dot"></span>Ahorro y deudas</li>
+    </ul>
+  </div>
+</section>
+{% endif %}
+
+{% if es_mes_actual and ingreso_real > 0 and dia_actual > 0 %}
+{% set proy_pct = (proyeccion / ingreso_real * 100)|round|int %}
+<aside class="eu-card eu-card--inset bg-proj" data-tone="{{ 'danger' if proy_pct > 100 else ('warning' if proy_pct >= 80 else 'success') }}">
+  <span class="eu-row-ic bg-proj-ic"><i data-lucide="trending-up"></i></span>
+  <p class="t-body">Proyección al día {{ dias_mes }}: <b class="t-data bg-proj-v">{{ money(proyeccion) }}</b> ({{ proy_pct }}% del ingreso) — ritmo al día {{ dia_actual }} de {{ dias_mes }}.</p>
+</aside>
+{% endif %}
+
+{% if racha_historial|selectattr('status', 'ne', 'sin_datos')|list|length > 0 %}
+{% set meses_es = {'01':'ene','02':'feb','03':'mar','04':'abr','05':'may','06':'jun','07':'jul','08':'ago','09':'sep','10':'oct','11':'nov','12':'dic'} %}
+<section class="eu-card bg-racha" aria-label="Racha bajo presupuesto">
+  <span class="eu-row-ic bg-racha-ic"><i data-lucide="flame"></i></span>
+  <div><div class="t-data bg-racha-v">{{ racha_meses }} {{ 'mes' if racha_meses == 1 else 'meses' }}</div><div class="t-meta">{% if racha_meses > 0 %}seguidos bajo presupuesto{% else %}racha rota este mes{% endif %}</div></div>
+  <ol class="bg-strip">
+    {% for cell in racha_historial %}
+    {% set lbl = meses_es[cell.mes[5:7]] ~ ' ' ~ cell.mes[:4] ~ ' — ' ~ ('bajo presupuesto' if cell.status == 'ok' else ('sobre presupuesto' if cell.status == 'over' else 'sin datos')) %}
+    <li class="bg-cell bg-cell--{{ cell.status }}" title="{{ lbl }}"><span class="bg-sr">{{ lbl }}</span></li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}

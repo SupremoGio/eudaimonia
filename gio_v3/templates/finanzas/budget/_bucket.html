@@ -1,0 +1,32 @@
+{# Un bucket 50-30-20 con sus categorías (abren el drill-down de movimientos) #}
+{% set bdata = buckets[bk] %}
+<section class="eu-card bg-bucket" data-cat="{{ bcat }}" aria-labelledby="bk-{{ bk }}">
+  <div class="eu-between bg-bk-hd">
+    <h2 class="t-eyebrow bg-bk-t" id="bk-{{ bk }}">{{ label }}</h2>
+    <span class="t-meta bg-bk-nums"><b class="t-data">{{ money(bdata.total_gastado) }}</b> / meta {{ money(bdata.target_monto) }}{% if bdata.over %} <span class="eu-badge eu-badge--danger">sobre la meta</span>{% endif %}</span>
+  </div>
+  <div class="eu-progress eu-progress--cat bg-bk-bar{{ ' is-over' if bdata.over }}" role="progressbar" aria-label="{{ label }}: {{ bdata.pct_of_target }}% de la meta" aria-valuenow="{{ bdata.pct_of_target }}" aria-valuemax="100"><i style="width:{{ [bdata.pct_of_target, 100]|min }}%"></i></div>
+  {% if bdata.cats %}
+  <ul class="bg-cats">
+    {% for cat in bdata.cats %}
+    {% set tone = 'danger' if cat.status == 'over' else ('warning' if cat.status == 'warn' else 'success') %}
+    <li class="bg-cat" data-tone="{{ tone }}" id="cat-{{ cat.categoria }}">
+      <button type="button" class="bg-cat-open" data-dd="{{ cat.categoria }}" data-nombre="{{ cat.nombre }}" data-ic="{{ cat_icons.get(cat.categoria, 'package') }}" aria-label="Ver movimientos de {{ cat.nombre }}">
+        <span class="eu-row-ic bg-cat-ic"><i data-lucide="{{ cat_icons.get(cat.categoria, 'package') }}"></i></span>
+        <span class="bg-cat-bd">
+          <span class="eu-between"><span class="t-ui">{{ cat.nombre }} <span class="t-meta num bg-cat-n">{{ cat.n }} mov</span></span><span class="t-data bg-cat-v">{{ money(cat.gastado) }}</span></span>
+          <span class="eu-progress eu-progress--thin bg-cat-bar" aria-hidden="true"><i style="width:{{ [cat.pct, 100]|min }}%"></i></span>
+          <span class="t-meta bg-cat-ft">
+            {% if cat.tiene_limite %}{% set rest = cat.limite - cat.gastado %}<span class="num">{{ cat.pct }}% del presupuesto</span> · {{ money(cat.gastado) }} / {{ money(cat.limite) }} · {% if rest >= 0 %}{{ money(rest) }} restante{% else %}<span class="bg-over">{{ money(rest|abs) }} excedido</span>{% endif %}
+            {% else %}<span class="num">{{ cat.pct }}% del bucket</span> · de {{ money(cat.bucket_target) }} target{% endif %}
+          </span>
+        </span>
+      </button>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm bg-lim" data-lim="{{ cat.categoria }}" data-nombre="{{ cat.nombre }}" data-val="{{ cat.limite }}" aria-label="Editar presupuesto de {{ cat.nombre }}">{% if cat.limite > 0 %}<i data-lucide="pencil"></i>{{ money(cat.limite) }}{% else %}<i data-lucide="plus"></i>Presupuesto{% endif %}</button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  {{ ui.empty('piggy-bank', 'Sin gasto registrado', 'Aún no hay movimientos en este bucket para ' ~ mes ~ '. Importa tus estados de cuenta para verlos aquí.') }}
+  {% endif %}
+</section>
