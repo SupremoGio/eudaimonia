@@ -1,0 +1,50 @@
+{# Modales: editar, marcar comprado y protocolo de compra (alta de artículo) #}
+{% macro fields(pfx) -%}
+<div class="eu-grid-2 pr-fgrid">
+  <div class="eu-field pr-span"><label class="eu-label" for="{{ pfx }}Nombre">Artículo *</label><input class="eu-input" id="{{ pfx }}Nombre" placeholder="ej. Apple Watch Series 9"></div>
+  <div class="eu-field"><label class="eu-label" for="{{ pfx }}Categoria">Categoría</label><select class="eu-select" id="{{ pfx }}Categoria"><option value="">— Sin categoría —</option>{% for c in CATS %}<option>{{ c }}</option>{% endfor %}</select></div>
+  <div class="eu-field"><label class="eu-label" for="{{ pfx }}Prioridad">Prioridad</label><select class="eu-select" id="{{ pfx }}Prioridad"><option>Alta</option><option selected>Media</option><option>Baja</option></select></div>
+  <div class="eu-field"><label class="eu-label" for="{{ pfx }}Precio">Precio estimado (MXN)</label><input class="eu-input eu-input--money" id="{{ pfx }}Precio" type="number" min="0" inputmode="decimal" placeholder="0"></div>
+  <div class="eu-field"><label class="eu-label" for="{{ pfx }}Mes">Mes objetivo</label><input class="eu-input" id="{{ pfx }}Mes" type="month"></div>
+  <div class="eu-field"><label class="eu-label" for="{{ pfx }}Tienda">Tienda</label><input class="eu-input" id="{{ pfx }}Tienda" placeholder="Amazon, Liverpool…"></div>
+  <div class="eu-field"><label class="eu-label" for="{{ pfx }}Url">URL del producto</label><input class="eu-input" id="{{ pfx }}Url" type="url" placeholder="https://…"></div>
+  <div class="eu-field pr-span"><label class="eu-label" for="{{ pfx }}Notas">Notas</label><input class="eu-input" id="{{ pfx }}Notas" placeholder="color, talla, modelo…"></div>
+</div>
+{%- endmacro %}
+<div data-cat="oikonomia">
+{% call ui.modal('m-edit', 'Editar artículo', eyebrow='Prioridades') %}
+<form class="eu-modal-bd" id="f-edit" autocomplete="off" novalidate>
+  <input type="hidden" id="editId">
+  {{ fields('f') }}
+  <div class="eu-field"><label class="eu-label" for="fEstado">Estado</label><select class="eu-select" id="fEstado"><option>Pendiente</option><option>Comprado</option><option>Descartado</option></select></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-edit')">Cancelar</button><button type="submit" form="f-edit" class="eu-btn eu-btn--primary">Guardar</button></div>
+{% endcall %}
+
+{% call ui.modal('m-comprar', '¡Comprado!', eyebrow='Prioridades') %}
+<form class="eu-modal-bd" id="f-comprar" novalidate>
+  <input type="hidden" id="comprarId">
+  <p class="t-section" id="comprarNombre"></p>
+  <div class="eu-field"><label class="eu-label" for="cPrecioReal">¿Cuánto pagaste realmente? (MXN)</label><input class="eu-input eu-input--money" id="cPrecioReal" type="number" min="0" inputmode="decimal" placeholder="0"></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-comprar')">Cancelar</button><button type="submit" form="f-comprar" class="eu-btn eu-btn--primary"><i data-lucide="check"></i>Confirmar</button></div>
+{% endcall %}
+
+{% call ui.modal('m-proto', 'Supremo protocolo de compra', eyebrow='Protocolo de compra v2.0') %}
+<div class="eu-modal-bd pr-proto" id="pr-proto">
+  <div class="wl-stepper">
+    <div class="eu-progress eu-progress--cat eu-progress--thin" role="progressbar" aria-label="Avance del protocolo" aria-valuenow="0" aria-valuemax="100" id="wl-prog"><i style="width:0%"></i></div>
+    <ol class="wl-phases" id="wl-phases">{% for p in ['Artículo','Dopamina','Solvencia','Lógica','Resultado'] %}<li data-ph="{{ loop.index0 }}"><span class="wl-ph-n num">{{ loop.index }}</span><span class="wl-ph-l">{{ p }}</span></li>{% endfor %}</ol>
+  </div>
+  <form class="wl-step" data-step="0" id="f-item" autocomplete="off" novalidate>
+    <div class="t-eyebrow wl-tag"><i data-lucide="package"></i>Registro del artículo</div>
+    <h3 class="t-section">¿Qué artículo deseas adquirir?</h3>
+    <p class="t-body wl-insight">Define el artículo antes de evaluar. El precio es clave para el cálculo de costo por uso y EC.</p>
+    {{ fields('p0') }}
+    <div class="wl-nav"><span></span><span class="t-meta">Paso 1 de 4</span><button type="submit" class="eu-btn eu-btn--primary">Iniciar protocolo<i data-lucide="arrow-right"></i></button></div>
+  </form>
+  {% include "_ui/protocolo_pasos.html" %}
+  <div class="wl-step" data-step="4" id="wl-result" hidden aria-live="polite"></div>
+</div>
+{% endcall %}
+</div>

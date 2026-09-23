@@ -1,27 +1,5 @@
 {# Protocolo en 5 pasos: artículo → dopamina → solvencia → lógica → resultado.
    Cada opción es un botón aria-pressed dentro de un grupo data-q. #}
-{% macro choice(q, v, icon, title, sub, bad=False) -%}
-<button type="button" class="wl-choice" data-q="{{ q }}" data-v="{{ v }}" data-tone="{{ 'danger' if bad else 'success' }}" aria-pressed="false">
-  <span class="wl-choice-ic" aria-hidden="true"><i data-lucide="{{ icon }}"></i></span>
-  <span class="wl-choice-bd"><span class="t-ui">{{ title }}</span><span class="t-meta">{{ sub }}</span></span>
-  <span class="wl-choice-chk" aria-hidden="true"><i data-lucide="check"></i></span>
-</button>
-{%- endmacro %}
-{% macro q(id, title, insight, hidden=False) -%}
-<fieldset class="wl-q" id="{{ id }}"{% if hidden %} hidden{% endif %}>
-  <legend class="t-section">{{ title }}</legend>
-  <p class="t-body wl-insight">{{ insight }}</p>
-  <div class="wl-choices">{{ caller() }}</div>
-</fieldset>
-{%- endmacro %}
-{% macro nav(back, label, next, cta) -%}
-<div class="wl-nav">
-  {% if back is not none %}<button type="button" class="eu-btn eu-btn--ghost" data-go="{{ back }}"><i data-lucide="arrow-left"></i>Atrás</button>{% else %}<span></span>{% endif %}
-  <span class="t-meta">{{ label }}</span>
-  <button type="button" class="eu-btn eu-btn--primary" data-next="{{ next }}">{{ cta }}<i data-lucide="arrow-right"></i></button>
-</div>
-{%- endmacro %}
-
 <div class="eu-card wl-quiz">
   <div class="wl-stepper">
     <div class="eu-progress eu-progress--cat eu-progress--thin" role="progressbar" aria-label="Avance del protocolo" aria-valuenow="0" aria-valuemax="100" id="wl-prog"><i style="width:0%"></i></div>
@@ -46,70 +24,7 @@
     <div class="wl-nav"><span></span><span class="t-meta">Paso 1 de 4</span><button type="submit" class="eu-btn eu-btn--primary">Iniciar protocolo<i data-lucide="arrow-right"></i></button></div>
   </form>
 
-  {# ── Paso 1: firewall de dopamina ── #}
-  <div class="wl-step" data-step="1" hidden>
-    <div class="t-eyebrow wl-tag"><i data-lucide="zap"></i>Fase 1 · Firewall de dopamina</div>
-    {% call q('q-days', '¿Hace cuánto tiempo deseas este artículo?', 'La dopamina anticipa el placer de la compra con hasta 3× más intensidad que el placer real. El filtro de 72 h es el protocolo mínimo para distinguir necesidades reales de impulsos: según Loewenstein (1996), el 68% de las compras impulsivas no se harían si se esperara 24 h.') %}
-      {{ choice('days', '0', 'zap', 'Hoy mismo', 'Alta señal de impulso dopamínico', True) }}
-      {{ choice('days', '1', 'moon', '1 a 2 días', 'Todavía en zona de riesgo', True) }}
-      {{ choice('days', '3', 'calendar', '3 a 7 días', 'Supera el umbral mínimo de 72 h') }}
-      {{ choice('days', '7', 'calendar-days', 'Más de 7 días', 'Deseo consolidado — señal sólida') }}
-    {% endcall %}
-    {% call q('q-calm', 'En calma, sin redes sociales ni publicidad… ¿el deseo persiste?', 'El ambiente de consumo amplifica artificialmente los deseos. Cierra los ojos, imagina que ya tienes el artículo hace 3 meses. ¿Todavía lo necesitas?') %}
-      {{ choice('calm', 'yes', 'check', 'Sí, el deseo persiste', 'Señal de necesidad funcional o de diseño de vida') }}
-      {{ choice('calm', 'no', 'x', 'No, desaparece en calma', 'Patrón de glitch emocional — activación dopamínica sin necesidad real', True) }}
-    {% endcall %}
-    {{ nav(0, 'Paso 2 de 4', 1, 'Continuar') }}
-  </div>
-
-  {# ── Paso 2: auditoría de solvencia ── #}
-  <div class="wl-step" data-step="2" hidden>
-    <div class="t-eyebrow wl-tag"><i data-lucide="landmark"></i>Fase 2 · Auditoría de solvencia</div>
-    {% call q('q-sol', '¿Cuál es tu estado financiero actual?', 'Antes de evaluar el valor de un artículo, el protocolo verifica si el contexto financiero lo permite. Una compra que es sabia en abundancia puede ser destructiva en escasez.') %}
-      {{ choice('sol', 'estable', 'trending-up', 'Estable — tengo excedente o ahorros', 'Flujo positivo, deudas bajo control, capital disponible') }}
-      {{ choice('sol', 'inestable', 'triangle-alert', 'Inestable — tengo deudas o flujo negativo', 'Pasivos significativos, sin excedente real, flujo negativo', True) }}
-    {% endcall %}
-    {% call q('q-cls', '¿Cómo clasificas este artículo?', 'CapEx es una herramienta que genera retorno: mejora tus ingresos, tu salud o tu capacidad productiva. OpEx es un gasto de consumo: ocio, entretenimiento, lujo estético. Solo el CapEx justifica endeudamiento o sacrificio de liquidez.', hidden=True) %}
-      {{ choice('cls', 'capex', 'wrench', 'CapEx — inversión productiva', 'Genera ingresos, mejora salud, potencia tu trabajo o formación') }}
-      {{ choice('cls', 'opex', 'gamepad-2', 'OpEx — gasto de ocio', 'Entretenimiento, moda, colección, estética no esencial', True) }}
-    {% endcall %}
-    {{ nav(1, 'Paso 3 de 4', 2, 'Continuar') }}
-  </div>
-
-  {# ── Paso 3: algoritmo lógico ── #}
-  <div class="wl-step" data-step="3" hidden>
-    <div class="t-eyebrow wl-tag"><i data-lucide="cpu"></i>Fase 3 · Algoritmo lógico</div>
-    {% call q('q-util', '¿Este artículo es útil para tu diseño de vida o trabajo?', 'El «diseño de vida» incluye salud, productividad, relaciones y misión personal. Un artículo que no contribuye a ninguna de estas áreas es decoración mental costosa.') %}
-      {{ choice('util', 'yes', 'check', 'Sí, tiene utilidad directa', 'Contribuye al trabajo, salud, misión o diseño de vida') }}
-      {{ choice('util', 'no', 'x', 'No, es más estético o caprichoso', 'No hay utilidad funcional directa identificable', True) }}
-    {% endcall %}
-    {% call q('q-dry', '¿Ya tienes algo que cumpla el 80% de esta función?', 'Principio DRY aplicado al consumo («Don’t Repeat Yourself»): si ya tienes una alternativa funcional que cubre la mayor parte, la nueva compra es redundancia, no adición de valor.', hidden=True) %}
-      {{ choice('dry', 'no', 'check', 'No, no tengo nada equivalente', 'Sería una adición de capacidad genuina') }}
-      {{ choice('dry', 'yes', 'copy', 'Sí, ya tengo algo similar', 'Cubre al menos el 80% de lo que busco', True) }}
-    {% endcall %}
-    <fieldset class="wl-q" id="q-cpu" hidden>
-      <legend class="t-section">Cálculo de costo por uso (CPU)</legend>
-      <p class="t-body wl-insight">CPU = precio ÷ usos. Es la métrica más honesta para evaluar el valor real de una compra: un artículo costoso de alta frecuencia puede ser más eficiente que uno barato de baja frecuencia.</p>
-      <div class="wl-cpu">
-        <div class="eu-field"><label class="eu-label" for="usos-input">Usos estimados por mes</label><input class="eu-input eu-input--money wl-usos" id="usos-input" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
-        <div class="eu-card eu-card--inset wl-cpu-out" aria-live="polite"><div class="t-eyebrow">Costo por uso (mensual)</div><div class="t-data wl-cpu-v" id="cpu-val">$—</div><div class="t-meta" id="cpu-note"></div></div>
-      </div>
-      <p class="t-ui wl-subq">¿El valor que recibes por uso justifica este costo?</p>
-      <div class="wl-choices">
-        {{ choice('cpu', 'yes', 'check', 'Sí, el valor supera el costo', 'El retorno (ahorro, tiempo, salud, resultado) justifica el precio') }}
-        {{ choice('cpu', 'no', 'x', 'No, el costo por uso es alto', 'El precio no se justifica por el uso real esperado', True) }}
-      </div>
-    </fieldset>
-    {% call q('q-mant', '¿Requiere menos de 10 min/semana de gestión?', 'Todo objeto tiene un costo oculto en tiempo y atención. La acumulación de objetos de alto mantenimiento reduce el bienestar neto incluso si el objeto es valioso: cuenta el costo real de posesión.', hidden=True) %}
-      {{ choice('mant', 'yes', 'check', 'Sí, bajo mantenimiento', 'Menos de 10 min/semana de limpieza, carga, gestión, etc.') }}
-      {{ choice('mant', 'no', 'x', 'No, requiere atención regular', 'Más de 10 min/semana de mantenimiento, carga o gestión', True) }}
-    {% endcall %}
-    {% call q('q-cap', '¿Invertir este capital rendiría más que el valor del artículo?', 'El dinero invertido en un instrumento compuesto (ETF, CETES, negocio) crece exponencialmente. Si el artículo no genera más valor del que generaría el capital invertido, la compra destruye riqueza futura. Regla: si el precio supera el 5% de tu capital líquido, aplica este filtro con seriedad.', hidden=True) %}
-      {{ choice('cap', 'no', 'check', 'No — el artículo vale más que la inversión', 'El valor de uso supera el rendimiento compuesto esperado') }}
-      {{ choice('cap', 'yes', 'trending-up', 'Sí — el capital crecería más invertido', 'El rendimiento compuesto superaría el valor del artículo', True) }}
-    {% endcall %}
-    {{ nav(2, 'Paso 4 de 4', 3, 'Ver resultado') }}
-  </div>
+  {% include "_ui/protocolo_pasos.html" %}
 
   {# ── Paso 4: resultado (render en JS) ── #}
   <div class="wl-step" data-step="4" id="wl-result" hidden aria-live="polite"></div>

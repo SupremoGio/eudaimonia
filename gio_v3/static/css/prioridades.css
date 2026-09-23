@@ -1,0 +1,45 @@
+/* Oikonomia · Prioridades — Design System V2 (el protocolo usa wishlist.css) */
+.pr{display:flex;flex-direction:column;gap:var(--sp-4)}
+.pr h1,.pr h2,.pr p,.pr dl,.pr dd{margin:0}
+.pr [hidden],#m-proto [hidden]{display:none!important}
+.pr-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.pr-hd .t-page{margin-top:var(--sp-2)}
+.pr-lead{margin-top:var(--sp-2);color:var(--fg-2)}
+@media (max-width:767px){.pr-hd{display:none}}
+@media (min-width:768px){.eu-topbar .js-add{display:none}}
+[data-tone=info]{--tone-fg:var(--info-fg);--tone-bg:var(--info-bg);--tone-border:var(--info-border)}
+.pr-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--tone-fg,var(--fg-3));flex-shrink:0}
+.pr-stats{gap:var(--sp-3)}
+.pr-st{padding:var(--sp-4)}
+.pr-st .eu-stat-val{color:var(--tone-fg)}
+.pr-st .eu-stat-lbl{align-items:center}
+@media (max-width:767px){.pr-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.pr-st{padding:var(--sp-3)}.pr-st .eu-stat-val{font-size:var(--fs-20)}}
+.pr-list{display:flex;flex-direction:column;gap:var(--sp-3)}
+.pr-card{display:flex;gap:var(--sp-4);padding:var(--sp-4);border-left:3px solid var(--tone-fg)}
+.pr-card.is-done{opacity:.72;border-left-color:var(--border-default)}
+.pr-card-bd{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--sp-2)}
+.pr-card-top{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+.pr-name{overflow-wrap:anywhere}
+.pr-card.is-done[data-estado=Descartado] .pr-name{text-decoration:line-through}
+.pr-pri{background:var(--tone-bg);color:var(--tone-fg);border-color:var(--tone-border)}
+.pr-meta{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+.pr-meta .eu-badge svg{width:12px;height:12px}
+.pr-ic{display:inline-flex;align-items:center;gap:var(--sp-1)}
+.pr-ic svg{width:12px;height:12px}
+.pr-link{color:var(--fg-brand);text-decoration:none}
+.pr-link:hover{text-decoration:underline}
+.pr-notas{font-style:italic}
+.pr-prices{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-5);align-items:flex-end}
+.pr-prices>div{display:flex;flex-direction:column;gap:2px}
+.pr-prices .t-data{font-size:var(--fs-15)}
+.pr-side{display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-shrink:0}
+.pr-side .eu-badge svg{width:12px;height:12px}
+.pr-acts{display:flex;align-items:center;gap:var(--sp-1);flex-wrap:wrap;justify-content:flex-end}
+.pr-del:hover,.pr-del:focus-visible{color:var(--danger-fg)}
+@media (max-width:639px){.pr-card{flex-direction:column}.pr-side{flex-direction:row;align-items:center;width:100%;padding-top:var(--sp-3);border-top:1px solid var(--border-subtle)}}
+.pr-fgrid{gap:var(--sp-3)}
+.pr-span{grid-column:1/-1}
+@media (max-width:479px){.pr-fgrid{grid-template-columns:minmax(0,1fr)}}
+.pr-proto{gap:var(--sp-5)}
+.pr-proto .wl-step{gap:var(--sp-4)}
+#m-proto .eu-modal{max-width:640px}
