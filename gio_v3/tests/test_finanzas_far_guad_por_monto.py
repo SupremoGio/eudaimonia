@@ -60,7 +60,7 @@ def test_menor_a_200_va_a_alimentacion_conveniencia(test_db):
         db.commit()
         row = db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
     assert n == 1
-    assert row['categoria'] == 'ALIMENTACION'
+    assert row['categoria'] == 'SUPER'
     assert row['subcategoria'] == 'Conveniencia'
 
 
@@ -102,7 +102,7 @@ def test_signo_negativo_no_afecta_el_umbral(test_db):
         _corregir_far_guad(db)
         db.commit()
         row = db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
-    assert row['categoria'] == 'ALIMENTACION'
+    assert row['categoria'] == 'SUPER'
 
 
 def test_no_toca_categoria_expense(test_db):
@@ -154,7 +154,7 @@ def test_apply_keywords_corrige_far_guad(client, test_db):
 
     with database.get_db() as db:
         row = db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
-    assert row['categoria'] == 'ALIMENTACION'
+    assert row['categoria'] == 'SUPER'
     assert row['subcategoria'] == 'Conveniencia'
 
 

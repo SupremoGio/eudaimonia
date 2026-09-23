@@ -72,25 +72,25 @@ def test_casa_hogar_va_a_vivienda_renta(test_db):
     assert row['subcategoria'] == 'Renta'
 
 
-def test_viveres_super_va_a_alimentacion_super(test_db):
+def test_viveres_super_va_a_super(test_db):
     with database.get_db() as db:
         tx_id = _insert_tx(db, categoria='VIVERES/SUPER', subcategoria='Supermercado')
         db.commit()
         _corregir_categorias_legacy(db)
         db.commit()
         row = db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
-    assert row['categoria'] == 'ALIMENTACION'
+    assert row['categoria'] == 'SUPER'
     assert row['subcategoria'] == 'Súper'
 
 
-def test_comida_rest_va_a_alimentacion_restaurante(test_db):
+def test_comida_rest_va_a_comida_fuera_restaurante(test_db):
     with database.get_db() as db:
         tx_id = _insert_tx(db, categoria='COMIDA/REST', subcategoria='Antojitos')
         db.commit()
         _corregir_categorias_legacy(db)
         db.commit()
         row = db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
-    assert row['categoria'] == 'ALIMENTACION'
+    assert row['categoria'] == 'COMIDA_FUERA'
     assert row['subcategoria'] == 'Restaurante'
 
 
@@ -219,7 +219,7 @@ def test_upload_corrige_categoria_legacy(client, monkeypatch, test_db):
         row = db.execute(
             "SELECT categoria, subcategoria FROM est_movimientos WHERE descripcion LIKE '%SUPER ABC%'"
         ).fetchone()
-    assert row['categoria'] == 'ALIMENTACION'
+    assert row['categoria'] == 'SUPER'
     assert row['subcategoria'] == 'Súper'
 
 

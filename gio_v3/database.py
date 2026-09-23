@@ -4896,6 +4896,62 @@ def init_db():
             )
             db.commit()
 
+        # ALIMENTACION se separa en SUPER (Súper/Conveniencia -> Necesidades)
+        # y COMIDA_FUERA (Restaurante/Fast Food/Delivery -> Deseos). El usuario
+        # lo pidió porque juntas inflaban «Necesidades» del 50-30-20 (~$3,300
+        # al mes de comida fuera contada como necesidad): "manda en super todo
+        # lo que sea conveniencia y super como categoria y deja comida afuera
+        # como otra categoria y subcategoria fast food, restaurante y
+        # delivery". Se corrigen movimientos, reglas guardadas (est_keywords,
+        # para que no la revivan), el catálogo de naturaleza y el límite de
+        # est_budgets. El blindaje contra recurrencia vive en
+        # _corregir_alimentacion_split (modules/finanzas/estados/routes.py).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_separa_alimentacion_2026_09'"
+        ).fetchone():
+            try:
+                detalle = []
+                from modules.finanzas.estados.config import split_alimentacion
+                for tabla, texto in (('est_movimientos', 'descripcion'), ('est_keywords', 'keyword')):
+                    filas = db.execute(f"SELECT id, subcategoria, {texto} AS t FROM {tabla} "
+                                       f"WHERE categoria='ALIMENTACION'").fetchall()
+                    for r in filas:
+                        cat, sub = split_alimentacion(r['subcategoria'], r['t'])
+                        db.execute(f"UPDATE {tabla} SET categoria=?, subcategoria=? WHERE id=?",
+                                   (cat, sub, r['id']))
+                    detalle.append(f"{tabla}: {len(filas)}")
+
+                for cat, sub, nat in [('SUPER', 'Súper', 'VARIABLE'), ('SUPER', 'Conveniencia', 'VARIABLE'),
+                                      ('COMIDA_FUERA', 'Restaurante', 'VARIABLE'),
+                                      ('COMIDA_FUERA', 'Fast Food', 'VARIABLE'),
+                                      ('COMIDA_FUERA', 'Delivery', 'VARIABLE')]:
+                    db.execute("INSERT OR IGNORE INTO est_categoria_naturaleza (categoria, subcategoria, naturaleza) "
+                               "VALUES (?,?,?)", (cat, sub, nat))
+                db.execute("DELETE FROM est_categoria_naturaleza WHERE categoria='ALIMENTACION'")
+
+                # Límite: el presupuesto original (Excel 2026) era VIVERES/SUPER
+                # $2,500 + COMIDA/REST $2,000 = los $4,500 de ALIMENTACION. Si
+                # el usuario lo cambió después, se reparte en la misma proporción.
+                b = db.execute("SELECT limite FROM est_budgets WHERE categoria='ALIMENTACION'").fetchone()
+                if b is not None:
+                    lim = float(b['limite'] or 0)
+                    sup = 2500.0 if lim == 4500 else round(lim * 2500 / 4500 / 50) * 50
+                    for cat, nombre, val in [('SUPER', 'Súper', sup), ('COMIDA_FUERA', 'Comida fuera', lim - sup)]:
+                        db.execute("INSERT OR IGNORE INTO est_budgets (categoria, nombre, limite, periodo) "
+                                   "VALUES (?,?,?,'mensual')", (cat, nombre, val))
+                    db.execute("DELETE FROM est_budgets WHERE categoria='ALIMENTACION'")
+                    detalle.append(f"límite {lim:.0f} -> Súper {sup:.0f} + Comida fuera {lim - sup:.0f}")
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_separa_alimentacion_2026_09",
+                     "ALIMENTACION -> SUPER (Súper/Conveniencia, Necesidades) + COMIDA_FUERA "
+                     "(Restaurante/Fast Food/Delivery, Deseos). " + " | ".join(detalle))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_separa_alimentacion_2026_09 migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,

@@ -5,7 +5,7 @@
   var root = document.getElementById('bg');
   if (!root) return;
   var MES = root.dataset.mes;
-  var CATS = ['ALIMENTACION', 'CAFE/PAN', 'VIVIENDA', 'TRANSPORTE', 'SALUD', 'CUIDADO_PERSONAL', 'ROPA', 'DIGITAL', 'DEPORTE', 'OCIO', 'SALSA', 'VIAJES',
+  var CATS = ['SUPER', 'COMIDA_FUERA', 'CAFE/PAN', 'VIVIENDA', 'TRANSPORTE', 'SALUD', 'CUIDADO_PERSONAL', 'ROPA', 'DIGITAL', 'DEPORTE', 'OCIO', 'SALSA', 'VIAJES',
     'FAMILIA_REGALOS', 'PROYECTOS', 'COSTOS_FINANCIEROS', 'APRENDIZAJE', 'OTROS', 'EXPENSE', 'INVERSION', 'PAGO_TDC', 'TRANSFERENCIA', 'SPEI_ENVIADO', 'RETIRO'];
   var ddCat = null, changed = false;
 

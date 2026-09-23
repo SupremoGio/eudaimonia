@@ -5,7 +5,7 @@ import { bankName, catMeta, tipoName } from '../lib/meta.js';
 import { categoryKeys, subcatsFor } from '../lib/store.js';
 import { Icon, Kbd, saveKey, toast } from './ui.jsx';
 
-const FREQUENT = ['ALIMENTACION', 'CAFE/PAN', 'TRANSPORTE', 'VIVIENDA', 'OCIO', 'DIGITAL', 'SALUD', 'ROPA'];
+const FREQUENT = ['SUPER', 'COMIDA_FUERA', 'CAFE/PAN', 'TRANSPORTE', 'VIVIENDA', 'OCIO', 'DIGITAL', 'SALUD', 'ROPA'];
 const STOP = new Set(['COMPRA', 'PAGO', 'CARGO', 'SPEI', 'TRANSFERENCIA', 'DE', 'EN', 'LA', 'EL', 'POR', 'MX', 'MEX', 'CDMX', 'SA', 'CV']);
 
 /** Palabra clave sugerida para una regla a partir de la descripción del banco. */

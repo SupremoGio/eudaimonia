@@ -73,8 +73,8 @@ def test_migration_is_logged_once(test_db):
 
 def test_get_categoria_subcategoria_now_returns_fast_food():
     from modules.finanzas.estados.config import get_categoria_subcategoria
-    assert get_categoria_subcategoria('REST QIN MIDTOWN') == ('ALIMENTACION', 'Fast Food')
-    assert get_categoria_subcategoria('TOR PLANCHADAS CENTRO') == ('ALIMENTACION', 'Fast Food')
-    assert get_categoria_subcategoria('GORDITAS DONA TOTA') == ('ALIMENTACION', 'Fast Food')
+    assert get_categoria_subcategoria('REST QIN MIDTOWN') == ('COMIDA_FUERA', 'Fast Food')
+    assert get_categoria_subcategoria('TOR PLANCHADAS CENTRO') == ('COMIDA_FUERA', 'Fast Food')
+    assert get_categoria_subcategoria('GORDITAS DONA TOTA') == ('COMIDA_FUERA', 'Fast Food')
     # No debe atrapar comercios no relacionados por substring accidental
-    assert get_categoria_subcategoria('TAQUERIA EL BUEN SABOR') == ('ALIMENTACION', 'Restaurante')
+    assert get_categoria_subcategoria('TAQUERIA EL BUEN SABOR') == ('COMIDA_FUERA', 'Restaurante')

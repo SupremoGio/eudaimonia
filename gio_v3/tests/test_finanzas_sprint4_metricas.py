@@ -58,7 +58,7 @@ def test_by_naturaleza_groups_known_categories(client):
         _insert(db, fecha='2026-01-05', descripcion='RENTA', monto=7000.0,
                 categoria='VIVIENDA', subcategoria='Renta')
         _insert(db, fecha='2026-01-06', descripcion='WALMART', monto=500.0,
-                categoria='ALIMENTACION', subcategoria='Súper')
+                categoria='SUPER', subcategoria='Súper')
         db.commit()
 
     resp = client.get('/finanzas/estados/api/summary/by-naturaleza',

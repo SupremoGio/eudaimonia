@@ -263,11 +263,11 @@ def _corregir_far_guad(db) -> int:
     explícita del usuario en cada compra, no algo que se deba adivinar
     por monto."""
     cur1 = db.execute("""
-        UPDATE est_movimientos SET categoria='ALIMENTACION', subcategoria='Conveniencia'
+        UPDATE est_movimientos SET categoria='SUPER', subcategoria='Conveniencia'
         WHERE UPPER(descripcion) LIKE '%FAR GUAD%'
           AND ABS(monto) < ?
           AND categoria != 'EXPENSE'
-          AND (categoria != 'ALIMENTACION' OR subcategoria != 'Conveniencia')
+          AND (categoria != 'SUPER' OR subcategoria != 'Conveniencia')
     """, (_FAR_GUAD_UMBRAL,))
     cur2 = db.execute("""
         UPDATE est_movimientos SET categoria='SALUD', subcategoria='Farmacia'
@@ -281,8 +281,8 @@ def _corregir_far_guad(db) -> int:
 
 _LEGACY_CATEGORIA_MAP = {
     'CASA/HOGAR':    ('VIVIENDA', 'Renta'),
-    'VIVERES/SUPER': ('ALIMENTACION', 'Súper'),
-    'COMIDA/REST':   ('ALIMENTACION', 'Restaurante'),
+    'VIVERES/SUPER': ('SUPER', 'Súper'),
+    'COMIDA/REST':   ('COMIDA_FUERA', 'Restaurante'),
     'VIAJES/VUELOS': ('VIAJES', 'Otros'),
     # 'REGALO' (categoria plana legacy) es enteramente el pago a
     # CRISTAL VILLAHERMOSA a 12 meses (un anillo) -- el usuario confirmó
@@ -320,6 +320,25 @@ def _corregir_categorias_legacy(db) -> int:
             (cat, sub, legacy),
         )
         total += cur.rowcount
+    return total
+
+
+def _corregir_alimentacion_split(db) -> int:
+    """ALIMENTACION se separó (2026-09, a petición del usuario) en SUPER
+    (Súper/Conveniencia → Necesidades) y COMIDA_FUERA (Restaurante/Fast
+    Food/Delivery → Deseos): juntas inflaban Necesidades en el 50-30-20.
+    Blindaje con el mismo patrón que _corregir_categorias_legacy: corrige
+    est_keywords para que ninguna regla guardada la reviva y
+    est_movimientos por si alguna fila se cuela. La regla de reparto vive en
+    config.split_alimentacion (la misma que usa la migración)."""
+    from .config import split_alimentacion
+    total = 0
+    for tabla, texto in (('est_keywords', 'keyword'), ('est_movimientos', 'descripcion')):
+        for r in db.execute(f"SELECT id, subcategoria, {texto} AS t FROM {tabla} "
+                            f"WHERE categoria='ALIMENTACION'").fetchall():
+            cat, sub = split_alimentacion(r['subcategoria'], r['t'])
+            db.execute(f"UPDATE {tabla} SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, r['id']))
+            total += 1
     return total
 
 
@@ -1335,6 +1354,7 @@ def apply_all_keywords():
         _corregir_fusion_gio(db)
         _corregir_far_guad(db)
         _corregir_categorias_legacy(db)
+        _corregir_alimentacion_split(db)
         _corregir_servicios_legacy(db)
         _corregir_suscripciones_legacy(db)
         _corregir_steamgames(db)
@@ -1811,6 +1831,7 @@ def upload_file():
             _corregir_fusion_gio(db)
             _corregir_far_guad(db)
             _corregir_categorias_legacy(db)
+            _corregir_alimentacion_split(db)
             _corregir_servicios_legacy(db)
             _corregir_suscripciones_legacy(db)
             _corregir_steamgames(db)
@@ -2558,7 +2579,7 @@ def fix_libreton_years():
 # SQL expression that buckets a transaction into a travel concept.
 # Taxonomía 2026-09: VIAJES ya trae sus propias subcategorias (Transporte,
 # Hospedaje, Comida, Otros) para lo que se etiquetó directamente como parte
-# del viaje; TRANSPORTE/ALIMENTACION/OCIO/SALSA cubren transacciones de otras
+# del viaje; TRANSPORTE/SUPER/COMIDA_FUERA/OCIO/SALSA cubren transacciones de otras
 # categorias que igual se asignaron a un viaje_id (ej. gasolina de carretera,
 # clases de salsa del congreso).
 _CONCEPTO_CASE = """
@@ -2567,7 +2588,7 @@ _CONCEPTO_CASE = """
     WHEN categoria='VIAJES' AND subcategoria='Transporte' THEN 'Transporte'
     WHEN categoria='TRANSPORTE' THEN 'Transporte'
     WHEN categoria='VIAJES' AND subcategoria='Comida' THEN 'Comida'
-    WHEN categoria IN ('ALIMENTACION','CAFE/PAN') THEN 'Comida'
+    WHEN categoria IN ('SUPER','COMIDA_FUERA','ALIMENTACION','CAFE/PAN') THEN 'Comida'
     WHEN categoria IN ('OCIO','SALSA') THEN 'Experiencias'
     ELSE 'Otros'
   END

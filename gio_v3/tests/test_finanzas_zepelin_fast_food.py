@@ -39,18 +39,18 @@ def _insert(db, **kw):
 
 def test_keyword_clip_mx_mec_zepelin_es_fast_food():
     cat, sub = get_categoria_subcategoria('CLIP MX MEC ZEPELIN EN GUADALAJARA')
-    assert (cat, sub) == ('ALIMENTACION', 'Fast Food')
+    assert (cat, sub) == ('COMIDA_FUERA', 'Fast Food')
 
 
 def test_keyword_payclip_mec_zepelin_es_fast_food():
     """Variante que la entrada vieja ('CLIP MX MEC ZEPELIN') no atrapaba."""
     cat, sub = get_categoria_subcategoria('PAYCLIP MEC ZEPELIN EN')
-    assert (cat, sub) == ('ALIMENTACION', 'Fast Food')
+    assert (cat, sub) == ('COMIDA_FUERA', 'Fast Food')
 
 
 def test_keyword_zepelin_variante_gua_es_fast_food():
     cat, sub = get_categoria_subcategoria('CLIP MX MEC ZEPELIN EN GUA')
-    assert (cat, sub) == ('ALIMENTACION', 'Fast Food')
+    assert (cat, sub) == ('COMIDA_FUERA', 'Fast Food')
 
 
 # ── Migración retroactiva ────────────────────────────────────────────────────

@@ -35,7 +35,7 @@ def test_debit_usa_config_primero_para_gasto():
     """Un GASTO con un keyword de comercio conocido en config.py (ZEPELIN)
     debe clasificarse con esa regla, no caer en el cajón legacy."""
     cat, sub = categorize_debit('CLIP MX MEC ZEPELIN EN GUADALAJARA', es_gasto=True)
-    assert (cat, sub) == ('ALIMENTACION', 'Fast Food')
+    assert (cat, sub) == ('COMIDA_FUERA', 'Fast Food')
 
 
 def test_debit_no_prueba_config_para_ingreso():
@@ -98,7 +98,7 @@ def test_libreton_nafin_ya_no_produce_categoria_inversion_literal():
 
 def test_libreton_usa_config_primero_para_gasto():
     cat, sub = categorize_libreton('CLIP MX MEC ZEPELIN EN GUADALAJARA', es_gasto=True)
-    assert (cat, sub) == ('ALIMENTACION', 'Fast Food')
+    assert (cat, sub) == ('COMIDA_FUERA', 'Fast Food')
 
 
 def test_libreton_nomina_requiere_pago_de_nomina_explicito():

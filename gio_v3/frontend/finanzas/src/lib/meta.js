@@ -2,7 +2,9 @@
 // de las 10 categorías del sistema (data-cat → --cat-fg/bg/border en
 // app.css): aquí solo se decide qué tono le toca a cada categoría de gasto.
 export const CAT_META = {
-  ALIMENTACION: { name: 'Alimentación', icon: 'utensils', tone: 'harma' },
+  SUPER: { name: 'Súper', icon: 'shopping-cart', tone: 'harma' },
+  COMIDA_FUERA: { name: 'Comida fuera', icon: 'utensils', tone: 'philia' },
+  ALIMENTACION: { name: 'Alimentación', icon: 'utensils', tone: 'harma' }, // legado
   'CAFE/PAN': { name: 'Café & Pan', icon: 'coffee', tone: 'hegemonikon' },
   VIVIENDA: { name: 'Vivienda', icon: 'house', tone: 'oikonomia' },
   TRANSPORTE: { name: 'Transporte', icon: 'car', tone: 'cosmopolitismo' },

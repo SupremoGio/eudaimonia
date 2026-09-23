@@ -273,7 +273,8 @@ def seed_budgets():
         # ── NECESIDADES (50%) — total $14,385.25 ──────────────────────
         ('VIVIENDA',    'Vivienda',            7429.84),  # Alquiler+Agua+Luz+Internet+Gas+Garrafón (antes CASA/HOGAR+SERVICIOS)
         ('TRANSPORTE',  'Gasolina / Auto',     1955.41),  # Seguro+Gasolina (antes GASOLINA/AUTO)
-        ('ALIMENTACION','Alimentación',        4500.00),  # Víveres+Carnes+Comida/Restaurante (antes VIVERES/SUPER $2500 + COMIDA/REST $2000, ahora una sola categoria)
+        ('SUPER',       'Súper',               2500.00),  # Víveres+Carnes (antes VIVERES/SUPER)
+        ('COMIDA_FUERA','Comida fuera',        2000.00),  # Restaurante/Fast food/Delivery (antes COMIDA/REST), va en Deseos
         ('SALUD',       'Personal / Salud',     300.00),  # Saldo Cel+Corte cabello
         ('MENSUALIDAD', 'Mensualidad TDC',     2200.00),  # Mensualidad TDC
         # ── DESEOS (30%) — total $4,000.00 ───────────────────────────
@@ -316,7 +317,8 @@ def apply_migrations():
         budgets = [
             ('VIVIENDA',     'Vivienda',            7429.84),
             ('TRANSPORTE',   'Gasolina / Auto',     1955.41),
-            ('ALIMENTACION', 'Alimentación',        4500.00),
+            ('SUPER',        'Súper',               2500.00),
+            ('COMIDA_FUERA', 'Comida fuera',        2000.00),
             ('SALUD',        'Personal / Salud',     300.00),
             ('MENSUALIDAD',  'Mensualidad TDC',     2200.00),
             ('SALSA',        'Salsa / Baile',        700.00),

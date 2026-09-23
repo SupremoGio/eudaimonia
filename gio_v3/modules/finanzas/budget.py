@@ -36,7 +36,11 @@ PCTS       = {'necesidades': 0.50, 'deseos': 0.30, 'ahorro_deuda': 0.20}
 # explícita) -- café y pan son un "deseo" distinto de comprar despensa o
 # comer en restaurante, así que se sacó de ALIMENTACION otra vez.
 CATEGORIA_BUCKET = {
-    'ALIMENTACION':      'necesidades',
+    # 2026-09: ALIMENTACION se separó en SUPER (necesidad) y COMIDA_FUERA
+    # (deseo) -- ver _corregir_alimentacion_split en estados/routes.py.
+    'SUPER':             'necesidades',
+    'COMIDA_FUERA':      'deseos',
+    'ALIMENTACION':      'necesidades',  # legado, ya no se genera
     'CAFE/PAN':          'deseos',  # revivida como categoria propia -- café/pan
                                      # siempre fue "deseo" aquí, no necesidad
     'VIVIENDA':          'necesidades',
@@ -83,6 +87,8 @@ _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_REC
                      'APORTACION_RENTA', 'FINANZAS')
 
 CAT_LABELS = {
+    'SUPER':            'Súper',
+    'COMIDA_FUERA':     'Comida fuera',
     'ALIMENTACION':     'Alimentación',
     'CAFE/PAN':         'Café & Pan',
     'VIVIENDA':         'Vivienda',

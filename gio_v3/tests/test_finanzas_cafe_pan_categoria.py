@@ -98,14 +98,14 @@ def test_get_categoria_subcategoria_now_returns_cafe_pan():
     assert get_categoria_subcategoria('STARBUCKS TORRE') == ('CAFE/PAN', 'Café')
     assert get_categoria_subcategoria('PANADERIA EL BUEN PAN') == ('CAFE/PAN', 'Pan')
     assert get_categoria_subcategoria('NESPRESSO BOUTIQUE') == ('CAFE/PAN', 'Café')
-    # ALIMENTACION sigue funcionando normal para lo que no es café/pan
-    assert get_categoria_subcategoria('WALMART VENTA EN LINEA') == ('ALIMENTACION', 'Súper')
+    # SUPER (antes ALIMENTACION) sigue funcionando normal para lo que no es café/pan
+    assert get_categoria_subcategoria('WALMART VENTA EN LINEA') == ('SUPER', 'Súper')
 
 
 def test_cafe_pan_no_longer_a_subcategoria_of_alimentacion():
     from modules.finanzas.estados.config import SUBCATEGORIAS
-    assert 'Café' not in SUBCATEGORIAS['ALIMENTACION']
-    assert 'Pan' not in SUBCATEGORIAS['ALIMENTACION']
+    assert 'Café' not in SUBCATEGORIAS['SUPER'] + SUBCATEGORIAS['COMIDA_FUERA']
+    assert 'Pan' not in SUBCATEGORIAS['SUPER'] + SUBCATEGORIAS['COMIDA_FUERA']
     assert SUBCATEGORIAS['CAFE/PAN'] == ['Café', 'Pan']
 
 
