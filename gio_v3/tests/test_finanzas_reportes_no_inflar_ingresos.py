@@ -76,14 +76,17 @@ def test_summary_stats_no_cuenta_finanzas_como_ingreso(client, test_db):
 
 
 def test_summary_stats_no_cuenta_finanzas_como_gasto(client, test_db):
-    """Simétrico del lado del gasto: un pago de tarjeta ya reclasificado a
-    FINANZAS (antes PAGO/PAGO_TDC) no debe sumar a total_expense."""
+    """Simétrico del lado del gasto: una transferencia propia ya
+    reclasificada a FINANZAS no debe sumar a total_expense. (Desde
+    2026-09-22 la exclusión es por subcategoría: FINANZAS/Pago servicios,
+    Retiro efectivo, etc. SÍ son gasto real -- ver
+    test_summary_stats_cuenta_finanzas_gasto_real.)"""
     import database
     with database.get_db() as db:
         _insert(db, descripcion='WALMART', fecha='2026-09-05', monto=-1200.0,
                 categoria='ALIMENTACION', subcategoria='Súper', tipo='GASTO')
-        _insert(db, descripcion='PAGO CUENTA DE TERCERO BNET TRANSF', fecha='2026-09-06',
-                monto=-4500.0, categoria='FINANZAS', subcategoria='Pago servicios', tipo='GASTO')
+        _insert(db, descripcion='SPEI ENVIADO NAFIN', fecha='2026-09-06',
+                monto=-4500.0, categoria='FINANZAS', subcategoria='Transferencia enviada', tipo='GASTO')
         db.commit()
 
     resp = client.get('/finanzas/estados/api/summary/stats', query_string={
@@ -91,6 +94,23 @@ def test_summary_stats_no_cuenta_finanzas_como_gasto(client, test_db):
     })
     data = resp.get_json()
     assert data['total_expense'] == -1200.0
+
+
+def test_summary_stats_cuenta_finanzas_gasto_real(client, test_db):
+    """FINANZAS/Pago servicios y Retiro efectivo son gasto real (decisión
+    del 2026-09-22: 51 "RETIRO SIN TARJETA" desaparecían de los reportes)."""
+    import database
+    with database.get_db() as db:
+        _insert(db, descripcion='PAGO CUENTA DE TERCERO', fecha='2026-09-06',
+                monto=-4500.0, categoria='FINANZAS', subcategoria='Pago servicios', tipo='GASTO')
+        _insert(db, descripcion='RETIRO SIN TARJETA', fecha='2026-09-07',
+                monto=-500.0, categoria='FINANZAS', subcategoria='Retiro efectivo', tipo='GASTO')
+        db.commit()
+
+    resp = client.get('/finanzas/estados/api/summary/stats', query_string={
+        'date_from': '2026-09-01', 'date_to': '2026-09-30',
+    })
+    assert resp.get_json()['total_expense'] == -5000.0
 
 
 def test_summary_stats_sigue_excluyendo_por_los_nombres_viejos(client, test_db):
@@ -120,8 +140,8 @@ def test_by_naturaleza_no_cuenta_finanzas_como_gasto(client, test_db):
     with database.get_db() as db:
         _insert(db, descripcion='RENTA', fecha='2026-09-01', monto=-8000.0,
                 categoria='VIVIENDA', subcategoria='Renta', tipo='GASTO')
-        _insert(db, descripcion='PAGO TDC', fecha='2026-09-03', monto=-4500.0,
-                categoria='FINANZAS', subcategoria='Pago servicios', tipo='GASTO')
+        _insert(db, descripcion='SPEI ENVIADO A MI CUENTA', fecha='2026-09-03', monto=-4500.0,
+                categoria='FINANZAS', subcategoria='Transferencia enviada', tipo='GASTO')
         db.commit()
 
     resp = client.get('/finanzas/estados/api/summary/by-naturaleza')

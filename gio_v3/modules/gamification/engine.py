@@ -258,6 +258,22 @@ def _get_today_keys(today):
         ).fetchall()]
 
 
+# Bloques de ATARAXIA que cierran el combo de fin de semana. Son los mismos
+# bloque_id que siembra database.init_db() en rutina_bloques (refactor
+# Sábado 7 bloques / Domingo 9 bloques); los tests y
+# scripts/pre_deploy_check.py los importan de aquí para no desincronizarse.
+SAT_COMBO_KEYS = frozenset({
+    "sat_bloque1", "sat_gym_bloque", "sat_textiles_bloque",
+    "sat_limpieza_bloque", "sat_bano_bloque", "sat_barrido_bloque",
+})
+SAT_OPTIONAL_KEYS = frozenset({"sat_jugos_bloque"})  # suma XP pero no condiciona el combo
+SUN_COMBO_KEYS = frozenset({
+    "sun_cafe_bloque", "sun_gym_bloque", "sun_nevera_bloque", "sun_comidas_bloque",
+    "sun_guardado_bloque", "sun_planchar_bloque", "sun_planeacion_bloque",
+    "sun_prioridades_bloque", "sun_cierre_bloque",
+})
+
+
 def _check_combo_bonus(today, keys_today):
     cats = {ACTIVITIES[k]["cat"] for k in keys_today if k in ACTIVITIES}
     combos = []
@@ -289,11 +305,7 @@ def _check_combo_bonus(today, keys_today):
         combos.append({"type": "5cats", "icon": "🌟", "name": "5 Virtudes", "description": "Cinco categorías distintas en un día", "xp": 5, "ec": 0})
 
     # Weekend: sábado completo → +4 XP bonus (6 bloques requeridos; Jugos es opcional)
-    sat_keys = {
-        "sat_bloque1", "sat_gym_bloque", "sat_textiles_bloque",
-        "sat_limpieza_bloque", "sat_bano_bloque", "sat_barrido_bloque",
-    }
-    if sat_keys.issubset(set(keys_today)):
+    if SAT_COMBO_KEYS.issubset(set(keys_today)):
         with get_db() as db:
             sat_done = db.execute(
                 "SELECT id FROM xp_ledger WHERE source='bonus' AND description='Combo: Sábado Completo' AND date=?",
@@ -305,12 +317,7 @@ def _check_combo_bonus(today, keys_today):
             combos.append({"type": "sat_complete", "icon": "🔥", "name": "Sábado Completo", "description": "Todos los bloques del sábado completados", "xp": 4, "ec": 2})
 
     # Weekend: domingo completo → +5 XP bonus (9 bloques)
-    sun_keys = {
-        "sun_cafe_bloque", "sun_gym_bloque", "sun_nevera_bloque", "sun_comidas_bloque",
-        "sun_guardado_bloque", "sun_planchar_bloque", "sun_planeacion_bloque",
-        "sun_prioridades_bloque", "sun_cierre_bloque",
-    }
-    if sun_keys.issubset(set(keys_today)):
+    if SUN_COMBO_KEYS.issubset(set(keys_today)):
         with get_db() as db:
             sun_done = db.execute(
                 "SELECT id FROM xp_ledger WHERE source='bonus' AND description='Combo: Domingo Completo' AND date=?",

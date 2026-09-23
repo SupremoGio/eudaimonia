@@ -56,7 +56,11 @@ def test_normalize_no_toca_renta_plana():
 
 
 def test_normalize_no_toca_variantes_de_otra_categoria():
-    assert _normalize_subcategoria('OTROS', 'Renta + deposito') == 'Renta + deposito'
+    # La unificación a 'Renta' es solo de VIVIENDA. En una categoría sin
+    # lista de subcategorías el valor se respeta tal cual; en una con lista
+    # (OTROS) se limpia por no ser válida ahí -- pero nunca se vuelve 'Renta'.
+    assert _normalize_subcategoria('GBM', 'Renta + deposito') == 'Renta + deposito'
+    assert _normalize_subcategoria('OTROS', 'Renta + deposito') != 'Renta'
 
 
 # ── create_transaction usa el normalizador ──────────────────────────────────

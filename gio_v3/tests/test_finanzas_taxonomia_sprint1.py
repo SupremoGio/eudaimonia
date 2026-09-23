@@ -51,8 +51,10 @@ def test_naturaleza_catalog_is_seeded(test_db):
     with database.get_db() as db:
         n = db.execute("SELECT COUNT(*) c FROM est_categoria_naturaleza").fetchone()["c"]
         assert n >= 30
+        # El catálogo se re-sembró con la taxonomía actual (CASA/HOGAR ·
+        # Alquiler pasó a VIVIENDA · Renta).
         row = db.execute(
-            "SELECT naturaleza FROM est_categoria_naturaleza WHERE categoria='CASA/HOGAR' AND subcategoria='Alquiler'"
+            "SELECT naturaleza FROM est_categoria_naturaleza WHERE categoria='VIVIENDA' AND subcategoria='Renta'"
         ).fetchone()
         assert row["naturaleza"] == "FIJO"
 

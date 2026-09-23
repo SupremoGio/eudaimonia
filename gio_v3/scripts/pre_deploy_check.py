@@ -26,18 +26,16 @@ def _check_ec_constants():
 
 def _check_activities():
     from data import ACTIVITIES
+    from modules.gamification.engine import SAT_COMBO_KEYS, SAT_OPTIONAL_KEYS, SUN_COMBO_KEYS
     errors = []
-    required = {
-        "sat_bloque1", "sat_bloque2", "sat_bloque3", "sat_jugos",
-        "sun_reflexion", "sun_diseno", "sun_comidas", "sun_jugos", "sun_planchar",
-    }
+    required = SAT_COMBO_KEYS | SAT_OPTIONAL_KEYS | SUN_COMBO_KEYS
     missing = required - set(ACTIVITIES)
     if missing:
         errors.append(f"ACTIVITIES missing weekend keys: {sorted(missing)}")
-    if "sat_jugos" in ACTIVITIES and not ACTIVITIES["sat_jugos"].get("optional"):
-        errors.append("sat_jugos must have optional=True")
+    if SAT_OPTIONAL_KEYS & SAT_COMBO_KEYS:
+        errors.append("sat_jugos_bloque must not be required by the Saturday combo")
     if not errors:
-        print(f"[OK] ACTIVITIES — {len(required)} weekend keys verified, sat_jugos=optional")
+        print(f"[OK] ACTIVITIES — {len(required)} weekend keys verified, Jugos opcional")
     return errors
 
 
@@ -75,13 +73,22 @@ def _check_init_db():
                   "xp_ledger", "coins_ledger", "rewards"):
             if t not in tables:
                 errors.append(f"Table missing after init_db: {t}")
+        # Los bloques sembrados deben ser exactamente los que usan los combos
+        # de fin de semana (Sábado 7 con Jugos opcional, Domingo 9).
+        from modules.gamification.engine import SAT_COMBO_KEYS, SAT_OPTIONAL_KEYS, SUN_COMBO_KEYS
         bloque_count = conn.execute("SELECT COUNT(*) as c FROM rutina_bloques").fetchone()["c"]
-        if bloque_count != 18:
-            errors.append(f"rutina_bloques has {bloque_count} rows, expected 18")
+        rows = conn.execute("SELECT DISTINCT dia, bloque_id FROM rutina_bloques").fetchall()
+        sat = {r["bloque_id"] for r in rows if r["dia"] == "sabado"}
+        sun = {r["bloque_id"] for r in rows if r["dia"] == "domingo"}
+        if sat != set(SAT_COMBO_KEYS | SAT_OPTIONAL_KEYS):
+            errors.append(f"rutina_bloques sábado desalineado con el combo: {sorted(sat)}")
+        if sun != set(SUN_COMBO_KEYS):
+            errors.append(f"rutina_bloques domingo desalineado con el combo: {sorted(sun)}")
         conn.close()
 
         if not errors:
-            print(f"[OK] init_db() — schema + 18 rutina tasks seeded")
+            print(f"[OK] init_db() — schema + {bloque_count} rutina tasks seeded "
+                  f"({len(sat)} bloques sáb, {len(sun)} dom)")
     except Exception as e:
         errors.append(f"init_db() raised: {e}")
     finally:
