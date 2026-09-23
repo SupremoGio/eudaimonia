@@ -1,0 +1,150 @@
+/* ═══════════════════════════════════════════════════════════════
+   Perfil «Tú» (/perfil/) — Design System V2 · pantalla 10
+   Desktop: tarjeta + subnav a la izquierda (280px), sección activa a
+   la derecha. Móvil: hub «Tú» (avatar, accesos, lista de secciones);
+   cada sección se abre por hash (#datos, #medidas…) con botón volver.
+   ═══════════════════════════════════════════════════════════════ */
+.pf{display:flex;flex-direction:column;gap:var(--sp-4)}
+.pf h1,.pf h2{margin:0}
+.pf [hidden],.eu-scrim [hidden]{display:none!important}
+.pf-p{margin:0;color:var(--fg-2)}
+.pf-aside{display:none}
+.pf-main{display:flex;flex-direction:column;gap:var(--sp-4);min-width:0}
+
+@media (min-width:1024px){
+  .pf{display:grid;grid-template-columns:280px minmax(0,1fr);gap:var(--sp-6);align-items:start}
+  .pf-aside{display:flex;flex-direction:column;gap:var(--sp-4);position:sticky;top:var(--sp-4)}
+  .pf-hub{display:none}
+}
+/* Móvil: con una sección abierta desaparece el hub */
+.pf:not([data-sec=""]) .pf-hub{display:none}
+
+/* ── Avatar y tarjeta ── */
+.pf-avatar{width:64px;height:64px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--bg-raised);border:1.5px solid var(--border-brand);color:var(--fg-brand);font:var(--fw-medium) var(--fs-28)/1 var(--font-display)}
+.pf-avatar--lg{width:88px;height:88px;font-size:var(--fs-40)}
+.pf-avatar svg{width:45%;height:45%}
+.pf-card{align-items:flex-start}
+.pf-card .eu-xpbar{width:100%}
+.pf-card-links{width:100%}
+.pf-link{gap:var(--sp-2);padding:var(--sp-3);text-decoration:none;color:var(--fg-1);transition:border-color var(--dur-fast)}
+.pf-link:hover{border-color:var(--border-strong)}
+.pf-link > span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pf-link svg{width:18px;height:18px;flex-shrink:0}
+
+/* Subnav (desktop) */
+.pf-subnav{display:flex;flex-direction:column;gap:2px}
+.pf-nav-it .kbd{margin-left:auto}
+.pf-nav-it[aria-current=page]{background:var(--brand-muted);color:var(--fg-brand-strong)}
+.pf-urgent{color:var(--warning-fg)}
+
+/* ── Hub (móvil) ── */
+.pf-hub{display:flex;flex-direction:column;gap:var(--sp-4)}
+.pf-hub-me{padding:var(--sp-2) 0}
+.pf-hub-row{text-decoration:none}
+.pf-chev{width:16px;height:16px;color:var(--fg-3);flex-shrink:0}
+.pf-logout{width:100%;border:0;border-bottom:1px solid var(--border-subtle);background:none;text-align:left;font:inherit;color:inherit}
+.pf-logout:last-child{border-bottom:0}
+.pf-logout .eu-row-t,.pf-logout .eu-row-ic{color:var(--danger-fg)}
+
+/* ── Encabezado de sección ── */
+.pf-sec{gap:var(--sp-4)}
+.pf-sec-hd{display:flex;align-items:flex-start;gap:var(--sp-3);flex-wrap:wrap}
+.pf-sec-hd .pf-p{margin-top:var(--sp-2)}
+.pf-sec-title{margin-top:var(--sp-2)}
+.pf-sec-hd > .eu-btn,.pf-sec-hd > .pf-upload{align-self:flex-end}
+@media (max-width:1023px){
+  .pf-sec-hd{align-items:center}
+  .pf-eyebrow,.pf-sec-hd .pf-p{display:none}
+  .pf-sec-title{margin-top:0;font-size:var(--fs-24)}
+}
+
+/* ── Datos personales ── */
+.pf-fields{display:grid;gap:var(--sp-4)}
+@media (min-width:768px){.pf-fields{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--sp-6)}}
+@media (min-width:1280px){.pf-fields{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.pf-field{display:flex;flex-direction:column;gap:var(--sp-2);min-width:0;padding-bottom:var(--sp-3);border-bottom:1px solid var(--border-subtle)}
+.pf-field:last-child{border-bottom:0;padding-bottom:0}
+.pf-field-lbl{gap:var(--sp-2)}
+.pf-priv{gap:4px}
+.pf-priv svg{width:11px;height:11px}
+.pf-field-view,.pf-meas-view{display:flex;align-items:center;gap:var(--sp-2);min-height:36px}
+.pf-val{flex:1;min-width:0;font-size:var(--fs-15);color:var(--fg-1);overflow-wrap:anywhere}
+.pf-val.is-priv{font-family:var(--font-data);letter-spacing:.1em;color:var(--fg-2)}
+.pf-val.is-empty,.pf-meas-val.is-empty{color:var(--fg-3);font-style:italic}
+.pf-actions{display:flex;gap:2px;flex-shrink:0}
+.pf-actions .eu-iconbtn{width:32px;height:32px}
+.pf-field-edit{display:flex;align-items:center;gap:var(--sp-2)}
+.pf-field-edit .eu-input{flex:1;min-width:0}
+.pf-attach{position:relative}
+.pf-attach.has-docs{color:var(--fg-brand)}
+.pf-attach-n{position:absolute;top:0;right:0;min-width:16px;height:16px;padding:0 4px;border-radius:var(--r-full);background:var(--brand);color:var(--bg-canvas);font:var(--fw-medium) var(--fs-11)/16px var(--font-data);text-align:center}
+.pf-fdp{display:flex;flex-direction:column;gap:var(--sp-2);padding:var(--sp-3)}
+.pf-fdp .eu-row{padding:var(--sp-2) 0;min-height:48px}
+
+/* Subida de archivos: el input vive dentro del label */
+.pf-upload{position:relative;cursor:pointer}
+.pf-upload input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.pf-upload:focus-within{outline:2px solid var(--brand);outline-offset:2px}
+
+/* Documentos */
+.pf-doc-name{display:block;text-decoration:none}
+.pf-doc-name:hover{color:var(--fg-brand)}
+.pf-thumb{width:36px;height:36px;border-radius:var(--r-sm);object-fit:cover;flex-shrink:0;background:var(--bg-raised)}
+.pf-ic-pdf{color:var(--danger-fg)}
+.pf-danger{color:var(--fg-3)}
+.pf-danger:hover{color:var(--danger-fg)}
+
+/* ── Medidas ── */
+.pf-meas-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2)}
+@media (min-width:768px){.pf-meas-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-3)}}
+@media (min-width:1280px){.pf-meas-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.pf-meas{display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-3);min-width:0}
+.pf-meas-val{flex:1;min-width:0;font-size:var(--fs-20)}
+.pf-meas .pf-actions{opacity:.7}
+.pf-meas:hover .pf-actions,.pf-meas:focus-within .pf-actions{opacity:1}
+.pf-meas .pf-field-edit .eu-input{height:36px}
+.pf-meas .pf-field-edit .eu-btn{padding:0 var(--sp-2)}
+@media (max-width:767px){.pf-meas .js-mcopy{display:none}}
+.pf-delta{font-family:var(--font-data)}
+.pf-delta.is-up{background:var(--warning-bg);border-color:var(--warning-border);color:var(--warning-fg)}
+.pf-delta.is-down{background:var(--success-bg);border-color:var(--success-border);color:var(--success-fg)}
+.pf-hist summary{cursor:pointer;list-style:none;width:max-content}
+.pf-hist summary::-webkit-details-marker{display:none}
+.pf-hist summary::before{content:"▸ ";color:var(--fg-3)}
+.pf-hist[open] summary::before{content:"▾ "}
+.pf-hist-list{display:flex;flex-direction:column;gap:4px;margin-top:var(--sp-2);max-height:180px;overflow-y:auto}
+.pf-hist-row{gap:var(--sp-2);font-size:var(--fs-12)}
+.pf-hist-row .num{margin-left:auto;color:var(--fg-1)}
+
+/* Bloques con lista (tallas, plicómetro) */
+.pf-block-hd{padding:var(--sp-4);gap:var(--sp-3);border-bottom:1px solid var(--border-subtle);flex-wrap:wrap}
+.pf-block .pf-form{padding:var(--sp-4);border-bottom:1px solid var(--border-subtle);background:var(--bg-sunken)}
+.pf-group{padding:var(--sp-3) var(--sp-4) var(--sp-1)}
+.pf-talla{font-size:var(--fs-17);color:var(--fg-brand)}
+.pf-plg-vals{gap:var(--sp-2);flex-wrap:wrap}
+
+/* ── Formularios ── */
+.pf-form{display:flex;flex-direction:column;gap:var(--sp-3)}
+.pf-form-grid{gap:var(--sp-3)}
+@media (max-width:767px){.pf-form-grid.eu-grid-3,.pf-form-grid.eu-grid-2{grid-template-columns:minmax(0,1fr)}}
+.pf-form-ft{display:flex;justify-content:flex-end;gap:var(--sp-2)}
+
+/* ── Recordatorios ── */
+.pf-rem-check{border:0;background:none;padding:var(--sp-1);margin:calc(var(--sp-1) * -1);cursor:pointer;color:var(--fg-2);border-radius:50%}
+.pf-rem-check:hover .eu-act-check{border-color:var(--brand)}
+.pf-rem-check:hover .eu-act-check svg{opacity:.5;transform:scale(1)}
+.pf-rem.is-busy{opacity:.4;pointer-events:none}
+.pf-rem .eu-row-t{white-space:normal}
+
+/* ── Contraseñas ── */
+.pf-vault .eu-row-t{display:flex;align-items:center;gap:6px}
+.pf-ext{color:var(--fg-3);display:inline-flex}
+.pf-ext svg{width:14px;height:14px}
+.pf-pass{font-family:var(--font-data);color:var(--fg-2);overflow-wrap:anywhere}
+@media (max-width:767px){.pf-vault .js-vault-edit{display:none}.pf-vault{flex-wrap:wrap}}
+
+/* ── Ajustes / zona de peligro ── */
+.pf-danger-zone{border-color:var(--danger-border);background:linear-gradient(0deg,var(--danger-bg),transparent 70%),var(--bg-surface)}
+.pf-danger-eyebrow{color:var(--danger-fg)}
+.pf-danger-btn{align-self:flex-start}
+.eu-seg button[aria-pressed=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}

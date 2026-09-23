@@ -120,7 +120,26 @@ def index():
     for t in tallas_rows:
         tallas_por_prenda.setdefault(t['prenda'], []).append(dict(t))
 
+    # ── Tarjeta «Tú» (DS V2 · pantalla 10): nivel, racha, EC e insignias ──
+    gam = engine.get_gamification_stats()
+    try:
+        from modules.gamification.badges import get_all_badges
+        _b = get_all_badges()
+        badges_earned, badges_total = sum(1 for b in _b if b['unlocked']), len(_b)
+    except Exception:
+        badges_earned, badges_total = 0, 0
+    nombre = next((i['value'] for i in info if i['key'] == 'nombre' and i['value'] != PLACEHOLDER), '')
+    me = {
+        'nombre':  nombre,
+        'inicial': (nombre.strip()[:1] or 'Tú').upper() if nombre else 'Tú',
+        'level': gam['level'], 'level_name': gam['level_name'], 'level_pct': gam['level_pct'],
+        'streak': gam['streak'], 'ec': gam['total_coins'],
+        'badges_earned': badges_earned, 'badges_total': badges_total,
+    }
+
     return render_template('perfil/index.html',
+                           me=me,
+                           placeholder=PLACEHOLDER,
                            info=info,
                            measurements=measurements,
                            meas_by_key=meas_by_key,

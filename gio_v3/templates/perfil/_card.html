@@ -1,0 +1,22 @@
+{# Tarjeta de perfil + subnav (desktop) #}
+<section class="eu-card eu-vstack pf-card" aria-label="Tu perfil">
+  <div class="pf-avatar pf-avatar--lg" aria-hidden="true">{% if me.nombre %}{{ me.inicial }}{% else %}<i data-lucide="user-round"></i>{% endif %}</div>
+  <div>
+    <div class="t-section">{{ me.nombre or 'Tu perfil' }}</div>
+    <div class="t-meta">Nivel {{ me.level }} · {{ me.level_name|title }}</div>
+  </div>
+  {{ ui.xpbar(me.level_pct, 100, label='% del nivel') }}
+  <div class="eu-grid-2 eu-gap-2 pf-card-links">
+    <a class="eu-card eu-card--inset eu-hstack pf-link" href="/logros"><i data-lucide="trophy" class="fg-brand"></i><span><span class="t-ui">Logros</span><span class="t-meta num">{{ me.badges_earned }} / {{ me.badges_total }}</span></span></a>
+    <a class="eu-card eu-card--inset eu-hstack pf-link" href="/recompensas/"><i data-lucide="gift" class="fg-ec"></i><span><span class="t-ui">Tienda</span><span class="t-meta num">{{ me.ec }} EC</span></span></a>
+  </div>
+</section>
+<nav class="pf-subnav" aria-label="Secciones del perfil">
+  {% for id, icon, label in sections %}
+  <a class="eu-sb-item pf-nav-it" href="#{{ id }}" data-sec-link="{{ id }}">
+    <i data-lucide="{{ icon }}"></i><span class="lbl">{{ label }}</span>
+    {% if counts.get(id) is not none %}<span class="kbd num">{{ counts[id] }}</span>{% endif %}
+    {% if id == 'recordatorios' and stats.rem_urgentes %}<span class="eu-dot pf-urgent" aria-label="{{ stats.rem_urgentes }} próximos"></span>{% endif %}
+  </a>
+  {% endfor %}
+</nav>

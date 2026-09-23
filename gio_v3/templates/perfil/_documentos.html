@@ -1,0 +1,12 @@
+{% from "perfil/_macros.html" import doc_row %}
+<section class="pf-sec eu-vstack" id="sec-documentos" data-sec-panel="documentos" hidden>
+  {% set sec_title, sec_sub = 'Documentos', 'Archivos generales; los ligados a un dato (INE, RFC…) viven junto a ese campo.' %}
+  {% set sec_action = '<label class="eu-btn eu-btn--secondary eu-btn--sm pf-upload"><input type="file" class="js-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip"><i data-lucide="upload"></i>Subir</label>' %}
+  {% include "perfil/_sechead.html" %}
+  <div class="eu-card eu-card--flush">
+    <div class="eu-list" id="docsList">
+      {% for doc in docs %}{{ doc_row(doc) }}{% endfor %}
+    </div>
+    <div class="js-docs-empty"{% if docs %} hidden{% endif %}>{{ ui.empty('file-text', 'Aún no hay documentos', 'Sube contratos, identificaciones o cualquier archivo que quieras tener a la mano.') }}</div>
+  </div>
+</section>

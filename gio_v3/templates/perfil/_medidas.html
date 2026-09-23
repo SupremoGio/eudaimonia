@@ -1,0 +1,118 @@
+{# Medidas corporales (con historial), tallas por marca y plicómetro #}
+{% macro delta_badge(delta, id=None) -%}
+<span class="eu-badge pf-delta{{ ' is-up' if delta is not none and delta > 0 }}{{ ' is-down' if delta is not none and delta < 0 }}"{% if id %} id="{{ id }}"{% endif %}{% if delta is none %} hidden{% endif %}>{% if delta is not none %}{{ ('+' ~ delta) if delta > 0 else (delta if delta < 0 else '=') }}{% endif %}</span>
+{%- endmacro %}
+<section class="pf-sec eu-vstack" id="sec-medidas" data-sec-panel="medidas" hidden>
+  {% set sec_title, sec_sub, sec_action = 'Medidas corporales', 'Cada cambio queda en tu historial para ver si subiste o bajaste.', '' %}
+  {% include "perfil/_sechead.html" %}
+
+  <div class="eu-card">
+    <div class="pf-meas-grid">
+      {% for m in measurements %}
+      {% set hist = meas_history.get(m.key, []) %}
+      {% set prev_val = hist[1].value if hist|length > 1 else None %}
+      {% set curr_num = m.value|float(0) %}
+      {% set prev_num = prev_val|float(0) if prev_val else None %}
+      {% set delta = (curr_num - prev_num)|round(1) if prev_num is not none and curr_num != 0 and prev_num != 0 else None %}
+      {% set empty = m.value == placeholder %}
+      <div class="eu-card eu-card--inset pf-meas" id="meas-cell-{{ m.key }}">
+        <div class="eu-between"><span class="t-meta">{{ m.label }}</span>{{ delta_badge(delta, 'mdelta-' ~ m.key) }}</div>
+        <div class="pf-meas-view" id="mvrow-{{ m.key }}">
+          <span class="t-data pf-meas-val{{ ' is-empty' if empty }}"><span id="mval-{{ m.key }}">{{ '—' if empty else m.value }}</span>{% if m.unit %}<span class="t-meta"> {{ m.unit }}</span>{% endif %}</span>
+          <span class="pf-actions">
+            <button type="button" class="eu-iconbtn js-mcopy" data-key="{{ m.key }}" aria-label="Copiar {{ m.label }}"><i data-lucide="copy"></i></button>
+            <button type="button" class="eu-iconbtn js-medit" data-key="{{ m.key }}" aria-label="Editar {{ m.label }}"><i data-lucide="pencil"></i></button>
+          </span>
+        </div>
+        <form class="pf-field-edit js-medit-form" id="merow-{{ m.key }}" data-key="{{ m.key }}" hidden>
+          <input class="eu-input eu-input--money" id="meinp-{{ m.key }}" value="{{ '' if empty else m.value }}" aria-label="{{ m.label }}" autocomplete="off" inputmode="decimal">
+          <button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">OK</button>
+          <button type="button" class="eu-iconbtn js-mcancel" data-key="{{ m.key }}" aria-label="Cancelar"><i data-lucide="x"></i></button>
+        </form>
+        <details class="pf-hist"{% if not hist %} hidden{% endif %} id="mhistwrap-{{ m.key }}">
+          <summary class="t-meta" id="mhistbtn-{{ m.key }}">Historial ({{ hist|length }})</summary>
+          <div class="pf-hist-list" id="mhist-{{ m.key }}">
+            {% for e in hist %}
+            {% set nxt = hist[loop.index] if loop.index < hist|length else None %}
+            {% set en, nn = e.value|float(0), (nxt.value|float(0) if nxt else None) %}
+            {% set chg = (en - nn)|round(1) if nn is not none and en != 0 and nn != 0 else None %}
+            <div class="eu-between pf-hist-row"><span class="t-meta">{{ e.date }}</span><span class="num">{{ e.value }}</span>{{ delta_badge(chg) if chg is not none else '<span class="t-meta">—</span>'|safe }}</div>
+            {% endfor %}
+          </div>
+        </details>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ── Tallas por marca ── #}
+  <section class="eu-card eu-card--flush pf-block" aria-labelledby="pf-tallas-t">
+    <div class="eu-between pf-block-hd">
+      <div><h2 class="t-card" id="pf-tallas-t">Tallas por marca</h2><div class="t-meta">Camisa · playera · pantalón — varían según la marca</div></div>
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-talla-new"><i data-lucide="plus"></i>Nueva</button>
+    </div>
+    <form class="pf-form js-talla-form" id="tallaForm" hidden autocomplete="off">
+      <div class="eu-grid-3 pf-form-grid">
+        <div class="eu-field"><label class="eu-label" for="tallaPrenda">Prenda</label>
+          <select class="eu-select" id="tallaPrenda"><option value="camisa">Camisa</option><option value="playera">Playera</option><option value="pantalon">Pantalón</option></select></div>
+        <div class="eu-field"><label class="eu-label" for="tallaMarca">Marca</label><input class="eu-input" id="tallaMarca" placeholder="Zara"></div>
+        <div class="eu-field"><label class="eu-label" for="tallaTalla">Talla</label><input class="eu-input" id="tallaTalla" placeholder="M, 32…"></div>
+      </div>
+      <div class="eu-field"><label class="eu-label" for="tallaNotas">Notas</label><input class="eu-input" id="tallaNotas" placeholder="Opcional, ej. corte slim"></div>
+      <div class="pf-form-ft"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-form-close">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button></div>
+    </form>
+    {% set prendas = [('camisa', 'Camisa'), ('playera', 'Playera'), ('pantalon', 'Pantalón')] %}
+    <div class="eu-list" id="tallaList">
+      {% for key, label in prendas if tallas_por_prenda.get(key) %}
+      <div class="t-eyebrow pf-group">{{ label }}</div>
+      {% for t in tallas_por_prenda[key] %}
+      <div class="eu-row" id="tallarow-{{ t.id }}">
+        <div class="eu-row-main"><div class="eu-row-t">{{ t.marca }}</div>{% if t.notas %}<div class="eu-row-s">{{ t.notas }}</div>{% endif %}</div>
+        <span class="t-data pf-talla">{{ t.talla }}</span>
+        <button type="button" class="eu-iconbtn pf-danger js-talla-del" data-id="{{ t.id }}" aria-label="Eliminar talla {{ t.marca }}"><i data-lucide="trash-2"></i></button>
+      </div>
+      {% endfor %}
+      {% endfor %}
+    </div>
+    {% if not tallas_por_prenda %}{{ ui.empty('ruler', 'Sin tallas registradas', 'Anota la talla que usas en cada marca para no adivinar la próxima vez que compres.') }}{% endif %}
+  </section>
+
+  {# ── Plicómetro ── #}
+  <section class="eu-card eu-card--flush pf-block" aria-labelledby="pf-plg-t">
+    <div class="eu-between pf-block-hd">
+      <div><h2 class="t-card" id="pf-plg-t">Grasa corporal · plicómetro</h2><div class="t-meta">Pliegues cutáneos · % grasa · historial</div></div>
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-plg-new"><i data-lucide="plus"></i>Nueva lectura</button>
+    </div>
+    <form class="pf-form js-plg-form" id="plgForm" hidden autocomplete="off">
+      <p class="t-meta pf-p">Registra los valores tal como los leíste (mm, % y categoría); la app no calcula la conversión, solo lleva tu historial.</p>
+      <div class="eu-grid-3 pf-form-grid">
+        <div class="eu-field"><label class="eu-label" for="plgFecha">Fecha</label><input class="eu-input" id="plgFecha" type="date"></div>
+        <div class="eu-field"><label class="eu-label" for="plgMm">Lectura (mm)</label><input class="eu-input eu-input--money" id="plgMm" type="number" step="0.1" inputmode="decimal"></div>
+        <div class="eu-field"><label class="eu-label" for="plgPct">% grasa</label><input class="eu-input eu-input--money" id="plgPct" type="number" step="0.1" inputmode="decimal"></div>
+      </div>
+      <div class="eu-grid-2 pf-form-grid">
+        <div class="eu-field"><label class="eu-label" for="plgCategoria">Categoría</label><input class="eu-input" id="plgCategoria" placeholder="IDEAL — Zona verde"></div>
+        <div class="eu-field"><label class="eu-label" for="plgNotas">Notas</label><input class="eu-input" id="plgNotas" placeholder="Opcional"></div>
+      </div>
+      <div class="pf-form-ft"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-form-close">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button></div>
+    </form>
+    <div class="eu-list" id="plgList">
+      {% for p in pliegue_log %}
+      {% set cl = (p.categoria or '')|lower %}
+      {% set tone = 'success' if ('verde' in cl or 'ideal' in cl) else ('warning' if ('amarilla' in cl or 'aceptable' in cl or 'promedio' in cl or 'moderad' in cl) else ('danger' if ('roja' in cl or 'riesgo' in cl or 'alto' in cl or 'alta' in cl) else '')) %}
+      <div class="eu-row pf-plg" id="plgrow-{{ p.id }}">
+        <div class="eu-row-main">
+          <div class="eu-hstack pf-plg-vals">
+            <span class="t-data">{{ p.porcentaje }}%</span>{{ delta_badge(p.delta_pct) if p.delta_pct is not none }}
+            <span class="t-meta num">{{ p.mm }} mm</span>{{ delta_badge(p.delta_mm) if p.delta_mm is not none }}
+          </div>
+          <div class="eu-row-s">{{ p.fecha }}{% if p.notas %} · {{ p.notas }}{% endif %}</div>
+        </div>
+        {% if p.categoria %}<span class="eu-badge{{ ' eu-badge--' ~ tone if tone }}">{{ p.categoria }}</span>{% endif %}
+        <button type="button" class="eu-iconbtn pf-danger js-plg-del" data-id="{{ p.id }}" aria-label="Eliminar lectura del {{ p.fecha }}"><i data-lucide="trash-2"></i></button>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="js-plg-empty"{% if pliegue_log %} hidden{% endif %}>{{ ui.empty('activity', 'Sin lecturas', 'Usa «Nueva lectura» para registrar la primera.') }}</div>
+  </section>
+</section>

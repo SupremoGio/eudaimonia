@@ -1,0 +1,40 @@
+<section class="pf-sec eu-vstack" id="sec-recordatorios" data-sec-panel="recordatorios" hidden>
+  {% set sec_title, sec_sub = 'Recordatorios', 'Únicos o periódicos; los periódicos se reprograman solos al cumplirlos (+3 XP).' %}
+  {% set sec_action = '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-rem-new"><i data-lucide="plus"></i>Nuevo</button>' %}
+  {% include "perfil/_sechead.html" %}
+  <form class="eu-card pf-form js-rem-form" id="remForm" hidden autocomplete="off">
+    <input type="hidden" id="remEditId" value="">
+    <div class="t-eyebrow" id="remFormLabel">Nuevo recordatorio</div>
+    <div class="eu-field"><label class="eu-label" for="remDesc">Descripción</label><input class="eu-input" id="remDesc" placeholder="Pagar HSBC el día 30"></div>
+    <div class="eu-grid-2 pf-form-grid">
+      <div class="eu-field"><label class="eu-label" for="remType">Tipo</label><select class="eu-select" id="remType"><option value="unico">Único</option><option value="periodico">Periódico</option></select></div>
+      <div class="eu-field"><label class="eu-label" for="remDate">Fecha</label><input class="eu-input" id="remDate" type="date"></div>
+    </div>
+    <div class="eu-grid-2 pf-form-grid" id="remFreqRow" hidden>
+      <div class="eu-field"><label class="eu-label" for="remFreqVal">Cada</label><input class="eu-input" id="remFreqVal" type="number" min="1" value="1"></div>
+      <div class="eu-field"><label class="eu-label" for="remFreqUnit">Unidad</label><select class="eu-select" id="remFreqUnit"><option value="dias">Días</option><option value="semanas">Semanas</option><option value="meses">Meses</option></select></div>
+    </div>
+    <div class="pf-form-ft"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-form-close">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm" id="remSaveBtn">Guardar</button></div>
+  </form>
+  <div class="eu-card eu-card--flush">
+    <div class="eu-list" id="remindersList">
+      {% for r in reminders %}
+      {% set d = r.next_date or r.target_date or '' %}
+      <div class="eu-row pf-rem" id="remrow-{{ r.id }}" data-id="{{ r.id }}" data-desc="{{ r.description }}" data-type="{{ r.type }}"
+           data-date="{{ d }}" data-freqval="{{ r.freq_value or 1 }}" data-frequnit="{{ r.freq_unit or 'dias' }}">
+        <button type="button" class="pf-rem-check js-rem-done" aria-label="Marcar «{{ r.description }}» como hecho"><span class="eu-act-check"><i data-lucide="check"></i></span></button>
+        <div class="eu-row-main">
+          <div class="eu-row-t">{{ r.description }}</div>
+          <div class="eu-row-s">
+            {% if r.type == 'periodico' %}<span class="eu-badge eu-badge--info">cada {{ r.freq_value }} {{ r.freq_unit }}</span>{% if r.next_date %} próx. {{ r.next_date }}{% endif %}
+            {% else %}<span class="eu-badge">único</span>{% if r.target_date %} {{ r.target_date }}{% endif %}{% endif %}
+          </div>
+        </div>
+        <button type="button" class="eu-iconbtn js-rem-edit" aria-label="Editar {{ r.description }}"><i data-lucide="pencil"></i></button>
+        <button type="button" class="eu-iconbtn pf-danger js-rem-del" aria-label="Eliminar {{ r.description }}"><i data-lucide="trash-2"></i></button>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="js-rem-empty"{% if reminders %} hidden{% endif %}>{{ ui.empty('list-todo', 'Nada pendiente', 'Crea un recordatorio único o periódico y aparecerá en el radar de Inicio.') }}</div>
+  </div>
+</section>
