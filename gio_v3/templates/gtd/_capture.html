@@ -1,0 +1,13 @@
+{# Captura rápida: Enter → Inbox (las tareas se clasifican al momento; las ideas van directo al banco) #}
+<form class="eu-card px-capture" id="px-capture" autocomplete="off">
+  <div class="px-cap-row">
+    <div class="eu-input-wrap px-cap-in"><i data-lucide="plus"></i>
+      <input class="eu-input" id="qi" placeholder="Captura rápida… (Enter)" aria-label="Captura rápida" maxlength="300"></div>
+    <button type="submit" class="eu-btn eu-btn--primary"><i data-lucide="inbox"></i><span>Capturar</span></button>
+  </div>
+  <div class="eu-chips" role="group" aria-label="Tipo">
+    <button type="button" class="eu-chip" data-tipo="tarea" aria-pressed="true"><i data-lucide="pin"></i>Tarea</button>
+    <button type="button" class="eu-chip" data-tipo="idea" aria-pressed="false"><i data-lucide="lightbulb"></i>Idea</button>
+    <button type="button" class="eu-chip" data-tipo="mantenimiento" aria-pressed="false"><i data-lucide="wrench"></i>Mantenimiento</button>
+  </div>
+</form>

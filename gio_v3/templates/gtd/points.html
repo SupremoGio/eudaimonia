@@ -1,45 +1,54 @@
-{% extends "gtd_base.html" %}{% set gp='points' %}
-{% block title %}Puntos — PRAXIS{% endblock %}{% block topright %}{% endblock %}
-{% block gtd_body %}
-<div class="pg-hd"><div><div class="pg-t">Puntos & Nivel</div><div class="pg-s">Tu progreso acumulado</div></div></div>
-<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
-  {% for lbl,val in [('Hoy',stats.pts_today),('Semana',stats.pts_week),('Mes',stats.pts_month),('Total',stats.pts_total)] %}
-  <div style="background:var(--card);border:1px solid var(--b);border-radius:8px;padding:16px;text-align:center;animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:{{ (loop.index0 * 0.05) }}s;">
-    <div style="font-family:var(--serif);font-size:2rem;font-weight:300;color:var(--gold);line-height:1;">{{ val }}</div>
-    <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.13em;text-transform:uppercase;margin-top:3px;">{{ lbl }}</div>
-  </div>
-  {% endfor %}
-</div>
-<div style="background:linear-gradient(135deg,#0d0c0a,#100f0c);border:1px solid var(--b2);border-radius:8px;padding:20px 24px;margin-bottom:18px;display:flex;align-items:center;gap:20px;">
-  <div style="font-family:var(--serif);font-size:3.5rem;font-style:italic;color:var(--gold-l);line-height:1;min-width:70px;">{{ stats.level }}</div>
-  <div style="flex:1;">
-    <div style="font-family:var(--serif);font-size:1.4rem;font-style:italic;margin-bottom:5px;color:#F2EDE0;">{{ stats.level_name }}</div>
-    <div style="background:rgba(201,168,76,0.15);border-radius:100px;height:5px;overflow:hidden;margin-bottom:5px;"><div style="width:{{ stats.level_pct }}%;height:100%;background:linear-gradient(90deg,var(--gold),#e8c88a);border-radius:100px;transition:width .8s;"></div></div>
-    <div style="font-size:var(--fs-sm);color:var(--fg-3);">{{ stats.level_pct }}% hacia Nivel {{ stats.level+1 }} — {{ stats.xp_to_next }} XP restantes</div>
-  </div>
-  <div style="text-align:center;">
-    <div style="font-family:var(--serif);font-size:2.2rem;color:var(--gold-l);font-style:italic;font-variant-numeric:lining-nums;">{{ stats.streak }}</div>
-    <div style="font-size:var(--fs-xs);color:var(--fg-3);letter-spacing:.1em;text-transform:uppercase;">Racha días</div>
-  </div>
-</div>
-<div class="tile">
-  <div class="tile-lbl">HISTORIAL RECIENTE</div>
-  <table style="width:100%;border-collapse:collapse;">
-    <thead><tr>{% for h in ['Fecha','Tarea','Tipo','Puntos'] %}<th style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.13em;text-transform:uppercase;padding:0 7px 9px;text-align:left;border-bottom:1px solid var(--b);">{{ h }}</th>{% endfor %}</tr></thead>
-    <tbody>
-    {% for e in log %}
-    <tr style="animation:euFadeIn .4s ease backwards;animation-delay:{{ (loop.index0 * 0.04) }}s;">
-      <td style="padding:8px 7px;border-bottom:1px solid var(--b);font-size:var(--fs-sm);color:var(--dim);">{{ e.date }}</td>
-      <td style="padding:8px 7px;border-bottom:1px solid var(--b);font-size:var(--fs-sm);color:var(--mid);">{{ e.title or '—' }}</td>
-      <td style="padding:8px 7px;border-bottom:1px solid var(--b);">
-        <span style="font-size:var(--fs-xs);padding:2px 6px;border-radius:100px;{% if e.reason=='daily_bonus_3tasks' %}background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--green);{% else %}background:var(--gold-d);border:1px solid rgba(197,163,108,.2);color:var(--gold);{% endif %}">{{ 'BONUS ×3' if e.reason=='daily_bonus_3tasks' else 'completado' }}</span>
-      </td>
-      <td style="padding:8px 7px;border-bottom:1px solid var(--b);font-family:var(--serif);font-size:.95rem;color:var(--green);">+{{ e.points_earned }}</td>
-    </tr>
-    {% else %}
-    <tr><td colspan="4" style="text-align:center;padding:22px;color:var(--dim);font-size:var(--fs-sm);">Sin registros aún</td></tr>
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'gtd' %}
+{% block title %}Puntos — Praxis{% endblock %}
+{% block module_title %}PRAXIS{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/praxis.css') }}">{% endblock %}
+
+{% block content %}
+<div class="px">
+  <header class="px-hd">
+    <div><div class="t-eyebrow">Praxis</div><h1 class="t-page">Puntos y nivel</h1><p class="t-meta px-lead">Tu progreso acumulado por tareas completadas.</p></div>
+    <a class="eu-btn eu-btn--ghost" href="/gtd/"><i data-lucide="list-checks"></i>Ir a Praxis</a>
+  </header>
+
+  <div class="eu-grid-4 px-stats">
+    {% for lbl, val, ic in [('Hoy', stats.pts_today, 'sun'), ('Semana', stats.pts_week, 'calendar-days'), ('Mes', stats.pts_month, 'calendar'), ('Total', stats.pts_total, 'sigma')] %}
+    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="{{ ic }}"></i>{{ lbl }}</div><div class="eu-stat-val">{{ val }}</div></div>
     {% endfor %}
-    </tbody>
-  </table>
+  </div>
+
+  <section class="eu-card px-level" aria-label="Nivel">
+    <div class="eu-level-seal px-seal"><span class="t-data">{{ stats.level }}</span></div>
+    <div class="eu-vstack px-level-main">
+      <div class="t-section">{{ stats.level_name|title }}</div>
+      {{ ui.xpbar(stats.level_pct, 100, label='% del nivel') }}
+      <div class="t-meta">{% if stats.xp_to_next %}{{ stats.level_pct }}% hacia el nivel {{ stats.level + 1 }} · faltan {{ stats.xp_to_next }} XP{% else %}Nivel máximo{% endif %}</div>
+    </div>
+    <div class="px-streak"><div class="t-data">{{ stats.streak }}</div><div class="t-meta">días de racha</div></div>
+  </section>
+
+  <section class="eu-card eu-card--flush" aria-labelledby="px-log-t">
+    <div class="px-sec-tg"><span class="t-card" id="px-log-t">Historial reciente</span></div>
+    {% if log %}
+    <div class="px-table-wrap">
+      <table class="eu-table">
+        <thead><tr><th scope="col">Fecha</th><th scope="col">Tarea</th><th scope="col">Tipo</th><th scope="col" class="r">Puntos</th></tr></thead>
+        <tbody>
+          {% for e in log %}
+          <tr>
+            <td class="fg-3 num">{{ e.date }}</td>
+            <td>{{ e.title or '—' }}</td>
+            <td>{% if e.reason == 'daily_bonus_3tasks' %}<span class="eu-badge eu-badge--success">Bonus ×3</span>{% else %}<span class="eu-badge">Completada</span>{% endif %}</td>
+            <td class="r num fg-success">+{{ e.points_earned }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    {{ ui.empty('trophy', 'Sin registros aún', 'Completa tareas en Praxis para empezar a sumar puntos.', cta='Ir a Praxis', cta_href='/gtd/') }}
+    {% endif %}
+  </section>
 </div>
 {% endblock %}
