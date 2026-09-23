@@ -308,6 +308,17 @@ function setNetWorthHidden(hidden) {
     btn.title = label;
     btn.setAttribute('aria-label', label);
   });
+  /* Botones V2 (Oikonomia): aria-pressed + ícono y texto según el estado */
+  document.querySelectorAll('.js-nw-toggle').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(hidden));
+    const t = btn.querySelector('span');
+    /* Con texto el ícono anuncia la acción; solo-ícono muestra el estado */
+    const icon = t ? (hidden ? 'eye' : 'eye-off') : (hidden ? 'eye-off' : 'eye');
+    const i = btn.querySelector('svg, i');
+    if (i) { const n = document.createElement('i'); n.setAttribute('data-lucide', icon); i.replaceWith(n); }
+    if (t) t.textContent = hidden ? 'Mostrar cifras' : 'Ocultar cifras';
+    else btn.setAttribute('aria-label', hidden ? 'Mostrar cifras' : 'Ocultar cifras');
+  });
   try { lucide.createIcons(); } catch (e) {}
   try { localStorage.setItem('oik_nw_hidden', hidden ? '1' : '0'); } catch (e) {}
 }

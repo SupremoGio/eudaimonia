@@ -1,0 +1,20 @@
+{# Presupuesto por categoría: ≥90% warning, >100% danger #}
+<section class="eu-card eu-vstack oik-budget" aria-labelledby="oik-bud-t">
+  <div class="eu-between">
+    <h2 class="t-card" id="oik-bud-t">Presupuesto{% if budget %} · {{ budget.mes_nombre }}{% endif %}</h2>
+    <a class="t-meta oik-link" href="/finanzas/budget/">Editar <i data-lucide="chevron-right"></i></a>
+  </div>
+  {% if budget_rows %}
+  <div class="eu-vstack oik-bud-rows">
+    {% for r in budget_rows %}
+    <div class="eu-vstack oik-bud-row">
+      <div class="eu-between"><span class="t-ui">{{ r.nombre }}</span>
+        <span class="num oik-bud-amt is-{{ r.tone }}">{{ mx(r.gastado) }} <span class="fg-3">/ {{ mx(r.meta) }}</span></span></div>
+      {{ ui.progress([r.pct, 100]|min, 100, r.tone, label=r.nombre ~ ': ' ~ r.pct ~ '%') }}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="t-meta">Aún no hay gasto clasificado este mes. Sube tu estado de cuenta para ver el avance por categoría.</p>
+  {% endif %}
+</section>

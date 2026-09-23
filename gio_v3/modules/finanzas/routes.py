@@ -7,12 +7,84 @@ from utils import today_str, today_date, clean_str, safe_float
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 
 
+# Días de pago de las tarjetas (no hay fecha de corte en la DB). `match` se
+# busca en el nombre/institución de la cuenta de pasivo para el badge de
+# vencimiento del hub; `label` es el aviso del día de pago.
+PAY_DAYS = [
+    {'match': 'bbva',  'day': 15, 'label': 'BBVA TDC'},
+    {'match': 'invex', 'day': 15, 'label': 'Invex'},
+    {'match': 'hsbc',  'day': 30, 'label': 'HSBC'},
+]
+_MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+             'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+
 def payment_alerts():
     d = today_date().day
-    alerts = []
-    if d == 15: alerts += [{"label":"BBVA TDC","color":"#c5a36c"},{"label":"Invex","color":"#a78bfa"}]
-    if d == 30: alerts.append({"label":"HSBC","color":"#60a5fa"})
-    return alerts
+    return [{'label': p['label']} for p in PAY_DAYS if p['day'] == d]
+
+
+def _days_until(day):
+    """Días hasta el próximo `day` del mes (un 30/31 en meses cortos cae en el último día)."""
+    import calendar
+    from datetime import timedelta
+    t = today_date()
+    for k in range(0, 2):
+        y, m = (t.year, t.month + k) if t.month + k <= 12 else (t.year + 1, 1)
+        last = calendar.monthrange(y, m)[1]
+        due = t.replace(year=y, month=m, day=min(day, last))
+        if due >= t:
+            return (due - t).days
+    return None
+
+
+def _hub_debts(cuentas):
+    """Tarjetas y préstamos activos (salud_cuentas) con su pago mínimo
+    (budget_deudas, por nombre) y días al próximo pago (PAY_DAYS)."""
+    from modules.finanzas.salud import TIPOS_PASIVO, TIPO_META, MONEDAS_EXTRANJERAS
+    try:
+        with get_db() as db:
+            minimos = {(r['nombre'] or '').strip().lower(): r['pago_minimo'] or 0
+                       for r in db.execute("SELECT nombre, pago_minimo FROM budget_deudas WHERE activa=1")}
+    except Exception:
+        minimos = {}
+    out = []
+    for c in cuentas:
+        if c['tipo'] not in TIPOS_PASIVO or c['moneda'] in MONEDAS_EXTRANJERAS or not c['saldo']:
+            continue
+        hay = f"{c['nombre']} {c.get('institucion') or ''}".lower()
+        pay = next((p for p in PAY_DAYS if p['match'] in hay), None)
+        dias = _days_until(pay['day']) if pay else None
+        minimo = next((v for k, v in minimos.items() if k and (k in hay or c['nombre'].lower() in k)), None)
+        out.append({
+            'nombre': c['nombre'],
+            'sub': ' · '.join(filter(None, [TIPO_META.get(c['tipo'], {}).get('label'), c.get('institucion')])),
+            'saldo': c['saldo'], 'minimo': minimo, 'dias': dias,
+            'tone': None if dias is None else 'danger' if dias == 0 else 'warning' if dias <= 7 else '',
+        })
+    out.sort(key=lambda d: (d['dias'] is None, d['dias'] if d['dias'] is not None else 0, -d['saldo']))
+    return out
+
+
+def _hub_budget_rows(bd):
+    """Presupuesto por categoría para el hub: primero las categorías con límite
+    configurado (gastado / límite); si no hay ninguna, los 3 buckets 50/30/20
+    (gastado / meta del bucket). tone: ≥90% warning, >100% danger."""
+    rows = []
+    for bk in bd['buckets'].values():
+        for c in bk['cats']:
+            if c['tiene_limite']:
+                rows.append({'nombre': c['nombre'], 'gastado': c['gastado'], 'meta': c['limite']})
+    if not rows:
+        rows = [{'nombre': bk['label'] if 'label' in bk else k, 'gastado': bk['total_gastado'], 'meta': bk['target_monto']}
+                for k, bk in bd['buckets'].items()]
+    if not any(r['gastado'] or r['meta'] for r in rows):
+        return []
+    for r in rows:
+        r['pct'] = round(r['gastado'] / r['meta'] * 100) if r['meta'] else 0
+        r['tone'] = 'danger' if r['pct'] > 100 else 'warning' if r['pct'] >= 90 else 'brand'
+    rows.sort(key=lambda r: -r['pct'])
+    return rows[:5]
 
 
 @finanzas_bp.route('/')
@@ -39,18 +111,24 @@ def index():
     _nm = 1 if today.month == 12 else today.month + 1
     _ny = today.year + 1 if today.month == 12 else today.year
     mes_ini, mes_fin = f"{cur_mes}-01", f"{_ny}-{_nm:02d}-01"
-    extra = {}
+    extra = {'budget': None, 'budget_rows': []}
 
-    try:  # Presupuesto: disponible + % del ingreso usado (reusa _calc_budget)
+    try:  # Presupuesto del mes (o el último con movimientos): ingreso, gasto, ahorro, categorías
         from modules.finanzas.budget import _calc_budget, _last_month_with_data
         with get_db() as db:
             n_cur = db.execute("SELECT COUNT(*) n FROM est_movimientos "
                                "WHERE fecha>=? AND fecha<?", (mes_ini, mes_fin)).fetchone()['n']
             bmes  = cur_mes if n_cur >= 1 else (_last_month_with_data(db) or cur_mes)
             bd    = _calc_budget(bmes, db)
-        extra['presupuesto_disponible'] = bd['disponible']
-        if bd['ingreso_real']:
-            extra['presupuesto_pct'] = round(bd['total_gastado'] / bd['ingreso_real'] * 100)
+        ing, gas = bd['ingreso_real'], bd['total_gastado']
+        extra['budget'] = {
+            'mes': bmes, 'mes_nombre': _MESES_ES[int(bmes[5:]) - 1], 'ingreso': ing, 'gastado': gas,
+            'disponible': bd['disponible'], 'pct': round(gas / ing * 100) if ing else None,
+            'ahorro_pct': round((ing - gas) / ing * 100) if ing else None,
+            'dias_restantes': bd['dias_mes'] - bd['dia_actual'] if bd['es_mes_actual'] else None,
+            'fuentes': len(bd['ingresos_detalle']),
+        }
+        extra['budget_rows'] = _hub_budget_rows(bd)
     except Exception:
         pass
 
@@ -73,16 +151,26 @@ def index():
     except Exception:
         pass
 
+    from modules.finanzas.salud import MONEDAS_EXTRANJERAS
+    inversiones = sum(c['saldo'] for c in pat['cuentas']
+                      if c['tipo'] == 'inversion' and c['moneda'] not in MONEDAS_EXTRANJERAS)
+    debts = _hub_debts(pat['cuentas'])
+
     return render_template('finanzas/hub.html',
         patrimonio_neto = patrimonio_neto_display,
         total_activos   = pat['total_activos'],
         total_pasivos   = pat['total_pasivos'],
         liquido         = pat['liquido'],
         total_bienes    = pat['total_bienes'],
+        inversiones     = inversiones,
         deudas_neto     = total_owe_me - total_i_owe,
+        owe_me_total    = total_owe_me,
+        i_owe_total     = total_i_owe,
         historial       = pat['historial'],
         pat_delta       = pat_delta,
         pat_delta_pct   = pat_delta_pct,
+        debts           = debts,
+        debts_total     = sum(d['saldo'] for d in debts),
         alerts=payment_alerts(), today=today_str(),
         **extra,
     )

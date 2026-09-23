@@ -1,0 +1,85 @@
+/* ═══════════════════════════════════════════════════════════════
+   Oikonomia Hub (/finanzas/) — Design System V2 · pantalla 06
+   Desktop: wallet 1.3fr + 3 stats · deudas (tabla) | presupuesto ·
+   accesos a submódulos. Móvil: wallet, mes en curso, deudas, accesos.
+   ═══════════════════════════════════════════════════════════════ */
+.oik{display:flex;flex-direction:column;gap:var(--sp-4)}
+.oik h1,.oik h2,.oik p{margin:0}
+.oik [hidden]{display:none!important}
+@media (min-width:1024px){.oik{gap:var(--sp-6)}}
+
+.oik-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.oik-hd .t-page{margin-top:var(--sp-2)}
+.oik-hd-act{gap:var(--sp-2);flex-wrap:wrap}
+@media (max-width:1023px){.oik-hd{display:none}}
+/* En desktop el ojo vive en el encabezado; en móvil, en la topbar */
+@media (min-width:1024px){.eu-topbar .js-nw-toggle{display:none}}
+
+.oik-alert{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-color:var(--warning-border);background:var(--warning-bg);color:var(--warning-fg);font-size:var(--fs-13)}
+.oik-alert svg{width:18px;height:18px;flex-shrink:0}
+
+/* ── Wallet + stats ── */
+.oik-top{display:grid;gap:var(--sp-3)}
+@media (min-width:1024px){.oik-top{grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:var(--sp-4)}}
+.oik-wallet{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:6px;padding:var(--sp-5);border-radius:var(--r-lg);border:1px solid var(--border-default);
+  background:radial-gradient(120% 100% at 100% 0%,var(--ec-bg),transparent 60%),linear-gradient(160deg,var(--bg-raised),var(--bg-surface))}
+.oik-nw{font-size:36px}
+@media (min-width:1024px){.oik-wallet{padding:var(--sp-6);gap:var(--sp-2)}.oik-nw{font-size:44px}}
+.oik-delta{gap:var(--sp-2);flex-wrap:wrap}
+.oik-delta svg{width:12px;height:12px}
+.oik-wallet-foot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2);margin-top:var(--sp-3)}
+.oik-wallet-foot .t-data{font-size:var(--fs-15)}
+@media (min-width:1024px){.oik-wallet-foot{display:none}}
+.oik-stat{display:none}
+@media (min-width:1024px){.oik-stat{display:flex;justify-content:center}}
+.oik-pct{color:var(--fg-3)}
+.oik-pct.is-warn{color:var(--warning-fg)}
+.oik-neg{color:var(--danger-fg)}
+
+.oik-month{gap:var(--sp-3);padding:var(--sp-4);text-decoration:none;color:inherit}
+.oik-month .t-data{font-size:var(--fs-13)}
+@media (min-width:1024px){.oik-month{display:none}}
+
+/* ── Deudas y presupuesto ── */
+.oik-row2{display:grid;gap:var(--sp-4);align-items:start}
+@media (min-width:1024px){.oik-row2{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}}
+.oik-card-hd{padding:var(--sp-4) var(--sp-5) var(--sp-2)}
+.oik-link{display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:var(--fg-3)}
+.oik-link:hover{color:var(--fg-brand)}
+.oik-link svg{width:14px;height:14px}
+.oik-table th:first-child,.oik-table td:first-child{padding-left:var(--sp-5)}
+.oik-table th:last-child,.oik-table td:last-child{padding-right:var(--sp-5)}
+.oik-table tbody tr:last-child td{border-bottom:0}
+.oik-debt-list{display:none}
+@media (max-width:767px){.oik-table{display:none}.oik-debt-list{display:flex}}
+.oik-due{margin-top:4px}
+.oik-personal{padding:var(--sp-3) var(--sp-5);border-top:1px solid var(--border-subtle);text-decoration:none;gap:var(--sp-3);flex-wrap:wrap}
+.oik-personal:hover{background:var(--bg-hover)}
+.oik-debts .eu-empty{padding:var(--sp-6) var(--sp-5)}
+
+.oik-budget{gap:var(--sp-4)}
+.oik-bud-rows{gap:var(--sp-4)}
+.oik-bud-row{gap:6px}
+.oik-bud-amt{font-size:var(--fs-12);color:var(--fg-2)}
+.oik-bud-amt.is-warning{color:var(--warning-fg)}
+.oik-bud-amt.is-danger{color:var(--danger-fg)}
+
+/* ── Submódulos ── */
+.oik-subs{display:grid;grid-template-columns:minmax(0,1fr);gap:0;border:1px solid var(--border-subtle);border-radius:var(--r-lg);overflow:hidden;background:var(--bg-surface)}
+.oik-sub{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);min-height:56px;text-decoration:none;color:inherit;border:0;border-bottom:1px solid var(--border-subtle);border-radius:0;box-shadow:none}
+.oik-sub:last-child{border-bottom:0}
+.oik-sub-ic{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;background:var(--bg-raised);color:var(--fg-brand);flex-shrink:0}
+.oik-sub-ic svg{width:18px;height:18px}
+.oik-sub-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.oik-flag{margin-top:2px}
+.oik-chev{width:16px;height:16px;color:var(--fg-3);flex-shrink:0}
+@media (min-width:768px){
+  .oik-subs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--sp-3);border:0;border-radius:0;overflow:visible;background:none}
+  .oik-sub{flex-direction:column;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-4);border:1px solid var(--border-subtle);border-radius:var(--r-lg);box-shadow:var(--e-1)}
+  .oik-sub:last-child{border-bottom:1px solid var(--border-subtle)}
+  .oik-sub-ic{width:auto;height:auto;background:none}
+  .oik-sub-ic svg{width:20px;height:20px}
+  .oik-chev{display:none}
+}
+.oik-debts .eu-badge--status{text-transform:none}
+@media (max-width:767px){.oik-card-hd{padding:var(--sp-4) var(--sp-4) var(--sp-2)}.oik-personal{padding:var(--sp-3) var(--sp-4)}}

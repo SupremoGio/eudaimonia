@@ -1,0 +1,38 @@
+{# Deudas: tarjetas y préstamos activos con badge de vencimiento #}
+<section class="eu-card eu-card--flush oik-debts" aria-labelledby="oik-debts-t">
+  <div class="eu-between oik-card-hd">
+    <h2 class="t-card" id="oik-debts-t">Deudas</h2>
+    <a class="t-meta oik-link" href="/finanzas/salud/">{% if debts %}<span class="num">{{ hide(mx(debts_total)) }}</span> total{% else %}Patrimonio{% endif %} <i data-lucide="chevron-right"></i></a>
+  </div>
+  {% if debts %}
+  <table class="eu-table oik-table">
+    <thead><tr><th scope="col">Acreedor</th><th scope="col" class="r">Saldo</th><th scope="col" class="r">Mínimo</th><th scope="col">Vence</th></tr></thead>
+    <tbody>
+      {% for d in debts %}
+      <tr>
+        <td><div>{{ d.nombre }}</div><div class="t-meta">{{ d.sub }}</div></td>
+        <td class="r num">{{ hide(mx(d.saldo)) }}</td>
+        <td class="r num fg-2">{{ mx(d.minimo) if d.minimo else '—' }}</td>
+        <td>{% if d.dias is not none %}<span class="eu-badge eu-badge--status{{ ' eu-badge--' ~ d.tone if d.tone }}">{{ 'Hoy' if d.dias == 0 else (d.dias ~ ' d') }}</span>{% else %}<span class="t-meta">—</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="eu-list oik-debt-list">
+    {% for d in debts %}
+    <div class="eu-row">
+      <div class="eu-row-main"><div class="eu-row-t">{{ d.nombre }}</div><div class="eu-row-s">{{ d.sub }}{% if d.minimo %} · mín {{ mx(d.minimo) }}{% endif %}</div></div>
+      <div class="eu-row-end"><div class="eu-amt">{{ hide(mx(d.saldo)) }}</div>{% if d.dias is not none %}<span class="eu-badge eu-badge--status{{ ' eu-badge--' ~ d.tone if d.tone }} oik-due">{{ 'Hoy' if d.dias == 0 else (d.dias ~ ' d') }}</span>{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  {{ ui.empty('credit-card', 'Sin deudas activas', 'Las tarjetas y préstamos que registres en Patrimonio aparecen aquí con su próximo pago.', cta='Ir a Patrimonio', cta_href='/finanzas/salud/') }}
+  {% endif %}
+  {% if owe_me_total or i_owe_total %}
+  <a class="eu-between oik-personal" href="/finanzas/salud/">
+    <span class="t-meta">Deudas personales</span>
+    <span class="t-meta num">{% if owe_me_total %}Te deben <b class="fg-success">{{ mx(owe_me_total) }}</b>{% endif %}{% if owe_me_total and i_owe_total %} · {% endif %}{% if i_owe_total %}Debes <b class="fg-2">{{ mx(i_owe_total) }}</b>{% endif %}</span>
+  </a>
+  {% endif %}
+</section>

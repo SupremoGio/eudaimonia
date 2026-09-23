@@ -1,346 +1,49 @@
-{% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'finanzas' %}
 {% block title %}Oikonomia — Finanzas{% endblock %}
 {% block module_title %}OIKONOMIA{% endblock %}
-{% block topright %}{{ today }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/oikonomia.css') }}">{% endblock %}
+{% block mtitle %}<b>Oikonomia</b><span>Finanzas</span>{% endblock %}
+{% block topright %}<button type="button" class="eu-iconbtn js-nw-toggle" aria-pressed="false" aria-label="Ocultar cifras"><i data-lucide="eye"></i></button>{% endblock %}
+
+{# Formato de dinero: $1,234 · compacto: $1.2k / $1.2M #}
+{% macro mx(v) -%}${{ '{:,.0f}'.format(v or 0) }}{%- endmacro %}
+{% macro mxk(v) -%}
+{%- set a = (v or 0)|abs -%}
+{%- if a >= 1000000 -%}${{ '%.1f'|format(v / 1000000) }}M{%- elif a >= 1000 -%}${{ '%.1f'|format(v / 1000) }}k{%- else -%}${{ '{:,.0f}'.format(v or 0) }}{%- endif -%}
+{%- endmacro %}
+{% macro hide(v) -%}<span class="nw-real">{{ v }}</span><span class="nw-mask">••••</span>{%- endmacro %}
 
 {% block content %}
-<style>
-/* ──────────────────────────────────────────────────────────────
-   OIKONOMIA HUB — responsive
-   PC / laptop (≥820px) → COCKPIT   ·   Celular (<820px) → LEDGER
-   Usa los tokens de layout_sub.html (--gold, --card, --b, etc.)
-   ────────────────────────────────────────────────────────────── */
-.oik .pos{color:var(--emerald-l);} .oik .neg{color:#f0a8a8;} .oik .goldv{color:var(--gold-l);}
-.oik .sec-l{font-size:var(--fs-11);letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin:0 0 12px 2px;}
-.oik .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.oik .delta{display:inline-flex;align-items:center;gap:4px;font-size:11px;letter-spacing:.02em;}
-.oik .delta svg{width:11px;height:11px;}
-.oik a{text-decoration:none;color:inherit;}
+<div class="oik" id="oik">
+  <header class="oik-hd">
+    <div><div class="t-eyebrow">Oikonomia · Finanzas</div><h1 class="t-page">Resumen</h1></div>
+    <div class="eu-hstack oik-hd-act">
+      <button type="button" class="eu-btn eu-btn--ghost js-nw-toggle" aria-pressed="false"><i data-lucide="eye-off"></i><span>Ocultar cifras</span></button>
+      <a class="eu-btn eu-btn--secondary" href="/finanzas/estados/"><i data-lucide="upload"></i>Subir estado</a>
+      <a class="eu-btn eu-btn--primary" href="/finanzas/estados/"><i data-lucide="plus"></i>Registrar gasto</a>
+    </div>
+  </header>
 
-/* ── alertas de pago ── */
-.oik-alerts{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px;}
-.oik-alert{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:6px;
-  background:rgba(255,255,255,.02);font-size:var(--fs-sm);letter-spacing:.07em;}
-.oik-alert svg{width:12px;height:12px;}
+  {% if alerts %}
+  <div class="eu-card oik-alert" role="status">
+    <i data-lucide="bell-ring"></i>
+    <span>Hoy toca pagar {% for a in alerts %}<b>{{ a.label }}</b>{{ ' y ' if loop.revindex == 2 else (', ' if not loop.last) }}{% endfor %}.</span>
+  </div>
+  {% endif %}
 
-/* ──────────────────── DESKTOP · COCKPIT ──────────────────── */
-.oik-desktop{display:none;}
-.vb-top{display:grid;grid-template-columns:400px 1fr;gap:16px;margin-bottom:24px;}
-.vb-nw{position:relative;overflow:hidden;background:linear-gradient(150deg,#1a1510,#241d14 55%,#16110b);
-  border:1px solid var(--b2);border-radius:16px;padding:24px;box-shadow:0 16px 44px -18px rgba(0,0,0,.7);
-  display:flex;flex-direction:column;}
-.vb-nw::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse at 90% 8%,rgba(201,168,76,.14),transparent 55%);}
-.vb-nw-eye{position:relative;font-size:var(--fs-11);letter-spacing:.24em;text-transform:uppercase;color:rgba(232,201,109,.7);margin-bottom:9px;}
-.vb-nw-val{position:relative;font-family:var(--serif);font-size:42px;font-weight:600;color:var(--gold-l);line-height:.95;white-space:nowrap;}
-.vb-nw-val span{font-size:14px;color:rgba(232,201,109,.5);font-family:var(--sans);}
-.vb-nw-trend{position:relative;margin-top:9px;font-size:12px;color:#7BC49A;display:flex;align-items:center;gap:6px;}
-.vb-nw-trend.neg{color:#E59B92;}
-.vb-nw-trend svg{width:13px;height:13px;}
-.vb-spark{position:relative;display:flex;align-items:flex-end;gap:4px;height:54px;margin-top:auto;padding-top:20px;}
-.vb-spark span{flex:1;background:linear-gradient(180deg,rgba(201,168,76,.5),rgba(201,168,76,.1));border-radius:2px 2px 0 0;min-height:3px;}
-.vb-spark span.now{background:linear-gradient(180deg,var(--gold-l),rgba(201,168,76,.3));box-shadow:0 0 10px rgba(201,168,76,.5);}
-.vb-nw-foot{position:relative;display:flex;align-items:center;gap:22px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(201,168,76,.16);}
-.vb-foot-l{font-size:var(--fs-11);letter-spacing:.14em;text-transform:uppercase;color:rgba(242,237,224,.4);margin-bottom:3px;}
-.vb-foot-v{font-family:var(--serif);font-size:18px;}
-.vb-nw-foot .vb-lock{margin-left:auto;width:32px;height:32px;border-radius:8px;border:1px solid var(--b2);
-  background:rgba(201,168,76,.06);color:var(--dim);display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.vb-nw-foot .vb-lock:hover{border-color:var(--red);color:var(--red);}
-.vb-nw-foot .vb-lock svg{width:13px;height:13px;}
-.vb-alloc{background:var(--card);border:1px solid var(--b);border-radius:16px;padding:22px 24px;}
-.vb-alloc-l{font-size:var(--fs-11);letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:18px;}
-.vb-alloc-row{display:flex;align-items:center;gap:30px;margin-bottom:20px;}
-.vb-donut{width:132px;height:132px;border-radius:50%;flex-shrink:0;position:relative;}
-.vb-donut-hole{position:absolute;inset:26px;border-radius:50%;background:var(--card);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;}
-.vb-donut-v{font-family:var(--serif);font-size:22px;color:var(--text);line-height:1;}
-.vb-donut-c{font-size:var(--fs-11);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-top:3px;}
-.vb-legend{flex:1;display:flex;flex-direction:column;gap:11px;}
-.vb-leg{display:flex;align-items:center;gap:10px;}
-.vb-leg-n{flex:1;font-size:13px;color:var(--mid);}
-.vb-leg-p{font-family:var(--serif);font-size:15px;color:var(--text);}
-.vb-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.vb-stat{background:var(--card2);border:1px solid var(--b);border-radius:9px;padding:11px 13px;}
-.vb-stat-v{font-family:var(--serif);font-size:18px;line-height:1;}
-.vb-stat-l{font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:4px;}
-.vb-mods{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
-.vb-card{display:flex;flex-direction:column;background:var(--card2);border:1px solid var(--b);
-  border-radius:13px;padding:17px 18px;cursor:pointer;transition:border-color .18s,transform .18s,background .18s;}
-.vb-card:hover{border-color:var(--b2);transform:translateY(-2px);background:var(--card);}
-.vb-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.vb-ic{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;}
-.vb-ic svg{width:17px;height:17px;}
-.vb-chev{color:var(--dim);display:flex;transition:color .18s;}
-.vb-chev svg{width:15px;height:15px;}
-.vb-card:hover .vb-chev{color:var(--gold);}
-.vb-card-name{font-family:var(--serif);font-size:19px;font-weight:600;color:var(--text);letter-spacing:.02em;}
-.vb-card-desc{font-size:11.5px;color:var(--dim);line-height:1.45;margin-top:3px;min-height:33px;}
-.vb-card-foot{display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px;padding-top:13px;border-top:1px solid var(--b);}
-.vb-card-sv{font-family:var(--serif);font-size:21px;color:var(--text);line-height:1;}
-.vb-card-sl{font-size:var(--fs-11);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-top:4px;}
-@media(min-width:820px) and (max-width:1100px){
-  .vb-top{grid-template-columns:1fr;}
-}
+  {% include "finanzas/hub/_hero.html" %}
 
-/* ──────────────────── MÓVIL · LEDGER ──────────────────── */
-.oik-mobile{display:none;}
-.m-hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#0c0a14,#161020);
-  border:1px solid rgba(201,168,76,.25);border-radius:16px;padding:20px;margin-bottom:20px;box-shadow:0 18px 50px -24px rgba(0,0,0,.7);}
-.m-hero::after{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse at 92% 0%,rgba(201,168,76,.10),transparent 55%);}
-.m-eyebrow{position:relative;font-size:var(--fs-11);letter-spacing:.24em;text-transform:uppercase;color:#E8C96D;margin-bottom:8px;}
-.m-hero-top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
-.m-value{font-family:var(--serif);font-size:38px;font-weight:600;line-height:.95;color:#F2EDE0;white-space:nowrap;}
-.m-value span{font-size:13px;color:var(--fg-3);font-family:var(--sans);}
-.m-trend{margin-top:9px;font-size:12.5px;color:#6ee7b7;display:flex;align-items:center;gap:6px;}
-.m-trend.neg{color:#f0a8a8;}
-.m-trend svg{width:13px;height:13px;}
-.m-lock{flex-shrink:0;width:36px;height:36px;border-radius:9px;border:1px solid rgba(201,168,76,.3);background:rgba(201,168,76,.06);
-  color:var(--fg-3);display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.m-lock svg{width:14px;height:14px;}
-.m-spark{position:relative;width:100%;height:62px;margin-top:16px;display:block;}
-.m-split{position:relative;margin-top:18px;}
-.m-bar{height:9px;border-radius:100px;overflow:hidden;display:flex;gap:2px;}
-.m-bar span{height:100%;border-radius:2px;}
-.m-legend{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:13px;}
-.m-leg{display:flex;align-items:center;gap:7px;font-size:12px;color:#A89880;}
-.m-leg b{color:#F2EDE0;font-weight:500;font-family:var(--serif);font-size:13.5px;}
-.va-mods{display:flex;flex-direction:column;gap:9px;}
-.va-row{display:flex;align-items:center;gap:14px;padding:15px 16px;background:var(--card);
-  border:1px solid var(--b);border-radius:13px;cursor:pointer;transition:border-color .18s,background .18s;}
-.va-row:active{border-color:var(--b2);background:var(--card2);}
-.va-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.va-ic svg{width:18px;height:18px;}
-.va-main{flex:1;min-width:0;}
-.va-name{font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:.02em;line-height:1.1;color:var(--text);}
-.va-sub{font-size:11.5px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.va-val{text-align:right;flex-shrink:0;}
-.va-val-n{font-family:var(--serif);font-size:18px;color:var(--text);line-height:1;white-space:nowrap;}
-.va-val-l{font-size:var(--fs-11);letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:4px;}
-.va-chev{color:var(--dim);flex-shrink:0;display:flex;}
-.va-chev svg{width:16px;height:16px;}
+  <div class="oik-row2">
+    {% include "finanzas/hub/_debts.html" %}
+    {% include "finanzas/hub/_budget.html" %}
+  </div>
 
-/* ── BREAKPOINT SWITCH ── */
-@media(min-width:820px){ .oik-desktop{display:block;} .oik-mobile{display:none;} }
-@media(max-width:819px){ .oik-desktop{display:none;}  .oik-mobile{display:block;} }
-</style>
-
-{# ──────────────── DATA PREP (todo desde el contexto que ya calcula la ruta) ──────────────── #}
-{% set inversiones = (total_activos - total_bienes - liquido) if (liquido is defined and total_bienes is defined) else 0 %}
-{% set act_ref     = [total_activos, 1]|max %}
-{% set p_liq = (liquido / act_ref * 100) if liquido is defined else 0 %}
-{% set p_inv = (inversiones / act_ref * 100) %}
-{% set p_bie = (total_bienes / act_ref * 100) if total_bienes is defined else 0 %}
-{% set tot_bar = [liquido|default(0) + inversiones + total_bienes|default(0) + total_pasivos, 1]|max %}
-{% set deudas  = deudas_neto|default(0) %}
-
-{# sparkline desde historial #}
-{% set spark = (historial|map(attribute='patrimonio_neto')|list)[-10:] if historial else [] %}
-{% set has_spark = spark|length >= 2 %}
-{% if has_spark %}
-  {% set smin = spark|min %}{% set smax = spark|max %}{% set srng = (smax - smin) or 1 %}
-  {% set ns = namespace(line='') %}
-  {% for v in spark %}
-    {% set x = loop.index0 * (320 / (spark|length - 1)) %}
-    {% set y = 64 - ((v - smin) / srng * 58) %}
-    {% set ns.line = ns.line ~ (' ' if not loop.first else '') ~ ('M' if loop.first else 'L') ~ ('%.1f'|format(x)) ~ ' ' ~ ('%.1f'|format(y)) %}
-  {% endfor %}
-{% endif %}
-
-<div class="oik">
-
-{% if alerts %}
-<div class="oik-alerts">
-  {% for a in alerts %}
-  <div class="oik-alert" style="border:1px solid {{a.color}};color:{{a.color}};"><i data-lucide="bell"></i>HOY: PAGAR {{ a.label }}</div>
-  {% endfor %}
+  {% include "finanzas/hub/_subs.html" %}
 </div>
-{% endif %}
-
-{# ──────────────────────────── DESKTOP · COCKPIT ──────────────────────────── #}
-<div class="oik-desktop">
-  <div class="vb-top">
-
-    <div class="vb-nw">
-      <div class="vb-nw-eye">Patrimonio Neto</div>
-      <div class="vb-nw-val"><span class="nw-real">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></span><span class="nw-mask">••••••</span></div>
-      {% if pat_delta is not none and pat_delta_pct is not none %}
-      <div class="vb-nw-trend nw-hide-block {% if pat_delta < 0 %}neg{% endif %}">
-        <i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i>
-        <span>{% if pat_delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(pat_delta) }} · {{ pat_delta_pct }}% vs anterior</span>
-      </div>
-      {% endif %}
-
-      {% if has_spark %}
-      <div class="vb-spark">
-        {% for v in spark %}
-        <span class="{% if loop.last %}now{% endif %}" style="height:{{ [ (8 + (v - smin) / srng * 92)|round(0,'floor')|int, 4]|max }}%"></span>
-        {% endfor %}
-      </div>
-      {% endif %}
-
-      <div class="vb-nw-foot">
-        <div><div class="vb-foot-l">Activos</div><div class="vb-foot-v pos"><span class="nw-real">${{ "{:,.0f}".format(total_activos) }}</span><span class="nw-mask">••••</span></div></div>
-        <div><div class="vb-foot-l">Pasivos</div><div class="vb-foot-v neg">−${{ "{:,.0f}".format(total_pasivos) }}</div></div>
-        <button class="vb-lock" onclick="toggleNetWorth()" title="Ocultar patrimonio" aria-label="Ocultar patrimonio"><i data-lucide="eye"></i></button>
-      </div>
-    </div>
-
-    <div class="vb-alloc">
-      <div class="vb-alloc-l">Composición de activos</div>
-      <div class="vb-alloc-row">
-        <div class="vb-donut" style="background:conic-gradient(#60a5fa 0 {{ '%.1f'|format(p_liq) }}%,var(--emerald) {{ '%.1f'|format(p_liq) }}% {{ '%.1f'|format(p_liq + p_inv) }}%,var(--gold) {{ '%.1f'|format(p_liq + p_inv) }}% 100%);">
-          <div class="vb-donut-hole">
-            <div class="vb-donut-v"><span class="nw-real">${{ "{:,.0f}".format(total_activos / 1000) }}K</span><span class="nw-mask">••••</span></div>
-            <div class="vb-donut-c">activos</div>
-          </div>
-        </div>
-        <div class="vb-legend">
-          <div class="vb-leg"><span class="dot" style="background:#60a5fa"></span><span class="vb-leg-n">Líquido</span><span class="vb-leg-p">{{ p_liq|round|int }}%</span></div>
-          <div class="vb-leg"><span class="dot" style="background:var(--emerald)"></span><span class="vb-leg-n">Inversiones</span><span class="vb-leg-p">{{ p_inv|round|int }}%</span></div>
-          <div class="vb-leg"><span class="dot" style="background:var(--gold)"></span><span class="vb-leg-n">Bienes</span><span class="vb-leg-p">{{ p_bie|round|int }}%</span></div>
-        </div>
-      </div>
-      <div class="vb-stats">
-        <div class="vb-stat"><div class="vb-stat-v pos"><span class="nw-real">${{ "{:,.0f}".format(total_activos) }}</span><span class="nw-mask">••••</span></div><div class="vb-stat-l">Activos</div></div>
-        <div class="vb-stat"><div class="vb-stat-v neg">−${{ "{:,.0f}".format(total_pasivos) }}</div><div class="vb-stat-l">Pasivos</div></div>
-        <div class="vb-stat"><div class="vb-stat-v goldv">${{ "{:,.0f}".format(total_bienes|default(0)) }}</div><div class="vb-stat-l">Bienes</div></div>
-        <div class="vb-stat"><div class="vb-stat-v {% if deudas >= 0 %}pos{% else %}neg{% endif %}">{% if deudas >= 0 %}+{% endif %}${{ "{:,.0f}".format(deudas) }}</div><div class="vb-stat-l">Deudas pers.</div></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="sec-l">Módulos</div>
-  <div class="vb-mods">
-    <a class="vb-card" href="/finanzas/salud/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:0s;">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:var(--gold)"><i data-lucide="landmark"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
-      <div class="vb-card-name">Patrimonio</div>
-      <div class="vb-card-desc">Cuentas · inversiones · bienes · deudas</div>
-      <div class="vb-card-foot"><div><div class="vb-card-sv"><span class="nw-real">${{ "{:,.0f}".format(total_activos) }}</span><span class="nw-mask">••••</span></div><div class="vb-card-sl">Activos</div></div></div>
-    </a>
-    <a class="vb-card" href="/finanzas/budget/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.035s;">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:var(--emerald)"><i data-lucide="pie-chart"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
-      <div class="vb-card-name">Presupuesto</div>
-      <div class="vb-card-desc">Regla 50/30/20 · necesidades · deseos · ahorro</div>
-      {% if presupuesto_disponible is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="vb-card-sl">Disponible</div></div>{% if presupuesto_pct is defined %}<span class="delta" style="color:var(--emerald-l)">{{ presupuesto_pct }}% usado</span>{% endif %}</div>{% endif %}
-    </a>
-    <a class="vb-card" href="/finanzas/estados/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.07s;">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(96,165,250,.11);border:1px solid rgba(96,165,250,.34);color:#60a5fa"><i data-lucide="list"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
-      <div class="vb-card-name">Estado de Cuenta</div>
-      <div class="vb-card-desc">Movimientos bancarios · clasificación · importar</div>
-      {% if estado_sin_clasificar is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">{{ estado_sin_clasificar }}</div><div class="vb-card-sl">Sin clasificar</div></div>{% if estado_total_movs is defined %}<span class="delta" style="color:var(--dim)">{{ estado_total_movs }} movs</span>{% endif %}</div>{% endif %}
-    </a>
-    <a class="vb-card" href="/finanzas/consumo/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.105s;">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
-      <div class="vb-card-name">Consumo</div>
-      <div class="vb-card-desc">Análisis de gastos · tendencias · categorías</div>
-      {% if consumo_mes is defined %}<div class="vb-card-foot"><div><div class="vb-card-sv">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="vb-card-sl">Gasto del mes</div></div>{% if consumo_delta_pct is defined %}<span class="delta" style="color:{% if consumo_delta_pct <= 0 %}#f0a8a8{% else %}var(--emerald-l){% endif %}">{{ consumo_delta_pct }}% vs mes ant.</span>{% endif %}</div>{% endif %}
-    </a>
-    <a class="vb-card" href="/finanzas/prioridades/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.14s;">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:var(--amber)"><i data-lucide="star"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
-      <div class="vb-card-name">Wishlist</div>
-      <div class="vb-card-desc">Deseos · compras · prioridades</div>
-    </a>
-    <a class="vb-card" href="/finanzas/inversiones/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.175s;">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(34,197,94,.11);border:1px solid rgba(34,197,94,.34);color:#22c55e"><i data-lucide="trending-up"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
-      <div class="vb-card-name">Inversiones</div>
-      <div class="vb-card-desc">Portafolio · rendimientos</div>
-    </a>
-    <a class="vb-card" href="/finanzas/estados/viajes/" style="animation:euRise .45s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.21s;">
-      <div class="vb-card-top"><span class="vb-ic" style="background:rgba(34,211,238,.11);border:1px solid rgba(34,211,238,.34);color:#22d3ee"><i data-lucide="plane"></i></span><span class="vb-chev"><i data-lucide="chevron-right"></i></span></div>
-      <div class="vb-card-name">Viajes</div>
-      <div class="vb-card-desc">Presupuesto y gasto por viaje</div>
-    </a>
-  </div>
-</div>
-
-{# ──────────────────────────── MÓVIL · LEDGER ──────────────────────────── #}
-<div class="oik-mobile">
-  <div class="m-hero">
-    <div class="m-eyebrow">Patrimonio Neto</div>
-    <div class="m-hero-top">
-      <div>
-        <div class="m-value"><span class="nw-real">{% if patrimonio_neto >= 0 %}+{% endif %}${{ "{:,.0f}".format(patrimonio_neto) }}<span> MXN</span></span><span class="nw-mask">••••••</span></div>
-        {% if pat_delta is not none and pat_delta_pct is not none %}
-        <div class="m-trend nw-hide-block {% if pat_delta < 0 %}neg{% endif %}"><i data-lucide="{% if pat_delta >= 0 %}arrow-up-right{% else %}arrow-down-right{% endif %}"></i><span>{% if pat_delta >= 0 %}+{% endif %}${{ "{:,.0f}".format(pat_delta) }} · {{ pat_delta_pct }}%</span></div>
-        {% endif %}
-      </div>
-      <button class="m-lock" onclick="toggleNetWorth()" title="Ocultar patrimonio" aria-label="Ocultar patrimonio"><i data-lucide="eye"></i></button>
-    </div>
-
-    {% if has_spark %}
-    <svg class="m-spark" viewBox="0 0 320 70" preserveAspectRatio="none">
-      <defs><linearGradient id="mFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(201,168,76,.30)"/><stop offset="1" stop-color="rgba(201,168,76,0)"/></linearGradient></defs>
-      <path d="{{ ns.line }} L320 70 L0 70 Z" fill="url(#mFill)" stroke="none"/>
-      <path d="{{ ns.line }}" fill="none" stroke="var(--gold-l)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    {% endif %}
-
-    <div class="m-split">
-      <div class="m-bar">
-        <span style="width:{{ '%.1f'|format(liquido|default(0) / tot_bar * 100) }}%;background:#60a5fa"></span>
-        <span style="width:{{ '%.1f'|format(inversiones / tot_bar * 100) }}%;background:var(--emerald)"></span>
-        <span style="width:{{ '%.1f'|format(total_bienes|default(0) / tot_bar * 100) }}%;background:var(--gold)"></span>
-        <span style="width:{{ '%.1f'|format(total_pasivos / tot_bar * 100) }}%;background:var(--coral)"></span>
-      </div>
-      <div class="m-legend">
-        <span class="m-leg"><span class="dot" style="background:#60a5fa"></span>Líquido <b>${{ "{:,.0f}".format(liquido|default(0)) }}</b></span>
-        <span class="m-leg"><span class="dot" style="background:var(--emerald)"></span>Inversiones <b>${{ "{:,.0f}".format(inversiones) }}</b></span>
-        <span class="m-leg"><span class="dot" style="background:var(--gold)"></span>Bienes <b>${{ "{:,.0f}".format(total_bienes|default(0)) }}</b></span>
-        <span class="m-leg"><span class="dot" style="background:var(--coral)"></span>Pasivos <b>${{ "{:,.0f}".format(total_pasivos) }}</b></span>
-      </div>
-    </div>
-  </div>
-
-  <div class="sec-l">Módulos</div>
-  <div class="va-mods">
-    <a class="va-row" href="/finanzas/salud/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:0s;">
-      <span class="va-ic" style="background:rgba(201,168,76,.11);border:1px solid rgba(201,168,76,.34);color:var(--gold)"><i data-lucide="landmark"></i></span>
-      <div class="va-main"><div class="va-name">Patrimonio</div><div class="va-sub">Cuentas · inversiones · bienes</div></div>
-      <div class="va-val"><div class="va-val-n"><span class="nw-real">${{ "{:,.0f}".format(total_activos) }}</span><span class="nw-mask">••••</span></div><div class="va-val-l">Activos</div></div>
-      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
-    </a>
-    <a class="va-row" href="/finanzas/budget/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.03s;">
-      <span class="va-ic" style="background:rgba(16,185,129,.11);border:1px solid rgba(16,185,129,.34);color:var(--emerald)"><i data-lucide="pie-chart"></i></span>
-      <div class="va-main"><div class="va-name">Presupuesto</div><div class="va-sub">Regla 50/30/20 · ahorro</div></div>
-      {% if presupuesto_disponible is defined %}<div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(presupuesto_disponible) }}</div><div class="va-val-l">Disponible</div></div>{% endif %}
-      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
-    </a>
-    <a class="va-row" href="/finanzas/estados/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.06s;">
-      <span class="va-ic" style="background:rgba(96,165,250,.11);border:1px solid rgba(96,165,250,.34);color:#60a5fa"><i data-lucide="list"></i></span>
-      <div class="va-main"><div class="va-name">Estado de Cuenta</div><div class="va-sub">Movimientos · clasificación</div></div>
-      {% if estado_sin_clasificar is defined %}<div class="va-val"><div class="va-val-n">{{ estado_sin_clasificar }}</div><div class="va-val-l">Sin clasificar</div></div>{% endif %}
-      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
-    </a>
-    <a class="va-row" href="/finanzas/consumo/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.09s;">
-      <span class="va-ic" style="background:rgba(251,146,60,.11);border:1px solid rgba(251,146,60,.34);color:#fb923c"><i data-lucide="bar-chart-2"></i></span>
-      <div class="va-main"><div class="va-name">Consumo</div><div class="va-sub">Gastos · tendencias</div></div>
-      {% if consumo_mes is defined %}<div class="va-val"><div class="va-val-n">${{ "{:,.0f}".format(consumo_mes) }}</div><div class="va-val-l">Gasto · mes</div></div>{% endif %}
-      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
-    </a>
-    <a class="va-row" href="/finanzas/prioridades/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.12s;">
-      <span class="va-ic" style="background:rgba(245,158,11,.11);border:1px solid rgba(245,158,11,.34);color:var(--amber)"><i data-lucide="star"></i></span>
-      <div class="va-main"><div class="va-name">Wishlist</div><div class="va-sub">Deseos · compras · prioridades</div></div>
-      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
-    </a>
-    <a class="va-row" href="/finanzas/inversiones/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.15s;">
-      <span class="va-ic" style="background:rgba(34,197,94,.11);border:1px solid rgba(34,197,94,.34);color:#22c55e"><i data-lucide="trending-up"></i></span>
-      <div class="va-main"><div class="va-name">Inversiones</div><div class="va-sub">Portafolio · rendimientos</div></div>
-      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
-    </a>
-    <a class="va-row" href="/finanzas/estados/viajes/" style="animation:euRise .4s cubic-bezier(.2,1,.3,1) backwards;animation-delay:.18s;">
-      <span class="va-ic" style="background:rgba(34,211,238,.11);border:1px solid rgba(34,211,238,.34);color:#22d3ee"><i data-lucide="plane"></i></span>
-      <div class="va-main"><div class="va-name">Viajes</div><div class="va-sub">Presupuesto por viaje</div></div>
-      <span class="va-chev"><i data-lucide="chevron-right"></i></span>
-    </a>
-  </div>
-</div>
-
-</div>{# /.oik #}
 {% endblock %}
 
 {% block scripts %}
-<script>
-lucide.createIcons();
-</script>
+<script src="{{ url_for('static', filename='js/oikonomia.js') }}"></script>
 {% endblock %}

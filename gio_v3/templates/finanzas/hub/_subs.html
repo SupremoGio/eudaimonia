@@ -1,0 +1,19 @@
+{# Accesos a submódulos (mismas URLs que NAV) #}
+{% set subs = [
+  ('/finanzas/estados/', 'receipt', 'Movimientos', (estado_total_movs ~ ' este mes') if estado_total_movs is defined else 'Estados de cuenta', (estado_sin_clasificar ~ ' sin clasificar') if estado_sin_clasificar else ''),
+  ('/finanzas/budget/', 'pie-chart', 'Presupuesto', ((budget.pct ~ '% usado') if budget and budget.pct is not none else 'Regla 50/30/20'), ''),
+  ('/finanzas/consumo/', 'shopping-cart', 'Consumo', ((mx(consumo_mes) ~ ' este mes') if consumo_mes is defined else 'Gastos y tendencias'), ''),
+  ('/finanzas/inversiones/', 'trending-up', 'Inversiones', mxk(inversiones) if inversiones else 'Portafolio', ''),
+  ('/finanzas/salud/', 'scale', 'Patrimonio', mxk(total_activos) ~ ' en activos', ''),
+  ('/finanzas/prioridades/', 'star', 'Wishlist', 'Deseos y prioridades', ''),
+  ('/finanzas/estados/viajes/', 'plane', 'Gastos de viaje', 'Presupuesto por viaje', ''),
+] %}
+<nav class="oik-subs" aria-label="Submódulos de Oikonomia">
+  {% for url, icon, label, sub, flag in subs %}
+  <a class="eu-card eu-card--interactive oik-sub" href="{{ url }}">
+    <span class="oik-sub-ic"><i data-lucide="{{ icon }}"></i></span>
+    <span class="oik-sub-t"><span class="t-ui">{{ label }}</span><span class="t-meta{{ ' nw-sub' if icon in ['scale', 'trending-up'] }}">{% if icon in ['scale', 'trending-up'] %}{{ hide(sub) }}{% else %}{{ sub }}{% endif %}</span>{% if flag %}<span class="eu-badge eu-badge--warning oik-flag">{{ flag }}</span>{% endif %}</span>
+    <i data-lucide="chevron-right" class="oik-chev"></i>
+  </a>
+  {% endfor %}
+</nav>
