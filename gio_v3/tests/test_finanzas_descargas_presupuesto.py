@@ -78,7 +78,9 @@ def test_presupuesto_csv_gasto_por_categoria_y_mes(client, test_db):
     viv = by[('Necesidades', 'Vivienda')]
     assert [float(v) for v in viv[2:5]] == [1000.0, 3000.0, 2000.0]
     assert float(by[('Deseos', 'Ocio')][3]) == 500.0
-    assert float(by[('Resumen', 'Ingreso')][3]) == 10000.0
+    # NOMINA_X no es NOMINA/Pago nominal: cuenta como extraordinario (paso 3).
+    assert float(by[('Resumen', 'Ingreso recurrente')][3]) == 0.0
+    assert float(by[('Resumen', 'Ingreso extraordinario')][3]) == 10000.0
 
 
 def test_presupuesto_csv_parametros_invalidos(client, test_db):

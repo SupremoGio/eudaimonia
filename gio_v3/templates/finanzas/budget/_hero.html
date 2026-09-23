@@ -20,11 +20,21 @@
       <div class="bg-ring-c"><span class="t-data bg-ring-v">{{ pct_gastado|round|int }}%</span><span class="t-meta">gastado</span></div>
     </div>
     <dl class="bg-flow">
-      <div><dt class="t-meta">Ingreso del mes{% if ingreso_es_override %} <span class="eu-badge eu-badge--warning">manual</span>{% endif %}</dt><dd class="t-data bg-ing">{{ money(ingreso_real) }}</dd></div>
+      <div><dt class="t-meta">Ingreso recurrente{% if ingreso_es_override %} <span class="eu-badge eu-badge--warning">manual</span>{% endif %}</dt><dd class="t-data bg-ing">{{ money(ingreso_real) }}</dd></div>
       <div><dt class="t-meta">Disponible</dt><dd class="t-data bg-disp" data-tone="{{ 'success' if disponible >= 0 else 'danger' }}">{{ money(disponible) }}</dd></div>
       <div><dt class="t-meta">Gasto total</dt><dd class="t-data">{{ money(total_gastado) }}</dd></div>
     </dl>
   </div>
+  {#- El extraordinario (bonos, PTU, regalos…) no entra a Disponible ni a las metas. -#}
+  {% if ingreso_extraordinario %}
+  <p class="t-meta bg-extra"><i data-lucide="sparkles" aria-hidden="true"></i>Ingreso extraordinario <b class="t-data">{{ '+' if ingreso_extraordinario > 0 }}{{ money(ingreso_extraordinario) }}</b> · no cuenta para Disponible ni para las metas</p>
+  {% endif %}
+  {% if ingreso_real == 0 %}
+  <form class="bg-manual bg-manual--inline" id="f-ingreso" novalidate>
+    <label class="eu-label" for="ingreso-manual-input">Aún no hay nómina este mes: captura tu ingreso recurrente</label>
+    <div class="eu-hstack bg-manual-row"><input class="eu-input eu-input--money" type="number" min="0" inputmode="decimal" id="ingreso-manual-input" placeholder="Ej: 20000"><button type="submit" class="eu-btn eu-btn--primary">Guardar</button></div>
+  </form>
+  {% endif %}
   <div class="bg-seg-wrap">
     <div class="bg-seg" role="img" aria-label="Gasto sobre el ingreso: necesidades {{ seg.necesidades }}%, deseos {{ seg.deseos }}%, ahorro {{ seg.ahorro_deuda }}%">
       {% for k, c in [('necesidades','ataraxia'),('deseos','cosmopolitismo'),('ahorro_deuda','paideia')] %}

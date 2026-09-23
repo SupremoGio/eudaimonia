@@ -22,6 +22,9 @@
 .bg-manual{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);padding:var(--sp-4) 0 var(--sp-6);border-top:1px solid var(--border-subtle);width:100%;max-width:360px}
 .bg-manual-row{gap:var(--sp-2)}
 .bg-manual .eu-input{width:160px}
+.bg-manual--inline{align-items:flex-start;max-width:none;padding:var(--sp-3) 0 0}
+.bg-extra{display:flex;align-items:center;gap:var(--sp-2);margin:0;padding-top:var(--sp-3);border-top:1px solid var(--border-subtle)}
+.bg-extra svg{width:14px;height:14px;color:var(--fg-brand)}
 
 /* Hero */
 .bg-hero{display:flex;flex-direction:column;gap:var(--sp-5);border-top:3px solid var(--tone-fg)}

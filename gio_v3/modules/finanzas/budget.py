@@ -85,8 +85,10 @@ CATEGORIA_BUCKET = {
 # cambiara su categoria habrían empezado a contarse de más como ingreso
 # real -- el usuario pidió explícitamente evitar eso. Se dejan también los
 # nombres viejos por si queda alguna fila sin migrar.
+# PRESTAMOS: una devolución de préstamo no es ingreso, solo baja el pendiente
+# en «Por cobrar» (Estados de cuenta ya lo excluía; aquí faltaba).
 _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO',
-                     'APORTACION_RENTA', 'FINANZAS')
+                     'APORTACION_RENTA', 'FINANZAS', 'PRESTAMOS')
 
 # Fila sintética de la Radiografía: aportaciones − retiros de tipo INVERSION.
 INVERSIONES_NETAS = '__INVERSIONES__'
@@ -130,6 +132,40 @@ def _inversiones_mes(db, desde, hasta):
           AND fecha >= ? AND fecha < ?""", (desde, hasta)).fetchone()
     aport, ret = round(float(r['aport']), 2), round(float(r['ret']), 2)
     return {'aportado': aport, 'retirado': ret, 'neto': round(aport - ret, 2), 'n': int(r['n'])}
+
+
+# Ingreso recurrente: el sueldo = NOMINA / Pago nominal. También NOMINA sin
+# subcategoría: la regla automática solo etiqueta «Pago nominal» a la nómina
+# de $9k-12k, y las nóminas viejas o fuera de rango quedaron sin subcategoría;
+# Bono / PTU / Fondo de ahorro siempre llevan la suya. Lo demás (bonos, PTU, fondo de ahorro,
+# regalos, reembolsos de siniestro…) es extraordinario: se muestra aparte y no
+# entra a Disponible ni a las metas, para que un mes con un extra grande no
+# esconda el déficit del sueldo. Las devoluciones de préstamos no son ingreso
+# (categoría PRESTAMOS, en _INGRESO_EXCLUIR).
+_RECURRENTE_CAT, _RECURRENTE_SUBS = 'NOMINA', ('Pago nominal', '')
+
+
+def _ingresos_mes(db, mes, desde, hasta):
+    """{'total', 'recurrente', 'extraordinario', 'base', 'es_override'}. base
+    es el recurrente; si en el mes no hay, el ingreso manual del mes
+    (budget_meses) si lo hay, y si no, 0."""
+    excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
+    r = db.execute(
+        f"""SELECT COALESCE(SUM(monto), 0) AS total,
+                  COALESCE(SUM(CASE WHEN categoria=? AND COALESCE(subcategoria, '') IN (?, ?)
+                                    THEN monto END), 0) AS recurrente
+           FROM est_movimientos
+           WHERE tipo='INGRESO' AND categoria NOT IN ({excl_ph})
+             AND fecha >= ? AND fecha < ?""",
+        [_RECURRENTE_CAT, *_RECURRENTE_SUBS, *_INGRESO_EXCLUIR, desde, hasta]).fetchone()
+    total, recurrente = round(float(r['total']), 2), round(float(r['recurrente']), 2)
+    base, es_override = recurrente, False
+    if recurrente <= 0:
+        ov = db.execute("SELECT ingreso_total FROM budget_meses WHERE mes=?", (mes,)).fetchone()
+        if ov and ov['ingreso_total']:
+            base, es_override = float(ov['ingreso_total']), True
+    return {'total': total, 'recurrente': recurrente,
+            'extraordinario': round(total - recurrente, 2), 'base': base, 'es_override': es_override}
 
 
 # Categorías de GASTO que no son consumo y nunca entran a la Radiografía
@@ -184,7 +220,6 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
     `max_meses` (más antiguo primero) con status 'ok' | 'over' | 'sin_datos',
     para pintar una tira tipo heatmap.
     """
-    excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
     y, m = int(mes_hasta[:4]), int(mes_hasta[5:])
 
     meses = []
@@ -206,12 +241,7 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
             meses.append({'mes': mes, 'status': 'sin_datos'})
             racha_rota = True
         else:
-            ingreso = db.execute(
-                f"""SELECT COALESCE(SUM(monto),0) t FROM est_movimientos
-                   WHERE tipo='INGRESO' AND categoria NOT IN ({excl_ph})
-                     AND fecha >= ? AND fecha < ?""",
-                list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
-            ).fetchone()['t']
+            ingreso = _ingresos_mes(db, mes, mes_inicio, mes_fin)['base']
             gasto = db.execute(
                 f"""SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
                    WHERE tipo='GASTO'
@@ -252,25 +282,11 @@ def _calc_budget(mes, db):
 
     excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
 
-    # ── Ingreso real
-    ingreso_row = db.execute(
-        f"""SELECT SUM(monto) AS total
-           FROM est_movimientos
-           WHERE tipo='INGRESO'
-             AND categoria NOT IN ({excl_ph})
-             AND fecha >= ? AND fecha < ?""",
-        list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
-    ).fetchone()
-    ingreso_real = float(ingreso_row['total'] or 0)
-    ingreso_es_override = False
-
-    if ingreso_real == 0:
-        ov = db.execute(
-            "SELECT ingreso_total FROM budget_meses WHERE mes=?", (mes,)
-        ).fetchone()
-        if ov and ov['ingreso_total']:
-            ingreso_real = float(ov['ingreso_total'])
-            ingreso_es_override = True
+    # ── Ingreso: Disponible y metas 50-30-20 usan solo el recurrente (ver
+    #    _ingresos_mes); el extraordinario se muestra aparte.
+    ing = _ingresos_mes(db, mes, mes_inicio, mes_fin)
+    ingreso_real = ing['base']
+    ingreso_es_override = ing['es_override']
 
     # ── Gasto real por categoría
     spending_rows = db.execute(
@@ -428,8 +444,11 @@ def _calc_budget(mes, db):
     proyeccion    = round(consumo / dia_actual * dias_mes + inv['neto']) if dia_actual > 0 and total_gastado > 0 else 0
 
     return {
-        'ingreso_real':       ingreso_real,
+        'ingreso_real':       ingreso_real,          # base: recurrente (o manual)
         'ingreso_es_override':ingreso_es_override,
+        'ingreso_recurrente': ing['recurrente'],
+        'ingreso_extraordinario': ing['extraordinario'],
+        'ingreso_total':      ing['total'],
         'ingresos_detalle':   [dict(r) for r in ingresos_rows],
         'n_movimientos':      n_movimientos,
         'total_gastado':      total_gastado,
@@ -531,7 +550,8 @@ def export_csv():
         rows.append(fila(BUCKET_META[bk]['label'], f"Subtotal (meta {BUCKET_META[bk]['pct_target']} % del ingreso)",
                          [datos[mes]['buckets'][bk]['total_gastado'] for mes in meses]))
     rows.append([])
-    rows.append(fila('Resumen', 'Ingreso', [datos[mes]['ingreso_real'] for mes in meses]))
+    rows.append(fila('Resumen', 'Ingreso recurrente', [datos[mes]['ingreso_real'] for mes in meses]))
+    rows.append(fila('Resumen', 'Ingreso extraordinario', [datos[mes]['ingreso_extraordinario'] for mes in meses]))
     rows.append(fila('Resumen', 'Gasto total', [datos[mes]['total_gastado'] for mes in meses]))
     rows.append(fila('Resumen', 'Disponible', [datos[mes]['disponible'] for mes in meses]))
 

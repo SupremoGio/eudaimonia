@@ -82,3 +82,55 @@ def test_neto_negativo_se_muestra_negativo(test_db):
         d = _calc_budget('2026-09', db)
     assert d['buckets']['ahorro_deuda']['total_gastado'] == -4000
     assert d['seg']['ahorro_deuda'] == 0          # la barra no pinta anchos negativos
+
+
+# ── 3. Ingreso recurrente vs. extraordinario ─────────────────────────────────
+
+def test_disponible_y_metas_usan_solo_el_recurrente(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 20000, tipo='INGRESO', sub='Pago nominal')
+        _mov(db, 'NOMINA', 5000, tipo='INGRESO', sub='Bono')
+        _mov(db, 'NOMINA', 3000, tipo='INGRESO', sub='PTU')
+        _mov(db, 'FAMILIA_REGALOS', 50000, tipo='INGRESO', sub='Regalos')
+        _mov(db, 'PRESTAMOS', 1000, tipo='INGRESO')                    # devolución: no es ingreso
+        _mov(db, 'OCIO', 1000)
+        d = _calc_budget('2026-09', db)
+    assert d['ingreso_recurrente'] == 20000
+    assert d['ingreso_extraordinario'] == 58000
+    assert d['ingreso_real'] == 20000
+    assert d['disponible'] == 19000
+    assert d['buckets']['necesidades']['target_monto'] == 10000
+    assert d['buckets']['deseos']['target_monto'] == 6000
+
+
+def test_nomina_sin_subcategoria_cuenta_como_recurrente(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 18000, tipo='INGRESO', sub='')
+        _mov(db, 'NOMINA', 4000, tipo='INGRESO', sub='Fondo de ahorro')
+        d = _calc_budget('2026-09', db)
+    assert (d['ingreso_recurrente'], d['ingreso_extraordinario']) == (18000, 4000)
+
+
+def test_sin_recurrente_usa_el_ingreso_manual_del_mes(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 5000, tipo='INGRESO', sub='Bono')
+        db.execute("INSERT INTO budget_meses (mes, ingreso_total, created_at) VALUES ('2026-09', 21000, '2026-09-01')")
+        d = _calc_budget('2026-09', db)
+    assert (d['ingreso_real'], d['ingreso_es_override'], d['ingreso_extraordinario']) == (21000, True, 5000)
+
+
+def test_sin_recurrente_ni_manual_la_base_es_cero(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 5000, tipo='INGRESO', sub='Bono')
+        d = _calc_budget('2026-09', db)
+    assert d['ingreso_real'] == 0 and d['buckets']['deseos']['target_monto'] == 0
+
+
+def test_racha_no_se_salva_con_un_ingreso_extraordinario(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 1000, tipo='INGRESO', sub='Pago nominal')
+        _mov(db, 'FAMILIA_REGALOS', 50000, tipo='INGRESO', sub='Regalos')
+        for i in range(5):
+            _mov(db, 'OCIO', 500, fecha=f'2026-09-0{i + 2}')
+        _, meses = _racha_bajo_presupuesto(db, '2026-09', max_meses=1)
+    assert meses[-1]['status'] == 'over'
