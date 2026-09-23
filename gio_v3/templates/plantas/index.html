@@ -1,453 +1,81 @@
-{% extends "eu/layout_sub.html" %}{% set pg='plantas' %}
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'plantas' %}
 {% block title %}Plantas — Eudaimonia{% endblock %}
 {% block module_title %}PLANTAS{% endblock %}
-{% block topright %}
-<button class="btn-a" onclick="abrirNuevaPlanta()" style="font-size:var(--fs-sm);padding:6px 14px;">
-  + Planta
-</button>
-{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/plantas.css') }}">{% endblock %}
+{% block mtitle %}<b>Plantas</b><span>Vida · riego y trasplante</span>{% endblock %}
+{% block topright %}<button type="button" class="eu-iconbtn js-new" aria-label="Nueva planta"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
-<style>
-:root{ --pl: oklch(62% 0.14 155); --pl-l: oklch(70% 0.14 155); --pl-bg: oklch(20% 0.05 155); --pl-b: oklch(38% 0.09 155); }
-html.light{ --pl: oklch(48% 0.15 155); --pl-l: oklch(42% 0.16 155); --pl-bg: oklch(93% 0.04 155); --pl-b: oklch(70% 0.11 155); }
+<div class="pl" id="pl" data-cat="ataraxia">
+  <header class="pl-hd">
+    <div><div class="t-eyebrow">Vida · Plantas</div><h1 class="t-page">Mis plantas</h1>
+      <p class="t-meta pl-lead">Riego y trasplante — sin identificación de especies, solo recordatorios.</p></div>
+    <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva planta</button>
+  </header>
 
-.pl-wrap{ max-width:1100px; }
-.pl-hero{ padding:2px 0 18px; }
-.pl-hero-tag{ font-family:var(--serif); font-style:italic; font-size:13px; color:var(--dim); margin-top:2px; }
-.pl-temporada{ display:flex; align-items:center; gap:8px; margin-top:12px; background:var(--pl-bg); border:1px solid var(--pl-b);
-               border-radius:9px; padding:8px 12px; font-size:11.5px; color:var(--pl-l); max-width:520px; }
-.pl-temporada i{ width:15px; height:15px; flex-shrink:0; }
+  {% if temporada.label %}
+  <aside class="eu-card eu-card--inset pl-season" aria-label="Temporada">
+    <span class="pl-season-ic"><i data-lucide="{{ 'cloud-rain' if temporada.factor > 1.05 else ('sun' if temporada.factor < 0.95 else 'leaf') }}"></i></span>
+    <p class="t-body">{{ temporada.label }} en Guadalajara — riego ajustado automáticamente
+      {%- if temporada.factor > 1 %} (~{{ ((temporada.factor - 1) * 100)|round|int }}% menos seguido)
+      {%- elif temporada.factor < 1 %} (~{{ ((1 - temporada.factor) * 100)|round|int }}% más seguido)
+      {%- endif %}.</p>
+  </aside>
+  {% endif %}
 
-.pl-status-strip{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
-.pl-status-box{ flex:1; min-width:80px; text-align:center; padding:10px 6px; border-radius:10px; background:rgba(16,185,129,0.04); border:1px solid var(--b); }
-.pl-status-n{ font-family:var(--serif); font-size:1.4rem; line-height:1; font-weight:600; color:var(--dim); }
-.pl-status-l{ font-size:var(--fs-11); letter-spacing:.1em; color:var(--dim); text-transform:uppercase; margin-top:4px; }
-.pl-status-box.on-vencido .pl-status-n{ color:#ef4444; }
-.pl-status-box.on-urgente .pl-status-n{ color:#f59e0b; }
-.pl-status-box.on-nominal .pl-status-n{ color:#10b981; }
-
-.pl-filters{ display:flex; gap:8px; margin:18px 0 16px; max-width:520px; flex-wrap:wrap; }
-.pl-filter{ flex:1; cursor:pointer; background:var(--card); border:1px solid var(--b); border-radius:100px; padding:7px 6px; font-size:11.5px; color:var(--dim); text-align:center; transition:all .15s; white-space:nowrap; }
-.pl-filter.on{ background:var(--pl-bg); border-color:var(--pl-b); color:var(--pl-l); font-weight:600; }
-
-.pl-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:14px; }
-.pl-card{ background:var(--card); border:1px solid var(--b); border-radius:16px; overflow:hidden; transition:border-color .15s, transform .15s, box-shadow .15s; }
-.pl-card:hover{ border-color:var(--pl-b); box-shadow:0 18px 34px -20px rgba(16,185,129,.35); }
-.pl-card-cover{ width:100%; aspect-ratio:4/3; object-fit:cover; display:block; background:var(--card2); }
-.pl-card-cover-empty{ width:100%; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center; color:var(--pl-l);
-                       background:linear-gradient(150deg, var(--pl-bg), var(--card2)); }
-.pl-card-cover-empty i{ width:34px; height:34px; opacity:.6; }
-.pl-card-body{ padding:14px 15px 15px; }
-.pl-card-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:2px; }
-.pl-card-title{ font-family:var(--serif); font-weight:600; font-size:17px; color:var(--text); line-height:1.25; }
-.pl-card-menu{ background:none; border:none; color:var(--dim); cursor:pointer; padding:2px; flex-shrink:0; display:flex; }
-.pl-card-menu:hover{ color:var(--coral); }
-.pl-card-menu svg{ width:15px; height:15px; }
-.pl-card-sub{ font-size:11.5px; color:var(--dim); margin-bottom:11px; }
-
-.pl-care{ display:flex; flex-direction:column; gap:6px; }
-.pl-care-row{ display:flex; align-items:center; gap:8px; }
-.pl-care-icon{ width:24px; height:24px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.pl-care-icon i{ width:13px; height:13px; }
-.pl-care-info{ flex:1; min-width:0; }
-.pl-care-lbl{ font-size:var(--fs-11); color:var(--dim); text-transform:uppercase; letter-spacing:.06em; }
-.pl-care-badge{ font-size:11px; font-weight:700; font-family:var(--mono); }
-.pl-care-btn{ background:var(--card2); border:1px solid var(--b); border-radius:7px; padding:5px 9px; font-size:var(--fs-12); font-weight:600;
-              color:var(--dim); cursor:pointer; transition:all .15s; white-space:nowrap; }
-.pl-care-btn:hover{ border-color:var(--pl-b); color:var(--pl-l); }
-
-.pl-badge-vencido .pl-care-icon{ background:rgba(239,68,68,.12); color:#ef4444; }
-.pl-badge-vencido .pl-care-badge{ color:#ef4444; }
-.pl-badge-urgente .pl-care-icon{ background:rgba(245,158,11,.12); color:#f59e0b; }
-.pl-badge-urgente .pl-care-badge{ color:#f59e0b; }
-.pl-badge-proximo .pl-care-icon{ background:rgba(234,179,8,.12); color:#eab308; }
-.pl-badge-proximo .pl-care-badge{ color:#eab308; }
-.pl-badge-nominal .pl-care-icon{ background:rgba(16,185,129,.12); color:#10b981; }
-.pl-badge-nominal .pl-care-badge{ color:#10b981; }
-
-.pl-empty{ text-align:center; padding:50px 10px; color:var(--dim); }
-.pl-empty i{ width:34px; height:34px; opacity:.4; margin-bottom:10px; }
-.pl-empty-title{ font-family:var(--serif); font-size:17px; color:var(--text); margin-bottom:4px; }
-
-/* ── Modal ── */
-.pl-modal{ width:400px; max-width:96vw; }
-.pl-row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.pl-photo-row{ display:flex; gap:12px; align-items:center; margin-bottom:14px; }
-.pl-photo-preview{ width:64px; height:64px; border-radius:10px; object-fit:cover; flex-shrink:0; background:var(--card2); border:1px solid var(--b); }
-.pl-photo-preview-empty{ display:flex; align-items:center; justify-content:center; color:var(--dim); }
-.pl-photo-preview-empty i{ width:22px; height:22px; opacity:.4; }
-.pl-photo-info{ flex:1; font-size:11px; color:var(--dim); }
-.pl-photo-btn{ font-size:11px; color:var(--pl-l); background:none; border:none; cursor:pointer; text-decoration:underline; padding:4px 0; }
-
-.pl-sugerencia{ display:flex; align-items:center; gap:8px; background:var(--pl-bg); border:1px solid var(--pl-b); border-radius:9px; padding:8px 10px; font-size:11.5px; color:var(--pl-l); }
-.pl-sugerencia i{ width:14px; height:14px; flex-shrink:0; }
-.pl-sugerencia b{ font-weight:700; }
-.pl-sugerencia-btn{ margin-left:auto; flex-shrink:0; background:var(--pl-l); color:var(--bg); border:none; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; }
-</style>
-
-<div class="pl-wrap">
-  <div class="pl-hero">
-    <div class="pl-hero-tag">Riego y trasplante — sin identificación de especies, solo recordatorios</div>
-    {% if temporada.label %}
-    <div class="pl-temporada">
-      <i data-lucide="{{ 'cloud-rain' if temporada.factor > 1.05 else ('sun' if temporada.factor < 0.95 else 'leaf') }}"></i>
-      <span>{{ temporada.label }} en Guadalajara — riego ajustado automáticamente
-        {%- if temporada.factor > 1 %} (~{{ ((temporada.factor - 1) * 100)|round|int }}% menos seguido)
-        {%- elif temporada.factor < 1 %} (~{{ ((1 - temporada.factor) * 100)|round|int }}% más seguido)
-        {%- endif %}.</span>
-    </div>
-    {% endif %}
-    <div class="pl-status-strip">
-      <div class="pl-status-box{{ ' on-vencido' if counts.vencido else '' }}">
-        <div class="pl-status-n">{{ counts.vencido }}</div>
-        <div class="pl-status-l">Vencidas</div>
-      </div>
-      <div class="pl-status-box{{ ' on-urgente' if counts.urgente else '' }}">
-        <div class="pl-status-n">{{ counts.urgente }}</div>
-        <div class="pl-status-l">Urgentes</div>
-      </div>
-      <div class="pl-status-box">
-        <div class="pl-status-n">{{ counts.proximo }}</div>
-        <div class="pl-status-l">Próximas</div>
-      </div>
-      <div class="pl-status-box on-nominal">
-        <div class="pl-status-n">{{ counts.nominal }}</div>
-        <div class="pl-status-l">Al día</div>
-      </div>
-    </div>
+  <div class="eu-grid-4 pl-status" aria-label="Estado de tus plantas">
+    {% for k, lbl, ic, tone in [('vencido','Vencidas','octagon-alert','danger'),('urgente','Urgentes','triangle-alert','warning'),('proximo','Próximas','clock','brand'),('nominal','Al día','circle-check','success')] %}
+    <div class="eu-card eu-stat pl-st{{ ' is-on' if counts[k] }}" data-tone="{{ tone }}" id="pl-st-{{ k }}"><div class="eu-stat-lbl"><i data-lucide="{{ ic }}"></i>{{ lbl }}</div><div class="eu-stat-val">{{ counts[k] }}</div></div>
+    {% endfor %}
   </div>
 
-  <div class="pl-filters">
-    <button class="pl-filter on" data-f="todas">Todas (<span id="pl-f-todas">{{ total }}</span>)</button>
-    <button class="pl-filter" data-f="pendientes">Pendientes (<span id="pl-f-pendientes">{{ counts.vencido + counts.urgente + counts.proximo }}</span>)</button>
-    <button class="pl-filter" data-f="al_dia">Al día (<span id="pl-f-al_dia">{{ counts.nominal }}</span>)</button>
+  <div class="eu-chips" role="group" aria-label="Filtrar plantas">
+    {{ ui.chip('Todas', pressed=True, count=total, **{'data-f': 'todas', 'id': 'pl-f-todas'}) }}
+    {{ ui.chip('Pendientes', count=counts.vencido + counts.urgente + counts.proximo, **{'data-f': 'pendientes', 'id': 'pl-f-pendientes'}) }}
+    {{ ui.chip('Al día', count=counts.nominal, **{'data-f': 'al_dia', 'id': 'pl-f-al_dia'}) }}
   </div>
 
-  <div id="pl-grid" class="pl-grid"></div>
+  <div class="pl-grid" id="pl-grid" aria-live="polite"></div>
 </div>
 
-<!-- ═══ MODAL: Nueva/editar planta ═══════════════════════════════════════ -->
-<div class="modal-bg" id="modal-planta">
-  <div class="modal pl-modal">
-    <div class="pd-modal-title" id="pl-modal-title" style="font-size:var(--fs-lg);font-weight:700;margin-bottom:16px;">Nueva planta</div>
-    <input type="hidden" id="pl-id">
-
-    <div class="pl-photo-row">
-      <img class="pl-photo-preview" id="pl-photo-img" src="" alt="" style="display:none;">
-      <div class="pl-photo-preview pl-photo-preview-empty" id="pl-photo-empty"><i data-lucide="camera"></i></div>
-      <div class="pl-photo-info">
-        <span id="pl-photo-caption">Sin foto</span><br>
-        <input type="file" id="pl-photo-input" accept="image/*" style="display:none;" onchange="onPlantaFotoChange(this)">
-        <button type="button" class="pl-photo-btn" onclick="document.getElementById('pl-photo-input').click()">Elegir foto</button>
-      </div>
-    </div>
-
-    <label class="fl" for="pl-nombre">Nombre</label>
-    <input class="fi" id="pl-nombre" placeholder="Ej. Monstera de la sala…">
-
-    <div class="pl-row2" style="margin-top:10px;">
-      <div>
-        <label class="fl" for="pl-especie">Especie</label>
-        <input class="fi" id="pl-especie" placeholder="Opcional">
-      </div>
-      <div>
-        <label class="fl" for="pl-ubicacion">Ubicación</label>
-        <input class="fi" id="pl-ubicacion" placeholder="Ej. Sala">
-      </div>
-    </div>
-
-    <div id="pl-sugerencia" class="pl-sugerencia" style="display:none;margin-top:10px;"></div>
-
-    <div class="pl-row2" style="margin-top:10px;">
-      <div>
-        <label class="fl" for="pl-dias-riego">Regar cada (días)</label>
-        <input class="fi" id="pl-dias-riego" type="number" min="1" value="7">
-      </div>
-      <div>
-        <label class="fl" for="pl-meses-trasplante">Trasplantar cada (meses)</label>
-        <input class="fi" id="pl-meses-trasplante" type="number" min="1" value="12">
-      </div>
-    </div>
-
-    <label class="fl" for="pl-notas" style="margin-top:10px;">Notas (opcional)</label>
-    <textarea class="fi" id="pl-notas" rows="2" placeholder="Luz, tipo de tierra, cuidados especiales…"></textarea>
-
-    <div class="modal-actions" style="margin-top:16px;justify-content:space-between;">
-      <button id="pl-delete-btn" onclick="eliminarPlanta()" style="background:none;border:1px solid var(--b2);color:var(--coral);border-radius:8px;padding:8px 14px;cursor:pointer;display:none;">Eliminar</button>
-      <div style="display:flex;gap:8px;margin-left:auto;">
-        <button class="btn-g" onclick="closeModal('planta')">Cancelar</button>
-        <button class="btn-a" onclick="guardarPlanta()">Guardar</button>
-      </div>
+<div data-cat="ataraxia">
+{% call ui.modal('m-planta', 'Nueva planta', eyebrow='Plantas') %}
+<form class="eu-modal-bd" id="f-planta" autocomplete="off" novalidate>
+  <input type="hidden" id="pl-id">
+  <div class="pl-photo">
+    <img class="pl-photo-img" id="pl-photo-img" alt="" hidden>
+    <span class="pl-photo-img pl-photo-empty" id="pl-photo-empty" aria-hidden="true"><i data-lucide="camera"></i></span>
+    <div class="eu-vstack pl-photo-info">
+      <span class="t-meta" id="pl-photo-caption">Sin foto</span>
+      <input type="file" id="pl-photo-input" accept="image/*" class="pl-file" aria-label="Foto de la planta">
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-photo"><i data-lucide="image-plus"></i>Elegir foto</button>
     </div>
   </div>
+  <div class="eu-field"><label class="eu-label" for="pl-nombre">Nombre *</label><input class="eu-input" id="pl-nombre" placeholder="Ej. Monstera de la sala…"></div>
+  <div class="eu-grid-2 pl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pl-especie">Especie</label><input class="eu-input" id="pl-especie" placeholder="Opcional"></div>
+    <div class="eu-field"><label class="eu-label" for="pl-ubicacion">Ubicación</label><input class="eu-input" id="pl-ubicacion" placeholder="Ej. Sala"></div>
+  </div>
+  <div class="pl-sug" id="pl-sugerencia" role="status" hidden></div>
+  <div class="eu-grid-2 pl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pl-dias-riego">Regar cada (días)</label><input class="eu-input eu-input--money" id="pl-dias-riego" type="number" min="1" inputmode="numeric" value="7"></div>
+    <div class="eu-field"><label class="eu-label" for="pl-meses-trasplante">Trasplantar cada (meses)</label><input class="eu-input eu-input--money" id="pl-meses-trasplante" type="number" min="1" inputmode="numeric" value="12"></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="pl-notas">Notas (opcional)</label><textarea class="eu-textarea" id="pl-notas" rows="2" placeholder="Luz, tipo de tierra, cuidados especiales…"></textarea></div>
+</form>
+<div class="eu-modal-ft pl-ft">
+  <button type="button" class="eu-btn eu-btn--danger" id="pl-delete-btn" hidden><i data-lucide="trash-2"></i>Eliminar</button>
+  <span class="eu-grow"></span>
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-planta')">Cancelar</button>
+  <button type="submit" form="f-planta" class="eu-btn eu-btn--primary">Guardar</button>
 </div>
+{% endcall %}
+</div>
+<script type="application/json" id="pl-data">{{ plantas|tojson }}</script>
 {% endblock %}
 
 {% block scripts %}
-<script>
-const BASE = '/plantas';
-let PLANTAS = {{ plantas | tojson | safe }};
-let plFilter = 'todas';
-let plFotoFile = null;
-
-function openModal(key) {
-  document.getElementById('modal-'+key).classList.add('open');
-  const first = document.querySelector('#modal-'+key+' input:not([type=hidden]):not([type=file])');
-  if (first) setTimeout(() => first.focus(), 80);
-}
-function closeModal(key) {
-  document.getElementById('modal-'+key).classList.remove('open');
-}
-
-function escapeHtml(s) {
-  const d = document.createElement('div');
-  d.textContent = s || '';
-  return d.innerHTML;
-}
-
-const STATUS_LABEL = {vencido: 'Vencido', urgente: 'Urgente', proximo: 'Próximo', nominal: 'Al día'};
-
-function plFilteredPlantas(){
-  if (plFilter === 'pendientes') return PLANTAS.filter(p => p.status !== 'nominal');
-  if (plFilter === 'al_dia')     return PLANTAS.filter(p => p.status === 'nominal');
-  return PLANTAS;
-}
-
-function careRowHtml(planta, tipo, icon, label, statusKey, extra){
-  const status = planta[statusKey];
-  return `
-    <div class="pl-care-row pl-badge-${status}">
-      <div class="pl-care-icon"><i data-lucide="${icon}"></i></div>
-      <div class="pl-care-info">
-        <div class="pl-care-lbl">${label}</div>
-        <div class="pl-care-badge">${STATUS_LABEL[status]}${extra ? ' · ' + extra : ''}</div>
-      </div>
-      <button type="button" class="pl-care-btn" onclick="marcarCuidado(${planta.id}, '${tipo}')">${tipo === 'riego' ? 'Regué' : 'Trasplanté'}</button>
-    </div>`;
-}
-
-function renderPlantas(){
-  const box = document.getElementById('pl-grid');
-  box.innerHTML = '';
-  const items = plFilteredPlantas();
-
-  if (!items.length) {
-    box.innerHTML = `
-      <div class="pl-empty" style="grid-column:1/-1;">
-        <i data-lucide="sprout"></i>
-        <div class="pl-empty-title">${PLANTAS.length ? 'Nada por aquí' : 'Aún no agregas ninguna planta'}</div>
-        <div style="font-size:12px;">${PLANTAS.length ? 'Cambia el filtro para ver el resto.' : 'Agrega la primera con el botón de arriba.'}</div>
-      </div>`;
-    if (window.lucide) lucide.createIcons();
-    return;
-  }
-
-  items.forEach(p => {
-    const card = document.createElement('div');
-    card.className = 'pl-card';
-    card.innerHTML = `
-      ${p.foto
-        ? `<img class="pl-card-cover" src="${BASE}/foto/${p.foto}" alt="" loading="lazy">`
-        : `<div class="pl-card-cover-empty"><i data-lucide="flower-2"></i></div>`}
-      <div class="pl-card-body">
-        <div class="pl-card-head">
-          <div class="pl-card-title">${escapeHtml(p.nombre)}</div>
-          <button type="button" class="pl-card-menu" aria-label="Editar ${escapeHtml(p.nombre)}" onclick="abrirEditarPlanta(${p.id})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-          </button>
-        </div>
-        <div class="pl-card-sub">${escapeHtml(p.especie || '')}${p.ubicacion ? (p.especie ? ' · ' : '') + escapeHtml(p.ubicacion) : ''}</div>
-        <div class="pl-care">
-          ${careRowHtml(p, 'riego', 'droplet', 'Riego', 'riego_status', p.riego_interval_efectivo !== p.dias_riego ? `cada ${p.riego_interval_efectivo}d (ajustado)` : `cada ${p.dias_riego}d`)}
-          ${careRowHtml(p, 'trasplante', 'sprout', 'Trasplante', 'trasplante_status', `cada ${p.meses_trasplante}m`)}
-        </div>
-      </div>`;
-    box.appendChild(card);
-  });
-
-  if (window.lucide) lucide.createIcons();
-}
-
-function syncCounters(){
-  const counts = {vencido: 0, urgente: 0, proximo: 0, nominal: 0};
-  PLANTAS.forEach(p => counts[p.status]++);
-  document.getElementById('pl-f-todas').textContent = PLANTAS.length;
-  document.getElementById('pl-f-pendientes').textContent = counts.vencido + counts.urgente + counts.proximo;
-  document.getElementById('pl-f-al_dia').textContent = counts.nominal;
-}
-
-async function marcarCuidado(id, tipo){
-  try {
-    const r = await fetch(`${BASE}/api/plantas/${id}/${tipo}`, { method: 'POST' });
-    const d = await r.json();
-    if (!r.ok || !d.ok) { toast('Error al guardar', 'err'); return; }
-    PLANTAS = d.state.plantas;
-    if (d.gam && d.gam.xp) toast(`+${d.gam.xp} XP · +${d.gam.ec} EC`);
-    syncCounters();
-    renderPlantas();
-  } catch {
-    toast('Sin conexión', 'err');
-  }
-}
-
-document.querySelectorAll('.pl-filter').forEach(btn => btn.addEventListener('click', () => {
-  document.querySelectorAll('.pl-filter').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  plFilter = btn.dataset.f;
-  renderPlantas();
-}));
-
-function setFotoPreview(url){
-  const img = document.getElementById('pl-photo-img');
-  const empty = document.getElementById('pl-photo-empty');
-  const caption = document.getElementById('pl-photo-caption');
-  if (url) {
-    img.src = url; img.style.display = '';
-    empty.style.display = 'none';
-    caption.textContent = 'Foto lista';
-  } else {
-    img.style.display = 'none'; img.src = '';
-    empty.style.display = 'flex';
-    caption.textContent = 'Sin foto';
-  }
-  if (window.lucide) lucide.createIcons();
-}
-
-function onPlantaFotoChange(input){
-  const f = input.files && input.files[0];
-  if (!f) return;
-  plFotoFile = f;
-  const reader = new FileReader();
-  reader.onload = e => setFotoPreview(e.target.result);
-  reader.readAsDataURL(f);
-}
-
-function limpiarFormPlanta(){
-  document.getElementById('pl-id').value = '';
-  document.getElementById('pl-nombre').value = '';
-  document.getElementById('pl-especie').value = '';
-  document.getElementById('pl-ubicacion').value = '';
-  document.getElementById('pl-dias-riego').value = 7;
-  document.getElementById('pl-meses-trasplante').value = 12;
-  document.getElementById('pl-notas').value = '';
-  document.getElementById('pl-photo-input').value = '';
-  document.getElementById('pl-delete-btn').style.display = 'none';
-  plFotoFile = null;
-  setFotoPreview(null);
-  ocultarSugerenciaPlanta();
-}
-
-/* ── Sugerencia de riego/trasplante por especie (tabla local, sin API) ──────
-   Se dispara al escribir en Nombre o Especie; nunca sobreescribe los
-   campos sola, solo ofrece un chip con botón "Usar". ── */
-let plSugerenciaTimer = null;
-
-function ocultarSugerenciaPlanta(){
-  document.getElementById('pl-sugerencia').style.display = 'none';
-}
-
-async function consultarSugerenciaPlanta(){
-  const q = (document.getElementById('pl-especie').value || document.getElementById('pl-nombre').value).trim();
-  if (q.length < 3) { ocultarSugerenciaPlanta(); return; }
-  try {
-    const s = await fetch(`${BASE}/api/sugerir?q=${encodeURIComponent(q)}`).then(r => r.json());
-    if (!s.match) { ocultarSugerenciaPlanta(); return; }
-    const box = document.getElementById('pl-sugerencia');
-    box.innerHTML = `
-      <i data-lucide="lightbulb"></i>
-      <span>Sugerencia para "${escapeHtml(s.match)}": <b>cada ${s.dias_riego}d</b> riego · <b>cada ${s.meses_trasplante}m</b> trasplante</span>
-      <button type="button" class="pl-sugerencia-btn" onclick="aplicarSugerenciaPlanta(${s.dias_riego}, ${s.meses_trasplante})">Usar</button>`;
-    box.style.display = 'flex';
-    if (window.lucide) lucide.createIcons();
-  } catch { ocultarSugerenciaPlanta(); }
-}
-
-function aplicarSugerenciaPlanta(diasRiego, mesesTrasplante){
-  document.getElementById('pl-dias-riego').value = diasRiego;
-  document.getElementById('pl-meses-trasplante').value = mesesTrasplante;
-  ocultarSugerenciaPlanta();
-  toast('Intervalos aplicados');
-}
-
-['pl-nombre', 'pl-especie'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => {
-    clearTimeout(plSugerenciaTimer);
-    plSugerenciaTimer = setTimeout(consultarSugerenciaPlanta, 450);
-  });
-});
-
-function abrirNuevaPlanta(){
-  limpiarFormPlanta();
-  document.getElementById('pl-modal-title').textContent = 'Nueva planta';
-  openModal('planta');
-}
-
-function abrirEditarPlanta(id){
-  const p = PLANTAS.find(x => x.id === id);
-  if (!p) return;
-  limpiarFormPlanta();
-  document.getElementById('pl-id').value = p.id;
-  document.getElementById('pl-nombre').value = p.nombre;
-  document.getElementById('pl-especie').value = p.especie || '';
-  document.getElementById('pl-ubicacion').value = p.ubicacion || '';
-  document.getElementById('pl-dias-riego').value = p.dias_riego;
-  document.getElementById('pl-meses-trasplante').value = p.meses_trasplante;
-  document.getElementById('pl-notas').value = p.notas || '';
-  document.getElementById('pl-delete-btn').style.display = '';
-  if (p.foto) setFotoPreview(`${BASE}/foto/${p.foto}`);
-  document.getElementById('pl-modal-title').textContent = 'Editar planta';
-  openModal('planta');
-}
-
-async function guardarPlanta(){
-  const nombre = document.getElementById('pl-nombre').value.trim();
-  if (!nombre) { toast('El nombre es requerido', 'err'); return; }
-  const id = document.getElementById('pl-id').value;
-
-  const fd = new FormData();
-  fd.append('nombre', nombre);
-  fd.append('especie', document.getElementById('pl-especie').value.trim());
-  fd.append('ubicacion', document.getElementById('pl-ubicacion').value.trim());
-  fd.append('dias_riego', document.getElementById('pl-dias-riego').value || 7);
-  fd.append('meses_trasplante', document.getElementById('pl-meses-trasplante').value || 12);
-  fd.append('notas', document.getElementById('pl-notas').value.trim());
-  if (plFotoFile) fd.append('foto', plFotoFile);
-
-  const url = id ? `${BASE}/api/plantas/${id}` : `${BASE}/api/plantas`;
-  try {
-    const r = await fetch(url, { method: 'POST', body: fd });
-    const d = await r.json();
-    if (!r.ok || !d.ok) { toast('Error: ' + (d.error || 'no se pudo guardar'), 'err'); return; }
-    PLANTAS = d.state.plantas;
-    closeModal('planta');
-    syncCounters();
-    renderPlantas();
-    toast(id ? 'Planta actualizada ✓' : 'Planta agregada ✓');
-  } catch {
-    toast('Sin conexión', 'err');
-  }
-}
-
-async function eliminarPlanta(){
-  const id = document.getElementById('pl-id').value;
-  if (!id) return;
-  const p = PLANTAS.find(x => x.id == id);
-  if (!(await euConfirm(`¿Eliminar "${p ? p.nombre : 'esta planta'}"?`))) return;
-  try {
-    const r = await fetch(`${BASE}/api/plantas/${id}`, { method: 'DELETE' });
-    const d = await r.json();
-    if (!r.ok || !d.ok) { toast('Error al eliminar', 'err'); return; }
-    PLANTAS = d.state.plantas;
-    closeModal('planta');
-    syncCounters();
-    renderPlantas();
-    toast('Planta eliminada');
-  } catch {
-    toast('Sin conexión', 'err');
-  }
-}
-
-renderPlantas();
-</script>
+<script src="{{ url_for('static', filename='js/plantas.js') }}"></script>
 {% endblock %}
