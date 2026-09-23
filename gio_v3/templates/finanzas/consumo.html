@@ -6,7 +6,7 @@
 {% block module_title %}CONSUMO{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/consumo.css') }}">{% endblock %}
 {% block mtitle %}<b>Consumo</b><span>Oikonomia · {{ productos|length }} producto{{ 's' if productos|length != 1 }}</span>{% endblock %}
-{% block topright %}<a class="eu-iconbtn" href="/finanzas/consumo/export.csv" download aria-label="Descargar CSV de productos"><i data-lucide="download"></i></a><button type="button" class="eu-iconbtn js-nuevo" aria-label="Nuevo producto"><i data-lucide="plus"></i></button>{% endblock %}
+{% block topright %}<button type="button" class="eu-iconbtn js-nuevo" aria-label="Nuevo producto"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
 <div class="ci" id="ci" data-cat="oikonomia" data-today="{{ today }}">
