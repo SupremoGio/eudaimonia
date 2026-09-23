@@ -70,6 +70,7 @@ CATEGORIA_BUCKET = {
     'RETIRO':            None,
     'FINANZAS':          None,
     'NOMINA':            None,
+    'PRESTAMOS':         None,            # por cobrar, no consumo (ver _GASTO_EXCLUIR)
 }
 
 # Categorías de ingreso que NO son ingreso real
@@ -112,6 +113,15 @@ CAT_LABELS = {
     'FINANZAS':         'Finanzas / Movimientos bancarios',
     'NOMINA':           'Nómina adelanto',
 }
+
+# Categorías de GASTO que no son consumo y nunca entran a la Radiografía
+# (misma lista para el cálculo del mes y para la racha). PRESTAMOS: dinero
+# prestado no es gasto -- se sigue en «Por cobrar»; antes caía en Deseos por
+# no tener bucket (CATEGORIA_BUCKET.get(cat, 'deseos')).
+_GASTO_EXCLUIR = ('PAGO_TDC', 'PAGO', 'TRANSFERENCIA', 'SPEI_ENVIADO', 'RETIRO',
+                  'PROYECTOS', 'PUBLICIDAD', 'NOMINA', 'FINANZAS', 'EXPENSE',
+                  'APORTACION_RENTA', 'PRESTAMOS')
+_GASTO_WHERE = "categoria NOT IN (" + ",".join(f"'{c}'" for c in _GASTO_EXCLUIR) + ")"
 
 BUCKET_META = {
     'necesidades': {'label': 'Necesidades',      'pct_target': 50, 'color': '#2a8a62', 'cls': 'bk-nec'},
@@ -185,11 +195,9 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
                 list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
             ).fetchone()['t']
             gasto = db.execute(
-                """SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
+                f"""SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
                    WHERE tipo='GASTO'
-                     AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
-                                           'SPEI_ENVIADO','RETIRO','PROYECTOS','PUBLICIDAD','NOMINA','FINANZAS',
-                                           'EXPENSE','APORTACION_RENTA')
+                     AND {_GASTO_WHERE}
                      AND fecha >= ? AND fecha < ?""",
                 (mes_inicio, mes_fin)
             ).fetchone()['t']
@@ -247,12 +255,10 @@ def _calc_budget(mes, db):
 
     # ── Gasto real por categoría
     spending_rows = db.execute(
-        """SELECT categoria, SUM(COALESCE(mi_parte, monto)) AS total, COUNT(*) AS n
+        f"""SELECT categoria, SUM(COALESCE(mi_parte, monto)) AS total, COUNT(*) AS n
            FROM est_movimientos
            WHERE tipo='GASTO'
-             AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
-                                   'SPEI_ENVIADO','RETIRO','PROYECTOS','PUBLICIDAD','NOMINA','FINANZAS',
-                                   'EXPENSE','APORTACION_RENTA')
+             AND {_GASTO_WHERE}
              AND fecha >= ? AND fecha < ?
            GROUP BY categoria
            ORDER BY total DESC""",
