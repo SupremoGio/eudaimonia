@@ -1,0 +1,54 @@
+{# Hoy: XP del día + clasificación (izq.) · nivel, racha, EC y perks (der.) #}
+{% set clf = data.classification %}
+{% set ranks = ['carbon', 'iron', 'gold', 'diamond'] %}
+{% set ci = ranks.index(clf.rank) if clf.rank in ranks else 0 %}
+{# La clasificación es por anclas/touches (engine.get_daily_classification),
+   no por umbrales de XP: cada tier muestra lo que pide. #}
+{% set tiers = [
+  {'t': 'carbon',   'label': 'Carbón',   'req': 'inicio'},
+  {'t': 'hierro',   'label': 'Hierro',   'req': '1 ancla'},
+  {'t': 'oro',      'label': 'Oro',      'req': '+ touches'},
+  {'t': 'diamante', 'label': 'Diamante', 'req': 'todas'},
+] %}
+<section class="eu-card eu-card--featured dash-hero" aria-label="Tu día">
+  <div class="eu-vstack eu-gap-4">
+    <div class="eu-between">
+      <div class="t-eyebrow">Hoy</div>
+      <span class="eu-badge dash-tier" data-t="{{ tiers[ci].t }}"><span class="eu-dot"></span>{{ tiers[ci].label }}</span>
+    </div>
+    <div class="t-data-xl fg-xp dash-xp">{{ data.xp_today }}<span class="t-meta"> / {{ XP_DAILY_GOAL }} XP</span></div>
+    {{ ui.xpbar(data.xp_today, XP_DAILY_GOAL) }}
+    <div class="eu-tiers">
+      {% for t in tiers %}
+      <div class="eu-tier{% if loop.index0 < ci %} is-past{% elif loop.index0 == ci %} is-now{% endif %}" data-t="{{ t.t }}">{{ t.label }}<b>{{ t.req }}</b></div>
+      {% endfor %}
+    </div>
+    {% if clf.next_hint %}<p class="t-meta dash-hint">{{ clf.next_hint }}</p>{% endif %}
+    {% if clf.anchors_total > 0 or clf.touches_total > 0 %}
+    <div class="eu-hstack eu-gap-4 t-meta num">
+      {% if clf.anchors_total > 0 %}<span>Anclas {{ clf.anchors_done }}/{{ clf.anchors_total }}</span>{% endif %}
+      {% if clf.touches_total > 0 %}<span>Touches {{ clf.touches_done }}/{{ clf.touches_total }}</span>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="eu-vstack eu-gap-3 dash-hero-level">
+    <a class="eu-hstack eu-gap-3 dash-level-link" href="/logros" aria-label="Ver logros y niveles">
+      <div class="eu-level-seal"><i data-lucide="columns-3"></i></div>
+      <div>
+        <div class="t-meta">Nivel {{ data.level }} de 10</div>
+        <div class="t-section">{{ data.level_name|title }}</div>
+      </div>
+    </a>
+    <div class="eu-xpbar dash-xpbar-thin" role="progressbar" aria-valuenow="{{ data.level_pct }}" aria-valuemax="100" aria-label="Progreso al siguiente nivel"><i style="width:{{ data.level_pct }}%"></i></div>
+    <div class="eu-between t-meta">
+      <span class="num">{{ '{:,}'.format(data.total_xp) }} XP</span>
+      {% if v2.next_level %}<span>{{ data.xp_to_next }} para <b class="fg-2">{{ v2.next_level|title }}</b></span>{% else %}<span>Nivel máximo</span>{% endif %}
+    </div>
+    <div class="eu-grid-3 eu-gap-2">
+      <div><div class="t-data">{{ data.streak }} d</div><div class="t-meta">Racha{% if v2.streak_bonus > 0 %} · +{{ v2.streak_bonus }}%{% endif %}</div></div>
+      <div><div class="t-data fg-ec">{{ data.ec_balance }}</div><div class="t-meta">EC</div></div>
+      <div><div class="t-data">{{ v2.perks }}</div><div class="t-meta">Perks</div></div>
+    </div>
+  </div>
+</section>

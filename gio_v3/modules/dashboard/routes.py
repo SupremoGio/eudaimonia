@@ -316,21 +316,97 @@ def _build_eudaimonia_data():
     }
 
 
-def _build_streak_heatmap(days: int = 21) -> list:
-    """XP por día de los últimos N días — mismo cálculo que /logros, ventana corta."""
-    end   = today_date()
-    start = end - timedelta(days=days - 1)
+# ── Dashboard V2 (Design System V2 · pantalla 02) ────────────────────────────
+# Los 8 pilares reales de Acta Diurna (activity_defs.PILLARS) con su nombre de
+# categoría en tokens.css (data-cat), función, ícono Lucide y a dónde lleva.
+_VIRTUES = [
+    ('logoi',   'logoi',          'Logoi',          'Programación', 'code-2',          '/actividades/'),
+    ('hege',    'hegemonikon',    'Hegemonikon',    'Salud',        'heart-pulse',     '/bienestar/'),
+    ('paideia', 'paideia',        'Paideia',        'Conocimiento', 'book-open',       '/paideia/'),
+    ('cosmo',   'cosmopolitismo', 'Cosmopolitismo', 'Idiomas',      'languages',       '/idiomas/'),
+    ('oiko',    'oikonomia',      'Oikonomia',      'Finanzas',     'landmark',        '/finanzas/'),
+    ('atar',    'ataraxia',       'Ataraxia',       'Orden',        'sun-dim',         '/ataraxia/'),
+    ('eury',    'eurythmia',      'Eurythmia',      'Baile',        'music-2',         '/eurythmia/'),
+    ('philia',  'philia',         'Philia',         'Vínculos',     'heart-handshake', '/actividades/'),
+]
+
+# Categoría de data.ACTIVITIES (la que usa la sugerencia) → data-cat del token
+_ACT_CAT_TO_VIRTUE = {
+    'Programación': 'logoi', 'Idiomas': 'cosmopolitismo', 'Salud Mental': 'hegemonikon',
+    'Salud Física': 'hegemonikon', 'Salud Base': 'hegemonikon', 'Baile': 'eurythmia',
+    'Paideia': 'paideia', 'Finanzas': 'oikonomia', 'Orden': 'ataraxia', 'Identidad': 'identidad',
+}
+
+# Tono del radar (nivel de urgencia de _build_deadlines → variante de badge)
+_RADAR_TONE = {'red': 'danger', 'amber': 'warning', 'yellow': 'info', 'green': ''}
+
+
+def _build_virtues_today() -> list:
+    """XP de hoy por pilar (activity_logs × activity_defs), en el orden de _VIRTUES."""
+    from modules.actividades import activity_defs as adefs
+    defs = adefs.get_active_flat()
+    today = today_str()
+    xp = {}
+    with get_db() as db:
+        for r in db.execute(
+            "SELECT activity_key, COALESCE(SUM(pts),0) AS pts FROM activity_logs "
+            "WHERE date=? AND activity_key != 'priority_bonus' GROUP BY activity_key", (today,)
+        ).fetchall():
+            key = r['activity_key']
+            pillar = 'eury' if key == 'eurythmia_session' else (defs.get(key) or {}).get('pillar')
+            if pillar:
+                xp[pillar] = xp.get(pillar, 0) + (r['pts'] or 0)
+    return [{'id': pid, 'cat': cat, 'label': label, 'fn': fn, 'icon': icon, 'url': url,
+             'xp': xp.get(pid, 0), 'done': pid in xp}
+            for pid, cat, label, fn, icon, url in _VIRTUES]
+
+
+def _build_heat_16w(goal: int = 15) -> list:
+    """16 semanas (lunes→domingo) terminando en la semana actual, para .eu-heat
+    (columna = semana, fila = día). Nivel 0–4 relativo a la meta diaria."""
+    today = today_date()
+    start = today - timedelta(days=today.weekday()) - timedelta(weeks=15)
     with get_db() as db:
         rows = db.execute(
-            "SELECT date, SUM(pts) as xp FROM activity_logs WHERE date>=? AND date<=? GROUP BY date",
-            (start.isoformat(), end.isoformat())
+            "SELECT date, SUM(pts) AS xp FROM activity_logs WHERE date>=? AND date<=? GROUP BY date",
+            (start.isoformat(), today.isoformat())
         ).fetchall()
-    by_date = {r['date']: r['xp'] for r in rows}
-    return [
-        {'date': (start + timedelta(days=i)).isoformat(),
-         'xp':   by_date.get((start + timedelta(days=i)).isoformat(), 0)}
-        for i in range(days)
-    ]
+    by_date = {r['date']: r['xp'] or 0 for r in rows}
+    cells = []
+    for i in range(16 * 7):
+        d = start + timedelta(days=i)
+        v = by_date.get(d.isoformat(), 0)
+        lvl = 0 if v <= 0 else 1 if v < goal / 2 else 2 if v < goal else 3 if v < goal + 5 else 4
+        cells.append({'date': d.isoformat(), 'xp': v, 'l': lvl,
+                      'today': d == today, 'future': d > today})
+    return cells
+
+
+def _build_dashboard_v2(data: dict) -> dict:
+    """Extras de la pantalla V2 sobre _build_eudaimonia_data()."""
+    from modules.gamification.engine import LEVEL_THRESHOLDS, get_gamification_stats
+    from modules.gamification.badges import get_all_badges
+    stats = get_gamification_stats()
+    lvl = data['level']
+    next_name = LEVEL_THRESHOLDS[lvl][2] if lvl < len(LEVEL_THRESHOLDS) else None
+    try:
+        perks = sum(1 for b in get_all_badges() if b['perk_active'])
+    except Exception:
+        perks = 0
+    virtues = _build_virtues_today()
+    sugg = data.get('suggestion')
+    hour = now_local().hour
+    return {
+        'greeting':    'Buenos días' if 5 <= hour < 12 else 'Buenas tardes' if hour < 19 else 'Buenas noches',
+        'next_level':  next_name,
+        'streak_bonus': round((stats.get('streak_mult', 1.0) - 1) * 100),
+        'perks':       perks,
+        'virtues':     virtues,
+        'virtues_done': sum(1 for v in virtues if v['done']),
+        'heat':        _build_heat_16w(),
+        'sugg_cat':    _ACT_CAT_TO_VIRTUE.get(sugg['cat']) if sugg else None,
+        'radar_tone':  _RADAR_TONE,
+    }
 
 
 _DIAS_ES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
@@ -343,10 +419,11 @@ _MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
 def index():
     hoy = today_date()
     fecha_larga = f"{_DIAS_ES[hoy.weekday()]} {hoy.day} de {_MESES_ES[hoy.month - 1]}"
+    data = _build_eudaimonia_data()
     return render_template(
         'dashboard/index.html',
-        data=_build_eudaimonia_data(),
-        heatmap=_build_streak_heatmap(21),
+        data=data,
+        v2=_build_dashboard_v2(data),
         fecha_larga=fecha_larga,
     )
 

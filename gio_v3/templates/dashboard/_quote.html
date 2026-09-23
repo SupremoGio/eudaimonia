@@ -1,0 +1,10 @@
+{# Reflexión del día — se renueva con /api/quote/refresh #}
+{% set q = data.reflexion %}
+<section class="eu-card eu-card--inset eu-vstack dash-quote" aria-label="Reflexión del día">
+  <div class="eu-between">
+    <span class="eu-badge js-q-cat" data-kind="{{ q.category }}">{{ 'Estoica' if q.category == 'stoic' else 'Motivacional' }}</span>
+    {{ ui.iconbtn('refresh-cw', 'Nueva reflexión', id='quote-refresh') }}
+  </div>
+  <blockquote class="t-quote dash-quote-t js-q-text">«{{ q.text }}»</blockquote>
+  <div class="t-meta js-q-author">{{ q.author }}</div>
+</section>

@@ -59,7 +59,7 @@
 --rare-bronce:#CF9A73;--rare-plata:#C9CED6;--rare-oro:var(--gold-200);--rare-especial:#A9DDE8;
 
 /* Categorías — hue desde ec_constants.CATEGORY_HUES */
---h-logoi:120;--h-hegemonikon:45;--h-oikonomia:80;--h-cosmopolitismo:215;--h-paideia:265;--h-ataraxia:155;--h-eurythmia:330;--h-harma:15;--h-identidad:280;
+--h-logoi:120;--h-hegemonikon:45;--h-oikonomia:80;--h-cosmopolitismo:215;--h-paideia:265;--h-ataraxia:155;--h-eurythmia:330;--h-harma:15;--h-identidad:280;--h-philia:10;
 --cat-l-fg:.80;--cat-c-fg:.09;--cat-l-bg:.24;--cat-c-bg:.035;--cat-l-bd:.40;--cat-c-bd:.06;
 
 /* ── Tipografía ─────────────────────────────────────────────── */
@@ -125,7 +125,7 @@ color-scheme:light;
 
 /* Categoría: cualquier elemento con data-cat obtiene --cat-fg/bg/border */
 [data-cat]{--cat-fg:oklch(var(--cat-l-fg) var(--cat-c-fg) var(--h));--cat-bg:oklch(var(--cat-l-bg) var(--cat-c-bg) var(--h));--cat-border:oklch(var(--cat-l-bd) var(--cat-c-bd) var(--h))}
-[data-cat=logoi]{--h:var(--h-logoi)}[data-cat=hegemonikon]{--h:var(--h-hegemonikon)}[data-cat=oikonomia]{--h:var(--h-oikonomia)}[data-cat=cosmopolitismo]{--h:var(--h-cosmopolitismo)}[data-cat=paideia]{--h:var(--h-paideia)}[data-cat=ataraxia]{--h:var(--h-ataraxia)}[data-cat=eurythmia]{--h:var(--h-eurythmia)}[data-cat=harma]{--h:var(--h-harma)}[data-cat=identidad]{--h:var(--h-identidad)}
+[data-cat=logoi]{--h:var(--h-logoi)}[data-cat=hegemonikon]{--h:var(--h-hegemonikon)}[data-cat=oikonomia]{--h:var(--h-oikonomia)}[data-cat=cosmopolitismo]{--h:var(--h-cosmopolitismo)}[data-cat=paideia]{--h:var(--h-paideia)}[data-cat=ataraxia]{--h:var(--h-ataraxia)}[data-cat=eurythmia]{--h:var(--h-eurythmia)}[data-cat=harma]{--h:var(--h-harma)}[data-cat=identidad]{--h:var(--h-identidad)}[data-cat=philia]{--h:var(--h-philia)}
 
 @media (prefers-reduced-motion:reduce){:root{--dur-fast:1ms;--dur-base:1ms;--dur-slow:1ms;--dur-deliberate:1ms;--dur-ceremony:1ms}}
 

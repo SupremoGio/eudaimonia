@@ -110,7 +110,7 @@
 <!-- TOPBAR — desktop: breadcrumb (NAV) + búsqueda ⌘K + XP/EC + avatar ·
      móvil: ← + título/función + EC + buscar -->
 <header class="eu-topbar">
-  <a class="eu-iconbtn eu-tb-back" href="{% block back_href %}{{ nav_back }}{% endblock %}" aria-label="Volver" title="Volver"><i data-lucide="chevron-left"></i></a>
+  {% if request.path != '/' %}<a class="eu-iconbtn eu-tb-back" href="{% block back_href %}{{ nav_back }}{% endblock %}" aria-label="Volver" title="Volver"><i data-lucide="chevron-left"></i></a>{% endif %}
 
   <nav class="eu-crumb" aria-label="Ruta">
     {% if nav_crumbs %}
@@ -125,8 +125,10 @@
   </nav>
 
   <div class="eu-mtitle">
+    {% block mtitle %}
     <b>{{ nav_title or _mt }}</b>
     {% if nav_sub %}<span>{{ nav_sub }}</span>{% endif %}
+    {% endblock %}
   </div>
 
   <div style="flex:1" class="hidden md:block"></div>
@@ -437,8 +439,6 @@ document.addEventListener('keydown', (e) => {
   var isMac = navigator.platform && /Mac|iPhone|iPad/.test(navigator.platform);
   document.querySelectorAll('[data-cmdk-hint]').forEach(function(el){ el.textContent = isMac ? '⌘K' : 'Ctrl K'; });
   document.querySelectorAll('[data-cmdk-mod]').forEach(function(el){ el.textContent = isMac ? '⌘' : 'Ctrl'; });
-  var legacyHint = document.getElementById('cmdk-hint');   // botón suelto del dashboard
-  if (legacyHint && isMac) legacyHint.textContent = '⌘K';
 
   var DATA = {pages:[], actions:[]}, HERE = null;
   try { DATA = JSON.parse(document.getElementById('eu-nav-data').textContent); } catch(e){}

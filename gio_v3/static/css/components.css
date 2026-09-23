@@ -403,10 +403,27 @@ html.light .eu-ic-moon,html:not(.light) .eu-ic-sun{display:none}
 .eu-cmdk-empty{padding:var(--sp-8) var(--sp-4);text-align:center;color:var(--fg-3);font-size:var(--fs-13)}
 @media (max-width:767px){.eu-cmdk-scrim{padding:var(--sp-4)}.eu-cmdk-ft{display:none}.eu-cmdk-it{height:44px}}
 
-/* Botón ⌘K suelto (dashboard, que oculta la topbar) */
-.cmdk-btn{display:flex;align-items:center;gap:6px;background:var(--bg-raised);border:1px solid var(--border-default);border-radius:var(--r-sm);padding:5px 9px;color:var(--fg-3);cursor:pointer;flex-shrink:0;font:var(--fs-12) var(--font-ui);transition:all var(--dur-fast)}
-.cmdk-btn:hover{border-color:var(--border-brand);color:var(--fg-brand);background:var(--brand-subtle)}
-.cmdk-btn kbd{font-family:var(--font-data);font-size:var(--fs-12);background:var(--bg-hover);border-radius:4px;padding:1px 5px;color:var(--fg-2);line-height:1.4}
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT HELPERS V2 — pilas y grids para las pantallas (Fase 3).
+   Espaciado solo con la escala --sp-*.
+   ═══════════════════════════════════════════════════════════════ */
+.eu-vstack{display:flex;flex-direction:column;gap:var(--stack)}
+.eu-hstack{display:flex;align-items:center;gap:var(--sp-2)}
+.eu-between{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
+.eu-grid-2,.eu-grid-3,.eu-grid-4{display:grid;gap:var(--sp-3)}
+.eu-grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.eu-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.eu-grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.eu-gap-1{gap:var(--sp-1)}.eu-gap-2{gap:var(--sp-2)}.eu-gap-3{gap:var(--sp-3)}.eu-gap-4{gap:var(--sp-4)}.eu-gap-6{gap:var(--sp-6)}
+.eu-grow{flex:1;min-width:0}
+.eu-right{text-align:right}
+/* Ícono de módulo teñido por su categoría (data-cat en él o en un ancestro) */
+.eu-mod-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--cat-bg,var(--bg-raised));color:var(--cat-fg,var(--fg-2));border:1px solid var(--cat-border,var(--border-subtle))}
+.eu-mod-ic svg{width:18px;height:18px}
+/* Tono del ícono de una fila (radar, alertas) */
+.eu-row-ic--danger{color:var(--danger-fg)}.eu-row-ic--warning{color:var(--warning-fg)}.eu-row-ic--info{color:var(--info-fg)}
+.eu-link{color:var(--fg-3);font-size:var(--fs-12);text-decoration:none}
+.eu-link:hover{color:var(--fg-brand)}
 
 /* ═══════════════════════════════════════════════════════════════
    ALIASES TEMPORALES (Fase 2) — clases V1 → componentes V2.

@@ -181,6 +181,9 @@ def nav_context():
             title = child['label']
             sub = item['label'] + (' · ' + item['fn'] if item.get('fn') else '')
             back = item['url']
+        elif item['id'] == 'inicio':
+            crumbs = [{'label': item['label'], 'current': True}]
+            title, sub = item['label'], None
         else:
             crumbs = [{'label': group['group']},
                       {'label': item['label'], 'fn': item.get('fn'), 'current': True}]

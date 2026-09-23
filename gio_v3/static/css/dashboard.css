@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════════════════════════════
+   Dashboard (/) — Design System V2 · pantalla 02
+   Solo tokens (app.css) y componentes eu-* (components.css).
+   Móvil: una columna Hoy → Siguiente paso → Pendiente → Virtudes →
+   Constancia → Inspiración. ≥1024: grid 1fr / 360px.
+   ═══════════════════════════════════════════════════════════════ */
+.dash{display:flex;flex-direction:column;gap:var(--sp-3)}
+.dash-main,.dash-side{display:contents}
+.dash-hello{order:0;display:none}
+.dash-hero{order:1}.dash-next{order:2}.dash-radar{order:3}.dash-virtues{order:4}
+.dash-heat{order:5}.dash-word{order:6}.dash-quote{order:7}
+.dash-hello .t-page{margin:var(--sp-2) 0 0}
+.dash h2{margin:0}
+
+@media (min-width:768px){
+  .dash{gap:var(--sp-4)}
+  .dash-hello{display:block}
+}
+@media (min-width:1024px){
+  .dash{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:var(--sp-6);align-items:start}
+  .dash-main{display:flex;flex-direction:column;gap:var(--sp-6)}
+  .dash-side{display:flex;flex-direction:column;gap:var(--sp-4)}
+}
+
+/* Topbar móvil: fecha + saludo */
+.eu-mtitle .t-eyebrow{color:var(--fg-brand);margin:0 0 3px}
+.eu-mtitle .dash-mgreet{font-size:var(--fs-20)}
+
+/* ── Hoy ─────────────────────────────────────────────────────── */
+.dash-hero{display:grid;gap:var(--sp-5)}
+.dash-hero-level{border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)}
+@media (min-width:768px){
+  .dash-hero{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:var(--sp-8);padding:var(--sp-6)}
+  .dash-hero-level{border-top:0;padding-top:0;border-left:1px solid var(--border-subtle);padding-left:var(--sp-8)}
+}
+@media (min-width:1024px){.dash-xp{font-size:var(--fs-40)}}
+.dash-xp .t-meta{font-family:var(--font-ui);font-size:var(--fs-13);letter-spacing:0}
+.dash-hint{margin:0}
+.dash-tier[data-t=carbon]{color:var(--tier-carbon)}
+.dash-tier[data-t=hierro]{color:var(--tier-hierro)}
+.dash-tier[data-t=oro]{color:var(--tier-oro)}
+.dash-tier[data-t=diamante]{color:var(--tier-diamante)}
+.dash-level-link{color:inherit;text-decoration:none}
+.dash-level-link:hover .t-section{color:var(--fg-brand)}
+.dash-level-link .t-section{margin:0}
+.dash-xpbar-thin{height:4px}
+
+/* ── Siguiente paso ──────────────────────────────────────────── */
+.dash-next-t{font-size:var(--fs-15);color:var(--fg-1)}
+.dash-next .eu-btn{align-self:flex-start}
+.dash-next[data-cat]{border-color:var(--cat-border)}
+
+/* ── Pendiente (radar) ───────────────────────────────────────── */
+.dash-card-hd{padding:var(--sp-4) var(--sp-4) var(--sp-1)}
+.dash-radar .eu-row-t{font-size:var(--fs-13)}
+.dash-radar .eu-row{padding-right:var(--sp-2)}
+.dash-radar-row{transition:opacity var(--dur-base) var(--ease-exit)}
+.dash-radar-row.is-leaving{opacity:0}
+
+/* ── Virtudes ────────────────────────────────────────────────── */
+.dash-vgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-2)}
+.dash-virtue{display:flex;flex-direction:column;gap:var(--sp-3);color:inherit;text-decoration:none}
+.dash-virtue.is-done{border-color:var(--cat-border)}
+.dash-virtue:not(.is-done) .eu-mod-ic{background:var(--bg-raised);border-color:var(--border-subtle);color:var(--fg-3)}
+.dash-virtue-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:767px){
+  .dash-virtue{padding:var(--sp-3) var(--sp-1);align-items:center;gap:var(--sp-2);border-radius:var(--r-md)}
+  .dash-virtue .eu-between{justify-content:center}
+  .dash-virtue .eu-badge,.dash-virtue-none,.dash-virtue-fn{display:none}
+  .dash-virtue-txt{max-width:100%;text-align:center}
+  .dash-virtue-name{font:var(--fw-medium) var(--fs-12)/1.2 var(--font-ui);letter-spacing:0}
+  .dash-virtue:not(.is-done) .dash-virtue-name{color:var(--fg-3)}
+}
+@media (min-width:768px){.dash-vgrid{gap:var(--sp-4)}}
+
+/* ── Constancia (heatmap) ────────────────────────────────────── */
+.dash-heat-scroll{overflow-x:auto;scrollbar-width:none}
+.dash-heat-scroll::-webkit-scrollbar{display:none}
+.dash-heat-grid{width:max-content}
+.eu-heat i.is-future{visibility:hidden}
+@media (min-width:1024px){
+  .dash-heat-grid{grid-template-rows:repeat(7,16px);grid-auto-columns:16px;gap:var(--sp-1)}
+}
+.eu-heat-legend i[data-l="0"]{background:var(--bg-raised)}
+.eu-heat-legend i[data-l="2"]{background:color-mix(in oklab,var(--brand) 45%,var(--bg-raised))}
+.eu-heat-legend i[data-l="4"]{background:var(--fg-brand-strong)}
+
+/* ── Inspiración ─────────────────────────────────────────────── */
+.dash-eyebrow-muted{color:var(--fg-3)}
+.dash-word-hd{align-items:baseline;flex-wrap:wrap}
+.dash-word-w{font:var(--fw-semibold) var(--fs-24)/1.1 var(--font-display);color:var(--fg-1)}
+.dash-word-mean{margin:0;font-size:var(--fs-13);color:var(--fg-2);line-height:var(--lh-relaxed)}
+.dash-word-ex{margin:0;font-style:italic}
+.dash-word-fr{align-self:flex-start}
+.dash-quote-t{margin:0;font-size:var(--fs-17)}
+.js-q-cat[data-kind=stoic]{color:var(--info-fg);background:var(--info-bg);border-color:var(--info-border)}
+.js-q-cat:not([data-kind=stoic]){color:var(--success-fg);background:var(--success-bg);border-color:var(--success-border)}
+.eu-iconbtn.is-spinning svg{animation:euSpin .7s linear infinite}

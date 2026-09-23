@@ -1,0 +1,20 @@
+{# Una fila del radar. Espera `dl`, `dl_icons`, `dl_labels` y `v2` en contexto. #}
+{% set tone = v2.radar_tone.get(dl.level, '') %}
+{% set badge = 'Vencido' if dl.badge == 'VENCIDO' else ('Hoy' if dl.badge == 'HOY' else dl.badge ~ ' d') %}
+<div class="eu-row dash-radar-row" data-key="{{ dl.type }}-{{ dl.id }}">
+  <div class="eu-row-ic{{ ' eu-row-ic--' ~ tone if tone }}"><i data-lucide="{{ dl_icons.get(dl.type, 'bell') }}"></i></div>
+  <div class="eu-row-main">
+    <div class="eu-row-t" title="{{ dl.label }}">{{ dl.label }}</div>
+    <div class="eu-row-s">{{ dl_labels.get(dl.type, dl.type) }}</div>
+  </div>
+  <span class="eu-badge eu-badge--status{{ ' eu-badge--' ~ tone if tone }}">{{ badge }}</span>
+  {% if dl.type == 'partido' %}
+  <a class="eu-iconbtn" href="/bienestar/futbol?resultado={{ dl.id }}" aria-label="Registrar resultado del partido" title="Registrar resultado"><i data-lucide="arrow-right"></i></a>
+  {% else %}
+  <button type="button" class="eu-iconbtn js-dl-done" aria-label="Marcar «{{ dl.label }}» como cumplido" title="Marcar como cumplido"
+    data-url="{{ '/gtd/api/task/' ~ dl.id ~ '/complete' if dl.type == 'task'
+      else '/plantas/api/plantas/' ~ dl.id ~ '/riego' if dl.type == 'planta_riego'
+      else '/plantas/api/plantas/' ~ dl.id ~ '/trasplante' if dl.type == 'planta_trasplante'
+      else '/perfil/api/reminder/' ~ dl.id ~ '/done' }}"><i data-lucide="check"></i></button>
+  {% endif %}
+</div>

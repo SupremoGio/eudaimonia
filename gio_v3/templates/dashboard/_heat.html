@@ -1,0 +1,16 @@
+{# Constancia: XP por día de las últimas 16 semanas (columna = semana) #}
+<section class="eu-card eu-vstack eu-gap-4 dash-heat" aria-labelledby="dash-heat-t">
+  <div class="eu-between">
+    <h2 class="t-card" id="dash-heat-t">Constancia · 16 semanas</h2>
+    <div class="eu-heat-legend" aria-hidden="true">Menos <i data-l="0"></i><i data-l="2"></i><i data-l="4"></i> Más</div>
+  </div>
+  <div class="dash-heat-scroll">
+    <div class="eu-heat dash-heat-grid" role="img" aria-label="XP por día en las últimas 16 semanas">
+      {% for c in v2.heat %}<i data-l="{{ c.l }}"{% if c.today %} class="today"{% elif c.future %} class="is-future"{% endif %} title="{{ c.date }} · {{ c.xp }} XP"></i>{% endfor %}
+    </div>
+  </div>
+  <div class="eu-between t-meta">
+    <span>Racha · {{ data.streak }} días</span>
+    <a class="eu-link" href="/logros">Ver historial →</a>
+  </div>
+</section>
