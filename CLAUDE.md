@@ -23,6 +23,8 @@ gio_v3_ACTUALIZADO/          ← raíz del repo
 │   │   └── ...
 │   ├── templates/           ← Jinja2 (espejo de modules/)
 │   ├── static/              ← CSS, JS, imágenes
+│   ├── frontend/finanzas/   ← fuente Vite+React del SPA de Estados de cuenta
+│   │                            (npm run build → static/finanzas/assets/estados.js)
 │   ├── uploads/             ← fotos subidas por el usuario (no se commitean)
 │   ├── tests/               ← pytest (TODOS los tests viven aquí: cd gio_v3 && pytest)
 │   ├── migrations/          ← migraciones versionadas (registran en migration_log)
@@ -214,6 +216,8 @@ prefijo `gio_v3/` ni hacer `cd gio_v3`. Si un comando falla con
 - El CSS de Tailwind (`static/css/tailwind-built.css`) se compila localmente
   con `npm run build:css` y se commitea ya construido — no se recompila en
   cada deploy de Railway.
+- Igual el SPA de Estados de cuenta: `cd gio_v3/frontend/finanzas && npm run build`
+  y se commitea `static/finanzas/assets/estados.js` (ver su README).
 
 ## Worktrees de Claude
 

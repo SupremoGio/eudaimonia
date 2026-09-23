@@ -1,0 +1,18 @@
+<!doctype html>
+<!-- Solo para `npm run dev`. En producción la página la sirve Flask
+     (templates/finanzas/estados.html) y este archivo no se usa. -->
+<html lang="es" class="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Estados de cuenta — dev</title>
+  <link rel="stylesheet" href="/static/css/tailwind-built.css">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="https://unpkg.com/lucide@1.31.0"></script>
+  <script>window.__EU_API_BASE__ = '/finanzas/estados/api';</script>
+</head>
+<body>
+  <div id="estados-root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
