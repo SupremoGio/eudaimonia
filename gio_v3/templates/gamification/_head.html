@@ -13,7 +13,7 @@
 </header>
 
 <section class="eu-card eu-card--featured lg-seal" aria-label="Tu nivel">
-  <div class="eu-level-seal lg-seal-ic"><i data-lucide="columns-3"></i></div>
+  {{ ui.tower(stats.level, 120) }}
   <div>
     <div class="t-eyebrow">Nivel {{ stats.level }} de 10</div>
     <div class="t-page lg-seal-name">{{ stats.level_name }}</div>

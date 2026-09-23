@@ -12,11 +12,16 @@
     <div><div class="t-data js-pillars-n">{{ clf.pillars|length }}</div><div class="t-meta">Virtudes</div></div>
     <div><div class="t-data fg-ec">+<span class="js-ec-today">{{ gam.coins_today }}</span></div><div class="t-meta">EC hoy</div></div>
   </div>
-  <div class="acta-clf eu-vstack eu-gap-2">
-    <div class="eu-between">
-      <span class="eu-badge acta-tier js-clf-badge" data-t="{{ tiers.get(clf.rank, 'carbon') }}"><span class="eu-dot"></span><span class="js-clf-label">{{ clf.label }}</span></span>
-      <span class="t-meta num js-clf-meta">{% if clf.anchors_total > 0 %}Anclas {{ clf.anchors_done }}/{{ clf.anchors_total }}{% endif %}{% if clf.anchors_total > 0 and clf.touches_total > 0 %} · {% endif %}{% if clf.touches_total > 0 %}Touches {{ clf.touches_done }}/{{ clf.touches_total }}{% endif %}</span>
+  <div class="acta-clf eu-vstack eu-gap-3">
+    <div class="eu-hstack eu-gap-3 acta-clf-hd">
+      {{ ui.rank(clf.rank, 56, label='Clasificación de hoy: ' ~ clf.label, cls='eu-rank-glow js-clf-rank') }}
+      <div class="eu-grow">
+        <div class="t-meta">Clasificación de hoy</div>
+        <div class="t-section acta-clf-name js-clf-label" data-rank="{{ tiers.get(clf.rank, 'carbon') }}">{{ clf.label }}</div>
+        <div class="t-meta num js-clf-meta">{% if clf.anchors_total > 0 %}Anclas {{ clf.anchors_done }}/{{ clf.anchors_total }}{% endif %}{% if clf.anchors_total > 0 and clf.touches_total > 0 %} · {% endif %}{% if clf.touches_total > 0 %}Touches {{ clf.touches_done }}/{{ clf.touches_total }}{% endif %}</div>
+      </div>
     </div>
+    {{ ui.ranks(clf.rank, sm=True) }}
     <p class="t-meta acta-p js-clf-desc">{{ clf.desc }}</p>
     <p class="t-ui acta-p js-clf-hint">{{ clf.next_hint or '' }}</p>
     <div class="eu-progress eu-progress--thin eu-progress--brand js-clf-track" role="progressbar" aria-label="Progreso al siguiente nivel del día"{% if clf.rank == 'diamond' %} hidden{% endif %}><i class="js-clf-bar" style="width:{{ clf.next_pct }}%"></i></div>

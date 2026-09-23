@@ -6,13 +6,14 @@
     <span class="eu-badge eu-badge--xp num">{{ stats.xp_today|int }} XP hoy</span>
   </div>
   <div class="eu-hstack eu-gap-3 lg-rank" data-t="{{ T.get(classification.rank, 'carbon') }}">
-    <div class="eu-row-ic lg-rank-ic"><i data-lucide="{{ classification.icon_lucide }}"></i></div>
+    {{ ui.rank(classification.rank, 64, label='Clasificación de hoy: ' ~ classification.label, cls='eu-rank-glow') }}
     <div><div class="t-section lg-rank-name">{{ classification.label }}</div><div class="t-meta">{{ classification.desc }}</div></div>
   </div>
+  {{ ui.ranks(classification.rank, sm=True) }}
   <ol class="lg-week" aria-label="Últimos 7 días">
     {% for d in history %}
-    <li class="lg-day" data-t="{{ T.get(d.rank, 'carbon') }}" title="{{ d.date }} · {{ d.xp|int }} XP">
-      <i data-lucide="{{ d.icon_lucide }}"></i>
+    <li class="lg-day" data-t="{{ T.get(d.rank, 'carbon') }}" title="{{ d.date }} · {{ d.xp|int }} XP" aria-label="{{ d.label }}: {{ {'carbon': 'Carbón', 'iron': 'Hierro', 'gold': 'Oro', 'diamond': 'Diamante'}.get(d.rank, 'Carbón') }}, {{ d.xp|int }} XP">
+      {{ ui.rank(d.rank, 28) }}
       <span class="lg-day-bar"><span style="width:{{ [d.xp * 5, 100]|min }}%"></span></span>
       <span class="t-meta">{{ d.label }}</span>
     </li>

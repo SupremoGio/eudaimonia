@@ -10,6 +10,18 @@
 <b class="dash-mgreet">{{ v2.greeting }}, Gio</b>
 {% endblock %}
 
+{# Campanita: recordatorios y vencimientos próximos (data.deadlines, los
+   mismos del radar «Pendiente»). Rojo si hay alguno vencido o de hoy. #}
+{% block topright %}
+{% set n_dl = data.deadlines|length %}
+{% set n_urg = data.deadlines|selectattr('level', 'equalto', 'red')|list|length %}
+<button type="button" class="eu-iconbtn dash-bell" aria-haspopup="dialog" aria-controls="m-notif" onclick="euModal.open('m-notif')"
+  aria-label="Recordatorios: {{ n_dl }} pendiente{{ 's' if n_dl != 1 }}{% if n_urg %}, {{ n_urg }} para hoy o vencido{{ 's' if n_urg != 1 }}{% endif %}" title="Recordatorios">
+  <i data-lucide="bell"></i>
+  <span class="dash-bell-ct js-bell-ct{% if n_urg %} is-urgent{% endif %}"{% if not n_dl %} hidden{% endif %} aria-hidden="true">{{ n_dl }}</span>
+</button>
+{% endblock %}
+
 {% block content %}
 {#  Tres zonas: Hoy (XP + nivel), Pendiente (siguiente paso + radar) e
     Inspiración (palabra + cita). Desktop: grid 1fr / 360px; móvil: una
@@ -32,6 +44,22 @@
     {% include "dashboard/_quote.html" %}
   </aside>
 </div>
+
+{% set dl_icons = {'reminder': 'bell', 'task': 'square-check-big', 'wishlist': 'shopping-bag', 'partido': 'trophy', 'planta_riego': 'droplets', 'planta_trasplante': 'sprout'} %}
+{% set dl_labels = {'reminder': 'Recordatorio', 'task': 'Tarea · Praxis', 'wishlist': 'Wishlist', 'partido': 'Partido · Fútbol', 'planta_riego': 'Riego · Plantas', 'planta_trasplante': 'Trasplante · Plantas'} %}
+{% call ui.modal('m-notif', 'Recordatorios', eyebrow='Pendiente', cls='eu-scrim--pop') %}
+<div class="eu-modal-bd dash-notif js-radar-box">
+  {% if data.deadlines %}
+  <div class="eu-list js-radar-list">
+    {% for dl in data.deadlines %}{% include "dashboard/_radar_row.html" %}{% endfor %}
+  </div>
+  {% endif %}
+  <div class="js-radar-empty"{% if data.deadlines %} hidden{% endif %}>
+    {{ ui.empty('bell-off', 'Sin recordatorios', 'No tienes recordatorios, tareas ni vencimientos próximos.', compact=True) }}
+  </div>
+  <a class="eu-btn eu-btn--ghost eu-btn--sm eu-btn--block" href="/perfil/#recordatorios"><i data-lucide="plus"></i>Nuevo recordatorio</a>
+</div>
+{% endcall %}
 {% endblock %}
 
 {% block scripts %}

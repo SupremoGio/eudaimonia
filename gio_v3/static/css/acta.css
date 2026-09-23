@@ -79,10 +79,6 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 /* ── Panel lateral ───────────────────────────────────────────── */
 .acta-xp .t-meta{font-family:var(--font-ui);font-size:var(--fs-13);letter-spacing:0}
 .acta-clf{border-top:1px solid var(--border-subtle);padding-top:var(--sp-3)}
-.acta-tier[data-t=carbon]{color:var(--tier-carbon)}
-.acta-tier[data-t=hierro]{color:var(--tier-hierro)}
-.acta-tier[data-t=oro]{color:var(--tier-oro)}
-.acta-tier[data-t=diamante]{color:var(--tier-diamante)}
 .acta-thin{height:4px}
 .acta-cover-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-3) var(--sp-1)}
 .acta-cover-it{display:flex;flex-direction:column;align-items:center;gap:var(--sp-1);min-width:0}
@@ -118,3 +114,28 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-toast .eu-toast-timer{transform-origin:left}
 .acta-toast.is-running .eu-toast-timer{animation:actaTimer 5s linear forwards}
 @keyframes actaTimer{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+
+.acta-clf-hd{align-items:center}
+.acta-clf-name{margin:0}
+
+/* ── Color por virtud (cada .acta-item trae data-cat de su pilar) ── */
+.acta-item .eu-act{border-left:3px solid color-mix(in oklab,var(--cat-fg) 65%,transparent)}
+.acta-item .eu-act:hover{background:color-mix(in oklab,var(--cat-bg) 55%,var(--bg-raised));border-color:var(--cat-border);border-left-color:var(--cat-fg)}
+.acta-item .eu-act-check{border-color:color-mix(in oklab,var(--cat-fg) 60%,var(--border-strong))}
+.acta-item .eu-act-xp{color:var(--cat-fg)}
+.acta-item .eu-act-xp .fg-ec{color:var(--ec-fg)}
+.acta-pillar .eu-mod-ic{background:var(--cat-bg);color:var(--cat-fg);border-color:var(--cat-border)}
+@media (min-width:768px){.acta-pillar{border-top:3px solid var(--cat-fg)}}
+@media (max-width:767px){.acta-pillar-hd{padding-left:var(--sp-3);border-left:3px solid var(--cat-fg)}}
+.acta-session{border-top:3px solid var(--cat-fg)}
+.acta-session-bar{margin:calc(var(--sp-1) * -1) 0 var(--sp-3)}
+.acta-session:not([open]) .acta-session-bar{margin:var(--sp-2) 0 0}
+
+/* ── Anclas: se distinguen a simple vista ── */
+.acta-item.is-ancla .eu-act{min-height:60px;border:1px solid var(--cat-border);border-left:5px solid var(--cat-fg);background:linear-gradient(100deg,var(--cat-bg) 0%,color-mix(in oklab,var(--cat-bg) 40%,var(--bg-raised)) 60%,var(--bg-raised) 100%);box-shadow:0 1px 0 color-mix(in oklab,var(--cat-fg) 18%,transparent)}
+.acta-item.is-ancla .eu-act[aria-pressed=true],.acta-item.is-ancla .eu-act.is-done{background:var(--cat-bg)}
+.acta-item.is-ancla .acta-lbl{font-weight:var(--fw-semibold)}
+.acta-item.is-ancla .eu-act-check{width:28px;height:28px;border-width:2px;border-color:var(--cat-fg)}
+.acta-item.is-ancla .eu-act-xp{font-size:var(--fs-13);font-weight:var(--fw-semibold)}
+.acta-tag--ancla{background:var(--cat-fg);color:var(--bg-canvas);border-color:transparent;gap:3px;letter-spacing:.02em}
+.acta-tag--ancla svg{width:11px;height:11px}

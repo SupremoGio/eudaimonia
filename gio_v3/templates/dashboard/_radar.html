@@ -2,7 +2,7 @@
    con fecha en los próximos días (dashboard.routes._build_deadlines). #}
 {% set dl_icons = {'reminder': 'bell', 'task': 'square-check-big', 'wishlist': 'shopping-bag', 'partido': 'trophy', 'planta_riego': 'droplets', 'planta_trasplante': 'sprout'} %}
 {% set dl_labels = {'reminder': 'Recordatorio', 'task': 'Tarea · Praxis', 'wishlist': 'Wishlist', 'partido': 'Partido · Fútbol', 'planta_riego': 'Riego · Plantas', 'planta_trasplante': 'Trasplante · Plantas'} %}
-<section class="eu-card eu-card--flush dash-radar" aria-labelledby="dash-radar-t">
+<section class="eu-card eu-card--flush dash-radar js-radar-box" aria-labelledby="dash-radar-t">
   <div class="eu-between dash-card-hd">
     <h2 class="t-card" id="dash-radar-t">Pendiente</h2>
     <span class="t-meta js-radar-count">{{ data.deadlines|length }} próximos</span>

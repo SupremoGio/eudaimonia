@@ -1,7 +1,7 @@
 {# Una fila del radar. Espera `dl`, `dl_icons`, `dl_labels` y `v2` en contexto. #}
 {% set tone = v2.radar_tone.get(dl.level, '') %}
 {% set badge = 'Vencido' if dl.badge == 'VENCIDO' else ('Hoy' if dl.badge == 'HOY' else dl.badge ~ ' d') %}
-<div class="eu-row dash-radar-row" data-key="{{ dl.type }}-{{ dl.id }}">
+<div class="eu-row dash-radar-row" data-key="{{ dl.type }}-{{ dl.id }}" data-level="{{ dl.level }}">
   <div class="eu-row-ic{{ ' eu-row-ic--' ~ tone if tone }}"><i data-lucide="{{ dl_icons.get(dl.type, 'bell') }}"></i></div>
   <div class="eu-row-main">
     <div class="eu-row-t" title="{{ dl.label }}">{{ dl.label }}</div>

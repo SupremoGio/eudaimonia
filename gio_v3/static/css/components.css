@@ -652,4 +652,50 @@ body.nw-hidden .nw-hide-block{display:none!important}
 .eu-scrim{padding-top:max(var(--sp-6),env(safe-area-inset-top))}
 @media (max-width:767px){.eu-scrim:not(.eu-scrim--sheet){padding-top:env(safe-area-inset-top)}.eu-scrim .eu-modal{max-height:calc(100dvh - env(safe-area-inset-top) - var(--sp-6))}}
 
+
+/* ═══════════════════════════════════════════════════════════════
+   INSIGNIAS DE CLASIFICACIÓN (ui.rank / ui.ranks / euRank)
+   Medallones SVG del sprite _ui/rank_sprite.html; materiales --rank-*.
+   ═══════════════════════════════════════════════════════════════ */
+.eu-rank{display:block;flex-shrink:0;overflow:visible}
+.eu-rank.is-locked{filter:grayscale(1);opacity:.38}
+.eu-rank-glow{filter:drop-shadow(0 4px 10px color-mix(in oklab,var(--rank-glow,var(--brand)) 45%,transparent))}
+.eu-rank[data-rank=carbon]{--rank-glow:var(--rank-carbon-mid)}.eu-rank[data-rank=hierro]{--rank-glow:var(--rank-hierro-mid)}
+.eu-rank[data-rank=oro]{--rank-glow:var(--rank-oro-mid)}.eu-rank[data-rank=diamante]{--rank-glow:var(--rank-diamante-mid)}
+.eu-rank.is-pop{animation:euSealIn 700ms var(--ease-settle) both}
+.eu-ranks{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-2);position:relative}
+.eu-ranks::before{content:"";position:absolute;left:12.5%;right:12.5%;top:26px;height:2px;border-radius:2px;background:var(--border-subtle)}
+.eu-rank-step{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;min-width:0}
+.eu-rank-step .eu-rank{width:44px;height:44px;margin:4px 0 var(--sp-1)}
+.eu-rank-step.is-now .eu-rank{width:56px;height:56px;margin:-2px 0 var(--sp-1);filter:drop-shadow(0 4px 10px color-mix(in oklab,var(--rank-glow) 50%,transparent))}
+.eu-rank-step b{font:var(--fw-medium) var(--fs-13)/1.2 var(--font-ui);color:var(--fg-2)}
+.eu-rank-step.is-now b{color:var(--fg-1);font-weight:var(--fw-semibold)}
+.eu-rank-step.is-next b{color:var(--fg-3)}
+.eu-rank-step .t-meta{font-family:var(--font-data);white-space:nowrap}
+.eu-ach-toast .eu-ach-seal.eu-ach-seal--rank{width:56px;height:56px;border:0;background:none}
+.eu-ach-seal--rank .eu-rank{width:56px;height:56px}
+
+
+/* Torre estoica de niveles (ui.tower) */
+.eu-tower{display:block;flex-shrink:0;overflow:visible}
+.eu-tower-stone{fill:url(#eu-tower-g);stroke:var(--rank-oro-lo);stroke-width:.8}
+.eu-tower-drum{fill:var(--bg-raised);stroke:var(--border-default);stroke-width:.8}
+.eu-tower-drum.is-on{fill:url(#eu-tower-g);stroke:var(--rank-oro-lo)}
+.eu-tower-drum.is-now{stroke:var(--fg-brand-strong);stroke-width:1.4;filter:drop-shadow(0 0 3px color-mix(in oklab,var(--rank-oro-mid) 70%,transparent))}
+.eu-tower-flute{fill:none;stroke:var(--rank-oro-lo);stroke-opacity:.45;stroke-width:.8;stroke-linecap:round}
+
+
+/* Modal anclado arriba a la derecha (popover): ui.modal(..., cls='eu-scrim--pop').
+   En móvil sigue siendo bottom sheet. */
+@media (min-width:768px){
+  .eu-scrim--pop{align-items:flex-start;justify-content:flex-end;padding:calc(var(--topbar-h) + env(safe-area-inset-top) + var(--sp-2)) var(--sp-6) var(--sp-6);background:color-mix(in oklab,var(--bg-overlay) 35%,transparent);backdrop-filter:none}
+  .eu-scrim--pop .eu-modal{max-width:400px;max-height:min(70vh,560px);animation:euRise var(--dur-base) var(--ease-enter) both}
+}
+
+
+.eu-ranks--sm::before{top:20px}
+.eu-ranks--sm .eu-rank-step .eu-rank{width:34px;height:34px;margin:3px 0 2px}
+.eu-ranks--sm .eu-rank-step.is-now .eu-rank{width:42px;height:42px;margin:-1px 0 2px}
+.eu-ranks--sm .eu-rank-step b{font-size:var(--fs-12)}
+
 }

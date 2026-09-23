@@ -435,3 +435,13 @@ a[class*="btn"]:active {
   .g3     { grid-template-columns:1fr 1fr !important; }
   .scroll { padding:16px 18px; }
 }
+
+/* ── Insignias de clasificación (templates/_ui/rank_sprite.html) ──
+   Materiales de los medallones Carbón · Hierro · Oro · Diamante. Son
+   ilustraciones: mismos valores en claro y oscuro (hi = luz, lo = sombra). */
+:root{
+--rank-carbon-hi:#CFC6D6;--rank-carbon-mid:#5E5566;--rank-carbon-lo:#2A2530;
+--rank-hierro-hi:#EEF2F7;--rank-hierro-mid:#A3AFBE;--rank-hierro-lo:#4B5666;
+--rank-oro-hi:#FFEBAA;--rank-oro-mid:#D9AE45;--rank-oro-lo:#7A5710;
+--rank-diamante-hi:#E9FBFF;--rank-diamante-mid:#79D0E6;--rank-diamante-lo:#1F6F86;
+}

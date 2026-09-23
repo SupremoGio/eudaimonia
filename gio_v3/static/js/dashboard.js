@@ -49,29 +49,38 @@
     }).catch(function () {}).then(function () { spin(wBtn, false); });
   });
 
-  // ── Radar: marcar como cumplido
-  var count = document.querySelector('.js-radar-count');
-  document.querySelectorAll('.js-dl-done').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      if (btn.disabled) return;
-      btn.disabled = true;
-      fetch(btn.dataset.url, { method: 'POST' }).then(function (r) { return r.json(); }).then(function (j) {
-        if (!j.ok) { btn.disabled = false; toast('No se pudo marcar', 'err'); return; }
-        if (j.gam && window.euXpGain) euXpGain({ el: btn, xp: j.gam.xp });
-        var row = btn.closest('.dash-radar-row');
-        row.classList.add('is-leaving');
-        setTimeout(function () {
-          row.remove();
-          var left = document.querySelectorAll('.dash-radar-row').length;
-          if (count) count.textContent = left + ' próximos';
-          if (!left) {
-            var list = document.querySelector('.js-radar-list'); if (list) list.remove();
-            var empty = document.querySelector('.js-radar-empty'); if (empty) empty.hidden = false;
-          }
-        }, 220);
-        if (j.gam && j.gam.xp) toast('+' + j.gam.xp + ' XP' + (j.gam.ec ? ' · +' + j.gam.ec + ' EC' : ''), 'win');
-        if (j.gam && window.euGam) euGam(j.gam);
-      }).catch(function () { btn.disabled = false; toast('No se pudo marcar', 'err'); });
+  // ── Radar y campanita: marcar como cumplido. La misma fila vive en la
+  //    tarjeta «Pendiente» y en el panel de la campanita (data-key).
+  function syncRadar() {
+    var left = document.querySelectorAll('.dash-radar .dash-radar-row').length;
+    var count = document.querySelector('.js-radar-count'); if (count) count.textContent = left + ' próximos';
+    document.querySelectorAll('.js-radar-box').forEach(function (box) {
+      if (box.querySelector('.dash-radar-row')) return;
+      var list = box.querySelector('.js-radar-list'); if (list) list.remove();
+      var empty = box.querySelector('.js-radar-empty'); if (empty) empty.hidden = false;
     });
+    var ct = document.querySelector('.js-bell-ct'), bell = document.querySelector('.dash-bell');
+    var urgent = document.querySelectorAll('.dash-radar .dash-radar-row[data-level=red]').length;
+    if (ct) { ct.textContent = left; ct.hidden = !left; ct.classList.toggle('is-urgent', urgent > 0); }
+    if (bell) bell.setAttribute('aria-label', 'Recordatorios: ' + left + ' pendiente' + (left === 1 ? '' : 's') + (urgent ? ', ' + urgent + ' para hoy o vencido' + (urgent === 1 ? '' : 's') : ''));
+  }
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.js-dl-done');
+    if (!btn || btn.disabled) return;
+    var key = btn.closest('.dash-radar-row').dataset.key;
+    var copies = document.querySelectorAll('.dash-radar-row[data-key="' + key + '"] .js-dl-done');
+    copies.forEach(function (b) { b.disabled = true; });
+    fetch(btn.dataset.url, { method: 'POST' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.ok) { copies.forEach(function (b) { b.disabled = false; }); toast('No se pudo marcar', 'err'); return; }
+      if (j.gam && window.euXpGain) euXpGain({ el: btn, xp: j.gam.xp });
+      document.querySelectorAll('.dash-radar-row[data-key="' + key + '"]').forEach(function (row) { row.classList.add('is-leaving'); });
+      setTimeout(function () {
+        document.querySelectorAll('.dash-radar-row[data-key="' + key + '"]').forEach(function (row) { row.remove(); });
+        syncRadar();
+      }, 220);
+      if (j.gam && j.gam.xp) toast('+' + j.gam.xp + ' XP' + (j.gam.ec ? ' · +' + j.gam.ec + ' EC' : ''), 'win');
+      else toast('Hecho', 'ok');
+      if (j.gam && window.euGam) euGam(j.gam);
+    }).catch(function () { copies.forEach(function (b) { b.disabled = false; }); toast('No se pudo marcar', 'err'); });
   });
 })();

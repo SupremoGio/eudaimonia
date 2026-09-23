@@ -69,6 +69,7 @@
     $$('.acta-session').forEach(function (s) {
       var items = $$('.acta-item', s), d = items.filter(function (i) { return i.dataset.done === '1'; });
       var c = $('summary .num', s); if (c) c.textContent = d.length + '/' + items.length;
+      var sb = $('.js-sbar', s); if (sb) sb.style.width = (items.length ? Math.round(d.length / items.length * 100) : 0) + '%';
     });
     updWeekend();
   }
@@ -105,7 +106,9 @@
     if (!g) return;
     var clf = g.classification;
     if (clf) {
-      var badge = $('.js-clf-badge'); if (badge) badge.dataset.t = TIER_T[clf.rank] || 'carbon';
+      var medal = $('.js-clf-rank'); if (medal && window.euRankSet) euRankSet(medal, clf.rank, 'Clasificación de hoy: ' + clf.label);
+      var cname = $('.js-clf-label'); if (cname) cname.dataset.rank = TIER_T[clf.rank] || 'carbon';
+      if (window.euRanksUpdate) euRanksUpdate($('.acta-summary .js-ranks'), clf.rank);
       var t = function (sel, v) { var el = $(sel); if (el) el.textContent = v || ''; };
       t('.js-clf-label', clf.label); t('.js-clf-desc', clf.desc); t('.js-clf-hint', clf.next_hint);
       var parts = [];
@@ -115,8 +118,10 @@
       var track = $('.js-clf-track'); if (track) track.hidden = clf.rank === 'diamond';
       var bar = $('.js-clf-bar'); if (bar) bar.style.width = (clf.next_pct || 0) + '%';
       // Subir de clasificación es el logro central del día: festejo propio
-      if (clfRank && clf.rank !== clfRank && RANKS.indexOf(clf.rank) > RANKS.indexOf(clfRank) && window.euRewardSheet) {
-        euRewardSheet({ icon: clf.icon_lucide || 'trophy', eyebrow: 'Subiste de clasificación', title: clf.label, desc: clf.desc || '', burst: false });
+      if (clfRank && clf.rank !== clfRank && RANKS.indexOf(clf.rank) > RANKS.indexOf(clfRank) && window.euAchievement) {
+        var RAR = { iron: 'plata', gold: 'oro', diamond: 'especial' };
+        euAchievement({ rank: clf.rank, rarity: RAR[clf.rank] || 'bronce', eyebrow: 'Subiste de clasificación', title: clf.label, desc: clf.desc || '' });
+        if (medal && !reduced) { medal.classList.remove('is-pop'); void medal.getBoundingClientRect(); medal.classList.add('is-pop'); }
       }
       clfRank = clf.rank;
       if (clf.pillars) {

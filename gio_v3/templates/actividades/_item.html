@@ -17,7 +17,7 @@
       <span class="acta-lbl">{{ item.label }}</span>
       {% if is_ancla or item.cadence == 'weekly' or item.eury_proxy %}
       <span class="acta-sub">
-        {% if is_ancla %}<span class="eu-badge eu-badge--cat acta-tag">Ancla</span>{% endif %}
+        {% if is_ancla %}<span class="eu-badge acta-tag acta-tag--ancla"><i data-lucide="anchor"></i>Ancla</span>{% endif %}
         {% if item.cadence == 'weekly' %}<span class="t-meta">{{ item.week_count or 0 }}/semana</span>{% endif %}
         {% if item.eury_proxy %}<span class="t-meta">{{ 'Hecho hoy · ver detalle' if item.done_ui else 'Registrar en Eurythmia →' }}</span>{% endif %}
       </span>

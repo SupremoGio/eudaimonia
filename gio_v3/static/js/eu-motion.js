@@ -94,8 +94,39 @@
     }, later);
   }
 
+  /* ── Insignia de clasificación (mismo SVG que ui.rank) ─────────────── */
+  var RANK_KEY = { iron: 'hierro', gold: 'oro', diamond: 'diamante' };
+  var RANK_LABEL = { carbon: 'Carbón', hierro: 'Hierro', oro: 'Oro', diamante: 'Diamante' };
+  function rankKey(r) { return RANK_KEY[r] || (RANK_LABEL[r] ? r : 'carbon'); }
+  function euRank(rank, size, label) {
+    var k = rankKey(rank), s = size || 48;
+    return '<svg class="eu-rank" width="' + s + '" height="' + s + '" viewBox="0 0 120 120" data-rank="' + k + '"' +
+      (label ? ' role="img" aria-label="' + esc(label) + '"' : ' aria-hidden="true"') + ' focusable="false"><use href="#eu-rank-' + k + '"/></svg>';
+  }
+  /** Cambia un <svg class="eu-rank"> existente a otro rango. */
+  function euRankSet(svg, rank, label) {
+    if (!svg) return;
+    var k = rankKey(rank);
+    svg.setAttribute('data-rank', k);
+    var u = svg.querySelector('use'); if (u) u.setAttribute('href', '#eu-rank-' + k);
+    if (label) svg.setAttribute('aria-label', label);
+  }
+
+  /** Actualiza una escalera ui.ranks() al rango dado (sin recargar). */
+  var ORDER = ['carbon', 'hierro', 'oro', 'diamante'];
+  function euRanksUpdate(ol, rank) {
+    if (!ol) return;
+    var ci = ORDER.indexOf(rankKey(rank));
+    Array.prototype.forEach.call(ol.querySelectorAll('.eu-rank-step'), function (li, i) {
+      li.classList.toggle('is-past', i < ci); li.classList.toggle('is-now', i === ci); li.classList.toggle('is-next', i > ci);
+      if (i === ci) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+      var svg = li.querySelector('.eu-rank'); if (svg) svg.classList.toggle('is-locked', i > ci);
+    });
+    ol.setAttribute('aria-label', 'Clasificación del día: ' + RANK_LABEL[ORDER[ci]]);
+  }
+
   /* ── Logro desbloqueado ────────────────────────────────────────────────
-     opts: { icon, rarity: bronce|plata|oro|especial, eyebrow, title, desc } */
+     opts: { icon | rank (carbon…diamante: medallón), rarity: bronce|plata|oro|especial, eyebrow, title, desc } */
   var achHost = null, achQueue = [], achBusy = false;
   function achHostEl() {
     if (achHost && document.body.contains(achHost)) return achHost;
@@ -121,7 +152,9 @@
     card.className = 'eu-ach eu-ach-toast is-earned';
     card.dataset.rarity = o.rarity || 'oro';
     card.innerHTML =
-      '<div class="eu-ach-seal"><i data-lucide="' + esc(o.icon || 'trophy') + '"></i><span class="eu-ach-halo" aria-hidden="true"></span></div>' +
+      (o.rank
+        ? '<div class="eu-ach-seal eu-ach-seal--rank">' + euRank(o.rank, 56) + '<span class="eu-ach-halo" aria-hidden="true"></span></div>'
+        : '<div class="eu-ach-seal"><i data-lucide="' + esc(o.icon || 'trophy') + '"></i><span class="eu-ach-halo" aria-hidden="true"></span></div>') +
       '<div class="eu-grow">' +
         '<div class="eu-ach-rar">' + esc(o.eyebrow || 'Logro desbloqueado') + '</div>' +
         '<div class="t-card">' + esc(o.title || '') + '</div>' +
@@ -301,6 +334,10 @@
   window.euMotion = { reduced: reduced };
   window.euCountTo = euCountTo;
   window.euEmpty = euEmpty;
+  window.euRank = euRank;
+  window.euRankSet = euRankSet;
+  window.euRanksUpdate = euRanksUpdate;
+  window.euRankLabel = function (r) { return RANK_LABEL[rankKey(r)]; };
   window.euSkel = euSkel;
   window.euSkelHTML = euSkelHTML;
   window.euXpGain = euXpGain;

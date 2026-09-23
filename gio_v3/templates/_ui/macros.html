@@ -74,8 +74,8 @@
 </{{ t }}>
 {%- endmacro %}
 
-{% macro modal(id, title, eyebrow=None) -%}
-<div class="eu-scrim" id="{{ id }}" hidden>
+{% macro modal(id, title, eyebrow=None, cls='') -%}
+<div class="eu-scrim{% if cls %} {{ cls }}{% endif %}" id="{{ id }}" hidden>
   <div class="eu-modal" role="dialog" aria-modal="true" aria-labelledby="{{ id }}-t">
     <div class="eu-modal-hd"><div>{% if eyebrow %}<div class="t-eyebrow">{{ eyebrow }}</div>{% endif %}<div class="t-section" id="{{ id }}-t" style="margin-top:6px">{{ title }}</div></div>{{ iconbtn('x', 'Cerrar', onclick="euModal.close('" ~ id ~ "')") }}</div>
     {{ caller() }}
@@ -97,4 +97,47 @@
   {% if cta %}{{ button(cta, icon=cta_icon, href=cta_href) }}{% endif %}
   {% if kbd %}<span class="t-meta">o pulsa <span class="kbd">{{ kbd }}</span></span>{% endif %}
 </div>
+{%- endmacro %}
+
+{# ── Insignias de clasificación del día (sprite: _ui/rank_sprite.html) ──
+   rank acepta el código del motor (carbon/iron/gold/diamond) o el del
+   sprite (carbon/hierro/oro/diamante). Sin label = decorativa. #}
+{% set RANK_KEY = {'iron': 'hierro', 'gold': 'oro', 'diamond': 'diamante'} %}
+{% macro rank(rank, size=48, label=None, locked=False, cls='') -%}
+{%- set k = RANK_KEY.get(rank, rank) or 'carbon' -%}
+<svg class="eu-rank{% if locked %} is-locked{% endif %}{% if cls %} {{ cls }}{% endif %}" width="{{ size }}" height="{{ size }}" viewBox="0 0 120 120" data-rank="{{ k }}"{% if label %} role="img" aria-label="{{ label }}"{% else %} aria-hidden="true"{% endif %} focusable="false"><use href="#eu-rank-{{ k }}"/></svg>
+{%- endmacro %}
+
+{# Escalera Carbón → Hierro → Oro → Diamante con el rango actual resaltado. #}
+{% macro ranks(current, size=44, sm=False) -%}
+{%- set order = ['carbon', 'hierro', 'oro', 'diamante'] -%}
+{%- set cur = RANK_KEY.get(current, current) or 'carbon' -%}
+{%- set ci = order.index(cur) if cur in order else 0 -%}
+{%- set info = {'carbon': ('Carbón', 'inicio'), 'hierro': ('Hierro', '1 ancla'), 'oro': ('Oro', '+ touches'), 'diamante': ('Diamante', 'todas')} -%}
+<ol class="eu-ranks{% if sm %} eu-ranks--sm{% endif %} js-ranks" aria-label="Clasificación del día: {{ info[cur][0] }}">
+  {%- for r in order %}
+  <li class="eu-rank-step{% if loop.index0 < ci %} is-past{% elif loop.index0 == ci %} is-now{% else %} is-next{% endif %}" data-rank="{{ r }}"{% if loop.index0 == ci %} aria-current="step"{% endif %}>
+    {{ rank(r, size, locked=loop.index0 > ci) }}
+    <b>{{ info[r][0] }}</b><span class="t-meta">{{ info[r][1] }}</span>
+  </li>
+  {%- endfor %}
+</ol>
+{%- endmacro %}
+
+{# ── Torre estoica: columna dórica de 10 tambores que se llena hasta el
+   nivel actual (antes dashboard/_greek_column.html). Degradado en el sprite. #}
+{% macro tower(level, height=112, next_name=None) -%}
+{%- set lv = [[level|int, 0]|max, 10]|min -%}
+<svg class="eu-tower" width="{{ (height * 64 / 120)|round(1) }}" height="{{ height }}" viewBox="0 0 64 120" role="img" aria-label="Torre estoica: nivel {{ lv }} de 10">
+  <rect class="eu-tower-stone" x="9" y="3" width="46" height="6" rx="1.5"/>
+  <path class="eu-tower-stone" d="M15 9 H49 L45 16 H19 Z"/>
+  {%- for i in range(10) %}
+  {%- set n = 10 - i %}{# tambor n (1 = abajo) #}
+  {%- set y = 17 + i * 8.4 %}
+  <rect class="eu-tower-drum{% if n <= lv %} is-on{% endif %}{% if n == lv %} is-now{% endif %}" x="20" y="{{ y }}" width="24" height="7.4" rx="1"/>
+  {%- if n <= lv %}<path class="eu-tower-flute" d="M27 {{ y + 1.2 }} v5 M32 {{ y + 1.2 }} v5 M37 {{ y + 1.2 }} v5"/>{% endif %}
+  {%- endfor %}
+  <rect class="eu-tower-stone" x="15" y="101.5" width="34" height="5.5" rx="1"/>
+  <rect class="eu-tower-stone" x="9" y="107" width="46" height="6" rx="1.5"/>
+</svg>
 {%- endmacro %}

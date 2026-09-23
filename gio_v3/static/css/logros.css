@@ -23,8 +23,7 @@
 
 /* Sello de nivel (móvil) */
 .lg-seal{display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--sp-3);padding:var(--sp-5)}
-.lg-seal-ic{width:64px;height:64px}
-.lg-seal-ic svg{width:28px;height:28px}
+.lg-seal .eu-tower{margin:0 auto}
 .lg-seal-name{letter-spacing:.1em;margin-top:var(--sp-2)}
 .lg-seal-q{font-size:var(--fs-15);margin-top:2px}
 .lg-seal .eu-xpbar,.lg-seal-ft{width:100%}
@@ -85,13 +84,13 @@
 /* Clasificación y 7 días */
 .lg-rank[data-t=carbon]{--tc:var(--tier-carbon)}.lg-rank[data-t=hierro]{--tc:var(--tier-hierro)}
 .lg-rank[data-t=oro]{--tc:var(--tier-oro)}.lg-rank[data-t=diamante]{--tc:var(--tier-diamante)}
-.lg-rank-ic{color:var(--tc)}
-.lg-rank-name{color:var(--tc)}
+.lg-rank{align-items:center}
+.lg-rank-name{color:var(--fg-1)}
 .lg-week{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--sp-1)}
 .lg-day{display:flex;flex-direction:column;align-items:center;gap:var(--sp-1);min-width:0}
 .lg-day[data-t=carbon]{--tc:var(--tier-carbon)}.lg-day[data-t=hierro]{--tc:var(--tier-hierro)}
 .lg-day[data-t=oro]{--tc:var(--tier-oro)}.lg-day[data-t=diamante]{--tc:var(--tier-diamante)}
-.lg-day svg{width:16px;height:16px;color:var(--tc)}
+.lg-day .eu-rank{width:28px;height:28px}
 .lg-day-bar{display:block;width:100%;height:4px;border-radius:2px;background:color-mix(in oklab,var(--tc) 22%,transparent);overflow:hidden}
 .lg-day-bar span{display:block;height:100%;background:var(--tc)}
 .lg-day .t-meta{white-space:nowrap}

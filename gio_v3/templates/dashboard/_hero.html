@@ -1,28 +1,21 @@
 {# Hoy: XP del día + clasificación (izq.) · nivel, racha, EC y perks (der.) #}
 {% set clf = data.classification %}
-{% set ranks = ['carbon', 'iron', 'gold', 'diamond'] %}
-{% set ci = ranks.index(clf.rank) if clf.rank in ranks else 0 %}
 {# La clasificación es por anclas/touches (engine.get_daily_classification),
-   no por umbrales de XP: cada tier muestra lo que pide. #}
-{% set tiers = [
-  {'t': 'carbon',   'label': 'Carbón',   'req': 'inicio'},
-  {'t': 'hierro',   'label': 'Hierro',   'req': '1 ancla'},
-  {'t': 'oro',      'label': 'Oro',      'req': '+ touches'},
-  {'t': 'diamante', 'label': 'Diamante', 'req': 'todas'},
-] %}
+   no por umbrales de XP: la escalera de insignias muestra lo que pide cada rango. #}
+{% set rank_names = {'carbon': 'Carbón', 'iron': 'Hierro', 'gold': 'Oro', 'diamond': 'Diamante'} %}
+{% set rname = rank_names.get(clf.rank, 'Carbón') %}
 <section class="eu-card eu-card--featured dash-hero" aria-label="Tu día">
   <div class="eu-vstack eu-gap-4">
-    <div class="eu-between">
+    <div class="eu-between dash-hero-top">
       <div class="t-eyebrow">Hoy</div>
-      <span class="eu-badge dash-tier" data-t="{{ tiers[ci].t }}"><span class="eu-dot"></span>{{ tiers[ci].label }}</span>
+      <a class="dash-rank" href="/logros" aria-label="Clasificación de hoy: {{ rname }}. Ver logros">
+        {{ ui.rank(clf.rank, 52, cls='eu-rank-glow') }}
+        <span><span class="t-meta">Clasificación</span><b class="t-card">{{ rname }}</b></span>
+      </a>
     </div>
     <div class="t-data-xl fg-xp dash-xp">{{ data.xp_today }}<span class="t-meta"> / {{ XP_DAILY_GOAL }} XP</span></div>
     {{ ui.xpbar(data.xp_today, XP_DAILY_GOAL) }}
-    <div class="eu-tiers">
-      {% for t in tiers %}
-      <div class="eu-tier{% if loop.index0 < ci %} is-past{% elif loop.index0 == ci %} is-now{% endif %}" data-t="{{ t.t }}">{{ t.label }}<b>{{ t.req }}</b></div>
-      {% endfor %}
-    </div>
+    {{ ui.ranks(clf.rank) }}
     {% if clf.next_hint %}<p class="t-meta dash-hint">{{ clf.next_hint }}</p>{% endif %}
     {% if clf.anchors_total > 0 or clf.touches_total > 0 %}
     <div class="eu-hstack eu-gap-4 t-meta num">
@@ -34,10 +27,11 @@
 
   <div class="eu-vstack eu-gap-3 dash-hero-level">
     <a class="eu-hstack eu-gap-3 dash-level-link" href="/logros" aria-label="Ver logros y niveles">
-      <div class="eu-level-seal"><i data-lucide="columns-3"></i></div>
+      {{ ui.tower(data.level, 96) }}
       <div>
-        <div class="t-meta">Nivel {{ data.level }} de 10</div>
+        <div class="t-meta">Nivel {{ data.level }} de 10 · Torre estoica</div>
         <div class="t-section">{{ data.level_name|title }}</div>
+        {% if data.level_subtitle %}<div class="t-quote dash-level-sub">«{{ data.level_subtitle.split('—')[-1]|trim|capitalize }}.»</div>{% endif %}
       </div>
     </a>
     <div class="eu-xpbar dash-xpbar-thin" role="progressbar" aria-valuenow="{{ data.level_pct }}" aria-valuemax="100" aria-label="Progreso al siguiente nivel"><i style="width:{{ data.level_pct }}%"></i></div>
