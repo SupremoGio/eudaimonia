@@ -1,0 +1,22 @@
+{# Desglose de XP: últimas 30 entradas, agrupadas por fecha #}
+<details class="eu-card lg-xplog">
+  <summary class="eu-between">
+    <span><span class="t-card">Desglose de XP</span> <span class="t-meta">· últimas 30</span></span>
+    <i data-lucide="chevron-down" class="lg-chev"></i>
+  </summary>
+  {% if xp_log %}
+  {% set ns = namespace(d='') %}
+  <div class="eu-list lg-xplog-list">
+    {% for e in xp_log %}
+      {% if e.date != ns.d %}{% set ns.d = e.date %}<div class="t-eyebrow lg-xplog-date">{{ e.date }}</div>{% endif %}
+      <div class="eu-row lg-xplog-row">
+        <span class="eu-amt {{ 'pos' if e.amount > 0 else 'neg' }} lg-xplog-amt">{{ '+' if e.amount > 0 }}{{ e.amount|int }}</span>
+        <div class="eu-row-main"><div class="eu-row-t">{{ e.description }}</div></div>
+        <span class="eu-badge">{{ e.source }}</span>
+      </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  {{ ui.empty('scroll-text', 'Sin historial todavía', 'Completa actividades para empezar a ganar XP y ver su desglose aquí.') }}
+  {% endif %}
+</details>

@@ -1,0 +1,57 @@
+{# Insignias (rareza por tier, con perk) y logros, filtrables por estado #}
+<section class="eu-vstack eu-gap-4 lg-coll" aria-label="Insignias y logros">
+  <div class="eu-between lg-coll-hd">
+    <div class="eu-tabs" role="tablist" aria-label="Estado">
+      <button type="button" role="tab" aria-selected="true" data-status="all">Todos · {{ total_items }}</button>
+      <button type="button" role="tab" aria-selected="false" data-status="earned">Ganados · {{ earned_all }}</button>
+      <button type="button" role="tab" aria-selected="false" data-status="locked">Bloqueados · {{ total_items - earned_all }}</button>
+    </div>
+    <div class="eu-seg" role="group" aria-label="Orden de insignias">
+      <button type="button" aria-selected="true" data-sort="rarity">Rareza</button>
+      <button type="button" aria-selected="false" data-sort="recent">Reciente</button>
+    </div>
+  </div>
+
+  <div class="eu-between"><h2 class="t-section">Insignias</h2><span class="t-meta num">{{ earned_bdg }} / {{ badges|length }}</span></div>
+  <div class="lg-ach-grid js-badges">
+    {% for b in badges %}
+    <article class="eu-ach{{ ' is-earned' if b.unlocked else ' is-locked' }}" data-rarity="{{ b.rarity }}"
+             data-earned="{{ 1 if b.unlocked else 0 }}" data-order="{{ loop.index0 }}" data-date="{{ (b.unlocked_at or '')[:10] }}">
+      <div class="eu-between">
+        <div class="eu-ach-seal"><i data-lucide="{{ b.icon_lucide if b.unlocked else 'lock' }}"></i></div>
+        {% if b.perk_active %}<span class="eu-badge eu-badge--success eu-badge--status">Activo</span>{% endif %}
+      </div>
+      <div>
+        <div class="eu-ach-rar">{{ b.tier_label }}</div>
+        <h3 class="t-card lg-ach-name">{{ b.name }}</h3>
+      </div>
+      <p class="t-meta lg-p">{{ b.description }}</p>
+      <p class="t-meta lg-p lg-perk"><i data-lucide="sparkles"></i>{{ b.perk }}</p>
+      <div class="eu-hstack lg-ach-ft">
+        {% if b.unlocked and b.unlocked_at %}<span class="t-meta">Ganada {{ b.unlocked_at[:10] }}</span>{% endif %}
+        {% if b.ec_bonus > 0 %}<span class="eu-badge eu-badge--ec num">+{{ b.ec_bonus }} EC</span>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="eu-between"><h2 class="t-section">Logros</h2><span class="t-meta num">{{ earned_ach }} / {{ achievements|length }}</span></div>
+  <div class="lg-ach-grid js-achievements">
+    {% for a in achievements %}
+    <article class="eu-ach lg-ach--logro{{ ' is-earned' if a.unlocked else ' is-locked' }}" data-earned="{{ 1 if a.unlocked else 0 }}">
+      <div class="eu-ach-seal"><i data-lucide="{{ a.icon_lucide if a.unlocked else ('eye-off' if a.hidden else 'lock') }}"></i></div>
+      <div>
+        <div class="eu-ach-rar">{{ 'Oculto' if a.hidden and not a.unlocked else 'Logro' }}</div>
+        <h3 class="t-card lg-ach-name">{{ a.name }}</h3>
+      </div>
+      <p class="t-meta lg-p">{{ a.description }}</p>
+      <div class="eu-hstack lg-ach-ft">
+        {% if a.unlocked %}<span class="t-meta">Ganado {{ a.unlocked_at }}</span>{% endif %}
+        {% if a.xp > 0 %}<span class="eu-badge eu-badge--xp num">+{{ a.xp }} XP</span>{% endif %}
+        {% if a.coins > 0 %}<span class="eu-badge eu-badge--ec num">+{{ a.coins }} EC</span>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="js-coll-empty" hidden>{{ ui.empty('trophy', 'Nada por aquí', 'No hay elementos con este filtro todavía.') }}</div>
+</section>

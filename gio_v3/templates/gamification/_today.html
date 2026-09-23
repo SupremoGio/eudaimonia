@@ -1,0 +1,21 @@
+{# Clasificación de hoy + últimos 7 días #}
+{% set T = {'carbon': 'carbon', 'iron': 'hierro', 'gold': 'oro', 'diamond': 'diamante'} %}
+<section class="eu-card eu-vstack lg-today" aria-labelledby="lg-today-t">
+  <div class="eu-between">
+    <h2 class="t-card" id="lg-today-t">Clasificación</h2>
+    <span class="eu-badge eu-badge--xp num">{{ stats.xp_today|int }} XP hoy</span>
+  </div>
+  <div class="eu-hstack eu-gap-3 lg-rank" data-t="{{ T.get(classification.rank, 'carbon') }}">
+    <div class="eu-row-ic lg-rank-ic"><i data-lucide="{{ classification.icon_lucide }}"></i></div>
+    <div><div class="t-section lg-rank-name">{{ classification.label }}</div><div class="t-meta">{{ classification.desc }}</div></div>
+  </div>
+  <ol class="lg-week" aria-label="Últimos 7 días">
+    {% for d in history %}
+    <li class="lg-day" data-t="{{ T.get(d.rank, 'carbon') }}" title="{{ d.date }} · {{ d.xp|int }} XP">
+      <i data-lucide="{{ d.icon_lucide }}"></i>
+      <span class="lg-day-bar"><span style="width:{{ [d.xp * 5, 100]|min }}%"></span></span>
+      <span class="t-meta">{{ d.label }}</span>
+    </li>
+    {% endfor %}
+  </ol>
+</section>

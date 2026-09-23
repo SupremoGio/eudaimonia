@@ -1,0 +1,16 @@
+{# Los diez niveles (desktop): barra por nivel, el actual con su % #}
+<section class="eu-card lg-levels-card" aria-labelledby="lg-lv-t">
+  <div class="eu-between lg-levels-hd">
+    <h2 class="t-card" id="lg-lv-t">Los diez niveles</h2>
+    <span class="t-meta num">{{ '{:,}'.format(stats.total_xp|int) }} / {{ '{:,}'.format(max_xp) }} XP</span>
+  </div>
+  <ol class="lg-levels">
+    {% for l in levels %}
+    <li class="lg-level is-{{ l.state }}"{% if l.state == 'now' %} aria-current="step"{% endif %}>
+      <div class="eu-xpbar lg-level-bar" aria-hidden="true"><i style="width:{{ l.fill }}%"></i></div>
+      <div class="lg-level-name">{{ l.name|title }}</div>
+      <div class="t-meta num">{{ l.n }} · {{ '{:,}'.format(l.xp) }}</div>
+    </li>
+    {% endfor %}
+  </ol>
+</section>

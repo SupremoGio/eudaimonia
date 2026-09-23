@@ -1,0 +1,27 @@
+{# Encabezado (desktop) + sello de nivel (móvil) + stats #}
+{% set pct_camino = ((stats.total_xp / max_xp * 100) if max_xp else 0)|round|int %}
+<header class="lg-hd">
+  <div>
+    <div class="t-eyebrow">Camino a Eudaimón · {{ [pct_camino, 100]|min }}%</div>
+    <h1 class="t-page">Logros</h1>
+  </div>
+  <div class="lg-stats">
+    <div class="eu-card lg-stat"><div class="t-data">{{ stats.streak }} d</div><div class="t-meta">Racha{% if stats.streak >= 30 %} · +10% XP{% elif stats.streak >= 7 %} · +5% XP{% endif %}</div></div>
+    <div class="eu-card lg-stat"><div class="t-data lg-diamond">{{ diamond_30 }}</div><div class="t-meta">Días diamante · 30 d</div></div>
+    <div class="eu-card lg-stat"><div class="t-data">{{ earned_bdg }} / {{ badges|length }}</div><div class="t-meta">Insignias</div></div>
+  </div>
+</header>
+
+<section class="eu-card eu-card--featured lg-seal" aria-label="Tu nivel">
+  <div class="eu-level-seal lg-seal-ic"><i data-lucide="columns-3"></i></div>
+  <div>
+    <div class="t-eyebrow">Nivel {{ stats.level }} de 10</div>
+    <div class="t-page lg-seal-name">{{ stats.level_name }}</div>
+    {% if level_quote %}<div class="t-quote lg-seal-q">«{{ level_quote }}»</div>{% endif %}
+  </div>
+  {{ ui.xpbar(stats.level_pct, 100, label='% del nivel') }}
+  <div class="eu-between t-meta lg-seal-ft">
+    <span class="num">{{ '{:,}'.format(stats.total_xp|int) }} XP</span>
+    {% if not stats.max_level %}{% set nxt = levels[stats.level] %}<span>{{ nxt.name|title }} · {{ '{:,}'.format(nxt.xp) }}</span>{% else %}<span>Nivel máximo</span>{% endif %}
+  </div>
+</section>

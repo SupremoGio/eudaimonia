@@ -1,0 +1,16 @@
+{# Perks activos (máx. 2) + regla anti-abuso #}
+<section class="eu-vstack eu-gap-3 lg-perks" aria-labelledby="lg-perks-t">
+  <h2 class="t-card" id="lg-perks-t">Perks activos <span class="t-meta">· máx. 2</span></h2>
+  {% for b in perks %}
+  <div class="eu-card eu-hstack eu-gap-3 lg-perk-row" data-rarity="{{ b.rarity }}">
+    <div class="eu-row-ic lg-perk-ic"><i data-lucide="{{ b.icon_lucide }}"></i></div>
+    <div class="eu-grow">
+      <div class="lg-perk-t">{{ b.perk }}</div>
+      <div class="t-meta">{{ b.name }}{% if b.days_left %} · {{ b.days_left }} d{% endif %}</div>
+    </div>
+  </div>
+  {% else %}
+  <div class="eu-card t-meta">Ningún perk activo. Las insignias de plata dan perks temporales al desbloquearse.</div>
+  {% endfor %}
+  <div class="eu-card eu-card--inset t-meta">Más de 3 perks seguidos → −10% XP por 2 días.</div>
+</section>

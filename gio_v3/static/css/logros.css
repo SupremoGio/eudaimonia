@@ -1,0 +1,119 @@
+/* ═══════════════════════════════════════════════════════════════
+   Logros (/logros) — Design System V2 · pantalla 04
+   Solo tokens y componentes eu-*. Desktop: timeline de 10 niveles +
+   grid 1fr / 300px. Móvil: sello de nivel, stats, pestañas y 2 columnas.
+   ═══════════════════════════════════════════════════════════════ */
+.lg{display:flex;flex-direction:column;gap:var(--sp-4)}
+.lg h1,.lg h2,.lg h3{margin:0}
+.lg-p{margin:0}
+@media (min-width:768px){.lg{gap:var(--sp-6)}}
+
+/* Encabezado + stats */
+.lg-hd{display:flex;flex-direction:column;gap:var(--sp-3)}
+.lg-hd .t-page{margin-top:var(--sp-2)}
+.lg-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2)}
+.lg-stat{padding:var(--sp-3)}
+.lg-diamond{color:var(--tier-diamante)}
+@media (max-width:767px){.lg-hd > div:first-child{display:none}}
+@media (min-width:768px){
+  .lg-hd{flex-direction:row;align-items:flex-end;justify-content:space-between}
+  .lg-stats{display:flex;gap:var(--sp-6)}
+  .lg-stat{background:none;border:0;box-shadow:none;padding:0}
+}
+
+/* Sello de nivel (móvil) */
+.lg-seal{display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--sp-3);padding:var(--sp-5)}
+.lg-seal-ic{width:64px;height:64px}
+.lg-seal-ic svg{width:28px;height:28px}
+.lg-seal-name{letter-spacing:.1em;margin-top:var(--sp-2)}
+.lg-seal-q{font-size:var(--fs-15);margin-top:2px}
+.lg-seal .eu-xpbar,.lg-seal-ft{width:100%}
+@media (min-width:768px){.lg-seal{display:none}}
+
+/* Los diez niveles (≥768) */
+.lg-levels-card{display:none}
+@media (min-width:768px){.lg-levels-card{display:block;padding:var(--sp-6)}}
+.lg-levels-hd{margin-bottom:var(--sp-5)}
+.lg-levels{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px}
+.lg-level{display:flex;flex-direction:column;gap:var(--sp-2);min-width:0}
+.lg-level-bar{height:4px}
+.lg-level-name{font:var(--fw-semibold) var(--fs-13)/1.2 var(--font-display);color:var(--fg-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg-level.is-past .lg-level-name{color:var(--fg-1)}
+.lg-level.is-now .lg-level-name{color:var(--fg-brand-strong)}
+@media (min-width:1280px){.lg-level-name{font-size:var(--fs-15)}}
+
+/* Móvil: sello → stats → perks → colección → resto (orden del diseño) */
+@media (max-width:1023px){
+  .lg-seal{order:-1}
+  .lg .lg-grid,.lg .lg-main,.lg .lg-side{display:contents}
+  .lg-perks{order:1}.lg-coll{order:2}.lg-today{order:3}.lg-heat{order:4}.lg-xplog{order:5}
+}
+
+/* Grid principal */
+.lg-grid{display:flex;flex-direction:column;gap:var(--sp-5)}
+@media (min-width:768px) and (max-width:1023px){.lg-seal{order:0}}
+.lg-main,.lg-side{display:flex;flex-direction:column;gap:var(--sp-4)}
+@media (min-width:1024px){
+  .lg-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:var(--sp-6);align-items:start}
+  .lg-side{gap:var(--sp-3)}
+}
+
+/* Colección */
+.lg-coll-hd{flex-wrap:wrap}
+.lg-ach-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2)}
+@media (min-width:768px){.lg-ach-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-3)}}
+@media (min-width:1280px){.lg-ach-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.lg-ach-name{margin-top:6px;font-size:var(--fs-15)}
+.lg-perk{display:flex;gap:6px;align-items:flex-start;font-style:italic}
+.lg-perk svg{width:12px;height:12px;flex-shrink:0;margin-top:3px;color:var(--rc)}
+.lg-ach-ft{flex-wrap:wrap;margin-top:auto}
+.lg-ach--logro{--rc:var(--fg-brand)}
+.eu-ach.is-locked{opacity:.72}
+.eu-ach.is-locked .lg-perk svg{color:var(--fg-4)}
+@media (max-width:767px){.lg-ach-grid .t-meta.lg-p:not(.lg-perk){display:none}}
+.lg[data-status=earned] .eu-ach[data-earned="0"],
+.lg[data-status=locked] .eu-ach[data-earned="1"]{display:none}
+
+/* Perks */
+.lg-perk-row{padding:var(--sp-3) var(--sp-4)}
+.lg-perk-row[data-rarity=bronce]{--rc:var(--rare-bronce)}.lg-perk-row[data-rarity=plata]{--rc:var(--rare-plata)}
+.lg-perk-row[data-rarity=oro]{--rc:var(--rare-oro)}.lg-perk-row[data-rarity=especial]{--rc:var(--rare-especial)}
+.lg-perk-ic{color:var(--rc)}
+.lg-perk-t{font-size:var(--fs-13);color:var(--fg-1)}
+
+/* Clasificación y 7 días */
+.lg-rank[data-t=carbon]{--tc:var(--tier-carbon)}.lg-rank[data-t=hierro]{--tc:var(--tier-hierro)}
+.lg-rank[data-t=oro]{--tc:var(--tier-oro)}.lg-rank[data-t=diamante]{--tc:var(--tier-diamante)}
+.lg-rank-ic{color:var(--tc)}
+.lg-rank-name{color:var(--tc)}
+.lg-week{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:var(--sp-1)}
+.lg-day{display:flex;flex-direction:column;align-items:center;gap:var(--sp-1);min-width:0}
+.lg-day[data-t=carbon]{--tc:var(--tier-carbon)}.lg-day[data-t=hierro]{--tc:var(--tier-hierro)}
+.lg-day[data-t=oro]{--tc:var(--tier-oro)}.lg-day[data-t=diamante]{--tc:var(--tier-diamante)}
+.lg-day svg{width:16px;height:16px;color:var(--tc)}
+.lg-day-bar{display:block;width:100%;height:4px;border-radius:2px;background:color-mix(in oklab,var(--tc) 22%,transparent);overflow:hidden}
+.lg-day-bar span{display:block;height:100%;background:var(--tc)}
+.lg-day .t-meta{white-space:nowrap}
+
+/* Heatmap */
+.lg-heat-grid{width:max-content;max-width:100%}
+.eu-heat i.is-future{visibility:hidden}
+.eu-heat-legend i[data-l="0"]{background:var(--bg-raised)}
+.eu-heat-legend i[data-l="2"]{background:color-mix(in oklab,var(--brand) 45%,var(--bg-raised))}
+.eu-heat-legend i[data-l="4"]{background:var(--fg-brand-strong)}
+
+/* Desglose XP */
+.lg-xplog summary{list-style:none;cursor:pointer;min-height:44px}
+.lg-xplog summary::-webkit-details-marker{display:none}
+.lg-chev{width:16px;height:16px;color:var(--fg-3);transition:transform var(--dur-fast) var(--ease-standard)}
+.lg-xplog[open] .lg-chev{transform:rotate(180deg)}
+.lg-xplog-list{margin-top:var(--sp-3)}
+.lg-xplog-date{color:var(--fg-3);padding:var(--sp-3) 0 var(--sp-1)}
+.lg-xplog-row{min-height:44px;padding:var(--sp-2) 0}
+.lg-xplog-row .eu-row-t{font-size:var(--fs-13)}
+.lg-xplog-amt{width:40px;text-align:right;flex-shrink:0}
+.lg-xplog-amt.pos{color:var(--xp-fg)}
+.lg-xplog-amt.neg{color:var(--danger-fg)}
+
+/* Entrada: los ganados aparecen escalonados (una sola vez) */
+.eu-ach.is-earned{animation:euRise var(--dur-slow) var(--ease-enter) both}
