@@ -185,6 +185,7 @@ def index():
         gasto_mes=round(stats["s"], 2),
         atrasados=atrasados,
         proximos=proximos,
+        today=today_str(),
     )
 
 
@@ -214,6 +215,7 @@ def detalle(pid):
         compras=compras,
         insights=insights,
         precio_trend=precio_trend,
+        today=today_str(),
     )
 
 

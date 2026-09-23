@@ -1,267 +1,90 @@
-{% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% import 'finanzas/consumo/_macros.html' as cm with context %}
+{% set pg = 'finanzas' %}
+{% set st = cm.ST.get(prod.status, ('Sin datos','')) %}
 {% block title %}{{ prod.nombre }} — Consumo{% endblock %}
 {% block module_title %}CONSUMO DETALLE{% endblock %}
 {% block back_href %}/finanzas/consumo/{% endblock %}
-{% block topright %}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/consumo.css') }}">{% endblock %}
+{% block mtitle %}<b>{{ prod.nombre }}</b><span>Consumo · {{ prod.categoria or 'Sin categoría' }}</span>{% endblock %}
+
 {% block content %}
-<style>
-/* ── Product hero ────────────────────────────────────────────── */
-.det-hero{background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(6,182,212,.05));border:1px solid var(--b2);border-radius:16px;padding:24px;margin-bottom:20px;}
-.det-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
-.det-nombre{font-family:var(--sans);font-size:1.6rem;font-weight:700;color:var(--violet-l);line-height:1.1;}
-.det-cat{font-size:var(--fs-xs);color:var(--violet-l);letter-spacing:.14em;text-transform:uppercase;background:var(--violet-d);border:1px solid rgba(124,58,237,.25);padding:3px 9px;border-radius:100px;display:inline-block;margin-top:7px;}
-
-/* status badge */
-.det-status{padding:6px 14px;border-radius:100px;font-size:var(--fs-sm);font-weight:600;letter-spacing:.07em;text-transform:uppercase;align-self:flex-start;}
-.ds-ok      {background:var(--emerald-d);color:var(--emerald);border:1px solid rgba(16,185,129,.3);}
-.ds-proximo {background:var(--amber-d);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
-.ds-atrasado{background:var(--coral-d);color:var(--coral);border:1px solid rgba(244,63,94,.3);}
-.ds-sin_datos{background:var(--card2);color:var(--dim);border:1px solid var(--b);}
-
-/* metrics grid */
-.det-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px;}
-.dm{background:rgba(0,0,0,.2);border-radius:10px;padding:12px 14px;}
-.dm-l{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.15em;text-transform:uppercase;margin-bottom:5px;}
-.dm-v{font-size:1.1rem;font-weight:600;font-family:var(--sans);color:var(--text);}
-.dm-s{font-size:var(--fs-xs);color:var(--dim);margin-top:2px;}
-
-/* ── Insights section ────────────────────────────────────────── */
-.ins-section{margin-bottom:20px;}
-.ins-grid{display:flex;flex-direction:column;gap:8px;}
-.ins-row{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:10px;font-size:var(--fs-sm);line-height:1.4;}
-.ir-frecuencia{background:rgba(167,139,250,.07);color:var(--violet-l);border:1px solid rgba(167,139,250,.18);}
-.ir-ok        {background:rgba(16,185,129,.07);color:var(--emerald);border:1px solid rgba(16,185,129,.18);}
-.ir-proximo   {background:rgba(245,158,11,.09);color:var(--amber);border:1px solid rgba(245,158,11,.2);}
-.ir-warning   {background:rgba(244,63,94,.08);color:var(--coral);border:1px solid rgba(244,63,94,.2);}
-.ir-tip       {background:rgba(6,182,212,.07);color:var(--cyan);border:1px solid rgba(6,182,212,.18);}
-.ir-trend     {background:rgba(236,72,153,.07);color:var(--pink);border:1px solid rgba(236,72,153,.18);}
-.ir-info      {background:var(--card2);color:var(--dim);border:1px solid var(--b);}
-.ir-icon{font-size:.8rem;flex-shrink:0;}
-
-/* ── Price trend ─────────────────────────────────────────────── */
-.trend-bar{display:flex;align-items:flex-end;gap:5px;height:60px;padding:8px 0;}
-.tb-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
-.tb-bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--violet),var(--indigo));min-height:4px;transition:height .3s;}
-.tb-label{font-size:var(--fs-xs);color:var(--dim);text-align:center;white-space:nowrap;}
-.tb-price{font-size:var(--fs-xs);color:var(--violet-l);}
-
-/* ── History table ───────────────────────────────────────────── */
-.hist-table{width:100%;border-collapse:collapse;}
-.hist-table th{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;text-transform:uppercase;padding:8px 12px;text-align:left;border-bottom:1px solid var(--b);}
-.hist-table td{padding:11px 12px;border-bottom:1px solid var(--b);font-size:var(--fs-sm);color:var(--mid);}
-.hist-table tr:last-child td{border-bottom:none;}
-.hist-table tr:hover td{background:var(--card2);}
-.hist-table td:first-child{color:var(--text);}
-/* stagger reveal for history rows on load */
-@keyframes rowInConsumo{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.hist-table tbody tr{opacity:0;animation:rowInConsumo .35s ease forwards;animation-delay:calc(var(--i,0)*25ms);}
-@media(prefers-reduced-motion:reduce){.hist-table tbody tr{animation:none;opacity:1;}}
-.btn-del-c{background:none;border:none;color:var(--dim);cursor:pointer;padding:3px 6px;border-radius:5px;font-size:var(--fs-sm);transition:color .15s;}
-.btn-del-c:hover{color:var(--coral);}
-
-/* no data */
-.no-data{text-align:center;padding:32px;color:var(--dim);font-size:var(--fs-sm);}
-
-@media(max-width:767px){
-  .det-metrics{grid-template-columns:repeat(2,1fr);}
-  .det-nombre{font-size:1.3rem;}
-}
-</style>
-
-<!-- Hero -->
-<div class="det-hero">
-  <div class="det-top">
-    <div>
-      <div class="det-nombre">{{ prod.nombre }}</div>
-      <div class="det-cat">{{ prod.categoria }}</div>
+<div class="ci" id="ci-det" data-cat="oikonomia" data-pid="{{ prod.id }}" data-today="{{ today }}">
+  <a class="eu-btn eu-btn--ghost eu-btn--sm ci-back" href="/finanzas/consumo/"><i data-lucide="arrow-left"></i>Consumo</a>
+  <section class="eu-card ci-hero" data-tone="{{ st[1] }}">
+    <div class="eu-between ci-hero-hd">
+      <div><div class="t-eyebrow">{{ prod.categoria or 'Sin categoría' }}</div><h1 class="t-page">{{ prod.nombre }}</h1></div>
+      <span class="eu-badge eu-badge--status ci-st-badge">{{ st[0] }}</span>
     </div>
-    <div class="det-status ds-{{ prod.status }}">
-      {% if prod.status == 'ok' %}Al día
-      {% elif prod.status == 'proximo' %}Próximo
-      {% elif prod.status == 'atrasado' %}Atrasado
-      {% else %}Sin datos{% endif %}
-    </div>
-  </div>
+    <dl class="eu-grid-4 ci-metrics ci-metrics--lg">
+      <div><dt class="t-meta">Última compra</dt><dd class="t-data">{{ cm.ago(prod) }}</dd>{% if prod.ultima_compra %}<dd class="t-meta">{{ prod.ultima_compra }}</dd>{% endif %}</div>
+      <div><dt class="t-meta">Frecuencia</dt><dd class="t-data">{% if prod.frecuencia_dias %}{{ prod.frecuencia_dias|int }} d{% else %}—{% endif %}</dd>{% if prod.frecuencia_dias %}<dd class="t-meta">entre compras</dd>{% endif %}</div>
+      <div><dt class="t-meta">Precio prom.</dt><dd class="t-data">{% if prod.precio_promedio %}${{ "%.2f"|format(prod.precio_promedio) }}{% else %}—{% endif %}</dd></div>
+      <div><dt class="t-meta">Total compras</dt><dd class="t-data">{{ prod.n_compras }}</dd></div>
+    </dl>
+  </section>
 
-  <div class="det-metrics">
-    <div class="dm">
-      <div class="dm-l">Última compra</div>
-      <div class="dm-v">
-        {% if prod.ultima_compra %}
-          {% if prod.dias_desde == 0 %}Hoy
-          {% elif prod.dias_desde == 1 %}Ayer
-          {% else %}{{ prod.dias_desde }}d atrás{% endif %}
-        {% else %}—{% endif %}
-      </div>
-      {% if prod.ultima_compra %}<div class="dm-s">{{ prod.ultima_compra }}</div>{% endif %}
-    </div>
-    <div class="dm">
-      <div class="dm-l">Frecuencia</div>
-      <div class="dm-v">{% if prod.frecuencia_dias %}{{ prod.frecuencia_dias|int }}d{% else %}—{% endif %}</div>
-      {% if prod.frecuencia_dias %}<div class="dm-s">días entre compras</div>{% endif %}
-    </div>
-    <div class="dm">
-      <div class="dm-l">Precio prom.</div>
-      <div class="dm-v">{% if prod.precio_promedio %}${{ "%.2f"|format(prod.precio_promedio) }}{% else %}—{% endif %}</div>
-    </div>
-    <div class="dm">
-      <div class="dm-l">Total compras</div>
-      <div class="dm-v">{{ prod.n_compras }}</div>
-    </div>
-  </div>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
-
-  <!-- Insights -->
-  <div>
-    <div class="tile">
-      <div class="tile-lbl">Análisis inteligente</div>
-      {% if insights %}
-      <div class="ins-grid">
-        {% for ins in insights %}
-        <div class="ins-row ir-{{ ins.tipo }}">
-          <span class="ir-icon">
-            {% if ins.tipo == 'frecuencia' %}<i data-lucide="bar-chart-2" style="width:14px;height:14px;"></i>
-            {% elif ins.tipo == 'ok' %}<i data-lucide="check-circle" style="width:14px;height:14px;"></i>
-            {% elif ins.tipo == 'proximo' %}<i data-lucide="clock" style="width:14px;height:14px;"></i>
-            {% elif ins.tipo == 'warning' %}<i data-lucide="circle-alert" style="width:14px;height:14px;"></i>
-            {% elif ins.tipo == 'tip' %}<i data-lucide="lightbulb" style="width:14px;height:14px;"></i>
-            {% elif ins.tipo == 'trend' %}<i data-lucide="trending-up" style="width:14px;height:14px;"></i>
-            {% else %}<i data-lucide="info" style="width:14px;height:14px;"></i>{% endif %}
-          </span>
-          <span>{{ ins.msg }}</span>
+  <div class="ci-det-grid">
+    <div class="eu-vstack ci-col">
+      <section class="eu-card eu-vstack ci-box" aria-labelledby="ci-ins-t">
+        <h2 class="t-card" id="ci-ins-t">Análisis inteligente</h2>
+        {% if insights %}<div class="eu-vstack ci-ins-list">{% for ins in insights %}{{ cm.insight(ins) }}{% endfor %}</div>
+        {% else %}{{ ui.empty('lightbulb', 'Sin análisis todavía', 'Registra compras de este producto para ver frecuencia, tendencia de precio y recomendaciones.') }}{% endif %}
+      </section>
+      {% if precio_trend|length >= 2 %}
+      {% set max_p = precio_trend|map(attribute='precio')|max %}
+      <section class="eu-card eu-vstack ci-box" aria-labelledby="ci-tr-t">
+        <h2 class="t-card" id="ci-tr-t">Tendencia de precio <span class="t-meta">(últimas {{ precio_trend|length }})</span></h2>
+        <div class="ci-trend" role="img" aria-label="Precios: {% for pt in precio_trend %}{{ pt.fecha }} ${{ pt.precio|int }}{{ ', ' if not loop.last }}{% endfor %}">
+          {% for pt in precio_trend %}
+          <div class="ci-tcol"><span class="t-data ci-tprice">${{ pt.precio|int }}</span><span class="ci-tbar{{ ' is-last' if loop.last }}" style="height:{{ ((pt.precio / max_p) * 100)|int }}%"></span><span class="t-meta">{{ pt.fecha[5:] }}</span></div>
+          {% endfor %}
         </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="empty-rich" style="padding:28px 20px;">
-        <div class="empty-icon-box"><i data-lucide="lightbulb"></i></div>
-        <div class="empty-title">Sin análisis todavía</div>
-        <div class="empty-desc">Registra compras de este producto para ver frecuencia, tendencia de precio y recomendaciones.</div>
-      </div>
+      </section>
       {% endif %}
     </div>
 
-    <!-- Price trend (last 5) -->
-    {% if precio_trend|length >= 2 %}
-    <div class="tile" style="margin-top:14px">
-      <div class="tile-lbl">Tendencia de precio (últimas {{ precio_trend|length }})</div>
-      {% set max_p = precio_trend|map(attribute='precio')|max %}
-      <div class="trend-bar">
-        {% for pt in precio_trend %}
-        {% set pct = ((pt.precio / max_p) * 100)|int %}
-        <div class="tb-col">
-          <div class="tb-price">${{ pt.precio|int }}</div>
-          <div class="tb-bar" style="height:{{ pct }}%"></div>
-          <div class="tb-label">{{ pt.fecha[5:] }}</div>
+    <section class="eu-card ci-box" aria-labelledby="ci-reg-t">
+      <h2 class="t-card" id="ci-reg-t">Registrar nueva compra</h2>
+      <form class="eu-vstack ci-reg" id="f-det" autocomplete="off" novalidate>
+        <div class="eu-field"><label class="eu-label" for="d-fecha">Fecha</label><input class="eu-input" type="date" id="d-fecha" value="{{ today }}"></div>
+        <div class="eu-grid-2 ci-fgrid">
+          <div class="eu-field"><label class="eu-label" for="d-precio">Precio total ($) *</label><input class="eu-input eu-input--money" type="number" step="0.01" min="0.01" inputmode="decimal" id="d-precio" placeholder="0.00"></div>
+          <div class="eu-field"><label class="eu-label" for="d-cant">Cantidad</label><input class="eu-input eu-input--money" type="number" step="1" min="1" inputmode="numeric" id="d-cant" value="1"></div>
         </div>
+        <button type="submit" class="eu-btn eu-btn--primary eu-btn--block"><i data-lucide="plus"></i>Registrar compra</button>
+      </form>
+      <div class="ci-danger">
+        <button type="button" class="eu-btn eu-btn--danger eu-btn--sm js-desactivar"><i data-lucide="archive"></i>Desactivar producto</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="eu-card eu-card--flush ci-hist" aria-labelledby="ci-h-t">
+    <h2 class="t-card ci-hist-t" id="ci-h-t">Historial de compras <span class="t-meta num">({{ compras|length }})</span></h2>
+    {% if compras %}
+    <div class="ci-table-wrap"><table class="eu-table ci-table">
+      <thead><tr><th scope="col">Fecha</th><th scope="col" class="num">Precio total</th><th scope="col" class="num">Cantidad</th><th scope="col" class="num">Unitario</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+      <tbody>
+        {% for c in compras %}
+        <tr id="row-{{ c.id }}">
+          <td class="num">{{ c.fecha_compra }}</td>
+          <td class="num">${{ "%.2f"|format(c.precio_total) }}</td>
+          <td class="num">{{ c.cantidad|int }}</td>
+          <td class="num">{% if c.cantidad > 0 %}${{ "%.2f"|format(c.precio_total / c.cantidad) }}{% else %}—{% endif %}</td>
+          <td class="ci-td-act"><button type="button" class="eu-iconbtn" data-del="{{ c.id }}" aria-label="Eliminar compra del {{ c.fecha_compra }}"><i data-lucide="x"></i></button></td>
+        </tr>
         {% endfor %}
-      </div>
-    </div>
+      </tbody>
+    </table></div>
+    {% else %}
+    {{ ui.empty('shopping-cart', 'Sin compras registradas', 'Registra tu primera compra de ' ~ prod.nombre ~ ' para empezar a ver su historial y frecuencia.') }}
     {% endif %}
-  </div>
-
-  <!-- Actions + register -->
-  <div class="tile">
-    <div class="tile-lbl">Registrar nueva compra</div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <div>
-        <label class="fl">Fecha</label>
-        <input class="fi" type="date" id="d-fecha">
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <label class="fl">Precio total ($)</label>
-          <input class="fi" type="number" step="0.01" min="0.01" id="d-precio" placeholder="0.00">
-        </div>
-        <div>
-          <label class="fl">Cantidad</label>
-          <input class="fi" type="number" step="1" min="1" id="d-cant" placeholder="1" value="1">
-        </div>
-      </div>
-      <button class="btn-a" style="width:100%;padding:10px" onclick="registrarDesdeDetalle()">+ Registrar compra</button>
-    </div>
-    <div id="d-feedback" style="margin-top:10px;display:none;" class="pc-insight"></div>
-
-    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--b);display:flex;gap:8px;">
-      <a href="/finanzas/consumo/" class="btn-g" style="flex:1;text-align:center">← Volver</a>
-      <button class="btn-r" onclick="desactivar()">Desactivar</button>
-    </div>
-  </div>
-
+  </section>
 </div>
-
-<!-- Purchase history -->
-<div class="tile" style="margin-top:16px">
-  <div class="tile-lbl">Historial de compras ({{ compras|length }})</div>
-  {% if compras %}
-  <table class="hist-table">
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Precio total</th>
-        <th>Cantidad</th>
-        <th>Precio unitario</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody id="hist-tbody">
-      {% for c in compras %}
-      <tr id="row-{{ c.id }}" style="--i:{{ loop.index0 }}">
-        <td>{{ c.fecha_compra }}</td>
-        <td>${{ "%.2f"|format(c.precio_total) }}</td>
-        <td>{{ c.cantidad|int }}</td>
-        <td>{% if c.cantidad > 0 %}${{ "%.2f"|format(c.precio_total / c.cantidad) }}{% else %}—{% endif %}</td>
-        <td><button class="btn-del-c" onclick="borrarCompra({{ c.id }})" title="Eliminar" aria-label="Eliminar"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="empty-rich" style="padding:32px 20px;">
-    <div class="empty-icon-box"><i data-lucide="shopping-cart"></i></div>
-    <div class="empty-title">Sin compras registradas</div>
-    <div class="empty-desc">Registra tu primera compra de {{ prod.nombre }} para empezar a ver su historial y frecuencia.</div>
-  </div>
-  {% endif %}
-</div>
-
 {% endblock %}
+
 {% block scripts %}
-<script>
-document.getElementById('d-fecha').value = new Date().toISOString().slice(0,10);
-
-async function registrarDesdeDetalle(){
-  const fecha  = document.getElementById('d-fecha').value;
-  const precio = parseFloat(document.getElementById('d-precio').value);
-  const cant   = parseFloat(document.getElementById('d-cant').value)||1;
-  if(!precio||precio<=0){toast('Ingresa un precio válido','err');return;}
-  const r = await fetch('/finanzas/consumo/api/compra',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({producto_id:{{ prod.id }},fecha,precio_total:precio,cantidad:cant})
-  });
-  const d = await r.json();
-  if(d.error){toast(d.error,'err');return;}
-  toast('Compra guardada','win');
-  setTimeout(()=>location.reload(),800);
-}
-
-async function desactivar(){
-  if(!(await euConfirm('¿Desactivar este producto? Puedes reactivarlo desde la base de datos.', {confirmLabel: 'Desactivar'}))) return;
-  await fetch('/finanzas/consumo/api/producto/{{ prod.id }}',{method:'DELETE'});
-  window.location.href='/finanzas/consumo/';
-}
-
-async function borrarCompra(cid){
-  if(!(await euConfirm('¿Eliminar este registro de compra?'))) return;
-  const r = await fetch(`/finanzas/consumo/api/compra/${cid}`,{method:'DELETE'});
-  const d = await r.json();
-  if(d.error){toast(d.error,'err');return;}
-  const row = document.getElementById(`row-${cid}`);
-  if(row) row.remove();
-  toast('Compra eliminada','win');
-  setTimeout(()=>location.reload(),900);
-}
-</script>
+<script src="{{ url_for('static', filename='js/consumo.js') }}"></script>
 {% endblock %}
