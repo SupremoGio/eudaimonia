@@ -1,0 +1,41 @@
+{# Deudas personales: me deben / debo #}
+{% set total_owe_me = owe_me|sum(attribute='monto_restante') if owe_me else 0 %}
+{% set total_i_owe = i_owe|sum(attribute='monto_restante') if i_owe else 0 %}
+{% set neto = total_owe_me - total_i_owe %}
+<section class="eu-card pt-box" aria-labelledby="pt-debt-t">
+  <div class="eu-between pt-box-hd">
+    <div><h3 class="t-card pt-box-t" id="pt-debt-t"><i data-lucide="handshake"></i>Deudas personales</h3>
+      <p class="t-meta">Me deben <b class="fg-success">{{ pm.money(total_owe_me) }}</b> · Debo <b class="fg-danger">{{ pm.money(total_i_owe) }}</b> · Neto <b class="{{ 'fg-success' if neto >= 0 else 'fg-danger' }}">{{ '+' if neto >= 0 }}{{ pm.money(neto) }}</b></p></div>
+    <button type="button" class="eu-btn eu-btn--primary eu-btn--sm" data-new-debt="owe_me"><i data-lucide="plus"></i>Registrar</button>
+  </div>
+  <div class="pt-debts">
+    {% for type, lbl, icon, tone, items, total, verb, empty_ic, empty_txt, add in [
+      ('owe_me', 'Me deben', 'arrow-down-left', 'success', owe_me, total_owe_me, 'cobrado', 'smile', 'Nadie te debe — o ya cobraste todo.', 'Me deben'),
+      ('i_owe', 'Debo', 'arrow-up-right', 'danger', i_owe, total_i_owe, 'pagado', 'circle-check', 'Sin deudas pendientes — ¡excelente!', 'Debo')] %}
+    <div class="pt-debt-col" data-tone="{{ tone }}">
+      <div class="eu-between pt-debt-hd"><span class="t-ui pt-debt-lbl"><i data-lucide="{{ icon }}"></i>{{ lbl }}</span><span class="t-data pt-tone">{{ pm.money(total) }}</span></div>
+      {% if items %}
+      <ul class="pt-debt-list">
+        {% for d in items %}
+        {% set pct = ((1 - d.monto_restante / d.monto_total) * 100)|int if d.monto_total > 0 else 0 %}
+        <li class="pt-debt">
+          <span class="pt-avatar" aria-hidden="true">{{ d.person[0]|upper }}</span>
+          <span class="eu-grow pt-debt-bd"><span class="t-ui">{{ d.person }}</span>{% if d.concept %}<span class="t-meta">{{ d.concept }}</span>{% endif %}
+            {% if d.monto_total > d.monto_restante %}<span class="eu-progress eu-progress--thin pt-debt-bar" role="progressbar" aria-label="{{ pct }}% {{ verb }}" aria-valuenow="{{ pct }}" aria-valuemax="100"><i style="width:{{ pct }}%"></i></span><span class="t-meta">{{ pct }}% {{ verb }} · total {{ pm.money(d.monto_total) }}</span>{% endif %}</span>
+          <span class="pt-debt-r"><span class="t-data pt-tone">{{ pm.money(d.monto_restante) }}</span>
+            <span class="pt-acts">
+              <button type="button" class="eu-iconbtn" data-abonar="{{ d.id }}" data-rest="{{ d.monto_restante }}" aria-label="Registrar {{ 'cobro' if type == 'owe_me' else 'pago' }} de {{ d.person }}" title="Registrar {{ 'cobro' if type == 'owe_me' else 'pago' }}"><i data-lucide="circle-plus"></i></button>
+              <button type="button" class="eu-iconbtn" data-settle="{{ d.id }}" aria-label="Liquidar deuda de {{ d.person }}" title="Liquidar"><i data-lucide="circle-check"></i></button>
+              <button type="button" class="eu-iconbtn pt-del" data-del-debt="{{ d.id }}" aria-label="Eliminar deuda de {{ d.person }}" title="Eliminar"><i data-lucide="trash-2"></i></button>
+            </span></span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="t-meta pt-debt-empty"><i data-lucide="{{ empty_ic }}"></i>{{ empty_txt }}</p>
+      {% endif %}
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm eu-btn--block" data-new-debt="{{ type }}"><i data-lucide="plus"></i>{{ add }}</button>
+    </div>
+    {% endfor %}
+  </div>
+</section>

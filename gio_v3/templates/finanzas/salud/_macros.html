@@ -1,0 +1,33 @@
+{# Patrimonio: montos ocultables y listas de cuentas por grupo #}
+{% set KIND = {'liq': ('cosmopolitismo', ''), 'inv': ('ataraxia', ''), 'pas': ('harma', '−')} %}
+{% macro hide(v, mask='••••') -%}<span class="nw-real">{{ v }}</span><span class="nw-mask">{{ mask }}</span>{%- endmacro %}
+{% macro money(n, dec=0) -%}${{ ("{:,.%df}" % dec).format(n) }}{%- endmacro %}
+{% macro accounts(kind, title, desc, icon, items, tipo_default, empty_txt, add_lbl, wide=False) -%}
+{% set k = KIND[kind] %}
+{% set total = items|rejectattr('moneda','in',['USD','EUR'])|sum(attribute='saldo') %}
+<section class="eu-card pt-box pt-acc-box" data-cat="{{ k[0] }}" data-kind="{{ kind }}" aria-labelledby="pt-{{ kind }}-t">
+  <div class="eu-between pt-box-hd">
+    <div><h3 class="t-card pt-box-t" id="pt-{{ kind }}-t"><i data-lucide="{{ icon }}"></i>{{ title }}</h3><p class="t-meta">{{ desc }}</p></div>
+    <div class="pt-box-r"><div class="t-data pt-total">{{ k[1] }}{{ hide(money(total, 2)) }}</div>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-new-cuenta="{{ tipo_default }}"><i data-lucide="plus"></i>Agregar</button></div>
+  </div>
+  {% if items %}
+  <ul class="pt-accs{{ ' pt-accs--wide' if wide }}">
+    {% for c in items %}
+    {% set meta = tipo_meta[c.tipo] %}
+    <li class="pt-acc">
+      <span class="eu-row-ic pt-acc-ic"><i data-lucide="{{ meta.icon }}"></i></span>
+      <span class="eu-grow pt-acc-bd"><span class="t-ui">{{ c.nombre }}</span><span class="t-meta">{{ c.institucion or meta.label }}</span></span>
+      <span class="pt-acc-r"><span class="t-data pt-amt">{{ k[1] }}{{ hide(money(c.saldo, 2)) }}</span><span class="t-meta">{{ c.moneda }}</span></span>
+      <span class="pt-acts">
+        <button type="button" class="eu-iconbtn" data-edit-cuenta='{{ {"id": c.id, "nombre": c.nombre, "tipo": c.tipo, "institucion": c.institucion or "", "saldo": c.saldo, "moneda": c.moneda, "notas": c.notas or ""}|tojson|forceescape }}' aria-label="Editar {{ c.nombre }}"><i data-lucide="pencil"></i></button>
+        <button type="button" class="eu-iconbtn pt-del" data-del-cuenta="{{ c.id }}" aria-label="Eliminar {{ c.nombre }}"><i data-lucide="trash-2"></i></button>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="pt-empty"><p class="t-meta">{{ empty_txt }}</p><button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-new-cuenta="{{ tipo_default }}"><i data-lucide="plus"></i>{{ add_lbl }}</button></div>
+  {% endif %}
+</section>
+{%- endmacro %}

@@ -1,0 +1,66 @@
+{# Modales: cuenta, bien, deuda y abono #}
+{% macro err(id) -%}<div class="eu-err" id="{{ id }}" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>{%- endmacro %}
+{% macro ft(id, lbl) -%}<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('{{ id }}')">Cancelar</button><button type="submit" form="f-{{ id }}" class="eu-btn eu-btn--primary">{{ lbl }}</button></div>{%- endmacro %}
+<div data-cat="oikonomia">
+{% call ui.modal('m-cuenta', 'Agregar cuenta', eyebrow='Patrimonio') %}
+<form class="eu-modal-bd" id="f-m-cuenta" autocomplete="off" novalidate>
+  <input type="hidden" id="mc-id">
+  <div class="eu-grid-2 pt-fgrid">
+    <div class="eu-field"><label class="eu-label" for="mc-nombre">Nombre de la cuenta *</label><input class="eu-input" id="mc-nombre" placeholder="Ej: BBVA Débito, GBM, Efectivo…"></div>
+    <div class="eu-field"><label class="eu-label" for="mc-tipo">Tipo *</label><select class="eu-select" id="mc-tipo">{% for k, m in tipo_meta.items() %}<option value="{{ k }}">{{ m.label }}</option>{% endfor %}</select></div>
+    <div class="eu-field"><label class="eu-label" for="mc-inst">Institución / banco</label><input class="eu-input" id="mc-inst" placeholder="Ej: BBVA, GBM, HSBC…"></div>
+    <div class="eu-field"><label class="eu-label" for="mc-moneda">Moneda</label><select class="eu-select" id="mc-moneda"><option value="MXN">MXN — Pesos</option><option value="USD">USD — Dólares</option><option value="EUR">EUR — Euros</option></select></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="mc-saldo">Saldo actual *</label><input class="eu-input eu-input--money" id="mc-saldo" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00"></div>
+  <div class="eu-field"><label class="eu-label" for="mc-notas">Notas (opcional)</label><input class="eu-input" id="mc-notas" placeholder="Ej: cuenta para gastos fijos…"></div>
+  {{ err('mc-err') }}
+</form>
+{{ ft('m-cuenta', 'Guardar cuenta') }}
+{% endcall %}
+
+{% call ui.modal('m-bien', 'Agregar bien personal', eyebrow='Patrimonio') %}
+<form class="eu-modal-bd" id="f-m-bien" autocomplete="off" novalidate>
+  <input type="hidden" id="mb-id">
+  <div class="eu-grid-2 pt-fgrid">
+    <div class="eu-field"><label class="eu-label" for="mb-nombre">Nombre del bien *</label><input class="eu-input" id="mb-nombre" placeholder="Ej: Lavadora Samsung, sofá…"></div>
+    <div class="eu-field"><label class="eu-label" for="mb-categoria">Categoría *</label><select class="eu-select" id="mb-categoria">{% for k, m in bien_meta.items() %}<option value="{{ k }}">{{ m.label }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="mb-descripcion">Descripción breve</label><input class="eu-input" id="mb-descripcion" placeholder="Modelo, características principales…"></div>
+  <div class="eu-grid-2 pt-fgrid">
+    <div class="eu-field"><label class="eu-label" for="mb-precio">Precio de compra (MXN)</label><input class="eu-input eu-input--money" id="mb-precio" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00"><div class="eu-help">Opcional, para calcular depreciación.</div></div>
+    <div class="eu-field"><label class="eu-label" for="mb-valor">Valor actual estimado (MXN)</label><input class="eu-input eu-input--money" id="mb-valor" type="number" step="0.01" min="0" inputmode="decimal" placeholder="0.00"></div>
+  </div>
+  <div class="eu-grid-3 pt-fgrid">
+    <div class="eu-field"><label class="eu-label" for="mb-fecha">Fecha de compra</label><input class="eu-input" id="mb-fecha" type="month"></div>
+    <div class="eu-field"><label class="eu-label" for="mb-lugar">Lugar / tienda</label><input class="eu-input" id="mb-lugar" placeholder="Ej: Liverpool…"></div>
+    <div class="eu-field"><label class="eu-label" for="mb-garantia">Garantía hasta</label><input class="eu-input" id="mb-garantia" type="month"></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="mb-notas">Notas</label><input class="eu-input" id="mb-notas" placeholder="Número de serie, detalles extra…"></div>
+  {{ err('mb-err') }}
+</form>
+{{ ft('m-bien', 'Guardar bien') }}
+{% endcall %}
+
+{% call ui.modal('m-debt', 'Registrar deuda', eyebrow='Compromisos') %}
+<form class="eu-modal-bd" id="f-m-debt" autocomplete="off" novalidate>
+  <div class="eu-seg pt-seg" role="group" aria-label="Tipo de deuda"><button type="button" data-dtype="owe_me" aria-pressed="true">Me deben</button><button type="button" data-dtype="i_owe" aria-pressed="false">Debo</button></div>
+  <input type="hidden" id="md-type" value="owe_me">
+  <div class="eu-field"><label class="eu-label" for="md-person">Persona *</label><input class="eu-input" id="md-person" placeholder="Nombre…"></div>
+  <div class="eu-field"><label class="eu-label" for="md-concept">Concepto</label><input class="eu-input" id="md-concept" placeholder="Ej: préstamo enero, cena, viaje…"></div>
+  <div class="eu-field"><label class="eu-label" for="md-amount">Monto (MXN) *</label><input class="eu-input eu-input--money" id="md-amount" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="0.00"></div>
+  {{ err('md-err') }}
+</form>
+{{ ft('m-debt', 'Guardar') }}
+{% endcall %}
+
+{% call ui.modal('m-abonar', 'Registrar abono / cobro', eyebrow='Compromisos') %}
+<form class="eu-modal-bd" id="f-m-abonar" autocomplete="off" novalidate>
+  <input type="hidden" id="ma-did">
+  <p class="t-meta">Pendiente: <b class="t-data" id="ma-restante"></b></p>
+  <div class="eu-field"><label class="eu-label" for="ma-amount">Monto *</label><input class="eu-input eu-input--money" id="ma-amount" type="number" step="0.01" min="0.01" inputmode="decimal" placeholder="0.00"></div>
+  <div class="eu-field"><label class="eu-label" for="ma-note">Nota (opcional)</label><input class="eu-input" id="ma-note" placeholder="Ej: transferencia 15 jun…"></div>
+  {{ err('ma-err') }}
+</form>
+{{ ft('m-abonar', 'Registrar') }}
+{% endcall %}
+</div>
