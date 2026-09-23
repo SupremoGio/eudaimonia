@@ -199,6 +199,7 @@
       STATE = d.state; closeCtx = null;
       euModal.close('m-close');
       toast('+' + d.xp + ' XP · Sesión guardada', 'win');
+      if (window.euGam) euGam(d.gam || { xp: d.xp });
       setTab('bitacora');
       renderRepertorio(); renderProgreso(); renderBitacora(); renderSteps();
     }).catch(function () { toast('Error de red', 'err'); })
@@ -368,6 +369,7 @@
       openRate = now ? id : (openRate === id ? null : openRate);
       syncMusica(); renderMusica();
       var nb = document.querySelector('[data-act="toggle"][data-id="' + id + '"]'); if (nb) nb.focus();
+      if (d.gam && window.euGam) euGam(d.gam, { el: nb });
     }).catch(function () { toast('Sin conexión', 'err'); });
   }
   function muRateToggle(id) {

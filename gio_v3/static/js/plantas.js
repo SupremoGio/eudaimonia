@@ -81,6 +81,7 @@
       apply(d);
       toast(d.gam && d.gam.xp ? '+' + d.gam.xp + ' XP · +' + d.gam.ec + ' EC' : (tipo === 'riego' ? 'Riego registrado' : 'Trasplante registrado'), d.gam && d.gam.xp ? 'win' : 'ok');
       var nb = document.querySelector('[data-care="' + tipo + '"][data-id="' + id + '"]'); if (nb) nb.focus();
+      if (d.gam && window.euGam) euGam(d.gam, { el: nb });
     }).catch(function () { toast('Sin conexión', 'err'); c.disabled = false; });
   });
   var tb = document.querySelector('.eu-topbar .js-new'); if (tb) tb.addEventListener('click', openNew);

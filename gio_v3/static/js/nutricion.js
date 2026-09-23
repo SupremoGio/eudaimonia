@@ -252,6 +252,7 @@
       b.setAttribute('aria-busy', 'true');
       var res = await api('/nutricion/api/cumplir', { meal_id: cur.id });
       if (res.error) { b.removeAttribute('aria-busy'); toast('No se pudo registrar', 'err'); return; }
+      if (window.euGam) euGam({ xp: (res.xp_earned || 0) + (res.bonus_xp || 0) }, { el: b });
       cur.done = true; S.xp_today = res.total_xp; S.ec_today = res.total_ec; S.streak = res.streak; kpis();
       toast(res.bonus_xp > 0 ? 'Día cerrado · +' + res.bonus_xp + ' XP bonus · +' + res.bonus_ec + ' EC' : '+' + res.xp_earned + ' XP · cumplida', 'win');
       mFeel = null; mTags = []; renderMeal(); if (S.tab === 'hoy') renderHoy();
@@ -259,6 +260,7 @@
       var r = await api('/nutricion/api/sintoma', { meal_id: cur.id, feeling: mFeel, tags: mTags });
       cur.symptom = mFeel; cur.sym_tags = mTags; if (r.total_xp != null) S.xp_today = r.total_xp; kpis();
       toast('+5 XP · registro guardado', 'win'); euModal.close('m-meal');
+      if (window.euRefreshXp) euRefreshXp();
       if (S.tab === 'hoy') renderView(); if (S.tab === 'sintomas') renderSintomas();
     }
   });

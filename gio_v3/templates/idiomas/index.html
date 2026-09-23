@@ -20,8 +20,8 @@
         <div class="id-ring-c"><span class="t-data num" id="plan-week">—</span><span class="t-meta">semana</span></div></div>
       <div class="eu-vstack id-plan-info">
         <h2 class="t-card" id="id-plan-t">Plan C1 · 26 semanas</h2>
-        <div class="t-meta" id="plan-fase">Cargando…</div>
-        <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Progreso del plan"><i id="plan-fill" style="width:0%"></i></div>
+        <div class="t-meta" id="plan-fase" aria-busy="true"><span class="eu-skel id-skel-line" aria-hidden="true"></span><span class="sr-only">Cargando plan</span></div>
+        <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Progreso del plan" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="plan-bar"><i id="plan-fill" style="width:0%"></i></div>
         <div class="t-meta" id="plan-inicio"></div>
       </div>
       <div class="id-plan-stats">
@@ -65,7 +65,7 @@
           <td class="r num fg-brand">{{ t.score }}</td><td class="num fg-3">{{ t.test_date }}</td>
           <td class="r"><button type="button" class="eu-iconbtn id-danger js-del-test" data-id="{{ t.id }}" aria-label="Eliminar {{ t.test_type }}"><i data-lucide="trash-2"></i></button></td></tr>{% endfor %}</tbody>
       </table></div>
-      {% else %}<p class="t-meta id-none">Aún no registras resultados.</p>{% endif %}
+      {% else %}{{ ui.empty('award', 'Aún no registras resultados', 'Agrega tu primer examen o prueba de nivel para seguir tu avance.', compact=True) }}{% endif %}
     </section>
   </div>
 
@@ -109,7 +109,7 @@
         <p class="t-body fg-2">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</p>
       </article>
       {% else %}
-      <p class="t-meta">Sin entradas aún. Escribe la primera arriba.</p>
+      {{ ui.empty('notebook-pen', 'Sin entradas aún', 'Escribe la primera arriba.', compact=True) }}
       {% endfor %}
     </div>
   </section>

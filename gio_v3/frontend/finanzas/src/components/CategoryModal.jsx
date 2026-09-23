@@ -129,7 +129,7 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
                         <span className="t-ui fz-ellipsis">{g.key}</span>
                         <span className="t-data">{money(g.total, { cents: false })}</span>
                       </span>
-                      <span className="eu-progress eu-progress--cat eu-progress--thin"><i style={{ width: `${pct(g.total, total)}%` }} /></span>
+                      <span className="eu-progress eu-progress--cat eu-progress--thin" aria-hidden="true"><i style={{ width: `${pct(g.total, total)}%` }} /></span>
                       <span className="t-meta">{g.n} mov. · {pct(g.total, total)} %</span>
                     </button>
                   </li>

@@ -27,7 +27,7 @@
     {% endfor %}
   </ul>
   {% else %}
-  <div class="pt-empty"><p class="t-meta">{{ empty_txt }}</p><button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-new-cuenta="{{ tipo_default }}"><i data-lucide="plus"></i>{{ add_lbl }}</button></div>
+  <div class="eu-empty eu-empty--sm pt-empty"><div class="eu-empty-ic"><i data-lucide="{{ icon }}"></i></div><p>{{ empty_txt }}</p><button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-new-cuenta="{{ tipo_default }}"><i data-lucide="plus"></i>{{ add_lbl }}</button></div>
   {% endif %}
 </section>
 {%- endmacro %}

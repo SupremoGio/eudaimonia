@@ -57,6 +57,7 @@
       btn.disabled = true;
       fetch(btn.dataset.url, { method: 'POST' }).then(function (r) { return r.json(); }).then(function (j) {
         if (!j.ok) { btn.disabled = false; toast('No se pudo marcar', 'err'); return; }
+        if (j.gam && window.euXpGain) euXpGain({ el: btn, xp: j.gam.xp });
         var row = btn.closest('.dash-radar-row');
         row.classList.add('is-leaving');
         setTimeout(function () {
@@ -68,7 +69,8 @@
             var empty = document.querySelector('.js-radar-empty'); if (empty) empty.hidden = false;
           }
         }, 220);
-        if (j.gam && j.gam.xp) toast('+' + j.gam.xp + ' XP' + (j.gam.ec ? ' · +' + j.gam.ec + ' EC' : ''));
+        if (j.gam && j.gam.xp) toast('+' + j.gam.xp + ' XP' + (j.gam.ec ? ' · +' + j.gam.ec + ' EC' : ''), 'win');
+        if (j.gam && window.euGam) euGam(j.gam);
       }).catch(function () { btn.disabled = false; toast('No se pudo marcar', 'err'); });
     });
   });

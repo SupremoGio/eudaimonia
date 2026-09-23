@@ -10,7 +10,7 @@
     </div>
   </div>
   {% else %}
-  <div class="eu-card t-meta">Ningún perk activo. Las insignias de plata dan perks temporales al desbloquearse.</div>
+  <div class="eu-card">{{ ui.empty('sparkles', 'Ningún perk activo', 'Las insignias de plata dan perks temporales al desbloquearse.', compact=True) }}</div>
   {% endfor %}
   <div class="eu-card eu-card--inset t-meta">Más de 3 perks seguidos → −10% XP por 2 días.</div>
 </section>

@@ -74,9 +74,10 @@
     var r = await jpost('/gtd/api/task/' + id + '/complete');
     if (!r || !r.ok) { btn.disabled = false; btn.setAttribute('aria-pressed', 'false'); toast('Error al completar', 'err'); return; }
     t.completado = true; t.fecha_completado = today();
+    // «+N XP» sube desde el botón antes de re-renderizar la lista.
+    if (window.euGam) euGam(Object.assign({ xp: (r.pts || 0) + (r.bonus || 0) }, r.gam || {}), { el: btn, pop: false });
     render();
     toast('+' + r.pts + ' pts' + (r.bonus ? ' · bonus +' + r.bonus : ''), 'win');
-    if (window.euAnnounceAchievements) euAnnounceAchievements(r.gam);
   }
   async function del(id) {
     if (!(await euConfirm('¿Eliminar esta tarea?', { confirmLabel: 'Eliminar' }))) return;
@@ -156,7 +157,7 @@
           (s.key === 'inbox' && items.length ? '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-rev"><i data-lucide="sparkles"></i>Revisión rápida</button>' : '') +
         '</div>' +
         (isOpen ? (items.length ? '<ul class="px-list">' + items.map(function (t) { return itemHTML(t, s.key); }).join('') + '</ul>'
-          : '<p class="t-meta px-empty">' + (s.key === 'done' ? 'Aún sin completadas.' : s.key === 'inbox' ? 'Inbox en cero. Todo está decidido.' : 'Nada aquí.') + '</p>') : '') +
+          : euEmpty(s.key === 'done' ? 'circle-check' : s.key === 'inbox' ? 'inbox' : 'layers', s.key === 'done' ? 'Aún sin completadas' : s.key === 'inbox' ? 'Inbox en cero' : 'Nada aquí', s.key === 'inbox' ? 'Todo está decidido.' : '', true)) : '') +
         '</section>';
     }).join('');
     document.getElementById('st-inbox').textContent = groups.inbox.length;

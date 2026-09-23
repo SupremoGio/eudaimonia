@@ -2,7 +2,7 @@ import { api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { MONTHS_LONG, fmtDate, money, pct, presetRange } from '../lib/format.js';
 import { NATURALEZA, catMeta } from '../lib/meta.js';
-import { CatIcon, Empty, ErrorNote, Icon, Skel, useLoad } from '../components/ui.jsx';
+import { CatIcon, Empty, ErrorNote, Icon, Skel, useLoad, Progress } from '../components/ui.jsx';
 import FlowBars from '../components/FlowBars.jsx';
 
 const monthName = MONTHS_LONG[new Date().getMonth()];
@@ -124,9 +124,8 @@ export default function Resumen() {
                         <span className="eu-row-t">{catMeta(c.categoria).name}</span>
                         <span className="t-data">{money(t, { cents: false })}{b && <span className="t-meta"> / {money(b.limite, { cents: false })}</span>}</span>
                       </div>
-                      <div className={`eu-progress eu-progress--thin fz-mt-1 ${tone ? 'fz-progress-tone' : 'eu-progress--cat'}`} data-cat={catMeta(c.categoria).tone || undefined}>
-                        <i style={{ width: `${Math.min(100, used)}%` }} />
-                      </div>
+                      <Progress className={`eu-progress--thin fz-mt-1 ${tone ? 'fz-progress-tone' : 'eu-progress--cat'}`} cat={catMeta(c.categoria).tone} pct={used}
+                        label={b ? `${catMeta(c.categoria).name}: presupuesto usado` : `${catMeta(c.categoria).name}: parte del gasto`} />
                       <div className="eu-row-s">{b ? `${used} % del presupuesto` : `${used} % del gasto`}{c.pct_change != null && <span className={c.pct_change > 0 ? 'fg-danger' : 'fg-success'}>· {c.pct_change > 0 ? '▲' : '▼'} {Math.abs(c.pct_change)} %</span>}</div>
                     </div>
                   </button>
@@ -171,14 +170,14 @@ export default function Resumen() {
             <h2 className="t-card">Gasto por naturaleza</h2>
             <span className="t-meta">{monthName}</span>
           </div>
-          {nat.loading ? <Skel rows={3} h={32} /> : natRows.length === 0 ? <div className="t-meta">Sin gastos este mes.</div> : (
+          {nat.loading ? <Skel rows={3} h={32} /> : natRows.length === 0 ? <Empty compact icon="layers" title="Sin gastos este mes" text="La naturaleza del gasto (fijo, variable…) aparece al clasificar movimientos." /> : (
             <div className="eu-vstack fz-gap-3">
               {natRows.map((n) => {
                 const m = NATURALEZA[n.naturaleza] || { name: n.naturaleza, tone: 'neutral' };
                 return (
                   <div key={n.naturaleza} className="eu-vstack fz-gap-1" data-tone={m.tone}>
                     <div className="eu-between"><span className="t-ui">{m.name}</span><span className="t-data">{money(n.total, { cents: false })} <span className="t-meta">· {pct(Math.abs(n.total), natTotal)} %</span></span></div>
-                    <div className="eu-progress fz-progress-tone"><i style={{ width: `${pct(Math.abs(n.total), natTotal)}%` }} /></div>
+                    <Progress className="fz-progress-tone" pct={pct(Math.abs(n.total), natTotal)} label={`Gasto ${m.name.toLowerCase()}`} />
                   </div>
                 );
               })}

@@ -18,8 +18,8 @@
 .vj-sec--vigente .vj-sec-t{color:var(--success-fg)}
 .vj-sec--proximo .vj-sec-t{color:var(--cat-fg)}
 .vj-sec--pasado .vj-sec-t{color:var(--fg-3)}
-.vj-sec--pasado .vj-card{opacity:.8}
-.vj-sec-empty{padding:var(--sp-3) var(--sp-4);border:1px dashed var(--border-default);border-radius:var(--r-md)}
+.vj-sec--pasado .vj-card{background:var(--bg-sunken);box-shadow:none}
+.vj-sec--pasado .vj-card img{filter:grayscale(.5)}
 .vj-empty-cta{display:flex;justify-content:center;padding-bottom:var(--sp-6)}
 .vj-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-3)}
 @media (min-width:640px){.vj-grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}}

@@ -8,7 +8,7 @@
     <span class="eu-badge eu-badge--success at-bl-ok"><i data-lucide="check"></i>Listo</span>
     <i data-lucide="chevron-down" class="at-chev"></i>
   </button>
-  <span class="eu-progress eu-progress--thin at-bl-bar"><i id="blbar-{{ bl.bloque_id }}" style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%"></i></span>
+  <span class="eu-progress eu-progress--thin at-bl-bar" role="progressbar" aria-label="Progreso: {{ bl.label }}" aria-valuemin="0" aria-valuemax="{{ bl.required_count or 0 }}" aria-valuenow="{{ bl.done_count }}" id="blpb-{{ bl.bloque_id }}"><i id="blbar-{{ bl.bloque_id }}" style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%"></i></span>
   <div class="at-bl-bd" id="blbody-{{ bl.bloque_id }}"{% if bl.bloque_done %} hidden{% endif %}>
     {% if bl.total_duracion %}
     <div class="at-timer" data-timer="{{ bl.bloque_id }}" data-ref="{{ bl.total_duracion * 60 }}">

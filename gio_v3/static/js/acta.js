@@ -86,7 +86,7 @@
   function updS(s) {
     if (!s) return;
     var xp = s.xp_today != null ? s.xp_today : (s.pts_today || 0);
-    $$('.js-xp-today').forEach(function (el) { el.textContent = xp; });
+    $$('.js-xp-today').forEach(function (el) { if (window.euCountTo) euCountTo(el, xp); else el.textContent = xp; });
     $$('.js-xp-bar').forEach(function (el) {
       el.style.width = Math.min(100, xp / GOAL * 100) + '%';
       var bar = el.parentNode; bar.setAttribute('aria-valuenow', xp);
@@ -130,6 +130,7 @@
     var lb = $('.js-lvl-bar'); if (lb && g.level_pct != null) lb.style.width = g.level_pct + '%';
     var ln = $('.js-lvl-name'); if (ln && g.level_name) ln.textContent = g.level_name.charAt(0) + g.level_name.slice(1).toLowerCase();
     var nx = $('.js-lvl-next'); if (nx) nx.textContent = g.max_level ? 'nivel máximo' : (g.xp_to_next || 0) + ' XP para subir';
+    if (window.euCheckLevel) euCheckLevel(g);
   }
 
   function afterGam(d) {
@@ -139,25 +140,16 @@
       toast(gam.combo_bonuses.map(function (c) { return 'Combo ' + c.label + ' +' + c.xp + ' XP'; }).join(' · '), 'win');
     }
     if (gam.perfect_day && window.euPerfectDay) euPerfectDay(gam.perfect_day);
-    if (gam.achievements && gam.achievements.length && window.euAnnounceAchievements) euAnnounceAchievements(gam);
-    if (gam.badges && gam.badges.length) toast('Badge: ' + gam.badges[0].name, 'win');
+    // Logros e insignias: sello + halo (eu-motion.js), uno tras otro.
+    if (window.euAnnounceAchievements) euAnnounceAchievements(gam);
     icons(); notifyDashboard();
+    if (window.euRefreshXp) euRefreshXp();
   }
 
-  // ── Coreografía de «marcar»: check con settle + «+N XP» que sube ─────────
+  // ── Coreografía de «marcar» (eu-motion.js): check con settle 220 ms +
+  //    «+N XP» que sube 600 ms; la barra y el contador los anima updS().
   function celebrate(btn, xp) {
-    if (reduced || !btn) return;
-    var chk = $('.eu-act-check', btn);
-    if (chk) { chk.classList.remove('is-pop'); void chk.offsetWidth; chk.classList.add('is-pop'); }
-    if (!xp) return;
-    var r = btn.getBoundingClientRect();
-    var f = document.createElement('span');
-    f.className = 'acta-xpfloat';
-    f.textContent = '+' + xp + ' XP';
-    f.style.left = (r.right - 64) + 'px';
-    f.style.top = (r.top + r.height / 2 - 8) + 'px';
-    document.body.appendChild(f);
-    setTimeout(function () { f.remove(); }, 700);
+    if (btn && window.euXpGain) euXpGain({ el: btn, xp: parseInt(xp, 10) || 0 });
   }
 
   // ── Toast con Deshacer (5 s) ─────────────────────────────────────────────

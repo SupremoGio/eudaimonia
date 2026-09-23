@@ -28,7 +28,7 @@
   var seg = $$('[data-sort]', root);
   seg.forEach(function (b) {
     b.addEventListener('click', function () {
-      seg.forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      seg.forEach(function (x) { x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
       var cards = $$('.eu-ach', grid);
       cards.sort(b.dataset.sort === 'recent'
         ? function (a, c) { return (c.dataset.date || '').localeCompare(a.dataset.date || '') || a.dataset.order - c.dataset.order; }

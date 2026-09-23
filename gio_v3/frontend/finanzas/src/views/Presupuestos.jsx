@@ -4,7 +4,7 @@ import { useApp } from '../lib/ctx.js';
 import { MONTHS_LONG, money, norm, pct, presetRange } from '../lib/format.js';
 import { catMeta } from '../lib/meta.js';
 import { getCategories } from '../lib/store.js';
-import { CatIcon, Empty, ErrorNote, Field, Icon, Modal, Skel, confirmDialog, toast, useLoad } from '../components/ui.jsx';
+import { CatIcon, Empty, ErrorNote, Field, Icon, Modal, Skel, confirmDialog, toast, useLoad, Progress } from '../components/ui.jsx';
 
 const monthName = MONTHS_LONG[new Date().getMonth()];
 const toneFor = (p) => (p > 100 ? 'danger' : p >= 85 ? 'warning' : 'success');
@@ -105,7 +105,7 @@ export default function Presupuestos() {
                 <div className="t-meta">{spent > limit ? `Excedido por ${money(spent - limit, { cents: false })}` : `Libre ${money(limit - spent, { cents: false })}`}</div>
               </div>
             </div>
-            <div className="eu-progress fz-progress-tone"><i style={{ width: `${Math.min(100, gp)}%` }} /></div>
+            <Progress className="fz-progress-tone" pct={gp} label="Presupuesto total usado" />
           </div>
 
           <div className="fz-budgets">
@@ -127,7 +127,7 @@ export default function Presupuestos() {
                     <span className="t-data">{money(b.gastado, { cents: false })} <span className="t-meta">de {money(b.limite, { cents: false })}</span></span>
                     <span className={`t-ui ${tone === 'success' ? 'fz-fg-3' : 'fz-tone-fg'}`}>{p} %</span>
                   </div>
-                  <div className="eu-progress fz-progress-tone"><i style={{ width: `${Math.min(100, p)}%` }} /></div>
+                  <Progress className="fz-progress-tone" pct={p} label={`${b.nombre}: presupuesto usado`} />
                   <div className="t-meta">
                     {b.gastado > b.limite
                       ? <span className="fz-tone-fg"><Icon name="octagon-alert" size={12} /> Excedido por {money(b.gastado - b.limite, { cents: false })}</span>

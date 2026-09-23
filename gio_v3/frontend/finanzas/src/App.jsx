@@ -117,7 +117,9 @@ export default function App() {
           </div>
         </header>
 
-        <nav className="eu-tabs fz-tabs" role="tablist" aria-label="Secciones de estados de cuenta">
+        <nav className="eu-tabs fz-tabs" aria-label="Secciones de estados de cuenta">
+          {/* El enlace a Gastos de viaje (otra página) va fuera del tablist. */}
+          <div className="fz-tablist" role="tablist" aria-label="Secciones de estados de cuenta">
           {TABS.map((t) => (
             <button key={t.id} type="button" role="tab" id={`fz-tab-${t.id}`} aria-selected={tab === t.id}
               aria-controls="fz-panel" onClick={() => selectTab(t.id)}>
@@ -127,6 +129,7 @@ export default function App() {
               )}
             </button>
           ))}
+          </div>
           <a className="fz-tab-link" href={VIAJES_URL}>Gastos de viaje<Icon name="arrow-up-right" size={14} /></a>
         </nav>
 

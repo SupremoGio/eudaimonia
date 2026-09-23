@@ -137,9 +137,20 @@ export function Field({ label, help, error, htmlFor, children, className = '' })
   );
 }
 
-export function Empty({ icon = 'inbox', title, text, children }) {
+/** Barra eu-progress con role=progressbar (valor en %, 0–100). */
+export function Progress({ pct = 0, label, className = '', cat, tone }) {
+  const v = Math.max(0, Math.min(100, Math.round(pct)));
   return (
-    <div className="eu-empty">
+    <div className={`eu-progress ${className}`.trim()} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={v}
+      data-cat={cat || undefined} data-tone={tone || undefined}>
+      <i style={{ width: `${v}%` }} />
+    </div>
+  );
+}
+
+export function Empty({ icon = 'inbox', title, text, children, compact = false }) {
+  return (
+    <div className={`eu-empty${compact ? ' eu-empty--sm' : ''}`}>
       <div className="eu-empty-ic"><Icon name={icon} /></div>
       <div className="t-card">{title}</div>
       {text && <p>{text}</p>}

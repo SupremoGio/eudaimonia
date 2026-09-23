@@ -45,6 +45,7 @@
       var g = d.gam;
       var won = g && g.xp > 0;
       toast(won ? '+' + g.xp + ' XP · +' + (g.ec || 0) + ' EC' : okMsg, won ? 'win' : 'ok');
+      if (g && window.euGam) euGam(g);
       return d;
     }).catch(function () { toast('Error de red', 'err'); }).finally(function () { if (form) busy(form, false); });
   }

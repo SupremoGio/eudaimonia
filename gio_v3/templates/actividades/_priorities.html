@@ -16,7 +16,7 @@
     {% endfor %}
   </div>
   <div class="js-prio-empty"{% if stats.priorities %} hidden{% endif %}>
-    <p class="t-meta acta-p">Elige hasta 3 cosas que de verdad importan hoy.</p>
+    {{ ui.empty('target', 'Sin prioridades hoy', 'Elige hasta 3 cosas que de verdad importan hoy.', compact=True) }}
   </div>
   <div class="eu-badge eu-badge--success js-prio-bonus"{% if not (stats.priorities|length == 3 and stats.priorities|selectattr('done')|list|length == 3) %} hidden{% endif %}><i data-lucide="sparkles"></i>Bono +5 XP · +5 EC — 3/3</div>
 </section>

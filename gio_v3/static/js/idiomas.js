@@ -14,6 +14,8 @@
     if (!d) return;
     $('plan-week').textContent = d.semana_actual;
     $('plan-fase').textContent = 'Semana ' + d.semana_actual + ' de ' + d.total_semanas + ' · Fase ' + d.fase_actual;
+    $('plan-fase').removeAttribute('aria-busy');
+    $('plan-bar').setAttribute('aria-valuenow', Math.round(d.progreso_pct));
     $('plan-inicio').textContent = 'Inicio del plan: ' + d.inicio;
     $('plan-fill').style.width = d.progreso_pct + '%';
     $('plan-ring').style.strokeDashoffset = 263.9 - Math.min(100, d.progreso_pct) / 100 * 263.9;

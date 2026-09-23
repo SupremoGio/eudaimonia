@@ -91,3 +91,6 @@
 .px-streak .t-data{font-size:var(--fs-28);color:var(--fg-brand)}
 .px-table-wrap{overflow-x:auto}
 @media (max-width:767px){.px-sec--inbox .js-rev{font-size:0;gap:0;padding:0 var(--sp-2)}.px-sec--inbox .js-rev svg{width:18px;height:18px}.px-cls{gap:var(--sp-2) var(--sp-4)}}
+
+/* En Puntos el encabezado no es plegable: sin cursor de botón */
+div.px-sec-tg{cursor:default}

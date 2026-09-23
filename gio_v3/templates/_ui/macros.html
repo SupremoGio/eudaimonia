@@ -83,8 +83,14 @@
 </div>
 {%- endmacro %}
 
-{% macro empty(icon, title, text, cta=None, cta_href=None, cta_icon=None, kbd=None) -%}
-<div class="eu-empty">
+{# Esqueleto de carga para contenido que llena JS: el envoltorio aria-busy
+   desaparece cuando el script reemplaza el contenedor. #}
+{% macro skel(rows=3, h=56) -%}
+<div class="eu-skel-wrap" aria-busy="true" role="status" aria-label="Cargando">{% for _ in range(rows) %}<div class="eu-skel" style="height:{{ h }}px"></div>{% endfor %}</div>
+{%- endmacro %}
+
+{% macro empty(icon, title, text, cta=None, cta_href=None, cta_icon=None, kbd=None, compact=False) -%}
+<div class="eu-empty{% if compact %} eu-empty--sm{% endif %}">
   <div class="eu-empty-ic"><i data-lucide="{{ icon }}"></i></div>
   <div class="t-card">{{ title }}</div>
   <p>{{ text }}</p>

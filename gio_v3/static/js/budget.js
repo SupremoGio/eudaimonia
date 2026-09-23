@@ -53,7 +53,7 @@
   function openDD(btn) {
     ddCat = btn.dataset.dd; changed = false;
     $('m-dd-t').textContent = btn.dataset.nombre;
-    $('dd-body').innerHTML = '<p class="t-meta">Cargando movimientos…</p>';
+    euSkel('dd-body', 4, 48);
     $('dd-footer-n').textContent = ''; $('dd-footer-total').textContent = '';
     euModal.open('m-dd');
     fetch('/finanzas/budget/api/cat-movs/' + MES + '/' + encodeURIComponent(ddCat)).then(function (r) { return r.json(); })

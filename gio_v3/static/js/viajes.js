@@ -80,7 +80,7 @@
       { k: 'pasado', l: 'Pasados', ic: 'history', t: g.pasado },
     ].map(function (s) {
       return '<section class="vj-sec vj-sec--' + s.k + '" aria-label="' + s.l + '"><h2 class="t-eyebrow vj-sec-t"><i data-lucide="' + s.ic + '"></i>' + s.l + ' <span class="num">(' + s.t.length + ')</span></h2>' +
-        (s.t.length ? '<div class="vj-grid">' + s.t.map(tripCard).join('') + '</div>' : '<p class="t-meta vj-sec-empty">Sin viajes ' + s.l.toLowerCase() + '.</p>') + '</section>';
+        (s.t.length ? '<div class="vj-grid">' + s.t.map(tripCard).join('') + '</div>' : euEmpty('calendar-x', 'Sin viajes ' + s.l.toLowerCase(), '', true)) + '</section>';
     }).join('');
     icons();
   }
@@ -189,7 +189,7 @@
     $('picker-day-label').textContent = fmtD(pickerDia.fecha) + (pickerDia.descripcion ? ' — ' + pickerDia.descripcion : '');
     $('btn-quitar-outfit').hidden = !(pickerDia.outfits && pickerDia.outfits.length);
     var grid = $('picker-outfit-grid');
-    grid.innerHTML = '<p class="t-meta">Cargando outfits…</p>';
+    grid.innerHTML = euSkelHTML(3, 72);
     euModal.open('m-picker');
     (outfits ? Promise.resolve(outfits) : getJ(API + '/outfits')).then(function (o) {
       outfits = o || [];
@@ -332,7 +332,7 @@
   $$('.js-add-item').forEach(function (b) {
     b.addEventListener('click', function () {
       $('ai-nombre').value = ''; $('ai-cat').value = 'Varios'; $('ai-wi-search').value = ''; setErr('ai-err', '');
-      $('ai-wi-grid').innerHTML = '<p class="t-meta">Cargando…</p>';
+      euSkel('ai-wi-grid', 3, 64);
       euModal.open('m-item'); setAi('wardrobe');
       (wardrobe ? Promise.resolve(wardrobe) : getJ(API + '/wardrobe-items')).then(function (w) { wardrobe = w || []; renderWardrobe(); })
         .catch(function () { $('ai-wi-grid').innerHTML = '<p class="t-meta">No se pudieron cargar las prendas.</p>'; });
@@ -349,7 +349,7 @@
       return '<button type="button" class="vj-wcard" data-wi="' + w.id + '" aria-pressed="' + on + '" aria-label="' + (on ? 'Quitar de la maleta: ' : 'Agregar a la maleta: ') + esc(w.nombre) + '">' +
         (w.foto ? photo(w.foto, 'vj-wimg') : swatch(w.color_hex, 'vj-wimg')) +
         '<span class="vj-wcheck" aria-hidden="true"><i data-lucide="check"></i></span><span class="t-meta vj-wname">' + esc(w.nombre) + '</span></button>';
-    }).join('') : '<p class="t-meta vj-span">Sin resultados para «' + esc(q) + '»</p>';
+    }).join('') : '<div class="vj-span">' + euEmpty('search-x', 'Sin resultados', 'Nada coincide con «' + q + '».', true) + '</div>';
     icons();
   }
   $('ai-wi-search').addEventListener('input', renderWardrobe);

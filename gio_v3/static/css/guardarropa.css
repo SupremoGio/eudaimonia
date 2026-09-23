@@ -277,3 +277,5 @@ body:has(#gr[data-tab=analisis]) .gr-fab{display:none}
   .gr-sort .t-meta{display:inline}
   .gr-sort .eu-select{max-width:none;height:36px}
 }
+
+.gr-tablist{display:inline-flex;gap:2px}

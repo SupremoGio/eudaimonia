@@ -64,6 +64,7 @@
     (r.bloques || []).forEach(function (bl) {
       var p = $('blprog-' + bl.bloque_id); if (p) p.textContent = bl.done_count + '/' + bl.required_count;
       var bar = $('blbar-' + bl.bloque_id); if (bar) bar.style.width = (bl.required_count ? Math.round(bl.done_count / bl.required_count * 100) : 0) + '%';
+      var pb = $('blpb-' + bl.bloque_id); if (pb) pb.setAttribute('aria-valuenow', bl.done_count);
       var card = $('blcard-' + bl.bloque_id); if (card) card.dataset.done = String(!!bl.bloque_done);
       if (bl.bloque_done) stop(bl.bloque_id);
     });
@@ -86,7 +87,7 @@
       if (g && !done) {
         if (g.xp > 0 || g.ec > 0) toast('+' + g.xp + ' XP' + (g.ec > 0 ? ' · +' + g.ec + ' EC' : ''), 'win');
         (g.combo_bonuses || []).forEach(function (c) { setTimeout(function () { toast(c.label + ' +' + c.xp + ' XP', 'win'); }, 300); });
-        if (g.achievements && g.achievements.length && window.euAnnounceAchievements) euAnnounceAchievements(g);
+        if (window.euGam) euGam(g, { el: btn });
       }
       if (!done) fetch('/ataraxia/api/rutina/finde/status').then(function (r) { return r.json(); })
         .then(function (s) { if (s.finde_perfecto) $('finde-banner').hidden = false; }).catch(function () {});
@@ -121,7 +122,7 @@
       if (!d._ok || !d.ok) { toast('Error al guardar', 'err'); return; }
       if (d.first_save && d.gam) {
         toast('Revisión guardada · +' + d.gam.xp + ' XP · +' + d.gam.ec + ' EC', 'win');
-        if (d.gam.achievements && d.gam.achievements.length && window.euAnnounceAchievements) euAnnounceAchievements(d.gam);
+        if (window.euGam) euGam(d.gam);
       } else toast('Revisión guardada');
       setTimeout(function () { location.reload(); }, 900);
     } catch (_) { toast('Sin conexión', 'err'); }

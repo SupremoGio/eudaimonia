@@ -599,7 +599,10 @@
       if (withXP !== false && XP.key && !XP.done) {
         var j = await (await jpost('/actividades/api/activity/log', { key: XP.key })).json().catch(function () { return {}; });
         if (j.action === 'removed') j = await (await jpost('/actividades/api/activity/log', { key: XP.key })).json().catch(function () { return {}; });
-        if (j.action === 'added') { XP.done = true; msg += ' · +' + (j.xp != null ? j.xp : XP.pts) + ' XP'; }
+        if (j.action === 'added') {
+          XP.done = true; msg += ' · +' + (j.xp != null ? j.xp : XP.pts) + ' XP';
+          if (window.euGam) euGam(j.gam || { xp: j.xp });
+        }
       }
       toast(msg, 'win');
       todayOffset = 0;  /* el de hoy pasa a ser el que se acaba de usar */
@@ -687,7 +690,7 @@
             '<span class="gr-pthumb">' + visualHTML(r) + '</span><span class="gr-prow-t">' + esc(r.nombre) + '</span>' +
             '<span class="eu-act-check"><i data-lucide="check"></i></span></button>';
         }).join('') + '</div>';
-    }).join('') || '<p class="t-meta gr-pempty">Sin prendas</p>';
+    }).join('') || euEmpty('shirt', 'Sin prendas', 'No hay prendas que coincidan.', true);
     icons(); renderPicked();
   }
   $('om-q').addEventListener('input', renderPicker);

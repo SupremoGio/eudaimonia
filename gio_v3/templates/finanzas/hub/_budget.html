@@ -15,6 +15,6 @@
     {% endfor %}
   </div>
   {% else %}
-  <p class="t-meta">Aún no hay gasto clasificado este mes. Sube tu estado de cuenta para ver el avance por categoría.</p>
+  {{ ui.empty('pie-chart', 'Aún no hay gasto clasificado', 'Sube tu estado de cuenta para ver el avance por categoría.', 'Subir estado de cuenta', '/finanzas/estados/', 'upload', compact=True) }}
   {% endif %}
 </section>

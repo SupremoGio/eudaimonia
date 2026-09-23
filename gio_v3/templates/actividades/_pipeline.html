@@ -10,5 +10,5 @@
     <span class="eu-chip acta-pipe-chip" data-id="{{ it.id }}">{{ it.text }}<button type="button" class="acta-chip-x js-pipe-del" data-id="{{ it.id }}" aria-label="Quitar «{{ it.text }}» del pipeline"><i data-lucide="x"></i></button></span>
     {% endfor %}
   </div>
-  <p class="t-meta acta-p js-pipe-empty"{% if stats.pipeline %} hidden{% endif %}>Guarda aquí ideas y pendientes futuros para no perderlos de vista.</p>
+  <div class="js-pipe-empty"{% if stats.pipeline %} hidden{% endif %}>{{ ui.empty('lightbulb', 'Pipeline vacío', 'Guarda aquí ideas y pendientes futuros para no perderlos de vista.', compact=True) }}</div>
 </section>

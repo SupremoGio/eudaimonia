@@ -162,7 +162,7 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
             <span className="t-ui">Tu parte</span>
             <span className="eu-seg" role="radiogroup" aria-label="Tu parte">
               {[['all', 'Todo'], ['half', '50%'], ['amount', 'Monto']].map(([id, l]) => (
-                <button key={id} type="button" role="radio" aria-checked={parte.mode === id} aria-selected={parte.mode === id}
+                <button key={id} type="button" role="radio" aria-checked={parte.mode === id}
                   onClick={() => setParte((p) => ({ mode: id, amount: id === 'amount' ? (p.amount || '') : p.amount }))}>{l}</button>
               ))}
             </span>

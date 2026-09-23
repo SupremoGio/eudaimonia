@@ -100,14 +100,14 @@
   }
   function loadSuggestions() {
     if (!curId) return Promise.resolve();
-    $('suggest-list').innerHTML = '<p class="t-meta">Buscando transacciones…</p>'; $('suggest-footer').hidden = true;
+    euSkel('suggest-list', 3, 48); $('suggest-footer').hidden = true;
     return getJ(API + '/trips/' + curId + '/suggest').then(function (r) {
       suggested = r.data || [];
       $('suggest-footer').hidden = !suggested.length;
       $('suggest-list').innerHTML = suggested.length ? suggested.map(function (tx) {
         return '<label class="gv-sug"><input type="checkbox" class="gv-chk" value="' + tx.id + '"><span class="eu-grow gv-sug-bd"><span class="t-ui gv-desc">' + esc(tx.descripcion) + '</span>' +
           '<span class="t-meta">' + fmtD(tx.fecha) + ' · ' + esc(tx.banco) + ' · ' + esc(tx.categoria) + '</span></span><span class="t-data">$' + fmt(tx.mi_parte == null ? tx.monto : tx.mi_parte) + '</span></label>';
-      }).join('') : '<p class="t-meta">No hay sugerencias para el rango de fechas del viaje.</p>';
+      }).join('') : euEmpty('search-x', 'Sin sugerencias', 'No hay movimientos sin asignar en las fechas del viaje.', true);
     }).catch(function () { $('suggest-list').innerHTML = '<p class="t-meta">No se pudieron cargar las sugerencias.</p>'; });
   }
   root.querySelector('.js-reload').addEventListener('click', loadSuggestions);

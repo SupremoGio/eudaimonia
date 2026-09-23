@@ -13,13 +13,13 @@
       {% if an.monthly %}{% set max_m = an.monthly|map(attribute='total')|max %}
       {% for m in an.monthly %}
       <div class="sl-bar"><span class="t-meta num">{{ m.mes[5:] }}</span><span class="sl-bar-t"><i style="width:{{ (m.total / max_m * 100)|int }}%"></i></span><span class="t-meta num">{{ m.total }}</span></div>
-      {% endfor %}{% else %}<p class="t-meta">Sin datos aún.</p>{% endif %}
+      {% endfor %}{% else %}{{ ui.empty('chart-column', 'Sin datos aún', 'Los episodios registrados aparecerán aquí por mes.', compact=True) }}{% endif %}
     </div>
     <div class="eu-vstack sl-an-col">
       <div class="t-eyebrow">Recuperación promedio</div>
       {% for r in an.recovery %}
       <div class="eu-between"><span><span class="t-ui">{{ TIPO.get(r.tipo, TIPO.consulta)[0] }}</span><span class="t-meta"> · {{ r.total }} resuelto{{ 's' if r.total != 1 }}</span></span><span class="t-data num">{{ r.avg_dias }} d</span></div>
-      {% else %}<p class="t-meta">Sin episodios resueltos aún.</p>{% endfor %}
+      {% else %}{{ ui.empty('timer', 'Sin episodios resueltos', 'Cuando cierres un episodio verás aquí cuánto tardaste en recuperarte.', compact=True) }}{% endfor %}
       {% if an.recurrencia %}
       <div class="t-eyebrow sl-mt">Recurrencias</div>
       {% for r in an.recurrencia %}

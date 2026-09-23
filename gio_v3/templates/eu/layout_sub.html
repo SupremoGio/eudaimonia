@@ -13,6 +13,7 @@
 {% set _nh = nav_here %}
 
 <body id="eu-body" class="font-sans antialiased" style="background:var(--bg);color:var(--text);">
+<a class="eu-skip" href="#eu-main">Saltar al contenido</a>
 
 <!-- SIDEBAR (≥1024) — DS V2: grupos Hoy · Virtudes · Vida · Tú (NAV) -->
 <aside class="eu-sidebar" aria-label="Navegación">
@@ -101,7 +102,7 @@
 {% endblock %}
 
 <!-- CONTENT -->
-<main id="eu-main" class="p-4 md:p-6 overflow-x-hidden">
+<main id="eu-main" class="p-4 md:p-6 overflow-x-hidden" tabindex="-1">
   {% block content %}{% endblock %}
 </main>
 
@@ -159,11 +160,10 @@
 <script type="application/json" id="eu-nav-data">{{ nav_cmdk|tojson }}</script>
 <script type="application/json" id="eu-nav-here">{{ {'title': nav_title or _mt, 'url': request.path, 'icon': (_nh['child'].icon if _nh['child'] and _nh['child'].icon else (_nh['item'].icon if _nh['item'] else 'file'))}|tojson }}</script>
 
-<!-- TOAST -->
-<div id="tw-toast"
-     class="fixed bottom-6 right-4 z-50 px-4 py-2.5 rounded-xl text-[var(--fs-sm)] shadow-lg opacity-0 translate-y-2 pointer-events-none"
-     style="background:var(--card); border:1px solid var(--b2); color:var(--gold); transition:transform .22s ease, opacity .22s ease;">
-</div>
+<!-- TOAST — toast(msg, 'ok'|'win'|'err') de eu-motion.js. Región aria-live
+     fija desde la carga para que los lectores de pantalla la anuncien. -->
+<div id="eu-toasts" class="eu-toast-host" aria-live="polite"></div>
+<div id="eu-ach" class="eu-ach-toasts" aria-live="polite"></div>
 
 <!-- LOADBAR — señal global de "algo está pasando" para cualquier fetch(),
      sin tener que deshabilitar cada botón uno por uno. Ver el wrapper de
@@ -247,24 +247,13 @@ function euSbRail(){
   try{ localStorage.setItem('eu-sb-rail', on?'1':'0'); }catch(e){}
 }
 
-/* ── XP del día, nivel y EC para topbar y pie del sidebar. Se piden después
-   de pintar (no retrasan el render) a /api/xp, el mismo endpoint del
-   dashboard. Si falla, los badges se quedan en «—». ── */
-(function(){
-  if(!document.querySelector('.eu-ec-val')) return;
-  fetch('/api/xp',{credentials:'same-origin'}).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
-    if(!d) return;
-    var fmt=function(n){ return Number(n||0).toLocaleString('es-MX'); };
-    document.querySelectorAll('.eu-ec-val').forEach(function(el){ el.textContent=fmt(d.total_coins); });
-    document.querySelectorAll('.eu-xp-today').forEach(function(el){ el.textContent=fmt(d.xp_today); });
-    var lv=document.getElementById('eu-sb-level'); if(lv) lv.textContent='Nivel '+d.level+' · '+(d.level_name||'').charAt(0)+(d.level_name||'').slice(1).toLowerCase();
-    var pct=Math.max(0,Math.min(100,Math.round(d.level_pct||0)));
-    var pc=document.getElementById('eu-sb-pct'); if(pc) pc.textContent=pct+'%';
-    var bar=document.getElementById('eu-sb-bar'); if(bar){ bar.style.width=pct+'%'; bar.parentNode.setAttribute('aria-valuenow',pct); }
-  }).catch(function(){});
-})();
+/* XP del día, nivel y EC de topbar/sidebar: euRefreshXp() en eu-motion.js,
+   se llama al cargar (abajo) y después de cada acción que da XP (euGam). */
 </script>
+<script src="{{ url_for('static', filename='js/eu-motion.js') }}"></script>
+<script src="{{ url_for('static', filename='js/eu-a11y.js') }}"></script>
 <script src="{{ url_for('static', filename='js/eu-celebrate.js') }}"></script>
+<script>if (window.euRefreshXp) euRefreshXp({ initial: true });</script>
 <script>
 /* Envuelto en try/catch: si el CDN de lucide falla o tarda (red lenta,
    bloqueo corporativo, caída puntual), esta llamada lanzaba una excepción
@@ -331,19 +320,7 @@ function toggleNetWorth() {
   if (hidden) setNetWorthHidden(true);
 })();
 
-function toast(msg, type = 'ok') {
-  const t = document.getElementById('tw-toast');
-  const COLOR = { ok: 'var(--gold)', win: 'var(--emerald)', err: 'var(--coral)' };
-  t.textContent = msg;
-  t.style.color = COLOR[type] || COLOR.ok;
-  t.classList.remove('opacity-0','translate-y-2');
-  t.classList.add('opacity-100','translate-y-0');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => {
-    t.classList.add('opacity-0','translate-y-2');
-    t.classList.remove('opacity-100','translate-y-0');
-  }, 2500);
-}
+/* toast() → static/js/eu-motion.js */
 
 /* ── Activación por teclado para tarjetas/widgets clicables marcados
    role="button" + class="eu-activate" (convención compartida por todos

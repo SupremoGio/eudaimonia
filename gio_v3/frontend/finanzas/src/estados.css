@@ -65,6 +65,7 @@
 .fz-bell{position:relative}
 .fz-bell-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--danger-fg);box-shadow:0 0 0 2px var(--bg-surface)}
 .fz-tabs{margin-top:calc(var(--sp-2) * -1)}
+.fz-tablist{display:flex;gap:var(--sp-6);flex-shrink:0}
 .fz-tabs button{display:inline-flex;align-items:center;gap:var(--sp-2)}
 .fz-tab-ct{height:18px;padding:0 6px;font-size:var(--fs-11)}
 .fz-tab-link{height:44px;display:inline-flex;align-items:center;gap:var(--sp-1);color:var(--fg-3);font:var(--fw-medium) var(--fs-13)/1 var(--font-ui);white-space:nowrap;text-decoration:none;flex-shrink:0}
@@ -200,8 +201,8 @@
 
 /* Drawer de 400 px (≥1024): fijo a la derecha bajo la topbar; la columna
    raíz del SPA (cabecera incluida) deja libre ese ancho mientras está abierto. */
-.fz-drawer{position:fixed;top:var(--topbar-h);right:0;bottom:0;width:400px;z-index:var(--z-sticky);background:var(--bg-sunken);border-left:1px solid var(--border-subtle);overflow-y:auto;overscroll-behavior:contain;animation:fz-drawer-in var(--dur-base) var(--ease-enter)}
-.fz:has(.fz-drawer){padding-right:400px}
+.fz-drawer{position:fixed;top:calc(var(--topbar-h) + env(safe-area-inset-top));right:0;bottom:0;width:400px;z-index:var(--z-sticky);background:var(--bg-sunken);border-left:1px solid var(--border-subtle);overflow-y:auto;overscroll-behavior:contain;animation:fz-drawer-in var(--dur-base) var(--ease-enter)}
+.fz:has(.fz-drawer){padding-right:calc(400px + env(safe-area-inset-right))}
 @keyframes fz-drawer-in{from{transform:translateX(16px);opacity:0}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.fz-drawer{animation:none}}
 

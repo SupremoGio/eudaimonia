@@ -108,7 +108,7 @@ svg.lucide{stroke-width:1.5}
 /* ── Segmented / Tabs ───────────────────────────────────────── */
 .eu-seg{display:inline-flex;padding:3px;gap:2px;background:var(--bg-sunken);border:1px solid var(--border-subtle);border-radius:var(--r-sm)}
 .eu-seg button{height:30px;padding:0 var(--sp-3);border:0;border-radius:6px;background:transparent;color:var(--fg-3);font:var(--fw-medium) var(--fs-13)/1 var(--font-ui);cursor:pointer}
-.eu-seg button[aria-selected=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
+.eu-seg button[aria-selected=true],.eu-seg button[aria-pressed=true],.eu-seg button[aria-checked=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
 .eu-tabs{flex-shrink:0;display:flex;gap:var(--sp-6);border-bottom:1px solid var(--border-subtle);overflow-x:auto;scrollbar-width:none}
 .eu-tabs button{height:44px;border:0;background:none;color:var(--fg-3);font:var(--fw-medium) var(--fs-13)/1 var(--font-ui);cursor:pointer;position:relative;white-space:nowrap;padding:0}
 .eu-tabs button[aria-selected=true]{color:var(--fg-1)}
@@ -265,7 +265,7 @@ svg.lucide{stroke-width:1.5}
 .eu-mtitle span{font-size:var(--fs-11);color:var(--fg-3);margin-top:2px}
 
 .eu-bnav{height:calc(var(--bottomnav-h) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg-glass);backdrop-filter:blur(20px) saturate(140%);border-top:1px solid var(--border-subtle)}
-.eu-bnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--fg-3);font:var(--fw-medium) 11px/1 var(--font-ui);min-height:44px}
+.eu-bnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--fg-2);font:var(--fw-medium) 11px/1 var(--font-ui);min-height:44px}
 .eu-bnav a svg{width:22px;height:22px}
 .eu-bnav a[aria-current=page]{color:var(--fg-brand)}
 .eu-bnav a[aria-current=page] svg{stroke-width:2}
@@ -362,14 +362,13 @@ html.light .eu-ic-moon,html:not(.light) .eu-ic-sun{display:none}
 
 /* Bottom nav móvil — fija; oculta en ≥1024 (ahí manda el sidebar) */
 .eu-bnav{display:none;position:fixed;left:0;right:0;bottom:0;z-index:200;-webkit-backdrop-filter:blur(20px) saturate(140%)}
-.eu-bnav a,.eu-bnav button{text-decoration:none;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--fg-3);font:var(--fw-medium) 11px/1 var(--font-ui);min-height:44px}
+.eu-bnav a,.eu-bnav button{text-decoration:none;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--fg-2);font:var(--fw-medium) 11px/1 var(--font-ui);min-height:44px}
 .eu-bnav a svg,.eu-bnav button svg{width:22px;height:22px;stroke-width:1.5}
 .eu-bnav .is-active{color:var(--fg-brand)}
 .eu-bnav .is-active svg{stroke-width:2}
 @media (max-width:1023px){
   .eu-bnav{display:grid}
   #eu-main{padding-bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 24px)}
-  #tw-toast{bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 12px)}
 }
 
 /* [hidden] siempre gana sobre el display de los componentes (badge, chip,
@@ -457,7 +456,7 @@ select.fi{padding-right:var(--sp-8)}
    LEGACY V1 compartido — movido del <style> de eu/layout_sub.html.
    Mismas reglas que antes; se irán sustituyendo por eu-*.
    ═══════════════════════════════════════════════════════════════ */
-header,.tile,.af,.modal,#tw-toast{transition:background .25s,border-color .25s,color .25s}
+header,.tile,.af,.modal{transition:background .25s,border-color .25s,color .25s}
 .tile-lbl{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.2em;text-transform:uppercase;margin-bottom:14px;font-family:var(--sans)}
 
 .btn-gr{background:transparent;border:1px solid var(--b);color:var(--dim);padding:6px 11px;border-radius:7px;font-size:var(--fs-sm);font-family:var(--sans);cursor:pointer;transition:all .18s}
@@ -573,5 +572,84 @@ body.nw-hidden .nw-hide-block{display:none!important}
   .modal{border-radius:22px 22px 0 0!important;width:100%!important;max-width:100%!important;max-height:88vh;overflow-y:auto;padding-bottom:calc(16px + env(safe-area-inset-bottom))!important}
   .fgrid.c2,.fgrid.c3{grid-template-columns:1fr!important}
 }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MOTION · coreografías de recompensa (DS V2 · Fundamentos 05)
+   JS: static/js/eu-motion.js (XP ganada, logro, confirm, toast) y
+   static/js/eu-celebrate.js (solo level-up). Todo con --dur-* / --ease-*;
+   prefers-reduced-motion ya reduce duraciones a 1 ms (ver arriba).
+   ═══════════════════════════════════════════════════════════════ */
+/* XP ganada: check 220 ms settle → «+N XP» sube 600 ms → barra 1.2 s → contador */
+.eu-act-check.is-pop,.eu-pop{animation:euSealIn var(--dur-base) var(--ease-settle)}
+.eu-xpfloat{position:fixed;z-index:var(--z-toast);pointer-events:none;font:var(--fw-medium) var(--fs-15)/1 var(--font-data);color:var(--xp-fg);white-space:nowrap;animation:euXpFloat var(--dur-deliberate) var(--ease-standard) both}
+.eu-count{font-variant-numeric:tabular-nums;display:inline-block}
+.eu-count.is-ticking{animation:euCountTick var(--dur-fast) var(--ease-standard)}
+
+/* Logro desbloqueado: sello .86→1 (settle 700 ms) + halo de 1 px una vez. Sin confeti. */
+.eu-ach-toasts{position:fixed;left:50%;top:calc(var(--topbar-h) + var(--sp-4) + env(safe-area-inset-top));transform:translateX(-50%);z-index:var(--z-toast);display:flex;flex-direction:column;gap:var(--sp-2);width:min(420px,calc(100vw - 2 * var(--sp-4)));pointer-events:none}
+.eu-ach-toast{pointer-events:auto;display:flex;flex-direction:row;align-items:center;text-align:left;gap:var(--sp-4);padding:var(--sp-4) var(--sp-3) var(--sp-4) var(--sp-4);background:var(--bg-raised);border:1px solid color-mix(in oklab,var(--rc) 40%,var(--border-default));border-radius:var(--r-lg);box-shadow:var(--e-3);animation:euRise var(--dur-slow) var(--ease-enter) both;cursor:pointer}
+.eu-ach-toast.is-leaving{animation:euFadeOut var(--dur-base) var(--ease-exit) both}
+.eu-ach-toast .eu-ach-seal{position:relative;flex-shrink:0;animation:euSealIn 700ms var(--ease-settle) both}
+.eu-ach-halo{position:absolute;inset:-1px;border-radius:50%;border:1px solid var(--rc);opacity:0;pointer-events:none;animation:euHalo var(--dur-ceremony) var(--ease-enter) 200ms both}
+.eu-ach-toast .eu-grow{min-width:0}
+.eu-ach-toast .t-card{overflow-wrap:anywhere}
+.eu-ach-toast .eu-iconbtn{align-self:flex-start}
+@keyframes euFadeOut{to{opacity:0;transform:translateY(8px)}}
+
+/* Level-up: scrim 360 ms → eyebrow → nombre con tracking .32em→.12em (1.2 s) → cita */
+.eu-lvlup{position:fixed;inset:0;z-index:var(--z-cmdk);display:flex;align-items:center;justify-content:center;padding:var(--sp-6) var(--sp-6) calc(var(--sp-6) + env(safe-area-inset-bottom));background:radial-gradient(80% 60% at 50% 45%,color-mix(in oklab,var(--brand) 14%,var(--bg-canvas)),var(--bg-canvas));animation:euFadeIn var(--dur-slow) var(--ease-enter) both;cursor:pointer;text-align:center}
+.eu-lvlup.is-leaving{animation:euFadeOut var(--dur-base) var(--ease-exit) both}
+.eu-lvlup-in{display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);max-width:560px}
+.eu-lvlup-in:focus,.eu-lvlup-in:focus-visible{outline:none;box-shadow:none}
+.eu-lvlup .t-eyebrow{animation:euRise var(--dur-slow) var(--ease-enter) 200ms both}
+.eu-lvlup-name{font:var(--fw-semibold) var(--fs-40)/1.1 var(--font-display);color:var(--fg-1);letter-spacing:.12em;margin:0;animation:euTrack var(--dur-ceremony) var(--ease-emphasis) 500ms both}
+@media (min-width:768px){.eu-lvlup-name{font-size:var(--fs-56)}}
+.eu-lvlup .t-quote{margin:0;animation:euRise var(--dur-slow) var(--ease-enter) 1500ms both}
+.eu-lvlup-hint{margin-top:var(--sp-8);animation:euRise var(--dur-slow) var(--ease-enter) 2100ms both}
+@keyframes euTrack{from{opacity:0;letter-spacing:.32em}to{opacity:1;letter-spacing:.12em}}
+@media (prefers-reduced-motion:reduce){.eu-lvlup-name{letter-spacing:.12em}}
+
+/* Toast global (toast()): eu-toast con aria-live, sobre la bottom nav en móvil */
+.eu-toast-host{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sp-6) + env(safe-area-inset-bottom));z-index:var(--z-toast);display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);pointer-events:none;max-width:calc(100vw - 2 * var(--sp-4))}
+@media (max-width:1023px){.eu-toast-host{left:var(--sp-4);right:var(--sp-4);transform:none;align-items:stretch;bottom:calc(var(--bottomnav-h) + var(--sp-3) + env(safe-area-inset-bottom))}}
+.eu-toast-host .eu-toast{pointer-events:auto;position:relative;animation:euRise var(--dur-base) var(--ease-enter) both}
+.eu-toast-host .eu-toast.is-leaving{animation:euFadeOut var(--dur-base) var(--ease-exit) both}
+.eu-toast--success>svg{color:var(--success-fg)}
+.eu-toast .grow{padding-right:var(--sp-2)}
+
+/* Esqueleto de carga (euSkel / ui.skel): ocupa toda la fila si cae en un grid */
+.eu-skel-wrap{display:flex;flex-direction:column;gap:var(--sp-2);grid-column:1/-1;width:100%}
+
+/* Vacío compacto (ui.empty(..., compact=True) / euEmpty(..., true)): listas dentro de tarjetas */
+.eu-empty--sm{padding:var(--sp-6) var(--sp-4);gap:var(--sp-2)}
+.eu-empty--sm .eu-empty-ic{width:40px;height:40px}
+.eu-empty--sm .eu-empty-ic svg{width:18px;height:18px}
+
+/* Accesibilidad: salto al contenido (visible solo con foco) */
+.eu-skip{position:fixed;left:var(--sp-4);top:0;z-index:var(--z-cmdk);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-sm);background:var(--brand);color:var(--fg-on-brand);font:var(--fw-medium) var(--fs-13)/1.2 var(--font-ui);text-decoration:none;transform:translateY(-120%);transition:transform var(--dur-fast) var(--ease-standard)}
+.eu-skip:focus,.eu-skip:focus-visible{transform:translateY(calc(var(--sp-2) + env(safe-area-inset-top)))}
+#eu-main:focus{outline:none}
+
+/* Confirmación (euConfirm): mismo markup que ui.modal, más angosto en desktop */
+@media (min-width:768px){.eu-confirm .eu-modal{max-width:400px}}
+.eu-confirm .eu-modal-bd{padding-top:var(--sp-6)}
+.eu-confirm-msg{margin:0;white-space:pre-line;font:var(--fw-medium) var(--fs-17)/var(--lh-snug) var(--font-display);color:var(--fg-1)}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   SAFE AREAS — PWA en modo app (standalone) con notch / isla y barra de
+   estado translúcida (apple-mobile-web-app-status-bar-style), y iPhone en
+   horizontal. Requiere viewport-fit=cover (_head.html). En navegadores sin
+   notch env() vale 0 y todo queda igual.
+   ═══════════════════════════════════════════════════════════════ */
+.eu-topbar{height:calc(var(--topbar-h) + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);padding-left:max(var(--sp-4),env(safe-area-inset-left));padding-right:max(var(--sp-4),env(safe-area-inset-right))}
+@media (min-width:768px){.eu-topbar{padding-left:max(var(--sp-6),env(safe-area-inset-left));padding-right:max(var(--sp-6),env(safe-area-inset-right))}}
+#eu-main{padding-left:max(var(--sp-4),env(safe-area-inset-left));padding-right:max(var(--sp-4),env(safe-area-inset-right))}
+@media (min-width:768px){#eu-main{padding-left:max(var(--sp-6),env(safe-area-inset-left));padding-right:max(var(--sp-6),env(safe-area-inset-right))}}
+.eu-sidebar{padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-bottom:env(safe-area-inset-bottom)}
+.eu-bnav{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+.eu-scrim{padding-top:max(var(--sp-6),env(safe-area-inset-top))}
+@media (max-width:767px){.eu-scrim:not(.eu-scrim--sheet){padding-top:env(safe-area-inset-top)}.eu-scrim .eu-modal{max-height:calc(100dvh - env(safe-area-inset-top) - var(--sp-6))}}
 
 }

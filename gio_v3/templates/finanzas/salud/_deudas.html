@@ -32,7 +32,7 @@
         {% endfor %}
       </ul>
       {% else %}
-      <p class="t-meta pt-debt-empty"><i data-lucide="{{ empty_ic }}"></i>{{ empty_txt }}</p>
+      <div class="eu-empty eu-empty--sm pt-debt-empty"><div class="eu-empty-ic"><i data-lucide="{{ empty_ic }}"></i></div><p>{{ empty_txt }}</p></div>
       {% endif %}
       <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm eu-btn--block" data-new-debt="{{ type }}"><i data-lucide="plus"></i>{{ add }}</button>
     </div>

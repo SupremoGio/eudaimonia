@@ -68,7 +68,8 @@
 .lg-perk svg{width:12px;height:12px;flex-shrink:0;margin-top:3px;color:var(--rc)}
 .lg-ach-ft{flex-wrap:wrap;margin-top:auto}
 .lg-ach--logro{--rc:var(--fg-brand)}
-.eu-ach.is-locked{opacity:.72}
+/* Bloqueado: sin opacity (bajaba el contraste del texto); fondo hundido + sello punteado */
+.eu-ach.is-locked{background:var(--bg-sunken);box-shadow:none}
 .eu-ach.is-locked .lg-perk svg{color:var(--fg-4)}
 @media (max-width:767px){.lg-ach-grid .t-meta.lg-p:not(.lg-perk){display:none}}
 .lg[data-status=earned] .eu-ach[data-earned="0"],

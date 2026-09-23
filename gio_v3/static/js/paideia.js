@@ -347,6 +347,7 @@
       if (!d.ok) { toast('Error al guardar', 'err'); return; }
       PELIS = d.peliculas;
       if (d.gam && d.gam.xp) toast('+' + d.gam.xp + ' XP · +' + d.gam.ec + ' EC', 'win');
+      if (d.gam && window.euGam) euGam(d.gam);
       openRate = now ? id : (openRate === id ? null : openRate);
       syncCounters(); renderPelis();
     }).catch(function () { toast('Sin conexión', 'err'); });

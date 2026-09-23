@@ -13,7 +13,7 @@
 /* ── 1 · PRIMITIVAS ─────────────────────────────────────────── */
 --ink-950:#09070F;--ink-900:#0F0C1A;--ink-850:#15111F;--ink-800:#1A1627;--ink-750:#221D32;--ink-700:#2B2540;--ink-600:#3A3352;--ink-500:#524A6B;
 --parch-50:#F2EDE0;--parch-200:#C2B69E;--parch-400:#978870;--parch-600:#6A6050;
---gold-50:#F7EDCF;--gold-100:#F0DFA6;--gold-200:#E8C96D;--gold-300:#D9B85B;--gold-400:#C9A84C;--gold-500:#A88A3A;--gold-600:#8B6914;--gold-700:#6B5010;--gold-800:#4A370B;--gold-900:#2A1F08;
+--gold-50:#F7EDCF;--gold-100:#F0DFA6;--gold-200:#E8C96D;--gold-300:#D9B85B;--gold-400:#C9A84C;--gold-500:#A88A3A;--gold-600:#8B6914;--gold-650:#7A5C10;--gold-700:#6B5010;--gold-800:#4A370B;--gold-900:#2A1F08;
 
 /* ── 2 · SEMÁNTICAS · Superficies ───────────────────────────── */
 --bg-canvas:var(--ink-950);      /* fondo de app */
@@ -106,17 +106,17 @@ html.light{
 --bg-overlay:rgba(28,22,16,.36);--bg-glass:rgba(245,240,231,.85);
 --border-subtle:rgba(28,22,16,.06);--border-default:rgba(28,22,16,.11);--border-strong:rgba(28,22,16,.20);--border-brand:rgba(139,105,20,.38);--border-focus:var(--gold-600);
 --fg-1:#1C1610;--fg-2:#4F4230;--fg-3:#6E5E42;--fg-4:#A0927A;
---fg-brand:var(--gold-600);--fg-brand-strong:var(--gold-700);--fg-on-brand:#FFFFFF;
+--fg-brand:var(--gold-650);--fg-brand-strong:var(--gold-700);--fg-on-brand:#FFFFFF;
 --brand:var(--gold-600);--brand-hover:#7A5C10;--brand-press:var(--gold-700);
 --brand-subtle:rgba(139,105,20,.07);--brand-muted:rgba(139,105,20,.12);--brand-strong-bg:rgba(139,105,20,.18);
 --success-fg:oklch(.46 .11 158);--success-bg:oklch(.95 .03 158);--success-border:oklch(.80 .07 158);
 --warning-fg:oklch(.50 .11 70);--warning-bg:oklch(.95 .04 82);--warning-border:oklch(.82 .08 82);
 --danger-fg:oklch(.50 .16 25);--danger-bg:oklch(.95 .03 22);--danger-border:oklch(.82 .07 22);
 --info-fg:oklch(.47 .10 245);--info-bg:oklch(.95 .02 240);--info-border:oklch(.82 .05 240);
---xp-fg:var(--gold-600);--xp-track:rgba(139,105,20,.12);--xp-fill:linear-gradient(90deg,var(--gold-600),var(--gold-500) 60%,var(--gold-400));
+--xp-fg:var(--gold-650);--xp-track:rgba(139,105,20,.12);--xp-fill:linear-gradient(90deg,var(--gold-600),var(--gold-500) 60%,var(--gold-400));
 --ec-fg:#6E6030;--ec-bg:rgba(110,96,48,.08);
 --tier-carbon:#5E5868;--tier-hierro:#5A6778;--tier-oro:var(--gold-600);--tier-diamante:#2F7F90;
---rare-bronce:#9A5E36;--rare-plata:#626A76;--rare-oro:var(--gold-600);--rare-especial:#2F7F90;
+--rare-bronce:#85502D;--rare-plata:#585F6A;--rare-oro:var(--gold-650);--rare-especial:#236B7A;
 --cat-l-fg:.46;--cat-c-fg:.10;--cat-l-bg:.955;--cat-c-bg:.025;--cat-l-bd:.84;--cat-c-bd:.05;
 --e-1:0 1px 2px rgba(28,22,16,.04);--e-2:0 6px 20px -6px rgba(28,22,16,.14);--e-3:0 24px 56px -16px rgba(28,22,16,.28);
 --glow-brand:0 0 0 1px rgba(139,105,20,.35),0 6px 20px -6px rgba(139,105,20,.35);

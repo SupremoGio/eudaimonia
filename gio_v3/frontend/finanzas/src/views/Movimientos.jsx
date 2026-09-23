@@ -134,8 +134,8 @@ export default function Movimientos({ initial }) {
       </div>
       <div className="eu-hstack fz-mv-actions">
         <div className="eu-seg" role="radiogroup" aria-label="Ver montos">
-          <button type="button" role="radio" aria-checked={mode === 'completo'} aria-selected={mode === 'completo'} onClick={() => setMode('completo')}>Completo</button>
-          <button type="button" role="radio" aria-checked={mode === 'mi_parte'} aria-selected={mode === 'mi_parte'} onClick={() => setMode('mi_parte')}>Mi parte</button>
+          <button type="button" role="radio" aria-checked={mode === 'completo'} onClick={() => setMode('completo')}>Completo</button>
+          <button type="button" role="radio" aria-checked={mode === 'mi_parte'} onClick={() => setMode('mi_parte')}>Mi parte</button>
         </div>
         <a className="eu-btn eu-btn--ghost eu-btn--sm" href={api.csvUrl({ ...f })} download><Icon name="download" />CSV</a>
       </div>

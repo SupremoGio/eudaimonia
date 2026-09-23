@@ -13,9 +13,12 @@
     <button type="button" class="eu-btn eu-btn--primary js-new-outfit" data-for="outfits" hidden><i data-lucide="plus"></i>Nuevo outfit</button>
   </div>
 </header>
-<nav class="eu-seg gr-tabs" role="tablist" aria-label="Secciones del guardarropa">
+<nav class="eu-seg gr-tabs" aria-label="Secciones del guardarropa">
+  {#- La lista de tabs no puede contener el enlace a Wishlist (otra página): va fuera del tablist. -#}
+  <div class="gr-tablist" role="tablist" aria-label="Secciones del guardarropa">
   <button type="button" role="tab" data-tab-set="prendas" aria-selected="true" aria-controls="gr-prendas">Prendas <span class="num">{{ items|length }}</span></button>
   <button type="button" role="tab" data-tab-set="outfits" aria-selected="false" aria-controls="gr-outfits">Outfits <span class="num">{{ outfits|length }}</span></button>
   <button type="button" role="tab" data-tab-set="analisis" aria-selected="false" aria-controls="gr-analisis">Análisis</button>
+  </div>
   <a href="/guardarropa/wishlist/">Wishlist{% if wish.n %} <span class="num">{{ wish.n }}</span>{% endif %}</a>
 </nav>

@@ -1,7 +1,7 @@
 import { api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { money, pct } from '../lib/format.js';
-import { Empty, ErrorNote, Icon, Skel, useLoad } from '../components/ui.jsx';
+import { Empty, ErrorNote, Icon, Skel, useLoad, Progress } from '../components/ui.jsx';
 import AccountCard from '../components/AccountCard.jsx';
 
 export default function Cuentas() {
@@ -39,7 +39,7 @@ export default function Cuentas() {
               {byExpense.map((a) => (
                 <div key={a.id} className="eu-vstack fz-gap-1">
                   <div className="eu-between"><span className="t-ui">{a.name}</span><span className="t-data">{money(a.expense, { cents: false })} <span className="t-meta">· {pct(Math.abs(a.expense), expense)} %</span></span></div>
-                  <div className="eu-progress eu-progress--brand"><i style={{ width: `${pct(Math.abs(a.expense), expense)}%` }} /></div>
+                  <Progress className="eu-progress--brand" pct={pct(Math.abs(a.expense), expense)} label={`${a.name}: parte del gasto`} />
                 </div>
               ))}
             </div>

@@ -184,6 +184,14 @@ Lista completa de rutas en `README.md` y `docs/PROJECT_CONTEXT.md`.
   nueva de `components.css` solo aparece armada dinámicamente o puesta por JS,
   agrégala al `safelist` de `tailwind.config.js` o Tailwind la purga.
 - **Macros:** `templates/_ui/macros.html` (`{% import '_ui/macros.html' as ui %}`).
+  Cargas: `ui.skel()` / `euSkel(el)`; vacíos: `ui.empty(..., compact=True)` / `euEmpty()`.
+- **Motion y feedback (JS global del layout):** `static/js/eu-motion.js` →
+  `toast()` (aria-live), `euConfirm()`, `euGam(gam, {el})` tras cualquier
+  acción que dé XP (float «+N XP», barra, contador, logros), `euAchievement()`.
+  `static/js/eu-celebrate.js` es **solo** el level-up (`euCheckLevel`). Sin
+  confeti. `static/js/eu-a11y.js`: flechas en `role=tablist` y salto al contenido.
+- **PWA:** `static/manifest.json` + `static/icons/` (theme-color `#09070F`);
+  safe areas con `env(safe-area-inset-*)` en el bloque SAFE AREAS de components.css.
 - Referencia de diseño: `docs/design/design-system-v2/` (README + `PROMPTS.md`).
 
 ## Limpieza del repo

@@ -39,6 +39,8 @@
     active = id;
     document.querySelectorAll('.js-ep').forEach(function (c) { c.setAttribute('aria-pressed', String(+c.dataset.id === id)); });
     var ep = EPS.find(function (e) { return e.id === id; }); if (!ep) return;
+    $('detail-empty').hidden = true; $('detail-content').hidden = false; euSkel('detail-content', 4, 56);
+    $('sl-detail').dataset.open = 'true';
     var res = await Promise.all([fetch(BASE + '/api/episodios/' + id + '/detail').then(function (r) { return r.json(); }),
       fetch(BASE + '/api/episodios/' + id + '/documentos').then(function (r) { return r.json(); })]);
     render(ep, res[0], res[1]);
@@ -79,14 +81,14 @@
           '<div class="eu-hstack sl-gap"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-add-med" data-id="' + r.id + '"><i data-lucide="plus"></i>Med.</button>' +
           '<button type="button" class="eu-iconbtn sl-danger js-del-rx" data-id="' + r.id + '" aria-label="Eliminar receta"><i data-lucide="trash-2"></i></button></div></div>' +
           (r.medicamentos.length ? '<ul class="sl-meds">' + r.medicamentos.map(medHTML).join('') + '</ul>' : '<p class="t-meta">Sin medicamentos.</p>') + '</li>';
-      }).join('') + '</ol>' : '<p class="t-meta sl-none">Sin recetas registradas.</p>') +
+      }).join('') + '</ol>' : euEmpty('pill', 'Sin recetas', 'Agrega la receta o el medicamento de este episodio.', true)) +
       '<div class="eu-between sl-sec-hd"><h3 class="t-card">Documentos</h3><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-add-doc" data-id="' + ep.id + '"><i data-lucide="upload"></i>Documento</button></div>' +
       (docs && docs.length ? '<div class="eu-list sl-docs">' + docs.map(function (dc) {
         var pdf = dc.nombre_archivo.toLowerCase().slice(-4) === '.pdf', name = dc.nombre_original || dc.nombre_archivo;
         return '<div class="eu-row"><span class="eu-row-ic"><i data-lucide="' + (pdf ? 'file-text' : 'image') + '"></i></span>' +
           '<a class="eu-row-main sl-doc-link" href="' + BASE + '/documentos/' + encodeURIComponent(dc.nombre_archivo) + '" target="_blank" rel="noopener"><span class="eu-row-t">' + esc(name) + '</span><span class="eu-row-s">' + (dc.tipo === 'estudio' ? 'Estudio' : 'Receta') + ' · ' + esc(dc.fecha) + '</span></a>' +
           '<button type="button" class="eu-iconbtn sl-danger js-del-doc" data-id="' + dc.id + '" aria-label="Eliminar ' + esc(name) + '"><i data-lucide="trash-2"></i></button></div>';
-      }).join('') + '</div>' : '<p class="t-meta sl-none">Sin documentos subidos.</p>') +
+      }).join('') + '</div>' : euEmpty('file-text', 'Sin documentos', 'Sube recetas, estudios o notas del episodio.', true)) +
       '<div class="sl-d-ft"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm sl-danger js-del-ep" data-id="' + ep.id + '"><i data-lucide="trash-2"></i>Eliminar episodio</button></div>';
     $('detail-content').innerHTML = html;
     $('detail-content').hidden = false; $('detail-empty').hidden = true;

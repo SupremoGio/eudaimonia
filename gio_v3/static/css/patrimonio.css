@@ -80,7 +80,7 @@
 .pt-acts .eu-iconbtn{width:32px;height:32px}
 .pt-del:hover,.pt-del:focus-visible{color:var(--danger-fg)}
 @media (max-width:479px){.pt-acc{flex-wrap:wrap}.pt-acts{margin-left:auto}}
-.pt-empty{display:flex;flex-direction:column;align-items:center;gap:var(--sp-3);padding:var(--sp-6) var(--sp-4);text-align:center;border:1px dashed var(--border-default);border-radius:var(--r-md)}
+.pt-empty{border:1px dashed var(--border-default);border-radius:var(--r-md)}
 
 /* Deudas */
 .pt-debts{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-4)}
@@ -96,8 +96,6 @@
 .pt-debt-bar{margin-top:var(--sp-1)}
 .pt-debt-bar>i{background:var(--tone-fg)}
 .pt-debt-r{display:flex;flex-direction:column;align-items:flex-end;gap:var(--sp-1);flex-shrink:0}
-.pt-debt-empty{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-3) 0}
-.pt-debt-empty svg{width:16px;height:16px}
 
 /* Bienes */
 .pt-bienes{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:var(--sp-3)}

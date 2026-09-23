@@ -109,7 +109,7 @@ export default function TxEditor({ tx, onClose, onSaved }) {
       <form id={`${idp}-form`} className="eu-modal-bd" onSubmit={(e) => { e.preventDefault(); save(); }} onKeyDown={onKeyDown} noValidate>
         <div className="eu-seg fz-seg-block" role="radiogroup" aria-label="Tipo de movimiento">
           {TIPOS_EDIT.map(([id, name]) => (
-            <button key={id} type="button" role="radio" aria-checked={f.tipo === id} aria-selected={f.tipo === id} onClick={() => set('tipo', id)}>{name}</button>
+            <button key={id} type="button" role="radio" aria-checked={f.tipo === id} onClick={() => set('tipo', id)}>{name}</button>
           ))}
         </div>
         {!isNew && !TIPOS_EDIT.some(([id]) => id === f.tipo) && <div className="t-meta">Tipo actual: {f.tipo}</div>}
