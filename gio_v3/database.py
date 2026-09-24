@@ -5305,6 +5305,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_spei_invex_pago_tdc migration warning: {e}")
 
+        # ── FINANZAS — ZTL ZAIRAAXZAYMENDOZAM -> COMIDA_FUERA/Restaurante
+        # (pedido del usuario). Una vez aquí; «Aplicar reglas» y el import lo
+        # reafirman con estados.routes._corregir_zaira_restaurante.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_zaira_restaurante'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_zaira_restaurante
+                _n = _corregir_zaira_restaurante(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_zaira_restaurante", f"{_n} ZTL ZAIRAAXZAYMENDOZAM -> COMIDA_FUERA/Restaurante")
+                )
+                db.commit()
+                print(f"[DB] finanzas_zaira_restaurante: {_n} movimientos -> COMIDA_FUERA/Restaurante")
+            except Exception as e:
+                print(f"[DB] finanzas_zaira_restaurante migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que

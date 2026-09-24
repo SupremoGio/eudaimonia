@@ -24,6 +24,7 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "RESTAURANT":           ("COMIDA_FUERA", "Restaurante"),
     "TACO":                 ("COMIDA_FUERA", "Restaurante"),
     "VIPS":                 ("COMIDA_FUERA", "Restaurante"),
+    "ZAIRAAXZAYMENDOZAM":   ("COMIDA_FUERA", "Restaurante"),  # ZTL ZAIRAAXZAYMENDOZAM (pedido del usuario)
     "RAPPI":                ("COMIDA_FUERA", "Delivery"),
     "CARLS JR":             ("COMIDA_FUERA", "Fast Food"),
     "DOMINO":               ("COMIDA_FUERA", "Fast Food"),
