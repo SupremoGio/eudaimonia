@@ -5122,6 +5122,36 @@ def init_db():
                     'hege', 'ancla', 1, 0, 0, 0, 'wed')""")
         db.commit()
 
+        # Presupuestos: solo los del plan. La carga de límites del plan
+        # (finanzas_limites_plan_2026_09) actualizó los 14 del plan pero dejó
+        # los del Excel viejo (CASA/HOGAR «Vivienda» $6,000 en $0, MENSUALIDAD,
+        # INVERSION, EXPENSE…), que duplicaban tarjetas e inflaban el total del
+        # mes. El usuario: «deja las nuevas y borra las antiguas». Se borra todo
+        # lo que no está en el plan; los del plan que falten se crean sin pisar
+        # los que ya existen (ediciones del usuario). Lo borrado queda en el log.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_presupuesto_solo_plan_2026_09'"
+        ).fetchone():
+            try:
+                from modules.finanzas.presupuesto_plan import PLAN_LIMITES
+                plan = [c for c, _, _ in PLAN_LIMITES]
+                ph = ','.join('?' * len(plan))
+                borrados = db.execute(f"SELECT categoria, nombre, limite FROM est_budgets WHERE categoria NOT IN ({ph})",
+                                      plan).fetchall()
+                db.execute(f"DELETE FROM est_budgets WHERE categoria NOT IN ({ph})", plan)
+                for cat, nombre, lim in PLAN_LIMITES:
+                    db.execute("INSERT OR IGNORE INTO est_budgets (categoria, nombre, limite, periodo) "
+                               "VALUES (?, ?, ?, 'mensual')", (cat, nombre, lim))
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_presupuesto_solo_plan_2026_09",
+                     "Borrados fuera del plan: " + (", ".join(f"{r['categoria']} ({r['nombre']}) {r['limite']:.0f}"
+                                                                for r in borrados) or "ninguno"))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_presupuesto_solo_plan_2026_09 migration warning: {e}")
+
         # Receta pedida por el usuario: Poke Bowl de quinoa, atún y zanahoria.
         # Solo se inserta si no existe una receta con ese nombre (no duplica
         # si ya la capturó a mano ni si la migración corre de nuevo).

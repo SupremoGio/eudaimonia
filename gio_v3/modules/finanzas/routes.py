@@ -269,26 +269,10 @@ def seed_budgets():
         return jsonify({'error': 'locked'}), 403
     # Cifras exactas del Excel SG BUDGET 2026 (50-30-20)
     # Ingreso mensual: $22,796 | Excedente: $110.75
-    budgets = [
-        # ── NECESIDADES (50%) — total $14,385.25 ──────────────────────
-        ('VIVIENDA',    'Vivienda',            7429.84),  # Alquiler+Agua+Luz+Internet+Gas+Garrafón (antes CASA/HOGAR+SERVICIOS)
-        ('TRANSPORTE',  'Gasolina / Auto',     1955.41),  # Seguro+Gasolina (antes GASOLINA/AUTO)
-        ('SUPER',       'Súper',               2500.00),  # Víveres+Carnes (antes VIVERES/SUPER)
-        ('COMIDA_FUERA','Comida fuera',        2000.00),  # Restaurante/Fast food/Delivery (antes COMIDA/REST), va en Deseos
-        ('SALUD',       'Personal / Salud',     300.00),  # Saldo Cel+Corte cabello
-        ('MENSUALIDAD', 'Mensualidad TDC',     2200.00),  # Mensualidad TDC
-        # ── DESEOS (30%) — total $4,000.00 ───────────────────────────
-        ('SALSA',   'Salsa / Baile',        700.00),
-        ('OCIO',    'Gustos',               300.00),   # antes ENTRETENIMIENTO
-        ('ROPA',    'Ropa',                 500.00),
-        ('DEPORTE', 'Gym',                  350.00),   # antes GYM
-        ('DIGITAL', 'Apps / Suscripciones', 150.00),   # antes SUSCRIPCIONES
-        # ── AHORRO Y DEUDAS (20%) — total $4,300.00 ──────────────────
-        ('INVERSION',    'Ahorro',    4000.00),
-        ('APRENDIZAJE',  'Educación',  300.00),
-        # ── EXPENSE (informativo — se reembolsa, sin presupuesto) ─────
-        ('EXPENSE',        'EXPENSE',              0.00),
-    ]
+    # Límites del plan acordado (antes: cifras del Excel SG BUDGET 2026 con
+    # categorías que ya no existen, p. ej. CASA/HOGAR o MENSUALIDAD).
+    from modules.finanzas.presupuesto_plan import PLAN_LIMITES
+    budgets = PLAN_LIMITES
     with get_db() as db:
         # Limpiar y recargar desde cero para garantizar cifras exactas
         db.execute("DELETE FROM est_budgets")
@@ -314,22 +298,8 @@ def apply_migrations():
 
         # ── 1. Presupuesto exacto Excel 2026 (50-30-20) ───────────────────────
         db.execute("DELETE FROM est_budgets")
-        budgets = [
-            ('VIVIENDA',     'Vivienda',            7429.84),
-            ('TRANSPORTE',   'Gasolina / Auto',     1955.41),
-            ('SUPER',        'Súper',               2500.00),
-            ('COMIDA_FUERA', 'Comida fuera',        2000.00),
-            ('SALUD',        'Personal / Salud',     300.00),
-            ('MENSUALIDAD',  'Mensualidad TDC',     2200.00),
-            ('SALSA',        'Salsa / Baile',        700.00),
-            ('OCIO',         'Gustos',               300.00),
-            ('ROPA',         'Ropa',                 500.00),
-            ('DEPORTE',      'Gym',                  350.00),
-            ('DIGITAL',      'Apps / Suscripciones', 150.00),
-            ('INVERSION',    'Ahorro',              4000.00),
-            ('APRENDIZAJE',  'Educación',            300.00),
-            ('EXPENSE',      'EXPENSE',                0.00),
-        ]
+        from modules.finanzas.presupuesto_plan import PLAN_LIMITES
+        budgets = PLAN_LIMITES
         for cat, nombre, limite in budgets:
             db.execute(
                 "INSERT INTO est_budgets (categoria, nombre, limite, periodo) VALUES (?,?,?,'mensual')",
