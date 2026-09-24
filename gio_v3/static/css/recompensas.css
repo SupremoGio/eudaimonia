@@ -31,7 +31,10 @@
 .rw[data-filter=available] .rw-card:not(.is-available),
 .rw[data-filter=ec] .rw-card:not(.is-ec),
 .rw[data-filter=level] .rw-card:not(.is-level),
-.rw[data-filter=wait] .rw-card:not(.is-wait){display:none}
+.rw[data-filter=wait] .rw-card:not(.is-wait),
+.rw[data-filter=done] .rw-card:not(.is-done),
+.rw[data-filter=all] .rw-card.is-done{display:none}
+.rw-card.is-done{border-style:dashed;background:var(--bg-sunken)}
 
 /* Tarjetas */
 .rw-grid{display:grid;gap:var(--sp-3)}

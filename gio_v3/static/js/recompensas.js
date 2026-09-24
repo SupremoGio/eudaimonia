@@ -74,11 +74,24 @@
     $('#f-cost').value = card ? card.dataset.cost : 50;
     $('#f-lvl').value = card ? card.dataset.level : 1;
     $('#f-cool').value = card ? card.dataset.cool : 30;
+    $('#f-cool').disabled = false;
+    coolPrev = card && card.dataset.cool !== '0' ? card.dataset.cool : 30;
     $('#f-desc').value = card ? card.dataset.desc : '';
     $('#f-weekend').checked = card ? card.dataset.weekend === '1' : false;
+    $('#f-unica').checked = card ? card.dataset.unica === '1' : false;
+    coolSync();
     if (title) title.textContent = card ? 'Editar recompensa' : 'Nueva recompensa';
     euModal.open('rw-modal');
   }
+  /* Una recompensa única no tiene cooldown: se canjea una vez y queda como Conseguida */
+  var coolPrev = 30;
+  function coolSync() {
+    var u = $('#f-unica').checked, f = $('#f-cool');
+    if (u && !f.disabled) coolPrev = f.value || coolPrev;
+    f.disabled = u;
+    f.value = u ? 0 : (f.value === '0' && coolPrev ? coolPrev : f.value);
+  }
+  $('#f-unica').addEventListener('change', coolSync);
   $$('.js-new').forEach(function (b) { b.addEventListener('click', function () { openForm(null); }); });
   function save() {
     var name = $('#f-name').value.trim();
@@ -87,6 +100,7 @@
     json(editingId ? '/recompensas/api/rewards/' + editingId : '/recompensas/api/rewards', editingId ? 'PUT' : 'POST', {
       name: name, ec_cost: parseInt($('#f-cost').value, 10) || 0, level_required: parseInt($('#f-lvl').value, 10) || 1,
       cooldown_days: parseInt($('#f-cool').value, 10) || 0, description: $('#f-desc').value.trim(), weekend_only: $('#f-weekend').checked,
+      unica: $('#f-unica').checked,
     }).then(function (d) {
       if (d.error) { toast(d.error, 'err'); btn.removeAttribute('aria-busy'); return; }
       toast(editingId ? 'Recompensa actualizada' : 'Recompensa agregada');
