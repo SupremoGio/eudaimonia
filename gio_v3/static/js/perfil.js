@@ -287,17 +287,22 @@
       j = await post('/perfil/api/reminder/' + id + '/done');
       if (!j.ok) { row.classList.remove('is-busy'); fail(j, 'Error al actualizar'); return; }
       if (row.dataset.type === 'unico') {
-        row.remove();
-        listEmpty('remindersList', '.js-rem-empty');
+        remRemove(row);
         toast('Hecho');
       } else location.reload();
     } else if (b.classList.contains('js-rem-del')) {
-      if (!(await euConfirm('¿Eliminar «' + row.dataset.desc + '»?', { danger: true, confirmLabel: 'Eliminar' }))) return;
-      j = await post('/perfil/api/reminder/' + id + '/delete');
+      /* Borrar vive dentro del formulario de edición, no en cada fila */
+      var rid = $('remEditId').value, rrow = $('remrow-' + rid);
+      if (!rid || !(await euConfirm('¿Eliminar «' + (rrow ? rrow.dataset.desc : 'este recordatorio') + '»?', { danger: true, confirmLabel: 'Eliminar' }))) return;
+      j = await post('/perfil/api/reminder/' + rid + '/delete');
       if (!j.ok) { fail(j, 'No se pudo eliminar'); return; }
-      row.remove();
-      listEmpty('remindersList', '.js-rem-empty');
+      $('remForm').hidden = true;
+      if (rrow) remRemove(rrow);
       toast('Eliminado');
+    } else if (b.classList.contains('js-rem-snooze')) {
+      snoozeOpen(row, b);
+    } else if (b.classList.contains('js-snooze-opt')) {
+      snoozeTo({ dias: parseInt(b.dataset.dias, 10) });
     }
 
     /* Contraseñas */
@@ -362,6 +367,45 @@
   });
 
   /* Recordatorios */
+  /* Quita una fila y actualiza el contador de su grupo (o el grupo entero) */
+  function remRemove(row) {
+    var g = row.closest('details');
+    row.remove();
+    if (g) {
+      var n = g.querySelectorAll('.pf-rem').length;
+      if (!n) g.remove(); else g.querySelector('summary .eu-badge').textContent = n;
+    }
+    listEmpty('remindersList', '.js-rem-empty');
+  }
+
+  /* Posponer: menú bajo la fila con Mañana / 3 días / +1 semana / fecha */
+  var snoozeRow = null, snoozeBtn = null;
+  function snoozeClose() {
+    $('remSnooze').hidden = true;
+    if (snoozeBtn) snoozeBtn.setAttribute('aria-expanded', 'false');
+    snoozeRow = snoozeBtn = null;
+  }
+  function snoozeOpen(row, btn) {
+    var m = $('remSnooze');
+    if (snoozeRow === row) { snoozeClose(); return; }
+    snoozeClose();
+    snoozeRow = row; snoozeBtn = btn;
+    row.after(m);
+    m.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    m.querySelector('button').focus();
+  }
+  async function snoozeTo(body) {
+    if (!snoozeRow) return;
+    var j = await post('/perfil/api/reminder/' + snoozeRow.dataset.id + '/snooze', body);
+    if (!j.ok) { fail(j, 'No se pudo posponer'); return; }
+    location.hash = 'recordatorios'; location.reload();
+  }
+  document.querySelector('.js-snooze-date').addEventListener('change', function () {
+    if (this.value) snoozeTo({ fecha: this.value });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && snoozeRow) { var b = snoozeBtn; snoozeClose(); b.focus(); } });
+
   function remTypeSync() { $('remFreqRow').hidden = $('remType').value !== 'periodico'; }
   $('remType').addEventListener('change', remTypeSync);
   function remForm(row) {
@@ -369,6 +413,7 @@
     $('remEditId').value = row ? d.id : '';
     $('remFormLabel').textContent = row ? 'Editar recordatorio' : 'Nuevo recordatorio';
     $('remSaveBtn').textContent = row ? 'Actualizar' : 'Guardar';
+    $('remDelBtn').hidden = !row;
     $('remDesc').value = d.desc || '';
     $('remType').value = d.type || 'unico';
     $('remDate').value = d.date || '';

@@ -4,8 +4,9 @@ from flask import Blueprint, render_template, request, jsonify, send_from_direct
 from werkzeug.utils import secure_filename
 from cryptography.fernet import Fernet, InvalidToken
 from database import get_db
-from utils import uploads_base_dir
+from utils import uploads_base_dir, today_str
 import modules.gamification.engine as engine
+from modules.perfil import recordatorios as rec
 
 PLACEHOLDER = '— editar —'
 
@@ -147,6 +148,7 @@ def index():
                            docs=docs_general,
                            docs_by_field=docs_by_field,
                            reminders=reminders,
+                           rem_grupos=rec.agrupar(reminders, date.fromisoformat(today_str())),
                            vault=vault,
                            pliegue_log=pliegue_log,
                            tallas_por_prenda=tallas_por_prenda,
@@ -372,9 +374,7 @@ def add_reminder():
 
 @perfil_bp.route('/api/reminder/<int:rid>/done', methods=['POST'])
 def complete_reminder(rid):
-    from datetime import date as _date, timedelta
     from utils import today_str as _today_str
-    import calendar
     today = _today_str()
     with get_db() as db:
         row = db.execute("SELECT * FROM reminders WHERE id=?", (rid,)).fetchone()
@@ -383,29 +383,9 @@ def complete_reminder(rid):
         if row['type'] == 'unico':
             db.execute("UPDATE reminders SET is_active=0, last_done=? WHERE id=?", (today, rid))
         else:
-            fv = row['freq_value'] or 1
-            fu = row['freq_unit'] or 'dias'
-            # Ancla en la fecha PROGRAMADA (next_date/target_date), no en la fecha
-            # en la que se marca "hecho": si se ancla en hoy, un pago tardío
-            # desplaza el día del mes/semana en cada ciclo (ver bug de recordatorios
-            # que se "mueven").
-            scheduled = row['next_date'] or row['target_date'] or today
-            base = _date.fromisoformat(scheduled)
-            while True:
-                if fu == 'semanas':
-                    cand = base + timedelta(weeks=fv)
-                elif fu == 'meses':
-                    m = base.month + fv
-                    y = base.year + (m - 1) // 12
-                    m = (m - 1) % 12 + 1
-                    d_max = calendar.monthrange(y, m)[1]
-                    cand = _date(y, m, min(base.day, d_max))
-                else:
-                    cand = base + timedelta(days=fv)
-                base = cand
-                if cand.isoformat() > today:
-                    break
-            next_d = cand.isoformat()
+            # Ancla en el ciclo del usuario (target_date), no en el día en que se
+            # marca hecho: pagar tarde o posponer no «mueve» el recordatorio.
+            next_d = rec.siguiente(dict(row), today)
             db.execute(
                 "UPDATE reminders SET last_done=?, next_date=? WHERE id=?",
                 (today, next_d, rid)
@@ -419,6 +399,31 @@ def complete_reminder(rid):
 
     gam = engine.process_activity(f"recordatorio_{rid}", _RECORDATORIO_XP, 'Recordatorios', log_id, ec=_RECORDATORIO_EC)
     return jsonify({'ok': True, 'gam': gam})
+
+
+@perfil_bp.route('/api/reminder/<int:rid>/snooze', methods=['POST'])
+def snooze_reminder(rid):
+    """Posponer: mueve solo esta ocurrencia (`dias` desde hoy, o `fecha`).
+    En los periódicos no toca target_date, que es el ancla del ciclo."""
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    try:
+        if d.get('fecha'):
+            nueva = date.fromisoformat(str(d['fecha'])[:10])
+        else:
+            nueva = date.fromisoformat(today_str()) + timedelta(days=max(1, min(int(d.get('dias') or 1), 365)))
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Fecha inválida'}), 400
+    with get_db() as db:
+        row = db.execute("SELECT type FROM reminders WHERE id=?", (rid,)).fetchone()
+        if not row:
+            return jsonify({'ok': False, 'error': 'No encontrado'}), 404
+        if row['type'] == 'unico':
+            db.execute("UPDATE reminders SET target_date=?, next_date=? WHERE id=?", (nueva.isoformat(),) * 2 + (rid,))
+        else:
+            db.execute("UPDATE reminders SET next_date=? WHERE id=?", (nueva.isoformat(), rid))
+        db.commit()
+    return jsonify({'ok': True, 'fecha': nueva.isoformat()})
 
 
 @perfil_bp.route('/api/reminder/<int:rid>/delete', methods=['POST'])

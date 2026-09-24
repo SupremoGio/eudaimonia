@@ -135,6 +135,28 @@
 .pf-rem-check:hover .eu-act-check svg{opacity:.5;transform:scale(1)}
 .pf-rem.is-busy{opacity:.4;pointer-events:none}
 .pf-rem .eu-row-t{white-space:normal}
+/* Grupos por urgencia (Vencidos / Hoy / Esta semana / Este mes / Más adelante) */
+.pf-remg+.pf-remg{border-top:1px solid var(--border-subtle)}
+.pf-remg-hd{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-3) var(--sp-4);cursor:pointer;list-style:none;font:var(--fw-semibold) var(--fs-12)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-2)}
+.pf-remg-hd::-webkit-details-marker{display:none}
+.pf-remg-chev{width:14px;height:14px;transition:transform var(--dur-fast)}
+.pf-remg[open] .pf-remg-chev{transform:rotate(90deg)}
+.pf-remg--vencidos .pf-remg-hd{color:var(--danger-fg)}
+.pf-remg--vencidos{background:linear-gradient(90deg,var(--danger-bg),transparent 60%)}
+.pf-remg .eu-list{border-top:1px solid var(--border-subtle)}
+/* Fila compacta: tocar el texto abre la edición; sin lápiz/bote por fila */
+.pf-rem-main{border:0;background:none;padding:0;text-align:left;cursor:pointer;color:inherit;font:inherit;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pf-rem-main:focus-visible{outline:2px solid var(--focus-ring, var(--brand));outline-offset:4px;border-radius:var(--r-sm)}
+.pf-rem .eu-row-s{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2)}
+.pf-rem-freq{display:inline-flex;align-items:center;gap:4px;color:var(--fg-3)}
+.pf-rem-freq svg{width:12px;height:12px}
+.pf-rem.is-late .pf-rem-when{color:var(--danger-fg);font-weight:var(--fw-semibold)}
+.pf-remg--hoy .pf-rem-when{color:var(--warning-fg, var(--fg-brand));font-weight:var(--fw-semibold)}
+.pf-snooze{display:flex;flex-wrap:wrap;gap:var(--sp-2);margin:0 var(--sp-4) var(--sp-3);padding:var(--sp-3);background:var(--bg-sunken)}
+.pf-snooze-date{position:relative}
+.pf-snooze-date input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.pf-grow{flex:1}
+@media (max-width:480px){.pf-hide-xs{display:none}}
 
 /* ── Contraseñas ── */
 .pf-vault .eu-row-t{display:flex;align-items:center;gap:6px}
