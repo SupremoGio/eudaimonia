@@ -121,3 +121,35 @@ def test_migracion_carga_los_limites_del_plan_una_sola_vez(test_db):
     database.init_db()
     with database.get_db() as db:
         assert db.execute("SELECT limite FROM est_budgets WHERE categoria='SUPER'").fetchone()['limite'] == 2300
+
+
+def test_presupuestos_quedan_solo_los_del_plan(test_db):
+    from modules.finanzas.presupuesto_plan import PLAN_LIMITES
+    with database.get_db() as db:
+        db.execute("DELETE FROM migration_log WHERE version='finanzas_presupuesto_solo_plan_2026_09'")
+        db.execute("DELETE FROM est_budgets")
+        for cat, nombre, lim in [('CASA/HOGAR', 'Vivienda', 6000), ('MENSUALIDAD', 'Mensualidad TDC', 2200),
+                                 ('INVERSION', 'Ahorro', 4000), ('EXPENSE', 'EXPENSE', 0),
+                                 ('VIVIENDA', 'Vivienda', 7100)]:        # del plan, editado por el usuario
+            db.execute("INSERT INTO est_budgets (categoria, nombre, limite) VALUES (?,?,?)", (cat, nombre, lim))
+        db.commit()
+    database.init_db()
+    with database.get_db() as db:
+        lim = {r['categoria']: r['limite'] for r in db.execute("SELECT categoria, limite FROM est_budgets")}
+        log = db.execute("SELECT description FROM migration_log WHERE version='finanzas_presupuesto_solo_plan_2026_09'").fetchone()['description']
+    assert set(lim) == {c for c, _, _ in PLAN_LIMITES}
+    assert lim['VIVIENDA'] == 7100                   # no pisa la edición
+    assert sum(lim.values()) == 17401 + (7100 - 6950)   # plan con Súper 2,000
+    assert 'CASA/HOGAR (Vivienda) 6000' in log and 'MENSUALIDAD' in log
+
+
+def test_seed_de_admin_recarga_el_plan_y_no_el_excel_viejo(test_db):
+    from app import create_app
+    app = create_app(); app.config['TESTING'] = True; app.config['WTF_CSRF_ENABLED'] = False
+    with app.test_client() as c:
+        with c.session_transaction() as s:
+            s['app_ok'] = True; s['fin_ok'] = True
+        c.post('/finanzas/admin/seed-budgets')
+    with database.get_db() as db:
+        cats = {r['categoria'] for r in db.execute("SELECT categoria FROM est_budgets")}
+    assert 'MENSUALIDAD' not in cats and 'SUPER' in cats and len(cats) == 14
