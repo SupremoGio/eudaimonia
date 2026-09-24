@@ -399,7 +399,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "SALUD":             ["Consultas", "Farmacia", "Estudios"],
     "TECH/DIGITAL":      ["Deudas MSI", "Accesorios", "Software"],
     "TRANSPORTE":        ["Gasolina", "Seguro auto", "Mantenimiento auto", "Taxi/apps", "Estacionamiento"],
-    "VIAJES":            ["Transporte", "Hospedaje", "Comida", "Otros"],
+    "VIAJES":            ["Transporte", "Hospedaje", "Comida", "Restaurante", "Salidas", "Otros"],
     "VIVIENDA":          ["Renta", "Aportación renta", "Luz", "Agua", "Gas", "Internet", "Artículos del hogar", "Lavandería", "Mudanza", "Plantas"],
 }
 
