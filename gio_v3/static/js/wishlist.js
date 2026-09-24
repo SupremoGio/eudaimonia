@@ -105,10 +105,18 @@
     };
     if (itemId) { show(1); return; }
     var btn = this.querySelector('[type=submit]'); btn.disabled = true;
-    post(API + '/item', item).then(function (r) {
-      if (!r.ok) { toast('Error al guardar', 'err'); return; }
-      itemId = r.id; show(1);
-    }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { btn.disabled = false; });
+    var save = function () {
+      post(API + '/item', item).then(function (r) {
+        if (!r.ok) { toast('Error al guardar', 'err'); return; }
+        itemId = r.id; show(1);
+      }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { btn.disabled = false; });
+    };
+    /* Aviso de duplicado: no bloquea, solo pregunta */
+    fetch(API + '/existe?nombre=' + encodeURIComponent(nombre)).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.existe) return save();
+      euConfirm('Ya tienes «' + d.existe.nombre + '» en tu wishlist (' + (d.existe.estado || 'sin estado') + '). ¿Agregarlo otra vez?',
+        { danger: false, confirmLabel: 'Agregar de todos modos' }).then(function (ok) { if (ok) save(); else btn.disabled = false; });
+    }).catch(save);
   });
   function need(q, msg) { if (ans[q] == null) { toast(msg, 'err'); var b = document.querySelector('.wl-choice[data-q="' + q + '"]'); if (b) b.focus(); return true; } return false; }
   function next(from) {
