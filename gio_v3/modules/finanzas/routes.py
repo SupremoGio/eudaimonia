@@ -409,23 +409,13 @@ def apply_migrations():
 
 @finanzas_bp.route('/admin/fix-invex-spei', methods=['POST'])
 def fix_invex_spei():
-    """Corrige SPEI ENVIADO INVEX mal clasificados como INVERSION → PAGO_TDC."""
+    """Pasa todos los SPEI ENVIADO INVEX a PAGO_TDC / MOVIMIENTO_INTERNO (misma
+    regla que el import y «Aplicar reglas»)."""
     if not session.get('fin_ok'):
         return jsonify({'error': 'locked'}), 403
+    from modules.finanzas.estados.routes import _corregir_spei_invex
     with get_db() as db:
-        rows = db.execute('''
-            SELECT id FROM est_movimientos
-            WHERE tipo="INVERSION" AND categoria="INVEX"
-              AND UPPER(descripcion) LIKE "%SPEI ENVIADO%"
-        ''').fetchall()
-        fixed = 0
-        for r in rows:
-            db.execute('''
-                UPDATE est_movimientos
-                SET tipo="PAGO", categoria="PAGO_TDC", subcategoria="Invex TDC"
-                WHERE id=?
-            ''', (r['id'],))
-            fixed += 1
+        fixed = _corregir_spei_invex(db)
         db.commit()
     return jsonify({'ok': True, 'fixed': fixed})
 

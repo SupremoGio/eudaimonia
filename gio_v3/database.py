@@ -5286,6 +5286,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_retiros_renta_2023 migration warning: {e}")
 
+        # ── FINANZAS — todos los «SPEI ENVIADO … INVEX» son el pago de la TDC
+        # Invex -> PAGO_TDC / MOVIMIENTO_INTERNO (la regla del import solo
+        # tocaba filas nuevas). Una vez aquí; «Aplicar reglas» y el import los
+        # reafirman con estados.routes._corregir_spei_invex.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_spei_invex_pago_tdc'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_spei_invex
+                _n = _corregir_spei_invex(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_spei_invex_pago_tdc", f"{_n} SPEI ENVIADO INVEX -> PAGO_TDC/MOVIMIENTO_INTERNO")
+                )
+                db.commit()
+                print(f"[DB] finanzas_spei_invex_pago_tdc: {_n} movimientos -> PAGO_TDC")
+            except Exception as e:
+                print(f"[DB] finanzas_spei_invex_pago_tdc migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que

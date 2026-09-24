@@ -563,6 +563,19 @@ def _corregir_retiros_renta(db) -> int:
     return n
 
 
+def _corregir_spei_invex(db) -> int:
+    """Todo «SPEI ENVIADO … INVEX» es el pago de la TDC Invex (misma regla
+    que _es_movimiento_interno en el import) -> PAGO_TDC / MOVIMIENTO_INTERNO.
+    El import solo la aplica a las filas nuevas; una regla de keyword
+    (ej. «INVEX» -> INVERSION, «SPEI ENVIADO» -> FINANZAS) las movía al
+    «Aplicar reglas», y las históricas nunca pasaron por ella."""
+    return db.execute("""
+        UPDATE est_movimientos SET categoria='PAGO_TDC', subcategoria='', tipo='MOVIMIENTO_INTERNO'
+        WHERE UPPER(descripcion) LIKE '%SPEI ENVIADO%' AND UPPER(descripcion) LIKE '%INVEX%'
+          AND (categoria != 'PAGO_TDC' OR subcategoria != '' OR tipo != 'MOVIMIENTO_INTERNO')
+    """).rowcount
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -1384,6 +1397,7 @@ def apply_all_keywords():
         _corregir_suscripciones_legacy(db)
         _corregir_steamgames(db)
         _corregir_retiros_renta(db)
+        _corregir_spei_invex(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -2004,6 +2018,7 @@ def upload_file():
             _corregir_suscripciones_legacy(db)
             _corregir_steamgames(db)
             _corregir_retiros_renta(db)
+            _corregir_spei_invex(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
