@@ -1054,6 +1054,13 @@ Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-
         raw = _extract_json(_gemini(prompt, max_tokens=1024))
         data = json.loads(raw)
         data['ok'] = True
+        # Si la prenda no tenía nombre de color, se guarda el de la IA: la
+        # distribución de colores agrupa por ese nombre antes que por el hex.
+        nombre_ia = clean_str(data.get('color_name', ''), max_len=60)
+        if nombre_ia and not (r.get('color_name') or '').strip():
+            with get_db() as db:
+                db.execute("UPDATE wardrobe_items SET color_name=? WHERE id=?", (nombre_ia, iid))
+                db.commit()
         return jsonify(data)
     except json.JSONDecodeError:
         return jsonify({'ok': False, 'error': 'Respuesta IA inválida'}), 500
