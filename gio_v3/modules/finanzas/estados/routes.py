@@ -587,6 +587,23 @@ def _corregir_zaira_restaurante(db) -> int:
     """).rowcount
 
 
+# Mensualidades de la lavadora comprada en walmart.com a 20 MSI: ~$509 cada
+# una, descritas como «WALMART VENTA EN LIN…». El keyword genérico «WALMART»
+# las mandaba a SUPER/Súper; el monto las separa de las compras de súper.
+WALMART_LAVADORA_MONTO = (508.5, 510.0)
+
+
+def _corregir_walmart_lavadora(db) -> int:
+    """Mensualidades de la lavadora -> VIVIENDA/Artículos del hogar."""
+    lo, hi = WALMART_LAVADORA_MONTO
+    return db.execute("""
+        UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Artículos del hogar', tipo='GASTO'
+        WHERE UPPER(descripcion) LIKE '%WALMART%VENTA EN LIN%'
+          AND ABS(monto) >= ? AND ABS(monto) < ? AND tipo IN ('GASTO', 'PAGO')
+          AND (categoria != 'VIVIENDA' OR subcategoria != 'Artículos del hogar' OR tipo != 'GASTO')
+    """, (lo, hi)).rowcount
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -1410,6 +1427,7 @@ def apply_all_keywords():
         _corregir_retiros_renta(db)
         _corregir_spei_invex(db)
         _corregir_zaira_restaurante(db)
+        _corregir_walmart_lavadora(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -2032,6 +2050,7 @@ def upload_file():
             _corregir_retiros_renta(db)
             _corregir_spei_invex(db)
             _corregir_zaira_restaurante(db)
+            _corregir_walmart_lavadora(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
