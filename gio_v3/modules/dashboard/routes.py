@@ -426,7 +426,7 @@ def _build_deadlines(today_dt: date) -> list:
 
     with get_db() as db:
         for r in db.execute("""
-            SELECT id, description AS label, type AS rem_type,
+            SELECT id, description AS label, type AS rem_type, tema,
                    COALESCE(next_date, target_date) AS fecha, 'reminder' AS kind
             FROM reminders
             WHERE is_active=1

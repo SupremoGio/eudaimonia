@@ -5225,6 +5225,30 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_limites_plan_2026_09 migration warning: {e}")
 
+        # ── RECORDATORIOS — tema (Finanzas / Casa y cuidado / Eventos / Otros)
+        # para filtrar con chips. La columna se agrega si falta; el tema se
+        # asigna por palabras clave solo a los que no tienen uno (una vez,
+        # migration_log), así un tema que el usuario cambió no se pisa.
+        try:
+            if 'tema' not in [r["name"] for r in db.execute("PRAGMA table_info(reminders)").fetchall()]:
+                db.execute("ALTER TABLE reminders ADD COLUMN tema TEXT DEFAULT ''")
+                db.commit()
+            if not db.execute(
+                "SELECT id FROM migration_log WHERE version='recordatorios_tema_2026_09'"
+            ).fetchone():
+                from modules.perfil.recordatorios import tema_auto
+                _rows = db.execute(
+                    "SELECT id, description FROM reminders WHERE COALESCE(tema, '') = ''").fetchall()
+                for _r in _rows:
+                    db.execute("UPDATE reminders SET tema=? WHERE id=?", (tema_auto(_r["description"]), _r["id"]))
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("recordatorios_tema_2026_09", f"Tema asignado por palabras clave a {len(_rows)} recordatorios")
+                )
+                db.commit()
+        except Exception as e:
+            print(f"[DB] recordatorios_tema_2026_09 migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,

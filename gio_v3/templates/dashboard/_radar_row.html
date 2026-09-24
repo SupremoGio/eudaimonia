@@ -5,7 +5,7 @@
   <div class="eu-row-ic{{ ' eu-row-ic--' ~ tone if tone }}"><i data-lucide="{{ dl_icons.get(dl.type, 'bell') }}"></i></div>
   <div class="eu-row-main">
     <div class="eu-row-t" title="{{ dl.label }}">{{ dl.label }}</div>
-    <div class="eu-row-s">{{ dl_labels.get(dl.type, dl.type) }}</div>
+    <div class="eu-row-s">{{ dl_labels.get(dl.type, dl.type) }}{% if dl.type == 'reminder' and dl.tema and dl.tema != 'otros' %} · {{ {'finanzas': 'Finanzas', 'casa': 'Casa y cuidado', 'eventos': 'Eventos'}.get(dl.tema, '') }}{% endif %}</div>
   </div>
   <span class="eu-badge eu-badge--status{{ ' eu-badge--' ~ tone if tone }}">{{ badge }}</span>
   {% if dl.type == 'partido' %}
