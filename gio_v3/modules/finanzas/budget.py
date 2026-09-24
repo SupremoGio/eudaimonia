@@ -129,6 +129,7 @@ def _inversiones_mes(db, desde, hasta):
                COUNT(*) AS n
         FROM est_movimientos
         WHERE tipo='INVERSION' AND subcategoria IN ('APORTACION', 'RETIRO')
+          AND categoria != 'OTRO'   -- plataforma no reconocida: no es ahorro real (inversiones.SIN_SALDO)
           AND fecha >= ? AND fecha < ?""", (desde, hasta)).fetchone()
     aport, ret = round(float(r['aport']), 2), round(float(r['ret']), 2)
     return {'aportado': aport, 'retirado': ret, 'neto': round(aport - ret, 2), 'n': int(r['n'])}

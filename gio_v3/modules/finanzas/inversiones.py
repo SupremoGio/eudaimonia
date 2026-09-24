@@ -27,6 +27,11 @@ inversiones_bp = Blueprint('inversiones', __name__, template_folder='../../templ
 
 PLATAFORMAS = ['GBM', 'INVEX', 'CETES', 'FINSUS', 'CRYPTO', 'FIBRA', 'OTRO']
 DIRECCIONES = ['APORTACION', 'RETIRO', 'RENDIMIENTO']
+# «Otro» no es una cuenta real del usuario («no hay otro, eso es todo»): ahí
+# caen movimientos que el import marcó como inversión sin reconocer la
+# plataforma (transferencias entre cuentas, etc.). Se siguen listando para
+# poder revisarlos, pero no suman al saldo ni al Ahorro de la Radiografía.
+SIN_SALDO = ('OTRO',)
 
 PLAT_META = {
     'GBM':    {'label': 'GBM Homebroker', 'icon': 'trending-up',  'color': '#22c55e'},
@@ -83,6 +88,8 @@ def _portafolio(db):
     plataformas_data = []
     total_aportado = total_retirado = total_rendimiento = 0
     for plat in PLATAFORMAS:
+        if plat in SIN_SALDO:
+            continue
         b = base.get(plat)
         if plat not in port and not (b and b['saldo']):
             continue  # sin corte con saldo ni movimientos: no se muestra (p. ej. «Otro» en 0)

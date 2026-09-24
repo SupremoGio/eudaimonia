@@ -94,3 +94,19 @@ def test_patrimonio_usa_el_saldo_en_vivo_de_inversiones(client, test_db):
                    'Fondo retiro': 90000.0}            # la Afore no es plataforma: sigue manual
     html = client.get('/finanzas/salud/').get_data(as_text=True)
     assert 'Ajustar GBM Homebroker en Inversiones' in html
+
+
+def test_otro_no_suma_al_saldo_ni_al_ahorro(client, test_db):
+    from modules.finanzas.budget import _calc_budget
+    with database.get_db() as db:
+        _reset(db)
+        _inv(db, 'OTRO', 'APORTACION', 250500, '2026-09-25')
+        _inv(db, 'GBM', 'APORTACION', 500, '2026-09-25')
+        db.commit()
+    database.init_db()
+    html = client.get('/finanzas/inversiones/').get_data(as_text=True)
+    assert '$220,523.89' in html and '$471,023.89' not in html
+    assert 'OTRO APORTACION 250500' in html           # se sigue listando para revisarlo
+    with database.get_db() as db:
+        inv = next(c for c in _calc_budget('2026-09', db)['buckets']['ahorro_deuda']['cats'] if c.get('inversion'))
+    assert inv['inversion']['aportado'] == 500
