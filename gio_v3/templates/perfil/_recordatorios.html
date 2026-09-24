@@ -14,27 +14,36 @@
       <div class="eu-field"><label class="eu-label" for="remFreqVal">Cada</label><input class="eu-input" id="remFreqVal" type="number" min="1" value="1"></div>
       <div class="eu-field"><label class="eu-label" for="remFreqUnit">Unidad</label><select class="eu-select" id="remFreqUnit"><option value="dias">Días</option><option value="semanas">Semanas</option><option value="meses">Meses</option></select></div>
     </div>
-    <div class="pf-form-ft"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-form-close">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm" id="remSaveBtn">Guardar</button></div>
+    <div class="pf-form-ft"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm pf-danger js-rem-del" id="remDelBtn" hidden><i data-lucide="trash-2"></i>Eliminar</button><span class="pf-grow"></span><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-form-close">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm" id="remSaveBtn">Guardar</button></div>
   </form>
-  <div class="eu-card eu-card--flush">
-    <div class="eu-list" id="remindersList">
-      {% for r in reminders %}
-      {% set d = r.next_date or r.target_date or '' %}
-      <div class="eu-row pf-rem" id="remrow-{{ r.id }}" data-id="{{ r.id }}" data-desc="{{ r.description }}" data-type="{{ r.type }}"
-           data-date="{{ d }}" data-freqval="{{ r.freq_value or 1 }}" data-frequnit="{{ r.freq_unit or 'dias' }}">
+  <div class="eu-card eu-card--flush" id="remindersList">
+    {% for g in rem_grupos %}
+    {% set cerrado = g.key in ('despues', 'sin_fecha') %}
+    <details class="pf-remg pf-remg--{{ g.key }}"{% if not cerrado %} open{% endif %}>
+      <summary class="pf-remg-hd"><i data-lucide="chevron-right" class="pf-remg-chev"></i><span>{{ g.titulo }}</span><span class="eu-badge{% if g.key == 'vencidos' %} eu-badge--danger{% elif g.key == 'hoy' %} eu-badge--warning{% endif %}">{{ g['items']|length }}</span></summary>
+      <div class="eu-list">
+      {% for r in g['items'] %}
+      <div class="eu-row pf-rem{% if g.key == 'vencidos' %} is-late{% endif %}" id="remrow-{{ r.id }}" data-id="{{ r.id }}" data-desc="{{ r.description }}" data-type="{{ r.type }}"
+           data-date="{{ r.fecha or '' }}" data-freqval="{{ r.freq_value or 1 }}" data-frequnit="{{ r.freq_unit or 'dias' }}">
         <button type="button" class="pf-rem-check js-rem-done" aria-label="Marcar «{{ r.description }}» como hecho"><span class="eu-act-check"><i data-lucide="check"></i></span></button>
-        <div class="eu-row-main">
-          <div class="eu-row-t">{{ r.description }}</div>
-          <div class="eu-row-s">
-            {% if r.type == 'periodico' %}<span class="eu-badge eu-badge--info">cada {{ r.freq_value }} {{ r.freq_unit }}</span>{% if r.next_date %} próx. {{ r.next_date }}{% endif %}
-            {% else %}<span class="eu-badge">único</span>{% if r.target_date %} {{ r.target_date }}{% endif %}{% endif %}
-          </div>
-        </div>
-        <button type="button" class="eu-iconbtn js-rem-edit" aria-label="Editar {{ r.description }}"><i data-lucide="pencil"></i></button>
-        <button type="button" class="eu-iconbtn pf-danger js-rem-del" aria-label="Eliminar {{ r.description }}"><i data-lucide="trash-2"></i></button>
+        <button type="button" class="eu-row-main pf-rem-main js-rem-edit" aria-label="Editar {{ r.description }}">
+          <span class="eu-row-t">{{ r.description }}</span>
+          <span class="eu-row-s">{% if r.rel %}<span class="pf-rem-when"{% if r.fecha %} title="{{ r.fecha }}"{% endif %}>{{ r.rel }}</span>{% endif %}{% if r.freq %}<span class="pf-rem-freq"><i data-lucide="repeat"></i>{{ r.freq }}</span>{% endif %}</span>
+        </button>
+        {% if g.key in ('vencidos', 'hoy') %}
+        <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-rem-snooze" aria-controls="remSnooze" aria-expanded="false" aria-label="Posponer {{ r.description }}"><i data-lucide="alarm-clock"></i><span class="pf-hide-xs">Posponer</span></button>
+        {% endif %}
       </div>
       {% endfor %}
-    </div>
+      </div>
+    </details>
+    {% endfor %}
     <div class="js-rem-empty"{% if reminders %} hidden{% endif %}>{{ ui.empty('list-todo', 'Nada pendiente', 'Crea un recordatorio único o periódico y aparecerá en el radar de Inicio.') }}</div>
+  </div>
+  <div class="eu-card pf-snooze" id="remSnooze" role="group" aria-label="Posponer hasta" hidden>
+    <button type="button" class="eu-chip js-snooze-opt" data-dias="1">Mañana</button>
+    <button type="button" class="eu-chip js-snooze-opt" data-dias="3">En 3 días</button>
+    <button type="button" class="eu-chip js-snooze-opt" data-dias="7">+1 semana</button>
+    <label class="eu-chip pf-snooze-date">Elegir fecha<input type="date" class="js-snooze-date" aria-label="Posponer hasta"></label>
   </div>
 </section>
