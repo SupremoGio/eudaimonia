@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify
-from datetime import datetime
+from datetime import datetime, date
 from database import get_db
 import modules.gamification.engine as engine
+import modules.actividades.activity_defs as adefs
 
 futbol_bp = Blueprint('futbol', __name__, template_folder='../../templates')
 
@@ -102,6 +103,38 @@ def _liquidar_partido(partido, fecha):
     return log_id
 
 
+def _marcar_ancla_partido(fecha):
+    """Si ese día de partido ya hay un partido jugado, tacha en el Acta el
+    ancla «Partido de fútbol» (activity_defs.PARTIDO_KEY) como si el usuario la
+    hubiera marcado a mano: mismo log y mismo XP/EC que el check del Acta. Es
+    idempotente — si ya estaba tachada no hace nada — y nunca la destacha."""
+    try:
+        d = date.fromisoformat(fecha)
+    except (TypeError, ValueError):
+        return None
+    if adefs.weekday_code(d) not in adefs.DIAS_PARTIDO:
+        return None
+    act = adefs.get_by_key(adefs.PARTIDO_KEY)
+    if not act or not act['active'] or act['hidden']:
+        return None
+    with get_db() as db:
+        jugado = db.execute(
+            "SELECT 1 FROM futbol_partidos WHERE fecha=? AND estado='jugado' LIMIT 1", (fecha,)
+        ).fetchone()
+        if not jugado or db.execute(
+            "SELECT 1 FROM activity_logs WHERE activity_key=? AND date=?", (adefs.PARTIDO_KEY, fecha)
+        ).fetchone():
+            return None
+        cur = db.execute(
+            "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+            (adefs.PARTIDO_KEY, fecha, act['pts'])
+        )
+        log_id = cur.lastrowid
+        db.commit()
+    engine.process_activity(adefs.PARTIDO_KEY, act['pts'], act['cat'], log_id)
+    return log_id
+
+
 # ── Rutas ─────────────────────────────────────────────────────────────────────
 
 @futbol_bp.route('/')
@@ -174,7 +207,10 @@ def crear_partido():
             ),
         )
         db.commit()
-    return jsonify({'ok': True, 'id': cur.lastrowid, 'liquidado': log_id is not None})
+        pid = cur.lastrowid
+    if estado == 'jugado':
+        _marcar_ancla_partido(d['fecha'])
+    return jsonify({'ok': True, 'id': pid, 'liquidado': log_id is not None})
 
 
 @futbol_bp.route('/api/partidos/<int:pid>', methods=['PATCH'])
@@ -227,6 +263,8 @@ def actualizar_partido(pid):
     with get_db() as db:
         db.execute(f"UPDATE futbol_partidos SET {', '.join(sets)} WHERE id=?", vals)
         db.commit()
+    if d.get('estado', partido['estado']) == 'jugado':
+        _marcar_ancla_partido(d.get('fecha', partido['fecha']))
     return jsonify({'ok': True})
 
 
