@@ -540,6 +540,29 @@ def _corregir_steamgames(db) -> int:
     return cur.rowcount
 
 
+# Retiros sin tarjeta de 2023 que en realidad fueron el pago de la renta en
+# efectivo. El usuario los señaló uno por uno (fecha + monto): no se toca
+# ningún otro retiro, porque la mayoría sí son efectivo de uso diario.
+RETIROS_RENTA_2023 = (
+    ('2023-02-16', 8000.0), ('2023-03-17', 8000.0), ('2023-04-18', 8600.0),
+    ('2023-05-18', 8500.0), ('2023-07-16', 7000.0), ('2023-09-16', 7600.0),
+)
+
+
+def _corregir_retiros_renta(db) -> int:
+    """Esos retiros van a VIVIENDA/Renta. Blindaje: una regla de keyword
+    «RETIRO» los regresaría a FINANZAS/Retiro efectivo al «Aplicar reglas»."""
+    n = 0
+    for fecha, monto in RETIROS_RENTA_2023:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta', tipo='GASTO'
+            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005 AND tipo != 'INGRESO'
+              AND UPPER(descripcion) LIKE 'RETIRO SIN TARJETA%'
+              AND (categoria != 'VIVIENDA' OR subcategoria != 'Renta' OR tipo != 'GASTO')
+        """, (fecha, monto)).rowcount
+    return n
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -1360,6 +1383,7 @@ def apply_all_keywords():
         _corregir_servicios_legacy(db)
         _corregir_suscripciones_legacy(db)
         _corregir_steamgames(db)
+        _corregir_retiros_renta(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -1979,6 +2003,7 @@ def upload_file():
             _corregir_servicios_legacy(db)
             _corregir_suscripciones_legacy(db)
             _corregir_steamgames(db)
+            _corregir_retiros_renta(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
