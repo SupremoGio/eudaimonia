@@ -80,3 +80,9 @@ def test_editar_permite_cambiar_unica(client):
     with database.get_db() as db:
         rid = db.execute("SELECT id FROM rewards WHERE name='Kindle'").fetchone()['id']
     assert client.put(f'/recompensas/api/rewards/{rid}', json={'unica': False}).get_json()['unica'] == 0
+
+
+def test_apple_watch_desbloqueado(test_db):
+    with database.get_db() as db:
+        r = db.execute("SELECT level_required, badge_required, ec_cost FROM rewards WHERE name='Apple Watch'").fetchone()
+    assert r['level_required'] == 1 and r['badge_required'] == '' and r['ec_cost'] == 300

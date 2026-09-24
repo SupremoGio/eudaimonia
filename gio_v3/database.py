@@ -5250,6 +5250,24 @@ def init_db():
         except Exception as e:
             print(f"[DB] rewards unica migration warning: {e}")
 
+        # ── RECOMPENSAS — el usuario pidió desbloquear el Apple Watch: se quitan
+        # el nivel 7 y la insignia stoic_commander que exigía el seed original.
+        # Sigue costando sus EC. Una sola vez (migration_log).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='rewards_desbloquea_apple_watch_2026_09'"
+        ).fetchone():
+            try:
+                _n = db.execute(
+                    "UPDATE rewards SET level_required=1, badge_required='' WHERE LOWER(TRIM(name))='apple watch'"
+                ).rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("rewards_desbloquea_apple_watch_2026_09", f"Apple Watch sin nivel ni insignia requeridos ({_n})")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] rewards_desbloquea_apple_watch migration warning: {e}")
+
         # ── RECORDATORIOS — tema (Finanzas / Casa y cuidado / Eventos / Otros)
         # para filtrar con chips. La columna se agrega si falta; el tema se
         # asigna por palabras clave solo a los que no tienen uno (una vez,
