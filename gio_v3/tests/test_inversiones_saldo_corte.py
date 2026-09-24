@@ -75,3 +75,22 @@ def test_ajustar_saldo_crea_nuevo_corte_y_la_migracion_no_lo_pisa(client, test_d
 def test_import_reconoce_finsus_antes_que_stp():
     from modules.finanzas.estados.config import get_categoria_subcategoria
     assert get_categoria_subcategoria('SPEI ENVIADO FINSUS STP')[0] == 'INVERSION'
+
+
+def test_patrimonio_usa_el_saldo_en_vivo_de_inversiones(client, test_db):
+    from modules.finanzas.salud import _compute_patrimonio
+    with database.get_db() as db:
+        _reset(db)
+        for nombre, inst, saldo in [('CETES', 'CETES', 63415.05), ('FINSUS', 'FINSUS', 101829.00),
+                                    ('GMB', 'GBM', 65499.00), ('Fondo retiro', 'Afore XXI', 90000.0)]:
+            db.execute("INSERT INTO salud_cuentas (nombre, tipo, institucion, saldo, moneda, activa, created_at) "
+                       "VALUES (?, 'inversion', ?, ?, 'MXN', 1, '2026-09-01')", (nombre, inst, saldo))
+        _inv(db, 'GBM', 'APORTACION', 1000, '2026-09-25')
+        db.commit()
+    database.init_db()
+    pat = _compute_patrimonio()
+    inv = {c['nombre']: c['saldo'] for c in pat['cuentas'] if c['tipo'] == 'inversion'}
+    assert inv == {'CETES Directo': 51124.65, 'Finsus': 102933.66, 'GBM Homebroker': 66965.58,
+                   'Fondo retiro': 90000.0}            # la Afore no es plataforma: sigue manual
+    html = client.get('/finanzas/salud/').get_data(as_text=True)
+    assert 'Ajustar GBM Homebroker en Inversiones' in html

@@ -19,10 +19,15 @@
       <span class="eu-row-ic pt-acc-ic"><i data-lucide="{{ meta.icon }}"></i></span>
       <span class="eu-grow pt-acc-bd"><span class="t-ui">{{ c.nombre }}</span><span class="t-meta">{{ c.institucion or meta.label }}</span></span>
       <span class="pt-acc-r"><span class="t-data pt-amt">{{ k[1] }}{{ hide(money(c.saldo, 2)) }}</span><span class="t-meta">{{ c.moneda }}</span></span>
+      {% if c.auto %}
+      {#- Saldo en vivo desde Inversiones (corte + movimientos): se ajusta allá. -#}
+      <span class="pt-acts"><a class="eu-iconbtn" href="/finanzas/inversiones/" aria-label="Ajustar {{ c.nombre }} en Inversiones" title="Se actualiza desde Inversiones"><i data-lucide="arrow-up-right"></i></a></span>
+      {% else %}
       <span class="pt-acts">
         <button type="button" class="eu-iconbtn" data-edit-cuenta='{{ {"id": c.id, "nombre": c.nombre, "tipo": c.tipo, "institucion": c.institucion or "", "saldo": c.saldo, "moneda": c.moneda, "notas": c.notas or ""}|tojson|forceescape }}' aria-label="Editar {{ c.nombre }}"><i data-lucide="pencil"></i></button>
         <button type="button" class="eu-iconbtn pt-del" data-del-cuenta="{{ c.id }}" aria-label="Eliminar {{ c.nombre }}"><i data-lucide="trash-2"></i></button>
       </span>
+      {% endif %}
     </li>
     {% endfor %}
   </ul>

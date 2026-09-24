@@ -59,6 +59,18 @@ def _agrupar_otras_monedas(cuentas):
     return grupos
 
 
+def _inversiones_en_vivo(db, cuentas):
+    """Las cuentas de inversión que corresponden a una plataforma de
+    Inversiones (CETES, Finsus, GBM…) se reemplazan por su saldo en vivo
+    (corte + movimientos), para no capturarlo dos veces; las que no
+    corresponden a ninguna siguen siendo manuales."""
+    from modules.finanzas.inversiones import cuentas_patrimonio, plataforma_de
+    manuales = [c for c in cuentas
+                if not (c['tipo'] == 'inversion' and c['moneda'] not in MONEDAS_EXTRANJERAS
+                        and plataforma_de(f"{c['nombre']} {c.get('institucion') or ''}"))]
+    return manuales + cuentas_patrimonio(db)
+
+
 def _compute_patrimonio():
     with get_db() as db:
         cuentas  = [dict(r) for r in db.execute(
@@ -70,6 +82,7 @@ def _compute_patrimonio():
         historial = [dict(r) for r in db.execute(
             "SELECT * FROM salud_patrimonio_log ORDER BY fecha DESC LIMIT 12"
         ).fetchall()][::-1]
+        cuentas = _inversiones_en_vivo(db, cuentas)
     total_activos, activos_cuentas, total_bienes, total_pasivos, patrimonio_neto = _totales(cuentas, bienes)
     cuentas_mxn = [c for c in cuentas if c['moneda'] not in MONEDAS_EXTRANJERAS]
     liquido = sum(c['saldo'] for c in cuentas_mxn if c['tipo'] in ('efectivo', 'cuenta_banco'))

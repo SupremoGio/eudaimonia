@@ -49,30 +49,22 @@ def _ok():
     return session.get('fin_ok')
 
 
-@inversiones_bp.route('/')
-def index():
-    with get_db() as db:
-        base = {r['plataforma']: {'saldo': float(r['saldo']), 'fecha': r['fecha']}
-                for r in db.execute("SELECT plataforma, saldo, fecha FROM inv_saldo_base")}
-        # ── Por plataforma (solo lo posterior al corte de cada plataforma)
-        plat_rows = db.execute("""
-            SELECT m.categoria,
-                   m.subcategoria,
-                   SUM(ABS(m.monto)) AS total,
-                   COUNT(*)   AS n
-            FROM est_movimientos m
-            LEFT JOIN inv_saldo_base b ON b.plataforma = m.categoria
-            WHERE m.tipo='INVERSION' AND (b.fecha IS NULL OR m.fecha > b.fecha)
-            GROUP BY m.categoria, m.subcategoria
-        """).fetchall()
-
-        # ── Historial completo (desc)
-        movs = db.execute("""
-            SELECT id, fecha, descripcion, monto, categoria, subcategoria, banco
-            FROM est_movimientos
-            WHERE tipo='INVERSION'
-            ORDER BY fecha DESC
-        """).fetchall()
+def _portafolio(db):
+    """Saldo por plataforma (corte + movimientos posteriores). Lo usan esta
+    vista y Patrimonio (salud.py), para que ambas muestren lo mismo."""
+    base = {r['plataforma']: {'saldo': float(r['saldo']), 'fecha': r['fecha']}
+            for r in db.execute("SELECT plataforma, saldo, fecha FROM inv_saldo_base")}
+    # ── Por plataforma (solo lo posterior al corte de cada plataforma)
+    plat_rows = db.execute("""
+        SELECT m.categoria,
+               m.subcategoria,
+               SUM(ABS(m.monto)) AS total,
+               COUNT(*)   AS n
+        FROM est_movimientos m
+        LEFT JOIN inv_saldo_base b ON b.plataforma = m.categoria
+        WHERE m.tipo='INVERSION' AND (b.fecha IS NULL OR m.fecha > b.fecha)
+        GROUP BY m.categoria, m.subcategoria
+    """).fetchall()
 
     # ── Construir portafolio por plataforma
     port = {}
@@ -123,6 +115,41 @@ def index():
     for p in plataformas_data:
         p['pct'] = round(max(p['saldo'], 0) / positivo * 100, 1) if positivo > 0 else 0
 
+    return {'plataformas': plataformas_data, 'total_aportado': total_aportado,
+            'total_retirado': total_retirado, 'total_rendimiento': total_rendimiento,
+            'saldo_total': saldo_total, 'fecha_corte': fechas_corte[-1] if fechas_corte else None}
+
+
+# Alias con que el usuario nombró sus cuentas en Patrimonio (p. ej. «GMB»).
+_ALIAS = {'GBM': ('GBM', 'GMB'), 'CETES': ('CETES',), 'FINSUS': ('FINSUS',), 'INVEX': ('INVEX',),
+          'CRYPTO': ('CRYPTO', 'BITSO', 'COINBASE'), 'FIBRA': ('FIBRA',)}
+
+
+def plataforma_de(texto):
+    """Plataforma a la que se refiere el nombre de una cuenta de Patrimonio."""
+    t = (texto or '').upper()
+    return next((p for p, alias in _ALIAS.items() if any(a in t for a in alias)), None)
+
+
+def cuentas_patrimonio(db):
+    """Las inversiones como cuentas de Patrimonio, con el saldo en vivo."""
+    return [{'id': f"inv-{p['id']}", 'nombre': p['label'], 'institucion': 'Desde Inversiones',
+             'saldo': p['saldo'], 'moneda': 'MXN', 'tipo': 'inversion', 'auto': True, 'plataforma': p['id']}
+            for p in _portafolio(db)['plataformas']]
+
+
+@inversiones_bp.route('/')
+def index():
+    with get_db() as db:
+        pf = _portafolio(db)
+        # ── Historial completo (desc)
+        movs = db.execute("""
+            SELECT id, fecha, descripcion, monto, categoria, subcategoria, banco
+            FROM est_movimientos
+            WHERE tipo='INVERSION'
+            ORDER BY fecha DESC
+        """).fetchall()
+
     movs_list = []
     for m in movs:
         sub = m['subcategoria'] if m['subcategoria'] in DIRECCIONES else 'APORTACION'
@@ -140,13 +167,13 @@ def index():
 
     return render_template(
         'finanzas/inversiones.html',
-        plataformas=plataformas_data,
+        plataformas=pf['plataformas'],
         movs=movs_list,
-        total_aportado=total_aportado,
-        total_retirado=total_retirado,
-        total_rendimiento=total_rendimiento,
-        saldo_total=saldo_total,
-        fecha_corte=fechas_corte[-1] if fechas_corte else None,
+        total_aportado=pf['total_aportado'],
+        total_retirado=pf['total_retirado'],
+        total_rendimiento=pf['total_rendimiento'],
+        saldo_total=pf['saldo_total'],
+        fecha_corte=pf['fecha_corte'],
         plataformas_list=PLATAFORMAS,
         plat_meta=PLAT_META,
         dir_meta=DIR_META,
