@@ -5122,6 +5122,45 @@ def init_db():
                     'hege', 'ancla', 1, 0, 0, 0, 'wed')""")
         db.commit()
 
+        # Receta pedida por el usuario: Poke Bowl de quinoa, atún y zanahoria.
+        # Solo se inserta si no existe una receta con ese nombre (no duplica
+        # si ya la capturó a mano ni si la migración corre de nuevo).
+        _poke = "Poke Bowl de Quinoa, Atún Aleta Amarilla y Zanahoria"
+        if not db.execute("SELECT 1 FROM recetas WHERE nombre=?", (_poke,)).fetchone():
+            try:
+                import json as _json
+                _ings = [
+                    {"item": "Quinoa orgánica (lavada; cocida en 1 taza de agua 12 min)", "cantidad": "1/2", "unidad": "taza"},
+                    {"item": "Atún aleta amarilla en cubitos", "cantidad": "200", "unidad": "g"},
+                    {"item": "Salsa de soya baja en sodio (marinada)", "cantidad": "1.5", "unidad": "cda"},
+                    {"item": "Aceite de ajonjolí tostado (marinada)", "cantidad": "1", "unidad": "cdta"},
+                    {"item": "Jugo de limón (marinada)", "cantidad": "1/2", "unidad": "limón"},
+                    {"item": "Sal de mar (marinada)", "cantidad": "1", "unidad": "pizca"},
+                    {"item": "Zanahoria rallada fina o en tiras delgadas", "cantidad": "1/2", "unidad": "pieza"},
+                    {"item": "Aguacate rebanado o en cubos", "cantidad": "1/2", "unidad": "pieza"},
+                    {"item": "Ajonjolí negro tostado", "cantidad": "1", "unidad": "cda"},
+                ]
+                _pasos = [
+                    "Quinoa: enjuagar la quinoa bajo el grifo durante 30 segundos. Cocinar con el doble de agua (1 taza) a fuego bajo y tapada durante 12 minutos. Apagar el fuego, dejar reposar 3 minutos y ahuecar con un tenedor.",
+                    "Marinada: mezclar los cubitos de atún con la salsa de soya, el aceite de ajonjolí y el jugo de limón. Refrigerar 10 minutos.",
+                    "Vegetales: rallar 1/2 zanahoria fina (puedes agregarle unas gotas de limón para mantener la frescura) y cortar el aguacate.",
+                    "Ensamblado: colocar la quinoa como cama en el bowl. Añadir el atún marinado, la zanahoria rallada y el aguacate distribuidos en secciones.",
+                    "Toque final: espolvorear el ajonjolí negro por encima.",
+                ]
+                db.execute(
+                    """INSERT INTO recetas (nombre, categoria, descripcion, ingredientes, instrucciones, calorias,
+                       proteina, carbos, grasa, tiempo_prep, tiempo_coccion, porciones, video_url, tags, favorita, created_at)
+                       VALUES (?, 'Post-Entrenamiento', ?, ?, ?, 515, 38, 43, 18, 20, 0, 1, '', ?, 0, datetime('now'))""",
+                    (_poke,
+                     "Nutrición deportiva · comida principal. Objetivo: alto rendimiento / post-entrenamiento. "
+                     "Proteína del atún aleta amarilla y la quinoa, carbohidratos complejos de quinoa y zanahoria, "
+                     "grasas saludables del aguacate y el aceite de ajonjolí. Fibra ~7 g · ~500-530 kcal.",
+                     _json.dumps(_ings, ensure_ascii=False), _json.dumps(_pasos, ensure_ascii=False),
+                     "HighProtein, Quinoa, Atún, Zanahoria, PostWorkout, CleanEating, PokeBowl"))
+                db.commit()
+            except Exception as e:
+                print(f"[DB] receta poke bowl warning: {e}")
+
         # Límites del plan de presupuesto acordado con el usuario (total ~$20,900
         # con $4,000 de ahorro como meta mínima aparte). Súper va en $2,000 y no
         # en los $1,500 del plan: la limpieza y el cuidado personal comprados en
