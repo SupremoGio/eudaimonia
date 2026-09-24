@@ -1,8 +1,9 @@
 import math
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
 from datetime import datetime
 from ec_constants import EC_RATE
+from modules import wishlist_dedup
 
 wishlist_bp = Blueprint('wishlist', __name__, template_folder='../../templates')
 
@@ -36,6 +37,24 @@ def get_items():
     q += " ORDER BY created_at DESC"
     items = [dict(r) for r in db.execute(q, params).fetchall()]
     return jsonify(items)
+
+
+@wishlist_bp.route('/api/existe')
+def existe():
+    """Aviso al crear: ¿ya hay un artículo con este nombre? (no bloquea)"""
+    with get_db() as db:
+        r = wishlist_dedup.existente(db, 'wishlist_items', request.args.get('nombre', ''))
+    return jsonify({'existe': r})
+
+
+@wishlist_bp.route('/admin/duplicados')
+def admin_duplicados():
+    """Auditoría de solo lectura de duplicados en las dos listas de deseos."""
+    # Prioridades es de Finanzas: solo con la sesión de finanzas abierta
+    tablas = [t for t in wishlist_dedup.TABLAS if t != 'lista_prioridades' or session.get('fin_ok')]
+    with get_db() as db:
+        return jsonify({t: {'lista': wishlist_dedup.TABLAS[t]['etiqueta'], 'grupos': wishlist_dedup.grupos(db, t)}
+                        for t in tablas})
 
 
 @wishlist_bp.route('/api/item', methods=['POST'])

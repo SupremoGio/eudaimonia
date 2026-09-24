@@ -5268,6 +5268,27 @@ def init_db():
             except Exception as e:
                 print(f"[DB] rewards_desbloquea_apple_watch migration warning: {e}")
 
+        # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
+        # Una sola vez: por cada nombre repetido se queda el registro más
+        # completo y, a igualdad, el más reciente; se le copian los campos que
+        # le falten (precio, url…) y una compra registrada; se borran los demás.
+        # Ver modules/wishlist_dedup.py y /guardarropa/wishlist/admin/duplicados.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='wishlist_dedup_2026_09'"
+        ).fetchone():
+            try:
+                from modules import wishlist_dedup as _wd
+                _res = {t: _wd.fusionar(db, t) for t in _wd.TABLAS}
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("wishlist_dedup_2026_09", "; ".join(
+                        f"{t}: {r['borrados']} borrados ({', '.join(r['grupos']) or 'sin duplicados'})"
+                        for t, r in _res.items()))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] wishlist_dedup_2026_09 migration warning: {e}")
+
         # ── RECORDATORIOS — tema (Finanzas / Casa y cuidado / Eventos / Otros)
         # para filtrar con chips. La columna se agrega si falta; el tema se
         # asigna por palabras clave solo a los que no tienen uno (una vez,

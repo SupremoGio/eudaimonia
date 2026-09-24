@@ -134,7 +134,12 @@
     e.preventDefault();
     item = readFields('p0');
     if (!item.nombre) { toast('El nombre es requerido', 'err'); $('p0Nombre').focus(); return; }
-    show(1);
+    /* Aviso de duplicado: no bloquea, solo pregunta */
+    fetch(BASE + '/api/existe?nombre=' + encodeURIComponent(item.nombre)).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.existe) return show(1);
+      euConfirm('Ya tienes «' + d.existe.nombre + '» en tu lista (' + (d.existe.estado || 'sin estado') + '). ¿Agregarlo otra vez?',
+        { danger: false, confirmLabel: 'Agregar de todos modos' }).then(function (ok) { if (ok) show(1); });
+    }).catch(function () { show(1); });
   });
   function need(q, msg) { if (ans[q] == null) { toast(msg, 'err'); var b = document.querySelector('#pr-proto .wl-choice[data-q="' + q + '"]'); if (b) b.focus(); return true; } return false; }
   $('pr-proto').addEventListener('click', function (e) {
