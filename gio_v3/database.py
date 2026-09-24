@@ -5323,6 +5323,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_zaira_restaurante migration warning: {e}")
 
+        # ── FINANZAS — mensualidades de la lavadora (WALMART VENTA EN LIN…,
+        # ~$509 a 20 MSI) -> VIVIENDA/Artículos del hogar. Una vez aquí;
+        # «Aplicar reglas» y el import lo reafirman con
+        # estados.routes._corregir_walmart_lavadora.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_walmart_lavadora'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_walmart_lavadora
+                _n = _corregir_walmart_lavadora(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_walmart_lavadora", f"{_n} mensualidades WALMART VENTA EN LIN ~$509 -> VIVIENDA/Artículos del hogar")
+                )
+                db.commit()
+                print(f"[DB] finanzas_walmart_lavadora: {_n} mensualidades -> VIVIENDA/Artículos del hogar")
+            except Exception as e:
+                print(f"[DB] finanzas_walmart_lavadora migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que
