@@ -15,7 +15,7 @@ from flask import (
     session, jsonify, Response, redirect, url_for,
 )
 from database import get_db
-from utils import clean_str, today_str, safe_float
+from utils import clean_str, today_str, safe_float, csv_response
 import modules.gamification.engine as engine
 from . import prestamos as _prest
 
@@ -1441,6 +1441,17 @@ def prestamos_duplicados():
     if not _ok(): return _locked()
     with get_db() as db:
         return jsonify(_prest.duplicados(db))
+
+
+@estados_bp.route('/api/prestamos/export.csv')
+def prestamos_csv():
+    """Movimientos de préstamo con persona/estado para clasificarlos fuera
+    de la app; los que falta registrar llevan Persona vacía."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        rows = _prest.filas_csv(db)
+    return csv_response(['ID', 'Fecha', 'Tipo', 'Descripción', 'Monto', 'Banco',
+                         'Persona', 'Estado', 'Pendiente'], rows, f"prestamos_{today_str()}.csv")
 
 
 @estados_bp.route('/api/prestamos', methods=['POST'])

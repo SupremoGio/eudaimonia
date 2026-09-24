@@ -172,3 +172,33 @@ def reafirmar_categorias(db) -> int:
           AND categoria != 'PRESTAMOS'
     """).rowcount
     return n
+
+
+def filas_csv(db) -> list[list]:
+    """Todos los movimientos de préstamo (categoría PRESTAMOS o tipo legacy)
+    con la persona y el estado si ya están registrados/ligados; la columna
+    Persona queda vacía en los que falta clasificar."""
+    por_mov, dev_de = {}, {}
+    for p in listar(db):
+        if p['movimiento_id']:
+            por_mov[p['movimiento_id']] = p
+        for d in p['devoluciones']:
+            dev_de[d['movimiento_id']] = p
+    rows = db.execute("""
+        SELECT id, fecha, descripcion, monto, banco, tipo FROM est_movimientos
+        WHERE categoria = 'PRESTAMOS' OR tipo IN ('PRESTAMO', 'COBRO_PRESTAMO')
+           OR id IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
+        ORDER BY fecha DESC, id DESC
+    """).fetchall()
+    out = []
+    for r in rows:
+        es_dev = r['tipo'] in ('INGRESO', 'COBRO_PRESTAMO')
+        p = dev_de.get(r['id']) if es_dev else por_mov.get(r['id'])
+        out.append([
+            r['id'], r['fecha'], 'Devolución' if es_dev else 'Préstamo', r['descripcion'],
+            round(abs(float(r['monto'])), 2), r['banco'] or '',
+            p['persona'] if p else '',
+            p['estado'] if p else ('Sin ligar' if es_dev else 'Sin registrar'),
+            p['pendiente'] if p and not es_dev else '',
+        ])
+    return out

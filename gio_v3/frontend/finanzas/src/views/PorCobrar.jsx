@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../lib/api.js';
+import { BASE, api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { fmtDate, money } from '../lib/format.js';
 import { bankName } from '../lib/meta.js';
@@ -166,9 +166,12 @@ export default function PorCobrar() {
             </div>
           )}
         </div>
-        <button type="button" className="eu-btn eu-btn--primary" onClick={() => setModal({ kind: 'new' })} disabled={!cand.data}>
-          <Icon name="plus" />Nuevo préstamo
-        </button>
+        <div className="eu-hstack">
+          <a className="eu-btn eu-btn--ghost" href={`${BASE}/prestamos/export.csv`} download><Icon name="download" />Descargar CSV</a>
+          <button type="button" className="eu-btn eu-btn--primary" onClick={() => setModal({ kind: 'new' })} disabled={!cand.data}>
+            <Icon name="plus" />Nuevo préstamo
+          </button>
+        </div>
       </div>
 
       {(cand.data?.prestamos || []).length > 0 && (

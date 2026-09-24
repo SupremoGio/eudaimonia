@@ -144,3 +144,21 @@ def test_migracion_normaliza_tipo_prestamo(test_db):
         rows = {r['id']: (r['tipo'], r['categoria']) for r in db.execute(
             "SELECT id, tipo, categoria FROM est_movimientos WHERE id IN (?,?)", (a, b))}
     assert rows == {a: ('GASTO', 'PRESTAMOS'), b: ('INGRESO', 'PRESTAMOS')}
+
+
+def test_csv_de_prestamos_para_clasificar(client, test_db):
+    import csv, io
+    with database.get_db() as db:
+        prest, dev1, _ = _setup(db)
+        suelto = _mov(db, 'RETIRO PRESTAMO SIN PERSONA', -700, 'GASTO', 'PRESTAMOS', fecha='2026-06-01')
+        db.commit()
+    pid = client.post('/finanzas/estados/api/prestamos', json={'movimiento_id': prest, 'persona': 'Judi'}).get_json()['id']
+    client.post(f'/finanzas/estados/api/prestamos/{pid}/devoluciones', json={'movimiento_id': dev1})
+    r = client.get('/finanzas/estados/api/prestamos/export.csv')
+    assert r.status_code == 200 and 'attachment' in r.headers['Content-Disposition']
+    body = r.get_data().decode('utf-8')
+    assert body.startswith('﻿')
+    rows = {int(x['ID']): x for x in csv.DictReader(io.StringIO(body[1:]))}
+    assert (rows[prest]['Tipo'], rows[prest]['Persona'], rows[prest]['Estado'], rows[prest]['Pendiente']) == ('Préstamo', 'Judi', 'Pagado parcial', '2000.0')
+    assert (rows[dev1]['Tipo'], rows[dev1]['Persona']) == ('Devolución', 'Judi')
+    assert (rows[suelto]['Persona'], rows[suelto]['Estado'], rows[suelto]['Monto']) == ('', 'Sin registrar', '700.0')
