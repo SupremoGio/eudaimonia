@@ -66,6 +66,56 @@ def eligible_today(row, wd=None, d=None):
     return True
 
 
+# ── Día de partido ────────────────────────────────────────────────────────────
+# Los miércoles el usuario suele jugar fútbol en vez de ir al gym: si ese día
+# hay un partido en futbol_partidos (programado o jugado), Ejercicio Gym y
+# GymBook no se piden y el partido toma su lugar como ancla (mismo pilar y
+# puntos que el gym). Sin partido, la actividad del partido no aparece.
+PARTIDO_KEY = "partido_futbol"
+REEMPLAZADAS_POR_PARTIDO = ("gym", "gymbook")
+DIAS_PARTIDO = ("wed",)
+
+
+def partido_del_dia(d=None):
+    """El partido de hoy (o de la fecha dada) si es día de partido, si no None."""
+    d = d or today_date()
+    if weekday_code(d) not in DIAS_PARTIDO:
+        return None
+    with get_db() as db:
+        row = db.execute(
+            "SELECT * FROM futbol_partidos WHERE fecha=? ORDER BY hora, id LIMIT 1", (d.isoformat(),)
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def _sesion_por_hora(hora):
+    try:
+        h = int((hora or "").split(":")[0])
+    except ValueError:
+        return "afternoon"
+    return "morning" if h < 13 else ("afternoon" if h < 19 else "night")
+
+
+def ajustar_por_partido(items, d=None):
+    """Aplica la regla del día de partido a una lista de actividades (dicts):
+    con partido quita Gym/GymBook y rotula el ancla del partido (rival, hora y
+    sesión según la hora); sin partido quita el ancla del partido."""
+    p = partido_del_dia(d)
+    out = []
+    for it in items:
+        if p and it["key"] in REEMPLAZADAS_POR_PARTIDO:
+            continue
+        if it["key"] == PARTIDO_KEY:
+            if not p:
+                continue
+            it = dict(it)
+            extra = " · ".join(x for x in (f"vs {p['rival']}" if p.get("rival") else "", p.get("hora") or "") if x)
+            it["label"] = "Partido de fútbol" + (f" · {extra}" if extra else "")
+            it["session"] = _sesion_por_hora(p.get("hora"))
+        out.append(it)
+    return out
+
+
 def _slugify(label):
     base = re.sub(r"[^a-z0-9]+", "_", label.strip().lower()).strip("_")
     return base or "actividad"
@@ -128,10 +178,8 @@ def get_active_grouped():
         ).fetchall()
     grouped = {s: [] for s in SESSIONS}
     occasional = []
-    for r in rows:
-        if not eligible_today(r, wd):
-            continue
-        item = _as_dict(r, focus_map)
+    items = ajustar_por_partido([_as_dict(r, focus_map) for r in rows if eligible_today(r, wd)])
+    for item in items:
         if item["type"] == "ocasional":
             occasional.append(item)
         else:

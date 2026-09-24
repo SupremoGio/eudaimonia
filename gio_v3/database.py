@@ -5112,6 +5112,16 @@ def init_db():
             except Exception as e:
                 print(f"[DB] inversiones_saldo_corte_2026_09_24 migration warning: {e}")
 
+        # Ancla «Partido de fútbol» (ver activity_defs.ajustar_por_partido): solo
+        # aparece los miércoles con partido en futbol_partidos, y ese día
+        # sustituye a Ejercicio Gym y GymBook. Mismos puntos y pilar que el gym.
+        db.execute("""
+            INSERT OR IGNORE INTO activity_defs
+              (key, label, cat, pts, ec, tier, session, pillar, type, active, hidden, custom, sort_order, days_of_week)
+            VALUES ('partido_futbol', 'Partido de fútbol', 'Salud Física', 4, 1, 'progreso', 'afternoon',
+                    'hege', 'ancla', 1, 0, 0, 0, 'wed')""")
+        db.commit()
+
         # Límites del plan de presupuesto acordado con el usuario (total ~$20,900
         # con $4,000 de ahorro como meta mínima aparte). Súper va en $2,000 y no
         # en los $1,500 del plan: la limpieza y el cuidado personal comprados en

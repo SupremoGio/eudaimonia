@@ -353,6 +353,8 @@ def get_daily_classification(date_str=None):
     # ancla de otro día (ej. Francés en lunes) infle "cuántas anclas hay hoy".
     wd_today       = adefs.DAY_CODES[d_obj.weekday()]
     defs_today = {k: v for k, v in defs.items() if adefs.eligible_today(v, wd_today, d_obj)}
+    # Día de partido: Gym/GymBook no se exigen y el partido es el ancla.
+    defs_today = {d["key"]: d for d in adefs.ajustar_por_partido(list(defs_today.values()), d_obj)}
 
     with get_db() as db:
         total_xp = db.execute(
