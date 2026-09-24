@@ -92,6 +92,14 @@
     /* Con tinte: manda el matiz aunque el color sea muy oscuro o muy claro */
     var hue = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
     hue *= 60;
+    /* Tonos cálidos poco saturados (arena, crema, hueso, caqui): antes caían en
+       Amarillo/Mostaza solo por el matiz (un beige claro ronda 45–55°). */
+    var sat = d / max;
+    if (hue >= 10 && hue <= 70 && sat < 0.45) {
+      if (lum < 70) return COLOR_PSYCH.cafe;
+      if (lum > 215) return COLOR_PSYCH.blanco_roto;
+      return hue > 45 && lum < 150 ? COLOR_PSYCH.caqui : COLOR_PSYCH.beige;
+    }
     if (hue >= 200 && hue <= 260) return lum < 60 ? COLOR_PSYCH.navy : COLOR_PSYCH.azul;
     if (hue >= 10 && hue <= 45) return lum < 70 ? COLOR_PSYCH.cafe : lum > 200 ? COLOR_PSYCH.blanco_roto : COLOR_PSYCH.beige;
     if (hue >= 340 || hue <= 10) return lum < 90 ? COLOR_PSYCH.borgona : COLOR_PSYCH.rojo;
@@ -101,6 +109,26 @@
     if (hue > 260 && hue < 340) return hue < 300 ? COLOR_PSYCH.morado : COLOR_PSYCH.rosa;
     return { name: 'Color personalizado', psych: 'Expresa tu personalidad única', rec: 'Accesorios y prendas statement' };
   }
+
+  /* Familia de color de una prenda: si tiene nombre de color (lo escribió el
+     usuario o lo puso la IA, p. ej. «Beige Claro»), manda el nombre; si no, se
+     calcula por el hex. Así la distribución coincide con lo que dice la IA. */
+  var NAME_ALIAS = [['blanco roto', 'blanco_roto'], ['hueso', 'blanco_roto'], ['marfil', 'blanco_roto'], ['crema', 'beige'],
+    ['arena', 'beige'], ['nude', 'beige'], ['khaki', 'caqui'], ['marino', 'navy'], ['vino', 'borgona'], ['tinto', 'borgona'],
+    ['oliva', 'verde'], ['militar', 'verde'], ['celeste', 'azul'], ['cobalto', 'azul'], ['carbón', 'gris'], ['plata', 'gris'],
+    ['chocolate', 'cafe'], ['marrón', 'cafe'], ['dorado', 'mostaza'], ['lila', 'morado'], ['fucsia', 'rosa'], ['coral', 'rojo']];
+  function familyFromName(name) {
+    var n = (name || '').toLowerCase();
+    if (!n) return null;
+    for (var i = 0; i < NAME_ALIAS.length; i++) if (n.indexOf(NAME_ALIAS[i][0]) >= 0) return COLOR_PSYCH[NAME_ALIAS[i][1]];
+    var best = null;
+    for (var k in COLOR_PSYCH) {
+      var pn = COLOR_PSYCH[k].name.toLowerCase();
+      if (n.indexOf(pn) >= 0 && (!best || pn.length > best.name.length)) best = COLOR_PSYCH[k];
+    }
+    return best;
+  }
+  function colorFamily(item) { return familyFromName(item.color_name) || matchColor(item.color_hex); }
 
   /* ── Pestañas y vista ─────────────────────────────────────── */
   var tab = 'prendas';
@@ -186,7 +214,7 @@
       return (!dept.cats || dept.cats.indexOf(r.categoria) >= 0) &&
         (!st.cat || r.categoria === st.cat) &&
         (!q || r.nombre.toLowerCase().indexOf(q) >= 0 || (r.marca || '').toLowerCase().indexOf(q) >= 0 || (r.color_name || '').toLowerCase().indexOf(q) >= 0) &&
-        (!st.color || ((matchColor(r.color_hex) || {}).name || 'Otro') === st.color) &&
+        (!st.color || ((colorFamily(r) || {}).name || 'Otro') === st.color) &&
         (st.catF === null || r.categoria === st.catF) &&
         (!st.idle || isIdle(r));
     });
@@ -326,6 +354,9 @@
       var d = await res.json();
       if (!d.ok || detailId !== id || !$('gr-psych-name')) return;
       $('gr-psych-name').textContent = d.color_name || $('gr-psych-name').textContent;
+      /* El backend guarda el nombre de la IA si la prenda no tenía: reflejarlo ya en la distribución. */
+      var it = ALL_ITEMS.find(function (x) { return x.id === id; });
+      if (it && d.color_name && !it.color_name) it.color_name = d.color_name;
       if (d.psych) $('gr-psych-msg').textContent = d.psych;
       if (d.rec) $('gr-psych-rec').textContent = d.rec;
       $('gr-psych-ai').hidden = false;
@@ -904,7 +935,7 @@
       icons(); return;
     }
     var colorMap = {};
-    act.forEach(function (i) { var p = matchColor(i.color_hex); var n = (p && p.name) || 'Otro'; colorMap[n] = colorMap[n] || { count: 0, hex: (p && p.hex) || i.color_hex }; colorMap[n].count++; });
+    act.forEach(function (i) { var p = colorFamily(i); var n = (p && p.name) || 'Otro'; colorMap[n] = colorMap[n] || { count: 0, hex: (p && p.hex) || i.color_hex }; colorMap[n].count++; });
     var colors = Object.keys(colorMap).sort(function (a, b) { return colorMap[b].count - colorMap[a].count; });
     var maxC = colors.length ? colorMap[colors[0]].count : 1;
     var catMap = {};

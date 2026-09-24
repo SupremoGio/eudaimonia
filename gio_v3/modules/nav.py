@@ -93,6 +93,10 @@ ACTIONS = [
      'keywords': 'praxis gtd inbox'},
     {'id': 'prenda', 'label': 'Nueva prenda', 'icon': 'shirt', 'url': '/guardarropa/?nueva=1',
      'keywords': 'ropa guardarropa'},
+    # Los recordatorios son una sección de Perfil (no una página propia), así
+    # que el ⌘K no los encontraba; /perfil/#recordatorios abre esa sección.
+    {'id': 'recordatorios', 'label': 'Recordatorios', 'icon': 'bell', 'url': '/perfil/#recordatorios',
+     'keywords': 'recordatorio nuevo pendiente aviso alarma vencido perfil'},
 ]
 
 # Bottom nav (móvil): 5 destinos. 'modulos' no navega, abre el sheet.
