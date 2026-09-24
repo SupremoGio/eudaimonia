@@ -1987,6 +1987,7 @@ def upload_file():
             # usuario para sus aportaciones a CETESDirecto ("SPEI ENVIADO STP").
             _PLAT_KW = [
                 ('GBM',   'GBM'),
+                ('FINSUS','FINSUS'),   # antes que CETES/STP: el nombre explícito gana
                 ('INVEX', 'INVEX'),
                 ('CETES', 'CETESDIRECTO'),
                 ('CETES', 'NAFIN'),

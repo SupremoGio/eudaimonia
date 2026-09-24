@@ -1,10 +1,13 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'finanzas' %}
-{% set PCAT = {'GBM':'hegemonikon','INVEX':'paideia','CETES':'cosmopolitismo','CRYPTO':'oikonomia','FIBRA':'harma','OTRO':'identidad'} %}
+{% set PCAT = {'GBM':'hegemonikon','INVEX':'paideia','CETES':'cosmopolitismo','FINSUS':'ataraxia','CRYPTO':'oikonomia','FIBRA':'harma','OTRO':'identidad'} %}
 {% set DIR = {'APORTACION':('success','arrow-up-right','+'),'RETIRO':('danger','arrow-down-right','−'),'RENDIMIENTO':('warning','sparkles','+')} %}
 {% macro hide(v) -%}<span class="nw-real">{{ v }}</span><span class="nw-mask">••••</span>{%- endmacro %}
 {% macro money(n) -%}${{ "{:,.0f}".format(n) }}{%- endmacro %}
+{% macro money2(n) -%}${{ "{:,.2f}".format(n) }}{%- endmacro %}
+{% set MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'] %}
+{% macro fcorte(f) -%}{{ f[8:10]|int }} {{ MESES[f[5:7]|int - 1] }} {{ f[:4] }}{%- endmacro %}
 {% block title %}Inversiones — Oikonomia{% endblock %}
 {% block module_title %}INVERSIONES{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/inversiones.css') }}">{% endblock %}
@@ -15,7 +18,7 @@
 <div class="iv" id="iv" data-cat="oikonomia">
   <header class="iv-hd">
     <div><div class="t-eyebrow">Oikonomia · Inversiones</div><h1 class="t-page">Portafolio</h1>
-      <p class="t-meta iv-lead">Aportaciones, retiros y rendimientos por plataforma. El saldo es una estimación a partir de los movimientos registrados.</p></div>
+      <p class="t-meta iv-lead">Saldo real de cada plataforma al último corte, más lo que entra o sale después según tus estados de cuenta.</p></div>
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Registrar movimiento</button>
   </header>
 
@@ -23,14 +26,17 @@
     <div class="iv-hero-top">
       <div class="iv-main">
         <div class="t-eyebrow" id="iv-saldo-l"><i data-lucide="wallet"></i>Saldo total</div>
-        <div class="t-data iv-main-v">{{ hide(money(saldo_total)) }}</div>
+        <div class="t-data iv-main-v">{{ hide(money2(saldo_total)) }}</div>
         <div class="t-meta">{{ plataformas|length }} plataforma{{ 's' if plataformas|length != 1 }} activa{{ 's' if plataformas|length != 1 }}</div>
       </div>
-      <dl class="iv-kpis">
+      <div class="iv-kpis-wrap">
+      {% if fecha_corte %}<p class="iv-kpis-t t-eyebrow" id="iv-kpis-t">Desde el corte · {{ fcorte(fecha_corte) }}</p>{% endif %}
+      <dl class="iv-kpis"{% if fecha_corte %} aria-labelledby="iv-kpis-t"{% endif %}>
         <div data-tone="success"><dt class="t-meta">Aportado</dt><dd class="t-data">{{ hide(money(total_aportado)) }}</dd></div>
         <div data-tone="danger"><dt class="t-meta">Retirado</dt><dd class="t-data">{{ hide(money(total_retirado)) }}</dd></div>
         <div data-tone="warning"><dt class="t-meta">Rendimientos</dt><dd class="t-data">{{ hide(money(total_rendimiento)) }}</dd></div>
       </dl>
+      </div>
     </div>
     {% if plataformas %}
     <div class="iv-alloc" role="img" aria-label="Distribución: {% for p in plataformas %}{{ p.label }} {{ p.pct }}%{{ ', ' if not loop.last }}{% endfor %}">
@@ -44,15 +50,16 @@
 
   {% if plataformas %}
   <section class="eu-vstack iv-sec" aria-labelledby="iv-plat-t">
-    <div><h2 class="t-card" id="iv-plat-t">Por plataforma</h2><p class="t-meta">Saldo estimado de cada cuenta activa</p></div>
+    <div><h2 class="t-card" id="iv-plat-t">Por plataforma</h2><p class="t-meta">Saldo de cada cuenta: corte + movimientos posteriores. Usa «Ajustar saldo» cuando quieras cuadrarlo con la app de la plataforma.</p></div>
     <div class="iv-plats">
       {% for p in plataformas %}
       <article class="eu-card iv-plat" data-cat="{{ PCAT.get(p.id, 'identidad') }}">
         <span class="eu-row-ic iv-plat-ic"><i data-lucide="{{ p.icon }}"></i></span>
         <div class="eu-grow iv-plat-bd">
-          <div class="eu-between"><span class="t-ui">{{ p.label }}</span><span class="t-data iv-plat-v">{{ hide(money(p.saldo)) }}</span></div>
-          <div class="t-meta nw-hide-block">Aportado {{ money(p.aportado) }}{% if p.retirado > 0 %} · retirado {{ money(p.retirado) }}{% endif %}{% if p.rendimiento > 0 %} · rend. {{ money(p.rendimiento) }}{% endif %}</div>
-          {{ ui.progress(p.pct, 100, variant='cat', thin=True, cat=PCAT.get(p.id, 'identidad'), label='Porcentaje aportado en ' ~ p.label) }}
+          <div class="eu-between"><span class="t-ui">{{ p.label }}</span><span class="t-data iv-plat-v">{{ hide(money2(p.saldo)) }}</span></div>
+          <div class="t-meta nw-hide-block">{% if p.base %}Corte {{ fcorte(p.base.fecha) }}: {{ money2(p.base.saldo) }}{% if p.aportado or p.retirado or p.rendimiento %} · desde entonces{% if p.aportado %} +{{ money(p.aportado) }}{% endif %}{% if p.retirado %} −{{ money(p.retirado) }}{% endif %}{% if p.rendimiento %} · rend. {{ money(p.rendimiento) }}{% endif %}{% endif %}{% else %}Aportado {{ money(p.aportado) }}{% if p.retirado > 0 %} · retirado {{ money(p.retirado) }}{% endif %}{% endif %}</div>
+          {{ ui.progress(p.pct, 100, variant='cat', thin=True, cat=PCAT.get(p.id, 'identidad'), label='Porcentaje del saldo en ' ~ p.label) }}
+          <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm iv-adj" data-adj="{{ p.id }}" data-label="{{ p.label }}" data-saldo="{{ p.saldo }}"><i data-lucide="scale"></i>Ajustar saldo</button>
         </div>
       </article>
       {% endfor %}
@@ -98,6 +105,15 @@
   <div class="eu-field"><label class="eu-label" for="inv-desc">Descripción (opcional)</label><input class="eu-input" id="inv-desc" placeholder="Ej: Compra de CETES a 28 días"></div>
 </form>
 <div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-inv')">Cancelar</button><button type="submit" form="f-inv" class="eu-btn eu-btn--primary">Guardar</button></div>
+{% endcall %}
+{% call ui.modal('m-adj', 'Ajustar saldo', eyebrow='Inversiones') %}
+<form class="eu-modal-bd" id="f-adj" autocomplete="off" novalidate>
+  <input type="hidden" id="adj-plat">
+  <div class="eu-field"><label class="eu-label" for="adj-saldo" id="adj-l">Saldo real hoy (MXN)</label>
+    <input class="eu-input eu-input--money" type="number" id="adj-saldo" step="0.01" min="0" inputmode="decimal">
+    <div class="eu-help">Queda como nuevo corte con fecha de hoy: a partir de aquí se suman los movimientos que entren o salgan.</div></div>
+</form>
+<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-adj')">Cancelar</button><button type="submit" form="f-adj" class="eu-btn eu-btn--primary">Guardar</button></div>
 {% endcall %}
 </div>
 {% endblock %}

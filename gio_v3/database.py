@@ -5079,6 +5079,39 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_prestamos_clasificacion_csv_2026_09 migration warning: {e}")
 
+        # Saldo de corte de inversiones (modules/finanzas/inversiones.py): el
+        # usuario dio sus saldos reales al 2026-09-24 -- CETES 51,124.65, Finsus
+        # 102,933.66 y GBM 65,965.58; «no hay otro, eso es todo» -- así que el
+        # resto de plataformas arranca en 0. Desde ahí el saldo es el corte +
+        # los movimientos posteriores. INSERT OR IGNORE: un ajuste hecho desde
+        # la app nunca se pisa. Los movimientos OTRO que mencionan FINSUS pasan
+        # a la plataforma nueva.
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS inv_saldo_base (
+                plataforma TEXT PRIMARY KEY,
+                saldo      REAL NOT NULL,
+                fecha      TEXT NOT NULL,
+                updated_at TEXT
+            )""")
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='inversiones_saldo_corte_2026_09_24'"
+        ).fetchone():
+            try:
+                for plat, saldo in [('CETES', 51124.65), ('FINSUS', 102933.66), ('GBM', 65965.58),
+                                    ('INVEX', 0), ('CRYPTO', 0), ('FIBRA', 0), ('OTRO', 0)]:
+                    db.execute("INSERT OR IGNORE INTO inv_saldo_base (plataforma, saldo, fecha, updated_at) "
+                               "VALUES (?, ?, '2026-09-24', datetime('now'))", (plat, saldo))
+                n = db.execute("UPDATE est_movimientos SET categoria='FINSUS' WHERE tipo='INVERSION' "
+                               "AND categoria='OTRO' AND UPPER(descripcion) LIKE '%FINSUS%'").rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("inversiones_saldo_corte_2026_09_24",
+                     f"Corte al 2026-09-24: CETES 51,124.65 · FINSUS 102,933.66 · GBM 65,965.58 · resto 0 | OTRO->FINSUS: {n}")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] inversiones_saldo_corte_2026_09_24 migration warning: {e}")
+
         # Límites del plan de presupuesto acordado con el usuario (total ~$20,900
         # con $4,000 de ahorro como meta mínima aparte). Súper va en $2,000 y no
         # en los $1,500 del plan: la limpieza y el cuidado personal comprados en

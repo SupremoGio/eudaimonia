@@ -12,6 +12,11 @@ La net position por plataforma:
   retirado  = SUM(monto) WHERE subcategoria='RETIRO'
   rendimiento= SUM(monto) WHERE subcategoria='RENDIMIENTO'
   saldo_est = aportado - retirado + rendimiento
+
+Saldo de corte (inv_saldo_base): el usuario fija el saldo real de cada
+plataforma en una fecha; desde ahí el saldo es ese corte + los movimientos
+posteriores (la dirección la dan las reglas del import). Una plataforma sin
+corte sigue calculándose con todo su historial.
 """
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
@@ -20,13 +25,14 @@ from datetime import datetime
 
 inversiones_bp = Blueprint('inversiones', __name__, template_folder='../../templates')
 
-PLATAFORMAS = ['GBM', 'INVEX', 'CETES', 'CRYPTO', 'FIBRA', 'OTRO']
+PLATAFORMAS = ['GBM', 'INVEX', 'CETES', 'FINSUS', 'CRYPTO', 'FIBRA', 'OTRO']
 DIRECCIONES = ['APORTACION', 'RETIRO', 'RENDIMIENTO']
 
 PLAT_META = {
     'GBM':    {'label': 'GBM Homebroker', 'icon': 'trending-up',  'color': '#22c55e'},
     'INVEX':  {'label': 'Invex',           'icon': 'landmark',     'color': '#a78bfa'},
     'CETES':  {'label': 'CETES Directo',   'icon': 'shield-check', 'color': '#60a5fa'},
+    'FINSUS': {'label': 'Finsus',          'icon': 'piggy-bank',   'color': '#34d399'},
     'CRYPTO': {'label': 'Crypto',          'icon': 'bitcoin',      'color': '#f59e0b'},
     'FIBRA':  {'label': 'FIBRA / Bienes R.','icon': 'building-2',  'color': '#fb923c'},
     'OTRO':   {'label': 'Otro',            'icon': 'briefcase',    'color': '#94a3b8'},
@@ -46,15 +52,18 @@ def _ok():
 @inversiones_bp.route('/')
 def index():
     with get_db() as db:
-        # ── Por plataforma
+        base = {r['plataforma']: {'saldo': float(r['saldo']), 'fecha': r['fecha']}
+                for r in db.execute("SELECT plataforma, saldo, fecha FROM inv_saldo_base")}
+        # ── Por plataforma (solo lo posterior al corte de cada plataforma)
         plat_rows = db.execute("""
-            SELECT categoria,
-                   subcategoria,
-                   SUM(monto) AS total,
+            SELECT m.categoria,
+                   m.subcategoria,
+                   SUM(ABS(m.monto)) AS total,
                    COUNT(*)   AS n
-            FROM est_movimientos
-            WHERE tipo='INVERSION'
-            GROUP BY categoria, subcategoria
+            FROM est_movimientos m
+            LEFT JOIN inv_saldo_base b ON b.plataforma = m.categoria
+            WHERE m.tipo='INVERSION' AND (b.fecha IS NULL OR m.fecha > b.fecha)
+            GROUP BY m.categoria, m.subcategoria
         """).fetchall()
 
         # ── Historial completo (desc)
@@ -82,13 +91,14 @@ def index():
     plataformas_data = []
     total_aportado = total_retirado = total_rendimiento = 0
     for plat in PLATAFORMAS:
-        if plat not in port:
-            continue
-        p = port[plat]
+        b = base.get(plat)
+        if plat not in port and not (b and b['saldo']):
+            continue  # sin corte con saldo ni movimientos: no se muestra (p. ej. «Otro» en 0)
+        p = port.get(plat, {'aportado': 0, 'retirado': 0, 'rendimiento': 0})
         aportado    = round(p['aportado'], 2)
         retirado    = round(p['retirado'], 2)
         rendimiento = round(p['rendimiento'], 2)
-        saldo       = round(aportado - retirado + rendimiento, 2)
+        saldo       = round((b['saldo'] if b else 0) + aportado - retirado + rendimiento, 2)
         total_aportado    += aportado
         total_retirado    += retirado
         total_rendimiento += rendimiento
@@ -98,17 +108,20 @@ def index():
             'retirado':    retirado,
             'rendimiento': rendimiento,
             'saldo':       saldo,
+            'base':        b,
             **PLAT_META.get(plat, PLAT_META['OTRO']),
         })
 
     total_aportado    = round(total_aportado, 2)
     total_retirado    = round(total_retirado, 2)
     total_rendimiento = round(total_rendimiento, 2)
-    saldo_total       = round(total_aportado - total_retirado + total_rendimiento, 2)
+    saldo_total       = round(sum(p['saldo'] for p in plataformas_data), 2)
+    fechas_corte      = sorted({b['fecha'] for b in base.values()})
 
-    # Pct allocation para barra
+    # Distribución por saldo (antes era por aportado histórico).
+    positivo = sum(max(p['saldo'], 0) for p in plataformas_data)
     for p in plataformas_data:
-        p['pct'] = round(p['aportado'] / total_aportado * 100, 1) if total_aportado > 0 else 0
+        p['pct'] = round(max(p['saldo'], 0) / positivo * 100, 1) if positivo > 0 else 0
 
     movs_list = []
     for m in movs:
@@ -133,6 +146,7 @@ def index():
         total_retirado=total_retirado,
         total_rendimiento=total_rendimiento,
         saldo_total=saldo_total,
+        fecha_corte=fechas_corte[-1] if fechas_corte else None,
         plataformas_list=PLATAFORMAS,
         plat_meta=PLAT_META,
         dir_meta=DIR_META,
@@ -168,6 +182,29 @@ def add_mov():
         """, (fecha, fecha, descripcion, monto, 'MANUAL', '', plataforma, direccion, 'INVERSION'))
         db.commit()
 
+    return jsonify({'ok': True})
+
+
+# ── API: ajustar saldo (nuevo corte) ─────────────────────────────────────────
+
+@inversiones_bp.route('/api/saldo', methods=['POST'])
+def set_saldo():
+    """Fija el saldo real de una plataforma hoy: desde aquí se suman los
+    movimientos posteriores."""
+    if not _ok():
+        return jsonify({'error': 'locked'}), 403
+    d = request.json or {}
+    plataforma = clean_str(d.get('plataforma'), 20)
+    try:
+        saldo = round(float(d.get('saldo')), 2)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Saldo inválido'}), 400
+    if plataforma not in PLATAFORMAS or saldo < 0:
+        return jsonify({'error': 'Datos inválidos'}), 400
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO inv_saldo_base (plataforma, saldo, fecha, updated_at) "
+                   "VALUES (?, ?, ?, datetime('now'))", (plataforma, saldo, today_str()))
+        db.commit()
     return jsonify({'ok': True})
 
 

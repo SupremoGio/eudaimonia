@@ -349,6 +349,7 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "FIBRA":                ("INVERSION", "Inversión"),
     "CETES":                ("INVERSION", "Inversión"),
     "GBM":                  ("INVERSION", "Inversión"),
+    "FINSUS":               ("INVERSION", "Inversión"),
     "BITSO":                ("INVERSION", "Crypto"),
     "REGALO":               ("FAMILIA_REGALOS", "Regalos"),
     "GIFT":                 ("FAMILIA_REGALOS", "Regalos"),

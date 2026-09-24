@@ -46,3 +46,7 @@
 @media (max-width:479px){.iv-mov{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:start;padding-top:var(--sp-3);padding-bottom:var(--sp-3)}.iv-mov-r{grid-column:2;grid-row:2;flex-direction:row;gap:var(--sp-3);align-items:baseline}.iv-del{grid-column:3;grid-row:1}}
 .iv-fgrid{gap:var(--sp-3)}
 @media (max-width:379px){.iv-fgrid{grid-template-columns:minmax(0,1fr)}}
+
+/* Saldo de corte */
+.iv-kpis-t{margin:0 0 var(--sp-2)}
+.iv-adj{align-self:flex-start;margin-top:var(--sp-2)}
