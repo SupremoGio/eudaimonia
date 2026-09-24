@@ -11,6 +11,11 @@ import { Empty, ErrorNote, Field, Icon, Modal, Skel, confirmDialog, toast, useLo
 // solo; «Perdido» es manual y en la Radiografía se vuelve gasto de Familia y
 // regalos del mes en que se marca.
 
+// Personas a las que normalmente se presta; «Otros» (muy raro) abre un campo
+// libre para escribir el nombre.
+const PERSONAS = ['Judi', 'Cornelius', 'Leni', 'Pops'];
+const OTROS = 'Otros';
+
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 const TONE = { Pendiente: 'warning', 'Pagado parcial': 'info', Pagado: 'success', Perdido: 'danger' };
@@ -21,7 +26,8 @@ function movLabel(m) {
 
 function NuevoPrestamo({ cand, onClose, onSaved }) {
   const [mov, setMov] = useState(cand.prestamos[0] ? String(cand.prestamos[0].id) : '');
-  const [persona, setPersona] = useState('');
+  const [persona, setPersona] = useState(PERSONAS[0]);
+  const [otro, setOtro] = useState('');
   const [notas, setNotas] = useState('');
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
@@ -29,10 +35,10 @@ function NuevoPrestamo({ cand, onClose, onSaved }) {
   async function submit(e) {
     e.preventDefault();
     if (!mov) { setErr('Elige el movimiento con el que prestaste.'); return; }
-    if (!persona.trim()) { setErr('Indica a quién le prestaste.'); return; }
+    const quien = persona === OTROS ? (otro.trim() || OTROS) : persona;
     setBusy(true); setErr('');
     try {
-      await api.post('/prestamos', { movimiento_id: Number(mov), persona: persona.trim(), notas });
+      await api.post('/prestamos', { movimiento_id: Number(mov), persona: quien, notas });
       toast('Préstamo registrado', 'ok');
       onSaved(); onClose();
     } catch (ex) { setErr(ex.message || 'No se pudo guardar.'); setBusy(false); }
@@ -56,9 +62,17 @@ function NuevoPrestamo({ cand, onClose, onSaved }) {
           </Field>
         )}
         <Field label="Persona" htmlFor="fz-pc-persona">
-          <input id="fz-pc-persona" className="eu-input" list="fz-pc-personas" value={persona} onChange={(e) => setPersona(e.target.value)} placeholder="¿A quién le prestaste?" autoComplete="off" />
-          <datalist id="fz-pc-personas">{cand.personas.map((p) => <option key={p} value={p} />)}</datalist>
+          <select id="fz-pc-persona" className="eu-select" value={persona} onChange={(e) => setPersona(e.target.value)}>
+            {PERSONAS.map((p) => <option key={p} value={p}>{p}</option>)}
+            <option value={OTROS}>Otros</option>
+          </select>
         </Field>
+        {persona === OTROS && (
+          <Field label="Nombre (opcional)" htmlFor="fz-pc-otro" help="Si lo dejas vacío se guarda como «Otros».">
+            <input id="fz-pc-otro" className="eu-input" list="fz-pc-personas" value={otro} onChange={(e) => setOtro(e.target.value)} placeholder="¿A quién le prestaste?" autoComplete="off" />
+            <datalist id="fz-pc-personas">{cand.personas.filter((p) => !PERSONAS.includes(p)).map((p) => <option key={p} value={p} />)}</datalist>
+          </Field>
+        )}
         <Field label="Notas (opcional)" htmlFor="fz-pc-notas" error={err}>
           <input id="fz-pc-notas" className="eu-input" value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej. para el depósito del depa" />
         </Field>
