@@ -11,6 +11,7 @@ Rule hierarchy:
   7. Daily classification: Carbón / Hierro / Oro / Diamante
   8. Hard cap: 3.0× on any multiplier
 """
+import math
 from datetime import date, datetime, timedelta
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, VIRTUE_CATS
@@ -50,11 +51,11 @@ LEVEL_SUBTITLES = {
 # Daily classification thresholds
 CLASSIFICATION = {
     "diamond": {"label": "Diamante", "icon": "💎", "color": "#7dd3fc",
-                "desc": "Oro + todas tus anclas de hoy completas"},
+                "desc": "Oro + al menos 3 de cada 4 anclas de hoy completas"},
     "gold":    {"label": "Oro",      "icon": "🥇", "color": "#fbbf24",
-                "desc": "Hierro + touches repartidos a lo largo del día"},
+                "desc": "Hierro + touches repartidos en el día y en varios pilares"},
     "iron":    {"label": "Hierro",   "icon": "⚔️",  "color": "#94a3b8",
-                "desc": "Completaste tu(s) ancla(s) del día"},
+                "desc": "Completaste tu ancla del día (o al menos su versión mínima)"},
     "carbon":  {"label": "Carbón",   "icon": "🪨",  "color": "#475569",
                 "desc": "Aún no completas tu ancla del día"},
 }
@@ -84,6 +85,45 @@ RECOVERY_GOLD_MIN_TOUCHES  = 3
 RECOVERY_GOLD_MIN_SESSIONS = 2
 RECOVERY_HIERRO_TOUCHES    = 2
 
+# ── Variedad de pilares para Oro ─────────────────────────────────────────────
+# Los 5 touches de Oro valen igual sin importar cuáles sean, así que cinco
+# touches fáciles del mismo pilar llegaban a Oro igual que un día repartido
+# de verdad (Goodhart otra vez: se optimiza el conteo, no el hábito). Pedir
+# al menos 2 pilares distintos entre los touches del día refuerza la
+# variedad sin tener que puntuar la dificultad de cada touch (subjetiva y
+# fácil de inflar). Con tope en los pilares que tienen touches hoy.
+GOLD_MIN_PILLARS = 2
+
+# ── Ancla mínima: el día nunca queda "perdido" ──────────────────────────────
+# Antes el ancla era un todo-o-nada: sin la sesión completa el día quedaba en
+# Carbón aunque registraras 10 touches, lo que dispara el efecto "qué más da"
+# (what-the-hell effect, Polivy & Herman): en cuanto el día se siente
+# perdido, se abandona el resto del esfuerzo. Atomic Habits (Clear: la regla
+# de los 2 minutos, "nunca falles dos veces") y Tiny Habits (Fogg) coinciden
+# en que la versión mínima de un hábito es la que mantiene viva la identidad,
+# y Lally et al. (2010) mostraron que un fallo aislado no rompe la formación
+# del hábito — lo que la rompe es encadenar fallos. La versión mínima (ej. 10
+# min de CCNA) se registra como `<key>__min` en activity_logs: da Hierro
+# igual que el ancla completa, pero NO cuenta como ancla hecha para Oro
+# (anclas extra) ni para Diamante, y da solo una fracción del XP.
+ANCLA_MIN_SUFFIX   = "__min"
+ANCLA_MIN_XP_RATIO = 1 / 3
+
+# ── Diamante proporcional a las anclas del día ──────────────────────────────
+# Exigir TODAS las anclas era desigual entre días: un sábado con 2 anclas
+# daba Diamante con 2/2, mientras un lunes con 4 se quedaba en Oro con 3/4
+# pese a ser objetivamente más esfuerzo. Ahora basta el 75% (redondeando
+# hacia arriba), con piso de 2 anclas (o todas si hay menos de 2): 1→1,
+# 2→2, 3→3, 4→3, 5→4.
+DIAMOND_ANCHOR_RATIO = 0.75
+DIAMOND_MIN_ANCHORS  = 2
+
+
+def _diamond_min_anchors(n_anchors):
+    if n_anchors <= 0:
+        return 0
+    return min(n_anchors, max(DIAMOND_MIN_ANCHORS, math.ceil(n_anchors * DIAMOND_ANCHOR_RATIO)))
+
 # ── Meta de Diamante: ligada al sistema de anclas rotativas, no a pilares ────
 # Dos intentos previos de Diamante fallaron por el mismo motivo de fondo —
 # medían algo que no tiene relación con cómo está diseñado el resto de Acta
@@ -102,7 +142,7 @@ RECOVERY_HIERRO_TOUCHES    = 2
 # "cobertura de la señal correcta" en vez de una proxy ajena — la métrica
 # que se recompensa (anclas completas) es la métrica que ya representa el
 # esfuerzo fuerte del día, no una aproximación.
-# Diamante = Oro + todas las anclas de hoy completas.
+# Diamante = Oro + el 75% de las anclas de hoy (ver DIAMOND_ANCHOR_RATIO).
 _SESSION_ORDER  = ("morning", "afternoon", "night", "any")
 _SESSION_LABELS = {"morning": "Mañana", "afternoon": "Tarde", "night": "Noche", "any": "Cualquier momento"}
 
@@ -416,19 +456,39 @@ def get_daily_classification(date_str=None):
         gold_min_touches  = max(1, gold_min_touches - extra_anchors)
         if sessions_available:
             gold_min_sessions = max(1, gold_min_sessions - extra_anchors)
+    # Variedad de pilares para Oro — ver nota de GOLD_MIN_PILLARS arriba. Con
+    # tope en los pilares que de verdad tienen touches hoy, y en los touches
+    # exigidos (si las anclas extra bajaron la meta a 1 touch, no se piden 2
+    # pilares distintos con ese único touch).
+    pillars_available = {d["pillar"] for d in touch_defs}
+    touch_pillars     = {d["pillar"] for d in touch_defs if d["key"] in done_touch_keys}
+    gold_min_pillars  = min(GOLD_MIN_PILLARS, len(pillars_available), gold_min_touches)
+
+    # Ancla mínima — ver nota de ANCLA_MIN_SUFFIX arriba. Solo cuenta si esa
+    # ancla está programada hoy y su versión completa no está registrada.
+    anchor_keys_today = {d["key"] for d in anchor_defs}
+    min_anchor_keys = {
+        k[:-len(ANCLA_MIN_SUFFIX)] for k in keys if k.endswith(ANCLA_MIN_SUFFIX)
+    } & anchor_keys_today - done_anchor_keys
+
     # En semana de descarga, Hierro también se alcanza solo con touches —
     # "menos anclas exigidas" — sin necesidad de completar la sesión larga.
-    hierro_ok = (not anchor_defs) or (anchors_done >= 1) or (
+    hierro_ok = (not anchor_defs) or (anchors_done >= 1) or bool(min_anchor_keys) or (
         recovery and touch_defs and touches_done >= RECOVERY_HIERRO_TOUCHES
     )
+
+    anchors_done_today = len(done_anchor_keys & anchor_keys_today)
+    diamond_min_anchors = _diamond_min_anchors(len(anchor_defs))
 
     rank = "carbon"
     if hierro_ok:
         rank = "iron"
-        gold_ok = touches_done >= gold_min_touches and len(sessions_covered) >= gold_min_sessions
+        gold_ok = (touches_done >= gold_min_touches
+                   and len(sessions_covered) >= gold_min_sessions
+                   and len(touch_pillars) >= gold_min_pillars)
         if not touch_defs or gold_ok:
             rank = "gold"
-            if not anchor_defs or anchors_done >= len(anchor_defs):
+            if anchors_done_today >= diamond_min_anchors:
                 rank = "diamond"
 
     info = CLASSIFICATION[rank].copy()
@@ -439,14 +499,19 @@ def get_daily_classification(date_str=None):
         "anchors_done": anchors_done, "anchors_total": len(anchor_defs),
         "touches_done": touches_done, "touches_total": len(touch_defs),
         "sessions_covered": len(sessions_covered), "sessions_available": len(sessions_available),
+        "pillars_covered": len(touch_pillars), "pillars_min": gold_min_pillars,
+        "anchors_min": sorted(min_anchor_keys),
+        "diamond_min_anchors": diamond_min_anchors,
         "recovery_week": recovery,
         "next_hint": _next_rank_hint(
             rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
-            sessions_covered, sessions_available, gold_min_sessions
+            sessions_covered, sessions_available, gold_min_sessions,
+            touch_pillars, gold_min_pillars, diamond_min_anchors
         ),
         "next_pct": _next_rank_pct(
             rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
-            sessions_covered, gold_min_sessions, recovery
+            sessions_covered, gold_min_sessions, recovery,
+            touch_pillars, gold_min_pillars, diamond_min_anchors
         ),
     })
     return info
@@ -528,63 +593,92 @@ def get_weekly_classification(monday_str):
 # XP acumulado — este hint se calcula aquí (no en el cliente) para que el
 # widget de "Clasificación de hoy" nunca muestre una meta de XP inventada que
 # no corresponde a la regla real de ascenso de rango.
+def _condensa(names, conj):
+    # Temprano en el día pueden faltar 5-7 anclas a la vez -- unirlas todas
+    # producía una oración de varias líneas en la tarjeta móvil. Con más de 2
+    # se condensa a las primeras dos + contador.
+    if len(names) <= 2:
+        return f" {conj} ".join(names)
+    return f"{names[0]}, {names[1]} {conj} {len(names) - 2} más"
+
+
+def _plural(n, word, suf="es"):
+    return f"{n} {word}{suf if n != 1 else ''}"
+
+
 def _next_rank_hint(rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
-                     sessions_covered, sessions_available, gold_min_sessions):
+                     sessions_covered, sessions_available, gold_min_sessions,
+                     touch_pillars=(), gold_min_pillars=0, diamond_min_anchors=None):
+    if diamond_min_anchors is None:
+        diamond_min_anchors = len(anchor_defs)
     if rank == "diamond":
         return "✦ Diamante alcanzado"
     if rank == "gold":
         missing_anchors = [a for a in anchor_defs if a["key"] not in done_anchor_keys]
-        if not missing_anchors:
+        faltan = diamond_min_anchors - (len(anchor_defs) - len(missing_anchors))
+        if not missing_anchors or faltan <= 0:
             return "Diamante alcanzado"
-        # Temprano en el día pueden faltar 5-7 anclas a la vez -- unirlas todas
-        # con " y " producía una oración de varias líneas en la tarjeta móvil.
-        # Con más de 2 se condensa a las primeras dos + contador.
         names = [a["label"] for a in missing_anchors]
-        if len(names) <= 2:
-            labels = " y ".join(names)
-        else:
-            labels = f"{names[0]}, {names[1]} y {len(names) - 2} más"
-        return f"Completa {labels} → Diamante"
+        if faltan >= len(names):
+            return f"Completa {_condensa(names, 'y')} → Diamante"
+        # Diamante proporcional: no hacen falta todas, cualquiera de las que faltan sirve.
+        return f"Completa {_plural(faltan, 'ancla', 's')} más ({_condensa(names, 'o')}) → Diamante"
     if rank == "iron":
         faltan_touches  = max(0, gold_min_touches - touches_done)
         faltan_sesiones = max(0, gold_min_sessions - len(sessions_covered))
-        if not touch_defs or (faltan_touches <= 0 and faltan_sesiones <= 0):
+        faltan_pilares  = max(0, gold_min_pillars - len(touch_pillars))
+        if not touch_defs or (faltan_touches <= 0 and faltan_sesiones <= 0 and faltan_pilares <= 0):
             return "Oro alcanzado"
-        if faltan_touches > 0 and faltan_sesiones <= 0:
-            return f"Registra {faltan_touches} touch{'es' if faltan_touches != 1 else ''} más → Oro"
-        missing = [s for s in _SESSION_ORDER if s in sessions_available and s not in sessions_covered]
-        labels = " y ".join(_SESSION_LABELS[s] for s in missing[:faltan_sesiones])
-        sesiones_txt = f"toca {labels}" if labels else f"cubre {faltan_sesiones} sesión{'es' if faltan_sesiones != 1 else ''} más"
+        partes = []
         if faltan_touches > 0:
-            return f"Registra {faltan_touches} touch{'es' if faltan_touches != 1 else ''} y {sesiones_txt} → Oro"
-        return f"{sesiones_txt[0].upper()}{sesiones_txt[1:]} → Oro"
+            # Si también faltan pilares, se dice en la misma frase para que el
+            # hint quepa en la tarjeta móvil.
+            if faltan_pilares > 0:
+                partes.append(f"registra {_plural(faltan_touches, 'touch')} en {gold_min_pillars}+ pilares")
+            else:
+                partes.append(f"registra {_plural(faltan_touches, 'touch')}" + ("" if faltan_sesiones else " más"))
+        elif faltan_pilares > 0:
+            partes.append("suma un touch de otro pilar" if faltan_pilares == 1
+                          else f"suma touches de {faltan_pilares} pilares más")
+        if faltan_sesiones > 0:
+            missing = [s for s in _SESSION_ORDER if s in sessions_available and s not in sessions_covered]
+            labels = " y ".join(_SESSION_LABELS[s] for s in missing[:faltan_sesiones])
+            partes.append(f"toca {labels}" if labels else f"cubre {_plural(faltan_sesiones, 'sesión', '')} más")
+        txt = " y ".join(partes)
+        return f"{txt[0].upper()}{txt[1:]} → Oro"
     # carbon
     if anchor_defs:
-        return "Completa tu ancla del día → Hierro"
+        return "Completa tu ancla del día (o su versión mínima) → Hierro"
     return "Registra una actividad de hoy → Hierro"
 
 
 # Progreso (0-100) hacia el SIGUIENTE rango — refleja el cuello de botella real
-# (ej. en Hierro→Oro, el mínimo entre touches y sesiones cubiertas, porque
-# ambos son requisitos y el que va más atrás es el que de verdad te frena).
-# Esto es lo que llena la barra visual junto al hint: la tarjeta deja de
-# mostrar solo "en qué rango estás" y muestra "qué tan cerca estás del que sigue".
+# (ej. en Hierro→Oro, el mínimo entre touches, sesiones y pilares cubiertos,
+# porque todos son requisitos y el que va más atrás es el que de verdad te
+# frena). Esto es lo que llena la barra visual junto al hint: la tarjeta deja
+# de mostrar solo "en qué rango estás" y muestra "qué tan cerca estás del que sigue".
 def _next_rank_pct(rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
-                    sessions_covered, gold_min_sessions, recovery):
+                    sessions_covered, gold_min_sessions, recovery,
+                    touch_pillars=(), gold_min_pillars=0, diamond_min_anchors=None):
+    if diamond_min_anchors is None:
+        diamond_min_anchors = len(anchor_defs)
     if rank == "diamond":
         return 100
     if rank == "gold":
-        if not anchor_defs:
+        if not anchor_defs or not diamond_min_anchors:
             return 100
-        return round(100 * len(done_anchor_keys) / len(anchor_defs))
+        done = len({a["key"] for a in anchor_defs} & set(done_anchor_keys))
+        return round(100 * min(1.0, done / diamond_min_anchors))
     if rank == "iron":
         if not touch_defs:
             return 100
-        touch_frac = min(1.0, touches_done / gold_min_touches) if gold_min_touches else 1.0
-        sess_frac  = min(1.0, len(sessions_covered) / gold_min_sessions) if gold_min_sessions else 1.0
-        return round(100 * min(touch_frac, sess_frac))
+        touch_frac  = min(1.0, touches_done / gold_min_touches) if gold_min_touches else 1.0
+        sess_frac   = min(1.0, len(sessions_covered) / gold_min_sessions) if gold_min_sessions else 1.0
+        pillar_frac = min(1.0, len(touch_pillars) / gold_min_pillars) if gold_min_pillars else 1.0
+        return round(100 * min(touch_frac, sess_frac, pillar_frac))
     # carbon — el ancla es un evento binario (no hay "medio ancla"), así que
-    # el % real es 0 hasta que se completa; el hint de arriba es lo accionable.
+    # el % real es 0 hasta que se completa (o su versión mínima); el hint de
+    # arriba es lo accionable.
     if recovery and touch_defs:
         return round(100 * min(1.0, touches_done / RECOVERY_HIERRO_TOUCHES))
     return 0
