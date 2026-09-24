@@ -98,3 +98,26 @@ def test_presupuesto_50_30_20_manda_comida_fuera_a_deseos(test_db):
     assert d['buckets']['necesidades']['total_gastado'] == 1000
     assert d['buckets']['deseos']['total_gastado'] == 800
     assert [c['nombre'] for c in d['buckets']['deseos']['cats']] == ['Comida fuera']
+
+
+def test_migracion_carga_los_limites_del_plan_una_sola_vez(test_db):
+    with database.get_db() as db:
+        db.execute("DELETE FROM migration_log WHERE version='finanzas_limites_plan_2026_09'")
+        db.execute("DELETE FROM est_budgets")
+        db.execute("INSERT INTO est_budgets (categoria, nombre, limite) VALUES ('VIVIENDA', 'Vivienda', 7429.84)")
+        db.execute("INSERT INTO est_budgets (categoria, nombre, limite) VALUES ('VIAJES', 'Viajes', 800)")
+        db.execute("INSERT INTO est_budgets (categoria, nombre, limite) VALUES ('INVERSION', 'Ahorro', 4000)")
+        db.commit()
+    database.init_db()
+    with database.get_db() as db:
+        lim = {r['categoria']: r['limite'] for r in db.execute("SELECT categoria, limite FROM est_budgets")}
+        assert lim['VIVIENDA'] == 6950 and lim['SUPER'] == 2000 and lim['COMIDA_FUERA'] == 2200
+        assert lim['CUIDADO_PERSONAL'] == 500 and lim['PROYECTOS'] == 200 and lim['DIGITAL'] == 1246
+        assert 'VIAJES' not in lim
+        assert lim['INVERSION'] == 4000          # fuera del plan: no se toca
+        assert len([c for c in lim if c != 'INVERSION']) == 14
+        db.execute("UPDATE est_budgets SET limite=2300 WHERE categoria='SUPER'")   # edición del usuario
+        db.commit()
+    database.init_db()
+    with database.get_db() as db:
+        assert db.execute("SELECT limite FROM est_budgets WHERE categoria='SUPER'").fetchone()['limite'] == 2300

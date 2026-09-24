@@ -5079,6 +5079,40 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_prestamos_clasificacion_csv_2026_09 migration warning: {e}")
 
+        # Límites del plan de presupuesto acordado con el usuario (total ~$20,900
+        # con $4,000 de ahorro como meta mínima aparte). Súper va en $2,000 y no
+        # en los $1,500 del plan: la limpieza y el cuidado personal comprados en
+        # el súper caen en esa categoría (el banco da un cargo por ticket).
+        # Viajes = 0 en el plan («se pagan con extras»); en la app un límite 0
+        # significa «sin presupuesto», así que se quita su límite. Una sola vez
+        # (migration_log): si luego el usuario edita un límite, no se pisa.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_limites_plan_2026_09'"
+        ).fetchone():
+            try:
+                _limites = [
+                    ('VIVIENDA', 'Vivienda', 6950), ('SUPER', 'Súper', 2000), ('SALUD', 'Salud', 300),
+                    ('TRANSPORTE', 'Transporte', 2105), ('CUIDADO_PERSONAL', 'Cuidado personal', 500),
+                    ('COMIDA_FUERA', 'Comida fuera', 2200), ('CAFE/PAN', 'Café & Pan', 300),
+                    ('DIGITAL', 'Digital', 1246), ('FAMILIA_REGALOS', 'Familia y regalos', 500),
+                    ('SALSA', 'Salsa / Baile', 300), ('DEPORTE', 'Deporte', 200), ('ROPA', 'Ropa', 400),
+                    ('OCIO', 'Ocio', 200), ('PROYECTOS', 'Proyectos', 200),
+                ]
+                for cat, nombre, lim in _limites:
+                    db.execute(
+                        "INSERT INTO est_budgets (categoria, nombre, limite, periodo) VALUES (?, ?, ?, 'mensual') "
+                        "ON CONFLICT(categoria) DO UPDATE SET limite=excluded.limite, nombre=excluded.nombre",
+                        (cat, nombre, float(lim)))
+                n_viajes = db.execute("DELETE FROM est_budgets WHERE categoria='VIAJES'").rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_limites_plan_2026_09",
+                     f"{len(_limites)} límites del plan cargados (Súper 2,000); límite de Viajes quitado: {n_viajes}")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_limites_plan_2026_09 migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
