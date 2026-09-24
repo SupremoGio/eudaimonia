@@ -5001,6 +5001,84 @@ def init_db():
         db.execute("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('presupuesto_meta_ahorro', '4000')")
         db.commit()
 
+        # Clasificación de préstamos que el usuario hizo sobre el CSV exportado
+        # de «Por cobrar» (prestamos_2026-09-23_corregido.csv) + sus respuestas:
+        # 2571 es devolución del 2138 aunque entró como Gasto; 2306 es de
+        # Cornelius; 1560 (ABONO) se liga al 1469; de 2130/2077 (mismo día y
+        # monto) solo se registra 2130. Sin registrar a propósito: 2077
+        # (posible duplicado) y 2999 (sin persona). Cada fila solo se aplica si
+        # el id coincide con fecha y monto del CSV; no toca préstamos o ligas
+        # que el usuario ya haya hecho a mano.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_prestamos_clasificacion_csv_2026_09'"
+        ).fetchone():
+            try:
+                _prest_csv = [  # (movimiento, fecha, monto, persona)
+                    (2306, '2026-07-11', 3400, 'Cornelius'), (2307, '2026-07-10', 1000, 'Judi'),
+                    (2138, '2026-06-10', 4500, 'Judi'),      (2088, '2026-05-15', 1000, 'Judi'),
+                    (2130, '2026-05-12', 2000, 'Cornelius'), (2073, '2026-05-11', 2000, 'Judi'),
+                    (1836, '2026-03-08', 2000, 'Judi'),      (1772, '2026-02-23', 2000, 'Judi'),
+                    (1679, '2026-01-25', 4500, 'Judi'),      (1534, '2025-12-15', 150, 'Aurora'),
+                    (1469, '2025-11-26', 10000, 'Judi'),     (1444, '2025-11-21', 2000, 'Judi'),
+                    (2779, '2025-09-15', 7000, 'Judi'),      (2767, '2025-09-07', 950, 'Judi'),
+                    (2810, '2025-08-23', 500, 'Judi'),       (2903, '2025-07-04', 1500, 'Judi'),
+                    (2870, '2025-06-11', 412, 'Judi'),       (2864, '2025-06-07', 600, 'Judi'),
+                    (3004, '2025-03-27', 2513, 'Judi'),      (3026, '2025-02-23', 500, 'Judi'),
+                    (3785, '2023-06-16', 7000, 'Judi'),
+                ]
+                _dev_csv = [  # (devolución, fecha, monto, movimiento del préstamo)
+                    (2571, '2026-09-11', 4500, 2138), (1560, '2025-12-22', 5000, 1469),
+                    (2776, '2025-09-11', 7000, 2779), (2898, '2025-07-02', 1500, 2903),
+                    (2872, '2025-06-11', 600, 2864),  (3003, '2025-03-27', 2512, 3004),
+                    (3028, '2025-02-24', 500, 3026),
+                ]
+
+                def _coincide(mid, fecha, monto):
+                    r = db.execute("SELECT fecha, monto, tipo FROM est_movimientos WHERE id=?", (mid,)).fetchone()
+                    if r and r['fecha'] == fecha and round(abs(float(r['monto'])), 2) == round(float(monto), 2):
+                        return r
+                    return None
+
+                reg, omit = 0, []
+                for mid, fecha, monto, persona in _prest_csv:
+                    r = _coincide(mid, fecha, monto)
+                    if not r or r['tipo'] != 'GASTO':
+                        omit.append(f"préstamo {mid}: no coincide")
+                        continue
+                    if db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (mid,)).fetchone():
+                        continue  # ya registrado a mano
+                    db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado' WHERE id=?", (mid,))
+                    db.execute(
+                        "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at) "
+                        "VALUES (?, 'OTORGADO', ?, ?, 'Clasificado desde CSV', ?, datetime('now'))",
+                        (persona, float(monto), fecha, mid))
+                    reg += 1
+
+                lig = 0
+                for did, fecha, monto, loan_mid in _dev_csv:
+                    r = _coincide(did, fecha, monto)
+                    p = db.execute("SELECT id FROM est_prestamos WHERE movimiento_id=?", (loan_mid,)).fetchone()
+                    if not r or not p:
+                        omit.append(f"devolución {did}: {'no coincide' if not r else f'sin préstamo {loan_mid}'}")
+                        continue
+                    if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (did,)).fetchone():
+                        continue
+                    # 2571 entró como Gasto; el usuario confirmó que es dinero que regresó.
+                    db.execute("UPDATE est_movimientos SET tipo='INGRESO', categoria='PRESTAMOS', subcategoria='' WHERE id=?", (did,))
+                    db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) "
+                               "VALUES (?, ?, datetime('now'))", (p['id'], did))
+                    lig += 1
+
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_prestamos_clasificacion_csv_2026_09",
+                     f"Préstamos registrados: {reg} | devoluciones ligadas: {lig}"
+                     + (" | omitidos: " + "; ".join(omit) if omit else ""))
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_prestamos_clasificacion_csv_2026_09 migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
