@@ -53,6 +53,11 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-lbl{display:block}
 .acta-sub{display:flex;align-items:center;gap:var(--sp-2);margin-top:2px;flex-wrap:wrap}
 .acta-tag{height:18px;padding:0 6px;font-size:var(--fs-11)}
+/* Versión mínima del ancla: chip bajo la tarjeta, se oculta al completar el ancla entera */
+.acta-min{align-self:flex-start;height:26px;padding:0 var(--sp-2);font-size:var(--fs-12)}
+.acta-min svg{width:12px;height:12px}
+.acta-min .t-meta{margin-left:2px}
+.acta-item[data-done="1"] .acta-min{display:none}
 .acta-reflect{min-height:64px;font-size:var(--fs-13)}
 .is-reflect-desk .acta-reflect{display:none}
 @media (min-width:1024px){.is-reflect-desk .acta-reflect{display:block}}

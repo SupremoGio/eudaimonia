@@ -69,14 +69,19 @@ Puedes agregar/editar recompensas directamente desde la tienda.
 
 ## Clasificación Diaria
 
-Evaluación automática al final de cada día:
+Calculada en vivo por `get_daily_classification()` (`modules/gamification/engine.py`)
+a partir de las anclas y touches de Acta Diurna — no depende del XP:
 
-| Rango | Condición |
-|-------|-----------|
-| 🪨 **Carbón** | <7 XP o sin acciones de progreso |
-| ⚔️ **Hierro** | 8–15 XP + ≥2 categorías |
-| 🥇 **Oro** | 16+ XP + ≥3 categorías |
-| 💎 **Diamante** | 20+ XP + ≥1 acción Alto Impacto |
+| Rango | Condición | Semana de descarga |
+|-------|-----------|--------------------|
+| 🪨 **Carbón** | Sin ancla del día (ni su versión mínima) | — |
+| ⚔️ **Hierro** | ≥1 ancla completa **o** su versión mínima | también con 2 touches |
+| 🥇 **Oro** | Hierro + 5 touches, 3 sesiones del día y ≥2 pilares distintos | 3 touches, 2 sesiones |
+| 💎 **Diamante** | Oro + 75% de las anclas de hoy (redondeo arriba, piso de 2) | igual |
+
+Cada ancla completa extra (después de la primera) descuenta 1 touch y 1 sesión
+de la meta de Oro. La versión mínima de un ancla da ⅓ del XP y no cuenta para
+Oro ni Diamante.
 
 ---
 

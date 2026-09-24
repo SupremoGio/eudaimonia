@@ -27,6 +27,14 @@
     <span class="eu-act-xp"><span>+{{ item.pts }} XP</span>{% if item.ec %}<span class="fg-ec">+{{ item.ec }} EC</span>{% endif %}</span>
     {% endif %}
   {% if item.eury_proxy %}</a>{% else %}</button>{% endif %}
+  {% if is_ancla and not item.eury_proxy %}
+  {# Versión mínima del ancla (ej. 10 min): da Hierro aunque no alcance la sesión completa #}
+  <button type="button" class="eu-chip acta-min js-min" data-key="{{ item.key }}"
+    aria-pressed="{{ 'true' if item.done_min else 'false' }}"
+    title="Hice la versión mínima (asegura Hierro, sin contar para Oro/Diamante)">
+    <i data-lucide="feather"></i>Versión mínima<span class="t-meta num">+{{ [1, (item.pts / 3)|round|int]|max }} XP</span>
+  </button>
+  {% endif %}
   {% if reflect_desk or reflect_all %}
   <textarea class="eu-textarea acta-reflect js-reflect" data-key="{{ item.key }}" rows="2"
     aria-label="Reflexión: {{ item.label }}" placeholder="{{ REFLECT_PLACEHOLDERS.get(item.key, 'Escribe aquí tu reflexión…') }}">{{ item.reflexion or '' }}</textarea>

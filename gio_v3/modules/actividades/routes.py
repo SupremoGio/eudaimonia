@@ -160,6 +160,7 @@ def build_acta_diurna_context():
     by_pillar = {}
     for item in unique_items:
         item["done"] = item["key"] in done_today
+        item["done_min"] = not item["done"] and (item["key"] + engine.ANCLA_MIN_SUFFIX) in done_today
         if item["key"] in REFLECT_KEYS:
             item["reflexion"] = reflexiones_today.get(item["key"], "")
         if item.get("cadence") == "weekly":
@@ -300,10 +301,29 @@ def log_activity():
 
     pts = act['pts']
     cat = act['cat']
+    ec  = None
     removed_id = None
     log_id     = None
+    base_key   = key
+    min_key    = key + engine.ANCLA_MIN_SUFFIX
+    upgraded_min_id = None
+
+    # Ancla mínima (ver engine.ANCLA_MIN_SUFFIX): se registra como otra fila
+    # `<key>__min`, con una fracción del XP y sin EC. Solo para anclas.
+    minimal = bool(request.json.get('minimal'))
+    if minimal:
+        if act['effective_type'] != 'ancla':
+            return jsonify({'error': 'solo las anclas tienen versión mínima'}), 400
+        key = min_key
+        pts = max(1, round(pts * engine.ANCLA_MIN_XP_RATIO))
+        ec  = 0
 
     with get_db() as db:
+        if minimal and db.execute(
+            "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (base_key, today)
+        ).fetchone():
+            return jsonify({'error': 'el ancla completa ya está registrada'}), 400
+
         existing = db.execute(
             "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (key, today)
         ).fetchone()
@@ -316,8 +336,20 @@ def log_activity():
                 "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)", (key, today, pts)
             )
             log_id = cursor.lastrowid
+            # Completar el ancla después de su versión mínima la reemplaza:
+            # no se suman los dos registros ni los dos XP.
+            if not minimal:
+                prev_min = db.execute(
+                    "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (min_key, today)
+                ).fetchone()
+                if prev_min:
+                    upgraded_min_id = prev_min["id"]
+                    db.execute("DELETE FROM activity_logs WHERE id=?", (upgraded_min_id,))
         db.commit()
     _t1 = time.perf_counter()
+
+    if upgraded_min_id:
+        engine.remove_activity(upgraded_min_id)
 
     if removed_id:
         gam = engine.remove_activity(removed_id)
@@ -327,16 +359,17 @@ def log_activity():
         print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
         return jsonify({'action': 'removed', 'pts': -pts, 'stats': stats, 'gam': gam})
 
-    gam = engine.process_activity(key, pts, cat, log_id)
+    gam = engine.process_activity(key, pts, cat, log_id, ec=ec)
     _t2 = time.perf_counter()
-    one_time = bool(act.get('one_time'))
+    one_time = bool(act.get('one_time')) and not minimal
     if one_time:
         adefs.deactivate(key)
     stats = get_dashboard_stats()
     _t3 = time.perf_counter()
     print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
     return jsonify({'action': 'added', 'pts': pts, 'xp': gam['xp'], 'ec': gam['ec'],
-                    'log_id': log_id, 'stats': stats, 'gam': gam, 'one_time': one_time})
+                    'log_id': log_id, 'stats': stats, 'gam': gam, 'one_time': one_time,
+                    'minimal': minimal, 'replaced_min': bool(upgraded_min_id)})
 
 
 @actividades_bp.route('/api/reflexion', methods=['POST'])

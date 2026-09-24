@@ -113,7 +113,7 @@
 {%- set order = ['carbon', 'hierro', 'oro', 'diamante'] -%}
 {%- set cur = RANK_KEY.get(current, current) or 'carbon' -%}
 {%- set ci = order.index(cur) if cur in order else 0 -%}
-{%- set info = {'carbon': ('Carbón', 'inicio'), 'hierro': ('Hierro', '1 ancla'), 'oro': ('Oro', '+ touches'), 'diamante': ('Diamante', 'todas')} -%}
+{%- set info = {'carbon': ('Carbón', 'inicio'), 'hierro': ('Hierro', '1 ancla'), 'oro': ('Oro', '+ touches'), 'diamante': ('Diamante', '75% anclas')} -%}
 <ol class="eu-ranks{% if sm %} eu-ranks--sm{% endif %} js-ranks" aria-label="Clasificación del día: {{ info[cur][0] }}">
   {%- for r in order %}
   <li class="eu-rank-step{% if loop.index0 < ci %} is-past{% elif loop.index0 == ci %} is-now{% else %} is-next{% endif %}" data-rank="{{ r }}"{% if loop.index0 == ci %} aria-current="step"{% endif %}>

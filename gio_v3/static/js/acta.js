@@ -198,6 +198,7 @@
       if (!wasDone) celebrate(btn || $('.acta-item[data-key="' + key + '"] .js-act'), item ? item.dataset.pts : 0);
       return post('/actividades/api/activity/log', { key: key }).then(function (d) {
         if (d.action === 'added') {
+          if (d.replaced_min) setMin(key, false);
           showUndo(esc(labelOf(key)) + ' · <span class="fg-xp num">+' + (d.xp != null ? d.xp : d.pts) + ' XP</span>' +
                    (d.ec > 0 ? ' <span class="fg-ec num">+' + d.ec + ' EC</span>' : ''), key);
         } else if (!isUndo) {
@@ -217,7 +218,33 @@
     });
   }
 
+  // ── Versión mínima de un ancla: asegura Hierro sin la sesión completa ─────
+  function setMin(key, on) {
+    $$('.js-min[data-key="' + key + '"]').forEach(function (b) { b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+  }
+  function logMin(key, btn) {
+    var pk = key + ':min';
+    if (pending[pk] || isDone(key)) return;
+    var was = btn.getAttribute('aria-pressed') === 'true';
+    pending[pk] = true;
+    setMin(key, !was);
+    post('/actividades/api/activity/log', { key: key, minimal: true }).then(function (d) {
+      if (d.action === 'added') {
+        celebrate(btn, d.xp);
+        toast('Versión mínima de ' + labelOf(key) + ' · +' + d.xp + ' XP — el día sigue en juego', 'win');
+      } else {
+        toast('Versión mínima quitada');
+      }
+      afterGam(d);
+    }).catch(function () {
+      setMin(key, was);
+      toast('No se pudo registrar', 'err');
+    }).then(function () { delete pending[pk]; });
+  }
+
   root.addEventListener('click', function (e) {
+    var m = e.target.closest('.js-min');
+    if (m && root.contains(m)) { logMin(m.dataset.key, m); return; }
     var b = e.target.closest('.js-act');
     if (b && root.contains(b)) { logAct(b.dataset.key, b); return; }
     var rm = e.target.closest('.js-rm');
