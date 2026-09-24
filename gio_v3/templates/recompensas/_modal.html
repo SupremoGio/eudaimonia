@@ -8,6 +8,7 @@
     {{ ui.field('cool', 'Cooldown (días)', type='number', value='30', min=0) }}
   </div>
   {{ ui.field('desc', 'Descripción', placeholder='Opcional', maxlength=200) }}
+  <label class="eu-hstack rw-check"><input type="checkbox" id="f-unica"> <span class="t-ui">Única vez</span> <span class="t-meta">· se canjea una sola vez (Kindle, reloj…); ya no vuelve a aparecer</span></label>
   <label class="eu-hstack rw-check"><input type="checkbox" id="f-weekend"> <span class="t-ui">Solo fin de semana</span> <span class="t-meta">· evita que se vuelva hábito diario</span></label>
 </form>
 <div class="eu-modal-ft">

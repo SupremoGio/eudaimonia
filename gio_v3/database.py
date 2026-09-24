@@ -5225,6 +5225,31 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_limites_plan_2026_09 migration warning: {e}")
 
+        # Migrate rewards: unica — artículos que se compran una sola vez (Kindle,
+        # Apple Watch…). Antes solo existía el cooldown, así que al vencer
+        # (90 días en el Kindle) la recompensa volvía a aparecer como disponible.
+        # Una vez canjeada, una recompensa única queda como «Conseguida».
+        try:
+            rw_cols = [r["name"] for r in db.execute("PRAGMA table_info(rewards)").fetchall()]
+            if "unica" not in rw_cols:
+                db.execute("ALTER TABLE rewards ADD COLUMN unica INTEGER DEFAULT 0")
+                db.commit()
+            if not db.execute(
+                "SELECT id FROM migration_log WHERE version='rewards_unica_2026_09'"
+            ).fetchone():
+                from modules.recompensas.routes import es_unica_por_nombre
+                _ids = [r["id"] for r in db.execute("SELECT id, name FROM rewards").fetchall()
+                        if es_unica_por_nombre(r["name"])]
+                for _id in _ids:
+                    db.execute("UPDATE rewards SET unica=1 WHERE id=?", (_id,))
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("rewards_unica_2026_09", f"{len(_ids)} recompensas marcadas como de una sola vez por nombre")
+                )
+                db.commit()
+        except Exception as e:
+            print(f"[DB] rewards unica migration warning: {e}")
+
         # ── RECORDATORIOS — tema (Finanzas / Casa y cuidado / Eventos / Otros)
         # para filtrar con chips. La columna se agrega si falta; el tema se
         # asigna por palabras clave solo a los que no tienen uno (una vez,

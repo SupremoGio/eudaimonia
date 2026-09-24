@@ -28,7 +28,22 @@ def _get_all_rewards():
     return [dict(r) for r in rows]
 
 
+# Artículos que normalmente se compran una sola vez (gadgets, equipo). Solo
+# se usa para la migración inicial y como sugerencia; el usuario lo cambia
+# en el formulario («Única vez»).
+_UNICA_WORDS = ("kindle", "watch", "ipad", "tablet", "iphone", "airpods", "laptop", "macbook", "consola",
+                "playstation", "ps5", "nintendo", "xbox", "bicicleta", "monitor", "cámara", "camara",
+                "audífonos", "audifonos", "silla", "escritorio", "teclado", "celular", "televisión", "pantalla")
+
+
+def es_unica_por_nombre(name):
+    n = (name or "").lower()
+    return any(w in n for w in _UNICA_WORDS)
+
+
 def _can_redeem(reward, ec_balance, current_level):
+    if reward.get("unica") and reward.get("last_redeemed"):
+        return False, "Ya la conseguiste"
     if ec_balance < reward["ec_cost"]:
         return False, "EC insuficientes"
     if current_level < reward["level_required"]:
@@ -73,7 +88,10 @@ def _reward_icon(name):
 
 def _reward_status(r, ec_balance, current_level):
     """available · level (bloqueada por nivel) · wait (cooldown, fin de semana,
-    badge) · ec (solo faltan EC) — los filtros de la tienda V2."""
+    badge) · ec (solo faltan EC) · done (única ya canjeada) — los filtros de la
+    tienda V2."""
+    if r.get("unica") and r.get("last_redeemed"):
+        return "done"
     if r["can_redeem"]:
         return "available"
     if current_level < r["level_required"]:
@@ -98,6 +116,8 @@ def index():
         r["status"] = _reward_status(r, ec_balance, current_level)
         r["icon"] = _reward_icon(r["name"])
         r["ec_pct"] = min(100, round(ec_balance / r["ec_cost"] * 100)) if r["ec_cost"] else 100
+    # Las conseguidas (únicas ya canjeadas) al final
+    rewards.sort(key=lambda r: r["status"] == "done")
 
     today = today_date()
     week_start = (today - timedelta(days=today.weekday())).isoformat()
@@ -120,7 +140,7 @@ def index():
         ec_week      = ec_week,
         ec_daily     = round(ec_30 / 30, 1),
         history      = history,
-        counts       = {k: sum(1 for r in rewards if r["status"] == k) for k in ("available", "level", "wait", "ec")},
+        counts       = {k: sum(1 for r in rewards if r["status"] == k) for k in ("available", "level", "wait", "ec", "done")},
     )
 
 
@@ -147,8 +167,8 @@ def create_reward():
     now = datetime.now().isoformat()
     with get_db() as db:
         db.execute(
-            """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, weekend_only, created_at)
-               VALUES (?,?,?,?,?,?,?,?)""",
+            """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, weekend_only, created_at, unica)
+               VALUES (?,?,?,?,?,?,?,?,?)""",
             (
                 name,
                 data.get("description", ""),
@@ -158,6 +178,7 @@ def create_reward():
                 int(data.get("cooldown_days", 0)),
                 int(bool(data.get("weekend_only", False))),
                 now,
+                int(bool(data.get("unica", es_unica_por_nombre(name)))),
             )
         )
         db.commit()
@@ -174,7 +195,7 @@ def update_reward(reward_id):
             return jsonify({"error": "not found"}), 404
         db.execute(
             """UPDATE rewards SET name=?, description=?, ec_cost=?, level_required=?,
-               badge_required=?, cooldown_days=?, weekend_only=? WHERE id=?""",
+               badge_required=?, cooldown_days=?, weekend_only=?, unica=? WHERE id=?""",
             (
                 data.get("name", row["name"]),
                 data.get("description", row["description"]),
@@ -183,6 +204,7 @@ def update_reward(reward_id):
                 data.get("badge_required", row["badge_required"]),
                 int(data.get("cooldown_days", row["cooldown_days"])),
                 int(bool(data.get("weekend_only", row["weekend_only"]))),
+                int(bool(data.get("unica", row["unica"]))),
                 reward_id,
             )
         )

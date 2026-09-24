@@ -1,7 +1,8 @@
 <div class="eu-chips rw-filters" role="group" aria-label="Filtrar recompensas">
-  <button type="button" class="eu-chip" aria-pressed="true" data-filter="all">Todas <span class="ct">{{ rewards|length }}</span></button>
+  <button type="button" class="eu-chip" aria-pressed="true" data-filter="all">Todas <span class="ct">{{ rewards|length - counts.done }}</span></button>
   <button type="button" class="eu-chip" aria-pressed="false" data-filter="available">Disponibles <span class="ct">{{ counts.available }}</span></button>
   <button type="button" class="eu-chip" aria-pressed="false" data-filter="ec">Te faltan EC <span class="ct">{{ counts.ec }}</span></button>
   <button type="button" class="eu-chip" aria-pressed="false" data-filter="level">Por nivel <span class="ct">{{ counts.level }}</span></button>
   <button type="button" class="eu-chip" aria-pressed="false" data-filter="wait">En espera <span class="ct">{{ counts.wait }}</span></button>
+  {% if counts.done %}<button type="button" class="eu-chip" aria-pressed="false" data-filter="done">Conseguidas <span class="ct">{{ counts.done }}</span></button>{% endif %}
 </div>
