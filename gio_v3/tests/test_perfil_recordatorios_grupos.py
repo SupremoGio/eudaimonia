@@ -90,3 +90,52 @@ def test_la_pagina_muestra_grupos(client):
     _add('2020-01-01')
     html = client.get('/perfil/').get_data(as_text=True)
     assert 'pf-remg--vencidos' in html and 'Posponer' in html
+
+
+# ── Fase 2: temas ────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize('desc,tema', [('Pagar Credito HSBC', 'finanzas'), ('EDO CUENTA BBVA DEBITO', 'finanzas'),
+                                       ('Corte Invex', 'finanzas'), ('Candlelight MJ', 'eventos'),
+                                       ('JABON POTASICO Y NEEM', 'casa'), ('Tomar vitaminas', 'casa'),
+                                       ('Llamar a mamá', 'otros')])
+def test_tema_por_palabras_clave(desc, tema):
+    assert rec.tema_auto(desc) == tema
+
+
+def test_alta_asigna_tema_automatico_o_el_elegido(client):
+    client.post('/perfil/api/reminder/add', json={'description': 'Pagar Renta', 'type': 'unico'})
+    client.post('/perfil/api/reminder/add', json={'description': 'Pagar Renta', 'type': 'unico', 'tema': 'casa'})
+    with database.get_db() as db:
+        assert [r['tema'] for r in db.execute("SELECT tema FROM reminders ORDER BY id")] == ['finanzas', 'casa']
+
+
+def test_migracion_no_pisa_tema_existente(test_db):
+    with database.get_db() as db:
+        db.execute("INSERT INTO reminders (description, type, is_active, created_at, tema) VALUES ('Pagar luz','unico',1,'x','eventos')")
+        db.execute("INSERT INTO reminders (description, type, is_active, created_at, tema) VALUES ('Corte Invex','unico',1,'x','')")
+        db.execute("DELETE FROM migration_log WHERE version='recordatorios_tema_2026_09'")
+        db.commit()
+    database.init_db()
+    with database.get_db() as db:
+        assert [r['tema'] for r in db.execute("SELECT tema FROM reminders ORDER BY id")] == ['eventos', 'finanzas']
+
+
+def test_pagina_muestra_chips_por_tema(client):
+    _add('2026-10-05'); _add('2026-10-06')
+    with database.get_db() as db:
+        db.execute("UPDATE reminders SET tema='finanzas' WHERE id=1"); db.execute("UPDATE reminders SET tema='eventos' WHERE id=2")
+        db.commit()
+    html = client.get('/perfil/').get_data(as_text=True)
+    assert 'js-rem-tema' in html and 'data-tema="finanzas"' in html and 'data-tema="eventos"' in html
+
+
+def test_campanita_separa_vencidos_de_proximos(client):
+    from utils import today_str
+    hoy = date.fromisoformat(today_str())
+    _add('2020-01-01')
+    _add(hoy.isoformat())
+    from datetime import timedelta
+    _add((hoy + timedelta(days=3)).isoformat())
+    html = client.get('/').get_data(as_text=True)
+    assert 'Vencidos y de hoy <span class="js-dl-sec-ct">2</span>' in html
+    assert 'Próximos días <span class="js-dl-sec-ct">1</span>' in html

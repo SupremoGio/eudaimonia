@@ -49,9 +49,17 @@
 {% set dl_labels = {'reminder': 'Recordatorio', 'task': 'Tarea · Praxis', 'wishlist': 'Wishlist', 'partido': 'Partido · Fútbol', 'planta_riego': 'Riego · Plantas', 'planta_trasplante': 'Trasplante · Plantas'} %}
 {% call ui.modal('m-notif', 'Recordatorios', eyebrow='Pendiente', cls='eu-scrim--pop') %}
 <div class="eu-modal-bd dash-notif js-radar-box">
+  {# Vencidos y de hoy primero, en su propia sección; luego lo próximo. #}
+  {% set urg = data.deadlines|selectattr('days', 'le', 0)|list %}
+  {% set prox = data.deadlines|selectattr('days', 'gt', 0)|list %}
   {% if data.deadlines %}
-  <div class="eu-list js-radar-list">
-    {% for dl in data.deadlines %}{% include "dashboard/_radar_row.html" %}{% endfor %}
+  <div class="js-radar-list">
+    {% for titulo, items, cls in [('Vencidos y de hoy', urg, 'is-urgent'), ('Próximos días', prox, '')] if items %}
+    <div class="dash-notif-sec js-dl-sec {{ cls }}">
+      <div class="t-eyebrow dash-notif-hd">{{ titulo }} <span class="js-dl-sec-ct">{{ items|length }}</span></div>
+      <div class="eu-list">{% for dl in items %}{% include "dashboard/_radar_row.html" %}{% endfor %}</div>
+    </div>
+    {% endfor %}
   </div>
   {% endif %}
   <div class="js-radar-empty"{% if data.deadlines %} hidden{% endif %}>

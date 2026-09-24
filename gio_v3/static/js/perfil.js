@@ -299,6 +299,8 @@
       $('remForm').hidden = true;
       if (rrow) remRemove(rrow);
       toast('Eliminado');
+    } else if (b.classList.contains('js-rem-tema')) {
+      remFiltro(b.dataset.tema);
     } else if (b.classList.contains('js-rem-snooze')) {
       snoozeOpen(row, b);
     } else if (b.classList.contains('js-snooze-opt')) {
@@ -371,12 +373,38 @@
   function remRemove(row) {
     var g = row.closest('details');
     row.remove();
-    if (g) {
-      var n = g.querySelectorAll('.pf-rem').length;
-      if (!n) g.remove(); else g.querySelector('summary .eu-badge').textContent = n;
-    }
+    if (g && !g.querySelector('.pf-rem')) g.remove();
     listEmpty('remindersList', '.js-rem-empty');
+    remFiltro(remTema);
   }
+
+  /* Chips de tema: ocultan filas de otros temas y los grupos que quedan
+     vacíos; los contadores de grupo cuentan solo lo visible. */
+  var remTema = '';
+  try { remTema = localStorage.getItem('eu.rem.tema') || ''; } catch (e) {}
+  function remFiltro(tema) {
+    var chips = document.querySelectorAll('.js-rem-tema');
+    if (!chips.length) tema = '';
+    else if (tema && !document.querySelector('.js-rem-tema[data-tema="' + tema + '"]')) tema = '';
+    remTema = tema;
+    try { localStorage.setItem('eu.rem.tema', tema); } catch (e) {}
+    chips.forEach(function (c) { c.setAttribute('aria-pressed', String(c.dataset.tema === tema)); });
+    var visibles = 0;
+    document.querySelectorAll('#remindersList details').forEach(function (g) {
+      var n = 0;
+      g.querySelectorAll('.pf-rem').forEach(function (r) {
+        var ok = !tema || r.dataset.tema === tema;
+        r.hidden = !ok; if (ok) n++;
+      });
+      g.hidden = !n; visibles += n;
+      var ct = g.querySelector('.js-remg-ct'); if (ct) ct.textContent = n;
+    });
+    var list = $('remindersList'); if (list) list.classList.toggle('is-filtered', !!tema);
+    var none = document.querySelector('.js-rem-none');
+    if (none) none.hidden = !(tema && !visibles);
+    if (snoozeRow && snoozeRow.hidden) snoozeClose();
+  }
+  remFiltro(remTema);
 
   /* Posponer: menú bajo la fila con Mañana / 3 días / +1 semana / fecha */
   var snoozeRow = null, snoozeBtn = null;
@@ -419,6 +447,7 @@
     $('remDate').value = d.date || '';
     $('remFreqVal').value = d.freqval || 1;
     $('remFreqUnit').value = d.frequnit || 'dias';
+    $('remTema').value = d.tema || '';
     remTypeSync();
     openForm('remForm', 'remDesc');
   }
@@ -427,7 +456,7 @@
     var desc = $('remDesc').value.trim();
     if (!desc) { toast('Escribe una descripción', 'err'); return; }
     var type = $('remType').value, date = $('remDate').value, editId = $('remEditId').value;
-    var payload = { description: desc, type: type, target_date: date || null };
+    var payload = { description: desc, type: type, target_date: date || null, tema: $('remTema').value };
     if (type === 'periodico') {
       payload.freq_value = parseInt($('remFreqVal').value, 10) || 1;
       payload.freq_unit = $('remFreqUnit').value;

@@ -107,3 +107,6 @@
 .dash-bell-ct[hidden]{display:none}
 .dash-notif{padding-left:0;padding-right:0;padding-bottom:var(--sp-4)}
 .dash-notif .eu-btn{margin:0 var(--sp-4);width:auto}
+.dash-notif-hd{display:flex;gap:6px;align-items:center;padding:var(--sp-3) var(--sp-4) var(--sp-2)}
+.dash-notif-sec.is-urgent .dash-notif-hd{color:var(--danger-fg)}
+.dash-notif-sec+.dash-notif-sec{border-top:1px solid var(--border-subtle)}

@@ -108,6 +108,7 @@ def index():
     }
 
     meas_by_key = {m['key']: dict(m) for m in measurements}
+    rem_grupos = rec.agrupar(reminders, date.fromisoformat(today_str()))
 
     # ── Plicómetro (pliegues cutáneos): calcular deltas contra la lectura previa
     pliegue_log = [dict(p) for p in pliegue_rows]
@@ -148,7 +149,9 @@ def index():
                            docs=docs_general,
                            docs_by_field=docs_by_field,
                            reminders=reminders,
-                           rem_grupos=rec.agrupar(reminders, date.fromisoformat(today_str())),
+                           rem_grupos=rem_grupos,
+                           rem_temas=rec.conteo_temas(rem_grupos),
+                           rem_tema_opts=rec.TEMAS,
                            vault=vault,
                            pliegue_log=pliegue_log,
                            tallas_por_prenda=tallas_por_prenda,
@@ -360,12 +363,12 @@ def add_reminder():
     now = datetime.now().isoformat()
     with get_db() as db:
         db.execute(
-            """INSERT INTO reminders (description, type, freq_unit, freq_value, target_date, next_date, is_active, created_at)
-               VALUES (?,?,?,?,?,?,1,?)""",
+            """INSERT INTO reminders (description, type, freq_unit, freq_value, target_date, next_date, is_active, created_at, tema)
+               VALUES (?,?,?,?,?,?,1,?,?)""",
             (desc, typ,
              d.get('freq_unit', ''),
              int(d.get('freq_value') or 1),
-             target, next_d, now)
+             target, next_d, now, rec.tema_valido(d.get('tema'), desc))
         )
         rid = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         db.commit()
@@ -448,11 +451,11 @@ def edit_reminder(rid):
     with get_db() as db:
         db.execute(
             """UPDATE reminders SET description=?, type=?, freq_unit=?, freq_value=?,
-               target_date=?, next_date=? WHERE id=?""",
+               target_date=?, next_date=?, tema=? WHERE id=?""",
             (desc, typ,
              d.get('freq_unit', ''),
              int(d.get('freq_value') or 1),
-             target, next_d, rid)
+             target, next_d, rec.tema_valido(d.get('tema'), desc), rid)
         )
         db.commit()
     return jsonify({'ok': True})

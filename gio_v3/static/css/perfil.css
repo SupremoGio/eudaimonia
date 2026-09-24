@@ -156,6 +156,14 @@
 .pf-snooze-date{position:relative}
 .pf-snooze-date input{position:absolute;inset:0;opacity:0;cursor:pointer}
 .pf-grow{flex:1}
+/* Fase 2: temas */
+
+.pf-rem[hidden],.pf-remg[hidden]{display:none}
+.is-filtered .pf-rem-tema{display:none}
+.pf-rem-tema{font-size:var(--fs-11);letter-spacing:.04em;text-transform:uppercase;color:var(--fg-3);padding:1px 6px;border-radius:var(--r-full);border:1px solid var(--border-subtle)}
+.pf-rem-tema--finanzas{color:var(--info-fg, var(--fg-2))}
+.pf-rem-tema--eventos{color:var(--fg-brand)}
+.pf-rem-tema--casa{color:var(--success-fg, var(--fg-2))}
 @media (max-width:480px){.pf-hide-xs{display:none}}
 
 /* ── Contraseñas ── */

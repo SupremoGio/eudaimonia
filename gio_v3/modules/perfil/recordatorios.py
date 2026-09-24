@@ -8,7 +8,58 @@ días», «hace 3 meses») y su frecuencia en palabras, y se reparte en grupos
 Vencidos / Hoy / Esta semana / Este mes / Más adelante / Sin fecha.
 """
 import calendar
+import re
+import unicodedata
 from datetime import date, timedelta
+
+# Temas (Fase 2): se asignan solos por palabras clave al crear el recordatorio
+# y el usuario los cambia en el formulario. Orden = orden de los chips.
+TEMAS = (
+    ('finanzas', 'Finanzas', 'credit-card'),
+    ('casa', 'Casa y cuidado', 'house'),
+    ('eventos', 'Eventos', 'ticket'),
+    ('otros', 'Otros', 'tag'),
+)
+TEMA_KEYS = tuple(k for k, _, _ in TEMAS)
+TEMA_LABEL = {k: t for k, t, _ in TEMAS}
+TEMA_ICON = {k: i for k, _, i in TEMAS}
+
+_KW = {
+    'finanzas': ('pagar', 'pago', 'corte', 'edo cuenta', 'estado de cuenta', 'credito', 'tarjeta', 'banco',
+                 'hsbc', 'bbva', 'invex', 'banamex', 'santander', 'nu ', 'renta', 'cetes', 'gbm', 'finsus',
+                 'inversion', 'nomina', 'factura', 'sat', 'impuesto', 'declaracion', 'seguro', 'predial',
+                 'tenencia', 'refrendo', 'recibo', 'recibo de luz', 'internet', 'telefono', 'suscripcion',
+                 'debito', 'cobrar', 'prestamo', 'deuda', 'transferir', 'deposito', 'afore'),
+    'eventos': ('concierto', 'candlelight', 'boda', 'cumpleanos', 'cumple', 'fiesta', 'evento', 'boleto',
+                'viaje', 'vuelo', 'hotel', 'cine', 'teatro', 'expo', 'festival', 'reunion', 'cena con',
+                'show', 'partido', 'clase de', 'taller', 'curso', 'graduacion', 'aniversario'),
+    'casa': ('jabon', 'limpiar', 'limpieza', 'lavar', 'regar', 'planta', 'comprar', 'super', 'despensa',
+             'doctor', 'medico', 'dentista', 'cita medica', 'vitamina', 'pastilla', 'medicina', 'corte de pelo',
+             'barberia', 'peluqueria', 'mascota', 'veterinario', 'filtro', 'cambiar', 'sabanas', 'toallas',
+             'basura', 'reparar', 'plomero', 'mantenimiento', 'coche', 'auto', 'verificacion', 'servicio',
+             'neem', 'potasico', 'pasaporte', 'ine', 'licencia', 'renovar'),
+}
+
+
+def _norm(txt: str) -> str:
+    t = unicodedata.normalize('NFKD', (txt or '').lower())
+    return ' ' + re.sub(r'\s+', ' ', ''.join(c for c in t if not unicodedata.combining(c))) + ' '
+
+
+def tema_auto(descripcion: str) -> str:
+    """Tema por palabras clave; finanzas gana si hay empate (un «pagar la
+    renta del evento» es un pago)."""
+    t = _norm(descripcion)
+    for k in ('finanzas', 'eventos', 'casa'):
+        # Palabras cortas (sat, ine…) exactas; las demás por prefijo
+        # (vitamina → vitaminas, super → supermercado).
+        if any(re.search(r'\b' + re.escape(w.strip()) + (r'\b' if len(w.strip()) <= 3 else ''), t) for w in _KW[k]):
+            return k
+    return 'otros'
+
+
+def tema_valido(tema, descripcion: str = '') -> str:
+    return tema if tema in TEMA_KEYS else tema_auto(descripcion)
 
 MESES = ('ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic')
 DIAS_SEM = ('lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom')
@@ -78,6 +129,7 @@ def agrupar(reminders: list[dict], hoy: date | None = None) -> list[dict]:
             except ValueError:
                 r['rel'] = f
         r['dias'], r['fecha'], r['freq'] = dias, f, frecuencia(r)
+        r['tema'] = tema_valido(r.get('tema'), r.get('description', ''))
         for k, _, pred in GRUPOS:
             if pred(dias):
                 grupos[k]['items'].append(r)
@@ -85,6 +137,15 @@ def agrupar(reminders: list[dict], hoy: date | None = None) -> list[dict]:
     for g in grupos.values():
         g['items'].sort(key=lambda r: (r['fecha'] or '9999', r.get('created_at') or ''))
     return [grupos[k] for k, _, _ in GRUPOS if grupos[k]['items']]
+
+
+def conteo_temas(grupos: list[dict]) -> list[dict]:
+    """Chips de filtro: solo los temas que tienen recordatorios."""
+    n = {}
+    for g in grupos:
+        for r in g['items']:
+            n[r['tema']] = n.get(r['tema'], 0) + 1
+    return [{'key': k, 'label': TEMA_LABEL[k], 'icon': TEMA_ICON[k], 'n': n[k]} for k in TEMA_KEYS if n.get(k)]
 
 
 def _paso(ancla: date, fu: str, fv: int, k: int) -> date:

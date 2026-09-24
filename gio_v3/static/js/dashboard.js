@@ -59,6 +59,10 @@
       var list = box.querySelector('.js-radar-list'); if (list) list.remove();
       var empty = box.querySelector('.js-radar-empty'); if (empty) empty.hidden = false;
     });
+    document.querySelectorAll('.js-dl-sec').forEach(function (sec) {
+      var n = sec.querySelectorAll('.dash-radar-row').length;
+      if (!n) sec.remove(); else sec.querySelector('.js-dl-sec-ct').textContent = n;
+    });
     var ct = document.querySelector('.js-bell-ct'), bell = document.querySelector('.dash-bell');
     var urgent = document.querySelectorAll('.dash-radar .dash-radar-row[data-level=red]').length;
     if (ct) { ct.textContent = left; ct.hidden = !left; ct.classList.toggle('is-urgent', urgent > 0); }
