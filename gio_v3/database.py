@@ -5268,6 +5268,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] rewards_desbloquea_apple_watch migration warning: {e}")
 
+        # ── FINANZAS — 6 retiros sin tarjeta de 2023 que fueron la renta en
+        # efectivo (el usuario los señaló por fecha y monto) -> VIVIENDA/Renta.
+        # Una vez aquí; «Aplicar reglas» y el import los reafirman con
+        # estados.routes._corregir_retiros_renta.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_retiros_renta_2023'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_retiros_renta
+                _n = _corregir_retiros_renta(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_retiros_renta_2023", f"{_n} retiros sin tarjeta de 2023 -> VIVIENDA/Renta")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_retiros_renta_2023 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que
