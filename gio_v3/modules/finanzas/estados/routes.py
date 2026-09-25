@@ -604,6 +604,22 @@ def _corregir_walmart_lavadora(db) -> int:
     """, (lo, hi)).rowcount
 
 
+# DiDi: si la descripción habla de un viaje (RIDE, VIAJE…) es transporte y
+# se queda como lo clasificó el keyword «DIDI» (TRANSPORTE/Taxi/apps); todo
+# lo demás de DiDi es comida a domicilio (pedido del usuario).
+DIDI_VIAJE_KW = ('RIDE', 'VIAJE', 'TAXI', 'MOVILIDAD')
+
+
+def _corregir_didi_delivery(db) -> int:
+    """DIDI sin marca de viaje -> COMIDA_FUERA/Delivery. Los viajes no se tocan."""
+    no_viaje = " ".join("AND UPPER(descripcion) NOT LIKE ?" for _ in DIDI_VIAJE_KW)
+    return db.execute(f"""
+        UPDATE est_movimientos SET categoria='COMIDA_FUERA', subcategoria='Delivery', tipo='GASTO'
+        WHERE UPPER(descripcion) LIKE '%DIDI%' {no_viaje} AND tipo IN ('GASTO', 'PAGO')
+          AND (categoria != 'COMIDA_FUERA' OR subcategoria != 'Delivery' OR tipo != 'GASTO')
+    """, tuple(f"%{kw}%" for kw in DIDI_VIAJE_KW)).rowcount
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -1428,6 +1444,7 @@ def apply_all_keywords():
         _corregir_spei_invex(db)
         _corregir_zaira_restaurante(db)
         _corregir_walmart_lavadora(db)
+        _corregir_didi_delivery(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -2051,6 +2068,7 @@ def upload_file():
             _corregir_spei_invex(db)
             _corregir_zaira_restaurante(db)
             _corregir_walmart_lavadora(db)
+            _corregir_didi_delivery(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
