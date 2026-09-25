@@ -175,6 +175,7 @@ export default function TxEditor({ tx, onClose, onSaved }) {
                   <option value="">—</option>
                   <option value="PENDIENTE">Pendiente</option>
                   <option value="PAGADO">Pagado</option>
+                  <option value="TERCERO">Pagado a compañero</option>
                 </select>
               </Field>
               <Field label="Fecha de reembolso" htmlFor={`${idp}-rfecha`}>

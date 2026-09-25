@@ -5401,6 +5401,34 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_celular_att_recargas migration warning: {e}")
 
+        # ── FINANZAS — EXPENSE: el usuario confirmó que todos sus gastos de
+        # trabajo ya se los reembolsaron, salvo los «PAGO CUENTA DE TERCERO…»,
+        # que son lo que él le transfiere al compañero que pagó el gasto
+        # (la empresa se lo reembolsó a él). Estos quedan como TERCERO y el
+        # resto pasa a PAGADO. Una vez aquí; el import y «Aplicar reglas»
+        # siguen marcando los TERCERO nuevos con
+        # estados.routes._corregir_expense_terceros.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_terceros_pagados'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_expense_terceros
+                _t = _corregir_expense_terceros(db)
+                _p = db.execute("""
+                    UPDATE est_movimientos SET estatus_reembolso='PAGADO'
+                    WHERE categoria='EXPENSE' AND tipo='GASTO'
+                      AND (estatus_reembolso IS NULL OR estatus_reembolso IN ('', 'PENDIENTE'))
+                """).rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_terceros_pagados",
+                     f"EXPENSE: {_t} PAGO CUENTA DE TERCERO -> TERCERO, {_p} -> PAGADO")
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_terceros_pagados: {_t} a compañeros, {_p} reembolsados")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_terceros_pagados migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que

@@ -42,6 +42,7 @@ export default function Resumen() {
   const natRows = (nat.data || []).filter((n) => Math.abs(n.total) > 0);
   const natTotal = natRows.reduce((s, n) => s + Math.abs(n.total), 0);
   const l = loans.data;
+  const x = p.expense_ref;
   const period = presetRange('this_month');
 
   const openCat = (categoria) => app.openCategory({ categoria, tipo: 'GASTO', period, periodLabel: `Este mes · ${monthName}` });
@@ -70,7 +71,7 @@ export default function Resumen() {
         </Stat>
       </div>
 
-      {((p.reembolsos_pendientes_count || 0) > 0 || (l && l.pendiente > 0)) && (
+      {((p.reembolsos_pendientes_count || 0) > 0 || (l && l.pendiente > 0) || (x && x.n > 0)) && (
         <div className="fz-notes">
           {p.reembolsos_pendientes_count > 0 && (
             <div className="fz-note" data-tone="info">
@@ -78,6 +79,18 @@ export default function Resumen() {
               <span className="eu-grow">{p.reembolsos_pendientes_count} reembolso{p.reembolsos_pendientes_count === 1 ? '' : 's'} pendiente{p.reembolsos_pendientes_count === 1 ? '' : 's'} de cobrar</span>
               <span className="t-data">{money(p.reembolsos_pendientes_total)}</span>
             </div>
+          )}
+          {x && x.n > 0 && (
+            // Expense ya no suma en «Total gastado»: aquí queda como referencia
+            // de cuánto se fue en gastos de trabajo este año y quién lo pagó.
+            <button type="button" className="fz-note" data-tone="info" onClick={() => app.goTo('movimientos', { category: 'EXPENSE' })}>
+              <Icon name="receipt" size={16} />
+              <span className="eu-grow">
+                Expense {new Date().getFullYear()} · tuyo {money(x.mio, { cents: false })}, a compañeros {money(x.terceros, { cents: false })}
+                {x.pendiente > 0 ? ` · por cobrar ${money(x.pendiente, { cents: false })}` : ''} · fuera del gasto
+              </span>
+              <span className="t-data">{money(x.total)}</span>
+            </button>
           )}
           {l && l.pendiente > 0 && (
             <div className="fz-note" data-tone="info">
