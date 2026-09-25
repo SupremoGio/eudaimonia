@@ -620,6 +620,51 @@ def _corregir_didi_delivery(db) -> int:
     """, tuple(f"%{kw}%" for kw in DIDI_VIAJE_KW)).rowcount
 
 
+# Amazon: el keyword genérico «AMAZON» manda todo a DIGITAL/Accesorios tech,
+# pero estos cargos son suscripciones de entretenimiento (pedido del usuario,
+# con capturas), siempre que la descripción NO diga «A MESES» (esas sí son
+# compras a MSI):
+#   - la descripción es solo «AMAZON» (cualquier monto),
+#   - cualquier cargo de Amazon de $100 o más («los que son de cientos»),
+#   - «AMAZONCOM INC…» de $69 (la mensualidad),
+#   - «AMAZON MEXICO» de $43.20 (mismo cargo que el «AMAZON» de $43.20).
+# Solo dentro de DIGITAL: no se jalan cargos de Amazon que el usuario ya
+# mandó a otra categoría (ej. AMAZON MEXICO -> VIVIENDA/Artículos del hogar).
+AMAZON_SUSCRIPCION_MIN_CIENTOS = 100.0
+AMAZON_SUSCRIPCION_INC_MONTO = 69.0
+AMAZON_SUSCRIPCION_MX_MONTO = 43.20
+
+
+def _corregir_amazon_suscripciones(db) -> int:
+    """Esos cargos de Amazon -> DIGITAL/Suscripciones entretenimiento."""
+    return db.execute("""
+        UPDATE est_movimientos SET subcategoria='Suscripciones entretenimiento', tipo='GASTO'
+        WHERE categoria='DIGITAL' AND tipo IN ('GASTO', 'PAGO')
+          AND UPPER(descripcion) LIKE 'AMAZON%' AND UPPER(descripcion) NOT LIKE '%MESES%'
+          AND (TRIM(UPPER(descripcion)) = 'AMAZON'
+               OR ABS(monto) >= ?
+               OR (UPPER(descripcion) LIKE 'AMAZON%INC%' AND ABS(ABS(monto) - ?) < 0.005)
+               OR (TRIM(UPPER(descripcion)) = 'AMAZON MEXICO' AND ABS(ABS(monto) - ?) < 0.005))
+          AND (subcategoria != 'Suscripciones entretenimiento' OR tipo != 'GASTO')
+    """, (AMAZON_SUSCRIPCION_MIN_CIENTOS, AMAZON_SUSCRIPCION_INC_MONTO, AMAZON_SUSCRIPCION_MX_MONTO)).rowcount
+
+
+# MI ATT (app de AT&T) y RECARGAS Y PAQUETES (BBVA móvil) son siempre el
+# celular (pedido del usuario: «que así sea siempre»). Una migración vieja
+# había mandado 3 recargas a «Saldo telefono».
+CELULAR_KW = ('MI ATT', 'RECARGAS Y PAQUETES')
+
+
+def _corregir_celular(db) -> int:
+    """MI ATT / RECARGAS Y PAQUETES -> DIGITAL/Celular."""
+    kw = " OR ".join("UPPER(descripcion) LIKE ?" for _ in CELULAR_KW)
+    return db.execute(f"""
+        UPDATE est_movimientos SET categoria='DIGITAL', subcategoria='Celular', tipo='GASTO'
+        WHERE ({kw}) AND tipo IN ('GASTO', 'PAGO')
+          AND (categoria != 'DIGITAL' OR subcategoria != 'Celular' OR tipo != 'GASTO')
+    """, tuple(f"%{k}%" for k in CELULAR_KW)).rowcount
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -1445,6 +1490,8 @@ def apply_all_keywords():
         _corregir_zaira_restaurante(db)
         _corregir_walmart_lavadora(db)
         _corregir_didi_delivery(db)
+        _corregir_amazon_suscripciones(db)
+        _corregir_celular(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -2069,6 +2116,8 @@ def upload_file():
             _corregir_zaira_restaurante(db)
             _corregir_walmart_lavadora(db)
             _corregir_didi_delivery(db)
+            _corregir_amazon_suscripciones(db)
+            _corregir_celular(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
