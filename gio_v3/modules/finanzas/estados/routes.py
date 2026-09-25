@@ -72,10 +72,15 @@ _FINANZAS_NO_GASTO_SUBCATS = (
 )
 
 
+# EXPENSE (gasto de trabajo que la empresa reembolsa) tampoco es gasto real:
+# el reembolso ya se excluye del ingreso (FINANZAS/Reembolsable), así que
+# contar el cargo inflaba «Total gastado». El usuario pidió sacarlo del gasto
+# y verlo aparte como referencia (/api/summary/pendientes -> expense_ref),
+# igual que budget.py ya lo trataba como informativo.
 def _pago_cats_sql(prefix: str = '') -> str:
     """Igual que _PAGO_CATS pero con un prefijo de tabla (ej. 'm.' en un JOIN)."""
     subcats = ",".join(f"'{s}'" for s in _FINANZAS_NO_GASTO_SUBCATS)
-    return (f"{prefix}categoria NOT IN ('PAGO_TDC','PAGO','PRESTAMOS') "
+    return (f"{prefix}categoria NOT IN ('PAGO_TDC','PAGO','PRESTAMOS','EXPENSE') "
             f"AND NOT ({prefix}categoria='FINANZAS' AND {prefix}subcategoria IN ({subcats}))")
 
 
@@ -665,6 +670,23 @@ def _corregir_celular(db) -> int:
     """, tuple(f"%{k}%" for k in CELULAR_KW)).rowcount
 
 
+# «PAGO CUENTA DE TERCERO…» en EXPENSE: un compañero pagó el gasto de
+# trabajo, la empresa me lo reembolsó a mí y yo se lo transfiero a él. No es
+# un reembolso pendiente ni gasto mío — estatus propio para distinguirlo en
+# la referencia de Expense (pedido del usuario).
+EXPENSE_ESTATUS_TERCERO = 'TERCERO'
+
+
+def _corregir_expense_terceros(db) -> int:
+    """EXPENSE «PAGO CUENTA DE TERCERO…» -> estatus_reembolso='TERCERO'."""
+    return db.execute("""
+        UPDATE est_movimientos SET estatus_reembolso=?
+        WHERE categoria='EXPENSE' AND tipo='GASTO'
+          AND UPPER(descripcion) LIKE '%PAGO CUENTA DE TERCERO%'
+          AND (estatus_reembolso IS NULL OR estatus_reembolso IN ('', 'PENDIENTE'))
+    """, (EXPENSE_ESTATUS_TERCERO,)).rowcount
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -1147,6 +1169,19 @@ def summary_pendientes():
             WHERE categoria='EXPENSE' AND estatus_reembolso='PENDIENTE'
         """).fetchone()
 
+        # Referencia de Expense del año en curso: ya no suma en «Total
+        # gastado» (ver _pago_cats_sql), pero el usuario quiere saber cuánto
+        # se fue en gastos de trabajo, separado por quién lo pagó.
+        year_start = datetime.now().strftime("%Y-01-01")
+        exp = db.execute("""
+            SELECT COUNT(*) AS n,
+                   COALESCE(SUM(ABS(monto)), 0) AS total,
+                   COALESCE(SUM(CASE WHEN estatus_reembolso='TERCERO' THEN ABS(monto) END), 0) AS terceros,
+                   COALESCE(SUM(CASE WHEN estatus_reembolso='PENDIENTE' THEN ABS(monto) END), 0) AS pendiente
+            FROM est_movimientos
+            WHERE categoria='EXPENSE' AND tipo='GASTO' AND fecha >= ?
+        """, (year_start,)).fetchone()
+
         # Por cada compra a MSI: cuotas restantes = total de mensualidades
         # de la compra menos las que ya se han visto en algún import: cada
         # una que falta por aparecer sigue siendo un cargo futuro real.
@@ -1171,6 +1206,14 @@ def summary_pendientes():
     return jsonify({
         'reembolsos_pendientes_count': reembolsos['n'] or 0,
         'reembolsos_pendientes_total': round(reembolsos['total'] or 0, 2),
+        'expense_ref': {
+            'desde': year_start,
+            'n': exp['n'] or 0,
+            'total': round(exp['total'] or 0, 2),
+            'mio': round((exp['total'] or 0) - (exp['terceros'] or 0), 2),
+            'terceros': round(exp['terceros'] or 0, 2),
+            'pendiente': round(exp['pendiente'] or 0, 2),
+        },
         'msi_compras_activas': msi_compras_activas,
         'msi_restante_total': round(msi_restante, 2),
     })
@@ -1492,6 +1535,7 @@ def apply_all_keywords():
         _corregir_didi_delivery(db)
         _corregir_amazon_suscripciones(db)
         _corregir_celular(db)
+        _corregir_expense_terceros(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -2118,6 +2162,7 @@ def upload_file():
             _corregir_didi_delivery(db)
             _corregir_amazon_suscripciones(db)
             _corregir_celular(db)
+            _corregir_expense_terceros(db)
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
