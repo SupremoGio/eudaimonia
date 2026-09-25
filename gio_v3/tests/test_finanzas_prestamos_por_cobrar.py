@@ -80,7 +80,9 @@ def test_estado_pagado_y_desligar():
     assert estado(1000, 400, '2026-09-01') == 'Perdido'
 
 
-def test_perdido_suma_a_familia_y_regalos_en_el_mes_que_se_marca(client, test_db):
+def test_perdido_suma_a_familia_y_regalos_en_el_mes_que_se_presto(client, test_db):
+    """El pendiente de un préstamo perdido cuenta en el mes en que se prestó
+    (2026-08 aquí), no en el mes en que se marca como perdido (hoy)."""
     from modules.finanzas.budget import _calc_budget
     from utils import today_str
     with database.get_db() as db:
@@ -93,16 +95,17 @@ def test_perdido_suma_a_familia_y_regalos_en_el_mes_que_se_marca(client, test_db
     assert res['total_pendiente'] == 0 and res['total_perdido'] == 2000
     assert res['personas'][0]['prestamos'][0]['perdido_fecha'] == today_str()
 
-    mes = today_str()[:7]
-    with database.get_db() as db:
-        d = _calc_budget(mes, db)
-    fam = [c for c in d['buckets']['deseos']['cats'] if c['categoria'] == 'FAMILIA_REGALOS']
-    assert fam and fam[0]['gastado'] == 2000
+    def fam(mes):
+        with database.get_db() as db:
+            d = _calc_budget(mes, db)
+        return [c for c in d['buckets']['deseos']['cats'] if c['categoria'] == 'FAMILIA_REGALOS']
+
+    assert fam('2026-08') and fam('2026-08')[0]['gastado'] == 2000
+    if today_str()[:7] != '2026-08':
+        assert not fam(today_str()[:7])          # el mes en que se marcó no se infla
 
     client.patch(f'/finanzas/estados/api/prestamos/{pid}', json={'perdido': False})
-    with database.get_db() as db:
-        d = _calc_budget(mes, db)
-    assert not [c for c in d['buckets']['deseos']['cats'] if c['categoria'] == 'FAMILIA_REGALOS']
+    assert not fam('2026-08')
 
 
 def test_aplicar_reglas_no_saca_de_prestamos_a_los_movimientos_ligados(client, test_db):
@@ -253,21 +256,22 @@ def test_migracion_csv_respeta_lo_hecho_a_mano_y_omite_lo_que_no_coincide(test_d
 
 def test_detalle_de_familia_y_regalos_lista_los_perdidos(client, test_db):
     """El detalle de la Radiografía tiene que cuadrar con la barra: si un
-    préstamo perdido suma a Familia y regalos, también se lista ahí."""
+    préstamo perdido suma a Familia y regalos, también se lista ahí (en el
+    mes en que se prestó)."""
     from utils import today_str
-    hoy = today_str()
     with database.get_db() as db:
         prest, dev1, _ = _setup(db)
-        _mov(db, 'CRISTAL VILLAHERMOSA', 1032, 'GASTO', 'FAMILIA_REGALOS', fecha=hoy)
+        _mov(db, 'CRISTAL VILLAHERMOSA', 1032, 'GASTO', 'FAMILIA_REGALOS', fecha='2026-08-22')
         db.commit()
     pid = client.post('/finanzas/estados/api/prestamos', json={'movimiento_id': prest, 'persona': 'Juan'}).get_json()['id']
     client.post(f'/finanzas/estados/api/prestamos/{pid}/devoluciones', json={'movimiento_id': dev1})
     client.patch(f'/finanzas/estados/api/prestamos/{pid}', json={'perdido': True})
 
-    d = client.get(f'/finanzas/budget/api/cat-movs/{hoy[:7]}/FAMILIA_REGALOS').get_json()
+    d = client.get('/finanzas/budget/api/cat-movs/2026-08/FAMILIA_REGALOS').get_json()
     assert [m['descripcion'] for m in d['movimientos']] == ['CRISTAL VILLAHERMOSA']
     assert d['perdidos'] == [{'prestamo_id': pid, 'persona': 'Juan', 'fecha': '2026-08-10',
-                              'perdido_fecha': hoy, 'pendiente': 2000.0,
+                              'perdido_fecha': today_str(), 'pendiente': 2000.0,
                               'descripcion': 'SPEI ENVIADO JUAN'}]
-    # Otras categorías no traen perdidos
-    assert client.get(f'/finanzas/budget/api/cat-movs/{hoy[:7]}/OCIO').get_json()['perdidos'] == []
+    # Otro mes u otra categoría no los traen
+    assert client.get('/finanzas/budget/api/cat-movs/2026-07/FAMILIA_REGALOS').get_json()['perdidos'] == []
+    assert client.get('/finanzas/budget/api/cat-movs/2026-08/OCIO').get_json()['perdidos'] == []

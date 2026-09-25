@@ -323,8 +323,8 @@ def _calc_budget(mes, db):
     ).fetchall()
     spending_rows = [dict(r) for r in spending_rows]
 
-    # ── Préstamos marcados como «Perdido» este mes: su pendiente es gasto en
-    #    Familia y regalos (registro interno, no hay movimiento bancario).
+    # ── Préstamos perdidos que se prestaron este mes: su pendiente es gasto
+    #    en Familia y regalos (registro interno, no hay movimiento bancario).
     perdido = perdidos_en_rango(db, mes_inicio, mes_fin)
     if perdido > 0:
         fam = next((r for r in spending_rows if r['categoria'] == 'FAMILIA_REGALOS'), None)
@@ -680,7 +680,7 @@ def cat_movimientos(mes, categoria):
               AND {_GASTO_WHERE}
             ORDER BY fecha DESC, id DESC
         """, (categoria, mes_ini, mes_fin)).fetchall()
-        # Los préstamos marcados como «Perdido» este mes también suman a
+        # Los préstamos perdidos que se prestaron este mes también suman a
         # Familia y regalos en la Radiografía (ver radiografia()); sin
         # listarlos aquí el detalle no cuadraba con la barra.
         perdidos = []
