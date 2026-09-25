@@ -72,11 +72,12 @@
     $('dd-footer-n').textContent = ''; $('dd-footer-total').textContent = '';
     euModal.open('m-dd');
     fetch('/finanzas/budget/api/cat-movs/' + MES + '/' + encodeURIComponent(ddCat)).then(function (r) { return r.json(); })
-      .then(function (d) { render(d.movimientos || []); })
+      .then(function (d) { render(d.movimientos || [], d.perdidos || []); })
       .catch(function () { $('dd-body').innerHTML = '<p class="t-meta fg-danger">Error al cargar</p>'; });
   }
-  function render(movs) {
-    if (!movs.length) {
+  function render(movs, perdidos) {
+    perdidos = perdidos || [];
+    if (!movs.length && !perdidos.length) {
       $('dd-body').innerHTML = '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="receipt"></i></div><div class="t-card">Sin movimientos</div><p>Esta categoría no tiene movimientos registrados en ' + esc(MES) + '.</p></div>';
       icons(); footer(); return;
     }
@@ -90,6 +91,13 @@
         CATS.map(function (c) { return '<option value="' + c + '"' + (c === m.categoria ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>' +
         '<div class="eu-field"><label class="eu-label" for="me-desc-' + m.id + '">Descripción</label><input class="eu-input" id="me-desc-' + m.id + '" value="' + esc(m.descripcion) + '" maxlength="200"></div></div>' +
         '<div class="bg-me-act"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-toggle="' + m.id + '">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button></div></form></li>';
+    }).join('') + perdidos.map(function (p) {
+      // Préstamo marcado como «Perdido» este mes: no es un movimiento bancario,
+      // se edita (o se desmarca) en Estados de cuenta → Por cobrar.
+      return '<li class="bg-mov" data-monto="' + p.pendiente + '">' +
+        '<a class="bg-mov-sum" href="/finanzas/estados/#porcobrar" title="Préstamo a ' + esc(p.persona) + ' del ' + esc(p.fecha) + ', marcado como perdido el ' + esc(p.perdido_fecha) + '">' +
+        '<span class="t-meta num bg-mov-f">' + esc(p.perdido_fecha.slice(5)) + '</span><span class="eu-grow bg-mov-d">Préstamo perdido · ' + esc(p.persona) + ' (prestado ' + esc(p.fecha) + ')</span>' +
+        '<span class="eu-badge eu-badge--warning bg-mov-c">PRÉSTAMO PERDIDO</span><span class="t-data bg-mov-m">$' + fmt(p.pendiente) + '</span><i data-lucide="arrow-up-right" class="bg-mov-chev"></i></a></li>';
     }).join('') + '</ul>';
     icons(); footer();
   }
