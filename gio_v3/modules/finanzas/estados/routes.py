@@ -6,12 +6,13 @@ Tables are prefixed with est_ to avoid conflicts.
 import calendar
 import csv
 import io
+import re
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from flask import (
-    Blueprint, render_template, request,
+    Blueprint, render_template, render_template_string, request,
     session, jsonify, Response, redirect, url_for,
 )
 from database import get_db
@@ -2450,6 +2451,134 @@ def audit_periodos_faltantes():
         'todos_los_meses_en_rango': todos_los_meses,
         'por_banco': resultado,
     })
+
+
+AUDIT_BANCOS = {
+    'BBVA_DEB': 'BBVA Débito',
+    'BBVA_TDC': 'BBVA Crédito',
+    'HSBC':     'HSBC',
+    'INVEX':    'Invex Volaris',
+}
+_PERIODO_RE = re.compile(r"(\d{4}-\d{2}-\d{2})\s+al\s+(\d{4}-\d{2}-\d{2})")
+
+
+def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
+    """Huecos de un banco: (1) días sin cubrir entre periodos de estado de
+    cuenta consecutivos (la señal más precisa: el `periodo` que guarda cada
+    import), (2) tramos de más de `umbral_dias` sin ningún movimiento y
+    (3) meses calendario sin filas, desde su primer movimiento hasta `hasta`."""
+    rows = db.execute("""
+        SELECT substr(fecha, 1, 10) AS fecha, COALESCE(periodo, '') AS periodo
+        FROM est_movimientos
+        WHERE banco=? AND fecha IS NOT NULL AND fecha != '' AND substr(fecha, 1, 10) <= ?
+        ORDER BY fecha
+    """, (banco, hasta)).fetchall()
+    fechas = [r['fecha'] for r in rows]
+    if not fechas:
+        return {'filas': 0, 'primera_fecha': None, 'ultima_fecha': None, 'dias_sin_datos': None,
+                'periodos': [], 'huecos_entre_periodos': [], 'huecos_sin_movimientos': [],
+                'meses_sin_movimientos': []}
+
+    # 1) Periodos de estado de cuenta
+    periodos = {}
+    for r in rows:
+        m = _PERIODO_RE.search(r['periodo'])
+        if m:
+            p = periodos.setdefault((m.group(1), m.group(2)), 0)
+            periodos[(m.group(1), m.group(2))] = p + 1
+    lista = sorted(periodos.items())
+    huecos_periodo = []
+    for i in range(1, len(lista)):
+        (_, fin_prev), _ = lista[i - 1]
+        (ini_sig, _), _ = lista[i]
+        d_fin = datetime.strptime(fin_prev, '%Y-%m-%d').date()
+        d_ini = datetime.strptime(ini_sig, '%Y-%m-%d').date()
+        # Tolerancia de 3 días: los cortes a veces brincan fines de semana.
+        if (d_ini - d_fin).days > 3:
+            huecos_periodo.append({
+                'desde': (d_fin + timedelta(days=1)).isoformat(),
+                'hasta': (d_ini - timedelta(days=1)).isoformat(),
+                'dias': (d_ini - d_fin).days - 1,
+            })
+
+    # 2) Tramos sin movimientos
+    huecos_mov = []
+    prev = datetime.strptime(fechas[0], '%Y-%m-%d').date()
+    for f in fechas[1:] + [hasta]:
+        d = datetime.strptime(f, '%Y-%m-%d').date()
+        if (d - prev).days > umbral_dias:
+            huecos_mov.append({'desde': (prev + timedelta(days=1)).isoformat(),
+                               'hasta': (d - timedelta(days=1)).isoformat() if f != hasta else hasta,
+                               'dias': (d - prev).days - (1 if f != hasta else 0)})
+        prev = max(prev, d)
+
+    # 3) Meses sin movimientos
+    con_datos = {f[:7] for f in fechas}
+    meses_sin = [m for m in _meses_en_rango(fechas[0], hasta) if m not in con_datos]
+
+    ultima = datetime.strptime(fechas[-1], '%Y-%m-%d').date()
+    return {
+        'filas': len(fechas),
+        'primera_fecha': fechas[0],
+        'ultima_fecha': fechas[-1],
+        'dias_sin_datos': (datetime.strptime(hasta, '%Y-%m-%d').date() - ultima).days,
+        'periodos': [{'inicio': a, 'fin': b, 'movimientos': n} for (a, b), n in lista],
+        'huecos_entre_periodos': huecos_periodo,
+        'huecos_sin_movimientos': huecos_mov,
+        'meses_sin_movimientos': meses_sin,
+    }
+
+
+@estados_bp.route('/admin/audit-huecos')
+def audit_huecos():
+    """Auditoría de solo lectura -- NUNCA modifica nada -- de qué estados de
+    cuenta faltan en BBVA Débito, BBVA Crédito, HSBC e Invex Volaris, desde
+    el primer movimiento de cada banco hasta hoy (o ?hasta=YYYY-MM-DD).
+    ?umbral=N ajusta cuántos días sin movimientos cuentan como hueco
+    (default 25). ?formato=html la muestra como página legible."""
+    if not _ok(): return _locked()
+    hasta = request.args.get('hasta') or today_str()
+    try:
+        umbral = max(1, int(request.args.get('umbral', 25)))
+    except ValueError:
+        umbral = 25
+    with get_db() as db:
+        por_banco = {b: {'nombre': n, **_auditar_banco(db, b, hasta, umbral)}
+                     for b, n in AUDIT_BANCOS.items()}
+    data = {'hasta': hasta, 'umbral_dias': umbral, 'por_banco': por_banco}
+    if request.args.get('formato') == 'html':
+        return render_template_string(_AUDIT_HUECOS_HTML, **data)
+    return jsonify(data)
+
+
+_AUDIT_HUECOS_HTML = """<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Auditoría de estados de cuenta</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;margin:0;padding:16px;background:#0f0d14;color:#ece8f4}
+h1{font-size:20px;margin:0 0 4px}.meta{color:#9d96ad;font-size:13px;margin-bottom:16px}
+.card{background:#1a1622;border:1px solid #2c2638;border-radius:12px;padding:16px;margin-bottom:16px;max-width:760px}
+h2{font-size:17px;margin:0 0 8px}.ok{color:#6ee7a8}.warn{color:#fbbf24}.bad{color:#f87171}
+ul{margin:4px 0 8px;padding-left:20px}li{margin:2px 0}h3{font-size:14px;margin:12px 0 2px;color:#c9c2d8}
+details summary{cursor:pointer;color:#9d96ad;font-size:13px;margin-top:8px}
+</style></head><body>
+<h1>Auditoría de estados de cuenta</h1>
+<div class="meta">Hasta {{ hasta }} · hueco = más de {{ umbral_dias }} días sin movimientos · solo lectura</div>
+{% for code, b in por_banco.items() %}
+<div class="card"><h2>{{ b.nombre }}</h2>
+{% if not b.filas %}<div class="bad">Sin ningún movimiento importado.</div>{% else %}
+<div class="meta">{{ b.filas }} movimientos · {{ b.primera_fecha }} → {{ b.ultima_fecha }}
+{% if b.dias_sin_datos > umbral_dias %}<span class="warn"> · {{ b.dias_sin_datos }} días sin datos al corte</span>{% endif %}</div>
+{% if b.huecos_entre_periodos %}<h3 class="bad">Faltan estados de cuenta entre periodos</h3><ul>
+{% for h in b.huecos_entre_periodos %}<li>{{ h.desde }} → {{ h.hasta }} ({{ h.dias }} días)</li>{% endfor %}</ul>{% endif %}
+{% if b.huecos_sin_movimientos %}<h3 class="warn">Tramos sin movimientos</h3><ul>
+{% for h in b.huecos_sin_movimientos %}<li>{{ h.desde }} → {{ h.hasta }} ({{ h.dias }} días)</li>{% endfor %}</ul>{% endif %}
+{% if b.meses_sin_movimientos %}<h3 class="warn">Meses sin ningún movimiento</h3><div>{{ b.meses_sin_movimientos|join(', ') }}</div>{% endif %}
+{% if not b.huecos_entre_periodos and not b.huecos_sin_movimientos and not b.meses_sin_movimientos %}<div class="ok">Sin huecos detectados.</div>{% endif %}
+{% if b.periodos %}<details><summary>{{ b.periodos|length }} periodos importados</summary><ul>
+{% for p in b.periodos %}<li>{{ p.inicio }} al {{ p.fin }} · {{ p.movimientos }} mov.</li>{% endfor %}</ul></details>{% endif %}
+{% endif %}</div>
+{% endfor %}
+</body></html>"""
 
 
 @estados_bp.route('/admin/audit-duplicados')
