@@ -9,9 +9,11 @@ Modelo:
   - est_prestamo_devoluciones: movimientos de ingreso ligados a un préstamo.
     Una devolución ligada queda con categoría PRESTAMOS, así que no cuenta
     como ingreso en ningún lado: solo baja el pendiente.
-  - perdido_fecha: «Perdido» es manual; ese mes el pendiente cuenta como gasto
-    en Familia y regalos, pero solo en la Radiografía (registro interno, no un
-    movimiento bancario).
+  - perdido_fecha: «Perdido» es manual; el pendiente cuenta como gasto en
+    Familia y regalos del mes en que se PRESTÓ (fecha del préstamo), no del
+    mes en que se marcó -- marcar de golpe préstamos viejos inflaba el mes en
+    curso (pedido del usuario). Solo en la Radiografía (registro interno, no
+    un movimiento bancario).
 
 El estado se calcula (Pendiente / Pagado parcial / Pagado) para que nunca se
 desincronice de las devoluciones; solo «Perdido» se marca a mano.
@@ -101,14 +103,14 @@ def resumen(db) -> dict:
 
 
 def perdidos_detalle_en_rango(db, desde: str, hasta: str) -> list[dict]:
-    """Préstamos marcados como perdidos en [desde, hasta), con lo que quedó
+    """Préstamos perdidos que se PRESTARON en [desde, hasta), con lo que quedó
     pendiente: el detalle de lo que suma perdidos_en_rango."""
     return [p for p in listar(db)
-            if p['perdido_fecha'] and desde <= p['perdido_fecha'][:10] < hasta and p['pendiente'] > 0]
+            if p['perdido_fecha'] and p['fecha'] and desde <= p['fecha'][:10] < hasta and p['pendiente'] > 0]
 
 
 def perdidos_en_rango(db, desde: str, hasta: str) -> float:
-    """Pendiente de los préstamos marcados como perdidos en [desde, hasta):
+    """Pendiente de los préstamos perdidos que se prestaron en [desde, hasta):
     es el gasto que la Radiografía suma a Familia y regalos ese mes."""
     return round(sum(p['pendiente'] for p in perdidos_detalle_en_rango(db, desde, hasta)), 2)
 

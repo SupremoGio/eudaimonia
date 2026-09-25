@@ -9,7 +9,7 @@ import { Empty, ErrorNote, Field, Icon, Modal, Skel, confirmDialog, toast, useLo
 // (el SPEI o retiro con el que prestaste); las devoluciones son ingresos que
 // se ligan y bajan el pendiente sin contar como ingreso. El estado se calcula
 // solo; «Perdido» es manual y en la Radiografía se vuelve gasto de Familia y
-// regalos del mes en que se marca.
+// regalos del mes en que se prestó (no del mes en que se marca).
 
 // Personas a las que normalmente se presta; «Otros» (muy raro) abre un campo
 // libre para escribir el nombre.
@@ -130,7 +130,7 @@ export default function PorCobrar() {
 
   async function setPerdido(p, perdido) {
     const ok = !perdido || await confirmDialog(
-      `¿Marcar como perdido el préstamo a ${p.persona}? Sus ${money(p.pendiente)} pendientes contarán como gasto en Familia y regalos este mes.`,
+      `¿Marcar como perdido el préstamo a ${p.persona}? Sus ${money(p.pendiente)} pendientes contarán como gasto en Familia y regalos del mes en que lo prestaste (${fmtDate(p.fecha, true)}).`,
       { confirmLabel: 'Marcar perdido', danger: true });
     if (!ok) return;
     try { await api.patch(`/prestamos/${p.id}`, { perdido }); toast(perdido ? 'Marcado como perdido' : 'Préstamo reactivado', 'ok'); saved(); }
