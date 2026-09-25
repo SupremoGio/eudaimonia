@@ -249,3 +249,25 @@ def test_migracion_csv_respeta_lo_hecho_a_mano_y_omite_lo_que_no_coincide(test_d
     assert personas[2307] == 'Leni'
     assert 1534 not in personas and 3785 not in personas
     assert 'préstamo 1534: no coincide' in log and 'préstamo 3785: no coincide' in log
+
+
+def test_detalle_de_familia_y_regalos_lista_los_perdidos(client, test_db):
+    """El detalle de la Radiografía tiene que cuadrar con la barra: si un
+    préstamo perdido suma a Familia y regalos, también se lista ahí."""
+    from utils import today_str
+    hoy = today_str()
+    with database.get_db() as db:
+        prest, dev1, _ = _setup(db)
+        _mov(db, 'CRISTAL VILLAHERMOSA', 1032, 'GASTO', 'FAMILIA_REGALOS', fecha=hoy)
+        db.commit()
+    pid = client.post('/finanzas/estados/api/prestamos', json={'movimiento_id': prest, 'persona': 'Juan'}).get_json()['id']
+    client.post(f'/finanzas/estados/api/prestamos/{pid}/devoluciones', json={'movimiento_id': dev1})
+    client.patch(f'/finanzas/estados/api/prestamos/{pid}', json={'perdido': True})
+
+    d = client.get(f'/finanzas/budget/api/cat-movs/{hoy[:7]}/FAMILIA_REGALOS').get_json()
+    assert [m['descripcion'] for m in d['movimientos']] == ['CRISTAL VILLAHERMOSA']
+    assert d['perdidos'] == [{'prestamo_id': pid, 'persona': 'Juan', 'fecha': '2026-08-10',
+                              'perdido_fecha': hoy, 'pendiente': 2000.0,
+                              'descripcion': 'SPEI ENVIADO JUAN'}]
+    # Otras categorías no traen perdidos
+    assert client.get(f'/finanzas/budget/api/cat-movs/{hoy[:7]}/OCIO').get_json()['perdidos'] == []

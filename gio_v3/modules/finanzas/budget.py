@@ -12,7 +12,7 @@ from database import get_db
 from datetime import datetime
 import calendar
 from utils import today_str, today_date, csv_response
-from modules.finanzas.estados.prestamos import perdidos_en_rango
+from modules.finanzas.estados.prestamos import perdidos_en_rango, perdidos_detalle_en_rango
 
 budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
 
@@ -680,7 +680,17 @@ def cat_movimientos(mes, categoria):
               AND {_GASTO_WHERE}
             ORDER BY fecha DESC, id DESC
         """, (categoria, mes_ini, mes_fin)).fetchall()
-    return jsonify({'movimientos': [dict(r) for r in rows]})
+        # Los préstamos marcados como «Perdido» este mes también suman a
+        # Familia y regalos en la Radiografía (ver radiografia()); sin
+        # listarlos aquí el detalle no cuadraba con la barra.
+        perdidos = []
+        if categoria == 'FAMILIA_REGALOS':
+            perdidos = [{
+                'prestamo_id': p['id'], 'persona': p['persona'], 'fecha': p['fecha'],
+                'perdido_fecha': p['perdido_fecha'][:10], 'pendiente': p['pendiente'],
+                'descripcion': p['descripcion'] or p['notas'],
+            } for p in perdidos_detalle_en_rango(db, mes_ini, mes_fin)]
+    return jsonify({'movimientos': [dict(r) for r in rows], 'perdidos': perdidos})
 
 
 # ── API: Editar movimiento (categoría + monto mi_parte) ──────────────────────

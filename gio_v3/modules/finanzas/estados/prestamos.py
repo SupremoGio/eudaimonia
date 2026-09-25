@@ -100,11 +100,17 @@ def resumen(db) -> dict:
     }
 
 
+def perdidos_detalle_en_rango(db, desde: str, hasta: str) -> list[dict]:
+    """Préstamos marcados como perdidos en [desde, hasta), con lo que quedó
+    pendiente: el detalle de lo que suma perdidos_en_rango."""
+    return [p for p in listar(db)
+            if p['perdido_fecha'] and desde <= p['perdido_fecha'][:10] < hasta and p['pendiente'] > 0]
+
+
 def perdidos_en_rango(db, desde: str, hasta: str) -> float:
     """Pendiente de los préstamos marcados como perdidos en [desde, hasta):
     es el gasto que la Radiografía suma a Familia y regalos ese mes."""
-    return round(sum(p['pendiente'] for p in listar(db)
-                     if p['perdido_fecha'] and desde <= p['perdido_fecha'][:10] < hasta), 2)
+    return round(sum(p['pendiente'] for p in perdidos_detalle_en_rango(db, desde, hasta)), 2)
 
 
 def candidatos(db) -> dict:
