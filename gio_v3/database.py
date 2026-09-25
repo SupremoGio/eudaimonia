@@ -5361,6 +5361,46 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_didi_delivery migration warning: {e}")
 
+        # ── FINANZAS — cargos de Amazon en DIGITAL que son suscripción
+        # («AMAZON» solo, de $100 o más, «AMAZONCOM INC…» de $69, «AMAZON
+        # MEXICO» de $43.20; nunca los que dicen «A MESES») ->
+        # DIGITAL/Suscripciones entretenimiento. Una vez aquí; «Aplicar
+        # reglas» y el import lo reafirman con
+        # estados.routes._corregir_amazon_suscripciones.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_amazon_suscripciones'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_amazon_suscripciones
+                _n = _corregir_amazon_suscripciones(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_amazon_suscripciones", f"{_n} cargos de Amazon -> DIGITAL/Suscripciones entretenimiento")
+                )
+                db.commit()
+                print(f"[DB] finanzas_amazon_suscripciones: {_n} movimientos -> DIGITAL/Suscripciones entretenimiento")
+            except Exception as e:
+                print(f"[DB] finanzas_amazon_suscripciones migration warning: {e}")
+
+        # ── FINANZAS — MI ATT y RECARGAS Y PAQUETES -> DIGITAL/Celular, siempre
+        # (una migración vieja había mandado 3 recargas a «Saldo telefono»).
+        # Una vez aquí; «Aplicar reglas» y el import lo reafirman con
+        # estados.routes._corregir_celular.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_celular_att_recargas'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_celular
+                _n = _corregir_celular(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_celular_att_recargas", f"{_n} MI ATT / RECARGAS Y PAQUETES -> DIGITAL/Celular")
+                )
+                db.commit()
+                print(f"[DB] finanzas_celular_att_recargas: {_n} movimientos -> DIGITAL/Celular")
+            except Exception as e:
+                print(f"[DB] finanzas_celular_att_recargas migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que

@@ -161,6 +161,8 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "074 PATRIA":           ("SUPER", "Conveniencia"),
     "ATTAPP MICROS":        ("DIGITAL", "Celular"),
     "MI ATT A APP":         ("DIGITAL", "Celular"),
+    "MI ATT":               ("DIGITAL", "Celular"),
+    "RECARGAS Y PAQUETES":  ("DIGITAL", "Celular"),
     "FRESKO":               ("SUPER", "Súper"),
     "SORIANA":              ("SUPER", "Súper"),
     "WALMART":              ("SUPER", "Súper"),
