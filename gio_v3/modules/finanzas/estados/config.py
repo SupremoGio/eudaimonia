@@ -290,7 +290,7 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "ORG SALUD":            ("SALUD", "Consultas"),
     "ESTUD CLIN":           ("SALUD", "Estudios"),
     "CHOPO":                ("SALUD", "Estudios"),
-    "DIDI":                 ("TRANSPORTE", "Taxi/apps"),
+    "DIDI":                 ("TRANSPORTE", "Taxi/apps"),  # sin RIDE/VIAJE -> Delivery (routes._corregir_didi_delivery)
     "UBER":                 ("TRANSPORTE", "Taxi/apps"),
     "ATTA TAXIS":           ("TRANSPORTE", "Taxi/apps"),
     "OP AIREPAZ":           ("TRANSPORTE", "Taxi/apps"),

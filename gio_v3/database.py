@@ -5342,6 +5342,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_walmart_lavadora migration warning: {e}")
 
+        # ── FINANZAS — DIDI sin marca de viaje (RIDE, VIAJE…) es comida a
+        # domicilio -> COMIDA_FUERA/Delivery; los viajes se quedan en
+        # TRANSPORTE. Una vez aquí; «Aplicar reglas» y el import lo reafirman
+        # con estados.routes._corregir_didi_delivery.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_didi_delivery'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_didi_delivery
+                _n = _corregir_didi_delivery(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_didi_delivery", f"{_n} DIDI sin viaje -> COMIDA_FUERA/Delivery")
+                )
+                db.commit()
+                print(f"[DB] finanzas_didi_delivery: {_n} movimientos -> COMIDA_FUERA/Delivery")
+            except Exception as e:
+                print(f"[DB] finanzas_didi_delivery migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que
