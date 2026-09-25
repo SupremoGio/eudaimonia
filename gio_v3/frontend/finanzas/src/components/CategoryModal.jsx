@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api.js';
 import { fmtDate, money, myAmount, norm, pct } from '../lib/format.js';
 import { bankName, catMeta } from '../lib/meta.js';
@@ -10,6 +10,11 @@ const SORTS = [
   ['estab_asc', 'Establecimiento A–Z'], ['estab_desc', 'Establecimiento Z–A'],
 ];
 const SIN_SUB = '__SIN_SUB__';
+// Filtros de cada categoría (búsqueda, subcategoría/comercio, orden). Abrir
+// un movimiento reemplaza este modal por el editor y al volver se montaba
+// de cero, así que había que rehacer los filtros tras cada registro. Se
+// recuerdan aquí mientras la página siga abierta.
+const UI_MEMO = new Map();
 const merchantOf = (t) => (t.descripcion || '').trim() || '(sin descripción)';
 
 function sortRows(rows, key) {
@@ -31,11 +36,16 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
   const isIngreso = categoria === '__INGRESO__';
   const meta = isIngreso ? { name: 'Ingresos', icon: 'banknote', tone: 'ataraxia' } : catMeta(categoria);
   const wide = useMedia('(min-width: 768px)');
-  const [groupBy, setGroupBy] = useState('sub');
-  const [sub, setSub] = useState('');
-  const [merchant, setMerchant] = useState('');
-  const [sortKey, setSortKey] = useState('fecha_desc');
-  const [q, setQ] = useState('');
+  const memoKey = `${categoria}|${tipo}|${bank}`;
+  const saved = UI_MEMO.get(memoKey) || {};
+  const [groupBy, setGroupBy] = useState(saved.groupBy || 'sub');
+  const [sub, setSub] = useState(saved.sub || '');
+  const [merchant, setMerchant] = useState(saved.merchant || '');
+  const [sortKey, setSortKey] = useState(saved.sortKey || 'fecha_desc');
+  const [q, setQ] = useState(saved.q || '');
+  useEffect(() => {
+    UI_MEMO.set(memoKey, { groupBy, sub, merchant, sortKey, q });
+  }, [memoKey, groupBy, sub, merchant, sortKey, q]);
 
   const { data, loading, error, reload } = useLoad(
     () => api.get('/transactions', {
@@ -60,8 +70,10 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
   const shown = groupBy === 'merchant' ? groups.slice(0, 8) : groups;
   const extra = groups.length - shown.length;
 
-  const subcats = [...new Set(tx.map((t) => t.subcategoria).filter(Boolean))].sort();
-  const hasSinSub = tx.some((t) => !t.subcategoria);
+  // El filtro recordado sigue en el selector aunque ya no le quede ningún
+  // movimiento (ej. acabas de clasificar el último «Sin subcategoría»).
+  const subcats = [...new Set([...tx.map((t) => t.subcategoria), sub !== SIN_SUB && sub].filter(Boolean))].sort();
+  const hasSinSub = sub === SIN_SUB || tx.some((t) => !t.subcategoria);
 
   const rows = useMemo(() => {
     let r = tx;
@@ -165,7 +177,7 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
                 <span>Total <b className="num fz-fg-1">{money(rowsTotal)}</b></span>
               </div>
 
-              {rows.length === 0 ? <div className="t-meta fz-pad">Nada coincide con «{q}».</div> : wide ? (
+              {rows.length === 0 ? <div className="t-meta fz-pad">{q.trim() ? `Nada coincide con «${q}».` : 'Ya no quedan movimientos con este filtro.'}</div> : wide ? (
                 <div className="fz-table-wrap">
                   <table className="eu-table fz-cm-table">
                     {/* Con una subcategoría ya filtrada, su columna solo repetiría el mismo valor. */}

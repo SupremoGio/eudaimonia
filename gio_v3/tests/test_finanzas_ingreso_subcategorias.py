@@ -111,6 +111,6 @@ def test_subcategorias_gained_nomina_and_aportacion_renta():
     # PTU y Fondo de ahorro se agregaron después (commit 9d58fe7); lo que
     # garantiza esta migración es que existan Pago nominal y Bono.
     assert SUBCATEGORIAS['NOMINA'][:2] == ['Pago nominal', 'Bono']
-    assert {'PTU', 'Fondo de ahorro'} <= set(SUBCATEGORIAS['NOMINA'])
+    assert {'PTU', 'Fondo de ahorro', 'Aguinaldo'} <= set(SUBCATEGORIAS['NOMINA'])
     assert 'Renta' in SUBCATEGORIAS['VIVIENDA']
     assert 'Aportación renta' in SUBCATEGORIAS['VIVIENDA']
