@@ -21,6 +21,7 @@ import modules.gamification.engine as engine
 from . import prestamos as _prest
 from . import expense_lotes as _lotes
 from . import correcciones_csv_2026_09_26 as _csv0926
+from . import msi as _msi
 
 estados_bp = Blueprint(
     'estados',
@@ -80,6 +81,7 @@ estados_bp = Blueprint(
 _FINANZAS_NO_GASTO_SUBCATS = (
     'Transferencia recibida',
     'Depósito', 'Fideicomiso', 'Reembolsable',
+    'Compra a meses',   # compra inicial a MSI: el gasto lo llevan las mensualidades (msi.py)
 )
 
 
@@ -1236,12 +1238,13 @@ def summary_pendientes():
         """, (year_start,)).fetchone()
 
         # Por cada compra a MSI: cuotas restantes = total de mensualidades
-        # de la compra menos las que ya se han visto en algún import: cada
-        # una que falta por aparecer sigue siendo un cargo futuro real.
+        # menos la última mensualidad vista (no las contadas: una que no se
+        # importó porque falta ese estado de cuenta ya se pagó, no es un cargo
+        # futuro -- esas salen en /admin/msi como «faltan mensualidades»).
         msi_rows = db.execute("""
             SELECT compra_msi_id,
                    MAX(parcialidad_total) AS total_cuotas,
-                   COUNT(DISTINCT parcialidad_num) AS cuotas_vistas,
+                   MAX(parcialidad_num) AS cuotas_vistas,
                    AVG(monto) AS monto_cuota
             FROM est_movimientos
             WHERE compra_msi_id IS NOT NULL
@@ -1600,6 +1603,7 @@ def _reaplicar_reglas(db) -> int:
     _corregir_celular(db)
     _corregir_expense_terceros(db)
     _corregir_pagos_salsa(db)
+    _msi.marcar_compras(db)
     _csv0926.aplicar(db)
     _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
     return total_updated
@@ -2547,6 +2551,7 @@ def upload_file():
             _corregir_celular(db)
             _corregir_expense_terceros(db)
             _corregir_pagos_salsa(db)
+            _msi.marcar_compras(db)
             _csv0926.aplicar(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
 
@@ -2926,6 +2931,46 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
         'meses_sin_movimientos': meses_sin,
         'cortes_sin_movimientos': cortes_sin,
     }
+
+
+@estados_bp.route('/admin/msi')
+def conciliar_msi():
+    """Conciliación de compras a meses sin intereses (solo lectura): por
+    compra, total vs. mensualidades encontradas, cuánto va pagado, qué meses
+    no tienen mensualidad y si cuadra. ?formato=html la muestra como página."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        compras = _msi.conciliar(db, today_str())
+    if request.args.get('formato') == 'html':
+        return render_template_string(_MSI_HTML, compras=compras)
+    return jsonify({'compras': compras})
+
+
+_MSI_HTML = """<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Compras a meses</title>
+<style>
+:root{--bg:#fff;--fg:#1d1b20;--mut:#6b6570;--card:#f7f5f2;--line:#e4e0da;--ok:#2a8a62;--warn:#b7791f;--bad:#c0392b}
+@media (prefers-color-scheme:dark){:root{--bg:#0e0d12;--fg:#eceaf0;--mut:#9a95a3;--card:#1a1820;--line:#2c2933}}
+body{background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;margin:0;padding:16px;max-width:900px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}
+.meta{color:var(--mut);font-size:12px}.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+details summary{cursor:pointer;color:var(--mut);font-size:12px;margin-top:6px}
+</style></head><body>
+<h2>Compras a meses sin intereses</h2>
+<div class="meta">La compra inicial no cuenta como gasto; cuentan las mensualidades · solo lectura</div>
+{% for c in compras %}<div class="card">
+<div class="row"><strong>{{ c.descripcion }}</strong>
+<span class="{{ 'ok' if c.estado == 'Liquidada' else ('bad' if c.estado in ('Faltan mensualidades', 'Pagado de más') else 'warn') }}">{{ c.estado }}</span></div>
+<div class="meta">{{ c.fecha }} · {{ c.banco }} · {{ c.mensualidades }} meses de ${{ '{:,.2f}'.format(c.cuota or 0) }}</div>
+<div>Total ${{ '{:,.2f}'.format(c.total or 0) }} · pagado ${{ '{:,.2f}'.format(c.pagado or 0) }} ({{ c.pagadas }} de {{ c.mensualidades }}) · restante ${{ '{:,.2f}'.format(c.restante or 0) }}</div>
+{% if c.meses_sin_mensualidad %}<div class="bad">Meses sin mensualidad registrada: {{ c.meses_sin_mensualidad|join(', ') }}</div>{% endif %}
+{% if c.mensualidades_faltantes %}<div class="bad">Mensualidades que no aparecen: {{ c.mensualidades_faltantes|join(', ') }}</div>{% endif %}
+{% if c.repetidas %}<div class="bad">Hay mensualidades repetidas: posible doble conteo</div>{% endif %}
+{% if c.pagos %}<details><summary>{{ c.pagos|length }} mensualidades</summary><div class="meta">
+{% for p in c.pagos %}{{ p.fecha }} ${{ '{:,.2f}'.format(p.monto) }}{% if p.parcialidad %} ({{ p.parcialidad }}/{{ c.mensualidades }}){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div></details>{% endif %}
+</div>{% else %}<div class="card">No hay compras a meses registradas.</div>{% endfor %}
+</body></html>"""
 
 
 @estados_bp.route('/admin/audit-huecos')

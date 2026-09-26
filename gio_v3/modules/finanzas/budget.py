@@ -200,7 +200,8 @@ _GASTO_EXCLUIR = ('PAGO_TDC', 'PAGO', 'TRANSFERENCIA', 'SPEI_ENVIADO', 'RETIRO',
 # en la Radiografía (bucket Deseos, como OTROS) para poder reclasificarlas.
 # Solo quedan fuera las subcategorías que nunca son gasto (misma lista que
 # estados/routes.py::_FINANZAS_NO_GASTO_SUBCATS).
-_FINANZAS_NO_GASTO = ('Transferencia recibida', 'Depósito', 'Fideicomiso', 'Reembolsable')
+_FINANZAS_NO_GASTO = ('Transferencia recibida', 'Depósito', 'Fideicomiso', 'Reembolsable',
+                      'Compra a meses')   # compra inicial a MSI: cuentan las mensualidades
 # PROYECTOS ya no se excluye entero: Hosting y Software son gasto propio y
 # cuentan en Deseos; Publicidad y Reclutamiento son gasto de trabajo y quedan
 # fuera, igual que EXPENSE.
