@@ -2820,6 +2820,33 @@ def _partes_sin_cubrir(desde, hasta, fechas_d, umbral_dias: int) -> list:
     return partes
 
 
+# Día de corte de las tarjetas (el usuario: «mis cortes son normalmente del 23
+# o 22 de cada mes»): el corte AAAAMM va del 23 del mes anterior al 22 de ese
+# mes, y así se llaman los PDF (007410027429408661_202209 = 23/08 -> 22/09).
+AUDIT_DIA_CORTE = {'BBVA_TDC': 22}
+
+
+def _cortes_sin_movimientos(banco: str, fechas_d, hasta: str) -> list:
+    dia = AUDIT_DIA_CORTE.get(banco)
+    if not dia or not fechas_d:
+        return []
+
+    def corte_de(d):          # (año, mes) del corte al que pertenece la fecha
+        return (d.year, d.month) if d.day <= dia else ((d.year + 1, 1) if d.month == 12 else (d.year, d.month + 1))
+
+    con = {corte_de(d) for d in fechas_d}
+    y, m = corte_de(fechas_d[0])
+    fin = corte_de(datetime.strptime(hasta, '%Y-%m-%d').date())
+    faltan = []
+    while (y, m) <= fin:
+        if (y, m) not in con:
+            py, pm = (y - 1, 12) if m == 1 else (y, m - 1)
+            faltan.append({'corte': f"{y}{m:02d}", 'desde': f"{py}-{pm:02d}-{dia + 1:02d}",
+                           'hasta': f"{y}-{m:02d}-{dia:02d}"})
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return faltan
+
+
 def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
     """Huecos de un banco: (1) días sin cubrir entre periodos de estado de
     cuenta consecutivos (la señal más precisa: el `periodo` que guarda cada
@@ -2835,7 +2862,7 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
     if not fechas:
         return {'filas': 0, 'primera_fecha': None, 'ultima_fecha': None, 'dias_sin_datos': None,
                 'periodos': [], 'huecos_entre_periodos': [], 'huecos_sin_movimientos': [],
-                'meses_sin_movimientos': []}
+                'meses_sin_movimientos': [], 'cortes_sin_movimientos': []}
 
     # 1) Periodos de estado de cuenta. Se lee el periodo ISO («2024-04-23 al
     # 2024-05-22») y el del Libretón («07/05/2024 al 06/06/2024»); como hay
@@ -2872,9 +2899,11 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
                                'dias': (d - prev).days - (1 if f != hasta else 0)})
         prev = max(prev, d)
 
-    # 3) Meses sin movimientos
+    # 3) Meses sin movimientos (y, en tarjetas con día de corte fijo, cortes
+    # sin movimientos: es lo que el usuario busca para pedir el PDF)
     con_datos = {f[:7] for f in fechas}
     meses_sin = [m for m in _meses_en_rango(fechas[0], hasta) if m not in con_datos]
+    cortes_sin = _cortes_sin_movimientos(banco, fechas_d, hasta)
 
     ultima = datetime.strptime(fechas[-1], '%Y-%m-%d').date()
     return {
@@ -2886,6 +2915,7 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
         'huecos_entre_periodos': huecos_periodo,
         'huecos_sin_movimientos': huecos_mov,
         'meses_sin_movimientos': meses_sin,
+        'cortes_sin_movimientos': cortes_sin,
     }
 
 
@@ -2907,7 +2937,7 @@ def audit_huecos():
                      for b, n in AUDIT_BANCOS.items()}
     data = {'hasta': hasta, 'umbral_dias': umbral, 'por_banco': por_banco}
     if request.args.get('formato') == 'html':
-        return render_template_string(_AUDIT_HUECOS_HTML, **data)
+        return render_template_string(_AUDIT_HUECOS_HTML, dia_corte=AUDIT_DIA_CORTE, **data)
     return jsonify(data)
 
 
@@ -2932,8 +2962,10 @@ details summary{cursor:pointer;color:#9d96ad;font-size:13px;margin-top:8px}
 {% for h in b.huecos_entre_periodos %}<li>{{ h.desde }} → {{ h.hasta }} ({{ h.dias }} días){% if h.parcial %} <span class="meta">· el resto de ese hueco ya tiene {{ h.movimientos }} mov. de otro import</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
 {% if b.huecos_sin_movimientos %}<h3 class="warn">Tramos sin movimientos</h3><ul>
 {% for h in b.huecos_sin_movimientos %}<li>{{ h.desde }} → {{ h.hasta }} ({{ h.dias }} días)</li>{% endfor %}</ul>{% endif %}
-{% if b.meses_sin_movimientos %}<h3 class="warn">Meses sin ningún movimiento</h3><div>{{ b.meses_sin_movimientos|join(', ') }}</div>{% endif %}
-{% if not b.huecos_entre_periodos and not b.huecos_sin_movimientos and not b.meses_sin_movimientos %}<div class="ok">Sin huecos detectados.</div>{% endif %}
+{% if b.cortes_sin_movimientos %}<h3 class="warn">Cortes sin ningún movimiento (del 23 al 22)</h3><ul>
+{% for c in b.cortes_sin_movimientos %}<li>{{ c.corte }} · {{ c.desde }} → {{ c.hasta }}</li>{% endfor %}</ul>
+{% elif b.meses_sin_movimientos and not dia_corte.get(code) %}<h3 class="warn">Meses sin ningún movimiento</h3><div>{{ b.meses_sin_movimientos|join(', ') }}</div>{% endif %}
+{% if not b.huecos_entre_periodos and not b.huecos_sin_movimientos and not (b.cortes_sin_movimientos if dia_corte.get(code) else b.meses_sin_movimientos) %}<div class="ok">Sin huecos detectados.</div>{% endif %}
 {% if b.periodos %}<details><summary>{{ b.periodos|length }} periodos importados</summary><ul>
 {% for p in b.periodos %}<li>{{ p.inicio }} al {{ p.fin }} · {{ p.movimientos }} mov.</li>{% endfor %}</ul></details>{% endif %}
 {% endif %}</div>
