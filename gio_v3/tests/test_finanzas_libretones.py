@@ -60,3 +60,16 @@ def test_dos_retiros_identicos_el_mismo_dia_entran_los_dos(test_db):
         n = db.execute("""SELECT COUNT(*) FROM est_movimientos WHERE fecha='2023-10-04'
                           AND descripcion LIKE 'RETIRO SIN TARJETA QR%' AND monto=300""").fetchone()[0]
         assert n == 2
+
+
+def test_cetes_por_spei_y_fondo_de_ahorro(test_db):
+    with database.get_db() as db:
+        libs.aplicar(db, '202401')
+        libs.aplicar(db, '202402')
+        db.commit()
+        env = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE 'SPEI ENVIADO NAFIN%'").fetchall()
+        dev = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE 'SPEI DEVUELTONAFIN%'").fetchall()
+        assert env and all((r['categoria'], r['subcategoria']) == ('CETES', 'APORTACION') for r in env)
+        assert dev and all((r['categoria'], r['subcategoria']) == ('CETES', 'RETIRO') for r in dev)
+        fdo = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE '%FDO AHORRO%'").fetchone()
+        assert (fdo['categoria'], fdo['subcategoria']) == ('NOMINA', 'Fondo de ahorro')

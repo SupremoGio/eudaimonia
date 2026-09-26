@@ -1,0 +1,307 @@
+{
+ "archivo": "1520361804_202306_C1.pdf",
+ "periodo": "07/05/2023 al 06/06/2023",
+ "totales": {
+  "cargos": 48286.6,
+  "abonos": 50109.67
+ },
+ "movimientos": [
+  {
+   "fecha": "2023-05-08",
+   "fecha_cargo": "2023-05-08",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 800.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-09",
+   "fecha_cargo": "2023-05-09",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-12",
+   "fecha_cargo": "2023-05-12",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7488.46,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-12",
+   "fecha_cargo": "2023-05-12",
+   "descripcion": "SPEI RECIBIDOHSBC",
+   "monto": 6840.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-12",
+   "fecha_cargo": "2023-05-12",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 5000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-12",
+   "fecha_cargo": "2023-05-12",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GRACIAS BEBO",
+   "monto": 4250.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-13",
+   "fecha_cargo": "2023-05-15",
+   "descripcion": "SPEI ENVIADO NAFIN",
+   "monto": 9000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-13",
+   "fecha_cargo": "2023-05-15",
+   "descripcion": "SPEI DEVUELTONAFIN",
+   "monto": 9000.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-13",
+   "fecha_cargo": "2023-05-15",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 2250.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-15",
+   "fecha_cargo": "2023-05-15",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-16",
+   "fecha_cargo": "2023-05-16",
+   "descripcion": "SPEI ENVIADO SANTANDER",
+   "monto": 320.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-17",
+   "fecha_cargo": "2023-05-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 5150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-18",
+   "fecha_cargo": "2023-05-18",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 8500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-19",
+   "fecha_cargo": "2023-05-19",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SOLAR GIO",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-19",
+   "fecha_cargo": "2023-05-22",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 30.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-22",
+   "fecha_cargo": "2023-05-20",
+   "descripcion": "DLOCAL*DIDI FOOD MX RFC: DME 180122DU4 22:05 AUT: 927078",
+   "monto": 292.2,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-23",
+   "fecha_cargo": "2023-05-24",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-25",
+   "fecha_cargo": "2023-05-25",
+   "descripcion": "DEPOSITO DE TERCERO SGLDAC EXPENSE GIOVANY",
+   "monto": 8029.2,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-25",
+   "fecha_cargo": "2023-05-25",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET POR CUALQUIER COSA",
+   "monto": 0.1,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-25",
+   "fecha_cargo": "2023-05-25",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET POR CUALQUIER COSA",
+   "monto": 0.1,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-25",
+   "fecha_cargo": "2023-05-25",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BONO X NUESTR 1 CI",
+   "monto": 6882.28,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-29",
+   "fecha_cargo": "2023-05-29",
+   "descripcion": "SPEI RECIBIDOSTP",
+   "monto": 80.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-29",
+   "fecha_cargo": "2023-05-29",
+   "descripcion": "DEPOSITO DE TERCERO ALBERTO SANCHEZ GIOVANY BMRCASH",
+   "monto": 136.73,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-30",
+   "fecha_cargo": "2023-05-30",
+   "descripcion": "DEPOSITO DE TERCERO ALBERTO SANCHEZ GIOVANY BMRCASH",
+   "monto": 306.45,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-30",
+   "fecha_cargo": "2023-05-30",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO EXPENSE",
+   "monto": 391.92,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-31",
+   "fecha_cargo": "2023-05-31",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7450.83,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-05-31",
+   "fecha_cargo": "2023-05-31",
+   "descripcion": "SPEI ENVIADO NAFIN",
+   "monto": 4000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-06-01",
+   "fecha_cargo": "2023-06-01",
+   "descripcion": "SPEI ENVIADO SANTANDER",
+   "monto": 320.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-06-02",
+   "fecha_cargo": "2023-06-01",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-06-02",
+   "fecha_cargo": "2023-06-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO 6",
+   "monto": 1378.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-06-02",
+   "fecha_cargo": "2023-06-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET POOL PARTY GIOVANY",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-06-06",
+   "fecha_cargo": "2023-06-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MAYO GIO",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-06-06",
+   "fecha_cargo": "2023-06-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET AFRO GIOVANY",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  }
+ ]
+}

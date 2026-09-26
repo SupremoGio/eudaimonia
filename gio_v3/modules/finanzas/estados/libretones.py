@@ -38,8 +38,16 @@ def _decisiones_previas(db, ids: list) -> None:
     """Lo que el usuario ya decidió para movimientos iguales en el CSV
     corregido (correcciones_csv_2026_09_26): SPEI de NAFIN recibido es
     retiro de CETES; «expense» pagado es EXPENSE y el depósito de expense
-    es su reembolso."""
+    es su reembolso. Por la misma lógica (SPEI a GBM -> GBM/APORTACION): SPEI
+    enviado a NAFIN es aportación a CETES y el SPEI devuelto por NAFIN, su
+    retiro (se compensan). El fondo de ahorro anual es NOMINA/Fondo de ahorro."""
     ph = ','.join('?' * len(ids))
+    db.execute(f"""UPDATE est_movimientos SET categoria='CETES', subcategoria='APORTACION', tipo='INVERSION'
+                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'SPEI ENVIADO NAFIN%'""", ids)
+    db.execute(f"""UPDATE est_movimientos SET categoria='CETES', subcategoria='RETIRO', tipo='INVERSION'
+                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'SPEI DEVUELTONAFIN%'""", ids)
+    db.execute(f"""UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Fondo de ahorro'
+                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE '%FDO AHORRO%' AND tipo='INGRESO'""", ids)
     db.execute(f"""UPDATE est_movimientos SET categoria='CETES', subcategoria='RETIRO', tipo='INVERSION'
                    WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'SPEI RECIBIDONAFIN%'""", ids)
     db.execute(f"""UPDATE est_movimientos SET categoria='EXPENSE', subcategoria='', tipo='GASTO'

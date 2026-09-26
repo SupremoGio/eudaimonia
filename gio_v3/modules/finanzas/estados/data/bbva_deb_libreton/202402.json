@@ -1,0 +1,310 @@
+{
+ "archivo": "1520361804_202402_C1.pdf",
+ "periodo": "07/01/2024 al 06/02/2024",
+ "totales": {
+  "cargos": 119390.6,
+  "abonos": 53394.65
+ },
+ "ajustes": [
+  "2024-01-07 «Pago 10 11 12» $3,814 -> INGRESO y «Abono deuda» $7,000 -> GASTO: el saldo de operación del 07/ENE baja $14,186 = -11,000 - 7,000 + 3,814; con esto cuadra (23 cargos / $119,390.60)."
+ ],
+ "movimientos": [
+  {
+   "fecha": "2024-01-07",
+   "fecha_cargo": "2024-01-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO 10 11 12",
+   "monto": 3814.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-01-07",
+   "fecha_cargo": "2024-01-08",
+   "descripcion": "SPEI ENVIADO NAFIN",
+   "monto": 19500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-07",
+   "fecha_cargo": "2024-01-08",
+   "descripcion": "SPEI DEVUELTONAFIN",
+   "monto": 19500.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-01-07",
+   "fecha_cargo": "2024-01-08",
+   "descripcion": "SPEI ENVIADO BANORTE",
+   "monto": 11000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-07",
+   "fecha_cargo": "2024-01-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET ABONO DEUDA",
+   "monto": 7000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-08",
+   "fecha_cargo": "2024-01-08",
+   "descripcion": "SPEI ENVIADO NAFIN",
+   "monto": 25000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-08",
+   "fecha_cargo": "2024-01-08",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 5070.71,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-01-09",
+   "fecha_cargo": "2024-01-09",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-12",
+   "fecha_cargo": "2024-01-15",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 16042.6,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-13",
+   "fecha_cargo": "2024-01-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET CONSULTA GIOVANY A",
+   "monto": 550.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-14",
+   "fecha_cargo": "2024-01-15",
+   "descripcion": "ABONO BBVA ABONO BBVA D LOCAL*DIDIFOOD",
+   "monto": 49.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-01-15",
+   "fecha_cargo": "2024-01-12",
+   "descripcion": "D LOCAL*DIDIFOOD RFC: DMM 171208LT4 00:02 AUT: 435359",
+   "monto": 49.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-15",
+   "fecha_cargo": "2024-01-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7586.8,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-01-15",
+   "fecha_cargo": "2024-01-15",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 800.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-16",
+   "fecha_cargo": "2024-01-16",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 420.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-17",
+   "fecha_cargo": "2024-01-17",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-18",
+   "fecha_cargo": "2024-01-18",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 4000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-01-19",
+   "fecha_cargo": "2024-01-19",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-21",
+   "fecha_cargo": "2024-01-22",
+   "descripcion": "SPEI ENVIADO INVEX",
+   "monto": 1569.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-22",
+   "fecha_cargo": "2024-01-22",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 30.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-29",
+   "fecha_cargo": "2024-01-29",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-30",
+   "fecha_cargo": "2024-01-30",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-01-31",
+   "fecha_cargo": "2024-01-31",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7555.57,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-02-01",
+   "fecha_cargo": "2024-02-01",
+   "descripcion": "SPEI ENVIADO NAFIN",
+   "monto": 25000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-01",
+   "fecha_cargo": "2024-02-01",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 818.57,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-02-01",
+   "fecha_cargo": "2024-02-01",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET DONATIVO",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-02-01",
+   "fecha_cargo": "2024-02-01",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-01",
+   "fecha_cargo": "2024-02-01",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-02",
+   "fecha_cargo": "2024-02-02",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 4000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-02-02",
+   "fecha_cargo": "2024-02-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 30.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-02",
+   "fecha_cargo": "2024-02-02",
+   "descripcion": "SPEI ENVIADO BANAMEX",
+   "monto": 2500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-02",
+   "fecha_cargo": "2024-02-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TUS CONNERIES",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-03",
+   "fecha_cargo": "2024-02-06",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  }
+ ]
+}
