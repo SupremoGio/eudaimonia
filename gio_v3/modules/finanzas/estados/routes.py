@@ -1538,53 +1538,62 @@ def create_keyword():
 def apply_all_keywords():
     """Re-apply every keyword rule to the entire transaction table."""
     if not _ok(): return _locked()
-    total_updated = 0
     with get_db() as db:
-        kw_rows = db.execute(
-            "SELECT keyword, categoria, subcategoria FROM est_keywords"
-        ).fetchall()
-        for kw_row in kw_rows:
-            result = db.execute("""
-                UPDATE est_movimientos
-                SET categoria=?, subcategoria=?
-                WHERE UPPER(descripcion) LIKE ?
-            """, (kw_row['categoria'], _normalize_subcategoria(kw_row['categoria'], kw_row['subcategoria']),
-                  f'%{kw_row["keyword"]}%'))
-            total_updated += result.rowcount if hasattr(result, 'rowcount') else 0
-        # Una regla de keyword no distingue tipo -- si alguna quedó
-        # aplicada a un ingreso con categoria=EXPENSE, o con VIVIENDA/
-        # Renta (ver _corregir_expense_en_ingreso y
-        # _corregir_renta_en_ingreso), se corrige aquí igual que en
-        # create/update_transaction.
-        db.execute("""
-            UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
-            WHERE categoria='EXPENSE' AND tipo='INGRESO'
-        """)
-        db.execute("""
-            UPDATE est_movimientos SET subcategoria='Aportación renta'
-            WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
-        """)
-        _corregir_fusion_gio(db)
-        _corregir_far_guad(db)
-        _corregir_categorias_legacy(db)
-        _corregir_alimentacion_split(db)
-        _prest.reafirmar_categorias(db)
-        _corregir_servicios_legacy(db)
-        _corregir_suscripciones_legacy(db)
-        _corregir_steamgames(db)
-        _corregir_retiros_renta(db)
-        _corregir_spei_invex(db)
-        _corregir_zaira_restaurante(db)
-        _corregir_walmart_lavadora(db)
-        _corregir_didi_delivery(db)
-        _corregir_amazon_suscripciones(db)
-        _corregir_celular(db)
-        _corregir_expense_terceros(db)
-        _corregir_pagos_salsa(db)
-        _csv0926.aplicar(db)
-        _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
+        total_updated = _reaplicar_reglas(db)
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
+
+
+def _reaplicar_reglas(db) -> int:
+    """Cuerpo de «Aplicar reglas»: keywords del usuario y todas las
+    correcciones reafirmadas sobre la tabla completa (idempotente). También
+    lo usan las cargas manuales de estados de cuenta (ej. libreton_2023_08)
+    para que sus filas queden igual que las de un import normal."""
+    total_updated = 0
+    kw_rows = db.execute(
+        "SELECT keyword, categoria, subcategoria FROM est_keywords"
+    ).fetchall()
+    for kw_row in kw_rows:
+        result = db.execute("""
+            UPDATE est_movimientos
+            SET categoria=?, subcategoria=?
+            WHERE UPPER(descripcion) LIKE ?
+        """, (kw_row['categoria'], _normalize_subcategoria(kw_row['categoria'], kw_row['subcategoria']),
+              f'%{kw_row["keyword"]}%'))
+        total_updated += result.rowcount if hasattr(result, 'rowcount') else 0
+    # Una regla de keyword no distingue tipo -- si alguna quedó
+    # aplicada a un ingreso con categoria=EXPENSE, o con VIVIENDA/
+    # Renta (ver _corregir_expense_en_ingreso y
+    # _corregir_renta_en_ingreso), se corrige aquí igual que en
+    # create/update_transaction.
+    db.execute("""
+        UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
+        WHERE categoria='EXPENSE' AND tipo='INGRESO'
+    """)
+    db.execute("""
+        UPDATE est_movimientos SET subcategoria='Aportación renta'
+        WHERE categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='INGRESO'
+    """)
+    _corregir_fusion_gio(db)
+    _corregir_far_guad(db)
+    _corregir_categorias_legacy(db)
+    _corregir_alimentacion_split(db)
+    _prest.reafirmar_categorias(db)
+    _corregir_servicios_legacy(db)
+    _corregir_suscripciones_legacy(db)
+    _corregir_steamgames(db)
+    _corregir_retiros_renta(db)
+    _corregir_spei_invex(db)
+    _corregir_zaira_restaurante(db)
+    _corregir_walmart_lavadora(db)
+    _corregir_didi_delivery(db)
+    _corregir_amazon_suscripciones(db)
+    _corregir_celular(db)
+    _corregir_expense_terceros(db)
+    _corregir_pagos_salsa(db)
+    _csv0926.aplicar(db)
+    _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
+    return total_updated
 
 
 @estados_bp.route('/api/keywords/<path:keyword>', methods=['DELETE'])
@@ -2755,6 +2764,20 @@ AUDIT_BANCOS = {
     'INVEX':    'Invex Volaris',
 }
 _PERIODO_RE = re.compile(r"(\d{4}-\d{2}-\d{2})\s+al\s+(\d{4}-\d{2}-\d{2})")
+# Tramos que la auditoría marcaba como hueco pero que se verificaron contra
+# el estado de cuenta oficial y NO tienen movimientos (pedido del usuario:
+# «si esos no tienen movimientos entonces quítalo de auditoría»). Un hueco
+# que cae completo dentro de uno de estos rangos ya no se reporta.
+#   - BBVA_DEB 2026-05-30 -> 2026-06-01: Libretón 07/05-06/06/2026 salta de
+#     la nómina del 29/MAY al SPEI del 02/JUN (fin de semana); las descargas
+#     de la app ponen como periodo la primera/última fecha con movimiento.
+AUDIT_TRAMOS_VACIOS = {
+    'BBVA_DEB': (('2026-05-30', '2026-06-01'),),
+}
+
+
+def _tramo_confirmado_vacio(banco: str, desde: str, hasta: str) -> bool:
+    return any(a <= desde and hasta <= b for a, b in AUDIT_TRAMOS_VACIOS.get(banco, ()))
 
 
 def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
@@ -2789,7 +2812,8 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
         d_fin = datetime.strptime(fin_prev, '%Y-%m-%d').date()
         d_ini = datetime.strptime(ini_sig, '%Y-%m-%d').date()
         # Tolerancia de 3 días: los cortes a veces brincan fines de semana.
-        if (d_ini - d_fin).days > 3:
+        if (d_ini - d_fin).days > 3 and not _tramo_confirmado_vacio(
+                banco, (d_fin + timedelta(days=1)).isoformat(), (d_ini - timedelta(days=1)).isoformat()):
             huecos_periodo.append({
                 'desde': (d_fin + timedelta(days=1)).isoformat(),
                 'hasta': (d_ini - timedelta(days=1)).isoformat(),
@@ -2801,7 +2825,8 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
     prev = datetime.strptime(fechas[0], '%Y-%m-%d').date()
     for f in fechas[1:] + [hasta]:
         d = datetime.strptime(f, '%Y-%m-%d').date()
-        if (d - prev).days > umbral_dias:
+        if (d - prev).days > umbral_dias and not _tramo_confirmado_vacio(
+                banco, (prev + timedelta(days=1)).isoformat(), (d - timedelta(days=1)).isoformat()):
             huecos_mov.append({'desde': (prev + timedelta(days=1)).isoformat(),
                                'hasta': (d - timedelta(days=1)).isoformat() if f != hasta else hasta,
                                'dias': (d - prev).days - (1 if f != hasta else 0)})

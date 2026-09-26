@@ -5524,6 +5524,50 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_csv_corregido_2026_09_26 migration warning: {e}")
 
+        # ── FINANZAS — segunda tanda del CSV comentado: 7 filas que seguían en
+        # OTROS (intereses INVEX, evento, gasolina, curso, pago en efectivo y un
+        # SPEI devuelto). Están al final de CORRECCIONES; se vuelve a correr
+        # aplicar() completo porque es idempotente.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_csv_otros_2026_09_26'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_csv_2026_09_26 import aplicar as _aplicar_csv2
+                _ok, _faltan = _aplicar_csv2(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_csv_otros_2026_09_26",
+                     f"CSV (OTROS): {_ok} movimientos actualizados, {_faltan} no encontrados (id+fecha+monto)")
+                )
+                db.commit()
+                print(f"[DB] finanzas_csv_otros_2026_09_26: {_ok} actualizados, {_faltan} no encontrados")
+            except Exception as e:
+                print(f"[DB] finanzas_csv_otros_2026_09_26 migration warning: {e}")
+
+        # ── FINANZAS — hueco BBVA Débito 2023-08-03 -> 2023-09-08: el Libretón
+        # 07/08-06/09/2023 que mandó el usuario es solo imagen (el parser no lo
+        # lee); sus 25 movimientos, transcritos y cuadrados contra el saldo, en
+        # modules/finanzas/estados/libreton_2023_08.py.
+        # Solo con historial de BBVA Débito alrededor del hueco (la base real):
+        # en una base nueva/vacía no se inserta nada ni se marca aplicada.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_libreton_2023_08'"
+        ).fetchone() and db.execute(
+            "SELECT 1 FROM est_movimientos WHERE banco='BBVA_DEB' AND fecha < '2023-08-07' LIMIT 1"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.libreton_2023_08 import aplicar as _aplicar_lib
+                _ins, _ya = _aplicar_lib(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_libreton_2023_08",
+                     f"Libretón 07/08-06/09/2023: {_ins} movimientos insertados, {_ya} ya existían")
+                )
+                db.commit()
+                print(f"[DB] finanzas_libreton_2023_08: {_ins} insertados, {_ya} ya existían")
+            except Exception as e:
+                print(f"[DB] finanzas_libreton_2023_08 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
