@@ -5496,6 +5496,42 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_csv_corregido_2026_09_26 migration warning: {e}")
 
+        # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
+        # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
+        # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_walmart_lavadora_v2'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_walmart_lavadora
+                _n = _corregir_walmart_lavadora(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_walmart_lavadora_v2", f"{_n} mensualidades más -> VIVIENDA/Artículos del hogar")
+                )
+                db.commit()
+                print(f"[DB] finanzas_walmart_lavadora_v2: {_n} mensualidades -> VIVIENDA/Artículos del hogar")
+            except Exception as e:
+                print(f"[DB] finanzas_walmart_lavadora_v2 migration warning: {e}")
+
+        # ── FINANZAS — «PAGO CUENTA DE TERCERO … EXPENSE» que llegaron como tipo
+        # PAGO (ago-2026: $332, $522, $244.49) no se marcaban como «Pagado a
+        # compañero» ni salían para armar lotes. Mismo blindaje, ya corregido.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_terceros_pago_v2'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_expense_terceros
+                _n = _corregir_expense_terceros(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_terceros_pago_v2", f"{_n} EXPENSE a compañeros tipo PAGO -> GASTO/TERCERO")
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_terceros_pago_v2: {_n} -> GASTO/TERCERO")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_terceros_pago_v2 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que
