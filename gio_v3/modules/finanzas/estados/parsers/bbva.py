@@ -64,6 +64,11 @@ def parse_tarjeta_oro(full_text: str) -> list[dict]:
             continue
         concepto = _ORO_RFC_RE.sub("", _ORO_REF_RE.sub("", m.group(3)))
         desc = clean_desc(concepto)
+        # «01 DE 03 ANUALIDAD»: la anualidad diferida sale en la lista pero el
+        # banco la cuenta en «Comisiones», no en TOTAL IMPORTES (corte dic 2022;
+        # en el siguiente se bonificó con «FELICIDADES ABONO CUOTA ANUAL»).
+        if _MSI_INSTALLMENT_RE.match(concepto) and desc.strip().upper() == "ANUALIDAD":
+            continue
         monto = float(m.group(4).replace(",", ""))
         abono = m.group(5) == "-"
         msi_m = _MSI_INSTALLMENT_RE.match(concepto)

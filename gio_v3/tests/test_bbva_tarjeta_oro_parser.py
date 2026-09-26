@@ -29,3 +29,12 @@ def test_parsea_cargos_abonos_msi_y_periodo():
     assert (ms[1]['monto'], ms[1]['tipo']) == (-1500.0, 'PAGO')
     assert (ms[3]['parcialidad_num'], ms[3]['parcialidad_total']) == (7, 9)
     assert B.oro_totales(TEXTO) == (739.23, 1500.0)
+
+
+def test_anualidad_diferida_no_es_movimiento():
+    texto = """Movimientos Efectuados Tarjeta Titular 4772 1330 5409 7990
+22/12/22 23/12/22 01 DE 06 MEN S FACTORY P PAT I $ 462.00
+22/12/22 22/12/22 01 DE 03 ANUALIDAD $ 358.66
+TOTAL IMPORTES: $ 462.00
+"""
+    assert [m['monto'] for m in B.parse_tarjeta_oro(texto)] == [462.0]
