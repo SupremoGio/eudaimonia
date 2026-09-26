@@ -1819,6 +1819,32 @@ def init_db():
             FOREIGN KEY (prestamo_id)   REFERENCES est_prestamos(id),
             FOREIGN KEY (movimiento_id) REFERENCES est_movimientos(id)
         );
+        -- Lotes de reembolso de Expense: el usuario sube varias facturas
+        -- juntas y la empresa paga un depósito (o varios) por todo el lote.
+        -- Cada gasto EXPENSE y cada depósito pertenece a lo más a un lote
+        -- (ver modules/finanzas/estados/expense_lotes.py).
+        CREATE TABLE IF NOT EXISTS est_expense_lotes (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre      TEXT    NOT NULL,
+            notas       TEXT    DEFAULT '',
+            created_at  TEXT    NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS est_expense_lote_gastos (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            lote_id       INTEGER NOT NULL,
+            movimiento_id INTEGER NOT NULL UNIQUE,
+            created_at    TEXT    NOT NULL,
+            FOREIGN KEY (lote_id)       REFERENCES est_expense_lotes(id),
+            FOREIGN KEY (movimiento_id) REFERENCES est_movimientos(id)
+        );
+        CREATE TABLE IF NOT EXISTS est_expense_lote_depositos (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            lote_id       INTEGER NOT NULL,
+            movimiento_id INTEGER NOT NULL UNIQUE,
+            created_at    TEXT    NOT NULL,
+            FOREIGN KEY (lote_id)       REFERENCES est_expense_lotes(id),
+            FOREIGN KEY (movimiento_id) REFERENCES est_movimientos(id)
+        );
         """)
 
         # «Perdido» es manual y guarda cuándo se marcó: ese mes el pendiente

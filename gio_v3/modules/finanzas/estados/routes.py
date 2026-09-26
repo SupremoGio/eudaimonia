@@ -19,6 +19,7 @@ from database import get_db
 from utils import clean_str, today_str, safe_float, csv_response
 import modules.gamification.engine as engine
 from . import prestamos as _prest
+from . import expense_lotes as _lotes
 
 estados_bp = Blueprint(
     'estados',
@@ -1537,6 +1538,7 @@ def apply_all_keywords():
         _corregir_amazon_suscripciones(db)
         _corregir_celular(db)
         _corregir_expense_terceros(db)
+        _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
 
@@ -1724,6 +1726,193 @@ def prestamos_desligar(pid, mov_id):
     if not _ok(): return _locked()
     with get_db() as db:
         db.execute("DELETE FROM est_prestamo_devoluciones WHERE prestamo_id=? AND movimiento_id=?", (pid, mov_id))
+        db.commit()
+    return jsonify({'ok': True})
+
+
+# ── Expense: conciliación por lotes (pestaña «Expense») ──────────────────────
+# Varias facturas se suben juntas y la empresa paga un depósito por el lote;
+# la lógica vive en expense_lotes.py. get_db() hace commit al salir del
+# `with` (y _HybridConn no tiene rollback), así que todo se valida ANTES de
+# escribir: un error nunca deja un lote a medias.
+
+def _ids(v) -> list:
+    try:
+        return sorted({int(x) for x in (v or [])})
+    except (TypeError, ValueError):
+        return []
+
+
+def _lote_existe(db, lid) -> bool:
+    return bool(db.execute("SELECT 1 FROM est_expense_lotes WHERE id=?", (lid,)).fetchone())
+
+
+def _error_gastos(db, ids) -> str | None:
+    for mid in ids:
+        m = _mov(db, mid)
+        if not m or m['tipo'] != 'GASTO' or m['categoria'] != 'EXPENSE':
+            return f'El movimiento {mid} no es un gasto EXPENSE.'
+        if db.execute("SELECT 1 FROM est_expense_lote_gastos WHERE movimiento_id=?", (mid,)).fetchone():
+            return f'La factura «{m["descripcion"]}» ya está en otro lote.'
+    return None
+
+
+def _error_deposito(db, mid) -> str | None:
+    m = _mov(db, mid)
+    if not m or m['tipo'] != 'INGRESO':
+        return 'El depósito no existe o no es un ingreso.'
+    if db.execute("SELECT 1 FROM est_expense_lote_depositos WHERE movimiento_id=?", (mid,)).fetchone():
+        return 'Ese depósito ya está ligado a un lote.'
+    if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (mid,)).fetchone():
+        return 'Ese ingreso está ligado como devolución de un préstamo.'
+    return None
+
+
+def _insertar_gastos(db, lid, ids):
+    for mid in ids:
+        db.execute("INSERT INTO est_expense_lote_gastos (lote_id, movimiento_id, created_at) VALUES (?,?,?)",
+                   (lid, mid, _lotes.ahora()))
+
+
+def _insertar_deposito(db, lid, mid):
+    db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable' WHERE id=?", (mid,))
+    db.execute("INSERT INTO est_expense_lote_depositos (lote_id, movimiento_id, created_at) VALUES (?,?,?)",
+               (lid, mid, _lotes.ahora()))
+
+
+@estados_bp.route('/api/expense/lotes')
+def expense_lotes():
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_lotes.resumen(db))
+
+
+@estados_bp.route('/api/expense/candidatos')
+def expense_candidatos():
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_lotes.candidatos(db))
+
+
+@estados_bp.route('/api/expense/export.csv')
+def expense_csv():
+    if not _ok(): return _locked()
+    with get_db() as db:
+        rows = _lotes.filas_csv(db)
+    return csv_response(['Lote', 'Estado', 'Tipo', 'Fecha', 'Descripción', 'Monto', 'Nota'],
+                        rows, f"expense_lotes_{today_str()}.csv")
+
+
+@estados_bp.route('/api/expense/lotes', methods=['POST'])
+def expense_lote_crear():
+    """Crea un lote con sus facturas (gasto_ids) y, opcional, sus depósitos."""
+    if not _ok(): return _locked()
+    d = request.get_json(silent=True) or {}
+    nombre = clean_str(d.get('nombre'), 80)
+    gasto_ids, deposito_ids = _ids(d.get('gasto_ids')), _ids(d.get('deposito_ids'))
+    if not nombre:
+        return jsonify({'error': 'Ponle un nombre al lote (ej. «Facturas mayo»).'}), 400
+    if not gasto_ids:
+        return jsonify({'error': 'Elige al menos una factura.'}), 400
+    with get_db() as db:
+        err = _error_gastos(db, gasto_ids) or next(filter(None, (_error_deposito(db, m) for m in deposito_ids)), None)
+        if err:
+            return jsonify({'error': err}), 400
+        lid = db.execute("INSERT INTO est_expense_lotes (nombre, notas, created_at) VALUES (?,?,?)",
+                         (nombre, clean_str(d.get('notas'), 300), _lotes.ahora())).lastrowid
+        _insertar_gastos(db, lid, gasto_ids)
+        for mid in deposito_ids:
+            _insertar_deposito(db, lid, mid)
+        _lotes.sincronizar(db, lid)
+        db.commit()
+    return jsonify({'ok': True, 'id': lid}), 201
+
+
+@estados_bp.route('/api/expense/lotes/<int:lid>', methods=['PATCH'])
+def expense_lote_editar(lid):
+    if not _ok(): return _locked()
+    d = request.get_json(silent=True) or {}
+    with get_db() as db:
+        if not _lote_existe(db, lid):
+            return jsonify({'error': 'Lote no encontrado.'}), 404
+        if 'nombre' in d:
+            nombre = clean_str(d.get('nombre'), 80)
+            if not nombre:
+                return jsonify({'error': 'El nombre no puede quedar vacío.'}), 400
+            db.execute("UPDATE est_expense_lotes SET nombre=? WHERE id=?", (nombre, lid))
+        if 'notas' in d:
+            db.execute("UPDATE est_expense_lotes SET notas=? WHERE id=?", (clean_str(d.get('notas'), 300), lid))
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/expense/lotes/<int:lid>', methods=['DELETE'])
+def expense_lote_borrar(lid):
+    """Borra el lote y sus ligas; los movimientos bancarios no se tocan."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        db.execute("DELETE FROM est_expense_lote_gastos WHERE lote_id=?", (lid,))
+        db.execute("DELETE FROM est_expense_lote_depositos WHERE lote_id=?", (lid,))
+        db.execute("DELETE FROM est_expense_lotes WHERE id=?", (lid,))
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/expense/lotes/<int:lid>/gastos', methods=['POST'])
+def expense_lote_agregar_gastos(lid):
+    if not _ok(): return _locked()
+    ids = _ids((request.get_json(silent=True) or {}).get('movimiento_ids'))
+    if not ids:
+        return jsonify({'error': 'Elige al menos una factura.'}), 400
+    with get_db() as db:
+        if not _lote_existe(db, lid):
+            return jsonify({'error': 'Lote no encontrado.'}), 404
+        err = _error_gastos(db, ids)
+        if err:
+            return jsonify({'error': err}), 400
+        _insertar_gastos(db, lid, ids)
+        _lotes.sincronizar(db, lid)
+        db.commit()
+    return jsonify({'ok': True}), 201
+
+
+@estados_bp.route('/api/expense/lotes/<int:lid>/gastos/<int:mov_id>', methods=['DELETE'])
+def expense_lote_quitar_gasto(lid, mov_id):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        db.execute("DELETE FROM est_expense_lote_gastos WHERE lote_id=? AND movimiento_id=?", (lid, mov_id))
+        _lotes.sincronizar(db, lid)
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/expense/lotes/<int:lid>/depositos', methods=['POST'])
+def expense_lote_ligar_deposito(lid):
+    """Liga el depósito de la empresa: queda como FINANZAS/Reembolsable (no
+    cuenta como ingreso) y, si cubre el lote, sus facturas pasan a Pagado."""
+    if not _ok(): return _locked()
+    try:
+        mid = int((request.get_json(silent=True) or {}).get('movimiento_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Falta el depósito.'}), 400
+    with get_db() as db:
+        if not _lote_existe(db, lid):
+            return jsonify({'error': 'Lote no encontrado.'}), 404
+        err = _error_deposito(db, mid)
+        if err:
+            return jsonify({'error': err}), 400
+        _insertar_deposito(db, lid, mid)
+        _lotes.sincronizar(db, lid)
+        db.commit()
+    return jsonify({'ok': True}), 201
+
+
+@estados_bp.route('/api/expense/lotes/<int:lid>/depositos/<int:mov_id>', methods=['DELETE'])
+def expense_lote_quitar_deposito(lid, mov_id):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        db.execute("DELETE FROM est_expense_lote_depositos WHERE lote_id=? AND movimiento_id=?", (lid, mov_id))
+        _lotes.sincronizar(db, lid)
         db.commit()
     return jsonify({'ok': True})
 
@@ -2164,6 +2353,7 @@ def upload_file():
             _corregir_amazon_suscripciones(db)
             _corregir_celular(db)
             _corregir_expense_terceros(db)
+            _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
 
             # ── Post-proceso inversiones ──────────────────────────────────────
             # Cuando categoria='INVERSION', elevar tipo y asignar plataforma+dirección.
