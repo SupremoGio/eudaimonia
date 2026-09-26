@@ -2943,6 +2943,24 @@ def conciliar_msi():
         compras = _msi.conciliar(db, today_str())
     if request.args.get('formato') == 'html':
         return render_template_string(_MSI_HTML, compras=compras)
+    if request.args.get('formato') == 'csv':
+        # Para que el usuario lo revise y lo regrese con COMENTARIOS (plazo
+        # real, «ya liquidada», «esta mensualidad es de otra compra»…).
+        # ?solo=pendientes deja fuera las que ya cuadran (Liquidada).
+        if request.args.get('solo') == 'pendientes':
+            compras = [c for c in compras if c['estado'] != 'Liquidada']
+        filas = [[
+            c['id'] or '', c['fecha'], c['descripcion'], c['banco'], c['estado'],
+            c['total'], c['mensualidades'], c['cuota'], c['pagadas'], c['pagado'], c['restante'],
+            ', '.join(c.get('meses_sin_mensualidad') or []),
+            ', '.join(str(n) for n in (c.get('mensualidades_faltantes') or [])),
+            ', '.join(f"{p['fecha']} ${p['monto']:.2f}" for p in c.get('pagos') or []),
+            '',
+        ] for c in compras]
+        return csv_response(['ID compra', 'Fecha', 'Descripción', 'Banco', 'Estado', 'Total', 'Meses',
+                             'Cuota', 'Mensualidades pagadas', 'Pagado', 'Restante',
+                             'Meses sin mensualidad', 'Mensualidades que no aparecen', 'Mensualidades encontradas',
+                             'COMENTARIOS'], filas, f'compras_msi_{today_str()}.csv')
     return jsonify({'compras': compras})
 
 
@@ -2958,7 +2976,8 @@ body{background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;ma
 details summary{cursor:pointer;color:var(--mut);font-size:12px;margin-top:6px}
 </style></head><body>
 <h2>Compras a meses sin intereses</h2>
-<div class="meta">La compra inicial no cuenta como gasto; cuentan las mensualidades · solo lectura</div>
+<div class="meta">La compra inicial no cuenta como gasto; cuentan las mensualidades · solo lectura ·
+<a href="?formato=csv&solo=pendientes">Descargar CSV (pendientes)</a> · <a href="?formato=csv">CSV completo</a></div>
 {% for c in compras %}<div class="card">
 <div class="row"><strong>{{ c.descripcion }}</strong>
 <span class="{{ 'ok' if c.estado == 'Liquidada' else ('bad' if c.estado in ('Faltan mensualidades', 'Pagado de más') else 'warn') }}">{{ c.estado }}</span></div>

@@ -97,3 +97,16 @@ def test_pagina_de_conciliacion(client):
     html = r.get_data(as_text=True)
     assert r.status_code == 200 and 'WALMART VENTA EN LIN3 A 20 MSI' in html and '2025-04' in html
     assert client.get('/finanzas/estados/admin/msi').get_json()['compras'][0]['estado'] == 'Faltan mensualidades'
+
+
+def test_csv_de_pendientes(client):
+    _lavadora(saltar=(5,))
+    for k in (1, 2):
+        _ins(f'2023-0{k}-22', f'0{k} DE 02 PRIVALIA', 100.0, cat='ROPA', sub='Ropa', pn=k, pt=2, grupo='pv')
+    with database.get_db() as db:
+        msi.marcar_compras(db)
+        db.commit()
+    r = client.get('/finanzas/estados/admin/msi', query_string={'formato': 'csv', 'solo': 'pendientes'})
+    txt = r.get_data(as_text=True)
+    assert r.status_code == 200 and 'COMENTARIOS' in txt and 'WALMART VENTA EN LIN3 A 20 MSI' in txt
+    assert '2025-04' in txt and 'Sin compra inicial' in txt     # la lavadora y las mensualidades sueltas
