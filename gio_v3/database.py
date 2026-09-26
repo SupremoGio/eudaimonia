@@ -5502,6 +5502,28 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_pagos_salsa_2024 migration warning: {e}")
 
+        # ── FINANZAS — correcciones del CSV «transacciones_CORREGIDO» que el
+        # usuario comentó (148 filas: reembolsos de Expense, retiros de CETES,
+        # aportaciones a GBM, mi parte de la renta y cuentas divididas, parte
+        # del roomie, préstamos de Pops, ajustes, reembolsos). Detalle en
+        # modules/finanzas/estados/correcciones_csv_2026_09_26.py; el import y
+        # «Aplicar reglas» las reafirman.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_csv_corregido_2026_09_26'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_csv_2026_09_26 import aplicar as _aplicar_csv
+                _ok, _faltan = _aplicar_csv(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_csv_corregido_2026_09_26",
+                     f"CSV corregido: {_ok} movimientos actualizados, {_faltan} no encontrados (id+fecha+monto)")
+                )
+                db.commit()
+                print(f"[DB] finanzas_csv_corregido_2026_09_26: {_ok} actualizados, {_faltan} no encontrados")
+            except Exception as e:
+                print(f"[DB] finanzas_csv_corregido_2026_09_26 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que
