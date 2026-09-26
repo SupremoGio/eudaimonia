@@ -22,6 +22,30 @@ def test_cuadra_con_los_totales_del_pdf(clave):
     assert round(cargos, 2) == d['totales']['cargos'] and round(abonos, 2) == d['totales']['abonos']
 
 
+@pytest.mark.parametrize('clave', libs.archivos('bbva_tdc_oro'))
+def test_tdc_oro_cuadra_con_total_importes(clave):
+    """En crédito los abonos (pagos, devoluciones) vienen con monto negativo."""
+    d = libs.cargar(clave, 'bbva_tdc_oro')
+    cargos = sum(m['monto'] for m in d['movimientos'] if m['monto'] > 0)
+    abonos = -sum(m['monto'] for m in d['movimientos'] if m['monto'] < 0)
+    assert round(cargos, 2) == d['totales']['cargos'] and round(abonos, 2) == d['totales']['abonos']
+
+
+def test_tdc_oro_inserta_en_credito_sin_duplicar(test_db):
+    d = libs.cargar('202405', 'bbva_tdc_oro')
+    with database.get_db() as db:
+        # Ya estaba el pago de $10,000 del 09/05/24 (de otro import)
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES ('2024-05-09', 'BMOVIL.PAGO TDC', -10000, 'BBVA_TDC', 'PAGO_TDC', '', 'PAGO')""")
+        db.commit()
+        assert libs.aplicar(db, '202405', 'bbva_tdc_oro') == (len(d['movimientos']) - 1, 1)
+        db.commit()
+        msi = db.execute("""SELECT * FROM est_movimientos WHERE banco='BBVA_TDC'
+                            AND descripcion LIKE '%LIVERPOOL%' AND parcialidad_num=7""").fetchone()
+        assert msi['parcialidad_total'] == 9 and msi['compra_msi_id']
+        assert db.execute("SELECT COUNT(*) FROM est_movimientos WHERE banco='BBVA_DEB'").fetchone()[0] == 0
+
+
 def test_aplica_sin_duplicar_y_clasifica(test_db):
     d = libs.cargar('202408')
     with database.get_db() as db:

@@ -5575,20 +5575,21 @@ def init_db():
         # recibe nada, y así «Aplicar reglas» (que corre al final) no toca sus filas.
         if db.execute("SELECT COUNT(*) FROM est_movimientos WHERE banco='BBVA_DEB'").fetchone()[0] >= 500:
             from modules.finanzas.estados import libretones as _libs
-            for _clave in _libs.archivos():
-                _ver = f"finanzas_libreton_{_clave}"
-                if db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
-                    continue
-                try:
-                    _ins, _ya = _libs.aplicar(db, _clave)
-                    db.execute(
-                        "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
-                        (_ver, f"Libretón {_clave}: {_ins} movimientos insertados, {_ya} ya existían")
-                    )
-                    db.commit()
-                    print(f"[DB] {_ver}: {_ins} insertados, {_ya} ya existían")
-                except Exception as e:
-                    print(f"[DB] {_ver} migration warning: {e}")
+            for _carpeta, (_banco, _pref) in _libs.CARPETAS.items():
+                for _clave in _libs.archivos(_carpeta):
+                    _ver = f"{_pref}{_clave}"
+                    if db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
+                        continue
+                    try:
+                        _ins, _ya = _libs.aplicar(db, _clave, _carpeta)
+                        db.execute(
+                            "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                            (_ver, f"{_banco} {_clave}: {_ins} movimientos insertados, {_ya} ya existían")
+                        )
+                        db.commit()
+                        print(f"[DB] {_ver}: {_ins} insertados, {_ya} ya existían")
+                    except Exception as e:
+                        print(f"[DB] {_ver} migration warning: {e}")
 
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última

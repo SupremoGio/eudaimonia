@@ -1,5 +1,6 @@
 """
-Estados de cuenta del Libretón BBVA Débito (cuenta 1520361804) que el usuario
+Estados de cuenta del Libretón BBVA Débito (cuenta 1520361804) -- y cortes de
+BBVA Crédito del formato viejo «Tarjeta Oro» (data/bbva_tdc_oro) -- que el usuario
 mandó para llenar los huecos de la auditoría (2026-09-26, «te voy a pasar 5
 por 5»). Cada archivo de data/bbva_deb_libreton/<AAAAMM>.json es la salida del
 parser del Libretón (bbva_libreton._parse_text) sobre el PDF del banco, ya
@@ -21,16 +22,23 @@ en la base -> se inserta solo una.
 import json
 import os
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), 'data', 'bbva_deb_libreton')
+# carpeta en data/ -> (banco, prefijo de la migración). BBVA Crédito: cortes
+# del formato viejo «Tarjeta Oro BBVA» (parsers/bbva.py::parse_tarjeta_oro).
+CARPETAS = {
+    'bbva_deb_libreton': ('BBVA_DEB', 'finanzas_libreton_'),
+    'bbva_tdc_oro':      ('BBVA_TDC', 'finanzas_bbva_tdc_oro_'),
+}
+_BASE = os.path.join(os.path.dirname(__file__), 'data')
 
 
-def archivos() -> list[str]:
+def archivos(carpeta: str = 'bbva_deb_libreton') -> list[str]:
     """Claves AAAAMM disponibles, en orden."""
-    return sorted(f[:-5] for f in os.listdir(DATA_DIR) if f.endswith('.json'))
+    d = os.path.join(_BASE, carpeta)
+    return sorted(f[:-5] for f in os.listdir(d) if f.endswith('.json')) if os.path.isdir(d) else []
 
 
-def cargar(clave: str) -> dict:
-    with open(os.path.join(DATA_DIR, f'{clave}.json'), encoding='utf-8') as fh:
+def cargar(clave: str, carpeta: str = 'bbva_deb_libreton') -> dict:
+    with open(os.path.join(_BASE, carpeta, f'{clave}.json'), encoding='utf-8') as fh:
         return json.load(fh)
 
 
@@ -65,17 +73,18 @@ def _decisiones_previas(db, ids: list) -> None:
                    WHERE id IN ({ph}) AND UPPER(descripcion) LIKE '%EXPENSE%' AND tipo='INGRESO'""", ids)
 
 
-def aplicar(db, clave: str) -> tuple[int, int]:
-    """Inserta los movimientos faltantes de un Libretón; (insertados, ya existían)."""
+def aplicar(db, clave: str, carpeta: str = 'bbva_deb_libreton') -> tuple[int, int]:
+    """Inserta los movimientos faltantes de un estado de cuenta; (insertados, ya existían)."""
     from .routes import (_auto_clasificar_nomina, _postproceso_inversiones,
                          _reaplicar_reglas, _unify_movimiento_interno)
-    data = cargar(clave)
+    banco = CARPETAS[carpeta][0]
+    data = cargar(clave, carpeta)
     movs = data['movimientos']
     fechas = sorted({m['fecha'] for m in movs} | {m['fecha_cargo'] for m in movs})
     existentes = [dict(r) for r in db.execute(
         f"""SELECT id, substr(fecha,1,10) AS fecha, ABS(monto) AS monto FROM est_movimientos
-            WHERE banco='BBVA_DEB' AND substr(fecha,1,10) IN ({','.join('?' * len(fechas))})""",
-        fechas).fetchall()]
+            WHERE banco=? AND substr(fecha,1,10) IN ({','.join('?' * len(fechas))})""",
+        [banco] + fechas).fetchall()]
     usados, nuevas, ya = set(), [], 0
     repetidos = {}
     for m in movs:
@@ -93,10 +102,12 @@ def aplicar(db, clave: str) -> tuple[int, int]:
             ya += 1
             continue
         cur = db.execute("""INSERT OR IGNORE INTO est_movimientos
-                            (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
-                            VALUES (?,?,?,?, 'BBVA_DEB', ?,?,?,?)""",
-                         (m['fecha'], m['fecha_cargo'], desc, m['monto'], data['periodo'],
-                          m['categoria'], m['subcategoria'], m['tipo']))
+                            (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo,
+                             parcialidad_num, parcialidad_total, compra_msi_id)
+                            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                         (m['fecha'], m['fecha_cargo'], desc, m['monto'], banco, data['periodo'],
+                          m['categoria'], m['subcategoria'], m['tipo'],
+                          m.get('parcialidad_num'), m.get('parcialidad_total'), m.get('compra_msi_id')))
         if cur.rowcount:
             nuevas.append(cur.lastrowid)
         else:
