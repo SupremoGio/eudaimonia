@@ -4,7 +4,6 @@ from urllib.parse import urlparse
 from html import unescape
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from werkzeug.utils import secure_filename
-from PIL import Image, ImageOps
 from database import get_db
 from utils import clean_str, safe_float, uploads_base_dir, today_str
 from ec_constants import EC_RATE
@@ -36,6 +35,9 @@ def _optimize_photo(data: bytes, dest_path: str) -> bool:
     """Redimensiona/comprime `data` como JPEG en `dest_path`. True si tuvo éxito.
     Falla en formatos que Pillow no puede decodificar de raíz (p.ej. HEIC sin
     plugin) — el llamador debe guardar los bytes originales en ese caso."""
+    # Import diferido: Pillow solo se necesita al subir una foto, y cargarlo
+    # al arrancar le suma ~7 MB de RSS al worker aunque nunca se use.
+    from PIL import Image, ImageOps
     try:
         img = Image.open(io.BytesIO(data))
         img = ImageOps.exif_transpose(img)  # corrige la orientación de fotos de celular

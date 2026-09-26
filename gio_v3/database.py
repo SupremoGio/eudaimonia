@@ -1,4 +1,4 @@
-import os, json as _json, http.client, threading, base64 as _base64, time as _time
+import os, json as _json, http.client, threading, atexit, base64 as _base64, time as _time
 from datetime import date, timedelta
 from utils import today_str, today_date
 
@@ -70,6 +70,43 @@ def _turso_sync(host, token, writes):
             _turso_pipeline(host, token, writes[i:i+BATCH])
     except Exception as e:
         print(f"[DB] Turso sync warning: {e}")
+
+# Pushes async a Turso aún en vuelo (modo volumen). Son hilos daemon: si el
+# worker de gunicorn se recicla (--max-requests) o Railway lo detiene en un
+# redeploy, el intérprete los mataría a mitad del push y ese write nunca
+# llegaría al respaldo (el siguiente commit solo empuja SUS propios writes, no
+# re-envía los perdidos). El dato ya está a salvo en el volumen, pero Turso
+# quedaría desfasado para siempre. Al salir se les da un margen acotado para
+# terminar -- gunicorn permite ~30s (graceful_timeout) antes del SIGKILL.
+_pending_syncs = set()
+_pending_lock  = threading.Lock()
+_DRAIN_SECS    = 10
+
+
+def _tracked_sync(host, token, writes):
+    try:
+        _turso_sync(host, token, writes)
+    finally:
+        with _pending_lock:
+            _pending_syncs.discard(threading.current_thread())
+
+
+def _drain_pending_syncs():
+    with _pending_lock:
+        pending = list(_pending_syncs)
+    if not pending:
+        return
+    print(f"[DB] Esperando {len(pending)} push(es) a Turso antes de salir...")
+    deadline = _time.monotonic() + _DRAIN_SECS
+    for t in pending:
+        t.join(max(0, deadline - _time.monotonic()))
+    left = sum(t.is_alive() for t in pending)
+    if left:
+        print(f"[DB] {left} push(es) a Turso sin terminar al salir "
+              f"(el dato está en el volumen; Turso queda desfasado)")
+
+
+atexit.register(_drain_pending_syncs)
 
 _RESTORE_BUDGET_SECS = 25  # tope duro: nunca dejar colgado el boot del server
 
@@ -194,12 +231,16 @@ class _HybridConn:
                 # evita que la latencia de red a Turso (o que esté caído)
                 # bloquee cada escritura de la app -- si el push falla o
                 # tarda, el dato ya está a salvo en el volumen; Turso solo
-                # pierde ese respaldo puntual y se pone al día en el
-                # siguiente write.
-                threading.Thread(
-                    target=_turso_sync, args=(self._host, self._token, writes),
+                # pierde ese respaldo puntual (no se re-envía después). Al
+                # salir el proceso se esperan los pushes en vuelo, ver
+                # _drain_pending_syncs.
+                t = threading.Thread(
+                    target=_tracked_sync, args=(self._host, self._token, writes),
                     daemon=True,
-                ).start()
+                )
+                with _pending_lock:
+                    _pending_syncs.add(t)
+                t.start()
             else:
                 # Síncrono a propósito: sin volumen, el SQLite local vive en
                 # el filesystem efímero del contenedor -- si el redeploy
