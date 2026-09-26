@@ -20,6 +20,7 @@ from utils import clean_str, today_str, safe_float, csv_response
 import modules.gamification.engine as engine
 from . import prestamos as _prest
 from . import expense_lotes as _lotes
+from . import correcciones_csv_2026_09_26 as _csv0926
 
 estados_bp = Blueprint(
     'estados',
@@ -118,7 +119,12 @@ def _monto_expr(prefix: str = '') -> str:
 # INGRESO categories that are NOT real income (transfers, cash mobilization)
 _INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO',
                      'APORTACION_RENTA', 'PRESTAMOS', 'FINANZAS')
-_INGRESO_EXCLUIR_SQL = "categoria NOT IN ({})".format(
+# VIVIENDA/Aportación renta (lo que el roomie te deposita de su parte) no es
+# ingreso: desde 2026-09-26 la renta cuenta solo tu parte (mi_parte), así que
+# contar también su aportación duplicaba su mitad (pedido del usuario al
+# corregir el CSV). Sigue visible en Movimientos.
+_INGRESO_EXCLUIR_SQL = ("(categoria NOT IN ({}) AND NOT (categoria='VIVIENDA' "
+                        "AND COALESCE(subcategoria,'')='Aportación renta'))").format(
     ','.join(f"'{c}'" for c in _INGRESO_EXCLUIR)
 )
 
@@ -1569,6 +1575,7 @@ def apply_all_keywords():
         _corregir_celular(db)
         _corregir_expense_terceros(db)
         _corregir_pagos_salsa(db)
+        _csv0926.aplicar(db)
         _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
@@ -2385,6 +2392,7 @@ def upload_file():
             _corregir_celular(db)
             _corregir_expense_terceros(db)
             _corregir_pagos_salsa(db)
+            _csv0926.aplicar(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
 
             # ── Post-proceso inversiones ──────────────────────────────────────

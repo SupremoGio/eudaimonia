@@ -465,12 +465,11 @@ def oikonomia_summary():
     # Gasto con la misma regla que Estados de cuenta (_PAGO_CATS): antes este
     # widget excluía FINANZAS entera y escondía transferencias que en
     # realidad eran gasto (pedido del usuario 2026-09-26).
-    from modules.finanzas.estados.routes import _PAGO_CATS, _MONTO
+    from modules.finanzas.estados.routes import _PAGO_CATS, _MONTO, _INGRESO_EXCLUIR_SQL
     with get_db() as db:
         flujo = db.execute(f"""
             SELECT
-              SUM(CASE WHEN tipo='INGRESO'
-                        AND categoria NOT IN ('TRANSFERENCIA','PAGO_TDC','RETIRO','DEPOSITO','SPEI_RECIBIDO','FINANZAS')
+              SUM(CASE WHEN tipo='INGRESO' AND {_INGRESO_EXCLUIR_SQL}
                        THEN monto ELSE 0 END) AS ingreso,
               SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}
                        THEN {_MONTO} ELSE 0 END) AS gasto

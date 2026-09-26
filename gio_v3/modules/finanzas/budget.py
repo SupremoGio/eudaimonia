@@ -144,6 +144,9 @@ def _inversiones_mes(db, desde, hasta):
 # esconda el déficit del sueldo. Las devoluciones de préstamos no son ingreso
 # (categoría PRESTAMOS, en _INGRESO_EXCLUIR).
 _RECURRENTE_CAT, _RECURRENTE_SUBS = 'NOMINA', ('Pago nominal', '')
+# La aportación del roomie a la renta no es ingreso: la renta ya cuenta solo
+# tu parte (mi_parte). Misma regla que estados/routes.py::_INGRESO_EXCLUIR_SQL.
+_NO_APORTACION_RENTA = "NOT (categoria='VIVIENDA' AND COALESCE(subcategoria,'')='Aportación renta')"
 
 
 def _ingresos_mes(db, mes, desde, hasta):
@@ -156,7 +159,7 @@ def _ingresos_mes(db, mes, desde, hasta):
                   COALESCE(SUM(CASE WHEN categoria=? AND COALESCE(subcategoria, '') IN (?, ?)
                                     THEN monto END), 0) AS recurrente
            FROM est_movimientos
-           WHERE tipo='INGRESO' AND categoria NOT IN ({excl_ph})
+           WHERE tipo='INGRESO' AND categoria NOT IN ({excl_ph}) AND {_NO_APORTACION_RENTA}
              AND fecha >= ? AND fecha < ?""",
         [_RECURRENTE_CAT, *_RECURRENTE_SUBS, *_INGRESO_EXCLUIR, desde, hasta]).fetchone()
     total, recurrente = round(float(r['total']), 2), round(float(r['recurrente']), 2)
@@ -352,7 +355,7 @@ def _calc_budget(mes, db):
         f"""SELECT categoria, SUM(monto) AS total
            FROM est_movimientos
            WHERE tipo='INGRESO'
-             AND categoria NOT IN ({excl_ph})
+             AND categoria NOT IN ({excl_ph}) AND {_NO_APORTACION_RENTA}
              AND fecha >= ? AND fecha < ?
            GROUP BY categoria ORDER BY total DESC""",
         list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
