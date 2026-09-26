@@ -2787,6 +2787,39 @@ def _tramo_confirmado_vacio(banco: str, desde: str, hasta: str) -> bool:
     return any(a <= desde and hasta <= b for a, b in AUDIT_TRAMOS_VACIOS.get(banco, ()))
 
 
+_PERIODO_DMY_RE = re.compile(r"(\d{2})/(\d{2})/(\d{4})\s+al\s+(\d{2})/(\d{2})/(\d{4})")
+
+
+def _periodo_iso(periodo: str):
+    """(inicio, fin) ISO de un `periodo` guardado, en cualquiera de los dos formatos."""
+    m = _PERIODO_RE.search(periodo or '')
+    if m:
+        return m.group(1), m.group(2)
+    m = _PERIODO_DMY_RE.search(periodo or '')
+    if m:
+        return f"{m.group(3)}-{m.group(2)}-{m.group(1)}", f"{m.group(6)}-{m.group(5)}-{m.group(4)}"
+    return None
+
+
+def _partes_sin_cubrir(desde, hasta, fechas_d, umbral_dias: int) -> list:
+    """Un hueco entre periodos puede tener movimientos de otro import sin
+    periodo (CSV/Excel): esa parte ya está cubierta y no se reporta (pedido
+    del usuario: «ajusta auditoría»). Sin ningún movimiento, se reporta el
+    hueco completo; con movimientos, solo los tramos de más de `umbral_dias`
+    sin ninguno (bordes del hueco incluidos)."""
+    dentro = [d for d in fechas_d if desde <= d <= hasta]
+    if not dentro:
+        return [{'desde': desde.isoformat(), 'hasta': hasta.isoformat(),
+                 'dias': (hasta - desde).days + 1}]
+    partes = []
+    anclas = [desde - timedelta(days=1)] + dentro + [hasta + timedelta(days=1)]
+    for a, b in zip(anclas, anclas[1:]):
+        if (b - a).days - 1 > umbral_dias:
+            partes.append({'desde': (a + timedelta(days=1)).isoformat(), 'hasta': (b - timedelta(days=1)).isoformat(),
+                           'dias': (b - a).days - 1, 'movimientos': len(dentro), 'parcial': True})
+    return partes
+
+
 def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
     """Huecos de un banco: (1) días sin cubrir entre periodos de estado de
     cuenta consecutivos (la señal más precisa: el `periodo` que guarda cada
@@ -2804,28 +2837,28 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
                 'periodos': [], 'huecos_entre_periodos': [], 'huecos_sin_movimientos': [],
                 'meses_sin_movimientos': []}
 
-    # 1) Periodos de estado de cuenta
+    # 1) Periodos de estado de cuenta. Se lee el periodo ISO («2024-04-23 al
+    # 2024-05-22») y el del Libretón («07/05/2024 al 06/06/2024»); como hay
+    # periodos que se enciman (descargas de la app dentro de un corte), el
+    # hueco se mide contra el fin más lejano visto hasta ahí.
     periodos = {}
     for r in rows:
-        m = _PERIODO_RE.search(r['periodo'])
-        if m:
-            p = periodos.setdefault((m.group(1), m.group(2)), 0)
-            periodos[(m.group(1), m.group(2))] = p + 1
+        par = _periodo_iso(r['periodo'])
+        if par:
+            periodos[par] = periodos.get(par, 0) + 1
     lista = sorted(periodos.items())
+    fechas_d = [datetime.strptime(f, '%Y-%m-%d').date() for f in fechas]
     huecos_periodo = []
-    for i in range(1, len(lista)):
-        (_, fin_prev), _ = lista[i - 1]
-        (ini_sig, _), _ = lista[i]
-        d_fin = datetime.strptime(fin_prev, '%Y-%m-%d').date()
-        d_ini = datetime.strptime(ini_sig, '%Y-%m-%d').date()
+    fin_max = None
+    for (ini, fin), _ in lista:
+        d_ini = datetime.strptime(ini, '%Y-%m-%d').date()
+        d_fin = datetime.strptime(fin, '%Y-%m-%d').date()
         # Tolerancia de 3 días: los cortes a veces brincan fines de semana.
-        if (d_ini - d_fin).days > 3 and not _tramo_confirmado_vacio(
-                banco, (d_fin + timedelta(days=1)).isoformat(), (d_ini - timedelta(days=1)).isoformat()):
-            huecos_periodo.append({
-                'desde': (d_fin + timedelta(days=1)).isoformat(),
-                'hasta': (d_ini - timedelta(days=1)).isoformat(),
-                'dias': (d_ini - d_fin).days - 1,
-            })
+        if fin_max and (d_ini - fin_max).days > 3:
+            desde, hasta_h = fin_max + timedelta(days=1), d_ini - timedelta(days=1)
+            if not _tramo_confirmado_vacio(banco, desde.isoformat(), hasta_h.isoformat()):
+                huecos_periodo.extend(_partes_sin_cubrir(desde, hasta_h, fechas_d, umbral_dias))
+        fin_max = max(fin_max, d_fin) if fin_max else d_fin
 
     # 2) Tramos sin movimientos
     huecos_mov = []
@@ -2896,7 +2929,7 @@ details summary{cursor:pointer;color:#9d96ad;font-size:13px;margin-top:8px}
 <div class="meta">{{ b.filas }} movimientos · {{ b.primera_fecha }} → {{ b.ultima_fecha }}
 {% if b.dias_sin_datos > umbral_dias %}<span class="warn"> · {{ b.dias_sin_datos }} días sin datos al corte</span>{% endif %}</div>
 {% if b.huecos_entre_periodos %}<h3 class="bad">Faltan estados de cuenta entre periodos</h3><ul>
-{% for h in b.huecos_entre_periodos %}<li>{{ h.desde }} → {{ h.hasta }} ({{ h.dias }} días)</li>{% endfor %}</ul>{% endif %}
+{% for h in b.huecos_entre_periodos %}<li>{{ h.desde }} → {{ h.hasta }} ({{ h.dias }} días){% if h.parcial %} <span class="meta">· el resto de ese hueco ya tiene {{ h.movimientos }} mov. de otro import</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
 {% if b.huecos_sin_movimientos %}<h3 class="warn">Tramos sin movimientos</h3><ul>
 {% for h in b.huecos_sin_movimientos %}<li>{{ h.desde }} → {{ h.hasta }} ({{ h.dias }} días)</li>{% endfor %}</ul>{% endif %}
 {% if b.meses_sin_movimientos %}<h3 class="warn">Meses sin ningún movimiento</h3><div>{{ b.meses_sin_movimientos|join(', ') }}</div>{% endif %}
