@@ -5610,6 +5610,23 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_renta_2024_mi_parte_5500 migration warning: {e}")
 
+        # ── FINANZAS — pagos de Salsa 2025 (captura del usuario): «clase gio»
+        # -> SALSA/Clases, lo demás -> SALSA/Social. Ver PAGOS_SALSA.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_pagos_salsa_2025'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_pagos_salsa as _salsa25
+                _n = _salsa25(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_pagos_salsa_2025", f"{_n} transferencias -> SALSA Clases/Social")
+                )
+                db.commit()
+                print(f"[DB] finanzas_pagos_salsa_2025: {_n} movimientos -> SALSA")
+            except Exception as e:
+                print(f"[DB] finanzas_pagos_salsa_2025 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

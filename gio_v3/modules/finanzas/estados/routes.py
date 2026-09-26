@@ -713,20 +713,29 @@ def _corregir_expense_terceros(db) -> int:
 # texto de la descripción). Caían en FINANZAS/Transferencia; una regla de
 # keyword («PAGO CUENTA DE TERCERO» -> Familia y regalos) también podría
 # moverlas, así que se reafirman en el import y en «Aplicar reglas».
-PAGOS_SALSA = (
-    ('2024-10-15', 3500.0, 'SOLAR GIOVANY'),
+PAGOS_SALSA = (  # (fecha, monto, texto, subcategoría)
+    ('2024-10-15', 3500.0, 'SOLAR GIOVANY', ''),
+    # 2025: «clase gio» -> Clases, lo demás -> Social (captura del usuario)
+    ('2025-05-26', 60.0, 'CLASEGIOVANY', 'Clases'),
+    ('2025-06-12', 70.0, 'CLASEGIO', 'Clases'),
+    ('2025-08-04', 60.0, 'CLASE GIO', 'Clases'),
+    ('2025-08-11', 60.0, 'CLASE GIO', 'Clases'),
+    ('2025-09-04', 70.0, 'CLASE GIO', 'Clases'),
+    ('2025-02-16', 120.0, 'JENNIFER', 'Social'),
+    ('2025-07-28', 80.0, 'DAVID YAE', 'Social'),
+    ('2025-10-29', 110.0, 'BNET GIO', 'Social'),
 )
 
 
 def _corregir_pagos_salsa(db) -> int:
     n = 0
-    for fecha, monto, texto in PAGOS_SALSA:
+    for fecha, monto, texto, sub in PAGOS_SALSA:
         n += db.execute("""
-            UPDATE est_movimientos SET categoria='SALSA', subcategoria='', tipo='GASTO'
+            UPDATE est_movimientos SET categoria='SALSA', subcategoria=?, tipo='GASTO'
             WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
               AND UPPER(descripcion) LIKE ? AND tipo IN ('GASTO', 'PAGO')
-              AND (categoria != 'SALSA' OR tipo != 'GASTO')
-        """, (fecha, monto, f"%{texto}%")).rowcount
+              AND (categoria != 'SALSA' OR COALESCE(subcategoria, '') != ? OR tipo != 'GASTO')
+        """, (sub, fecha, monto, f"%{texto}%", sub)).rowcount
     return n
 
 
