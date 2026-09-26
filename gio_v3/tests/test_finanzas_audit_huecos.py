@@ -73,3 +73,15 @@ def test_no_modifica_nada(client):
     client.get(URL)
     with database.get_db() as db:
         assert db.execute("SELECT COUNT(*) FROM est_movimientos").fetchone()[0] == antes
+
+
+def test_credito_cuenta_por_corte_del_23_al_22(client):
+    """BBVA Crédito corta el 22: el corte 202209 va del 23/08 al 22/09. Un
+    movimiento el 25/09 es del corte 202210, no «septiembre»."""
+    _mov('BBVA_TDC', '2022-08-10')                 # corte 202208
+    _mov('BBVA_TDC', '2022-09-25')                 # corte 202210
+    _mov('BBVA_TDC', '2022-11-20')                 # corte 202211
+    b = client.get(URL, query_string={'hasta': '2022-11-22'}).get_json()['por_banco']['BBVA_TDC']
+    assert b['cortes_sin_movimientos'] == [{'corte': '202209', 'desde': '2022-08-23', 'hasta': '2022-09-22'}]
+    html = client.get(URL, query_string={'hasta': '2022-11-22', 'formato': 'html'}).get_data(as_text=True)
+    assert '202209 · 2022-08-23 → 2022-09-22' in html and 'Meses sin ningún movimiento' not in html
