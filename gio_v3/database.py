@@ -5548,13 +5548,13 @@ def init_db():
         # 07/08-06/09/2023 que mandó el usuario es solo imagen (el parser no lo
         # lee); sus 25 movimientos, transcritos y cuadrados contra el saldo, en
         # modules/finanzas/estados/libreton_2023_08.py.
-        # Solo con historial de BBVA Débito alrededor del hueco (la base real):
-        # en una base nueva/vacía no se inserta nada ni se marca aplicada.
+        # Solo en una base con historial real de BBVA Débito (producción): en una
+        # base nueva o de pruebas no se inserta nada ni se marca aplicada.
         if not db.execute(
             "SELECT id FROM migration_log WHERE version='finanzas_libreton_2023_08'"
         ).fetchone() and db.execute(
-            "SELECT 1 FROM est_movimientos WHERE banco='BBVA_DEB' AND fecha < '2023-08-07' LIMIT 1"
-        ).fetchone():
+            "SELECT COUNT(*) FROM est_movimientos WHERE banco='BBVA_DEB'"
+        ).fetchone()[0] >= 500:
             try:
                 from modules.finanzas.estados.libreton_2023_08 import aplicar as _aplicar_lib
                 _ins, _ya = _aplicar_lib(db)
@@ -5567,6 +5567,29 @@ def init_db():
                 print(f"[DB] finanzas_libreton_2023_08: {_ins} insertados, {_ya} ya existían")
             except Exception as e:
                 print(f"[DB] finanzas_libreton_2023_08 migration warning: {e}")
+
+        # ── FINANZAS — Libretones BBVA Débito que el usuario mandó para llenar
+        # huecos (data/bbva_deb_libreton/<AAAAMM>.json). Uno por migración; no
+        # duplica filas que ya estén. Solo en una base con historial real de
+        # BBVA Débito (producción tiene ~1,500): una base nueva o de pruebas no
+        # recibe nada, y así «Aplicar reglas» (que corre al final) no toca sus filas.
+        if db.execute("SELECT COUNT(*) FROM est_movimientos WHERE banco='BBVA_DEB'").fetchone()[0] >= 500:
+            from modules.finanzas.estados import libretones as _libs
+            for _carpeta, (_banco, _pref) in _libs.CARPETAS.items():
+                for _clave in _libs.archivos(_carpeta):
+                    _ver = f"{_pref}{_clave}"
+                    if db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
+                        continue
+                    try:
+                        _ins, _ya = _libs.aplicar(db, _clave, _carpeta)
+                        db.execute(
+                            "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                            (_ver, f"{_banco} {_clave}: {_ins} movimientos insertados, {_ya} ya existían")
+                        )
+                        db.commit()
+                        print(f"[DB] {_ver}: {_ins} insertados, {_ya} ya existían")
+                    except Exception as e:
+                        print(f"[DB] {_ver} migration warning: {e}")
 
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última

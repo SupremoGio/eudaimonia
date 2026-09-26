@@ -1,0 +1,472 @@
+{
+ "archivo": "1520361804_202408_C1.pdf",
+ "periodo": "07/07/2024 al 06/08/2024",
+ "totales": {
+  "cargos": 40020.41,
+  "abonos": 39924.66
+ },
+ "movimientos": [
+  {
+   "fecha": "2024-07-07",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-07",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "SPEI RECIBIDOHSBC",
+   "monto": 4850.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-07",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A UNDEFINED",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-07",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-08",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET CAFECITO Y PAN",
+   "monto": 145.0,
+   "categoria": "CAFE/PAN",
+   "subcategoria": "Café",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-08",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BOLETO GIOVANY",
+   "monto": 180.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-08",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 4000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-08",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "SPEI ENVIADO BANORTE",
+   "monto": 11000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-08",
+   "fecha_cargo": "2024-07-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET VACA",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-09",
+   "fecha_cargo": "2024-07-09",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PQGO D BOLETOS",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-09",
+   "fecha_cargo": "2024-07-09",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-11",
+   "fecha_cargo": "2024-07-11",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 3500.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-11",
+   "fecha_cargo": "2024-07-11",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BOLETO",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-12",
+   "fecha_cargo": "2024-07-12",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 8400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-12",
+   "fecha_cargo": "2024-07-12",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 9366.91,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-13",
+   "fecha_cargo": "2024-07-15",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-13",
+   "fecha_cargo": "2024-07-15",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-13",
+   "fecha_cargo": "2024-07-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A UNDEFINED",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-14",
+   "fecha_cargo": "2024-07-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PRESTAMO",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-15",
+   "fecha_cargo": "2024-07-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7947.63,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-15",
+   "fecha_cargo": "2024-07-15",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-16",
+   "fecha_cargo": "2024-07-16",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-16",
+   "fecha_cargo": "2024-07-16",
+   "descripcion": "SITH20000001056 FIDEICOMISO F 1596",
+   "monto": 542.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Fideicomiso",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-16",
+   "fecha_cargo": "2024-07-16",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-17",
+   "fecha_cargo": "2024-07-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET XX",
+   "monto": 2500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-18",
+   "fecha_cargo": "2024-07-18",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 30.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-18",
+   "fecha_cargo": "2024-07-18",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 426.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-18",
+   "fecha_cargo": "2024-07-18",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GALLETAS Y CAFECIT",
+   "monto": 127.5,
+   "categoria": "CAFE/PAN",
+   "subcategoria": "Café",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-20",
+   "fecha_cargo": "2024-07-22",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BEMBE GIOVANY",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-20",
+   "fecha_cargo": "2024-07-22",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-21",
+   "fecha_cargo": "2024-07-22",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-23",
+   "fecha_cargo": "2024-07-23",
+   "descripcion": "SPEI ENVIADO INVEX",
+   "monto": 2094.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-24",
+   "fecha_cargo": "2024-07-24",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-25",
+   "fecha_cargo": "2024-07-25",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-26",
+   "fecha_cargo": "2024-07-26",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PANECITO",
+   "monto": 40.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-26",
+   "fecha_cargo": "2024-07-26",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-27",
+   "fecha_cargo": "2024-07-29",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-28",
+   "fecha_cargo": "2024-07-29",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-29",
+   "fecha_cargo": "2024-07-29",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-30",
+   "fecha_cargo": "2024-07-30",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PARA TUS UNAS",
+   "monto": 11.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-30",
+   "fecha_cargo": "2024-07-30",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A UNDEFINED",
+   "monto": 11.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-31",
+   "fecha_cargo": "2024-07-31",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7914.03,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-08-01",
+   "fecha_cargo": "2024-08-01",
+   "descripcion": "SPEI RECIBIDOMERCADO PAGO",
+   "monto": 60.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-08-01",
+   "fecha_cargo": "2024-08-01",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A AURORA EL",
+   "monto": 30.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-08-01",
+   "fecha_cargo": "2024-08-01",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-08-02",
+   "fecha_cargo": "2024-08-02",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-08-03",
+   "fecha_cargo": "2024-08-05",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET INVERSION",
+   "monto": 2500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-08-03",
+   "fecha_cargo": "2024-08-05",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-08-03",
+   "fecha_cargo": "2024-08-05",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-08-04",
+   "fecha_cargo": "2024-08-05",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-08-06",
+   "fecha_cargo": "2024-08-06",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  }
+ ],
+ "ajustes": [
+  "2024-07-07 $500 «TRANSF A UNDEFINED» -> INGRESO y 2024-07-30 $11 «TRANSF A UNDEFINED» -> INGRESO: el parser los dejó como cargo; ese día hay otra transferencia del mismo monto de salida y el saldo no distingue cuál es cuál. Con esto cuadra con Total importe abonos (14 / $39,924.66)."
+ ]
+}

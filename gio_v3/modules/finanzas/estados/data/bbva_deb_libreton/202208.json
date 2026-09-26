@@ -1,0 +1,271 @@
+{
+ "archivo": "1520361804_202208_C1.pdf",
+ "periodo": "07/07/2022 al 06/08/2022",
+ "totales": {
+  "cargos": 29711.45,
+  "abonos": 17168.67
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-07-11",
+   "fecha_cargo": "2022-07-09",
+   "descripcion": "MERPAGO*CAMACHOS RFC: MER 991006JMA 10:50 AUT: 236526",
+   "monto": 105.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-13",
+   "fecha_cargo": "2022-07-12",
+   "descripcion": "PAGO TARJETA DE CREDITO DOMICILIACION",
+   "monto": 436.25,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-13",
+   "fecha_cargo": "2022-07-13",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 1729.75,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-15",
+   "fecha_cargo": "2022-07-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO",
+   "monto": 239.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-15",
+   "fecha_cargo": "2022-07-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7094.89,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-07-15",
+   "fecha_cargo": "2022-07-15",
+   "descripcion": "RETIRO CAJERO AUTOMATICO JUL15 18:25 BANCOMER 9433 FOLIO:4934",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-18",
+   "fecha_cargo": "2022-07-18",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 2000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-18",
+   "fecha_cargo": "2022-07-19",
+   "descripcion": "PAGO TARJETA DE TERCEROS",
+   "monto": 7764.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-19",
+   "fecha_cargo": "2022-07-17",
+   "descripcion": "ZTL*EDUARDORODRIGUEZRO RFC: OPM 150323DI1 19:19 AUT: 562702",
+   "monto": 127.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-20",
+   "fecha_cargo": "2022-07-21",
+   "descripcion": "SPEI ENVIADO BANAMEX",
+   "monto": 9000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-21",
+   "fecha_cargo": "2022-07-21",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 3000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-07-22",
+   "fecha_cargo": "2022-07-22",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 5000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-22",
+   "fecha_cargo": "2022-07-21",
+   "descripcion": "FAR GUAD 2480 RFC: FGU 830930PD3 18:20 AUT: 909583",
+   "monto": 10.5,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-24",
+   "fecha_cargo": "2022-07-25",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET UBER GIOVANY",
+   "monto": 100.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-25",
+   "fecha_cargo": "2022-07-23",
+   "descripcion": "QIN MIDTOWN RFC: LOR 130920Q24 17:21 AUT: 272404",
+   "monto": 135.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-25",
+   "fecha_cargo": "2022-07-24",
+   "descripcion": "SORIANA313 AMERICASGDL RFC: TSO 991022PB6 14:42 AUT: 564656",
+   "monto": 78.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-25",
+   "fecha_cargo": "2022-07-24",
+   "descripcion": "MERPAGO*DANNYYO RFC: MER 991006JMA 18:51 AUT: 178325",
+   "monto": 25.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-26",
+   "fecha_cargo": "2022-07-26",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET AFRO CUBANO GIOVAN",
+   "monto": 600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-26",
+   "fecha_cargo": "2022-07-24",
+   "descripcion": "ZTL*YADIRAAZUCENACEBAL RFC: OPM 150323DI1 01:29 AUT: 965057",
+   "monto": 39.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-26",
+   "fecha_cargo": "2022-07-25",
+   "descripcion": "FAR GUAD 2480 RFC: FGU 830930PD3 18:30 AUT: 146502",
+   "monto": 18.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-28",
+   "fecha_cargo": "2022-07-27",
+   "descripcion": "OXXO OTTAWA GDL RFC: CCO 8605231N4 18:33 AUT: 550364",
+   "monto": 15.5,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-29",
+   "fecha_cargo": "2022-07-29",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7073.78,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-07-29",
+   "fecha_cargo": "2022-07-29",
+   "descripcion": "RETIRO CAJERO AUTOMATICO JUL29 18:49 BANCOMER B839 FOLIO:7542",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-29",
+   "fecha_cargo": "2022-07-28",
+   "descripcion": "FAR GUAD 2480 RFC: FGU 830930PD3 20:07 AUT: 432210",
+   "monto": 18.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-30",
+   "fecha_cargo": "2022-08-01",
+   "descripcion": "RETIRO CAJERO AUTOMATICO JUL30 21:17 BANCOMER 1438 FOLIO:7245",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-08-01",
+   "fecha_cargo": "2022-08-01",
+   "descripcion": "DLOCAL*DIDI FOOD RFC: DMM 171208LT4 17:56 AUT: 639127",
+   "monto": 101.8,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-08-01",
+   "fecha_cargo": "2022-08-01",
+   "descripcion": "SORIANA313 AMERICASGDL RFC: TSO 991022PB6 14:36 AUT: 420364",
+   "monto": 302.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-08-01",
+   "fecha_cargo": "2022-08-01",
+   "descripcion": "TRE BLE RFC: APG 210521UQ1 17:22 AUT: 474948",
+   "monto": 153.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-08-01",
+   "fecha_cargo": "2022-08-01",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 03:36 AUT: 576306",
+   "monto": 214.65,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  }
+ ]
+}

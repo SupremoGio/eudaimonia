@@ -1,0 +1,271 @@
+{
+ "archivo": "1520361804_202308_C1.pdf",
+ "periodo": "07/07/2023 al 06/08/2023",
+ "totales": {
+  "cargos": 34641.23,
+  "abonos": 32564.5
+ },
+ "movimientos": [
+  {
+   "fecha": "2023-07-08",
+   "fecha_cargo": "2023-07-10",
+   "descripcion": "SPEI ENVIADO BANAMEX",
+   "monto": 350.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-09",
+   "fecha_cargo": "2023-07-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET JUNIO GIO",
+   "monto": 700.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-09",
+   "fecha_cargo": "2023-07-10",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-10",
+   "fecha_cargo": "2023-07-10",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 1850.03,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-12",
+   "fecha_cargo": "2023-07-12",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PUY",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-12",
+   "fecha_cargo": "2023-07-12",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 11741.23,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-14",
+   "fecha_cargo": "2023-07-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 5150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-14",
+   "fecha_cargo": "2023-07-14",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 3100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-14",
+   "fecha_cargo": "2023-07-14",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7604.56,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-14",
+   "fecha_cargo": "2023-07-14",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 2700.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-14",
+   "fecha_cargo": "2023-07-14",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-15",
+   "fecha_cargo": "2023-07-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 330.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-16",
+   "fecha_cargo": "2023-07-17",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 7000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-17",
+   "fecha_cargo": "2023-07-17",
+   "descripcion": "SPEI ENVIADO SANTANDER",
+   "monto": 640.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-17",
+   "fecha_cargo": "2023-07-17",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-19",
+   "fecha_cargo": "2023-07-19",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 5000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-20",
+   "fecha_cargo": "2023-07-20",
+   "descripcion": "RETIRO SIN TARJETA QR",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-21",
+   "fecha_cargo": "2023-07-21",
+   "descripcion": "RETIRO SIN TARJETA QR",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-22",
+   "fecha_cargo": "2023-07-24",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-24",
+   "fecha_cargo": "2023-07-24",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-24",
+   "fecha_cargo": "2023-07-25",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO 7",
+   "monto": 1378.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-26",
+   "fecha_cargo": "2023-07-26",
+   "descripcion": "SPEI ENVIADO BANORTE",
+   "monto": 550.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-27",
+   "fecha_cargo": "2023-07-27",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 15.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-28",
+   "fecha_cargo": "2023-07-28",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7581.91,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-07-28",
+   "fecha_cargo": "2023-07-28",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-31",
+   "fecha_cargo": "2023-07-29",
+   "descripcion": "DLOCAL*DIDI FOOD MX RFC: DME 180122DU4 13:02 AUT: 758286",
+   "monto": 115.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-07-31",
+   "fecha_cargo": "2023-07-31",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-08-02",
+   "fecha_cargo": "2023-08-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO GIO",
+   "monto": 700.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-08-02",
+   "fecha_cargo": "2023-08-02",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  }
+ ]
+}

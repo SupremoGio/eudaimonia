@@ -1,0 +1,190 @@
+{
+ "archivo": "1520361804_202403_C1.pdf",
+ "periodo": "07/02/2024 al 06/03/2024",
+ "totales": {
+  "cargos": 31499.95,
+  "abonos": 19101.82
+ },
+ "movimientos": [
+  {
+   "fecha": "2024-02-08",
+   "fecha_cargo": "2024-02-08",
+   "descripcion": "SPEI ENVIADO BANORTE",
+   "monto": 11000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-08",
+   "fecha_cargo": "2024-02-08",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-09",
+   "fecha_cargo": "2024-02-09",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 30.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-11",
+   "fecha_cargo": "2024-02-12",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 13864.43,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-12",
+   "fecha_cargo": "2024-02-12",
+   "descripcion": "SPEI ENVIADO BANAMEX",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-12",
+   "fecha_cargo": "2024-02-12",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 479.5,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-13",
+   "fecha_cargo": "2024-02-13",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-13",
+   "fecha_cargo": "2024-02-12",
+   "descripcion": "D LOCAL*DIDIFOOD RFC: DMM 171208LT4 00:05 AUT: 440612",
+   "monto": 49.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-15",
+   "fecha_cargo": "2024-02-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7867.94,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-02-18",
+   "fecha_cargo": "2024-02-19",
+   "descripcion": "ABONO BBVA ABONO BBVA D LOCAL*DIDIFOOD",
+   "monto": 49.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-02-18",
+   "fecha_cargo": "2024-02-19",
+   "descripcion": "SPEI ENVIADO INVEX",
+   "monto": 849.02,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-21",
+   "fecha_cargo": "2024-02-21",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 15.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-22",
+   "fecha_cargo": "2024-02-22",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 15.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-24",
+   "fecha_cargo": "2024-02-26",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-02-29",
+   "fecha_cargo": "2024-02-29",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7618.88,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-02-29",
+   "fecha_cargo": "2024-02-29",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-01",
+   "fecha_cargo": "2024-03-01",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 30.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-01",
+   "fecha_cargo": "2024-03-01",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET ROLES",
+   "monto": 48.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-04",
+   "fecha_cargo": "2024-03-04",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-05",
+   "fecha_cargo": "2024-03-05",
+   "descripcion": "SITH20000007897 FIBRA HOTELERA SC",
+   "monto": 3566.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Fideicomiso",
+   "tipo": "INGRESO"
+  }
+ ]
+}

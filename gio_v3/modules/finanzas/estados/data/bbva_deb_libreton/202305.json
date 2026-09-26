@@ -1,0 +1,220 @@
+{
+ "archivo": "1520361804_202305_C1.pdf",
+ "periodo": "07/04/2023 al 06/05/2023",
+ "totales": {
+  "cargos": 36659.53,
+  "abonos": 28963.96
+ },
+ "ajustes": [
+  "2023-04-25 $500 «Transf a Giovany A» -> INGRESO: ese día hay otra de $500 de salida y el saldo (4,718.77) solo cuadra si una entró; con esto cuadra (6 abonos / $28,963.96)."
+ ],
+ "movimientos": [
+  {
+   "fecha": "2023-04-07",
+   "fecha_cargo": "2023-04-10",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-09",
+   "fecha_cargo": "2023-04-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET F",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-10",
+   "fecha_cargo": "2023-04-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SUPREMO CHOMBITO 2",
+   "monto": 3420.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-14",
+   "fecha_cargo": "2023-04-14",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 11945.72,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-04-14",
+   "fecha_cargo": "2023-04-14",
+   "descripcion": "SPEI ENVIADO SANTANDER",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-14",
+   "fecha_cargo": "2023-04-14",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-16",
+   "fecha_cargo": "2023-04-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-17",
+   "fecha_cargo": "2023-04-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MENSUALIDAD GIO",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-17",
+   "fecha_cargo": "2023-04-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET RENTA",
+   "monto": 5150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-04-18",
+   "fecha_cargo": "2023-04-18",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 8600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-18",
+   "fecha_cargo": "2023-04-17",
+   "descripcion": "OPENPAY*UDEMY RFC: OPE 130906HN4 14:17 AUT: 030934",
+   "monto": 179.0,
+   "categoria": "APRENDIZAJE",
+   "subcategoria": "Cursos",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-21",
+   "fecha_cargo": "2023-04-21",
+   "descripcion": "SPEI ENVIADO BANAMEX",
+   "monto": 2000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-22",
+   "fecha_cargo": "2023-04-24",
+   "descripcion": "RETIRO SIN TARJETA QR",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-24",
+   "fecha_cargo": "2023-04-24",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET LAS LENIS",
+   "monto": 130.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-24",
+   "fecha_cargo": "2023-04-24",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-25",
+   "fecha_cargo": "2023-04-25",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-25",
+   "fecha_cargo": "2023-04-25",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-04-25",
+   "fecha_cargo": "2023-04-25",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-28",
+   "fecha_cargo": "2023-04-28",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7612.24,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-04-28",
+   "fecha_cargo": "2023-04-28",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO 4 Y 5",
+   "monto": 2756.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-04-28",
+   "fecha_cargo": "2023-04-28",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-04-29",
+   "fecha_cargo": "2023-05-02",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 11030.53,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-05-05",
+   "fecha_cargo": "2023-05-05",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  }
+ ]
+}

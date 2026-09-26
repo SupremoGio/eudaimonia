@@ -1,0 +1,355 @@
+{
+ "archivo": "1520361804_202301_C1.pdf",
+ "periodo": "07/12/2022 al 06/01/2023",
+ "totales": {
+  "cargos": 39512.12,
+  "abonos": 87167.07
+ },
+ "ajustes": [
+  "2022-12-10 CORRECCION COMPRA TIEMPO $50 -> INGRESO: revierte la recarga de $50 de ese día; el saldo de operación (16,233.92) solo cuadra así; con esto cuadra (15 abonos / $87,167.07)."
+ ],
+ "movimientos": [
+  {
+   "fecha": "2022-12-10",
+   "fecha_cargo": "2022-12-13",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-10",
+   "fecha_cargo": "2022-12-13",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-10",
+   "fecha_cargo": "2022-12-13",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-11",
+   "fecha_cargo": "2022-12-13",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GIO MENSUALIDAD",
+   "monto": 440.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-12",
+   "fecha_cargo": "2022-12-13",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-13",
+   "fecha_cargo": "2022-12-13",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 10834.12,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-14",
+   "fecha_cargo": "2022-12-13",
+   "descripcion": "DLOCAL*DIDI FOOD RFC: DMM 171208LT4 20:17 AUT: 443258",
+   "monto": 70.6,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-15",
+   "fecha_cargo": "2022-12-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BACKPACK",
+   "monto": 150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-15",
+   "fecha_cargo": "2022-12-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7094.93,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-15",
+   "fecha_cargo": "2022-12-15",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-16",
+   "fecha_cargo": "2022-12-16",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 10493.87,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-16",
+   "fecha_cargo": "2022-12-16",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-18",
+   "fecha_cargo": "2022-12-19",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 8000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-19",
+   "fecha_cargo": "2022-12-19",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 1100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-19",
+   "fecha_cargo": "2022-12-19",
+   "descripcion": "SPEI DEVUELTOBAJIO",
+   "monto": 1100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-20",
+   "fecha_cargo": "2022-12-20",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 1100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-21",
+   "fecha_cargo": "2022-12-21",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-21",
+   "fecha_cargo": "2022-12-21",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-21",
+   "fecha_cargo": "2022-12-21",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-21",
+   "fecha_cargo": "2022-12-21",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-21",
+   "fecha_cargo": "2022-12-21",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO GIOVANY",
+   "monto": 600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-23",
+   "fecha_cargo": "2022-12-23",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PA LAS LENIS",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-24",
+   "fecha_cargo": "2022-12-26",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-26",
+   "fecha_cargo": "2022-12-23",
+   "descripcion": "DLOCAL*DIDI FOOD RFC: DMM 171208LT4 21:19 AUT: 996095",
+   "monto": 81.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-27",
+   "fecha_cargo": "2022-12-27",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PASTEL GUARDAME",
+   "monto": 164.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-27",
+   "fecha_cargo": "2022-12-26",
+   "descripcion": "DLOCAL*DIDI FOOD RFC: DMM 171208LT4 21:35 AUT: 817498",
+   "monto": 81.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-29",
+   "fecha_cargo": "2022-12-29",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7056.8,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-29",
+   "fecha_cargo": "2022-12-29",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 5300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-30",
+   "fecha_cargo": "2023-01-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET P",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-01-01",
+   "fecha_cargo": "2023-01-02",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 9581.4,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-01-02",
+   "fecha_cargo": "2023-01-02",
+   "descripcion": "SPEI RECIBIDOBANAMEX",
+   "monto": 250.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-01-03",
+   "fecha_cargo": "2023-01-03",
+   "descripcion": "SITH20000004451 FIDEICOMISO F 1596",
+   "monto": 215.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Fideicomiso",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-01-03",
+   "fecha_cargo": "2023-01-03",
+   "descripcion": "SITH20000006905 FIBRA HOTELERA SC",
+   "monto": 4129.82,
+   "categoria": "FINANZAS",
+   "subcategoria": "Fideicomiso",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-01-03",
+   "fecha_cargo": "2023-01-02",
+   "descripcion": "DLOCAL*DIDI FOOD RFC: DMM 171208LT4 22:25 AUT: 387924",
+   "monto": 139.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-01-04",
+   "fecha_cargo": "2023-01-04",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET EXPENSE IVAN",
+   "monto": 1171.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-01-05",
+   "fecha_cargo": "2023-01-05",
+   "descripcion": "DEPOSITO DE TERCERO FDO AHORRO 2022 BMRCASH",
+   "monto": 2634.52,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-01-06",
+   "fecha_cargo": "2023-01-06",
+   "descripcion": "DEPOSITO DE TERCERO FONDO AHORRO BMRCASH",
+   "monto": 48392.13,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-01-06",
+   "fecha_cargo": "2023-01-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO SUPREMO GIO",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  }
+ ]
+}

@@ -1,0 +1,106 @@
+{
+ "archivo": "007410027429408661_202207_C1.pdf",
+ "periodo": "2022-06-23 al 2022-07-22",
+ "totales": {
+  "cargos": 3345.0,
+  "abonos": 2166.0
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-07-22",
+   "fecha_cargo": "2022-07-25",
+   "descripcion": "TIENDAS CHEDRAUI S TA",
+   "monto": 292.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO",
+   "parcialidad_num": 8,
+   "parcialidad_total": 12,
+   "compra_msi_id": "990549d1b05fc124"
+  },
+  {
+   "fecha": "2022-07-22",
+   "fecha_cargo": "2022-07-25",
+   "descripcion": "TRAINING INNOVATION",
+   "monto": 358.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": 4,
+   "parcialidad_total": 12,
+   "compra_msi_id": "0acc9691107f20a1"
+  },
+  {
+   "fecha": "2022-07-03",
+   "fecha_cargo": "2022-07-04",
+   "descripcion": "PLAZA PATRIA GUADALAJA",
+   "monto": 849.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-07-12",
+   "fecha_cargo": "2022-07-13",
+   "descripcion": "SU PAGO GRACIAS",
+   "monto": -436.25,
+   "categoria": "PAGO",
+   "subcategoria": "",
+   "tipo": "PAGO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-07-13",
+   "fecha_cargo": "2022-07-13",
+   "descripcion": "BMOVIL.PAGO TDC",
+   "monto": -1729.75,
+   "categoria": "PAGO",
+   "subcategoria": "",
+   "tipo": "PAGO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-07-17",
+   "fecha_cargo": "2022-07-18",
+   "descripcion": "DECATHLON GDL ACUEDUCT",
+   "monto": 330.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-07-22",
+   "fecha_cargo": "2022-07-25",
+   "descripcion": "SEGBBVA AUTOSEGURO VO",
+   "monto": 949.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": 9,
+   "parcialidad_total": 12,
+   "compra_msi_id": "87e2d8b74ca1ebe9"
+  },
+  {
+   "fecha": "2022-07-22",
+   "fecha_cargo": "2022-07-25",
+   "descripcion": "WALMART VENTA EN LIN3",
+   "monto": 567.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO",
+   "parcialidad_num": 3,
+   "parcialidad_total": 12,
+   "compra_msi_id": "6ac103f10a5bb55e"
+  }
+ ]
+}

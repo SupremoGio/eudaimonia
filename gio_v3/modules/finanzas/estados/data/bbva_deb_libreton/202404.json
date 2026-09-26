@@ -1,0 +1,199 @@
+{
+ "archivo": "1520361804_202404_C1.pdf",
+ "periodo": "07/03/2024 al 06/04/2024",
+ "totales": {
+  "cargos": 43476.66,
+  "abonos": 36372.12
+ },
+ "movimientos": [
+  {
+   "fecha": "2024-03-07",
+   "fecha_cargo": "2024-03-07",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-08",
+   "fecha_cargo": "2024-03-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 1500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-03-08",
+   "fecha_cargo": "2024-03-08",
+   "descripcion": "SPEI ENVIADO MERCADO PAGO",
+   "monto": 150.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-08",
+   "fecha_cargo": "2024-03-08",
+   "descripcion": "SPEI ENVIADO BANORTE",
+   "monto": 11000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-08",
+   "fecha_cargo": "2024-03-11",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-10",
+   "fecha_cargo": "2024-03-11",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-12",
+   "fecha_cargo": "2024-03-12",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 3000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-03-12",
+   "fecha_cargo": "2024-03-12",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 10523.66,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-15",
+   "fecha_cargo": "2024-03-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7961.85,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-03-15",
+   "fecha_cargo": "2024-03-15",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-15",
+   "fecha_cargo": "2024-03-14",
+   "descripcion": "D LOCAL*DIDIFOOD RFC: DMM 171208LT4 00:00 AUT: 346959",
+   "monto": 49.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-18",
+   "fecha_cargo": "2024-03-19",
+   "descripcion": "SPEI ENVIADO INVEX",
+   "monto": 1324.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-18",
+   "fecha_cargo": "2024-03-19",
+   "descripcion": "SPEI ENVIADO NAFIN",
+   "monto": 6000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-18",
+   "fecha_cargo": "2024-03-19",
+   "descripcion": "SPEI DEVUELTONAFIN",
+   "monto": 6000.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-03-27",
+   "fecha_cargo": "2024-03-27",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 17910.27,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-03-27",
+   "fecha_cargo": "2024-03-27",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-27",
+   "fecha_cargo": "2024-03-27",
+   "descripcion": "SPEI ENVIADO NAFIN",
+   "monto": 10000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-29",
+   "fecha_cargo": "2024-04-01",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-03-31",
+   "fecha_cargo": "2024-04-01",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-04-01",
+   "fecha_cargo": "2024-04-01",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-04-05",
+   "fecha_cargo": "2024-04-05",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 30.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  }
+ ]
+}
