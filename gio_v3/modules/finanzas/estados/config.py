@@ -390,7 +390,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "FINANZAS":          ["Deudas MSI", "Cargos bancarios", "Transferencia",
                            "Transferencia enviada", "Transferencia recibida",
                            "Retiro efectivo", "Depósito", "Fideicomiso",
-                           "Reembolsable", "Pago servicios"],
+                           "Reembolsable", "Pago servicios", "Compra a meses"],
     "INVERSION":         ["Ahorro", "Inversión", "Crypto", "Fondo viaje", "Fondo emergencias"],
     "NOMINA":            ["Pago nominal", "Bono", "Aguinaldo", "PTU", "Fondo de ahorro"],
     "OCIO":              ["Eventos y congresos", "Cine", "Salidas", "Videojuegos"],
