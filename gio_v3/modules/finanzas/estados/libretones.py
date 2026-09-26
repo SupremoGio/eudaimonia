@@ -60,7 +60,14 @@ def aplicar(db, clave: str) -> tuple[int, int]:
             WHERE banco='BBVA_DEB' AND substr(fecha,1,10) IN ({','.join('?' * len(fechas))})""",
         fechas).fetchall()]
     usados, nuevas, ya = set(), [], 0
+    repetidos = {}
     for m in movs:
+        # Dos movimientos reales idénticos el mismo día (ej. 2 retiros de $300)
+        # chocarían con el índice único (fecha, descripcion, monto): el 2º
+        # lleva « (2)» en la descripción.
+        k = (m['fecha'], m['descripcion'], m['monto'])
+        repetidos[k] = repetidos.get(k, 0) + 1
+        desc = m['descripcion'] if repetidos[k] == 1 else f"{m['descripcion']} ({repetidos[k]})"
         match = next((e for e in existentes if e['id'] not in usados
                       and e['fecha'] in (m['fecha'], m['fecha_cargo'])
                       and abs(e['monto'] - abs(m['monto'])) < 0.005), None)
@@ -71,7 +78,7 @@ def aplicar(db, clave: str) -> tuple[int, int]:
         cur = db.execute("""INSERT OR IGNORE INTO est_movimientos
                             (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo)
                             VALUES (?,?,?,?, 'BBVA_DEB', ?,?,?,?)""",
-                         (m['fecha'], m['fecha_cargo'], m['descripcion'], m['monto'], data['periodo'],
+                         (m['fecha'], m['fecha_cargo'], desc, m['monto'], data['periodo'],
                           m['categoria'], m['subcategoria'], m['tipo']))
         if cur.rowcount:
             nuevas.append(cur.lastrowid)

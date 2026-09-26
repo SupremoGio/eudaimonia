@@ -1,0 +1,352 @@
+{
+ "archivo": "1520361804_202311_C1.pdf",
+ "periodo": "07/10/2023 al 06/11/2023",
+ "totales": {
+  "cargos": 52407.3,
+  "abonos": 39365.31
+ },
+ "movimientos": [
+  {
+   "fecha": "2023-10-07",
+   "fecha_cargo": "2023-10-09",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 9900.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-08",
+   "fecha_cargo": "2023-10-09",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A LAURA GUA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-08",
+   "fecha_cargo": "2023-10-09",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 2425.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-10",
+   "fecha_cargo": "2023-10-10",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 987.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-13",
+   "fecha_cargo": "2023-10-13",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7595.46,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-10-13",
+   "fecha_cargo": "2023-10-13",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-13",
+   "fecha_cargo": "2023-10-16",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-15",
+   "fecha_cargo": "2023-10-16",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 2000.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-15",
+   "fecha_cargo": "2023-10-16",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 100.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-17",
+   "fecha_cargo": "2023-10-17",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 1500.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-17",
+   "fecha_cargo": "2023-10-16",
+   "descripcion": "NESPRESSO MEXICO RFC: NME 14:07 AUT: 904923",
+   "monto": 165.0,
+   "categoria": "CAFE/PAN",
+   "subcategoria": "Café",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-17",
+   "fecha_cargo": "2023-10-18",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-19",
+   "fecha_cargo": "2023-10-19",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A LAURA GUA",
+   "monto": 77.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-19",
+   "fecha_cargo": "2023-10-18",
+   "descripcion": "D LOCAL*XANDRIE QOBUZ RFC: DME 180122DU4 06:29 AUT: 724083",
+   "monto": 149.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-20",
+   "fecha_cargo": "2023-10-20",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-21",
+   "fecha_cargo": "2023-10-23",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-23",
+   "fecha_cargo": "2023-10-23",
+   "descripcion": "TELEFONOS DE MEXICO 18354",
+   "monto": 658.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-23",
+   "fecha_cargo": "2023-10-23",
+   "descripcion": "RETIRO SIN TARJETA QR",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-24",
+   "fecha_cargo": "2023-10-24",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 300.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-24",
+   "fecha_cargo": "2023-10-24",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 1000.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-24",
+   "fecha_cargo": "2023-10-22",
+   "descripcion": "ROLL BITS RFC: API 6609273E0 21:02 AUT: 827412",
+   "monto": 241.4,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-24",
+   "fecha_cargo": "2023-10-22",
+   "descripcion": "ROLL BITS RFC: API 6609273E0 21:05 AUT: 847142",
+   "monto": 115.4,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-27",
+   "fecha_cargo": "2023-10-27",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-10-28",
+   "fecha_cargo": "2023-10-30",
+   "descripcion": "RETIRO SIN TARJETA QR",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-30",
+   "fecha_cargo": "2023-10-28",
+   "descripcion": "DLOCAL*DIDI FOOD MX RFC: DME 180122DU4 10:39 AUT: 350197",
+   "monto": 359.5,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-30",
+   "fecha_cargo": "2023-10-30",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 22827.58,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-10-30",
+   "fecha_cargo": "2023-10-30",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 20000.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-30",
+   "fecha_cargo": "2023-10-30",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MENSUALIDAD GIOVAN",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-10-31",
+   "fecha_cargo": "2023-10-31",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7557.27,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-10-31",
+   "fecha_cargo": "2023-10-31",
+   "descripcion": "SITH20000007585 FIBRA HOTELERA SC",
+   "monto": 885.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Fideicomiso",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-10-31",
+   "fecha_cargo": "2023-10-31",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SESION GIO",
+   "monto": 250.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-11-01",
+   "fecha_cargo": "2023-11-01",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-11-01",
+   "fecha_cargo": "2023-11-01",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-11-03",
+   "fecha_cargo": "2023-11-03",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SOLAR GIOVANY FULL",
+   "monto": 700.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-11-04",
+   "fecha_cargo": "2023-11-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A KEILA JAH",
+   "monto": 80.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-11-05",
+   "fecha_cargo": "2023-11-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-11-05",
+   "fecha_cargo": "2023-11-06",
+   "descripcion": "RETIRO SIN TARJETA QR",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-11-06",
+   "fecha_cargo": "2023-11-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  }
+ ]
+}

@@ -50,3 +50,13 @@ def test_decisiones_previas(test_db):
         assert spei and all((r['categoria'], r['subcategoria']) == ('CETES', 'RETIRO') for r in spei)
         exp = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE '%EXPENSE%'").fetchall()
         assert exp and all(r['categoria'] == ('EXPENSE' if r['tipo'] == 'GASTO' else 'FINANZAS') for r in exp)
+
+
+def test_dos_retiros_identicos_el_mismo_dia_entran_los_dos(test_db):
+    d = libs.cargar('202310')
+    with database.get_db() as db:
+        assert libs.aplicar(db, '202310') == (len(d['movimientos']), 0)
+        db.commit()
+        n = db.execute("""SELECT COUNT(*) FROM est_movimientos WHERE fecha='2023-10-04'
+                          AND descripcion LIKE 'RETIRO SIN TARJETA QR%' AND monto=300""").fetchone()[0]
+        assert n == 2
