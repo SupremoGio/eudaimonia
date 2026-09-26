@@ -16,6 +16,10 @@ cambian. Interpretación de los comentarios:
   - «REEMBOLSO TEMU» -> VIVIENDA/Artículos del hogar (resta al gasto)
   - «ESTE PAGO NO PROCEDIO» / «RETENIDO PERO NO COBRADO EN GARANTIA» ->
     FINANZAS/Reembolsable (fuera de gasto e ingreso)
+Segunda tanda (7 filas en OTROS): intereses INVEX -> COSTOS_FINANCIEROS,
+«entretenimiento» -> OCIO, «gasolina» -> TRANSPORTE, «aprendizaje» ->
+APRENDIZAJE/Cursos, pago en efectivo -> FINANZAS/Depósito y SPEI devuelto ->
+FINANZAS/Reembolsable (las dos últimas ya no cuentan como ingreso).
 Sin aplicar (se preguntó): id 302 VIVA AEROBUS A 09 MSI (2), comentario «1».
 """
 
@@ -168,6 +172,14 @@ CORRECCIONES = [
     (2577, '2026-09-07', 12000.0, {'mi_parte': 6000.0}),  # PAGO TARJETA DE TERCEROS MBAN · «6000»
     (2570, '2026-09-11', 1200.0, {'categoria': 'VIVIENDA', 'subcategoria': 'Aportación renta', 'tipo': 'INGRESO'}),  # SPEI RECIBIDONUBANK 638 0110926TRANSFERE · «PARTE RENTA ROOMIE»
     (2580, '2026-09-15', 4174.94, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
+    # ── Segunda tanda (2026-09-26): 7 filas que seguían en OTROS, con su comentario.
+    (3999, '2025-10-06', 200.56, {'categoria': 'COSTOS_FINANCIEROS', 'subcategoria': 'Intereses', 'tipo': 'GASTO'}),  # INTERES COMPRAS SUJETO IVA (INVEX) · «costo financiero»
+    (4000, '2025-10-06', 5.28, {'categoria': 'COSTOS_FINANCIEROS', 'subcategoria': 'Intereses', 'tipo': 'GASTO'}),  # INTERES COMPRAS NO SUJETOS A IVA (INVEX) · «costo financiero»
+    (3992, '2025-09-27', 60.0, {'categoria': 'OCIO', 'subcategoria': 'Eventos y congresos', 'tipo': 'GASTO'}),  # ESPECTACULOS Y EVENTOS GUADALAJARA J · «entretenimiento»
+    (3989, '2025-09-18', 100.0, {'categoria': 'TRANSPORTE', 'subcategoria': 'Gasolina', 'tipo': 'GASTO'}),  # SERVS MOZA ZAPOPAN JAL · «gasolina»
+    (3983, '2025-08-15', 377.97, {'categoria': 'APRENDIZAJE', 'subcategoria': 'Cursos', 'tipo': 'GASTO'}),  # CODE TRIAL PRO - MONT NEW YORK NY · «aprendizaje»
+    (2935, '2025-06-02', 3000.0, {'categoria': 'FINANZAS', 'subcategoria': 'Depósito'}),  # SU PAGO EN EFECTIVO EN COMERCIO · «dejalo en finanzas»
+    (3175, '2025-03-28', 192.5, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SPEI DEVUELTOSANTANDER · «ingreso no paso ese pago»
 ]
 _CAMPOS = ('categoria', 'subcategoria', 'tipo', 'mi_parte')
 

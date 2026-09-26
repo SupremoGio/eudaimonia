@@ -63,3 +63,18 @@ def test_aportacion_renta_no_cuenta_como_ingreso(test_db):
     from modules.finanzas.budget import _ingresos_mes
     with database.get_db() as db:
         assert _ingresos_mes(db, '2026-09', '2026-09-01', '2026-10-01')['total'] == 20000
+
+
+def test_segunda_tanda_otros(test_db):
+    _ins(3999, '2025-10-06', 'INTERES COMPRAS SUJETO IVA', 200.56, 'OTROS', '', 'GASTO')
+    _ins(3989, '2025-09-18', 'SERVS MOZA ZAPOPAN JAL', 100, 'OTROS', '', 'GASTO')
+    _ins(2935, '2025-06-02', 'SU PAGO EN EFECTIVO EN COMERCIO', 3000, 'OTROS', '', 'INGRESO')
+    _ins(3175, '2025-03-28', 'SPEI DEVUELTOSANTANDER', 192.5, 'OTROS', '', 'INGRESO')
+    with database.get_db() as db:
+        ok, _ = csv0926.aplicar(db)
+        db.commit()
+    assert ok == 4
+    assert (_row(3999)['categoria'], _row(3999)['subcategoria']) == ('COSTOS_FINANCIEROS', 'Intereses')
+    assert (_row(3989)['categoria'], _row(3989)['subcategoria']) == ('TRANSPORTE', 'Gasolina')
+    assert (_row(2935)['categoria'], _row(2935)['subcategoria'], _row(2935)['tipo']) == ('FINANZAS', 'Depósito', 'INGRESO')
+    assert (_row(3175)['categoria'], _row(3175)['subcategoria']) == ('FINANZAS', 'Reembolsable')
