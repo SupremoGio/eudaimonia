@@ -337,3 +337,14 @@ button.fz-note{width:100%;text-align:left;font:inherit;color:inherit;cursor:poin
 .fz-pc-x{width:22px;height:22px;min-height:0}
 .fz-pc-acts{white-space:nowrap}
 .fz-pc-acts>*{margin-left:var(--sp-1)}
+/* Expense · lotes de reembolso */
+.fz-ex-table{table-layout:fixed}
+.fz-ex-table .c-date{width:80px}.fz-ex-table .c-amt{width:120px}.fz-ex-table .c-st{width:170px}.fz-ex-table .c-x{width:48px}
+.fz-ex-table .fz-td-desc{display:block;max-width:none}
+.fz-ex-dep td{background:color-mix(in oklab,var(--success-bg,transparent) 45%,transparent)}
+.fz-ex-acts{gap:var(--sp-2);border-top:1px solid var(--border-subtle)}
+.fz-ex-pick{list-style:none;margin:0;padding:0;max-height:320px;overflow:auto;border:1px solid var(--border-subtle);border-radius:var(--r-md)}
+.fz-ex-pick li+li{border-top:1px solid var(--border-subtle)}
+.fz-ex-pick label{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);cursor:pointer}
+.fz-ex-pick label:hover{background:var(--bg-raised)}
+.fz-ex-date{width:64px;flex-shrink:0;white-space:nowrap}.fz-ex-amt{width:104px;text-align:right;flex-shrink:0}

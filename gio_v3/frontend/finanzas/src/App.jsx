@@ -11,6 +11,7 @@ import Presupuestos from './views/Presupuestos.jsx';
 import Reglas from './views/Reglas.jsx';
 import Reportes from './views/Reportes.jsx';
 import PorCobrar from './views/PorCobrar.jsx';
+import Expense from './views/Expense.jsx';
 import TxEditor from './components/TxEditor.jsx';
 import ImportModal from './components/ImportModal.jsx';
 import CategoryModal from './components/CategoryModal.jsx';
@@ -23,6 +24,7 @@ const TABS = [
   { id: 'reglas', label: 'Reglas' },
   { id: 'reportes', label: 'Reportes' },
   { id: 'porcobrar', label: 'Por cobrar', desk: true }, // solo PC (se oculta < 768)
+  { id: 'expense', label: 'Expense', desk: true }, // conciliación por lotes, solo PC
 ];
 const VIAJES_URL = '/finanzas/estados/viajes/';
 
@@ -94,6 +96,7 @@ export default function App() {
     case 'reglas': view = <Reglas />; break;
     case 'reportes': view = <Reportes />; break;
     case 'porcobrar': view = <PorCobrar />; break;
+    case 'expense': view = <Expense />; break;
     default: view = <Resumen />;
   }
 
