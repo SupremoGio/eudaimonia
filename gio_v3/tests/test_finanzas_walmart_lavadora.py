@@ -33,12 +33,14 @@ def test_solo_las_mensualidades_de_509(test_db):
         _mov('WALMART VENTA EN LIN3', -509.0, '2026-06-10'),
         _mov('WALMART VENTA EN LIN3 03/20', -509.5, '2026-07-10', 'FINANZAS', 'Deudas MSI'),
         _mov('WALMART VENTA EN LINEA', 509.0, '2026-08-10'),
+        _mov('19 DE 20 WALMART VENTA EN L', -509.0, '2026-05-22'),      # descripción cortada
+        _mov('20 DE 20 WALMART VENTA EN L', -498.0, '2026-06-22'),      # última, otro monto
     ]
     super_linea = _mov('WALMART VENTA EN LIN3', -1250.0)
     super_tienda = _mov('WALMART SUPERCENTER', -509.0)
     devolucion = _mov('WALMART VENTA EN LIN3', 509.0, '2026-09-10', 'FINANZAS', 'Reembolsable', 'INGRESO')
     with database.get_db() as db:
-        assert er._corregir_walmart_lavadora(db) == 3
+        assert er._corregir_walmart_lavadora(db) == 5
         db.commit()
     assert all(_cls(r) == HOGAR for r in lavadora)
     assert _cls(super_linea) == _cls(super_tienda) == ('SUPER', 'Súper', 'GASTO')

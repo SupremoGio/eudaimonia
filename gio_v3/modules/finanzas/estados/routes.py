@@ -615,12 +615,16 @@ WALMART_LAVADORA_MONTO = (508.5, 510.0)
 
 
 def _corregir_walmart_lavadora(db) -> int:
-    """Mensualidades de la lavadora -> VIVIENDA/Artículos del hogar."""
+    """Mensualidades de la lavadora -> VIVIENDA/Artículos del hogar. El banco
+    a veces corta la descripción («19 DE 20 WALMART VENTA EN L») y la última
+    mensualidad fue de otro monto ($498), así que también cuenta cualquier
+    «N DE 20 WALMART VENTA EN L…» (la lavadora es la compra a 20 meses)."""
     lo, hi = WALMART_LAVADORA_MONTO
     return db.execute("""
         UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Artículos del hogar', tipo='GASTO'
-        WHERE UPPER(descripcion) LIKE '%WALMART%VENTA EN LIN%'
-          AND ABS(monto) >= ? AND ABS(monto) < ? AND tipo IN ('GASTO', 'PAGO')
+        WHERE UPPER(descripcion) LIKE '%WALMART%VENTA EN L%'
+          AND ((ABS(monto) >= ? AND ABS(monto) < ?) OR UPPER(descripcion) LIKE '% DE 20 WALMART%')
+          AND tipo IN ('GASTO', 'PAGO')
           AND (categoria != 'VIVIENDA' OR subcategoria != 'Artículos del hogar' OR tipo != 'GASTO')
     """, (lo, hi)).rowcount
 
@@ -695,11 +699,13 @@ EXPENSE_ESTATUS_TERCERO = 'TERCERO'
 
 def _corregir_expense_terceros(db) -> int:
     """EXPENSE «PAGO CUENTA DE TERCERO…» -> estatus_reembolso='TERCERO'."""
+    # Algunos llegan del banco como tipo PAGO: son la misma salida de dinero
+    # (y así no aparecían para armar lotes), se normalizan a GASTO.
     return db.execute("""
-        UPDATE est_movimientos SET estatus_reembolso=?
-        WHERE categoria='EXPENSE' AND tipo='GASTO'
+        UPDATE est_movimientos SET estatus_reembolso=?, tipo='GASTO'
+        WHERE categoria='EXPENSE' AND tipo IN ('GASTO', 'PAGO')
           AND UPPER(descripcion) LIKE '%PAGO CUENTA DE TERCERO%'
-          AND (estatus_reembolso IS NULL OR estatus_reembolso IN ('', 'PENDIENTE'))
+          AND (estatus_reembolso IS NULL OR estatus_reembolso IN ('', 'PENDIENTE') OR tipo = 'PAGO')
     """, (EXPENSE_ESTATUS_TERCERO,)).rowcount
 
 

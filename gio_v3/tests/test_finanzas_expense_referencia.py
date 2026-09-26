@@ -75,6 +75,11 @@ def test_terceros_y_pagados(test_db):
     assert _estatus(ya_pagado) == 'PAGADO'
     assert _estatus(regalo) is None
     # Un EXPENSE nuevo pendiente no lo toca el blindaje (solo los de tercero)
+    como_pago = _mov('PAGO CUENTA DE TERCERO BNET EXPENSE', -332.0, tipo='PAGO', estatus='PENDIENTE')
+    with database.get_db() as db:
+        er._corregir_expense_terceros(db)
+        db.commit()
+        assert tuple(db.execute("SELECT tipo, estatus_reembolso FROM est_movimientos WHERE id=?", (como_pago,)).fetchone()) == ('GASTO', 'TERCERO')
     nuevo = _mov('TAXI CLIENTE', -120.0, estatus='PENDIENTE')
     nuevo_t = _mov('PAGO CUENTA DE TERCERO BNET EXPENSE OCT', -900.0, estatus='PENDIENTE')
     with database.get_db() as db:
