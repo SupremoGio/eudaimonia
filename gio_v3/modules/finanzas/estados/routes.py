@@ -2262,6 +2262,28 @@ def conciliar_expense(mov_id):
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 
+# Palabras que traen casi todas las descripciones bancarias y no dicen qué
+# fue el movimiento: no cuentan para decidir si dos descripciones se parecen.
+_DESC_STOP = frozenset({
+    'SPEI', 'ENVIADO', 'RECIBIDO', 'RECIBIDOS', 'PAGO', 'CUENTA', 'TERCERO', 'TERCEROS', 'BNET', 'BMOV',
+    'DEPOSITO', 'TRANSFERENCIA', 'TRANSF', 'COMPRA', 'CARGO', 'ABONO', 'MBAN', 'BMOVIL', 'TARJETA',
+    'DEL', 'LOS', 'LAS', 'POR', 'CON', 'MEX', 'MEXICO', 'CDMX', 'GUADALAJARA', 'ZAPOPAN', 'JAL',
+})
+
+
+def _desc_tokens(desc: str) -> set:
+    import re as _re
+    return {w for w in _re.findall(r'[A-ZÁÉÍÓÚÑ]{3,}', (desc or '').upper()) if w not in _DESC_STOP}
+
+
+def _desc_parecida(a: str, b: str) -> bool:
+    """¿Dos descripciones pueden ser el mismo movimiento? Sí si comparten
+    alguna palabra significativa, o si alguna no tiene ninguna (no hay con
+    qué distinguirlas: se trata como duplicado, igual que antes)."""
+    ta, tb = _desc_tokens(a), _desc_tokens(b)
+    return not ta or not tb or bool(ta & tb)
+
+
 @estados_bp.route('/api/upload', methods=['POST'])
 def upload_file():
     if not _ok(): return _locked()
@@ -2299,16 +2321,23 @@ def upload_file():
         dedup_conflict = 0  # chocó con idx_est_mov_dedup (fecha, descripcion) aunque
                              # el dedup por (fecha, monto, tipo) lo había dejado pasar
         with get_db() as db:
-            existing = set()
+            # key -> [(banco, descripción)] ya guardados con ese (fecha, monto,
+            # tipo). En el MISMO banco basta la key (es el mismo estado de
+            # cuenta; hay imports viejos con descripciones mal emparejadas, así
+            # que la descripción no sirve para distinguir). Entre bancos
+            # distintos además debe parecerse la descripción (_desc_parecida):
+            # antes bastaba la key y una mensualidad a MSI de $200 en crédito
+            # se descartaba porque ese día hubo un SPEI de $200 en débito.
+            existing = {}
             for r in db.execute(
-                "SELECT fecha, monto, tipo FROM est_movimientos WHERE monto > 0"
+                "SELECT fecha, monto, tipo, descripcion, banco FROM est_movimientos WHERE monto > 0"
             ).fetchall():
                 # Redondeado a centavos: dos parsers pueden calcular el mismo
                 # monto por caminos distintos (división vs. parseo directo
                 # del string) y no siempre caen en el mismo float exacto —
                 # comparar con round() evita que ese detalle deje pasar un
                 # duplicado real.
-                existing.add((r['fecha'], round(float(r['monto']), 2), r['tipo']))
+                existing.setdefault((r['fecha'], round(float(r['monto']), 2), r['tipo']), []).append((r['banco'], r['descripcion']))
 
             # Blindaje adicional (auditoría "AUDITA PORQUE HAY MONTOS Y DIAS
             # REPETIDOS..."): el mismo SPEI recibido / depósito de tercero
@@ -2341,7 +2370,8 @@ def upload_file():
                 m_desc_upper = (m['descripcion'] or '').upper()
                 # Dedup solo aplica a montos > 0
                 key = (m['fecha'], round(m_monto, 2), m['tipo'])
-                if m_monto > 0 and key in existing:
+                if m_monto > 0 and any(b == m_banco or _desc_parecida(m['descripcion'], d)
+                                       for b, d in existing.get(key, ())):
                     skipped += 1
                     continue
                 if (m_monto > 0 and m_banco != 'BBVA_DEB'
@@ -2350,7 +2380,7 @@ def upload_file():
                     skipped += 1
                     continue
                 if m_monto > 0:
-                    existing.add(key)
+                    existing.setdefault(key, []).append((m_banco, m['descripcion']))
                     if m_banco == 'BBVA_DEB' and ('SPEI RECIBIDO' in m_desc_upper or 'DEPOSITO DE TERCERO' in m_desc_upper):
                         existing_deb_spei.add((m['fecha'], round(m_monto, 2)))
                 cur = db.execute("""

@@ -5554,6 +5554,28 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_auditoria_expense_2026_09_26 migration warning: {e}")
 
+        # ── FINANZAS — reconciliar los cortes jul/ago/sep 2026 de BBVA Crédito
+        # contra sus PDF: faltaban 22 movimientos (mensualidades a MSI del
+        # anillo y Amazon incluidas), había descripciones corridas un renglón
+        # respecto a su monto y duplicados con otra fecha. Detalle en
+        # modules/finanzas/estados/reconciliar.py.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_reconciliar_bbva_tdc_2026_07_09'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.reconciliar import reconciliar_cortes_bbva_tdc_2026
+                _r = reconciliar_cortes_bbva_tdc_2026(db)
+                if not _r:
+                    raise RuntimeError("sin movimientos de BBVA Crédito en esos cortes todavía; se reintenta en el próximo arranque")
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_reconciliar_bbva_tdc_2026_07_09", f"Cortes BBVA Crédito reconciliados con PDF: {_r}")
+                )
+                db.commit()
+                print(f"[DB] finanzas_reconciliar_bbva_tdc_2026_07_09: {_r}")
+            except Exception as e:
+                print(f"[DB] finanzas_reconciliar_bbva_tdc_2026_07_09 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que
