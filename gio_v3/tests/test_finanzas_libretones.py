@@ -78,6 +78,7 @@ def test_cetes_por_spei_y_fondo_de_ahorro(test_db):
 def test_ptu_y_spei_devuelto(test_db):
     with database.get_db() as db:
         libs.aplicar(db, '202301')
+        libs.aplicar(db, '202302')   # el PTU (26/01/2023) viene en el corte de febrero
         db.commit()
         ptu = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE '%PTU%'").fetchone()
         assert (ptu['categoria'], ptu['subcategoria']) == ('NOMINA', 'PTU')
