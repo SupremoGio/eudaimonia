@@ -1,0 +1,217 @@
+{
+ "archivo": "1520361804_202303_C1.pdf",
+ "periodo": "07/02/2023 al 06/03/2023",
+ "totales": {
+  "cargos": 18807.0,
+  "abonos": 26751.04
+ },
+ "movimientos": [
+  {
+   "fecha": "2023-02-07",
+   "fecha_cargo": "2023-02-07",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-07",
+   "fecha_cargo": "2023-02-07",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BOLSA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-02-07",
+   "fecha_cargo": "2023-02-07",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SEGURO GIO",
+   "monto": 257.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-07",
+   "fecha_cargo": "2023-02-07",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-13",
+   "fecha_cargo": "2023-02-13",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-14",
+   "fecha_cargo": "2023-02-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET RENTA EMMA",
+   "monto": 4400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-02-15",
+   "fecha_cargo": "2023-02-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7192.15,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-02-15",
+   "fecha_cargo": "2023-02-16",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BOLSA",
+   "monto": 150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-02-16",
+   "fecha_cargo": "2023-02-16",
+   "descripcion": "RETIRO SIN TARJETA QR",
+   "monto": 8000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-16",
+   "fecha_cargo": "2023-02-16",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-17",
+   "fecha_cargo": "2023-02-17",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 4000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-02-17",
+   "fecha_cargo": "2023-02-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A DIEGO ALB",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-18",
+   "fecha_cargo": "2023-02-20",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BOLSO",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-02-25",
+   "fecha_cargo": "2023-02-27",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GASAFA",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-25",
+   "fecha_cargo": "2023-02-27",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GASOLINA Y BOLSA",
+   "monto": 200.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Gasolina",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-02-25",
+   "fecha_cargo": "2023-02-27",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-26",
+   "fecha_cargo": "2023-02-27",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-02-28",
+   "fecha_cargo": "2023-02-28",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7248.89,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-03-02",
+   "fecha_cargo": "2023-03-02",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-03-03",
+   "fecha_cargo": "2023-03-03",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 2500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-03-03",
+   "fecha_cargo": "2023-03-03",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 580.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2023-03-04",
+   "fecha_cargo": "2023-03-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BEMBE GIOVANY ALBE",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2023-03-06",
+   "fecha_cargo": "2023-03-06",
+   "descripcion": "SPEI RECIBIDOHSBC",
+   "monto": 80.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  }
+ ]
+}

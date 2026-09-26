@@ -73,3 +73,15 @@ def test_cetes_por_spei_y_fondo_de_ahorro(test_db):
         assert dev and all((r['categoria'], r['subcategoria']) == ('CETES', 'RETIRO') for r in dev)
         fdo = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE '%FDO AHORRO%'").fetchone()
         assert (fdo['categoria'], fdo['subcategoria']) == ('NOMINA', 'Fondo de ahorro')
+
+
+def test_ptu_y_spei_devuelto(test_db):
+    with database.get_db() as db:
+        libs.aplicar(db, '202301')
+        db.commit()
+        ptu = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE '%PTU%'").fetchone()
+        assert (ptu['categoria'], ptu['subcategoria']) == ('NOMINA', 'PTU')
+        dev = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE 'SPEI DEVUELTOBAJIO%'").fetchone()
+        assert (dev['categoria'], dev['subcategoria']) == ('FINANZAS', 'Reembolsable')
+        fdo = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE '%FONDO AHORRO%'").fetchone()
+        assert fdo['subcategoria'] == 'Fondo de ahorro'

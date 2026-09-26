@@ -40,14 +40,23 @@ def _decisiones_previas(db, ids: list) -> None:
     retiro de CETES; «expense» pagado es EXPENSE y el depósito de expense
     es su reembolso. Por la misma lógica (SPEI a GBM -> GBM/APORTACION): SPEI
     enviado a NAFIN es aportación a CETES y el SPEI devuelto por NAFIN, su
-    retiro (se compensan). El fondo de ahorro anual es NOMINA/Fondo de ahorro."""
+    retiro (se compensan). Fondo de ahorro y PTU van a NOMINA; cualquier otro
+    SPEI devuelto, a FINANZAS/Reembolsable (como «SPEI DEVUELTOSANTANDER»)."""
     ph = ','.join('?' * len(ids))
     db.execute(f"""UPDATE est_movimientos SET categoria='CETES', subcategoria='APORTACION', tipo='INVERSION'
                    WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'SPEI ENVIADO NAFIN%'""", ids)
     db.execute(f"""UPDATE est_movimientos SET categoria='CETES', subcategoria='RETIRO', tipo='INVERSION'
                    WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'SPEI DEVUELTONAFIN%'""", ids)
     db.execute(f"""UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Fondo de ahorro'
-                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE '%FDO AHORRO%' AND tipo='INGRESO'""", ids)
+                   WHERE id IN ({ph}) AND (UPPER(descripcion) LIKE '%FDO AHORRO%' OR UPPER(descripcion) LIKE '%FONDO AHORRO%')
+                     AND tipo='INGRESO'""", ids)
+    db.execute(f"""UPDATE est_movimientos SET categoria='NOMINA', subcategoria='PTU'
+                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE '%PTU%' AND tipo='INGRESO'""", ids)
+    # SPEI devuelto (el pago no pasó): fuera de ingreso, como «SPEI DEVUELTOSANTANDER»
+    # en el CSV corregido. El de NAFIN ya se trató arriba como retiro de CETES.
+    db.execute(f"""UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
+                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'SPEI DEVUELTO%'
+                     AND UPPER(descripcion) NOT LIKE 'SPEI DEVUELTONAFIN%'""", ids)
     db.execute(f"""UPDATE est_movimientos SET categoria='CETES', subcategoria='RETIRO', tipo='INVERSION'
                    WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'SPEI RECIBIDONAFIN%'""", ids)
     db.execute(f"""UPDATE est_movimientos SET categoria='EXPENSE', subcategoria='', tipo='GASTO'
