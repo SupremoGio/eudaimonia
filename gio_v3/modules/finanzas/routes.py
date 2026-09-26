@@ -462,14 +462,18 @@ def oikonomia_summary():
     else:
         delta, delta_pct = 0, 0
     mes = today_date().replace(day=1).isoformat()
+    # Gasto con la misma regla que Estados de cuenta (_PAGO_CATS): antes este
+    # widget excluía FINANZAS entera y escondía transferencias que en
+    # realidad eran gasto (pedido del usuario 2026-09-26).
+    from modules.finanzas.estados.routes import _PAGO_CATS, _MONTO
     with get_db() as db:
-        flujo = db.execute("""
+        flujo = db.execute(f"""
             SELECT
               SUM(CASE WHEN tipo='INGRESO'
                         AND categoria NOT IN ('TRANSFERENCIA','PAGO_TDC','RETIRO','DEPOSITO','SPEI_RECIBIDO','FINANZAS')
                        THEN monto ELSE 0 END) AS ingreso,
-              SUM(CASE WHEN tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO','FINANZAS')
-                       THEN COALESCE(mi_parte, monto) ELSE 0 END) AS gasto
+              SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}
+                       THEN {_MONTO} ELSE 0 END) AS gasto
             FROM est_movimientos WHERE fecha >= ?""", (mes,)).fetchone()
         n_cuentas = db.execute(
             "SELECT COUNT(*) c FROM salud_cuentas WHERE activa=1"

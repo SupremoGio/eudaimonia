@@ -5483,6 +5483,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_terceros_pagados migration warning: {e}")
 
+        # ── FINANZAS — PAGO CUENTA DE TERCERO BNET SOLAR GIOVANY (15/10/2024,
+        # $3,500) era gasto de Salsa, no una transferencia (el usuario lo
+        # señaló). Una vez aquí; el import y «Aplicar reglas» lo reafirman con
+        # estados.routes._corregir_pagos_salsa.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_pagos_salsa_2024'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_pagos_salsa
+                _n = _corregir_pagos_salsa(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_pagos_salsa_2024", f"{_n} transferencias señaladas -> SALSA")
+                )
+                db.commit()
+                print(f"[DB] finanzas_pagos_salsa_2024: {_n} movimientos -> SALSA")
+            except Exception as e:
+                print(f"[DB] finanzas_pagos_salsa_2024 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que

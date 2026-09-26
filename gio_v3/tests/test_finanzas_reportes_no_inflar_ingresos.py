@@ -75,25 +75,28 @@ def test_summary_stats_no_cuenta_finanzas_como_ingreso(client, test_db):
     assert data['total_income'] == 15000.0
 
 
-def test_summary_stats_no_cuenta_finanzas_como_gasto(client, test_db):
-    """Simétrico del lado del gasto: una transferencia propia ya
-    reclasificada a FINANZAS no debe sumar a total_expense. (Desde
-    2026-09-22 la exclusión es por subcategoría: FINANZAS/Pago servicios,
-    Retiro efectivo, etc. SÍ son gasto real -- ver
-    test_summary_stats_cuenta_finanzas_gasto_real.)"""
+def test_summary_stats_cuenta_transferencias_enviadas_como_gasto(client, test_db):
+    """Desde 2026-09-26 (pedido del usuario) FINANZAS/Transferencia y
+    Transferencia enviada SÍ suman a total_expense: su clasificación no es
+    fiable y escondían gasto real (ej. un pago de Salsa). Depósito,
+    Fideicomiso, Reembolsable y Transferencia recibida siguen fuera."""
     import database
     with database.get_db() as db:
         _insert(db, descripcion='WALMART', fecha='2026-09-05', monto=-1200.0,
                 categoria='ALIMENTACION', subcategoria='Súper', tipo='GASTO')
         _insert(db, descripcion='SPEI ENVIADO NAFIN', fecha='2026-09-06',
                 monto=-4500.0, categoria='FINANZAS', subcategoria='Transferencia enviada', tipo='GASTO')
+        _insert(db, descripcion='PAGO CUENTA DE TERCERO BNET', fecha='2026-09-07',
+                monto=-300.0, categoria='FINANZAS', subcategoria='Transferencia', tipo='GASTO')
+        _insert(db, descripcion='REEMBOLSO', fecha='2026-09-08',
+                monto=-999.0, categoria='FINANZAS', subcategoria='Reembolsable', tipo='GASTO')
         db.commit()
 
     resp = client.get('/finanzas/estados/api/summary/stats', query_string={
         'date_from': '2026-09-01', 'date_to': '2026-09-30',
     })
     data = resp.get_json()
-    assert data['total_expense'] == -1200.0
+    assert data['total_expense'] == -6000.0
 
 
 def test_summary_stats_cuenta_finanzas_gasto_real(client, test_db):
@@ -135,13 +138,15 @@ def test_summary_stats_sigue_excluyendo_por_los_nombres_viejos(client, test_db):
 
 # ── /api/summary/by-naturaleza (Sprint 4) ───────────────────────────────────
 
-def test_by_naturaleza_no_cuenta_finanzas_como_gasto(client, test_db):
+def test_by_naturaleza_no_cuenta_finanzas_no_gasto(client, test_db):
+    """Un depósito/fideicomiso en FINANZAS sigue fuera del gasto por
+    naturaleza; una transferencia enviada ya cuenta (ver arriba)."""
     import database
     with database.get_db() as db:
         _insert(db, descripcion='RENTA', fecha='2026-09-01', monto=-8000.0,
                 categoria='VIVIENDA', subcategoria='Renta', tipo='GASTO')
-        _insert(db, descripcion='SPEI ENVIADO A MI CUENTA', fecha='2026-09-03', monto=-4500.0,
-                categoria='FINANZAS', subcategoria='Transferencia enviada', tipo='GASTO')
+        _insert(db, descripcion='FIDEICOMISO F 1596', fecha='2026-09-03', monto=-4500.0,
+                categoria='FINANZAS', subcategoria='Fideicomiso', tipo='GASTO')
         db.commit()
 
     resp = client.get('/finanzas/estados/api/summary/by-naturaleza')
@@ -171,14 +176,20 @@ def test_oikonomia_summary_no_infla_ingreso_ni_gasto(test_db):
             _insert(db, descripcion='SPEI RECIBIDO GRANDE', fecha=mes_actual, monto=50000.0,
                     categoria='FINANZAS', subcategoria='Transferencia', tipo='INGRESO')
             _insert(db, descripcion='PAGO TDC GRANDE', fecha=mes_actual, monto=-30000.0,
-                    categoria='FINANZAS', subcategoria='Pago servicios', tipo='GASTO')
+                    categoria='PAGO_TDC', subcategoria='', tipo='GASTO')
+            _insert(db, descripcion='PAGO CUENTA DE TERCERO SALSA', fecha=mes_actual, monto=-3500.0,
+                    categoria='FINANZAS', subcategoria='Transferencia', tipo='GASTO')
+            _insert(db, descripcion='FIDEICOMISO', fecha=mes_actual, monto=-800.0,
+                    categoria='FINANZAS', subcategoria='Fideicomiso', tipo='GASTO')
             db.commit()
 
         resp = c.get('/finanzas/api/oikonomia-summary')
         assert resp.status_code == 200
         data = resp.get_json()
     assert data['flujo_ingreso'] == 15000.0
-    assert data['flujo_gasto'] == 0.0
+    # Misma regla que Estados de cuenta: el pago de TDC y el fideicomiso no
+    # son gasto; la transferencia sí se ve (pedido del usuario 2026-09-26).
+    assert data['flujo_gasto'] == -3500.0
 
 
 # ── /finanzas/api/reclasificar -- ya no debe generar TRANSFERENCIA ─────────
@@ -205,3 +216,27 @@ def test_reclasificar_excluir_usa_finanzas_no_transferencia(test_db):
         row = db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
     assert row['categoria'] == 'FINANZAS'
     assert row['subcategoria'] == 'Transferencia'
+
+
+def test_radiografia_muestra_transferencias_y_pago_de_salsa(test_db):
+    """La Radiografía ya no esconde FINANZAS entera: una transferencia
+    enviada aparece (bucket Deseos) para poder reclasificarla; un depósito
+    no. El pago SOLAR GIOVANY del 15/10/2024 que el usuario señaló va a SALSA."""
+    import database
+    from modules.finanzas.budget import _calc_budget
+    from modules.finanzas.estados import routes as er
+    with database.get_db() as db:
+        _insert(db, descripcion='SPEI ENVIADO X', fecha='2026-09-06', monto=400.0,
+                categoria='FINANZAS', subcategoria='Transferencia enviada', tipo='GASTO')
+        _insert(db, descripcion='DEPOSITO', fecha='2026-09-06', monto=900.0,
+                categoria='FINANZAS', subcategoria='Depósito', tipo='GASTO')
+        sid = _insert(db, descripcion='PAGO CUENTA DE TERCERO BNET SOLAR GIOVANY', fecha='2024-10-15',
+                      monto=3500.0, categoria='FINANZAS', subcategoria='Transferencia', tipo='GASTO')
+        db.commit()
+        d = _calc_budget('2026-09', db)
+        fin = [c for c in d['buckets']['deseos']['cats'] if c['categoria'] == 'FINANZAS']
+        assert fin and fin[0]['gastado'] == 400.0
+        assert er._corregir_pagos_salsa(db) == 1
+        db.commit()
+        assert db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (sid,)).fetchone()[0] == 'SALSA'
+        assert er._corregir_pagos_salsa(db) == 0

@@ -68,8 +68,16 @@ estados_bp = Blueprint(
 # Se agregan todas las variantes que los parsers realmente escriben para
 # FINANZAS (Depósito/Fideicomiso incluidos por completitud, aunque casi
 # siempre llegan como INGRESO y no pasan por este filtro de GASTO).
+#
+# Corregido 2026-09-26, a petición del usuario: «Transferencia» y
+# «Transferencia enviada» vuelven a contar como gasto. La clasificación de
+# esas transferencias no es 100 % fiable (ej. un pago a un tercero que en
+# realidad era de Salsa quedaba como FINANZAS/Transferencia y desaparecía de
+# todos los reportes), así que es preferible verlas y reclasificarlas. Las
+# que sí son movimiento interno tienen su propia categoría (PAGO_TDC,
+# INVERSION, PRESTAMOS) y siguen fuera.
 _FINANZAS_NO_GASTO_SUBCATS = (
-    'Transferencia', 'Transferencia enviada', 'Transferencia recibida',
+    'Transferencia recibida',
     'Depósito', 'Fideicomiso', 'Reembolsable',
 )
 
@@ -687,6 +695,27 @@ def _corregir_expense_terceros(db) -> int:
           AND UPPER(descripcion) LIKE '%PAGO CUENTA DE TERCERO%'
           AND (estatus_reembolso IS NULL OR estatus_reembolso IN ('', 'PENDIENTE'))
     """, (EXPENSE_ESTATUS_TERCERO,)).rowcount
+
+
+# Transferencias que el usuario señaló como gasto de Salsa (fecha, monto,
+# texto de la descripción). Caían en FINANZAS/Transferencia; una regla de
+# keyword («PAGO CUENTA DE TERCERO» -> Familia y regalos) también podría
+# moverlas, así que se reafirman en el import y en «Aplicar reglas».
+PAGOS_SALSA = (
+    ('2024-10-15', 3500.0, 'SOLAR GIOVANY'),
+)
+
+
+def _corregir_pagos_salsa(db) -> int:
+    n = 0
+    for fecha, monto, texto in PAGOS_SALSA:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria='SALSA', subcategoria='', tipo='GASTO'
+            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
+              AND UPPER(descripcion) LIKE ? AND tipo IN ('GASTO', 'PAGO')
+              AND (categoria != 'SALSA' OR tipo != 'GASTO')
+        """, (fecha, monto, f"%{texto}%")).rowcount
+    return n
 
 
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
@@ -1538,6 +1567,7 @@ def apply_all_keywords():
         _corregir_amazon_suscripciones(db)
         _corregir_celular(db)
         _corregir_expense_terceros(db)
+        _corregir_pagos_salsa(db)
         _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
         db.commit()
     return jsonify({'ok': True, 'updated_transactions': total_updated})
@@ -2353,6 +2383,7 @@ def upload_file():
             _corregir_amazon_suscripciones(db)
             _corregir_celular(db)
             _corregir_expense_terceros(db)
+            _corregir_pagos_salsa(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
 
             # ── Post-proceso inversiones ──────────────────────────────────────
