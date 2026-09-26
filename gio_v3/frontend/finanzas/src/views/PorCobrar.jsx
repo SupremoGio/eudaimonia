@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BASE, api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { fmtDate, money } from '../lib/format.js';
@@ -19,6 +19,38 @@ const OTROS = 'Otros';
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 const TONE = { Pendiente: 'warning', 'Pagado parcial': 'info', Pagado: 'success', Perdido: 'danger' };
+
+// Orden de las tablas (clic en el encabezado; otro clic invierte). Es el
+// mismo para todas las personas y se recuerda en este navegador.
+const SORT_KEY = 'fz-pc-sort';
+const ESTADO_ORDEN = { Pendiente: 0, 'Pagado parcial': 1, Perdido: 2, Pagado: 3 };
+const SORT_VAL = {
+  fecha: (p) => p.fecha || '',
+  mov: (p) => (p.descripcion || '').toLowerCase(),
+  monto: (p) => p.monto,
+  devuelto: (p) => p.devuelto,
+  pendiente: (p) => p.pendiente,
+  estado: (p) => ESTADO_ORDEN[p.estado] ?? 9,
+};
+const TEXT_COLS = new Set(['mov', 'estado']);
+
+function readSort() {
+  try {
+    const v = JSON.parse(localStorage.getItem(SORT_KEY));
+    if (v && SORT_VAL[v.col] && (v.dir === 'asc' || v.dir === 'desc')) return v;
+  } catch { /* sin almacenamiento: orden por defecto */ }
+  return { col: 'fecha', dir: 'desc' };
+}
+
+function sortPrestamos(list, { col, dir }) {
+  const val = SORT_VAL[col];
+  const sign = dir === 'asc' ? 1 : -1;
+  return [...list].sort((a, b) => {
+    const x = val(a), y = val(b);
+    const c = typeof x === 'string' ? x.localeCompare(y) : x - y;
+    return c * sign || (b.fecha || '').localeCompare(a.fecha || '');
+  });
+}
 
 function movLabel(m) {
   return `${fmtDate(m.fecha, true)} · ${m.descripcion} · ${money(m.monto)}${m.banco ? ` · ${bankName(m.banco)}` : ''}`;
@@ -127,6 +159,22 @@ export default function PorCobrar() {
   const [modal, setModal] = useState(null); // {kind:'new'} | {kind:'dev', prestamo}
   const saved = () => app.refresh();
   const d = res.data;
+  const [sort, setSort] = useState(readSort);
+  useEffect(() => { try { localStorage.setItem(SORT_KEY, JSON.stringify(sort)); } catch { /* noop */ } }, [sort]);
+  const sortBy = (col) => setSort((s) => (s.col === col
+    ? { col, dir: s.dir === 'asc' ? 'desc' : 'asc' }
+    : { col, dir: TEXT_COLS.has(col) ? 'asc' : 'desc' }));
+  const th = (col, label, className) => {
+    const on = sort.col === col;
+    return (
+      <th className={className} aria-sort={on ? (sort.dir === 'asc' ? 'ascending' : 'descending') : undefined}>
+        <button type="button" className="fz-th-btn" onClick={() => sortBy(col)}>
+          {label}
+          {on && <Icon name={sort.dir === 'asc' ? 'arrow-up' : 'arrow-down'} size={12} />}
+        </button>
+      </th>
+    );
+  };
 
   async function setPerdido(p, perdido) {
     const ok = !perdido || await confirmDialog(
@@ -220,10 +268,13 @@ export default function PorCobrar() {
               <table className="eu-table fz-pc-table">
                 <colgroup><col className="c-date" /><col /><col className="c-amt" /><col className="c-amt" /><col className="c-amt" /><col className="c-st" /><col className="c-act" /></colgroup>
                 <thead>
-                  <tr><th>Fecha</th><th>Movimiento</th><th className="r">Monto</th><th className="r">Devuelto</th><th className="r">Pendiente</th><th>Estado</th><th><span className="fz-sr">Acciones</span></th></tr>
+                  <tr>
+                    {th('fecha', 'Fecha')}{th('mov', 'Movimiento')}{th('monto', 'Monto', 'r')}{th('devuelto', 'Devuelto', 'r')}
+                    {th('pendiente', 'Pendiente', 'r')}{th('estado', 'Estado')}<th><span className="fz-sr">Acciones</span></th>
+                  </tr>
                 </thead>
                 <tbody>
-                  {g.prestamos.map((p) => (
+                  {sortPrestamos(g.prestamos, sort).map((p) => (
                     <tr key={p.id}>
                       <td className="num fg-3">{fmtDate(p.fecha, true)}</td>
                       <td>
