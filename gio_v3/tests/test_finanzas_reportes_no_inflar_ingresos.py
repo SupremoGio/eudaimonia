@@ -240,3 +240,21 @@ def test_radiografia_muestra_transferencias_y_pago_de_salsa(test_db):
         db.commit()
         assert db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (sid,)).fetchone()[0] == 'SALSA'
         assert er._corregir_pagos_salsa(db) == 0
+
+
+def test_pagos_salsa_2025_clases_y_social(test_db):
+    import database
+    from modules.finanzas.estados import routes as er
+    with database.get_db() as db:
+        c = _insert(db, descripcion='PAGO CUENTA DE TERCERO BNET CLASEGIOVANY', fecha='2025-05-26', monto=60.0,
+                    categoria='FINANZAS', subcategoria='Transferencia', tipo='GASTO')
+        s = _insert(db, descripcion='PAGO CUENTA DE TERCERO BNET TRANSF A JENNIFER', fecha='2025-02-16', monto=120.0,
+                    categoria='FAMILIA_REGALOS', subcategoria='Regalos', tipo='GASTO')
+        g = _insert(db, descripcion='PAGO CUENTA DE TERCERO BNET GIO', fecha='2025-10-29', monto=110.0,
+                    categoria='FINANZAS', subcategoria='Transferencia', tipo='GASTO')
+        db.commit()
+        assert er._corregir_pagos_salsa(db) == 3
+        db.commit()
+        row = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert row(c) == ('SALSA', 'Clases') and row(s) == ('SALSA', 'Social') and row(g) == ('SALSA', 'Social')
+        assert er._corregir_pagos_salsa(db) == 0
