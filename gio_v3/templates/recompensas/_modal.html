@@ -9,7 +9,15 @@
   </div>
   {{ ui.field('desc', 'Descripción', placeholder='Opcional', maxlength=200) }}
   <label class="eu-hstack rw-check"><input type="checkbox" id="f-unica"> <span class="t-ui">Única vez</span> <span class="t-meta">· se canjea una sola vez (Kindle, reloj…); ya no vuelve a aparecer</span></label>
-  <label class="eu-hstack rw-check"><input type="checkbox" id="f-weekend"> <span class="t-ui">Solo fin de semana</span> <span class="t-meta">· evita que se vuelva hábito diario</span></label>
+  <div class="eu-field">
+    <label class="eu-label" for="f-weekend">Días disponibles</label>
+    <select class="eu-select" id="f-weekend" name="weekend">
+      <option value="0">Cualquier día</option>
+      <option value="1">Solo fin de semana (sáb–dom)</option>
+      <option value="2">Viernes a domingo</option>
+    </select>
+    <div class="eu-help">Evita que se vuelva hábito diario; al vencer el cooldown se abre el siguiente día permitido</div>
+  </div>
 </form>
 <div class="eu-modal-ft">
   <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('rw-modal')">Cancelar</button>

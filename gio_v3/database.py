@@ -5268,6 +5268,34 @@ def init_db():
             except Exception as e:
                 print(f"[DB] rewards_desbloquea_apple_watch migration warning: {e}")
 
+        # ── RECOMPENSAS — el usuario pidió abrir Carl's Jr de viernes a domingo
+        # (weekend_only=2) con cooldown de 30 días: tras canjear, vuelve el
+        # siguiente vie/sáb/dom después de los 30 días. Si ya existía una con
+        # «carl» en el nombre se ajusta; si no, se crea. Una sola vez.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='rewards_carls_jr_vie_dom_2026_09'"
+        ).fetchone():
+            try:
+                _n = db.execute(
+                    "UPDATE rewards SET weekend_only=2, cooldown_days=30, unica=0 WHERE LOWER(name) LIKE '%carl%'"
+                ).rowcount
+                if not _n:
+                    db.execute(
+                        """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required,
+                               cooldown_days, weekend_only, created_at, unica)
+                           VALUES (?,?,?,?,?,?,?,datetime('now'),0)""",
+                        ("Carl's Jr", "Hamburguesa de fin de semana — una vez al mes, de viernes a domingo",
+                         25, 1, "", 30, 2)
+                    )
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("rewards_carls_jr_vie_dom_2026_09",
+                     f"Carl's Jr vie-dom, cooldown 30 d ({'ajustada' if _n else 'creada'})")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] rewards_carls_jr migration warning: {e}")
+
         # ── FINANZAS — 6 retiros sin tarjeta de 2023 que fueron la renta en
         # efectivo (el usuario los señaló por fecha y monto) -> VIVIENDA/Renta.
         # Una vez aquí; «Aplicar reglas» y el import los reafirman con

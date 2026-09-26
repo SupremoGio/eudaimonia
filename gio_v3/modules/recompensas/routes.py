@@ -41,6 +41,38 @@ def es_unica_por_nombre(name):
     return any(w in n for w in _UNICA_WORDS)
 
 
+# Ventana de días por recompensa (columna weekend_only): 0 = cualquier día,
+# 1 = fin de semana (sáb–dom), 2 = viernes a domingo (ej. Carl's Jr).
+_VENTANAS = {1: (5, 6), 2: (4, 5, 6)}
+_VENTANA_LABEL = {1: "Fin de semana", 2: "Vie–Dom"}
+_DIAS = ("lun", "mar", "mié", "jue", "vie", "sáb", "dom")
+_MESES = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+
+
+def ventana_modo(value):
+    """Normaliza weekend_only (bool del formulario viejo o 0/1/2) al modo 0/1/2."""
+    if value is True:
+        return 1
+    try:
+        v = int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+    return v if v in _VENTANAS else 0
+
+
+def _proximo_dia_permitido(d, modo):
+    dias = _VENTANAS.get(modo)
+    if not dias:
+        return d
+    while d.weekday() not in dias:
+        d += timedelta(days=1)
+    return d
+
+
+def _fecha_corta(d):
+    return f"{_DIAS[d.weekday()]} {d.day} {_MESES[d.month - 1]}"
+
+
 def _can_redeem(reward, ec_balance, current_level):
     if reward.get("unica") and reward.get("last_redeemed"):
         return False, "Ya la conseguiste"
@@ -48,16 +80,22 @@ def _can_redeem(reward, ec_balance, current_level):
         return False, "EC insuficientes"
     if current_level < reward["level_required"]:
         return False, f"Nivel {reward['level_required']} requerido"
-    if reward.get("weekend_only") and today_date().weekday() < 5:
-        return False, "Solo disponible en fin de semana"
+    modo = ventana_modo(reward.get("weekend_only"))
+    today = today_date()
+    # Cooldown primero: al vencer, la recompensa se abre el siguiente día de su
+    # ventana (Carl's Jr: 30 días y luego el próximo vie/sáb/dom).
     if reward["cooldown_days"] > 0 and reward["last_redeemed"]:
         cooldown_end = (
             datetime.fromisoformat(reward["last_redeemed"]) +
             timedelta(days=reward["cooldown_days"])
         ).date()
-        if today_date() < cooldown_end:
-            days_left = (cooldown_end - today_date()).days
+        if today < cooldown_end:
+            if modo:
+                return False, f"Disponible el {_fecha_corta(_proximo_dia_permitido(cooldown_end, modo))}"
+            days_left = (cooldown_end - today).days
             return False, f"Cooldown: {days_left} días restantes"
+    if modo and today.weekday() not in _VENTANAS[modo]:
+        return False, ("Solo de viernes a domingo" if modo == 2 else "Solo disponible en fin de semana")
     if reward["badge_required"]:
         with get_db() as db:
             badge = db.execute(
@@ -73,7 +111,7 @@ def _can_redeem(reward, ec_balance, current_level):
 _REWARD_ICONS = [
     (("libro", "book", "kindle", "lectura"), "book-open"), (("ropa", "nike", "tenis", "camisa"), "shirt"),
     (("viaje", "vuelo", "trip"), "plane"), (("watch", "reloj"), "watch"), (("tablet", "ipad"), "tablet"),
-    (("salida", "cine", "experiencia", "concierto"), "ticket"), (("cena", "comida", "restaurante", "helado"), "utensils"),
+    (("salida", "cine", "experiencia", "concierto"), "ticket"), (("cena", "comida", "restaurante", "helado", "carl", "burger", "hamburguesa"), "utensils"),
     (("juego", "game", "steam"), "gamepad-2"), (("café", "cafe"), "coffee"), (("masaje", "spa"), "flower-2"),
 ]
 
@@ -115,6 +153,7 @@ def index():
         r["block_reason"] = reason if not can else ""
         r["status"] = _reward_status(r, ec_balance, current_level)
         r["icon"] = _reward_icon(r["name"])
+        r["ventana"] = _VENTANA_LABEL.get(ventana_modo(r.get("weekend_only")), "")
         r["ec_pct"] = min(100, round(ec_balance / r["ec_cost"] * 100)) if r["ec_cost"] else 100
     # Las conseguidas (únicas ya canjeadas) al final
     rewards.sort(key=lambda r: r["status"] == "done")
@@ -176,7 +215,7 @@ def create_reward():
                 int(data.get("level_required", 1)),
                 data.get("badge_required", ""),
                 int(data.get("cooldown_days", 0)),
-                int(bool(data.get("weekend_only", False))),
+                ventana_modo(data.get("weekend_only", 0)),
                 now,
                 int(bool(data.get("unica", es_unica_por_nombre(name)))),
             )
@@ -203,7 +242,7 @@ def update_reward(reward_id):
                 int(data.get("level_required", row["level_required"])),
                 data.get("badge_required", row["badge_required"]),
                 int(data.get("cooldown_days", row["cooldown_days"])),
-                int(bool(data.get("weekend_only", row["weekend_only"]))),
+                ventana_modo(data.get("weekend_only", row["weekend_only"])),
                 int(bool(data.get("unica", row["unica"]))),
                 reward_id,
             )
