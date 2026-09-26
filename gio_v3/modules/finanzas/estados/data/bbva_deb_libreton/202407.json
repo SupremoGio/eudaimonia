@@ -1,0 +1,343 @@
+{
+ "archivo": "1520361804_202407_C1.pdf",
+ "periodo": "07/06/2024 al 06/07/2024",
+ "totales": {
+  "cargos": 40544.2,
+  "abonos": 34437.87
+ },
+ "movimientos": [
+  {
+   "fecha": "2024-06-07",
+   "fecha_cargo": "2024-06-07",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-07",
+   "fecha_cargo": "2024-06-07",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET DONAS Y COMIDA",
+   "monto": 120.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-06-07",
+   "fecha_cargo": "2024-06-07",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 3000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-06-08",
+   "fecha_cargo": "2024-06-10",
+   "descripcion": "SPEI ENVIADO ARCUS",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-08",
+   "fecha_cargo": "2024-06-10",
+   "descripcion": "SPEI ENVIADO ARCUS",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-09",
+   "fecha_cargo": "2024-06-10",
+   "descripcion": "SPEI ENVIADO BANORTE",
+   "monto": 11000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-10",
+   "fecha_cargo": "2024-06-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 730.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-11",
+   "fecha_cargo": "2024-06-11",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A AURORA EL",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-11",
+   "fecha_cargo": "2024-06-11",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 13000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-06-11",
+   "fecha_cargo": "2024-06-11",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-06-11",
+   "fecha_cargo": "2024-06-11",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 14570.7,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-11",
+   "fecha_cargo": "2024-06-11",
+   "descripcion": "SPEI ENVIADO HSBC",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-12",
+   "fecha_cargo": "2024-06-12",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-14",
+   "fecha_cargo": "2024-06-14",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7873.75,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-06-15",
+   "fecha_cargo": "2024-06-17",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 30.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-15",
+   "fecha_cargo": "2024-06-17",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-15",
+   "fecha_cargo": "2024-06-17",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-17",
+   "fecha_cargo": "2024-06-17",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-20",
+   "fecha_cargo": "2024-06-20",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PIZZAAAAAAA",
+   "monto": 117.5,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-20",
+   "fecha_cargo": "2024-06-20",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-21",
+   "fecha_cargo": "2024-06-21",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-21",
+   "fecha_cargo": "2024-06-21",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-22",
+   "fecha_cargo": "2024-06-24",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-23",
+   "fecha_cargo": "2024-06-24",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-24",
+   "fecha_cargo": "2024-06-24",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET POOL PARTY GIOVANY",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-25",
+   "fecha_cargo": "2024-06-25",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-26",
+   "fecha_cargo": "2024-06-27",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SEMBRANDO VIDAS",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-27",
+   "fecha_cargo": "2024-06-27",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-28",
+   "fecha_cargo": "2024-06-28",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7882.44,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-06-28",
+   "fecha_cargo": "2024-06-28",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-29",
+   "fecha_cargo": "2024-07-01",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-06-29",
+   "fecha_cargo": "2024-07-01",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 800.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-01",
+   "fecha_cargo": "2024-07-01",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-02",
+   "fecha_cargo": "2024-07-02",
+   "descripcion": "SITH20000001026 FIDEICOMISO F 1596",
+   "monto": 1561.68,
+   "categoria": "FINANZAS",
+   "subcategoria": "Fideicomiso",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2024-07-02",
+   "fecha_cargo": "2024-07-02",
+   "descripcion": "SPEI ENVIADO INVEX",
+   "monto": 2396.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-03",
+   "fecha_cargo": "2024-07-03",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 10.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2024-07-05",
+   "fecha_cargo": "2024-07-05",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  }
+ ]
+}
