@@ -5591,6 +5591,25 @@ def init_db():
                     except Exception as e:
                         print(f"[DB] {_ver} migration warning: {e}")
 
+        # ── FINANZAS — renta 2024: el roomie puso $5,500 cada mes -> tu parte
+        # $5,500 en toda renta de $11,000 de 2024 (antes $6,000 o vacía).
+        # correcciones_csv_2026_09_26.renta_2024; import y «Aplicar reglas»
+        # la reafirman.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_renta_2024_mi_parte_5500'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_csv_2026_09_26 import renta_2024 as _renta24
+                _n = _renta24(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_renta_2024_mi_parte_5500", f"Renta 2024: {_n} cambios (mi_parte 5,500)")
+                )
+                db.commit()
+                print(f"[DB] finanzas_renta_2024_mi_parte_5500: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_renta_2024_mi_parte_5500 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
