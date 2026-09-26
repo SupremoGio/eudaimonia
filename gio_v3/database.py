@@ -5560,6 +5560,28 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_terceros_pago_v2 migration warning: {e}")
 
+        # ── FINANZAS — respuestas a la auditoría de Expense: borrar 18 ingresos
+        # duplicados en BBVA Crédito («nada que ingrese va a crédito»), mover
+        # Qualitas a Débito, Plaza Panamericana y Office Depot a EXPENSE y
+        # crear los lotes con los folios de la empresa. Detalle en
+        # modules/finanzas/estados/correcciones_expense_2026_09_26.py.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_auditoria_expense_2026_09_26'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_expense_2026_09_26 import aplicar as _aplicar_exp
+                _r = _aplicar_exp(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_auditoria_expense_2026_09_26",
+                     f"{_r['borrados']} duplicados en crédito borrados, {_r['a_debito']} a débito, "
+                     f"{_r['a_expense']} a EXPENSE, {_r['lotes']} lotes creados")
+                )
+                db.commit()
+                print(f"[DB] finanzas_auditoria_expense_2026_09_26: {_r}")
+            except Exception as e:
+                print(f"[DB] finanzas_auditoria_expense_2026_09_26 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que

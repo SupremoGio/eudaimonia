@@ -1995,6 +1995,33 @@ def _es_movimiento_interno(desc_upper: str) -> bool:
     return "SPEI ENVIADO" in desc_upper and ("HSBC" in desc_upper or "INVEX" in desc_upper)
 
 
+def _descartar_ingresos_en_credito(db, ids: list) -> int:
+    """«Nada que ingrese va a crédito» (regla del usuario): una entrada de
+    dinero en BBVA_TDC que no es pago a la tarjeta y tiene gemela en BBVA_DEB
+    (mismo día y monto) es una línea del estado de débito importada como
+    crédito -- pasó con 18 movimientos jun-ago 2026. Se borra la de crédito,
+    sin importar cuál de las dos se importó primero. Solo mira las filas
+    recién importadas (`ids`) y nunca toca filas ligadas a lotes o préstamos."""
+    if not ids:
+        return 0
+    ph = ','.join('?' * len(ids))
+    ligadas = """SELECT movimiento_id FROM est_expense_lote_gastos UNION SELECT movimiento_id FROM est_expense_lote_depositos
+                 UNION SELECT movimiento_id FROM est_prestamo_devoluciones
+                 UNION SELECT movimiento_id FROM est_prestamos WHERE movimiento_id IS NOT NULL"""
+    rows = db.execute(f"""
+        SELECT DISTINCT c.id FROM est_movimientos c
+        JOIN est_movimientos d ON d.banco='BBVA_DEB' AND d.tipo='INGRESO'
+             AND substr(d.fecha,1,10)=substr(c.fecha,1,10) AND ABS(ABS(d.monto)-ABS(c.monto)) < 0.005
+        WHERE c.banco='BBVA_TDC' AND c.tipo IN ('INGRESO','PAGO') AND c.monto != 0
+          AND c.categoria != 'PAGO_TDC'
+          AND (c.id IN ({ph}) OR d.id IN ({ph}))
+          AND c.id NOT IN ({ligadas})
+    """, ids + ids).fetchall()
+    for r in rows:
+        db.execute("DELETE FROM est_movimientos WHERE id=?", (r['id'],))
+    return len(rows)
+
+
 def _unify_movimiento_interno(db, ids: list) -> int:
     """Reclasifica, entre las filas recién insertadas (`ids`), las que en
     realidad son pago de tarjeta de crédito / SPEI hacia la TDC — dinero
@@ -2473,6 +2500,7 @@ def upload_file():
             db.commit()
 
             # ── Reglas automáticas al importar (Sprint 3 original) ────────────
+            n_duplicados_credito = _descartar_ingresos_en_credito(db, new_ids)
             n_movimiento_interno = _unify_movimiento_interno(db, new_ids)
             avisos_msi = _detectar_avisos_msi(db)
             sugerencias_viaje_tabasco = _sugerir_viaje_tabasco(db, new_ids)
@@ -2515,6 +2543,7 @@ def upload_file():
             'preview': preview,
             'review_needed': review_needed,  # DEPOSITO/SPEI pendientes de clasificar
             'movimiento_interno_reclasificados': n_movimiento_interno,
+            'ingresos_duplicados_en_credito': n_duplicados_credito,   # «nada que ingrese va a crédito»
             'avisos_msi': avisos_msi,                         # posible doble conteo de MSI, revisar manual
             'sugerencias_viaje_tabasco': sugerencias_viaje_tabasco,  # nunca se asignan solas
             'sugerencias_reembolso': sugerencias_reembolso,          # confirmar en /api/expenses/<id>/conciliar
