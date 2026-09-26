@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { BASE, api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { fmtDate, money } from '../lib/format.js';
-import { bankName } from '../lib/meta.js';
+import { PRESTAMO_OTROS, PRESTAMO_PERSONAS, bankName } from '../lib/meta.js';
 import { Empty, ErrorNote, Field, Icon, Modal, Skel, confirmDialog, toast, useLoad } from '../components/ui.jsx';
 
 // Préstamos por cobrar (solo PC). Un préstamo nace de un movimiento de gasto
@@ -11,10 +11,8 @@ import { Empty, ErrorNote, Field, Icon, Modal, Skel, confirmDialog, toast, useLo
 // solo; «Perdido» es manual y en la Radiografía se vuelve gasto de Familia y
 // regalos del mes en que se prestó (no del mes en que se marca).
 
-// Personas a las que normalmente se presta; «Otros» (muy raro) abre un campo
-// libre para escribir el nombre.
-const PERSONAS = ['Judi', 'Cornelius', 'Leni', 'Pops'];
-const OTROS = 'Otros';
+const PERSONAS = PRESTAMO_PERSONAS;
+const OTROS = PRESTAMO_OTROS;
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 

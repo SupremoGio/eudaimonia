@@ -4,6 +4,7 @@ import { fmtDate, money } from '../lib/format.js';
 import { bankName, catMeta, tipoName } from '../lib/meta.js';
 import { categoryKeys, subcatsFor } from '../lib/store.js';
 import { Icon, Kbd, saveKey, toast } from './ui.jsx';
+import { PrestamoPersonaField, usePrestamoPersona } from './PrestamoPersona.jsx';
 
 const FREQUENT = ['SUPER', 'COMIDA_FUERA', 'CAFE/PAN', 'TRANSPORTE', 'VIVIENDA', 'OCIO', 'DIGITAL', 'SALUD', 'ROPA'];
 const STOP = new Set(['COMPRA', 'PAGO', 'CARGO', 'SPEI', 'TRANSFERENCIA', 'DE', 'EN', 'LA', 'EL', 'POR', 'MX', 'MEX', 'CDMX', 'SA', 'CV']);
@@ -46,6 +47,8 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
   }, [tx]);
 
   const isGasto = tx.tipo === 'GASTO';
+  const pp = usePrestamoPersona(tx.id);
+  const esPrestamo = categoria === 'PRESTAMOS' && isGasto;
   const total = Math.abs(tx.monto);
   const keys = categoryKeys(cats, categoria);
   const picks = useMemo(() => {
@@ -80,6 +83,7 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
     }
     try {
       await api.patch(`/transactions/${tx.id}`, body);
+      if (esPrestamo) await pp.guardar(tx.id);
       let extra = '';
       if (always) {
         const d = await createRule(true);
@@ -154,6 +158,7 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
             {sub && !subs.includes(sub) && <option value={sub}>{sub}</option>}
           </select>
         )}
+        <PrestamoPersonaField p={pp} activo={esPrestamo} idp={`${headingId}-pp`} compact />
       </div>
 
       {isGasto && (
