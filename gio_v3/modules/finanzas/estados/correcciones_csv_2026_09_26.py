@@ -61,23 +61,23 @@ CORRECCIONES = [
     (536, '2024-08-23', 4176.24, {'mi_parte': 1044.06}),  # HTL COURT BY MARRIOTT · «1044.06»
     (3606, '2024-08-30', 738.7, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001188 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (3106, '2024-09-09', 518.0, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001221 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
-    (3107, '2024-09-09', 11000.0, {'mi_parte': 6000.0}),  # PAGO TARJETA DE TERCEROS · «6000»
+    (3107, '2024-09-09', 11000.0, {'mi_parte': 5500.0}),  # PAGO TARJETA DE TERCEROS · «6000» -> 5500 (roomie puso 5,500 en 2024)
     (3111, '2024-09-11', 13000.0, {'categoria': 'PRESTAMOS', 'subcategoria': ''}),  # PAGO CUENTA DE TERCERO BNET TRANSF A GIO · «ME PRESTO DINERO POPS»
     (3114, '2024-09-12', 13000.0, {'categoria': 'PRESTAMOS', 'subcategoria': ''}),  # PAGO CUENTA DE TERCERO BNET DEUDA · «PAGUE PRESTAMO A POPS»
     (3117, '2024-09-13', 512.0, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001239 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (3147, '2024-09-30', 6000.0, {'categoria': 'VIVIENDA', 'subcategoria': 'Aportación renta', 'tipo': 'INGRESO'}),  # SPEI RECIBIDOSANTANDER · «PARTE DE RENTA DE ROOMIE»
     (3152, '2024-10-04', 527.5, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001300 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (3061, '2024-10-08', 11000.0, {'categoria': 'FINANZAS', 'subcategoria': 'Transferencia recibida'}),  # SPEI RECIBIDOBANORTE · «ME REGRESO RENTA PARA QUE PAGARA EN OTRA CUENTA»
-    (3163, '2024-10-08', 11000.0, {'mi_parte': 6000.0}),  # PAGO TARJETA DE TERCEROS · «6000»
+    (3163, '2024-10-08', 11000.0, {'mi_parte': 5500.0}),  # PAGO TARJETA DE TERCEROS · «6000» -> 5500 (roomie puso 5,500 en 2024)
     (3066, '2024-10-11', 738.0, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001317 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (3076, '2024-10-18', 372.5, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001356 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (3093, '2024-11-01', 2215.6, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001380 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (3094, '2024-11-01', 6000.0, {'categoria': 'VIVIENDA', 'subcategoria': 'Aportación renta', 'tipo': 'INGRESO'}),  # SPEI RECIBIDOSANTANDER · «PARTE DE RENTA DE ROOMIE»
-    (2589, '2024-11-12', 11000.0, {'mi_parte': 6000.0}),  # PAGO TARJETA DE TERCEROS · «6000»
+    (2589, '2024-11-12', 11000.0, {'mi_parte': 5500.0}),  # PAGO TARJETA DE TERCEROS · «6000» -> 5500 (roomie puso 5,500 en 2024)
     (2593, '2024-11-15', 4365.55, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001417 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (2601, '2024-11-29', 477.0, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001465 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (2607, '2024-12-02', 6000.0, {'categoria': 'VIVIENDA', 'subcategoria': 'Aportación renta', 'tipo': 'INGRESO'}),  # SPEI RECIBIDOSANTANDER · «PARTE DE RENTA DE ROOMIE»
-    (2611, '2024-12-03', 11000.0, {'mi_parte': 6000.0}),  # PAGO TARJETA DE TERCEROS · «6000»
+    (2611, '2024-12-03', 11000.0, {'mi_parte': 5500.0}),  # PAGO TARJETA DE TERCEROS · «6000» -> 5500 (roomie puso 5,500 en 2024)
     (2613, '2024-12-06', 6138.0, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001490 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (2697, '2024-12-20', 715.0, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001541 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (2639, '2025-01-03', 6000.0, {'categoria': 'VIVIENDA', 'subcategoria': 'Aportación renta', 'tipo': 'INGRESO'}),  # SPEI RECIBIDOSANTANDER · «PARTE DE RENTA DE ROOMIE»
@@ -184,6 +184,30 @@ CORRECCIONES = [
 _CAMPOS = ('categoria', 'subcategoria', 'tipo', 'mi_parte')
 
 
+RENTA_2024 = 11000.0
+MI_PARTE_RENTA_2024 = 5500.0   # «todas las aportaciones de roomie fueron 5,500» (2024)
+
+
+def renta_2024(db) -> int:
+    """Renta 2024: $11,000 al mes, el roomie puso $5,500 -> tu parte $5,500.
+    Los SPEI a Banorte de $11,000 de 2024 son esa renta (el de julio dice
+    «Julio Renta Giovany») y van a VIVIENDA/Renta; a toda renta de $11,000 de
+    2024 sin tu parte (o con los $6,000 de antes) se le pone $5,500. Una con
+    mi_parte=0 (el SPEI de oct que te regresaron) no se toca."""
+    n = db.execute("""
+        UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta', tipo='GASTO'
+        WHERE substr(fecha, 1, 4)='2024' AND UPPER(descripcion) LIKE 'SPEI ENVIADO BANORTE%'
+          AND ABS(ABS(monto) - ?) < 0.005 AND tipo != 'INGRESO'
+          AND (categoria != 'VIVIENDA' OR subcategoria != 'Renta' OR tipo != 'GASTO')
+    """, (RENTA_2024,)).rowcount
+    n += db.execute("""
+        UPDATE est_movimientos SET mi_parte=?
+        WHERE substr(fecha, 1, 4)='2024' AND categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='GASTO'
+          AND ABS(ABS(monto) - ?) < 0.005 AND (mi_parte IS NULL OR ABS(mi_parte - 6000) < 0.005)
+    """, (MI_PARTE_RENTA_2024, RENTA_2024)).rowcount
+    return n
+
+
 def aplicar(db) -> tuple[int, int]:
     """Aplica las correcciones; devuelve (actualizadas, no encontradas).
     Idempotente: una fila que ya tiene esos valores no cuenta."""
@@ -202,4 +226,5 @@ def aplicar(db) -> tuple[int, int]:
         db.execute(f"UPDATE est_movimientos SET {', '.join(f'{c}=?' for c in cols)} WHERE id=?",
                    (*[cambios[c] for c in cols], mid))
         ok += 1
+    ok += renta_2024(db)
     return ok, faltan

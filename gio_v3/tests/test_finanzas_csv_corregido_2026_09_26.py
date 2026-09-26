@@ -78,3 +78,21 @@ def test_segunda_tanda_otros(test_db):
     assert (_row(3989)['categoria'], _row(3989)['subcategoria']) == ('TRANSPORTE', 'Gasolina')
     assert (_row(2935)['categoria'], _row(2935)['subcategoria'], _row(2935)['tipo']) == ('FINANZAS', 'Depósito', 'INGRESO')
     assert (_row(3175)['categoria'], _row(3175)['subcategoria']) == ('FINANZAS', 'Reembolsable')
+
+
+def test_renta_2024_tu_parte_5500(test_db):
+    _ins(3107, '2024-09-09', 'PAGO TARJETA DE TERCEROS', 11000, 'VIVIENDA', 'Renta', 'GASTO')
+    _ins(9001, '2024-07-08', 'SPEI ENVIADO BANORTE', 11000, 'FINANZAS', 'Transferencia enviada', 'GASTO')
+    _ins(9002, '2024-02-08', 'SPEI ENVIADO BANORTE', 11000, 'VIVIENDA', 'Renta', 'GASTO')
+    _ins(9003, '2024-10-08', 'SPEI ENVIADO BANORTE 2', 11000, 'VIVIENDA', 'Renta', 'GASTO')
+    _ins(9004, '2025-02-07', 'PAGO TARJETA DE TERCEROS', 11000, 'VIVIENDA', 'Renta', 'GASTO')   # 2025: no se toca
+    with database.get_db() as db:
+        db.execute("UPDATE est_movimientos SET mi_parte=0 WHERE id=9003")   # el que te regresaron
+        db.commit()
+        csv0926.aplicar(db)
+        db.commit()
+    assert _row(3107)['mi_parte'] == 5500
+    assert (_row(9001)['categoria'], _row(9001)['subcategoria'], _row(9001)['mi_parte']) == ('VIVIENDA', 'Renta', 5500)
+    assert _row(9002)['mi_parte'] == 5500 and _row(9003)['mi_parte'] == 0 and _row(9004)['mi_parte'] is None
+    with database.get_db() as db:
+        assert csv0926.renta_2024(db) == 0
