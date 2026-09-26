@@ -1,0 +1,70 @@
+{
+ "archivo": "007410027429408661_202206_C1.pdf",
+ "periodo": "2022-05-23 al 2022-06-22",
+ "totales": {
+  "cargos": 2166.0,
+  "abonos": 9008.47
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-06-11",
+   "fecha_cargo": "2022-06-13",
+   "descripcion": "BMOVIL.PAGO TDC",
+   "monto": -9008.47,
+   "categoria": "PAGO",
+   "subcategoria": "",
+   "tipo": "PAGO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-06-22",
+   "fecha_cargo": "2022-06-23",
+   "descripcion": "TIENDAS CHEDRAUI S TA",
+   "monto": 292.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO",
+   "parcialidad_num": 7,
+   "parcialidad_total": 12,
+   "compra_msi_id": "990549d1b05fc124"
+  },
+  {
+   "fecha": "2022-06-22",
+   "fecha_cargo": "2022-06-23",
+   "descripcion": "TRAINING INNOVATION",
+   "monto": 358.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": 3,
+   "parcialidad_total": 12,
+   "compra_msi_id": "0acc9691107f20a1"
+  },
+  {
+   "fecha": "2022-06-22",
+   "fecha_cargo": "2022-06-23",
+   "descripcion": "SEGBBVA AUTOSEGURO VO",
+   "monto": 949.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": 8,
+   "parcialidad_total": 12,
+   "compra_msi_id": "87e2d8b74ca1ebe9"
+  },
+  {
+   "fecha": "2022-06-22",
+   "fecha_cargo": "2022-06-23",
+   "descripcion": "WALMART VENTA EN LIN3",
+   "monto": 567.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO",
+   "parcialidad_num": 2,
+   "parcialidad_total": 12,
+   "compra_msi_id": "6ac103f10a5bb55e"
+  }
+ ]
+}
