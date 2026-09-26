@@ -69,7 +69,7 @@ CATEGORIA_BUCKET = {
     'TRANSFERENCIA':     None,
     'SPEI_ENVIADO':      None,
     'RETIRO':            None,
-    'FINANZAS':          None,
+    'FINANZAS':          'deseos',        # transferencias/retiros/cargos: se ven para reclasificar (ver _GASTO_WHERE)
     'NOMINA':            None,
     'PRESTAMOS':         None,            # por cobrar, no consumo (ver _GASTO_EXCLUIR)
 }
@@ -189,15 +189,24 @@ def _meta_ahorro(db) -> float:
 # prestado no es gasto -- se sigue en «Por cobrar»; antes caía en Deseos por
 # no tener bucket (CATEGORIA_BUCKET.get(cat, 'deseos')).
 _GASTO_EXCLUIR = ('PAGO_TDC', 'PAGO', 'TRANSFERENCIA', 'SPEI_ENVIADO', 'RETIRO',
-                  'PUBLICIDAD', 'NOMINA', 'FINANZAS', 'EXPENSE',
+                  'PUBLICIDAD', 'NOMINA', 'EXPENSE',
                   'APORTACION_RENTA', 'PRESTAMOS')
+# FINANZAS ya no se excluye entera (pedido del usuario 2026-09-26): sus
+# transferencias enviadas, retiros de efectivo, cargos bancarios, etc. sí
+# salen de tu bolsillo y su clasificación no es 100 % fiable, así que se ven
+# en la Radiografía (bucket Deseos, como OTROS) para poder reclasificarlas.
+# Solo quedan fuera las subcategorías que nunca son gasto (misma lista que
+# estados/routes.py::_FINANZAS_NO_GASTO_SUBCATS).
+_FINANZAS_NO_GASTO = ('Transferencia recibida', 'Depósito', 'Fideicomiso', 'Reembolsable')
 # PROYECTOS ya no se excluye entero: Hosting y Software son gasto propio y
 # cuentan en Deseos; Publicidad y Reclutamiento son gasto de trabajo y quedan
 # fuera, igual que EXPENSE.
 _PROYECTOS_EXCLUIR = ('Publicidad', 'Reclutamiento')
 _GASTO_WHERE = ("categoria NOT IN (" + ",".join(f"'{c}'" for c in _GASTO_EXCLUIR) + ")"
                 " AND NOT (categoria='PROYECTOS' AND COALESCE(subcategoria,'') IN ("
-                + ",".join(f"'{s}'" for s in _PROYECTOS_EXCLUIR) + "))")
+                + ",".join(f"'{s}'" for s in _PROYECTOS_EXCLUIR) + "))"
+                " AND NOT (categoria='FINANZAS' AND COALESCE(subcategoria,'') IN ("
+                + ",".join(f"'{s}'" for s in _FINANZAS_NO_GASTO) + "))")
 
 BUCKET_META = {
     'necesidades': {'label': 'Necesidades',      'pct_target': 50, 'color': '#2a8a62', 'cls': 'bk-nec'},
