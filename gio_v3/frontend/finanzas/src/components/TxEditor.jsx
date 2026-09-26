@@ -4,6 +4,7 @@ import { todayISO } from '../lib/format.js';
 import { BANKS, catMeta } from '../lib/meta.js';
 import { categoryKeys, getCategories, getTrips, subcatsFor } from '../lib/store.js';
 import { Field, Icon, Kbd, Modal, confirmDialog, saveKey, toast } from './ui.jsx';
+import { PrestamoPersonaField, usePrestamoPersona } from './PrestamoPersona.jsx';
 
 const TIPOS_EDIT = [['GASTO', 'Gasto'], ['INGRESO', 'Ingreso'], ['PAGO', 'Pago']];
 
@@ -42,11 +43,11 @@ export default function TxEditor({ tx, onClose, onSaved }) {
 
   useEffect(() => { getCategories().then(setCats).catch(() => {}); getTrips().then(setTrips); }, []);
 
-  const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
-  // Cambiar de categoría limpia la subcategoría: la anterior casi nunca
-  // existe en la nueva (antes se quedaba escrita, p. ej. «Transferencia
-  // enviada» al pasar de FINANZAS a VIVIENDA).
-  const setCategoria = (v) => setF((s) => (s.categoria === v ? s : { ...s, categoria: v, subcategoria: '' }));
+  // Préstamo: con categoría Préstamos en un gasto se pide a quién le
+  // prestaste y al guardar queda registrado en «Por cobrar».
+  const pp = usePrestamoPersona(isNew ? null : tx.id);
+  const esPrestamo = f.categoria === 'PRESTAMOS' && f.tipo === 'GASTO';
+  const guardarPrestamo = (movId) => (esPrestamo ? pp.guardar(movId) : Promise.resolve());
 
   const subs = subcatsFor(cats, f.categoria, f.tipo);
   const keys = categoryKeys(cats, f.categoria);
@@ -61,13 +62,15 @@ export default function TxEditor({ tx, onClose, onSaved }) {
     setBusy(true); setErr(''); setDup(false);
     try {
       if (isNew) {
-        await api.post('/transactions', {
+        const r = await api.post('/transactions', {
           tipo: f.tipo, descripcion: f.descripcion.trim(), monto: parseFloat(f.monto), categoria: f.categoria,
           subcategoria: f.subcategoria, banco: f.banco, fecha: f.fecha, ...(force ? { force: true } : {}),
         });
+        await guardarPrestamo(r && r.id);
         toast('Movimiento agregado', 'ok');
       } else {
         await api.patch(`/transactions/${tx.id}`, { ...f, descripcion: f.descripcion.trim(), monto: parseFloat(f.monto) });
+        await guardarPrestamo(tx.id);
         toast('Movimiento actualizado', 'ok');
       }
       onSaved && onSaved();
@@ -147,6 +150,8 @@ export default function TxEditor({ tx, onClose, onSaved }) {
             </select>
           </Field>
         )}
+
+        <PrestamoPersonaField p={pp} activo={esPrestamo} idp={idp} />
 
         {!isNew && f.tipo === 'GASTO' && (
           <div className="eu-grid-2">

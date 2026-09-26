@@ -275,3 +275,16 @@ def test_detalle_de_familia_y_regalos_lista_los_perdidos(client, test_db):
     # Otro mes u otra categoría no los traen
     assert client.get('/finanzas/budget/api/cat-movs/2026-07/FAMILIA_REGALOS').get_json()['perdidos'] == []
     assert client.get('/finanzas/budget/api/cat-movs/2026-08/OCIO').get_json()['perdidos'] == []
+
+
+def test_alta_de_movimiento_devuelve_id_para_registrar_el_prestamo(client, test_db):
+    """El editor crea el movimiento y, con categoría Préstamos, registra el
+    préstamo con el id que devuelve el alta."""
+    r = client.post('/finanzas/estados/api/transactions', json={
+        'tipo': 'GASTO', 'descripcion': 'SPEI ENVIADO JORGE', 'monto': 4900, 'fecha': '2024-10-24',
+        'categoria': 'PRESTAMOS', 'subcategoria': 'Prestado', 'banco': 'BBVA_DEB'})
+    assert r.status_code == 201
+    mid = r.get_json()['id']
+    assert client.post('/finanzas/estados/api/prestamos', json={'movimiento_id': mid, 'persona': 'Jorge'}).status_code == 201
+    res = client.get('/finanzas/estados/api/prestamos').get_json()
+    assert [(g['persona'], g['pendiente']) for g in res['personas']] == [('Jorge', 4900.0)]

@@ -81,3 +81,8 @@ export const NATURALEZA = {
   EVITABLE: { name: 'Evitable', tone: 'danger' },
   SIN_CLASIFICAR: { name: 'Sin clasificar', tone: 'neutral' },
 };
+
+// Personas a las que normalmente se presta (Por cobrar y el editor de
+// movimientos); «Otros» abre un campo libre para escribir el nombre.
+export const PRESTAMO_PERSONAS = ['Judi', 'Cornelius', 'Leni', 'Pops'];
+export const PRESTAMO_OTROS = 'Otros';

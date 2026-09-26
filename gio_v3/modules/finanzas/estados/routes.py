@@ -847,6 +847,7 @@ def create_transaction():
         )
         db.commit()
         inserted = cur.rowcount
+        new_id = cur.lastrowid if inserted else None
     if not inserted:
         # Índice UNIQUE(fecha, descripcion): ya existe un movimiento con esa
         # misma fecha y descripción exacta — no se guardó. Devolvemos error
@@ -856,7 +857,7 @@ def create_transaction():
             'error': 'Ya existe un movimiento con esa fecha y descripción exacta. '
                      'Cambia la descripción si es una transacción distinta (ej. añade la hora o el monto).',
         }), 409
-    return jsonify({'inserted': 1}), 201
+    return jsonify({'inserted': 1, 'id': new_id}), 201
 
 
 @estados_bp.route('/api/transactions/<int:tx_id>', methods=['PATCH'])
