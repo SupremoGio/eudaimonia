@@ -49,3 +49,37 @@ def test_auditoria_omite_tramos_confirmados_vacios(test_db):
         db.commit()
         assert _auditar_banco(db, 'BBVA_DEB', '2026-06-20', 25)['huecos_entre_periodos'] == []
         assert len(_auditar_banco(db, 'HSBC', '2026-06-20', 25)['huecos_entre_periodos']) == 1   # solo BBVA_DEB se verificó
+
+
+def _mov(db, banco, fecha, periodo=None, n=[0]):
+    n[0] += 1
+    db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, periodo, categoria, tipo)
+                  VALUES (?, ?, 1, ?, ?, 'OTROS', 'GASTO')""", (fecha, f'M{n[0]}', banco, periodo))
+
+
+def test_hueco_entre_periodos_cubierto_por_otro_import(test_db):
+    """Entre dos cortes con periodo hay movimientos de un CSV (sin periodo):
+    solo se reporta la parte que de verdad no tiene movimientos."""
+    from modules.finanzas.estados.routes import _auditar_banco
+    with database.get_db() as db:
+        _mov(db, 'BBVA_TDC', '2023-07-01', '2023-06-23 al 2023-07-22')
+        _mov(db, 'BBVA_TDC', '2024-05-01', '2024-04-23 al 2024-05-22')
+        for f in ('2023-09-25', '2023-10-15', '2023-11-05', '2023-11-28', '2023-12-20', '2024-01-10',
+                  '2024-02-01', '2024-02-25', '2024-03-15', '2024-04-05', '2024-04-20'):
+            _mov(db, 'BBVA_TDC', f)          # CSV: sin periodo
+        _mov(db, 'BBVA_TDC', '2024-07-01', '2024-06-23 al 2024-07-22')   # hueco 05-23 -> 06-22 sin nada
+        db.commit()
+        h = _auditar_banco(db, 'BBVA_TDC', '2024-07-22', 25)['huecos_entre_periodos']
+    assert [(x['desde'], x['hasta']) for x in h] == [('2023-07-23', '2023-09-24'), ('2024-05-23', '2024-06-22')]
+    assert h[0]['parcial'] and h[0]['movimientos'] == 11 and not h[1].get('parcial')
+
+
+def test_periodo_del_libreton_cuenta_como_periodo(test_db):
+    from modules.finanzas.estados.routes import _auditar_banco
+    with database.get_db() as db:
+        _mov(db, 'BBVA_DEB', '2022-07-20', '07/07/2022 al 06/08/2022')
+        _mov(db, 'BBVA_DEB', '2022-12-20', '07/12/2022 al 06/01/2023')
+        _mov(db, 'BBVA_DEB', '2022-12-25', '2022-12-10 al 2022-12-31')   # descarga de la app dentro del corte
+        db.commit()
+        r = _auditar_banco(db, 'BBVA_DEB', '2023-01-06', 25)
+    assert [(x['desde'], x['hasta']) for x in r['huecos_entre_periodos']] == [('2022-08-07', '2022-12-06')]
