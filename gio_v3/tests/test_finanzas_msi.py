@@ -183,3 +183,30 @@ def test_varios_productos_con_planes_que_no_se_enciman(test_db):
     assert c['planes'] == [{'cuota': 169.55, 'mensualidades': 5}, {'cuota': 218.17, 'mensualidades': 6}]
     assert c['estado'] == 'Faltan mensualidades' and c['meses_sin_mensualidad'] == ['2026-06']
     assert c['restante'] == 169.55
+
+
+def test_mensualidades_con_otro_nombre_del_comercio(test_db):
+    """Liverpool Zapopan 10/04/2025, 6 × $408.17: las mensualidades llegan como «LIVERPOOL GDL»."""
+    lv = _ins('2025-04-10', 'LIVERPOOL ZAPOPAN A 06 MSI', 2449.0, cat='ROPA', sub='Calzado')
+    for k in range(6):
+        _ins(f'2025-{4 + k:02d}-22', 'LIVERPOOL GDL', 408.17 if k < 5 else 408.15, cat='ROPA', sub='Calzado')
+    _ins('2025-05-03', 'LIVERPOOL GDL', 1200.0, cat='ROPA', sub='Ropa')          # otra compra: no se liga
+    c = _conciliar()[lv]
+    assert (c['estado'], c['pagadas'], c['pagado']) == ('Liquidada', 6, 2449.0)
+
+
+def test_pista_de_cargos_con_el_monto_de_la_cuota(test_db):
+    lv = _ins('2025-04-10', 'LIVERPOOL ZAPOPAN A 06 MSI', 2449.0, cat='ROPA', sub='Calzado')
+    _ins('2025-04-22', 'LPOOL 0123 ZAP', 408.17, cat='ROPA', sub='Calzado')
+    c = _conciliar()[lv]
+    assert c['pagadas'] == 0 and [p['descripcion'] for p in c['misma_cuota']] == ['LPOOL 0123 ZAP']
+
+
+def test_compra_pasada_a_meses_por_error_es_gasto_normal(test_db):
+    """Pointmp Arellano $22 (15/03/2025): conveniencia que el banco pasó a 3 meses por error."""
+    pa = _ins('2025-03-15', 'POINTMP ARELLANO A 03 MSI', 22.0, cat='FINANZAS', sub='Compra a meses')
+    c = _conciliar()
+    assert pa not in c
+    with database.get_db() as db:
+        r = db.execute("SELECT categoria, subcategoria, tipo FROM est_movimientos WHERE id=?", (pa,)).fetchone()
+    assert tuple(r) == ('SUPER', 'Conveniencia', 'GASTO')

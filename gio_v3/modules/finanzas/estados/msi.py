@@ -24,18 +24,38 @@ _COMPRA_RE = re.compile(r"^(.*?)\s+A\s+(\d{1,2})\s+MSI\b", re.IGNORECASE)
 _PREFIJO = 12   # caracteres del comercio para ligar compra y mensualidades
 
 
+# Compras que el banco pasó a meses por error y el usuario pagó como un gasto
+# normal (fecha, texto, monto) -> (categoria, subcategoria): cuentan
+# completas ese día y no entran a la conciliación.
+NO_SON_MSI = {
+    ('2025-03-15', 'POINTMP ARELLANO', 22.0): ('SUPER', 'Conveniencia'),   # «se confundieron… a 3 meses»
+}
+
+
+def _excepcion(r):
+    for (fecha, texto, monto), dest in NO_SON_MSI.items():
+        if (r['fecha'] or '')[:10] == fecha and texto in (r['descripcion'] or '').upper() \
+                and abs(abs(r['monto'] or 0) - monto) < 0.005:
+            return dest
+    return None
+
+
 def marcar_compras(db) -> int:
-    """Compra inicial a MSI -> FINANZAS/Compra a meses (fuera del gasto)."""
+    """Compra inicial a MSI -> FINANZAS/Compra a meses (fuera del gasto),
+    salvo las de NO_SON_MSI, que quedan como gasto normal."""
     rows = db.execute("""
-        SELECT id, descripcion, categoria, subcategoria FROM est_movimientos
+        SELECT id, fecha, descripcion, monto, categoria, subcategoria, tipo FROM est_movimientos
         WHERE parcialidad_num IS NULL AND UPPER(descripcion) LIKE '% MSI%'
           AND tipo IN ('GASTO', 'PAGO')
     """).fetchall()
     n = 0
     for r in rows:
-        if _COMPRA_RE.match(r['descripcion'] or '') and (r['categoria'], r['subcategoria']) != ('FINANZAS', SUBCAT):
-            db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=?, tipo='GASTO' WHERE id=?",
-                       (SUBCAT, r['id']))
+        if not _COMPRA_RE.match(r['descripcion'] or ''):
+            continue
+        dest = _excepcion(r) or ('FINANZAS', SUBCAT)
+        if (r['categoria'], r['subcategoria'], r['tipo']) != (*dest, 'GASTO'):
+            db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, tipo='GASTO' WHERE id=?",
+                       (*dest, r['id']))
             n += 1
     return n
 
@@ -87,14 +107,30 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         # Ventana: n meses + 7 de holgura (promociones «paga en enero»: la 1ª
         # mensualidad puede llegar varios meses después de la compra).
         fin = _sumar_meses(inicio, n + _DIFERIDO)
-        cand = [dict(r) for r in db.execute("""
-            SELECT id, substr(fecha,1,10) AS fecha, descripcion, monto, parcialidad_num, parcialidad_total
-            FROM est_movimientos
-            WHERE banco=? AND id != ? AND substr(fecha,1,10) >= ? AND substr(fecha,1,7) <= ? AND tipo='GASTO'
-              AND COALESCE(subcategoria,'') != ? AND UPPER(descripcion) LIKE ?
-            ORDER BY fecha, id
-        """, (c['banco'], c['id'], d_compra, f"{fin[0]}-{fin[1]:02d}", SUBCAT,
-              f"%{comercio[:_PREFIJO]}%")).fetchall() if r['id'] not in usados]
+        hasta_mes = f"{fin[0]}-{fin[1]:02d}"
+
+        def _buscar(like):
+            return [dict(r) for r in db.execute("""
+                SELECT id, substr(fecha,1,10) AS fecha, descripcion, monto, parcialidad_num, parcialidad_total
+                FROM est_movimientos
+                WHERE banco=? AND id != ? AND substr(fecha,1,10) >= ? AND substr(fecha,1,7) <= ? AND tipo='GASTO'
+                  AND COALESCE(subcategoria,'') != ? AND UPPER(descripcion) LIKE ?
+                ORDER BY fecha, id
+            """, (c['banco'], c['id'], d_compra, hasta_mes, SUBCAT, like)).fetchall() if r['id'] not in usados]
+
+        cand = _buscar(f"%{comercio[:_PREFIJO]}%")
+        # Las mensualidades pueden llegar con otro nombre («LIVERPOOL» sin la
+        # sucursal, otra tienda de la cadena): sin ninguna de la cuota con el
+        # nombre completo, se busca por la primera palabra del comercio, pero
+        # solo cargos del monto de la cuota.
+        palabra = comercio.split()[0] if comercio.split() else ''
+        cuota0 = linea / n
+        if len(palabra) >= 4 and palabra != comercio[:_PREFIJO] and not any(
+                abs(abs(r['monto']) - cuota0) <= max(cuota0 * _TOL, 1.0) for r in cand):
+            ids = {r['id'] for r in cand}
+            cand += [r for r in _buscar(f"%{palabra}%")
+                     if r['id'] not in ids and abs(abs(r['monto']) - cuota0) <= max(cuota0 * _TOL, 1.0)]
+            cand.sort(key=lambda r: (r['fecha'], r['id']))
         # ¿La línea trae la cuota en vez del total? (p. ej. «CRISTAL … A 12 MSI
         # $1,037.50» con mensualidades «10 de 12» de $1,038.)
         cuota, total, linea_es_cuota = linea / n, linea, False
@@ -168,6 +204,14 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         else:
             estado = 'En curso'
         otros = [r for r in cand if r['id'] not in usados][:8]
+        # Pista para revisar a mano: cargos de CUALQUIER comercio con el monto
+        # de la cuota en la ventana (así se ve con qué nombre llegaron).
+        misma_cuota = [] if pagos else [dict(r) for r in db.execute("""
+            SELECT id, substr(fecha,1,10) AS fecha, descripcion, monto FROM est_movimientos
+            WHERE banco=? AND substr(fecha,1,10) >= ? AND substr(fecha,1,7) <= ? AND tipo='GASTO'
+              AND ABS(ABS(monto) - ?) <= ? AND COALESCE(subcategoria,'') != ?
+            ORDER BY fecha LIMIT 8
+        """, (c['banco'], d_compra, hasta_mes, cuota, max(cuota * 0.01, 0.5), SUBCAT)).fetchall()]
         out.append({**base,
             'total': round(total, 2), 'cuota': round(cuota, 2), 'linea_es_cuota': linea_es_cuota,
             'pagadas': pagadas, 'pagado': pagado,
@@ -180,6 +224,8 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
             'posibles': [{'id': r['id'], 'fecha': r['fecha'], 'descripcion': r['descripcion'],
                           'monto': round(abs(r['monto']), 2), 'parcialidad': r['parcialidad_num'],
                           'de': r['parcialidad_total']} for r in otros],
+            'misma_cuota': [{'id': r['id'], 'fecha': r['fecha'], 'descripcion': r['descripcion'],
+                             'monto': round(abs(r['monto']), 2)} for r in misma_cuota],
         })
     out.sort(key=lambda x: x['fecha'], reverse=True)
 

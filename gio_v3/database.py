@@ -5645,6 +5645,23 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_msi_compra_inicial migration warning: {e}")
 
+        # ── FINANZAS — compras que el banco pasó a meses por error (Pointmp
+        # Arellano $22, 15/03/2025): gasto normal, fuera de la conciliación MSI.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_msi_no_son_msi_1'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.msi import marcar_compras as _msi_marcar2
+                _n = _msi_marcar2(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_msi_no_son_msi_1", f"{_n} compras a meses reclasificadas")
+                )
+                db.commit()
+                print(f"[DB] finanzas_msi_no_son_msi_1: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_msi_no_son_msi_1 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
