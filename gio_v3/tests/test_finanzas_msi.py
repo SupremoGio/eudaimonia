@@ -232,3 +232,17 @@ def test_respuestas_del_usuario_2026_09_27(test_db):
     assert c[cr]['total'] == 12450.0 and c[cr]['pagos'][0]['id'] == cr
     assert row(v2m) == ('PRESTAMOS', 'Prestado') and row(mia) == ('VIAJES', 'Transporte')
     assert row(ref) == ('VIVIENDA', 'Artículos del hogar') and row(super_) == ('SUPER', 'Súper')
+
+
+def test_compra_a_meses_escrita_como_a_nn_meses(test_db):
+    """Corte 202209: «MERCADO PAGO 1 A 03 MESES S/I $467.17» es la compra; «AMAZON MX A MESES» es mensualidad."""
+    mp = _ins('2022-09-03', 'MERCADO PAGO 1 A 03 MESES S/I', 467.17, cat='OTROS', sub='')
+    am = _ins('2022-09-22', 'AMAZON MX A MESES', 560.0, cat='DIGITAL', sub='Accesorios tech', pn=4, pt=6, grupo='am')
+    for k, mes in ((1, '2022-09'), (2, '2022-10'), (3, '2022-11')):
+        _ins(f'{mes}-22', f'0{k} DE 03 MERCADO PAGO 1', 156.0 if k < 3 else 155.17, cat='OTROS', sub='',
+             pn=k, pt=3, grupo='mp')
+    c = _conciliar()
+    with database.get_db() as db:
+        cats = {i: db.execute("SELECT subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[0] for i in (mp, am)}
+    assert cats == {mp: 'Compra a meses', am: 'Accesorios tech'}
+    assert c[mp]['estado'] == 'Liquidada' and c[mp]['pagadas'] == 3
