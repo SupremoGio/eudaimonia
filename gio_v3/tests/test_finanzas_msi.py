@@ -254,3 +254,23 @@ def test_compra_a_meses_devuelta_no_procedio(test_db):
     _ins('2025-11-11', 'ELPALACIOHIERRO COM', -2345.0, cat='FINANZAS', sub='Reembolsable', tipo='PAGO')
     c = _conciliar()[pa]
     assert c['estado'] == 'No procedió' and c['total'] == 0
+
+
+def test_inicio_se_deduce_de_k_de_n(test_db):
+    """Viva (2): aparecen la 4 (mayo) y la 6-9 (jul-oct 2024): solo falta la 5 (junio)."""
+    v2 = _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI (2)', 11895.45, cat='VIAJES', sub='Transporte')
+    for k, mes, monto in ((4, '2024-05', 1322.0), (6, '2024-07', 1322.0), (7, '2024-08', 1322.0),
+                          (8, '2024-09', 1322.0), (9, '2024-10', 1319.45)):
+        _ins(f'{mes}-22', f'0{k} DE 09 VIVA AEROBUS CIB', monto, cat='VIAJES', sub='Transporte', pn=k, pt=9, grupo=f'v{k}')
+    c = _conciliar()[v2]
+    assert c['meses_sin_mensualidad'] == ['2024-02', '2024-03', '2024-04', '2024-06']
+
+
+def test_ultima_mensualidad_menor_no_parte_la_compra(test_db):
+    """Amazon «A MESES M» 6 × $290: la 6ª de $287.99 era otra «compra sin inicial»."""
+    for k, mes, monto in ((2, '2024-05', 290.0), (4, '2024-07', 290.0), (5, '2024-08', 290.0), (6, '2024-09', 287.99)):
+        _ins(f'{mes}-22', 'AMAZON MX A MESES M', monto, cat='DIGITAL', sub='Accesorios tech', pn=k, pt=6,
+             grupo='am290' if monto == 290.0 else 'am288')
+    sueltas = [c for c in _conciliar().values() if c['estado'] == 'Sin compra inicial']
+    assert len(sueltas) == 1 and sueltas[0]['mensualidades_vistas'] == [2, 4, 5, 6]
+    assert sueltas[0]['mensualidades_faltantes'] == [3] and sueltas[0]['restante'] == 0.0
