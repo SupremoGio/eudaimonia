@@ -1,0 +1,379 @@
+{
+ "archivo": "1520361804_202210_C1.pdf",
+ "periodo": "07/09/2022 al 06/10/2022",
+ "totales": {
+  "cargos": 17499.66,
+  "abonos": 15282.08
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-09-11",
+   "fecha_cargo": "2022-09-12",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 5056.85,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-11",
+   "fecha_cargo": "2022-09-12",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET COOP GIO",
+   "monto": 130.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-11",
+   "fecha_cargo": "2022-09-12",
+   "descripcion": "SPEI RECIBIDOCODI VALIDA",
+   "monto": 0.01,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-09-12",
+   "fecha_cargo": "2022-09-13",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET COMIDITA Y MILKSHA",
+   "monto": 190.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-14",
+   "fecha_cargo": "2022-09-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-15",
+   "fecha_cargo": "2022-09-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7094.64,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-09-15",
+   "fecha_cargo": "2022-09-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET CROASANT",
+   "monto": 74.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-09-16",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-16",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-09-16",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-16",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-09-16",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-16",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-09-16",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-17",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 250.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-18",
+   "fecha_cargo": "2022-09-19",
+   "descripcion": "RETIRO CAJERO AUTOMATICO SEP18 12:49 BANCOMER 1850 FOLIO:2431",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-19",
+   "fecha_cargo": "2022-09-16",
+   "descripcion": "FAR GUAD 1701 RFC: FGU 830930PD3 22:26 AUT: 805405",
+   "monto": 56.41,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-19",
+   "fecha_cargo": "2022-09-17",
+   "descripcion": "MERCADO PAGO RFC: MAG 2105031W3 23:24 AUT: 909394",
+   "monto": 50.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-19",
+   "fecha_cargo": "2022-09-18",
+   "descripcion": "F AHORRO VLTC TIERRA RFC: CFC 14:00 AUT: 422146",
+   "monto": 108.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-20",
+   "fecha_cargo": "2022-09-20",
+   "descripcion": "RETIRO CAJERO AUTOMATICO SEP20 13:02 BANCOMER 9363 FOLIO:7864",
+   "monto": 600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-21",
+   "fecha_cargo": "2022-09-21",
+   "descripcion": "RETIRO CAJERO AUTOMATICO SEP21 21:41 BANCOMER A020 FOLIO:4075",
+   "monto": 5000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-21",
+   "fecha_cargo": "2022-09-20",
+   "descripcion": "OXXO APTO T1 B2 RFC: CCO 8605231N4 04:36 AUT: 234753",
+   "monto": 26.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-21",
+   "fecha_cargo": "2022-09-20",
+   "descripcion": "EL GLOBO AEROPUERTO 4 RFC: TPA 131111PM4 05:55 AUT: 308317",
+   "monto": 96.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-23",
+   "fecha_cargo": "2022-09-26",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSFERENCIA",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-09-24",
+   "fecha_cargo": "2022-09-26",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-24",
+   "fecha_cargo": "2022-09-26",
+   "descripcion": "RETIRO CAJERO AUTOMATICO SEP24 21:45 BBVA A019 FOLIO:7440",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-25",
+   "fecha_cargo": "2022-09-26",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GAS GIO",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-26",
+   "fecha_cargo": "2022-09-25",
+   "descripcion": "REST CELEBRE RFC: SAAR730516RS2 00:51 AUT: 663567",
+   "monto": 90.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-27",
+   "fecha_cargo": "2022-09-26",
+   "descripcion": "FAR GUAD 2480 RFC: FGU 830930PD3 20:39 AUT: 120410",
+   "monto": 92.4,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-29",
+   "fecha_cargo": "2022-09-29",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PABLITO",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-09-30",
+   "fecha_cargo": "2022-09-30",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 6663.43,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-02",
+   "fecha_cargo": "2022-10-03",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET VALER VG",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-03",
+   "fecha_cargo": "2022-10-03",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-03",
+   "fecha_cargo": "2022-10-03",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-03",
+   "fecha_cargo": "2022-10-03",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-03",
+   "fecha_cargo": "2022-10-03",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-03",
+   "fecha_cargo": "2022-10-03",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-03",
+   "fecha_cargo": "2022-10-03",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-03",
+   "fecha_cargo": "2022-10-03",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-03",
+   "fecha_cargo": "2022-10-01",
+   "descripcion": "CLIP MX*SALTERRA RFC: BLI 120726UF6 23:47 AUT: 506664",
+   "monto": 154.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-04",
+   "fecha_cargo": "2022-10-04",
+   "descripcion": "RETIRO CAJERO AUTOMATICO OCT04 18:49 BBVA D797 FOLIO:3636",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  }
+ ]
+}
