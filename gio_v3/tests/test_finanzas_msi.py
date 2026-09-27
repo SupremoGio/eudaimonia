@@ -47,7 +47,7 @@ def _lavadora(meses=20, saltar=()):
 
 def test_compra_inicial_sale_del_gasto(test_db):
     cid = _lavadora()
-    mens = _ins('2025-01-22', '03 DE 12 MACSTORE', 211.0, pn=3, pt=12, grupo='g1')   # mensualidad: no se toca
+    mens = _ins('2025-01-22', '03 DE 12 LIVERPOOL', 211.0, pn=3, pt=12, grupo='g1')   # mensualidad: no se toca
     with database.get_db() as db:
         assert msi.marcar_compras(db) == 1
         db.commit()
@@ -140,8 +140,9 @@ def test_casos_reales_de_produccion(test_db):
         _ins(f'2025-{3 + k:02d}-22', 'VIVA AEROBUS CIB', 968.01 if k == 5 else 968.0, cat='VIAJES', sub='Transporte')
     c = _conciliar()
     assert [p['monto'] for p in c[v1]['pagos']] == [658.0] and [p['monto'] for p in c[v2]['pagos']] == [1322.0]
-    assert c[p0]['estado'] == 'Sin monto'
-    assert c[cr]['linea_es_cuota'] and c[cr]['total'] == 12450.0 and c[cr]['pagadas'] == 3
+    assert c[p0]['estado'] == 'No procedió'
+    # el usuario confirmó que la línea del 04/10 fue la 1ª mensualidad: 1 + las 10, 11 y 12
+    assert c[cr]['linea_es_cuota'] and c[cr]['total'] == 12450.0 and c[cr]['pagadas'] == 4
     assert c[va]['estado'] == 'Liquidada' and c[va]['meses_sin_mensualidad'] == []
 
 
@@ -210,3 +211,24 @@ def test_compra_pasada_a_meses_por_error_es_gasto_normal(test_db):
     with database.get_db() as db:
         r = db.execute("SELECT categoria, subcategoria, tipo FROM est_movimientos WHERE id=?", (pa,)).fetchone()
     assert tuple(r) == ('SUPER', 'Conveniencia', 'GASTO')
+
+
+def test_respuestas_del_usuario_2026_09_27(test_db):
+    # Cristal: la línea del 04/10 fue la 1ª mensualidad -> gasto y mensualidad 1
+    _ins('2026-07-22', '10 DE 12 CRISTAL VILLAHERMOSA', 1038.0, cat='VIVIENDA', sub='Artículos del hogar',
+         pn=10, pt=12, grupo='cr')
+    cr = _ins('2025-10-04', 'CRISTAL VILLAHERMOSA A 12 MSI', 1037.5, cat='OTROS', sub='')
+    # Viva (2): mensualidades de $1,322 fueron de la familia -> PRESTAMOS
+    _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI (2)', 11895.45, cat='VIAJES', sub='Transporte')
+    v2m = _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB (2)', 1322.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='b')
+    mia = _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB', 658.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='a')
+    # Refri a 13 meses en Chedraui (el keyword la mandaba a SUPER)
+    ref = _ins('2024-05-22', 'CHEDRAUI TDA EN LINEA', 569.0, cat='SUPER', sub='Súper', pn=8, pt=13, grupo='ch')
+    super_ = _ins('2024-05-10', 'CHEDRAUI TDA EN LINEA', 569.0, cat='SUPER', sub='Súper')     # sin plazo: súper normal
+    c = _conciliar()
+    row = lambda i: tuple(database.get_db().__enter__().execute(
+        "SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+    assert row(cr) == ('VIVIENDA', 'Artículos del hogar')
+    assert c[cr]['total'] == 12450.0 and c[cr]['pagos'][0]['id'] == cr
+    assert row(v2m) == ('PRESTAMOS', 'Prestado') and row(mia) == ('VIAJES', 'Transporte')
+    assert row(ref) == ('VIVIENDA', 'Artículos del hogar') and row(super_) == ('SUPER', 'Súper')
