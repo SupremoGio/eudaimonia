@@ -19,8 +19,9 @@ from itertools import combinations
 from datetime import date
 
 SUBCAT = 'Compra a meses'
-# «… A 20 MSI», «… A 03 MSI»: la compra completa, no una mensualidad
-_COMPRA_RE = re.compile(r"^(.*?)\s+A\s+(\d{1,2})\s+MSI\b", re.IGNORECASE)
+# «… A 20 MSI», «… A 03 MSI», «… A 03 MESES S/I»: la compra completa, no una
+# mensualidad («AMAZON MX A MESES» sin número sí es mensualidad).
+_COMPRA_RE = re.compile(r"^(.*?)\s+A\s+(\d{1,2})\s+(?:MSI|MESES)\b", re.IGNORECASE)
 _PREFIJO = 12   # caracteres del comercio para ligar compra y mensualidades
 
 
@@ -112,7 +113,7 @@ def marcar_compras(db) -> int:
     que el usuario identificó y las que pagó por alguien más."""
     rows = db.execute("""
         SELECT id, fecha, descripcion, monto, categoria, subcategoria, tipo FROM est_movimientos
-        WHERE parcialidad_num IS NULL AND UPPER(descripcion) LIKE '% MSI%'
+        WHERE parcialidad_num IS NULL AND (UPPER(descripcion) LIKE '% MSI%' OR UPPER(descripcion) LIKE '% MESES%')
           AND tipo IN ('GASTO', 'PAGO')
     """).fetchall()
     n = 0
@@ -173,9 +174,17 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         linea = abs(c['monto'] or 0)
         base = {'id': c['id'], 'fecha': c['fecha'][:10], 'descripcion': c['descripcion'], 'banco': c['banco'],
                 'mensualidades': n}
-        if linea < 0.005:
-            # Compra que no procedió (el banco la dejó en $0; Palacio de Hierro
-            # nov 2025: «lo intenté dos veces y no me quiso»): nada que conciliar.
+        # Compra devuelta en los días siguientes por el mismo monto (Palacio de
+        # Hierro nov 2025: «A 09 MSI $2,345» y al otro día -$2,345): no procedió.
+        devuelta = linea >= 0.005 and db.execute("""
+            SELECT 1 FROM est_movimientos
+            WHERE banco=? AND id != ? AND monto < 0 AND ABS(ABS(monto) - ?) < 0.005
+              AND UPPER(descripcion) LIKE ?
+              AND julianday(substr(fecha,1,10)) BETWEEN julianday(?) AND julianday(?) + 7
+        """, (c['banco'], c['id'], linea, f"%{comercio[:_PREFIJO]}%", c['fecha'][:10], c['fecha'][:10])).fetchone()
+        if linea < 0.005 or devuelta:
+            # Compra que no procedió (el banco la dejó en $0 o la devolvió;
+            # Palacio de Hierro nov 2025: «lo intenté dos veces y no me quiso»).
             out.append({**base, 'total': 0, 'cuota': 0, 'pagadas': 0, 'pagado': 0, 'restante': 0,
                         'meses_sin_mensualidad': [], 'por_venir': 0, 'pagos': [], 'posibles': [],
                         'estado': 'No procedió'})

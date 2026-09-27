@@ -110,3 +110,28 @@ def test_ptu_y_spei_devuelto(test_db):
         assert (dev['categoria'], dev['subcategoria']) == ('FINANZAS', 'Reembolsable')
         fdo = db.execute("SELECT * FROM est_movimientos WHERE descripcion LIKE '%FONDO AHORRO%'").fetchone()
         assert fdo['subcategoria'] == 'Fondo de ahorro'
+
+
+
+@pytest.mark.parametrize('clave', libs.archivos('bbva_tdc'))
+def test_tdc_pdf_cuadra_con_total_cargos(clave):
+    """Formato actual: TOTAL CARGOS no incluye penalizaciones/comisiones (van aparte)."""
+    d = libs.cargar(clave, 'bbva_tdc')
+    cargos = sum(m['monto'] for m in d['movimientos'] if m['monto'] > 0)
+    abonos = -sum(m['monto'] for m in d['movimientos'] if m['monto'] < 0)
+    t = d['totales']
+    assert round(cargos, 2) == round(t['cargos'] + t.get('cargos_fuera_de_total', 0), 2)
+    assert round(abonos, 2) == t['abonos']
+
+
+def test_tdc_pdf_completa_la_mensualidad_de_una_fila_existente(test_db):
+    """La mensualidad ya estaba (de un CSV) sin «5 de 6»: no se duplica y se le pone."""
+    with database.get_db() as db:
+        mid = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                            VALUES ('2025-08-22', 'LIVERPOOL ZAPOPAN', 409, 'BBVA_TDC', 'ROPA', 'Calzado', 'GASTO')""").lastrowid
+        db.commit()
+        libs.aplicar(db, '202508', 'bbva_tdc')
+        db.commit()
+        r = db.execute("SELECT parcialidad_num, parcialidad_total FROM est_movimientos WHERE id=?", (mid,)).fetchone()
+        assert tuple(r) == (5, 6)
+        assert db.execute("SELECT COUNT(*) FROM est_movimientos WHERE descripcion LIKE 'LIVERPOOL ZAPOPAN%' AND monto=409").fetchone()[0] == 1

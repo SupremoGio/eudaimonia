@@ -5681,6 +5681,23 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_msi_respuestas_2026_09_27 migration warning: {e}")
 
+        # ── FINANZAS — compras a meses escritas «… A 03 MESES S/I» (no «A 03
+        # MSI»): también son la compra inicial y dejan de contar como gasto.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_msi_a_nn_meses'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.msi import marcar_compras as _msi_marcar4
+                _n = _msi_marcar4(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_msi_a_nn_meses", f"{_n} compras «A NN MESES» -> Compra a meses")
+                )
+                db.commit()
+                print(f"[DB] finanzas_msi_a_nn_meses: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_msi_a_nn_meses migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

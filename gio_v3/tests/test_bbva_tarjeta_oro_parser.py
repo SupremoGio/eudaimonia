@@ -38,3 +38,15 @@ def test_anualidad_diferida_no_es_movimiento():
 TOTAL IMPORTES: $ 462.00
 """
     assert [m['monto'] for m in B.parse_tarjeta_oro(texto)] == [462.0]
+
+
+def test_cargos_no_reconocidos_no_son_movimientos():
+    texto = """TOTAL ABONOS -$12,545.35
+CARGOS NO RECONOCIDOS
+Notas: Ver notas en la sección “NOTAS ACLARATORIAS” en este estado de cuenta.
+06-jul-2025 05-ago-2025 SHERATON MEXICO C Concluida, 8054954410 - $8,910.00
+improcedente 9066198060
+NOTAS ACLARATORIAS
+1. Tienes como límite"""
+    assert 'SHERATON' not in B._sin_secciones_informativas(texto)
+    assert 'NOTAS ACLARATORIAS\n1.' in B._sin_secciones_informativas(texto)
