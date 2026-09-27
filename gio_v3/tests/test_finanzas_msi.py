@@ -274,3 +274,20 @@ def test_ultima_mensualidad_menor_no_parte_la_compra(test_db):
     sueltas = [c for c in _conciliar().values() if c['estado'] == 'Sin compra inicial']
     assert len(sueltas) == 1 and sueltas[0]['mensualidades_vistas'] == [2, 4, 5, 6]
     assert sueltas[0]['mensualidades_faltantes'] == [3] and sueltas[0]['restante'] == 0.0
+
+
+def test_tres_compras_iguales_el_mismo_dia_cada_una_su_cuota(test_db):
+    """Amazon 24/01/2026: tres A 06 con cuotas ~$114.89, ~$116.50 y ~$326.33;
+    las mensualidades de $117 van a la de $116.50, no a la de $114.89."""
+    a = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I', 689.34, cat='DIGITAL', sub='Accesorios tech')
+    b = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I (2)', 699.0, cat='DIGITAL', sub='Accesorios tech')
+    c3 = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I (3)', 1958.0, cat='DIGITAL', sub='Accesorios tech')
+    for k in range(1, 6):
+        mes = f'2026-{1 + k:02d}-22'
+        _ins(mes, 'AMAZON A MESES', 115.0, cat='DIGITAL', sub='Accesorios tech')
+        _ins(mes, 'AMAZON MX A MESES', 117.0, cat='DIGITAL', sub='Accesorios tech')     # otro nombre
+        _ins(mes, 'AMAZON A MESES (C)', 326.0, cat='DIGITAL', sub='Accesorios tech')
+    c = _conciliar()
+    assert {p['monto'] for p in c[a]['pagos']} == {115.0}
+    assert {p['monto'] for p in c[b]['pagos']} == {117.0} and c[b]['pagadas'] == 5
+    assert {p['monto'] for p in c[c3]['pagos']} == {326.0}
