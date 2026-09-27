@@ -2850,7 +2850,12 @@ def _cortes_sin_movimientos(banco: str, fechas_d, hasta: str) -> list:
 
     con = {corte_de(d) for d in fechas_d}
     y, m = corte_de(fechas_d[0])
-    fin = corte_de(datetime.strptime(hasta, '%Y-%m-%d').date())
+    # Solo cortes ya cerrados: el que contiene `hasta` sigue en curso (sus
+    # movimientos aún no salen en ningún estado) salvo que `hasta` sea su día de corte.
+    h = datetime.strptime(hasta, '%Y-%m-%d').date()
+    fin = corte_de(h)
+    if h.day != dia:
+        fin = (fin[0] - 1, 12) if fin[1] == 1 else (fin[0], fin[1] - 1)
     faltan = []
     while (y, m) <= fin:
         if (y, m) not in con:
