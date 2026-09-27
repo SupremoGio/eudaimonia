@@ -278,8 +278,15 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         faltan, por_venir, completas = set(), 0, True
         for _, rs in series:
             meses_s = sorted({_mes(r['fecha']) for r in rs})
-            # Inicio diferido: los meses esperados arrancan en la 1ª mensualidad real.
-            ini = meses_s[0] if meses_s and meses_s[0] > inicio else inicio
+            # Con «k de n» el inicio se deduce de la mensualidad (la «4 de 9» en
+            # mayo -> la 1 fue en febrero); sin número, inicio diferido: los
+            # meses esperados arrancan en la 1ª mensualidad real.
+            con_num = [_sumar_meses(_mes(r['fecha']), -(r['parcialidad_num'] - 1))
+                       for r in rs if r.get('parcialidad_num')]
+            if con_num:
+                ini = min(con_num)
+            else:
+                ini = meses_s[0] if meses_s and meses_s[0] > inicio else inicio
             esperados = [_sumar_meses(ini, k) for k in range(n)]
             if len(meses_s) < n:
                 completas = False
@@ -322,29 +329,44 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
     out.sort(key=lambda x: x['fecha'], reverse=True)
 
     # Mensualidades sin compra inicial en la base (p. ej. la compra fue antes
-    # del primer estado importado): se agrupan por compra_msi_id.
-    sueltas = db.execute("""
-        SELECT compra_msi_id, MIN(descripcion) AS descripcion, MIN(banco) AS banco,
-               MAX(parcialidad_total) AS n, COUNT(*) AS filas,
-               GROUP_CONCAT(parcialidad_num) AS nums, ROUND(SUM(ABS(monto)), 2) AS pagado,
-               ROUND(AVG(ABS(monto)), 2) AS cuota, MIN(substr(fecha,1,10)) AS desde, MAX(substr(fecha,1,10)) AS hasta
+    # del primer estado importado). Se agrupan por comercio y plazo, y dentro
+    # de eso por mes de inicio (mes de la «k de n» - (k-1)) y cuota: así la
+    # última mensualidad, que suele venir unos pesos menos ($287.99 vs $290),
+    # no queda como otra compra, y dos compras iguales en meses distintos no
+    # se mezclan.
+    filas = [dict(r) for r in db.execute("""
+        SELECT id, substr(fecha,1,10) AS fecha, descripcion, banco, ABS(monto) AS monto,
+               parcialidad_num, parcialidad_total
         FROM est_movimientos
-        WHERE compra_msi_id IS NOT NULL AND tipo='GASTO'
-        GROUP BY compra_msi_id
-    """).fetchall()
-    for g in sueltas:
-        ids = [r['id'] for r in db.execute("SELECT id FROM est_movimientos WHERE compra_msi_id=?", (g['compra_msi_id'],))]
-        if any(i in usados for i in ids):
-            continue
-        nums = sorted({int(x) for x in (g['nums'] or '').split(',') if x})
-        n = g['n'] or 0
-        faltan_nums = [k for k in range(min(nums) if nums else 1, (max(nums) if nums else 0) + 1) if k not in nums]
+        WHERE compra_msi_id IS NOT NULL AND tipo='GASTO' AND parcialidad_num IS NOT NULL
+        ORDER BY fecha, id
+    """).fetchall() if r['id'] not in usados]
+    grupos = []
+    for r in filas:
+        ini_r = _sumar_meses(_mes(r['fecha']), -(r['parcialidad_num'] - 1))
+        desc = re.sub(r"^\d{1,2}\s+DE\s+\d{1,2}\s+", "", (r['descripcion'] or '').upper())   # «03 DE 06 …»
+        clave = (desc[:_PREFIJO], r['banco'], r['parcialidad_total'])
+        g = next((g for g in grupos if g['clave'] == clave and abs(_dif_meses(g['ini'], ini_r)) <= 1
+                  and r['parcialidad_num'] not in g['nums']
+                  and abs(r['monto'] - g['cuota']) <= max(g['cuota'] * _TOL, 1.0)), None)
+        if g is None:
+            g = {'clave': clave, 'ini': ini_r, 'cuota': r['monto'], 'nums': set(), 'filas': []}
+            grupos.append(g)
+        g['nums'].add(r['parcialidad_num'])
+        g['filas'].append(r)
+    for g in grupos:
+        rs, n = g['filas'], g['clave'][2] or 0
+        nums = sorted(g['nums'])
+        cuota = round(max(r['monto'] for r in rs), 2)       # la última puede ser menor
+        pagado = round(sum(r['monto'] for r in rs), 2)
+        faltan_nums = [k for k in range(min(nums), max(nums) + 1) if k not in nums]
         out.append({
-            'id': None, 'fecha': g['desde'], 'descripcion': g['descripcion'], 'banco': g['banco'],
-            'total': round((g['cuota'] or 0) * n, 2), 'mensualidades': n, 'cuota': g['cuota'],
-            'pagadas': len(nums), 'pagado': g['pagado'], 'restante': round((g['cuota'] or 0) * max(n - max(nums or [0]), 0), 2),
+            'id': None, 'fecha': rs[0]['fecha'], 'descripcion': rs[0]['descripcion'], 'banco': rs[0]['banco'],
+            'total': round(cuota * n, 2), 'mensualidades': n, 'cuota': cuota,
+            'pagadas': len(nums), 'pagado': pagado,
+            'restante': 0.0 if max(nums) >= n else round(cuota * (n - max(nums)), 2),
             'mensualidades_vistas': nums, 'mensualidades_faltantes': faltan_nums,
-            'repetidas': g['filas'] > len(nums),
+            'repetidas': False,
             'estado': 'Sin compra inicial',
         })
     return out
