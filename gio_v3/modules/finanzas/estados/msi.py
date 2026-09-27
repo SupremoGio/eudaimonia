@@ -150,6 +150,29 @@ def _dif_meses(a: tuple[int, int], b: tuple[int, int]) -> int:
     return (a[0] - b[0]) * 12 + (a[1] - b[1])
 
 
+def _rivales(db, compras) -> dict:
+    """Por compra: banco, primera palabra del comercio, plazo, mes y cuota
+    estimada (la línea / n, o la línea misma si hay mensualidades «k de n» de
+    ese monto: la línea traía la cuota)."""
+    out = {}
+    for c in compras:
+        m = _COMPRA_RE.match(c['descripcion'] or '')
+        if not m:
+            continue
+        comercio, n = m.group(1).strip().upper(), int(m.group(2))
+        linea = abs(c['monto'] or 0)
+        if linea < 0.005:
+            continue
+        palabra = comercio.split()[0] if comercio.split() else ''
+        es_cuota = _es_primera(c) or (n > 1 and db.execute("""
+            SELECT 1 FROM est_movimientos WHERE banco=? AND id != ? AND parcialidad_total=?
+              AND ABS(ABS(monto) - ?) <= ? AND UPPER(descripcion) LIKE ? LIMIT 1
+        """, (c['banco'], c['id'], n, linea, linea * _TOL, f"%{comercio[:_PREFIJO]}%")).fetchone() is not None)
+        out[c['id']] = {'id': c['id'], 'banco': c['banco'], 'palabra': palabra, 'n': n,
+                        'mes': _mes(c['fecha'][:10]), 'cuota': linea if es_cuota else linea / n}
+    return out
+
+
 def conciliar(db, hoy: str | None = None) -> list[dict]:
     hoy = hoy or date.today().isoformat()
     mes_hoy = _mes(hoy)
@@ -164,6 +187,7 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
               AND COALESCE(subcategoria,'') != ?
         """, (fecha, f"%{texto}%", monto, SUBCAT)).fetchall()]
     compras.sort(key=lambda c: (c['fecha'], c['id']))
+    rivales = _rivales(db, compras)
     usados = set()
     out = []
     for c in compras:
@@ -211,13 +235,11 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
             cand = [{'id': c['id'], 'fecha': d_compra, 'descripcion': c['descripcion'], 'monto': c['monto'],
                      'parcialidad_num': 1, 'parcialidad_total': n}] + cand
         # Las mensualidades pueden llegar con otro nombre («LIVERPOOL» sin la
-        # sucursal, otra tienda de la cadena): sin ninguna de la cuota con el
-        # nombre completo, se busca por la primera palabra del comercio, pero
-        # solo cargos del monto de la cuota.
+        # sucursal, «AMAZON A MESES» / «AMAZON MX A MESES»): también se buscan
+        # por la primera palabra del comercio, solo cargos del monto de la cuota.
         palabra = comercio.split()[0] if comercio.split() else ''
-        cuota0 = linea / n
-        if len(palabra) >= 4 and palabra != comercio[:_PREFIJO] and not any(
-                abs(abs(r['monto']) - cuota0) <= max(cuota0 * _TOL, 1.0) for r in cand):
+        cuota0 = rivales.get(c['id'], {}).get('cuota') or linea / n
+        if len(palabra) >= 4 and palabra != comercio[:_PREFIJO]:
             ids = {r['id'] for r in cand}
             cand += [r for r in _buscar(f"%{palabra}%")
                      if r['id'] not in ids and abs(abs(r['monto']) - cuota0) <= max(cuota0 * _TOL, 1.0)]
@@ -232,6 +254,15 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         def encaja(r):
             if abs(abs(r['monto']) - cuota) > max(cuota * _TOL, 1.0):
                 return False
+            # Varias compras del mismo comercio y plazo en fechas cercanas (3
+            # Amazon A 06 el 24/01/2026 de ~$114.89, ~$116.50 y ~$326.33): la
+            # mensualidad va a la de cuota más parecida.
+            dif = abs(abs(r['monto']) - cuota)
+            for o in rivales.values():
+                if o['id'] != c['id'] and o['banco'] == c['banco'] and o['palabra'] == palabra and o['n'] == n \
+                        and abs(_dif_meses(o['mes'], _mes(d_compra))) <= 1 \
+                        and abs(abs(r['monto']) - o['cuota']) + 0.005 < dif:
+                    return False
             if r['parcialidad_total'] and r['parcialidad_total'] != n:
                 return False
             k = _dif_meses(_mes(r['fecha']), inicio)
