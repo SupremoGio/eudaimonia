@@ -2989,6 +2989,7 @@ details summary{cursor:pointer;color:var(--mut);font-size:12px;margin-top:6px}
 {% if c.repetidas %}<div class="bad">Hay mensualidades repetidas: posible doble conteo</div>{% endif %}
 {% if c.pagos %}<details><summary>{{ c.pagos|length }} mensualidades</summary><div class="meta">
 {% for p in c.pagos %}{{ p.fecha }} ${{ '{:,.2f}'.format(p.monto) }}{% if p.parcialidad %} ({{ p.parcialidad }}/{{ c.mensualidades }}){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div></details>{% endif %}
+{% if c.planes %}<div class="meta">Compra de {{ c.planes|length }} productos: {% for pl in c.planes %}{{ pl.mensualidades }} × ${{ '{:,.2f}'.format(pl.cuota) }}{% if not loop.last %} + {% endif %}{% endfor %}</div>{% endif %}
 {% if c.linea_es_cuota %}<div class="meta">La línea de la compra traía la cuota; el total se calculó como cuota × meses.</div>{% endif %}
 {% if c.posibles %}<details><summary>{{ c.posibles|length }} cargos del mismo comercio sin ligar</summary><div class="meta">
 {% for p in c.posibles %}{{ p.fecha }} {{ p.descripcion }} ${{ '{:,.2f}'.format(p.monto) }}{% if not loop.last %} · {% endif %}{% endfor %}</div></details>{% endif %}

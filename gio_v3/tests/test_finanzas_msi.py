@@ -157,3 +157,29 @@ def test_mensualidades_de_otra_compra_mismo_comercio(test_db):
              pn=k, pt=12, grupo='t2')
     c = _conciliar()[t]
     assert c['estado'] == 'Liquidada' and all(p['fecha'] < '2023-04' for p in c['pagos'])
+
+
+def test_compra_de_varios_productos_y_pago_diferido(test_db):
+    """Palacio de Hierro 01/06/2025: 6 × $218.17 + 6 × $169.55 = $2,326.32; el
+    Lacoste era «MSI + paga en enero» -> dos cargos al mes, y empiezan tarde."""
+    pal = _ins('2025-06-01', 'ELPALACIOHIERRO COM A 06 MSI', 2326.32, cat='ROPA', sub='Ropa')
+    for k in range(6):
+        y, m = (2025, 8 + k) if 8 + k <= 12 else (2026, k - 4)
+        _ins(f'{y}-{m:02d}-22', 'ELPALACIOHIERRO COM', 218.17, cat='ROPA', sub='Ropa')
+        _ins(f'{y}-{m:02d}-22', 'ELPALACIOHIERRO COM (B)', 169.55, cat='ROPA', sub='Ropa')
+    c = _conciliar()[pal]
+    assert (c['estado'], c['pagadas'], c['pagado']) == ('Liquidada', 6, 2326.32)
+    assert c['meses_sin_mensualidad'] == []
+
+
+def test_varios_productos_con_planes_que_no_se_enciman(test_db):
+    """El primer producto de jul a dic 2025 y el Lacoste («paga en enero») de ene a jun 2026."""
+    pal = _ins('2025-06-01', 'ELPALACIOHIERRO COM A 06 MSI', 2326.32, cat='ROPA', sub='Ropa')
+    for k in range(6):
+        _ins(f'2025-{7 + k:02d}-22', 'ELPALACIOHIERRO COM', 218.17, cat='ROPA', sub='Ropa')
+    for k in range(5):                                   # falta la 6ª del Lacoste (jun 2026)
+        _ins(f'2026-{1 + k:02d}-22', 'ELPALACIOHIERRO COM', 169.55, cat='ROPA', sub='Ropa')
+    c = _conciliar()[pal]
+    assert c['planes'] == [{'cuota': 169.55, 'mensualidades': 5}, {'cuota': 218.17, 'mensualidades': 6}]
+    assert c['estado'] == 'Faltan mensualidades' and c['meses_sin_mensualidad'] == ['2026-06']
+    assert c['restante'] == 169.55

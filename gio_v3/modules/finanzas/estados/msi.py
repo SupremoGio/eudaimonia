@@ -15,6 +15,7 @@ contra lo que de verdad aparece en la base: cuánto va pagado, qué meses no
 tienen mensualidad registrada y si la suma cuadra con el total.
 """
 import re
+from itertools import combinations
 from datetime import date
 
 SUBCAT = 'Compra a meses'
@@ -51,6 +52,7 @@ def _sumar_meses(ym: tuple[int, int], k: int) -> tuple[int, int]:
 
 DIA_CORTE = 22            # BBVA Crédito corta el 22: compra hasta el 22 -> 1ª mensualidad ese mes
 _TOL = 0.05               # la última mensualidad suele variar unos pesos por redondeo
+_DIFERIDO = 7             # meses que puede diferirse el inicio («MSI + paga en enero»)
 
 
 def _dif_meses(a: tuple[int, int], b: tuple[int, int]) -> int:
@@ -82,7 +84,9 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
             continue
         d_compra = c['fecha'][:10]
         inicio = _mes(d_compra) if int(d_compra[8:10]) <= DIA_CORTE else _sumar_meses(_mes(d_compra), 1)
-        fin = _sumar_meses(inicio, n)            # ventana: n meses + 1 de holgura
+        # Ventana: n meses + 7 de holgura (promociones «paga en enero»: la 1ª
+        # mensualidad puede llegar varios meses después de la compra).
+        fin = _sumar_meses(inicio, n + _DIFERIDO)
         cand = [dict(r) for r in db.execute("""
             SELECT id, substr(fecha,1,10) AS fecha, descripcion, monto, parcialidad_num, parcialidad_total
             FROM est_movimientos
@@ -103,28 +107,59 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
             if r['parcialidad_total'] and r['parcialidad_total'] != n:
                 return False
             k = _dif_meses(_mes(r['fecha']), inicio)
-            if r['parcialidad_num']:          # la «k de n» cae en el mes que le toca (±1)
+            if r['parcialidad_num'] and k <= n:  # la «k de n» cae en el mes que le toca (±1)
                 return abs(k - (r['parcialidad_num'] - 1)) <= 1
-            return -1 <= k <= n
+            return -1 <= k <= n + _DIFERIDO
 
-        pagos, meses_con = [], set()
+        # Cada «serie» es un plan: (cuota, filas, mes de inicio). Normalmente
+        # una sola serie con la cuota de la compra.
+        series = []
+        filas_1 = []
         for r in cand:
-            if len(pagos) >= n:
-                break
-            if encaja(r) and _mes(r['fecha']) not in meses_con:
-                pagos.append(r)
-                meses_con.add(_mes(r['fecha']))
+            if encaja(r) and _mes(r['fecha']) not in {_mes(x['fecha']) for x in filas_1}:
+                filas_1.append(r)
+        filas_1 = filas_1[:n]
+        if len(filas_1) < n:
+            # Compra de varios productos, cada uno con su plan (Palacio de
+            # Hierro: 6 × $218.17 + 6 × $169.55 = $2,326.32), que pueden
+            # empezar en meses distintos («MSI + paga en enero»): 2 o 3 montos
+            # que se repiten en el comercio y cuyas cuotas suman la de la compra.
+            por_monto = {}
+            for r in cand:
+                if r['id'] not in {x['id'] for x in filas_1} and abs(r['monto']) < cuota - max(cuota * _TOL, 1.0) \
+                        and (not r['parcialidad_total'] or r['parcialidad_total'] == n):
+                    por_monto.setdefault(round(abs(r['monto']), 2), []).append(r)
+            montos = [mt for mt, rs in por_monto.items() if len(rs) >= 2]
+            for tam in (2, 3):
+                combo = next((cb for cb in combinations(sorted(montos), tam)
+                              if abs(sum(cb) - cuota) <= max(cuota * _TOL, 1.0)), None)
+                if combo:
+                    for mt in combo:
+                        rs, vistos = [], set()
+                        for r in por_monto[mt]:
+                            if _mes(r['fecha']) not in vistos:
+                                rs.append(r)
+                                vistos.add(_mes(r['fecha']))
+                        series.append((mt, rs[:n]))
+                    break
+        if not series:
+            series = [(cuota, filas_1)]
+        pagos = sorted((r for _, rs in series for r in rs), key=lambda r: (r['fecha'], r['id']))
         usados.update(r['id'] for r in pagos)
         pagado = round(sum(abs(r['monto']) for r in pagos), 2)
-        esperados = [_sumar_meses(inicio, k) for k in range(n)]
-        faltan = [f"{y}-{mm:02d}" for (y, mm) in esperados
-                  if (y, mm) < mes_hoy and not any(abs(_dif_meses((y, mm), p)) == 0 for p in meses_con)]
-        # Con todas las mensualidades cobradas no hay mes faltante (una pudo
-        # caer en el mes vecino por el día de corte).
-        if len(pagos) >= n:
-            faltan = []
-        por_venir = sum(1 for ym in esperados if ym >= mes_hoy and ym not in meses_con)
-        if len(pagos) >= n and abs(total - pagado) <= max(1.0, n * 0.5):
+        faltan, por_venir, completas = set(), 0, True
+        for _, rs in series:
+            meses_s = sorted({_mes(r['fecha']) for r in rs})
+            # Inicio diferido: los meses esperados arrancan en la 1ª mensualidad real.
+            ini = meses_s[0] if meses_s and meses_s[0] > inicio else inicio
+            esperados = [_sumar_meses(ini, k) for k in range(n)]
+            if len(meses_s) < n:
+                completas = False
+                faltan.update(f"{y}-{mm:02d}" for (y, mm) in esperados if (y, mm) < mes_hoy and (y, mm) not in meses_s)
+            por_venir += sum(1 for ym in esperados if ym >= mes_hoy and ym not in meses_s)
+        faltan = sorted(faltan)
+        pagadas = min(len(rs) for _, rs in series)
+        if completas and abs(total - pagado) <= max(1.0, n * 0.5):
             estado = 'Liquidada'
         elif faltan:
             estado = 'Faltan mensualidades'
@@ -135,7 +170,8 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         otros = [r for r in cand if r['id'] not in usados][:8]
         out.append({**base,
             'total': round(total, 2), 'cuota': round(cuota, 2), 'linea_es_cuota': linea_es_cuota,
-            'pagadas': len(pagos), 'pagado': pagado, 'restante': round(max(total - pagado, 0), 2),
+            'pagadas': pagadas, 'pagado': pagado,
+            'planes': [{'cuota': mt, 'mensualidades': len(rs)} for mt, rs in series] if len(series) > 1 else [], 'restante': round(max(total - pagado, 0), 2),
             'meses_sin_mensualidad': faltan, 'por_venir': por_venir, 'estado': estado,
             'pagos': [{'id': r['id'], 'fecha': r['fecha'], 'monto': round(abs(r['monto']), 2),
                        'parcialidad': r['parcialidad_num']} for r in pagos],
