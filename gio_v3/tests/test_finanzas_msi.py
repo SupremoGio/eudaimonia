@@ -246,3 +246,11 @@ def test_compra_a_meses_escrita_como_a_nn_meses(test_db):
         cats = {i: db.execute("SELECT subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[0] for i in (mp, am)}
     assert cats == {mp: 'Compra a meses', am: 'Accesorios tech'}
     assert c[mp]['estado'] == 'Liquidada' and c[mp]['pagadas'] == 3
+
+
+def test_compra_a_meses_devuelta_no_procedio(test_db):
+    """Palacio de Hierro 10/11/2025: «A 09 MSI $2,345» y el 11/11 -$2,345."""
+    pa = _ins('2025-11-10', 'ELPALACIOHIERRO COM A 09 MSI', 2345.0, cat='ROPA', sub='Ropa')
+    _ins('2025-11-11', 'ELPALACIOHIERRO COM', -2345.0, cat='FINANZAS', sub='Reembolsable', tipo='PAGO')
+    c = _conciliar()[pa]
+    assert c['estado'] == 'No procedió' and c['total'] == 0
