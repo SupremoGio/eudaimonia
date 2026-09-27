@@ -2955,12 +2955,13 @@ def conciliar_msi():
             ', '.join(c.get('meses_sin_mensualidad') or []),
             ', '.join(str(n) for n in (c.get('mensualidades_faltantes') or [])),
             ', '.join(f"{p['fecha']} ${p['monto']:.2f}" for p in c.get('pagos') or []),
+            ', '.join(f"{p['fecha']} {p['descripcion']} ${p['monto']:.2f}" for p in c.get('posibles') or []),
             '',
         ] for c in compras]
         return csv_response(['ID compra', 'Fecha', 'Descripción', 'Banco', 'Estado', 'Total', 'Meses',
                              'Cuota', 'Mensualidades pagadas', 'Pagado', 'Restante',
                              'Meses sin mensualidad', 'Mensualidades que no aparecen', 'Mensualidades encontradas',
-                             'COMENTARIOS'], filas, f'compras_msi_{today_str()}.csv')
+                             'Otros cargos del comercio (no ligados)', 'COMENTARIOS'], filas, f'compras_msi_{today_str()}.csv')
     return jsonify({'compras': compras})
 
 
@@ -2988,6 +2989,9 @@ details summary{cursor:pointer;color:var(--mut);font-size:12px;margin-top:6px}
 {% if c.repetidas %}<div class="bad">Hay mensualidades repetidas: posible doble conteo</div>{% endif %}
 {% if c.pagos %}<details><summary>{{ c.pagos|length }} mensualidades</summary><div class="meta">
 {% for p in c.pagos %}{{ p.fecha }} ${{ '{:,.2f}'.format(p.monto) }}{% if p.parcialidad %} ({{ p.parcialidad }}/{{ c.mensualidades }}){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div></details>{% endif %}
+{% if c.linea_es_cuota %}<div class="meta">La línea de la compra traía la cuota; el total se calculó como cuota × meses.</div>{% endif %}
+{% if c.posibles %}<details><summary>{{ c.posibles|length }} cargos del mismo comercio sin ligar</summary><div class="meta">
+{% for p in c.posibles %}{{ p.fecha }} {{ p.descripcion }} ${{ '{:,.2f}'.format(p.monto) }}{% if not loop.last %} · {% endif %}{% endfor %}</div></details>{% endif %}
 </div>{% else %}<div class="card">No hay compras a meses registradas.</div>{% endfor %}
 </body></html>"""
 

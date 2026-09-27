@@ -37,7 +37,7 @@ def _ins(fecha, desc, monto, cat='VIVIENDA', sub='Artículos del hogar', tipo='G
 
 def _lavadora(meses=20, saltar=()):
     cid = _ins('2024-11-17', 'WALMART VENTA EN LIN3 A 20 MSI', -10169.0)
-    y, m = 2024, 12
+    y, m = 2024, 11          # compra antes del día 22: la 1ª mensualidad cae en ese corte
     for k in range(1, meses + 1):
         if k not in saltar:
             _ins(f'{y}-{m:02d}-22', 'WALMART VENTA EN LIN3', 498.0 if k == 20 else 509.0)
@@ -72,11 +72,11 @@ def test_conciliacion_liquidada_y_con_faltantes(test_db):
 
 
 def test_conciliacion_detecta_mes_sin_mensualidad(test_db):
-    _lavadora(saltar=(5,))          # la 5ª (abril 2025) no se importó
+    _lavadora(saltar=(5,))          # la 5ª (marzo 2025) no se importó
     with database.get_db() as db:
         msi.marcar_compras(db)
         c = msi.conciliar(db, '2026-09-26')[0]
-    assert c['estado'] == 'Faltan mensualidades' and c['meses_sin_mensualidad'] == ['2025-04']
+    assert c['estado'] == 'Faltan mensualidades' and c['meses_sin_mensualidad'] == ['2025-03']
     assert c['pagadas'] == 19 and c['restante'] == 509.0
 
 
@@ -95,7 +95,7 @@ def test_pagina_de_conciliacion(client):
         db.commit()
     r = client.get('/finanzas/estados/admin/msi', query_string={'formato': 'html'})
     html = r.get_data(as_text=True)
-    assert r.status_code == 200 and 'WALMART VENTA EN LIN3 A 20 MSI' in html and '2025-04' in html
+    assert r.status_code == 200 and 'WALMART VENTA EN LIN3 A 20 MSI' in html and '2025-03' in html
     assert client.get('/finanzas/estados/admin/msi').get_json()['compras'][0]['estado'] == 'Faltan mensualidades'
 
 
@@ -109,4 +109,51 @@ def test_csv_de_pendientes(client):
     r = client.get('/finanzas/estados/admin/msi', query_string={'formato': 'csv', 'solo': 'pendientes'})
     txt = r.get_data(as_text=True)
     assert r.status_code == 200 and 'COMENTARIOS' in txt and 'WALMART VENTA EN LIN3 A 20 MSI' in txt
-    assert '2025-04' in txt and 'Sin compra inicial' in txt     # la lavadora y las mensualidades sueltas
+    assert '2025-03' in txt and 'Sin compra inicial' in txt     # la lavadora y las mensualidades sueltas
+
+
+def _conciliar():
+    with database.get_db() as db:
+        msi.marcar_compras(db)
+        db.commit()
+        return {c['id']: c for c in msi.conciliar(db, '2026-09-27')}
+
+
+def test_casos_reales_de_produccion(test_db):
+    """Casos del JSON del usuario (2026-09-27)."""
+    # Dos Viva Aerobus A 09 el mismo día: cada mensualidad va a su compra por monto
+    v1 = _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI', 5919.63, cat='VIAJES', sub='Transporte')
+    v2 = _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI (2)', 11895.45, cat='VIAJES', sub='Transporte')
+    _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB', 658.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='a')
+    _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB (2)', 1322.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='b')
+    _ins('2025-12-23', 'VIVA AEROBUS CIB', 1346.51, cat='VIAJES', sub='Transporte')      # otra compra: no se liga
+    # Compra que no procedió ($0)
+    p0 = _ins('2025-11-12', 'ELPALACIOHIERRO COM A 09 MSI', 0.0, cat='ROPA', sub='Ropa')
+    # La línea trae la cuota, no el total
+    cr = _ins('2025-10-04', 'CRISTAL VILLAHERMOSA A 12 MSI', 1037.5, cat='VIVIENDA', sub='Artículos del hogar')
+    for k in (10, 11, 12):
+        _ins(f'2026-{k - 3:02d}-22', f'{k} DE 12 CRISTAL VILLAHERMOSA', 1038.0, cat='VIVIENDA',
+             sub='Artículos del hogar', pn=k, pt=12, grupo='cr')
+    # Primera mensualidad en el mismo corte (compra el 10, corte el 22)
+    va = _ins('2025-03-10', 'VIVA AEROBUS CIB A 06 MSI', 5808.01, cat='VIAJES', sub='Transporte')
+    for k in range(6):
+        _ins(f'2025-{3 + k:02d}-22', 'VIVA AEROBUS CIB', 968.01 if k == 5 else 968.0, cat='VIAJES', sub='Transporte')
+    c = _conciliar()
+    assert [p['monto'] for p in c[v1]['pagos']] == [658.0] and [p['monto'] for p in c[v2]['pagos']] == [1322.0]
+    assert c[p0]['estado'] == 'Sin monto'
+    assert c[cr]['linea_es_cuota'] and c[cr]['total'] == 12450.0 and c[cr]['pagadas'] == 3
+    assert c[va]['estado'] == 'Liquidada' and c[va]['meses_sin_mensualidad'] == []
+
+
+def test_mensualidades_de_otra_compra_mismo_comercio(test_db):
+    """Training Innovation 2022 (12 MSI) no se lleva las mensualidades de la de 2023."""
+    t = _ins('2022-04-16', 'TRAINING INNOVATION A 12 MSI', 4290.0, cat='APRENDIZAJE', sub='Cursos')
+    for k in range(1, 13):
+        y, m = (2022, 3 + k) if 3 + k <= 12 else (2023, k - 9)
+        _ins(f'{y}-{m:02d}-22', f'{k:02d} DE 12 TRAINING INNOVATION', 358.0, cat='APRENDIZAJE', sub='Cursos',
+             pn=k, pt=12, grupo='t1')
+    for k, mes in ((3, '2023-06'), (4, '2023-07')):
+        _ins(f'{mes}-22', f'0{k} DE 12 TRAINING INNOVATION (B)', 359.0, cat='APRENDIZAJE', sub='Cursos',
+             pn=k, pt=12, grupo='t2')
+    c = _conciliar()[t]
+    assert c['estado'] == 'Liquidada' and all(p['fecha'] < '2023-04' for p in c['pagos'])

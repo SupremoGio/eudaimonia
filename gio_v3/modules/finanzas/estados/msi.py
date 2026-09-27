@@ -49,11 +49,20 @@ def _sumar_meses(ym: tuple[int, int], k: int) -> tuple[int, int]:
     return y + (m - 1) // 12, (m - 1) % 12 + 1
 
 
+DIA_CORTE = 22            # BBVA Crédito corta el 22: compra hasta el 22 -> 1ª mensualidad ese mes
+_TOL = 0.05               # la última mensualidad suele variar unos pesos por redondeo
+
+
+def _dif_meses(a: tuple[int, int], b: tuple[int, int]) -> int:
+    return (a[0] - b[0]) * 12 + (a[1] - b[1])
+
+
 def conciliar(db, hoy: str | None = None) -> list[dict]:
     hoy = hoy or date.today().isoformat()
+    mes_hoy = _mes(hoy)
     compras = db.execute("""
         SELECT id, fecha, descripcion, monto, banco FROM est_movimientos
-        WHERE categoria='FINANZAS' AND subcategoria=? ORDER BY fecha DESC
+        WHERE categoria='FINANZAS' AND subcategoria=? ORDER BY fecha, id
     """, (SUBCAT,)).fetchall()
     usados = set()
     out = []
@@ -62,50 +71,81 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         if not m:
             continue
         comercio, n = m.group(1).strip().upper(), int(m.group(2))
-        total = abs(c['monto'] or 0)
-        cuota = total / n if n else 0
-        pref = comercio[:_PREFIJO]
-        # Mensualidades: mismo banco, mismo comercio, después de la compra, y
-        # o traen «NN de N» o su monto es la cuota (±3 %; la última a veces
-        # es menor por redondeo, esa se liga por el «NN de N»).
-        cand = db.execute("""
+        linea = abs(c['monto'] or 0)
+        base = {'id': c['id'], 'fecha': c['fecha'][:10], 'descripcion': c['descripcion'], 'banco': c['banco'],
+                'mensualidades': n}
+        if linea < 0.005:
+            # Compra que no procedió (el banco la dejó en $0): nada que conciliar.
+            out.append({**base, 'total': 0, 'cuota': 0, 'pagadas': 0, 'pagado': 0, 'restante': 0,
+                        'meses_sin_mensualidad': [], 'por_venir': 0, 'pagos': [], 'posibles': [],
+                        'estado': 'Sin monto'})
+            continue
+        d_compra = c['fecha'][:10]
+        inicio = _mes(d_compra) if int(d_compra[8:10]) <= DIA_CORTE else _sumar_meses(_mes(d_compra), 1)
+        fin = _sumar_meses(inicio, n)            # ventana: n meses + 1 de holgura
+        cand = [dict(r) for r in db.execute("""
             SELECT id, substr(fecha,1,10) AS fecha, descripcion, monto, parcialidad_num, parcialidad_total
             FROM est_movimientos
-            WHERE banco=? AND id != ? AND substr(fecha,1,10) >= ? AND tipo='GASTO'
-              AND COALESCE(subcategoria,'') != ?
-              AND UPPER(descripcion) LIKE ?
-            ORDER BY fecha
-        """, (c['banco'], c['id'], c['fecha'][:10], SUBCAT, f"%{pref}%")).fetchall()
-        pagos = [r for r in cand if r['id'] not in usados and (
-            (r['parcialidad_total'] == n) or (cuota and abs(abs(r['monto']) - cuota) <= cuota * 0.03))]
-        pagos = pagos[:n]
+            WHERE banco=? AND id != ? AND substr(fecha,1,10) >= ? AND substr(fecha,1,7) <= ? AND tipo='GASTO'
+              AND COALESCE(subcategoria,'') != ? AND UPPER(descripcion) LIKE ?
+            ORDER BY fecha, id
+        """, (c['banco'], c['id'], d_compra, f"{fin[0]}-{fin[1]:02d}", SUBCAT,
+              f"%{comercio[:_PREFIJO]}%")).fetchall() if r['id'] not in usados]
+        # ¿La línea trae la cuota en vez del total? (p. ej. «CRISTAL … A 12 MSI
+        # $1,037.50» con mensualidades «10 de 12» de $1,038.)
+        cuota, total, linea_es_cuota = linea / n, linea, False
+        if n > 1 and any(r['parcialidad_total'] == n and abs(abs(r['monto']) - linea) <= linea * _TOL for r in cand):
+            cuota, total, linea_es_cuota = linea, round(linea * n, 2), True
+
+        def encaja(r):
+            if abs(abs(r['monto']) - cuota) > max(cuota * _TOL, 1.0):
+                return False
+            if r['parcialidad_total'] and r['parcialidad_total'] != n:
+                return False
+            k = _dif_meses(_mes(r['fecha']), inicio)
+            if r['parcialidad_num']:          # la «k de n» cae en el mes que le toca (±1)
+                return abs(k - (r['parcialidad_num'] - 1)) <= 1
+            return -1 <= k <= n
+
+        pagos, meses_con = [], set()
+        for r in cand:
+            if len(pagos) >= n:
+                break
+            if encaja(r) and _mes(r['fecha']) not in meses_con:
+                pagos.append(r)
+                meses_con.add(_mes(r['fecha']))
         usados.update(r['id'] for r in pagos)
         pagado = round(sum(abs(r['monto']) for r in pagos), 2)
-        # Meses esperados: la 1ª mensualidad cae en el corte siguiente a la
-        # compra; se buscan en una ventana de N+2 meses.
-        inicio = _sumar_meses(_mes(c['fecha']), 1)
         esperados = [_sumar_meses(inicio, k) for k in range(n)]
-        con_pago = {_mes(r['fecha']) for r in pagos}
-        mes_hoy = _mes(hoy)
-        faltan = [f"{y}-{mm:02d}" for (y, mm) in esperados if (y, mm) not in con_pago and (y, mm) < mes_hoy]
-        por_venir = sum(1 for ym in esperados if ym >= mes_hoy and ym not in con_pago)
-        restante = round(max(total - pagado, 0), 2)
+        faltan = [f"{y}-{mm:02d}" for (y, mm) in esperados
+                  if (y, mm) < mes_hoy and not any(abs(_dif_meses((y, mm), p)) == 0 for p in meses_con)]
+        # Con todas las mensualidades cobradas no hay mes faltante (una pudo
+        # caer en el mes vecino por el día de corte).
+        if len(pagos) >= n:
+            faltan = []
+        por_venir = sum(1 for ym in esperados if ym >= mes_hoy and ym not in meses_con)
         if len(pagos) >= n and abs(total - pagado) <= max(1.0, n * 0.5):
             estado = 'Liquidada'
         elif faltan:
             estado = 'Faltan mensualidades'
-        elif len(pagos) > n or pagado - total > max(1.0, n * 0.5):
+        elif pagado - total > max(1.0, n * 0.5):
             estado = 'Pagado de más'
         else:
             estado = 'En curso'
-        out.append({
-            'id': c['id'], 'fecha': c['fecha'][:10], 'descripcion': c['descripcion'], 'banco': c['banco'],
-            'total': round(total, 2), 'mensualidades': n, 'cuota': round(cuota, 2),
-            'pagadas': len(pagos), 'pagado': pagado, 'restante': restante,
+        otros = [r for r in cand if r['id'] not in usados][:8]
+        out.append({**base,
+            'total': round(total, 2), 'cuota': round(cuota, 2), 'linea_es_cuota': linea_es_cuota,
+            'pagadas': len(pagos), 'pagado': pagado, 'restante': round(max(total - pagado, 0), 2),
             'meses_sin_mensualidad': faltan, 'por_venir': por_venir, 'estado': estado,
             'pagos': [{'id': r['id'], 'fecha': r['fecha'], 'monto': round(abs(r['monto']), 2),
                        'parcialidad': r['parcialidad_num']} for r in pagos],
+            # Cargos del mismo comercio en la ventana que NO se ligaron (otro
+            # monto u otro plazo): para revisar a mano si falta algo.
+            'posibles': [{'id': r['id'], 'fecha': r['fecha'], 'descripcion': r['descripcion'],
+                          'monto': round(abs(r['monto']), 2), 'parcialidad': r['parcialidad_num'],
+                          'de': r['parcialidad_total']} for r in otros],
         })
+    out.sort(key=lambda x: x['fecha'], reverse=True)
 
     # Mensualidades sin compra inicial en la base (p. ej. la compra fue antes
     # del primer estado importado): se agrupan por compra_msi_id.
