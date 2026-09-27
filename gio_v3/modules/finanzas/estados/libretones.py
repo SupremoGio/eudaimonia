@@ -27,6 +27,10 @@ import os
 CARPETAS = {
     'bbva_deb_libreton': ('BBVA_DEB', 'finanzas_libreton_'),
     'bbva_tdc_oro':      ('BBVA_TDC', 'finanzas_bbva_tdc_oro_'),
+    # Formato actual de BBVA Crédito (parsers/bbva.py), cortes 2025-2026 que
+    # el usuario mandó; su base ya tenía esos meses (de CSV) sin las
+    # mensualidades a meses.
+    'bbva_tdc':          ('BBVA_TDC', 'finanzas_bbva_tdc_pdf_'),
 }
 _BASE = os.path.join(os.path.dirname(__file__), 'data')
 
@@ -82,7 +86,7 @@ def aplicar(db, clave: str, carpeta: str = 'bbva_deb_libreton') -> tuple[int, in
     movs = data['movimientos']
     fechas = sorted({m['fecha'] for m in movs} | {m['fecha_cargo'] for m in movs})
     existentes = [dict(r) for r in db.execute(
-        f"""SELECT id, substr(fecha,1,10) AS fecha, ABS(monto) AS monto FROM est_movimientos
+        f"""SELECT id, substr(fecha,1,10) AS fecha, ABS(monto) AS monto, parcialidad_num FROM est_movimientos
             WHERE banco=? AND substr(fecha,1,10) IN ({','.join('?' * len(fechas))})""",
         [banco] + fechas).fetchall()]
     usados, nuevas, ya = set(), [], 0
@@ -100,6 +104,12 @@ def aplicar(db, clave: str, carpeta: str = 'bbva_deb_libreton') -> tuple[int, in
         if match:
             usados.add(match['id'])
             ya += 1
+            # Ya estaba (p. ej. de un CSV) pero sin su «k de n»: se le pone,
+            # para que la conciliación de compras a meses la ligue.
+            if m.get('parcialidad_num') and not match['parcialidad_num']:
+                db.execute("""UPDATE est_movimientos SET parcialidad_num=?, parcialidad_total=?, compra_msi_id=?
+                              WHERE id=?""", (m['parcialidad_num'], m.get('parcialidad_total'),
+                                               m.get('compra_msi_id'), match['id']))
             continue
         cur = db.execute("""INSERT OR IGNORE INTO est_movimientos
                             (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo,

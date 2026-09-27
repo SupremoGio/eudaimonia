@@ -6,12 +6,24 @@ from ._base import (parse_text_statement, extract_periodo, open_pdf, clean_desc,
 
 PAYMENT_KW = ["BMOVIL", "PAGO TDC", "SPEI RECIBIDO", "ABONO RECIBIDO", "PAGO TARJETA"]
 
+# Secciones que listan movimientos pero NO son movimientos del periodo: la de
+# «CARGOS NO RECONOCIDOS» es el estatus de una aclaración (Sheraton $8,910,
+# «Concluida, improcedente») y sale en varios cortes seguidos; leída como
+# movimiento metía un abono falso de $8,910 en cada uno (ago-oct 2025).
+_SECCIONES_INFO = re.compile(
+    r"^CARGOS NO RECONOCIDOS.*?(?=^NOTAS ACLARATORIAS|^ATENCI[ÓO]N DE QUEJAS|^DESGLOSE DE MOVIMIENTOS|\Z)",
+    re.DOTALL | re.MULTILINE)
+
+
+def _sin_secciones_informativas(texto: str) -> str:
+    return _SECCIONES_INFO.sub("", texto)
+
 
 def parse(pdf_path: Path) -> list[dict]:
     movimientos = []
     try:
         with open_pdf(pdf_path, PDF_PASSWORD, PDF_PASSWORD_BBVA) as pdf:
-            full_text = "\n".join(p.extract_text() or "" for p in pdf.pages)
+            full_text = _sin_secciones_informativas("\n".join(p.extract_text() or "" for p in pdf.pages))
             inicio, fin = extract_periodo(full_text)
             periodo = f"{inicio} al {fin}" if inicio and fin else None
             movimientos = parse_text_statement(full_text, PAYMENT_KW, periodo)
