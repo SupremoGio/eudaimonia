@@ -2943,6 +2943,27 @@ def conciliar_msi():
         compras = _msi.conciliar(db, today_str())
     if request.args.get('formato') == 'html':
         return render_template_string(_MSI_HTML, compras=compras)
+    if request.args.get('formato') == 'csv':
+        # Para que el usuario lo revise y lo regrese con COMENTARIOS (plazo
+        # real, «ya liquidada», «esta mensualidad es de otra compra»…).
+        # ?solo=pendientes deja fuera las que ya cuadran (Liquidada).
+        if request.args.get('solo') == 'pendientes':
+            compras = [c for c in compras if c['estado'] != 'Liquidada']
+        filas = [[
+            c['id'] or '', c['fecha'], c['descripcion'], c['banco'], c['estado'],
+            c['total'], c['mensualidades'], c['cuota'], c['pagadas'], c['pagado'], c['restante'],
+            ', '.join(c.get('meses_sin_mensualidad') or []),
+            ', '.join(str(n) for n in (c.get('mensualidades_faltantes') or [])),
+            ', '.join(f"{p['fecha']} ${p['monto']:.2f}" for p in c.get('pagos') or []),
+            ', '.join(f"{p['fecha']} {p['descripcion']} ${p['monto']:.2f}" for p in c.get('posibles') or []),
+            ', '.join(f"{p['fecha']} {p['descripcion']} ${p['monto']:.2f}" for p in c.get('misma_cuota') or []),
+            '',
+        ] for c in compras]
+        return csv_response(['ID compra', 'Fecha', 'Descripción', 'Banco', 'Estado', 'Total', 'Meses',
+                             'Cuota', 'Mensualidades pagadas', 'Pagado', 'Restante',
+                             'Meses sin mensualidad', 'Mensualidades que no aparecen', 'Mensualidades encontradas',
+                             'Otros cargos del comercio (no ligados)', 'Cargos del monto de la cuota (cualquier comercio)',
+                             'COMENTARIOS'], filas, f'compras_msi_{today_str()}.csv')
     return jsonify({'compras': compras})
 
 
@@ -2958,7 +2979,8 @@ body{background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,sans-serif;ma
 details summary{cursor:pointer;color:var(--mut);font-size:12px;margin-top:6px}
 </style></head><body>
 <h2>Compras a meses sin intereses</h2>
-<div class="meta">La compra inicial no cuenta como gasto; cuentan las mensualidades · solo lectura</div>
+<div class="meta">La compra inicial no cuenta como gasto; cuentan las mensualidades · solo lectura ·
+<a href="?formato=csv&solo=pendientes">Descargar CSV (pendientes)</a> · <a href="?formato=csv">CSV completo</a></div>
 {% for c in compras %}<div class="card">
 <div class="row"><strong>{{ c.descripcion }}</strong>
 <span class="{{ 'ok' if c.estado == 'Liquidada' else ('bad' if c.estado in ('Faltan mensualidades', 'Pagado de más') else 'warn') }}">{{ c.estado }}</span></div>
@@ -2969,6 +2991,12 @@ details summary{cursor:pointer;color:var(--mut);font-size:12px;margin-top:6px}
 {% if c.repetidas %}<div class="bad">Hay mensualidades repetidas: posible doble conteo</div>{% endif %}
 {% if c.pagos %}<details><summary>{{ c.pagos|length }} mensualidades</summary><div class="meta">
 {% for p in c.pagos %}{{ p.fecha }} ${{ '{:,.2f}'.format(p.monto) }}{% if p.parcialidad %} ({{ p.parcialidad }}/{{ c.mensualidades }}){% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div></details>{% endif %}
+{% if c.planes %}<div class="meta">Compra de {{ c.planes|length }} productos: {% for pl in c.planes %}{{ pl.mensualidades }} × ${{ '{:,.2f}'.format(pl.cuota) }}{% if not loop.last %} + {% endif %}{% endfor %}</div>{% endif %}
+{% if c.misma_cuota %}<details open><summary>Cargos de ${{ '{:,.2f}'.format(c.cuota) }} en esos meses (cualquier comercio)</summary><div class="meta">
+{% for p in c.misma_cuota %}{{ p.fecha }} {{ p.descripcion }} ${{ '{:,.2f}'.format(p.monto) }}{% if not loop.last %} · {% endif %}{% endfor %}</div></details>{% endif %}
+{% if c.linea_es_cuota %}<div class="meta">La línea de la compra traía la cuota; el total se calculó como cuota × meses.</div>{% endif %}
+{% if c.posibles %}<details><summary>{{ c.posibles|length }} cargos del mismo comercio sin ligar</summary><div class="meta">
+{% for p in c.posibles %}{{ p.fecha }} {{ p.descripcion }} ${{ '{:,.2f}'.format(p.monto) }}{% if not loop.last %} · {% endif %}{% endfor %}</div></details>{% endif %}
 </div>{% else %}<div class="card">No hay compras a meses registradas.</div>{% endfor %}
 </body></html>"""
 
