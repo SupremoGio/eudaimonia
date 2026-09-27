@@ -1,0 +1,325 @@
+{
+ "archivo": "1520361804_202211_C1.pdf",
+ "periodo": "07/10/2022 al 06/11/2022",
+ "totales": {
+  "cargos": 30000.87,
+  "abonos": 24969.15
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-10-07",
+   "fecha_cargo": "2022-10-07",
+   "descripcion": "COMISION POR MEMBRESIA",
+   "monto": 25.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-07",
+   "fecha_cargo": "2022-10-07",
+   "descripcion": "IVA COM MEMBRESIA",
+   "monto": 4.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-07",
+   "fecha_cargo": "2022-10-07",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET APARTADO RENTA",
+   "monto": 2500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-08",
+   "fecha_cargo": "2022-10-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET REGRESO DEPOSITO",
+   "monto": 2500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-11",
+   "fecha_cargo": "2022-10-11",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-13",
+   "fecha_cargo": "2022-10-13",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 12843.3,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-13",
+   "fecha_cargo": "2022-10-12",
+   "descripcion": "PAGO TARJETA DE CREDITO DOMICILIACION",
+   "monto": 292.96,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-13",
+   "fecha_cargo": "2022-10-12",
+   "descripcion": "H&M MX0006 VALLEJO RFC: HAM 111006K69 20:14 AUT: 989780",
+   "monto": 134.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-13",
+   "fecha_cargo": "2022-10-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GIOVANY",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-14",
+   "fecha_cargo": "2022-10-14",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7094.64,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-14",
+   "fecha_cargo": "2022-10-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PRES",
+   "monto": 8000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-14",
+   "fecha_cargo": "2022-10-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO GIO",
+   "monto": 600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-15",
+   "fecha_cargo": "2022-10-17",
+   "descripcion": "RETIRO CAJERO AUTOMATICO OCT15 12:51 BBVA B839 FOLIO:7531",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-16",
+   "fecha_cargo": "2022-10-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET CERVEZA GIO",
+   "monto": 150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-17",
+   "fecha_cargo": "2022-10-17",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-17",
+   "fecha_cargo": "2022-10-16",
+   "descripcion": "LAVANDERIA AQUAMATIC P RFC: OSL 871217LN7 18:22 AUT: 580160",
+   "monto": 40.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-18",
+   "fecha_cargo": "2022-10-18",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 5400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-19",
+   "fecha_cargo": "2022-10-18",
+   "descripcion": "QUEEN LATIN CLUB RFC: COUC7003167Q9 22:43 AUT: 719441",
+   "monto": 60.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-22",
+   "fecha_cargo": "2022-10-24",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET RECARGA A SUPREMO",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-24",
+   "fecha_cargo": "2022-10-21",
+   "descripcion": "OXXOMIL 500 GDL CASH RFC: CCO 8605231N4 20:16 AUT: 103726",
+   "monto": 117.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-24",
+   "fecha_cargo": "2022-10-22",
+   "descripcion": "FRESKO MIDTOWN RFC: CCF 121101KQ4 16:35 AUT: 073832",
+   "monto": 147.61,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-24",
+   "fecha_cargo": "2022-10-23",
+   "descripcion": "7 ELEVEN MEXICO RFC: SEM 980701STA 16:29 AUT: 838444",
+   "monto": 36.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-24",
+   "fecha_cargo": "2022-10-25",
+   "descripcion": "SPEI ENVIADO STP",
+   "monto": 1.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-24",
+   "fecha_cargo": "2022-10-25",
+   "descripcion": "SPEI DEVUELTOSTP",
+   "monto": 1.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-26",
+   "fecha_cargo": "2022-10-27",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-26",
+   "fecha_cargo": "2022-10-27",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-26",
+   "fecha_cargo": "2022-10-27",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-26",
+   "fecha_cargo": "2022-10-27",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-26",
+   "fecha_cargo": "2022-10-27",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-26",
+   "fecha_cargo": "2022-10-27",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-27",
+   "fecha_cargo": "2022-10-27",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 1100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-10-28",
+   "fecha_cargo": "2022-10-28",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7073.51,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-28",
+   "fecha_cargo": "2022-10-28",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TAXI",
+   "monto": 150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-10-29",
+   "fecha_cargo": "2022-10-31",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BOLETO GIO",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-04",
+   "fecha_cargo": "2022-11-04",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  }
+ ]
+}

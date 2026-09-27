@@ -1,0 +1,334 @@
+{
+ "archivo": "1520361804_202212_C1.pdf",
+ "periodo": "07/11/2022 al 06/12/2022",
+ "totales": {
+  "cargos": 32420.82,
+  "abonos": 39460.5
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-11-07",
+   "fecha_cargo": "2022-11-07",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-07",
+   "fecha_cargo": "2022-11-07",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-07",
+   "fecha_cargo": "2022-11-07",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 50.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-07",
+   "fecha_cargo": "2022-11-07",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-07",
+   "fecha_cargo": "2022-11-07",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO SUPREMO",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-09",
+   "fecha_cargo": "2022-11-08",
+   "descripcion": "FAR GUAD 2480 RFC: FGU 830930PD3 18:42 AUT: 341163",
+   "monto": 79.93,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-10",
+   "fecha_cargo": "2022-11-10",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 5160.51,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-10",
+   "fecha_cargo": "2022-11-10",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 4115.14,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-10",
+   "fecha_cargo": "2022-11-10",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 15703.89,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-10",
+   "fecha_cargo": "2022-11-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET EL SABROSO DISFRUT",
+   "monto": 315.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-10",
+   "fecha_cargo": "2022-11-09",
+   "descripcion": "OXXO LAGO SUPERIOR GDL RFC: CCO 8605231N4 21:01 AUT: 701477",
+   "monto": 19.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-13",
+   "fecha_cargo": "2022-11-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MENSUALIDAD GIO",
+   "monto": 420.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-13",
+   "fecha_cargo": "2022-11-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PLAYERA GIO",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-14",
+   "fecha_cargo": "2022-11-11",
+   "descripcion": "FAR GUAD 2480 RFC: FGU 830930PD3 18:59 AUT: 602053",
+   "monto": 14.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-14",
+   "fecha_cargo": "2022-11-11",
+   "descripcion": "FARM GUADALAJARA 15 RFC: FGU 830930PD3 23:35 AUT: 365932",
+   "monto": 50.0,
+   "categoria": "SALUD",
+   "subcategoria": "Farmacia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-14",
+   "fecha_cargo": "2022-11-12",
+   "descripcion": "ABTS MARCELLA RFC: UBC 201215TM8 22:13 AUT: 169305",
+   "monto": 41.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-15",
+   "fecha_cargo": "2022-11-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7094.93,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-15",
+   "fecha_cargo": "2022-11-16",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MENSUALIDAD GIO",
+   "monto": 600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-16",
+   "fecha_cargo": "2022-11-16",
+   "descripcion": "SPEI RECIBIDOBANAMEX",
+   "monto": 2600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-16",
+   "fecha_cargo": "2022-11-16",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET RENTA",
+   "monto": 2500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-17",
+   "fecha_cargo": "2022-11-16",
+   "descripcion": "AQUI ES PEJAMO RFC: AEP 2111227T2 22:36 AUT: 577826",
+   "monto": 190.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-18",
+   "fecha_cargo": "2022-11-18",
+   "descripcion": "CFE REF: CIE:",
+   "monto": 322.0,
+   "categoria": "VIVIENDA",
+   "subcategoria": "Luz",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-18",
+   "fecha_cargo": "2022-11-17",
+   "descripcion": "OXXOLAS RAMBLAS GDL RFC: CCO 8605231N4 18:54 AUT: 649077",
+   "monto": 50.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-18",
+   "fecha_cargo": "2022-11-17",
+   "descripcion": "OXXO CONSULADO RFC: CCO 8605231N4 20:49 AUT: 144478",
+   "monto": 31.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-19",
+   "fecha_cargo": "2022-11-22",
+   "descripcion": "RETIRO CAJERO AUTOMATICO NOV19 14:55 BBVA A605 FOLIO:1705",
+   "monto": 9300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-23",
+   "fecha_cargo": "2022-11-23",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MISHELLE",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-24",
+   "fecha_cargo": "2022-11-24",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-24",
+   "fecha_cargo": "2022-11-25",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-11-27",
+   "fecha_cargo": "2022-11-28",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MOCHILA",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-30",
+   "fecha_cargo": "2022-11-30",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7094.92,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-11-30",
+   "fecha_cargo": "2022-11-30",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-01",
+   "fecha_cargo": "2022-12-01",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MISHELLE CT",
+   "monto": 5300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-02",
+   "fecha_cargo": "2022-12-02",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 4000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-02",
+   "fecha_cargo": "2022-12-05",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 550.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-12-05",
+   "fecha_cargo": "2022-12-05",
+   "descripcion": "SPEI RECIBIDOHSBC",
+   "monto": 280.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-12-06",
+   "fecha_cargo": "2022-12-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 3500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  }
+ ]
+}

@@ -11,6 +11,11 @@ from ._base import open_pdf
 ABONO_KW = [
     "SPEI RECIBIDO", "PAGO DE NOMINA", "DEPOSITO EFECTIVO", "DEPOSITO DE TERCERO",
     "SU PAGO", "SITH", "ABONO", "DEVUELTO",
+    # Devuelve una «RECARGAS Y PAQUETES» del mismo día: siempre abono. Cuando
+    # hay varias recargas y correcciones iguales seguidas, el saldo impreso no
+    # alcanza para decidir cuál es cuál y quedaban como cargo (Libretones
+    # 202210, 202212 y 202301: 16/09, 07/11 y 10/12/2022).
+    "CORRECCION COMPRA TIEMPO",
 ]
 
 # "PAGO CUENTA DE TERCERO" y "CORRECCION" son descripciones que de verdad
