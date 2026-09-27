@@ -85,3 +85,14 @@ def test_credito_cuenta_por_corte_del_23_al_22(client):
     assert b['cortes_sin_movimientos'] == [{'corte': '202209', 'desde': '2022-08-23', 'hasta': '2022-09-22'}]
     html = client.get(URL, query_string={'hasta': '2022-11-22', 'formato': 'html'}).get_data(as_text=True)
     assert '202209 · 2022-08-23 → 2022-09-22' in html and 'Meses sin ningún movimiento' not in html
+
+
+def test_corte_en_curso_no_se_marca(client):
+    """El corte que sigue abierto (hoy 27/09 -> corte 202610, cierra el 22/10)
+    todavía no tiene estado de cuenta: no es un hueco."""
+    _mov('BBVA_TDC', '2026-08-10')                 # corte 202608
+    _mov('BBVA_TDC', '2026-09-20')                 # corte 202609
+    b = client.get(URL, query_string={'hasta': '2026-09-27'}).get_json()['por_banco']['BBVA_TDC']
+    assert b['cortes_sin_movimientos'] == []
+    b = client.get(URL, query_string={'hasta': '2026-10-22'}).get_json()['por_banco']['BBVA_TDC']
+    assert [c['corte'] for c in b['cortes_sin_movimientos']] == ['202610']
