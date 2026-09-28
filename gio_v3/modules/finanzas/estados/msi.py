@@ -100,9 +100,9 @@ def _reafirmar_mensualidades(db) -> int:
     for texto, cuota, plazo, cat, sub in CATEGORIA_MENSUALIDADES:
         n += db.execute("""
             UPDATE est_movimientos SET categoria=?, subcategoria=?
-            WHERE UPPER(descripcion) LIKE ? AND ABS(ABS(monto) - ?) <= 1 AND parcialidad_total=?
+            WHERE UPPER(descripcion) LIKE ? AND ABS(ABS(monto) - ?) <= ? AND parcialidad_total=?
               AND tipo='GASTO' AND (categoria != ? OR COALESCE(subcategoria,'') != ?)
-        """, (cat, sub, f"%{texto}%", cuota, plazo, cat, sub)).rowcount
+        """, (cat, sub, f"%{texto}%", cuota, max(cuota * _TOL, 1.0), plazo, cat, sub)).rowcount
     return n
 
 
@@ -148,6 +148,17 @@ _DIFERIDO = 7             # meses que puede diferirse el inicio («MSI + paga en
 
 def _dif_meses(a: tuple[int, int], b: tuple[int, int]) -> int:
     return (a[0] - b[0]) * 12 + (a[1] - b[1])
+
+
+def _k_real(r, inicio: tuple[int, int]):
+    """El renglón del banco recorta la «k» de dos dígitos: la «11 de 13» del
+    refri Chedraui sale «1 DE 13» (su tabla de MSI sí dice «11 de 13»). Si
+    k + 10 cae en el mes que le toca y k no, es k + 10."""
+    pn, pt = r.get('parcialidad_num'), r.get('parcialidad_total')
+    if not pn or not pt or pn + 10 > pt:
+        return pn
+    k = _dif_meses(_mes(r['fecha']), inicio) + 1
+    return pn + 10 if abs(k - (pn + 10)) < abs(k - pn) else pn
 
 
 def _rivales(db, compras) -> dict:
@@ -270,6 +281,8 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
             """, (c['banco'], c['id'], d_compra, hasta_mes, SUBCAT, like)).fetchall() if r['id'] not in usados]
 
         cand = _buscar(f"%{comercio[:_PREFIJO]}%")
+        for r in cand:
+            r['parcialidad_num'] = _k_real(r, inicio)
         primera = _es_primera(c)
         if primera:                  # la línea misma es la mensualidad 1
             cand = [{'id': c['id'], 'fecha': d_compra, 'descripcion': c['descripcion'], 'monto': c['monto'],
@@ -281,8 +294,11 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         cuota0 = rivales.get(c['id'], {}).get('cuota') or linea / n
         if len(palabra) >= 4 and palabra != comercio[:_PREFIJO]:
             ids = {r['id'] for r in cand}
-            cand += [r for r in _buscar(f"%{palabra}%")
+            extra = [r for r in _buscar(f"%{palabra}%")
                      if r['id'] not in ids and abs(abs(r['monto']) - cuota0) <= max(cuota0 * _TOL, 1.0)]
+            for r in extra:
+                r['parcialidad_num'] = _k_real(r, inicio)
+            cand += extra
             cand.sort(key=lambda r: (r['fecha'], r['id']))
         # ¿La línea trae la cuota en vez del total? (p. ej. «CRISTAL … A 12 MSI
         # $1,037.50» con mensualidades «10 de 12» de $1,038.)

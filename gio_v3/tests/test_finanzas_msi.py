@@ -326,3 +326,22 @@ def test_mensualidad_con_k_de_n_gana_a_cargo_suelto_del_mes(test_db):
     c = _conciliar()
     assert [p['monto'] for p in c[a]['pagos']] == [250.0, 250.0, 249.0] and c[a]['estado'] == 'Liquidada'
     assert not [x for x in c.values() if x['estado'] == 'Sin compra inicial']
+
+
+def test_k_de_dos_digitos_recortada_por_el_banco(test_db):
+    """Refri Chedraui A 13 del 15/10/2023: el banco imprime la 11, 12 y 13
+    como «1 DE 13», «2 DE 13», «3 DE 13» (su tabla MSI dice «11 de 13»). La
+    última ($567) también es del refri, no súper."""
+    ch = _ins('2023-10-15', 'CHEDRAUI TDA EN LINEA A 13 MSI', 7395.0, cat='SUPER', sub='Súper')
+    y, m = 2023, 10
+    for k in range(1, 14):
+        _ins(f'{y}-{m:02d}-22', 'CHEDRAUI TDA EN LINEA', 567.0 if k == 13 else 569.0, cat='SUPER', sub='Súper',
+             pn=k - 10 if k > 10 else k, pt=13)
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    c = _conciliar()
+    assert c[ch]['estado'] == 'Liquidada' and c[ch]['pagadas'] == 13
+    assert [p['parcialidad'] for p in c[ch]['pagos']] == list(range(1, 14))
+    assert not [x for x in c.values() if x['estado'] == 'Sin compra inicial']
+    with database.get_db() as db:
+        cats = {r[0] for r in db.execute("SELECT categoria FROM est_movimientos WHERE parcialidad_total=13")}
+    assert cats == {'VIVIENDA'}
