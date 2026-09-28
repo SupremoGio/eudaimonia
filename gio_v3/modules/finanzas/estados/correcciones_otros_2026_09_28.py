@@ -253,8 +253,8 @@ CORRECCIONES = [
     (4953, '2023-07-30', 10.0, 'ESTACIONAM AMER MIL500', 'TRANSPORTE', 'Estacionamiento'),  # estacionamiento
     # Segunda tanda (47 filas, «lo que faltaba»): comisión de membresía ->
     # COSTOS_FINANCIEROS/Comisiones, Futpool -> DEPORTE/Fútbol, Microsoft Store
-    # -> TECH/DIGITAL/Software. Sin comentario, no se toca: PAYPAL TRENDYIMPOR
-    # $1,279.36 (06/02/2023).
+    # -> TECH/DIGITAL/Software. PAYPAL TRENDYIMPOR $1,279.36 (06/02/2023) llegó
+    # después: artículos de la casa.
     (4396, '2024-05-10', 20.97, '539 GDL LAS AMERICAS ZAPOPA', 'SUPER', 'Súper'),  # super
     (4192, '2022-12-30', 55.0, 'AEROMARKET 1 GDL', 'SUPER', 'Súper'),  # super
     (4260, '2023-02-11', 50.0, 'BON APPETIT', 'CAFE/PAN', 'Pan'),  # pan
@@ -321,6 +321,7 @@ CORRECCIONES = [
     (4103, '2022-06-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
     (17, '2022-05-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
     (4442, '2022-08-29', 7888.0, 'WALMART VENTA EN LIN4', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4277, '2023-02-06', 1279.36, 'PAYPAL TRENDYIMPOR TREN', 'VIVIENDA', 'Artículos del hogar'),  # «mándalo a artículos casa»
 ]
 
 
