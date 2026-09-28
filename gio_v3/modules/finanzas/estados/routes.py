@@ -3217,6 +3217,35 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
     }
 
 
+@estados_bp.route('/admin/expense-plataforma')
+def expense_plataforma_admin():
+    """Solo lectura: depósitos de la empresa que siguen sin lote y qué gastos
+    de la plataforma (y cargos del banco) les tocarían; y los gastos de la
+    plataforma que no quedaron en ningún depósito."""
+    if not _ok(): return _locked()
+    from . import expense_plataforma as _plat
+    with get_db() as db:
+        pl = _plat.plan(db)
+        ligados = {r[0] for r in db.execute("SELECT movimiento_id FROM est_expense_lote_gastos")}
+    asignados = {g['idx'] for p in pl for g in p['gastos']}
+    sin_deposito = [x for x in _plat.items() if x['idx'] not in asignados]
+    data = {'pendientes': pl, 'gastos_plataforma_sin_deposito_pendiente': sin_deposito, 'cargos_en_lotes': len(ligados)}
+    if request.args.get('formato') != 'html':
+        return jsonify(data)
+    fmt = lambda v: f"${float(v):,.2f}"
+    filas = ''.join(
+        f"<tr><td>{p['deposito']['fecha'][:10]}</td><td>{p['deposito']['descripcion']}</td><td class=r>{fmt(p['deposito']['monto'])}</td>"
+        f"<td>{p['pasada'] or '<b>sin pareja</b>'}</td><td>{'<br>'.join(g['fecha'] + ' ' + g['titulo'] + ' ' + fmt(g['monto']) + ('' if g['cargo'] else ' <i>(sin cargo)</i>') for g in p['gastos'])}</td></tr>"
+        for p in pl)
+    return ('<!doctype html><meta charset=utf-8><title>Expense · plataforma</title>'
+            '<style>body{font:14px system-ui;background:#0f0d14;color:#eee;padding:16px}table{border-collapse:collapse;width:100%}'
+            'td,th{padding:6px 10px;border-bottom:1px solid #333;text-align:left;vertical-align:top}.r{text-align:right}th{color:#aaa}</style>'
+            f'<h2>Depósitos de la empresa sin lote ({len(pl)})</h2>'
+            f'<table><tr><th>Fecha</th><th>Depósito</th><th class=r>Monto</th><th>Emparejado por</th><th>Gastos de la plataforma</th></tr>{filas}</table>'
+            f'<h2>Gastos de la plataforma sin depósito pendiente ({len(sin_deposito)})</h2>'
+            '<p>Ya pagados en un lote, o su depósito no está cargado / no se encontró.</p>')
+
+
 @estados_bp.route('/admin/renta')
 def conciliar_renta():
     """Solo lectura: por mes, renta pagada, depósitos de roomies y tu parte."""
