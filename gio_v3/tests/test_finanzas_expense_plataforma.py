@@ -76,3 +76,21 @@ def test_reparacion_toma_gastos_de_otro_deposito_si_este_se_reempareja():
     u = {'id': 2, 'fecha': '2024-01-20', 'monto': 500.0}      # necesita A + B (C es posterior a su fecha)
     res = P.asignar([u, m], g)
     assert {x['idx'] for x in res[2][1]} == {0, 1} and [x['idx'] for x in res[1][1]] == [2]
+
+
+def test_deposito_561_fuera_y_rearmado(test_db, monkeypatch):
+    gastos = [{'fecha': '2024-05-15', 'titulo': 'PASTEL DIA DE LAS MADRES', 'tipo': '', 'monto': 561.0},
+              {'fecha': '2024-05-15', 'titulo': 'PASTEL DIA MADRE', 'tipo': '', 'monto': 561.0}]
+    monkeypatch.setattr(P, 'items', lambda: [{**x, 'idx': i} for i, x in enumerate(gastos)])
+    with database.get_db() as db:
+        c = _mov(db, '2024-05-15', 'PASTELERIA', 561.0, 'CAFE/PAN', 'Pan')
+        d561 = _mov(db, '2024-05-28', 'SITH2 FIDEICOMISO F 1596', 561.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        d2 = _mov(db, '2024-05-20', 'DEPOSITO DE TERCERO EXPENSE GIO BMRCASH', 1122.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        db.commit()
+        monkeypatch.setattr(P, 'DEPOSITOS_FUERA', ())
+        P.conciliar(db); db.commit()                      # como en producción: el de $561 tomó un pastel
+        monkeypatch.setattr(P, 'DEPOSITOS_FUERA', (('2024-05-28', 561.0),))
+        assert P.liberar_lotes_plataforma(db) >= 1
+        P.conciliar(db); db.commit()
+        lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
+        assert d561 not in lotes and [g['id'] for g in lotes[d2]['gastos']] == [c]

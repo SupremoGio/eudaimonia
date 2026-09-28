@@ -6150,6 +6150,26 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_v3 migration warning: {e}")
 
+        # ── FINANZAS — el depósito de $561 del 28/05/2024 no paga gastos de la
+        # plataforma: se rearman todos los lotes de la plataforma (los manuales
+        # no se tocan) y el de $2,973.24 del Día de las Madres queda con sus 8
+        # gastos y sus cargos.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_plataforma_v4_561'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.expense_plataforma import conciliar as _exp_plat4, liberar_lotes_plataforma
+                _lib = liberar_lotes_plataforma(db)
+                _h = _exp_plat4(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_plataforma_v4_561", f"{_lib} lotes liberados; {len(_h)} lotes: " + "; ".join(_h)[:850])
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_plataforma_v4_561: {_lib} liberados, {len(_h)} lotes {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_plataforma_v4_561 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

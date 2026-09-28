@@ -161,6 +161,35 @@ def _cargo_de(item, cargos, usados):
     return candidatos[0] if candidatos else None
 
 
+# Depósitos que no pagan gastos de la plataforma (el usuario, 2026-09-28): el
+# de $561 del 28/05/2024 se quedaba con uno de los dos pasteles de $561 del
+# Día de las Madres que necesita el de $2,973.24 del 20/05/2024 («sí, quita
+# ese de 561 para que cuadre»).
+DEPOSITOS_FUERA = (('2024-05-28', 561.0),)
+
+
+def _fuera(d) -> bool:
+    return any(d['fecha'][:10] == f and abs(float(d['monto']) - m) < 0.005 for f, m in DEPOSITOS_FUERA)
+
+
+def liberar_lotes_plataforma(db) -> int:
+    """Borra los lotes que creó la conciliación con la plataforma (notas
+    «Plataforma de Expense…»; los armados a mano no se tocan) para volver a
+    armarlos todos juntos con la asignación corregida. Sus cargos siguen en
+    EXPENSE y quedan libres; el depósito queda sin lote hasta reconciliar."""
+    lotes = [r[0] for r in db.execute(
+        "SELECT id FROM est_expense_lotes WHERE notas LIKE 'Plataforma de Expense%'").fetchall()]
+    for lid in lotes:
+        gastos = [g[0] for g in db.execute("SELECT movimiento_id FROM est_expense_lote_gastos WHERE lote_id=?", (lid,))]
+        db.execute("DELETE FROM est_expense_lote_gastos WHERE lote_id=?", (lid,))
+        db.execute("DELETE FROM est_expense_lote_depositos WHERE lote_id=?", (lid,))
+        db.execute("DELETE FROM est_expense_lotes WHERE id=?", (lid,))
+        for gid in gastos:
+            db.execute("""UPDATE est_movimientos SET estatus_reembolso=NULL, fecha_reembolso=NULL
+                          WHERE id=? AND COALESCE(estatus_reembolso,'') != ?""", (gid, _lotes.ESTATUS_TERCERO))
+    return len(lotes)
+
+
 def _depositos_empresa(db) -> list[dict]:
     """Todos los depósitos de la empresa, estén o no en un lote: la asignación
     se recalcula siempre sobre todos para que los gastos que ya pagó un lote
@@ -172,7 +201,7 @@ def _depositos_empresa(db) -> list[dict]:
         WHERE tipo = 'INGRESO' AND categoria IN ('FINANZAS', 'EXPENSE')
           AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
         ORDER BY fecha, id
-    """).fetchall() if _lotes._DEP_RE.search(r['descripcion'] or '')]
+    """).fetchall() if _lotes._DEP_RE.search(r['descripcion'] or '') and not _fuera(r)]
 
 
 def plan(db) -> list[dict]:
