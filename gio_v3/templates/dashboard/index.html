@@ -23,9 +23,10 @@
 {% endblock %}
 
 {% block content %}
-{#  Tres zonas: Hoy (XP + nivel), Pendiente (siguiente paso + radar) e
-    Inspiración (palabra + cita). Desktop: grid 1fr / 360px; móvil: una
-    columna en el orden Hoy → Siguiente paso → Pendiente → Virtudes. #}
+{#  Tres zonas: Hoy (XP + nivel), columna lateral (reflexión del día arriba,
+    radar Pendiente, palabra y siguiente paso al final). Desktop: grid
+    1fr / 360px; móvil: una columna en el orden Hoy → Reflexión →
+    Pendiente → Virtudes → … → Siguiente paso. #}
 <div class="dash">
   <div class="dash-main">
     <header class="dash-hello">
@@ -38,10 +39,10 @@
   </div>
 
   <aside class="dash-side" aria-label="Pendiente e inspiración">
-    {% include "dashboard/_next.html" %}
+    {% include "dashboard/_quote.html" %}
     {% include "dashboard/_radar.html" %}
     {% include "dashboard/_word.html" %}
-    {% include "dashboard/_quote.html" %}
+    {% include "dashboard/_next.html" %}
   </aside>
 </div>
 

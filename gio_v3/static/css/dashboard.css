@@ -1,14 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════
    Dashboard (/) — Design System V2 · pantalla 02
    Solo tokens (app.css) y componentes eu-* (components.css).
-   Móvil: una columna Hoy → Siguiente paso → Pendiente → Virtudes →
-   Constancia → Inspiración. ≥1024: grid 1fr / 360px.
+   Móvil: una columna Hoy → Reflexión → Pendiente → Virtudes →
+   Constancia → Palabra → Siguiente paso. ≥1024: grid 1fr / 360px.
    ═══════════════════════════════════════════════════════════════ */
 .dash{display:flex;flex-direction:column;gap:var(--sp-3)}
 .dash-main,.dash-side{display:contents}
 .dash-hello{order:0;display:none}
-.dash-hero{order:1}.dash-next{order:2}.dash-radar{order:3}.dash-virtues{order:4}
-.dash-heat{order:5}.dash-word{order:6}.dash-quote{order:7}
+.dash-hero{order:1}.dash-quote{order:2}.dash-radar{order:3}.dash-virtues{order:4}
+.dash-heat{order:5}.dash-word{order:6}.dash-next{order:7}
 .dash-hello .t-page{margin:var(--sp-2) 0 0}
 .dash h2{margin:0}
 
