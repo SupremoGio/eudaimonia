@@ -77,6 +77,8 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 
 /* ── Fin de semana, foco, alertas ────────────────────────────── */
 .acta-weekend{border-color:var(--cat-border)}
+.acta-weekend-link{border-color:var(--cat-border);align-items:center;color:inherit;text-decoration:none}
+.acta-weekend-link>svg,.acta-weekend-link>i{color:var(--fg-3);flex:none}
 .acta-foco-grid{display:grid;gap:var(--sp-3);margin-top:var(--sp-4)}
 @media (min-width:768px){.acta-foco-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .acta-foco summary svg:first-child{width:16px;height:16px;color:var(--fg-brand)}
