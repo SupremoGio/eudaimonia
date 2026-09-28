@@ -104,11 +104,11 @@ def get_semana_id():
 
 REVISION_METRICS = [
     {"key": "dias_lectura",      "label": "Lectura (Kindle)",    "unit": "días",   "icon": "book-open",   "direction": "up",   "step": "1",   "min": "0", "max": "7",    "placeholder": "0–7"},
-    {"key": "horas_sueno",       "label": "Sueño promedio",      "unit": "h/noche","icon": "moon",        "direction": "up",   "step": "0.1", "min": "0", "max": "12",   "placeholder": "7.5"},
-    {"key": "presupuesto_pct",   "label": "Presupuesto usado",   "unit": "%",      "icon": "landmark",    "direction": "down", "step": "1",   "min": "0", "max": "300",  "placeholder": "85"},
-    {"key": "calorias_quemadas", "label": "Calorías quemadas",   "unit": "kcal/d", "icon": "flame",       "direction": "up",   "step": "10",  "min": "0", "max": "6000", "placeholder": "2200"},
-    {"key": "pasos_promedio",    "label": "Pasos promedio",      "unit": "pasos/d","icon": "footprints",  "direction": "up",   "step": "100", "min": "0", "max": "30000","placeholder": "8000"},
-    {"key": "screen_time_horas", "label": "Pantalla en redes",   "unit": "h/día",  "icon": "smartphone",  "direction": "down", "step": "0.1", "min": "0", "max": "12",   "placeholder": "1.5"},
+    {"key": "horas_sueno",       "label": "Sueño promedio",      "unit": "h/noche","icon": "moon",        "direction": "up",   "step": "any", "min": "0", "max": "12",   "placeholder": "7.5"},
+    {"key": "presupuesto_pct",   "label": "Presupuesto usado",   "unit": "%",      "icon": "landmark",    "direction": "down", "step": "any", "min": "0", "max": "300",  "placeholder": "85"},
+    {"key": "calorias_quemadas", "label": "Calorías quemadas",   "unit": "kcal/d", "icon": "flame",       "direction": "up",   "step": "1",   "min": "0", "max": "6000", "placeholder": "2200"},
+    {"key": "pasos_promedio",    "label": "Pasos promedio",      "unit": "pasos/d","icon": "footprints",  "direction": "up",   "step": "1",   "min": "0", "max": "30000","placeholder": "8000"},
+    {"key": "screen_time_horas", "label": "Pantalla en redes",   "unit": "h/día",  "icon": "smartphone",  "direction": "down", "step": "any", "min": "0", "max": "12",   "placeholder": "1.5"},
 ]
 
 

@@ -53,7 +53,7 @@ function BudgetForm({ budget, existing, onClose, onSaved }) {
           <input id="fz-bf-nombre" className="eu-input" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={categoria ? catMeta(categoria).name : 'Ej. Súper y mercado'} />
         </Field>
         <Field label="Límite mensual (MXN)" htmlFor="fz-bf-lim" error={err}>
-          <input id="fz-bf-lim" className="eu-input eu-input--money" type="number" inputMode="decimal" min="0" step="100" value={limite} onChange={(e) => setLimite(e.target.value)} placeholder="0" />
+          <input id="fz-bf-lim" className="eu-input eu-input--money" type="number" inputMode="decimal" min="0" step="0.01" value={limite} onChange={(e) => setLimite(e.target.value)} placeholder="0" />
         </Field>
       </form>
     </Modal>
