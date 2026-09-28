@@ -6080,6 +6080,22 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_aportacion_renta_roomies_2022_2023 migration warning: {e}")
 
+        # ── FINANZAS — renta variable: tu parte = renta pagada − depósitos de roomies del mes.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_renta_variable_conciliada'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _conciliar_renta_variable
+                _h = _conciliar_renta_variable(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_renta_variable_conciliada", f"{len(_h)} meses: " + "; ".join(_h)[:900])
+                )
+                db.commit()
+                print(f"[DB] finanzas_renta_variable_conciliada: {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_renta_variable_conciliada migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

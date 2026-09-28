@@ -904,6 +904,66 @@ def _corregir_pagos_renta(db) -> int:
     return n
 
 
+_MESES_NOMBRE = {'ENERO': 1, 'FEBRERO': 2, 'MARZO': 3, 'ABRIL': 4, 'MAYO': 5, 'JUNIO': 6, 'JULIO': 7,
+                 'AGOSTO': 8, 'SEPTIEMBRE': 9, 'SETIEMBRE': 9, 'OCTUBRE': 10, 'NOVIEMBRE': 11, 'DICIEMBRE': 12}
+
+
+def _mes_aportacion(fecha: str, descripcion: str) -> str:
+    """Mes de renta al que corresponde un depósito de roomie: el de su fecha,
+    salvo que la descripción nombre el mes («BNET RENTA NOVIEMBRE» del 04/12
+    es noviembre)."""
+    y, m = int(fecha[:4]), int(fecha[5:7])
+    for nombre, n in _MESES_NOMBRE.items():
+        if nombre in (descripcion or '').upper():
+            return f"{y - 1 if n > m else y}-{n:02d}"
+    return f"{y}-{m:02d}"
+
+
+def renta_por_mes(db) -> list[dict]:
+    """Por mes: renta pagada (VIVIENDA/Renta, gasto), lo que depositaron los
+    roomies (VIVIENDA/Aportación renta) y tu parte (mi_parte)."""
+    meses = {}
+    for r in db.execute("""SELECT id, substr(fecha,1,10) f, descripcion, ABS(monto) monto, mi_parte, tipo, subcategoria
+                           FROM est_movimientos WHERE categoria='VIVIENDA'
+                             AND subcategoria IN ('Renta', 'Aportación renta')
+                             AND tipo IN ('GASTO', 'INGRESO')""").fetchall():
+        es_aport = r['subcategoria'] == 'Aportación renta' and r['tipo'] == 'INGRESO'
+        if not es_aport and not (r['subcategoria'] == 'Renta' and r['tipo'] == 'GASTO'):
+            continue
+        mes = _mes_aportacion(r['f'], r['descripcion']) if es_aport else r['f'][:7]
+        d = meses.setdefault(mes, {'mes': mes, 'pagos': [], 'aportaciones': []})
+        (d['aportaciones'] if es_aport else d['pagos']).append(dict(r))
+    out = []
+    for mes in sorted(meses):
+        d = meses[mes]
+        pagado = round(sum(p['monto'] for p in d['pagos']), 2)
+        aport = round(sum(a['monto'] for a in d['aportaciones']), 2)
+        mi = round(sum(abs(p['mi_parte']) if p['mi_parte'] is not None else p['monto'] for p in d['pagos']), 2)
+        out.append({**d, 'pagado': pagado, 'aportaciones_total': aport, 'mi_parte': mi})
+    return out
+
+
+def _conciliar_renta_variable(db) -> list[str]:
+    """Renta compartida con parte variable (el usuario: «era variable, ayúdame
+    a conciliar»): en los meses con depósitos de roomies, tu parte = renta
+    pagada − lo que depositaron, repartido entre los pagos del mes. Solo en
+    pagos sin mi_parte (los $4,000 de 2023 y los $5,500 de 2024 ya son del
+    usuario y no se tocan); si un mes ya tiene algún pago con mi_parte, se
+    deja como está."""
+    hechos = []
+    for d in renta_por_mes(db):
+        if not d['aportaciones'] or not d['pagos'] or d['pagado'] <= 0:
+            continue
+        if any(p['mi_parte'] is not None for p in d['pagos']):
+            continue
+        factor = max(0.0, 1 - d['aportaciones_total'] / d['pagado'])
+        for p in d['pagos']:
+            db.execute("UPDATE est_movimientos SET mi_parte=? WHERE id=?", (round(p['monto'] * factor, 2), p['id']))
+        hechos.append(f"{d['mes']}: renta {d['pagado']:,.2f} - roomies {d['aportaciones_total']:,.2f} = "
+                      f"tu parte {max(0.0, d['pagado'] - d['aportaciones_total']):,.2f}")
+    return hechos
+
+
 def _corregir_expense_en_ingreso(categoria: str, subcategoria: str, tipo: str) -> tuple[str, str]:
     """EXPENSE es exclusivamente para el lado del GASTO (algo que pagas y
     te van a reembolsar -- ver estatus_reembolso/_sugerir_reembolsos). El
@@ -1785,6 +1845,7 @@ def _reaplicar_reglas(db) -> int:
     _msi.marcar_compras(db)
     _csv0926.aplicar(db)
     _otros0928.aplicar(db)
+    _conciliar_renta_variable(db)
     _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
     return total_updated
 
@@ -3137,6 +3198,26 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
         'meses_sin_movimientos': meses_sin,
         'cortes_sin_movimientos': cortes_sin,
     }
+
+
+@estados_bp.route('/admin/renta')
+def conciliar_renta():
+    """Solo lectura: por mes, renta pagada, depósitos de roomies y tu parte."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        meses = renta_por_mes(db)
+    if request.args.get('formato') != 'html':
+        return jsonify(meses)
+    fmt = lambda v: f"${v:,.2f}"
+    filas = ''.join(
+        f"<tr><td>{m['mes']}</td><td class=r>{fmt(m['pagado'])}</td><td class=r>{fmt(m['aportaciones_total'])}</td>"
+        f"<td class=r><b>{fmt(m['mi_parte'])}</b></td><td>{'; '.join(a['descripcion'] + ' ' + fmt(a['monto']) for a in m['aportaciones'])}</td></tr>"
+        for m in meses)
+    return ('<!doctype html><meta charset=utf-8><title>Renta por mes</title>'
+            '<style>body{font:14px system-ui;background:#0f0d14;color:#eee;padding:16px}table{border-collapse:collapse;width:100%}'
+            'td,th{padding:6px 10px;border-bottom:1px solid #333;text-align:left}.r{text-align:right}th{color:#aaa}</style>'
+            '<h2>Renta por mes</h2><p>Tu parte = renta pagada − depósitos de roomies (solo en meses sin «mi parte» manual).</p>'
+            f'<table><tr><th>Mes</th><th class=r>Renta pagada</th><th class=r>Roomies</th><th class=r>Tu parte</th><th>Depósitos</th></tr>{filas}</table>')
 
 
 @estados_bp.route('/admin/msi')
