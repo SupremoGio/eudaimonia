@@ -58,3 +58,15 @@ def test_ventana_amplia_y_dos_depositos(test_db):
         assert s[d1]['confianza'] == 'media' and [f['id'] for f in s[d1]['facturas']] == [vieja]
         assert [d['id'] for d in s[a]['depositos']] == [a, b]
         assert {f['id'] for f in s[a]['facturas']} == {g1, g2}
+
+
+def test_sueltos(test_db):
+    with database.get_db() as db:
+        a = _mov(db, '2024-04-02', 'UBER', 214.0, 'EXPENSE')
+        sola = _mov(db, '2024-04-03', 'CENA SIN REEMBOLSO', 999.0, 'EXPENSE')
+        _mov(db, '2024-05-14', 'SITH2 FIDEICOMISO F 1596', 214.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        dep_solo = _mov(db, '2024-06-14', 'SITH3 FIDEICOMISO F 1596', 12345.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        db.commit()
+        s = E.sueltos(db)
+        assert [d['id'] for d in s['depositos']] == [dep_solo] and [f['id'] for f in s['facturas']] == [sola]
+        assert s['total_depositos'] == 12345.0 and s['total_facturas'] == 999.0

@@ -261,3 +261,20 @@ def sugerencias(db) -> list[dict]:
             buscar([a, b], PASADAS[1][0], 'media')
     out.sort(key=lambda x: x['deposito']['fecha'])
     return out
+
+
+def sueltos(db) -> dict:
+    """Lo que ni está en un lote ni entra en ninguna sugerencia: depósitos de
+    la empresa sin pareja y facturas EXPENSE pendientes sin pareja."""
+    sug = sugerencias(db)
+    con_dep = {d['id'] for s in sug for d in s['depositos']}
+    con_fact = {f['id'] for s in sug for f in s['facturas']}
+    deps = [d for d in _depositos_sin_lote(db) if d['id'] not in con_dep]
+    facts = [g for g in sin_lote(db) if g['id'] not in con_fact
+             and (g['estatus_reembolso'] or 'PENDIENTE') == 'PENDIENTE']
+    return {
+        'depositos': sorted(deps, key=lambda d: d['fecha'], reverse=True),
+        'facturas': sorted(facts, key=lambda g: g['fecha'], reverse=True),
+        'total_depositos': round(sum(d['monto'] for d in deps), 2),
+        'total_facturas': round(sum(g['monto'] for g in facts), 2),
+    }

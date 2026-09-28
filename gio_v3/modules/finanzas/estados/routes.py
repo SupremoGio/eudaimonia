@@ -2129,6 +2129,14 @@ def expense_sugerencias():
         return jsonify(_lotes.sugerencias(db))
 
 
+@estados_bp.route('/api/expense/sueltos')
+def expense_sueltos():
+    """Solo lectura: depósitos y facturas que no están en lote ni en ninguna sugerencia."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_lotes.sueltos(db))
+
+
 @estados_bp.route('/api/expense/export.csv')
 def expense_csv():
     if not _ok(): return _locked()
