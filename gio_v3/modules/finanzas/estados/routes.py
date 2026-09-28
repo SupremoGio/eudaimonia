@@ -792,6 +792,12 @@ PAGOS_AUTO = (  # (fecha, monto, texto)
     ('2022-01-05', 40000.0, 'BNET ULTIMA CARRITO'),
 )
 
+# Abonos que devuelven un gasto (restan a esa categoría, como «REEMBOLSO
+# TEMU»): «BNET CARRITO» $400 del 19/02/2022 = le pagaron gasolina.
+ABONOS_A_GASTO = (  # (fecha, monto, texto, categoria, subcategoria)
+    ('2022-02-19', 400.0, 'BNET CARRITO', 'TRANSPORTE', 'Gasolina'),
+)
+
 # Nómina que en realidad fue aguinaldo (el usuario, 2026-09-28).
 AGUINALDOS = (  # (fecha, monto, texto)
     ('2022-12-16', 10493.87, 'PAGO DE NOMINA'),
@@ -834,6 +840,13 @@ def _corregir_pagos_renta(db) -> int:
                   AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
                   AND (categoria != ? OR COALESCE(subcategoria, '') != ?)
             """, (cat, sub, fecha, monto, f"%{texto}%", cat, sub)).rowcount
+    for fecha, monto, texto, cat, sub in ABONOS_A_GASTO:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria=?, subcategoria=?
+            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
+              AND UPPER(descripcion) LIKE ? AND tipo='INGRESO'
+              AND (categoria != ? OR COALESCE(subcategoria, '') != ?)
+        """, (cat, sub, fecha, monto, f"%{texto}%", cat, sub)).rowcount
     for fecha, monto, texto in SE_CANCELAN:
         n += db.execute("""
             UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
