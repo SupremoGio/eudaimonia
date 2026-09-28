@@ -21,6 +21,7 @@ en la base -> se inserta solo una.
 """
 import json
 import os
+import re
 
 # carpeta en data/ -> (banco, prefijo de la migración). BBVA Crédito: cortes
 # del formato viejo «Tarjeta Oro BBVA» (parsers/bbva.py::parse_tarjeta_oro).
@@ -33,6 +34,26 @@ CARPETAS = {
     'bbva_tdc':          ('BBVA_TDC', 'finanzas_bbva_tdc_pdf_'),
 }
 _BASE = os.path.join(os.path.dirname(__file__), 'data')
+
+
+def _palabras(desc: str) -> set:
+    """Palabras del comercio (sin el prefijo «NN DE NN»), para saber si dos
+    filas del mismo monto son el mismo cargo."""
+    d = re.sub(r'^\d{1,2} DE \d{1,2}\s+', '', (desc or '').upper())
+    return {w for w in re.split(r'[^A-Z0-9ÁÉÍÓÚÑ]+', d) if len(w) >= 4}
+
+
+def _match(existentes, usados, m):
+    """La fila de la base que ya es este movimiento del PDF, o None. Primero
+    una del mismo comercio en su fecha de operación o de liquidación; si no,
+    cualquiera del mismo monto en la MISMA fecha de operación. Por fecha de
+    liquidación con otro comercio no: la mensualidad Amazon $114 del 22/07
+    no es el Little Caesars de $114 del 23/07."""
+    libres = [e for e in existentes if e['id'] not in usados and abs(e['monto'] - abs(m['monto'])) < 0.005]
+    pal = _palabras(m['descripcion'])
+    return (next((e for e in libres if e['fecha'] in (m['fecha'], m['fecha_cargo'])
+                  and pal & _palabras(e['descripcion'])), None)
+            or next((e for e in libres if e['fecha'] == m['fecha']), None))
 
 
 def archivos(carpeta: str = 'bbva_deb_libreton') -> list[str]:
@@ -86,7 +107,7 @@ def aplicar(db, clave: str, carpeta: str = 'bbva_deb_libreton') -> tuple[int, in
     movs = data['movimientos']
     fechas = sorted({m['fecha'] for m in movs} | {m['fecha_cargo'] for m in movs})
     existentes = [dict(r) for r in db.execute(
-        f"""SELECT id, substr(fecha,1,10) AS fecha, ABS(monto) AS monto, parcialidad_num FROM est_movimientos
+        f"""SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto, parcialidad_num FROM est_movimientos
             WHERE banco=? AND substr(fecha,1,10) IN ({','.join('?' * len(fechas))})""",
         [banco] + fechas).fetchall()]
     usados, nuevas, ya = set(), [], 0
@@ -98,9 +119,7 @@ def aplicar(db, clave: str, carpeta: str = 'bbva_deb_libreton') -> tuple[int, in
         k = (m['fecha'], m['descripcion'], m['monto'])
         repetidos[k] = repetidos.get(k, 0) + 1
         desc = m['descripcion'] if repetidos[k] == 1 else f"{m['descripcion']} ({repetidos[k]})"
-        match = next((e for e in existentes if e['id'] not in usados
-                      and e['fecha'] in (m['fecha'], m['fecha_cargo'])
-                      and abs(e['monto'] - abs(m['monto'])) < 0.005), None)
+        match = _match(existentes, usados, m)
         if match:
             usados.add(match['id'])
             ya += 1
@@ -129,3 +148,51 @@ def aplicar(db, clave: str, carpeta: str = 'bbva_deb_libreton') -> tuple[int, in
         _unify_movimiento_interno(db, nuevas)
         _auto_clasificar_nomina(db, nuevas)
     return len(nuevas), ya
+
+
+def reparar_parcialidades(db) -> list:
+    """Una sola vez: el cargador viejo empataba por monto y fecha de
+    liquidación sin ver el comercio, y a veces le ponía la «k de n» de una
+    mensualidad a otro cargo (Little Caesars $114 del 23/07/2026 se quedó con
+    la «6 de 6» de Amazon del 22/07, y la mensualidad no se insertó). Por cada
+    mensualidad de los PDFs cargados: si la fila que tiene su «k de n» es de
+    otro comercio, se le quita y se inserta la mensualidad."""
+    from .routes import _reaplicar_reglas, _unify_movimiento_interno
+    arreglos, nuevas = [], []
+    for carpeta, (banco, _) in CARPETAS.items():
+        for clave in archivos(carpeta):
+            data = cargar(clave, carpeta)
+            for m in data['movimientos']:
+                if not m.get('parcialidad_num'):
+                    continue
+                filas = db.execute("""
+                    SELECT id, descripcion FROM est_movimientos
+                    WHERE banco=? AND substr(fecha,1,10) IN (?,?) AND ABS(ABS(monto) - ?) < 0.005
+                      AND parcialidad_num=? AND parcialidad_total IS ?""",
+                    (banco, m['fecha'], m['fecha_cargo'], abs(m['monto']),
+                     m['parcialidad_num'], m.get('parcialidad_total'))).fetchall()
+                pal = _palabras(m['descripcion'])
+                if not filas or any(pal & _palabras(f['descripcion']) for f in filas):
+                    continue
+                for f in filas:
+                    db.execute("""UPDATE est_movimientos SET parcialidad_num=NULL, parcialidad_total=NULL,
+                                  compra_msi_id=NULL WHERE id=?""", (f['id'],))
+                ya = db.execute("""SELECT 1 FROM est_movimientos WHERE banco=? AND substr(fecha,1,10)=?
+                                   AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion)=?""",
+                                (banco, m['fecha'], abs(m['monto']), m['descripcion'].upper())).fetchone()
+                if not ya:
+                    cur = db.execute("""INSERT OR IGNORE INTO est_movimientos
+                        (fecha, fecha_cargo, descripcion, monto, banco, periodo, categoria, subcategoria, tipo,
+                         parcialidad_num, parcialidad_total, compra_msi_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                        (m['fecha'], m['fecha_cargo'], m['descripcion'], m['monto'], banco, data['periodo'],
+                         m['categoria'], m['subcategoria'], m['tipo'], m['parcialidad_num'],
+                         m.get('parcialidad_total'), m.get('compra_msi_id')))
+                    if cur.rowcount:
+                        nuevas.append(cur.lastrowid)
+                arreglos.append(f"{m['fecha']} {m['descripcion']} ${abs(m['monto']):,.2f} "
+                                f"(estaba en: {', '.join(f['descripcion'] for f in filas)})")
+    if nuevas:
+        _unify_movimiento_interno(db, nuevas)
+    if arreglos:
+        _reaplicar_reglas(db)
+    return arreglos

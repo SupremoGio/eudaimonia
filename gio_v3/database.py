@@ -5734,6 +5734,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_msi_chedraui_ultima migration warning: {e}")
 
+        # ── FINANZAS — mensualidades cuya «k de n» el cargador viejo le puso a
+        # otro comercio del mismo monto (fecha de liquidación): se corrigen y
+        # se inserta la mensualidad que faltaba (libretones.reparar_parcialidades).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_msi_parcialidades_mal_ligadas'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.libretones import reparar_parcialidades as _rep_parc
+                _arr = _rep_parc(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_msi_parcialidades_mal_ligadas", f"{len(_arr)} arreglos: " + "; ".join(_arr)[:900])
+                )
+                db.commit()
+                print(f"[DB] finanzas_msi_parcialidades_mal_ligadas: {len(_arr)} arreglos {_arr}")
+            except Exception as e:
+                print(f"[DB] finanzas_msi_parcialidades_mal_ligadas migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
