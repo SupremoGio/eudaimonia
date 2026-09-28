@@ -165,3 +165,14 @@ def test_bonos_bmrcash(test_db):
         assert _corregir_pagos_renta(db) == 2
         assert {tuple(r) for r in db.execute("SELECT descripcion, categoria, subcategoria FROM est_movimientos")} == \
             {('DEPOSITO DE TERCERO · BONO BMRCASH', 'NOMINA', 'Bono')}
+
+
+def test_ultima_letra_del_carro(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta
+    assert 'Pago auto' in SUBCATEGORIAS['TRANSPORTE']
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES ('2022-01-05', 'PAGO CUENTA DE TERCERO BNET ULTIMA CARRITO', 40000, 'BBVA_DEB', 'FINANZAS', 'Transferencia', 'GASTO')""")
+        db.commit()
+        assert _corregir_pagos_renta(db) == 1
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos").fetchone()) == ('TRANSPORTE', 'Pago auto')
