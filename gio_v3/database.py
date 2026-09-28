@@ -5786,6 +5786,23 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_otros_csv_2026_09_28 migration warning: {e}")
 
+        # ── FINANZAS — segunda tanda de «Sin clasificar» (47 filas); aplicar()
+        # es idempotente, así que repasa también las 214 de la primera.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_otros_csv_2026_09_28_b'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_otros_2026_09_28 import aplicar as _otros_0928b
+                _ok, _falta = _otros_0928b(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_otros_csv_2026_09_28_b", f"{_ok} reclasificadas, {_falta} no encontradas")
+                )
+                db.commit()
+                print(f"[DB] finanzas_otros_csv_2026_09_28_b: {_ok} reclasificadas, {_falta} no encontradas")
+            except Exception as e:
+                print(f"[DB] finanzas_otros_csv_2026_09_28_b migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

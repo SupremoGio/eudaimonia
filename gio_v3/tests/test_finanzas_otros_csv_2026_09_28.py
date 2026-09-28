@@ -19,7 +19,7 @@ def _ins(db, mid, fecha, desc, monto, cat='OTROS'):
 def test_categorias_validas():
     for *_, cat, sub in corr.CORRECCIONES:
         assert cat == 'EXPENSE' or sub in SUBCATEGORIAS[cat], (cat, sub)
-    assert len(corr.CORRECCIONES) == 214 and len({c[0] for c in corr.CORRECCIONES}) == 214
+    assert len(corr.CORRECCIONES) == 261 and len({c[0] for c in corr.CORRECCIONES}) == 261
 
 
 def test_aplica_por_id_y_por_comercio(test_db):

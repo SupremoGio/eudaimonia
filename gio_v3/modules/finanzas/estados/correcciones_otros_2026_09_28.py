@@ -1,5 +1,5 @@
 """
-Correcciones de «Sin clasificar» (2026-09-28): el usuario bajó OTROS con el
+Correcciones de «Sin clasificar» (2026-09-28, 214 + 47 filas): el usuario bajó OTROS con el
 botón CSV del detalle de categoría y le puso un comentario a cada fila.
 Cada una se identifica por id + fecha + monto; si el id no coincide (otra
 base), por fecha + monto + comercio siempre que siga en OTROS. Comentario ->
@@ -251,6 +251,57 @@ CORRECCIONES = [
     (4900, '2023-05-06', 15.0, 'ESTACIONAM AMER MIL500', 'TRANSPORTE', 'Estacionamiento'),  # estacionamiento
     (4899, '2023-05-01', 15.0, 'ESTACIONAM AMER MIL500', 'TRANSPORTE', 'Estacionamiento'),  # estacionamiento
     (4953, '2023-07-30', 10.0, 'ESTACIONAM AMER MIL500', 'TRANSPORTE', 'Estacionamiento'),  # estacionamiento
+    # Segunda tanda (47 filas, «lo que faltaba»): comisión de membresía ->
+    # COSTOS_FINANCIEROS/Comisiones, Futpool -> DEPORTE/Fútbol, Microsoft Store
+    # -> TECH/DIGITAL/Software. Sin comentario, no se toca: PAYPAL TRENDYIMPOR
+    # $1,279.36 (06/02/2023).
+    (4396, '2024-05-10', 20.97, '539 GDL LAS AMERICAS ZAPOPA', 'SUPER', 'Súper'),  # super
+    (4192, '2022-12-30', 55.0, 'AEROMARKET 1 GDL', 'SUPER', 'Súper'),  # super
+    (4260, '2023-02-11', 50.0, 'BON APPETIT', 'CAFE/PAN', 'Pan'),  # pan
+    (5042, '2023-09-11', 72.8, 'CARNICERIAS PTO BELLO', 'SUPER', 'Súper'),  # super
+    (4633, '2022-08-18', 175.5, 'CARNICERIAS PTO BELLO', 'SUPER', 'Súper'),  # super
+    (4237, '2023-01-28', 103.87, 'CCP MIDTOWN JALISCO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5029, '2023-09-02', 89.9, 'CCP MIDTOWN JALISCO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4987, '2023-08-19', 89.9, 'CCP MIDTOWN JALISCO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4021, '2026-08-20', 182.36, 'CENTRO ARTESANAL DONAMA', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4438, '2022-09-15', 139.0, 'CK PROVIDENCIA', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4305, '2023-06-04', 142.0, 'CLIP MX KABAB CAIRO CO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4807, '2023-02-24', 176.0, 'CLIP MX MALA NOCHE CHA', 'SALSA', 'Social'),  # salsa
+    (4779, '2022-11-08', 193.73, 'CLIP MX VORRECHT S A D', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4692, '2022-10-03', 154.0, 'CLIP MX*SALTERRA', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4571, '2024-05-25', 55.0, 'CLIPMX MANNA BOULANGE', 'CAFE/PAN', 'Pan'),  # pan
+    (4374, '2024-04-30', 20.0, 'CLIPMX PACHANGUITOS', 'CAFE/PAN', 'Pan'),  # pan
+    (4694, '2022-10-07', 25.0, 'COMISION POR MEMBRESIA', 'COSTOS_FINANCIEROS', 'Comisiones'),  # comision
+    (4604, '2024-06-12', 22.0, 'FARMASAL COUNTRY', 'SALUD', 'Farmacia'),  # farmacia
+    (4343, '2023-07-04', 27.0, 'FUTPOOLGDL', 'DEPORTE', 'Fútbol'),  # deporte
+    (4194, '2022-12-31', 100.0, 'GAS ISLA REGIA', 'TRANSPORTE', 'Gasolina'),  # gasolina
+    (4695, '2022-10-07', 4.0, 'IVA COM MEMBRESIA', 'COSTOS_FINANCIEROS', 'Comisiones'),  # comision
+    (4892, '2023-04-29', 56.0, 'KIDZANIA GDL', 'OCIO', 'Salidas'),  # entretenimiento
+    (4387, '2024-05-07', 182.0, 'KIOSKOS MIX', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4600, '2024-06-07', 76.0, 'KK PLAZA PATRIA GDL', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4772, '2022-10-30', 752.0, 'MENNENGH', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4935, '2023-07-23', 35.0, 'MERPAGO CCBRETON', 'SUPER', 'Súper'),  # super
+    (4410, '2024-05-18', 104.0, 'MERPAGO MARTIN', 'SALSA', 'Social'),  # salsa
+    (4067, '2022-07-25', 25.0, 'MERPAGO*DANNYYO', 'SUPER', 'Súper'),  # super
+    (4838, '2023-03-09', 10.0, 'MICROSOFT STORE', 'TECH/DIGITAL', 'Software'),  # tecnologia software
+    (4950, '2023-07-28', 193.0, 'NETPAY GAMBINOS', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4650, '2022-09-05', 199.0, 'NETPAY*STEREN', 'TECH/DIGITAL', 'Accesorios'),  # tecnologia
+    (4768, '2022-10-27', 100.0, 'NUTRISA 12480 M JALISC', 'CAFE/PAN', 'Pan'),  # café pan
+    (4125, '2022-09-29', 100.0, 'NUTRISA 12480 M JALISC', 'CAFE/PAN', 'Pan'),  # café pan
+    (4636, '2022-08-26', 100.0, 'NUTRISA 12480 M JALISC', 'CAFE/PAN', 'Pan'),  # café pan
+    (4339, '2023-06-29', 75.0, 'NUTRISA P PATRIA GDL', 'CAFE/PAN', 'Pan'),  # café pan
+    (4646, '2022-09-02', 176.0, 'OHLALA BISTROT', 'CAFE/PAN', 'Pan'),  # café pan
+    (4771, '2022-10-30', 67.0, 'PALE MANHATTAN', 'CAFE/PAN', 'Pan'),  # café pan
+    (4532, '2024-09-01', 137.5, 'PELIGRO AL FONDO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4065, '2022-07-25', 135.0, 'QIN MIDTOWN', 'COMIDA_FUERA', 'Fast Food'),  # fast food
+    (4575, '2024-05-25', 20.0, 'S WOW S HERR Y CAIRO', 'SUPER', 'Súper'),  # super
+    (4131, '2022-10-11', 150.0, 'SITIO 300', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4334, '2023-06-23', 100.0, 'UNIV B9', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4896, '2023-04-29', 50.0, 'ZTL CRISTINATAYLORCHOC', 'SUPER', 'Súper'),  # super
+    (4172, '2022-12-18', 136.0, 'ZTL JUANCARLOSBERRUTTI', 'SALSA', 'Social'),  # salsa
+    (4301, '2023-06-03', 147.0, 'ZTL LOSSABROSOSMOCHIS', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4059, '2022-07-19', 127.0, 'ZTL*EDUARDORODRIGUEZRO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4069, '2022-07-26', 39.0, 'ZTL*YADIRAAZUCENACEBAL', 'SUPER', 'Súper'),  # super
 ]
 
 
