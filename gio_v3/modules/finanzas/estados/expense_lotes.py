@@ -149,15 +149,20 @@ def reafirmar_categorias(db) -> int:
 
 
 def filas_csv(db) -> list[list]:
+    """Todo lo de Expense en un archivo, con ID para poder conciliar fuera de
+    la app: facturas y depósitos de cada lote, facturas sin lote y los
+    depósitos de la empresa que aún no están en ningún lote."""
     filas = []
     for l in listar(db):
         for g in l['gastos']:
-            filas.append([l['nombre'], l['estado'], 'Factura', g['fecha'], g['descripcion'], g['monto'],
-                          'Pagado a compañero' if g['estatus_reembolso'] == ESTATUS_TERCERO else ''])
+            filas.append([g['id'], l['nombre'], l['estado'], 'Factura', g['fecha'], g['descripcion'], g['monto'],
+                          'Pagado a compañero' if g['estatus_reembolso'] == ESTATUS_TERCERO else '', ''])
         for d in l['depositos']:
-            filas.append([l['nombre'], l['estado'], 'Depósito', d['fecha'], d['descripcion'], d['monto'], ''])
+            filas.append([d['id'], l['nombre'], l['estado'], 'Depósito', d['fecha'], d['descripcion'], d['monto'], '', ''])
     for g in sin_lote(db):
-        filas.append(['', 'Sin lote', 'Factura', g['fecha'], g['descripcion'], g['monto'], g['estatus_reembolso'] or ''])
+        filas.append([g['id'], '', 'Sin lote', 'Factura', g['fecha'], g['descripcion'], g['monto'], g['estatus_reembolso'] or '', ''])
+    for d in _depositos_sin_lote(db):
+        filas.append([d['id'], '', 'Sin lote', 'Depósito', d['fecha'], d['descripcion'], d['monto'], '', ''])
     return filas
 
 
