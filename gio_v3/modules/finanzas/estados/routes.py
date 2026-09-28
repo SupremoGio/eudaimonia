@@ -1500,22 +1500,36 @@ def summary_pendientes():
         # menos la última mensualidad vista (no las contadas: una que no se
         # importó porque falta ese estado de cuenta ya se pagó, no es un cargo
         # futuro -- esas salen en /admin/msi como «faltan mensualidades»).
+        # Solo cuentan las cuotas que caen DESPUÉS del último estado de cuenta
+        # cargado de ese banco: si una compra vio su cuota 5/6 en junio y ya
+        # está cargado septiembre, la 6/6 cayó en julio (o se liquidó antes) y
+        # no es deuda por pagar. Antes se sumaban las «faltantes» de todas las
+        # compras de la historia (usuario, 2026-09-28: 36 compras / $29,539
+        # «activas», casi todas de 2022-2025 ya terminadas).
         msi_rows = db.execute("""
-            SELECT compra_msi_id,
+            SELECT compra_msi_id, banco,
                    MAX(parcialidad_total) AS total_cuotas,
                    MAX(parcialidad_num) AS cuotas_vistas,
-                   AVG(monto) AS monto_cuota
+                   AVG(monto) AS monto_cuota,
+                   MAX(substr(fecha, 1, 7)) AS ultimo_mes
             FROM est_movimientos
             WHERE compra_msi_id IS NOT NULL
             GROUP BY compra_msi_id
         """).fetchall()
+        ultimo_mes_banco = {r[0]: r[1] for r in db.execute(
+            "SELECT banco, MAX(substr(fecha, 1, 7)) FROM est_movimientos GROUP BY banco").fetchall()}
+
+    def _mes(ym):
+        return int(ym[:4]) * 12 + int(ym[5:7])
 
     msi_restante = 0.0
     msi_compras_activas = 0
     for r in msi_rows:
         faltan = (r['total_cuotas'] or 0) - (r['cuotas_vistas'] or 0)
-        if faltan > 0:
-            msi_restante += faltan * (r['monto_cuota'] or 0)
+        corte = ultimo_mes_banco.get(r['banco']) or r['ultimo_mes']
+        futuras = faltan - max(0, _mes(corte) - _mes(r['ultimo_mes'])) if r['ultimo_mes'] else faltan
+        if futuras > 0:
+            msi_restante += futuras * (r['monto_cuota'] or 0)
             msi_compras_activas += 1
 
     return jsonify({

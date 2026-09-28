@@ -199,3 +199,20 @@ def test_pendientes_excludes_msi_purchase_already_fully_seen(client):
     data = resp.get_json()
     assert data['msi_compras_activas'] == 0
     assert data['msi_restante_total'] == 0.0
+
+
+def test_pendientes_ignora_msi_que_ya_terminaron(client):
+    """Una compra 5/6 de junio con septiembre ya cargado terminó en julio: no
+    es deuda. Una 4/15 de septiembre sí debe 11 cuotas."""
+    import database
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (fecha,descripcion,monto,banco,categoria,tipo,
+                      parcialidad_num,parcialidad_total,compra_msi_id)
+                      VALUES ('2026-06-22','AMAZON A MESES',327.0,'BBVA_TDC','DIGITAL','GASTO',5,6,'viejo')""")
+        db.execute("""INSERT INTO est_movimientos (fecha,descripcion,monto,banco,categoria,tipo,
+                      parcialidad_num,parcialidad_total,compra_msi_id)
+                      VALUES ('2026-09-22','AMAZON A MESES',480.0,'BBVA_TDC','DIGITAL','GASTO',4,15,'nuevo')""")
+        db.commit()
+    data = client.get('/finanzas/estados/api/summary/pendientes').get_json()
+    assert data['msi_compras_activas'] == 1
+    assert data['msi_restante_total'] == 5280.0
