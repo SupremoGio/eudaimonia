@@ -153,3 +153,15 @@ def test_finiquito_2022_como_bono(test_db):
             "SELECT monto, descripcion, categoria, subcategoria FROM est_movimientos")))
         assert rows[16712.43] == ('DEPOSITO DE TERCERO · FINIQUITO', 'NOMINA', 'Bono')
         assert rows[4547.41] == ('DEPOSITO DE TERCERO · NOMINA Q07', 'NOMINA', 'Pago nominal')
+
+
+def test_bonos_bmrcash(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta
+    with database.get_db() as db:
+        for f, m in (('2021-12-16', 3833.50), ('2022-01-13', 807.01)):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES (?, 'DEPOSITO DE TERCERO', ?, 'BBVA_DEB', 'OTROS', '', 'INGRESO')""", (f, m))
+        db.commit()
+        assert _corregir_pagos_renta(db) == 2
+        assert {tuple(r) for r in db.execute("SELECT descripcion, categoria, subcategoria FROM est_movimientos")} == \
+            {('DEPOSITO DE TERCERO · BONO BMRCASH', 'NOMINA', 'Bono')}

@@ -5964,6 +5964,22 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_nomina_q07_2022 migration warning: {e}")
 
+        # ── FINANZAS — depósitos BMRCASH del 16/12/2021 y 13/01/2022 -> NOMINA/Bono.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_bonos_bmrcash_2022'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_pagos_renta
+                _n = _corregir_pagos_renta(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_bonos_bmrcash_2022", f"{_n} cambios")
+                )
+                db.commit()
+                print(f"[DB] finanzas_bonos_bmrcash_2022: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_bonos_bmrcash_2022 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

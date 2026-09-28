@@ -799,6 +799,9 @@ BONOS = (  # (fecha, monto, texto, subcategoría de NOMINA, etiqueta)
     ('2022-04-05', 16712.43, 'DEPOSITO DE TERCERO', 'Bono', 'FINIQUITO'),
     # «80338 Q7 BMRCASH»: quincena 7 (1ª de abril) de la empresa anterior.
     ('2022-04-13', 4547.41, 'DEPOSITO DE TERCERO', 'Pago nominal', 'NOMINA Q07'),
+    # «GIOVANY ALBERTO SANCHEZ BMRCASH» (empresa anterior): el usuario, «mételos como bonos».
+    ('2021-12-16', 3833.50, 'DEPOSITO DE TERCERO', 'Bono', 'BONO BMRCASH'),
+    ('2022-01-13', 807.01, 'DEPOSITO DE TERCERO', 'Bono', 'BONO BMRCASH'),
 )
 
 # Transferencias que se cancelan entre sí (salió y regresó el mismo día):
