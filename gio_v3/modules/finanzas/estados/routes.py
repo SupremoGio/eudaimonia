@@ -787,9 +787,16 @@ PAGOS_CELULAR = (  # (fecha, monto, texto)
 )
 
 
+# Nómina que en realidad fue aguinaldo (el usuario, 2026-09-28).
+AGUINALDOS = (  # (fecha, monto, texto)
+    ('2022-12-16', 10493.87, 'PAGO DE NOMINA'),
+)
+
+
 def _corregir_pagos_renta(db) -> int:
     """Reafirma PAGOS_RENTA (VIVIENDA/Renta), PAGOS_COSTO_FINANCIERO
-    (COSTOS_FINANCIEROS/Intereses) y PAGOS_CELULAR (DIGITAL/Celular)."""
+    (COSTOS_FINANCIEROS/Intereses), PAGOS_CELULAR (DIGITAL/Celular) y
+    AGUINALDOS (NOMINA/Aguinaldo, del lado ingreso)."""
     n = 0
     for lista, cat, sub in ((PAGOS_RENTA, 'VIVIENDA', 'Renta'),
                             (PAGOS_COSTO_FINANCIERO, 'COSTOS_FINANCIEROS', 'Intereses'),
@@ -801,6 +808,13 @@ def _corregir_pagos_renta(db) -> int:
                   AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
                   AND (categoria != ? OR COALESCE(subcategoria, '') != ?)
             """, (cat, sub, fecha, monto, f"%{texto}%", cat, sub)).rowcount
+    for fecha, monto, texto in AGUINALDOS:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Aguinaldo'
+            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
+              AND UPPER(descripcion) LIKE ? AND tipo='INGRESO'
+              AND (categoria != 'NOMINA' OR COALESCE(subcategoria, '') != 'Aguinaldo')
+        """, (fecha, monto, f"%{texto}%")).rowcount
     return n
 
 

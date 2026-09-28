@@ -125,3 +125,15 @@ def test_chedraui_walmart_2022_desde_super(test_db):
         db.commit()
         corr.aplicar(db)
         assert {tuple(r) for r in db.execute("SELECT categoria, subcategoria FROM est_movimientos")} == {('VIVIENDA', 'Artículos del hogar')}
+
+
+def test_aguinaldo_2022(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta
+    with database.get_db() as db:
+        for f, m in (('2022-12-16', 10493.87), ('2022-12-15', 7094.93)):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES (?, 'PAGO DE NOMINA FIBRA HOTELERA SC', ?, 'BBVA_DEB', 'NOMINA', 'Pago nominal', 'INGRESO')""", (f, m))
+        db.commit()
+        assert _corregir_pagos_renta(db) == 1
+        got = dict(db.execute("SELECT monto, subcategoria FROM est_movimientos").fetchall())
+        assert got == {10493.87: 'Aguinaldo', 7094.93: 'Pago nominal'}
