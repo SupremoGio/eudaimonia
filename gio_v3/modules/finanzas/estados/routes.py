@@ -742,7 +742,7 @@ def _corregir_pagos_salsa(db) -> int:
     return n
 
 
-# Transferencias BNET de $5,000 que fueron renta (el usuario, 2026-09-28:
+# Transferencias, SPEI y retiros que fueron renta (el usuario, 2026-09-28:
 # «mándalos a renta»). Mismo patrón que PAGOS_SALSA: se reafirman en «Aplicar
 # reglas» para que ninguna keyword las regrese a FINANZAS/Transferencia.
 PAGOS_RENTA = (  # (fecha, monto, texto)
@@ -750,6 +750,13 @@ PAGOS_RENTA = (  # (fecha, monto, texto)
     ('2023-04-01', 5000.0, 'BNET PRIMERA PARTE'),
     ('2023-05-12', 5000.0, 'BNET TRANSF A'),
     ('2024-09-29', 5000.0, 'BNET TRANSF A GIOVANY A'),
+    # Segunda tanda (mismo día): retiros en efectivo y SPEI con los que pagó renta en 2022.
+    ('2022-07-20', 9000.0, 'SPEI ENVIADO BANAMEX'),
+    ('2022-07-22', 5000.0, 'SPEI ENVIADO BAJIO'),
+    ('2022-09-21', 5000.0, 'RETIRO CAJERO AUTOMATICO SEP21'),
+    ('2022-10-18', 5400.0, 'RETIRO SIN TARJETA'),
+    ('2022-11-19', 9300.0, 'RETIRO CAJERO AUTOMATICO NOV19'),
+    ('2022-12-18', 8000.0, 'RETIRO SIN TARJETA'),
 )
 
 
