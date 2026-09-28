@@ -792,6 +792,13 @@ AGUINALDOS = (  # (fecha, monto, texto)
     ('2022-12-16', 10493.87, 'PAGO DE NOMINA'),
 )
 
+# Depósitos que fueron bono; la etiqueta se agrega a la descripción porque
+# los movimientos no tienen campo de comentario (el usuario, 2026-09-28:
+# «finiquito, mételo como bono, comentario finiquito»).
+BONOS = (  # (fecha, monto, texto, etiqueta)
+    ('2022-04-05', 16712.43, 'DEPOSITO DE TERCERO', 'FINIQUITO'),
+)
+
 # Transferencias que se cancelan entre sí (salió y regresó el mismo día):
 # ni gasto ni ingreso. Libretón jun 2022: $1,500 «PABLO» y $1,500 «ERR DEL
 # HORROR» a la misma cuenta; el saldo solo bajó por el retiro.
@@ -822,6 +829,15 @@ def _corregir_pagos_renta(db) -> int:
             WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ?
               AND (categoria != 'FINANZAS' OR COALESCE(subcategoria, '') != 'Reembolsable')
         """, (fecha, monto, f"%{texto}%")).rowcount
+    for fecha, monto, texto, etiqueta in BONOS:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Bono',
+                   descripcion = CASE WHEN UPPER(descripcion) LIKE ? THEN descripcion
+                                      ELSE descripcion || ' · ' || ? END
+            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
+              AND UPPER(descripcion) LIKE ? AND tipo='INGRESO'
+              AND (categoria != 'NOMINA' OR COALESCE(subcategoria, '') != 'Bono' OR UPPER(descripcion) NOT LIKE ?)
+        """, (f"%{etiqueta}%", etiqueta, fecha, monto, f"%{texto}%", f"%{etiqueta}%")).rowcount
     for fecha, monto, texto in AGUINALDOS:
         n += db.execute("""
             UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Aguinaldo'
