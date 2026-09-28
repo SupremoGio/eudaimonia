@@ -207,3 +207,19 @@ def test_renta_2023_mi_parte_4000(test_db):
         got = {r[0]: (r[1], r[2], r[3]) for r in db.execute("SELECT monto, categoria, subcategoria, mi_parte FROM est_movimientos")}
         assert got[8000.0] == got[9900.0] == got[5000.0] == ('VIVIENDA', 'Renta', 4000.0)
         assert got[300.0] == ('FINANZAS', 'Retiro efectivo', None)
+
+
+def test_aportaciones_de_roomies(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta
+    from modules.finanzas.estados import abonos
+    with database.get_db() as db:
+        for f, d, m in (('2023-02-14', 'PAGO CUENTA DE TERCERO BNET RENTA EMMA', 4400.0),
+                        ('2022-10-07', 'PAGO CUENTA DE TERCERO BNET APARTADO RENTA', 2500.0),
+                        ('2022-10-07', 'PAGO CUENTA DE TERCERO BNET OTRA COSA', 300.0)):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES (?,?,?, 'BBVA_DEB', 'FINANZAS', 'Transferencia', 'INGRESO')""", (f, d, m))
+        db.commit()
+        _corregir_pagos_renta(db)
+        got = {r[0]: (r[1], r[2]) for r in db.execute("SELECT monto, categoria, subcategoria FROM est_movimientos")}
+        assert got[4400.0] == got[2500.0] == ('VIVIENDA', 'Aportación renta')
+        assert [m['monto'] for m in abonos.sin_conciliar(db)['movimientos']] == [300.0]   # ya no están sueltos
