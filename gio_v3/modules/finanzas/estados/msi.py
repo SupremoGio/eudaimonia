@@ -47,6 +47,8 @@ PRIMERA_MENSUALIDAD: set = set()
 MENSUALIDADES_PRESTADAS = (
     # Viva Aerobus A 09 (2) $11,895.45 del 20/02/2024: «fue para mi familia y me lo fueron pagando»
     ('VIVA AEROBUS', 1322.0, '2024-02-01', '2024-12-31'),
+    # MacStore A 18 $20,999 del 19/11/2022: «iphone no mío».
+    ('MACSTORE', 1167.0, '2022-11-01', '2024-04-30'),
 )
 
 # Categoría de las mensualidades de compras que el usuario identificó
@@ -55,9 +57,15 @@ MENSUALIDADES_PRESTADAS = (
 CATEGORIA_MENSUALIDADES = (
     ('CHEDRAUI TDA EN LINEA', 569.0, 13, 'VIVIENDA', 'Artículos del hogar'),   # refri
     ('OFFICE DEPOT INTERNET', 917.0, 12, 'TECH/DIGITAL', 'Deudas MSI'),       # laptop
-    ('MACSTORE', 1167.0, 18, 'TECH/DIGITAL', 'Deudas MSI'),                   # iPhone
     ('MACSTORE', 211.0, 12, 'TECH/DIGITAL', 'Deudas MSI'),
     ('POINTMP ARELLANO', 7.0, 3, 'SUPER', 'Conveniencia'),                    # $8, $8, $6
+    # Comentarios del usuario a las compras iniciales (2026-09-28):
+    ('WALMART VENTA EN LIN3', 567.0, 12, 'VIVIENDA', 'Artículos del hogar'),  # cama (abr 2022)
+    ('TRAINING INNOVATION', 358.0, 12, 'DEPORTE', 'Gym'),                     # gym (abr 2022)
+    ('TRAINING INNOVATION', 359.0, 12, 'DEPORTE', 'Gym'),                     # gym (abr 2023)
+    ('MEN S FACTORY', 462.0, 6, 'ROPA', 'Ropa'),                             # ropa (dic 2022)
+    ('MERCADO PAGO 1', 234.0, 6, 'VIVIENDA', 'Artículos del hogar'),         # artículo casa (nov 2022)
+    ('MERCADO PAGO 1', 156.0, 3, 'VIVIENDA', 'Artículos del hogar'),         # artículo casa (sep 2022)
 )
 
 

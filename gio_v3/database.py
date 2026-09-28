@@ -6012,6 +6012,42 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_carrito_gasolina_2022 migration warning: {e}")
 
+        # ── FINANZAS — cuarta tanda de comentarios (FINANZAS 2022) y categoría
+        # de las mensualidades de compras a meses comentadas (iPhone no mío -> PRESTAMOS).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_finanzas_2022_comentarios'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_otros_2026_09_28 import aplicar as _otros_0928f
+                from modules.finanzas.estados.routes import _corregir_pagos_renta
+                from modules.finanzas.estados.msi import marcar_compras as _msi_marcar8
+                _n = _corregir_pagos_renta(db) + _msi_marcar8(db)
+                _ok, _falta = _otros_0928f(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_finanzas_2022_comentarios", f"{_ok} reclasificadas, {_falta} no encontradas, {_n} mensualidades/reglas")
+                )
+                db.commit()
+                print(f"[DB] finanzas_finanzas_2022_comentarios: {_ok} reclasificadas, {_falta} no encontradas, {_n} mensualidades/reglas")
+            except Exception as e:
+                print(f"[DB] finanzas_finanzas_2022_comentarios migration warning: {e}")
+
+        # ── FINANZAS — renta 2023: mi parte $4,000 en 9 pagos.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_renta_2023_mi_parte_4000'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_pagos_renta
+                _n = _corregir_pagos_renta(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_renta_2023_mi_parte_4000", f"{_n} cambios")
+                )
+                db.commit()
+                print(f"[DB] finanzas_renta_2023_mi_parte_4000: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_renta_2023_mi_parte_4000 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

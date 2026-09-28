@@ -351,3 +351,19 @@ def test_k_de_dos_digitos_recortada_por_el_banco(test_db):
     with database.get_db() as db:
         cats = {r[0] for r in db.execute("SELECT categoria FROM est_movimientos WHERE parcialidad_total=13")}
     assert cats == {'VIVIENDA'}
+
+
+def test_mensualidades_segun_comentarios_2026_09_28(test_db):
+    """iPhone A 18 «no mío» -> PRESTAMOS; cama Walmart A 12, gym Training A 12,
+    ropa Men's Factory A 06 y Mercado Pago -> su categoría."""
+    iph = _ins('2023-01-22', 'MACSTORE MIDTOWN JALI', 1167.0, cat='TECH/DIGITAL', sub='Deudas MSI', pn=3, pt=18)
+    mio = _ins('2023-01-22', 'MACSTORE MIDTOWN JALI (2)', 211.0, cat='TECH/DIGITAL', sub='Deudas MSI', pn=3, pt=12)
+    cama = _ins('2022-06-22', 'WALMART VENTA EN LIN3', 567.0, cat='SUPER', sub='Súper', pn=2, pt=12)
+    gym = _ins('2022-06-22', 'TRAINING INNOVATION', 358.0, cat='OTROS', sub='', pn=3, pt=12)
+    mp = _ins('2022-12-22', 'MERCADO PAGO 1', 234.0, cat='COMIDA_FUERA', sub='Restaurante', pn=2, pt=6)
+    _conciliar()
+    with database.get_db() as db:
+        cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert cat(iph) == ('PRESTAMOS', 'Prestado') and cat(mio) == ('TECH/DIGITAL', 'Deudas MSI')
+        assert cat(cama) == ('VIVIENDA', 'Artículos del hogar') and cat(gym) == ('DEPORTE', 'Gym')
+        assert cat(mp) == ('VIVIENDA', 'Artículos del hogar')

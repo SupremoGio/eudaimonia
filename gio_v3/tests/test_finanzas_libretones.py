@@ -170,7 +170,7 @@ def test_reparar_parcialidades_de_otro_comercio(test_db):
 
 def test_libretones_2021_2022_nomina_y_cancelados(test_db):
     """202201-202207: aguinaldo 2021, fondo de ahorro y quincena «PAGO Q8» a
-    NOMINA; las dos transferencias de $1,500 del 10/06/2022 se cancelan."""
+    NOMINA; el $1,500 «ERR DEL HORROR» del 10/06/2022 regresó (no es ingreso)."""
     with database.get_db() as db:
         for k in ('202201', '202205', '202207'):
             libs.aplicar(db, k)
@@ -181,4 +181,5 @@ def test_libretones_2021_2022_nomina_y_cancelados(test_db):
         assert cat('DEPOSITO DE TERCERO FONDO DE AHORRO%') == ('NOMINA', 'Fondo de ahorro')
         assert cat('DEPOSITO DE TERCERO PAGO Q8%') == ('NOMINA', 'Pago nominal')
         assert cat('CORRECCION COMPRA TIEMPO%') == ('DIGITAL', 'Celular')
-        assert cat('%BNET PABLO') == ('FINANZAS', 'Reembolsable') == cat('%ERR DEL HORROR')
+        assert cat('%ERR DEL HORROR') == ('FINANZAS', 'Reembolsable')
+        assert cat('%BNET PABLO') != ('FINANZAS', 'Reembolsable')      # el usuario: fue renta
