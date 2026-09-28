@@ -137,3 +137,19 @@ def test_aguinaldo_2022(test_db):
         assert _corregir_pagos_renta(db) == 1
         got = dict(db.execute("SELECT monto, subcategoria FROM est_movimientos").fetchall())
         assert got == {10493.87: 'Aguinaldo', 7094.93: 'Pago nominal'}
+
+
+def test_finiquito_2022_como_bono(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES ('2022-04-05', 'DEPOSITO DE TERCERO', 16712.43, 'BBVA_DEB', 'OTROS', '', 'INGRESO')""")
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES ('2022-04-13', 'DEPOSITO DE TERCERO', 4547.41, 'BBVA_DEB', 'OTROS', '', 'INGRESO')""")
+        db.commit()
+        assert _corregir_pagos_renta(db) == 1
+        assert _corregir_pagos_renta(db) == 0          # la etiqueta no se repite
+        rows = dict(((r[0], (r[1], r[2], r[3])) for r in db.execute(
+            "SELECT monto, descripcion, categoria, subcategoria FROM est_movimientos")))
+        assert rows[16712.43] == ('DEPOSITO DE TERCERO · FINIQUITO', 'NOMINA', 'Bono')
+        assert rows[4547.41] == ('DEPOSITO DE TERCERO', 'OTROS', '')
