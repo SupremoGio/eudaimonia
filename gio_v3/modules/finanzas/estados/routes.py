@@ -601,6 +601,27 @@ def _corregir_spei_invex(db) -> int:
     """).rowcount
 
 
+def _corregir_spei_nafin(db) -> int:
+    """SPEI con NAFIN (CETESDirecto) es dinero propio que entra o sale de la
+    inversión, no ingreso ni gasto: «SPEI RECIBIDONAFIN» y «SPEI DEVUELTONAFIN»
+    -> CETES/RETIRO, «SPEI ENVIADO NAFIN» -> CETES/APORTACION. El import de
+    Libretón por PDF/Excel los dejaba como FINANZAS/Transferencia recibida y
+    aparecían en «Sin conciliar» (retiros de CETES de 2026 del usuario)."""
+    n = db.execute("""
+        UPDATE est_movimientos SET categoria='CETES', subcategoria='RETIRO', tipo='INVERSION'
+        WHERE (UPPER(descripcion) LIKE 'SPEI RECIBIDO%NAFIN%' OR UPPER(descripcion) LIKE 'SPEI DEVUELTO%NAFIN%')
+          AND (categoria != 'CETES' OR subcategoria != 'RETIRO' OR tipo != 'INVERSION')
+    """).rowcount
+    n += db.execute("""
+        UPDATE est_movimientos SET categoria='CETES', subcategoria='APORTACION', tipo='INVERSION'
+        WHERE UPPER(descripcion) LIKE 'SPEI ENVIADO%NAFIN%'
+          AND (categoria != 'CETES' OR subcategoria != 'APORTACION' OR tipo != 'INVERSION')
+    """).rowcount
+    from . import cetes_retiros as _cetes
+    _cetes.conciliar(db)
+    return n
+
+
 def _corregir_zaira_restaurante(db) -> int:
     """ZTL ZAIRAAXZAYMENDOZAM va a COMIDA_FUERA/Restaurante (pedido del
     usuario). Antes 2 filas se habían mandado por id a ALIMENTACION/Súper;
@@ -1834,6 +1855,7 @@ def _reaplicar_reglas(db) -> int:
     _corregir_steamgames(db)
     _corregir_retiros_renta(db)
     _corregir_spei_invex(db)
+    _corregir_spei_nafin(db)
     _corregir_zaira_restaurante(db)
     _corregir_walmart_lavadora(db)
     _corregir_didi_delivery(db)
@@ -3215,6 +3237,16 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
         'meses_sin_movimientos': meses_sin,
         'cortes_sin_movimientos': cortes_sin,
     }
+
+
+@estados_bp.route('/admin/cetes-retiros')
+def cetes_retiros_admin():
+    """Solo lectura: cada retiro instruido en CETESDirecto con el depósito
+    del banco que le tocó (y la retención) o «no encontrado»."""
+    if not _ok(): return _locked()
+    from . import cetes_retiros as _cetes
+    with get_db() as db:
+        return jsonify({'retiros': _cetes.plan(db)})
 
 
 @estados_bp.route('/admin/expense-plataforma')
