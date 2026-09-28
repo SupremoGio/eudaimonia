@@ -795,8 +795,10 @@ AGUINALDOS = (  # (fecha, monto, texto)
 # Depósitos que fueron bono; la etiqueta se agrega a la descripción porque
 # los movimientos no tienen campo de comentario (el usuario, 2026-09-28:
 # «finiquito, mételo como bono, comentario finiquito»).
-BONOS = (  # (fecha, monto, texto, etiqueta)
-    ('2022-04-05', 16712.43, 'DEPOSITO DE TERCERO', 'FINIQUITO'),
+BONOS = (  # (fecha, monto, texto, subcategoría de NOMINA, etiqueta)
+    ('2022-04-05', 16712.43, 'DEPOSITO DE TERCERO', 'Bono', 'FINIQUITO'),
+    # «80338 Q7 BMRCASH»: quincena 7 (1ª de abril) de la empresa anterior.
+    ('2022-04-13', 4547.41, 'DEPOSITO DE TERCERO', 'Pago nominal', 'NOMINA Q07'),
 )
 
 # Transferencias que se cancelan entre sí (salió y regresó el mismo día):
@@ -829,15 +831,15 @@ def _corregir_pagos_renta(db) -> int:
             WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ?
               AND (categoria != 'FINANZAS' OR COALESCE(subcategoria, '') != 'Reembolsable')
         """, (fecha, monto, f"%{texto}%")).rowcount
-    for fecha, monto, texto, etiqueta in BONOS:
+    for fecha, monto, texto, sub, etiqueta in BONOS:
         n += db.execute("""
-            UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Bono',
+            UPDATE est_movimientos SET categoria='NOMINA', subcategoria=?,
                    descripcion = CASE WHEN UPPER(descripcion) LIKE ? THEN descripcion
                                       ELSE descripcion || ' · ' || ? END
             WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
               AND UPPER(descripcion) LIKE ? AND tipo='INGRESO'
-              AND (categoria != 'NOMINA' OR COALESCE(subcategoria, '') != 'Bono' OR UPPER(descripcion) NOT LIKE ?)
-        """, (f"%{etiqueta}%", etiqueta, fecha, monto, f"%{texto}%", f"%{etiqueta}%")).rowcount
+              AND (categoria != 'NOMINA' OR COALESCE(subcategoria, '') != ? OR UPPER(descripcion) NOT LIKE ?)
+        """, (sub, f"%{etiqueta}%", etiqueta, fecha, monto, f"%{texto}%", sub, f"%{etiqueta}%")).rowcount
     for fecha, monto, texto in AGUINALDOS:
         n += db.execute("""
             UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Aguinaldo'

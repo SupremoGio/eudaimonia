@@ -147,9 +147,9 @@ def test_finiquito_2022_como_bono(test_db):
         db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
                       VALUES ('2022-04-13', 'DEPOSITO DE TERCERO', 4547.41, 'BBVA_DEB', 'OTROS', '', 'INGRESO')""")
         db.commit()
-        assert _corregir_pagos_renta(db) == 1
+        assert _corregir_pagos_renta(db) == 2
         assert _corregir_pagos_renta(db) == 0          # la etiqueta no se repite
         rows = dict(((r[0], (r[1], r[2], r[3])) for r in db.execute(
             "SELECT monto, descripcion, categoria, subcategoria FROM est_movimientos")))
         assert rows[16712.43] == ('DEPOSITO DE TERCERO · FINIQUITO', 'NOMINA', 'Bono')
-        assert rows[4547.41] == ('DEPOSITO DE TERCERO', 'OTROS', '')
+        assert rows[4547.41] == ('DEPOSITO DE TERCERO · NOMINA Q07', 'NOMINA', 'Pago nominal')
