@@ -47,3 +47,21 @@ def test_conciliar_crea_lotes(test_db, monkeypatch):
         cat = lambda i: db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[0]
         assert cat(c1) == cat(c4) == 'EXPENSE' and cat(otro) == 'SUPER'
         assert P.conciliar(db) == []                                    # idempotente
+
+
+def test_no_reofrece_gastos_ya_pagados_y_cargo_antes_o_transferencia(test_db, monkeypatch):
+    gastos = [{'fecha': '2025-01-08', 'titulo': 'PASTEL ENERO', 'tipo': '', 'monto': 420.0},
+              {'fecha': '2025-01-06', 'titulo': 'BOTANA', 'tipo': '', 'monto': 222.0},
+              {'fecha': '2025-03-20', 'titulo': 'CAPACITACION', 'tipo': '', 'monto': 441.3}]
+    monkeypatch.setattr(P, 'items', lambda: [{**x, 'idx': i} for i, x in enumerate(sorted(gastos, key=lambda g: g['fecha']))])
+    with database.get_db() as db:
+        d1 = _mov(db, '2025-01-22', 'SITH20000001608 FIDEICOMISO F 1596', 642.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        P.conciliar(db); db.commit()                      # primera pasada: lote de d1
+        c_antes = _mov(db, '2025-03-15', 'PAGO CUENTA DE TERCERO BNET CAPACITACION', 441.3, 'FINANZAS', 'Transferencia')
+        d2 = _mov(db, '2025-04-09', 'SITH20000001908 FIDEICOMISO F 1596', 441.3, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        d3 = _mov(db, '2025-04-30', 'SITH20000002002 FIDEICOMISO F 1596', 642.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        db.commit()
+        P.conciliar(db); db.commit()
+        lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
+        assert d3 not in lotes                           # los gastos de $642 ya los pagó d1
+        assert [g['id'] for g in lotes[d2]['gastos']] == [c_antes]   # transferencia 5 días antes del recibo

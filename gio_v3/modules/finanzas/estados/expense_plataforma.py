@@ -37,7 +37,9 @@ from . import expense_lotes as _lotes
 
 _ARCHIVO = os.path.join(os.path.dirname(__file__), 'data', 'expense_plataforma.json')
 TOL = 1.0
-DIAS_CARGO = 10
+# Cargo del banco: desde 7 días antes del gasto (se pagó y el recibo se
+# registró después) hasta 15 días después (lo que tarda en aparecer).
+DIAS_ANTES, DIAS_DESPUES = 7, 15
 
 
 def items() -> list[dict]:
@@ -95,27 +97,48 @@ def asignar(depositos: list[dict], gastos: list[dict]) -> dict:
 
 
 def _cargos_libres(db) -> list[dict]:
+    """Cargos que pueden ser un gasto de Expense: compras con tarjeta y también
+    transferencias BNET/SPEI a un proveedor (FINANZAS/Transferencia…)."""
     return [dict(r) for r in db.execute("""
         SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto, categoria, banco
         FROM est_movimientos
-        WHERE tipo IN ('GASTO', 'PAGO') AND categoria NOT IN ('PAGO_TDC', 'FINANZAS', 'PRESTAMOS', 'INVERSION')
+        WHERE tipo IN ('GASTO', 'PAGO') AND categoria NOT IN ('PAGO_TDC', 'PRESTAMOS', 'INVERSION')
+          AND NOT (categoria = 'FINANZAS' AND COALESCE(subcategoria, '') NOT IN
+                   ('Transferencia', 'Transferencia enviada', ''))
           AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_gastos)
         ORDER BY CASE WHEN categoria = 'EXPENSE' THEN 0 ELSE 1 END, fecha, id
     """).fetchall()]
 
 
 def _cargo_de(item, cargos, usados):
-    hasta = (date.fromisoformat(item['fecha']) + timedelta(days=DIAS_CARGO)).isoformat()
-    for c in cargos:
-        if c['id'] not in usados and item['fecha'] <= c['fecha'] <= hasta and abs(c['monto'] - item['monto']) <= 0.01:
-            return c
-    return None
+    f = date.fromisoformat(item['fecha'])
+    desde, hasta = (f - timedelta(days=DIAS_ANTES)).isoformat(), (f + timedelta(days=DIAS_DESPUES)).isoformat()
+    candidatos = [c for c in cargos if c['id'] not in usados and desde <= c['fecha'] <= hasta
+                  and abs(c['monto'] - item['monto']) <= 0.01]
+    # Primero los que ya son EXPENSE (vienen ordenados así) y, entre iguales, el más cercano en fecha.
+    candidatos.sort(key=lambda c: (c['categoria'] != 'EXPENSE', abs((date.fromisoformat(c['fecha']) - f).days)))
+    return candidatos[0] if candidatos else None
+
+
+def _depositos_empresa(db) -> list[dict]:
+    """Todos los depósitos de la empresa, estén o no en un lote: la asignación
+    se recalcula siempre sobre todos para que los gastos que ya pagó un lote
+    no se vuelvan a ofrecer a otro depósito."""
+    return [{**dict(r), 'monto': round(float(r['monto']), 2)} for r in db.execute("""
+        SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto, banco,
+               id IN (SELECT movimiento_id FROM est_expense_lote_depositos) AS en_lote
+        FROM est_movimientos
+        WHERE tipo = 'INGRESO' AND categoria IN ('FINANZAS', 'EXPENSE')
+          AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
+        ORDER BY fecha, id
+    """).fetchall() if _lotes._DEP_RE.search(r['descripcion'] or '')]
 
 
 def plan(db) -> list[dict]:
     """Lo que conciliar() haría, sin tocar nada (para revisar)."""
-    deps = _lotes._depositos_sin_lote(db)
-    asign = asignar(deps, items())
+    todos = _depositos_empresa(db)
+    asign = asignar(todos, items())
+    deps = [d for d in todos if not d['en_lote']]
     cargos, usados, out = _cargos_libres(db), set(), []
     for d in deps:
         if d['id'] not in asign:
@@ -132,6 +155,19 @@ def plan(db) -> list[dict]:
     return out
 
 
+def posibles_cargos(db, item, dias: int = 45) -> list[dict]:
+    """Para revisar un gasto «sin cargo»: movimientos del mismo monto (±$0.01)
+    a ±dias, de cualquier categoría, y si ya están en un lote."""
+    f = date.fromisoformat(item['fecha'])
+    return [dict(r) for r in db.execute("""
+        SELECT id, substr(fecha,1,10) AS fecha, descripcion, categoria, subcategoria, tipo, banco,
+               id IN (SELECT movimiento_id FROM est_expense_lote_gastos) AS en_lote
+        FROM est_movimientos
+        WHERE ABS(ABS(monto) - ?) <= 0.01 AND substr(fecha,1,10) BETWEEN ? AND ?
+        ORDER BY fecha
+    """, (item['monto'], (f - timedelta(days=dias)).isoformat(), (f + timedelta(days=dias)).isoformat())).fetchall()]
+
+
 def conciliar(db) -> list[str]:
     """Crea un lote por depósito emparejado; devuelve un resumen por lote."""
     hechos = []
@@ -139,6 +175,8 @@ def conciliar(db) -> list[str]:
         if not p['pasada']:
             continue
         d = p['deposito']
+        if d.get('en_lote'):
+            continue
         con = [g for g in p['gastos'] if g['cargo']]
         sin = [g for g in p['gastos'] if not g['cargo']]
         notas = f"Plataforma de Expense ({p['pasada']}): {len(p['gastos'])} gastos"
