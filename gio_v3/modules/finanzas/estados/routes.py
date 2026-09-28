@@ -21,6 +21,7 @@ import modules.gamification.engine as engine
 from . import prestamos as _prest
 from . import expense_lotes as _lotes
 from . import correcciones_csv_2026_09_26 as _csv0926
+from . import correcciones_otros_2026_09_28 as _otros0928
 from . import msi as _msi
 
 estados_bp = Blueprint(
@@ -738,6 +739,29 @@ def _corregir_pagos_salsa(db) -> int:
               AND UPPER(descripcion) LIKE ? AND tipo IN ('GASTO', 'PAGO')
               AND (categoria != 'SALSA' OR COALESCE(subcategoria, '') != ? OR tipo != 'GASTO')
         """, (sub, fecha, monto, f"%{texto}%", sub)).rowcount
+    return n
+
+
+# Transferencias BNET de $5,000 que fueron renta (el usuario, 2026-09-28:
+# «mándalos a renta»). Mismo patrón que PAGOS_SALSA: se reafirman en «Aplicar
+# reglas» para que ninguna keyword las regrese a FINANZAS/Transferencia.
+PAGOS_RENTA = (  # (fecha, monto, texto)
+    ('2022-08-17', 5000.0, 'BNET RENTA GIO'),
+    ('2023-04-01', 5000.0, 'BNET PRIMERA PARTE'),
+    ('2023-05-12', 5000.0, 'BNET TRANSF A'),
+    ('2024-09-29', 5000.0, 'BNET TRANSF A GIOVANY A'),
+)
+
+
+def _corregir_pagos_renta(db) -> int:
+    n = 0
+    for fecha, monto, texto in PAGOS_RENTA:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta'
+            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
+              AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
+              AND (categoria != 'VIVIENDA' OR COALESCE(subcategoria, '') != 'Renta')
+        """, (fecha, monto, f"%{texto}%")).rowcount
     return n
 
 
@@ -1618,8 +1642,10 @@ def _reaplicar_reglas(db) -> int:
     _corregir_celular(db)
     _corregir_expense_terceros(db)
     _corregir_pagos_salsa(db)
+    _corregir_pagos_renta(db)
     _msi.marcar_compras(db)
     _csv0926.aplicar(db)
+    _otros0928.aplicar(db)
     _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
     return total_updated
 
@@ -2566,8 +2592,10 @@ def upload_file():
             _corregir_celular(db)
             _corregir_expense_terceros(db)
             _corregir_pagos_salsa(db)
+            _corregir_pagos_renta(db)
             _msi.marcar_compras(db)
             _csv0926.aplicar(db)
+            _otros0928.aplicar(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
 
             gbm_detected = _postproceso_inversiones(db)
