@@ -302,6 +302,25 @@ CORRECCIONES = [
     (4301, '2023-06-03', 147.0, 'ZTL LOSSABROSOSMOCHIS', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
     (4059, '2022-07-19', 127.0, 'ZTL*EDUARDORODRIGUEZRO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
     (4069, '2022-07-26', 39.0, 'ZTL*YADIRAAZUCENACEBAL', 'SUPER', 'Súper'),  # super
+    # Tercera tanda (estaban en SUPER): mensualidades de Chedraui y Walmart de
+    # 2022 y la compra Walmart de $7,888 -> artículos de la casa.
+    (4765, '2022-11-22', 283.0, 'TIENDAS CHEDRAUI S TA', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4121, '2022-10-22', 292.0, 'TIENDAS CHEDRAUI S TA', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4429, '2022-09-22', 292.0, 'TIENDAS CHEDRAUI S TA', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4112, '2022-08-22', 292.0, 'TIENDAS CHEDRAUI S TA', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4104, '2022-07-22', 292.0, 'TIENDAS CHEDRAUI S TA', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4100, '2022-06-22', 292.0, 'TIENDAS CHEDRAUI S TA', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (15, '2022-05-22', 292.0, 'TIENDAS CHEDRAUI S TA', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (7, '2022-04-22', 292.0, 'TIENDAS CHEDRAUI S TA', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4176, '2022-12-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4798, '2022-11-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4144, '2022-10-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4441, '2022-09-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4119, '2022-08-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4111, '2022-07-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4103, '2022-06-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (17, '2022-05-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
+    (4442, '2022-08-29', 7888.0, 'WALMART VENTA EN LIN4', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
 ]
 
 

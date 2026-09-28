@@ -43,6 +43,12 @@ export default function TxEditor({ tx, onClose, onSaved }) {
 
   useEffect(() => { getCategories().then(setCats).catch(() => {}); getTrips().then(setTrips); }, []);
 
+  const set = (k, v) => setF((s) => ({ ...s, [k]: v }));
+  // Cambiar de categoría limpia la subcategoría: la anterior casi nunca
+  // existe en la nueva (antes se quedaba escrita, p. ej. «Transferencia
+  // enviada» al pasar de FINANZAS a VIVIENDA).
+  const setCategoria = (v) => setF((s) => (s.categoria === v ? s : { ...s, categoria: v, subcategoria: '' }));
+
   // Préstamo: con categoría Préstamos en un gasto se pide a quién le
   // prestaste y al guardar queda registrado en «Por cobrar».
   const pp = usePrestamoPersona(isNew ? null : tx.id);

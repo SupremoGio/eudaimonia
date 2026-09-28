@@ -5868,6 +5868,38 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_spei_bajio_costo_financiero migration warning: {e}")
 
+        # ── FINANZAS — clases de salsa con Gio (7) y recargas de celular (6), 2022.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_salsa_clases_celular_2022'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_pagos_renta, _corregir_pagos_salsa
+                _n = _corregir_pagos_salsa(db) + _corregir_pagos_renta(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_salsa_clases_celular_2022", f"{_n} cambios")
+                )
+                db.commit()
+                print(f"[DB] finanzas_salsa_clases_celular_2022: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_salsa_clases_celular_2022 migration warning: {e}")
+
+        # ── FINANZAS — Chedraui/Walmart 2022 (17, estaban en SUPER) -> artículos de la casa.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_otros_csv_2026_09_28_d'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_otros_2026_09_28 import aplicar as _otros_0928d
+                _ok, _falta = _otros_0928d(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_otros_csv_2026_09_28_d", f"{_ok} reclasificadas, {_falta} no encontradas")
+                )
+                db.commit()
+                print(f"[DB] finanzas_otros_csv_2026_09_28_d: {_ok} reclasificadas, {_falta} no encontradas")
+            except Exception as e:
+                print(f"[DB] finanzas_otros_csv_2026_09_28_d migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
