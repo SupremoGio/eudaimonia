@@ -316,6 +316,47 @@ function Sugerencias({ refreshKey, saved }) {
   );
 }
 
+/** Lo que queda suelto después de las sugerencias: depósitos de la empresa
+ * sin facturas que los cubran y facturas pendientes sin depósito. */
+function Sueltos({ refreshKey, onNuevo }) {
+  const res = useLoad(() => api.get('/expense/sueltos'), [refreshKey]);
+  const d = res.data;
+  if (res.loading || !d || (d.depositos.length === 0 && d.facturas.length === 0)) return null;
+  const tabla = (rows, signo) => (
+    <table className="eu-table fz-ex-table fz-sc-table">
+      <colgroup><col className="c-date" /><col /><col className="c-amt" /></colgroup>
+      <tbody>
+        {rows.map((m) => (
+          <tr key={m.id}>
+            <td className="num fg-3">{fmtDate(m.fecha, true)}</td>
+            <td><span className="fz-ellipsis fz-td-desc" title={m.descripcion}>{m.descripcion}</span></td>
+            <td className={`r num${signo ? ' fg-success' : ''}`}>{signo}{money(m.monto)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+  return (
+    <section className="eu-card eu-card--flush" aria-label="Quedan sueltos">
+      <div className="eu-between fz-card-hd fz-wrap">
+        <div className="eu-vstack">
+          <h2 className="t-card">Quedan sueltos</h2>
+          <span className="t-meta">Ni en un lote ni en ninguna sugerencia. Ármalos a mano con «Nuevo lote» (un depósito puede cubrir facturas de hace más de un año, o faltar alguna factura por cargar).</span>
+        </div>
+        <button type="button" className="eu-btn eu-btn--ghost eu-btn--sm" onClick={onNuevo}><Icon name="plus" />Nuevo lote</button>
+      </div>
+      <details className="fz-pad" open={d.depositos.length <= 12}>
+        <summary className="t-ui">{plural(d.depositos.length, 'depósito', 'depósitos')} de la empresa sin pareja · <b className="num fg-success">+{money(d.total_depositos)}</b></summary>
+        {d.depositos.length > 0 && tabla(d.depositos, '+')}
+      </details>
+      <details className="fz-pad" open={d.facturas.length <= 12}>
+        <summary className="t-ui">{plural(d.facturas.length, 'factura pendiente', 'facturas pendientes')} sin depósito · <b className="num">{money(d.total_facturas)}</b></summary>
+        {d.facturas.length > 0 && tabla(d.facturas, '')}
+      </details>
+    </section>
+  );
+}
+
 export default function Expense() {
   const app = useApp();
   const res = useLoad(() => api.get('/expense/lotes'), [app.refreshKey]);
@@ -357,6 +398,7 @@ export default function Expense() {
       )}
 
       <Sugerencias refreshKey={app.refreshKey} saved={saved} />
+      <Sueltos refreshKey={app.refreshKey} onNuevo={() => setModal({ kind: 'new' })} />
 
       <ErrorNote error={res.error} onRetry={res.reload} />
       {res.loading ? <Skel rows={3} h={120} /> : !d || d.lotes.length === 0 ? (
