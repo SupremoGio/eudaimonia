@@ -14,20 +14,55 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const grupoDe = (m) => (m.categoria !== 'FINANZAS' ? m.categoria : (m.subcategoria || 'Sin subcategoría'));
 const nombreGrupo = (g) => (['PRESTAMOS', 'EXPENSE'].includes(g) ? catMeta(g).name : g);
 
+// Filtros y orden se recuerdan en este navegador: editar un movimiento,
+// cambiar de pestaña o recargar no los deshace.
+const MEMO_KEY = 'fz-sc-filtros';
+const DEF = { anio: '', grupo: '', q: '', banco: '', sort: 'fecha', dir: 'desc' };
+function leerMemo() {
+  try { return { ...DEF, ...(JSON.parse(localStorage.getItem(MEMO_KEY)) || {}) }; } catch { return DEF; }
+}
+function guardarMemo(v) {
+  try { localStorage.setItem(MEMO_KEY, JSON.stringify(v)); } catch { /* sin almacenamiento */ }
+}
+const SORT_VAL = {
+  fecha: (m) => m.fecha || '',
+  desc: (m) => (m.descripcion || '').toLowerCase(),
+  tipo: (m) => nombreGrupo(grupoDe(m)).toLowerCase(),
+  banco: (m) => bankName(m.banco).toLowerCase(),
+  monto: (m) => Math.abs(m.monto),
+};
+
 export default function SinConciliar() {
   const app = useApp();
-  const [anio, setAnio] = useState('');
-  const [grupo, setGrupo] = useState('');
-  const [q, setQ] = useState('');
+  const [f, setF] = useState(leerMemo);
+  const set = (patch) => setF((prev) => { const n = { ...prev, ...patch }; guardarMemo(n); return n; });
+  const { anio, grupo, q, banco, sort, dir } = f;
   const res = useLoad(() => api.get('/abonos/sin-conciliar', anio ? { anio } : {}), [app.refreshKey, anio]);
   const d = res.data;
 
   const rows = useMemo(() => {
     let r = d?.movimientos || [];
     if (grupo) r = r.filter((m) => grupoDe(m) === grupo);
+    if (banco) r = r.filter((m) => m.banco === banco);
     if (q.trim()) { const nq = norm(q.trim()); r = r.filter((m) => norm(`${m.descripcion} ${m.fecha} ${Math.abs(m.monto)}`).includes(nq)); }
-    return r;
-  }, [d, grupo, q]);
+    const val = SORT_VAL[sort] || SORT_VAL.fecha;
+    const sign = dir === 'asc' ? 1 : -1;
+    return [...r].sort((a, b) => {
+      const x = val(a), y = val(b);
+      const c = typeof x === 'string' ? x.localeCompare(y) : x - y;
+      return c * sign || (b.fecha || '').localeCompare(a.fecha || '');
+    });
+  }, [d, grupo, banco, q, sort, dir]);
+  const bancos = [...new Set((d?.movimientos || []).map((m) => m.banco))].sort();
+  const sortBy = (col) => set(sort === col ? { dir: dir === 'asc' ? 'desc' : 'asc' } : { sort: col, dir: ['desc', 'tipo', 'banco'].includes(col) ? 'asc' : 'desc' });
+  const th = (col, label, cls) => (
+    <th className={cls} aria-sort={sort === col ? (dir === 'asc' ? 'ascending' : 'descending') : undefined}>
+      <button type="button" className="fz-th-btn" onClick={() => sortBy(col)}>
+        {label}{sort === col && <Icon name={dir === 'asc' ? 'arrow-up' : 'arrow-down'} size={12} />}
+      </button>
+    </th>
+  );
+  const hayFiltros = grupo || banco || q.trim();
   const total = rows.reduce((s, m) => s + Math.abs(m.monto), 0);
 
   return (
@@ -41,7 +76,7 @@ export default function SinConciliar() {
           </div>
         </div>
         <div className="eu-hstack">
-          <select className="eu-select fz-input-sm fz-w-auto" aria-label="Año" value={anio} onChange={(e) => { setAnio(e.target.value); setGrupo(''); }}>
+          <select className="eu-select fz-input-sm fz-w-auto" aria-label="Año" value={anio} onChange={(e) => set({ anio: e.target.value })}>
             <option value="">Todos los años</option>
             {(d?.anios || []).map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
@@ -67,24 +102,31 @@ export default function SinConciliar() {
       ) : (
         <>
           <div className="eu-hstack fz-wrap" role="group" aria-label="Filtrar por tipo">
-            <button type="button" className="eu-chip" aria-pressed={!grupo} onClick={() => setGrupo('')}>Todos · {money(d.total, { cents: false })}</button>
+            <button type="button" className="eu-chip" aria-pressed={!grupo} onClick={() => set({ grupo: '' })}>Todos · {money(d.total, { cents: false })}</button>
             {d.grupos.map((g) => (
-              <button key={g.grupo} type="button" className="eu-chip" aria-pressed={grupo === g.grupo} onClick={() => setGrupo(grupo === g.grupo ? '' : g.grupo)}>
+              <button key={g.grupo} type="button" className="eu-chip" aria-pressed={grupo === g.grupo} onClick={() => set({ grupo: grupo === g.grupo ? '' : g.grupo })}>
                 {nombreGrupo(g.grupo)} · {g.n} · {money(g.total, { cents: false })}
               </button>
             ))}
           </div>
           <div className="eu-between t-meta fz-wrap">
-            <div className="eu-input-wrap">
-              <Icon name="search" />
-              <input className="eu-input fz-input-sm" type="search" placeholder="Buscar…" aria-label="Buscar abono" value={q} onChange={(e) => setQ(e.target.value)} />
+            <div className="eu-hstack fz-wrap">
+              <div className="eu-input-wrap">
+                <Icon name="search" />
+                <input className="eu-input fz-input-sm" type="search" placeholder="Buscar descripción, fecha o monto…" aria-label="Buscar abono" value={q} onChange={(e) => set({ q: e.target.value })} />
+              </div>
+              <select className="eu-select fz-input-sm fz-w-auto" aria-label="Cuenta" value={banco} onChange={(e) => set({ banco: e.target.value })}>
+                <option value="">Todas las cuentas</option>
+                {bancos.map((b) => <option key={b} value={b}>{bankName(b)}</option>)}
+              </select>
+              {hayFiltros && <button type="button" className="fz-link" onClick={() => set({ grupo: '', banco: '', q: '' })}>Quitar filtros</button>}
             </div>
             <span>{rows.length} de {d.movimientos.length} · Total <b className="num fz-fg-1">{money(total)}</b></span>
           </div>
           <div className="fz-table-wrap">
             <table className="eu-table fz-ex-table fz-sc-table">
               <colgroup><col className="c-date" /><col /><col className="c-st" /><col className="c-st" /><col className="c-amt" /></colgroup>
-              <thead><tr><th>Fecha</th><th>Descripción</th><th>Tipo</th><th>Cuenta</th><th className="r">Monto</th></tr></thead>
+              <thead><tr>{th('fecha', 'Fecha')}{th('desc', 'Descripción')}{th('tipo', 'Tipo')}{th('banco', 'Cuenta')}{th('monto', 'Monto', 'r')}</tr></thead>
               <tbody>
                 {rows.map((m) => (
                   <tr key={m.id} className="fz-tr" tabIndex={0} onClick={() => app.openTx(m)} onKeyDown={(e) => { if (e.key === 'Enter') app.openTx(m); }}>
