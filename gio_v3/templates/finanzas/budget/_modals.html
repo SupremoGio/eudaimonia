@@ -9,7 +9,7 @@
 <form class="eu-modal-bd" id="f-limite" novalidate>
   <input type="hidden" id="lim-cat"><input type="hidden" id="lim-nombre">
   <div class="eu-field"><label class="eu-label" for="lim-valor" id="lim-cat-label">Categoría</label>
-    <input class="eu-input eu-input--money" type="number" step="100" min="0" inputmode="decimal" id="lim-valor" placeholder="0.00">
+    <input class="eu-input eu-input--money" type="number" step="0.01" min="0" inputmode="decimal" id="lim-valor" placeholder="0.00">
     <div class="eu-help">El límite actualiza también la vista de Estados de Cuenta.</div></div>
 </form>
 <div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-limite')">Cancelar</button><button type="submit" form="f-limite" class="eu-btn eu-btn--primary">Guardar</button></div>
@@ -18,7 +18,7 @@
 {% call ui.modal('m-meta', 'Meta mínima de ahorro', eyebrow='Ahorro y deudas') %}
 <form class="eu-modal-bd" id="f-meta" novalidate>
   <div class="eu-field"><label class="eu-label" for="meta-valor">Cuánto quieres apartar al mes (MXN)</label>
-    <input class="eu-input eu-input--money" type="number" step="100" min="0" inputmode="decimal" id="meta-valor" placeholder="4000">
+    <input class="eu-input eu-input--money" type="number" step="0.01" min="0" inputmode="decimal" id="meta-valor" placeholder="4000">
     <div class="eu-help">Es un piso: el grupo se pinta en verde al alcanzarla o superarla y en rojo si queda por debajo.</div></div>
 </form>
 <div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-meta')">Cancelar</button><button type="submit" form="f-meta" class="eu-btn eu-btn--primary">Guardar</button></div>
