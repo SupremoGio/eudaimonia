@@ -246,8 +246,8 @@ function LoteCard({ l, cand, saved, open }) {
   );
 }
 
-const CONF_TONE = { alta: 'success', media: 'warning', baja: 'danger' };
-const CONF_LBL = { alta: 'Confianza alta', media: 'Confianza media', baja: 'Confianza baja' };
+const CONF_TONE = { alta: 'success', media: 'warning', baja: 'danger', aproximada: 'info' };
+const CONF_LBL = { alta: 'Confianza alta', media: 'Confianza media', baja: 'Confianza baja', aproximada: 'Aproximada · revisa la diferencia' };
 
 /** Sugerencias automáticas: depósito de la empresa + facturas de hasta ~3
  * meses antes que suman lo mismo. Se confirma una por una o todas. */
@@ -278,7 +278,7 @@ function Sugerencias({ refreshKey, saved }) {
       <div className="eu-between fz-card-hd fz-wrap">
         <div className="eu-vstack">
           <h2 className="t-card">Sugerencias <span className="eu-badge eu-badge--info">{lista.length}</span></h2>
-          <span className="t-meta">Depósitos de la empresa sin lote y las facturas que suman lo mismo (±$1): primero de hasta 3 meses antes, luego 6 y 12, y pares de depósitos. Revisa con más cuidado las de confianza media o baja.</span>
+          <span className="t-meta">Depósitos de la empresa sin lote y las facturas que suman lo mismo (±$1): primero tandas de facturas seguidas, luego combinaciones de hasta 3, 6 y 12 meses antes y pares de depósitos. Las «aproximadas» son la combinación más cercana (hasta 3% o $300 de diferencia): revísalas antes de crear el lote.</span>
         </div>
         <button type="button" className="eu-btn eu-btn--secondary eu-btn--sm" disabled={busy || !lista.some((x) => x.confianza === 'alta')}
           onClick={() => crear(lista.filter((x) => x.confianza === 'alta'))} title="Solo las de confianza alta; las demás revísalas una por una">
