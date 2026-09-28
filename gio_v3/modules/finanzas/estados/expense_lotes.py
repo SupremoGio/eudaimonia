@@ -174,19 +174,20 @@ VENTANA_DIAS = 100
 _DEP_RE = re.compile(r'FIDEICOMISO|EXPENSE|SITH2|BMRCASH', re.IGNORECASE)
 
 
-def _combinacion(montos: list[float], objetivo: float) -> list[int] | None:
-    """Índices de montos cuya suma da el objetivo (±TOLERANCIA). Suma de
+def _combinacion(montos: list[float], objetivo: float, tol: float = TOLERANCIA) -> list[int] | None:
+    """Índices de montos cuya suma da el objetivo (±tol). Suma de
     subconjuntos sobre pesos redondeados con bitsets; se verifica en centavos.
-    Con varias soluciones prefiere las facturas más antiguas (las primeras)."""
+    Con varias soluciones prefiere la suma más cercana y, entre ésas, las
+    facturas más antiguas (las primeras)."""
     pesos = [int(round(m)) for m in montos]
     obj = int(round(objetivo))
-    limite = obj + len(pesos) + 2
+    limite = obj + len(pesos) + 2 + int(tol)
     mask = (1 << (limite + 1)) - 1
     alcanzables = [1]                          # alcanzables[i]: sumas con los primeros i montos
     for w in pesos:
         alcanzables.append((alcanzables[-1] | (alcanzables[-1] << w)) & mask)
     total = alcanzables[-1]
-    holgura = len(pesos) // 2 + 2
+    holgura = len(pesos) // 2 + 2 + int(tol)
     for delta in sorted(range(-holgura, holgura + 1), key=abs):
         s = obj + delta
         if s <= 0 or not (total >> s) & 1:
@@ -197,8 +198,25 @@ def _combinacion(montos: list[float], objetivo: float) -> list[int] | None:
                 continue                       # alcanzable sin la i-ésima: no se usa
             idx.append(i - 1)
             s -= pesos[i - 1]
-        if s == 0 and abs(sum(montos[i] for i in idx) - objetivo) <= TOLERANCIA:
+        if s == 0 and abs(sum(montos[i] for i in idx) - objetivo) <= tol:
             return sorted(idx)
+    return None
+
+
+def _bloque_seguido(montos: list[float], objetivo: float) -> list[int] | None:
+    """Bloque de 2+ facturas consecutivas (ordenadas por fecha) que suma el
+    objetivo (±TOLERANCIA): así sube el usuario sus facturas, por tanda. Si hay
+    varios, el que empieza antes (los depósitos se atienden del más antiguo al
+    más reciente, así cada uno toma las facturas más viejas que le cuadran)."""
+    n = len(montos)
+    for i in range(n):
+        suma = 0.0
+        for j in range(i, n):
+            suma += montos[j]
+            if j > i and abs(suma - objetivo) <= TOLERANCIA:
+                return list(range(i, j + 1))
+            if suma > objetivo + TOLERANCIA:
+                break
     return None
 
 
@@ -208,6 +226,12 @@ def _combinacion(montos: list[float], objetivo: float) -> list[int] | None:
 # días) que juntos pagan un grupo de facturas.
 PASADAS = ((100, 'alta'), (185, 'media'), (370, 'baja'))
 PAR_DIAS = 45
+BLOQUE_DIAS = 400          # tanda de facturas seguidas: hasta ~13 meses antes
+APROX_DIAS = 185           # aproximadas: la combinación más cercana en ~6 meses
+
+
+def _tol_aprox(monto: float) -> float:
+    return max(300.0, round(monto * 0.03, 2))
 
 
 def _depositos_sin_lote(db) -> list[dict]:
@@ -226,17 +250,26 @@ def sugerencias(db) -> list[dict]:
     libres.sort(key=lambda g: (g['fecha'], g['id']))
     usados, emparejados, out = set(), set(), []
 
-    def buscar(depositos, dias, confianza):
+    def buscar(depositos, dias, confianza, modo='suma'):
         desde = (date.fromisoformat(depositos[0]['fecha']) - timedelta(days=dias)).isoformat()
         hasta = depositos[-1]['fecha']
         objetivo = round(sum(d['monto'] for d in depositos), 2)
         cand = [g for g in libres if g['id'] not in usados and desde <= g['fecha'][:10] <= hasta]
         if not cand:
             return False
-        idx = _combinacion([g['monto'] for g in cand], objetivo)
+        montos = [g['monto'] for g in cand]
+        if modo == 'bloque':
+            idx = _bloque_seguido(montos, objetivo)
+        elif modo == 'aprox':
+            idx = _combinacion(montos, objetivo, _tol_aprox(objetivo))
+        else:
+            idx = _combinacion(montos, objetivo)
         if idx is None:
             return False
         facturas = [cand[i] for i in idx]
+        if modo == 'bloque':               # tanda reciente: alta; tanda vieja: media
+            antig = (date.fromisoformat(hasta) - date.fromisoformat(facturas[0]['fecha'][:10])).days
+            confianza = 'alta' if antig <= PASADAS[1][0] else 'media'
         usados.update(g['id'] for g in facturas)
         emparejados.update(d['id'] for d in depositos)
         total = round(sum(g['monto'] for g in facturas), 2)
@@ -249,6 +282,8 @@ def sugerencias(db) -> list[dict]:
         })
         return True
 
+    for d in deps:                                   # tandas de facturas seguidas
+        buscar([d], BLOQUE_DIAS, 'alta', 'bloque')
     for dias, confianza in PASADAS:
         for d in deps:
             if d['id'] not in emparejados:
@@ -259,6 +294,9 @@ def sugerencias(db) -> list[dict]:
             continue
         if (date.fromisoformat(b['fecha']) - date.fromisoformat(a['fecha'])).days <= PAR_DIAS:
             buscar([a, b], PASADAS[1][0], 'media')
+    for d in deps:                                   # lo más cercano, con diferencia
+        if d['id'] not in emparejados:
+            buscar([d], APROX_DIAS, 'aproximada', 'aprox')
     out.sort(key=lambda x: x['deposito']['fecha'])
     return out
 
