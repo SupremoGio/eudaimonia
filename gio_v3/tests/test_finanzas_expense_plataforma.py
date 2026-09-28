@@ -94,3 +94,17 @@ def test_deposito_561_fuera_y_rearmado(test_db, monkeypatch):
         P.conciliar(db); db.commit()
         lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
         assert d561 not in lotes and [g['id'] for g in lotes[d2]['gastos']] == [c]
+
+
+def test_exacto_al_centavo_gana_a_redondeo():
+    """El de $4,365.55 cuadra al centavo con 6 gastos; el de $2,215.60 (antes)
+    no debe quitárselos con una combinación que solo cuadra redondeando."""
+    g = [{'idx': i, 'fecha': f, 'titulo': t, 'monto': m} for i, (f, t, m) in enumerate((
+        ('2024-10-18', 'DESPENSA', 1904.40), ('2024-10-18', 'pastel cocina', 415.0), ('2024-10-18', 'PASTEL OCT', 740.0),
+        ('2024-10-22', 'DIA DEL CHEF', 415.0), ('2024-10-22', 'REFRESCO', 160.14), ('2024-10-25', 'pastel act', 427.0),
+        ('2024-10-30', 'pan de muerto', 138.85), ('2024-10-31', 'PAPELERIA', 335.0), ('2024-11-06', 'Corona', 1044.0)))]
+    a = {'id': 1, 'fecha': '2024-11-01', 'monto': 2215.60}
+    b = {'id': 2, 'fecha': '2024-11-15', 'monto': 4365.55}
+    res = P.asignar([a, b], g)
+    assert round(sum(x['monto'] for x in res[2][1]), 2) == 4365.54
+    assert {x['titulo'] for x in res[2][1]} == {'DESPENSA', 'pastel cocina', 'DIA DEL CHEF', 'REFRESCO', 'pastel act', 'Corona'}

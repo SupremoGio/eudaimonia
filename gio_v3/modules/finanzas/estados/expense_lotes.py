@@ -181,30 +181,30 @@ _DEP_RE = re.compile(r'FIDEICOMISO|EXPENSE|SITH2|BMRCASH', re.IGNORECASE)
 
 def _combinacion(montos: list[float], objetivo: float, tol: float = TOLERANCIA) -> list[int] | None:
     """Índices de montos cuya suma da el objetivo (±tol). Suma de
-    subconjuntos sobre pesos redondeados con bitsets; se verifica en centavos.
-    Con varias soluciones prefiere la suma más cercana y, entre ésas, las
-    facturas más antiguas (las primeras)."""
-    pesos = [int(round(m)) for m in montos]
-    obj = int(round(objetivo))
-    limite = obj + len(pesos) + 2 + int(tol)
+    subconjuntos en centavos con bitsets (así la combinación exacta al
+    centavo gana a una que solo cuadra redondeando). Busca de la suma más
+    cercana hacia afuera y, con varias soluciones, prefiere las facturas más
+    antiguas (las primeras)."""
+    cent = [int(round(m * 100)) for m in montos]
+    obj = int(round(objetivo * 100))
+    holgura = int(round(tol * 100))
+    limite = obj + holgura
     mask = (1 << (limite + 1)) - 1
     alcanzables = [1]                          # alcanzables[i]: sumas con los primeros i montos
-    for w in pesos:
+    for w in cent:
         alcanzables.append((alcanzables[-1] | (alcanzables[-1] << w)) & mask)
     total = alcanzables[-1]
-    holgura = len(pesos) // 2 + 2 + int(tol)
     for delta in sorted(range(-holgura, holgura + 1), key=abs):
         s = obj + delta
         if s <= 0 or not (total >> s) & 1:
             continue
-        idx, n = [], len(pesos)
-        for i in range(n, 0, -1):              # de la más reciente a la más antigua
+        idx = []
+        for i in range(len(cent), 0, -1):      # de la más reciente a la más antigua
             if (alcanzables[i - 1] >> s) & 1:
                 continue                       # alcanzable sin la i-ésima: no se usa
             idx.append(i - 1)
-            s -= pesos[i - 1]
-        if s == 0 and abs(sum(montos[i] for i in idx) - objetivo) <= tol:
-            return sorted(idx)
+            s -= cent[i - 1]
+        return sorted(idx)
     return None
 
 

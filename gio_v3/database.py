@@ -6170,6 +6170,26 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_v4_561 migration warning: {e}")
 
+        # ── FINANZAS — plataforma de Expense v5: primero lo que cuadra al
+        # centavo (suma de subconjuntos en centavos) y luego lo de ±$1; se
+        # rearman los lotes de la plataforma (el de $4,365.55 del 15/11/2024
+        # recupera sus gastos exactos).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_plataforma_v5_centavos'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.expense_plataforma import conciliar as _exp_plat5, liberar_lotes_plataforma as _lib5
+                _l = _lib5(db)
+                _h = _exp_plat5(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_plataforma_v5_centavos", f"{_l} liberados; {len(_h)} lotes: " + "; ".join(_h)[:850])
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_plataforma_v5_centavos: {_l} liberados, {len(_h)} lotes {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_plataforma_v5_centavos migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
