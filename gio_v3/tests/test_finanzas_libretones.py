@@ -135,3 +135,34 @@ def test_tdc_pdf_completa_la_mensualidad_de_una_fila_existente(test_db):
         r = db.execute("SELECT parcialidad_num, parcialidad_total FROM est_movimientos WHERE id=?", (mid,)).fetchone()
         assert tuple(r) == (5, 6)
         assert db.execute("SELECT COUNT(*) FROM est_movimientos WHERE descripcion LIKE 'LIVERPOOL ZAPOPAN%' AND monto=409").fetchone()[0] == 1
+
+
+def test_tdc_pdf_no_empata_otro_comercio_por_fecha_de_liquidacion(test_db):
+    """Corte 202607: la mensualidad Amazon $114 (22/07, liquida 23/07) no es el
+    Little Caesars de $114 del 23/07 que ya estaba (del corte siguiente)."""
+    with database.get_db() as db:
+        lc = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                           VALUES ('2026-07-23', 'LITTLE CAESAR A CAMACH', 114.0, 'BBVA_TDC', 'COMIDA_FUERA', '', 'GASTO')""").lastrowid
+        db.commit()
+        libs.aplicar(db, '202607', 'bbva_tdc')
+        db.commit()
+        assert db.execute("SELECT parcialidad_num FROM est_movimientos WHERE id=?", (lc,)).fetchone()[0] is None
+        am = db.execute("""SELECT parcialidad_num, parcialidad_total FROM est_movimientos
+                           WHERE fecha='2026-07-22' AND descripcion LIKE 'AMAZON A MESES%' AND monto=114""").fetchone()
+        assert tuple(am) == (6, 6)
+
+
+def test_reparar_parcialidades_de_otro_comercio(test_db):
+    """Lo que dejó el cargador viejo: la «6 de 6» en el Little Caesars y sin la mensualidad."""
+    with database.get_db() as db:
+        lc = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo,
+                           parcialidad_num, parcialidad_total)
+                           VALUES ('2026-07-23', 'LITTLE CAESAR A CAMACH', 114.0, 'BBVA_TDC', 'COMIDA_FUERA', '', 'GASTO', 6, 6)""").lastrowid
+        db.commit()
+        arr = libs.reparar_parcialidades(db)
+        db.commit()
+        assert len(arr) == 1 and 'LITTLE CAESAR' in arr[0]
+        assert db.execute("SELECT parcialidad_num FROM est_movimientos WHERE id=?", (lc,)).fetchone()[0] is None
+        assert db.execute("""SELECT COUNT(*) FROM est_movimientos WHERE fecha='2026-07-22'
+                             AND descripcion LIKE 'AMAZON A MESES%' AND monto=114 AND parcialidad_num=6""").fetchone()[0] == 1
+        assert libs.reparar_parcialidades(db) == []
