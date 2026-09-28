@@ -3233,9 +3233,21 @@ def expense_plataforma_admin():
     if request.args.get('formato') != 'html':
         return jsonify(data)
     fmt = lambda v: f"${float(v):,.2f}"
+    with get_db() as db:
+        posibles = {g['idx']: _plat.posibles_cargos(db, g) for p in pl for g in p['gastos'] if not g['cargo']}
+
+    def linea(g):
+        txt = g['fecha'] + ' ' + g['titulo'] + ' ' + fmt(g['monto'])
+        if g['cargo']:
+            return txt + f" → {g['cargo']['fecha']} {g['cargo']['descripcion']} ({g['cargo']['categoria']})"
+        cands = posibles.get(g['idx']) or []
+        pista = '; '.join(f"{c['fecha']} {c['descripcion'][:30]} {c['categoria']}/{c['subcategoria'] or ''} {c['tipo']}"
+                          + (' [ya en lote]' if c['en_lote'] else '') for c in cands) or 'ningún movimiento de ese monto a ±45 días'
+        return txt + f' <i>(sin cargo · {pista})</i>'
+
     filas = ''.join(
         f"<tr><td>{p['deposito']['fecha'][:10]}</td><td>{p['deposito']['descripcion']}</td><td class=r>{fmt(p['deposito']['monto'])}</td>"
-        f"<td>{p['pasada'] or '<b>sin pareja</b>'}</td><td>{'<br>'.join(g['fecha'] + ' ' + g['titulo'] + ' ' + fmt(g['monto']) + ('' if g['cargo'] else ' <i>(sin cargo)</i>') for g in p['gastos'])}</td></tr>"
+        f"<td>{p['pasada'] or '<b>sin pareja</b>'}</td><td>{'<br>'.join(linea(g) for g in p['gastos'])}</td></tr>"
         for p in pl)
     return ('<!doctype html><meta charset=utf-8><title>Expense · plataforma</title>'
             '<style>body{font:14px system-ui;background:#0f0d14;color:#eee;padding:16px}table{border-collapse:collapse;width:100%}'

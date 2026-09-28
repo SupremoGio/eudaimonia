@@ -6114,6 +6114,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_2026_09_28 migration warning: {e}")
 
+        # ── FINANZAS — segunda pasada de la plataforma de Expense: la asignación
+        # ya no reofrece gastos pagados por otro lote y el cargo se busca de 7
+        # días antes a 15 después, incluyendo transferencias a proveedores.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_plataforma_v2'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.expense_plataforma import conciliar as _exp_plat2
+                _h = _exp_plat2(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_plataforma_v2", f"{len(_h)} lotes: " + "; ".join(_h)[:900])
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_plataforma_v2: {len(_h)} lotes {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_plataforma_v2 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
