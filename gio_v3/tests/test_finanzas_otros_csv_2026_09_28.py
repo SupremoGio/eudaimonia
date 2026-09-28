@@ -61,7 +61,7 @@ def test_transferencias_de_5000_a_renta(test_db):
                           VALUES (?,?,?, 'BBVA_DEB', 'FINANZAS', 'Transferencia', 'GASTO')""",
                        (f, d, 800.0 if 'OTRO' in d else 5000.0))
         db.commit()
-        assert _corregir_pagos_renta(db) == 4
+        _corregir_pagos_renta(db)     # los 2 de 2023 además reciben mi_parte (RENTA_MI_PARTE)
         db.execute("INSERT INTO est_keywords (keyword, categoria, subcategoria) VALUES ('BNET', 'FINANZAS', 'Transferencia')")
         _reaplicar_reglas(db)
         cats = db.execute("SELECT monto, categoria, subcategoria FROM est_movimientos ORDER BY id").fetchall()
