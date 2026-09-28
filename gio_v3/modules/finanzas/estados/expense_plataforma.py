@@ -49,35 +49,48 @@ def items() -> list[dict]:
     return out
 
 
-def _exacto(cand, monto):
-    uno = [x for x in cand if abs(x['monto'] - monto) <= 0.01]
+def _exacto(cand, monto, tol):
+    uno = [x for x in cand if abs(x['monto'] - monto) <= min(tol, 0.01)]
     return [uno[0]] if uno else None
 
 
-def _fifo(cand, monto):
+def _fifo(cand, monto, tol):
     s, out = 0.0, []
     for x in cand:
         s += x['monto']
         out.append(x)
-        if abs(s - monto) <= TOL:
+        if abs(s - monto) <= tol:
             return out if len(out) > 1 else None
-        if s > monto + TOL:
+        if s > monto + tol:
             return None
     return None
 
 
-def _bloque(cand, monto):
-    idx = _lotes._bloque_seguido([x['monto'] for x in cand], monto)
+def _bloque(cand, monto, tol):
+    for i in range(len(cand)):
+        s = 0.0
+        for j in range(i, len(cand)):
+            s += cand[j]['monto']
+            if j > i and abs(s - monto) <= tol:
+                return cand[i:j + 1]
+            if s > monto + tol:
+                break
+    return None
+
+
+def _suma(cand, monto, tol):
+    idx = _lotes._combinacion([x['monto'] for x in cand], monto, tol)
     return [cand[i] for i in idx] if idx is not None else None
 
 
-def _suma(cand, monto):
-    idx = _lotes._combinacion([x['monto'] for x in cand], monto)
-    return [cand[i] for i in idx] if idx is not None else None
-
-
-PASADAS = (('mismo monto', 120, _exacto), ('FIFO', 185, _fifo), ('bloque', 120, _bloque),
-           ('combinación', 120, _suma), ('combinación', 240, _suma))
+_PASADAS_BASE = (('mismo monto', 120, _exacto), ('FIFO', 185, _fifo), ('bloque', 120, _bloque),
+                 ('combinación', 120, _suma), ('combinación', 240, _suma))
+# Primero todo lo que cuadra al centavo y después lo que cuadra con hasta $1
+# de redondeo: el de $4,365.55 (15/11/2024) cuadra exacto ($4,365.54) con
+# Despensa + pasteles + Día del Chef + Corona, pero el de $2,215.60 se los
+# ganaba antes con una combinación que daba $2,215.99.
+PASADAS = tuple((n, d, f, 0.02) for n, d, f in _PASADAS_BASE) + \
+          tuple((n + ' ±$1', d, f, TOL) for n, d, f in _PASADAS_BASE if f is not _exacto)
 
 
 def _ventana(d, gastos, libres, dias):
@@ -86,9 +99,9 @@ def _ventana(d, gastos, libres, dias):
 
 
 def _emparejar(d, gastos, libres):
-    for nombre, dias, fn in PASADAS:
+    for nombre, dias, fn, tol in PASADAS:
         cand = _ventana(d, gastos, libres, dias)
-        sel = fn(cand, float(d['monto'])) if cand else None
+        sel = fn(cand, float(d['monto']), tol) if cand else None
         if sel:
             return nombre, sel
     return None
@@ -97,13 +110,13 @@ def _emparejar(d, gastos, libres):
 def asignar(depositos: list[dict], gastos: list[dict]) -> dict:
     """depósito id -> (pasada, [gastos de la plataforma])."""
     usados, res = set(), {}
-    for nombre, dias, fn in PASADAS:
+    for nombre, dias, fn, tol in PASADAS:
         for d in depositos:
             if d['id'] in res:
                 continue
             desde = (date.fromisoformat(d['fecha'][:10]) - timedelta(days=dias)).isoformat()
             cand = [x for x in gastos if x['idx'] not in usados and desde <= x['fecha'] <= d['fecha'][:10]]
-            sel = fn(cand, float(d['monto'])) if cand else None
+            sel = fn(cand, float(d['monto']), tol) if cand else None
             if sel:
                 usados.update(x['idx'] for x in sel)
                 res[d['id']] = (nombre, sel)
