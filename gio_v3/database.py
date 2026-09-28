@@ -6209,6 +6209,26 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_v6_viaticos migration warning: {e}")
 
+        # ── FINANZAS — retiros de CETES a débito (usuario, 2026-09-28): SPEI
+        # de NAFIN -> CETES/RETIRO|APORTACION y las 9 instrucciones de retiro
+        # de mar-sep 2026 ligadas a su depósito.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_cetes_retiros_2026'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_spei_nafin
+                from modules.finanzas.estados import cetes_retiros as _cetes
+                _n = _corregir_spei_nafin(db)
+                _r = _cetes.conciliar(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_cetes_retiros_2026", f"{_n} SPEI NAFIN; {_r['ligados']} retiros ligados; faltan: {', '.join(_r['faltan'])}"[:900])
+                )
+                db.commit()
+                print(f"[DB] finanzas_cetes_retiros_2026: {_n} SPEI NAFIN, {_r}")
+            except Exception as e:
+                print(f"[DB] finanzas_cetes_retiros_2026 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
