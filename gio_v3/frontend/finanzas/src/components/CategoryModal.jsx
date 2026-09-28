@@ -203,7 +203,17 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
               </div>
 
               <div className="eu-between t-meta">
-                <span>{rows.length} de {tx.length}</span>
+                <span className="fz-cm-count">
+                  {rows.length} de {tx.length}
+                  {/* Lo que se ve (categoría, periodo, cuenta y subcategoría) con una
+                      columna COMENTARIOS vacía para anotar correcciones. */}
+                  <a className="eu-btn eu-btn--ghost eu-btn--sm" download title="Descargar en CSV con columna para comentarios"
+                    href={api.csvUrl({
+                      ...(isIngreso ? { tipo: 'INGRESO' } : { category: categoria, tipo }),
+                      bank, ...period, ...(groupBy === 'sub' && sub && sub !== SIN_SUB ? { subcategoria: sub } : {}),
+                      comentarios: '1',
+                    })}><Icon name="download" />CSV</a>
+                </span>
                 <span>{rowsRef && !allRef ? 'Referencia' : 'Total'} <b className="num fz-fg-1">{money(rowsTotal)}</b>{rowsRef && !allRef ? ' · no suma' : ''}</span>
               </div>
 

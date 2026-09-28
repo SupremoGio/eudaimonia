@@ -976,6 +976,16 @@ def list_reembolsos():
     return jsonify({'data': [dict(r) for r in rows]})
 
 
+def _nombre_csv(args) -> str:
+    """transacciones.csv, o transacciones_otros_2023-01-01_2023-12-31.csv si
+    viene filtrado por categoría/periodo (para no confundir descargas)."""
+    partes = [args.get('category'), args.get('subcategoria'), args.get('date_from'), args.get('date_to')]
+    if args.get('months'):
+        partes.append(args['months'].replace(',', '_'))
+    extra = '_'.join(re.sub(r'[^A-Za-z0-9-]+', '', p.lower()) for p in partes if p)
+    return f"transacciones_{extra}.csv" if extra else 'transacciones.csv'
+
+
 @estados_bp.route('/api/transactions/export/csv')
 def export_csv():
     if not _ok(): return _locked()
@@ -987,10 +997,15 @@ def export_csv():
         ).fetchall()
 
     output = io.StringIO()
+    # comentarios=1 (botón CSV del detalle de categoría): columna vacía al
+    # final para que el usuario anote correcciones y mande el archivo de
+    # regreso (como correcciones_csv_2026_09_26); ahí se pide «Sin clasificar».
+    comentarios = request.args.get('comentarios') == '1'
     if rows:
-        writer = csv.DictWriter(output, fieldnames=dict(rows[0]).keys())
+        campos = list(dict(rows[0]).keys()) + (['COMENTARIOS'] if comentarios else [])
+        writer = csv.DictWriter(output, fieldnames=campos)
         writer.writeheader()
-        writer.writerows([dict(r) for r in rows])
+        writer.writerows([{**dict(r), **({'COMENTARIOS': ''} if comentarios else {})} for r in rows])
 
     # BOM UTF-8 al inicio: el usuario reportó acentos rotos ("ArtÃ¬culos
     # del hogar" en vez de "Artículos del hogar") al abrir el CSV en
@@ -1002,7 +1017,7 @@ def export_csv():
         mimetype='text/csv',
         headers={
             'Content-Type': 'text/csv; charset=utf-8',
-            'Content-Disposition': 'attachment; filename=transacciones.csv',
+            'Content-Disposition': f"attachment; filename={_nombre_csv(request.args)}",
         },
     )
 

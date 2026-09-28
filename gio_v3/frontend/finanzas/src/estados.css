@@ -282,6 +282,7 @@ button.fz-note{width:100%;text-align:left;font:inherit;color:inherit;cursor:poin
 .fz-ref-badge{height:18px;padding:0 6px;font-size:var(--fs-11,11px);color:var(--fg-3);border-style:dashed;margin-left:6px;vertical-align:middle}
 .fz-bd .fz-ref-badge{margin-left:0}
 .fz-ref-note{margin-top:2px}
+.fz-cm-count{display:inline-flex;align-items:center;gap:var(--sp-2)}
 .fz-ref-note .fz-ref-badge{margin-left:0}
 .fz-cm-tools{display:flex;gap:var(--sp-2);flex-wrap:wrap}
 .fz-cm-tools>*{flex:1 1 150px;min-width:0}
