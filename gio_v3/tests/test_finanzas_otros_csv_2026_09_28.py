@@ -19,7 +19,7 @@ def _ins(db, mid, fecha, desc, monto, cat='OTROS'):
 def test_categorias_validas():
     for *_, cat, sub in corr.CORRECCIONES:
         assert cat == 'EXPENSE' or sub in SUBCATEGORIAS[cat], (cat, sub)
-    assert len(corr.CORRECCIONES) == 261 and len({c[0] for c in corr.CORRECCIONES}) == 261
+    assert len(corr.CORRECCIONES) == 278 and len({c[0] for c in corr.CORRECCIONES}) == 278
 
 
 def test_aplica_por_id_y_por_comercio(test_db):
@@ -97,3 +97,31 @@ def test_spei_bajio_1100_a_costo_financiero(test_db):
         assert _corregir_pagos_renta(db) == 4
         cats = {(r[0], r[1], r[2]) for r in db.execute("SELECT monto, categoria, subcategoria FROM est_movimientos")}
         assert cats == {(1100.0, 'COSTOS_FINANCIEROS', 'Intereses'), (5000.0, 'VIVIENDA', 'Renta')}
+
+
+def test_salsa_clases_y_celular_2022(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta, _corregir_pagos_salsa
+    with database.get_db() as db:
+        filas = (('2022-07-26', 'PAGO CUENTA DE TERCERO BNET AFRO CUBANO GIOVAN', 600.0),
+                 ('2022-11-13', 'PAGO CUENTA DE TERCERO BNET MENSUALIDAD GIO', 420.0),
+                 ('2022-12-21', 'PAGO CUENTA DE TERCERO BNET PAGO GIOVANY', 600.0),
+                 ('2022-10-22', 'PAGO CUENTA DE TERCERO BNET RECARGA A SUPREMO', 100.0),
+                 ('2022-12-24', 'PAGO CUENTA DE TERCERO BNET TRANSF A', 50.0),
+                 ('2022-12-24', 'PAGO CUENTA DE TERCERO BNET TRANSF A (2)', 300.0))    # otro monto: no
+        for f, d, m in filas:
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES (?,?,?, 'BBVA_DEB', 'FINANZAS', 'Transferencia', 'GASTO')""", (f, d, m))
+        db.commit()
+        _corregir_pagos_salsa(db); _corregir_pagos_renta(db)
+        got = {(r[0], r[1], r[2]) for r in db.execute("SELECT monto, categoria, subcategoria FROM est_movimientos")}
+        assert got == {(600.0, 'SALSA', 'Clases'), (420.0, 'SALSA', 'Clases'), (100.0, 'DIGITAL', 'Celular'),
+                       (50.0, 'DIGITAL', 'Celular'), (300.0, 'FINANZAS', 'Transferencia')}
+
+
+def test_chedraui_walmart_2022_desde_super(test_db):
+    with database.get_db() as db:
+        _ins(db, 4442, '2022-08-29', 'WALMART VENTA EN LIN4', 7888.0, cat='SUPER')
+        _ins(db, 7, '2022-04-22', 'TIENDAS CHEDRAUI S TA', 292.0, cat='SUPER')
+        db.commit()
+        corr.aplicar(db)
+        assert {tuple(r) for r in db.execute("SELECT categoria, subcategoria FROM est_movimientos")} == {('VIVIENDA', 'Artículos del hogar')}

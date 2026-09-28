@@ -727,6 +727,14 @@ PAGOS_SALSA = (  # (fecha, monto, texto, subcategoría)
     ('2025-02-16', 120.0, 'JENNIFER', 'Social'),
     ('2025-07-28', 80.0, 'DAVID YAE', 'Social'),
     ('2025-10-29', 110.0, 'BNET GIO', 'Social'),
+    # Clases con Gio de 2022 (el usuario, 2026-09-28: «manda a salsa clases»).
+    ('2022-07-26', 600.0, 'BNET AFRO CUBANO GIOVAN', 'Clases'),
+    ('2022-10-13', 500.0, 'BNET GIOVANY', 'Clases'),
+    ('2022-10-14', 600.0, 'BNET PAGO GIO', 'Clases'),
+    ('2022-11-13', 420.0, 'BNET MENSUALIDAD GIO', 'Clases'),
+    ('2022-11-15', 600.0, 'BNET MENSUALIDAD GIO', 'Clases'),
+    ('2022-12-11', 440.0, 'BNET GIO MENSUALIDAD', 'Clases'),
+    ('2022-12-21', 600.0, 'BNET PAGO GIOVANY', 'Clases'),
 )
 
 
@@ -768,12 +776,24 @@ PAGOS_COSTO_FINANCIERO = (  # (fecha, monto, texto)
 )
 
 
+# Recargas de saldo del celular (el usuario, 2026-09-28: «manda a saldo teléfono»).
+PAGOS_CELULAR = (  # (fecha, monto, texto)
+    ('2022-09-16', 50.0, 'BNET TRANSF A'),
+    ('2022-10-22', 100.0, 'BNET RECARGA A SUPREMO'),
+    ('2022-11-07', 100.0, 'BNET PAGO SUPREMO'),
+    ('2022-11-24', 50.0, 'BNET TRANSF A'),
+    ('2022-12-10', 50.0, 'BNET TRANSF A'),
+    ('2022-12-24', 50.0, 'BNET TRANSF A'),
+)
+
+
 def _corregir_pagos_renta(db) -> int:
-    """Reafirma PAGOS_RENTA (VIVIENDA/Renta) y PAGOS_COSTO_FINANCIERO
-    (COSTOS_FINANCIEROS/Intereses)."""
+    """Reafirma PAGOS_RENTA (VIVIENDA/Renta), PAGOS_COSTO_FINANCIERO
+    (COSTOS_FINANCIEROS/Intereses) y PAGOS_CELULAR (DIGITAL/Celular)."""
     n = 0
     for lista, cat, sub in ((PAGOS_RENTA, 'VIVIENDA', 'Renta'),
-                            (PAGOS_COSTO_FINANCIERO, 'COSTOS_FINANCIEROS', 'Intereses')):
+                            (PAGOS_COSTO_FINANCIERO, 'COSTOS_FINANCIEROS', 'Intereses'),
+                            (PAGOS_CELULAR, 'DIGITAL', 'Celular')):
         for fecha, monto, texto in lista:
             n += db.execute("""
                 UPDATE est_movimientos SET categoria=?, subcategoria=?
