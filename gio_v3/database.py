@@ -6229,6 +6229,22 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_cetes_retiros_2026 migration warning: {e}")
 
+        # ── FINANZAS — retiros de CETES ene-feb 2026 (segunda tanda de capturas).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_cetes_retiros_2026_ene_feb'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados import cetes_retiros as _cetes2
+                _r = _cetes2.conciliar(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_cetes_retiros_2026_ene_feb", f"{_r['ligados']} retiros ligados; faltan: {', '.join(_r['faltan'])}"[:900])
+                )
+                db.commit()
+                print(f"[DB] finanzas_cetes_retiros_2026_ene_feb: {_r}")
+            except Exception as e:
+                print(f"[DB] finanzas_cetes_retiros_2026_ene_feb migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

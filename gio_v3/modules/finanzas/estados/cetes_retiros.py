@@ -15,6 +15,10 @@ from datetime import date, timedelta
 
 # (fecha de la instrucción, producto, importe instruido)
 RETIROS = (
+    ('2026-01-05', 'CETES', 4091.96),
+    ('2026-01-05', 'CETES', 19718.43),
+    ('2026-02-04', 'BONDDIA', 12800.00),
+    ('2026-02-09', 'CETES', 12000.00),
     ('2026-03-09', 'BONDDIA', 6500.00),
     ('2026-04-08', 'BONDDIA', 700.00),
     ('2026-05-11', 'CETES', 5000.00),
