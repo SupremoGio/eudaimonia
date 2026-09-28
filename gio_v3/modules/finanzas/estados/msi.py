@@ -33,12 +33,12 @@ NO_SON_MSI = {
 }
 
 
-# La línea «… A NN MSI» que en realidad fue la 1ª mensualidad (el usuario:
-# «04/10 fue la primera mensualidad»): cuenta como gasto y como mensualidad 1
-# de una compra de cuota × NN.
-PRIMERA_MENSUALIDAD = {
-    ('2025-10-04', 'CRISTAL VILLAHERMOSA', 1037.5),
-}
+# La línea «… A NN MSI» que en realidad fue la 1ª mensualidad: cuenta como
+# gasto y como mensualidad 1 de una compra de cuota × NN. Vacío desde que llegó
+# el PDF de Cristal (oct 2025): la línea de $1,037.50 del 04/10 que la app
+# descargó es la misma compra que el banco imprime como $12,450 ese día (la
+# 1ª mensualidad real es la «1 de 12» del 22/10); ver _duplicadas.
+PRIMERA_MENSUALIDAD: set = set()
 
 # Mensualidades de compras que el usuario pagó por alguien más y le fueron
 # devolviendo (texto, cuota, desde, hasta) -> PRESTAMOS, fuera de su gasto.
@@ -164,13 +164,52 @@ def _rivales(db, compras) -> dict:
         if linea < 0.005:
             continue
         palabra = comercio.split()[0] if comercio.split() else ''
-        es_cuota = _es_primera(c) or (n > 1 and db.execute("""
-            SELECT 1 FROM est_movimientos WHERE banco=? AND id != ? AND parcialidad_total=?
-              AND ABS(ABS(monto) - ?) <= ? AND UPPER(descripcion) LIKE ? LIMIT 1
-        """, (c['banco'], c['id'], n, linea, linea * _TOL, f"%{comercio[:_PREFIJO]}%")).fetchone() is not None)
         out[c['id']] = {'id': c['id'], 'banco': c['banco'], 'palabra': palabra, 'n': n,
-                        'mes': _mes(c['fecha'][:10]), 'cuota': linea if es_cuota else linea / n}
+                        'mes': _mes(c['fecha'][:10]), 'cuota': linea / n, 'linea': linea,
+                        'comercio': comercio}
+    # Con la cuota «de la línea / n» de todas ya calculada: ¿alguna línea trae
+    # la cuota? Solo si hay al menos 2 mensualidades «k de n» de ese monto que
+    # no queden más cerca de la cuota de otra compra (Amazon A 06 $114.89 del
+    # 24/01/2026 es la compra completa: la «k de 6» de $114 era la última de
+    # la de $699 = 5 × $117 + $114).
+    for c in compras:
+        o = out.get(c['id'])
+        if not o:
+            continue
+        if _es_primera(c):
+            o['cuota'] = o['linea']
+            continue
+        if o['n'] < 2:
+            continue
+        filas = db.execute("""
+            SELECT ABS(monto) AS monto FROM est_movimientos WHERE banco=? AND id != ? AND parcialidad_total=?
+              AND ABS(ABS(monto) - ?) <= ? AND UPPER(descripcion) LIKE ?
+        """, (c['banco'], c['id'], o['n'], o['linea'], o['linea'] * _TOL, f"%{o['comercio'][:_PREFIJO]}%")).fetchall()
+        propias = [f for f in filas if not any(
+            x['id'] != o['id'] and x['banco'] == o['banco'] and x['palabra'] == o['palabra'] and x['n'] == o['n']
+            and abs(f['monto'] - x['cuota']) + 0.005 < abs(f['monto'] - o['linea']) for x in out.values())]
+        if len(propias) >= 2:
+            o['cuota'] = o['linea']
+            o['es_cuota'] = True
     return out
+
+
+def _duplicadas(compras) -> set:
+    """La misma compra descargada dos veces: la app la trae con la cuota
+    («CRISTAL VILLAHERMOSA A 12 MSI $1,037.50») y el PDF con el total ($12,450)
+    el mismo día. La de la cuota sobra: no es otra compra ni una mensualidad."""
+    info = []
+    for c in compras:
+        m = _COMPRA_RE.match(c['descripcion'] or '')
+        if m and abs(c['monto'] or 0) >= 0.005:
+            info.append((c, m.group(1).strip().upper()[:_PREFIJO], int(m.group(2)), abs(c['monto'])))
+    dup = set()
+    for c, com, n, linea in info:
+        for o, com_o, n_o, linea_o in info:
+            if o['id'] != c['id'] and o['banco'] == c['banco'] and o['fecha'][:10] == c['fecha'][:10] \
+                    and com_o == com and n_o == n and n > 1 and abs(linea_o / n - linea) <= 0.02:   # la app da la cuota exacta al centavo
+                dup.add(c['id'])
+    return dup
 
 
 def conciliar(db, hoy: str | None = None) -> list[dict]:
@@ -186,7 +225,8 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
             WHERE substr(fecha,1,10)=? AND UPPER(descripcion) LIKE ? AND ABS(ABS(monto) - ?) < 0.005
               AND COALESCE(subcategoria,'') != ?
         """, (fecha, f"%{texto}%", monto, SUBCAT)).fetchall()]
-    compras.sort(key=lambda c: (c['fecha'], c['id']))
+    duplicadas = _duplicadas(compras)
+    compras = sorted((c for c in compras if c['id'] not in duplicadas), key=lambda c: (c['fecha'], c['id']))
     rivales = _rivales(db, compras)
     usados = set()
     out = []
@@ -247,8 +287,7 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         # ¿La línea trae la cuota en vez del total? (p. ej. «CRISTAL … A 12 MSI
         # $1,037.50» con mensualidades «10 de 12» de $1,038.)
         cuota, total, linea_es_cuota = linea / n, linea, False
-        if primera or n > 1 and any(r['parcialidad_total'] == n and r['id'] != c['id']
-                                    and abs(abs(r['monto']) - linea) <= linea * _TOL for r in cand):
+        if primera or rivales.get(c['id'], {}).get('es_cuota'):
             cuota, total, linea_es_cuota = linea, round(linea * n, 2), True
 
         def encaja(r):
@@ -273,11 +312,27 @@ def conciliar(db, hoy: str | None = None) -> list[dict]:
         # Cada «serie» es un plan: (cuota, filas, mes de inicio). Normalmente
         # una sola serie con la cuota de la compra.
         series = []
-        filas_1 = []
+        # Una por mes, la mejor: con «k de n» antes que sin número, y luego la
+        # de monto más parecido (Amazon A 03 $749: la 3ª es la «3 de 3» de
+        # $249 del 22/12, no un cargo suelto de $259 del 01/12).
+        por_mes = {}
         for r in cand:
-            if encaja(r) and _mes(r['fecha']) not in {_mes(x['fecha']) for x in filas_1}:
-                filas_1.append(r)
-        filas_1 = filas_1[:n]
+            if encaja(r):
+                clave = (0 if r['parcialidad_num'] else 1, abs(abs(r['monto']) - cuota), r['fecha'], r['id'])
+                ym = _mes(r['fecha'])
+                if ym not in por_mes or clave < por_mes[ym][0]:
+                    por_mes[ym] = (clave, r)
+        filas_1 = [r for _, (_, r) in sorted(por_mes.items())][:n]
+        # La última mensualidad es lo que resta y puede quedar lejos de la
+        # cuota en compras chicas (Amazon A 06 $114.89 = 5 × $20 + $14.89).
+        if len(filas_1) == n - 1 and filas_1:
+            resto = total - sum(abs(r['monto']) for r in filas_1)
+            ult = _mes(filas_1[-1]['fecha'])
+            fin_r = next((r for r in cand if r['id'] not in {x['id'] for x in filas_1}
+                          and _dif_meses(_mes(r['fecha']), ult) >= 1 and abs(abs(r['monto']) - resto) <= 1.0
+                          and abs(r['monto']) < cuota and (not r['parcialidad_total'] or r['parcialidad_total'] == n)), None)
+            if fin_r:
+                filas_1.append(fin_r)
         if len(filas_1) < n:
             # Compra de varios productos, cada uno con su plan (Palacio de
             # Hierro: 6 × $218.17 + 6 × $169.55 = $2,326.32), que pueden

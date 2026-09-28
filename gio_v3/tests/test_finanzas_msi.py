@@ -141,8 +141,8 @@ def test_casos_reales_de_produccion(test_db):
     c = _conciliar()
     assert [p['monto'] for p in c[v1]['pagos']] == [658.0] and [p['monto'] for p in c[v2]['pagos']] == [1322.0]
     assert c[p0]['estado'] == 'No procedió'
-    # el usuario confirmó que la línea del 04/10 fue la 1ª mensualidad: 1 + las 10, 11 y 12
-    assert c[cr]['linea_es_cuota'] and c[cr]['total'] == 12450.0 and c[cr]['pagadas'] == 4
+    # la línea trae la cuota: 12 × $1,037.50, con la 10, 11 y 12
+    assert c[cr]['linea_es_cuota'] and c[cr]['total'] == 12450.0 and c[cr]['pagadas'] == 3
     assert c[va]['estado'] == 'Liquidada' and c[va]['meses_sin_mensualidad'] == []
 
 
@@ -214,10 +214,13 @@ def test_compra_pasada_a_meses_por_error_es_gasto_normal(test_db):
 
 
 def test_respuestas_del_usuario_2026_09_27(test_db):
-    # Cristal: la línea del 04/10 fue la 1ª mensualidad -> gasto y mensualidad 1
-    _ins('2026-07-22', '10 DE 12 CRISTAL VILLAHERMOSA', 1038.0, cat='VIVIENDA', sub='Artículos del hogar',
-         pn=10, pt=12, grupo='cr')
-    cr = _ins('2025-10-04', 'CRISTAL VILLAHERMOSA A 12 MSI', 1037.5, cat='OTROS', sub='')
+    # Cristal: la app bajó la compra del 04/10 con la cuota ($1,037.50) y el PDF
+    # con el total ($12,450); la 1ª mensualidad es la «1 de 12» del 22/10.
+    cr = _ins('2025-10-04', 'CRISTAL VILLAHERMOSA A 12 MSI', 1037.5, cat='FAMILIA_REGALOS', sub='Regalos')
+    cr_pdf = _ins('2025-10-04', 'CRISTAL VILLAHERMOSA A 12 MSI (PDF)', 12450.0, cat='FAMILIA_REGALOS', sub='Regalos')
+    for k in (1, 2, 3):
+        _ins(f'2025-{9 + k}-22', 'CRISTAL VILLAHERMOSA', 1038.0, cat='FAMILIA_REGALOS', sub='Regalos',
+             pn=k, pt=12, grupo='cr')
     # Viva (2): mensualidades de $1,322 fueron de la familia -> PRESTAMOS
     _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI (2)', 11895.45, cat='VIAJES', sub='Transporte')
     v2m = _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB (2)', 1322.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='b')
@@ -228,8 +231,8 @@ def test_respuestas_del_usuario_2026_09_27(test_db):
     c = _conciliar()
     row = lambda i: tuple(database.get_db().__enter__().execute(
         "SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
-    assert row(cr) == ('VIVIENDA', 'Artículos del hogar')
-    assert c[cr]['total'] == 12450.0 and c[cr]['pagos'][0]['id'] == cr
+    assert row(cr) == ('FINANZAS', 'Compra a meses') and cr not in c        # duplicada: fuera del gasto
+    assert c[cr_pdf]['total'] == 12450.0 and c[cr_pdf]['pagadas'] == 3 and not c[cr_pdf]['linea_es_cuota']
     assert row(v2m) == ('PRESTAMOS', 'Prestado') and row(mia) == ('VIAJES', 'Transporte')
     assert row(ref) == ('VIVIENDA', 'Artículos del hogar') and row(super_) == ('SUPER', 'Súper')
 
@@ -291,3 +294,35 @@ def test_tres_compras_iguales_el_mismo_dia_cada_una_su_cuota(test_db):
     assert {p['monto'] for p in c[a]['pagos']} == {115.0}
     assert {p['monto'] for p in c[b]['pagos']} == {117.0} and c[b]['pagadas'] == 5
     assert {p['monto'] for p in c[c3]['pagos']} == {326.0}
+
+
+def test_amazon_24_01_2026_con_montos_reales(test_db):
+    """PDF de feb 2026: tres A 06 de $114.89, $1,958 y $699 (compras completas).
+    Mensualidades $20 (la de $114.89: 5 × $20 + $14.89), $327 y $117 (la de
+    $699: 5 × $117 + $114). La $114 no hace que la de $114.89 «traiga la cuota»."""
+    a = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I', 114.89, cat='DIGITAL', sub='Accesorios tech')
+    b = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I (2)', 1958.0, cat='DIGITAL', sub='Accesorios tech')
+    c3 = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I (3)', 699.0, cat='DIGITAL', sub='Accesorios tech')
+    for k in range(1, 7):
+        mes = f'2026-{1 + k:02d}-22'
+        _ins(mes, 'AMAZON A MESES', 20.0 if k < 6 else 14.89, cat='DIGITAL', sub='Accesorios tech', pn=k, pt=6)
+        _ins(mes, 'AMAZON A MESES (B)', 327.0 if k < 6 else 323.0, cat='DIGITAL', sub='Accesorios tech', pn=k, pt=6)
+        _ins(mes, 'AMAZON A MESES (C)', 117.0 if k < 6 else 114.0, cat='DIGITAL', sub='Accesorios tech', pn=k, pt=6)
+    c = _conciliar()
+    assert not c[a]['linea_es_cuota'] and c[a]['total'] == 114.89
+    assert [p['monto'] for p in c[a]['pagos']] == [20.0] * 5 + [14.89] and c[a]['estado'] == 'Liquidada'
+    assert [p['monto'] for p in c[c3]['pagos']] == [117.0] * 5 + [114.0] and c[c3]['estado'] == 'Liquidada'
+    assert c[b]['estado'] == 'Liquidada'
+
+
+def test_mensualidad_con_k_de_n_gana_a_cargo_suelto_del_mes(test_db):
+    """Amazon A 03 $749 (30/09/2025): la 3ª es la «3 de 3» de $249 del 22/12,
+    no un cargo suelto de $259 del 01/12 (salía «pagado de más»)."""
+    a = _ins('2025-09-30', 'AMAZON A MESES A 03 MESES S/I', 749.0, cat='DIGITAL', sub='Accesorios tech')
+    _ins('2025-10-22', 'AMAZON A MESES', 250.0, cat='DIGITAL', sub='Accesorios tech', pn=1, pt=3)
+    _ins('2025-11-22', 'AMAZON A MESES', 250.0, cat='DIGITAL', sub='Accesorios tech', pn=2, pt=3)
+    _ins('2025-12-01', 'STRIPE AMAZON', 259.0, cat='DIGITAL', sub='Accesorios tech')
+    _ins('2025-12-22', 'AMAZON A MESES', 249.0, cat='DIGITAL', sub='Accesorios tech', pn=3, pt=3)
+    c = _conciliar()
+    assert [p['monto'] for p in c[a]['pagos']] == [250.0, 250.0, 249.0] and c[a]['estado'] == 'Liquidada'
+    assert not [x for x in c.values() if x['estado'] == 'Sin compra inicial']
