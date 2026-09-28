@@ -43,3 +43,18 @@ def test_cada_factura_se_usa_una_vez(test_db):
         db.commit()
         s = E.sugerencias(db)
         assert [x['facturas'][0]['id'] for x in s] == [f1, f2]
+
+
+def test_ventana_amplia_y_dos_depositos(test_db):
+    with database.get_db() as db:
+        vieja = _mov(db, '2024-01-10', 'CONGRESO', 3000.0, 'EXPENSE')                   # 5 meses antes
+        d1 = _mov(db, '2024-06-12', 'SITH2000001 FIDEICOMISO F 1596', 3000.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        g1 = _mov(db, '2024-07-01', 'VUELO', 5000.0, 'EXPENSE')
+        g2 = _mov(db, '2024-07-03', 'HOTEL', 2500.0, 'EXPENSE')
+        a = _mov(db, '2024-08-10', 'SITH2000002 FIDEICOMISO F 1596', 4000.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        b = _mov(db, '2024-08-30', 'SITH2000003 FIDEICOMISO F 1596', 3500.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        db.commit()
+        s = {x['deposito']['id']: x for x in E.sugerencias(db)}
+        assert s[d1]['confianza'] == 'media' and [f['id'] for f in s[d1]['facturas']] == [vieja]
+        assert [d['id'] for d in s[a]['depositos']] == [a, b]
+        assert {f['id'] for f in s[a]['facturas']} == {g1, g2}

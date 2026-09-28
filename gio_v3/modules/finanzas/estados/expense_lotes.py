@@ -202,34 +202,62 @@ def _combinacion(montos: list[float], objetivo: float) -> list[int] | None:
     return None
 
 
-def sugerencias(db) -> list[dict]:
-    deps = [dict(r) for r in db.execute("""
+# Pasadas de la más segura a la más amplia (el usuario: «amplía para emparejar
+# facturas»): primero facturas de hasta ~3 meses antes, luego 6 y 12 para los
+# depósitos que quedaron sin pareja; al final, dos depósitos seguidos (≤45
+# días) que juntos pagan un grupo de facturas.
+PASADAS = ((100, 'alta'), (185, 'media'), (370, 'baja'))
+PAR_DIAS = 45
+
+
+def _depositos_sin_lote(db) -> list[dict]:
+    return [{**dict(r), 'monto': round(float(r['monto']), 2)} for r in db.execute("""
         SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto, banco FROM est_movimientos
         WHERE tipo = 'INGRESO' AND categoria IN ('FINANZAS', 'EXPENSE')
           AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)
           AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
         ORDER BY fecha, id
     """).fetchall() if _DEP_RE.search(r['descripcion'] or '')]
+
+
+def sugerencias(db) -> list[dict]:
+    deps = _depositos_sin_lote(db)
     libres = [g for g in sin_lote(db) if (g['estatus_reembolso'] or '') != ESTATUS_TERCERO]
     libres.sort(key=lambda g: (g['fecha'], g['id']))
-    usados, out = set(), []
-    for d in deps:
-        hasta = date.fromisoformat(d['fecha'])
-        desde = (hasta - timedelta(days=VENTANA_DIAS)).isoformat()
-        cand = [g for g in libres if g['id'] not in usados and desde <= g['fecha'][:10] <= d['fecha']]
+    usados, emparejados, out = set(), set(), []
+
+    def buscar(depositos, dias, confianza):
+        desde = (date.fromisoformat(depositos[0]['fecha']) - timedelta(days=dias)).isoformat()
+        hasta = depositos[-1]['fecha']
+        objetivo = round(sum(d['monto'] for d in depositos), 2)
+        cand = [g for g in libres if g['id'] not in usados and desde <= g['fecha'][:10] <= hasta]
         if not cand:
-            continue
-        idx = _combinacion([g['monto'] for g in cand], float(d['monto']))
+            return False
+        idx = _combinacion([g['monto'] for g in cand], objetivo)
         if idx is None:
-            continue
+            return False
         facturas = [cand[i] for i in idx]
         usados.update(g['id'] for g in facturas)
+        emparejados.update(d['id'] for d in depositos)
         total = round(sum(g['monto'] for g in facturas), 2)
         out.append({
-            'deposito': {**d, 'monto': round(float(d['monto']), 2)},
-            'facturas': facturas,
-            'total': total,
-            'diferencia': round(float(d['monto']) - total, 2),
-            'nombre': f"Expense {hasta.strftime('%Y-%m-%d')}",
+            'deposito': depositos[0], 'depositos': depositos,
+            'facturas': facturas, 'total': total,
+            'diferencia': round(objetivo - total, 2),
+            'confianza': confianza, 'ventana_dias': dias,
+            'nombre': f"Expense {depositos[-1]['fecha']}",
         })
+        return True
+
+    for dias, confianza in PASADAS:
+        for d in deps:
+            if d['id'] not in emparejados:
+                buscar([d], dias, confianza)
+    sueltos = [d for d in deps if d['id'] not in emparejados]
+    for a, b in zip(sueltos, sueltos[1:]):
+        if a['id'] in emparejados or b['id'] in emparejados:
+            continue
+        if (date.fromisoformat(b['fecha']) - date.fromisoformat(a['fecha'])).days <= PAR_DIAS:
+            buscar([a, b], PASADAS[1][0], 'media')
+    out.sort(key=lambda x: x['deposito']['fecha'])
     return out

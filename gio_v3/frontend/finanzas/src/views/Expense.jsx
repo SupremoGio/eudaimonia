@@ -246,6 +246,9 @@ function LoteCard({ l, cand, saved, open }) {
   );
 }
 
+const CONF_TONE = { alta: 'success', media: 'warning', baja: 'danger' };
+const CONF_LBL = { alta: 'Confianza alta', media: 'Confianza media', baja: 'Confianza baja' };
+
 /** Sugerencias automáticas: depósito de la empresa + facturas de hasta ~3
  * meses antes que suman lo mismo. Se confirma una por una o todas. */
 function Sugerencias({ refreshKey, saved }) {
@@ -261,7 +264,7 @@ function Sugerencias({ refreshKey, saved }) {
       for (const s of items) {
         await api.post('/expense/lotes', {
           nombre: s.nombre, notas: 'Sugerido automáticamente',
-          gasto_ids: s.facturas.map((f) => f.id), deposito_ids: [s.deposito.id],
+          gasto_ids: s.facturas.map((f) => f.id), deposito_ids: (s.depositos || [s.deposito]).map((d) => d.id),
         });
       }
       toast(items.length === 1 ? 'Lote creado' : `${items.length} lotes creados`, 'ok');
@@ -275,10 +278,11 @@ function Sugerencias({ refreshKey, saved }) {
       <div className="eu-between fz-card-hd fz-wrap">
         <div className="eu-vstack">
           <h2 className="t-card">Sugerencias <span className="eu-badge eu-badge--info">{lista.length}</span></h2>
-          <span className="t-meta">Depósitos de la empresa sin lote y las facturas de hasta 3 meses antes que suman lo mismo (±$1).</span>
+          <span className="t-meta">Depósitos de la empresa sin lote y las facturas que suman lo mismo (±$1): primero de hasta 3 meses antes, luego 6 y 12, y pares de depósitos. Revisa con más cuidado las de confianza media o baja.</span>
         </div>
-        <button type="button" className="eu-btn eu-btn--secondary eu-btn--sm" disabled={busy} onClick={() => crear(lista)}>
-          <Icon name="check-check" />Crear todos
+        <button type="button" className="eu-btn eu-btn--secondary eu-btn--sm" disabled={busy || !lista.some((x) => x.confianza === 'alta')}
+          onClick={() => crear(lista.filter((x) => x.confianza === 'alta'))} title="Solo las de confianza alta; las demás revísalas una por una">
+          <Icon name="check-check" />Crear todas las de confianza alta
         </button>
       </div>
       <ul className="eu-list fz-list-inset">
@@ -286,7 +290,10 @@ function Sugerencias({ refreshKey, saved }) {
           <li key={s.deposito.id} className="eu-vstack fz-gap-2 fz-pad">
             <div className="eu-between fz-wrap">
               <button type="button" className="fz-link eu-grow" aria-expanded={abierta === s.deposito.id} onClick={() => setAbierta(abierta === s.deposito.id ? null : s.deposito.id)}>
-                <span className="num fg-3">{fmtDate(s.deposito.fecha, true)}</span> · {s.deposito.descripcion} · <b className="num fg-success">+{money(s.deposito.monto)}</b>
+                <span className={`eu-badge eu-badge--${CONF_TONE[s.confianza] || 'info'}`}>{CONF_LBL[s.confianza] || s.confianza}</span>{' '}
+                {(s.depositos || [s.deposito]).map((d, i) => (
+                  <span key={d.id}>{i > 0 ? ' + ' : ''}<span className="num fg-3">{fmtDate(d.fecha, true)}</span> · {d.descripcion} · <b className="num fg-success">+{money(d.monto)}</b></span>
+                ))}
                 <span className="t-meta"> ← {plural(s.facturas.length, 'factura', 'facturas')} ({fmtDate(s.facturas[0].fecha, true)} – {fmtDate(s.facturas[s.facturas.length - 1].fecha, true)})
                   {Math.abs(s.diferencia) >= 0.01 ? ` · dif. ${money(s.diferencia)}` : ''}</span>
               </button>
