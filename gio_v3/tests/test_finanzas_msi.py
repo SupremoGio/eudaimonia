@@ -204,13 +204,19 @@ def test_pista_de_cargos_con_el_monto_de_la_cuota(test_db):
 
 
 def test_compra_pasada_a_meses_por_error_es_gasto_normal(test_db):
-    """Pointmp Arellano $22 (15/03/2025): conveniencia que el banco pasó a 3 meses por error."""
-    pa = _ins('2025-03-15', 'POINTMP ARELLANO A 03 MSI', 22.0, cat='FINANZAS', sub='Compra a meses')
+    """Pointmp Arellano $22 (15/03/2025): conveniencia que el banco pasó a 3
+    meses por error y cobró en $8 + $8 + $6. Cuentan las mensualidades (como
+    conveniencia), no la compra: si no, los $22 contaban doble."""
+    pa = _ins('2025-03-15', 'POINTMP ARELLANO A 03 MSI', 22.0, cat='SUPER', sub='Conveniencia')
+    ms = [_ins(f'2025-{mes:02d}-22', 'POINTMP ARELLANO', monto, cat='COMIDA_FUERA', sub='Restaurante', pn=k, pt=3)
+          for k, (mes, monto) in enumerate(((3, 8.0), (4, 8.0), (5, 6.0)), 1)]
     c = _conciliar()
-    assert pa not in c
+    assert c[pa]['estado'] == 'Liquidada' and c[pa]['pagado'] == 22.0
+    assert not [x for x in c.values() if x['estado'] == 'Sin compra inicial']
     with database.get_db() as db:
-        r = db.execute("SELECT categoria, subcategoria, tipo FROM est_movimientos WHERE id=?", (pa,)).fetchone()
-    assert tuple(r) == ('SUPER', 'Conveniencia', 'GASTO')
+        cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert cat(pa) == ('FINANZAS', 'Compra a meses')
+        assert {cat(i) for i in ms} == {('SUPER', 'Conveniencia')}
 
 
 def test_respuestas_del_usuario_2026_09_27(test_db):

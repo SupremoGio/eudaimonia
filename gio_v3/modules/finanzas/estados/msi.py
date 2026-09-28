@@ -28,9 +28,11 @@ _PREFIJO = 12   # caracteres del comercio para ligar compra y mensualidades
 # Compras que el banco pasó a meses por error y el usuario pagó como un gasto
 # normal (fecha, texto, monto) -> (categoria, subcategoria): cuentan
 # completas ese día y no entran a la conciliación.
-NO_SON_MSI = {
-    ('2025-03-15', 'POINTMP ARELLANO', 22.0): ('SUPER', 'Conveniencia'),   # «se confundieron… a 3 meses»
-}
+# Pointmp Arellano $22 (15/03/2025, «se confundieron… a 3 meses») estuvo aquí,
+# pero el banco sí la cobró en 3 mensualidades ($8 + $8 + $6): contaba doble.
+# Ahora es una compra a meses normal y sus mensualidades van a SUPER/Conveniencia
+# (CATEGORIA_MENSUALIDADES).
+NO_SON_MSI: dict = {}
 
 
 # La línea «… A NN MSI» que en realidad fue la 1ª mensualidad: cuenta como
@@ -55,6 +57,7 @@ CATEGORIA_MENSUALIDADES = (
     ('OFFICE DEPOT INTERNET', 917.0, 12, 'TECH/DIGITAL', 'Deudas MSI'),       # laptop
     ('MACSTORE', 1167.0, 18, 'TECH/DIGITAL', 'Deudas MSI'),                   # iPhone
     ('MACSTORE', 211.0, 12, 'TECH/DIGITAL', 'Deudas MSI'),
+    ('POINTMP ARELLANO', 7.0, 3, 'SUPER', 'Conveniencia'),                    # $8, $8, $6
 )
 
 
