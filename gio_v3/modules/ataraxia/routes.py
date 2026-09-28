@@ -290,8 +290,10 @@ def _revision_view(semana_id):
         metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "delta": delta, "delta_str": delta_str, "trend": trend})
 
     with get_db() as db:
+        # Incluye la semana actual (el usuario guardaba y «no me aparece lo que
+        # acabo de registrar hoy»): va arriba marcada como «Esta semana».
         hist_rows = db.execute(
-            "SELECT * FROM revision_semanal WHERE semana_id != ? ORDER BY semana_id DESC LIMIT 6",
+            "SELECT * FROM revision_semanal WHERE semana_id <= ? ORDER BY semana_id DESC LIMIT 7",
             (semana_id,)
         ).fetchall()
 
@@ -306,7 +308,7 @@ def _revision_view(semana_id):
         "metrics":    metrics,
         "has_data":   bool(actual),
         "notas":      actual.get("notas") or "",
-        "historial":  [dict(r) for r in hist_rows],
+        "historial":  [{**dict(r), "actual": r["semana_id"] == semana_id} for r in hist_rows],
         "weekly":     weekly,
         "analysis":   _analyze_week(weekly, prev_weekly, metrics),
         "semana_num": _week_num_of(monday_id),

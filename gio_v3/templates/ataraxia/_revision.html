@@ -72,8 +72,8 @@
           <thead><tr><th scope="col">Semana</th><th scope="col" class="r">Lectura</th><th scope="col" class="r">Sueño</th><th scope="col" class="r">Presup.</th><th scope="col" class="r">Kcal</th><th scope="col" class="r">Pasos</th><th scope="col" class="r">Pantalla</th></tr></thead>
           <tbody>
             {% for h in rv.historial %}
-            <tr>
-              <td class="num fg-3">{{ h.semana_id[5:] }}</td>
+            <tr{% if h.actual %} class="at-hist-actual"{% endif %}>
+              <td class="num fg-3">{{ h.semana_id[5:] }}{% if h.actual %} <span class="eu-badge eu-badge--success">Esta semana</span>{% endif %}</td>
               <td class="r num">{{ h.dias_lectura|int if h.dias_lectura is not none else '—' }}</td>
               <td class="r num">{{ h.horas_sueno if h.horas_sueno is not none else '—' }}</td>
               <td class="r num">{{ (h.presupuesto_pct|int ~ '%') if h.presupuesto_pct is not none else '—' }}</td>
