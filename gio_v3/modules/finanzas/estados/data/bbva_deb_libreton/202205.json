@@ -1,0 +1,508 @@
+{
+ "archivo": "1520361804_202205_C1.pdf",
+ "periodo": "07/04/2022 al 06/05/2022",
+ "totales": {
+  "cargos": 21396.86,
+  "abonos": 28304.47
+ },
+ "ajustes": [
+  "2022-04-18 «APPLE.COM/BILL» $99 (op. 13/ABR, misma AUT 613359 que el cargo del 12/ABR) -> INGRESO: es la devolución; con esto cuadra (43 cargos / $21,396.86)."
+ ],
+ "movimientos": [
+  {
+   "fecha": "2022-04-07",
+   "fecha_cargo": "2022-04-07",
+   "descripcion": "STP UBER EATS PENDING RFC: UPM 191014S31 17:45 AUT: 039925",
+   "monto": 137.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-09",
+   "fecha_cargo": "2022-04-11",
+   "descripcion": "RETIRO CAJERO AUTOMATICO ABR09 16:21 BANCOMER A309 FOLIO:6622",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-10",
+   "fecha_cargo": "2022-04-11",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 6838.92,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-11",
+   "fecha_cargo": "2022-04-07",
+   "descripcion": "MERPAGO*CAFETAL97 RFC: MER 991006JMA 23:47 AUT: 919057",
+   "monto": 80.0,
+   "categoria": "CAFE/PAN",
+   "subcategoria": "Café",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-11",
+   "fecha_cargo": "2022-04-09",
+   "descripcion": "FARM GUADALAJARA 24 RFC: FGU 830930PD3 17:21 AUT: 111676",
+   "monto": 35.4,
+   "categoria": "SALUD",
+   "subcategoria": "Farmacia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-11",
+   "fecha_cargo": "2022-04-10",
+   "descripcion": "MI BICI CP RFC: SPC 130227L99 11:57 AUT: 403157",
+   "monto": 443.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-11",
+   "fecha_cargo": "2022-04-10",
+   "descripcion": "BENAVIDES 19403 AMERIC RFC: FBE 9110215Z3 16:39 AUT: 521697",
+   "monto": 30.01,
+   "categoria": "SALUD",
+   "subcategoria": "Farmacia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-11",
+   "fecha_cargo": "2022-04-10",
+   "descripcion": "7 ELEVEN T1644 RFC: SEM 980701STA 17:45 AUT: 109069",
+   "monto": 10.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-11",
+   "fecha_cargo": "2022-04-10",
+   "descripcion": "FRESKO MIDTOWN RFC: CCF 121101KQ4 19:40 AUT: 092846",
+   "monto": 68.44,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-12",
+   "fecha_cargo": "2022-04-11",
+   "descripcion": "OXXO LAGO SUPERIOR GDL RFC: CCO 8605231N4 19:48 AUT: 363416",
+   "monto": 19.5,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-12",
+   "fecha_cargo": "2022-04-11",
+   "descripcion": "APPLE.COM BILL RFC: 19:36 AUT: 613359",
+   "monto": 99.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-12",
+   "fecha_cargo": "2022-04-11",
+   "descripcion": "APPLE.COM BILL RFC: 19:37 AUT: 627328",
+   "monto": 159.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-13",
+   "fecha_cargo": "2022-04-13",
+   "descripcion": "DEPOSITO DE TERCERO",
+   "monto": 4547.41,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-13",
+   "fecha_cargo": "2022-04-13",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-13",
+   "fecha_cargo": "2022-04-13",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-13",
+   "fecha_cargo": "2022-04-13",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-13",
+   "fecha_cargo": "2022-04-13",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-13",
+   "fecha_cargo": "2022-04-13",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-13",
+   "fecha_cargo": "2022-04-13",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-13",
+   "fecha_cargo": "2022-04-12",
+   "descripcion": "OXXOMIL 500 GDL RFC: CCO 8605231N4 21:10 AUT: 503197",
+   "monto": 15.5,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-15",
+   "fecha_cargo": "2022-04-18",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-15",
+   "fecha_cargo": "2022-04-18",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-16",
+   "fecha_cargo": "2022-04-18",
+   "descripcion": "RETIRO CAJERO AUTOMATICO ABR16 22:49 BANCOMER A877 FOLIO:8146",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-18",
+   "fecha_cargo": "2022-04-13",
+   "descripcion": "APPLE.COM BILL RFC: 00:00 AUT: 613359",
+   "monto": 99.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-18",
+   "fecha_cargo": "2022-04-15",
+   "descripcion": "MERCADO PAGO RFC: MER 991006JMA 18:42 AUT: 762640",
+   "monto": 100.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-18",
+   "fecha_cargo": "2022-04-15",
+   "descripcion": "MERPAGO*DANNYCOLON57 RFC: MER 991006JMA 20:01 AUT: 521676",
+   "monto": 23.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-18",
+   "fecha_cargo": "2022-04-16",
+   "descripcion": "QIN MIDTOWN RFC: LOR 130920Q24 16:15 AUT: 407192",
+   "monto": 135.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-18",
+   "fecha_cargo": "2022-04-16",
+   "descripcion": "CCP MIDTOWN JALISCO RFC: CAG 0412176A6 16:59 AUT: 873009",
+   "monto": 158.95,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-18",
+   "fecha_cargo": "2022-04-18",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 1000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-18",
+   "fecha_cargo": "2022-04-17",
+   "descripcion": "MERCADO PAGO RFC: MER 991006JMA 12:52 AUT: 532921",
+   "monto": 50.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-21",
+   "fecha_cargo": "2022-04-22",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-22",
+   "fecha_cargo": "2022-04-25",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-23",
+   "fecha_cargo": "2022-04-25",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 350.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-25",
+   "fecha_cargo": "2022-04-22",
+   "descripcion": "STP*UBER TRIP RFC: UPM 200220LK5 16:23 AUT: 328760",
+   "monto": 79.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-25",
+   "fecha_cargo": "2022-04-24",
+   "descripcion": "APPLE.COM BILL RFC: 21:13 AUT: 069951",
+   "monto": 39.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-25",
+   "fecha_cargo": "2022-04-24",
+   "descripcion": "DLOCAL*DIDI FOOD RFC: DMM 171208LT4 20:20 AUT: 363994",
+   "monto": 61.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-25",
+   "fecha_cargo": "2022-04-26",
+   "descripcion": "SPEI ENVIADO BANREGIO",
+   "monto": 350.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-26",
+   "fecha_cargo": "2022-04-26",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 3825.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-27",
+   "fecha_cargo": "2022-04-26",
+   "descripcion": "DO IT CLEAN RFC: CEFE731203JZ4 20:31 AUT: 289671",
+   "monto": 109.5,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-27",
+   "fecha_cargo": "2022-04-26",
+   "descripcion": "FACEBK 3B8VUCXMW2 RFC: 23:52 AUT: 807728",
+   "monto": 40.0,
+   "categoria": "PROYECTOS",
+   "subcategoria": "Publicidad",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-27",
+   "fecha_cargo": "2022-04-28",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 5000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-28",
+   "fecha_cargo": "2022-04-28",
+   "descripcion": "DEPOSITO DE TERCERO FONDO DE AHORRO GIO BMRCASH",
+   "monto": 10124.67,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-28",
+   "fecha_cargo": "2022-04-26",
+   "descripcion": "ZTL*THEBLOOMINGTEA RFC: OPM 150323DI1 19:45 AUT: 813936",
+   "monto": 103.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-28",
+   "fecha_cargo": "2022-04-28",
+   "descripcion": "FACEBK K2K4PGKMW2 RFC: 22:11 AUT: 987009",
+   "monto": 40.0,
+   "categoria": "PROYECTOS",
+   "subcategoria": "Publicidad",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-29",
+   "fecha_cargo": "2022-04-29",
+   "descripcion": "DEPOSITO DE TERCERO PAGO Q8 ABR2022 BMRCASH",
+   "monto": 7558.39,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-29",
+   "fecha_cargo": "2022-04-29",
+   "descripcion": "DEPOSITO EFECTIVO PRACTIC ABR29 21:19 PRAC 4672 FOLIO:0898",
+   "monto": 1380.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Depósito",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-29",
+   "fecha_cargo": "2022-04-29",
+   "descripcion": "DEPOSITO EFECTIVO PRACTIC ABR29 21:20 PRAC 4672 FOLIO:0900",
+   "monto": 20.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Depósito",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-05-01",
+   "fecha_cargo": "2022-05-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-01",
+   "fecha_cargo": "2022-05-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET CLASE SALSA",
+   "monto": 700.0,
+   "categoria": "SALSA",
+   "subcategoria": "Clases",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-02",
+   "fecha_cargo": "2022-05-01",
+   "descripcion": "AME*SPOTIFY CR RFC: RSM 160408CSA 11:00 AUT: 710046",
+   "monto": 115.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-02",
+   "fecha_cargo": "2022-05-01",
+   "descripcion": "FACEBK 4GTJVRPMW2 RFC: 21:57 AUT: 211086",
+   "monto": 40.0,
+   "categoria": "PROYECTOS",
+   "subcategoria": "Publicidad",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-02",
+   "fecha_cargo": "2022-05-01",
+   "descripcion": "STP*UBER PENDING RFC: UPM 200220LK5 03:19 AUT: 158202",
+   "monto": 156.62,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-03",
+   "fecha_cargo": "2022-05-02",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 2000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-03",
+   "fecha_cargo": "2022-05-01",
+   "descripcion": "ZTL*QE RFC: OPM 150323DI1 00:52 AUT: 941478",
+   "monto": 32.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-06",
+   "fecha_cargo": "2022-05-04",
+   "descripcion": "STP*UBER TRIP RFC: UPM 200220LK5 04:41 AUT: 539525",
+   "monto": 29.02,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  }
+ ]
+}

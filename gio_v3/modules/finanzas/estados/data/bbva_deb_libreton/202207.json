@@ -1,0 +1,337 @@
+{
+ "archivo": "1520361804_202207_C1.pdf",
+ "periodo": "07/06/2022 al 06/07/2022",
+ "totales": {
+  "cargos": 25249.76,
+  "abonos": 15689.35
+ },
+ "ajustes": [
+  "2022-06-10 dos «BNET» de $1,500 a la misma cuenta (PABLO / ERR DEL HORROR): el saldo solo baja $500 (el retiro), así que una entró; se toma «ERR DEL HORROR» como el regreso. Con esto cuadra (33 cargos / $25,249.76)."
+ ],
+ "movimientos": [
+  {
+   "fecha": "2022-06-08",
+   "fecha_cargo": "2022-06-07",
+   "descripcion": "MERCADO PAGO RFC: MER 991006JMA 19:00 AUT: 640871",
+   "monto": 100.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-10",
+   "fecha_cargo": "2022-06-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PABLO",
+   "monto": 1500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-10",
+   "fecha_cargo": "2022-06-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET ERR DEL HORROR",
+   "monto": 1500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-06-10",
+   "fecha_cargo": "2022-06-10",
+   "descripcion": "RETIRO CAJERO AUTOMATICO JUN10 19:50 BANCOMER A605 FOLIO:0378",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-11",
+   "fecha_cargo": "2022-06-13",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 9008.47,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-12",
+   "fecha_cargo": "2022-06-13",
+   "descripcion": "RETIRO CAJERO AUTOMATICO JUN12 14:30 BANCOMER A154 FOLIO:5698",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-13",
+   "fecha_cargo": "2022-06-13",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET LOS ELI",
+   "monto": 700.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-15",
+   "fecha_cargo": "2022-06-15",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7094.68,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-06-15",
+   "fecha_cargo": "2022-06-15",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 2000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-18",
+   "fecha_cargo": "2022-06-20",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A AURORA EL",
+   "monto": 120.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-18",
+   "fecha_cargo": "2022-06-20",
+   "descripcion": "RETIRO CAJERO AUTOMATICO JUN18 22:08 BANCOMER B839 FOLIO:4177",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-20",
+   "fecha_cargo": "2022-06-17",
+   "descripcion": "MERCADO PAGO RFC: MER 991006JMA 09:34 AUT: 684585",
+   "monto": 10.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-20",
+   "fecha_cargo": "2022-06-17",
+   "descripcion": "MERCADO PAGO RFC: MER 991006JMA 18:36 AUT: 806679",
+   "monto": 10.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-20",
+   "fecha_cargo": "2022-06-17",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 23:13 AUT: 981487",
+   "monto": 48.55,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-20",
+   "fecha_cargo": "2022-06-18",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 22:50 AUT: 251211",
+   "monto": 77.17,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-21",
+   "fecha_cargo": "2022-06-21",
+   "descripcion": "RETIRO CAJERO AUTOMATICO JUN21 20:32 BANCOMER B839 FOLIO:5217",
+   "monto": 600.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-22",
+   "fecha_cargo": "2022-06-22",
+   "descripcion": "SPEI ENVIADO BAJIO",
+   "monto": 5000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-23",
+   "fecha_cargo": "2022-06-22",
+   "descripcion": "MERCADO PAGO RFC: MER 991006JMA 18:56 AUT: 714810",
+   "monto": 100.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-24",
+   "fecha_cargo": "2022-06-22",
+   "descripcion": "DHL WSI SHIPMENT RFC: 17:54 AUT: 043635",
+   "monto": 497.1,
+   "categoria": "VIVIENDA",
+   "subcategoria": "Artículos del hogar",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-27",
+   "fecha_cargo": "2022-06-24",
+   "descripcion": "APPLE.COM BILL RFC: 21:13 AUT: 142045",
+   "monto": 39.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-27",
+   "fecha_cargo": "2022-06-25",
+   "descripcion": "CLIP MX*PINEDAS RED DO RFC: BLI 120726UF6 22:54 AUT: 852491",
+   "monto": 118.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-27",
+   "fecha_cargo": "2022-06-26",
+   "descripcion": "BON APPETIT RFC: AMO 180307ML0 11:08 AUT: 631755",
+   "monto": 66.94,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-27",
+   "fecha_cargo": "2022-06-26",
+   "descripcion": "SORIANA313 AMERICASGDL RFC: TSO 991022PB6 14:28 AUT: 679053",
+   "monto": 127.03,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-29",
+   "fecha_cargo": "2022-06-28",
+   "descripcion": "OXXOMIL 500 GDL RFC: CCO 8605231N4 18:47 AUT: 766376",
+   "monto": 15.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-29",
+   "fecha_cargo": "2022-06-28",
+   "descripcion": "OXXOMIL 500 GDL CASH RFC: CCO 8605231N4 20:39 AUT: 977933",
+   "monto": 236.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-30",
+   "fecha_cargo": "2022-06-30",
+   "descripcion": "PAGO DE NOMINA FIBRA HOTELERA SC",
+   "monto": 7094.67,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-07-01",
+   "fecha_cargo": "2022-07-01",
+   "descripcion": "COM.REPOSICION DE TARJETA",
+   "monto": 150.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-01",
+   "fecha_cargo": "2022-07-01",
+   "descripcion": "IVA COMISION REPOSICION",
+   "monto": 24.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-04",
+   "fecha_cargo": "2022-07-02",
+   "descripcion": "ATT A MGN RUBEN DARIO RFC: CNM 980114PI2 15:32 AUT: 503731",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-04",
+   "fecha_cargo": "2022-07-02",
+   "descripcion": "ATT A MGN RUBEN DARIO RFC: CNM 980114PI2 15:33 AUT: 517765",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-04",
+   "fecha_cargo": "2022-07-02",
+   "descripcion": "C A ZAPOPAN RFC: CME 16:30 AUT: 388860",
+   "monto": 199.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-04",
+   "fecha_cargo": "2022-07-02",
+   "descripcion": "BELLA AMERICAS LOCAL11 RFC: BFU 061122RG4 16:44 AUT: 589188",
+   "monto": 352.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-04",
+   "fecha_cargo": "2022-07-04",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 2000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-04",
+   "fecha_cargo": "2022-07-03",
+   "descripcion": "FAR GUAD 2480 CASH RFC: FGU 830930PD3 13:42 AUT: 452369",
+   "monto": 151.5,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-06",
+   "fecha_cargo": "2022-07-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A MARIA DE",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-07-06",
+   "fecha_cargo": "2022-07-05",
+   "descripcion": "CARNICERIA FLORENCIA B RFC: MERD630405653 19:32 AUT: 878581",
+   "monto": 50.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  }
+ ]
+}

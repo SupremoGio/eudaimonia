@@ -1,0 +1,361 @@
+{
+ "archivo": "1520361804_202206_C1.pdf",
+ "periodo": "07/05/2022 al 06/06/2022",
+ "totales": {
+  "cargos": 17002.73,
+  "abonos": 14268.22
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-05-07",
+   "fecha_cargo": "2022-05-09",
+   "descripcion": "RETIRO CAJERO AUTOMATICO MAY07 19:49 BANCOMER C551 FOLIO:4128",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-08",
+   "fecha_cargo": "2022-05-09",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BONELESS",
+   "monto": 125.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-09",
+   "fecha_cargo": "2022-05-09",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PASTEL",
+   "monto": 345.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-09",
+   "fecha_cargo": "2022-05-09",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-09",
+   "fecha_cargo": "2022-05-09",
+   "descripcion": "CORRECCION COMPRA TIEMPO",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-05-09",
+   "fecha_cargo": "2022-05-07",
+   "descripcion": "FRESHSALADS MIDTOWN RFC: BASM911020TJ9 16:41 AUT: 086209",
+   "monto": 108.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-09",
+   "fecha_cargo": "2022-05-07",
+   "descripcion": "CLIP MX*TACOS GASCON RFC: BLI 120726UF6 21:56 AUT: 106061",
+   "monto": 123.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-10",
+   "fecha_cargo": "2022-05-10",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 2748.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-10",
+   "fecha_cargo": "2022-05-09",
+   "descripcion": "MERCADO PAGO RFC: MER 991006JMA 20:29 AUT: 718288",
+   "monto": 100.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-10",
+   "fecha_cargo": "2022-05-09",
+   "descripcion": "MERCADO PAGO 5 RFC: MER 991006JMA 12:04 AUT: 397267",
+   "monto": 149.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-11",
+   "fecha_cargo": "2022-05-11",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-13",
+   "fecha_cargo": "2022-05-13",
+   "descripcion": "PAGO DE NOMINA COMPA#IA OPERADORA DE RECURSOS",
+   "monto": 7100.69,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-05-15",
+   "fecha_cargo": "2022-05-16",
+   "descripcion": "RETIRO CAJERO AUTOMATICO MAY15 11:31 BANCOMER A019 FOLIO:5003",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-16",
+   "fecha_cargo": "2022-05-16",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 2000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-16",
+   "fecha_cargo": "2022-05-15",
+   "descripcion": "LA GRAN LUCHA P PATRIA RFC: CDE 120426MK3 15:06 AUT: 350246",
+   "monto": 139.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-17",
+   "fecha_cargo": "2022-05-16",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 02:18 AUT: 401353",
+   "monto": 125.83,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-17",
+   "fecha_cargo": "2022-05-16",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 08:52 AUT: 229212",
+   "monto": 39.73,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-23",
+   "fecha_cargo": "2022-05-23",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 5000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-23",
+   "fecha_cargo": "2022-05-17",
+   "descripcion": "OLA KREPE RFC: COGA910104TH1 22:03 AUT: 938296",
+   "monto": 109.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-23",
+   "fecha_cargo": "2022-05-24",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-24",
+   "fecha_cargo": "2022-05-24",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET H",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-25",
+   "fecha_cargo": "2022-05-24",
+   "descripcion": "SORIANA313 AMERICASGDCASH RFC: TSO 991022PB6 19:37 AUT: 533720",
+   "monto": 140.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-25",
+   "fecha_cargo": "2022-05-24",
+   "descripcion": "APPLE.COM BILL RFC: 21:15 AUT: 925445",
+   "monto": 39.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-25",
+   "fecha_cargo": "2022-05-23",
+   "descripcion": "UBER* TRIP RFC: UPM 200220LK5 08:52 AUT: 633988",
+   "monto": 59.81,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-28",
+   "fecha_cargo": "2022-05-30",
+   "descripcion": "RETIRO CAJERO AUTOMATICO MAY28 22:13 BANCOMER C551 FOLIO:0693",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-30",
+   "fecha_cargo": "2022-05-28",
+   "descripcion": "MC DONALDS VALLARTA RFC: ARO 860923TK0 22:32 AUT: 818399",
+   "monto": 100.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-30",
+   "fecha_cargo": "2022-05-29",
+   "descripcion": "CARNICERIA FLORENCIA B RFC: MERD630405653 10:53 AUT: 741858",
+   "monto": 59.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-30",
+   "fecha_cargo": "2022-05-29",
+   "descripcion": "PROMANUEZ GUADALAJARA RFC: CASR731215U1A 10:58 AUT: 783493",
+   "monto": 65.5,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-30",
+   "fecha_cargo": "2022-05-28",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 23:01 AUT: 010683",
+   "monto": 54.25,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-31",
+   "fecha_cargo": "2022-05-31",
+   "descripcion": "PAGO DE NOMINA COMPA#IA OPERADORA DE RECURSOS",
+   "monto": 7067.53,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-05-31",
+   "fecha_cargo": "2022-05-31",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 2000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-05-31",
+   "fecha_cargo": "2022-05-30",
+   "descripcion": "MERCADO PAGO RFC: MER 991006JMA 08:51 AUT: 995736",
+   "monto": 100.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-01",
+   "fecha_cargo": "2022-06-01",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 09:16 AUT: 885367",
+   "monto": 47.57,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-01",
+   "fecha_cargo": "2022-06-01",
+   "descripcion": "AME*SPOTIFY CR RFC: RSM 160408CSA 11:00 AUT: 885145",
+   "monto": 115.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-03",
+   "fecha_cargo": "2022-06-01",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 23:21 AUT: 157134",
+   "monto": 89.7,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-04",
+   "fecha_cargo": "2022-06-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GASOLINA",
+   "monto": 100.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Gasolina",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-04",
+   "fecha_cargo": "2022-06-06",
+   "descripcion": "RETIRO CAJERO AUTOMATICO JUN04 21:15 BANCOMER A020 FOLIO:3976",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-06",
+   "fecha_cargo": "2022-06-03",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 22:38 AUT: 208440",
+   "monto": 34.86,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-06-06",
+   "fecha_cargo": "2022-06-05",
+   "descripcion": "DLOCAL*DIDI RIDES RFC: DMM 171208LT4 15:06 AUT: 102534",
+   "monto": 36.48,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  }
+ ]
+}

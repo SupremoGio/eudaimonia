@@ -166,3 +166,19 @@ def test_reparar_parcialidades_de_otro_comercio(test_db):
         assert db.execute("""SELECT COUNT(*) FROM est_movimientos WHERE fecha='2026-07-22'
                              AND descripcion LIKE 'AMAZON A MESES%' AND monto=114 AND parcialidad_num=6""").fetchone()[0] == 1
         assert libs.reparar_parcialidades(db) == []
+
+
+def test_libretones_2021_2022_nomina_y_cancelados(test_db):
+    """202201-202207: aguinaldo 2021, fondo de ahorro y quincena «PAGO Q8» a
+    NOMINA; las dos transferencias de $1,500 del 10/06/2022 se cancelan."""
+    with database.get_db() as db:
+        for k in ('202201', '202205', '202207'):
+            libs.aplicar(db, k)
+        db.commit()
+        cat = lambda like: tuple(db.execute(
+            "SELECT categoria, subcategoria FROM est_movimientos WHERE descripcion LIKE ? ORDER BY id LIMIT 1", (like,)).fetchone())
+        assert cat('PAGO DE AGUINALDO%') == ('NOMINA', 'Aguinaldo')
+        assert cat('DEPOSITO DE TERCERO FONDO DE AHORRO%') == ('NOMINA', 'Fondo de ahorro')
+        assert cat('DEPOSITO DE TERCERO PAGO Q8%') == ('NOMINA', 'Pago nominal')
+        assert cat('CORRECCION COMPRA TIEMPO%') == ('DIGITAL', 'Celular')
+        assert cat('%BNET PABLO') == ('FINANZAS', 'Reembolsable') == cat('%ERR DEL HORROR')
