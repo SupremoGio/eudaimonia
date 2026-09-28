@@ -85,3 +85,15 @@ def test_retiros_y_spei_2022_a_renta(test_db):
         db.commit()
         assert _corregir_pagos_renta(db) == 6
         assert db.execute("SELECT categoria FROM est_movimientos WHERE monto=200").fetchone()[0] == 'FINANZAS'
+
+
+def test_spei_bajio_1100_a_costo_financiero(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta
+    with database.get_db() as db:
+        for f, m in (('2022-10-27', 1100.0), ('2022-12-19', 1100.0), ('2022-12-20', 1100.0), ('2022-07-22', 5000.0)):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES (?, 'SPEI ENVIADO BAJIO', ?, 'BBVA_DEB', 'FINANZAS', 'Transferencia enviada', 'GASTO')""", (f, m))
+        db.commit()
+        assert _corregir_pagos_renta(db) == 4
+        cats = {(r[0], r[1], r[2]) for r in db.execute("SELECT monto, categoria, subcategoria FROM est_movimientos")}
+        assert cats == {(1100.0, 'COSTOS_FINANCIEROS', 'Intereses'), (5000.0, 'VIVIENDA', 'Renta')}
