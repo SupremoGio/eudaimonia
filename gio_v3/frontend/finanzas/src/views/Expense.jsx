@@ -246,6 +246,69 @@ function LoteCard({ l, cand, saved, open }) {
   );
 }
 
+/** Sugerencias automáticas: depósito de la empresa + facturas de hasta ~3
+ * meses antes que suman lo mismo. Se confirma una por una o todas. */
+function Sugerencias({ refreshKey, saved }) {
+  const sug = useLoad(() => api.get('/expense/sugerencias'), [refreshKey]);
+  const [abierta, setAbierta] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const lista = sug.data || [];
+  if (sug.loading || lista.length === 0) return null;
+
+  async function crear(items) {
+    setBusy(true);
+    try {
+      for (const s of items) {
+        await api.post('/expense/lotes', {
+          nombre: s.nombre, notas: 'Sugerido automáticamente',
+          gasto_ids: s.facturas.map((f) => f.id), deposito_ids: [s.deposito.id],
+        });
+      }
+      toast(items.length === 1 ? 'Lote creado' : `${items.length} lotes creados`, 'ok');
+      saved();
+    } catch (e) { toast(e.message || 'No se pudo crear el lote', 'err'); }
+    setBusy(false);
+  }
+
+  return (
+    <section className="eu-card eu-card--flush" aria-label="Sugerencias de lotes">
+      <div className="eu-between fz-card-hd fz-wrap">
+        <div className="eu-vstack">
+          <h2 className="t-card">Sugerencias <span className="eu-badge eu-badge--info">{lista.length}</span></h2>
+          <span className="t-meta">Depósitos de la empresa sin lote y las facturas de hasta 3 meses antes que suman lo mismo (±$1).</span>
+        </div>
+        <button type="button" className="eu-btn eu-btn--secondary eu-btn--sm" disabled={busy} onClick={() => crear(lista)}>
+          <Icon name="check-check" />Crear todos
+        </button>
+      </div>
+      <ul className="eu-list fz-list-inset">
+        {lista.map((s) => (
+          <li key={s.deposito.id} className="eu-vstack fz-gap-2 fz-pad">
+            <div className="eu-between fz-wrap">
+              <button type="button" className="fz-link eu-grow" aria-expanded={abierta === s.deposito.id} onClick={() => setAbierta(abierta === s.deposito.id ? null : s.deposito.id)}>
+                <span className="num fg-3">{fmtDate(s.deposito.fecha, true)}</span> · {s.deposito.descripcion} · <b className="num fg-success">+{money(s.deposito.monto)}</b>
+                <span className="t-meta"> ← {plural(s.facturas.length, 'factura', 'facturas')} ({fmtDate(s.facturas[0].fecha, true)} – {fmtDate(s.facturas[s.facturas.length - 1].fecha, true)})
+                  {Math.abs(s.diferencia) >= 0.01 ? ` · dif. ${money(s.diferencia)}` : ''}</span>
+              </button>
+              <button type="button" className="eu-btn eu-btn--primary eu-btn--sm" disabled={busy} onClick={() => crear([s])}>Crear lote</button>
+            </div>
+            {abierta === s.deposito.id && (
+              <table className="eu-table fz-ex-table">
+                <colgroup><col className="c-date" /><col /><col className="c-amt" /></colgroup>
+                <tbody>
+                  {s.facturas.map((f) => (
+                    <tr key={f.id}><td className="num fg-3">{fmtDate(f.fecha, true)}</td><td><span className="fz-ellipsis fz-td-desc" title={f.descripcion}>{f.descripcion}</span></td><td className="r num">{money(f.monto)}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export default function Expense() {
   const app = useApp();
   const res = useLoad(() => api.get('/expense/lotes'), [app.refreshKey]);
@@ -285,6 +348,8 @@ export default function Expense() {
           <button type="button" className="fz-link" onClick={() => setModal({ kind: 'new' })}>Armar lote<Icon name="arrow-right" size={14} /></button>
         </div>
       )}
+
+      <Sugerencias refreshKey={app.refreshKey} saved={saved} />
 
       <ErrorNote error={res.error} onRetry={res.reload} />
       {res.loading ? <Skel rows={3} h={120} /> : !d || d.lotes.length === 0 ? (

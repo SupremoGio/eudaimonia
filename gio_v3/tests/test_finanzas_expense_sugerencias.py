@@ -1,0 +1,45 @@
+"""
+test_finanzas_expense_sugerencias.py — sugerencias automáticas de lotes de
+Expense: cada depósito de la empresa se cubre con facturas de hasta ~3 meses
+antes cuya suma lo iguala (±$1).
+"""
+import sys, os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import database
+from modules.finanzas.estados import expense_lotes as E
+
+
+def _mov(db, fecha, desc, monto, cat, sub='', tipo='GASTO', est=None):
+    return db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo, estatus_reembolso)
+                         VALUES (?,?,?, 'BBVA_TDC', ?,?,?,?)""", (fecha, desc, monto, cat, sub, tipo, est)).lastrowid
+
+
+def test_sugiere_facturas_que_suman_el_deposito(test_db):
+    with database.get_db() as db:
+        a = _mov(db, '2024-03-10', 'COMIDA CLIENTE', 1200.50, 'EXPENSE')
+        b = _mov(db, '2024-04-02', 'UBER', 214.00, 'EXPENSE')
+        c = _mov(db, '2024-04-20', 'HOTEL', 1529.50, 'EXPENSE')
+        viejo = _mov(db, '2023-10-01', 'MUY VIEJA', 500.0, 'EXPENSE')          # fuera de la ventana
+        tercero = _mov(db, '2024-04-05', 'PAGO COMPAÑERO', 214.0, 'EXPENSE', est='TERCERO')
+        dep = _mov(db, '2024-05-14', 'SITH20000000864 FIDEICOMISO F 1596', 2944.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        _mov(db, '2024-05-15', 'SPEI DEVUELTOSANTANDER', 2944.0, 'FINANZAS', 'Reembolsable', 'INGRESO')  # no es de la empresa
+        d2 = _mov(db, '2024-06-04', 'SITH20000000932 FIDEICOMISO F 1596', 99999.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        db.commit()
+        s = E.sugerencias(db)
+        assert len(s) == 1
+        assert s[0]['deposito']['id'] == dep and s[0]['diferencia'] == 0.0
+        assert {f['id'] for f in s[0]['facturas']} == {a, b, c}
+        assert viejo not in {f['id'] for f in s[0]['facturas']} and tercero not in {f['id'] for f in s[0]['facturas']}
+
+
+def test_cada_factura_se_usa_una_vez(test_db):
+    with database.get_db() as db:
+        f1 = _mov(db, '2025-01-05', 'TAXI', 300.0, 'EXPENSE')
+        f2 = _mov(db, '2025-01-20', 'COMIDA', 300.0, 'EXPENSE')
+        _mov(db, '2025-02-10', 'SITH20000001 FIDEICOMISO F 1596', 300.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        _mov(db, '2025-03-10', 'SITH20000002 FIDEICOMISO F 1596', 300.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        db.commit()
+        s = E.sugerencias(db)
+        assert [x['facturas'][0]['id'] for x in s] == [f1, f2]

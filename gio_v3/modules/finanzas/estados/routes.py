@@ -2120,6 +2120,15 @@ def expense_candidatos():
         return jsonify(_lotes.candidatos(db))
 
 
+@estados_bp.route('/api/expense/sugerencias')
+def expense_sugerencias():
+    """Solo lectura: depósitos de la empresa sin lote con el grupo de
+    facturas (hasta ~3 meses antes) cuya suma los cubre (expense_lotes.sugerencias)."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_lotes.sugerencias(db))
+
+
 @estados_bp.route('/api/expense/export.csv')
 def expense_csv():
     if not _ok(): return _locked()
