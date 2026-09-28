@@ -1,0 +1,455 @@
+{
+ "archivo": "1520361804_202201_C1.pdf",
+ "periodo": "07/12/2021 al 06/01/2022",
+ "totales": {
+  "cargos": 61979.64,
+  "abonos": 63878.44
+ },
+ "ajustes": [
+  "2021-12-17 «Pago de aguinaldo 2021» $7,035.76 -> INGRESO (el parser lo leía como cargo; saldo 5,557.33 + 7,035.76 - 300 - 20 = 12,273.09).",
+  "2022-01-05 «BNET Sushito» $200 -> INGRESO: el saldo de liquidación del 05/ENE (48,219.32) = 6,533.30 + 41,486.02 + 200; con esto cuadra (40 cargos / $61,979.64, 9 abonos / $63,878.44)."
+ ],
+ "movimientos": [
+  {
+   "fecha": "2021-12-07",
+   "fecha_cargo": "2021-12-07",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-08",
+   "fecha_cargo": "2021-12-08",
+   "descripcion": "RETIRO CAJERO AUTOMATICO DIC08 11:52 BANCOMER 6874 FOLIO:2376",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-08",
+   "fecha_cargo": "2021-12-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET DEUDA BGIO",
+   "monto": 815.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-09",
+   "fecha_cargo": "2021-12-08",
+   "descripcion": "MERCADO PAGO 4 RFC: MER 991006JMA 20:58 AUT: 629103",
+   "monto": 10.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-09",
+   "fecha_cargo": "2021-12-10",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 949.0,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-10",
+   "fecha_cargo": "2021-12-10",
+   "descripcion": "SPEI ENVIADO GBM",
+   "monto": 100.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-10",
+   "fecha_cargo": "2021-12-10",
+   "descripcion": "SPEI RECIBIDONAFIN",
+   "monto": 0.01,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia recibida",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2021-12-10",
+   "fecha_cargo": "2021-12-10",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-12",
+   "fecha_cargo": "2021-12-13",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET MANTENIMIENTO GIOV",
+   "monto": 130.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-12",
+   "fecha_cargo": "2021-12-13",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-13",
+   "fecha_cargo": "2021-12-13",
+   "descripcion": "SPEI ENVIADO GBM",
+   "monto": 100.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-15",
+   "fecha_cargo": "2021-12-15",
+   "descripcion": "PAGO DE NOMINA COMPA#IA OPERADORA DE RECURSOS",
+   "monto": 5306.3,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2021-12-15",
+   "fecha_cargo": "2021-12-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET RENTA GIO",
+   "monto": 3000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-15",
+   "fecha_cargo": "2021-12-15",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-15",
+   "fecha_cargo": "2021-12-15",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 500.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-16",
+   "fecha_cargo": "2021-12-16",
+   "descripcion": "DEPOSITO DE TERCERO",
+   "monto": 3833.5,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2021-12-16",
+   "fecha_cargo": "2021-12-16",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TACOS POSADA",
+   "monto": 3364.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Restaurante",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-16",
+   "fecha_cargo": "2021-12-16",
+   "descripcion": "SPEI ENVIADO GBM",
+   "monto": 100.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-16",
+   "fecha_cargo": "2021-12-16",
+   "descripcion": "SPEI ENVIADO GBM",
+   "monto": 25.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-17",
+   "fecha_cargo": "2021-12-17",
+   "descripcion": "PAGO DE AGUINALDO AGUINALDO 2021",
+   "monto": 7035.76,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2021-12-17",
+   "fecha_cargo": "2021-12-17",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET LAS LENIS",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-17",
+   "fecha_cargo": "2021-12-17",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-18",
+   "fecha_cargo": "2021-12-20",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET REGALO ELI",
+   "monto": 1100.0,
+   "categoria": "FAMILIA_REGALOS",
+   "subcategoria": "Regalos",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-18",
+   "fecha_cargo": "2021-12-20",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET COMIDITA",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-20",
+   "fecha_cargo": "2021-12-20",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET J",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-20",
+   "fecha_cargo": "2021-12-20",
+   "descripcion": "SPEI ENVIADO GBM",
+   "monto": 200.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-20",
+   "fecha_cargo": "2021-12-20",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET AGUINALDO LAS LENI",
+   "monto": 1500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-20",
+   "fecha_cargo": "2021-12-20",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-21",
+   "fecha_cargo": "2021-12-21",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET COOPERATION GIO",
+   "monto": 165.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-27",
+   "fecha_cargo": "2021-12-24",
+   "descripcion": "SORIANA477 VILLAHERMOS RFC: TSO 991022PB6 14:36 AUT: 377202",
+   "monto": 168.9,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-27",
+   "fecha_cargo": "2021-12-24",
+   "descripcion": "APPLE.COM BILL RFC: 21:13 AUT: 654164",
+   "monto": 39.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-27",
+   "fecha_cargo": "2021-12-27",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 20.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-28",
+   "fecha_cargo": "2021-12-28",
+   "descripcion": "SPEI ENVIADO GBM",
+   "monto": 150.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-28",
+   "fecha_cargo": "2021-12-28",
+   "descripcion": "SPEI ENVIADO NAFIN",
+   "monto": 5000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-28",
+   "fecha_cargo": "2021-12-27",
+   "descripcion": "BURGER KING SEND FS RFC: OEX 9602014B9 14:14 AUT: 330851",
+   "monto": 109.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Fast Food",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-30",
+   "fecha_cargo": "2021-12-30",
+   "descripcion": "PAGO DE NOMINA COMPA#IA OPERADORA DE RECURSOS",
+   "monto": 5286.85,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2021-12-30",
+   "fecha_cargo": "2021-12-30",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO GIO",
+   "monto": 338.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-30",
+   "fecha_cargo": "2021-12-30",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 356.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2021-12-30",
+   "fecha_cargo": "2021-12-29",
+   "descripcion": "SORIANA477 VILLAHERMOS RFC: TSO 991022PB6 16:51 AUT: 978768",
+   "monto": 42.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-31",
+   "fecha_cargo": "2021-12-31",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 1704.74,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2021-12-31",
+   "fecha_cargo": "2021-12-31",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SUSHI",
+   "monto": 374.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2021-12-31",
+   "fecha_cargo": "2021-12-30",
+   "descripcion": "NUTRISA 538 SENDERO RFC: PIN 17:39 AUT: 733033",
+   "monto": 85.0,
+   "categoria": "CAFE/PAN",
+   "subcategoria": "Pan",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-01-03",
+   "fecha_cargo": "2022-01-01",
+   "descripcion": "AME*SPOTIFY RFC: RSM 160408CSA 10:00 AUT: 890201",
+   "monto": 115.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-01-03",
+   "fecha_cargo": "2022-01-03",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET BIGGIO",
+   "monto": 250.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-01-03",
+   "fecha_cargo": "2022-01-03",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 500.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-01-05",
+   "fecha_cargo": "2022-01-05",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SUSHITO",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-01-05",
+   "fecha_cargo": "2022-01-05",
+   "descripcion": "DEPOSITO DE TERCERO FONDO DE AHORRO BMRCASH",
+   "monto": 41486.02,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-01-05",
+   "fecha_cargo": "2022-01-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET ULTIMA CARRITO",
+   "monto": 40000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-01-05",
+   "fecha_cargo": "2022-01-06",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET DEUDA PABLITO PAGO",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  }
+ ]
+}

@@ -81,8 +81,18 @@ def _decisiones_previas(db, ids: list) -> None:
     db.execute(f"""UPDATE est_movimientos SET categoria='CETES', subcategoria='RETIRO', tipo='INVERSION'
                    WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'SPEI DEVUELTONAFIN%'""", ids)
     db.execute(f"""UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Fondo de ahorro'
-                   WHERE id IN ({ph}) AND (UPPER(descripcion) LIKE '%FDO AHORRO%' OR UPPER(descripcion) LIKE '%FONDO AHORRO%')
+                   WHERE id IN ({ph}) AND (UPPER(descripcion) LIKE '%FDO AHORRO%' OR UPPER(descripcion) LIKE '%FONDO AHORRO%'
+                                           OR UPPER(descripcion) LIKE '%FONDO DE AHORRO%')
                      AND tipo='INGRESO'""", ids)
+    # Libretones de 2021-2022 (empresa anterior, depósitos «BMRCASH»):
+    # «PAGO DE AGUINALDO» y la quincena «DEPOSITO DE TERCERO PAGO Q8 ABR2022».
+    db.execute(f"""UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Aguinaldo'
+                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE '%AGUINALDO%' AND tipo='INGRESO'""", ids)
+    db.execute(f"""UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Pago nominal'
+                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'DEPOSITO DE TERCERO PAGO Q%' AND tipo='INGRESO'""", ids)
+    # Devuelve una recarga de celular del mismo día: resta al gasto de celular.
+    db.execute(f"""UPDATE est_movimientos SET categoria='DIGITAL', subcategoria='Celular'
+                   WHERE id IN ({ph}) AND UPPER(descripcion) LIKE 'CORRECCION COMPRA TIEMPO%' AND tipo='INGRESO'""", ids)
     db.execute(f"""UPDATE est_movimientos SET categoria='NOMINA', subcategoria='PTU'
                    WHERE id IN ({ph}) AND UPPER(descripcion) LIKE '%PTU%' AND tipo='INGRESO'""", ids)
     # SPEI devuelto (el pago no pasó): fuera de ingreso, como «SPEI DEVUELTOSANTANDER»

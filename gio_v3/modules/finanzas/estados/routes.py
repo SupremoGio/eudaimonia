@@ -792,6 +792,14 @@ AGUINALDOS = (  # (fecha, monto, texto)
     ('2022-12-16', 10493.87, 'PAGO DE NOMINA'),
 )
 
+# Transferencias que se cancelan entre sí (salió y regresó el mismo día):
+# ni gasto ni ingreso. Libretón jun 2022: $1,500 «PABLO» y $1,500 «ERR DEL
+# HORROR» a la misma cuenta; el saldo solo bajó por el retiro.
+SE_CANCELAN = (  # (fecha, monto, texto)
+    ('2022-06-10', 1500.0, 'BNET PABLO'),
+    ('2022-06-10', 1500.0, 'BNET ERR DEL HORROR'),
+)
+
 
 def _corregir_pagos_renta(db) -> int:
     """Reafirma PAGOS_RENTA (VIVIENDA/Renta), PAGOS_COSTO_FINANCIERO
@@ -808,6 +816,12 @@ def _corregir_pagos_renta(db) -> int:
                   AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
                   AND (categoria != ? OR COALESCE(subcategoria, '') != ?)
             """, (cat, sub, fecha, monto, f"%{texto}%", cat, sub)).rowcount
+    for fecha, monto, texto in SE_CANCELAN:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
+            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ?
+              AND (categoria != 'FINANZAS' OR COALESCE(subcategoria, '') != 'Reembolsable')
+        """, (fecha, monto, f"%{texto}%")).rowcount
     for fecha, monto, texto in AGUINALDOS:
         n += db.execute("""
             UPDATE est_movimientos SET categoria='NOMINA', subcategoria='Aguinaldo'
