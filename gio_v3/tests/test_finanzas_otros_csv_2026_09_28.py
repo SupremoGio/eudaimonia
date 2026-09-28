@@ -176,3 +176,13 @@ def test_ultima_letra_del_carro(test_db):
         db.commit()
         assert _corregir_pagos_renta(db) == 1
         assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos").fetchone()) == ('TRANSPORTE', 'Pago auto')
+
+
+def test_carrito_400_es_gasolina(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES ('2022-02-19', 'PAGO CUENTA DE TERCERO BNET CARRITO', 400, 'BBVA_DEB', 'FINANZAS', 'Transferencia', 'INGRESO')""")
+        db.commit()
+        assert _corregir_pagos_renta(db) == 1
+        assert tuple(db.execute("SELECT categoria, subcategoria, tipo FROM est_movimientos").fetchone()) == ('TRANSPORTE', 'Gasolina', 'INGRESO')
