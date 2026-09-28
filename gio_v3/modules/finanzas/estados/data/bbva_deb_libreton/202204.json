@@ -1,0 +1,469 @@
+{
+ "archivo": "1520361804_202204_C1.pdf",
+ "periodo": "07/03/2022 al 06/04/2022",
+ "totales": {
+  "cargos": 14754.76,
+  "abonos": 29281.42
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-03-07",
+   "fecha_cargo": "2022-03-07",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET COMIDITA GIO",
+   "monto": 82.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-07",
+   "fecha_cargo": "2022-03-07",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-07",
+   "fecha_cargo": "2022-03-07",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 3109.69,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-07",
+   "fecha_cargo": "2022-03-07",
+   "descripcion": "SPEI ENVIADO SCOTIABANK",
+   "monto": 1100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-07",
+   "fecha_cargo": "2022-03-07",
+   "descripcion": "OXXO ARIES RFC: CCO 8605231N4 23:16 AUT: 640395",
+   "monto": 107.5,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-07",
+   "fecha_cargo": "2022-03-07",
+   "descripcion": "COPPEL SENDERO T191 RFC: COP 920428Q20 15:37 AUT: 040189",
+   "monto": 1097.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-10",
+   "fecha_cargo": "2022-03-10",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET ANTI REGIA",
+   "monto": 56.33,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-11",
+   "fecha_cargo": "2022-03-11",
+   "descripcion": "SPEI ENVIADO BANAMEX",
+   "monto": 250.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-11",
+   "fecha_cargo": "2022-03-11",
+   "descripcion": "SPEI DEVUELTOBANAMEX",
+   "monto": 250.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-03-12",
+   "fecha_cargo": "2022-03-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 200.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-03-12",
+   "fecha_cargo": "2022-03-14",
+   "descripcion": "RETIRO CAJERO AUTOMATICO MAR12 15:08 BANCOMER 1850 FOLIO:6866",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-14",
+   "fecha_cargo": "2022-03-14",
+   "descripcion": "SPEI ENVIADO BANAMEX",
+   "monto": 250.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-15",
+   "fecha_cargo": "2022-03-15",
+   "descripcion": "PAGO DE NOMINA COMPA#IA OPERADORA DE RECURSOS",
+   "monto": 5803.48,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-03-15",
+   "fecha_cargo": "2022-03-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TAQUITOS",
+   "monto": 44.5,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-15",
+   "fecha_cargo": "2022-03-15",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GALLETITA",
+   "monto": 31.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-15",
+   "fecha_cargo": "2022-03-15",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 1000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-16",
+   "fecha_cargo": "2022-03-16",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET REGALO LITTLE MALI",
+   "monto": 250.0,
+   "categoria": "FAMILIA_REGALOS",
+   "subcategoria": "Regalos",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-22",
+   "fecha_cargo": "2022-03-17",
+   "descripcion": "DPV VHT RFC: HYM 091130QYA 17:42 AUT: 476787",
+   "monto": 43.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-22",
+   "fecha_cargo": "2022-03-17",
+   "descripcion": "DPV COATZACOALCOS RFC: HYM 091130QYA 22:05 AUT: 450578",
+   "monto": 66.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-22",
+   "fecha_cargo": "2022-03-18",
+   "descripcion": "BUNA COMUNICACIONES RFC: HESL731017E61 07:58 AUT: 074356",
+   "monto": 220.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-22",
+   "fecha_cargo": "2022-03-20",
+   "descripcion": "CHOCOLATE MAYORDOMO RFC: CMO 14:19 AUT: 054551",
+   "monto": 165.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-22",
+   "fecha_cargo": "2022-03-22",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PASTEL JORGE",
+   "monto": 150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-22",
+   "fecha_cargo": "2022-03-21",
+   "descripcion": "HANGAR LIFE AMERICAS RFC: HHL 180522SG9 13:00 AUT: 040105",
+   "monto": 12.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-22",
+   "fecha_cargo": "2022-03-23",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET JUEGO",
+   "monto": 10.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-22",
+   "fecha_cargo": "2022-03-23",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET JUEGO 2",
+   "monto": 10.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-23",
+   "fecha_cargo": "2022-03-23",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET OAXACA SGIO",
+   "monto": 930.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-25",
+   "fecha_cargo": "2022-03-24",
+   "descripcion": "SUBWAY AICM T2 RFC: AER 990218E83 08:55 AUT: 057052",
+   "monto": 131.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Fast Food",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-25",
+   "fecha_cargo": "2022-03-24",
+   "descripcion": "APPLE.COM BILL RFC: 20:12 AUT: 492686",
+   "monto": 39.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-27",
+   "fecha_cargo": "2022-03-28",
+   "descripcion": "RET CAJ OTRO BCO COM IVA MAR27 05:31 SCH FOLIO:0603",
+   "monto": 530.74,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-28",
+   "fecha_cargo": "2022-03-26",
+   "descripcion": "PAN SM BAKERY PROV 2 RFC: SBA 170728C91 07:36 AUT: 073274",
+   "monto": 119.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-28",
+   "fecha_cargo": "2022-03-26",
+   "descripcion": "BURGER KING AEROPU RFC: OFA 9210138U1 11:25 AUT: 817555",
+   "monto": 129.0,
+   "categoria": "COMIDA_FUERA",
+   "subcategoria": "Fast Food",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-28",
+   "fecha_cargo": "2022-03-26",
+   "descripcion": "OXXOZONAFINANCIERAII RFC: CCO 8605231N4 17:56 AUT: 804559",
+   "monto": 19.5,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-28",
+   "fecha_cargo": "2022-03-26",
+   "descripcion": "WAL MART AVILA CAMACHCASH RFC: NWM 9709244W4 19:31 AUT: 870216",
+   "monto": 604.44,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-28",
+   "fecha_cargo": "2022-03-27",
+   "descripcion": "KE RICO SALA 75 RFC: GSA 10:50 AUT: 094460",
+   "monto": 32.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-29",
+   "fecha_cargo": "2022-03-29",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO",
+   "monto": 211.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-03-30",
+   "fecha_cargo": "2022-03-30",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PANECITO",
+   "monto": 29.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-30",
+   "fecha_cargo": "2022-03-29",
+   "descripcion": "6855 PLAZA PATIO V RFC: WDM 20:16 AUT: 121517",
+   "monto": 211.06,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-30",
+   "fecha_cargo": "2022-03-29",
+   "descripcion": "SORIANA477 VILLAHERMOS RFC: TSO 991022PB6 20:38 AUT: 328390",
+   "monto": 50.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-31",
+   "fecha_cargo": "2022-03-31",
+   "descripcion": "PAGO DE NOMINA COMPA#IA OPERADORA DE RECURSOS",
+   "monto": 5804.51,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-03-31",
+   "fecha_cargo": "2022-03-31",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET HELADITO",
+   "monto": 50.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-31",
+   "fecha_cargo": "2022-03-31",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET COMIDITA",
+   "monto": 160.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-01",
+   "fecha_cargo": "2022-04-01",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-01",
+   "fecha_cargo": "2022-04-01",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 1000.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-01",
+   "fecha_cargo": "2022-04-01",
+   "descripcion": "AME*SPOTIFY CR RFC: RSM 160408CSA 10:00 AUT: 936404",
+   "monto": 115.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-02",
+   "fecha_cargo": "2022-04-04",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET COMIDA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-04",
+   "fecha_cargo": "2022-04-01",
+   "descripcion": "OXXO FAJA DE ORO VSA RFC: CCO 8605231N4 21:15 AUT: 146351",
+   "monto": 169.0,
+   "categoria": "SUPER",
+   "subcategoria": "Conveniencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-05",
+   "fecha_cargo": "2022-04-05",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET REGALO",
+   "monto": 250.0,
+   "categoria": "FAMILIA_REGALOS",
+   "subcategoria": "Regalos",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-05",
+   "fecha_cargo": "2022-04-05",
+   "descripcion": "DEPOSITO DE TERCERO",
+   "monto": 16712.43,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-04-06",
+   "fecha_cargo": "2022-04-06",
+   "descripcion": "RETIRO CAJERO AUTOMATICO ABR06 19:40 BANCOMER D934 FOLIO:3970",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-06",
+   "fecha_cargo": "2022-04-05",
+   "descripcion": "NETPAY*VIVA AEROBUS RFC: ANA 050518RL1 12:28 AUT: 583982",
+   "monto": 360.0,
+   "categoria": "VIAJES",
+   "subcategoria": "Transporte",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-04-06",
+   "fecha_cargo": "2022-04-05",
+   "descripcion": "CONV SHOP 4 VSA RFC: CAS 0407163Z1 12:46 AUT: 777325",
+   "monto": 172.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  }
+ ]
+}
