@@ -16,6 +16,28 @@ MESES = {
 }
 
 CATEGORIAS: dict[str, tuple[str, str]] = {
+    # Comercios que el usuario clasificó desde «Sin clasificar» (2026-09-28);
+    # van primero porque gana la primera coincidencia.
+    "TRE BLE":              ("CAFE/PAN", "Pan"),
+    "AQUAMATIC":            ("VIVIENDA", "Lavandería"),
+    "AQUI ES PEJAMO":       ("VIVIENDA", "Lavandería"),
+    "ESTACIONAM AMER":      ("TRANSPORTE", "Estacionamiento"),
+    "ONE MINUTE PARK":      ("TRANSPORTE", "Estacionamiento"),
+    "KINZA GAS":            ("TRANSPORTE", "Gasolina"),
+    "RED NAC COMB":         ("TRANSPORTE", "Gasolina"),
+    "SERV LOPEZ MATEOS":    ("TRANSPORTE", "Gasolina"),
+    "SEGBBVA AUTOSEGURO":   ("TRANSPORTE", "Seguro auto"),
+    "TRAINING INNOVATION":  ("DEPORTE", "Gym"),
+    "QUEEN LATIN CLUB":     ("SALSA", "Social"),
+    "SODIMAC":              ("VIVIENDA", "Artículos del hogar"),
+    "PULL BEAR":            ("ROPA", "Ropa"),
+    "MEN S FACTORY":        ("ROPA", "Ropa"),
+    "PRIVALIA":             ("ROPA", "Ropa"),
+    "SUPERPROF":            ("APRENDIZAJE", "Cursos"),
+    "RECORCHOLIS":          ("OCIO", "Salidas"),
+    "YORK PUB":             ("COMIDA_FUERA", "Restaurante"),
+    "CERVECERIA CHAPULTEPEC":("COMIDA_FUERA", "Restaurante"),
+    "BAR ROCK IT":          ("COMIDA_FUERA", "Restaurante"),
     "BURGER":               ("COMIDA_FUERA", "Fast Food"),
     "ZEPELIN":              ("COMIDA_FUERA", "Fast Food"),
     "KFC":                  ("COMIDA_FUERA", "Fast Food"),
