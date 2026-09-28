@@ -47,3 +47,23 @@ def test_estacion_de_serv_col_es_gasolina(test_db):
         db.commit()
         corr.aplicar(db)
         assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=4888").fetchone()) == ('TRANSPORTE', 'Gasolina')
+
+
+def test_transferencias_de_5000_a_renta(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta, _reaplicar_reglas
+    with database.get_db() as db:
+        for f, d in (('2022-08-17', 'PAGO CUENTA DE TERCERO BNET RENTA GIO'),
+                     ('2023-04-01', 'PAGO CUENTA DE TERCERO BNET PRIMERA PARTE'),
+                     ('2023-05-12', 'PAGO CUENTA DE TERCERO BNET TRANSF A'),
+                     ('2024-09-29', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A'),
+                     ('2023-05-12', 'PAGO CUENTA DE TERCERO BNET TRANSF A (OTRO MONTO)')):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES (?,?,?, 'BBVA_DEB', 'FINANZAS', 'Transferencia', 'GASTO')""",
+                       (f, d, 800.0 if 'OTRO' in d else 5000.0))
+        db.commit()
+        assert _corregir_pagos_renta(db) == 4
+        db.execute("INSERT INTO est_keywords (keyword, categoria, subcategoria) VALUES ('BNET', 'FINANZAS', 'Transferencia')")
+        _reaplicar_reglas(db)
+        cats = db.execute("SELECT monto, categoria, subcategoria FROM est_movimientos ORDER BY id").fetchall()
+        assert [tuple(r) for r in cats if r[0] == 5000] == [(5000.0, 'VIVIENDA', 'Renta')] * 4
+        assert [tuple(r) for r in cats if r[0] == 800] == [(800.0, 'FINANZAS', 'Transferencia')]
