@@ -760,15 +760,27 @@ PAGOS_RENTA = (  # (fecha, monto, texto)
 )
 
 
+# SPEI a Bajío de $1,100 (2022) -> costo financiero (el usuario, 2026-09-28).
+PAGOS_COSTO_FINANCIERO = (  # (fecha, monto, texto)
+    ('2022-10-27', 1100.0, 'SPEI ENVIADO BAJIO'),
+    ('2022-12-19', 1100.0, 'SPEI ENVIADO BAJIO'),
+    ('2022-12-20', 1100.0, 'SPEI ENVIADO BAJIO'),
+)
+
+
 def _corregir_pagos_renta(db) -> int:
+    """Reafirma PAGOS_RENTA (VIVIENDA/Renta) y PAGOS_COSTO_FINANCIERO
+    (COSTOS_FINANCIEROS/Intereses)."""
     n = 0
-    for fecha, monto, texto in PAGOS_RENTA:
-        n += db.execute("""
-            UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta'
-            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
-              AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
-              AND (categoria != 'VIVIENDA' OR COALESCE(subcategoria, '') != 'Renta')
-        """, (fecha, monto, f"%{texto}%")).rowcount
+    for lista, cat, sub in ((PAGOS_RENTA, 'VIVIENDA', 'Renta'),
+                            (PAGOS_COSTO_FINANCIERO, 'COSTOS_FINANCIEROS', 'Intereses')):
+        for fecha, monto, texto in lista:
+            n += db.execute("""
+                UPDATE est_movimientos SET categoria=?, subcategoria=?
+                WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
+                  AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
+                  AND (categoria != ? OR COALESCE(subcategoria, '') != ?)
+            """, (cat, sub, fecha, monto, f"%{texto}%", cat, sub)).rowcount
     return n
 
 
