@@ -159,3 +159,77 @@ def filas_csv(db) -> list[list]:
     for g in sin_lote(db):
         filas.append(['', 'Sin lote', 'Factura', g['fecha'], g['descripcion'], g['monto'], g['estatus_reembolso'] or ''])
     return filas
+
+
+# ── Sugerencias automáticas ───────────────────────────────────────────────────
+# El usuario (2026-09-28): los depósitos de la empresa (FIDEICOMISO F 1596,
+# SITH2…, «EXPENSE … BMRCASH») pagan facturas de 1 a 3 meses antes. Para cada
+# depósito sin lote se busca el grupo de facturas EXPENSE sin lote, de hasta
+# VENTANA_DIAS antes, cuya suma dé el depósito (±TOLERANCIA). Solo sugiere:
+# el usuario confirma y se crea el lote.
+import re
+from datetime import date, timedelta
+
+VENTANA_DIAS = 100
+_DEP_RE = re.compile(r'FIDEICOMISO|EXPENSE|SITH2|BMRCASH', re.IGNORECASE)
+
+
+def _combinacion(montos: list[float], objetivo: float) -> list[int] | None:
+    """Índices de montos cuya suma da el objetivo (±TOLERANCIA). Suma de
+    subconjuntos sobre pesos redondeados con bitsets; se verifica en centavos.
+    Con varias soluciones prefiere las facturas más antiguas (las primeras)."""
+    pesos = [int(round(m)) for m in montos]
+    obj = int(round(objetivo))
+    limite = obj + len(pesos) + 2
+    mask = (1 << (limite + 1)) - 1
+    alcanzables = [1]                          # alcanzables[i]: sumas con los primeros i montos
+    for w in pesos:
+        alcanzables.append((alcanzables[-1] | (alcanzables[-1] << w)) & mask)
+    total = alcanzables[-1]
+    holgura = len(pesos) // 2 + 2
+    for delta in sorted(range(-holgura, holgura + 1), key=abs):
+        s = obj + delta
+        if s <= 0 or not (total >> s) & 1:
+            continue
+        idx, n = [], len(pesos)
+        for i in range(n, 0, -1):              # de la más reciente a la más antigua
+            if (alcanzables[i - 1] >> s) & 1:
+                continue                       # alcanzable sin la i-ésima: no se usa
+            idx.append(i - 1)
+            s -= pesos[i - 1]
+        if s == 0 and abs(sum(montos[i] for i in idx) - objetivo) <= TOLERANCIA:
+            return sorted(idx)
+    return None
+
+
+def sugerencias(db) -> list[dict]:
+    deps = [dict(r) for r in db.execute("""
+        SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto, banco FROM est_movimientos
+        WHERE tipo = 'INGRESO' AND categoria IN ('FINANZAS', 'EXPENSE')
+          AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)
+          AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
+        ORDER BY fecha, id
+    """).fetchall() if _DEP_RE.search(r['descripcion'] or '')]
+    libres = [g for g in sin_lote(db) if (g['estatus_reembolso'] or '') != ESTATUS_TERCERO]
+    libres.sort(key=lambda g: (g['fecha'], g['id']))
+    usados, out = set(), []
+    for d in deps:
+        hasta = date.fromisoformat(d['fecha'])
+        desde = (hasta - timedelta(days=VENTANA_DIAS)).isoformat()
+        cand = [g for g in libres if g['id'] not in usados and desde <= g['fecha'][:10] <= d['fecha']]
+        if not cand:
+            continue
+        idx = _combinacion([g['monto'] for g in cand], float(d['monto']))
+        if idx is None:
+            continue
+        facturas = [cand[i] for i in idx]
+        usados.update(g['id'] for g in facturas)
+        total = round(sum(g['monto'] for g in facturas), 2)
+        out.append({
+            'deposito': {**d, 'monto': round(float(d['monto']), 2)},
+            'facturas': facturas,
+            'total': total,
+            'diferencia': round(float(d['monto']) - total, 2),
+            'nombre': f"Expense {hasta.strftime('%Y-%m-%d')}",
+        })
+    return out
