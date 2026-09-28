@@ -809,6 +809,14 @@ RENTA_MI_PARTE = (  # (fecha, monto, texto, mi_parte)
 # TEMU»): «BNET CARRITO» $400 del 19/02/2022 = le pagaron gasolina.
 ABONOS_A_GASTO = (  # (fecha, monto, texto, categoria, subcategoria)
     ('2022-02-19', 400.0, 'BNET CARRITO', 'TRANSPORTE', 'Gasolina'),
+    # Parte de la renta que depositaron los roomies (el usuario, 2026-09-28):
+    # VIVIENDA/Aportación renta, fuera del ingreso (la renta cuenta mi_parte).
+    ('2022-10-07', 2500.0, 'BNET APARTADO RENTA', 'VIVIENDA', 'Aportación renta'),
+    ('2022-11-16', 2500.0, 'BNET RENTA', 'VIVIENDA', 'Aportación renta'),
+    ('2023-01-16', 2931.0, 'BNET INTERNET Y RENTA', 'VIVIENDA', 'Aportación renta'),
+    ('2023-02-14', 4400.0, 'BNET RENTA EMMA', 'VIVIENDA', 'Aportación renta'),
+    ('2023-04-17', 5150.0, 'BNET RENTA', 'VIVIENDA', 'Aportación renta'),
+    ('2023-12-04', 4000.0, 'BNET RENTA NOVIEMBRE', 'VIVIENDA', 'Aportación renta'),
 )
 
 # Nómina que en realidad fue aguinaldo (el usuario, 2026-09-28).
