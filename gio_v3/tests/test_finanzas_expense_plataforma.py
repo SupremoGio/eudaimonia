@@ -108,3 +108,24 @@ def test_exacto_al_centavo_gana_a_redondeo():
     res = P.asignar([a, b], g)
     assert round(sum(x['monto'] for x in res[2][1]), 2) == 4365.54
     assert {x['titulo'] for x in res[2][1]} == {'DESPENSA', 'pastel cocina', 'DIA DEL CHEF', 'REFRESCO', 'pastel act', 'Corona'}
+
+
+def test_aproximado_aceptado_y_viaticos(test_db, monkeypatch):
+    """738.70 toma confeti + globos + pastel agosto (aceptado por el usuario);
+    los de viáticos quedan en un lote propio sin gastos y fuera de sin-lote."""
+    gastos = [{'fecha': '2024-06-05', 'titulo': 'CONFETI AC ANIVERSARIO', 'tipo': '', 'monto': 100.02},
+              {'fecha': '2024-06-05', 'titulo': 'GLOBOS AC ANIVERSARIO', 'tipo': '', 'monto': 134.66},
+              {'fecha': '2024-08-16', 'titulo': 'pastel agosto', 'tipo': '', 'monto': 533.0}]
+    monkeypatch.setattr(P, 'items', lambda: [{**x, 'idx': i} for i, x in enumerate(gastos)])
+    with database.get_db() as db:
+        c = _mov(db, '2024-08-17', 'PASTELERIA', 533.0, 'CAFE/PAN', 'Pan')
+        d = _mov(db, '2024-08-30', 'SITH20000001188 FIDEICOMISO F 1596', 738.70, 'FINANZAS', 'Fideicomiso', 'INGRESO')
+        v1 = _mov(db, '2024-08-13', 'SITH20000001150 FIDEICOMISO F 1596', 1815.63, 'FINANZAS', 'Fideicomiso', 'INGRESO')
+        v2 = _mov(db, '2024-09-13', 'SITH20000001239 FIDEICOMISO F 1596', 512.00, 'FINANZAS', 'Fideicomiso', 'INGRESO')
+        db.commit()
+        P.conciliar(db); db.commit()
+        lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
+        assert [g['id'] for g in lotes[d]['gastos']] == [c] and 'aproximado' in lotes[d]['notas']
+        assert lotes[v1]['nombre'] == 'Viáticos 2024-08-13' and lotes[v2]['gastos'] == []
+        assert not {v1, v2, d} & {x['id'] for x in E._depositos_sin_lote(db)}
+        assert P.liberar_lotes_plataforma(db) == 3 and len(P.conciliar(db)) == 3   # se rearman igual

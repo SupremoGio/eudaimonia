@@ -107,9 +107,27 @@ def _emparejar(d, gastos, libres):
     return None
 
 
+# Emparejamientos aproximados aceptados por el usuario (2026-09-28, «dalos por
+# buenos»): (fecha, monto) del depósito -> títulos de los gastos. El de
+# $738.70 del 30/08/2024 con confeti + globos del aniversario + pastel agosto
+# ($767.68; la empresa rechazó $28.98).
+APROXIMADOS = {('2024-08-30', 738.70): ('CONFETI AC ANIVERSARIO', 'GLOBOS AC ANIVERSARIO', 'pastel agosto')}
+
+
+def _es(d, clave) -> bool:
+    return d['fecha'][:10] == clave[0] and abs(float(d['monto']) - clave[1]) < 0.005
+
+
 def asignar(depositos: list[dict], gastos: list[dict]) -> dict:
     """depósito id -> (pasada, [gastos de la plataforma])."""
     usados, res = set(), {}
+    for clave, titulos in APROXIMADOS.items():
+        d = next((d for d in depositos if _es(d, clave)), None)
+        sel = [next((x for x in gastos if x['titulo'] == t and x['idx'] not in usados and x['fecha'] <= clave[0]), None)
+               for t in titulos]
+        if d and all(sel):
+            usados.update(x['idx'] for x in sel)
+            res[d['id']] = ('aproximado (aceptado)', sel)
     for nombre, dias, fn, tol in PASADAS:
         for d in depositos:
             if d['id'] in res:
@@ -180,9 +198,20 @@ def _cargo_de(item, cargos, usados):
 # ese de 561 para que cuadre»).
 DEPOSITOS_FUERA = (('2024-05-28', 561.0),)
 
+# Depósitos que pagaron viáticos, no gastos de la plataforma (el usuario,
+# 2026-09-28: «esos mételos como pagado de viáticos»): ninguna combinación de
+# gastos del export los forma. El de $512 del 13/09/2024 se suma aquí porque
+# el confeti y los globos que lo aproximaban ya los tomó el de $738.70.
+VIATICOS = (('2024-06-04', 2414.94), ('2024-07-02', 1561.68), ('2024-08-13', 1815.63),
+            ('2024-09-13', 512.00), ('2025-04-30', 4828.01))
+
 
 def _fuera(d) -> bool:
-    return any(d['fecha'][:10] == f and abs(float(d['monto']) - m) < 0.005 for f, m in DEPOSITOS_FUERA)
+    return any(_es(d, c) for c in DEPOSITOS_FUERA)
+
+
+def _viaticos(d) -> bool:
+    return any(_es(d, c) for c in VIATICOS)
 
 
 def liberar_lotes_plataforma(db) -> int:
@@ -214,7 +243,17 @@ def _depositos_empresa(db) -> list[dict]:
         WHERE tipo = 'INGRESO' AND categoria IN ('FINANZAS', 'EXPENSE')
           AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
         ORDER BY fecha, id
-    """).fetchall() if _lotes._DEP_RE.search(r['descripcion'] or '') and not _fuera(r)]
+    """).fetchall() if _lotes._DEP_RE.search(r['descripcion'] or '') and not _fuera(r) and not _viaticos(r)]
+
+
+def _depositos_viaticos(db) -> list[dict]:
+    return [dict(r) for r in db.execute("""
+        SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto FROM est_movimientos
+        WHERE tipo = 'INGRESO' AND categoria IN ('FINANZAS', 'EXPENSE')
+          AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)
+          AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
+        ORDER BY fecha, id
+    """).fetchall() if _lotes._DEP_RE.search(r['descripcion'] or '') and _viaticos(r)]
 
 
 def plan(db) -> list[dict]:
@@ -292,4 +331,14 @@ def conciliar(db) -> list[str]:
         _lotes.sincronizar(db, lid)
         hechos.append(f"{d['fecha'][:10]} ${float(d['monto']):,.2f}: {len(con)} cargos"
                       + (f", {len(sin)} sin cargo" if sin else ""))
+    # Los de viáticos quedan en un lote propio sin gastos: así salen de
+    # «depósitos sin lote» / «sin conciliar» y el nombre dice qué pagaron.
+    for d in _depositos_viaticos(db):
+        lid = db.execute("INSERT INTO est_expense_lotes (nombre, notas, created_at) VALUES (?,?,?)",
+                         (f"Viáticos {d['fecha']}", "Plataforma de Expense: pagado de viáticos (sin gastos en la plataforma)",
+                          _lotes.ahora())).lastrowid
+        db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable' WHERE id=?", (d['id'],))
+        db.execute("INSERT INTO est_expense_lote_depositos (lote_id, movimiento_id, created_at) VALUES (?,?,?)",
+                   (lid, d['id'], _lotes.ahora()))
+        hechos.append(f"{d['fecha']} ${float(d['monto']):,.2f}: viáticos")
     return hechos

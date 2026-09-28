@@ -6190,6 +6190,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_v5_centavos migration warning: {e}")
 
+        # ── FINANZAS — plataforma de Expense v6 (usuario, 2026-09-28): el de
+        # $738.70 se da por bueno con confeti + globos + pastel agosto, y los
+        # de $2,414.94, $1,561.68, $1,815.63, $512 y $4,828.01 son viáticos.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_plataforma_v6_viaticos'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.expense_plataforma import conciliar as _exp_plat6, liberar_lotes_plataforma as _lib6
+                _l = _lib6(db)
+                _h = _exp_plat6(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_plataforma_v6_viaticos", f"{_l} liberados; {len(_h)} lotes: " + "; ".join(_h)[:850])
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_plataforma_v6_viaticos: {_l} liberados, {len(_h)} lotes {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_plataforma_v6_viaticos migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
