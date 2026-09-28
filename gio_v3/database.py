@@ -5980,6 +5980,22 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_bonos_bmrcash_2022 migration warning: {e}")
 
+        # ── FINANZAS — última letra del carro ($40,000, 05/01/2022) -> TRANSPORTE/Pago auto.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_ultima_letra_carro'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_pagos_renta
+                _n = _corregir_pagos_renta(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_ultima_letra_carro", f"{_n} cambios")
+                )
+                db.commit()
+                print(f"[DB] finanzas_ultima_letra_carro: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_ultima_letra_carro migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

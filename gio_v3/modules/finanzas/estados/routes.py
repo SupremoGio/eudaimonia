@@ -787,6 +787,11 @@ PAGOS_CELULAR = (  # (fecha, monto, texto)
 )
 
 
+# Pagos del crédito del carro (el usuario: «fue la última letra de mi carro»).
+PAGOS_AUTO = (  # (fecha, monto, texto)
+    ('2022-01-05', 40000.0, 'BNET ULTIMA CARRITO'),
+)
+
 # Nómina que en realidad fue aguinaldo (el usuario, 2026-09-28).
 AGUINALDOS = (  # (fecha, monto, texto)
     ('2022-12-16', 10493.87, 'PAGO DE NOMINA'),
@@ -820,7 +825,8 @@ def _corregir_pagos_renta(db) -> int:
     n = 0
     for lista, cat, sub in ((PAGOS_RENTA, 'VIVIENDA', 'Renta'),
                             (PAGOS_COSTO_FINANCIERO, 'COSTOS_FINANCIEROS', 'Intereses'),
-                            (PAGOS_CELULAR, 'DIGITAL', 'Celular')):
+                            (PAGOS_CELULAR, 'DIGITAL', 'Celular'),
+                            (PAGOS_AUTO, 'TRANSPORTE', 'Pago auto')):
         for fecha, monto, texto in lista:
             n += db.execute("""
                 UPDATE est_movimientos SET categoria=?, subcategoria=?
