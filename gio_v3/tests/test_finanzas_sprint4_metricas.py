@@ -216,3 +216,18 @@ def test_pendientes_ignora_msi_que_ya_terminaron(client):
     data = client.get('/finanzas/estados/api/summary/pendientes').get_json()
     assert data['msi_compras_activas'] == 1
     assert data['msi_restante_total'] == 5280.0
+
+
+def test_pendientes_lista_msi_activos_con_su_compra(client):
+    import database
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (fecha,descripcion,monto,banco,categoria,subcategoria,tipo)
+                      VALUES ('2026-05-28','AMAZON A MESES A 15 MESES S/I',7186.75,'BBVA_TDC','FINANZAS','Compra a meses','GASTO')""")
+        for k, f in enumerate(('2026-06-22', '2026-07-22', '2026-08-22', '2026-09-22'), 1):
+            db.execute("""INSERT INTO est_movimientos (fecha,descripcion,monto,banco,categoria,tipo,
+                          parcialidad_num,parcialidad_total,compra_msi_id)
+                          VALUES (?,'AMAZON A MESES',480.0,'BBVA_TDC','DIGITAL','GASTO',?,15,'h1')""", (f, k))
+        db.commit()
+    a = client.get('/finanzas/estados/api/summary/pendientes').get_json()['msi_activos']
+    assert len(a) == 1 and a[0]['pagadas'] == 4 and a[0]['faltan'] == 11 and a[0]['restante'] == 5280.0
+    assert a[0]['fecha_compra'] == '2026-05-28' and a[0]['total'] == 7186.75

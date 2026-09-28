@@ -356,3 +356,8 @@ button.fz-note{width:100%;text-align:left;font:inherit;color:inherit;cursor:poin
 .fz-ex-pick label{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2) var(--sp-3);cursor:pointer}
 .fz-ex-pick label:hover{background:var(--bg-raised)}
 .fz-ex-date{width:64px;flex-shrink:0;white-space:nowrap}.fz-ex-amt{width:104px;text-align:right;flex-shrink:0}
+/* Tarjeta «MSI activos» clicable y su pop-up */
+.fz-stat--btn{text-align:left;font:inherit;color:inherit;width:100%;cursor:pointer}
+.fz-msi-list{display:flex;flex-direction:column;gap:var(--sp-3)}
+.fz-msi-row{display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-3);border:1px solid var(--border-subtle);border-radius:var(--r-md)}
+.fz-msi-name{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

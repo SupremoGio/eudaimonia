@@ -2,18 +2,46 @@ import { api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { MONTHS_LONG, fmtDate, money, pct, presetRange } from '../lib/format.js';
 import { NATURALEZA, catMeta } from '../lib/meta.js';
-import { CatIcon, Empty, ErrorNote, Icon, Skel, useLoad, Progress } from '../components/ui.jsx';
+import { useState } from 'react';
+import { CatIcon, Empty, ErrorNote, Icon, Modal, Skel, useLoad, Progress } from '../components/ui.jsx';
 import FlowBars from '../components/FlowBars.jsx';
 
 const monthName = MONTHS_LONG[new Date().getMonth()];
 
-function Stat({ label, icon, children, foot }) {
+function Stat({ label, icon, children, foot, onClick }) {
+  const Tag = onClick ? 'button' : 'div';
   return (
-    <div className="eu-card eu-stat fz-stat">
+    <Tag type={onClick ? 'button' : undefined} onClick={onClick}
+      className={`eu-card eu-stat fz-stat${onClick ? ' eu-card--interactive fz-stat--btn' : ''}`}>
       <div className="eu-stat-lbl"><Icon name={icon} />{label}</div>
       {children}
       {foot}
-    </div>
+    </Tag>
+  );
+}
+
+// Qué compras a meses forman «MSI activos»: cuota, cuántas van y lo que falta.
+function MsiModal({ items, total, onClose }) {
+  return (
+    <Modal title="MSI activos" eyebrow="Compras a meses por pagar" onClose={onClose}
+      footer={<div className="eu-between eu-grow"><span className="t-meta">Total por pagar</span><span className="t-data">{money(total)}</span></div>}>
+      <div className="eu-modal-bd fz-msi-list">
+        {items.length ? items.map((a) => (
+          <div key={a.id} className="fz-msi-row">
+            <div className="eu-between">
+              <div className="eu-grow fz-msi-name">{a.descripcion}</div>
+              <span className="t-data">{money(a.restante)}</span>
+            </div>
+            <div className="t-meta">
+              {a.fecha_compra ? `Compra ${fmtDate(a.fecha_compra)}${a.total ? ` · ${money(a.total)}` : ''} · ` : ''}
+              {money(a.cuota)} / mes · faltan {a.faltan}
+            </div>
+            <Progress pct={Math.round((a.pagadas / (a.mensualidades || 1)) * 100)} label={`${a.pagadas} de ${a.mensualidades} pagadas`} />
+            <div className="t-meta">{a.pagadas} de {a.mensualidades} pagadas{a.primera ? ` · 1ª cuota ${fmtDate(a.primera)}` : ""}</div>
+          </div>
+        )) : <Empty compact icon="calendar-check" title="Sin compras a meses" text="No hay mensualidades por venir." />}
+      </div>
+    </Modal>
   );
 }
 
@@ -45,11 +73,13 @@ export default function Resumen() {
   const x = p.expense_ref;
   const period = presetRange('this_month');
 
+  const [msiOpen, setMsiOpen] = useState(false);
   const openCat = (categoria) => app.openCategory({ categoria, tipo: 'GASTO', period, periodLabel: `Este mes · ${monthName}` });
 
   return (
     <div className="fz-vstack-lg">
       <ErrorNote error={ov.error} onRetry={ov.reload} />
+      {msiOpen && <MsiModal items={p.msi_activos || []} total={p.msi_restante_total || 0} onClose={() => setMsiOpen(false)} />}
       <div className="eu-grid-4 fz-stats">
         <Stat label="Gastado · tu parte" icon="wallet"
           foot={delta != null ? <div className={`eu-stat-delta ${delta > 0 ? 'down' : 'up'}`}><Icon name={delta > 0 ? 'trending-up' : 'trending-down'} size={12} />{delta > 0 ? '+' : ''}{delta} % vs {prev.month.toLowerCase()}</div> : <div className="t-meta">En {monthName}</div>}>
@@ -59,7 +89,7 @@ export default function Resumen() {
           foot={<div className="t-meta">{o.income > 0 ? `Ahorro ${o.savings_pct} %` : `En ${monthName}`}</div>}>
           {ov.loading ? <div className="eu-skel fz-skel-val" /> : <div className="eu-stat-val fg-success">{money(o.income, { cents: false })}</div>}
         </Stat>
-        <Stat label="MSI activos" icon="calendar-clock"
+        <Stat label="MSI activos" icon="calendar-clock" onClick={pend.loading ? undefined : () => setMsiOpen(true)}
           foot={<div className="t-meta">{p.msi_compras_activas ? `${p.msi_compras_activas} compra${p.msi_compras_activas === 1 ? '' : 's'} · por pagar` : 'Sin compras a meses'}</div>}>
           {pend.loading ? <div className="eu-skel fz-skel-val" /> : <div className="eu-stat-val">{money(p.msi_restante_total || 0, { cents: false })}</div>}
         </Stat>
