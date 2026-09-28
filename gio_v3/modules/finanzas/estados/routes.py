@@ -1470,6 +1470,58 @@ def by_naturaleza():
     return jsonify([{'naturaleza': r['naturaleza'], 'total': round(r['total'] or 0, 2)} for r in rows])
 
 
+def msi_por_pagar():
+    """Compras a MSI con cuotas por pagar -> (lista, bancos con MSI).
+
+    Fuente única de «MSI activos» (Resumen de Estados) y del saldo de las
+    tarjetas en la tarjeta «Deudas» del hub de Finanzas. El segundo valor
+    es el conjunto de bancos que alguna vez tuvieron compras a MSI: para
+    esos, el saldo de la tarjeta se deriva de aquí aunque dé 0.
+    """
+    # Por cada compra a MSI: cuotas restantes = total de mensualidades
+    # menos la última mensualidad vista (no las contadas: una que no se
+    # importó porque falta ese estado de cuenta ya se pagó, no es un cargo
+    # futuro -- esas salen en /admin/msi como «faltan mensualidades»).
+    # Solo cuentan las cuotas que caen DESPUÉS del último estado de cuenta
+    # cargado de ese banco: si una compra vio su cuota 5/6 en junio y ya
+    # está cargado septiembre, la 6/6 cayó en julio (o se liquidó antes) y
+    # no es deuda por pagar. Antes se sumaban las «faltantes» de todas las
+    # compras de la historia (usuario, 2026-09-28: 36 compras / $29,539
+    # «activas», casi todas de 2022-2025 ya terminadas).
+    with get_db() as db:
+        msi_rows = db.execute("""
+            SELECT compra_msi_id, banco,
+                   MAX(parcialidad_total) AS total_cuotas,
+                   MAX(parcialidad_num) AS cuotas_vistas,
+                   AVG(monto) AS monto_cuota,
+                   MAX(substr(fecha, 1, 7)) AS ultimo_mes,
+                   MAX(substr(fecha, 1, 10)) AS ultima_fecha,
+                   MIN(descripcion) AS desc_cuota
+            FROM est_movimientos
+            WHERE compra_msi_id IS NOT NULL
+            GROUP BY compra_msi_id
+        """).fetchall()
+        ultimo_mes_banco = {r[0]: r[1] for r in db.execute(
+            "SELECT banco, MAX(substr(fecha, 1, 7)) FROM est_movimientos GROUP BY banco").fetchall()}
+
+    def _mes(ym):
+        return int(ym[:4]) * 12 + int(ym[5:7])
+
+    activos = []
+    for r in msi_rows:
+        faltan = (r['total_cuotas'] or 0) - (r['cuotas_vistas'] or 0)
+        corte = ultimo_mes_banco.get(r['banco']) or r['ultimo_mes']
+        futuras = faltan - max(0, _mes(corte) - _mes(r['ultimo_mes'])) if r['ultimo_mes'] else faltan
+        if futuras > 0:
+            activos.append({
+                'id': r['compra_msi_id'], 'descripcion': r['desc_cuota'], 'banco': r['banco'],
+                'mensualidades': r['total_cuotas'], 'pagadas': (r['total_cuotas'] or 0) - futuras,
+                'faltan': futuras, 'cuota': round(r['monto_cuota'] or 0, 2),
+                'restante': round(futuras * (r['monto_cuota'] or 0), 2), 'ultima': r['ultima_fecha'],
+            })
+    return activos, {r['banco'] for r in msi_rows}
+
+
 @estados_bp.route('/api/summary/pendientes')
 def summary_pendientes():
     """Reembolsos (EXPENSE) pendientes y deuda restante estimada en compras
@@ -1496,50 +1548,9 @@ def summary_pendientes():
             WHERE categoria='EXPENSE' AND tipo='GASTO' AND fecha >= ?
         """, (year_start,)).fetchone()
 
-        # Por cada compra a MSI: cuotas restantes = total de mensualidades
-        # menos la última mensualidad vista (no las contadas: una que no se
-        # importó porque falta ese estado de cuenta ya se pagó, no es un cargo
-        # futuro -- esas salen en /admin/msi como «faltan mensualidades»).
-        # Solo cuentan las cuotas que caen DESPUÉS del último estado de cuenta
-        # cargado de ese banco: si una compra vio su cuota 5/6 en junio y ya
-        # está cargado septiembre, la 6/6 cayó en julio (o se liquidó antes) y
-        # no es deuda por pagar. Antes se sumaban las «faltantes» de todas las
-        # compras de la historia (usuario, 2026-09-28: 36 compras / $29,539
-        # «activas», casi todas de 2022-2025 ya terminadas).
-        msi_rows = db.execute("""
-            SELECT compra_msi_id, banco,
-                   MAX(parcialidad_total) AS total_cuotas,
-                   MAX(parcialidad_num) AS cuotas_vistas,
-                   AVG(monto) AS monto_cuota,
-                   MAX(substr(fecha, 1, 7)) AS ultimo_mes,
-                   MAX(substr(fecha, 1, 10)) AS ultima_fecha,
-                   MIN(descripcion) AS desc_cuota
-            FROM est_movimientos
-            WHERE compra_msi_id IS NOT NULL
-            GROUP BY compra_msi_id
-        """).fetchall()
-        ultimo_mes_banco = {r[0]: r[1] for r in db.execute(
-            "SELECT banco, MAX(substr(fecha, 1, 7)) FROM est_movimientos GROUP BY banco").fetchall()}
-
-    def _mes(ym):
-        return int(ym[:4]) * 12 + int(ym[5:7])
-
-    msi_restante = 0.0
-    msi_compras_activas = 0
-    msi_activos = []
-    for r in msi_rows:
-        faltan = (r['total_cuotas'] or 0) - (r['cuotas_vistas'] or 0)
-        corte = ultimo_mes_banco.get(r['banco']) or r['ultimo_mes']
-        futuras = faltan - max(0, _mes(corte) - _mes(r['ultimo_mes'])) if r['ultimo_mes'] else faltan
-        if futuras > 0:
-            msi_restante += futuras * (r['monto_cuota'] or 0)
-            msi_compras_activas += 1
-            msi_activos.append({
-                'id': r['compra_msi_id'], 'descripcion': r['desc_cuota'], 'banco': r['banco'],
-                'mensualidades': r['total_cuotas'], 'pagadas': (r['total_cuotas'] or 0) - futuras,
-                'faltan': futuras, 'cuota': round(r['monto_cuota'] or 0, 2),
-                'restante': round(futuras * (r['monto_cuota'] or 0), 2), 'ultima': r['ultima_fecha'],
-            })
+    msi_activos, _ = msi_por_pagar()
+    msi_restante = sum(a['restante'] for a in msi_activos)
+    msi_compras_activas = len(msi_activos)
     # Para el pop-up de la tarjeta: la compra original («… A 15 MESES S/I»)
     # del mismo comercio, hasta 45 días antes de la 1ª cuota y cuyo total
     # cuadra con cuota × mensualidades (compra_msi_id es un hash, no su id).

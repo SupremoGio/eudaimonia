@@ -48,18 +48,41 @@ def _hub_debts(cuentas):
                        for r in db.execute("SELECT nombre, pago_minimo FROM budget_deudas WHERE activa=1")}
     except Exception:
         minimos = {}
+    # El saldo de las tarjetas sale de sus compras a MSI por pagar (la misma
+    # cifra de «MSI activos» en Estados), no del capturado a mano en
+    # Patrimonio. Banco del estado de cuenta (BBVA_TDC, HSBC…) → tarjeta cuyo
+    # nombre/institución lo menciona; solo la primera, para no contarlo doble.
+    # Tarjetas de bancos sin historial de MSI conservan el saldo manual.
+    try:
+        from modules.finanzas.estados.routes import msi_por_pagar
+        activos, msi_bancos = msi_por_pagar()
+    except Exception:
+        activos, msi_bancos = [], set()
+    msi_banco = defaultdict(float)
+    for a in activos:
+        msi_banco[a['banco']] += a['restante']
+    asignados = set()
     out = []
     for c in cuentas:
-        if c['tipo'] not in TIPOS_PASIVO or c['moneda'] in MONEDAS_EXTRANJERAS or not c['saldo']:
+        if c['tipo'] not in TIPOS_PASIVO or c['moneda'] in MONEDAS_EXTRANJERAS:
             continue
         hay = f"{c['nombre']} {c.get('institucion') or ''}".lower()
+        saldo, de_msi = c['saldo'], False
+        if c['tipo'] == 'tarjeta_credito':
+            bancos = [b for b in msi_bancos - asignados if b and b.split('_')[0].lower() in hay]
+            if bancos:
+                asignados.update(bancos)
+                saldo, de_msi = round(sum(msi_banco[b] for b in bancos), 2), True
+        if not saldo:
+            continue
         pay = next((p for p in PAY_DAYS if p['match'] in hay), None)
         dias = _days_until(pay['day']) if pay else None
         minimo = next((v for k, v in minimos.items() if k and (k in hay or c['nombre'].lower() in k)), None)
         out.append({
             'nombre': c['nombre'],
-            'sub': ' · '.join(filter(None, [TIPO_META.get(c['tipo'], {}).get('label'), c.get('institucion')])),
-            'saldo': c['saldo'], 'minimo': minimo, 'dias': dias,
+            'sub': ' · '.join(filter(None, [TIPO_META.get(c['tipo'], {}).get('label'), c.get('institucion'),
+                                            'MSI por pagar' if de_msi else None])),
+            'saldo': saldo, 'minimo': minimo, 'dias': dias,
             'tone': None if dias is None else 'danger' if dias == 0 else 'warning' if dias <= 7 else '',
         })
     out.sort(key=lambda d: (d['dias'] is None, d['dias'] if d['dias'] is not None else 0, -d['saldo']))
