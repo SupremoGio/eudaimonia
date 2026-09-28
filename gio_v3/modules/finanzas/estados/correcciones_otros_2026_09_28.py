@@ -154,7 +154,7 @@ CORRECCIONES = [
     (4968, '2023-08-10', 200.0, 'SERV ZAPOPAN', 'TRANSPORTE', 'Gasolina'),  # gasolina
     (4293, '2023-05-28', 200.0, 'SERV PATRYBACH', 'TRANSPORTE', 'Gasolina'),  # gasolina
     (4907, '2023-05-13', 200.0, 'RED NAC COMB SERV', 'TRANSPORTE', 'Gasolina'),  # gasolina
-    (4888, '2023-04-26', 200.0, 'ESTACION DE SERV COL', 'TRANSPORTE', 'Estacionamiento'),  # estacionamiento
+    (4888, '2023-04-26', 200.0, 'ESTACION DE SERV COL', 'TRANSPORTE', 'Gasolina'),  # «estacionamiento» -> el usuario: «sí es gasolina»
     (4795, '2022-11-07', 200.0, 'SEGBBVA AUTOSEGURO ROP', 'TRANSPORTE', 'Seguro auto'),  # seguro carro BBVA a meses
     (4312, '2023-06-11', 199.0, 'T14 GALS GDL', 'TRANSPORTE', 'Gasolina'),  # gasolina
     (4835, '2023-02-23', 199.0, 'SUPERPROF PASSELEVE', 'APRENDIZAJE', 'Cursos'),  # educacion

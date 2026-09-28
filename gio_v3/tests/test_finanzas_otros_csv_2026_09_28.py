@@ -38,3 +38,12 @@ def test_aplica_por_id_y_por_comercio(test_db):
         assert cat(4588) == ('OTROS', '')
         assert ok == 3
         assert corr.aplicar(db)[0] == 0
+
+
+def test_estacion_de_serv_col_es_gasolina(test_db):
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES (4888, '2023-04-26', 'ESTACION DE SERV COL', 200, 'BBVA_TDC', 'TRANSPORTE', 'Estacionamiento', 'GASTO')""")
+        db.commit()
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=4888").fetchone()) == ('TRANSPORTE', 'Gasolina')

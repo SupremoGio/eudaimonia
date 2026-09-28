@@ -43,6 +43,7 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "CCP MIDTOWN":          ("COMIDA_FUERA", "Restaurante"),
     "COMISION POR MEMBRESIA":("COSTOS_FINANCIEROS", "Comisiones"),
     "IVA COM MEMBRESIA":    ("COSTOS_FINANCIEROS", "Comisiones"),
+    "ESTACION DE SERV":     ("TRANSPORTE", "Gasolina"),
     "BURGER":               ("COMIDA_FUERA", "Fast Food"),
     "ZEPELIN":              ("COMIDA_FUERA", "Fast Food"),
     "KFC":                  ("COMIDA_FUERA", "Fast Food"),
