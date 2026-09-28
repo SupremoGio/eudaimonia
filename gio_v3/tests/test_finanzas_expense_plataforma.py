@@ -65,3 +65,14 @@ def test_no_reofrece_gastos_ya_pagados_y_cargo_antes_o_transferencia(test_db, mo
         lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
         assert d3 not in lotes                           # los gastos de $642 ya los pagó d1
         assert [g['id'] for g in lotes[d2]['gastos']] == [c_antes]   # transferencia 5 días antes del recibo
+
+
+def test_reparacion_toma_gastos_de_otro_deposito_si_este_se_reempareja():
+    """U solo cuadra con el gasto de $300 que tomó M; M también cuadra con otro de $300 libre."""
+    g = [{'idx': 0, 'fecha': '2024-01-05', 'titulo': 'A', 'monto': 300.0},
+         {'idx': 1, 'fecha': '2024-01-06', 'titulo': 'B', 'monto': 200.0},
+         {'idx': 2, 'fecha': '2024-02-20', 'titulo': 'C', 'monto': 300.0}]
+    m = {'id': 1, 'fecha': '2024-03-01', 'monto': 300.0}      # «mismo monto»: toma A (el primero)
+    u = {'id': 2, 'fecha': '2024-01-20', 'monto': 500.0}      # necesita A + B (C es posterior a su fecha)
+    res = P.asignar([u, m], g)
+    assert {x['idx'] for x in res[2][1]} == {0, 1} and [x['idx'] for x in res[1][1]] == [2]

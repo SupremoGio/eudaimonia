@@ -3219,43 +3219,51 @@ def _auditar_banco(db, banco: str, hasta: str, umbral_dias: int) -> dict:
 
 @estados_bp.route('/admin/expense-plataforma')
 def expense_plataforma_admin():
-    """Solo lectura: depósitos de la empresa que siguen sin lote y qué gastos
-    de la plataforma (y cargos del banco) les tocarían; y los gastos de la
-    plataforma que no quedaron en ningún depósito."""
+    """Solo lectura: depósitos de la empresa sin lote (con lo que les tocaría),
+    la asignación completa depósito ↔ gastos de la plataforma y los gastos de
+    la plataforma que no quedaron en ningún depósito."""
     if not _ok(): return _locked()
     from . import expense_plataforma as _plat
     with get_db() as db:
         pl = _plat.plan(db)
-        ligados = {r[0] for r in db.execute("SELECT movimiento_id FROM est_expense_lote_gastos")}
-    asignados = {g['idx'] for p in pl for g in p['gastos']}
-    sin_deposito = [x for x in _plat.items() if x['idx'] not in asignados]
-    data = {'pendientes': pl, 'gastos_plataforma_sin_deposito_pendiente': sin_deposito, 'cargos_en_lotes': len(ligados)}
-    if request.args.get('formato') != 'html':
-        return jsonify(data)
-    fmt = lambda v: f"${float(v):,.2f}"
-    with get_db() as db:
+        comp = _plat.asignacion_completa(db)
         posibles = {g['idx']: _plat.posibles_cargos(db, g) for p in pl for g in p['gastos'] if not g['cargo']}
+    if request.args.get('formato') != 'html':
+        return jsonify({'pendientes': pl, 'asignacion': comp['depositos'], 'sin_deposito': comp['sin_deposito']})
+    fmt = lambda v: f"${float(v):,.2f}"
 
     def linea(g):
         txt = g['fecha'] + ' ' + g['titulo'] + ' ' + fmt(g['monto'])
-        if g['cargo']:
+        if g.get('cargo'):
             return txt + f" → {g['cargo']['fecha']} {g['cargo']['descripcion']} ({g['cargo']['categoria']})"
+        if 'cargo' not in g:
+            return txt
         cands = posibles.get(g['idx']) or []
         pista = '; '.join(f"{c['fecha']} {c['descripcion'][:30]} {c['categoria']}/{c['subcategoria'] or ''} {c['tipo']}"
                           + (' [ya en lote]' if c['en_lote'] else '') for c in cands) or 'ningún movimiento de ese monto a ±45 días'
         return txt + f' <i>(sin cargo · {pista})</i>'
 
-    filas = ''.join(
+    pend = ''.join(
         f"<tr><td>{p['deposito']['fecha'][:10]}</td><td>{p['deposito']['descripcion']}</td><td class=r>{fmt(p['deposito']['monto'])}</td>"
         f"<td>{p['pasada'] or '<b>sin pareja</b>'}</td><td>{'<br>'.join(linea(g) for g in p['gastos'])}</td></tr>"
         for p in pl)
+    asig = ''.join(
+        f"<tr><td>{d['fecha'][:10]}</td><td>{d['descripcion']}</td><td class=r>{fmt(d['monto'])}</td>"
+        f"<td>{'en lote' if d['en_lote'] else '<b>sin lote</b>'}</td><td>{d['pasada'] or '<b>sin pareja</b>'}</td>"
+        f"<td>{'<br>'.join(linea(g) for g in d['gastos'])}</td></tr>"
+        for d in comp['depositos'])
+    sueltos = ''.join(f"<tr><td>{x['fecha']}</td><td>{x['titulo']}</td><td class=r>{fmt(x['monto'])}</td></tr>"
+                      for x in comp['sin_deposito'])
+    total_sueltos = sum(x['monto'] for x in comp['sin_deposito'])
     return ('<!doctype html><meta charset=utf-8><title>Expense · plataforma</title>'
             '<style>body{font:14px system-ui;background:#0f0d14;color:#eee;padding:16px}table{border-collapse:collapse;width:100%}'
             'td,th{padding:6px 10px;border-bottom:1px solid #333;text-align:left;vertical-align:top}.r{text-align:right}th{color:#aaa}</style>'
             f'<h2>Depósitos de la empresa sin lote ({len(pl)})</h2>'
-            f'<table><tr><th>Fecha</th><th>Depósito</th><th class=r>Monto</th><th>Emparejado por</th><th>Gastos de la plataforma</th></tr>{filas}</table>'
-            f'<h2>Gastos de la plataforma sin depósito pendiente ({len(sin_deposito)})</h2>'
-            '<p>Ya pagados en un lote, o su depósito no está cargado / no se encontró.</p>')
+            f'<table><tr><th>Fecha</th><th>Depósito</th><th class=r>Monto</th><th>Emparejado por</th><th>Gastos de la plataforma</th></tr>{pend}</table>'
+            f'<h2>Gastos de la plataforma sin ningún depósito ({len(comp["sin_deposito"])} · {fmt(total_sueltos)})</h2>'
+            f'<table><tr><th>Fecha</th><th>Gasto</th><th class=r>Monto</th></tr>{sueltos}</table>'
+            f'<h2>Asignación completa ({len(comp["depositos"])} depósitos de la empresa)</h2>'
+            f'<table><tr><th>Fecha</th><th>Depósito</th><th class=r>Monto</th><th>Lote</th><th>Emparejado por</th><th>Gastos de la plataforma</th></tr>{asig}</table>')
 
 
 @estados_bp.route('/admin/renta')

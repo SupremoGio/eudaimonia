@@ -80,6 +80,20 @@ PASADAS = (('mismo monto', 120, _exacto), ('FIFO', 185, _fifo), ('bloque', 120, 
            ('combinación', 120, _suma), ('combinación', 240, _suma))
 
 
+def _ventana(d, gastos, libres, dias):
+    desde = (date.fromisoformat(d['fecha'][:10]) - timedelta(days=dias)).isoformat()
+    return [x for x in gastos if x['idx'] in libres and desde <= x['fecha'] <= d['fecha'][:10]]
+
+
+def _emparejar(d, gastos, libres):
+    for nombre, dias, fn in PASADAS:
+        cand = _ventana(d, gastos, libres, dias)
+        sel = fn(cand, float(d['monto'])) if cand else None
+        if sel:
+            return nombre, sel
+    return None
+
+
 def asignar(depositos: list[dict], gastos: list[dict]) -> dict:
     """depósito id -> (pasada, [gastos de la plataforma])."""
     usados, res = set(), {}
@@ -93,6 +107,33 @@ def asignar(depositos: list[dict], gastos: list[dict]) -> dict:
             if sel:
                 usados.update(x['idx'] for x in sel)
                 res[d['id']] = (nombre, sel)
+    # Reparación: un depósito sin pareja puede tomar gastos que se quedó otro
+    # depósito cercano, si ese otro se puede volver a emparejar con gastos
+    # libres (p. ej. un depósito de $561 tomó uno de los dos pasteles de $561
+    # que necesitaba el de $2,973.24 del Día de las Madres).
+    por_idx = {x['idx']: x for x in gastos}
+    for u in depositos:
+        if u['id'] in res:
+            continue
+        ventana_u = {x['idx'] for x in _ventana(u, gastos, set(por_idx), PASADAS[-1][1])}
+        for m in depositos:
+            if m['id'] not in res or m['id'] == u['id']:
+                continue
+            _, sel_m = res[m['id']]
+            if not {x['idx'] for x in sel_m} & ventana_u:
+                continue
+            libres = (set(por_idx) - usados) | {x['idx'] for x in sel_m}
+            nuevo_u = _emparejar(u, gastos, libres)
+            if not nuevo_u:
+                continue
+            nuevo_m = _emparejar(m, gastos, libres - {x['idx'] for x in nuevo_u[1]})
+            if not nuevo_m:
+                continue
+            usados -= {x['idx'] for x in sel_m}
+            usados |= {x['idx'] for x in nuevo_u[1]} | {x['idx'] for x in nuevo_m[1]}
+            res[u['id']] = (nuevo_u[0] + ' (reparado)', nuevo_u[1])
+            res[m['id']] = (nuevo_m[0], nuevo_m[1])
+            break
     return res
 
 
@@ -153,6 +194,21 @@ def plan(db) -> list[dict]:
             gastos.append({**it, 'cargo': c})
         out.append({'deposito': d, 'pasada': pasada, 'gastos': gastos})
     return out
+
+
+def asignacion_completa(db) -> dict:
+    """Para revisar: cada depósito de la empresa con los gastos de la
+    plataforma que le tocan (esté o no en lote) y los gastos que no quedaron
+    en ningún depósito."""
+    todos = _depositos_empresa(db)
+    it = items()
+    asign = asignar(todos, it)
+    usados = {x['idx'] for _, sel in asign.values() for x in sel}
+    return {
+        'depositos': [{**d, 'pasada': asign.get(d['id'], (None, []))[0],
+                       'gastos': asign.get(d['id'], (None, []))[1]} for d in todos],
+        'sin_deposito': [x for x in it if x['idx'] not in usados],
+    }
 
 
 def posibles_cargos(db, item, dias: int = 45) -> list[dict]:
