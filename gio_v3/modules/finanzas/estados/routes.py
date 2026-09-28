@@ -1511,7 +1511,9 @@ def summary_pendientes():
                    MAX(parcialidad_total) AS total_cuotas,
                    MAX(parcialidad_num) AS cuotas_vistas,
                    AVG(monto) AS monto_cuota,
-                   MAX(substr(fecha, 1, 7)) AS ultimo_mes
+                   MAX(substr(fecha, 1, 7)) AS ultimo_mes,
+                   MAX(substr(fecha, 1, 10)) AS ultima_fecha,
+                   MIN(descripcion) AS desc_cuota
             FROM est_movimientos
             WHERE compra_msi_id IS NOT NULL
             GROUP BY compra_msi_id
@@ -1524,6 +1526,7 @@ def summary_pendientes():
 
     msi_restante = 0.0
     msi_compras_activas = 0
+    msi_activos = []
     for r in msi_rows:
         faltan = (r['total_cuotas'] or 0) - (r['cuotas_vistas'] or 0)
         corte = ultimo_mes_banco.get(r['banco']) or r['ultimo_mes']
@@ -1531,6 +1534,34 @@ def summary_pendientes():
         if futuras > 0:
             msi_restante += futuras * (r['monto_cuota'] or 0)
             msi_compras_activas += 1
+            msi_activos.append({
+                'id': r['compra_msi_id'], 'descripcion': r['desc_cuota'], 'banco': r['banco'],
+                'mensualidades': r['total_cuotas'], 'pagadas': (r['total_cuotas'] or 0) - futuras,
+                'faltan': futuras, 'cuota': round(r['monto_cuota'] or 0, 2),
+                'restante': round(futuras * (r['monto_cuota'] or 0), 2), 'ultima': r['ultima_fecha'],
+            })
+    # Para el pop-up de la tarjeta: la compra original («… A 15 MESES S/I»)
+    # del mismo comercio, hasta 45 días antes de la 1ª cuota y cuyo total
+    # cuadra con cuota × mensualidades (compra_msi_id es un hash, no su id).
+    if msi_activos:
+        with get_db() as db:
+            for a in msi_activos:
+                primera = db.execute("SELECT MIN(substr(fecha,1,10)) FROM est_movimientos WHERE compra_msi_id=?",
+                                     (a['id'],)).fetchone()[0]
+                esperado = a['cuota'] * (a['mensualidades'] or 0)
+                c = db.execute("""
+                    SELECT substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto FROM est_movimientos
+                    WHERE parcialidad_num IS NULL AND UPPER(descripcion) LIKE ?
+                      AND (UPPER(descripcion) LIKE '% MSI%' OR UPPER(descripcion) LIKE '% MESES%')
+                      AND substr(fecha,1,10) BETWEEN date(?, '-45 days') AND ?
+                      AND ABS(ABS(monto) - ?) <= ?
+                    ORDER BY ABS(ABS(monto) - ?) LIMIT 1
+                """, ((a['descripcion'] or '').upper()[:12] + '%', primera, primera,
+                      esperado, (a['mensualidades'] or 1) * 1.0, esperado)).fetchone() if primera else None
+                a['primera'] = primera
+                if c:
+                    a.update(fecha_compra=c['fecha'], descripcion=c['descripcion'], total=round(c['monto'], 2))
+        msi_activos.sort(key=lambda a: -a['restante'])
 
     return jsonify({
         'reembolsos_pendientes_count': reembolsos['n'] or 0,
@@ -1545,6 +1576,7 @@ def summary_pendientes():
         },
         'msi_compras_activas': msi_compras_activas,
         'msi_restante_total': round(msi_restante, 2),
+        'msi_activos': msi_activos,
     })
 
 
