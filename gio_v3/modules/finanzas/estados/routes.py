@@ -23,6 +23,7 @@ from . import expense_lotes as _lotes
 from . import correcciones_csv_2026_09_26 as _csv0926
 from . import correcciones_otros_2026_09_28 as _otros0928
 from . import msi as _msi
+from . import abonos as _abonos
 
 estados_bp = Blueprint(
     'estados',
@@ -1865,6 +1866,25 @@ def prestamos_csv():
         rows = _prest.filas_csv(db)
     return csv_response(['ID', 'Fecha', 'Tipo', 'Descripción', 'Monto', 'Banco',
                          'Persona', 'Estado', 'Pendiente'], rows, f"prestamos_{today_str()}.csv")
+
+
+@estados_bp.route('/api/abonos/sin-conciliar')
+def abonos_sin_conciliar():
+    """Dinero que entró, no cuenta como ingreso y no está ligado a un
+    préstamo ni a un lote de Expense (ver abonos.py). ?anio=2024 opcional."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_abonos.sin_conciliar(db, request.args.get('anio') or None))
+
+
+@estados_bp.route('/api/abonos/sin-conciliar.csv')
+def abonos_sin_conciliar_csv():
+    if not _ok(): return _locked()
+    anio = request.args.get('anio') or None
+    with get_db() as db:
+        rows = _abonos.filas_csv(db, anio)
+    return csv_response(['ID', 'Fecha', 'Descripción', 'Monto', 'Banco', 'Categoría', 'Subcategoría', 'COMENTARIOS'],
+                        rows, f"abonos_sin_conciliar_{anio or 'todos'}_{today_str()}.csv")
 
 
 @estados_bp.route('/api/prestamos', methods=['POST'])

@@ -12,6 +12,7 @@ import Reglas from './views/Reglas.jsx';
 import Reportes from './views/Reportes.jsx';
 import PorCobrar from './views/PorCobrar.jsx';
 import Expense from './views/Expense.jsx';
+import SinConciliar from './views/SinConciliar.jsx';
 import TxEditor from './components/TxEditor.jsx';
 import ImportModal from './components/ImportModal.jsx';
 import CategoryModal from './components/CategoryModal.jsx';
@@ -25,6 +26,7 @@ const TABS = [
   { id: 'reportes', label: 'Reportes' },
   { id: 'porcobrar', label: 'Por cobrar', desk: true }, // solo PC (se oculta < 768)
   { id: 'expense', label: 'Expense', desk: true }, // conciliación por lotes, solo PC
+  { id: 'sinconciliar', label: 'Sin conciliar', desk: true }, // abonos sueltos, solo PC
 ];
 const VIAJES_URL = '/finanzas/estados/viajes/';
 
@@ -97,6 +99,7 @@ export default function App() {
     case 'reportes': view = <Reportes />; break;
     case 'porcobrar': view = <PorCobrar />; break;
     case 'expense': view = <Expense />; break;
+    case 'sinconciliar': view = <SinConciliar />; break;
     default: view = <Resumen />;
   }
 
