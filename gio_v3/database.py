@@ -6048,6 +6048,22 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_renta_2023_mi_parte_4000 migration warning: {e}")
 
+        # ── FINANZAS — SPEI Bajío $1,100 del 19/12/2022 regresó: sale de COSTOS_FINANCIEROS.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_spei_bajio_devuelto_2022'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_pagos_renta
+                _n = _corregir_pagos_renta(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_spei_bajio_devuelto_2022", f"{_n} cambios")
+                )
+                db.commit()
+                print(f"[DB] finanzas_spei_bajio_devuelto_2022: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_spei_bajio_devuelto_2022 migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.

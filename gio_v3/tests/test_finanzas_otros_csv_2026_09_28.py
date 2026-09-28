@@ -94,9 +94,14 @@ def test_spei_bajio_1100_a_costo_financiero(test_db):
             db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
                           VALUES (?, 'SPEI ENVIADO BAJIO', ?, 'BBVA_DEB', 'FINANZAS', 'Transferencia enviada', 'GASTO')""", (f, m))
         db.commit()
-        assert _corregir_pagos_renta(db) == 4
-        cats = {(r[0], r[1], r[2]) for r in db.execute("SELECT monto, categoria, subcategoria FROM est_movimientos")}
-        assert cats == {(1100.0, 'COSTOS_FINANCIEROS', 'Intereses'), (5000.0, 'VIVIENDA', 'Renta')}
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES ('2022-12-19', 'SPEI DEVUELTOBAJIO', 1100, 'BBVA_DEB', 'FINANZAS', 'Reembolsable', 'INGRESO')""")
+        _corregir_pagos_renta(db)
+        got = {(r[0], r[1], r[2], r[3]) for r in db.execute("SELECT substr(fecha,1,10), monto, categoria, subcategoria FROM est_movimientos")}
+        assert got == {('2022-10-27', 1100.0, 'COSTOS_FINANCIEROS', 'Intereses'),
+                       ('2022-12-20', 1100.0, 'COSTOS_FINANCIEROS', 'Intereses'),
+                       ('2022-12-19', 1100.0, 'FINANZAS', 'Reembolsable'),        # regresó: se cancelan
+                       ('2022-07-22', 5000.0, 'VIVIENDA', 'Renta')}
 
 
 def test_salsa_clases_y_celular_2022(test_db):

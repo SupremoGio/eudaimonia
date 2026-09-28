@@ -772,7 +772,6 @@ PAGOS_RENTA = (  # (fecha, monto, texto)
 # SPEI a Bajío de $1,100 (2022) -> costo financiero (el usuario, 2026-09-28).
 PAGOS_COSTO_FINANCIERO = (  # (fecha, monto, texto)
     ('2022-10-27', 1100.0, 'SPEI ENVIADO BAJIO'),
-    ('2022-12-19', 1100.0, 'SPEI ENVIADO BAJIO'),
     ('2022-12-20', 1100.0, 'SPEI ENVIADO BAJIO'),
 )
 
@@ -834,6 +833,10 @@ BONOS = (  # (fecha, monto, texto, subcategoría de NOMINA, etiqueta)
 # usuario, 2026-09-28), así que ese ya no se cancela.
 SE_CANCELAN = (  # (fecha, monto, texto)
     ('2022-06-10', 1500.0, 'BNET ERR DEL HORROR'),
+    # SPEI a Bajío de $1,100 del 19/12/2022 que regresó el mismo día («sí me
+    # lo regresaron»): ni costo financiero ni ingreso.
+    ('2022-12-19', 1100.0, 'SPEI ENVIADO BAJIO'),
+    ('2022-12-19', 1100.0, 'SPEI DEVUELTOBAJIO'),
 )
 
 
