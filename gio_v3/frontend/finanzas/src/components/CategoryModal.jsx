@@ -17,6 +17,17 @@ const SIN_SUB = '__SIN_SUB__';
 const UI_MEMO = new Map();
 const merchantOf = (t) => (t.descripcion || '').trim() || '(sin descripción)';
 
+// Movimientos que se ven en el detalle pero NO suman al gasto (mismo criterio
+// que _PAGO_CATS en estados/routes.py): pagos internos y, dentro de FINANZAS,
+// la compra inicial a meses (el gasto lo llevan las mensualidades), depósitos,
+// fideicomiso, reembolsables y transferencias recibidas. El usuario veía
+// «Compra a meses $34,221» y pensaba que se le cobraba doble.
+const REF_CATS = new Set(['PAGO_TDC', 'PAGO', 'PRESTAMOS', 'EXPENSE']);
+const REF_FINANZAS = new Set(['Transferencia recibida', 'Depósito', 'Fideicomiso', 'Reembolsable', 'Compra a meses']);
+const isRef = (t) => t.tipo === 'GASTO'
+  && (REF_CATS.has(t.categoria) || (t.categoria === 'FINANZAS' && REF_FINANZAS.has(t.subcategoria)));
+const RefBadge = () => <span className="eu-badge fz-ref-badge" title="Se muestra como referencia: no suma a tu gasto">referencia · no suma</span>;
+
 function sortRows(rows, key) {
   const r = [...rows];
   const cmp = {
@@ -60,13 +71,20 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
     const g = {};
     tx.forEach((t) => {
       const k = groupBy === 'merchant' ? merchantOf(t) : (t.subcategoria || 'Sin subcategoría');
-      g[k] = g[k] || { key: k, total: 0, n: 0, raw: groupBy === 'merchant' ? k : (t.subcategoria || SIN_SUB) };
+      g[k] = g[k] || { key: k, total: 0, n: 0, nRef: 0, raw: groupBy === 'merchant' ? k : (t.subcategoria || SIN_SUB) };
       g[k].total += myAmount(t);
       g[k].n += 1;
+      if (isRef(t)) g[k].nRef += 1;
     });
-    return Object.values(g).sort((a, b) => b.total - a.total);
+    // Lo que sí suma primero; las de referencia al final.
+    return Object.values(g).map((x) => ({ ...x, ref: x.nRef === x.n }))
+      .sort((a, b) => (a.ref - b.ref) || (b.total - a.total));
   }, [tx, groupBy]);
-  const total = groups.reduce((s, g) => s + g.total, 0);
+  const refTotal = tx.filter(isRef).reduce((s, t) => s + myAmount(t), 0);
+  const allRef = tx.length > 0 && tx.every(isRef);
+  // El número grande es lo que cuenta como gasto (igual que en Reportes); si
+  // toda la categoría es de referencia (p. ej. Préstamos), se muestra su suma.
+  const total = allRef ? refTotal : tx.filter((t) => !isRef(t)).reduce((s, t) => s + myAmount(t), 0);
   const shown = groupBy === 'merchant' ? groups.slice(0, 8) : groups;
   const extra = groups.length - shown.length;
 
@@ -86,7 +104,8 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
     }
     return sortRows(r, sortKey);
   }, [tx, groupBy, merchant, sub, q, sortKey]);
-  const rowsTotal = rows.reduce((s, t) => s + myAmount(t), 0);
+  const rowsRef = rows.length > 0 && rows.every(isRef);
+  const rowsTotal = rows.filter((t) => rowsRef || !isRef(t)).reduce((s, t) => s + myAmount(t), 0);
 
   const activeKey = groupBy === 'merchant' ? merchant : sub;
   const pick = (g) => {
@@ -117,6 +136,11 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
           <div className="eu-grow">
             <div className="t-data-xl">{money(total)}</div>
             <div className="t-meta">{tx.length} movimiento{tx.length === 1 ? '' : 's'}{bank ? ` · ${bankName(bank)}` : ''}</div>
+            {allRef ? (
+              <div className="t-meta fz-ref-note"><RefBadge /> Nada de esta categoría suma a tu gasto.</div>
+            ) : refTotal > 0.004 ? (
+              <div className="t-meta fz-ref-note">+ <span className="num">{money(refTotal)}</span> de referencia que no suman al gasto</div>
+            ) : null}
           </div>
         </div>
 
@@ -136,13 +160,19 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
               <ul className="fz-bd-list">
                 {shown.map((g) => (
                   <li key={g.key}>
-                    <button type="button" className="fz-bd" aria-pressed={activeKey === g.raw} onClick={() => pick(g)}>
+                    <button type="button" className="fz-bd" data-ref={g.ref && !allRef ? '' : undefined} aria-pressed={activeKey === g.raw} onClick={() => pick(g)}>
                       <span className="eu-between">
                         <span className="t-ui fz-ellipsis">{g.key}</span>
                         <span className="t-data">{money(g.total, { cents: false })}</span>
                       </span>
-                      <span className="eu-progress eu-progress--cat eu-progress--thin" aria-hidden="true"><i style={{ width: `${pct(g.total, total)}%` }} /></span>
-                      <span className="t-meta">{g.n} mov. · {pct(g.total, total)} %</span>
+                      {g.ref && !allRef ? (
+                        <span className="t-meta">{g.n} mov. · <RefBadge /></span>
+                      ) : (
+                        <>
+                          <span className="eu-progress eu-progress--cat eu-progress--thin" aria-hidden="true"><i style={{ width: `${pct(g.total, total)}%` }} /></span>
+                          <span className="t-meta">{g.n} mov. · {pct(g.total, total)} %</span>
+                        </>
+                      )}
                     </button>
                   </li>
                 ))}
@@ -174,7 +204,7 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
 
               <div className="eu-between t-meta">
                 <span>{rows.length} de {tx.length}</span>
-                <span>Total <b className="num fz-fg-1">{money(rowsTotal)}</b></span>
+                <span>{rowsRef && !allRef ? 'Referencia' : 'Total'} <b className="num fz-fg-1">{money(rowsTotal)}</b>{rowsRef && !allRef ? ' · no suma' : ''}</span>
               </div>
 
               {rows.length === 0 ? <div className="t-meta fz-pad">{q.trim() ? `Nada coincide con «${q}».` : 'Ya no quedan movimientos con este filtro.'}</div> : wide ? (
@@ -200,6 +230,7 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
                           <td>
                             <span className="fz-ellipsis fz-td-desc" title={t.descripcion}>{t.descripcion}</span>
                             {t.parcialidad_num && t.parcialidad_total ? <span className="eu-badge eu-badge--info">MSI {t.parcialidad_num}/{t.parcialidad_total}</span> : null}
+                            {isRef(t) && !allRef && <RefBadge />}
                           </td>
                           {!sub && <td className="fg-3"><span className="fz-td-sub" title={t.subcategoria || ''}>{t.subcategoria || '—'}</span></td>}
                           <td className="r">
@@ -222,6 +253,7 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
                         <div className="eu-row-s">
                           {fmtDate(t.fecha, true)}{t.subcategoria ? ` · ${t.subcategoria}` : ''}
                           {t.parcialidad_num && t.parcialidad_total ? <span className="eu-badge eu-badge--info">MSI {t.parcialidad_num}/{t.parcialidad_total}</span> : null}
+                          {isRef(t) && !allRef && <RefBadge />}
                         </div>
                       </div>
                       <div className="eu-row-end">

@@ -277,6 +277,12 @@ button.fz-note{width:100%;text-align:left;font:inherit;color:inherit;cursor:poin
 .fz-bd:hover{background:var(--bg-hover)}
 .fz-bd[aria-pressed=true]{background:var(--cat-bg,var(--brand-subtle));border-color:var(--cat-border,var(--border-brand))}
 .fz-bd .eu-between{min-width:0}
+/* Subcategorías que se ven pero no suman al gasto (CategoryModal: isRef) */
+.fz-bd[data-ref] .t-ui,.fz-bd[data-ref] .t-data{color:var(--fg-3)}
+.fz-ref-badge{height:18px;padding:0 6px;font-size:var(--fs-11,11px);color:var(--fg-3);border-style:dashed;margin-left:6px;vertical-align:middle}
+.fz-bd .fz-ref-badge{margin-left:0}
+.fz-ref-note{margin-top:2px}
+.fz-ref-note .fz-ref-badge{margin-left:0}
 .fz-cm-tools{display:flex;gap:var(--sp-2);flex-wrap:wrap}
 .fz-cm-tools>*{flex:1 1 150px;min-width:0}
 .fz-cm-tools .fz-grow-2{flex:2 1 200px}
