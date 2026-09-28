@@ -223,3 +223,25 @@ def test_aportaciones_de_roomies(test_db):
         got = {r[0]: (r[1], r[2]) for r in db.execute("SELECT monto, categoria, subcategoria FROM est_movimientos")}
         assert got[4400.0] == got[2500.0] == ('VIVIENDA', 'Aportación renta')
         assert [m['monto'] for m in abonos.sin_conciliar(db)['movimientos']] == [300.0]   # ya no están sueltos
+
+
+def test_renta_variable_conciliada(test_db):
+    from modules.finanzas.estados.routes import _conciliar_renta_variable, renta_por_mes
+    with database.get_db() as db:
+        ins = lambda f, d, m, sub, tipo, parte=None: db.execute(
+            """INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo, mi_parte)
+               VALUES (?,?,?, 'BBVA_DEB', 'VIVIENDA', ?, ?, ?)""", (f, d, m, sub, tipo, parte)).lastrowid
+        oct_ = ins('2022-10-18', 'RETIRO SIN TARJETA', 5400.0, 'Renta', 'GASTO')
+        ins('2022-10-07', 'BNET APARTADO RENTA', 2500.0, 'Aportación renta', 'INGRESO')
+        nov = ins('2022-11-19', 'RETIRO CAJERO', 9300.0, 'Renta', 'GASTO')
+        ins('2022-12-04', 'BNET RENTA NOVIEMBRE', 4000.0, 'Aportación renta', 'INGRESO')   # es de noviembre
+        feb = ins('2023-02-16', 'RETIRO SIN TARJETA QR', 8000.0, 'Renta', 'GASTO', 4000.0)  # manual: no se toca
+        ins('2023-02-14', 'BNET RENTA EMMA', 4400.0, 'Aportación renta', 'INGRESO')
+        dic = ins('2022-12-18', 'RETIRO SIN TARJETA', 8000.0, 'Renta', 'GASTO')             # sin roomies: completa
+        db.commit()
+        hechos = _conciliar_renta_variable(db)
+        parte = lambda i: db.execute("SELECT mi_parte FROM est_movimientos WHERE id=?", (i,)).fetchone()[0]
+        assert parte(oct_) == 2900.0 and parte(nov) == 5300.0 and parte(feb) == 4000.0 and parte(dic) is None
+        assert len(hechos) == 2 and _conciliar_renta_variable(db) == []       # idempotente
+        m = {x['mes']: x for x in renta_por_mes(db)}
+        assert m['2022-11']['aportaciones_total'] == 4000.0 and m['2022-11']['mi_parte'] == 5300.0
