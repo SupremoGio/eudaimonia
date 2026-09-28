@@ -1,0 +1,253 @@
+{
+ "archivo": "1520361804_202203_C1.pdf",
+ "periodo": "07/02/2022 al 06/03/2022",
+ "totales": {
+  "cargos": 12078.95,
+  "abonos": 11832.53
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-02-07",
+   "fecha_cargo": "2022-02-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SUPREMO GIO",
+   "monto": 204.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-07",
+   "fecha_cargo": "2022-02-08",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET PAGO",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-02-08",
+   "fecha_cargo": "2022-02-07",
+   "descripcion": "A TAKEAR I RFC: TOIM801226BP2 20:42 AUT: 108360",
+   "monto": 281.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-08",
+   "fecha_cargo": "2022-02-08",
+   "descripcion": "PAGO TARJETA DE CREDITO",
+   "monto": 4813.06,
+   "categoria": "PAGO_TDC",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-09",
+   "fecha_cargo": "2022-02-09",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET ANI",
+   "monto": 37.5,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-02-09",
+   "fecha_cargo": "2022-02-08",
+   "descripcion": "STP UBER EATS PENDING RFC: UPM 191014S31 15:27 AUT: 758464",
+   "monto": 100.0,
+   "categoria": "TRANSPORTE",
+   "subcategoria": "Taxi/apps",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-10",
+   "fecha_cargo": "2022-02-10",
+   "descripcion": "RECARGAS Y PAQUETES BMOV",
+   "monto": 100.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Celular",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-11",
+   "fecha_cargo": "2022-02-11",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-13",
+   "fecha_cargo": "2022-02-14",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SUPREMO GIO PAGO",
+   "monto": 460.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-18",
+   "fecha_cargo": "2022-02-18",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET GIO",
+   "monto": 150.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-18",
+   "fecha_cargo": "2022-02-21",
+   "descripcion": "SPEI ENVIADO BANAMEX",
+   "monto": 490.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia enviada",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-18",
+   "fecha_cargo": "2022-02-21",
+   "descripcion": "SPEI DEVUELTOBANAMEX",
+   "monto": 490.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-02-19",
+   "fecha_cargo": "2022-02-21",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET CARRITO",
+   "monto": 400.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-02-20",
+   "fecha_cargo": "2022-02-21",
+   "descripcion": "RETIRO SIN TARJETA",
+   "monto": 1000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-21",
+   "fecha_cargo": "2022-02-21",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET RENTA GIO SERGIO",
+   "monto": 3000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-24",
+   "fecha_cargo": "2022-02-24",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-02-25",
+   "fecha_cargo": "2022-02-24",
+   "descripcion": "APPLE.COM BILL RFC: 21:14 AUT: 331521",
+   "monto": 39.0,
+   "categoria": "DIGITAL",
+   "subcategoria": "Suscripciones entretenimiento",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-26",
+   "fecha_cargo": "2022-02-26",
+   "descripcion": "PAGO DE NOMINA COMPA#IA OPERADORA DE RECURSOS",
+   "monto": 6055.03,
+   "categoria": "NOMINA",
+   "subcategoria": "Pago nominal",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-02-28",
+   "fecha_cargo": "2022-02-26",
+   "descripcion": "MINISO CARLOS PELLICER RFC: MME 160812J15 17:57 AUT: 446134",
+   "monto": 59.9,
+   "categoria": "VIVIENDA",
+   "subcategoria": "Artículos del hogar",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-28",
+   "fecha_cargo": "2022-02-28",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET SERGIO",
+   "monto": 1500.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-02-28",
+   "fecha_cargo": "2022-02-28",
+   "descripcion": "NAFIN 12206 CETESDIRECTO DOMICILIACION",
+   "monto": 500.0,
+   "categoria": "INVERSION",
+   "subcategoria": "Inversión",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-02-28",
+   "fecha_cargo": "2022-02-27",
+   "descripcion": "GUM.CO CC* MAIA STUDIO RFC: 20:29 AUT: 814669",
+   "monto": 81.99,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-02",
+   "fecha_cargo": "2022-03-02",
+   "descripcion": "RETIRO CAJERO AUTOMATICO MAR02 10:51 BANCOMER 6874 FOLIO:9968",
+   "monto": 300.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Retiro efectivo",
+   "tipo": "GASTO"
+  },
+  {
+   "fecha": "2022-03-02",
+   "fecha_cargo": "2022-03-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET CLASE",
+   "monto": 100.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-03-02",
+   "fecha_cargo": "2022-03-02",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET CLASES SALSA",
+   "monto": 400.0,
+   "categoria": "SALSA",
+   "subcategoria": "Clases",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-03-04",
+   "fecha_cargo": "2022-03-04",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TRANSF A",
+   "monto": 2000.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  },
+  {
+   "fecha": "2022-03-04",
+   "fecha_cargo": "2022-03-04",
+   "descripcion": "PAGO CUENTA DE TERCERO BNET TELE",
+   "monto": 450.0,
+   "categoria": "FINANZAS",
+   "subcategoria": "Transferencia",
+   "tipo": "INGRESO"
+  }
+ ]
+}
