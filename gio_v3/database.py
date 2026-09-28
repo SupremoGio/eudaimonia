@@ -5698,6 +5698,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_msi_a_nn_meses migration warning: {e}")
 
+        # ── FINANZAS — Cristal: la línea «A 12 MSI $1,037.50» del 04/10/2025 no
+        # fue la 1ª mensualidad sino la misma compra que el PDF trae como
+        # $12,450 (la 1ª es la «1 de 12» del 22/10): sale del gasto como
+        # Compra a meses y la conciliación la ignora por duplicada.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_msi_cristal_duplicada'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.msi import marcar_compras as _msi_marcar5
+                _n = _msi_marcar5(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_msi_cristal_duplicada", f"{_n} cambios (Cristal $1,037.50 -> Compra a meses)")
+                )
+                db.commit()
+                print(f"[DB] finanzas_msi_cristal_duplicada: {_n} cambios")
+            except Exception as e:
+                print(f"[DB] finanzas_msi_cristal_duplicada migration warning: {e}")
+
         # ── FINANZAS — lavadora Walmart v2: la regla original no atrapaba
         # «19 DE 20 WALMART VENTA EN L» (descripción cortada) ni la última
         # mensualidad de $498 («20 DE 20»). Mismo blindaje, ya corregido.
