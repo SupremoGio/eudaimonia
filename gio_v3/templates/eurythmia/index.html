@@ -9,9 +9,12 @@
 {% block content %}
 <div class="ey" id="ey" data-cat="eurythmia" data-mod="baile">
   <header class="ey-hd">
-    <div><div class="t-eyebrow">Eurythmia · εὐρυθμία · buen ritmo</div><h1 class="t-page">Salsa cubana</h1>
-      <p class="t-meta ey-lead">Práctica deliberada de casino en bucles cortos, repertorio de figuras y cultura musical.</p></div>
-    {{ ui.badge('Nivel ' ~ state.level.level.n ~ ' · ' ~ state.level.level.name, cat='eurythmia', icon='footprints') }}
+    {# Un encabezado por submódulo; el CSS muestra el que coincide con data-mod #}
+    <div class="ey-for-baile"><div class="t-eyebrow">Eurythmia · εὐρυθμία · buen ritmo</div><h1 class="t-page">Salsa cubana</h1>
+      <p class="t-meta ey-lead">Práctica deliberada de casino en bucles cortos y repertorio de figuras.</p></div>
+    <span class="ey-for-baile">{{ ui.badge('Nivel ' ~ state.level.level.n ~ ' · ' ~ state.level.level.name, cat='eurythmia', icon='footprints') }}</span>
+    <div class="ey-for-musica"><div class="t-eyebrow">Eurythmia · εὐρυθμία · buen ritmo</div><h2 class="t-page">Música</h2>
+      <p class="t-meta ey-lead">Cultura musical: los 100 mejores álbumes de Apple Music, escuchados y ranking personal.</p></div>
   </header>
 
   <nav class="eu-tabs ey-tabs" role="tablist" aria-label="Submódulos de Eurythmia">

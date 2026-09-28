@@ -6,6 +6,7 @@
 .ey-hd .t-page{margin-top:var(--sp-2)}
 .ey-lead{margin-top:var(--sp-2);color:var(--fg-2)}
 @media (max-width:767px){.ey-hd{display:none}}
+.ey[data-mod=baile] .ey-for-musica,.ey[data-mod=musica] .ey-for-baile{display:none}
 .ey-tabs button{display:inline-flex;align-items:center;gap:var(--sp-2)}
 .ey-tabs svg{width:16px;height:16px}
 .ey-stats,.ey-mini{gap:var(--sp-3)}
