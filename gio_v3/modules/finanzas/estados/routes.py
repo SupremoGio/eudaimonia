@@ -2142,7 +2142,7 @@ def expense_csv():
     if not _ok(): return _locked()
     with get_db() as db:
         rows = _lotes.filas_csv(db)
-    return csv_response(['Lote', 'Estado', 'Tipo', 'Fecha', 'Descripción', 'Monto', 'Nota'],
+    return csv_response(['ID', 'Lote', 'Estado', 'Tipo', 'Fecha', 'Descripción', 'Monto', 'Nota', 'COMENTARIOS'],
                         rows, f"expense_lotes_{today_str()}.csv")
 
 
