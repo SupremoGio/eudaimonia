@@ -792,6 +792,19 @@ PAGOS_AUTO = (  # (fecha, monto, texto)
     ('2022-01-05', 40000.0, 'BNET ULTIMA CARRITO'),
 )
 
+# Renta 2023 compartida: «mi parte era 4000» (el usuario, 2026-09-28).
+RENTA_MI_PARTE = (  # (fecha, monto, texto, mi_parte)
+    ('2023-02-16', 8000.0, 'RETIRO SIN TARJETA QR', 4000.0),
+    ('2023-03-17', 8000.0, 'RETIRO SIN TARJETA', 4000.0),
+    ('2023-04-01', 5000.0, 'BNET PRIMERA PARTE', 4000.0),
+    ('2023-04-18', 8600.0, 'RETIRO SIN TARJETA', 4000.0),
+    ('2023-05-12', 5000.0, 'BNET TRANSF A', 4000.0),
+    ('2023-05-18', 8500.0, 'RETIRO SIN TARJETA', 4000.0),
+    ('2023-07-16', 7000.0, 'RETIRO SIN TARJETA', 4000.0),
+    ('2023-09-16', 7600.0, 'RETIRO SIN TARJETA', 4000.0),
+    ('2023-10-07', 9900.0, 'RETIRO SIN TARJETA', 4000.0),
+)
+
 # Abonos que devuelven un gasto (restan a esa categoría, como «REEMBOLSO
 # TEMU»): «BNET CARRITO» $400 del 19/02/2022 = le pagaron gasolina.
 ABONOS_A_GASTO = (  # (fecha, monto, texto, categoria, subcategoria)
@@ -815,11 +828,10 @@ BONOS = (  # (fecha, monto, texto, subcategoría de NOMINA, etiqueta)
     ('2022-01-13', 807.01, 'DEPOSITO DE TERCERO', 'Bono', 'BONO BMRCASH'),
 )
 
-# Transferencias que se cancelan entre sí (salió y regresó el mismo día):
-# ni gasto ni ingreso. Libretón jun 2022: $1,500 «PABLO» y $1,500 «ERR DEL
-# HORROR» a la misma cuenta; el saldo solo bajó por el retiro.
+# Abonos que no son ingreso ni gasto (regresos). Libretón jun 2022: el
+# $1,500 «ERR DEL HORROR» regresó; el «PABLO» del mismo día fue renta (el
+# usuario, 2026-09-28), así que ese ya no se cancela.
 SE_CANCELAN = (  # (fecha, monto, texto)
-    ('2022-06-10', 1500.0, 'BNET PABLO'),
     ('2022-06-10', 1500.0, 'BNET ERR DEL HORROR'),
 )
 
@@ -840,6 +852,14 @@ def _corregir_pagos_renta(db) -> int:
                   AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
                   AND (categoria != ? OR COALESCE(subcategoria, '') != ?)
             """, (cat, sub, fecha, monto, f"%{texto}%", cat, sub)).rowcount
+    for fecha, monto, texto, parte in RENTA_MI_PARTE:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta', mi_parte=?
+            WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
+              AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
+              AND (categoria != 'VIVIENDA' OR COALESCE(subcategoria, '') != 'Renta'
+                   OR mi_parte IS NULL OR ABS(mi_parte - ?) > 0.005)
+        """, (parte, fecha, monto, f"%{texto}%", parte)).rowcount
     for fecha, monto, texto, cat, sub in ABONOS_A_GASTO:
         n += db.execute("""
             UPDATE est_movimientos SET categoria=?, subcategoria=?

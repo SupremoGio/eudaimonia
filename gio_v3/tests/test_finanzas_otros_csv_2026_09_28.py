@@ -19,7 +19,7 @@ def _ins(db, mid, fecha, desc, monto, cat='OTROS'):
 def test_categorias_validas():
     for *_, cat, sub in corr.CORRECCIONES:
         assert cat == 'EXPENSE' or sub in SUBCATEGORIAS[cat], (cat, sub)
-    assert len(corr.CORRECCIONES) == 279 and len({c[0] for c in corr.CORRECCIONES}) == 279
+    assert len(corr.CORRECCIONES) == 321 and len({c[0] for c in corr.CORRECCIONES}) == 321
 
 
 def test_aplica_por_id_y_por_comercio(test_db):
@@ -186,3 +186,19 @@ def test_carrito_400_es_gasolina(test_db):
         db.commit()
         assert _corregir_pagos_renta(db) == 1
         assert tuple(db.execute("SELECT categoria, subcategoria, tipo FROM est_movimientos").fetchone()) == ('TRANSPORTE', 'Gasolina', 'INGRESO')
+
+
+def test_renta_2023_mi_parte_4000(test_db):
+    from modules.finanzas.estados.routes import _corregir_pagos_renta, _reaplicar_reglas
+    with database.get_db() as db:
+        for f, d, m in (('2023-02-16', 'RETIRO SIN TARJETA QR', 8000.0), ('2023-10-07', 'RETIRO SIN TARJETA', 9900.0),
+                        ('2023-04-01', 'PAGO CUENTA DE TERCERO BNET PRIMERA PARTE', 5000.0),
+                        ('2023-10-07', 'RETIRO SIN TARJETA (2)', 300.0)):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES (?,?,?, 'BBVA_DEB', 'FINANZAS', 'Retiro efectivo', 'GASTO')""", (f, d, m))
+        db.commit()
+        _corregir_pagos_renta(db)
+        _reaplicar_reglas(db)
+        got = {r[0]: (r[1], r[2], r[3]) for r in db.execute("SELECT monto, categoria, subcategoria, mi_parte FROM est_movimientos")}
+        assert got[8000.0] == got[9900.0] == got[5000.0] == ('VIVIENDA', 'Renta', 4000.0)
+        assert got[300.0] == ('FINANZAS', 'Retiro efectivo', None)

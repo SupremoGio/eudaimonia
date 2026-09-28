@@ -322,6 +322,49 @@ CORRECCIONES = [
     (17, '2022-05-22', 567.0, 'WALMART VENTA EN LIN3', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
     (4442, '2022-08-29', 7888.0, 'WALMART VENTA EN LIN4', 'VIVIENDA', 'Artículos del hogar'),  # «manda a artículo casa»
     (4277, '2023-02-06', 1279.36, 'PAYPAL TRENDYIMPOR TREN', 'VIVIENDA', 'Artículos del hogar'),  # «mándalo a artículos casa»
+    # Cuarta tanda: FINANZAS/Transferencia, Retiro y SPEI de 2022 con comentario.
+    (5342, '2022-06-22', 5000.0, 'SPEI ENVIADO BAJIO', 'VIVIENDA', 'Renta'),  # renta
+    (5304, '2022-05-23', 5000.0, 'RETIRO SIN TARJETA', 'VIVIENDA', 'Renta'),  # renta
+    (5272, '2022-04-27', 5000.0, 'SPEI ENVIADO BAJIO', 'VIVIENDA', 'Renta'),  # renta
+    (5418, '2022-02-21', 3000.0, 'PAGO CUENTA DE TERCERO BNET RENTA GIO SERGIO', 'VIVIENDA', 'Renta'),  # renta
+    (5327, '2022-06-10', 1500.0, 'PAGO CUENTA DE TERCERO BNET PABLO', 'VIVIENDA', 'Renta'),  # renta
+    (5379, '2022-01-19', 1500.0, 'PAGO CUENTA DE TERCERO BNET RENTA GIO', 'VIVIENDA', 'Renta'),  # renta
+    (4626, '2022-08-12', 1250.0, 'PAGO CUENTA DE TERCERO BNET TEQUILA RESERVA', 'VIAJES', 'Otros'),  # viaje
+    (5456, '2022-03-23', 930.0, 'PAGO CUENTA DE TERCERO BNET OAXACA SGIO', 'SALSA', 'Congreso'),  # salsa congreso
+    (4632, '2022-08-18', 700.0, 'RETIRO CAJERO AUTOMATICO AGO18', 'VIAJES', 'Otros'),  # viaje
+    (5332, '2022-06-13', 700.0, 'PAGO CUENTA DE TERCERO BNET LOS ELI', 'TRANSPORTE', 'Gasolina'),  # gasolina
+    (5381, '2022-01-21', 520.0, 'PAGO CUENTA DE TERCERO BNET MTTO GIO', 'VIVIENDA', 'Renta'),  # renta
+    (3640, '2022-12-23', 500.0, 'PAGO CUENTA DE TERCERO BNET PA LAS LENIS', 'FAMILIA_REGALOS', 'Regalos'),  # regalo familia
+    (5475, '2022-04-02', 500.0, 'PAGO CUENTA DE TERCERO BNET COMIDA', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5375, '2022-01-16', 487.0, 'PAGO CUENTA DE TERCERO BNET SHEIN ROPA BGIO', 'ROPA', 'Ropa'),  # ropa
+    (5368, '2022-01-11', 407.0, 'PAGO CUENTA DE TERCERO BNET SERVICIOS', 'TRANSPORTE', 'Gasolina'),  # gasolina
+    (5289, '2022-05-09', 345.0, 'PAGO CUENTA DE TERCERO BNET PASTEL', 'FAMILIA_REGALOS', 'Regalos'),  # regalo familia
+    (4679, '2022-09-25', 300.0, 'PAGO CUENTA DE TERCERO BNET GAS GIO', 'TRANSPORTE', 'Gasolina'),  # gasolina
+    (4620, '2022-08-07', 300.0, 'PAGO CUENTA DE TERCERO BNET GAS GIO', 'TRANSPORTE', 'Gasolina'),  # gasolina
+    (4727, '2022-10-29', 200.0, 'PAGO CUENTA DE TERCERO BNET BOLETO GIO', 'SALSA', 'Social'),  # salsa
+    (5231, '2022-01-05', 200.0, 'PAGO CUENTA DE TERCERO BNET DEUDA PABLITO PAGO', 'SALSA', 'Social'),  # salsa
+    (4656, '2022-09-12', 190.0, 'PAGO CUENTA DE TERCERO BNET COMIDITA Y MILKSHA', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (3643, '2022-12-27', 164.0, 'PAGO CUENTA DE TERCERO BNET PASTEL GUARDAME', 'FAMILIA_REGALOS', 'Regalos'),  # regalo familia
+    (5471, '2022-03-31', 160.0, 'PAGO CUENTA DE TERCERO BNET COMIDITA', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (4707, '2022-10-16', 150.0, 'PAGO CUENTA DE TERCERO BNET CERVEZA GIO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5452, '2022-03-22', 150.0, 'PAGO CUENTA DE TERCERO BNET PASTEL JORGE', 'FAMILIA_REGALOS', 'Regalos'),  # regalo familia
+    (5413, '2022-02-18', 150.0, 'PAGO CUENTA DE TERCERO BNET GIO', 'SALSA', 'Social'),  # salsa
+    (5367, '2022-01-08', 150.0, 'PAGO CUENTA DE TERCERO BNET JUDI', 'FAMILIA_REGALOS', 'Regalos'),  # regalo familia
+    (4654, '2022-09-11', 130.0, 'PAGO CUENTA DE TERCERO BNET COOP GIO', 'FAMILIA_REGALOS', 'Regalos'),  # regalo familia
+    (5288, '2022-05-08', 125.0, 'PAGO CUENTA DE TERCERO BNET BONELESS', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5335, '2022-06-18', 120.0, 'PAGO CUENTA DE TERCERO BNET TRANSF A AURORA EL', 'FAMILIA_REGALOS', 'Regalos'),  # regalo familia
+    (4741, '2022-11-13', 100.0, 'PAGO CUENTA DE TERCERO BNET PLAYERA GIO', 'ROPA', 'Ropa'),  # ropa
+    (5385, '2022-01-25', 100.0, 'PAGO CUENTA DE TERCERO BNET COOP ABY', 'FAMILIA_REGALOS', 'Regalos'),  # regalo familia
+    (5431, '2022-03-07', 82.0, 'PAGO CUENTA DE TERCERO BNET COMIDITA GIO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5394, '2022-02-02', 58.0, 'PAGO CUENTA DE TERCERO BNET PAGO CHEESE CAKE', 'CAFE/PAN', 'Pan'),  # pan
+    (5437, '2022-03-10', 56.33, 'PAGO CUENTA DE TERCERO BNET ANTI REGIA', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5307, '2022-05-24', 50.0, 'PAGO CUENTA DE TERCERO BNET H', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5470, '2022-03-31', 50.0, 'PAGO CUENTA DE TERCERO BNET HELADITO', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5444, '2022-03-15', 44.5, 'PAGO CUENTA DE TERCERO BNET TAQUITOS', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5445, '2022-03-15', 31.0, 'PAGO CUENTA DE TERCERO BNET GALLETITA', 'COMIDA_FUERA', 'Restaurante'),  # restaurante
+    (5466, '2022-03-30', 29.0, 'PAGO CUENTA DE TERCERO BNET PANECITO', 'CAFE/PAN', 'Pan'),  # pan
+    (5455, '2022-03-22', 10.0, 'PAGO CUENTA DE TERCERO BNET JUEGO 2', 'CAFE/PAN', 'Pan'),  # pan
+    (5454, '2022-03-22', 10.0, 'PAGO CUENTA DE TERCERO BNET JUEGO', 'CAFE/PAN', 'Pan'),  # pan
 ]
 
 
