@@ -96,3 +96,22 @@ def test_corte_en_curso_no_se_marca(client):
     assert b['cortes_sin_movimientos'] == []
     b = client.get(URL, query_string={'hasta': '2026-10-22'}).get_json()['por_banco']['BBVA_TDC']
     assert [c['corte'] for c in b['cortes_sin_movimientos']] == ['202610']
+
+
+def test_csv_de_categoria_con_columna_comentarios(client):
+    """Botón CSV del detalle de categoría: solo esa categoría/periodo y una
+    columna COMENTARIOS vacía para mandar correcciones."""
+    _mov('BBVA_TDC', '2023-05-10')                                   # OTROS
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, tipo, categoria, banco)
+                      VALUES ('2023-05-11', 'OXXO', -50, 'GASTO', 'SUPER', 'BBVA_TDC')""")
+        db.commit()
+    r = client.get('/finanzas/estados/api/transactions/export/csv', query_string={
+        'category': 'OTROS', 'tipo': 'GASTO', 'date_from': '2023-01-01', 'date_to': '2023-12-31', 'comentarios': '1'})
+    txt = r.get_data(as_text=True).lstrip('﻿')
+    lineas = txt.strip().splitlines()
+    assert lineas[0].endswith(',COMENTARIOS') and len(lineas) == 2 and 'OXXO' not in txt
+    assert 'transacciones_otros_gasto' not in r.headers['Content-Disposition']
+    assert 'transacciones_otros_2023-01-01_2023-12-31.csv' in r.headers['Content-Disposition']
+    sin = client.get('/finanzas/estados/api/transactions/export/csv').get_data(as_text=True)
+    assert 'COMENTARIOS' not in sin
