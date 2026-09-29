@@ -168,6 +168,7 @@ export default function SinConciliar() {
                     <td>
                       <span className="fz-ellipsis fz-td-desc" title={m.descripcion}>{m.descripcion}</span>
                       {m.pista && <span className="fz-ellipsis t-meta" title={m.pista.texto}>{m.pista.texto}</span>}
+                      {m.patron && <span className="fz-ellipsis t-meta" title={m.patron}>Se repite: {m.patron}</span>}
                     </td>
                     <td className="fg-3">{nombreGrupo(grupoDe(m))}</td>
                     <td className="fg-3">{bankName(m.banco)}</td>

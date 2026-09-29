@@ -132,3 +132,19 @@ def test_iphone_macstore_prestamo_y_devoluciones(client):
         p = next(x for x in prestamos.listar(db) if x['persona'] == 'iPhone MacStore')
         assert p['devuelto'] == 9326 and p['pendiente'] == 20999 - 9326
     assert [m['id'] for m in client.get(URL).get_json()['movimientos']] == [otro]
+
+
+def test_csv_incluye_conciliados_y_patrones(client):
+    for f in ('2023-03-16', '2023-04-17', '2023-05-17'):
+        _mov(f, 'PAGO CUENTA DE TERCERO BNET RENTA', 5150, 'FINANZAS', 'Transferencia')
+    ligado = _mov('2023-06-01', 'BNET PAGO PRESTAMO', 1000, 'PRESTAMOS')
+    with database.get_db() as db:
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Pops', 1000, '2023-05-01', 'x')""").lastrowid
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,'x')", (pid, ligado))
+        db.commit()
+    csv = client.get(URL + '.csv').get_data(as_text=True)
+    assert 'Estado' in csv and 'Patrón' in csv
+    assert 'Devolución de préstamo: Pops' in csv and 'SIN CONCILIAR' in csv
+    assert '$5,150.00 ×3 (2023-03-16 a 2023-05-17, cada mes)' in csv and '«RENTA» ×3' in csv
+    assert all(m['patron'] for m in client.get(URL).get_json()['movimientos'])

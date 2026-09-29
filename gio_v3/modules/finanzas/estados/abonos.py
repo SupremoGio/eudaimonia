@@ -56,6 +56,7 @@ def sin_conciliar(db, anio: str | None = None) -> dict:
         WHERE tipo = 'INGRESO' AND categoria IN ({ph}) ORDER BY 1 DESC
     """, list(CATEGORIAS)).fetchall()]
     _pistas(db, rows)
+    _patrones(rows)
     por_pista = {}
     for r in rows:
         t = r['pista']['tipo'] if r['pista'] else 'ninguna'
@@ -73,10 +74,90 @@ def sin_conciliar(db, anio: str | None = None) -> dict:
     }
 
 
+def _concepto(desc: str) -> str:
+    """Lo que escribió quien depositó: «PAGO CUENTA DE TERCERO BNET RENTA» -> «RENTA»,
+    «SPEI RECIBIDONAFIN» -> «NAFIN»."""
+    d = (desc or '').upper()
+    for pref in ('BNET ', 'SPEI RECIBIDO', 'DEPOSITO EFECTIVO'):
+        if pref in d:
+            return d.split(pref, 1)[1].strip()[:25] or pref.strip()
+    return d[:25]
+
+
+def _frecuencia(fechas: list[str]) -> str:
+    if len(fechas) < 3:
+        return ''
+    ds = sorted(date.fromisoformat(f) for f in fechas)
+    gaps = sorted((b - a).days for a, b in zip(ds, ds[1:]))
+    med = gaps[len(gaps) // 2]
+    if 25 <= med <= 35:
+        return 'cada mes'
+    if 12 <= med <= 17:
+        return 'cada quincena'
+    if 5 <= med <= 9:
+        return 'cada semana'
+    return ''
+
+
+def _patrones(rows) -> None:
+    """r['patron']: el mismo monto que se repite (y cada cuánto) y el mismo
+    concepto repetido, para recordar de qué eran (el usuario, 2026-09-29:
+    «¿hay algún patrón… que se repita cada cierto tiempo o sea el mismo monto?»)."""
+    por_monto, por_concepto = {}, {}
+    for r in rows:
+        por_monto.setdefault(round(abs(r['monto'] or 0), 2), []).append(r)
+        por_concepto.setdefault(_concepto(r['descripcion']), []).append(r)
+    for r in rows:
+        partes = []
+        mismos = por_monto[round(abs(r['monto'] or 0), 2)]
+        if len(mismos) >= 2:
+            fechas = [(m['fecha'] or '')[:10] for m in mismos if m['fecha']]
+            frec = _frecuencia(fechas)
+            partes.append(f"${abs(r['monto'] or 0):,.2f} ×{len(mismos)} ({min(fechas)} a {max(fechas)}"
+                          + (f", {frec}" if frec else '') + ')')
+        c = _concepto(r['descripcion'])
+        if len(por_concepto[c]) >= 2:
+            tot = sum(abs(m['monto'] or 0) for m in por_concepto[c])
+            partes.append(f"«{c}» ×{len(por_concepto[c])} (${tot:,.2f})")
+        r['patron'] = ' · '.join(partes)
+
+
+def _estado(db) -> dict:
+    """movimiento_id -> cómo quedó conciliado."""
+    est = {}
+    for r in db.execute("""SELECT d.movimiento_id, p.contraparte, p.fecha FROM est_prestamo_devoluciones d
+                           JOIN est_prestamos p ON p.id = d.prestamo_id"""):
+        est[r['movimiento_id']] = f"Devolución de préstamo: {r['contraparte']} ({(r['fecha'] or '')[:10]})"
+    for r in db.execute("""SELECT d.movimiento_id, l.nombre FROM est_expense_lote_depositos d
+                           JOIN est_expense_lotes l ON l.id = d.lote_id"""):
+        est[r['movimiento_id']] = f"Depósito de Expense: lote «{r['nombre']}»"
+    return est
+
+
 def filas_csv(db, anio: str | None = None) -> list[list]:
+    """Los sin conciliar y, como referencia, los que ya se conciliaron (columna
+    Estado), con su pista y patrón. El patrón se calcula sobre todos juntos."""
+    pend = sin_conciliar(db, anio)['movimientos']
+    ids = {r['id'] for r in pend}
+    ph = ','.join('?' * len(CATEGORIAS))
+    params = list(CATEGORIAS) + ([str(anio)] if anio else [])
+    otros = [dict(r) for r in db.execute(f"""
+        SELECT * FROM est_movimientos WHERE tipo = 'INGRESO' AND categoria IN ({ph})
+        {"AND substr(fecha, 1, 4) = ?" if anio else ""}
+    """, params).fetchall() if r['id'] not in ids]
+    est = _estado(db)
+    for r in otros:
+        r['pista'] = None
+        r['estado'] = est.get(r['id']) or ('Entre cuentas propias' if r['subcategoria'] == SUB_PROPIA
+                                           else 'Conciliado')
+    for r in pend:
+        r['estado'] = 'SIN CONCILIAR'
+    todos = sorted(pend + otros, key=lambda r: (r['fecha'] or '', r['id']), reverse=True)
+    _patrones(todos)
     return [[r['id'], (r['fecha'] or '')[:10], r['descripcion'], abs(r['monto'] or 0), r['banco'],
-             r['categoria'], r['subcategoria'] or '', r['pista']['texto'] if r['pista'] else '', '']
-            for r in sin_conciliar(db, anio)['movimientos']]
+             r['categoria'], r['subcategoria'] or '', r['estado'],
+             r['pista']['texto'] if r['pista'] else '', r['patron'], '']
+            for r in todos]
 
 
 PROPIA_DIAS = 3
