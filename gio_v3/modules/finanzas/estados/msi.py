@@ -73,6 +73,7 @@ CATEGORIA_MENSUALIDADES = (
     ('AMAZON A MESES', 117.0, 6, 'TECH/DIGITAL', 'Accesorios'),              # power bank UGREEN $699 (ene 2026)
     ('AMAZON A MESES', 20.0, 6, 'TECH/DIGITAL', 'Accesorios'),               # cable HDMI $114.89 (ene 2026)
     ('AMAZON A MESES', 14.89, 6, 'TECH/DIGITAL', 'Accesorios'),              # su última mensualidad
+    ('AMAZON MX A MESES', 200.0, 15, 'TECH/DIGITAL', 'Accesorios'),          # Bose QuietComfort $2,999 (jul 2025)
 )
 
 

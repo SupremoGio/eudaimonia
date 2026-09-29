@@ -65,6 +65,19 @@ PEDIDOS = [
     ('2026-01-03', 520.00, 'Aspiradora inalámbrica para auto', 'TRANSPORTE', 'Mantenimiento auto'),
     ('2025-12-03', 196.00, 'Kit de sujeción de batería del coche', 'TRANSPORTE', 'Mantenimiento auto'),
     ('2025-12-03', 1680.49, 'Almohadas Luuna + vaporizador Taurus', 'VIVIENDA', 'Artículos del hogar'),
+    ('2025-12-01', 238.00, 'Bolas magnéticas antiestrés (regalo)', 'FAMILIA_REGALOS', 'Regalos'),
+    # Mejoras a la PC (sep 2025). El pedido del 25/09 ($1,065.17: hub USB, pasta
+    # térmica, desarmadores, kits de limpieza y limpia lavadoras) llegó en cinco
+    # cargos que suman justo el total.
+    ('2025-09-24', 1779.00, 'SSD WD_Black SN7100 1 TB', 'TECH/DIGITAL', 'Accesorios'),
+    ('2025-09-25', 249.00, 'Mejoras PC (1/5 del pedido de $1,065.17)', 'TECH/DIGITAL', 'Accesorios'),
+    ('2025-09-25', 256.12, 'Mejoras PC (2/5 del pedido de $1,065.17)', 'TECH/DIGITAL', 'Accesorios'),
+    ('2025-09-25', 226.00, 'Mejoras PC (3/5 del pedido de $1,065.17)', 'TECH/DIGITAL', 'Accesorios'),
+    ('2025-09-25', 189.05, 'Mejoras PC (4/5 del pedido de $1,065.17)', 'TECH/DIGITAL', 'Accesorios'),
+    ('2025-09-25', 145.00, 'Mejoras PC (5/5 del pedido de $1,065.17)', 'TECH/DIGITAL', 'Accesorios'),
+    # Bose QuietComfort $2,999 (20/07/2025) fue a 15 MSI: ver msi.CATEGORIA_MENSUALIDADES.
+    ('2026-08-12', 279.63, 'Cetaphil crema limpiadora', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2026-09-03', 43.20, 'Desodorante Dove Men Care', 'CUIDADO_PERSONAL', 'Higiene'),
 ]
 
 # (fecha del pedido, total, producto): devueltos con reembolso a la tarjeta.

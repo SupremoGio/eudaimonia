@@ -109,3 +109,14 @@ def test_admin_pedidos_amazon(test_db):
         r = c.get('/finanzas/estados/admin/pedidos-amazon')
         assert r.status_code == 200
         assert len(r.get_json()['pedidos']) == len(amz.PEDIDOS) + len(amz.DEVUELTOS)
+
+
+def test_bose_a_meses_y_pedido_partido_en_cargos(test_db):
+    with database.get_db() as db:
+        bose = [_ins(db, f, 'AMAZON MX A MESES', m, pn=n, pt=15) for f, m, n in
+                (('2025-08-22', 200.0, 1), ('2026-09-22', 199.0, 15))]
+        pc = [_ins(db, '2025-09-26', 'STR AMAZON', m) for m in (189.05, 145.0)]
+        db.commit()
+        msi.marcar_compras(db)
+        amz.aplicar(db)
+        assert all(_cat(db, i) == ('TECH/DIGITAL', 'Accesorios') for i in bose + pc)

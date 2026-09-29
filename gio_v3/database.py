@@ -5917,24 +5917,25 @@ def init_db():
                 print(f"[DB] finanzas_otros_csv_2026_09_28_e migration warning: {e}")
 
         # ── FINANZAS — pedidos de Amazon con su categoría (pedidos_amazon.py) y
-        #    mensualidades del Oral B a 15 MSI -> CUIDADO_PERSONAL/Higiene.
-        if not db.execute(
-            "SELECT id FROM migration_log WHERE version='finanzas_pedidos_amazon_2026_09_29'"
-        ).fetchone():
-            try:
-                from modules.finanzas.estados.pedidos_amazon import aplicar as _amazon_0929
-                from modules.finanzas.estados.msi import marcar_compras as _msi_0929
-                _ok, _falta = _amazon_0929(db)
-                _n = _msi_0929(db)
+        #    las mensualidades de los que fueron a MSI (msi.CATEGORIA_MENSUALIDADES).
+        #    La versión lleva el tamaño de las listas: cada tanda nueva de pedidos
+        #    vuelve a correr al arrancar, sin tener que abrir otra migración.
+        try:
+            from modules.finanzas.estados import pedidos_amazon as _amz
+            from modules.finanzas.estados import msi as _msi_amz
+            _ver = (f"finanzas_pedidos_amazon_{len(_amz.PEDIDOS)}_{len(_amz.DEVUELTOS)}"
+                    f"_{len(_msi_amz.CATEGORIA_MENSUALIDADES)}")
+            if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
+                _ok, _falta = _amz.aplicar(db)
+                _n = _msi_amz.marcar_compras(db)
                 db.execute(
                     "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
-                    ("finanzas_pedidos_amazon_2026_09_29",
-                     f"{_ok} pedidos reclasificados, {_falta} sin cargo, {_n} MSI")
+                    (_ver, f"{_ok} pedidos reclasificados, {_falta} sin cargo, {_n} MSI")
                 )
                 db.commit()
-                print(f"[DB] finanzas_pedidos_amazon_2026_09_29: {_ok} reclasificados, {_falta} sin cargo, {_n} MSI")
-            except Exception as e:
-                print(f"[DB] finanzas_pedidos_amazon_2026_09_29 migration warning: {e}")
+                print(f"[DB] {_ver}: {_ok} reclasificados, {_falta} sin cargo, {_n} MSI")
+        except Exception as e:
+            print(f"[DB] finanzas_pedidos_amazon migration warning: {e}")
 
         # ── FINANZAS — nómina del 16/12/2022 ($10,493.87) fue aguinaldo.
         if not db.execute(
