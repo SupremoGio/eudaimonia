@@ -129,8 +129,11 @@ def test_iphone_macstore_prestamo_y_devoluciones(client):
         assert prestamos.ligar_iphone_macstore(db) == (1, 3)
         assert prestamos.ligar_iphone_macstore(db) == (0, 0)
         db.commit()
-        p = next(x for x in prestamos.listar(db) if x['persona'] == 'iPhone MacStore')
+        p = next(x for x in prestamos.listar(db) if x['persona'] == 'Astro')
         assert p['devuelto'] == 9326 and p['pendiente'] == 20999 - 9326
+        assert prestamos.marcar_iphone_perdido(db, '2026-09-29') == 1
+        p = next(x for x in prestamos.listar(db) if x['persona'] == 'Astro')
+        assert p['perdido_fecha'] == '2026-09-29' and p['estado'] == prestamos.PERDIDO
     assert [m['id'] for m in client.get(URL).get_json()['movimientos']] == [otro]
 
 

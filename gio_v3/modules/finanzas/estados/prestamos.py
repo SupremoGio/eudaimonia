@@ -220,6 +220,13 @@ def filas_csv(db) -> list[list]:
 # número: el «BNET PAGO» de $1,000 del 22/07/2023 no es de esto.
 IPHONE_NOTAS = 'iPhone MacStore A 18 MSI (19/11/2022)'
 IPHONE_MONTO = 20999.0
+IPHONE_PERSONA = 'Astro'   # el usuario, 2026-09-29: «la persona es Astro», y lo que falta ya se da por perdido
+
+
+def marcar_iphone_perdido(db, hoy: str) -> int:
+    """Pone a Astro como persona y marca el préstamo del iPhone como Perdido."""
+    return db.execute("""UPDATE est_prestamos SET contraparte=?, perdido_fecha=COALESCE(perdido_fecha, ?)
+                         WHERE notas=?""", (IPHONE_PERSONA, hoy, IPHONE_NOTAS)).rowcount
 _IPHONE_DEV_RE = re.compile(r'BNET PAGO \d', re.IGNORECASE)
 
 
@@ -239,8 +246,8 @@ def ligar_iphone_macstore(db) -> tuple[int, int]:
         pid = p['id']
     else:
         pid = db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
-                            VALUES ('iPhone MacStore', 'OTORGADO', ?, '2022-11-19', ?, NULL, ?)""",
-                         (IPHONE_MONTO, IPHONE_NOTAS, ahora())).lastrowid
+                            VALUES (?, 'OTORGADO', ?, '2022-11-19', ?, NULL, ?)""",
+                         (IPHONE_PERSONA, IPHONE_MONTO, IPHONE_NOTAS, ahora())).lastrowid
         creado = 1
     for mid in devs:
         db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (mid,))

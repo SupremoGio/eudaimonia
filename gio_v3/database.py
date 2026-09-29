@@ -5934,6 +5934,23 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_prestamo_iphone_macstore migration warning: {e}")
 
+        # ── FINANZAS — préstamo del iPhone: la persona es Astro y lo pendiente
+        #    ($4,783) ya se da por perdido (el usuario, 2026-09-29).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_prestamo_iphone_astro_perdido'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.prestamos import marcar_iphone_perdido as _iph_p
+                _n = _iph_p(db, date.today().isoformat())
+                if _n:   # sin el préstamo (base sin esos depósitos) se reintenta al siguiente arranque
+                    db.execute(
+                        "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                        ("finanzas_prestamo_iphone_astro_perdido", f"{_n} préstamo actualizado")
+                    )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_prestamo_iphone_astro_perdido migration warning: {e}")
+
         # ── FINANZAS — «Sin conciliar»: aplicar las pistas una vez (el usuario,
         #    2026-09-29: «manda esas sugerencias, concílialas»). Después se hace
         #    con el botón de la pestaña.
