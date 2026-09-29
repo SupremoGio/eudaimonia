@@ -19,6 +19,7 @@ El estado se calcula (Pendiente / Pagado parcial / Pagado) para que nunca se
 desincronice de las devoluciones; solo «Perdido» se marca a mano.
 """
 from datetime import datetime
+import re
 
 PENDIENTE, PARCIAL, PAGADO, PERDIDO = 'Pendiente', 'Pagado parcial', 'Pagado', 'Perdido'
 
@@ -210,3 +211,39 @@ def filas_csv(db) -> list[list]:
             p['pendiente'] if p and not es_dev else '',
         ])
     return out
+
+
+# iPhone de MacStore A 18 MSI ($20,999, 19/11/2022) que fue para alguien más
+# (msi.MENSUALIDADES_PRESTADAS ya manda sus mensualidades a PRESTAMOS). Esa
+# persona le fue depositando «PAGO CUENTA DE TERCERO BNET PAGO 2», «PAGO 3»,
+# «PAGO 4 Y 5»… (el usuario, 2026-09-29, con captura). Solo los que llevan
+# número: el «BNET PAGO» de $1,000 del 22/07/2023 no es de esto.
+IPHONE_NOTAS = 'iPhone MacStore A 18 MSI (19/11/2022)'
+IPHONE_MONTO = 20999.0
+_IPHONE_DEV_RE = re.compile(r'BNET PAGO \d', re.IGNORECASE)
+
+
+def ligar_iphone_macstore(db) -> tuple[int, int]:
+    """Registra el préstamo (si no existe y hay depósitos) y le liga los «BNET PAGO n».
+    Devuelve (préstamo creado 0/1, devoluciones ligadas). Idempotente."""
+    devs = [r['id'] for r in db.execute("""
+        SELECT id, descripcion FROM est_movimientos
+        WHERE tipo='INGRESO' AND UPPER(descripcion) LIKE '%BNET PAGO%' AND substr(fecha,1,10) >= '2022-11-19'
+          AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
+    """).fetchall() if _IPHONE_DEV_RE.search(r['descripcion'] or '')]
+    if not devs:
+        return 0, 0
+    p = db.execute("SELECT id FROM est_prestamos WHERE notas=?", (IPHONE_NOTAS,)).fetchone()
+    creado = 0
+    if p:
+        pid = p['id']
+    else:
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                            VALUES ('iPhone MacStore', 'OTORGADO', ?, '2022-11-19', ?, NULL, ?)""",
+                         (IPHONE_MONTO, IPHONE_NOTAS, ahora())).lastrowid
+        creado = 1
+    for mid in devs:
+        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (mid,))
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+                   (pid, mid, ahora()))
+    return creado, len(devs)

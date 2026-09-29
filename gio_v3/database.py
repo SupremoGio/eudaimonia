@@ -5916,6 +5916,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_otros_csv_2026_09_28_e migration warning: {e}")
 
+        # ── FINANZAS — iPhone MacStore ($20,999, nov 2022) que fue para alguien
+        #    más: préstamo + sus depósitos «BNET PAGO 2…12» como devoluciones.
+        #    Va antes de conciliar las pistas para que ninguna se los lleve.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_prestamo_iphone_macstore'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.prestamos import ligar_iphone_macstore as _iph
+                _c, _n = _iph(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_prestamo_iphone_macstore", f"préstamo creado: {_c}, devoluciones ligadas: {_n}")
+                )
+                db.commit()
+                print(f"[DB] finanzas_prestamo_iphone_macstore: creado {_c}, {_n} devoluciones")
+            except Exception as e:
+                print(f"[DB] finanzas_prestamo_iphone_macstore migration warning: {e}")
+
         # ── FINANZAS — «Sin conciliar»: aplicar las pistas una vez (el usuario,
         #    2026-09-29: «manda esas sugerencias, concílialas»). Después se hace
         #    con el botón de la pestaña.

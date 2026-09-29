@@ -117,3 +117,18 @@ def test_conciliar_pistas_crea_lote_expense(client):
         lid = db.execute("SELECT lote_id FROM est_expense_lote_depositos WHERE movimiento_id=?", (dep,)).fetchone()[0]
         assert {x[0] for x in db.execute("SELECT movimiento_id FROM est_expense_lote_gastos WHERE lote_id=?", (lid,))} == {f1, f2}
         assert {x[0] for x in db.execute("SELECT estatus_reembolso FROM est_movimientos WHERE id IN (?,?)", (f1, f2))} == {'PAGADO'}
+
+
+def test_iphone_macstore_prestamo_y_devoluciones(client):
+    from modules.finanzas.estados import prestamos
+    pagos = [_mov(f, f'PAGO CUENTA DE TERCERO BNET {d}', m, 'FINANZAS', 'Transferencia')
+             for f, d, m in (('2023-01-07', 'PAGO 2', 2756), ('2023-04-28', 'PAGO 4 Y 5', 2756),
+                             ('2024-01-07', 'PAGO 10 11 12', 3814))]
+    otro = _mov('2023-07-22', 'PAGO CUENTA DE TERCERO BNET PAGO', 1000, 'FINANZAS', 'Transferencia')
+    with database.get_db() as db:
+        assert prestamos.ligar_iphone_macstore(db) == (1, 3)
+        assert prestamos.ligar_iphone_macstore(db) == (0, 0)
+        db.commit()
+        p = next(x for x in prestamos.listar(db) if x['persona'] == 'iPhone MacStore')
+        assert p['devuelto'] == 9326 and p['pendiente'] == 20999 - 9326
+    assert [m['id'] for m in client.get(URL).get_json()['movimientos']] == [otro]
