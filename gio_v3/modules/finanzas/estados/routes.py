@@ -2030,6 +2030,16 @@ def abonos_sin_conciliar():
         return jsonify(_abonos.sin_conciliar(db, request.args.get('anio') or None))
 
 
+@estados_bp.route('/api/abonos/conciliar-pistas', methods=['POST'])
+def abonos_conciliar_pistas():
+    """Aplica las pistas de «Sin conciliar» (abonos.conciliar_pistas)."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        res = _abonos.conciliar_pistas(db)
+        db.commit()
+    return jsonify({'ok': True, **res})
+
+
 @estados_bp.route('/api/abonos/sin-conciliar.csv')
 def abonos_sin_conciliar_csv():
     if not _ok(): return _locked()

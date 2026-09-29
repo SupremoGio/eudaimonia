@@ -82,3 +82,38 @@ def test_pistas(client):
     assert pista[gasto_igual] is None                                   # un gasto normal no es transferencia
     assert {g['tipo'] for g in d['por_pista']} == {'prestamo', 'propia', 'ninguna'}
     assert 'Pablo Ruiz' in client.get(URL + '.csv').get_data(as_text=True)
+
+
+def test_conciliar_pistas(client):
+    with database.get_db() as db:
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Pablo Ruiz', 1000, '2023-01-05', 'x')""").lastrowid
+        db.commit()
+    dev1 = _mov('2023-02-01', 'PAGO CUENTA DE TERCERO BNET PABLO', 600, 'FINANZAS', 'Transferencia recibida')
+    dev2 = _mov('2023-02-15', 'PAGO CUENTA DE TERCERO BNET PABLO', 600, 'FINANZAS', 'Transferencia recibida')  # pasa del pendiente
+    propia = _mov('2023-03-10', 'SPEI RECIBIDO NAFIN', 3000, 'FINANZAS', 'Transferencia recibida')
+    _mov_banco('2023-03-09', 'TRASPASO A BBVA', 3000, 'FINANZAS', 'NU', 'Transferencia enviada', 'GASTO')
+    suelto = _mov('2023-04-10', 'SPEI RECIBIDO X', 250, 'FINANZAS', 'Transferencia recibida')
+    r = client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()
+    assert (r['prestamos'], r['propias'], r['sin_aplicar']) == (1, 1, 1)
+    ids = [m['id'] for m in client.get(URL).get_json()['movimientos']]
+    assert dev1 not in ids and propia not in ids and dev2 in ids and suelto in ids
+    with database.get_db() as db:
+        assert db.execute("SELECT prestamo_id FROM est_prestamo_devoluciones WHERE movimiento_id=?", (dev1,)).fetchone()[0] == pid
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (propia,)).fetchone()) \
+            == ('FINANZAS', 'Entre cuentas propias')
+    assert client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()['prestamos'] == 0   # idempotente
+
+
+def test_conciliar_pistas_crea_lote_expense(client):
+    f1 = _mov('2023-05-02', 'UBER', 300, 'EXPENSE', tipo='GASTO')
+    f2 = _mov('2023-05-03', 'HOTEL', 700, 'EXPENSE', tipo='GASTO')
+    dep = _mov('2023-05-20', 'FIDEICOMISO F 1596', 1000, 'FINANZAS', 'Reembolsable')
+    assert client.get(URL).get_json()['movimientos'][0]['pista']['tipo'] == 'expense'
+    r = client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()
+    assert (r['expense_lotes'], r['expense_depositos']) == (1, 1)
+    assert client.get(URL).get_json()['movimientos'] == []
+    with database.get_db() as db:
+        lid = db.execute("SELECT lote_id FROM est_expense_lote_depositos WHERE movimiento_id=?", (dep,)).fetchone()[0]
+        assert {x[0] for x in db.execute("SELECT movimiento_id FROM est_expense_lote_gastos WHERE lote_id=?", (lid,))} == {f1, f2}
+        assert {x[0] for x in db.execute("SELECT estatus_reembolso FROM est_movimientos WHERE id IN (?,?)", (f1, f2))} == {'PAGADO'}

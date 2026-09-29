@@ -5916,6 +5916,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_otros_csv_2026_09_28_e migration warning: {e}")
 
+        # ── FINANZAS — «Sin conciliar»: aplicar las pistas una vez (el usuario,
+        #    2026-09-29: «manda esas sugerencias, concílialas»). Después se hace
+        #    con el botón de la pestaña.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_conciliar_pistas_2026_09_29'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.abonos import conciliar_pistas as _conc_0929
+                _res = _conc_0929(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_conciliar_pistas_2026_09_29", str(_res))
+                )
+                db.commit()
+                print(f"[DB] finanzas_conciliar_pistas_2026_09_29: {_res}")
+            except Exception as e:
+                print(f"[DB] finanzas_conciliar_pistas_2026_09_29 migration warning: {e}")
+
         # ── FINANZAS — pedidos de Amazon con su categoría (pedidos_amazon.py) y
         #    las mensualidades de los que fueron a MSI (msi.CATEGORIA_MENSUALIDADES).
         #    La versión lleva el tamaño de las listas: cada tanda nueva de pedidos

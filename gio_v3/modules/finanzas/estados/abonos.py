@@ -25,6 +25,9 @@ import re
 from datetime import date, timedelta
 
 CATEGORIAS = ('FINANZAS', 'PRESTAMOS', 'EXPENSE')
+# Abonos que el usuario (o conciliar_pistas) marcó como dinero que vino de
+# otra de sus cuentas: ya están conciliados, no salen en la lista.
+SUB_PROPIA = 'Entre cuentas propias'
 
 
 def sin_conciliar(db, anio: str | None = None) -> dict:
@@ -37,6 +40,7 @@ def sin_conciliar(db, anio: str | None = None) -> dict:
     rows = [dict(r) for r in db.execute(f"""
         SELECT * FROM est_movimientos
         WHERE tipo = 'INGRESO' AND categoria IN ({ph}) {filtro_anio}
+          AND COALESCE(subcategoria, '') != '{SUB_PROPIA}'
           AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
           AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)
         ORDER BY fecha DESC, id DESC
@@ -93,7 +97,7 @@ def _pistas(db, rows) -> None:
         for sug in expense_lotes.sugerencias(db):
             for d in sug['depositos']:
                 exp[d['id']] = (f"Expense: cuadra con {len(sug['facturas'])} factura(s) por "
-                                f"${sug['total']:,.2f} (confianza {sug['confianza']})")
+                                f"${sug['total']:,.2f} (confianza {sug['confianza']})", sug)
     except Exception:
         exp = {}
     try:
@@ -105,14 +109,17 @@ def _pistas(db, rows) -> None:
         r['pista'] = None
         monto, fecha = abs(r['monto'] or 0), (r['fecha'] or '')[:10]
         if r['id'] in exp:
-            r['pista'] = {'tipo': 'expense', 'texto': exp[r['id']]}
+            texto, sug = exp[r['id']]
+            r['pista'] = {'tipo': 'expense', 'texto': texto, 'confianza': sug['confianza'],
+                          'facturas': [f['id'] for f in sug['facturas']],
+                          'depositos': [d['id'] for d in sug['depositos']], 'nombre': sug['nombre']}
             continue
         desc = _palabras(r['descripcion'])
         p = next((p for p in abiertos if (p['fecha'] or '')[:10] <= fecha and _palabras(p['persona']) & desc), None) \
             or next((p for p in abiertos if (p['fecha'] or '')[:10] <= fecha and abs(p['pendiente'] - monto) < 0.01), None)
         if p:
-            r['pista'] = {'tipo': 'prestamo', 'texto': f"Préstamo a {p['persona']} del {p['fecha'][:10]} "
-                                                        f"(pendiente ${p['pendiente']:,.2f})"}
+            r['pista'] = {'tipo': 'prestamo', 'prestamo_id': p['id'],
+                          'texto': f"Préstamo a {p['persona']} del {p['fecha'][:10]} (pendiente ${p['pendiente']:,.2f})"}
             continue
         if not fecha:
             continue
@@ -128,3 +135,67 @@ def _pistas(db, rows) -> None:
         if par:
             r['pista'] = {'tipo': 'propia', 'texto': f"Entre tus cuentas: salió de {par['banco']} el "
                                                      f"{par['fecha'][:10]} ({par['descripcion']})"}
+
+
+
+CONFIANZAS_EXPENSE = ('alta', 'media')   # «aproximada» no cuadra exacto: se revisa a mano
+
+
+def conciliar_pistas(db) -> dict:
+    """Aplica las pistas (el usuario, 2026-09-29: «manda esas sugerencias,
+    concílialas»):
+      - expense (confianza alta/media): crea el lote con sus facturas y
+        depósito(s), como «Crear lote» en la pestaña Expense.
+      - prestamo: liga la devolución, sin pasar del pendiente del préstamo.
+      - propia: FINANZAS/«Entre cuentas propias».
+    Lo que no se aplica (Expense aproximada, devolución mayor al pendiente)
+    se queda en la lista con su pista. Devuelve los conteos."""
+    from datetime import datetime
+    from . import expense_lotes, prestamos
+    ahora = datetime.now().isoformat(timespec='seconds')
+    out = {'expense_lotes': 0, 'expense_depositos': 0, 'prestamos': 0, 'propias': 0, 'sin_aplicar': 0}
+    rows = sorted(sin_conciliar(db)['movimientos'], key=lambda r: (r['fecha'] or '', r['id']))
+    pendiente = {p['id']: p['pendiente'] for p in prestamos.listar(db)}
+    hechos = set()
+    for r in rows:
+        pista = r['pista']
+        if not pista or r['id'] in hechos:
+            continue
+        monto = abs(r['monto'] or 0)
+        if pista['tipo'] == 'expense':
+            if pista['confianza'] not in CONFIANZAS_EXPENSE:
+                out['sin_aplicar'] += 1
+                continue
+            libres = lambda tabla, ids: not db.execute(
+                f"SELECT 1 FROM {tabla} WHERE movimiento_id IN ({','.join('?' * len(ids))})", ids).fetchone()
+            if not (libres('est_expense_lote_gastos', pista['facturas'])
+                    and libres('est_expense_lote_depositos', pista['depositos'])):
+                out['sin_aplicar'] += 1
+                continue
+            lid = db.execute("INSERT INTO est_expense_lotes (nombre, notas, created_at) VALUES (?,?,?)",
+                             (pista['nombre'], 'Conciliado desde «Sin conciliar»', ahora)).lastrowid
+            for mid in pista['facturas']:
+                db.execute("INSERT INTO est_expense_lote_gastos (lote_id, movimiento_id, created_at) VALUES (?,?,?)",
+                           (lid, mid, ahora))
+            for mid in pista['depositos']:
+                db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable' WHERE id=?", (mid,))
+                db.execute("INSERT INTO est_expense_lote_depositos (lote_id, movimiento_id, created_at) VALUES (?,?,?)",
+                           (lid, mid, ahora))
+                hechos.add(mid)
+            expense_lotes.sincronizar(db, lid)
+            out['expense_lotes'] += 1
+            out['expense_depositos'] += len(pista['depositos'])
+        elif pista['tipo'] == 'prestamo':
+            pid = pista['prestamo_id']
+            if monto > pendiente.get(pid, 0) + 0.01:
+                out['sin_aplicar'] += 1
+                continue
+            db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (r['id'],))
+            db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+                       (pid, r['id'], ahora))
+            pendiente[pid] = round(pendiente[pid] - monto, 2)
+            out['prestamos'] += 1
+        elif pista['tipo'] == 'propia':
+            db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id=?", (SUB_PROPIA, r['id']))
+            out['propias'] += 1
+    return out

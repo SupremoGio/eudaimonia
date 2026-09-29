@@ -3,7 +3,7 @@ import { BASE, api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { fmtDate, money, norm } from '../lib/format.js';
 import { bankName, catMeta } from '../lib/meta.js';
-import { Empty, ErrorNote, Icon, Skel, useLoad } from '../components/ui.jsx';
+import { Empty, ErrorNote, Icon, Skel, confirmDialog, toast, useLoad } from '../components/ui.jsx';
 
 // Abonos sin conciliar (solo PC): dinero que te entró, no cuenta como
 // ingreso (Finanzas, Préstamos, Expense) y no está ligado ni a un préstamo
@@ -68,6 +68,21 @@ export default function SinConciliar() {
   );
   const hayFiltros = grupo || pista || banco || q.trim();
   const total = rows.reduce((s, m) => s + Math.abs(m.monto), 0);
+  const conPista = (d?.movimientos || []).filter((m) => m.pista).length;
+  const [conciliando, setConciliando] = useState(false);
+  const conciliar = async () => {
+    if (!await confirmDialog(
+      `¿Conciliar ${plural(conPista, 'abono con pista', 'abonos con pista')}? Se crean los lotes de Expense (confianza alta o media), se ligan las devoluciones de préstamos y se marcan los movimientos entre tus cuentas.`,
+      { confirmLabel: 'Conciliar' })) return;
+    setConciliando(true);
+    try {
+      const r = await api.post('/abonos/conciliar-pistas');
+      toast(`Conciliados: ${r.expense_depositos} de Expense, ${r.prestamos} de préstamos, ${r.propias} entre cuentas`
+        + (r.sin_aplicar ? ` · ${r.sin_aplicar} para revisar a mano` : ''), 'ok');
+      app.refresh();
+    } catch (e) { toast(e.message || 'No se pudo conciliar', 'err'); }
+    finally { setConciliando(false); }
+  };
 
   return (
     <div className="fz-vstack-lg fz-pc">
@@ -84,6 +99,11 @@ export default function SinConciliar() {
             <option value="">Todos los años</option>
             {(d?.anios || []).map((a) => <option key={a} value={a}>{a}</option>)}
           </select>
+          {conPista > 0 && (
+            <button type="button" className="eu-btn" disabled={conciliando} onClick={conciliar}>
+              <Icon name="check-check" />Conciliar sugerencias
+            </button>
+          )}
           <a className="eu-btn eu-btn--ghost" href={`${BASE}/abonos/sin-conciliar.csv${anio ? `?anio=${anio}` : ''}`} download>
             <Icon name="download" />CSV para comentar
           </a>
