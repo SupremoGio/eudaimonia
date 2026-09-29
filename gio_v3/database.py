@@ -5969,6 +5969,23 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_conciliar_pistas_2026_09_29 migration warning: {e}")
 
+        # ── FINANZAS — abonos de «Sin conciliar» comentados por el usuario
+        #    (correcciones_sin_conciliar.py). La versión lleva el tamaño de la
+        #    lista: cada tanda nueva se aplica sola al arrancar.
+        try:
+            from modules.finanzas.estados import correcciones_sin_conciliar as _sc
+            _ver = f"finanzas_sin_conciliar_csv_{len(_sc.CORRECCIONES)}"
+            if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
+                _ok, _falta = _sc.aplicar(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    (_ver, f"{_ok} reclasificados, {_falta} no encontrados")
+                )
+                db.commit()
+                print(f"[DB] {_ver}: {_ok} reclasificados, {_falta} no encontrados")
+        except Exception as e:
+            print(f"[DB] finanzas_sin_conciliar_csv migration warning: {e}")
+
         # ── FINANZAS — pedidos de Amazon con su categoría (pedidos_amazon.py) y
         #    las mensualidades de los que fueron a MSI (msi.CATEGORIA_MENSUALIDADES).
         #    La versión lleva el tamaño de las listas: cada tanda nueva de pedidos
