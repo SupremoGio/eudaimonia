@@ -3309,6 +3309,15 @@ def cetes_retiros_admin():
         return jsonify({'retiros': _cetes.plan(db)})
 
 
+@estados_bp.route('/admin/pedidos-amazon')
+def pedidos_amazon_admin():
+    """Solo lectura: cada pedido de Amazon con el cargo que le tocó y, si se
+    devolvió, el abono del reembolso (o null si no aparece)."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify({'pedidos': _amazon.plan(db)})
+
+
 @estados_bp.route('/admin/expense-plataforma')
 def expense_plataforma_admin():
     """Solo lectura: depósitos de la empresa sin lote (con lo que les tocaría),

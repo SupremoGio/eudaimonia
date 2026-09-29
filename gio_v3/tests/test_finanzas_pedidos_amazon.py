@@ -40,7 +40,7 @@ def test_pedidos_se_ligan_a_su_cargo(test_db):
         assert _cat(db, casa) == ('VIVIENDA', 'Artículos del hogar')
         assert _cat(db, deso) == ('CUIDADO_PERSONAL', 'Higiene')
         assert _cat(db, otro) == ('DIGITAL', 'Accesorios tech')
-        assert (ok, faltan) == (3, len(amz.PEDIDOS) - 3)   # el resto: sus cargos no están en esta base
+        assert (ok, faltan) == (3, len(amz.PEDIDOS) + len(amz.DEVUELTOS) - 3)   # el resto: sus cargos no están en esta base
         assert amz.aplicar(db)[0] == 0
 
 
@@ -57,6 +57,14 @@ def test_mensualidades_oral_b_a_cuidado_personal(test_db):
         assert _cat(db, ajena) == ('DIGITAL', 'Accesorios tech')
 
 
+def test_mensualidades_ram_power_bank_hdmi_a_tech(test_db):
+    with database.get_db() as db:
+        ids = [_ins(db, '2026-07-22', 'AMAZON A MESES', m, pn=6, pt=6) for m in (323.0, 114.0, 14.89)]
+        db.commit()
+        msi.marcar_compras(db)
+        assert all(_cat(db, i) == ('TECH/DIGITAL', 'Accesorios') for i in ids)
+
+
 def test_desodorante_de_43_20_no_es_suscripcion(test_db):
     from modules.finanzas.estados.routes import _corregir_amazon_suscripciones
     with database.get_db() as db:
@@ -65,3 +73,39 @@ def test_desodorante_de_43_20_no_es_suscripcion(test_db):
         _corregir_amazon_suscripciones(db)                             # corre antes en «Aplicar reglas»
         amz.aplicar(db)
         assert _cat(db, deso) == ('CUIDADO_PERSONAL', 'Higiene')
+
+
+def test_devuelto_con_reembolso_sale_del_gasto(test_db):
+    with database.get_db() as db:
+        cargo = _ins(db, '2026-04-29', 'AMAZON', 970.0)
+        abono = _ins(db, '2026-05-10', 'AMAZON', -970.0)
+        db.commit()
+        amz.aplicar(db)
+        assert _cat(db, cargo) == ('FINANZAS', 'Reembolsable')
+        assert _cat(db, abono) == ('FINANZAS', 'Reembolsable')
+        p = next(x for x in amz.plan(db) if x.get('devuelto'))
+        assert p['cargo']['id'] == cargo and p['reembolso']['id'] == abono
+
+
+def test_devuelto_sin_reembolso_no_se_toca(test_db):
+    with database.get_db() as db:
+        cargo = _ins(db, '2026-04-29', 'AMAZON', 970.0)
+        db.commit()
+        amz.aplicar(db)
+        assert _cat(db, cargo) == ('DIGITAL', 'Accesorios tech')
+        assert next(x for x in amz.plan(db) if x.get('devuelto'))['reembolso'] is None
+
+
+def test_admin_pedidos_amazon(test_db):
+    from app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess["app_ok"] = True
+        assert c.get('/finanzas/estados/admin/pedidos-amazon').status_code == 403
+        with c.session_transaction() as sess:
+            sess["fin_ok"] = True
+        r = c.get('/finanzas/estados/admin/pedidos-amazon')
+        assert r.status_code == 200
+        assert len(r.get_json()['pedidos']) == len(amz.PEDIDOS) + len(amz.DEVUELTOS)

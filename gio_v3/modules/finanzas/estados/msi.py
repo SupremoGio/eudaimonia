@@ -69,6 +69,10 @@ CATEGORIA_MENSUALIDADES = (
     # Pedidos de Amazon (ver pedidos_amazon.py):
     ('AMAZON A MESES', 146.0, 15, 'CUIDADO_PERSONAL', 'Higiene'),            # Oral B iO 6 $2,181.77 (jul 2026)
     ('AMAZON A MESES', 480.0, 15, 'TECH/DIGITAL', 'Accesorios'),             # Apple Watch S11 $7,186.75 (may 2026)
+    ('AMAZON A MESES', 327.0, 6, 'TECH/DIGITAL', 'Accesorios'),              # RAM Kingston x2 $1,958 (ene 2026)
+    ('AMAZON A MESES', 117.0, 6, 'TECH/DIGITAL', 'Accesorios'),              # power bank UGREEN $699 (ene 2026)
+    ('AMAZON A MESES', 20.0, 6, 'TECH/DIGITAL', 'Accesorios'),               # cable HDMI $114.89 (ene 2026)
+    ('AMAZON A MESES', 14.89, 6, 'TECH/DIGITAL', 'Accesorios'),              # su última mensualidad
 )
 
 
