@@ -5924,7 +5924,7 @@ def init_db():
             from modules.finanzas.estados import pedidos_amazon as _amz
             from modules.finanzas.estados import msi as _msi_amz
             _ver = (f"finanzas_pedidos_amazon_{len(_amz.PEDIDOS)}_{len(_amz.DEVUELTOS)}"
-                    f"_{len(_msi_amz.CATEGORIA_MENSUALIDADES)}")
+                    f"_{len(_msi_amz.MENSUALIDADES_AMAZON)}")
             if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
                 _ok, _falta = _amz.aplicar(db)
                 _n = _msi_amz.marcar_compras(db)

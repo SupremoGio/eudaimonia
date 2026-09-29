@@ -11,7 +11,7 @@ tarjeta aún no cargada se liga solo cuando llegue su estado.
 
 Pedidos a meses: la línea de la compra se queda en FINANZAS/«Compra a meses»
 (fuera del gasto); la categoría la llevan sus mensualidades, en
-msi.CATEGORIA_MENSUALIDADES.
+msi.MENSUALIDADES_AMAZON.
 
 Devoluciones con reembolso a la tarjeta (DEVUELTOS): si aparecen el cargo y el
 abono de Amazon por el mismo monto (hasta 60 días después), los dos pasan a
@@ -30,7 +30,7 @@ PEDIDOS = [
     ('2026-07-13', 999.00, 'Maleta de mano rígida', 'VIVIENDA', 'Artículos del hogar'),
     ('2026-07-14', 45.45, 'Desodorante Dove Men Care', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2026-07-18', 298.00, 'Bolsas de vacío para ropa (Mastercard 4254)', 'VIVIENDA', 'Artículos del hogar'),
-    # Oral B iO Series 6 $2,181.77 (13/07/2026) fue a 15 MSI: ver msi.CATEGORIA_MENSUALIDADES.
+    # Oral B iO Series 6 $2,181.77 (13/07/2026) fue a 15 MSI: ver msi.MENSUALIDADES_AMAZON.
     # Pedido 13/07/2026 de $445.09 que el banco cobró en dos cargos; la creatina,
     # con la promoción de $29.90, fue $269.10.
     ('2026-07-13', 269.10, 'Creatina monohidratada 450 g', 'CUIDADO_PERSONAL', 'Higiene'),
@@ -41,7 +41,7 @@ PEDIDOS = [
     ('2026-05-24', 269.99, 'Funda para Kindle', 'VIVIENDA', 'Artículos del hogar'),
     ('2026-05-24', 398.65, 'Regleta multicontacto Tessan', 'VIVIENDA', 'Artículos del hogar'),
     ('2026-05-24', 43.20, 'Desodorante Dove Men Care', 'CUIDADO_PERSONAL', 'Higiene'),
-    # Apple Watch Series 11 $7,186.75 (28/05/2026) fue a 15 MSI: ver msi.CATEGORIA_MENSUALIDADES.
+    # Apple Watch Series 11 $7,186.75 (28/05/2026) fue a 15 MSI: ver msi.MENSUALIDADES_AMAZON.
     # Molinillo (regalo a Cornelius) y sartén del 07/05/2026 se pagaron con saldo
     # de Amazon: total $0, no hay cargo en ninguna tarjeta.
     ('2026-05-01', 111.18, 'Protector solar L\'Oréal + CeraVe PM', 'CUIDADO_PERSONAL', 'Higiene'),
@@ -58,7 +58,7 @@ PEDIDOS = [
     # Cajón Nespresso (23/02) y Pato (18/02) salieron en $0: sin cargo.
     ('2026-01-25', 783.06, 'Sábanas Lacoste', 'VIVIENDA', 'Artículos del hogar'),
     # RAM Kingston x2 + power bank ($2,657) y cable HDMI ($114.89) del 24/01
-    # fueron a 6 MSI: ver msi.CATEGORIA_MENSUALIDADES.
+    # fueron a 6 MSI: ver msi.MENSUALIDADES_AMAZON.
     ('2026-01-24', 448.99, 'Mouse UGREEN', 'TECH/DIGITAL', 'Accesorios'),
     ('2026-01-10', 182.00, 'Protector solar L\'Oréal UV Defender', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2026-01-10', 149.99, 'Pluma estilográfica Amazon Basics', 'APRENDIZAJE', 'Papelería'),
@@ -75,7 +75,7 @@ PEDIDOS = [
     ('2025-09-25', 226.00, 'Mejoras PC (3/5 del pedido de $1,065.17)', 'TECH/DIGITAL', 'Accesorios'),
     ('2025-09-25', 189.05, 'Mejoras PC (4/5 del pedido de $1,065.17)', 'TECH/DIGITAL', 'Accesorios'),
     ('2025-09-25', 145.00, 'Mejoras PC (5/5 del pedido de $1,065.17)', 'TECH/DIGITAL', 'Accesorios'),
-    # Bose QuietComfort $2,999 (20/07/2025) fue a 15 MSI: ver msi.CATEGORIA_MENSUALIDADES.
+    # Bose QuietComfort $2,999 (20/07/2025) fue a 15 MSI: ver msi.MENSUALIDADES_AMAZON.
     ('2026-08-12', 279.63, 'Cetaphil crema limpiadora', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2026-09-03', 43.20, 'Desodorante Dove Men Care', 'CUIDADO_PERSONAL', 'Higiene'),
     # Más para la PC (sep 2025): monitor, teclado, y soporte + carcasa de disco
@@ -84,7 +84,7 @@ PEDIDOS = [
     ('2025-09-13', 509.00, 'Teclado Free Wolf M96', 'TECH/DIGITAL', 'Accesorios'),
     ('2025-09-14', 134.10, 'Soporte laptop / carcasa de disco (1/2 del pedido de $323.10)', 'TECH/DIGITAL', 'Accesorios'),
     ('2025-09-14', 189.00, 'Soporte laptop / carcasa de disco (2/2 del pedido de $323.10)', 'TECH/DIGITAL', 'Accesorios'),
-    # Echo Dot $749 (30/09/2025) fue a 3 MSI: ver msi.CATEGORIA_MENSUALIDADES.
+    # Echo Dot $749 (30/09/2025) fue a 3 MSI: ver msi.MENSUALIDADES_AMAZON.
     # Pedido 07/10/2025 de $2,156.90 en cinco cargos; el de $88 fue la caja de
     # herramientas devuelta (DEVUELTOS) y el de $1,299 el microondas.
     ('2025-10-07', 1299.00, 'Microondas Xwave Mirage', 'VIVIENDA', 'Artículos del hogar'),
@@ -124,7 +124,7 @@ PEDIDOS = [
     ('2024-05-24', 349.30, 'Creatina monohidratada 450 g', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2024-04-12', 99.00, 'Atomizador de perfume', 'CUIDADO_PERSONAL', 'Higiene'),
     # Lámpara + Roku + banco zapatero $1,737.99 (06/04/2024) fue a 6 MSI: ver
-    # msi.CATEGORIA_MENSUALIDADES. La pintura Angelus de $228 del mismo día se
+    # msi.MENSUALIDADES_AMAZON. La pintura Angelus de $228 del mismo día se
     # cargó a meses y se reversó (-$228 el 10/04): no hay gasto.
     ('2024-01-04', 357.00, 'Creatina Valara 450 g', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2023-12-04', 599.15, 'Agenda Clever Fox Weekly 2024-2025', 'APRENDIZAJE', 'Papelería'),
@@ -133,13 +133,21 @@ PEDIDOS = [
     ('2023-10-13', 338.00, 'Soporte de TV para pared', 'VIVIENDA', 'Artículos del hogar'),
     ('2023-07-30', 284.99, 'Collar Clepsidra', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2023-07-30', 1577.24, 'Tenis Lacoste Hydez', 'ROPA', 'Calzado'),
+    # Creatina Birdman $363 (15/05/2024) devuelta, pero el reembolso quedó como
+    # saldo de Amazon: el cargo sigue siendo gasto.
+    ('2024-05-15', 363.00, 'Creatina Birdman (devuelta a saldo Amazon)', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2023-07-25', 349.00, 'Soporte UGREEN para tablet', 'TECH/DIGITAL', 'Accesorios'),
+    ('2023-07-02', 400.00, 'Creatina Pura Premium 500 g', 'CUIDADO_PERSONAL', 'Higiene'),
+    # Audífonos Sennheiser HD 450SE $3,355.95 (11/03/2023) fueron a 6 MSI: ver
+    # msi.MENSUALIDADES_AMAZON.
+    ('2023-01-16', 469.00, 'Creatina Valara 450 g (débito)', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2023-01-08', 334.34, 'Maleta deportiva Puma Evercat', 'ROPA', 'Ropa deportiva'),
 ]
 
 # (fecha del pedido, total, producto): devueltos con reembolso a la tarjeta.
 DEVUELTOS = [
     ('2026-04-28', 970.00, 'Control Xbox Carbon Black'),
     ('2025-10-07', 88.00, 'Caja de herramientas Pretul'),
-    ('2024-05-15', 363.00, 'Creatina Birdman 450 g'),
 ]
 
 _AMAZON = "UPPER(descripcion) LIKE '%AMAZON%' AND ABS(ABS(monto) - ?) < 0.01"

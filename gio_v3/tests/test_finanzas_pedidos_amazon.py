@@ -152,3 +152,13 @@ def test_mensualidades_lampara_roku_zapatero(test_db):
         db.commit()
         msi.marcar_compras(db)
         assert all(_cat(db, i) == ('VIVIENDA', 'Artículos del hogar') for i in ids)
+
+
+def test_sennheiser_no_toma_la_compra_de_560_de_2022(test_db):
+    with database.get_db() as db:
+        senn = _ins(db, '2023-04-22', 'AMAZON MX A MESES', 560.0, pn=2, pt=6)
+        otra = _ins(db, '2022-09-22', 'AMAZON MX A MESES', 560.0, pn=4, pt=6)
+        db.commit()
+        msi.marcar_compras(db)
+        assert _cat(db, senn) == ('TECH/DIGITAL', 'Accesorios')
+        assert _cat(db, otra) == ('DIGITAL', 'Accesorios tech')

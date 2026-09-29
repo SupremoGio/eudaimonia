@@ -66,16 +66,23 @@ CATEGORIA_MENSUALIDADES = (
     ('MEN S FACTORY', 462.0, 6, 'ROPA', 'Ropa'),                             # ropa (dic 2022)
     ('MERCADO PAGO 1', 234.0, 6, 'VIVIENDA', 'Artículos del hogar'),         # artículo casa (nov 2022)
     ('MERCADO PAGO 1', 156.0, 3, 'VIVIENDA', 'Artículos del hogar'),         # artículo casa (sep 2022)
-    # Pedidos de Amazon (ver pedidos_amazon.py):
-    ('AMAZON A MESES', 146.0, 15, 'CUIDADO_PERSONAL', 'Higiene'),            # Oral B iO 6 $2,181.77 (jul 2026)
-    ('AMAZON A MESES', 480.0, 15, 'TECH/DIGITAL', 'Accesorios'),             # Apple Watch S11 $7,186.75 (may 2026)
-    ('AMAZON A MESES', 327.0, 6, 'TECH/DIGITAL', 'Accesorios'),              # RAM Kingston x2 $1,958 (ene 2026)
-    ('AMAZON A MESES', 117.0, 6, 'TECH/DIGITAL', 'Accesorios'),              # power bank UGREEN $699 (ene 2026)
-    ('AMAZON A MESES', 20.0, 6, 'TECH/DIGITAL', 'Accesorios'),               # cable HDMI $114.89 (ene 2026)
-    ('AMAZON A MESES', 14.89, 6, 'TECH/DIGITAL', 'Accesorios'),              # su última mensualidad
-    ('AMAZON MX A MESES', 200.0, 15, 'TECH/DIGITAL', 'Accesorios'),          # Bose QuietComfort $2,999 (jul 2025)
-    ('AMAZON A MESES', 250.0, 3, 'VIVIENDA', 'Artículos del hogar'),        # Echo Dot $749 (sep 2025)
-    ('AMAZON MX A MESES', 290.0, 6, 'VIVIENDA', 'Artículos del hogar'),     # lámpara + Roku + zapatero $1,737.99 (abr 2024)
+)
+
+# Mensualidades de pedidos de Amazon a MSI (ver pedidos_amazon.py), acotadas a
+# las fechas de esa compra: la misma cuota y plazo se repiten en otras compras
+# de Amazon (ej. $560 a 6 meses en 2022 y en 2023).
+# (texto, cuota, plazo, desde, hasta, categoria, subcategoria)
+MENSUALIDADES_AMAZON = (
+    ('AMAZON MX A MESES', 560.0, 6, '2023-03-01', '2023-08-31', 'TECH/DIGITAL', 'Accesorios'),       # Sennheiser HD 450SE $3,355.95
+    ('AMAZON MX A MESES', 290.0, 6, '2024-04-01', '2024-09-30', 'VIVIENDA', 'Artículos del hogar'),  # lámpara + Roku + zapatero $1,737.99
+    ('AMAZON MX A MESES', 200.0, 15, '2025-08-01', '2026-10-31', 'TECH/DIGITAL', 'Accesorios'),      # Bose QuietComfort $2,999
+    ('AMAZON A MESES', 250.0, 3, '2025-10-01', '2025-12-31', 'VIVIENDA', 'Artículos del hogar'),     # Echo Dot $749
+    ('AMAZON A MESES', 327.0, 6, '2026-02-01', '2026-07-31', 'TECH/DIGITAL', 'Accesorios'),          # RAM Kingston x2 $1,958
+    ('AMAZON A MESES', 117.0, 6, '2026-02-01', '2026-07-31', 'TECH/DIGITAL', 'Accesorios'),          # power bank UGREEN $699
+    ('AMAZON A MESES', 20.0, 6, '2026-02-01', '2026-07-31', 'TECH/DIGITAL', 'Accesorios'),           # cable HDMI $114.89
+    ('AMAZON A MESES', 14.89, 6, '2026-02-01', '2026-07-31', 'TECH/DIGITAL', 'Accesorios'),          # su última mensualidad
+    ('AMAZON A MESES', 480.0, 15, '2026-06-01', '2027-09-30', 'TECH/DIGITAL', 'Accesorios'),         # Apple Watch S11 $7,186.75
+    ('AMAZON A MESES', 146.0, 15, '2026-07-01', '2027-10-31', 'CUIDADO_PERSONAL', 'Higiene'),        # Oral B iO 6 $2,181.77
 )
 
 
@@ -124,6 +131,13 @@ def _reafirmar_mensualidades(db) -> int:
             WHERE UPPER(descripcion) LIKE ? AND ABS(ABS(monto) - ?) <= ? AND parcialidad_total=?
               AND tipo='GASTO' AND (categoria != ? OR COALESCE(subcategoria,'') != ?)
         """, (cat, sub, f"%{texto}%", cuota, max(cuota * _TOL, 1.0), plazo, cat, sub)).rowcount
+    for texto, cuota, plazo, desde, hasta, cat, sub in MENSUALIDADES_AMAZON:
+        n += db.execute("""
+            UPDATE est_movimientos SET categoria=?, subcategoria=?
+            WHERE UPPER(descripcion) LIKE ? AND ABS(ABS(monto) - ?) <= ? AND parcialidad_total=?
+              AND substr(fecha,1,10) BETWEEN ? AND ?
+              AND tipo='GASTO' AND (categoria != ? OR COALESCE(subcategoria,'') != ?)
+        """, (cat, sub, f"%{texto}%", cuota, max(cuota * _TOL, 1.0), plazo, desde, hasta, cat, sub)).rowcount
     return n
 
 
