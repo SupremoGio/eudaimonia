@@ -177,3 +177,17 @@ def test_pistas_inteligentes_de_gasto(client):
     assert r['gastos'] == 4
     ids = [m['id'] for m in client.get(URL).get_json()['movimientos']]
     assert ids == [nada]
+
+
+
+def test_pistas_de_gasto_no_se_pasan(client):
+    """Casos reales mal sugeridos: concepto por defecto del banco, 1/4 de un pago de
+    renta y un retiro sin tarjeta que «cuadraba» con un Costco de $495.12 posterior."""
+    _mov_banco('2026-01-10', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 900, 'VIAJES', 'BBVA_DEB', 'Otros')
+    transf = _mov('2026-09-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 4500, 'FINANZAS', 'Reembolsable')
+    _mov_banco('2026-08-07', 'PAGO TARJETA DE TERCEROS MBAN', 12000, 'VIVIENDA', 'BBVA_DEB', 'Renta', 'GASTO')
+    stp = _mov('2026-08-10', 'SPEI RECIBIDOSTP 646', 3000, 'FINANZAS', 'Transferencia')
+    _mov_banco('2026-08-01', 'COSTCO VILLAHERMOSA', 495.12, 'SUPER', 'BBVA_TDC', 'Súper', 'GASTO')
+    retiro = _mov('2026-07-30', 'FIBRA HOTELERA SC RETIRO SIN TARJETA', 500, 'FINANZAS', 'Reembolsable')
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert p[transf] is None and p[stp] is None and p[retiro] is None

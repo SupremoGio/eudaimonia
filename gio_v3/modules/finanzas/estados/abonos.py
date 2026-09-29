@@ -231,7 +231,8 @@ def _pistas(db, rows) -> None:
 # hoteles o cosas que compró por alguien. Conciliarlos = ponerles la
 # categoría de ese gasto: un INGRESO en una categoría de gasto la resta
 # (como ABONOS_A_GASTO), así el viaje cuenta solo lo que le tocó pagar.
-GASTO_DIAS_ANTES, GASTO_DIAS_DESPUES = 60, 5
+GASTO_DIAS_ANTES, GASTO_DIAS_DESPUES = 60, 1
+_SE_DIVIDE = ('VIAJES', 'COMIDA_FUERA', 'OCIO', 'SALSA', 'CAFE/PAN', 'TRANSPORTE')
 _NO_GASTO = ('FINANZAS', 'PRESTAMOS', 'EXPENSE', 'INVERSION', 'NOMINA', 'OTROS', 'PAGO')
 _VIAJE_RE = re.compile(r'\b(VIA|VIAJE|VIAJ|VACA|VACAS|BOLETO|BOLET|BOLETOS|HOTEL|HOSPEDAJE|VUELO|AVION|AIRBNB|CASA PLAYA)\b')
 _RENTA_RE = re.compile(r'\bRENTA\b')
@@ -239,6 +240,12 @@ _RENTA_RE = re.compile(r'\bRENTA\b')
 _GENERICOS = {'TRANSF A GIO', 'TRANSF A', 'TRANSFERENCI', 'TRANSFERENCIA', 'PAGO', 'GIO', 'GIOVANY', 'P', 'XX',
               'TRANSF A UND', 'NAFIN', 'HSBC', 'STP', 'BANORTE', 'SANTANDER', 'BANAMEX'}
 PARTES = (1, 2, 3, 4)   # te pagaron todo, la mitad, un tercio o un cuarto del gasto
+
+
+def _generico(c: str) -> bool:
+    """«TRANSF A GIOVANY A» es el concepto que pone la app del banco por
+    defecto: lo usan muchas personas distintas, no dice nada."""
+    return c in _GENERICOS or len(c) < 3 or c.startswith('TRANSF') or 'GIOVANY' in c or 'RETIRO' in c
 
 
 def _conceptos_aprendidos(db) -> dict:
@@ -249,7 +256,7 @@ def _conceptos_aprendidos(db) -> dict:
     for r in db.execute(f"""SELECT descripcion, categoria, subcategoria FROM est_movimientos
                             WHERE tipo='INGRESO' AND categoria NOT IN ({ph})""", _NO_GASTO).fetchall():
         c = _concepto(r['descripcion'])
-        if c and c not in _GENERICOS and len(c) >= 3:
+        if c and not _generico(c):
             k = (r['categoria'], r['subcategoria'] or '')
             cuenta.setdefault(c, {}).setdefault(k, 0)
             cuenta[c][k] += 1
@@ -266,16 +273,21 @@ def _pista_gasto(db, r, monto, d, aprendidos):
         return {'tipo': 'gasto', 'categoria': 'VIVIENDA', 'subcategoria': 'Aportación renta',
                 'texto': "Parte de la renta que te depositaron (concepto «RENTA»)"}
     viaje = bool(_VIAJE_RE.search(concepto))
+    if 'RETIRO' in (r['descripcion'] or '').upper():   # retiro de efectivo: no es que te pagaran algo
+        return None
     ph = ','.join('?' * len(_NO_GASTO))
+    # El gasto va antes del depósito (pagaste y luego te pagaron), hasta el día siguiente.
     cands = db.execute(f"""
         SELECT fecha, descripcion, ABS(monto) AS monto, categoria, subcategoria FROM est_movimientos
-        WHERE tipo='GASTO' AND categoria NOT IN ({ph}) AND COALESCE(subcategoria,'') != 'Compra a meses'
+        WHERE tipo='GASTO' AND categoria NOT IN ({ph}) AND COALESCE(subcategoria,'') NOT IN ('Compra a meses', 'Renta')
           AND substr(fecha,1,10) BETWEEN ? AND ? {"AND categoria='VIAJES'" if viaje else ""}
         ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?))
     """, (*_NO_GASTO, (d - timedelta(days=GASTO_DIAS_ANTES)).isoformat(),
           (d + timedelta(days=GASTO_DIAS_DESPUES)).isoformat(), d.isoformat())).fetchall()
     for partes in PARTES:
-        g = next((g for g in cands if abs(g['monto'] - monto * partes) <= max(1.0, 0.01 * monto * partes)), None)
+        # Mitades, tercios y cuartos solo en lo que se suele dividir entre varios.
+        g = next((g for g in cands if abs(g['monto'] - monto * partes) <= 0.5 * partes
+                  and (partes == 1 or g['categoria'] in _SE_DIVIDE)), None)
         if g:
             parte = 'todo' if partes == 1 else f"1/{partes}"
             return {'tipo': 'gasto', 'categoria': g['categoria'], 'subcategoria': g['subcategoria'] or '',
