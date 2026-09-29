@@ -120,3 +120,13 @@ def test_bose_a_meses_y_pedido_partido_en_cargos(test_db):
         msi.marcar_compras(db)
         amz.aplicar(db)
         assert all(_cat(db, i) == ('TECH/DIGITAL', 'Accesorios') for i in bose + pc)
+
+
+def test_plan_muestra_cercanos_libres(test_db):
+    with database.get_db() as db:
+        tomado = _ins(db, '2026-07-13', 'AMAZON', 999.0)
+        libre = _ins(db, '2026-04-05', 'STR AMAZON CIUDAD DE MEX', 470.0)
+        db.commit()
+        p = next(x for x in amz.plan(db) if x['producto'].startswith('Pants Nike'))
+        assert p['cargo'] is None and [m['id'] for m in p['cercanos']] == [libre]
+        assert 'cercanos' not in next(x for x in amz.plan(db) if x['producto'] == 'Maleta de mano rígida')

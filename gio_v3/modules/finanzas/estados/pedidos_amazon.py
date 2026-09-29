@@ -139,15 +139,40 @@ def aplicar(db) -> tuple[int, int]:
     return ok, faltan
 
 
+_CAMPOS = ('id', 'fecha', 'descripcion', 'monto', 'banco', 'categoria', 'subcategoria')
+
+
+def _mov(r):
+    return r and {k: r[k] for k in _CAMPOS}
+
+
+def _cercanos(db, fecha, usados, dias_despues=45):
+    """Movimientos de Amazon (cargos y abonos, sin mensualidades) de 5 días
+    antes a `dias_despues` del pedido que ningún pedido tomó: para ligar a
+    mano un pedido que no cuadró al centavo o se cobró partido."""
+    desde = (date.fromisoformat(fecha) - timedelta(days=5)).isoformat()
+    rows = db.execute(f"""
+        SELECT {', '.join(_CAMPOS)} FROM est_movimientos
+        WHERE UPPER(descripcion) LIKE '%AMAZON%' AND substr(fecha,1,10) BETWEEN ? AND ?
+          AND parcialidad_num IS NULL AND UPPER(descripcion) NOT LIKE '%MESES%'
+        ORDER BY substr(fecha,1,10), id
+    """, (desde, _hasta(fecha, dias_despues))).fetchall()
+    return [_mov(r) for r in rows if r['id'] not in usados][:20]
+
+
 def plan(db) -> list[dict]:
-    """Solo lectura: cada pedido con el cargo (y, si se devolvió, el abono) que le tocó."""
-    mov = lambda r: r and {k: r[k] for k in ('id', 'fecha', 'descripcion', 'monto', 'banco', 'categoria', 'subcategoria')}
+    """Solo lectura: cada pedido con el cargo (y, si se devolvió, el abono) que
+    le tocó; los que no tienen, con los movimientos de Amazon cercanos libres."""
     out = []
     for fecha, monto, producto, cat, sub in PEDIDOS:
         out.append({'pedido': fecha, 'total': monto, 'producto': producto,
-                    'categoria': f'{cat}/{sub}', 'cargo': mov(_cargo(db, fecha, monto))})
+                    'categoria': f'{cat}/{sub}', 'cargo': _mov(_cargo(db, fecha, monto))})
     for fecha, monto, producto in DEVUELTOS:
         cargo = _cargo(db, fecha, monto)
         out.append({'pedido': fecha, 'total': monto, 'producto': producto, 'devuelto': True,
-                    'cargo': mov(cargo), 'reembolso': mov(cargo and _reembolso(db, cargo, monto))})
+                    'cargo': _mov(cargo), 'reembolso': _mov(cargo and _reembolso(db, cargo, monto))})
+    usados = {m['id'] for p in out for m in (p['cargo'], p.get('reembolso')) if m}
+    for p in out:
+        if not p['cargo'] or (p.get('devuelto') and not p['reembolso']):
+            p['cercanos'] = _cercanos(db, p['pedido'], usados, 75 if p.get('devuelto') else 45)
     return out
