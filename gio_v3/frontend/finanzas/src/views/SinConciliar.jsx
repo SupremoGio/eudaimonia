@@ -13,11 +13,14 @@ import { Empty, ErrorNote, Icon, Skel, useLoad } from '../components/ui.jsx';
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const grupoDe = (m) => (m.categoria !== 'FINANZAS' ? m.categoria : (m.subcategoria || 'Sin subcategoría'));
 const nombreGrupo = (g) => (['PRESTAMOS', 'EXPENSE'].includes(g) ? catMeta(g).name : g);
+// Pista del servidor (abonos.py): qué es probablemente cada abono.
+const PISTAS = { prestamo: 'Préstamo', expense: 'Expense', propia: 'Entre tus cuentas', ninguna: 'Sin pista' };
+const pistaDe = (m) => m.pista?.tipo || 'ninguna';
 
 // Filtros y orden se recuerdan en este navegador: editar un movimiento,
 // cambiar de pestaña o recargar no los deshace.
 const MEMO_KEY = 'fz-sc-filtros';
-const DEF = { anio: '', grupo: '', q: '', banco: '', sort: 'fecha', dir: 'desc' };
+const DEF = { anio: '', grupo: '', pista: '', q: '', banco: '', sort: 'fecha', dir: 'desc' };
 function leerMemo() {
   try { return { ...DEF, ...(JSON.parse(localStorage.getItem(MEMO_KEY)) || {}) }; } catch { return DEF; }
 }
@@ -36,13 +39,14 @@ export default function SinConciliar() {
   const app = useApp();
   const [f, setF] = useState(leerMemo);
   const set = (patch) => setF((prev) => { const n = { ...prev, ...patch }; guardarMemo(n); return n; });
-  const { anio, grupo, q, banco, sort, dir } = f;
+  const { anio, grupo, pista, q, banco, sort, dir } = f;
   const res = useLoad(() => api.get('/abonos/sin-conciliar', anio ? { anio } : {}), [app.refreshKey, anio]);
   const d = res.data;
 
   const rows = useMemo(() => {
     let r = d?.movimientos || [];
     if (grupo) r = r.filter((m) => grupoDe(m) === grupo);
+    if (pista) r = r.filter((m) => pistaDe(m) === pista);
     if (banco) r = r.filter((m) => m.banco === banco);
     if (q.trim()) { const nq = norm(q.trim()); r = r.filter((m) => norm(`${m.descripcion} ${m.fecha} ${Math.abs(m.monto)}`).includes(nq)); }
     const val = SORT_VAL[sort] || SORT_VAL.fecha;
@@ -52,7 +56,7 @@ export default function SinConciliar() {
       const c = typeof x === 'string' ? x.localeCompare(y) : x - y;
       return c * sign || (b.fecha || '').localeCompare(a.fecha || '');
     });
-  }, [d, grupo, banco, q, sort, dir]);
+  }, [d, grupo, pista, banco, q, sort, dir]);
   const bancos = [...new Set((d?.movimientos || []).map((m) => m.banco))].sort();
   const sortBy = (col) => set(sort === col ? { dir: dir === 'asc' ? 'desc' : 'asc' } : { sort: col, dir: ['desc', 'tipo', 'banco'].includes(col) ? 'asc' : 'desc' });
   const th = (col, label, cls) => (
@@ -62,7 +66,7 @@ export default function SinConciliar() {
       </button>
     </th>
   );
-  const hayFiltros = grupo || banco || q.trim();
+  const hayFiltros = grupo || pista || banco || q.trim();
   const total = rows.reduce((s, m) => s + Math.abs(m.monto), 0);
 
   return (
@@ -109,6 +113,16 @@ export default function SinConciliar() {
               </button>
             ))}
           </div>
+          {(d.por_pista || []).length > 0 && (
+            <div className="eu-hstack fz-wrap" role="group" aria-label="Filtrar por pista">
+              <span className="t-meta">Qué parece:</span>
+              {d.por_pista.map((g) => (
+                <button key={g.tipo} type="button" className="eu-chip" aria-pressed={pista === g.tipo} onClick={() => set({ pista: pista === g.tipo ? '' : g.tipo })}>
+                  {PISTAS[g.tipo] || g.tipo} · {g.n} · {money(g.total, { cents: false })}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="eu-between t-meta fz-wrap">
             <div className="eu-hstack fz-wrap">
               <div className="eu-input-wrap">
@@ -119,7 +133,7 @@ export default function SinConciliar() {
                 <option value="">Todas las cuentas</option>
                 {bancos.map((b) => <option key={b} value={b}>{bankName(b)}</option>)}
               </select>
-              {hayFiltros && <button type="button" className="fz-link" onClick={() => set({ grupo: '', banco: '', q: '' })}>Quitar filtros</button>}
+              {hayFiltros && <button type="button" className="fz-link" onClick={() => set({ grupo: '', pista: '', banco: '', q: '' })}>Quitar filtros</button>}
             </div>
             <span>{rows.length} de {d.movimientos.length} · Total <b className="num fz-fg-1">{money(total)}</b></span>
           </div>
@@ -131,7 +145,10 @@ export default function SinConciliar() {
                 {rows.map((m) => (
                   <tr key={m.id} className="fz-tr" tabIndex={0} onClick={() => app.openTx(m)} onKeyDown={(e) => { if (e.key === 'Enter') app.openTx(m); }}>
                     <td className="num fg-3">{fmtDate(m.fecha, true)}</td>
-                    <td><span className="fz-ellipsis fz-td-desc" title={m.descripcion}>{m.descripcion}</span></td>
+                    <td>
+                      <span className="fz-ellipsis fz-td-desc" title={m.descripcion}>{m.descripcion}</span>
+                      {m.pista && <span className="fz-ellipsis t-meta" title={m.pista.texto}>{m.pista.texto}</span>}
+                    </td>
                     <td className="fg-3">{nombreGrupo(grupoDe(m))}</td>
                     <td className="fg-3">{bankName(m.banco)}</td>
                     <td className="r num fg-success">+{money(Math.abs(m.monto))}</td>

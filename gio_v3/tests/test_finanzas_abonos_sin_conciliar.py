@@ -52,3 +52,33 @@ def test_solo_abonos_sueltos(client):
     assert client.get(URL, query_string={'anio': '2021'}).get_json()['movimientos'] == []
     csv = client.get(URL + '.csv').get_data(as_text=True)
     assert 'COMENTARIOS' in csv and 'GIOVANY' in csv
+
+
+def _mov_banco(fecha, desc, monto, cat, banco, sub='', tipo='INGRESO'):
+    with database.get_db() as db:
+        mid = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                            VALUES (?,?,?,?,?,?,?)""", (fecha, desc, monto, banco, cat, sub, tipo)).lastrowid
+        db.commit()
+    return mid
+
+
+def test_pistas(client):
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                      VALUES ('Pablo Ruiz', 1500, '2023-01-05', 'x')""")
+        db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                      VALUES ('Judi', 740, '2023-01-05', 'x')""")
+        db.commit()
+    por_nombre = _mov('2023-02-01', 'PAGO CUENTA DE TERCERO BNET PABLO', 500, 'FINANZAS', 'Transferencia recibida')
+    por_monto = _mov('2023-02-03', 'SPEI RECIBIDO BANORTE', 740, 'FINANZAS', 'Transferencia recibida')
+    propia = _mov('2023-03-10', 'SPEI RECIBIDO NAFIN', 3000, 'FINANZAS', 'Transferencia recibida')
+    _mov_banco('2023-03-09', 'TRASPASO A BBVA', 3000, 'FINANZAS', 'NU', 'Transferencia enviada', 'GASTO')
+    gasto_igual = _mov('2023-04-10', 'SPEI RECIBIDO X', 250, 'FINANZAS', 'Transferencia recibida')
+    _mov_banco('2023-04-10', 'RESTAURANTE', 250, 'COMIDA_FUERA', 'BBVA_TDC', 'Restaurante', 'GASTO')
+    d = client.get(URL).get_json()
+    pista = {m['id']: (m['pista'] or {}).get('tipo') for m in d['movimientos']}
+    assert pista[por_nombre] == 'prestamo' and pista[por_monto] == 'prestamo'
+    assert pista[propia] == 'propia'
+    assert pista[gasto_igual] is None                                   # un gasto normal no es transferencia
+    assert {g['tipo'] for g in d['por_pista']} == {'prestamo', 'propia', 'ninguna'}
+    assert 'Pablo Ruiz' in client.get(URL + '.csv').get_data(as_text=True)

@@ -2036,7 +2036,7 @@ def abonos_sin_conciliar_csv():
     anio = request.args.get('anio') or None
     with get_db() as db:
         rows = _abonos.filas_csv(db, anio)
-    return csv_response(['ID', 'Fecha', 'Descripción', 'Monto', 'Banco', 'Categoría', 'Subcategoría', 'COMENTARIOS'],
+    return csv_response(['ID', 'Fecha', 'Descripción', 'Monto', 'Banco', 'Categoría', 'Subcategoría', 'Pista', 'COMENTARIOS'],
                         rows, f"abonos_sin_conciliar_{anio or 'todos'}_{today_str()}.csv")
 
 
