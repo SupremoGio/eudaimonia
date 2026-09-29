@@ -88,6 +88,27 @@ PEDIDOS = [
     # Pedido 07/10/2025 de $2,156.90 en cinco cargos; el de $88 fue la caja de
     # herramientas devuelta (DEVUELTOS) y el de $1,299 el microondas.
     ('2025-10-07', 1299.00, 'Microondas Xwave Mirage', 'VIVIENDA', 'Artículos del hogar'),
+    # 2025 (BBVA crédito)
+    ('2025-05-21', 459.00, 'Compresa caliente eléctrica', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2025-04-04', 668.33, 'Camiseta Lacoste cuello V', 'ROPA', 'Ropa'),
+    # Pedido 04/04 de $634.88 en dos cargos: creatina Birdman ($498) y pintura
+    # Angelus para cuero ($136.88, para tenis).
+    ('2025-04-04', 498.00, 'Creatina Birdman 450 g', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2025-04-04', 136.88, 'Pintura Angelus para cuero', 'ROPA', 'Calzado'),
+    ('2025-03-27', 299.00, 'Aromatizante Air Wick (7 repuestos)', 'VIVIENDA', 'Artículos del hogar'),
+    # Pedido 27/03 de $331.99 en dos cargos: organizador de regadera ($199) y
+    # atomizadores de perfume ($132.99), según el precio probable de cada uno.
+    ('2025-03-27', 199.00, 'Organizador de regadera (2 pzas)', 'VIVIENDA', 'Artículos del hogar'),
+    ('2025-03-27', 132.99, 'Atomizadores de perfume', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2025-02-15', 999.00, 'Perfume Lacoste L.12.12 Blanc', 'CUIDADO_PERSONAL', 'Higiene'),
+    # Pedido 01/02 de $767.31 en dos cargos.
+    ('2025-02-01', 599.99, 'Recipientes de vidrio EasyWare', 'VIVIENDA', 'Artículos del hogar'),
+    ('2025-02-01', 167.32, 'Protector solar L\'Oréal UV Defender', 'CUIDADO_PERSONAL', 'Higiene'),
+    # Cetaphil pedido el 29/01/2025 que el banco cobró hasta el 18/02 (fuera de
+    # la ventana de 10 días): se registra con la fecha del cargo.
+    ('2025-02-18', 278.10, 'Cetaphil crema limpiadora (pedido 29/01)', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2025-01-16', 751.28, 'Resveratrol + Omega 3 B Life', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2025-01-13', 3990.00, 'Llantas Mirage 185/60R15 (4)', 'TRANSPORTE', 'Mantenimiento auto'),
 ]
 
 # (fecha del pedido, total, producto): devueltos con reembolso a la tarjeta.
