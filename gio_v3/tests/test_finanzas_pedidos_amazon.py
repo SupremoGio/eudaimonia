@@ -130,3 +130,16 @@ def test_plan_muestra_cercanos_libres(test_db):
         p = next(x for x in amz.plan(db) if x['producto'].startswith('Pants Nike'))
         assert p['cargo'] is None and [m['id'] for m in p['cercanos']] == [libre]
         assert 'cercanos' not in next(x for x in amz.plan(db) if x['producto'] == 'Maleta de mano rígida')
+
+
+def test_caja_devuelta_con_abono_tipo_pago(test_db):
+    with database.get_db() as db:
+        cargo = _ins(db, '2025-10-07', 'STRIPE AMAZON', 88.0)
+        abono = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                              VALUES ('2025-10-20', 'STRIPE AMAZON', -88.0, 'BBVA_TDC', 'PAGO', '', 'PAGO')""").lastrowid
+        echo = [_ins(db, '2025-10-22', 'AMAZON A MESES', m, pn=n, pt=3) for m, n in ((250.0, 1), (249.0, 3))]
+        db.commit()
+        amz.aplicar(db)
+        msi.marcar_compras(db)
+        assert _cat(db, cargo) == _cat(db, abono) == ('FINANZAS', 'Reembolsable')
+        assert all(_cat(db, i) == ('VIVIENDA', 'Artículos del hogar') for i in echo)

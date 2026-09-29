@@ -78,11 +78,22 @@ PEDIDOS = [
     # Bose QuietComfort $2,999 (20/07/2025) fue a 15 MSI: ver msi.CATEGORIA_MENSUALIDADES.
     ('2026-08-12', 279.63, 'Cetaphil crema limpiadora', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2026-09-03', 43.20, 'Desodorante Dove Men Care', 'CUIDADO_PERSONAL', 'Higiene'),
+    # Más para la PC (sep 2025): monitor, teclado, y soporte + carcasa de disco
+    # (pedido de $323.10 cobrado en dos cargos).
+    ('2025-09-13', 1949.00, 'Monitor Xiaomi A27i 27"', 'TECH/DIGITAL', 'Accesorios'),
+    ('2025-09-13', 509.00, 'Teclado Free Wolf M96', 'TECH/DIGITAL', 'Accesorios'),
+    ('2025-09-14', 134.10, 'Soporte laptop / carcasa de disco (1/2 del pedido de $323.10)', 'TECH/DIGITAL', 'Accesorios'),
+    ('2025-09-14', 189.00, 'Soporte laptop / carcasa de disco (2/2 del pedido de $323.10)', 'TECH/DIGITAL', 'Accesorios'),
+    # Echo Dot $749 (30/09/2025) fue a 3 MSI: ver msi.CATEGORIA_MENSUALIDADES.
+    # Pedido 07/10/2025 de $2,156.90 en cinco cargos; el de $88 fue la caja de
+    # herramientas devuelta (DEVUELTOS) y el de $1,299 el microondas.
+    ('2025-10-07', 1299.00, 'Microondas Xwave Mirage', 'VIVIENDA', 'Artículos del hogar'),
 ]
 
 # (fecha del pedido, total, producto): devueltos con reembolso a la tarjeta.
 DEVUELTOS = [
     ('2026-04-28', 970.00, 'Control Xbox Carbon Black'),
+    ('2025-10-07', 88.00, 'Caja de herramientas Pretul'),
 ]
 
 _AMAZON = "UPPER(descripcion) LIKE '%AMAZON%' AND ABS(ABS(monto) - ?) < 0.01"
