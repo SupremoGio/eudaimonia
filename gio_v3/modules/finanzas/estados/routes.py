@@ -22,6 +22,7 @@ from . import prestamos as _prest
 from . import expense_lotes as _lotes
 from . import correcciones_csv_2026_09_26 as _csv0926
 from . import correcciones_otros_2026_09_28 as _otros0928
+from . import pedidos_amazon as _amazon
 from . import msi as _msi
 from . import abonos as _abonos
 
@@ -1924,6 +1925,7 @@ def _reaplicar_reglas(db) -> int:
     _msi.marcar_compras(db)
     _csv0926.aplicar(db)
     _otros0928.aplicar(db)
+    _amazon.aplicar(db)
     _conciliar_renta_variable(db)
     _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
     return total_updated
@@ -2911,6 +2913,7 @@ def upload_file():
             _msi.marcar_compras(db)
             _csv0926.aplicar(db)
             _otros0928.aplicar(db)
+            _amazon.aplicar(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
 
             gbm_detected = _postproceso_inversiones(db)

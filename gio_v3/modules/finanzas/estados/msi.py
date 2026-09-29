@@ -66,6 +66,9 @@ CATEGORIA_MENSUALIDADES = (
     ('MEN S FACTORY', 462.0, 6, 'ROPA', 'Ropa'),                             # ropa (dic 2022)
     ('MERCADO PAGO 1', 234.0, 6, 'VIVIENDA', 'Artículos del hogar'),         # artículo casa (nov 2022)
     ('MERCADO PAGO 1', 156.0, 3, 'VIVIENDA', 'Artículos del hogar'),         # artículo casa (sep 2022)
+    # Pedidos de Amazon (ver pedidos_amazon.py):
+    ('AMAZON A MESES', 146.0, 15, 'CUIDADO_PERSONAL', 'Higiene'),            # Oral B iO 6 $2,181.77 (jul 2026)
+    ('AMAZON A MESES', 480.0, 15, 'TECH/DIGITAL', 'Accesorios'),             # Apple Watch S11 $7,186.75 (may 2026)
 )
 
 
