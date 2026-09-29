@@ -77,8 +77,8 @@ def test_desodorante_de_43_20_no_es_suscripcion(test_db):
 
 def test_devuelto_con_reembolso_sale_del_gasto(test_db):
     with database.get_db() as db:
-        cargo = _ins(db, '2026-04-29', 'AMAZON', 970.0)
-        abono = _ins(db, '2026-05-10', 'AMAZON', -970.0)
+        cargo = _ins(db, '2025-10-07', 'STRIPE AMAZON', 88.0)
+        abono = _ins(db, '2025-10-20', 'STRIPE AMAZON', -88.0)
         db.commit()
         amz.aplicar(db)
         assert _cat(db, cargo) == ('FINANZAS', 'Reembolsable')
@@ -89,7 +89,7 @@ def test_devuelto_con_reembolso_sale_del_gasto(test_db):
 
 def test_devuelto_sin_reembolso_no_se_toca(test_db):
     with database.get_db() as db:
-        cargo = _ins(db, '2026-04-29', 'AMAZON', 970.0)
+        cargo = _ins(db, '2025-10-07', 'STRIPE AMAZON', 88.0)
         db.commit()
         amz.aplicar(db)
         assert _cat(db, cargo) == ('DIGITAL', 'Accesorios tech')
@@ -125,9 +125,9 @@ def test_bose_a_meses_y_pedido_partido_en_cargos(test_db):
 def test_plan_muestra_cercanos_libres(test_db):
     with database.get_db() as db:
         tomado = _ins(db, '2026-07-13', 'AMAZON', 999.0)
-        libre = _ins(db, '2026-04-05', 'STR AMAZON CIUDAD DE MEX', 470.0)
+        libre = _ins(db, '2026-07-25', 'AMAZON CIUDAD DE MEX', 470.0)
         db.commit()
-        p = next(x for x in amz.plan(db) if x['producto'].startswith('Pants Nike'))
+        p = next(x for x in amz.plan(db) if x['producto'].startswith('Bolsas de vacío'))
         assert p['cargo'] is None and [m['id'] for m in p['cercanos']] == [libre]
         assert 'cercanos' not in next(x for x in amz.plan(db) if x['producto'] == 'Maleta de mano rígida')
 
@@ -162,3 +162,13 @@ def test_sennheiser_no_toma_la_compra_de_560_de_2022(test_db):
         msi.marcar_compras(db)
         assert _cat(db, senn) == ('TECH/DIGITAL', 'Accesorios')
         assert _cat(db, otra) == ('DIGITAL', 'Accesorios tech')
+
+
+def test_pedidos_sivale_no_se_ligan(test_db):
+    """Sivale aún no está en la app: sus pedidos no tocan ningún cargo."""
+    with database.get_db() as db:
+        nike = _ins(db, '2026-03-30', 'AMAZON', 488.08)
+        db.commit()
+        amz.aplicar(db)
+        assert _cat(db, nike) == ('DIGITAL', 'Accesorios tech')
+        assert not any(p['producto'] == 'Pants Nike Club' for p in amz.plan(db))

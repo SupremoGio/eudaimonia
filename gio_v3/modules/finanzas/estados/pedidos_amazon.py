@@ -44,22 +44,11 @@ PEDIDOS = [
     # Apple Watch Series 11 $7,186.75 (28/05/2026) fue a 15 MSI: ver msi.MENSUALIDADES_AMAZON.
     # Molinillo (regalo a Cornelius) y sartén del 07/05/2026 se pagaron con saldo
     # de Amazon: total $0, no hay cargo en ninguna tarjeta.
-    ('2026-05-01', 111.18, 'Protector solar L\'Oréal + CeraVe PM', 'CUIDADO_PERSONAL', 'Higiene'),
-    ('2026-03-29', 488.08, 'Pants Nike Club', 'ROPA', 'Ropa deportiva'),
-    ('2026-03-28', 936.80, 'Chaqueta Nike Park 20 Rain', 'ROPA', 'Ropa deportiva'),
-    # Cartuchos Pilot, shampoo Ducray y espejo LED en un solo pedido: va a lo
-    # que más pesa (el espejo).
-    ('2026-03-28', 1057.00, 'Espejo LED + cartuchos Pilot + shampoo Ducray', 'VIVIENDA', 'Artículos del hogar'),
-    # Audífonos Soundcore $999 devueltos: el reembolso quedó como saldo de
-    # Amazon y con él salieron los pedidos en $0 (tenis y short Puma,
-    # calcetines Under Armour, limpiador de lavadora). El cargo es esa ropa.
-    ('2026-03-13', 999.00, 'Audífonos devueltos -> tenis/short Puma, calcetines UA', 'ROPA', 'Ropa deportiva'),
     ('2026-03-10', 260.10, 'Creatina monohidratada 450 g', 'CUIDADO_PERSONAL', 'Higiene'),
     # Cajón Nespresso (23/02) y Pato (18/02) salieron en $0: sin cargo.
     ('2026-01-25', 783.06, 'Sábanas Lacoste', 'VIVIENDA', 'Artículos del hogar'),
     # RAM Kingston x2 + power bank ($2,657) y cable HDMI ($114.89) del 24/01
     # fueron a 6 MSI: ver msi.MENSUALIDADES_AMAZON.
-    ('2026-01-24', 448.99, 'Mouse UGREEN', 'TECH/DIGITAL', 'Accesorios'),
     ('2026-01-10', 182.00, 'Protector solar L\'Oréal UV Defender', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2026-01-10', 149.99, 'Pluma estilográfica Amazon Basics', 'APRENDIZAJE', 'Papelería'),
     ('2026-01-03', 520.00, 'Aspiradora inalámbrica para auto', 'TRANSPORTE', 'Mantenimiento auto'),
@@ -146,8 +135,27 @@ PEDIDOS = [
 
 # (fecha del pedido, total, producto): devueltos con reembolso a la tarjeta.
 DEVUELTOS = [
-    ('2026-04-28', 970.00, 'Control Xbox Carbon Black'),
     ('2025-10-07', 88.00, 'Caja de herramientas Pretul'),
+]
+
+# Pedidos pagados con Sivale (2026-09-29): esa cuenta aún no está en la app y
+# maneja otra lógica, así que por ahora no cuentan como gasto ni se ligan a
+# nada (el usuario: «por ahora no los cuentes como gastos»). Guardados aquí
+# para cuando se integre Sivale; ni aplicar() ni plan() los leen.
+SIVALE = [
+    ('2026-05-01', 111.18, 'Protector solar L\'Oréal + CeraVe PM', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2026-03-29', 488.08, 'Pants Nike Club', 'ROPA', 'Ropa deportiva'),
+    ('2026-03-28', 936.80, 'Chaqueta Nike Park 20 Rain', 'ROPA', 'Ropa deportiva'),
+    # Cartuchos Pilot, shampoo Ducray y espejo LED en un solo pedido: va a lo
+    # que más pesa (el espejo).
+    ('2026-03-28', 1057.00, 'Espejo LED + cartuchos Pilot + shampoo Ducray', 'VIVIENDA', 'Artículos del hogar'),
+    # Audífonos Soundcore $999 devueltos: el reembolso quedó como saldo de
+    # Amazon y con él salieron los pedidos en $0 (tenis y short Puma,
+    # calcetines Under Armour, limpiador de lavadora). El cargo es esa ropa.
+    ('2026-03-13', 999.00, 'Audífonos devueltos -> tenis/short Puma, calcetines UA', 'ROPA', 'Ropa deportiva'),
+    ('2026-01-24', 448.99, 'Mouse UGREEN', 'TECH/DIGITAL', 'Accesorios'),
+    # Devuelto (reembolso a Sivale):
+    ('2026-04-28', 970.00, 'Control Xbox Carbon Black'),
 ]
 
 _AMAZON = "UPPER(descripcion) LIKE '%AMAZON%' AND ABS(ABS(monto) - ?) < 0.01"
