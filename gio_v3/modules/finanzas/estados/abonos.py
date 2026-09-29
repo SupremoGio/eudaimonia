@@ -16,6 +16,9 @@ expenses y así»), en este orden:
     con facturas EXPENSE sin lote.
   - prestamo: un préstamo con pendiente cuyo nombre aparece en la
     descripción, o cuyo pendiente es exactamente el monto (después de prestar).
+  - gasto: te pagaron (todo, 1/2, 1/3 o 1/4 de) un gasto tuyo de hasta 60
+    días antes; o el concepto ya lo clasificaste antes; «RENTA» -> aportación
+    de renta; «VIA/BOLETO/HOTEL…» -> VIAJES. Ver _pista_gasto.
   - propia: la misma cantidad salió de otra de tus cuentas ±3 días como
     transferencia, pago o inversión (no un gasto normal): es dinero tuyo que
     se movió entre cuentas, no entró de fuera.
@@ -186,6 +189,7 @@ def _pistas(db, rows) -> None:
         abiertos = [p for p in prestamos.listar(db) if p['pendiente'] > 0 and not p['perdido_fecha']]
     except Exception:
         abiertos = []
+    aprendidos = _conceptos_aprendidos(db)
     for r in rows:
         r['pista'] = None
         monto, fecha = abs(r['monto'] or 0), (r['fecha'] or '')[:10]
@@ -216,25 +220,91 @@ def _pistas(db, rows) -> None:
         if par:
             r['pista'] = {'tipo': 'propia', 'texto': f"Entre tus cuentas: salió de {par['banco']} el "
                                                      f"{par['fecha'][:10]} ({par['descripcion']})"}
+            continue
+        r['pista'] = _pista_gasto(db, r, monto, d, aprendidos)
 
+
+
+
+# ── Conciliación inteligente: abonos que regresan un gasto ─────────────────
+# El usuario (2026-09-29): muchos depósitos son su parte de viajes, boletos,
+# hoteles o cosas que compró por alguien. Conciliarlos = ponerles la
+# categoría de ese gasto: un INGRESO en una categoría de gasto la resta
+# (como ABONOS_A_GASTO), así el viaje cuenta solo lo que le tocó pagar.
+GASTO_DIAS_ANTES, GASTO_DIAS_DESPUES = 60, 5
+_NO_GASTO = ('FINANZAS', 'PRESTAMOS', 'EXPENSE', 'INVERSION', 'NOMINA', 'OTROS', 'PAGO')
+_VIAJE_RE = re.compile(r'\b(VIA|VIAJE|VIAJ|VACA|VACAS|BOLETO|BOLET|BOLETOS|HOTEL|HOSPEDAJE|VUELO|AVION|AIRBNB|CASA PLAYA)\b')
+_RENTA_RE = re.compile(r'\bRENTA\b')
+# Conceptos que no dicen nada: no se aprende de ellos.
+_GENERICOS = {'TRANSF A GIO', 'TRANSF A', 'TRANSFERENCI', 'TRANSFERENCIA', 'PAGO', 'GIO', 'GIOVANY', 'P', 'XX',
+              'TRANSF A UND', 'NAFIN', 'HSBC', 'STP', 'BANORTE', 'SANTANDER', 'BANAMEX'}
+PARTES = (1, 2, 3, 4)   # te pagaron todo, la mitad, un tercio o un cuarto del gasto
+
+
+def _conceptos_aprendidos(db) -> dict:
+    """concepto -> (categoria, subcategoria) de abonos que el usuario ya puso en
+    una categoría de gasto (el mismo «BNET BOLETO» de otra vez)."""
+    ph = ','.join('?' * len(_NO_GASTO))
+    cuenta = {}
+    for r in db.execute(f"""SELECT descripcion, categoria, subcategoria FROM est_movimientos
+                            WHERE tipo='INGRESO' AND categoria NOT IN ({ph})""", _NO_GASTO).fetchall():
+        c = _concepto(r['descripcion'])
+        if c and c not in _GENERICOS and len(c) >= 3:
+            k = (r['categoria'], r['subcategoria'] or '')
+            cuenta.setdefault(c, {}).setdefault(k, 0)
+            cuenta[c][k] += 1
+    return {c: max(ks, key=ks.get) for c, ks in cuenta.items()}
+
+
+def _pista_gasto(db, r, monto, d, aprendidos):
+    concepto = _concepto(r['descripcion'])
+    if concepto in aprendidos:
+        cat, sub = aprendidos[concepto]
+        return {'tipo': 'gasto', 'categoria': cat, 'subcategoria': sub,
+                'texto': f"Como otros «{concepto}» que ya clasificaste: {cat}/{sub}"}
+    if _RENTA_RE.search(concepto):
+        return {'tipo': 'gasto', 'categoria': 'VIVIENDA', 'subcategoria': 'Aportación renta',
+                'texto': "Parte de la renta que te depositaron (concepto «RENTA»)"}
+    viaje = bool(_VIAJE_RE.search(concepto))
+    ph = ','.join('?' * len(_NO_GASTO))
+    cands = db.execute(f"""
+        SELECT fecha, descripcion, ABS(monto) AS monto, categoria, subcategoria FROM est_movimientos
+        WHERE tipo='GASTO' AND categoria NOT IN ({ph}) AND COALESCE(subcategoria,'') != 'Compra a meses'
+          AND substr(fecha,1,10) BETWEEN ? AND ? {"AND categoria='VIAJES'" if viaje else ""}
+        ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?))
+    """, (*_NO_GASTO, (d - timedelta(days=GASTO_DIAS_ANTES)).isoformat(),
+          (d + timedelta(days=GASTO_DIAS_DESPUES)).isoformat(), d.isoformat())).fetchall()
+    for partes in PARTES:
+        g = next((g for g in cands if abs(g['monto'] - monto * partes) <= max(1.0, 0.01 * monto * partes)), None)
+        if g:
+            parte = 'todo' if partes == 1 else f"1/{partes}"
+            return {'tipo': 'gasto', 'categoria': g['categoria'], 'subcategoria': g['subcategoria'] or '',
+                    'texto': f"Te pagaron {parte} de «{g['descripcion']}» ${g['monto']:,.2f} del "
+                             f"{g['fecha'][:10]} → {g['categoria']}/{g['subcategoria'] or ''}"}
+    if viaje:
+        return {'tipo': 'gasto', 'categoria': 'VIAJES', 'subcategoria': 'Otros',
+                'texto': f"Tu parte de un viaje o boleto (concepto «{concepto}») → VIAJES/Otros"}
+    return None
 
 
 CONFIANZAS_EXPENSE = ('alta', 'media')   # «aproximada» no cuadra exacto: se revisa a mano
 
 
-def conciliar_pistas(db) -> dict:
+def conciliar_pistas(db, solo_seguras: bool = False) -> dict:
     """Aplica las pistas (el usuario, 2026-09-29: «manda esas sugerencias,
     concílialas»):
       - expense (confianza alta/media): crea el lote con sus facturas y
         depósito(s), como «Crear lote» en la pestaña Expense.
       - prestamo: liga la devolución, sin pasar del pendiente del préstamo.
       - propia: FINANZAS/«Entre cuentas propias».
+      - gasto: la categoría del gasto que te pagaron (resta a ese gasto).
+        solo_seguras=True (la migración de arranque) no aplica estas.
     Lo que no se aplica (Expense aproximada, devolución mayor al pendiente)
     se queda en la lista con su pista. Devuelve los conteos."""
     from datetime import datetime
     from . import expense_lotes, prestamos
     ahora = datetime.now().isoformat(timespec='seconds')
-    out = {'expense_lotes': 0, 'expense_depositos': 0, 'prestamos': 0, 'propias': 0, 'sin_aplicar': 0}
+    out = {'expense_lotes': 0, 'expense_depositos': 0, 'prestamos': 0, 'propias': 0, 'gastos': 0, 'sin_aplicar': 0}
     rows = sorted(sin_conciliar(db)['movimientos'], key=lambda r: (r['fecha'] or '', r['id']))
     pendiente = {p['id']: p['pendiente'] for p in prestamos.listar(db)}
     hechos = set()
@@ -276,6 +346,11 @@ def conciliar_pistas(db) -> dict:
                        (pid, r['id'], ahora))
             pendiente[pid] = round(pendiente[pid] - monto, 2)
             out['prestamos'] += 1
+        elif pista['tipo'] == 'gasto':
+            if not solo_seguras:
+                db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?",
+                           (pista['categoria'], pista['subcategoria'], r['id']))
+                out['gastos'] += 1
         elif pista['tipo'] == 'propia':
             db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id=?", (SUB_PROPIA, r['id']))
             out['propias'] += 1

@@ -14,7 +14,7 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const grupoDe = (m) => (m.categoria !== 'FINANZAS' ? m.categoria : (m.subcategoria || 'Sin subcategoría'));
 const nombreGrupo = (g) => (['PRESTAMOS', 'EXPENSE'].includes(g) ? catMeta(g).name : g);
 // Pista del servidor (abonos.py): qué es probablemente cada abono.
-const PISTAS = { prestamo: 'Préstamo', expense: 'Expense', propia: 'Entre tus cuentas', ninguna: 'Sin pista' };
+const PISTAS = { prestamo: 'Préstamo', expense: 'Expense', propia: 'Entre tus cuentas', gasto: 'Te pagaron un gasto', ninguna: 'Sin pista' };
 const pistaDe = (m) => m.pista?.tipo || 'ninguna';
 
 // Filtros y orden se recuerdan en este navegador: editar un movimiento,
@@ -72,12 +72,12 @@ export default function SinConciliar() {
   const [conciliando, setConciliando] = useState(false);
   const conciliar = async () => {
     if (!await confirmDialog(
-      `¿Conciliar ${plural(conPista, 'abono con pista', 'abonos con pista')}? Se crean los lotes de Expense (confianza alta o media), se ligan las devoluciones de préstamos y se marcan los movimientos entre tus cuentas.`,
+      `¿Conciliar ${plural(conPista, 'abono con pista', 'abonos con pista')}? Se crean los lotes de Expense (confianza alta o media), se ligan las devoluciones de préstamos, se marcan los movimientos entre tus cuentas y los que te pagaron un gasto (tu parte de viajes, cenas, renta…) pasan a la categoría de ese gasto y lo restan.`,
       { confirmLabel: 'Conciliar' })) return;
     setConciliando(true);
     try {
       const r = await api.post('/abonos/conciliar-pistas');
-      toast(`Conciliados: ${r.expense_depositos} de Expense, ${r.prestamos} de préstamos, ${r.propias} entre cuentas`
+      toast(`Conciliados: ${r.expense_depositos} de Expense, ${r.prestamos} de préstamos, ${r.propias} entre cuentas, ${r.gastos} de gastos`
         + (r.sin_aplicar ? ` · ${r.sin_aplicar} para revisar a mano` : ''), 'ok');
       app.refresh();
     } catch (e) { toast(e.message || 'No se pudo conciliar', 'err'); }

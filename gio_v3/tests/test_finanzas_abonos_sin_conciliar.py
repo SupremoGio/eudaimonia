@@ -79,8 +79,8 @@ def test_pistas(client):
     pista = {m['id']: (m['pista'] or {}).get('tipo') for m in d['movimientos']}
     assert pista[por_nombre] == 'prestamo' and pista[por_monto] == 'prestamo'
     assert pista[propia] == 'propia'
-    assert pista[gasto_igual] is None                                   # un gasto normal no es transferencia
-    assert {g['tipo'] for g in d['por_pista']} == {'prestamo', 'propia', 'ninguna'}
+    assert pista[gasto_igual] == 'gasto'          # no es transferencia propia: te pagaron la cena
+    assert {g['tipo'] for g in d['por_pista']} == {'prestamo', 'propia', 'gasto'}
     assert 'Pablo Ruiz' in client.get(URL + '.csv').get_data(as_text=True)
 
 
@@ -151,3 +151,29 @@ def test_csv_incluye_conciliados_y_patrones(client):
     assert 'Devolución de préstamo: Pops' in csv and 'SIN CONCILIAR' in csv
     assert '$5,150.00 ×3 (2023-03-16 a 2023-05-17, cada mes)' in csv and '«RENTA» ×3' in csv
     assert all(m['patron'] for m in client.get(URL).get_json()['movimientos'])
+
+
+def test_pistas_inteligentes_de_gasto(client):
+    hotel = _mov_banco('2024-07-01', 'HOTEL XCARET', 4000, 'VIAJES', 'BBVA_TDC', 'Hospedaje', 'GASTO')
+    _mov_banco('2024-06-20', 'ZARA', 1000, 'ROPA', 'BBVA_TDC', 'Ropa', 'GASTO')
+    boleto = _mov('2024-07-08', 'PAGO CUENTA DE TERCERO BNET BOLETO', 1000, 'FINANZAS', 'Transferencia')  # 1/4 del hotel
+    renta = _mov('2023-03-16', 'PAGO CUENTA DE TERCERO BNET RENTA', 5150, 'FINANZAS', 'Transferencia')
+    _mov_banco('2024-05-01', 'SUSHI ROLL', 400, 'COMIDA_FUERA', 'BBVA_TDC', 'Restaurante', 'GASTO')
+    sushi = _mov('2024-05-03', 'PAGO CUENTA DE TERCERO BNET SUSHITO', 200, 'FINANZAS', 'Transferencia')  # la mitad
+    _mov('2023-01-10', 'PAGO CUENTA DE TERCERO BNET MOCHILA', 100, 'ROPA', 'Ropa')                   # ya clasificado
+    mochila = _mov('2024-09-10', 'PAGO CUENTA DE TERCERO BNET MOCHILA', 150, 'FINANZAS', 'Transferencia')
+    nada = _mov('2024-10-10', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIO', 3333, 'FINANZAS', 'Transferencia')
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert (p[boleto]['categoria'], p[boleto]['subcategoria']) == ('VIAJES', 'Hospedaje') and '1/4' in p[boleto]['texto']
+    assert (p[renta]['categoria'], p[renta]['subcategoria']) == ('VIVIENDA', 'Aportación renta')
+    assert p[sushi]['categoria'] == 'COMIDA_FUERA' and '1/2' in p[sushi]['texto']
+    assert p[mochila]['categoria'] == 'ROPA'
+    assert p[nada] is None
+    # la migración (solo seguras) no las toca; el botón sí
+    with database.get_db() as db:
+        from modules.finanzas.estados.abonos import conciliar_pistas
+        assert conciliar_pistas(db, solo_seguras=True)['gastos'] == 0
+    r = client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()
+    assert r['gastos'] == 4
+    ids = [m['id'] for m in client.get(URL).get_json()['movimientos']]
+    assert ids == [nada]

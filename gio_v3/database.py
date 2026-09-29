@@ -5959,7 +5959,7 @@ def init_db():
         ).fetchone():
             try:
                 from modules.finanzas.estados.abonos import conciliar_pistas as _conc_0929
-                _res = _conc_0929(db)
+                _res = _conc_0929(db, solo_seguras=True)
                 db.execute(
                     "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
                     ("finanzas_conciliar_pistas_2026_09_29", str(_res))
