@@ -75,6 +75,7 @@ CATEGORIA_MENSUALIDADES = (
     ('AMAZON A MESES', 14.89, 6, 'TECH/DIGITAL', 'Accesorios'),              # su última mensualidad
     ('AMAZON MX A MESES', 200.0, 15, 'TECH/DIGITAL', 'Accesorios'),          # Bose QuietComfort $2,999 (jul 2025)
     ('AMAZON A MESES', 250.0, 3, 'VIVIENDA', 'Artículos del hogar'),        # Echo Dot $749 (sep 2025)
+    ('AMAZON MX A MESES', 290.0, 6, 'VIVIENDA', 'Artículos del hogar'),     # lámpara + Roku + zapatero $1,737.99 (abr 2024)
 )
 
 

@@ -120,12 +120,26 @@ PEDIDOS = [
     ('2025-02-18', 278.10, 'Cetaphil crema limpiadora (pedido 29/01)', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2025-01-16', 751.28, 'Resveratrol + Omega 3 B Life', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2025-01-13', 3990.00, 'Llantas Mirage 185/60R15 (4)', 'TRANSPORTE', 'Mantenimiento auto'),
+    # 2024 y 2023 (BBVA Oro)
+    ('2024-05-24', 349.30, 'Creatina monohidratada 450 g', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2024-04-12', 99.00, 'Atomizador de perfume', 'CUIDADO_PERSONAL', 'Higiene'),
+    # Lámpara + Roku + banco zapatero $1,737.99 (06/04/2024) fue a 6 MSI: ver
+    # msi.CATEGORIA_MENSUALIDADES. La pintura Angelus de $228 del mismo día se
+    # cargó a meses y se reversó (-$228 el 10/04): no hay gasto.
+    ('2024-01-04', 357.00, 'Creatina Valara 450 g', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2023-12-04', 599.15, 'Agenda Clever Fox Weekly 2024-2025', 'APRENDIZAJE', 'Papelería'),
+    ('2023-11-27', 399.00, 'Proteína Evolution WP60', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2023-10-17', 557.40, 'Cortinas opacas Amazon Basics', 'VIVIENDA', 'Artículos del hogar'),
+    ('2023-10-13', 338.00, 'Soporte de TV para pared', 'VIVIENDA', 'Artículos del hogar'),
+    ('2023-07-30', 284.99, 'Collar Clepsidra', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2023-07-30', 1577.24, 'Tenis Lacoste Hydez', 'ROPA', 'Calzado'),
 ]
 
 # (fecha del pedido, total, producto): devueltos con reembolso a la tarjeta.
 DEVUELTOS = [
     ('2026-04-28', 970.00, 'Control Xbox Carbon Black'),
     ('2025-10-07', 88.00, 'Caja de herramientas Pretul'),
+    ('2024-05-15', 363.00, 'Creatina Birdman 450 g'),
 ]
 
 _AMAZON = "UPPER(descripcion) LIKE '%AMAZON%' AND ABS(ABS(monto) - ?) < 0.01"

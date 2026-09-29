@@ -143,3 +143,12 @@ def test_caja_devuelta_con_abono_tipo_pago(test_db):
         msi.marcar_compras(db)
         assert _cat(db, cargo) == _cat(db, abono) == ('FINANZAS', 'Reembolsable')
         assert all(_cat(db, i) == ('VIVIENDA', 'Artículos del hogar') for i in echo)
+
+
+def test_mensualidades_lampara_roku_zapatero(test_db):
+    with database.get_db() as db:
+        ids = [_ins(db, f, 'AMAZON MX A MESES M', m, 'OTROS', '', pn=n, pt=6) for f, m, n in
+               (('2024-04-22', 290.0, 1), ('2024-09-22', 287.99, 6))]
+        db.commit()
+        msi.marcar_compras(db)
+        assert all(_cat(db, i) == ('VIVIENDA', 'Artículos del hogar') for i in ids)
