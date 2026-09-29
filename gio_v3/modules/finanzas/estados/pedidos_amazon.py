@@ -88,6 +88,17 @@ PEDIDOS = [
     # Pedido 07/10/2025 de $2,156.90 en cinco cargos; el de $88 fue la caja de
     # herramientas devuelta (DEVUELTOS) y el de $1,299 el microondas.
     ('2025-10-07', 1299.00, 'Microondas Xwave Mirage', 'VIVIENDA', 'Artículos del hogar'),
+    ('2025-10-07', 355.00, 'Creatina monohidratada 450 g', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2025-10-07', 136.00, 'Detergente Persil 4.65 L', 'VIVIENDA', 'Artículos del hogar'),
+    # Un solo cargo por Suavitel ($101) + protector solar ($143) + desodorante
+    # ($50), menos la promoción: va a lo que más pesa (cuidado personal).
+    ('2025-10-07', 278.90, 'Protector solar + desodorante + Suavitel', 'CUIDADO_PERSONAL', 'Higiene'),
+    # Pedido 30/11/2025 de $1,422.17: un cargo por producto.
+    ('2025-11-30', 389.27, 'Amortiguadores de cajuela Ibiza', 'TRANSPORTE', 'Mantenimiento auto'),
+    ('2025-11-30', 259.00, 'Funda para volante', 'TRANSPORTE', 'Mantenimiento auto'),
+    ('2025-11-30', 332.15, 'Contenedores herméticos Vtopmart', 'VIVIENDA', 'Artículos del hogar'),
+    ('2025-11-30', 312.75, 'Lentes de sol Hawkers', 'CUIDADO_PERSONAL', 'Higiene'),
+    ('2025-11-30', 129.00, 'Cepillo de silicona para inodoro', 'VIVIENDA', 'Artículos del hogar'),
     # 2025 (BBVA crédito)
     ('2025-05-21', 459.00, 'Compresa caliente eléctrica', 'CUIDADO_PERSONAL', 'Higiene'),
     ('2025-04-04', 668.33, 'Camiseta Lacoste cuello V', 'ROPA', 'Ropa'),
