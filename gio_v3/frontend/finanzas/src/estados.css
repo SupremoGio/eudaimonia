@@ -361,3 +361,4 @@ button.fz-note{width:100%;text-align:left;font:inherit;color:inherit;cursor:poin
 .fz-msi-list{display:flex;flex-direction:column;gap:var(--sp-3)}
 .fz-msi-row{display:flex;flex-direction:column;gap:var(--sp-1);padding:var(--sp-3);border:1px solid var(--border-subtle);border-radius:var(--r-md)}
 .fz-msi-name{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fz-conc-seg{align-self:flex-start}

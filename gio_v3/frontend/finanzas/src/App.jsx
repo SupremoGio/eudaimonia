@@ -24,15 +24,28 @@ const TABS = [
   { id: 'presupuestos', label: 'Presupuestos' },
   { id: 'reglas', label: 'Reglas' },
   { id: 'reportes', label: 'Reportes' },
-  { id: 'porcobrar', label: 'Por cobrar', desk: true }, // solo PC (se oculta < 768)
-  { id: 'expense', label: 'Expense', desk: true }, // conciliación por lotes, solo PC
-  { id: 'sinconciliar', label: 'Sin conciliar', desk: true }, // abonos sueltos, solo PC
+  // Por cobrar, Expense y Sin conciliar (solo PC) viven juntas en «Conciliación»
+  // con un selector propio: amontonadas en la barra hacían ruido (el usuario,
+  // 2026-09-30). Sus hashes (#porcobrar, #expense, #sinconciliar) siguen
+  // funcionando como enlaces directos.
+  { id: 'conciliacion', label: 'Conciliación', desk: true },
 ];
+const CONCILIACION = [
+  { id: 'sinconciliar', label: 'Sin conciliar' },
+  { id: 'porcobrar', label: 'Por cobrar' },
+  { id: 'expense', label: 'Expense' },
+];
+const esConc = (id) => CONCILIACION.some((t) => t.id === id);
+const SUB_KEY = 'fz-conc-sub';
+const ultimaSub = () => {
+  try { const v = localStorage.getItem(SUB_KEY); return esConc(v) ? v : 'sinconciliar'; } catch { return 'sinconciliar'; }
+};
 const VIAJES_URL = '/finanzas/estados/viajes/';
 
 const tabFromHash = () => {
   const h = (window.location.hash || '').replace('#', '');
-  return TABS.some((t) => t.id === h) ? h : 'resumen';
+  if (h === 'conciliacion') return ultimaSub();
+  return TABS.some((t) => t.id === h) || esConc(h) ? h : 'resumen';
 };
 
 export default function App() {
@@ -58,6 +71,8 @@ export default function App() {
   }, [refreshKey]);
 
   const selectTab = useCallback((id, filter) => {
+    if (id === 'conciliacion') id = ultimaSub();
+    if (esConc(id)) { try { localStorage.setItem(SUB_KEY, id); } catch { /* sin almacenamiento */ } }
     setTxFilter(filter || null);
     setTab(id);
     try { window.history.replaceState(null, '', `#${id}`); } catch { /* noop */ }
@@ -102,6 +117,19 @@ export default function App() {
     case 'sinconciliar': view = <SinConciliar />; break;
     default: view = <Resumen />;
   }
+  const tabActivo = esConc(tab) ? 'conciliacion' : tab;
+  if (esConc(tab)) {
+    view = (
+      <div className="fz-vstack-lg">
+        <div className="eu-seg fz-conc-seg" role="tablist" aria-label="Conciliación">
+          {CONCILIACION.map((t) => (
+            <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => selectTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+        {view}
+      </div>
+    );
+  }
 
   return (
     <AppCtx.Provider value={ctx}>
@@ -130,7 +158,7 @@ export default function App() {
           {/* El enlace a Gastos de viaje (otra página) va fuera del tablist. */}
           <div className="fz-tablist" role="tablist" aria-label="Secciones de estados de cuenta">
           {TABS.map((t) => (
-            <button key={t.id} type="button" role="tab" id={`fz-tab-${t.id}`} aria-selected={tab === t.id}
+            <button key={t.id} type="button" role="tab" id={`fz-tab-${t.id}`} aria-selected={tabActivo === t.id}
               className={t.desk ? 'fz-tab-desk' : undefined}
               aria-controls="fz-panel" onClick={() => selectTab(t.id)}>
               {t.label}
@@ -143,7 +171,7 @@ export default function App() {
           <a className="fz-tab-link" href={VIAJES_URL}>Gastos de viaje<Icon name="arrow-up-right" size={14} /></a>
         </nav>
 
-        <section id="fz-panel" role="tabpanel" aria-labelledby={`fz-tab-${tab}`} className="fz-panel">
+        <section id="fz-panel" role="tabpanel" aria-labelledby={`fz-tab-${tabActivo}`} className="fz-panel">
           {view}
         </section>
       </div>
