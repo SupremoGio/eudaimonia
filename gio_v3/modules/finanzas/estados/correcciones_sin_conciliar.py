@@ -19,6 +19,16 @@ CORRECCIONES = [
     (5430, '2022-03-04', 450.0, 'BNET TELE', 'VIVIENDA', 'Artículos del hogar'),
     (5363, '2022-01-07', 300.0, 'BNET TELE', 'VIVIENDA', 'Artículos del hogar'),
     (5423, '2022-02-28', 1500.0, 'BNET SERGIO', 'VIVIENDA', 'Aportación renta'),   # Sergio pagaba su parte de la renta
+    # Tanda 2 (2026-09-30): «estos son dinero efectivo que metí a mi cuenta»:
+    # su propio dinero, ni ingreso ni gasto.
+    (2063, '2026-05-08', 2500.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
+    (1728, '2026-02-11', 7000.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
+    (1437, '2025-11-19', 6000.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
+    (2742, '2025-10-08', 4300.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
+    (2834, '2025-07-14', 4700.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
+    (2878, '2025-06-15', 5600.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
+    (4091, '2023-11-07', 4000.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
+    (5277, '2022-04-29', 1380.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
 ]
 
 
