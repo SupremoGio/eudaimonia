@@ -6013,7 +6013,7 @@ def init_db():
         #    lista: cada tanda nueva se aplica sola al arrancar.
         try:
             from modules.finanzas.estados import correcciones_sin_conciliar as _sc
-            _ver = f"finanzas_sin_conciliar_csv_{len(_sc.CORRECCIONES)}_{len(_sc.VIAJES)}"
+            _ver = f"finanzas_sin_conciliar_csv_{len(_sc.CORRECCIONES)}_{len(_sc.VIAJES)}_{len(_sc.PERSONAS)}"
             if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
                 _ok, _falta = _sc.aplicar(db)
                 db.execute(
@@ -6024,6 +6024,25 @@ def init_db():
                 print(f"[DB] {_ver}: {_ok} reclasificados, {_falta} no encontrados")
         except Exception as e:
             print(f"[DB] finanzas_sin_conciliar_csv migration warning: {e}")
+
+        # ── FINANZAS — «Sin conciliar», segunda pasada de pistas (2026-09-30):
+        #    devoluciones por gastos compartidos (mi_parte), préstamos por fecha y
+        #    monto para «TRANSF A GIOVANY A» y lo seguro de siempre. Va después de
+        #    las correcciones comentadas por el usuario (bloque anterior).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_conciliar_pistas_v2'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.abonos import conciliar_pistas as _conc_v2
+                _res = _conc_v2(db, solo_seguras=True)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_conciliar_pistas_v2", str(_res))
+                )
+                db.commit()
+                print(f"[DB] finanzas_conciliar_pistas_v2: {_res}")
+            except Exception as e:
+                print(f"[DB] finanzas_conciliar_pistas_v2 migration warning: {e}")
 
         # ── FINANZAS — pedidos de Amazon con su categoría (pedidos_amazon.py) y
         #    las mensualidades de los que fueron a MSI (msi.CATEGORIA_MENSUALIDADES).

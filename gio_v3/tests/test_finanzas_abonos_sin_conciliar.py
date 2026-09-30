@@ -240,3 +240,44 @@ def test_pista_viaje_ignora_transferencias_y_empresa(client):
     assert p[mitad]['categoria'] == 'COMIDA_FUERA' and '1/2' in p[mitad]['texto']
     assert p[codi] is None
     assert p[empresa]['tipo'] == 'empresa'
+
+
+def test_compartido_y_prestamo_por_fecha(client):
+    # Hotel de $3,000 donde tu parte fue $1,000: te regresan $1,000 por persona.
+    hotel = _mov_banco('2025-03-01', 'HOTEL PLAYA', 3000, 'VIAJES', 'BBVA_TDC', 'Hospedaje', 'GASTO')
+    with database.get_db() as db:
+        db.execute("UPDATE est_movimientos SET mi_parte=1000 WHERE id=?", (hotel,))
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Judi', 5000, '2025-06-01', 'x')""").lastrowid
+        db.commit()
+    uno = _mov('2025-03-05', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 1000, 'FINANZAS', 'Transferencia')
+    dos = _mov('2025-03-06', 'SPEI RECIBIDOHSBC', 1000, 'FINANZAS', 'Transferencia recibida')
+    tres = _mov('2025-03-07', 'SPEI RECIBIDOHSBC', 1000, 'FINANZAS', 'Transferencia recibida')     # ya no queda
+    judi = _mov('2025-08-01', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 3000, 'FINANZAS', 'Transferencia')
+    judi2 = _mov('2025-08-15', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 3000, 'FINANZAS', 'Transferencia')  # ya no cabe
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert p[uno]['tipo'] == p[dos]['tipo'] == 'compartido' and '1/2' in p[uno]['texto']
+    assert p[tres] is None
+    assert p[judi]['tipo'] == 'prestamo' and p[judi]['prestamo_id'] == pid and 'confírmalo' in p[judi]['texto']
+    assert p[judi2] is None
+    r = client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()
+    assert (r['compartidos'], r['prestamos']) == (2, 1)
+    ids = [m['id'] for m in client.get(URL).get_json()['movimientos']]
+    assert uno not in ids and judi not in ids and tres in ids
+
+
+def test_devolucion_de_persona_sin_prestamo_queda_compartido(client):
+    from modules.finanzas.estados import correcciones_sin_conciliar as corr
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES (3811, '2023-05-12', 'PAGO CUENTA DE TERCERO BNET GRACIAS BEBO', 4250, 'BBVA_DEB',
+                              'FINANZAS', 'Transferencia', 'INGRESO')""")
+        db.commit()
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=3811").fetchone()) \
+            == ('FINANZAS', 'Reembolso compartido')
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Judi', 7000, '2023-06-16', 'x')""").lastrowid
+        db.commit()
+        corr.aplicar(db)
+        assert db.execute("SELECT prestamo_id FROM est_prestamo_devoluciones WHERE movimiento_id=3811").fetchone()[0] == pid

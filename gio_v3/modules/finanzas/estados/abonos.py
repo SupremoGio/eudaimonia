@@ -43,14 +43,21 @@ def sin_conciliar(db, anio: str | None = None) -> dict:
     if anio:
         filtro_anio = "AND substr(fecha, 1, 4) = ?"
         params.append(str(anio))
+    try:   # parejas que se cancelan (routes.SE_CANCELAN): ya están conciliadas entre sí
+        from .routes import SE_CANCELAN
+    except Exception:
+        SE_CANCELAN = ()
+    cancelan = lambda r: any((r['fecha'] or '')[:10] == f and abs(abs(r['monto'] or 0) - m) < 0.005
+                             and t in (r['descripcion'] or '').upper() for f, m, t in SE_CANCELAN)
     rows = [dict(r) for r in db.execute(f"""
         SELECT * FROM est_movimientos
         WHERE tipo = 'INGRESO' AND categoria IN ({ph}) {filtro_anio}
-          AND COALESCE(subcategoria, '') != '{SUB_PROPIA}'
+          AND COALESCE(subcategoria, '') NOT IN ('{SUB_PROPIA}', '{SUB_COMPARTIDO}')
           AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
           AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)
         ORDER BY fecha DESC, id DESC
     """, params).fetchall()]
+    rows = [r for r in rows if not cancelan(r)]
     grupos = {}
     for r in rows:
         k = r['categoria'] if r['categoria'] != 'FINANZAS' else (r['subcategoria'] or 'Sin subcategoría')
@@ -176,6 +183,46 @@ def _palabras(nombre: str) -> set:
     return {w for w in re.findall(r'[A-ZÑ]{3,}', (nombre or '').upper()) if w not in _PALABRAS_COMUNES}
 
 
+PRESTAMO_DIAS = 365
+COMPARTIDO_DIAS = 60
+# Abono que te regresan lo que pagaste por otros en un gasto compartido (el
+# gasto ya solo cuenta tu parte, mi_parte): ni ingreso ni resta al gasto.
+SUB_COMPARTIDO = 'Reembolso compartido'
+
+
+def _por_cobrar_compartido(db) -> list[dict]:
+    """Gastos compartidos (con mi_parte): lo que pagaste por los demás."""
+    out = []
+    for g in db.execute("""
+        SELECT id, fecha, descripcion, ABS(monto) AS monto, ABS(mi_parte) AS mi_parte, viaje_id FROM est_movimientos
+        WHERE tipo='GASTO' AND mi_parte IS NOT NULL AND ABS(monto) - ABS(mi_parte) > 1
+    """).fetchall():
+        out.append({**dict(g), 'otros': round(g['monto'] - g['mi_parte'], 2),
+                    'resta': round(g['monto'] - g['mi_parte'], 2)})
+    return out
+
+
+def _compartido_de(compartidos, monto, fecha):
+    """El usuario (2026-09-30): en los gastos compartidos «mi parte es lo que yo
+    puse, lo demás yo lo pagué y luego me lo regresaron». El abono cuadra con lo
+    que pagaste por los demás en un gasto de hasta 60 días antes: todo, o la
+    parte de una persona (1/2, 1/3, 1/4 de lo de los demás)."""
+    d = date.fromisoformat(fecha)
+    cands = [g for g in compartidos if g['resta'] >= monto - 0.5
+             and (g['fecha'] or '')[:10] <= (d + timedelta(days=1)).isoformat()
+             and (g['fecha'] or '')[:10] >= (d - timedelta(days=COMPARTIDO_DIAS)).isoformat()]
+    cands.sort(key=lambda g: abs((d - date.fromisoformat(g['fecha'][:10])).days))
+    for k in PARTES:
+        g = next((g for g in cands if abs(g['otros'] / k - monto) <= 0.5), None)
+        if g:
+            g['resta'] = round(g['resta'] - monto, 2)
+            parte = 'todo lo de los demás' if k == 1 else f"la parte de una persona (1/{k} de lo de los demás)"
+            return {'tipo': 'compartido', 'gasto_id': g['id'], 'viaje_id': g['viaje_id'],
+                    'texto': f"Te regresaron {parte} de «{g['descripcion']}» ${g['monto']:,.2f} del {g['fecha'][:10]} "
+                             f"(tu parte ${g['mi_parte']:,.2f})"}
+    return None
+
+
 def _pistas(db, rows) -> None:
     """Pone r['pista'] = {'tipo', 'texto'} o None en cada abono (ver docstring del módulo)."""
     try:
@@ -193,7 +240,11 @@ def _pistas(db, rows) -> None:
     except Exception:
         abiertos = []
     aprendidos = _conceptos_aprendidos(db)
-    for r in rows:
+    pend = {p['id']: p['pendiente'] for p in abiertos}
+    compartidos = _por_cobrar_compartido(db)
+    # Del más antiguo al más reciente: cada devolución baja el pendiente de su
+    # préstamo (o de su gasto compartido) antes de ver la siguiente.
+    for r in sorted(rows, key=lambda x: (x['fecha'] or '', x['id'])):
         r['pista'] = None
         monto, fecha = abs(r['monto'] or 0), (r['fecha'] or '')[:10]
         if r['id'] in exp:
@@ -202,12 +253,20 @@ def _pistas(db, rows) -> None:
                           'facturas': [f['id'] for f in sug['facturas']],
                           'depositos': [d['id'] for d in sug['depositos']], 'nombre': sug['nombre']}
             continue
+        if not fecha or 'RETIRO' in (r['descripcion'] or '').upper():
+            continue
+        c = _compartido_de(compartidos, monto, fecha)
+        if c:
+            r['pista'] = c
+            continue
         desc = _palabras(r['descripcion'])
-        p = next((p for p in abiertos if (p['fecha'] or '')[:10] <= fecha and _palabras(p['persona']) & desc), None) \
-            or next((p for p in abiertos if (p['fecha'] or '')[:10] <= fecha and abs(p['pendiente'] - monto) < 0.01), None)
+        antes = [p for p in abiertos if (p['fecha'] or '')[:10] <= fecha]
+        p = next((p for p in antes if _palabras(p['persona']) & desc), None) \
+            or next((p for p in antes if abs(pend[p['id']] - monto) < 0.01), None)
         if p:
+            pend[p['id']] = round(pend[p['id']] - monto, 2)
             r['pista'] = {'tipo': 'prestamo', 'prestamo_id': p['id'],
-                          'texto': f"Préstamo a {p['persona']} del {p['fecha'][:10]} (pendiente ${p['pendiente']:,.2f})"}
+                          'texto': f"Préstamo a {p['persona']} del {p['fecha'][:10]} (pendiente ${pend[p['id']] + monto:,.2f})"}
             continue
         if not fecha:
             continue
@@ -225,6 +284,18 @@ def _pistas(db, rows) -> None:
                                                      f"{par['fecha'][:10]} ({par['descripcion']})"}
             continue
         r['pista'] = _pista_gasto(db, r, monto, d, aprendidos)
+        if r['pista'] is None and _concepto(r['descripcion']).startswith('TRANSF'):
+            # «TRANSF A GIOVANY A» no dice quién (el usuario: «me regresaron dinero
+            # de algo, acomódalo a los préstamos»): el préstamo abierto más reciente
+            # de hasta un año antes al que todavía le cabe el monto.
+            lim = (d - timedelta(days=PRESTAMO_DIAS)).isoformat()
+            p = max((p for p in abiertos if lim <= (p['fecha'] or '')[:10] <= fecha and pend[p['id']] >= monto - 0.01),
+                    key=lambda p: p['fecha'], default=None)
+            if p:
+                pend[p['id']] = round(pend[p['id']] - monto, 2)
+                r['pista'] = {'tipo': 'prestamo', 'prestamo_id': p['id'],
+                              'texto': f"Préstamo a {p['persona']} del {p['fecha'][:10]} (pendiente "
+                                       f"${pend[p['id']] + monto:,.2f}) · por fecha y monto: confírmalo"}
 
 
 
@@ -241,7 +312,7 @@ _VIAJE_RE = re.compile(r'\b(VIA|VIAJE|VIAJ|VACA|VACAS|BOLETO|BOLET|BOLETOS|HOTEL
 _RENTA_RE = re.compile(r'\bRENTA\b')
 # Conceptos que no dicen nada: no se aprende de ellos.
 # Depósitos de la empresa (Expense / viáticos): nunca son «te pagaron un gasto».
-_EMPRESA_RE = re.compile(r'FIBRA HOTELERA|SITH2|SITH\d|FIDEICOMISO|BMRCASH|EXPENSE|SGLDAC')
+_EMPRESA_RE = re.compile(r'SITH2|SITH\d|FIDEICOMISO|BMRCASH|EXPENSE|SGLDAC')
 _GENERICOS = {'CODI VALIDA', 'TRANSF A GIO', 'TRANSF A', 'TRANSFERENCI', 'TRANSFERENCIA', 'PAGO', 'GIO', 'GIOVANY', 'P', 'XX',
               'TRANSF A UND', 'NAFIN', 'HSBC', 'STP', 'BANORTE', 'SANTANDER', 'BANAMEX'}
 PARTES = (1, 2, 3, 4)   # te pagaron todo, la mitad, un tercio o un cuarto del gasto
@@ -296,7 +367,7 @@ def _pista_viaje(db, r, monto, d):
     gastos = db.execute(f"""
         SELECT fecha, descripcion, ABS(monto) AS monto, categoria, subcategoria FROM est_movimientos
         WHERE viaje_id = ? AND tipo = 'GASTO' AND categoria NOT IN ({ph})
-          AND COALESCE(subcategoria,'') != 'Compra a meses' AND substr(fecha,1,10) <= ?
+          AND COALESCE(subcategoria,'') != 'Compra a meses' AND mi_parte IS NULL AND substr(fecha,1,10) <= ?
         ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?))
     """, (v['id'], *_NO_GASTO, (d + timedelta(days=1)).isoformat(), d.isoformat())).fetchall()
     for partes in PARTES:
@@ -307,6 +378,14 @@ def _pista_viaje(db, r, monto, d):
                     'viaje_id': v['id'],
                     'texto': f"Viaje «{v['nombre']}»: te pagaron {parte} de «{g['descripcion']}» ${g['monto']:,.2f} "
                              f"→ {g['categoria']}/{g['subcategoria'] or ''}"}
+    otros = db.execute("""SELECT COALESCE(SUM(ABS(monto) - ABS(mi_parte)), 0) FROM est_movimientos
+                          WHERE viaje_id=? AND tipo='GASTO' AND mi_parte IS NOT NULL""", (v['id'],)).fetchone()[0] or 0
+    if otros > 1:
+        # En el viaje pagaste por otros (gastos con «mi parte»): lo más probable es
+        # que te estén regresando eso, que ya no cuenta como tu gasto.
+        return {'tipo': 'compartido', 'viaje_id': v['id'],
+                'texto': f"Llegó en las fechas del viaje «{v['nombre']}», donde pagaste ${otros:,.2f} por otros: "
+                         f"te regresaron parte de eso"}
     return {'tipo': 'gasto', 'categoria': 'VIAJES', 'subcategoria': 'Otros', 'viaje_id': v['id'],
             'texto': f"Llegó en las fechas del viaje «{v['nombre']}» ({v['fecha_inicio'][:10]} a "
                      f"{v['fecha_fin'][:10]}): tu parte de algo del viaje → VIAJES/Otros"}
@@ -337,7 +416,7 @@ def _pista_gasto(db, r, monto, d, aprendidos):
     # El gasto va antes del depósito (pagaste y luego te pagaron), hasta el día siguiente.
     cands = db.execute(f"""
         SELECT fecha, descripcion, ABS(monto) AS monto, categoria, subcategoria FROM est_movimientos
-        WHERE tipo='GASTO' AND categoria NOT IN ({ph}) AND COALESCE(subcategoria,'') NOT IN ('Compra a meses', 'Renta')
+        WHERE tipo='GASTO' AND categoria NOT IN ({ph}) AND COALESCE(subcategoria,'') NOT IN ('Compra a meses', 'Renta') AND mi_parte IS NULL
           AND substr(fecha,1,10) BETWEEN ? AND ? {"AND categoria='VIAJES'" if viaje else ""}
         ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?))
     """, (*_NO_GASTO, (d - timedelta(days=GASTO_DIAS_ANTES)).isoformat(),
@@ -374,7 +453,7 @@ def conciliar_pistas(db, solo_seguras: bool = False) -> dict:
     from datetime import datetime
     from . import expense_lotes, prestamos
     ahora = datetime.now().isoformat(timespec='seconds')
-    out = {'expense_lotes': 0, 'expense_depositos': 0, 'prestamos': 0, 'propias': 0, 'gastos': 0, 'sin_aplicar': 0}
+    out = {'expense_lotes': 0, 'expense_depositos': 0, 'prestamos': 0, 'propias': 0, 'gastos': 0, 'compartidos': 0, 'sin_aplicar': 0}
     rows = sorted(sin_conciliar(db)['movimientos'], key=lambda r: (r['fecha'] or '', r['id']))
     pendiente = {p['id']: p['pendiente'] for p in prestamos.listar(db)}
     hechos = set()
@@ -416,6 +495,10 @@ def conciliar_pistas(db, solo_seguras: bool = False) -> dict:
                        (pid, r['id'], ahora))
             pendiente[pid] = round(pendiente[pid] - monto, 2)
             out['prestamos'] += 1
+        elif pista['tipo'] == 'compartido':
+            db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=?, viaje_id=COALESCE(?, viaje_id) WHERE id=?",
+                       (SUB_COMPARTIDO, pista.get('viaje_id'), r['id']))
+            out['compartidos'] += 1
         elif pista['tipo'] == 'empresa':
             out['sin_aplicar'] += 1
         elif pista['tipo'] == 'gasto':

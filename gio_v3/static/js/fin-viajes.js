@@ -90,9 +90,10 @@
     r.dataset.tone = pres > 0 ? (rest >= 0 ? 'success' : 'danger') : '';
     $('gv-budget').dataset.tone = tone(pct, over);
     var bar = $('detail-bar'); bar.querySelector('i').style.width = pct.toFixed(1) + '%'; bar.setAttribute('aria-valuenow', Math.round(pct)); bar.hidden = !pres;
-    var neto = $('detail-neto'), tp = summary.te_pagaron || 0;
-    neto.hidden = !tp;
-    neto.innerHTML = tp ? 'Te pagaron <b class="num">$' + fmt(tp) + '</b> de tu parte · tu gasto neto <b class="num">$' + fmt(summary.neto) + '</b>' : '';
+    var neto = $('detail-neto'), tp = summary.te_pagaron || 0, po = summary.te_regresaron_por_otros || 0;
+    neto.hidden = !tp && !po;
+    neto.innerHTML = (tp ? 'Te pagaron <b class="num">$' + fmt(tp) + '</b> de tu parte · tu gasto neto <b class="num">$' + fmt(summary.neto) + '</b>' : '') +
+      (tp && po ? ' · ' : '') + (po ? 'Te regresaron <b class="num">$' + fmt(po) + '</b> de lo que pagaste por otros' : '');
     $('detail-pct-txt').textContent = pres > 0 ? pct.toFixed(0) + '% del presupuesto' + (over ? ' — excedido' : '') : 'Define un presupuesto al editar el viaje para ver el avance.';
 
     var bd = summary.breakdown || [], max = bd.length ? bd[0].total : 1;

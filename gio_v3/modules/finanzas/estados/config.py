@@ -420,7 +420,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
                            "Transferencia enviada", "Transferencia recibida",
                            "Retiro efectivo", "Depósito", "Fideicomiso",
                            "Reembolsable", "Pago servicios", "Compra a meses",
-                           "Entre cuentas propias"],
+                           "Entre cuentas propias", "Reembolso compartido"],
     "INVERSION":         ["Ahorro", "Inversión", "Crypto", "Fondo viaje", "Fondo emergencias"],
     "NOMINA":            ["Pago nominal", "Bono", "Aguinaldo", "PTU", "Fondo de ahorro"],
     "OCIO":              ["Eventos y congresos", "Cine", "Salidas", "Videojuegos"],

@@ -34,6 +34,25 @@ CORRECCIONES = [
     (3441, '2024-05-11', 3000.0, 'BNET VAC', 'VIAJES', 'Otros'),                       # «VAC»: vacaciones / vaca
 ]
 
+# Tanda 4 (2026-09-30, comentarios del usuario a la lista de pendientes):
+CORRECCIONES += [
+    (4754, '2022-11-23', 1000.0, 'MISHELLE', 'VIVIENDA', 'Aportación renta'),     # «Mishelle sí es roomie»
+    (5383, '2022-01-22', 350.0, 'BNET AURO', 'VIVIENDA', 'Artículos del hogar'),  # «me pagó la tele, fue mom»
+    (3792, '2023-06-21', 180.0, 'BNET CENA', 'COMIDA_FUERA', 'Restaurante'),      # «me regresó dinero de una cena que pagué yo»
+    # Validaciones del banco y un SPEI que regresó: no es dinero de nadie más.
+    (4717, '2022-10-24', 1.0, 'SPEI DEVUELTO', 'FINANZAS', 'Entre cuentas propias'),
+    (4655, '2022-09-11', 0.01, 'CODI VALIDA', 'FINANZAS', 'Entre cuentas propias'),
+    (4645, '2022-09-01', 0.01, 'CODI VALIDA', 'FINANZAS', 'Entre cuentas propias'),
+]
+
+# Devoluciones de una persona (id, fecha, monto, texto, persona): se ligan a su
+# préstamo con pendiente (el más cercano antes del abono, si no el más antiguo
+# con saldo); si no tiene, quedan como «Reembolso compartido» (te regresó algo
+# que pagaste por ella).
+PERSONAS = [
+    (3811, '2023-05-12', 4250.0, 'GRACIAS BEBO', 'Judi'),   # «Gracias bebo: me regresó dinero Judi»
+]
+
 # Abonos que además se ligan a un viaje (id, fecha, monto, texto, nombre del viaje):
 # llegaron en sus fechas, así que son tu parte de algo de ese viaje (VIAJES/Otros).
 VIAJES = [
@@ -64,6 +83,26 @@ def aplicar(db) -> tuple[int, int]:
         if (row['categoria'], row['subcategoria'] or '', row['viaje_id']) != ('VIAJES', 'Otros', v['id']):
             db.execute("UPDATE est_movimientos SET categoria='VIAJES', subcategoria='Otros', viaje_id=? WHERE id=?",
                        (v['id'], row['id']))
+            ok += 1
+    for mid, fecha, monto, texto, persona in PERSONAS:
+        row = _fila(db, mid, fecha, monto, texto)
+        if not row:
+            faltan += 1
+            continue
+        if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (row['id'],)).fetchone():
+            continue
+        from . import prestamos
+        abiertos = [p for p in prestamos.listar(db) if p['persona'].strip().lower() == persona.lower()
+                    and p['pendiente'] >= monto - 0.01 and not p['perdido_fecha']]
+        antes = [p for p in abiertos if (p['fecha'] or '')[:10] <= fecha]
+        p = max(antes, key=lambda p: p['fecha']) if antes else (min(abiertos, key=lambda p: p['fecha']) if abiertos else None)
+        if p:
+            db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (row['id'],))
+            db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,datetime('now'))",
+                       (p['id'], row['id']))
+            ok += 1
+        elif (row['categoria'], row['subcategoria'] or '') != ('FINANZAS', 'Reembolso compartido'):
+            db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolso compartido' WHERE id=?", (row['id'],))
             ok += 1
     for mid, fecha, monto, texto, cat, sub in CORRECCIONES:
         row = _fila(db, mid, fecha, monto, texto)

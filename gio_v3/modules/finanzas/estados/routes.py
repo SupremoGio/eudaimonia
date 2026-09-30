@@ -4110,13 +4110,18 @@ def trip_summary(trip_id):
         total_gastado = sum(r['total'] or 0 for r in breakdown)
         # Lo que te transfirieron por tu parte del viaje (abonos ligados al viaje,
         # ver abonos._pista_viaje): el gasto neto es lo que de verdad pusiste tú.
-        te_pagaron = db.execute(
-            "SELECT COALESCE(SUM(ABS(monto)), 0) FROM est_movimientos WHERE viaje_id=? AND tipo='INGRESO'",
-            (trip_id,)).fetchone()[0] or 0
+        # Los «Reembolso compartido» son lo que pagaste por otros (el gasto ya
+        # solo cuenta tu parte): no bajan tu neto otra vez, se muestran aparte.
+        te_pagaron, por_otros = db.execute(
+            """SELECT COALESCE(SUM(CASE WHEN COALESCE(subcategoria,'') != 'Reembolso compartido' THEN ABS(monto) END), 0),
+                      COALESCE(SUM(CASE WHEN subcategoria = 'Reembolso compartido' THEN ABS(monto) END), 0)
+               FROM est_movimientos WHERE viaje_id=? AND tipo='INGRESO'""", (trip_id,)).fetchone()
+        te_pagaron, por_otros = te_pagaron or 0, por_otros or 0
     return jsonify({
         'trip':          dict(trip),
         'total_gastado': round(total_gastado, 2),
         'te_pagaron':    round(te_pagaron, 2),
+        'te_regresaron_por_otros': round(por_otros, 2),
         'neto':          round(total_gastado - te_pagaron, 2),
         'breakdown': [
             {'concepto': r['concepto'], 'total': round(r['total'] or 0, 2), 'n': r['n']}
@@ -4134,6 +4139,7 @@ def trip_transactions(trip_id):
         # (pagos, transferencias, ingresos) llevan concepto NULL.
         rows = db.execute(f"""
             SELECT *, CASE WHEN {_GASTO_FILTER} THEN {_CONCEPTO_CASE}
+                           WHEN tipo='INGRESO' AND subcategoria='Reembolso compartido' THEN 'Te regresaron (por otros)'
                            WHEN tipo='INGRESO' THEN 'Te pagaron' END AS concepto
             FROM est_movimientos WHERE viaje_id=? ORDER BY fecha ASC, monto DESC
         """, (trip_id,)).fetchall()
