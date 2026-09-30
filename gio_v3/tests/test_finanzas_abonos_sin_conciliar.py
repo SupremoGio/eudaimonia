@@ -191,3 +191,26 @@ def test_pistas_de_gasto_no_se_pasan(client):
     retiro = _mov('2026-07-30', 'FIBRA HOTELERA SC RETIRO SIN TARJETA', 500, 'FINANZAS', 'Reembolsable')
     p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
     assert p[transf] is None and p[stp] is None and p[retiro] is None
+
+
+def test_pista_de_viaje_y_neto(client):
+    with database.get_db() as db:
+        vid = db.execute("""INSERT INTO viajes (nombre, destino, fecha_inicio, fecha_fin, estado, created_at)
+                            VALUES ('Oaxaca Oct 25', 'Oaxaca', '2025-10-10', '2025-10-14', 'completado', 'x')""").lastrowid
+        db.commit()
+    hotel = _mov_banco('2025-10-10', 'HOTEL CASA OAXACA', 3000, 'VIAJES', 'BBVA_TDC', 'Hospedaje', 'GASTO')
+    with database.get_db() as db:
+        db.execute("UPDATE est_movimientos SET viaje_id=? WHERE id=?", (vid, hotel))
+        db.commit()
+    mitad = _mov('2025-10-20', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 1500, 'FINANZAS', 'Transferencia')
+    otro = _mov('2025-10-25', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 777, 'FINANZAS', 'Transferencia')
+    lejos = _mov('2026-01-25', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 1500, 'FINANZAS', 'Transferencia')
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert p[mitad]['viaje_id'] == vid and '1/2' in p[mitad]['texto'] and p[mitad]['subcategoria'] == 'Hospedaje'
+    assert p[otro]['viaje_id'] == vid and (p[otro]['categoria'], p[otro]['subcategoria']) == ('VIAJES', 'Otros')
+    assert p[lejos] is None
+    client.post('/finanzas/estados/api/abonos/conciliar-pistas')
+    s = client.get(f'/finanzas/estados/api/trips/{vid}/summary').get_json()
+    assert (s['total_gastado'], s['te_pagaron'], s['neto']) == (3000, 2277, 723)
+    tx = client.get(f'/finanzas/estados/api/trips/{vid}/transactions').get_json()['data']
+    assert sorted(t['concepto'] for t in tx) == ['Hotel', 'Te pagaron', 'Te pagaron']

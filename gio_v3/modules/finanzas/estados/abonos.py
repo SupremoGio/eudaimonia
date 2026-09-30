@@ -16,7 +16,10 @@ expenses y así»), en este orden:
     con facturas EXPENSE sin lote.
   - prestamo: un préstamo con pendiente cuyo nombre aparece en la
     descripción, o cuyo pendiente es exactamente el monto (después de prestar).
-  - gasto: te pagaron (todo, 1/2, 1/3 o 1/4 de) un gasto tuyo de hasta 60
+  - gasto: si llegó en las fechas de un viaje (3 días antes a 30 después),
+    tu parte de un gasto de ese viaje o, si ninguno cuadra, del viaje en
+    general (VIAJES/Otros); al conciliar queda ligado al viaje. Si no,
+    te pagaron (todo, 1/2, 1/3 o 1/4 de) un gasto tuyo de hasta 60
     días antes; o el concepto ya lo clasificaste antes; «RENTA» -> aportación
     de renta; «VIA/BOLETO/HOTEL…» -> VIAJES. Ver _pista_gasto.
   - propia: la misma cantidad salió de otra de tus cuentas ±3 días como
@@ -263,6 +266,45 @@ def _conceptos_aprendidos(db) -> dict:
     return {c: max(ks, key=ks.get) for c, ks in cuenta.items()}
 
 
+VIAJE_DIAS_ANTES, VIAJE_DIAS_DESPUES = 3, 30
+
+
+def _viaje_de(db, d):
+    """El viaje (con gastos ligados) en cuyas fechas cae el depósito: de 3 días
+    antes a 30 después (te pagan su parte al regresar). El más cercano."""
+    return db.execute("""
+        SELECT v.id, v.nombre, v.fecha_inicio, v.fecha_fin FROM viajes v
+        WHERE ? BETWEEN date(v.fecha_inicio, ?) AND date(v.fecha_fin, ?)
+          AND EXISTS (SELECT 1 FROM est_movimientos m WHERE m.viaje_id = v.id AND m.tipo = 'GASTO')
+        ORDER BY ABS(julianday(?) - julianday(v.fecha_fin)) LIMIT 1
+    """, (d.isoformat(), f'-{VIAJE_DIAS_ANTES} day', f'+{VIAJE_DIAS_DESPUES} day', d.isoformat())).fetchone()
+
+
+def _pista_viaje(db, r, monto, d):
+    """El usuario (2026-09-30): lo que le transfirieron en las fechas de un viaje
+    seguramente fue su parte de algo que él pagó. Busca el gasto del viaje que
+    cuadra (todo, 1/2, 1/3, 1/4); si ninguno, «tu parte del viaje»."""
+    v = _viaje_de(db, d)
+    if not v:
+        return None
+    gastos = db.execute("""
+        SELECT fecha, descripcion, ABS(monto) AS monto, categoria, subcategoria FROM est_movimientos
+        WHERE viaje_id = ? AND tipo = 'GASTO' AND substr(fecha,1,10) <= ?
+        ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?))
+    """, (v['id'], (d + timedelta(days=1)).isoformat(), d.isoformat())).fetchall()
+    for partes in PARTES:
+        g = next((g for g in gastos if abs(g['monto'] - monto * partes) <= 0.5 * partes), None)
+        if g:
+            parte = 'todo' if partes == 1 else f"1/{partes}"
+            return {'tipo': 'gasto', 'categoria': g['categoria'], 'subcategoria': g['subcategoria'] or '',
+                    'viaje_id': v['id'],
+                    'texto': f"Viaje «{v['nombre']}»: te pagaron {parte} de «{g['descripcion']}» ${g['monto']:,.2f} "
+                             f"→ {g['categoria']}/{g['subcategoria'] or ''}"}
+    return {'tipo': 'gasto', 'categoria': 'VIAJES', 'subcategoria': 'Otros', 'viaje_id': v['id'],
+            'texto': f"Llegó en las fechas del viaje «{v['nombre']}» ({v['fecha_inicio'][:10]} a "
+                     f"{v['fecha_fin'][:10]}): tu parte de algo del viaje → VIAJES/Otros"}
+
+
 def _pista_gasto(db, r, monto, d, aprendidos):
     concepto = _concepto(r['descripcion'])
     if concepto in aprendidos:
@@ -275,6 +317,9 @@ def _pista_gasto(db, r, monto, d, aprendidos):
     viaje = bool(_VIAJE_RE.search(concepto))
     if 'RETIRO' in (r['descripcion'] or '').upper():   # retiro de efectivo: no es que te pagaran algo
         return None
+    pv = _pista_viaje(db, r, monto, d)
+    if pv:
+        return pv
     ph = ','.join('?' * len(_NO_GASTO))
     # El gasto va antes del depósito (pagaste y luego te pagaron), hasta el día siguiente.
     cands = db.execute(f"""
@@ -360,8 +405,8 @@ def conciliar_pistas(db, solo_seguras: bool = False) -> dict:
             out['prestamos'] += 1
         elif pista['tipo'] == 'gasto':
             if not solo_seguras:
-                db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?",
-                           (pista['categoria'], pista['subcategoria'], r['id']))
+                db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, viaje_id=COALESCE(?, viaje_id) WHERE id=?",
+                           (pista['categoria'], pista['subcategoria'], pista.get('viaje_id'), r['id']))
                 out['gastos'] += 1
         elif pista['tipo'] == 'propia':
             db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id=?", (SUB_PROPIA, r['id']))

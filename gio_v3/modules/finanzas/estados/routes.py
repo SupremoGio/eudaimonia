@@ -4108,9 +4108,16 @@ def trip_summary(trip_id):
             ORDER BY total DESC
         """, (trip_id,)).fetchall()
         total_gastado = sum(r['total'] or 0 for r in breakdown)
+        # Lo que te transfirieron por tu parte del viaje (abonos ligados al viaje,
+        # ver abonos._pista_viaje): el gasto neto es lo que de verdad pusiste tú.
+        te_pagaron = db.execute(
+            "SELECT COALESCE(SUM(ABS(monto)), 0) FROM est_movimientos WHERE viaje_id=? AND tipo='INGRESO'",
+            (trip_id,)).fetchone()[0] or 0
     return jsonify({
         'trip':          dict(trip),
         'total_gastado': round(total_gastado, 2),
+        'te_pagaron':    round(te_pagaron, 2),
+        'neto':          round(total_gastado - te_pagaron, 2),
         'breakdown': [
             {'concepto': r['concepto'], 'total': round(r['total'] or 0, 2), 'n': r['n']}
             for r in breakdown
@@ -4126,7 +4133,8 @@ def trip_transactions(trip_id):
         # filtrar la tabla por concepto; los que no cuentan como gasto del viaje
         # (pagos, transferencias, ingresos) llevan concepto NULL.
         rows = db.execute(f"""
-            SELECT *, CASE WHEN {_GASTO_FILTER} THEN {_CONCEPTO_CASE} END AS concepto
+            SELECT *, CASE WHEN {_GASTO_FILTER} THEN {_CONCEPTO_CASE}
+                           WHEN tipo='INGRESO' THEN 'Te pagaron' END AS concepto
             FROM est_movimientos WHERE viaje_id=? ORDER BY fecha ASC, monto DESC
         """, (trip_id,)).fetchall()
     return jsonify({'data': [dict(r) for r in rows]})

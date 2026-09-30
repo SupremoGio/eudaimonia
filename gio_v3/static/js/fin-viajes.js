@@ -90,6 +90,9 @@
     r.dataset.tone = pres > 0 ? (rest >= 0 ? 'success' : 'danger') : '';
     $('gv-budget').dataset.tone = tone(pct, over);
     var bar = $('detail-bar'); bar.querySelector('i').style.width = pct.toFixed(1) + '%'; bar.setAttribute('aria-valuenow', Math.round(pct)); bar.hidden = !pres;
+    var neto = $('detail-neto'), tp = summary.te_pagaron || 0;
+    neto.hidden = !tp;
+    neto.innerHTML = tp ? 'Te pagaron <b class="num">$' + fmt(tp) + '</b> de tu parte · tu gasto neto <b class="num">$' + fmt(summary.neto) + '</b>' : '';
     $('detail-pct-txt').textContent = pres > 0 ? pct.toFixed(0) + '% del presupuesto' + (over ? ' — excedido' : '') : 'Define un presupuesto al editar el viaje para ver el avance.';
 
     var bd = summary.breakdown || [], max = bd.length ? bd[0].total : 1;
@@ -121,7 +124,7 @@
       th('fecha', 'Fecha') + th('desc', 'Descripción') + th('cat', 'Categoría') + th('monto', 'Monto', 'num') + '<th scope="col"><span class="gv-sr">Acciones</span></th></tr></thead><tbody>' +
       rows.map(function (tx) {
         return '<tr><td class="num gv-nowrap">' + fmtD(tx.fecha) + '</td><td><span class="gv-desc" title="' + esc(tx.descripcion) + '">' + esc(tx.descripcion) + '</span></td>' +
-          '<td><span class="t-ui">' + esc(tx.concepto || 'No cuenta') + '</span><br><span class="t-meta">' + esc(tx.categoria) + (tx.subcategoria ? ' · ' + esc(tx.subcategoria) : '') + '</span></td><td class="num">$' + fmt(montoDe(tx)) + '</td>' +
+          '<td><span class="t-ui">' + esc(tx.concepto || 'No cuenta') + '</span><br><span class="t-meta">' + esc(tx.categoria) + (tx.subcategoria ? ' · ' + esc(tx.subcategoria) : '') + '</span></td><td class="num">' + (tx.tipo === 'INGRESO' ? '+' : '') + '$' + fmt(montoDe(tx)) + '</td>' +
           '<td><button type="button" class="eu-iconbtn" data-untag="' + tx.id + '" aria-label="Desvincular ' + esc(tx.descripcion) + '" title="Desvincular"><i data-lucide="unlink"></i></button></td></tr>';
       }).join('') + '</tbody></table></div>' : empty('link-2', 'Sin transacciones vinculadas', 'Usa las sugerencias para vincular los gastos de este viaje.');
     icons();
