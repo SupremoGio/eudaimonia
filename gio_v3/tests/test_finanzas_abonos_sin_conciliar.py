@@ -214,3 +214,29 @@ def test_pista_de_viaje_y_neto(client):
     assert (s['total_gastado'], s['te_pagaron'], s['neto']) == (3000, 2277, 723)
     tx = client.get(f'/finanzas/estados/api/trips/{vid}/transactions').get_json()['data']
     assert sorted(t['concepto'] for t in tx) == ['Hotel', 'Te pagaron', 'Te pagaron']
+
+
+def test_pista_viaje_ignora_transferencias_y_empresa(client):
+    """Casos reales mal sugeridos: 1/4 de una transferencia ligada al viaje,
+    «todo» de un retiro de cajero; CODI y depósitos de la empresa."""
+    with database.get_db() as db:
+        vid = db.execute("""INSERT INTO viajes (nombre, destino, fecha_inicio, fecha_fin, estado, created_at)
+                            VALUES ('VILLAHERMOSA JUN 24', 'Villahermosa', '2024-05-30', '2024-06-03', 'completado', 'x')""").lastrowid
+        db.commit()
+    for d, m, c, sub in (('2024-05-30', 1000, 'FINANZAS', 'Transferencia'), ('2024-05-31', 500, 'FINANZAS', 'Retiro efectivo'),
+                         ('2024-06-01', 800, 'COMIDA_FUERA', 'Restaurante')):
+        mid = _mov_banco(d, 'X ' + c, m, c, 'BBVA_DEB', sub, 'GASTO')
+        with database.get_db() as db:
+            db.execute("UPDATE est_movimientos SET viaje_id=? WHERE id=?", (vid, mid)); db.commit()
+    cuarto = _mov('2024-06-04', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 250, 'FINANZAS', 'Transferencia')
+    retiro = _mov('2024-06-05', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 500, 'FINANZAS', 'Transferencia')
+    mitad = _mov('2024-06-06', 'PAGO CUENTA DE TERCERO BNET CENA', 400, 'FINANZAS', 'Transferencia')
+    _mov('2022-09-01', 'SPEI RECIBIDOCODI VALIDA', 0.01, 'VIAJES', 'Otros')
+    codi = _mov('2022-09-11', 'SPEI RECIBIDOCODI VALIDA', 0.01, 'FINANZAS', 'Transferencia recibida')
+    empresa = _mov('2024-03-05', 'SITH20000007897 FIBRA HOTELERA SC', 3566, 'FINANZAS', 'Fideicomiso')
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert (p[cuarto]['categoria'], p[cuarto]['subcategoria']) == ('VIAJES', 'Otros')      # no «1/4 de la transferencia»
+    assert (p[retiro]['categoria'], p[retiro]['subcategoria']) == ('VIAJES', 'Otros')      # no «todo del retiro»
+    assert p[mitad]['categoria'] == 'COMIDA_FUERA' and '1/2' in p[mitad]['texto']
+    assert p[codi] is None
+    assert p[empresa]['tipo'] == 'empresa'

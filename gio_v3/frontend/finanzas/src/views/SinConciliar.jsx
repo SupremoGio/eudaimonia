@@ -14,7 +14,7 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const grupoDe = (m) => (m.categoria !== 'FINANZAS' ? m.categoria : (m.subcategoria || 'Sin subcategoría'));
 const nombreGrupo = (g) => (['PRESTAMOS', 'EXPENSE'].includes(g) ? catMeta(g).name : g);
 // Pista del servidor (abonos.py): qué es probablemente cada abono.
-const PISTAS = { prestamo: 'Préstamo', expense: 'Expense', propia: 'Entre tus cuentas', gasto: 'Te pagaron un gasto', ninguna: 'Sin pista' };
+const PISTAS = { prestamo: 'Préstamo', expense: 'Expense', propia: 'Entre tus cuentas', gasto: 'Te pagaron un gasto', empresa: 'Empresa sin lote', ninguna: 'Sin pista' };
 const pistaDe = (m) => m.pista?.tipo || 'ninguna';
 
 // Filtros y orden se recuerdan en este navegador: editar un movimiento,

@@ -240,7 +240,9 @@ _NO_GASTO = ('FINANZAS', 'PRESTAMOS', 'EXPENSE', 'INVERSION', 'NOMINA', 'OTROS',
 _VIAJE_RE = re.compile(r'\b(VIA|VIAJE|VIAJ|VACA|VACAS|BOLETO|BOLET|BOLETOS|HOTEL|HOSPEDAJE|VUELO|AVION|AIRBNB|CASA PLAYA)\b')
 _RENTA_RE = re.compile(r'\bRENTA\b')
 # Conceptos que no dicen nada: no se aprende de ellos.
-_GENERICOS = {'TRANSF A GIO', 'TRANSF A', 'TRANSFERENCI', 'TRANSFERENCIA', 'PAGO', 'GIO', 'GIOVANY', 'P', 'XX',
+# Depósitos de la empresa (Expense / viáticos): nunca son «te pagaron un gasto».
+_EMPRESA_RE = re.compile(r'FIBRA HOTELERA|SITH2|SITH\d|FIDEICOMISO|BMRCASH|EXPENSE|SGLDAC')
+_GENERICOS = {'CODI VALIDA', 'TRANSF A GIO', 'TRANSF A', 'TRANSFERENCI', 'TRANSFERENCIA', 'PAGO', 'GIO', 'GIOVANY', 'P', 'XX',
               'TRANSF A UND', 'NAFIN', 'HSBC', 'STP', 'BANORTE', 'SANTANDER', 'BANAMEX'}
 PARTES = (1, 2, 3, 4)   # te pagaron todo, la mitad, un tercio o un cuarto del gasto
 
@@ -248,7 +250,8 @@ PARTES = (1, 2, 3, 4)   # te pagaron todo, la mitad, un tercio o un cuarto del g
 def _generico(c: str) -> bool:
     """«TRANSF A GIOVANY A» es el concepto que pone la app del banco por
     defecto: lo usan muchas personas distintas, no dice nada."""
-    return c in _GENERICOS or len(c) < 3 or c.startswith('TRANSF') or 'GIOVANY' in c or 'RETIRO' in c
+    return (c in _GENERICOS or len(c) < 3 or c.startswith('TRANSF') or 'GIOVANY' in c or 'RETIRO' in c
+            or _EMPRESA_RE.search(c) is not None)
 
 
 def _conceptos_aprendidos(db) -> dict:
@@ -287,11 +290,15 @@ def _pista_viaje(db, r, monto, d):
     v = _viaje_de(db, d)
     if not v:
         return None
-    gastos = db.execute("""
+    # Solo gastos de verdad del viaje: no transferencias, retiros ni pagos
+    # ligados a él (FINANZAS, PRESTAMOS…), que no son algo que «te pagaron».
+    ph = ','.join('?' * len(_NO_GASTO))
+    gastos = db.execute(f"""
         SELECT fecha, descripcion, ABS(monto) AS monto, categoria, subcategoria FROM est_movimientos
-        WHERE viaje_id = ? AND tipo = 'GASTO' AND substr(fecha,1,10) <= ?
+        WHERE viaje_id = ? AND tipo = 'GASTO' AND categoria NOT IN ({ph})
+          AND COALESCE(subcategoria,'') != 'Compra a meses' AND substr(fecha,1,10) <= ?
         ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?))
-    """, (v['id'], (d + timedelta(days=1)).isoformat(), d.isoformat())).fetchall()
+    """, (v['id'], *_NO_GASTO, (d + timedelta(days=1)).isoformat(), d.isoformat())).fetchall()
     for partes in PARTES:
         g = next((g for g in gastos if abs(g['monto'] - monto * partes) <= 0.5 * partes), None)
         if g:
@@ -306,6 +313,12 @@ def _pista_viaje(db, r, monto, d):
 
 
 def _pista_gasto(db, r, monto, d, aprendidos):
+    if 'RETIRO' in (r['descripcion'] or '').upper():   # retiro de efectivo: no es que te pagaran algo
+        return None
+    if _EMPRESA_RE.search((r['descripcion'] or '').upper()):
+        # Ni el algoritmo de Expense lo cuadró con facturas: se revisa a mano.
+        return {'tipo': 'empresa', 'texto': 'Depósito de la empresa (Expense/viáticos) sin facturas que cuadren: '
+                                            'crea o completa su lote en Expense'}
     concepto = _concepto(r['descripcion'])
     if concepto in aprendidos:
         cat, sub = aprendidos[concepto]
@@ -403,6 +416,8 @@ def conciliar_pistas(db, solo_seguras: bool = False) -> dict:
                        (pid, r['id'], ahora))
             pendiente[pid] = round(pendiente[pid] - monto, 2)
             out['prestamos'] += 1
+        elif pista['tipo'] == 'empresa':
+            out['sin_aplicar'] += 1
         elif pista['tipo'] == 'gasto':
             if not solo_seguras:
                 db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, viaje_id=COALESCE(?, viaje_id) WHERE id=?",
