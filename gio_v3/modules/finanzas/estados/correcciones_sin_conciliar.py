@@ -18,6 +18,7 @@ CORRECCIONES = [
     # «compré una tele y mom me pagaba esa mensualidad»: resta a lo de la casa.
     (5430, '2022-03-04', 450.0, 'BNET TELE', 'VIVIENDA', 'Artículos del hogar'),
     (5363, '2022-01-07', 300.0, 'BNET TELE', 'VIVIENDA', 'Artículos del hogar'),
+    (5423, '2022-02-28', 1500.0, 'BNET SERGIO', 'VIVIENDA', 'Aportación renta'),   # Sergio pagaba su parte de la renta
 ]
 
 
