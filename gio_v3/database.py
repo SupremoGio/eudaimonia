@@ -6013,7 +6013,7 @@ def init_db():
         #    lista: cada tanda nueva se aplica sola al arrancar.
         try:
             from modules.finanzas.estados import correcciones_sin_conciliar as _sc
-            _ver = f"finanzas_sin_conciliar_csv_{len(_sc.CORRECCIONES)}"
+            _ver = f"finanzas_sin_conciliar_csv_{len(_sc.CORRECCIONES)}_{len(_sc.VIAJES)}"
             if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
                 _ok, _falta = _sc.aplicar(db)
                 db.execute(

@@ -29,21 +29,44 @@ CORRECCIONES = [
     (2878, '2025-06-15', 5600.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
     (4091, '2023-11-07', 4000.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
     (5277, '2022-04-29', 1380.0, 'DEPOSITO EFECTIVO', 'FINANZAS', 'Entre cuentas propias'),
+    # Tanda 3 (2026-09-30, «todo lo que dices tiene lógica, aplícalos»):
+    (3817, '2023-05-17', 5150.0, 'TRANSF A GIOVANY', 'VIVIENDA', 'Aportación renta'),   # mismo monto que la renta de los roomies (mar–jul 2023)
+    (3441, '2024-05-11', 3000.0, 'BNET VAC', 'VIAJES', 'Otros'),                       # «VAC»: vacaciones / vaca
 ]
+
+# Abonos que además se ligan a un viaje (id, fecha, monto, texto, nombre del viaje):
+# llegaron en sus fechas, así que son tu parte de algo de ese viaje (VIAJES/Otros).
+VIAJES = [
+    (3468, '2024-06-04', 250.0, 'TRANSF A GIOVANY', 'VILLAHERMOSA JUN 24'),
+    (4084, '2023-04-25', 500.0, 'TRANSF A GIOVANY', 'VILLA MARZO 2023'),
+]
+
+
+def _fila(db, mid, fecha, monto, texto):
+    row = db.execute("""SELECT id, categoria, subcategoria, viaje_id FROM est_movimientos
+                        WHERE id=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'""",
+                     (mid, fecha, monto)).fetchone()
+    return row or db.execute("""SELECT id, categoria, subcategoria, viaje_id FROM est_movimientos
+                                WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'
+                                  AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""",
+                             (fecha, monto, f"%{texto.upper()}%")).fetchone()
 
 
 def aplicar(db) -> tuple[int, int]:
     """(actualizadas, no encontradas). Idempotente."""
     ok = faltan = 0
+    for mid, fecha, monto, texto, nombre in VIAJES:
+        row = _fila(db, mid, fecha, monto, texto)
+        v = db.execute("SELECT id FROM viajes WHERE UPPER(TRIM(nombre))=? ORDER BY id LIMIT 1", (nombre,)).fetchone()
+        if not row or not v:
+            faltan += 1
+            continue
+        if (row['categoria'], row['subcategoria'] or '', row['viaje_id']) != ('VIAJES', 'Otros', v['id']):
+            db.execute("UPDATE est_movimientos SET categoria='VIAJES', subcategoria='Otros', viaje_id=? WHERE id=?",
+                       (v['id'], row['id']))
+            ok += 1
     for mid, fecha, monto, texto, cat, sub in CORRECCIONES:
-        row = db.execute("""SELECT id, categoria, subcategoria FROM est_movimientos
-                            WHERE id=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'""",
-                         (mid, fecha, monto)).fetchone()
-        if not row:
-            row = db.execute("""SELECT id, categoria, subcategoria FROM est_movimientos
-                                WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'
-                                  AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""",
-                             (fecha, monto, f"%{texto.upper()}%")).fetchone()
+        row = _fila(db, mid, fecha, monto, texto)
         if not row:
             faltan += 1
             continue
