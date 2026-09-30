@@ -4122,10 +4122,13 @@ def trip_summary(trip_id):
 def trip_transactions(trip_id):
     if not _ok(): return _locked()
     with get_db() as db:
-        rows = db.execute(
-            "SELECT * FROM est_movimientos WHERE viaje_id=? ORDER BY fecha ASC, monto DESC",
-            (trip_id,),
-        ).fetchall()
+        # concepto: el mismo del «Desglose por concepto» (summary), para poder
+        # filtrar la tabla por concepto; los que no cuentan como gasto del viaje
+        # (pagos, transferencias, ingresos) llevan concepto NULL.
+        rows = db.execute(f"""
+            SELECT *, CASE WHEN {_GASTO_FILTER} THEN {_CONCEPTO_CASE} END AS concepto
+            FROM est_movimientos WHERE viaje_id=? ORDER BY fecha ASC, monto DESC
+        """, (trip_id,)).fetchall()
     return jsonify({'data': [dict(r) for r in rows]})
 
 

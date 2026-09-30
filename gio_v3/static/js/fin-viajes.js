@@ -10,6 +10,16 @@
   var CAT = { Vuelos: 'cosmopolitismo', Hotel: 'paideia', Transporte: 'hegemonikon', Comida: 'harma', Experiencias: 'eurythmia', Otros: 'identidad' };
   var ESTADO = { planificado: ['Planificado', 'eu-badge--info'], activo: ['En curso', 'eu-badge--success'], completado: ['Completado', ''], cancelado: ['Cancelado', 'eu-badge--danger'] };
   var trips = [], curId = null, summary = null, tagged = [], suggested = [], editing = false;
+  // Tabla de vinculadas: orden por columna (asc/desc) y filtro por concepto
+  // desde el desglose (clic en un concepto muestra solo sus movimientos).
+  var sortKey = 'fecha', sortDir = 'asc', conceptoSel = null;
+  var montoDe = function (tx) { return Math.abs(tx.mi_parte == null ? tx.monto : tx.mi_parte); };
+  var SORT = {
+    fecha: function (tx) { return tx.fecha || ''; },
+    desc: function (tx) { return (tx.descripcion || '').toLowerCase(); },
+    cat: function (tx) { return ((tx.concepto || '~') + ' ' + tx.categoria + ' ' + (tx.subcategoria || '')).toLowerCase(); },
+    monto: montoDe,
+  };
 
   function $(id) { return document.getElementById(id); }
   function $$(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
@@ -61,7 +71,7 @@
     curId = id; setView('detail');
     history.replaceState(null, '', location.pathname + '?trip=' + id);
     return Promise.all([getJ(API + '/trips/' + id + '/summary'), getJ(API + '/trips/' + id + '/transactions')]).then(function (r) {
-      summary = r[0]; tagged = r[1].data || [];
+      summary = r[0]; tagged = r[1].data || []; conceptoSel = null;
       renderDetail(); window.scrollTo(0, 0);
       return loadSuggestions();
     }).catch(function () { toast('No se pudo cargar el viaje', 'err'); showList(); });
@@ -84,16 +94,34 @@
 
     var bd = summary.breakdown || [], max = bd.length ? bd[0].total : 1;
     $('breakdown-list').innerHTML = bd.length ? bd.map(function (b) {
-      return '<li class="gv-concept" data-cat="' + (CAT[b.concepto] || 'identidad') + '"><span class="eu-row-ic gv-c-ic"><i data-lucide="' + (ICON[b.concepto] || 'package') + '"></i></span>' +
+      var on = conceptoSel === b.concepto;
+      return '<li><button type="button" class="gv-concept' + (on ? ' is-on' : '') + '" data-concepto="' + esc(b.concepto) + '" aria-pressed="' + on + '" data-cat="' + (CAT[b.concepto] || 'identidad') + '" title="Ver sus movimientos">' +
+        '<span class="eu-row-ic gv-c-ic"><i data-lucide="' + (ICON[b.concepto] || 'package') + '"></i></span>' +
         '<span class="gv-c-bd"><span class="eu-between"><span class="t-ui">' + esc(b.concepto) + ' <span class="t-meta num">· ' + b.n + '</span></span><span class="t-data">$' + fmt(b.total) + '</span></span>' +
-        '<span class="eu-progress eu-progress--thin eu-progress--cat" aria-hidden="true"><i style="width:' + (max > 0 ? (b.total / max * 100).toFixed(1) : 0) + '%"></i></span></span></li>';
+        '<span class="eu-progress eu-progress--thin eu-progress--cat" aria-hidden="true"><i style="width:' + (max > 0 ? (b.total / max * 100).toFixed(1) : 0) + '%"></i></span></span></button></li>';
     }).join('') : '<li>' + empty('pie-chart', 'Sin gastos vinculados', 'Vincula movimientos desde Sugerencias para ver el desglose.') + '</li>';
-
-    $('tx-count-badge').textContent = '(' + tagged.length + ')';
-    $('tx-list-wrap').innerHTML = tagged.length ? '<div class="gv-table-wrap"><table class="eu-table gv-table"><thead><tr><th scope="col">Fecha</th><th scope="col">Descripción</th><th scope="col">Categoría</th><th scope="col" class="num">Monto</th><th scope="col"><span class="gv-sr">Acciones</span></th></tr></thead><tbody>' +
-      tagged.map(function (tx) {
+    renderTx();
+  }
+  function renderTx() {
+    var rows = conceptoSel ? tagged.filter(function (tx) { return tx.concepto === conceptoSel; }) : tagged.slice();
+    var val = SORT[sortKey], sign = sortDir === 'asc' ? 1 : -1;
+    rows.sort(function (a, b) {
+      var x = val(a), y = val(b), c = typeof x === 'string' ? x.localeCompare(y) : x - y;
+      return c * sign || (a.fecha || '').localeCompare(b.fecha || '');
+    });
+    $('tx-count-badge').textContent = conceptoSel ? '(' + rows.length + ' de ' + tagged.length + ')' : '(' + tagged.length + ')';
+    var th = function (k, label, cls) {
+      var on = sortKey === k;
+      return '<th scope="col"' + (cls ? ' class="' + cls + '"' : '') + (on ? ' aria-sort="' + (sortDir === 'asc' ? 'ascending' : 'descending') + '"' : '') + '>' +
+        '<button type="button" class="gv-th-btn" data-sort="' + k + '">' + label + (on ? '<i data-lucide="' + (sortDir === 'asc' ? 'arrow-up' : 'arrow-down') + '"></i>' : '') + '</button></th>';
+    };
+    var filtro = conceptoSel ? '<div class="gv-filtro t-meta">Mostrando solo <b>' + esc(conceptoSel) + '</b> · $' + fmt(rows.reduce(function (s, tx) { return s + montoDe(tx); }, 0)) +
+      ' <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-clear-concepto"><i data-lucide="x"></i>Ver todos</button></div>' : '';
+    $('tx-list-wrap').innerHTML = tagged.length ? filtro + '<div class="gv-table-wrap"><table class="eu-table gv-table"><thead><tr>' +
+      th('fecha', 'Fecha') + th('desc', 'Descripción') + th('cat', 'Categoría') + th('monto', 'Monto', 'num') + '<th scope="col"><span class="gv-sr">Acciones</span></th></tr></thead><tbody>' +
+      rows.map(function (tx) {
         return '<tr><td class="num gv-nowrap">' + fmtD(tx.fecha) + '</td><td><span class="gv-desc" title="' + esc(tx.descripcion) + '">' + esc(tx.descripcion) + '</span></td>' +
-          '<td class="t-meta">' + esc(tx.categoria) + (tx.subcategoria ? ' · ' + esc(tx.subcategoria) : '') + '</td><td class="num">$' + fmt(tx.mi_parte == null ? tx.monto : tx.mi_parte) + '</td>' +
+          '<td><span class="t-ui">' + esc(tx.concepto || 'No cuenta') + '</span><br><span class="t-meta">' + esc(tx.categoria) + (tx.subcategoria ? ' · ' + esc(tx.subcategoria) : '') + '</span></td><td class="num">$' + fmt(montoDe(tx)) + '</td>' +
           '<td><button type="button" class="eu-iconbtn" data-untag="' + tx.id + '" aria-label="Desvincular ' + esc(tx.descripcion) + '" title="Desvincular"><i data-lucide="unlink"></i></button></td></tr>';
       }).join('') + '</tbody></table></div>' : empty('link-2', 'Sin transacciones vinculadas', 'Usa las sugerencias para vincular los gastos de este viaje.');
     icons();
@@ -126,7 +154,24 @@
       return showDetail(curId);
     }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { btn.disabled = false; });
   });
+  $('breakdown-list').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-concepto]'); if (!b) return;
+    conceptoSel = conceptoSel === b.dataset.concepto ? null : b.dataset.concepto;
+    $$('[data-concepto]', $('breakdown-list')).forEach(function (x) {
+      var on = x.dataset.concepto === conceptoSel; x.classList.toggle('is-on', on); x.setAttribute('aria-pressed', String(on));
+    });
+    renderTx(); icons();
+    if (conceptoSel && window.innerWidth < 900) $('gv-tx-t').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   $('tx-list-wrap').addEventListener('click', function (e) {
+    var s = e.target.closest('[data-sort]');
+    if (s) {
+      var k = s.dataset.sort;
+      if (sortKey === k) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      else { sortKey = k; sortDir = k === 'monto' ? 'desc' : 'asc'; }
+      renderTx(); icons(); return;
+    }
+    if (e.target.closest('.js-clear-concepto')) { $('breakdown-list').querySelector('[aria-pressed=true]').click(); return; }
     var b = e.target.closest('[data-untag]'); if (!b) return;
     send(API + '/trips/' + curId + '/untag', 'POST', { tx_ids: [+b.dataset.untag] }).then(function (r) {
       if (r.ok) { toast('Transacción desvinculada'); return showDetail(curId); }

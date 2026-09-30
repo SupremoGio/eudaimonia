@@ -44,7 +44,15 @@
 @media (min-width:1024px){.gv-body{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}}
 .gv-col,.gv-box{gap:var(--sp-3)}
 .gv-concepts{list-style:none;padding:0;display:flex;flex-direction:column;gap:var(--sp-3)}
-.gv-concept{display:flex;align-items:center;gap:var(--sp-3)}
+.gv-concept{display:flex;align-items:center;gap:var(--sp-3);width:100%;padding:var(--sp-2);box-sizing:border-box;background:none;border:1px solid transparent;border-radius:var(--r-md,10px);color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background .15s,border-color .15s}
+.gv-concept:hover{background:var(--bg-sunken,rgba(0,0,0,.03))}
+.gv-concept:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.gv-concept.is-on{background:var(--cat-bg);border-color:var(--cat-fg)}
+.gv-th-btn{display:inline-flex;align-items:center;gap:4px;background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer}
+.gv-th-btn svg{width:13px;height:13px}
+.gv-th-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.gv-table th.num .gv-th-btn{margin-left:auto}
+.gv-filtro{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;padding:0 var(--sp-4) var(--sp-3)}
 .gv-c-ic{background:var(--cat-bg);color:var(--cat-fg)}
 .gv-c-bd{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--sp-1)}
 .gv-sugs{display:flex;flex-direction:column;max-height:420px;overflow-y:auto}
