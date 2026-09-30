@@ -5934,6 +5934,45 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_prestamo_iphone_macstore migration warning: {e}")
 
+        # ── VIAJES — «FUSION CASINO CDMX» era un duplicado de «Salsa Fusion CDMX -
+        #    Mayo 2026» (el usuario, 2026-09-30: salió el 28 de mayo en la noche y
+        #    regresó el domingo 31). Se fusionan en el segundo con fechas 28–31/05:
+        #    los movimientos y la maleta del duplicado pasan a él y el duplicado se
+        #    borra. Si alguno de los dos no existe, se reintenta al siguiente arranque.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='viajes_fusion_cdmx_mayo_2026'"
+        ).fetchone():
+            try:
+                _keep = db.execute("""SELECT v.id FROM viajes v WHERE LOWER(TRIM(v.nombre))='salsa fusion cdmx - mayo 2026'
+                                        ORDER BY (SELECT COUNT(*) FROM est_movimientos m WHERE m.viaje_id=v.id) DESC, v.id LIMIT 1""").fetchone()
+                _dups = [r['id'] for r in db.execute(
+                    "SELECT id FROM viajes WHERE UPPER(TRIM(nombre))='FUSION CASINO CDMX'").fetchall()]
+                if _keep and _dups:
+                    _k = _keep['id']
+                    _ph = ','.join('?' * len(_dups))
+                    _n = db.execute(f"UPDATE est_movimientos SET viaje_id=? WHERE viaje_id IN ({_ph})", (_k, *_dups)).rowcount
+                    db.execute(f"UPDATE viaje_maleta SET viaje_id=? WHERE viaje_id IN ({_ph})", (_k, *_dups))
+                    db.execute(f"DELETE FROM viaje_dia_outfits WHERE dia_id IN (SELECT id FROM viaje_dias WHERE viaje_id IN ({_ph}))", _dups)
+                    db.execute(f"DELETE FROM viaje_dias WHERE viaje_id IN ({_ph})", _dups)
+                    db.execute(f"DELETE FROM viajes WHERE id IN ({_ph})", _dups)
+                    _ini, _fin = '2026-05-28', '2026-05-31'
+                    db.execute("UPDATE viajes SET fecha_inicio=?, fecha_fin=? WHERE id=?", (_ini, _fin, _k))
+                    db.execute("DELETE FROM viaje_dia_outfits WHERE dia_id IN (SELECT id FROM viaje_dias WHERE viaje_id=? AND (fecha < ? OR fecha > ?))", (_k, _ini, _fin))
+                    db.execute("DELETE FROM viaje_dias WHERE viaje_id=? AND (fecha < ? OR fecha > ?)", (_k, _ini, _fin))
+                    _d, _i = date.fromisoformat(_ini), 1
+                    while _d <= date.fromisoformat(_fin):
+                        db.execute("INSERT OR IGNORE INTO viaje_dias (viaje_id, fecha, descripcion) VALUES (?,?,?)",
+                                   (_k, _d.isoformat(), f"Día {_i}"))
+                        _d += timedelta(days=1); _i += 1
+                    db.execute(
+                        "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                        ("viajes_fusion_cdmx_mayo_2026", f"{len(_dups)} duplicado(s) fusionado(s), {_n} movimientos movidos")
+                    )
+                    db.commit()
+                    print(f"[DB] viajes_fusion_cdmx_mayo_2026: {len(_dups)} fusionados, {_n} movimientos")
+            except Exception as e:
+                print(f"[DB] viajes_fusion_cdmx_mayo_2026 migration warning: {e}")
+
         # ── FINANZAS — préstamo del iPhone: la persona es Astro y lo pendiente
         #    ($4,783) ya se da por perdido (el usuario, 2026-09-29).
         if not db.execute(
