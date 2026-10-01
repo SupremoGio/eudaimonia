@@ -497,6 +497,11 @@ def _calc_budget(mes, db):
         'ingresos_detalle':   [dict(r) for r in ingresos_rows],
         'n_movimientos':      n_movimientos,
         'total_gastado':      total_gastado,
+        # Consumo: el gasto sin el neto de inversiones. Un mes con retiro
+        # neto (neto negativo) bajaba total_gastado como si fuera «gasto
+        # negativo»; el Resumen del hub y el coach muestran este.
+        'consumo':            round(consumo, 2),
+        'inversion_neta':     inv['neto'],
         'disponible':         disponible,
         'proyeccion':         proyeccion,
         'dia_actual':         dia_actual,

@@ -103,26 +103,31 @@ def _sec_meses(db, hoy):
             continue
         b = bd['buckets']
         ing = bd['ingreso_total']
-        gasto = bd['total_gastado']
+        gasto = bd['consumo']
         nota = ' (en curso)' if bd['es_mes_actual'] else ''
         filas.append([
             _nombre_mes(mes) + nota, _mx(bd['ingreso_recurrente']), _mx(bd['ingreso_extraordinario']),
             _mx(gasto), _mx(b['necesidades']['total_gastado']), _mx(b['deseos']['total_gastado']),
-            _mx(b['ahorro_deuda']['total_gastado']), _mx(ing - gasto), _pct(ing - gasto, ing),
+            _mx(b['ahorro_deuda']['total_gastado'] - bd['inversion_neta']), _mx(bd['inversion_neta']),
+            _mx(ing - gasto), _pct(ing - gasto, ing),
         ])
         if bd['es_mes_actual']:
             continue
         n_meses += 1
         for bk in b.values():
             for c in bk['cats']:
+                if c.get('inversion'):   # va en su columna, no es gasto
+                    continue
                 k = c['nombre']
                 por_cat[k] = por_cat.get(k, 0) + c['gastado']
                 if i >= len(meses) - 4:
                     ultimos3[k] = ultimos3.get(k, 0) + c['gastado']
     txt = ["## Mes a mes (últimos 12 meses y el actual)",
-           "Ahorro = ingreso total − gasto. «Ahorro y deudas» es lo que se fue a inversiones, MSI y deudas.",
+           "Gasto = consumo (no incluye inversiones). «Deudas y ahorro en gasto» son pagos de deudas y "
+           "gastos categorizados como ahorro. «Inversión neta» = aportaciones − retiros a inversiones "
+           "(negativa si saqué dinero). Ahorro = ingreso total − gasto.",
            _tabla(['Mes', 'Ingreso recurrente', 'Extraordinario', 'Gasto', 'Necesidades', 'Deseos',
-                   'Ahorro y deudas', 'Ahorro', 'Tasa de ahorro'], filas) if filas else '_Sin movimientos._',
+                   'Deudas y ahorro en gasto', 'Inversión neta', 'Ahorro', 'Tasa de ahorro'], filas) if filas else '_Sin movimientos._',
            f"Meta mínima de ahorro mensual configurada: {_mx(_meta_ahorro(db))}"]
     if por_cat and n_meses:
         top = sorted(por_cat.items(), key=lambda kv: -kv[1])

@@ -191,3 +191,30 @@ def test_detalle_de_proyectos_cuadra_con_la_fila(test_db):
             s['app_ok'] = True; s['fin_ok'] = True
         movs = c.get('/finanzas/budget/api/cat-movs/2026-09/PROYECTOS').get_json()['movimientos']
     assert [m['mi_monto'] for m in movs] == [300]
+
+
+def test_resumen_del_hub_no_resta_retiros_de_inversion_al_gasto(test_db):
+    """Retirar $8,000 de GBM no es «gasto negativo»: el Resumen del hub
+    mostraba Gastos $4.0k con $12k de consumo (usuario, 2026-10-01)."""
+    from unittest.mock import patch
+    from modules.finanzas import routes as fin
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 21000, tipo='INGRESO', sub='Pago nominal')
+        _mov(db, 'VIVIENDA', 12000, sub='Renta')
+        _mov(db, 'GBM', 8000, tipo='INVERSION', sub='RETIRO')
+        d = _calc_budget('2026-09', db)
+    assert d['consumo'] == 12000 and d['inversion_neta'] == -8000
+    assert d['total_gastado'] == 4000                 # Radiografía: el neto sigue en Ahorro y deudas
+    from app import create_app
+    app = create_app()
+    app.config['TESTING'] = True
+    captured = {}
+    def _render(tpl, **kw):
+        captured.update(kw)
+        return ''
+    with app.test_request_context(), patch.object(fin, 'today_date', return_value=__import__('datetime').date(2026, 9, 30)), \
+            patch.object(fin, 'render_template', _render):
+        fin.index()
+    b = captured['budget']
+    assert b['gastado'] == 12000 and b['pct'] == 57 and b['ahorro_pct'] == 43
+    assert b['disponible'] == 9000

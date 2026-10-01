@@ -143,10 +143,12 @@ def index():
                                "WHERE fecha>=? AND fecha<?", (mes_ini, mes_fin)).fetchone()['n']
             bmes  = cur_mes if n_cur >= 1 else (_last_month_with_data(db) or cur_mes)
             bd    = _calc_budget(bmes, db)
-        ing, gas = bd['ingreso_real'], bd['total_gastado']
+        ing, gas = bd['ingreso_real'], bd['consumo']   # sin inversiones: un retiro no es «gasto negativo»
         extra['budget'] = {
             'mes': bmes, 'mes_nombre': _MESES_ES[int(bmes[5:]) - 1], 'ingreso': ing, 'gastado': gas,
-            'disponible': bd['disponible'], 'pct': round(gas / ing * 100) if ing else None,
+            # Lo que se aparta a inversiones sí ocupa ingreso; un retiro no lo libera.
+            'disponible': round(ing - gas - max(bd['inversion_neta'], 0), 2),
+            'pct': round(gas / ing * 100) if ing else None,
             'ahorro_pct': round((ing - gas) / ing * 100) if ing else None,
             'dias_restantes': bd['dias_mes'] - bd['dia_actual'] if bd['es_mes_actual'] else None,
             'fuentes': len(bd['ingresos_detalle']),
