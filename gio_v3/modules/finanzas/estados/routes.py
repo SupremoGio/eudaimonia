@@ -1945,6 +1945,7 @@ def _reaplicar_reglas(db) -> int:
     _otros0928.aplicar(db)
     _amazon.aplicar(db)
     _sinconc.aplicar(db)
+    _prest.registrar_manuales(db)
     _conciliar_renta_variable(db)
     _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
     return total_updated
@@ -2957,6 +2958,7 @@ def upload_file():
             _otros0928.aplicar(db)
             _amazon.aplicar(db)
             _sinconc.aplicar(db)
+            _prest.registrar_manuales(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
 
             gbm_detected = _postproceso_inversiones(db)

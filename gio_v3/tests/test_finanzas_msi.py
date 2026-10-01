@@ -227,7 +227,7 @@ def test_respuestas_del_usuario_2026_09_27(test_db):
     for k in (1, 2, 3):
         _ins(f'2025-{9 + k}-22', 'CRISTAL VILLAHERMOSA', 1038.0, cat='FAMILIA_REGALOS', sub='Regalos',
              pn=k, pt=12, grupo='cr')
-    # Viva (2): mensualidades de $1,322 fueron de la familia -> PRESTAMOS
+    # Viva (2): mensualidades de $1,322 fueron de la familia y ya las devolvió -> Reembolsable
     _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI (2)', 11895.45, cat='VIAJES', sub='Transporte')
     v2m = _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB (2)', 1322.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='b')
     mia = _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB', 658.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='a')
@@ -239,7 +239,7 @@ def test_respuestas_del_usuario_2026_09_27(test_db):
         "SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
     assert row(cr) == ('FINANZAS', 'Compra a meses') and cr not in c        # duplicada: fuera del gasto
     assert c[cr_pdf]['total'] == 12450.0 and c[cr_pdf]['pagadas'] == 3 and not c[cr_pdf]['linea_es_cuota']
-    assert row(v2m) == ('PRESTAMOS', 'Prestado') and row(mia) == ('VIAJES', 'Transporte')
+    assert row(v2m) == ('FINANZAS', 'Reembolsable') and row(mia) == ('VIAJES', 'Transporte')
     assert row(ref) == ('VIVIENDA', 'Artículos del hogar') and row(super_) == ('SUPER', 'Súper')
 
 

@@ -125,6 +125,7 @@ def candidatos(db) -> dict:
           AND id NOT IN (SELECT movimiento_id FROM est_prestamos WHERE movimiento_id IS NOT NULL)
         ORDER BY fecha DESC
     """).fetchall()
+    nuevos = [r for r in nuevos if not _mensualidad_de(r)]
     ph = ','.join('?' * len(_CATS_DEVOLUCION))
     devs = db.execute(f"""
         SELECT id, fecha, descripcion, ABS(monto) AS monto, banco, categoria FROM est_movimientos
@@ -229,6 +230,7 @@ def filas_csv(db) -> list[list]:
             por_mov[p['movimiento_id']] = p
         for d in p['devoluciones']:
             dev_de[d['movimiento_id']] = p
+    por_notas = {p['notas']: p for p in listar(db) if p['notas']}
     rows = db.execute("""
         SELECT id, fecha, descripcion, monto, banco, tipo FROM est_movimientos
         WHERE categoria = 'PRESTAMOS' OR tipo IN ('PRESTAMO', 'COBRO_PRESTAMO')
@@ -238,7 +240,7 @@ def filas_csv(db) -> list[list]:
     out = []
     for r in rows:
         es_dev = r['tipo'] in ('INGRESO', 'COBRO_PRESTAMO')
-        p = dev_de.get(r['id']) if es_dev else por_mov.get(r['id'])
+        p = dev_de.get(r['id']) if es_dev else (por_mov.get(r['id']) or por_notas.get(_mensualidad_de(r)))
         out.append([
             r['id'], r['fecha'], 'Devolución' if es_dev else 'Préstamo', r['descripcion'],
             round(abs(float(r['monto'])), 2), r['banco'] or '',
@@ -290,3 +292,78 @@ def ligar_iphone_macstore(db) -> tuple[int, int]:
         db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
                    (pid, mid, ahora()))
     return creado, len(devs)
+
+
+# Mensualidades a MSI que son un préstamo ya registrado como uno solo (sin
+# movimiento_id): (texto, cuota, desde, hasta, notas del préstamo). No se
+# ofrecen como «sin persona» y el CSV les pone la persona de ese préstamo.
+MENSUALIDADES_DE_PRESTAMO = (
+    ('MACSTORE', 1167.0, '2022-11-01', '2024-04-30', IPHONE_NOTAS),
+)
+
+
+def _mensualidad_de(r) -> str:
+    desc, fecha = (r['descripcion'] or '').upper(), (r['fecha'] or '')[:10]
+    for texto, cuota, desde, hasta, notas in MENSUALIDADES_DE_PRESTAMO:
+        if texto in desc and abs(abs(float(r['monto'])) - cuota) <= 1 and desde <= fecha <= hasta:
+            return notas
+    return ''
+
+
+# Lista «Préstamos sin persona» que el usuario contestó (2026-10-01).
+_SUB_PROPIA = 'Entre cuentas propias'   # = abonos.SUB_PROPIA (abonos importa este módulo)
+# (fecha, monto, texto) -> persona
+PRESTAMOS_MANUALES = (
+    ('2026-05-12', 2000.0, 'REGRESO AL CORNER', 'Cornelius'),
+    ('2024-10-18', 10000.0, 'CIRUJIA CAMBIO SEX', 'Jorge'),
+)
+# «parece que se regresó»: transferencias de $13,000 que volvieron. Se cancelan
+# con el depósito del mismo monto que llegó después (hasta 15 días): las dos
+# quedan como «Entre cuentas propias» (ni gasto, ni ingreso, ni Sin conciliar);
+# si no aparece el depósito se dejan como están.
+REGRESADOS = (
+    ('2024-09-11', 13000.0, 'TRANSF A GIOVANY A'),
+    ('2024-09-12', 13000.0, 'BNET DEUDA'),
+)
+
+
+def _mov(db, fecha, monto, texto, tipo='GASTO'):
+    return db.execute("""SELECT id, fecha, monto FROM est_movimientos
+                         WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
+                           AND UPPER(descripcion) LIKE ? AND tipo=?""",
+                      (fecha, monto, f"%{texto}%", tipo)).fetchone()
+
+
+def registrar_manuales(db) -> tuple[int, int]:
+    """Registra PRESTAMOS_MANUALES y cancela REGRESADOS con su depósito.
+    Devuelve (préstamos creados, parejas canceladas). Idempotente."""
+    creados = 0
+    for fecha, monto, texto, persona in PRESTAMOS_MANUALES:
+        m = _mov(db, fecha, monto, texto)
+        if not m or db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (m['id'],)).fetchone():
+            continue
+        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado' WHERE id=?", (m['id'],))
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES (?, 'OTORGADO', ?, ?, '', ?, ?)""",
+                   (persona, abs(float(m['monto'])), m['fecha'][:10], m['id'], ahora()))
+        creados += 1
+    parejas = 0
+    for fecha, monto, texto in REGRESADOS:
+        m = _mov(db, fecha, monto, texto)
+        if not m or db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (m['id'],)).fetchone():
+            continue
+        if db.execute("SELECT 1 FROM est_movimientos WHERE id=? AND categoria='FINANZAS' AND subcategoria=?",
+                      (m['id'], _SUB_PROPIA)).fetchone():
+            continue
+        dep = db.execute("""SELECT id FROM est_movimientos
+                            WHERE tipo='INGRESO' AND ABS(ABS(monto) - ?) < 0.005
+                              AND substr(fecha,1,10) BETWEEN ? AND date(?, '+15 days')
+                              AND NOT (categoria='FINANZAS' AND subcategoria=?)
+                              AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
+                            ORDER BY fecha, id LIMIT 1""", (monto, fecha, fecha, _SUB_PROPIA)).fetchone()
+        if not dep:
+            continue
+        db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id IN (?,?)",
+                   (_SUB_PROPIA, m['id'], dep['id']))
+        parejas += 1
+    return creados, parejas

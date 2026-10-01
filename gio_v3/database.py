@@ -6120,6 +6120,25 @@ def init_db():
         except Exception as e:
             print(f"[DB] finanzas_pedidos_amazon migration warning: {e}")
 
+        # ── FINANZAS — lista «Préstamos sin persona» contestada por el usuario
+        #    (2026-10-01): Cornelius y Jorge, los $13,000 que regresaron, las
+        #    mensualidades de Viva Aerobus que pagó la familia (Reembolsable).
+        try:
+            from modules.finanzas.estados import prestamos as _pm
+            from modules.finanzas.estados import msi as _msi_pm
+            _ver = f"finanzas_prestamos_manuales_{len(_pm.PRESTAMOS_MANUALES)}_{len(_pm.REGRESADOS)}"
+            if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
+                _m = _msi_pm.marcar_compras(db)
+                _c, _p = _pm.registrar_manuales(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    (_ver, f"{_c} préstamos, {_p} regresos cancelados, {_m} MSI")
+                )
+                db.commit()
+                print(f"[DB] {_ver}: {_c} préstamos, {_p} regresos cancelados, {_m} MSI")
+        except Exception as e:
+            print(f"[DB] finanzas_prestamos_manuales migration warning: {e}")
+
         # ── FINANZAS — nómina del 16/12/2022 ($10,493.87) fue aguinaldo.
         if not db.execute(
             "SELECT id FROM migration_log WHERE version='finanzas_aguinaldo_2022'"

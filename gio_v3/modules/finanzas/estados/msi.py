@@ -42,13 +42,16 @@ NO_SON_MSI: dict = {}
 # 1ª mensualidad real es la «1 de 12» del 22/10); ver _duplicadas.
 PRIMERA_MENSUALIDAD: set = set()
 
-# Mensualidades de compras que el usuario pagó por alguien más y le fueron
-# devolviendo (texto, cuota, desde, hasta) -> PRESTAMOS, fuera de su gasto.
+# Mensualidades de compras que el usuario pagó por alguien más
+# (texto, cuota, desde, hasta, categoria, subcategoria), fuera de su gasto.
 MENSUALIDADES_PRESTADAS = (
-    # Viva Aerobus A 09 (2) $11,895.45 del 20/02/2024: «fue para mi familia y me lo fueron pagando»
-    ('VIVA AEROBUS', 1322.0, '2024-02-01', '2024-12-31'),
-    # MacStore A 18 $20,999 del 19/11/2022: «iphone no mío».
-    ('MACSTORE', 1167.0, '2022-11-01', '2024-04-30'),
+    # Viva Aerobus A 09 (2) $11,895.45 del 20/02/2024: boletos de la familia que
+    # le devolvieron Judi, Pops y Mom (el usuario, 2026-10-01). Ya se pagó
+    # todo: no es préstamo por cobrar, sale del gasto como reembolsable.
+    ('VIVA AEROBUS', 1322.0, '2024-02-01', '2024-12-31', 'FINANZAS', 'Reembolsable'),
+    # MacStore A 18 $20,999 del 19/11/2022: «iphone no mío». Son el préstamo
+    # del iPhone a Astro (prestamos.IPHONE_NOTAS), que ya está registrado.
+    ('MACSTORE', 1167.0, '2022-11-01', '2024-04-30', 'PRESTAMOS', 'Prestado'),
 )
 
 # Categoría de las mensualidades de compras que el usuario identificó
@@ -119,12 +122,13 @@ def _categoria_de_mensualidades(db, r):
 
 def _reafirmar_mensualidades(db) -> int:
     n = 0
-    for texto, cuota, desde, hasta in MENSUALIDADES_PRESTADAS:
+    for texto, cuota, desde, hasta, cat, sub in MENSUALIDADES_PRESTADAS:
         n += db.execute("""
-            UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado'
+            UPDATE est_movimientos SET categoria=?, subcategoria=?
             WHERE UPPER(descripcion) LIKE ? AND ABS(ABS(monto) - ?) <= 1 AND substr(fecha,1,10) BETWEEN ? AND ?
-              AND tipo='GASTO' AND COALESCE(subcategoria,'') != ? AND categoria != 'PRESTAMOS'
-        """, (f"%{texto}%", cuota, desde, hasta, SUBCAT)).rowcount
+              AND tipo='GASTO' AND COALESCE(subcategoria,'') != ?
+              AND (categoria != ? OR COALESCE(subcategoria,'') != ?)
+        """, (cat, sub, f"%{texto}%", cuota, desde, hasta, SUBCAT, cat, sub)).rowcount
     for texto, cuota, plazo, cat, sub in CATEGORIA_MENSUALIDADES:
         n += db.execute("""
             UPDATE est_movimientos SET categoria=?, subcategoria=?
