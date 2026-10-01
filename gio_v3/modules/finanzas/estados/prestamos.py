@@ -139,9 +139,30 @@ def candidatos(db) -> dict:
             'personas': personas}
 
 
+def _tabla_descartados(db) -> None:
+    # Grupos de «posibles duplicados» que el usuario revisó y no lo son. La
+    # llave son los ids del grupo: si aparece otro movimiento ese día y monto,
+    # el grupo cambia y vuelve a avisar.
+    db.execute("""CREATE TABLE IF NOT EXISTS est_duplicados_descartados (
+                      ids TEXT PRIMARY KEY, created_at TEXT NOT NULL)""")
+
+
+def _llave(ids) -> str:
+    return ','.join(str(i) for i in sorted(int(i) for i in ids))
+
+
+def descartar_duplicado(db, ids) -> None:
+    _tabla_descartados(db)
+    db.execute("INSERT OR IGNORE INTO est_duplicados_descartados (ids, created_at) VALUES (?,?)",
+               (_llave(ids), ahora()))
+
+
 def duplicados(db) -> list[dict]:
     """Posibles duplicados entre movimientos de préstamo: mismo día y mismo
-    monto. Solo lectura: el usuario confirma y borra desde Movimientos."""
+    monto. Solo lectura: el usuario confirma y borra desde Movimientos, o
+    marca «No es duplicado» (descartar_duplicado)."""
+    _tabla_descartados(db)
+    vistos = {r[0] for r in db.execute("SELECT ids FROM est_duplicados_descartados")}
     grupos = db.execute("""
         SELECT fecha, ABS(monto) AS monto, COUNT(*) AS n FROM est_movimientos
         WHERE categoria = 'PRESTAMOS' OR tipo IN ('PRESTAMO', 'COBRO_PRESTAMO')
@@ -156,9 +177,24 @@ def duplicados(db) -> list[dict]:
               AND (categoria = 'PRESTAMOS' OR tipo IN ('PRESTAMO', 'COBRO_PRESTAMO'))
             ORDER BY id
         """, (g['fecha'], g['monto'])).fetchall()
+        if _llave(m['id'] for m in movs) in vistos:
+            continue
         out.append({'fecha': g['fecha'], 'monto': round(float(g['monto']), 2),
                     'movimientos': [dict(m) for m in movs]})
     return out
+
+
+# Grupos que el usuario ya revisó (2026-10-01: «estos no son duplicados»).
+REVISADOS = (('2026-05-12', 2000.0), ('2026-03-08', 2000.0), ('2026-01-25', 4500.0))
+
+
+def descartar_revisados(db) -> int:
+    n = 0
+    for g in duplicados(db):
+        if any(g['fecha'][:10] == f and abs(g['monto'] - m) < 0.01 for f, m in REVISADOS):
+            descartar_duplicado(db, [x['id'] for x in g['movimientos']])
+            n += 1
+    return n
 
 
 def ahora() -> str:

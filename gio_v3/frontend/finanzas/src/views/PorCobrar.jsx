@@ -154,6 +154,12 @@ export default function PorCobrar() {
   const res = useLoad(() => api.get('/prestamos'), [app.refreshKey]);
   const cand = useLoad(() => api.get('/prestamos/candidatos'), [app.refreshKey]);
   const dup = useLoad(() => api.get('/prestamos/duplicados'), [app.refreshKey]);
+  const noEsDuplicado = async (g) => {
+    try {
+      await api.post('/prestamos/duplicados/descartar', { ids: g.movimientos.map((m) => m.id) });
+      toast('Listo: ya no se avisará de este grupo', 'ok'); dup.reload();
+    } catch (e) { toast(e.message || 'No se pudo guardar', 'err'); }
+  };
   const [modal, setModal] = useState(null); // {kind:'new'} | {kind:'dev', prestamo}
   const saved = () => app.refresh();
   const d = res.data;
@@ -242,6 +248,7 @@ export default function PorCobrar() {
                   <button type="button" className="fz-link" onClick={() => app.goTo('movimientos', { search: g.movimientos[0].descripcion })}>
                     Ver en Movimientos<Icon name="arrow-right" size={14} />
                   </button>
+                  <button type="button" className="fz-link" onClick={() => noEsDuplicado(g)}>No es duplicado</button>
                 </li>
               ))}
             </ul>

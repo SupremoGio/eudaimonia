@@ -2020,6 +2020,19 @@ def prestamos_candidatos():
         return jsonify(_prest.candidatos(db))
 
 
+@estados_bp.route('/api/prestamos/duplicados/descartar', methods=['POST'])
+def prestamos_duplicado_descartar():
+    """«No es duplicado»: el grupo (sus ids) deja de aparecer en el aviso."""
+    if not _ok(): return _locked()
+    ids = _ids((request.get_json(silent=True) or {}).get('ids'))
+    if len(ids) < 2:
+        return jsonify({'error': 'Faltan los movimientos del grupo.'}), 400
+    with get_db() as db:
+        _prest.descartar_duplicado(db, ids)
+        db.commit()
+    return jsonify({'ok': True})
+
+
 @estados_bp.route('/api/prestamos/duplicados')
 def prestamos_duplicados():
     """Solo lectura: grupos de movimientos de préstamo con mismo día y monto,

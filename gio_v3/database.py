@@ -6025,6 +6025,23 @@ def init_db():
         except Exception as e:
             print(f"[DB] finanzas_sin_conciliar_csv migration warning: {e}")
 
+        # ── FINANZAS — «Posibles duplicados» de préstamos que el usuario revisó
+        #    y no lo son (2026-10-01). Si los grupos aún no existen, reintenta.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_duplicados_revisados_2026_10_01'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.prestamos import descartar_revisados as _dr
+                _n = _dr(db)
+                if _n:
+                    db.execute(
+                        "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                        ("finanzas_duplicados_revisados_2026_10_01", f"{_n} grupos descartados")
+                    )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_duplicados_revisados_2026_10_01 migration warning: {e}")
+
         # ── FINANZAS — lotes de Expense armados con los reportes PDF que pasa el
         #    usuario (expense_lotes_manuales.py); la versión lleva el número de
         #    lotes: cada reporte nuevo se aplica solo al arrancar. Va antes de las

@@ -288,3 +288,33 @@ def test_alta_de_movimiento_devuelve_id_para_registrar_el_prestamo(client, test_
     assert client.post('/finanzas/estados/api/prestamos', json={'movimiento_id': mid, 'persona': 'Jorge'}).status_code == 201
     res = client.get('/finanzas/estados/api/prestamos').get_json()
     assert [(g['persona'], g['pendiente']) for g in res['personas']] == [('Jorge', 4900.0)]
+
+
+def test_no_es_duplicado_ya_no_avisa(test_db):
+    import database
+    from modules.finanzas.estados import prestamos
+    from app import create_app
+    app = create_app(); app.config["TESTING"] = True
+    with database.get_db() as db:
+        a = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, tipo)
+                          VALUES ('2026-03-08', 'BNET TRANSF', 2000, 'BBVA_DEB', 'PRESTAMOS', 'INGRESO')""").lastrowid
+        b = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, tipo)
+                          VALUES ('2026-03-08', 'BNET TRANSF A JUDITH A', 2000, 'BBVA_DEB', 'PRESTAMOS', 'INGRESO')""").lastrowid
+        c = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, tipo)
+                          VALUES ('2025-01-01', 'X', 100, 'BBVA_DEB', 'PRESTAMOS', 'INGRESO')""").lastrowid
+        d = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, tipo)
+                          VALUES ('2025-01-01', 'Y', 100, 'BBVA_DEB', 'PRESTAMOS', 'INGRESO')""").lastrowid
+        db.commit()
+        assert prestamos.descartar_revisados(db) == 1               # el del 08/03/2026 que revisó el usuario
+        db.commit()
+        assert [g['fecha'] for g in prestamos.duplicados(db)] == ['2025-01-01']
+    with app.test_client() as cl:
+        with cl.session_transaction() as s:
+            s["app_ok"] = True; s["fin_ok"] = True
+        assert cl.post('/finanzas/estados/api/prestamos/duplicados/descartar', json={'ids': [c, d]}).status_code == 200
+        assert cl.get('/finanzas/estados/api/prestamos/duplicados').get_json() == []
+        with database.get_db() as db:   # un tercero el mismo día y monto vuelve a avisar
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, tipo)
+                          VALUES ('2025-01-01', 'Z', 100, 'BBVA_DEB', 'PRESTAMOS', 'INGRESO')""")
+            db.commit()
+        assert len(cl.get('/finanzas/estados/api/prestamos/duplicados').get_json()) == 1
