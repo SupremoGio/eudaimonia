@@ -12,7 +12,7 @@ from modules.finanzas.estados.config import SUBCATEGORIAS
 
 
 def test_categorias_validas():
-    for *_, cat, sub in corr.CORRECCIONES:
+    for *_, cat, sub in corr.CORRECCIONES + corr.GASTOS:
         assert sub in SUBCATEGORIAS[cat], (cat, sub)
 
 
@@ -27,7 +27,7 @@ def test_aplica_por_id_y_por_texto(test_db):
         cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
         assert cat(4726) == ('TRANSPORTE', 'Taxi/apps')
         assert cat(90001) == ('VIVIENDA', 'Aportación renta')
-        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) - 2)
+        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) - 2)
         assert corr.aplicar(db)[0] == 0
 
 
@@ -42,3 +42,13 @@ def test_abono_en_fechas_de_viaje_se_liga(test_db):
         corr.aplicar(db)
         r = db.execute("SELECT categoria, subcategoria, viaje_id FROM est_movimientos WHERE id=3468").fetchone()
         assert tuple(r) == ('VIAJES', 'Otros', vid)
+
+
+def test_gastos_de_dinero_ajeno_regresado(test_db):
+    with database.get_db() as db:
+        i = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2023-01-04', 'PAGO CUENTA DE TERCERO BNET EXPENSE IVAN', 1171, 'BBVA_DEB', 'OTROS', '', 'GASTO')""").lastrowid
+        db.commit()
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) \
+            == ('FINANZAS', 'Reembolsable')

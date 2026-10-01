@@ -3,7 +3,8 @@ Abonos de «Sin conciliar» que el usuario comentó en el CSV (columna
 COMENTARIOS). Casi todos son gente pagándole su parte de algo que él pagó:
 el abono va a la categoría de ese gasto y lo resta (como ABONOS_A_GASTO).
 Cada fila se identifica por id + fecha + monto; si el id no coincide (otra
-base), por fecha + monto + texto de la descripción. Solo toca INGRESOS.
+base), por fecha + monto + texto de la descripción. Solo toca INGRESOS,
+salvo la lista GASTOS.
 Se aplica en «Aplicar reglas», al cargar estados y al arrancar (la versión de
 la migración lleva el tamaño de la lista: cada tanda nueva se aplica sola).
 """
@@ -60,6 +61,25 @@ VIAJES = [
     (4084, '2023-04-25', 500.0, 'TRANSF A GIOVANY', 'VILLA MARZO 2023'),
 ]
 
+# Gastos que el usuario reclasificó (fecha, monto, texto, categoria, subcategoria):
+# dinero ajeno que regresó (sale de su gasto) y pagos que identificó.
+GASTOS = [
+    # «regresé dinero de un expense que me pagaron pero no era mío» (2026-10-01)
+    ('2023-01-04', 1171.0, 'EXPENSE IVAN', 'FINANZAS', 'Reembolsable'),
+    ('2023-06-30', 999.0, 'EXPENSE IVAN', 'FINANZAS', 'Reembolsable'),
+    # «es un depósito de un roomie que devolví» (2026-10-01)
+    ('2023-08-14', 2500.0, 'DEPOSITO DPTO', 'FINANZAS', 'Reembolsable'),
+    # «manda todo esto a salsa, clases» (2026-10-01): mensualidades de 2023
+    ('2023-01-06', 400.0, 'PAGO SUPREMO GIO', 'SALSA', 'Clases'),
+    ('2023-01-14', 420.0, 'MENS BOLETO GIO', 'SALSA', 'Clases'),
+    ('2023-02-17', 400.0, 'TRANSF A DIEGO ALB', 'SALSA', 'Clases'),
+    ('2023-03-26', 400.0, 'MENS GIO', 'SALSA', 'Clases'),
+    ('2023-04-17', 400.0, 'MENSUALIDAD GIO', 'SALSA', 'Clases'),
+    ('2023-06-06', 400.0, 'MAYO GIO', 'SALSA', 'Clases'),
+    ('2023-10-30', 400.0, 'MENSUALIDAD GIOVAN', 'SALSA', 'Clases'),
+    ('2023-12-29', 400.0, 'PAGO BOLETO GIO', 'SALSA', 'Clases'),
+]
+
 
 def _fila(db, mid, fecha, monto, texto):
     row = db.execute("""SELECT id, categoria, subcategoria, viaje_id FROM est_movimientos
@@ -111,5 +131,16 @@ def aplicar(db) -> tuple[int, int]:
             continue
         if (row['categoria'], row['subcategoria'] or '') != (cat, sub):
             db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, row['id']))
+            ok += 1
+    for fecha, monto, texto, cat, sub in GASTOS:
+        row = db.execute("""SELECT id, categoria, subcategoria, tipo FROM est_movimientos
+                            WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo IN ('GASTO', 'PAGO')
+                              AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""",
+                         (fecha, monto, f"%{texto}%")).fetchone()
+        if not row:
+            faltan += 1
+        elif (row['categoria'], row['subcategoria'] or '', row['tipo']) != (cat, sub, 'GASTO'):
+            db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, tipo='GASTO' WHERE id=?",
+                       (cat, sub, row['id']))
             ok += 1
     return ok, faltan
