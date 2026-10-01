@@ -118,7 +118,7 @@ export default function Movimientos({ initial }) {
     <div className="fz-mv-tools">
       <div className="eu-input-wrap fz-mv-search">
         <Icon name="search" />
-        <input className="eu-input fz-input-sm" type="search" placeholder="Buscar comercio o descripción" aria-label="Buscar movimientos"
+        <input className="eu-input fz-input-sm" type="search" placeholder="Buscar comercio, descripción o monto" aria-label="Buscar movimientos"
           value={searchDraft} onChange={(e) => setSearchDraft(e.target.value)} />
       </div>
       <div className="eu-chips" role="group" aria-label="Filtro rápido">

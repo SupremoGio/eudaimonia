@@ -6025,6 +6025,25 @@ def init_db():
         except Exception as e:
             print(f"[DB] finanzas_sin_conciliar_csv migration warning: {e}")
 
+        # ── FINANZAS — lotes de Expense armados con los reportes PDF que pasa el
+        #    usuario (expense_lotes_manuales.py); la versión lleva el número de
+        #    lotes: cada reporte nuevo se aplica solo al arrancar. Va antes de las
+        #    pistas para que ninguna se lleve el depósito.
+        try:
+            from modules.finanzas.estados import expense_lotes_manuales as _elm
+            _ver = f"finanzas_expense_lotes_manuales_{len(_elm.LOTES)}"
+            if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
+                _h, _f = _elm.aplicar(db)
+                if not _f:   # si falta algún movimiento se reintenta al siguiente arranque
+                    db.execute(
+                        "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                        (_ver, f"{_h} lotes creados")
+                    )
+                db.commit()
+                print(f"[DB] {_ver}: {_h} lotes creados, {_f} incompletos")
+        except Exception as e:
+            print(f"[DB] finanzas_expense_lotes_manuales migration warning: {e}")
+
         # ── FINANZAS — «Sin conciliar», segunda pasada de pistas (2026-09-30):
         #    devoluciones por gastos compartidos (mi_parte), préstamos por fecha y
         #    monto para «TRANSF A GIOVANY A» y lo seguro de siempre. Va después de

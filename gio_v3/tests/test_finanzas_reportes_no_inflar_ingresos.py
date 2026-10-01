@@ -149,7 +149,10 @@ def test_by_naturaleza_no_cuenta_finanzas_no_gasto(client, test_db):
                 categoria='FINANZAS', subcategoria='Fideicomiso', tipo='GASTO')
         db.commit()
 
-    resp = client.get('/finanzas/estados/api/summary/by-naturaleza')
+    # Rango explícito: sin él el endpoint toma el mes en curso y la prueba
+    # dependía de correr en septiembre de 2026.
+    resp = client.get('/finanzas/estados/api/summary/by-naturaleza',
+                      query_string={'date_from': '2026-09-01', 'date_to': '2026-09-30'})
     assert resp.status_code == 200
     data = resp.get_json()
     total = sum(g['total'] for g in data)

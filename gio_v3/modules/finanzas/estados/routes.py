@@ -190,8 +190,25 @@ def _build_filters(args) -> tuple[list[str], list]:
         conditions.append("tipo = ?")
         params.append(args['tipo'])
     if args.get('search'):
-        conditions.append("UPPER(descripcion) LIKE ?")
-        params.append(f"%{args['search'].upper()}%")
+        # También por monto (el usuario, 2026-10-01): «390», «$1,500» o «6882.28».
+        # Sin centavos busca de 390.00 a 390.99; con centavos, el monto exacto.
+        # Compara contra el monto y contra mi_parte (gastos compartidos).
+        q = args['search'].strip()
+        num = re.fullmatch(r'\$?\s*(\d{1,3}(?:,\d{3})+|\d+)(\.\d{1,2})?', q)
+        if num:
+            entero = float(num.group(1).replace(',', ''))
+            if num.group(2):
+                x = entero + float(num.group(2))
+                monto_cond, monto_params = "(ABS(ABS(monto) - ?) < 0.005 OR ABS(ABS(COALESCE(mi_parte, -1)) - ?) < 0.005)", [x, x]
+            else:
+                monto_cond = ("((ABS(monto) >= ? AND ABS(monto) < ?) OR "
+                              "(mi_parte IS NOT NULL AND ABS(mi_parte) >= ? AND ABS(mi_parte) < ?))")
+                monto_params = [entero, entero + 1, entero, entero + 1]
+            conditions.append(f"(UPPER(descripcion) LIKE ? OR {monto_cond})")
+            params.extend([f"%{q.upper()}%", *monto_params])
+        else:
+            conditions.append("UPPER(descripcion) LIKE ?")
+            params.append(f"%{q.upper()}%")
     months_cond, months_params = _months_condition(args)
     if months_cond:
         conditions.append(months_cond)
