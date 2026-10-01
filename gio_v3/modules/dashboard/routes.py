@@ -450,9 +450,8 @@ def _build_deadlines(today_dt: date) -> list:
         for r in db.execute("""
             SELECT id,
                    ('vs ' || COALESCE(NULLIF(rival, ''), 'rival por confirmar')
-                     || CASE WHEN hora <> '' THEN ' · ' || hora ELSE '' END
-                     || CASE WHEN cancha <> '' THEN ' · ' || cancha ELSE '' END) AS label,
-                   NULL AS rem_type,
+                     || CASE WHEN hora <> '' THEN ' · ' || hora ELSE '' END) AS label,
+                   NULL AS rem_type, cancha,
                    fecha AS fecha, 'partido' AS kind
             FROM futbol_partidos
             WHERE estado='programado'
