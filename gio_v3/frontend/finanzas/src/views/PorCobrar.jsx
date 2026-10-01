@@ -54,8 +54,8 @@ function movLabel(m) {
   return `${fmtDate(m.fecha, true)} · ${m.descripcion} · ${money(m.monto)}${m.banco ? ` · ${bankName(m.banco)}` : ''}`;
 }
 
-function NuevoPrestamo({ cand, onClose, onSaved }) {
-  const [mov, setMov] = useState(cand.prestamos[0] ? String(cand.prestamos[0].id) : '');
+function NuevoPrestamo({ cand, movId, onClose, onSaved }) {
+  const [mov, setMov] = useState(movId ? String(movId) : cand.prestamos[0] ? String(cand.prestamos[0].id) : '');
   const [persona, setPersona] = useState(PERSONAS[0]);
   const [otro, setOtro] = useState('');
   const [notas, setNotas] = useState('');
@@ -160,7 +160,8 @@ export default function PorCobrar() {
       toast('Listo: ya no se avisará de este grupo', 'ok'); dup.reload();
     } catch (e) { toast(e.message || 'No se pudo guardar', 'err'); }
   };
-  const [modal, setModal] = useState(null); // {kind:'new'} | {kind:'dev', prestamo}
+  const [modal, setModal] = useState(null); // {kind:'new', movId?} | {kind:'dev', prestamo}
+  const [verSinPersona, setVerSinPersona] = useState(false);
   const saved = () => app.refresh();
   const d = res.data;
   const [sort, setSort] = useState(readSort);
@@ -229,8 +230,23 @@ export default function PorCobrar() {
       {(cand.data?.prestamos || []).length > 0 && (
         <div className="fz-note" data-tone="info" role="note">
           <Icon name="user-plus" size={16} />
-          <span className="eu-grow">{plural(cand.data.prestamos.length, 'movimiento con categoría Préstamos aún no tiene', 'movimientos con categoría Préstamos aún no tienen')} persona asignada.</span>
-          <button type="button" className="fz-link" onClick={() => setModal({ kind: 'new' })}>Registrar<Icon name="arrow-right" size={14} /></button>
+          <div className="eu-grow eu-vstack fz-gap-2">
+            <span>{plural(cand.data.prestamos.length, 'movimiento con categoría Préstamos aún no tiene', 'movimientos con categoría Préstamos aún no tienen')} persona asignada.</span>
+            {verSinPersona && (
+              <ul className="fz-pc-dups">
+                {cand.data.prestamos.map((m) => (
+                  <li key={m.id}>
+                    <span className="num">{fmtDate(m.fecha, true)} · {money(m.monto)}</span>
+                    <span className="t-meta">{m.descripcion}{m.banco ? ` · ${bankName(m.banco)}` : ''}</span>
+                    <button type="button" className="fz-link" onClick={() => setModal({ kind: 'new', movId: m.id })}>Registrar<Icon name="arrow-right" size={14} /></button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <button type="button" className="fz-link" aria-expanded={verSinPersona} onClick={() => setVerSinPersona((v) => !v)}>
+            {verSinPersona ? 'Ocultar lista' : 'Ver lista'}<Icon name={verSinPersona ? 'chevron-up' : 'chevron-down'} size={14} />
+          </button>
         </div>
       )}
 
@@ -320,7 +336,7 @@ export default function PorCobrar() {
         </div>
       )}
 
-      {modal?.kind === 'new' && cand.data && <NuevoPrestamo cand={cand.data} onClose={() => setModal(null)} onSaved={saved} />}
+      {modal?.kind === 'new' && cand.data && <NuevoPrestamo cand={cand.data} movId={modal.movId} onClose={() => setModal(null)} onSaved={saved} />}
       {modal?.kind === 'dev' && cand.data && <LigarDevolucion prestamo={modal.prestamo} cand={cand.data} onClose={() => setModal(null)} onSaved={saved} />}
     </div>
   );
