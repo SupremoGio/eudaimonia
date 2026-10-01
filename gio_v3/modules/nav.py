@@ -44,6 +44,7 @@ NAV = [
             {'id': 'consumo', 'label': 'Consumo', 'url': '/finanzas/consumo/', 'icon': 'shopping-cart'},
             {'id': 'fin-wishlist', 'label': 'Wishlist', 'url': '/finanzas/prioridades/', 'icon': 'star'},
             {'id': 'gastos-viaje', 'label': 'Gastos de viaje', 'url': '/finanzas/estados/viajes/', 'icon': 'plane'},
+            {'id': 'coach', 'label': 'Coach financiero', 'url': '/finanzas/coach/', 'icon': 'sparkles'},
         ]},
         {'id': 'hegemonikon', 'label': 'Hegemonikon', 'fn': 'Salud', 'cat': 'hegemonikon',
          'icon': 'heart-pulse', 'url': '/bienestar/', 'children': [

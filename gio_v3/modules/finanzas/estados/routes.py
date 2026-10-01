@@ -86,6 +86,7 @@ _FINANZAS_NO_GASTO_SUBCATS = (
     'Transferencia recibida',
     'Depósito', 'Fideicomiso', 'Reembolsable',
     'Compra a meses',   # compra inicial a MSI: el gasto lo llevan las mensualidades (msi.py)
+    'Entre cuentas propias',   # transferencia que regresó o entre cuentas del usuario
 )
 
 
