@@ -52,7 +52,7 @@ def sin_conciliar(db, anio: str | None = None) -> dict:
     rows = [dict(r) for r in db.execute(f"""
         SELECT * FROM est_movimientos
         WHERE tipo = 'INGRESO' AND categoria IN ({ph}) {filtro_anio}
-          AND COALESCE(subcategoria, '') NOT IN ('{SUB_PROPIA}', '{SUB_COMPARTIDO}')
+          AND COALESCE(subcategoria, '') NOT IN ('{SUB_PROPIA}', '{SUB_COMPARTIDO}', '{SUB_EXPENSE_SIN_DETALLE}')
           AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
           AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)
         ORDER BY fecha DESC, id DESC
@@ -188,6 +188,8 @@ COMPARTIDO_DIAS = 60
 # Abono que te regresan lo que pagaste por otros en un gasto compartido (el
 # gasto ya solo cuenta tu parte, mi_parte): ni ingreso ni resta al gasto.
 SUB_COMPARTIDO = 'Reembolso compartido'
+# Depósitos viejos de la empresa sin reporte de gastos para armar su lote.
+SUB_EXPENSE_SIN_DETALLE = 'Expense sin detalle'
 
 
 def _por_cobrar_compartido(db) -> list[dict]:
@@ -509,4 +511,25 @@ def conciliar_pistas(db, solo_seguras: bool = False) -> dict:
         elif pista['tipo'] == 'propia':
             db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id=?", (SUB_PROPIA, r['id']))
             out['propias'] += 1
+    return out
+
+
+def cerrar_sin_pista(db, hasta: str) -> dict:
+    """Cierre que eligió el usuario (2026-10-01) para lo que ya no recuerda:
+    los abonos sin pista hasta `hasta` -> «Reembolso compartido» (regresos sin
+    identificar: ni ingreso ni resta a ningún gasto) y los de la empresa sin
+    lote -> «Expense sin detalle». Siguen en el CSV (con su Estado) por si
+    después recuerda alguno. Lo que tiene otra pista no se toca."""
+    out = {'regresos': 0, 'expense': 0}
+    for r in sin_conciliar(db)['movimientos']:
+        if (r['fecha'] or '')[:10] > hasta:
+            continue
+        tipo = r['pista']['tipo'] if r['pista'] else None
+        if tipo is None:
+            db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id=?", (SUB_COMPARTIDO, r['id']))
+            out['regresos'] += 1
+        elif tipo == 'empresa':
+            db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id=?",
+                       (SUB_EXPENSE_SIN_DETALLE, r['id']))
+            out['expense'] += 1
     return out

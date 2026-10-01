@@ -281,3 +281,17 @@ def test_devolucion_de_persona_sin_prestamo_queda_compartido(client):
         db.commit()
         corr.aplicar(db)
         assert db.execute("SELECT prestamo_id FROM est_prestamo_devoluciones WHERE movimiento_id=3811").fetchone()[0] == pid
+
+
+def test_cierre_sin_pista(client):
+    from modules.finanzas.estados.abonos import cerrar_sin_pista
+    nada = _mov('2023-06-10', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 7000, 'FINANZAS', 'Transferencia')
+    emp = _mov('2023-09-05', 'SITH20000007452 FIBRA HOTELERA SC', 5110.99, 'FINANZAS', 'Fideicomiso')
+    despues = _mov('2026-11-01', 'SPEI RECIBIDOBANORTE', 999, 'FINANZAS', 'Transferencia recibida')
+    with database.get_db() as db:
+        assert cerrar_sin_pista(db, '2026-10-01') == {'regresos': 1, 'expense': 1}
+        db.commit()
+        sub = lambda i: db.execute("SELECT subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[0]
+        assert (sub(nada), sub(emp)) == ('Reembolso compartido', 'Expense sin detalle')
+    assert [m['id'] for m in client.get(URL).get_json()['movimientos']] == [despues]
+    assert 'Reembolso compartido' in client.get(URL + '.csv').get_data(as_text=True)   # siguen en el CSV de referencia

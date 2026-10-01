@@ -16,7 +16,7 @@ from flask import (
     session, jsonify, Response, redirect, url_for,
 )
 from database import get_db
-from utils import clean_str, today_str, safe_float, csv_response
+from utils import clean_str, today_str, safe_float, csv_response, now_local
 import modules.gamification.engine as engine
 from . import prestamos as _prest
 from . import expense_lotes as _lotes
@@ -158,7 +158,7 @@ def _days_in_month(year_month: str) -> int:
     """Días calendario de un 'YYYY-MM' — el mes actual cuenta solo los días
     transcurridos hasta hoy (igual que un rango 'este mes' sin fecha final)."""
     year, month = (int(p) for p in year_month.split('-'))
-    today = datetime.now().date()
+    today = now_local().date()
     if (year, month) == (today.year, today.month):
         return today.day
     return calendar.monthrange(year, month)[1]
@@ -1290,7 +1290,7 @@ def export_csv():
 @estados_bp.route('/api/summary/overview')
 def overview():
     if not _ok(): return _locked()
-    month_start = datetime.now().replace(day=1).strftime("%Y-%m-%d")
+    month_start = now_local().replace(day=1).strftime("%Y-%m-%d")
 
     with get_db() as db:
         row = db.execute(f"""
@@ -1360,7 +1360,7 @@ def _prev_period_range(date_from: str, date_to: str | None) -> tuple[str, str]:
     un periodo contra el que le precede. `date_to` ausente se toma como hoy,
     igual que hace by-category para el rango en curso."""
     d_from = datetime.strptime(date_from, "%Y-%m-%d").date()
-    d_to = datetime.strptime(date_to, "%Y-%m-%d").date() if date_to else datetime.now().date()
+    d_to = datetime.strptime(date_to, "%Y-%m-%d").date() if date_to else now_local().date()
     span = (d_to - d_from).days + 1
     prev_to = d_from - timedelta(days=1)
     prev_from = prev_to - timedelta(days=span - 1)
@@ -1399,7 +1399,7 @@ def by_category():
         conds.append(months_cond)
         params.extend(months_params)
     else:
-        date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        date_from = request.args.get('date_from') or now_local().replace(day=1).strftime("%Y-%m-%d")
         date_to   = request.args.get('date_to')
         conds.append("fecha >= ?"); params.append(date_from)
         if date_to:
@@ -1467,7 +1467,7 @@ def by_naturaleza():
         conds.append(months_cond.replace('fecha', 'm.fecha'))
         params.extend(months_params)
     else:
-        date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        date_from = request.args.get('date_from') or now_local().replace(day=1).strftime("%Y-%m-%d")
         date_to   = request.args.get('date_to')
         conds.append("m.fecha >= ?"); params.append(date_from)
         if date_to:
@@ -1557,7 +1557,7 @@ def summary_pendientes():
         # Referencia de Expense del año en curso: ya no suma en «Total
         # gastado» (ver _pago_cats_sql), pero el usuario quiere saber cuánto
         # se fue en gastos de trabajo, separado por quién lo pagó.
-        year_start = datetime.now().strftime("%Y-01-01")
+        year_start = now_local().strftime("%Y-01-01")
         exp = db.execute("""
             SELECT COUNT(*) AS n,
                    COALESCE(SUM(ABS(monto)), 0) AS total,
@@ -1625,7 +1625,7 @@ def by_subcategory():
         conds.append(months_cond)
         params.extend(months_params)
     else:
-        date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        date_from = request.args.get('date_from') or now_local().replace(day=1).strftime("%Y-%m-%d")
         date_to   = request.args.get('date_to')
         conds.append("fecha >= ?"); params.append(date_from)
         if date_to:
@@ -1660,14 +1660,14 @@ def summary_stats():
         params  = list(months_params)
         days    = sum(_days_in_month(m) for m in months_params)
     else:
-        date_from = request.args.get('date_from') or datetime.now().replace(day=1).strftime("%Y-%m-%d")
+        date_from = request.args.get('date_from') or now_local().replace(day=1).strftime("%Y-%m-%d")
         date_to   = request.args.get('date_to')
         conds  = ["fecha >= ?"]
         params = [date_from]
         if date_to:
             conds.append("fecha <= ?"); params.append(date_to)
         d_from = datetime.strptime(date_from, "%Y-%m-%d").date()
-        d_to   = datetime.strptime(date_to, "%Y-%m-%d").date() if date_to else datetime.now().date()
+        d_to   = datetime.strptime(date_to, "%Y-%m-%d").date() if date_to else now_local().date()
         days   = max((d_to - d_from).days + 1, 1)
     if bank:
         conds.append("banco = ?"); params.append(bank)
@@ -1760,7 +1760,7 @@ def get_accounts():
 @estados_bp.route('/api/budgets')
 def get_budgets():
     if not _ok(): return _locked()
-    month_start = datetime.now().replace(day=1).strftime("%Y-%m-%d")
+    month_start = now_local().replace(day=1).strftime("%Y-%m-%d")
 
     with get_db() as db:
         budgets = db.execute(

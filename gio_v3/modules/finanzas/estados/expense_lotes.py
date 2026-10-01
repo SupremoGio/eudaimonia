@@ -17,6 +17,8 @@ Reembolsado) y se refleja en estatus_reembolso de sus gastos (los
 """
 from datetime import datetime
 
+from utils import now_local
+
 PENDIENTE, PARCIAL, REEMBOLSADO, VACIO = 'Pendiente', 'Reembolsado parcial', 'Reembolsado', 'Sin gastos'
 ESTATUS_TERCERO = 'TERCERO'
 # Redondeos del depósito vs. la suma de facturas: hasta $1 de diferencia se
@@ -92,7 +94,7 @@ def resumen(db) -> dict:
     lotes = listar(db)
     sueltos = sin_lote(db)
     pendientes_sueltos = [g for g in sueltos if (g['estatus_reembolso'] or 'PENDIENTE') == 'PENDIENTE']
-    year = datetime.now().strftime('%Y')
+    year = now_local().strftime('%Y')
     return {
         'por_cobrar': round(sum(l['pendiente'] for l in lotes)
                             + sum(g['monto'] for g in pendientes_sueltos), 2),

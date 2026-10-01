@@ -6080,6 +6080,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_conciliar_pistas_v2 migration warning: {e}")
 
+        # ── FINANZAS — cierre de «Sin conciliar» (el usuario, 2026-10-01): lo que
+        #    quedó sin pista hasta hoy son regresos sin identificar y los depósitos
+        #    viejos de la empresa sin reporte, Expense sin detalle. Una sola vez:
+        #    lo que llegue después se concilia normal.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_sin_conciliar_cierre_2026_10_01'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.abonos import cerrar_sin_pista as _cierre
+                _res = _cierre(db, '2026-10-01')
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_sin_conciliar_cierre_2026_10_01", str(_res))
+                )
+                db.commit()
+                print(f"[DB] finanzas_sin_conciliar_cierre_2026_10_01: {_res}")
+            except Exception as e:
+                print(f"[DB] finanzas_sin_conciliar_cierre_2026_10_01 migration warning: {e}")
+
         # ── FINANZAS — pedidos de Amazon con su categoría (pedidos_amazon.py) y
         #    las mensualidades de los que fueron a MSI (msi.CATEGORIA_MENSUALIDADES).
         #    La versión lleva el tamaño de las listas: cada tanda nueva de pedidos
