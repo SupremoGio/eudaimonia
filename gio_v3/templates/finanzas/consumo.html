@@ -78,7 +78,7 @@
 <form class="eu-modal-bd" id="f-nuevo" autocomplete="off" novalidate>
   <div class="eu-field"><label class="eu-label" for="nuevo-nombre">Nombre *</label><input class="eu-input" id="nuevo-nombre" placeholder="ej. Shampoo"></div>
   <div class="eu-field"><label class="eu-label" for="nuevo-cat">Categoría</label><input class="eu-input" id="nuevo-cat" list="cat-list" placeholder="ej. Higiene personal">
-    <datalist id="cat-list">{% for cat in categorias %}<option value="{{ cat }}">{% endfor %}</datalist></div>
+    <datalist id="cat-list">{% for cat in sugerencias %}<option value="{{ cat }}">{% endfor %}</datalist></div>
 </form>
 <div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-nuevo')">Cancelar</button><button type="submit" form="f-nuevo" class="eu-btn eu-btn--primary">Crear</button></div>
 {% endcall %}

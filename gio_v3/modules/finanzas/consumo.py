@@ -156,6 +156,12 @@ def _enrich(prod, db):
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+# Sugerencias del campo Categoría (el campo es libre): las que ya usó el
+# usuario más esta base, para que la lista no salga vacía al empezar.
+CATEGORIAS_BASE = ("Despensa", "Bebidas", "Limpieza", "Higiene personal", "Cuidado personal",
+                   "Suplementos", "Medicamentos", "Mascotas", "Hogar")
+
+
 @consumo_bp.route("/")
 def index():
     with get_db() as db:
@@ -174,13 +180,15 @@ def index():
             "SELECT DISTINCT categoria FROM consumo_productos WHERE activo=1 ORDER BY categoria"
         ).fetchall()
 
+    usadas = [r["categoria"] for r in categorias]
     atrasados = sum(1 for p in productos if p["status"] == "atrasado")
     proximos  = sum(1 for p in productos if p["status"] == "proximo")
 
     return render_template(
         "finanzas/consumo.html",
         productos=productos,
-        categorias=[r["categoria"] for r in categorias],
+        categorias=usadas,
+        sugerencias=sorted({c for c in usadas if c} | set(CATEGORIAS_BASE), key=str.lower),
         compras_mes=stats["c"],
         gasto_mes=round(stats["s"], 2),
         atrasados=atrasados,
