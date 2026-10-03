@@ -317,7 +317,9 @@ PRESTAMOS_MANUALES = (
     ('2026-05-12', 2000.0, 'REGRESO AL CORNER', 'Cornelius'),
     ('2024-10-18', 10000.0, 'CIRUJIA CAMBIO SEX', 'Jorge'),
 )
-# «parece que se regresó»: transferencias de $13,000 que volvieron. Se cancelan
+# «parece que se regresó»: transferencias de $13,000 que volvieron (el
+# usuario, 2026-10-03: «me prestaron y regresé»; el dinero prestado no llegó a
+# una cuenta cargada en la app, el depósito del 12/09 es un retiro de CETES). Se cancelan
 # con el depósito del mismo monto más cercano (15 días antes o después; el
 # usuario, 2026-10-03: «un día antes me lo prestaron, al día siguiente lo
 # devolví», así que el depósito puede llegar ANTES de la transferencia): las dos
@@ -364,9 +366,11 @@ def registrar_manuales(db) -> tuple[int, int]:
                               AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
                             ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?)), fecha, id
                             LIMIT 1""", (monto, fecha, fecha, _SUB_PROPIA, fecha)).fetchone()
-        if not dep:
-            continue
-        db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id IN (?,?)",
-                   (_SUB_PROPIA, m['id'], dep['id']))
+        # Sin depósito en esta base (el préstamo le llegó por otro lado) la
+        # salida igual queda fuera del gasto y de Por cobrar: el usuario
+        # confirmó que fue regresar un préstamo que le hicieron.
+        ids = (m['id'], dep['id']) if dep else (m['id'],)
+        db.execute(f"UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? "
+                   f"WHERE id IN ({','.join('?' * len(ids))})", (_SUB_PROPIA, *ids))
         parejas += 1
     return creados, parejas

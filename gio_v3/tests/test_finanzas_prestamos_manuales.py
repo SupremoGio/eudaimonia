@@ -37,9 +37,10 @@ def test_regresados_se_cancelan_con_su_deposito(test_db):
         b = _ins(db, '2024-09-12', 'PAGO CUENTA DE TERCERO BNET DEUDA', 13000.0)
         da = _ins(db, '2024-09-11', 'DEVOLUCION SPEI', -13000.0, 'INGRESO', 'FINANZAS', 'Reembolso compartido')
         db.commit()
-        assert pr.registrar_manuales(db) == (0, 1)
+        assert pr.registrar_manuales(db) == (0, 2)
         assert _cat(db, a) == _cat(db, da) == ('FINANZAS', 'Entre cuentas propias')
-        assert _cat(db, b) == ('PRESTAMOS', 'Prestado')              # sin depósito: se queda
+        assert _cat(db, b) == ('FINANZAS', 'Entre cuentas propias')  # sin depósito: igual sale
+        assert pr.registrar_manuales(db) == (0, 0)
         db.execute("DELETE FROM est_movimientos WHERE id=?", (da,))   # (para no confundir)
         db.commit()
 
