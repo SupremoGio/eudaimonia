@@ -110,3 +110,26 @@ def test_judi_ida_y_vuelta_y_cornelius(test_db):
         assert _cat(db, judi) == _cat(db, vuelta) == ('FINANZAS', 'Entre cuentas propias')
         assert db.execute("SELECT tipo FROM est_movimientos WHERE id=?", (vuelta,)).fetchone()[0] == 'INGRESO'
         assert pr.candidatos(db)['prestamos'] == []
+
+
+def test_gracias_bebo_es_prestamo_de_2023_y_libera_mayo_2026(test_db):
+    """«GRACIAS BEBO» estaba ligado al préstamo de mayo 2026 a Judi (que fue ida
+    y vuelta); pasa a su propio préstamo de 2023, pagado."""
+    with database.get_db() as db:
+        gb = _ins(db, '2023-05-12', 'PAGO CUENTA DE TERCERO BNET GRACIAS BEBO', 4250.0, 'INGRESO', 'PRESTAMOS', '')
+        judi = _ins(db, '2026-05-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A JUDITH A', 2000.0)
+        vuelta = _ins(db, '2026-05-12', 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0)
+        _ins(db, '2026-05-12', 'BNET TACOS PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0)
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                            VALUES ('Judi', 'OTORGADO', 2000, '2026-05-11', '', ?, datetime('now'))""", (judi,)).lastrowid
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,datetime('now'))",
+                   (pid, gb))
+        db.commit()
+        pr.registrar_manuales(db)
+        pr.registrar_manuales(db)
+        por = {(p['persona'], p['fecha'][:4]): p for p in pr.listar(db)}
+        j23 = por[('Judi', '2023')]
+        assert j23['monto'] == 4250 and j23['estado'] == 'Pagado' and j23['notas'].startswith('Préstamo de 2023')
+        assert ('Judi', '2026') not in por and ('Cornelius', '2026') in por
+        assert _cat(db, judi) == _cat(db, vuelta) == ('FINANZAS', 'Entre cuentas propias')
+        assert _cat(db, gb) == ('PRESTAMOS', '')

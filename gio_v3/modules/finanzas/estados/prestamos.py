@@ -317,6 +317,15 @@ PRESTAMOS_MANUALES = (
     ('2026-05-12', 2000.0, 'BNET TACOS', 'Cornelius'),   # la que sí fue a Cornelius (ver IDA_Y_VUELTA)
     ('2024-10-18', 10000.0, 'CIRUJIA CAMBIO SEX', 'Jorge'),
 )
+# Préstamos de los que solo quedó la devolución (la salida no se identifica):
+# (persona, fecha, monto, notas, devolución (fecha, monto, texto)). Quedan
+# pagados. El usuario, 2026-10-03: «GRACIAS BEBO» fue Judi pagándole «un
+# dinero que le presté a mi hermana, es del 2023, ya no recuerdo de qué».
+PRESTAMOS_SOLO_DEVOLUCION = (
+    ('Judi', '2023-05-12', 4250.0, 'Préstamo de 2023 (no recuerdo de qué)',
+     ('2023-05-12', 4250.0, 'GRACIAS BEBO')),
+)
+
 # Transferencias que fueron y regresaron (salida, y el abono de vuelta que el
 # lector de BBVA dejó como cargo): las dos quedan «Entre cuentas propias» y
 # sin préstamo. (fecha, monto, prefijo exacto de la descripción) de la salida
@@ -364,6 +373,20 @@ def _mov(db, fecha, monto, texto, tipo='GASTO'):
 def registrar_manuales(db) -> tuple[int, int]:
     """Registra PRESTAMOS_MANUALES y cancela REGRESADOS con su depósito.
     Devuelve (préstamos creados, parejas canceladas). Idempotente."""
+    for persona, p_fecha, p_monto, notas, (d_fecha, d_monto, d_texto) in PRESTAMOS_SOLO_DEVOLUCION:
+        d = db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
+                            AND UPPER(descripcion) LIKE ? AND tipo='INGRESO' ORDER BY id LIMIT 1""",
+                       (d_fecha, d_monto, f"%{d_texto}%")).fetchone()
+        if not d:
+            continue
+        p = db.execute("SELECT id FROM est_prestamos WHERE contraparte=? AND notas=?", (persona, notas)).fetchone()
+        pid = p['id'] if p else db.execute(
+            """INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+               VALUES (?, 'OTORGADO', ?, ?, ?, NULL, ?)""", (persona, p_monto, p_fecha, notas, ahora())).lastrowid
+        db.execute("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=? AND prestamo_id != ?", (d['id'], pid))
+        db.execute("INSERT OR IGNORE INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+                   (pid, d['id'], ahora()))
+        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (d['id'],))
     for ida, vuelta in IDA_Y_VUELTA:
         filas = [db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=?
                                  AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""",
