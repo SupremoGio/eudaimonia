@@ -54,6 +54,9 @@ def test_simulacion_no_escribe_y_aplicar_es_idempotente(test_db):
 def test_correcciones(test_db):
     with database.get_db() as db:
         _sembrar(db)
+        dev = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                              VALUES ('2024-10-09', 'SPEI DEVUELTO BANORTE', 11000, 'BBVA_DEB', 'FINANZAS',
+                                      'Transferencia recibida', 'INGRESO')""").lastrowid
         aud.aplicar(db)
         # Dirección en débito + categoría sugerida (antes era gasto en CAFE).
         r = _fila(db, 1616)
@@ -88,6 +91,12 @@ def test_correcciones(test_db):
         # Abono de Judi con concepto claro: se queda en su categoría (resta del viaje).
         r = _fila(db, 2958)
         assert (r['tipo'], r['categoria'], r['subcategoria']) == ('INGRESO', 'VIAJES', 'Otros')
+        # Renta oct-2024: el SPEI a BANORTE regresó (ni gasto ni ingreso) y la renta es el pago a BBVA.
+        assert (_fila(db, 3163)['categoria'], _fila(db, 3163)['subcategoria']) == ('FINANZAS', 'Entre cuentas propias')
+        assert (_fila(db, dev)['categoria'], _fila(db, dev)['subcategoria']) == ('FINANZAS', 'Entre cuentas propias')
+        r = db.execute("""SELECT * FROM est_movimientos WHERE fecha='2024-10-08' AND monto=11000
+                          AND descripcion LIKE 'PAGO TARJETA DE TERCEROS%'""").fetchone()
+        assert (r['tipo'], r['categoria'], r['subcategoria']) == ('GASTO', 'VIVIENDA', 'Renta')
         # Monto distinto.
         assert _fila(db, 2089)['monto'] == 5555.0
 

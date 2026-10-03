@@ -63,6 +63,17 @@ SOBRA_DECIDIDO = {
                         'el gasto lo llevan las mensualidades)'),
 }
 
+# Envíos que regresaron (id del envío): el envío y su devolución quedan como
+# «Entre cuentas propias» (ni gasto ni ingreso).
+ENVIOS_DEVUELTOS = {
+    3163: 'renta oct-2024 mandada a BANORTE; el casero la regresó y se pagó a BBVA (…5198)',
+}
+
+# Categoría de un faltante que el usuario explicó: (fecha, monto, operación) -> (cat, sub).
+FALTA_CATEGORIA = {
+    ('2024-10-08', 11000.0, 'PAGO TARJETA'): ('VIVIENDA', 'Renta'),   # la renta de oct-2024, pagada a BBVA
+}
+
 # Sugerencia de categoría que NO se aplica porque contradice lo que el
 # usuario explicó de ese movimiento.
 CATEGORIA_SE_QUEDA = {
@@ -209,9 +220,13 @@ def _plan_corregir(db, f, ocupados) -> list[dict]:
     elif 'tipo' in cambios and tipo in ('INGRESO', 'GASTO') and r['tipo'] in _TIPOS_INTERNOS:
         _cambiar_categoria(cambios, actual, bbva_libreton._categorize(cambios.get('descripcion', r['descripcion']),
                                                                       es_gasto=tipo == 'GASTO'))
+    if r['id'] in ENVIOS_DEVUELTOS:
+        _cambiar_categoria(cambios, actual, ('FINANZAS', 'Entre cuentas propias'))
+        cat = ''
     out = []
     for campo, valor in cambios.items():
-        motivo = CATEGORIA_SE_QUEDA.get(r['id']) or TIPO_INTERNO_ERRONEO.get(r['id']) or ''
+        motivo = (CATEGORIA_SE_QUEDA.get(r['id']) or TIPO_INTERNO_ERRONEO.get(r['id'])
+                  or ENVIOS_DEVUELTOS.get(r['id']) or '')
         out.append(_linea(f, r, 'actualizado', campo, r[campo], valor, motivo))
     queda = (r['categoria'] or '', r['subcategoria'] or '')
     if cat and 'categoria' not in cambios and 'subcategoria' not in cambios and (cat, sub or '') != queda:
@@ -278,6 +293,9 @@ def _nueva_fila(f) -> dict:
                     parcialidad_num=int(msi.group(1)) if msi else None,
                     parcialidad_total=int(msi.group(2)) if msi else None)
     tipo = f['tipo_real']
+    fijo = FALTA_CATEGORIA.get((f['fecha'], monto, ' '.join(_operacion(desc))))
+    if fijo:
+        return dict(descripcion=desc, monto=monto, tipo=tipo, categoria=fijo[0], subcategoria=fijo[1], periodo=None)
     if 'envío y devolución' in f['nota']:
         # Sale y regresa el mismo día: ni gasto ni ingreso.
         return dict(descripcion=desc, monto=monto, tipo='MOVIMIENTO_INTERNO', categoria='FINANZAS',
@@ -344,7 +362,32 @@ def plan(db) -> list[dict]:
     for f in todas:
         if f['estado'] == 'FALTA_EN_APP':
             out += _plan_falta(db, f, ocupados, usados)
+    out += _plan_devoluciones(db)
     out.sort(key=lambda x: (x['banco'], x['fecha'], x['id_app'] or 0))
+    return out
+
+
+def _plan_devoluciones(db) -> list[dict]:
+    """La devolución de cada envío de ENVIOS_DEVUELTOS: abono del mismo monto en
+    los 20 días siguientes -> Entre cuentas propias."""
+    out = []
+    for mid, por_que in ENVIOS_DEVUELTOS.items():
+        e = db.execute("SELECT * FROM est_movimientos WHERE id=?", (mid,)).fetchone()
+        if not e:
+            continue
+        f = {'banco': e['banco'], 'fecha': e['fecha'][:10], 'monto': abs(e['monto']), 'estado': 'AJUSTE',
+             'nota': por_que, 'id_app': ''}
+        d = db.execute("""SELECT * FROM est_movimientos WHERE banco=? AND tipo='INGRESO' AND ABS(ABS(monto) - ?) < 0.01
+                           AND substr(fecha,1,10) BETWEEN ? AND date(?, '+20 days') ORDER BY fecha, id LIMIT 1""",
+                        (e['banco'], abs(e['monto']), e['fecha'][:10], e['fecha'][:10])).fetchone()
+        if not d:
+            out.append(_linea(f, None, 'pendiente revisión', motivo='no encontré la devolución: ' + por_que))
+            continue
+        f['fecha'] = d['fecha'][:10]
+        cambios = {}
+        _cambiar_categoria(cambios, (d['categoria'] or '', d['subcategoria'] or ''), ('FINANZAS', 'Entre cuentas propias'))
+        out += [_linea(f, d, 'actualizado', c, d[c], v, 'devolución: ' + por_que) for c, v in cambios.items()] \
+            or [_linea(f, d, 'sin cambio', motivo='devolución ya está como Entre cuentas propias')]
     return out
 
 
