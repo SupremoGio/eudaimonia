@@ -314,9 +314,20 @@ def _mensualidad_de(r) -> str:
 _SUB_PROPIA = 'Entre cuentas propias'   # = abonos.SUB_PROPIA (abonos importa este módulo)
 # (fecha, monto, texto) -> persona
 PRESTAMOS_MANUALES = (
-    ('2026-05-12', 2000.0, 'REGRESO AL CORNER', 'Cornelius'),
+    ('2026-05-12', 2000.0, 'BNET TACOS', 'Cornelius'),   # la que sí fue a Cornelius (ver IDA_Y_VUELTA)
     ('2024-10-18', 10000.0, 'CIRUJIA CAMBIO SEX', 'Jorge'),
 )
+# Transferencias que fueron y regresaron (salida, y el abono de vuelta que el
+# lector de BBVA dejó como cargo): las dos quedan «Entre cuentas propias» y
+# sin préstamo. (fecha, monto, prefijo exacto de la descripción) de la salida
+# y del regreso. El usuario, 2026-10-03: «le transferí a Judi, me dijo mejor
+# a Cornelius, me lo regresó y el 12 se lo pasé a Corner» — el regreso de
+# Judi es «… REGRESO AL CORNER» y lo de Cornelius es «BNET TACOS …».
+IDA_Y_VUELTA = (
+    (('2026-05-11', 2000.0, 'PAGO CUENTA DE TERCERO BNET TRANSF A JUDITH A'),
+     ('2026-05-12', 2000.0, 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER')),
+)
+
 # Abonos que el lector de BBVA dejó como cargo («PAGO CUENTA DE TERCERO» es
 # ambiguo y sin saldo impreso queda como cargo; ver parsers/bbva_libreton.py):
 # devoluciones de un préstamo (fecha, monto, texto) -> (persona, fecha del
@@ -353,6 +364,20 @@ def _mov(db, fecha, monto, texto, tipo='GASTO'):
 def registrar_manuales(db) -> tuple[int, int]:
     """Registra PRESTAMOS_MANUALES y cancela REGRESADOS con su depósito.
     Devuelve (préstamos creados, parejas canceladas). Idempotente."""
+    for ida, vuelta in IDA_Y_VUELTA:
+        filas = [db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=?
+                                 AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""",
+                            (f, mo, f"{t}%")).fetchone() for f, mo, t in (ida, vuelta)]
+        if not all(filas):
+            continue
+        ids = [r['id'] for r in filas]
+        if any(db.execute("""SELECT 1 FROM est_prestamo_devoluciones d JOIN est_prestamos p ON p.id = d.prestamo_id
+                               WHERE p.movimiento_id=? OR d.movimiento_id=?""", (i, i)).fetchone() for i in ids):
+            continue   # ya tiene devoluciones ligadas: se revisa a mano
+        db.execute(f"DELETE FROM est_prestamos WHERE movimiento_id IN ({','.join('?' * len(ids))})", ids)
+        db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id=?", (_SUB_PROPIA, ids[0]))
+        db.execute("UPDATE est_movimientos SET tipo='INGRESO', categoria='FINANZAS', subcategoria=? WHERE id=?",
+                   (_SUB_PROPIA, ids[1]))
     creados = 0
     for fecha, monto, texto, persona in PRESTAMOS_MANUALES:
         m = _mov(db, fecha, monto, texto)

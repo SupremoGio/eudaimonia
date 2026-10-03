@@ -90,3 +90,23 @@ def test_jorge_liquido_con_abonos_leidos_como_cargo(test_db):
         assert jorge[0]['devuelto'] == 10000 and jorge[0]['estado'] == 'Pagado'
         for i in (a, b, c):
             assert db.execute("SELECT tipo, categoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[:] == ('INGRESO', 'PRESTAMOS')
+
+
+def test_judi_ida_y_vuelta_y_cornelius(test_db):
+    """11/05 a Judi, Judi lo regresa («REGRESO AL CORNER», leído como cargo) y
+    el 12 va a Cornelius («BNET TACOS …»)."""
+    with database.get_db() as db:
+        judi = _ins(db, '2026-05-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A JUDITH A', 2000.0)
+        vuelta = _ins(db, '2026-05-12', 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0)
+        corner = _ins(db, '2026-05-12', 'BNET TACOS PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0)
+        for mid, quien in ((judi, 'Judi'), (vuelta, 'Cornelius')):    # préstamos mal registrados
+            db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                          VALUES (?, 'OTORGADO', 2000, '2026-05-11', '', ?, datetime('now'))""", (quien, mid))
+        db.commit()
+        pr.registrar_manuales(db)
+        pr.registrar_manuales(db)
+        prest = [(p['persona'], p['movimiento_id']) for p in pr.listar(db) if p['fecha'].startswith('2026-05')]
+        assert prest == [('Cornelius', corner)]
+        assert _cat(db, judi) == _cat(db, vuelta) == ('FINANZAS', 'Entre cuentas propias')
+        assert db.execute("SELECT tipo FROM est_movimientos WHERE id=?", (vuelta,)).fetchone()[0] == 'INGRESO'
+        assert pr.candidatos(db)['prestamos'] == []
