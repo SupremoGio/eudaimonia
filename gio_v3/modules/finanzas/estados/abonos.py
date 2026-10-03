@@ -315,7 +315,7 @@ _VIAJE_RE = re.compile(r'\b(VIA|VIAJE|VIAJ|VACA|VACAS|BOLETO|BOLET|BOLETOS|HOTEL
 _RENTA_RE = re.compile(r'\bRENTA\b')
 # Conceptos que no dicen nada: no se aprende de ellos.
 # Depósitos de la empresa (Expense / viáticos): nunca son «te pagaron un gasto».
-_EMPRESA_RE = re.compile(r'SITH2|SITH\d|FIDEICOMISO|BMRCASH|EXPENSE|SGLDAC')
+_EMPRESA_RE = re.compile(r'SITH2|SITH\d|FIDEICOMISO|BMRCASH|EXPENSE|SGLDAC|FIBRA HOTELERA')
 _GENERICOS = {'CODI VALIDA', 'TRANSF A GIO', 'TRANSF A', 'TRANSFERENCI', 'TRANSFERENCIA', 'PAGO', 'GIO', 'GIOVANY', 'P', 'XX',
               'TRANSF A UND', 'NAFIN', 'HSBC', 'STP', 'BANORTE', 'SANTANDER', 'BANAMEX'}
 PARTES = (1, 2, 3, 4)   # te pagaron todo, la mitad, un tercio o un cuarto del gasto

@@ -6015,7 +6015,7 @@ def init_db():
             from modules.finanzas.estados import correcciones_sin_conciliar as _sc
             _ver = (f"finanzas_sin_conciliar_csv_{len(_sc.CORRECCIONES)}_{len(_sc.VIAJES)}_{len(_sc.PERSONAS)}"
                     + (f"_{len(_sc.GASTOS)}" if _sc.GASTOS else "")
-                    + f"_d{len(_sc.INGRESOS_QUE_ERAN_GASTO)}_e{len(_sc.ENTRADAS)}")
+                    + f"_d{len(_sc.INGRESOS_QUE_ERAN_GASTO)}_e{len(_sc.ENTRADAS)}_fibra")
             if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
                 _ok, _falta = _sc.aplicar(db)
                 db.execute(
