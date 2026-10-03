@@ -27,7 +27,7 @@ def test_aplica_por_id_y_por_texto(test_db):
         cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
         assert cat(4726) == ('TRANSPORTE', 'Taxi/apps')
         assert cat(90001) == ('VIVIENDA', 'Aportación renta')
-        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) + len(corr.ENTRADAS) + len(corr.REESCRITOS) - 2)
+        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) + len(corr.ENTRADAS) + len(corr.REESCRITOS) + len(corr.AUDITORIA_2026) - 2)
         assert corr.aplicar(db)[0] == 0
 
 
@@ -163,7 +163,7 @@ def test_abonos_de_viajes_revisados_contra_pdf(test_db):
         corr.aplicar(db)
         r = lambda i: tuple(db.execute("SELECT descripcion, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
         assert r(fid) == ('SITH26623774 FIDEICOMISO F/1596', 'FINANZAS', 'Reembolsable')
-        assert r(sp)[1:] == ('FINANZAS', 'Reembolso compartido')
+        assert r(sp)[1:] == ('OTROS', '')                      # de su papá: ingreso
         assert r(liq) == ('PAGO CUENTA DE TERCERO BNET LIQUIDOS', 'OTROS', '')
         assert r(stp)[1:] == ('FINANZAS', 'Transferencia recibida')
 
@@ -181,3 +181,31 @@ def test_comida_fuera_revisada_contra_pdf(test_db):
         assert r(mens) == ('SPEI ENVIADO SANTANDER MENS GIO', 'GASTO', 'SALSA')
         assert r(com)[1:] == ('INGRESO', 'COMIDA_FUERA')
         assert r(val)[1:] == ('INGRESO', 'FINANZAS')
+
+
+def test_auditoria_2026_papa_colecta_y_cumple(test_db):
+    with database.get_db() as db:
+        ins = lambda f, d, m, t, c='FAMILIA_REGALOS', sub='Regalos': db.execute(
+            """INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+               VALUES (?,?,?, 'BBVA_DEB', ?, ?, ?)""", (f, d, m, c, sub, t)).lastrowid
+        tqm = ins('2026-07-16', 'PAGO CUENTA DE TERCERO BNET IGUAL TQM', 50000, 'INGRESO')
+        col = ins('2026-03-03', 'PAGO CUENTA DE TERCERO', 600, 'INGRESO', 'FAMILIA_REGALOS', 'Colectas')
+        seg = ins('2026-05-15', 'PAGO CUENTA DE TERCERO BNET SEGURO Y DEUDA', 5555, 'GASTO', 'FINANZAS', 'Transferencia')
+        papa = ins('2026-08-20', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 500, 'INGRESO')
+        dev = ins('2026-09-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 4500, 'INGRESO', 'VIAJES', 'Otros')
+        db.commit()
+        corr.aplicar(db)
+        r = lambda i: tuple(db.execute("SELECT tipo, categoria, subcategoria, mi_parte FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert r(tqm) == ('INGRESO', 'OTROS', '', None)
+        assert r(col) == ('INGRESO', 'FAMILIA_REGALOS', 'Colectas', None)
+        assert r(seg) == ('GASTO', 'TRANSPORTE', 'Seguro auto', 555.0)
+        assert r(papa)[:2] == ('INGRESO', 'OTROS')
+        # regalito y el tercer regalo faltan en agosto: se registran (agosto ya está importado)
+        assert db.execute("SELECT COUNT(*) FROM est_movimientos WHERE fecha='2026-08-20' AND monto=500").fetchone()[0] == 3
+        # el cargo del préstamo del 11/09 falta: se registra y la devolución NO se toca
+        assert r(dev)[:2] == ('INGRESO', 'VIAJES')
+        assert db.execute("SELECT tipo, categoria FROM est_movimientos WHERE fecha='2026-09-11' AND monto=4500 AND tipo='GASTO'").fetchone()[:] == ('GASTO', 'PRESTAMOS')
+        n = db.execute("SELECT COUNT(*) FROM est_movimientos").fetchone()[0]
+        corr.aplicar(db)
+        assert db.execute("SELECT COUNT(*) FROM est_movimientos").fetchone()[0] == n       # idempotente
+        assert corr.aplicar(db)[0] == 0

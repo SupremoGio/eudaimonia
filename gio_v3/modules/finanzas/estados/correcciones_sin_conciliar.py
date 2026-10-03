@@ -129,21 +129,21 @@ REESCRITOS = [
     ('2026-03-12', 505.0, 'FIBRA HOTELERA', 'PAGO CUENTA DE TERCERO BNET PLANTITA',
      'GASTO', 'VIVIENDA', 'Plantas'),
     ('2026-03-29', 6000.0, 'FIBRA HOTELERA', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A',
-     'INGRESO', 'FINANZAS', 'Transferencia recibida'),            # entrada sin identificar: a Sin conciliar
+     'INGRESO', 'FINANZAS', 'Reembolso compartido'),              # de Judith (auditoría 2026): no es ingreso
     ('2026-04-27', 460.41, 'FIBRA HOTELERA', 'PAGO CUENTA DE TERCERO BNET EXPENSE',
      'GASTO', 'EXPENSE', ''),                                     # le pasa a un compañero su parte (TERCERO)
     # Revisión contra los PDF (2026-10-03), abonos que estaban en Viajes/Otros:
     ('2026-03-31', 2299.0, 'SIN DESCRIPCION', 'SITH26623774 FIDEICOMISO F/1596',
      'INGRESO', 'FINANZAS', 'Reembolsable'),                      # «es un expense pagado»
     ('2026-04-07', 1500.0, 'EGRESOS SPEI SVD', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A',
-     'INGRESO', 'FINANZAS', 'Reembolso compartido'),              # cuenta con ida y vuelta; el texto era del Cetes vecino
+     'INGRESO', 'OTROS', ''),                                     # de su papá (auditoría 2026): ingreso; el texto era del Cetes vecino
     ('2026-04-21', 738.0, 'PAGO CUENTA DE TERCERO', 'PAGO CUENTA DE TERCERO BNET LIQUIDOS',
      'INGRESO', 'OTROS', ''),                                     # le regresaron algo que pagó con vales: sí es ingreso
     # Revisión de «Comida fuera» contra los PDF (2026-10-03):
     ('2026-04-14', 750.0, 'FIBRA HOTELERA', 'SPEI ENVIADO SANTANDER MENS GIO',
      'GASTO', 'SALSA', 'Clases'),                                 # SPEI a Esteban Aceves «mens gio»: va a salsa
     ('2026-03-26', 227.0, 'HSBC MARZ GIO', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A',
-     'INGRESO', 'FINANZAS', 'Reembolso compartido'),              # abono; «HSBC MARZ GIO» era del SPEI del 28/03
+     'INGRESO', 'OTROS', ''),                                     # de su papá: ingreso; «HSBC MARZ GIO» era del SPEI del 28/03
 ]
 
 
@@ -206,6 +206,99 @@ def revisar_reescritos(db) -> list[dict]:
     return out
 
 
+# Auditoría de BBVA Débito 2026 contra los PDF (Cowork, 2026-10-03:
+# correcciones_movimientos_2026.csv y movimientos_papa_2026.csv). Cada fila:
+# (fecha, monto, palabra para encontrarlo, tipo, categoria, subcategoria,
+#  mi_parte, crear) — crear: si no está en la base se registra (los «?» del CSV).
+# Se busca por fecha + monto + palabra; si la palabra no aparece (descripción
+# mezclada) y hay un solo movimiento con esa fecha y monto, se usa ese — salvo
+# en las filas con «crear»: ahí solo cuenta la palabra (si no, se registra), para
+# no confundir un cargo faltante con su devolución del mismo día. Las
+# filas que ya están en REESCRITOS / ENTRADAS / GASTOS no se repiten aquí.
+_PAPA = ('OTROS', '')                                    # «Familia > Papá (recibido)»: ingreso extraordinario
+_REGALO = ('OTROS', '')                                  # «Ingreso > Regalo recibido»
+_COLECTA = ('FAMILIA_REGALOS', 'Colectas')               # colecta de Martha: entra $1,550, sale $1,500
+_SEGURO = ('TRANSPORTE', 'Seguro auto')                  # seguro del carro que le paga a su papá
+AUDITORIA_2026 = [
+    # Colecta de Martha (pasa por su cuenta: neto +$50)
+    ('2026-02-27', 200.0, 'AYUDA', 'INGRESO', *_COLECTA, None, 'PAGO CUENTA DE TERCERO BNET AYUDA'),
+    ('2026-02-27', 500.0, 'MARTHA', 'INGRESO', *_COLECTA, None, 'PAGO CUENTA DE TERCERO BNET MARTHA'),
+    ('2026-03-03', 250.0, 'MARTHA', 'INGRESO', *_COLECTA, None, None),
+    ('2026-03-03', 600.0, 'MARTHA', 'INGRESO', *_COLECTA, None, None),
+    ('2026-03-04', 1500.0, 'RETIRO', 'GASTO', *_COLECTA, None, 'RETIRO SIN TARJETA ******7852'),
+    # Papá → Gio (ingreso)
+    ('2026-01-04', 251.0, 'ROSCA', 'INGRESO', *_PAPA, None, None),
+    ('2026-02-01', 1610.0, 'TRANSF', 'INGRESO', *_PAPA, None, None),
+    ('2026-03-23', 500.0, 'TRANSF', 'INGRESO', *_PAPA, None, None),
+    ('2026-05-08', 5000.0, 'PRE', 'INGRESO', *_REGALO, None, None),        # regalo de su papá
+    ('2026-07-16', 50000.0, 'TQM', 'INGRESO', *_PAPA, None, None),
+    # 3/feb le mandó $12,800 y el 4/feb se los regresó («deuda»): neto 0
+    ('2026-02-03', 12800.0, 'TRANSF', 'INGRESO', 'FINANZAS', 'Entre cuentas propias', None, None),
+    ('2026-02-04', 12800.0, 'DEUDA', 'GASTO', 'FINANZAS', 'Entre cuentas propias', None, None),
+    # Gio → Papá: seguro del carro (y en mayo, seguro + deuda: solo el seguro es gasto)
+    ('2026-01-15', 555.5, 'SEGURO', 'GASTO', *_SEGURO, None, None),
+    ('2026-02-27', 555.5, 'SEGURO', 'GASTO', *_SEGURO, None, None),
+    ('2026-05-15', 5555.0, 'SEGURO', 'GASTO', *_SEGURO, 555.0, None),
+    ('2026-06-15', 555.0, 'SEGURO', 'GASTO', *_SEGURO, None, None),
+    ('2026-07-06', 555.0, 'SEGURO', 'GASTO', *_SEGURO, None, None),
+    ('2026-08-15', 555.0, 'SEGURO', 'GASTO', *_SEGURO, None, None),
+    ('2026-09-17', 555.0, 'SEGURO', 'GASTO', *_SEGURO, None, None),
+    # Cumpleaños (20/ago): Judith («regalito»), su papá y otra persona (los dos «Transf a GIOVANY A»)
+    ('2026-08-20', 500.0, 'REGALITO', 'INGRESO', *_REGALO, None, 'PAGO CUENTA DE TERCERO BNET REGALITO'),
+    ('2026-08-20', 500.0, 'TRANSF', 'INGRESO', *_REGALO, None, None),
+    ('2026-08-20', 500.0, 'TRANSF', 'INGRESO', *_REGALO, None, 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A CUMPLE'),
+    # 12/may: depósito en efectivo en OXXO que no hizo él (¿alguien pagándole?): a Sin conciliar
+    ('2026-05-12', 5000.0, 'SU PAGO EN EFECTIVO', 'INGRESO', 'FINANZAS', 'Transferencia recibida', None, None),
+    # Préstamos a Judi (cargos; sus devoluciones se ligan en prestamos.DEVOLUCIONES_DE_PRESTAMO)
+    ('2026-06-10', 4500.0, 'PRESTAMO', 'GASTO', 'PRESTAMOS', 'Prestado', None, 'PAGO CUENTA DE TERCERO BNET PRESTAMO A LA JUDI'),
+    ('2026-09-11', 4500.0, 'PRESTAMO', 'GASTO', 'PRESTAMOS', 'Prestado', None, 'PAGO CUENTA DE TERCERO BNET PRESTAMO'),
+]
+
+
+def _aplicar_auditoria(db) -> tuple[int, int]:
+    ok = faltan = 0
+    usados = set()
+    for fecha, monto, palabra, tipo, cat, sub, parte, crear in AUDITORIA_2026:
+        filas = [r for r in db.execute("""SELECT id, descripcion, tipo, categoria, subcategoria, mi_parte FROM est_movimientos
+                                          WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005 ORDER BY id""",
+                                       (fecha, monto)).fetchall() if r['id'] not in usados]
+        con = [r for r in filas if palabra in (r['descripcion'] or '').upper()]
+        row = con[0] if con else (filas[0] if len(filas) == 1 and not crear else None)
+        if not row:
+            # Solo se registra si ese mes de BBVA Débito ya está importado (en una
+            # base vacía o de pruebas no se inventan movimientos).
+            if crear and db.execute("SELECT 1 FROM est_movimientos WHERE banco='BBVA_DEB' AND substr(fecha,1,7)=?",
+                                    (fecha[:7],)).fetchone():
+                usados.add(db.execute("""INSERT INTO est_movimientos (fecha, fecha_cargo, descripcion, monto, banco, periodo,
+                                                                      categoria, subcategoria, tipo, mi_parte)
+                                         VALUES (?,?,?,?, 'BBVA_DEB', '', ?,?,?,?)""",
+                                      (fecha, fecha, crear, monto, cat, sub, tipo, parte)).lastrowid)
+                ok += 1
+            else:
+                faltan += 1
+            continue
+        usados.add(row['id'])
+        if _referenciado(db, row['id']) and cat != 'PRESTAMOS':
+            continue   # ya ligado a un préstamo o lote: lo decide ese módulo
+        if (row['tipo'], row['categoria'], row['subcategoria'] or '', row['mi_parte']) != (tipo, cat, sub, parte):
+            db.execute("UPDATE est_movimientos SET tipo=?, categoria=?, subcategoria=?, mi_parte=? WHERE id=?",
+                       (tipo, cat, sub, parte, row['id']))
+            ok += 1
+    return ok, faltan
+
+
+def revisar_auditoria(db) -> list[dict]:
+    """Solo lectura: cómo están hoy los movimientos de AUDITORIA_2026."""
+    out = []
+    for fecha, monto, palabra, tipo, cat, sub, parte, _ in AUDITORIA_2026:
+        filas = [dict(r) for r in db.execute("""SELECT id, descripcion, tipo, categoria, subcategoria, mi_parte
+                                                FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005""",
+                                             (fecha, monto)).fetchall()]
+        out.append({'fecha': fecha, 'monto': monto, 'esperado': f"{tipo} {cat}/{sub}", 'en_base': filas,
+                    'correcto': any(f['tipo'] == tipo and f['categoria'] == cat for f in filas)})
+    return out
+
+
 def _fila(db, mid, fecha, monto, texto):
     row = db.execute("""SELECT id, categoria, subcategoria, viaje_id FROM est_movimientos
                         WHERE id=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'""",
@@ -263,6 +356,8 @@ def aplicar(db) -> tuple[int, int]:
             faltan += 1
         else:
             ok += n
+    a_ok, a_faltan = _aplicar_auditoria(db)
+    ok, faltan = ok + a_ok, faltan + a_faltan
     for fecha, monto, texto, cat, sub in ENTRADAS:
         row = db.execute("""SELECT id, tipo, categoria, subcategoria FROM est_movimientos
                             WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND UPPER(descripcion) LIKE ?

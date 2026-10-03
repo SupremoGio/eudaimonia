@@ -3404,7 +3404,8 @@ def correcciones_admin():
             _prest.registrar_manuales(db)
             db.commit()
             aplicado = {'actualizados': ok, 'no_encontrados': faltan}
-        return jsonify({'aplicado': aplicado, 'reescritos': _sinconc.revisar_reescritos(db)})
+        return jsonify({'aplicado': aplicado, 'reescritos': _sinconc.revisar_reescritos(db),
+                        'auditoria_2026': _sinconc.revisar_auditoria(db)})
 
 
 @estados_bp.route('/admin/pedidos-amazon')
