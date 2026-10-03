@@ -149,3 +149,20 @@ def test_admin_correcciones(test_db):
             sess["app_ok"] = sess["fin_ok"] = True
         r = c.get('/finanzas/estados/admin/correcciones?aplicar=1').get_json()
         assert r['aplicado'] is not None and len(r['reescritos']) == len(corr.REESCRITOS)
+
+
+def test_abonos_de_viajes_revisados_contra_pdf(test_db):
+    with database.get_db() as db:
+        ins = lambda f, d, m: db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                                            VALUES (?,?,?, 'BBVA_DEB', 'VIAJES', 'Otros', 'INGRESO')""", (f, d, m)).lastrowid
+        fid = ins('2026-03-31', 'SIN DESCRIPCION', 2299)
+        sp = ins('2026-04-07', '135 EGRESOS SPEI SVD PAGO CUENTA DE TERCERO BNET', 1500)
+        liq = ins('2026-04-21', 'PAGO CUENTA DE TERCERO BNET', 738)
+        stp = ins('2026-08-10', 'SPEI RECIBIDOSTP 646', 3000)
+        db.commit()
+        corr.aplicar(db)
+        r = lambda i: tuple(db.execute("SELECT descripcion, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert r(fid) == ('SITH26623774 FIDEICOMISO F/1596', 'FINANZAS', 'Reembolsable')
+        assert r(sp)[1:] == ('FINANZAS', 'Reembolso compartido')
+        assert r(liq) == ('PAGO CUENTA DE TERCERO BNET LIQUIDOS', 'OTROS', '')
+        assert r(stp)[1:] == ('FINANZAS', 'Transferencia recibida')

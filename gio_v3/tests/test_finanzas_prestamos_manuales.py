@@ -221,3 +221,20 @@ def test_retiro_sin_tarjeta_no_es_prestamo_a_cornelio(test_db):
         pr.registrar_manuales(db)
         assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
         assert _cat(db, m) == ('FINANZAS', 'Retiro efectivo')
+
+
+def test_devoluciones_de_judi_4500(test_db):
+    with database.get_db() as db:
+        p1 = _ins(db, '2026-06-10', 'PAGO CUENTA DE TERCERO BNET PRESTAMO A LA JUDI', 4500.0)
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                            VALUES ('Judi', 'OTORGADO', 4500, '2026-06-10', '', ?, datetime('now'))""", (p1,)).lastrowid
+        d1 = _ins(db, '2026-06-29', 'PAGO CUENTA DE TERCERO BNET TRANSF', 4500.0, 'INGRESO', 'VIAJES', 'Otros')
+        p2 = _ins(db, '2026-09-11', 'PAGO CUENTA DE TERCERO BNET PRESTAMO', 4500.0, 'GASTO', 'FINANZAS', 'Transferencia')
+        d2 = _ins(db, '2026-09-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 4500.0, 'INGRESO', 'VIAJES', 'Otros')
+        db.commit()
+        pr.registrar_manuales(db)
+        pr.registrar_manuales(db)
+        por = {p['movimiento_id']: p for p in pr.listar(db)}
+        assert por[p1]['estado'] == 'Pagado' and [x['movimiento_id'] for x in por[p1]['devoluciones']] == [d1]
+        assert por[p2]['persona'] == 'Judi' and por[p2]['estado'] == 'Pagado'
+        assert _cat(db, d2) == ('PRESTAMOS', '')

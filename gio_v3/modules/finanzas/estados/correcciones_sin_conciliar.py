@@ -95,6 +95,8 @@ ENTRADAS = [
     ('2026-07-17', 410.0, 'CAPSULAS CAFE', 'FINANZAS', 'Reembolso compartido'),
     # «fue un depósito que yo mismo me hice para pagar la renta» (2026-10-03)
     ('2026-04-07', 7000.0, 'DEPOSITO EFECTIVO PRACTIC', 'FINANZAS', 'Entre cuentas propias'),
+    ('2026-03-23', 1110.0, 'TRANSF', 'FINANZAS', 'Reembolso compartido'),     # Judi: devolución o reparto de gastos
+    ('2026-08-10', 3000.0, 'SPEI RECIBIDO', 'FINANZAS', 'Transferencia recibida'),  # sin identificar: a Sin conciliar
 ]
 
 
@@ -127,6 +129,13 @@ REESCRITOS = [
      'INGRESO', 'FINANZAS', 'Transferencia recibida'),            # entrada sin identificar: a Sin conciliar
     ('2026-04-27', 460.41, 'FIBRA HOTELERA', 'PAGO CUENTA DE TERCERO BNET EXPENSE',
      'GASTO', 'EXPENSE', ''),                                     # le pasa a un compañero su parte (TERCERO)
+    # Revisión contra los PDF (2026-10-03), abonos que estaban en Viajes/Otros:
+    ('2026-03-31', 2299.0, 'SIN DESCRIPCION', 'SITH26623774 FIDEICOMISO F/1596',
+     'INGRESO', 'FINANZAS', 'Reembolsable'),                      # «es un expense pagado»
+    ('2026-04-07', 1500.0, 'EGRESOS SPEI SVD', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A',
+     'INGRESO', 'FINANZAS', 'Reembolso compartido'),              # cuenta con ida y vuelta; el texto era del Cetes vecino
+    ('2026-04-21', 738.0, 'PAGO CUENTA DE TERCERO', 'PAGO CUENTA DE TERCERO BNET LIQUIDOS',
+     'INGRESO', 'OTROS', ''),                                     # le regresaron algo que pagó con vales: sí es ingreso
 ]
 
 
