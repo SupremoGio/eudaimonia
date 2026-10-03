@@ -27,7 +27,7 @@ def test_aplica_por_id_y_por_texto(test_db):
         cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
         assert cat(4726) == ('TRANSPORTE', 'Taxi/apps')
         assert cat(90001) == ('VIVIENDA', 'Aportación renta')
-        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) + len(corr.ENTRADAS) - 2)
+        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) + len(corr.ENTRADAS) + len(corr.REESCRITOS) - 2)
         assert corr.aplicar(db)[0] == 0
 
 
@@ -108,3 +108,18 @@ def test_deposito_propio_para_la_renta(test_db):
         corr.aplicar(db)
         assert tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) \
             == ('INGRESO', 'FINANZAS', 'Entre cuentas propias')
+
+
+def test_movimientos_con_fibra_hotelera_pegada(test_db):
+    with database.get_db() as db:
+        ins = lambda f, m, t: db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                                            VALUES (?, 'FIBRA HOTELERA SC PAGO CUENTA DE TERCERO BNET', ?, 'BBVA_DEB', 'VIAJES', 'Otros', ?)""",
+                                         (f, m, t)).lastrowid
+        a, b, c = ins('2026-03-12', 505, 'INGRESO'), ins('2026-03-29', 6000, 'GASTO'), ins('2026-04-27', 460.41, 'INGRESO')
+        db.commit()
+        corr.aplicar(db)
+        row = lambda i: tuple(db.execute("SELECT descripcion, tipo, categoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert row(a) == ('PAGO CUENTA DE TERCERO BNET PLANTITA', 'GASTO', 'VIVIENDA')
+        assert row(b) == ('PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 'INGRESO', 'FINANZAS')
+        assert row(c) == ('PAGO CUENTA DE TERCERO BNET EXPENSE', 'GASTO', 'EXPENSE')
+        assert corr.aplicar(db)[0] == 0

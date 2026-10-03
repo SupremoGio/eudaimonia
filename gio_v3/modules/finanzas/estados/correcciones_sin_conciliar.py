@@ -115,6 +115,21 @@ INGRESOS_QUE_ERAN_GASTO = [
 ]
 
 
+# Movimientos cuya descripción se mezcló con la del renglón vecino al leer el
+# PDF (el usuario revisó sus estados BBVA de 2026, 2026-10-03: «FIBRA
+# HOTELERA» venía del pago de nómina pegado). Se reescribe la descripción y
+# se pone la dirección y categoría correctas.
+# (fecha, monto, texto que hoy trae, descripción real, tipo, categoria, subcategoria)
+REESCRITOS = [
+    ('2026-03-12', 505.0, 'FIBRA HOTELERA', 'PAGO CUENTA DE TERCERO BNET PLANTITA',
+     'GASTO', 'VIVIENDA', 'Plantas'),
+    ('2026-03-29', 6000.0, 'FIBRA HOTELERA', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A',
+     'INGRESO', 'FINANZAS', 'Transferencia recibida'),            # entrada sin identificar: a Sin conciliar
+    ('2026-04-27', 460.41, 'FIBRA HOTELERA', 'PAGO CUENTA DE TERCERO BNET EXPENSE',
+     'GASTO', 'EXPENSE', ''),                                     # le pasa a un compañero su parte (TERCERO)
+]
+
+
 def _fila(db, mid, fecha, monto, texto):
     row = db.execute("""SELECT id, categoria, subcategoria, viaje_id FROM est_movimientos
                         WHERE id=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'""",
@@ -166,6 +181,17 @@ def aplicar(db) -> tuple[int, int]:
         if (row['categoria'], row['subcategoria'] or '') != (cat, sub):
             db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, row['id']))
             ok += 1
+    for fecha, monto, texto, desc, tipo, cat, sub in REESCRITOS:
+        row = db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01
+                              AND (UPPER(descripcion) LIKE ? OR descripcion=?) ORDER BY id LIMIT 1""",
+                         (fecha, monto, f"%{texto}%", desc)).fetchone()
+        if not row:
+            faltan += 1
+            continue
+        cur = db.execute("""UPDATE est_movimientos SET descripcion=?, tipo=?, categoria=?, subcategoria=?
+                             WHERE id=? AND (descripcion != ? OR tipo != ? OR categoria != ? OR COALESCE(subcategoria,'') != ?)""",
+                         (desc, tipo, cat, sub, row['id'], desc, tipo, cat, sub))
+        ok += cur.rowcount
     for fecha, monto, texto, cat, sub in ENTRADAS:
         row = db.execute("""SELECT id, tipo, categoria, subcategoria FROM est_movimientos
                             WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND UPPER(descripcion) LIKE ?
