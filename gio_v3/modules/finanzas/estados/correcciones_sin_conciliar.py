@@ -83,6 +83,16 @@ GASTOS = [
     # ($555.50 c/u) + préstamos que él le hizo ($1,500 + $700, no son gasto).
     # «INVEX ABRIL» en el concepto lo mandaba a Pago TDC.
     ('2026-04-15', 3311.0, 'INVEX ABRIL PAGO CUENTA DE TERCERO BNET DEUDA', 'TRANSPORTE', 'Seguro auto', 1111.0),
+    # Nespresso compartido (2026-10-03): «compré una parte para mí y otra para
+    # alguien más; me transfirieron su parte» ($410, «CAPSULAS CAFE», abajo).
+    ('2026-07-17', 918.75, 'NESPRESSO', 'CAFE/PAN', 'Café', 508.75),
+]
+
+# Entradas de dinero (aunque se hayan guardado como salida): alguien pagándole
+# su parte de un gasto que ya lleva mi_parte. (fecha, monto, texto, categoria,
+# subcategoria). «Reembolso compartido» no es ingreso ni sale en Sin conciliar.
+ENTRADAS = [
+    ('2026-07-17', 410.0, 'CAPSULAS CAFE', 'FINANZAS', 'Reembolso compartido'),
 ]
 
 
@@ -153,6 +163,16 @@ def aplicar(db) -> tuple[int, int]:
             continue
         if (row['categoria'], row['subcategoria'] or '') != (cat, sub):
             db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, row['id']))
+            ok += 1
+    for fecha, monto, texto, cat, sub in ENTRADAS:
+        row = db.execute("""SELECT id, tipo, categoria, subcategoria FROM est_movimientos
+                            WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND UPPER(descripcion) LIKE ?
+                            ORDER BY id LIMIT 1""", (fecha, monto, f"%{texto}%")).fetchone()
+        if not row:
+            faltan += 1
+        elif (row['tipo'], row['categoria'], row['subcategoria'] or '') != ('INGRESO', cat, sub):
+            db.execute("UPDATE est_movimientos SET tipo='INGRESO', categoria=?, subcategoria=? WHERE id=?",
+                       (cat, sub, row['id']))
             ok += 1
     for fecha, monto, texto, cat_hoy, cat, sub in INGRESOS_QUE_ERAN_GASTO:
         row = db.execute("""SELECT id FROM est_movimientos

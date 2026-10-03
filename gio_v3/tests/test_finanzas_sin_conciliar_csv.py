@@ -27,7 +27,7 @@ def test_aplica_por_id_y_por_texto(test_db):
         cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
         assert cat(4726) == ('TRANSPORTE', 'Taxi/apps')
         assert cat(90001) == ('VIVIENDA', 'Aportación renta')
-        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) - 2)
+        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) + len(corr.ENTRADAS) - 2)
         assert corr.aplicar(db)[0] == 0
 
 
@@ -84,3 +84,16 @@ def test_mens_gio_era_gasto_de_salsa(test_db):
         corr.aplicar(db)
         assert tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) \
             == ('GASTO', 'SALSA', 'Clases')
+
+
+def test_nespresso_compartido(test_db):
+    with database.get_db() as db:
+        n = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2026-07-17', 'NESPRESSO MEXICO', 918.75, 'BBVA_TDC', 'CAFE/PAN', 'Café', 'GASTO')""").lastrowid
+        c = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2026-07-17', 'PAGO CUENTA DE TERCERO BNET CAPSULAS CAFE', 410, 'BBVA_DEB', 'CAFE/PAN', 'Café', 'GASTO')""").lastrowid
+        db.commit()
+        corr.aplicar(db)
+        assert db.execute("SELECT mi_parte FROM est_movimientos WHERE id=?", (n,)).fetchone()[0] == 508.75
+        assert tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (c,)).fetchone()) \
+            == ('INGRESO', 'FINANZAS', 'Reembolso compartido')
