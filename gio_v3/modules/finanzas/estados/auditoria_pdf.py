@@ -54,6 +54,15 @@ def _sugerida(f, actual=None):
     return f['categoria_sugerida'], f['subcategoria_sugerida']
 
 
+# Lo que sobra en la app (no está en el PDF) y el usuario explicó (2026-10-03).
+SOBRA_DECIDIDO = {
+    1102: ('borrar', 'Sheraton: depósito en garantía, nunca se cobró'),
+    2053: ('borrar', 'AMAZONVALIDACION: validación de la tarjeta, no es un cargo'),
+    2031: ('conservar', 'Steam: un juego que compró'),
+    1306: ('conservar', 'compra a 12 MSI de los anillos de los Corners (no cuenta como gasto; '
+                        'el gasto lo llevan las mensualidades)'),
+}
+
 # Sugerencia de categoría que NO se aplica porque contradice lo que el
 # usuario explicó de ese movimiento.
 CATEGORIA_SE_QUEDA = {
@@ -187,6 +196,11 @@ def _plan_corregir(db, f, ocupados) -> list[dict]:
         cambios['monto'] = mn[1] if r['monto'] >= 0 else -mn[1]
     actual = (r['categoria'] or '', r['subcategoria'] or '')
     cat, sub = _sugerida(f, actual)
+    if cat == 'FINANZAS' and not sub and actual not in _GENERICAS \
+            and actual[0] not in ('PAGO_TDC', 'PRESTAMOS', 'CETES', 'OTRO', 'INVERSION'):
+        # Cowork solo dice «FINANZAS»; la categoría que tiene dice de qué es
+        # (viaje, hospedaje del congreso, boleto, recarga): la entrada resta de ella.
+        cat, sub = actual
     if cat and r['id'] not in CATEGORIA_SE_QUEDA and not (f['banco'] == 'BBVA_TDC' and tipo in _TIPOS_INTERNOS):
         if not sub and cat == 'FINANZAS' and tipo == 'INGRESO':
             sub = 'Transferencia recibida'     # sale en Sin conciliar para clasificarla
@@ -229,6 +243,11 @@ def _plan_sobra(db, f, ocupados) -> list[dict]:
         return [_linea(f, r, 'pendiente revisión', motivo=motivo)]
     if abs(r['monto']) < 0.005:
         return [_linea(f, r, 'borrado', 'fila', r['descripcion'], '', 'monto 0.00')]
+    if r['id'] in SOBRA_DECIDIDO:
+        accion, por_que = SOBRA_DECIDIDO[r['id']]
+        if accion == 'borrar':
+            return [_linea(f, r, 'borrado', 'fila', f'{r["descripcion"]} [{r["tipo"]} {r["categoria"]}]', '', por_que)]
+        return [_linea(f, r, 'sin cambio', motivo='se queda: ' + por_que)]
     ids = [int(x) for x in re.findall(r'\d+', (re.search(r'posible duplicado de id ([\d,\s]+)', f['nota']) or [''])[0])]
     g = _gemelo(db, r, ids) if ids else None
     if not g:
@@ -274,6 +293,10 @@ def _nueva_fila(f) -> dict:
     return dict(descripcion=desc, monto=monto, tipo=tipo, categoria=cat, subcategoria=sub, periodo=None)
 
 
+def _operacion(desc: str) -> tuple:
+    return tuple(re.findall(r'[A-Z]+', (desc or '').upper())[:2])
+
+
 def _plan_falta(db, f, ocupados, usados) -> list[dict]:
     if f['banco'] == 'BBVA_TDC' and re.match(r'\d{2} DE \d{2} ANUALIDAD', f['descripcion_real']):
         return [_linea(f, None, 'pendiente revisión',
@@ -290,7 +313,10 @@ def _plan_falta(db, f, ocupados, usados) -> list[dict]:
         if r['id'] in ocupados or r['id'] in usados:
             continue
         mismo_lado = r['tipo'] in _TIPOS_INTERNOS or ((r['tipo'] == 'INGRESO' or r['monto'] < 0) == ingreso)
-        if mismo_lado:
+        # Misma operación del banco («PAGO TARJETA» no es «PAGO CUENTA»): el
+        # 5-may-2024 había un PAGO CUENTA DE TERCERO y faltaba el PAGO TARJETA
+        # DE CREDITO del mismo monto.
+        if mismo_lado and _operacion(r['descripcion']) == _operacion(nueva['descripcion']):
             usados.add(r['id'])
             return [_linea(f, r, 'sin cambio', motivo=f'ya existe (id {r["id"]}: {r["descripcion"]})')]
     return [_linea(f, None, 'creado', 'fila', '', f"{nueva['descripcion']} [{nueva['tipo']} "

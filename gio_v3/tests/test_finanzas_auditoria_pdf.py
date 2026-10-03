@@ -85,6 +85,9 @@ def test_correcciones(test_db):
             assert (r['tipo'], r['categoria'], r['subcategoria']) == ('INGRESO', 'FINANZAS', 'Reembolso compartido'), i
         r = _fila(db, 1578)
         assert (r['tipo'], r['categoria']) == ('INGRESO', 'VIAJES')
+        # Abono de Judi con concepto claro: se queda en su categoría (resta del viaje).
+        r = _fila(db, 2958)
+        assert (r['tipo'], r['categoria'], r['subcategoria']) == ('INGRESO', 'VIAJES', 'Otros')
         # Monto distinto.
         assert _fila(db, 2089)['monto'] == 5555.0
 
@@ -102,7 +105,10 @@ def test_borra_solo_lo_seguro(test_db):
         assert _fila(db, 2077) is not None and (2077, 'pendiente revisión') in plan   # ligado a un préstamo
         assert _fila(db, 1881) is not None and (1881, 'pendiente revisión') in plan   # su gemelo no tiene el viaje
         assert _fila(db, 2003) is not None              # el «gemelo» no existe: no se borra
-        assert _fila(db, 2031) is not None              # no está en el PDF, pero no es duplicado
+        assert _fila(db, 2031) is not None              # Steam: real, se queda
+        assert _fila(db, 1306) is not None              # compra a MSI de los anillos
+        assert _fila(db, 19) is not None                # no está en el PDF y nadie sabe qué es: se queda
+        assert _fila(db, 1102) is None and _fila(db, 2053) is None   # garantía y validación: nunca se cobraron
         for i in aud.PENDIENTES_USUARIO:                # las que decidió el usuario no se tocan
             assert _fila(db, i)['tipo'] == 'GASTO'
 
@@ -110,6 +116,8 @@ def test_borra_solo_lo_seguro(test_db):
 def test_faltantes(test_db):
     with database.get_db() as db:
         _sembrar(db)
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES ('2024-05-05', 'PAGO CUENTA DE TERCERO BNET TRANSF A', 1500, 'BBVA_DEB', 'FINANZAS', '', 'GASTO')""")
         aud.aplicar(db)
         q = lambda f, m: [dict(r) for r in db.execute(
             "SELECT * FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01", (f, m))]
@@ -129,6 +137,9 @@ def test_faltantes(test_db):
         # La mensualidad de la anualidad no se crea (la anualidad ya va en comisiones).
         assert q('2022-12-22', 358.66) == []
         assert len(q('2022-11-23', 1076.0)) == 1
+        # Otra operación del mismo monto ese día no cuenta como «ya existe».
+        assert {r['descripcion'] for r in q('2024-05-05', 1500.0)} == \
+            {'PAGO CUENTA DE TERCERO BNET TRANSF A', 'PAGO TARJETA DE CREDITO'}
         # Nada en 0.00.
         assert not db.execute("SELECT 1 FROM est_movimientos WHERE monto = 0").fetchone()
 
