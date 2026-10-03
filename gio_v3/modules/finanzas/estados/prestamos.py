@@ -317,6 +317,18 @@ PRESTAMOS_MANUALES = (
     ('2026-05-12', 2000.0, 'REGRESO AL CORNER', 'Cornelius'),
     ('2024-10-18', 10000.0, 'CIRUJIA CAMBIO SEX', 'Jorge'),
 )
+# Abonos que el lector de BBVA dejó como cargo («PAGO CUENTA DE TERCERO» es
+# ambiguo y sin saldo impreso queda como cargo; ver parsers/bbva_libreton.py):
+# devoluciones de un préstamo (fecha, monto, texto) -> (persona, fecha del
+# préstamo, monto del préstamo). El usuario, 2026-10-03: Jorge le pagó los
+# $10,000 de la cirugía en dos partes ($4,900 + $100 el 24/10 y $5,000 el
+# 1/11, «este día me liquidó»); el $4,900 estaba registrado como otro préstamo.
+DEVOLUCIONES_LEIDAS_COMO_CARGO = (
+    ('2024-10-24', 4900.0, 'BNET JORGE', ('Jorge', '2024-10-18', 10000.0)),
+    ('2024-10-24', 100.0, 'BNET GIO', ('Jorge', '2024-10-18', 10000.0)),
+    ('2024-11-01', 5000.0, 'JORGE 2 PAGO', ('Jorge', '2024-10-18', 10000.0)),
+)
+
 # «parece que se regresó»: transferencias de $13,000 que volvieron (el
 # usuario, 2026-10-03: «me prestaron y regresé»; el dinero prestado no llegó a
 # una cuenta cargada en la app, el depósito del 12/09 es un retiro de CETES). Se cancelan
@@ -351,6 +363,24 @@ def registrar_manuales(db) -> tuple[int, int]:
                       VALUES (?, 'OTORGADO', ?, ?, '', ?, ?)""",
                    (persona, abs(float(m['monto'])), m['fecha'][:10], m['id'], ahora()))
         creados += 1
+    for fecha, monto, texto, (persona, p_fecha, p_monto) in DEVOLUCIONES_LEIDAS_COMO_CARGO:
+        m = db.execute("""SELECT id FROM est_movimientos
+                          WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ?""",
+                       (fecha, monto, f"%{texto}%")).fetchone()
+        p = db.execute("""SELECT id FROM est_prestamos WHERE contraparte=? AND substr(fecha,1,10)=?
+                            AND ABS(monto - ?) < 0.005 AND COALESCE(movimiento_id, 0) NOT IN (SELECT ?)""",
+                       (persona, p_fecha, p_monto, m['id'] if m else 0)).fetchone()
+        if not m or not p or db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?",
+                                        (m['id'],)).fetchone():
+            continue
+        # El «préstamo» que se registró sobre este movimiento no existe (sin devoluciones propias).
+        for (pid,) in db.execute("SELECT id FROM est_prestamos WHERE movimiento_id=?", (m['id'],)).fetchall():
+            if not db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,)).fetchone():
+                db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
+        db.execute("UPDATE est_movimientos SET tipo='INGRESO', categoria='PRESTAMOS', subcategoria='' WHERE id=?",
+                   (m['id'],))
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+                   (p['id'], m['id'], ahora()))
     parejas = 0
     for fecha, monto, texto in REGRESADOS:
         m = _mov(db, fecha, monto, texto)

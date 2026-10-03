@@ -72,3 +72,21 @@ def test_regresado_con_deposito_un_dia_antes(test_db):
         assert pr.registrar_manuales(db) == (0, 1)
         assert _cat(db, t) == _cat(db, dep) == ('FINANZAS', 'Entre cuentas propias')
         assert pr.candidatos(db)['prestamos'] == []
+
+
+def test_jorge_liquido_con_abonos_leidos_como_cargo(test_db):
+    with database.get_db() as db:
+        cir = _ins(db, '2024-10-18', 'PAGO CUENTA DE TERCERO BNET CIRUJIA CAMBIO SEX', 10000.0)
+        a = _ins(db, '2024-10-24', 'PAGO CUENTA DE TERCERO BNET JORGE', 4900.0)
+        b = _ins(db, '2024-10-24', 'PAGO CUENTA DE TERCERO BNET GIO', 100.0, 'GASTO', 'FINANZAS', 'Transferencia')
+        c = _ins(db, '2024-11-01', 'PAGO CUENTA DE TERCERO BNET JORGE 2 PAGO', 5000.0, 'GASTO', 'FINANZAS', 'Transferencia')
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Jorge', 'OTORGADO', 4900, '2024-10-24', '', ?, datetime('now'))""", (a,))
+        db.commit()
+        pr.registrar_manuales(db)
+        pr.registrar_manuales(db)                                     # idempotente
+        jorge = [p for p in pr.listar(db) if p['persona'] == 'Jorge']
+        assert len(jorge) == 1 and jorge[0]['movimiento_id'] == cir
+        assert jorge[0]['devuelto'] == 10000 and jorge[0]['estado'] == 'Pagado'
+        for i in (a, b, c):
+            assert db.execute("SELECT tipo, categoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[:] == ('INGRESO', 'PRESTAMOS')

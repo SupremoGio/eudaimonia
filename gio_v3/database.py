@@ -6127,7 +6127,7 @@ def init_db():
         try:
             from modules.finanzas.estados import prestamos as _pm
             from modules.finanzas.estados import msi as _msi_pm
-            _ver = f"finanzas_prestamos_manuales_{len(_pm.PRESTAMOS_MANUALES)}_{len(_pm.REGRESADOS)}_v3"   # v3: sin depósito también
+            _ver = f"finanzas_prestamos_manuales_{len(_pm.PRESTAMOS_MANUALES)}_{len(_pm.REGRESADOS)}_{len(_pm.DEVOLUCIONES_LEIDAS_COMO_CARGO)}_v3"
             if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
                 _m = _msi_pm.marcar_compras(db)
                 _c, _p = _pm.registrar_manuales(db)
