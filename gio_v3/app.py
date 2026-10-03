@@ -1,9 +1,16 @@
 import os
 import secrets
+import sys
 import warnings
 from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()  # carga gio_v3/.env en desarrollo local; en Railway no existe y no hace nada
+# Bajo gunicorn stdout no es una terminal y Python lo bufferea: los print("[DB] …")
+# de las migraciones no llegaban a los logs de Railway. Línea por línea.
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
 from flask import Flask, jsonify, request, session, redirect, url_for
 from database import init_db
 from extensions import limiter, csrf

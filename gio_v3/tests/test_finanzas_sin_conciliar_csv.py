@@ -123,3 +123,29 @@ def test_movimientos_con_fibra_hotelera_pegada(test_db):
         assert row(b) == ('PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 'INGRESO', 'FINANZAS')
         assert row(c) == ('PAGO CUENTA DE TERCERO BNET EXPENSE', 'GASTO', 'EXPENSE')
         assert corr.aplicar(db)[0] == 0
+
+
+def test_reescrito_con_copia_buena_ya_guardada(test_db):
+    """El mismo estado importado de dos PDFs: una copia con «FIBRA HOTELERA»
+    pegado y otra ya con la descripción real. Antes el UNIQUE hacía fallar todo."""
+    with database.get_db() as db:
+        ins = lambda d, t: db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                                         VALUES ('2026-03-29', ?, 6000, 'BBVA_DEB', 'VIAJES', 'Otros', ?)""", (d, t)).lastrowid
+        mala = ins('FIBRA HOTELERA SC PAGO CUENTA DE TERCERO BNET', 'GASTO')
+        buena = ins('PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 'GASTO')
+        db.commit()
+        corr.aplicar(db)
+        assert db.execute("SELECT 1 FROM est_movimientos WHERE id=?", (mala,)).fetchone() is None
+        assert tuple(db.execute("SELECT tipo, categoria FROM est_movimientos WHERE id=?", (buena,)).fetchone()) == ('INGRESO', 'FINANZAS')
+        assert next(r for r in corr.revisar_reescritos(db) if r['monto'] == 6000)['correcto']
+
+
+def test_admin_correcciones(test_db):
+    from app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess["app_ok"] = sess["fin_ok"] = True
+        r = c.get('/finanzas/estados/admin/correcciones?aplicar=1').get_json()
+        assert r['aplicado'] is not None and len(r['reescritos']) == len(corr.REESCRITOS)

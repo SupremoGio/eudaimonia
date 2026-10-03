@@ -130,6 +130,65 @@ REESCRITOS = [
 ]
 
 
+_REFERENCIAS = (('est_prestamos', 'movimiento_id'), ('est_prestamo_devoluciones', 'movimiento_id'),
+                ('est_expense_lote_gastos', 'movimiento_id'), ('est_expense_lote_depositos', 'movimiento_id'))
+
+
+def _referenciado(db, mid) -> bool:
+    for tabla, col in _REFERENCIAS:
+        try:
+            if db.execute(f"SELECT 1 FROM {tabla} WHERE {col}=?", (mid,)).fetchone():
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def _reescribir(db, fecha, monto, texto, desc, tipo, cat, sub):
+    """Corrige un movimiento de REESCRITOS. None si no está. Si ya existe otra
+    copia con la descripción real (el mismo estado importado de dos PDFs), la
+    de descripción mezclada es duplicada: se borra (si nada la usa) y se corrige
+    la otra — antes el UNIQUE(fecha, descripcion, monto) hacía fallar todo."""
+    filas = db.execute("""SELECT id, descripcion FROM est_movimientos WHERE substr(fecha,1,10)=?
+                           AND ABS(ABS(monto) - ?) < 0.01 AND (UPPER(descripcion) LIKE ? OR descripcion=?)
+                         ORDER BY id""", (fecha, monto, f"%{texto}%", desc)).fetchall()
+    if not filas:
+        return None
+    buena = next((r for r in filas if r['descripcion'] == desc), None)
+    n = 0
+    for r in filas:
+        if buena and r['id'] != buena['id'] and not _referenciado(db, r['id']):
+            db.execute("DELETE FROM est_movimientos WHERE id=?", (r['id'],))
+            n += 1
+    objetivo = buena['id'] if buena else filas[0]['id']
+    if not buena:
+        # sin copia buena: si chocara con otra fila (otra fecha exacta/monto), no se renombra
+        choque = db.execute("SELECT 1 FROM est_movimientos WHERE fecha=(SELECT fecha FROM est_movimientos WHERE id=?) "
+                            "AND descripcion=? AND monto=(SELECT monto FROM est_movimientos WHERE id=?) AND id != ?",
+                            (objetivo, desc, objetivo, objetivo)).fetchone()
+        if choque:
+            desc = None
+    n += db.execute("""UPDATE est_movimientos SET descripcion=COALESCE(?, descripcion), tipo=?, categoria=?, subcategoria=?
+                        WHERE id=? AND (descripcion != COALESCE(?, descripcion) OR tipo != ? OR categoria != ?
+                                        OR COALESCE(subcategoria,'') != ?)""",
+                    (desc, tipo, cat, sub, objetivo, desc, tipo, cat, sub)).rowcount
+    return n
+
+
+def revisar_reescritos(db) -> list[dict]:
+    """Solo lectura: cómo están hoy los movimientos de REESCRITOS."""
+    out = []
+    for fecha, monto, texto, desc, tipo, cat, sub in REESCRITOS:
+        filas = [dict(r) for r in db.execute("""SELECT id, fecha, descripcion, monto, tipo, categoria, subcategoria, banco
+                                                FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01
+                                                ORDER BY id""", (fecha, monto)).fetchall()]
+        out.append({'fecha': fecha, 'monto': monto, 'esperado': {'descripcion': desc, 'tipo': tipo, 'categoria': cat,
+                                                                 'subcategoria': sub},
+                    'en_base': filas,
+                    'correcto': any(f['descripcion'] == desc and f['tipo'] == tipo and f['categoria'] == cat for f in filas)})
+    return out
+
+
 def _fila(db, mid, fecha, monto, texto):
     row = db.execute("""SELECT id, categoria, subcategoria, viaje_id FROM est_movimientos
                         WHERE id=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'""",
@@ -182,16 +241,11 @@ def aplicar(db) -> tuple[int, int]:
             db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, row['id']))
             ok += 1
     for fecha, monto, texto, desc, tipo, cat, sub in REESCRITOS:
-        row = db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01
-                              AND (UPPER(descripcion) LIKE ? OR descripcion=?) ORDER BY id LIMIT 1""",
-                         (fecha, monto, f"%{texto}%", desc)).fetchone()
-        if not row:
+        n = _reescribir(db, fecha, monto, texto, desc, tipo, cat, sub)
+        if n is None:
             faltan += 1
-            continue
-        cur = db.execute("""UPDATE est_movimientos SET descripcion=?, tipo=?, categoria=?, subcategoria=?
-                             WHERE id=? AND (descripcion != ? OR tipo != ? OR categoria != ? OR COALESCE(subcategoria,'') != ?)""",
-                         (desc, tipo, cat, sub, row['id'], desc, tipo, cat, sub))
-        ok += cur.rowcount
+        else:
+            ok += n
     for fecha, monto, texto, cat, sub in ENTRADAS:
         row = db.execute("""SELECT id, tipo, categoria, subcategoria FROM est_movimientos
                             WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND UPPER(descripcion) LIKE ?

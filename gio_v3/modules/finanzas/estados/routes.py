@@ -3392,6 +3392,21 @@ def cetes_retiros_admin():
         return jsonify({'retiros': _cetes.plan(db)})
 
 
+@estados_bp.route('/admin/correcciones')
+def correcciones_admin():
+    """Revisa (y con ?aplicar=1 re-aplica) las correcciones manuales de
+    movimientos: cómo está cada uno de REESCRITOS en la base."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        aplicado = None
+        if request.args.get('aplicar') == '1':
+            ok, faltan = _sinconc.aplicar(db)
+            _prest.registrar_manuales(db)
+            db.commit()
+            aplicado = {'actualizados': ok, 'no_encontrados': faltan}
+        return jsonify({'aplicado': aplicado, 'reescritos': _sinconc.revisar_reescritos(db)})
+
+
 @estados_bp.route('/admin/pedidos-amazon')
 def pedidos_amazon_admin():
     """Solo lectura: cada pedido de Amazon con el cargo que le tocó y, si se
