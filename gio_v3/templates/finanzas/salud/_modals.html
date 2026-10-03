@@ -53,6 +53,10 @@
 {{ ft('m-debt', 'Guardar') }}
 {% endcall %}
 
+{% call ui.modal('m-debt-hist', 'Historial', eyebrow='Compromisos') %}
+<div class="eu-modal-bd" id="mh-body" aria-live="polite"></div>
+{% endcall %}
+
 {% call ui.modal('m-abonar', 'Registrar abono / cobro', eyebrow='Compromisos') %}
 <form class="eu-modal-bd" id="f-m-abonar" autocomplete="off" novalidate>
   <input type="hidden" id="ma-did">

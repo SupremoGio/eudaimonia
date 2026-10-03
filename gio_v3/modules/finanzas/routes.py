@@ -267,10 +267,44 @@ def debt_payments(did):
     return jsonify({'payments': [dict(p) for p in payments]})
 
 
+def _debt_hist(db, d) -> dict:
+    """Una deuda con sus abonos/cobros en orden cronológico (historial)."""
+    pagos = [dict(p) for p in db.execute(
+        "SELECT id, amount, note, paid_at FROM debt_payments WHERE debt_id=? ORDER BY paid_at, id", (d['id'],))]
+    return {'id': d['id'], 'type': d['type'], 'person': d['person'], 'concept': d['concept'] or '',
+            'monto_total': d['monto_total'], 'monto_restante': d['monto_restante'],
+            'settled': bool(d['settled']), 'created_at': d['created_at'], 'payments': pagos,
+            'pagado': round(sum(p['amount'] for p in pagos), 2)}
+
+
+@finanzas_bp.route('/api/debt/<int:did>/historial')
+def debt_historial(did):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        d = db.execute("SELECT * FROM debts WHERE id=?", (did,)).fetchone()
+        if not d: return jsonify({'error': 'not found'}), 404
+        return jsonify(_debt_hist(db, d))
+
+
+@finanzas_bp.route('/api/debts/historial')
+def debts_historial():
+    """Deudas ya liquidadas, la más reciente primero, con sus pagos."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        rows = db.execute("""SELECT d.*, COALESCE((SELECT MAX(paid_at) FROM debt_payments WHERE debt_id=d.id), d.created_at) AS ultimo
+                              FROM debts d WHERE d.settled=1 ORDER BY ultimo DESC""").fetchall()
+        return jsonify({'debts': [{**_debt_hist(db, d), 'ultimo': d['ultimo']} for d in rows]})
+
+
 @finanzas_bp.route('/api/debt/<int:did>/settle', methods=['POST'])
 def settle_debt(did):
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     with get_db() as db:
+        d = db.execute("SELECT monto_restante FROM debts WHERE id=?", (did,)).fetchone()
+        # Lo que faltaba queda como último pago, para que el historial cuadre.
+        if d and (d['monto_restante'] or 0) > 0:
+            db.execute("INSERT INTO debt_payments (debt_id, amount, note, paid_at) VALUES (?,?,?,?)",
+                       (did, d['monto_restante'], 'Liquidado', datetime.now().isoformat()))
         db.execute("UPDATE debts SET settled=1, monto_restante=0 WHERE id=?", (did,))
         db.commit()
     return jsonify({'ok':True})

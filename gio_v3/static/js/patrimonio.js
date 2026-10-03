@@ -105,8 +105,52 @@
       }).catch(function () { toast('Sin conexión', 'err'); });
     });
   }
+  // ── Historial de deudas personales (abonos/cobros con fecha) ──
+  var MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  function mx(n) { return '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function fecha(iso) { if (!iso) return '—'; var d = String(iso).slice(0, 10).split('-'); return +d[2] + ' ' + MESES[+d[1] - 1] + ' ' + d[0]; }
+  function esc(v) { var d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; }
+  function lineas(d) {
+    var cobro = d.type === 'owe_me';
+    var html = '<ol class="pt-hist">'
+      + '<li><span class="t-meta pt-hist-f">' + fecha(d.created_at) + '</span><span class="eu-grow">'
+      + (cobro ? 'Le prestaste' : 'Te prestaron') + (d.concept ? ' · ' + esc(d.concept) : '') + '</span>'
+      + '<span class="t-data">' + mx(d.monto_total) + '</span></li>';
+    d.payments.forEach(function (p) {
+      html += '<li><span class="t-meta pt-hist-f">' + fecha(p.paid_at) + '</span><span class="eu-grow">'
+        + (cobro ? 'Te pagó' : 'Pagaste') + (p.note ? ' · <span class="t-meta">' + esc(p.note) + '</span>' : '') + '</span>'
+        + '<span class="t-data pt-hist-pago">−' + mx(p.amount) + '</span></li>';
+    });
+    if (!d.payments.length) html += '<li class="t-meta">Sin abonos registrados todavía.</li>';
+    html += '</ol><div class="eu-between pt-hist-tot"><span class="t-meta">' + (cobro ? 'Cobrado ' : 'Pagado ') + mx(d.pagado) + '</span>'
+      + '<b class="t-data">' + (d.settled ? 'Liquidada' : 'Pendiente ' + mx(d.monto_restante)) + '</b></div>';
+    return html;
+  }
+  function showHist(title, html) {
+    $('m-debt-hist-t').textContent = title; $('mh-body').innerHTML = html; open('m-debt-hist');
+  }
+  function histDeuda(id) {
+    send('/finanzas/api/debt/' + id + '/historial', 'GET').then(function (d) {
+      if (d.error) { toast('No se pudo cargar el historial', 'err'); return; }
+      showHist(d.person + (d.type === 'owe_me' ? ' · te debe' : ' · le debes'), lineas(d));
+    }).catch(function () { toast('Sin conexión', 'err'); });
+  }
+  function histLiquidadas() {
+    send('/finanzas/api/debts/historial', 'GET').then(function (r) {
+      if (r.error) { toast('No se pudo cargar el historial', 'err'); return; }
+      var html = r.debts.length ? r.debts.map(function (d) {
+        return '<details class="pt-hist-item"><summary><span class="eu-grow"><b>' + esc(d.person) + '</b> <span class="t-meta">· '
+          + (d.type === 'owe_me' ? 'te debía' : 'le debías') + (d.concept ? ' · ' + esc(d.concept) : '') + '</span></span>'
+          + '<span class="t-data">' + mx(d.monto_total) + '</span></summary>' + lineas(d) + '</details>';
+      }).join('') : '<p class="t-meta">Todavía no hay deudas liquidadas.</p>';
+      showHist('Deudas liquidadas', html);
+    }).catch(function () { toast('Sin conexión', 'err'); });
+  }
+
   root.addEventListener('click', function (e) {
     var t;
+    if ((t = e.target.closest('[data-hist]'))) { histDeuda(t.dataset.hist); return; }
+    if (e.target.closest('[data-debts-hist]')) { histLiquidadas(); return; }
     if ((t = e.target.closest('[data-new-cuenta]'))) { fillCuenta({ tipo: t.dataset.newCuenta }); }
     else if ((t = e.target.closest('[data-edit-cuenta]'))) { fillCuenta(JSON.parse(t.dataset.editCuenta)); }
     else if ((t = e.target.closest('[data-del-cuenta]'))) { confirmDel('¿Eliminar esta cuenta? No se puede deshacer.', '/finanzas/salud/api/cuenta/' + t.dataset.delCuenta, 'Cuenta eliminada'); }

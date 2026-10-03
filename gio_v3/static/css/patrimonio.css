@@ -112,3 +112,18 @@
 .pt-seg{display:flex;width:100%}
 .pt-seg button{flex:1}
 .eu-seg button[aria-pressed=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
+
+/* Historial de deudas personales */
+.pt-debt-name{all:unset;cursor:pointer;font:inherit;color:var(--fg-1)}
+.pt-debt-name:hover{text-decoration:underline}
+.pt-debt-name:focus-visible{outline:2px solid var(--border-focus);outline-offset:2px;border-radius:var(--r-xs)}
+.pt-hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.pt-hist li{display:flex;align-items:baseline;gap:var(--sp-3);padding:var(--sp-2) 0;border-top:1px solid var(--border-subtle)}
+.pt-hist li:first-child{border-top:0}
+.pt-hist-f{flex:none;width:92px}
+.pt-hist-pago{color:var(--fg-2)}
+.pt-hist-tot{padding-top:var(--sp-3);margin-top:var(--sp-2);border-top:1px solid var(--border-default)}
+.pt-hist-item{border:1px solid var(--border-subtle);border-radius:var(--r-md);padding:var(--sp-3);margin-bottom:var(--sp-2)}
+.pt-hist-item summary{display:flex;gap:var(--sp-3);align-items:baseline;cursor:pointer;list-style:none}
+.pt-hist-item summary::-webkit-details-marker{display:none}
+.pt-hist-item[open] summary{margin-bottom:var(--sp-2)}
