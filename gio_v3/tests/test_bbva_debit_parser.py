@@ -78,3 +78,44 @@ def test_amounts_and_signs_unaffected_by_description_fix():
 
     assert by_fecha["2026-01-04"]["monto"] == 500.0
     assert by_fecha["2026-01-04"]["tipo"] == "GASTO"
+
+
+# ── Blindaje de dirección (2026-10-03): cargos leídos como abonos ──────────────
+SAMPLE_SALDOS = """FECHA DESCRIPCIÓN MONTO SALDO TOTAL
+01 mar 2026 PAGO DE NOMINA / HH 1111111111 $10,00000 $10,00000
+04 mar 2026 PAGO CUENTA DE TERCERO / ARBITRAJE GIO -$40000 $9,60000
+14 abr 2026 PAGO CUENTA DE TERCERO / MENS GIO $−70000 $8,90000
+27 jun 2026 PAGO CUENTA DE TERCERO / FRESKO $35800 $8,54200
+02 jul 2026 SPEI RECIBIDO STP / QUALITAS $1,00000 $9,54200"""
+
+
+def test_signo_menos_antes_del_peso_o_tipografico_es_cargo():
+    by = {m["fecha"]: m for m in _parse_text(SAMPLE_SALDOS, periodo=None)}
+    assert by["2026-03-04"]["tipo"] == "GASTO" and by["2026-03-04"]["monto"] == 400.0
+    assert by["2026-04-14"]["tipo"] == "GASTO" and by["2026-04-14"]["monto"] == 700.0
+
+
+def test_el_saldo_corrige_un_cargo_sin_signo():
+    # «FRESKO» viene sin signo pero el saldo bajó $358: es cargo.
+    by = {m["fecha"]: m for m in _parse_text(SAMPLE_SALDOS, periodo=None)}
+    assert by["2026-06-27"]["tipo"] == "GASTO"
+    assert by["2026-06-27"]["dir_verificada"] is True
+    assert by["2026-07-02"]["tipo"] == "INGRESO" and by["2026-07-02"]["dir_verificada"] is True
+
+
+def test_estado_del_mas_nuevo_al_mas_viejo():
+    lineas = SAMPLE_SALDOS.split("\n")
+    texto = "\n".join([lineas[0]] + lineas[1:][::-1])
+    by = {m["fecha"]: m for m in _parse_text(texto, periodo=None)}
+    assert by["2026-06-27"]["tipo"] == "GASTO" and by["2026-07-02"]["tipo"] == "INGRESO"
+
+
+
+def test_excel_con_cero_en_abonos_es_cargo():
+    import pandas as pd
+    from modules.finanzas.estados.parsers.bbva_debit_xlsx import _parse_df
+    raw = pd.DataFrame([["FECHA", "DESCRIPCIÓN", "CARGO", "ABONO", "SALDO"],
+                        ["04/03/2026", "PAGO CUENTA DE TERCERO ARBITRAJE GIO", "400.00", "0", "9600"],
+                        ["05/03/2026", "SPEI RECIBIDO", "0", "100.00", "9700"]])
+    movs = _parse_df(raw)
+    assert [(m["monto"], m["tipo"]) for m in movs] == [(400.0, "GASTO"), (100.0, "INGRESO")]

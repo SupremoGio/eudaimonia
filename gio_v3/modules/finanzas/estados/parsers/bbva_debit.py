@@ -141,7 +141,20 @@ def _find_amount_in_block(block: list[str]) -> tuple[float | None, int | None]:
     return None, None
 
 
+_MENOS_RE = re.compile(r"[\u2212\u2013\u2014\u2012]")   # −, –, —, ‒
+
+
+def _normalizar_signos(text: str) -> str:
+    """El signo de un cargo puede venir como «-$1,000», «$ -1,000» o con el
+    menos tipográfico «−»: todo pasa a «$-1,000», que es lo que leen las
+    expresiones de abajo. Antes, «-$1,000» o «$−1,000» se leía como abono."""
+    text = _MENOS_RE.sub("-", text)
+    text = re.sub(r"-\s*\$\s*", "$-", text)
+    return re.sub(r"\$\s+-", "$-", text)
+
+
 def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
+    full_text = _normalizar_signos(full_text)
     lines = [l.strip() for l in full_text.split("\n")
              if l.strip() and not _should_skip(l.strip())]
 
@@ -197,8 +210,10 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
 
         dm = dm_by_idx[idx]
         inline_desc = inline_by_idx[idx]
+        saldo = None
         if dm:
             monto = _parse_monto(dm.group(5))
+            saldo = _parse_monto(dm.group(6))
         else:
             block = lines[pos:next_pos]
             monto, region_start = _find_amount_in_block(block)
@@ -252,9 +267,49 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
             "subcategoria": subcategoria,
             "tipo":         tipo,
             "periodo":      periodo,
+            "_saldo":       saldo,
         })
 
+    _verificar_con_saldo(movimientos)
+    for m in movimientos:
+        m.pop("_saldo", None)
     return movimientos
+
+
+def _verificar_con_saldo(movimientos: list[dict]) -> None:
+    """Cada renglón trae el saldo después del movimiento: saldo anterior ±
+    monto = saldo nuevo dice si entró o salió, sin depender del signo impreso.
+    El estado puede venir del más viejo al más nuevo o al revés: se usa el
+    orden con el que cuadran más renglones. Si el saldo contradice al signo,
+    manda el saldo; los renglones que cuadran quedan con dir_verificada."""
+    n = len(movimientos)
+    if n < 2:
+        return
+
+    def _signo(i, j):
+        # i: el movimiento, j: el renglón con el saldo anterior a i
+        a, b = movimientos[j].get("_saldo"), movimientos[i].get("_saldo")
+        if a is None or b is None:
+            return None
+        d = round(b - a, 2)
+        if abs(abs(d) - movimientos[i]["monto"]) < 0.01 and abs(d) >= 0.01:
+            return "INGRESO" if d > 0 else "GASTO"
+        return None
+
+    asc = {i: _signo(i, i - 1) for i in range(1, n)}          # viejo → nuevo
+    desc = {i: _signo(i, i + 1) for i in range(n - 1)}        # nuevo → viejo
+    ok_asc, ok_desc = sum(v is not None for v in asc.values()), sum(v is not None for v in desc.values())
+    if not max(ok_asc, ok_desc):
+        return
+    dirs = asc if ok_asc >= ok_desc else desc
+    for i, tipo in dirs.items():
+        if tipo is None:
+            continue
+        m = movimientos[i]
+        if m["tipo"] != tipo:
+            m["tipo"] = tipo
+            m["categoria"], m["subcategoria"] = _categorize(m["descripcion"], es_gasto=(tipo == "GASTO"))
+        m["dir_verificada"] = True
 
 
 def parse(pdf_path: Path) -> list[dict]:

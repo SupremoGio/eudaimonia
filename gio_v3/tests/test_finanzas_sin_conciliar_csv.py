@@ -73,3 +73,14 @@ def test_consulta_guardada_como_ingreso_pasa_a_gasto(test_db):
         db.commit()
         corr.aplicar(db)
         assert tuple(db.execute("SELECT tipo, categoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) == ('GASTO', 'SALUD')
+
+
+def test_mens_gio_era_gasto_de_salsa(test_db):
+    with database.get_db() as db:
+        i = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2026-04-14', '014 180326OMENS GIO PAGO CUENTA DE TERCERO BNET', 700, 'BBVA_DEB',
+                                  'TRANSPORTE', 'Gasolina', 'INGRESO')""").lastrowid
+        db.commit()
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) \
+            == ('GASTO', 'SALSA', 'Clases')

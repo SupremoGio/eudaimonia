@@ -81,9 +81,11 @@ def _parse_df(raw: pd.DataFrame) -> list[dict]:
         cargo = _to_float(cargo_raw) if cargo_raw not in ("", "nan") else None
         abono = _to_float(abono_raw) if abono_raw not in ("", "nan") else None
 
-        if abono is not None:
+        # Un 0 en la otra columna no es dato: antes «Abonos = 0» en un renglón de
+        # cargo lo volvía ingreso. Manda la columna con monto distinto de 0.
+        if abono:
             monto, tipo = abs(abono), "INGRESO"
-        elif cargo is not None:
+        elif cargo:
             monto, tipo = abs(cargo), "GASTO"
         else:
             continue
