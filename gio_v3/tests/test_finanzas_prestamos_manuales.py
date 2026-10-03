@@ -210,3 +210,14 @@ def test_regalo_bodas_no_era_prestamo(test_db):
         pr.registrar_manuales(db)
         assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
         assert _cat(db, m) == ('FAMILIA_REGALOS', 'Regalos')
+
+
+def test_retiro_sin_tarjeta_no_es_prestamo_a_cornelio(test_db):
+    with database.get_db() as db:
+        m = _ins(db, '2026-07-11', 'CORNELIO RETIRO SIN TARJETA ******7852', 3400.0)
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Cornelius', 'OTORGADO', 3400, '2026-07-11', 'Clasificado desde CSV', ?, datetime('now'))""", (m,))
+        db.commit()
+        pr.registrar_manuales(db)
+        assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
+        assert _cat(db, m) == ('FINANZAS', 'Retiro efectivo')

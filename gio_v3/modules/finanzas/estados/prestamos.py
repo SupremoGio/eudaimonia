@@ -348,6 +348,10 @@ DEVOLUCIONES_CORREGIDAS = (
 # esto como préstamo y déjalo como familia regalo».
 NO_ERAN_PRESTAMO = (
     ('2025-09-07', 950.0, 'REGALO BODAS', 'FAMILIA_REGALOS', 'Regalos'),
+    # «CORNELIO RETIRO SIN TARJETA ******7852» (11/07/2026, $3,400, del CSV):
+    # «es un retiro sin tarjeta, no es un préstamo a Cornelio» — el «CORNELIO»
+    # se le pegó del concepto del renglón vecino al leer el PDF.
+    ('2026-07-11', 3400.0, 'RETIRO SIN TARJETA', 'FINANZAS', 'Retiro efectivo'),
 )
 
 # Préstamos que el usuario da por cobrados aunque falte un resto mínimo: el
