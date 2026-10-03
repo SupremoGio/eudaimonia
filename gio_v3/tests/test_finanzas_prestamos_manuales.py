@@ -133,3 +133,19 @@ def test_gracias_bebo_es_prestamo_de_2023_y_libera_mayo_2026(test_db):
         assert ('Judi', '2026') not in por and ('Cornelius', '2026') in por
         assert _cat(db, judi) == _cat(db, vuelta) == ('FINANZAS', 'Entre cuentas propias')
         assert _cat(db, gb) == ('PRESTAMOS', '')
+
+
+def test_cositas_cobrado_en_efectivo_pasa_al_viaje(test_db):
+    with database.get_db() as db:
+        vid = db.execute("""INSERT INTO viajes (nombre, fecha_inicio, fecha_fin, created_at)
+                            VALUES ('Villahermosa Marzo 26', '2026-03-20', '2026-03-29', datetime('now'))""").lastrowid
+        db.execute("""INSERT INTO viajes (nombre, fecha_inicio, fecha_fin, created_at)
+                      VALUES ('Villahermosa Dic 25', '2025-12-20', '2025-12-30', datetime('now'))""")
+        m = _ins(db, '2026-03-19', 'PAGO CUENTA DE TERCERO BNET COSITAS', 8000.0)
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, perdido_fecha, created_at)
+                      VALUES ('X', 'OTORGADO', 8000, '2026-03-19', '', ?, '2026-09-25', datetime('now'))""", (m,))
+        db.commit()
+        pr.registrar_manuales(db)
+        assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
+        r = db.execute("SELECT categoria, subcategoria, viaje_id FROM est_movimientos WHERE id=?", (m,)).fetchone()
+        assert tuple(r) == ('VIAJES', 'Otros', vid)

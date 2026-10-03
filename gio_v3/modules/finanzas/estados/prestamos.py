@@ -317,6 +317,16 @@ PRESTAMOS_MANUALES = (
     ('2026-05-12', 2000.0, 'BNET TACOS', 'Cornelius'),   # la que sí fue a Cornelius (ver IDA_Y_VUELTA)
     ('2024-10-18', 10000.0, 'CIRUJIA CAMBIO SEX', 'Jorge'),
 )
+# Préstamos que le pagaron en efectivo y ese efectivo se fue en un viaje: el
+# movimiento deja de ser préstamo y es gasto del viaje (VIAJES, ligado al
+# viaje más cercano cuyo nombre lleva el texto dado, ±45 días).
+# (fecha, monto, texto, nombre del viaje). El usuario, 2026-10-03: «me lo
+# pagaron en efectivo y todo se me fue en comida, salidas, cosas de ese viaje
+# a Villahermosa; pásalo a viajes de ese periodo».
+COBRADOS_EN_EFECTIVO_PARA_VIAJE = (
+    ('2026-03-19', 8000.0, 'COSITAS', 'VILLA'),
+)
+
 # Préstamos de los que solo quedó la devolución (la salida no se identifica):
 # (persona, fecha, monto, notas, devolución (fecha, monto, texto)). Quedan
 # pagados. El usuario, 2026-10-03: «GRACIAS BEBO» fue Judi pagándole «un
@@ -373,6 +383,21 @@ def _mov(db, fecha, monto, texto, tipo='GASTO'):
 def registrar_manuales(db) -> tuple[int, int]:
     """Registra PRESTAMOS_MANUALES y cancela REGRESADOS con su depósito.
     Devuelve (préstamos creados, parejas canceladas). Idempotente."""
+    for fecha, monto, texto, viaje in COBRADOS_EN_EFECTIVO_PARA_VIAJE:
+        m = db.execute("""SELECT id, categoria, viaje_id FROM est_movimientos WHERE substr(fecha,1,10)=?
+                            AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
+                          ORDER BY id LIMIT 1""", (fecha, monto, f"%{texto}%")).fetchone()
+        if not m:
+            continue
+        for (pid,) in db.execute("SELECT id FROM est_prestamos WHERE movimiento_id=?", (m['id'],)).fetchall():
+            if not db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,)).fetchone():
+                db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
+        v = db.execute("""SELECT id FROM viajes WHERE UPPER(nombre) LIKE ?
+                            AND fecha_inicio <= date(?, '+45 days') AND fecha_fin >= date(?, '-45 days')
+                          ORDER BY ABS(julianday(fecha_inicio) - julianday(?)) LIMIT 1""",
+                       (f"%{viaje}%", fecha, fecha, fecha)).fetchone()
+        db.execute("UPDATE est_movimientos SET categoria='VIAJES', subcategoria='Otros', viaje_id=COALESCE(?, viaje_id) WHERE id=?",
+                   (v['id'] if v else None, m['id']))
     for persona, p_fecha, p_monto, notas, (d_fecha, d_monto, d_texto) in PRESTAMOS_SOLO_DEVOLUCION:
         d = db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
                             AND UPPER(descripcion) LIKE ? AND tipo='INGRESO' ORDER BY id LIMIT 1""",
