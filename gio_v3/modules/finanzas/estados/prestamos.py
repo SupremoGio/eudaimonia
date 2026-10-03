@@ -318,7 +318,9 @@ PRESTAMOS_MANUALES = (
     ('2024-10-18', 10000.0, 'CIRUJIA CAMBIO SEX', 'Jorge'),
 )
 # «parece que se regresó»: transferencias de $13,000 que volvieron. Se cancelan
-# con el depósito del mismo monto que llegó después (hasta 15 días): las dos
+# con el depósito del mismo monto más cercano (15 días antes o después; el
+# usuario, 2026-10-03: «un día antes me lo prestaron, al día siguiente lo
+# devolví», así que el depósito puede llegar ANTES de la transferencia): las dos
 # quedan como «Entre cuentas propias» (ni gasto, ni ingreso, ni Sin conciliar);
 # si no aparece el depósito se dejan como están.
 REGRESADOS = (
@@ -357,10 +359,11 @@ def registrar_manuales(db) -> tuple[int, int]:
             continue
         dep = db.execute("""SELECT id FROM est_movimientos
                             WHERE tipo='INGRESO' AND ABS(ABS(monto) - ?) < 0.005
-                              AND substr(fecha,1,10) BETWEEN ? AND date(?, '+15 days')
+                              AND substr(fecha,1,10) BETWEEN date(?, '-15 days') AND date(?, '+15 days')
                               AND NOT (categoria='FINANZAS' AND subcategoria=?)
                               AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
-                            ORDER BY fecha, id LIMIT 1""", (monto, fecha, fecha, _SUB_PROPIA)).fetchone()
+                            ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?)), fecha, id
+                            LIMIT 1""", (monto, fecha, fecha, _SUB_PROPIA, fecha)).fetchone()
         if not dep:
             continue
         db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id IN (?,?)",

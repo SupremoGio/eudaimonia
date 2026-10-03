@@ -60,3 +60,14 @@ def test_viva_aerobus_de_la_familia_es_reembolsable(test_db):
         msi.marcar_compras(db)
         assert _cat(db, v) == ('FINANZAS', 'Reembolsable')
         assert pr.candidatos(db)['prestamos'] == []
+
+
+def test_regresado_con_deposito_un_dia_antes(test_db):
+    """Le prestaron $13,000 el 10/09 y al otro día los devolvió."""
+    with database.get_db() as db:
+        dep = _ins(db, '2024-09-10', 'SPEI RECIBIDO', -13000.0, 'INGRESO', 'FINANZAS', 'Reembolso compartido')
+        t = _ins(db, '2024-09-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 13000.0)
+        db.commit()
+        assert pr.registrar_manuales(db) == (0, 1)
+        assert _cat(db, t) == _cat(db, dep) == ('FINANZAS', 'Entre cuentas propias')
+        assert pr.candidatos(db)['prestamos'] == []
