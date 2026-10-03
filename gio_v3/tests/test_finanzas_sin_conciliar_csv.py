@@ -97,3 +97,14 @@ def test_nespresso_compartido(test_db):
         assert db.execute("SELECT mi_parte FROM est_movimientos WHERE id=?", (n,)).fetchone()[0] == 508.75
         assert tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (c,)).fetchone()) \
             == ('INGRESO', 'FINANZAS', 'Reembolso compartido')
+
+
+def test_deposito_propio_para_la_renta(test_db):
+    with database.get_db() as db:
+        i = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2026-04-07', 'A GIOVANY A DEPOSITO EFECTIVO PRACTIC ******1801', 7000, 'BBVA_DEB',
+                                  'VIAJES', 'Otros', 'INGRESO')""").lastrowid
+        db.commit()
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) \
+            == ('INGRESO', 'FINANZAS', 'Entre cuentas propias')

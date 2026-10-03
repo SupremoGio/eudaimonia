@@ -93,6 +93,8 @@ GASTOS = [
 # subcategoria). «Reembolso compartido» no es ingreso ni sale en Sin conciliar.
 ENTRADAS = [
     ('2026-07-17', 410.0, 'CAPSULAS CAFE', 'FINANZAS', 'Reembolso compartido'),
+    # «fue un depósito que yo mismo me hice para pagar la renta» (2026-10-03)
+    ('2026-04-07', 7000.0, 'DEPOSITO EFECTIVO PRACTIC', 'FINANZAS', 'Entre cuentas propias'),
 ]
 
 
