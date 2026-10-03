@@ -111,8 +111,6 @@ ENTRADAS = [
 INGRESOS_QUE_ERAN_GASTO = [
     ('2026-06-22', 1000.0, 'PAGO CUENTA DE TERCERO', 'SALUD', 'SALUD', 'Consultas'),
     # «esto tampoco es ingreso, es gasto» (2026-10-03)
-    ('2026-07-01', 129.0, 'FRESKO', 'SUPER', 'SUPER', 'Súper'),
-    ('2026-06-27', 358.0, 'FRESKO', 'SUPER', 'SUPER', 'Súper'),
     ('2026-03-22', 57.0, 'TRANSF', 'SUPER', 'SUPER', 'Súper'),
     ('2026-03-04', 400.0, 'ARBITRAJE GIO', 'DEPORTE', 'DEPORTE', 'Fútbol'),
     # «MENS GIO va a salsa»: estaba como Gasolina

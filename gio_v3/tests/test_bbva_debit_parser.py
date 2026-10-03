@@ -81,11 +81,12 @@ def test_amounts_and_signs_unaffected_by_description_fix():
 
 
 # ── Blindaje de dirección (2026-10-03): cargos leídos como abonos ──────────────
+# Datos de ejemplo inventados para probar la lógica (signo y saldo).
 SAMPLE_SALDOS = """FECHA DESCRIPCIÓN MONTO SALDO TOTAL
 01 mar 2026 PAGO DE NOMINA / HH 1111111111 $10,00000 $10,00000
-04 mar 2026 PAGO CUENTA DE TERCERO / ARBITRAJE GIO -$40000 $9,60000
-14 abr 2026 PAGO CUENTA DE TERCERO / MENS GIO $−70000 $8,90000
-27 jun 2026 PAGO CUENTA DE TERCERO / FRESKO $35800 $8,54200
+04 mar 2026 PAGO CUENTA DE TERCERO / CONCEPTO A -$40000 $9,60000
+14 abr 2026 PAGO CUENTA DE TERCERO / CONCEPTO B $−70000 $8,90000
+27 jun 2026 PAGO CUENTA DE TERCERO / CONCEPTO C $35800 $8,54200
 02 jul 2026 SPEI RECIBIDO STP / QUALITAS $1,00000 $9,54200"""
 
 
@@ -96,7 +97,7 @@ def test_signo_menos_antes_del_peso_o_tipografico_es_cargo():
 
 
 def test_el_saldo_corrige_un_cargo_sin_signo():
-    # «FRESKO» viene sin signo pero el saldo bajó $358: es cargo.
+    # Viene sin signo pero el saldo bajó $358: es cargo (saldos inventados, no de un PDF real).
     by = {m["fecha"]: m for m in _parse_text(SAMPLE_SALDOS, periodo=None)}
     assert by["2026-06-27"]["tipo"] == "GASTO"
     assert by["2026-06-27"]["dir_verificada"] is True

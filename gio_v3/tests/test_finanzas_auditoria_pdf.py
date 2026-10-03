@@ -75,6 +75,10 @@ def test_correcciones(test_db):
         # «me prestaron y regresé»: se voltea pero NO pasa a ingreso extraordinario.
         r = _fila(db, 3111)
         assert r['tipo'] == 'INGRESO'
+        # Fresko: «alguien me pagó su parte del súper» (usuario, 2026-10-03).
+        for i in (2272, 2276):
+            r = _fila(db, i)
+            assert (r['tipo'], r['categoria'], r['subcategoria']) == ('INGRESO', 'FINANZAS', 'Reembolso compartido')
         # Monto distinto.
         assert _fila(db, 2089)['monto'] == 5555.0
 

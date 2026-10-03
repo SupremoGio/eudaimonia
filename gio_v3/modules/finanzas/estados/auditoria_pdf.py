@@ -42,8 +42,6 @@ PENDIENTES_USUARIO = {
     1888: 'el PDF dice abono de …3042 «Transf a GIOVANY»; se había pasado a SUPER como gasto',
     1975: 'el PDF dice abono de …3042 «Transf a GIOVANY»; «MENS GIO» venía del renglón vecino',
     2242: 'el PDF dice abono de …3042 «p»; se había pasado a SALUD/Consultas como gasto',
-    2272: 'el PDF dice abono de …6197 «Fresko 21 Jun»; se había pasado a SUPER como gasto',
-    2276: 'el PDF dice abono de …6197 «Fresko 28Junio»; se había pasado a SUPER como gasto',
 }
 
 # Sugerencia de categoría que NO se aplica porque contradice lo que el
