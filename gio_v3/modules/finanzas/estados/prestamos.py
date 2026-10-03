@@ -327,6 +327,27 @@ COBRADOS_EN_EFECTIVO_PARA_VIAJE = (
     ('2026-03-19', 8000.0, 'COSITAS', 'VILLA'),
 )
 
+# Devoluciones corregidas por el usuario (2026-10-03): de COCKTELITOS ($10,000
+# a Judi, 26/11/2025) lo que de verdad le abonaron es el depósito en efectivo
+# del 12/05/2026; el «ABONO» de $5,000 (22/12/2025) y el «TRANSF A GIOVANY A»
+# de $702 (01/12/2025) los había ligado la conciliación automática.
+# (texto del préstamo, persona, [devoluciones (fecha, monto, texto)],
+#  [desligar (fecha, monto, texto)])
+DEVOLUCIONES_CORREGIDAS = (
+    ('COCKTELITOS', 'Judi',
+     [('2026-05-12', 5000.0, 'SU PAGO EN EFECTIVO')],
+     [('2025-12-22', 5000.0, 'BNET ABONO'), ('2025-12-01', 702.0, 'TRANSF A GIOVANY A')]),
+)
+
+
+def no_es_devolucion(r) -> bool:
+    """Abonos que el usuario desligó de un préstamo: la conciliación automática
+    no debe volver a proponerlos como devolución."""
+    f, d = (r['fecha'] or '')[:10], (r['descripcion'] or '').upper()
+    return any(f == fe and abs(abs(r['monto'] or 0) - mo) < 0.005 and t in d
+               for *_, desligar in DEVOLUCIONES_CORREGIDAS for fe, mo, t in desligar)
+
+
 # Préstamos de los que solo quedó la devolución (la salida no se identifica):
 # (persona, fecha, monto, notas, devolución (fecha, monto, texto)). Quedan
 # pagados. El usuario, 2026-10-03: «GRACIAS BEBO» fue Judi pagándole «un
@@ -383,6 +404,30 @@ def _mov(db, fecha, monto, texto, tipo='GASTO'):
 def registrar_manuales(db) -> tuple[int, int]:
     """Registra PRESTAMOS_MANUALES y cancela REGRESADOS con su depósito.
     Devuelve (préstamos creados, parejas canceladas). Idempotente."""
+    for p_texto, persona, ligar, desligar in DEVOLUCIONES_CORREGIDAS:
+        p = db.execute("""SELECT p.id FROM est_prestamos p JOIN est_movimientos m ON m.id = p.movimiento_id
+                          WHERE p.contraparte=? AND UPPER(m.descripcion) LIKE ? ORDER BY p.id LIMIT 1""",
+                       (persona, f"%{p_texto}%")).fetchone()
+        if not p:
+            continue
+        for fe, mo, t in desligar:
+            d = db.execute("""SELECT d.movimiento_id FROM est_prestamo_devoluciones d JOIN est_movimientos m ON m.id = d.movimiento_id
+                              WHERE d.prestamo_id=? AND substr(m.fecha,1,10)=? AND ABS(ABS(m.monto) - ?) < 0.005
+                                AND UPPER(m.descripcion) LIKE ?""", (p['id'], fe, mo, f"%{t}%")).fetchone()
+            if d:   # vuelve a «Sin conciliar» para que el usuario diga qué fue
+                db.execute("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=?", (d['movimiento_id'],))
+                db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Transferencia recibida' WHERE id=?",
+                           (d['movimiento_id'],))
+        for fe, mo, t in ligar:
+            m = db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
+                                AND UPPER(descripcion) LIKE ? AND tipo='INGRESO' ORDER BY id LIMIT 1""",
+                           (fe, mo, f"%{t}%")).fetchone()
+            if not m:
+                continue
+            db.execute("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=? AND prestamo_id != ?", (m['id'], p['id']))
+            db.execute("INSERT OR IGNORE INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+                       (p['id'], m['id'], ahora()))
+            db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (m['id'],))
     for fecha, monto, texto, viaje in COBRADOS_EN_EFECTIVO_PARA_VIAJE:
         m = db.execute("""SELECT id, categoria, viaje_id FROM est_movimientos WHERE substr(fecha,1,10)=?
                             AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
@@ -428,7 +473,11 @@ def registrar_manuales(db) -> tuple[int, int]:
                    (_SUB_PROPIA, ids[1]))
     creados = 0
     for fecha, monto, texto, persona in PRESTAMOS_MANUALES:
-        m = _mov(db, fecha, monto, texto)
+        # Puede venir con un tipo legado (PRESTAMO/PAGO): «BNET TACOS» de
+        # Cornelius nunca se registraba porque solo se buscaba GASTO.
+        m = next((x for t in ('GASTO', 'PRESTAMO', 'PAGO') if (x := _mov(db, fecha, monto, texto, t))), None)
+        if m:
+            db.execute("UPDATE est_movimientos SET tipo='GASTO' WHERE id=?", (m['id'],))
         if not m or db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (m['id'],)).fetchone():
             continue
         db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado' WHERE id=?", (m['id'],))

@@ -149,3 +149,37 @@ def test_cositas_cobrado_en_efectivo_pasa_al_viaje(test_db):
         assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
         r = db.execute("SELECT categoria, subcategoria, viaje_id FROM est_movimientos WHERE id=?", (m,)).fetchone()
         assert tuple(r) == ('VIAJES', 'Otros', vid)
+
+
+def test_cornelius_con_tipo_legado_se_registra(test_db):
+    with database.get_db() as db:
+        t = _ins(db, '2026-05-12', 'BNET TACOS PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0, 'PRESTAMO')
+        db.commit()
+        pr.registrar_manuales(db)
+        assert [(p['persona'], p['estado']) for p in pr.listar(db) if p['movimiento_id'] == t] == [('Cornelius', 'Pendiente')]
+        assert db.execute("SELECT tipo FROM est_movimientos WHERE id=?", (t,)).fetchone()[0] == 'GASTO'
+
+
+def test_cocktelitos_devolucion_real_y_desligadas(test_db):
+    from modules.finanzas.estados import abonos
+    with database.get_db() as db:
+        c = _ins(db, '2025-11-26', 'PAGO CUENTA DE TERCERO BNET COCKTELITOS', 10000.0)
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                            VALUES ('Judi', 'OTORGADO', 10000, '2025-11-26', '', ?, datetime('now'))""", (c,)).lastrowid
+        ab = _ins(db, '2025-12-22', 'PAGO CUENTA DE TERCERO BNET ABONO', 5000.0, 'INGRESO', 'PRESTAMOS', '')
+        tr = _ins(db, '2025-12-01', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 702.0, 'INGRESO', 'PRESTAMOS', '')
+        for mid in (ab, tr):
+            db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,datetime('now'))", (pid, mid))
+        ef = _ins(db, '2026-05-12', 'SU PAGO EN EFECTIVO EN COMERCIO', 5000.0, 'INGRESO', 'FAMILIA_REGALOS', 'Regalos')
+        db.commit()
+        pr.registrar_manuales(db)
+        pr.registrar_manuales(db)
+        p = next(p for p in pr.listar(db) if p['id'] == pid)
+        assert [d['movimiento_id'] for d in p['devoluciones']] == [ef]
+        assert p['devuelto'] == 5000 and p['pendiente'] == 5000
+        assert _cat(db, ab) == _cat(db, tr) == ('FINANZAS', 'Transferencia recibida')
+        # vuelven a Sin conciliar, sin pista de préstamo
+        filas = {r['id']: r for r in abonos.sin_conciliar(db)['movimientos']} if isinstance(abonos.sin_conciliar(db), dict) else None
+        if filas is not None:
+            assert ab in filas and tr in filas
+            assert all((filas[i].get('pista') or {}).get('tipo') != 'prestamo' for i in (ab, tr))

@@ -236,8 +236,8 @@ def _pistas(db, rows) -> None:
                                 f"${sug['total']:,.2f} (confianza {sug['confianza']})", sug)
     except Exception:
         exp = {}
+    from . import prestamos
     try:
-        from . import prestamos
         abiertos = [p for p in prestamos.listar(db) if p['pendiente'] > 0 and not p['perdido_fecha']]
     except Exception:
         abiertos = []
@@ -262,7 +262,8 @@ def _pistas(db, rows) -> None:
             r['pista'] = c
             continue
         desc = _palabras(r['descripcion'])
-        antes = [p for p in abiertos if (p['fecha'] or '')[:10] <= fecha]
+        desligada = prestamos.no_es_devolucion(r)
+        antes = [] if desligada else [p for p in abiertos if (p['fecha'] or '')[:10] <= fecha]
         p = next((p for p in antes if _palabras(p['persona']) & desc), None) \
             or next((p for p in antes if abs(pend[p['id']] - monto) < 0.01), None)
         if p:
@@ -286,7 +287,7 @@ def _pistas(db, rows) -> None:
                                                      f"{par['fecha'][:10]} ({par['descripcion']})"}
             continue
         r['pista'] = _pista_gasto(db, r, monto, d, aprendidos)
-        if r['pista'] is None and _concepto(r['descripcion']).startswith('TRANSF'):
+        if r['pista'] is None and not desligada and _concepto(r['descripcion']).startswith('TRANSF'):
             # «TRANSF A GIOVANY A» no dice quién (el usuario: «me regresaron dinero
             # de algo, acomódalo a los préstamos»): el préstamo abierto más reciente
             # de hasta un año antes al que todavía le cabe el monto.
