@@ -1,0 +1,147 @@
+"""Auditoría 2022-2026 contra los PDF de BBVA (modules/finanzas/estados/auditoria_pdf.py).
+
+La base se arma con las mismas filas del CSV de auditoría, tal como las tenía
+la app (id_app, descripción, tipo y categoría de la app), más los «gemelos» de
+los posibles duplicados."""
+import os
+import re
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import database
+from modules.finanzas.estados import auditoria_pdf as aud
+
+
+def _sembrar(db, sin_gemelos=()):
+    for f in aud.filas():
+        if not f['id_app']:
+            continue
+        cat, _, sub = f['categoria_app'].partition('/')
+        monto = float(f['monto'])
+        if (mn := aud._monto_app_nota(f)):
+            monto = mn[0]
+        db.execute("""INSERT OR IGNORE INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria,
+                      subcategoria, tipo) VALUES (?,?,?,?,?,?,?,?)""",
+                   (int(f['id_app']), f['fecha'], f['descripcion_app'], monto, f['banco'], cat, sub, f['tipo_app']))
+    for f in aud.filas():
+        dup = re.search(r'posible duplicado de id ([\d,\s]+)', f['nota'])
+        for i in re.findall(r'\d+', dup.group(1) if dup else ''):
+            if int(i) not in sin_gemelos:
+                db.execute("""INSERT OR IGNORE INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria,
+                              subcategoria, tipo) VALUES (?,?,?,?,?,?,?,?)""",
+                           (int(i), f['fecha'], f'GEMELO {i}', float(f['monto']), f['banco'], 'X', '', 'GASTO'))
+
+
+def _fila(db, i):
+    return db.execute("SELECT * FROM est_movimientos WHERE id=?", (i,)).fetchone()
+
+
+def test_simulacion_no_escribe_y_aplicar_es_idempotente(test_db):
+    with database.get_db() as db:
+        _sembrar(db)
+        antes = db.execute("SELECT COUNT(*), SUM(monto) FROM est_movimientos").fetchone()[:]
+        plan = aud.plan(db)
+        assert db.execute("SELECT COUNT(*), SUM(monto) FROM est_movimientos").fetchone()[:] == antes
+        assert len({(l['estado_auditoria'], l['fecha'], l['monto'], l['id_app']) for l in plan}) >= 280
+        aud.aplicar(db, plan)
+        db.commit()
+        segunda = aud.plan(db)
+        assert {l['accion'] for l in segunda} <= {'sin cambio', 'pendiente revisión'}
+        assert db.execute("SELECT 1 FROM migration_log WHERE version=?", (aud.VERSION,)).fetchone()
+
+
+def test_correcciones(test_db):
+    with database.get_db() as db:
+        _sembrar(db)
+        aud.aplicar(db)
+        # Dirección en débito + categoría sugerida (antes era gasto en CAFE).
+        r = _fila(db, 1616)
+        assert (r['tipo'], r['categoria']) == ('INGRESO', 'OTROS')
+        # Abono a la tarjeta: monto negativo, sigue siendo pago (no gasto ni ingreso).
+        r = _fila(db, 40)
+        assert (r['monto'], r['tipo'], r['categoria']) == (-11677.85, 'MOVIMIENTO_INTERNO', 'PAGO_TDC')
+        # RFC -> nombre del comercio; la categoría que vino del RFC toma la sugerida.
+        r = _fila(db, 115)
+        assert (r['descripcion'], r['categoria'], r['subcategoria']) == ('OXXO PANAMERICANA', 'SUPER', 'Conveniencia')
+        # Descripción mezclada -> la del PDF, en el formato del importador; la renta se queda como renta.
+        r = _fila(db, 1838)
+        assert r['descripcion'] == 'PAGO TARJETA DE TERCEROS MBAN'
+        assert (r['categoria'], r['subcategoria']) == ('VIVIENDA', 'Renta')
+        # Texto ajeno que lo había metido como inversión: es un retiro sin tarjeta.
+        r = _fila(db, 2375)
+        assert (r['descripcion'], r['tipo'], r['categoria'], r['subcategoria']) == \
+            ('RETIRO SIN TARJETA QR', 'GASTO', 'FINANZAS', 'Retiro efectivo')
+        # «me prestaron y regresé»: se voltea pero NO pasa a ingreso extraordinario.
+        r = _fila(db, 3111)
+        assert r['tipo'] == 'INGRESO'
+        # Monto distinto.
+        assert _fila(db, 2089)['monto'] == 5555.0
+
+
+def test_borra_solo_lo_seguro(test_db):
+    with database.get_db() as db:
+        _sembrar(db, sin_gemelos={2117})
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Cornelius', 'OTORGADO', 2000, '2026-05-12', '', 2077, datetime('now'))""")
+        db.execute("UPDATE est_movimientos SET viaje_id=3 WHERE id=1881")
+        plan = {(l['id_app'], l['accion']) for l in aud.plan(db)}
+        aud.aplicar(db)
+        assert _fila(db, 1658) is None                  # monto 0.00
+        assert _fila(db, 1810) is None                  # duplicado confirmado de 1816
+        assert _fila(db, 2077) is not None and (2077, 'pendiente revisión') in plan   # ligado a un préstamo
+        assert _fila(db, 1881) is not None and (1881, 'pendiente revisión') in plan   # su gemelo no tiene el viaje
+        assert _fila(db, 2003) is not None              # el «gemelo» no existe: no se borra
+        assert _fila(db, 2031) is not None              # no está en el PDF, pero no es duplicado
+        for i in aud.PENDIENTES_USUARIO:                # las que decidió el usuario no se tocan
+            assert _fila(db, i)['tipo'] == 'GASTO'
+
+
+def test_faltantes(test_db):
+    with database.get_db() as db:
+        _sembrar(db)
+        aud.aplicar(db)
+        q = lambda f, m: [dict(r) for r in db.execute(
+            "SELECT * FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01", (f, m))]
+        # Envío y devolución el mismo día: los dos, sin contar como gasto ni ingreso.
+        par = q('2026-01-08', 42200.0)
+        assert len(par) == 2 and {r['tipo'] for r in par} == {'MOVIMIENTO_INTERNO'}
+        # Pago a la tarjeta Invex desde débito: movimiento interno, como en el import.
+        assert [(r['tipo'], r['categoria']) for r in q('2026-01-23', 3386.0)] == [('MOVIMIENTO_INTERNO', 'PAGO_TDC')]
+        # Abono a la TDC creado con signo negativo.
+        assert [(r['tipo'], r['monto'], r['banco']) for r in q('2022-02-08', 4813.06)] == [('PAGO', -4813.06, 'BBVA_TDC')]
+        # Intereses del resumen como gasto financiero.
+        assert [(r['categoria'], r['subcategoria']) for r in q('2025-08-22', 924.06)] == [('COSTOS_FINANCIEROS', 'Intereses')]
+        # Mensualidad MSI.
+        msi = q('2022-01-22', 292.0)
+        assert [(r['descripcion'], r['parcialidad_num'], r['parcialidad_total']) for r in msi] == \
+            [('TIENDAS CHEDRAUI S TA', 2, 12)]
+        # La mensualidad de la anualidad no se crea (la anualidad ya va en comisiones).
+        assert q('2022-12-22', 358.66) == []
+        assert len(q('2022-11-23', 1076.0)) == 1
+        # Nada en 0.00.
+        assert not db.execute("SELECT 1 FROM est_movimientos WHERE monto = 0").fetchone()
+
+
+def test_endpoint_simula_y_aplica_con_respaldo(test_db):
+    from app import create_app
+    app = create_app()
+    app.config['TESTING'] = True
+    with database.get_db() as db:
+        _sembrar(db)
+        db.commit()
+    with app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess['app_ok'] = True
+            sess['fin_ok'] = True
+        j = c.get('/finanzas/estados/admin/auditoria-pdf').get_json()
+        assert j['respaldo'] is None and j['cambios']
+        with database.get_db() as db:
+            assert _fila(db, 1616)['tipo'] == 'GASTO'
+        csv_txt = c.get('/finanzas/estados/admin/auditoria-pdf?formato=csv').get_data(as_text=True)
+        assert csv_txt.startswith('id_app,banco,fecha,monto,estado_auditoria,accion')
+        j = c.get('/finanzas/estados/admin/auditoria-pdf?aplicar=1&cuadre=1').get_json()
+        assert j['respaldo'] and os.path.exists(j['respaldo'])
+        assert isinstance(j['cuadre'], list)
+        with database.get_db() as db:
+            assert _fila(db, 1616)['tipo'] == 'INGRESO'

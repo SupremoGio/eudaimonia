@@ -2791,9 +2791,23 @@ def _corregir_direcciones(db, movimientos, bank) -> dict:
     solas: se devuelven en «revisar»."""
     out = {'corregidas': [], 'revisar': []}
     for m in movimientos:
+        banco = m.get('banco', bank) or bank
+        if m['tipo'] == 'PAGO' and float(m['monto']) < 0:
+            # Abono a la tarjeta (el «-» del PDF): versiones anteriores lo
+            # guardaban en positivo y la nueva subida lo duplicaba (auditoría
+            # 2022-2026: 15 pagos «BMOVIL.PAGO TDC»).
+            for r in db.execute("""SELECT id, tipo FROM est_movimientos
+                                    WHERE fecha=? AND banco=? AND ABS(monto + ?) < 0.005
+                                      AND tipo IN ('PAGO', 'MOVIMIENTO_INTERNO')
+                                      AND (descripcion=? OR descripcion LIKE ? || ' (%')""",
+                                 (m['fecha'], banco, float(m['monto']), m['descripcion'], m['descripcion'])).fetchall():
+                db.execute("UPDATE est_movimientos SET monto=-ABS(monto) WHERE id=?", (r['id'],))
+                m['_ya_existe'] = True
+                out['corregidas'].append({'id': r['id'], 'fecha': m['fecha'], 'descripcion': m['descripcion'],
+                                          'monto': m['monto'], 'antes': 'cargo', 'ahora': 'abono'})
+            continue
         if not m.get('dir_verificada'):
             continue
-        banco = m.get('banco', bank) or bank
         rows = db.execute("""SELECT id, tipo, categoria FROM est_movimientos
                              WHERE fecha=? AND descripcion=? AND ABS(monto - ?) < 0.005 AND banco=?
                                AND tipo IN ('GASTO', 'INGRESO') AND tipo != ?""",
@@ -2901,6 +2915,14 @@ def upload_file():
                 m_banco = m.get('banco', bank) or bank
                 m_monto = float(m['monto'])
                 m_desc_upper = (m['descripcion'] or '').upper()
+                if m.get('_ya_existe'):      # pago de TDC que ya estaba (se le corrigió el signo)
+                    skipped += 1
+                    continue
+                # Una fila en 0.00 no es un movimiento (salían del resumen de
+                # compras a meses de la TDC: LIVERPOOL/PALACIO cada corte).
+                if abs(m_monto) < 0.005:
+                    skipped += 1
+                    continue
                 # Dedup solo aplica a montos > 0
                 key = (m['fecha'], round(m_monto, 2), m['tipo'])
                 if m_monto > 0 and any(b == m_banco or _desc_parecida(m['descripcion'], d)
@@ -3406,6 +3428,44 @@ def correcciones_admin():
             aplicado = {'actualizados': ok, 'no_encontrados': faltan}
         return jsonify({'aplicado': aplicado, 'reescritos': _sinconc.revisar_reescritos(db),
                         'auditoria_2026': _sinconc.revisar_auditoria(db)})
+
+
+@estados_bp.route('/admin/auditoria-pdf')
+def auditoria_pdf_admin():
+    """Auditoría 2022-2026 contra los PDF de BBVA (auditoria_pdf.py).
+    Sin parámetros es una SIMULACIÓN: el plan de cambios contra la base de
+    hoy, sin escribir nada. ?formato=csv descarga el reporte; ?cuadre=1 agrega
+    abonos/cargos por estado de cuenta contra el PDF. ?aplicar=1 respalda la
+    base (respaldos/ junto al archivo de la DB), ejecuta el plan y vuelve a
+    pasar las correcciones manuales encima."""
+    if not _ok(): return _locked()
+    import database as _database
+    from . import auditoria_pdf as _aud
+    respaldo = None
+    with get_db() as db:
+        lineas = _aud.plan(db)
+        if request.args.get('aplicar') == '1':
+            respaldo = _aud.respaldar(_database._DB_PATH)
+            lineas = _aud.aplicar(db, lineas)
+            _sinconc.aplicar(db)
+            _prest.registrar_manuales(db)
+            db.commit()
+        cuadre = _aud.cuadre(db) if request.args.get('cuadre') == '1' else None
+    lineas = [{k: v for k, v in l.items() if not k.startswith('_')} for l in lineas]
+    if request.args.get('formato') == 'csv':
+        buf = io.StringIO()
+        w = csv.DictWriter(buf, fieldnames=['id_app', 'banco', 'fecha', 'monto', 'estado_auditoria', 'accion',
+                                            'campo', 'valor_antes', 'valor_despues', 'motivo'])
+        w.writeheader()
+        w.writerows(lineas)
+        return Response(buf.getvalue(), mimetype='text/csv',
+                        headers={'Content-Disposition': 'attachment; filename=reporte_correcciones.csv'})
+    return jsonify({'modo': 'aplicado' if respaldo else 'simulacion (no se escribió nada)',
+                    'respaldo': respaldo, 'resumen': _aud.resumen(lineas),
+                    'pendientes': [l for l in lineas if l['accion'] == 'pendiente revisión'],
+                    'cambios': [l for l in lineas if l['accion'] not in ('sin cambio', 'pendiente revisión')],
+                    'sin_cambio': [l for l in lineas if l['accion'] == 'sin cambio'],
+                    'cuadre': cuadre and [c for c in cuadre if not c['cuadra']]})
 
 
 @estados_bp.route('/admin/pedidos-amazon')

@@ -35,3 +35,21 @@ def test_corrige_solo_lo_verificado_y_respeta_prestamos(test_db):
         assert tipo(b) == ('GASTO', 'Transferencia')
         assert tipo(c) == ('GASTO', 'Prestado')
         assert [d['id'] for d in res['corregidas']] == [a] and [d['id'] for d in res['revisar']] == [c]
+
+
+def test_pago_tdc_guardado_en_positivo_se_voltea(test_db):
+    """Auditoría 2022-2026: los «BMOVIL.PAGO TDC» viejos estaban en positivo y
+    la nueva subida (PAGO, monto negativo) los duplicaba."""
+    with database.get_db() as db:
+        a = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2023-10-24', 'BMOVIL.PAGO TDC', 300.0, 'BBVA_TDC', 'PAGO_TDC', '', 'MOVIMIENTO_INTERNO')""").lastrowid
+        b = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2023-10-24', 'BMOVIL.PAGO TDC (2)', 1000.0, 'BBVA_TDC', 'PAGO_TDC', '', 'MOVIMIENTO_INTERNO')""").lastrowid
+        compra = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                               VALUES ('2023-10-24', 'OXXO', 300.0, 'BBVA_TDC', 'SUPER', '', 'GASTO')""").lastrowid
+        pago = lambda monto: {'fecha': '2023-10-24', 'descripcion': 'BMOVIL.PAGO TDC', 'monto': monto, 'tipo': 'PAGO',
+                              'banco': 'BBVA_TDC', 'categoria': 'PAGO', 'subcategoria': ''}
+        res = _corregir_direcciones(db, [pago(-300.0), pago(-1000.0)], 'BBVA_TDC')
+        monto = lambda i: db.execute("SELECT monto FROM est_movimientos WHERE id=?", (i,)).fetchone()[0]
+        assert (monto(a), monto(b), monto(compra)) == (-300.0, -1000.0, 300.0)
+        assert len(res['corregidas']) == 2

@@ -176,3 +176,30 @@ def test_monto_distinto_no_se_descarta(client, monkeypatch, test_db):
     data = resp.get_json()
     assert data['inserted'] == 1
     assert data['skipped'] == 0
+
+
+def test_no_se_guardan_filas_en_cero(client, monkeypatch, test_db):
+    """Auditoría 2022-2026: LIVERPOOL / PALACIO DE HIERRO en 0.00 cada corte."""
+    import database
+    resp = _upload(client, monkeypatch, [
+        _mov(descripcion="LIVERPOOL ZAPOPAN", monto=0.0, tipo="GASTO", categoria="ROPA", subcategoria="Ropa"),
+        _mov(descripcion="OXXO PANAMERICANA", monto=31.0, tipo="GASTO", categoria="SUPER", subcategoria=""),
+    ])
+    assert resp.status_code == 200
+    with database.get_db() as db:
+        rows = db.execute("SELECT descripcion FROM est_movimientos").fetchall()
+    assert [r[0] for r in rows] == ["OXXO PANAMERICANA"]
+
+
+def test_resubir_tdc_no_duplica_pago_guardado_en_positivo(client, monkeypatch, test_db):
+    import database
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES ('2023-10-24', 'BMOVIL.PAGO TDC (2)', 1000.0, 'BBVA_TDC', 'PAGO_TDC', '', 'MOVIMIENTO_INTERNO')""")
+        db.commit()
+    resp = _upload(client, monkeypatch, [_mov(fecha="2023-10-24", descripcion="BMOVIL.PAGO TDC", monto=-1000.0,
+                                              tipo="PAGO", categoria="PAGO", subcategoria="")])
+    assert resp.status_code == 200
+    with database.get_db() as db:
+        rows = db.execute("SELECT descripcion, monto FROM est_movimientos").fetchall()
+    assert [tuple(r) for r in rows] == [('BMOVIL.PAGO TDC (2)', -1000.0)]
