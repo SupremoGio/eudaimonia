@@ -61,8 +61,9 @@ VIAJES = [
     (4084, '2023-04-25', 500.0, 'TRANSF A GIOVANY', 'VILLA MARZO 2023'),
 ]
 
-# Gastos que el usuario reclasificó (fecha, monto, texto, categoria, subcategoria):
-# dinero ajeno que regresó (sale de su gasto) y pagos que identificó.
+# Gastos que el usuario reclasificó (fecha, monto, texto, categoria, subcategoria
+# [, mi_parte]): dinero ajeno que regresó (sale de su gasto) y pagos que
+# identificó. mi_parte: solo esa parte es gasto (el resto no lo es).
 GASTOS = [
     # «regresé dinero de un expense que me pagaron pero no era mío» (2026-10-01)
     ('2023-01-04', 1171.0, 'EXPENSE IVAN', 'FINANZAS', 'Reembolsable'),
@@ -78,6 +79,10 @@ GASTOS = [
     ('2023-06-06', 400.0, 'MAYO GIO', 'SALSA', 'Clases'),
     ('2023-10-30', 400.0, 'MENSUALIDAD GIOVAN', 'SALSA', 'Clases'),
     ('2023-12-29', 400.0, 'PAGO BOLETO GIO', 'SALSA', 'Clases'),
+    # «aquí le pagué a Eli, mi papá» (2026-10-03): seguro de marzo y abril
+    # ($555.50 c/u) + préstamos que él le hizo ($1,500 + $700, no son gasto).
+    # «INVEX ABRIL» en el concepto lo mandaba a Pago TDC.
+    ('2026-04-15', 3311.0, 'INVEX ABRIL PAGO CUENTA DE TERCERO BNET DEUDA', 'TRANSPORTE', 'Seguro auto', 1111.0),
 ]
 
 
@@ -132,15 +137,16 @@ def aplicar(db) -> tuple[int, int]:
         if (row['categoria'], row['subcategoria'] or '') != (cat, sub):
             db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, row['id']))
             ok += 1
-    for fecha, monto, texto, cat, sub in GASTOS:
-        row = db.execute("""SELECT id, categoria, subcategoria, tipo FROM est_movimientos
+    for fecha, monto, texto, cat, sub, *resto in GASTOS:
+        parte = resto[0] if resto else None
+        row = db.execute("""SELECT id, categoria, subcategoria, tipo, mi_parte FROM est_movimientos
                             WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo IN ('GASTO', 'PAGO')
                               AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""",
                          (fecha, monto, f"%{texto}%")).fetchone()
         if not row:
             faltan += 1
-        elif (row['categoria'], row['subcategoria'] or '', row['tipo']) != (cat, sub, 'GASTO'):
-            db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, tipo='GASTO' WHERE id=?",
-                       (cat, sub, row['id']))
+        elif (row['categoria'], row['subcategoria'] or '', row['tipo'], row['mi_parte']) != (cat, sub, 'GASTO', parte):
+            db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, tipo='GASTO', mi_parte=? WHERE id=?",
+                       (cat, sub, parte, row['id']))
             ok += 1
     return ok, faltan

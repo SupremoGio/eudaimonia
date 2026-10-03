@@ -12,7 +12,7 @@ from modules.finanzas.estados.config import SUBCATEGORIAS
 
 
 def test_categorias_validas():
-    for *_, cat, sub in corr.CORRECCIONES + corr.GASTOS:
+    for *_, cat, sub in corr.CORRECCIONES + [g[:5] for g in corr.GASTOS]:
         assert sub in SUBCATEGORIAS[cat], (cat, sub)
 
 
@@ -52,3 +52,15 @@ def test_gastos_de_dinero_ajeno_regresado(test_db):
         corr.aplicar(db)
         assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) \
             == ('FINANZAS', 'Reembolsable')
+
+
+def test_pago_a_eli_solo_el_seguro_es_gasto(test_db):
+    with database.get_db() as db:
+        i = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2026-04-15', '059 180326OINVEX ABRIL PAGO CUENTA DE TERCERO BNET DEUDA', 3311,
+                                  'BBVA_DEB', 'PAGO_TDC', '', 'PAGO')""").lastrowid
+        db.commit()
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT categoria, subcategoria, tipo, mi_parte FROM est_movimientos WHERE id=?",
+                                (i,)).fetchone()) == ('TRANSPORTE', 'Seguro auto', 'GASTO', 1111.0)
+        assert corr.aplicar(db)[0] == 0
