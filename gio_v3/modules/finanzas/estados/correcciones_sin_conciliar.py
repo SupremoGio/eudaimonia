@@ -125,26 +125,9 @@ def _fila(db, mid, fecha, monto, texto):
                              (fecha, monto, f"%{texto.upper()}%")).fetchone()
 
 
-def _depositos_de_la_empresa(db) -> int:
-    """«FIBRA HOTELERA SC PAGO CUENTA DE TERCERO» es la empresa depositando
-    algo que no es nómina (la nómina dice «PAGO DE NOMINA»): reembolsos de
-    Expense (el usuario, 2026-10-03). Quedan FINANZAS/Reembolsable: no cuentan
-    como ingreso y salen como depósito en la pestaña Expense para ligarlos a su
-    lote. No toca los ya ligados a un lote ni los ya cerrados."""
-    return db.execute("""
-        UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable'
-        WHERE tipo='INGRESO' AND UPPER(descripcion) LIKE '%FIBRA HOTELERA%'
-          AND UPPER(descripcion) LIKE '%PAGO CUENTA DE TERCERO%' AND UPPER(descripcion) NOT LIKE '%NOMINA%'
-          AND categoria NOT IN ('NOMINA', 'PRESTAMOS', 'EXPENSE')
-          AND NOT (categoria='FINANZAS' AND COALESCE(subcategoria,'') IN ('Reembolsable', 'Expense sin detalle'))
-          AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)
-    """).rowcount
-
-
 def aplicar(db) -> tuple[int, int]:
     """(actualizadas, no encontradas). Idempotente."""
-    ok = _depositos_de_la_empresa(db)
-    faltan = 0
+    ok = faltan = 0
     for mid, fecha, monto, texto, nombre in VIAJES:
         row = _fila(db, mid, fecha, monto, texto)
         v = db.execute("SELECT id FROM viajes WHERE UPPER(TRIM(nombre))=? ORDER BY id LIMIT 1", (nombre,)).fetchone()

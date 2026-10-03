@@ -108,20 +108,3 @@ def test_deposito_propio_para_la_renta(test_db):
         corr.aplicar(db)
         assert tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) \
             == ('INGRESO', 'FINANZAS', 'Entre cuentas propias')
-
-
-def test_depositos_de_la_empresa_son_expense(test_db):
-    with database.get_db() as db:
-        ins = lambda f, d, m, c, sub: db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
-                                                    VALUES (?,?,?, 'BBVA_DEB', ?, ?, 'INGRESO')""", (f, d, m, c, sub)).lastrowid
-        a = ins('2026-03-29', 'FIBRA HOTELERA SC PAGO CUENTA DE TERCERO BNET', 6000, 'VIAJES', 'Otros')
-        n = ins('2026-03-15', 'PAGO DE NOMINA FIBRA HOTELERA SC', 10500, 'NOMINA', 'Pago nominal')
-        v = ins('2023-05-01', 'FIBRA HOTELERA SC PAGO CUENTA DE TERCERO BNET', 900, 'FINANZAS', 'Expense sin detalle')
-        db.commit()
-        corr.aplicar(db)
-        cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
-        assert cat(a) == ('FINANZAS', 'Reembolsable')
-        assert cat(n) == ('NOMINA', 'Pago nominal')
-        assert cat(v) == ('FINANZAS', 'Expense sin detalle')
-        from modules.finanzas.estados import expense_lotes
-        assert a in [d['id'] for d in expense_lotes.candidatos(db)['depositos']]
