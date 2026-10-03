@@ -64,3 +64,12 @@ def test_pago_a_eli_solo_el_seguro_es_gasto(test_db):
         assert tuple(db.execute("SELECT categoria, subcategoria, tipo, mi_parte FROM est_movimientos WHERE id=?",
                                 (i,)).fetchone()) == ('TRANSPORTE', 'Seguro auto', 'GASTO', 1111.0)
         assert corr.aplicar(db)[0] == 0
+
+
+def test_consulta_guardada_como_ingreso_pasa_a_gasto(test_db):
+    with database.get_db() as db:
+        i = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2026-06-22', 'PAGO CUENTA DE TERCERO', 1000, 'BBVA_DEB', 'SALUD', 'Consultas', 'INGRESO')""").lastrowid
+        db.commit()
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT tipo, categoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) == ('GASTO', 'SALUD')

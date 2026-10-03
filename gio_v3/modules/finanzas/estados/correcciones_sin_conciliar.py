@@ -86,6 +86,15 @@ GASTOS = [
 ]
 
 
+# Salidas que quedaron guardadas como entrada («PAGO CUENTA DE TERCERO» es
+# ambiguo en el PDF de BBVA): (fecha, monto, texto, categoria, subcategoria).
+# Se busca por la categoría que ya tienen para no confundirlas con otro abono
+# del mismo día. El usuario, 2026-10-03: «esto no es ingreso, yo lo pagué de consulta».
+INGRESOS_QUE_ERAN_GASTO = [
+    ('2026-06-22', 1000.0, 'PAGO CUENTA DE TERCERO', 'SALUD', 'Consultas'),
+]
+
+
 def _fila(db, mid, fecha, monto, texto):
     row = db.execute("""SELECT id, categoria, subcategoria, viaje_id FROM est_movimientos
                         WHERE id=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'""",
@@ -136,6 +145,14 @@ def aplicar(db) -> tuple[int, int]:
             continue
         if (row['categoria'], row['subcategoria'] or '') != (cat, sub):
             db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, row['id']))
+            ok += 1
+    for fecha, monto, texto, cat, sub in INGRESOS_QUE_ERAN_GASTO:
+        row = db.execute("""SELECT id FROM est_movimientos
+                            WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.01 AND tipo='INGRESO'
+                              AND categoria=? AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""",
+                         (fecha, monto, cat, f"%{texto}%")).fetchone()
+        if row:
+            db.execute("UPDATE est_movimientos SET tipo='GASTO', subcategoria=? WHERE id=?", (sub, row['id']))
             ok += 1
     for fecha, monto, texto, cat, sub, *resto in GASTOS:
         parte = resto[0] if resto else None
