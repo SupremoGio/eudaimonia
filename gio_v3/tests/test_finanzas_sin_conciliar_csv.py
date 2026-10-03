@@ -66,24 +66,29 @@ def test_pago_a_eli_solo_el_seguro_es_gasto(test_db):
         assert corr.aplicar(db)[0] == 0
 
 
-def test_consulta_guardada_como_ingreso_pasa_a_gasto(test_db):
+def test_abonos_de_mommita_ya_no_se_vuelven_gasto(test_db):
+    """La auditoría contra los PDF (2026-10-03) mostró que la «consulta» de
+    $1,000 y «MENS GIO» $700 eran abonos de …3042 (su mamá) con texto del
+    renglón vecino: ya no se fuerzan a gasto, quedan como reembolso."""
     with database.get_db() as db:
-        i = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+        c = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
                           VALUES ('2026-06-22', 'PAGO CUENTA DE TERCERO', 1000, 'BBVA_DEB', 'SALUD', 'Consultas', 'INGRESO')""").lastrowid
+        nueva = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                              VALUES ('2026-10-02', 'PAGO CUENTA DE TERCERO BNET …3042 P', 300, 'BBVA_DEB', 'FINANZAS',
+                                      'Transferencia recibida', 'INGRESO')""").lastrowid
+        viaje = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                              VALUES ('2025-12-25', 'PAGO CUENTA DE TERCERO BNET …3042 P', 604, 'BBVA_DEB', 'VIAJES',
+                                      'Otros', 'INGRESO')""").lastrowid
+        regalo = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                               VALUES ('2026-09-23', 'PAGO CUENTA DE TERCERO BNET …3042 REGALO A LAS LENIS', 33, 'BBVA_DEB',
+                                       'FINANZAS', 'Transferencia', 'GASTO')""").lastrowid
         db.commit()
         corr.aplicar(db)
-        assert tuple(db.execute("SELECT tipo, categoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) == ('GASTO', 'SALUD')
-
-
-def test_mens_gio_era_gasto_de_salsa(test_db):
-    with database.get_db() as db:
-        i = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
-                          VALUES ('2026-04-14', '014 180326OMENS GIO PAGO CUENTA DE TERCERO BNET', 700, 'BBVA_DEB',
-                                  'TRANSPORTE', 'Gasolina', 'INGRESO')""").lastrowid
-        db.commit()
-        corr.aplicar(db)
-        assert tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()) \
-            == ('GASTO', 'SALSA', 'Clases')
+        fila = lambda i: tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert fila(c) == ('INGRESO', 'SALUD', 'Consultas')
+        assert fila(nueva) == ('INGRESO', 'FINANZAS', 'Reembolso compartido')   # cuenta conocida: Mommita
+        assert fila(viaje) == ('INGRESO', 'VIAJES', 'Otros')                     # categoría elegida: se respeta
+        assert fila(regalo) == ('GASTO', 'FINANZAS', 'Transferencia')            # lo que él le manda no se toca
 
 
 def test_nespresso_compartido(test_db):

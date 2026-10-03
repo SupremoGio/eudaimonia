@@ -498,3 +498,19 @@ def split_alimentacion(subcategoria: str | None, texto: str | None = '') -> tupl
     if cat in ('SUPER', 'COMIDA_FUERA', 'CAFE/PAN'):
         return cat, sub
     return 'COMIDA_FUERA', 'Restaurante'
+
+
+# ── Cuentas conocidas (últimos 4 dígitos como salen en BNET «…NNNN») ─────────
+# Quién es cada cuenta y qué son los abonos que manda. «reembolsa»: lo que
+# entra de esa cuenta es la devolución de algo que el usuario pagó (no es
+# ingreso) -> FINANZAS/Reembolso compartido, salvo que ya tenga otra categoría
+# elegida. Lo que el usuario le manda a esa cuenta no se toca.
+CUENTAS_CONOCIDAS = {
+    '…3042': {'nombre': 'Mommita', 'reembolsa': True},   # su mamá (Lenis / Aurora), 2026-10-03
+}
+
+
+def cuenta_conocida(descripcion: str):
+    """(cuenta, datos) de la primera cuenta conocida que aparece en la descripción."""
+    d = descripcion or ''
+    return next(((c, v) for c, v in CUENTAS_CONOCIDAS.items() if c in d), (None, None))

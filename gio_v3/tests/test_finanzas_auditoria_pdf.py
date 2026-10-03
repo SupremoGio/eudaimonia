@@ -79,6 +79,12 @@ def test_correcciones(test_db):
         for i in (2272, 2276):
             r = _fila(db, i)
             assert (r['tipo'], r['categoria'], r['subcategoria']) == ('INGRESO', 'FINANZAS', 'Reembolso compartido')
+        # …3042 es Mommita: sus abonos son reembolso; si ya estaban en VIAJES, restan del viaje.
+        for i in (1816, 1888, 1975, 2242, 1615, 1440):
+            r = _fila(db, i)
+            assert (r['tipo'], r['categoria'], r['subcategoria']) == ('INGRESO', 'FINANZAS', 'Reembolso compartido'), i
+        r = _fila(db, 1578)
+        assert (r['tipo'], r['categoria']) == ('INGRESO', 'VIAJES')
         # Monto distinto.
         assert _fila(db, 2089)['monto'] == 5555.0
 

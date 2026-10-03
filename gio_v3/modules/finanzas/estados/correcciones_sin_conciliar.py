@@ -109,12 +109,9 @@ ENTRADAS = [
 # del mismo día. El usuario, 2026-10-03: «esto no es ingreso, yo lo pagué de consulta».
 # (fecha, monto, texto, categoría que tiene hoy, categoría, subcategoría)
 INGRESOS_QUE_ERAN_GASTO = [
-    ('2026-06-22', 1000.0, 'PAGO CUENTA DE TERCERO', 'SALUD', 'SALUD', 'Consultas'),
-    # «esto tampoco es ingreso, es gasto» (2026-10-03)
-    ('2026-03-22', 57.0, 'TRANSF', 'SUPER', 'SUPER', 'Súper'),
-    ('2026-03-04', 400.0, 'ARBITRAJE GIO', 'DEPORTE', 'DEPORTE', 'Fútbol'),
-    # «MENS GIO va a salsa»: estaba como Gasolina
-    ('2026-04-14', 700.0, 'MENS GIO', 'TRANSPORTE', 'SALSA', 'Clases'),
+    # Vacía desde la auditoría contra los PDF (2026-10-03): las que había aquí
+    # (consulta $1,000, $57, $400, MENS GIO $700, Fresko) eran abonos con texto
+    # del renglón vecino — devoluciones de su mamá (…3042) y del súper (…6197).
 ]
 
 
@@ -307,9 +304,27 @@ def _fila(db, mid, fecha, monto, texto):
                              (fecha, monto, f"%{texto.upper()}%")).fetchone()
 
 
+def _abonos_de_cuentas_conocidas(db) -> int:
+    """Abonos de una cuenta que reembolsa (config.CUENTAS_CONOCIDAS, ej. …3042
+    Mommita) que siguen con la categoría genérica del import -> Reembolso
+    compartido. Una categoría que el usuario eligió se respeta."""
+    from .config import CUENTAS_CONOCIDAS
+    n = 0
+    for cuenta, datos in CUENTAS_CONOCIDAS.items():
+        if datos.get('reembolsa'):
+            n += db.execute("""UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolso compartido'
+                               WHERE tipo='INGRESO' AND descripcion LIKE ?
+                                 AND (COALESCE(categoria, '') IN ('', 'OTROS')
+                                      OR (categoria='FINANZAS' AND COALESCE(subcategoria, '') IN
+                                          ('', 'Transferencia', 'Transferencia recibida')))""",
+                            (f'%{cuenta}%',)).rowcount
+    return n
+
+
 def aplicar(db) -> tuple[int, int]:
     """(actualizadas, no encontradas). Idempotente."""
     ok = faltan = 0
+    ok += _abonos_de_cuentas_conocidas(db)
     for mid, fecha, monto, texto, nombre in VIAJES:
         row = _fila(db, mid, fecha, monto, texto)
         v = db.execute("SELECT id FROM viajes WHERE UPPER(TRIM(nombre))=? ORDER BY id LIMIT 1", (nombre,)).fetchone()

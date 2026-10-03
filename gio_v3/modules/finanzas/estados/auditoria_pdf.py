@@ -26,7 +26,7 @@ from datetime import date, datetime, timedelta
 
 from .parsers import bbva_libreton
 from .parsers._base import _MSI_INSTALLMENT_RE, clean_desc
-from .config import get_categoria_subcategoria
+from .config import cuenta_conocida, get_categoria_subcategoria
 from .correcciones_sin_conciliar import _referenciado
 
 _DIR = os.path.join(os.path.dirname(__file__), 'data')
@@ -38,11 +38,21 @@ VERSION = 'auditoria_pdf_2022_2026_v1'
 # mezclada con el renglón vecino; el PDF dice otra cosa (todas son abonos).
 # No se tocan hasta que confirme.
 PENDIENTES_USUARIO = {
-    1816: 'el PDF dice abono de …3042 «p»; tenía «ARBITRAJE GIO» pegado del renglón vecino',
-    1888: 'el PDF dice abono de …3042 «Transf a GIOVANY»; se había pasado a SUPER como gasto',
-    1975: 'el PDF dice abono de …3042 «Transf a GIOVANY»; «MENS GIO» venía del renglón vecino',
-    2242: 'el PDF dice abono de …3042 «p»; se había pasado a SALUD/Consultas como gasto',
+    # (las de …3042 y Fresko ya las aclaró: ver _sugerida)
 }
+
+# Cuentas que le devuelven al usuario lo que él pagó (config.CUENTAS_CONOCIDAS): …3042 es su
+# mamá, Mommita («devolución de gasto que yo hice de viajes o de boletos que les compré»).
+# Sus abonos no son ingreso: «Reembolso compartido»; si la fila ya está en
+# VIAJES se queda ahí, como entrada que resta del viaje.
+def _sugerida(f, actual=None):
+    _, datos = cuenta_conocida(f['descripcion_real'])
+    if f['tipo_real'] == 'INGRESO' and datos and datos.get('reembolsa'):
+        if actual and actual[0] == 'VIAJES':
+            return actual
+        return 'FINANZAS', 'Reembolso compartido'
+    return f['categoria_sugerida'], f['subcategoria_sugerida']
+
 
 # Sugerencia de categoría que NO se aplica porque contradice lo que el
 # usuario explicó de ese movimiento.
@@ -175,8 +185,8 @@ def _plan_corregir(db, f, ocupados) -> list[dict]:
             cambios['descripcion'] = nueva
     if (mn := _monto_app_nota(f)) and abs(abs(r['monto']) - mn[1]) >= 0.01:
         cambios['monto'] = mn[1] if r['monto'] >= 0 else -mn[1]
-    cat, sub = f['categoria_sugerida'], f['subcategoria_sugerida']
     actual = (r['categoria'] or '', r['subcategoria'] or '')
+    cat, sub = _sugerida(f, actual)
     if cat and r['id'] not in CATEGORIA_SE_QUEDA and not (f['banco'] == 'BBVA_TDC' and tipo in _TIPOS_INTERNOS):
         if not sub and cat == 'FINANZAS' and tipo == 'INGRESO':
             sub = 'Transferencia recibida'     # sale en Sin conciliar para clasificarla
@@ -236,7 +246,7 @@ def _plan_sobra(db, f, ocupados) -> list[dict]:
 def _nueva_fila(f) -> dict:
     desc = desc_real(f)
     monto = _monto(f)
-    cat, sub = f['categoria_sugerida'], f['subcategoria_sugerida']
+    cat, sub = _sugerida(f)
     if f['banco'] == 'BBVA_TDC':
         if f['tipo_real'] == 'INGRESO':          # abono a la tarjeta: como lo deja el importador
             return dict(descripcion=desc, monto=-monto, tipo='PAGO', categoria='PAGO', subcategoria='',
