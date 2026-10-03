@@ -97,6 +97,9 @@ ENTRADAS = [
     ('2026-04-07', 7000.0, 'DEPOSITO EFECTIVO PRACTIC', 'FINANZAS', 'Entre cuentas propias'),
     ('2026-03-23', 1110.0, 'TRANSF', 'FINANZAS', 'Reembolso compartido'),     # Judi: devolución o reparto de gastos
     ('2026-08-10', 3000.0, 'SPEI RECIBIDO', 'FINANZAS', 'Transferencia recibida'),  # sin identificar: a Sin conciliar
+    ('2026-02-15', 300.0, 'TRANSF A GIOVANY A', 'FINANZAS', 'Reembolso compartido'),  # de Judith
+    ('2026-09-25', 105.0, 'BNET COMIDA', 'COMIDA_FUERA', 'Restaurante'),            # su parte de una comida: resta a Comida fuera
+    ('2026-07-02', 0.01, 'VAL.ASEG', 'FINANZAS', 'Entre cuentas propias'),          # centavo de validación de Qualitas
 ]
 
 
@@ -136,6 +139,11 @@ REESCRITOS = [
      'INGRESO', 'FINANZAS', 'Reembolso compartido'),              # cuenta con ida y vuelta; el texto era del Cetes vecino
     ('2026-04-21', 738.0, 'PAGO CUENTA DE TERCERO', 'PAGO CUENTA DE TERCERO BNET LIQUIDOS',
      'INGRESO', 'OTROS', ''),                                     # le regresaron algo que pagó con vales: sí es ingreso
+    # Revisión de «Comida fuera» contra los PDF (2026-10-03):
+    ('2026-04-14', 750.0, 'FIBRA HOTELERA', 'SPEI ENVIADO SANTANDER MENS GIO',
+     'GASTO', 'SALSA', 'Clases'),                                 # SPEI a Esteban Aceves «mens gio»: va a salsa
+    ('2026-03-26', 227.0, 'HSBC MARZ GIO', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A',
+     'INGRESO', 'FINANZAS', 'Reembolso compartido'),              # abono; «HSBC MARZ GIO» era del SPEI del 28/03
 ]
 
 

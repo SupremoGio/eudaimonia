@@ -166,3 +166,18 @@ def test_abonos_de_viajes_revisados_contra_pdf(test_db):
         assert r(sp)[1:] == ('FINANZAS', 'Reembolso compartido')
         assert r(liq) == ('PAGO CUENTA DE TERCERO BNET LIQUIDOS', 'OTROS', '')
         assert r(stp)[1:] == ('FINANZAS', 'Transferencia recibida')
+
+
+def test_comida_fuera_revisada_contra_pdf(test_db):
+    with database.get_db() as db:
+        ins = lambda f, d, m, t: db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                                               VALUES (?,?,?, 'BBVA_DEB', 'COMIDA_FUERA', 'Restaurante', ?)""", (f, d, m, t)).lastrowid
+        mens = ins('2026-04-14', 'FIBRA HOTELERA SC SPEI ENVIADO SANTANDER', 750, 'GASTO')
+        com = ins('2026-09-25', 'PAGO CUENTA DE TERCERO BNET COMIDA', 105, 'GASTO')
+        val = ins('2026-07-02', 'SPEI RECIBIDOSTP 646 0061370VAL.ASEG. OP', 0.01, 'GASTO')
+        db.commit()
+        corr.aplicar(db)
+        r = lambda i: tuple(db.execute("SELECT descripcion, tipo, categoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert r(mens) == ('SPEI ENVIADO SANTANDER MENS GIO', 'GASTO', 'SALSA')
+        assert r(com)[1:] == ('INGRESO', 'COMIDA_FUERA')
+        assert r(val)[1:] == ('INGRESO', 'FINANZAS')
