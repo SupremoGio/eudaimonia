@@ -342,25 +342,38 @@ def _cuadra(movimientos: list[dict], tot) -> bool:
 
 def _direcciones_por_columna(layout_text: str) -> list[str | None]:
     """'A' (abono), 'C' (cargo) o None por cada renglón de movimiento, según
-    la columna (CARGOS / ABONOS del encabezado) bajo la que cae su monto."""
-    cols = None
-    out = []
+    la columna bajo la que cae su monto (alineado a la derecha). Las columnas
+    se sacan de los propios renglones: los montos terminan en dos posiciones
+    separadas (estado real abr-2026: cargos en 59-61, abonos en 65-67); la
+    izquierda es CARGOS y la derecha ABONOS. El encabezado «CARGOS ABONOS»
+    solo sale en la página 1, así que no se depende de él. Sin una separación
+    clara (≥3 caracteres) no se decide nada."""
+    fines = []
     for line in layout_text.split("\n"):
-        up = line.upper()
-        if "CARGOS" in up and "ABONOS" in up and "DESCRIPCION" in up:
-            cols = (up.index("CARGOS") + len("CARGOS"), up.index("ABONOS") + len("ABONOS"))
-            continue
         st = line.strip()
         if not TXN_RE.match(st) or _should_skip(st):
             continue
         m = next(_AMT_RE.finditer(line), None)
-        if not cols or not m:
-            out.append(None)
-            continue
-        fin = m.end()   # los montos van alineados a la derecha de su columna
-        d_c, d_a = abs(fin - cols[0]), abs(fin - cols[1])
-        out.append(None if abs(d_c - d_a) < 3 else ('C' if d_c < d_a else 'A'))
-    return out
+        fines.append(m.end() if m else None)
+    vals = sorted({f for f in fines if f is not None})
+    if len(vals) < 2:
+        return [None] * len(fines)
+    gap, corte = max((b - a, (a + b) / 2) for a, b in zip(vals, vals[1:]))
+    if gap < 3:
+        return [None] * len(fines)
+    return [None if f is None else ('C' if f < corte else 'A') for f in fines]
+
+
+def _columnas_consistentes(movimientos: list[dict], dirs: list) -> bool:
+    """Las columnas se aceptan sin totales impresos si coinciden con todos los
+    renglones de dirección conocida (nómina, depósitos, SPEI enviado, pagos de
+    tarjeta, retiros…) y hay al menos 3 de ellos."""
+    if len(dirs) != len(movimientos) or any(d is None for d in dirs):
+        return False
+    conocidos = [(m, d) for m, d in zip(movimientos, dirs)
+                 if not any(k in m["descripcion"] for k in AMBIGUOUS_KW)]
+    return len(conocidos) >= 3 and all(
+        (d == 'A') == (m["tipo"] == "INGRESO") for m, d in conocidos)
 
 
 def _aplicar_columnas(movimientos: list[dict], dirs: list, tot) -> bool:
@@ -410,9 +423,20 @@ def _recategorizar(m: dict) -> None:
 def blindar(movimientos: list[dict], full_text: str, layout_text: str | None = None) -> None:
     tot = _totales_impresos(full_text)
     antes = [m["tipo"] for m in movimientos]
-    if not (layout_text and _aplicar_columnas(movimientos, _direcciones_por_columna(layout_text), tot)):
+    dirs = _direcciones_por_columna(layout_text) if layout_text else []
+    por_columna = False
+    if dirs and _aplicar_columnas(movimientos, dirs, tot):
+        por_columna = True
+    elif dirs and _columnas_consistentes(movimientos, dirs) and not (tot and _cuadra(movimientos, tot)):
+        for m, d in zip(movimientos, dirs):
+            m["tipo"] = "INGRESO" if d == 'A' else "GASTO"
+        por_columna = not tot or _cuadra(movimientos, tot)
+        if not por_columna:                       # contradice los totales: se deshace
+            for m, t in zip(movimientos, antes):
+                m["tipo"] = t
+    if not por_columna:
         _reconciliar_con_totales(movimientos, tot)
-    ok = bool(tot) and _cuadra(movimientos, tot)
+    ok = (bool(tot) and _cuadra(movimientos, tot)) or (por_columna and not tot)
     for m, t in zip(movimientos, antes):
         if m["tipo"] != t:
             _recategorizar(m)

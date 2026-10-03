@@ -1,0 +1,225 @@
+# Libretón Básico Cuenta Digital (estado mensual de débito)
+# Archivo: BBVA_Estados_de_Cuenta/Debito_Libreton_…1804/2026/BBVA_Debito_2026-04.pdf
+# Por qué estas páginas: 29/MAR $6,000 (abono que la app guardó con «FIBRA HOTELERA» del renglón de nómina) y 31/MAR $2,299 SITH… que la app dejó «SIN DESCRIPCION»; aquí se ve cómo la nómina queda pegada al movimiento anterior
+# Cuentas enmascaradas a los últimos 4 dígitos.
+
+===== PÁGINA 3 — extract_text() =====
+Estado de Cuenta
+Libretón Básico Cuenta Digital
+PAGINA 3 / 8
+No. de Cuenta …1804
+No. de Cliente C1740273
+09/MAR 09/MAR DEPOSITO EFECTIVO PRACTIC 3,800.00
+MAR09 11:37 PRAC D797 FOLIO:3038 Referencia ******1804
+09/MAR 09/MAR PAGO TARJETA DE TERCEROS 12,000.00 230.51 230.51
+CUENTA: …5198 MBAN Referencia 0047381791
+10/MAR 10/MAR PAGO CUENTA DE TERCERO 2,000.00 2,230.51 2,230.51
+BNET …5937 8b Referencia 0038640434
+12/MAR 12/MAR PAGO CUENTA DE TERCERO 505.00 1,725.51 1,725.51
+BNET …3540 plantita Referencia 0009945421
+13/MAR 13/MAR PAGO DE NOMINA 10,415.58 12,141.09 12,141.09
+FIBRA HOTELERA SC Referencia HH 4206466060
+17/MAR 17/MAR PAGO CUENTA DE TERCERO 1,700.00
+BNET …6230 prestamito Referencia 0022300805
+17/MAR 17/MAR PAGO CUENTA DE TERCERO 3.00 10,438.09 10,438.09
+BNET …6230 dueda con interes Referencia 0058109101
+19/MAR 20/MAR PAGO CUENTA DE TERCERO 8,000.00 2,438.09 10,438.09
+BNET …6230 cositas Referencia 0067410578
+21/MAR 23/MAR SPEI ENVIADO INVEX 928.00 1,510.09 2,438.09
+2702260invex marzo Referencia 0069310569 059
+…2829
+MBAN01002603230069310569
+INVEX Giovany
+22/MAR 23/MAR PAGO CUENTA DE TERCERO 57.00 1,567.09 2,438.09
+BNET …3042 Transf a GIOVANY A Referencia 0021573457
+23/MAR 23/MAR PAGO CUENTA DE TERCERO 500.00
+BNET …1239 Transf a GIOVANY A Referencia 0074822744
+23/MAR 23/MAR PAGO CUENTA DE TERCERO 1,110.00 3,177.09 3,177.09
+BNET …6230 Transf a GIOVANY A Referencia 0037730724
+25/MAR 25/MAR SITH2EXPENSERH 1,862.00
+FIBRA HOTELERA SC 1832964 Referencia 359546143987040
+25/MAR 25/MAR PAGO CUENTA DE TERCERO 1,862.00 3,177.09 3,177.09
+BNET …3746 comida Referencia 0036426306
+26/MAR 26/MAR SPEI ENVIADO BANAMEX 100.00
+2702260arbitraje gio Referencia 0093784676 002
+…6996
+MBAN01002603260093784676
+Nestor
+26/MAR 26/MAR PAGO CUENTA DE TERCERO 227.00 3,304.09 3,304.09
+BNET …1239 Transf a GIOVANY A Referencia 0090905204
+28/MAR 30/MAR SPEI ENVIADO HSBC 2,915.00 389.09 3,304.09
+2702260hsbc marz gio Referencia 0057403727 021
+…7441
+MBAN01002603300057403727
+Giovany Alberto
+29/MAR 30/MAR PAGO CUENTA DE TERCERO 6,000.00 6,389.09 3,304.09
+BNET …6230 Transf a GIOVANY A Referencia 0068634509
+30/MAR 30/MAR PAGO DE NOMINA 33,451.41
+FIBRA HOTELERA SC Referencia HH 4206466060
+30/MAR 30/MAR PAGO TARJETA DE CREDITO 13,937.06
+CUENTA: BMOV Referencia 3879105746
+30/MAR 30/MAR SPEI ENVIADO STP 25,000.00 903.44 903.44
+1803260gio marzo Referencia 0070301674 646
+…6316
+MBAN01002603310070301674
+BBVA MEXICO, S.A., INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO BBVA MEXICO
+Av. Paseo de la Reforma 510, Col. Juárez, Alcaldía Cuauhtémoc; C.P. 06600, Ciudad de México, México, R.F.C. BBA830831LJ2
+
+===== PÁGINA 3 — extract_text(layout=True) =====
+                                                                                    
+                                                                                    
+                                                                     Estado de Cuenta
+                                                                                    
+                                                              Libretón Básico Cuenta Digital
+                                                                          PAGINA 3 / 8
+                                                                                    
+                                                                                    
+                                              No. de Cuenta                …1804
+                                              No. de Cliente                C1740273
+                                                                                    
+                                                                                    
+  09/MAR 09/MAR DEPOSITO EFECTIVO PRACTIC                  3,800.00                 
+               MAR09 11:37 PRAC D797 FOLIO:3038 Referencia ******1804               
+  09/MAR 09/MAR PAGO TARJETA DE TERCEROS            12,000.00      230.51     230.51
+               CUENTA: …5198 MBAN Referencia 0047381791                  
+  10/MAR 10/MAR PAGO CUENTA DE TERCERO                     2,000.00 2,230.51 2,230.51
+               BNET …5937 8b           Referencia 0038640434                   
+  12/MAR 12/MAR PAGO CUENTA DE TERCERO                505.00      1,725.51   1,725.51
+               BNET …3540 plantita     Referencia 0009945421                   
+  13/MAR 13/MAR PAGO DE NOMINA                            10,415.58 12,141.09 12,141.09
+               FIBRA HOTELERA SC            Referencia HH 4206466060                
+  17/MAR 17/MAR PAGO CUENTA DE TERCERO               1,700.00                       
+               BNET …6230 prestamito   Referencia 0022300805                   
+  17/MAR 17/MAR PAGO CUENTA DE TERCERO                 3.00       10,438.09  10,438.09
+               BNET …6230 dueda con interes Referencia 0058109101              
+  19/MAR 20/MAR PAGO CUENTA DE TERCERO               8,000.00     2,438.09   10,438.09
+               BNET …6230 cositas      Referencia 0067410578                   
+  21/MAR 23/MAR SPEI ENVIADO INVEX                    928.00      1,510.09   2,438.09
+               2702260invex marzo           Referencia 0069310569 059               
+               …2829                                                 
+               MBAN01002603230069310569                                             
+               INVEX Giovany                                                        
+  22/MAR 23/MAR PAGO CUENTA DE TERCERO                      57.00 1,567.09   2,438.09
+               BNET …3042 Transf a GIOVANY A Referencia 0021573457             
+  23/MAR 23/MAR PAGO CUENTA DE TERCERO                      500.00                  
+               BNET …1239 Transf a GIOVANY A Referencia 0074822744             
+  23/MAR 23/MAR PAGO CUENTA DE TERCERO                     1,110.00 3,177.09 3,177.09
+               BNET …6230 Transf a GIOVANY A Referencia 0037730724             
+  25/MAR 25/MAR SITH2EXPENSERH                             1,862.00                 
+               FIBRA HOTELERA SC 1832964    Referencia 359546143987040              
+  25/MAR 25/MAR PAGO CUENTA DE TERCERO               1,862.00     3,177.09   3,177.09
+               BNET …3746 comida       Referencia 0036426306                   
+  26/MAR 26/MAR SPEI ENVIADO BANAMEX                  100.00                        
+               2702260arbitraje gio         Referencia 0093784676 002               
+               …6996                                                 
+               MBAN01002603260093784676                                             
+               Nestor                                                               
+  26/MAR 26/MAR PAGO CUENTA DE TERCERO                      227.00 3,304.09  3,304.09
+               BNET …1239 Transf a GIOVANY A Referencia 0090905204             
+  28/MAR 30/MAR SPEI ENVIADO HSBC                    2,915.00      389.09    3,304.09
+               2702260hsbc marz gio         Referencia 0057403727 021               
+               …7441                                                 
+               MBAN01002603300057403727                                             
+               Giovany Alberto                                                      
+  29/MAR 30/MAR PAGO CUENTA DE TERCERO                     6,000.00 6,389.09 3,304.09
+               BNET …6230 Transf a GIOVANY A Referencia 0068634509             
+  30/MAR 30/MAR PAGO DE NOMINA                            33,451.41                 
+               FIBRA HOTELERA SC            Referencia HH 4206466060                
+  30/MAR 30/MAR PAGO TARJETA DE CREDITO             13,937.06                       
+               CUENTA: BMOV                 Referencia 3879105746                   
+  30/MAR 30/MAR SPEI ENVIADO STP                    25,000.00      903.44     903.44
+               1803260gio marzo             Referencia 0070301674 646               
+               …6316                                                 
+               MBAN01002603310070301674                                             
+  BBVA MEXICO, S.A., INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO BBVA MEXICO    
+  Av. Paseo de la Reforma 510, Col. Juárez, Alcaldía Cuauhtémoc; C.P. 06600, Ciudad de México, México, R.F.C. BBA830831LJ2
+
+===== PÁGINA 4 — extract_text() =====
+Estado de Cuenta
+Libretón Básico Cuenta Digital
+PAGINA 4 / 8
+No. de Cuenta …1804
+No. de Cliente C1740273
+GIOVANY ALBERTO SANCHEZ
+31/MAR 31/MAR SITH26623774 2,299.00 3,202.44 3,202.44
+FIDEICOMISO F/1596 1832077 Referencia 365550010094770
+01/ABR 01/ABR RETIRO SIN TARJETA 200.00 3,002.44 3,002.44
+Referencia ******7852
+Total de Movimientos
+TOTAL IMPORTE CARGOS 69,150.06 TOTAL MOVIMIENTOS CARGOS 13
+TOTAL IMPORTE ABONOS 68,221.99 TOTAL MOVIMIENTOS ABONOS 12
+Le informamos que puede consultar, en cualquier momento, el contrato correspondiente a esta cuenta
+en nuetra página de internet https://www.bbva.mx, en el apartado del producto contratado.
+Estado de cuenta de Apartados Vigentes
+Folio Nombre Apartado Importe Apartado Importe Total
+Gas $ 0.00
+Renta s $ 0.00
+Seguro car $ 0.00
+Gym $ 0.00
+$ 0.00
+BBVA MEXICO, S.A., INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO BBVA MEXICO
+Av. Paseo de la Reforma 510, Col. Juárez, Alcaldía Cuauhtémoc; C.P. 06600, Ciudad de México, México, R.F.C. BBA830831LJ2
+
+===== PÁGINA 4 — extract_text(layout=True) =====
+                                                                                    
+                                                                                    
+                                                                     Estado de Cuenta
+                                                                                    
+                                                              Libretón Básico Cuenta Digital
+                                                                          PAGINA 4 / 8
+                                                                                    
+                                                                                    
+                                              No. de Cuenta                …1804
+                                              No. de Cliente                C1740273
+                                                                                    
+                                                                                    
+               GIOVANY ALBERTO SANCHEZ                                              
+  31/MAR 31/MAR SITH26623774                               2,299.00 3,202.44 3,202.44
+               FIDEICOMISO F/1596 1832077   Referencia 365550010094770              
+  01/ABR 01/ABR RETIRO SIN TARJETA                    200.00      3,002.44   3,002.44
+                                            Referencia ******7852                   
+ Total de Movimientos                                                               
+                                                                                    
+    TOTAL IMPORTE CARGOS         69,150.06  TOTAL MOVIMIENTOS CARGOS            13  
+    TOTAL IMPORTE ABONOS          68,221.99 TOTAL MOVIMIENTOS ABONOS            12  
+                                                                                    
+                                                                                    
+                 Le informamos que puede consultar, en cualquier momento, el contrato correspondiente a esta cuenta
+                   en nuetra página de internet https://www.bbva.mx, en el apartado del producto contratado.
+ Estado de cuenta de Apartados Vigentes                                             
+                                                                                    
+      Folio             Nombre Apartado         Importe Apartado         Importe Total
+                                                                                    
+                Gas                           $             0.00                    
+                Renta s                       $             0.00                    
+                Seguro car                    $             0.00                    
+                Gym                           $             0.00                    
+                                                                   $          0.00  
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+  BBVA MEXICO, S.A., INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO BBVA MEXICO    
+  Av. Paseo de la Reforma 510, Col. Juárez, Alcaldía Cuauhtémoc; C.P. 06600, Ciudad de México, México, R.F.C. BBA830831LJ2
+

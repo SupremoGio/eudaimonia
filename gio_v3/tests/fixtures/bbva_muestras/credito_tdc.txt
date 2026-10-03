@@ -1,0 +1,200 @@
+# Tarjeta de Crédito Oro BBVA (formato anterior a jul-2024)
+# Archivo: BBVA_Estados_de_Cuenta/Credito_Oro_7990/2023/BBVA_Credito_Oro_2023-10.pdf
+# Por qué estas páginas: La app guardó el RFC del comercio (p. ej. «GHT 190820QQ7») en lugar del nombre, y los «BMOVIL.PAGO TDC … $ x-» (abonos con el signo al final) con monto positivo
+# Cuentas enmascaradas a los últimos 4 dígitos.
+
+===== PÁGINA 3 — extract_text() =====
+Estado de Cuenta
+Tarjeta Oro BBVA
+PAGINA 3 / 9
+GIOVANY ALBERTO SANCHEZ No. de Tarjeta …7990
+No. de Cliente C1740273
+Informe de Puntos BBVA
+Saldo Anterior 1,190
+Generados 2,483
+Utilizados 0
+Vencidos 0
+Saldo Nuevo 3,673
+SU TARJETA REFLEJA UN SOBREGIRO, MUCHO LE AGRADECEREMOS ACUDIR A CUALQUIERA DE NUESTRAS SUCURSALES A LIQUIDAR
+SU EXCEDENTE, SI REQUIERE DE UN INCREMENTO SOLICITELO CON SU EJECUTIVO."
+Movimientos Efectuados Tarjeta Titular …7990
+FECHA FECHA CONCEPTO R.F.C. REFERENCIA IMPORTE IMPORTE
+AUTORIZACION APLICACION CARGOS ABONOS
+25/09/23 26/09/23 MERPAGO*CREPASCHAPA MAG 2105031W3 ******9161 $ 360.00
+25/09/23 26/09/23 KINZA GAS OKI 030722JM9 ******3689 $ 300.00
+25/09/23 26/09/23 OXXO MOTOROLA CCO 8605231N4 ******9176 $ 30.00
+26/09/23 27/09/23 TRE BLE APG 210521UQ1 ******1689 $ 174.00
+27/09/23 28/09/23 BOSTONS PIZZA CBS 210727QP1 ******9386 $ 500.00
+28/09/23 29/09/23 REBEL WINGS UAQ RWI 171124V96 ******0858 $ 118.30
+28/09/23 29/09/23 HOTEL STADIA SUITE QRO IJJ 17071122A ******8013 $ 5,560.40
+28/09/23 29/09/23 DELICIUSPAST DEL 220421374 ******2560 $ 40.00
+29/09/23 02/10/23 HIDALGO NUMERO 8 VEPA690806KU8 ******4282 $ 1,588.40
+29/09/23 02/10/23 REST VINEDOS LA REDOND VIL 1101148M1 ******4488 $ 50.00
+29/09/23 02/10/23 REST VINEDOS LA REDOND VIL 1101148M1 ******5658 $ 292.00
+29/09/23 02/10/23 REST QUERETARO RICO HI GAUL650107PP7 ******9833 $ 577.00
+30/09/23 02/10/23 ZTL*TEODORACAFE OPM 150323DI1 ******9884 $ 234.00
+01/10/23 02/10/23 PLAYA CARACOL HOTEL FCH 060814FF0 ******5906 $ 1,907.00
+02/10/23 03/10/23 CAFE EL ALBA CENTRO FUT 9202134T7 ******8227 $ 645.70
+04/10/23 04/10/23 BMOVIL.PAGO TDC ******8616 $ 11,677.85-
+BBVA MEXICO, S.A., INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO BBVA MEXICO.
+Av. Paseo de la Reforma 510, Col. Juárez, C.P. 06600, Alcaldía Cuauhtémoc, Ciudad de México, México. RFC BBA830831LJ2 Régimen Fiscal: Régimen General de Ley Personas Morales
+LINEA BBVA: 5552262663 CIUDAD DE MEXICO Y 5552262663 LARGA DISTANCIA SIN COSTO
+
+===== PÁGINA 3 — extract_text(layout=True) =====
+                                                                     Estado de Cuenta
+                                                                                    
+                                                                       Tarjeta Oro BBVA
+                                                                          PAGINA 3 / 9
+                                                                                    
+                                                                                    
+                                                                                    
+      GIOVANY ALBERTO SANCHEZ          No. de Tarjeta                …7990
+                                       No. de Cliente                       C1740273
+                                                                                    
+  Informe de Puntos BBVA                                                            
+                                                                                    
+  Saldo Anterior     1,190                                                          
+  Generados          2,483                                                          
+  Utilizados           0                                                            
+                                                                                    
+  Vencidos             0                                                            
+  Saldo Nuevo        3,673                                                          
+                                                                                    
+           SU TARJETA REFLEJA UN SOBREGIRO, MUCHO LE AGRADECEREMOS ACUDIR A CUALQUIERA DE NUESTRAS SUCURSALES A LIQUIDAR
+           SU EXCEDENTE, SI REQUIERE DE UN INCREMENTO SOLICITELO CON SU EJECUTIVO." 
+                                                                                    
+  Movimientos Efectuados       Tarjeta Titular …7990                  
+                                                                                    
+     FECHA     FECHA          CONCEPTO               R.F.C. REFERENCIA IMPORTE IMPORTE
+  AUTORIZACION APLICACION                                           CARGOS  ABONOS  
+    25/09/23  26/09/23 MERPAGO*CREPASCHAPA    MAG 2105031W3 ******9161 $ 360.00     
+                                                                                    
+    25/09/23  26/09/23 KINZA GAS               OKI 030722JM9 ******3689 $ 300.00    
+                                                                                    
+    25/09/23  26/09/23 OXXO MOTOROLA           CCO 8605231N4 ******9176 $ 30.00     
+                                                                                    
+    26/09/23  27/09/23 TRE BLE                 APG 210521UQ1 ******1689 $ 174.00    
+                                                                                    
+    27/09/23  28/09/23 BOSTONS PIZZA           CBS 210727QP1 ******9386 $ 500.00    
+                                                                                    
+    28/09/23  29/09/23 REBEL WINGS UAQ         RWI 171124V96 ******0858 $ 118.30    
+                                                                                    
+    28/09/23  29/09/23 HOTEL STADIA SUITE QRO   IJJ 17071122A ******8013 $ 5,560.40 
+    28/09/23  29/09/23 DELICIUSPAST            DEL 220421374 ******2560 $ 40.00     
+                                                                                    
+    29/09/23  02/10/23 HIDALGO NUMERO 8        VEPA690806KU8 ******4282 $ 1,588.40  
+                                                                                    
+    29/09/23  02/10/23 REST VINEDOS LA REDOND  VIL 1101148M1 ******4488 $ 50.00     
+                                                                                    
+    29/09/23  02/10/23 REST VINEDOS LA REDOND  VIL 1101148M1 ******5658 $ 292.00    
+                                                                                    
+    29/09/23  02/10/23 REST QUERETARO RICO HI GAUL650107PP7 ******9833 $ 577.00     
+                                                                                    
+    30/09/23  02/10/23 ZTL*TEODORACAFE         OPM 150323DI1 ******9884 $ 234.00    
+                                                                                    
+    01/10/23  02/10/23 PLAYA CARACOL HOTEL     FCH 060814FF0 ******5906 $ 1,907.00  
+                                                                                    
+    02/10/23  03/10/23 CAFE EL ALBA CENTRO     FUT 9202134T7 ******8227 $ 645.70    
+                                                                                    
+    04/10/23  04/10/23 BMOVIL.PAGO TDC                     ******8616     $  11,677.85-
+                                                                                    
+                                                                                    
+           BBVA MEXICO, S.A., INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO BBVA MEXICO.
+ Av. Paseo de la Reforma 510, Col. Juárez, C.P. 06600, Alcaldía Cuauhtémoc, Ciudad de México, México. RFC BBA830831LJ2 Régimen Fiscal: Régimen General de Ley Personas Morales
+                   LINEA BBVA: 5552262663 CIUDAD DE MEXICO Y 5552262663 LARGA DISTANCIA SIN COSTO
+
+===== PÁGINA 4 — extract_text() =====
+Estado de Cuenta
+Tarjeta Oro BBVA
+PAGINA 4 / 9
+03/10/23 04/10/23 LAS HIJAS DE LA TOSTAD GHT 190820QQ7 ******7142 $ 433.40
+04/10/23 05/10/23 LAGUNAS MONTERO SLM 051108BK3 ******9166 $ 100.00
+05/10/23 06/10/23 PAST MARISA ITALIA PRO LACI6501276K1 ******2019 $ 520.00
+07/10/23 09/10/23 BBV CAJERO A019 ******4210 $ 1,000.00
+07/10/23 09/10/23 CARLS JR CHAPULTEPEC ICR 9305317G4 ******5525 $ 319.00
+07/10/23 09/10/23 ESTACIONAM HOTEL RIU POC 691128ED4 ******2651 $ 15.00
+07/10/23 09/10/23 GAS FLORENCIA 1000 FMI 130426L65 ******8460 $ 200.00
+08/10/23 09/10/23 CLIPMX*AGREGADOR BLI 120726UF6 ******5172 $ 135.00
+08/10/23 09/10/23 KINZA GAS OKI 030722JM9 ******3680 $ 300.00
+09/10/23 10/10/23 ROYALTON SPLASH CUN CCI 160314Q40 ******2779 $ 203.58
+09/10/23 10/10/23 POINTMP*CANCUN MAG 2105031W3 ******1270 $ 630.00
+12/10/23 13/10/23 POINTMP*TAXIDRIVER MAG 2105031W3 ******1274 $ 1,050.00
+13/10/23 16/10/23 PAST MARISA ITALIA PRO LACI6501276K1 ******2017 $ 365.00
+14/10/23 16/10/23 DP 11020 PROVIDENCIA OPP 010927SA5 ******4562 $ 149.00
+15/10/23 16/10/23 BMOVIL.PAGO TDC ******6439 $ 2,000.00-
+15/10/23 16/10/23 BMOVIL.PAGO TDC ******5974 $ 100.00-
+15/10/23 16/10/23 GAS SAN MIGUEL SSM 110222NT7 ******4558 $ 400.00
+15/10/23 16/10/23 TRE BLE APG 210521UQ1 ******1681 $ 88.00
+17/10/23 17/10/23 BMOVIL.PAGO TDC ******5138 $ 1,500.00-
+17/10/23 18/10/23 SORIANA313 AMERICASGDL TSO 991022PB6 ******6539 $ 866.00
+19/10/23 20/10/23 PAST MARISA ITALIA PRO LACI6501276K1 ******2010 $ 365.00
+22/10/23 23/10/23 12 DE 12 MACSTORE MIDTOWN JALI $ 211.00
+22/10/23 23/10/23 12 DE 18 MACSTORE MIDTOWN JALI $ 1,167.00
+22/10/23 23/10/23 07 DE 12 TRAINING INNOVATION $ 359.00
+BBVA MEXICO, S.A., INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO BBVA MEXICO.
+Av. Paseo de la Reforma 510, Col. Juárez, C.P. 06600, Alcaldía Cuauhtémoc, Ciudad de México, México. RFC BBA830831LJ2 Régimen Fiscal: Régimen General de Ley Personas Morales
+LINEA BBVA: 5552262663 CIUDAD DE MEXICO Y 5552262663 LARGA DISTANCIA SIN COSTO
+
+===== PÁGINA 4 — extract_text(layout=True) =====
+                                                                     Estado de Cuenta
+                                                                                    
+                                                                       Tarjeta Oro BBVA
+                                                                          PAGINA 4 / 9
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+                                                                                    
+    03/10/23  04/10/23 LAS HIJAS DE LA TOSTAD  GHT 190820QQ7 ******7142 $ 433.40    
+                                                                                    
+    04/10/23  05/10/23 LAGUNAS MONTERO         SLM 051108BK3 ******9166 $ 100.00    
+                                                                                    
+    05/10/23  06/10/23 PAST MARISA ITALIA PRO  LACI6501276K1 ******2019 $ 520.00    
+                                                                                    
+    07/10/23  09/10/23 BBV CAJERO A019                     ******4210 $ 1,000.00    
+    07/10/23  09/10/23 CARLS JR CHAPULTEPEC    ICR 9305317G4 ******5525 $ 319.00    
+                                                                                    
+    07/10/23  09/10/23 ESTACIONAM HOTEL RIU    POC 691128ED4 ******2651 $ 15.00     
+                                                                                    
+    07/10/23  09/10/23 GAS FLORENCIA 1000      FMI 130426L65 ******8460 $ 200.00    
+                                                                                    
+    08/10/23  09/10/23 CLIPMX*AGREGADOR         BLI 120726UF6 ******5172 $ 135.00   
+                                                                                    
+    08/10/23  09/10/23 KINZA GAS               OKI 030722JM9 ******3680 $ 300.00    
+                                                                                    
+    09/10/23  10/10/23 ROYALTON SPLASH CUN     CCI 160314Q40 ******2779 $ 203.58    
+                                                                                    
+    09/10/23  10/10/23 POINTMP*CANCUN         MAG 2105031W3 ******1270 $ 630.00     
+                                                                                    
+    12/10/23  13/10/23 POINTMP*TAXIDRIVER     MAG 2105031W3 ******1274 $ 1,050.00   
+                                                                                    
+    13/10/23  16/10/23 PAST MARISA ITALIA PRO  LACI6501276K1 ******2017 $ 365.00    
+                                                                                    
+    14/10/23  16/10/23 DP 11020 PROVIDENCIA    OPP 010927SA5 ******4562 $ 149.00    
+                                                                                    
+    15/10/23  16/10/23 BMOVIL.PAGO TDC                     ******6439     $  2,000.00-
+                                                                                    
+    15/10/23  16/10/23 BMOVIL.PAGO TDC                     ******5974     $   100.00-
+                                                                                    
+    15/10/23  16/10/23 GAS SAN MIGUEL          SSM 110222NT7 ******4558 $ 400.00    
+                                                                                    
+    15/10/23  16/10/23 TRE BLE                 APG 210521UQ1 ******1681 $ 88.00     
+                                                                                    
+    17/10/23  17/10/23 BMOVIL.PAGO TDC                     ******5138     $  1,500.00-
+                                                                                    
+    17/10/23  18/10/23 SORIANA313 AMERICASGDL  TSO 991022PB6 ******6539 $ 866.00    
+                                                                                    
+    19/10/23  20/10/23 PAST MARISA ITALIA PRO  LACI6501276K1 ******2010 $ 365.00    
+                                                                                    
+    22/10/23  23/10/23 12 DE 12 MACSTORE MIDTOWN JALI             $  211.00         
+                                                                                    
+    22/10/23  23/10/23 12 DE 18 MACSTORE MIDTOWN JALI             $ 1,167.00        
+                                                                                    
+    22/10/23  23/10/23 07 DE 12 TRAINING INNOVATION               $  359.00         
+                                                                                    
+                                                                                    
+           BBVA MEXICO, S.A., INSTITUCION DE BANCA MULTIPLE, GRUPO FINANCIERO BBVA MEXICO.
+ Av. Paseo de la Reforma 510, Col. Juárez, C.P. 06600, Alcaldía Cuauhtémoc, Ciudad de México, México. RFC BBA830831LJ2 Régimen Fiscal: Régimen General de Ley Personas Morales
+                   LINEA BBVA: 5552262663 CIUDAD DE MEXICO Y 5552262663 LARGA DISTANCIA SIN COSTO
+
