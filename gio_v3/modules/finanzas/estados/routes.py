@@ -2782,6 +2782,40 @@ def _postproceso_inversiones(db) -> bool:
     return gbm_detected
 
 
+def _corregir_direcciones(db, movimientos, bank) -> dict:
+    """Re-subir un estado ya importado corrige la dirección (cargo/abono) de
+    sus filas guardadas cuando el parser la verificó contra los totales del
+    PDF (dir_verificada, ver parsers/bbva_libreton.blindar): abonos de «PAGO
+    CUENTA DE TERCERO» que versiones anteriores guardaron como cargo (usuario,
+    2026-10-03: pagos de Jorge). Las filas ligadas a un préstamo no se tocan
+    solas: se devuelven en «revisar»."""
+    out = {'corregidas': [], 'revisar': []}
+    for m in movimientos:
+        if not m.get('dir_verificada'):
+            continue
+        banco = m.get('banco', bank) or bank
+        rows = db.execute("""SELECT id, tipo, categoria FROM est_movimientos
+                             WHERE fecha=? AND descripcion=? AND ABS(monto - ?) < 0.005 AND banco=?
+                               AND tipo IN ('GASTO', 'INGRESO') AND tipo != ?""",
+                          (m['fecha'], m['descripcion'], float(m['monto']), banco, m['tipo'])).fetchall()
+        for r in rows:
+            info = {'id': r['id'], 'fecha': m['fecha'], 'descripcion': m['descripcion'],
+                    'monto': m['monto'], 'antes': r['tipo'], 'ahora': m['tipo']}
+            ligado = db.execute("""SELECT 1 FROM est_prestamos WHERE movimiento_id=?
+                                   UNION SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?""",
+                                (r['id'], r['id'])).fetchone()
+            if ligado:
+                out['revisar'].append(info)
+                continue
+            if r['categoria'] in ('FINANZAS', 'OTROS', 'PRESTAMOS', ''):
+                db.execute("UPDATE est_movimientos SET tipo=?, categoria=?, subcategoria=? WHERE id=?",
+                           (m['tipo'], m['categoria'], m.get('subcategoria', ''), r['id']))
+            else:
+                db.execute("UPDATE est_movimientos SET tipo=? WHERE id=?", (m['tipo'], r['id']))
+            out['corregidas'].append(info)
+    return out
+
+
 @estados_bp.route('/api/upload', methods=['POST'])
 def upload_file():
     if not _ok(): return _locked()
@@ -2819,6 +2853,7 @@ def upload_file():
         dedup_conflict = 0  # chocó con idx_est_mov_dedup (fecha, descripcion) aunque
                              # el dedup por (fecha, monto, tipo) lo había dejado pasar
         with get_db() as db:
+            direcciones = _corregir_direcciones(db, movimientos, bank)
             # key -> [(banco, descripción)] ya guardados con ese (fecha, monto,
             # tipo). En el MISMO banco basta la key (es el mismo estado de
             # cuenta; hay imports viejos con descripciones mal emparejadas, así
@@ -3015,6 +3050,8 @@ def upload_file():
             'sugerencias_viaje_tabasco': sugerencias_viaje_tabasco,  # nunca se asignan solas
             'sugerencias_reembolso': sugerencias_reembolso,          # confirmar en /api/expenses/<id>/conciliar
             'avisos_posible_duplicado': avisos_posible_duplicado,    # mismo día+monto, tipo distinto -- revisar manual
+            'direcciones_corregidas': direcciones['corregidas'],     # cargo/abono corregido al re-subir
+            'direcciones_revisar': direcciones['revisar'],           # ligadas a un préstamo: revisar manual
         })
 
     except Exception as e:

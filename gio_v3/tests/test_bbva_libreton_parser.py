@@ -213,3 +213,67 @@ def test_all_movements_are_captured_no_count_regression():
     bounds = _extract_year_bounds(SAMPLE_TEXT_CROSS_YEAR)
     movs = _parse_text(SAMPLE_TEXT_CROSS_YEAR, bounds, periodo=None)
     assert len(movs) == 4
+
+
+# ── Blindaje con los totales impresos y la columna del monto (2026-10-03) ──────
+# Caso real: pagos de Jorge ($4,900 + $100 y $5,000, oct-nov 2024) quedaron
+# como cargos porque el saldo impreso no alcanzaba para decidir.
+from modules.finanzas.estados.parsers.bbva_libreton import blindar, _direcciones_por_columna
+
+SAMPLE_JORGE = """Periodo DEL 07/10/2024 AL 06/11/2024
+Saldo Anterior 1,000.00
+OPER LIQ DESCRIPCION REFERENCIA CARGOS ABONOS OPERACION LIQUIDACION
+24/OCT 24/OCT PAGO CUENTA DE TERCERO 4,900.00
+ BNET 1111111111 JORGE Referencia 1111111111
+24/OCT 24/OCT PAGO CUENTA DE TERCERO 100.00
+ BNET 2222222222 GIO Referencia 2222222222
+25/OCT 25/OCT PAGO CUENTA DE TERCERO 300.00
+ BNET 3333333333 RENTA Referencia 3333333333
+28/OCT 28/OCT PAGO CUENTA DE TERCERO 700.00
+ BNET 4444444444 TACOS Referencia 4444444444
+Total Importe Cargos 1,000.00 Total Movimientos Cargos 2
+Total Importe Abonos 5,000.00 Total Movimientos Abonos 2"""
+
+
+def _jorge():
+    movs = _parse_text(SAMPLE_JORGE, _extract_year_bounds(SAMPLE_JORGE), periodo=None)
+    return movs, {m["descripcion"]: m for m in movs}
+
+
+def test_totales_impresos_resuelven_lo_que_el_saldo_no_pudo():
+    movs, by = _jorge()
+    assert by["PAGO CUENTA DE TERCERO BNET JORGE"]["tipo"] == "GASTO"      # el bug
+    blindar(movs, SAMPLE_JORGE)
+    assert by["PAGO CUENTA DE TERCERO BNET JORGE"]["tipo"] == "INGRESO"
+    assert by["PAGO CUENTA DE TERCERO BNET GIO"]["tipo"] == "INGRESO"
+    assert by["PAGO CUENTA DE TERCERO BNET TACOS"]["tipo"] == "GASTO"
+    assert all(m["dir_verificada"] for m in movs)
+
+
+def test_sin_totales_no_se_marca_verificado():
+    texto = SAMPLE_JORGE.rsplit("\nTotal Importe Cargos", 1)[0]
+    movs = _parse_text(texto, _extract_year_bounds(texto), periodo=None)
+    blindar(movs, texto)
+    assert not any(m["dir_verificada"] for m in movs)
+
+
+def test_columna_del_monto_decide_aunque_los_totales_tengan_varias_soluciones():
+    # Dos de $500: uno entra y otro sale. Los totales solos no saben cuál.
+    texto = """Saldo Anterior 1,000.00
+24/OCT 24/OCT PAGO CUENTA DE TERCERO 500.00
+ BNET 1111111111 AMIGO Referencia 1111111111
+24/OCT 24/OCT PAGO CUENTA DE TERCERO 500.00
+ BNET 2222222222 RENTA Referencia 2222222222
+Total Importe Cargos 500.00 Total Movimientos Cargos 1
+Total Importe Abonos 500.00 Total Movimientos Abonos 1"""
+    layout = """OPER   LIQ    DESCRIPCION                REFERENCIA      CARGOS      ABONOS   OPERACION  LIQUIDACION
+24/OCT 24/OCT PAGO CUENTA DE TERCERO                                  500.00
+       BNET 1111111111 AMIGO
+24/OCT 24/OCT PAGO CUENTA DE TERCERO                      500.00
+       BNET 2222222222 RENTA"""
+    assert _direcciones_por_columna(layout) == ['A', 'C']
+    movs = _parse_text(texto, (10, 2024, 10, 2024), periodo=None)
+    blindar(movs, texto, layout)
+    by = {m["descripcion"]: m["tipo"] for m in movs}
+    assert by == {"PAGO CUENTA DE TERCERO BNET AMIGO": "INGRESO", "PAGO CUENTA DE TERCERO BNET RENTA": "GASTO"}
+    assert all(m["dir_verificada"] for m in movs)

@@ -23,14 +23,34 @@ export default function ImportModal({ onClose, onImported }) {
   const [res, setRes] = useState(null);
   const [done, setDone] = useState({});
 
-  async function upload(file) {
-    if (!file || busy) return;
+  // Varios archivos (re-subir estados viejos corrige la dirección cargo/abono
+  // de lo ya guardado): se suben uno por uno y los resultados se suman.
+  function merge(a, b) {
+    if (!a) return b;
+    const out = { ...a };
+    for (const [k, v] of Object.entries(b)) {
+      if (typeof v === 'number' && typeof a[k] === 'number') out[k] = a[k] + v;
+      else if (Array.isArray(v) && Array.isArray(a[k])) out[k] = a[k].concat(v);
+      else if (v != null && a[k] == null) out[k] = v;
+    }
+    if (a.bank && b.bank && a.bank !== b.bank) out.bank = '';
+    return out;
+  }
+
+  async function upload(files) {
+    const list = Array.from(files || []).filter(Boolean);
+    if (!list.length || busy) return;
     setBusy(true); setErr(''); setRes(null); setDone({});
     try {
-      const data = await api.upload(file);
-      if (data && data.ok === false) {
-        setErr(data.error || 'No se encontraron transacciones en el archivo.');
-      } else {
+      let data = null;
+      const fallos = [];
+      for (const file of list) {
+        const d = await api.upload(file);
+        if (d && d.ok === false) fallos.push(`${file.name}: ${d.error || 'sin transacciones'}`);
+        else data = merge(data, d);
+      }
+      if (fallos.length) setErr(fallos.join(' · '));
+      if (data) {
         setRes(data);
         onImported && onImported();
         const gam = data && data.gamification;
@@ -71,14 +91,14 @@ export default function ImportModal({ onClose, onImported }) {
           onClick={() => input.current && input.current.click()}
           onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
           onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); upload(e.dataTransfer.files && e.dataTransfer.files[0]); }}
+          onDrop={(e) => { e.preventDefault(); setDrag(false); upload(e.dataTransfer.files); }}
           disabled={busy}
         >
           <span className="eu-empty-ic"><Icon name={busy ? 'loader-circle' : 'upload'} className={busy ? 'fz-spin' : ''} /></span>
-          <span className="t-ui">{busy ? 'Procesando…' : 'Arrastra tu PDF o CSV aquí'}</span>
-          <span className="t-meta" id="fz-drop-help">o toca para elegir un archivo · BBVA, Invex, HSBC</span>
+          <span className="t-ui">{busy ? 'Procesando…' : 'Arrastra tus PDF o CSV aquí'}</span>
+          <span className="t-meta" id="fz-drop-help">o toca para elegir uno o varios archivos · BBVA, Invex, HSBC</span>
         </button>
-        <input ref={input} type="file" accept=".pdf,.csv,.xlsx,.xls" hidden onChange={(e) => upload(e.target.files && e.target.files[0])} />
+        <input ref={input} type="file" accept=".pdf,.csv,.xlsx,.xls" multiple hidden onChange={(e) => upload(e.target.files)} />
 
         {err && <Notice tone="danger" icon="circle-alert">{err}</Notice>}
 
@@ -91,6 +111,27 @@ export default function ImportModal({ onClose, onImported }) {
             {r.dedup_conflict > 0 && (
               <Notice tone="warning" icon="triangle-alert">
                 {plural(r.dedup_conflict, 'transacción no guardada', 'transacciones no guardadas')} (coincide fecha + descripción con otra existente) — revísalo a mano.
+              </Notice>
+            )}
+            {r.direcciones_corregidas && r.direcciones_corregidas.length > 0 && (
+              <Notice tone="info" icon="arrow-left-right">
+                {plural(r.direcciones_corregidas.length, 'movimiento ya guardado cambió', 'movimientos ya guardados cambiaron')} de dirección
+                (entrada/salida) según los totales del estado de cuenta.
+                <ul className="fz-import-list">
+                  {r.direcciones_corregidas.slice(0, 20).map((d) => (
+                    <li key={d.id} className="t-meta">{fmtDate(d.fecha, true)} · {d.descripcion} · {money(d.monto)} → {d.ahora === 'INGRESO' ? 'entrada' : 'salida'}</li>
+                  ))}
+                </ul>
+              </Notice>
+            )}
+            {r.direcciones_revisar && r.direcciones_revisar.length > 0 && (
+              <Notice tone="warning" icon="triangle-alert">
+                {plural(r.direcciones_revisar.length, 'movimiento ligado', 'movimientos ligados')} a un préstamo trae la dirección al revés — revísalo en Por cobrar:
+                <ul className="fz-import-list">
+                  {r.direcciones_revisar.map((d) => (
+                    <li key={d.id} className="t-meta">{fmtDate(d.fecha, true)} · {d.descripcion} · {money(d.monto)} → {d.ahora === 'INGRESO' ? 'entrada' : 'salida'}</li>
+                  ))}
+                </ul>
               </Notice>
             )}
             {r.review_needed && r.review_needed.length > 0 && (

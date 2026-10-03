@@ -310,6 +310,118 @@ def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str 
     return movimientos
 
 
+# ── Blindaje de cargo/abono (2026-10-03) ──────────────────────────────────────
+# El texto plano no dice en qué columna (CARGOS o ABONOS) cayó el monto y el
+# saldo impreso no siempre alcanza: pagos de Jorge de oct-nov 2024 quedaron
+# como cargos. Dos verificaciones más, ambas contra lo que imprime el PDF:
+#   1. La columna real de cada monto, leyendo el PDF con layout (posición
+#      horizontal) — se acepta solo si los totales cuadran.
+#   2. «Total importe abonos/cargos» y sus conteos: si no cuadran, se busca la
+#      única combinación de renglones ambiguos que, volteada, los cuadra.
+# Cada movimiento sale con dir_verificada=True si al final los totales del
+# estado cuadran; el import usa eso para corregir la dirección de filas ya
+# guardadas (ver routes.upload_file).
+
+_AMT_RE = re.compile(r"[\d,]+\.\d{2}")
+
+
+def _totales_impresos(full_text: str):
+    tc, ta = TOTAL_CARGOS_RE.search(full_text), TOTAL_ABONOS_RE.search(full_text)
+    if not (tc and ta):
+        return None
+    return {'cargos': float(tc.group(1).replace(",", "")), 'n_cargos': int(tc.group(2)),
+            'abonos': float(ta.group(1).replace(",", "")), 'n_abonos': int(ta.group(2))}
+
+
+def _cuadra(movimientos: list[dict], tot) -> bool:
+    ab = [m["monto"] for m in movimientos if m["tipo"] == "INGRESO"]
+    ca = [m["monto"] for m in movimientos if m["tipo"] != "INGRESO"]
+    return (abs(sum(ab) - tot['abonos']) < 0.01 and abs(sum(ca) - tot['cargos']) < 0.01
+            and len(ab) == tot['n_abonos'] and len(ca) == tot['n_cargos'])
+
+
+def _direcciones_por_columna(layout_text: str) -> list[str | None]:
+    """'A' (abono), 'C' (cargo) o None por cada renglón de movimiento, según
+    la columna (CARGOS / ABONOS del encabezado) bajo la que cae su monto."""
+    cols = None
+    out = []
+    for line in layout_text.split("\n"):
+        up = line.upper()
+        if "CARGOS" in up and "ABONOS" in up and "DESCRIPCION" in up:
+            cols = (up.index("CARGOS") + len("CARGOS"), up.index("ABONOS") + len("ABONOS"))
+            continue
+        st = line.strip()
+        if not TXN_RE.match(st) or _should_skip(st):
+            continue
+        m = next(_AMT_RE.finditer(line), None)
+        if not cols or not m:
+            out.append(None)
+            continue
+        fin = m.end()   # los montos van alineados a la derecha de su columna
+        d_c, d_a = abs(fin - cols[0]), abs(fin - cols[1])
+        out.append(None if abs(d_c - d_a) < 3 else ('C' if d_c < d_a else 'A'))
+    return out
+
+
+def _aplicar_columnas(movimientos: list[dict], dirs: list, tot) -> bool:
+    if not tot or len(dirs) != len(movimientos) or any(d is None for d in dirs):
+        return False
+    prueba = [{**m, "tipo": "INGRESO" if d == 'A' else "GASTO"} for m, d in zip(movimientos, dirs)]
+    if not _cuadra(prueba, tot):
+        return False
+    for m, d in zip(movimientos, dirs):
+        m["tipo"] = "INGRESO" if d == 'A' else "GASTO"
+    return True
+
+
+def _reconciliar_con_totales(movimientos: list[dict], tot) -> None:
+    """Voltea la única combinación de renglones ambiguos (PAGO CUENTA DE
+    TERCERO / CORRECCION) que cuadra los totales impresos; si hay cero o
+    varias, no adivina."""
+    if not tot or _cuadra(movimientos, tot):
+        return
+    amb = [i for i, m in enumerate(movimientos)
+           if any(k in m["descripcion"] for k in AMBIGUOUS_KW)]
+    if not amb or len(amb) > 18:
+        return
+    ab = sum(m["monto"] for m in movimientos if m["tipo"] == "INGRESO")
+    diff = round(tot['abonos'] - ab, 2)          # lo que falta (o sobra) en abonos
+    sols = []
+    for r in range(1, len(amb) + 1):
+        for combo in combinations(amb, r):
+            delta = sum(movimientos[i]["monto"] * (1 if movimientos[i]["tipo"] != "INGRESO" else -1) for i in combo)
+            if abs(delta - diff) < 0.01:
+                prueba = [dict(m) for m in movimientos]
+                for i in combo:
+                    prueba[i]["tipo"] = "GASTO" if prueba[i]["tipo"] == "INGRESO" else "INGRESO"
+                if _cuadra(prueba, tot):
+                    sols.append(combo)
+        if len(sols) > 1:
+            return
+    if len(sols) == 1:
+        for i in sols[0]:
+            movimientos[i]["tipo"] = "GASTO" if movimientos[i]["tipo"] == "INGRESO" else "INGRESO"
+
+
+def _recategorizar(m: dict) -> None:
+    m["categoria"], m["subcategoria"] = _categorize(m["descripcion"], es_gasto=(m["tipo"] == "GASTO"))
+
+
+def blindar(movimientos: list[dict], full_text: str, layout_text: str | None = None) -> None:
+    tot = _totales_impresos(full_text)
+    antes = [m["tipo"] for m in movimientos]
+    if not (layout_text and _aplicar_columnas(movimientos, _direcciones_por_columna(layout_text), tot)):
+        _reconciliar_con_totales(movimientos, tot)
+    ok = bool(tot) and _cuadra(movimientos, tot)
+    for m, t in zip(movimientos, antes):
+        if m["tipo"] != t:
+            _recategorizar(m)
+        m["dir_verificada"] = ok
+    if tot and not ok:
+        print(f"  [AVISO BBVA_LIB] cargos/abonos no cuadran con los totales del PDF: "
+              f"revisa la dirección de los PAGO CUENTA DE TERCERO de este estado")
+
+
 def parse(pdf_path: Path) -> list[dict]:
     movimientos = []
     try:
@@ -318,6 +430,11 @@ def parse(pdf_path: Path) -> list[dict]:
             bounds  = _extract_year_bounds(full_text)
             periodo = _extract_periodo(full_text)
             movimientos = _parse_text(full_text, bounds, periodo)
+            try:
+                layout_text = "\n".join(p.extract_text(layout=True) or "" for p in pdf.pages)
+            except Exception:
+                layout_text = None
+            blindar(movimientos, full_text, layout_text)
     except Exception as e:
         print(f"  [ERROR BBVA_LIB] {e}")
     return movimientos

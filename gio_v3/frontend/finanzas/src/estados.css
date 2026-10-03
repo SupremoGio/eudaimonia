@@ -261,6 +261,7 @@ button.fz-note{width:100%;text-align:left;font:inherit;color:inherit;cursor:poin
 .fz-drop.is-drag .eu-empty-ic{color:var(--fg-brand)}
 .fz-drop:disabled{cursor:progress}
 .fz-import-res{gap:var(--sp-2)}
+.fz-import-list{margin:var(--sp-2) 0 0;padding-left:1.1em;display:flex;flex-direction:column;gap:2px}
 .fz-sugg{display:flex;flex-direction:column;gap:var(--sp-2);padding:var(--sp-3) var(--sp-4)}
 .fz-sugg .t-ui svg{color:var(--tone-fg,var(--fg-brand))}
 .fz-sugg-row{gap:var(--sp-2);min-height:32px}
