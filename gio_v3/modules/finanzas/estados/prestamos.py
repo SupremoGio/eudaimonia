@@ -328,15 +328,25 @@ COBRADOS_EN_EFECTIVO_PARA_VIAJE = (
 )
 
 # Devoluciones corregidas por el usuario (2026-10-03): de COCKTELITOS ($10,000
-# a Judi, 26/11/2025) lo que de verdad le abonaron es el depósito en efectivo
-# del 12/05/2026; el «ABONO» de $5,000 (22/12/2025) y el «TRANSF A GIOVANY A»
-# de $702 (01/12/2025) los había ligado la conciliación automática.
+# a Judi, 26/11/2025) le abonaron $5,000 con el «ABONO» del 22/12/2025 («me
+# abonaron 5000 de los 10000»). El «TRANSF A GIOVANY A» de $702 (01/12/2025)
+# lo había ligado la conciliación automática y no se sabe de qué fue: vuelve a
+# Sin conciliar. El depósito en efectivo del 12/05/2026 no es de esto: vuelve
+# a su categoría (Familia y regalos).
 # (texto del préstamo, persona, [devoluciones (fecha, monto, texto)],
-#  [desligar (fecha, monto, texto)])
+#  [desligar (fecha, monto, texto[, categoria, subcategoria])])
 DEVOLUCIONES_CORREGIDAS = (
     ('COCKTELITOS', 'Judi',
-     [('2026-05-12', 5000.0, 'SU PAGO EN EFECTIVO')],
-     [('2025-12-22', 5000.0, 'BNET ABONO'), ('2025-12-01', 702.0, 'TRANSF A GIOVANY A')]),
+     [('2025-12-22', 5000.0, 'BNET ABONO')],
+     [('2025-12-01', 702.0, 'TRANSF A GIOVANY A'),
+      ('2026-05-12', 5000.0, 'SU PAGO EN EFECTIVO', 'FAMILIA_REGALOS', 'Regalos')]),
+)
+
+# Préstamos que el usuario da por cobrados aunque falte un resto mínimo: el
+# monto se ajusta a lo devuelto. (texto del préstamo, persona). 2026-10-03:
+# «JEFE DE FAMIL REPO» $2,513 con devolución de $2,512 — «ya dalo por cobrado».
+DADOS_POR_COBRADOS = (
+    ('JEFE DE FAMIL REPO', 'Judi'),
 )
 
 
@@ -345,7 +355,7 @@ def no_es_devolucion(r) -> bool:
     no debe volver a proponerlos como devolución."""
     f, d = (r['fecha'] or '')[:10], (r['descripcion'] or '').upper()
     return any(f == fe and abs(abs(r['monto'] or 0) - mo) < 0.005 and t in d
-               for *_, desligar in DEVOLUCIONES_CORREGIDAS for fe, mo, t in desligar)
+               for *_, desligar in DEVOLUCIONES_CORREGIDAS for fe, mo, t, *_ in desligar)
 
 
 # Préstamos de los que solo quedó la devolución (la salida no se identifica):
@@ -410,14 +420,14 @@ def registrar_manuales(db) -> tuple[int, int]:
                        (persona, f"%{p_texto}%")).fetchone()
         if not p:
             continue
-        for fe, mo, t in desligar:
+        for fe, mo, t, *cat in desligar:
             d = db.execute("""SELECT d.movimiento_id FROM est_prestamo_devoluciones d JOIN est_movimientos m ON m.id = d.movimiento_id
                               WHERE d.prestamo_id=? AND substr(m.fecha,1,10)=? AND ABS(ABS(m.monto) - ?) < 0.005
                                 AND UPPER(m.descripcion) LIKE ?""", (p['id'], fe, mo, f"%{t}%")).fetchone()
-            if d:   # vuelve a «Sin conciliar» para que el usuario diga qué fue
+            if d:   # sin categoría propia vuelve a «Sin conciliar» para que el usuario diga qué fue
                 db.execute("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=?", (d['movimiento_id'],))
-                db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Transferencia recibida' WHERE id=?",
-                           (d['movimiento_id'],))
+                db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?",
+                           (*(cat or ('FINANZAS', 'Transferencia recibida')), d['movimiento_id']))
         for fe, mo, t in ligar:
             m = db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
                                 AND UPPER(descripcion) LIKE ? AND tipo='INGRESO' ORDER BY id LIMIT 1""",
@@ -428,6 +438,10 @@ def registrar_manuales(db) -> tuple[int, int]:
             db.execute("INSERT OR IGNORE INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
                        (p['id'], m['id'], ahora()))
             db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (m['id'],))
+    for p_texto, persona in DADOS_POR_COBRADOS:
+        for p in [p for p in listar(db) if p['persona'] == persona and p_texto in (p['descripcion'] or '').upper()]:
+            if 0 < p['pendiente'] and p['devuelto'] > 0:
+                db.execute("UPDATE est_prestamos SET monto=? WHERE id=?", (p['devuelto'], p['id']))
     for fecha, monto, texto, viaje in COBRADOS_EN_EFECTIVO_PARA_VIAJE:
         m = db.execute("""SELECT id, categoria, viaje_id FROM est_movimientos WHERE substr(fecha,1,10)=?
                             AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ? AND tipo='GASTO'

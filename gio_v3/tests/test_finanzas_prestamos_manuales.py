@@ -175,11 +175,27 @@ def test_cocktelitos_devolucion_real_y_desligadas(test_db):
         pr.registrar_manuales(db)
         pr.registrar_manuales(db)
         p = next(p for p in pr.listar(db) if p['id'] == pid)
-        assert [d['movimiento_id'] for d in p['devoluciones']] == [ef]
+        assert [d['movimiento_id'] for d in p['devoluciones']] == [ab]
         assert p['devuelto'] == 5000 and p['pendiente'] == 5000
-        assert _cat(db, ab) == _cat(db, tr) == ('FINANZAS', 'Transferencia recibida')
+        assert _cat(db, tr) == ('FINANZAS', 'Transferencia recibida')
+        assert _cat(db, ef) == ('FAMILIA_REGALOS', 'Regalos')
+        assert _cat(db, ab) == ('PRESTAMOS', '')
+        ab, tr = tr, tr     # abajo: solo el de $702 vuelve a Sin conciliar
         # vuelven a Sin conciliar, sin pista de préstamo
         filas = {r['id']: r for r in abonos.sin_conciliar(db)['movimientos']} if isinstance(abonos.sin_conciliar(db), dict) else None
         if filas is not None:
             assert ab in filas and tr in filas
             assert all((filas[i].get('pista') or {}).get('tipo') != 'prestamo' for i in (ab, tr))
+
+
+def test_jefe_de_famil_repo_dado_por_cobrado(test_db):
+    with database.get_db() as db:
+        m = _ins(db, '2025-03-27', 'PAGO CUENTA DE TERCERO BNET JEFE DE FAMIL REPO', 2513.0)
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                            VALUES ('Judi', 'OTORGADO', 2513, '2025-03-27', '', ?, datetime('now'))""", (m,)).lastrowid
+        d = _ins(db, '2025-03-27', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 2512.0, 'INGRESO', 'PRESTAMOS', '')
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,datetime('now'))", (pid, d))
+        db.commit()
+        pr.registrar_manuales(db)
+        p = next(p for p in pr.listar(db) if p['id'] == pid)
+        assert p['estado'] == 'Pagado' and p['pendiente'] == 0

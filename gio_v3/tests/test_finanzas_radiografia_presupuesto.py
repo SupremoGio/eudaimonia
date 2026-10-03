@@ -218,3 +218,22 @@ def test_resumen_del_hub_no_resta_retiros_de_inversion_al_gasto(test_db):
     b = captured['budget']
     assert b['gastado'] == 12000 and b['pct'] == 57 and b['ahorro_pct'] == 43
     assert b['disponible'] == 9000
+
+
+def test_tarjeta_presupuesto_dice_el_mes_si_no_es_el_actual(test_db):
+    """1/oct sin movimientos de octubre: la tarjeta muestra septiembre y lo dice."""
+    from unittest.mock import patch
+    import datetime as dt
+    from modules.finanzas import routes as fin
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 20000, tipo='INGRESO', sub='Pago nominal')
+        for i in range(5):
+            _mov(db, 'OCIO', 100, fecha=f'2026-09-0{i + 1}')
+    from app import create_app
+    app = create_app()
+    app.config['TESTING'] = True
+    with app.test_client() as c, patch.object(fin, 'today_date', return_value=dt.date(2026, 10, 1)):
+        with c.session_transaction() as sess:
+            sess['app_ok'] = sess['fin_ok'] = True
+        html = c.get('/finanzas/').get_data(as_text=True)
+    assert 'Septiembre · 2% usado' in html          # $500 / $20,000
