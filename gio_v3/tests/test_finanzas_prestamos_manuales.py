@@ -199,3 +199,14 @@ def test_jefe_de_famil_repo_dado_por_cobrado(test_db):
         pr.registrar_manuales(db)
         p = next(p for p in pr.listar(db) if p['id'] == pid)
         assert p['estado'] == 'Pagado' and p['pendiente'] == 0
+
+
+def test_regalo_bodas_no_era_prestamo(test_db):
+    with database.get_db() as db:
+        m = _ins(db, '2025-09-07', 'PAGO CUENTA DE TERCERO BNET REGALO BODAS', 950.0)
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Judi', 'OTORGADO', 950, '2025-09-07', 'Clasificado desde CSV', ?, datetime('now'))""", (m,))
+        db.commit()
+        pr.registrar_manuales(db)
+        assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
+        assert _cat(db, m) == ('FAMILIA_REGALOS', 'Regalos')

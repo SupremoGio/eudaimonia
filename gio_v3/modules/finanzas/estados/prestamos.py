@@ -334,12 +334,20 @@ COBRADOS_EN_EFECTIVO_PARA_VIAJE = (
 # Sin conciliar. El depósito en efectivo del 12/05/2026 no es de esto: vuelve
 # a su categoría (Familia y regalos).
 # (texto del préstamo, persona, [devoluciones (fecha, monto, texto)],
-#  [desligar (fecha, monto, texto[, categoria, subcategoria])])
+#  [desligar (fecha, monto, texto[, categoria, subcategoria])][, fecha del préstamo])
 DEVOLUCIONES_CORREGIDAS = (
     ('COCKTELITOS', 'Judi',
      [('2025-12-22', 5000.0, 'BNET ABONO')],
      [('2025-12-01', 702.0, 'TRANSF A GIOVANY A'),
       ('2026-05-12', 5000.0, 'SU PAGO EN EFECTIVO', 'FAMILIA_REGALOS', 'Regalos')]),
+)
+
+# Movimientos registrados como préstamo que no lo eran: pierden el préstamo y
+# van a su categoría. (fecha, monto, texto, categoria, subcategoria).
+# El usuario, 2026-10-03: «REGALO BODAS» (07/09/2025, $950, del CSV) «cambia
+# esto como préstamo y déjalo como familia regalo».
+NO_ERAN_PRESTAMO = (
+    ('2025-09-07', 950.0, 'REGALO BODAS', 'FAMILIA_REGALOS', 'Regalos'),
 )
 
 # Préstamos que el usuario da por cobrados aunque falte un resto mínimo: el
@@ -355,7 +363,7 @@ def no_es_devolucion(r) -> bool:
     no debe volver a proponerlos como devolución."""
     f, d = (r['fecha'] or '')[:10], (r['descripcion'] or '').upper()
     return any(f == fe and abs(abs(r['monto'] or 0) - mo) < 0.005 and t in d
-               for *_, desligar in DEVOLUCIONES_CORREGIDAS for fe, mo, t, *_ in desligar)
+               for _t, _p, _l, desligar, *_f in DEVOLUCIONES_CORREGIDAS for fe, mo, t, *_ in desligar)
 
 
 # Préstamos de los que solo quedó la devolución (la salida no se identifica):
@@ -414,10 +422,11 @@ def _mov(db, fecha, monto, texto, tipo='GASTO'):
 def registrar_manuales(db) -> tuple[int, int]:
     """Registra PRESTAMOS_MANUALES y cancela REGRESADOS con su depósito.
     Devuelve (préstamos creados, parejas canceladas). Idempotente."""
-    for p_texto, persona, ligar, desligar in DEVOLUCIONES_CORREGIDAS:
+    for p_texto, persona, ligar, desligar, *p_fecha in DEVOLUCIONES_CORREGIDAS:
         p = db.execute("""SELECT p.id FROM est_prestamos p JOIN est_movimientos m ON m.id = p.movimiento_id
-                          WHERE p.contraparte=? AND UPPER(m.descripcion) LIKE ? ORDER BY p.id LIMIT 1""",
-                       (persona, f"%{p_texto}%")).fetchone()
+                          WHERE p.contraparte=? AND UPPER(m.descripcion) LIKE ? AND substr(p.fecha,1,10) LIKE ?
+                          ORDER BY p.id LIMIT 1""",
+                       (persona, f"%{p_texto}%", p_fecha[0] if p_fecha else '%')).fetchone()
         if not p:
             continue
         for fe, mo, t, *cat in desligar:
@@ -442,6 +451,16 @@ def registrar_manuales(db) -> tuple[int, int]:
         for p in [p for p in listar(db) if p['persona'] == persona and p_texto in (p['descripcion'] or '').upper()]:
             if 0 < p['pendiente'] and p['devuelto'] > 0:
                 db.execute("UPDATE est_prestamos SET monto=? WHERE id=?", (p['devuelto'], p['id']))
+    for fecha, monto, texto, cat, sub in NO_ERAN_PRESTAMO:
+        m = db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
+                            AND UPPER(descripcion) LIKE ? AND tipo='GASTO' ORDER BY id LIMIT 1""",
+                       (fecha, monto, f"%{texto}%")).fetchone()
+        if not m:
+            continue
+        for (pid,) in db.execute("SELECT id FROM est_prestamos WHERE movimiento_id=?", (m['id'],)).fetchall():
+            if not db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,)).fetchone():
+                db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
+        db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, m['id']))
     for fecha, monto, texto, viaje in COBRADOS_EN_EFECTIVO_PARA_VIAJE:
         m = db.execute("""SELECT id, categoria, viaje_id FROM est_movimientos WHERE substr(fecha,1,10)=?
                             AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
