@@ -74,6 +74,25 @@ FALTA_CATEGORIA = {
     ('2024-10-08', 11000.0, 'PAGO TARJETA'): ('VIVIENDA', 'Renta'),   # la renta de oct-2024, pagada a BBVA
 }
 
+# Filas ligadas a préstamos / lotes de expense cuya dirección el usuario
+# confirmó contra el PDF (2026-10-03): id -> (categoría, subcategoría, por qué).
+# La categoría None = ligar como devolución a un préstamo abierto de esa persona
+# (DEVOLUCION_DE); si no tiene, Reembolso compartido.
+CONFIRMADOS_LIGADOS = {
+    3351: ('PRESTAMOS', '', '«sí, yo aboné deuda»: le pagó $7,000 a su papá'),
+    2999: (None, None, '«sí es devolución de Judi»'),
+    3004: ('FINANZAS', 'Transferencia recibida', '«así es»: «jefe de famil repo» le entró de …5937'),
+    2124: ('FINANZAS', 'Retiro efectivo', '«fue retiro»'),
+    2303: ('FINANZAS', 'Reembolsable', '«tuve que regresar un expense que no era mío»'),
+}
+DEVOLUCION_DE = {2999: 'Judi'}
+
+# Duplicados ligados (préstamo/devolución): «hagamos lo que dice Cowork» -> el
+# vínculo pasa al gemelo y la copia se borra.
+RELIGAR_DUPLICADOS = {1831, 2077}
+
+_TABLAS_LIGA = ('est_prestamos', 'est_prestamo_devoluciones', 'est_expense_lote_gastos', 'est_expense_lote_depositos')
+
 # Sugerencia de categoría que NO se aplica porque contradice lo que el
 # usuario explicó de ese movimiento.
 CATEGORIA_SE_QUEDA = {
@@ -188,6 +207,8 @@ def _plan_corregir(db, f, ocupados) -> list[dict]:
             # importador: PAGO -x). Un INGRESO de la app ya es abono.
             if tipo in ('PAGO', 'MOVIMIENTO_INTERNO') and r['monto'] > 0:
                 cambios['monto'] = -r['monto']
+        elif f['tipo_real'] in ('INGRESO', 'GASTO') and r['id'] in CONFIRMADOS_LIGADOS:
+            return _plan_ligado(db, f, r)
         elif f['tipo_real'] in ('INGRESO', 'GASTO') and tipo != f['tipo_real']:
             if (motivo := _intocable(db, r)):
                 return [_linea(f, r, 'pendiente revisión', 'tipo', tipo, f['tipo_real'], motivo)]
@@ -238,6 +259,75 @@ def _plan_corregir(db, f, ocupados) -> list[dict]:
     return out or [_linea(f, r, 'sin cambio', motivo='ya está como en el PDF')]
 
 
+def _sql_linea(f, r, accion, campo, antes, despues, motivo, sql):
+    return _linea(f, r, accion, campo, antes, despues, motivo) | {'_sql': sql}
+
+
+def _plan_ligado(db, f, r) -> list[dict]:
+    """Voltea la dirección de una fila ligada que el usuario confirmó y deshace
+    los vínculos que con la dirección real no tienen sentido."""
+    cat, sub, por_que = CONFIRMADOS_LIGADOS[r['id']]
+    nuevo = f['tipo_real']
+    out = []
+    if r['tipo'] != nuevo:
+        out.append(_linea(f, r, 'actualizado', 'tipo', r['tipo'], nuevo, por_que))
+    ignorar_prestamos = set()
+    for p in db.execute("SELECT * FROM est_prestamos WHERE movimiento_id=?", (r['id'],)).fetchall():
+        # Un préstamo que diste empieza con dinero que sale; uno que te dieron, con dinero que entra.
+        if (p['direccion'] == 'OTORGADO') == (nuevo == 'GASTO'):
+            continue
+        ignorar_prestamos.add(p['id'])
+        for d in db.execute("""SELECT d.movimiento_id, m.descripcion, m.categoria FROM est_prestamo_devoluciones d
+                               JOIN est_movimientos m ON m.id = d.movimiento_id WHERE d.prestamo_id=?""",
+                            (p['id'],)).fetchall():
+            sql = [("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=?", (d['movimiento_id'],))]
+            if d['categoria'] == 'PRESTAMOS':
+                sql.append(("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Transferencia recibida' "
+                            "WHERE id=?", (d['movimiento_id'],)))
+            out.append(_sql_linea(f, r, 'desligado', 'devolución', d['movimiento_id'], '',
+                                  f'devolución ({d["descripcion"]}) de un préstamo que no existió; queda en Sin conciliar', sql))
+        out.append(_sql_linea(f, r, 'préstamo borrado', 'préstamo', f'{p["contraparte"]} ${abs(p["monto"]):,.2f}', '',
+                              f'no fue préstamo: el PDF dice que el dinero {"entró" if nuevo == "INGRESO" else "salió"}',
+                              [("DELETE FROM est_prestamos WHERE id=?", (p['id'],))]))
+    if nuevo == 'GASTO':
+        for d in db.execute("""SELECT d.prestamo_id, p.contraparte, p.direccion FROM est_prestamo_devoluciones d
+                               JOIN est_prestamos p ON p.id = d.prestamo_id WHERE d.movimiento_id=?""", (r['id'],)).fetchall():
+            if d['direccion'] == 'OTORGADO':
+                out.append(_sql_linea(f, r, 'desligado', 'devolución', f'préstamo a {d["contraparte"]}', '',
+                                      'un dinero que sale no es la devolución de un préstamo que diste',
+                                      [("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=?", (r['id'],))]))
+        tabla_mala = 'est_expense_lote_depositos'
+    else:
+        tabla_mala = 'est_expense_lote_gastos'
+    if db.execute(f"SELECT 1 FROM {tabla_mala} WHERE movimiento_id=?", (r['id'],)).fetchone():
+        out.append(_sql_linea(f, r, 'desligado', 'lote de expense', tabla_mala.rsplit('_', 1)[1], '',
+                              'con la dirección real no es ' + ('depósito' if nuevo == 'GASTO' else 'gasto') + ' del lote',
+                              [(f"DELETE FROM {tabla_mala} WHERE movimiento_id=?", (r['id'],))]))
+    if cat is None:
+        from . import prestamos
+        persona = DEVOLUCION_DE[r['id']]
+        ya = db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (r['id'],)).fetchone()
+        abiertos = [p for p in prestamos.listar(db) if p['persona'].strip().lower() == persona.lower()
+                    and p['id'] not in ignorar_prestamos and p['pendiente'] >= abs(r['monto']) - 0.01
+                    and not p['perdido_fecha']]
+        antes = [p for p in abiertos if (p['fecha'] or '')[:10] <= f['fecha']]
+        p = max(antes, key=lambda p: p['fecha']) if antes else (min(abiertos, key=lambda p: p['fecha']) if abiertos else None)
+        if ya:
+            cat, sub = 'PRESTAMOS', ''
+        elif p:
+            cat, sub = 'PRESTAMOS', ''
+            out.append(_sql_linea(f, r, 'ligado', 'devolución', '', f'préstamo a {persona} del {p["fecha"][:10]} '
+                                  f'(${p["monto"]:,.2f}, pendiente ${p["pendiente"]:,.2f})', por_que,
+                                  [("INSERT OR IGNORE INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) "
+                                    "VALUES (?,?,datetime('now'))", (p['id'], r['id']))]))
+        else:
+            cat, sub = 'FINANZAS', 'Reembolso compartido'
+    cambios = {}
+    _cambiar_categoria(cambios, (r['categoria'] or '', r['subcategoria'] or ''), (cat, sub))
+    out += [_linea(f, r, 'actualizado', c, r[c], v, por_que) for c, v in cambios.items()]
+    return out or [_linea(f, r, 'sin cambio', motivo='ya está como en el PDF')]
+
+
 # ── SOBRA_EN_APP ─────────────────────────────────────────────────────────────
 
 def _gemelo(db, r, ids):
@@ -249,11 +339,40 @@ def _gemelo(db, r, ids):
     return None
 
 
+def _ids_duplicado(f) -> list[int]:
+    return [int(x) for x in re.findall(r'\d+', (re.search(r'posible duplicado de id ([\d,\s]+)', f['nota']) or [''])[0])]
+
+
+def _plan_religar(db, f, r) -> list[dict]:
+    """Duplicado ligado: el vínculo pasa al gemelo (que no tenga ya uno) y la copia se borra."""
+    gemelos = [g for g in (db.execute("SELECT * FROM est_movimientos WHERE id=?", (i,)).fetchone()
+                           for i in _ids_duplicado(f)) if g]
+    gemelos = [g for g in gemelos if g['banco'] == r['banco'] and abs(abs(g['monto']) - abs(r['monto'])) < 0.01
+               and not _referenciado(db, g['id'])]
+    if not gemelos:
+        return [_linea(f, r, 'pendiente revisión', motivo='duplicado ligado, pero ningún gemelo libre para pasarle el vínculo')]
+    g = gemelos[0]
+    sql = [(f"UPDATE {t} SET movimiento_id=? WHERE movimiento_id=?", (g['id'], r['id'])) for t in _TABLAS_LIGA]
+    if r['viaje_id'] is not None and g['viaje_id'] is None:
+        sql.append(("UPDATE est_movimientos SET viaje_id=? WHERE id=?", (r['viaje_id'], g['id'])))
+    out = [_sql_linea(f, r, 'religado', 'vínculo', r['id'], g['id'], f'el vínculo pasa a id {g["id"]} ({g["descripcion"]})', sql)]
+    if (r['categoria'], r['tipo']) != (g['categoria'], g['tipo']) and r['categoria'] == 'PRESTAMOS':
+        out.append(_linea(f, g, 'actualizado', 'categoria', g['categoria'], 'PRESTAMOS', 'hereda la categoría de su copia ligada'))
+        if (g['subcategoria'] or '') != (r['subcategoria'] or ''):
+            out.append(_linea(f, g, 'actualizado', 'subcategoria', g['subcategoria'], r['subcategoria'] or '',
+                              'hereda la categoría de su copia ligada'))
+    out.append(_linea(f, r, 'borrado', 'fila', f'{r["descripcion"]} [{r["tipo"]} {r["categoria"]}]', '',
+                      f'duplicado de id {g["id"]} (no está en el PDF)'))
+    return out
+
+
 def _plan_sobra(db, f, ocupados) -> list[dict]:
     r = _buscar(db, f)
     if not r:
         return [_linea(f, None, 'sin cambio', motivo='ya no está en la base')]
     ocupados.add(r['id'])
+    if r['id'] in RELIGAR_DUPLICADOS:
+        return _plan_religar(db, f, r)
     if (motivo := _intocable(db, r)):
         return [_linea(f, r, 'pendiente revisión', motivo=motivo)]
     if abs(r['monto']) < 0.005:
@@ -418,6 +537,10 @@ def aplicar(db, lineas: list[dict] | None = None) -> list[dict]:
     el respaldo antes y el commit después."""
     lineas = plan(db) if lineas is None else lineas
     for l in lineas:
+        for sql, args in l.get('_sql', ()):
+            db.execute(sql, args)
+        if '_sql' in l:
+            continue
         if l['accion'] == 'actualizado':
             db.execute(f"UPDATE est_movimientos SET {l['campo']}=? WHERE id=?", (l['valor_despues'], l['id_app']))
         elif l['accion'] == 'borrado':

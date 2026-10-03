@@ -111,7 +111,9 @@ def test_borra_solo_lo_seguro(test_db):
         aud.aplicar(db)
         assert _fila(db, 1658) is None                  # monto 0.00
         assert _fila(db, 1810) is None                  # duplicado confirmado de 1816
-        assert _fila(db, 2077) is not None and (2077, 'pendiente revisión') in plan   # ligado a un préstamo
+        # Duplicado ligado (Cornelius): «lo que dice Cowork» -> el préstamo pasa al gemelo y la copia se borra.
+        assert _fila(db, 2077) is None and (2077, 'religado') in plan
+        assert db.execute("SELECT movimiento_id FROM est_prestamos WHERE contraparte='Cornelius'").fetchone()[0] == 2130
         assert _fila(db, 1881) is not None and (1881, 'pendiente revisión') in plan   # su gemelo no tiene el viaje
         assert _fila(db, 2003) is not None              # el «gemelo» no existe: no se borra
         assert _fila(db, 2031) is not None              # Steam: real, se queda
@@ -175,3 +177,46 @@ def test_endpoint_simula_y_aplica_con_respaldo(test_db):
         assert isinstance(j['cuadre'], list)
         with database.get_db() as db:
             assert _fila(db, 1616)['tipo'] == 'INGRESO'
+
+
+def _prestamo(db, persona, monto, fecha, mid, direccion='OTORGADO'):
+    return db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                         VALUES (?, ?, ?, ?, '', ?, datetime('now'))""", (persona, direccion, monto, fecha, mid)).lastrowid
+
+
+def _devolucion(db, pid, mid):
+    db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,datetime('now'))",
+               (pid, mid))
+
+
+def test_ligados_confirmados_por_el_usuario(test_db):
+    with database.get_db() as db:
+        _sembrar(db)
+        # 3351 ($7,000 a su papá) estaba como devolución de un préstamo que él dio.
+        papa = _prestamo(db, 'Papá', 7000, '2023-12-01', None)
+        _devolucion(db, papa, 3351)
+        # 2999 ($1,000 de Judi) era el origen de un «préstamo» a Judi; Judi tiene otro abierto.
+        falso = _prestamo(db, 'Judi', 1000, '2025-03-24', 2999)
+        abierto = _prestamo(db, 'Judi', 3000, '2025-02-01', None)
+        # 3004 (jefe de famil repo) era el origen de un préstamo con una devolución de $2,512.
+        repo = _prestamo(db, 'Judi', 2513, '2025-03-27', 3004)
+        dev = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                            VALUES ('2025-04-02', 'PAGO CUENTA DE TERCERO BNET REPO', 2512, 'BBVA_DEB', 'PRESTAMOS', '', 'INGRESO')""").lastrowid
+        _devolucion(db, repo, dev)
+        # 2303 (expense que regresó) estaba como depósito de un lote.
+        db.execute("INSERT INTO est_expense_lote_depositos (lote_id, movimiento_id, created_at) VALUES (1, 2303, datetime('now'))")
+        # 1831 duplicado ligado como devolución -> pasa al gemelo 1847.
+        _devolucion(db, abierto, 1831)
+        aud.aplicar(db)
+        fila = lambda i: tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        liga = lambda i: db.execute("SELECT prestamo_id FROM est_prestamo_devoluciones WHERE movimiento_id=?", (i,)).fetchone()
+        assert fila(3351) == ('GASTO', 'PRESTAMOS', '') and liga(3351) is None
+        assert fila(2999)[0] == 'INGRESO' and liga(2999)[0] == abierto
+        assert not db.execute("SELECT 1 FROM est_prestamos WHERE id IN (?, ?)", (falso, repo)).fetchone()
+        assert fila(3004) == ('INGRESO', 'FINANZAS', 'Transferencia recibida')
+        assert liga(dev) is None and fila(dev) == ('INGRESO', 'FINANZAS', 'Transferencia recibida')
+        assert fila(2124) == ('GASTO', 'FINANZAS', 'Retiro efectivo')
+        assert fila(2303) == ('GASTO', 'FINANZAS', 'Reembolsable')
+        assert not db.execute("SELECT 1 FROM est_expense_lote_depositos WHERE movimiento_id=2303").fetchone()
+        assert _fila(db, 1831) is None and liga(1847)[0] == abierto
+        assert {l['accion'] for l in aud.plan(db)} <= {'sin cambio', 'pendiente revisión'}

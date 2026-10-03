@@ -548,6 +548,11 @@ def registrar_manuales(db) -> tuple[int, int]:
             db.execute("UPDATE est_movimientos SET tipo='GASTO' WHERE id=?", (m['id'],))
         if not m or db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (m['id'],)).fetchone():
             continue
+        # Ya registrado sobre otra copia del mismo movimiento (la auditoría
+        # contra el PDF borra duplicados y pasa el préstamo al gemelo).
+        if db.execute("""SELECT 1 FROM est_prestamos WHERE contraparte=? AND substr(fecha,1,10)=?
+                           AND ABS(ABS(monto) - ?) < 0.005""", (persona, fecha, monto)).fetchone():
+            continue
         db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado' WHERE id=?", (m['id'],))
         db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
                       VALUES (?, 'OTORGADO', ?, ?, '', ?, ?)""",
