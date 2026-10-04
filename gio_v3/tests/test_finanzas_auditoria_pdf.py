@@ -221,3 +221,21 @@ def test_ligados_confirmados_por_el_usuario(test_db):
         assert not db.execute("SELECT 1 FROM est_expense_lote_depositos WHERE movimiento_id=2303").fetchone()
         assert _fila(db, 1831) is None and liga(1847)[0] == abierto
         assert {l['accion'] for l in aud.plan(db)} <= {'sin cambio', 'pendiente revisión'}
+
+
+def test_periodo_y_cuadre_cuentan_la_devolucion_como_abono(test_db):
+    from app import create_app
+    app = create_app()
+    app.config['TESTING'] = True
+    with database.get_db() as db:
+        for desc in ('SPEI ENVIADO STP 0080126AHORRO GIO', 'SPEI DEVUELTOSTP 0080126AHORRO GIO'):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2026-01-08', ?, 42200, 'BBVA_DEB', 'FINANZAS', 'Entre cuentas propias',
+                                  'MOVIMIENTO_INTERNO')""", (desc,))
+        db.commit()
+    with app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess['app_ok'] = True
+            sess['fin_ok'] = True
+        j = c.get('/finanzas/estados/admin/auditoria-pdf/periodo?banco=BBVA_DEB&desde=2026-01-07&hasta=2026-02-06').get_json()
+    assert (j['abonos'], j['cargos']) == (42200.0, 42200.0)

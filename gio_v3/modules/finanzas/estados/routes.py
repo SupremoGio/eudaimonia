@@ -3468,6 +3468,23 @@ def auditoria_pdf_admin():
                     'cuadre': cuadre and [c for c in cuadre if not c['cuadra']]})
 
 
+@estados_bp.route('/admin/auditoria-pdf/periodo')
+def auditoria_pdf_periodo():
+    """Solo lectura: los movimientos de la app de un banco en un periodo, con
+    el lado (abono/cargo) y los totales que usa el cuadre contra el PDF.
+    ?banco=BBVA_DEB&desde=2026-02-07&hasta=2026-03-06"""
+    if not _ok(): return _locked()
+    from . import auditoria_pdf as _aud
+    banco, desde, hasta = request.args.get('banco', 'BBVA_DEB'), request.args.get('desde'), request.args.get('hasta')
+    if not desde or not hasta:
+        return jsonify({'error': 'faltan desde y hasta (AAAA-MM-DD)'}), 400
+    with get_db() as db:
+        movs = _aud.movimientos_periodo(db, banco, desde, hasta)
+    tot = lambda lado: round(sum(m['monto'] for m in movs if m['lado'] == lado), 2)
+    return jsonify({'banco': banco, 'desde': desde, 'hasta': hasta,
+                    'abonos': tot('abono'), 'cargos': tot('cargo'), 'movimientos': movs})
+
+
 @estados_bp.route('/admin/pedidos-amazon')
 def pedidos_amazon_admin():
     """Solo lectura: cada pedido de Amazon con el cargo que le tocó y, si se

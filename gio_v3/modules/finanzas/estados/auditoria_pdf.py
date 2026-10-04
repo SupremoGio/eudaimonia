@@ -568,7 +568,20 @@ def aplicar(db, lineas: list[dict] | None = None) -> list[dict]:
 def _es_abono(r) -> bool:
     if r['banco'] == 'BBVA_TDC':
         return r['monto'] < 0 or r['tipo'] == 'INGRESO'
-    return r['tipo'] == 'INGRESO' or (r['tipo'] == 'INVERSION' and (r['subcategoria'] or '') == 'RETIRO')
+    d = (r['descripcion'] or '').upper()
+    return (r['tipo'] == 'INGRESO' or (r['tipo'] == 'INVERSION' and (r['subcategoria'] or '') == 'RETIRO')
+            or (r['tipo'] == 'MOVIMIENTO_INTERNO' and ('DEVUELTO' in d or 'RECIBIDO' in d)))
+
+
+def movimientos_periodo(db, banco: str, desde: str, hasta: str) -> list[dict]:
+    """Lo que tiene la app en un periodo, del lado (abono/cargo) que cuenta el
+    cuadre: para comparar renglón por renglón contra el PDF."""
+    rows = db.execute("""SELECT id, fecha, descripcion, monto, tipo, categoria, subcategoria, banco
+                          FROM est_movimientos WHERE banco=? AND substr(fecha,1,10) BETWEEN ? AND ?
+                          ORDER BY fecha, id""", (banco, desde, hasta)).fetchall()
+    return [{'id': r['id'], 'fecha': r['fecha'][:10], 'lado': 'abono' if _es_abono(r) else 'cargo',
+             'monto': round(abs(r['monto']), 2), 'descripcion': r['descripcion'], 'tipo': r['tipo'],
+             'categoria': f"{r['categoria']}/{r['subcategoria'] or ''}"} for r in rows]
 
 
 def cuadre(db) -> list[dict]:
@@ -582,7 +595,7 @@ def cuadre(db) -> list[dict]:
         m = re.match(r'(\d{4}-\d{2}-\d{2}) al (\d{4}-\d{2}-\d{2})', e['periodo'])
         if not m:
             continue
-        rows = db.execute("""SELECT banco, monto, tipo, subcategoria FROM est_movimientos
+        rows = db.execute("""SELECT banco, monto, tipo, subcategoria, descripcion FROM est_movimientos
                              WHERE banco=? AND substr(fecha,1,10) BETWEEN ? AND ?""",
                           (e['banco'], m.group(1), m.group(2))).fetchall()
         ab = round(sum(abs(r['monto']) for r in rows if _es_abono(r)), 2)
