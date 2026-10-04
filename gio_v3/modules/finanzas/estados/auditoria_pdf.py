@@ -61,6 +61,18 @@ SOBRA_DECIDIDO = {
     2031: ('conservar', 'Steam: un juego que compró'),
     1306: ('conservar', 'compra a 12 MSI de los anillos de los Corners (no cuenta como gasto; '
                         'el gasto lo llevan las mensualidades)'),
+    19: ('conservar', 'el usuario pidió dejarlo así (2026-10-04)'),
+    20: ('conservar', 'el usuario pidió dejarlo así (2026-10-04)'),
+    68: ('conservar', 'el usuario pidió dejarlo así (2026-10-04)'),
+}
+
+# Compras que se cancelaron y se reembolsaron (banco, fecha, monto): el cargo
+# se crea y, con su reembolso, quedan como movimiento interno (ni gasto ni
+# ingreso). Palacio de Hierro, cafetera Nespresso: dos intentos el 10 y 12 de
+# nov-2025, reembolsados el 13-nov (el usuario mandó el comprobante).
+COMPRAS_CANCELADAS = {
+    ('BBVA_TDC', '2025-11-10', 2345.0): 'Palacio de Hierro: intento de compra cancelado, reembolsado el 13-nov',
+    ('BBVA_TDC', '2025-11-12', 2345.0): 'Palacio de Hierro: intento de compra cancelado, reembolsado el 13-nov',
 }
 
 # Envíos que regresaron (id del envío): el envío y su devolución quedan como
@@ -116,6 +128,9 @@ CORRECCIONES_CUADRE = {
     2085: {'descripcion': ('PAGO CUENTA DE TERCERO', 'PAGO CUENTA DE TERCERO BNET TACOS')},
     # En el PDF es del 7-may: pasa al estado de mayo (abr +$300 / may -$300).
     2059: {'fecha': ('2026-05-06', '2026-05-07')},
+    # «capital» a Judith y los $2,500 que regresaron el mismo día: ida y vuelta.
+    1749: {'subcategoria': ('Retiro efectivo', 'Entre cuentas propias')},
+    1750: {'subcategoria': ('Reembolso compartido', 'Entre cuentas propias')},
     # Retiros sin tarjeta: efectivo, no un gasto en ese comercio.
     1732: {'categoria': ('COMIDA_FUERA', 'FINANZAS'), 'subcategoria': ('Restaurante', 'Retiro efectivo')},
     1980: {'categoria': ('COMIDA_FUERA', 'FINANZAS'), 'subcategoria': ('Restaurante', 'Retiro efectivo')},
@@ -517,6 +532,7 @@ def _plan_falta(db, f, ocupados, usados) -> list[dict]:
 # ── Plan / aplicar ───────────────────────────────────────────────────────────
 
 def plan(db) -> list[dict]:
+    _REEMBOLSOS_TOMADOS.clear()
     todas = filas()
     ocupados: set = set()
     out = []
@@ -525,6 +541,8 @@ def plan(db) -> list[dict]:
             out += _plan_corregir(db, f, ocupados)
         elif f['estado'] == 'SOBRA_EN_APP':
             out += _plan_sobra(db, f, ocupados)
+        elif f['estado'] == 'DUDA' and (f['banco'], f['fecha'], _monto(f)) in COMPRAS_CANCELADAS:
+            out += _plan_compra_cancelada(db, f)
         elif f['estado'] == 'DUDA':
             r = _buscar(db, f) if f['id_app'] else None
             if r:
@@ -618,6 +636,45 @@ def _plan_correcciones_cuadre(db, borrados) -> list[dict]:
                 continue
         out += [_linea(f, r, 'actualizado', c, r[c], v, 'revisión contra el PDF (feb-may 2026)') for c, v in cambios.items()]
     return out
+
+
+_NEUTRO = ('MOVIMIENTO_INTERNO', 'FINANZAS', 'Entre cuentas propias')
+
+
+def _plan_compra_cancelada(db, f) -> list[dict]:
+    por_que = COMPRAS_CANCELADAS[(f['banco'], f['fecha'], _monto(f))]
+    desc = desc_real(f)
+    out = []
+    ya = db.execute("""SELECT id FROM est_movimientos WHERE banco=? AND substr(fecha,1,10)=? AND ABS(monto - ?) < 0.005
+                         AND tipo='MOVIMIENTO_INTERNO'""", (f['banco'], f['fecha'], _monto(f))).fetchone()
+    if ya:
+        out.append(_linea(f, None, 'sin cambio', motivo='ya está el cargo de la compra cancelada'))
+    else:
+        nueva = dict(descripcion=desc, monto=_monto(f), tipo=_NEUTRO[0], categoria=_NEUTRO[1],
+                     subcategoria=_NEUTRO[2], periodo=_periodo_tdc(f['fecha']))
+        out.append(_linea(f, None, 'creado', 'fila', '', f'{desc} [{_NEUTRO[0]} {_NEUTRO[1]}/{_NEUTRO[2]}] '
+                                                          f'{_monto(f):.2f}', por_que) | {'_nueva': nueva})
+    # Su reembolso: un abono del mismo monto en los 20 días siguientes que no sea ya neutro.
+    usados = {l['id_app'] for l in out}
+    for r in db.execute("""SELECT * FROM est_movimientos WHERE banco=? AND ABS(ABS(monto) - ?) < 0.005
+                            AND substr(fecha,1,10) BETWEEN ? AND date(?, '+20 days')
+                            AND (monto < 0 OR tipo='INGRESO') ORDER BY fecha, id""",
+                         (f['banco'], _monto(f), f['fecha'], f['fecha'])).fetchall():
+        if (r['tipo'], r['categoria'], r['subcategoria'] or '') == _NEUTRO:
+            continue
+        if any(r['id'] == x for x in usados) or r['id'] in _REEMBOLSOS_TOMADOS:
+            continue
+        _REEMBOLSOS_TOMADOS.add(r['id'])
+        g = {'banco': f['banco'], 'fecha': r['fecha'][:10], 'monto': abs(r['monto']), 'estado': 'AJUSTE',
+             'nota': por_que, 'id_app': str(r['id'])}
+        for campo, valor in zip(('tipo', 'categoria', 'subcategoria'), _NEUTRO):
+            if (r[campo] or '') != valor:
+                out.append(_linea(g, r, 'actualizado', campo, r[campo], valor, 'reembolso de la compra cancelada'))
+        break
+    return out
+
+
+_REEMBOLSOS_TOMADOS: set = set()
 
 
 def resumen(lineas: list[dict]) -> dict:

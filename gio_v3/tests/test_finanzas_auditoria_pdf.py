@@ -293,3 +293,21 @@ def test_correcciones_cuadre_feb_may_2026(test_db):
         assert fila(2077) is None
         assert db.execute("SELECT movimiento_id FROM est_prestamos WHERE contraparte='Cornelius'").fetchone()[0] is None
         assert {l['accion'] for l in aud.plan(db) if l['estado_auditoria'] == 'CUADRE'} <= {'sin cambio'}
+
+
+def test_compras_canceladas_palacio(test_db):
+    with database.get_db() as db:
+        for i in (1, 2):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES ('2025-11-13', ?, -2345, 'BBVA_TDC', 'PAGO', '', 'PAGO')""",
+                       (f'ELPALACIOHIERRO COM DEVOLUCION {i}',))
+        aud.aplicar(db)
+        rows = db.execute("""SELECT fecha, monto, tipo, subcategoria FROM est_movimientos
+                             WHERE banco='BBVA_TDC' AND ABS(ABS(monto) - 2345) < 0.01 ORDER BY fecha, monto""").fetchall()
+        assert [tuple(r) for r in rows] == [
+            ('2025-11-10', 2345.0, 'MOVIMIENTO_INTERNO', 'Entre cuentas propias'),
+            ('2025-11-12', 2345.0, 'MOVIMIENTO_INTERNO', 'Entre cuentas propias'),
+            ('2025-11-13', -2345.0, 'MOVIMIENTO_INTERNO', 'Entre cuentas propias'),
+            ('2025-11-13', -2345.0, 'MOVIMIENTO_INTERNO', 'Entre cuentas propias')]
+        assert not [l for l in aud.plan(db) if l['fecha'].startswith('2025-11-1') and l['accion'] not in ('sin cambio',)
+                    and abs(l['monto'] - 2345) < 0.01]
