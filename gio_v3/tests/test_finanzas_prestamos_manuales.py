@@ -273,3 +273,14 @@ def test_aurora_es_regalo(test_db):
         pr.registrar_manuales(db)
         assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
         assert _cat(db, m) == ('FAMILIA_REGALOS', 'Regalos')
+
+
+def test_nomina_de_empleada_prestada_y_cerrada(test_db):
+    with database.get_db() as db:
+        p = _ins(db, '2024-09-14', 'PAGO CUENTA DE TERCERO BNET NOM Q17', 3666.0, 'GASTO', 'FINANZAS', 'Transferencia')
+        d = _ins(db, '2024-09-30', 'PAGO CUENTA DE TERCERO BNET GRACIAS', 3600.0, 'INGRESO', 'FINANZAS', 'Transferencia')
+        db.commit()
+        pr.registrar_manuales(db)       # una sola pasada (la migración corre una vez)
+        [x] = [x for x in pr.listar(db) if x['movimiento_id'] == p]
+        assert (x['persona'], x['estado'], x['pendiente']) == ('Empleada', 'Pagado', 0)
+        assert _cat(db, d) == ('PRESTAMOS', '')
