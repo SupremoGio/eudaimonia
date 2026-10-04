@@ -239,3 +239,21 @@ def test_periodo_y_cuadre_cuentan_la_devolucion_como_abono(test_db):
             sess['fin_ok'] = True
         j = c.get('/finanzas/estados/admin/auditoria-pdf/periodo?banco=BBVA_DEB&desde=2026-01-07&hasta=2026-02-06').get_json()
     assert (j['abonos'], j['cargos']) == (42200.0, 42200.0)
+
+
+def test_sobran_por_cuadre_feb_2026(test_db):
+    with database.get_db() as db:
+        ins = lambda i, d, m, t, c: db.execute(
+            """INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+               VALUES (?, ?, ?, ?, 'BBVA_DEB', ?, '', ?)""", (i, '2026-03-03', d, m, c, t))
+        ins(1805, 'BNET MARTHA PAGO CUENTA DE TERCERO BNET', 600, 'INGRESO', 'FAMILIA_REGALOS')
+        ins(1806, 'PAGO CUENTA DE TERCERO', 250, 'INGRESO', 'FAMILIA_REGALOS')
+        ins(1807, 'PAGO CUENTA DE TERCERO BNET COLECTA MARTHA', 600, 'GASTO', 'FAMILIA_REGALOS')
+        ins(1808, 'PAGO CUENTA DE TERCERO BNET MARTHA', 250, 'INGRESO', 'FAMILIA_REGALOS')
+        ins(1812, 'BNET P RETIRO SIN TARJETA ******7852', 1500, 'GASTO', 'FAMILIA_REGALOS')
+        ins(1817, 'RETIRO SIN TARJETA', 1500, 'GASTO', 'EXPENSE')
+        db.execute("INSERT INTO est_expense_lote_gastos (lote_id, movimiento_id, created_at) VALUES (1, 1817, datetime('now'))")
+        aud.aplicar(db)
+        quedan = {r[0] for r in db.execute("SELECT id FROM est_movimientos WHERE id BETWEEN 1805 AND 1817")}
+        assert quedan == {1805, 1808, 1812}
+        assert db.execute("SELECT movimiento_id FROM est_expense_lote_gastos").fetchone()[0] == 1812

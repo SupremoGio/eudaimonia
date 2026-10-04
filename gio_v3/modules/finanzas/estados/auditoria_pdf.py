@@ -91,6 +91,15 @@ DEVOLUCION_DE = {2999: 'Judi'}
 # vínculo pasa al gemelo y la copia se borra.
 RELIGAR_DUPLICADOS = {1831, 2077}
 
+# Sobrantes que encontró el cuadre por estado de cuenta (no venían en los CSV):
+# id que sobra -> (id de la copia buena, por qué). Feb-2026 cuadraba +$250 en
+# abonos y +$2,100 en cargos contra el PDF: justo estas tres filas.
+SOBRAN_POR_CUADRE = {
+    1806: (1808, 'abono de $250 del 3-mar repetido («BNET MARTHA», id 1808)'),
+    1807: (1805, 'el PDF solo trae el abono de $600 de Martha del 3-mar (id 1805), no un cargo'),
+    1817: (1812, 'retiro de $1,500 del 4-mar repetido (el de la colecta, id 1812)'),
+}
+
 _TABLAS_LIGA = ('est_prestamos', 'est_prestamo_devoluciones', 'est_expense_lote_gastos', 'est_expense_lote_depositos')
 
 # Sugerencia de categoría que NO se aplica porque contradice lo que el
@@ -483,6 +492,7 @@ def plan(db) -> list[dict]:
         if f['estado'] == 'FALTA_EN_APP':
             out += _plan_falta(db, f, ocupados, usados)
     out += _plan_devoluciones(db)
+    out += _plan_sobran_por_cuadre(db)
     out.sort(key=lambda x: (x['banco'], x['fecha'], x['id_app'] or 0))
     return out
 
@@ -508,6 +518,30 @@ def _plan_devoluciones(db) -> list[dict]:
         _cambiar_categoria(cambios, (d['categoria'] or '', d['subcategoria'] or ''), ('FINANZAS', 'Entre cuentas propias'))
         out += [_linea(f, d, 'actualizado', c, d[c], v, 'devolución: ' + por_que) for c, v in cambios.items()] \
             or [_linea(f, d, 'sin cambio', motivo='devolución ya está como Entre cuentas propias')]
+    return out
+
+
+def _plan_sobran_por_cuadre(db) -> list[dict]:
+    out = []
+    for mid, (gid, por_que) in SOBRAN_POR_CUADRE.items():
+        r = db.execute("SELECT * FROM est_movimientos WHERE id=?", (mid,)).fetchone()
+        if not r:
+            continue
+        f = {'banco': r['banco'], 'fecha': r['fecha'][:10], 'monto': abs(r['monto']), 'estado': 'CUADRE',
+             'nota': por_que, 'id_app': str(mid)}
+        g = db.execute("SELECT * FROM est_movimientos WHERE id=?", (gid,)).fetchone()
+        if not g:
+            out.append(_linea(f, r, 'pendiente revisión', motivo=f'no está la copia buena (id {gid})'))
+            continue
+        sql = []
+        if _referenciado(db, mid):
+            if _referenciado(db, gid) or (r['tipo'] == 'INGRESO') != (g['tipo'] == 'INGRESO'):
+                out.append(_linea(f, r, 'pendiente revisión', motivo=por_que + '; está ligada a un préstamo o expense'))
+                continue
+            sql = [(f"UPDATE {t} SET movimiento_id=? WHERE movimiento_id=?", (gid, mid)) for t in _TABLAS_LIGA]
+            out.append(_sql_linea(f, r, 'religado', 'vínculo', mid, gid, f'el vínculo pasa a id {gid}', sql))
+        out.append(_linea(f, r, 'borrado', 'fila', f'{r["descripcion"]} [{r["tipo"]} {r["categoria"]}/'
+                                                    f'{r["subcategoria"] or ""}]', '', por_que))
     return out
 
 
