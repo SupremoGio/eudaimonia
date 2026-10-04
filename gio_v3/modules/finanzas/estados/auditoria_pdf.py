@@ -131,11 +131,19 @@ CORRECCIONES_CUADRE = {
     # «capital» a Judith y los $2,500 que regresaron el mismo día: ida y vuelta.
     1749: {'subcategoria': ('Retiro efectivo', 'Entre cuentas propias')},
     1750: {'subcategoria': ('Reembolso compartido', 'Entre cuentas propias')},
+    # «metí dinero para invertir»: lo que llegó por STP el 18-may se fue a GBM ese día.
+    2100: {'categoria': ('NOMINA', 'FINANZAS'), 'subcategoria': ('Bono', 'Entre cuentas propias')},
     # Retiros sin tarjeta: efectivo, no un gasto en ese comercio.
     1732: {'categoria': ('COMIDA_FUERA', 'FINANZAS'), 'subcategoria': ('Restaurante', 'Retiro efectivo')},
     1980: {'categoria': ('COMIDA_FUERA', 'FINANZAS'), 'subcategoria': ('Restaurante', 'Retiro efectivo')},
     2108: {'categoria': ('SUPER', 'FINANZAS'), 'subcategoria': ('Súper', 'Retiro efectivo')},
 }
+
+# Faltantes que encontró el cuadre (banco, fecha, monto, descripción, categoría, subcategoría):
+# jul-2024 tenía $99 menos que el PDF; ese día hubo dos cargos de $99.
+CREAR_POR_CUADRE = (
+    ('BBVA_TDC', '2024-07-28', 99.0, 'BURGER KING AVILA C', 'COMIDA_FUERA', 'Fast Food'),
+)
 
 # Duplicados que tienen un préstamo encima y cuyo gemelo ya tiene el suyo: el
 # préstamo se queda (sin movimiento) y la copia se borra. 2077: «BNET TACOS …
@@ -554,6 +562,7 @@ def plan(db) -> list[dict]:
             out += _plan_falta(db, f, ocupados, usados)
     out += _plan_devoluciones(db)
     out += _plan_sobran_por_cuadre(db)
+    out += _plan_crear_por_cuadre(db)
     out += _plan_correcciones_cuadre(db, {l['id_app'] for l in out if l['accion'] == 'borrado'})
     out.sort(key=lambda x: (x['banco'], x['fecha'], x['id_app'] or 0))
     return out
@@ -604,6 +613,22 @@ def _plan_sobran_por_cuadre(db) -> list[dict]:
             out.append(_sql_linea(f, r, 'religado', 'vínculo', mid, gid, f'el vínculo pasa a id {gid}', sql))
         out.append(_linea(f, r, 'borrado', 'fila', f'{r["descripcion"]} [{r["tipo"]} {r["categoria"]}/'
                                                     f'{r["subcategoria"] or ""}]', '', por_que))
+    return out
+
+
+def _plan_crear_por_cuadre(db) -> list[dict]:
+    out = []
+    for banco, fecha, monto, desc, cat, sub in CREAR_POR_CUADRE:
+        f = {'banco': banco, 'fecha': fecha, 'monto': monto, 'estado': 'CUADRE', 'nota': 'faltaba según el PDF',
+             'id_app': ''}
+        if db.execute("SELECT 1 FROM est_movimientos WHERE banco=? AND substr(fecha,1,10)=? AND descripcion=?",
+                      (banco, fecha, desc)).fetchone():
+            out.append(_linea(f, None, 'sin cambio', motivo='ya existe'))
+            continue
+        nueva = dict(descripcion=desc, monto=monto, tipo='GASTO', categoria=cat, subcategoria=sub,
+                     periodo=_periodo_tdc(fecha) if banco == 'BBVA_TDC' else None)
+        out.append(_linea(f, None, 'creado', 'fila', '', f'{desc} [GASTO {cat}/{sub}] {monto:.2f}', 'faltaba según el PDF')
+                   | {'_nueva': nueva})
     return out
 
 

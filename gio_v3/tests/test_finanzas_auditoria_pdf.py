@@ -311,3 +311,16 @@ def test_compras_canceladas_palacio(test_db):
             ('2025-11-13', -2345.0, 'MOVIMIENTO_INTERNO', 'Entre cuentas propias')]
         assert not [l for l in aud.plan(db) if l['fecha'].startswith('2025-11-1') and l['accion'] not in ('sin cambio',)
                     and abs(l['monto'] - 2345) < 0.01]
+
+
+def test_burger_king_y_dinero_a_gbm(test_db):
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES (2100, '2026-05-18', 'SPEI RECIBIDOSTP 646', 15305, 'BBVA_DEB', 'NOMINA', 'Bono', 'INGRESO')""")
+        aud.aplicar(db)
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=2100").fetchone()) == \
+            ('FINANZAS', 'Entre cuentas propias')
+        bk = db.execute("SELECT * FROM est_movimientos WHERE descripcion='BURGER KING AVILA C'").fetchall()
+        assert [(r['fecha'], r['monto'], r['subcategoria']) for r in bk] == [('2024-07-28', 99.0, 'Fast Food')]
+        aud.aplicar(db)
+        assert len(db.execute("SELECT 1 FROM est_movimientos WHERE descripcion='BURGER KING AVILA C'").fetchall()) == 1
