@@ -159,25 +159,27 @@ def descartar_duplicado(db, ids) -> None:
 
 
 def duplicados(db) -> list[dict]:
-    """Posibles duplicados entre movimientos de préstamo: mismo día y mismo
-    monto. Solo lectura: el usuario confirma y borra desde Movimientos, o
-    marca «No es duplicado» (descartar_duplicado)."""
+    """Posibles duplicados entre movimientos de préstamo: mismo día, mismo
+    monto y misma dirección. Un préstamo y su devolución del mismo día (el
+    usuario, 2026-10-04: le prestó $4,500 a Judith y se los regresó el 11/09)
+    no son duplicados: uno sale y el otro entra. Solo lectura: el usuario
+    confirma y borra desde Movimientos, o marca «No es duplicado»."""
     _tabla_descartados(db)
     vistos = {r[0] for r in db.execute("SELECT ids FROM est_duplicados_descartados")}
     grupos = db.execute("""
-        SELECT fecha, ABS(monto) AS monto, COUNT(*) AS n FROM est_movimientos
+        SELECT fecha, ABS(monto) AS monto, tipo, COUNT(*) AS n FROM est_movimientos
         WHERE categoria = 'PRESTAMOS' OR tipo IN ('PRESTAMO', 'COBRO_PRESTAMO')
-        GROUP BY fecha, ABS(monto) HAVING COUNT(*) > 1
+        GROUP BY fecha, ABS(monto), tipo HAVING COUNT(*) > 1
         ORDER BY fecha DESC
     """).fetchall()
     out = []
     for g in grupos:
         movs = db.execute("""
             SELECT id, fecha, descripcion, monto, tipo, categoria, banco FROM est_movimientos
-            WHERE fecha = ? AND ABS(monto) = ?
+            WHERE fecha = ? AND ABS(monto) = ? AND tipo = ?
               AND (categoria = 'PRESTAMOS' OR tipo IN ('PRESTAMO', 'COBRO_PRESTAMO'))
             ORDER BY id
-        """, (g['fecha'], g['monto'])).fetchall()
+        """, (g['fecha'], g['monto'], g['tipo'])).fetchall()
         if _llave(m['id'] for m in movs) in vistos:
             continue
         out.append({'fecha': g['fecha'], 'monto': round(float(g['monto']), 2),

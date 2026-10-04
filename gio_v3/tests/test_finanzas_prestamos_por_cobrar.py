@@ -318,3 +318,17 @@ def test_no_es_duplicado_ya_no_avisa(test_db):
                           VALUES ('2025-01-01', 'Z', 100, 'BBVA_DEB', 'PRESTAMOS', 'INGRESO')""")
             db.commit()
         assert len(cl.get('/finanzas/estados/api/prestamos/duplicados').get_json()) == 1
+
+
+def test_prestamo_y_su_devolucion_del_mismo_dia_no_son_duplicados(test_db):
+    """11/09/2026: le prestó $4,500 a Judith y se los regresó ese día."""
+    from modules.finanzas.estados import prestamos
+    with database.get_db() as db:
+        for d, t in (('PAGO CUENTA DE TERCERO BNET PRESTAMO', 'GASTO'),
+                     ('PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 'INGRESO')):
+            db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, tipo)
+                          VALUES ('2026-09-11', ?, 4500, 'BBVA_DEB', 'PRESTAMOS', ?)""", (d, t))
+        assert prestamos.duplicados(db) == []
+        prestamos.registrar_manuales(db)
+        p = next(p for p in prestamos.listar(db) if p['fecha'][:10] == '2026-09-11')
+        assert (p['persona'], p['estado'], [x['monto'] for x in p['devoluciones']]) == ('Judi', 'Pagado', [4500.0])
