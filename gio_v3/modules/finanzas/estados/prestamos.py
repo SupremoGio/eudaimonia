@@ -432,6 +432,17 @@ REGRESADOS = (
     ('2024-09-12', 13000.0, 'BNET DEUDA'),
 )
 
+# Préstamos que le hicieron a él y pagó (entrada, salida), ambos por BBVA: no
+# es dinero prestado a nadie, las dos quedan «Entre cuentas propias» (como
+# REGRESADOS). Si la salida estaba registrada como préstamo que él dio, se
+# borra; las devoluciones que tuviera ligadas vuelven a Sin conciliar.
+# 2026-10-04: los $7,000 «PRESTAMO GIO» del 16/06/2023 los regresó a su papá
+# (…1239), que se los había mandado el 10/06 («Transf a Giovany A»); el CSV
+# de préstamos lo tenía como préstamo a Judi.
+PRESTAMOS_RECIBIDOS_PAGADOS = (
+    (('2023-06-10', 7000.0, 'TRANSF A GIOVANY'), ('2023-06-16', 7000.0, 'PRESTAMO GIO')),
+)
+
 
 def _mov(db, fecha, monto, texto, tipo='GASTO'):
     return db.execute("""SELECT id, fecha, monto FROM est_movimientos
@@ -589,6 +600,25 @@ def registrar_manuales(db) -> tuple[int, int]:
                    (m['id'],))
         db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
                    (p['id'], m['id'], ahora()))
+    for (e_fecha, e_monto, e_texto), (s_fecha, s_monto, s_texto) in PRESTAMOS_RECIBIDOS_PAGADOS:
+        sal = next((x for t in ('GASTO', 'PRESTAMO', 'PAGO') if (x := _mov(db, s_fecha, s_monto, s_texto, t))), None)
+        ent = db.execute("""SELECT id FROM est_movimientos WHERE tipo='INGRESO' AND ABS(ABS(monto) - ?) < 0.005
+                               AND UPPER(descripcion) LIKE ?
+                               AND substr(fecha,1,10) BETWEEN date(?, '-3 days') AND date(?, '+3 days')
+                             ORDER BY ABS(julianday(substr(fecha,1,10)) - julianday(?)), id LIMIT 1""",
+                         (e_monto, f"%{e_texto}%", e_fecha, e_fecha, e_fecha)).fetchone()
+        if not sal or not ent:
+            continue
+        for (pid,) in db.execute("SELECT id FROM est_prestamos WHERE movimiento_id=?", (sal['id'],)).fetchall():
+            for (dm,) in db.execute("SELECT movimiento_id FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,)).fetchall():
+                db.execute("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=?", (dm,))
+                db.execute("""UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Transferencia recibida'
+                              WHERE id=? AND categoria='PRESTAMOS'""", (dm,))
+            db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
+        db.execute("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=?", (ent['id'],))
+        db.execute("UPDATE est_movimientos SET tipo='GASTO', categoria='FINANZAS', subcategoria=? WHERE id=?",
+                   (_SUB_PROPIA, sal['id']))
+        db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=? WHERE id=?", (_SUB_PROPIA, ent['id']))
     parejas = 0
     for fecha, monto, texto in REGRESADOS:
         m = _mov(db, fecha, monto, texto)

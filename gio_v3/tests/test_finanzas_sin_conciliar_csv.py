@@ -12,7 +12,7 @@ from modules.finanzas.estados.config import SUBCATEGORIAS
 
 
 def test_categorias_validas():
-    for *_, cat, sub in corr.CORRECCIONES + [g[:5] for g in corr.GASTOS]:
+    for *_, cat, sub in corr.CORRECCIONES + [g[:5] for g in corr.GASTOS] + [g[:6] for g in corr.SUGERENCIAS_ACEPTADAS]:
         assert sub in SUBCATEGORIAS[cat], (cat, sub)
 
 
@@ -27,7 +27,7 @@ def test_aplica_por_id_y_por_texto(test_db):
         cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
         assert cat(4726) == ('TRANSPORTE', 'Taxi/apps')
         assert cat(90001) == ('VIVIENDA', 'Aportación renta')
-        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) + len(corr.ENTRADAS) + len(corr.REESCRITOS) + len(corr.AUDITORIA_2026) - 2)
+        assert (ok, faltan) == (2, len(corr.CORRECCIONES) + len(corr.VIAJES) + len(corr.PERSONAS) + len(corr.GASTOS) + len(corr.ENTRADAS) + len(corr.REESCRITOS) + len(corr.AUDITORIA_2026) + len(corr.SUGERENCIAS_ACEPTADAS) - 2)
         assert corr.aplicar(db)[0] == 0
 
 
@@ -225,3 +225,20 @@ def test_pablo_a_comida(test_db):
         corr.aplicar(db)
         assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=5328").fetchone()) == \
             ('COMIDA_FUERA', 'Restaurante')
+
+
+def test_sugerencias_aceptadas(test_db):
+    with database.get_db() as db:
+        vid = db.execute("""INSERT INTO viajes (nombre, destino, fecha_inicio, fecha_fin, estado, created_at)
+                            VALUES ('Viaje 2024', 'X', '2024-09-10', '2024-09-22', 'completado', 'x')""").lastrowid
+        for mid, f, d, m in ((3116, '2024-09-13', 'PAGO CUENTA DE TERCERO BNET TRANSF A UNDEFINED', 4000),
+                             (3110, '2024-09-11', 'PAGO CUENTA DE TERCERO BNET PIZZA', 32.5),
+                             (3145, '2024-09-30', 'PAGO CUENTA DE TERCERO BNET GRACIAS', 3600)):
+            db.execute("""INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                          VALUES (?,?,?,?, 'BBVA_DEB', 'FINANZAS', 'Transferencia', 'INGRESO')""", (mid, f, d, m))
+        corr.aplicar(db)
+        fila = lambda i: tuple(db.execute("SELECT categoria, subcategoria, viaje_id FROM est_movimientos WHERE id=?",
+                                          (i,)).fetchone())
+        assert fila(3116) == ('FINANZAS', 'Reembolso compartido', vid)
+        assert fila(3110) == ('COMIDA_FUERA', 'Restaurante', None)
+        assert fila(3145) == ('FINANZAS', 'Transferencia', None)      # «menos de gracias»

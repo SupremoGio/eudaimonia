@@ -242,3 +242,23 @@ def test_devoluciones_de_judi_4500(test_db):
         assert por[p1]['estado'] == 'Pagado' and [x['movimiento_id'] for x in por[p1]['devoluciones']] == [d1]
         assert por[p2]['persona'] == 'Judi' and por[p2]['estado'] == 'Pagado'
         assert _cat(db, d2) == ('PRESTAMOS', '')
+
+
+def test_prestamo_de_papa_pagado_no_es_prestamo_a_judi(test_db):
+    """$7,000 de su papá el 10/06/2023 y los regresó el 16/06 («PRESTAMO GIO»):
+    no le prestó a nadie; las dos quedan «Entre cuentas propias»."""
+    with database.get_db() as db:
+        ent = _ins(db, '2023-06-10', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 7000.0,
+                   'INGRESO', 'FINANZAS', 'Reembolso compartido')
+        sal = _ins(db, '2023-06-16', 'PAGO CUENTA DE TERCERO BNET PRESTAMO GIO', 7000.0)
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                            VALUES ('Judi', 'OTORGADO', 7000, '2023-06-16', '', ?, datetime('now'))""", (sal,)).lastrowid
+        otra = _ins(db, '2023-07-01', 'PAGO CUENTA DE TERCERO BNET TRANSF', 500.0, 'INGRESO', 'PRESTAMOS', '')
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,datetime('now'))",
+                   (pid, otra))
+        db.commit()
+        pr.registrar_manuales(db)
+        pr.registrar_manuales(db)
+        assert not db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (sal,)).fetchone()
+        assert _cat(db, ent) == _cat(db, sal) == ('FINANZAS', 'Entre cuentas propias')
+        assert _cat(db, otra) == ('FINANZAS', 'Transferencia recibida')

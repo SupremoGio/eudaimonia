@@ -51,6 +51,23 @@ CORRECCIONES += [
     (5328, '2022-06-10', 1500.0, 'PABLO', 'COMIDA_FUERA', 'Restaurante'),   # «mándalo a comida»
 ]
 
+# Sugerencias de la app que el usuario aceptó en bloque (2026-10-04: «aplica
+# las sugerencias menos de gracias»): (id, fecha, monto, texto, categoria,
+# subcategoria, viaje o None). «Reembolso compartido» = te regresaron lo que
+# pagaste por otros en ese viaje.
+SUGERENCIAS_ACEPTADAS = [
+    (2590, '2024-11-12', 140.0, 'VIAJE MAZAMITLA', 'VIAJES', 'Otros', None),
+    (2585, '2024-11-11', 100.0, 'TRANSF A GIOVANY', 'COMIDA_FUERA', 'Restaurante', None),     # Merpago Los Volcanes
+    (2583, '2024-11-08', 63.0, 'DEUDAR MAR', 'COMIDA_FUERA', 'Restaurante', None),            # 1/2 de Merpago Dani
+    (3062, '2024-10-09', 56.0, 'TRANSF A GIOVANY', 'SUPER', 'Súper', None),                   # Soriana
+    (3130, '2024-09-20', 1000.0, 'TRANSF A GIOVANY', 'FINANZAS', 'Reembolso compartido', 'VIAJE 2024'),
+    (3125, '2024-09-19', 89.0, 'TRANSF A GIOVANY', 'CAFE/PAN', 'Café', 'VIAJE 2024'),         # 1/2 de Starbucks
+    (3116, '2024-09-13', 4000.0, 'TRANSF A UNDEFINED', 'FINANZAS', 'Reembolso compartido', 'VIAJE 2024'),
+    (3110, '2024-09-11', 32.5, 'PIZZA', 'COMIDA_FUERA', 'Restaurante', None),
+    (3347, '2024-01-07', 3814.0, 'PAGO 10 11 12', 'FINANZAS', 'Reembolso compartido', 'FIN DE AÑO 2023'),
+    (3793, '2023-06-22', 360.0, 'TRANSF A GIOVANY', 'FINANZAS', 'Reembolso compartido', 'VILLA JUNIO 2023'),
+]
+
 # Devoluciones de una persona (id, fecha, monto, texto, persona): se ligan a su
 # préstamo con pendiente (el más cercano antes del abono, si no el más antiguo
 # con saldo); si no tiene, quedan como «Reembolso compartido» (te regresó algo
@@ -367,6 +384,18 @@ def aplicar(db) -> tuple[int, int]:
             continue
         if (row['categoria'], row['subcategoria'] or '') != (cat, sub):
             db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, row['id']))
+            ok += 1
+    for mid, fecha, monto, texto, cat, sub, viaje in SUGERENCIAS_ACEPTADAS:
+        row = _fila(db, mid, fecha, monto, texto)
+        if not row:
+            faltan += 1
+            continue
+        v = viaje and db.execute("SELECT id FROM viajes WHERE UPPER(TRIM(nombre))=UPPER(?) ORDER BY id LIMIT 1",
+                                 (viaje,)).fetchone()
+        vid = v['id'] if v else row['viaje_id']
+        if (row['categoria'], row['subcategoria'] or '', row['viaje_id']) != (cat, sub, vid):
+            db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, viaje_id=? WHERE id=?",
+                       (cat, sub, vid, row['id']))
             ok += 1
     for fecha, monto, texto, desc, tipo, cat, sub in REESCRITOS:
         n = _reescribir(db, fecha, monto, texto, desc, tipo, cat, sub)
