@@ -369,6 +369,19 @@ NO_ERAN_PRESTAMO = (
     # «TRANSF A AURORA EL» (15/12/2025, $150, del CSV, estaba como perdido):
     # «muévelo mejor como regalo» (2026-10-04).
     ('2025-12-15', 150.0, 'TRANSF A AURORA', 'FAMILIA_REGALOS', 'Regalos'),
+    # «TRANSF A JUDITH A» (11/05/2026, $2,000): «le transferí a Judi, me dijo
+    # mejor a Cornelius, me lo regresó» (2026-10-03); el regreso no pasó por
+    # BBVA (2026-10-04, revisión del débito de mayo): ida y vuelta, neto 0.
+    ('2026-05-11', 2000.0, 'TRANSF A JUDITH', 'FINANZAS', 'Entre cuentas propias'),
+)
+
+# Préstamos manuales («Sin movimiento») que repiten uno ya ligado a su
+# movimiento del banco: (persona, fecha, monto). Se borra la copia sin
+# movimiento si no tiene devoluciones. 2026-10-04: Cornelius aparecía debiendo
+# $4,000 por el «regreso al corner» del 12/05/2026 ($2,000) registrado dos
+# veces (la copia quedó suelta al borrar el duplicado «BNET TACOS»).
+PRESTAMOS_REPETIDOS_SIN_MOVIMIENTO = (
+    ('Cornelius', '2026-05-12', 2000.0),
 )
 
 # Préstamos que el usuario da por cobrados aunque falte un resto mínimo: el
@@ -412,10 +425,10 @@ PRESTAMOS_SOLO_DEVOLUCION = (
 # a Cornelius, me lo regresó y el 12 se lo pasé a Corner» — el regreso de
 # Judi es «… REGRESO AL CORNER» y lo de Cornelius es «BNET TACOS …».
 _CARGOS_CONFIRMADOS_PDF = {2130}
-IDA_Y_VUELTA = (
-    (('2026-05-11', 2000.0, 'PAGO CUENTA DE TERCERO BNET TRANSF A JUDITH A'),
-     ('2026-05-12', 2000.0, 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER')),
-)
+# 2026-10-04: el de mayo-2026 (11/05 a Judith y 12/05 «regreso al corner»)
+# ya no va aquí: el PDF muestra que los dos salieron; el del 12 es el préstamo
+# a Cornelius y el del 11 está en NO_ERAN_PRESTAMO (Judith lo regresó fuera de BBVA).
+IDA_Y_VUELTA = ()
 
 # Abonos que el lector de BBVA dejó como cargo («PAGO CUENTA DE TERCERO» es
 # ambiguo y sin saldo impreso queda como cargo; ver parsers/bbva_libreton.py):
@@ -525,6 +538,16 @@ def registrar_manuales(db) -> tuple[int, int]:
             if not db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,)).fetchone():
                 db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
         db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, m['id']))
+    for persona, fecha, monto in PRESTAMOS_REPETIDOS_SIN_MOVIMIENTO:
+        if not db.execute("""SELECT 1 FROM est_prestamos WHERE contraparte=? AND substr(fecha,1,10)=?
+                                AND ABS(ABS(monto) - ?) < 0.005 AND movimiento_id IS NOT NULL""",
+                          (persona, fecha, monto)).fetchone():
+            continue   # sin la copia ligada no hay nada repetido
+        for (pid,) in db.execute("""SELECT id FROM est_prestamos WHERE contraparte=? AND substr(fecha,1,10)=?
+                                        AND ABS(ABS(monto) - ?) < 0.005 AND movimiento_id IS NULL""",
+                                 (persona, fecha, monto)).fetchall():
+            if not db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,)).fetchone():
+                db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
     for fecha, monto, texto, viaje in COBRADOS_EN_EFECTIVO_PARA_VIAJE:
         m = db.execute("""SELECT id, categoria, viaje_id FROM est_movimientos WHERE substr(fecha,1,10)=?
                             AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ? AND tipo='GASTO'

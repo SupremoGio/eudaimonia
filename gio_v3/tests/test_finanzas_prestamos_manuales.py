@@ -93,13 +93,13 @@ def test_jorge_liquido_con_abonos_leidos_como_cargo(test_db):
 
 
 def test_judi_ida_y_vuelta_y_cornelius(test_db):
-    """11/05 a Judi, Judi lo regresa («REGRESO AL CORNER», leído como cargo) y
-    el 12 va a Cornelius («BNET TACOS …»)."""
+    """Mayo 2026 según el PDF (2026-10-04): el 11 a Judith (lo regresó fuera de
+    BBVA: ida y vuelta) y el 12 «regreso al corner», que sí salió: el préstamo
+    a Cornelius."""
     with database.get_db() as db:
         judi = _ins(db, '2026-05-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A JUDITH A', 2000.0)
-        vuelta = _ins(db, '2026-05-12', 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0)
-        corner = _ins(db, '2026-05-12', 'BNET TACOS PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0)
-        for mid, quien in ((judi, 'Judi'), (vuelta, 'Cornelius')):    # préstamos mal registrados
+        corner = _ins(db, '2026-05-12', 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0)
+        for mid, quien in ((judi, 'Judi'), (corner, 'Cornelius')):
             db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
                           VALUES (?, 'OTORGADO', 2000, '2026-05-11', '', ?, datetime('now'))""", (quien, mid))
         db.commit()
@@ -107,9 +107,8 @@ def test_judi_ida_y_vuelta_y_cornelius(test_db):
         pr.registrar_manuales(db)
         prest = [(p['persona'], p['movimiento_id']) for p in pr.listar(db) if p['fecha'].startswith('2026-05')]
         assert prest == [('Cornelius', corner)]
-        assert _cat(db, judi) == _cat(db, vuelta) == ('FINANZAS', 'Entre cuentas propias')
-        assert db.execute("SELECT tipo FROM est_movimientos WHERE id=?", (vuelta,)).fetchone()[0] == 'INGRESO'
-        assert pr.candidatos(db)['prestamos'] == []
+        assert _cat(db, judi) == ('FINANZAS', 'Entre cuentas propias')
+        assert db.execute("SELECT tipo, categoria FROM est_movimientos WHERE id=?", (corner,)).fetchone()[:] == ('GASTO', 'PRESTAMOS')
 
 
 def test_gracias_bebo_es_prestamo_de_2023_y_libera_mayo_2026(test_db):
@@ -131,7 +130,7 @@ def test_gracias_bebo_es_prestamo_de_2023_y_libera_mayo_2026(test_db):
         j23 = por[('Judi', '2023')]
         assert j23['monto'] == 4250 and j23['estado'] == 'Pagado' and j23['notas'].startswith('Préstamo de 2023')
         assert ('Judi', '2026') not in por and ('Cornelius', '2026') in por
-        assert _cat(db, judi) == _cat(db, vuelta) == ('FINANZAS', 'Entre cuentas propias')
+        assert _cat(db, judi) == ('FINANZAS', 'Entre cuentas propias')
         assert _cat(db, gb) == ('PRESTAMOS', '')
 
 
@@ -284,3 +283,22 @@ def test_nomina_de_empleada_prestada_y_cerrada(test_db):
         [x] = [x for x in pr.listar(db) if x['movimiento_id'] == p]
         assert (x['persona'], x['estado'], x['pendiente']) == ('Empleada', 'Pagado', 0)
         assert _cat(db, d) == ('PRESTAMOS', '')
+
+
+def test_cornelius_un_solo_prestamo_y_judith_11_mayo_ida_y_vuelta(test_db):
+    with database.get_db() as db:
+        corner = _ins(db, '2026-05-12', 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000.0)
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Cornelius', 'OTORGADO', 2000, '2026-05-12', '', ?, datetime('now'))""", (corner,))
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Cornelius', 'OTORGADO', 2000, '2026-05-12', '', NULL, datetime('now'))""")
+        jud = _ins(db, '2026-05-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A JUDITH A', 2000.0)
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Judi', 'OTORGADO', 2000, '2026-05-11', '', ?, datetime('now'))""", (jud,))
+        db.commit()
+        pr.registrar_manuales(db)
+        pr.registrar_manuales(db)
+        cor = [p for p in pr.listar(db) if p['persona'] == 'Cornelius']
+        assert [(p['movimiento_id'], p['pendiente']) for p in cor] == [(corner, 2000.0)]
+        assert not [p for p in pr.listar(db) if p['movimiento_id'] == jud]
+        assert _cat(db, jud) == ('FINANZAS', 'Entre cuentas propias')
