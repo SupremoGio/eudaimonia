@@ -214,3 +214,14 @@ def test_auditoria_2026_papa_colecta_y_cumple(test_db):
         corr.aplicar(db)
         assert db.execute("SELECT COUNT(*) FROM est_movimientos").fetchone()[0] == n       # idempotente
         assert corr.aplicar(db)[0] == 0
+
+
+def test_pablo_a_comida(test_db):
+    """5328 «…6230 PABLO» $1,500 (10/06/2022): «mándalo a comida»."""
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES (5328, '2022-06-10', 'PAGO CUENTA DE TERCERO BNET …6230 PABLO', 1500, 'BBVA_DEB',
+                              'FINANZAS', 'Reembolsable', 'INGRESO')""")
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=5328").fetchone()) == \
+            ('COMIDA_FUERA', 'Restaurante')

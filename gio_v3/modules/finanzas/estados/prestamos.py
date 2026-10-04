@@ -364,11 +364,10 @@ NO_ERAN_PRESTAMO = (
 )
 
 # Préstamos que el usuario da por cobrados aunque falte un resto mínimo: el
-# monto se ajusta a lo devuelto. (texto del préstamo, persona). 2026-10-03:
-# «JEFE DE FAMIL REPO» $2,513 con devolución de $2,512 — «ya dalo por cobrado».
-DADOS_POR_COBRADOS = (
-    ('JEFE DE FAMIL REPO', 'Judi'),
-)
+# monto se ajusta a lo devuelto. (texto del préstamo, persona). El de «JEFE DE
+# FAMIL REPO» (2026-10-03) salió de aquí: no fue préstamo sino devolución
+# (ver PRESTAMOS_SOLO_DEVOLUCION).
+DADOS_POR_COBRADOS = ()
 
 
 def no_es_devolucion(r) -> bool:
@@ -383,9 +382,17 @@ def no_es_devolucion(r) -> bool:
 # (persona, fecha, monto, notas, devolución (fecha, monto, texto)). Quedan
 # pagados. El usuario, 2026-10-03: «GRACIAS BEBO» fue Judi pagándole «un
 # dinero que le presté a mi hermana, es del 2023, ya no recuerdo de qué».
+#
+# 2026-10-04: los $2,513 «JEFE DE FAMIL REPO» del 27/03/2025 se habían tomado
+# como un préstamo a Judi con su devolución de $2,512, pero el PDF dice que
+# los dos ENTRARON ($5,025 ese día). El usuario: «es un préstamo ya pagado».
+# Una entrada puede traer varias devoluciones.
 PRESTAMOS_SOLO_DEVOLUCION = (
     ('Judi', '2023-05-12', 4250.0, 'Préstamo de 2023 (no recuerdo de qué)',
      ('2023-05-12', 4250.0, 'GRACIAS BEBO')),
+    ('Judi', '2025-03-27', 5025.0, 'Préstamo pagado el 27/03/2025 en dos transferencias',
+     ('2025-03-27', 2513.0, 'JEFE DE FAMIL REPO'),
+     ('2025-03-27', 2512.0, 'TRANSF A GIOVANY A')),
 )
 
 # Transferencias que fueron y regresaron (salida, y el abono de vuelta que el
@@ -512,20 +519,21 @@ def registrar_manuales(db) -> tuple[int, int]:
                        (f"%{viaje}%", fecha, fecha, fecha)).fetchone()
         db.execute("UPDATE est_movimientos SET categoria='VIAJES', subcategoria='Otros', viaje_id=COALESCE(?, viaje_id) WHERE id=?",
                    (v['id'] if v else None, m['id']))
-    for persona, p_fecha, p_monto, notas, (d_fecha, d_monto, d_texto) in PRESTAMOS_SOLO_DEVOLUCION:
-        d = db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
-                            AND UPPER(descripcion) LIKE ? AND tipo='INGRESO' ORDER BY id LIMIT 1""",
-                       (d_fecha, d_monto, f"%{d_texto}%")).fetchone()
-        if not d:
+    for persona, p_fecha, p_monto, notas, *devs in PRESTAMOS_SOLO_DEVOLUCION:
+        ds = [db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
+                               AND UPPER(descripcion) LIKE ? AND tipo='INGRESO' ORDER BY id LIMIT 1""",
+                          (d_fecha, d_monto, f"%{d_texto}%")).fetchone() for d_fecha, d_monto, d_texto in devs]
+        if not all(ds):     # sin todas sus devoluciones el préstamo quedaría con saldo falso
             continue
         p = db.execute("SELECT id FROM est_prestamos WHERE contraparte=? AND notas=?", (persona, notas)).fetchone()
         pid = p['id'] if p else db.execute(
             """INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
                VALUES (?, 'OTORGADO', ?, ?, ?, NULL, ?)""", (persona, p_monto, p_fecha, notas, ahora())).lastrowid
-        db.execute("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=? AND prestamo_id != ?", (d['id'], pid))
-        db.execute("INSERT OR IGNORE INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
-                   (pid, d['id'], ahora()))
-        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (d['id'],))
+        for d in ds:
+            db.execute("DELETE FROM est_prestamo_devoluciones WHERE movimiento_id=? AND prestamo_id != ?", (d['id'], pid))
+            db.execute("INSERT OR IGNORE INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+                       (pid, d['id'], ahora()))
+            db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (d['id'],))
     for ida, vuelta in IDA_Y_VUELTA:
         filas = [db.execute("""SELECT id FROM est_movimientos WHERE substr(fecha,1,10)=?
                                  AND ABS(ABS(monto) - ?) < 0.005 AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""",

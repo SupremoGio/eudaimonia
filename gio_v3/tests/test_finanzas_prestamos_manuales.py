@@ -188,17 +188,21 @@ def test_cocktelitos_devolucion_real_y_desligadas(test_db):
             assert all((filas[i].get('pista') or {}).get('tipo') != 'prestamo' for i in (ab, tr))
 
 
-def test_jefe_de_famil_repo_dado_por_cobrado(test_db):
+def test_jefe_de_famil_repo_es_devolucion_de_prestamo_pagado(test_db):
+    """El PDF dice que los $2,513 «JEFE DE FAMIL REPO» entraron, igual que los
+    $2,512: «es un préstamo ya pagado» -> préstamo a Judi de $5,025 pagado."""
     with database.get_db() as db:
-        m = _ins(db, '2025-03-27', 'PAGO CUENTA DE TERCERO BNET JEFE DE FAMIL REPO', 2513.0)
-        pid = db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
-                            VALUES ('Judi', 'OTORGADO', 2513, '2025-03-27', '', ?, datetime('now'))""", (m,)).lastrowid
-        d = _ins(db, '2025-03-27', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 2512.0, 'INGRESO', 'PRESTAMOS', '')
-        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,datetime('now'))", (pid, d))
+        a = _ins(db, '2025-03-27', 'PAGO CUENTA DE TERCERO BNET JEFE DE FAMIL REPO', 2513.0,
+                 'INGRESO', 'FINANZAS', 'Transferencia recibida')
+        b = _ins(db, '2025-03-27', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 2512.0,
+                 'INGRESO', 'FINANZAS', 'Transferencia recibida')
         db.commit()
         pr.registrar_manuales(db)
-        p = next(p for p in pr.listar(db) if p['id'] == pid)
-        assert p['estado'] == 'Pagado' and p['pendiente'] == 0
+        pr.registrar_manuales(db)
+        [p] = [p for p in pr.listar(db) if p['fecha'][:10] == '2025-03-27']
+        assert (p['persona'], p['monto'], p['estado'], p['pendiente']) == ('Judi', 5025.0, 'Pagado', 0)
+        assert sorted(x['movimiento_id'] for x in p['devoluciones']) == sorted([a, b])
+        assert _cat(db, a) == _cat(db, b) == ('PRESTAMOS', '')
 
 
 def test_regalo_bodas_no_era_prestamo(test_db):

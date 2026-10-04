@@ -46,6 +46,11 @@ CORRECCIONES += [
     (4645, '2022-09-01', 0.01, 'CODI VALIDA', 'FINANZAS', 'Entre cuentas propias'),
 ]
 
+# Tanda 5 (2026-10-04, comentarios a la lista de Sin conciliar):
+CORRECCIONES += [
+    (5328, '2022-06-10', 1500.0, 'PABLO', 'COMIDA_FUERA', 'Restaurante'),   # «mándalo a comida»
+]
+
 # Devoluciones de una persona (id, fecha, monto, texto, persona): se ligan a su
 # préstamo con pendiente (el más cercano antes del abono, si no el más antiguo
 # con saldo); si no tiene, quedan como «Reembolso compartido» (te regresó algo

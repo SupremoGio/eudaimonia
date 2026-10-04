@@ -93,7 +93,9 @@ FALTA_CATEGORIA = {
 CONFIRMADOS_LIGADOS = {
     3351: ('PRESTAMOS', '', '«sí, yo aboné deuda»: le pagó $7,000 a su papá'),
     2999: (None, None, '«sí es devolución de Judi»'),
-    3004: ('FINANZAS', 'Transferencia recibida', '«así es»: «jefe de famil repo» le entró de …5937'),
+    # Le entró (no fue préstamo que dio): es la devolución de un préstamo ya
+    # pagado (prestamos.PRESTAMOS_SOLO_DEVOLUCION), por eso queda en PRESTAMOS.
+    3004: ('PRESTAMOS', '', '«así es»: «jefe de famil repo» le entró de …5937; «es un préstamo ya pagado»'),
     2124: ('FINANZAS', 'Retiro efectivo', '«fue retiro»'),
     2303: ('FINANZAS', 'Reembolsable', '«tuve que regresar un expense que no era mío»'),
 }

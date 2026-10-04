@@ -215,7 +215,7 @@ def test_ligados_confirmados_por_el_usuario(test_db):
         assert fila(3351) == ('GASTO', 'PRESTAMOS', '') and liga(3351) is None
         assert fila(2999)[0] == 'INGRESO' and liga(2999)[0] == abierto
         assert not db.execute("SELECT 1 FROM est_prestamos WHERE id IN (?, ?)", (falso, repo)).fetchone()
-        assert fila(3004) == ('INGRESO', 'FINANZAS', 'Transferencia recibida')
+        assert fila(3004) == ('INGRESO', 'PRESTAMOS', '')
         assert liga(dev) is None and fila(dev) == ('INGRESO', 'FINANZAS', 'Transferencia recibida')
         assert fila(2124) == ('GASTO', 'FINANZAS', 'Retiro efectivo')
         assert fila(2303) == ('GASTO', 'FINANZAS', 'Reembolsable')
