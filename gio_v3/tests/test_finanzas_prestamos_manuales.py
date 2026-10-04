@@ -262,3 +262,14 @@ def test_prestamo_de_papa_pagado_no_es_prestamo_a_judi(test_db):
         assert not db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (sal,)).fetchone()
         assert _cat(db, ent) == _cat(db, sal) == ('FINANZAS', 'Entre cuentas propias')
         assert _cat(db, otra) == ('FINANZAS', 'Transferencia recibida')
+
+
+def test_aurora_es_regalo(test_db):
+    with database.get_db() as db:
+        m = _ins(db, '2025-12-15', 'PAGO CUENTA DE TERCERO BNET TRANSF A AURORA EL', 150.0)
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, perdido_fecha, created_at)
+                      VALUES ('Aurora', 'OTORGADO', 150, '2025-12-15', 'Clasificado desde CSV', ?, '2026-09-25', datetime('now'))""", (m,))
+        db.commit()
+        pr.registrar_manuales(db)
+        assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
+        assert _cat(db, m) == ('FAMILIA_REGALOS', 'Regalos')

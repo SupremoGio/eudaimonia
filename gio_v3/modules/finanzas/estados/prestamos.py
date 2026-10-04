@@ -361,6 +361,9 @@ NO_ERAN_PRESTAMO = (
     # «es un retiro sin tarjeta, no es un préstamo a Cornelio» — el «CORNELIO»
     # se le pegó del concepto del renglón vecino al leer el PDF.
     ('2026-07-11', 3400.0, 'RETIRO SIN TARJETA', 'FINANZAS', 'Retiro efectivo'),
+    # «TRANSF A AURORA EL» (15/12/2025, $150, del CSV, estaba como perdido):
+    # «muévelo mejor como regalo» (2026-10-04).
+    ('2025-12-15', 150.0, 'TRANSF A AURORA', 'FAMILIA_REGALOS', 'Regalos'),
 )
 
 # Préstamos que el usuario da por cobrados aunque falte un resto mínimo: el
