@@ -203,3 +203,22 @@ def test_resubir_tdc_no_duplica_pago_guardado_en_positivo(client, monkeypatch, t
     with database.get_db() as db:
         rows = db.execute("SELECT descripcion, monto FROM est_movimientos").fetchall()
     assert [tuple(r) for r in rows] == [('BMOVIL.PAGO TDC (2)', -1000.0)]
+
+
+def test_estado_de_debito_pone_la_liquidacion_a_la_fila_que_ya_estaba(client, monkeypatch, test_db):
+    """SPEI del sábado 5-sep liquidado el lunes 7: la exportación lo trajo solo
+    con la fecha de operación; el estado de cuenta (con LIQ) se la completa
+    y no lo duplica."""
+    import database
+    with database.get_db() as db:
+        rid = _insert_existing(db, fecha='2026-09-05', fecha_cargo='2026-09-05',
+                               descripcion='SPEI ENVIADO BANAMEX 002 1408260CORTE GIO', monto=150.0,
+                               categoria='CUIDADO_PERSONAL', subcategoria='Barbería', tipo='GASTO')
+        db.commit()
+    resp = _upload(client, monkeypatch, [_mov(fecha='2026-09-05', fecha_cargo='2026-09-07',
+                                              descripcion='SPEI ENVIADO BANAMEX', monto=150.0, tipo='GASTO',
+                                              categoria='FINANZAS', subcategoria='')], bank='BBVA_DEB')
+    assert resp.status_code == 200
+    with database.get_db() as db:
+        rows = db.execute("SELECT id, fecha, fecha_cargo, subcategoria FROM est_movimientos WHERE monto=150").fetchall()
+    assert [tuple(r) for r in rows] == [(rid, '2026-09-05', '2026-09-07', 'Barbería')]

@@ -133,6 +133,12 @@ def aplicar(db, clave: str, carpeta: str = 'bbva_deb_libreton') -> tuple[int, in
         if match:
             usados.add(match['id'])
             ya += 1
+            # El periodo de débito lo decide la fecha de liquidación: si la
+            # fila venía sin ella (exportación de movimientos), se le pone.
+            if banco == 'BBVA_DEB' and m.get('fecha_cargo') and m['fecha_cargo'] != m['fecha']:
+                db.execute("""UPDATE est_movimientos SET fecha_cargo=? WHERE id=?
+                              AND (fecha_cargo IS NULL OR fecha_cargo='' OR substr(fecha_cargo,1,10)=substr(fecha,1,10))""",
+                           (m['fecha_cargo'], match['id']))
             # Ya estaba (p. ej. de un CSV) pero sin su «k de n»: se le pone,
             # para que la conciliación de compras a meses la ligue.
             if m.get('parcialidad_num') and not match['parcialidad_num']:

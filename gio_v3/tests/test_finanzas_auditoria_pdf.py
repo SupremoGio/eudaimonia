@@ -324,3 +324,22 @@ def test_burger_king_y_dinero_a_gbm(test_db):
         assert [(r['fecha'], r['monto'], r['subcategoria']) for r in bk] == [('2024-07-28', 99.0, 'Fast Food')]
         aud.aplicar(db)
         assert len(db.execute("SELECT 1 FROM est_movimientos WHERE descripcion='BURGER KING AVILA C'").fetchall()) == 1
+
+
+def test_debito_cuadra_por_fecha_de_liquidacion(test_db):
+    """2540: SPEI «corte gio» del sábado 5-sep liquidado el lunes 7. La fecha
+    de operación se queda; por la de liquidación pasa al estado de septiembre."""
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (id, fecha, fecha_cargo, descripcion, monto, banco, categoria,
+                      subcategoria, tipo) VALUES (2540, '2026-09-05', NULL, 'SPEI ENVIADO BANAMEX 002 1408260CORTE GIO',
+                      150, 'BBVA_DEB', 'CUIDADO_PERSONAL', 'Barbería', 'GASTO')""")
+        assert [m['id'] for m in aud.movimientos_periodo(db, 'BBVA_DEB', '2026-09-03', '2026-09-06')] == [2540]
+        aud.aplicar(db)
+        r = _fila(db, 2540)
+        assert (r['fecha'], r['fecha_cargo']) == ('2026-09-05', '2026-09-07')
+        assert aud.movimientos_periodo(db, 'BBVA_DEB', '2026-09-03', '2026-09-06') == []
+        [m] = aud.movimientos_periodo(db, 'BBVA_DEB', '2026-09-07', '2026-09-10')
+        assert (m['id'], m['fecha'], m['fecha_liq']) == (2540, '2026-09-05', '2026-09-07')
+        sep = next(c for c in aud.cuadre(db) if c['periodo'].startswith('2026-09-07'))
+        assert sep['cargos_app'] == 150.0
+        assert {l['accion'] for l in aud.plan(db) if l['id_app'] == 2540} <= {'sin cambio'}

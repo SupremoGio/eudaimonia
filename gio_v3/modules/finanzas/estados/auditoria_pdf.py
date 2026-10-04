@@ -137,6 +137,10 @@ CORRECCIONES_CUADRE = {
     1732: {'categoria': ('COMIDA_FUERA', 'FINANZAS'), 'subcategoria': ('Restaurante', 'Retiro efectivo')},
     1980: {'categoria': ('COMIDA_FUERA', 'FINANZAS'), 'subcategoria': ('Restaurante', 'Retiro efectivo')},
     2108: {'categoria': ('SUPER', 'FINANZAS'), 'subcategoria': ('Súper', 'Retiro efectivo')},
+    # SPEI «corte gio» $150 del sábado 5-sep: el banco lo liquidó el lunes 7 y
+    # va en el periodo de septiembre (ago +$150 / sep -$150). La fecha de
+    # operación se queda; cambia la de liquidación.
+    2540: {'fecha_cargo': ('2026-09-05', '2026-09-07')},
 }
 
 # Faltantes que encontró el cuadre (banco, fecha, monto, descripción, categoría, subcategoría):
@@ -639,12 +643,14 @@ def _plan_correcciones_cuadre(db, borrados) -> list[dict]:
         if not r:
             continue
         f = {'banco': r['banco'], 'fecha': r['fecha'][:10], 'monto': abs(r['monto']), 'estado': 'CUADRE',
-             'nota': 'revisión contra el PDF (feb-may 2026)', 'id_app': str(mid)}
+             'nota': 'revisión contra el PDF', 'id_app': str(mid)}
         cambios = {}
         for campo, (hoy, nuevo) in campos.items():
             actual = (r[campo] or '')
             if campo == 'fecha':
                 actual = actual[:10]
+            elif campo == 'fecha_cargo':          # sin fecha de liquidación = la de operación
+                actual = (actual or r['fecha'])[:10]
             if actual == nuevo:
                 continue
             if not (actual == hoy or actual.startswith(hoy)):
@@ -659,7 +665,7 @@ def _plan_correcciones_cuadre(db, borrados) -> list[dict]:
             if otra and otra['id'] not in borrados:
                 out.append(_linea(f, r, 'pendiente revisión', motivo=f'chocaría con la fila {otra["id"]}'))
                 continue
-        out += [_linea(f, r, 'actualizado', c, r[c], v, 'revisión contra el PDF (feb-may 2026)') for c, v in cambios.items()]
+        out += [_linea(f, r, 'actualizado', c, r[c], v, 'revisión contra el PDF') for c, v in cambios.items()]
     return out
 
 
@@ -765,13 +771,27 @@ def _es_abono(r) -> bool:
             or (r['tipo'] == 'MOVIMIENTO_INTERNO' and ('DEVUELTO' in d or 'RECIBIDO' in d)))
 
 
+def _fecha_periodo(banco: str) -> str:
+    """Columna (SQL) que decide en qué estado de cuenta cae una fila. En débito
+    manda la fecha de liquidación (LIQ): una operación del sábado 5-sep que el
+    banco liquida el lunes 7 va en el estado que empieza el 7. Sin fecha de
+    liquidación, la de operación. La TDC sigue por fecha de operación (así
+    cuadran todos sus estados)."""
+    if banco == 'BBVA_DEB':
+        return "substr(COALESCE(NULLIF(fecha_cargo, ''), fecha), 1, 10)"
+    return 'substr(fecha, 1, 10)'
+
+
 def movimientos_periodo(db, banco: str, desde: str, hasta: str) -> list[dict]:
     """Lo que tiene la app en un periodo, del lado (abono/cargo) que cuenta el
     cuadre: para comparar renglón por renglón contra el PDF."""
-    rows = db.execute("""SELECT id, fecha, descripcion, monto, tipo, categoria, subcategoria, banco
-                          FROM est_movimientos WHERE banco=? AND substr(fecha,1,10) BETWEEN ? AND ?
-                          ORDER BY fecha, id""", (banco, desde, hasta)).fetchall()
-    return [{'id': r['id'], 'fecha': r['fecha'][:10], 'lado': 'abono' if _es_abono(r) else 'cargo',
+    col = _fecha_periodo(banco)
+    rows = db.execute(f"""SELECT id, fecha, {col} AS fecha_liq, descripcion, monto, tipo, categoria,
+                                 subcategoria, banco
+                          FROM est_movimientos WHERE banco=? AND {col} BETWEEN ? AND ?
+                          ORDER BY fecha_liq, fecha, id""", (banco, desde, hasta)).fetchall()
+    return [{'id': r['id'], 'fecha': r['fecha'][:10], 'fecha_liq': r['fecha_liq'],
+             'lado': 'abono' if _es_abono(r) else 'cargo',
              'monto': round(abs(r['monto']), 2), 'descripcion': r['descripcion'], 'tipo': r['tipo'],
              'categoria': f"{r['categoria']}/{r['subcategoria'] or ''}"} for r in rows]
 
@@ -787,8 +807,9 @@ def cuadre(db) -> list[dict]:
         m = re.match(r'(\d{4}-\d{2}-\d{2}) al (\d{4}-\d{2}-\d{2})', e['periodo'])
         if not m:
             continue
-        rows = db.execute("""SELECT banco, monto, tipo, subcategoria, descripcion FROM est_movimientos
-                             WHERE banco=? AND substr(fecha,1,10) BETWEEN ? AND ?""",
+        col = _fecha_periodo(e['banco'])
+        rows = db.execute(f"""SELECT banco, monto, tipo, subcategoria, descripcion FROM est_movimientos
+                              WHERE banco=? AND {col} BETWEEN ? AND ?""",
                           (e['banco'], m.group(1), m.group(2))).fetchall()
         ab = round(sum(abs(r['monto']) for r in rows if _es_abono(r)), 2)
         ca = round(sum(abs(r['monto']) for r in rows if not _es_abono(r)), 2)

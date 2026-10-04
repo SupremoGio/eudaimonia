@@ -2700,6 +2700,21 @@ def _desc_tokens(desc: str) -> set:
     return {w for w in _re.findall(r'[A-ZÁÉÍÓÚÑ]{3,}', (desc or '').upper()) if w not in _DESC_STOP}
 
 
+def _guardar_liquidacion(db, banco, m, monto) -> None:
+    """La fila ya existía (p. ej. de la exportación de movimientos, que solo
+    trae la fecha de operación) y el estado de cuenta de débito trae su fecha
+    de liquidación (LIQ) distinta: se le pone, porque el periodo lo decide la
+    LIQ (SPEI del sábado 5-sep liquidado el lunes 7 → estado de septiembre).
+    Solo toca filas sin LIQ propia (vacía o igual a la de operación)."""
+    liq = (m.get('fecha_cargo') or '')[:10]
+    if banco != 'BBVA_DEB' or not liq or liq == m['fecha'][:10]:
+        return
+    db.execute("""UPDATE est_movimientos SET fecha_cargo=?
+                  WHERE banco=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005 AND tipo=?
+                    AND (fecha_cargo IS NULL OR fecha_cargo='' OR substr(fecha_cargo,1,10)=substr(fecha,1,10))""",
+               (liq, banco, m['fecha'][:10], abs(monto), m['tipo']))
+
+
 def _desc_parecida(a: str, b: str) -> bool:
     """¿Dos descripciones pueden ser el mismo movimiento? Sí si comparten
     alguna palabra significativa, o si alguna no tiene ninguna (no hay con
@@ -2927,6 +2942,7 @@ def upload_file():
                 key = (m['fecha'], round(m_monto, 2), m['tipo'])
                 if m_monto > 0 and any(b == m_banco or _desc_parecida(m['descripcion'], d)
                                        for b, d in existing.get(key, ())):
+                    _guardar_liquidacion(db, m_banco, m, m_monto)
                     skipped += 1
                     continue
                 if (m_monto > 0 and m_banco != 'BBVA_DEB'
