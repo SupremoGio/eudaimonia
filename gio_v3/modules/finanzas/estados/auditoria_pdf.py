@@ -100,6 +100,34 @@ SOBRAN_POR_CUADRE = {
     1817: (1812, 'retiro de $1,500 del 4-mar repetido (el de la colecta, id 1812)'),
 }
 
+# Revisión de los periodos que no cuadraban contra el PDF (feb, abr y may 2026,
+# 2026-10-04): id -> {campo: (texto que tiene hoy, valor del PDF)}. Solo se
+# cambia si la fila todavía tiene el texto mezclado.
+CORRECCIONES_CUADRE = {
+    1812: {'descripcion': ('BNET P RETIRO', 'RETIRO SIN TARJETA')},
+    1823: {'descripcion': ('A JUDITH A RETIRO', 'RETIRO SIN TARJETA')},
+    2124: {'descripcion': ('FIBRA HOTELERA SC RETIRO', 'RETIRO SIN TARJETA')},
+    1815: {'descripcion': ('GIO SPEI ENVIADO BANAMEX', 'SPEI ENVIADO BANAMEX ARBITRAJE GIO'),
+           'categoria': ('CUIDADO_PERSONAL', 'DEPORTE'), 'subcategoria': ('Barbería', 'Fútbol')},
+    1805: {'descripcion': ('BNET MARTHA PAGO CUENTA', 'PAGO CUENTA DE TERCERO BNET COLECTA MARTHA')},
+    1956: {'descripcion': ('A GIOVANY A DEPOSITO', 'DEPOSITO EFECTIVO PRACTIC ******1804 ABR07 18:08 PRAC D797')},
+    1959: {'descripcion': ('A GIOVANY A CFE', 'CFE SUM SERV BAS CR MU ******7830 RFC: CSS 160330CP7 17:40 AUT:')},
+    2006: {'descripcion': ('GIOVANY SITH2PAGOGDLAC', 'SITH2PAGOGDLAC FIDEICOMISO F 1596')},
+    2085: {'descripcion': ('PAGO CUENTA DE TERCERO', 'PAGO CUENTA DE TERCERO BNET TACOS')},
+    # En el PDF es del 7-may: pasa al estado de mayo (abr +$300 / may -$300).
+    2059: {'fecha': ('2026-05-06', '2026-05-07')},
+    # Retiros sin tarjeta: efectivo, no un gasto en ese comercio.
+    1732: {'categoria': ('COMIDA_FUERA', 'FINANZAS'), 'subcategoria': ('Restaurante', 'Retiro efectivo')},
+    1980: {'categoria': ('COMIDA_FUERA', 'FINANZAS'), 'subcategoria': ('Restaurante', 'Retiro efectivo')},
+    2108: {'categoria': ('SUPER', 'FINANZAS'), 'subcategoria': ('Súper', 'Retiro efectivo')},
+}
+
+# Duplicados que tienen un préstamo encima y cuyo gemelo ya tiene el suyo: el
+# préstamo se queda (sin movimiento) y la copia se borra. 2077: «BNET TACOS …
+# REGRESO AL CORNER» de $2,000 (12-may-2026) repetido de 2130; «BNET TACOS»
+# venía del renglón de $400 «tacos» (id 2085).
+SOLTAR_PRESTAMO_Y_BORRAR = {2077}
+
 _TABLAS_LIGA = ('est_prestamos', 'est_prestamo_devoluciones', 'est_expense_lote_gastos', 'est_expense_lote_depositos')
 
 # Sugerencia de categoría que NO se aplica porque contradice lo que el
@@ -353,6 +381,19 @@ def _ids_duplicado(f) -> list[int]:
     return [int(x) for x in re.findall(r'\d+', (re.search(r'posible duplicado de id ([\d,\s]+)', f['nota']) or [''])[0])]
 
 
+def _plan_soltar(db, f, r) -> list[dict]:
+    otros = [t for t in _TABLAS_LIGA[1:] if db.execute(f"SELECT 1 FROM {t} WHERE movimiento_id=?", (r['id'],)).fetchone()]
+    if otros:
+        return [_linea(f, r, 'pendiente revisión', motivo='duplicado ligado a ' + ', '.join(otros))]
+    out = [_sql_linea(f, r, 'desligado', 'préstamo', f'{p["contraparte"]} ${abs(p["monto"]):,.2f}', '',
+                      'el préstamo se queda, sin la fila duplicada',
+                      [("UPDATE est_prestamos SET movimiento_id=NULL WHERE id=?", (p['id'],))])
+           for p in db.execute("SELECT * FROM est_prestamos WHERE movimiento_id=?", (r['id'],)).fetchall()]
+    out.append(_linea(f, r, 'borrado', 'fila', f'{r["descripcion"]} [{r["tipo"]} {r["categoria"]}]', '',
+                      'duplicado (no está en el PDF)'))
+    return out
+
+
 def _plan_religar(db, f, r) -> list[dict]:
     """Duplicado ligado: el vínculo pasa al gemelo (que no tenga ya uno) y la copia se borra."""
     gemelos = [g for g in (db.execute("SELECT * FROM est_movimientos WHERE id=?", (i,)).fetchone()
@@ -381,6 +422,8 @@ def _plan_sobra(db, f, ocupados) -> list[dict]:
     if not r:
         return [_linea(f, None, 'sin cambio', motivo='ya no está en la base')]
     ocupados.add(r['id'])
+    if r['id'] in SOLTAR_PRESTAMO_Y_BORRAR:
+        return _plan_soltar(db, f, r)
     if r['id'] in RELIGAR_DUPLICADOS:
         return _plan_religar(db, f, r)
     if (motivo := _intocable(db, r)):
@@ -493,6 +536,7 @@ def plan(db) -> list[dict]:
             out += _plan_falta(db, f, ocupados, usados)
     out += _plan_devoluciones(db)
     out += _plan_sobran_por_cuadre(db)
+    out += _plan_correcciones_cuadre(db, {l['id_app'] for l in out if l['accion'] == 'borrado'})
     out.sort(key=lambda x: (x['banco'], x['fecha'], x['id_app'] or 0))
     return out
 
@@ -545,6 +589,37 @@ def _plan_sobran_por_cuadre(db) -> list[dict]:
     return out
 
 
+def _plan_correcciones_cuadre(db, borrados) -> list[dict]:
+    out = []
+    for mid, campos in CORRECCIONES_CUADRE.items():
+        r = db.execute("SELECT * FROM est_movimientos WHERE id=?", (mid,)).fetchone()
+        if not r:
+            continue
+        f = {'banco': r['banco'], 'fecha': r['fecha'][:10], 'monto': abs(r['monto']), 'estado': 'CUADRE',
+             'nota': 'revisión contra el PDF (feb-may 2026)', 'id_app': str(mid)}
+        cambios = {}
+        for campo, (hoy, nuevo) in campos.items():
+            actual = (r[campo] or '')
+            if campo == 'fecha':
+                actual = actual[:10]
+            if actual == nuevo:
+                continue
+            if not (actual == hoy or actual.startswith(hoy)):
+                out.append(_linea(f, r, 'pendiente revisión', campo, actual, nuevo,
+                                  f'ya no tiene «{hoy}»: alguien la cambió, no se toca'))
+                continue
+            cambios[campo] = nuevo
+        if 'descripcion' in cambios or 'fecha' in cambios:
+            fecha = cambios.get('fecha', r['fecha'])
+            otra = db.execute("""SELECT id FROM est_movimientos WHERE fecha=? AND descripcion=? AND monto=? AND id != ?""",
+                              (fecha, cambios.get('descripcion', r['descripcion']), r['monto'], mid)).fetchone()
+            if otra and otra['id'] not in borrados:
+                out.append(_linea(f, r, 'pendiente revisión', motivo=f'chocaría con la fila {otra["id"]}'))
+                continue
+        out += [_linea(f, r, 'actualizado', c, r[c], v, 'revisión contra el PDF (feb-may 2026)') for c, v in cambios.items()]
+    return out
+
+
 def resumen(lineas: list[dict]) -> dict:
     por = {}
     for l in lineas:
@@ -571,7 +646,8 @@ def aplicar(db, lineas: list[dict] | None = None) -> list[dict]:
     """Ejecuta el plan (el que se mostró, o uno recalculado). El caller hace
     el respaldo antes y el commit después."""
     lineas = plan(db) if lineas is None else lineas
-    for l in lineas:
+    orden = {'religado': 0, 'desligado': 0, 'préstamo borrado': 0, 'borrado': 1}
+    for l in sorted(lineas, key=lambda l: orden.get(l['accion'], 2)):
         for sql, args in l.get('_sql', ()):
             db.execute(sql, args)
         if '_sql' in l:

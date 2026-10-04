@@ -112,8 +112,9 @@ def test_borra_solo_lo_seguro(test_db):
         assert _fila(db, 1658) is None                  # monto 0.00
         assert _fila(db, 1810) is None                  # duplicado confirmado de 1816
         # Duplicado ligado (Cornelius): «lo que dice Cowork» -> el préstamo pasa al gemelo y la copia se borra.
-        assert _fila(db, 2077) is None and (2077, 'religado') in plan
-        assert db.execute("SELECT movimiento_id FROM est_prestamos WHERE contraparte='Cornelius'").fetchone()[0] == 2130
+        # El gemelo (2130) ya tiene lo suyo: el préstamo de Cornelius se queda sin movimiento y la copia se borra.
+        assert _fila(db, 2077) is None and (2077, 'desligado') in plan
+        assert db.execute("SELECT movimiento_id FROM est_prestamos WHERE contraparte='Cornelius'").fetchone()[0] is None
         assert _fila(db, 1881) is not None and (1881, 'pendiente revisión') in plan   # su gemelo no tiene el viaje
         assert _fila(db, 2003) is not None              # el «gemelo» no existe: no se borra
         assert _fila(db, 2031) is not None              # Steam: real, se queda
@@ -257,3 +258,38 @@ def test_sobran_por_cuadre_feb_2026(test_db):
         quedan = {r[0] for r in db.execute("SELECT id FROM est_movimientos WHERE id BETWEEN 1805 AND 1817")}
         assert quedan == {1805, 1808, 1812}
         assert db.execute("SELECT movimiento_id FROM est_expense_lote_gastos").fetchone()[0] == 1812
+
+
+def test_correcciones_cuadre_feb_may_2026(test_db):
+    with database.get_db() as db:
+        ins = lambda i, f, d, m, t, c, s: db.execute(
+            """INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+               VALUES (?, ?, ?, ?, 'BBVA_DEB', ?, ?, ?)""", (i, f, d, m, c, s, t))
+        ins(1812, '2026-03-04', 'BNET P RETIRO SIN TARJETA ******7852', 1500, 'GASTO', 'FAMILIA_REGALOS', 'Colectas')
+        ins(1817, '2026-03-04', 'RETIRO SIN TARJETA', 1500, 'GASTO', 'EXPENSE', '')     # se borra antes de renombrar 1812
+        ins(1808, '2026-03-03', 'PAGO CUENTA DE TERCERO BNET MARTHA', 250, 'INGRESO', 'FAMILIA_REGALOS', 'Colectas')
+        ins(1805, '2026-03-03', 'BNET MARTHA PAGO CUENTA DE TERCERO BNET', 600, 'INGRESO', 'FAMILIA_REGALOS', 'Colectas')
+        ins(1807, '2026-03-03', 'PAGO CUENTA DE TERCERO BNET COLECTA MARTHA', 600, 'GASTO', 'FAMILIA_REGALOS', 'Colectas')
+        ins(2059, '2026-05-06', 'SPEI ENVIADO BANAMEX 002 1404260CARNES GIO', 300, 'GASTO', 'COMIDA_FUERA', 'Restaurante')
+        ins(1980, '2026-04-15', 'RETIRO SIN TARJETA', 200, 'GASTO', 'COMIDA_FUERA', 'Restaurante')
+        ins(2006, '2026-04-23', 'GIOVANY SITH2PAGOGDLAC FIDEICOMISO F 1596', 3142.39, 'INGRESO', 'FINANZAS', 'Reembolsable')
+        ins(2077, '2026-05-12', 'BNET TACOS PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000, 'GASTO', 'PRESTAMOS', 'Prestado')
+        ins(2130, '2026-05-12', 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER', 2000, 'GASTO', 'PRESTAMOS', 'Prestado')
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Cornelius', 'OTORGADO', 2000, '2026-05-12', '', 2077, datetime('now'))""")
+        db.execute("""INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at)
+                      VALUES ('Judi', 'OTORGADO', 2000, '2026-05-12', '', 2130, datetime('now'))""")
+        db.execute("""INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES (2124, '2026-05-25', 'FIBRA HOTELERA SC RETIRO SIN TARJETA ******7852', 2000, 'BBVA_DEB',
+                              'FINANZAS', 'Retiro efectivo', 'GASTO')""")
+        aud.aplicar(db)
+        fila = lambda i: db.execute("SELECT * FROM est_movimientos WHERE id=?", (i,)).fetchone()
+        assert fila(1812)['descripcion'] == 'RETIRO SIN TARJETA' and fila(1817) is None
+        assert fila(1805)['descripcion'] == 'PAGO CUENTA DE TERCERO BNET COLECTA MARTHA' and fila(1807) is None
+        assert fila(2059)['fecha'][:10] == '2026-05-07'
+        assert (fila(1980)['categoria'], fila(1980)['subcategoria']) == ('FINANZAS', 'Retiro efectivo')
+        assert fila(2006)['descripcion'] == 'SITH2PAGOGDLAC FIDEICOMISO F 1596'
+        assert fila(2124)['descripcion'] == 'RETIRO SIN TARJETA'
+        assert fila(2077) is None
+        assert db.execute("SELECT movimiento_id FROM est_prestamos WHERE contraparte='Cornelius'").fetchone()[0] is None
+        assert {l['accion'] for l in aud.plan(db) if l['estado_auditoria'] == 'CUADRE'} <= {'sin cambio'}

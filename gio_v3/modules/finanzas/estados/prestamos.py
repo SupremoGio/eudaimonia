@@ -394,6 +394,7 @@ PRESTAMOS_SOLO_DEVOLUCION = (
 # y del regreso. El usuario, 2026-10-03: «le transferí a Judi, me dijo mejor
 # a Cornelius, me lo regresó y el 12 se lo pasé a Corner» — el regreso de
 # Judi es «… REGRESO AL CORNER» y lo de Cornelius es «BNET TACOS …».
+_CARGOS_CONFIRMADOS_PDF = {2130}
 IDA_Y_VUELTA = (
     (('2026-05-11', 2000.0, 'PAGO CUENTA DE TERCERO BNET TRANSF A JUDITH A'),
      ('2026-05-12', 2000.0, 'PAGO CUENTA DE TERCERO BNET REGRESO AL CORNER')),
@@ -532,6 +533,10 @@ def registrar_manuales(db) -> tuple[int, int]:
         if not all(filas):
             continue
         ids = [r['id'] for r in filas]
+        # La auditoría contra el PDF (2026-10-04) mostró que «REGRESO AL CORNER»
+        # es un cargo (el regreso de Judi no pasó por BBVA): no se vuelve abono.
+        if any(i in _CARGOS_CONFIRMADOS_PDF for i in ids):
+            continue
         if any(db.execute("""SELECT 1 FROM est_prestamo_devoluciones d JOIN est_prestamos p ON p.id = d.prestamo_id
                                WHERE p.movimiento_id=? OR d.movimiento_id=?""", (i, i)).fetchone() for i in ids):
             continue   # ya tiene devoluciones ligadas: se revisa a mano
