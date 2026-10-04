@@ -3,6 +3,7 @@ from database import get_db
 from datetime import date, datetime
 from collections import defaultdict
 from utils import today_str, today_date, clean_str, safe_float
+from . import compromisos as _comp
 
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 
@@ -225,6 +226,11 @@ def abonar_debt(did):
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     amount = safe_float(request.json.get('amount', 0), min_val=0.0)
     note   = clean_str(request.json.get('note', ''), 300)
+    # Depósitos del banco que son este abono (opcional): ids de movimiento.
+    try:
+        mov_ids = [int(x) for x in (request.json.get('movimiento_ids') or []) if str(x).strip()]
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Los ids de movimiento deben ser números'}), 400
     with get_db() as db:
         debt = db.execute("SELECT * FROM debts WHERE id=?", (did,)).fetchone()
         if not debt: return jsonify({'error':'not found'}), 404
@@ -238,8 +244,14 @@ def abonar_debt(did):
 
         db.execute("UPDATE debts SET monto_restante=?, settled=? WHERE id=?",
                    (nuevo_restante, settled, did))
-        db.execute("INSERT INTO debt_payments (debt_id, amount, note, paid_at) VALUES (?,?,?,?)",
-                   (did, amount, note, datetime.now().isoformat()))
+        pid = db.execute("INSERT INTO debt_payments (debt_id, amount, note, paid_at) VALUES (?,?,?,?)",
+                         (did, amount, note, datetime.now().isoformat())).lastrowid
+        try:
+            for mid in mov_ids:
+                _comp.ligar(db, pid, mid)
+        except ValueError as e:
+            db.rollback()
+            return jsonify({'error': str(e)}), 400
         db.commit()
 
         updated = db.execute("SELECT * FROM debts WHERE id=?", (did,)).fetchone()
@@ -269,7 +281,7 @@ def debt_payments(did):
 
 def _debt_hist(db, d) -> dict:
     """Una deuda con sus abonos/cobros en orden cronológico (historial)."""
-    pagos = [dict(p) for p in db.execute(
+    pagos = [{**dict(p), 'movimientos': _comp.movs_de_pago(db, p['id'])} for p in db.execute(
         "SELECT id, amount, note, paid_at FROM debt_payments WHERE debt_id=? ORDER BY paid_at, id", (d['id'],))]
     return {'id': d['id'], 'type': d['type'], 'person': d['person'], 'concept': d['concept'] or '',
             'monto_total': d['monto_total'], 'monto_restante': d['monto_restante'],
@@ -310,10 +322,58 @@ def settle_debt(did):
     return jsonify({'ok':True})
 
 
+@finanzas_bp.route('/api/debt-payment/<int:pid>/ligar', methods=['POST'])
+def ligar_abono(pid):
+    """Liga un abono ya registrado a su depósito del banco (id de movimiento)."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    try:
+        mid = int((request.json or {}).get('movimiento_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Falta el id del movimiento'}), 400
+    with get_db() as db:
+        if not db.execute("SELECT 1 FROM debt_payments WHERE id=?", (pid,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
+        try:
+            _comp.ligar(db, pid, mid)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        db.commit()
+        return jsonify({'ok': True, 'movimientos': _comp.movs_de_pago(db, pid)})
+
+
+@finanzas_bp.route('/api/debt-payment/movimiento/<int:mid>', methods=['DELETE'])
+def desligar_abono(mid):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        _comp.desligar(db, mid)
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@finanzas_bp.route('/api/debts/sugerencias')
+def debts_sugerencias():
+    """Depósitos de alguien con un compromiso abierto: posibles abonos (no se aplican solos)."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        return jsonify({'sugerencias': _comp.sugerencias(db)})
+
+
+@finanzas_bp.route('/api/debts/sugerencias/<int:mid>/descartar', methods=['POST'])
+def debts_sugerencia_descartar(mid):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        _comp.descartar(db, mid)
+        db.commit()
+    return jsonify({'ok': True})
+
+
 @finanzas_bp.route('/api/debt/<int:did>', methods=['DELETE'])
 def delete_debt(did):
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     with get_db() as db:
+        for (pid,) in db.execute("SELECT id FROM debt_payments WHERE debt_id=?", (did,)).fetchall():
+            for (mid,) in db.execute("SELECT movimiento_id FROM debt_payment_movs WHERE payment_id=?", (pid,)).fetchall():
+                _comp.desligar(db, mid)
         db.execute("DELETE FROM debt_payments WHERE debt_id=?", (did,))
         db.execute("DELETE FROM debts WHERE id=?", (did,))
         db.commit()

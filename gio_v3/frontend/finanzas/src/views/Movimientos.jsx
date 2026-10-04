@@ -8,7 +8,7 @@ import { CatBadge, CatIcon, Empty, ErrorNote, Icon, Modal, Skel, useMedia } from
 import Categorizer from '../components/Categorizer.jsx';
 
 const PAGE = 50;
-const EMPTY = { search: '', tipo: '', category: '', bank: '', date_from: '', date_to: '' };
+const EMPTY = { search: '', tipo: '', category: '', bank: '', contraparte: '', date_from: '', date_to: '' };
 
 function Amount({ t, mode }) {
   const ingreso = t.tipo === 'INGRESO';
@@ -26,6 +26,7 @@ function Amount({ t, mode }) {
 function Flags({ t }) {
   return (
     <>
+      {t.contraparte_nombre ? <span className="eu-badge"><Icon name="user" />{t.contraparte_nombre}</span> : null}
       {t.parcialidad_num && t.parcialidad_total ? <span className="eu-badge eu-badge--info">MSI {t.parcialidad_num}/{t.parcialidad_total}</span> : null}
       {t.mi_parte != null && Math.abs(t.mi_parte) !== Math.abs(t.monto) ? <span className="eu-badge eu-badge--info"><Icon name="users" />Tu parte</span> : null}
     </>
@@ -39,18 +40,20 @@ export default function Movimientos({ initial }) {
   const [searchDraft, setSearchDraft] = useState(f.search);
   const [page, setPage] = useState(0);
   const [mode, setMode] = useState('completo');
-  const [showFilters, setShowFilters] = useState(() => !!(initial && (initial.bank || initial.tipo || initial.date_from)));
+  const [showFilters, setShowFilters] = useState(() => !!(initial && (initial.bank || initial.tipo || initial.contraparte || initial.date_from)));
   const [st, setSt] = useState({ rows: [], total: 0, loading: true, error: null });
   const [sel, setSel] = useState(null); // id seleccionado
   const [cats, setCats] = useState([]);
   const [trips, setTrips] = useState([]);
   const [banks, setBanks] = useState([]);
+  const [cps, setCps] = useState([]);
   const tableRef = useRef(null);
 
   useEffect(() => {
     getCategories().then(setCats).catch(() => {});
     getTrips().then(setTrips);
     api.get('/summary/banks').then((b) => setBanks(b || [])).catch(() => {});
+    api.get('/contrapartes').then((d) => setCps(d.data || [])).catch(() => {});
   }, []);
 
   // Búsqueda con debounce: no se pide a la API en cada tecla.
@@ -69,7 +72,7 @@ export default function Movimientos({ initial }) {
 
   const setFilter = (k, v) => { setF((s) => ({ ...s, [k]: v })); setPage(0); };
   const clear = () => { setF(EMPTY); setSearchDraft(''); setPage(0); };
-  const active = ['tipo', 'bank', 'date_from', 'date_to'].filter((k) => f[k]).length + (f.category && f.category !== 'OTROS' ? 1 : 0);
+  const active = ['tipo', 'bank', 'contraparte', 'date_from', 'date_to'].filter((k) => f[k]).length + (f.category && f.category !== 'OTROS' ? 1 : 0);
   const anyFilter = active > 0 || f.search || f.category;
 
   const rows = st.rows;
@@ -160,6 +163,11 @@ export default function Movimientos({ initial }) {
         <select id="fz-f-bank" className="eu-select fz-input-sm" value={f.bank} onChange={(e) => setFilter('bank', e.target.value)}>
           <option value="">Todas</option>
           {bankOpts.map((b) => <option key={b} value={b}>{bankName(b)}</option>)}
+        </select></div>
+      <div className="eu-field"><label className="eu-label" htmlFor="fz-f-cp">Persona</label>
+        <select id="fz-f-cp" className="eu-select fz-input-sm" value={f.contraparte} onChange={(e) => setFilter('contraparte', e.target.value)}>
+          <option value="">Todas</option>
+          {cps.map((c) => <option key={c.cuenta} value={c.cuenta}>{c.nombre} (…{c.cuenta})</option>)}
         </select></div>
       <div className="eu-field"><label className="eu-label" htmlFor="fz-f-from">Desde</label>
         <input id="fz-f-from" type="date" className="eu-input fz-input-sm" value={f.date_from} onChange={(e) => setFilter('date_from', e.target.value)} /></div>

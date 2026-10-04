@@ -6008,6 +6008,22 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_conciliar_pistas_2026_09_29 migration warning: {e}")
 
+        # ── FINANZAS — contrapartes por los últimos 4 dígitos de la cuenta BNET
+        #    (estados/contrapartes.py). Idempotente: crea la tabla y la semilla
+        #    si faltan y recalcula la contraparte de cada movimiento (no toca
+        #    categorías: eso lo hacen el import y «Aplicar reglas»).
+        try:
+            from modules.finanzas.estados import contrapartes as _cp
+            _cp.asegurar(db)
+            from modules.finanzas import compromisos as _comp
+            _comp.asegurar(db)
+            _n_cp = _cp.actualizar(db)   # solo quién es quién; las categorías las cambia «Aplicar reglas»
+            db.commit()
+            if _n_cp:
+                print(f"[DB] contrapartes: {_n_cp} movimientos actualizados")
+        except Exception as e:
+            print(f"[DB] contrapartes migration warning: {e}")
+
         # ── FINANZAS — abonos de «Sin conciliar» comentados por el usuario
         #    (correcciones_sin_conciliar.py). La versión lleva el tamaño de la
         #    lista: cada tanda nueva se aplica sola al arrancar.

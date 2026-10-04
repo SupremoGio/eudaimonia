@@ -23,6 +23,8 @@ import json
 import os
 import re
 
+from .contrapartes import cuenta_de
+
 # carpeta en data/ -> (banco, prefijo de la migración). BBVA Crédito: cortes
 # del formato viejo «Tarjeta Oro BBVA» (parsers/bbva.py::parse_tarjeta_oro).
 CARPETAS = {
@@ -135,6 +137,9 @@ def aplicar(db, clave: str, carpeta: str = 'bbva_deb_libreton') -> tuple[int, in
             ya += 1
             # El periodo de débito lo decide la fecha de liquidación: si la
             # fila venía sin ella (exportación de movimientos), se le pone.
+            if banco == 'BBVA_DEB' and (cuenta := cuenta_de(m['descripcion'])):
+                db.execute("UPDATE est_movimientos SET cuenta_contraparte=? WHERE id=? AND cuenta_contraparte IS NULL",
+                           (cuenta, match['id']))
             if banco == 'BBVA_DEB' and m.get('fecha_cargo') and m['fecha_cargo'] != m['fecha']:
                 db.execute("""UPDATE est_movimientos SET fecha_cargo=? WHERE id=?
                               AND (fecha_cargo IS NULL OR fecha_cargo='' OR substr(fecha_cargo,1,10)=substr(fecha,1,10))""",

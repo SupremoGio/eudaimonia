@@ -165,7 +165,8 @@ REESCRITOS = [
 
 
 _REFERENCIAS = (('est_prestamos', 'movimiento_id'), ('est_prestamo_devoluciones', 'movimiento_id'),
-                ('est_expense_lote_gastos', 'movimiento_id'), ('est_expense_lote_depositos', 'movimiento_id'))
+                ('est_expense_lote_gastos', 'movimiento_id'), ('est_expense_lote_depositos', 'movimiento_id'),
+                ('debt_payment_movs', 'movimiento_id'))   # abono de un compromiso (modules/finanzas/compromisos.py)
 
 
 def _referenciado(db, mid) -> bool:
@@ -245,7 +246,8 @@ AUDITORIA_2026 = [
     ('2026-03-04', 1500.0, 'RETIRO', 'GASTO', *_COLECTA, None, 'RETIRO SIN TARJETA ******7852'),
     # Papá → Gio (ingreso)
     ('2026-01-04', 251.0, 'ROSCA', 'INGRESO', *_PAPA, None, None),
-    ('2026-02-01', 1610.0, 'TRANSF', 'INGRESO', *_PAPA, None, None),
+    # 1/feb $1,610: abono de Eli al viaje a Guadalajara (contrapartes_viaje.py), no ingreso
+    ('2026-02-01', 1610.0, 'TRANSF', 'INGRESO', 'FINANZAS', 'Reembolso compartido', None, None),
     ('2026-03-23', 500.0, 'TRANSF', 'INGRESO', *_PAPA, None, None),
     ('2026-05-08', 5000.0, 'PRE', 'INGRESO', *_REGALO, None, None),        # regalo de su papá
     ('2026-07-16', 50000.0, 'TQM', 'INGRESO', *_PAPA, None, None),

@@ -42,4 +42,24 @@
     </div>
     {% endfor %}
   </div>
+  {% if sugerencias_abonos %}
+  <div class="pt-sug" aria-labelledby="pt-sug-t">
+    <h4 class="t-ui" id="pt-sug-t"><i data-lucide="sparkles"></i>Depósitos que pueden ser abonos</h4>
+    <p class="t-meta">Llegaron de la cuenta de alguien que te debe. Confírmalos para ligarlos; no se registran solos.</p>
+    <ul class="pt-debt-list">
+      {% for s in sugerencias_abonos %}
+      <li class="pt-debt">
+        <span class="eu-grow pt-debt-bd"><span class="t-ui">{{ s.person }} · {{ s.movimiento.fecha }}</span>
+          <span class="t-meta">{{ s.movimiento.descripcion }} · #{{ s.movimiento.id }} · a «{{ s.concept }}»</span></span>
+        <span class="pt-debt-r"><span class="t-data">{{ pm.money(s.movimiento.monto) }}</span>
+          <span class="pt-acts">
+            <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-abonar="{{ s.debt_id }}" data-rest="{{ s.monto_restante }}"
+              data-mov="{{ s.movimiento.id }}" data-monto="{{ s.movimiento.monto }}" data-nota="Depósito {{ s.movimiento.fecha }}">Registrar abono</button>
+            <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-descartar="{{ s.movimiento.id }}">No es abono</button>
+          </span></span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
 </section>

@@ -26,6 +26,7 @@ from . import pedidos_amazon as _amazon
 from . import correcciones_sin_conciliar as _sinconc
 from . import msi as _msi
 from . import abonos as _abonos
+from . import contrapartes as _contra
 
 estados_bp = Blueprint(
     'estados',
@@ -190,6 +191,9 @@ def _build_filters(args) -> tuple[list[str], list]:
     if args.get('tipo'):
         conditions.append("tipo = ?")
         params.append(args['tipo'])
+    if args.get('contraparte'):
+        conditions.append("contraparte = ?")
+        params.append(args['contraparte'])
     if args.get('search'):
         # También por monto (el usuario, 2026-10-01): «390», «$1,500» o «6882.28».
         # Sin centavos busca de 390.00 a 390.99; con centavos, el monto exacto.
@@ -1084,8 +1088,42 @@ def list_transactions():
             f"SELECT * FROM est_movimientos {where} ORDER BY {order_by} LIMIT ? OFFSET ?",
             params + [limit, offset],
         ).fetchall()
+        nombres = {cp['cuenta']: cp['nombre'] for cp in _contra.listar(db)}
+    return jsonify({'data': [{**dict(r), 'contraparte_nombre': nombres.get(r['contraparte'])} for r in rows],
+                    'total': total})
 
-    return jsonify({'data': [dict(r) for r in rows], 'total': total})
+
+@estados_bp.route('/api/contrapartes')
+def contrapartes_listar():
+    """Contrapartes (últimos 4 dígitos de la cuenta BNET) con cuántos
+    movimientos tiene cada una."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        cuenta = dict(db.execute("""SELECT contraparte, COUNT(*) FROM est_movimientos
+                                     WHERE contraparte IS NOT NULL GROUP BY contraparte""").fetchall())
+        return jsonify({'data': [{**cp, 'movimientos': cuenta.get(cp['cuenta'], 0)} for cp in _contra.listar(db)]})
+
+
+@estados_bp.route('/api/contrapartes', methods=['POST'])
+def contrapartes_guardar():
+    if not _ok(): return _locked()
+    with get_db() as db:
+        try:
+            cp = _contra.guardar(db, request.json or {})
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        _contra.aplicar_auto(db)
+        db.commit()
+    return jsonify({'ok': True, 'contraparte': cp})
+
+
+@estados_bp.route('/api/contrapartes/<cuenta>', methods=['DELETE'])
+def contrapartes_borrar(cuenta):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        _contra.borrar(db, cuenta)
+        db.commit()
+    return jsonify({'ok': True})
 
 
 @estados_bp.route('/api/transactions', methods=['POST'])
@@ -1945,6 +1983,8 @@ def _reaplicar_reglas(db) -> int:
     _csv0926.aplicar(db)
     _otros0928.aplicar(db)
     _amazon.aplicar(db)
+    _contra.actualizar(db)
+    _contra.aplicar_auto(db)
     _sinconc.aplicar(db)
     _prest.registrar_manuales(db)
     _conciliar_renta_variable(db)
@@ -2706,6 +2746,11 @@ def _guardar_liquidacion(db, banco, m, monto) -> None:
     de liquidación (LIQ) distinta: se le pone, porque el periodo lo decide la
     LIQ (SPEI del sábado 5-sep liquidado el lunes 7 → estado de septiembre).
     Solo toca filas sin LIQ propia (vacía o igual a la de operación)."""
+    if banco == 'BBVA_DEB' and (cuenta := _contra.cuenta_de(m.get('descripcion'))):
+        # La cuenta de la contraparte (…NNNN) que la exportación no traía.
+        db.execute("""UPDATE est_movimientos SET cuenta_contraparte=?
+                      WHERE banco=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005 AND tipo=?
+                        AND cuenta_contraparte IS NULL""", (cuenta, banco, m['fecha'][:10], abs(monto), m['tipo']))
     liq = (m.get('fecha_cargo') or '')[:10]
     if banco != 'BBVA_DEB' or not liq or liq == m['fecha'][:10]:
         return
@@ -3031,6 +3076,8 @@ def upload_file():
             _csv0926.aplicar(db)
             _otros0928.aplicar(db)
             _amazon.aplicar(db)
+            _contra.actualizar(db)
+            _contra.aplicar_auto(db)
             _sinconc.aplicar(db)
             _prest.registrar_manuales(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
@@ -3482,6 +3529,37 @@ def auditoria_pdf_admin():
                     'cambios': [l for l in lineas if l['accion'] not in ('sin cambio', 'pendiente revisión')],
                     'sin_cambio': [l for l in lineas if l['accion'] == 'sin cambio'],
                     'cuadre': cuadre and [c for c in cuadre if not c['cuadra']]})
+
+
+@estados_bp.route('/admin/contrapartes-viaje')
+def contrapartes_viaje_admin():
+    """Compromisos del viaje a Guadalajara + revisión de correcciones
+    (contrapartes_viaje.py). Sin parámetros es SIMULACIÓN. ?aplicar=1 respalda
+    la base y aplica. ?formato=md devuelve el reporte en Markdown."""
+    if not _ok(): return _locked()
+    import database as _database
+    from . import auditoria_pdf as _aud
+    from . import contrapartes_viaje as _cv
+    respaldo = None
+    with get_db() as db:
+        lineas = _cv.plan(db)
+        if request.args.get('aplicar') == '1':
+            respaldo = _aud.respaldar(_database._DB_PATH, 'contrapartes_viaje')
+            lineas = _cv.aplicar(db, lineas)
+            db.commit()
+        compromisos = _cv.resumen_compromisos(db)
+        periodos = ('2026-02-07', '2026-04-07', '2026-05-07', '2026-08-07', '2026-09-07')
+        cuadre = [c for c in _aud.cuadre(db) if c['banco'] == 'BBVA_DEB' and c['periodo'][:10] in periodos]
+    lineas = [{k: v for k, v in l.items() if not k.startswith('_')} for l in lineas]
+    if request.args.get('formato') == 'md':
+        return Response(_cv.reporte_md(lineas, compromisos, respaldo), mimetype='text/markdown',
+                        headers={'Content-Disposition': 'attachment; filename=reporte_contrapartes_viaje.md'})
+    return jsonify({'modo': 'aplicado' if respaldo else 'simulacion (no se escribió nada)', 'respaldo': respaldo,
+                    'preguntas': [l for l in lineas if l['accion'] == 'pregunta'],
+                    'pendientes': [l for l in lineas if l['accion'] == 'pendiente revisión'],
+                    'cambios': [l for l in lineas if l['accion'] not in ('sin cambio', 'verificado', 'pregunta', 'pendiente revisión')],
+                    'verificado': [l for l in lineas if l['accion'] == 'verificado'],
+                    'compromisos': compromisos, 'cuadre_2026': cuadre})
 
 
 @estados_bp.route('/admin/auditoria-pdf/periodo')

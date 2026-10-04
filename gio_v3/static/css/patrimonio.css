@@ -127,3 +127,8 @@
 .pt-hist-item summary{display:flex;gap:var(--sp-3);align-items:baseline;cursor:pointer;list-style:none}
 .pt-hist-item summary::-webkit-details-marker{display:none}
 .pt-hist-item[open] summary{margin-bottom:var(--sp-2)}
+/* Depósitos sugeridos como abono de un compromiso */
+.pt-sug{margin-top:var(--sp-4);padding-top:var(--sp-4);border-top:1px solid var(--border-subtle)}
+.pt-sug h4{display:flex;align-items:center;gap:var(--sp-2)}
+.pt-sug h4 svg{width:16px;height:16px}
+.pt-sug .pt-acts{display:flex;flex-wrap:wrap;gap:var(--sp-2)}

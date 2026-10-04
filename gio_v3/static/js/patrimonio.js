@@ -90,7 +90,8 @@
     var amount = parseFloat($('ma-amount').value);
     if (!(amount > 0)) { setErr('ma-err', 'Monto inválido.'); $('ma-amount').focus(); return; }
     busy('f-m-abonar', true);
-    send('/finanzas/api/debt/' + $('ma-did').value + '/abonar', 'POST', { amount: amount, note: $('ma-note').value.trim() }).then(function (d) {
+    var movs = $('ma-movs').value.split(',').map(function (x) { return x.replace(/\D/g, ''); }).filter(Boolean);
+    send('/finanzas/api/debt/' + $('ma-did').value + '/abonar', 'POST', { amount: amount, note: $('ma-note').value.trim(), movimiento_ids: movs }).then(function (d) {
       if (!d.ok) { setErr('ma-err', d.error || 'Error.'); busy('f-m-abonar', false); return; }
       euModal.close('m-abonar'); toast('Abono registrado', 'ok'); reload();
     }).catch(function () { setErr('ma-err', 'Sin conexión.'); busy('f-m-abonar', false); });
@@ -118,7 +119,9 @@
       + '<span class="t-data">' + mx(d.monto_total) + '</span></li>';
     d.payments.forEach(function (p) {
       html += '<li><span class="t-meta pt-hist-f">' + fecha(p.paid_at) + '</span><span class="eu-grow">'
-        + (cobro ? 'Te pagó' : 'Pagaste') + (p.note ? ' · <span class="t-meta">' + esc(p.note) + '</span>' : '') + '</span>'
+        + (cobro ? 'Te pagó' : 'Pagaste') + (p.note ? ' · <span class="t-meta">' + esc(p.note) + '</span>' : '')
+        + (p.movimientos || []).map(function (m) { return '<br><span class="t-meta">Banco: ' + fecha(m.fecha) + ' · ' + mx(m.monto) + ' · #' + m.id + '</span>'; }).join('')
+        + '</span>'
         + '<span class="t-data pt-hist-pago">−' + mx(p.amount) + '</span></li>';
     });
     if (!d.payments.length) html += '<li class="t-meta">Sin abonos registrados todavía.</li>';
@@ -163,8 +166,10 @@
     }
     else if ((t = e.target.closest('[data-abonar]'))) {
       $('ma-did').value = t.dataset.abonar; $('ma-restante').textContent = '$' + Number(t.dataset.rest).toLocaleString('es-MX', { minimumFractionDigits: 2 });
-      $('ma-amount').value = ''; $('ma-note').value = ''; setErr('ma-err', ''); open('m-abonar', 'ma-amount');
+      $('ma-amount').value = t.dataset.monto || ''; $('ma-note').value = t.dataset.nota || ''; $('ma-movs').value = t.dataset.mov || '';
+      setErr('ma-err', ''); open('m-abonar', 'ma-amount');
     }
+    else if ((t = e.target.closest('[data-descartar]'))) { confirmDel('¿No es un abono? No se volverá a sugerir.', '/finanzas/api/debts/sugerencias/' + t.dataset.descartar + '/descartar', 'Sugerencia descartada', { danger: false, confirmLabel: 'No es abono', method: 'POST' }); }
     else if ((t = e.target.closest('[data-settle]'))) { confirmDel('¿Marcar como liquidada? Se moverá al historial.', '/finanzas/api/debt/' + t.dataset.settle + '/settle', 'Deuda liquidada', { danger: false, confirmLabel: 'Marcar liquidada', method: 'POST' }); }
     else if ((t = e.target.closest('[data-del-debt]'))) { confirmDel('¿Eliminar esta deuda? No se puede deshacer.', '/finanzas/api/debt/' + t.dataset.delDebt, 'Deuda eliminada'); }
     else if ((t = e.target.closest('.js-snap'))) {

@@ -117,6 +117,11 @@ def index():
         i_owe  = [dict(r) for r in db.execute(
             "SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY created_at DESC"
         ).fetchall()]
+        try:   # depósitos de un deudor con compromiso abierto: posibles abonos
+            from modules.finanzas import compromisos
+            sugerencias_abonos = compromisos.sugerencias(db)
+        except Exception:
+            sugerencias_abonos = []
     return render_template('finanzas/salud.html',
         patrimonio_neto   = pat['patrimonio_neto'],
         total_activos     = pat['total_activos'],
@@ -134,6 +139,7 @@ def index():
         today             = today_str(),
         owe_me            = owe_me,
         i_owe             = i_owe,
+        sugerencias_abonos = sugerencias_abonos,
         otras_monedas     = pat['otras_monedas'],
     )
 

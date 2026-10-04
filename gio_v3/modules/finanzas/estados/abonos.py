@@ -243,6 +243,13 @@ def _pistas(db, rows) -> None:
         abiertos = []
     aprendidos = _conceptos_aprendidos(db)
     pend = {p['id']: p['pendiente'] for p in abiertos}
+    from . import contrapartes
+    cps = contrapartes.por_cuenta(db)
+    try:   # compromisos «me deben» abiertos, por contraparte
+        from modules.finanzas import compromisos
+        sug = {s['movimiento']['id']: s for s in compromisos.sugerencias(db)}
+    except Exception:
+        sug = {}
     compartidos = _por_cobrar_compartido(db)
     # Del más antiguo al más reciente: cada devolución baja el pendiente de su
     # préstamo (o de su gasto compartido) antes de ver la siguiente.
@@ -270,6 +277,17 @@ def _pistas(db, rows) -> None:
             pend[p['id']] = round(pend[p['id']] - monto, 2)
             r['pista'] = {'tipo': 'prestamo', 'prestamo_id': p['id'],
                           'texto': f"Préstamo a {p['persona']} del {p['fecha'][:10]} (pendiente ${pend[p['id']] + monto:,.2f})"}
+            continue
+        if r['id'] in sug:
+            s = sug[r['id']]
+            r['pista'] = {'tipo': 'compromiso', 'debt_id': s['debt_id'],
+                          'texto': f"¿Abono de {s['person']} a «{s['concept']}»? (pendiente ${s['monto_restante']:,.2f}) "
+                                   f"· regístralo en Compromisos"}
+            continue
+        cp = cps.get(r.get('contraparte'))
+        sc = cp and contrapartes.sugerencia(cp, 'INGRESO', r['descripcion'])
+        if sc and (sc[0], sc[1]) != ((r['categoria'] or ''), (r['subcategoria'] or '')):
+            r['pista'] = {'tipo': 'gasto', 'categoria': sc[0], 'subcategoria': sc[1], 'texto': sc[2]}
             continue
         if not fecha:
             continue
@@ -502,7 +520,7 @@ def conciliar_pistas(db, solo_seguras: bool = False) -> dict:
             db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria=?, viaje_id=COALESCE(?, viaje_id) WHERE id=?",
                        (SUB_COMPARTIDO, pista.get('viaje_id'), r['id']))
             out['compartidos'] += 1
-        elif pista['tipo'] == 'empresa':
+        elif pista['tipo'] in ('empresa', 'compromiso'):   # el abono a un compromiso se confirma en Compromisos
             out['sin_aplicar'] += 1
         elif pista['tipo'] == 'gasto':
             if not solo_seguras:

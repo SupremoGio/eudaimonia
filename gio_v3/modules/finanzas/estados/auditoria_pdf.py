@@ -121,7 +121,9 @@ CORRECCIONES_CUADRE = {
     1812: {'descripcion': ('BNET P RETIRO', 'RETIRO SIN TARJETA')},
     1823: {'descripcion': ('A JUDITH A RETIRO', 'RETIRO SIN TARJETA')},
     2124: {'descripcion': ('FIBRA HOTELERA SC RETIRO', 'RETIRO SIN TARJETA')},
-    1815: {'descripcion': ('GIO SPEI ENVIADO BANAMEX', 'SPEI ENVIADO BANAMEX ARBITRAJE GIO'),
+    # 2026-10-04 (prompt de contrapartes): el concepto completo del PDF, «2901260Arbitraje Gio».
+    1815: {'descripcion': (('GIO SPEI ENVIADO BANAMEX', 'SPEI ENVIADO BANAMEX ARBITRAJE GIO'),
+                           'SPEI ENVIADO BANAMEX 2901260ARBITRAJE GIO'),
            'categoria': ('CUIDADO_PERSONAL', 'DEPORTE'), 'subcategoria': ('Barbería', 'Fútbol')},
     1805: {'descripcion': ('BNET MARTHA PAGO CUENTA', 'PAGO CUENTA DE TERCERO BNET COLECTA MARTHA')},
     1956: {'descripcion': ('A GIOVANY A DEPOSITO', 'DEPOSITO EFECTIVO PRACTIC ******1804 ABR07 18:08 PRAC D797')},
@@ -655,9 +657,10 @@ def _plan_correcciones_cuadre(db, borrados) -> list[dict]:
                 actual = (actual or r['fecha'])[:10]
             if actual == nuevo:
                 continue
-            if not (actual == hoy or actual.startswith(hoy)):
+            hoys = hoy if isinstance(hoy, tuple) else (hoy,)   # varios textos de antes posibles
+            if not any(actual == h or actual.startswith(h) for h in hoys):
                 out.append(_linea(f, r, 'pendiente revisión', campo, actual, nuevo,
-                                  f'ya no tiene «{hoy}»: alguien la cambió, no se toca'))
+                                  f'ya no tiene «{hoys[0]}»: alguien la cambió, no se toca'))
                 continue
             cambios[campo] = nuevo
         if 'descripcion' in cambios or 'fecha' in cambios:
@@ -718,11 +721,11 @@ def resumen(lineas: list[dict]) -> dict:
     return dict(sorted(por.items()))
 
 
-def respaldar(db_path: str) -> str:
+def respaldar(db_path: str, motivo: str = 'auditoria_pdf') -> str:
     """Copia consistente de la base (API de respaldo de SQLite) junto a ella."""
     destino_dir = os.path.join(os.path.dirname(os.path.abspath(db_path)), 'respaldos')
     os.makedirs(destino_dir, exist_ok=True)
-    destino = os.path.join(destino_dir, f"pipeline_{datetime.now():%Y%m%d_%H%M%S}_antes_auditoria_pdf.db")
+    destino = os.path.join(destino_dir, f"pipeline_{datetime.now():%Y%m%d_%H%M%S}_antes_{motivo}.db")
     src, dst = sqlite3.connect(db_path), sqlite3.connect(destino)
     try:
         src.backup(dst)
