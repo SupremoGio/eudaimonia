@@ -54,7 +54,8 @@ def test_gastos_de_dinero_ajeno_regresado(test_db):
             == ('FINANZAS', 'Reembolsable')
 
 
-def test_pago_a_eli_solo_el_seguro_es_gasto(test_db):
+def test_pago_a_eli_es_deuda(test_db):
+    """«si yo pagué todo, es deuda» (2026-10-04): pago de deuda a su papá, no seguro."""
     with database.get_db() as db:
         i = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
                           VALUES ('2026-04-15', '059 180326OINVEX ABRIL PAGO CUENTA DE TERCERO BNET DEUDA', 3311,
@@ -62,7 +63,7 @@ def test_pago_a_eli_solo_el_seguro_es_gasto(test_db):
         db.commit()
         corr.aplicar(db)
         assert tuple(db.execute("SELECT categoria, subcategoria, tipo, mi_parte FROM est_movimientos WHERE id=?",
-                                (i,)).fetchone()) == ('TRANSPORTE', 'Seguro auto', 'GASTO', 1111.0)
+                                (i,)).fetchone()) == ('FINANZAS', 'Transferencia enviada', 'GASTO', None)
         assert corr.aplicar(db)[0] == 0
 
 

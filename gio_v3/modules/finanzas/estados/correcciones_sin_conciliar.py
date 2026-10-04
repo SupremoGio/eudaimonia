@@ -104,7 +104,8 @@ GASTOS = [
     # «aquí le pagué a Eli, mi papá» (2026-10-03): seguro de marzo y abril
     # ($555.50 c/u) + préstamos que él le hizo ($1,500 + $700, no son gasto).
     # «INVEX ABRIL» en el concepto lo mandaba a Pago TDC.
-    ('2026-04-15', 3311.0, 'DEUDA', 'TRANSPORTE', 'Seguro auto', 1111.0),
+    # 2026-10-04: «si yo pagué todo, es deuda»: pago de deuda a su papá, no seguro.
+    ('2026-04-15', 3311.0, 'DEUDA', 'FINANZAS', 'Transferencia enviada'),
     # Nespresso compartido (2026-10-03): «compré una parte para mí y otra para
     # alguien más; me transfirieron su parte» ($410, «CAPSULAS CAFE», abajo).
     ('2026-07-17', 918.75, 'NESPRESSO', 'CAFE/PAN', 'Café', 508.75),

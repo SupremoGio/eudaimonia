@@ -168,7 +168,7 @@ def test_viaje_gdl_plan_y_aplicar(test_db):
         ligados = [l for l in lineas if l['accion'] == 'ligado']
         assert len(ligados) == 6
         assert {l['seccion'] for l in lineas if l['accion'] == 'abono agregado'} == {'viaje · Lenis', 'viaje · Judicial'}
-        assert [l['accion'] for l in lineas if l['accion'] == 'pregunta'] == ['pregunta'] * 4
+        assert [l['objeto'][:5] for l in lineas if l['accion'] == 'pregunta'] == ['#1749']
         cv.aplicar(db, lineas)
         res = {c['persona']: c for c in cv.resumen_compromisos(db)}
         assert (res['Eli']['liquidado'], res['Lenis']['liquidado']) == (True, True)
@@ -194,7 +194,7 @@ def test_endpoint_contrapartes_viaje_simula(test_db):
         _viaje_como_prod(db)
         db.commit()
     j = c.get('/finanzas/estados/admin/contrapartes-viaje').get_json()
-    assert j['respaldo'] is None and j['modo'].startswith('simulacion') and len(j['preguntas']) == 4
+    assert j['respaldo'] is None and j['modo'].startswith('simulacion') and len(j['preguntas']) == 1
     with database.get_db() as db:
         assert db.execute("SELECT COUNT(*) FROM debt_payment_movs").fetchone()[0] == 0
     md = c.get('/finanzas/estados/admin/contrapartes-viaje?formato=md')

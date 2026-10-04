@@ -48,11 +48,12 @@ COMPROMISOS = (
 )
 
 # Lo que choca con decisiones anteriores: None = falta la respuesta del usuario.
+# Respuestas del usuario (2026-10-04).
 DECISIONES = {
-    'papa_2023': None,   # $7,000 jun-2023: ¿neutros (Entre cuentas propias) o abono OTROS?
-    '1749': None,        # $2,500 «capital» a Judith (15-feb-2026): ¿préstamo con 1750 de devolución?
-    '1979': None,        # $3,311 a Papá (15-abr-2026): ¿seguro + préstamos o todo pago de deuda?
-    '3004': None,        # $2,513 «jefe de famil repo» (…5937): ¿préstamo de Cornelius o de Judi?
+    'papa_2023': 'neutro',   # «haz lo que recomiendas»: Entre cuentas propias los dos (prestamos.PRESTAMOS_RECIBIDOS_PAGADOS)
+    '1749': None,            # $2,500 «capital» a Judith (15-feb-2026) que regresaron el mismo día (1750)
+    '1979': 'deuda',         # «si yo pagué todo, es deuda» (CATEGORIAS)
+    '3004': 'judi',          # «quizá le transferí a mi hermana Judi, pero es lo mismo: Cornelius es su esposo»
 }
 
 # Categorías que el usuario corrigió: (sección, id, fecha, monto, texto, categoría, subcategoría, por qué).
@@ -60,6 +61,8 @@ DECISIONES = {
 CATEGORIAS = (
     ('3a', 3351, '2024-01-07', 7000.0, 'ABONO DEUDA', 'FINANZAS', 'Transferencia enviada',
      'abono de deuda a Papá (…1239): le pagaste, no le prestaste'),
+    ('3f', 1979, '2026-04-15', 3311.0, 'DEUDA', 'FINANZAS', 'Transferencia enviada',
+     '«si yo pagué todo, es deuda»: pago de deuda a Papá, no seguro'),
 )
 
 # Correcciones que ya aplicó la auditoría contra el PDF: id -> (campo, valor esperado | None = no debe existir)
@@ -205,12 +208,13 @@ def _categorias(db) -> list[dict]:
                 out.append(_l(sec, 'préstamo borrado', f'préstamo a {p["contraparte"]} (#{r["id"]})', por_que,
                               fn=lambda db, pid=p['id']: db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))))
         antes = f"{r['categoria']}/{r['subcategoria'] or ''}"
-        if (r['categoria'], r['subcategoria'] or '') == (cat, sub):
+        if (r['categoria'], r['subcategoria'] or '', r['mi_parte']) == (cat, sub, None):
             out.append(_l(sec, 'sin cambio', f'#{r["id"]}', 'ya está', antes, antes))
         else:
             out.append(_l(sec, 'actualizado', f'#{r["id"]} {fecha} ${monto:,.2f} {r["descripcion"]}', por_que, antes, f'{cat}/{sub}',
                           lambda db, mid=r['id'], cat=cat, sub=sub:
-                          db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, mid))))
+                          db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, mi_parte=NULL WHERE id=?",
+                                     (cat, sub, mid))))
     return out
 
 
@@ -240,7 +244,8 @@ def _preguntas(db) -> list[dict]:
                     '(contaría $7,000 de ingreso en jun-2023) y cargo → Transferencia enviada'))
     if DECISIONES['1749'] is None:
         q.append(_l('3f', 'pregunta', '#1749 $2,500 «capital» a Judith (15-feb-2026)',
-                    'el prompt dice PRESTAMOS/Prestado; el mismo día regresaron $2,500 (#1750): ¿préstamo pagado con el 1750?'))
+                    'le mandaste $2,500 y ese mismo día te regresaron $2,500 (#1750); hoy los dos son Entre cuentas '
+                    'propias (no cuentan). El prompt lo quiere como préstamo: ¿lo marco como préstamo ya pagado?'))
     if DECISIONES['1979'] is None:
         q.append(_l('3f', 'pregunta', '#1979 $3,311 a Papá (15-abr-2026)',
                     'el 3-oct dijiste: seguro mar+abr ($1,111) + préstamos ($1,500 + $700). El prompt: todo es pago de deuda'))
