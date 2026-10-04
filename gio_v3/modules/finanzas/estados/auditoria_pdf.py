@@ -127,7 +127,7 @@ CORRECCIONES_CUADRE = {
     2006: {'descripcion': ('GIOVANY SITH2PAGOGDLAC', 'SITH2PAGOGDLAC FIDEICOMISO F 1596')},
     2085: {'descripcion': ('PAGO CUENTA DE TERCERO', 'PAGO CUENTA DE TERCERO BNET TACOS')},
     # En el PDF es del 7-may: pasa al estado de mayo (abr +$300 / may -$300).
-    2059: {'fecha': ('2026-05-06', '2026-05-07')},
+    2059: {'fecha': ('2026-05-06', '2026-05-07'), 'fecha_cargo': ('2026-05-06', '2026-05-07')},
     # «capital» a Judith y los $2,500 que regresaron el mismo día: ida y vuelta.
     1749: {'subcategoria': ('Retiro efectivo', 'Entre cuentas propias')},
     1750: {'subcategoria': ('Reembolso compartido', 'Entre cuentas propias')},

@@ -343,3 +343,16 @@ def test_debito_cuadra_por_fecha_de_liquidacion(test_db):
         sep = next(c for c in aud.cuadre(db) if c['periodo'].startswith('2026-09-07'))
         assert sep['cargos_app'] == 150.0
         assert {l['accion'] for l in aud.plan(db) if l['id_app'] == 2540} <= {'sin cambio'}
+
+
+def test_2059_ya_movido_de_fecha_tambien_mueve_la_liquidacion(test_db):
+    """Producción: la 1ª pasada le cambió la fecha al 7-may pero dejó la LIQ
+    en el 6; al cuadrar por liquidación volvía a caer en abril (abr +$300)."""
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (id, fecha, fecha_cargo, descripcion, monto, banco, categoria,
+                      subcategoria, tipo) VALUES (2059, '2026-05-07', '2026-05-06',
+                      'SPEI ENVIADO BANAMEX 002 1404260CARNES GIO', 300, 'BBVA_DEB', 'COMIDA_FUERA', 'Restaurante', 'GASTO')""")
+        aud.aplicar(db)
+        r = _fila(db, 2059)
+        assert (r['fecha'], r['fecha_cargo']) == ('2026-05-07', '2026-05-07')
+        assert [m['id'] for m in aud.movimientos_periodo(db, 'BBVA_DEB', '2026-05-07', '2026-06-06')] == [2059]
