@@ -3535,7 +3535,8 @@ def auditoria_pdf_admin():
 def contrapartes_viaje_admin():
     """Compromisos del viaje a Guadalajara + revisión de correcciones
     (contrapartes_viaje.py). Sin parámetros es SIMULACIÓN. ?aplicar=1 respalda
-    la base y aplica. ?formato=md devuelve el reporte en Markdown."""
+    la base y aplica. ?formato=md devuelve el reporte en Markdown (con
+    ?aplicar=1&formato=md, el de lo que se acaba de aplicar)."""
     if not _ok(): return _locked()
     import database as _database
     from . import auditoria_pdf as _aud

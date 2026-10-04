@@ -287,16 +287,23 @@ def resumen_compromisos(db) -> list[dict]:
 
 
 def reporte_md(lineas, compromisos, respaldo) -> str:
+    pend = [x for x in lineas if x['accion'] not in ('sin cambio', 'verificado', 'pregunta', 'pendiente revisión')]
+    estado = (f'Aplicado. Respaldo: `{respaldo}`.' if respaldo else
+              'Simulación: no se escribió nada.' if pend else 'Sin cambios pendientes: la base ya está así.')
     l = ['# Reporte: contrapartes y viaje a Guadalajara', '',
-         f'Generado {datetime.now():%Y-%m-%d %H:%M}. ' + (f'Respaldo: `{respaldo}`.' if respaldo else 'Simulación: no se escribió nada.'), '',
+         f'Generado {datetime.now():%Y-%m-%d %H:%M}. {estado}', '',
          '## Compromisos del viaje', '', '| Persona | Total | Abonos | Pendiente |', '|---|---:|---|---:|']
     for c in compromisos:
         ab = '; '.join(f"{a['fecha']} ${a['monto']:,.2f}" + (f" (#{', #'.join(map(str, a['depositos']))})" if a['depositos'] else '')
                        for a in c['abonos'])
         l.append(f"| {c['persona']} {c['cuenta']} | ${c['total']:,.2f} | {ab} | "
                  f"{'LIQUIDADO' if c['liquidado'] else '$' + format(c['pendiente'], ',.2f')} |")
-    l += ['', '## Cambios', '', '| Sección | Acción | Qué | Antes | Después | Por qué |', '|---|---|---|---|---|---|']
-    for x in lineas:
-        if x['accion'] != 'sin cambio':
-            l.append(f"| {x['seccion']} | {x['accion']} | {x['objeto']} | {x['antes']} | {x['despues']} | {x['motivo']} |")
+    fila = lambda x: f"| {x['seccion']} | {x['accion']} | {x['objeto']} | {x['antes']} | {x['despues']} | {x['motivo']} |"
+    hd = ['| Sección | Acción | Qué | Antes | Después | Por qué |', '|---|---|---|---|---|---|']
+    for titulo, acciones in (('Cambios', None), ('Pendientes y preguntas', ('pendiente revisión', 'pregunta')),
+                             ('Revisión (ya estaba así)', ('verificado',))):
+        xs = [x for x in lineas if (x['accion'] in acciones if acciones else
+                                   x['accion'] not in ('sin cambio', 'verificado', 'pendiente revisión', 'pregunta'))]
+        if xs:
+            l += ['', f'## {titulo}', '', *hd, *map(fila, xs)]
     return '\n'.join(l) + '\n'
