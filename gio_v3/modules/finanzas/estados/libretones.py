@@ -1,5 +1,5 @@
 """
-Estados de cuenta del Libretón BBVA Débito (cuenta 1520361804) -- y cortes de
+Estados de cuenta del Libretón BBVA Débito (cuenta …1804) -- y cortes de
 BBVA Crédito del formato viejo «Tarjeta Oro» (data/bbva_tdc_oro) -- que el usuario
 mandó para llenar los huecos de la auditoría (2026-09-26, «te voy a pasar 5
 por 5»). Cada archivo de data/bbva_deb_libreton/<AAAAMM>.json es la salida del

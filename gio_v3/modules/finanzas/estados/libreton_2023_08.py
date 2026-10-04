@@ -1,5 +1,5 @@
 """
-Libretón BBVA Débito 07/08/2023 al 06/09/2023 (cuenta 1520361804), cargado a
+Libretón BBVA Débito 07/08/2023 al 06/09/2023 (cuenta …1804), cargado a
 mano (2026-09-26): la auditoría de huecos marcaba 2023-08-03 -> 2023-09-08 sin
 movimientos en BBVA Débito y el PDF que mandó el usuario es una impresión
 (solo imagen, sin texto), así que el parser no puede leerlo. Las 25 filas se
