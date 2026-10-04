@@ -311,7 +311,8 @@ def _plan_ligado(db, f, r) -> list[dict]:
                     and p['id'] not in ignorar_prestamos and p['pendiente'] >= abs(r['monto']) - 0.01
                     and not p['perdido_fecha']]
         antes = [p for p in abiertos if (p['fecha'] or '')[:10] <= f['fecha']]
-        p = max(antes, key=lambda p: p['fecha']) if antes else (min(abiertos, key=lambda p: p['fecha']) if abiertos else None)
+        # Solo un préstamo anterior al abono: lo que llega antes no puede pagar uno posterior.
+        p = max(antes, key=lambda p: p['fecha']) if antes else None
         if ya:
             cat, sub = 'PRESTAMOS', ''
         elif p:

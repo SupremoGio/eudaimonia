@@ -198,6 +198,7 @@ def test_ligados_confirmados_por_el_usuario(test_db):
         # 2999 ($1,000 de Judi) era el origen de un «préstamo» a Judi; Judi tiene otro abierto.
         falso = _prestamo(db, 'Judi', 1000, '2025-03-24', 2999)
         abierto = _prestamo(db, 'Judi', 3000, '2025-02-01', None)
+        _prestamo(db, 'Judi', 10000, '2025-11-26', None)          # posterior al abono: no le toca
         # 3004 (jefe de famil repo) era el origen de un préstamo con una devolución de $2,512.
         repo = _prestamo(db, 'Judi', 2513, '2025-03-27', 3004)
         dev = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
