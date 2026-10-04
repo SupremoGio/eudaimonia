@@ -212,7 +212,7 @@ def test_ligados_confirmados_por_el_usuario(test_db):
         aud.aplicar(db)
         fila = lambda i: tuple(db.execute("SELECT tipo, categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
         liga = lambda i: db.execute("SELECT prestamo_id FROM est_prestamo_devoluciones WHERE movimiento_id=?", (i,)).fetchone()
-        assert fila(3351) == ('GASTO', 'PRESTAMOS', '') and liga(3351) is None
+        assert fila(3351) == ('GASTO', 'FINANZAS', 'Transferencia enviada') and liga(3351) is None
         assert fila(2999)[0] == 'INGRESO' and liga(2999)[0] == abierto
         assert not db.execute("SELECT 1 FROM est_prestamos WHERE id IN (?, ?)", (falso, repo)).fetchone()
         assert fila(3004) == ('INGRESO', 'PRESTAMOS', '')

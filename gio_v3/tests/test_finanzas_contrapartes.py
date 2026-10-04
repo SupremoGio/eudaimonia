@@ -209,3 +209,14 @@ def test_totales_pdf_de_los_periodos_2026():
     esperado = {'2026-02-07': (47162.82, 43777.28), '2026-04-07': (40631.86, 37600.41), '2026-05-07': (85844.35, 88638.63)}
     for p, (a, c) in esperado.items():
         assert (float(filas[p]['total_abonos_pdf']), float(filas[p]['total_cargos_pdf'])) == (a, c)
+
+
+def test_abono_deuda_a_papa_no_es_prestamo(test_db):
+    from modules.finanzas.estados import contrapartes_viaje as cv
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES (3351, '2024-01-07', 'PAGO CUENTA DE TERCERO BNET ABONO DEUDA', 7000, 'BBVA_DEB', 'PRESTAMOS', '', 'GASTO')""")
+        cv.aplicar(db)
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=3351").fetchone()) == \
+            ('FINANZAS', 'Transferencia enviada')
+        assert [l['accion'] for l in cv.plan(db) if l['objeto'] == '#3351'] == ['sin cambio']

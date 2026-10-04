@@ -91,7 +91,9 @@ FALTA_CATEGORIA = {
 # La categoría None = ligar como devolución a un préstamo abierto de esa persona
 # (DEVOLUCION_DE); si no tiene, Reembolso compartido.
 CONFIRMADOS_LIGADOS = {
-    3351: ('PRESTAMOS', '', '«sí, yo aboné deuda»: le pagó $7,000 a su papá'),
+    # Pago de una deuda a su papá (…1239), no un préstamo que él dio: 2026-10-04,
+    # «cámbiala a Finanzas › Transferencia enviada» (abono de deuda a Papá).
+    3351: ('FINANZAS', 'Transferencia enviada', '«sí, yo aboné deuda»: le pagó $7,000 a su papá'),
     2999: (None, None, '«sí es devolución de Judi»'),
     # Le entró (no fue préstamo que dio): es la devolución de un préstamo ya
     # pagado (prestamos.PRESTAMOS_SOLO_DEVOLUCION), por eso queda en PRESTAMOS.

@@ -55,6 +55,13 @@ DECISIONES = {
     '3004': None,        # $2,513 «jefe de famil repo» (…5937): ¿préstamo de Cornelius o de Judi?
 }
 
+# Categorías que el usuario corrigió: (sección, id, fecha, monto, texto, categoría, subcategoría, por qué).
+# Un préstamo registrado sobre el movimiento (sin devoluciones) se borra: no le prestó a nadie.
+CATEGORIAS = (
+    ('3a', 3351, '2024-01-07', 7000.0, 'ABONO DEUDA', 'FINANZAS', 'Transferencia enviada',
+     'abono de deuda a Papá (…1239): le pagaste, no le prestaste'),
+)
+
 # Correcciones que ya aplicó la auditoría contra el PDF: id -> (campo, valor esperado | None = no debe existir)
 VERIFICAR = (
     ('3b', 2540, 'fecha', '2026-09-05'), ('3b', 2540, 'fecha_cargo', '2026-09-07'),
@@ -181,6 +188,32 @@ def _plan_compromiso(db, persona, cuenta, abonos, no_ligar) -> list[dict]:
     return out
 
 
+def _categorias(db) -> list[dict]:
+    out = []
+    for sec, mid, fecha, monto, texto, cat, sub, por_que in CATEGORIAS:
+        r = db.execute("SELECT * FROM est_movimientos WHERE id=? AND substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005",
+                       (mid, fecha, monto)).fetchone() or db.execute(
+            """SELECT * FROM est_movimientos WHERE substr(fecha,1,10)=? AND ABS(ABS(monto) - ?) < 0.005
+                 AND UPPER(descripcion) LIKE ? ORDER BY id LIMIT 1""", (fecha, monto, f'%{texto}%')).fetchone()
+        if not r:
+            out.append(_l(sec, 'pendiente revisión', f'{fecha} ${monto:,.2f} «{texto}»', 'no está en la base'))
+            continue
+        for p in db.execute("SELECT id, contraparte FROM est_prestamos WHERE movimiento_id=?", (r['id'],)).fetchall():
+            if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE prestamo_id=?", (p['id'],)).fetchone():
+                out.append(_l(sec, 'pendiente revisión', f'préstamo #{p["id"]}', 'tiene devoluciones ligadas: dime qué hago'))
+            else:
+                out.append(_l(sec, 'préstamo borrado', f'préstamo a {p["contraparte"]} (#{r["id"]})', por_que,
+                              fn=lambda db, pid=p['id']: db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))))
+        antes = f"{r['categoria']}/{r['subcategoria'] or ''}"
+        if (r['categoria'], r['subcategoria'] or '') == (cat, sub):
+            out.append(_l(sec, 'sin cambio', f'#{r["id"]}', 'ya está', antes, antes))
+        else:
+            out.append(_l(sec, 'actualizado', f'#{r["id"]} {fecha} ${monto:,.2f} {r["descripcion"]}', por_que, antes, f'{cat}/{sub}',
+                          lambda db, mid=r['id'], cat=cat, sub=sub:
+                          db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?", (cat, sub, mid))))
+    return out
+
+
 def _verificar(db) -> list[dict]:
     out = []
     for sec, mid, campo, valor in VERIFICAR:
@@ -221,7 +254,7 @@ def plan(db) -> list[dict]:
     out = []
     for persona, cuenta, abonos, no_ligar in COMPROMISOS:
         out += _plan_compromiso(db, persona, cuenta, abonos, no_ligar)
-    return out + _verificar(db) + _preguntas(db)
+    return out + _categorias(db) + _verificar(db) + _preguntas(db)
 
 
 def aplicar(db, lineas=None) -> list[dict]:
