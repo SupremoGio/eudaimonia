@@ -110,3 +110,14 @@ def test_otro_no_suma_al_saldo_ni_al_ahorro(client, test_db):
     with database.get_db() as db:
         inv = next(c for c in _calc_budget('2026-09', db)['buckets']['ahorro_deuda']['cats'] if c.get('inversion'))
     assert inv['inversion']['aportado'] == 500
+
+
+def test_bienes_no_suman_al_patrimonio():
+    """El carro y demás bienes se muestran aparte: no entran a activos ni al
+    patrimonio neto (el usuario, 2026-10-05)."""
+    from modules.finanzas.salud import _totales
+    cuentas = [{'tipo': 'cuenta_banco', 'moneda': 'MXN', 'saldo': 1000.0},
+               {'tipo': 'tarjeta_credito', 'moneda': 'MXN', 'saldo': 200.0}]
+    bienes = [{'valor_actual': 100000.0}]
+    activos, cuentas_act, total_bienes, pasivos, neto = _totales(cuentas, bienes)
+    assert (activos, cuentas_act, total_bienes, pasivos, neto) == (1000.0, 1000.0, 100000.0, 200.0, 800.0)

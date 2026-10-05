@@ -13,7 +13,7 @@
       <div class="t-eyebrow" id="pt-pn-l">Patrimonio neto</div>
       <div class="t-data pt-pn-v" data-tone="{{ 'success' if patrimonio_neto >= 0 else 'danger' }}">{{ pm.hide(('+' if patrimonio_neto >= 0 else '') ~ pm.money(patrimonio_neto, 2), '••••••') }} <span class="t-meta">MXN</span></div>
       <p class="t-meta">Activos totales menos pasivos · solvencia {{ "{:.0f}".format(solvencia) }}% ({{ estado|lower }})</p>
-      <p class="t-meta nw-hide-block">Cuentas {{ "{:.0f}".format(activos_cuentas/total_ref*100) }}% · Bienes {{ "{:.0f}".format(total_bienes/total_ref*100) }}% · Pasivos {{ "{:.0f}".format(total_pasivos/total_ref*100) }}%</p>
+      <p class="t-meta nw-hide-block">Cuentas {{ "{:.0f}".format(activos_cuentas/total_ref*100) }}% · Pasivos {{ "{:.0f}".format(total_pasivos/total_ref*100) }}%</p>
       {% if otras_monedas %}
       <p class="pt-fx" role="note"><i data-lucide="triangle-alert"></i><span>No incluido arriba:
         {% for m, info in otras_monedas.items() %}{{ pm.money(info.total, 2) }} {{ m }} ({{ info.cuentas|join(', ') }}){% if not loop.last %}, {% endif %}{% endfor %} — sin conversión automática de moneda todavía.</span></p>
@@ -21,19 +21,19 @@
     </div>
   </div>
   <dl class="eu-grid-3 pt-kpis">
-    <div data-tone="success"><dt class="t-meta">Total activos</dt><dd class="t-data">{{ pm.hide(pm.money(total_activos)) }}</dd><dd class="t-meta">Líquido + inversiones + bienes</dd></div>
+    <div data-tone="success"><dt class="t-meta">Total activos</dt><dd class="t-data">{{ pm.hide(pm.money(total_activos)) }}</dd><dd class="t-meta">Líquido + inversiones</dd></div>
     <div data-tone="danger"><dt class="t-meta">Total pasivos</dt><dd class="t-data">−{{ pm.hide(pm.money(total_pasivos)) }}</dd><dd class="t-meta">Tarjetas + préstamos</dd></div>
-    <div data-tone="brand"><dt class="t-meta">Bienes personales</dt><dd class="t-data">{{ pm.hide(pm.money(total_bienes)) }}</dd><dd class="t-meta">Valor estimado actual</dd></div>
+    <div data-tone="brand"><dt class="t-meta">Bienes personales</dt><dd class="t-data">{{ pm.hide(pm.money(total_bienes)) }}</dd><dd class="t-meta">Valor estimado · no suma al patrimonio</dd></div>
   </dl>
   {% if total_activos > 0 or total_pasivos > 0 %}
   {% set ref2 = [total_activos + total_pasivos, 1]|max %}
   {% set liq = cuentas_liquido|rejectattr('moneda','in',['USD','EUR'])|sum(attribute='saldo') %}
   {% set inv = cuentas_inversion|rejectattr('moneda','in',['USD','EUR'])|sum(attribute='saldo') %}
   <div class="pt-comp nw-hide-block">
-    <div class="pt-bar" role="img" aria-label="Composición: líquido {{ (liq/ref2*100)|int }}%, inversiones {{ (inv/ref2*100)|int }}%, bienes {{ (total_bienes/ref2*100)|int }}%, pasivos {{ (total_pasivos/ref2*100)|int }}%">
-      <span data-cat="cosmopolitismo" style="width:{{ (liq/ref2*100)|round(1) }}%"></span><span data-cat="ataraxia" style="width:{{ (inv/ref2*100)|round(1) }}%"></span><span data-cat="oikonomia" style="width:{{ (total_bienes/ref2*100)|round(1) }}%"></span><span data-cat="harma" style="width:{{ (total_pasivos/ref2*100)|round(1) }}%"></span>
+    <div class="pt-bar" role="img" aria-label="Composición: líquido {{ (liq/ref2*100)|int }}%, inversiones {{ (inv/ref2*100)|int }}%, pasivos {{ (total_pasivos/ref2*100)|int }}%">
+      <span data-cat="cosmopolitismo" style="width:{{ (liq/ref2*100)|round(1) }}%"></span><span data-cat="ataraxia" style="width:{{ (inv/ref2*100)|round(1) }}%"></span><span data-cat="harma" style="width:{{ (total_pasivos/ref2*100)|round(1) }}%"></span>
     </div>
-    <ul class="pt-legend"><li data-cat="cosmopolitismo"><span class="pt-dot"></span>Líquido</li><li data-cat="ataraxia"><span class="pt-dot"></span>Inversiones</li><li data-cat="oikonomia"><span class="pt-dot"></span>Bienes</li><li data-cat="harma"><span class="pt-dot"></span>Pasivos</li></ul>
+    <ul class="pt-legend"><li data-cat="cosmopolitismo"><span class="pt-dot"></span>Líquido</li><li data-cat="ataraxia"><span class="pt-dot"></span>Inversiones</li><li data-cat="harma"><span class="pt-dot"></span>Pasivos</li></ul>
   </div>
   {% endif %}
 </section>

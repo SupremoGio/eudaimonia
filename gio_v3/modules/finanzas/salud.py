@@ -39,10 +39,13 @@ def _require_auth():
 
 
 def _totales(cuentas, bienes):
+    # Los bienes (carro, muebles…) se muestran aparte y NO entran al patrimonio
+    # neto ni a los activos (el usuario, 2026-10-05: «no cuentes el carro, está
+    # en bienes»): no son dinero disponible y su valor es una estimación.
     cuentas_mxn     = [c for c in cuentas if c['moneda'] not in MONEDAS_EXTRANJERAS]
     activos_cuentas = sum(c['saldo'] for c in cuentas_mxn if c['tipo'] in TIPOS_ACTIVO)
     total_bienes    = sum(b['valor_actual'] for b in bienes)
-    total_activos   = activos_cuentas + total_bienes
+    total_activos   = activos_cuentas
     total_pasivos   = sum(c['saldo'] for c in cuentas_mxn if c['tipo'] in TIPOS_PASIVO)
     return total_activos, activos_cuentas, total_bienes, total_pasivos, total_activos - total_pasivos
 
