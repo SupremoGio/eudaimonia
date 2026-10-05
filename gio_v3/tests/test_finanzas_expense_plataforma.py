@@ -18,8 +18,9 @@ def _mov(db, fecha, desc, monto, cat, sub='', tipo='GASTO'):
 
 def test_datos_de_la_plataforma():
     it = P.items()
-    # 176 gastos en el export menos 5 que no son del usuario (P.NO_SON_MIOS)
-    assert len(it) == 171 and round(sum(x['monto'] for x in it), 2) == round(194325.27 - 10461 - 4694 - 1442 - 364.80 - 21273, 2)
+    # 176 gastos en el export menos 6 que no son del usuario o están duplicados (P.NO_SON_MIOS)
+    assert len(it) == 170 and round(sum(x['monto'] for x in it), 2) == round(194325.27 - 10461 - 4694 - 1442 - 364.80 - 21273 - 285, 2)
+    assert [x['titulo'] for x in it if x['fecha'] == '2024-05-13' and x['monto'] == 285] == ['BOLSAS DIA DE MADRES']
     assert not any('MARRIOTT' in x['titulo'] for x in it)
     assert not any('SERV' in x['titulo'] and 'VIAJES' in x['titulo'] for x in it)
 

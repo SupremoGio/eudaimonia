@@ -50,6 +50,9 @@ NO_SON_MIOS = (
     ('2026-03-04', 'ACTIVIDAD INTEGRACION MARRIOTT BONVOY', 1442.00),
     ('2025-07-06', 'UBER GDL - AEROPUERTO', 364.80),
     ('2025-12-17', 'ACTIVIDAD INTEGRACION MARRIOTT BONVOY', 21273.00),
+    # Duplicado de «BOLSAS DIA DE MADRES» $285 del mismo día, ya pagado (el
+    # usuario: «solo es uno y ya lo debieron haber pagado»).
+    ('2024-05-13', 'BOLSAS DIA MADRE', 285.00),
 )
 
 
