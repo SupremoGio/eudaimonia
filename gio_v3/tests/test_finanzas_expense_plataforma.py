@@ -18,8 +18,12 @@ def _mov(db, fecha, desc, monto, cat, sub='', tipo='GASTO'):
 
 def test_datos_de_la_plataforma():
     it = P.items()
-    # 176 gastos en el export menos 6 que no son del usuario o están duplicados (P.NO_SON_MIOS)
-    assert len(it) == 170 and round(sum(x['monto'] for x in it), 2) == round(194325.27 - 10461 - 4694 - 1442 - 364.80 - 21273 - 1010, 2)
+    # 176 gastos en el export menos 5 que no son del usuario o están duplicados (P.NO_SON_MIOS)
+    assert len(it) == 171 and round(sum(x['monto'] for x in it), 2) == round(194325.27 - 10461 - 4694 - 1442 - 21273 - 1010, 2)
+    # Reporte del HR Summit (jul-2025, 133.67 USD = $2,478.11): sus 7 gastos, Uber GDL incluido.
+    summit = [x for x in it if x['titulo'] in ('UBER GDL - AEROPUERTO', 'UBER AEROPUERTO- CDMX', 'UBER CDMX - AEROPUERTO',
+                                               'Taxi 1', 'COMIDA HR SUMMIT', 'COMIDA 2 SUMMIT', 'COMIDA 3 SUMMIT')]
+    assert len(summit) == 7 and round(sum(x['monto'] for x in summit), 2) == 2478.11
     assert [x['titulo'] for x in it if x['monto'] == 1010 and 'POSADA' in x['titulo']] == ['DECORACION POSADA']
     # Las dos bolsas de $285 son de reportes distintos (no son duplicado).
     assert sorted(x['titulo'] for x in it if x['fecha'] == '2024-05-13' and x['monto'] == 285) == ['BOLSAS DIA DE MADRES', 'BOLSAS DIA MADRE']
