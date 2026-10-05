@@ -798,7 +798,16 @@
       }
     });
   });
-  $('ai-anchor').addEventListener('change', function () { ai.anchor = this.value ? parseInt(this.value, 10) : null; });
+  $('ai-anchor').addEventListener('change', function () {
+    ai.anchor = this.value ? parseInt(this.value, 10) : null;
+    var it = ai.anchor && ALL_ITEMS.find(function (x) { return x.id === ai.anchor; }), prev = $('ai-anchor-prev');
+    prev.hidden = !it;
+    if (!it) { prev.innerHTML = ''; return; }
+    var meta = [it.categoria, it.subcategoria, it.color_name, it.marca].filter(Boolean).map(esc).join(' · ');
+    prev.innerHTML = '<span class="gr-ai-anchor-ph">' + visualHTML(it) + '</span>' +
+      '<span class="eu-vstack"><span class="t-ui">' + esc(it.nombre) + '</span><span class="t-meta">' + meta + '</span>' +
+      '<span class="t-meta fg-3">' + (it.foto ? 'La IA verá esta foto para leer color, textura y corte reales.' : 'Sin foto: la IA solo usará los datos de la prenda.') + '</span></span>';
+  });
   $('ai-occs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-ai-occ]'); if (!b) return;
     ai.occ = b.dataset.aiOcc;
@@ -821,6 +830,7 @@
   $('ai-go').addEventListener('click', generateAI);
   function renderAI(d) {
     ai.props = (d.propuestas && d.propuestas.length) ? d.propuestas : [d];
+    ai.fotoOk = !!d.foto_analizada;
     ai.idx = 0;
     var box = $('ai-result');
     box.innerHTML = (ai.props.length > 1 ? '<div class="eu-seg gr-ai-tabs" role="tablist" aria-label="Propuestas">' + ai.props.map(function (p, i) {
@@ -838,6 +848,7 @@
       '<div class="eu-between"><div><div class="t-card">' + esc(d.nombre || 'Look ' + ai.occ) + '</div>' +
       (d.harmony ? '<div class="t-meta">' + esc(d.harmony) + '</div>' : '') + '</div>' +
       '<span class="gr-stars-ro" aria-label="' + (d.rating || 4) + ' de 5">' + stars(d.rating || 4) + '</span></div>' +
+      (ai.fotoOk ? '<p class="t-meta fg-3 gr-ai-photo-ok"><i data-lucide="scan-eye"></i>Basado también en la foto de la prenda</p>' : '') +
       '<ul class="gr-ai-items gr-ai-items--roles">' + chosen.map(function (i) {
         var rol = roles[String(i.id)] || (auto.indexOf(i.id) >= 0 ? 'Completado automáticamente para cerrar el look.' : '');
         return '<li class="gr-ai-item"><span class="gr-pthumb">' + visualHTML(i) + '</span><span><span class="t-ui">' + esc(i.nombre) +

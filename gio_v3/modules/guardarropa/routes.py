@@ -773,10 +773,12 @@ def audit_fotos():
 
 # ── AI helpers ───────────────────────────────────────────────────────────────
 
-def _gemini(prompt, max_tokens=4096, thinking_budget=0, temperature=0.7):
+def _gemini(prompt, max_tokens=4096, thinking_budget=0, temperature=0.7, images=None):
     """Call Gemini 2.5 Flash via REST. Returns raw text (JSON mode).
     `thinking_budget` > 0 deja razonar al modelo antes de responder (los
-    tokens de razonamiento cuentan dentro de `max_tokens`)."""
+    tokens de razonamiento cuentan dentro de `max_tokens`). `images` es una
+    lista de (mime, bytes) que se adjuntan antes del texto."""
+    import base64
     import urllib.error
     api_key = os.environ.get('GEMINI_API_KEY', '')
     if not api_key:
@@ -786,7 +788,10 @@ def _gemini(prompt, max_tokens=4096, thinking_budget=0, temperature=0.7):
         f'gemini-2.5-flash:generateContent?key={api_key}'
     )
     body = json.dumps({
-        'contents': [{'parts': [{'text': prompt}]}],
+        'contents': [{'parts': [
+            {'inline_data': {'mime_type': mime, 'data': base64.b64encode(raw).decode()}}
+            for mime, raw in (images or [])
+        ] + [{'text': prompt}]}],
         'generationConfig': {
             'maxOutputTokens': max_tokens,
             'temperature': temperature,
@@ -889,6 +894,26 @@ Responde SOLO con JSON con esta forma exacta:
 }}]}}"""
 
 
+def _photo_for_ai(foto, max_dim=768):
+    """Foto local de la prenda reducida a JPEG chico para mandarla a la IA.
+    None si no hay foto o no se puede leer (la IA sigue con el texto)."""
+    if not foto:
+        return None
+    path = os.path.join(UPLOAD_DIR, os.path.basename(foto))
+    try:
+        with Image.open(path) as img:
+            img = ImageOps.exif_transpose(img)
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, 'JPEG', quality=80)
+            return ('image/jpeg', buf.getvalue())
+    except Exception as e:
+        _log.info('Foto de la ancla no disponible para la IA (%s): %s', foto, e)
+        return None
+
+
 def _coach_outfits(occasion, anchor_id=None, contexto=''):
     """Motor compartido de los dos modos del Coach de imagen. Devuelve
     (payload, status)."""
@@ -898,7 +923,7 @@ def _coach_outfits(occasion, anchor_id=None, contexto=''):
     with get_db() as db:
         rows = [dict(r) for r in db.execute(
             "SELECT id, nombre, categoria, subcategoria, color_hex, color_name, marca, ocasion, "
-            "temporada, estado, veces_usado, ultimo_uso, notas "
+            "temporada, estado, veces_usado, ultimo_uso, notas, foto "
             "FROM wardrobe_items WHERE activo=1"
         ).fetchall()]
         anchor_outfits = []
@@ -935,10 +960,18 @@ def _coach_outfits(occasion, anchor_id=None, contexto=''):
                           + ' — dilo en pieza_faltante en vez de forzar otra prenda.)')
 
     anchor_block = ''
+    anchor_photo = _photo_for_ai(anchor.get('foto')) if anchor else None
     if anchor:
         anchor_block = ('PRENDA ANCLA (el look se construye alrededor de ella; ya va incluida):\n  '
                         + stylist.item_line(anchor, with_score=False)
-                        + f" | función: {stylist.SLOT_LABEL[anchor['slot']]}\n\n")
+                        + f" | función: {stylist.SLOT_LABEL[anchor['slot']]}\n")
+        if anchor_photo:
+            anchor_block += ('  La imagen adjunta es la FOTO REAL de la prenda ancla: úsala para leer su color '
+                             'verdadero (el dato de color puede ser aproximado), estampado, textura, tejido, corte '
+                             'y detalles (logos, cuello, botones). Si la foto contradice los datos, manda la foto, '
+                             'y menciona en las explicaciones lo que ves en ella.\n')
+        anchor_block += '\n'
+
     context_block = f"CONTEXTO DEL USUARIO: {contexto}\n" if contexto else ''
     history_block = ''
     if anchor_outfits:
@@ -960,7 +993,8 @@ def _coach_outfits(occasion, anchor_id=None, contexto=''):
 
     try:
         data = json.loads(_extract_json(_gemini(prompt, max_tokens=8192, thinking_budget=2048,
-                                                temperature=0.8)))
+                                                temperature=0.8,
+                                                images=[anchor_photo] if anchor_photo else None)))
     except json.JSONDecodeError as e:
         return {'ok': False, 'error': f'JSON inválido: {str(e)}'}, 500
     except Exception as e:
@@ -984,7 +1018,8 @@ def _coach_outfits(occasion, anchor_id=None, contexto=''):
         return {'ok': False, 'error': 'La IA no devolvió un look válido, intenta de nuevo'}, 500
 
     # Campos planos de la primera propuesta: compatibilidad con clientes viejos.
-    return {'ok': True, **propuestas[0], 'propuestas': propuestas}, 200
+    return {'ok': True, **propuestas[0], 'propuestas': propuestas,
+            'foto_analizada': bool(anchor_photo)}, 200
 
 
 def _coach_request():

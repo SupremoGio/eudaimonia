@@ -111,6 +111,7 @@ def ai(test_db, monkeypatch):
 
     def fake(prompt, **kw):
         st.prompts.append(prompt)
+        st.images = kw.get('images')
         return json.dumps(st.reply)
     monkeypatch.setattr(gr, '_gemini', fake)
     app = create_app()
@@ -195,3 +196,36 @@ def test_errores(ai):
     r = ai.client.post('/guardarropa/api/ai-outfit-from-item', json={'item_id': solo})
     assert r.status_code == 400
     assert not ai.prompts                                  # no gasta llamada a la IA
+
+
+def test_la_foto_de_la_ancla_se_adjunta_a_la_ia(ai, tmp_path, monkeypatch):
+    from PIL import Image
+    monkeypatch.setattr(gr, 'UPLOAD_DIR', str(tmp_path))
+    Image.new('RGB', (2000, 1500), (20, 30, 60)).save(tmp_path / 'polo.jpg')
+    polo = _prenda('Polo Tommy', 'Polo', '#1f2a44')
+    with database.get_db() as db:
+        db.execute("UPDATE wardrobe_items SET foto='polo.jpg' WHERE id=?", (polo,))
+        db.commit()
+    jeans = _prenda('Jeans', 'Jeans', '#1c2333')
+    _prenda('Sneakers', 'Sneakers', '#f5f5f5')
+    ai.reply = {'propuestas': [{'nombre': 'X', 'item_ids': [jeans]}]}
+    d = ai.client.post('/guardarropa/api/ai-outfit-from-item', json={'item_id': polo}).get_json()
+    assert d['foto_analizada'] is True
+    mime, raw = ai.images[0]
+    assert mime == 'image/jpeg'
+    assert max(Image.open(__import__('io').BytesIO(raw)).size) <= 768   # reducida antes de mandarla
+    assert 'FOTO REAL' in ai.prompts[-1]
+
+
+def test_sin_foto_o_foto_perdida_sigue_solo_con_texto(ai, tmp_path, monkeypatch):
+    monkeypatch.setattr(gr, 'UPLOAD_DIR', str(tmp_path))
+    polo = _prenda('Polo', 'Polo')
+    with database.get_db() as db:
+        db.execute("UPDATE wardrobe_items SET foto='no-existe.jpg' WHERE id=?", (polo,))
+        db.commit()
+    jeans = _prenda('Jeans', 'Jeans', '#1c2333')
+    _prenda('Sneakers', 'Sneakers', '#f5f5f5')
+    ai.reply = {'propuestas': [{'nombre': 'X', 'item_ids': [jeans]}]}
+    d = ai.client.post('/guardarropa/api/ai-outfit-from-item', json={'item_id': polo}).get_json()
+    assert d['ok'] and d['foto_analizada'] is False
+    assert not ai.images

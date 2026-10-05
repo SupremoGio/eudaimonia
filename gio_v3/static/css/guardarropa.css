@@ -156,6 +156,13 @@ body:has(#gr[data-tab=analisis]) .gr-fab{display:none}
 .gr-ai-items{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
 .gr-ai-item{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-1);border:1px solid var(--border-subtle);border-radius:var(--r-md);background:var(--bg-surface)}
 .gr-ai-item > span:last-child{display:flex;flex-direction:column}
+.gr-ai-anchor{display:flex;gap:var(--sp-3);align-items:center;margin-top:var(--sp-2);padding:var(--sp-2);border:1px solid var(--border-subtle);border-radius:var(--r-md);background:var(--bg-surface)}
+.gr-ai-anchor > .eu-vstack{gap:2px;min-width:0}
+.gr-ai-anchor-ph{position:relative;width:88px;height:110px;flex-shrink:0;border-radius:var(--r-md);overflow:hidden;background:var(--bg-raised)}
+.gr-ai-anchor-ph > *{position:absolute;inset:0;width:100%;height:100%}
+.gr-ai-anchor-ph > .gr-img{object-fit:cover}
+.gr-ai-photo-ok{display:flex;gap:var(--sp-1);align-items:center;margin:0}
+.gr-ai-photo-ok svg{width:14px;height:14px}
 .gr-ai-tabs{align-self:flex-start;max-width:100%;overflow-x:auto}
 .gr-ai-tabs button[aria-pressed=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
 .gr-ai-items--roles{list-style:none;margin:0;padding:0;flex-direction:column}
