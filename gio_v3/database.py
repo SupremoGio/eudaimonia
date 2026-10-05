@@ -6451,29 +6451,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_v6_viaticos migration warning: {e}")
 
-        # ── FINANZAS — plataforma de Expense v7 (usuario, 2026-10-05: «se
-        # agregaron cosas que yo no pagué, expense de alguien más»): solo
-        # cuentan los gastos del export con su propio cargo en el banco; se
-        # rearman los lotes de la plataforma sin los de otras personas.
+        # ── FINANZAS — plataforma de Expense: regreso a la v6 (usuario,
+        # 2026-10-05: «regresa el expense como estaba»). La v7 (solo gastos con
+        # cargo propio) ya corrió en producción y dejó 24 depósitos sin pareja;
+        # se rearman los lotes de la plataforma con la lógica de la v6.
         if not db.execute(
-            "SELECT id FROM migration_log WHERE version='finanzas_expense_plataforma_v7_propios'"
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_plataforma_v8_regreso_v6'"
         ).fetchone():
             try:
-                from modules.finanzas.estados import expense_plataforma as _ep7
-                _pr = _ep7.propios(db)
-                _l = _ep7.liberar_lotes_plataforma(db)
-                _h = _ep7.conciliar(db)
+                from modules.finanzas.estados.expense_plataforma import conciliar as _exp_plat8, liberar_lotes_plataforma as _lib8
+                _l = _lib8(db)
+                _h = _exp_plat8(db)
                 db.execute(
                     "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
-                    ("finanzas_expense_plataforma_v7_propios",
-                     f"{len(_pr['mios'])} propios, {len(_pr['ajenos'])} ajenos "
-                     f"(${sum(x['monto'] for x in _pr['ajenos']):,.2f}); {_l} liberados; {len(_h)} lotes: "
-                     + "; ".join(_h)[:700])
+                    ("finanzas_expense_plataforma_v8_regreso_v6", f"{_l} liberados; {len(_h)} lotes: " + "; ".join(_h)[:850])
                 )
                 db.commit()
-                print(f"[DB] finanzas_expense_plataforma_v7_propios: {len(_pr['ajenos'])} ajenos, {_l} liberados, {len(_h)} lotes {_h}")
+                print(f"[DB] finanzas_expense_plataforma_v8_regreso_v6: {_l} liberados, {len(_h)} lotes {_h}")
             except Exception as e:
-                print(f"[DB] finanzas_expense_plataforma_v7_propios migration warning: {e}")
+                print(f"[DB] finanzas_expense_plataforma_v8_regreso_v6 migration warning: {e}")
 
         # ── FINANZAS — retiros de CETES a débito (usuario, 2026-09-28): SPEI
         # de NAFIN -> CETES/RETIRO|APORTACION y las 9 instrucciones de retiro

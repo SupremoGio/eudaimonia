@@ -3601,8 +3601,7 @@ def expense_plataforma_admin():
         comp = _plat.asignacion_completa(db)
         posibles = {g['idx']: _plat.posibles_cargos(db, g) for p in pl for g in p['gastos'] if not g['cargo']}
     if request.args.get('formato') != 'html':
-        return jsonify({'pendientes': pl, 'asignacion': comp['depositos'], 'sin_deposito': comp['sin_deposito'],
-                        'otro_lote': comp['otro_lote'], 'ajenos': comp['ajenos']})
+        return jsonify({'pendientes': pl, 'asignacion': comp['depositos'], 'sin_deposito': comp['sin_deposito']})
     fmt = lambda v: f"${float(v):,.2f}"
 
     def linea(g):
@@ -3628,22 +3627,13 @@ def expense_plataforma_admin():
     sueltos = ''.join(f"<tr><td>{x['fecha']}</td><td>{x['titulo']}</td><td class=r>{fmt(x['monto'])}</td></tr>"
                       for x in comp['sin_deposito'])
     total_sueltos = sum(x['monto'] for x in comp['sin_deposito'])
-    ajenos = ''.join(f"<tr><td>{x['fecha']}</td><td>{x['titulo']}</td><td class=r>{fmt(x['monto'])}</td></tr>"
-                     for x in comp['ajenos'])
-    otro = ''.join(f"<tr><td>{x['fecha']}</td><td>{x['titulo']}</td><td class=r>{fmt(x['monto'])}</td>"
-                   f"<td>{x['cargo']['fecha']} {x['cargo']['descripcion']}</td></tr>" for x in comp['otro_lote'])
     return ('<!doctype html><meta charset=utf-8><title>Expense · plataforma</title>'
             '<style>body{font:14px system-ui;background:#0f0d14;color:#eee;padding:16px}table{border-collapse:collapse;width:100%}'
             'td,th{padding:6px 10px;border-bottom:1px solid #333;text-align:left;vertical-align:top}.r{text-align:right}th{color:#aaa}</style>'
             f'<h2>Depósitos de la empresa sin lote ({len(pl)})</h2>'
             f'<table><tr><th>Fecha</th><th>Depósito</th><th class=r>Monto</th><th>Emparejado por</th><th>Gastos de la plataforma</th></tr>{pend}</table>'
-            f'<h2>Gastos tuyos de la plataforma sin ningún depósito ({len(comp["sin_deposito"])} · {fmt(total_sueltos)})</h2>'
+            f'<h2>Gastos de la plataforma sin ningún depósito ({len(comp["sin_deposito"])} · {fmt(total_sueltos)})</h2>'
             f'<table><tr><th>Fecha</th><th>Gasto</th><th class=r>Monto</th></tr>{sueltos}</table>'
-            f'<h2>Gastos tuyos que ya pagó un lote armado a mano ({len(comp["otro_lote"])})</h2>'
-            f'<table><tr><th>Fecha</th><th>Gasto</th><th class=r>Monto</th><th>Cargo</th></tr>{otro}</table>'
-            f'<h2>Gastos de otras personas: sin cargo en tu banco, fuera de la conciliación '
-            f'({len(comp["ajenos"])} · {fmt(sum(x["monto"] for x in comp["ajenos"]))})</h2>'
-            f'<table><tr><th>Fecha</th><th>Gasto</th><th class=r>Monto</th></tr>{ajenos}</table>'
             f'<h2>Asignación completa ({len(comp["depositos"])} depósitos de la empresa)</h2>'
             f'<table><tr><th>Fecha</th><th>Depósito</th><th class=r>Monto</th><th>Lote</th><th>Emparejado por</th><th>Gastos de la plataforma</th></tr>{asig}</table>')
 
