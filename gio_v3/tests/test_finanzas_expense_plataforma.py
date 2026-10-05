@@ -18,15 +18,17 @@ def _mov(db, fecha, desc, monto, cat, sub='', tipo='GASTO'):
 
 def test_datos_de_la_plataforma():
     it = P.items()
-    # 176 gastos en el export menos 7 que no son del usuario o están duplicados (P.NO_SON_MIOS)
-    assert len(it) == 169 and round(sum(x['monto'] for x in it), 2) == round(194325.27 - 10461 - 4694 - 1442 - 364.80 - 21273 - 285 - 1010, 2)
+    # 176 gastos en el export menos 6 que no son del usuario o están duplicados (P.NO_SON_MIOS)
+    assert len(it) == 170 and round(sum(x['monto'] for x in it), 2) == round(194325.27 - 10461 - 4694 - 1442 - 364.80 - 21273 - 1010, 2)
     assert [x['titulo'] for x in it if x['monto'] == 1010 and 'POSADA' in x['titulo']] == ['DECORACION POSADA']
-    assert [x['titulo'] for x in it if x['fecha'] == '2024-05-13' and x['monto'] == 285] == ['BOLSAS DIA DE MADRES']
+    # Las dos bolsas de $285 son de reportes distintos (no son duplicado).
+    assert sorted(x['titulo'] for x in it if x['fecha'] == '2024-05-13' and x['monto'] == 285) == ['BOLSAS DIA DE MADRES', 'BOLSAS DIA MADRE']
     assert not any('MARRIOTT' in x['titulo'] for x in it)
     assert not any('SERV' in x['titulo'] and 'VIAJES' in x['titulo'] for x in it)
 
 
 def test_conciliar_crea_lotes(test_db, monkeypatch):
+    monkeypatch.setattr(P, 'FIJOS', {})                   # aquí se prueba el algoritmo
     gastos = [{'fecha': '2024-11-29', 'titulo': 'Decoracion Navidad', 'tipo': '', 'monto': 1047.0},
               {'fecha': '2024-11-29', 'titulo': 'REGALOS POSADA', 'tipo': '', 'monto': 4895.0},
               {'fecha': '2024-11-29', 'titulo': 'SNACK', 'tipo': '', 'monto': 196.0},
@@ -101,9 +103,10 @@ def test_deposito_561_fuera_y_rearmado(test_db, monkeypatch):
         assert d561 not in lotes and [g['id'] for g in lotes[d2]['gastos']] == [c]
 
 
-def test_exacto_al_centavo_gana_a_redondeo():
+def test_exacto_al_centavo_gana_a_redondeo(monkeypatch):
     """El de $4,365.55 cuadra al centavo con 6 gastos; el de $2,215.60 (antes)
     no debe quitárselos con una combinación que solo cuadra redondeando."""
+    monkeypatch.setattr(P, 'FIJOS', {})
     g = [{'idx': i, 'fecha': f, 'titulo': t, 'monto': m} for i, (f, t, m) in enumerate((
         ('2024-10-18', 'DESPENSA', 1904.40), ('2024-10-18', 'pastel cocina', 415.0), ('2024-10-18', 'PASTEL OCT', 740.0),
         ('2024-10-22', 'DIA DEL CHEF', 415.0), ('2024-10-22', 'REFRESCO', 160.14), ('2024-10-25', 'pastel act', 427.0),
@@ -118,6 +121,7 @@ def test_exacto_al_centavo_gana_a_redondeo():
 def test_aproximado_aceptado_y_viaticos(test_db, monkeypatch):
     """738.70 toma confeti + globos + pastel agosto (aceptado por el usuario);
     los de viáticos quedan en un lote propio sin gastos y fuera de sin-lote."""
+    monkeypatch.setattr(P, 'FIJOS', {})
     gastos = [{'fecha': '2024-06-05', 'titulo': 'CONFETI AC ANIVERSARIO', 'tipo': '', 'monto': 100.02},
               {'fecha': '2024-06-05', 'titulo': 'GLOBOS AC ANIVERSARIO', 'tipo': '', 'monto': 134.66},
               {'fecha': '2024-08-16', 'titulo': 'pastel agosto', 'tipo': '', 'monto': 533.0}]
@@ -134,3 +138,17 @@ def test_aproximado_aceptado_y_viaticos(test_db, monkeypatch):
         assert lotes[v1]['nombre'] == 'Viáticos 2024-08-13' and lotes[v2]['gastos'] == []
         assert not {v1, v2, d} & {x['id'] for x in E._depositos_sin_lote(db)}
         assert P.liberar_lotes_plataforma(db) == 3 and len(P.conciliar(db)) == 3   # se rearman igual
+
+
+def test_fijos_dia_de_las_madres_2024():
+    """Reportes 12169 (179.22 USD = $2,973.24) y 12170 (33.82 USD = $561): cada
+    depósito toma sus gastos fijos; las bolsas/flores/pastel del otro reporte
+    («DÍA DE LA MADRE») quedan sin depósito."""
+    it = P.items()
+    deps = [{'id': 1, 'fecha': '2024-05-20', 'monto': 2973.24}, {'id': 2, 'fecha': '2024-05-28', 'monto': 561.0},
+            {'id': 3, 'fecha': '2024-05-28', 'monto': 4640.0}]
+    res = P.asignar(deps, it)
+    assert [x['titulo'] for x in res[1][1]] == ['REGALOS DIA MADRE', 'BOLSAS DIA DE MADRES', 'FLORES DIA DE LAS MADRES']
+    assert [x['titulo'] for x in res[2][1]] == ['PASTEL DIA DE LAS MADRES']
+    assert [x['titulo'] for x in res[3][1]] == ['PASTEL ANIVERSARIO GDLAC']
+    assert all(n == 'fijo' for n, _ in res.values())

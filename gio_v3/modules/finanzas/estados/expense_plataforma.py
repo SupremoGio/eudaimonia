@@ -50,9 +50,6 @@ NO_SON_MIOS = (
     ('2026-03-04', 'ACTIVIDAD INTEGRACION MARRIOTT BONVOY', 1442.00),
     ('2025-07-06', 'UBER GDL - AEROPUERTO', 364.80),
     ('2025-12-17', 'ACTIVIDAD INTEGRACION MARRIOTT BONVOY', 21273.00),
-    # Duplicado de «BOLSAS DIA DE MADRES» $285 del mismo día, ya pagado (el
-    # usuario: «solo es uno y ya lo debieron haber pagado»).
-    ('2024-05-13', 'BOLSAS DIA MADRE', 285.00),
     # Duplicado de «DECORACION POSADA» $1,010 del 18/12/2025, ya pagado.
     ('2025-12-26', 'EXPENSE DECORACION POSADA', 1010.00),
 )
@@ -134,6 +131,267 @@ def _emparejar(d, gastos, libres):
 APROXIMADOS = {('2024-08-30', 738.70): ('CONFETI AC ANIVERSARIO', 'GLOBOS AC ANIVERSARIO', 'pastel agosto')}
 
 
+# Asignación fija depósito -> gastos (fecha, título, monto), revisada con el
+# usuario (2026-10-05). Es la de la v6 con la corrección de Día de las Madres
+# 2024 por los reportes que pasó: cada uno de los dos reportes trae sus
+# propias bolsas, flores y pastel (no son duplicados). Así un cambio en el
+# export (quitar un gasto ajeno) no mueve los demás depósitos; el algoritmo
+# solo empareja depósitos nuevos.
+FIJOS = {
+    ('2024-04-23', 410.0): (
+        ('2024-03-27', 'MARISA PASTEL', 410.0),
+    ),
+    ('2024-05-14', 2944.0): (
+        ('2024-04-30', 'dulces dia del nino', 544.03),
+        ('2024-04-30', 'juguetes dia del nino', 2400.0),
+    ),
+    # Reporte 12169 «DIA DE LAS MADRES» (179.22 USD): bolsas + flores + la mitad
+    # de los regalos ($2,340; la otra mitad va en el reporte «DÍA DE LA MADRE»).
+    ('2024-05-20', 2973.24): (
+        ('2024-05-08', 'REGALOS DIA MADRE', 4680.0),
+        ('2024-05-13', 'BOLSAS DIA DE MADRES', 285.0),
+        ('2024-05-13', 'FLORES DIA DE LAS MADRES', 348.24),
+    ),
+    # Reporte 12170 «PASTEL DIA DE LAS MADRES» (33.82 USD).
+    ('2024-05-28', 561.0): (
+        ('2024-05-15', 'PASTEL DIA DE LAS MADRES', 561.0),
+    ),
+    ('2024-05-28', 4640.0): (
+        ('2024-05-24', 'PASTEL ANIVERSARIO GDLAC', 4640.0),
+    ),
+    ('2024-07-16', 542.0): (
+        ('2024-07-10', 'PASTEL CUMPLEAÑOS JULIO', 542.0),
+    ),
+    ('2024-08-30', 738.7): (
+        ('2024-06-05', 'CONFETI AC ANIVERSARIO', 100.02),
+        ('2024-06-05', 'GLOBOS AC ANIVERSARIO', 134.66),
+        ('2024-08-16', 'pastel agosto', 533.0),
+    ),
+    ('2024-09-09', 518.0): (
+        ('2024-09-02', 'PASTEL SEPTIEMBRE', 518.0),
+    ),
+    ('2024-10-04', 527.5): (
+        ('2024-09-09', 'PASTEL SEPTIEMBRE', 420.0),
+        ('2024-09-10', 'DULCES ACTIVIDADES SEPTIEMBRE', 107.5),
+    ),
+    ('2024-10-11', 738.0): (
+        ('2024-09-27', 'actividad septiembre', 343.0),
+        ('2024-10-08', 'PASTEL OCTUBRE CUMPLEAÑOS', 395.0),
+    ),
+    ('2024-10-18', 372.5): (
+        ('2024-10-09', 'Dulces oct', 107.0),
+        ('2024-10-11', 'Actividad mental health', 265.0),
+    ),
+    ('2024-11-01', 2215.6): (
+        ('2024-05-17', 'DULCES ACTIVIDAD MAYO', 149.5),
+        ('2024-06-28', 'DULCES JUNTA MENSUAL', 309.0),
+        ('2024-10-18', 'PASTEL OCT', 740.0),
+        ('2024-10-22', 'refrescos dia chef', 86.0),
+        ('2024-10-25', 'pizza actividad oct', 596.0),
+        ('2024-10-31', 'PAPELERIA ALTAR DE MUERTO', 335.0),
+    ),
+    ('2024-11-15', 4365.55): (
+        ('2024-10-18', 'DESPENSA SERVE 360', 1904.4),
+        ('2024-10-18', 'pastel cocina', 415.0),
+        ('2024-10-22', 'DIA DEL CHEF ACTIVIDAD', 415.0),
+        ('2024-10-22', 'REFRESCO ACTI DIA DELCHEF', 160.14),
+        ('2024-10-25', 'pastel act oct', 427.0),
+        ('2024-11-06', 'Corona', 1044.0),
+    ),
+    ('2024-11-29', 477.0): (
+        ('2024-11-13', 'DULCES NOV', 107.0),
+        ('2024-11-25', 'PASTEL NOC', 370.0),
+    ),
+    ('2024-12-06', 6138.0): (
+        ('2024-11-29', 'Decoracion Navidad', 1047.0),
+        ('2024-11-29', 'REGALOS POSADA', 4895.0),
+        ('2024-11-29', 'SNACK ACTIVIDAD PINO NAVIDAD', 196.0),
+    ),
+    ('2024-12-20', 715.0): (
+        ('2024-12-05', 'pastle dic', 395.0),
+        ('2024-12-11', 'pastel dic', 320.0),
+    ),
+    ('2025-01-10', 3500.9): (
+        ('2024-12-13', 'CUADROS RECONOCIMIENTO', 625.0),
+        ('2024-12-13', 'DECORACION POSADA', 239.9),
+        ('2024-12-13', 'DULCES PIÑATA POSADA', 758.0),
+        ('2024-12-20', 'BOTANA POSADA', 529.0),
+        ('2024-12-20', 'PAPEL REGALO POSADA', 688.5),
+        ('2024-12-20', 'RECONOCIMIENTOS POSADA', 201.5),
+        ('2024-12-23', 'pastel dic', 459.0),
+    ),
+    ('2025-01-22', 642.0): (
+        ('2025-01-06', 'ACTIVIDAD VIERNES BOTANA', 222.0),
+        ('2025-01-08', 'PASTEL ENERO', 420.0),
+    ),
+    ('2025-02-26', 445.0): (
+        ('2025-02-17', 'PASTEL FEB', 445.0),
+    ),
+    ('2025-02-26', 2030.0): (
+        ('2025-02-06', 'ACTIVIDAD TAMALES', 2030.0),
+    ),
+    ('2025-03-12', 1239.0): (
+        ('2025-02-26', 'PASTEL 1FEB', 520.0),
+        ('2025-02-28', 'DULCES PULSE SURVEY', 339.0),
+        ('2025-02-28', 'PASTEL 2FEB', 380.0),
+    ),
+    ('2025-04-09', 441.3): (
+        ('2025-03-20', 'ACTIVIDAD CAPACITACION MARZO', 441.3),
+    ),
+    ('2025-04-23', 480.0): (
+        ('2025-03-26', 'PASTEL MARZO', 480.0),
+    ),
+    ('2025-06-04', 442.0): (
+        ('2025-04-25', 'actividad snack abril', 442.0),
+    ),
+    ('2025-06-09', 42674.84): (
+        ('2024-10-30', 'pan de muerto', 138.85),
+        ('2024-11-06', 'Globos decoracion', 71.5),
+        ('2024-11-06', 'pastel noviembre', 395.0),
+        ('2024-11-07', 'uniforme asociado', 558.0),
+        ('2025-04-30', 'ACTIVIDAD BRAND INMERSION', 254.5),
+        ('2025-05-07', 'Snack lunes  Elotes', 1740.0),
+        ('2025-05-08', 'snack elotes pt 2', 1740.0),
+        ('2025-05-09', 'FLORES DIA MADRE', 265.0),
+        ('2025-05-09', 'REGALO DIA DE LAS MADRES', 3667.0),
+        ('2025-05-14', 'SNACK AAW CHURROS', 3229.43),
+        ('2025-05-16', 'BANQUETE AAW', 19329.66),
+        ('2025-05-16', 'CANDADO ACTIVIDAD AAW', 65.0),
+        ('2025-05-16', 'DULCE ACTIVIDAD AAW', 97.0),
+        ('2025-05-16', 'PASTEL CUMPLEAÑO MAYO', 440.0),
+        ('2025-05-19', 'COMIDA HOT DOG MARTES AAW', 6214.25),
+        ('2025-05-20', 'PIPZAS 2 VIERNES AAW', 1490.0),
+        ('2025-05-20', 'PIZZAS 1 VIERNES AAW', 1490.0),
+        ('2025-05-20', 'PIZZAS 3 VIERNES AAW', 1490.0),
+    ),
+    ('2025-06-11', 124.9): (
+        ('2025-06-03', 'DULCES ENCUESTA PULSE', 124.9),
+    ),
+    ('2025-07-02', 1805.2): (
+        ('2025-05-22', 'UNIFORMES RRHH', 1003.0),
+        ('2025-06-10', 'SNACK VIERNES BOTANA', 558.2),
+        ('2025-06-13', 'ACTIVIDAD CAPACITACION', 244.0),
+    ),
+    ('2025-07-23', 735.0): (
+        ('2025-06-30', 'Pastel julio', 355.0),
+        ('2025-07-03', 'Pastel julio', 380.0),
+    ),
+    ('2025-09-03', 4913.61): (
+        ('2025-05-09', 'Gastos AAE 12may25', 1241.19),
+        ('2025-06-16', 'PASTEL JUNIO', 445.0),
+        ('2025-06-18', 'DULCES ACTIVIDAD JUNIO', 122.5),
+        ('2025-07-06', 'UBER AEROPUERTO- CDMX', 179.91),
+        ('2025-07-07', 'ACTIVIDAD JULIO', 228.0),
+        ('2025-07-11', 'Pastel julio', 545.0),
+        ('2025-07-14', 'COMIDA 3 SUMMIT', 246.0),
+        ('2025-07-14', 'Taxi 1', 455.0),
+        ('2025-07-15', 'COMIDA 2 SUMMIT', 336.99),
+        ('2025-07-30', 'Dulces Actividad Junta Mensual', 559.0),
+        ('2025-07-30', 'Pastel julio', 555.0),
+    ),
+    ('2025-09-10', 835.0): (
+        ('2025-08-21', 'pastel agosto', 380.0),
+        ('2025-08-29', 'VASOS ACTIVIDAD', 75.0),
+        ('2025-08-29', 'pastel agosto', 380.0),
+    ),
+    ('2025-10-01', 2788.71): (
+        ('2025-03-27', 'PASTEL CUMPLEAÑOS MARZO', 380.0),
+        ('2025-04-21', 'pastel abril', 510.01),
+        ('2025-07-10', 'UBER CDMX - AEROPUERTO', 139.41),
+        ('2025-07-29', 'cuadro', 315.0),
+        ('2025-09-08', 'PASTEL SEPT', 434.01),
+        ('2025-09-10', 'PASTEL SEPT', 499.0),
+        ('2025-09-22', 'DHL CONTRATO CTM', 418.71),
+        ('2025-09-23', 'HSKP week', 92.0),
+    ),
+    ('2025-10-22', 389.0): (
+        ('2025-05-13', 'CAJA REGALOS DIA MADRES', 240.0),
+        ('2025-10-22', 'EXPENSE LISTONES ROSAS', 150.0),
+    ),
+    ('2025-11-26', 4759.25): (
+        ('2025-09-19', 'DULCES HSKP WEEK', 413.0),
+        ('2025-10-21', 'DULCES GRADUACION WORLD VISION', 214.0),
+        ('2025-10-24', 'FLORES GRADUACION WORLD VISION', 2900.0),
+        ('2025-10-31', 'PAPELERIA ALTAR DE MUERTO', 329.0),
+        ('2025-11-03', 'DULCES ALTAR DE MUERTO', 277.25),
+        ('2025-11-03', 'DULCES ALTAR DE MUERTOS', 277.25),
+        ('2025-11-04', 'FLORES ALTAR DE MUERTOS', 348.62),
+    ),
+    ('2025-12-11', 920.0): (
+        ('2025-11-18', 'CANDADO ESTANTE SKYBAR', 108.0),
+        ('2025-12-01', 'SNACK ARBOL DE NAVIDAD', 152.0),
+        ('2025-12-02', 'LUCES ARBOL DE NAVIDAD', 660.0),
+    ),
+    ('2026-01-07', 4479.0): (
+        ('2025-07-14', 'COMIDA HR SUMMIT', 756.0),
+        ('2025-10-22', 'LISTON ROSA CANCER DE MAMA', 150.0),
+        ('2025-10-24', 'FLORES GRADUACION', 2963.18),
+        ('2025-11-04', 'FLORES PARA ALTAR', 340.0),
+        ('2025-12-15', 'OPALINA INVITACION POSADA', 270.0),
+    ),
+    ('2026-02-10', 454.0): (
+        ('2026-01-07', 'EXPENSE CHIP CEL RH', 99.0),
+        ('2026-01-07', 'PASTEL ENERO', 355.0),
+    ),
+    ('2026-03-25', 1862.0): (
+        ('2025-10-21', 'Dulces Halloween', 214.0),
+        ('2025-10-31', 'PAPELERIA ALTAR', 329.0),
+        ('2025-11-01', 'PASTEL NOV', 549.0),
+        ('2025-12-04', 'DULCES INVITACION POSADA', 770.0),
+    ),
+    ('2026-04-23', 3142.39): (
+        ('2026-04-13', 'PASTEL CUMPLEAÑOS ABRIL', 570.0),
+        ('2026-04-14', 'ARREGLO FLORAL', 2572.39),
+    ),
+    ('2026-05-06', 690.0): (
+        ('2026-04-02', 'velas hora del planeta', 140.0),
+        ('2026-04-21', 'pastel cumpleaños abril', 550.0),
+    ),
+    ('2026-05-20', 10143.5): (
+        ('2026-04-28', 'GLOBOS DECORACION DIA DEL NINO', 374.92),
+        ('2026-04-30', 'DESPEDIDA PRACTICANTES', 420.0),
+        ('2026-05-05', 'IMPRESIONES DIA DEL NIÑO', 119.8),
+        ('2026-05-07', 'DECORACION DIA DEL NINO', 347.0),
+        ('2026-05-13', 'REGALOS DIAS DE LAS MADRES', 8067.68),
+        ('2026-05-15', 'ACTIVIDAD AAW', 334.1),
+        ('2026-05-15', 'PASTEL CUMPLEANEROS MAYO', 480.0),
+    ),
+    ('2026-05-27', 4582.0): (
+        ('2026-05-27', 'PASTEL ANIVERSARIO HOTEL', 4582.0),
+    ),
+    ('2026-06-04', 4582.0): (
+        ('2026-06-01', 'PASTEL ANIVERSARIO PT 2', 4582.0),
+    ),
+    ('2026-06-18', 709.0): (
+        ('2026-05-18', 'IMPRESION AAW', 334.1),
+        ('2026-05-19', 'REFRESCOS AAW', 176.0),
+        ('2026-05-26', 'ACTIVIDAD AAW', 98.9),
+        ('2026-05-26', 'ACTIVIDAD CLAUSURA AAW', 100.0),
+    ),
+    ('2026-07-22', 7163.62): (
+        ('2025-12-19', 'boletos bus taskforce', 6105.08),
+        ('2026-06-02', 'CUMPLEAÑOS JULIO', 580.0),
+        ('2026-06-20', 'EXPENSE CUMPLEAÑOS JULIO', 244.49),
+        ('2026-07-09', 'AMENIDAD ANIVERSARIOS', 235.0),
+    ),
+    ('2026-08-12', 3799.4): (
+        ('2025-12-18', 'DECORACION POSADA', 1010.0),
+        ('2026-04-09', 'JUNTA DEPARTAMENTAL FRONT ABRIL', 476.0),
+        ('2026-05-28', 'Gastos decoracion Junta mensual Asociados junio 2026', 371.0),
+        ('2026-05-30', 'Gastos decoracion Junta mensual Asociados junio 2026', 1045.0),
+        ('2026-06-30', 'CUADRO DESPEDIDA M', 684.4),
+        ('2026-07-08', 'IMPRESION DESPEDIDA GM', 213.0),
+    ),
+    ('2026-09-15', 4174.94): (
+        ('2026-05-07', 'JUNTA DEPARTAMENTAL FD MAYO', 1157.0),
+        ('2026-05-14', 'DESPEDIDA ASOCIADOS FRONT', 485.0),
+        ('2026-06-12', 'REFRESCOS  ACTIVIDAD MUNDIAL', 198.0),
+        ('2026-06-23', 'ACTIVIDAD JULIO', 1860.13),
+        ('2026-07-09', 'PASTEL CUMPLEAÑO JULIO', 475.0),
+    ),
+}
+
+
 def _es(d, clave) -> bool:
     return d['fecha'][:10] == clave[0] and abs(float(d['monto']) - clave[1]) < 0.005
 
@@ -141,11 +399,24 @@ def _es(d, clave) -> bool:
 def asignar(depositos: list[dict], gastos: list[dict]) -> dict:
     """depósito id -> (pasada, [gastos de la plataforma])."""
     usados, res = set(), {}
+    for clave, gastos_fijos in FIJOS.items():
+        d = next((d for d in depositos if _es(d, clave)), None)
+        if not d:
+            continue
+        sel = []
+        for f, t, m in gastos_fijos:
+            x = next((x for x in gastos if x['fecha'] == f and x['titulo'] == t and abs(x['monto'] - m) < 0.005
+                      and x['idx'] not in usados and x['idx'] not in {y['idx'] for y in sel}), None)
+            if x:
+                sel.append(x)
+        if sel:
+            usados.update(x['idx'] for x in sel)
+            res[d['id']] = ('fijo', sel)
     for clave, titulos in APROXIMADOS.items():
         d = next((d for d in depositos if _es(d, clave)), None)
         sel = [next((x for x in gastos if x['titulo'] == t and x['idx'] not in usados and x['fecha'] <= clave[0]), None)
                for t in titulos]
-        if d and all(sel):
+        if d and d['id'] not in res and all(sel):
             usados.update(x['idx'] for x in sel)
             res[d['id']] = ('aproximado (aceptado)', sel)
     for nombre, dias, fn, tol in PASADAS:
@@ -216,7 +487,9 @@ def _cargo_de(item, cargos, usados):
 # de $561 del 28/05/2024 se quedaba con uno de los dos pasteles de $561 del
 # Día de las Madres que necesita el de $2,973.24 del 20/05/2024 («sí, quita
 # ese de 561 para que cuadre»).
-DEPOSITOS_FUERA = (('2024-05-28', 561.0),)
+# 2026-10-05: el de $561 sí es expense, paga el reporte 12170 (pastel Día de
+# las Madres, 33.82 USD); está en FIJOS.
+DEPOSITOS_FUERA = ()
 
 # Depósitos que pagaron viáticos, no gastos de la plataforma (el usuario,
 # 2026-09-28: «esos mételos como pagado de viáticos»): ninguna combinación de

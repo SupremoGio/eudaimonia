@@ -6471,6 +6471,26 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_v8_regreso_v6 migration warning: {e}")
 
+        # ── FINANZAS — plataforma de Expense v9 (usuario, 2026-10-05): asignación
+        # fija por depósito (FIJOS), sin Servyviajes/Marriott/Uber ajenos ni la
+        # posada duplicada, y Día de las Madres 2024 por sus reportes (12169 =
+        # $2,973.24, 12170 = $561). Se rearman los lotes de la plataforma.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_plataforma_v9_fijos'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.expense_plataforma import conciliar as _exp_plat9, liberar_lotes_plataforma as _lib9
+                _l = _lib9(db)
+                _h = _exp_plat9(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_plataforma_v9_fijos", f"{_l} liberados; {len(_h)} lotes: " + "; ".join(_h)[:850])
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_plataforma_v9_fijos: {_l} liberados, {len(_h)} lotes {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_plataforma_v9_fijos migration warning: {e}")
+
         # ── FINANZAS — retiros de CETES a débito (usuario, 2026-09-28): SPEI
         # de NAFIN -> CETES/RETIRO|APORTACION y las 9 instrucciones de retiro
         # de mar-sep 2026 ligadas a su depósito.
