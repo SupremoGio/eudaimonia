@@ -67,7 +67,7 @@ CORRECCIONES = [
     (3117, '2024-09-13', 512.0, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001239 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (3147, '2024-09-30', 6000.0, {'categoria': 'VIVIENDA', 'subcategoria': 'Aportación renta', 'tipo': 'INGRESO'}),  # SPEI RECIBIDOSANTANDER · «PARTE DE RENTA DE ROOMIE»
     (3152, '2024-10-04', 527.5, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001300 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
-    (3061, '2024-10-08', 11000.0, {'categoria': 'FINANZAS', 'subcategoria': 'Transferencia recibida'}),  # SPEI RECIBIDOBANORTE · «ME REGRESO RENTA PARA QUE PAGARA EN OTRA CUENTA»
+    (3061, '2024-10-08', 11000.0, {'categoria': 'FINANZAS', 'subcategoria': 'Entre cuentas propias'}),  # SPEI RECIBIDOBANORTE · «ME REGRESO RENTA PARA QUE PAGARA EN OTRA CUENTA»
     (3163, '2024-10-08', 11000.0, {'mi_parte': 5500.0}),  # PAGO TARJETA DE TERCEROS · «6000» -> 5500 (roomie puso 5,500 en 2024)
     (3066, '2024-10-11', 738.0, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001317 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»
     (3076, '2024-10-18', 372.5, {'categoria': 'FINANZAS', 'subcategoria': 'Reembolsable'}),  # SITH20000001356 FIDEICOMISO F 1596 · «ME REGRESARON DINERO DE EXPENSE»

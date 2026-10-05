@@ -51,6 +51,13 @@ CORRECCIONES += [
     (5328, '2022-06-10', 1500.0, 'PABLO', 'COMIDA_FUERA', 'Restaurante'),   # «mándalo a comida»
 ]
 
+# Tanda 6 (2026-10-05): la renta de oct-2024 que se mandó a BANORTE y regresó
+# («fue un depósito que hice a esa tarjeta Banorte, me lo regresaron y
+# transferí a BBVA»): es tu propio dinero de vuelta, no ingreso.
+CORRECCIONES += [
+    (3061, '2024-10-08', 11000.0, 'BANORTE', 'FINANZAS', 'Entre cuentas propias'),
+]
+
 # Sugerencias de la app que el usuario aceptó en bloque (2026-10-04: «aplica
 # las sugerencias menos de gracias»): (id, fecha, monto, texto, categoria,
 # subcategoria, viaje o None). «Reembolso compartido» = te regresaron lo que
