@@ -58,9 +58,18 @@ def _no_es_mio(x) -> bool:
     return any(x['fecha'] == f and x['titulo'] == t and abs(x['monto'] - m) < 0.005 for f, t, m in NO_SON_MIOS)
 
 
+# Gastos que el usuario pasó de reportes posteriores al export (que llega al
+# 09/07/2026): fecha, título, tipo y monto en MXN (Amount LC).
+EXTRA = (
+    # Reporte de jul-2026 (56.88 USD), pagado con el depósito de $986.50 del 18/08/2026.
+    {'fecha': '2026-07-28', 'titulo': 'PIZZAS EVENTO LP', 'tipo': 'Associate Celebrations Meals PS(655641) / SUN(624401)', 'monto': 796.00},
+    {'fecha': '2026-07-28', 'titulo': 'REFRESCOS LP', 'tipo': 'Associate Celebrations Meals PS(655641) / SUN(624401)', 'monto': 190.50},
+)
+
+
 def items() -> list[dict]:
     with open(_ARCHIVO, encoding='utf-8') as fh:
-        data = [x for x in json.load(fh)['items'] if not _no_es_mio(x)]
+        data = [x for x in json.load(fh)['items'] if not _no_es_mio(x)] + [dict(x) for x in EXTRA]
     out = [{**x, 'idx': i} for i, x in enumerate(sorted(data, key=lambda x: (x['fecha'], x['titulo'])))]
     return out
 
@@ -380,6 +389,11 @@ FIJOS = {
         ('2026-05-30', 'Gastos decoracion Junta mensual Asociados junio 2026', 1045.0),
         ('2026-06-30', 'CUADRO DESPEDIDA M', 684.4),
         ('2026-07-08', 'IMPRESION DESPEDIDA GM', 213.0),
+    ),
+    # Reporte de jul-2026 (56.88 USD): pizzas + refrescos LP.
+    ('2026-08-18', 986.5): (
+        ('2026-07-28', 'PIZZAS EVENTO LP', 796.0),
+        ('2026-07-28', 'REFRESCOS LP', 190.5),
     ),
     ('2026-09-15', 4174.94): (
         ('2026-05-07', 'JUNTA DEPARTAMENTAL FD MAYO', 1157.0),

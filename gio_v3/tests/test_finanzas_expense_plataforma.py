@@ -19,7 +19,10 @@ def _mov(db, fecha, desc, monto, cat, sub='', tipo='GASTO'):
 def test_datos_de_la_plataforma():
     it = P.items()
     # 176 gastos en el export menos 5 que no son del usuario o están duplicados (P.NO_SON_MIOS)
-    assert len(it) == 171 and round(sum(x['monto'] for x in it), 2) == round(194325.27 - 10461 - 4694 - 1442 - 21273 - 1010, 2)
+    # más 2 de reportes posteriores (P.EXTRA)
+    assert len(it) == 173 and round(sum(x['monto'] for x in it), 2) == round(194325.27 - 10461 - 4694 - 1442 - 21273 - 1010 + 986.50, 2)
+    res = P.asignar([{'id': 1, 'fecha': '2026-08-18', 'monto': 986.50}], it)
+    assert [x['titulo'] for x in res[1][1]] == ['PIZZAS EVENTO LP', 'REFRESCOS LP']
     # Reporte del HR Summit (jul-2025, 133.67 USD = $2,478.11): sus 7 gastos, Uber GDL incluido.
     summit = [x for x in it if x['titulo'] in ('UBER GDL - AEROPUERTO', 'UBER AEROPUERTO- CDMX', 'UBER CDMX - AEROPUERTO',
                                                'Taxi 1', 'COMIDA HR SUMMIT', 'COMIDA 2 SUMMIT', 'COMIDA 3 SUMMIT')]
