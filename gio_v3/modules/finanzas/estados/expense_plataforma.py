@@ -519,8 +519,18 @@ def _fuera(d) -> bool:
     return any(_es(d, c) for c in DEPOSITOS_FUERA)
 
 
+# Depósitos de antes de la plataforma cuyo reporte no aparece (el usuario,
+# 2026-10-05: «haz el punto 2 para ya cerrar esos»): lote propio «Reembolso
+# sin detalle», sin gastos ligados, como los de viáticos.
+SIN_DETALLE = (('2023-01-03', 215.00), ('2024-01-03', 2076.00))
+
+
 def _viaticos(d) -> bool:
-    return any(_es(d, c) for c in VIATICOS)
+    return any(_es(d, c) for c in VIATICOS + SIN_DETALLE)
+
+
+def _sin_detalle(d) -> bool:
+    return any(_es(d, c) for c in SIN_DETALLE)
 
 
 def liberar_lotes_plataforma(db) -> int:
@@ -643,11 +653,13 @@ def conciliar(db) -> list[str]:
     # Los de viáticos quedan en un lote propio sin gastos: así salen de
     # «depósitos sin lote» / «sin conciliar» y el nombre dice qué pagaron.
     for d in _depositos_viaticos(db):
+        nombre, nota = ((f"Reembolso sin detalle {d['fecha']}", "Plataforma de Expense: reembolso sin detalle (no se encontró el reporte)")
+                        if _sin_detalle(d) else
+                        (f"Viáticos {d['fecha']}", "Plataforma de Expense: pagado de viáticos (sin gastos en la plataforma)"))
         lid = db.execute("INSERT INTO est_expense_lotes (nombre, notas, created_at) VALUES (?,?,?)",
-                         (f"Viáticos {d['fecha']}", "Plataforma de Expense: pagado de viáticos (sin gastos en la plataforma)",
-                          _lotes.ahora())).lastrowid
+                         (nombre, nota, _lotes.ahora())).lastrowid
         db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable' WHERE id=?", (d['id'],))
         db.execute("INSERT INTO est_expense_lote_depositos (lote_id, movimiento_id, created_at) VALUES (?,?,?)",
                    (lid, d['id'], _lotes.ahora()))
-        hechos.append(f"{d['fecha']} ${float(d['monto']):,.2f}: viáticos")
+        hechos.append(f"{d['fecha']} ${float(d['monto']):,.2f}: " + ('sin detalle' if _sin_detalle(d) else 'viáticos'))
     return hechos

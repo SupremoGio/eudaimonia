@@ -6510,6 +6510,23 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_v10_summit migration warning: {e}")
 
+        # ── FINANZAS — Expense: los depósitos de $215 (03/01/2023) y $2,076
+        # (03/01/2024) quedan en un lote «Reembolso sin detalle» (no hay reporte).
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_sin_detalle_2023_2024'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.expense_plataforma import conciliar as _exp_sd
+                _h = _exp_sd(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_sin_detalle_2023_2024", "; ".join(_h)[:900])
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_sin_detalle_2023_2024: {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_sin_detalle_2023_2024 migration warning: {e}")
+
         # ── FINANZAS — retiros de CETES a débito (usuario, 2026-09-28): SPEI
         # de NAFIN -> CETES/RETIRO|APORTACION y las 9 instrucciones de retiro
         # de mar-sep 2026 ligadas a su depósito.

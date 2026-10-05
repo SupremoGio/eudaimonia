@@ -56,6 +56,13 @@ CORRECCIONES += [
 # transferí a BBVA»): es tu propio dinero de vuelta, no ingreso.
 CORRECCIONES += [
     (3061, '2024-10-08', 11000.0, 'BANORTE', 'FINANZAS', 'Entre cuentas propias'),
+    # «cierralo de la mejor manera»: efectivo propio depositado a la cuenta, un
+    # SPEI que regresó y un SPEI de STP (cuenta propia en otra app): ni
+    # ingreso ni gasto.
+    (2079, '2026-05-12', 5000.0, 'EFECTIVO EN COMERCIO', 'FINANZAS', 'Entre cuentas propias'),
+    (2935, '2025-06-02', 3000.0, 'EFECTIVO EN COMERCIO', 'FINANZAS', 'Entre cuentas propias'),
+    (3175, '2025-03-28', 192.5, 'SPEI DEVUELTO', 'FINANZAS', 'Entre cuentas propias'),
+    (2431, '2026-08-10', 3000.0, 'STP', 'FINANZAS', 'Entre cuentas propias'),
 ]
 
 # Sugerencias de la app que el usuario aceptó en bloque (2026-10-04: «aplica

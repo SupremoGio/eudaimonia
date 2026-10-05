@@ -170,3 +170,16 @@ def test_summit_en_deposito_de_septiembre_2025():
             'COMIDA HR SUMMIT', 'COMIDA 2 SUMMIT', 'COMIDA 3 SUMMIT'} <= sep
     assert round(sum(x['monto'] for x in res[1][1]), 2) == 4912.61
     assert not {'UBER CDMX - AEROPUERTO', 'COMIDA HR SUMMIT'} & {x['titulo'] for x in res[2][1] + res[3][1]}
+
+
+def test_reembolso_sin_detalle(test_db):
+    with database.get_db() as db:
+        d1 = _mov(db, '2023-01-03', 'SITH20000004451 FIDEICOMISO F 1596', 215.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        d2 = _mov(db, '2024-01-03', 'SITH20000000433 FIDEICOMISO F 1596', 2076.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        db.commit()
+        P.conciliar(db); db.commit()
+        lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
+        assert lotes[d1]['nombre'] == 'Reembolso sin detalle 2023-01-03' and lotes[d1]['gastos'] == []
+        assert lotes[d2]['nombre'] == 'Reembolso sin detalle 2024-01-03'
+        assert not {d1, d2} & {x['id'] for x in E._depositos_sin_lote(db)}
+        assert P.conciliar(db) == []                                    # idempotente
