@@ -53,6 +53,8 @@ NO_SON_MIOS = (
     # Duplicado de «BOLSAS DIA DE MADRES» $285 del mismo día, ya pagado (el
     # usuario: «solo es uno y ya lo debieron haber pagado»).
     ('2024-05-13', 'BOLSAS DIA MADRE', 285.00),
+    # Duplicado de «DECORACION POSADA» $1,010 del 18/12/2025, ya pagado.
+    ('2025-12-26', 'EXPENSE DECORACION POSADA', 1010.00),
 )
 
 
