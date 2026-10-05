@@ -42,9 +42,22 @@ TOL = 1.0
 DIAS_ANTES, DIAS_DESPUES = 7, 15
 
 
+# Gastos del export que no son del usuario (2026-10-05: «servyviajes yo no
+# pagué nada de eso», «este tampoco es mío»): (fecha, título, monto).
+NO_SON_MIOS = (
+    ('2025-12-01', 'SERVIVYAJES', 10461.00),
+    ('2025-12-01', 'SERVYVIAJES', 4694.00),
+    ('2026-03-04', 'ACTIVIDAD INTEGRACION MARRIOTT BONVOY', 1442.00),
+)
+
+
+def _no_es_mio(x) -> bool:
+    return any(x['fecha'] == f and x['titulo'] == t and abs(x['monto'] - m) < 0.005 for f, t, m in NO_SON_MIOS)
+
+
 def items() -> list[dict]:
     with open(_ARCHIVO, encoding='utf-8') as fh:
-        data = json.load(fh)['items']
+        data = [x for x in json.load(fh)['items'] if not _no_es_mio(x)]
     out = [{**x, 'idx': i} for i, x in enumerate(sorted(data, key=lambda x: (x['fecha'], x['titulo'])))]
     return out
 
