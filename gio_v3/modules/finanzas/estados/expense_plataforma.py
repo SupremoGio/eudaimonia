@@ -284,16 +284,21 @@ FIJOS = {
         ('2025-06-30', 'Pastel julio', 355.0),
         ('2025-07-03', 'Pastel julio', 380.0),
     ),
+    # Depósito de expense de sep-2025 (confirmado por el usuario): el reporte
+    # del HR Summit completo (7 gastos, 133.67 USD = $2,478.11) + pasteles,
+    # dulces y actividad de may–jul 2025 ($2,434.50; $1 de redondeo).
     ('2025-09-03', 4913.61): (
-        ('2025-05-09', 'Gastos AAE 12may25', 1241.19),
+        ('2025-07-06', 'UBER GDL - AEROPUERTO', 364.8),
+        ('2025-07-06', 'UBER AEROPUERTO- CDMX', 179.91),
+        ('2025-07-10', 'UBER CDMX - AEROPUERTO', 139.41),
+        ('2025-07-14', 'Taxi 1', 455.0),
+        ('2025-07-14', 'COMIDA HR SUMMIT', 756.0),
+        ('2025-07-14', 'COMIDA 3 SUMMIT', 246.0),
+        ('2025-07-15', 'COMIDA 2 SUMMIT', 336.99),
+        ('2025-04-30', 'PASTEL MAYO', 525.0),
         ('2025-06-16', 'PASTEL JUNIO', 445.0),
         ('2025-06-18', 'DULCES ACTIVIDAD JUNIO', 122.5),
-        ('2025-07-06', 'UBER AEROPUERTO- CDMX', 179.91),
         ('2025-07-07', 'ACTIVIDAD JULIO', 228.0),
-        ('2025-07-11', 'Pastel julio', 545.0),
-        ('2025-07-14', 'COMIDA 3 SUMMIT', 246.0),
-        ('2025-07-14', 'Taxi 1', 455.0),
-        ('2025-07-15', 'COMIDA 2 SUMMIT', 336.99),
         ('2025-07-30', 'Dulces Actividad Junta Mensual', 559.0),
         ('2025-07-30', 'Pastel julio', 555.0),
     ),
@@ -305,7 +310,6 @@ FIJOS = {
     ('2025-10-01', 2788.71): (
         ('2025-03-27', 'PASTEL CUMPLEAÑOS MARZO', 380.0),
         ('2025-04-21', 'pastel abril', 510.01),
-        ('2025-07-10', 'UBER CDMX - AEROPUERTO', 139.41),
         ('2025-07-29', 'cuadro', 315.0),
         ('2025-09-08', 'PASTEL SEPT', 434.01),
         ('2025-09-10', 'PASTEL SEPT', 499.0),
@@ -331,7 +335,6 @@ FIJOS = {
         ('2025-12-02', 'LUCES ARBOL DE NAVIDAD', 660.0),
     ),
     ('2026-01-07', 4479.0): (
-        ('2025-07-14', 'COMIDA HR SUMMIT', 756.0),
         ('2025-10-22', 'LISTON ROSA CANCER DE MAMA', 150.0),
         ('2025-10-24', 'FLORES GRADUACION', 2963.18),
         ('2025-11-04', 'FLORES PARA ALTAR', 340.0),

@@ -6491,6 +6491,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_plataforma_v9_fijos migration warning: {e}")
 
+        # ── FINANZAS — plataforma de Expense v10 (usuario, 2026-10-05): el depósito
+        # de $4,913.61 del 03/09/2025 paga el reporte del HR Summit completo; el
+        # de $986.50 del 18/08/2026 las pizzas/refrescos LP. Se rearman los lotes.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_plataforma_v10_summit'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.expense_plataforma import conciliar as _exp_plat10, liberar_lotes_plataforma as _lib10
+                _l = _lib10(db)
+                _h = _exp_plat10(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_plataforma_v10_summit", f"{_l} liberados; {len(_h)} lotes: " + "; ".join(_h)[:850])
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_plataforma_v10_summit: {_l} liberados, {len(_h)} lotes {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_plataforma_v10_summit migration warning: {e}")
+
         # ── FINANZAS — retiros de CETES a débito (usuario, 2026-09-28): SPEI
         # de NAFIN -> CETES/RETIRO|APORTACION y las 9 instrucciones de retiro
         # de mar-sep 2026 ligadas a su depósito.

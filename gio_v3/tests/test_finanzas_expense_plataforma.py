@@ -159,3 +159,14 @@ def test_fijos_dia_de_las_madres_2024():
     assert [x['titulo'] for x in res[2][1]] == ['PASTEL DIA DE LAS MADRES']
     assert [x['titulo'] for x in res[3][1]] == ['PASTEL ANIVERSARIO GDLAC']
     assert all(n == 'fijo' for n, _ in res.values())
+
+
+def test_summit_en_deposito_de_septiembre_2025():
+    deps = [{'id': 1, 'fecha': '2025-09-03', 'monto': 4913.61}, {'id': 2, 'fecha': '2025-10-01', 'monto': 2788.71},
+            {'id': 3, 'fecha': '2026-01-07', 'monto': 4479.0}]
+    res = P.asignar(deps, P.items())
+    sep = {x['titulo'] for x in res[1][1]}
+    assert {'UBER GDL - AEROPUERTO', 'UBER AEROPUERTO- CDMX', 'UBER CDMX - AEROPUERTO', 'Taxi 1',
+            'COMIDA HR SUMMIT', 'COMIDA 2 SUMMIT', 'COMIDA 3 SUMMIT'} <= sep
+    assert round(sum(x['monto'] for x in res[1][1]), 2) == 4912.61
+    assert not {'UBER CDMX - AEROPUERTO', 'COMIDA HR SUMMIT'} & {x['titulo'] for x in res[2][1] + res[3][1]}
