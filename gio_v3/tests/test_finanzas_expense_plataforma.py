@@ -34,15 +34,16 @@ def test_conciliar_crea_lotes(test_db, monkeypatch):
         otro = _mov(db, '2024-11-29', 'SAMS PERSONAL', 4895.0, 'SUPER', 'Súper')             # mismo monto: no se usa
         c4 = _mov(db, '2024-12-06', 'PASTELERIA', 395.0, 'CAFE/PAN', 'Pan')
         c5 = _mov(db, '2024-12-12', 'PASTELERIA', 320.0, 'CAFE/PAN', 'Pan')
-        d1 = _mov(db, '2024-12-06', 'SITH20000001490 FIDEICOMISO F 1596', 6138.0, 'FINANZAS', 'Fideicomiso', 'INGRESO')
+        d1 = _mov(db, '2024-12-06', 'SITH20000001490 FIDEICOMISO F 1596', 5942.0, 'FINANZAS', 'Fideicomiso', 'INGRESO')
         d2 = _mov(db, '2024-12-20', 'SITH20000001541 FIDEICOMISO F 1596', 715.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
         db.commit()
         hechos = P.conciliar(db)
         db.commit()
         assert len(hechos) == 2
         lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
-        assert {g['id'] for g in lotes[d1]['gastos']} == {c1, c2}          # el SNACK de $196 no tiene cargo
-        assert 'sin cargo en el banco' in lotes[d1]['notas'] and 'SNACK' in lotes[d1]['notas']
+        assert {g['id'] for g in lotes[d1]['gastos']} == {c1, c2}
+        assert 'SNACK' not in lotes[d1]['notas']                          # sin cargo: es de otra persona
+        assert [x['titulo'] for x in P.propios(db)['ajenos']] == ['SNACK']
         assert {g['id'] for g in lotes[d2]['gastos']} == {c4, c5} and lotes[d2]['estado'] == 'Reembolsado'
         cat = lambda i: db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[0]
         assert cat(c1) == cat(c4) == 'EXPENSE' and cat(otro) == 'SUPER'
@@ -55,6 +56,8 @@ def test_no_reofrece_gastos_ya_pagados_y_cargo_antes_o_transferencia(test_db, mo
               {'fecha': '2025-03-20', 'titulo': 'CAPACITACION', 'tipo': '', 'monto': 441.3}]
     monkeypatch.setattr(P, 'items', lambda: [{**x, 'idx': i} for i, x in enumerate(sorted(gastos, key=lambda g: g['fecha']))])
     with database.get_db() as db:
+        _mov(db, '2025-01-06', 'BOTANA', 222.0, 'COMIDA')
+        _mov(db, '2025-01-08', 'PASTELERIA', 420.0, 'CAFE/PAN', 'Pan')
         d1 = _mov(db, '2025-01-22', 'SITH20000001608 FIDEICOMISO F 1596', 642.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
         P.conciliar(db); db.commit()                      # primera pasada: lote de d1
         c_antes = _mov(db, '2025-03-15', 'PAGO CUENTA DE TERCERO BNET CAPACITACION', 441.3, 'FINANZAS', 'Transferencia')
@@ -84,6 +87,7 @@ def test_deposito_561_fuera_y_rearmado(test_db, monkeypatch):
     monkeypatch.setattr(P, 'items', lambda: [{**x, 'idx': i} for i, x in enumerate(gastos)])
     with database.get_db() as db:
         c = _mov(db, '2024-05-15', 'PASTELERIA', 561.0, 'CAFE/PAN', 'Pan')
+        c2 = _mov(db, '2024-05-16', 'PASTELERIA', 561.0, 'CAFE/PAN', 'Pan')
         d561 = _mov(db, '2024-05-28', 'SITH2 FIDEICOMISO F 1596', 561.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
         d2 = _mov(db, '2024-05-20', 'DEPOSITO DE TERCERO EXPENSE GIO BMRCASH', 1122.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
         db.commit()
@@ -93,7 +97,7 @@ def test_deposito_561_fuera_y_rearmado(test_db, monkeypatch):
         assert P.liberar_lotes_plataforma(db) >= 1
         P.conciliar(db); db.commit()
         lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
-        assert d561 not in lotes and [g['id'] for g in lotes[d2]['gastos']] == [c]
+        assert d561 not in lotes and {g['id'] for g in lotes[d2]['gastos']} == {c, c2}
 
 
 def test_exacto_al_centavo_gana_a_redondeo():
@@ -129,3 +133,26 @@ def test_aproximado_aceptado_y_viaticos(test_db, monkeypatch):
         assert lotes[v1]['nombre'] == 'Viáticos 2024-08-13' and lotes[v2]['gastos'] == []
         assert not {v1, v2, d} & {x['id'] for x in E._depositos_sin_lote(db)}
         assert P.liberar_lotes_plataforma(db) == 3 and len(P.conciliar(db)) == 3   # se rearman igual
+
+
+def test_solo_gastos_propios(test_db, monkeypatch):
+    """Un depósito de $500 cuadraría con dos gastos de otra persona ($200 + $300,
+    sin cargo en tu banco); solo cuenta tu gasto de $500 con su cargo."""
+    gastos = [{'fecha': '2025-03-01', 'titulo': 'AJENO A', 'tipo': '', 'monto': 200.0},
+              {'fecha': '2025-03-02', 'titulo': 'AJENO B', 'tipo': '', 'monto': 300.0},
+              {'fecha': '2025-03-10', 'titulo': 'MIO', 'tipo': '', 'monto': 500.0},
+              {'fecha': '2025-03-11', 'titulo': 'AJENO C', 'tipo': '', 'monto': 500.0}]
+    monkeypatch.setattr(P, 'items', lambda: [{**x, 'idx': i} for i, x in enumerate(gastos)])
+    with database.get_db() as db:
+        c = _mov(db, '2025-03-10', 'PASTELERIA', 500.0, 'CAFE/PAN', 'Pan')
+        d1 = _mov(db, '2025-03-20', 'SITH2 FIDEICOMISO F 1596', 500.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        d2 = _mov(db, '2025-03-25', 'SITH2 FIDEICOMISO F 1596', 500.0, 'FINANZAS', 'Reembolsable', 'INGRESO')
+        db.commit()
+        pr = P.propios(db)
+        assert [x['titulo'] for x in pr['mios']] == ['MIO'] and pr['mios'][0]['cargo']['id'] == c
+        assert {x['titulo'] for x in pr['ajenos']} == {'AJENO A', 'AJENO B', 'AJENO C'}
+        P.conciliar(db); db.commit()
+        lotes = {l['depositos'][0]['id']: l for l in E.listar(db)}
+        assert [g['id'] for g in lotes[d1]['gastos']] == [c] and d2 not in lotes
+        comp = P.asignacion_completa(db)
+        assert comp['sin_deposito'] == [] and len(comp['ajenos']) == 3

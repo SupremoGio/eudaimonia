@@ -26,8 +26,14 @@ qué cargo del banco. Dos pasos:
    cargo por gasto; primero los que ya están como EXPENSE.
 
 Con eso se crea un lote por depósito (sus cargos pasan a EXPENSE y quedan
-Pagado). Los gastos sin cargo en el banco (efectivo, otra tarjeta sin estado
-de cuenta) quedan anotados en las notas del lote.
+Pagado).
+
+Solo gastos propios (el usuario, 2026-10-05: «se agregaron cosas que yo no
+pagué, expense de alguien más; solo deja los que aparecen como gasto mío»):
+el export trae gastos de otras personas, así que un gasto de la plataforma
+solo entra a la asignación si tiene su propio cargo en el banco (paso 2,
+uno a uno). Los que no lo tienen son «ajenos»: no se emparejan con ningún
+depósito ni se anotan en los lotes.
 """
 import json
 import os
@@ -123,9 +129,11 @@ def asignar(depositos: list[dict], gastos: list[dict]) -> dict:
     usados, res = set(), {}
     for clave, titulos in APROXIMADOS.items():
         d = next((d for d in depositos if _es(d, clave)), None)
-        sel = [next((x for x in gastos if x['titulo'] == t and x['idx'] not in usados and x['fecha'] <= clave[0]), None)
-               for t in titulos]
-        if d and all(sel):
+        # Solo los gastos propios llegan aquí: si alguno de los títulos era de
+        # otra persona, el depósito se queda con los que sí son tuyos.
+        sel = [x for x in (next((x for x in gastos if x['titulo'] == t and x['idx'] not in usados
+                                 and x['fecha'] <= clave[0]), None) for t in titulos) if x]
+        if d and sel:
             usados.update(x['idx'] for x in sel)
             res[d['id']] = ('aproximado (aceptado)', sel)
     for nombre, dias, fn, tol in PASADAS:
@@ -190,6 +198,49 @@ def _cargo_de(item, cargos, usados):
     # Primero los que ya son EXPENSE (vienen ordenados así) y, entre iguales, el más cercano en fecha.
     candidatos.sort(key=lambda c: (c['categoria'] != 'EXPENSE', abs((date.fromisoformat(c['fecha']) - f).days)))
     return candidatos[0] if candidatos else None
+
+
+_NOTAS_PLATAFORMA = 'Plataforma de Expense%'
+
+# Gastos del export que el usuario dice que no son suyos aunque haya un cargo
+# del mismo monto en su banco: (fecha, título).
+AJENOS = ()
+
+
+def _pool_cargos(db) -> list[dict]:
+    """Cargos que pueden ser el pago de un gasto de la plataforma, estén o no
+    en un lote de la plataforma (esos se rearman); los que están en un lote
+    armado a mano o desde la pestaña llevan en_otro_lote."""
+    return [dict(r) for r in db.execute(f"""
+        SELECT m.id, substr(m.fecha,1,10) AS fecha, m.descripcion, ABS(m.monto) AS monto, m.categoria, m.banco,
+               EXISTS (SELECT 1 FROM est_expense_lote_gastos g JOIN est_expense_lotes l ON l.id = g.lote_id
+                       WHERE g.movimiento_id = m.id AND COALESCE(l.notas, '') NOT LIKE '{_NOTAS_PLATAFORMA}') AS en_otro_lote
+        FROM est_movimientos m
+        WHERE m.tipo IN ('GASTO', 'PAGO') AND m.categoria NOT IN ('PAGO_TDC', 'PRESTAMOS', 'INVERSION')
+          AND NOT (m.categoria = 'FINANZAS' AND COALESCE(m.subcategoria, '') NOT IN
+                   ('Transferencia', 'Transferencia enviada', ''))
+        ORDER BY CASE WHEN m.categoria = 'EXPENSE' THEN 0 ELSE 1 END, m.fecha, m.id
+    """).fetchall()]
+
+
+def propios(db, its: list[dict] | None = None) -> dict:
+    """Separa el export en gastos tuyos (con su propio cargo en el banco, uno
+    a uno), los tuyos que ya pagó un lote armado a mano, y los ajenos (sin
+    cargo: los pagó otra persona)."""
+    its = items() if its is None else its
+    cargos, usados = _pool_cargos(db), set()
+    mios, otro_lote, ajenos = [], [], []
+    for it in its:
+        if any(it['fecha'] == f and it['titulo'] == t for f, t in AJENOS):
+            ajenos.append({**it, 'cargo': None})
+            continue
+        c = _cargo_de(it, cargos, usados)
+        if not c:
+            ajenos.append({**it, 'cargo': None})
+            continue
+        usados.add(c['id'])
+        (otro_lote if c['en_otro_lote'] else mios).append({**it, 'cargo': c})
+    return {'mios': mios, 'otro_lote': otro_lote, 'ajenos': ajenos}
 
 
 # Depósitos que no pagan gastos de la plataforma (el usuario, 2026-09-28): el
@@ -257,38 +308,36 @@ def _depositos_viaticos(db) -> list[dict]:
 
 
 def plan(db) -> list[dict]:
-    """Lo que conciliar() haría, sin tocar nada (para revisar)."""
+    """Lo que conciliar() haría, sin tocar nada (para revisar). Cada gasto
+    lleva el cargo del banco que lo hace tuyo."""
     todos = _depositos_empresa(db)
-    asign = asignar(todos, items())
+    asign = asignar(todos, propios(db)['mios'])
     deps = [d for d in todos if not d['en_lote']]
-    cargos, usados, out = _cargos_libres(db), set(), []
+    libres, out = {c['id'] for c in _cargos_libres(db)}, []
     for d in deps:
         if d['id'] not in asign:
             out.append({'deposito': d, 'pasada': None, 'gastos': []})
             continue
         pasada, sel = asign[d['id']]
-        gastos = []
-        for it in sel:
-            c = _cargo_de(it, cargos, usados)
-            if c:
-                usados.add(c['id'])
-            gastos.append({**it, 'cargo': c})
+        gastos = [{**it, 'cargo': it['cargo'] if it['cargo']['id'] in libres else None} for it in sel]
         out.append({'deposito': d, 'pasada': pasada, 'gastos': gastos})
     return out
 
 
 def asignacion_completa(db) -> dict:
-    """Para revisar: cada depósito de la empresa con los gastos de la
-    plataforma que le tocan (esté o no en lote) y los gastos que no quedaron
-    en ningún depósito."""
+    """Para revisar: cada depósito de la empresa con los gastos propios de la
+    plataforma que le tocan (esté o no en lote), los propios que no quedaron
+    en ningún depósito y los ajenos (sin cargo en tu banco)."""
     todos = _depositos_empresa(db)
-    it = items()
-    asign = asignar(todos, it)
+    pr = propios(db)
+    asign = asignar(todos, pr['mios'])
     usados = {x['idx'] for _, sel in asign.values() for x in sel}
     return {
         'depositos': [{**d, 'pasada': asign.get(d['id'], (None, []))[0],
                        'gastos': asign.get(d['id'], (None, []))[1]} for d in todos],
-        'sin_deposito': [x for x in it if x['idx'] not in usados],
+        'sin_deposito': [x for x in pr['mios'] if x['idx'] not in usados],
+        'otro_lote': pr['otro_lote'],
+        'ajenos': pr['ajenos'],
     }
 
 
