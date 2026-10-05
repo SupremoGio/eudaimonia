@@ -101,7 +101,8 @@
 .fz-note{display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-radius:var(--r-md);background:var(--tone-bg,var(--bg-raised));border:1px solid var(--tone-border,var(--border-subtle));color:var(--fg-1);font-size:var(--fs-13);line-height:var(--lh-normal)}
 .fz-note>svg{flex-shrink:0;margin-top:2px;color:var(--tone-fg,var(--fg-3))}
 .fz-note .t-data{align-self:center}
-button.fz-note{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer}
+button.fz-note{width:100%;text-align:left;font:inherit;font-size:var(--fs-13);line-height:var(--lh-normal);color:inherit;cursor:pointer}
+button.fz-note:hover{border-color:var(--border-strong,var(--tone-border))}
 
 /* Barras de flujo */
 .fz-bars{margin:0}

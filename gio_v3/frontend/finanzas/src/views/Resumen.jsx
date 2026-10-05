@@ -104,11 +104,12 @@ export default function Resumen() {
       {((p.reembolsos_pendientes_count || 0) > 0 || (l && l.pendiente > 0) || (x && x.n > 0)) && (
         <div className="fz-notes">
           {p.reembolsos_pendientes_count > 0 && (
-            <div className="fz-note" data-tone="info">
+            // Facturas de Expense (todos los años) que la empresa aún no te reembolsa.
+            <button type="button" className="fz-note" data-tone="info" onClick={() => app.goTo('expense')}>
               <Icon name="undo-2" size={16} />
-              <span className="eu-grow">{p.reembolsos_pendientes_count} reembolso{p.reembolsos_pendientes_count === 1 ? '' : 's'} pendiente{p.reembolsos_pendientes_count === 1 ? '' : 's'} de cobrar</span>
+              <span className="eu-grow">{p.reembolsos_pendientes_count} reembolso{p.reembolsos_pendientes_count === 1 ? '' : 's'} de Expense pendiente{p.reembolsos_pendientes_count === 1 ? '' : 's'} de cobrar</span>
               <span className="t-data">{money(p.reembolsos_pendientes_total)}</span>
-            </div>
+            </button>
           )}
           {x && x.n > 0 && (
             // Expense ya no suma en «Total gastado»: aquí queda como referencia
@@ -123,11 +124,11 @@ export default function Resumen() {
             </button>
           )}
           {l && l.pendiente > 0 && (
-            <div className="fz-note" data-tone="info">
+            <button type="button" className="fz-note" data-tone="info" onClick={() => app.goTo('porcobrar')}>
               <Icon name="handshake" size={16} />
               <span className="eu-grow">Préstamos por cobrar · prestado {money(l.prestado, { cents: false })}, cobrado {money(l.cobrado, { cents: false })}</span>
               <span className="t-data">{money(l.pendiente)}</span>
-            </div>
+            </button>
           )}
         </div>
       )}
