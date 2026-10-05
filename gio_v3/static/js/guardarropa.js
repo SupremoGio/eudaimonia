@@ -811,7 +811,8 @@
     $('ai-result').hidden = true;
     try {
       var d = await (await jpost(ai.mode === 'item' ? '/guardarropa/api/ai-outfit-from-item' : '/guardarropa/api/ai-outfit',
-        ai.mode === 'item' ? { item_id: ai.anchor, ocasion: ai.occ } : { ocasion: ai.occ })).json();
+        ai.mode === 'item' ? { item_id: ai.anchor, ocasion: ai.occ, contexto: $('ai-ctx').value.trim() }
+                           : { ocasion: ai.occ, contexto: $('ai-ctx').value.trim() })).json();
       if (!d.ok) { toast('Error IA: ' + (d.error || 'desconocido'), 'err'); return; }
       renderAI(d);
     } catch (_) { toast('Error al conectar con IA', 'err'); }
@@ -819,27 +820,59 @@
   }
   $('ai-go').addEventListener('click', generateAI);
   function renderAI(d) {
-    ai.last = d;
-    var chosen = (d.item_ids || []).map(function (id) { return ALL_ITEMS.find(function (x) { return x.id === id; }); }).filter(Boolean);
+    ai.props = (d.propuestas && d.propuestas.length) ? d.propuestas : [d];
+    ai.idx = 0;
     var box = $('ai-result');
-    box.innerHTML = '<div class="eu-card eu-card--inset eu-vstack gr-ai-res">' +
-      '<div class="eu-between"><div><div class="t-card">' + esc(d.nombre || 'Look ' + ai.occ) + '</div><div class="t-meta">' + esc(d.harmony || '') + '</div></div>' +
-      '<span class="gr-stars-ro">' + stars(d.rating || 5) + '</span></div>' +
-      (d.why_works ? '<p class="t-body fg-2">' + esc(d.why_works) + '</p>' : '') +
-      ((d.tips || []).length ? '<ul class="gr-tips">' + d.tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
-      '<div class="gr-ai-items">' + chosen.map(function (i) {
-        return '<span class="gr-ai-item"><span class="gr-pthumb">' + visualHTML(i) + '</span><span><span class="t-ui">' + esc(i.nombre) + '</span><span class="t-meta">' + esc(i.categoria) + '</span></span></span>';
-      }).join('') + '</div>' +
+    box.innerHTML = (ai.props.length > 1 ? '<div class="eu-seg gr-ai-tabs" role="tablist" aria-label="Propuestas">' + ai.props.map(function (p, i) {
+      return '<button type="button" role="tab" data-ai-prop="' + i + '" aria-selected="' + (i === 0) + '" aria-pressed="' + (i === 0) + '">' + esc(p.enfoque || 'Opción ' + (i + 1)) + '</button>';
+    }).join('') + '</div>' : '') + '<div id="ai-prop"></div>';
+    renderProp();
+    box.hidden = false;
+  }
+  function renderProp() {
+    var d = ai.props[ai.idx]; ai.last = d;
+    var roles = d.roles || {}, auto = d.autocompletado || [];
+    var chosen = (d.item_ids || []).map(function (id) { return ALL_ITEMS.find(function (x) { return x.id === id; }); }).filter(Boolean);
+    var falt = d.pieza_faltante;
+    $('ai-prop').innerHTML = '<div class="eu-card eu-card--inset eu-vstack gr-ai-res" role="tabpanel">' +
+      '<div class="eu-between"><div><div class="t-card">' + esc(d.nombre || 'Look ' + ai.occ) + '</div>' +
+      (d.harmony ? '<div class="t-meta">' + esc(d.harmony) + '</div>' : '') + '</div>' +
+      '<span class="gr-stars-ro" aria-label="' + (d.rating || 4) + ' de 5">' + stars(d.rating || 4) + '</span></div>' +
+      '<ul class="gr-ai-items gr-ai-items--roles">' + chosen.map(function (i) {
+        var rol = roles[String(i.id)] || (auto.indexOf(i.id) >= 0 ? 'Completado automáticamente para cerrar el look.' : '');
+        return '<li class="gr-ai-item"><span class="gr-pthumb">' + visualHTML(i) + '</span><span><span class="t-ui">' + esc(i.nombre) +
+          '</span><span class="t-meta">' + esc(i.categoria) + '</span>' + (rol ? '<span class="t-meta fg-2 gr-ai-rol">' + esc(rol) + '</span>' : '') + '</span></li>';
+      }).join('') + '</ul>' +
+      (d.why_works ? '<div><div class="t-eyebrow">Por qué funciona</div><p class="t-body fg-2">' + esc(d.why_works) + '</p></div>' : '') +
+      ((d.tips || []).length ? '<div><div class="t-eyebrow">Cómo llevarlo</div><ul class="gr-tips">' + d.tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>' : '') +
+      (d.evitar ? '<p class="t-meta gr-ai-avoid"><i data-lucide="triangle-alert"></i><span><strong>Evita:</strong> ' + esc(d.evitar) + '</span></p>' : '') +
+      (falt ? '<div class="gr-ai-miss"><div class="eu-grow"><div class="t-eyebrow">Pieza que lo subiría de nivel</div><div class="t-ui">' + esc(falt.nombre) + '</div>' +
+        (falt.por_que ? '<div class="t-meta">' + esc(falt.por_que) + '</div>' : '') + '</div>' +
+        '<button type="button" class="eu-btn eu-btn--ghost js-ai-wish"><i data-lucide="heart-plus"></i>Wishlist</button></div>' : '') +
       '<div class="eu-hstack"><button type="button" class="eu-btn eu-btn--primary eu-grow js-ai-save">Guardar outfit</button>' +
       '<button type="button" class="eu-btn eu-btn--ghost js-ai-again"><i data-lucide="refresh-cw"></i>Regenerar</button></div></div>';
-    box.hidden = false;
     icons();
   }
   $('ai-result').addEventListener('click', async function (e) {
+    var tab = e.target.closest('[data-ai-prop]');
+    if (tab) {
+      ai.idx = parseInt(tab.dataset.aiProp, 10);
+      $$('#ai-result [data-ai-prop]').forEach(function (x) { var on = x === tab; x.setAttribute('aria-selected', String(on)); x.setAttribute('aria-pressed', String(on)); });
+      renderProp(); return;
+    }
     if (e.target.closest('.js-ai-again')) { generateAI(); return; }
+    var wish = e.target.closest('.js-ai-wish');
+    if (wish && ai.last && ai.last.pieza_faltante) {
+      var f = ai.last.pieza_faltante;
+      wish.disabled = true;
+      var w = await (await jpost('/guardarropa/wishlist/api/item', { nombre: f.nombre, categoria: f.categoria || '', descripcion: 'Sugerida por el Coach IA para «' + (ai.last.nombre || '') + '»: ' + (f.por_que || '') })).json().catch(function () { return {}; });
+      if (w.ok) toast('«' + f.nombre + '» añadida a la wishlist'); else { wish.disabled = false; toast('No se pudo añadir', 'err'); }
+      return;
+    }
     if (!e.target.closest('.js-ai-save') || !ai.last) return;
     var d = ai.last;
-    var saved = await (await jpost('/guardarropa/api/outfit', { nombre: d.nombre, ocasion: d.ocasion || ai.occ, rating: d.rating || 5, notas: d.why_works, item_ids: d.item_ids || [] })).json().catch(function () { return {}; });
+    var notas = [d.why_works, (d.tips || []).join(' · ')].filter(Boolean).join('\n');
+    var saved = await (await jpost('/guardarropa/api/outfit', { nombre: d.nombre, ocasion: d.ocasion || ai.occ, rating: d.rating || 4, notas: notas, item_ids: d.item_ids || [] })).json().catch(function () { return {}; });
     if (saved.id) { ALL_OUTFITS.unshift(saved); renderOutfits(); renderToday(); $('ai-result').hidden = true; toast('Outfit guardado'); }
     else toast('No se pudo guardar', 'err');
   });

@@ -16,7 +16,7 @@
   <details class="eu-card gr-ai" id="ai-gen">
     <summary class="eu-hstack gr-ai-sum">
       <span class="eu-row-ic fg-brand"><i data-lucide="sparkles"></i></span>
-      <span class="eu-grow"><span class="t-card">Coach de imagen · IA</span><span class="t-meta">Genera un look por ocasión o a partir de una prenda</span></span>
+      <span class="eu-grow"><span class="t-card">Coach de imagen · IA</span><span class="t-meta">3 propuestas con tus prendas: por ocasión o a partir de una prenda</span></span>
       <i data-lucide="chevron-down" class="gr-ai-chev"></i>
     </summary>
     <div class="eu-vstack gr-ai-bd">
@@ -32,6 +32,10 @@
         {% for oc, lbl in [('Casual','Casual'), ('Business','Business'), ('Formal','Formal'), ('Social','Social'), ('Cita','Cita'), ('Reunión importante','Reunión'), ('Fin de semana','Fin de semana')] %}
         <button type="button" class="eu-chip" data-ai-occ="{{ oc }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ lbl }}</button>
         {% endfor %}
+      </div>
+      <div class="eu-field">
+        <label class="eu-label" for="ai-ctx">Contexto <span class="t-meta">(opcional)</span></label>
+        <input class="eu-input" id="ai-ctx" maxlength="300" placeholder="Ej. cena en terraza, hace fresco, quiero verme relajado">
       </div>
       <button type="button" class="eu-btn eu-btn--secondary gr-ai-go" id="ai-go"><i data-lucide="sparkles"></i><span>Generar look</span></button>
       <div id="ai-result" hidden></div>

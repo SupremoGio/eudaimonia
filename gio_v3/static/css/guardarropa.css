@@ -156,6 +156,14 @@ body:has(#gr[data-tab=analisis]) .gr-fab{display:none}
 .gr-ai-items{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
 .gr-ai-item{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-1) var(--sp-3) var(--sp-1) var(--sp-1);border:1px solid var(--border-subtle);border-radius:var(--r-md);background:var(--bg-surface)}
 .gr-ai-item > span:last-child{display:flex;flex-direction:column}
+.gr-ai-tabs{align-self:flex-start;max-width:100%;overflow-x:auto}
+.gr-ai-tabs button[aria-pressed=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
+.gr-ai-items--roles{list-style:none;margin:0;padding:0;flex-direction:column}
+.gr-ai-items--roles .gr-ai-item{align-items:flex-start}
+.gr-ai-rol{margin-top:2px}
+.gr-ai-avoid{display:flex;gap:var(--sp-2);align-items:flex-start;margin:0}
+.gr-ai-avoid svg{width:16px;height:16px;flex:none;color:var(--warn,var(--fg-3));margin-top:2px}
+.gr-ai-miss{display:flex;gap:var(--sp-3);align-items:center;padding:var(--sp-3);border:1px dashed var(--border-subtle);border-radius:var(--r-md)}
 
 /* ── Detalle de prenda ── */
 .gr-scrim-wide .eu-modal{max-width:880px}
