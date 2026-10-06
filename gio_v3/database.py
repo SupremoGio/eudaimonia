@@ -6158,6 +6158,24 @@ def init_db():
         except Exception as e:
             print(f"[DB] finanzas_prestamos_manuales migration warning: {e}")
 
+        # ── FINANZAS — retiros de efectivo que el usuario identificó
+        #    (retiros_efectivo.py). Si alguno aún no está cargado, reintenta
+        #    en el próximo arranque; la versión lleva el tamaño de la lista.
+        try:
+            from modules.finanzas.estados import retiros_efectivo as _re
+            _ver = f"finanzas_retiros_efectivo_{len(_re.RETIROS)}"
+            if not db.execute("SELECT id FROM migration_log WHERE version=?", (_ver,)).fetchone():
+                _ok, _falta = _re.aplicar(db)
+                if not _falta:
+                    db.execute(
+                        "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                        (_ver, f"{_ok} retiros reclasificados")
+                    )
+                db.commit()
+                print(f"[DB] {_ver}: {_ok} reclasificados, {_falta} no encontrados")
+        except Exception as e:
+            print(f"[DB] finanzas_retiros_efectivo migration warning: {e}")
+
         # ── FINANZAS — nómina del 16/12/2022 ($10,493.87) fue aguinaldo.
         if not db.execute(
             "SELECT id FROM migration_log WHERE version='finanzas_aguinaldo_2022'"

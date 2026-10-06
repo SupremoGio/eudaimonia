@@ -223,7 +223,7 @@ def test_retiro_sin_tarjeta_no_es_prestamo_a_cornelio(test_db):
         db.commit()
         pr.registrar_manuales(db)
         assert not [p for p in pr.listar(db) if p['movimiento_id'] == m]
-        assert _cat(db, m) == ('FINANZAS', 'Retiro efectivo')
+        assert _cat(db, m) == ('FAMILIA_REGALOS', 'Regalos')   # 2026-10-06: anillos para Ale
 
 
 def test_devoluciones_de_judi_4500(test_db):
