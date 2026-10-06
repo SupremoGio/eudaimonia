@@ -64,6 +64,7 @@
 .bg-cell{width:14px;height:22px;border-radius:3px;background:var(--bg-sunken);border:1px solid var(--border-subtle)}
 .bg-cell--ok{background:var(--success-fg);border-color:transparent}
 .bg-cell--over{background:var(--danger-fg);border-color:transparent}
+.bg-cell--en_curso{background:transparent;border:1.5px dashed var(--success-fg)}
 
 /* Buckets */
 .bg-bucket{display:flex;flex-direction:column;gap:var(--sp-3);border-left:3px solid var(--cat-fg)}

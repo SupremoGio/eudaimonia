@@ -204,7 +204,9 @@ def test_resumen_del_hub_no_resta_retiros_de_inversion_al_gasto(test_db):
         _mov(db, 'GBM', 8000, tipo='INVERSION', sub='RETIRO')
         d = _calc_budget('2026-09', db)
     assert d['consumo'] == 12000 and d['inversion_neta'] == -8000
-    assert d['total_gastado'] == 4000                 # Radiografía: el neto sigue en Ahorro y deudas
+    assert d['total_gastado'] == 12000                # Radiografía: el retiro tampoco resta (2026-10-06)
+    assert d['disponible'] == 9000 and d['retiro_inversiones'] == 8000
+    assert d['buckets']['ahorro_deuda']['total_gastado'] == -8000   # el desahorro sí se ve en su bucket
     from app import create_app
     app = create_app()
     app.config['TESTING'] = True
@@ -237,3 +239,73 @@ def test_tarjeta_presupuesto_dice_el_mes_si_no_es_el_actual(test_db):
             sess['app_ok'] = sess['fin_ok'] = True
         html = c.get('/finanzas/').get_data(as_text=True)
     assert 'Septiembre · 2% usado' in html          # $500 / $20,000
+
+
+# ── 6. Gasto total de la Radiografía = consumo + aportación (2026-10-06) ─────
+
+def test_radiografia_septiembre_con_retiros_de_cetes(test_db):
+    """Caso real: sep-2026 con $12,500 sacados de CETES. La Radiografía decía
+    Gasto $6,129 / Disponible $14,886 / 29 % gastado con ~$18.6k de consumo."""
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 21015, tipo='INGRESO', sub='Pago nominal')
+        _mov(db, 'VIVIENDA', 11243, sub='Renta')
+        _mov(db, 'OCIO', 7355)
+        _mov(db, 'COSTOS_FINANCIEROS', 31)
+        for m in (2700.51, 5299.49, 3083.34, 1416.66):
+            _mov(db, 'CETES', m, tipo='INVERSION', sub='RETIRO')
+        d = _calc_budget('2026-09', db)
+    assert d['total_gastado'] == 18629 == d['consumo']
+    assert d['disponible'] == 21015 - 18629
+    assert d['retiro_inversiones'] == 12500
+    # Los segmentos de la barra suman el Gasto total (antes: 88.5 % vs. 29 %)
+    assert round(sum(d['seg'].values()), 1) == round(18629 / 21015 * 100, 1)
+    assert d['seg']['ahorro_deuda'] == 0.1        # los $31 de costos financieros, no el retiro
+
+
+def test_aportacion_si_ocupa_ingreso(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 20000, tipo='INGRESO', sub='Pago nominal')
+        _mov(db, 'OCIO', 5000)
+        _mov(db, 'GBM', 3000, tipo='INVERSION', sub='APORTACION')
+        d = _calc_budget('2026-09', db)
+    assert (d['consumo'], d['total_gastado'], d['disponible'], d['retiro_inversiones']) == (5000, 8000, 12000, 0)
+    assert d['seg']['ahorro_deuda'] == 15.0
+
+
+def test_racha_un_retiro_de_inversion_no_salva_el_mes(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 10000, tipo='INGRESO', sub='Pago nominal')
+        for i in range(5):
+            _mov(db, 'OCIO', 3000, fecha=f'2026-09-0{i + 2}')
+        _mov(db, 'CETES', 9000, tipo='INVERSION', sub='RETIRO')
+        _, meses = _racha_bajo_presupuesto(db, '2026-09', max_meses=1)
+    assert meses[-1]['status'] == 'over'
+
+
+def test_racha_mes_en_curso_no_suma_ni_rompe(test_db, monkeypatch):
+    import datetime as dt
+    from modules.finanzas import budget
+    monkeypatch.setattr(budget, 'today_date', lambda: dt.date(2026, 10, 3))
+    with database.get_db() as db:
+        for mes in ('2026-08', '2026-09'):
+            _mov(db, 'NOMINA', 10000, tipo='INGRESO', sub='Pago nominal', fecha=f'{mes}-01')
+            for i in range(5):
+                _mov(db, 'OCIO', 100, fecha=f'{mes}-0{i + 2}')
+        _mov(db, 'OCIO', 100, fecha='2026-10-02')          # 1 movimiento: antes «sin datos» → racha 0
+        racha, meses = _racha_bajo_presupuesto(db, '2026-10', max_meses=3)
+    assert [m['status'] for m in meses] == ['ok', 'ok', 'en_curso']
+    assert racha == 2
+
+
+def test_racha_mes_en_curso_ya_sobre_presupuesto_la_rompe(test_db, monkeypatch):
+    import datetime as dt
+    from modules.finanzas import budget
+    monkeypatch.setattr(budget, 'today_date', lambda: dt.date(2026, 10, 20))
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 10000, tipo='INGRESO', sub='Pago nominal', fecha='2026-09-01')
+        for i in range(5):
+            _mov(db, 'OCIO', 100, fecha=f'2026-09-0{i + 2}')
+        _mov(db, 'NOMINA', 1000, tipo='INGRESO', sub='Pago nominal', fecha='2026-10-01')
+        _mov(db, 'OCIO', 5000, fecha='2026-10-02')
+        racha, meses = _racha_bajo_presupuesto(db, '2026-10', max_meses=2)
+    assert [m['status'] for m in meses] == ['ok', 'over'] and racha == 0

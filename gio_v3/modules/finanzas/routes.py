@@ -148,7 +148,7 @@ def index():
         extra['budget'] = {
             'mes': bmes, 'mes_nombre': _MESES_ES[int(bmes[5:]) - 1], 'ingreso': ing, 'gastado': gas,
             # Lo que se aparta a inversiones sí ocupa ingreso; un retiro no lo libera.
-            'disponible': round(ing - gas - max(bd['inversion_neta'], 0), 2),
+            'disponible': bd['disponible'],   # = ing − consumo − aportación neta (mismo que la Radiografía)
             'pct': round(gas / ing * 100) if ing else None,
             'ahorro_pct': round((ing - gas) / ing * 100) if ing else None,
             'dias_restantes': bd['dias_mes'] - bd['dia_actual'] if bd['es_mes_actual'] else None,

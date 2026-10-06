@@ -29,6 +29,10 @@
   {% if ingreso_extraordinario %}
   <p class="t-meta bg-extra"><i data-lucide="sparkles" aria-hidden="true"></i>Ingreso extraordinario <b class="t-data">{{ '+' if ingreso_extraordinario > 0 }}{{ money(ingreso_extraordinario) }}</b> · no cuenta para Disponible ni para las metas</p>
   {% endif %}
+  {#- Un retiro de GBM/CETES financia gasto, no lo reduce: se informa aparte. -#}
+  {% if retiro_inversiones %}
+  <p class="t-meta bg-extra"><i data-lucide="piggy-bank" aria-hidden="true"></i>Retiraste <b class="t-data">{{ money(retiro_inversiones) }}</b> neto de inversiones · no resta a tu gasto ni suma a Disponible</p>
+  {% endif %}
   {% if ingreso_real == 0 %}
   <form class="bg-manual bg-manual--inline" id="f-ingreso" novalidate>
     <label class="eu-label" for="ingreso-manual-input">Aún no hay nómina este mes: captura tu ingreso recurrente</label>
@@ -64,7 +68,7 @@
   <div><div class="t-data bg-racha-v">{{ racha_meses }} {{ 'mes' if racha_meses == 1 else 'meses' }}</div><div class="t-meta">{% if racha_meses > 0 %}seguidos bajo presupuesto{% else %}racha rota este mes{% endif %}</div></div>
   <ol class="bg-strip">
     {% for cell in racha_historial %}
-    {% set lbl = meses_es[cell.mes[5:7]] ~ ' ' ~ cell.mes[:4] ~ ' — ' ~ ('bajo presupuesto' if cell.status == 'ok' else ('sobre presupuesto' if cell.status == 'over' else 'sin datos')) %}
+    {% set lbl = meses_es[cell.mes[5:7]] ~ ' ' ~ cell.mes[:4] ~ ' — ' ~ ({'ok': 'bajo presupuesto', 'over': 'sobre presupuesto', 'en_curso': 'en curso'}.get(cell.status, 'sin datos')) %}
     <li class="bg-cell bg-cell--{{ cell.status }}" title="{{ lbl }}"><span class="bg-sr">{{ lbl }}</span></li>
     {% endfor %}
   </ol>

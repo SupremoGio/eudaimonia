@@ -6,7 +6,15 @@
   if (!root) return;
   var MES = root.dataset.mes;
   var CATS = ['SUPER', 'COMIDA_FUERA', 'CAFE/PAN', 'VIVIENDA', 'TRANSPORTE', 'SALUD', 'CUIDADO_PERSONAL', 'ROPA', 'DIGITAL', 'DEPORTE', 'OCIO', 'SALSA', 'VIAJES',
-    'FAMILIA_REGALOS', 'PROYECTOS', 'COSTOS_FINANCIEROS', 'APRENDIZAJE', 'OTROS', 'EXPENSE', 'INVERSION', 'PAGO_TDC', 'TRANSFERENCIA', 'SPEI_ENVIADO', 'RETIRO'];
+    'FAMILIA_REGALOS', 'PROYECTOS', 'COSTOS_FINANCIEROS', 'APRENDIZAJE', 'OTROS', 'EXPENSE', 'INVERSION', 'FINANZAS', 'PAGO_TDC'];
+  /* Si la categoría actual no está en la lista (legado), se agrega: si no, el
+     select caía en la primera opción y guardar solo la descripción
+     reclasificaba el movimiento a SUPER sin aviso. */
+  function catOptions(cur) {
+    return (CATS.indexOf(cur) < 0 ? [cur].concat(CATS) : CATS).map(function (c) {
+      return '<option value="' + esc(c) + '"' + (c === cur ? ' selected' : '') + '>' + esc(c) + '</option>';
+    }).join('');
+  }
   var ddCat = null, changed = false;
 
   function $(id) { return document.getElementById(id); }
@@ -88,7 +96,7 @@
         '<span class="eu-badge bg-mov-c">' + esc(m.categoria) + '</span><span class="t-data bg-mov-m">$' + fmt(m.mi_monto) + '</span><i data-lucide="chevron-down" class="bg-mov-chev"></i></button>' +
         '<form class="bg-mov-edit" id="mov-edit-' + m.id + '" data-save="' + m.id + '" hidden novalidate><div class="eu-grid-2 bg-me-grid">' +
         '<div class="eu-field"><label class="eu-label" for="me-cat-' + m.id + '">Categoría</label><select class="eu-select" id="me-cat-' + m.id + '">' +
-        CATS.map(function (c) { return '<option value="' + c + '"' + (c === m.categoria ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>' +
+        catOptions(m.categoria) + '</select></div>' +
         '<div class="eu-field"><label class="eu-label" for="me-desc-' + m.id + '">Descripción</label><input class="eu-input" id="me-desc-' + m.id + '" value="' + esc(m.descripcion) + '" maxlength="200"></div></div>' +
         '<div class="bg-me-act"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-toggle="' + m.id + '">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button></div></form></li>';
     }).join('') + perdidos.map(function (p) {

@@ -253,9 +253,14 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
     que no tiene datos suficientes.
 
     Devuelve (racha, meses) donde `meses` es la lista de los últimos
-    `max_meses` (más antiguo primero) con status 'ok' | 'over' | 'sin_datos',
-    para pintar una tira tipo heatmap.
+    `max_meses` (más antiguo primero) con status 'ok' | 'over' | 'sin_datos' |
+    'en_curso', para pintar una tira tipo heatmap.
+
+    El mes en curso no suma a la racha (ir bajo presupuesto el día 6 no es
+    haberlo cumplido) ni la rompe por tener pocos movimientos todavía; solo la
+    rompe si ya va por encima del ingreso.
     """
+    mes_actual = today_date().strftime('%Y-%m')
     y, m = int(mes_hasta[:4]), int(mes_hasta[5:])
 
     meses = []
@@ -273,11 +278,15 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
             (mes_inicio, mes_fin)
         ).fetchone()['n']
 
-        if n < 5:
+        en_curso = mes == mes_actual
+        if n < 5 and not en_curso:
             meses.append({'mes': mes, 'status': 'sin_datos'})
             racha_rota = True
         else:
             ingreso = _ingresos_mes(db, mes, mes_inicio, mes_fin)['base']
+            # Mismo «Gasto total» que la Radiografía: consumo + lo aportado a
+            # inversiones. Un retiro neto NO resta: antes un mes en que se
+            # sacaban $12k de CETES contaba como $12k «menos gasto».
             gasto = db.execute(
                 f"""SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
                    WHERE tipo='GASTO'
@@ -285,9 +294,11 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
                      AND fecha >= ? AND fecha < ?""",
                 (mes_inicio, mes_fin)
             ).fetchone()['t'] + perdidos_en_rango(db, mes_inicio, mes_fin) \
-              + _inversiones_mes(db, mes_inicio, mes_fin)['neto']
+              + max(_inversiones_mes(db, mes_inicio, mes_fin)['neto'], 0)
 
-            if ingreso <= 0:
+            if en_curso and (ingreso <= 0 or gasto <= ingreso):
+                meses.append({'mes': mes, 'status': 'en_curso'})
+            elif ingreso <= 0:
                 meses.append({'mes': mes, 'status': 'sin_datos'})
                 racha_rota = True
             else:
@@ -296,7 +307,7 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
                 if not ok:
                     racha_rota = True
 
-        if not racha_rota:
+        if not racha_rota and meses[-1]['status'] == 'ok':
             racha += 1
 
         m -= 1
@@ -471,22 +482,32 @@ def _calc_budget(mes, db):
     ah['over'] = not ah['cumple_meta']
     ah['pct_of_meta'] = max(min(round(ah['total_gastado'] / meta * 100) if meta > 0 else 100, 999), 0)
 
-    total_gastado = round(sum(c['gastado'] for c in cats_data), 2)
+    # Gasto total = consumo + lo que se apartó a inversiones. Un retiro neto
+    # de inversiones (GBM/CETES) es una FUENTE de dinero, no «gasto negativo»:
+    # antes se restaba y un mes con $12.5k sacados de CETES mostraba $6k de
+    # gasto y $14.8k disponibles cuando el consumo real fue $18.6k. Se muestra
+    # aparte (retiro_inversiones) y la fila de Inversiones del bucket Ahorro
+    # sigue mostrando el neto negativo (desahorro), que es lo correcto ahí.
+    inv_aplicada  = max(inv['neto'], 0)
+    consumo       = round(sum(c['gastado'] for c in cats_data if c['categoria'] != INVERSIONES_NETAS), 2)
+    total_gastado = round(consumo + inv_aplicada, 2)
     disponible    = round(ingreso_real - total_gastado, 2)
 
-    # Barra segmentada: % del ingreso gastado en cada bucket
+    # Barra segmentada: % del ingreso gastado en cada bucket; en Ahorro solo
+    # cuenta la aportación positiva, así los segmentos suman el Gasto total.
+    seg_monto = {bk: buckets[bk]['total_gastado'] for bk in CATEGORIAS}
+    seg_monto['ahorro_deuda'] += inv_aplicada - inv['neto']
     seg = {}
     for bk in CATEGORIAS:
-        seg[bk] = max(round(buckets[bk]['total_gastado'] / ingreso_real * 100, 1), 0) if ingreso_real > 0 else 0
+        seg[bk] = max(round(seg_monto[bk] / ingreso_real * 100, 1), 0) if ingreso_real > 0 else 0
 
     dias_mes      = calendar.monthrange(y, m)[1]
     today         = today_date()
     es_mes_actual = (today.strftime('%Y-%m') == mes)
     dia_actual    = today.day if es_mes_actual else dias_mes
-    # La proyección extrapola solo el consumo; las inversiones son aportaciones
-    # puntuales y se suman tal cual.
-    consumo       = total_gastado - inv['neto']
-    proyeccion    = round(consumo / dia_actual * dias_mes + inv['neto']) if dia_actual > 0 and total_gastado > 0 else 0
+    # La proyección extrapola solo el consumo; las aportaciones son puntuales y
+    # se suman tal cual (un retiro no baja la proyección).
+    proyeccion    = round(consumo / dia_actual * dias_mes + inv_aplicada) if dia_actual > 0 and total_gastado > 0 else 0
 
     return {
         'ingreso_real':       ingreso_real,          # base: recurrente (o manual)
@@ -500,8 +521,9 @@ def _calc_budget(mes, db):
         # Consumo: el gasto sin el neto de inversiones. Un mes con retiro
         # neto (neto negativo) bajaba total_gastado como si fuera «gasto
         # negativo»; el Resumen del hub y el coach muestran este.
-        'consumo':            round(consumo, 2),
+        'consumo':            consumo,
         'inversion_neta':     inv['neto'],
+        'retiro_inversiones': round(max(-inv['neto'], 0), 2),
         'disponible':         disponible,
         'proyeccion':         proyeccion,
         'dia_actual':         dia_actual,
@@ -603,6 +625,7 @@ def export_csv():
     rows.append(fila('Resumen', 'Ingreso recurrente', [datos[mes]['ingreso_real'] for mes in meses]))
     rows.append(fila('Resumen', 'Ingreso extraordinario', [datos[mes]['ingreso_extraordinario'] for mes in meses]))
     rows.append(fila('Resumen', 'Gasto total', [datos[mes]['total_gastado'] for mes in meses]))
+    rows.append(fila('Resumen', 'Retiro neto de inversiones', [datos[mes]['retiro_inversiones'] for mes in meses]))
     rows.append(fila('Resumen', 'Disponible', [datos[mes]['disponible'] for mes in meses]))
 
     return csv_response(['Grupo', 'Categoría', *meses, 'Promedio', 'Límite mensual'],
