@@ -284,17 +284,15 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
             racha_rota = True
         else:
             ingreso = _ingresos_mes(db, mes, mes_inicio, mes_fin)['base']
-            # Mismo «Gasto total» que la Radiografía: consumo + lo aportado a
-            # inversiones. Un retiro neto NO resta: antes un mes en que se
-            # sacaban $12k de CETES contaba como $12k «menos gasto».
+            # Mismo «Gasto total» que la Radiografía: solo consumo. Invertir
+            # no cuenta como gasto y un retiro de inversiones no lo baja.
             gasto = db.execute(
                 f"""SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
-                   WHERE tipo='GASTO'
+                   WHERE tipo='GASTO' AND categoria != 'INVERSION'
                      AND {_GASTO_WHERE}
                      AND fecha >= ? AND fecha < ?""",
                 (mes_inicio, mes_fin)
-            ).fetchone()['t'] + perdidos_en_rango(db, mes_inicio, mes_fin) \
-              + max(_inversiones_mes(db, mes_inicio, mes_fin)['neto'], 0)
+            ).fetchone()['t'] + perdidos_en_rango(db, mes_inicio, mes_fin)
 
             if en_curso and (ingreso <= 0 or gasto <= ingreso):
                 meses.append({'mes': mes, 'status': 'en_curso'})
@@ -482,21 +480,26 @@ def _calc_budget(mes, db):
     ah['over'] = not ah['cumple_meta']
     ah['pct_of_meta'] = max(min(round(ah['total_gastado'] / meta * 100) if meta > 0 else 100, 999), 0)
 
-    # Gasto total = consumo + lo que se apartó a inversiones. Un retiro neto
-    # de inversiones (GBM/CETES) es una FUENTE de dinero, no «gasto negativo»:
-    # antes se restaba y un mes con $12.5k sacados de CETES mostraba $6k de
-    # gasto y $14.8k disponibles cuando el consumo real fue $18.6k. Se muestra
-    # aparte (retiro_inversiones) y la fila de Inversiones del bucket Ahorro
-    # sigue mostrando el neto negativo (desahorro), que es lo correcto ahí.
-    inv_aplicada  = max(inv['neto'], 0)
-    consumo       = round(sum(c['gastado'] for c in cats_data if c['categoria'] != INVERSIONES_NETAS), 2)
-    total_gastado = round(consumo + inv_aplicada, 2)
-    disponible    = round(ingreso_real - total_gastado, 2)
+    # Invertir NO es gastar (decisión del usuario, 2026-10-06): el Gasto total
+    # y el «% gastado» son solo consumo; lo invertido es una cifra de
+    # referencia aparte. Invertido = gastos categorizados INVERSION (fila
+    # «Ahorro») + aportaciones − retiros de GBM/CETES. Disponible = ingreso −
+    # consumo − invertido: lo que queda sin asignar. Un retiro neto tampoco es
+    # «gasto negativo» (antes $12.5k sacados de CETES dejaban el gasto de
+    # sep-2026 en $6k con $18.6k de consumo): se informa aparte y sigue como
+    # desahorro en el bucket Ahorro y deudas.
+    inversion_gasto = round(sum(c['gastado'] for c in cats_data if c['categoria'] == 'INVERSION'), 2)
+    inv_total       = round(inversion_gasto + inv['neto'], 2)
+    invertido       = max(inv_total, 0)
+    consumo         = round(sum(c['gastado'] for c in cats_data
+                                if c['categoria'] not in (INVERSIONES_NETAS, 'INVERSION')), 2)
+    total_gastado   = consumo
+    disponible      = round(ingreso_real - consumo - invertido, 2)
 
-    # Barra segmentada: % del ingreso gastado en cada bucket; en Ahorro solo
-    # cuenta la aportación positiva, así los segmentos suman el Gasto total.
+    # Barra segmentada: el reparto del ingreso 50-30-20. En Ahorro entra lo
+    # invertido (sin restar retiros: la barra no pinta anchos negativos).
     seg_monto = {bk: buckets[bk]['total_gastado'] for bk in CATEGORIAS}
-    seg_monto['ahorro_deuda'] += inv_aplicada - inv['neto']
+    seg_monto['ahorro_deuda'] += invertido - inv_total
     seg = {}
     for bk in CATEGORIAS:
         seg[bk] = max(round(seg_monto[bk] / ingreso_real * 100, 1), 0) if ingreso_real > 0 else 0
@@ -505,9 +508,8 @@ def _calc_budget(mes, db):
     today         = today_date()
     es_mes_actual = (today.strftime('%Y-%m') == mes)
     dia_actual    = today.day if es_mes_actual else dias_mes
-    # La proyección extrapola solo el consumo; las aportaciones son puntuales y
-    # se suman tal cual (un retiro no baja la proyección).
-    proyeccion    = round(consumo / dia_actual * dias_mes + inv_aplicada) if dia_actual > 0 and total_gastado > 0 else 0
+    # Proyección del gasto (consumo) al cierre; lo invertido no cuenta.
+    proyeccion    = round(consumo / dia_actual * dias_mes) if dia_actual > 0 and consumo > 0 else 0
 
     return {
         'ingreso_real':       ingreso_real,          # base: recurrente (o manual)
@@ -523,7 +525,9 @@ def _calc_budget(mes, db):
         # negativo»; el Resumen del hub y el coach muestran este.
         'consumo':            consumo,
         'inversion_neta':     inv['neto'],
-        'retiro_inversiones': round(max(-inv['neto'], 0), 2),
+        'inversion_gasto':    inversion_gasto,
+        'invertido':          invertido,
+        'retiro_inversiones': round(max(-inv_total, 0), 2),
         'disponible':         disponible,
         'proyeccion':         proyeccion,
         'dia_actual':         dia_actual,
@@ -625,6 +629,7 @@ def export_csv():
     rows.append(fila('Resumen', 'Ingreso recurrente', [datos[mes]['ingreso_real'] for mes in meses]))
     rows.append(fila('Resumen', 'Ingreso extraordinario', [datos[mes]['ingreso_extraordinario'] for mes in meses]))
     rows.append(fila('Resumen', 'Gasto total', [datos[mes]['total_gastado'] for mes in meses]))
+    rows.append(fila('Resumen', 'Invertido (referencia)', [datos[mes]['invertido'] for mes in meses]))
     rows.append(fila('Resumen', 'Retiro neto de inversiones', [datos[mes]['retiro_inversiones'] for mes in meses]))
     rows.append(fila('Resumen', 'Disponible', [datos[mes]['disponible'] for mes in meses]))
 

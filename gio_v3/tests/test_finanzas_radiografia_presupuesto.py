@@ -59,8 +59,8 @@ def test_ahorro_suma_aportaciones_menos_retiros_por_subcategoria(test_db):
     inv = next(c for c in ahorro['cats'] if c.get('inversion'))
     assert inv['inversion'] == {'aportado': 4000, 'retirado': 500, 'neto': 3500, 'n': 3}
     assert ahorro['total_gastado'] == 3500
-    assert d['total_gastado'] == 3500
-    assert d['disponible'] == 16500
+    assert d['total_gastado'] == 0                   # invertir no es gasto (2026-10-06)
+    assert d['invertido'] == 3500 and d['disponible'] == 16500
 
 
 def test_gasto_con_categoria_inversion_no_se_cuenta_dos_veces(test_db):
@@ -72,6 +72,7 @@ def test_gasto_con_categoria_inversion_no_se_cuenta_dos_veces(test_db):
     ahorro = d['buckets']['ahorro_deuda']
     assert sorted(c['gastado'] for c in ahorro['cats']) == [700, 1000]
     assert ahorro['total_gastado'] == 1700
+    assert (d['total_gastado'], d['invertido'], d['disponible']) == (0, 1700, 18300)
 
 
 def test_neto_negativo_se_muestra_negativo(test_db):
@@ -262,14 +263,27 @@ def test_radiografia_septiembre_con_retiros_de_cetes(test_db):
     assert d['seg']['ahorro_deuda'] == 0.1        # los $31 de costos financieros, no el retiro
 
 
-def test_aportacion_si_ocupa_ingreso(test_db):
+def test_invertir_no_es_gasto_pero_sale_de_disponible(test_db):
     with database.get_db() as db:
         _mov(db, 'NOMINA', 20000, tipo='INGRESO', sub='Pago nominal')
-        _mov(db, 'OCIO', 5000)
+        _mov(db, 'OCIO', 5000, fecha='2026-09-02')
         _mov(db, 'GBM', 3000, tipo='INVERSION', sub='APORTACION')
         d = _calc_budget('2026-09', db)
-    assert (d['consumo'], d['total_gastado'], d['disponible'], d['retiro_inversiones']) == (5000, 8000, 12000, 0)
-    assert d['seg']['ahorro_deuda'] == 15.0
+    assert (d['consumo'], d['total_gastado'], d['invertido'], d['disponible']) == (5000, 5000, 3000, 12000)
+    assert d['retiro_inversiones'] == 0
+    assert d['seg']['ahorro_deuda'] == 15.0          # la barra 50-30-20 sí muestra el ahorro
+
+
+def test_racha_invertir_un_bono_no_rompe_el_mes(test_db):
+    with database.get_db() as db:
+        _mov(db, 'NOMINA', 10000, tipo='INGRESO', sub='Pago nominal')
+        _mov(db, 'NOMINA', 30000, tipo='INGRESO', sub='Bono')
+        for i in range(5):
+            _mov(db, 'OCIO', 1000, fecha=f'2026-09-0{i + 2}')
+        _mov(db, 'GBM', 30000, tipo='INVERSION', sub='APORTACION')
+        _mov(db, 'INVERSION', 2000, sub='Ahorro')
+        _, meses = _racha_bajo_presupuesto(db, '2026-09', max_meses=1)
+    assert meses[-1]['status'] == 'ok'
 
 
 def test_racha_un_retiro_de_inversion_no_salva_el_mes(test_db):

@@ -108,7 +108,8 @@ def _sec_meses(db, hoy):
         filas.append([
             _nombre_mes(mes) + nota, _mx(bd['ingreso_recurrente']), _mx(bd['ingreso_extraordinario']),
             _mx(gasto), _mx(b['necesidades']['total_gastado']), _mx(b['deseos']['total_gastado']),
-            _mx(b['ahorro_deuda']['total_gastado'] - bd['inversion_neta']), _mx(bd['inversion_neta']),
+            _mx(b['ahorro_deuda']['total_gastado'] - bd['inversion_neta'] - bd['inversion_gasto']),
+            _mx(bd['inversion_neta'] + bd['inversion_gasto']),
             _mx(ing - gasto), _pct(ing - gasto, ing),
         ])
         if bd['es_mes_actual']:
@@ -116,7 +117,7 @@ def _sec_meses(db, hoy):
         n_meses += 1
         for bk in b.values():
             for c in bk['cats']:
-                if c.get('inversion'):   # va en su columna, no es gasto
+                if c.get('inversion') or c['categoria'] == 'INVERSION':   # va en su columna, no es gasto
                     continue
                 k = c['nombre']
                 por_cat[k] = por_cat.get(k, 0) + c['gastado']
@@ -124,7 +125,7 @@ def _sec_meses(db, hoy):
                     ultimos3[k] = ultimos3.get(k, 0) + c['gastado']
     txt = ["## Mes a mes (últimos 12 meses y el actual)",
            "Gasto = consumo (no incluye inversiones). «Deudas y ahorro en gasto» son pagos de deudas y "
-           "gastos categorizados como ahorro. «Inversión neta» = aportaciones − retiros a inversiones "
+           "gastos categorizados como ahorro. «Inversión neta» = aportaciones − retiros a inversiones, más gastos categorizados como Inversión "
            "(negativa si saqué dinero). Ahorro = ingreso total − gasto.",
            _tabla(['Mes', 'Ingreso recurrente', 'Extraordinario', 'Gasto', 'Necesidades', 'Deseos',
                    'Deudas y ahorro en gasto', 'Inversión neta', 'Ahorro', 'Tasa de ahorro'], filas) if filas else '_Sin movimientos._',
