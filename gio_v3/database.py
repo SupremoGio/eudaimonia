@@ -302,6 +302,11 @@ def get_db():
     return c
 
 
+# Altas de datos reales del usuario que corren al arrancar (p. ej. sus
+# plantas). conftest.py lo pone en False para que los tests empiecen vacíos.
+SEMBRAR_DATOS_USUARIO = True
+
+
 def init_db():
   try:
     with get_db() as db:
@@ -4331,6 +4336,23 @@ def init_db():
             WHERE p.foto IS NOT NULL AND p.foto != ''
               AND NOT EXISTS (SELECT 1 FROM plantas_fotos f WHERE f.planta_id = p.id AND f.foto = p.foto);
         """)
+
+        # Plantas del usuario (fotos de WhatsApp, 2026-10-06): alta única.
+        # Los tests la apagan (conftest: SEMBRAR_DATOS_USUARIO=False) para
+        # arrancar con el módulo vacío.
+        if SEMBRAR_DATOS_USUARIO and not db.execute(
+                "SELECT 1 FROM migration_log WHERE version='plantas_alta_2026_10_06'").fetchone():
+            try:
+                import os as _os
+                from utils import uploads_base_dir as _ubd
+                from modules.plantas import alta_2026_10_06 as _alta
+                _c, _y = _alta.aplicar(db, _os.path.join(_ubd(), 'plantas'))
+                db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                           ('plantas_alta_2026_10_06', f'{_c} plantas creadas, {_y} ya existían'))
+                db.commit()
+                print(f"[DB] plantas_alta_2026_10_06: {_c} creadas, {_y} ya existían")
+            except Exception as e:
+                print(f"[DB] plantas_alta_2026_10_06 migration warning: {e}")
 
         # ── FÚTBOL — Historial de partidos (submódulo de Hegemonikon) ──────────
         db.executescript("""

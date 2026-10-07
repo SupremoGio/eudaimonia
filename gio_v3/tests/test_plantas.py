@@ -453,3 +453,26 @@ def test_el_doctor_recibe_la_especie_confirmada(client, ia_fake):
     ia_fake.reply = {'resumen': 'ok'}
     client.post(f'/plantas/api/plantas/{pid}/diagnostico', data={'texto': 'x'}, content_type='multipart/form-data')
     assert 'Palma areca (confirmada: Dypsis lutescens)' in ia_fake.prompts[-1]
+
+
+# ── Alta de las plantas del usuario (fotos de WhatsApp, 2026-10-06) ──────────
+
+def test_alta_de_plantas_del_usuario_una_vez_y_sin_duplicar(test_db, tmp_path, monkeypatch):
+    from modules.plantas import alta_2026_10_06 as alta
+    import utils
+    monkeypatch.setattr(utils, 'uploads_base_dir', lambda: str(tmp_path))
+    with database.get_db() as db:   # una ya existía con el mismo nombre
+        db.execute("INSERT INTO plantas (nombre, especie, created_at) VALUES ('monstera', 'mi monstera', '2026-01-01')")
+        db.commit()
+    monkeypatch.setattr(database, 'SEMBRAR_DATOS_USUARIO', True)
+    database.init_db()
+    database.init_db()   # solo una vez
+    with database.get_db() as db:
+        plantas = {r['nombre']: dict(r) for r in db.execute("SELECT * FROM plantas")}
+        n_fotos = db.execute("SELECT COUNT(*) FROM plantas_fotos").fetchone()[0]
+    assert len(plantas) == len(alta.PLANTAS)                       # 9 nuevas + la monstera que ya estaba
+    assert plantas['monstera']['especie_cientifica'] == 'Monstera deliciosa'
+    assert plantas['monstera']['especie'] == 'mi monstera'          # no se pisa lo del usuario
+    assert plantas['Pata de elefante']['entorno'] == 'balcon' and plantas['Palma areca']['entorno'] == 'interior'
+    assert n_fotos == len(alta.PLANTAS)
+    assert all((tmp_path / 'plantas' / p['foto']).exists() for p in plantas.values())
