@@ -33,13 +33,12 @@
 .pl-card-bd{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4)}
 .pl-card-hd{align-items:flex-start}
 .pl-card-t{overflow-wrap:anywhere}
-.pl-care{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--r-sm);background:var(--bg-sunken);border:1px solid var(--border-subtle);border-left:3px solid var(--tone-fg)}
+.pl-care{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--r-sm);background:var(--bg-sunken);border:1px solid var(--border-subtle);border-left:3px solid var(--tone-fg)}
 .pl-care-ic{flex-shrink:0;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--tone-bg);color:var(--tone-fg)}
 .pl-care-ic svg{width:16px;height:16px}
-.pl-care-bd{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--sp-1)}
+.pl-care-bd{flex:1 1 150px;min-width:0;display:flex;flex-direction:column;gap:var(--sp-1)}
 .pl-prog>i{background:var(--tone-fg)}
 .pl-notes{font-style:italic}
-@media (max-width:379px){.pl-care{flex-wrap:wrap}.pl-care .eu-btn{margin-left:auto}}
 
 .pl-fgrid{gap:var(--sp-3)}
 @media (max-width:479px){.pl-fgrid{grid-template-columns:minmax(0,1fr)}}
@@ -53,7 +52,9 @@
 .pl-sug>svg{width:16px;height:16px;flex-shrink:0}
 .pl-ft{flex-wrap:wrap}
 
-.pl-care-act{display:flex;gap:var(--sp-1);flex-shrink:0}
+/* Si no caben junto al texto (tarjeta angosta + «Aún húmeda»), los botones
+   bajan a su propia línea alineados a la derecha en vez de aplastar el texto. */
+.pl-care-act{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--sp-1);flex-shrink:0;margin-left:auto}
 .pl-env{display:inline-flex;align-items:center;gap:4px}
 .pl-env svg{width:12px;height:12px}
 .pl-hist{display:flex;flex-direction:column;gap:var(--sp-2);border-top:1px solid var(--border-subtle);padding-top:var(--sp-3)}
