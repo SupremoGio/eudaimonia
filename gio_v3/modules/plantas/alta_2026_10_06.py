@@ -14,6 +14,10 @@ import shutil
 import uuid
 from datetime import datetime
 
+# «Pon que las regué hoy todas; no riego pata de oso, pata de elefante ni
+# monstera aún» (el usuario, 2026-10-06 por la noche).
+NO_REGADAS = ('Monstera', 'Pata de oso', 'Pata de elefante')
+
 _DIR_FOTOS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'alta_2026_10_06')
 FECHA = '2026-10-06'
 
@@ -46,7 +50,7 @@ def _norm(s):
 def aplicar(db, upload_dir):
     """Crea las plantas que falten. Devuelve (creadas, existentes)."""
     os.makedirs(upload_dir, exist_ok=True)
-    existentes = {_norm(r['nombre']): r for r in db.execute("SELECT id, nombre, especie_cientifica FROM plantas")}
+    existentes = {_norm(r['nombre']): r for r in db.execute("SELECT id, nombre, especie_cientifica, last_riego FROM plantas")}
     creadas = ya = 0
     ahora = datetime.now().isoformat()
     for nombre, especie, cient, entorno, dias, meses, foto, notas in PLANTAS:
@@ -68,6 +72,10 @@ def aplicar(db, upload_dir):
                 (nombre, especie, cient, '', entorno, dias, meses, notas,
                  f'{FECHA}T21:52:00')).lastrowid
             creadas += 1
+        if nombre not in NO_REGADAS and not (previa and (previa['last_riego'] or '') >= FECHA):
+            db.execute("INSERT INTO plantas_bitacora (planta_id, tipo, fecha, notas, prev_fecha, created_at) VALUES (?,?,?,?,?,?)",
+                       (pid, 'riego', FECHA, 'Registrado al dar de alta', previa['last_riego'] if previa else None, ahora))
+            db.execute("UPDATE plantas SET last_riego=?, riego_pospuesto_hasta=NULL WHERE id=?", (FECHA, pid))
         if filename:
             db.execute("INSERT INTO plantas_fotos (planta_id, foto, fecha, nota, created_at) VALUES (?,?,?,?,?)",
                        (pid, filename, FECHA, 'Foto del alta', ahora))

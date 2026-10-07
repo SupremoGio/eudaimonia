@@ -476,3 +476,9 @@ def test_alta_de_plantas_del_usuario_una_vez_y_sin_duplicar(test_db, tmp_path, m
     assert plantas['Pata de elefante']['entorno'] == 'balcon' and plantas['Palma areca']['entorno'] == 'interior'
     assert n_fotos == len(alta.PLANTAS)
     assert all((tmp_path / 'plantas' / p['foto']).exists() for p in plantas.values())
+    # Regadas el 6-oct todas menos Monstera, Pata de oso y Pata de elefante
+    regadas = {n for n, p in plantas.items() if p['last_riego'] == '2026-10-06'}
+    assert regadas == {p[0] for p in alta.PLANTAS} - {'Monstera', 'Pata de oso', 'Pata de elefante'}
+    assert plantas['Pata de oso']['last_riego'] is None and plantas['monstera']['last_riego'] is None
+    with database.get_db() as db:
+        assert db.execute("SELECT COUNT(*) FROM plantas_bitacora WHERE tipo='riego'").fetchone()[0] == 7
