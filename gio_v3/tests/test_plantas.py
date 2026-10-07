@@ -428,3 +428,28 @@ def test_pagina_oculta_el_doctor_sin_api_key(client, monkeypatch):
     monkeypatch.setenv('GEMINI_API_KEY', 'x')
     html = client.get('/plantas/').get_data(as_text=True)
     assert 'm-doctor' in html and 'js-ficha' in html
+
+
+# ── Especie confirmada con fotos (iNaturalist, desde el navegador) ───────────
+
+def test_guarda_especie_confirmada_y_solo_acepta_fotos_de_inaturalist(client):
+    ok = 'https://inaturalist-open-data.s3.amazonaws.com/photos/1/medium.jpg'
+    pid = _crear(client, especie='Palma areca', especie_cientifica='Dypsis lutescens',
+                 ref_foto=ok, ref_foto_credito='(c) alguien, CC BY')
+    st = client.get('/plantas/api/state').get_json()
+    p = next(x for x in st['plantas'] if x['id'] == pid)
+    assert (p['especie_cientifica'], p['ref_foto'], p['ref_foto_credito']) == ('Dypsis lutescens', ok, '(c) alguien, CC BY')
+    # Editar sin esos campos los conserva; con una URL ajena la descarta
+    client.post(f'/plantas/api/plantas/{pid}', data={'notas': 'x'}, content_type='multipart/form-data')
+    client.post(f'/plantas/api/plantas/{pid}', data={'especie_cientifica': 'Dypsis lutescens', 'ref_foto': 'https://evil.example/x.jpg'},
+                content_type='multipart/form-data')
+    with database.get_db() as db:
+        r = db.execute("SELECT especie_cientifica, ref_foto FROM plantas WHERE id=?", (pid,)).fetchone()
+    assert tuple(r) == ('Dypsis lutescens', '')
+
+
+def test_el_doctor_recibe_la_especie_confirmada(client, ia_fake):
+    pid = _crear(client, especie='Palma areca', especie_cientifica='Dypsis lutescens')
+    ia_fake.reply = {'resumen': 'ok'}
+    client.post(f'/plantas/api/plantas/{pid}/diagnostico', data={'texto': 'x'}, content_type='multipart/form-data')
+    assert 'Palma areca (confirmada: Dypsis lutescens)' in ia_fake.prompts[-1]

@@ -67,7 +67,8 @@ def contexto_planta(p, temporada, hist):
     """Bloque de texto con todo lo que se sabe de la planta."""
     lineas = [
         f"Nombre: {p.get('nombre')}",
-        f"Especie: {p.get('especie') or 'no registrada'}",
+        f"Especie: {p.get('especie') or 'no registrada'}"
+        + (f" (confirmada: {p['especie_cientifica']})" if p.get('especie_cientifica') else ''),
         f"Dónde vive: {'balcón (exterior, recibe clima)' if p.get('entorno') == 'balcon' else 'interior'}"
         + (f", {p['ubicacion']}" if p.get('ubicacion') else ''),
         f"Luz: {_LUZ_TXT.get(p.get('luz') or '', p.get('luz'))}",

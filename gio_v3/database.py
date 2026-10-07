@@ -4287,6 +4287,10 @@ def init_db():
             ('plantas_bitacora', 'prev_fecha', 'TEXT DEFAULT NULL'),
             ('plantas_bitacora', 'prev_pospuesto', 'TEXT DEFAULT NULL'),
             ('plantas_bitacora', 'detalle', 'TEXT DEFAULT NULL'),   # Entrega 3: JSON del diagnóstico
+            # Especie confirmada con fotos de iNaturalist (2026-10-07)
+            ('plantas', 'especie_cientifica', "TEXT DEFAULT ''"),
+            ('plantas', 'ref_foto', "TEXT DEFAULT ''"),
+            ('plantas', 'ref_foto_credito', "TEXT DEFAULT ''"),
         ]:
             try:
                 db.execute(f"ALTER TABLE {_tbl} ADD COLUMN {_col} {_def}")

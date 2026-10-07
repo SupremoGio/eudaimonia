@@ -57,9 +57,14 @@
   </div>
   <div class="eu-field"><label class="eu-label" for="pl-nombre">Nombre *</label><input class="eu-input" id="pl-nombre" placeholder="Ej. Monstera de la sala…"></div>
   <div class="eu-grid-2 pl-fgrid">
-    <div class="eu-field"><label class="eu-label" for="pl-especie">Especie</label><input class="eu-input" id="pl-especie" placeholder="Opcional"></div>
+    <div class="eu-field"><label class="eu-label" for="pl-especie">Especie</label><input class="eu-input" id="pl-especie" placeholder="Ej. Palma areca" autocomplete="off"></div>
     <div class="eu-field"><label class="eu-label" for="pl-ubicacion">Ubicación</label><input class="eu-input" id="pl-ubicacion" placeholder="Ej. Sala"></div>
   </div>
+  {#- Confirmar la especie con fotos de iNaturalist (la búsqueda la hace el
+      navegador; si iNaturalist no responde, simplemente no aparece). -#}
+  <input type="hidden" id="pl-cient"><input type="hidden" id="pl-ref-foto"><input type="hidden" id="pl-ref-cred">
+  <div class="pl-taxa-sel" id="pl-taxa-sel" hidden></div>
+  <div class="pl-taxa" id="pl-taxa" aria-live="polite" hidden></div>
   <div class="eu-grid-2 pl-fgrid">
     <div class="eu-field"><label class="eu-label" for="pl-entorno">Dónde vive</label>
       <select class="eu-select" id="pl-entorno"><option value="interior">Interior</option><option value="balcon">Balcón</option></select></div>

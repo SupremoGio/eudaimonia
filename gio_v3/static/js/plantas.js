@@ -96,9 +96,12 @@
     }
     box.innerHTML = list.map(function (p) {
       var env = '<span class="pl-env"><i data-lucide="' + (p.entorno === 'balcon' ? 'sun' : 'house') + '"></i>' + (p.entorno === 'balcon' ? 'Balcón' : 'Interior') + '</span>';
-      var sub = [env].concat([p.especie, p.ubicacion].filter(Boolean).map(esc)).join(' · ');
+      var sub = [env].concat([p.especie, p.ubicacion].filter(Boolean).map(esc)).join(' · ') +
+        (p.especie_cientifica && p.especie_cientifica !== p.especie ? ' · <i>' + esc(p.especie_cientifica) + '</i>' : '');
       return '<article class="eu-card eu-card--flush pl-card" data-tone="' + ST[p.status][2] + '">' +
-        (p.foto ? '<img class="pl-cover" src="' + BASE + '/foto/' + encodeURIComponent(p.foto) + '" alt="" loading="lazy">' : '<span class="pl-cover pl-cover--empty" aria-hidden="true"><i data-lucide="flower-2"></i></span>') +
+        (p.foto ? '<img class="pl-cover" src="' + BASE + '/foto/' + encodeURIComponent(p.foto) + '" alt="" loading="lazy">'
+          : p.ref_foto ? '<span class="pl-cover-ref"><img class="pl-cover" src="' + esc(p.ref_foto) + '" alt="" loading="lazy" referrerpolicy="no-referrer"><span class="pl-cover-tag">Foto de referencia</span></span>'
+          : '<span class="pl-cover pl-cover--empty" aria-hidden="true"><i data-lucide="flower-2"></i></span>') +
         '<div class="pl-card-bd"><div class="eu-between pl-card-hd"><div class="eu-grow"><h2 class="t-card pl-card-t">' + esc(p.nombre) + '</h2><p class="t-meta">' + sub + '</p></div>' +
         (IA ? '<button type="button" class="eu-iconbtn" data-doctor="' + p.id + '" aria-label="Doctor de plantas: ' + esc(p.nombre) + '" title="Doctor de plantas"><i data-lucide="stethoscope"></i></button>' : '') +
         '<button type="button" class="eu-iconbtn" data-edit="' + p.id + '" aria-label="Editar ' + esc(p.nombre) + '"><i data-lucide="pencil"></i></button></div>' +
@@ -186,6 +189,8 @@
     $('pl-dias-riego').value = p.dias_riego || 7; $('pl-meses-trasplante').value = p.meses_trasplante || 12;
     $('pl-notas').value = p.notas || ''; $('pl-photo-input').value = '';
     $('pl-entorno').value = p.entorno || 'interior'; $('pl-luz').value = p.luz || '';
+    setTaxon(p.especie_cientifica ? { cient: p.especie_cientifica, comun: p.especie, foto: p.ref_foto, cred: p.ref_foto_credito } : null);
+    $('pl-taxa').hidden = true; $('pl-taxa').innerHTML = '';
     $('pl-last-wrap').hidden = !!p.id; $('pl-last-riego').value = TODAY || ''; if (TODAY) $('pl-last-riego').max = TODAY;
     loadHist(p.id); loadFotos(p.id); fillExtras(p); fillOtra(p); if ($('pl-ficha')) $('pl-ficha').hidden = true;
     $('pl-delete-btn').hidden = !p.id;
@@ -194,6 +199,66 @@
     icons(); euModal.open('m-planta'); setTimeout(function () { $('pl-nombre').focus(); }, 20);
   }
   function openNew() { fill(null); }
+
+  /* ── Confirmar la especie con fotos (iNaturalist, desde el navegador) ── */
+  // Se consulta directo desde el navegador: no depende de que el servidor
+  // (Railway) tenga salida a iNaturalist. Si falla o no hay internet, no se
+  // muestra nada y el formulario funciona igual.
+  var INAT = 'https://api.inaturalist.org/v1/taxa/autocomplete', PLANTAE = 47126;
+  var RANGOS = { species: 1, subspecies: 1, variety: 1, form: 1, hybrid: 1, genus: 1 };
+  var taxaTimer = null, taxaCtl = null, taxaCache = {}, TAXA = [];
+  function setTaxon(t) {
+    $('pl-cient').value = t ? t.cient : ''; $('pl-ref-foto').value = t ? (t.foto || '') : ''; $('pl-ref-cred').value = t ? (t.cred || '') : '';
+    var box = $('pl-taxa-sel'); box.dataset.comun = t ? (t.comun || '') : '';
+    box.hidden = !t;
+    if (!t) { box.innerHTML = ''; return; }
+    box.innerHTML = (t.foto ? '<img src="' + esc(t.foto) + '" alt="" referrerpolicy="no-referrer">' : '') +
+      '<span class="eu-grow"><span class="t-ui"><i data-lucide="badge-check"></i> ' + esc(t.comun || t.cient) + '</span><i class="sci">' + esc(t.cient) + '</i>' +
+      (t.cred ? '<span class="t-meta">Foto: ' + esc(t.cred) + ' · iNaturalist</span>' : '') + '</span>' +
+      '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-taxon-cambiar">Cambiar</button>';
+    icons();
+  }
+  function buscarTaxa(q) {
+    clearTimeout(taxaTimer);
+    q = (q || '').trim();
+    if (q.length < 3 || $('pl-cient').value) { if (!$('pl-cient').value) $('pl-taxa').hidden = true; return; }
+    taxaTimer = setTimeout(function () {
+      if (taxaCache[q]) { pintarTaxa(taxaCache[q], q); return; }
+      if (taxaCtl) taxaCtl.abort();
+      taxaCtl = window.AbortController ? new AbortController() : null;
+      var url = INAT + '?q=' + encodeURIComponent(q) + '&taxon_id=' + PLANTAE + '&locale=es&preferred_place_id=6793&per_page=10&is_active=true';
+      fetch(url, taxaCtl ? { signal: taxaCtl.signal } : {}).then(function (r) { return r.ok ? r.json() : { results: [] }; }).then(function (d) {
+        var res = (d.results || []).filter(function (t) { return RANGOS[t.rank] && t.default_photo; }).slice(0, 4).map(function (t) {
+          var ph = t.default_photo || {};
+          return { cient: t.name, comun: t.preferred_common_name || '', rank: t.rank, foto: ph.medium_url || ph.square_url || '', cred: ph.attribution || '' };
+        });
+        taxaCache[q] = res; pintarTaxa(res, q);
+      }).catch(function () { /* sin iNaturalist: no se muestra nada */ });
+    }, 500);
+  }
+  function pintarTaxa(res, q) {
+    var box = $('pl-taxa'); TAXA = res;
+    if (!res.length || $('pl-especie').value.trim() !== q) { box.hidden = true; return; }
+    box.innerHTML = '<span class="t-meta">¿Es alguna de estas? Toca la que se parezca a la tuya.</span><ul class="pl-taxa-list">' + res.map(function (t, i) {
+      return '<li class="pl-taxon">' + (t.foto ? '<img src="' + esc(t.foto) + '" alt="' + esc(t.comun || t.cient) + '" loading="lazy" referrerpolicy="no-referrer">' : '<span class="pl-taxon-ph"><i data-lucide="flower-2"></i></span>') +
+        '<span class="pl-taxon-bd"><span class="t-ui">' + esc(t.comun || t.cient) + '</span><i>' + esc(t.cient) + (t.rank === 'genus' ? ' (género)' : '') + '</i></span>' +
+        '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-taxon="' + i + '">Es esta</button></li>';
+    }).join('') + '</ul>';
+    box.hidden = false; icons();
+  }
+  $('pl-taxa').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-taxon]'); if (!b) return;
+    var t = TAXA[+b.dataset.taxon]; if (!t) return;
+    if (t.comun) $('pl-especie').value = t.comun.charAt(0).toUpperCase() + t.comun.slice(1);
+    t.comun = $('pl-especie').value.trim() || t.comun;
+    setTaxon(t); $('pl-taxa').hidden = true;
+    // Con la especie confirmada, la sugerencia local de intervalos usa ambos nombres.
+    $('pl-especie').dispatchEvent(new Event('input'));
+  });
+  $('pl-taxa-sel').addEventListener('click', function (e) {
+    if (!e.target.closest('.js-taxon-cambiar')) return;
+    setTaxon(null); buscarTaxa($('pl-especie').value); $('pl-especie').focus();
+  });
 
   /* ── Otros cuidados (fertilizar, rotar, limpiar, plagas) ─────────────── */
   function fillExtras(p) {
@@ -303,6 +368,11 @@
   function openEdit(id) { var p = PLANTAS.filter(function (x) { return x.id === id; })[0]; if (p) fill(p); }
 
   // Sugerencia de intervalos por especie: nunca sobreescribe sola, solo ofrece «Usar».
+  $('pl-especie').addEventListener('input', function () {
+    // Si cambia el texto, la especie confirmada ya no aplica.
+    if ($('pl-cient').value && this.value.trim() !== ($('pl-taxa-sel').dataset.comun || '')) setTaxon(null);
+    buscarTaxa(this.value);
+  });
   ['pl-nombre', 'pl-especie'].forEach(function (id) {
     $(id).addEventListener('input', function () {
       clearTimeout(sugTimer);
@@ -335,6 +405,7 @@
     fd.append('dias_riego', $('pl-dias-riego').value || 7); fd.append('meses_trasplante', $('pl-meses-trasplante').value || 12);
     fd.append('notas', $('pl-notas').value.trim());
     fd.append('entorno', $('pl-entorno').value); fd.append('luz', $('pl-luz').value);
+    fd.append('especie_cientifica', $('pl-cient').value); fd.append('ref_foto', $('pl-ref-foto').value); fd.append('ref_foto_credito', $('pl-ref-cred').value);
     $$('[data-ex]').forEach(function (chk) {
       fd.append('cuidado_' + chk.dataset.ex, chk.checked ? ($('pl-ex-' + chk.dataset.ex).value || '') : '');
     });
@@ -456,10 +527,11 @@
   if (fichaBtn) fichaBtn.addEventListener('click', function () {
     var id = $('pl-id').value, especie = $('pl-especie').value.trim(), p = id ? planta(+id) : null;
     var fd = new FormData();
-    fd.append('especie', especie || $('pl-nombre').value.trim());
+    fd.append('especie', $('pl-cient').value ? $('pl-cient').value + (especie ? ' (' + especie + ')' : '') : (especie || $('pl-nombre').value.trim()));
     fd.append('entorno', $('pl-entorno').value); fd.append('luz', $('pl-luz').value);
+    fd.append('especie_cientifica', $('pl-cient').value); fd.append('ref_foto', $('pl-ref-foto').value); fd.append('ref_foto_credito', $('pl-ref-cred').value);
     // Sin especie escrita, se identifica por la foto (la recién elegida o la portada).
-    if (!especie && fotoFile) fd.append('foto', fotoFile);
+    if (!especie && !$('pl-cient').value && fotoFile) fd.append('foto', fotoFile);
     else if (!especie && p && p.foto) { fd.append('planta_id', id); fd.append('usar_foto', '1'); }
     var box = $('pl-ficha'); box.hidden = false; box.innerHTML = '<span class="t-meta">Consultando…</span>';
     fichaBtn.disabled = true;

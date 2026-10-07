@@ -311,6 +311,25 @@ def _form_luz(default=''):
     return v if v in LUCES else default
 
 
+# Fotos de referencia de iNaturalist: solo se aceptan URLs de sus servidores
+# de fotos (el navegador las elige en el buscador de especies; el servidor
+# nunca las descarga).
+_REF_FOTO_HOSTS = ('https://inaturalist-open-data.s3.amazonaws.com/', 'https://static.inaturalist.org/')
+
+
+def _form_especie_ref(row=None):
+    """(especie_cientifica, ref_foto, ref_foto_credito) del formulario. Si el
+    formulario no los trae, conserva los de la planta."""
+    row = row or {}
+    if 'especie_cientifica' not in request.form:
+        return row.get('especie_cientifica') or '', row.get('ref_foto') or '', row.get('ref_foto_credito') or ''
+    cient = request.form.get('especie_cientifica', '').strip()[:120]
+    ref = request.form.get('ref_foto', '').strip()[:400]
+    if not ref.startswith(_REF_FOTO_HOSTS):
+        ref = ''
+    return cient, ref, request.form.get('ref_foto_credito', '').strip()[:200]
+
+
 def _form_fecha_pasada(name, default):
     """Fecha opcional del formulario (YYYY-MM-DD) que no puede ser futura."""
     d = _parse_date(request.form.get(name))
@@ -375,7 +394,8 @@ def api_planta_create():
     with get_db() as db:
         cur = db.execute(
             "INSERT INTO plantas (nombre, especie, ubicacion, foto, dias_riego, meses_trasplante, "
-            "last_riego, last_trasplante, notas, entorno, luz, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            "last_riego, last_trasplante, notas, entorno, luz, especie_cientifica, ref_foto, ref_foto_credito, created_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 nombre,
                 request.form.get('especie', '').strip()[:80],
@@ -384,7 +404,7 @@ def api_planta_create():
                 dias_riego, meses_trasplante,
                 _form_fecha_pasada('last_riego', hoy), _form_fecha_pasada('last_trasplante', hoy),
                 request.form.get('notas', '').strip()[:300],
-                _form_entorno(), _form_luz(),
+                _form_entorno(), _form_luz(), *_form_especie_ref(),
                 _now(),
             ),
         )
@@ -424,7 +444,7 @@ def api_planta_update(pid):
 
         db.execute(
             "UPDATE plantas SET nombre=?, especie=?, ubicacion=?, foto=?, dias_riego=?, "
-            "meses_trasplante=?, notas=?, entorno=?, luz=? WHERE id=?",
+            "meses_trasplante=?, notas=?, entorno=?, luz=?, especie_cientifica=?, ref_foto=?, ref_foto_credito=? WHERE id=?",
             (
                 request.form.get('nombre', row['nombre']).strip()[:80] or row['nombre'],
                 request.form.get('especie', row['especie'] or '').strip()[:80],
@@ -433,6 +453,7 @@ def api_planta_update(pid):
                 dias_riego, meses_trasplante,
                 request.form.get('notas', row['notas'] or '').strip()[:300],
                 _form_entorno(row.get('entorno') or 'interior'), _form_luz(row.get('luz') or ''),
+                *_form_especie_ref(row),
                 pid,
             ),
         )
