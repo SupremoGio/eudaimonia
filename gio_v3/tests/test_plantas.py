@@ -288,3 +288,143 @@ def test_dashboard_incluye_cuidados_extra(client):
         db.commit()
     dl = [d for d in _build_deadlines(today_date()) if d['type'].startswith('planta_')]
     assert [(d['type'], d['label'], d['badge']) for d in dl] == [('planta_limpiar', 'Limpiar hojas de Calathea', 'VENCIDO')]
+
+
+# ── Entrega 3: Doctor de plantas (IA simulada) ───────────────────────────────
+
+import json as _json
+from modules.plantas import doctor
+
+
+@pytest.fixture
+def ia_fake(monkeypatch):
+    """Simula Gemini: guarda prompts e imágenes y devuelve `reply`."""
+    import ia
+    monkeypatch.setenv('GEMINI_API_KEY', 'x')
+
+    class S:
+        prompts, images, reply = [], [], {}
+    st = S()
+
+    def fake(prompt, **kw):
+        st.prompts.append(prompt); st.images.append(kw.get('images'))
+        return _json.dumps(st.reply)
+    monkeypatch.setattr(ia, 'gemini', fake)
+    return st
+
+
+def test_resumen_historial():
+    hoy = date(2026, 10, 7)
+    bit = [{'tipo': 'riego', 'fecha': f, 'notas': ''} for f in ('2026-09-01', '2026-09-05', '2026-09-09', '2026-09-14')]
+    bit += [{'tipo': 'revision', 'fecha': '2026-09-20', 'notas': ''},
+            {'tipo': 'diagnostico', 'fecha': '2026-09-21', 'notas': 'Exceso de riego'}]
+    h = doctor.resumen_historial(bit, 9, hoy)
+    assert (h['n_riegos'], h['intervalo_real'], h['ultimo_riego_hace'], h['revisiones_humeda']) == (4, 4, 23, 1)
+    assert h['diagnosticos'] == ['2026-09-21: Exceso de riego']
+
+
+def test_sanitize_diagnostico_acota_todo():
+    d = doctor.sanitize_diagnostico({
+        'resumen': 'x' * 500, 'urgencia': 'CRITICA', 'confianza': 'Alta',
+        'causas': [{'causa': 'Luz', 'probabilidad': 20}, {'causa': 'Riego', 'probabilidad': 250}, {'nada': 1}],
+        'acciones': [{'paso': 'a', 'cuando': 'mañana'}], 'vigilar': 'hojas nuevas',
+        'ajustes_sugeridos': {'dias_riego': 300, 'luz': 'oscuridad'}})
+    assert len(d['resumen']) == 200 and d['urgencia'] == 'media' and d['confianza'] == 'alta'
+    assert [(c['causa'], c['probabilidad']) for c in d['causas']] == [('Riego', 100), ('Luz', 20)]
+    assert d['acciones'] == [{'paso': 'a', 'cuando': 'esta semana'}]
+    assert d['vigilar'] == ['hojas nuevas'] and d['ajustes_sugeridos'] == {}
+
+
+def test_sanitize_ficha_y_consejo():
+    f = doctor.sanitize_ficha({'dias_riego': 0, 'meses_trasplante': 100, 'fertilizar_cada_dias': None,
+                               'luz_ideal': 'brillante', 'toxica_mascotas': 'si'})
+    assert (f['dias_riego'], f['meses_trasplante'], f['fertilizar_cada_dias'], f['luz_ideal'], f['toxica_mascotas']) == \
+        (7, 12, None, 'brillante', None)
+    c = doctor.sanitize_consejo({'observacion': 'o', 'ajuste': {'campo': 'luz', 'valor': 3}})
+    assert c['ajuste'] is None
+    assert doctor.sanitize_consejo({'ajuste': {'campo': 'dias_riego', 'valor': '11'}})['ajuste']['valor'] == 11
+
+
+def test_diagnostico_con_foto_y_contexto(client, ia_fake, tmp_path):
+    pid = _crear(client, nombre='Monstera', especie='Monstera deliciosa', entorno='interior', luz='media')
+    ia_fake.reply = {'resumen': 'Exceso de riego', 'urgencia': 'alta', 'confianza': 'media',
+                     'en_la_foto': 'Hojas bajas amarillas', 'causas': [{'causa': 'Exceso de riego', 'probabilidad': 70}],
+                     'acciones': [{'paso': 'No riegues hasta que se seque', 'cuando': 'hoy'}],
+                     'ajustes_sugeridos': {'dias_riego': 11}}
+    r = client.post(f'/plantas/api/plantas/{pid}/diagnostico',
+                    data={'sintomas': ['hojas_amarillas', 'inventado'], 'texto': 'desde hace una semana', 'foto': (_png(), 'x.png')},
+                    content_type='multipart/form-data').get_json()
+    assert r['ok'] and r['diagnostico']['resumen'] == 'Exceso de riego'
+    assert r['diagnostico']['sintomas'] == ['Hojas amarillas']
+    assert r['diagnostico']['ajustes_sugeridos'] == {'dias_riego': 11}
+    prompt = ia_fake.prompts[-1]
+    assert 'Monstera deliciosa' in prompt and 'interior' in prompt and 'Hojas amarillas' in prompt
+    assert 'desde hace una semana' in prompt and 'FOTO' in prompt
+    assert ia_fake.images[-1][0][0] == 'image/jpeg'
+    # Bitácora + foto en la línea de tiempo SIN volverse portada
+    hist = client.get(f'/plantas/api/plantas/{pid}/bitacora').get_json()['bitacora']
+    assert hist[0]['tipo'] == 'diagnostico' and hist[0]['detalle']['urgencia'] == 'alta' and hist[0]['deshacer']
+    fotos = client.get(f'/plantas/api/plantas/{pid}/fotos').get_json()['fotos']
+    assert len(fotos) == 1 and not fotos[0]['portada']
+
+
+def test_diagnostico_no_bloquea_deshacer_el_riego(client, ia_fake):
+    pid = _crear(client, last_riego='2026-01-01')
+    client.post(f'/plantas/api/plantas/{pid}/riego')
+    ia_fake.reply = {'resumen': 'Sana'}
+    client.post(f'/plantas/api/plantas/{pid}/diagnostico', data={'texto': 'revisión'}, content_type='multipart/form-data')
+    hist = client.get(f'/plantas/api/plantas/{pid}/bitacora').get_json()['bitacora']
+    riego = next(h for h in hist if h['tipo'] == 'riego')
+    assert riego['deshacer'] and client.delete(f'/plantas/api/bitacora/{riego["id"]}').get_json()['ok']
+
+
+def test_diagnostico_sin_datos_ni_ia(client, monkeypatch):
+    pid = _crear(client)
+    monkeypatch.delenv('GEMINI_API_KEY', raising=False)
+    assert client.post(f'/plantas/api/plantas/{pid}/diagnostico', data={'texto': 'x'},
+                       content_type='multipart/form-data').status_code == 503
+    monkeypatch.setenv('GEMINI_API_KEY', 'x')
+    assert client.post(f'/plantas/api/plantas/{pid}/diagnostico', data={},
+                       content_type='multipart/form-data').status_code == 400
+
+
+def test_ficha_por_texto_con_cache(client, ia_fake):
+    ia_fake.reply = {'especie': 'Lavandula angustifolia', 'nombre_comun': 'Lavanda', 'confianza': 'alta',
+                     'dias_riego': 8, 'meses_trasplante': 18, 'fertilizar_cada_dias': 45, 'luz_ideal': 'sol_directo'}
+    r1 = client.post('/plantas/api/ficha', json={'especie': 'Lavanda', 'entorno': 'balcon', 'luz': 'sol_directo'}).get_json()
+    r2 = client.post('/plantas/api/ficha', json={'especie': 'lavanda ', 'entorno': 'balcon', 'luz': 'sol_directo'}).get_json()
+    assert r1['ficha']['dias_riego'] == 8 and not r1['cache'] and r2['cache']
+    assert len(ia_fake.prompts) == 1 and 'balcón' in ia_fake.prompts[0]
+    assert client.post('/plantas/api/ficha', json={'entorno': 'balcon'}).status_code == 400
+
+
+def test_ficha_identifica_por_foto(client, ia_fake):
+    ia_fake.reply = {'especie': 'Epipremnum aureum', 'nombre_comun': 'Pothos', 'confianza': 'media', 'dias_riego': 9}
+    r = client.post('/plantas/api/ficha', data={'entorno': 'interior', 'foto': (_png(), 'x.png')},
+                    content_type='multipart/form-data').get_json()
+    assert r['ok'] and r['ficha']['nombre_comun'] == 'Pothos' and not r['cache']
+    assert ia_fake.images[-1] and 'identifica la especie' in ia_fake.prompts[-1]
+
+
+def test_consejo_pide_historial_minimo_y_luego_usa_la_ia(client, ia_fake):
+    from utils import today_date
+    from datetime import timedelta
+    pid = _crear(client, dias_riego='9')
+    r = client.get(f'/plantas/api/plantas/{pid}/consejo').get_json()
+    assert r['ok'] and not r['suficiente'] and not ia_fake.prompts
+    hoy = today_date()
+    for d in (12, 8, 4):
+        client.post(f'/plantas/api/plantas/{pid}/riego', json={'fecha': (hoy - timedelta(days=d)).isoformat()})
+    ia_fake.reply = {'observacion': 'La riegas cada 4 d', 'recomendacion': 'Espacia', 'ajuste': {'campo': 'dias_riego', 'valor': 9, 'razon': 'r'}}
+    r = client.get(f'/plantas/api/plantas/{pid}/consejo').get_json()
+    assert r['suficiente'] and r['historial']['intervalo_real'] == 4 and r['consejo']['ajuste']['valor'] == 9
+    assert 'cada 4' in ia_fake.prompts[-1]
+
+
+def test_pagina_oculta_el_doctor_sin_api_key(client, monkeypatch):
+    monkeypatch.delenv('GEMINI_API_KEY', raising=False)
+    html = client.get('/plantas/').get_data(as_text=True)
+    assert 'm-doctor' not in html and 'js-ficha' not in html
+    monkeypatch.setenv('GEMINI_API_KEY', 'x')
+    html = client.get('/plantas/').get_data(as_text=True)
+    assert 'm-doctor' in html and 'js-ficha' in html

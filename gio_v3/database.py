@@ -4286,6 +4286,7 @@ def init_db():
             ('plantas', 'riego_pospuesto_hasta', 'TEXT DEFAULT NULL'),
             ('plantas_bitacora', 'prev_fecha', 'TEXT DEFAULT NULL'),
             ('plantas_bitacora', 'prev_pospuesto', 'TEXT DEFAULT NULL'),
+            ('plantas_bitacora', 'detalle', 'TEXT DEFAULT NULL'),   # Entrega 3: JSON del diagnóstico
         ]:
             try:
                 db.execute(f"ALTER TABLE {_tbl} ADD COLUMN {_col} {_def}")
@@ -4305,6 +4306,11 @@ def init_db():
             created_at  TEXT    NOT NULL,
             UNIQUE (planta_id, tipo),
             FOREIGN KEY (planta_id) REFERENCES plantas(id) ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS plantas_fichas (
+            clave       TEXT PRIMARY KEY,
+            datos       TEXT NOT NULL,
+            created_at  TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS plantas_fotos (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,

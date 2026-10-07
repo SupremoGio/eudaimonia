@@ -67,6 +67,11 @@
       <select class="eu-select" id="pl-luz"><option value="">Sin especificar</option><option value="baja">Baja (lejos de ventanas)</option><option value="media">Media</option><option value="brillante">Brillante indirecta</option><option value="sol_directo">Sol directo</option></select></div>
   </div>
   <div class="pl-sug" id="pl-sugerencia" role="status" hidden></div>
+  {% if ia_disponible %}
+  <div class="pl-ficha-bar"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-ficha"><i data-lucide="sparkles"></i>Ficha de cuidados con IA</button>
+    <span class="t-meta">Con la especie (o la foto, si no la sabes), dónde vive y su luz.</span></div>
+  <div class="pl-ficha" id="pl-ficha" role="status" hidden></div>
+  {% endif %}
   <div class="eu-grid-2 pl-fgrid">
     <div class="eu-field"><label class="eu-label" for="pl-dias-riego">Regar cada (días)</label><input class="eu-input eu-input--money" id="pl-dias-riego" type="number" min="1" inputmode="numeric" value="7"></div>
     <div class="eu-field"><label class="eu-label" for="pl-meses-trasplante">Trasplantar cada (meses)</label><input class="eu-input eu-input--money" id="pl-meses-trasplante" type="number" min="1" inputmode="numeric" value="12"></div>
@@ -114,7 +119,40 @@
 </div>
 {% endcall %}
 </div>
+{% if ia_disponible %}
+<div data-cat="ataraxia">
+{% call ui.modal('m-doctor', 'Doctor de plantas', eyebrow='Plantas · IA') %}
+<div class="eu-modal-bd pl-dr">
+  <p class="t-meta" id="dr-planta"></p>
+  <section class="pl-dr-sec" aria-labelledby="dr-dx-t">
+    <h3 class="t-eyebrow" id="dr-dx-t">¿Qué le notas?</h3>
+    <div class="eu-chips pl-dr-chips" role="group" aria-label="Síntomas">
+      {% for k, lbl in sintomas.items() %}{{ ui.chip(lbl, **{'data-sint': k}) }}{% endfor %}
+    </div>
+    <textarea class="eu-textarea" id="dr-texto" rows="2" maxlength="500" placeholder="Opcional: desde cuándo, qué cambió (la moviste, la trasplantaste, hizo calor…)" aria-label="Describe lo que ves"></textarea>
+    <div class="pl-dr-foto">
+      <img id="dr-foto-img" alt="" hidden>
+      <div class="eu-vstack">
+        <span class="t-meta" id="dr-foto-cap">Se usará la foto de portada.</span>
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-dr-foto"><i data-lucide="camera"></i>Foto de cómo está hoy</button>
+      </div>
+      <input type="file" id="dr-foto-input" accept="image/*" class="pl-file" aria-label="Foto actual de la planta">
+    </div>
+    <button type="button" class="eu-btn eu-btn--primary js-dr-go"><i data-lucide="stethoscope"></i><span>Diagnosticar</span></button>
+    <div id="dr-result" aria-live="polite"></div>
+  </section>
+  <section class="pl-dr-sec" aria-labelledby="dr-cx-t">
+    <h3 class="t-eyebrow" id="dr-cx-t">Consejo según tu historial</h3>
+    <p class="t-meta">Compara cómo la has cuidado (riegos reales, veces que seguía húmeda) con lo que necesita.</p>
+    <button type="button" class="eu-btn eu-btn--secondary js-cx-go"><i data-lucide="chart-line"></i><span>Analizar mi historial</span></button>
+    <div id="cx-result" aria-live="polite"></div>
+  </section>
+</div>
+{% endcall %}
+</div>
+{% endif %}
 <script type="application/json" id="pl-data">{{ plantas|tojson }}</script>
+<script type="application/json" id="pl-ia">{{ ia_disponible|tojson }}</script>
 <script type="application/json" id="pl-today">{{ today_iso|tojson }}</script>
 {% endblock %}
 

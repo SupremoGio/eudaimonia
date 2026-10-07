@@ -9,6 +9,7 @@ from database import get_db
 from utils import clean_str, safe_float, uploads_base_dir, today_str, optimize_photo
 from ec_constants import EC_RATE
 from modules.guardarropa import stylist
+from ia import gemini, extract_json, photo_for_ai
 
 _log = logging.getLogger(__name__)
 
@@ -753,80 +754,9 @@ def audit_fotos():
 
 # ── AI helpers ───────────────────────────────────────────────────────────────
 
-def _gemini(prompt, max_tokens=4096, thinking_budget=0, temperature=0.7, images=None):
-    """Call Gemini 2.5 Flash via REST. Returns raw text (JSON mode).
-    `thinking_budget` > 0 deja razonar al modelo antes de responder (los
-    tokens de razonamiento cuentan dentro de `max_tokens`). `images` es una
-    lista de (mime, bytes) que se adjuntan antes del texto."""
-    import base64
-    import urllib.error
-    api_key = os.environ.get('GEMINI_API_KEY', '')
-    if not api_key:
-        raise ValueError('GEMINI_API_KEY no configurada')
-    url = (
-        'https://generativelanguage.googleapis.com/v1beta/models/'
-        f'gemini-2.5-flash:generateContent?key={api_key}'
-    )
-    body = json.dumps({
-        'contents': [{'parts': [
-            {'inline_data': {'mime_type': mime, 'data': base64.b64encode(raw).decode()}}
-            for mime, raw in (images or [])
-        ] + [{'text': prompt}]}],
-        'generationConfig': {
-            'maxOutputTokens': max_tokens,
-            'temperature': temperature,
-            'responseMimeType': 'application/json',
-            'thinkingConfig': {'thinkingBudget': thinking_budget},
-        },
-    }).encode()
-    req = urllib.request.Request(url, data=body,
-                                 headers={'Content-Type': 'application/json'})
-    try:
-        resp = urllib.request.urlopen(req, timeout=90)
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode('utf-8', errors='replace')
-        try:
-            msg = json.loads(err_body).get('error', {}).get('message', err_body[:200])
-        except Exception:
-            msg = err_body[:200]
-        raise ValueError(f'Gemini HTTP {e.code}: {msg}')
-    data = json.loads(resp.read().decode())
-    candidate = data['candidates'][0]
-    parts = candidate['content']['parts']
-    # Filter out thought=True parts (internal reasoning tokens from Gemini 2.5)
-    text_parts = [p.get('text', '') for p in parts if not p.get('thought', False)]
-    return ''.join(text_parts).strip()
-
-
-def _extract_json(raw):
-    """Extract first valid JSON object from IA response, ignoring surrounding text."""
-    raw = raw.strip()
-    # Strip markdown fences
-    if '```' in raw:
-        parts = raw.split('```')
-        for part in parts:
-            part = part.strip()
-            if part.startswith('json'):
-                part = part[4:].strip()
-            if part.startswith('{'):
-                raw = part
-                break
-    # Find outermost { ... }
-    start = raw.find('{')
-    if start == -1:
-        raise ValueError(f'No JSON object in response: {raw[:200]}')
-    depth, end = 0, -1
-    for i, ch in enumerate(raw[start:], start):
-        if ch == '{':
-            depth += 1
-        elif ch == '}':
-            depth -= 1
-            if depth == 0:
-                end = i
-                break
-    if end == -1:
-        raise ValueError(f'Unclosed JSON in response: {raw[:200]}')
-    return raw[start:end + 1]
+# Gemini y la extracción de JSON viven en ia.py (compartidos con Plantas).
+_gemini = gemini
+_extract_json = extract_json
 
 
 
@@ -875,23 +805,8 @@ Responde SOLO con JSON con esta forma exacta:
 
 
 def _photo_for_ai(foto, max_dim=768):
-    """Foto local de la prenda reducida a JPEG chico para mandarla a la IA.
-    None si no hay foto o no se puede leer (la IA sigue con el texto)."""
-    if not foto:
-        return None
-    path = os.path.join(UPLOAD_DIR, os.path.basename(foto))
-    try:
-        with Image.open(path) as img:
-            img = ImageOps.exif_transpose(img)
-            if img.mode != 'RGB':
-                img = img.convert('RGB')
-            img.thumbnail((max_dim, max_dim), Image.LANCZOS)
-            buf = io.BytesIO()
-            img.save(buf, 'JPEG', quality=80)
-            return ('image/jpeg', buf.getvalue())
-    except Exception as e:
-        _log.info('Foto de la ancla no disponible para la IA (%s): %s', foto, e)
-        return None
+    """Foto local de la prenda lista para la IA (ver ia.photo_for_ai)."""
+    return photo_for_ai(os.path.join(UPLOAD_DIR, os.path.basename(foto)) if foto else None, max_dim)
 
 
 def _coach_outfits(occasion, anchor_id=None, contexto=''):

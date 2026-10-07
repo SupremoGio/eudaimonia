@@ -5,7 +5,10 @@ from datetime import datetime, date, timedelta
 import calendar
 from database import get_db
 from utils import today_str, today_date, uploads_base_dir, optimize_photo
-from modules.plantas.care_data import suggest_care, seasonal_factor, ENTORNOS
+from modules.plantas.care_data import suggest_care, seasonal_factor, ENTORNOS, _norm
+from modules.plantas import doctor
+import ia
+import json
 import modules.gamification.engine as engine
 
 plantas_bp = Blueprint('plantas', __name__, template_folder='../../templates')
@@ -264,11 +267,12 @@ def _guardar_cuidados_extra(db, planta_id):
                        (planta_id, tipo, dias, today_str(), _now()))
 
 
-def _registrar_foto(db, planta_id, filename, nota=''):
-    """Agrega la foto a la línea de tiempo y la vuelve la portada."""
+def _registrar_foto(db, planta_id, filename, nota='', portada=True):
+    """Agrega la foto a la línea de tiempo y (por defecto) la vuelve la portada."""
     db.execute("INSERT INTO plantas_fotos (planta_id, foto, fecha, nota, created_at) VALUES (?,?,?,?,?)",
                (planta_id, filename, today_str(), nota[:200], _now()))
-    db.execute("UPDATE plantas SET foto=? WHERE id=?", (filename, planta_id))
+    if portada:
+        db.execute("UPDATE plantas SET foto=? WHERE id=?", (filename, planta_id))
 
 
 def _borrar_archivo(filename):
@@ -319,7 +323,8 @@ def _form_fecha_pasada(name, default):
 
 @plantas_bp.route('/')
 def index():
-    return render_template('plantas/index.html', today_iso=today_str(), **_state())
+    return render_template('plantas/index.html', today_iso=today_str(), ia_disponible=ia.disponible(),
+                           sintomas=doctor.SINTOMAS, **_state())
 
 
 @plantas_bp.route('/api/state')
@@ -549,17 +554,28 @@ def api_planta_posponer(pid):
                     'msg': f'Riego pospuesto {dias} día' + ('s' if dias != 1 else '')})
 
 
+def _ultimo_cuidado(db, pid):
+    return db.execute("SELECT MAX(id) m FROM plantas_bitacora WHERE planta_id=? AND tipo != 'diagnostico'",
+                      (pid,)).fetchone()['m']
+
+
 @plantas_bp.route('/api/plantas/<int:pid>/bitacora')
 def api_planta_bitacora(pid):
     with get_db() as db:
         if not db.execute("SELECT 1 FROM plantas WHERE id=?", (pid,)).fetchone():
             return jsonify({'ok': False, 'error': 'not found'}), 404
         rows = [dict(r) for r in db.execute(
-            "SELECT id, tipo, fecha, notas FROM plantas_bitacora WHERE planta_id=? "
+            "SELECT id, tipo, fecha, notas, detalle FROM plantas_bitacora WHERE planta_id=? "
             "ORDER BY fecha DESC, id DESC LIMIT 60", (pid,)).fetchall()]
-        ultimo = db.execute("SELECT MAX(id) m FROM plantas_bitacora WHERE planta_id=?", (pid,)).fetchone()['m']
+        ultimo = _ultimo_cuidado(db, pid)
     for r in rows:
-        r['deshacer'] = r['id'] == ultimo   # solo el último registrado se puede deshacer
+        # Solo el último cuidado registrado se deshace; un diagnóstico se puede
+        # borrar siempre (no mueve calendarios).
+        r['deshacer'] = r['id'] == ultimo or r['tipo'] == 'diagnostico'
+        try:
+            r['detalle'] = json.loads(r['detalle']) if r['detalle'] else None
+        except ValueError:
+            r['detalle'] = None
     return jsonify({'ok': True, 'bitacora': rows})
 
 
@@ -571,9 +587,7 @@ def api_bitacora_deshacer(bid):
         r = db.execute("SELECT * FROM plantas_bitacora WHERE id=?", (bid,)).fetchone()
         if not r:
             return jsonify({'ok': False, 'error': 'not found'}), 404
-        ultimo = db.execute("SELECT MAX(id) m FROM plantas_bitacora WHERE planta_id=?",
-                            (r['planta_id'],)).fetchone()['m']
-        if ultimo != bid:
+        if r['tipo'] != 'diagnostico' and _ultimo_cuidado(db, r['planta_id']) != bid:
             return jsonify({'ok': False, 'error': 'Solo se puede deshacer el último registro'}), 409
         if r['tipo'] in _COL_CUIDADO:
             db.execute(f"UPDATE plantas SET {_COL_CUIDADO[r['tipo']]}=? WHERE id=?", (r['prev_fecha'], r['planta_id']))
@@ -589,6 +603,141 @@ def api_bitacora_deshacer(bid):
     if r['activity_log_id']:
         engine.remove_activity(r['activity_log_id'])
     return jsonify({'ok': True, 'state': _state()})
+
+
+# ── Doctor de plantas (IA) ───────────────────────────────────────────────────
+
+def _sin_ia():
+    return jsonify({'ok': False, 'error': 'La IA no está configurada (falta GEMINI_API_KEY)'}), 503
+
+
+def _planta_y_contexto(pid):
+    """(planta calculada, bitácora, resumen del historial, contexto en texto)."""
+    today = today_date()
+    with get_db() as db:
+        p = next((x for x in _serialize_plantas(db, today) if x['id'] == pid), None)
+        if not p:
+            return None, None, None, None
+        bit = [dict(r) for r in db.execute(
+            "SELECT tipo, fecha, notas FROM plantas_bitacora WHERE planta_id=?", (pid,)).fetchall()]
+    hist = doctor.resumen_historial(bit, p['riego_interval_efectivo'], today)
+    temporada = seasonal_factor(today.month)['label'] or ''
+    return p, bit, hist, doctor.contexto_planta(p, temporada, hist)
+
+
+def _ia_json(prompt, images=None, max_tokens=4096):
+    return json.loads(ia.extract_json(ia.gemini(prompt, max_tokens=max_tokens, thinking_budget=1024,
+                                                temperature=0.4, images=images)))
+
+
+@plantas_bp.route('/api/plantas/<int:pid>/diagnostico', methods=['POST'])
+def api_planta_diagnostico(pid):
+    """Foto (opcional; si no, la portada) + síntomas + texto -> diagnóstico.
+    Se guarda en la bitácora (tipo 'diagnostico'); la foto nueva entra a la
+    línea de tiempo sin volverse portada."""
+    if not ia.disponible():
+        return _sin_ia()
+    p, _bit, _hist, contexto = _planta_y_contexto(pid)
+    if not p:
+        return jsonify({'ok': False, 'error': 'not found'}), 404
+    sintomas = [x for x in request.form.getlist('sintomas') if x in doctor.SINTOMAS]
+    texto = request.form.get('texto', '').strip()[:500]
+    if not sintomas and not texto and not (request.files.get('foto') and request.files['foto'].filename) and not p.get('foto'):
+        return jsonify({'ok': False, 'error': 'Marca un síntoma, describe qué ves o agrega una foto'}), 400
+
+    foto_nueva = None
+    f = request.files.get('foto')
+    if f and f.filename:
+        foto_nueva, err = _save_upload(f)
+        if not foto_nueva:
+            return jsonify({'ok': False, 'error': err}), 400
+    foto = foto_nueva or p.get('foto')
+    img = ia.photo_for_ai(os.path.join(UPLOAD_DIR, foto) if foto else None)
+    try:
+        dx = doctor.sanitize_diagnostico(_ia_json(doctor.prompt_diagnostico(contexto, sintomas, texto, bool(img)),
+                                                  [img] if img else None))
+    except Exception as e:
+        if foto_nueva:
+            _borrar_archivo(foto_nueva)
+        return jsonify({'ok': False, 'error': f'No se pudo diagnosticar: {e}'}), 502
+    dx['sintomas'] = [doctor.SINTOMAS[x] for x in sintomas]
+    dx['foto'] = foto if img else None
+    with get_db() as db:
+        if foto_nueva:
+            _registrar_foto(db, pid, foto_nueva, 'Diagnóstico', portada=False)
+        bid = db.execute(
+            "INSERT INTO plantas_bitacora (planta_id, tipo, fecha, notas, detalle, created_at) VALUES (?,?,?,?,?,?)",
+            (pid, 'diagnostico', today_str(), dx['resumen'], json.dumps(dx, ensure_ascii=False), _now())).lastrowid
+        db.commit()
+    return jsonify({'ok': True, 'diagnostico': dx, 'bitacora_id': bid})
+
+
+@plantas_bp.route('/api/ficha', methods=['POST'])
+def api_ficha():
+    """Ficha de cuidados por especie para un entorno y una luz. Con foto
+    (subida, o la portada de `planta_id`) identifica la especie. Las fichas
+    por texto se guardan en caché (plantas_fichas) para no repetir la consulta."""
+    if not ia.disponible():
+        return _sin_ia()
+    data = request.form if request.form else (request.get_json(silent=True) or {})
+    especie = str(data.get('especie') or '').strip()[:80]
+    entorno = data.get('entorno') if data.get('entorno') in ENTORNOS else 'interior'
+    luz = data.get('luz') if data.get('luz') in LUCES else ''
+
+    img = None
+    f = request.files.get('foto')
+    if f and f.filename:
+        tmp = os.path.join(UPLOAD_DIR, f'_ficha_{uuid.uuid4().hex}.jpg')
+        try:
+            if optimize_photo(f.read(), tmp, 768):
+                img = ia.photo_for_ai(tmp)
+        finally:
+            _borrar_archivo(os.path.basename(tmp))
+    elif data.get('planta_id') and data.get('usar_foto'):
+        with get_db() as db:
+            r = db.execute("SELECT foto FROM plantas WHERE id=?", (data.get('planta_id'),)).fetchone()
+        if r and r['foto']:
+            img = ia.photo_for_ai(os.path.join(UPLOAD_DIR, r['foto']))
+    if not especie and not img:
+        return jsonify({'ok': False, 'error': 'Escribe la especie o agrega una foto'}), 400
+
+    clave = doctor.clave_ficha(_norm(especie), entorno, luz) if not img else None
+    if clave:
+        with get_db() as db:
+            c = db.execute("SELECT datos FROM plantas_fichas WHERE clave=?", (clave,)).fetchone()
+        if c:
+            return jsonify({'ok': True, 'ficha': json.loads(c['datos']), 'cache': True})
+    try:
+        ficha = doctor.sanitize_ficha(_ia_json(doctor.prompt_ficha(especie, entorno, luz, bool(img)),
+                                               [img] if img else None, max_tokens=3072))
+    except Exception as e:
+        return jsonify({'ok': False, 'error': f'No se pudo generar la ficha: {e}'}), 502
+    if clave and ficha['confianza'] != 'baja':
+        with get_db() as db:
+            db.execute("INSERT OR REPLACE INTO plantas_fichas (clave, datos, created_at) VALUES (?,?,?)",
+                       (clave, json.dumps(ficha, ensure_ascii=False), _now()))
+            db.commit()
+    return jsonify({'ok': True, 'ficha': ficha, 'cache': False})
+
+
+@plantas_bp.route('/api/plantas/<int:pid>/consejo')
+def api_planta_consejo(pid):
+    """Consejo a partir del historial real. Con menos de 3 riegos registrados
+    no hay de dónde sacar conclusiones: responde eso sin llamar a la IA."""
+    p, _bit, hist, contexto = _planta_y_contexto(pid)
+    if not p:
+        return jsonify({'ok': False, 'error': 'not found'}), 404
+    if hist['n_riegos'] < doctor.MIN_RIEGOS_CONSEJO:
+        return jsonify({'ok': True, 'suficiente': False, 'historial': hist,
+                        'msg': f"Aún no hay suficiente historial: registra al menos {doctor.MIN_RIEGOS_CONSEJO} riegos "
+                               f"(llevas {hist['n_riegos']} en los últimos 120 días)."})
+    if not ia.disponible():
+        return _sin_ia()
+    try:
+        consejo = doctor.sanitize_consejo(_ia_json(doctor.prompt_consejo(contexto), max_tokens=3072))
+    except Exception as e:
+        return jsonify({'ok': False, 'error': f'No se pudo generar el consejo: {e}'}), 502
+    return jsonify({'ok': True, 'suficiente': True, 'historial': hist, 'consejo': consejo})
 
 
 @plantas_bp.route('/api/plantas/<int:pid>/fotos')

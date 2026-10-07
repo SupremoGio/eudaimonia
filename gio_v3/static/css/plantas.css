@@ -86,3 +86,28 @@
 .pl-fotos-strip .eu-iconbtn svg{width:14px;height:14px}
 .pl-otra-row{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
 .pl-otra-row .eu-select,.pl-otra-row .eu-input{flex:1 1 140px;min-width:0}
+
+.pl-ficha-bar{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+.pl-ficha{display:flex;flex-direction:column;gap:var(--sp-2);padding:var(--sp-3);border-radius:var(--r-sm);background:var(--cat-bg);border:1px solid var(--cat-border)}
+.pl-ficha dl{display:grid;grid-template-columns:auto 1fr;gap:2px var(--sp-3);margin:0;font-size:var(--fs-13)}
+.pl-ficha dt{color:var(--fg-3)}.pl-ficha dd{margin:0;color:var(--fg-1)}
+.pl-dr{display:flex;flex-direction:column;gap:var(--sp-4)}
+.pl-dr-sec{display:flex;flex-direction:column;gap:var(--sp-3)}
+.pl-dr-sec+.pl-dr-sec{border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)}
+.pl-dr-sec h3,.pl-dr p{margin:0}
+.pl-dr-foto{display:flex;align-items:center;gap:var(--sp-3)}
+.pl-dr-foto img{width:72px;height:72px;border-radius:var(--r-sm);object-fit:cover;border:1px solid var(--border-subtle)}
+.pl-dr-sec>.eu-btn{align-self:flex-start}
+.pl-dx{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--r-sm);background:var(--bg-sunken);border:1px solid var(--border-subtle)}
+.pl-dx h4{margin:0;font-size:var(--fs-15);color:var(--fg-1)}
+.pl-dx ul,.pl-dx ol{margin:0;padding-left:var(--sp-5);display:flex;flex-direction:column;gap:4px;font-size:var(--fs-13);color:var(--fg-2)}
+.pl-dx-badges{display:flex;gap:var(--sp-2);flex-wrap:wrap}
+.pl-cause{display:flex;flex-direction:column;gap:2px;list-style:none}
+.pl-dx .pl-causes{padding-left:0}
+.pl-cause .eu-between{font-size:var(--fs-13);color:var(--fg-1)}
+.pl-cause .eu-progress>i{background:var(--cat-fg)}
+.pl-dx-aj{display:flex;gap:var(--sp-2);flex-wrap:wrap}
+.pl-dx-warn{display:flex;gap:var(--sp-2);align-items:flex-start;color:var(--warning-fg);font-size:var(--fs-13)}
+.pl-dx-warn svg,.pl-dx-eye svg{width:14px;height:14px;flex-shrink:0;margin-top:2px}
+.pl-dx-eye{display:flex;gap:var(--sp-2);font-size:var(--fs-13);color:var(--fg-2)}
+.pl-dr-chips{flex-wrap:wrap;overflow:visible}

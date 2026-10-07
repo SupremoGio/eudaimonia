@@ -11,6 +11,7 @@
     vencido: ['Vencido', 'eu-badge--danger', 'danger'], urgente: ['Urgente', 'eu-badge--warning', 'warning'],
     proximo: ['Próximo', 'eu-badge--brand', 'brand'], nominal: ['Al día', 'eu-badge--success', 'success'],
   };
+  var IA = JSON.parse((document.getElementById('pl-ia') || {}).textContent || 'false');
   var TODAY = JSON.parse((document.getElementById('pl-today') || {}).textContent || 'null');
   var filter = 'todas', fotoFile = null, sugTimer = null;
 
@@ -99,6 +100,7 @@
       return '<article class="eu-card eu-card--flush pl-card" data-tone="' + ST[p.status][2] + '">' +
         (p.foto ? '<img class="pl-cover" src="' + BASE + '/foto/' + encodeURIComponent(p.foto) + '" alt="" loading="lazy">' : '<span class="pl-cover pl-cover--empty" aria-hidden="true"><i data-lucide="flower-2"></i></span>') +
         '<div class="pl-card-bd"><div class="eu-between pl-card-hd"><div class="eu-grow"><h2 class="t-card pl-card-t">' + esc(p.nombre) + '</h2><p class="t-meta">' + sub + '</p></div>' +
+        (IA ? '<button type="button" class="eu-iconbtn" data-doctor="' + p.id + '" aria-label="Doctor de plantas: ' + esc(p.nombre) + '" title="Doctor de plantas"><i data-lucide="stethoscope"></i></button>' : '') +
         '<button type="button" class="eu-iconbtn" data-edit="' + p.id + '" aria-label="Editar ' + esc(p.nombre) + '"><i data-lucide="pencil"></i></button></div>' +
         (function () {
           var its = careItems(p), main = its.filter(function (it) { return !it.extra || it.status !== 'nominal'; });
@@ -130,6 +132,7 @@
   root.addEventListener('click', function (e) {
     if (e.target.closest('.js-new')) { openNew(); return; }
     var ed = e.target.closest('[data-edit]'); if (ed) { openEdit(+ed.dataset.edit); return; }
+    var dr = e.target.closest('[data-doctor]'); if (dr) { openDoctor(+dr.dataset.doctor); return; }
     var pp = e.target.closest('[data-posponer]');
     if (pp) {
       pp.disabled = true;
@@ -184,7 +187,7 @@
     $('pl-notas').value = p.notas || ''; $('pl-photo-input').value = '';
     $('pl-entorno').value = p.entorno || 'interior'; $('pl-luz').value = p.luz || '';
     $('pl-last-wrap').hidden = !!p.id; $('pl-last-riego').value = TODAY || ''; if (TODAY) $('pl-last-riego').max = TODAY;
-    loadHist(p.id); loadFotos(p.id); fillExtras(p); fillOtra(p);
+    loadHist(p.id); loadFotos(p.id); fillExtras(p); fillOtra(p); if ($('pl-ficha')) $('pl-ficha').hidden = true;
     $('pl-delete-btn').hidden = !p.id;
     $('m-planta-t').textContent = p.id ? 'Editar planta' : 'Nueva planta';
     fotoFile = null; setFoto(p.foto ? BASE + '/foto/' + encodeURIComponent(p.foto) : null); hideSug();
@@ -273,7 +276,7 @@
 
   /* ── Historial (bitácora) con deshacer del último registro ──────────── */
   var HIST = { riego: ['droplet', 'Regada'], trasplante: ['sprout', 'Trasplantada'], revision: ['clock', 'Revisada'],
-    fertilizar: ['flask-conical', 'Fertilizada'], rotar: ['rotate-cw', 'Rotada'], limpiar: ['sparkles', 'Hojas limpias'], plagas: ['bug', 'Plagas revisadas'] };
+    diagnostico: ['stethoscope', 'Diagnóstico'], fertilizar: ['flask-conical', 'Fertilizada'], rotar: ['rotate-cw', 'Rotada'], limpiar: ['sparkles', 'Hojas limpias'], plagas: ['bug', 'Plagas revisadas'] };
   function fmtFecha(f) { var d = f.split('-'); return d[2] + '/' + d[1] + '/' + d[0]; }
   function loadHist(id) {
     var box = $('pl-hist'), ul = $('pl-hist-list');
@@ -353,6 +356,140 @@
         euModal.close('m-planta'); apply(d); toast('Planta eliminada');
       }).catch(function () { toast('Sin conexión', 'err'); });
     });
+  });
+
+  /* ── Doctor de plantas (IA) ─────────────────────────────────────────── */
+  var dr = { id: null, foto: null };
+  var URG = { alta: ['Urgencia alta', 'eu-badge--danger'], media: ['Urgencia media', 'eu-badge--warning'], baja: ['Urgencia baja', 'eu-badge--success'] };
+  var LUZ_TXT = { baja: 'baja', media: 'media', brillante: 'brillante indirecta', sol_directo: 'sol directo' };
+  function planta(id) { return PLANTAS.filter(function (x) { return x.id === id; })[0]; }
+  function busy(btn, on, txt) {
+    btn.disabled = on; btn.setAttribute('aria-busy', String(on));
+    var sp = btn.querySelector('span'); if (sp) { if (!btn.dataset.lbl) btn.dataset.lbl = sp.textContent; sp.textContent = on ? txt : btn.dataset.lbl; }
+  }
+  function openDoctor(id) {
+    var p = planta(id); if (!p || !$('m-doctor')) return;
+    dr.id = id; dr.foto = null;
+    $('dr-planta').textContent = p.nombre + (p.especie ? ' · ' + p.especie : '') + ' · ' + (p.entorno === 'balcon' ? 'Balcón' : 'Interior');
+    $$('[data-sint]').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+    $('dr-texto').value = ''; $('dr-result').innerHTML = ''; $('cx-result').innerHTML = '';
+    var img = $('dr-foto-img');
+    if (p.foto) { img.src = BASE + '/foto/' + encodeURIComponent(p.foto); img.hidden = false; $('dr-foto-cap').textContent = 'Se usará la foto de portada; mejor toma una de cómo está hoy.'; }
+    else { img.removeAttribute('src'); img.hidden = true; $('dr-foto-cap').textContent = 'Sin foto: agrega una para un diagnóstico más certero.'; }
+    icons(); euModal.open('m-doctor');
+  }
+  if ($('m-doctor')) {
+    $('m-doctor').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-sint]'); if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+    });
+    document.querySelector('#m-doctor .js-dr-foto').addEventListener('click', function () { $('dr-foto-input').click(); });
+    $('dr-foto-input').addEventListener('change', function () {
+      var f = this.files && this.files[0]; if (!f) return;
+      dr.foto = f;
+      var rd = new FileReader(); rd.onload = function (ev) { var img = $('dr-foto-img'); img.src = ev.target.result; img.hidden = false; }; rd.readAsDataURL(f);
+      $('dr-foto-cap').textContent = 'Foto de hoy lista (se guarda en su línea de tiempo).';
+    });
+    document.querySelector('#m-doctor .js-dr-go').addEventListener('click', function () {
+      var btn = this, fd = new FormData();
+      $$('[data-sint][aria-pressed="true"]').forEach(function (b) { fd.append('sintomas', b.dataset.sint); });
+      fd.append('texto', $('dr-texto').value.trim());
+      if (dr.foto) fd.append('foto', dr.foto);
+      busy(btn, true, 'Revisando la planta…'); $('dr-result').innerHTML = '';
+      fetch(BASE + '/api/plantas/' + dr.id + '/diagnostico', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) { toast(d.error || 'No se pudo diagnosticar', 'err'); return; }
+        $('dr-result').innerHTML = dxHTML(d.diagnostico); icons();
+      }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { busy(btn, false); });
+    });
+    document.querySelector('#m-doctor .js-cx-go').addEventListener('click', function () {
+      var btn = this; busy(btn, true, 'Analizando…'); $('cx-result').innerHTML = '';
+      fetch(BASE + '/api/plantas/' + dr.id + '/consejo').then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) { toast(d.error || 'No se pudo analizar', 'err'); return; }
+        $('cx-result').innerHTML = d.suficiente ? cxHTML(d.consejo, d.historial) : '<p class="t-meta">' + esc(d.msg) + '</p>'; icons();
+      }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { busy(btn, false); });
+    });
+    $('m-doctor').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-aplicar]'); if (!b) return;
+      var fd = new FormData(); fd.append(b.dataset.aplicar, b.dataset.valor); b.disabled = true;
+      fetch(BASE + '/api/plantas/' + dr.id, { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) { toast(d.error || 'No se pudo aplicar', 'err'); b.disabled = false; return; }
+        apply(d); b.innerHTML = '<i data-lucide="check"></i>Aplicado'; icons(); toast('Ajuste aplicado', 'ok');
+      }).catch(function () { toast('Sin conexión', 'err'); b.disabled = false; });
+    });
+  }
+  function ajusteBtns(aj) {
+    var out = [];
+    if (aj && aj.dias_riego) out.push('<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-aplicar="dias_riego" data-valor="' + aj.dias_riego + '"><i data-lucide="droplet"></i>Aplicar: regar cada ' + aj.dias_riego + ' d</button>');
+    if (aj && aj.luz) out.push('<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-aplicar="luz" data-valor="' + aj.luz + '"><i data-lucide="sun"></i>Aplicar: luz ' + esc(LUZ_TXT[aj.luz] || aj.luz) + '</button>');
+    return out.length ? '<div class="pl-dx-aj">' + out.join('') + '</div>' : '';
+  }
+  function dxHTML(d) {
+    var u = URG[d.urgencia] || URG.media;
+    var grupos = ['hoy', 'esta semana', 'este mes'].map(function (k) {
+      var acc = d.acciones.filter(function (a) { return a.cuando === k; });
+      return acc.length ? '<div><div class="t-eyebrow">' + k.charAt(0).toUpperCase() + k.slice(1) + '</div><ol>' + acc.map(function (a) { return '<li>' + esc(a.paso) + '</li>'; }).join('') + '</ol></div>' : '';
+    }).join('');
+    return '<div class="pl-dx"><h4>' + esc(d.resumen) + '</h4>' +
+      '<div class="pl-dx-badges"><span class="eu-badge ' + u[1] + '">' + u[0] + '</span><span class="eu-badge">Confianza ' + esc(d.confianza) + '</span></div>' +
+      (d.pedir_mejor_foto ? '<p class="pl-dx-warn"><i data-lucide="triangle-alert"></i>La foto no deja ver bien la planta: toma otra con luz de día, de cerca a las hojas afectadas.</p>' : '') +
+      (d.en_la_foto ? '<p class="pl-dx-eye"><i data-lucide="scan-eye"></i><span>' + esc(d.en_la_foto) + '</span></p>' : '') +
+      (d.causas.length ? '<div><div class="t-eyebrow">Causas probables</div><ul class="pl-causes">' + d.causas.map(function (c) {
+        return '<li class="pl-cause"><span class="eu-between"><span>' + esc(c.causa) + '</span><span class="num">' + c.probabilidad + '%</span></span>' +
+          '<span class="eu-progress eu-progress--thin" aria-hidden="true"><i style="width:' + c.probabilidad + '%"></i></span>' +
+          (c.evidencia ? '<span class="t-meta">' + esc(c.evidencia) + '</span>' : '') + '</li>';
+      }).join('') + '</ul></div>' : '') +
+      grupos +
+      (d.vigilar.length ? '<div><div class="t-eyebrow">Vigila</div><ul>' + d.vigilar.map(function (v) { return '<li>' + esc(v) + '</li>'; }).join('') + '</ul></div>' : '') +
+      ajusteBtns(d.ajustes_sugeridos) +
+      '<p class="t-meta">Guardado en su historial.</p></div>';
+  }
+  function cxHTML(c, h) {
+    var datos = 'Riegos en 120 días: ' + h.n_riegos + (h.intervalo_real ? ' · cada ' + h.intervalo_real + ' d en promedio (configurado: ' + h.intervalo_configurado + ' d)' : '') +
+      (h.revisiones_humeda ? ' · seguía húmeda ' + h.revisiones_humeda + ' vez/veces' : '');
+    return '<div class="pl-dx"><p class="t-meta">' + esc(datos) + '</p>' +
+      (c.observacion ? '<div><div class="t-eyebrow">Lo que muestran tus datos</div><p class="t-body">' + esc(c.observacion) + '</p></div>' : '') +
+      (c.recomendacion ? '<div><div class="t-eyebrow">Qué hacer</div><p class="t-body">' + esc(c.recomendacion) + '</p></div>' : '') +
+      (c.ajuste ? '<p class="t-meta">' + esc(c.ajuste.razon) + '</p>' + ajusteBtns({ dias_riego: c.ajuste.valor }) : '') + '</div>';
+  }
+
+  /* ── Ficha de cuidados con IA (formulario) ──────────────────────────── */
+  var fichaBtn = document.querySelector('#m-planta .js-ficha'), fichaData = null;
+  if (fichaBtn) fichaBtn.addEventListener('click', function () {
+    var id = $('pl-id').value, especie = $('pl-especie').value.trim(), p = id ? planta(+id) : null;
+    var fd = new FormData();
+    fd.append('especie', especie || $('pl-nombre').value.trim());
+    fd.append('entorno', $('pl-entorno').value); fd.append('luz', $('pl-luz').value);
+    // Sin especie escrita, se identifica por la foto (la recién elegida o la portada).
+    if (!especie && fotoFile) fd.append('foto', fotoFile);
+    else if (!especie && p && p.foto) { fd.append('planta_id', id); fd.append('usar_foto', '1'); }
+    var box = $('pl-ficha'); box.hidden = false; box.innerHTML = '<span class="t-meta">Consultando…</span>';
+    fichaBtn.disabled = true;
+    fetch(BASE + '/api/ficha', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { box.hidden = true; toast(d.error || 'No se pudo generar la ficha', 'err'); return; }
+      var f = fichaData = d.ficha;
+      box.innerHTML = '<div class="eu-between"><span class="t-ui">' + esc(f.nombre_comun || f.especie || 'Ficha') + (f.especie && f.nombre_comun ? ' <span class="t-meta">(' + esc(f.especie) + ')</span>' : '') + '</span>' +
+        '<span class="eu-badge">Confianza ' + esc(f.confianza) + '</span></div>' +
+        '<dl><dt>Riego</dt><dd>cada ' + f.dias_riego + ' d</dd><dt>Trasplante</dt><dd>cada ' + f.meses_trasplante + ' meses</dd>' +
+        '<dt>Fertilizar</dt><dd>' + (f.fertilizar_cada_dias ? 'cada ' + f.fertilizar_cada_dias + ' d (pausa nov-feb)' : 'no hace falta') + '</dd>' +
+        (f.luz_ideal ? '<dt>Luz ideal</dt><dd>' + esc(LUZ_TXT[f.luz_ideal] || f.luz_ideal) + '</dd>' : '') +
+        (f.humedad ? '<dt>Humedad</dt><dd>' + esc(f.humedad) + '</dd>' : '') +
+        (f.toxica_mascotas !== null ? '<dt>Mascotas</dt><dd>' + (f.toxica_mascotas ? 'tóxica' : 'no tóxica') + '</dd>' : '') + '</dl>' +
+        (f.nota_entorno ? '<p class="t-meta">' + esc(f.nota_entorno) + '</p>' : '') +
+        '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-ficha-usar"><i data-lucide="check"></i>Usar estos valores</button>';
+      icons();
+    }).catch(function () { box.hidden = true; toast('Sin conexión', 'err'); }).finally(function () { fichaBtn.disabled = false; });
+  });
+  if ($('pl-ficha')) $('pl-ficha').addEventListener('click', function (e) {
+    if (!e.target.closest('.js-ficha-usar') || !fichaData) return;
+    var f = fichaData;
+    $('pl-dias-riego').value = f.dias_riego; $('pl-meses-trasplante').value = f.meses_trasplante;
+    if (!$('pl-especie').value.trim()) $('pl-especie').value = f.nombre_comun || f.especie || '';
+    if (f.luz_ideal && !$('pl-luz').value) $('pl-luz').value = f.luz_ideal;
+    var fert = $('pl-exon-fertilizar');
+    if (fert) {
+      fert.checked = !!f.fertilizar_cada_dias; if (f.fertilizar_cada_dias) $('pl-ex-fertilizar').value = f.fertilizar_cada_dias;
+      fert.closest('.pl-extra-row').classList.toggle('is-off', !fert.checked);
+    }
+    $('pl-ficha').hidden = true; toast('Valores aplicados: revisa y guarda', 'ok');
   });
 
   render(); groupBar();
