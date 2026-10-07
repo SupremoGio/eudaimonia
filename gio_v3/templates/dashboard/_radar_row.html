@@ -19,8 +19,7 @@
   {% endif %}
   <button type="button" class="eu-iconbtn js-dl-done" aria-label="Marcar «{{ dl.label }}» como cumplido" title="Marcar como cumplido"
     data-url="{{ '/gtd/api/task/' ~ dl.id ~ '/complete' if dl.type == 'task'
-      else '/plantas/api/plantas/' ~ dl.id ~ '/riego' if dl.type == 'planta_riego'
-      else '/plantas/api/plantas/' ~ dl.id ~ '/trasplante' if dl.type == 'planta_trasplante'
+      else '/plantas/api/plantas/' ~ dl.id ~ '/cuidado/' ~ dl.type[7:] if dl.type.startswith('planta_')
       else '/perfil/api/reminder/' ~ dl.id ~ '/done' }}"><i data-lucide="check"></i></button>
   {% endif %}
 </div>

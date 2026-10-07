@@ -18,6 +18,9 @@
   function $$(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function icons() { if (window.lucide) lucide.createIcons(); }
+  function jpost(url, body) {
+    return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }).then(function (r) { return r.json(); });
+  }
 
   function items() {
     if (filter === 'pendientes') return PLANTAS.filter(function (p) { return p.status !== 'nominal'; });
@@ -33,25 +36,54 @@
     if (tipo === 'trasplante' && dias > 45) return 'en ' + Math.round(dias / 30) + ' meses';
     return 'en ' + dias + ' d';
   }
-  function badge(p, tipo) {
-    var st = p[tipo + '_status'], s = ST[st], lbl = s[0];
-    if (st === 'urgente') lbl = tipo === 'riego' ? 'Hoy' : 'Esta semana';
+  var EXTRA_IC = { fertilizar: 'flask-conical', rotar: 'rotate-cw', limpiar: 'sparkles', plagas: 'bug' };
+  var EXTRA_BTN = { fertilizar: 'Fertilicé', rotar: 'Roté', limpiar: 'Limpié', plagas: 'Revisé' };
+  /* Normaliza riego / trasplante / cuidados extra a una misma forma. */
+  function careItems(p) {
+    var r = {
+      tipo: 'riego', label: 'Riego', icon: 'droplet', btn: 'Regué', status: p.riego_status, pct: p.riego_pct, dias: p.riego_dias,
+      regla: (p.riego_interval_efectivo !== p.dias_riego ? 'cada ' + p.riego_interval_efectivo + ' d (ajustado; base ' + p.dias_riego + ' d)' : 'cada ' + p.dias_riego + ' d') +
+        (p.riego_pospuesta ? ' · pospuesto (aún húmeda)' : '')
+    };
+    var t = { tipo: 'trasplante', label: 'Trasplante', icon: 'sprout', btn: 'Trasplanté', status: p.trasplante_status, pct: p.trasplante_pct,
+      dias: p.trasplante_dias, regla: 'cada ' + p.meses_trasplante + ' meses' };
+    return [r, t].concat((p.cuidados || []).map(function (c) {
+      return { tipo: c.tipo, label: c.label, icon: EXTRA_IC[c.tipo] || 'leaf', btn: EXTRA_BTN[c.tipo] || 'Hecho', status: c.status,
+        pct: c.pct, dias: c.dias, regla: 'cada ' + c.cada_dias + ' d', pausado: c.pausado, extra: true };
+    }));
+  }
+  function badge(it) {
+    var s = ST[it.status], lbl = s[0];
+    if (it.status === 'urgente') lbl = it.tipo === 'trasplante' ? 'Esta semana' : 'Hoy';
     return '<span class="eu-badge eu-badge--status ' + s[1] + '">' + lbl + '</span>';
   }
-  function care(p, tipo) {
-    var riego = tipo === 'riego', st = p[tipo + '_status'], pct = Math.min(1, p[tipo + '_pct'] || 0) * 100;
-    var regla = riego
-      ? (p.riego_interval_efectivo !== p.dias_riego ? 'cada ' + p.riego_interval_efectivo + ' d (ajustado; base ' + p.dias_riego + ' d)' : 'cada ' + p.dias_riego + ' d')
-      : 'cada ' + p.meses_trasplante + ' meses';
-    var extra = (p[tipo + '_dias'] < 0 ? 'Tocaba ' : 'Toca ') + cuando(p[tipo + '_dias'], tipo) + ' · ' + regla + (riego && p.riego_pospuesta ? ' · pospuesto (aún húmeda)' : '');
-    var acts = (riego && st !== 'nominal'
+  function care(p, it) {
+    var pct = Math.min(1, it.pct || 0) * 100;
+    var extra = (it.dias < 0 ? 'Tocaba ' : 'Toca ') + cuando(it.dias, it.tipo) + ' · ' + it.regla;
+    var acts = (it.tipo === 'riego' && it.status !== 'nominal'
         ? '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-posponer="' + p.id + '" aria-label="' + esc(p.nombre) + ': aún está húmeda, posponer 2 días" title="Revisé la tierra y aún está húmeda: posponer 2 días"><i data-lucide="clock"></i>Aún húmeda</button>' : '') +
-      '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-care="' + tipo + '" data-id="' + p.id + '" aria-label="' + (riego ? 'Regué' : 'Trasplanté') + ' ' + esc(p.nombre) + '">' +
-      '<i data-lucide="check"></i>' + (riego ? 'Regué' : 'Trasplanté') + '</button>';
-    return '<div class="pl-care" data-tone="' + ST[st][2] + '"><span class="pl-care-ic"><i data-lucide="' + (riego ? 'droplet' : 'sprout') + '"></i></span>' +
-      '<div class="pl-care-bd"><div class="eu-between"><span class="t-ui">' + (riego ? 'Riego' : 'Trasplante') + '</span>' + badge(p, tipo) + '</div>' +
+      '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-care="' + it.tipo + '" data-id="' + p.id + '" aria-label="' + it.btn + ' ' + esc(p.nombre) + '">' +
+      '<i data-lucide="check"></i>' + it.btn + '</button>';
+    return '<div class="pl-care" data-tone="' + ST[it.status][2] + '"><span class="pl-care-ic"><i data-lucide="' + it.icon + '"></i></span>' +
+      '<div class="pl-care-bd"><div class="eu-between"><span class="t-ui">' + it.label + '</span>' + badge(it) + '</div>' +
       '<div class="eu-progress eu-progress--thin pl-prog" aria-hidden="true"><i style="width:' + pct.toFixed(1) + '%"></i></div><span class="t-meta">' + extra + '</span></div>' +
       '<div class="pl-care-act">' + acts + '</div></div>';
+  }
+  /* Cuidados extra al día: una sola línea en lugar de una fila cada uno. */
+  function moreLine(rest) {
+    if (!rest.length) return '';
+    return '<p class="t-meta pl-more">' + rest.map(function (it) {
+      return '<span><i data-lucide="' + it.icon + '"></i>' + esc(it.label) + ' · ' + (it.pausado ? 'en pausa (invierno)' : cuando(it.dias, it.tipo)) + '</span>';
+    }).join('') + '</p>';
+  }
+  /* «Regar las N pendientes del balcón / de interior» cuando hay 2 o más. */
+  function groupBar() {
+    var box = $('pl-group'); if (!box) return;
+    var html = ['balcon', 'interior'].map(function (env) {
+      var n = PLANTAS.filter(function (p) { return p.entorno === env && p.riego_status !== 'nominal'; }).length;
+      return n >= 2 ? '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-grupo="' + env + '"><i data-lucide="droplets"></i>Regar las ' + n + ' pendientes ' + (env === 'balcon' ? 'del balcón' : 'de interior') + '</button>' : '';
+    }).join('');
+    box.innerHTML = html; box.hidden = !html;
   }
   function render() {
     var list = items(), box = $('pl-grid');
@@ -68,7 +100,10 @@
         (p.foto ? '<img class="pl-cover" src="' + BASE + '/foto/' + encodeURIComponent(p.foto) + '" alt="" loading="lazy">' : '<span class="pl-cover pl-cover--empty" aria-hidden="true"><i data-lucide="flower-2"></i></span>') +
         '<div class="pl-card-bd"><div class="eu-between pl-card-hd"><div class="eu-grow"><h2 class="t-card pl-card-t">' + esc(p.nombre) + '</h2><p class="t-meta">' + sub + '</p></div>' +
         '<button type="button" class="eu-iconbtn" data-edit="' + p.id + '" aria-label="Editar ' + esc(p.nombre) + '"><i data-lucide="pencil"></i></button></div>' +
-        care(p, 'riego') + care(p, 'trasplante') +
+        (function () {
+          var its = careItems(p), main = its.filter(function (it) { return !it.extra || it.status !== 'nominal'; });
+          return main.map(function (it) { return care(p, it); }).join('') + moreLine(its.filter(function (it) { return it.extra && it.status === 'nominal'; }));
+        })() +
         (p.notas ? '<p class="t-meta pl-notes">' + esc(p.notas) + '</p>' : '') + '</div></article>';
     }).join('');
     icons();
@@ -83,7 +118,7 @@
     $('pl-f-pendientes').querySelector('.ct').textContent = c.vencido + c.urgente + c.proximo;
     $('pl-f-al_dia').querySelector('.ct').textContent = c.nominal;
   }
-  function apply(d) { PLANTAS = d.state.plantas; sync(); render(); }
+  function apply(d) { PLANTAS = d.state.plantas; sync(); render(); groupBar(); }
 
   $$('[data-f]').forEach(function (b) {
     b.addEventListener('click', function () {
@@ -104,13 +139,23 @@
       }).catch(function () { toast('Sin conexión', 'err'); pp.disabled = false; });
       return;
     }
+    var g = e.target.closest('[data-grupo]');
+    if (g) {
+      g.disabled = true;
+      jpost(BASE + '/api/riego-grupo', { entorno: g.dataset.grupo }).then(function (d) {
+        if (!d.ok) { toast(d.error || 'Error al guardar', 'err'); g.disabled = false; return; }
+        apply(d); toast(d.msg + (d.gam && d.gam.xp ? ' · +' + d.gam.xp + ' XP' : ''), d.gam ? 'win' : 'ok');
+        if (d.gam && window.euGam) euGam(d.gam);
+      }).catch(function () { toast('Sin conexión', 'err'); g.disabled = false; });
+      return;
+    }
     var c = e.target.closest('[data-care]'); if (!c) return;
     var tipo = c.dataset.care, id = c.dataset.id; c.disabled = true;
-    fetch(BASE + '/api/plantas/' + id + '/' + tipo, { method: 'POST' }).then(function (r) { return r.json(); }).then(function (d) {
+    fetch(BASE + '/api/plantas/' + id + '/cuidado/' + tipo, { method: 'POST' }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d.ok) { toast('Error al guardar', 'err'); c.disabled = false; return; }
       apply(d);
       if (d.ya_registrado) { toast(d.msg || 'Ya estaba registrado hoy', 'ok'); return; }
-      toast(d.gam && d.gam.xp ? '+' + d.gam.xp + ' XP · +' + d.gam.ec + ' EC' : (tipo === 'riego' ? 'Riego registrado' : 'Trasplante registrado'), d.gam && d.gam.xp ? 'win' : 'ok');
+      toast(d.gam && d.gam.xp ? '+' + d.gam.xp + ' XP · +' + d.gam.ec + ' EC' : 'Registrado', d.gam && d.gam.xp ? 'win' : 'ok');
       var nb = document.querySelector('[data-care="' + tipo + '"][data-id="' + id + '"]'); if (nb) nb.focus();
       if (d.gam && window.euGam) euGam(d.gam, { el: nb });
     }).catch(function () { toast('Sin conexión', 'err'); c.disabled = false; });
@@ -139,7 +184,7 @@
     $('pl-notas').value = p.notas || ''; $('pl-photo-input').value = '';
     $('pl-entorno').value = p.entorno || 'interior'; $('pl-luz').value = p.luz || '';
     $('pl-last-wrap').hidden = !!p.id; $('pl-last-riego').value = TODAY || ''; if (TODAY) $('pl-last-riego').max = TODAY;
-    loadHist(p.id);
+    loadHist(p.id); loadFotos(p.id); fillExtras(p); fillOtra(p);
     $('pl-delete-btn').hidden = !p.id;
     $('m-planta-t').textContent = p.id ? 'Editar planta' : 'Nueva planta';
     fotoFile = null; setFoto(p.foto ? BASE + '/foto/' + encodeURIComponent(p.foto) : null); hideSug();
@@ -147,8 +192,88 @@
   }
   function openNew() { fill(null); }
 
+  /* ── Otros cuidados (fertilizar, rotar, limpiar, plagas) ─────────────── */
+  function fillExtras(p) {
+    var activos = {};
+    ((p && p.cuidados) || []).forEach(function (c) { activos[c.tipo] = c.cada_dias; });
+    $$('[data-ex]').forEach(function (chk) {
+      var k = chk.dataset.ex, inp = $('pl-ex-' + k);
+      chk.checked = k in activos;
+      inp.value = activos[k] || inp.defaultValue;
+      chk.closest('.pl-extra-row').classList.toggle('is-off', !chk.checked);
+    });
+  }
+  $$('[data-ex]').forEach(function (chk) {
+    chk.addEventListener('change', function () { chk.closest('.pl-extra-row').classList.toggle('is-off', !chk.checked); });
+  });
+
+  /* ── Registrar en otra fecha («la regué ayer») ──────────────────────── */
+  function fillOtra(p) {
+    var box = $('pl-otra'); box.hidden = !(p && p.id); if (box.hidden) return;
+    var opts = [['riego', 'Riego'], ['trasplante', 'Trasplante']].concat((p.cuidados || []).map(function (c) { return [c.tipo, c.label]; }));
+    $('pl-otra-tipo').innerHTML = opts.map(function (o) { return '<option value="' + o[0] + '">' + esc(o[1]) + '</option>'; }).join('');
+    var f = $('pl-otra-fecha');
+    if (TODAY) {
+      var d = new Date(TODAY + 'T12:00:00'); d.setDate(d.getDate() - 1);
+      var min = new Date(TODAY + 'T12:00:00'); min.setDate(min.getDate() - 60);
+      f.value = d.toISOString().slice(0, 10); f.max = TODAY; f.min = min.toISOString().slice(0, 10);
+    }
+  }
+  document.querySelector('#m-planta .js-otra').addEventListener('click', function () {
+    var id = $('pl-id').value, tipo = $('pl-otra-tipo').value, fecha = $('pl-otra-fecha').value, b = this;
+    if (!id || !fecha) return;
+    b.disabled = true;
+    jpost(BASE + '/api/plantas/' + id + '/cuidado/' + tipo, { fecha: fecha }).then(function (d) {
+      if (!d.ok) { toast(d.error || 'No se pudo registrar', 'err'); return; }
+      apply(d); loadHist(id);
+      toast(d.ya_registrado ? d.msg : 'Registrado el ' + fmtFecha(fecha) + (d.gam && d.gam.xp ? ' · +' + d.gam.xp + ' XP' : ''), d.gam ? 'win' : 'ok');
+    }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { b.disabled = false; });
+  });
+
+  /* ── Fotos de evolución ─────────────────────────────────────────────── */
+  function loadFotos(id) {
+    var box = $('pl-fotos'), ul = $('pl-fotos-strip');
+    box.hidden = !id; ul.innerHTML = ''; if (!id) return;
+    fetch(BASE + '/api/plantas/' + id + '/fotos').then(function (r) { return r.json(); }).then(function (d) {
+      var fotos = d.fotos || [];
+      ul.innerHTML = fotos.length ? fotos.map(function (f) {
+        var src = BASE + '/foto/' + encodeURIComponent(f.foto);
+        return '<li class="' + (f.portada ? 'is-cover' : '') + '"><a href="' + src + '" target="_blank" rel="noopener" aria-label="Ver foto del ' + fmtFecha(f.fecha) + '"><img src="' + src + '" alt="" loading="lazy"></a>' +
+          '<span class="t-meta num">' + fmtFecha(f.fecha) + (f.portada ? ' · portada' : '') + '</span>' +
+          '<button type="button" class="eu-iconbtn" data-foto-del="' + f.id + '" aria-label="Borrar foto del ' + fmtFecha(f.fecha) + '"><i data-lucide="x"></i></button></li>';
+      }).join('') : '<li class="t-meta">Aún sin fotos. Una al mes basta para ver cómo cambia.</li>';
+      icons();
+    }).catch(function () { ul.innerHTML = '<li class="t-meta">No se pudieron cargar las fotos.</li>'; });
+  }
+  document.querySelector('#m-planta .js-foto-add').addEventListener('click', function () { $('pl-foto-add').click(); });
+  $('pl-foto-add').addEventListener('change', function () {
+    var f = this.files && this.files[0], id = $('pl-id').value; if (!f || !id) return;
+    var fd = new FormData(); fd.append('foto', f); this.value = '';
+    toast('Subiendo foto…', 'ok');
+    fetch(BASE + '/api/plantas/' + id + '/fotos', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
+      if (!d.ok) { toast(d.error || 'No se pudo subir', 'err'); return; }
+      apply(d); loadFotos(id);
+      var p = PLANTAS.filter(function (x) { return String(x.id) === id; })[0];
+      setFoto(p && p.foto ? BASE + '/foto/' + encodeURIComponent(p.foto) : null);
+      toast('Foto agregada', 'ok');
+    }).catch(function () { toast('Sin conexión', 'err'); });
+  });
+  $('pl-fotos-strip').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-foto-del]'); if (!b) return;
+    euConfirm('¿Borrar esta foto?', { confirmLabel: 'Borrar' }).then(function (ok) {
+      if (!ok) return;
+      fetch(BASE + '/api/fotos/' + b.dataset.fotoDel, { method: 'DELETE' }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.ok) { toast('No se pudo borrar', 'err'); return; }
+        var id = $('pl-id').value; apply(d); loadFotos(id);
+        var p = PLANTAS.filter(function (x) { return String(x.id) === id; })[0];
+        setFoto(p && p.foto ? BASE + '/foto/' + encodeURIComponent(p.foto) : null);
+      }).catch(function () { toast('Sin conexión', 'err'); });
+    });
+  });
+
   /* ── Historial (bitácora) con deshacer del último registro ──────────── */
-  var HIST = { riego: ['droplet', 'Regada'], trasplante: ['sprout', 'Trasplantada'], revision: ['clock', 'Revisada'] };
+  var HIST = { riego: ['droplet', 'Regada'], trasplante: ['sprout', 'Trasplantada'], revision: ['clock', 'Revisada'],
+    fertilizar: ['flask-conical', 'Fertilizada'], rotar: ['rotate-cw', 'Rotada'], limpiar: ['sparkles', 'Hojas limpias'], plagas: ['bug', 'Plagas revisadas'] };
   function fmtFecha(f) { var d = f.split('-'); return d[2] + '/' + d[1] + '/' + d[0]; }
   function loadHist(id) {
     var box = $('pl-hist'), ul = $('pl-hist-list');
@@ -207,6 +332,9 @@
     fd.append('dias_riego', $('pl-dias-riego').value || 7); fd.append('meses_trasplante', $('pl-meses-trasplante').value || 12);
     fd.append('notas', $('pl-notas').value.trim());
     fd.append('entorno', $('pl-entorno').value); fd.append('luz', $('pl-luz').value);
+    $$('[data-ex]').forEach(function (chk) {
+      fd.append('cuidado_' + chk.dataset.ex, chk.checked ? ($('pl-ex-' + chk.dataset.ex).value || '') : '');
+    });
     if (!id && $('pl-last-riego').value) fd.append('last_riego', $('pl-last-riego').value);
     if (fotoFile) fd.append('foto', fotoFile);
     var btn = document.querySelector('[form="f-planta"]'); btn.disabled = true;
@@ -227,5 +355,5 @@
     });
   });
 
-  render();
+  render(); groupBar();
 })();

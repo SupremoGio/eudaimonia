@@ -62,3 +62,27 @@
 .pl-hist-list li{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-13);color:var(--fg-2);padding:var(--sp-1) 0}
 .pl-hist-list li svg{width:14px;height:14px;flex-shrink:0;color:var(--fg-3)}
 .pl-hist-list .num{color:var(--fg-3);min-width:76px}
+
+.pl-group{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+.pl-more{display:flex;flex-wrap:wrap;gap:var(--sp-1) var(--sp-3)}
+.pl-more span{display:inline-flex;align-items:center;gap:4px}
+.pl-more svg{width:12px;height:12px}
+.pl-extra{border:0;border-top:1px solid var(--border-subtle);margin:0;padding:var(--sp-3) 0 0;display:flex;flex-direction:column;gap:var(--sp-2)}
+.pl-extra legend{padding:0;margin-bottom:var(--sp-2)}
+.pl-extra-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
+.pl-extra-chk{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-14);color:var(--fg-1);cursor:pointer}
+.pl-extra-chk input{width:18px;height:18px;accent-color:var(--cat-fg)}
+.pl-extra-dias{display:flex;align-items:center;gap:var(--sp-1)}
+.pl-extra-dias .eu-input{width:72px;text-align:right}
+.pl-extra-row.is-off .pl-extra-dias{opacity:.45}
+.pl-fotos,.pl-otra{display:flex;flex-direction:column;gap:var(--sp-2);border-top:1px solid var(--border-subtle);padding-top:var(--sp-3)}
+.pl-fotos h3,.pl-otra h3{margin:0}
+.pl-fotos-strip{list-style:none;margin:0;padding:0 0 var(--sp-1);display:flex;gap:var(--sp-2);overflow-x:auto}
+.pl-fotos-strip li{position:relative;flex:0 0 auto;display:flex;flex-direction:column;gap:2px;width:96px}
+.pl-fotos-strip a{display:block;width:96px;height:96px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border-subtle)}
+.pl-fotos-strip li.is-cover a{border:2px solid var(--cat-fg)}
+.pl-fotos-strip img{width:100%;height:100%;object-fit:cover}
+.pl-fotos-strip .eu-iconbtn{position:absolute;top:4px;right:4px;width:26px;height:26px;background:var(--bg-overlay,rgba(0,0,0,.55))}
+.pl-fotos-strip .eu-iconbtn svg{width:14px;height:14px}
+.pl-otra-row{display:flex;flex-wrap:wrap;gap:var(--sp-2);align-items:center}
+.pl-otra-row .eu-select,.pl-otra-row .eu-input{flex:1 1 140px;min-width:0}

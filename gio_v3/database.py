@@ -4292,6 +4292,36 @@ def init_db():
             except Exception:
                 pass  # ya existe
 
+        # Plantas, Entrega 2: otros cuidados con calendario propio y línea de
+        # tiempo de fotos. Las portadas que ya existían entran a la línea de
+        # tiempo con la fecha de alta de la planta (una sola vez: NOT EXISTS).
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS plantas_cuidados (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            planta_id   INTEGER NOT NULL,
+            tipo        TEXT    NOT NULL,
+            cada_dias   INTEGER NOT NULL,
+            last_fecha  TEXT    DEFAULT NULL,
+            created_at  TEXT    NOT NULL,
+            UNIQUE (planta_id, tipo),
+            FOREIGN KEY (planta_id) REFERENCES plantas(id) ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS plantas_fotos (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            planta_id   INTEGER NOT NULL,
+            foto        TEXT    NOT NULL,
+            fecha       TEXT    NOT NULL,
+            nota        TEXT    DEFAULT '',
+            created_at  TEXT    NOT NULL,
+            FOREIGN KEY (planta_id) REFERENCES plantas(id) ON DELETE CASCADE
+        );
+        INSERT INTO plantas_fotos (planta_id, foto, fecha, nota, created_at)
+            SELECT p.id, p.foto, substr(p.created_at, 1, 10), '', datetime('now')
+            FROM plantas p
+            WHERE p.foto IS NOT NULL AND p.foto != ''
+              AND NOT EXISTS (SELECT 1 FROM plantas_fotos f WHERE f.planta_id = p.id AND f.foto = p.foto);
+        """)
+
         # ── FÚTBOL — Historial de partidos (submódulo de Hegemonikon) ──────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS futbol_partidos (

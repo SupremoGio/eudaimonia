@@ -46,8 +46,8 @@
   </aside>
 </div>
 
-{% set dl_icons = {'reminder': 'bell', 'task': 'square-check-big', 'wishlist': 'shopping-bag', 'partido': 'trophy', 'planta_riego': 'droplets', 'planta_trasplante': 'sprout'} %}
-{% set dl_labels = {'reminder': 'Recordatorio', 'task': 'Tarea · Praxis', 'wishlist': 'Wishlist', 'partido': 'Partido · Fútbol', 'planta_riego': 'Riego · Plantas', 'planta_trasplante': 'Trasplante · Plantas'} %}
+{% set dl_icons = {'reminder': 'bell', 'task': 'square-check-big', 'wishlist': 'shopping-bag', 'partido': 'trophy', 'planta_riego': 'droplets', 'planta_trasplante': 'sprout', 'planta_fertilizar': 'flask-conical', 'planta_rotar': 'rotate-cw', 'planta_limpiar': 'sparkles', 'planta_plagas': 'bug'} %}
+{% set dl_labels = {'reminder': 'Recordatorio', 'task': 'Tarea · Praxis', 'wishlist': 'Wishlist', 'partido': 'Partido · Fútbol', 'planta_riego': 'Riego · Plantas', 'planta_trasplante': 'Trasplante · Plantas', 'planta_fertilizar': 'Fertilizar · Plantas', 'planta_rotar': 'Rotar · Plantas', 'planta_limpiar': 'Limpiar hojas · Plantas', 'planta_plagas': 'Revisar plagas · Plantas'} %}
 {% call ui.modal('m-notif', 'Recordatorios', eyebrow='Pendiente', cls='eu-scrim--pop') %}
 <div class="eu-modal-bd dash-notif js-radar-box">
   {# Vencidos y de hoy primero, en su propia sección; luego lo próximo. #}

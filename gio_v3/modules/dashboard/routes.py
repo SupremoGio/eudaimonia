@@ -415,6 +415,12 @@ def index():
     )
 
 
+_PLANTA_VERBO = {
+    'riego': 'Regar {}', 'trasplante': 'Trasplantar {}', 'fertilizar': 'Fertilizar {}',
+    'rotar': 'Rotar {}', 'limpiar': 'Limpiar hojas de {}', 'plagas': 'Revisar plagas de {}',
+}
+
+
 def _build_deadlines(today_dt: date) -> list:
     """Recordatorios y tareas GTD con fecha en los próximos 6 días (o vencidos).
     Plantas usa un horizonte más corto (3 días) a propósito — el usuario lo
@@ -470,7 +476,7 @@ def _build_deadlines(today_dt: date) -> list:
         from modules.plantas.routes import agenda as _plantas_agenda
         for a in _plantas_agenda(today_dt, 3):
             raw.append({'id': a['planta_id'],
-                        'label': ('Regar ' if a['tipo'] == 'riego' else 'Trasplantar ') + a['nombre'],
+                        'label': _PLANTA_VERBO.get(a['tipo'], '{}').format(a['nombre']),
                         'rem_type': None, 'fecha': a['fecha'], 'kind': f"planta_{a['tipo']}"})
     except Exception:
         pass

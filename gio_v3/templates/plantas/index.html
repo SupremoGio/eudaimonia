@@ -31,6 +31,8 @@
     {% endfor %}
   </div>
 
+  <div class="pl-group" id="pl-group" hidden></div>
+
   <div class="eu-chips" role="group" aria-label="Filtrar plantas">
     {{ ui.chip('Todas', pressed=True, count=total, **{'data-f': 'todas', 'id': 'pl-f-todas'}) }}
     {{ ui.chip('Pendientes', count=counts.vencido + counts.urgente + counts.proximo, **{'data-f': 'pendientes', 'id': 'pl-f-pendientes'}) }}
@@ -72,6 +74,33 @@
   <div class="eu-field" id="pl-last-wrap"><label class="eu-label" for="pl-last-riego">¿Cuándo la regaste por última vez?</label>
     <input class="eu-input" id="pl-last-riego" type="date"></div>
   <div class="eu-field"><label class="eu-label" for="pl-notas">Notas (opcional)</label><textarea class="eu-textarea" id="pl-notas" rows="2" placeholder="Luz, tipo de tierra, cuidados especiales…"></textarea></div>
+  <fieldset class="pl-extra">
+    <legend class="t-eyebrow">Otros cuidados</legend>
+    {% for k, c in cuidados_extra.items() %}
+    <div class="pl-extra-row">
+      <label class="pl-extra-chk"><input type="checkbox" data-ex="{{ k }}" id="pl-exon-{{ k }}">{{ c.label }}</label>
+      <span class="pl-extra-dias"><span class="t-meta">cada</span><input class="eu-input" type="number" min="1" max="365" inputmode="numeric" id="pl-ex-{{ k }}" value="{{ c.dias }}" aria-label="{{ c.label }}: cada cuántos días"><span class="t-meta">d</span></span>
+    </div>
+    {% endfor %}
+    <p class="t-meta">Fertilizar se pausa solo de noviembre a febrero (seco y fresco: la planta casi no crece).</p>
+  </fieldset>
+
+  <section class="pl-fotos" id="pl-fotos" aria-label="Fotos de evolución" hidden>
+    <div class="eu-between"><h3 class="t-eyebrow">Fotos de evolución</h3>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-foto-add"><i data-lucide="camera"></i>Agregar foto de hoy</button></div>
+    <input type="file" id="pl-foto-add" accept="image/*" class="pl-file" aria-label="Agregar foto de evolución">
+    <ul class="pl-fotos-strip" id="pl-fotos-strip"></ul>
+  </section>
+
+  <section class="pl-otra" id="pl-otra" aria-label="Registrar en otra fecha" hidden>
+    <h3 class="t-eyebrow">Registrar en otra fecha</h3>
+    <div class="pl-otra-row">
+      <select class="eu-select" id="pl-otra-tipo" aria-label="Cuidado"></select>
+      <input class="eu-input" type="date" id="pl-otra-fecha" aria-label="Fecha">
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-otra"><i data-lucide="calendar-check"></i>Registrar</button>
+    </div>
+  </section>
+
   <section class="pl-hist" id="pl-hist" aria-label="Historial" hidden>
     <h3 class="t-eyebrow">Historial</h3>
     <ul class="pl-hist-list" id="pl-hist-list"></ul>
