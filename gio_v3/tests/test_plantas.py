@@ -472,7 +472,6 @@ def test_alta_de_plantas_del_usuario_una_vez_y_sin_duplicar(test_db, tmp_path, m
         n_fotos = db.execute("SELECT COUNT(*) FROM plantas_fotos").fetchone()[0]
     assert len(plantas) == len(alta.PLANTAS)                       # 9 nuevas + la monstera que ya estaba
     assert plantas['monstera']['especie_cientifica'] == 'Monstera deliciosa'
-    assert plantas['monstera']['especie'] == 'mi monstera'          # no se pisa lo del usuario
     assert plantas['Pata de elefante']['entorno'] == 'balcon' and plantas['Palma areca']['entorno'] == 'interior'
     assert n_fotos == len(alta.PLANTAS)
     assert all((tmp_path / 'plantas' / p['foto']).exists() for p in plantas.values())
@@ -482,3 +481,17 @@ def test_alta_de_plantas_del_usuario_una_vez_y_sin_duplicar(test_db, tmp_path, m
     assert plantas['Pata de oso']['last_riego'] is None and plantas['monstera']['last_riego'] is None
     with database.get_db() as db:
         assert db.execute("SELECT COUNT(*) FROM plantas_bitacora WHERE tipo='riego'").fetchone()[0] == 7
+
+
+def test_corregir_monstera_existente(test_db):
+    from modules.plantas import alta_2026_10_06 as alta
+    with database.get_db() as db:
+        db.execute("INSERT INTO plantas (nombre, especie, ubicacion, dias_riego, meses_trasplante, last_riego, notas, created_at) "
+                   "VALUES ('Monstera', 'monstera', 'Sala', 8, 18, '2026-09-30', 'Mía', '2026-01-01')")
+        assert alta.corregir_monstera(db) == 1
+        alta.corregir_monstera(db)   # la nota no se repite
+        r = dict(db.execute("SELECT * FROM plantas WHERE nombre='Monstera'").fetchone())
+    assert (r['especie'], r['especie_cientifica'], r['dias_riego'], r['meses_trasplante'], r['entorno']) == \
+        ('Monstera (esqueje)', 'Monstera deliciosa', 6, 12, 'interior')
+    assert (r['ubicacion'], r['last_riego']) == ('Sala', '2026-09-30')        # se conserva lo suyo
+    assert r['notas'].startswith('Mía\n') and r['notas'].count('Esqueje') == 1

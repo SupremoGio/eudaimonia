@@ -81,3 +81,24 @@ def aplicar(db, upload_dir):
                        (pid, filename, FECHA, 'Foto del alta', ahora))
             db.execute("UPDATE plantas SET foto=? WHERE id=?", (filename, pid))
     return creadas, ya
+
+
+def corregir_monstera(db):
+    """La «Monstera» ya existía en producción con sus datos viejos (riego cada
+    8 d) y el alta no la pisó. El usuario (2026-10-07): «cambia los datos que
+    tú me dijiste de la monstera». Se le ponen los del alta; se conservan su
+    ubicación, foto, historial y último riego. La nota se agrega sin borrar
+    la suya. Devuelve cuántas filas cambió."""
+    nombre, especie, cient, entorno, dias, meses, _foto, nota = PLANTAS[0]
+    n = 0
+    for r in db.execute("SELECT id, nombre, notas FROM plantas").fetchall():
+        if _norm(r['nombre']) != _norm(nombre):
+            continue
+        notas = r['notas'] or ''
+        if nota not in notas:
+            notas = f"{notas}\n{nota}".strip() if notas else nota
+        db.execute("UPDATE plantas SET especie=?, especie_cientifica=?, entorno=?, dias_riego=?, "
+                   "meses_trasplante=?, notas=? WHERE id=?",
+                   (especie, cient, entorno, dias, meses, notas[:300], r['id']))
+        n += 1
+    return n

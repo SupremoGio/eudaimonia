@@ -4353,6 +4353,17 @@ def init_db():
                 print(f"[DB] plantas_alta_2026_10_06: {_c} creadas, {_y} ya existían")
             except Exception as e:
                 print(f"[DB] plantas_alta_2026_10_06 migration warning: {e}")
+        if SEMBRAR_DATOS_USUARIO and not db.execute(
+                "SELECT 1 FROM migration_log WHERE version='plantas_monstera_datos_2026_10_07'").fetchone():
+            try:
+                from modules.plantas import alta_2026_10_06 as _alta
+                _n = _alta.corregir_monstera(db)
+                db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                           ('plantas_monstera_datos_2026_10_07', f'{_n} actualizada(s)'))
+                db.commit()
+                print(f"[DB] plantas_monstera_datos_2026_10_07: {_n} actualizada(s)")
+            except Exception as e:
+                print(f"[DB] plantas_monstera_datos_2026_10_07 migration warning: {e}")
 
         # ── FÚTBOL — Historial de partidos (submódulo de Hegemonikon) ──────────
         db.executescript("""
