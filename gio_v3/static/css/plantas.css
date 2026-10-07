@@ -128,3 +128,5 @@
 .pl-taxa-sel i.sci{font-size:var(--fs-12);color:var(--fg-2)}
 .pl-cover-ref{position:relative}
 .pl-cover-tag{position:absolute;left:8px;bottom:8px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:var(--fs-12)}
+.pl-extra-nota{margin:-4px 0 var(--sp-1) 26px;width:calc(100% - 26px)}
+.pl-extra-row.is-off+.pl-extra-nota{display:none}

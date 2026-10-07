@@ -4337,6 +4337,11 @@ def init_db():
               AND NOT EXISTS (SELECT 1 FROM plantas_fotos f WHERE f.planta_id = p.id AND f.foto = p.foto);
         """)
 
+        try:   # qué se aplica en un tratamiento (2026-10-07)
+            db.execute("ALTER TABLE plantas_cuidados ADD COLUMN nota TEXT DEFAULT ''")
+        except Exception:
+            pass
+
         # Plantas del usuario (fotos de WhatsApp, 2026-10-06): alta única.
         # Los tests la apagan (conftest: SEMBRAR_DATOS_USUARIO=False) para
         # arrancar con el módulo vacío.
@@ -4364,6 +4369,17 @@ def init_db():
                 print(f"[DB] plantas_monstera_datos_2026_10_07: {_n} actualizada(s)")
             except Exception as e:
                 print(f"[DB] plantas_monstera_datos_2026_10_07 migration warning: {e}")
+        if SEMBRAR_DATOS_USUARIO and not db.execute(
+                "SELECT 1 FROM migration_log WHERE version='plantas_tratamiento_cochinilla_2026_10_07'").fetchone():
+            try:
+                from modules.plantas import alta_2026_10_06 as _alta
+                _n, _r = _alta.tratamiento_cochinilla(db)
+                db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                           ('plantas_tratamiento_cochinilla_2026_10_07', f'{_n} plantas en tratamiento, {_r} recordatorio(s) desactivado(s)'))
+                db.commit()
+                print(f"[DB] plantas_tratamiento_cochinilla_2026_10_07: {_n} plantas, {_r} recordatorios desactivados")
+            except Exception as e:
+                print(f"[DB] plantas_tratamiento_cochinilla_2026_10_07 migration warning: {e}")
 
         # ── FÚTBOL — Historial de partidos (submódulo de Hegemonikon) ──────────
         db.executescript("""

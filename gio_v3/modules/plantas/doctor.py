@@ -84,7 +84,8 @@ def contexto_planta(p, temporada, hist):
     if hist['revisiones_humeda']:
         lineas.append(f"Veces que la tierra seguía húmeda al revisar (90 días): {hist['revisiones_humeda']}")
     for c in p.get('cuidados') or []:
-        lineas.append(f"{c['label']}: cada {c['cada_dias']} d, último {c.get('last_fecha') or 'sin registro'}")
+        lineas.append(f"{c['label']}: cada {c['cada_dias']} d, último {c.get('last_fecha') or 'sin registro'}"
+                      + (f" ({c['nota']})" if c.get('nota') else ''))
     if hist['diagnosticos']:
         lineas.append('Diagnósticos anteriores: ' + ' | '.join(hist['diagnosticos']))
     if p.get('notas'):

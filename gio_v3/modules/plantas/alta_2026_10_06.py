@@ -102,3 +102,36 @@ def corregir_monstera(db):
                    (especie, cient, entorno, dias, meses, notas[:300], r['id']))
         n += 1
     return n
+
+
+# El usuario (2026-10-07): «oreja de elefante, palma areca y monstera están
+# bajo tratamiento por cochinilla… cada 4 días con neem y jabón potásico»,
+# última aplicación hace dos días. Ya lo llevaba como recordatorio
+# («JABON POTASICO Y NEEM», cada 4 días): se pasa a Plantas y el recordatorio
+# se desactiva para no duplicarlo en el Dashboard.
+TRATAMIENTO = (('Oreja de elefante', 'Palma areca', 'Monstera'), 4, '2026-10-04',
+               'Cochinilla · neem + jabón potásico')
+
+
+def tratamiento_cochinilla(db):
+    """Devuelve (plantas en tratamiento, recordatorios desactivados)."""
+    nombres, cada, ultima, nota = TRATAMIENTO
+    objetivo = {_norm(n) for n in nombres}
+    ahora = datetime.now().isoformat()
+    n = 0
+    for r in db.execute("SELECT id, nombre FROM plantas").fetchall():
+        if _norm(r['nombre']) not in objetivo:
+            continue
+        if db.execute("SELECT 1 FROM plantas_cuidados WHERE planta_id=? AND tipo='tratamiento'", (r['id'],)).fetchone():
+            db.execute("UPDATE plantas_cuidados SET cada_dias=?, last_fecha=?, nota=? WHERE planta_id=? AND tipo='tratamiento'",
+                       (cada, ultima, nota, r['id']))
+        else:
+            db.execute("INSERT INTO plantas_cuidados (planta_id, tipo, cada_dias, last_fecha, nota, created_at) VALUES (?,?,?,?,?,?)",
+                       (r['id'], 'tratamiento', cada, ultima, nota, ahora))
+        if not db.execute("SELECT 1 FROM plantas_bitacora WHERE planta_id=? AND tipo='tratamiento' AND fecha=?",
+                          (r['id'], ultima)).fetchone():
+            db.execute("INSERT INTO plantas_bitacora (planta_id, tipo, fecha, notas, created_at) VALUES (?,?,?,?,?)",
+                       (r['id'], 'tratamiento', ultima, nota, ahora))
+        n += 1
+    rec = db.execute("UPDATE reminders SET is_active=0 WHERE is_active=1 AND UPPER(description) LIKE '%NEEM%'").rowcount
+    return n, rec

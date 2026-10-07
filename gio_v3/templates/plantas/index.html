@@ -91,6 +91,7 @@
       <label class="pl-extra-chk"><input type="checkbox" data-ex="{{ k }}" id="pl-exon-{{ k }}">{{ c.label }}</label>
       <span class="pl-extra-dias"><span class="t-meta">cada</span><input class="eu-input" type="number" min="1" max="365" inputmode="numeric" id="pl-ex-{{ k }}" value="{{ c.dias }}" aria-label="{{ c.label }}: cada cuántos días"><span class="t-meta">d</span></span>
     </div>
+    {% if k == 'tratamiento' %}<input class="eu-input pl-extra-nota" id="pl-exnota-tratamiento" maxlength="120" placeholder="¿Contra qué y con qué? Ej. cochinilla · neem + jabón potásico" aria-label="Tratamiento: contra qué y con qué">{% endif %}
     {% endfor %}
     <p class="t-meta">Fertilizar se pausa solo de noviembre a febrero (seco y fresco: la planta casi no crece).</p>
   </fieldset>

@@ -495,3 +495,28 @@ def test_corregir_monstera_existente(test_db):
         ('Monstera (esqueje)', 'Monstera deliciosa', 6, 12, 'interior')
     assert (r['ubicacion'], r['last_riego']) == ('Sala', '2026-09-30')        # se conserva lo suyo
     assert r['notas'].startswith('Mía\n') and r['notas'].count('Esqueje') == 1
+
+
+def test_tratamiento_cochinilla_pasa_el_recordatorio_a_plantas(test_db):
+    from modules.plantas import alta_2026_10_06 as alta
+    with database.get_db() as db:
+        for n in ('Monstera', 'Palma areca', 'Oreja de elefante', 'Pothos'):
+            db.execute("INSERT INTO plantas (nombre, created_at) VALUES (?, '2026-10-06')", (n,))
+        db.execute("INSERT INTO reminders (description, type, freq_unit, freq_value, next_date, is_active, created_at) "
+                   "VALUES ('JABON POTASICO Y NEEM', 'periodico', 'dias', 4, '2026-10-08', 1, '2026-09-01')")
+        assert alta.tratamiento_cochinilla(db) == (3, 1)
+        assert alta.tratamiento_cochinilla(db) == (3, 0)        # idempotente
+        db.commit()
+        assert db.execute("SELECT is_active FROM reminders").fetchone()[0] == 0
+        assert db.execute("SELECT COUNT(*) FROM plantas_bitacora WHERE tipo='tratamiento'").fetchone()[0] == 3
+        p = next(x for x in pr._serialize_plantas(db, date(2026, 10, 7)) if x['nombre'] == 'Monstera')
+    t = next(c for c in p['cuidados'] if c['tipo'] == 'tratamiento')
+    assert (t['proxima'], t['dias'], t['nota']) == ('2026-10-08', 1, 'Cochinilla · neem + jabón potásico')
+
+
+def test_nota_del_tratamiento_desde_el_formulario(client):
+    pid = _crear(client, cuidado_tratamiento='4', cuidado_tratamiento_nota='trips · jabón')
+    st = client.get('/plantas/api/state').get_json()
+    t = next(x for x in st['plantas'] if x['id'] == pid)['cuidados'][0]
+    assert (t['tipo'], t['cada_dias'], t['nota']) == ('tratamiento', 4, 'trips · jabón')
+    assert client.post(f'/plantas/api/plantas/{pid}/cuidado/tratamiento').get_json()['gam']['xp'] > 0

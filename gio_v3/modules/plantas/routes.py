@@ -34,6 +34,9 @@ CUIDADOS_EXTRA = {
     'rotar':      ('Rotar hacia la luz', 14),
     'limpiar':    ('Limpiar hojas', 30),
     'plagas':     ('Revisar plagas', 14),
+    # Tratamiento activo (p. ej. neem + jabón potásico contra cochinilla): su
+    # nota dice qué se aplica; se desactiva al terminar el tratamiento.
+    'tratamiento': ('Tratamiento de plagas', 4),
 }
 _EXTRA_XP, _EXTRA_EC = 2, 1
 # Noviembre-febrero: seco y fresco en Guadalajara, las plantas casi no crecen
@@ -77,7 +80,7 @@ def _pct(base, proxima, today):
 
 
 def _compute_extra(c, created, today):
-    """Estado de un cuidado extra (fertilizar, rotar, limpiar, plagas)."""
+    """Estado de un cuidado extra (fertilizar, rotar, limpiar, plagas, tratamiento)."""
     label, _ = CUIDADOS_EXTRA[c['tipo']]
     cada = max(1, int(c['cada_dias'] or 1))
     base = _parse_date(c.get('last_fecha')) or created
@@ -85,6 +88,7 @@ def _compute_extra(c, created, today):
     dias = (prox - today).days
     pausado = c['tipo'] == 'fertilizar' and today.month in FERTILIZAR_PAUSA
     return {'tipo': c['tipo'], 'label': label, 'cada_dias': cada, 'last_fecha': c.get('last_fecha'),
+            'nota': c.get('nota') or '',
             'proxima': prox.isoformat(), 'dias': dias, 'pct': _pct(base, prox, today),
             'pausado': pausado,
             'status': 'nominal' if pausado else _estado(dias, 0, max(1, min(2, cada // 4)))}
@@ -145,7 +149,7 @@ def _serialize_plantas(db, today=None):
     f = _factores(today)
     rows = [dict(r) for r in db.execute("SELECT * FROM plantas ORDER BY id").fetchall()]
     cuidados = {}
-    for c in db.execute("SELECT planta_id, tipo, cada_dias, last_fecha FROM plantas_cuidados").fetchall():
+    for c in db.execute("SELECT planta_id, tipo, cada_dias, last_fecha, nota FROM plantas_cuidados").fetchall():
         cuidados.setdefault(c['planta_id'], []).append(dict(c))
     plantas = [_compute_planta(r, today, f, cuidados.get(r['id'], ())) for r in rows]
     plantas.sort(key=lambda p: (_STATUS_ORDER[p['status']], p['riego_dias']))
@@ -260,11 +264,15 @@ def _guardar_cuidados_extra(db, planta_id):
             db.execute("DELETE FROM plantas_cuidados WHERE planta_id=? AND tipo=?", (planta_id, tipo))
             continue
         dias = min(dias, 365)
+        nota = request.form.get(f'{campo}_nota')
         if db.execute("SELECT 1 FROM plantas_cuidados WHERE planta_id=? AND tipo=?", (planta_id, tipo)).fetchone():
             db.execute("UPDATE plantas_cuidados SET cada_dias=? WHERE planta_id=? AND tipo=?", (dias, planta_id, tipo))
         else:
             db.execute("INSERT INTO plantas_cuidados (planta_id, tipo, cada_dias, last_fecha, created_at) VALUES (?,?,?,?,?)",
                        (planta_id, tipo, dias, today_str(), _now()))
+        if nota is not None:
+            db.execute("UPDATE plantas_cuidados SET nota=? WHERE planta_id=? AND tipo=?",
+                       (nota.strip()[:120], planta_id, tipo))
 
 
 def _registrar_foto(db, planta_id, filename, nota='', portada=True):

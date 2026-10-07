@@ -418,6 +418,7 @@ def index():
 _PLANTA_VERBO = {
     'riego': 'Regar {}', 'trasplante': 'Trasplantar {}', 'fertilizar': 'Fertilizar {}',
     'rotar': 'Rotar {}', 'limpiar': 'Limpiar hojas de {}', 'plagas': 'Revisar plagas de {}',
+    'tratamiento': 'Tratamiento a {}',
 }
 
 

@@ -37,8 +37,8 @@
     if (tipo === 'trasplante' && dias > 45) return 'en ' + Math.round(dias / 30) + ' meses';
     return 'en ' + dias + ' d';
   }
-  var EXTRA_IC = { fertilizar: 'flask-conical', rotar: 'rotate-cw', limpiar: 'sparkles', plagas: 'bug' };
-  var EXTRA_BTN = { fertilizar: 'Fertilicé', rotar: 'Roté', limpiar: 'Limpié', plagas: 'Revisé' };
+  var EXTRA_IC = { fertilizar: 'flask-conical', rotar: 'rotate-cw', limpiar: 'sparkles', plagas: 'bug', tratamiento: 'spray-can' };
+  var EXTRA_BTN = { fertilizar: 'Fertilicé', rotar: 'Roté', limpiar: 'Limpié', plagas: 'Revisé', tratamiento: 'Apliqué' };
   /* Normaliza riego / trasplante / cuidados extra a una misma forma. */
   function careItems(p) {
     var r = {
@@ -50,7 +50,7 @@
       dias: p.trasplante_dias, regla: 'cada ' + p.meses_trasplante + ' meses' };
     return [r, t].concat((p.cuidados || []).map(function (c) {
       return { tipo: c.tipo, label: c.label, icon: EXTRA_IC[c.tipo] || 'leaf', btn: EXTRA_BTN[c.tipo] || 'Hecho', status: c.status,
-        pct: c.pct, dias: c.dias, regla: 'cada ' + c.cada_dias + ' d', pausado: c.pausado, extra: true };
+        pct: c.pct, dias: c.dias, regla: 'cada ' + c.cada_dias + ' d' + (c.nota ? ' · ' + esc(c.nota) : ''), pausado: c.pausado, extra: true };
     }));
   }
   function badge(it) {
@@ -262,8 +262,9 @@
 
   /* ── Otros cuidados (fertilizar, rotar, limpiar, plagas) ─────────────── */
   function fillExtras(p) {
-    var activos = {};
-    ((p && p.cuidados) || []).forEach(function (c) { activos[c.tipo] = c.cada_dias; });
+    var activos = {}, notas = {};
+    ((p && p.cuidados) || []).forEach(function (c) { activos[c.tipo] = c.cada_dias; notas[c.tipo] = c.nota || ''; });
+    if ($('pl-exnota-tratamiento')) $('pl-exnota-tratamiento').value = notas.tratamiento || '';
     $$('[data-ex]').forEach(function (chk) {
       var k = chk.dataset.ex, inp = $('pl-ex-' + k);
       chk.checked = k in activos;
@@ -408,6 +409,7 @@
     fd.append('especie_cientifica', $('pl-cient').value); fd.append('ref_foto', $('pl-ref-foto').value); fd.append('ref_foto_credito', $('pl-ref-cred').value);
     $$('[data-ex]').forEach(function (chk) {
       fd.append('cuidado_' + chk.dataset.ex, chk.checked ? ($('pl-ex-' + chk.dataset.ex).value || '') : '');
+      if ($('pl-exnota-' + chk.dataset.ex)) fd.append('cuidado_' + chk.dataset.ex + '_nota', $('pl-exnota-' + chk.dataset.ex).value);
     });
     if (!id && $('pl-last-riego').value) fd.append('last_riego', $('pl-last-riego').value);
     if (fotoFile) fd.append('foto', fotoFile);
