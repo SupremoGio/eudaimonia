@@ -12,6 +12,11 @@
   {% if dl.type == 'partido' %}
   <a class="eu-iconbtn" href="/bienestar/futbol?resultado={{ dl.id }}" aria-label="Registrar resultado del partido" title="Registrar resultado"><i data-lucide="arrow-right"></i></a>
   {% else %}
+  {% if dl.type == 'planta_riego' %}
+  {#- Revisar la tierra antes de regar: si sigue húmeda, se pospone 2 días (sin XP). -#}
+  <button type="button" class="eu-iconbtn js-dl-done" data-url="/plantas/api/plantas/{{ dl.id }}/posponer"
+    aria-label="«{{ dl.label }}»: aún está húmeda, posponer 2 días" title="Aún húmeda · posponer 2 días"><i data-lucide="clock"></i></button>
+  {% endif %}
   <button type="button" class="eu-iconbtn js-dl-done" aria-label="Marcar «{{ dl.label }}» como cumplido" title="Marcar como cumplido"
     data-url="{{ '/gtd/api/task/' ~ dl.id ~ '/complete' if dl.type == 'task'
       else '/plantas/api/plantas/' ~ dl.id ~ '/riego' if dl.type == 'planta_riego'

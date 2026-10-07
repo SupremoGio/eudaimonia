@@ -91,3 +91,30 @@ def csv_response(header, rows, filename):
             'Content-Disposition': f'attachment; filename="{filename}"',
         },
     )
+
+
+# Fotos subidas desde el celular (Guardarropa, Plantas): se muestran como
+# miniaturas, así que guardarlas tal cual salen de la cámara (varios MB) hace
+# que tarden segundos en cargar. Se re-comprimen a JPEG con lado máximo 1600px.
+_MAX_PHOTO_DIM = 1600
+_PHOTO_QUALITY = 85
+
+
+def optimize_photo(data: bytes, dest_path: str, max_dim: int = _MAX_PHOTO_DIM) -> bool:
+    """Redimensiona/comprime `data` como JPEG en `dest_path`. True si tuvo éxito.
+    Falla en formatos que Pillow no puede decodificar de raíz (p.ej. HEIC sin
+    plugin) — el llamador debe guardar los bytes originales en ese caso."""
+    import io
+    import logging
+    from PIL import Image, ImageOps
+    try:
+        img = Image.open(io.BytesIO(data))
+        img = ImageOps.exif_transpose(img)  # corrige la orientación de fotos de celular
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+        img.save(dest_path, 'JPEG', quality=_PHOTO_QUALITY, optimize=True)
+        return True
+    except Exception as e:
+        logging.getLogger(__name__).warning('No se pudo optimizar la foto, se guarda el original: %s', e)
+        return False

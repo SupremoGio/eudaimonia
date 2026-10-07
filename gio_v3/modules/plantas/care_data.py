@@ -11,7 +11,10 @@ editable, no una receta exacta (la luz, la humedad y la maceta de cada
 quien varían). El usuario siempre puede sobreescribirlos a mano.
 """
 
-# keyword (minúsculas) -> (dias_riego, meses_trasplante)
+import re
+import unicodedata
+
+# keyword (minúsculas, sin acentos) -> (dias_riego, meses_trasplante)
 PLANT_CARE: dict[str, tuple[int, int]] = {
     # Aráceas de interior muy comunes
     "pothos":       (9, 18),
@@ -101,6 +104,7 @@ PLANT_CARE: dict[str, tuple[int, int]] = {
     "rosal":        (4, 12),
     "rose":         (4, 12),
     "romero":       (10, 15),
+    "rosemary":     (10, 15),
     "albahaca":     (3, 6),
     "basil":        (3, 6),
     "menta":        (4, 6),
@@ -108,16 +112,25 @@ PLANT_CARE: dict[str, tuple[int, int]] = {
 }
 
 
+def _norm(s: str) -> str:
+    s = unicodedata.normalize('NFKD', (s or '').lower())
+    return ' '.join(''.join(c for c in s if not unicodedata.combining(c)).split())
+
+
+# Más larga primero: «ficus lyrata» gana a «ficus», «costilla de adan» a «adan».
+_KEYWORDS = sorted(PLANT_CARE, key=len, reverse=True)
+
+
 def suggest_care(query: str):
-    """Primer match por substring — case-insensitive, sin acentos exactos
-    requeridos por parte del usuario (las claves ya están sin acento)."""
-    if not query:
-        return None
-    q = query.strip().lower()
+    """Coincidencia por palabra completa, sin acentos ni mayúsculas: «Orquídea»
+    encuentra «orquidea» y «Rosemary» ya no cae en «rose» ni «pizza» en «zz».
+    Gana la clave más larga que aparezca (la más específica)."""
+    q = _norm(query)
     if not q:
         return None
-    for keyword, (dias_riego, meses_trasplante) in PLANT_CARE.items():
-        if keyword in q:
+    for keyword in _KEYWORDS:
+        if re.search(r'(?<![a-z])' + re.escape(keyword) + r'(?![a-z])', q):
+            dias_riego, meses_trasplante = PLANT_CARE[keyword]
             return {
                 'match': keyword,
                 'dias_riego': dias_riego,
@@ -154,6 +167,16 @@ SEASONAL_FACTOR_GDL: dict[int, tuple[float, str]] = {
 }
 
 
-def seasonal_factor(month: int):
+ENTORNOS = ('interior', 'balcon')
+
+# Una planta de interior no recibe la lluvia ni el sol directo: la temporada
+# solo le llega por la humedad y la temperatura del aire. Su ajuste es una
+# fracción del de balcón (en julio: ×1.10 en vez de ×1.30).
+_PESO_INTERIOR = 0.35
+
+
+def seasonal_factor(month: int, entorno: str = 'balcon'):
     factor, label = SEASONAL_FACTOR_GDL.get(month, (1.0, ""))
+    if entorno != 'balcon':
+        factor = round(1 + (factor - 1) * _PESO_INTERIOR, 3)
     return {'factor': factor, 'label': label}

@@ -4277,6 +4277,20 @@ def init_db():
             FOREIGN KEY (planta_id) REFERENCES plantas(id) ON DELETE CASCADE
         );
         """)
+        # Plantas, Entrega 1 (2026-10-06): entorno interior/balcón y luz, riego
+        # pospuesto («aún húmeda») y la fecha previa de cada registro de la
+        # bitácora para poder deshacerlo.
+        for _tbl, _col, _def in [
+            ('plantas', 'entorno', "TEXT DEFAULT 'interior'"),
+            ('plantas', 'luz', "TEXT DEFAULT ''"),
+            ('plantas', 'riego_pospuesto_hasta', 'TEXT DEFAULT NULL'),
+            ('plantas_bitacora', 'prev_fecha', 'TEXT DEFAULT NULL'),
+            ('plantas_bitacora', 'prev_pospuesto', 'TEXT DEFAULT NULL'),
+        ]:
+            try:
+                db.execute(f"ALTER TABLE {_tbl} ADD COLUMN {_col} {_def}")
+            except Exception:
+                pass  # ya existe
 
         # ── FÚTBOL — Historial de partidos (submódulo de Hegemonikon) ──────────
         db.executescript("""

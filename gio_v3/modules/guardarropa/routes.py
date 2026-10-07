@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, request, jsonify, send_from_direct
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
 from database import get_db
-from utils import clean_str, safe_float, uploads_base_dir, today_str
+from utils import clean_str, safe_float, uploads_base_dir, today_str, optimize_photo
 from ec_constants import EC_RATE
 from modules.guardarropa import stylist
 
@@ -25,29 +25,9 @@ UPLOAD_DIR  = os.path.join(uploads_base_dir(), 'wardrobe')
 ALLOWED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.heic'}
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Fotos de prendas se muestran siempre como miniaturas (grid, mosaico de
-# outfits) — guardar el archivo tal cual sale de la cámara del celular
-# (varios MB a resolución completa) es lo que hace que tarden segundos en
-# cargar. Se re-comprime a JPEG con un lado máximo de 1600px antes de guardar.
-_MAX_PHOTO_DIM = 1600
-_PHOTO_QUALITY = 85
-
-
-def _optimize_photo(data: bytes, dest_path: str) -> bool:
-    """Redimensiona/comprime `data` como JPEG en `dest_path`. True si tuvo éxito.
-    Falla en formatos que Pillow no puede decodificar de raíz (p.ej. HEIC sin
-    plugin) — el llamador debe guardar los bytes originales en ese caso."""
-    try:
-        img = Image.open(io.BytesIO(data))
-        img = ImageOps.exif_transpose(img)  # corrige la orientación de fotos de celular
-        if img.mode != 'RGB':
-            img = img.convert('RGB')
-        img.thumbnail((_MAX_PHOTO_DIM, _MAX_PHOTO_DIM), Image.LANCZOS)
-        img.save(dest_path, 'JPEG', quality=_PHOTO_QUALITY, optimize=True)
-        return True
-    except Exception as e:
-        _log.warning('No se pudo optimizar la foto, se guarda el original: %s', e)
-        return False
+# Fotos de prendas: se re-comprimen a JPEG ≤1600px antes de guardar (ver
+# utils.optimize_photo, compartida con Plantas).
+_optimize_photo = optimize_photo
 
 CATEGORIAS = [
     'Camisa', 'Camiseta', 'Polo', 'Sudadera', 'Suéter',

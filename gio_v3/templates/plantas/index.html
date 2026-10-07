@@ -11,17 +11,17 @@
 <div class="pl" id="pl" data-cat="ataraxia">
   <header class="pl-hd">
     <div><div class="t-eyebrow">Vida · Plantas</div><h1 class="t-page">Mis plantas</h1>
-      <p class="t-meta pl-lead">Riego y trasplante — sin identificación de especies, solo recordatorios.</p></div>
+      <p class="t-meta pl-lead">Riego y trasplante con fechas reales, ajustadas por temporada según esté en interior o en balcón.</p></div>
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva planta</button>
   </header>
 
   {% if temporada.label %}
+  {%- macro pct_txt(f) -%}
+    {%- if f > 1.005 %}~{{ ((f - 1) * 100)|round|int }}% menos seguido{% elif f < 0.995 %}~{{ ((1 - f) * 100)|round|int }}% más seguido{% else %}sin cambio{% endif -%}
+  {%- endmacro %}
   <aside class="eu-card eu-card--inset pl-season" aria-label="Temporada">
     <span class="pl-season-ic"><i data-lucide="{{ 'cloud-rain' if temporada.factor > 1.05 else ('sun' if temporada.factor < 0.95 else 'leaf') }}"></i></span>
-    <p class="t-body">{{ temporada.label }} en Guadalajara — riego ajustado automáticamente
-      {%- if temporada.factor > 1 %} (~{{ ((temporada.factor - 1) * 100)|round|int }}% menos seguido)
-      {%- elif temporada.factor < 1 %} (~{{ ((1 - temporada.factor) * 100)|round|int }}% más seguido)
-      {%- endif %}.</p>
+    <p class="t-body">{{ temporada.label }} en Guadalajara — riego ajustado automáticamente: balcón {{ pct_txt(temporada.factor) }}, interior {{ pct_txt(temporada.factor_interior) }}.</p>
   </aside>
   {% endif %}
 
@@ -58,12 +58,24 @@
     <div class="eu-field"><label class="eu-label" for="pl-especie">Especie</label><input class="eu-input" id="pl-especie" placeholder="Opcional"></div>
     <div class="eu-field"><label class="eu-label" for="pl-ubicacion">Ubicación</label><input class="eu-input" id="pl-ubicacion" placeholder="Ej. Sala"></div>
   </div>
+  <div class="eu-grid-2 pl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pl-entorno">Dónde vive</label>
+      <select class="eu-select" id="pl-entorno"><option value="interior">Interior</option><option value="balcon">Balcón</option></select></div>
+    <div class="eu-field"><label class="eu-label" for="pl-luz">Luz</label>
+      <select class="eu-select" id="pl-luz"><option value="">Sin especificar</option><option value="baja">Baja (lejos de ventanas)</option><option value="media">Media</option><option value="brillante">Brillante indirecta</option><option value="sol_directo">Sol directo</option></select></div>
+  </div>
   <div class="pl-sug" id="pl-sugerencia" role="status" hidden></div>
   <div class="eu-grid-2 pl-fgrid">
     <div class="eu-field"><label class="eu-label" for="pl-dias-riego">Regar cada (días)</label><input class="eu-input eu-input--money" id="pl-dias-riego" type="number" min="1" inputmode="numeric" value="7"></div>
     <div class="eu-field"><label class="eu-label" for="pl-meses-trasplante">Trasplantar cada (meses)</label><input class="eu-input eu-input--money" id="pl-meses-trasplante" type="number" min="1" inputmode="numeric" value="12"></div>
   </div>
+  <div class="eu-field" id="pl-last-wrap"><label class="eu-label" for="pl-last-riego">¿Cuándo la regaste por última vez?</label>
+    <input class="eu-input" id="pl-last-riego" type="date"></div>
   <div class="eu-field"><label class="eu-label" for="pl-notas">Notas (opcional)</label><textarea class="eu-textarea" id="pl-notas" rows="2" placeholder="Luz, tipo de tierra, cuidados especiales…"></textarea></div>
+  <section class="pl-hist" id="pl-hist" aria-label="Historial" hidden>
+    <h3 class="t-eyebrow">Historial</h3>
+    <ul class="pl-hist-list" id="pl-hist-list"></ul>
+  </section>
 </form>
 <div class="eu-modal-ft pl-ft">
   <button type="button" class="eu-btn eu-btn--danger" id="pl-delete-btn" hidden><i data-lucide="trash-2"></i>Eliminar</button>
@@ -74,6 +86,7 @@
 {% endcall %}
 </div>
 <script type="application/json" id="pl-data">{{ plantas|tojson }}</script>
+<script type="application/json" id="pl-today">{{ today_iso|tojson }}</script>
 {% endblock %}
 
 {% block scripts %}

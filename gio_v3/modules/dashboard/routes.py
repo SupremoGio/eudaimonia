@@ -461,35 +461,19 @@ def _build_deadlines(today_dt: date) -> list:
         """, (horizon,)).fetchall():
             raw.append(dict(r))
 
-        # Plantas — próxima fecha de riego/trasplante calculada con las
-        # funciones date() de SQLite (no hay columna de "próxima fecha"
-        # guardada, se deriva de last_* + intervalo, igual que el estado
-        # que ya calcula modules/plantas/routes.py._compute_planta). El
-        # riego usa dias_riego * factor de temporada (Guadalajara) — mismo
-        # ajuste estacional que ya aplica esa función, para que el widget
-        # del dashboard no contradiga lo que muestra /plantas/.
-        from modules.plantas.care_data import seasonal_factor as _plantas_factor
-        today_iso = today_dt.isoformat()
-        _riego_factor = _plantas_factor(today_dt.month)['factor']
-        for r in db.execute("""
-            SELECT id, ('Regar ' || nombre) AS label, NULL AS rem_type,
-                   date(COALESCE(last_riego, ?), '+' || CAST(MAX(1, ROUND(dias_riego * ?)) AS INTEGER) || ' days') AS fecha,
-                   'planta_riego' AS kind
-            FROM plantas
-            WHERE date(COALESCE(last_riego, ?), '+' || CAST(MAX(1, ROUND(dias_riego * ?)) AS INTEGER) || ' days') <= ?
-            ORDER BY fecha LIMIT 8
-        """, (today_iso, _riego_factor, today_iso, _riego_factor, plant_horizon)).fetchall():
-            raw.append(dict(r))
-
-        for r in db.execute("""
-            SELECT id, ('Trasplantar ' || nombre) AS label, NULL AS rem_type,
-                   date(COALESCE(last_trasplante, ?), '+' || meses_trasplante || ' months') AS fecha,
-                   'planta_trasplante' AS kind
-            FROM plantas
-            WHERE date(COALESCE(last_trasplante, ?), '+' || meses_trasplante || ' months') <= ?
-            ORDER BY fecha LIMIT 8
-        """, (today_iso, today_iso, plant_horizon)).fetchall():
-            raw.append(dict(r))
+    # Plantas — la agenda la calcula el propio módulo (modules/plantas/
+    # routes.py:agenda): mismo estado que /plantas/ (temporada por entorno,
+    # riegos pospuestos, fechas reales de trasplante), sin SQL duplicado.
+    # Horizonte de 3 días a propósito (ver docstring). Si falla, el
+    # Dashboard sigue sin la parte de plantas.
+    try:
+        from modules.plantas.routes import agenda as _plantas_agenda
+        for a in _plantas_agenda(today_dt, 3):
+            raw.append({'id': a['planta_id'],
+                        'label': ('Regar ' if a['tipo'] == 'riego' else 'Trasplantar ') + a['nombre'],
+                        'rem_type': None, 'fecha': a['fecha'], 'kind': f"planta_{a['tipo']}"})
+    except Exception:
+        pass
 
     deadlines = []
     for d in raw:

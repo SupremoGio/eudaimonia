@@ -83,7 +83,7 @@
         syncRadar();
       }, 220);
       if (j.gam && j.gam.xp) toast('+' + j.gam.xp + ' XP' + (j.gam.ec ? ' · +' + j.gam.ec + ' EC' : ''), 'win');
-      else toast('Hecho', 'ok');
+      else toast(j.msg || 'Hecho', 'ok');
       if (j.gam && window.euGam) euGam(j.gam);
     }).catch(function () { copies.forEach(function (b) { b.disabled = false; }); toast('No se pudo marcar', 'err'); });
   });
