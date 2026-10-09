@@ -665,6 +665,67 @@ def _corregir_spei_nubank_renta(db) -> int:
     """).rowcount
 
 
+# Abonos en tarjeta de crédito que SÍ son pago a la tarjeta (dinero propio
+# entrando a la TDC). Cualquier otro abono es una devolución del comercio.
+_ABONO_TDC_ES_PAGO = ('PAGO', 'BMOVIL', 'SPEI', 'TRASPASO', 'DEPOSITO', 'TRANSFER', 'BNET',
+                      'ABONO RECIBIDO')
+_ABONO_TDC_RUIDO = {'ABONO', 'BBVA', 'DEVOLUCION', 'DEVOL', 'REEMBOLSO', 'ACLARACION', 'BONIFICACION',
+                    'CARGO', 'COMPRA', 'POR', 'DE', 'DEL', 'LA', 'EL', 'MX', 'MEXICO', 'FELICIDADES'}
+_ABONO_TDC_VENTANA_DIAS = 120
+
+
+def _corregir_abonos_tdc(db) -> int:
+    """En tarjeta de crédito un monto negativo es algo que te regresaron
+    (devolución o aclaración: «ABONO BBVA AMAZON» -209/-379/-356.99 del
+    9-oct-2026), no un pago a la tarjeta. Los parsers mandaban toda la
+    columna de abonos a PAGO: salía del gasto pero no le restaba nada a lo
+    que se compró, así que Amazon seguía contando completo.
+
+    Aquí un abono de BBVA_TDC/INVEX que no es pago (_ABONO_TDC_ES_PAGO) pasa
+    a GASTO con monto negativo -- el mismo modelo que «REEMBOLSO TEMU»: resta
+    del gasto de su categoría. La categoría es la del cargo original (mismo
+    comercio y monto, hasta 120 días antes); si no hay cargo exacto, la del
+    último cargo del mismo comercio; si tampoco, la del keyword. Solo toca
+    abonos todavía en el cajón genérico PAGO, así que no pisa lo que el
+    usuario o los DEVUELTOS de Amazon ya clasificaron."""
+    from .config import get_categoria_subcategoria
+    rows = db.execute("""
+        SELECT id, substr(fecha,1,10) f, descripcion, ABS(monto) m, banco FROM est_movimientos
+        WHERE banco IN ('BBVA_TDC', 'INVEX') AND tipo IN ('PAGO', 'INGRESO')
+          AND categoria IN ('PAGO', '') AND monto != 0
+          -- Gemela en débito (mismo día y monto): es una línea de débito
+          -- importada como crédito, la borra _descartar_ingresos_en_credito.
+          AND NOT EXISTS (SELECT 1 FROM est_movimientos d WHERE d.banco='BBVA_DEB' AND d.tipo='INGRESO'
+                          AND substr(d.fecha,1,10)=substr(est_movimientos.fecha,1,10)
+                          AND ABS(ABS(d.monto) - ABS(est_movimientos.monto)) < 0.005)
+    """).fetchall()
+    n = 0
+    for r in rows:
+        desc = (r['descripcion'] or '').upper()
+        if any(k in desc for k in _ABONO_TDC_ES_PAGO):
+            continue
+        tokens = sorted({t for t in re.findall(r'[A-Z]{3,}', desc) if t not in _ABONO_TDC_RUIDO})
+        cat = sub = None
+        if tokens:
+            like = ' OR '.join('UPPER(descripcion) LIKE ?' for _ in tokens)
+            cargo = db.execute(f"""
+                SELECT categoria, subcategoria, ABS(ABS(monto) - ?) < 0.01 exacto FROM est_movimientos
+                WHERE tipo='GASTO' AND monto > 0 AND id != ? AND ({like})
+                  AND substr(fecha,1,10) BETWEEN date(?, '-{_ABONO_TDC_VENTANA_DIAS} days') AND ?
+                  AND parcialidad_num IS NULL AND COALESCE(subcategoria,'') != 'Compra a meses'
+                  AND categoria NOT IN ('PAGO', 'PAGO_TDC', 'FINANZAS', '')
+                ORDER BY exacto DESC, banco = ? DESC, substr(fecha,1,10) DESC, id DESC LIMIT 1
+            """, [r['m'], r['id'], *[f'%{t}%' for t in tokens], r['f'], r['f'], r['banco']]).fetchone()
+            if cargo:
+                cat, sub = cargo['categoria'], cargo['subcategoria'] or ''
+        if cat is None:
+            cat, sub = get_categoria_subcategoria(desc)
+        db.execute("UPDATE est_movimientos SET tipo='GASTO', monto=?, categoria=?, subcategoria=? WHERE id=?",
+                   (-r['m'], cat, sub, r['id']))
+        n += 1
+    return n
+
+
 def _corregir_zaira_restaurante(db) -> int:
     """ZTL ZAIRAAXZAYMENDOZAM va a COMIDA_FUERA/Restaurante (pedido del
     usuario). Antes 2 filas se habían mandado por id a ALIMENTACION/Súper;
@@ -2036,6 +2097,7 @@ def _reaplicar_reglas(db) -> int:
     _corregir_spei_invex(db)
     _corregir_spei_nafin(db)
     _corregir_spei_nubank_renta(db)
+    _corregir_abonos_tdc(db)
     _corregir_zaira_restaurante(db)
     _corregir_walmart_lavadora(db)
     _corregir_didi_delivery(db)
@@ -3131,6 +3193,7 @@ def upload_file():
             _corregir_spei_invex(db)
             _corregir_spei_nafin(db)
             _corregir_spei_nubank_renta(db)
+            _corregir_abonos_tdc(db)
             _corregir_zaira_restaurante(db)
             _corregir_walmart_lavadora(db)
             _corregir_didi_delivery(db)

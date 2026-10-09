@@ -6748,6 +6748,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_nafin_nubank_renta_2026_10 migration warning: {e}")
 
+        # ── FINANZAS — abonos en tarjeta de crédito = devoluciones (usuario,
+        # 2026-10-09: «cuando es en tarjeta de crédito número negativo quiere
+        # decir que me regresaron algo»). Los ya cargados como PAGO pasan a
+        # gasto negativo en la categoría de la compra.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_abonos_tdc_devolucion_2026_10'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_abonos_tdc
+                _n = _corregir_abonos_tdc(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_abonos_tdc_devolucion_2026_10", f"{_n} abonos de TDC -> devolución (gasto negativo)")
+                )
+                db.commit()
+                print(f"[DB] finanzas_abonos_tdc_devolucion_2026_10: {_n} abonos -> devolución")
+            except Exception as e:
+                print(f"[DB] finanzas_abonos_tdc_devolucion_2026_10 migration warning: {e}")
+
         # ── FINANZAS — respuestas a la auditoría de Expense: borrar 18 ingresos
         # duplicados en BBVA Crédito («nada que ingrese va a crédito»), mover
         # Qualitas a Débito, Plaza Panamericana y Office Depot a EXPENSE y
