@@ -1412,13 +1412,37 @@ def monthly_summary():
     return jsonify(result)
 
 
+def _shift_months(d, n: int, fin_de_mes: bool = False):
+    """`d` movida `n` meses atrás; el día se recorta al último del mes destino
+    (31-mar −1 → 28/29-feb). Con fin_de_mes, cae siempre en el último día."""
+    y, m = divmod(d.year * 12 + d.month - 1 - n, 12)
+    ultimo = calendar.monthrange(y, m + 1)[1]
+    return d.replace(year=y, month=m + 1, day=ultimo if fin_de_mes else min(d.day, ultimo))
+
+
 def _prev_period_range(date_from: str, date_to: str | None) -> tuple[str, str]:
-    """Rango [prev_from, prev_to] de igual duración, inmediatamente anterior
-    a [date_from, date_to] — usado para calcular tendencia (% de cambio) de
-    un periodo contra el que le precede. `date_to` ausente se toma como hoy,
-    igual que hace by-category para el rango en curso."""
+    """Rango [prev_from, prev_to] con el que se compara [date_from, date_to]
+    para la tendencia (% de cambio). `date_to` ausente se toma como hoy, igual
+    que hace by-category para el rango en curso.
+
+    Si el rango arranca el día 1 (todos los presets: este mes, mes pasado,
+    3/6 meses, este año) se compara contra el MISMO tramo del calendario
+    anterior: «este mes» del 1 al 9 de oct contra el 1 al 9 de sep, «mes
+    pasado» contra el mes completo previo, «este año» contra el mismo tramo
+    del año pasado. Antes se usaba «los N días inmediatamente anteriores»:
+    1-9 oct se comparaba contra 22-30 sep y Súper salía +1193 % ($375 contra
+    los $29 de esa última semana), y el mes completo de 31 días se comía el
+    31 del mes anterior al anterior. Un rango que no arranca el día 1 sigue
+    comparándose contra los N días previos."""
     d_from = datetime.strptime(date_from, "%Y-%m-%d").date()
     d_to = datetime.strptime(date_to, "%Y-%m-%d").date() if date_to else now_local().date()
+    if d_from.day == 1 and d_to >= d_from:
+        if d_from.month == 1 and d_to.year == d_from.year and d_to.month > 1:
+            n = 12                                   # este año -> mismo tramo del año pasado
+        else:
+            n = (d_to.year - d_from.year) * 12 + d_to.month - d_from.month + 1
+        fin_de_mes = (d_to + timedelta(days=1)).day == 1
+        return _shift_months(d_from, n).isoformat(), _shift_months(d_to, n, fin_de_mes).isoformat()
     span = (d_to - d_from).days + 1
     prev_to = d_from - timedelta(days=1)
     prev_from = prev_to - timedelta(days=span - 1)

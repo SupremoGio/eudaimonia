@@ -117,8 +117,8 @@ def test_tipo_ingreso_tambien_calcula_tendencia(client):
         # Periodo actual: 2026-02-01..2026-02-10 -> $20,000 NOMINA
         _insert(db, fecha='2026-02-05', descripcion='NOMINA SEP', monto=20000.0,
                 categoria='NOMINA', tipo='INGRESO')
-        # Periodo anterior de igual duración (10 días): 2026-01-22..2026-01-31 -> $18,000
-        _insert(db, fecha='2026-01-25', descripcion='NOMINA AGO', monto=18000.0,
+        # Mismo tramo del mes anterior: 2026-01-01..2026-01-10 -> $18,000
+        _insert(db, fecha='2026-01-05', descripcion='NOMINA AGO', monto=18000.0,
                 categoria='NOMINA', tipo='INGRESO')
         db.commit()
 

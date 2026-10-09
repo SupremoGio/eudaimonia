@@ -105,8 +105,8 @@ def test_by_category_computes_pct_change_vs_previous_period(client):
         # Periodo actual: 2026-02-01..2026-02-10 (10 días) -> $300 en WALMART
         _insert(db, fecha='2026-02-05', descripcion='WALMART', monto=300.0,
                 categoria='ALIMENTACION', subcategoria='Súper')
-        # Periodo anterior de igual duración (10 días): 2026-01-22..2026-01-31 -> $200
-        _insert(db, fecha='2026-01-25', descripcion='WALMART', monto=200.0,
+        # Mismo tramo del mes anterior: 2026-01-01..2026-01-10 -> $200
+        _insert(db, fecha='2026-01-05', descripcion='WALMART', monto=200.0,
                 categoria='ALIMENTACION', subcategoria='Súper')
         db.commit()
 
@@ -231,3 +231,35 @@ def test_pendientes_lista_msi_activos_con_su_compra(client):
     a = client.get('/finanzas/estados/api/summary/pendientes').get_json()['msi_activos']
     assert len(a) == 1 and a[0]['pagadas'] == 4 and a[0]['faltan'] == 11 and a[0]['restante'] == 5280.0
     assert a[0]['fecha_compra'] == '2026-05-28' and a[0]['total'] == 7186.75
+
+
+def test_prev_period_range_compara_mismo_tramo_del_calendario():
+    """Caso real (9-oct-2026): «este mes» = 1-9 oct se comparaba contra
+    22-30 sep y Súper salía +1193 %. Debe ser contra 1-9 sep."""
+    from modules.finanzas.estados.routes import _prev_period_range as p
+    assert p('2026-10-01', '2026-10-09') == ('2026-09-01', '2026-09-09')       # este mes
+    assert p('2026-09-01', '2026-09-30') == ('2026-08-01', '2026-08-31')       # mes pasado
+    assert p('2026-10-01', '2026-10-31') == ('2026-09-01', '2026-09-30')       # mes de 31 contra uno de 30
+    assert p('2026-03-01', '2026-03-31') == ('2026-02-01', '2026-02-28')
+    assert p('2026-03-01', '2026-03-30') == ('2026-02-01', '2026-02-28')       # tramo recortado a fin de febrero
+    assert p('2026-08-01', '2026-10-09') == ('2026-05-01', '2026-07-09')       # 3 meses
+    assert p('2026-01-01', '2026-10-09') == ('2025-01-01', '2025-10-09')       # este año
+    assert p('2026-02-01', '2026-02-28') == ('2026-01-01', '2026-01-31')
+    assert p('2026-10-05', '2026-10-09') == ('2026-09-30', '2026-10-04')       # rango libre: N días previos
+
+
+def test_by_category_este_mes_no_compara_contra_fin_del_mes_anterior(client):
+    import database
+    with database.get_db() as db:
+        _insert(db, fecha='2026-10-05', descripcion='WALMART', monto=375.0,
+                categoria='SUPER', subcategoria='Súper')
+        _insert(db, fecha='2026-09-05', descripcion='WALMART', monto=500.0,
+                categoria='SUPER', subcategoria='Súper')
+        _insert(db, fecha='2026-09-28', descripcion='OXXO', monto=29.0,      # fuera del tramo 1-9 sep
+                categoria='SUPER', subcategoria='Conveniencia')
+        db.commit()
+    resp = client.get('/finanzas/estados/api/summary/by-category',
+                      query_string={'date_from': '2026-10-01', 'date_to': '2026-10-09'})
+    row = next(r for r in resp.get_json() if r['categoria'] == 'SUPER')
+    assert row['prev_total'] == 500.0
+    assert row['pct_change'] == -25.0
