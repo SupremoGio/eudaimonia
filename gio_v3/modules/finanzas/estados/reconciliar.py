@@ -195,7 +195,7 @@ def reconciliar_cortes_bbva_tdc_2026(db) -> list:
                         'ligados_sin_pareja': len(plan['ligados_sin_pareja'])})
     if not resumen:
         return []
-    for f in (r._corregir_spei_invex, r._corregir_zaira_restaurante, r._corregir_walmart_lavadora,
+    for f in (r._corregir_spei_invex, r._corregir_spei_nafin, r._corregir_zaira_restaurante, r._corregir_walmart_lavadora,
               r._corregir_didi_delivery, r._corregir_amazon_suscripciones, r._corregir_celular,
               r._corregir_expense_terceros, lotes.reafirmar_categorias):
         f(db)

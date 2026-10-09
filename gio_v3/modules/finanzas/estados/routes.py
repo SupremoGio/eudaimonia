@@ -3064,6 +3064,7 @@ def upload_file():
             _corregir_steamgames(db)
             _corregir_retiros_renta(db)
             _corregir_spei_invex(db)
+            _corregir_spei_nafin(db)
             _corregir_zaira_restaurante(db)
             _corregir_walmart_lavadora(db)
             _corregir_didi_delivery(db)

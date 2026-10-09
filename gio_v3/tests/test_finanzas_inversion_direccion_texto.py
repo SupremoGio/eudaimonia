@@ -134,3 +134,20 @@ def test_spei_enviado_a_tdc_sin_plataforma_sigue_yendo_a_pago_tdc(client, monkey
         row = _row_by_desc(db, "SPEI ENVIADO HSBC 021 0509260TDC HSBC")
     assert row['categoria'] == 'PAGO_TDC'
     assert row['tipo'] == 'MOVIMIENTO_INTERNO'
+
+
+def test_spei_recibido_nafin_como_ingreso_se_vuelve_retiro_de_cetes(client, monkeypatch, test_db):
+    """Caso real (9-oct-2026): el parser dejó «SPEI RECIBIDONAFIN 135
+    0508925EGRESO» como FINANZAS/Ingreso. Todo lo recibido de NAFIN es un
+    retiro de CETES -- el import debe aplicar _corregir_spei_nafin igual que
+    «Aplicar reglas», no esperar a que el usuario lo corra a mano."""
+    desc = "SPEI RECIBIDONAFIN 135 0508925EGRESO"
+    resp = _upload(client, monkeypatch, [_mov(
+        fecha="2026-10-09", fecha_cargo="2026-10-09", descripcion=desc, monto=4500.0,
+        categoria="FINANZAS", subcategoria="Transferencia recibida", tipo="INGRESO",
+    )])
+    assert resp.status_code == 200
+    import database
+    with database.get_db() as db:
+        row = _row_by_desc(db, desc)
+    assert (row['tipo'], row['categoria'], row['subcategoria']) == ('INVERSION', 'CETES', 'RETIRO')
