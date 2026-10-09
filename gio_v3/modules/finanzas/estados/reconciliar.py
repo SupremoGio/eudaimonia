@@ -197,7 +197,7 @@ def reconciliar_cortes_bbva_tdc_2026(db) -> list:
         return []
     for f in (r._corregir_spei_invex, r._corregir_spei_nafin, r._corregir_spei_nubank_renta, r._corregir_zaira_restaurante, r._corregir_walmart_lavadora,
               r._corregir_didi_delivery, r._corregir_amazon_suscripciones, r._corregir_celular,
-              r._corregir_expense_terceros, lotes.reafirmar_categorias):
+              r._corregir_expense_terceros, r._conciliar_renta_variable, lotes.reafirmar_categorias):
         f(db)
     for (lid,) in db.execute("SELECT id FROM est_expense_lotes").fetchall():
         lotes.sincronizar(db, lid)

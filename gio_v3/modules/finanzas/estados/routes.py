@@ -930,7 +930,7 @@ def _corregir_pagos_renta(db) -> int:
             """, (cat, sub, fecha, monto, f"%{texto}%", cat, sub)).rowcount
     for fecha, monto, texto, parte in RENTA_MI_PARTE:
         n += db.execute("""
-            UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta', mi_parte=?
+            UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Renta', mi_parte=?, mi_parte_auto=0
             WHERE substr(fecha, 1, 10)=? AND ABS(ABS(monto) - ?) < 0.005
               AND UPPER(descripcion) LIKE ? AND tipo='GASTO'
               AND (categoria != 'VIVIENDA' OR COALESCE(subcategoria, '') != 'Renta'
@@ -987,7 +987,8 @@ def renta_por_mes(db) -> list[dict]:
     """Por mes: renta pagada (VIVIENDA/Renta, gasto), lo que depositaron los
     roomies (VIVIENDA/Aportación renta) y tu parte (mi_parte)."""
     meses = {}
-    for r in db.execute("""SELECT id, substr(fecha,1,10) f, descripcion, ABS(monto) monto, mi_parte, tipo, subcategoria
+    for r in db.execute("""SELECT id, substr(fecha,1,10) f, descripcion, ABS(monto) monto, mi_parte,
+                                  COALESCE(mi_parte_auto, 0) mi_parte_auto, tipo, subcategoria
                            FROM est_movimientos WHERE categoria='VIVIENDA'
                              AND subcategoria IN ('Renta', 'Aportación renta')
                              AND tipo IN ('GASTO', 'INGRESO')""").fetchall():
@@ -1010,21 +1011,35 @@ def renta_por_mes(db) -> list[dict]:
 def _conciliar_renta_variable(db) -> list[str]:
     """Renta compartida con parte variable (el usuario: «era variable, ayúdame
     a conciliar»): en los meses con depósitos de roomies, tu parte = renta
-    pagada − lo que depositaron, repartido entre los pagos del mes. Solo en
-    pagos sin mi_parte (los $4,000 de 2023 y los $5,500 de 2024 ya son del
-    usuario y no se tocan); si un mes ya tiene algún pago con mi_parte, se
-    deja como está."""
+    pagada − lo que depositaron, repartido entre los pagos del mes.
+
+    Un mes cuyos pagos tienen un mi_parte puesto a mano (los $4,000 de 2023,
+    los $5,500 de 2024, o una edición del usuario) no se toca. El mi_parte que
+    calcula esta función se marca mi_parte_auto=1 y se RECALCULA cada vez:
+    antes se calculaba una sola vez, así que un depósito del roomie que
+    llegaba después de la renta (o que se reclasificaba después, como el
+    NUBANK del 3-oct-2026) ya no la bajaba y la renta seguía completa. Si un
+    mes con mi_parte automático se queda sin aportaciones, vuelve a la renta
+    completa."""
     hechos = []
     for d in renta_por_mes(db):
-        if not d['aportaciones'] or not d['pagos'] or d['pagado'] <= 0:
+        if not d['pagos'] or any(p['mi_parte'] is not None and not p['mi_parte_auto'] for p in d['pagos']):
             continue
-        if any(p['mi_parte'] is not None for p in d['pagos']):
+        if not d['aportaciones'] or d['pagado'] <= 0:
+            for p in d['pagos']:
+                if p['mi_parte_auto']:
+                    db.execute("UPDATE est_movimientos SET mi_parte=NULL, mi_parte_auto=0 WHERE id=?", (p['id'],))
             continue
         factor = max(0.0, 1 - d['aportaciones_total'] / d['pagado'])
+        cambio = False
         for p in d['pagos']:
-            db.execute("UPDATE est_movimientos SET mi_parte=? WHERE id=?", (round(p['monto'] * factor, 2), p['id']))
-        hechos.append(f"{d['mes']}: renta {d['pagado']:,.2f} - roomies {d['aportaciones_total']:,.2f} = "
-                      f"tu parte {max(0.0, d['pagado'] - d['aportaciones_total']):,.2f}")
+            nuevo = round(p['monto'] * factor, 2)
+            if p['mi_parte'] is None or abs(p['mi_parte'] - nuevo) > 0.005:
+                db.execute("UPDATE est_movimientos SET mi_parte=?, mi_parte_auto=1 WHERE id=?", (nuevo, p['id']))
+                cambio = True
+        if cambio:
+            hechos.append(f"{d['mes']}: renta {d['pagado']:,.2f} - roomies {d['aportaciones_total']:,.2f} = "
+                          f"tu parte {max(0.0, d['pagado'] - d['aportaciones_total']):,.2f}")
     return hechos
 
 
@@ -1234,7 +1249,13 @@ def update_transaction(tx_id):
                        (d['periodo'], tx_id))
         if 'mi_parte' in d:
             val = safe_float(d['mi_parte']) if d['mi_parte'] not in (None, '') else None
-            db.execute("UPDATE est_movimientos SET mi_parte=? WHERE id=?", (val, tx_id))
+            # Solo un valor distinto cuenta como «puesto a mano»: el editor
+            # reenvía el mi_parte actual al guardar cualquier otro campo, y eso
+            # no debe congelar el cálculo automático de la renta.
+            db.execute("""UPDATE est_movimientos SET mi_parte=?,
+                              mi_parte_auto=CASE WHEN mi_parte IS NOT NULL AND ? IS NOT NULL
+                                                  AND ABS(mi_parte - ?) < 0.005 THEN mi_parte_auto ELSE 0 END
+                          WHERE id=?""", (val, val, val, tx_id))
         if 'reembolso_cat' in d:
             val = d['reembolso_cat'] or None
             db.execute("UPDATE est_movimientos SET reembolso_cat=? WHERE id=?", (val, tx_id))
@@ -3126,6 +3147,7 @@ def upload_file():
             _contra.aplicar_auto(db)
             _sinconc.aplicar(db)
             _prest.registrar_manuales(db)
+            _conciliar_renta_variable(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
 
             gbm_detected = _postproceso_inversiones(db)

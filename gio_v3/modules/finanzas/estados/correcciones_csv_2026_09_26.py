@@ -201,7 +201,7 @@ def renta_2024(db) -> int:
           AND (categoria != 'VIVIENDA' OR subcategoria != 'Renta' OR tipo != 'GASTO')
     """, (RENTA_2024,)).rowcount
     n += db.execute("""
-        UPDATE est_movimientos SET mi_parte=?
+        UPDATE est_movimientos SET mi_parte=?, mi_parte_auto=0
         WHERE substr(fecha, 1, 4)='2024' AND categoria='VIVIENDA' AND subcategoria='Renta' AND tipo='GASTO'
           AND ABS(ABS(monto) - ?) < 0.005 AND (mi_parte IS NULL OR ABS(mi_parte - 6000) < 0.005)
     """, (MI_PARTE_RENTA_2024, RENTA_2024)).rowcount

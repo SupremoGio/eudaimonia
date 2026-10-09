@@ -1600,6 +1600,10 @@ def init_db():
             ("mi_parte",      "REAL    DEFAULT NULL"),
             ("reembolso_cat", "TEXT    DEFAULT NULL"),
             ("viaje_id",      "INTEGER DEFAULT NULL"),
+            # 1 = mi_parte la calculó _conciliar_renta_variable (renta −
+            # aportaciones del roomie) y se puede recalcular; 0 = la puso el
+            # usuario o una corrección explícita, no se toca.
+            ("mi_parte_auto", "INTEGER DEFAULT 0"),
         ]:
             try:
                 db.execute(f"ALTER TABLE est_movimientos ADD COLUMN {col} {definition}")
@@ -6719,6 +6723,30 @@ def init_db():
                 print(f"[DB] finanzas_expense_terceros_pago_v2: {_n} -> GASTO/TERCERO")
             except Exception as e:
                 print(f"[DB] finanzas_expense_terceros_pago_v2 migration warning: {e}")
+
+        # ── FINANZAS — NAFIN/NUBANK y tu parte de la renta (usuario, 2026-10-09:
+        # «lo veo igual»). Las reglas _corregir_spei_nafin/_corregir_spei_nubank_renta
+        # solo corrían al importar o con «Aplicar»; los movimientos ya cargados
+        # (SPEI NAFIN 9-oct, NUBANK 4/11-sep y 3-oct) seguían mal y la renta de
+        # octubre seguía en $12,000 completos en vez de tu parte.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_nafin_nubank_renta_2026_10'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import (
+                    _corregir_spei_nafin, _corregir_spei_nubank_renta, _conciliar_renta_variable)
+                _a = _corregir_spei_nafin(db)
+                _b = _corregir_spei_nubank_renta(db)
+                _h = _conciliar_renta_variable(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_nafin_nubank_renta_2026_10",
+                     f"{_a} SPEI NAFIN -> CETES; {_b} NUBANK -> Aportación renta; renta: {'; '.join(_h)}"[:900])
+                )
+                db.commit()
+                print(f"[DB] finanzas_nafin_nubank_renta_2026_10: NAFIN {_a}, NUBANK {_b}, renta {_h}")
+            except Exception as e:
+                print(f"[DB] finanzas_nafin_nubank_renta_2026_10 migration warning: {e}")
 
         # ── FINANZAS — respuestas a la auditoría de Expense: borrar 18 ingresos
         # duplicados en BBVA Crédito («nada que ingrese va a crédito»), mover

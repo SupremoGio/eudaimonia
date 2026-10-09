@@ -315,7 +315,7 @@ def _aplicar_auditoria(db) -> tuple[int, int]:
         if _referenciado(db, row['id']) and cat != 'PRESTAMOS':
             continue   # ya ligado a un préstamo o lote: lo decide ese módulo
         if (row['tipo'], row['categoria'], row['subcategoria'] or '', row['mi_parte']) != (tipo, cat, sub, parte):
-            db.execute("UPDATE est_movimientos SET tipo=?, categoria=?, subcategoria=?, mi_parte=? WHERE id=?",
+            db.execute("UPDATE est_movimientos SET tipo=?, categoria=?, subcategoria=?, mi_parte=?, mi_parte_auto=0 WHERE id=?",
                        (tipo, cat, sub, parte, row['id']))
             ok += 1
     return ok, faltan
@@ -455,7 +455,7 @@ def aplicar(db) -> tuple[int, int]:
         if not row:
             faltan += 1
         elif (row['categoria'], row['subcategoria'] or '', row['tipo'], row['mi_parte']) != (cat, sub, 'GASTO', parte):
-            db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, tipo='GASTO', mi_parte=? WHERE id=?",
+            db.execute("UPDATE est_movimientos SET categoria=?, subcategoria=?, tipo='GASTO', mi_parte=?, mi_parte_auto=0 WHERE id=?",
                        (cat, sub, parte, row['id']))
             ok += 1
     return ok, faltan

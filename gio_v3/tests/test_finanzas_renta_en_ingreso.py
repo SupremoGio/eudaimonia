@@ -254,3 +254,87 @@ def test_nubank_reclasificado_a_mano_no_se_pisa(test_db):
         assert tuple(sub(generico)) == ('VIVIENDA', 'Aportación renta')
         assert tuple(sub(en_super)) == ('VIVIENDA', 'Aportación renta')   # caso real sep-2026
         assert tuple(sub(manual)) == ('PRESTAMOS', '')
+
+
+# ── Tu parte de la renta se recalcula con cada aportación ──────────────────
+
+def test_renta_octubre_baja_a_tu_parte_y_se_recalcula(test_db):
+    """Caso real (9-oct-2026): renta $12,000 del 7-oct y el NUBANK de $5,000
+    del 3-oct que estaba en FINANZAS. Vivienda seguía en $12,299 porque tu
+    parte solo se calculaba una vez por mes y nunca con este depósito."""
+    from modules.finanzas.estados.routes import (_conciliar_renta_variable,
+                                                 _corregir_spei_nubank_renta)
+    import database
+    with database.get_db() as db:
+        renta = _insert(db, fecha='2026-10-07', descripcion='PAGO TARJETA DE TERCEROS MBAN',
+                        monto=-12000.0, subcategoria='Renta', tipo='GASTO')
+        _insert(db, fecha='2026-10-03', descripcion='SPEI RECIBIDONUBANK 638 0031026TRANSFERENCIA',
+                monto=5000.0, categoria='FINANZAS', subcategoria='Transferencia recibida')
+        parte = lambda: tuple(db.execute("SELECT mi_parte, mi_parte_auto FROM est_movimientos WHERE id=?",
+                                         (renta,)).fetchone())
+        assert _conciliar_renta_variable(db) == [] and parte() == (None, 0)   # aún sin aportación
+        _corregir_spei_nubank_renta(db)
+        _conciliar_renta_variable(db)
+        assert parte() == (7000.0, 1)
+        # Kevin deposita otro $1,000 después: antes ya no se recalculaba.
+        extra = _insert(db, fecha='2026-10-20', descripcion='SPEI RECIBIDONUBANK 638 0201026TRANSFERENCIA',
+                        monto=1000.0, subcategoria='Aportación renta')
+        _conciliar_renta_variable(db)
+        assert parte() == (6000.0, 1)
+        assert _conciliar_renta_variable(db) == []                            # idempotente
+        # Si se reclasifican todas las aportaciones, vuelve a la renta completa.
+        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' "
+                   "WHERE fecha >= '2026-10-01' AND tipo='INGRESO'")
+        _conciliar_renta_variable(db)
+        assert parte() == (None, 0)
+        assert extra
+
+
+def test_mi_parte_manual_no_se_recalcula(client, test_db):
+    import database
+    from modules.finanzas.estados.routes import _conciliar_renta_variable
+    with database.get_db() as db:
+        renta = _insert(db, fecha='2026-10-07', descripcion='RENTA', monto=-12000.0,
+                        subcategoria='Renta', tipo='GASTO')
+        _insert(db, fecha='2026-10-03', descripcion='SPEI RECIBIDONUBANK X', monto=5000.0,
+                subcategoria='Aportación renta')
+        _conciliar_renta_variable(db)
+        db.commit()
+    # Guardar otro campo reenviando el mismo mi_parte no lo congela...
+    assert client.patch(f'/finanzas/estados/api/transactions/{renta}',
+                        json={'mi_parte': 7000.0, 'subcategoria': 'Renta'}).status_code == 200
+    with database.get_db() as db:
+        assert db.execute("SELECT mi_parte_auto FROM est_movimientos WHERE id=?", (renta,)).fetchone()[0] == 1
+    # ...pero un valor distinto sí es manual y ya no se pisa.
+    client.patch(f'/finanzas/estados/api/transactions/{renta}', json={'mi_parte': 6500.0})
+    with database.get_db() as db:
+        _insert(db, fecha='2026-10-20', descripcion='SPEI RECIBIDONUBANK Y', monto=1000.0,
+                subcategoria='Aportación renta')
+        _conciliar_renta_variable(db)
+        assert tuple(db.execute("SELECT mi_parte, mi_parte_auto FROM est_movimientos WHERE id=?",
+                                (renta,)).fetchone()) == (6500.0, 0)
+
+
+def test_migracion_arranque_corrige_movimientos_ya_cargados(test_db):
+    """Los movimientos ya cargados se corrigen al desplegar, sin tener que
+    presionar «Aplicar»."""
+    import database
+    with database.get_db() as db:
+        renta = _insert(db, fecha='2026-10-07', descripcion='PAGO TARJETA DE TERCEROS MBAN',
+                        monto=-12000.0, subcategoria='Renta', tipo='GASTO')
+        nu = _insert(db, fecha='2026-10-03', descripcion='SPEI RECIBIDONUBANK 638 0031026TRANSFERENCIA',
+                     monto=5000.0, categoria='FINANZAS', subcategoria='Transferencia recibida')
+        sep = _insert(db, fecha='2026-09-11', descripcion='SPEI RECIBIDONUBANK 638 0110926TRANSFERENCIA',
+                      monto=1200.0, categoria='SUPER', subcategoria='')
+        nafin = _insert(db, fecha='2026-10-09', descripcion='SPEI RECIBIDONAFIN 135 0508925EGRESO',
+                        monto=4500.0, categoria='FINANZAS', subcategoria='Transferencia recibida')
+        db.execute("DELETE FROM migration_log WHERE version='finanzas_nafin_nubank_renta_2026_10'")
+        db.commit()
+    database.init_db()
+    with database.get_db() as db:
+        row = lambda i: tuple(db.execute("SELECT categoria, subcategoria, tipo, mi_parte FROM est_movimientos "
+                                         "WHERE id=?", (i,)).fetchone())
+        assert row(nu) == ('VIVIENDA', 'Aportación renta', 'INGRESO', None)
+        assert row(sep) == ('VIVIENDA', 'Aportación renta', 'INGRESO', None)
+        assert row(nafin) == ('CETES', 'RETIRO', 'INVERSION', None)
+        assert row(renta) == ('VIVIENDA', 'Renta', 'GASTO', 7000.0)
