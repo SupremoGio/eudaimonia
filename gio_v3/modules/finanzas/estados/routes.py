@@ -646,6 +646,25 @@ def _corregir_spei_nafin(db) -> int:
     return n
 
 
+def _corregir_spei_nubank_renta(db) -> int:
+    """«SPEI RECIBIDONUBANK …» es el roomie (Kevin) depositando su parte de la
+    renta: todos los históricos quedaron en VIVIENDA/Aportación renta a mano
+    (ago-sep 2026). El estado de cuenta no trae el nombre del ordenante, así
+    que la señal es el banco emisor. Solo se toca el cajón genérico del
+    import (FINANZAS/Transferencia recibida o sin categoría) y categorías sin
+    subcategoría donde un ingreso no tiene sentido -- los de sep-2026 habían
+    caído en Súper sin subcategoría (vía el split de ALIMENTACION). Si el
+    usuario lo reclasificó con subcategoría, «Aplicar reglas» no se lo pisa. El mes de renta
+    lo pone renta_por_mes (_mes_aportacion) y _conciliar_renta_variable
+    descuenta la aportación de tu parte."""
+    return db.execute("""
+        UPDATE est_movimientos SET categoria='VIVIENDA', subcategoria='Aportación renta'
+        WHERE UPPER(descripcion) LIKE 'SPEI RECIBIDO%NUBANK%' AND tipo='INGRESO'
+          AND (categoria IN ('FINANZAS', 'SPEI_RECIBIDO', '') AND COALESCE(subcategoria, '') IN ('Transferencia recibida', '')
+               OR categoria IN ('VIVIENDA', 'SUPER', 'ALIMENTACION', 'OTROS') AND COALESCE(subcategoria, '')='')
+    """).rowcount
+
+
 def _corregir_zaira_restaurante(db) -> int:
     """ZTL ZAIRAAXZAYMENDOZAM va a COMIDA_FUERA/Restaurante (pedido del
     usuario). Antes 2 filas se habían mandado por id a ALIMENTACION/Súper;
@@ -1971,6 +1990,7 @@ def _reaplicar_reglas(db) -> int:
     _corregir_retiros_renta(db)
     _corregir_spei_invex(db)
     _corregir_spei_nafin(db)
+    _corregir_spei_nubank_renta(db)
     _corregir_zaira_restaurante(db)
     _corregir_walmart_lavadora(db)
     _corregir_didi_delivery(db)
@@ -3065,6 +3085,7 @@ def upload_file():
             _corregir_retiros_renta(db)
             _corregir_spei_invex(db)
             _corregir_spei_nafin(db)
+            _corregir_spei_nubank_renta(db)
             _corregir_zaira_restaurante(db)
             _corregir_walmart_lavadora(db)
             _corregir_didi_delivery(db)

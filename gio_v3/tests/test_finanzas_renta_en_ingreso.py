@@ -207,3 +207,50 @@ def test_migration_is_logged_once(test_db):
             "SELECT id FROM migration_log WHERE version='finanzas_renta_ingreso_unificada_2026_09'"
         ).fetchall()
     assert len(rows) == 1
+
+
+# ── SPEI RECIBIDO de NUBANK = aportación de renta del roomie ───────────────
+
+def _upload(client, monkeypatch, movimientos, bank="BBVA_DEB"):
+    import io
+    import modules.finanzas.estados.parsers as parsers_mod
+    monkeypatch.setattr(parsers_mod, "parse_file", lambda path: movimientos)
+    monkeypatch.setattr(parsers_mod, "detect_bank", lambda path: bank)
+    data = {"file": (io.BytesIO(b"parse_file esta mockeado"), "estado.pdf")}
+    return client.post("/finanzas/estados/api/upload", data=data, content_type="multipart/form-data")
+
+
+def test_import_spei_recibido_nubank_es_aportacion_renta(client, monkeypatch, test_db):
+    """Caso real (3-oct-2026): «SPEI RECIBIDONUBANK 638 0031026TRANSFERENCIA»
+    $5,000 entraba como FINANZAS/Transferencia recibida. Es el roomie
+    pagando su parte de la renta de octubre."""
+    desc = "SPEI RECIBIDONUBANK 638 0031026TRANSFERENCIA"
+    resp = _upload(client, monkeypatch, [dict(
+        fecha="2026-10-03", fecha_cargo="2026-10-03", descripcion=desc, monto=5000.0,
+        categoria="FINANZAS", subcategoria="Transferencia recibida", tipo="INGRESO", periodo="")])
+    assert resp.status_code == 200
+    import database
+    from modules.finanzas.estados.routes import renta_por_mes
+    with database.get_db() as db:
+        row = db.execute("SELECT * FROM est_movimientos WHERE descripcion=?", (desc,)).fetchone()
+        assert (row['tipo'], row['categoria'], row['subcategoria']) == ('INGRESO', 'VIVIENDA', 'Aportación renta')
+        oct_ = next(m for m in renta_por_mes(db) if m['mes'] == '2026-10')
+    assert oct_['aportaciones_total'] == 5000.0
+
+
+def test_nubank_reclasificado_a_mano_no_se_pisa(test_db):
+    from modules.finanzas.estados.routes import _corregir_spei_nubank_renta
+    import database
+    with database.get_db() as db:
+        generico = _insert(db, descripcion='SPEI RECIBIDONUBANK 638 0031026TRANSFERENCIA',
+                           categoria='FINANZAS', subcategoria='Transferencia recibida')
+        manual = _insert(db, descripcion='SPEI RECIBIDONUBANK 638 0051026PRESTAMO',
+                         categoria='PRESTAMOS', subcategoria='')
+        en_super = _insert(db, descripcion='SPEI RECIBIDONUBANK 638 0110926TRANSFERENCIA',
+                           fecha='2026-09-11', monto=1200.0, categoria='SUPER', subcategoria='')
+        assert _corregir_spei_nubank_renta(db) == 2
+        assert _corregir_spei_nubank_renta(db) == 0      # idempotente
+        sub = lambda i: db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()
+        assert tuple(sub(generico)) == ('VIVIENDA', 'Aportación renta')
+        assert tuple(sub(en_super)) == ('VIVIENDA', 'Aportación renta')   # caso real sep-2026
+        assert tuple(sub(manual)) == ('PRESTAMOS', '')
