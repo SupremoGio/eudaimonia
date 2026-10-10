@@ -77,4 +77,9 @@ export function norm(s) {
 }
 
 /** Monto efectivo para el usuario: mi_parte si existe (siempre magnitud). */
-export const myAmount = (t) => Math.abs(t.mi_parte != null ? t.mi_parte : t.monto);
+// Con signo: una devolución (gasto negativo, ej. «ABONO BBVA AMAZON» en la
+// tarjeta) resta en vez de sumar. El backend suma igual (_MONTO).
+export const myAmount = (t) => {
+  const v = Math.abs(t.mi_parte != null ? t.mi_parte : t.monto);
+  return Number(t.monto) < 0 ? -v : v;
+};

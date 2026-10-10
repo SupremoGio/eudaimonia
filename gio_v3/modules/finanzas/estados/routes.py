@@ -681,23 +681,33 @@ def _corregir_abonos_tdc(db) -> int:
     columna de abonos a PAGO: salía del gasto pero no le restaba nada a lo
     que se compró, así que Amazon seguía contando completo.
 
-    Aquí un abono de BBVA_TDC/INVEX que no es pago (_ABONO_TDC_ES_PAGO) pasa
-    a GASTO con monto negativo -- el mismo modelo que «REEMBOLSO TEMU»: resta
-    del gasto de su categoría. La categoría es la del cargo original (mismo
-    comercio y monto, hasta 120 días antes); si no hay cargo exacto, la del
-    último cargo del mismo comercio; si tampoco, la del keyword. Solo toca
-    abonos todavía en el cajón genérico PAGO, así que no pisa lo que el
-    usuario o los DEVUELTOS de Amazon ya clasificaron."""
+    Devoluciones = abonos de BBVA_TDC/INVEX que no son pago
+    (_ABONO_TDC_ES_PAGO) todavía en el cajón PAGO, más los «ABONO …» que ya
+    quedaron como GASTO (con cualquier signo) y no están emparejados.
+
+    - Si tiene su cargo exacto (mismo comercio y monto, hasta 120 días antes)
+      se hace el match: cargo y devolución pasan a FINANZAS/Reembolsable, los
+      dos fuera del gasto -- igual que los DEVUELTOS de pedidos_amazon. Antes
+      la devolución quedaba como gasto negativo en la categoría del cargo y
+      el usuario veía cargo y abono juntos («haz el match»).
+    - Si no, queda como GASTO negativo (modelo «REEMBOLSO TEMU»: resta del
+      gasto) en la categoría del último cargo del comercio, o la del keyword.
+
+    No toca lo que el usuario ya clasificó fuera de PAGO (salvo «ABONO …»
+    sin emparejar) ni líneas de débito importadas como crédito."""
     from .config import get_categoria_subcategoria
     rows = db.execute("""
-        SELECT id, substr(fecha,1,10) f, descripcion, ABS(monto) m, banco FROM est_movimientos
-        WHERE banco IN ('BBVA_TDC', 'INVEX') AND tipo IN ('PAGO', 'INGRESO')
-          AND categoria IN ('PAGO', '') AND monto != 0
+        SELECT id, substr(fecha,1,10) f, descripcion, ABS(monto) m, banco, tipo, categoria FROM est_movimientos
+        WHERE banco IN ('BBVA_TDC', 'INVEX') AND monto != 0
+          AND (tipo IN ('PAGO', 'INGRESO') AND categoria IN ('PAGO', '')
+               OR tipo = 'GASTO' AND UPPER(descripcion) LIKE 'ABONO %'
+                  AND NOT (categoria = 'FINANZAS' AND COALESCE(subcategoria, '') = 'Reembolsable'))
           -- Gemela en débito (mismo día y monto): es una línea de débito
           -- importada como crédito, la borra _descartar_ingresos_en_credito.
           AND NOT EXISTS (SELECT 1 FROM est_movimientos d WHERE d.banco='BBVA_DEB' AND d.tipo='INGRESO'
                           AND substr(d.fecha,1,10)=substr(est_movimientos.fecha,1,10)
                           AND ABS(ABS(d.monto) - ABS(est_movimientos.monto)) < 0.005)
+        ORDER BY substr(fecha,1,10), id
     """).fetchall()
     n = 0
     for r in rows:
@@ -705,24 +715,38 @@ def _corregir_abonos_tdc(db) -> int:
         if any(k in desc for k in _ABONO_TDC_ES_PAGO):
             continue
         tokens = sorted({t for t in re.findall(r'[A-Z]{3,}', desc) if t not in _ABONO_TDC_RUIDO})
-        cat = sub = None
+        cargo = None
         if tokens:
             like = ' OR '.join('UPPER(descripcion) LIKE ?' for _ in tokens)
             cargo = db.execute(f"""
-                SELECT categoria, subcategoria, ABS(ABS(monto) - ?) < 0.01 exacto FROM est_movimientos
+                SELECT id, categoria, subcategoria, ABS(ABS(monto) - ?) < 0.01 exacto FROM est_movimientos
                 WHERE tipo='GASTO' AND monto > 0 AND id != ? AND ({like})
+                  AND UPPER(descripcion) NOT LIKE 'ABONO %'
                   AND substr(fecha,1,10) BETWEEN date(?, '-{_ABONO_TDC_VENTANA_DIAS} days') AND ?
                   AND parcialidad_num IS NULL AND COALESCE(subcategoria,'') != 'Compra a meses'
                   AND categoria NOT IN ('PAGO', 'PAGO_TDC', 'FINANZAS', '')
                 ORDER BY exacto DESC, banco = ? DESC, substr(fecha,1,10) DESC, id DESC LIMIT 1
             """, [r['m'], r['id'], *[f'%{t}%' for t in tokens], r['f'], r['f'], r['banco']]).fetchone()
-            if cargo:
-                cat, sub = cargo['categoria'], cargo['subcategoria'] or ''
-        if cat is None:
+        if cargo and cargo['exacto']:
+            db.execute("UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Reembolsable' WHERE id=?",
+                       (cargo['id'],))
+            db.execute("""UPDATE est_movimientos SET tipo='GASTO', monto=?, categoria='FINANZAS',
+                          subcategoria='Reembolsable' WHERE id=?""", (-r['m'], r['id']))
+            n += 1
+            continue
+        if r['tipo'] == 'GASTO' and r['categoria'] not in ('PAGO', ''):
+            cat = None                       # ya tiene categoría: solo se asegura el signo
+        elif cargo:
+            cat, sub = cargo['categoria'], cargo['subcategoria'] or ''
+        else:
             cat, sub = get_categoria_subcategoria(desc)
-        db.execute("UPDATE est_movimientos SET tipo='GASTO', monto=?, categoria=?, subcategoria=? WHERE id=?",
-                   (-r['m'], cat, sub, r['id']))
-        n += 1
+        if cat is None:
+            n += db.execute("UPDATE est_movimientos SET monto=? WHERE id=? AND monto != ?",
+                            (-r['m'], r['id'], -r['m'])).rowcount
+        else:
+            db.execute("UPDATE est_movimientos SET tipo='GASTO', monto=?, categoria=?, subcategoria=? WHERE id=?",
+                       (-r['m'], cat, sub, r['id']))
+            n += 1
     return n
 
 

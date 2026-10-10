@@ -6748,6 +6748,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_nafin_nubank_renta_2026_10 migration warning: {e}")
 
+        # ── FINANZAS — abonos de TDC v2: match devolución ↔ cargo (usuario,
+        # 2026-10-10: «haz el match»). La v1 dejaba los ABONO BBVA AMAZON como
+        # gasto negativo junto a su cargo; ahora el par sale del gasto.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_abonos_tdc_match_2026_10'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.routes import _corregir_abonos_tdc
+                _n = _corregir_abonos_tdc(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_abonos_tdc_match_2026_10", f"{_n} abonos de TDC emparejados o corregidos")
+                )
+                db.commit()
+                print(f"[DB] finanzas_abonos_tdc_match_2026_10: {_n} abonos")
+            except Exception as e:
+                print(f"[DB] finanzas_abonos_tdc_match_2026_10 migration warning: {e}")
+
         # ── FINANZAS — abonos en tarjeta de crédito = devoluciones (usuario,
         # 2026-10-09: «cuando es en tarjeta de crédito número negativo quiere
         # decir que me regresaron algo»). Los ya cargados como PAGO pasan a

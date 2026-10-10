@@ -244,7 +244,7 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
                           </td>
                           {!sub && <td className="fg-3"><span className="fz-td-sub" title={t.subcategoria || ''}>{t.subcategoria || '—'}</span></td>}
                           <td className="r">
-                            <span className="num">{money(t.monto)}</span>
+                            <span className="num">{money(t.monto, { sign: t.monto < 0 })}</span>
                             {t.mi_parte != null && Math.abs(t.mi_parte) !== Math.abs(t.monto) && (
                               <div className="t-meta fz-nowrap">tu parte <span className="num">{money(t.mi_parte)}</span></div>
                             )}
@@ -267,7 +267,7 @@ export default function CategoryModal({ categoria, tipo = 'GASTO', period = {}, 
                         </div>
                       </div>
                       <div className="eu-row-end">
-                        <div className="eu-amt">{money(t.monto)}</div>
+                        <div className="eu-amt">{money(t.monto, { sign: t.monto < 0 })}</div>
                         {t.mi_parte != null && Math.abs(t.mi_parte) !== Math.abs(t.monto) && <div className="t-meta">tu parte {money(t.mi_parte)}</div>}
                       </div>
                     </button>

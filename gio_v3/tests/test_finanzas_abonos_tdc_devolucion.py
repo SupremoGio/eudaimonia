@@ -33,20 +33,48 @@ def _row(db, i):
                             (i,)).fetchone())
 
 
-def test_abono_amazon_resta_en_la_categoria_del_cargo(test_db):
+def test_abono_con_cargo_exacto_hace_match_y_sin_cargo_resta(test_db):
+    from modules.finanzas.estados.config import get_categoria_subcategoria
     with database.get_db() as db:
-        _insert(db, fecha='2026-10-07', descripcion='AMAZON', monto=356.99, tipo='GASTO',
-                categoria='VIVIENDA', subcategoria='Artículos del hogar')
-        _insert(db, fecha='2026-09-23', descripcion='AMAZON', monto=209.0, tipo='GASTO',
-                categoria='CUIDADO_PERSONAL', subcategoria='Higiene')
+        c1 = _insert(db, fecha='2026-10-07', descripcion='AMAZON', monto=356.99, tipo='GASTO',
+                     categoria='VIVIENDA', subcategoria='Artículos del hogar')
+        c2 = _insert(db, fecha='2026-09-23', descripcion='AMAZON', monto=209.0, tipo='GASTO',
+                     categoria='CUIDADO_PERSONAL', subcategoria='Higiene')
         a = _insert(db, descripcion='ABONO BBVA AMAZON', monto=-356.99)
         b = _insert(db, descripcion='ABONO BBVA AMAZON', monto=209.0)            # CSV lo guarda positivo
         c = _insert(db, descripcion='ABONO BBVA AMAZON', monto=-379.0)           # sin cargo exacto
         assert _corregir_abonos_tdc(db) == 3
         assert _corregir_abonos_tdc(db) == 0                                       # idempotente
-        assert _row(db, a) == ('GASTO', -356.99, 'VIVIENDA', 'Artículos del hogar')
-        assert _row(db, b) == ('GASTO', -209.0, 'CUIDADO_PERSONAL', 'Higiene')
-        assert _row(db, c) == ('GASTO', -379.0, 'VIVIENDA', 'Artículos del hogar')  # último cargo de Amazon
+        par = ('FINANZAS', 'Reembolsable')
+        assert _row(db, c1)[2:] == par and _row(db, a) == ('GASTO', -356.99, *par)
+        assert _row(db, c2)[2:] == par and _row(db, b) == ('GASTO', -209.0, *par)
+        assert _row(db, c) == ('GASTO', -379.0, *get_categoria_subcategoria('ABONO BBVA AMAZON'))
+
+
+@pytest.mark.parametrize('monto', [356.99, -356.99])
+def test_abono_que_ya_quedo_como_gasto_en_digital_hace_match(test_db, monto):
+    """Caso real (10-oct-2026): los ABONO BBVA AMAZON ya estaban como gasto en
+    DIGITAL/Suscripciones junto a su cargo -- positivos (import viejo) o
+    negativos (primera versión de esta regla). «Haz el match»."""
+    with database.get_db() as db:
+        cargo = _insert(db, fecha='2026-10-07', descripcion='AMAZON', monto=356.99, tipo='GASTO',
+                        categoria='DIGITAL', subcategoria='Suscripciones entretenimiento')
+        abono = _insert(db, descripcion='ABONO BBVA AMAZON', monto=monto, tipo='GASTO',
+                        categoria='DIGITAL', subcategoria='Suscripciones entretenimiento')
+        apple = _insert(db, fecha='2026-10-06', descripcion='APPLE.COM/BILL', monto=59.0, tipo='GASTO',
+                        categoria='DIGITAL', subcategoria='Suscripciones entretenimiento')
+        assert _corregir_abonos_tdc(db) == 1
+        assert _row(db, cargo)[2:] == ('FINANZAS', 'Reembolsable')
+        assert _row(db, abono) == ('GASTO', -356.99, 'FINANZAS', 'Reembolsable')
+        assert _row(db, apple) == ('GASTO', 59.0, 'DIGITAL', 'Suscripciones entretenimiento')
+
+
+def test_abono_sin_par_ya_categorizado_solo_corrige_signo(test_db):
+    with database.get_db() as db:
+        abono = _insert(db, descripcion='ABONO BBVA AMAZON', monto=379.0, tipo='GASTO',
+                        categoria='DIGITAL', subcategoria='Suscripciones entretenimiento')
+        assert _corregir_abonos_tdc(db) == 1 and _corregir_abonos_tdc(db) == 0
+        assert _row(db, abono) == ('GASTO', -379.0, 'DIGITAL', 'Suscripciones entretenimiento')
 
 
 def test_pagos_a_la_tarjeta_no_se_tocan(test_db):
@@ -95,4 +123,4 @@ def test_import_tdc_abono_resta_del_gasto(client, monkeypatch, test_db):
     assert resp.status_code == 200
     r = client.get('/finanzas/estados/api/summary/by-category',
                    query_string={'date_from': '2026-10-01', 'date_to': '2026-10-31'}).get_json()
-    assert not any(x['categoria'] == 'DIGITAL' and abs(x['total']) > 0.005 for x in r)
+    assert not any(x['categoria'] == 'DIGITAL' for x in r)       # el par salió del gasto
