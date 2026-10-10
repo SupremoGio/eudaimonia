@@ -1482,6 +1482,34 @@ def init_db():
             )
             db.commit()
 
+        # ── ATARAXIA SÁBADO — Bloque 1 (Mantenimiento & Recepción): robot
+        # aspiradora sala y cuarto + vaciar botes de basura (usuario,
+        # 2026-10-10). Los dos robots ya los sembraba
+        # sat_robot_aspiradora_y_toallas, pero no aparecían en producción
+        # (la migración quedó registrada sin las filas), así que aquí se
+        # garantizan con INSERT OR IGNORE y se les pone el nombre que pidió.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='sat_bloque1_robots_y_basura'"
+        ).fetchone():
+            db.executemany(
+                """INSERT OR IGNORE INTO rutina_bloques
+                   (id, dia, bloque_id, nombre, tier, xp, ec, categoria, opcional, duracion_min, orden)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                [
+                    ("sat_robot_sala",   "sabado", "sat_bloque1", "Pasar robot aspiradora (sala)",   "micro", 0, 0, "", 0, 5, 6),
+                    ("sat_robot_cuarto", "sabado", "sat_bloque1", "Pasar robot aspiradora (cuarto)", "micro", 0, 0, "", 0, 5, 7),
+                    ("sat_basura",       "sabado", "sat_bloque1", "Vaciar botes de basura",          "micro", 0, 0, "", 0, 5, 8),
+                ]
+            )
+            db.execute("UPDATE rutina_bloques SET nombre='Pasar robot aspiradora (sala)' WHERE id='sat_robot_sala'")
+            db.execute("UPDATE rutina_bloques SET nombre='Pasar robot aspiradora (cuarto)' WHERE id='sat_robot_cuarto'")
+            db.execute(
+                "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                ("sat_bloque1_robots_y_basura",
+                 "Bloque 1 del sábado: robot aspiradora sala y cuarto (garantizados) + vaciar botes de basura.")
+            )
+            db.commit()
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS app_settings (
             key   TEXT PRIMARY KEY,
