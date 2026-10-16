@@ -5411,6 +5411,29 @@ def init_db():
         except Exception as e:
             print(f"[DB] rewards unica migration warning: {e}")
 
+        # Migrate rewards: max_por_ventana — tope de canjes dentro de cada
+        # ventana de días (ej. 2 cápsulas Nespresso por fin de semana, usuario
+        # 2026-10-16). 0 = sin tope por ventana (se usa cooldown_days). La
+        # Cápsula Nespresso pasa de «cada 7 días» a «2 por fin de semana».
+        try:
+            rw_cols = [r["name"] for r in db.execute("PRAGMA table_info(rewards)").fetchall()]
+            if "max_por_ventana" not in rw_cols:
+                db.execute("ALTER TABLE rewards ADD COLUMN max_por_ventana INTEGER DEFAULT 0")
+                db.commit()
+            if not db.execute(
+                "SELECT id FROM migration_log WHERE version='rewards_nespresso_2_por_finde'"
+            ).fetchone():
+                _n = db.execute("""UPDATE rewards SET max_por_ventana=2, cooldown_days=0,
+                                       weekend_only=CASE WHEN COALESCE(weekend_only,0)=0 THEN 1 ELSE weekend_only END
+                                   WHERE LOWER(name)=?""", ("cápsula nespresso",)).rowcount
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("rewards_nespresso_2_por_finde", f"Cápsula Nespresso: 2 por fin de semana ({_n} fila)")
+                )
+                db.commit()
+        except Exception as e:
+            print(f"[DB] rewards max_por_ventana migration warning: {e}")
+
         # ── RECOMPENSAS — el usuario pidió desbloquear el Apple Watch: se quitan
         # el nivel 7 y la insignia stoic_commander que exigía el seed original.
         # Sigue costando sus EC. Una sola vez (migration_log).

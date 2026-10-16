@@ -18,6 +18,7 @@
     </select>
     <div class="eu-help">Evita que se vuelva hábito diario; al vencer el cooldown se abre el siguiente día permitido</div>
   </div>
+  {{ ui.field('max', 'Máx. por fin de semana', type='number', value='0', min=0, max=7, help='0 = sin tope; usa el cooldown. Con tope, se puede canjear esas veces cada fin de semana (pon un día en «Días disponibles»)') }}
 </form>
 <div class="eu-modal-ft">
   <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('rw-modal')">Cancelar</button>

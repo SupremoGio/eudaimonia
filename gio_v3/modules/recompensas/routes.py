@@ -73,6 +73,29 @@ def _fecha_corta(d):
     return f"{_DIAS[d.weekday()]} {d.day} {_MESES[d.month - 1]}"
 
 
+def _inicio_ventana(d, modo):
+    """Primer día de la ventana (vie o sáb) que contiene a `d`."""
+    primero = _VENTANAS[modo][0]
+    return d - timedelta(days=(d.weekday() - primero) % 7)
+
+
+def canjes_en_ventana(reward, d=None):
+    """Canjes de la recompensa en la ventana (fin de semana) que contiene a `d`,
+    contados en coins_ledger -- una sola fecha (last_redeemed) no alcanza para
+    un tope de 2 o más."""
+    modo = ventana_modo(reward.get("weekend_only"))
+    if not modo:
+        return 0
+    d = d or today_date()
+    if d.weekday() not in _VENTANAS[modo]:
+        return 0
+    with get_db() as db:
+        return db.execute(
+            "SELECT COUNT(*) c FROM coins_ledger WHERE source='reward' AND description=? AND amount<0 AND date BETWEEN ? AND ?",
+            (f"Recompensa: {reward['name']}", _inicio_ventana(d, modo).isoformat(), d.isoformat())
+        ).fetchone()["c"]
+
+
 def _can_redeem(reward, ec_balance, current_level):
     if reward.get("unica") and reward.get("last_redeemed"):
         return False, "Ya la conseguiste"
@@ -82,9 +105,15 @@ def _can_redeem(reward, ec_balance, current_level):
         return False, f"Nivel {reward['level_required']} requerido"
     modo = ventana_modo(reward.get("weekend_only"))
     today = today_date()
+    # Tope por ventana (ej. 2 cápsulas por fin de semana): reemplaza al
+    # cooldown; al llenarse se abre de nuevo la siguiente ventana.
+    tope = int(reward.get("max_por_ventana") or 0)
+    if tope and modo and today.weekday() in _VENTANAS[modo] and canjes_en_ventana(reward, today) >= tope:
+        siguiente = _inicio_ventana(today, modo) + timedelta(days=7)
+        return False, f"Ya van {tope} este fin de semana · disponible el {_fecha_corta(siguiente)}"
     # Cooldown primero: al vencer, la recompensa se abre el siguiente día de su
     # ventana (Carl's Jr: 30 días y luego el próximo vie/sáb/dom).
-    if reward["cooldown_days"] > 0 and reward["last_redeemed"]:
+    if reward["cooldown_days"] > 0 and reward["last_redeemed"] and not (tope and modo):
         cooldown_end = (
             datetime.fromisoformat(reward["last_redeemed"]) +
             timedelta(days=reward["cooldown_days"])
@@ -154,6 +183,8 @@ def index():
         r["status"] = _reward_status(r, ec_balance, current_level)
         r["icon"] = _reward_icon(r["name"])
         r["ventana"] = _VENTANA_LABEL.get(ventana_modo(r.get("weekend_only")), "")
+        r["max_por_ventana"] = int(r.get("max_por_ventana") or 0)
+        r["usados_ventana"] = canjes_en_ventana(r) if r["max_por_ventana"] else 0
         r["ec_pct"] = min(100, round(ec_balance / r["ec_cost"] * 100)) if r["ec_cost"] else 100
     # Las conseguidas (únicas ya canjeadas) al final
     rewards.sort(key=lambda r: r["status"] == "done")
@@ -206,8 +237,8 @@ def create_reward():
     now = datetime.now().isoformat()
     with get_db() as db:
         db.execute(
-            """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, weekend_only, created_at, unica)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
+            """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, weekend_only, created_at, unica, max_por_ventana)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (
                 name,
                 data.get("description", ""),
@@ -218,6 +249,7 @@ def create_reward():
                 ventana_modo(data.get("weekend_only", 0)),
                 now,
                 int(bool(data.get("unica", es_unica_por_nombre(name)))),
+                max(0, int(data.get("max_por_ventana", 0) or 0)),
             )
         )
         db.commit()
@@ -234,7 +266,7 @@ def update_reward(reward_id):
             return jsonify({"error": "not found"}), 404
         db.execute(
             """UPDATE rewards SET name=?, description=?, ec_cost=?, level_required=?,
-               badge_required=?, cooldown_days=?, weekend_only=?, unica=? WHERE id=?""",
+               badge_required=?, cooldown_days=?, weekend_only=?, unica=?, max_por_ventana=? WHERE id=?""",
             (
                 data.get("name", row["name"]),
                 data.get("description", row["description"]),
@@ -244,6 +276,7 @@ def update_reward(reward_id):
                 int(data.get("cooldown_days", row["cooldown_days"])),
                 ventana_modo(data.get("weekend_only", row["weekend_only"])),
                 int(bool(data.get("unica", row["unica"]))),
+                max(0, int(data.get("max_por_ventana", row["max_por_ventana"] or 0) or 0)),
                 reward_id,
             )
         )

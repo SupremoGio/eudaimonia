@@ -6,10 +6,11 @@
       else (r.block_reason if r.status == 'wait'
       else ('Conseguida' if r.status == 'done'
       else ('Una sola vez' if r.unica
-      else ('Cada ' ~ r.cooldown_days ~ ' d' if r.cooldown_days else 'Sin espera'))))) %}
+      else (r.max_por_ventana ~ ' por fin de semana' ~ (' · llevas ' ~ r.usados_ventana if r.usados_ventana else '') if r.max_por_ventana
+      else ('Cada ' ~ r.cooldown_days ~ ' d' if r.cooldown_days else 'Sin espera')))))) %}
   <article class="eu-card eu-vstack rw-card is-{{ r.status }}" data-status="{{ r.status }}" data-id="{{ r.id }}"
            data-name="{{ r.name }}" data-desc="{{ r.description or '' }}" data-cost="{{ r.ec_cost }}"
-           data-level="{{ r.level_required }}" data-cool="{{ r.cooldown_days }}" data-weekend="{{ r.weekend_only or 0 }}" data-unica="{{ 1 if r.unica else 0 }}">
+           data-level="{{ r.level_required }}" data-cool="{{ r.cooldown_days }}" data-weekend="{{ r.weekend_only or 0 }}" data-max="{{ r.max_por_ventana or 0 }}" data-unica="{{ 1 if r.unica else 0 }}">
     <div class="eu-hstack eu-gap-3">
       <div class="eu-row-ic rw-ic"><i data-lucide="{{ 'lock' if r.status == 'level' else ('circle-check-big' if r.status == 'done' else r.icon) }}"></i></div>
       <div class="eu-grow">
@@ -20,6 +21,7 @@
     {% if r.description %}<p class="t-meta rw-desc">{{ r.description }}</p>{% endif %}
     <div class="eu-hstack rw-tags">
       {% if r.unica %}<span class="eu-badge{{ ' eu-badge--success' if r.status == 'done' }}"><i data-lucide="{{ 'check' if r.status == 'done' else 'gem' }}"></i>Única vez</span>
+      {% elif r.max_por_ventana %}<span class="eu-badge"><i data-lucide="repeat"></i>{{ r.max_por_ventana }} por fin de semana{{ ' · llevas ' ~ r.usados_ventana if r.usados_ventana }}</span>
       {% elif r.cooldown_days %}<span class="eu-badge"><i data-lucide="repeat"></i>Periódica</span>{% endif %}
       {% if r.ventana %}<span class="eu-badge eu-badge--info"><i data-lucide="calendar-days"></i>{{ r.ventana }}</span>{% endif %}
       {% if r.badge_required %}<span class="eu-badge"><i data-lucide="award"></i>{{ r.badge_required }}</span>{% endif %}

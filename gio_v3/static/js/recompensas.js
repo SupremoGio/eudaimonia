@@ -78,6 +78,7 @@
     coolPrev = card && card.dataset.cool !== '0' ? card.dataset.cool : 30;
     $('#f-desc').value = card ? card.dataset.desc : '';
     $('#f-weekend').value = card ? (card.dataset.weekend || '0') : '0';
+    $('#f-max').value = card ? (card.dataset.max || '0') : '0';
     $('#f-unica').checked = card ? card.dataset.unica === '1' : false;
     coolSync();
     if (title) title.textContent = card ? 'Editar recompensa' : 'Nueva recompensa';
@@ -100,7 +101,7 @@
     json(editingId ? '/recompensas/api/rewards/' + editingId : '/recompensas/api/rewards', editingId ? 'PUT' : 'POST', {
       name: name, ec_cost: parseInt($('#f-cost').value, 10) || 0, level_required: parseInt($('#f-lvl').value, 10) || 1,
       cooldown_days: parseInt($('#f-cool').value, 10) || 0, description: $('#f-desc').value.trim(), weekend_only: parseInt($('#f-weekend').value, 10) || 0,
-      unica: $('#f-unica').checked,
+      unica: $('#f-unica').checked, max_por_ventana: parseInt($('#f-max').value, 10) || 0,
     }).then(function (d) {
       if (d.error) { toast(d.error, 'err'); btn.removeAttribute('aria-busy'); return; }
       toast(editingId ? 'Recompensa actualizada' : 'Recompensa agregada');
