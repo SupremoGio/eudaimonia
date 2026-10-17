@@ -69,14 +69,19 @@ Puedes agregar/editar recompensas directamente desde la tienda.
 
 ## Clasificación Diaria
 
-Evaluación automática al final de cada día:
+Calculada en vivo por `get_daily_classification()` (`modules/gamification/engine.py`)
+a partir de las anclas y touches de Acta Diurna — no depende del XP:
 
-| Rango | Condición |
-|-------|-----------|
-| 🪨 **Carbón** | <7 XP o sin acciones de progreso |
-| ⚔️ **Hierro** | 8–15 XP + ≥2 categorías |
-| 🥇 **Oro** | 16+ XP + ≥3 categorías |
-| 💎 **Diamante** | 20+ XP + ≥1 acción Alto Impacto |
+| Rango | Condición | Semana de descarga |
+|-------|-----------|--------------------|
+| 🪨 **Carbón** | Sin ancla del día (ni su versión mínima) | — |
+| ⚔️ **Hierro** | ≥1 ancla completa **o** su versión mínima | también con 2 touches |
+| 🥇 **Oro** | Hierro + 5 touches, 3 sesiones del día y ≥2 pilares distintos | 3 touches, 2 sesiones |
+| 💎 **Diamante** | Oro + 75% de las anclas de hoy (redondeo arriba, piso de 2) | igual |
+
+Cada ancla completa extra (después de la primera) descuenta 1 touch y 1 sesión
+de la meta de Oro. La versión mínima de un ancla da ⅓ del XP y no cuenta para
+Oro ni Diamante.
 
 ---
 
@@ -295,12 +300,21 @@ Si >3 perks seguidos activos: **-10% XP** por 2 días.
 | `/` | Dashboard principal |
 | `/actividades` | **Acta Diurna** — registro de actividades diarias |
 | `/recompensas` | **Tienda EC** — canjear Euda-Credits |
-| `/gtd` | Sistema GTD — inbox, next, proyectos |
-| `/finanzas` | Presupuesto, deudas, consumo |
+| `/logros` | Badges y logros |
+| `/gtd` | Sistema GTD — inbox, next, proyectos, someday, points |
+| `/finanzas` | Oikonomia — presupuesto, estados de cuenta, deudas, inversiones |
 | `/idiomas` | Journal de idiomas, tests |
 | `/nutricion` | Plan semanal de comidas |
-| `/perfil` | Datos personales, medidas |
-| `/sabado` | Checklist sábado (módulo legacy) |
+| `/recetas` | Recetario |
+| `/bienestar` | Hegemonikon — salud, fútbol, expediente médico |
+| `/ataraxia` | Rutina de fin de semana y prioridades |
+| `/eurythmia` | Baile — repertorio, sesiones |
+| `/paideia` | Libros y películas |
+| `/guardarropa` | Guardarropa + wishlist |
+| `/harma` | Vehículo — servicios, pólizas, siniestros |
+| `/plantas` | Plantas y cuidados |
+| `/viajes` | Viajes |
+| `/perfil` | Datos personales, medidas, documentos |
 | `/api/gamification/stats` | JSON: stats de gamificación |
 | `/api/gamification/badges` | JSON: badges y perks activos |
 | `/api/gamification/classification` | JSON: clasificación del día |
@@ -309,7 +323,7 @@ Si >3 perks seguidos activos: **-10% XP** por 2 días.
 
 ## Stack Técnico
 
-- **Backend:** Python 3 + Flask
+- **Backend:** Python 3.12 + Flask 3.1
 - **Base de datos:** SQLite local + Turso (híbrido async)
 - **Frontend:** HTML + CSS custom + Lucide icons + Vanilla JS
 - **Layout:** Sistema de diseño propio (dark theme, tokens CSS)
@@ -329,7 +343,8 @@ DATABASE_PATH=/data/pipeline.db
 
 ```bash
 cd gio_v3
-pip install flask
+pip install -r requirements.txt
+cp .env.example .env   # y rellena los valores
 python run.py
 # → http://localhost:5000/actividades
 ```

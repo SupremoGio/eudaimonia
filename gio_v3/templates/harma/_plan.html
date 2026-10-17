@@ -1,0 +1,16 @@
+{# Plan de mantenimiento por categoría + historial reciente #}
+<div class="hm-pane" id="pane-plan" role="tabpanel" aria-labelledby="tab-plan">
+  <div class="eu-between hm-bar">
+    <div class="eu-chips" role="group" aria-label="Filtrar plan" id="hm-filters"></div>
+    <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-plan-new"><i data-lucide="plus"></i>Servicio al plan</button>
+  </div>
+  <div class="hm-plan" id="hm-plan-cats"></div>
+  <aside class="eu-card eu-card--inset hm-nota">
+    <i data-lucide="info"></i>
+    <div><div class="t-eyebrow">Nota técnica</div><p class="t-body">Los fluidos higroscópicos (frenos, anticongelante) caducan aunque el coche no se use — el progreso por tiempo puede vencer antes que el de kilometraje.</p></div>
+  </aside>
+  <section class="eu-vstack hm-sec" aria-labelledby="hm-hist-t">
+    <h2 class="t-card" id="hm-hist-t">Historial reciente</h2>
+    <ol class="eu-card eu-card--flush eu-list hm-hist" id="hm-historial"></ol>
+  </section>
+</div>

@@ -85,7 +85,9 @@
       "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" add gio_v3/modules/finanzas/estados/routes.py)",
       "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" add gio_v3/modules/finanzas/routes.py)",
       "Bash(git -C \"C:\\\\Users\\\\magos\\\\Desktop\\\\PIPELINE_SG\\\\gio_v3_ACTUALIZADO\" commit -m \"fix: endpoint admin/fix-invex-spei para corregir Railway DB\")",
-      "Bash(python -c \"import sys; [print\\(l.rstrip\\(\\)\\) for l in sys.stdin]\")"
+      "Bash(python -c \"import sys; [print\\(l.rstrip\\(\\)\\) for l in sys.stdin]\")",
+      "Bash(rm -f /tmp/pipeline_anchorfix2.db)",
+      "Bash(DATABASE_PATH=/tmp/pipeline_anchorfix2.db SECRET_KEY=testkey python run.py --port 8093)"
     ]
   }
 }

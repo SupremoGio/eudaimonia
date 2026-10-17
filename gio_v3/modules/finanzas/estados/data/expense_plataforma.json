@@ -1,0 +1,1061 @@
+{
+ "fuente": "Export de la plataforma de Expense (data.xlsx, 2026-09-28): gastos con estatus distinto de Open; Refund LC = lo reembolsado en MXN.",
+ "items": [
+  {
+   "fecha": "2024-03-27",
+   "titulo": "MARISA PASTEL",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 410.0
+  },
+  {
+   "fecha": "2024-04-30",
+   "titulo": "dulces dia del nino",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 544.03
+  },
+  {
+   "fecha": "2024-04-30",
+   "titulo": "juguetes dia del nino",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 2400.0
+  },
+  {
+   "fecha": "2024-04-30",
+   "titulo": "Miguel Angel Silva De La Torre",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 470.99
+  },
+  {
+   "fecha": "2024-04-30",
+   "titulo": "Tiendas Soriana S.A de C.V",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 188.25
+  },
+  {
+   "fecha": "2024-05-08",
+   "titulo": "REGALOS DIA MADRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 4680.0
+  },
+  {
+   "fecha": "2024-05-13",
+   "titulo": "BOLSAS DIA DE MADRES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 285.0
+  },
+  {
+   "fecha": "2024-05-13",
+   "titulo": "BOLSAS DIA MADRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 285.0
+  },
+  {
+   "fecha": "2024-05-13",
+   "titulo": "FLORES DIA DE LA MADRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 348.24
+  },
+  {
+   "fecha": "2024-05-13",
+   "titulo": "FLORES DIA DE LAS MADRES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 348.24
+  },
+  {
+   "fecha": "2024-05-15",
+   "titulo": "PASTEL DIA DE LAS MADRES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 561.0
+  },
+  {
+   "fecha": "2024-05-15",
+   "titulo": "PASTEL DIA MADRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 561.0
+  },
+  {
+   "fecha": "2024-05-17",
+   "titulo": "DULCES ACTIVIDAD MAYO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 149.5
+  },
+  {
+   "fecha": "2024-05-17",
+   "titulo": "PAPELERIA ACTIVIDAD MAYO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 210.0
+  },
+  {
+   "fecha": "2024-05-24",
+   "titulo": "PASTEL ANIVERSARIO GDLAC",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 4640.0
+  },
+  {
+   "fecha": "2024-06-05",
+   "titulo": "CONFETI AC ANIVERSARIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 100.02
+  },
+  {
+   "fecha": "2024-06-05",
+   "titulo": "GLOBOS AC ANIVERSARIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 134.66
+  },
+  {
+   "fecha": "2024-06-28",
+   "titulo": "DULCES JUNTA MENSUAL",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 309.0
+  },
+  {
+   "fecha": "2024-07-10",
+   "titulo": "PASTEL CUMPLEAÑOS JULIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 542.0
+  },
+  {
+   "fecha": "2024-08-16",
+   "titulo": "pastel agosto",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 533.0
+  },
+  {
+   "fecha": "2024-09-02",
+   "titulo": "PASTEL SEPTIEMBRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 518.0
+  },
+  {
+   "fecha": "2024-09-09",
+   "titulo": "PASTEL SEPTIEMBRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 420.0
+  },
+  {
+   "fecha": "2024-09-10",
+   "titulo": "DULCES ACTIVIDADES SEPTIEMBRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 107.5
+  },
+  {
+   "fecha": "2024-09-27",
+   "titulo": "actividad septiembre",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 343.0
+  },
+  {
+   "fecha": "2024-10-08",
+   "titulo": "PASTEL OCTUBRE CUMPLEAÑOS",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 395.0
+  },
+  {
+   "fecha": "2024-10-09",
+   "titulo": "Dulces oct",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 107.0
+  },
+  {
+   "fecha": "2024-10-11",
+   "titulo": "Actividad mental health",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 265.0
+  },
+  {
+   "fecha": "2024-10-18",
+   "titulo": "DESPENSA SERVE 360",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1904.4
+  },
+  {
+   "fecha": "2024-10-18",
+   "titulo": "pastel cocina",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 415.0
+  },
+  {
+   "fecha": "2024-10-18",
+   "titulo": "PASTEL OCT",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 740.0
+  },
+  {
+   "fecha": "2024-10-22",
+   "titulo": "DIA DEL CHEF ACTIVIDAD",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 415.0
+  },
+  {
+   "fecha": "2024-10-22",
+   "titulo": "REFRESCO ACTI DIA DELCHEF",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 160.14
+  },
+  {
+   "fecha": "2024-10-22",
+   "titulo": "refrescos dia chef",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 86.0
+  },
+  {
+   "fecha": "2024-10-25",
+   "titulo": "pastel act oct",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 427.0
+  },
+  {
+   "fecha": "2024-10-25",
+   "titulo": "pizza actividad oct",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 596.0
+  },
+  {
+   "fecha": "2024-10-30",
+   "titulo": "pan de muerto",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 138.85
+  },
+  {
+   "fecha": "2024-10-31",
+   "titulo": "PAPELERIA ALTAR DE MUERTO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 335.0
+  },
+  {
+   "fecha": "2024-11-06",
+   "titulo": "Corona",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1044.0
+  },
+  {
+   "fecha": "2024-11-06",
+   "titulo": "Globos decoracion",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 71.5
+  },
+  {
+   "fecha": "2024-11-06",
+   "titulo": "pastel noviembre",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 395.0
+  },
+  {
+   "fecha": "2024-11-07",
+   "titulo": "uniforme asociado",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 558.0
+  },
+  {
+   "fecha": "2024-11-13",
+   "titulo": "DULCES NOV",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 107.0
+  },
+  {
+   "fecha": "2024-11-25",
+   "titulo": "PASTEL NOC",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 370.0
+  },
+  {
+   "fecha": "2024-11-29",
+   "titulo": "Decoracion Navidad",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1047.0
+  },
+  {
+   "fecha": "2024-11-29",
+   "titulo": "REGALOS POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 4895.0
+  },
+  {
+   "fecha": "2024-11-29",
+   "titulo": "SNACK ACTIVIDAD PINO NAVIDAD",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 196.0
+  },
+  {
+   "fecha": "2024-12-05",
+   "titulo": "pastle dic",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 395.0
+  },
+  {
+   "fecha": "2024-12-11",
+   "titulo": "pastel dic",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 320.0
+  },
+  {
+   "fecha": "2024-12-13",
+   "titulo": "CUADROS RECONOCIMIENTO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 625.0
+  },
+  {
+   "fecha": "2024-12-13",
+   "titulo": "DECORACION POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 239.9
+  },
+  {
+   "fecha": "2024-12-13",
+   "titulo": "DULCES PIÑATA POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 758.0
+  },
+  {
+   "fecha": "2024-12-20",
+   "titulo": "BOTANA POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 529.0
+  },
+  {
+   "fecha": "2024-12-20",
+   "titulo": "PAPEL REGALO POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 688.5
+  },
+  {
+   "fecha": "2024-12-20",
+   "titulo": "RECONOCIMIENTOS POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 201.5
+  },
+  {
+   "fecha": "2024-12-23",
+   "titulo": "pastel dic",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 459.0
+  },
+  {
+   "fecha": "2025-01-06",
+   "titulo": "ACTIVIDAD VIERNES BOTANA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 222.0
+  },
+  {
+   "fecha": "2025-01-08",
+   "titulo": "PASTEL ENERO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 420.0
+  },
+  {
+   "fecha": "2025-02-06",
+   "titulo": "ACTIVIDAD TAMALES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 2030.0
+  },
+  {
+   "fecha": "2025-02-17",
+   "titulo": "PASTEL FEB",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 445.0
+  },
+  {
+   "fecha": "2025-02-26",
+   "titulo": "PASTEL 1FEB",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 520.0
+  },
+  {
+   "fecha": "2025-02-28",
+   "titulo": "DULCES PULSE SURVEY",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 339.0
+  },
+  {
+   "fecha": "2025-02-28",
+   "titulo": "PASTEL 2FEB",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 380.0
+  },
+  {
+   "fecha": "2025-03-20",
+   "titulo": "ACTIVIDAD CAPACITACION MARZO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 441.3
+  },
+  {
+   "fecha": "2025-03-26",
+   "titulo": "PASTEL MARZO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 480.0
+  },
+  {
+   "fecha": "2025-03-27",
+   "titulo": "PASTEL CUMPLEAÑOS MARZO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 380.0
+  },
+  {
+   "fecha": "2025-04-21",
+   "titulo": "pastel abril",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 510.01
+  },
+  {
+   "fecha": "2025-04-25",
+   "titulo": "actividad snack abril",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 442.0
+  },
+  {
+   "fecha": "2025-04-30",
+   "titulo": "ACTIVIDAD BRAND INMERSION",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 254.5
+  },
+  {
+   "fecha": "2025-04-30",
+   "titulo": "PASTEL MAYO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 525.0
+  },
+  {
+   "fecha": "2025-05-07",
+   "titulo": "Snack lunes  Elotes",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1740.0
+  },
+  {
+   "fecha": "2025-05-08",
+   "titulo": "snack elotes pt 2",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1740.0
+  },
+  {
+   "fecha": "2025-05-09",
+   "titulo": "FLORES DIA MADRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 265.0
+  },
+  {
+   "fecha": "2025-05-09",
+   "titulo": "REGALO DIA DE LAS MADRES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 3667.0
+  },
+  {
+   "fecha": "2025-05-09",
+   "titulo": "Gastos AAE 12may25",
+   "tipo": "Miscellaneous (explain below) PS(690001) / SUN(601930)",
+   "monto": 1241.19
+  },
+  {
+   "fecha": "2025-05-13",
+   "titulo": "CAJA REGALOS DIA MADRES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 240.0
+  },
+  {
+   "fecha": "2025-05-14",
+   "titulo": "SNACK AAW CHURROS",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 3229.43
+  },
+  {
+   "fecha": "2025-05-16",
+   "titulo": "BANQUETE AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 19329.66
+  },
+  {
+   "fecha": "2025-05-16",
+   "titulo": "CANDADO ACTIVIDAD AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 65.0
+  },
+  {
+   "fecha": "2025-05-16",
+   "titulo": "DULCE ACTIVIDAD AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 97.0
+  },
+  {
+   "fecha": "2025-05-16",
+   "titulo": "PASTEL CUMPLEAÑO MAYO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 440.0
+  },
+  {
+   "fecha": "2025-05-19",
+   "titulo": "COMIDA HOT DOG MARTES AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 6214.25
+  },
+  {
+   "fecha": "2025-05-20",
+   "titulo": "PIPZAS 2 VIERNES AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1490.0
+  },
+  {
+   "fecha": "2025-05-20",
+   "titulo": "PIZZAS 1 VIERNES AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1490.0
+  },
+  {
+   "fecha": "2025-05-20",
+   "titulo": "PIZZAS 3 VIERNES AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1490.0
+  },
+  {
+   "fecha": "2025-05-21",
+   "titulo": "REFRESCOS AAW VIERNES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 398.0
+  },
+  {
+   "fecha": "2025-05-22",
+   "titulo": "UNIFORMES RRHH",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1003.0
+  },
+  {
+   "fecha": "2025-06-03",
+   "titulo": "DULCES ENCUESTA PULSE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 124.9
+  },
+  {
+   "fecha": "2025-06-10",
+   "titulo": "SNACK VIERNES BOTANA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 558.2
+  },
+  {
+   "fecha": "2025-06-13",
+   "titulo": "ACTIVIDAD CAPACITACION",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 244.0
+  },
+  {
+   "fecha": "2025-06-16",
+   "titulo": "PASTEL JUNIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 445.0
+  },
+  {
+   "fecha": "2025-06-18",
+   "titulo": "DULCES ACTIVIDAD JUNIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 122.5
+  },
+  {
+   "fecha": "2025-06-30",
+   "titulo": "Pastel julio",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 355.0
+  },
+  {
+   "fecha": "2025-07-03",
+   "titulo": "Pastel julio",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 380.0
+  },
+  {
+   "fecha": "2025-07-06",
+   "titulo": "UBER AEROPUERTO- CDMX",
+   "tipo": "Taxis & Airport Shuttles PS(655601) / SUN(600510)",
+   "monto": 179.91
+  },
+  {
+   "fecha": "2025-07-06",
+   "titulo": "UBER GDL - AEROPUERTO",
+   "tipo": "Taxis & Airport Shuttles PS(655601) / SUN(600510)",
+   "monto": 364.8
+  },
+  {
+   "fecha": "2025-07-07",
+   "titulo": "ACTIVIDAD JULIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 228.0
+  },
+  {
+   "fecha": "2025-07-10",
+   "titulo": "UBER CDMX - AEROPUERTO",
+   "tipo": "Taxis & Airport Shuttles PS(655601) / SUN(600510)",
+   "monto": 139.41
+  },
+  {
+   "fecha": "2025-07-11",
+   "titulo": "Pastel julio",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 545.0
+  },
+  {
+   "fecha": "2025-07-14",
+   "titulo": "COMIDA 3 SUMMIT",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 246.0
+  },
+  {
+   "fecha": "2025-07-14",
+   "titulo": "COMIDA HR SUMMIT",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 756.0
+  },
+  {
+   "fecha": "2025-07-14",
+   "titulo": "Taxi 1",
+   "tipo": "Taxis & Airport Shuttles PS(655601) / SUN(600510)",
+   "monto": 455.0
+  },
+  {
+   "fecha": "2025-07-15",
+   "titulo": "COMIDA 2 SUMMIT",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 336.99
+  },
+  {
+   "fecha": "2025-07-29",
+   "titulo": "cuadro",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 315.0
+  },
+  {
+   "fecha": "2025-07-30",
+   "titulo": "Dulces Actividad Junta Mensual",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 559.0
+  },
+  {
+   "fecha": "2025-07-30",
+   "titulo": "Pastel julio",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 555.0
+  },
+  {
+   "fecha": "2025-08-21",
+   "titulo": "pastel agosto",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 380.0
+  },
+  {
+   "fecha": "2025-08-29",
+   "titulo": "pastel agosto",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 380.0
+  },
+  {
+   "fecha": "2025-08-29",
+   "titulo": "VASOS ACTIVIDAD",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 75.0
+  },
+  {
+   "fecha": "2025-09-08",
+   "titulo": "PASTEL SEPT",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 434.01
+  },
+  {
+   "fecha": "2025-09-10",
+   "titulo": "PASTEL SEPT",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 499.0
+  },
+  {
+   "fecha": "2025-09-19",
+   "titulo": "DULCES HSKP WEEK",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 413.0
+  },
+  {
+   "fecha": "2025-09-22",
+   "titulo": "DHL CONTRATO CTM",
+   "tipo": "Associate Relations (explain below) PS(652302) / SUN(644130)",
+   "monto": 418.71
+  },
+  {
+   "fecha": "2025-09-23",
+   "titulo": "DECORACION HSKP WEEK",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 432.99
+  },
+  {
+   "fecha": "2025-09-23",
+   "titulo": "HSKP week",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 92.0
+  },
+  {
+   "fecha": "2025-10-21",
+   "titulo": "DULCES GRADUACION WORLD VISION",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 214.0
+  },
+  {
+   "fecha": "2025-10-21",
+   "titulo": "Dulces Halloween",
+   "tipo": "Miscellaneous PS(690001) / SUN(629901)",
+   "monto": 214.0
+  },
+  {
+   "fecha": "2025-10-22",
+   "titulo": "EXPENSE LISTONES ROSAS",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 150.0
+  },
+  {
+   "fecha": "2025-10-22",
+   "titulo": "LISTON ROSA CANCER DE MAMA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 150.0
+  },
+  {
+   "fecha": "2025-10-24",
+   "titulo": "FLORES GRADUACION",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 2963.18
+  },
+  {
+   "fecha": "2025-10-24",
+   "titulo": "FLORES GRADUACION WORLD VISION",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 2900.0
+  },
+  {
+   "fecha": "2025-10-31",
+   "titulo": "PAPELERIA ALTAR",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 329.0
+  },
+  {
+   "fecha": "2025-10-31",
+   "titulo": "PAPELERIA ALTAR DE MUERTO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 329.0
+  },
+  {
+   "fecha": "2025-11-01",
+   "titulo": "PASTEL NOV",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 549.0
+  },
+  {
+   "fecha": "2025-11-03",
+   "titulo": "DULCES ALTAR DE MUERTO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 277.25
+  },
+  {
+   "fecha": "2025-11-03",
+   "titulo": "DULCES ALTAR DE MUERTOS",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 277.25
+  },
+  {
+   "fecha": "2025-11-04",
+   "titulo": "FLORES ALTAR DE MUERTOS",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 348.62
+  },
+  {
+   "fecha": "2025-11-04",
+   "titulo": "FLORES PARA ALTAR",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 340.0
+  },
+  {
+   "fecha": "2025-11-18",
+   "titulo": "CANDADO ESTANTE SKYBAR",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 108.0
+  },
+  {
+   "fecha": "2025-12-01",
+   "titulo": "SNACK ARBOL DE NAVIDAD",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 152.0
+  },
+  {
+   "fecha": "2025-12-01",
+   "titulo": "SERVIVYAJES",
+   "tipo": "Taxis & Airport Shuttles PS(655601) / SUN(600510)",
+   "monto": 10461.0
+  },
+  {
+   "fecha": "2025-12-01",
+   "titulo": "SERVYVIAJES",
+   "tipo": "Taxis & Airport Shuttles PS(655601) / SUN(600510)",
+   "monto": 4694.0
+  },
+  {
+   "fecha": "2025-12-02",
+   "titulo": "LUCES ARBOL DE NAVIDAD",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 660.0
+  },
+  {
+   "fecha": "2025-12-04",
+   "titulo": "DULCES INVITACION POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 770.0
+  },
+  {
+   "fecha": "2025-12-15",
+   "titulo": "OPALINA INVITACION POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 270.0
+  },
+  {
+   "fecha": "2025-12-17",
+   "titulo": "ACTIVIDAD INTEGRACION MARRIOTT BONVOY",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 21273.0
+  },
+  {
+   "fecha": "2025-12-18",
+   "titulo": "DECORACION POSADA",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1010.0
+  },
+  {
+   "fecha": "2025-12-19",
+   "titulo": "boletos bus taskforce",
+   "tipo": "Taxis & Airport Shuttles PS(655601) / SUN(600510)",
+   "monto": 6105.08
+  },
+  {
+   "fecha": "2025-12-26",
+   "titulo": "EXPENSE DECORACION POSADA",
+   "tipo": "Associate Relations (explain below) PS(652302) / SUN(644130)",
+   "monto": 1010.0
+  },
+  {
+   "fecha": "2025-12-29",
+   "titulo": "EXPENSE MOÑOS PARA REGALOS",
+   "tipo": "Miscellaneous (explain below) PS(690001) / SUN(601930)",
+   "monto": 600.0
+  },
+  {
+   "fecha": "2026-01-07",
+   "titulo": "EXPENSE CHIP CEL RH",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 99.0
+  },
+  {
+   "fecha": "2026-01-07",
+   "titulo": "PASTEL ENERO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 355.0
+  },
+  {
+   "fecha": "2026-03-04",
+   "titulo": "ACTIVIDAD INTEGRACION MARRIOTT BONVOY",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1442.0
+  },
+  {
+   "fecha": "2026-04-02",
+   "titulo": "velas hora del planeta",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 140.0
+  },
+  {
+   "fecha": "2026-04-09",
+   "titulo": "JUNTA DEPARTAMENTAL FRONT ABRIL",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 476.0
+  },
+  {
+   "fecha": "2026-04-13",
+   "titulo": "PASTEL CUMPLEAÑOS ABRIL",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 570.0
+  },
+  {
+   "fecha": "2026-04-14",
+   "titulo": "ARREGLO FLORAL",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 2572.39
+  },
+  {
+   "fecha": "2026-04-21",
+   "titulo": "pastel cumpleaños abril",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 550.0
+  },
+  {
+   "fecha": "2026-04-28",
+   "titulo": "GLOBOS DECORACION DIA DEL NINO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 374.92
+  },
+  {
+   "fecha": "2026-04-30",
+   "titulo": "DESPEDIDA PRACTICANTES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 420.0
+  },
+  {
+   "fecha": "2026-05-05",
+   "titulo": "IMPRESIONES DIA DEL NIÑO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 119.8
+  },
+  {
+   "fecha": "2026-05-07",
+   "titulo": "DECORACION DIA DEL NINO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 347.0
+  },
+  {
+   "fecha": "2026-05-07",
+   "titulo": "JUNTA DEPARTAMENTAL FD MAYO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1157.0
+  },
+  {
+   "fecha": "2026-05-13",
+   "titulo": "REGALOS DIAS DE LAS MADRES",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 8067.68
+  },
+  {
+   "fecha": "2026-05-14",
+   "titulo": "DESPEDIDA ASOCIADOS FRONT",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 485.0
+  },
+  {
+   "fecha": "2026-05-15",
+   "titulo": "ACTIVIDAD AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 334.1
+  },
+  {
+   "fecha": "2026-05-15",
+   "titulo": "PASTEL CUMPLEANEROS MAYO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 480.0
+  },
+  {
+   "fecha": "2026-05-18",
+   "titulo": "IMPRESION AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 334.1
+  },
+  {
+   "fecha": "2026-05-19",
+   "titulo": "REFRESCOS AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 176.0
+  },
+  {
+   "fecha": "2026-05-26",
+   "titulo": "ACTIVIDAD AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 98.9
+  },
+  {
+   "fecha": "2026-05-26",
+   "titulo": "ACTIVIDAD CLAUSURA AAW",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 100.0
+  },
+  {
+   "fecha": "2026-05-27",
+   "titulo": "PASTEL ANIVERSARIO HOTEL",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 4582.0
+  },
+  {
+   "fecha": "2026-05-28",
+   "titulo": "Gastos decoracion Junta mensual Asociados junio 2026",
+   "tipo": "Miscellaneous (explain below) PS(690001) / SUN(601930)",
+   "monto": 371.0
+  },
+  {
+   "fecha": "2026-05-30",
+   "titulo": "Gastos decoracion Junta mensual Asociados junio 2026",
+   "tipo": "Miscellaneous (explain below) PS(690001) / SUN(601930)",
+   "monto": 1045.0
+  },
+  {
+   "fecha": "2026-06-01",
+   "titulo": "PASTEL ANIVERSARIO PT 2",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 4582.0
+  },
+  {
+   "fecha": "2026-06-02",
+   "titulo": "CUMPLEAÑOS JULIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 580.0
+  },
+  {
+   "fecha": "2026-06-12",
+   "titulo": "REFRESCOS  ACTIVIDAD MUNDIAL",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 198.0
+  },
+  {
+   "fecha": "2026-06-19",
+   "titulo": "REGALOS DIA DEL PADRE",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 3316.0
+  },
+  {
+   "fecha": "2026-06-20",
+   "titulo": "EXPENSE CUMPLEAÑOS JULIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 244.49
+  },
+  {
+   "fecha": "2026-06-23",
+   "titulo": "ACTIVIDAD JULIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 1860.13
+  },
+  {
+   "fecha": "2026-06-25",
+   "titulo": "PASTEL JUNIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 465.0
+  },
+  {
+   "fecha": "2026-06-26",
+   "titulo": "PASTEL JUNIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 500.0
+  },
+  {
+   "fecha": "2026-06-30",
+   "titulo": "CUADRO DESPEDIDA M",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 684.4
+  },
+  {
+   "fecha": "2026-07-08",
+   "titulo": "IMPRESION DESPEDIDA GM",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 213.0
+  },
+  {
+   "fecha": "2026-07-08",
+   "titulo": "PASTEL CUMPLEAÑOS JULIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 586.0
+  },
+  {
+   "fecha": "2026-07-09",
+   "titulo": "AMENIDAD ANIVERSARIOS",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 235.0
+  },
+  {
+   "fecha": "2026-07-09",
+   "titulo": "PASTEL CUMPLEAÑO JULIO",
+   "tipo": "Associate Celebrations Meals PS(655641) / SUN(624401)",
+   "monto": 475.0
+  }
+ ]
+}

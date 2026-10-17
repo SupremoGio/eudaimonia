@@ -1,0 +1,16 @@
+{# Cobertura de pilares: cuáles tocaste hoy (cuenta para Diamante) #}
+<section class="eu-card eu-vstack acta-cover" aria-labelledby="acta-cov-t">
+  <div class="eu-between">
+    <h2 class="t-card" id="acta-cov-t">Cobertura de pilares</h2>
+    <span class="t-meta num js-pillars-count">{{ clf.pillars|length }} / {{ pillar_meta|length }}</span>
+  </div>
+  <div class="acta-cover-grid">
+    {% for pk in pillar_meta %}
+    {% set pu = pillar_ui.get(pk, {}) %}
+    <div class="acta-cover-it{% if pk in clf.pillars %} is-on{% endif %}" data-cat="{{ pu.cat }}" data-pillar="{{ pk }}" title="{{ pu.name }}">
+      <span class="eu-mod-ic"><i data-lucide="{{ pu.icon }}"></i></span>
+      <span class="acta-cover-n">{{ pu.name }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</section>

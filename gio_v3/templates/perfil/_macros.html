@@ -1,0 +1,21 @@
+{# Filas de documento: adjuntos por campo y documentos generales #}
+{% macro doc_icon(doc) -%}
+{%- set ext = doc.original.split('.')[-1].lower() -%}
+{%- if ext in ['jpg', 'jpeg', 'png', 'webp'] -%}
+<img class="pf-thumb" src="/perfil/docs/{{ doc.filename }}" alt="" loading="lazy">
+{%- else -%}
+<div class="eu-row-ic{{ ' pf-ic-pdf' if ext == 'pdf' }}"><i data-lucide="{{ 'file-text' if ext == 'pdf' else ('table' if ext in ['xls', 'xlsx'] else ('archive' if ext == 'zip' else 'file')) }}"></i></div>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro doc_row(doc, field_key=None) %}
+<div class="eu-row pf-doc" id="{{ 'fdprow-' if field_key else 'docrow-' }}{{ doc.id }}">
+  {{ doc_icon(doc) }}
+  <div class="eu-row-main">
+    <a class="eu-row-t pf-doc-name" href="/perfil/docs/{{ doc.filename }}" target="_blank" rel="noopener">{{ doc.original }}</a>
+    <div class="eu-row-s">{{ doc.uploaded_at[:10] if doc.uploaded_at else '' }}</div>
+  </div>
+  <a class="eu-iconbtn" href="/perfil/docs/{{ doc.filename }}" target="_blank" rel="noopener" aria-label="Abrir {{ doc.original }}"><i data-lucide="external-link"></i></a>
+  <button type="button" class="eu-iconbtn pf-danger js-doc-del" data-id="{{ doc.id }}"{% if field_key %} data-field="{{ field_key }}"{% endif %} aria-label="Eliminar {{ doc.original }}"><i data-lucide="trash-2"></i></button>
+</div>
+{% endmacro %}

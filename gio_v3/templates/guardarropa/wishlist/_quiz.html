@@ -1,0 +1,31 @@
+{# Protocolo en 5 pasos: artículo → dopamina → solvencia → lógica → resultado.
+   Cada opción es un botón aria-pressed dentro de un grupo data-q. #}
+<div class="eu-card wl-quiz">
+  <div class="wl-stepper">
+    <div class="eu-progress eu-progress--cat eu-progress--thin" role="progressbar" aria-label="Avance del protocolo" aria-valuenow="0" aria-valuemax="100" id="wl-prog"><i style="width:0%"></i></div>
+    <ol class="wl-phases" id="wl-phases">
+      {% for p in ['Artículo','Dopamina','Solvencia','Lógica','Resultado'] %}<li data-ph="{{ loop.index0 }}"><span class="wl-ph-n num">{{ loop.index }}</span><span class="wl-ph-l">{{ p }}</span></li>{% endfor %}
+    </ol>
+  </div>
+
+  {# ── Paso 0: artículo ── #}
+  <form class="wl-step" data-step="0" id="f-item" autocomplete="off" novalidate>
+    <div class="t-eyebrow wl-tag"><i data-lucide="package"></i>Registro del artículo</div>
+    <h2 class="t-section">¿Qué artículo deseas adquirir?</h2>
+    <p class="t-body wl-insight">Registra los datos básicos del artículo. Esta información alimenta el algoritmo de decisión en cada fase del protocolo.</p>
+    <div class="eu-field"><label class="eu-label" for="f-nombre">Nombre del artículo *</label><input class="eu-input" id="f-nombre" placeholder="ej. MacBook Pro 14"></div>
+    <div class="eu-grid-2 wl-fgrid">
+      <div class="eu-field"><label class="eu-label" for="f-cat">Categoría</label><select class="eu-select" id="f-cat"><option value="">— seleccionar —</option>{% for c in categorias %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select></div>
+      <div class="eu-field"><label class="eu-label" for="f-precio">Precio estimado (MXN)</label><div class="eu-input-wrap wl-money"><span class="t-meta">$</span><input class="eu-input eu-input--money" id="f-precio" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div></div>
+      <div class="eu-field"><label class="eu-label" for="f-marca">Marca / modelo</label><input class="eu-input" id="f-marca" placeholder="ej. Apple"></div>
+      <div class="eu-field"><label class="eu-label" for="f-url">URL (opcional)</label><input class="eu-input" id="f-url" type="url" placeholder="https://…"></div>
+    </div>
+    <div class="eu-field"><label class="eu-label" for="f-desc">Descripción breve</label><input class="eu-input" id="f-desc" placeholder="¿Para qué lo usarías?"></div>
+    <div class="wl-nav"><span></span><span class="t-meta">Paso 1 de 4</span><button type="submit" class="eu-btn eu-btn--primary">Iniciar protocolo<i data-lucide="arrow-right"></i></button></div>
+  </form>
+
+  {% include "_ui/protocolo_pasos.html" %}
+
+  {# ── Paso 4: resultado (render en JS) ── #}
+  <div class="wl-step" data-step="4" id="wl-result" hidden aria-live="polite"></div>
+</div>

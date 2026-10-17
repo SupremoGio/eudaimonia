@@ -1,0 +1,20 @@
+{# Películas: contador de vistas, filtros y lista (render en static/js/paideia.js) #}
+<div class="eu-card pe-hero">
+  <div class="eu-between">
+    <div><div class="t-eyebrow">Mi ranking de películas</div><p class="t-meta pe-sub">Califica lo que ya viste · cultura general</p></div>
+    <div class="pe-count"><span class="t-data" id="pe-count-n">{{ peliculas.vistas_n }}/{{ peliculas.total }}</span><span class="t-meta">vistas</span></div>
+  </div>
+  <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Películas vistas" aria-valuenow="{{ peliculas.vistas_n }}" aria-valuemax="{{ peliculas.total }}" id="pe-bar"><i style="width:{{ (peliculas.vistas_n / peliculas.total * 100)|round(1) if peliculas.total else 0 }}%"></i></div>
+</div>
+
+<div class="pd-sec">
+  <div class="eu-chips" role="group" aria-label="Filtrar películas">
+    {{ ui.chip('Todas', pressed=True, count=peliculas.total, **{'data-pf': 'todos', 'id': 'pe-f-todos'}) }}
+    {{ ui.chip('Pendientes', count=peliculas.total - peliculas.vistas_n, **{'data-pf': 'pendientes', 'id': 'pe-f-pendientes'}) }}
+    {{ ui.chip('Vistas', count=peliculas.vistas_n, **{'data-pf': 'vistas', 'id': 'pe-f-vistas'}) }}
+    {{ ui.chip('Mi ranking', icon='trophy', **{'data-pf': 'ranking'}) }}
+  </div>
+  <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-new-peli"><i data-lucide="plus"></i>Película</button>
+</div>
+
+<div id="pe-list" class="pe-grid" aria-live="polite"></div>

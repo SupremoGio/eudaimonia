@@ -1,0 +1,32 @@
+{# Tarjeta de un artículo de la lista #}
+{% set pr = PRI.get(it.prioridad, ('info', it.prioridad)) %}
+{% set est = {'Pendiente': ('eu-badge--warning','clock'), 'Comprado': ('eu-badge--success','circle-check'), 'Descartado': ('','x')}.get(it.estado, ('','circle')) %}
+<article class="eu-card pr-card{{ ' is-done' if it.estado != 'Pendiente' }}" data-tone="{{ pr[0] }}" data-estado="{{ it.estado }}" data-prioridad="{{ it.prioridad }}">
+  <div class="pr-card-bd">
+    <div class="pr-card-top"><h2 class="t-card pr-name">{{ it.nombre }}</h2><span class="eu-badge pr-pri"><span class="pr-dot"></span>{{ it.prioridad }}</span></div>
+    <div class="pr-meta">
+      {% if it.categoria %}<span class="eu-badge">{{ it.categoria }}</span>{% endif %}
+      {% if it.tienda %}<span class="t-meta pr-ic"><i data-lucide="map-pin"></i>{{ it.tienda }}</span>{% endif %}
+      {% if it.url %}<a class="t-meta pr-ic pr-link" href="{{ it.url }}" target="_blank" rel="noopener"><i data-lucide="external-link"></i>Ver producto</a>{% endif %}
+      {% if it.protocolo_score is not none %}<span class="eu-badge" title="{{ it.protocolo_rec }}"><i data-lucide="shield"></i>Score {{ it.protocolo_score }}</span>{% endif %}
+      {% if it.comprar_con_ec %}<span class="eu-badge eu-badge--ec"><i data-lucide="coins"></i>{{ it.ec_pagado }} EC</span>{% endif %}
+    </div>
+    {% if it.notas %}<p class="t-meta pr-notas">{{ it.notas }}</p>{% endif %}
+    <dl class="pr-prices">
+      {% if it.precio_estimado %}<div><dt class="t-eyebrow">Estimado</dt><dd class="t-data">{{ money(it.precio_estimado) }} <span class="t-meta">MXN</span></dd></div>{% endif %}
+      {% if it.precio_real %}<div><dt class="t-eyebrow">Pagado</dt><dd class="t-data fg-success">{{ money(it.precio_real) }} <span class="t-meta">MXN</span></dd></div>{% endif %}
+      {% if it.mes_label %}<div><dt class="t-eyebrow">Objetivo</dt><dd class="t-meta pr-ic"><i data-lucide="calendar"></i>{{ it.mes_label }}</dd></div>{% endif %}
+    </dl>
+  </div>
+  <div class="pr-side">
+    <span class="eu-badge eu-badge--status {{ est[0] }}"><i data-lucide="{{ est[1] }}"></i>{{ it.estado }}</span>
+    <div class="pr-acts">
+      {% if it.estado == 'Pendiente' %}
+      <button type="button" class="eu-btn eu-btn--primary eu-btn--sm" data-comprar="{{ it.id }}" data-nombre="{{ it.nombre }}" data-precio="{{ it.precio_estimado or 0 }}"><i data-lucide="shopping-bag"></i>Comprado</button>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-descartar="{{ it.id }}">Descartar</button>
+      {% endif %}
+      <button type="button" class="eu-iconbtn" data-edit="{{ it.id }}" aria-label="Editar {{ it.nombre }}"><i data-lucide="pencil"></i></button>
+      <button type="button" class="eu-iconbtn pr-del" data-del="{{ it.id }}" aria-label="Eliminar {{ it.nombre }}"><i data-lucide="trash-2"></i></button>
+    </div>
+  </div>
+</article>

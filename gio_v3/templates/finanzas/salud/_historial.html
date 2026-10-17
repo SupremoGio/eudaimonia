@@ -1,0 +1,27 @@
+{# Evolución del patrimonio neto (snapshots) — SVG calculado en el servidor #}
+{% if historial %}
+{% set primero = historial[0].patrimonio_neto %}{% set ultimo = historial[-1].patrimonio_neto %}
+{% set delta = ultimo - primero %}{% set delta_pct = (delta / primero * 100) if primero != 0 else 0 %}
+{% set max_pn = historial|map(attribute='patrimonio_neto')|max %}{% set min_pn = historial|map(attribute='patrimonio_neto')|min %}
+{% set range_pn = [(max_pn - min_pn), 1]|max %}{% set n = historial|length %}{% set denom = [(n - 1), 1]|max %}
+{% set ns = namespace(line=[]) %}
+{% for h in historial %}{% set ns.line = ns.line + [((10 + loop.index0 * (580 / denom))|round(1))|string ~ ',' ~ ((16 + (1 - (h.patrimonio_neto - min_pn) / range_pn) * 108)|round(1))|string] %}{% endfor %}
+{% set line_pts = ns.line|join(' ') %}
+{% set last_x = (10 + (n - 1) * (580 / denom))|round(1) %}
+<section class="eu-card pt-hist" data-tone="{{ 'success' if delta >= 0 else 'danger' }}" aria-labelledby="pt-hist-t">
+  <div class="eu-between pt-box-hd">
+    <h2 class="t-card pt-box-t" id="pt-hist-t"><i data-lucide="bar-chart-3"></i>Evolución del patrimonio neto</h2>
+    <span class="t-meta">Últimos {{ n }} registros</span>
+  </div>
+  <p class="eu-badge eu-badge--status pt-delta nw-hide-block"><i data-lucide="{{ 'trending-up' if delta >= 0 else 'trending-down' }}"></i>{{ '+' if delta >= 0 }}{{ pm.money(delta) }} ({{ '+' if delta_pct >= 0 }}{{ "%.1f"|format(delta_pct) }}%)</p>
+  <div class="pt-chart nw-hide-block">
+    <svg viewBox="0 0 600 140" preserveAspectRatio="none" role="img" aria-label="Patrimonio neto de {{ historial[0].fecha }} a {{ historial[-1].fecha }}">
+      <polygon class="pt-area" points="10,140 {{ line_pts }} {{ last_x }},140"/>
+      <polyline class="pt-line" points="{{ line_pts }}" vector-effect="non-scaling-stroke"/>
+      {% for p in ns.line %}{% set xy = p.split(',') %}<circle class="pt-pt{{ ' is-last' if loop.last }}" cx="{{ xy[0] }}" cy="{{ xy[1] }}" r="{{ 4 if loop.last else 2.5 }}"><title>{{ historial[loop.index0].fecha }}: {{ pm.money(historial[loop.index0].patrimonio_neto, 2) }}</title></circle>{% endfor %}
+    </svg>
+  </div>
+  <div class="pt-hist-lbls t-meta num nw-hide-block">{% for h in historial %}<span>{{ h.fecha[5:] }}</span>{% endfor %}</div>
+  <div class="eu-between t-meta pt-hist-ft"><span>Primero: {{ historial[0].fecha }} · {{ pm.hide(pm.money(primero)) }}</span><span>Último: <b class="pt-last">{{ pm.hide(pm.money(ultimo)) }}</b></span></div>
+</section>
+{% endif %}

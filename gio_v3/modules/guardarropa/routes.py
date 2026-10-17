@@ -1,18 +1,34 @@
-import os, uuid, urllib.request, json, ipaddress, logging
+import os, uuid, urllib.request, json, ipaddress, logging, io
 from datetime import datetime
 from urllib.parse import urlparse
+from html import unescape
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from werkzeug.utils import secure_filename
+from PIL import Image, ImageOps
 from database import get_db
-from utils import clean_str, safe_float
+from utils import clean_str, safe_float, uploads_base_dir, today_str, optimize_photo
+from ec_constants import EC_RATE
+from modules.guardarropa import stylist
+from ia import gemini, gemini_search, extract_json, photo_for_ai
 
 _log = logging.getLogger(__name__)
 
 guardarropa_bp = Blueprint('guardarropa', __name__, template_folder='../../templates')
 
-UPLOAD_DIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'uploads', 'wardrobe')
+_BROWSER_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                  '(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+    'Accept-Language': 'es-MX,es;q=0.9,en;q=0.8',
+}
+
+UPLOAD_DIR  = os.path.join(uploads_base_dir(), 'wardrobe')
 ALLOWED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.heic'}
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Fotos de prendas: se re-comprimen a JPEG ≤1600px antes de guardar (ver
+# utils.optimize_photo, compartida con Plantas).
+_optimize_photo = optimize_photo
 
 CATEGORIAS = [
     'Camisa', 'Camiseta', 'Polo', 'Sudadera', 'Suéter',
@@ -28,7 +44,7 @@ ESTADOS    = ['nuevo', 'bueno', 'regular', 'donar']
 
 
 def _row(r):
-    return dict(r)
+    return dict(r) if r is not None else None
 
 
 # ── Pages ─────────────────────────────────────────────────────────────────────
@@ -61,7 +77,39 @@ def index():
     return render_template('guardarropa/index.html',
                            items=items, outfits=outfits,
                            categorias=CATEGORIAS, ocasiones=OCASIONES,
-                           temporadas=TEMPORADAS, estados=ESTADOS)
+                           temporadas=TEMPORADAS, estados=ESTADOS,
+                           today=today_str(), outfit_xp=_outfit_xp_state(),
+                           wish=_wishlist_summary())
+
+
+def _outfit_xp_state():
+    """Actividad «outfit» (+1 XP) del Acta: si existe y si ya se marcó hoy.
+    «Usar hoy · +1 XP» del panel la marca vía /actividades/api/activity/log."""
+    try:
+        import modules.actividades.activity_defs as adefs
+        act = adefs.get_by_key('outfit')
+        if not act or not act['active'] or act['hidden']:
+            return {'key': None, 'pts': 0, 'done': False}
+        with get_db() as db:
+            done = db.execute("SELECT 1 FROM activity_logs WHERE activity_key='outfit' AND date=?",
+                              (today_str(),)).fetchone() is not None
+        return {'key': 'outfit', 'pts': act['pts'], 'done': done}
+    except Exception:
+        return {'key': None, 'pts': 0, 'done': False}
+
+
+def _wishlist_summary():
+    """Resumen de la wishlist activa para el panel lateral."""
+    try:
+        with get_db() as db:
+            rows = db.execute("SELECT precio_estimado FROM wishlist_items "
+                              "WHERE estado IN ('evaluando','pendiente')").fetchall()
+            balance = max(0, db.execute("SELECT COALESCE(SUM(amount),0) AS s FROM coins_ledger").fetchone()['s'])
+        precios = [r['precio_estimado'] or 0 for r in rows]
+        canjeables = sum(1 for p in precios if p > 0 and -(-p // EC_RATE) <= balance)
+        return {'n': len(precios), 'total': sum(precios), 'canjeables': canjeables}
+    except Exception:
+        return {'n': 0, 'total': 0, 'canjeables': 0}
 
 
 # ── Wardrobe items API ────────────────────────────────────────────────────────
@@ -122,24 +170,32 @@ def update_item(iid):
         )
         db.commit()
         row = _row(db.execute("SELECT * FROM wardrobe_items WHERE id=?", (iid,)).fetchone())
+    if not row:
+        return jsonify({'error': 'not found'}), 404
     return jsonify(row)
 
 
 @guardarropa_bp.route('/api/item/<int:iid>', methods=['DELETE'])
 def delete_item(iid):
     with get_db() as db:
-        db.execute("UPDATE wardrobe_items SET activo=0 WHERE id=?", (iid,))
+        cur = db.execute("UPDATE wardrobe_items SET activo=0 WHERE id=?", (iid,))
         db.commit()
+    if not cur.rowcount:
+        return jsonify({'error': 'not found'}), 404
     return jsonify({'ok': True})
 
 
 @guardarropa_bp.route('/api/item/<int:iid>/uso', methods=['POST'])
 def register_uso(iid):
     with get_db() as db:
-        db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1 WHERE id=?", (iid,))
+        today = today_str()
+        cur = db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1, ultimo_uso=? WHERE id=?",
+                         (today, iid))
         db.commit()
+        if not cur.rowcount:
+            return jsonify({'error': 'not found'}), 404
         row = db.execute("SELECT veces_usado FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
-    return jsonify({'veces_usado': row['veces_usado']})
+    return jsonify({'veces_usado': row['veces_usado'], 'ultimo_uso': today})
 
 
 # ── Outfits API ───────────────────────────────────────────────────────────────
@@ -200,6 +256,8 @@ def update_outfit(oid):
             except Exception: pass
         db.commit()
         row = _row(db.execute("SELECT * FROM outfits WHERE id=?", (oid,)).fetchone())
+        if not row:
+            return jsonify({'error': 'not found'}), 404
         row['items'] = [_row(r) for r in db.execute(
             "SELECT oi.outfit_id, wi.id, wi.nombre, wi.categoria, wi.color_hex, wi.foto "
             "FROM outfit_items oi JOIN wardrobe_items wi ON oi.item_id=wi.id WHERE oi.outfit_id=?", (oid,)
@@ -212,27 +270,33 @@ def delete_outfit(oid):
     with get_db() as db:
         db.execute("DELETE FROM viaje_dia_outfits WHERE outfit_id=?", (oid,))
         db.execute("DELETE FROM outfit_items WHERE outfit_id=?", (oid,))
-        db.execute("DELETE FROM outfits WHERE id=?", (oid,))
+        cur = db.execute("DELETE FROM outfits WHERE id=?", (oid,))
         db.commit()
+    if not cur.rowcount:
+        return jsonify({'error': 'not found'}), 404
     return jsonify({'ok': True})
 
 
 @guardarropa_bp.route('/api/outfit/<int:oid>/usar', methods=['POST'])
 def usar_outfit(oid):
-    today = datetime.now().strftime('%Y-%m-%d')
+    today = today_str()
     with get_db() as db:
-        db.execute(
+        cur = db.execute(
             "UPDATE outfits SET veces_usado=COALESCE(veces_usado,0)+1, ultimo_uso=? WHERE id=?",
             (today, oid)
         )
+        if not cur.rowcount:
+            return jsonify({'error': 'not found'}), 404
         item_ids = [r['item_id'] for r in db.execute(
             "SELECT item_id FROM outfit_items WHERE outfit_id=?", (oid,)
         ).fetchall()]
         for iid in item_ids:
-            db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1 WHERE id=?", (iid,))
+            db.execute("UPDATE wardrobe_items SET veces_usado=veces_usado+1, ultimo_uso=? WHERE id=?",
+                       (today, iid))
         db.commit()
         row = _row(db.execute("SELECT * FROM outfits WHERE id=?", (oid,)).fetchone())
-    return jsonify({'ok': True, 'veces_usado': row.get('veces_usado', 1), 'ultimo_uso': today})
+    return jsonify({'ok': True, 'veces_usado': row.get('veces_usado', 1), 'ultimo_uso': today,
+                    'item_ids': item_ids})
 
 
 # ── Photo upload ──────────────────────────────────────────────────────────────
@@ -250,8 +314,21 @@ def upload_photo(iid):
         ext = _mime_map.get((f.content_type or '').split(';')[0].strip(), '')
     if ext not in ALLOWED_EXT:
         return jsonify({'ok': False, 'error': 'Tipo no permitido'}), 400
-    filename = uuid.uuid4().hex + ext
-    f.save(os.path.join(UPLOAD_DIR, filename))
+
+    data = f.read()
+    filename = uuid.uuid4().hex + '.jpg'
+    if not _optimize_photo(data, os.path.join(UPLOAD_DIR, filename)):
+        # HEIC es el único formato permitido que Pillow puede no saber
+        # decodificar de raíz (sin plugin) pese a ser una foto real — para
+        # ese caso se guarda tal cual. Cualquier otra extensión "permitida"
+        # (jpg/png/webp) que Pillow no pueda abrir casi seguro no es
+        # realmente una imagen de ese tipo — se rechaza en vez de guardar
+        # bytes sin validar.
+        if ext != '.heic':
+            return jsonify({'ok': False, 'error': 'No se pudo leer la imagen'}), 400
+        filename = uuid.uuid4().hex + ext
+        with open(os.path.join(UPLOAD_DIR, filename), 'wb') as out:
+            out.write(data)
     with get_db() as db:
         # remove old photo file if exists
         old = db.execute("SELECT foto FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
@@ -291,9 +368,7 @@ def _extract_image_url(page_url):
     """Extrae la URL de imagen principal de una página HTML (og:image, twitter:image, etc.)."""
     import re
     _validate_url(page_url)
-    req = urllib.request.Request(page_url, headers={
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    })
+    req = urllib.request.Request(page_url, headers=_BROWSER_HEADERS)
     with urllib.request.urlopen(req, timeout=10) as resp:
         ct = resp.headers.get('Content-Type', '')
         if 'image' in ct:
@@ -324,6 +399,215 @@ def _extract_image_url(page_url):
     raise ValueError('No se encontró imagen en la página')
 
 
+def _extract_meta(html):
+    """Extrae título, descripción, precio, marca e imagen de meta tags de una página de producto."""
+    import re
+
+    def find(*patterns):
+        for pat in patterns:
+            m = re.search(pat, html, re.IGNORECASE | re.DOTALL)
+            if m:
+                return unescape(m.group(1).strip())
+        return ''
+
+    title = find(
+        r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:title["\']',
+        r'<title>([^<]+)</title>',
+    )
+    desc = find(
+        r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:description["\']',
+        r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']+)["\']',
+    )
+    price = find(
+        r'<meta[^>]+property=["\']product:price:amount["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+property=["\']og:price:amount["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+itemprop=["\']price["\'][^>]+content=["\']([^"\']+)["\']',
+    )
+    brand = find(
+        r'<meta[^>]+property=["\']product:brand["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+itemprop=["\']brand["\'][^>]+content=["\']([^"\']+)["\']',
+    )
+    image = find(
+        r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']',
+        r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+    )
+    return {'title': title[:200], 'desc': desc[:400], 'price': price, 'brand': brand[:100], 'image': image}
+
+
+def _extract_jsonld_product(html):
+    """Busca datos estructurados schema.org/Product — suelen ser más confiables que los meta tags
+    en sitios que renderizan el resto de la página con JavaScript (muy común en e-commerce)."""
+    import re
+    for m in re.finditer(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        html, re.IGNORECASE | re.DOTALL
+    ):
+        try:
+            data = json.loads(m.group(1).strip())
+        except (json.JSONDecodeError, ValueError):
+            continue
+        blocks = data if isinstance(data, list) else [data]
+        expanded = []
+        for b in blocks:
+            if isinstance(b, dict) and isinstance(b.get('@graph'), list):
+                expanded.extend(b['@graph'])
+            else:
+                expanded.append(b)
+        for b in expanded:
+            if not isinstance(b, dict):
+                continue
+            types = b.get('@type')
+            types = types if isinstance(types, list) else [types]
+            if any(str(t).lower() == 'product' for t in types if t):
+                return b
+    return None
+
+
+def _jsonld_field(product, key):
+    val = product.get(key)
+    if isinstance(val, dict):
+        val = val.get('name') or val.get('url') or ''
+    elif isinstance(val, list) and val:
+        first = val[0]
+        val = first.get('name', '') if isinstance(first, dict) else first
+    return unescape(str(val).strip()) if val else ''
+
+
+def _jsonld_price(product):
+    offers = product.get('offers')
+    if isinstance(offers, list):
+        offers = offers[0] if offers else {}
+    if isinstance(offers, dict):
+        return str(offers.get('price') or offers.get('lowPrice') or '')
+    return ''
+
+
+def _parse_price(raw):
+    import re
+    if not raw:
+        return 0.0
+    cleaned = re.sub(r'[^\d.]', '', raw)
+    try:
+        return float(cleaned) if cleaned else 0.0
+    except ValueError:
+        return 0.0
+
+
+_HEX_RE = None
+
+
+def _valid_hex(value):
+    import re
+    global _HEX_RE
+    if _HEX_RE is None:
+        _HEX_RE = re.compile(r'^#[0-9a-fA-F]{6}$')
+    return bool(value) and bool(_HEX_RE.match(value))
+
+
+@guardarropa_bp.route('/api/parse-url', methods=['POST'])
+def parse_url():
+    """Lee una página de producto y propone los campos de la prenda (nombre, categoría, marca, color, precio…)."""
+    d = request.get_json(force=True)
+    page_url = (d.get('url') or '').strip()
+    if not page_url:
+        return jsonify({'ok': False, 'error': 'URL vacía'}), 400
+
+    try:
+        _validate_url(page_url)
+        req = urllib.request.Request(page_url, headers=_BROWSER_HEADERS)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read(300_000).decode('utf-8', errors='ignore')
+    except ValueError as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
+    except Exception as e:
+        _log.error('parse_url fetch %s: %s', page_url, e)
+        return jsonify({'ok': False, 'error': 'No se pudo acceder a la página'}), 400
+
+    meta = _extract_meta(html)
+    # Los datos estructurados (JSON-LD) suelen ser más confiables que los meta tags,
+    # sobre todo en tiendas que renderizan el resto del contenido con JavaScript.
+    product = _extract_jsonld_product(html)
+    if product:
+        meta['title'] = _jsonld_field(product, 'name') or meta['title']
+        meta['desc']  = _jsonld_field(product, 'description') or meta['desc']
+        meta['brand'] = _jsonld_field(product, 'brand') or meta['brand']
+        meta['image'] = _jsonld_field(product, 'image') or meta['image']
+        meta['price'] = _jsonld_price(product) or meta['price']
+
+    image = meta['image']
+    if image.startswith('//'):
+        image = 'https:' + image
+    elif image.startswith('/'):
+        p = urlparse(page_url)
+        image = f'{p.scheme}://{p.netloc}{image}'
+
+    result = {
+        'ok': True,
+        'suficiente_info': True,
+        'nombre': meta['title'][:120],
+        'categoria': '',
+        'subcategoria': '',
+        'marca': meta['brand'],
+        'color_name': '',
+        'color_hex': '',
+        'precio': _parse_price(meta['price']),
+        'ocasion': [],
+        'temporada': '',
+        'notas': '',
+        'foto_url': image,
+    }
+
+    if os.environ.get('GEMINI_API_KEY') and (meta['title'] or meta['desc']):
+        prompt = f"""Eres un asistente que estructura datos de productos de moda masculina para un armario digital.
+
+Texto extraído de una página de producto:
+Título: {meta['title']}
+Descripción: {meta['desc']}
+Marca detectada: {meta['brand'] or 'desconocida'}
+Precio detectado: {meta['price'] or 'desconocido'}
+
+Categorías válidas: {', '.join(CATEGORIAS)}
+Ocasiones válidas: {', '.join(OCASIONES)}
+Temporadas válidas: {', '.join(TEMPORADAS)}
+
+Si el título/descripción es genérico y NO describe una prenda real (por ejemplo solo dice algo
+como "Producto", "Artículo", "Prenda de Vestir", el nombre de la tienda a secas, un mensaje de
+error o de bloqueo de acceso), responde con "suficiente_info":false y deja el resto de los campos
+vacíos o en 0 — NO inventes categoría, color ni ocasión sin evidencia real en el texto.
+
+Responde SOLO con este JSON (sin markdown, sin texto extra):
+{{"suficiente_info":true,"nombre":"nombre corto y claro de la prenda","categoria":"una de las categorías válidas","subcategoria":"detalle breve, ej. Oxford, Slim fit (vacío si no aplica)","marca":"marca si se detecta, vacío si no","color_name":"nombre del color principal en español si se puede inferir, vacío si no","color_hex":"código hex aproximado del color principal, ej #1a2b3c (vacío si no se puede inferir)","precio":numero_o_0,"ocasion":["una o más de las ocasiones válidas"],"temporada":"una de las temporadas válidas","notas":"detalle útil breve, vacío si no aplica"}}"""
+        try:
+            raw = _extract_json(_gemini(prompt, max_tokens=512))
+            ai = json.loads(raw)
+            result['suficiente_info'] = bool(ai.get('suficiente_info', True))
+            if result['suficiente_info']:
+                if ai.get('nombre'):
+                    result['nombre'] = str(ai['nombre'])[:120]
+                if ai.get('categoria') in CATEGORIAS:
+                    result['categoria'] = ai['categoria']
+                result['subcategoria'] = clean_str(ai.get('subcategoria', ''), max_len=200)
+                if ai.get('marca'):
+                    result['marca'] = clean_str(ai['marca'], max_len=100)
+                result['color_name'] = clean_str(ai.get('color_name', ''), max_len=60)
+                if _valid_hex(ai.get('color_hex')):
+                    result['color_hex'] = ai['color_hex']
+                if ai.get('precio'):
+                    result['precio'] = safe_float(ai.get('precio'), min_val=0.0)
+                result['ocasion'] = [o for o in (ai.get('ocasion') or []) if o in OCASIONES]
+                if ai.get('temporada') in TEMPORADAS:
+                    result['temporada'] = ai['temporada']
+                result['notas'] = clean_str(ai.get('notas', ''), max_len=500)
+            else:
+                result['notas'] = 'La página no dio suficiente información del producto — completa los datos manualmente.'
+        except Exception as e:
+            _log.warning('parse_url gemini fallback (usando solo meta tags): %s', e)
+
+    return jsonify(result)
+
+
 @guardarropa_bp.route('/api/item/<int:iid>/fetch-url-photo', methods=['POST'])
 def fetch_url_photo(iid):
     d   = request.get_json(force=True)
@@ -336,20 +620,18 @@ def fetch_url_photo(iid):
         # Si _extract_image_url devolvió solo la URL (página HTML), descargar la imagen
         if data is None:
             _validate_url(img_url)
-            req2 = urllib.request.Request(img_url, headers={
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            })
+            req2 = urllib.request.Request(img_url, headers=_BROWSER_HEADERS)
             with urllib.request.urlopen(req2, timeout=10) as resp2:
                 ct = resp2.headers.get('Content-Type', '')
                 data = resp2.read(5 * 1024 * 1024)
 
-        if   'png'  in (ct or ''): ext = '.png'
-        elif 'webp' in (ct or ''): ext = '.webp'
-        else:                      ext = '.jpg'
-
-        filename = uuid.uuid4().hex + ext
-        with open(os.path.join(UPLOAD_DIR, filename), 'wb') as f:
-            f.write(data)
+        filename = uuid.uuid4().hex + '.jpg'
+        if not _optimize_photo(data, os.path.join(UPLOAD_DIR, filename)):
+            # A diferencia de la subida local, aquí no hay caso legítimo de
+            # HEIC-sin-plugin — es una URL externa, así que si Pillow no
+            # puede decodificarla como imagen, se rechaza en vez de guardar
+            # bytes sin validar de un origen no confiable.
+            return jsonify({'ok': False, 'error': 'La URL no devolvió una imagen válida'}), 400
         with get_db() as db:
             old = db.execute("SELECT foto FROM wardrobe_items WHERE id=?", (iid,)).fetchone()
             if old and old['foto']:
@@ -372,167 +654,293 @@ def serve_photo(filename):
     return send_from_directory(UPLOAD_DIR, filename)
 
 
+_AUDIT_WALK_MAX_ENTRIES = 50_000  # tope de archivos a inspeccionar por raíz, por seguridad
+
+
+def _buscar_en_disco(nombres_buscados: set, raices: list) -> dict:
+    """Recorre cada raíz en `raices` buscando archivos cuyo *basename* esté
+    en `nombres_buscados`. Solo lectura (os.walk). Devuelve
+    {nombre_archivo: ruta_completa_encontrada} para los que sí aparecen."""
+    encontrados = {}
+    pendientes = set(nombres_buscados)
+    for raiz in raices:
+        if not pendientes or not raiz or not os.path.isdir(raiz):
+            continue
+        vistos = 0
+        for dirpath, _dirnames, filenames in os.walk(raiz):
+            for fn in filenames:
+                vistos += 1
+                if fn in pendientes:
+                    encontrados[fn] = os.path.join(dirpath, fn)
+                    pendientes.discard(fn)
+            if vistos >= _AUDIT_WALK_MAX_ENTRIES or not pendientes:
+                break
+    return encontrados
+
+
+@guardarropa_bp.route('/admin/audit-fotos')
+def audit_fotos():
+    """Diagnóstico de solo lectura -- NUNCA borra ni modifica nada. El
+    usuario reportó ver "?" rotos en las fotos de un outfit. Este entorno
+    no tiene acceso al filesystem/volumen de Railway en producción, así
+    que este endpoint corre EN LA APP DESPLEGADA: primero compara cada
+    prenda con foto registrada contra el UPLOAD_DIR resuelto ahora mismo
+    (uploads_base_dir()), y para las que faltan ahí, además RECORRE el
+    volumen (raíz de DATABASE_PATH y su directorio padre) buscando el
+    archivo por nombre en cualquier subcarpeta -- así se distingue un
+    archivo realmente perdido de uno que sigue en disco pero en una ruta
+    distinta a la que el código está resolviendo (p.ej. un doble
+    "uploads/uploads" si el propio volumen ya se llama "uploads")."""
+    env_uploads_dir = os.environ.get('UPLOADS_DIR')
+    env_database_path = os.environ.get('DATABASE_PATH')
+    if env_uploads_dir:
+        modo = 'UPLOADS_DIR explícita'
+    elif env_database_path:
+        modo = 'derivada de DATABASE_PATH (volumen Railway)'
+    else:
+        modo = 'fallback local junto al código (efímero en Railway)'
+
+    with get_db() as db:
+        items = db.execute(
+            "SELECT id, nombre, categoria, foto FROM wardrobe_items "
+            "WHERE foto IS NOT NULL AND foto != ''"
+        ).fetchall()
+        outfit_map = {}
+        for r in db.execute(
+            "SELECT oi.item_id, o.id AS outfit_id, o.nombre AS outfit_nombre "
+            "FROM outfit_items oi JOIN outfits o ON oi.outfit_id = o.id"
+        ).fetchall():
+            outfit_map.setdefault(r['item_id'], []).append(
+                {'outfit_id': r['outfit_id'], 'outfit_nombre': r['outfit_nombre']}
+            )
+
+    faltantes = []
+    for r in items:
+        path = os.path.join(UPLOAD_DIR, r['foto'])
+        if not os.path.exists(path):
+            faltantes.append({
+                'item_id': r['id'],
+                'nombre': r['nombre'],
+                'categoria': r['categoria'],
+                'foto': r['foto'],
+                'outfits_afectados': outfit_map.get(r['id'], []),
+            })
+
+    raices_busqueda = []
+    if env_database_path:
+        vol_dir = os.path.dirname(os.path.abspath(env_database_path))
+        raices_busqueda.append(vol_dir)
+        raices_busqueda.append(os.path.dirname(vol_dir))
+    raices_busqueda.append(os.path.dirname(os.path.abspath(__file__)))  # ubicación del fallback viejo
+
+    encontrados_en_otro_lado = {}
+    if faltantes:
+        nombres = {f['foto'] for f in faltantes}
+        encontrados_en_otro_lado = _buscar_en_disco(nombres, raices_busqueda)
+        for f in faltantes:
+            f['encontrado_en'] = encontrados_en_otro_lado.get(f['foto'])
+
+    return jsonify({
+        'upload_dir_resuelto': UPLOAD_DIR,
+        'modo_resolucion': modo,
+        'raices_de_busqueda_en_disco': raices_busqueda,
+        'total_prendas_con_foto': len(items),
+        'total_fotos_faltantes_en_upload_dir': len(faltantes),
+        'total_recuperables_en_otra_ruta': len(encontrados_en_otro_lado),
+        'total_realmente_perdidas': len(faltantes) - len(encontrados_en_otro_lado),
+        'faltantes': faltantes,
+    })
+
+
 # ── AI helpers ───────────────────────────────────────────────────────────────
 
-def _gemini(prompt, max_tokens=4096):
-    """Call Gemini 2.5 Flash via REST. Returns raw text (JSON mode)."""
-    import urllib.error
-    api_key = os.environ.get('GEMINI_API_KEY', '')
-    if not api_key:
-        raise ValueError('GEMINI_API_KEY no configurada')
-    url = (
-        'https://generativelanguage.googleapis.com/v1beta/models/'
-        f'gemini-2.5-flash:generateContent?key={api_key}'
-    )
-    body = json.dumps({
-        'contents': [{'parts': [{'text': prompt}]}],
-        'generationConfig': {
-            'maxOutputTokens': max_tokens,
-            'temperature': 0.7,
-            'responseMimeType': 'application/json',
-            'thinkingConfig': {'thinkingBudget': 0},
-        },
-    }).encode()
-    req = urllib.request.Request(url, data=body,
-                                 headers={'Content-Type': 'application/json'})
-    try:
-        resp = urllib.request.urlopen(req, timeout=90)
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode('utf-8', errors='replace')
-        try:
-            msg = json.loads(err_body).get('error', {}).get('message', err_body[:200])
-        except Exception:
-            msg = err_body[:200]
-        raise ValueError(f'Gemini HTTP {e.code}: {msg}')
-    data = json.loads(resp.read().decode())
-    candidate = data['candidates'][0]
-    parts = candidate['content']['parts']
-    # Filter out thought=True parts (internal reasoning tokens from Gemini 2.5)
-    text_parts = [p.get('text', '') for p in parts if not p.get('thought', False)]
-    return ''.join(text_parts).strip()
-
-
-def _gemini_search(prompt, max_tokens=4096):
-    """Gemini 2.5 Flash con Google Search grounding (precios y temporadas de rebaja actuales).
-    El grounding no admite responseMimeType JSON, así que el JSON se extrae del texto.
-    Returns (text, sources)."""
-    import urllib.error
-    api_key = os.environ.get('GEMINI_API_KEY', '')
-    if not api_key:
-        raise ValueError('GEMINI_API_KEY no configurada')
-    url = (
-        'https://generativelanguage.googleapis.com/v1beta/models/'
-        f'gemini-2.5-flash:generateContent?key={api_key}'
-    )
-    body = json.dumps({
-        'contents': [{'parts': [{'text': prompt}]}],
-        'tools': [{'google_search': {}}],
-        'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.4},
-    }).encode()
-    req = urllib.request.Request(url, data=body,
-                                 headers={'Content-Type': 'application/json'})
-    try:
-        resp = urllib.request.urlopen(req, timeout=90)
-    except urllib.error.HTTPError as e:
-        raise ValueError(f'Gemini HTTP {e.code}')
-    data = json.loads(resp.read().decode())
-    candidate = data['candidates'][0]
-    parts = candidate.get('content', {}).get('parts', [])
-    text = ''.join(p.get('text', '') for p in parts if not p.get('thought', False)).strip()
-    sources = []
-    for ch in (candidate.get('groundingMetadata') or {}).get('groundingChunks', []):
-        web = ch.get('web') or {}
-        if web.get('uri'):
-            sources.append({'title': web.get('title', ''), 'url': web['uri']})
-    return text, sources[:5]
-
-
-def _extract_json(raw):
-    """Extract first valid JSON object from IA response, ignoring surrounding text."""
-    raw = raw.strip()
-    # Strip markdown fences
-    if '```' in raw:
-        parts = raw.split('```')
-        for part in parts:
-            part = part.strip()
-            if part.startswith('json'):
-                part = part[4:].strip()
-            if part.startswith('{'):
-                raw = part
-                break
-    # Find outermost { ... }
-    start = raw.find('{')
-    if start == -1:
-        raise ValueError(f'No JSON object in response: {raw[:200]}')
-    depth, end = 0, -1
-    for i, ch in enumerate(raw[start:], start):
-        if ch == '{':
-            depth += 1
-        elif ch == '}':
-            depth -= 1
-            if depth == 0:
-                end = i
-                break
-    if end == -1:
-        raise ValueError(f'Unclosed JSON in response: {raw[:200]}')
-    return raw[start:end + 1]
+# Gemini y la extracción de JSON viven en ia.py (compartidos con Plantas).
+_gemini = gemini
+_extract_json = extract_json
+_gemini_search = gemini_search
 
 
 
 
 # ── AI Analysis ──────────────────────────────────────────────────────────────
 
-@guardarropa_bp.route('/api/ai-outfit', methods=['POST'])
-def ai_generate_outfit():
-    if not os.environ.get('GEMINI_API_KEY'):
-        return jsonify({'ok': False, 'error': 'GEMINI_API_KEY no configurada'}), 503
+_COACH_PROMPT = """Eres estilista personal masculino. Tu trabajo NO es dar frases de revista, es decirle a este hombre exactamente qué ponerse de SU armario y cómo llevarlo.
 
-    d = request.get_json(force=True)
-    occasion = d.get('ocasion', 'Casual')
+{anchor_block}OCASIÓN: {occasion}
+{context_block}
+CANDIDATAS PRESELECCIONADAS POR FUNCIÓN (ya filtradas por ocasión; "afinidad" es un puntaje de color + formalidad{anchor_vs} — úsalo como pista, no como orden):
+{shortlist}
+{history_block}
+FUNCIONES QUE EL LOOK DEBE CUBRIR: {required}. Capa media/exterior, calcetas y accesorios solo si suman.
+
+REGLAS DE ESTILISMO QUE DEBES APLICAR (y citar cuando aplique):
+- Coherencia de formalidad: todas las piezas a ±1 nivel entre sí. Nada de prendas deportivas con sastrería.
+- Color: máximo 3 colores visibles; base neutra (≈70%), un color secundario y como mucho un acento. Si la ancla es un acento, el resto va neutro.
+- Contraste de valor: prenda superior e inferior con claridad distinta (claro/oscuro), salvo look monocromo intencional que se sostiene con texturas.
+- Cuero coordinado: cinturón del mismo tono que el calzado de piel. Marrón no va con traje negro.
+- Calcetas: del tono del pantalón (alarga la pierna) o un acento deliberado; invisibles con sneakers en look casual.
+- Denim: no denim con denim del mismo tono; jeans oscuros son el más formal.
+- Proporción: si la parte de arriba tiene volumen, la de abajo va más limpia y viceversa.
+- Clima/contexto: respeta temporada de la prenda y lo que diga el contexto.
+
+ARMA 3 PROPUESTAS DISTINTAS (no cambies solo una pieza entre ellas):
+1. enfoque "Clásico seguro": la combinación más sólida y fácil.
+2. enfoque "Elevado": la misma idea un escalón más pulida (capa, textura o calzado mejor).
+3. enfoque "Con carácter": una apuesta con más personalidad (contraste, textura o acento), que siga siendo apropiada.
+
+PROHIBIDO: frases genéricas como "combina bien", "es versátil", "luce elegante", "transmite confianza", "colores neutros que combinan". Cada explicación debe nombrar las prendas y sus colores concretos y decir el PORQUÉ técnico (contraste de valor, temperatura de color, formalidad, textura, proporción).
+
+Responde SOLO con JSON con esta forma exacta:
+{{"propuestas":[{{
+  "enfoque":"Clásico seguro",
+  "nombre":"nombre corto y específico del look (ej. 'Navy & camel para cena')",
+  "item_ids":[enteros de las candidatas{anchor_ids_note}],
+  "roles":[{{"id":entero,"rol":"qué aporta ESTA pieza al look, en una frase concreta"}}],
+  "paleta":"la lógica de color concreta: qué colores, en qué proporción y por qué funcionan juntos",
+  "why_works":"2-3 frases técnicas y concretas sobre por qué este conjunto funciona para {occasion}",
+  "styling":["instrucción de ejecución concreta: fajado o no, mangas, bastilla/puño del pantalón, botones, qué cinturón/calcetas, cómo llevar la capa"],
+  "evitar":"el error más probable al llevar este look, en una frase",
+  "pieza_faltante":{{"nombre":"prenda concreta que NO tiene y que mejoraría este look","categoria":"categoría","por_que":"qué resolvería"}} o null,
+  "rating":entero 1-5 honesto (5 solo si el look es impecable con lo disponible)
+}}]}}"""
+
+
+def _photo_for_ai(foto, max_dim=768):
+    """Foto local de la prenda lista para la IA (ver ia.photo_for_ai)."""
+    return photo_for_ai(os.path.join(UPLOAD_DIR, os.path.basename(foto)) if foto else None, max_dim)
+
+
+def _coach_outfits(occasion, anchor_id=None, contexto=''):
+    """Motor compartido de los dos modos del Coach de imagen. Devuelve
+    (payload, status)."""
+    if not os.environ.get('GEMINI_API_KEY'):
+        return {'ok': False, 'error': 'GEMINI_API_KEY no configurada'}, 503
 
     with get_db() as db:
-        items = [dict(r) for r in db.execute(
-            "SELECT id, nombre, categoria, subcategoria, color_hex, color_name, marca, ocasion, temporada, estado "
-            "FROM wardrobe_items WHERE activo=1 ORDER BY estado DESC"
+        rows = [dict(r) for r in db.execute(
+            "SELECT id, nombre, categoria, subcategoria, color_hex, color_name, marca, ocasion, "
+            "temporada, estado, veces_usado, ultimo_uso, notas, foto "
+            "FROM wardrobe_items WHERE activo=1"
         ).fetchall()]
+        anchor_outfits = []
+        if anchor_id:
+            anchor_outfits = [dict(r) for r in db.execute(
+                "SELECT o.id, o.nombre, o.ocasion, o.rating, "
+                "  (SELECT GROUP_CONCAT(oi2.item_id) FROM outfit_items oi2 WHERE oi2.outfit_id=o.id) AS ids "
+                "FROM outfits o JOIN outfit_items oi ON oi.outfit_id=o.id "
+                "WHERE oi.item_id=? ORDER BY o.rating DESC, o.veces_usado DESC LIMIT 6",
+                (anchor_id,)
+            ).fetchall()]
 
-    if not items:
-        return jsonify({'ok': False, 'error': 'No hay prendas en el armario'}), 400
+    if not rows:
+        return {'ok': False, 'error': 'No hay prendas en el armario'}, 400
 
-    items_list = '\n'.join([
-        f"ID {i['id']}: {i['nombre']} | {i['categoria']}{(' · '+i['subcategoria']) if i.get('subcategoria') else ''} "
-        f"| hex:{i['color_hex']} {i.get('color_name') or ''} | {i.get('marca') or ''} | estado:{i['estado']}"
-        for i in items
-    ])
+    items = [stylist.enrich(r) for r in rows]
+    by_id = {it['id']: it for it in items}
+    anchor = by_id.get(anchor_id) if anchor_id else None
+    if anchor_id and not anchor:
+        return {'ok': False, 'error': 'Prenda no encontrada'}, 404
 
-    prompt = f"""Eres un coach de imagen personal masculino de élite con 20 años de experiencia vistiendo a ejecutivos y figuras públicas.
+    shortlist = stylist.build_shortlist(items, occasion, anchor)
+    required = stylist.required_slots(anchor['slot'] if anchor else None)
+    missing = [s for s in required if not shortlist.get(s)]
+    if not shortlist or (anchor and len(missing) == len(required)):
+        return {'ok': False, 'error': 'Necesitas más prendas en el armario para combinar'}, 400
 
-INVENTARIO DISPONIBLE ({len(items)} prendas):
-{items_list}
+    shortlist_txt = '\n'.join(
+        f"[{stylist.SLOT_LABEL[slot]}]\n" + '\n'.join('  ' + stylist.item_line(it) for it in lst)
+        for slot, lst in sorted(shortlist.items(), key=lambda kv: stylist.SLOTS.index(kv[0]))
+    )
+    if missing:
+        shortlist_txt += ('\n(No hay candidatas para: ' + ', '.join(stylist.SLOT_LABEL[m] for m in missing)
+                          + ' — dilo en pieza_faltante en vez de forzar otra prenda.)')
 
-OCASIÓN: {occasion}
+    anchor_block = ''
+    anchor_photo = _photo_for_ai(anchor.get('foto')) if anchor else None
+    if anchor:
+        anchor_block = ('PRENDA ANCLA (el look se construye alrededor de ella; ya va incluida):\n  '
+                        + stylist.item_line(anchor, with_score=False)
+                        + f" | función: {stylist.SLOT_LABEL[anchor['slot']]}\n")
+        if anchor_photo:
+            anchor_block += ('  La imagen adjunta es la FOTO REAL de la prenda ancla: úsala para leer su color '
+                             'verdadero (el dato de color puede ser aproximado), estampado, textura, tejido, corte '
+                             'y detalles (logos, cuello, botones). Si la foto contradice los datos, manda la foto, '
+                             'y menciona en las explicaciones lo que ves en ella.\n')
+        anchor_block += '\n'
 
-Crea el outfit PERFECTO para esta ocasión usando SOLO las prendas del inventario. Aplica:
-- Harmonía de color (análogos, monocromático, contraste tonal, complementarios)
-- Equilibrio de proporciones visuales (proporción áurea en silhouette)
-- Dress code apropiado para la ocasión
-- Prioriza estado "nuevo" o "bueno"
+    context_block = f"CONTEXTO DEL USUARIO: {contexto}\n" if contexto else ''
+    history_block = ''
+    if anchor_outfits:
+        lines = []
+        for o in anchor_outfits:
+            ids = [int(x) for x in (o.get('ids') or '').split(',') if x.strip().isdigit()]
+            names = ', '.join(by_id[i]['nombre'] for i in ids if i in by_id and i != anchor['id'])
+            lines.append(f"  - «{o['nombre']}» ({o.get('ocasion') or 's/ocasión'}, {o.get('rating') or 0}★): {names}")
+        history_block = ('\nOUTFITS QUE YA TIENE GUARDADOS CON LA ANCLA (aprende de los mejor valorados, '
+                         'pero NO los repitas tal cual):\n' + '\n'.join(lines) + '\n')
 
-Responde SOLO con JSON (sin markdown, sin ```, sin texto extra):
-{{"nombre":"nombre elegante y descriptivo del look","ocasion":"{occasion}","item_ids":[IDs enteros de las prendas],"harmony":"tipo de harmonía de color específico","why_works":"por qué esta combinación funciona visualmente y psicológicamente — 2-3 líneas directas y concretas","tips":["tip concreto 1","tip concreto 2"],"rating":5}}
-
-REGLAS: item_ids son enteros del inventario · incluye superior + inferior + calzado si disponibles · rating es entero 1-5"""
+    prompt = _COACH_PROMPT.format(
+        anchor_block=anchor_block, occasion=occasion, context_block=context_block,
+        anchor_vs=' respecto a la ancla' if anchor else '',
+        shortlist=shortlist_txt, history_block=history_block,
+        required=', '.join(stylist.SLOT_LABEL[s] for s in required),
+        anchor_ids_note=f", SIN el ID {anchor['id']} de la ancla" if anchor else '',
+    )
 
     try:
-        raw = _extract_json(_gemini(prompt))
-        data = json.loads(raw)
-        data['item_ids'] = [int(x) for x in data.get('item_ids', []) if x]
-        data['ok'] = True
-        return jsonify(data)
+        data = json.loads(_extract_json(_gemini(prompt, max_tokens=8192, thinking_budget=2048,
+                                                temperature=0.8,
+                                                images=[anchor_photo] if anchor_photo else None)))
     except json.JSONDecodeError as e:
-        return jsonify({'ok': False, 'error': f'JSON inválido: {str(e)}'}), 500
+        return {'ok': False, 'error': f'JSON inválido: {str(e)}'}, 500
     except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        return {'ok': False, 'error': str(e)}, 500
+
+    raw_props = data.get('propuestas')
+    if not isinstance(raw_props, list):
+        raw_props = [data]  # el modelo devolvió una sola propuesta suelta
+    propuestas, seen = [], set()
+    for p in raw_props[:3]:
+        if not isinstance(p, dict):
+            continue
+        clean = stylist.sanitize_proposal(p, by_id, shortlist, anchor)
+        key = tuple(sorted(clean['item_ids']))
+        if len(clean['item_ids']) < 2 or key in seen:
+            continue
+        seen.add(key)
+        clean['ocasion'] = occasion
+        propuestas.append(clean)
+    if not propuestas:
+        return {'ok': False, 'error': 'La IA no devolvió un look válido, intenta de nuevo'}, 500
+
+    # Campos planos de la primera propuesta: compatibilidad con clientes viejos.
+    return {'ok': True, **propuestas[0], 'propuestas': propuestas,
+            'foto_analizada': bool(anchor_photo)}, 200
+
+
+def _coach_request():
+    d = request.get_json(force=True, silent=True) or {}
+    occasion = clean_str(d.get('ocasion') or 'Casual', max_len=40) or 'Casual'
+    contexto = clean_str(d.get('contexto') or '', max_len=300)
+    return d, occasion, contexto
+
+
+@guardarropa_bp.route('/api/ai-outfit', methods=['POST'])
+def ai_generate_outfit():
+    _, occasion, contexto = _coach_request()
+    payload, status = _coach_outfits(occasion, contexto=contexto)
+    return jsonify(payload), status
+
+
+@guardarropa_bp.route('/api/ai-outfit-from-item', methods=['POST'])
+def ai_generate_outfit_from_item():
+    d, occasion, contexto = _coach_request()
+    try:
+        anchor_id = int(d.get('item_id'))
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Falta item_id'}), 400
+    payload, status = _coach_outfits(occasion, anchor_id=anchor_id, contexto=contexto)
+    return jsonify(payload), status
 
 
 @guardarropa_bp.route('/api/capsule/analyze', methods=['POST'])
@@ -621,6 +1029,13 @@ Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-
         raw = _extract_json(_gemini(prompt, max_tokens=1024))
         data = json.loads(raw)
         data['ok'] = True
+        # Si la prenda no tenía nombre de color, se guarda el de la IA: la
+        # distribución de colores agrupa por ese nombre antes que por el hex.
+        nombre_ia = clean_str(data.get('color_name', ''), max_len=60)
+        if nombre_ia and not (r.get('color_name') or '').strip():
+            with get_db() as db:
+                db.execute("UPDATE wardrobe_items SET color_name=? WHERE id=?", (nombre_ia, iid))
+                db.commit()
         return jsonify(data)
     except json.JSONDecodeError:
         return jsonify({'ok': False, 'error': 'Respuesta IA inválida'}), 500
@@ -735,4 +1150,9 @@ REGLAS: incluye 5-7 factores · usa nombres EXACTOS del inventario en similares/
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 def _s(d, key, default='', max_len=500):
-    return clean_str(d.get(key, default), max_len=max_len)
+    # dict.get(key, default) solo usa `default` si la llave falta — un payload
+    # que mande explícitamente "" (p.ej. categoria/temporada/estado/color_hex
+    # sin seleccionar) lo dejaba pasar tal cual, saltándose el default previsto
+    # y colando filas con esos campos vacíos (ver auditoría de "categoría en
+    # blanco" en Guardarropa → Inteligencia). `or default` cierra ese hueco.
+    return clean_str(d.get(key, default), max_len=max_len) or default

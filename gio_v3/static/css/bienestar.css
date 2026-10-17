@@ -1,0 +1,16 @@
+/* Hegemonikon (/bienestar/) — Design System V2: accesos a Salud, Nutrición, Recetas, Fútbol… */
+.hg{display:flex;flex-direction:column;gap:var(--sp-5)}
+.hg h1,.hg p{margin:0}
+.hg-hd .t-page{margin-top:var(--sp-2)}
+.hg-lead{margin-top:var(--sp-2);color:var(--fg-2)}
+@media (max-width:767px){.hg-hd{display:none}}
+.hg-grid{display:grid;gap:var(--sp-3)}
+@media (min-width:640px){.hg-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1280px){.hg-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.hg-link{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-4);text-decoration:none;color:inherit}
+.hg-ic{background:var(--cat-bg);color:var(--cat-fg)}
+.hg-link-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hg-chev{width:16px;height:16px;color:var(--fg-3);flex-shrink:0}
+.hg-link.is-warning{border-color:var(--warning-border)}
+.hg-link.is-warning .t-meta{color:var(--warning-fg)}
+.hg-link.is-warning .hg-ic{background:var(--warning-bg);color:var(--warning-fg)}

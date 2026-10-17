@@ -2,6 +2,7 @@ import math
 from flask import Blueprint, render_template, request, jsonify, session, redirect
 from database import get_db
 from ec_constants import EC_RATE
+from modules import wishlist_dedup
 import datetime
 
 prioridades_bp = Blueprint('prioridades', __name__, template_folder='../../templates')
@@ -46,7 +47,7 @@ def index():
 
     summary = {
         'alta_pend': 0, 'media_pend': 0, 'baja_pend': 0,
-        'gastado': 0, 'pend_count': 0, 'comp_count': 0,
+        'gastado': 0, 'pend_count': 0, 'comp_count': 0, 'desc_count': 0,
     }
     for r in raw:
         if r['estado'] == 'Pendiente':
@@ -57,6 +58,8 @@ def index():
         elif r['estado'] == 'Comprado':
             summary['comp_count'] += r['cnt']
             summary['gastado']    += r['tr']
+        elif r['estado'] == 'Descartado':
+            summary['desc_count'] += r['cnt']
 
     items_dict = []
     for it in items:
@@ -66,6 +69,14 @@ def index():
 
     return render_template('finanzas/prioridades.html',
                            pg='prioridades', items=items_dict, summary=summary)
+
+
+@prioridades_bp.route('/api/existe')
+def existe():
+    """Aviso al crear: ¿ya hay un artículo con este nombre? (no bloquea)"""
+    with get_db() as db:
+        r = wishlist_dedup.existente(db, 'lista_prioridades', request.args.get('nombre', ''))
+    return jsonify({'existe': r})
 
 
 @prioridades_bp.route('/api/add', methods=['POST'])

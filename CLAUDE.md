@@ -23,11 +23,22 @@ gio_v3_ACTUALIZADO/          ← raíz del repo
 │   │   └── ...
 │   ├── templates/           ← Jinja2 (espejo de modules/)
 │   ├── static/              ← CSS, JS, imágenes
+│   ├── frontend/finanzas/   ← fuente Vite+React del SPA de Estados de cuenta
+│   │                            (npm run build → static/finanzas/assets/estados.js)
 │   ├── uploads/             ← fotos subidas por el usuario (no se commitean)
+│   ├── tests/               ← pytest (TODOS los tests viven aquí: cd gio_v3 && pytest)
+│   ├── migrations/          ← migraciones versionadas (registran en migration_log)
+│   ├── scripts/             ← utilidades de mantenimiento (pre_deploy_check, fixes)
+│   ├── .env.example         ← plantilla de variables de entorno
 │   ├── package.json         ← build local de Tailwind (npm run build:css)
 │   └── nixpacks.toml        ← config Nixpacks — Railway tiene Root Directory
 │                                = "gio_v3", así que nixpacks busca su config
 │                                AQUÍ, no en la raíz del repo (ver Deployment)
+├── docs/
+│   ├── PROJECT_CONTEXT.md   ← contexto técnico completo (para otras IAs)
+│   └── design/              ← referencia visual, NO se sirve ni se importa
+│       ├── prototipo-app/   ← prototipo React original
+│       └── ux-patches/      ← specs de los sprints UX (todos ya aplicados)
 ├── CLAUDE.md                ← este archivo
 ├── README.md
 ├── Procfile                 ← gunicorn para Heroku/repo-root fallback (no usado
@@ -43,8 +54,34 @@ gio_v3_ACTUALIZADO/          ← raíz del repo
 
 - `database.py` resuelve el path relativo a su propia ubicación (`__file__`), por eso
   el DB siempre está en `gio_v3/pipeline.db` sin importar desde dónde se arranque el proceso.
-- En producción Railway usa la variable de entorno `DATABASE_PATH` (volumen montado).
-- Turso (cloud) se sincroniza en escritura si `TURSO_DATABASE_URL` y `TURSO_AUTH_TOKEN` están definidos.
+- En producción Railway usa la variable de entorno `DATABASE_PATH`, que **debe** apuntar
+  a un volumen persistente montado (ver "Volumen de Railway" abajo) — es la fuente de
+  verdad: sobrevive redeploys por sí solo.
+- Turso (cloud) es un **respaldo asíncrono fuera del camino crítico** cuando hay volumen
+  (`DATABASE_PATH` definido): cada escritura se confirma primero en el volumen y el push a
+  Turso corre en background — si Turso está lento o caído, la app no se entera. Si el
+  volumen aparece vacío al arrancar (primer deploy o volumen nuevo), se hace un bootstrap
+  restaurando desde Turso una sola vez; nunca se pisa un volumen que ya tiene datos.
+- **Sin `DATABASE_PATH`** (dev local sin volumen) el filesystem es efímero, así que si
+  Turso está configurado el comportamiento es el modo previo: cada escritura bloquea hasta
+  que Turso la confirma, porque es la única copia que sobrevive un reinicio.
+- Diagnóstico: `get_db_status()` en `database.py` expone el modo activo
+  (`"volume + Turso backup (async)"` / `"hybrid (SQLite + Turso, sync)"` / `"local SQLite only"`).
+
+### Volumen de Railway — configuración manual (una sola vez)
+
+Esto **no se puede hacer desde el repo**, es un recurso del dashboard de Railway:
+
+1. En el servicio de Railway → pestaña **Volumes** → crear un volumen, mount path
+   sugerido `/data` (cualquier ruta escribible del contenedor sirve).
+2. Variable de entorno del servicio: `DATABASE_PATH=/data/pipeline.db` (debe apuntar a un
+   archivo *dentro* del mount path, no al directorio).
+3. Redeploy. En los logs de arranque debe aparecer
+   `[DB] Modo: SQLite en volumen (fuente de verdad) + Turso backup async OK` — si sale
+   `Modo hibrido: ... (sync)` es que `DATABASE_PATH` no llegó a definirse o el volumen no
+   quedó montado ahí.
+- Los uploads (`UPLOADS_DIR`, ver sección de Uploads) ya usan el mismo volumen vía
+  `uploads_base_dir()` — no hace falta un volumen aparte para eso.
 
 **Cuando necesites ejecutar un script que toca la DB:**
 
@@ -60,6 +97,39 @@ cd gio_v3 && python tu_script.py
 (fue eliminado en la limpieza del 2026-05-15) y si vuelve a aparecer es una copia
 obsoleta generada accidentalmente.
 
+## Uploads (fotos y documentos subidos por el usuario)
+
+**Regla crítica:** el directorio base de uploads lo resuelve `utils.uploads_base_dir()`,
+nunca lo hardcodees relativo a `__file__` en un módulo nuevo.
+
+- Prioridad: env var `UPLOADS_DIR` > **mismo directorio** que contiene el archivo de
+  `DATABASE_PATH` (mismo volumen de Railway que ya usa la DB) > `gio_v3/uploads` local
+  (dev, en .gitignore).
+- Los módulos que suben archivos (`guardarropa`, `perfil`, `plantas`, `harma`,
+  `bienestar/salud`) construyen su `UPLOAD_DIR` como
+  `os.path.join(uploads_base_dir(), '<subdir>')` — esa subcarpeta (`wardrobe/`, `docs/`,
+  `harma/`, `medico/`, `plantas/`) vive **directamente** dentro del directorio de
+  `DATABASE_PATH`, sin un nivel intermedio `uploads/` (en producción el volumen ya
+  está montado en una carpeta llamada `uploads`, ej. `DATABASE_PATH=/app/uploads/pipeline.db`
+  y las fotos están en `/app/uploads/wardrobe/...`).
+- **Por qué existe esto:** hasta 2026-09-07 cada módulo hardcodeaba su `UPLOAD_DIR`
+  relativo a su propia ubicación en el código (`gio_v3/uploads/...`), fuera del volumen
+  persistente de Railway (que solo cubría `DATABASE_PATH`, ej. `/data/pipeline.db`).
+  Cada redeploy crea un contenedor con filesystem nuevo, así que las fotos subidas
+  desaparecían (el usuario las reportó como "efímeras") aunque la DB sí persistía y
+  seguía referenciando el nombre de archivo ya perdido. Al derivar `UPLOADS_DIR` del
+  mismo volumen que `DATABASE_PATH`, los uploads persisten igual que la DB sin
+  necesitar configurar nada nuevo en Railway.
+- **Bug corregido 2026-09-22:** la primera versión de `uploads_base_dir()` unía un
+  `uploads` extra al directorio de `DATABASE_PATH` (`dirname(DATABASE_PATH)/uploads`),
+  asumiendo que el volumen se llamaría algo distinto a "uploads". En este deploy real
+  el volumen SÍ se llama `uploads`, así que esa ruta nunca existió
+  (`/app/uploads/uploads/wardrobe`) y las 89 fotos de Guardarropa se veían rotas en la
+  app aunque los archivos originales seguían intactos un nivel arriba
+  (`/app/uploads/wardrobe/`). Diagnosticado con el endpoint de solo lectura
+  `/guardarropa/admin/audit-fotos` (busca cada foto por nombre en todo el volumen antes
+  de darla por perdida). Cero fotos se perdieron — fue puramente un bug de ruta.
+
 ## Cómo arrancar la app localmente
 
 ```bash
@@ -74,7 +144,7 @@ App disponible en `http://localhost:5000`.
 
 ## Variables de entorno
 
-Crea `gio_v3/.env` (nunca se commitea). Usa `gio_v3/.env.example` como plantilla si existe.
+Crea `gio_v3/.env` (nunca se commitea). Usa `gio_v3/.env.example` como plantilla.
 
 ```
 TURSO_DATABASE_URL=libsql://...
@@ -97,6 +167,39 @@ SECRET_KEY=...
 | Recetas | `/recetas` | `modules/recetas/routes.py` |
 | Recompensas | `/recompensas` | `modules/recompensas/routes.py` |
 | Perfil | `/perfil` | `modules/perfil/routes.py` |
+
+Lista completa de rutas en `README.md` y `docs/PROJECT_CONTEXT.md`.
+
+## Navegación y UI (Design System V2)
+
+- **Navegación = una sola fuente:** `gio_v3/modules/nav.py` (`NAV`, `ACTIONS`,
+  `BOTTOM_NAV`). Un context processor (`app.py`) lo inyecta en todas las
+  plantillas; sidebar, bottom nav, sheet de Módulos, breadcrumb/título de la
+  topbar y ⌘K se generan desde ahí. Para agregar o renombrar una página, se
+  edita `nav.py`, no `layout_sub.html`. Las etiquetas pueden cambiar; las URLs no.
+- **CSS:** tokens en `static/css/app.css`; componentes `eu-*`, shell de
+  navegación, aliases V1→V2 (`.btn-a`, `.tile`, `.fi`…) y CSS legacy compartido
+  en `static/css/components.css`, que se compila dentro de `tailwind-built.css`
+  (`cd gio_v3 && npm run build:css`, y commitear el resultado). Si una clase
+  nueva de `components.css` solo aparece armada dinámicamente o puesta por JS,
+  agrégala al `safelist` de `tailwind.config.js` o Tailwind la purga.
+- **Macros:** `templates/_ui/macros.html` (`{% import '_ui/macros.html' as ui %}`).
+  Cargas: `ui.skel()` / `euSkel(el)`; vacíos: `ui.empty(..., compact=True)` / `euEmpty()`.
+- **Motion y feedback (JS global del layout):** `static/js/eu-motion.js` →
+  `toast()` (aria-live), `euConfirm()`, `euGam(gam, {el})` tras cualquier
+  acción que dé XP (float «+N XP», barra, contador, logros), `euAchievement()`.
+  `static/js/eu-celebrate.js` es **solo** el level-up (`euCheckLevel`). Sin
+  confeti. `static/js/eu-a11y.js`: flechas en `role=tablist` y salto al contenido.
+- **PWA:** `static/manifest.json` + `static/icons/` (theme-color `#09070F`);
+  safe areas con `env(safe-area-inset-*)` en el bloque SAFE AREAS de components.css.
+- Referencia de diseño: `docs/design/design-system-v2/` (README + `PROMPTS.md`).
+
+## Limpieza del repo
+
+- Scripts de un solo uso: una vez aplicados en producción se **borran** (quedan en el
+  historial de git), no se archivan en carpetas `archive/`.
+- Carpetas de IDE (`.idea/`), clones de Claude (`.claude/worktrees/`) y `__pycache__`
+  están en `.gitignore` — no los agregues con `git add -A`.
 
 ## Deployment (Railway)
 
@@ -121,6 +224,8 @@ prefijo `gio_v3/` ni hacer `cd gio_v3`. Si un comando falla con
 - El CSS de Tailwind (`static/css/tailwind-built.css`) se compila localmente
   con `npm run build:css` y se commitea ya construido — no se recompila en
   cada deploy de Railway.
+- Igual el SPA de Estados de cuenta: `cd gio_v3/frontend/finanzas && npm run build`
+  y se commitea `static/finanzas/assets/estados.js` (ver su README).
 
 ## Worktrees de Claude
 

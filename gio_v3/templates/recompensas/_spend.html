@@ -1,0 +1,25 @@
+{# Gasto libre de EC (sin recompensa predefinida): pesos ⇄ EC #}
+<section class="eu-card eu-vstack rw-spend" aria-labelledby="rw-spend-t">
+  <div class="eu-between">
+    <h2 class="t-card" id="rw-spend-t">Gastar EC</h2>
+    <span class="t-meta num">1 EC = ${{ ec_rate }}</span>
+  </div>
+  <form class="eu-vstack js-spend" autocomplete="off">
+    <div class="rw-spend-row">
+      <div class="eu-field">
+        <label class="eu-label" for="g-pesos">Pesos MXN</label>
+        <input class="eu-input eu-input--money" id="g-pesos" type="number" min="0" inputmode="decimal" placeholder="150">
+      </div>
+      <i data-lucide="arrow-left-right" class="rw-swap" aria-hidden="true"></i>
+      <div class="eu-field">
+        <label class="eu-label" for="g-ec">EC</label>
+        <input class="eu-input eu-input--money" id="g-ec" type="number" min="1" inputmode="numeric" placeholder="15">
+      </div>
+    </div>
+    <div class="eu-field">
+      <label class="eu-label" for="g-desc">¿En qué lo gastaste?</label>
+      <input class="eu-input" id="g-desc" placeholder="Helado, salida al cine…" maxlength="120">
+    </div>
+    <button type="submit" class="eu-btn eu-btn--secondary"><i data-lucide="banknote"></i>Registrar gasto</button>
+  </form>
+</section>

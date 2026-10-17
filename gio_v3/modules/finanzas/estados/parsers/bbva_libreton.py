@@ -2,19 +2,46 @@
 BBVA Libretón Básico Cuenta Digital — Estado de cuenta débito.
 """
 import re
+from itertools import combinations
 from pathlib import Path
 
-from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA
+from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA, get_categoria_subcategoria
 from ._base import open_pdf
 
 ABONO_KW = [
-    "SPEI RECIBIDO", "PAGO DE NOMINA", "DEPOSITO EFECTIVO",
-    "SU PAGO", "SITH", "ABONO",
+    "SPEI RECIBIDO", "PAGO DE NOMINA", "DEPOSITO EFECTIVO", "DEPOSITO DE TERCERO",
+    "SU PAGO", "SITH", "ABONO", "DEVUELTO",
+    # Devuelve una «RECARGAS Y PAQUETES» del mismo día: siempre abono. Cuando
+    # hay varias recargas y correcciones iguales seguidas, el saldo impreso no
+    # alcanza para decidir cuál es cuál y quedaban como cargo (Libretones
+    # 202210, 202212 y 202301: 16/09, 07/11 y 10/12/2022).
+    "CORRECCION COMPRA TIEMPO",
 ]
 
+# "PAGO CUENTA DE TERCERO" y "CORRECCION" son descripciones que de verdad
+# pueden ser cargo O abono según el caso — BBVA no lo distingue en el texto
+# (a diferencia de "SPEI ENVIADO"/"SPEI RECIBIDO", que sí son inequívocos
+# por nombre). Adivinar por palabra clave le atinaba la mayoría de las
+# veces pero fallaba en silencio en el resto — ver commit "Verificar
+# cargo/abono de PAGO CUENTA DE TERCERO contra el saldo del PDF" (y, para
+# "CORRECCION COMPRA TIEMPO", un caso real confirmado contra Total Importe
+# Cargos/Abonos: una reversión de cargo que el parser tenía por default en
+# GASTO). Para estas líneas se verifica el signo contra el saldo impreso
+# en vez de adivinar.
+AMBIGUOUS_KW = ["PAGO CUENTA DE TERCERO", "CORRECCION"]
+
+# NOTA: igual que en bbva_debit.py::CATS_DEBIT (mismo bug, mismo fix) --
+# estas son categorías-cajón para movimientos bancarios que
+# get_categoria_subcategoria() (config.py) no reconoce por texto de
+# comercio, remapeadas en _remap_legacy() de abajo, nunca guardadas
+# literalmente. "INVERSION" se quitó (rompía el modelo de inversiones:
+# categoria debe ser la plataforma, ej. CETES/GBM -- "NAFIN" en esta lista
+# hacía que retiros de CETES vía Nacional Financiera quedaran con
+# categoria='INVERSION' literal). "NOMINA" se angostó a solo "PAGO DE
+# NOMINA" por la misma razón que en bbva_debit.py (ver
+# finanzas_audit_duplicados_dic_2026_09).
 CATS_LIBRETON = {
-    "NOMINA":        ["PAGO DE NOMINA", "NOMINA", "FIBRA HOTELERA"],
-    "INVERSION":     ["CETES", "GBM", "BITSO", "NAFIN", "FONDO"],
+    "NOMINA":        ["PAGO DE NOMINA"],
     "PAGO_TDC":      ["PAGO TARJETA DE CREDITO", "PAGO TARJETA DE TERCEROS",
                       "PAGO INTERBANCARIO"],
     "SPEI_ENVIADO":  ["SPEI ENVIADO"],
@@ -23,6 +50,17 @@ CATS_LIBRETON = {
     "DEPOSITO":      ["DEPOSITO EFECTIVO"],
     "FIDEICOMISO":   ["FIDEICOMISO", "SITH"],
     "TRANSFERENCIA": ["PAGO CUENTA DE TERCERO", "BNET"],
+}
+
+_LEGACY_REMAP = {
+    "NOMINA":        ("NOMINA", "Pago nominal"),
+    "PAGO_TDC":      ("PAGO_TDC", ""),
+    "SPEI_ENVIADO":  ("FINANZAS", "Transferencia enviada"),
+    "SPEI_RECIBIDO": ("FINANZAS", "Transferencia recibida"),
+    "RETIRO":        ("FINANZAS", "Retiro efectivo"),
+    "DEPOSITO":      ("FINANZAS", "Depósito"),
+    "FIDEICOMISO":   ("FINANZAS", "Fideicomiso"),
+    "TRANSFERENCIA": ("FINANZAS", "Transferencia"),
 }
 
 SKIP_KW = [
@@ -42,25 +80,61 @@ SKIP_KW = [
 
 TXN_RE = re.compile(
     r"^(\d{2}/[A-Z]{3})\s+(\d{2}/[A-Z]{3})\s+(.+?)\s+([\d,]+\.\d{2})"
-    r"(?:\s+[\d,]+\.\d{2}(?:\s+[\d,]+\.\d{2})?)?\s*$",
+    r"(?:\s+([\d,]+\.\d{2})(?:\s+[\d,]+\.\d{2})?)?\s*$",
     re.IGNORECASE,
 )
 
 PERIODO_RE = re.compile(
-    r"periodo\s+del\s+\d{2}/\d{2}/(\d{4})\s+al\s+\d{2}/\d{2}/(\d{4})",
+    r"periodo\s+del\s+\d{2}/(\d{2})/(\d{4})\s+al\s+\d{2}/(\d{2})/(\d{4})",
     re.IGNORECASE,
 )
 CORTE_RE = re.compile(r"fecha\s+de\s+corte\s+\d{2}/\d{2}/(\d{4})", re.IGNORECASE)
+SALDO_ANTERIOR_RE = re.compile(r"saldo\s+anterior\s+([\d,]+\.\d{2})", re.IGNORECASE)
+SALDO_FINAL_RE = re.compile(r"saldo\s+final\s+([\d,]+\.\d{2})", re.IGNORECASE)
+TOTAL_CARGOS_RE = re.compile(
+    r"total\s+importe\s+cargos\s+([\d,]+\.\d{2})\s+total\s+movimientos\s+cargos\s+(\d+)",
+    re.IGNORECASE,
+)
+TOTAL_ABONOS_RE = re.compile(
+    r"total\s+importe\s+abonos\s+([\d,]+\.\d{2})\s+total\s+movimientos\s+abonos\s+(\d+)",
+    re.IGNORECASE,
+)
 
 
-def _extract_year(full_text: str) -> int:
+def _extract_year_bounds(full_text: str) -> tuple[int, int, int, int]:
+    """Devuelve (mes_inicio, anio_inicio, mes_fin, anio_fin) del periodo.
+
+    El periodo de un Libretón siempre corta a mediados de mes (ej. "DEL
+    07/12/2024 AL 06/01/2025"), así que en diciembre-enero el año de inicio
+    y el de fin son distintos. Aplicar un solo año a todas las fechas del
+    estado de cuenta (como hacía la versión anterior) desplazaba un año
+    completo cada movimiento de diciembre — se colaban en el "2025-12" del
+    año siguiente en vez de "2024-12", y por lo tanto desaparecían al
+    filtrar por 2024 en la app.
+    """
     m = PERIODO_RE.search(full_text)
     if m:
-        return int(m.group(2))
+        mes_ini, anio_ini, mes_fin, anio_fin = m.groups()
+        return int(mes_ini), int(anio_ini), int(mes_fin), int(anio_fin)
     m = CORTE_RE.search(full_text)
     if m:
-        return int(m.group(1))
-    return 2025
+        anio = int(m.group(1))
+        return 1, anio, 12, anio
+    return 1, 2025, 12, 2025
+
+
+def _year_for_month(mon_abbr: str, bounds: tuple[int, int, int, int]) -> int:
+    mes_ini, anio_ini, mes_fin, anio_fin = bounds
+    if anio_ini == anio_fin:
+        return anio_ini
+    mes = int(MESES.get(mon_abbr.lower(), "0") or "0")
+    if mes == mes_ini:
+        return anio_ini
+    if mes == mes_fin:
+        return anio_fin
+    # Mes fuera de lo esperado (no debería pasar en un periodo de ~1 mes):
+    # nos quedamos con el año cuyo mes de borde está más cerca.
+    return anio_fin if mes <= mes_fin else anio_ini
 
 
 def _extract_periodo(full_text: str) -> str | None:
@@ -72,18 +146,25 @@ def _extract_periodo(full_text: str) -> str | None:
     return None
 
 
-def _parse_date(s: str, year: int) -> str:
+def _parse_date(s: str, bounds: tuple[int, int, int, int]) -> str:
     day, mon = s.split("/")
     mm = MESES.get(mon.lower(), "00")
+    year = _year_for_month(mon, bounds)
     return f"{year}-{mm}-{day.zfill(2)}"
 
 
-def _categorize(desc: str) -> str:
+def _categorize(desc: str, es_gasto: bool) -> tuple[str, str]:
+    # Ver bbva_debit.py::_categorize -- mismo orden (config.py primero,
+    # solo para GASTO, luego el cajón legacy de este archivo).
+    if es_gasto:
+        cat, subcat = get_categoria_subcategoria(desc)
+        if cat != "OTROS":
+            return cat, subcat
     du = desc.upper()
-    for cat, kws in CATS_LIBRETON.items():
+    for legacy_cat, kws in CATS_LIBRETON.items():
         if any(k in du for k in kws):
-            return cat
-    return "OTROS"
+            return _LEGACY_REMAP[legacy_cat]
+    return "OTROS", ""
 
 
 def _clean(desc: str) -> str:
@@ -102,7 +183,73 @@ def _should_skip(line: str) -> bool:
     return any(k.upper() in lu for k in SKIP_KW)
 
 
-def _parse_text(full_text: str, year: int, periodo: str | None) -> list[dict]:
+_MAX_PENDIENTES_COMBINATORIA = 14  # 2**14 = 16384 combinaciones, de sobra para una racha real
+
+
+def _resolve_ambiguous_tipos(movimientos: list[dict], saldos: list[float | None],
+                              ambiguos: list[bool], saldo_inicial: float | None) -> None:
+    """Verifica contra el saldo impreso el tipo de las líneas ambiguas
+    (AMBIGUOUS_KW), en vez de dejarlas en el default GASTO.
+
+    Recorre los movimientos en orden acumulando un saldo esperado. Las
+    líneas confiables (no ambiguas) aportan su monto con el signo ya
+    determinado por palabra clave. Las líneas ambiguas se acumulan como
+    "pendientes" (signo desconocido, sin aportar al saldo esperado)
+    hasta la siguiente línea que trae saldo impreso (un "checkpoint").
+    Ahí se compara, asumiendo GASTO por default para todas las pendientes,
+    el saldo esperado contra el saldo real impreso. Si no cuadra, se
+    prueban todos los subconjuntos de pendientes que — de voltearse a
+    INGRESO — explican exactamente esa diferencia (cada uno vale 2×monto
+    porque pasa de restar a sumar). Si hay una única combinación que
+    cuadra, se aplica; si no hay ninguna o hay varias (ambiguo, no se
+    puede saber cuál de las combinaciones es la real), no se adivina: se
+    deja el default y esas líneas quedan sin verificar — ninguna peor que
+    antes de este cambio, solo sin confirmar.
+
+    Muta movimientos[i]["tipo"] in place cuando corrige.
+    """
+    if saldo_inicial is None:
+        return  # no se pudo leer "Saldo Anterior" — no hay con qué verificar
+
+    saldo_esperado = saldo_inicial
+    pendientes: list[int] = []  # índices de movimientos ambiguos sin verificar aún
+
+    for i, mov in enumerate(movimientos):
+        signo = 1 if mov["tipo"] == "INGRESO" else -1
+        if ambiguos[i]:
+            pendientes.append(i)
+        else:
+            saldo_esperado += signo * mov["monto"]
+
+        saldo_real = saldos[i]
+        if saldo_real is None:
+            continue  # esta línea no trae saldo impreso — no hay checkpoint aquí
+
+        # saldo_esperado asume GASTO (signo -1) para cada pendiente sin resolver
+        esperado_con_pendientes = saldo_esperado - sum(movimientos[j]["monto"] for j in pendientes)
+        diff = round(saldo_real - esperado_con_pendientes, 2)
+
+        if abs(diff) < 0.01:
+            pass  # el default ya cuadra — nada que corregir
+        elif pendientes and len(pendientes) <= _MAX_PENDIENTES_COMBINATORIA:
+            montos = [movimientos[j]["monto"] for j in pendientes]
+            matches = [
+                combo
+                for r in range(len(pendientes) + 1)
+                for combo in combinations(range(len(pendientes)), r)
+                if abs(sum(2 * montos[k] for k in combo) - diff) < 0.01
+            ]
+            if len(matches) == 1:
+                for k in matches[0]:
+                    movimientos[pendientes[k]]["tipo"] = "INGRESO"
+            # 0 o >1 combinaciones cuadran: no se puede atribuir con
+            # certeza — se deja tal cual (sin adivinar).
+
+        saldo_esperado = saldo_real  # el saldo impreso es siempre la verdad
+        pendientes = []
+
+
+def _parse_text(full_text: str, bounds: tuple[int, int, int, int], periodo: str | None) -> list[dict]:
     lines = [l.strip() for l in full_text.split("\n") if l.strip()]
 
     txn_positions = []
@@ -113,15 +260,19 @@ def _parse_text(full_text: str, year: int, periodo: str | None) -> list[dict]:
     if not txn_positions:
         return []
 
-    movimientos = []
+    movimientos: list[dict] = []
+    saldos: list[float | None] = []
+    ambiguos: list[bool] = []
+
     for idx, pos in enumerate(txn_positions):
         next_pos = txn_positions[idx + 1] if idx + 1 < len(txn_positions) else len(lines)
 
         m = TXN_RE.match(lines[pos])
-        fecha_oper  = _parse_date(m.group(1), year)
-        fecha_cargo = _parse_date(m.group(2), year)
+        fecha_oper  = _parse_date(m.group(1), bounds)
+        fecha_cargo = _parse_date(m.group(2), bounds)
         desc_main   = m.group(3).strip()
         monto       = float(m.group(4).replace(",", ""))
+        saldo_op    = float(m.group(5).replace(",", "")) if m.group(5) else None
 
         cont_extra = ""
         for bline in lines[pos + 1 : next_pos]:
@@ -135,7 +286,8 @@ def _parse_text(full_text: str, year: int, periodo: str | None) -> list[dict]:
         full_desc = (desc_main + " " + cont_extra).strip() if cont_extra else desc_main
         du = full_desc.upper()
         tipo = "INGRESO" if any(k in du for k in ABONO_KW) else "GASTO"
-        categoria = _categorize(full_desc)
+        es_ambiguo = any(k in du for k in AMBIGUOUS_KW) and not any(k in du for k in ABONO_KW)
+        categoria, subcategoria = _categorize(full_desc, es_gasto=(tipo == "GASTO"))
         desc = _clean(full_desc)
 
         movimientos.append({
@@ -144,12 +296,154 @@ def _parse_text(full_text: str, year: int, periodo: str | None) -> list[dict]:
             "descripcion":  desc or "SIN DESCRIPCION",
             "monto":        monto,
             "categoria":    categoria,
-            "subcategoria": "",
+            "subcategoria": subcategoria,
             "tipo":         tipo,
             "periodo":      periodo,
         })
+        saldos.append(saldo_op)
+        ambiguos.append(es_ambiguo)
+
+    saldo_inicial_m = SALDO_ANTERIOR_RE.search(full_text)
+    saldo_inicial = float(saldo_inicial_m.group(1).replace(",", "")) if saldo_inicial_m else None
+    _resolve_ambiguous_tipos(movimientos, saldos, ambiguos, saldo_inicial)
 
     return movimientos
+
+
+# ── Blindaje de cargo/abono (2026-10-03) ──────────────────────────────────────
+# El texto plano no dice en qué columna (CARGOS o ABONOS) cayó el monto y el
+# saldo impreso no siempre alcanza: pagos de Jorge de oct-nov 2024 quedaron
+# como cargos. Dos verificaciones más, ambas contra lo que imprime el PDF:
+#   1. La columna real de cada monto, leyendo el PDF con layout (posición
+#      horizontal) — se acepta solo si los totales cuadran.
+#   2. «Total importe abonos/cargos» y sus conteos: si no cuadran, se busca la
+#      única combinación de renglones ambiguos que, volteada, los cuadra.
+# Cada movimiento sale con dir_verificada=True si al final los totales del
+# estado cuadran; el import usa eso para corregir la dirección de filas ya
+# guardadas (ver routes.upload_file).
+
+_AMT_RE = re.compile(r"[\d,]+\.\d{2}")
+
+
+def _totales_impresos(full_text: str):
+    tc, ta = TOTAL_CARGOS_RE.search(full_text), TOTAL_ABONOS_RE.search(full_text)
+    if not (tc and ta):
+        return None
+    return {'cargos': float(tc.group(1).replace(",", "")), 'n_cargos': int(tc.group(2)),
+            'abonos': float(ta.group(1).replace(",", "")), 'n_abonos': int(ta.group(2))}
+
+
+def _cuadra(movimientos: list[dict], tot) -> bool:
+    ab = [m["monto"] for m in movimientos if m["tipo"] == "INGRESO"]
+    ca = [m["monto"] for m in movimientos if m["tipo"] != "INGRESO"]
+    return (abs(sum(ab) - tot['abonos']) < 0.01 and abs(sum(ca) - tot['cargos']) < 0.01
+            and len(ab) == tot['n_abonos'] and len(ca) == tot['n_cargos'])
+
+
+def _direcciones_por_columna(layout_text: str) -> list[str | None]:
+    """'A' (abono), 'C' (cargo) o None por cada renglón de movimiento, según
+    la columna bajo la que cae su monto (alineado a la derecha). Las columnas
+    se sacan de los propios renglones: los montos terminan en dos posiciones
+    separadas (estado real abr-2026: cargos en 59-61, abonos en 65-67); la
+    izquierda es CARGOS y la derecha ABONOS. El encabezado «CARGOS ABONOS»
+    solo sale en la página 1, así que no se depende de él. Sin una separación
+    clara (≥3 caracteres) no se decide nada."""
+    fines = []
+    for line in layout_text.split("\n"):
+        st = line.strip()
+        if not TXN_RE.match(st) or _should_skip(st):
+            continue
+        m = next(_AMT_RE.finditer(line), None)
+        fines.append(m.end() if m else None)
+    vals = sorted({f for f in fines if f is not None})
+    if len(vals) < 2:
+        return [None] * len(fines)
+    gap, corte = max((b - a, (a + b) / 2) for a, b in zip(vals, vals[1:]))
+    if gap < 3:
+        return [None] * len(fines)
+    return [None if f is None else ('C' if f < corte else 'A') for f in fines]
+
+
+def _columnas_consistentes(movimientos: list[dict], dirs: list) -> bool:
+    """Las columnas se aceptan sin totales impresos si coinciden con todos los
+    renglones de dirección conocida (nómina, depósitos, SPEI enviado, pagos de
+    tarjeta, retiros…) y hay al menos 3 de ellos."""
+    if len(dirs) != len(movimientos) or any(d is None for d in dirs):
+        return False
+    conocidos = [(m, d) for m, d in zip(movimientos, dirs)
+                 if not any(k in m["descripcion"] for k in AMBIGUOUS_KW)]
+    return len(conocidos) >= 3 and all(
+        (d == 'A') == (m["tipo"] == "INGRESO") for m, d in conocidos)
+
+
+def _aplicar_columnas(movimientos: list[dict], dirs: list, tot) -> bool:
+    if not tot or len(dirs) != len(movimientos) or any(d is None for d in dirs):
+        return False
+    prueba = [{**m, "tipo": "INGRESO" if d == 'A' else "GASTO"} for m, d in zip(movimientos, dirs)]
+    if not _cuadra(prueba, tot):
+        return False
+    for m, d in zip(movimientos, dirs):
+        m["tipo"] = "INGRESO" if d == 'A' else "GASTO"
+    return True
+
+
+def _reconciliar_con_totales(movimientos: list[dict], tot) -> None:
+    """Voltea la única combinación de renglones ambiguos (PAGO CUENTA DE
+    TERCERO / CORRECCION) que cuadra los totales impresos; si hay cero o
+    varias, no adivina."""
+    if not tot or _cuadra(movimientos, tot):
+        return
+    amb = [i for i, m in enumerate(movimientos)
+           if any(k in m["descripcion"] for k in AMBIGUOUS_KW)]
+    if not amb or len(amb) > 18:
+        return
+    ab = sum(m["monto"] for m in movimientos if m["tipo"] == "INGRESO")
+    diff = round(tot['abonos'] - ab, 2)          # lo que falta (o sobra) en abonos
+    sols = []
+    for r in range(1, len(amb) + 1):
+        for combo in combinations(amb, r):
+            delta = sum(movimientos[i]["monto"] * (1 if movimientos[i]["tipo"] != "INGRESO" else -1) for i in combo)
+            if abs(delta - diff) < 0.01:
+                prueba = [dict(m) for m in movimientos]
+                for i in combo:
+                    prueba[i]["tipo"] = "GASTO" if prueba[i]["tipo"] == "INGRESO" else "INGRESO"
+                if _cuadra(prueba, tot):
+                    sols.append(combo)
+        if len(sols) > 1:
+            return
+    if len(sols) == 1:
+        for i in sols[0]:
+            movimientos[i]["tipo"] = "GASTO" if movimientos[i]["tipo"] == "INGRESO" else "INGRESO"
+
+
+def _recategorizar(m: dict) -> None:
+    m["categoria"], m["subcategoria"] = _categorize(m["descripcion"], es_gasto=(m["tipo"] == "GASTO"))
+
+
+def blindar(movimientos: list[dict], full_text: str, layout_text: str | None = None) -> None:
+    tot = _totales_impresos(full_text)
+    antes = [m["tipo"] for m in movimientos]
+    dirs = _direcciones_por_columna(layout_text) if layout_text else []
+    por_columna = False
+    if dirs and _aplicar_columnas(movimientos, dirs, tot):
+        por_columna = True
+    elif dirs and _columnas_consistentes(movimientos, dirs) and not (tot and _cuadra(movimientos, tot)):
+        for m, d in zip(movimientos, dirs):
+            m["tipo"] = "INGRESO" if d == 'A' else "GASTO"
+        por_columna = not tot or _cuadra(movimientos, tot)
+        if not por_columna:                       # contradice los totales: se deshace
+            for m, t in zip(movimientos, antes):
+                m["tipo"] = t
+    if not por_columna:
+        _reconciliar_con_totales(movimientos, tot)
+    ok = (bool(tot) and _cuadra(movimientos, tot)) or (por_columna and not tot)
+    for m, t in zip(movimientos, antes):
+        if m["tipo"] != t:
+            _recategorizar(m)
+        m["dir_verificada"] = ok
+    if tot and not ok:
+        print(f"  [AVISO BBVA_LIB] cargos/abonos no cuadran con los totales del PDF: "
+              f"revisa la dirección de los PAGO CUENTA DE TERCERO de este estado")
 
 
 def parse(pdf_path: Path) -> list[dict]:
@@ -157,9 +451,14 @@ def parse(pdf_path: Path) -> list[dict]:
     try:
         with open_pdf(pdf_path, PDF_PASSWORD, PDF_PASSWORD_BBVA) as pdf:
             full_text = "\n".join(p.extract_text() or "" for p in pdf.pages)
-            year    = _extract_year(full_text)
+            bounds  = _extract_year_bounds(full_text)
             periodo = _extract_periodo(full_text)
-            movimientos = _parse_text(full_text, year, periodo)
+            movimientos = _parse_text(full_text, bounds, periodo)
+            try:
+                layout_text = "\n".join(p.extract_text(layout=True) or "" for p in pdf.pages)
+            except Exception:
+                layout_text = None
+            blindar(movimientos, full_text, layout_text)
     except Exception as e:
         print(f"  [ERROR BBVA_LIB] {e}")
     return movimientos

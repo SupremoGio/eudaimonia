@@ -1,0 +1,143 @@
+{#- EUDAIMONIA OS — Macros UI V2
+    Destino: gio_v3/templates/_ui/macros.html
+    Uso: {% import '_ui/macros.html' as ui %} -#}
+
+{% macro button(label, variant='primary', size='md', icon=None, href=None, busy=False, block=False, type='button') -%}
+{%- set cls = 'eu-btn eu-btn--' ~ variant ~ (' eu-btn--' ~ size if size != 'md' else '') ~ (' eu-btn--block' if block else '') -%}
+{%- if href -%}
+<a class="{{ cls }}" href="{{ href }}" {{ kwargs|xmlattr }}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}</a>
+{%- else -%}
+<button type="{{ type }}" class="{{ cls }}"{% if busy %} aria-busy="true"{% endif %} {{ kwargs|xmlattr }}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}</button>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro iconbtn(icon, label, variant='', pressed=None) -%}
+<button type="button" class="eu-iconbtn{{ ' eu-iconbtn--' ~ variant if variant }}" aria-label="{{ label }}"{% if pressed is not none %} aria-pressed="{{ 'true' if pressed else 'false' }}"{% endif %} {{ kwargs|xmlattr }}><i data-lucide="{{ icon }}"></i></button>
+{%- endmacro %}
+
+{% macro card(variant='', tag='div', href=None) -%}
+{%- set t = 'a' if href else tag -%}
+<{{ t }} class="eu-card{{ ' eu-card--' ~ variant if variant }}"{% if href %} href="{{ href }}"{% endif %} {{ kwargs|xmlattr }}>{{ caller() }}</{{ t }}>
+{%- endmacro %}
+
+{% macro stat(label, value, icon=None, delta=None, delta_dir='up', meta=None) -%}
+<div class="eu-card eu-stat">
+  <div class="eu-stat-lbl">{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}</div>
+  <div class="eu-stat-val">{{ value }}</div>
+  {% if delta %}<div class="eu-stat-delta {{ delta_dir }}">{{ delta }}</div>{% elif meta %}<div class="t-meta">{{ meta }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro badge(text, variant='', cat=None, status=False, icon=None) -%}
+<span class="eu-badge{{ ' eu-badge--' ~ variant if variant }}{{ ' eu-badge--cat' if cat }}{{ ' eu-badge--status' if status }}"{% if cat %} data-cat="{{ cat|lower }}"{% endif %}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ text }}</span>
+{%- endmacro %}
+
+{% macro chip(label, pressed=False, count=None, icon=None) -%}
+<button type="button" class="eu-chip" aria-pressed="{{ 'true' if pressed else 'false' }}" {{ kwargs|xmlattr }}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}{% if count is not none %} <span class="ct">{{ count }}</span>{% endif %}</button>
+{%- endmacro %}
+
+{% macro field(name, label, type='text', value='', placeholder='', help=None, error=None, money=False) -%}
+<div class="eu-field">
+  <label class="eu-label" for="f-{{ name }}">{{ label }}</label>
+  {% if type == 'textarea' -%}
+  <textarea class="eu-textarea" id="f-{{ name }}" name="{{ name }}" placeholder="{{ placeholder }}"{% if error %} aria-invalid="true" aria-describedby="f-{{ name }}-err"{% endif %} {{ kwargs|xmlattr }}>{{ value }}</textarea>
+  {%- else -%}
+  <input class="eu-input{{ ' eu-input--money' if money }}" id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value }}" placeholder="{{ placeholder }}"{% if money %} inputmode="decimal"{% endif %}{% if error %} aria-invalid="true" aria-describedby="f-{{ name }}-err"{% endif %} {{ kwargs|xmlattr }}>
+  {%- endif %}
+  {% if error %}<div class="eu-err" id="f-{{ name }}-err"><i data-lucide="alert-circle" style="width:14px;height:14px"></i>{{ error }}</div>{% elif help %}<div class="eu-help">{{ help }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro progress(value, max=100, variant='brand', thin=False, cat=None, label=None) -%}
+{%- set pct = [ (value / max * 100) if max else 0, 100 ]|min -%}
+<div class="eu-progress eu-progress--{{ variant }}{{ ' eu-progress--thin' if thin }}"{% if cat %} data-cat="{{ cat|lower }}"{% endif %} role="progressbar" aria-valuenow="{{ value }}" aria-valuemax="{{ max }}"{% if label %} aria-label="{{ label }}"{% endif %}><i style="width:{{ pct|round(1) }}%"></i></div>
+{%- endmacro %}
+
+{% macro xpbar(value, max, label='XP') -%}
+<div class="eu-xpbar" role="progressbar" aria-valuenow="{{ value }}" aria-valuemax="{{ max }}" aria-label="{{ value }} de {{ max }} {{ label }}"><i style="width:{{ ([value / max * 100, 100]|min)|round(1) }}%"></i></div>
+{%- endmacro %}
+
+{% macro activity(a, done=False) -%}
+<button type="button" class="eu-act" data-cat="{{ a.categoria|lower }}" data-id="{{ a.id }}" aria-pressed="{{ 'true' if done else 'false' }}">
+  <span class="eu-act-check"><i data-lucide="check"></i></span>
+  <span class="eu-act-t">{{ a.nombre }}</span>
+  <span class="eu-act-xp"><span>+{{ a.xp }} XP</span>{% if a.ec %}<span class="fg-ec">+{{ a.ec }} EC</span>{% endif %}</span>
+</button>
+{%- endmacro %}
+
+{% macro row(title, sub=None, icon=None, cat=None, href=None, amount=None, amount_pos=False) -%}
+{%- set t = 'a' if href else 'div' -%}
+<{{ t }} class="eu-row{{ ' eu-row--interactive' if href }}"{% if href %} href="{{ href }}"{% endif %}>
+  {% if icon %}<div class="eu-row-ic"{% if cat %} data-cat="{{ cat|lower }}"{% endif %}><i data-lucide="{{ icon }}"></i></div>{% endif %}
+  <div class="eu-row-main"><div class="eu-row-t">{{ title }}</div>{% if sub or caller %}<div class="eu-row-s">{{ sub or '' }}{{ caller() if caller }}</div>{% endif %}</div>
+  {% if amount is not none %}<div class="eu-row-end"><div class="eu-amt{{ ' pos' if amount_pos }}">{{ amount }}</div></div>{% endif %}
+</{{ t }}>
+{%- endmacro %}
+
+{% macro modal(id, title, eyebrow=None, cls='') -%}
+<div class="eu-scrim{% if cls %} {{ cls }}{% endif %}" id="{{ id }}" hidden>
+  <div class="eu-modal" role="dialog" aria-modal="true" aria-labelledby="{{ id }}-t">
+    <div class="eu-modal-hd"><div>{% if eyebrow %}<div class="t-eyebrow">{{ eyebrow }}</div>{% endif %}<div class="t-section" id="{{ id }}-t" style="margin-top:6px">{{ title }}</div></div>{{ iconbtn('x', 'Cerrar', onclick="euModal.close('" ~ id ~ "')") }}</div>
+    {{ caller() }}
+  </div>
+</div>
+{%- endmacro %}
+
+{# Esqueleto de carga para contenido que llena JS: el envoltorio aria-busy
+   desaparece cuando el script reemplaza el contenedor. #}
+{% macro skel(rows=3, h=56) -%}
+<div class="eu-skel-wrap" aria-busy="true" role="status" aria-label="Cargando">{% for _ in range(rows) %}<div class="eu-skel" style="height:{{ h }}px"></div>{% endfor %}</div>
+{%- endmacro %}
+
+{% macro empty(icon, title, text, cta=None, cta_href=None, cta_icon=None, kbd=None, compact=False) -%}
+<div class="eu-empty{% if compact %} eu-empty--sm{% endif %}">
+  <div class="eu-empty-ic"><i data-lucide="{{ icon }}"></i></div>
+  <div class="t-card">{{ title }}</div>
+  <p>{{ text }}</p>
+  {% if cta %}{{ button(cta, icon=cta_icon, href=cta_href) }}{% endif %}
+  {% if kbd %}<span class="t-meta">o pulsa <span class="kbd">{{ kbd }}</span></span>{% endif %}
+</div>
+{%- endmacro %}
+
+{# ── Insignias de clasificación del día (sprite: _ui/rank_sprite.html) ──
+   rank acepta el código del motor (carbon/iron/gold/diamond) o el del
+   sprite (carbon/hierro/oro/diamante). Sin label = decorativa. #}
+{% set RANK_KEY = {'iron': 'hierro', 'gold': 'oro', 'diamond': 'diamante'} %}
+{% macro rank(rank, size=48, label=None, locked=False, cls='') -%}
+{%- set k = RANK_KEY.get(rank, rank) or 'carbon' -%}
+<svg class="eu-rank{% if locked %} is-locked{% endif %}{% if cls %} {{ cls }}{% endif %}" width="{{ size }}" height="{{ size }}" viewBox="0 0 120 120" data-rank="{{ k }}"{% if label %} role="img" aria-label="{{ label }}"{% else %} aria-hidden="true"{% endif %} focusable="false"><use href="#eu-rank-{{ k }}"/></svg>
+{%- endmacro %}
+
+{# Escalera Carbón → Hierro → Oro → Diamante con el rango actual resaltado. #}
+{% macro ranks(current, size=44, sm=False) -%}
+{%- set order = ['carbon', 'hierro', 'oro', 'diamante'] -%}
+{%- set cur = RANK_KEY.get(current, current) or 'carbon' -%}
+{%- set ci = order.index(cur) if cur in order else 0 -%}
+{%- set info = {'carbon': ('Carbón', 'inicio'), 'hierro': ('Hierro', '1 ancla'), 'oro': ('Oro', '+ touches'), 'diamante': ('Diamante', '75% anclas')} -%}
+<ol class="eu-ranks{% if sm %} eu-ranks--sm{% endif %} js-ranks" aria-label="Clasificación del día: {{ info[cur][0] }}">
+  {%- for r in order %}
+  <li class="eu-rank-step{% if loop.index0 < ci %} is-past{% elif loop.index0 == ci %} is-now{% else %} is-next{% endif %}" data-rank="{{ r }}"{% if loop.index0 == ci %} aria-current="step"{% endif %}>
+    {{ rank(r, size, locked=loop.index0 > ci) }}
+    <b>{{ info[r][0] }}</b><span class="t-meta">{{ info[r][1] }}</span>
+  </li>
+  {%- endfor %}
+</ol>
+{%- endmacro %}
+
+{# ── Torre estoica: columna dórica de 10 tambores que se llena hasta el
+   nivel actual (antes dashboard/_greek_column.html). Degradado en el sprite. #}
+{% macro tower(level, height=112, next_name=None) -%}
+{%- set lv = [[level|int, 0]|max, 10]|min -%}
+<svg class="eu-tower" width="{{ (height * 64 / 120)|round(1) }}" height="{{ height }}" viewBox="0 0 64 120" role="img" aria-label="Torre estoica: nivel {{ lv }} de 10">
+  <rect class="eu-tower-stone" x="9" y="3" width="46" height="6" rx="1.5"/>
+  <path class="eu-tower-stone" d="M15 9 H49 L45 16 H19 Z"/>
+  {%- for i in range(10) %}
+  {%- set n = 10 - i %}{# tambor n (1 = abajo) #}
+  {%- set y = 17 + i * 8.4 %}
+  <rect class="eu-tower-drum{% if n <= lv %} is-on{% endif %}{% if n == lv %} is-now{% endif %}" x="20" y="{{ y }}" width="24" height="7.4" rx="1"/>
+  {%- if n <= lv %}<path class="eu-tower-flute" d="M27 {{ y + 1.2 }} v5 M32 {{ y + 1.2 }} v5 M37 {{ y + 1.2 }} v5"/>{% endif %}
+  {%- endfor %}
+  <rect class="eu-tower-stone" x="15" y="101.5" width="34" height="5.5" rx="1"/>
+  <rect class="eu-tower-stone" x="9" y="107" width="46" height="6" rx="1.5"/>
+</svg>
+{%- endmacro %}

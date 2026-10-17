@@ -9,6 +9,12 @@ salud_bp = Blueprint('salud', __name__, template_folder='../../templates')
 TIPOS_ACTIVO = ('efectivo', 'cuenta_banco', 'inversion')
 TIPOS_PASIVO = ('tarjeta_credito', 'prestamo')
 
+# Cuentas en estas monedas se excluyen de los totales en MXN (Patrimonio Neto,
+# Total Activos/Pasivos, etc.) en vez de sumarse tal cual como si fueran pesos
+# — no hay tipo de cambio configurado, así que sumarlas directo daría un total
+# silenciosamente incorrecto. Se muestran aparte vía `_agrupar_otras_monedas`.
+MONEDAS_EXTRANJERAS = ('USD', 'EUR')
+
 TIPO_META = {
     'efectivo':       {'label': 'Efectivo',             'color': '#C9A84C', 'icon': 'wallet'},
     'cuenta_banco':   {'label': 'Cuenta Bancaria',      'color': '#60a5fa', 'icon': 'building-2'},
@@ -33,11 +39,39 @@ def _require_auth():
 
 
 def _totales(cuentas, bienes):
-    activos_cuentas = sum(c['saldo'] for c in cuentas if c['tipo'] in TIPOS_ACTIVO)
+    # Los bienes (carro, muebles…) se muestran aparte y NO entran al patrimonio
+    # neto ni a los activos (el usuario, 2026-10-05: «no cuentes el carro, está
+    # en bienes»): no son dinero disponible y su valor es una estimación.
+    cuentas_mxn     = [c for c in cuentas if c['moneda'] not in MONEDAS_EXTRANJERAS]
+    activos_cuentas = sum(c['saldo'] for c in cuentas_mxn if c['tipo'] in TIPOS_ACTIVO)
     total_bienes    = sum(b['valor_actual'] for b in bienes)
-    total_activos   = activos_cuentas + total_bienes
-    total_pasivos   = sum(c['saldo'] for c in cuentas if c['tipo'] in TIPOS_PASIVO)
+    total_activos   = activos_cuentas
+    total_pasivos   = sum(c['saldo'] for c in cuentas_mxn if c['tipo'] in TIPOS_PASIVO)
     return total_activos, activos_cuentas, total_bienes, total_pasivos, total_activos - total_pasivos
+
+
+def _agrupar_otras_monedas(cuentas):
+    """Cuentas en USD/EUR excluidas de los totales en MXN, agrupadas por moneda
+    para mostrarlas aparte en vez de dejarlas invisiblemente fuera del total."""
+    grupos = {}
+    for c in cuentas:
+        if c['moneda'] in MONEDAS_EXTRANJERAS:
+            g = grupos.setdefault(c['moneda'], {'total': 0.0, 'cuentas': []})
+            g['total'] += c['saldo']
+            g['cuentas'].append(c['nombre'])
+    return grupos
+
+
+def _inversiones_en_vivo(db, cuentas):
+    """Las cuentas de inversión que corresponden a una plataforma de
+    Inversiones (CETES, Finsus, GBM…) se reemplazan por su saldo en vivo
+    (corte + movimientos), para no capturarlo dos veces; las que no
+    corresponden a ninguna siguen siendo manuales."""
+    from modules.finanzas.inversiones import cuentas_patrimonio, plataforma_de
+    manuales = [c for c in cuentas
+                if not (c['tipo'] == 'inversion' and c['moneda'] not in MONEDAS_EXTRANJERAS
+                        and plataforma_de(f"{c['nombre']} {c.get('institucion') or ''}"))]
+    return manuales + cuentas_patrimonio(db)
 
 
 def _compute_patrimonio():
@@ -49,10 +83,12 @@ def _compute_patrimonio():
             "SELECT * FROM salud_bienes WHERE activo=1 ORDER BY categoria, nombre"
         ).fetchall()]
         historial = [dict(r) for r in db.execute(
-            "SELECT * FROM salud_patrimonio_log ORDER BY fecha ASC LIMIT 12"
-        ).fetchall()]
+            "SELECT * FROM salud_patrimonio_log ORDER BY fecha DESC LIMIT 12"
+        ).fetchall()][::-1]
+        cuentas = _inversiones_en_vivo(db, cuentas)
     total_activos, activos_cuentas, total_bienes, total_pasivos, patrimonio_neto = _totales(cuentas, bienes)
-    liquido = sum(c['saldo'] for c in cuentas if c['tipo'] in ('efectivo', 'cuenta_banco'))
+    cuentas_mxn = [c for c in cuentas if c['moneda'] not in MONEDAS_EXTRANJERAS]
+    liquido = sum(c['saldo'] for c in cuentas_mxn if c['tipo'] in ('efectivo', 'cuenta_banco'))
     return {
         'patrimonio_neto': patrimonio_neto,
         'total_activos':   total_activos,
@@ -63,6 +99,7 @@ def _compute_patrimonio():
         'historial':       historial,
         'cuentas':         cuentas,
         'bienes':          bienes,
+        'otras_monedas':   _agrupar_otras_monedas(cuentas),
     }
 
 
@@ -83,6 +120,11 @@ def index():
         i_owe  = [dict(r) for r in db.execute(
             "SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY created_at DESC"
         ).fetchall()]
+        try:   # depósitos de un deudor con compromiso abierto: posibles abonos
+            from modules.finanzas import compromisos
+            sugerencias_abonos = compromisos.sugerencias(db)
+        except Exception:
+            sugerencias_abonos = []
     return render_template('finanzas/salud.html',
         patrimonio_neto   = pat['patrimonio_neto'],
         total_activos     = pat['total_activos'],
@@ -100,6 +142,8 @@ def index():
         today             = today_str(),
         owe_me            = owe_me,
         i_owe             = i_owe,
+        sugerencias_abonos = sugerencias_abonos,
+        otras_monedas     = pat['otras_monedas'],
     )
 
 
@@ -232,14 +276,24 @@ def take_snapshot():
     now   = datetime.now().isoformat()
     today = now[:10]
     with get_db() as db:
-        if db.execute("SELECT id FROM salud_patrimonio_log WHERE fecha=?", (today,)).fetchone():
-            return jsonify(ok=False, error='Ya existe un snapshot de hoy'), 409
         cuentas = [dict(r) for r in db.execute("SELECT * FROM salud_cuentas WHERE activa=1").fetchall()]
         bienes  = [dict(r) for r in db.execute("SELECT * FROM salud_bienes WHERE activo=1").fetchall()]
         total_activos, _, _, total_pasivos, patrimonio = _totales(cuentas, bienes)
-        db.execute(
-            "INSERT INTO salud_patrimonio_log (total_activos, total_pasivos, patrimonio_neto, fecha, created_at) VALUES (?,?,?,?,?)",
-            (total_activos, total_pasivos, patrimonio, today, now)
-        )
+        existente = db.execute("SELECT id FROM salud_patrimonio_log WHERE fecha=?", (today,)).fetchone()
+        if existente:
+            # Ya se tomó un snapshot hoy: se actualiza con los valores actuales
+            # en vez de bloquear con un error — si el usuario editó una cuenta
+            # y quiere refrescar el registro del día, debe poder hacerlo.
+            db.execute(
+                "UPDATE salud_patrimonio_log SET total_activos=?, total_pasivos=?, patrimonio_neto=?, created_at=? WHERE id=?",
+                (total_activos, total_pasivos, patrimonio, now, existente['id'])
+            )
+            actualizado = True
+        else:
+            db.execute(
+                "INSERT INTO salud_patrimonio_log (total_activos, total_pasivos, patrimonio_neto, fecha, created_at) VALUES (?,?,?,?,?)",
+                (total_activos, total_pasivos, patrimonio, today, now)
+            )
+            actualizado = False
         db.commit()
-    return jsonify(ok=True, patrimonio_neto=patrimonio, fecha=today)
+    return jsonify(ok=True, patrimonio_neto=patrimonio, fecha=today, actualizado=actualizado)

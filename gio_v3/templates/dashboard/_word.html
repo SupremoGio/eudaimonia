@@ -1,0 +1,22 @@
+{# Palabra del día (EN → FR) — se renueva con /api/word/refresh #}
+{% set w = data.word_of_day %}
+<section class="eu-card eu-vstack dash-word" aria-labelledby="dash-word-t">
+  <div class="eu-between">
+    <div class="t-eyebrow dash-eyebrow-muted" id="dash-word-t">Palabra del día</div>
+    <div class="eu-hstack">
+      <span class="eu-badge eu-badge--info">EN → FR</span>
+      {{ ui.iconbtn('refresh-cw', 'Otra palabra', id='word-refresh') }}
+    </div>
+  </div>
+  {% if w %}
+  <div class="eu-hstack eu-gap-2 dash-word-hd">
+    <span class="dash-word-w js-w-word">{{ w.word }}</span>
+    <span class="t-greek js-w-phon">{{ w.phonetic }}</span>
+  </div>
+  <p class="dash-word-mean js-w-meaning">{{ w.meaning }}</p>
+  <p class="t-meta dash-word-ex js-w-example">“{{ w.example }}”</p>
+  <span class="eu-badge dash-word-fr js-w-fr">FR · {{ w.french }}</span>
+  {% else %}
+  {{ ui.empty('languages', 'Sin palabra hoy', 'Todavía no hay una palabra del día cargada. Pulsa ↻ o revisa Idiomas.') }}
+  {% endif %}
+</section>

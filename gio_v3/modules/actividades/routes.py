@@ -3,11 +3,51 @@ from datetime import timedelta, datetime
 import time
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_random_quote
-from utils import today_str, today_date
+from utils import today_str, today_date, now_local
 from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
+import modules.actividades.activity_defs as adefs
 
 actividades_bp = Blueprint('actividades', __name__, template_folder='../../templates')
+
+PILLAR_META = {
+    # Hues alineados con window.EU.modules (eu-data.js) — mismo pilar, mismo
+    # color en el Home y en Acta Diurna.
+    "logoi":   {"name": "Logoi",          "hue": 120},
+    "paideia": {"name": "Paideia",        "hue": 265},
+    "cosmo":   {"name": "Cosmopolitismo", "hue": 215},
+    "hege":    {"name": "Hegemonikon",    "hue": 45},
+    "eury":    {"name": "Eurythmia",      "hue": 330},
+    "atar":    {"name": "Ataraxia",       "hue": 155},
+    "oiko":    {"name": "Oikonomia",      "hue": 80},
+    "philia":  {"name": "Philia",         "hue": 10},
+}
+SESSION_META = {
+    "morning":   {"label": "Mañana", "window": "6:00 – 13:00"},
+    "afternoon": {"label": "Tarde",  "window": "13:00 – 19:00"},
+    "night":     {"label": "Noche",  "window": "19:00 – 23:00"},
+    "any":       {"label": "Cualquier momento", "window": ""},
+}
+
+
+# Touches que aceptan texto libre además del checkbox — ver /api/reflexion.
+# Guardar contenido no vacío marca el check automáticamente si aún no
+# estaba (ya se hizo/definió, cuenta como cumplido); el checkbox se sigue
+# pudiendo desmarcar a mano como siempre. gratitud_diaria/correccion_diaria/
+# sintesis_activa son reflexiones de cierre de día (solo visibles en
+# desktop en la plantilla); mit (Most Important Task) es planeación de la
+# mañana y sí es editable también en mobile (ver REFLECT_ALL_KEYS en
+# templates/actividades/index.html).
+REFLECT_KEYS = {"gratitud_diaria", "correccion_diaria", "sintesis_activa", "mit"}
+
+
+def get_eurythmia_today():
+    with get_db() as db:
+        row = db.execute(
+            "SELECT id FROM activity_logs WHERE activity_key='eurythmia_session' AND date=?",
+            (today_str(),)
+        ).fetchone()
+    return row is not None
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -76,23 +116,121 @@ def get_weekend_mode():
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+def _now_session():
+    """Sesión que coincide con la hora real (zona horaria de la app, no la
+    del servidor — Railway corre en UTC), para expandir esa tarjeta arriba."""
+    hour = now_local().hour
+    if 6 <= hour < 13:  return "morning"
+    if 13 <= hour < 19: return "afternoon"
+    return "night"  # 19:00–23:59 y madrugada (0:00–6:00): Noche es la sesión vigente
+
+
+def build_acta_diurna_context():
+    """Agrupación de actividades por sesión + foco del mes + Eurythmia pasivo.
+
+    Compartido por la página Jinja (/actividades) y el endpoint JSON que
+    consume la pantalla React (/actividades/api/today) — una sola fuente
+    de verdad para no duplicar (y desincronizar) esta lógica entre las dos.
+    """
+    grouped    = adefs.get_active_grouped()
+    with get_db() as db:
+        done_today = {r["activity_key"] for r in db.execute(
+            "SELECT activity_key FROM activity_logs WHERE date=?", (today_str(),)
+        ).fetchall()}
+        reflexiones_today = {r["activity_key"]: r["texto"] for r in db.execute(
+            f"""SELECT activity_key, texto FROM reflexion_diaria
+                WHERE date=? AND activity_key IN ({",".join("?" * len(REFLECT_KEYS))})""",
+            (today_str(), *REFLECT_KEYS)
+        ).fetchall()}
+
+    # Un item con session CSV (ej. "morning,afternoon,night") aparece varias
+    # veces en grouped.values() — mismo objeto repetido, una por tarjeta. Se
+    # deduplica por key para no triplicar entradas en foco_candidates/week_counts.
+    seen_keys = set()
+    unique_items = []
+    for items in grouped.values():
+        for item in items:
+            if item["key"] not in seen_keys:
+                seen_keys.add(item["key"])
+                unique_items.append(item)
+
+    weekly_keys  = [i["key"] for i in unique_items if i.get("cadence") == "weekly"]
+    week_counts  = adefs.get_week_counts(weekly_keys)
+
+    by_pillar = {}
+    for item in unique_items:
+        item["done"] = item["key"] in done_today
+        item["done_min"] = not item["done"] and (item["key"] + engine.ANCLA_MIN_SUFFIX) in done_today
+        if item["key"] in REFLECT_KEYS:
+            item["reflexion"] = reflexiones_today.get(item["key"], "")
+        if item.get("cadence") == "weekly":
+            item["week_count"] = week_counts.get(item["key"], 0)
+        if item["type"] != "ocasional":
+            by_pillar.setdefault(item["pillar"], []).append(item)
+
+    # Pilares con >1 item elegible = candidatos a "foco del mes" (ancla configurable)
+    foco_candidates = {p: items for p, items in by_pillar.items() if len(items) > 1}
+
+    return {
+        "grouped":         grouped,
+        "now_session":     _now_session(),
+        "session_meta":    SESSION_META,
+        "pillar_meta":     PILLAR_META,
+        "pillar_focus":    adefs.get_pillar_focus_map(),
+        "foco_candidates": foco_candidates,
+        "eurythmia_done":  get_eurythmia_today(),
+    }
+
+
 @actividades_bp.route('/')
 def index():
     stats        = get_dashboard_stats()
     gam          = engine.get_gamification_stats()
     weekend_mode = get_weekend_mode()
 
-    # Weekend activities separated
+    # Weekend activities separated (bloques Sábado/Domingo, sistema aparte)
     sat_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sat"}
     sun_acts = {k: v for k, v in ACTIVITIES.items() if v.get("weekend") == "sun"}
-    # Regular activities (no weekend field, no auto-logged/hidden module activities)
-    regular_acts = {k: v for k, v in ACTIVITIES.items() if "weekend" not in v and not v.get("hidden")}
+
+    ctx = build_acta_diurna_context()
+
+    # Vista «Por virtud» (DS V2): los mismos items de las sesiones, sin
+    # duplicar los que viven en varias sesiones, agrupados por pilar.
+    seen, by_pillar = set(), {}
+    for sk in adefs.SESSIONS:
+        for item in ctx["grouped"].get(sk, []):
+            if item["key"] in seen:
+                continue
+            seen.add(item["key"])
+            # Actividades de baile que no son el touch base se registran en
+            # /eurythmia/ (sesiones reales): se ven hechas si ahí hubo sesión hoy.
+            item["eury_proxy"] = item["pillar"] == "eury" and item["key"] != "lenguaje_corporal"
+            item["done_ui"] = ctx["eurythmia_done"] if item["eury_proxy"] else bool(item.get("done"))
+            by_pillar.setdefault(item["pillar"], []).append(item)
+    acta_pillars = []
+    for pid in adefs.PILLAR_ORDER:
+        items = by_pillar.get(pid, [])
+        if not items:
+            continue
+        done = [i for i in items if i["done_ui"]]
+        acta_pillars.append({**adefs.PILLAR_UI[pid], "id": pid, "items": items,
+                             "done": len(done), "total": len(items),
+                             "xp_done": sum(i.get("pts") or 0 for i in done)})
 
     _td = today_date()
     return render_template('actividades/index.html',
+        acta_pillars  = acta_pillars,
+        pillar_ui     = adefs.PILLAR_UI,
+        acta_total    = len(seen),
         stats         = stats,
         gam           = gam,
-        activities    = regular_acts,
+        grouped       = ctx["grouped"],
+        now_session   = ctx["now_session"],
+        session_meta  = ctx["session_meta"],
+        pillar_meta   = ctx["pillar_meta"],
+        pillar_focus  = ctx["pillar_focus"],
+        foco_candidates = ctx["foco_candidates"],
+        eurythmia_done= ctx["eurythmia_done"],
         sat_acts      = sat_acts,
         sun_acts      = sun_acts,
         cats          = ACTIVITY_CATEGORIES,
@@ -102,6 +240,10 @@ def index():
         payment_alerts= get_payment_alerts(),
         today         = _td.isoformat(),
         today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()],
+        fecha_larga   = "{} {} de {}".format(
+            ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()], _td.day,
+            ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre",
+             "octubre","noviembre","diciembre"][_td.month - 1]),
         weekend_mode  = weekend_mode,
         classification= gam["classification"],
     )
@@ -114,9 +256,6 @@ def today_status():
     week_start  = (_today - timedelta(days=_today.weekday())).isoformat()
     month_start = _today.replace(day=1).isoformat()
     with get_db() as db:
-        today_keys = {r['activity_key'] for r in db.execute(
-            "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
-        ).fetchall()}
         xp_today  = db.execute(
             "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=?", (today,)
         ).fetchone()['s']
@@ -128,13 +267,16 @@ def today_status():
             "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date>=? AND date<=?",
             (month_start, today)
         ).fetchone()['s']
-    activities = [
-        {'key': k, 'label': v['label'], 'cat': v['cat'], 'pts': v['pts'],
-         'ec': v.get('ec', 0), 'tier': v.get('tier', 'micro'), 'done': k in today_keys}
-        for k, v in ACTIVITIES.items() if not v.get('hidden')
-    ]
+
+    ctx = build_acta_diurna_context()
     return jsonify({
-        'activities': activities,
+        'grouped':         ctx["grouped"],
+        'now_session':     ctx["now_session"],
+        'session_meta':    ctx["session_meta"],
+        'pillar_meta':     ctx["pillar_meta"],
+        'pillar_focus':    ctx["pillar_focus"],
+        'foco_candidates': ctx["foco_candidates"],
+        'eurythmia_done':  ctx["eurythmia_done"],
         'xp': {'today': xp_today, 'week': xp_week, 'month': xp_month},
         'streak': engine.get_gamification_streak(),
         'classification': engine.get_daily_classification(today),
@@ -153,15 +295,35 @@ def log_activity():
     _t0 = time.perf_counter()
     key   = request.json.get('key')
     today = today_str()
-    if key not in ACTIVITIES or ACTIVITIES[key].get('hidden'):
+    act = adefs.get_by_key(key)
+    if not act or not act['active'] or act['hidden']:
         return jsonify({'error': 'invalid'}), 400
 
-    pts = ACTIVITIES[key]['pts']
-    cat = ACTIVITIES[key]['cat']
+    pts = act['pts']
+    cat = act['cat']
+    ec  = None
     removed_id = None
     log_id     = None
+    base_key   = key
+    min_key    = key + engine.ANCLA_MIN_SUFFIX
+    upgraded_min_id = None
+
+    # Ancla mínima (ver engine.ANCLA_MIN_SUFFIX): se registra como otra fila
+    # `<key>__min`, con una fracción del XP y sin EC. Solo para anclas.
+    minimal = bool(request.json.get('minimal'))
+    if minimal:
+        if act['effective_type'] != 'ancla':
+            return jsonify({'error': 'solo las anclas tienen versión mínima'}), 400
+        key = min_key
+        pts = max(1, round(pts * engine.ANCLA_MIN_XP_RATIO))
+        ec  = 0
 
     with get_db() as db:
+        if minimal and db.execute(
+            "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (base_key, today)
+        ).fetchone():
+            return jsonify({'error': 'el ancla completa ya está registrada'}), 400
+
         existing = db.execute(
             "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (key, today)
         ).fetchone()
@@ -174,8 +336,20 @@ def log_activity():
                 "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)", (key, today, pts)
             )
             log_id = cursor.lastrowid
+            # Completar el ancla después de su versión mínima la reemplaza:
+            # no se suman los dos registros ni los dos XP.
+            if not minimal:
+                prev_min = db.execute(
+                    "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (min_key, today)
+                ).fetchone()
+                if prev_min:
+                    upgraded_min_id = prev_min["id"]
+                    db.execute("DELETE FROM activity_logs WHERE id=?", (upgraded_min_id,))
         db.commit()
     _t1 = time.perf_counter()
+
+    if upgraded_min_id:
+        engine.remove_activity(upgraded_min_id)
 
     if removed_id:
         gam = engine.remove_activity(removed_id)
@@ -185,13 +359,132 @@ def log_activity():
         print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
         return jsonify({'action': 'removed', 'pts': -pts, 'stats': stats, 'gam': gam})
 
-    gam = engine.process_activity(key, pts, cat, log_id)
+    gam = engine.process_activity(key, pts, cat, log_id, ec=ec)
     _t2 = time.perf_counter()
+    one_time = bool(act.get('one_time')) and not minimal
+    if one_time:
+        adefs.deactivate(key)
     stats = get_dashboard_stats()
     _t3 = time.perf_counter()
     print(f"[logAct] sqlite={(_t1-_t0)*1000:.1f}ms engine={(_t2-_t1)*1000:.1f}ms stats={(_t3-_t2)*1000:.1f}ms TOTAL={(_t3-_t0)*1000:.1f}ms")
     return jsonify({'action': 'added', 'pts': pts, 'xp': gam['xp'], 'ec': gam['ec'],
-                    'log_id': log_id, 'stats': stats, 'gam': gam})
+                    'log_id': log_id, 'stats': stats, 'gam': gam, 'one_time': one_time,
+                    'minimal': minimal, 'replaced_min': bool(upgraded_min_id)})
+
+
+@actividades_bp.route('/api/reflexion', methods=['POST'])
+def save_reflexion():
+    """Guarda el texto libre de un touch reflexivo (gratitud/corrección/
+    síntesis) para hoy. Si el texto no está vacío y el touch todavía no
+    estaba marcado, lo marca automáticamente (misma ruta de XP/EC que un
+    check manual) — ya se hizo la reflexión, cuenta como cumplido. El
+    checkbox se puede seguir desmarcando a mano como siempre; el texto no
+    se borra al hacerlo."""
+    key   = (request.json or {}).get('key')
+    texto = ((request.json or {}).get('texto') or '').strip()
+    if key not in REFLECT_KEYS:
+        return jsonify({'error': 'invalid key'}), 400
+
+    today = today_str()
+    with get_db() as db:
+        db.execute(
+            """INSERT INTO reflexion_diaria (activity_key, date, texto, updated_at)
+               VALUES (?,?,?,datetime('now'))
+               ON CONFLICT(activity_key, date)
+               DO UPDATE SET texto=excluded.texto, updated_at=excluded.updated_at""",
+            (key, today, texto)
+        )
+        db.commit()
+
+    gam = None
+    auto_checked = False
+    if texto:
+        act = adefs.get_by_key(key)
+        with get_db() as db:
+            existing = db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (key, today)
+            ).fetchone()
+        if not existing and act:
+            with get_db() as db:
+                cursor = db.execute(
+                    "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                    (key, today, act['pts'])
+                )
+                log_id = cursor.lastrowid
+                db.commit()
+            gam = engine.process_activity(key, act['pts'], act['cat'], log_id)
+            auto_checked = True
+
+    return jsonify({'ok': True, 'auto_checked': auto_checked, 'stats': get_dashboard_stats(), 'gam': gam})
+
+
+# ── CRUD de actividades (Acta Diurna) ───────────────────────────────────────
+
+@actividades_bp.route('/api/activity/create', methods=['POST'])
+def create_activity():
+    data = request.json or {}
+    label = (data.get('label') or '').strip()
+    pillar = data.get('pillar')
+    type_  = data.get('type', 'touch')
+    session = data.get('session')
+    if type_ == 'ocasional':
+        session = None
+    try:
+        pts = int(data.get('pts', 1))
+        ec  = int(data.get('ec', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'pts/ec inválidos'}), 400
+    if not label or pillar not in adefs.PILLARS or type_ not in adefs.TYPES:
+        return jsonify({'error': 'datos incompletos o inválidos'}), 400
+
+    one_time = bool(data.get('one_time'))
+    days_of_week = data.get('days_of_week')
+    if isinstance(days_of_week, list):
+        days_of_week = ",".join(days_of_week)
+
+    try:
+        act = adefs.create(label=label, pillar=pillar, type_=type_, session=session, pts=pts, ec=ec,
+                            one_time=one_time, days_of_week=days_of_week)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    return jsonify({'ok': True, 'activity': act})
+
+
+@actividades_bp.route('/api/activity/update/<key>', methods=['POST'])
+def update_activity(key):
+    if not adefs.get_by_key(key):
+        return jsonify({'error': 'not found'}), 404
+    data = request.json or {}
+    fields = {k: v for k, v in data.items() if k in
+              {'label', 'cat', 'pts', 'ec', 'tier', 'session', 'pillar', 'type'}}
+    act = adefs.update(key, **fields)
+    return jsonify({'ok': True, 'activity': act})
+
+
+@actividades_bp.route('/api/activity/<key>', methods=['DELETE'])
+def delete_activity(key):
+    act = adefs.get_by_key(key)
+    if not act:
+        return jsonify({'error': 'not found'}), 404
+    adefs.deactivate(key)
+    return jsonify({'ok': True})
+
+
+@actividades_bp.route('/api/pillar-focus', methods=['GET'])
+def get_pillar_focus():
+    return jsonify(adefs.get_pillar_focus_map())
+
+
+@actividades_bp.route('/api/pillar-focus', methods=['POST'])
+def post_pillar_focus():
+    data = request.json or {}
+    pillar = data.get('pillar')
+    focus_key = data.get('focus_key')
+    try:
+        adefs.set_pillar_focus(pillar, focus_key)
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    return jsonify({'ok': True, 'pillar_focus': adefs.get_pillar_focus_map()})
 
 
 @actividades_bp.route('/api/pipeline', methods=['POST'])

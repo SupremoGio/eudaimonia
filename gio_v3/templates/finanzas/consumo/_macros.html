@@ -1,0 +1,9 @@
+{# Consumo: tonos por estado e insight, compartidos entre lista y detalle #}
+{% set ST = {'ok': ('Al día','success'), 'proximo': ('Próximo','warning'), 'atrasado': ('Atrasado','danger'), 'sin_datos': ('Sin datos','')} %}
+{% set INS = {'frecuencia': ('bar-chart-3',''), 'ok': ('circle-check','success'), 'proximo': ('clock','warning'), 'warning': ('circle-alert','danger'), 'tip': ('lightbulb','info'), 'trend': ('trending-up','brand'), 'info': ('info','')} %}
+{% macro insight(ins) -%}
+<p class="ci-ins" data-tone="{{ INS.get(ins.tipo, ('info',''))[1] }}"><i data-lucide="{{ INS.get(ins.tipo, ('info',''))[0] }}"></i><span>{{ ins.msg }}</span></p>
+{%- endmacro %}
+{% macro ago(p) -%}
+{%- if p.ultima_compra -%}{% if p.dias_desde == 0 %}Hoy{% elif p.dias_desde == 1 %}Ayer{% else %}hace {{ p.dias_desde }} d{% endif %}{%- else -%}—{%- endif -%}
+{%- endmacro %}

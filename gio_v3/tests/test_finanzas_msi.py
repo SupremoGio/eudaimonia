@@ -1,0 +1,369 @@
+"""
+test_finanzas_msi.py — compras a meses: la compra inicial («… A 20 MSI») no
+cuenta como gasto (cuentan las mensualidades) y la conciliación dice cuánto va
+pagado, qué meses no tienen mensualidad y si cuadra.
+"""
+import sys, os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import pytest
+
+import database
+from modules.finanzas.estados import msi
+
+
+@pytest.fixture
+def client(test_db):
+    from app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess["app_ok"] = True
+            sess["fin_ok"] = True
+        yield c
+
+
+def _ins(fecha, desc, monto, cat='VIVIENDA', sub='Artículos del hogar', tipo='GASTO', banco='BBVA_TDC',
+         pn=None, pt=None, grupo=None):
+    with database.get_db() as db:
+        mid = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo,
+                            parcialidad_num, parcialidad_total, compra_msi_id) VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                         (fecha, desc, monto, banco, cat, sub, tipo, pn, pt, grupo)).lastrowid
+        db.commit()
+    return mid
+
+
+def _lavadora(meses=20, saltar=()):
+    cid = _ins('2024-11-17', 'WALMART VENTA EN LIN3 A 20 MSI', -10169.0)
+    y, m = 2024, 11          # compra antes del día 22: la 1ª mensualidad cae en ese corte
+    for k in range(1, meses + 1):
+        if k not in saltar:
+            _ins(f'{y}-{m:02d}-22', 'WALMART VENTA EN LIN3', 498.0 if k == 20 else 509.0)
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    return cid
+
+
+def test_compra_inicial_sale_del_gasto(test_db):
+    cid = _lavadora()
+    mens = _ins('2025-01-22', '03 DE 12 LIVERPOOL', 211.0, pn=3, pt=12, grupo='g1')   # mensualidad: no se toca
+    with database.get_db() as db:
+        assert msi.marcar_compras(db) == 1
+        db.commit()
+        r = db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (cid,)).fetchone()
+        assert tuple(r) == ('FINANZAS', 'Compra a meses')
+        assert db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (mens,)).fetchone()[0] == 'VIVIENDA'
+        assert msi.marcar_compras(db) == 0
+    from modules.finanzas.estados.routes import _PAGO_CATS
+    from modules.finanzas.budget import _GASTO_WHERE
+    with database.get_db() as db:
+        for where in (_PAGO_CATS, _GASTO_WHERE):
+            n = db.execute(f"SELECT COUNT(*) FROM est_movimientos WHERE id=? AND {where}", (cid,)).fetchone()[0]
+            assert n == 0
+
+
+def test_conciliacion_liquidada_y_con_faltantes(test_db):
+    _lavadora()
+    with database.get_db() as db:
+        msi.marcar_compras(db)
+        c = msi.conciliar(db, '2026-09-26')[0]
+    assert (c['estado'], c['pagadas'], c['pagado'], c['restante']) == ('Liquidada', 20, 10169.0, 0)
+
+
+def test_conciliacion_detecta_mes_sin_mensualidad(test_db):
+    _lavadora(saltar=(5,))          # la 5ª (marzo 2025) no se importó
+    with database.get_db() as db:
+        msi.marcar_compras(db)
+        c = msi.conciliar(db, '2026-09-26')[0]
+    assert c['estado'] == 'Faltan mensualidades' and c['meses_sin_mensualidad'] == ['2025-03']
+    assert c['pagadas'] == 19 and c['restante'] == 509.0
+
+
+def test_mensualidades_sin_compra_inicial(test_db):
+    for k in (1, 2, 4):
+        _ins(f'2023-0{k}-22', f'0{k} DE 06 MEN S FACTORY', 462.0, cat='ROPA', sub='Ropa', pn=k, pt=6, grupo='mf')
+    with database.get_db() as db:
+        c = msi.conciliar(db, '2026-09-26')[0]
+    assert c['estado'] == 'Sin compra inicial' and c['mensualidades_faltantes'] == [3]
+
+
+def test_pagina_de_conciliacion(client):
+    _lavadora(saltar=(5,))
+    with database.get_db() as db:      # lo hacen la migración y cada import
+        msi.marcar_compras(db)
+        db.commit()
+    r = client.get('/finanzas/estados/admin/msi', query_string={'formato': 'html'})
+    html = r.get_data(as_text=True)
+    assert r.status_code == 200 and 'WALMART VENTA EN LIN3 A 20 MSI' in html and '2025-03' in html
+    assert client.get('/finanzas/estados/admin/msi').get_json()['compras'][0]['estado'] == 'Faltan mensualidades'
+
+
+def test_csv_de_pendientes(client):
+    _lavadora(saltar=(5,))
+    for k in (1, 2):
+        _ins(f'2023-0{k}-22', f'0{k} DE 02 PRIVALIA', 100.0, cat='ROPA', sub='Ropa', pn=k, pt=2, grupo='pv')
+    with database.get_db() as db:
+        msi.marcar_compras(db)
+        db.commit()
+    r = client.get('/finanzas/estados/admin/msi', query_string={'formato': 'csv', 'solo': 'pendientes'})
+    txt = r.get_data(as_text=True)
+    assert r.status_code == 200 and 'COMENTARIOS' in txt and 'WALMART VENTA EN LIN3 A 20 MSI' in txt
+    assert '2025-03' in txt and 'Sin compra inicial' in txt     # la lavadora y las mensualidades sueltas
+
+
+def _conciliar():
+    with database.get_db() as db:
+        msi.marcar_compras(db)
+        db.commit()
+        return {c['id']: c for c in msi.conciliar(db, '2026-09-27')}
+
+
+def test_casos_reales_de_produccion(test_db):
+    """Casos del JSON del usuario (2026-09-27)."""
+    # Dos Viva Aerobus A 09 el mismo día: cada mensualidad va a su compra por monto
+    v1 = _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI', 5919.63, cat='VIAJES', sub='Transporte')
+    v2 = _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI (2)', 11895.45, cat='VIAJES', sub='Transporte')
+    _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB', 658.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='a')
+    _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB (2)', 1322.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='b')
+    _ins('2025-12-23', 'VIVA AEROBUS CIB', 1346.51, cat='VIAJES', sub='Transporte')      # otra compra: no se liga
+    # Compra que no procedió ($0)
+    p0 = _ins('2025-11-12', 'ELPALACIOHIERRO COM A 09 MSI', 0.0, cat='ROPA', sub='Ropa')
+    # La línea trae la cuota, no el total
+    cr = _ins('2025-10-04', 'CRISTAL VILLAHERMOSA A 12 MSI', 1037.5, cat='VIVIENDA', sub='Artículos del hogar')
+    for k in (10, 11, 12):
+        _ins(f'2026-{k - 3:02d}-22', f'{k} DE 12 CRISTAL VILLAHERMOSA', 1038.0, cat='VIVIENDA',
+             sub='Artículos del hogar', pn=k, pt=12, grupo='cr')
+    # Primera mensualidad en el mismo corte (compra el 10, corte el 22)
+    va = _ins('2025-03-10', 'VIVA AEROBUS CIB A 06 MSI', 5808.01, cat='VIAJES', sub='Transporte')
+    for k in range(6):
+        _ins(f'2025-{3 + k:02d}-22', 'VIVA AEROBUS CIB', 968.01 if k == 5 else 968.0, cat='VIAJES', sub='Transporte')
+    c = _conciliar()
+    assert [p['monto'] for p in c[v1]['pagos']] == [658.0] and [p['monto'] for p in c[v2]['pagos']] == [1322.0]
+    assert c[p0]['estado'] == 'No procedió'
+    # la línea trae la cuota: 12 × $1,037.50, con la 10, 11 y 12
+    assert c[cr]['linea_es_cuota'] and c[cr]['total'] == 12450.0 and c[cr]['pagadas'] == 3
+    assert c[va]['estado'] == 'Liquidada' and c[va]['meses_sin_mensualidad'] == []
+
+
+def test_mensualidades_de_otra_compra_mismo_comercio(test_db):
+    """Training Innovation 2022 (12 MSI) no se lleva las mensualidades de la de 2023."""
+    t = _ins('2022-04-16', 'TRAINING INNOVATION A 12 MSI', 4290.0, cat='APRENDIZAJE', sub='Cursos')
+    for k in range(1, 13):
+        y, m = (2022, 3 + k) if 3 + k <= 12 else (2023, k - 9)
+        _ins(f'{y}-{m:02d}-22', f'{k:02d} DE 12 TRAINING INNOVATION', 358.0, cat='APRENDIZAJE', sub='Cursos',
+             pn=k, pt=12, grupo='t1')
+    for k, mes in ((3, '2023-06'), (4, '2023-07')):
+        _ins(f'{mes}-22', f'0{k} DE 12 TRAINING INNOVATION (B)', 359.0, cat='APRENDIZAJE', sub='Cursos',
+             pn=k, pt=12, grupo='t2')
+    c = _conciliar()[t]
+    assert c['estado'] == 'Liquidada' and all(p['fecha'] < '2023-04' for p in c['pagos'])
+
+
+def test_compra_de_varios_productos_y_pago_diferido(test_db):
+    """Palacio de Hierro 01/06/2025: 6 × $218.17 + 6 × $169.55 = $2,326.32; el
+    Lacoste era «MSI + paga en enero» -> dos cargos al mes, y empiezan tarde."""
+    pal = _ins('2025-06-01', 'ELPALACIOHIERRO COM A 06 MSI', 2326.32, cat='ROPA', sub='Ropa')
+    for k in range(6):
+        y, m = (2025, 8 + k) if 8 + k <= 12 else (2026, k - 4)
+        _ins(f'{y}-{m:02d}-22', 'ELPALACIOHIERRO COM', 218.17, cat='ROPA', sub='Ropa')
+        _ins(f'{y}-{m:02d}-22', 'ELPALACIOHIERRO COM (B)', 169.55, cat='ROPA', sub='Ropa')
+    c = _conciliar()[pal]
+    assert (c['estado'], c['pagadas'], c['pagado']) == ('Liquidada', 6, 2326.32)
+    assert c['meses_sin_mensualidad'] == []
+
+
+def test_varios_productos_con_planes_que_no_se_enciman(test_db):
+    """El primer producto de jul a dic 2025 y el Lacoste («paga en enero») de ene a jun 2026."""
+    pal = _ins('2025-06-01', 'ELPALACIOHIERRO COM A 06 MSI', 2326.32, cat='ROPA', sub='Ropa')
+    for k in range(6):
+        _ins(f'2025-{7 + k:02d}-22', 'ELPALACIOHIERRO COM', 218.17, cat='ROPA', sub='Ropa')
+    for k in range(5):                                   # falta la 6ª del Lacoste (jun 2026)
+        _ins(f'2026-{1 + k:02d}-22', 'ELPALACIOHIERRO COM', 169.55, cat='ROPA', sub='Ropa')
+    c = _conciliar()[pal]
+    assert c['planes'] == [{'cuota': 169.55, 'mensualidades': 5}, {'cuota': 218.17, 'mensualidades': 6}]
+    assert c['estado'] == 'Faltan mensualidades' and c['meses_sin_mensualidad'] == ['2026-06']
+    assert c['restante'] == 169.55
+
+
+def test_mensualidades_con_otro_nombre_del_comercio(test_db):
+    """Liverpool Zapopan 10/04/2025, 6 × $408.17: las mensualidades llegan como «LIVERPOOL GDL»."""
+    lv = _ins('2025-04-10', 'LIVERPOOL ZAPOPAN A 06 MSI', 2449.0, cat='ROPA', sub='Calzado')
+    for k in range(6):
+        _ins(f'2025-{4 + k:02d}-22', 'LIVERPOOL GDL', 408.17 if k < 5 else 408.15, cat='ROPA', sub='Calzado')
+    _ins('2025-05-03', 'LIVERPOOL GDL', 1200.0, cat='ROPA', sub='Ropa')          # otra compra: no se liga
+    c = _conciliar()[lv]
+    assert (c['estado'], c['pagadas'], c['pagado']) == ('Liquidada', 6, 2449.0)
+
+
+def test_pista_de_cargos_con_el_monto_de_la_cuota(test_db):
+    lv = _ins('2025-04-10', 'LIVERPOOL ZAPOPAN A 06 MSI', 2449.0, cat='ROPA', sub='Calzado')
+    _ins('2025-04-22', 'LPOOL 0123 ZAP', 408.17, cat='ROPA', sub='Calzado')
+    c = _conciliar()[lv]
+    assert c['pagadas'] == 0 and [p['descripcion'] for p in c['misma_cuota']] == ['LPOOL 0123 ZAP']
+
+
+def test_compra_pasada_a_meses_por_error_es_gasto_normal(test_db):
+    """Pointmp Arellano $22 (15/03/2025): conveniencia que el banco pasó a 3
+    meses por error y cobró en $8 + $8 + $6. Cuentan las mensualidades (como
+    conveniencia), no la compra: si no, los $22 contaban doble."""
+    pa = _ins('2025-03-15', 'POINTMP ARELLANO A 03 MSI', 22.0, cat='SUPER', sub='Conveniencia')
+    ms = [_ins(f'2025-{mes:02d}-22', 'POINTMP ARELLANO', monto, cat='COMIDA_FUERA', sub='Restaurante', pn=k, pt=3)
+          for k, (mes, monto) in enumerate(((3, 8.0), (4, 8.0), (5, 6.0)), 1)]
+    c = _conciliar()
+    assert c[pa]['estado'] == 'Liquidada' and c[pa]['pagado'] == 22.0
+    assert not [x for x in c.values() if x['estado'] == 'Sin compra inicial']
+    with database.get_db() as db:
+        cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert cat(pa) == ('FINANZAS', 'Compra a meses')
+        assert {cat(i) for i in ms} == {('SUPER', 'Conveniencia')}
+
+
+def test_respuestas_del_usuario_2026_09_27(test_db):
+    # Cristal: la app bajó la compra del 04/10 con la cuota ($1,037.50) y el PDF
+    # con el total ($12,450); la 1ª mensualidad es la «1 de 12» del 22/10.
+    cr = _ins('2025-10-04', 'CRISTAL VILLAHERMOSA A 12 MSI', 1037.5, cat='FAMILIA_REGALOS', sub='Regalos')
+    cr_pdf = _ins('2025-10-04', 'CRISTAL VILLAHERMOSA A 12 MSI (PDF)', 12450.0, cat='FAMILIA_REGALOS', sub='Regalos')
+    for k in (1, 2, 3):
+        _ins(f'2025-{9 + k}-22', 'CRISTAL VILLAHERMOSA', 1038.0, cat='FAMILIA_REGALOS', sub='Regalos',
+             pn=k, pt=12, grupo='cr')
+    # Viva (2): mensualidades de $1,322 fueron de la familia y ya las devolvió -> Reembolsable
+    _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI (2)', 11895.45, cat='VIAJES', sub='Transporte')
+    v2m = _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB (2)', 1322.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='b')
+    mia = _ins('2024-05-22', '04 DE 09 VIVA AEROBUS CIB', 658.0, cat='VIAJES', sub='Transporte', pn=4, pt=9, grupo='a')
+    # Refri a 13 meses en Chedraui (el keyword la mandaba a SUPER)
+    ref = _ins('2024-05-22', 'CHEDRAUI TDA EN LINEA', 569.0, cat='SUPER', sub='Súper', pn=8, pt=13, grupo='ch')
+    super_ = _ins('2024-05-10', 'CHEDRAUI TDA EN LINEA', 569.0, cat='SUPER', sub='Súper')     # sin plazo: súper normal
+    c = _conciliar()
+    row = lambda i: tuple(database.get_db().__enter__().execute(
+        "SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+    assert row(cr) == ('FINANZAS', 'Compra a meses') and cr not in c        # duplicada: fuera del gasto
+    assert c[cr_pdf]['total'] == 12450.0 and c[cr_pdf]['pagadas'] == 3 and not c[cr_pdf]['linea_es_cuota']
+    assert row(v2m) == ('FINANZAS', 'Reembolsable') and row(mia) == ('VIAJES', 'Transporte')
+    assert row(ref) == ('VIVIENDA', 'Artículos del hogar') and row(super_) == ('SUPER', 'Súper')
+
+
+def test_compra_a_meses_escrita_como_a_nn_meses(test_db):
+    """Corte 202209: «MERCADO PAGO 1 A 03 MESES S/I $467.17» es la compra; «AMAZON MX A MESES» es mensualidad."""
+    mp = _ins('2022-09-03', 'MERCADO PAGO 1 A 03 MESES S/I', 467.17, cat='OTROS', sub='')
+    am = _ins('2022-09-22', 'AMAZON MX A MESES', 560.0, cat='DIGITAL', sub='Accesorios tech', pn=4, pt=6, grupo='am')
+    for k, mes in ((1, '2022-09'), (2, '2022-10'), (3, '2022-11')):
+        _ins(f'{mes}-22', f'0{k} DE 03 MERCADO PAGO 1', 156.0 if k < 3 else 155.17, cat='OTROS', sub='',
+             pn=k, pt=3, grupo='mp')
+    c = _conciliar()
+    with database.get_db() as db:
+        cats = {i: db.execute("SELECT subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[0] for i in (mp, am)}
+    assert cats == {mp: 'Compra a meses', am: 'Accesorios tech'}
+    assert c[mp]['estado'] == 'Liquidada' and c[mp]['pagadas'] == 3
+
+
+def test_compra_a_meses_devuelta_no_procedio(test_db):
+    """Palacio de Hierro 10/11/2025: «A 09 MSI $2,345» y el 11/11 -$2,345."""
+    pa = _ins('2025-11-10', 'ELPALACIOHIERRO COM A 09 MSI', 2345.0, cat='ROPA', sub='Ropa')
+    _ins('2025-11-11', 'ELPALACIOHIERRO COM', -2345.0, cat='FINANZAS', sub='Reembolsable', tipo='PAGO')
+    c = _conciliar()[pa]
+    assert c['estado'] == 'No procedió' and c['total'] == 0
+
+
+def test_inicio_se_deduce_de_k_de_n(test_db):
+    """Viva (2): aparecen la 4 (mayo) y la 6-9 (jul-oct 2024): solo falta la 5 (junio)."""
+    v2 = _ins('2024-02-20', 'VIVA AEROBUS CIB A 09 MSI (2)', 11895.45, cat='VIAJES', sub='Transporte')
+    for k, mes, monto in ((4, '2024-05', 1322.0), (6, '2024-07', 1322.0), (7, '2024-08', 1322.0),
+                          (8, '2024-09', 1322.0), (9, '2024-10', 1319.45)):
+        _ins(f'{mes}-22', f'0{k} DE 09 VIVA AEROBUS CIB', monto, cat='VIAJES', sub='Transporte', pn=k, pt=9, grupo=f'v{k}')
+    c = _conciliar()[v2]
+    assert c['meses_sin_mensualidad'] == ['2024-02', '2024-03', '2024-04', '2024-06']
+
+
+def test_ultima_mensualidad_menor_no_parte_la_compra(test_db):
+    """Amazon «A MESES M» 6 × $290: la 6ª de $287.99 era otra «compra sin inicial»."""
+    for k, mes, monto in ((2, '2024-05', 290.0), (4, '2024-07', 290.0), (5, '2024-08', 290.0), (6, '2024-09', 287.99)):
+        _ins(f'{mes}-22', 'AMAZON MX A MESES M', monto, cat='DIGITAL', sub='Accesorios tech', pn=k, pt=6,
+             grupo='am290' if monto == 290.0 else 'am288')
+    sueltas = [c for c in _conciliar().values() if c['estado'] == 'Sin compra inicial']
+    assert len(sueltas) == 1 and sueltas[0]['mensualidades_vistas'] == [2, 4, 5, 6]
+    assert sueltas[0]['mensualidades_faltantes'] == [3] and sueltas[0]['restante'] == 0.0
+
+
+def test_tres_compras_iguales_el_mismo_dia_cada_una_su_cuota(test_db):
+    """Amazon 24/01/2026: tres A 06 con cuotas ~$114.89, ~$116.50 y ~$326.33;
+    las mensualidades de $117 van a la de $116.50, no a la de $114.89."""
+    a = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I', 689.34, cat='DIGITAL', sub='Accesorios tech')
+    b = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I (2)', 699.0, cat='DIGITAL', sub='Accesorios tech')
+    c3 = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I (3)', 1958.0, cat='DIGITAL', sub='Accesorios tech')
+    for k in range(1, 6):
+        mes = f'2026-{1 + k:02d}-22'
+        _ins(mes, 'AMAZON A MESES', 115.0, cat='DIGITAL', sub='Accesorios tech')
+        _ins(mes, 'AMAZON MX A MESES', 117.0, cat='DIGITAL', sub='Accesorios tech')     # otro nombre
+        _ins(mes, 'AMAZON A MESES (C)', 326.0, cat='DIGITAL', sub='Accesorios tech')
+    c = _conciliar()
+    assert {p['monto'] for p in c[a]['pagos']} == {115.0}
+    assert {p['monto'] for p in c[b]['pagos']} == {117.0} and c[b]['pagadas'] == 5
+    assert {p['monto'] for p in c[c3]['pagos']} == {326.0}
+
+
+def test_amazon_24_01_2026_con_montos_reales(test_db):
+    """PDF de feb 2026: tres A 06 de $114.89, $1,958 y $699 (compras completas).
+    Mensualidades $20 (la de $114.89: 5 × $20 + $14.89), $327 y $117 (la de
+    $699: 5 × $117 + $114). La $114 no hace que la de $114.89 «traiga la cuota»."""
+    a = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I', 114.89, cat='DIGITAL', sub='Accesorios tech')
+    b = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I (2)', 1958.0, cat='DIGITAL', sub='Accesorios tech')
+    c3 = _ins('2026-01-24', 'AMAZON A MESES A 06 MESES S/I (3)', 699.0, cat='DIGITAL', sub='Accesorios tech')
+    for k in range(1, 7):
+        mes = f'2026-{1 + k:02d}-22'
+        _ins(mes, 'AMAZON A MESES', 20.0 if k < 6 else 14.89, cat='DIGITAL', sub='Accesorios tech', pn=k, pt=6)
+        _ins(mes, 'AMAZON A MESES (B)', 327.0 if k < 6 else 323.0, cat='DIGITAL', sub='Accesorios tech', pn=k, pt=6)
+        _ins(mes, 'AMAZON A MESES (C)', 117.0 if k < 6 else 114.0, cat='DIGITAL', sub='Accesorios tech', pn=k, pt=6)
+    c = _conciliar()
+    assert not c[a]['linea_es_cuota'] and c[a]['total'] == 114.89
+    assert [p['monto'] for p in c[a]['pagos']] == [20.0] * 5 + [14.89] and c[a]['estado'] == 'Liquidada'
+    assert [p['monto'] for p in c[c3]['pagos']] == [117.0] * 5 + [114.0] and c[c3]['estado'] == 'Liquidada'
+    assert c[b]['estado'] == 'Liquidada'
+
+
+def test_mensualidad_con_k_de_n_gana_a_cargo_suelto_del_mes(test_db):
+    """Amazon A 03 $749 (30/09/2025): la 3ª es la «3 de 3» de $249 del 22/12,
+    no un cargo suelto de $259 del 01/12 (salía «pagado de más»)."""
+    a = _ins('2025-09-30', 'AMAZON A MESES A 03 MESES S/I', 749.0, cat='DIGITAL', sub='Accesorios tech')
+    _ins('2025-10-22', 'AMAZON A MESES', 250.0, cat='DIGITAL', sub='Accesorios tech', pn=1, pt=3)
+    _ins('2025-11-22', 'AMAZON A MESES', 250.0, cat='DIGITAL', sub='Accesorios tech', pn=2, pt=3)
+    _ins('2025-12-01', 'STRIPE AMAZON', 259.0, cat='DIGITAL', sub='Accesorios tech')
+    _ins('2025-12-22', 'AMAZON A MESES', 249.0, cat='DIGITAL', sub='Accesorios tech', pn=3, pt=3)
+    c = _conciliar()
+    assert [p['monto'] for p in c[a]['pagos']] == [250.0, 250.0, 249.0] and c[a]['estado'] == 'Liquidada'
+    assert not [x for x in c.values() if x['estado'] == 'Sin compra inicial']
+
+
+def test_k_de_dos_digitos_recortada_por_el_banco(test_db):
+    """Refri Chedraui A 13 del 15/10/2023: el banco imprime la 11, 12 y 13
+    como «1 DE 13», «2 DE 13», «3 DE 13» (su tabla MSI dice «11 de 13»). La
+    última ($567) también es del refri, no súper."""
+    ch = _ins('2023-10-15', 'CHEDRAUI TDA EN LINEA A 13 MSI', 7395.0, cat='SUPER', sub='Súper')
+    y, m = 2023, 10
+    for k in range(1, 14):
+        _ins(f'{y}-{m:02d}-22', 'CHEDRAUI TDA EN LINEA', 567.0 if k == 13 else 569.0, cat='SUPER', sub='Súper',
+             pn=k - 10 if k > 10 else k, pt=13)
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+    c = _conciliar()
+    assert c[ch]['estado'] == 'Liquidada' and c[ch]['pagadas'] == 13
+    assert [p['parcialidad'] for p in c[ch]['pagos']] == list(range(1, 14))
+    assert not [x for x in c.values() if x['estado'] == 'Sin compra inicial']
+    with database.get_db() as db:
+        cats = {r[0] for r in db.execute("SELECT categoria FROM est_movimientos WHERE parcialidad_total=13")}
+    assert cats == {'VIVIENDA'}
+
+
+def test_mensualidades_segun_comentarios_2026_09_28(test_db):
+    """iPhone A 18 «no mío» -> PRESTAMOS; cama Walmart A 12, gym Training A 12,
+    ropa Men's Factory A 06 y Mercado Pago -> su categoría."""
+    iph = _ins('2023-01-22', 'MACSTORE MIDTOWN JALI', 1167.0, cat='TECH/DIGITAL', sub='Deudas MSI', pn=3, pt=18)
+    mio = _ins('2023-01-22', 'MACSTORE MIDTOWN JALI (2)', 211.0, cat='TECH/DIGITAL', sub='Deudas MSI', pn=3, pt=12)
+    cama = _ins('2022-06-22', 'WALMART VENTA EN LIN3', 567.0, cat='SUPER', sub='Súper', pn=2, pt=12)
+    gym = _ins('2022-06-22', 'TRAINING INNOVATION', 358.0, cat='OTROS', sub='', pn=3, pt=12)
+    mp = _ins('2022-12-22', 'MERCADO PAGO 1', 234.0, cat='COMIDA_FUERA', sub='Restaurante', pn=2, pt=6)
+    _conciliar()
+    with database.get_db() as db:
+        cat = lambda i: tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone())
+        assert cat(iph) == ('PRESTAMOS', 'Prestado') and cat(mio) == ('TECH/DIGITAL', 'Deudas MSI')
+        assert cat(cama) == ('VIVIENDA', 'Artículos del hogar') and cat(gym) == ('DEPORTE', 'Gym')
+        assert cat(mp) == ('VIVIENDA', 'Artículos del hogar')

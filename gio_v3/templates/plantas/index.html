@@ -1,0 +1,167 @@
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'plantas' %}
+{% block title %}Plantas — Eudaimonia{% endblock %}
+{% block module_title %}PLANTAS{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/plantas.css') }}">{% endblock %}
+{% block mtitle %}<b>Plantas</b><span>Vida · riego y trasplante</span>{% endblock %}
+{% block topright %}<button type="button" class="eu-iconbtn js-new" aria-label="Nueva planta"><i data-lucide="plus"></i></button>{% endblock %}
+
+{% block content %}
+<div class="pl" id="pl" data-cat="ataraxia">
+  <header class="pl-hd">
+    <div><div class="t-eyebrow">Vida · Plantas</div><h1 class="t-page">Mis plantas</h1>
+      <p class="t-meta pl-lead">Riego y trasplante con fechas reales, ajustadas por temporada según esté en interior o en balcón.</p></div>
+    <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva planta</button>
+  </header>
+
+  {% if temporada.label %}
+  {%- macro pct_txt(f) -%}
+    {%- if f > 1.005 %}~{{ ((f - 1) * 100)|round|int }}% menos seguido{% elif f < 0.995 %}~{{ ((1 - f) * 100)|round|int }}% más seguido{% else %}sin cambio{% endif -%}
+  {%- endmacro %}
+  <aside class="eu-card eu-card--inset pl-season" aria-label="Temporada">
+    <span class="pl-season-ic"><i data-lucide="{{ 'cloud-rain' if temporada.factor > 1.05 else ('sun' if temporada.factor < 0.95 else 'leaf') }}"></i></span>
+    <p class="t-body">{{ temporada.label }} en Guadalajara — riego ajustado automáticamente: balcón {{ pct_txt(temporada.factor) }}, interior {{ pct_txt(temporada.factor_interior) }}.</p>
+  </aside>
+  {% endif %}
+
+  <div class="eu-grid-4 pl-status" aria-label="Estado de tus plantas">
+    {% for k, lbl, ic, tone in [('vencido','Vencidas','octagon-alert','danger'),('urgente','Urgentes','triangle-alert','warning'),('proximo','Próximas','clock','brand'),('nominal','Al día','circle-check','success')] %}
+    <div class="eu-card eu-stat pl-st{{ ' is-on' if counts[k] }}" data-tone="{{ tone }}" id="pl-st-{{ k }}"><div class="eu-stat-lbl"><i data-lucide="{{ ic }}"></i>{{ lbl }}</div><div class="eu-stat-val">{{ counts[k] }}</div></div>
+    {% endfor %}
+  </div>
+
+  <div class="pl-group" id="pl-group" hidden></div>
+
+  <div class="eu-chips" role="group" aria-label="Filtrar plantas">
+    {{ ui.chip('Todas', pressed=True, count=total, **{'data-f': 'todas', 'id': 'pl-f-todas'}) }}
+    {{ ui.chip('Pendientes', count=counts.vencido + counts.urgente + counts.proximo, **{'data-f': 'pendientes', 'id': 'pl-f-pendientes'}) }}
+    {{ ui.chip('Al día', count=counts.nominal, **{'data-f': 'al_dia', 'id': 'pl-f-al_dia'}) }}
+  </div>
+
+  <div class="pl-grid" id="pl-grid" aria-live="polite"></div>
+</div>
+
+<div data-cat="ataraxia">
+{% call ui.modal('m-planta', 'Nueva planta', eyebrow='Plantas') %}
+<form class="eu-modal-bd" id="f-planta" autocomplete="off" novalidate>
+  <input type="hidden" id="pl-id">
+  <div class="pl-photo">
+    <img class="pl-photo-img" id="pl-photo-img" alt="" hidden>
+    <span class="pl-photo-img pl-photo-empty" id="pl-photo-empty" aria-hidden="true"><i data-lucide="camera"></i></span>
+    <div class="eu-vstack pl-photo-info">
+      <span class="t-meta" id="pl-photo-caption">Sin foto</span>
+      <input type="file" id="pl-photo-input" accept="image/*" class="pl-file" aria-label="Foto de la planta">
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-photo"><i data-lucide="image-plus"></i>Elegir foto</button>
+    </div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="pl-nombre">Nombre *</label><input class="eu-input" id="pl-nombre" placeholder="Ej. Monstera de la sala…"></div>
+  <div class="eu-grid-2 pl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pl-especie">Especie</label><input class="eu-input" id="pl-especie" placeholder="Ej. Palma areca" autocomplete="off"></div>
+    <div class="eu-field"><label class="eu-label" for="pl-ubicacion">Ubicación</label><input class="eu-input" id="pl-ubicacion" placeholder="Ej. Sala"></div>
+  </div>
+  {#- Confirmar la especie con fotos de iNaturalist (la búsqueda la hace el
+      navegador; si iNaturalist no responde, simplemente no aparece). -#}
+  <input type="hidden" id="pl-cient"><input type="hidden" id="pl-ref-foto"><input type="hidden" id="pl-ref-cred">
+  <div class="pl-taxa-sel" id="pl-taxa-sel" hidden></div>
+  <div class="pl-taxa" id="pl-taxa" aria-live="polite" hidden></div>
+  <div class="eu-grid-2 pl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pl-entorno">Dónde vive</label>
+      <select class="eu-select" id="pl-entorno"><option value="interior">Interior</option><option value="balcon">Balcón</option></select></div>
+    <div class="eu-field"><label class="eu-label" for="pl-luz">Luz</label>
+      <select class="eu-select" id="pl-luz"><option value="">Sin especificar</option><option value="baja">Baja (lejos de ventanas)</option><option value="media">Media</option><option value="brillante">Brillante indirecta</option><option value="sol_directo">Sol directo</option></select></div>
+  </div>
+  <div class="pl-sug" id="pl-sugerencia" role="status" hidden></div>
+  {% if ia_disponible %}
+  <div class="pl-ficha-bar"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-ficha"><i data-lucide="sparkles"></i>Ficha de cuidados con IA</button>
+    <span class="t-meta">Con la especie (o la foto, si no la sabes), dónde vive y su luz.</span></div>
+  <div class="pl-ficha" id="pl-ficha" role="status" hidden></div>
+  {% endif %}
+  <div class="eu-grid-2 pl-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pl-dias-riego">Regar cada (días)</label><input class="eu-input eu-input--money" id="pl-dias-riego" type="number" min="1" inputmode="numeric" value="7"></div>
+    <div class="eu-field"><label class="eu-label" for="pl-meses-trasplante">Trasplantar cada (meses)</label><input class="eu-input eu-input--money" id="pl-meses-trasplante" type="number" min="1" inputmode="numeric" value="12"></div>
+  </div>
+  <div class="eu-field" id="pl-last-wrap"><label class="eu-label" for="pl-last-riego">¿Cuándo la regaste por última vez?</label>
+    <input class="eu-input" id="pl-last-riego" type="date"></div>
+  <div class="eu-field"><label class="eu-label" for="pl-notas">Notas (opcional)</label><textarea class="eu-textarea" id="pl-notas" rows="2" placeholder="Luz, tipo de tierra, cuidados especiales…"></textarea></div>
+  <fieldset class="pl-extra">
+    <legend class="t-eyebrow">Otros cuidados</legend>
+    {% for k, c in cuidados_extra.items() %}
+    <div class="pl-extra-row">
+      <label class="pl-extra-chk"><input type="checkbox" data-ex="{{ k }}" id="pl-exon-{{ k }}">{{ c.label }}</label>
+      <span class="pl-extra-dias"><span class="t-meta">cada</span><input class="eu-input" type="number" min="1" max="365" inputmode="numeric" id="pl-ex-{{ k }}" value="{{ c.dias }}" aria-label="{{ c.label }}: cada cuántos días"><span class="t-meta">d</span></span>
+    </div>
+    {% if k == 'tratamiento' %}<input class="eu-input pl-extra-nota" id="pl-exnota-tratamiento" maxlength="120" placeholder="¿Contra qué y con qué? Ej. cochinilla · neem + jabón potásico" aria-label="Tratamiento: contra qué y con qué">{% endif %}
+    {% endfor %}
+    <p class="t-meta">Fertilizar se pausa solo de noviembre a febrero (seco y fresco: la planta casi no crece).</p>
+  </fieldset>
+
+  <section class="pl-fotos" id="pl-fotos" aria-label="Fotos de evolución" hidden>
+    <div class="eu-between"><h3 class="t-eyebrow">Fotos de evolución</h3>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-foto-add"><i data-lucide="camera"></i>Agregar foto de hoy</button></div>
+    <input type="file" id="pl-foto-add" accept="image/*" class="pl-file" aria-label="Agregar foto de evolución">
+    <ul class="pl-fotos-strip" id="pl-fotos-strip"></ul>
+  </section>
+
+  <section class="pl-otra" id="pl-otra" aria-label="Registrar en otra fecha" hidden>
+    <h3 class="t-eyebrow">Registrar en otra fecha</h3>
+    <div class="pl-otra-row">
+      <select class="eu-select" id="pl-otra-tipo" aria-label="Cuidado"></select>
+      <input class="eu-input" type="date" id="pl-otra-fecha" aria-label="Fecha">
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-otra"><i data-lucide="calendar-check"></i>Registrar</button>
+    </div>
+  </section>
+
+  <section class="pl-hist" id="pl-hist" aria-label="Historial" hidden>
+    <h3 class="t-eyebrow">Historial</h3>
+    <ul class="pl-hist-list" id="pl-hist-list"></ul>
+  </section>
+</form>
+<div class="eu-modal-ft pl-ft">
+  <button type="button" class="eu-btn eu-btn--danger" id="pl-delete-btn" hidden><i data-lucide="trash-2"></i>Eliminar</button>
+  <span class="eu-grow"></span>
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-planta')">Cancelar</button>
+  <button type="submit" form="f-planta" class="eu-btn eu-btn--primary">Guardar</button>
+</div>
+{% endcall %}
+</div>
+{% if ia_disponible %}
+<div data-cat="ataraxia">
+{% call ui.modal('m-doctor', 'Doctor de plantas', eyebrow='Plantas · IA') %}
+<div class="eu-modal-bd pl-dr">
+  <p class="t-meta" id="dr-planta"></p>
+  <section class="pl-dr-sec" aria-labelledby="dr-dx-t">
+    <h3 class="t-eyebrow" id="dr-dx-t">¿Qué le notas?</h3>
+    <div class="eu-chips pl-dr-chips" role="group" aria-label="Síntomas">
+      {% for k, lbl in sintomas.items() %}{{ ui.chip(lbl, **{'data-sint': k}) }}{% endfor %}
+    </div>
+    <textarea class="eu-textarea" id="dr-texto" rows="2" maxlength="500" placeholder="Opcional: desde cuándo, qué cambió (la moviste, la trasplantaste, hizo calor…)" aria-label="Describe lo que ves"></textarea>
+    <div class="pl-dr-foto">
+      <img id="dr-foto-img" alt="" hidden>
+      <div class="eu-vstack">
+        <span class="t-meta" id="dr-foto-cap">Se usará la foto de portada.</span>
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-dr-foto"><i data-lucide="camera"></i>Foto de cómo está hoy</button>
+      </div>
+      <input type="file" id="dr-foto-input" accept="image/*" class="pl-file" aria-label="Foto actual de la planta">
+    </div>
+    <button type="button" class="eu-btn eu-btn--primary js-dr-go"><i data-lucide="stethoscope"></i><span>Diagnosticar</span></button>
+    <div id="dr-result" aria-live="polite"></div>
+  </section>
+  <section class="pl-dr-sec" aria-labelledby="dr-cx-t">
+    <h3 class="t-eyebrow" id="dr-cx-t">Consejo según tu historial</h3>
+    <p class="t-meta">Compara cómo la has cuidado (riegos reales, veces que seguía húmeda) con lo que necesita.</p>
+    <button type="button" class="eu-btn eu-btn--secondary js-cx-go"><i data-lucide="chart-line"></i><span>Analizar mi historial</span></button>
+    <div id="cx-result" aria-live="polite"></div>
+  </section>
+</div>
+{% endcall %}
+</div>
+{% endif %}
+<script type="application/json" id="pl-data">{{ plantas|tojson }}</script>
+<script type="application/json" id="pl-ia">{{ ia_disponible|tojson }}</script>
+<script type="application/json" id="pl-today">{{ today_iso|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/plantas.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{# Encabezado de sección. Espera sec_title, sec_sub y opcional sec_action (html).
+   En móvil el «volver» de la topbar regresa al hub (perfil.js). #}
+<header class="pf-sec-hd">
+  <div class="eu-grow">
+    <div class="t-eyebrow pf-eyebrow">Tú · Αὐτός</div>
+    <h1 class="t-page pf-sec-title">{{ sec_title }}</h1>
+    {% if sec_sub %}<p class="t-meta pf-p">{{ sec_sub }}</p>{% endif %}
+  </div>
+  {% if sec_action %}{{ sec_action|safe }}{% endif %}
+</header>

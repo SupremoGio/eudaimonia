@@ -1,0 +1,98 @@
+{# Libros: meta anual + stats, leyendo ahora, filtros y grid de la biblioteca #}
+{% macro bump(l, fill_id, text_id, fmt) -%}
+{%- if l.progreso_pct is not none -%}
+<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-bump" aria-label="Sumar 5% de progreso a {{ l.titulo }}"
+  data-mode="pct" data-id="{{ l.id }}" data-current="{{ l.progreso_pct }}" data-fill="{{ fill_id }}" data-text="{{ text_id }}" data-format="{{ fmt }}"
+  {% if l.progreso_pct >= 100 %}disabled{% endif %}>+5%</button>
+{%- else -%}
+<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-bump" aria-label="Sumar 10 páginas de progreso a {{ l.titulo }}"
+  data-mode="paginas" data-id="{{ l.id }}" data-total="{{ l.paginas_totales }}" data-current="{{ l.paginas_actuales }}" data-fill="{{ fill_id }}" data-text="{{ text_id }}" data-format="{{ fmt }}"
+  {% if l.paginas_actuales >= l.paginas_totales %}disabled{% endif %}>+10 págs</button>
+{%- endif -%}
+{%- endmacro %}
+
+<div class="pd-hero">
+  <div class="eu-card pd-goal">
+    <div class="eu-between">
+      <div class="t-eyebrow">Meta de lectura {{ now_year }}</div>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-meta"><i data-lucide="pencil"></i>Editar meta</button>
+    </div>
+    <div class="pd-goal-num"><span class="t-data">{{ stats.leidos_este_anio }}</span><span class="fg-3"> / {{ stats.meta_anual }} libros</span></div>
+    {{ ui.progress(stats.leidos_este_anio, stats.meta_anual, cat='paideia', variant='cat', label='Meta de lectura anual') }}
+  </div>
+  <div class="eu-grid-4 pd-stats">
+    {{ ui.stat('Leídos', stats.total_leidos, icon='book-check') }}
+    {{ ui.stat('Leyendo', stats.leyendo, icon='book-open') }}
+    {{ ui.stat('Por leer', stats.por_leer, icon='bookmark') }}
+    {{ ui.stat('Rating prom.', stats.rating_prom if stats.rating_prom is not none else '—', icon='star') }}
+  </div>
+</div>
+
+{% set actual = libros|selectattr('estado', 'equalto', 'leyendo')|first %}
+{% if actual %}
+<article class="eu-card pd-now">
+  <button type="button" class="pd-now-open js-edit" data-id="{{ actual.id }}" aria-label="Editar {{ actual.titulo }}">
+    {% if actual.portada %}<img class="pd-cover pd-cover--now" src="{{ actual.portada }}" alt="" loading="lazy">
+    {% else %}<span class="pd-cover pd-cover--now pd-cover--empty" aria-hidden="true">{{ actual.titulo[0]|upper }}</span>{% endif %}
+    <span class="pd-now-info">
+      <span class="t-eyebrow">Leyendo ahora</span>
+      <span class="t-section pd-now-t">{{ actual.titulo }}</span>
+      {% if actual.autor %}<span class="t-meta">{{ actual.autor }}</span>{% endif %}
+    </span>
+  </button>
+  {% if actual.progreso_pct is not none or actual.paginas_totales %}
+  {% set actual_pct = actual.progreso_pct if actual.progreso_pct is not none else [100, (actual.paginas_actuales / actual.paginas_totales * 100)]|min %}
+  <div class="pd-prog">
+    <div class="eu-progress eu-progress--cat" role="progressbar" aria-valuenow="{{ actual_pct|round|int }}" aria-valuemax="100" aria-label="Progreso de {{ actual.titulo }}" id="pd-now-fill"><i style="width:{{ actual_pct|round(1) }}%"></i></div>
+    <div class="eu-between">
+      <span class="t-meta num" id="pd-now-text">{% if actual.progreso_pct is not none %}{{ actual.progreso_pct }}% leído{% else %}{{ actual.paginas_actuales }} / {{ actual.paginas_totales }} páginas · {{ actual_pct|round|int }}%{% endif %}</span>
+      {{ bump(actual, 'pd-now-fill', 'pd-now-text', 'full') }}
+    </div>
+  </div>
+  {% endif %}
+</article>
+{% endif %}
+
+<div class="pd-sec">
+  <div><h2 class="t-card">Tu biblioteca</h2><p class="t-meta">Filtra por estado y entra a cualquier libro para actualizar tu progreso.</p></div>
+  <div class="eu-chips" role="group" aria-label="Filtrar biblioteca por estado">
+    {{ ui.chip('Todos', pressed=True, count=libros|length, **{'data-f': 'todos'}) }}
+    {{ ui.chip('Leyendo', count=stats.leyendo, **{'data-f': 'leyendo'}) }}
+    {{ ui.chip('Por leer', count=stats.por_leer, **{'data-f': 'por_leer'}) }}
+    {{ ui.chip('Leídos', count=stats.total_leidos, **{'data-f': 'leido'}) }}
+  </div>
+</div>
+
+{% set EST = {'leyendo': ('Leyendo', 'info'), 'por_leer': ('Por leer', ''), 'leido': ('Leído', 'success')} %}
+<div class="pd-grid" id="pd-grid">
+  {% for l in libros %}
+  <article class="eu-card pd-card" data-estado="{{ l.estado }}">
+    <button type="button" class="pd-card-open js-edit" data-id="{{ l.id }}" aria-label="Editar {{ l.titulo }}">
+      {% if l.portada %}<img class="pd-cover" src="{{ l.portada }}" alt="" loading="lazy">
+      {% else %}<span class="pd-cover pd-cover--empty" aria-hidden="true">{{ l.titulo[0]|upper }}</span>{% endif %}
+      <span class="pd-card-bd">
+        <span class="pd-badges">{{ ui.badge(EST[l.estado][0], EST[l.estado][1]) }}{{ ui.badge(l.categoria) }}</span>
+        <span class="t-card pd-card-t">{{ l.titulo }}</span>
+        {% if l.autor %}<span class="t-meta">{{ l.autor }}</span>{% endif %}
+        {% if l.paginas_totales %}<span class="t-meta num">{{ l.paginas_totales }} páginas</span>{% endif %}
+        {% if l.estado == 'leido' and l.rating %}
+        <span class="pd-stars" aria-label="{{ l.rating }} de 5 estrellas">{% for i in range(1,6) %}<i data-lucide="star" class="{{ 'is-on' if i <= l.rating }}"></i>{% endfor %}</span>
+        {% endif %}
+      </span>
+    </button>
+    {% if l.estado == 'leyendo' and (l.progreso_pct is not none or l.paginas_totales) %}
+    {% set l_pct = l.progreso_pct if l.progreso_pct is not none else [100, (l.paginas_actuales / l.paginas_totales * 100)]|min %}
+    <div class="pd-prog pd-card-prog">
+      <div class="eu-progress eu-progress--cat eu-progress--thin" role="progressbar" aria-valuenow="{{ l_pct|round|int }}" aria-valuemax="100" aria-label="Progreso de {{ l.titulo }}" id="pd-fill-{{ l.id }}"><i style="width:{{ l_pct|round(1) }}%"></i></div>
+      <div class="eu-between">
+        <span class="t-meta num" id="pd-text-{{ l.id }}">{{ l_pct|round|int }}% leído</span>
+        {{ bump(l, 'pd-fill-' ~ l.id, 'pd-text-' ~ l.id, 'pct') }}
+      </div>
+    </div>
+    {% endif %}
+  </article>
+  {% else %}
+  <div class="pd-span">{{ ui.empty('book-open', 'Tu biblioteca está vacía', 'Registra tu primer libro con el botón de arriba.') }}</div>
+  {% endfor %}
+  <div class="pd-span" id="pd-nomatch" hidden>{{ ui.empty('filter', 'Nada en este filtro', 'No hay libros con este estado todavía.') }}</div>
+</div>

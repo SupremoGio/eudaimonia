@@ -15,17 +15,17 @@ _MODULE_CATS = {
     'paideia':        {'Paideia'},
     'cosmopolitismo': {'Idiomas'},
     'logoi':          {'Programación'},
-    'eurythmia':      {'Baile'},
+    'eurythmia':      {'Baile', 'Música'},
 }
 
 _EU_MODULES_BASE = [
-    {'id': 'hegemonikon',    'name': 'HEGEMONIKON',    'concept': 'Bienestar',     'desc': 'Salud · Nutrición · Fútbol · Perfil',  'hue': 45 },
-    {'id': 'oikonomia',      'name': 'OIKONOMIA',      'concept': 'Finanzas',      'desc': 'Finanzas · Gastos · Deudas',  'hue': 80,  'route': '/finanzas'},
-    {'id': 'ataraxia',       'name': 'ATARAXIA',       'concept': 'Productividad', 'desc': 'Automatización · Checklist',  'hue': 155},
-    {'id': 'paideia',        'name': 'PAIDEIA',        'concept': 'Conocimiento',  'desc': 'Aprendizaje · Libros',        'hue': 265},
-    {'id': 'cosmopolitismo', 'name': 'COSMOPOLITISMO', 'concept': 'Idiomas',       'desc': 'Idiomas · Culturas',          'hue': 215},
-    {'id': 'logoi',          'name': 'LOGOI',          'concept': 'Programación',  'desc': 'Programación · Lógica',       'hue': 120},
-    {'id': 'eurythmia',      'name': 'EURYTHMIA',      'concept': 'Baile',         'desc': 'Baile · Ritmo · Cuerpo',      'hue': 330},
+    {'id': 'hegemonikon',    'name': 'HEGEMONIKON',    'concept': 'Bienestar',     'desc': 'Salud · Nutrición · Fútbol · Perfil',  'hue': 45,  'route': '/bienestar/'},
+    {'id': 'oikonomia',      'name': 'OIKONOMIA',      'concept': 'Finanzas',      'desc': 'Finanzas · Gastos · Deudas',  'hue': 80,  'route': '/finanzas/'},
+    {'id': 'ataraxia',       'name': 'ATARAXIA',       'concept': 'Productividad', 'desc': 'Automatización · Checklist',  'hue': 155, 'route': '/ataraxia/'},
+    {'id': 'paideia',        'name': 'PAIDEIA',        'concept': 'Conocimiento',  'desc': 'Aprendizaje · Libros',        'hue': 265, 'route': '/paideia/'},
+    {'id': 'cosmopolitismo', 'name': 'COSMOPOLITISMO', 'concept': 'Idiomas',       'desc': 'Idiomas · Culturas',          'hue': 215, 'route': '/idiomas/'},
+    {'id': 'logoi',          'name': 'LOGOI',          'concept': 'Programación',  'desc': 'Programación · Lógica',       'hue': 120, 'route': '/actividades/'},
+    {'id': 'eurythmia',      'name': 'EURYTHMIA',      'concept': 'Baile',         'desc': 'Baile · Ritmo · Cuerpo',      'hue': 330, 'route': '/eurythmia/'},
 ]
 
 # Habit → activity keys que la marcan como done si se loguearon hoy
@@ -282,6 +282,7 @@ def _build_eudaimonia_data():
         'xp_today':       stats['xp_today'],
         'level':          stats['level'],
         'level_name':     stats['level_name'],
+        'level_subtitle': stats['level_subtitle'],
         'level_pct':      stats['level_pct'],
         'xp_to_next':     stats['xp_to_next'],
         'streak':         stats['streak'],
@@ -315,20 +316,124 @@ def _build_eudaimonia_data():
     }
 
 
+# ── Dashboard V2 (Design System V2 · pantalla 02) ────────────────────────────
+# Categoría de data.ACTIVITIES (la que usa la sugerencia) → data-cat del token
+_ACT_CAT_TO_VIRTUE = {
+    'Programación': 'logoi', 'Idiomas': 'cosmopolitismo', 'Salud Mental': 'hegemonikon',
+    'Salud Física': 'hegemonikon', 'Salud Base': 'hegemonikon', 'Baile': 'eurythmia',
+    'Paideia': 'paideia', 'Finanzas': 'oikonomia', 'Orden': 'ataraxia', 'Identidad': 'identidad',
+}
+
+# Tono del radar (nivel de urgencia de _build_deadlines → variante de badge)
+_RADAR_TONE = {'red': 'danger', 'amber': 'warning', 'yellow': 'info', 'green': ''}
+
+
+def _build_virtues_today() -> list:
+    """XP de hoy por pilar (activity_logs × activity_defs), en el orden de activity_defs.PILLAR_ORDER."""
+    from modules.actividades import activity_defs as adefs
+    defs = adefs.get_active_flat()
+    today = today_str()
+    xp = {}
+    with get_db() as db:
+        for r in db.execute(
+            "SELECT activity_key, COALESCE(SUM(pts),0) AS pts FROM activity_logs "
+            "WHERE date=? AND activity_key != 'priority_bonus' GROUP BY activity_key", (today,)
+        ).fetchall():
+            key = r['activity_key']
+            pillar = 'eury' if key == 'eurythmia_session' else (defs.get(key) or {}).get('pillar')
+            if pillar:
+                xp[pillar] = xp.get(pillar, 0) + (r['pts'] or 0)
+    return [{'id': pid, 'cat': ui['cat'], 'label': ui['name'], 'fn': ui['fn'], 'icon': ui['icon'],
+             'url': ui['url'], 'xp': xp.get(pid, 0), 'done': pid in xp}
+            for pid in adefs.PILLAR_ORDER for ui in [adefs.PILLAR_UI[pid]]]
+
+
+def _build_heat_16w(goal: int = 15) -> list:
+    """16 semanas (lunes→domingo) terminando en la semana actual, para .eu-heat
+    (columna = semana, fila = día). Nivel 0–4 relativo a la meta diaria."""
+    today = today_date()
+    start = today - timedelta(days=today.weekday()) - timedelta(weeks=15)
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT date, SUM(pts) AS xp FROM activity_logs WHERE date>=? AND date<=? GROUP BY date",
+            (start.isoformat(), today.isoformat())
+        ).fetchall()
+    by_date = {r['date']: r['xp'] or 0 for r in rows}
+    cells = []
+    for i in range(16 * 7):
+        d = start + timedelta(days=i)
+        v = by_date.get(d.isoformat(), 0)
+        lvl = 0 if v <= 0 else 1 if v < goal / 2 else 2 if v < goal else 3 if v < goal + 5 else 4
+        cells.append({'date': d.isoformat(), 'xp': v, 'l': lvl,
+                      'today': d == today, 'future': d > today})
+    return cells
+
+
+def _build_dashboard_v2(data: dict) -> dict:
+    """Extras de la pantalla V2 sobre _build_eudaimonia_data()."""
+    from modules.gamification.engine import LEVEL_THRESHOLDS, get_gamification_stats
+    from modules.gamification.badges import get_all_badges
+    stats = get_gamification_stats()
+    lvl = data['level']
+    next_name = LEVEL_THRESHOLDS[lvl][2] if lvl < len(LEVEL_THRESHOLDS) else None
+    try:
+        perks = sum(1 for b in get_all_badges() if b['perk_active'])
+    except Exception:
+        perks = 0
+    virtues = _build_virtues_today()
+    sugg = data.get('suggestion')
+    hour = now_local().hour
+    return {
+        'greeting':    'Buenos días' if 5 <= hour < 12 else 'Buenas tardes' if hour < 19 else 'Buenas noches',
+        'next_level':  next_name,
+        'streak_bonus': round((stats.get('streak_mult', 1.0) - 1) * 100),
+        'perks':       perks,
+        'virtues':     virtues,
+        'virtues_done': sum(1 for v in virtues if v['done']),
+        'heat':        _build_heat_16w(),
+        'sugg_cat':    _ACT_CAT_TO_VIRTUE.get(sugg['cat']) if sugg else None,
+        'radar_tone':  _RADAR_TONE,
+    }
+
+
+_DIAS_ES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
+_MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio',
+             'Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+
 # ── EUDAIMONIA — ruta principal ───────────────────────────────────────────────
 @dashboard_bp.route('/')
 def index():
-    return render_template('base_eudaimonia.html', eudaimonia_data=_build_eudaimonia_data())
+    hoy = today_date()
+    fecha_larga = f"{_DIAS_ES[hoy.weekday()]} {hoy.day} de {_MESES_ES[hoy.month - 1]}"
+    data = _build_eudaimonia_data()
+    return render_template(
+        'dashboard/index.html',
+        data=data,
+        v2=_build_dashboard_v2(data),
+        fecha_larga=fecha_larga,
+    )
+
+
+_PLANTA_VERBO = {
+    'riego': 'Regar {}', 'trasplante': 'Trasplantar {}', 'fertilizar': 'Fertilizar {}',
+    'rotar': 'Rotar {}', 'limpiar': 'Limpiar hojas de {}', 'plagas': 'Revisar plagas de {}',
+    'tratamiento': 'Tratamiento a {}',
+}
 
 
 def _build_deadlines(today_dt: date) -> list:
-    """Recordatorios y tareas GTD con fecha en los próximos 6 días (o vencidos)."""
+    """Recordatorios y tareas GTD con fecha en los próximos 6 días (o vencidos).
+    Plantas usa un horizonte más corto (3 días) a propósito — el usuario lo
+    pidió así para no ver el riego "venir" con tanta anticipación como el
+    resto de los pendientes."""
     horizon = (today_dt + timedelta(days=6)).isoformat()
+    plant_horizon = (today_dt + timedelta(days=3)).isoformat()
     raw = []
 
     with get_db() as db:
         for r in db.execute("""
-            SELECT id, description AS label, type AS rem_type,
+            SELECT id, description AS label, type AS rem_type, tema,
                    COALESCE(next_date, target_date) AS fecha, 'reminder' AS kind
             FROM reminders
             WHERE is_active=1
@@ -352,9 +457,8 @@ def _build_deadlines(today_dt: date) -> list:
         for r in db.execute("""
             SELECT id,
                    ('vs ' || COALESCE(NULLIF(rival, ''), 'rival por confirmar')
-                     || CASE WHEN hora <> '' THEN ' · ' || hora ELSE '' END
-                     || CASE WHEN cancha <> '' THEN ' · ' || cancha ELSE '' END) AS label,
-                   NULL AS rem_type,
+                     || CASE WHEN hora <> '' THEN ' · ' || hora ELSE '' END) AS label,
+                   NULL AS rem_type, cancha,
                    fecha AS fecha, 'partido' AS kind
             FROM futbol_partidos
             WHERE estado='programado'
@@ -363,6 +467,20 @@ def _build_deadlines(today_dt: date) -> list:
             ORDER BY fecha, hora LIMIT 8
         """, (horizon,)).fetchall():
             raw.append(dict(r))
+
+    # Plantas — la agenda la calcula el propio módulo (modules/plantas/
+    # routes.py:agenda): mismo estado que /plantas/ (temporada por entorno,
+    # riegos pospuestos, fechas reales de trasplante), sin SQL duplicado.
+    # Horizonte de 3 días a propósito (ver docstring). Si falla, el
+    # Dashboard sigue sin la parte de plantas.
+    try:
+        from modules.plantas.routes import agenda as _plantas_agenda
+        for a in _plantas_agenda(today_dt, 3):
+            raw.append({'id': a['planta_id'],
+                        'label': _PLANTA_VERBO.get(a['tipo'], '{}').format(a['nombre']),
+                        'rem_type': None, 'fecha': a['fecha'], 'kind': f"planta_{a['tipo']}"})
+    except Exception:
+        pass
 
     deadlines = []
     for d in raw:
@@ -396,6 +514,8 @@ def _build_deadlines(today_dt: date) -> list:
 # ── Redirecciones de compatibilidad ──────────────────────────────────────────
 @dashboard_bp.route('/classic')
 @dashboard_bp.route('/v2')
+@dashboard_bp.route('/tw')
+@dashboard_bp.route('/logoi')
 def legacy_redirect():
     return redirect('/', 301)
 

@@ -1,0 +1,15 @@
+{# Música: 100 mejores álbumes (Apple Music) — lista, filtros y ranking personal #}
+<div class="eu-card mu-hero">
+  <div class="eu-between">
+    <div><div class="t-eyebrow">100 mejores álbumes</div><p class="t-meta mu-sub">Apple Music · repertorio y cultura musical</p></div>
+    <div class="mu-count"><span class="t-data" id="mu-count-n">{{ musica.escuchados_n }}/{{ musica.total }}</span><span class="t-meta">escuchados</span></div>
+  </div>
+  <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Álbumes escuchados" aria-valuenow="{{ musica.escuchados_n }}" aria-valuemax="{{ musica.total }}" id="mu-bar"><i style="width:{{ (musica.escuchados_n / musica.total * 100)|round(1) if musica.total else 0 }}%"></i></div>
+</div>
+<div class="eu-chips" role="group" aria-label="Filtrar álbumes">
+  {{ ui.chip('Todos', pressed=True, count=musica.total, **{'data-mf': 'todos', 'id': 'mu-f-todos'}) }}
+  {{ ui.chip('Pendientes', count=musica.total - musica.escuchados_n, **{'data-mf': 'pendientes', 'id': 'mu-f-pendientes'}) }}
+  {{ ui.chip('Escuchados', count=musica.escuchados_n, **{'data-mf': 'escuchados', 'id': 'mu-f-escuchados'}) }}
+  {{ ui.chip('Mi ranking', icon='trophy', **{'data-mf': 'ranking'}) }}
+</div>
+<div id="mu-list" aria-live="polite"></div>

@@ -1,0 +1,20 @@
+{# Fin de semana: solo un atajo a Ataraxia (el usuario: «no toda la lista
+   ahí», primero el domingo y luego el sábado igual); los bloques se marcan
+   en /ataraxia/?dia=sabado|domingo. #}
+{% if weekend_mode in ['sat', 'sun'] %}
+{% set wk_sat = weekend_mode == 'sat' %}
+{% set wk_acts = sat_acts if wk_sat else sun_acts %}
+{% set wk_dia = 'sabado' if wk_sat else 'domingo' %}
+{% set ns = namespace(req=0, done=0) %}
+{% for key, act in wk_acts.items() if not act.get('optional') %}
+  {% set ns.req = ns.req + 1 %}{% if key in stats.done_today %}{% set ns.done = ns.done + 1 %}{% endif %}
+{% endfor %}
+<a class="eu-card eu-card--interactive eu-hstack eu-gap-3 acta-weekend-link" data-cat="{{ 'ataraxia' if wk_sat else 'paideia' }}" href="/ataraxia/?dia={{ wk_dia }}#dia-{{ wk_dia }}">
+  <div class="eu-mod-ic"><i data-lucide="{{ 'flower-2' if wk_sat else 'brain' }}"></i></div>
+  <div class="eu-grow">
+    <h2 class="t-card">{{ 'Sábado · Ataraxia Reset' if wk_sat else 'Domingo · Eudaimonia Strategy' }}</h2>
+    <div class="t-meta">{{ ns.done }} / {{ ns.req }} bloques · abrir en Ataraxia</div>
+  </div>
+  <i data-lucide="chevron-right"></i>
+</a>
+{% endif %}

@@ -1,0 +1,22 @@
+{# Virtudes de hoy: los 8 pilares de Acta Diurna con el XP ganado hoy #}
+<section class="eu-vstack eu-gap-3 dash-virtues" aria-labelledby="dash-virtues-t">
+  <div class="eu-between">
+    <h2 class="t-section" id="dash-virtues-t">Virtudes de hoy</h2>
+    <span class="t-meta num">{{ v2.virtues_done }} / {{ v2.virtues|length }}</span>
+  </div>
+  <div class="dash-vgrid">
+    {% for v in v2.virtues %}
+    <a class="eu-card eu-card--interactive dash-virtue{% if v.done %} is-done{% endif %}" data-cat="{{ v.cat }}" href="{{ v.url }}"
+       aria-label="{{ v.label }} · {{ v.fn }}: {{ ('+' ~ v.xp ~ ' XP hoy') if v.done else 'sin actividad hoy' }}">
+      <div class="eu-between">
+        <div class="eu-mod-ic"><i data-lucide="{{ v.icon }}"></i></div>
+        {% if v.done %}<span class="eu-badge eu-badge--cat num">+{{ v.xp }} XP</span>{% else %}<span class="t-meta dash-virtue-none">—</span>{% endif %}
+      </div>
+      <div class="dash-virtue-txt">
+        <div class="t-card dash-virtue-name">{{ v.label }}</div>
+        <div class="t-meta dash-virtue-fn">{{ v.fn }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>

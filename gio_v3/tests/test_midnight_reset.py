@@ -7,8 +7,7 @@ Cubre:
   3. Actividades de tarde (>18:00 México) se guardan con fecha México correcta
   4. week_start es siempre el lunes de la semana actual (México)
   5. Lunes nuevo = PTS_SEMANA arranca desde 0
-  6. Script de migración fix_tz_dates: lógica de corrección de fechas
-  7. Regresión: el mismo escenario exacto que falló (26 abr tarde → 27 abr mañana)
+  6. Regresión: el mismo escenario exacto que falló (26 abr tarde → 27 abr mañana)
 
 Ejecución:
   cd gio_v3
@@ -225,52 +224,6 @@ class TestRegressionBugApril26:
         assert xp_date_domingo < week_start, (
             "El XP del domingo 26-abr debe quedar FUERA del rango de la semana que empieza el lunes 27"
         )
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# 5. Lógica del script de migración (fix_tz_dates.py)
-# ══════════════════════════════════════════════════════════════════════════════
-
-class TestMigrationLogic:
-    """Verifica que utc_str_to_mexico_date() calcula la fecha México correcta."""
-
-    def _fix(self, utc_iso: str) -> str:
-        from fix_tz_dates import utc_str_to_mexico_date
-        return utc_str_to_mexico_date(utc_iso)
-
-    # Casos donde la fecha UTC es un día antes que la fecha México correcta
-    def test_01h_utc_corrije_a_dia_anterior(self):
-        assert self._fix("2026-04-27T01:00:00") == "2026-04-26"
-
-    def test_02h_utc_corrije_a_dia_anterior(self):
-        assert self._fix("2026-04-27T02:00:00") == "2026-04-26"
-
-    def test_05h59m_utc_corrije_a_dia_anterior(self):
-        assert self._fix("2026-04-27T05:59:59") == "2026-04-26"
-
-    # Casos donde la fecha UTC ya es la misma que México
-    def test_06h_utc_no_necesita_corrección(self):
-        """06:00 UTC = midnight México → ambas fechas son iguales."""
-        assert self._fix("2026-04-27T06:00:00") == "2026-04-27"
-
-    def test_12h_utc_es_mismo_dia(self):
-        assert self._fix("2026-04-27T12:00:00") == "2026-04-27"
-
-    def test_23h59m_utc_no_adelanta_dia(self):
-        """23:59 UTC = 17:59 México — mismo día, no avanza al siguiente."""
-        assert self._fix("2026-04-27T23:59:00") == "2026-04-27"
-
-    def test_idempotente_si_fecha_ya_correcta(self):
-        """Si la fecha ya estaba bien (actividad registrada de mañana), no cambia nada."""
-        # 09:00 UTC April 27 = 03:00 México April 27 → correcto '2026-04-27'
-        result = self._fix("2026-04-27T09:00:00")
-        assert result == "2026-04-27"
-
-    def test_frontera_exacta_05h59m59s(self):
-        assert self._fix("2026-04-27T05:59:59") == "2026-04-26"
-
-    def test_frontera_exacta_06h00m00s(self):
-        assert self._fix("2026-04-27T06:00:00") == "2026-04-27"
 
 
 # ══════════════════════════════════════════════════════════════════════════════

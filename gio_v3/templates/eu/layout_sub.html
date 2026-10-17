@@ -1,294 +1,268 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{% block title %}EUDAIMONIA{% endblock %}</title>
-
-  <!-- Anti-FOUC: apply saved theme before first paint -->
-  <script>
-    (function(){
-      var t = localStorage.getItem('eu-theme') || 'dark';
-      var h = document.documentElement;
-      if (t === 'light') { h.classList.remove('dark'); h.classList.add('light'); }
-      else               { h.classList.add('dark');    h.classList.remove('light'); }
-    })();
-  </script>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
-
-  <!-- Tailwind precompilado en build time (antes: cdn.tailwindcss.com,
-       compila en cada carga del navegador — ver gio_v3/tailwind.config.js) -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-built.css') }}">
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="/static/css/app.css">
-
-  <style>
-    /* Tokens de diseño (paleta, tipografía, tamaños) viven en app.css —
-       enlazado arriba — como fuente única de verdad. Las utilidades
-       Tailwind (text-dim, bg-surface...) ya apuntan a esas mismas
-       variables CSS vía tailwind.config.js, así que reaccionan solas
-       al toggle claro/oscuro sin overrides !important. */
-
-    *, *::before, *::after { box-sizing: border-box; }
-    body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; transition: background .25s, color .25s; }
-
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
-    * { scrollbar-width: thin; scrollbar-color: rgba(201,168,76,0.2) transparent; }
-
-    header, .tile, .af, .modal, #tw-toast { transition: background .25s, border-color .25s, color .25s; }
-
-    .tile { background:var(--card); border:1px solid var(--b); border-radius:14px; padding:20px; }
-    .tile-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.2em; text-transform:uppercase; margin-bottom:14px; font-family:var(--sans); }
-
-    .btn-a { background:linear-gradient(135deg,#7A5520,#C9A84C); border:none; color:#09070F; padding:8px 18px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:opacity .18s; font-weight:500; }
-    .btn-a:hover { opacity:.85; }
-    .btn-g { background:transparent; border:1px solid var(--b2); color:var(--mid); padding:8px 16px; border-radius:8px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; white-space:nowrap; }
-    .btn-g:hover { border-color:var(--gold); color:var(--gold); }
-    .btn-r { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; }
-    .btn-r:hover { border-color:var(--coral); color:var(--coral); }
-    .btn-gr { background:transparent; border:1px solid var(--b); color:var(--dim); padding:6px 11px; border-radius:7px; font-size:var(--fs-sm); font-family:var(--sans); cursor:pointer; transition:all .18s; }
-    .btn-gr:hover { border-color:var(--emerald); color:var(--emerald); }
-
-    .fi { background:var(--card2); border:1px solid var(--b); border-radius:8px; padding:8px 12px; color:var(--text); font-family:var(--sans); font-size:.8rem; outline:none; width:100%; transition:border-color .18s; }
-    .fi:focus { border-color:var(--gold); }
-    .fi option { background:var(--card2); }
-    .fl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.14em; text-transform:uppercase; margin-bottom:4px; display:block; font-family:var(--sans); }
-
-    .pri { font-size:var(--fs-xs); padding:2px 7px; border-radius:100px; letter-spacing:.07em; text-transform:uppercase; }
-    .pri-critical  { background:var(--coral-d);  border:1px solid rgba(244,63,94,.25);  color:var(--coral); }
-    .pri-important { background:var(--amber-d);  border:1px solid rgba(201,168,76,.25); color:var(--amber); }
-    .pri-normal    { background:var(--b);         color:var(--dim); }
-
-    .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:500; display:none; align-items:center; justify-content:center; padding:16px; backdrop-filter:blur(4px); }
-    .modal-bg.open { display:flex; }
-    .modal { background:var(--card); border:1px solid var(--b2); border-radius:16px; padding:28px; width:440px; max-width:100%; box-shadow:0 24px 80px rgba(0,0,0,0.7); }
-    .modal-title { font-family:var(--serif); font-size:1.3rem; font-weight:600; margin-bottom:18px; color:var(--text); letter-spacing:.06em; }
-    .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:18px; }
-
-    .af { background:var(--card); border:1px solid var(--b2); border-radius:7px; padding:16px; margin-bottom:16px; }
-    .af-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.16em; text-transform:uppercase; margin-bottom:12px; font-family:var(--sans); }
-    .fg  { display:flex; flex-direction:column; gap:3px; }
-    .fgrid { display:grid; gap:8px; margin-bottom:8px; }
-    .fgrid.c2 { grid-template-columns:1fr 1fr; }
-    .fgrid.c3 { grid-template-columns:1fr 1fr 1fr; }
-    .fa { display:flex; gap:7px; justify-content:flex-end; margin-top:4px; }
-
-    .pg-hd { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-    .pg-t  { font-family:var(--serif); font-size:1.6rem; font-style:italic; font-weight:400; color:var(--text); letter-spacing:.06em; }
-    .pg-s  { font-size:var(--fs-sm); color:var(--dim); margin-top:1px; font-family:var(--sans); }
-
-    .chips2 { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
-    .ch2 { background:var(--card2); border:1px solid var(--b); border-radius:100px; padding:4px 10px; font-size:var(--fs-sm); color:var(--mid); cursor:pointer; transition:all .14s; text-decoration:none; font-family:var(--sans); }
-    .ch2:hover, .ch2.on { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
-
-    .empty-s { text-align:center; padding:36px 18px; color:var(--dim); }
-    .empty-s svg { width:26px; height:26px; display:block; margin:0 auto 9px; opacity:.22; }
-    .empty-s p { font-size:var(--fs-sm); }
-    .empty-rich { text-align:center; padding:48px 24px; display:flex; flex-direction:column; align-items:center; gap:12px; }
-    .empty-icon-box { width:56px; height:56px; border-radius:14px; border:1px solid var(--b); background:var(--card); display:flex; align-items:center; justify-content:center; margin-bottom:4px; }
-    .empty-icon-box svg { width:22px; height:22px; color:var(--dim); opacity:0.6; }
-    .empty-title { font-family:var(--serif); font-style:italic; font-size:22px; color:var(--text); letter-spacing:0.02em; }
-    .empty-desc { font-size:var(--fs-sm); color:var(--dim); max-width:320px; line-height:1.5; }
-    .empty-cta { margin-top:10px; background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.3); border-radius:8px; padding:9px 16px; font-family:var(--sans); font-size:var(--fs-sm); color:var(--gold); letter-spacing:0.06em; cursor:pointer; display:inline-flex; align-items:center; gap:8px; transition:background 0.15s; }
-    .empty-cta:hover { background:rgba(201,168,76,0.14); }
-    .empty-cta kbd { font-family:monospace; font-size:10px; background:var(--card2); border:1px solid var(--b); border-radius:4px; padding:1px 6px; color:var(--dim); }
-    /* .sk (shimmer skeleton) vive en app.css */
-
-    .t-row { display:flex; align-items:center; gap:8px; padding:9px 12px; background:var(--card); border:1px solid var(--b); border-radius:6px; margin-bottom:5px; transition:border-color .14s; }
-    .t-row:hover { border-color:var(--b2); }
-    .t-row.faded { opacity:.4; border-style:dashed; }
-    .t-dot { width:14px; height:14px; border:1px solid var(--dim); border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all .16s; }
-    .t-dot:hover { border-color:var(--gold); }
-    .t-dot.ck { background:var(--gold); border-color:var(--gold); }
-    .t-dot svg { width:8px; height:8px; color:var(--bg); display:none; }
-    .t-dot.ck svg { display:block; }
-    .t-main { flex:1; min-width:0; }
-    .t-title { font-size:var(--fs-sm); color:var(--text); font-family:var(--sans); }
-    .t-row.faded .t-title { text-decoration:line-through; color:var(--dim); }
-    .t-sub { font-size:var(--fs-xs); color:var(--gold); margin-top:1px; font-family:var(--sans); }
-    .t-meta { display:flex; align-items:center; gap:4px; flex-shrink:0; }
-    .pts-t { font-size:var(--fs-xs); color:var(--gold); background:var(--gold-d); padding:2px 5px; border-radius:100px; }
-    .pt { font-size:var(--fs-xs); padding:2px 6px; border-radius:100px; letter-spacing:.06em; text-transform:uppercase; }
-    .pt-c { background:rgba(244,63,94,.1);    border:1px solid rgba(244,63,94,.2);    color:var(--red); }
-    .pt-i { background:rgba(201,168,76,.1);   border:1px solid rgba(201,168,76,.2);   color:var(--gold); }
-    .pt-n { background:var(--b); color:var(--dim); }
-    .due-t  { font-size:var(--fs-xs); color:var(--mid); font-family:var(--sans); }
-    .proj-t { font-size:var(--fs-xs); color:var(--gold); background:rgba(201,168,76,.07); border:1px solid rgba(201,168,76,.18); padding:2px 5px; border-radius:100px; }
-    .ai { background:none; border:none; color:var(--dim); padding:3px; border-radius:3px; display:flex; align-items:center; transition:color .14s; cursor:pointer; font-family:var(--sans); }
-    .ai:hover { color:var(--gold); }
-    .ai.del:hover { color:var(--red); }
-    .ai svg { width:11px; height:11px; }
-
-    /* Theme toggle */
-    .theme-btn {
-      width:30px; height:30px; border-radius:7px; border:1px solid var(--b2);
-      background:var(--card2); color:var(--mid); cursor:pointer;
-      display:flex; align-items:center; justify-content:center; transition:all .2s; flex-shrink:0;
-    }
-    .theme-btn:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-d); }
-    .theme-btn svg { width:13px; height:13px; }
-
-    /* === Header nav: breadcrumb + back — UN SOLO LENGUAJE DE NAVEGACIÓN === */
-    .crumb-back {
-      width:34px; height:34px; border-radius:9px; border:1px solid var(--b2);
-      background:var(--card); color:var(--mid); display:flex; align-items:center;
-      justify-content:center; transition:all .18s; flex-shrink:0; text-decoration:none;
-    }
-    .crumb-back:hover { border-color:var(--gold); color:var(--gold); background:var(--gold-d); transform:translateX(-1px); }
-    .crumb-back svg { width:17px; height:17px; }
-    .crumbs { display:flex; align-items:center; gap:9px; min-width:0; }
-    .crumbs a { font-family:var(--sans); font-size:13px; color:var(--dim); text-decoration:none; letter-spacing:.01em; transition:color .16s; white-space:nowrap; }
-    .crumbs a:hover { color:var(--gold); }
-    .crumbs .sep { color:var(--b2); font-size:14px; }
-    .crumb-cur { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text); letter-spacing:.01em; white-space:nowrap; }
-    /* Responsive: breadcrumb en ≥768px, ← + título en <768px */
-    .hdr-mtitle { display:none; flex-direction:column; line-height:1.08; min-width:0; }
-    .mt-eyebrow { font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); }
-    .mt-title { font-family:var(--serif); font-size:17px; font-weight:600; color:var(--text); letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    @media (max-width:767px) {
-      .crumbs    { display:none; }
-      .hdr-mtitle{ display:flex; }
-      .hdr-util  { display:none; }
-    }
-
-    /* GTD internal shell */
-    .gtd-shell { display:grid; grid-template-columns:180px 1fr; height:calc(100vh - 56px); overflow:hidden; margin:-16px -16px; }
-    .gtd-nav { background:var(--surf); border-right:1px solid var(--b); padding:18px 0; display:flex; flex-direction:column; overflow-y:auto; }
-    .gn-head { padding:0 14px 14px; border-bottom:1px solid var(--b); }
-    .gn-head .t { font-family:var(--serif); font-size:.95rem; font-style:italic; color:var(--gold); }
-    .gn-head .s { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.14em; text-transform:uppercase; font-family:var(--sans); }
-    .gn-sec { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.18em; text-transform:uppercase; padding:10px 14px 3px; font-family:var(--sans); }
-    .gl { display:flex; align-items:center; gap:8px; padding:7px 14px; color:var(--mid); font-size:var(--fs-sm); text-decoration:none; transition:all .14s; border-left:2px solid transparent; font-family:var(--sans); }
-    .gl:hover { color:var(--text); background:var(--gold-d); }
-    .gl.on { color:var(--gold); background:var(--gold-d); border-left-color:var(--gold); }
-    .gl svg { width:13px; height:13px; flex-shrink:0; }
-    .gl-badge { margin-left:auto; background:var(--b); color:var(--dim); font-size:var(--fs-xs); padding:1px 5px; border-radius:100px; font-family:var(--sans); }
-    .gl.on .gl-badge { background:var(--gold); color:var(--bg); }
-    .gn-foot { padding:12px 14px; margin-top:auto; border-top:1px solid var(--b); }
-    .lv-lbl { font-size:var(--fs-xs); color:var(--dim); letter-spacing:.1em; text-transform:uppercase; margin-bottom:4px; font-family:var(--sans); }
-    .lv-bar { background:var(--b); border-radius:100px; height:3px; overflow:hidden; margin-bottom:3px; }
-    .lv-fill { height:100%; background:linear-gradient(90deg,#7A5520,#C9A84C,#E8C96D); border-radius:100px; transition:width .5s; }
-    .lv-pts { font-size:var(--fs-xs); color:var(--dim); font-family:var(--sans); }
-    .gtd-body { overflow-y:auto; padding:20px 24px; scrollbar-width:thin; scrollbar-color:var(--b) transparent; }
-
-    @media(min-width:1024px) {
-      .gtd-shell { height:calc(100vh - 56px); margin:-24px -24px; }
-      .gtd-body  { padding:22px 26px; }
-    }
-    @media(max-width:767px) {
-      .gtd-shell { grid-template-columns:1fr; grid-template-rows:auto 1fr; height:calc(100vh - 48px); }
-      .gtd-nav   { flex-direction:row; overflow-x:auto; overflow-y:hidden; border-right:none; border-bottom:1px solid var(--b); padding:8px 12px; gap:4px; height:auto; scrollbar-width:none; }
-      .gtd-nav::-webkit-scrollbar { display:none; }
-      .gn-head, .gn-sec, .gn-foot { display:none; }
-      .gl { flex-shrink:0; flex-direction:column; border-left:none; border-bottom:2px solid transparent; border-radius:10px; padding:8px 14px; font-size:var(--fs-sm); gap:3px; min-width:60px; text-align:center; justify-content:center; }
-      .gl svg { width:16px; height:16px; }
-      .gl.on { border-bottom-color:var(--gold); background:var(--gold-d); }
-      .gl-badge { margin-left:0; margin-top:2px; }
-      .gtd-body { padding:14px 14px; }
-      .modal-bg.open { align-items:flex-end !important; padding:0 !important; }
-      .modal { border-radius:22px 22px 0 0 !important; width:100% !important; max-width:100% !important; max-height:88vh; overflow-y:auto; padding-bottom:calc(16px + env(safe-area-inset-bottom)) !important; }
-      .fgrid.c2, .fgrid.c3 { grid-template-columns:1fr !important; }
-    }
-  </style>
-
-  <meta name="csrf-token" content="{{ csrf_token() }}">
+  {% include "eu/_head.html" %}
   {% block head %}{% endblock %}
 </head>
 
-{# ── Mapa módulo-padre: (slug, NombreMostrado, URL_del_módulo) ── #}
-{% set _pm = {
-  'finanzas':    ('oikonomia',      'Oikonomia',      '/finanzas/'),
-  'nutricion':   ('hegemonikon',    'Hegemonikon',    '/nutricion/'),
-  'perfil':      ('hegemonikon',    'Hegemonikon',    ''),
-  'recetas':     ('hegemonikon',    'Hegemonikon',    ''),
-  'guardarropa': ('hegemonikon',    'Hegemonikon',    ''),
-  'viajes':      ('hegemonikon',    'Hegemonikon',    ''),
-  'idiomas':     ('cosmopolitismo', 'Cosmopolitismo', '/idiomas/'),
-  'gtd':         ('ataraxia',       'Ataraxia',       '/gtd/'),
-  'ataraxia':    ('ataraxia',       'Ataraxia',       '/ataraxia/'),
-  'prioridades': ('oikonomia',      'Oikonomia',      '/finanzas/'),
-  'consumo':     ('oikonomia',      'Oikonomia',      '/finanzas/'),
-  'bienestar':   ('hegemonikon',    'Hegemonikon',    ''),
-  'eurythmia':   ('eurythmia',      'Eurythmia',      '/eurythmia/'),
-  'harma':       ('harma',          'Harma',          '/harma/'),
-  'paideia':     ('paideia',        'Paideia',        '/paideia/'),
-} %}
+{# Navegación: todo sale de NAV (modules/nav.py, context processor):
+   nav_here / nav_crumbs / nav_title / nav_sub / nav_back / nav_sheet…
+   Páginas fuera de NAV (login) usan su bloque module_title como título. #}
+{% set _mt = self.module_title()|trim %}
+{% set _nh = nav_here %}
 
-{# URL efectiva del módulo padre; si está vacía → hub de módulos #}
-{% set _mod_url = ((_pm[pg][2] if _pm[pg][2] else ('/?tab=modules&open=' ~ _pm[pg][0])) if (pg is defined and pg in _pm) else '/?tab=modules') %}
-{# ¿Estamos en la raíz del propio módulo? (evita breadcrumb y back-link circulares) #}
-{% set _rpath = request.path %}
-{% set _is_root = _mod_url and (_rpath == _mod_url or _rpath.rstrip('/') == _mod_url.rstrip('/')) %}
-{# URL real del botón ← : si es raíz → hub de módulos; si no → página padre #}
-{% set _back_url = '/?tab=modules' if _is_root else _mod_url %}
+<body id="eu-body" class="font-sans antialiased" style="background:var(--bg);color:var(--text);">
+<a class="eu-skip" href="#eu-main">Saltar al contenido</a>
+{% include "_ui/rank_sprite.html" %}
 
-<body class="font-sans antialiased min-h-screen" style="background:var(--bg);color:var(--text);">
-
-<!-- TOPBAR -->
-<header class="sticky top-0 z-20 flex-shrink-0"
-        style="background:var(--surf-top); border-bottom:1px solid var(--b); backdrop-filter:blur(12px);">
-  <div class="flex items-center justify-between px-4 md:px-6" style="height:56px; gap:16px;">
-
-    <!-- IZQUIERDA: botón ← + breadcrumb (una sola ruta) -->
-    <div class="flex items-center" style="gap:11px; min-width:0;">
-      <a href="{% block back_href %}{{ _back_url }}{% endblock %}" class="crumb-back" aria-label="Volver" title="Volver">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+<!-- SIDEBAR (≥1024) — DS V2: grupos Hoy · Virtudes · Vida · Tú (NAV) -->
+<aside class="eu-sidebar" aria-label="Navegación">
+  <a class="eu-sb-brand" href="/" style="text-decoration:none">
+    <span class="eu-sb-mark eu-sb-mark--logo"><img src="{{ url_for('static', filename='icons/favicon-64.png') }}" alt="" width="28" height="28"></span><b>EUDAIMONIA</b>
+  </a>
+  <nav class="eu-sb-body">
+    {% for g in NAV %}
+    <div class="eu-sb-group">
+      <div class="eu-sb-glbl">{{ g.group }}</div>
+      {% for it in g['items'] %}
+      {% set _open = _nh['item'] and _nh['item'].id == it.id %}
+      <a class="eu-sb-item" href="{{ it.url }}" title="{{ it.label }}{{ ' · ' ~ it.fn if it.fn }}"
+         {% if _open and not _nh['child'] %}aria-current="page"{% endif %}>
+        <i data-lucide="{{ it.icon }}"></i><span class="lbl">{{ it.label }}</span>{% if it.greek %}<span class="gr">{{ it.greek }}</span>{% endif %}
       </a>
-      <nav class="crumbs" aria-label="Ruta">
-        <a href="/?tab=modules">Módulos</a>
-        {# Nivel intermedio solo si NO somos la raíz del módulo #}
-        {% if pg is defined and pg in _pm and not _is_root %}<span class="sep">›</span><a href="{{ _mod_url }}">{{ _pm[pg][1] }}</a>{% endif %}
-        {% block crumb_mid %}{% endblock %}
-        <span class="sep">›</span>
-        <span class="crumb-cur">{% block module_title %}{% endblock %}</span>
-      </nav>
-      <!-- Móvil: eyebrow solo si NO somos la raíz (evita "Oikonomia / OIKONOMIA") -->
-      <div class="hdr-mtitle">
-        {% if pg is defined and pg in _pm and not _is_root %}<span class="mt-eyebrow">{{ _pm[pg][1] }}</span>{% endif %}
-        <span class="mt-title">{{ self.module_title() }}</span>
+      {% if _open and it.children %}
+        {% set _kids = it.children %}
+        {% set _cur = _nh['child'] %}
+        {% for ch in _kids %}
+          {% set _is_cur = _cur and _cur.id == ch.id %}
+          <a class="eu-sb-item eu-sb-sub{% if loop.index > nav_sb_max and not _is_cur %} eu-sb-extra{% endif %}" href="{{ ch.url }}"
+             {% if loop.index > nav_sb_max and not _is_cur %}hidden{% endif %}{% if _is_cur %} aria-current="page"{% endif %}><span class="lbl">{{ ch.label }}</span></a>
+        {% endfor %}
+        {% if _kids|length > nav_sb_max %}
+          <button type="button" class="eu-sb-item eu-sb-sub eu-sb-more" onclick="euSbMore(this)" aria-expanded="false"><span class="lbl">Más…</span></button>
+        {% endif %}
+      {% endif %}
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </nav>
+  <div class="eu-sb-foot">
+    <div class="eu-sb-foot-row eu-sb-lvl">
+      <span class="t-meta" id="eu-sb-level">Nivel —</span>
+      <span class="num fg-xp" style="font-size:var(--fs-12)" id="eu-sb-pct"></span>
+    </div>
+    <div class="eu-xpbar eu-sb-lvl" role="progressbar" aria-label="Progreso al siguiente nivel" aria-valuemax="100" aria-valuenow="0"><i id="eu-sb-bar" style="width:0%"></i></div>
+    <div class="eu-sb-foot-row">
+      <a class="eu-badge eu-badge--ec" href="/recompensas/" title="Euda-Credits"><i data-lucide="coins"></i><span class="eu-ec-val">—</span> EC</a>
+      <div style="display:flex">
+        <button type="button" class="eu-iconbtn" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar tema"><i data-lucide="moon" class="eu-ic-moon"></i><i data-lucide="sun" class="eu-ic-sun"></i></button>
+        <button type="button" class="eu-iconbtn" onclick="logoutApp()" aria-label="Cerrar sesión" title="Cerrar sesión"><i data-lucide="log-out"></i></button>
+        <button type="button" class="eu-iconbtn eu-sb-collapse" onclick="euSbRail()" aria-label="Colapsar menú" title="Colapsar menú"><i data-lucide="panel-left-close"></i></button>
       </div>
     </div>
-
-    <!-- DERECHA: utilidades opcionales + tema -->
-    <div class="flex items-center gap-3">
-      <span class="hdr-util" style="font-size:var(--fs-xs); color:var(--mid); letter-spacing:.08em; text-transform:uppercase;">
-        {% block topright %}{% endblock %}
-      </span>
-      <button class="theme-btn" onclick="toggleTheme()" aria-label="Cambiar tema" title="Cambiar tema">
-        <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
-        <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
-          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
-      </button>
-    </div>
-
   </div>
+</aside>
+
+{% block topbar %}
+<!-- TOPBAR — desktop: breadcrumb (NAV) + búsqueda ⌘K + XP/EC + avatar ·
+     móvil: ← + título/función + EC + buscar -->
+<header class="eu-topbar">
+  {% if request.path != '/' %}<a class="eu-iconbtn eu-tb-back" href="{% block back_href %}{{ nav_back }}{% endblock %}" aria-label="Volver" title="Volver"><i data-lucide="chevron-left"></i></a>{% endif %}
+
+  <nav class="eu-crumb" aria-label="Ruta">
+    {% if nav_crumbs %}
+      {% for c in nav_crumbs %}
+        {% if c.current %}<span aria-current="page">{{ c.label }}{% if c.fn %}<span class="fn"> · {{ c.fn }}</span>{% endif %}</span>
+        {% elif c.url %}<a href="{{ c.url }}">{{ c.label }}</a><i data-lucide="chevron-right"></i>
+        {% else %}<span>{{ c.label }}</span><i data-lucide="chevron-right"></i>{% endif %}
+      {% endfor %}
+    {% else %}
+      <span aria-current="page">{% block module_title %}{% endblock %}</span>
+    {% endif %}
+  </nav>
+
+  <div class="eu-mtitle">
+    {% block mtitle %}
+    <b>{{ nav_title or _mt }}</b>
+    {% if nav_sub %}<span>{{ nav_sub }}</span>{% endif %}
+    {% endblock %}
+  </div>
+
+  <div style="flex:1" class="hidden md:block"></div>
+  <span class="eu-tb-util">{% block topright %}{% endblock %}</span>
+
+  <button type="button" class="eu-search" onclick="euCmdkOpen()" aria-label="Buscar o ejecutar (Cmd/Ctrl+K)">
+    <i data-lucide="search"></i>Buscar o ejecutar…<span class="kbd" data-cmdk-hint>Ctrl K</span>
+  </button>
+  <span class="eu-badge eu-badge--xp eu-tb-xp" title="XP de hoy / meta diaria"><span class="eu-xp-today">—</span>&nbsp;/ {{ XP_DAILY_GOAL }} XP</span>
+  <a class="eu-badge eu-badge--ec" href="/recompensas/" title="Euda-Credits"><i data-lucide="coins"></i><span class="eu-ec-val">—</span></a>
+  <button type="button" class="eu-iconbtn eu-tb-search-m" onclick="euCmdkOpen()" aria-label="Buscar"><i data-lucide="search"></i></button>
+  <a class="eu-tb-avatar" href="/perfil/" aria-label="Tu perfil" title="Tu perfil"><i data-lucide="user-round"></i></a>
 </header>
+{% endblock %}
 
 <!-- CONTENT -->
-<main class="p-4 md:p-6 overflow-x-hidden">
+<main id="eu-main" class="p-4 md:p-6 overflow-x-hidden" tabindex="-1">
   {% block content %}{% endblock %}
 </main>
 
-<!-- TOAST -->
-<div id="tw-toast"
-     class="fixed bottom-6 right-4 z-50 px-4 py-2.5 rounded-xl text-[var(--fs-sm)] shadow-lg opacity-0 translate-y-2 pointer-events-none"
-     style="background:var(--card); border:1px solid var(--b2); color:var(--gold); transition:transform .22s ease, opacity .22s ease;">
+<!-- BOTTOM NAV — móvil (NAV_BOTTOM): Inicio · Acta · Praxis · Módulos · Tú.
+     «Módulos» no navega: abre el sheet #eu-mod-sheet. -->
+<nav class="eu-bnav" aria-label="Navegación principal">
+  {% for b in NAV_BOTTOM %}
+    {% if b.url %}
+    <a href="{{ b.url }}"{% if nav_bottom_active == b.id %} aria-current="page" class="is-active"{% endif %}><i data-lucide="{{ b.icon }}"></i><span>{{ b.label }}</span></a>
+    {% else %}
+    <button type="button" id="eu-mod-btn"{% if nav_bottom_active == b.id %} class="is-active"{% endif %}
+            aria-haspopup="dialog" aria-controls="eu-mod-sheet" aria-expanded="false" onclick="euModSheet(true)">
+      <i data-lucide="{{ b.icon }}"></i><span>{{ b.label }}</span>
+    </button>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+<!-- SHEET «Módulos» (móvil) — grid 4×3 desde NAV -->
+<div class="eu-scrim eu-scrim--sheet" id="eu-mod-sheet" hidden onclick="if(event.target===this) euModSheet(false)">
+  <div class="eu-sheet" role="dialog" aria-modal="true" aria-labelledby="eu-mod-title">
+    <div class="eu-sheet-grab" aria-hidden="true"></div>
+    <div class="eu-sheet-hd">
+      <div class="t-section" id="eu-mod-title">Módulos</div>
+      <button type="button" class="eu-iconbtn" aria-label="Cerrar" onclick="euModSheet(false)"><i data-lucide="x"></i></button>
+    </div>
+    <nav class="eu-modgrid" aria-label="Módulos">
+      {% for it in nav_sheet %}
+      <a href="{{ it.url }}"{% if _nh['item'] and _nh['item'].id == it.id %} aria-current="page"{% endif %}>
+        <span class="ic"{% if it.cat %} data-cat="{{ it.cat }}"{% endif %}><i data-lucide="{{ it.icon }}"></i></span>
+        <span>{{ it.label|replace('Cosmopolitismo', 'Cosmopo­litismo') }}</span><span class="fn">{{ it.fn }}</span>
+      </a>
+      {% endfor %}
+    </nav>
+  </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/eu-celebrate.js') }}"></script>
+<!-- COMMAND PALETTE (⌘K) — Acciones · Páginas · Recientes · Sistema (NAV) -->
+<div class="eu-cmdk-scrim" id="eu-cmdk" hidden onclick="if(event.target===this) euCmdkClose()">
+  <div class="eu-cmdk" role="dialog" aria-modal="true" aria-label="Buscar o ejecutar">
+    <div class="eu-cmdk-in">
+      <i data-lucide="search"></i>
+      <input type="text" id="eu-cmdk-input" placeholder="Buscar páginas o acciones… (griego o español)" autocomplete="off" spellcheck="false"
+             role="combobox" aria-expanded="true" aria-controls="eu-cmdk-list" aria-autocomplete="list">
+      <span class="kbd">esc</span>
+    </div>
+    <div class="eu-cmdk-list" id="eu-cmdk-list" role="listbox"></div>
+    <div class="eu-cmdk-ft">
+      <span><span class="kbd">↑</span><span class="kbd">↓</span>navegar</span>
+      <span><span class="kbd">↵</span>abrir</span>
+      <span><span class="kbd" data-cmdk-mod>Ctrl</span><span class="kbd">↵</span>nueva pestaña</span>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="eu-nav-data">{{ nav_cmdk|tojson }}</script>
+<script type="application/json" id="eu-nav-here">{{ {'title': nav_title or _mt, 'url': request.path, 'icon': (_nh['child'].icon if _nh['child'] and _nh['child'].icon else (_nh['item'].icon if _nh['item'] else 'file'))}|tojson }}</script>
+
+<!-- TOAST — toast(msg, 'ok'|'win'|'err') de eu-motion.js. Región aria-live
+     fija desde la carga para que los lectores de pantalla la anuncien. -->
+<div id="eu-toasts" class="eu-toast-host" aria-live="polite"></div>
+<div id="eu-ach" class="eu-ach-toasts" aria-live="polite"></div>
+
+<!-- LOADBAR — señal global de "algo está pasando" para cualquier fetch(),
+     sin tener que deshabilitar cada botón uno por uno. Ver el wrapper de
+     window.fetch más abajo. -->
+<div id="eu-loadbar"
+     style="position:fixed; top:0; left:0; height:2px; width:0%; z-index:9999;
+            background:linear-gradient(90deg, var(--gold), var(--gold-l));
+            box-shadow:0 0 8px var(--gold-glow, rgba(201,168,76,.45));
+            opacity:0; pointer-events:none;
+            transition:width .3s ease, opacity .2s ease;">
+</div>
+
 <script>
-lucide.createIcons();
+/* ── Sheet «Módulos» (móvil): role=dialog, Esc/scrim/✕, el foco va al primer
+   módulo al abrir y regresa al botón al cerrar. ── */
+function euModSheet(open){
+  var sh=document.getElementById('eu-mod-sheet'), btn=document.getElementById('eu-mod-btn');
+  if(!sh) return;
+  sh.hidden=!open;
+  if(btn) btn.setAttribute('aria-expanded', open?'true':'false');
+  document.documentElement.style.overflow = open ? 'hidden' : '';
+  if(open){ var f=sh.querySelector('.eu-modgrid a'); if(f) f.focus(); }
+  else if(btn){ btn.focus(); }
+}
+document.addEventListener('keydown',function(e){
+  var sh=document.getElementById('eu-mod-sheet');
+  if(e.key==='Escape' && sh && !sh.hidden) euModSheet(false);
+});
+
+/* ── Modales V2 (macro ui.modal): <div class="eu-scrim" id hidden> ─────────
+   euModal.open(id) / euModal.close(id). role=dialog, foco atrapado, Esc
+   cierra, el foco vuelve a quien lo abrió. En <768px se ve como bottom
+   sheet (mismo markup, ver components.css). ── */
+window.euModal = (function(){
+  var stack = [];
+  function focusables(el){
+    return [].slice.call(el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
+      .filter(function(n){ return n.offsetParent !== null; });
+  }
+  function open(id){
+    var sc = document.getElementById(id); if (!sc || !sc.hidden) return;
+    stack.push({id: id, opener: document.activeElement});
+    sc.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    var f = focusables(sc); var first = f.find(function(n){ return /INPUT|SELECT|TEXTAREA/.test(n.tagName); }) || f[0];
+    if (first) setTimeout(function(){ first.focus(); }, 10);
+    if (!sc._euBound) {
+      sc._euBound = true;
+      sc.addEventListener('mousedown', function(e){ if (e.target === sc) close(id); });
+    }
+  }
+  function close(id){
+    var sc = document.getElementById(id); if (!sc || sc.hidden) return;
+    sc.hidden = true;
+    var i = -1; stack.forEach(function(s, k){ if (s.id === id) i = k; });
+    var entry = i >= 0 ? stack.splice(i, 1)[0] : null;
+    if (!stack.length) document.documentElement.style.overflow = '';
+    if (entry && entry.opener && entry.opener.focus) entry.opener.focus();
+  }
+  document.addEventListener('keydown', function(e){
+    if (!stack.length) return;
+    var top = document.getElementById(stack[stack.length - 1].id);
+    if (e.key === 'Escape') { e.preventDefault(); close(top.id); return; }
+    if (e.key === 'Tab') {
+      var f = focusables(top); if (!f.length) return;
+      var a = f[0], z = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
+      else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
+    }
+  });
+  return {open: open, close: close};
+})();
+
+/* ── Sidebar: «Más…» despliega el resto de subpáginas; colapsar a riel ── */
+function euSbMore(btn){
+  btn.parentNode.querySelectorAll('.eu-sb-extra').forEach(function(a){ a.hidden=false; });
+  btn.remove();
+}
+function euSbRail(){
+  var on=document.documentElement.classList.toggle('sb-rail');
+  try{ localStorage.setItem('eu-sb-rail', on?'1':'0'); }catch(e){}
+}
+
+/* XP del día, nivel y EC de topbar/sidebar: euRefreshXp() en eu-motion.js,
+   se llama al cargar (abajo) y después de cada acción que da XP (euGam). */
+</script>
+<script src="{{ url_for('static', filename='js/eu-motion.js') }}"></script>
+<script src="{{ url_for('static', filename='js/eu-a11y.js') }}"></script>
+<script src="{{ url_for('static', filename='js/eu-celebrate.js') }}"></script>
+<script>if (window.euRefreshXp) euRefreshXp({ initial: true });</script>
+<script>
+/* Envuelto en try/catch: si el CDN de lucide falla o tarda (red lenta,
+   bloqueo corporativo, caída puntual), esta llamada lanzaba una excepción
+   que detenía TODO el resto de este bloque — incluido el theme toggle,
+   toast() y la activación por teclado de .eu-activate — porque son
+   sentencias sueltas, no declaraciones con hoisting como las funciones
+   de abajo. Un ícono roto no debería tumbar el resto de la app. */
+try { lucide.createIcons(); } catch (e) { console.warn('lucide.createIcons() falló:', e); }
 
 /* ── Theme toggle ── */
 (function initTheme() {
@@ -297,18 +271,10 @@ lucide.createIcons();
 })();
 
 function _applyTheme(t) {
-  var h    = document.documentElement;
-  var moon = document.getElementById('theme-icon-moon');
-  var sun  = document.getElementById('theme-icon-sun');
-  if (t === 'light') {
-    h.classList.add('light'); h.classList.remove('dark');
-    if (moon) moon.style.display = 'none';
-    if (sun)  sun.style.display  = '';
-  } else {
-    h.classList.add('dark'); h.classList.remove('light');
-    if (moon) moon.style.display = '';
-    if (sun)  sun.style.display  = 'none';
-  }
+  /* El ícono luna/sol del botón se resuelve por CSS (html.light / .eu-ic-*) */
+  var h = document.documentElement;
+  if (t === 'light') { h.classList.add('light'); h.classList.remove('dark'); }
+  else               { h.classList.add('dark');  h.classList.remove('light'); }
 }
 
 function toggleTheme() {
@@ -318,23 +284,92 @@ function toggleTheme() {
   _applyTheme(next);
 }
 
-function toast(msg, type = 'ok') {
-  const t = document.getElementById('tw-toast');
-  t.textContent = msg;
-  t.classList.remove('opacity-0','translate-y-2');
-  t.classList.add('opacity-100','translate-y-0');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => {
-    t.classList.add('opacity-0','translate-y-2');
-    t.classList.remove('opacity-100','translate-y-0');
-  }, 2500);
+async function logoutApp() {
+  await fetch('/logout', { method: 'POST' });
+  window.location.href = '/login';
 }
+
+/* ── Ocultar patrimonio neto / total activos (Finanzas) ── */
+function setNetWorthHidden(hidden) {
+  document.body.classList.toggle('nw-hidden', hidden);
+  document.querySelectorAll('.vb-lock i, .m-lock i').forEach(i => i.setAttribute('data-lucide', hidden ? 'eye-off' : 'eye'));
+  document.querySelectorAll('.vb-lock, .m-lock').forEach(btn => {
+    const label = hidden ? 'Mostrar patrimonio' : 'Ocultar patrimonio';
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  });
+  /* Botones V2 (Oikonomia): aria-pressed + ícono y texto según el estado */
+  document.querySelectorAll('.js-nw-toggle').forEach(btn => {
+    btn.setAttribute('aria-pressed', String(hidden));
+    const t = btn.querySelector('span');
+    /* Con texto el ícono anuncia la acción; solo-ícono muestra el estado */
+    const icon = t ? (hidden ? 'eye' : 'eye-off') : (hidden ? 'eye-off' : 'eye');
+    const i = btn.querySelector('svg, i');
+    if (i) { const n = document.createElement('i'); n.setAttribute('data-lucide', icon); i.replaceWith(n); }
+    if (t) t.textContent = hidden ? 'Mostrar cifras' : 'Ocultar cifras';
+    else btn.setAttribute('aria-label', hidden ? 'Mostrar cifras' : 'Ocultar cifras');
+  });
+  try { lucide.createIcons(); } catch (e) {}
+  try { localStorage.setItem('oik_nw_hidden', hidden ? '1' : '0'); } catch (e) {}
+}
+function toggleNetWorth() {
+  setNetWorthHidden(!document.body.classList.contains('nw-hidden'));
+}
+(function initNetWorthVisibility() {
+  let hidden = false;
+  try { hidden = localStorage.getItem('oik_nw_hidden') === '1'; } catch (e) {}
+  if (hidden) setNetWorthHidden(true);
+})();
+
+/* toast() → static/js/eu-motion.js */
+
+/* ── Activación por teclado para tarjetas/widgets clicables marcados
+   role="button" + class="eu-activate" (convención compartida por todos
+   los módulos). Delegado en document en vez de registrar un listener por
+   elemento, así cubre contenido agregado dinámicamente (ej. listas
+   renderizadas por fetch) sin volver a inicializarse. Ignora el evento si
+   no vino directo del propio elemento (ej. un botón anidado como "+10" o
+   "Eliminar"), para no disparar su acción y la del contenedor a la vez. */
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const el = e.target.closest('.eu-activate');
+  if (!el || e.target !== el) return;
+  e.preventDefault();
+  el.click();
+});
 </script>
 
 <script>
 (function(){
   var _f=window.fetch;
   var _t=(document.querySelector('meta[name="csrf-token"]')||{}).content||'';
+
+  // Barra de carga global — la mayoría de los botones de la app no se
+  // deshabilitaban ni mostraban ningún indicio de "esto está cargando"
+  // mientras esperaban su fetch(). En vez de retocar cada uno de los
+  // cientos de handlers a mano, se engancha aquí mismo, en el único punto
+  // por donde ya pasa cada llamada a la red.
+  var _bar = document.getElementById('eu-loadbar');
+  var _reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (_bar && _reduced) _bar.style.transition = 'none';
+  var _pending = 0, _hideTimer;
+  function _barStart(){
+    _pending++;
+    clearTimeout(_hideTimer);
+    if (!_bar) return;
+    _bar.style.opacity = '1';
+    _bar.style.width = '70%';
+  }
+  function _barEnd(){
+    _pending = Math.max(0, _pending - 1);
+    if (_pending > 0 || !_bar) return;
+    _bar.style.width = '100%';
+    _hideTimer = setTimeout(function(){
+      _bar.style.opacity = '0';
+      setTimeout(function(){ _bar.style.width = '0%'; }, _reduced ? 0 : 200);
+    }, _reduced ? 0 : 150);
+  }
+
   window.fetch=function(url,opts){
     opts=opts||{};
     var m=(opts.method||'GET').toUpperCase();
@@ -342,8 +377,171 @@ function toast(msg, type = 'ok') {
       if(opts.headers instanceof Headers){opts.headers.set('X-CSRFToken',_t);}
       else{opts.headers=Object.assign({'X-CSRFToken':_t},opts.headers||{});}
     }
-    return _f(url,opts);
+    _barStart();
+    return _f(url,opts).finally(_barEnd);
   };
+})();
+</script>
+
+<script>
+(function(){
+  // Modales: un click accidental en el fondo NO debe cerrarlos y tirar lo ya
+  // escrito en el formulario — cada pantalla de la app (Paideia, Guardarropa,
+  // Harma, Finanzas, Ataraxia, Recetas, Perfil, Viajes...) reimplementaba su
+  // propio "cerrar si el click cayó justo en el overlay", así que en vez de
+  // arreglarlo modal por modal se neutraliza una sola vez aquí, en fase de
+  // captura (antes de que el click le llegue al propio overlay y dispare su
+  // onclick/listener original). La única salida "accidental" que queda es
+  // Escape — el botón Cancelar de cada modal sigue funcionando igual.
+  //
+  // Cualquier modal nuevo que use uno de estos overlays hereda esto gratis;
+  // si agregas un contenedor de overlay con un nombre distinto, súmalo aquí.
+  var OVERLAY_SELECTOR = [
+    '.modal-bg', '.modal', '.gm-overlay', '.inv-modal-overlay',
+    '.reset-modal', '#reset-modal', '.rm-overlay'
+  ].join(',');
+
+  document.addEventListener('click', function (e) {
+    if (e.target.matches && e.target.matches(OVERLAY_SELECTOR)) {
+      e.stopPropagation();
+    }
+  }, true);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll(OVERLAY_SELECTOR).forEach(function (el) {
+      var isOpen = el.classList.contains('open') ||
+        (el.style.display && el.style.display !== 'none');
+      if (!isOpen) return;
+      el.classList.remove('open');
+      if (el.style.display) el.style.display = 'none';
+    });
+  });
+})();
+</script>
+
+<script>
+/* ── Command palette (⌘K) — datos desde NAV/ACTIONS (modules/nav.py) ──────
+   Grupos: Recientes (últimas 5 visitas) · Acciones · Páginas · Sistema.
+   Busca en griego y en español, sin acentos: «finanzas» encuentra Oikonomia. */
+(function(){
+  var isMac = navigator.platform && /Mac|iPhone|iPad/.test(navigator.platform);
+  document.querySelectorAll('[data-cmdk-hint]').forEach(function(el){ el.textContent = isMac ? '⌘K' : 'Ctrl K'; });
+  document.querySelectorAll('[data-cmdk-mod]').forEach(function(el){ el.textContent = isMac ? '⌘' : 'Ctrl'; });
+
+  var DATA = {pages:[], actions:[]}, HERE = null;
+  try { DATA = JSON.parse(document.getElementById('eu-nav-data').textContent); } catch(e){}
+  try { HERE = JSON.parse(document.getElementById('eu-nav-here').textContent); } catch(e){}
+
+  // Recientes: se registra cada visita (máx. 5, sin repetir)
+  var RKEY = 'eu-recent';
+  function recents(){ try { return JSON.parse(localStorage.getItem(RKEY) || '[]'); } catch(e){ return []; } }
+  if (HERE && HERE.title) {
+    try {
+      var r = recents().filter(function(x){ return x.url !== HERE.url; });
+      r.unshift({label: HERE.title, url: HERE.url, icon: HERE.icon || 'history'});
+      localStorage.setItem(RKEY, JSON.stringify(r.slice(0, 6)));
+    } catch(e){}
+  }
+
+  var SYSTEM = [
+    {label:'Cambiar tema', icon:'sun-moon', q:'tema claro oscuro dia noche theme', run:function(){ toggleTheme(); }},
+    {label:'Ocultar / mostrar patrimonio', icon:'eye-off', q:'patrimonio ocultar mostrar privacidad', run:function(){ toggleNetWorth(); }},
+    {label:'Cerrar sesión', icon:'log-out', q:'salir logout cerrar sesion', run:function(){ logoutApp(); }},
+  ];
+
+  var scrim = document.getElementById('eu-cmdk');
+  var input = document.getElementById('eu-cmdk-input');
+  var list  = document.getElementById('eu-cmdk-list');
+  var shown = [], active = 0, opener = null;
+
+  function norm(t){ return (t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); }
+  function esc(t){ return String(t||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function hit(it, words){ var h = norm(it.q || it.label); return words.every(function(w){ return h.indexOf(w) !== -1; }); }
+
+  function render(query){
+    var words = norm(query).split(/\s+/).filter(Boolean);
+    var groups = [];
+    if (!words.length) {
+      var rec = recents().filter(function(x){ return !HERE || x.url !== HERE.url; }).slice(0,5);
+      if (rec.length) groups.push(['Recientes', rec.map(function(x){ return {label:x.label, url:x.url, icon:x.icon}; })]);
+      groups.push(['Acciones', DATA.actions]);
+      groups.push(['Páginas', DATA.pages]);
+      groups.push(['Sistema', SYSTEM]);
+    } else {
+      groups.push(['Acciones', DATA.actions.filter(function(it){ return hit(it, words); })]);
+      groups.push(['Páginas',  DATA.pages.filter(function(it){ return hit(it, words); })]);
+      groups.push(['Sistema',  SYSTEM.filter(function(it){ return hit(it, words); })]);
+    }
+    shown = []; var html = '';
+    groups.forEach(function(g){
+      if (!g[1].length) return;
+      html += '<div class="eu-cmdk-g" role="presentation">' + g[0] + '</div>';
+      g[1].forEach(function(it){
+        var i = shown.length; shown.push(it);
+        html += '<a class="eu-cmdk-it" role="option" id="eu-cmdk-o' + i + '" data-i="' + i + '" href="' + esc(it.url || '#') + '">' +
+                '<i data-lucide="' + esc(it.icon || 'circle') + '"></i><span class="lbl">' + esc(it.label) + '</span>' +
+                (it.hint ? ' <span class="gr">' + esc(it.hint) + '</span>' : '') + '</a>';
+      });
+    });
+    list.innerHTML = html || '<div class="eu-cmdk-empty">Sin resultados para «' + esc(query) + '»</div>';
+    try { lucide.createIcons(); } catch(e){}
+    setActive(0);
+  }
+
+  function setActive(i){
+    var els = list.querySelectorAll('.eu-cmdk-it');
+    if (!els.length) { input.removeAttribute('aria-activedescendant'); return; }
+    active = (i + els.length) % els.length;
+    els.forEach(function(el, j){ el.setAttribute('aria-selected', j === active ? 'true' : 'false'); });
+    input.setAttribute('aria-activedescendant', els[active].id);
+    els[active].scrollIntoView({block:'nearest'});
+  }
+
+  function run(i, newTab){
+    var it = shown[i]; if (!it) return;
+    if (it.run) { euCmdkClose(); it.run(); return; }
+    if (newTab) { window.open(it.url, '_blank'); return; }
+    window.location.href = it.url;
+  }
+
+  list.addEventListener('mousemove', function(e){
+    var a = e.target.closest('.eu-cmdk-it'); if (a) setActive(parseInt(a.dataset.i, 10));
+  });
+  list.addEventListener('click', function(e){
+    var a = e.target.closest('.eu-cmdk-it'); if (!a) return;
+    var it = shown[parseInt(a.dataset.i, 10)];
+    if (it && it.run) { e.preventDefault(); run(parseInt(a.dataset.i, 10)); }
+  });
+
+  window.euCmdkOpen = function(){
+    opener = document.activeElement;
+    scrim.hidden = false;
+    document.documentElement.style.overflow = 'hidden';
+    input.value = ''; render('');
+    setTimeout(function(){ input.focus(); }, 10);
+  };
+  window.euCmdkClose = function(){
+    if (scrim.hidden) return;
+    scrim.hidden = true;
+    document.documentElement.style.overflow = '';
+    if (opener && opener.focus) opener.focus();
+  };
+
+  input.addEventListener('input', function(){ render(input.value); });
+  input.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+    else if (e.key === 'Enter') { e.preventDefault(); run(active, e.metaKey || e.ctrlKey); }
+    else if (e.key === 'Escape') { e.preventDefault(); euCmdkClose(); }
+    else if (e.key === 'Tab') { e.preventDefault(); }   // foco atrapado en el input
+  });
+  document.addEventListener('keydown', function(e){
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      scrim.hidden ? euCmdkOpen() : euCmdkClose();
+    }
+  });
 })();
 </script>
 {% block scripts %}{% endblock %}

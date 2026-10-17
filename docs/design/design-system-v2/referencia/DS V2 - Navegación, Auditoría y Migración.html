@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Eudaimonia OS — Navegación, Auditoría y Migración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ds-v2/tokens.css">
+<link rel="stylesheet" href="ds-v2/components.css">
+<script src="https://unpkg.com/lucide@1.31.0"></script>
+<style>
+main{max-width:1160px;margin:0 auto;padding:0 var(--gutter) 120px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:20px 0;border-bottom:1px solid var(--border-subtle);gap:16px;flex-wrap:wrap}
+.top nav{display:flex;gap:4px;flex-wrap:wrap}
+section.s{padding:64px 0 8px;scroll-margin-top:16px}
+.s-hd{display:flex;flex-direction:column;gap:8px;margin-bottom:28px;max-width:720px}
+.s-hd h2{margin:0}.s-hd p{margin:0;color:var(--fg-2);text-wrap:pretty}
+h3.sub{font:600 17px/1.2 var(--font-display);margin:40px 0 14px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.nav-demo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:24px;align-items:start}
+@media(max-width:900px){.nav-demo{grid-template-columns:1fr}}
+.frame{border:1px solid var(--border-default);border-radius:16px;overflow:hidden;background:var(--bg-canvas)}
+.phone{width:360px;max-width:100%;border-radius:28px}
+.sb-demo{height:720px}
+.ia{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:12px}
+.ia .eu-card h4{margin:0 0 4px;font:600 17px var(--font-display)}
+.ia ul{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--fg-2)}
+.ia li{display:flex;gap:8px;align-items:flex-start}
+.ia li svg{width:15px;height:15px;color:var(--fg-3);margin-top:2px;flex-shrink:0}
+.ia li b{color:var(--fg-1);font-weight:500}
+.audit td{vertical-align:top;line-height:1.5}
+.audit td:first-child{width:36px}
+.audit .t{color:var(--fg-1);font-weight:500;display:block;margin-bottom:2px}
+.audit .d{color:var(--fg-3);font-size:12px}
+.lvl{display:inline-flex;gap:2px}.lvl i{width:6px;height:14px;border-radius:2px;background:var(--bg-hover)}.lvl i.on{background:var(--fg-2)}
+.lvl.hi i.on{background:var(--brand)}
+.phase{display:grid;grid-template-columns:120px minmax(0,1fr);gap:24px;padding:28px 0;border-top:1px solid var(--border-subtle)}
+@media(max-width:760px){.phase{grid-template-columns:1fr;gap:12px}}
+.phase-n{display:flex;flex-direction:column;gap:6px}
+.phase-n b{font:600 44px/1 var(--font-display);color:var(--fg-brand)}
+.phase ul{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.phase li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;font-size:14px;color:var(--fg-2);align-items:start}
+.phase li svg{width:16px;height:16px;color:var(--fg-3);margin-top:2px}
+.phase li code{font:12px var(--font-data);color:var(--fg-brand)}
+.tok{font:12px/1.65 var(--font-data);color:var(--fg-2);background:var(--bg-sunken);border:1px solid var(--border-subtle);border-radius:12px;padding:16px;overflow:auto;white-space:pre;margin:12px 0 0}
+.tok b{color:var(--fg-brand);font-weight:500}.tok i{color:var(--fg-3);font-style:normal}
+.cmdk-wrap{background:var(--bg-overlay);border-radius:16px;padding:40px 16px;display:flex;justify-content:center;border:1px solid var(--border-subtle)}
+.kpi{display:flex;gap:24px;flex-wrap:wrap;margin-top:8px}
+.kpi div{display:flex;flex-direction:column;gap:4px}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><div style="display:flex;align-items:center;gap:12px"><div class="eu-sb-mark"><i data-lucide="landmark"></i></div><div><div class="t-eyebrow">Design System V2</div><div class="t-card" style="margin-top:4px">Navegación · Auditoría · Migración</div></div></div>
+<nav><a class="eu-btn eu-btn--ghost eu-btn--sm" href="#nav">Navegación</a><a class="eu-btn eu-btn--ghost eu-btn--sm" href="#auditoria">Auditoría</a><a class="eu-btn eu-btn--ghost eu-btn--sm" href="#migracion">Migración</a><a class="eu-btn eu-btn--secondary eu-btn--sm" href="Design System V2.html"><i data-lucide="arrow-left"></i>Sistema</a></nav></div>
+
+<section class="s" id="nav">
+<div class="s-hd"><div class="t-eyebrow">06 · Navegación</div><h2 class="t-page">Una sola jerarquía, tres superficies</h2><p>Hoy la bottom nav (Inicio · Praxis · Acta · Perfil) no llega a ningún módulo, y el sidebar mete Guardarropa y Viajes dentro de Hegemonikon. V2 usa las mismas tres agrupaciones en todas partes: <b>Hoy</b>, <b>Módulos</b> y <b>Tú</b>.</p></div>
+
+<div class="ia">
+<div class="eu-card"><div class="t-eyebrow">Bottom nav · móvil</div><h4 style="margin-top:8px">5 destinos, frecuencia diaria</h4><p class="t-meta" style="margin:0">Ley de Hick: lo que se usa todos los días va a una distancia de un toque.</p><ul>
+<li><i data-lucide="house"></i><span><b>Inicio</b> · Ἀρχή — dashboard</span></li>
+<li><i data-lucide="scroll-text"></i><span><b>Acta</b> — registro diario</span></li>
+<li><i data-lucide="list-checks"></i><span><b>Praxis</b> — tareas</span></li>
+<li><i data-lucide="layout-grid"></i><span><b>Módulos</b> — abre sheet con los 11 módulos + recientes</span></li>
+<li><i data-lucide="user-round"></i><span><b>Tú</b> · Αὐτός — perfil, logros, recompensas</span></li></ul></div>
+<div class="eu-card"><div class="t-eyebrow">Sidebar · desktop ≥1024</div><h4 style="margin-top:8px">Todo el árbol, visible</h4><p class="t-meta" style="margin:0">Las subpáginas se muestran solo dentro del módulo activo.</p><ul>
+<li><i data-lucide="sun"></i><span><b>Hoy</b> — Inicio, Acta Diurna, Praxis, Ataraxia</span></li>
+<li><i data-lucide="columns-3"></i><span><b>Virtudes</b> — Oikonomia, Hegemonikon, Paideia, Cosmopolitismo, Eurythmia</span></li>
+<li><i data-lucide="compass"></i><span><b>Vida</b> — Guardarropa, Viajes, Harma, Plantas (salen de Hegemonikon; las rutas no cambian)</span></li>
+<li><i data-lucide="user-round"></i><span><b>Tú</b> — Logros, Recompensas, Perfil</span></li>
+<li><i data-lucide="panel-left-close"></i><span>Pie: saldo EC, tema, colapsar a riel de 64</span></li></ul></div>
+<div class="eu-card"><div class="t-eyebrow">⌘K · ambos</div><h4 style="margin-top:8px">Todo lo demás, y las acciones</h4><p class="t-meta" style="margin:0">Busca en griego y español: «finanzas» encuentra Oikonomia.</p><ul>
+<li><i data-lucide="zap"></i><span><b>Acciones</b> — Marcar actividad, Registrar gasto, Nueva tarea, Subir estado de cuenta, Nueva prenda</span></li>
+<li><i data-lucide="file"></i><span><b>Páginas</b> — las ~30 pantallas, incluidas subpáginas profundas</span></li>
+<li><i data-lucide="history"></i><span><b>Recientes</b> — últimas 5 visitadas</span></li>
+<li><i data-lucide="settings-2"></i><span><b>Sistema</b> — tema, ocultar patrimonio, cerrar sesión</span></li></ul></div>
+</div>
+
+<h3 class="sub">Resolución de nombres duplicados</h3>
+<div class="eu-card eu-card--flush" style="overflow-x:auto"><table class="eu-table" style="min-width:640px"><thead><tr><th style="padding-top:16px">Ruta</th><th style="padding-top:16px">Hoy</th><th style="padding-top:16px">V2 (etiqueta)</th><th style="padding-top:16px">Motivo</th></tr></thead><tbody>
+<tr><td class="num fg-3">/finanzas/salud/</td><td>Salud financiera</td><td><b>Patrimonio</b></td><td class="fg-2">«Salud» ya es Hegemonikon</td></tr>
+<tr><td class="num fg-3">/finanzas/estados/viajes/</td><td>Viajes</td><td><b>Gastos de viaje</b></td><td class="fg-2">Distinguir de /viajes/ (logística)</td></tr>
+<tr><td class="num fg-3">/finanzas/estados/</td><td>Estados de cuenta</td><td><b>Movimientos</b></td><td class="fg-2">El usuario piensa en movimientos, no en PDFs</td></tr>
+<tr><td class="num fg-3">/gtd/</td><td>Praxis</td><td><b>Praxis</b> · Tareas</td><td class="fg-2">Griego + función en todo título</td></tr>
+<tr><td class="num fg-3">/perfil/</td><td>Αὐτός</td><td><b>Tú</b> · Αὐτός</td><td class="fg-2">Label legible en bottom nav; griego como acento</td></tr>
+</tbody></table></div>
+
+<h3 class="sub">Sidebar y topbar · desktop</h3>
+<div class="frame" style="display:flex;height:640px">
+<aside class="eu-sidebar" id="sb"></aside>
+<div style="flex:1;display:flex;flex-direction:column;min-width:0">
+<div class="eu-topbar"><div class="eu-crumb"><span>Virtudes</span><i data-lucide="chevron-right"></i><span>Oikonomia</span><i data-lucide="chevron-right"></i><span aria-current="page">Movimientos</span></div><div style="flex:1"></div><div class="eu-search"><i data-lucide="search"></i>Buscar o ejecutar…<span class="kbd">⌘K</span></div><span class="eu-badge eu-badge--xp">11 / 15 XP</span><span class="eu-badge eu-badge--ec"><i data-lucide="coins"></i>148</span></div>
+<div style="padding:32px;display:flex;flex-direction:column;gap:8px"><div class="t-eyebrow">Oikonomia · Finanzas</div><div class="t-page">Movimientos</div><p class="t-meta" style="margin:0">Topbar 56 · breadcrumb de 3 niveles máx. · XP y EC siempre visibles · búsqueda que abre ⌘K</p></div>
+</div></div>
+
+<h3 class="sub">Topbar y bottom nav · móvil</h3>
+<div class="nav-demo">
+<div class="frame phone" style="height:640px;display:flex;flex-direction:column">
+<div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;font:600 14px var(--font-ui)"><span>9:41</span><span style="display:flex;gap:4px"><i data-lucide="signal" style="width:15px"></i><i data-lucide="wifi" style="width:15px"></i><i data-lucide="battery-full" style="width:18px"></i></span></div>
+<div class="eu-topbar" style="padding:0 8px"><button class="eu-iconbtn" aria-label="Volver"><i data-lucide="chevron-left"></i></button><div class="eu-mtitle"><b>Movimientos</b><span>Oikonomia · Finanzas</span></div><span class="eu-badge eu-badge--ec"><i data-lucide="coins"></i>148</span><button class="eu-iconbtn" aria-label="Buscar"><i data-lucide="search"></i></button></div>
+<div style="flex:1;position:relative;background:var(--bg-overlay)">
+<div class="eu-sheet" style="position:absolute;left:0;right:0;bottom:0;padding-bottom:16px"><div class="eu-sheet-grab"></div><div class="t-section" style="margin-bottom:12px">Módulos</div>
+<div id="mod-sheet" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px 4px"></div></div></div>
+<nav class="eu-bnav" id="bn" style="height:76px;padding-bottom:12px"></nav>
+</div>
+<div class="stack">
+<div class="eu-card"><div class="t-card">Topbar móvil</div><p class="t-meta">← sube al hub padre (usa <code>_pm</code> actual). Título del módulo en serif 17, función debajo en 11. Derecha: EC + buscar. Sin breadcrumb.</p></div>
+<div class="eu-card"><div class="t-card">Sheet de Módulos</div><p class="t-meta">Grid 4×3 con ícono en el tono de su categoría y nombre corto. Primero los recientes. Sustituye el ⌘K como único acceso a módulos en el móvil.</p></div>
+<div class="eu-card"><div class="t-card">Bottom nav</div><p class="t-meta">64 + safe area · vidrio con blur 20 · ícono 22 + label 11 · activo en oro con trazo 2. Se oculta al hacer scroll hacia abajo en listas largas y vuelve al subir.</p></div>
+<div class="eu-card"><div class="t-card">Acciones de página</div><p class="t-meta">El CTA primario de la página (Registrar gasto, Nueva prenda) va en un botón flotante de 56 sobre la bottom nav, a la derecha. Uno por página.</p></div>
+</div></div>
+
+<h3 class="sub">Command palette</h3>
+<div class="cmdk-wrap"><div class="eu-cmdk" role="dialog" aria-label="Command palette">
+<div class="eu-cmdk-in"><i data-lucide="search"></i><span>gas<span style="border-right:1.5px solid var(--brand);margin-left:1px"></span></span><span class="kbd">esc</span></div>
+<div class="eu-cmdk-list">
+<div class="eu-cmdk-g">Acciones</div>
+<div class="eu-cmdk-it" aria-selected="true"><i data-lucide="plus"></i>Registrar gasto<span class="kbd">G</span></div>
+<div class="eu-cmdk-it"><i data-lucide="upload"></i>Subir estado de cuenta</div>
+<div class="eu-cmdk-g">Páginas</div>
+<div class="eu-cmdk-it"><i data-lucide="landmark"></i>Movimientos <span class="gr">Oikonomia</span></div>
+<div class="eu-cmdk-it"><i data-lucide="plane"></i>Gastos de viaje <span class="gr">Oikonomia</span></div>
+<div class="eu-cmdk-it"><i data-lucide="pie-chart"></i>Presupuesto <span class="gr">Oikonomia</span></div>
+</div>
+<div class="eu-cmdk-ft"><span><span class="kbd">↑</span><span class="kbd">↓</span>navegar</span><span><span class="kbd">↵</span>abrir</span><span><span class="kbd">⌘</span><span class="kbd">↵</span>nueva pestaña</span></div>
+</div></div>
+<p class="t-meta">Hoy ⌘K lee sus ítems del sidebar. V2: un registro único <code>NAV</code> en Python (<code>modules/nav.py</code>) alimenta sidebar, sheet de módulos, ⌘K y breadcrumb — una sola fuente de verdad.</p>
+<pre class="tok"><i># modules/nav.py — reemplaza el dict _pm de layout_sub.html</i>
+NAV = [
+  {<b>'group'</b>: 'Hoy', 'items': [
+    {'id':'inicio',  'label':'Inicio',      'greek':'Ἀρχή', 'url':'/',             'icon':'house'},
+    {'id':'acta',    'label':'Acta Diurna', 'url':'/actividades/', 'icon':'scroll-text'}, ...]},
+  {<b>'group'</b>: 'Virtudes', 'items': [
+    {'id':'oikonomia','label':'Oikonomia','fn':'Finanzas','cat':'oikonomia','icon':'landmark','url':'/finanzas/',
+     'children':[{'id':'movimientos','label':'Movimientos','url':'/finanzas/estados/'}, ...]}, ...]},
+]
+ACTIONS = [{'label':'Registrar gasto','key':'G','url':'/finanzas/estados/?nuevo=1','icon':'plus'}, ...]</pre>
+</section>
+
+<section class="s" id="auditoria">
+<div class="s-hd"><div class="t-eyebrow">10 · Auditoría UX</div><h2 class="t-page">Qué duele, ordenado por impacto</h2><p>Basado en el repo <code>SupremoGio/eudaimonia@main</code> (layout_sub.html, app.css, templates por módulo) y en los prototipos de este proyecto.</p>
+<div class="kpi"><div><span class="t-data-xl">~1,850</span><span class="t-meta">style="" inline</span></div><div><span class="t-data-xl">~280</span><span class="t-meta">hex hardcodeados</span></div><div><span class="t-data-xl">37</span><span class="t-meta">bloques &lt;style&gt;</span></div><div><span class="t-data-xl">2</span><span class="t-meta">sistemas visuales</span></div></div></div>
+<div class="eu-card eu-card--flush" style="overflow-x:auto"><table class="eu-table audit" style="min-width:760px" id="audit"></table></div>
+<p class="t-meta" style="margin-top:12px">Impacto y esfuerzo en escala 1–4. La prioridad sale de impacto ÷ esfuerzo, con la accesibilidad pesando el doble.</p>
+</section>
+
+<section class="s" id="migracion">
+<div class="s-hd"><div class="t-eyebrow">11 · Plan de migración</div><h2 class="t-page">Cinco fases, cero reescrituras</h2><p>Flask + Jinja + Tailwind + JS vanilla se quedan. Cada fase se puede desplegar sola y ninguna cambia rutas ni endpoints <code>/api</code>.</p></div>
+<div id="phases"></div>
+<h3 class="sub">Macro Jinja de referencia</h3>
+<pre class="tok"><i>{# templates/_ui/macros.html #}</i>
+{% macro <b>button</b>(label, variant='primary', size='md', icon=None, href=None, busy=False) -%}
+  {% set cls = 'eu-btn eu-btn--' ~ variant ~ (' eu-btn--' ~ size if size != 'md' else '') %}
+  {% if href %}&lt;a class="{{ cls }}" href="{{ href }}"&gt;{% else %}&lt;button class="{{ cls }}"{% if busy %} aria-busy="true"{% endif %} {{ kwargs|xmlattr }}&gt;{% endif %}
+    {% if icon %}&lt;i data-lucide="{{ icon }}"&gt;&lt;/i&gt;{% endif %}{{ label }}
+  {% if href %}&lt;/a&gt;{% else %}&lt;/button&gt;{% endif %}
+{%- endmacro %}
+
+{% macro <b>activity</b>(a, done=False) -%}
+  &lt;button class="eu-act" data-cat="{{ a.categoria|lower }}" aria-pressed="{{ 'true' if done else 'false' }}" data-id="{{ a.id }}"&gt;
+    &lt;span class="eu-act-check"&gt;&lt;i data-lucide="check"&gt;&lt;/i&gt;&lt;/span&gt;
+    &lt;span class="eu-act-t"&gt;{{ a.nombre }}&lt;/span&gt;
+    &lt;span class="eu-act-xp"&gt;+{{ a.xp }} XP{% if a.ec %} &lt;span class="fg-ec"&gt;+{{ a.ec }} EC&lt;/span&gt;{% endif %}&lt;/span&gt;
+  &lt;/button&gt;
+{%- endmacro %}
+
+<i>{# uso #}</i>
+{% import '_ui/macros.html' as ui %}
+{{ ui.button('Registrar gasto', icon='plus', onclick='openGasto()') }}</pre>
+<pre class="tok"><i>/* tailwind-src.css — alias legacy durante Fase 2 */</i>
+@tailwind base; @tailwind components; @tailwind utilities;
+@import './tokens.css';
+@layer components {
+  @import './components.css';
+  <b>.btn-a</b>  { @apply eu-btn eu-btn--primary; }   <i>/* se borran en Fase 3 */</i>
+  <b>.btn-g</b>  { @apply eu-btn eu-btn--ghost; }
+  <b>.btn-r</b>  { @apply eu-btn eu-btn--danger; }
+  <b>.tile</b>   { @apply eu-card; }
+  <b>.fi</b>     { @apply eu-input; }
+  <b>.ch2</b>    { @apply eu-chip; }
+}</pre>
+</section>
+</main>
+<script>
+const SB=[['Hoy',[['house','Inicio','Ἀρχή'],['scroll-text','Acta Diurna'],['list-checks','Praxis'],['sun-dim','Ataraxia']]],['Virtudes',[['landmark','Oikonomia',null,'oikonomia',1],['heart-pulse','Hegemonikon'],['book-open','Paideia'],['languages','Cosmopolitismo'],['music-2','Eurythmia']]],['Vida',[['shirt','Guardarropa'],['plane','Viajes'],['car','Harma'],['sprout','Plantas']]],['Tú',[['trophy','Logros'],['gift','Recompensas'],['user-round','Perfil','Αὐτός']]]];
+document.getElementById('sb').innerHTML=`<div class="eu-sb-brand"><div class="eu-sb-mark"><i data-lucide="landmark"></i></div><b>EUDAIMONIA</b></div><div class="eu-sb-body">${SB.map(([g,it])=>`<div class="eu-sb-group"><div class="eu-sb-glbl">${g}</div>${it.map(([i,l,gr,c,open])=>`<a class="eu-sb-item"${open?' aria-current="page"':''}><i data-lucide="${i}"></i>${l}${gr?`<span class="gr">${gr}</span>`:''}</a>${open?['Resumen','Movimientos','Presupuesto','Inversiones','Más…'].map((s,k)=>`<a class="eu-sb-item eu-sb-sub"${k===1?' style="color:var(--fg-1)"':''}>${s}</a>`).join(''):''}`).join('')}</div>`).join('')}</div><div class="eu-sb-foot"><div style="display:flex;justify-content:space-between;align-items:center"><span class="t-meta">Nivel 4 · Estrategos</span><span class="num fg-xp" style="font-size:12px">74%</span></div><div class="eu-xpbar" style="height:4px"><i style="width:74%"></i></div><div style="display:flex;justify-content:space-between;align-items:center"><span class="eu-badge eu-badge--ec"><i data-lucide="coins"></i>148 EC</span><div style="display:flex"><button class="eu-iconbtn" aria-label="Tema"><i data-lucide="moon"></i></button><button class="eu-iconbtn" aria-label="Colapsar"><i data-lucide="panel-left-close"></i></button></div></div></div>`;
+document.getElementById('bn').innerHTML=[['house','Inicio'],['scroll-text','Acta'],['list-checks','Praxis'],['layout-grid','Módulos',1],['user-round','Tú']].map(([i,l,a])=>`<a${a?' aria-current="page"':''}><i data-lucide="${i}"></i>${l}</a>`).join('');
+document.getElementById('mod-sheet').innerHTML=[['landmark','Oikonomia','oikonomia'],['heart-pulse','Hegemonikon','hegemonikon'],['book-open','Paideia','paideia'],['languages','Idiomas','cosmopolitismo'],['music-2','Eurythmia','eurythmia'],['sun-dim','Ataraxia','ataraxia'],['shirt','Ropa','identidad'],['plane','Viajes','cosmopolitismo'],['car','Harma','harma'],['sprout','Plantas','ataraxia'],['trophy','Logros'],['gift','Tienda']].map(([i,l,c])=>`<a style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;color:var(--fg-2)"${c?` data-cat="${c}"`:''}><span style="width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:${c?'var(--cat-bg)':'var(--bg-raised)'};border:1px solid ${c?'var(--cat-border)':'var(--border-subtle)'};color:${c?'var(--cat-fg)':'var(--fg-brand)'}"><i data-lucide="${i}" style="width:20px;height:20px"></i></span>${l}</a>`).join('');
+const A=[
+['P0','Finanzas parece otra app','La SPA de Estados usa slate #0f172a/#1e293b, DM Sans solo y sombras propias; estados.html la «parcha» con selectores [style*=…] !important.','Visual',4,4],
+['P0','Contraste insuficiente','--muted #6A6050 sobre #1A1627 = 2.9:1; --dim #8A7A60 sobre #221D32 = 4.0:1. Falla AA en metas, labels y placeholders.','A11y',4,1],
+['P0','Texto de 9–11 px','~210 font-size en rem literales (.42–.6rem). Mínimo V2: 12 px; 11 px solo en eyebrows.','A11y',4,2],
+['P0','Bottom nav sin módulos','Inicio · Praxis · Acta · Perfil: para llegar a Oikonomia en el iPhone hay que usar ⌘K o subir desde el dashboard.','Navegación',4,1],
+['P0','El tema claro se rompe','rgba(201,168,76,…) hardcodeado no cambia con html.light; los bordes y fondos dorados quedan mal sobre pergamino.','Visual',3,2],
+['P1','Oro en todo','Bordes, labels, eyebrows, íconos e hovers en oro: el acento pierde significado. V2: bordes neutros; oro solo para marca, foco, XP y activo.','Jerarquía',3,1],
+['P1','Targets < 44 px','Chips (.ch2), icon buttons de 32 px, filas de tarea y acciones de tabla en móvil.','A11y',3,2],
+['P1','Dashboard con 8 bloques','XP, nivel, heatmap, módulos, deadlines, sugerencia, palabra, cita y reflexión compiten entre sí. V2: tres zonas (Hoy, Pendiente, Inspiración).','Carga cognitiva',3,2],
+['P1','Movimiento infinito decorativo','Float, wiggle y pulse en íconos en reposo (Dashboard prototipo) y en tier activo. Distrae y va contra la quietud.','Motion',2,1],
+['P1','Griego sin función','Hegemonikon, Paideia y Αὐτός solo se traducen en el sidebar. En títulos y bottom nav falta la función.','Navegación',3,1],
+['P2','Iconografía mixta','Lucide + SVG inline + emojis (🪨⚔️🥇💎) + Flaticon en prototipos.','Visual',2,1],
+['P2','Mayúsculas en exceso','Hasta 6 niveles uppercase + tracking .14–.28em por pantalla.','Jerarquía',2,1],
+['P2','Componentes reinventados','Cada template redefine tarjeta, chip, botón y modal con diferencias sutiles; nombres crípticos (.px-*, .ch2, .fi).','Consistencia',3,3],
+['P2','Templates gigantes','guardarropa 2,300 líneas, perfil 1,600, paideia 1,300, actividades 1,250, con CSS y JS inline.','Mantenibilidad',2,3],
+['P3','Nombres duplicados','«Salud» y «Viajes» existen en Hegemonikon y en Oikonomia.','Navegación',2,1],
+['P3','Breakpoints dispares','500 / 767 / 768 / 1023 / 1024 según la página.','Consistencia',1,1]];
+const lv=(n,hi)=>`<span class="lvl${hi?' hi':''}">${[1,2,3,4].map(i=>`<i class="${i<=n?'on':''}"></i>`).join('')}</span>`;
+const pc={P0:'danger',P1:'warning',P2:'info',P3:''};
+document.getElementById('audit').innerHTML=`<thead><tr><th style="padding-top:16px"></th><th style="padding-top:16px">Hallazgo</th><th style="padding-top:16px">Área</th><th style="padding-top:16px">Impacto</th><th style="padding-top:16px">Esfuerzo</th></tr></thead><tbody>${A.map(([p,t,d,a,i,e])=>`<tr><td><span class="eu-badge eu-badge--status ${pc[p]?'eu-badge--'+pc[p]:''}">${p}</span></td><td><span class="t">${t}</span><span class="d">${d}</span></td><td class="fg-2" style="white-space:nowrap">${a}</td><td>${lv(i,1)}</td><td>${lv(e)}</td></tr>`).join('')}</tbody>`;
+const P=[
+['1','Alto impacto, bajo esfuerzo','1 semana',[
+['palette','Sustituir el bloque :root de <code>app.css</code> por <code>tokens.css</code>. Los alias legacy hacen que los templates actuales hereden bordes neutros, contraste AA y tema claro sin tocar HTML.','app.css'],
+['type','Lint + reemplazo global: <code>font-size:.4x–.5rem</code> → <code>var(--fs-12)</code>; <code>#6A6050</code> → <code>var(--fg-3)</code>.','sed / script'],
+['smartphone','Bottom nav de 5 (Inicio · Acta · Praxis · Módulos · Tú) + sheet de módulos.','layout_sub.html'],
+['sparkles','Quitar animaciones infinitas en reposo; conservar <code>eu-celebrate.js</code> solo para level-up.','dashboard, actividades'],
+['languages','Subtítulo funcional en todo <code>.pg-hd</code>: «Oikonomia · Finanzas».','templates']]],
+['2','Adopción del sistema','2–3 semanas',[
+['blocks','<code>components.css</code> en <code>@layer components</code>; aliases <code>.btn-a → eu-btn--primary</code>, <code>.tile → eu-card</code>…','tailwind-src.css'],
+['braces','Macros Jinja: button, card, stat, chip, badge, field, modal, row, empty, activity, xpbar.','_ui/macros.html'],
+['map','Registro <code>NAV</code> único para sidebar, sheet, ⌘K y breadcrumb.','modules/nav.py'],
+['shield-check','Stylelint: prohibir hex fuera de tokens.css, px fuera de la escala y <code>!important</code> nuevo.','.stylelintrc'],
+['image','Lucide como único set; tabla de íconos por módulo.','—']]],
+['3','Unificación de módulos','4–6 semanas',[
+['layout-dashboard','Orden por uso: Dashboard → Acta Diurna → Logros → Recompensas → Perfil → Praxis → resto.','templates/*'],
+['scissors','Por módulo: dividir en partials por sección, extraer JS a <code>static/js/&lt;modulo&gt;.js</code>, borrar su &lt;style&gt;.','guardarropa, perfil…'],
+['check-circle-2','Definición de hecho: 0 <code>style=""</code> con color o tamaño, 0 hex, macros para todo control y QA en tema claro.','—'],
+['trash-2','Borrar aliases legacy cuando un módulo ya no los use.','app.css']]],
+['4','Rediseño de Finanzas','3–4 semanas',[
+['git-branch','Reconstruir la SPA de Estados con Vite + React en <code>gio_v3/frontend/finanzas/</code> (fuente versionada), build a <code>static/finanzas/assets/</code>. Mismos endpoints <code>/api</code>.','frontend/'],
+['palette','La SPA importa <code>tokens.css</code> y usa solo <code>var(--*)</code>; se borran los overrides [style*=…] de estados.html.','estados.html'],
+['layout-list','Vistas: Resumen, Movimientos (tabla/filas), Cuentas, Presupuestos, Reglas, Reportes + modal de categoría — ver Pantallas B.','—'],
+['landmark','Hub, Presupuesto, Consumo, Inversiones y Patrimonio pasan por la Fase 3 con los mismos componentes.','finanzas/*.html']]],
+['5','Pulido','continuo',[
+['wand-2','Coreografías de XP, logro y level-up con tokens de motion.','eu-celebrate.js'],
+['loader','Skeleton y empty state en toda carga y lista.','_partials'],
+['accessibility','Auditoría axe en ambos temas; navegación por teclado completa; VoiceOver en iPhone.','—'],
+['sun','QA visual del tema claro, pantalla por pantalla.','—'],
+['app-window','PWA: manifest, íconos, theme-color, safe areas.','static/']]]];
+document.getElementById('phases').innerHTML=P.map(([n,t,d,it])=>`<div class="phase"><div class="phase-n"><span class="t-eyebrow">Fase</span><b>${n}</b><span class="t-meta">${d}</span></div><div><div class="t-section">${t}</div><ul>${it.map(([i,x,f])=>`<li><i data-lucide="${i}"></i><span>${x}</span><span class="t-meta num">${f}</span></li>`).join('')}</ul></div></div>`).join('');
+lucide.createIcons();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+<section class="eu-vstack at-dia" id="dia-sabado" role="tabpanel" aria-labelledby="tab-sabado" data-dia-panel="sabado"{% if dia != 'sabado' %} hidden{% endif %}>
+  <div class="eu-card at-complete" id="sat-day-complete"{% if not sabado.complete %} hidden{% endif %}>
+    <i data-lucide="party-popper"></i><div><div class="t-ui">¡Sábado completo!</div><div class="t-meta">Sistema reset activado · fin de semana en orden</div></div>
+  </div>
+  {% set dia = 'sabado' %}
+  {% for bl in sabado.bloques %}{% include "ataraxia/_bloque.html" %}{% endfor %}
+</section>

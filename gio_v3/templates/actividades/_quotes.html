@@ -1,0 +1,11 @@
+{# Citas: estoicismo y motivación (se renuevan con /actividades/api/quote/refresh) #}
+{% for kind, q, lbl in [('stoic', quote_stoic, 'Estoicismo'), ('motivational', quote_motiv, 'Motivación')] %}
+<section class="eu-card eu-card--inset eu-vstack acta-quote" aria-label="{{ lbl }}">
+  <div class="eu-between">
+    <span class="t-eyebrow{% if kind != 'stoic' %} acta-eyebrow-2{% endif %}">{{ lbl }}</span>
+    <button type="button" class="eu-iconbtn js-quote" data-kind="{{ kind }}" aria-label="Nueva frase de {{ lbl|lower }}"><i data-lucide="refresh-cw"></i></button>
+  </div>
+  <blockquote class="t-quote acta-quote-t js-q-text">«{{ q.text }}»</blockquote>
+  <div class="t-meta js-q-author">{{ q.author }}</div>
+</section>
+{% endfor %}

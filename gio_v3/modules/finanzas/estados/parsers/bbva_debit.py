@@ -4,7 +4,7 @@ BBVA Débito — Estado de cuenta de cheques/débito.
 import re
 from pathlib import Path
 
-from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA
+from ..config import MESES, PDF_PASSWORD, PDF_PASSWORD_BBVA, get_categoria_subcategoria
 from ._base import extract_periodo, open_pdf
 
 DATE_LINE_RE = re.compile(
@@ -22,9 +22,19 @@ DATE_ONLY_RE = re.compile(
     re.IGNORECASE,
 )
 
+# NOTA: estas son categorías-cajón para movimientos bancarios que
+# get_categoria_subcategoria() (config.py) no reconoce por texto de
+# comercio -- se remapean a la taxonomía unificada de FINANZAS en
+# _remap_legacy() de abajo, nunca se guardan literalmente en la DB.
+# "INVERSION" se quitó de aquí: como categoria de salida rompía el modelo
+# de inversiones (categoria debe ser la plataforma, ej. CETES/GBM, no la
+# palabra "INVERSION") -- ver auditoría finanzas_audit_duplicados_dic_2026_09.
+# "NOMINA" se angostó a solo "PAGO DE NOMINA": "FIBRA HOTELERA" solo
+# (sin ese prefijo) también hacía match con depósitos de reembolso de
+# EXPENSE del mismo empleador (ej. "FIBRA HOTELERA SC PAGO CUENTA DE
+# TERCERO BNET"), clasificándolos como nómina real por error.
 CATS_DEBIT = {
-    "NOMINA":           ["PAGO DE NOMINA", "NOMINA", "FIBRA HOTELERA"],
-    "INVERSION":        ["FONDO", "CETES", "GBM", "BITSO"],
+    "NOMINA":           ["PAGO DE NOMINA"],
     "PAGO_TDC":         ["PAGO TARJETA DE CREDITO", "PAGO TARJETA DE TERCEROS"],
     "SPEI_ENVIADO":     ["SPEI ENVIADO"],
     "SPEI_RECIBIDO":    ["SPEI RECIBIDO"],
@@ -32,6 +42,21 @@ CATS_DEBIT = {
     "DEPOSITO":         ["DEPOSITO EFECTIVO"],
     "FIDEICOMISO":      ["FIDEICOMISO", "SITH"],
     "TRANSFERENCIA":    ["PAGO CUENTA DE TERCERO", "BNET"],
+}
+
+# Remapea las categorías-cajón legacy de arriba a la taxonomía unificada
+# (ver finanzas_legacy_bancario_a_finanzas_2026_09): todas menos NOMINA y
+# PAGO_TDC pasan a categoria=FINANZAS con una subcategoria descriptiva, en
+# vez de guardar el nombre legacy directo en la DB.
+_LEGACY_REMAP = {
+    "NOMINA":        ("NOMINA", "Pago nominal"),
+    "PAGO_TDC":      ("PAGO_TDC", ""),
+    "SPEI_ENVIADO":  ("FINANZAS", "Transferencia enviada"),
+    "SPEI_RECIBIDO": ("FINANZAS", "Transferencia recibida"),
+    "RETIRO":        ("FINANZAS", "Retiro efectivo"),
+    "DEPOSITO":      ("FINANZAS", "Depósito"),
+    "FIDEICOMISO":   ("FINANZAS", "Fideicomiso"),
+    "TRANSFERENCIA": ("FINANZAS", "Transferencia"),
 }
 
 SKIP_KW = [
@@ -59,12 +84,23 @@ def _parse_monto(raw: str) -> float:
     return sign * float(f"{digits[:-2]}.{digits[-2:]}")
 
 
-def _categorize(desc: str) -> str:
+def _categorize(desc: str, es_gasto: bool) -> tuple[str, str]:
+    # get_categoria_subcategoria() (config.py) tiene todo el conocimiento
+    # acumulado de comercios/keywords específicos (CRISTAL VILLAHERMOSA,
+    # ZEPELIN, SALSA, etc.) -- se prueba primero, solo para GASTO (igual
+    # que parsers/_base.py::parse_text_statement, config.py está pensado
+    # para texto de comercio, no de movimientos de ingreso). Solo se cae
+    # al cajón legacy de este archivo (movimientos bancarios genéricos que
+    # config.py no puede reconocer por texto de comercio) si no hubo match.
+    if es_gasto:
+        cat, subcat = get_categoria_subcategoria(desc)
+        if cat != "OTROS":
+            return cat, subcat
     du = desc.upper()
-    for cat, kws in CATS_DEBIT.items():
+    for legacy_cat, kws in CATS_DEBIT.items():
         if any(k in du for k in kws):
-            return cat
-    return "OTROS"
+            return _LEGACY_REMAP[legacy_cat]
+    return "OTROS", ""
 
 
 def _clean(desc: str) -> str:
@@ -105,7 +141,20 @@ def _find_amount_in_block(block: list[str]) -> tuple[float | None, int | None]:
     return None, None
 
 
+_MENOS_RE = re.compile(r"[\u2212\u2013\u2014\u2012]")   # −, –, —, ‒
+
+
+def _normalizar_signos(text: str) -> str:
+    """El signo de un cargo puede venir como «-$1,000», «$ -1,000» o con el
+    menos tipográfico «−»: todo pasa a «$-1,000», que es lo que leen las
+    expresiones de abajo. Antes, «-$1,000» o «$−1,000» se leía como abono."""
+    text = _MENOS_RE.sub("-", text)
+    text = re.sub(r"-\s*\$\s*", "$-", text)
+    return re.sub(r"\$\s+-", "$-", text)
+
+
 def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
+    full_text = _normalizar_signos(full_text)
     lines = [l.strip() for l in full_text.split("\n")
              if l.strip() and not _should_skip(l.strip())]
 
@@ -128,6 +177,30 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
         if fechas:
             periodo = f"{min(fechas)} al {max(fechas)}"
 
+    # Pre-compute each entry's inline description so a neighbour can look
+    # ahead/behind to decide who owns the single line that sits between two
+    # date rows (see _entry_has_own_desc below).
+    inline_by_idx: list[str] = []
+    dm_by_idx: list[re.Match | None] = []
+    for pos in date_positions:
+        dm = DATE_LINE_RE.match(lines[pos])
+        if dm:
+            inline_by_idx.append((dm.group(4) or "").strip())
+        else:
+            m0 = DATE_ONLY_RE.match(lines[pos])
+            inline_by_idx.append((m0.group(4) or "").strip())
+        dm_by_idx.append(dm)
+
+    def _entry_has_own_desc(inline: str) -> bool:
+        # BBVA renders every movement as "TIPO DE MOVIMIENTO / referencia".
+        # An inline description that already contains that "/" separator
+        # (e.g. "RETIRO SIN TARJETA QR / ******7852") is the complete unit —
+        # pdfplumber didn't need to split it across the surrounding lines.
+        # Empty, or a "/"-less fragment (a reference-number continuation
+        # like "0056645672 072 3107260honorarios", or "RFC: ... AUT:"),
+        # means the real description lives partly on the line before/after.
+        return "/" in inline
+
     movimientos = []
     for idx, pos in enumerate(date_positions):
         next_pos = date_positions[idx + 1] if idx + 1 < len(date_positions) else len(lines)
@@ -135,19 +208,24 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
         d, mes, y = m.group(1), m.group(2).lower(), m.group(3)
         fecha = f"{y}-{MESES.get(mes, '00')}-{d.zfill(2)}"
 
-        dm = DATE_LINE_RE.match(lines[pos])
+        dm = dm_by_idx[idx]
+        inline_desc = inline_by_idx[idx]
+        saldo = None
         if dm:
             monto = _parse_monto(dm.group(5))
-            inline_desc = (dm.group(4) or "").strip()
+            saldo = _parse_monto(dm.group(6))
         else:
             block = lines[pos:next_pos]
             monto, region_start = _find_amount_in_block(block)
             if monto is None:
                 continue
-            inline_desc = (m.group(4) or "").strip()
 
         desc_parts = []
-        if pos > 0 and (pos - 1) not in date_pos_set:
+        if (
+            pos > 0
+            and (pos - 1) not in date_pos_set
+            and not _entry_has_own_desc(inline_desc)
+        ):
             desc_parts.append(lines[pos - 1])
 
         if inline_desc:
@@ -155,7 +233,16 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
 
         is_last = (idx + 1 >= len(date_positions))
         if dm:
-            post_end = next_pos if is_last else (next_pos - 1 if next_pos > pos + 1 else pos + 1)
+            if is_last:
+                post_end = next_pos
+            elif next_pos > pos + 1:
+                # Only cede the boundary line to the next entry if that
+                # entry actually needs it as its "before" description —
+                # otherwise it's this entry's own trailing continuation.
+                next_needs_before = not _entry_has_own_desc(inline_by_idx[idx + 1])
+                post_end = (next_pos - 1) if next_needs_before else next_pos
+            else:
+                post_end = pos + 1
             for bline in lines[pos + 1 : post_end]:
                 if not DATE_ONLY_RE.match(bline):
                     desc_parts.append(bline)
@@ -167,9 +254,9 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
                     desc_parts.append(bline)
 
         desc_raw = " ".join(p for p in desc_parts if p)
-        categoria = _categorize(desc_raw)
-        desc = _clean(desc_raw)
         tipo = "INGRESO" if monto >= 0 else "GASTO"
+        categoria, subcategoria = _categorize(desc_raw, es_gasto=(tipo == "GASTO"))
+        desc = _clean(desc_raw)
 
         movimientos.append({
             "fecha":        fecha,
@@ -177,12 +264,52 @@ def _parse_text(full_text: str, periodo: str | None) -> list[dict]:
             "descripcion":  desc or "SIN DESCRIPCION",
             "monto":        abs(monto),
             "categoria":    categoria,
-            "subcategoria": "",
+            "subcategoria": subcategoria,
             "tipo":         tipo,
             "periodo":      periodo,
+            "_saldo":       saldo,
         })
 
+    _verificar_con_saldo(movimientos)
+    for m in movimientos:
+        m.pop("_saldo", None)
     return movimientos
+
+
+def _verificar_con_saldo(movimientos: list[dict]) -> None:
+    """Cada renglón trae el saldo después del movimiento: saldo anterior ±
+    monto = saldo nuevo dice si entró o salió, sin depender del signo impreso.
+    El estado puede venir del más viejo al más nuevo o al revés: se usa el
+    orden con el que cuadran más renglones. Si el saldo contradice al signo,
+    manda el saldo; los renglones que cuadran quedan con dir_verificada."""
+    n = len(movimientos)
+    if n < 2:
+        return
+
+    def _signo(i, j):
+        # i: el movimiento, j: el renglón con el saldo anterior a i
+        a, b = movimientos[j].get("_saldo"), movimientos[i].get("_saldo")
+        if a is None or b is None:
+            return None
+        d = round(b - a, 2)
+        if abs(abs(d) - movimientos[i]["monto"]) < 0.01 and abs(d) >= 0.01:
+            return "INGRESO" if d > 0 else "GASTO"
+        return None
+
+    asc = {i: _signo(i, i - 1) for i in range(1, n)}          # viejo → nuevo
+    desc = {i: _signo(i, i + 1) for i in range(n - 1)}        # nuevo → viejo
+    ok_asc, ok_desc = sum(v is not None for v in asc.values()), sum(v is not None for v in desc.values())
+    if not max(ok_asc, ok_desc):
+        return
+    dirs = asc if ok_asc >= ok_desc else desc
+    for i, tipo in dirs.items():
+        if tipo is None:
+            continue
+        m = movimientos[i]
+        if m["tipo"] != tipo:
+            m["tipo"] = tipo
+            m["categoria"], m["subcategoria"] = _categorize(m["descripcion"], es_gasto=(tipo == "GASTO"))
+        m["dir_verificada"] = True
 
 
 def parse(pdf_path: Path) -> list[dict]:

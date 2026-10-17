@@ -11,7 +11,8 @@ from flask import Blueprint, render_template, request, jsonify, session, redirec
 from database import get_db
 from datetime import datetime
 import calendar
-from utils import today_str, today_date
+from utils import today_str, today_date, csv_response
+from modules.finanzas.estados.prestamos import perdidos_en_rango, perdidos_detalle_en_rango
 
 budget_bp = Blueprint('budget', __name__, template_folder='../../templates')
 
@@ -20,72 +21,197 @@ CATEGORIAS = ['necesidades', 'deseos', 'ahorro_deuda']
 PCTS       = {'necesidades': 0.50, 'deseos': 0.30, 'ahorro_deuda': 0.20}
 
 # Mapeo categoria → bucket (None = excluir del gasto visible)
+#
+# NOTA taxonomía 2026-09 (sprint de categorías): antes VIVERES/SUPER
+# (necesidades) y COMIDA/REST + CAFE/PAN (deseos) eran categorías separadas.
+# Se fusionaron en una sola categoria ALIMENTACION (Súper/Conveniencia/
+# Restaurante/Fast Food/Delivery) -- este mapeo por bucket ya no puede
+# distinguir "víveres" de "comer fuera" dentro de esa categoria. Se dejó en
+# 'necesidades' (la comida en sí es una necesidad, se coma en casa o
+# fuera) pero si se quiere recuperar el split completo de antes, hay que
+# hacer CATEGORIA_BUCKET y _calc_budget conscientes de subcategoria, no
+# solo categoria -- no se hizo aquí porque no se pidió, para no ampliar el
+# alcance de lo confirmado.
+#
+# CAFE/PAN sí se revivió como categoria propia (2026-09, a petición
+# explícita) -- café y pan son un "deseo" distinto de comprar despensa o
+# comer en restaurante, así que se sacó de ALIMENTACION otra vez.
 CATEGORIA_BUCKET = {
-    'COMIDA/REST':      'deseos',
-    'VIVERES/SUPER':    'necesidades',
-    'CASA/HOGAR':       'necesidades',
-    'GASOLINA/AUTO':    'necesidades',
-    'SERVICIOS':        'necesidades',   # Agua, Luz, Internet, Gas, Garrafón
-    'MENSUALIDAD':      'necesidades',   # Mensualidad TDC
-    'ROPA':             'deseos',
-    'SALUD':            'necesidades',
-    'TECH/DIGITAL':     'deseos',
-    'SUSCRIPCIONES':    'deseos',
-    'ENTRETENIMIENTO':  'deseos',
-    'SALSA':            'deseos',
-    'VIAJES/VUELOS':    'deseos',
-    'TRANSPORTE':       'necesidades',
-    'APRENDIZAJE':      'ahorro_deuda',
-    'CAFE/PAN':         'deseos',
-    'GYM':              'deseos',
-    'DEPORTE':          'deseos',
-    'REGALO':           'deseos',
-    'OTROS':            'deseos',
-    'EXPENSE':          None,            # Informativo – se reembolsa, no afecta buckets
-    'APORTACION_RENTA': None,           # Parte de renta recibida de tercero – no es ingreso propio
-    # Inversión → ahorro
-    'INVERSION':        'ahorro_deuda',
-    # Excluidos del gasto de consumo
-    'PAGO_TDC':         None,
-    'PAGO':             None,
-    'TRANSFERENCIA':    None,
-    'SPEI_ENVIADO':     None,
-    'RETIRO':           None,
-    'PUBLICIDAD':       None,
-    'FINANZAS':         None,
-    'NOMINA':           None,
+    # 2026-09: ALIMENTACION se separó en SUPER (necesidad) y COMIDA_FUERA
+    # (deseo) -- ver _corregir_alimentacion_split en estados/routes.py.
+    'SUPER':             'necesidades',
+    'COMIDA_FUERA':      'deseos',
+    'ALIMENTACION':      'necesidades',  # legado, ya no se genera
+    'CAFE/PAN':          'deseos',  # revivida como categoria propia -- café/pan
+                                     # siempre fue "deseo" aquí, no necesidad
+    'VIVIENDA':          'necesidades',
+    'TRANSPORTE':        'necesidades',
+    'SALUD':             'necesidades',
+    'CUIDADO_PERSONAL':  'deseos',
+    'ROPA':              'deseos',
+    'DIGITAL':           'deseos',
+    'DEPORTE':           'deseos',
+    'OCIO':              'deseos',
+    'SALSA':             'deseos',
+    'VIAJES':            'deseos',
+    'FAMILIA_REGALOS':   'deseos',
+    'OTROS':             'deseos',
+    'APRENDIZAJE':       'ahorro_deuda',
+    'INVERSION':         'ahorro_deuda',
+    'COSTOS_FINANCIEROS':'ahorro_deuda',  # intereses/comisiones/penalizaciones -- gasto evitable real, sí debe verse
+    'EXPENSE':           None,            # Informativo – se reembolsa, no afecta buckets
+    'APORTACION_RENTA':  None,            # legado -- ya no se genera, ahora es VIVIENDA/Renta
+    'PROYECTOS':         'deseos',        # Hosting/Software; Publicidad y Reclutamiento se excluyen (_GASTO_WHERE)
+    'PUBLICIDAD':        None,            # legado, ver PROYECTOS
+    # Excluidos del gasto de consumo (movimientos, no gasto real)
+    'PAGO_TDC':          None,
+    'PAGO':              None,
+    'TRANSFERENCIA':     None,
+    'SPEI_ENVIADO':      None,
+    'RETIRO':            None,
+    'FINANZAS':          'deseos',        # transferencias/retiros/cargos: se ven para reclasificar (ver _GASTO_WHERE)
+    'NOMINA':            None,
+    'PRESTAMOS':         None,            # por cobrar, no consumo (ver _GASTO_EXCLUIR)
 }
 
 # Categorías de ingreso que NO son ingreso real
-_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO', 'APORTACION_RENTA')
+#
+# NOTA (2026-09, a petición del usuario): DEPOSITO, SPEI_RECIBIDO,
+# TRANSFERENCIA, PAGO_TDC y RETIRO eran categorías legacy que ya no se
+# generan -- la migración finanzas_legacy_bancario_a_finanzas_2026_09 las
+# reclasifica todas a categoria='FINANZAS'. Se agrega 'FINANZAS' aquí para
+# que sigan excluidas del ingreso real (igual que EXPENSE/FINANZAS ya
+# están excluidas del lado de gasto arriba); sin este agregado, en cuanto
+# cambiara su categoria habrían empezado a contarse de más como ingreso
+# real -- el usuario pidió explícitamente evitar eso. Se dejan también los
+# nombres viejos por si queda alguna fila sin migrar.
+# PRESTAMOS: una devolución de préstamo no es ingreso, solo baja el pendiente
+# en «Por cobrar» (Estados de cuenta ya lo excluía; aquí faltaba).
+_INGRESO_EXCLUIR = ('TRANSFERENCIA', 'PAGO_TDC', 'RETIRO', 'DEPOSITO', 'SPEI_RECIBIDO',
+                     'APORTACION_RENTA', 'FINANZAS', 'PRESTAMOS')
+
+# Fila sintética de la Radiografía: aportaciones − retiros de tipo INVERSION.
+INVERSIONES_NETAS = '__INVERSIONES__'
 
 CAT_LABELS = {
-    'COMIDA/REST':     'Comida / Restaurante',
-    'VIVERES/SUPER':   'Víveres / Súper',
-    'CASA/HOGAR':      'Vivienda',
-    'GASOLINA/AUTO':   'Gasolina / Auto',
-    'SERVICIOS':       'Servicios',
-    'MENSUALIDAD':     'Mensualidad TDC',
-    'ROPA':            'Ropa',
-    'SALUD':           'Personal / Salud',
-    'TECH/DIGITAL':    'Tech / Digital',
-    'SUSCRIPCIONES':   'Apps / Suscripciones',
-    'ENTRETENIMIENTO': 'Gustos',
-    'SALSA':           'Salsa / Baile',
-    'VIAJES/VUELOS':   'Viajes / Vuelos',
-    'TRANSPORTE':      'Transporte',
-    'APRENDIZAJE':     'Educación',
-    'INVERSION':       'Ahorro',
-    'CAFE/PAN':        'Café / Pan',
-    'GYM':             'Gym',
-    'DEPORTE':         'Deporte',
-    'REGALO':          'Regalo',
-    'OTROS':           'Otros',
-    'EXPENSE':         'EXPENSE',
-    'APORTACION_RENTA':'Aportación renta',
-    'FINANZAS':        'Cargos bancarios',
-    'NOMINA':          'Nómina adelanto',
+    'SUPER':            'Súper',
+    'COMIDA_FUERA':     'Comida fuera',
+    'ALIMENTACION':     'Alimentación',
+    'CAFE/PAN':         'Café & Pan',
+    'VIVIENDA':         'Vivienda',
+    'TRANSPORTE':       'Transporte',
+    'SALUD':            'Salud',
+    'CUIDADO_PERSONAL': 'Cuidado personal',
+    'ROPA':             'Ropa',
+    'DIGITAL':          'Digital',
+    'DEPORTE':          'Deporte',
+    'OCIO':             'Ocio',
+    'SALSA':            'Salsa / Baile',
+    'VIAJES':           'Viajes',
+    'FAMILIA_REGALOS':  'Familia y regalos',
+    'PROYECTOS':        'Proyectos',
+    'COSTOS_FINANCIEROS':'Costos financieros',
+    'APRENDIZAJE':      'Aprendizaje',
+    'INVERSION':        'Ahorro',
+    'OTROS':            'Otros',
+    INVERSIONES_NETAS:  'Inversiones (neto)',
+    'EXPENSE':          'EXPENSE',
+    'APORTACION_RENTA': 'Aportación renta',
+    'FINANZAS':         'Finanzas / Movimientos bancarios',
+    'NOMINA':           'Nómina adelanto',
 }
+
+
+def _inversiones_mes(db, desde, hasta):
+    r = db.execute("""
+        SELECT COALESCE(SUM(CASE WHEN subcategoria='APORTACION' THEN ABS(monto) END), 0) AS aport,
+               COALESCE(SUM(CASE WHEN subcategoria='RETIRO'     THEN ABS(monto) END), 0) AS ret,
+               COUNT(*) AS n
+        FROM est_movimientos
+        WHERE tipo='INVERSION' AND subcategoria IN ('APORTACION', 'RETIRO')
+          AND categoria != 'OTRO'   -- plataforma no reconocida: no es ahorro real (inversiones.SIN_SALDO)
+          AND fecha >= ? AND fecha < ?""", (desde, hasta)).fetchone()
+    aport, ret = round(float(r['aport']), 2), round(float(r['ret']), 2)
+    return {'aportado': aport, 'retirado': ret, 'neto': round(aport - ret, 2), 'n': int(r['n'])}
+
+
+# Ingreso recurrente: el sueldo = NOMINA / Pago nominal. También NOMINA sin
+# subcategoría: la regla automática solo etiqueta «Pago nominal» a la nómina
+# de $9k-12k, y las nóminas viejas o fuera de rango quedaron sin subcategoría;
+# Bono / PTU / Fondo de ahorro siempre llevan la suya. Lo demás (bonos, PTU, fondo de ahorro,
+# regalos, reembolsos de siniestro…) es extraordinario: se muestra aparte y no
+# entra a Disponible ni a las metas, para que un mes con un extra grande no
+# esconda el déficit del sueldo. Las devoluciones de préstamos no son ingreso
+# (categoría PRESTAMOS, en _INGRESO_EXCLUIR).
+_RECURRENTE_CAT, _RECURRENTE_SUBS = 'NOMINA', ('Pago nominal', '')
+# La aportación del roomie a la renta no es ingreso: la renta ya cuenta solo
+# tu parte (mi_parte). Misma regla que estados/routes.py::_INGRESO_EXCLUIR_SQL.
+_NO_APORTACION_RENTA = "NOT (categoria='VIVIENDA' AND COALESCE(subcategoria,'')='Aportación renta')"
+
+
+def _ingresos_mes(db, mes, desde, hasta):
+    """{'total', 'recurrente', 'extraordinario', 'base', 'es_override'}. base
+    es el recurrente; si en el mes no hay, el ingreso manual del mes
+    (budget_meses) si lo hay, y si no, 0."""
+    excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
+    r = db.execute(
+        f"""SELECT COALESCE(SUM(monto), 0) AS total,
+                  COALESCE(SUM(CASE WHEN categoria=? AND COALESCE(subcategoria, '') IN (?, ?)
+                                    THEN monto END), 0) AS recurrente
+           FROM est_movimientos
+           WHERE tipo='INGRESO' AND categoria NOT IN ({excl_ph}) AND {_NO_APORTACION_RENTA}
+             AND fecha >= ? AND fecha < ?""",
+        [_RECURRENTE_CAT, *_RECURRENTE_SUBS, *_INGRESO_EXCLUIR, desde, hasta]).fetchone()
+    total, recurrente = round(float(r['total']), 2), round(float(r['recurrente']), 2)
+    base, es_override = recurrente, False
+    if recurrente <= 0:
+        ov = db.execute("SELECT ingreso_total FROM budget_meses WHERE mes=?", (mes,)).fetchone()
+        if ov and ov['ingreso_total']:
+            base, es_override = float(ov['ingreso_total']), True
+    return {'total': total, 'recurrente': recurrente,
+            'extraordinario': round(total - recurrente, 2), 'base': base, 'es_override': es_override}
+
+
+# Meta mínima del grupo Ahorro y deudas: es un piso (verde al alcanzarla o
+# superarla, rojo por debajo), a diferencia de Necesidades/Deseos cuya meta
+# es un tope. El 20 % del ingreso recurrente se sigue mostrando de referencia.
+META_AHORRO_KEY = 'presupuesto_meta_ahorro'
+META_AHORRO_DEFAULT = 4000.0
+
+
+def _meta_ahorro(db) -> float:
+    r = db.execute("SELECT value FROM app_settings WHERE key=?", (META_AHORRO_KEY,)).fetchone()
+    try:
+        return float(r['value']) if r else META_AHORRO_DEFAULT
+    except (TypeError, ValueError):
+        return META_AHORRO_DEFAULT
+
+
+# Categorías de GASTO que no son consumo y nunca entran a la Radiografía
+# (misma lista para el cálculo del mes y para la racha). PRESTAMOS: dinero
+# prestado no es gasto -- se sigue en «Por cobrar»; antes caía en Deseos por
+# no tener bucket (CATEGORIA_BUCKET.get(cat, 'deseos')).
+_GASTO_EXCLUIR = ('PAGO_TDC', 'PAGO', 'TRANSFERENCIA', 'SPEI_ENVIADO', 'RETIRO',
+                  'PUBLICIDAD', 'NOMINA', 'EXPENSE',
+                  'APORTACION_RENTA', 'PRESTAMOS')
+# FINANZAS ya no se excluye entera (pedido del usuario 2026-09-26): sus
+# transferencias enviadas, retiros de efectivo, cargos bancarios, etc. sí
+# salen de tu bolsillo y su clasificación no es 100 % fiable, así que se ven
+# en la Radiografía (bucket Deseos, como OTROS) para poder reclasificarlas.
+# Solo quedan fuera las subcategorías que nunca son gasto (misma lista que
+# estados/routes.py::_FINANZAS_NO_GASTO_SUBCATS).
+_FINANZAS_NO_GASTO = ('Transferencia recibida', 'Depósito', 'Fideicomiso', 'Reembolsable',
+                      'Compra a meses',   # compra inicial a MSI: cuentan las mensualidades
+                      'Entre cuentas propias')
+# PROYECTOS ya no se excluye entero: Hosting y Software son gasto propio y
+# cuentan en Deseos; Publicidad y Reclutamiento son gasto de trabajo y quedan
+# fuera, igual que EXPENSE.
+_PROYECTOS_EXCLUIR = ('Publicidad', 'Reclutamiento')
+_GASTO_WHERE = ("categoria NOT IN (" + ",".join(f"'{c}'" for c in _GASTO_EXCLUIR) + ")"
+                " AND NOT (categoria='PROYECTOS' AND COALESCE(subcategoria,'') IN ("
+                + ",".join(f"'{s}'" for s in _PROYECTOS_EXCLUIR) + "))"
+                " AND NOT (categoria='FINANZAS' AND COALESCE(subcategoria,'') IN ("
+                + ",".join(f"'{s}'" for s in _FINANZAS_NO_GASTO) + "))")
 
 BUCKET_META = {
     'necesidades': {'label': 'Necesidades',      'pct_target': 50, 'color': '#2a8a62', 'cls': 'bk-nec'},
@@ -127,10 +253,14 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
     que no tiene datos suficientes.
 
     Devuelve (racha, meses) donde `meses` es la lista de los últimos
-    `max_meses` (más antiguo primero) con status 'ok' | 'over' | 'sin_datos',
-    para pintar una tira tipo heatmap.
+    `max_meses` (más antiguo primero) con status 'ok' | 'over' | 'sin_datos' |
+    'en_curso', para pintar una tira tipo heatmap.
+
+    El mes en curso no suma a la racha (ir bajo presupuesto el día 6 no es
+    haberlo cumplido) ni la rompe por tener pocos movimientos todavía; solo la
+    rompe si ya va por encima del ingreso.
     """
-    excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
+    mes_actual = today_date().strftime('%Y-%m')
     y, m = int(mes_hasta[:4]), int(mes_hasta[5:])
 
     meses = []
@@ -148,27 +278,25 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
             (mes_inicio, mes_fin)
         ).fetchone()['n']
 
-        if n < 5:
+        en_curso = mes == mes_actual
+        if n < 5 and not en_curso:
             meses.append({'mes': mes, 'status': 'sin_datos'})
             racha_rota = True
         else:
-            ingreso = db.execute(
-                f"""SELECT COALESCE(SUM(monto),0) t FROM est_movimientos
-                   WHERE tipo='INGRESO' AND categoria NOT IN ({excl_ph})
-                     AND fecha >= ? AND fecha < ?""",
-                list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
-            ).fetchone()['t']
+            ingreso = _ingresos_mes(db, mes, mes_inicio, mes_fin)['base']
+            # Mismo «Gasto total» que la Radiografía: solo consumo. Invertir
+            # no cuenta como gasto y un retiro de inversiones no lo baja.
             gasto = db.execute(
-                """SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
-                   WHERE tipo='GASTO'
-                     AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
-                                           'SPEI_ENVIADO','RETIRO','PUBLICIDAD','NOMINA','FINANZAS',
-                                           'EXPENSE','APORTACION_RENTA')
+                f"""SELECT COALESCE(SUM(COALESCE(mi_parte, monto)),0) t FROM est_movimientos
+                   WHERE tipo='GASTO' AND categoria != 'INVERSION'
+                     AND {_GASTO_WHERE}
                      AND fecha >= ? AND fecha < ?""",
                 (mes_inicio, mes_fin)
-            ).fetchone()['t']
+            ).fetchone()['t'] + perdidos_en_rango(db, mes_inicio, mes_fin)
 
-            if ingreso <= 0:
+            if en_curso and (ingreso <= 0 or gasto <= ingreso):
+                meses.append({'mes': mes, 'status': 'en_curso'})
+            elif ingreso <= 0:
                 meses.append({'mes': mes, 'status': 'sin_datos'})
                 racha_rota = True
             else:
@@ -177,7 +305,7 @@ def _racha_bajo_presupuesto(db, mes_hasta, max_meses=12):
                 if not ok:
                     racha_rota = True
 
-        if not racha_rota:
+        if not racha_rota and meses[-1]['status'] == 'ok':
             racha += 1
 
         m -= 1
@@ -199,39 +327,35 @@ def _calc_budget(mes, db):
 
     excl_ph = ','.join('?' * len(_INGRESO_EXCLUIR))
 
-    # ── Ingreso real
-    ingreso_row = db.execute(
-        f"""SELECT SUM(monto) AS total
-           FROM est_movimientos
-           WHERE tipo='INGRESO'
-             AND categoria NOT IN ({excl_ph})
-             AND fecha >= ? AND fecha < ?""",
-        list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
-    ).fetchone()
-    ingreso_real = float(ingreso_row['total'] or 0)
-    ingreso_es_override = False
-
-    if ingreso_real == 0:
-        ov = db.execute(
-            "SELECT ingreso_total FROM budget_meses WHERE mes=?", (mes,)
-        ).fetchone()
-        if ov and ov['ingreso_total']:
-            ingreso_real = float(ov['ingreso_total'])
-            ingreso_es_override = True
+    # ── Ingreso: Disponible y metas 50-30-20 usan solo el recurrente (ver
+    #    _ingresos_mes); el extraordinario se muestra aparte.
+    ing = _ingresos_mes(db, mes, mes_inicio, mes_fin)
+    ingreso_real = ing['base']
+    ingreso_es_override = ing['es_override']
 
     # ── Gasto real por categoría
     spending_rows = db.execute(
-        """SELECT categoria, SUM(COALESCE(mi_parte, monto)) AS total, COUNT(*) AS n
+        f"""SELECT categoria, SUM(COALESCE(mi_parte, monto)) AS total, COUNT(*) AS n
            FROM est_movimientos
            WHERE tipo='GASTO'
-             AND categoria NOT IN ('PAGO_TDC','PAGO','TRANSFERENCIA',
-                                   'SPEI_ENVIADO','RETIRO','PUBLICIDAD','NOMINA','FINANZAS',
-                                   'EXPENSE','APORTACION_RENTA')
+             AND {_GASTO_WHERE}
              AND fecha >= ? AND fecha < ?
            GROUP BY categoria
            ORDER BY total DESC""",
         (mes_inicio, mes_fin)
     ).fetchall()
+    spending_rows = [dict(r) for r in spending_rows]
+
+    # ── Préstamos perdidos que se prestaron este mes: su pendiente es gasto
+    #    en Familia y regalos (registro interno, no hay movimiento bancario).
+    perdido = perdidos_en_rango(db, mes_inicio, mes_fin)
+    if perdido > 0:
+        fam = next((r for r in spending_rows if r['categoria'] == 'FAMILIA_REGALOS'), None)
+        if fam:
+            fam['total'] = float(fam['total'] or 0) + perdido
+            fam['perdido'] = perdido
+        else:
+            spending_rows.append({'categoria': 'FAMILIA_REGALOS', 'total': perdido, 'n': 0, 'perdido': perdido})
 
     # ── Límites opcionales (est_budgets)
     budgets_map = {r['categoria']: float(r['limite'] or 0)
@@ -242,7 +366,7 @@ def _calc_budget(mes, db):
         f"""SELECT categoria, SUM(monto) AS total
            FROM est_movimientos
            WHERE tipo='INGRESO'
-             AND categoria NOT IN ({excl_ph})
+             AND categoria NOT IN ({excl_ph}) AND {_NO_APORTACION_RENTA}
              AND fecha >= ? AND fecha < ?
            GROUP BY categoria ORDER BY total DESC""",
         list(_INGRESO_EXCLUIR) + [mes_inicio, mes_fin]
@@ -297,12 +421,36 @@ def _calc_budget(mes, db):
             'limite':       limite,
             'gastado':      gastado,
             'n':            int(row['n'] or 0),
+            'perdido':      row.get('perdido', 0),
             'pct':          pct,
             'pct_bucket':   pct_bucket,
             'tiene_limite': tiene_limite,
             'bucket':       bucket,
             'bucket_target': bucket_target,
             'status':       status,
+        })
+
+    # ── Inversiones del mes (tipo INVERSION, categoría = plataforma GBM/CETES…):
+    #    aportaciones − retiros, con la dirección tomada de la subcategoría
+    #    (el signo del monto no es confiable). RENDIMIENTO no cuenta: no es
+    #    dinero que el usuario aparta. No se cruza con los gastos de categoría
+    #    INVERSION (tipo GASTO), que siguen como su propia fila: tipos distintos,
+    #    así que nada se cuenta dos veces. El neto puede ser negativo.
+    inv = _inversiones_mes(db, mes_inicio, mes_fin)
+    if inv['n']:
+        cats_data.append({
+            'categoria':    INVERSIONES_NETAS,
+            'nombre':       CAT_LABELS[INVERSIONES_NETAS],
+            'limite':       0.0,
+            'gastado':      inv['neto'],
+            'n':            inv['n'],
+            'pct':          round(inv['neto'] / (ingreso_real * PCTS['ahorro_deuda']) * 100, 1) if ingreso_real > 0 else 0,
+            'pct_bucket':   0,
+            'tiene_limite': False,
+            'bucket':       'ahorro_deuda',
+            'bucket_target': round(ingreso_real * PCTS['ahorro_deuda'], 2),
+            'status':       'ok' if inv['neto'] >= 0 else 'over',
+            'inversion':    inv,
         })
 
     # ── Agrupar por bucket
@@ -323,26 +471,63 @@ def _calc_budget(mes, db):
             'over':           total_gastado > target_monto,
         }
 
-    total_gastado = round(sum(c['gastado'] for c in cats_data), 2)
-    disponible    = round(ingreso_real - total_gastado, 2)
+    # Ahorro y deudas: la meta mínima decide el color (piso, no tope). 'over'
+    # conserva su sentido de «en rojo» para el hero y el mini-resumen.
+    ah = buckets['ahorro_deuda']
+    meta = _meta_ahorro(db)
+    ah['meta_minima'] = meta
+    ah['cumple_meta'] = ah['total_gastado'] >= meta
+    ah['over'] = not ah['cumple_meta']
+    ah['pct_of_meta'] = max(min(round(ah['total_gastado'] / meta * 100) if meta > 0 else 100, 999), 0)
 
-    # Barra segmentada: % del ingreso gastado en cada bucket
+    # Invertir NO es gastar (decisión del usuario, 2026-10-06): el Gasto total
+    # y el «% gastado» son solo consumo; lo invertido es una cifra de
+    # referencia aparte. Invertido = gastos categorizados INVERSION (fila
+    # «Ahorro») + aportaciones − retiros de GBM/CETES. Disponible = ingreso −
+    # consumo − invertido: lo que queda sin asignar. Un retiro neto tampoco es
+    # «gasto negativo» (antes $12.5k sacados de CETES dejaban el gasto de
+    # sep-2026 en $6k con $18.6k de consumo): se informa aparte y sigue como
+    # desahorro en el bucket Ahorro y deudas.
+    inversion_gasto = round(sum(c['gastado'] for c in cats_data if c['categoria'] == 'INVERSION'), 2)
+    inv_total       = round(inversion_gasto + inv['neto'], 2)
+    invertido       = max(inv_total, 0)
+    consumo         = round(sum(c['gastado'] for c in cats_data
+                                if c['categoria'] not in (INVERSIONES_NETAS, 'INVERSION')), 2)
+    total_gastado   = consumo
+    disponible      = round(ingreso_real - consumo - invertido, 2)
+
+    # Barra segmentada: el reparto del ingreso 50-30-20. En Ahorro entra lo
+    # invertido (sin restar retiros: la barra no pinta anchos negativos).
+    seg_monto = {bk: buckets[bk]['total_gastado'] for bk in CATEGORIAS}
+    seg_monto['ahorro_deuda'] += invertido - inv_total
     seg = {}
     for bk in CATEGORIAS:
-        seg[bk] = round(buckets[bk]['total_gastado'] / ingreso_real * 100, 1) if ingreso_real > 0 else 0
+        seg[bk] = max(round(seg_monto[bk] / ingreso_real * 100, 1), 0) if ingreso_real > 0 else 0
 
     dias_mes      = calendar.monthrange(y, m)[1]
     today         = today_date()
     es_mes_actual = (today.strftime('%Y-%m') == mes)
     dia_actual    = today.day if es_mes_actual else dias_mes
-    proyeccion    = round(total_gastado / dia_actual * dias_mes) if dia_actual > 0 and total_gastado > 0 else 0
+    # Proyección del gasto (consumo) al cierre; lo invertido no cuenta.
+    proyeccion    = round(consumo / dia_actual * dias_mes) if dia_actual > 0 and consumo > 0 else 0
 
     return {
-        'ingreso_real':       ingreso_real,
+        'ingreso_real':       ingreso_real,          # base: recurrente (o manual)
         'ingreso_es_override':ingreso_es_override,
+        'ingreso_recurrente': ing['recurrente'],
+        'ingreso_extraordinario': ing['extraordinario'],
+        'ingreso_total':      ing['total'],
         'ingresos_detalle':   [dict(r) for r in ingresos_rows],
         'n_movimientos':      n_movimientos,
         'total_gastado':      total_gastado,
+        # Consumo: el gasto sin el neto de inversiones. Un mes con retiro
+        # neto (neto negativo) bajaba total_gastado como si fuera «gasto
+        # negativo»; el Resumen del hub y el coach muestran este.
+        'consumo':            consumo,
+        'inversion_neta':     inv['neto'],
+        'inversion_gasto':    inversion_gasto,
+        'invertido':          invertido,
+        'retiro_inversiones': round(max(-inv_total, 0), 2),
         'disponible':         disponible,
         'proyeccion':         proyeccion,
         'dia_actual':         dia_actual,
@@ -397,6 +582,76 @@ def index(mes=None):
     )
 
 
+# ── Exportar CSV ──────────────────────────────────────────────────────────────
+
+@budget_bp.route('/api/export')
+def export_csv():
+    """Gasto por categoría de los últimos `n` meses (hasta `hasta`, incluido)
+    con promedio y límite configurado, más ingreso/gasto/disponible por mes:
+    la base para armar el presupuesto en una hoja de cálculo."""
+    hasta = request.args.get('hasta') or today_date().strftime('%Y-%m')
+    try:
+        y, m = int(hasta[:4]), int(hasta[5:7])
+        n = max(1, min(int(request.args.get('n', 6)), 24))
+    except ValueError:
+        return jsonify({'error': 'parámetros inválidos'}), 400
+    meses = []
+    for _ in range(n):
+        meses.insert(0, f"{y}-{m:02d}")
+        y, m = (y, m - 1) if m > 1 else (y - 1, 12)
+
+    with get_db() as db:
+        datos = {mes: _calc_budget(mes, db) for mes in meses}
+        limites = {r['categoria']: float(r['limite'] or 0)
+                   for r in db.execute("SELECT categoria, limite FROM est_budgets").fetchall()}
+
+    # categoria → {mes: gastado}, agrupado por bucket en el orden 50/30/20
+    gasto = {}
+    for mes, d in datos.items():
+        for bk in CATEGORIAS:
+            for c in d['buckets'][bk]['cats']:
+                gasto.setdefault((bk, c['categoria']), {})[mes] = c['gastado']
+
+    def fila(label_bk, label_cat, vals, limite=''):
+        prom = round(sum(vals) / len(vals), 2) if vals else 0
+        return [label_bk, label_cat, *[round(v, 2) for v in vals], prom, limite]
+
+    rows = []
+    for bk in CATEGORIAS:
+        cats = sorted((c for (b, c) in gasto if b == bk),
+                      key=lambda c: -sum(gasto[(bk, c)].values()))
+        for cat in cats:
+            vals = [gasto[(bk, cat)].get(mes, 0) for mes in meses]
+            rows.append(fila(BUCKET_META[bk]['label'], CAT_LABELS.get(cat, cat), vals, limites.get(cat) or ''))
+        rows.append(fila(BUCKET_META[bk]['label'], f"Subtotal (meta {BUCKET_META[bk]['pct_target']} % del ingreso)",
+                         [datos[mes]['buckets'][bk]['total_gastado'] for mes in meses]))
+    rows.append([])
+    rows.append(fila('Resumen', 'Ingreso recurrente', [datos[mes]['ingreso_real'] for mes in meses]))
+    rows.append(fila('Resumen', 'Ingreso extraordinario', [datos[mes]['ingreso_extraordinario'] for mes in meses]))
+    rows.append(fila('Resumen', 'Gasto total', [datos[mes]['total_gastado'] for mes in meses]))
+    rows.append(fila('Resumen', 'Invertido (referencia)', [datos[mes]['invertido'] for mes in meses]))
+    rows.append(fila('Resumen', 'Retiro neto de inversiones', [datos[mes]['retiro_inversiones'] for mes in meses]))
+    rows.append(fila('Resumen', 'Disponible', [datos[mes]['disponible'] for mes in meses]))
+
+    return csv_response(['Grupo', 'Categoría', *meses, 'Promedio', 'Límite mensual'],
+                        rows, f"presupuesto_{meses[0]}_a_{meses[-1]}.csv")
+
+
+@budget_bp.route('/api/meta-ahorro', methods=['POST'])
+def set_meta_ahorro():
+    d = request.get_json(silent=True) or {}
+    try:
+        valor = round(float(d.get('valor')), 2)
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'Monto inválido'}), 400
+    if valor <= 0 or valor > 10_000_000:
+        return jsonify({'ok': False, 'error': 'La meta debe ser mayor a 0'}), 400
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)", (META_AHORRO_KEY, str(valor)))
+        db.commit()
+    return jsonify({'ok': True, 'valor': valor})
+
+
 # ── API: Reclasificar DEPOSITO / SPEI ─────────────────────────────────────────
 
 @budget_bp.route('/api/reclasificar/<int:mov_id>', methods=['POST'])
@@ -416,7 +671,14 @@ def reclasificar(mov_id):
         if accion == 'ingreso':
             db.execute("UPDATE est_movimientos SET categoria=? WHERE id=?", (cat_new, mov_id))
         elif accion == 'excluir':
-            db.execute("UPDATE est_movimientos SET categoria='TRANSFERENCIA' WHERE id=?", (mov_id,))
+            # 'TRANSFERENCIA' era el marcador legacy -- se usa 'FINANZAS' /
+            # 'Transferencia' ahora, igual que la migración
+            # finanzas_legacy_bancario_a_finanzas_2026_09, para no volver a
+            # generar la categoria vieja que ya se quitó del dropdown.
+            db.execute(
+                "UPDATE est_movimientos SET categoria='FINANZAS', subcategoria='Transferencia' WHERE id=?",
+                (mov_id,),
+            )
         else:
             return jsonify({'error': 'accion inválida'}), 400
         db.commit()
@@ -454,16 +716,28 @@ def cat_movimientos(mes, categoria):
     mes_ini = f"{mes}-01"
     mes_fin = f"{next_y}-{next_m:02d}-01"
     with get_db() as db:
-        rows = db.execute("""
+        # Mismo filtro que la fila de la Radiografía (p. ej. Proyectos sin Publicidad).
+        rows = db.execute(f"""
             SELECT id, fecha, descripcion, monto, COALESCE(mi_parte, monto) AS mi_monto,
                    categoria, banco, tipo
             FROM est_movimientos
             WHERE categoria = ?
               AND tipo IN ('GASTO','INVERSION')
               AND fecha >= ? AND fecha < ?
+              AND {_GASTO_WHERE}
             ORDER BY fecha DESC, id DESC
         """, (categoria, mes_ini, mes_fin)).fetchall()
-    return jsonify({'movimientos': [dict(r) for r in rows]})
+        # Los préstamos perdidos que se prestaron este mes también suman a
+        # Familia y regalos en la Radiografía (ver radiografia()); sin
+        # listarlos aquí el detalle no cuadraba con la barra.
+        perdidos = []
+        if categoria == 'FAMILIA_REGALOS':
+            perdidos = [{
+                'prestamo_id': p['id'], 'persona': p['persona'], 'fecha': p['fecha'],
+                'perdido_fecha': p['perdido_fecha'][:10], 'pendiente': p['pendiente'],
+                'descripcion': p['descripcion'] or p['notas'],
+            } for p in perdidos_detalle_en_rango(db, mes_ini, mes_fin)]
+    return jsonify({'movimientos': [dict(r) for r in rows], 'perdidos': perdidos})
 
 
 # ── API: Editar movimiento (categoría + monto mi_parte) ──────────────────────

@@ -1,0 +1,52 @@
+{# Vista 2: detalle del viaje con pestañas Outfits por día / Maleta / Regreso #}
+<section class="vj-view eu-vstack" id="vw-detail" aria-labelledby="detail-title" hidden>
+  <div class="vj-dhd">
+    <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm vj-back js-back"><i data-lucide="arrow-left"></i>Mis viajes</button>
+    <div class="eu-between vj-dhd-row">
+      <div class="eu-grow"><div class="eu-hstack vj-dhd-title"><h1 class="t-page" id="detail-title">—</h1><span class="eu-badge eu-badge--status" id="detail-estado-badge"></span></div></div>
+      <div class="eu-hstack vj-dhd-actions">
+        <a class="eu-btn eu-btn--secondary eu-btn--sm" id="detail-presupuesto-link" href="#"><i data-lucide="wallet"></i>Presupuesto</a>
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-edit"><i data-lucide="pencil"></i>Editar</button>
+        <button type="button" class="eu-iconbtn js-del" aria-label="Eliminar viaje"><i data-lucide="trash-2"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <dl class="eu-grid-4 vj-meta">
+    <div class="eu-card eu-card--inset"><dt class="t-eyebrow"><i data-lucide="map-pin"></i>Destino</dt><dd class="t-ui" id="detail-destino">—</dd></div>
+    <div class="eu-card eu-card--inset"><dt class="t-eyebrow"><i data-lucide="calendar"></i>Fechas</dt><dd class="t-ui num" id="detail-fechas">—</dd></div>
+    <div class="eu-card eu-card--inset"><dt class="t-eyebrow"><i data-lucide="moon"></i>Duración</dt><dd class="t-ui" id="detail-duracion">—</dd></div>
+    <div class="eu-card eu-card--inset" id="detail-clima-wrap"><dt class="t-eyebrow"><i data-lucide="cloud-sun"></i>Clima · tipo</dt><dd class="t-ui" id="detail-clima">—</dd></div>
+  </dl>
+
+  <nav class="eu-tabs vj-tabs" role="tablist" aria-label="Secciones del viaje">
+    <button type="button" role="tab" id="tab-outfits" data-pane="outfits" aria-selected="true" aria-controls="pane-outfits"><i data-lucide="shirt"></i>Outfits por día</button>
+    <button type="button" role="tab" id="tab-maleta" data-pane="maleta" aria-selected="false" aria-controls="pane-maleta"><i data-lucide="briefcase"></i>Mi maleta</button>
+    <button type="button" role="tab" id="tab-regreso" data-pane="regreso" aria-selected="false" aria-controls="pane-regreso"><i data-lucide="arrow-left-right"></i>Regreso</button>
+  </nav>
+
+  <div class="eu-card vj-pane" id="pane-outfits" role="tabpanel" aria-labelledby="tab-outfits">
+    <div class="eu-between vj-pane-hd"><h2 class="t-card">Planificador de outfits</h2><span class="t-meta num" id="outfits-progress-txt"></span></div>
+    <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Días con outfit" aria-valuenow="0" aria-valuemax="100" id="outfits-prog"><i style="width:0%"></i></div>
+    <ol class="vj-days" id="dias-list"></ol>
+  </div>
+
+  <div class="eu-card vj-pane" id="pane-maleta" role="tabpanel" aria-labelledby="tab-maleta" hidden>
+    <div class="eu-between vj-pane-hd">
+      <div><h2 class="t-card">Mi maleta</h2><p class="t-meta num" id="maleta-progress-txt"></p></div>
+      <div class="eu-hstack vj-pane-actions">
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-add-item"><i data-lucide="plus"></i>Agregar</button>
+        <button type="button" class="eu-btn eu-btn--primary eu-btn--sm" id="btn-generar"><i data-lucide="sparkles"></i><span>Generar desde outfits</span></button>
+      </div>
+    </div>
+    <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Ítems empacados" aria-valuenow="0" aria-valuemax="100" id="maleta-prog"><i style="width:0%"></i></div>
+    <div class="vj-cats" id="maleta-list"></div>
+  </div>
+
+  <div class="eu-card vj-pane" id="pane-regreso" role="tabpanel" aria-labelledby="tab-regreso" hidden>
+    <div class="eu-between vj-pane-hd"><h2 class="t-card">Checklist de regreso</h2><span class="t-meta num" id="regreso-progress-txt"></span></div>
+    <p class="vj-banner t-meta"><i data-lucide="info"></i>Marca cada ítem cuando lo hayas empacado de regreso. ¡No dejes nada atrás!</p>
+    <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Ítems empacados de regreso" aria-valuenow="0" aria-valuemax="100" id="regreso-prog"><i style="width:0%"></i></div>
+    <div class="vj-cats" id="regreso-list"></div>
+  </div>
+</section>

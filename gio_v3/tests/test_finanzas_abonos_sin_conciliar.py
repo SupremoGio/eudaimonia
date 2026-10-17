@@ -1,0 +1,297 @@
+"""
+test_finanzas_abonos_sin_conciliar.py — pestaña «Sin conciliar»: abonos que no
+cuentan como ingreso y no están ligados a un préstamo ni a un lote de Expense.
+"""
+import sys, os
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import pytest
+
+import database
+
+URL = '/finanzas/estados/api/abonos/sin-conciliar'
+
+
+@pytest.fixture
+def client(test_db):
+    from app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess["app_ok"] = True
+            sess["fin_ok"] = True
+        yield c
+
+
+def _mov(fecha, desc, monto, cat, sub='', tipo='INGRESO'):
+    with database.get_db() as db:
+        mid = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                            VALUES (?,?,?, 'BBVA_DEB', ?,?,?)""", (fecha, desc, monto, cat, sub, tipo)).lastrowid
+        db.commit()
+    return mid
+
+
+def test_solo_abonos_sueltos(client):
+    suelto = _mov('2022-12-29', 'BNET TRANSF A GIOVANY A', 5300, 'FINANZAS', 'Transferencia')
+    _mov('2022-12-15', 'PAGO DE NOMINA', 7000, 'NOMINA', 'Pago nominal')              # ingreso real: no
+    _mov('2022-12-10', 'OXXO', 50, 'SUPER', 'Súper', tipo='GASTO')                     # gasto: no
+    ligado = _mov('2022-11-01', 'BNET PAGO PRESTAMO', 1000, 'PRESTAMOS')
+    dep = _mov('2022-10-01', 'FIDEICOMISO F 1596', 900, 'FINANZAS', 'Reembolsable')
+    with database.get_db() as db:
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Pops', 1000, '2022-10-01', '2022-10-01')""").lastrowid
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,'x')", (pid, ligado))
+        lid = db.execute("INSERT INTO est_expense_lotes (nombre, created_at) VALUES ('L', 'x')").lastrowid
+        db.execute("INSERT INTO est_expense_lote_depositos (lote_id, movimiento_id, created_at) VALUES (?,?,'x')", (lid, dep))
+        db.commit()
+    d = client.get(URL).get_json()
+    assert [m['id'] for m in d['movimientos']] == [suelto] and d['total'] == 5300
+    assert d['grupos'] == [{'grupo': 'Transferencia', 'n': 1, 'total': 5300}]
+    assert client.get(URL, query_string={'anio': '2021'}).get_json()['movimientos'] == []
+    csv = client.get(URL + '.csv').get_data(as_text=True)
+    assert 'COMENTARIOS' in csv and 'GIOVANY' in csv
+
+
+def _mov_banco(fecha, desc, monto, cat, banco, sub='', tipo='INGRESO'):
+    with database.get_db() as db:
+        mid = db.execute("""INSERT INTO est_movimientos (fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                            VALUES (?,?,?,?,?,?,?)""", (fecha, desc, monto, banco, cat, sub, tipo)).lastrowid
+        db.commit()
+    return mid
+
+
+def test_pistas(client):
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                      VALUES ('Pablo Ruiz', 1500, '2023-01-05', 'x')""")
+        db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                      VALUES ('Judi', 740, '2023-01-05', 'x')""")
+        db.commit()
+    por_nombre = _mov('2023-02-01', 'PAGO CUENTA DE TERCERO BNET PABLO', 500, 'FINANZAS', 'Transferencia recibida')
+    por_monto = _mov('2023-02-03', 'SPEI RECIBIDO BANORTE', 740, 'FINANZAS', 'Transferencia recibida')
+    propia = _mov('2023-03-10', 'SPEI RECIBIDO NAFIN', 3000, 'FINANZAS', 'Transferencia recibida')
+    _mov_banco('2023-03-09', 'TRASPASO A BBVA', 3000, 'FINANZAS', 'NU', 'Transferencia enviada', 'GASTO')
+    gasto_igual = _mov('2023-04-10', 'SPEI RECIBIDO X', 250, 'FINANZAS', 'Transferencia recibida')
+    _mov_banco('2023-04-10', 'RESTAURANTE', 250, 'COMIDA_FUERA', 'BBVA_TDC', 'Restaurante', 'GASTO')
+    d = client.get(URL).get_json()
+    pista = {m['id']: (m['pista'] or {}).get('tipo') for m in d['movimientos']}
+    assert pista[por_nombre] == 'prestamo' and pista[por_monto] == 'prestamo'
+    assert pista[propia] == 'propia'
+    assert pista[gasto_igual] == 'gasto'          # no es transferencia propia: te pagaron la cena
+    assert {g['tipo'] for g in d['por_pista']} == {'prestamo', 'propia', 'gasto'}
+    assert 'Pablo Ruiz' in client.get(URL + '.csv').get_data(as_text=True)
+
+
+def test_conciliar_pistas(client):
+    with database.get_db() as db:
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Pablo Ruiz', 1000, '2023-01-05', 'x')""").lastrowid
+        db.commit()
+    dev1 = _mov('2023-02-01', 'PAGO CUENTA DE TERCERO BNET PABLO', 600, 'FINANZAS', 'Transferencia recibida')
+    dev2 = _mov('2023-02-15', 'PAGO CUENTA DE TERCERO BNET PABLO', 600, 'FINANZAS', 'Transferencia recibida')  # pasa del pendiente
+    propia = _mov('2023-03-10', 'SPEI RECIBIDO NAFIN', 3000, 'FINANZAS', 'Transferencia recibida')
+    _mov_banco('2023-03-09', 'TRASPASO A BBVA', 3000, 'FINANZAS', 'NU', 'Transferencia enviada', 'GASTO')
+    suelto = _mov('2023-04-10', 'SPEI RECIBIDO X', 250, 'FINANZAS', 'Transferencia recibida')
+    r = client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()
+    assert (r['prestamos'], r['propias'], r['sin_aplicar']) == (1, 1, 1)
+    ids = [m['id'] for m in client.get(URL).get_json()['movimientos']]
+    assert dev1 not in ids and propia not in ids and dev2 in ids and suelto in ids
+    with database.get_db() as db:
+        assert db.execute("SELECT prestamo_id FROM est_prestamo_devoluciones WHERE movimiento_id=?", (dev1,)).fetchone()[0] == pid
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (propia,)).fetchone()) \
+            == ('FINANZAS', 'Entre cuentas propias')
+    assert client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()['prestamos'] == 0   # idempotente
+
+
+def test_conciliar_pistas_crea_lote_expense(client):
+    f1 = _mov('2023-05-02', 'UBER', 300, 'EXPENSE', tipo='GASTO')
+    f2 = _mov('2023-05-03', 'HOTEL', 700, 'EXPENSE', tipo='GASTO')
+    dep = _mov('2023-05-20', 'FIDEICOMISO F 1596', 1000, 'FINANZAS', 'Reembolsable')
+    assert client.get(URL).get_json()['movimientos'][0]['pista']['tipo'] == 'expense'
+    r = client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()
+    assert (r['expense_lotes'], r['expense_depositos']) == (1, 1)
+    assert client.get(URL).get_json()['movimientos'] == []
+    with database.get_db() as db:
+        lid = db.execute("SELECT lote_id FROM est_expense_lote_depositos WHERE movimiento_id=?", (dep,)).fetchone()[0]
+        assert {x[0] for x in db.execute("SELECT movimiento_id FROM est_expense_lote_gastos WHERE lote_id=?", (lid,))} == {f1, f2}
+        assert {x[0] for x in db.execute("SELECT estatus_reembolso FROM est_movimientos WHERE id IN (?,?)", (f1, f2))} == {'PAGADO'}
+
+
+def test_iphone_macstore_prestamo_y_devoluciones(client):
+    from modules.finanzas.estados import prestamos
+    pagos = [_mov(f, f'PAGO CUENTA DE TERCERO BNET {d}', m, 'FINANZAS', 'Transferencia')
+             for f, d, m in (('2023-01-07', 'PAGO 2', 2756), ('2023-04-28', 'PAGO 4 Y 5', 2756),
+                             ('2024-01-07', 'PAGO 10 11 12', 3814))]
+    otro = _mov('2023-07-22', 'PAGO CUENTA DE TERCERO BNET PAGO', 1000, 'FINANZAS', 'Transferencia')
+    with database.get_db() as db:
+        assert prestamos.ligar_iphone_macstore(db) == (1, 3)
+        assert prestamos.ligar_iphone_macstore(db) == (0, 0)
+        db.commit()
+        p = next(x for x in prestamos.listar(db) if x['persona'] == 'Astro')
+        assert p['devuelto'] == 9326 and p['pendiente'] == 20999 - 9326
+        assert prestamos.marcar_iphone_perdido(db, '2026-09-29') == 1
+        p = next(x for x in prestamos.listar(db) if x['persona'] == 'Astro')
+        assert p['perdido_fecha'] == '2026-09-29' and p['estado'] == prestamos.PERDIDO
+    assert [m['id'] for m in client.get(URL).get_json()['movimientos']] == [otro]
+
+
+def test_csv_incluye_conciliados_y_patrones(client):
+    for f in ('2023-03-16', '2023-04-17', '2023-05-17'):
+        _mov(f, 'PAGO CUENTA DE TERCERO BNET RENTA', 5150, 'FINANZAS', 'Transferencia')
+    ligado = _mov('2023-06-01', 'BNET PAGO PRESTAMO', 1000, 'PRESTAMOS')
+    with database.get_db() as db:
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Pops', 1000, '2023-05-01', 'x')""").lastrowid
+        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,'x')", (pid, ligado))
+        db.commit()
+    csv = client.get(URL + '.csv').get_data(as_text=True)
+    assert 'Estado' in csv and 'Patrón' in csv
+    assert 'Devolución de préstamo: Pops' in csv and 'SIN CONCILIAR' in csv
+    assert '$5,150.00 ×3 (2023-03-16 a 2023-05-17, cada mes)' in csv and '«RENTA» ×3' in csv
+    assert all(m['patron'] for m in client.get(URL).get_json()['movimientos'])
+
+
+def test_pistas_inteligentes_de_gasto(client):
+    hotel = _mov_banco('2024-07-01', 'HOTEL XCARET', 4000, 'VIAJES', 'BBVA_TDC', 'Hospedaje', 'GASTO')
+    _mov_banco('2024-06-20', 'ZARA', 1000, 'ROPA', 'BBVA_TDC', 'Ropa', 'GASTO')
+    boleto = _mov('2024-07-08', 'PAGO CUENTA DE TERCERO BNET BOLETO', 1000, 'FINANZAS', 'Transferencia')  # 1/4 del hotel
+    renta = _mov('2023-03-16', 'PAGO CUENTA DE TERCERO BNET RENTA', 5150, 'FINANZAS', 'Transferencia')
+    _mov_banco('2024-05-01', 'SUSHI ROLL', 400, 'COMIDA_FUERA', 'BBVA_TDC', 'Restaurante', 'GASTO')
+    sushi = _mov('2024-05-03', 'PAGO CUENTA DE TERCERO BNET SUSHITO', 200, 'FINANZAS', 'Transferencia')  # la mitad
+    _mov('2023-01-10', 'PAGO CUENTA DE TERCERO BNET MOCHILA', 100, 'ROPA', 'Ropa')                   # ya clasificado
+    mochila = _mov('2024-09-10', 'PAGO CUENTA DE TERCERO BNET MOCHILA', 150, 'FINANZAS', 'Transferencia')
+    nada = _mov('2024-10-10', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIO', 3333, 'FINANZAS', 'Transferencia')
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert (p[boleto]['categoria'], p[boleto]['subcategoria']) == ('VIAJES', 'Hospedaje') and '1/4' in p[boleto]['texto']
+    assert (p[renta]['categoria'], p[renta]['subcategoria']) == ('VIVIENDA', 'Aportación renta')
+    assert p[sushi]['categoria'] == 'COMIDA_FUERA' and '1/2' in p[sushi]['texto']
+    assert p[mochila]['categoria'] == 'ROPA'
+    assert p[nada] is None
+    # la migración (solo seguras) no las toca; el botón sí
+    with database.get_db() as db:
+        from modules.finanzas.estados.abonos import conciliar_pistas
+        assert conciliar_pistas(db, solo_seguras=True)['gastos'] == 0
+    r = client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()
+    assert r['gastos'] == 4
+    ids = [m['id'] for m in client.get(URL).get_json()['movimientos']]
+    assert ids == [nada]
+
+
+
+def test_pistas_de_gasto_no_se_pasan(client):
+    """Casos reales mal sugeridos: concepto por defecto del banco, 1/4 de un pago de
+    renta y un retiro sin tarjeta que «cuadraba» con un Costco de $495.12 posterior."""
+    _mov_banco('2026-01-10', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 900, 'VIAJES', 'BBVA_DEB', 'Otros')
+    transf = _mov('2026-09-11', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 4500, 'FINANZAS', 'Reembolsable')
+    _mov_banco('2026-08-07', 'PAGO TARJETA DE TERCEROS MBAN', 12000, 'VIVIENDA', 'BBVA_DEB', 'Renta', 'GASTO')
+    stp = _mov('2026-08-10', 'SPEI RECIBIDOSTP 646', 3000, 'FINANZAS', 'Transferencia')
+    _mov_banco('2026-08-01', 'COSTCO VILLAHERMOSA', 495.12, 'SUPER', 'BBVA_TDC', 'Súper', 'GASTO')
+    retiro = _mov('2026-07-30', 'FIBRA HOTELERA SC RETIRO SIN TARJETA', 500, 'FINANZAS', 'Reembolsable')
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert p[transf] is None and p[stp] is None and p[retiro] is None
+
+
+def test_pista_de_viaje_y_neto(client):
+    with database.get_db() as db:
+        vid = db.execute("""INSERT INTO viajes (nombre, destino, fecha_inicio, fecha_fin, estado, created_at)
+                            VALUES ('Oaxaca Oct 25', 'Oaxaca', '2025-10-10', '2025-10-14', 'completado', 'x')""").lastrowid
+        db.commit()
+    hotel = _mov_banco('2025-10-10', 'HOTEL CASA OAXACA', 3000, 'VIAJES', 'BBVA_TDC', 'Hospedaje', 'GASTO')
+    with database.get_db() as db:
+        db.execute("UPDATE est_movimientos SET viaje_id=? WHERE id=?", (vid, hotel))
+        db.commit()
+    mitad = _mov('2025-10-20', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 1500, 'FINANZAS', 'Transferencia')
+    otro = _mov('2025-10-25', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 777, 'FINANZAS', 'Transferencia')
+    lejos = _mov('2026-01-25', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 1500, 'FINANZAS', 'Transferencia')
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert p[mitad]['viaje_id'] == vid and '1/2' in p[mitad]['texto'] and p[mitad]['subcategoria'] == 'Hospedaje'
+    assert p[otro]['viaje_id'] == vid and (p[otro]['categoria'], p[otro]['subcategoria']) == ('VIAJES', 'Otros')
+    assert p[lejos] is None
+    client.post('/finanzas/estados/api/abonos/conciliar-pistas')
+    s = client.get(f'/finanzas/estados/api/trips/{vid}/summary').get_json()
+    assert (s['total_gastado'], s['te_pagaron'], s['neto']) == (3000, 2277, 723)
+    tx = client.get(f'/finanzas/estados/api/trips/{vid}/transactions').get_json()['data']
+    assert sorted(t['concepto'] for t in tx) == ['Hotel', 'Te pagaron', 'Te pagaron']
+
+
+def test_pista_viaje_ignora_transferencias_y_empresa(client):
+    """Casos reales mal sugeridos: 1/4 de una transferencia ligada al viaje,
+    «todo» de un retiro de cajero; CODI y depósitos de la empresa."""
+    with database.get_db() as db:
+        vid = db.execute("""INSERT INTO viajes (nombre, destino, fecha_inicio, fecha_fin, estado, created_at)
+                            VALUES ('VILLAHERMOSA JUN 24', 'Villahermosa', '2024-05-30', '2024-06-03', 'completado', 'x')""").lastrowid
+        db.commit()
+    for d, m, c, sub in (('2024-05-30', 1000, 'FINANZAS', 'Transferencia'), ('2024-05-31', 500, 'FINANZAS', 'Retiro efectivo'),
+                         ('2024-06-01', 800, 'COMIDA_FUERA', 'Restaurante')):
+        mid = _mov_banco(d, 'X ' + c, m, c, 'BBVA_DEB', sub, 'GASTO')
+        with database.get_db() as db:
+            db.execute("UPDATE est_movimientos SET viaje_id=? WHERE id=?", (vid, mid)); db.commit()
+    cuarto = _mov('2024-06-04', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 250, 'FINANZAS', 'Transferencia')
+    retiro = _mov('2024-06-05', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 500, 'FINANZAS', 'Transferencia')
+    mitad = _mov('2024-06-06', 'PAGO CUENTA DE TERCERO BNET CENA', 400, 'FINANZAS', 'Transferencia')
+    _mov('2022-09-01', 'SPEI RECIBIDOCODI VALIDA', 0.01, 'VIAJES', 'Otros')
+    codi = _mov('2022-09-11', 'SPEI RECIBIDOCODI VALIDA', 0.01, 'FINANZAS', 'Transferencia recibida')
+    empresa = _mov('2024-03-05', 'SITH20000007897 FIBRA HOTELERA SC', 3566, 'FINANZAS', 'Fideicomiso')
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert (p[cuarto]['categoria'], p[cuarto]['subcategoria']) == ('VIAJES', 'Otros')      # no «1/4 de la transferencia»
+    assert (p[retiro]['categoria'], p[retiro]['subcategoria']) == ('VIAJES', 'Otros')      # no «todo del retiro»
+    assert p[mitad]['categoria'] == 'COMIDA_FUERA' and '1/2' in p[mitad]['texto']
+    assert p[codi] is None
+    assert p[empresa]['tipo'] == 'empresa'
+
+
+def test_compartido_y_prestamo_por_fecha(client):
+    # Hotel de $3,000 donde tu parte fue $1,000: te regresan $1,000 por persona.
+    hotel = _mov_banco('2025-03-01', 'HOTEL PLAYA', 3000, 'VIAJES', 'BBVA_TDC', 'Hospedaje', 'GASTO')
+    with database.get_db() as db:
+        db.execute("UPDATE est_movimientos SET mi_parte=1000 WHERE id=?", (hotel,))
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Judi', 5000, '2025-06-01', 'x')""").lastrowid
+        db.commit()
+    uno = _mov('2025-03-05', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 1000, 'FINANZAS', 'Transferencia')
+    dos = _mov('2025-03-06', 'SPEI RECIBIDOHSBC', 1000, 'FINANZAS', 'Transferencia recibida')
+    tres = _mov('2025-03-07', 'SPEI RECIBIDOHSBC', 1000, 'FINANZAS', 'Transferencia recibida')     # ya no queda
+    judi = _mov('2025-08-01', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 3000, 'FINANZAS', 'Transferencia')
+    judi2 = _mov('2025-08-15', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 3000, 'FINANZAS', 'Transferencia')  # ya no cabe
+    p = {m['id']: m['pista'] for m in client.get(URL).get_json()['movimientos']}
+    assert p[uno]['tipo'] == p[dos]['tipo'] == 'compartido' and '1/2' in p[uno]['texto']
+    assert p[tres] is None
+    assert p[judi]['tipo'] == 'prestamo' and p[judi]['prestamo_id'] == pid and 'confírmalo' in p[judi]['texto']
+    assert p[judi2] is None
+    r = client.post('/finanzas/estados/api/abonos/conciliar-pistas').get_json()
+    assert (r['compartidos'], r['prestamos']) == (2, 1)
+    ids = [m['id'] for m in client.get(URL).get_json()['movimientos']]
+    assert uno not in ids and judi not in ids and tres in ids
+
+
+def test_devolucion_de_persona_sin_prestamo_queda_compartido(client):
+    from modules.finanzas.estados import correcciones_sin_conciliar as corr
+    with database.get_db() as db:
+        db.execute("""INSERT INTO est_movimientos (id, fecha, descripcion, monto, banco, categoria, subcategoria, tipo)
+                      VALUES (3811, '2023-05-12', 'PAGO CUENTA DE TERCERO BNET GRACIAS BEBO', 4250, 'BBVA_DEB',
+                              'FINANZAS', 'Transferencia', 'INGRESO')""")
+        db.commit()
+        corr.aplicar(db)
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=3811").fetchone()) \
+            == ('FINANZAS', 'Reembolso compartido')
+        pid = db.execute("""INSERT INTO est_prestamos (contraparte, monto, fecha, created_at)
+                            VALUES ('Judi', 7000, '2023-06-16', 'x')""").lastrowid
+        db.commit()
+        corr.aplicar(db)
+        assert db.execute("SELECT prestamo_id FROM est_prestamo_devoluciones WHERE movimiento_id=3811").fetchone()[0] == pid
+
+
+def test_cierre_sin_pista(client):
+    from modules.finanzas.estados.abonos import cerrar_sin_pista
+    nada = _mov('2023-06-10', 'PAGO CUENTA DE TERCERO BNET TRANSF A GIOVANY A', 7000, 'FINANZAS', 'Transferencia')
+    emp = _mov('2023-09-05', 'SITH20000007452 FIBRA HOTELERA SC', 5110.99, 'FINANZAS', 'Fideicomiso')
+    despues = _mov('2026-11-01', 'SPEI RECIBIDOBANORTE', 999, 'FINANZAS', 'Transferencia recibida')
+    with database.get_db() as db:
+        assert cerrar_sin_pista(db, '2026-10-01') == {'regresos': 1, 'expense': 1}
+        db.commit()
+        sub = lambda i: db.execute("SELECT subcategoria FROM est_movimientos WHERE id=?", (i,)).fetchone()[0]
+        assert (sub(nada), sub(emp)) == ('Reembolso compartido', 'Expense sin detalle')
+    assert [m['id'] for m in client.get(URL).get_json()['movimientos']] == [despues]
+    assert 'Reembolso compartido' in client.get(URL + '.csv').get_data(as_text=True)   # siguen en el CSV de referencia

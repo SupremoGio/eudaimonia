@@ -20,5 +20,6 @@ def test_db(tmp_path, monkeypatch):
     db_file = str(tmp_path / "test_eudaimonia.db")
     monkeypatch.setattr(database, "_DB_PATH", db_file)
     monkeypatch.setattr(database, "_USE_HYBRID", False)
+    monkeypatch.setattr(database, "SEMBRAR_DATOS_USUARIO", False)   # sin las plantas reales del usuario
     database.init_db()
     yield db_file

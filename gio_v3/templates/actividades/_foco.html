@@ -1,0 +1,22 @@
+{# Foco del mes: en pilares con varias actividades, una se promueve a ancla #}
+{% if foco_candidates %}
+{% set configured = namespace(n=0) %}
+{% for pk in foco_candidates %}{% if pillar_focus.get(pk) %}{% set configured.n = configured.n + 1 %}{% endif %}{% endfor %}
+<details class="eu-card acta-foco">
+  <summary class="eu-between">
+    <span class="eu-hstack"><i data-lucide="crosshair"></i><span class="t-ui">Foco del mes</span></span>
+    <span class="eu-hstack"><span class="t-meta num">{{ configured.n }}/{{ foco_candidates|length }} configurados</span><i data-lucide="chevron-down" class="acta-chev"></i></span>
+  </summary>
+  <div class="acta-foco-grid">
+    {% for pk, items in foco_candidates.items() %}
+    <div class="eu-field">
+      <label class="eu-label" for="foco-{{ pk }}">{{ pillar_meta.get(pk, {}).get('name', pk) }}</label>
+      <select class="eu-select js-foco" id="foco-{{ pk }}" data-pillar="{{ pk }}">
+        <option value="">— sin foco —</option>
+        {% for it in items %}<option value="{{ it.key }}"{% if pillar_focus.get(pk) == it.key %} selected{% endif %}>{{ it.label }}</option>{% endfor %}
+      </select>
+    </div>
+    {% endfor %}
+  </div>
+</details>
+{% endif %}

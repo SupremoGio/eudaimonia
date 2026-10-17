@@ -1,0 +1,42 @@
+/* Fútbol (/bienestar/futbol/) — Design System V2 */
+.fb{display:flex;flex-direction:column;gap:var(--sp-4)}
+.fb h1,.fb h2,.fb p{margin:0}
+.fb [hidden],#m-pt [hidden]{display:none!important}
+@media (min-width:1024px){.fb{gap:var(--sp-5)}}
+.fb-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.fb-hd .t-page{margin-top:var(--sp-2)}
+.fb-lead{margin-top:var(--sp-2);color:var(--fg-2)}
+@media (max-width:767px){.fb-hd{display:none}}
+@media (min-width:768px){.eu-topbar .js-new{display:none}}
+.fb-stats{gap:var(--sp-3)}
+.fb-stats .eu-card{padding:var(--sp-4)}
+@media (max-width:767px){.fb-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.fb-stats .eu-stat-val{font-size:var(--fs-24)}}
+.fb-tone--success{--tn:var(--success-fg)}.fb-tone--brand{--tn:var(--fg-brand)}.fb-tone--warning{--tn:var(--warning-fg)}.fb-tone--danger{--tn:var(--danger-fg)}.fb-tone--none{--tn:var(--fg-3)}
+.eu-stat-val[class*=fb-tone]{color:var(--tn)}
+.fb-gep{display:flex;height:6px;border-radius:var(--r-full);overflow:hidden;background:var(--bg-raised)}
+.fb-gep i{display:block;height:100%}
+.is-win{--rc:var(--success-fg)}.is-draw{--rc:var(--fg-3)}.is-loss{--rc:var(--danger-fg)}
+.fb-gep i,.fb-dot{background:var(--rc)}
+.fb-sec{gap:var(--sp-2)}
+.fb-form{gap:6px}
+.fb-dot{width:10px;height:10px;border-radius:50%}
+.fb-card{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);flex-wrap:wrap}
+.fb-card--prox{border-color:var(--border-brand)}
+.fb-ic{background:var(--cat-bg);color:var(--cat-fg)}
+.fb-card-main{flex:1;min-width:180px;display:flex;flex-direction:column;gap:4px}
+.fb-card-top{gap:var(--sp-2)}
+.fb-card-top .eu-badge svg{width:11px;height:11px}
+.fb-meta{display:flex;flex-wrap:wrap;gap:var(--sp-3)}
+.fb-meta span{display:inline-flex;align-items:center;gap:4px}
+.fb-meta svg{width:12px;height:12px}
+.fb-score{font-size:var(--fs-20);color:var(--rc)}
+.fb-acts{display:flex;gap:2px}
+.fb-acts .eu-iconbtn{width:32px;height:32px}
+.fb-danger{color:var(--fg-3)}.fb-danger:hover{color:var(--danger-fg)}
+.fb-ring{--pct:0;width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--tn) calc(var(--pct) * 1%),var(--bg-raised) 0)}
+.fb-ring b{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg-surface);font:var(--fw-medium) var(--fs-12)/1 var(--font-data);color:var(--tn)}
+@media (max-width:479px){.fb-card--prox .eu-btn{order:5;width:100%}}
+.fb-result{border:0;margin:0;padding:var(--sp-3) 0 0;border-top:1px solid var(--border-subtle);gap:var(--sp-3);min-width:0}
+.fb-result legend{padding:0}
+.fb-fgrid{gap:var(--sp-3)}
+@media (max-width:479px){.fb-card:not(.fb-card--prox){flex-wrap:nowrap;align-items:flex-start}.fb-card:not(.fb-card--prox) .fb-card-main{min-width:0}.fb-card:not(.fb-card--prox) .fb-acts{flex-direction:column}}

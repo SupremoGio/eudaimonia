@@ -11,12 +11,14 @@ Rule hierarchy:
   7. Daily classification: Carbón / Hierro / Oro / Diamante
   8. Hard cap: 3.0× on any multiplier
 """
-from datetime import datetime, timedelta
+import math
+from datetime import date, datetime, timedelta
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES, VIRTUE_CATS
 from modules.gamification.achievements import ACHIEVEMENT_DEFS
 from modules.gamification.icons import lucide_for
 from utils import today_str, today_date
+import modules.actividades.activity_defs as adefs
 
 # ── Level System (10 Stoic Levels — 1 año dedicado = nivel 10) ───────────────
 # Calibrado a 25 XP/día activo × 5 días/semana = nivel 10 en ~52 semanas
@@ -49,14 +51,104 @@ LEVEL_SUBTITLES = {
 # Daily classification thresholds
 CLASSIFICATION = {
     "diamond": {"label": "Diamante", "icon": "💎", "color": "#7dd3fc",
-                "desc": "20+ XP · ≥1 acción alto impacto"},
+                "desc": "Oro + al menos 3 de cada 4 anclas de hoy completas"},
     "gold":    {"label": "Oro",      "icon": "🥇", "color": "#fbbf24",
-                "desc": "16+ XP · ≥3 categorías"},
+                "desc": "Hierro + touches repartidos en el día y en varios pilares"},
     "iron":    {"label": "Hierro",   "icon": "⚔️",  "color": "#94a3b8",
-                "desc": "8–15 XP · ≥2 categorías"},
+                "desc": "Completaste tu ancla del día (o al menos su versión mínima)"},
     "carbon":  {"label": "Carbón",   "icon": "🪨",  "color": "#475569",
-                "desc": "<7 XP o sin acciones de progreso"},
+                "desc": "Aún no completas tu ancla del día"},
 }
+
+# ── Meta de Oro: recalibrada con ciencia del comportamiento ──────────────────
+# La versión original exigía el 50% de TODOS los touches activos definidos en
+# Acta Diurna (ver historial de este archivo). Eso rompía por dos razones:
+#   1. Ley de Goodhart: el umbral crecía cada vez que se agregaba un touch
+#      nuevo (custom o de fase) — trackear más hábitos te alejaba de Oro en
+#      vez de ayudarte, un incentivo perverso contra enriquecer el sistema.
+#   2. Efecto de gradiente de meta (Kivetz, Urminsky & Zheng, 2006): una meta
+#      que sigue lejos incluso tras esfuerzo real (ej. 4/38 → faltan 15) se
+#      percibe como inalcanzable y mata la motivación en vez de acelerarla.
+# La meta nueva usa dos números fijos y pequeños, independientes del tamaño
+# de la librería de touches (a prueba de Goodhart):
+#   - GOLD_MIN_TOUCHES:  un volumen absoluto alcanzable en un día ocupado.
+#   - GOLD_MIN_SESSIONS: cobertura a lo largo del día (mañana/tarde/noche/
+#     cualquier-momento), no un montón de touches fáciles en un solo bloque —
+#     la práctica distribuida a lo largo del día construye el hábito mejor
+#     que la práctica concentrada (distributed practice effect).
+# El hint (_next_rank_hint) nombra el/los bloque(s) concretos que faltan en
+# vez de un conteo abstracto — metas específicas y accionables superan a las
+# vagas (goal-setting theory, Locke & Latham).
+GOLD_MIN_TOUCHES           = 5
+GOLD_MIN_SESSIONS          = 3
+RECOVERY_GOLD_MIN_TOUCHES  = 3
+RECOVERY_GOLD_MIN_SESSIONS = 2
+RECOVERY_HIERRO_TOUCHES    = 2
+
+# ── Variedad de pilares para Oro ─────────────────────────────────────────────
+# Los 5 touches de Oro valen igual sin importar cuáles sean, así que cinco
+# touches fáciles del mismo pilar llegaban a Oro igual que un día repartido
+# de verdad (Goodhart otra vez: se optimiza el conteo, no el hábito). Pedir
+# al menos 2 pilares distintos entre los touches del día refuerza la
+# variedad sin tener que puntuar la dificultad de cada touch (subjetiva y
+# fácil de inflar). Con tope en los pilares que tienen touches hoy.
+GOLD_MIN_PILLARS = 2
+
+# ── Ancla mínima: el día nunca queda "perdido" ──────────────────────────────
+# Antes el ancla era un todo-o-nada: sin la sesión completa el día quedaba en
+# Carbón aunque registraras 10 touches, lo que dispara el efecto "qué más da"
+# (what-the-hell effect, Polivy & Herman): en cuanto el día se siente
+# perdido, se abandona el resto del esfuerzo. Atomic Habits (Clear: la regla
+# de los 2 minutos, "nunca falles dos veces") y Tiny Habits (Fogg) coinciden
+# en que la versión mínima de un hábito es la que mantiene viva la identidad,
+# y Lally et al. (2010) mostraron que un fallo aislado no rompe la formación
+# del hábito — lo que la rompe es encadenar fallos. La versión mínima (ej. 10
+# min de CCNA) se registra como `<key>__min` en activity_logs: da Hierro
+# igual que el ancla completa, pero NO cuenta como ancla hecha para Oro
+# (anclas extra) ni para Diamante, y da solo una fracción del XP.
+ANCLA_MIN_SUFFIX   = "__min"
+ANCLA_MIN_XP_RATIO = 1 / 3
+
+# ── Diamante proporcional a las anclas del día ──────────────────────────────
+# Exigir TODAS las anclas era desigual entre días: un sábado con 2 anclas
+# daba Diamante con 2/2, mientras un lunes con 4 se quedaba en Oro con 3/4
+# pese a ser objetivamente más esfuerzo. Ahora basta el 75% (redondeando
+# hacia arriba), con piso de 2 anclas (o todas si hay menos de 2): 1→1,
+# 2→2, 3→3, 4→3, 5→4.
+DIAMOND_ANCHOR_RATIO = 0.75
+DIAMOND_MIN_ANCHORS  = 2
+
+
+def _diamond_min_anchors(n_anchors):
+    if n_anchors <= 0:
+        return 0
+    return min(n_anchors, max(DIAMOND_MIN_ANCHORS, math.ceil(n_anchors * DIAMOND_ANCHOR_RATIO)))
+
+# ── Meta de Diamante: ligada al sistema de anclas rotativas, no a pilares ────
+# Dos intentos previos de Diamante fallaron por el mismo motivo de fondo —
+# medían algo que no tiene relación con cómo está diseñado el resto de Acta
+# Diurna:
+#   v1: 8 de 8 pilares el mismo día (6 en descarga) — perfección total.
+#   v2: se relajó a 6 de 8 — seguía siendo casi imposible, porque el sistema
+#       de anclas semanales rotativas (Fase 3) REPARTE a propósito los focos
+#       fuertes (CCNA, inglés, francés, lectura de psicología) en días
+#       distintos — nunca coinciden los 8 pilares el mismo día por diseño,
+#       así que exigirlos no medía disciplina, medía una coincidencia de
+#       calendario que casi nunca ocurre.
+# v3 mide lo que sí varía intencionalmente por día: completar TODAS las
+# anclas elegibles hoy (2 en un día tranquilo como sábado, hasta 4 en lunes o
+# viernes — ver eligible_today()/days_of_week). Esto respeta el diseño real
+# del sistema de anclas en vez de competir con él, y sigue el principio de
+# "cobertura de la señal correcta" en vez de una proxy ajena — la métrica
+# que se recompensa (anclas completas) es la métrica que ya representa el
+# esfuerzo fuerte del día, no una aproximación.
+# Diamante = Oro + el 75% de las anclas de hoy (ver DIAMOND_ANCHOR_RATIO).
+_SESSION_ORDER  = ("morning", "afternoon", "night", "any")
+_SESSION_LABELS = {"morning": "Mañana", "afternoon": "Tarde", "night": "Noche", "any": "Cualquier momento"}
+
+
+def _sessions_of(touch_def):
+    return set((touch_def.get("session") or "").split(",")) & set(_SESSION_ORDER)
 
 
 def get_level_info(total_xp):
@@ -206,6 +298,22 @@ def _get_today_keys(today):
         ).fetchall()]
 
 
+# Bloques de ATARAXIA que cierran el combo de fin de semana. Son los mismos
+# bloque_id que siembra database.init_db() en rutina_bloques (refactor
+# Sábado 7 bloques / Domingo 9 bloques); los tests y
+# scripts/pre_deploy_check.py los importan de aquí para no desincronizarse.
+SAT_COMBO_KEYS = frozenset({
+    "sat_bloque1", "sat_gym_bloque", "sat_textiles_bloque",
+    "sat_limpieza_bloque", "sat_bano_bloque", "sat_barrido_bloque",
+})
+SAT_OPTIONAL_KEYS = frozenset({"sat_jugos_bloque"})  # suma XP pero no condiciona el combo
+SUN_COMBO_KEYS = frozenset({
+    "sun_cafe_bloque", "sun_gym_bloque", "sun_nevera_bloque", "sun_comidas_bloque",
+    "sun_guardado_bloque", "sun_planchar_bloque", "sun_planeacion_bloque",
+    "sun_prioridades_bloque", "sun_cierre_bloque",
+})
+
+
 def _check_combo_bonus(today, keys_today):
     cats = {ACTIVITIES[k]["cat"] for k in keys_today if k in ACTIVITIES}
     combos = []
@@ -237,11 +345,7 @@ def _check_combo_bonus(today, keys_today):
         combos.append({"type": "5cats", "icon": "🌟", "name": "5 Virtudes", "description": "Cinco categorías distintas en un día", "xp": 5, "ec": 0})
 
     # Weekend: sábado completo → +4 XP bonus (6 bloques requeridos; Jugos es opcional)
-    sat_keys = {
-        "sat_bloque1", "sat_gym_bloque", "sat_textiles_bloque",
-        "sat_limpieza_bloque", "sat_bano_bloque", "sat_barrido_bloque",
-    }
-    if sat_keys.issubset(set(keys_today)):
+    if SAT_COMBO_KEYS.issubset(set(keys_today)):
         with get_db() as db:
             sat_done = db.execute(
                 "SELECT id FROM xp_ledger WHERE source='bonus' AND description='Combo: Sábado Completo' AND date=?",
@@ -253,12 +357,7 @@ def _check_combo_bonus(today, keys_today):
             combos.append({"type": "sat_complete", "icon": "🔥", "name": "Sábado Completo", "description": "Todos los bloques del sábado completados", "xp": 4, "ec": 2})
 
     # Weekend: domingo completo → +5 XP bonus (9 bloques)
-    sun_keys = {
-        "sun_cafe_bloque", "sun_gym_bloque", "sun_nevera_bloque", "sun_comidas_bloque",
-        "sun_guardado_bloque", "sun_planchar_bloque", "sun_planeacion_bloque",
-        "sun_prioridades_bloque", "sun_cierre_bloque",
-    }
-    if sun_keys.issubset(set(keys_today)):
+    if SUN_COMBO_KEYS.issubset(set(keys_today)):
         with get_db() as db:
             sun_done = db.execute(
                 "SELECT id FROM xp_ledger WHERE source='bonus' AND description='Combo: Domingo Completo' AND date=?",
@@ -274,8 +373,29 @@ def _check_combo_bonus(today, keys_today):
 
 # ── Daily Classification ──────────────────────────────────────────────────────
 
+# Semana del mes (bloques de 7 días, 1-indexed) en la que se relaja el estándar
+# de Oro/Diamante a propósito — ciclo de descanso planeado a nivel sistema, no
+# una decisión manual del usuario cada vez. Configurable.
+RECOVERY_WEEK_OF_MONTH = 4
+
+
+def _is_recovery_week(d):
+    return ((d.day - 1) // 7) + 1 == RECOVERY_WEEK_OF_MONTH
+
+
 def get_daily_classification(date_str=None):
-    today = date_str or today_str()
+    today    = date_str or today_str()
+    d_obj    = date.fromisoformat(today)
+    defs     = adefs.get_active_flat()
+    recovery = _is_recovery_week(d_obj)
+    # Anclas semanales rotativas (Fase 3): solo cuentan en el denominador del
+    # día si están programadas para ese día de la semana — evita que una
+    # ancla de otro día (ej. Francés en lunes) infle "cuántas anclas hay hoy".
+    wd_today       = adefs.DAY_CODES[d_obj.weekday()]
+    defs_today = {k: v for k, v in defs.items() if adefs.eligible_today(v, wd_today, d_obj)}
+    # Día de partido: Gym/GymBook no se exigen y el partido es el ancla.
+    defs_today = {d["key"]: d for d in adefs.ajustar_por_partido(list(defs_today.values()), d_obj)}
+
     with get_db() as db:
         total_xp = db.execute(
             "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=?", (today,)
@@ -284,24 +404,284 @@ def get_daily_classification(date_str=None):
             "SELECT activity_key FROM activity_logs WHERE date=? AND activity_key != 'priority_bonus'",
             (today,)
         ).fetchall()]
+        eury_today = db.execute(
+            "SELECT 1 FROM activity_logs WHERE activity_key='eurythmia_session' AND date=?", (today,)
+        ).fetchone() is not None
 
-    cats       = {ACTIVITIES[k]["cat"] for k in keys if k in ACTIVITIES}
-    has_alto   = any(ACTIVITIES[k].get("tier") == "alto" for k in keys if k in ACTIVITIES)
-    has_progreso = any(ACTIVITIES[k].get("tier") in ("progreso", "alto") for k in keys if k in ACTIVITIES)
+    done_today = [defs[k] for k in keys if k in defs]
 
-    if total_xp >= 20 and has_alto:
-        rank = "diamond"
-    elif total_xp >= 16 and len(cats) >= 3:
-        rank = "gold"
-    elif total_xp >= 8 and len(cats) >= 2 and has_progreso:
+    pillars_today = {d["pillar"] for d in done_today if d["effective_type"] != "ocasional"}
+    if eury_today:
+        pillars_today.add("eury")
+    # Harma queda fuera de la cobertura de Diamante a propósito (no es uno de los 8 pilares)
+    pillars_today &= set(adefs.PILLARS)
+
+    anchor_defs      = [d for d in defs_today.values() if d["effective_type"] == "ancla"]
+    done_anchor_keys = {d["key"] for d in done_today if d["effective_type"] == "ancla"}
+    anchors_done     = len(done_anchor_keys)
+    # Los touches cadence='weekly' (ej. tiempo de calidad, networking) no se
+    # exigen a diario — no cuentan en el conteo de touches del día, solo dan
+    # XP/EC y cobertura de pilar cuando se registran.
+    touch_defs   = [d for d in defs_today.values() if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"]
+    done_touch_keys = {d["key"] for d in done_today if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"}
+    touches_done = len(done_touch_keys)
+
+    # Cobertura de sesiones (mañana/tarde/noche/cualquier-momento) entre los
+    # touches ya registrados hoy — ver nota de GOLD_MIN_SESSIONS arriba.
+    sessions_available = set()
+    for d in touch_defs:
+        sessions_available |= _sessions_of(d)
+    sessions_covered = set()
+    for d in touch_defs:
+        if d["key"] in done_touch_keys:
+            sessions_covered |= _sessions_of(d)
+
+    gold_min_touches  = RECOVERY_GOLD_MIN_TOUCHES  if recovery else GOLD_MIN_TOUCHES
+    gold_min_sessions = min(
+        (RECOVERY_GOLD_MIN_SESSIONS if recovery else GOLD_MIN_SESSIONS),
+        len(sessions_available)
+    )
+    # Anclas extra cuentan para Oro: la 1ª ancla del día ya la exige Hierro,
+    # pero hasta ahora cualquier ancla adicional (días con 2-4 elegibles, ver
+    # nota de Diamante arriba) no daba NINGÚN crédito hacia Oro pese a ser el
+    # touch de mayor esfuerzo del sistema — un usuario podía completar TODAS
+    # sus anclas del día y seguir en Hierro solo por no repartir touches, lo
+    # cual castiga precisamente el esfuerzo que el propio diseño de Diamante
+    # ya trata como la señal fuerte del día ("anclas completas"). Cada ancla
+    # extra descuenta 1 touch y 1 sesión exigidos para Oro (piso de 1 en
+    # ambos): sigue haciendo falta repartir esfuerzo en el día para llegar a
+    # Oro, pero ya no se ignora lo que sí hiciste con tus anclas.
+    extra_anchors = max(0, anchors_done - 1) if anchor_defs else 0
+    if extra_anchors:
+        gold_min_touches  = max(1, gold_min_touches - extra_anchors)
+        if sessions_available:
+            gold_min_sessions = max(1, gold_min_sessions - extra_anchors)
+    # Variedad de pilares para Oro — ver nota de GOLD_MIN_PILLARS arriba. Con
+    # tope en los pilares que de verdad tienen touches hoy, y en los touches
+    # exigidos (si las anclas extra bajaron la meta a 1 touch, no se piden 2
+    # pilares distintos con ese único touch).
+    pillars_available = {d["pillar"] for d in touch_defs}
+    touch_pillars     = {d["pillar"] for d in touch_defs if d["key"] in done_touch_keys}
+    gold_min_pillars  = min(GOLD_MIN_PILLARS, len(pillars_available), gold_min_touches)
+
+    # Ancla mínima — ver nota de ANCLA_MIN_SUFFIX arriba. Solo cuenta si esa
+    # ancla está programada hoy y su versión completa no está registrada.
+    anchor_keys_today = {d["key"] for d in anchor_defs}
+    min_anchor_keys = {
+        k[:-len(ANCLA_MIN_SUFFIX)] for k in keys if k.endswith(ANCLA_MIN_SUFFIX)
+    } & anchor_keys_today - done_anchor_keys
+
+    # En semana de descarga, Hierro también se alcanza solo con touches —
+    # "menos anclas exigidas" — sin necesidad de completar la sesión larga.
+    hierro_ok = (not anchor_defs) or (anchors_done >= 1) or bool(min_anchor_keys) or (
+        recovery and touch_defs and touches_done >= RECOVERY_HIERRO_TOUCHES
+    )
+
+    anchors_done_today = len(done_anchor_keys & anchor_keys_today)
+    diamond_min_anchors = _diamond_min_anchors(len(anchor_defs))
+
+    rank = "carbon"
+    if hierro_ok:
         rank = "iron"
-    else:
-        rank = "carbon"
+        gold_ok = (touches_done >= gold_min_touches
+                   and len(sessions_covered) >= gold_min_sessions
+                   and len(touch_pillars) >= gold_min_pillars)
+        if not touch_defs or gold_ok:
+            rank = "gold"
+            if anchors_done_today >= diamond_min_anchors:
+                rank = "diamond"
 
     info = CLASSIFICATION[rank].copy()
     info["icon_lucide"] = lucide_for(info["icon"])
-    info.update({"rank": rank, "xp": total_xp, "cats": len(cats), "has_alto": has_alto})
+    info.update({
+        "rank": rank, "xp": total_xp,
+        "cats": len(pillars_today), "pillars": sorted(pillars_today),
+        "anchors_done": anchors_done, "anchors_total": len(anchor_defs),
+        "touches_done": touches_done, "touches_total": len(touch_defs),
+        "sessions_covered": len(sessions_covered), "sessions_available": len(sessions_available),
+        "pillars_covered": len(touch_pillars), "pillars_min": gold_min_pillars,
+        "anchors_min": sorted(min_anchor_keys),
+        "diamond_min_anchors": diamond_min_anchors,
+        "recovery_week": recovery,
+        "next_hint": _next_rank_hint(
+            rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
+            sessions_covered, sessions_available, gold_min_sessions,
+            touch_pillars, gold_min_pillars, diamond_min_anchors
+        ),
+        "next_pct": _next_rank_pct(
+            rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
+            sessions_covered, gold_min_sessions, recovery,
+            touch_pillars, gold_min_pillars, diamond_min_anchors
+        ),
+    })
     return info
+
+
+_WEEKDAY_LABELS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+_RANK_POINTS        = {"carbon": 0, "iron": 1, "gold": 2, "diamond": 3}
+_WEEKLY_DESC = {
+    "diamond": "Semana de nivel máximo: la mayoría de tus días fueron Oro o Diamante.",
+    "gold":    "Buena semana: cumpliste tus anclas y touches con constancia.",
+    "iron":    "Semana sólida: completaste tu ancla casi todos los días, pero faltó volumen para Oro.",
+    "carbon":  "Semana floja: la mayoría de los días no llegaste a completar tu ancla.",
+}
+
+
+def get_weekly_classification(monday_str):
+    """Agrega get_daily_classification() sobre los 7 días lunes→domingo que
+    empiezan en `monday_str` — mismo esquema Carbón/Hierro/Oro/Diamante que
+    ya existe por día, aplicado a la semana completa, más el detalle día por
+    día para poder mostrar "qué hiciste cada día de esta semana".
+    Días futuros dentro del rango (semana en curso) se marcan future=True y
+    no cuentan para el promedio."""
+    monday = date.fromisoformat(monday_str)
+    today  = today_date()
+
+    days = []
+    rank_counts  = {"carbon": 0, "iron": 0, "gold": 0, "diamond": 0}
+    total_points = 0
+    total_xp     = 0
+
+    for i in range(7):
+        d     = monday + timedelta(days=i)
+        d_str = d.isoformat()
+        if d > today:
+            days.append({"date": d_str, "weekday": _WEEKDAY_LABELS_ES[i], "future": True, "rank": None})
+            continue
+        info = get_daily_classification(d_str)
+        rank_counts[info["rank"]] += 1
+        total_points += _RANK_POINTS[info["rank"]]
+        total_xp     += info["xp"]
+        days.append({
+            "date": d_str, "weekday": _WEEKDAY_LABELS_ES[i], "future": False,
+            "rank": info["rank"], "label": info["label"], "icon": info["icon"],
+            "icon_lucide": info["icon_lucide"], "color": info["color"], "xp": info["xp"],
+            "anchors_done": info["anchors_done"], "anchors_total": info["anchors_total"],
+            "touches_done": info["touches_done"], "touches_total": info["touches_total"],
+        })
+
+    evaluated  = sum(1 for d in days if not d["future"])
+    avg_points = (total_points / evaluated) if evaluated else 0.0
+
+    if evaluated == 0:
+        weekly_rank = "carbon"
+    elif avg_points >= 2.5:
+        weekly_rank = "diamond"
+    elif avg_points >= 1.75:
+        weekly_rank = "gold"
+    elif avg_points >= 1.0:
+        weekly_rank = "iron"
+    else:
+        weekly_rank = "carbon"
+
+    info = CLASSIFICATION[weekly_rank].copy()
+    info["icon_lucide"] = lucide_for(info["icon"])
+    info.update({
+        "rank": weekly_rank,
+        "desc": _WEEKLY_DESC[weekly_rank],
+        "pct": round(avg_points / 3 * 100) if evaluated else 0,
+        "avg_points": round(avg_points, 2),
+        "rank_counts": rank_counts,
+        "days": days,
+        "days_evaluated": evaluated,
+        "total_xp": total_xp,
+    })
+    return info
+
+
+# La clasificación diaria depende de anclas/touches/pilares cubiertos, no del
+# XP acumulado — este hint se calcula aquí (no en el cliente) para que el
+# widget de "Clasificación de hoy" nunca muestre una meta de XP inventada que
+# no corresponde a la regla real de ascenso de rango.
+def _condensa(names, conj):
+    # Temprano en el día pueden faltar 5-7 anclas a la vez -- unirlas todas
+    # producía una oración de varias líneas en la tarjeta móvil. Con más de 2
+    # se condensa a las primeras dos + contador.
+    if len(names) <= 2:
+        return f" {conj} ".join(names)
+    return f"{names[0]}, {names[1]} {conj} {len(names) - 2} más"
+
+
+def _plural(n, word, suf="es"):
+    return f"{n} {word}{suf if n != 1 else ''}"
+
+
+def _next_rank_hint(rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
+                     sessions_covered, sessions_available, gold_min_sessions,
+                     touch_pillars=(), gold_min_pillars=0, diamond_min_anchors=None):
+    if diamond_min_anchors is None:
+        diamond_min_anchors = len(anchor_defs)
+    if rank == "diamond":
+        return "✦ Diamante alcanzado"
+    if rank == "gold":
+        missing_anchors = [a for a in anchor_defs if a["key"] not in done_anchor_keys]
+        faltan = diamond_min_anchors - (len(anchor_defs) - len(missing_anchors))
+        if not missing_anchors or faltan <= 0:
+            return "Diamante alcanzado"
+        names = [a["label"] for a in missing_anchors]
+        if faltan >= len(names):
+            return f"Completa {_condensa(names, 'y')} → Diamante"
+        # Diamante proporcional: no hacen falta todas, cualquiera de las que faltan sirve.
+        return f"Completa {_plural(faltan, 'ancla', 's')} más ({_condensa(names, 'o')}) → Diamante"
+    if rank == "iron":
+        faltan_touches  = max(0, gold_min_touches - touches_done)
+        faltan_sesiones = max(0, gold_min_sessions - len(sessions_covered))
+        faltan_pilares  = max(0, gold_min_pillars - len(touch_pillars))
+        if not touch_defs or (faltan_touches <= 0 and faltan_sesiones <= 0 and faltan_pilares <= 0):
+            return "Oro alcanzado"
+        partes = []
+        if faltan_touches > 0:
+            # Si también faltan pilares, se dice en la misma frase para que el
+            # hint quepa en la tarjeta móvil.
+            if faltan_pilares > 0:
+                partes.append(f"registra {_plural(faltan_touches, 'touch')} en {gold_min_pillars}+ pilares")
+            else:
+                partes.append(f"registra {_plural(faltan_touches, 'touch')}" + ("" if faltan_sesiones else " más"))
+        elif faltan_pilares > 0:
+            partes.append("suma un touch de otro pilar" if faltan_pilares == 1
+                          else f"suma touches de {faltan_pilares} pilares más")
+        if faltan_sesiones > 0:
+            missing = [s for s in _SESSION_ORDER if s in sessions_available and s not in sessions_covered]
+            labels = " y ".join(_SESSION_LABELS[s] for s in missing[:faltan_sesiones])
+            partes.append(f"toca {labels}" if labels else f"cubre {_plural(faltan_sesiones, 'sesión', '')} más")
+        txt = " y ".join(partes)
+        return f"{txt[0].upper()}{txt[1:]} → Oro"
+    # carbon
+    if anchor_defs:
+        return "Completa tu ancla del día (o su versión mínima) → Hierro"
+    return "Registra una actividad de hoy → Hierro"
+
+
+# Progreso (0-100) hacia el SIGUIENTE rango — refleja el cuello de botella real
+# (ej. en Hierro→Oro, el mínimo entre touches, sesiones y pilares cubiertos,
+# porque todos son requisitos y el que va más atrás es el que de verdad te
+# frena). Esto es lo que llena la barra visual junto al hint: la tarjeta deja
+# de mostrar solo "en qué rango estás" y muestra "qué tan cerca estás del que sigue".
+def _next_rank_pct(rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
+                    sessions_covered, gold_min_sessions, recovery,
+                    touch_pillars=(), gold_min_pillars=0, diamond_min_anchors=None):
+    if diamond_min_anchors is None:
+        diamond_min_anchors = len(anchor_defs)
+    if rank == "diamond":
+        return 100
+    if rank == "gold":
+        if not anchor_defs or not diamond_min_anchors:
+            return 100
+        done = len({a["key"] for a in anchor_defs} & set(done_anchor_keys))
+        return round(100 * min(1.0, done / diamond_min_anchors))
+    if rank == "iron":
+        if not touch_defs:
+            return 100
+        touch_frac  = min(1.0, touches_done / gold_min_touches) if gold_min_touches else 1.0
+        sess_frac   = min(1.0, len(sessions_covered) / gold_min_sessions) if gold_min_sessions else 1.0
+        pillar_frac = min(1.0, len(touch_pillars) / gold_min_pillars) if gold_min_pillars else 1.0
+        return round(100 * min(touch_frac, sess_frac, pillar_frac))
+    # carbon — el ancla es un evento binario (no hay "medio ancla"), así que
+    # el % real es 0 hasta que se completa (o su versión mínima); el hint de
+    # arriba es lo accionable.
+    if recovery and touch_defs:
+        return round(100 * min(1.0, touches_done / RECOVERY_HIERRO_TOUCHES))
+    return 0
 
 
 # ── Achievement stats + unlock ────────────────────────────────────────────────
@@ -570,9 +950,11 @@ def get_gamification_stats():
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def process_activity(key, pts, cat, log_id):
+def process_activity(key, pts, cat, log_id, ec=None):
     streak  = get_gamification_streak()
-    ec      = ACTIVITIES.get(key, {}).get("ec", 0)
+    if ec is None:
+        act_def = adefs.get_by_key(key)
+        ec      = act_def["ec"] if act_def else ACTIVITIES.get(key, {}).get("ec", 0)
 
     xp_mult  = _compute_xp_mult(cat, streak)
     final_xp = max(1, int(pts * xp_mult))
@@ -731,6 +1113,41 @@ def process_gtd_task(task_id, priority):
         "coins":       coins,
         "achievements": new_ach,
         "stats":       get_gamification_stats(),
+    }
+
+
+# Importar un estado de cuenta es la acción que mantiene viva la sección
+# Oikonomia: reconciliar movimientos reales en vez de dejarlos sin registrar.
+# Fija (no por transacción) para no premiar subir el mismo PDF trozado en
+# muchas partes — solo se otorga cuando el import trajo movimientos NUEVOS
+# (ver `inserted` en estados/routes.py), así que re-subir un archivo ya
+# importado no genera XP/EC de más. "progreso" tier, a la par de
+# registrar_gastos (2/1) pero un poco más alto por cubrir todo un periodo
+# de una sola vez en vez de una transacción suelta.
+IMPORT_ESTADO_XP = 4
+IMPORT_ESTADO_EC = 2
+
+
+def process_estado_import(inserted_count, bank=None):
+    streak   = get_gamification_streak()
+    xp_mult  = _compute_xp_mult('Finanzas', streak)
+    final_xp = max(1, int(IMPORT_ESTADO_XP * xp_mult))
+
+    desc = "Importar estado de cuenta" + (f" ({bank})" if bank else "")
+    _award_xp(final_xp, "import", desc, None, xp_mult)
+    _award_coins(IMPORT_ESTADO_EC, "import", desc, None, 1.0)
+
+    new_ach    = check_and_unlock()
+    new_badges = _check_badges_safe()
+
+    return {
+        "xp":           final_xp,
+        "ec":           IMPORT_ESTADO_EC,
+        "xp_mult":      xp_mult,
+        "inserted":     inserted_count,
+        "achievements": new_ach,
+        "badges":       new_badges,
+        "stats":        get_gamification_stats(),
     }
 
 

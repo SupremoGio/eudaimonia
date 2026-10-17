@@ -45,6 +45,83 @@ SCIENCE = [
 _GRABADO_KEY = "eurythmia_grabado"
 _SESSION_KEY = "eurythmia_session"
 _GRABADO_XP  = 3
+_GRABADO_EC  = 1
+
+# ── Racha de días bailando — bono único al alcanzar el hito (no se repite
+# hasta que la racha se rompe y se vuelve a formar otra vez) ────────────────
+_STREAK_EC_BONUS = {3: 2, 7: 3, 14: 5, 30: 8}
+
+
+def _session_ec(minutes, flow):
+    """EC de una sesión de práctica: antes era 1 fijo sin importar duración o
+    fluidez. Ahora premia la calidad del movimiento (flow, 1-5, ya capturado
+    en cada sesión) y la dedicación (sesiones largas), en vez de dar lo mismo
+    por 10 minutos trabados que por 45 en la música."""
+    ec = 0
+    if flow >= 5:
+        ec += 2      # despelote total
+    elif flow >= 3:
+        ec += 1      # fluido / en la música
+    if minutes >= 45:
+        ec += 1      # sesión larga, dedicación real
+    return ec
+
+
+def _maybe_award_dance_streak(streak, today):
+    """Bono de EC al alcanzar un hito de racha de días bailando seguidos.
+    Se da una sola vez el día en que se alcanza cada hito (dedupe por fecha)."""
+    bonus_ec = _STREAK_EC_BONUS.get(streak)
+    if not bonus_ec:
+        return None
+    key = f"eurythmia_streak_{streak}"
+    with get_db() as db:
+        if db.execute(
+            "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (key, today)
+        ).fetchone():
+            return None
+        cur = db.execute(
+            "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+            (key, today, 0)
+        )
+        log_id = cur.lastrowid
+        db.commit()
+    return engine.process_activity(key, 0, 'Baile', log_id, ec=bonus_ec)
+
+
+# ── Música — 100 mejores álbumes ──────────────────────────────────────────────
+_ALBUM_XP = 5
+_ALBUM_EC = 2
+
+RATING_DIMS = [
+    {"key": "sonido",        "label": "Producción"},
+    {"key": "letras",        "label": "Composición"},
+    {"key": "consistencia",  "label": "Consistencia"},
+    {"key": "replay",        "label": "Replay value"},
+]
+
+
+def _compute_mi_rating(row):
+    vals = [row[f"rating_{d['key']}"] for d in RATING_DIMS if row[f"rating_{d['key']}"] is not None]
+    if not vals:
+        return None
+    return round(sum(vals) / len(vals), 1)
+
+
+def _musica_state():
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM eury_albums ORDER BY rank").fetchall()
+    albumes = [dict(r) for r in rows]
+    escuchados = [a for a in albumes if a["escuchado"]]
+    ranking = sorted(
+        [a for a in escuchados if a["mi_rating"] is not None],
+        key=lambda a: (-a["mi_rating"], a["rank"])
+    )
+    return {
+        "albumes":       albumes,
+        "total":         len(albumes),
+        "escuchados_n":  len(escuchados),
+        "ranking":       ranking,
+    }
 
 
 def _split_minutes(total):
@@ -130,6 +207,8 @@ def index():
         'eurythmia/index.html',
         phases=PHASES, levels=LEVELS, flow_labels=FLOW_LABELS, science=SCIENCE,
         state=_state(),
+        musica=_musica_state(),
+        rating_dims=RATING_DIMS,
     )
 
 
@@ -187,7 +266,7 @@ def api_session():
         session_id = cur2.lastrowid
         db.commit()
 
-    gam = engine.process_activity(_SESSION_KEY, xp, 'Baile', log_id)
+    gam = engine.process_activity(_SESSION_KEY, xp, 'Baile', log_id, ec=_session_ec(minutes, flow))
 
     grabado_gam = None
     if grabado:
@@ -202,11 +281,13 @@ def api_session():
                 )
                 grabado_log_id = cur3.lastrowid
                 db.commit()
-                grabado_gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', grabado_log_id)
+                grabado_gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', grabado_log_id, ec=_GRABADO_EC)
+
+    streak_gam = _maybe_award_dance_streak(_eury_streak(), today)
 
     return jsonify({
         'ok': True, 'session_id': session_id, 'xp': xp,
-        'gam': gam, 'grabado_gam': grabado_gam,
+        'gam': gam, 'grabado_gam': grabado_gam, 'streak_gam': streak_gam,
         'state': _state(),
     })
 
@@ -231,8 +312,85 @@ def api_grabado_toggle():
         log_id = cur.lastrowid
         db.commit()
 
-    gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', log_id)
+    gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', log_id, ec=_GRABADO_EC)
     return jsonify({'action': 'added', 'gam': gam, 'state': _state()})
+
+
+@eurythmia_bp.route('/api/album/<int:album_id>', methods=['POST'])
+def api_album_update(album_id):
+    data = request.get_json(silent=True) or {}
+
+    with get_db() as db:
+        row = db.execute("SELECT * FROM eury_albums WHERE id=?", (album_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'not found'}), 404
+    row = dict(row)
+
+    was_escuchado = bool(row['escuchado'])
+    escuchado = bool(data.get('escuchado', was_escuchado))
+
+    ratings = {}
+    for d in RATING_DIMS:
+        key = f"rating_{d['key']}"
+        val = data.get(key, row[key])
+        if val not in (None, ''):
+            try:
+                val = int(val)
+            except (TypeError, ValueError):
+                return jsonify({'error': f'invalid {key}'}), 400
+            if val < 1 or val > 10:
+                return jsonify({'error': f'invalid {key}'}), 400
+        else:
+            val = None
+        ratings[key] = val
+
+    mi_rating = _compute_mi_rating(ratings)
+    notas = str(data.get('notas', row['notas']) or '')[:500]
+    escuchado_at = row['escuchado_at']
+    rating_cols = list(ratings.keys())
+    rating_vals = [ratings[k] for k in rating_cols]
+
+    gam = None
+    with get_db() as db:
+        if escuchado and not was_escuchado:
+            escuchado_at = datetime.now().isoformat()
+            today = today_str()
+            cur = db.execute(
+                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                (f"eury_album_{album_id}", today, _ALBUM_XP)
+            )
+            log_id = cur.lastrowid
+            db.execute(
+                f"UPDATE eury_albums SET escuchado=1, mi_rating=?, notas=?, escuchado_at=?, "
+                f"{', '.join(f'{c}=?' for c in rating_cols)} WHERE id=?",
+                (mi_rating, notas, escuchado_at, *rating_vals, album_id)
+            )
+            db.commit()
+            gam = engine.process_activity(f"eury_album_{album_id}", _ALBUM_XP, 'Música', log_id, ec=_ALBUM_EC)
+        elif not escuchado and was_escuchado:
+            db.execute(
+                f"UPDATE eury_albums SET escuchado=0, mi_rating=NULL, notas=?, escuchado_at=NULL, "
+                f"{', '.join(f'{c}=NULL' for c in rating_cols)} WHERE id=?",
+                (notas, album_id)
+            )
+            db.commit()
+            log_row = db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? ORDER BY id DESC LIMIT 1",
+                (f"eury_album_{album_id}",)
+            ).fetchone()
+            if log_row:
+                db.execute("DELETE FROM activity_logs WHERE id=?", (log_row['id'],))
+                db.commit()
+                gam = engine.remove_activity(log_row['id'])
+        else:
+            db.execute(
+                f"UPDATE eury_albums SET mi_rating=?, notas=?, "
+                f"{', '.join(f'{c}=?' for c in rating_cols)} WHERE id=?",
+                (mi_rating, notas, *rating_vals, album_id)
+            )
+            db.commit()
+
+    return jsonify({'ok': True, 'gam': gam, 'musica': _musica_state()})
 
 
 @eurythmia_bp.route('/api/drill', methods=['POST'])

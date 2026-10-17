@@ -21,6 +21,38 @@ def today_date():
     return now_local().date()
 
 
+def uploads_base_dir() -> str:
+    """Directorio base para archivos subidos por el usuario (fotos, docs).
+
+    Prioridad: UPLOADS_DIR env var > directorio de DATABASE_PATH (Railway
+    Volume — así los uploads persisten entre deploys igual que la DB, que
+    ya usa ese mismo volumen) > gio_v3/uploads local (dev, gitignored).
+    Sin esto, en Railway cada redeploy crea un contenedor con filesystem
+    nuevo y los uploads (guardados hasta ahora en una ruta relativa al
+    código, fuera del volumen) desaparecían aunque la DB sí persistiera.
+
+    IMPORTANTE: se usa el MISMO directorio que contiene el archivo de
+    DATABASE_PATH, no un subdirectorio "uploads" dentro de él. En el volumen
+    real de Railway de este proyecto, DATABASE_PATH ya apunta a
+    /app/uploads/pipeline.db (el volumen se llama "uploads"), y las
+    subcarpetas de cada módulo (wardrobe/, docs/, harma/, etc.) viven
+    directamente ahí -- /app/uploads/wardrobe/... Unir un "uploads" extra
+    aquí generaba /app/uploads/uploads/wardrobe, una ruta que nunca existió
+    y que hacía que TODAS las fotos ya subidas se vieran rotas en la app
+    aunque los archivos originales seguían intactos en el volumen
+    (confirmado 2026-09-22 vía /guardarropa/admin/audit-fotos: 89/89
+    fotos "perdidas" aparecieron en /app/uploads/wardrobe/, un nivel
+    arriba de donde el código las buscaba).
+    """
+    env_dir = os.environ.get("UPLOADS_DIR")
+    if env_dir:
+        return env_dir
+    db_path = os.environ.get("DATABASE_PATH")
+    if db_path:
+        return os.path.dirname(os.path.abspath(db_path))
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
+
+
 def clean_str(value, max_len: int = 500) -> str:
     """Strip whitespace and truncate to max_len. Returns '' for None."""
     if value is None:
@@ -41,3 +73,48 @@ def safe_float(value, default: float = 0.0, min_val=None, max_val: float = 10_00
     if max_val is not None and f > max_val:
         return default
     return f
+
+
+def csv_response(header, rows, filename):
+    """Descarga CSV lista para Excel/Sheets: UTF-8 con BOM (sin él Excel
+    lee ANSI y rompe los acentos) y números sin separador de miles."""
+    import csv, io
+    from flask import Response
+    out = io.StringIO()
+    w = csv.writer(out)
+    w.writerow(header)
+    w.writerows(rows)
+    return Response(
+        '﻿' + out.getvalue(),
+        headers={
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': f'attachment; filename="{filename}"',
+        },
+    )
+
+
+# Fotos subidas desde el celular (Guardarropa, Plantas): se muestran como
+# miniaturas, así que guardarlas tal cual salen de la cámara (varios MB) hace
+# que tarden segundos en cargar. Se re-comprimen a JPEG con lado máximo 1600px.
+_MAX_PHOTO_DIM = 1600
+_PHOTO_QUALITY = 85
+
+
+def optimize_photo(data: bytes, dest_path: str, max_dim: int = _MAX_PHOTO_DIM) -> bool:
+    """Redimensiona/comprime `data` como JPEG en `dest_path`. True si tuvo éxito.
+    Falla en formatos que Pillow no puede decodificar de raíz (p.ej. HEIC sin
+    plugin) — el llamador debe guardar los bytes originales en ese caso."""
+    import io
+    import logging
+    from PIL import Image, ImageOps
+    try:
+        img = Image.open(io.BytesIO(data))
+        img = ImageOps.exif_transpose(img)  # corrige la orientación de fotos de celular
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+        img.save(dest_path, 'JPEG', quality=_PHOTO_QUALITY, optimize=True)
+        return True
+    except Exception as e:
+        logging.getLogger(__name__).warning('No se pudo optimizar la foto, se guarda el original: %s', e)
+        return False

@@ -243,23 +243,6 @@ def logros():
     for b in badges:
         b["icon_lucide"] = lucide_for(b["icon"])
 
-    # 90-day activity heatmap
-    _hm_days = 90
-    _hm_end   = today_date()
-    _hm_start = _hm_end - timedelta(days=_hm_days - 1)
-    with get_db() as db:
-        _hm_rows = db.execute(
-            "SELECT date, SUM(pts) as xp FROM activity_logs "
-            "WHERE date>=? GROUP BY date",
-            (_hm_start.isoformat(),)
-        ).fetchall()
-    _hm_by_date = {r['date']: r['xp'] for r in _hm_rows}
-    heatmap = [
-        {'date': (_hm_start + timedelta(days=i)).isoformat(),
-         'xp':   _hm_by_date.get((_hm_start + timedelta(days=i)).isoformat(), 0)}
-        for i in range(_hm_days)
-    ]
-
     # Last 7 days classification history
     history = []
     for i in range(6, -1, -1):
@@ -267,7 +250,7 @@ def logros():
         cl = get_daily_classification(d.isoformat())
         history.append({
             "date":        d.isoformat(),
-            "label":       d.strftime("%a %d"),
+            "label":       "{} {}".format("LMXJVSD"[d.weekday()], d.day),
             "rank":        cl["rank"],
             "icon":        cl["icon"],
             "icon_lucide": lucide_for(cl["icon"]),
@@ -280,7 +263,52 @@ def logros():
         for k, v in TIER_LABELS.items()
     }
 
+    # ── Datos V2 (Design System · pantalla 04) ──────────────────────────────
+    from modules.gamification.engine import LEVEL_THRESHOLDS, LEVEL_SUBTITLES
+    lvl, total = stats["level"], stats["total_xp"]
+    levels = []
+    for i, (threshold, n, name) in enumerate(LEVEL_THRESHOLDS):
+        state = "past" if n < lvl else ("now" if n == lvl else "next")
+        fill = 100 if n < lvl else (stats["level_pct"] if n == lvl else 0)
+        levels.append({"n": n, "name": name, "xp": threshold, "state": state, "fill": fill})
+    max_xp = LEVEL_THRESHOLDS[-1][0]
+
+    rarity_of = {"bronze": "bronce", "silver": "plata", "gold": "oro", "diamond": "especial"}
+    for b in badges:
+        b["rarity"] = rarity_of.get(b["tier"], "bronce")
+        b["days_left"] = None
+        if b["perk_active"] and b.get("perks_active_until"):
+            try:
+                b["days_left"] = (datetime.fromisoformat(b["perks_active_until"][:10]).date() - today_date()).days + 1
+            except ValueError:
+                pass
+    perks = [b for b in badges if b["perk_active"]]
+
+    # Días Diamante de los últimos 30 (la clasificación es por día)
+    diamond_30 = sum(
+        1 for i in range(30)
+        if get_daily_classification((today_date() - timedelta(days=i)).isoformat())["rank"] == "diamond"
+    )
+
+    # Heatmap V2: 13 semanas lunes→domingo (≈ los 90 días de antes)
+    _end = today_date()
+    _start = _end - timedelta(days=_end.weekday()) - timedelta(weeks=12)
+    with get_db() as db:
+        _rows = db.execute(
+            "SELECT date, SUM(pts) AS xp FROM activity_logs WHERE date>=? AND date<=? GROUP BY date",
+            (_start.isoformat(), _end.isoformat())
+        ).fetchall()
+    _by = {r["date"]: r["xp"] or 0 for r in _rows}
+    heat = []
+    for i in range(13 * 7):
+        d = _start + timedelta(days=i)
+        v = _by.get(d.isoformat(), 0)
+        heat.append({"date": d.isoformat(), "xp": v, "today": d == _end, "future": d > _end,
+                     "l": 0 if v <= 0 else 1 if v < 8 else 2 if v < 15 else 3 if v < 20 else 4})
+
     return render_template('gamification/logros.html',
+        levels=levels, max_xp=max_xp, level_quote=LEVEL_SUBTITLES.get(lvl, ""),
+        perks=perks, diamond_30=diamond_30, heat=heat,
         stats=stats,
         classification=classification,
         achievements=achievements,
@@ -288,7 +316,6 @@ def logros():
         tier_labels=tier_labels,
         xp_log=[dict(r) for r in xp_log],
         history=history,
-        heatmap=heatmap,
     )
 
 

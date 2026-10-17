@@ -31,6 +31,9 @@ HORARIOS = {
     "sat_cocina_r":     "Mañana · 10 min",
     "sat_despensa":     "Mañana · 20 min",
     "sat_carga1":       "Antes del gym",
+    "sat_robot_sala":   "Mañana · 5 min",
+    "sat_robot_cuarto": "Mañana · 5 min",
+    "sat_basura":       "Mañana · 5 min",
     "sat_bano_vidrio":  "Tarde · 4 min",
     "sat_bano_espejo":  "Tarde · 3 min",
     "sat_bano_lavabo":  "Tarde · 4 min",
@@ -95,6 +98,224 @@ def get_semana_id():
     dias_desde_sabado = (hoy.weekday() - 5) % 7
     sabado = hoy - timedelta(days=dias_desde_sabado)
     return sabado.isoformat()
+
+
+# ── Revisión Semanal Objetiva ─────────────────────────────────────────────────
+# Métricas de entrada manual (sin integración automática con Apple Health,
+# Kindle ni redes sociales) — cada una declara su dirección "mejor" para
+# poder colorear el delta contra la semana anterior sin subjetividad.
+
+REVISION_METRICS = [
+    {"key": "dias_lectura",      "label": "Lectura (Kindle)",    "unit": "días",   "icon": "book-open",   "direction": "up",   "step": "1",   "min": "0", "max": "7",    "placeholder": "0–7"},
+    {"key": "horas_sueno",       "label": "Sueño promedio",      "unit": "h/noche","icon": "moon",        "direction": "up",   "step": "any", "min": "0", "max": "12",   "placeholder": "7.5"},
+    {"key": "presupuesto_pct",   "label": "Presupuesto usado",   "unit": "%",      "icon": "landmark",    "direction": "down", "step": "any", "min": "0", "max": "300",  "placeholder": "85"},
+    {"key": "calorias_quemadas", "label": "Calorías quemadas",   "unit": "kcal/d", "icon": "flame",       "direction": "up",   "step": "1",   "min": "0", "max": "6000", "placeholder": "2200"},
+    {"key": "pasos_promedio",    "label": "Pasos promedio",      "unit": "pasos/d","icon": "footprints",  "direction": "up",   "step": "1",   "min": "0", "max": "30000","placeholder": "8000"},
+    {"key": "screen_time_horas", "label": "Pantalla en redes",   "unit": "h/día",  "icon": "smartphone",  "direction": "down", "step": "any", "min": "0", "max": "12",   "placeholder": "1.5"},
+]
+
+
+def _prev_semana_id(semana_id):
+    d = date.fromisoformat(semana_id)
+    return (d - timedelta(days=7)).isoformat()
+
+
+def _get_revision_row(semana_id):
+    with get_db() as db:
+        row = db.execute("SELECT * FROM revision_semanal WHERE semana_id=?", (semana_id,)).fetchone()
+    return dict(row) if row else None
+
+
+# ── Prioridades de la semana (ritual dominical) ───────────────────────────────
+# semana_id es el sábado del ciclo (ver get_semana_id); las 3 prioridades que
+# se capturan aquí gobiernan la semana laboral que arranca el lunes siguiente
+# a ese sábado, no la que ya terminó — por eso +2 días, no -5 como en
+# get_weekly_classification (que sí mira la semana retrospectiva).
+
+def _semana_siguiente_dias(semana_id):
+    lunes = date.fromisoformat(semana_id) + timedelta(days=2)
+    return [(lunes + timedelta(days=i)).isoformat() for i in range(7)]
+
+
+def _get_weekly_priorities(semana_id):
+    with get_db() as db:
+        row = db.execute("SELECT * FROM weekly_priorities WHERE semana_id=?", (semana_id,)).fetchone()
+    return dict(row) if row else {}
+
+
+def _fmt_num(v):
+    if v is None:
+        return ""
+    return str(int(v)) if v == int(v) else str(v)
+
+
+# ── Análisis de Élite ──────────────────────────────────────────────────────────
+# Lectura cuantitativa de la semana: combina el rango semanal ya calculado por
+# el motor de gamificación (get_weekly_classification) con las métricas de
+# bienestar de esta misma Revisión Semanal, y entrega un veredicto + plan de
+# acción concreto para la siguiente — el mismo ritmo semana-a-semana del
+# sistema de niveles (~52 semanas/año, ver engine.LEVEL_THRESHOLDS), pero
+# aterrizado en "qué hago distinto la próxima semana" en vez de solo XP.
+# Todo es determinista (sin IA) para que el "veredicto" sea 100% trazable a
+# los datos — cuantitativo de verdad, no una narrativa inventada.
+_RANK_ORDER = ["carbon", "iron", "gold", "diamond"]
+
+_VERDICT_COPY = {
+    "diamond": {
+        "title": "Semana ÉLITE — Diamante",
+        "body":  "La mayoría de tus días fueron Oro o Diamante: es exactamente el nivel de consistencia que compone. Sostenlo unas semanas más y deja de sentirse como esfuerzo — se vuelve identidad.",
+    },
+    "gold": {
+        "title": "Semana sólida — Oro",
+        "body":  "Cumpliste tus anclas con constancia y sumaste volumen real de touches. Lo que te separa de Diamante no es más esfuerzo, es cobertura: cerrar el 100% de tus anclas los días que ya estás en Oro.",
+    },
+    "iron": {
+        "title": "Semana base — Hierro",
+        "body":  "Completaste el mínimo casi todos los días, pero sin profundidad. Esto mantiene la racha viva — no construye margen. El salto a Oro está en repartir touches a lo largo del día, no en sumar más anclas.",
+    },
+    "carbon": {
+        "title": "Semana de alerta — Carbón",
+        "body":  "La mayoría de los días no llegaste ni a tu ancla mínima. Antes de pensar en Oro o Diamante, la única prioridad real es asegurar Hierro todos los días de la próxima semana.",
+    },
+}
+
+_WELLNESS_ABS_FLAGS = [
+    ("horas_sueno",       lambda v: v < 7,    lambda v: f"Sueño promedio de {v:g}h — bajo el mínimo de 7h. Es la palanca con más impacto directo en tu rendimiento diario."),
+    ("screen_time_horas", lambda v: v >= 3.5, lambda v: f"Pantalla en redes en {v:g}h/día — por encima del umbral de tu propio sistema de badges (3.5h). Compite directo con tus touches."),
+    ("presupuesto_pct",   lambda v: v > 100,  lambda v: f"Te pasaste del presupuesto semanal ({v:g}%). Revísalo en Finanzas antes de que se acumule."),
+    ("dias_lectura",      lambda v: v == 0,   lambda v: "Cero días de lectura esta semana — la primera métrica que se cae cuando la semana se pone pesada."),
+    ("pasos_promedio",    lambda v: v < 5000, lambda v: f"Pasos promedio de {v:,.0f}/día — por debajo del umbral sedentario (5,000). Súmalos con caminatas cortas repartidas, no una sola sesión larga."),
+]
+
+
+def _week_num_of(monday_id):
+    return date.fromisoformat(monday_id).isocalendar()[1]
+
+
+def _best_worst_day(days):
+    evaluated = [d for d in days if not d["future"]]
+    if not evaluated:
+        return None, None
+    scored = [(_RANK_ORDER.index(d["rank"]), d["xp"], d) for d in evaluated]
+    best  = max(scored, key=lambda t: (t[0], t[1]))[2]
+    worst = min(scored, key=lambda t: (t[0], t[1]))[2]
+    return best, worst
+
+
+def _wellness_flags(metrics):
+    by_key = {m["key"]: m for m in metrics}
+    flags = []
+    for key, cond, msg in _WELLNESS_ABS_FLAGS:
+        m = by_key.get(key)
+        if m and m["value"] is not None and cond(m["value"]):
+            flags.append({"key": key, "label": m["label"], "text": msg(m["value"])})
+    # Cualquier métrica con tendencia negativa marcada que no haya entrado ya
+    # por umbral absoluto — evita mostrar el mismo dato dos veces.
+    flagged_keys = {f["key"] for f in flags}
+    for m in metrics:
+        if m["key"] in flagged_keys or m["trend"] != "worse" or m["delta"] is None:
+            continue
+        flags.append({
+            "key": m["key"], "label": m["label"],
+            "text": f"{m['label']} empeoró {abs(m['delta']):g}{m['unit']} vs la semana pasada.",
+        })
+    return flags[:3]
+
+
+def _action_plan(weekly, worst_day, flags):
+    plan = []
+    if weekly["rank"] in ("carbon", "iron"):
+        plan.append("Prioridad #1: completa tu ancla del día TODOS los días — sin eso, Oro no es matemáticamente posible.")
+    if weekly["rank"] == "iron":
+        plan.append("Reparte al menos 3 touches en 2 momentos distintos del día (no los dejes todos para la noche) — así es como Hierro se convierte en Oro.")
+    if weekly["rank"] == "gold":
+        plan.append("Ya tienes el volumen — enfócate en cerrar el 100% de tus anclas los días que sí llegas a Oro. Eso es lo único que falta para Diamante.")
+    if weekly["rank"] == "diamond":
+        plan.append("Sostén el mismo patrón — el riesgo en una semana de élite no es bajar el esfuerzo, es no anotar qué lo hizo funcionar para poder repetirlo.")
+    if flags:
+        plan.append(flags[0]["text"])
+    if worst_day:
+        plan.append(f"Tu día más flojo fue {worst_day['weekday']} ({worst_day['label']}) — identifica qué lo bloqueó y arma un plan mínimo específico para ese día.")
+    return plan[:3]
+
+
+def _analyze_week(weekly, prev_weekly, metrics):
+    verdict = _VERDICT_COPY.get(weekly["rank"], _VERDICT_COPY["carbon"])
+    best_day, worst_day = _best_worst_day(weekly["days"])
+
+    vs_prev = {"trend": None, "delta_pts": None, "text": None}
+    if prev_weekly and prev_weekly.get("days_evaluated"):
+        delta = round(weekly["avg_points"] - prev_weekly["avg_points"], 2)
+        vs_prev["delta_pts"] = delta
+        if abs(delta) < 0.05:
+            vs_prev["trend"] = "same"
+            vs_prev["text"] = "Nivel casi idéntico al de la semana pasada."
+        elif delta > 0:
+            vs_prev["trend"] = "up"
+            vs_prev["text"] = f"Subiste vs la semana pasada (fue {prev_weekly['label']})."
+        else:
+            vs_prev["trend"] = "down"
+            vs_prev["text"] = f"Bajaste vs la semana pasada (fue {prev_weekly['label']})."
+
+    flags = _wellness_flags(metrics)
+
+    return {
+        "verdict_title":  verdict["title"],
+        "verdict_body":   verdict["body"],
+        "best_day":       best_day,
+        "worst_day":      worst_day,
+        "vs_prev":        vs_prev,
+        "wellness_flags": flags,
+        "action_plan":    _action_plan(weekly, worst_day, flags),
+    }
+
+
+def _revision_view(semana_id):
+    actual   = _get_revision_row(semana_id) or {}
+    anterior = _get_revision_row(_prev_semana_id(semana_id)) or {}
+
+    metrics = []
+    for m in REVISION_METRICS:
+        v  = actual.get(m["key"])
+        pv = anterior.get(m["key"])
+        delta = None
+        delta_str = None
+        trend = None
+        if v is not None and pv is not None:
+            delta = round(v - pv, 2)
+            delta_str = f"{delta:+g}"
+            if delta == 0:
+                trend = "same"
+            elif (m["direction"] == "up") == (delta > 0):
+                trend = "better"
+            else:
+                trend = "worse"
+        metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "delta": delta, "delta_str": delta_str, "trend": trend})
+
+    with get_db() as db:
+        # Incluye la semana actual (el usuario guardaba y «no me aparece lo que
+        # acabo de registrar hoy»): va arriba marcada como «Esta semana».
+        hist_rows = db.execute(
+            "SELECT * FROM revision_semanal WHERE semana_id <= ? ORDER BY semana_id DESC LIMIT 7",
+            (semana_id,)
+        ).fetchall()
+
+    # semana_id es el sábado de este ciclo (ver get_semana_id) — el lunes de
+    # esa misma semana Lun-Dom es 5 días antes.
+    monday_id      = (date.fromisoformat(semana_id) - timedelta(days=5)).isoformat()
+    prev_monday_id = (date.fromisoformat(monday_id) - timedelta(days=7)).isoformat()
+    weekly         = engine.get_weekly_classification(monday_id)
+    prev_weekly    = engine.get_weekly_classification(prev_monday_id)
+
+    return {
+        "metrics":    metrics,
+        "has_data":   bool(actual),
+        "notas":      actual.get("notas") or "",
+        "historial":  [{**dict(r), "actual": r["semana_id"] == semana_id} for r in hist_rows],
+        "weekly":     weekly,
+        "analysis":   _analyze_week(weekly, prev_weekly, metrics),
+        "semana_num": _week_num_of(monday_id),
+    }
 
 
 # ── Data builder ──────────────────────────────────────────────────────────────
@@ -203,7 +424,45 @@ def index():
         sun_combo    = sun_combo,
         is_weekend   = dow in (5, 6),
         today        = today_str(),
+        revision     = _revision_view(semana_id),
+        weekly_priorities = _get_weekly_priorities(semana_id),
     )
+
+
+@ataraxia_bp.route('/api/prioridades-semana', methods=['POST'])
+def save_prioridades_semana():
+    data      = request.json or {}
+    semana_id = get_semana_id()
+    textos    = [(data.get(f'p{i}') or '').strip()[:200] for i in (1, 2, 3)]
+    textos    = [t for t in textos if t]
+    now       = datetime.now().isoformat()
+
+    dias = _semana_siguiente_dias(semana_id)
+
+    with get_db() as db:
+        db.execute(
+            """INSERT INTO weekly_priorities (semana_id, p1, p2, p3, updated_at) VALUES (?,?,?,?,?)
+               ON CONFLICT(semana_id) DO UPDATE SET
+                 p1=excluded.p1, p2=excluded.p2, p3=excluded.p3, updated_at=excluded.updated_at""",
+            (semana_id,
+             textos[0] if len(textos) > 0 else None,
+             textos[1] if len(textos) > 1 else None,
+             textos[2] if len(textos) > 2 else None,
+             now)
+        )
+        # Limpia lo sembrado antes por esta misma semana (re-guardar no debe
+        # duplicar) sin tocar prioridades sueltas que el usuario haya tecleado
+        # ese día directamente en Acta Diurna (semana_id NULL en esas filas).
+        db.execute("DELETE FROM priorities WHERE semana_id=?", (semana_id,))
+        for d in dias:
+            for t in textos:
+                db.execute(
+                    "INSERT INTO priorities (date, text, done, semana_id) VALUES (?,?,0,?)",
+                    (d, t, semana_id)
+                )
+        db.commit()
+
+    return jsonify({'ok': True, 'textos': textos, 'dias': dias})
 
 
 @ataraxia_bp.route('/api/rutina/<dia>')
@@ -314,6 +573,64 @@ def finde_status():
         "sun_combo":      sun_combo,
         "finde_perfecto": sat_combo and sun_combo,
     })
+
+
+@ataraxia_bp.route('/api/revision', methods=['POST'])
+def save_revision():
+    data = request.json or {}
+    semana_id = get_semana_id()
+
+    valores = {}
+    for m in REVISION_METRICS:
+        raw = data.get(m["key"])
+        try:
+            valores[m["key"]] = float(raw) if raw not in (None, "") else None
+        except (TypeError, ValueError):
+            valores[m["key"]] = None
+    notas = (data.get("notas") or "").strip()
+    now = datetime.now().isoformat()
+
+    with get_db() as db:
+        existing = db.execute(
+            "SELECT semana_id FROM revision_semanal WHERE semana_id=?", (semana_id,)
+        ).fetchone()
+        is_first_save = existing is None
+        if existing:
+            db.execute(
+                """UPDATE revision_semanal SET dias_lectura=?, horas_sueno=?, presupuesto_pct=?,
+                   calorias_quemadas=?, pasos_promedio=?, screen_time_horas=?, notas=?, updated_at=? WHERE semana_id=?""",
+                (valores["dias_lectura"], valores["horas_sueno"], valores["presupuesto_pct"],
+                 valores["calorias_quemadas"], valores["pasos_promedio"], valores["screen_time_horas"], notas, now, semana_id)
+            )
+        else:
+            db.execute(
+                """INSERT INTO revision_semanal
+                   (semana_id, dias_lectura, horas_sueno, presupuesto_pct, calorias_quemadas, pasos_promedio, screen_time_horas, notas, created_at, updated_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (semana_id, valores["dias_lectura"], valores["horas_sueno"], valores["presupuesto_pct"],
+                 valores["calorias_quemadas"], valores["pasos_promedio"], valores["screen_time_horas"], notas, now, now)
+            )
+        db.commit()
+
+    # XP/EC solo en el primer guardado de la semana — editar una revisión ya
+    # guardada (ajustar un dato, agregar notas) no debe volver a pagar. Usa
+    # los mismos valores ya calibrados en data.py (ACTIVITIES['revision_semanal'],
+    # tier "alto") en vez de inventar un número nuevo — así queda dentro de la
+    # misma economía de XP/EC que el resto del sistema, no una excepción aparte.
+    gam = None
+    if is_first_save:
+        act = ACTIVITIES["revision_semanal"]
+        today = today_str()
+        with get_db() as db:
+            cursor = db.execute(
+                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                ("revision_semanal", today, act["pts"])
+            )
+            log_id = cursor.lastrowid
+            db.commit()
+        gam = engine.process_activity("revision_semanal", act["pts"], act["cat"], log_id, ec=act["ec"])
+
+    return jsonify({"ok": True, "semana_id": semana_id, "first_save": is_first_save, "gam": gam})
 
 
 @ataraxia_bp.route('/api/rutina/reset', methods=['POST'])

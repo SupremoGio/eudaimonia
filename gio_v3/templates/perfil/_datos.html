@@ -1,0 +1,50 @@
+{% from "perfil/_macros.html" import doc_row %}
+<section class="pf-sec eu-vstack" id="sec-datos" data-sec-panel="datos" hidden>
+  {% set sec_title, sec_sub, sec_action = 'Datos personales', 'Identidad y contacto. Los campos privados se ocultan hasta que los muestres.', '' %}
+  {% include "perfil/_sechead.html" %}
+  <div class="eu-card pf-fields">
+    {% for item in info %}
+    {% set field_docs = docs_by_field.get(item.key, []) %}
+    {% set empty = item.value == placeholder %}
+    <div class="pf-field" data-key="{{ item.key }}">
+      <div class="eu-hstack pf-field-lbl">
+        <span class="t-meta">{{ item.label }}</span>
+        {% if item.private %}<span class="eu-badge pf-priv"><i data-lucide="lock"></i>privado</span>{% endif %}
+      </div>
+      <div class="pf-field-view" id="vrow-{{ item.key }}">
+        <span class="pf-val{{ ' is-priv' if item.private and not empty }}{{ ' is-empty' if empty }}" id="val-{{ item.key }}">{% if item.private and not empty %}••••••••{% else %}{{ 'Sin capturar' if empty else item.value }}{% endif %}</span>
+        <span class="pf-actions">
+          {% if item.private %}<button type="button" class="eu-iconbtn js-vis" data-key="{{ item.key }}" id="eyebtn-{{ item.key }}" aria-label="Mostrar u ocultar {{ item.label }}"><i data-lucide="eye"></i></button>{% endif %}
+          <button type="button" class="eu-iconbtn js-copy" data-key="{{ item.key }}" aria-label="Copiar {{ item.label }}"><i data-lucide="copy"></i></button>
+          <button type="button" class="eu-iconbtn js-edit" data-key="{{ item.key }}" aria-label="Editar {{ item.label }}"><i data-lucide="pencil"></i></button>
+          {% if item.key not in ['telefono', 'email'] %}
+          <button type="button" class="eu-iconbtn pf-attach js-attach{{ ' has-docs' if field_docs }}" data-key="{{ item.key }}" id="attachbtn-{{ item.key }}" aria-expanded="false" aria-controls="fdp-{{ item.key }}" aria-label="Documentos de {{ item.label }}">
+            <i data-lucide="paperclip"></i>{% if field_docs %}<span class="pf-attach-n" id="badge-{{ item.key }}">{{ field_docs|length }}</span>{% endif %}
+          </button>
+          {% endif %}
+        </span>
+      </div>
+      <form class="pf-field-edit js-edit-form" id="erow-{{ item.key }}" data-key="{{ item.key }}" hidden>
+        <input class="eu-input" id="einp-{{ item.key }}" value="{{ '' if empty else item.value }}" aria-label="{{ item.label }}" autocomplete="off">
+        <button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button>
+        <button type="button" class="eu-iconbtn js-cancel" data-key="{{ item.key }}" aria-label="Cancelar"><i data-lucide="x"></i></button>
+      </form>
+      {% if item.key not in ['telefono', 'email'] %}
+      <div class="eu-card eu-card--inset pf-fdp" id="fdp-{{ item.key }}" hidden>
+        <div class="eu-between">
+          <span class="t-meta">Documentos · {{ item.label }}</span>
+          <label class="eu-btn eu-btn--ghost eu-btn--sm pf-upload">
+            <input type="file" class="js-upload" data-field="{{ item.key }}" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip">
+            <i data-lucide="upload"></i>Adjuntar
+          </label>
+        </div>
+        <div class="eu-list" id="fdp-list-{{ item.key }}">
+          {% for doc in field_docs %}{{ doc_row(doc, item.key) }}{% endfor %}
+        </div>
+        <p class="t-meta pf-p" id="fdp-empty-{{ item.key }}"{% if field_docs %} hidden{% endif %}>Sin documentos adjuntos.</p>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>

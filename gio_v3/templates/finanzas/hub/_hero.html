@@ -1,0 +1,44 @@
+{# Hero «wallet» de patrimonio neto + 3 stats del mes #}
+{% set b = budget %}
+<div class="oik-top">
+  <section class="oik-wallet" aria-labelledby="oik-nw-l">
+    <div class="t-meta" id="oik-nw-l">Patrimonio neto</div>
+    <div class="t-data-xl oik-nw num">{{ hide(mx(patrimonio_neto)) }}</div>
+    {% if pat_delta is not none %}
+    <div class="eu-hstack oik-delta nw-hide-block">
+      <span class="eu-stat-delta {{ 'up' if pat_delta >= 0 else 'down' }}"><i data-lucide="{{ 'trending-up' if pat_delta >= 0 else 'trending-down' }}"></i>{{ '+' if pat_delta >= 0 else '−' }}{{ mx(pat_delta|abs) }}{% if pat_delta_pct is not none %} ({{ pat_delta_pct|abs }}%){% endif %}</span>
+      <span class="t-meta">vs registro anterior</span>
+    </div>
+    {% endif %}
+    <div class="oik-wallet-foot">
+      <div><div class="t-meta">Activos</div><div class="t-data num">{{ hide(mxk(total_activos)) }}</div></div>
+      <div><div class="t-meta">Deudas</div><div class="t-data num">{{ hide(mxk(total_pasivos)) }}</div></div>
+      <div><div class="t-meta">Ahorro</div><div class="t-data num{{ ' fg-success' if b and b.ahorro_pct is not none and b.ahorro_pct > 0 }}">{{ (b.ahorro_pct ~ '%') if b and b.ahorro_pct is not none else '—' }}</div></div>
+    </div>
+  </section>
+
+  <div class="eu-card eu-stat oik-stat">
+    <div class="eu-stat-lbl"><i data-lucide="arrow-down-left"></i>Ingresos</div>
+    <div class="eu-stat-val">{{ hide(mxk(b.ingreso)) if b else '—' }}</div>
+    <div class="t-meta">{% if b %}{{ b.mes_nombre|capitalize }}{% if b.fuentes %} · {{ b.fuentes }} fuente{{ 's' if b.fuentes != 1 }}{% endif %}{% else %}Sin movimientos{% endif %}</div>
+  </div>
+  <div class="eu-card eu-stat oik-stat">
+    <div class="eu-stat-lbl"><i data-lucide="arrow-up-right"></i>Gastos</div>
+    <div class="eu-stat-val">{{ hide(mxk(b.gastado)) if b else '—' }}</div>
+    {% if b and b.pct is not none %}<div class="eu-stat-delta {{ 'down' if b.pct > 100 else '' }} oik-pct{{ ' is-warn' if 90 <= b.pct <= 100 }}">{{ b.pct }}% del ingreso</div>{% else %}<div class="t-meta">—</div>{% endif %}
+  </div>
+  <div class="eu-card eu-stat oik-stat">
+    <div class="eu-stat-lbl"><i data-lucide="piggy-bank"></i>Tasa de ahorro</div>
+    <div class="eu-stat-val{{ ' fg-success' if b and b.ahorro_pct is not none and b.ahorro_pct >= 20 }}{{ ' oik-neg' if b and b.ahorro_pct is not none and b.ahorro_pct < 0 }}">{{ (b.ahorro_pct ~ '%') if b and b.ahorro_pct is not none else '—' }}</div>
+    <div class="t-meta">Meta 20% · regla 50/30/20</div>
+  </div>
+</div>
+
+{# Móvil: mes en curso #}
+{% if b %}
+<a class="eu-card eu-vstack oik-month" href="/finanzas/budget/">
+  <div class="eu-between"><span class="t-ui">{{ b.mes_nombre|capitalize }}</span><span class="t-data num">{{ hide(mx(b.gastado)) }} <span class="fg-3">/ {{ hide(mx(b.ingreso)) }}</span></span></div>
+  {{ ui.progress([b.pct or 0, 100]|min, 100, 'danger' if (b.pct or 0) > 100 else ('warning' if (b.pct or 0) >= 90 else 'brand'), label='Gastado del ingreso') }}
+  <div class="t-meta">{% if b.disponible >= 0 %}Quedan {{ hide(mx(b.disponible)) }}{% else %}Excedido por {{ hide(mx(b.disponible|abs)) }}{% endif %}{% if b.dias_restantes is not none %} · {{ b.dias_restantes }} día{{ 's' if b.dias_restantes != 1 }}{% endif %}</div>
+</a>
+{% endif %}

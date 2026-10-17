@@ -1,0 +1,46 @@
+{# Hub «Tú» (móvil): avatar, accesos y lista de secciones #}
+<div class="pf-hub">
+  <div class="eu-hstack eu-gap-3 pf-hub-me">
+    <div class="pf-avatar" aria-hidden="true">{% if me.nombre %}{{ me.inicial }}{% else %}<i data-lucide="user-round"></i>{% endif %}</div>
+    <div class="eu-grow">
+      <div class="t-section">{{ me.nombre or 'Tu perfil' }}</div>
+      <div class="t-meta">Nivel {{ me.level }} · {{ me.level_name|title }} · {{ me.streak }} d de racha</div>
+    </div>
+  </div>
+  <div class="eu-grid-2 eu-gap-2">
+    <a class="eu-card eu-hstack pf-link" href="/logros"><i data-lucide="trophy" class="fg-brand"></i><span><span class="t-ui">Logros</span><span class="t-meta num">{{ me.badges_earned }} / {{ me.badges_total }}</span></span></a>
+    <a class="eu-card eu-hstack pf-link" href="/recompensas/"><i data-lucide="gift" class="fg-ec"></i><span><span class="t-ui">Recompensas</span><span class="t-meta num">{{ me.ec }} EC</span></span></a>
+  </div>
+  <nav class="eu-card eu-card--flush" aria-label="Secciones del perfil">
+    <div class="eu-list">
+      {% for id, icon, label in sections if id != 'ajustes' %}
+      <a class="eu-row eu-row--interactive pf-hub-row" href="#{{ id }}" data-sec-link="{{ id }}">
+        <div class="eu-row-ic"><i data-lucide="{{ icon }}"></i></div>
+        <div class="eu-row-main"><div class="eu-row-t">{{ label }}</div><div class="eu-row-s">{{ subs[id] }}</div></div>
+        {% if id == 'recordatorios' and stats.rem_urgentes %}<span class="eu-badge eu-badge--warning eu-badge--status">{{ stats.rem_urgentes }}</span>{% endif %}
+        <i data-lucide="chevron-right" class="pf-chev"></i>
+      </a>
+      {% endfor %}
+    </div>
+  </nav>
+  <div class="eu-card eu-card--flush">
+    <div class="eu-list">
+      <div class="eu-row">
+        <div class="eu-row-ic"><i data-lucide="moon"></i></div>
+        <div class="eu-row-main"><div class="eu-row-t">Tema</div></div>
+        <div class="eu-seg js-theme-seg" role="group" aria-label="Tema">
+          <button type="button" data-theme-set="dark">Noche</button><button type="button" data-theme-set="light">Día</button>
+        </div>
+      </div>
+      <a class="eu-row eu-row--interactive" href="#ajustes" data-sec-link="ajustes">
+        <div class="eu-row-ic"><i data-lucide="settings-2"></i></div>
+        <div class="eu-row-main"><div class="eu-row-t">Ajustes</div><div class="eu-row-s">Zona de peligro</div></div>
+        <i data-lucide="chevron-right" class="pf-chev"></i>
+      </a>
+      <button type="button" class="eu-row eu-row--interactive pf-logout" onclick="logoutApp()">
+        <div class="eu-row-ic"><i data-lucide="log-out"></i></div>
+        <div class="eu-row-main"><div class="eu-row-t">Cerrar sesión</div></div>
+      </button>
+    </div>
+  </div>
+</div>

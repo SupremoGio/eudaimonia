@@ -3,9 +3,9 @@ test_gamification_v31.py — Regression suite for Eudaimonia OS v3.1.
 
 Covers:
   1. EC constants — EC_VALUE_MXN=10, GAMIFICATION_VERSION='3.1'
-  2. ACTIVITIES — weekend keys exist, sat_jugos is optional
-  3. Saturday combo — fires on sat_bloque1+2+3, sat_jugos NOT required
-  4. Sunday combo   — fires only when all 5 sun keys present (incl. sun_jugos)
+  2. ACTIVITIES — weekend keys exist (Sábado 7 bloques, Domingo 9), Jugos opcional
+  3. Saturday combo — fires with the 6 required bloques, sat_jugos_bloque NOT required
+  4. Sunday combo   — fires only when all 9 sun bloques are present
   5. Migration      — run_migration() is idempotent (second call = already_applied)
   6. Reward prices  — seeds use EC costs calibrated to $10 MXN/EC
 
@@ -44,130 +44,121 @@ class TestECConstants:
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 2. ACTIVITIES — weekend keys
+#    Sábado: 7 bloques (6 requeridos + Jugos opcional); Domingo: 9 bloques.
+#    Las claves salen de engine.SAT_COMBO_KEYS / SUN_COMBO_KEYS para que el
+#    test no se desincronice del motor como pasó tras el refactor de ATARAXIA.
 # ══════════════════════════════════════════════════════════════════════════════
 
 class TestActivitiesWeekendKeys:
-    SAT_REQUIRED = {"sat_bloque1", "sat_bloque2", "sat_bloque3"}
-    SUN_REQUIRED = {"sun_reflexion", "sun_diseno", "sun_comidas", "sun_jugos", "sun_planchar"}
 
     def test_sat_combo_keys_exist(self):
         from data import ACTIVITIES
-        missing = self.SAT_REQUIRED - set(ACTIVITIES)
-        assert not missing, f"Missing sat combo keys in ACTIVITIES: {missing}"
+        from modules.gamification.engine import SAT_COMBO_KEYS, SAT_OPTIONAL_KEYS
+        missing = (SAT_COMBO_KEYS | SAT_OPTIONAL_KEYS) - set(ACTIVITIES)
+        assert not missing, f"Missing sat keys in ACTIVITIES: {missing}"
 
     def test_sun_combo_keys_exist(self):
         from data import ACTIVITIES
-        missing = self.SUN_REQUIRED - set(ACTIVITIES)
+        from modules.gamification.engine import SUN_COMBO_KEYS
+        missing = SUN_COMBO_KEYS - set(ACTIVITIES)
         assert not missing, f"Missing sun combo keys in ACTIVITIES: {missing}"
 
-    def test_sat_jugos_exists_and_is_optional(self):
-        from data import ACTIVITIES
-        assert "sat_jugos" in ACTIVITIES
-        assert ACTIVITIES["sat_jugos"].get("optional") is True, \
-            "sat_jugos must have optional=True — it must not gate the sat combo"
+    def test_block_counts(self):
+        from modules.gamification.engine import SAT_COMBO_KEYS, SAT_OPTIONAL_KEYS, SUN_COMBO_KEYS
+        assert len(SAT_COMBO_KEYS | SAT_OPTIONAL_KEYS) == 7
+        assert len(SUN_COMBO_KEYS) == 9
+
+    def test_sat_jugos_is_not_required(self):
+        from modules.gamification.engine import SAT_COMBO_KEYS, SAT_OPTIONAL_KEYS
+        assert "sat_jugos_bloque" in SAT_OPTIONAL_KEYS
+        assert "sat_jugos_bloque" not in SAT_COMBO_KEYS
 
     def test_sat_jugos_pts_and_ec(self):
         from data import ACTIVITIES
-        act = ACTIVITIES["sat_jugos"]
+        act = ACTIVITIES["sat_jugos_bloque"]
         assert act["pts"] == 2
         assert act["ec"] == 1
 
-    def test_sat_bloque_tiers_are_progreso_or_alto(self):
+    def test_sat_keys_have_weekend_marker(self):
         from data import ACTIVITIES
-        for key in self.SAT_REQUIRED:
-            tier = ACTIVITIES[key]["tier"]
-            assert tier in ("progreso", "alto"), f"{key} tier={tier!r}"
+        from modules.gamification.engine import SAT_COMBO_KEYS, SAT_OPTIONAL_KEYS
+        for key in SAT_COMBO_KEYS | SAT_OPTIONAL_KEYS:
+            assert ACTIVITIES[key].get("weekend") == "sat", f"{key} missing weekend='sat'"
+            assert ACTIVITIES[key]["tier"] in ("micro", "progreso", "alto"), f"{key} tier"
 
     def test_sun_keys_have_weekend_marker(self):
         from data import ACTIVITIES
-        for key in self.SUN_REQUIRED:
-            assert ACTIVITIES[key].get("weekend") == "sun", \
-                f"{key} missing weekend='sun'"
+        from modules.gamification.engine import SUN_COMBO_KEYS
+        for key in SUN_COMBO_KEYS:
+            assert ACTIVITIES[key].get("weekend") == "sun", f"{key} missing weekend='sun'"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 3. Saturday combo
+# 3/4. Weekend combos
 # ══════════════════════════════════════════════════════════════════════════════
+
+def _insert_keys(keys, today):
+    import database
+    with database.get_db() as db:
+        for key in keys:
+            db.execute(
+                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                (key, today, 4),
+            )
+        db.commit()
+
+
+def _combos(monkeypatch, today, keys):
+    import datetime
+    from modules.gamification import engine
+    monkeypatch.setattr(engine, "today_str", lambda: today)
+    monkeypatch.setattr(engine, "today_date", lambda: datetime.date.fromisoformat(today))
+    _insert_keys(keys, today)
+    return engine._check_combo_bonus(today, engine._get_today_keys(today))
+
+
+def _ledger_sum(table, description, today):
+    import database
+    with database.get_db() as db:
+        return db.execute(
+            f"SELECT COALESCE(SUM(amount),0) as s FROM {table} "
+            "WHERE source='bonus' AND description=? AND date=?",
+            (description, today),
+        ).fetchone()["s"]
+
 
 class TestSaturdayCombo:
     TODAY = "2026-04-25"  # a Saturday
 
-    def _insert_keys(self, db_mod, keys, today):
-        import database
-        with database.get_db() as db:
-            for key in keys:
-                db.execute(
-                    "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
-                    (key, today, 4),
-                )
-            db.commit()
-
-    def test_fires_with_three_required_bloques(self, test_db, monkeypatch):
-        import database
-        from modules.gamification import engine
-        monkeypatch.setattr(engine, "today_str", lambda: self.TODAY)
-        monkeypatch.setattr(engine, "today_date", lambda: __import__("datetime").date(2026, 4, 25))
-
-        self._insert_keys(database, ["sat_bloque1", "sat_bloque2", "sat_bloque3"], self.TODAY)
-
-        keys = engine._get_today_keys(self.TODAY)
-        combos = engine._check_combo_bonus(self.TODAY, keys)
+    def test_fires_with_all_required_bloques(self, test_db, monkeypatch):
+        from modules.gamification.engine import SAT_COMBO_KEYS
+        combos = _combos(monkeypatch, self.TODAY, sorted(SAT_COMBO_KEYS))
         assert any(c["type"] == "sat_complete" for c in combos), \
-            "sat_complete combo should fire with sat_bloque1+2+3"
+            "sat_complete combo should fire with the 6 required sat bloques"
 
     def test_fires_even_with_sat_jugos(self, test_db, monkeypatch):
-        """Adding sat_jugos on top of the 3 required bloques must not break the combo."""
-        import database
-        from modules.gamification import engine
-        monkeypatch.setattr(engine, "today_str", lambda: self.TODAY)
-        monkeypatch.setattr(engine, "today_date", lambda: __import__("datetime").date(2026, 4, 25))
-
-        self._insert_keys(database,
-                          ["sat_bloque1", "sat_bloque2", "sat_bloque3", "sat_jugos"],
-                          self.TODAY)
-
-        keys = engine._get_today_keys(self.TODAY)
-        combos = engine._check_combo_bonus(self.TODAY, keys)
+        """Adding the optional Jugos bloque on top must not break the combo."""
+        from modules.gamification.engine import SAT_COMBO_KEYS, SAT_OPTIONAL_KEYS
+        combos = _combos(monkeypatch, self.TODAY, sorted(SAT_COMBO_KEYS | SAT_OPTIONAL_KEYS))
         assert any(c["type"] == "sat_complete" for c in combos)
 
     def test_sat_jugos_alone_does_not_fire(self, test_db, monkeypatch):
-        """sat_jugos alone — not enough, no sat combo."""
-        import database
-        from modules.gamification import engine
-        monkeypatch.setattr(engine, "today_str", lambda: self.TODAY)
-        monkeypatch.setattr(engine, "today_date", lambda: __import__("datetime").date(2026, 4, 25))
-
-        self._insert_keys(database, ["sat_jugos"], self.TODAY)
-
-        keys = engine._get_today_keys(self.TODAY)
-        combos = engine._check_combo_bonus(self.TODAY, keys)
+        combos = _combos(monkeypatch, self.TODAY, ["sat_jugos_bloque"])
         assert not any(c["type"] == "sat_complete" for c in combos)
 
-    def test_two_bloques_not_enough(self, test_db, monkeypatch):
-        import database
-        from modules.gamification import engine
-        monkeypatch.setattr(engine, "today_str", lambda: self.TODAY)
-        monkeypatch.setattr(engine, "today_date", lambda: __import__("datetime").date(2026, 4, 25))
-
-        self._insert_keys(database, ["sat_bloque1", "sat_bloque2"], self.TODAY)
-
-        keys = engine._get_today_keys(self.TODAY)
-        combos = engine._check_combo_bonus(self.TODAY, keys)
+    def test_missing_one_bloque_not_enough(self, test_db, monkeypatch):
+        from modules.gamification.engine import SAT_COMBO_KEYS
+        keys = sorted(SAT_COMBO_KEYS)[1:]
+        combos = _combos(monkeypatch, self.TODAY, keys)
         assert not any(c["type"] == "sat_complete" for c in combos)
 
     def test_combo_is_idempotent(self, test_db, monkeypatch):
         """Calling combo check twice does not double-award XP."""
-        import database
         from modules.gamification import engine
-        monkeypatch.setattr(engine, "today_str", lambda: self.TODAY)
-        monkeypatch.setattr(engine, "today_date", lambda: __import__("datetime").date(2026, 4, 25))
-
-        self._insert_keys(database, ["sat_bloque1", "sat_bloque2", "sat_bloque3"], self.TODAY)
-
-        keys = engine._get_today_keys(self.TODAY)
-        engine._check_combo_bonus(self.TODAY, keys)
-        engine._check_combo_bonus(self.TODAY, keys)  # second call
-
+        from modules.gamification.engine import SAT_COMBO_KEYS
+        _combos(monkeypatch, self.TODAY, sorted(SAT_COMBO_KEYS))
+        engine._check_combo_bonus(self.TODAY, engine._get_today_keys(self.TODAY))  # second call
+        import database
         with database.get_db() as db:
             count = db.execute(
                 "SELECT COUNT(*) as c FROM xp_ledger "
@@ -176,74 +167,35 @@ class TestSaturdayCombo:
             ).fetchone()["c"]
         assert count == 1, f"Sat combo XP must be awarded exactly once, got {count}"
 
+    def test_sat_combo_awards_xp_and_coins(self, test_db, monkeypatch):
+        from modules.gamification.engine import SAT_COMBO_KEYS
+        _combos(monkeypatch, self.TODAY, sorted(SAT_COMBO_KEYS))
+        assert _ledger_sum("xp_ledger", "Combo: Sábado Completo", self.TODAY) == 4
+        assert _ledger_sum("coins_ledger", "Combo: Sábado Completo", self.TODAY) == 2
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 4. Sunday combo
-# ══════════════════════════════════════════════════════════════════════════════
 
 class TestSundayCombo:
     TODAY = "2026-04-26"  # a Sunday
-    SUN_KEYS = ["sun_reflexion", "sun_diseno", "sun_comidas", "sun_jugos", "sun_planchar"]
 
-    def _insert_keys(self, keys, today):
-        import database
-        with database.get_db() as db:
-            for key in keys:
-                db.execute(
-                    "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
-                    (key, today, 4),
-                )
-            db.commit()
-
-    def test_fires_with_all_five_keys(self, test_db, monkeypatch):
-        import database
-        from modules.gamification import engine
-        monkeypatch.setattr(engine, "today_str", lambda: self.TODAY)
-        monkeypatch.setattr(engine, "today_date", lambda: __import__("datetime").date(2026, 4, 26))
-
-        self._insert_keys(self.SUN_KEYS, self.TODAY)
-        keys = engine._get_today_keys(self.TODAY)
-        combos = engine._check_combo_bonus(self.TODAY, keys)
+    def test_fires_with_all_nine_bloques(self, test_db, monkeypatch):
+        from modules.gamification.engine import SUN_COMBO_KEYS
+        combos = _combos(monkeypatch, self.TODAY, sorted(SUN_COMBO_KEYS))
         assert any(c["type"] == "sun_complete" for c in combos), \
-            "sun_complete must fire with all 5 sun keys"
+            "sun_complete must fire with all 9 sun bloques"
 
-    def test_missing_sun_jugos_blocks_combo(self, test_db, monkeypatch):
-        """sun_jugos IS required for sun combo — removing it must prevent the bonus."""
-        import database
-        from modules.gamification import engine
-        monkeypatch.setattr(engine, "today_str", lambda: self.TODAY)
-        monkeypatch.setattr(engine, "today_date", lambda: __import__("datetime").date(2026, 4, 26))
-
-        keys_without_jugos = [k for k in self.SUN_KEYS if k != "sun_jugos"]
-        self._insert_keys(keys_without_jugos, self.TODAY)
-
-        keys = engine._get_today_keys(self.TODAY)
-        combos = engine._check_combo_bonus(self.TODAY, keys)
+    def test_missing_cierre_blocks_combo(self, test_db, monkeypatch):
+        """Every Sunday bloque is required — dropping one must prevent the bonus."""
+        from modules.gamification.engine import SUN_COMBO_KEYS
+        keys = sorted(SUN_COMBO_KEYS - {"sun_cierre_bloque"})
+        combos = _combos(monkeypatch, self.TODAY, keys)
         assert not any(c["type"] == "sun_complete" for c in combos), \
-            "sun_complete must NOT fire without sun_jugos"
+            "sun_complete must NOT fire without sun_cierre_bloque"
 
     def test_sun_combo_awards_xp_and_coins(self, test_db, monkeypatch):
-        import database
-        from modules.gamification import engine
-        monkeypatch.setattr(engine, "today_str", lambda: self.TODAY)
-        monkeypatch.setattr(engine, "today_date", lambda: __import__("datetime").date(2026, 4, 26))
-
-        self._insert_keys(self.SUN_KEYS, self.TODAY)
-        keys = engine._get_today_keys(self.TODAY)
-        engine._check_combo_bonus(self.TODAY, keys)
-
-        with database.get_db() as db:
-            xp = db.execute(
-                "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger "
-                "WHERE source='bonus' AND description='Combo: Domingo Completo' AND date=?",
-                (self.TODAY,),
-            ).fetchone()["s"]
-            ec = db.execute(
-                "SELECT COALESCE(SUM(amount),0) as s FROM coins_ledger "
-                "WHERE source='bonus' AND description='Combo: Domingo Completo' AND date=?",
-                (self.TODAY,),
-            ).fetchone()["s"]
-
+        from modules.gamification.engine import SUN_COMBO_KEYS
+        _combos(monkeypatch, self.TODAY, sorted(SUN_COMBO_KEYS))
+        xp = _ledger_sum("xp_ledger", "Combo: Domingo Completo", self.TODAY)
+        ec = _ledger_sum("coins_ledger", "Combo: Domingo Completo", self.TODAY)
         assert xp == 5, f"Sun combo should award 5 XP, got {xp}"
         assert ec == 3, f"Sun combo should award 3 EC, got {ec}"
 
@@ -267,9 +219,13 @@ class TestMigrationV31:
         assert result2["status"] == "already_applied"
 
     def test_migration_records_bloque_count(self, test_db):
+        import database
         from migrations.migrate_v31 import run_migration
         result = run_migration()
-        assert result.get("bloque_count", 0) == 18
+        with database.get_db() as db:
+            count = db.execute("SELECT COUNT(*) as c FROM rutina_bloques").fetchone()["c"]
+        assert count > 0
+        assert result.get("bloque_count") == count
 
     def test_migration_log_entry_persists(self, test_db):
         import database
@@ -296,13 +252,21 @@ class TestMigrationV31:
         assert "rutina_progreso" in tables
         assert "migration_log" in tables
 
-    def test_ataraxia_seeded_18_tasks(self, test_db):
+    def test_ataraxia_seeded_blocks_match_combos(self, test_db):
+        """rutina_bloques siembra exactamente los bloques que usan los combos:
+        Sábado 7 (Jugos opcional) y Domingo 9."""
         import database
+        from modules.gamification.engine import SAT_COMBO_KEYS, SAT_OPTIONAL_KEYS, SUN_COMBO_KEYS
         with database.get_db() as db:
-            count = db.execute(
-                "SELECT COUNT(*) as c FROM rutina_bloques"
-            ).fetchone()["c"]
-        assert count == 18, f"Expected 18 seeded tasks, got {count}"
+            rows = db.execute(
+                "SELECT dia, bloque_id, MAX(opcional) AS opc FROM rutina_bloques GROUP BY dia, bloque_id"
+            ).fetchall()
+        sat = {r["bloque_id"] for r in rows if r["dia"] == "sabado"}
+        sun = {r["bloque_id"] for r in rows if r["dia"] == "domingo"}
+        optional = {r["bloque_id"] for r in rows if r["opc"]}
+        assert sat == set(SAT_COMBO_KEYS | SAT_OPTIONAL_KEYS)
+        assert sun == set(SUN_COMBO_KEYS)
+        assert optional == set(SAT_OPTIONAL_KEYS)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

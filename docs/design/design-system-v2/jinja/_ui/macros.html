@@ -1,0 +1,94 @@
+{#- EUDAIMONIA OS — Macros UI V2
+    Destino: gio_v3/templates/_ui/macros.html
+    Uso: {% import '_ui/macros.html' as ui %} -#}
+
+{% macro button(label, variant='primary', size='md', icon=None, href=None, busy=False, block=False, type='button') -%}
+{%- set cls = 'eu-btn eu-btn--' ~ variant ~ (' eu-btn--' ~ size if size != 'md' else '') ~ (' eu-btn--block' if block else '') -%}
+{%- if href -%}
+<a class="{{ cls }}" href="{{ href }}" {{ kwargs|xmlattr }}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}</a>
+{%- else -%}
+<button type="{{ type }}" class="{{ cls }}"{% if busy %} aria-busy="true"{% endif %} {{ kwargs|xmlattr }}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}</button>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro iconbtn(icon, label, variant='', pressed=None) -%}
+<button type="button" class="eu-iconbtn{{ ' eu-iconbtn--' ~ variant if variant }}" aria-label="{{ label }}"{% if pressed is not none %} aria-pressed="{{ 'true' if pressed else 'false' }}"{% endif %} {{ kwargs|xmlattr }}><i data-lucide="{{ icon }}"></i></button>
+{%- endmacro %}
+
+{% macro card(variant='', tag='div', href=None) -%}
+{%- set t = 'a' if href else tag -%}
+<{{ t }} class="eu-card{{ ' eu-card--' ~ variant if variant }}"{% if href %} href="{{ href }}"{% endif %} {{ kwargs|xmlattr }}>{{ caller() }}</{{ t }}>
+{%- endmacro %}
+
+{% macro stat(label, value, icon=None, delta=None, delta_dir='up', meta=None) -%}
+<div class="eu-card eu-stat">
+  <div class="eu-stat-lbl">{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}</div>
+  <div class="eu-stat-val">{{ value }}</div>
+  {% if delta %}<div class="eu-stat-delta {{ delta_dir }}">{{ delta }}</div>{% elif meta %}<div class="t-meta">{{ meta }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro badge(text, variant='', cat=None, status=False, icon=None) -%}
+<span class="eu-badge{{ ' eu-badge--' ~ variant if variant }}{{ ' eu-badge--cat' if cat }}{{ ' eu-badge--status' if status }}"{% if cat %} data-cat="{{ cat|lower }}"{% endif %}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ text }}</span>
+{%- endmacro %}
+
+{% macro chip(label, pressed=False, count=None, icon=None) -%}
+<button type="button" class="eu-chip" aria-pressed="{{ 'true' if pressed else 'false' }}" {{ kwargs|xmlattr }}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}{% if count is not none %} <span class="ct">{{ count }}</span>{% endif %}</button>
+{%- endmacro %}
+
+{% macro field(name, label, type='text', value='', placeholder='', help=None, error=None, money=False) -%}
+<div class="eu-field">
+  <label class="eu-label" for="f-{{ name }}">{{ label }}</label>
+  {% if type == 'textarea' -%}
+  <textarea class="eu-textarea" id="f-{{ name }}" name="{{ name }}" placeholder="{{ placeholder }}"{% if error %} aria-invalid="true" aria-describedby="f-{{ name }}-err"{% endif %} {{ kwargs|xmlattr }}>{{ value }}</textarea>
+  {%- else -%}
+  <input class="eu-input{{ ' eu-input--money' if money }}" id="f-{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ value }}" placeholder="{{ placeholder }}"{% if money %} inputmode="decimal"{% endif %}{% if error %} aria-invalid="true" aria-describedby="f-{{ name }}-err"{% endif %} {{ kwargs|xmlattr }}>
+  {%- endif %}
+  {% if error %}<div class="eu-err" id="f-{{ name }}-err"><i data-lucide="alert-circle" style="width:14px;height:14px"></i>{{ error }}</div>{% elif help %}<div class="eu-help">{{ help }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro progress(value, max=100, variant='brand', thin=False, cat=None, label=None) -%}
+{%- set pct = [ (value / max * 100) if max else 0, 100 ]|min -%}
+<div class="eu-progress eu-progress--{{ variant }}{{ ' eu-progress--thin' if thin }}"{% if cat %} data-cat="{{ cat|lower }}"{% endif %} role="progressbar" aria-valuenow="{{ value }}" aria-valuemax="{{ max }}"{% if label %} aria-label="{{ label }}"{% endif %}><i style="width:{{ pct|round(1) }}%"></i></div>
+{%- endmacro %}
+
+{% macro xpbar(value, max, label='XP') -%}
+<div class="eu-xpbar" role="progressbar" aria-valuenow="{{ value }}" aria-valuemax="{{ max }}" aria-label="{{ value }} de {{ max }} {{ label }}"><i style="width:{{ ([value / max * 100, 100]|min)|round(1) }}%"></i></div>
+{%- endmacro %}
+
+{% macro activity(a, done=False) -%}
+<button type="button" class="eu-act" data-cat="{{ a.categoria|lower }}" data-id="{{ a.id }}" aria-pressed="{{ 'true' if done else 'false' }}">
+  <span class="eu-act-check"><i data-lucide="check"></i></span>
+  <span class="eu-act-t">{{ a.nombre }}</span>
+  <span class="eu-act-xp"><span>+{{ a.xp }} XP</span>{% if a.ec %}<span class="fg-ec">+{{ a.ec }} EC</span>{% endif %}</span>
+</button>
+{%- endmacro %}
+
+{% macro row(title, sub=None, icon=None, cat=None, href=None, amount=None, amount_pos=False) -%}
+{%- set t = 'a' if href else 'div' -%}
+<{{ t }} class="eu-row{{ ' eu-row--interactive' if href }}"{% if href %} href="{{ href }}"{% endif %}>
+  {% if icon %}<div class="eu-row-ic"{% if cat %} data-cat="{{ cat|lower }}"{% endif %}><i data-lucide="{{ icon }}"></i></div>{% endif %}
+  <div class="eu-row-main"><div class="eu-row-t">{{ title }}</div>{% if sub or caller %}<div class="eu-row-s">{{ sub or '' }}{{ caller() if caller }}</div>{% endif %}</div>
+  {% if amount is not none %}<div class="eu-row-end"><div class="eu-amt{{ ' pos' if amount_pos }}">{{ amount }}</div></div>{% endif %}
+</{{ t }}>
+{%- endmacro %}
+
+{% macro modal(id, title, eyebrow=None) -%}
+<div class="eu-scrim" id="{{ id }}" hidden>
+  <div class="eu-modal" role="dialog" aria-modal="true" aria-labelledby="{{ id }}-t">
+    <div class="eu-modal-hd"><div>{% if eyebrow %}<div class="t-eyebrow">{{ eyebrow }}</div>{% endif %}<div class="t-section" id="{{ id }}-t" style="margin-top:6px">{{ title }}</div></div>{{ iconbtn('x', 'Cerrar', onclick="euModal.close('" ~ id ~ "')") }}</div>
+    {{ caller() }}
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro empty(icon, title, text, cta=None, cta_href=None, cta_icon=None, kbd=None) -%}
+<div class="eu-empty">
+  <div class="eu-empty-ic"><i data-lucide="{{ icon }}"></i></div>
+  <div class="t-card">{{ title }}</div>
+  <p>{{ text }}</p>
+  {% if cta %}{{ button(cta, icon=cta_icon, href=cta_href) }}{% endif %}
+  {% if kbd %}<span class="t-meta">o pulsa <span class="kbd">{{ kbd }}</span></span>{% endif %}
+</div>
+{%- endmacro %}

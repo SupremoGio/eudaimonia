@@ -1,6 +1,7 @@
 from datetime import datetime, date, timedelta
 from flask import Blueprint, render_template, request, jsonify
 from database import get_db
+from utils import today_str
 
 viajes_bp = Blueprint('viajes', __name__, template_folder='../../templates')
 
@@ -47,7 +48,7 @@ def _gen_dias(viaje_id, fecha_inicio_str, fecha_fin_str, db):
 
 @viajes_bp.route('/')
 def index():
-    return render_template('viajes/index.html')
+    return render_template('viajes/index.html', today=today_str())
 
 
 # ── API Trips ─────────────────────────────────────────────────────────────────
@@ -160,6 +161,10 @@ def api_update_trip(vid):
 @viajes_bp.route('/api/trips/<int:vid>', methods=['DELETE'])
 def api_delete_trip(vid):
     with get_db() as db:
+        # `viajes` es la tabla compartida con el presupuesto de viaje
+        # (modules/finanzas/estados/routes.py) — desvincular sus movimientos
+        # tageados antes de borrar, igual que hace ese módulo.
+        db.execute("UPDATE est_movimientos SET viaje_id=NULL WHERE viaje_id=?", (vid,))
         db.execute("DELETE FROM viaje_maleta    WHERE viaje_id=?", (vid,))
         db.execute("DELETE FROM viaje_dia_outfits WHERE dia_id IN "
                    "(SELECT id FROM viaje_dias WHERE viaje_id=?)", (vid,))

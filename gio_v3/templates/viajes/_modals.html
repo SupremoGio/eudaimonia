@@ -1,0 +1,60 @@
+{# Modales: viaje (crear/editar), picker de outfit por día, agregar ítem a la maleta #}
+{% call ui.modal('m-trip', 'Nuevo viaje', eyebrow='Viajes') %}
+<form class="eu-modal-bd" id="f-trip" autocomplete="off" novalidate>
+  <div class="eu-field"><label class="eu-label" for="f-nombre">Nombre del viaje *</label><input class="eu-input" id="f-nombre" placeholder="Ej: CDMX – Diciembre 2026" maxlength="200"></div>
+  <div class="eu-grid-2 vj-fgrid">
+    <div class="eu-field"><label class="eu-label" for="f-destino">Destino</label><input class="eu-input" id="f-destino" placeholder="Ej: Ciudad de México" maxlength="100"></div>
+    <div class="eu-field"><label class="eu-label" for="f-estado">Estado</label>
+      <select class="eu-select" id="f-estado"><option value="planificado">Planificado</option><option value="activo">Activo (en curso)</option><option value="completado">Completado</option><option value="cancelado">Cancelado</option></select></div>
+    <div class="eu-field"><label class="eu-label" for="f-inicio">Fecha inicio *</label><input class="eu-input" id="f-inicio" type="date"></div>
+    <div class="eu-field"><label class="eu-label" for="f-fin">Fecha fin *</label><input class="eu-input" id="f-fin" type="date"></div>
+    <div class="eu-field"><label class="eu-label" for="f-clima">Clima / temporada</label>
+      <select class="eu-select" id="f-clima"><option value="">Sin especificar</option><option value="calor">Calor / Playa</option><option value="frio">Frío / Nieve</option><option value="templado">Templado</option><option value="lluvia">Lluvioso</option></select></div>
+    <div class="eu-field"><label class="eu-label" for="f-ocasion">Tipo de viaje</label>
+      <select class="eu-select" id="f-ocasion"><option value="">General</option><option value="negocios">Negocios</option><option value="casual">Casual / Turismo</option><option value="playa">Playa / Resort</option><option value="aventura">Aventura / Outdoor</option><option value="formal">Evento formal</option></select></div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="f-notas">Notas (opcional)</label><textarea class="eu-textarea" id="f-notas" rows="2" placeholder="Detalles, recordatorios…"></textarea></div>
+  <div class="eu-err" id="modal-err" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-trip')">Cancelar</button>
+  <button type="submit" form="f-trip" class="eu-btn eu-btn--primary">Guardar</button>
+</div>
+{% endcall %}
+
+{% call ui.modal('m-picker', 'Seleccionar outfit', eyebrow='Outfit del día') %}
+<div class="eu-modal-bd">
+  <p class="t-meta" id="picker-day-label"></p>
+  <div class="vj-ogrid" id="picker-outfit-grid" role="group" aria-label="Outfits del guardarropa"></div>
+  <div id="picker-empty" hidden>{{ ui.empty('shirt', 'Sin outfits', 'No tienes outfits guardados en Guardarropa.', cta='Crear outfits', cta_href='/guardarropa/', cta_icon='arrow-right') }}</div>
+</div>
+<div class="eu-modal-ft vj-ft">
+  <button type="button" class="eu-btn eu-btn--danger" id="btn-quitar-outfit" hidden><i data-lucide="x"></i>Quitar outfit</button>
+  <span class="eu-grow"></span>
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-picker')">Cancelar</button>
+</div>
+{% endcall %}
+
+{% call ui.modal('m-item', 'Agregar a la maleta', eyebrow='Mi maleta') %}
+<div class="eu-modal-bd">
+  <div class="eu-seg vj-seg-full" role="tablist" aria-label="Tipo de ítem">
+    <button type="button" role="tab" id="ai-tab-wardrobe" data-ai="wardrobe" aria-selected="true" aria-controls="ai-panel-wardrobe">Prenda del guardarropa</button>
+    <button type="button" role="tab" id="ai-tab-generic" data-ai="generic" aria-selected="false" aria-controls="ai-panel-generic">Ítem genérico</button>
+  </div>
+  <div class="eu-vstack vj-ai-panel" id="ai-panel-wardrobe" role="tabpanel" aria-labelledby="ai-tab-wardrobe">
+    <div class="eu-input-wrap"><i data-lucide="search"></i><input class="eu-input" id="ai-wi-search" type="search" placeholder="Buscar prenda…" aria-label="Buscar prenda"></div>
+    <div class="vj-wgrid" id="ai-wi-grid" role="group" aria-label="Prendas"></div>
+    <div id="ai-wi-empty" hidden>{{ ui.empty('shirt', 'Sin prendas', 'No tienes prendas en Guardarropa.', cta='Agregar prendas', cta_href='/guardarropa/', cta_icon='arrow-right') }}</div>
+  </div>
+  <form class="eu-vstack vj-ai-panel" id="ai-panel-generic" role="tabpanel" aria-labelledby="ai-tab-generic" autocomplete="off" novalidate hidden>
+    <div class="eu-field"><label class="eu-label" for="ai-nombre">Nombre del ítem *</label><input class="eu-input" id="ai-nombre" placeholder="Ej: Gorra, bloqueador solar…" maxlength="200"></div>
+    <div class="eu-field"><label class="eu-label" for="ai-cat">Categoría</label>
+      <select class="eu-select" id="ai-cat">{% for c in ['Varios','Documentos','Higiene','Tecnología','Salud','Tops','Bottoms','Calzado','Accesorios','Ropa interior','Abrigo','Formal'] %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select></div>
+    <div class="eu-err" id="ai-err" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>
+  </form>
+</div>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-item')">Cerrar</button>
+  <button type="submit" form="ai-panel-generic" class="eu-btn eu-btn--primary" id="ai-submit-btn" hidden>Agregar</button>
+</div>
+{% endcall %}

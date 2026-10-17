@@ -1,0 +1,33 @@
+<section class="pf-sec eu-vstack" id="sec-ajustes" data-sec-panel="ajustes" hidden>
+  {% set sec_title, sec_sub, sec_action = 'Ajustes', '', '' %}
+  {% include "perfil/_sechead.html" %}
+  <div class="eu-card eu-card--flush">
+    <div class="eu-list">
+      <div class="eu-row">
+        <div class="eu-row-ic"><i data-lucide="sun-moon"></i></div>
+        <div class="eu-row-main"><div class="eu-row-t">Tema</div><div class="eu-row-s">Se guarda en este dispositivo</div></div>
+        <div class="eu-seg js-theme-seg" role="group" aria-label="Tema"><button type="button" data-theme-set="dark">Noche</button><button type="button" data-theme-set="light">Día</button></div>
+      </div>
+      <button type="button" class="eu-row eu-row--interactive pf-logout" onclick="logoutApp()">
+        <div class="eu-row-ic"><i data-lucide="log-out"></i></div>
+        <div class="eu-row-main"><div class="eu-row-t">Cerrar sesión</div></div>
+      </button>
+    </div>
+  </div>
+  <div class="eu-card eu-vstack pf-danger-zone">
+    <div class="t-eyebrow pf-danger-eyebrow">Zona de peligro</div>
+    <div class="t-card">Reset de gamificación</div>
+    <p class="t-meta pf-p">Borra XP, EC, racha, logros y badges. Tu historial de actividades y los módulos no se tocan, pero el progreso vuelve a cero. No se puede deshacer.</p>
+    <button type="button" class="eu-btn eu-btn--danger pf-danger-btn" id="reset-trigger"><i data-lucide="rotate-ccw"></i>Reset gamificación</button>
+  </div>
+  {% call ui.modal('reset-modal', '¿Empiezas de nuevo?', eyebrow='Zona de peligro') %}
+  <div class="eu-modal-bd">
+    <p class="t-meta pf-p">Se borrarán <b class="fg-2">XP, EC, racha, logros y badges</b>. Tu historial de actividades queda intacto. Escribe <span class="kbd">RESET</span> para confirmar.</p>
+    <div class="eu-field"><label class="eu-label" for="reset-confirm">Confirmación</label><input class="eu-input" id="reset-confirm" autocomplete="off" placeholder="RESET"></div>
+  </div>
+  <div class="eu-modal-ft">
+    <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('reset-modal')">Cancelar</button>
+    <button type="button" class="eu-btn eu-btn--danger" id="reset-confirm-btn" disabled>Borrar todo</button>
+  </div>
+  {% endcall %}
+</section>

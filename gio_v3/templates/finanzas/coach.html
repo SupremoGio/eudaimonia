@@ -1,0 +1,55 @@
+{% extends "eu/layout_sub.html" %}
+{% set pg = 'finanzas' %}
+{% block title %}Coach financiero — Oikonomia{% endblock %}
+{% block module_title %}COACH FINANCIERO{% endblock %}
+{% block mtitle %}<b>Coach financiero</b><span>Oikonomia · análisis con Claude</span>{% endblock %}
+{% block head %}
+<style>
+  .co{display:flex;flex-direction:column;gap:var(--sp-5);max-width:760px}
+  .co-lead{margin-top:var(--sp-2);max-width:60ch}
+  .co-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--sp-4)}
+  .co-steps li{display:flex;gap:var(--sp-3);align-items:flex-start}
+  .co-n{flex:none;width:28px;height:28px;border-radius:var(--r-full);background:var(--brand-subtle);color:var(--fg-brand-strong);
+        display:flex;align-items:center;justify-content:center;font-weight:600}
+  .co-steps b{display:block;color:var(--fg-1)}
+  .co-act{display:flex;gap:var(--sp-3);flex-wrap:wrap}
+  .co-inc{margin:var(--sp-3) 0;padding-left:1.2em;list-style:disc;display:flex;flex-direction:column;gap:var(--sp-1)}
+  .co-steps .t-meta{display:block;margin-top:2px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="co" data-cat="oikonomia">
+  <header>
+    <div class="t-eyebrow">Oikonomia · Coach financiero</div>
+    <h1 class="t-page">Tu consultor financiero</h1>
+    <p class="t-meta co-lead">Descarga un resumen de tus finanzas con las instrucciones del coach ya incluidas,
+      súbelo a un chat de Claude y recibe un diagnóstico: cómo vas, fugas, plan de acción y meta del mes.</p>
+  </header>
+
+  <section class="eu-card" aria-label="Cómo usarlo">
+    <ol class="co-steps">
+      <li><span class="co-n">1</span><div><b>Descarga tu resumen</b><span class="t-meta">Un archivo .md con los datos de hoy.</span></div></li>
+      <li><span class="co-n">2</span><div><b>Ábrelo en Claude</b><span class="t-meta">Abre un chat nuevo en claude.ai y sube el archivo.</span></div></li>
+      <li><span class="co-n">3</span><div><b>Escribe «analízame»</b><span class="t-meta">Después pregúntale lo que quieras. Cada mes descarga uno nuevo y pídele que lo compare con el anterior.</span></div></li>
+    </ol>
+  </section>
+
+  <div class="co-act">
+    <a class="eu-btn eu-btn--primary" href="/finanzas/coach/descargar" download><i data-lucide="download"></i>Descargar para el coach</a>
+    <a class="eu-btn eu-btn--secondary" href="https://claude.ai/new" target="_blank" rel="noopener"><i data-lucide="external-link"></i>Abrir Claude</a>
+  </div>
+
+  <section class="eu-card" aria-label="Qué incluye">
+    <h2 class="t-card">Qué incluye</h2>
+    <ul class="co-inc t-meta">
+      <li>Ingresos, gasto, necesidades, deseos y tasa de ahorro de los últimos 12 meses.</li>
+      <li>Gasto por categoría, los comercios donde más gastas y tus suscripciones.</li>
+      <li>Patrimonio, inversiones por plataforma y compras a meses por pagar.</li>
+      <li>Dinero que prestaste: quién te debe y cuánto.</li>
+      <li>Tus viajes del último año.</li>
+    </ul>
+    <p class="t-meta">Son totales y resúmenes, no tus estados de cuenta completos. No incluye números de cuenta ni contraseñas.</p>
+  </section>
+</div>
+{% endblock %}

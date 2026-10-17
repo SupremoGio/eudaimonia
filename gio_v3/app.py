@@ -1,9 +1,16 @@
 import os
 import secrets
+import sys
 import warnings
 from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()  # carga gio_v3/.env en desarrollo local; en Railway no existe y no hace nada
+# Bajo gunicorn stdout no es una terminal y Python lo bufferea: los print("[DB] …")
+# de las migraciones no llegaban a los logs de Railway. Línea por línea.
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
 from flask import Flask, jsonify, request, session, redirect, url_for
 from database import init_db
 from extensions import limiter, csrf
@@ -23,8 +30,8 @@ from modules.finanzas.budget       import budget_bp
 from modules.finanzas.inversiones  import inversiones_bp
 from modules.finanzas.prioridades  import prioridades_bp
 from modules.finanzas.salud        import salud_bp
+from modules.finanzas.coach        import coach_bp
 from modules.recetas.routes        import recetas_bp
-from modules.tw.routes       import tw_bp
 from modules.recompensas.routes import recompensas_bp
 from modules.guardarropa.routes import guardarropa_bp
 from modules.guardarropa.wishlist import wishlist_bp
@@ -36,6 +43,7 @@ from modules.viajes.routes       import viajes_bp
 from modules.eurythmia.routes    import eurythmia_bp
 from modules.harma.routes        import harma_bp
 from modules.paideia.routes      import paideia_bp
+from modules.plantas.routes      import plantas_bp
 
 
 def create_app():
@@ -54,6 +62,12 @@ def create_app():
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=8)
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    # Secure solo cuando corre bajo un hosting real (Railway/Render inyectan
+    # $PORT para el bind de gunicorn; el dev local con run.py no lo define y
+    # sirve por http://localhost, donde una cookie Secure nunca se enviaría
+    # de vuelta y rompería el login). Sin esto, la cookie de sesión viaja sin
+    # el flag Secure y un MITM en red no cifrada podría leerla.
+    app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('PORT'))
     app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
 
     limiter.init_app(app)
@@ -74,8 +88,8 @@ def create_app():
     app.register_blueprint(inversiones_bp,  url_prefix='/finanzas/inversiones')
     app.register_blueprint(prioridades_bp,  url_prefix='/finanzas/prioridades')
     app.register_blueprint(salud_bp,        url_prefix='/finanzas/salud')
+    app.register_blueprint(coach_bp,        url_prefix='/finanzas/coach')
     app.register_blueprint(recetas_bp,     url_prefix='/recetas')
-    app.register_blueprint(tw_bp)
     app.register_blueprint(recompensas_bp, url_prefix='/recompensas')
     app.register_blueprint(guardarropa_bp, url_prefix='/guardarropa')
     app.register_blueprint(wishlist_bp,   url_prefix='/guardarropa/wishlist')
@@ -87,6 +101,7 @@ def create_app():
     app.register_blueprint(eurythmia_bp,  url_prefix='/eurythmia')
     app.register_blueprint(harma_bp,      url_prefix='/harma')
     app.register_blueprint(paideia_bp,    url_prefix='/paideia')
+    app.register_blueprint(plantas_bp,    url_prefix='/plantas')
     csrf.exempt(estados_bp)
     csrf.exempt(viajes_bp)
     csrf.exempt(budget_bp)
@@ -107,15 +122,17 @@ def create_app():
     def health_v31():
         from ec_constants import EC_VALUE_MXN, GAMIFICATION_VERSION
         from data import ACTIVITIES
-        sat_keys = {"sat_bloque1", "sat_bloque2", "sat_bloque3"}
-        sun_keys = {"sun_reflexion", "sun_diseno", "sun_comidas", "sun_jugos", "sun_planchar"}
+        sat_keys = {"sat_bloque1", "sat_bano_bloque", "sat_gym_bloque", "sat_textiles_bloque",
+                    "sat_limpieza_bloque", "sat_barrido_bloque", "sat_jugos_bloque"}
+        sun_keys = {"sun_cafe_bloque", "sun_gym_bloque", "sun_nevera_bloque", "sun_comidas_bloque",
+                    "sun_guardado_bloque", "sun_planchar_bloque", "sun_planeacion_bloque",
+                    "sun_prioridades_bloque", "sun_cierre_bloque"}
         checks = {
-            "version":            GAMIFICATION_VERSION,
-            "ec_value_mxn":       EC_VALUE_MXN,
-            "ec_rate_ok":         EC_VALUE_MXN == 10,
-            "sat_jugos_optional": ACTIVITIES.get("sat_jugos", {}).get("optional", False),
-            "sat_keys_ok":        sat_keys.issubset(set(ACTIVITIES)),
-            "sun_keys_ok":        sun_keys.issubset(set(ACTIVITIES)),
+            "version":      GAMIFICATION_VERSION,
+            "ec_value_mxn": EC_VALUE_MXN,
+            "ec_rate_ok":   EC_VALUE_MXN == 10,
+            "sat_keys_ok":  sat_keys.issubset(set(ACTIVITIES)),
+            "sun_keys_ok":  sun_keys.issubset(set(ACTIVITIES)),
         }
         from database import get_db
         try:
@@ -127,23 +144,34 @@ def create_app():
                     "SELECT 1 FROM migration_log WHERE version='3.1'"
                 ).fetchone())
         except Exception as e:
-            checks["db_error"] = str(e)
+            # Este endpoint es público (PUBLIC_ENDPOINTS) para que el hosting
+            # pueda usarlo como health check sin sesión — nunca debe devolver
+            # el texto crudo de la excepción (puede traer fragmentos de SQL o
+            # de esquema) a un visitante no autenticado. El detalle real queda
+            # en el log del proceso, no en la respuesta.
+            print(f"[health_v31] db check failed: {e}")
+            checks["db_error"] = True
         ok = (checks["ec_rate_ok"] and checks["sat_keys_ok"] and
               checks["sun_keys_ok"] and "db_error" not in checks)
         return checks, 200 if ok else 500
 
     @app.route('/health')
     def health():
-        from database import get_db_status, _USE_HYBRID
+        # Público (health check del hosting) — por eso solo expone un status
+        # binario. get_db_status() trae detalle real (rutas de archivo, conteo
+        # de filas por tabla, último activity_key, XP total) que es
+        # información personal del dueño de la app; eso vive en
+        # /dashboard/api/db-status, que sí exige sesión iniciada.
+        from database import get_db_status
         status = get_db_status()
         ok = status.get('db_exists', False) and 'error' not in status
-        return {
-            'status': 'ok' if ok else 'degraded',
-            'mode':   status.get('mode'),
-            'turso':  'connected' if _USE_HYBRID else 'not_configured',
-            'tables': status.get('tables', {}),
-            'total_xp': status.get('total_xp', 0),
-        }, 200 if ok else 503
+        return {'status': 'ok' if ok else 'degraded'}, 200 if ok else 503
+
+    # Navegación V2: NAV/ACTIONS (modules/nav.py) + la página actual resuelta,
+    # disponibles en todas las plantillas → sidebar, bottom nav, sheet de
+    # Módulos, breadcrumb y ⌘K salen de una sola fuente.
+    from modules.nav import nav_context
+    app.context_processor(nav_context)
 
     @app.errorhandler(429)
     def too_many_requests(e):
@@ -160,6 +188,10 @@ def create_app():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-XSS-Protection'] = '1; mode=block'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        # Mismo guard que SESSION_COOKIE_SECURE: solo bajo hosting real (donde
+        # TLS está garantizado), nunca en el dev local por http://localhost.
+        if bool(os.environ.get('PORT')):
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
 
     with app.app_context():

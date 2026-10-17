@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from database import get_db
 from modules.gamification.engine import get_gamification_stats
 from utils import today_str, today_date
+from ec_constants import EC_RATE
 
 recompensas_bp = Blueprint('recompensas', __name__, template_folder='../../templates')
 
@@ -27,21 +28,103 @@ def _get_all_rewards():
     return [dict(r) for r in rows]
 
 
+# Artículos que normalmente se compran una sola vez (gadgets, equipo). Solo
+# se usa para la migración inicial y como sugerencia; el usuario lo cambia
+# en el formulario («Única vez»).
+_UNICA_WORDS = ("kindle", "watch", "ipad", "tablet", "iphone", "airpods", "laptop", "macbook", "consola",
+                "playstation", "ps5", "nintendo", "xbox", "bicicleta", "monitor", "cámara", "camara",
+                "audífonos", "audifonos", "silla", "escritorio", "teclado", "celular", "televisión", "pantalla")
+
+
+def es_unica_por_nombre(name):
+    n = (name or "").lower()
+    return any(w in n for w in _UNICA_WORDS)
+
+
+# Ventana de días por recompensa (columna weekend_only): 0 = cualquier día,
+# 1 = fin de semana (sáb–dom), 2 = viernes a domingo (ej. Carl's Jr).
+_VENTANAS = {1: (5, 6), 2: (4, 5, 6)}
+_VENTANA_LABEL = {1: "Fin de semana", 2: "Vie–Dom"}
+_DIAS = ("lun", "mar", "mié", "jue", "vie", "sáb", "dom")
+_MESES = ("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
+
+
+def ventana_modo(value):
+    """Normaliza weekend_only (bool del formulario viejo o 0/1/2) al modo 0/1/2."""
+    if value is True:
+        return 1
+    try:
+        v = int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+    return v if v in _VENTANAS else 0
+
+
+def _proximo_dia_permitido(d, modo):
+    dias = _VENTANAS.get(modo)
+    if not dias:
+        return d
+    while d.weekday() not in dias:
+        d += timedelta(days=1)
+    return d
+
+
+def _fecha_corta(d):
+    return f"{_DIAS[d.weekday()]} {d.day} {_MESES[d.month - 1]}"
+
+
+def _inicio_ventana(d, modo):
+    """Primer día de la ventana (vie o sáb) que contiene a `d`."""
+    primero = _VENTANAS[modo][0]
+    return d - timedelta(days=(d.weekday() - primero) % 7)
+
+
+def canjes_en_ventana(reward, d=None):
+    """Canjes de la recompensa en la ventana (fin de semana) que contiene a `d`,
+    contados en coins_ledger -- una sola fecha (last_redeemed) no alcanza para
+    un tope de 2 o más."""
+    modo = ventana_modo(reward.get("weekend_only"))
+    if not modo:
+        return 0
+    d = d or today_date()
+    if d.weekday() not in _VENTANAS[modo]:
+        return 0
+    with get_db() as db:
+        return db.execute(
+            "SELECT COUNT(*) c FROM coins_ledger WHERE source='reward' AND description=? AND amount<0 AND date BETWEEN ? AND ?",
+            (f"Recompensa: {reward['name']}", _inicio_ventana(d, modo).isoformat(), d.isoformat())
+        ).fetchone()["c"]
+
+
 def _can_redeem(reward, ec_balance, current_level):
+    if reward.get("unica") and reward.get("last_redeemed"):
+        return False, "Ya la conseguiste"
     if ec_balance < reward["ec_cost"]:
         return False, "EC insuficientes"
     if current_level < reward["level_required"]:
         return False, f"Nivel {reward['level_required']} requerido"
-    if reward.get("weekend_only") and today_date().weekday() < 5:
-        return False, "Solo disponible en fin de semana"
-    if reward["cooldown_days"] > 0 and reward["last_redeemed"]:
+    modo = ventana_modo(reward.get("weekend_only"))
+    today = today_date()
+    # Tope por ventana (ej. 2 cápsulas por fin de semana): reemplaza al
+    # cooldown; al llenarse se abre de nuevo la siguiente ventana.
+    tope = int(reward.get("max_por_ventana") or 0)
+    if tope and modo and today.weekday() in _VENTANAS[modo] and canjes_en_ventana(reward, today) >= tope:
+        siguiente = _inicio_ventana(today, modo) + timedelta(days=7)
+        return False, f"Ya van {tope} este fin de semana · disponible el {_fecha_corta(siguiente)}"
+    # Cooldown primero: al vencer, la recompensa se abre el siguiente día de su
+    # ventana (Carl's Jr: 30 días y luego el próximo vie/sáb/dom).
+    if reward["cooldown_days"] > 0 and reward["last_redeemed"] and not (tope and modo):
         cooldown_end = (
             datetime.fromisoformat(reward["last_redeemed"]) +
             timedelta(days=reward["cooldown_days"])
         ).date()
-        if today_date() < cooldown_end:
-            days_left = (cooldown_end - today_date()).days
+        if today < cooldown_end:
+            if modo:
+                return False, f"Disponible el {_fecha_corta(_proximo_dia_permitido(cooldown_end, modo))}"
+            days_left = (cooldown_end - today).days
             return False, f"Cooldown: {days_left} días restantes"
+    if modo and today.weekday() not in _VENTANAS[modo]:
+        return False, ("Solo de viernes a domingo" if modo == 2 else "Solo disponible en fin de semana")
     if reward["badge_required"]:
         with get_db() as db:
             badge = db.execute(
@@ -51,6 +134,39 @@ def _can_redeem(reward, ec_balance, current_level):
         if not badge:
             return False, f"Badge requerido: {reward['badge_required']}"
     return True, "ok"
+
+
+# Ícono Lucide por palabras del nombre (la tabla rewards no guarda ícono)
+_REWARD_ICONS = [
+    (("libro", "book", "kindle", "lectura"), "book-open"), (("ropa", "nike", "tenis", "camisa"), "shirt"),
+    (("viaje", "vuelo", "trip"), "plane"), (("watch", "reloj"), "watch"), (("tablet", "ipad"), "tablet"),
+    (("salida", "cine", "experiencia", "concierto"), "ticket"), (("cena", "comida", "restaurante", "helado", "carl", "burger", "hamburguesa"), "utensils"),
+    (("juego", "game", "steam"), "gamepad-2"), (("café", "cafe"), "coffee"), (("masaje", "spa"), "flower-2"),
+]
+
+
+def _reward_icon(name):
+    n = (name or "").lower()
+    for words, icon in _REWARD_ICONS:
+        if any(w in n for w in words):
+            return icon
+    return "gift"
+
+
+def _reward_status(r, ec_balance, current_level):
+    """available · level (bloqueada por nivel) · wait (cooldown, fin de semana,
+    badge) · ec (solo faltan EC) · done (única ya canjeada) — los filtros de la
+    tienda V2."""
+    if r.get("unica") and r.get("last_redeemed"):
+        return "done"
+    if r["can_redeem"]:
+        return "available"
+    if current_level < r["level_required"]:
+        return "level"
+    if ec_balance < r["ec_cost"]:
+        can_otherwise, _ = _can_redeem(r, 10 ** 9, current_level)
+        return "ec" if can_otherwise else "wait"
+    return "wait"
 
 
 @recompensas_bp.route('/')
@@ -64,12 +180,37 @@ def index():
         can, reason = _can_redeem(r, ec_balance, current_level)
         r["can_redeem"] = can
         r["block_reason"] = reason if not can else ""
+        r["status"] = _reward_status(r, ec_balance, current_level)
+        r["icon"] = _reward_icon(r["name"])
+        r["ventana"] = _VENTANA_LABEL.get(ventana_modo(r.get("weekend_only")), "")
+        r["max_por_ventana"] = int(r.get("max_por_ventana") or 0)
+        r["usados_ventana"] = canjes_en_ventana(r) if r["max_por_ventana"] else 0
+        r["ec_pct"] = min(100, round(ec_balance / r["ec_cost"] * 100)) if r["ec_cost"] else 100
+    # Las conseguidas (únicas ya canjeadas) al final
+    rewards.sort(key=lambda r: r["status"] == "done")
+
+    today = today_date()
+    week_start = (today - timedelta(days=today.weekday())).isoformat()
+    month_ago = (today - timedelta(days=29)).isoformat()
+    with get_db() as db:
+        ec_week = db.execute("SELECT COALESCE(SUM(amount),0) s FROM coins_ledger WHERE amount>0 AND date>=?",
+                             (week_start,)).fetchone()["s"]
+        ec_30 = db.execute("SELECT COALESCE(SUM(amount),0) s FROM coins_ledger WHERE amount>0 AND date>=?",
+                           (month_ago,)).fetchone()["s"]
+        history = [dict(r) for r in db.execute(
+            "SELECT id, ABS(amount) AS ec, description, date, source FROM coins_ledger "
+            "WHERE amount < 0 ORDER BY id DESC LIMIT 60").fetchall()]
 
     return render_template('recompensas/index.html',
         rewards      = rewards,
         ec_balance   = ec_balance,
         level_info   = level_info,
         gam          = get_gamification_stats(),
+        ec_rate      = EC_RATE,
+        ec_week      = ec_week,
+        ec_daily     = round(ec_30 / 30, 1),
+        history      = history,
+        counts       = {k: sum(1 for r in rewards if r["status"] == k) for k in ("available", "level", "wait", "ec", "done")},
     )
 
 
@@ -96,8 +237,8 @@ def create_reward():
     now = datetime.now().isoformat()
     with get_db() as db:
         db.execute(
-            """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, weekend_only, created_at)
-               VALUES (?,?,?,?,?,?,?,?)""",
+            """INSERT INTO rewards (name, description, ec_cost, level_required, badge_required, cooldown_days, weekend_only, created_at, unica, max_por_ventana)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (
                 name,
                 data.get("description", ""),
@@ -105,8 +246,10 @@ def create_reward():
                 int(data.get("level_required", 1)),
                 data.get("badge_required", ""),
                 int(data.get("cooldown_days", 0)),
-                int(bool(data.get("weekend_only", False))),
+                ventana_modo(data.get("weekend_only", 0)),
                 now,
+                int(bool(data.get("unica", es_unica_por_nombre(name)))),
+                max(0, int(data.get("max_por_ventana", 0) or 0)),
             )
         )
         db.commit()
@@ -123,7 +266,7 @@ def update_reward(reward_id):
             return jsonify({"error": "not found"}), 404
         db.execute(
             """UPDATE rewards SET name=?, description=?, ec_cost=?, level_required=?,
-               badge_required=?, cooldown_days=?, weekend_only=? WHERE id=?""",
+               badge_required=?, cooldown_days=?, weekend_only=?, unica=?, max_por_ventana=? WHERE id=?""",
             (
                 data.get("name", row["name"]),
                 data.get("description", row["description"]),
@@ -131,7 +274,9 @@ def update_reward(reward_id):
                 int(data.get("level_required", row["level_required"])),
                 data.get("badge_required", row["badge_required"]),
                 int(data.get("cooldown_days", row["cooldown_days"])),
-                int(bool(data.get("weekend_only", row["weekend_only"]))),
+                ventana_modo(data.get("weekend_only", row["weekend_only"])),
+                int(bool(data.get("unica", row["unica"]))),
+                max(0, int(data.get("max_por_ventana", row["max_por_ventana"] or 0) or 0)),
                 reward_id,
             )
         )

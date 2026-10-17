@@ -1,0 +1,27 @@
+{# Alta / edición de recompensa (POST · PUT /recompensas/api/rewards) #}
+{% call ui.modal('rw-modal', 'Nueva recompensa', eyebrow='Tienda') %}
+<form class="eu-modal-bd js-rw-form" autocomplete="off">
+  {{ ui.field('name', 'Nombre', placeholder='Ej. Ropa Nike', maxlength=80) }}
+  <div class="eu-grid-2">
+    {{ ui.field('cost', 'Costo (EC)', type='number', value='50', min=0) }}
+    {{ ui.field('lvl', 'Nivel requerido', type='number', value='1', min=1, max=10) }}
+    {{ ui.field('cool', 'Cooldown (días)', type='number', value='30', min=0) }}
+  </div>
+  {{ ui.field('desc', 'Descripción', placeholder='Opcional', maxlength=200) }}
+  <label class="eu-hstack rw-check"><input type="checkbox" id="f-unica"> <span class="t-ui">Única vez</span> <span class="t-meta">· se canjea una sola vez (Kindle, reloj…); ya no vuelve a aparecer</span></label>
+  <div class="eu-field">
+    <label class="eu-label" for="f-weekend">Días disponibles</label>
+    <select class="eu-select" id="f-weekend" name="weekend">
+      <option value="0">Cualquier día</option>
+      <option value="1">Solo fin de semana (sáb–dom)</option>
+      <option value="2">Viernes a domingo</option>
+    </select>
+    <div class="eu-help">Evita que se vuelva hábito diario; al vencer el cooldown se abre el siguiente día permitido</div>
+  </div>
+  {{ ui.field('max', 'Máx. por fin de semana', type='number', value='0', min=0, max=7, help='0 = sin tope; usa el cooldown. Con tope, se puede canjear esas veces cada fin de semana (pon un día en «Días disponibles»)') }}
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('rw-modal')">Cancelar</button>
+  <button type="button" class="eu-btn eu-btn--primary js-rw-save"><i data-lucide="check"></i>Guardar</button>
+</div>
+{% endcall %}

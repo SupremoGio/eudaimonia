@@ -1,0 +1,12 @@
+{# Constancia · 13 semanas (columna = semana) #}
+{% set active = heat|selectattr('xp', '>', 0)|list|length %}
+<section class="eu-card eu-vstack lg-heat" aria-labelledby="lg-heat-t">
+  <div class="eu-between">
+    <h2 class="t-card" id="lg-heat-t">Constancia</h2>
+    <span class="t-meta num">{{ active }} días activos</span>
+  </div>
+  <div class="eu-heat lg-heat-grid" role="img" aria-label="XP por día, últimas 13 semanas">
+    {% for c in heat %}<i data-l="{{ c.l }}"{% if c.today %} class="today"{% elif c.future %} class="is-future"{% endif %} title="{{ c.date }} · {{ c.xp }} XP"></i>{% endfor %}
+  </div>
+  <div class="eu-heat-legend" aria-hidden="true">Menos <i data-l="0"></i><i data-l="2"></i><i data-l="4"></i> Más</div>
+</section>

@@ -3,16 +3,112 @@ from database import get_db
 from datetime import date, datetime
 from collections import defaultdict
 from utils import today_str, today_date, clean_str, safe_float
+from . import compromisos as _comp
 
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 
 
+# Días de pago de las tarjetas (no hay fecha de corte en la DB). `match` se
+# busca en el nombre/institución de la cuenta de pasivo para el badge de
+# vencimiento del hub; `label` es el aviso del día de pago.
+PAY_DAYS = [
+    {'match': 'bbva',  'day': 15, 'label': 'BBVA TDC'},
+    {'match': 'invex', 'day': 15, 'label': 'Invex'},
+    {'match': 'hsbc',  'day': 30, 'label': 'HSBC'},
+]
+_MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+             'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+
 def payment_alerts():
     d = today_date().day
-    alerts = []
-    if d == 15: alerts += [{"label":"BBVA TDC","color":"#c5a36c"},{"label":"Invex","color":"#a78bfa"}]
-    if d == 30: alerts.append({"label":"HSBC","color":"#60a5fa"})
-    return alerts
+    return [{'label': p['label']} for p in PAY_DAYS if p['day'] == d]
+
+
+def _days_until(day):
+    """Días hasta el próximo `day` del mes (un 30/31 en meses cortos cae en el último día)."""
+    import calendar
+    from datetime import timedelta
+    t = today_date()
+    for k in range(0, 2):
+        y, m = (t.year, t.month + k) if t.month + k <= 12 else (t.year + 1, 1)
+        last = calendar.monthrange(y, m)[1]
+        due = t.replace(year=y, month=m, day=min(day, last))
+        if due >= t:
+            return (due - t).days
+    return None
+
+
+def _hub_debts(cuentas):
+    """Tarjetas y préstamos activos (salud_cuentas) con su pago mínimo
+    (budget_deudas, por nombre) y días al próximo pago (PAY_DAYS)."""
+    from modules.finanzas.salud import TIPOS_PASIVO, TIPO_META, MONEDAS_EXTRANJERAS
+    try:
+        with get_db() as db:
+            minimos = {(r['nombre'] or '').strip().lower(): r['pago_minimo'] or 0
+                       for r in db.execute("SELECT nombre, pago_minimo FROM budget_deudas WHERE activa=1")}
+    except Exception:
+        minimos = {}
+    # El saldo de las tarjetas sale de sus compras a MSI por pagar (la misma
+    # cifra de «MSI activos» en Estados), no del capturado a mano en
+    # Patrimonio. Banco del estado de cuenta (BBVA_TDC, HSBC…) → tarjeta cuyo
+    # nombre/institución lo menciona; solo la primera, para no contarlo doble.
+    # Tarjetas de bancos sin historial de MSI conservan el saldo manual.
+    try:
+        from modules.finanzas.estados.routes import msi_por_pagar
+        activos, msi_bancos = msi_por_pagar()
+    except Exception:
+        activos, msi_bancos = [], set()
+    msi_banco = defaultdict(float)
+    for a in activos:
+        msi_banco[a['banco']] += a['restante']
+    asignados = set()
+    out = []
+    for c in cuentas:
+        if c['tipo'] not in TIPOS_PASIVO or c['moneda'] in MONEDAS_EXTRANJERAS:
+            continue
+        hay = f"{c['nombre']} {c.get('institucion') or ''}".lower()
+        saldo, de_msi = c['saldo'], False
+        if c['tipo'] == 'tarjeta_credito':
+            bancos = [b for b in msi_bancos - asignados if b and b.split('_')[0].lower() in hay]
+            if bancos:
+                asignados.update(bancos)
+                saldo, de_msi = round(sum(msi_banco[b] for b in bancos), 2), True
+        if not saldo:
+            continue
+        pay = next((p for p in PAY_DAYS if p['match'] in hay), None)
+        dias = _days_until(pay['day']) if pay else None
+        minimo = next((v for k, v in minimos.items() if k and (k in hay or c['nombre'].lower() in k)), None)
+        out.append({
+            'nombre': c['nombre'],
+            'sub': ' · '.join(filter(None, [TIPO_META.get(c['tipo'], {}).get('label'), c.get('institucion'),
+                                            'MSI por pagar' if de_msi else None])),
+            'saldo': saldo, 'minimo': minimo, 'dias': dias,
+            'tone': None if dias is None else 'danger' if dias == 0 else 'warning' if dias <= 7 else '',
+        })
+    out.sort(key=lambda d: (d['dias'] is None, d['dias'] if d['dias'] is not None else 0, -d['saldo']))
+    return out
+
+
+def _hub_budget_rows(bd):
+    """Presupuesto por categoría para el hub: primero las categorías con límite
+    configurado (gastado / límite); si no hay ninguna, los 3 buckets 50/30/20
+    (gastado / meta del bucket). tone: ≥90% warning, >100% danger."""
+    rows = []
+    for bk in bd['buckets'].values():
+        for c in bk['cats']:
+            if c['tiene_limite']:
+                rows.append({'nombre': c['nombre'], 'gastado': c['gastado'], 'meta': c['limite']})
+    if not rows:
+        rows = [{'nombre': bk['label'] if 'label' in bk else k, 'gastado': bk['total_gastado'], 'meta': bk['target_monto']}
+                for k, bk in bd['buckets'].items()]
+    if not any(r['gastado'] or r['meta'] for r in rows):
+        return []
+    for r in rows:
+        r['pct'] = round(r['gastado'] / r['meta'] * 100) if r['meta'] else 0
+        r['tone'] = 'danger' if r['pct'] > 100 else 'warning' if r['pct'] >= 90 else 'brand'
+    rows.sort(key=lambda r: -r['pct'])
+    return rows[:5]
 
 
 @finanzas_bp.route('/')
@@ -39,18 +135,26 @@ def index():
     _nm = 1 if today.month == 12 else today.month + 1
     _ny = today.year + 1 if today.month == 12 else today.year
     mes_ini, mes_fin = f"{cur_mes}-01", f"{_ny}-{_nm:02d}-01"
-    extra = {}
+    extra = {'budget': None, 'budget_rows': []}
 
-    try:  # Presupuesto: disponible + % del ingreso usado (reusa _calc_budget)
+    try:  # Presupuesto del mes (o el último con movimientos): ingreso, gasto, ahorro, categorías
         from modules.finanzas.budget import _calc_budget, _last_month_with_data
         with get_db() as db:
             n_cur = db.execute("SELECT COUNT(*) n FROM est_movimientos "
                                "WHERE fecha>=? AND fecha<?", (mes_ini, mes_fin)).fetchone()['n']
             bmes  = cur_mes if n_cur >= 1 else (_last_month_with_data(db) or cur_mes)
             bd    = _calc_budget(bmes, db)
-        extra['presupuesto_disponible'] = bd['disponible']
-        if bd['ingreso_real']:
-            extra['presupuesto_pct'] = round(bd['total_gastado'] / bd['ingreso_real'] * 100)
+        ing, gas = bd['ingreso_real'], bd['consumo']   # invertir no es gasto; un retiro tampoco lo baja
+        extra['budget'] = {
+            'mes': bmes, 'mes_nombre': _MESES_ES[int(bmes[5:]) - 1], 'ingreso': ing, 'gastado': gas,
+            # Lo que se aparta a inversiones sí ocupa ingreso; un retiro no lo libera.
+            'disponible': bd['disponible'],   # = ing − consumo − invertido (mismo que la Radiografía)
+            'pct': round(gas / ing * 100) if ing else None,
+            'ahorro_pct': round((ing - gas) / ing * 100) if ing else None,
+            'dias_restantes': bd['dias_mes'] - bd['dia_actual'] if bd['es_mes_actual'] else None,
+            'fuentes': len(bd['ingresos_detalle']),
+        }
+        extra['budget_rows'] = _hub_budget_rows(bd)
     except Exception:
         pass
 
@@ -73,16 +177,26 @@ def index():
     except Exception:
         pass
 
+    from modules.finanzas.salud import MONEDAS_EXTRANJERAS
+    inversiones = sum(c['saldo'] for c in pat['cuentas']
+                      if c['tipo'] == 'inversion' and c['moneda'] not in MONEDAS_EXTRANJERAS)
+    debts = _hub_debts(pat['cuentas'])
+
     return render_template('finanzas/hub.html',
         patrimonio_neto = patrimonio_neto_display,
         total_activos   = pat['total_activos'],
         total_pasivos   = pat['total_pasivos'],
         liquido         = pat['liquido'],
         total_bienes    = pat['total_bienes'],
+        inversiones     = inversiones,
         deudas_neto     = total_owe_me - total_i_owe,
+        owe_me_total    = total_owe_me,
+        i_owe_total     = total_i_owe,
         historial       = pat['historial'],
         pat_delta       = pat_delta,
         pat_delta_pct   = pat_delta_pct,
+        debts           = debts,
+        debts_total     = sum(d['saldo'] for d in debts),
         alerts=payment_alerts(), today=today_str(),
         **extra,
     )
@@ -112,6 +226,11 @@ def abonar_debt(did):
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     amount = safe_float(request.json.get('amount', 0), min_val=0.0)
     note   = clean_str(request.json.get('note', ''), 300)
+    # Depósitos del banco que son este abono (opcional): ids de movimiento.
+    try:
+        mov_ids = [int(x) for x in (request.json.get('movimiento_ids') or []) if str(x).strip()]
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Los ids de movimiento deben ser números'}), 400
     with get_db() as db:
         debt = db.execute("SELECT * FROM debts WHERE id=?", (did,)).fetchone()
         if not debt: return jsonify({'error':'not found'}), 404
@@ -125,8 +244,14 @@ def abonar_debt(did):
 
         db.execute("UPDATE debts SET monto_restante=?, settled=? WHERE id=?",
                    (nuevo_restante, settled, did))
-        db.execute("INSERT INTO debt_payments (debt_id, amount, note, paid_at) VALUES (?,?,?,?)",
-                   (did, amount, note, datetime.now().isoformat()))
+        pid = db.execute("INSERT INTO debt_payments (debt_id, amount, note, paid_at) VALUES (?,?,?,?)",
+                         (did, amount, note, datetime.now().isoformat())).lastrowid
+        try:
+            for mid in mov_ids:
+                _comp.ligar(db, pid, mid)
+        except ValueError as e:
+            db.rollback()
+            return jsonify({'error': str(e)}), 400
         db.commit()
 
         updated = db.execute("SELECT * FROM debts WHERE id=?", (did,)).fetchone()
@@ -154,19 +279,101 @@ def debt_payments(did):
     return jsonify({'payments': [dict(p) for p in payments]})
 
 
+def _debt_hist(db, d) -> dict:
+    """Una deuda con sus abonos/cobros en orden cronológico (historial)."""
+    pagos = [{**dict(p), 'movimientos': _comp.movs_de_pago(db, p['id'])} for p in db.execute(
+        "SELECT id, amount, note, paid_at FROM debt_payments WHERE debt_id=? ORDER BY paid_at, id", (d['id'],))]
+    return {'id': d['id'], 'type': d['type'], 'person': d['person'], 'concept': d['concept'] or '',
+            'monto_total': d['monto_total'], 'monto_restante': d['monto_restante'],
+            'settled': bool(d['settled']), 'created_at': d['created_at'], 'payments': pagos,
+            'pagado': round(sum(p['amount'] for p in pagos), 2)}
+
+
+@finanzas_bp.route('/api/debt/<int:did>/historial')
+def debt_historial(did):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        d = db.execute("SELECT * FROM debts WHERE id=?", (did,)).fetchone()
+        if not d: return jsonify({'error': 'not found'}), 404
+        return jsonify(_debt_hist(db, d))
+
+
+@finanzas_bp.route('/api/debts/historial')
+def debts_historial():
+    """Deudas ya liquidadas, la más reciente primero, con sus pagos."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        rows = db.execute("""SELECT d.*, COALESCE((SELECT MAX(paid_at) FROM debt_payments WHERE debt_id=d.id), d.created_at) AS ultimo
+                              FROM debts d WHERE d.settled=1 ORDER BY ultimo DESC""").fetchall()
+        return jsonify({'debts': [{**_debt_hist(db, d), 'ultimo': d['ultimo']} for d in rows]})
+
+
 @finanzas_bp.route('/api/debt/<int:did>/settle', methods=['POST'])
 def settle_debt(did):
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     with get_db() as db:
+        d = db.execute("SELECT monto_restante FROM debts WHERE id=?", (did,)).fetchone()
+        # Lo que faltaba queda como último pago, para que el historial cuadre.
+        if d and (d['monto_restante'] or 0) > 0:
+            db.execute("INSERT INTO debt_payments (debt_id, amount, note, paid_at) VALUES (?,?,?,?)",
+                       (did, d['monto_restante'], 'Liquidado', datetime.now().isoformat()))
         db.execute("UPDATE debts SET settled=1, monto_restante=0 WHERE id=?", (did,))
         db.commit()
     return jsonify({'ok':True})
+
+
+@finanzas_bp.route('/api/debt-payment/<int:pid>/ligar', methods=['POST'])
+def ligar_abono(pid):
+    """Liga un abono ya registrado a su depósito del banco (id de movimiento)."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    try:
+        mid = int((request.json or {}).get('movimiento_id'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Falta el id del movimiento'}), 400
+    with get_db() as db:
+        if not db.execute("SELECT 1 FROM debt_payments WHERE id=?", (pid,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
+        try:
+            _comp.ligar(db, pid, mid)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        db.commit()
+        return jsonify({'ok': True, 'movimientos': _comp.movs_de_pago(db, pid)})
+
+
+@finanzas_bp.route('/api/debt-payment/movimiento/<int:mid>', methods=['DELETE'])
+def desligar_abono(mid):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        _comp.desligar(db, mid)
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@finanzas_bp.route('/api/debts/sugerencias')
+def debts_sugerencias():
+    """Depósitos de alguien con un compromiso abierto: posibles abonos (no se aplican solos)."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        return jsonify({'sugerencias': _comp.sugerencias(db)})
+
+
+@finanzas_bp.route('/api/debts/sugerencias/<int:mid>/descartar', methods=['POST'])
+def debts_sugerencia_descartar(mid):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        _comp.descartar(db, mid)
+        db.commit()
+    return jsonify({'ok': True})
 
 
 @finanzas_bp.route('/api/debt/<int:did>', methods=['DELETE'])
 def delete_debt(did):
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     with get_db() as db:
+        for (pid,) in db.execute("SELECT id FROM debt_payments WHERE debt_id=?", (did,)).fetchall():
+            for (mid,) in db.execute("SELECT movimiento_id FROM debt_payment_movs WHERE payment_id=?", (pid,)).fetchall():
+                _comp.desligar(db, mid)
         db.execute("DELETE FROM debt_payments WHERE debt_id=?", (did,))
         db.execute("DELETE FROM debts WHERE id=?", (did,))
         db.commit()
@@ -181,27 +388,10 @@ def seed_budgets():
         return jsonify({'error': 'locked'}), 403
     # Cifras exactas del Excel SG BUDGET 2026 (50-30-20)
     # Ingreso mensual: $22,796 | Excedente: $110.75
-    budgets = [
-        # ── NECESIDADES (50%) — total $14,385.25 ──────────────────────
-        ('CASA/HOGAR',    'Vivienda',           6000.00),  # Alquiler
-        ('SERVICIOS',     'Servicios',          1429.84),  # Agua+Luz+Internet+Gas+Garrafón
-        ('GASOLINA/AUTO', 'Gasolina / Auto',    1955.41),  # Seguro+Gasolina
-        ('VIVERES/SUPER', 'Víveres / Súper',    2500.00),  # Víveres+Carnes
-        ('SALUD',         'Personal / Salud',    300.00),  # Saldo Cel+Corte cabello
-        ('MENSUALIDAD',   'Mensualidad TDC',    2200.00),  # Mensualidad TDC
-        # ── DESEOS (30%) — total $4,000.00 ───────────────────────────
-        ('SALSA',          'Salsa / Baile',      700.00),
-        ('COMIDA/REST',    'Comida / Restaurante',2000.00),
-        ('ENTRETENIMIENTO','Gustos',              300.00),
-        ('ROPA',           'Ropa',               500.00),
-        ('GYM',            'Gym',                350.00),
-        ('SUSCRIPCIONES',  'Apps / Suscripciones',150.00),
-        # ── AHORRO Y DEUDAS (20%) — total $4,300.00 ──────────────────
-        ('INVERSION',      'Ahorro',            4000.00),
-        ('APRENDIZAJE',    'Educación',          300.00),
-        # ── EXPENSE (informativo — se reembolsa, sin presupuesto) ─────
-        ('EXPENSE',        'EXPENSE',              0.00),
-    ]
+    # Límites del plan acordado (antes: cifras del Excel SG BUDGET 2026 con
+    # categorías que ya no existen, p. ej. CASA/HOGAR o MENSUALIDAD).
+    from modules.finanzas.presupuesto_plan import PLAN_LIMITES
+    budgets = PLAN_LIMITES
     with get_db() as db:
         # Limpiar y recargar desde cero para garantizar cifras exactas
         db.execute("DELETE FROM est_budgets")
@@ -227,23 +417,8 @@ def apply_migrations():
 
         # ── 1. Presupuesto exacto Excel 2026 (50-30-20) ───────────────────────
         db.execute("DELETE FROM est_budgets")
-        budgets = [
-            ('CASA/HOGAR',    'Vivienda',           6000.00),
-            ('SERVICIOS',     'Servicios',          1429.84),
-            ('GASOLINA/AUTO', 'Gasolina / Auto',    1955.41),
-            ('VIVERES/SUPER', 'Víveres / Súper',    2500.00),
-            ('SALUD',         'Personal / Salud',    300.00),
-            ('MENSUALIDAD',   'Mensualidad TDC',    2200.00),
-            ('SALSA',         'Salsa / Baile',       700.00),
-            ('COMIDA/REST',   'Comida / Restaurante',2000.00),
-            ('ENTRETENIMIENTO','Gustos',              300.00),
-            ('ROPA',          'Ropa',                500.00),
-            ('GYM',           'Gym',                 350.00),
-            ('SUSCRIPCIONES', 'Apps / Suscripciones',150.00),
-            ('INVERSION',     'Ahorro',             4000.00),
-            ('APRENDIZAJE',   'Educación',           300.00),
-            ('EXPENSE',       'EXPENSE',               0.00),
-        ]
+        from modules.finanzas.presupuesto_plan import PLAN_LIMITES
+        budgets = PLAN_LIMITES
         for cat, nombre, limite in budgets:
             db.execute(
                 "INSERT INTO est_budgets (categoria, nombre, limite, periodo) VALUES (?,?,?,'mensual')",
@@ -253,17 +428,17 @@ def apply_migrations():
 
         # ── 2. Keyword rules ──────────────────────────────────────────────────
         keywords = [
-            ('NU MEXICO',               'APORTACION_RENTA', 'Parte renta Nu Mexico'),
-            ('TARJETA DE TERCEROS MBAN','CASA/HOGAR',       'Renta depto 807'),
-            ('5420150016315198',         'CASA/HOGAR',      'Renta depto 807'),
-            ('TOTAL PLAY CR MEX',        'SERVICIOS',       'Internet'),
-            ('TOTAL PLAY',               'SERVICIOS',       'Internet'),
-            ('TOTALPLAY',                'SERVICIOS',       'Internet'),
-            ('CFE SUM SERV',             'SERVICIOS',       'Luz'),
-            ('CFE',                      'SERVICIOS',       'Luz'),
-            ('MI ATT A APP',             'SERVICIOS',       'Saldo telefono'),
-            ('ATTAPP',                   'SERVICIOS',       'Saldo telefono'),
-            ('ATTAPP MICROS',            'SERVICIOS',       'Saldo telefono'),
+            ('NU MEXICO',               'VIVIENDA', 'Renta'),
+            ('TARJETA DE TERCEROS MBAN','VIVIENDA',  'Renta'),
+            ('5420150016315198',         'VIVIENDA', 'Renta'),
+            ('TOTAL PLAY CR MEX',        'VIVIENDA', 'Internet'),
+            ('TOTAL PLAY',               'VIVIENDA', 'Internet'),
+            ('TOTALPLAY',                'VIVIENDA', 'Internet'),
+            ('CFE SUM SERV',             'VIVIENDA', 'Luz'),
+            ('CFE',                      'VIVIENDA', 'Luz'),
+            ('MI ATT A APP',             'DIGITAL',  'Celular'),
+            ('ATTAPP',                   'DIGITAL',  'Celular'),
+            ('ATTAPP MICROS',            'DIGITAL',  'Celular'),
         ]
         for kw, cat, sub in keywords:
             db.execute(
@@ -272,66 +447,71 @@ def apply_migrations():
             )
         log.append(f'est_keywords: {len(keywords)} reglas aseguradas')
 
-        # ── 3b. Reclasificar TOTAL PLAY → SERVICIOS/Internet ─────────────────
+        # ── 3b. Reclasificar TOTAL PLAY → VIVIENDA/Internet ─────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='SERVICIOS', subcategoria='Internet'
+            SET categoria='VIVIENDA', subcategoria='Internet'
             WHERE (UPPER(descripcion) LIKE '%TOTAL PLAY%'
                 OR UPPER(descripcion) LIKE '%TOTALPLAY%')
         """)
-        log.append(f'TOTAL PLAY → SERVICIOS/Internet: {r.rowcount} transacciones reclasificadas')
+        log.append(f'TOTAL PLAY → VIVIENDA/Internet: {r.rowcount} transacciones reclasificadas')
 
-        # ── 3d. Reclasificar CFE → SERVICIOS/Luz ─────────────────────────────
+        # ── 3d. Reclasificar CFE → VIVIENDA/Luz ─────────────────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='SERVICIOS', subcategoria='Luz'
+            SET categoria='VIVIENDA', subcategoria='Luz'
             WHERE UPPER(descripcion) LIKE '%CFE%'
               AND tipo='GASTO'
         """)
-        log.append(f'CFE → SERVICIOS/Luz: {r.rowcount} transacciones reclasificadas')
+        log.append(f'CFE → VIVIENDA/Luz: {r.rowcount} transacciones reclasificadas')
 
-        # ── 3c. Reclasificar ATT saldo telefono → SERVICIOS ─────────────────────
+        # ── 3c. Reclasificar ATT saldo telefono → DIGITAL/Celular ────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='SERVICIOS', subcategoria='Saldo telefono'
+            SET categoria='DIGITAL', subcategoria='Celular'
             WHERE (UPPER(descripcion) LIKE '%MI ATT A APP%'
                 OR UPPER(descripcion) LIKE '%ATTAPP%')
               AND tipo='GASTO'
         """)
-        log.append(f'ATT saldo telefono → SERVICIOS: {r.rowcount} transacciones reclasificadas')
+        log.append(f'ATT saldo telefono → DIGITAL/Celular: {r.rowcount} transacciones reclasificadas')
 
         # ── 3a. Reclasificar aportación de renta Nu Mexico ────────────────────
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='APORTACION_RENTA', subcategoria='Parte renta Nu Mexico'
+            SET categoria='VIVIENDA', subcategoria='Renta'
             WHERE tipo='INGRESO'
               AND UPPER(descripcion) LIKE '%NU MEXICO%'
               AND UPPER(descripcion) LIKE '%RECIBIDO%'
         """)
-        log.append(f'APORTACION_RENTA: {r.rowcount} transacciones Nu Mexico reclasificadas')
+        log.append(f'Aportación renta Nu Mexico → VIVIENDA/Renta: {r.rowcount} transacciones reclasificadas')
 
         # ── 4. Reclasificar pagos de renta depto 807 ─────────────────────────
         # Patron: PAGO TARJETA DE TERCEROS a cuenta 5420150016315198 (MBAN)
         # Monto ~12,000-13,000, dias 1-12 de cada mes, BBVA_DEB
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='CASA/HOGAR',
-                subcategoria='Renta depto 807',
+            SET categoria='VIVIENDA',
+                subcategoria='Renta',
                 tipo='GASTO',
                 mi_parte=6000.0
             WHERE banco='BBVA_DEB'
               AND UPPER(descripcion) LIKE '%TARJETA DE TERCEROS%'
               AND monto BETWEEN 11000 AND 14000
               AND CAST(substr(fecha,9,2) AS INTEGER) BETWEEN 1 AND 12
-              AND subcategoria != 'Renta depto 807 + deposito'
+              AND NOT (monto = 13000 AND substr(fecha,1,7) = '2025-11')
         """)
         log.append(f'Renta depto 807: {r.rowcount} pagos mensuales reclasificados (mi_parte=6000)')
 
-        # Nov-2025: depósito inicial — mi_parte = 7000
+        # Nov-2025: depósito inicial — mi_parte = 7000. El depósito se
+        # distingue por mi_parte (7000 vs 6000), no por su propia
+        # subcategoria -- "Renta + deposito"/"Renta depto 807 + deposito"
+        # eran variantes de lo mismo que el usuario pidió unificar
+        # ("tambien renta depto 807"), igual que Aportación renta/Renta
+        # del lado ingreso.
         r = db.execute("""
             UPDATE est_movimientos
-            SET categoria='CASA/HOGAR',
-                subcategoria='Renta depto 807 + deposito',
+            SET categoria='VIVIENDA',
+                subcategoria='Renta',
                 tipo='GASTO',
                 mi_parte=7000.0
             WHERE banco='BBVA_DEB'
@@ -348,23 +528,13 @@ def apply_migrations():
 
 @finanzas_bp.route('/admin/fix-invex-spei', methods=['POST'])
 def fix_invex_spei():
-    """Corrige SPEI ENVIADO INVEX mal clasificados como INVERSION → PAGO_TDC."""
+    """Pasa todos los SPEI ENVIADO INVEX a PAGO_TDC / MOVIMIENTO_INTERNO (misma
+    regla que el import y «Aplicar reglas»)."""
     if not session.get('fin_ok'):
         return jsonify({'error': 'locked'}), 403
+    from modules.finanzas.estados.routes import _corregir_spei_invex
     with get_db() as db:
-        rows = db.execute('''
-            SELECT id FROM est_movimientos
-            WHERE tipo="INVERSION" AND categoria="INVEX"
-              AND UPPER(descripcion) LIKE "%SPEI ENVIADO%"
-        ''').fetchall()
-        fixed = 0
-        for r in rows:
-            db.execute('''
-                UPDATE est_movimientos
-                SET tipo="PAGO", categoria="PAGO_TDC", subcategoria="Invex TDC"
-                WHERE id=?
-            ''', (r['id'],))
-            fixed += 1
+        fixed = _corregir_spei_invex(db)
         db.commit()
     return jsonify({'ok': True, 'fixed': fixed})
 
@@ -411,14 +581,17 @@ def oikonomia_summary():
     else:
         delta, delta_pct = 0, 0
     mes = today_date().replace(day=1).isoformat()
+    # Gasto con la misma regla que Estados de cuenta (_PAGO_CATS): antes este
+    # widget excluía FINANZAS entera y escondía transferencias que en
+    # realidad eran gasto (pedido del usuario 2026-09-26).
+    from modules.finanzas.estados.routes import _PAGO_CATS, _MONTO, _INGRESO_EXCLUIR_SQL
     with get_db() as db:
-        flujo = db.execute("""
+        flujo = db.execute(f"""
             SELECT
-              SUM(CASE WHEN tipo='INGRESO'
-                        AND categoria NOT IN ('TRANSFERENCIA','PAGO_TDC','RETIRO','DEPOSITO','SPEI_RECIBIDO')
+              SUM(CASE WHEN tipo='INGRESO' AND {_INGRESO_EXCLUIR_SQL}
                        THEN monto ELSE 0 END) AS ingreso,
-              SUM(CASE WHEN tipo='GASTO' AND categoria NOT IN ('PAGO_TDC','PAGO')
-                       THEN COALESCE(mi_parte, monto) ELSE 0 END) AS gasto
+              SUM(CASE WHEN tipo='GASTO' AND {_PAGO_CATS}
+                       THEN {_MONTO} ELSE 0 END) AS gasto
             FROM est_movimientos WHERE fecha >= ?""", (mes,)).fetchone()
         n_cuentas = db.execute(
             "SELECT COUNT(*) c FROM salud_cuentas WHERE activa=1"

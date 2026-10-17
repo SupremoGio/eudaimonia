@@ -1,0 +1,35 @@
+{# Runner de la sesión guiada y hoja de cierre #}
+<div class="eu-scrim ey-run-scrim" id="m-run" hidden>
+  <div class="eu-modal ey-runner" role="dialog" aria-modal="true" aria-labelledby="ey-r-name" data-cat="eurythmia">
+    <div class="eu-modal-bd ey-runner-bd">
+      <div class="t-eyebrow" id="ey-r-phase">Fase 1 / 3</div>
+      <div class="t-page ey-r-name" id="ey-r-name">Disociación</div>
+      <p class="t-body ey-r-desc" id="ey-r-desc"></p>
+      <div class="t-data ey-r-time" id="ey-r-time" role="timer" aria-live="off">10:00</div>
+      <div class="ey-r-dots" id="ey-r-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="eu-grid-2 ey-r-actions">
+        <button type="button" class="eu-btn eu-btn--secondary" id="ey-r-pause"><i data-lucide="pause"></i><span>Pausar</span></button>
+        <button type="button" class="eu-btn eu-btn--secondary" id="ey-r-skip">Siguiente fase<i data-lucide="skip-forward"></i></button>
+      </div>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--block" id="ey-r-cancel">Cancelar sesión</button>
+    </div>
+  </div>
+</div>
+
+{% call ui.modal('m-close', 'Sesión completada', eyebrow='Eurythmia · Bitácora') %}
+<form class="eu-modal-bd" id="f-close" novalidate>
+  <div class="ey-close-hd"><div class="t-page"><span id="ey-close-min">30</span> min de práctica</div><div class="t-meta" id="ey-close-sub"></div></div>
+  <div class="eu-field">
+    <span class="eu-label" id="ey-flow-l">¿Cómo se sintió?</span>
+    <div class="ey-flow" role="radiogroup" aria-labelledby="ey-flow-l" id="ey-flow-row"></div>
+    <div class="t-meta fg-brand ey-flow-lbl" id="ey-flow-lbl" aria-live="polite">Fluido</div>
+  </div>
+  <div class="eu-field"><label class="eu-label" for="ey-improv">Hoy improvisé e hice…</label>
+    <textarea class="eu-textarea" id="ey-improv" rows="3" placeholder="Encadené enchufla doble con vacílala sin pensarlo…"></textarea></div>
+  <div><button type="button" class="eu-chip" id="ey-close-grabado" aria-pressed="false"><i data-lucide="video"></i>Grabé esta práctica</button></div>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-close')">Cancelar</button>
+  <button type="submit" form="f-close" class="eu-btn eu-btn--primary" id="ey-save-btn">Guardar · +<span id="ey-close-xp">0</span> XP</button>
+</div>
+{% endcall %}

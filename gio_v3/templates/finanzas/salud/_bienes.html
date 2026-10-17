@@ -1,0 +1,41 @@
+{# Bienes personales con filtro por categoría #}
+{% set BCAT = {'vehiculo':'cosmopolitismo','electrodomestico':'paideia','mueble':'harma','electronico':'ataraxia','otro':'identidad'} %}
+<section class="eu-card pt-box" data-cat="oikonomia" aria-labelledby="pt-bien-t">
+  <div class="eu-between pt-box-hd">
+    <div><h3 class="t-card pt-box-t" id="pt-bien-t"><i data-lucide="house"></i>Bienes personales</h3><p class="t-meta">Vehículo, electrodomésticos, muebles, electrónicos</p></div>
+    <div class="pt-box-r"><div class="t-data pt-total">{{ pm.hide(pm.money(total_bienes, 2)) }}</div>
+      <button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-new-bien"><i data-lucide="plus"></i>Agregar bien</button></div>
+  </div>
+  {% if bienes %}
+  <div class="eu-chips" role="group" aria-label="Filtrar bienes">
+    {{ ui.chip('Todos', pressed=True, count=bienes|length, **{'data-bf': 'todos'}) }}
+    {% for cat, items in bienes_por_cat.items() %}{{ ui.chip(bien_meta[cat].label, count=items|length, **{'data-bf': cat}) }}{% endfor %}
+  </div>
+  <div class="pt-bienes" id="bienes-grid">
+    {% for b in bienes %}
+    {% set bm = bien_meta[b.categoria] %}
+    {% set deprec = ((b.valor_actual - b.precio_compra) / b.precio_compra * 100) if b.precio_compra > 0 else 0 %}
+    <article class="eu-card eu-card--inset pt-bien" data-bcat="{{ b.categoria }}" data-cat="{{ BCAT.get(b.categoria, 'identidad') }}">
+      <div class="eu-between"><span class="eu-badge eu-badge--cat"><i data-lucide="{{ bm.icon }}"></i>{{ bm.label }}</span>
+        <span class="pt-acts">
+          <button type="button" class="eu-iconbtn" data-edit-bien='{{ {"id": b.id, "nombre": b.nombre, "categoria": b.categoria, "descripcion": b.descripcion or "", "precio_compra": b.precio_compra, "valor_actual": b.valor_actual, "fecha_compra": b.fecha_compra or "", "lugar_compra": b.lugar_compra or "", "garantia_hasta": b.garantia_hasta or "", "notas": b.notas or ""}|tojson|forceescape }}' aria-label="Editar {{ b.nombre }}"><i data-lucide="pencil"></i></button>
+          <button type="button" class="eu-iconbtn pt-del" data-del-bien="{{ b.id }}" aria-label="Eliminar {{ b.nombre }}"><i data-lucide="trash-2"></i></button>
+        </span></div>
+      <div class="t-card pt-bien-t">{{ b.nombre }}</div>
+      {% if b.descripcion or b.lugar_compra %}<p class="t-meta">{{ b.descripcion or b.lugar_compra }}</p>{% endif %}
+      <dl class="pt-bien-vals">
+        <div><dt class="t-meta">Precio compra</dt><dd class="t-data">{{ pm.money(b.precio_compra) }}</dd></div>
+        <div><dt class="t-meta">Valor actual</dt><dd class="t-data fg-brand">{{ pm.money(b.valor_actual) }}</dd></div>
+      </dl>
+      <div class="pt-bien-ft">
+        {% if b.precio_compra > 0 %}<span class="eu-badge {{ 'eu-badge--success' if deprec >= 0 else 'eu-badge--danger' }}"><i data-lucide="{{ 'trending-up' if deprec >= 0 else 'trending-down' }}"></i>{{ '+' if deprec >= 0 }}{{ "{:.1f}".format(deprec) }}% valor</span>{% endif %}
+        {% if b.fecha_compra %}<span class="eu-badge"><i data-lucide="calendar"></i>{{ b.fecha_compra }}</span>{% endif %}
+        {% if b.garantia_hasta %}<span class="eu-badge"><i data-lucide="shield-check"></i>Gtía: {{ b.garantia_hasta }}</span>{% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="pt-empty"><p class="t-meta">Registra tus bienes: carro, lavadora, sofá, refrigerador…</p><button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-new-bien"><i data-lucide="plus"></i>Agregar primer bien</button></div>
+  {% endif %}
+</section>

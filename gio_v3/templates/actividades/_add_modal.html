@@ -1,0 +1,34 @@
+{# Alta de actividad (POST /actividades/api/activity/create) #}
+{% call ui.modal('acta-add', 'Nueva actividad', eyebrow='Acta Diurna') %}
+<form class="eu-modal-bd js-add-form" autocomplete="off">
+  {{ ui.field('label', 'Nombre', placeholder='Ej. Leer 10 páginas', maxlength=80) }}
+  <div class="eu-grid-2">
+    <div class="eu-field"><label class="eu-label" for="f-pillar">Virtud</label>
+      <select class="eu-select" id="f-pillar" name="pillar">
+        {% for pk in pillar_meta %}<option value="{{ pk }}">{{ pillar_ui.get(pk, {}).get('name', pk) }}</option>{% endfor %}
+      </select></div>
+    <div class="eu-field"><label class="eu-label" for="f-type">Tipo</label>
+      <select class="eu-select" id="f-type" name="type"><option value="touch">Touch</option><option value="ancla">Ancla</option></select></div>
+    <div class="eu-field"><label class="eu-label" for="f-session">Sesión</label>
+      <select class="eu-select" id="f-session" name="session">
+        {% for sk in ['morning', 'afternoon', 'night', 'any'] %}<option value="{{ sk }}">{{ session_meta[sk].label }}</option>{% endfor %}
+      </select></div>
+    <div class="eu-field"><label class="eu-label" for="f-freq">Frecuencia</label>
+      <select class="eu-select" id="f-freq" name="freq"><option value="daily">Todos los días</option><option value="days">Días específicos…</option><option value="once">Solo una vez</option></select></div>
+    {{ ui.field('pts', 'XP', type='number', value='2', min=1, max=10) }}
+    {{ ui.field('ec', 'EC', type='number', value='0', min=0, max=5) }}
+  </div>
+  <fieldset class="acta-days js-days" hidden>
+    <legend class="eu-label">Días</legend>
+    <div class="eu-chips">
+      {% for code, lbl in [('mon','L'),('tue','M'),('wed','X'),('thu','J'),('fri','V'),('sat','S'),('sun','D')] %}
+      <label class="eu-chip acta-day"><input type="checkbox" value="{{ code }}" class="js-day"> {{ lbl }}</label>
+      {% endfor %}
+    </div>
+  </fieldset>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('acta-add')">Cancelar</button>
+  <button type="button" class="eu-btn eu-btn--primary js-add-save"><i data-lucide="check"></i>Guardar</button>
+</div>
+{% endcall %}

@@ -1,0 +1,118 @@
+{
+ "archivo": "007410027429408661_202208_C1.pdf",
+ "periodo": "2022-07-23 al 2022-08-22",
+ "totales": {
+  "cargos": 4880.0,
+  "abonos": 3684.41
+ },
+ "movimientos": [
+  {
+   "fecha": "2022-08-22",
+   "fecha_cargo": "2022-08-23",
+   "descripcion": "TIENDAS CHEDRAUI S TA",
+   "monto": 292.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO",
+   "parcialidad_num": 9,
+   "parcialidad_total": 12,
+   "compra_msi_id": "990549d1b05fc124"
+  },
+  {
+   "fecha": "2022-08-22",
+   "fecha_cargo": "2022-08-23",
+   "descripcion": "TRAINING INNOVATION",
+   "monto": 358.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": 5,
+   "parcialidad_total": 12,
+   "compra_msi_id": "0acc9691107f20a1"
+  },
+  {
+   "fecha": "2022-07-24",
+   "fecha_cargo": "2022-07-25",
+   "descripcion": "MOBO PLAZA PATRIA 2",
+   "monto": 229.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-08-11",
+   "fecha_cargo": "2022-08-12",
+   "descripcion": "SU PAGO GRACIAS",
+   "monto": -436.25,
+   "categoria": "PAGO",
+   "subcategoria": "",
+   "tipo": "PAGO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-08-12",
+   "fecha_cargo": "2022-08-12",
+   "descripcion": "BMOVIL.PAGO TDC",
+   "monto": -3248.16,
+   "categoria": "PAGO",
+   "subcategoria": "",
+   "tipo": "PAGO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-08-20",
+   "fecha_cargo": "2022-08-22",
+   "descripcion": "SERV FERPETRO",
+   "monto": 700.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  },
+  {
+   "fecha": "2022-08-22",
+   "fecha_cargo": "2022-08-23",
+   "descripcion": "SEGBBVA AUTOSEGURO VO",
+   "monto": 949.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": 10,
+   "parcialidad_total": 12,
+   "compra_msi_id": "87e2d8b74ca1ebe9"
+  },
+  {
+   "fecha": "2022-08-22",
+   "fecha_cargo": "2022-08-23",
+   "descripcion": "WALMART VENTA EN LIN3",
+   "monto": 567.0,
+   "categoria": "SUPER",
+   "subcategoria": "Súper",
+   "tipo": "GASTO",
+   "parcialidad_num": 4,
+   "parcialidad_total": 12,
+   "compra_msi_id": "6ac103f10a5bb55e"
+  },
+  {
+   "fecha": "2022-08-20",
+   "fecha_cargo": "2022-08-22",
+   "descripcion": "DESPEGAR",
+   "monto": 1785.0,
+   "categoria": "OTROS",
+   "subcategoria": "",
+   "tipo": "GASTO",
+   "parcialidad_num": null,
+   "parcialidad_total": null,
+   "compra_msi_id": null
+  }
+ ]
+}

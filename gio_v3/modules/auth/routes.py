@@ -42,7 +42,37 @@ def _set_pass_hash(new_hash: str):
 def login_page():
     if session.get('app_ok'):
         return redirect('/')
-    return render_template('auth/login.html', has_pass=bool(_get_pass_hash()))
+    has_pass = bool(_get_pass_hash())
+    return render_template('auth/login.html', has_pass=has_pass,
+                           hero=_login_hero(with_stats=has_pass))
+
+
+_DIAS_ES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+_MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
+             'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+
+def _login_hero(with_stats=True):
+    """Fecha y 3 cifras del hero de Login (desktop). Si algo falla (DB nueva,
+    migración pendiente) el login no debe romperse: las cifras se omiten."""
+    from utils import today_date
+    hoy = today_date()
+    hero = {'fecha': f"{_DIAS_ES[hoy.weekday()]} {hoy.day} de {_MESES_ES[hoy.month - 1]}",
+            'dia': hoy.timetuple().tm_yday, 'stats': None}
+    if not with_stats:
+        return hero
+    try:
+        from modules.gamification.engine import (get_level_info, get_gamification_streak,
+                                                 LEVEL_THRESHOLDS)
+        with get_db() as db:
+            total_xp = db.execute("SELECT COALESCE(SUM(amount),0) AS s FROM xp_ledger").fetchone()['s']
+        lvl = get_level_info(total_xp)
+        hero['stats'] = {'xp': total_xp, 'streak': get_gamification_streak(),
+                         'level': lvl['level'], 'levels': len(LEVEL_THRESHOLDS),
+                         'level_name': lvl['level_name']}
+    except Exception:
+        pass
+    return hero
 
 
 @auth_bp.route('/login', methods=['POST'])

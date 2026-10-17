@@ -1,0 +1,243 @@
+# Exportación «movimientos*.pdf» de la app BBVA
+# Archivo: Otros/movimientos (11).pdf
+# Por qué estas páginas: 11 sep 2026 (envío y devolución de $4,500 con descripciones en varias líneas) y 20 ago 2026 (tres abonos de $500); la descripción y la fecha quedan en líneas distintas al monto
+# Cuentas enmascaradas a los últimos 4 dígitos.
+
+===== PÁGINA 1 — extract_text() =====
+ALBERTO SANCHEZ GIOVANY
+Monto disponible
+Cuenta: …1804 $15,24313
+DETALLES DE MOVIMIENTOS
+Periodo: 07 ago - 26 sep Todos los importes
+FECHA DESCRIPCIÓN MONTO SALDO TOTAL
+PAGO CUENTA DE TERCERO /
+25 sep 2026 0009854123 BNET …6197 $10500 $15,24313
+comida
+SPEI ENVIADO BANAMEX /
+23 sep 2026 $-8000 $15,13813
+0093263763 002 0509260arbitraje gio
+SPEI ENVIADO HSBC / 0092762317
+23 sep 2026 $-15000 $15,21813
+021 0509260arbitraje gio
+PAGO CUENTA DE TERCERO /
+23 sep 2026 0023322541 BNET …3042 regalo $-3300 $15,36813
+a las lenis
+PAGO CUENTA DE TERCERO /
+20 sep 2026 0031873192 BNET …9888 $-17000 $15,40113
+arbitraje gio
+SPEI ENVIADO INVEX / 0071094730
+19 sep 2026 $-4,48600 $15,57113
+059 0509260pago tdc septiembre invex
+PAGO CUENTA DE TERCERO /
+17 sep 2026 0032809190 BNET …3041 coase $-8000 $20,05713
+salsa gio
+PAGO CUENTA DE TERCERO /
+17 sep 2026 0054616932 BNET …1239 seguro $-55500 $20,13713
+carro sept
+SITH27253389 / 477634377044950
+15 sep 2026 $4,17494 $20,69213
+FIDEICOMISO F/1596 1832077
+SPEI ENVIADO HSBC / 0094473061
+15 sep 2026 $-50200 $16,51719
+021 0509260tdc hsbc
+PAGO DE NOMINA / HH
+15 sep 2026 $10,50757 $17,01919
+4206466060 FIBRA HOTELERA SC
+PAGO CUENTA DE TERCERO /
+11 sep 2026 0037275389 BNET …6230 Transf $4,50000 $6,51162
+a GIOVANY A
+SPEI RECIBIDONUBANK / 0129682808
+11 sep 2026 $1,20000 $2,01162
+638 0110926Transferencia
+PAGO CUENTA DE TERCERO /
+11 sep 2026 $-4,50000 $81162
+0056120221 BNET …6230
+En cumplimiento a la Ley Federal de Transparencia te presentamos el desglose de la comisión cobrada en
+caso de haber utilizado cajeros automáticos de otras entidades financieras.
+BBVA México, S.A. Institución de Banca Múltiple, Grupo Financiero BBVA México.
+
+===== PÁGINA 1 — extract_text(layout=True) =====
+                                                                                  
+                                                                                  
+                                                                                  
+                                                                                  
+                                                 ALBERTO   SANCHEZ  GIOVANY       
+                                                                                  
+                                                                Monto disponible  
+      Cuenta: …1804                                          $15,24313       
+                                                                                  
+                                                                                  
+                                                                                  
+      DETALLES DE MOVIMIENTOS                                                     
+      Periodo: 07 ago - 26 sep Todos los importes                                 
+                                                                                  
+                                                                                  
+         FECHA             DESCRIPCIÓN             MONTO        SALDO TOTAL       
+                                                                                  
+                   PAGO CUENTA DE TERCERO /                                       
+        25 sep 2026 0009854123 BNET …6197           $10500       $15,24313   
+                   comida                                                         
+                   SPEI ENVIADO BANAMEX /                                         
+        23 sep 2026                                      $-8000       $15,13813   
+                   0093263763 002 0509260arbitraje gio                            
+                   SPEI ENVIADO HSBC / 0092762317                                 
+        23 sep 2026                                     $-15000       $15,21813   
+                   021 0509260arbitraje gio                                       
+                   PAGO CUENTA DE TERCERO /                                       
+        23 sep 2026 0023322541 BNET …3042 regalo    $-3300       $15,36813   
+                   a las lenis                                                    
+                   PAGO CUENTA DE TERCERO /                                       
+        20 sep 2026 0031873192 BNET …9888          $-17000       $15,40113   
+                   arbitraje gio                                                  
+                   SPEI ENVIADO INVEX / 0071094730                                
+        19 sep 2026                                    $-4,48600      $15,57113   
+                   059 0509260pago tdc septiembre invex                           
+                   PAGO CUENTA DE TERCERO /                                       
+        17 sep 2026 0032809190 BNET …3041 coase     $-8000       $20,05713   
+                   salsa gio                                                      
+                   PAGO CUENTA DE TERCERO /                                       
+        17 sep 2026 0054616932 BNET …1239 seguro   $-55500       $20,13713   
+                   carro sept                                                     
+                   SITH27253389  / 477634377044950                                
+        15 sep 2026                                    $4,17494       $20,69213   
+                   FIDEICOMISO F/1596 1832077                                     
+                   SPEI ENVIADO HSBC / 0094473061                                 
+        15 sep 2026                                     $-50200       $16,51719   
+                   021 0509260tdc hsbc                                            
+                   PAGO DE NOMINA  / HH                                           
+        15 sep 2026                                    $10,50757      $17,01919   
+                   4206466060 FIBRA HOTELERA SC                                   
+                   PAGO CUENTA DE TERCERO /                                       
+        11 sep 2026 0037275389 BNET …6230 Transf  $4,50000        $6,51162   
+                   a GIOVANY A                                                    
+                   SPEI RECIBIDONUBANK / 0129682808                               
+        11 sep 2026                                    $1,20000        $2,01162   
+                   638 0110926Transferencia                                       
+                   PAGO CUENTA DE TERCERO /                                       
+        11 sep 2026                                    $-4,50000        $81162    
+                   0056120221 BNET …6230                                     
+        En cumplimiento a la Ley Federal de Transparencia te presentamos el desglose de la comisión cobrada en
+        caso de haber utilizado cajeros automáticos de otras entidades financieras.
+                                                                                  
+                   BBVA México, S.A. Institución de Banca Múltiple, Grupo Financiero BBVA México.
+                                                                                  
+
+===== PÁGINA 2 — extract_text() =====
+ALBERTO SANCHEZ GIOVANY
+Monto disponible
+Cuenta: …1804 $15,24313
+DETALLES DE MOVIMIENTOS
+Periodo: 07 ago - 26 sep Todos los importes
+FECHA DESCRIPCIÓN MONTO SALDO TOTAL
+prestamo
+SPEI RECIBIDONAFIN / 0127122779
+11 sep 2026 $3,08334 $5,31162
+135 0613239EGRESO
+SPEI RECIBIDONAFIN / 0127122778
+11 sep 2026 $1,41614 $2,22828
+135 0613237EGRESO
+PAGO TARJETA DE CREDITO /
+09 sep 2026 $-17,96343 $81214
+7939197157 CUENTA: BMOV
+SPEI RECIBIDONAFIN / 0114022434
+09 sep 2026 $2,70051 $18,77557
+135 9401446EGRESO
+SPEI RECIBIDONAFIN / 0114021774
+09 sep 2026 $5,29871 $16,07506
+135 9401444EGRESO
+PAGO TARJETA DE TERCEROS /
+07 sep 2026 0097349157 CUENTA: $-12,00000 $10,77635
+…5198 MBAN
+SPEI ENVIADO BANAMEX /
+05 sep 2026 $-15000 $22,77635
+0085143462 002 1408260corte gio
+SPEI RECIBIDONUBANK / 0188012160
+04 sep 2026 $5,00000 $22,92635
+638 0040926Transferencia
+PAGO CUENTA DE TERCERO /
+04 sep 2026 0008361387 BNET …6197 $-1,69700 $17,92635
+medicamentos
+SPEI ENVIADO BANAMEX /
+02 sep 2026 $-16000 $19,62335
+0069610717 002 1408260arbitraje gio
+PAGO CUENTA DE TERCERO /
+31 ago 2026 0010518936 BNET …3540 pago $-1,56900 $19,78335
+expense de gi
+PAGO DE NOMINA / HH
+31 ago 2026 $10,43519 $21,35235
+4206466060 FIBRA HOTELERA SC
+PAGO CUENTA DE TERCERO /
+29 ago 2026 0032421353 BNET …3042 $-4000 $10,91716
+prstamo
+26 ago 2026 RETIRO SIN TARJETA QR / ******7852 $-20000 $10,95716
+23 ago 2026 SPEI ENVIADO BANORTE / $-1,70000 $11,15716
+En cumplimiento a la Ley Federal de Transparencia te presentamos el desglose de la comisión cobrada en
+caso de haber utilizado cajeros automáticos de otras entidades financieras.
+BBVA México, S.A. Institución de Banca Múltiple, Grupo Financiero BBVA México.
+
+===== PÁGINA 2 — extract_text(layout=True) =====
+                                                                                  
+                                                                                  
+                                                                                  
+                                                                                  
+                                                 ALBERTO   SANCHEZ  GIOVANY       
+                                                                                  
+                                                                Monto disponible  
+      Cuenta: …1804                                          $15,24313       
+                                                                                  
+                                                                                  
+                                                                                  
+      DETALLES DE MOVIMIENTOS                                                     
+      Periodo: 07 ago - 26 sep Todos los importes                                 
+                                                                                  
+                                                                                  
+         FECHA             DESCRIPCIÓN             MONTO        SALDO TOTAL       
+                                                                                  
+                   prestamo                                                       
+                   SPEI RECIBIDONAFIN / 0127122779                                
+        11 sep 2026                                    $3,08334        $5,31162   
+                   135 0613239EGRESO                                              
+                   SPEI RECIBIDONAFIN / 0127122778                                
+        11 sep 2026                                    $1,41614        $2,22828   
+                   135 0613237EGRESO                                              
+                   PAGO TARJETA DE CREDITO /                                      
+        09 sep 2026                                   $-17,96343        $81214    
+                   7939197157 CUENTA:    BMOV                                     
+                   SPEI RECIBIDONAFIN / 0114022434                                
+        09 sep 2026                                    $2,70051       $18,77557   
+                   135 9401446EGRESO                                              
+                   SPEI RECIBIDONAFIN / 0114021774                                
+        09 sep 2026                                    $5,29871       $16,07506   
+                   135 9401444EGRESO                                              
+                   PAGO TARJETA DE TERCEROS /                                     
+        07 sep 2026 0097349157 CUENTA:                $-12,00000      $10,77635   
+                   …5198 MBAN                                          
+                   SPEI ENVIADO BANAMEX /                                         
+        05 sep 2026                                     $-15000       $22,77635   
+                   0085143462 002 1408260corte gio                                
+                   SPEI RECIBIDONUBANK / 0188012160                               
+        04 sep 2026                                    $5,00000       $22,92635   
+                   638 0040926Transferencia                                       
+                   PAGO CUENTA DE TERCERO /                                       
+        04 sep 2026 0008361387 BNET …6197         $-1,69700      $17,92635   
+                   medicamentos                                                   
+                   SPEI ENVIADO BANAMEX /                                         
+        02 sep 2026                                     $-16000       $19,62335   
+                   0069610717 002 1408260arbitraje gio                            
+                   PAGO CUENTA DE TERCERO /                                       
+        31 ago 2026 0010518936 BNET …3540 pago    $-1,56900      $19,78335   
+                   expense de gi                                                  
+                   PAGO DE NOMINA  / HH                                           
+        31 ago 2026                                    $10,43519      $21,35235   
+                   4206466060 FIBRA HOTELERA SC                                   
+                   PAGO CUENTA DE TERCERO /                                       
+        29 ago 2026 0032421353 BNET …3042           $-4000       $10,91716   
+                   prstamo                                                        
+        26 ago 2026 RETIRO SIN TARJETA QR / ******7852  $-20000       $10,95716   
+        23 ago 2026 SPEI ENVIADO BANORTE /             $-1,70000      $11,15716   
+        En cumplimiento a la Ley Federal de Transparencia te presentamos el desglose de la comisión cobrada en
+        caso de haber utilizado cajeros automáticos de otras entidades financieras.
+                                                                                  
+                   BBVA México, S.A. Institución de Banca Múltiple, Grupo Financiero BBVA México.
+                                                                                  
+

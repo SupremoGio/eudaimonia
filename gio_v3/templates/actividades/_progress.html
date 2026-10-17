@@ -1,0 +1,17 @@
+{# Progreso: semana, mes, EC, racha (con hitos) y nivel #}
+<section class="eu-card eu-vstack acta-prog" aria-labelledby="acta-prog-t">
+  <h2 class="t-card" id="acta-prog-t">Progreso</h2>
+  <div class="eu-grid-2 eu-gap-3">
+    <div><div class="t-data js-xp-week">{{ stats.xp_week }}</div><div class="t-meta">XP semana</div></div>
+    <div><div class="t-data js-xp-month">{{ stats.xp_month }}</div><div class="t-meta">XP mes</div></div>
+    <div><div class="t-data js-streak">{{ stats.streak }} d</div><div class="t-meta js-streak-sub">{% if stats.streak >= 30 %}Racha · +10% XP{% elif stats.streak >= 7 %}Racha · +5% XP{% elif stats.streak >= 5 %}{{ 7 - stats.streak }} d para bono{% else %}{{ 5 - stats.streak }} d para racha{% endif %}</div></div>
+    <div><a class="t-data fg-ec acta-ec-link" href="/recompensas/"><span class="js-ec-total">{{ stats.ec_total }}</span></a><div class="t-meta">EC · tienda</div></div>
+  </div>
+  <div class="eu-hstack eu-gap-2" aria-label="Hitos de racha">
+    {% for m in [7, 21, 30] %}<span class="eu-badge{% if stats.streak >= m %} eu-badge--brand{% endif %}">{{ m }} d{% if stats.streak >= m %} ✓{% endif %}</span>{% endfor %}
+  </div>
+  <div class="eu-vstack eu-gap-2">
+    <div class="eu-between t-meta"><span>Nivel {{ gam.level }} · <b class="fg-2 js-lvl-name">{{ gam.level_name|title }}</b></span><span class="js-lvl-next">{% if not gam.max_level %}{{ gam.xp_to_next }} XP para subir{% else %}nivel máximo{% endif %}</span></div>
+    <div class="eu-xpbar acta-thin" role="progressbar" aria-label="Progreso de nivel" aria-valuemax="100" aria-valuenow="{{ gam.level_pct }}"><i class="js-lvl-bar" style="width:{{ gam.level_pct }}%"></i></div>
+  </div>
+</section>

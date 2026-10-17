@@ -1,0 +1,38 @@
+<section class="pf-sec eu-vstack" id="sec-vault" data-sec-panel="vault" hidden>
+  {% set sec_title, sec_sub = 'Contraseñas', 'Cifradas en la base de datos; se descifran solo cuando las muestras o copias.' %}
+  {% set sec_action = '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-vault-new"><i data-lucide="plus"></i>Nueva</button>' %}
+  {% include "perfil/_sechead.html" %}
+  <form class="eu-card pf-form js-vault-form" id="vaultForm" hidden autocomplete="off">
+    <input type="hidden" id="vaultEditId" value="">
+    <div class="t-eyebrow" id="vaultFormLabel">Nueva contraseña</div>
+    <div class="eu-field"><label class="eu-label" for="vaultServicio">Servicio</label><input class="eu-input" id="vaultServicio" placeholder="Netflix"></div>
+    <div class="eu-grid-2 pf-form-grid">
+      <div class="eu-field"><label class="eu-label" for="vaultUsuario">Usuario / email</label><input class="eu-input" id="vaultUsuario" autocomplete="off"></div>
+      <div class="eu-field"><label class="eu-label" for="vaultPassword">Contraseña</label><input class="eu-input" id="vaultPassword" type="text" autocomplete="off"></div>
+    </div>
+    <div class="eu-grid-2 pf-form-grid">
+      <div class="eu-field"><label class="eu-label" for="vaultUrl">URL</label><input class="eu-input" id="vaultUrl" placeholder="Opcional"></div>
+      <div class="eu-field"><label class="eu-label" for="vaultNotas">Notas</label><input class="eu-input" id="vaultNotas" placeholder="Opcional"></div>
+    </div>
+    <div class="pf-form-ft"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-form-close">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm" id="vaultSaveBtn">Guardar</button></div>
+  </form>
+  <div class="eu-card eu-card--flush">
+    <div class="eu-list" id="vaultList">
+      {% for v in vault %}
+      <div class="eu-row pf-vault" id="vaultrow-{{ v.id }}" data-id="{{ v.id }}" data-servicio="{{ v.servicio }}" data-usuario="{{ v.usuario or '' }}" data-url="{{ v.url or '' }}" data-notas="{{ v.notas or '' }}">
+        <div class="eu-row-ic fg-brand"><i data-lucide="key-round"></i></div>
+        <div class="eu-row-main">
+          <div class="eu-row-t">{{ v.servicio }}{% if v.url %} <a class="pf-ext" href="{{ v.url }}" target="_blank" rel="noopener" aria-label="Abrir {{ v.servicio }}"><i data-lucide="external-link"></i></a>{% endif %}</div>
+          <div class="eu-row-s">{% if v.usuario %}{{ v.usuario }} · {% endif %}<span class="num pf-pass" id="vaultpass-{{ v.id }}">••••••••</span></div>
+          {% if v.notas %}<div class="eu-row-s">{{ v.notas }}</div>{% endif %}
+        </div>
+        <button type="button" class="eu-iconbtn js-vault-reveal" id="vaulteye-{{ v.id }}" aria-label="Mostrar contraseña de {{ v.servicio }}"><i data-lucide="eye"></i></button>
+        <button type="button" class="eu-iconbtn js-vault-copy" aria-label="Copiar contraseña de {{ v.servicio }}"><i data-lucide="copy"></i></button>
+        <button type="button" class="eu-iconbtn js-vault-edit" aria-label="Editar {{ v.servicio }}"><i data-lucide="pencil"></i></button>
+        <button type="button" class="eu-iconbtn pf-danger js-vault-del" aria-label="Eliminar {{ v.servicio }}"><i data-lucide="trash-2"></i></button>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="js-vault-empty"{% if vault %} hidden{% endif %}>{{ ui.empty('key-round', 'El cofre está vacío', 'Guarda tus accesos aquí, cifrados, para no perseguirlos por tu memoria.') }}</div>
+  </div>
+</section>

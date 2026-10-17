@@ -1,12 +1,62 @@
+import os
+import requests
 from flask import Blueprint, render_template, request, jsonify
 from datetime import datetime
 from database import get_db
 from data import get_paideia_tip_of_day, get_random_paideia_tip
+import modules.gamification.engine as engine
 
 paideia_bp = Blueprint('paideia', __name__, template_folder='../../templates')
 
+_OPENLIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json'
+
+# Búsqueda de películas — OMDb en vez de iTunes Search API: Apple suele
+# bloquear/limitar peticiones servidor-a-servidor desde IPs de nube (Railway)
+# a itunes.apple.com aunque funcione desde un navegador normal. OMDb está
+# hecho justo para uso server-side y de paso trae Director (iTunes no lo
+# daba). Requiere API key gratis (omdbapi.com/apikey.aspx, sin tarjeta) en
+# la variable de entorno OMDB_API_KEY — sin ella la búsqueda degrada a
+# "sin resultados" en vez de romper el modal de alta manual.
+_OMDB_URL = 'https://www.omdbapi.com/'
+_OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '')
+
 _META_KEY = 'paideia_meta_anual'
 _DEFAULT_META = 12
+
+# ── Películas — ranking personal (mismo patrón que Música dentro de EURYTHMIA) ─
+_PELI_XP = 5
+_PELI_EC = 2
+
+PELI_RATING_DIMS = [
+    {"key": "guion",      "label": "Guion"},
+    {"key": "actuacion",  "label": "Actuación"},
+    {"key": "direccion",  "label": "Dirección"},
+    {"key": "rewatch",    "label": "Rewatch value"},
+]
+
+
+def _compute_mi_rating_peli(row):
+    vals = [row[f"rating_{d['key']}"] for d in PELI_RATING_DIMS if row[f"rating_{d['key']}"] is not None]
+    if not vals:
+        return None
+    return round(sum(vals) / len(vals), 1)
+
+
+def _peliculas_state():
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM paideia_peliculas ORDER BY created_at DESC, id DESC").fetchall()
+    peliculas = [dict(r) for r in rows]
+    vistas = [p for p in peliculas if p["vista"]]
+    ranking = sorted(
+        [p for p in vistas if p["mi_rating"] is not None],
+        key=lambda p: -p["mi_rating"]
+    )
+    return {
+        "peliculas": peliculas,
+        "total":     len(peliculas),
+        "vistas_n":  len(vistas),
+        "ranking":   ranking,
+    }
 
 
 def _now():
@@ -37,6 +87,12 @@ def _row_to_dict(r):
     return dict(r)
 
 
+def _clamp_pct(v):
+    if v in (None, ''):
+        return None
+    return max(0, min(100, int(v)))
+
+
 # ── Rutas ─────────────────────────────────────────────────────────────────────
 
 @paideia_bp.route('/')
@@ -51,6 +107,7 @@ def index():
     return render_template(
         'paideia/index.html', libros=libros, stats=_stats(libros),
         tip=get_paideia_tip_of_day(), now_year=datetime.now().year,
+        peliculas=_peliculas_state(), peli_rating_dims=PELI_RATING_DIMS,
     )
 
 
@@ -89,6 +146,93 @@ def set_meta():
     return jsonify({'ok': True, 'meta': meta})
 
 
+@paideia_bp.route('/api/buscar')
+def buscar_libro():
+    q = request.args.get('q', '').strip()
+    if not q:
+        return jsonify({'resultados': []})
+    try:
+        r = requests.get(_OPENLIBRARY_SEARCH_URL, params={
+            'q': q,
+            'fields': 'title,author_name,number_of_pages_median,cover_i,first_publish_year',
+            'limit': 6,
+        }, timeout=6)
+        r.raise_for_status()
+        docs = r.json().get('docs', [])
+    except requests.RequestException:
+        return jsonify({'resultados': []})
+    resultados = [{
+        'titulo': d.get('title'),
+        'autor': (d.get('author_name') or [None])[0],
+        'paginas': d.get('number_of_pages_median'),
+        'anio': d.get('first_publish_year'),
+        'portada': f"https://covers.openlibrary.org/b/id/{d['cover_i']}-M.jpg" if d.get('cover_i') else None,
+    } for d in docs if d.get('title')]
+    return jsonify({'resultados': resultados})
+
+
+def _omdb_year(y):
+    if not y:
+        return None
+    digits = ''.join(c for c in y[:4] if c.isdigit())
+    return int(digits) if len(digits) == 4 else None
+
+
+def _omdb_clean(v):
+    return None if v in (None, 'N/A', '') else v
+
+
+@paideia_bp.route('/api/buscar_pelicula')
+def buscar_pelicula():
+    q = request.args.get('q', '').strip()
+    if not q or not _OMDB_API_KEY:
+        return jsonify({'resultados': []})
+    try:
+        r = requests.get(_OMDB_URL, params={
+            'apikey': _OMDB_API_KEY, 's': q, 'type': 'movie',
+        }, timeout=6)
+        r.raise_for_status()
+        data = r.json()
+    except requests.RequestException:
+        return jsonify({'resultados': []})
+
+    if data.get('Response') != 'True':
+        return jsonify({'resultados': []})
+
+    resultados = [{
+        'imdb_id': d.get('imdbID'),
+        'titulo':  d.get('Title'),
+        'anio':    _omdb_year(d.get('Year')),
+        'portada': _omdb_clean(d.get('Poster')),
+    } for d in data.get('Search', [])[:6] if d.get('Title') and d.get('imdbID')]
+    return jsonify({'resultados': resultados})
+
+
+@paideia_bp.route('/api/pelicula_detalle')
+def pelicula_detalle():
+    """Detalle completo por imdbID — la búsqueda (s=) de OMDb no trae
+    Director/Genre, solo título/año/póster; se pide aparte y solo cuando
+    el usuario elige un resultado (no por cada item del dropdown)."""
+    imdb_id = request.args.get('id', '').strip()
+    if not imdb_id or not _OMDB_API_KEY:
+        return jsonify({'error': 'no disponible'}), 400
+    try:
+        r = requests.get(_OMDB_URL, params={'apikey': _OMDB_API_KEY, 'i': imdb_id}, timeout=6)
+        r.raise_for_status()
+        d = r.json()
+    except requests.RequestException:
+        return jsonify({'error': 'sin conexión'}), 502
+    if d.get('Response') != 'True':
+        return jsonify({'error': d.get('Error', 'no encontrado')}), 404
+    return jsonify({
+        'titulo':   d.get('Title'),
+        'anio':     _omdb_year(d.get('Year')),
+        'director': _omdb_clean(d.get('Director')),
+        'genero':   _omdb_clean(d.get('Genre')),
+        'portada':  _omdb_clean(d.get('Poster')),
+    })
+
+
 @paideia_bp.route('/api/libros')
 def list_libros():
     with get_db() as db:
@@ -110,8 +254,8 @@ def crear_libro():
         cur = db.execute(
             """INSERT INTO paideia_libros
                    (titulo, autor, categoria, estado, paginas_totales, paginas_actuales,
-                    rating, fecha_inicio, fecha_fin, notas, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                    rating, fecha_inicio, fecha_fin, notas, portada, progreso_pct, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 d['titulo'].strip(),
                 d.get('autor', '').strip(),
@@ -123,6 +267,8 @@ def crear_libro():
                 fecha_inicio,
                 fecha_fin,
                 d.get('notas', '').strip(),
+                d.get('portada') or None,
+                _clamp_pct(d.get('progreso_pct')),
                 _now(),
             ),
         )
@@ -134,7 +280,7 @@ def crear_libro():
 def actualizar_libro(lid):
     d = request.json or {}
     sets, vals = [], []
-    for f in ('titulo', 'autor', 'categoria', 'estado', 'fecha_inicio', 'fecha_fin', 'notas'):
+    for f in ('titulo', 'autor', 'categoria', 'estado', 'fecha_inicio', 'fecha_fin', 'notas', 'portada'):
         if f in d:
             sets.append(f'{f}=?')
             vals.append(d[f])
@@ -142,6 +288,9 @@ def actualizar_libro(lid):
         if f in d:
             sets.append(f'{f}=?')
             vals.append(int(d[f]) if d[f] not in (None, '') else None)
+    if 'progreso_pct' in d:
+        sets.append('progreso_pct=?')
+        vals.append(_clamp_pct(d['progreso_pct']))
 
     # Transiciones automáticas de fecha al cambiar de estado
     if d.get('estado') == 'leyendo' and not d.get('fecha_inicio'):
@@ -170,3 +319,129 @@ def eliminar_libro(lid):
         db.execute("DELETE FROM paideia_libros WHERE id=?", (lid,))
         db.commit()
     return jsonify({'ok': True})
+
+
+# ── Películas ─────────────────────────────────────────────────────────────────
+
+@paideia_bp.route('/api/peliculas')
+def list_peliculas():
+    return jsonify(_peliculas_state())
+
+
+@paideia_bp.route('/api/peliculas', methods=['POST'])
+def crear_pelicula():
+    d = request.json or {}
+    titulo = (d.get('titulo') or '').strip()
+    if not titulo:
+        return jsonify({'ok': False, 'error': 'título requerido'}), 400
+    with get_db() as db:
+        cur = db.execute(
+            "INSERT INTO paideia_peliculas (titulo, director, anio, genero, portada) VALUES (?,?,?,?,?)",
+            (
+                titulo,
+                (d.get('director') or '').strip(),
+                int(d['anio']) if d.get('anio') not in (None, '') else None,
+                (d.get('genero') or '').strip(),
+                d.get('portada') or None,
+            ),
+        )
+        db.commit()
+    return jsonify({'ok': True, 'id': cur.lastrowid, 'peliculas': _peliculas_state()}), 201
+
+
+@paideia_bp.route('/api/peliculas/<int:pid>', methods=['POST'])
+def actualizar_pelicula(pid):
+    data = request.get_json(silent=True) or {}
+
+    with get_db() as db:
+        row = db.execute("SELECT * FROM paideia_peliculas WHERE id=?", (pid,)).fetchone()
+    if not row:
+        return jsonify({'error': 'not found'}), 404
+    row = dict(row)
+
+    was_vista = bool(row['vista'])
+    vista = bool(data.get('vista', was_vista))
+
+    ratings = {}
+    for dim in PELI_RATING_DIMS:
+        key = f"rating_{dim['key']}"
+        val = data.get(key, row[key])
+        if val not in (None, ''):
+            try:
+                val = int(val)
+            except (TypeError, ValueError):
+                return jsonify({'error': f'invalid {key}'}), 400
+            if val < 1 or val > 10:
+                return jsonify({'error': f'invalid {key}'}), 400
+        else:
+            val = None
+        ratings[key] = val
+
+    mi_rating = _compute_mi_rating_peli(ratings)
+    notas = str(data.get('notas', row['notas']) or '')[:500]
+    vista_at = row['vista_at']
+    rating_cols = list(ratings.keys())
+    rating_vals = [ratings[k] for k in rating_cols]
+
+    gam = None
+    with get_db() as db:
+        if vista and not was_vista:
+            vista_at = datetime.now().isoformat()
+            today = datetime.now().date().isoformat()
+            cur = db.execute(
+                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                (f"paideia_pelicula_{pid}", today, _PELI_XP)
+            )
+            log_id = cur.lastrowid
+            db.execute(
+                f"UPDATE paideia_peliculas SET vista=1, mi_rating=?, notas=?, vista_at=?, "
+                f"{', '.join(f'{c}=?' for c in rating_cols)} WHERE id=?",
+                (mi_rating, notas, vista_at, *rating_vals, pid)
+            )
+            db.commit()
+            gam = engine.process_activity(f"paideia_pelicula_{pid}", _PELI_XP, 'Cine', log_id, ec=_PELI_EC)
+        elif not vista and was_vista:
+            db.execute(
+                f"UPDATE paideia_peliculas SET vista=0, mi_rating=NULL, notas=?, vista_at=NULL, "
+                f"{', '.join(f'{c}=NULL' for c in rating_cols)} WHERE id=?",
+                (notas, pid)
+            )
+            db.commit()
+            log_row = db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? ORDER BY id DESC LIMIT 1",
+                (f"paideia_pelicula_{pid}",)
+            ).fetchone()
+            if log_row:
+                db.execute("DELETE FROM activity_logs WHERE id=?", (log_row['id'],))
+                db.commit()
+                gam = engine.remove_activity(log_row['id'])
+        else:
+            db.execute(
+                f"UPDATE paideia_peliculas SET mi_rating=?, notas=?, "
+                f"{', '.join(f'{c}=?' for c in rating_cols)} WHERE id=?",
+                (mi_rating, notas, *rating_vals, pid)
+            )
+            db.commit()
+
+    return jsonify({'ok': True, 'gam': gam, 'peliculas': _peliculas_state()})
+
+
+@paideia_bp.route('/api/peliculas/<int:pid>', methods=['DELETE'])
+def eliminar_pelicula(pid):
+    with get_db() as db:
+        row = db.execute("SELECT vista FROM paideia_peliculas WHERE id=?", (pid,)).fetchone()
+        if not row:
+            return jsonify({'error': 'not found'}), 404
+        log_row = None
+        if row['vista']:
+            log_row = db.execute(
+                "SELECT id FROM activity_logs WHERE activity_key=? ORDER BY id DESC LIMIT 1",
+                (f"paideia_pelicula_{pid}",)
+            ).fetchone()
+            if log_row:
+                db.execute("DELETE FROM activity_logs WHERE id=?", (log_row['id'],))
+        db.execute("DELETE FROM paideia_peliculas WHERE id=?", (pid,))
+        db.commit()
+    if log_row:
+        engine.remove_activity(log_row['id'])
+    return jsonify({'ok': True, 'peliculas': _peliculas_state()})

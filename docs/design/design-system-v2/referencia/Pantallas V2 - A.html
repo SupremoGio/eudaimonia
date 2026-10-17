@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="design_doc_mode" content="canvas">
+<title>Eudaimonia OS — Pantallas V2 · A</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="ds-v2/tokens.css">
+<link rel="stylesheet" href="ds-v2/components.css">
+<link rel="stylesheet" href="ds-v2/screens.css">
+<script src="https://unpkg.com/lucide@1.31.0"></script>
+</head>
+<body>
+
+<!-- ═════════ 1 · LOGIN ═════════ -->
+<div class="lbl" style="left:100px;top:40px"><b>01 · Login</b>390 · 1440</div>
+<div class="mob" data-screen-label="01 Login móvil" style="left:100px;top:90px">
+<div data-shell="status"></div>
+<div style="flex:1;display:flex;flex-direction:column;padding:0 28px 40px;background:radial-gradient(80% 50% at 50% 0%,var(--brand-subtle),transparent 70%)">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:20px">
+<div class="eu-level-seal" style="width:64px;height:64px;border-radius:18px"><i data-lucide="landmark" style="width:28px;height:28px"></i></div>
+<div style="font:600 26px/1 var(--font-display);letter-spacing:.22em">EUDAIMONIA</div>
+<div class="t-quote" style="font-size:18px;max-width:280px">«La felicidad de tu vida depende de la calidad de tus pensamientos.»</div>
+<div class="t-meta">Marco Aurelio · Meditaciones V.16</div>
+</div>
+<div class="vstack" style="gap:16px">
+<div class="eu-field"><label class="eu-label" for="pw1">Contraseña</label><div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input" id="pw1" type="password" value="••••••••••" style="font-size:16px"></div></div>
+<button class="eu-btn eu-btn--primary eu-btn--lg eu-btn--block">Entrar</button>
+<div class="t-meta" style="text-align:center">Sesión segura · 8 horas</div>
+</div></div></div>
+
+<div class="desk" data-screen-label="01 Login desktop" style="left:560px;top:90px">
+<div style="flex:1.3;position:relative;display:flex;flex-direction:column;justify-content:space-between;padding:56px 64px;background:radial-gradient(70% 60% at 20% 20%,var(--brand-subtle),transparent 70%),var(--bg-canvas);border-right:1px solid var(--border-subtle)">
+<div class="hstack" style="gap:12px"><div class="eu-sb-mark"><i data-lucide="landmark"></i></div><b style="font:600 17px var(--font-display);letter-spacing:.18em">EUDAIMONIA</b></div>
+<div class="vstack" style="gap:24px;max-width:620px">
+<div class="t-eyebrow">Martes 22 de septiembre · Día 267</div>
+<div class="t-hero" style="font-size:72px;line-height:1">Cada día,<br><span style="font-style:italic;font-weight:400;color:var(--fg-2)">un acto de carácter.</span></div>
+<p class="t-body fg-2" style="margin:0;max-width:460px">Hábitos, finanzas, salud y aprendizaje en un solo lugar. Cada acción suma XP hacia Eudaimón.</p>
+</div>
+<div class="hstack" style="gap:32px">
+<div><div class="t-data" style="font-size:20px">1,342</div><div class="t-meta">XP acumulada</div></div>
+<div><div class="t-data" style="font-size:20px">23 d</div><div class="t-meta">Racha</div></div>
+<div><div class="t-data" style="font-size:20px">4 / 10</div><div class="t-meta">Nivel · Estrategos</div></div>
+</div></div>
+<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:64px">
+<div class="vstack" style="width:360px;gap:24px">
+<div><div class="t-page">Bienvenido de vuelta</div><p class="t-meta" style="margin:6px 0 0">Introduce tu contraseña para continuar.</p></div>
+<div class="eu-field"><label class="eu-label" for="pw2">Contraseña</label><div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input" id="pw2" type="password" value="••••••••••"></div></div>
+<div class="eu-field"><label class="eu-label" for="pw3">Estado de error</label><div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input" id="pw3" type="password" value="•••••" aria-invalid="true"></div><div class="eu-err"><i data-lucide="alert-circle" style="width:14px;height:14px"></i>Contraseña incorrecta · 4 intentos restantes</div></div>
+<button class="eu-btn eu-btn--primary eu-btn--lg eu-btn--block">Entrar <span class="kbd" style="background:transparent;border-color:rgba(9,7,15,.25);color:var(--fg-on-brand)">↵</span></button>
+<div class="t-quote" style="font-size:15px;padding-top:24px;border-top:1px solid var(--border-subtle)">«No es que tengamos poco tiempo, sino que perdemos mucho.» <span class="t-meta" style="font-style:normal;display:block;margin-top:6px">Séneca</span></div>
+</div></div></div>
+
+<!-- ═════════ 2 · DASHBOARD ═════════ -->
+<div class="lbl" style="left:100px;top:1100px"><b>02 · Dashboard</b>Hoy · Pendiente · Inspiración</div>
+<div class="mob" data-screen-label="02 Dashboard móvil" style="left:100px;top:1150px">
+<div data-shell="status"></div>
+<div class="m-top"><div class="eu-mtitle"><span style="margin:0 0 3px" class="t-eyebrow">Martes 22 sep</span><b style="font-size:22px">Buenos días, Giovany</b></div><span class="eu-badge eu-badge--ec"><i data-lucide="coins"></i>148</span><button class="eu-iconbtn" aria-label="Buscar"><i data-lucide="search"></i></button></div>
+<div class="m-body">
+<div class="eu-card eu-card--featured vstack" style="gap:14px">
+<div class="between"><div><div class="t-eyebrow">Hoy</div><div class="t-data-xl fg-xp" style="margin-top:8px">11<span class="t-meta" style="font-family:var(--font-ui);font-size:13px"> / 15 XP</span></div></div><div style="text-align:right"><span class="eu-badge" style="color:var(--tier-hierro)"><span class="eu-dot"></span>Hierro</span><div class="t-meta" style="margin-top:6px">5 XP para Oro</div></div></div>
+<div class="eu-xpbar"><i style="width:73%"></i></div>
+<div class="eu-tiers"><div class="eu-tier is-past" data-t="carbon">Carbón</div><div class="eu-tier is-now" data-t="hierro">Hierro</div><div class="eu-tier" data-t="oro">Oro</div><div class="eu-tier" data-t="diamante">Diamante</div></div>
+</div>
+<a class="eu-card eu-card--interactive hstack" style="gap:12px;padding:14px" data-cat="paideia"><div class="mod-ic"><i data-lucide="book-open"></i></div><div style="flex:1"><div class="t-meta">Siguiente paso · equilibra Paideia</div><div style="font-size:15px;margin-top:2px">Lección Brilliant</div></div><span class="eu-badge eu-badge--xp">+2 · ×1.2</span></a>
+<div class="between" style="margin-top:4px"><div class="t-section" style="font-size:18px">Pendiente</div><a class="t-meta">Ver radar</a></div>
+<div class="eu-card eu-card--flush"><div class="eu-list">
+<div class="eu-row"><div class="eu-row-ic" style="color:var(--danger-fg)"><i data-lucide="credit-card"></i></div><div class="eu-row-main"><div class="eu-row-t">Pago BBVA Azul</div><div class="eu-row-s">$8,420 · mínimo $1,260</div></div><span class="eu-badge eu-badge--danger eu-badge--status">Hoy</span></div>
+<div class="eu-row"><div class="eu-row-ic" style="color:var(--warning-fg)"><i data-lucide="shield"></i></div><div class="eu-row-main"><div class="eu-row-t">Póliza del auto</div><div class="eu-row-s">Harma · Qualitas</div></div><span class="eu-badge eu-badge--warning eu-badge--status">4 d</span></div>
+</div></div>
+<div class="between" style="margin-top:4px"><div class="t-section" style="font-size:18px">Virtudes de hoy</div><span class="t-meta num">4 / 8</span></div>
+<div class="g4" style="gap:8px" id="m-mods"></div>
+</div>
+<div data-shell="bnav" data-active="inicio" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="02 Dashboard desktop" style="left:560px;top:1150px">
+<aside data-shell="sidebar" data-active="inicio"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Inicio"></div>
+<div class="d-body" style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-content:start">
+<div class="vstack" style="gap:24px">
+<div><div class="t-eyebrow">Martes 22 de septiembre · Día 267 de 365</div><div class="t-page" style="margin-top:8px">Buenos días, Giovany</div></div>
+<div class="eu-card eu-card--featured" style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:32px;padding:24px">
+<div class="vstack" style="gap:16px"><div class="between"><div class="t-eyebrow">Hoy</div><span class="eu-badge" style="color:var(--tier-hierro)"><span class="eu-dot"></span>Hierro · 5 XP para Oro</span></div>
+<div class="t-data-xl fg-xp" style="font-size:48px">11<span class="t-meta" style="font-family:var(--font-ui);font-size:15px"> / 15 XP</span></div>
+<div class="eu-xpbar"><i style="width:73%"></i></div>
+<div class="eu-tiers"><div class="eu-tier is-past" data-t="carbon">Carbón<b>0–7</b></div><div class="eu-tier is-now" data-t="hierro">Hierro<b>8–15</b></div><div class="eu-tier" data-t="oro">Oro<b>16+</b></div><div class="eu-tier" data-t="diamante">Diamante<b>20+ · alto</b></div></div></div>
+<div class="vstack" style="gap:14px;border-left:1px solid var(--border-subtle);padding-left:32px">
+<div class="hstack" style="gap:14px"><div class="eu-level-seal"><i data-lucide="columns-3"></i></div><div><div class="t-meta">Nivel 4 de 10</div><div class="t-section">Estrategos</div></div></div>
+<div class="eu-xpbar" style="height:4px"><i style="width:74.5%"></i></div>
+<div class="between t-meta"><span class="num">1,342 XP</span><span>458 para <b class="fg-2" style="font-weight:500">Autarkés</b></span></div>
+<div class="g3" style="gap:8px;margin-top:4px"><div><div class="t-data">23 d</div><div class="t-meta">Racha · +5%</div></div><div><div class="t-data fg-ec">148</div><div class="t-meta">EC</div></div><div><div class="t-data">3</div><div class="t-meta">Perks</div></div></div></div>
+</div>
+<div class="between"><div class="t-section">Virtudes</div><span class="t-meta">4 de 8 tocadas hoy · combo Logoi+Hegemonikon+Paideia a 1 de distancia</span></div>
+<div class="g4" id="d-mods"></div>
+<div class="eu-card"><div class="between" style="margin-bottom:14px"><div class="t-card">Constancia · 16 semanas</div><div class="eu-heat-legend">Menos <i style="background:var(--bg-raised)"></i><i style="background:color-mix(in oklab,var(--brand) 45%,var(--bg-raised))"></i><i style="background:var(--fg-brand-strong)"></i> Más</div></div><div class="eu-heat" id="d-heat" style="grid-template-rows:repeat(7,16px);grid-auto-columns:16px;gap:4px"></div></div>
+</div>
+<div class="vstack" style="gap:16px">
+<a class="eu-card eu-card--interactive vstack" data-cat="paideia" style="gap:12px"><div class="t-eyebrow">Siguiente paso</div><div class="hstack" style="gap:12px"><div class="mod-ic"><i data-lucide="book-open"></i></div><div style="flex:1"><div style="font-size:15px">Lección Brilliant</div><div class="t-meta">Paideia va 40% bajo tu promedio → +20% XP</div></div></div><button class="eu-btn eu-btn--secondary eu-btn--sm" style="align-self:flex-start">Marcar · +2 XP</button></a>
+<div class="eu-card eu-card--flush"><div class="between" style="padding:16px 16px 4px"><div class="t-card">Radar</div><span class="t-meta">7 días</span></div><div class="eu-list" id="d-radar"></div></div>
+<div class="eu-card vstack" style="gap:10px"><div class="t-eyebrow" style="color:var(--fg-3)">Palabra del día</div><div class="hstack" style="gap:10px;align-items:baseline"><span style="font:600 26px var(--font-display)">Prosoché</span><span class="t-greek">προσοχή</span></div><p class="t-meta" style="margin:0;color:var(--fg-2)">Atención sostenida a uno mismo: vigilar el propio juicio en cada momento.</p></div>
+<div class="eu-card eu-card--inset vstack" style="gap:10px"><div class="t-quote" style="font-size:17px">«Si no es correcto, no lo hagas; si no es verdad, no lo digas.»</div><div class="t-meta">Marco Aurelio · XII.17</div></div>
+</div></div></div></div>
+
+<!-- ═════════ 3 · ACTA DIURNA ═════════ -->
+<div class="lbl" style="left:100px;top:2160px"><b>03 · Acta Diurna</b>Registro por virtud · undo 5 s</div>
+<div class="mob" data-screen-label="03 Acta móvil" style="left:100px;top:2210px">
+<div data-shell="status"></div>
+<div class="m-top"><div class="eu-mtitle"><b style="font-size:22px">Acta Diurna</b><span>Martes 22 · 7 actividades</span></div><div style="text-align:right;padding-right:8px"><div class="t-data fg-xp">11 XP</div><div class="t-meta num">+3 EC</div></div></div>
+<div class="m-body" style="gap:14px">
+<div class="eu-xpbar" style="height:4px"><i style="width:73%"></i></div>
+<div class="eu-chips"><button class="eu-chip" aria-pressed="true">Todas</button><button class="eu-chip" data-cat="logoi">Logoi <span class="ct">0/6</span></button><button class="eu-chip">Hegemonikon <span class="ct">3/10</span></button><button class="eu-chip">Paideia <span class="ct">1/4</span></button></div>
+<div id="m-acta" class="vstack" style="gap:18px"></div>
+<div class="eu-toast eu-toast--xp" style="position:absolute;left:12px;right:12px;bottom:12px;max-width:none"><i data-lucide="sparkles"></i><span class="grow">Ejercicio Gym · <span class="fg-xp num">+4 XP</span> <span class="fg-ec num">+1 EC</span></span><button class="eu-btn eu-btn--ghost eu-btn--sm">Deshacer</button><span class="eu-toast-timer" style="transform:scaleX(.55)"></span></div>
+</div>
+<div data-shell="bnav" data-active="acta" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="03 Acta desktop" style="left:560px;top:2210px">
+<aside data-shell="sidebar" data-active="acta"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Hoy > Acta Diurna"></div>
+<div class="d-body" style="display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-content:start">
+<div class="vstack" style="gap:20px">
+<div class="d-hd"><div><div class="t-eyebrow">Martes 22 de septiembre</div><div class="t-page">Acta Diurna</div><p class="t-meta" style="margin:6px 0 0;color:var(--fg-2)">Registro de actividades y virtudes. <span class="fg-2">Progreso</span> genera EC; <span class="fg-2">Alto impacto</span> es transformación.</p></div><div class="eu-seg"><button aria-selected="true">Por virtud</button><button>Por tier</button></div></div>
+<div class="eu-chips"><button class="eu-chip" aria-pressed="true">Todas <span class="ct">39</span></button><button class="eu-chip">Pendientes <span class="ct">32</span></button><button class="eu-chip">Hechas <span class="ct">7</span></button><button class="eu-chip"><i data-lucide="zap"></i>Alto impacto</button></div>
+<div id="d-acta" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start"></div>
+</div>
+<div class="vstack" style="gap:16px">
+<div class="eu-card eu-card--featured vstack" style="gap:14px"><div class="t-eyebrow">Resumen del día</div><div class="t-data-xl fg-xp">11 <span class="t-meta" style="font-family:var(--font-ui)">/ 15 XP</span></div><div class="eu-xpbar"><i style="width:73%"></i></div><div class="g3" style="gap:8px"><div><div class="t-data">7</div><div class="t-meta">Hechas</div></div><div><div class="t-data">4</div><div class="t-meta">Virtudes</div></div><div><div class="t-data fg-ec">+3</div><div class="t-meta">EC</div></div></div></div>
+<div class="eu-card vstack" style="gap:12px"><div class="t-card">Combos</div>
+<div class="vstack" style="gap:6px"><div class="between t-ui"><span>Logoi + Hegemonikon + Paideia</span><span class="num fg-3">2/3</span></div><div class="eu-progress eu-progress--thin eu-progress--brand"><i style="width:66%"></i></div><div class="t-meta">Falta Logoi · +3 XP</div></div>
+<div class="vstack" style="gap:6px"><div class="between t-ui"><span>5 virtudes en un día</span><span class="num fg-3">4/5</span></div><div class="eu-progress eu-progress--thin eu-progress--brand"><i style="width:80%"></i></div><div class="t-meta">+5 XP</div></div></div>
+<div class="eu-card vstack" style="gap:10px"><div class="t-card">Regla de balance</div><div class="hstack" data-cat="paideia"><span class="eu-badge eu-badge--cat">Paideia</span><span class="eu-badge eu-badge--cat" data-cat="cosmopolitismo">Cosmopolitismo</span></div><p class="t-meta" style="margin:0">Bajo el 60% del promedio semanal → +20% XP hasta equilibrar.</p></div>
+<div class="t-meta hstack"><span class="kbd">1</span>–<span class="kbd">9</span> marcar · <span class="kbd">⌘Z</span> deshacer</div>
+</div></div></div></div>
+
+<!-- ═════════ 4 · LOGROS ═════════ -->
+<div class="lbl" style="left:100px;top:3220px"><b>04 · Logros</b>Camino · perks · badges</div>
+<div class="mob" data-screen-label="04 Logros móvil" style="left:100px;top:3270px">
+<div data-shell="status"></div>
+<div class="m-top" style="padding-left:8px"><button class="eu-iconbtn" aria-label="Volver"><i data-lucide="chevron-left"></i></button><div class="eu-mtitle"><b>Logros</b><span>Tú · progreso</span></div></div>
+<div class="m-body">
+<div class="eu-card eu-card--featured vstack" style="gap:14px;align-items:center;text-align:center;padding:20px">
+<div class="eu-level-seal" style="width:64px;height:64px"><i data-lucide="columns-3" style="width:28px;height:28px"></i></div>
+<div><div class="t-eyebrow">Nivel 4 de 10</div><div class="t-page" style="letter-spacing:.1em;margin-top:6px">ESTRATEGOS</div><div class="t-quote" style="font-size:15px;margin-top:2px">«El que dirige su propia campaña.»</div></div>
+<div class="eu-xpbar" style="width:100%"><i style="width:74.5%"></i></div>
+<div class="between t-meta" style="width:100%"><span class="num">1,342 XP</span><span>Autarkés · 1,800</span></div></div>
+<div class="g3" style="gap:8px"><div class="eu-card" style="padding:12px"><div class="t-data">23 d</div><div class="t-meta">Racha</div></div><div class="eu-card" style="padding:12px"><div class="t-data" style="color:var(--tier-diamante)">9</div><div class="t-meta">Diamante</div></div><div class="eu-card" style="padding:12px"><div class="t-data">7/16</div><div class="t-meta">Badges</div></div></div>
+<div class="eu-card hstack" style="gap:12px;padding:14px"><div class="eu-row-ic" style="color:var(--rare-plata)"><i data-lucide="waves"></i></div><div style="flex:1"><div class="t-meta">Perk activo · 2 de 2</div><div style="font-size:14px">Día vacío controlado</div></div><span class="eu-badge">4 d</span></div>
+<div class="eu-tabs" style="gap:20px"><button aria-selected="true">Todos</button><button>Ganados</button><button>En curso</button><button>Bloqueados</button></div>
+<div class="g2" id="m-ach"></div>
+</div>
+<div data-shell="bnav" data-active="tu" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="04 Logros desktop" style="left:560px;top:3270px">
+<aside data-shell="sidebar" data-active="logros"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Tú > Logros"></div>
+<div class="d-body">
+<div class="d-hd"><div><div class="t-eyebrow">Camino a Eudaimón · 24% del año</div><div class="t-page">Logros</div></div><div class="hstack" style="gap:24px"><div><div class="t-data">23 d</div><div class="t-meta">Racha · +5% XP</div></div><div><div class="t-data" style="color:var(--tier-diamante)">9</div><div class="t-meta">Días diamante</div></div><div><div class="t-data">7 / 16</div><div class="t-meta">Badges</div></div></div></div>
+<div class="eu-card" style="padding:24px"><div class="between" style="margin-bottom:20px"><div class="t-card">Los diez niveles</div><span class="t-meta num">1,342 / 5,500 XP</span></div><div id="levels" style="display:grid;grid-template-columns:repeat(10,1fr);gap:6px"></div></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start">
+<div class="vstack" style="gap:16px"><div class="between"><div class="eu-tabs"><button aria-selected="true">Todos · 16</button><button>Ganados · 7</button><button>En curso · 4</button><button>Bloqueados · 5</button></div><div class="eu-seg"><button aria-selected="true">Rareza</button><button>Reciente</button></div></div><div class="g4" id="d-ach" style="gap:12px"></div></div>
+<div class="vstack" style="gap:12px"><div class="t-card">Perks activos <span class="t-meta">· máx. 2</span></div>
+<div class="eu-card hstack" style="gap:12px;padding:14px"><div class="eu-row-ic" style="color:var(--rare-plata)"><i data-lucide="waves"></i></div><div style="flex:1"><div style="font-size:14px">Día vacío controlado</div><div class="t-meta">Maestro del Flow · 4 d</div></div></div>
+<div class="eu-card hstack" style="gap:12px;padding:14px"><div class="eu-row-ic" style="color:var(--rare-bronce)"><i data-lucide="book-marked"></i></div><div style="flex:1"><div style="font-size:14px">Compra de libros</div><div class="t-meta">Script Junior · permanente</div></div></div>
+<div class="eu-card eu-card--inset t-meta" style="padding:14px">Más de 3 perks seguidos → −10% XP por 2 días.</div>
+</div></div></div></div></div>
+
+<!-- ═════════ 5 · RECOMPENSAS ═════════ -->
+<div class="lbl" style="left:100px;top:4280px"><b>05 · Recompensas</b>Tienda de Euda-Credits · 1 EC = $10 MXN</div>
+<div class="mob" data-screen-label="05 Recompensas móvil" style="left:100px;top:4330px">
+<div data-shell="status"></div>
+<div class="m-top" style="padding-left:8px"><button class="eu-iconbtn" aria-label="Volver"><i data-lucide="chevron-left"></i></button><div class="eu-mtitle"><b>Recompensas</b><span>Tú · tienda EC</span></div><button class="eu-iconbtn" aria-label="Historial"><i data-lucide="history"></i></button></div>
+<div class="m-body">
+<div class="eu-card vstack" style="gap:6px;padding:20px;background:radial-gradient(100% 120% at 100% 0%,var(--ec-bg),transparent 60%),var(--bg-surface)"><div class="t-meta">Saldo</div><div class="hstack" style="align-items:baseline;gap:10px"><span class="t-data-xl fg-ec" style="font-size:40px">148</span><span class="t-ui fg-3">EC</span></div><div class="t-meta num">≈ $1,480 MXN · +12 esta semana</div></div>
+<div class="eu-chips"><button class="eu-chip" aria-pressed="true">Disponibles <span class="ct">3</span></button><button class="eu-chip">Por nivel <span class="ct">2</span></button><button class="eu-chip">En espera <span class="ct">1</span></button></div>
+<div class="vstack" id="m-rw" style="gap:10px"></div>
+</div>
+<div data-shell="bnav" data-active="tu" class="m-nav"></div></div>
+
+<div class="desk" data-screen-label="05 Recompensas desktop" style="left:560px;top:4330px">
+<aside data-shell="sidebar" data-active="recompensas"></aside>
+<div class="d-main"><div data-shell="dtop" data-crumbs="Tú > Recompensas"></div>
+<div class="d-body" style="display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-content:start">
+<div class="vstack" style="gap:20px">
+<div class="d-hd"><div><div class="t-eyebrow">Tienda</div><div class="t-page">Recompensas</div><p class="t-meta" style="margin:6px 0 0;color:var(--fg-2)">Premios reales pagados con disciplina. 1 EC = $10 MXN.</p></div><button class="eu-btn eu-btn--secondary"><i data-lucide="plus"></i>Nueva recompensa</button></div>
+<div class="eu-chips"><button class="eu-chip" aria-pressed="true">Todas <span class="ct">6</span></button><button class="eu-chip">Disponibles <span class="ct">3</span></button><button class="eu-chip">Por nivel <span class="ct">2</span></button><button class="eu-chip">En espera <span class="ct">1</span></button></div>
+<div class="g3" id="d-rw" style="gap:16px"></div>
+</div>
+<div class="vstack" style="gap:16px">
+<div class="eu-card vstack" style="gap:6px;padding:24px;background:radial-gradient(100% 120% at 100% 0%,var(--ec-bg),transparent 60%),var(--bg-surface)"><div class="t-meta">Saldo</div><div class="hstack" style="align-items:baseline;gap:10px"><span class="t-data-xl fg-ec" style="font-size:44px">148</span><span class="t-ui fg-3">EC</span></div><div class="t-meta num">≈ $1,480 MXN</div><div class="divider" style="margin:12px 0"></div><div class="between t-meta"><span>Esta semana</span><span class="num fg-2">+12 EC</span></div><div class="between t-meta"><span>Promedio diario</span><span class="num fg-2">1.7 EC</span></div></div>
+<div class="eu-card eu-card--flush"><div style="padding:16px 16px 4px" class="t-card">Canjes recientes</div><div class="eu-list">
+<div class="eu-row"><div class="eu-row-main"><div class="eu-row-t">Libro técnico</div><div class="eu-row-s">14 sep</div></div><span class="num fg-3" style="font-size:13px">−30</span></div>
+<div class="eu-row"><div class="eu-row-main"><div class="eu-row-t">Ropa Nike</div><div class="eu-row-s">28 ago</div></div><span class="num fg-3" style="font-size:13px">−50</span></div>
+</div></div></div></div></div></div>
+
+<script src="ds-v2/shell.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const MODS=[['logoi','code-2','Logoi','Programación',0],['hegemonikon','heart-pulse','Hegemonikon','Salud',9],['paideia','book-open','Paideia','Conocimiento',1],['cosmopolitismo','languages','Cosmopolitismo','Idiomas',0],['oikonomia','landmark','Oikonomia','Finanzas',0],['ataraxia','sun-dim','Ataraxia','Orden',1],['eurythmia','music-2','Eurythmia','Baile',0],['identidad','user-round','Identidad','Presencia',0]];
+MODS[4][4]=0;MODS[7][4]=0;
+$('m-mods').innerHTML=MODS.map(([c,i,n,f,x])=>`<div data-cat="${c}" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0;border-radius:12px;background:var(--bg-surface);border:1px solid ${x?'var(--cat-border)':'var(--border-subtle)'}"><div class="mod-ic" style="${x?'':'background:var(--bg-raised);border-color:var(--border-subtle);color:var(--fg-3)'}"><i data-lucide="${i}"></i></div><span style="font-size:11px;color:${x?'var(--fg-1)':'var(--fg-3)'}">${n.length>9?n.slice(0,7)+'.':n}</span></div>`).join('');
+$('d-mods').innerHTML=MODS.map(([c,i,n,f,x])=>`<a class="mod eu-card--interactive${x?' done':''}" data-cat="${c}"><div class="between"><div class="mod-ic"><i data-lucide="${i}"></i></div>${x?`<span class="eu-badge eu-badge--cat num">+${x} XP</span>`:'<span class="t-meta">—</span>'}</div><div><div class="t-card">${n}</div><div class="t-meta">${f}</div></div></a>`).join('');
+let h='';for(let i=0;i<112;i++){const l=i>88?[3,4,3,2,4,3,3][i%7]:[0,1,2,0,3,1,2,2,0][i%9];h+=`<i data-l="${l}"${i===111?' class="today"':''}></i>`}$('d-heat').innerHTML=h;
+$('d-radar').innerHTML=[['credit-card','Pago BBVA Azul','$8,420 · mínimo $1,260','danger','Hoy'],['shield','Póliza del auto','Harma · Qualitas','warning','4 d'],['droplets','Regar monstera','Plantas','info','5 d'],['calendar','Revisión semanal','Domingo · +7 XP','','6 d']].map(([i,t,s,k,b])=>`<div class="eu-row"><div class="eu-row-ic"${k?` style="color:var(--${k}-fg)"`:''}><i data-lucide="${i}"></i></div><div class="eu-row-main"><div class="eu-row-t" style="font-size:14px">${t}</div><div class="eu-row-s">${s}</div></div><span class="eu-badge eu-badge--status${k?' eu-badge--'+k:''}">${b}</span></div>`).join('');
+const ACTA=[['hegemonikon','Hegemonikon','Salud',[['Meditar',2,0,1],['Ejercicio Gym',4,1,1],['Dormir 8 horas',2,0,1],['Jugo verde',1,0,0],['Pliometría',3,1,0]]],['logoi','Logoi','Programación',[['Lección 100 Días Python',2,1,0],['Curso CCNA / Frontend',3,1,0],['Resolver 5 problemas reales',6,2,0],['Subir proyecto a GitHub',8,3,0]]],['paideia','Paideia','Conocimiento',[['Leer 5 páginas',1,0,1],['Lección Brilliant',2,1,0],['Leer psicología',1,0,0]]],['ataraxia','Ataraxia','Orden',[['Tender cama',1,0,1],['Planchar ropa',2,1,0],['Preparar comida semana',3,1,0]]]];
+const act=(n,x,e,d)=>`<button class="eu-act" aria-pressed="${!!d}"><span class="eu-act-check"><i data-lucide="check"></i></span><span class="eu-act-t">${n}</span><span class="eu-act-xp"><span>+${x} XP</span>${e?`<span class="fg-ec">+${e} EC</span>`:''}</span></button>`;
+$('m-acta').innerHTML=ACTA.slice(0,2).map(([c,n,f,a])=>`<div data-cat="${c}" class="vstack" style="gap:8px"><div class="between"><div class="hstack"><span style="width:8px;height:8px;border-radius:50%;background:var(--cat-fg)"></span><span class="t-card">${n}</span><span class="t-meta">${f}</span></div><span class="t-meta num">${a.filter(x=>x[3]).length}/${a.length}</span></div>${a.slice(0,c==='logoi'?2:5).map(x=>act(...x)).join('')}</div>`).join('');
+$('d-acta').innerHTML=ACTA.map(([c,n,f,a])=>`<div class="eu-card vstack" data-cat="${c}" style="gap:8px;padding:16px"><div class="between" style="margin-bottom:4px"><div class="hstack" style="gap:10px"><div class="mod-ic" style="width:32px;height:32px"><i data-lucide="${MODS.find(m=>m[0]===c)[1]}"></i></div><div><div class="t-card">${n}</div><div class="t-meta">${f}</div></div></div><div style="text-align:right"><div class="t-data" style="font-size:13px;color:var(--cat-fg)">+${a.filter(x=>x[3]).reduce((s,x)=>s+x[1],0)} XP</div><div class="t-meta num">${a.filter(x=>x[3]).length}/${a.length}</div></div></div>${a.map(x=>act(...x)).join('')}</div>`).join('');
+const ACH=[['plata','waves','Maestro del Flow','Ganado 12 sep',1],['bronce','code-2','Script Junior','Ganado 3 ago',1],['bronce','salad','Chef de Hierro','Ganado 21 jul',1],['oro','shield-check','Stoic Commander','23 / 30 días',.76],['plata','goal','Pichichi de Élite','2 / 3 goles',.66],['oro','building-2','The Architect','4 / 10 proyectos',.4],['especial','infinity','Eudaimonia Sync','Sáb + dom completos',0],['especial','crown','The MJ Move','Racha 21 + nivel 6',0]];
+const ach=([r,i,n,s,p])=>`<div class="eu-ach ${p===1?'is-earned':p===0?'is-locked':''}" data-rarity="${r}"><div class="eu-ach-seal"><i data-lucide="${p===0?'lock':i}"></i></div><div><div class="eu-ach-rar">${r}</div><div class="t-card" style="margin-top:6px;font-size:16px">${n}</div></div>${p>0&&p<1?`<div class="eu-progress eu-progress--thin eu-progress--brand"><i style="width:${p*100}%"></i></div>`:''}<div class="t-meta">${s}</div></div>`;
+$('m-ach').innerHTML=ACH.slice(0,4).map(ach).join('');$('d-ach').innerHTML=ACH.map(ach).join('');
+$('levels').innerHTML=[['Prokopton',0],['Efebo',200],['Asquetés',500],['Estrategos',1000],['Autarkés',1800],['Polímata',2700],['Areté',3600],['Hegemón',4400],['Sophos',5000],['Eudaimón',5500]].map(([n,x],i)=>`<div class="vstack" style="gap:8px"><div style="height:4px;border-radius:2px;background:${i<3?'var(--brand)':i===3?'linear-gradient(90deg,var(--brand) 43%,var(--xp-track) 43%)':'var(--xp-track)'}"></div><div style="font:600 14px var(--font-display);color:${i<=3?'var(--fg-1)':'var(--fg-3)'};${i===3?'color:var(--fg-brand-strong)':''}">${n}</div><div class="t-meta num" style="font-size:11px">${i+1} · ${x.toLocaleString('en')}</div></div>`).join('');
+const RW=[['book','Libro técnico',30,2,'','7 d'],['shirt','Ropa Nike',50,3,'','30 d'],['ticket','Salida / Experiencia',80,5,'lvl',''],['tablet','Kindle',120,4,'wait','Disponible en 12 d'],['watch','Apple Watch',300,7,'lvl',''],['plane','Viaje',500,10,'lvl','']];
+const rw=([i,n,c,l,s,cd],desk)=>{const can=!s&&c<=148;const need=s==='lvl'?`Requiere nivel ${l}`:s==='wait'?cd:c>148?`Faltan ${c-148} EC`:`Cooldown ${cd}`;return `<div class="eu-card vstack" style="gap:${desk?14:10}px;${s?'':''}"><div class="between"><div class="hstack" style="gap:12px"><div class="eu-row-ic" style="${can?'color:var(--fg-brand);background:var(--brand-subtle)':''}"><i data-lucide="${s==='lvl'?'lock':i}"></i></div><div><div style="font-size:15px;${s==='lvl'?'color:var(--fg-2)':''}">${n}</div><div class="t-meta">Nivel ${l}+ · ${need}</div></div></div>${desk?'':`<span class="t-data fg-ec" style="font-size:15px">${c}</span>`}</div>${desk?`<div class="between"><span class="t-data fg-ec" style="font-size:22px">${c} <span class="t-meta" style="font-family:var(--font-ui)">EC</span></span><span class="t-meta num">$${(c*10).toLocaleString('en')}</span></div>`:''}${c>148&&s!=='lvl'?`<div class="eu-progress eu-progress--thin"><i style="width:${148/c*100}%;background:var(--ec-fg)"></i></div>`:''}${can?`<button class="eu-btn eu-btn--primary eu-btn--sm${desk?' eu-btn--block':''}" style="${desk?'':'align-self:flex-start'}">Canjear</button>`:desk?`<button class="eu-btn eu-btn--secondary eu-btn--sm eu-btn--block" disabled>${s==='lvl'?'Bloqueada':'En espera'}</button>`:''}</div>`};
+$('m-rw').innerHTML=RW.slice(0,4).map(r=>rw(r,0)).join('');$('d-rw').innerHTML=RW.map(r=>rw(r,1)).join('');
+EU_SHELL.render();
+</script>
+</body>
+</html>

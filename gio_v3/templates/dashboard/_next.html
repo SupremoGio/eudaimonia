@@ -1,0 +1,29 @@
+{# Siguiente paso: la actividad que cierra una categoría con un clic #}
+{% set s = data.suggestion %}
+{% if s %}
+<article class="eu-card eu-vstack dash-next" {% if v2.sugg_cat %}data-cat="{{ v2.sugg_cat }}"{% endif %}>
+  <div class="t-eyebrow">Siguiente paso</div>
+  <div class="eu-hstack eu-gap-3">
+    <div class="eu-mod-ic"><i data-lucide="zap"></i></div>
+    <div class="eu-grow">
+      <div class="dash-next-t">{{ s.label }}</div>
+      <div class="t-meta">Un clic cierra {{ s.cat }}</div>
+    </div>
+  </div>
+  <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-sugg" data-key="{{ s.key }}">
+    <i data-lucide="check"></i>Marcar · +{{ s.pts }} XP
+  </button>
+</article>
+{% else %}
+<article class="eu-card eu-vstack dash-next">
+  <div class="t-eyebrow">Siguiente paso</div>
+  <div class="eu-hstack eu-gap-3">
+    <div class="eu-mod-ic"><i data-lucide="scroll-text"></i></div>
+    <div class="eu-grow">
+      <div class="dash-next-t">Nada a un clic de cerrarse</div>
+      <div class="t-meta">Revisa tu Acta Diurna para el resto del día.</div>
+    </div>
+  </div>
+  {{ ui.button('Abrir Acta', variant='secondary', size='sm', icon='arrow-right', href='/actividades/') }}
+</article>
+{% endif %}

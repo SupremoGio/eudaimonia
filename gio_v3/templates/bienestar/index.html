@@ -1,0 +1,37 @@
+{% extends "eu/layout_sub.html" %}
+{% set pg = 'hegemonikon' %}
+{% block title %}Hegemonikon — Eudaimonia{% endblock %}
+{% block module_title %}HEGEMONIKON{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/bienestar.css') }}">{% endblock %}
+{% block mtitle %}<b>Hegemonikon</b><span>Salud</span>{% endblock %}
+
+{% set s = data.salud %}
+{% set links = [
+  ('/bienestar/salud/', 'stethoscope', 'Salud',
+    ((s.episodios_activos ~ ' episodio' ~ ('s' if s.episodios_activos != 1) ~ ' activo' ~ ('s' if s.episodios_activos != 1)) ~ ((' · ' ~ s.meds_activos ~ ' medicamento' ~ ('s' if s.meds_activos != 1)) if s.meds_activos else '')) if s.episodios_activos else 'Al día',
+    'warning' if s.episodios_activos else ''),
+  ('/nutricion/', 'salad', 'Nutrición', data.nutricion.comidas_done ~ '/' ~ data.nutricion.comidas_total ~ ' comidas hoy · racha ' ~ data.nutricion.streak ~ ' d', ''),
+  ('/recetas/', 'chef-hat', 'Recetas', data.recetas.total ~ ' recetas · ' ~ data.recetas.favoritas ~ ' favoritas', ''),
+  ('/bienestar/futbol/', 'trophy', 'Fútbol', (data.futbol.partidos ~ ' partido' ~ ('s' if data.futbol.partidos != 1) ~ ((' · rating ' ~ data.futbol.rating) if data.futbol.rating else '')) if data.futbol.partidos else 'Registra tu primer partido', ''),
+  ('/guardarropa/', 'shirt', 'Guardarropa', data.guardarropa['items'] ~ ' prendas · ' ~ data.guardarropa.outfits ~ ' outfits', ''),
+  ('/viajes/', 'plane', 'Viajes', (data.viajes.total ~ ' viaje' ~ ('s' if data.viajes.total != 1) ~ ((' · ' ~ data.viajes.proximos ~ ' próximo' ~ ('s' if data.viajes.proximos != 1)) if data.viajes.proximos else '')) if data.viajes.total else 'Planifica tu primer viaje', ''),
+] %}
+
+{% block content %}
+<div class="hg" data-cat="hegemonikon">
+  <header class="hg-hd">
+    <div class="t-eyebrow">Virtudes · Salud</div>
+    <h1 class="t-page">Hegemonikon</h1>
+    <p class="t-meta hg-lead">La razón que gobierna el cuerpo: salud, nutrición, movimiento y presencia.</p>
+  </header>
+  <nav class="hg-grid" aria-label="Secciones de Hegemonikon">
+    {% for url, icon, label, sub, tone in links %}
+    <a class="eu-card eu-card--interactive hg-link{{ ' is-' ~ tone if tone }}" href="{{ url }}">
+      <span class="eu-row-ic hg-ic"><i data-lucide="{{ icon }}"></i></span>
+      <span class="hg-link-t"><span class="t-ui">{{ label }}</span><span class="t-meta">{{ sub }}</span></span>
+      <i data-lucide="chevron-right" class="hg-chev"></i>
+    </a>
+    {% endfor %}
+  </nav>
+</div>
+{% endblock %}

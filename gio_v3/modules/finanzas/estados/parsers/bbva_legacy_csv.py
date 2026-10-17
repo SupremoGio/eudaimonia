@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from ..config import get_categoria_subcategoria
+from ._base import msi_group_id
 
 PAYMENT_KW = [
     "BMOVIL", "PAGO TDC", "SPEI RECIBIDO", "ABONO RECIBIDO",
@@ -17,6 +18,7 @@ _S1_RE = re.compile(
     r"^(\d{2}/\d{2}/\d{2})\s{2,}(\d{2}/\d{2}/\d{2})\s{2,}(.+?)\s+\$\s*([\d,]+\.\d{2})(-?)\s*$"
 )
 _DATE_RE = re.compile(r"^\d{2}/\d{2}/\d{2}$")
+_MSI_RE = re.compile(r"^(\d{1,2})\s+DE\s+(\d{1,2})\s+", re.IGNORECASE)
 
 
 def _norm(s: str) -> str:
@@ -56,6 +58,9 @@ def _to_float(val) -> float | None:
 def _make_mov(fecha, fecha_cargo, desc, monto, is_payment):
     if not fecha or monto == 0:
         return None
+    msi_m = _MSI_RE.match(str(desc).strip())
+    parcialidad_num = int(msi_m.group(1)) if msi_m else None
+    parcialidad_total = int(msi_m.group(2)) if msi_m else None
     desc = _clean_desc(desc)
     if not desc:
         return None
@@ -70,6 +75,9 @@ def _make_mov(fecha, fecha_cargo, desc, monto, is_payment):
         "subcategoria": subcat,
         "tipo":         tipo,
         "periodo":      None,
+        "parcialidad_num":   parcialidad_num,
+        "parcialidad_total": parcialidad_total,
+        "compra_msi_id": msi_group_id(desc, monto) if parcialidad_num else None,
     }
 
 

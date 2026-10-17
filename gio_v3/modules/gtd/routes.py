@@ -29,7 +29,7 @@ def index():
         tasks = [dict(r) for r in db.execute(
             "SELECT * FROM gtd_tasks ORDER BY created_at DESC"
         ).fetchall()]
-    return render_template('gtd/praxis.html', tasks=tasks, stats=get_gtd_stats())
+    return render_template('gtd/praxis.html', tasks=tasks, stats=get_gtd_stats(), today=today_str())
 
 
 @gtd_bp.route('/points')
@@ -99,11 +99,13 @@ def classify_task(tid):
     urg_val = None if urg is None else (1 if urg else 0)
     cuadrante = _calc_cuadrante(imp, urg)
     with get_db() as db:
-        db.execute(
+        cur = db.execute(
             "UPDATE gtd_tasks SET importante=?, urgente=?, cuadrante=?, actualizado_en=? WHERE id=?",
             (imp_val, urg_val, cuadrante, now, tid)
         )
         db.commit()
+    if not cur.rowcount:
+        return jsonify({'error': 'not found'}), 404
     return jsonify({'ok': True, 'cuadrante': cuadrante})
 
 
@@ -175,8 +177,10 @@ def update_task(tid):
 @gtd_bp.route('/api/task/<int:tid>', methods=['DELETE'])
 def delete_task(tid):
     with get_db() as db:
-        db.execute("DELETE FROM gtd_tasks WHERE id=?", (tid,))
+        cur = db.execute("DELETE FROM gtd_tasks WHERE id=?", (tid,))
         db.commit()
+    if not cur.rowcount:
+        return jsonify({'error': 'not found'}), 404
     return jsonify({'ok': True})
 
 
