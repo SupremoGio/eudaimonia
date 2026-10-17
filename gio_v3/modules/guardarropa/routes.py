@@ -412,6 +412,41 @@ def _gemini(prompt, max_tokens=4096):
     return ''.join(text_parts).strip()
 
 
+def _gemini_search(prompt, max_tokens=4096):
+    """Gemini 2.5 Flash con Google Search grounding (precios y temporadas de rebaja actuales).
+    El grounding no admite responseMimeType JSON, así que el JSON se extrae del texto.
+    Returns (text, sources)."""
+    import urllib.error
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if not api_key:
+        raise ValueError('GEMINI_API_KEY no configurada')
+    url = (
+        'https://generativelanguage.googleapis.com/v1beta/models/'
+        f'gemini-2.5-flash:generateContent?key={api_key}'
+    )
+    body = json.dumps({
+        'contents': [{'parts': [{'text': prompt}]}],
+        'tools': [{'google_search': {}}],
+        'generationConfig': {'maxOutputTokens': max_tokens, 'temperature': 0.4},
+    }).encode()
+    req = urllib.request.Request(url, data=body,
+                                 headers={'Content-Type': 'application/json'})
+    try:
+        resp = urllib.request.urlopen(req, timeout=90)
+    except urllib.error.HTTPError as e:
+        raise ValueError(f'Gemini HTTP {e.code}')
+    data = json.loads(resp.read().decode())
+    candidate = data['candidates'][0]
+    parts = candidate.get('content', {}).get('parts', [])
+    text = ''.join(p.get('text', '') for p in parts if not p.get('thought', False)).strip()
+    sources = []
+    for ch in (candidate.get('groundingMetadata') or {}).get('groundingChunks', []):
+        web = ch.get('web') or {}
+        if web.get('uri'):
+            sources.append({'title': web.get('title', ''), 'url': web['uri']})
+    return text, sources[:5]
+
+
 def _extract_json(raw):
     """Extract first valid JSON object from IA response, ignoring surrounding text."""
     raw = raw.strip()
@@ -585,6 +620,110 @@ Para is_sportswear=true: considera categoría deportiva, tejidos técnicos (dry-
     try:
         raw = _extract_json(_gemini(prompt, max_tokens=1024))
         data = json.loads(raw)
+        data['ok'] = True
+        return jsonify(data)
+    except json.JSONDecodeError:
+        return jsonify({'ok': False, 'error': 'Respuesta IA inválida'}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@guardarropa_bp.route('/api/purchase-advisor', methods=['POST'])
+def purchase_advisor():
+    """Asesor de compra: ¿comprar ahora, esperar o no comprar esta prenda?"""
+    if not os.environ.get('GEMINI_API_KEY'):
+        return jsonify({'ok': False, 'error': 'GEMINI_API_KEY no configurada'}), 503
+
+    d       = request.get_json(force=True) or {}
+    prenda  = _s(d, 'prenda', max_len=300)
+    precio  = safe_float(d.get('precio'), min_val=0.0)
+    url     = _s(d, 'url', max_len=1000)
+    motivo  = _s(d, 'motivo', max_len=500)
+    if not prenda:
+        return jsonify({'ok': False, 'error': 'Describe la prenda que quieres comprar'}), 400
+
+    today = datetime.now()
+    month_start = today.strftime('%Y-%m-01')
+    with get_db() as db:
+        items = [dict(r) for r in db.execute(
+            "SELECT id, nombre, categoria, subcategoria, color_name, color_hex, marca, ocasion, "
+            "estado, precio, veces_usado FROM wardrobe_items WHERE activo=1"
+        ).fetchall()]
+        # Contexto financiero (estados de cuenta) — opcional, la tabla puede no existir
+        fin = {}
+        try:
+            fin['presupuesto_mensual'] = (db.execute(
+                "SELECT limite FROM est_budgets WHERE categoria='ROPA'").fetchone() or {'limite': None})['limite']
+            fin['gastado_mes'] = db.execute(
+                "SELECT COALESCE(SUM(ABS(COALESCE(mi_parte, monto))),0) s FROM est_movimientos "
+                "WHERE categoria='ROPA' AND tipo='GASTO' AND fecha>=?", (month_start,)).fetchone()['s']
+            fin['gastado_90d'] = db.execute(
+                "SELECT COALESCE(SUM(ABS(COALESCE(mi_parte, monto))),0) s FROM est_movimientos "
+                "WHERE categoria='ROPA' AND tipo='GASTO' AND fecha>=date('now','-90 day')").fetchone()['s']
+        except Exception:
+            pass
+        try:
+            tallas = [dict(r) for r in db.execute(
+                "SELECT prenda, marca, talla FROM tallas_marca").fetchall()]
+        except Exception:
+            tallas = []
+
+    inventario = '\n'.join(
+        f"- {i['nombre']} | {i['categoria']}{(' · '+i['subcategoria']) if i.get('subcategoria') else ''} "
+        f"| {i.get('color_name') or i.get('color_hex')} | {i.get('marca') or 'sin marca'} "
+        f"| estado:{i['estado']} | usos:{i.get('veces_usado') or 0} | ${i.get('precio') or 0:.0f}"
+        for i in items
+    ) or '(armario vacío)'
+    fin_txt = ''
+    if fin:
+        fin_txt = (f"Presupuesto mensual ROPA: ${fin.get('presupuesto_mensual') or 'sin definir'} · "
+                   f"gastado este mes: ${fin.get('gastado_mes', 0):.0f} · "
+                   f"gastado últimos 90 días: ${fin.get('gastado_90d', 0):.0f}")
+    tallas_txt = ', '.join(f"{t['marca']} {t['prenda']}: {t['talla']}" for t in tallas) or 'sin registro'
+
+    prompt = f"""Eres un asesor de compras de moda masculina, frío y racional: mezcla de coach de imagen de élite y analista financiero personal. Tu trabajo es evitar compras impulsivas y redundantes, y detectar el MEJOR MOMENTO para comprar.
+
+FECHA DE HOY: {today.strftime('%Y-%m-%d')} (usuario en México, precios en MXN)
+
+PRENDA QUE QUIERE COMPRAR: {prenda}
+PRECIO QUE VE: {f'${precio:.0f} MXN' if precio else 'no indicado'}
+LINK: {url or 'no indicado'}
+POR QUÉ LA QUIERE: {motivo or 'no indicado'}
+
+SU ARMARIO ACTUAL ({len(items)} prendas):
+{inventario}
+
+FINANZAS ROPA: {fin_txt or 'sin datos'}
+TALLAS REGISTRADAS: {tallas_txt}
+
+Usa Google Search para verificar: precio actual típico de esta prenda en México (tienda oficial, Liverpool, Amazon MX, outlet), si suele bajar de precio, y próximos eventos de descuento relevantes (Buen Fin, Hot Sale, Black Friday, rebajas de temporada, cambio de colección).
+
+Evalúa:
+1. REDUNDANCIA: ¿ya tiene algo que cumple ≥80% de la función? Nómbralo.
+2. VERSATILIDAD: ¿con cuántas prendas de SU armario combina?
+3. COSTO POR USO estimado según su patrón de uso real.
+4. PRECIO: ¿es justo, caro o buena oferta frente al mercado?
+5. TIMING: ¿conviene esperar a un evento de descuento cercano? ¿cuánto se ahorraría?
+6. PRESUPUESTO: ¿cabe en su presupuesto de ropa de este mes?
+7. CALIDAD/MARCA: durabilidad y relación calidad-precio de la marca para esta prenda.
+
+Responde SOLO con un objeto JSON (sin markdown, sin ```, sin texto extra):
+{{"veredicto":"comprar|esperar|no_comprar","confianza":80,"titular":"frase corta y contundente","resumen":"2-3 líneas con el razonamiento principal","precio":{{"evaluacion":"buena_oferta|justo|caro|desconocido","rango_mercado":"$X–$Y MXN","precio_objetivo":"precio al que sí conviene comprar"}},"mejor_momento":"cuándo comprar y por qué (evento + fecha aproximada)","ahorro_esperando":"ahorro estimado si espera, o vacío","factores":[{{"nombre":"Redundancia","impacto":"positivo|negativo|neutral","detalle":"..."}}],"similares_en_armario":["nombres exactos de prendas suyas parecidas"],"combina_con":["nombres exactos de prendas suyas con las que combina"],"costo_por_uso_est":"$X por uso (supuesto de usos)","alternativas":["alternativa concreta más barata o mejor"],"consejo_final":"una línea accionable"}}
+
+REGLAS: incluye 5-7 factores · usa nombres EXACTOS del inventario en similares/combina_con · confianza entero 0-100 · sé honesto: si no hace falta, dilo sin rodeos."""
+
+    sources = []
+    try:
+        try:
+            raw, sources = _gemini_search(prompt)
+            data = json.loads(_extract_json(raw))
+        except Exception as e:
+            _log.warning('purchase_advisor: grounding falló, usando modo sin búsqueda: %s', e)
+            sources = []
+            data = json.loads(_extract_json(_gemini(prompt)))
+        if data.get('veredicto') not in ('comprar', 'esperar', 'no_comprar'):
+            data['veredicto'] = 'esperar'
+        data['sources'] = sources
         data['ok'] = True
         return jsonify(data)
     except json.JSONDecodeError:

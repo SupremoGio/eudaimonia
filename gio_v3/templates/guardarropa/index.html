@@ -211,6 +211,20 @@
 .gap-text{flex:1;font-size:var(--fs-sm);color:var(--mid);}
 .gap-status-ok{font-size:var(--fs-xs);color:var(--green);}
 .gap-status-miss{font-size:var(--fs-xs);color:var(--red);}
+.pa-card{max-width:900px;margin-bottom:16px;box-sizing:border-box;}
+.pa-verdict{display:flex;align-items:center;gap:14px;padding:14px;border-radius:10px;margin-bottom:14px;}
+.pa-verdict-badge{font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:5px 10px;border-radius:100px;white-space:nowrap;}
+.pa-v-comprar{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);}
+.pa-v-comprar .pa-verdict-badge{background:rgba(16,185,129,.15);color:var(--green);}
+.pa-v-esperar{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);}
+.pa-v-esperar .pa-verdict-badge{background:rgba(245,158,11,.15);color:#f59e0b;}
+.pa-v-no_comprar{background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.25);}
+.pa-v-no_comprar .pa-verdict-badge{background:rgba(244,63,94,.14);color:var(--red);}
+.pa-sub{font-size:var(--fs-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:14px 0 6px;}
+.pa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--b);border-radius:8px;overflow:hidden;}
+@media(max-width:700px){.pa-grid{grid-template-columns:1fr;}}
+.pa-grid > div{background:var(--card2);padding:10px;}
+.pa-chip{display:inline-block;background:var(--card2);border:1px solid var(--b);border-radius:100px;padding:3px 9px;font-size:var(--fs-xs);color:var(--mid);margin:0 4px 4px 0;}
 .cat-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
 .cat-bar-label{font-size:var(--fs-sm);color:var(--mid);width:80px;flex-shrink:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -392,6 +406,24 @@
 
 <!-- ══════════════════ TAB: INTELIGENCIA ══════════════════ -->
 <div id="section-intel" style="display:none;">
+  <!-- Asesor de compra IA -->
+  <div class="intel-card pa-card">
+    <div class="intel-title" style="margin-bottom:4px;color:var(--gold);">✨ ASESOR DE COMPRA · IA</div>
+    <div style="font-size:var(--fs-sm);color:var(--dim);margin-bottom:14px;">¿Vale la pena comprarla, esperar o mejor no? Evalúa tu armario, tu presupuesto de ropa y precios/rebajas actuales.</div>
+    <div class="gm-row"><label class="fl">¿Qué quieres comprar? *</label>
+      <input class="fi" id="pa-prenda" placeholder="Playera Under Armour Tech 2.0 negra, talla M…" onkeydown="if(event.key==='Enter')runPurchaseAdvisor()"></div>
+    <div class="gm-row c2">
+      <div><label class="fl">Precio que ves (MXN)</label><input class="fi" id="pa-precio" type="number" min="0" placeholder="599"></div>
+      <div><label class="fl">Link (opcional)</label><input class="fi" id="pa-url" placeholder="https://…"></div>
+    </div>
+    <div class="gm-row"><label class="fl">¿Por qué la quieres? (opcional)</label>
+      <input class="fi" id="pa-motivo" placeholder="Para el gym, la mía ya está gastada…"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+      <button class="btn-a" id="pa-btn" onclick="runPurchaseAdvisor()" style="background:var(--gold-d);border-color:rgba(201,168,76,.4);color:var(--gold);">✨ Evaluar compra</button>
+    </div>
+    <div id="pa-result" style="display:none;margin-top:16px;"></div>
+  </div>
+
   <div class="intel-grid" id="intel-content">
     <!-- rendered by JS -->
   </div>
@@ -1613,6 +1645,110 @@ async function analyzeCapsulaAI(){
   } finally {
     if(btn){ btn.disabled = false; btn.textContent = '✨ Análisis IA profundo'; }
   }
+}
+
+// ── AI Purchase Advisor ───────────────────────────────────────────────────────
+let _lastPA = null;
+const PA_LABELS = {comprar:'Cómpralo', esperar:'Espérate', no_comprar:'No lo compres'};
+const PA_PRICE  = {buena_oferta:'Buena oferta', justo:'Precio justo', caro:'Caro', desconocido:'Sin datos'};
+
+async function runPurchaseAdvisor(){
+  const prenda = document.getElementById('pa-prenda').value.trim();
+  if(!prenda){ toast('Describe la prenda que quieres comprar'); return; }
+  const btn = document.getElementById('pa-btn');
+  const box = document.getElementById('pa-result');
+  const payload = {
+    prenda,
+    precio: document.getElementById('pa-precio').value,
+    url:    document.getElementById('pa-url').value.trim(),
+    motivo: document.getElementById('pa-motivo').value.trim(),
+  };
+  btn.disabled = true;
+  btn.textContent = '⏳ Investigando precios y tu armario...';
+  box.style.display = 'none';
+  try {
+    const res = await fetch('/guardarropa/api/purchase-advisor', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const d = await res.json();
+    if(!d.ok){ toast('Error IA: ' + (d.error||'desconocido')); return; }
+    _lastPA = {...d, _req: payload};
+
+    const v = d.veredicto || 'esperar';
+    const factores = (d.factores||[]).map(f=>{
+      const icon = f.impacto==='positivo' ? '<span style="color:var(--green);">✓</span>'
+                 : f.impacto==='negativo' ? '<span style="color:var(--red);">✕</span>'
+                 : '<span style="color:var(--dim);">•</span>';
+      return `<div class="gap-row"><div style="width:16px;flex-shrink:0;text-align:center;">${icon}</div>
+        <div class="gap-text"><b style="color:var(--text);font-weight:500;">${esc(f.nombre)}</b> — ${esc(f.detalle)}</div></div>`;
+    }).join('');
+    const chips = arr => (arr||[]).map(x=>`<span class="pa-chip">${esc(x)}</span>`).join('') || '<span style="font-size:var(--fs-sm);color:var(--dim);">—</span>';
+    const p = d.precio || {};
+    const sources = (d.sources||[]).map(s=>`<a href="${esc(s.url)}" target="_blank" rel="noopener" class="pa-chip" style="text-decoration:none;">${esc(s.title||'fuente')}</a>`).join('');
+
+    box.innerHTML = `
+      <div class="pa-verdict pa-v-${esc(v)}">
+        <span class="pa-verdict-badge">${esc(PA_LABELS[v]||v)}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:var(--serif);font-size:1.05rem;color:var(--text);">${esc(d.titular||'')}</div>
+          <div style="font-size:var(--fs-sm);color:var(--mid);line-height:1.5;margin-top:3px;">${esc(d.resumen||'')}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--serif);font-size:1.5rem;color:var(--text);line-height:1;">${parseInt(d.confianza)||0}%</div>
+          <div style="font-size:var(--fs-xs);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;">confianza</div>
+        </div>
+      </div>
+
+      <div class="pa-grid">
+        <div><div class="pa-sub" style="margin-top:0;">Precio</div>
+          <div style="font-size:var(--fs-sm);color:var(--text);">${esc(PA_PRICE[p.evaluacion]||p.evaluacion||'—')}</div>
+          <div style="font-size:var(--fs-xs);color:var(--dim);margin-top:2px;">Mercado: ${esc(p.rango_mercado||'—')}</div>
+          <div style="font-size:var(--fs-xs);color:var(--gold);margin-top:2px;">Objetivo: ${esc(p.precio_objetivo||'—')}</div></div>
+        <div><div class="pa-sub" style="margin-top:0;">Mejor momento</div>
+          <div style="font-size:var(--fs-sm);color:var(--text);line-height:1.45;">${esc(d.mejor_momento||'—')}</div>
+          ${d.ahorro_esperando?`<div style="font-size:var(--fs-xs);color:var(--green);margin-top:3px;">Ahorro: ${esc(d.ahorro_esperando)}</div>`:''}</div>
+        <div><div class="pa-sub" style="margin-top:0;">Costo por uso</div>
+          <div style="font-size:var(--fs-sm);color:var(--text);line-height:1.45;">${esc(d.costo_por_uso_est||'—')}</div></div>
+      </div>
+
+      <div class="pa-sub">Factores</div>
+      ${factores||'<div style="font-size:var(--fs-sm);color:var(--dim);">—</div>'}
+
+      <div class="pa-sub">Ya tienes algo parecido</div>${chips(d.similares_en_armario)}
+      <div class="pa-sub">Combina con</div>${chips(d.combina_con)}
+      ${(d.alternativas||[]).length?`<div class="pa-sub">Alternativas</div>${chips(d.alternativas)}`:''}
+
+      ${d.consejo_final?`<div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px 14px;margin-top:14px;font-size:var(--fs-sm);color:var(--text);font-style:italic;">"${esc(d.consejo_final)}"</div>`:''}
+      ${sources?`<div class="pa-sub">Fuentes consultadas</div>${sources}`:''}
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap;">
+        ${v!=='no_comprar'?`<button class="btn-g" style="font-size:var(--fs-sm);" onclick="paToWishlist()">Guardar en lista de deseos</button>`:''}
+        <button class="btn-g" style="font-size:var(--fs-sm);" onclick="runPurchaseAdvisor()">Reevaluar</button>
+      </div>`;
+    box.style.display = 'block';
+  } catch(e){
+    toast('Error al conectar con IA');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Evaluar compra';
+  }
+}
+
+async function paToWishlist(){
+  const d = _lastPA;
+  if(!d) return;
+  const res = await fetch('/guardarropa/wishlist/api/item', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      nombre: d._req.prenda,
+      categoria: 'Ropa & Calzado',
+      precio_estimado: d._req.precio || 0,
+      url: d._req.url,
+      descripcion: `IA: ${PA_LABELS[d.veredicto]||d.veredicto} — ${d.mejor_momento||d.resumen||''}`,
+    })
+  });
+  const r = await res.json();
+  toast(r.ok ? 'Guardado en lista de deseos ✓' : 'No se pudo guardar');
 }
 
 // ── Utility ───────────────────────────────────────────────────────────────────
