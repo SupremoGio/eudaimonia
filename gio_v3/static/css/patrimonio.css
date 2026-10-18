@@ -132,3 +132,14 @@
 .pt-sug h4{display:flex;align-items:center;gap:var(--sp-2)}
 .pt-sug h4 svg{width:16px;height:16px}
 .pt-sug .pt-acts{display:flex;flex-wrap:wrap;gap:var(--sp-2)}
+
+/* Abono: depósitos candidatos (Por cobrar) */
+.pt-movs-f{border:0;margin:0;padding:0;min-width:0}
+.pt-movs{display:flex;flex-direction:column;gap:var(--sp-1);max-height:240px;overflow-y:auto;margin-top:var(--sp-2)}
+.pt-mov{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-2) var(--sp-3);border:1px solid var(--border-default);border-radius:var(--r-md);cursor:pointer}
+.pt-mov:has(input:checked){border-color:var(--border-brand);background:var(--brand-subtle)}
+.pt-mov input{flex-shrink:0}
+.pt-mov-bd{display:flex;flex-direction:column;min-width:0;flex:1}
+.pt-mov-bd .t-meta{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pt-debt-link{display:inline-flex;align-items:center;gap:4px;margin-top:var(--sp-2);color:var(--fg-brand);text-decoration:none}
+.pt-debt-link svg{width:12px;height:12px}

@@ -22,8 +22,10 @@ def test_historial_y_liquidar(test_db):
     import database
     with database.get_db() as db:
         ids = {r['person']: r['id'] for r in db.execute("SELECT id, person FROM debts")}
-    c.post(f"/finanzas/api/debt/{ids['Corner']}/abonar", json={'amount': 1000, 'note': 'transferencia'})
-    h = c.get(f"/finanzas/api/debt/{ids['Corner']}/historial").get_json()
+        pid = db.execute("SELECT id FROM est_prestamos WHERE contraparte='Corner'").fetchone()[0]
+    assert set(ids) == {'ELI'}   # «me deben» vive en Por cobrar
+    c.post(f"/finanzas/api/prestamo/{pid}/abonar", json={'amount': 1000, 'note': 'transferencia'})
+    h = c.get(f"/finanzas/api/prestamo/{pid}/historial").get_json()
     assert h['person'] == 'Corner' and h['pagado'] == 1000 and h['monto_restante'] == 2509
     assert [p['note'] for p in h['payments']] == ['transferencia']
 
@@ -34,5 +36,11 @@ def test_historial_y_liquidar(test_db):
     assert liq[0]['pagado'] == 1000 and [p['amount'] for p in liq[0]['payments']] == [400, 600]
     assert liq[0]['payments'][-1]['note'] == 'Liquidado'
 
+    c.post(f"/finanzas/api/prestamo/{pid}/settle")
+    liq = c.get('/finanzas/api/debts/historial').get_json()['debts']
+    assert {d['person'] for d in liq} == {'ELI', 'Corner'}
+    corner = next(d for d in liq if d['person'] == 'Corner')
+    assert corner['pagado'] == 3509 and corner['payments'][-1]['note'] == 'Liquidado'
+
     html = c.get('/finanzas/salud/').get_data(as_text=True)
-    assert 'data-debts-hist' in html and f'data-hist="{ids["Corner"]}"' in html and 'm-debt-hist' in html
+    assert 'data-debts-hist' in html and 'm-debt-hist' in html and 'id="ma-movs"' in html

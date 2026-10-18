@@ -195,8 +195,16 @@ export default function PorCobrar() {
     try { await api.del(`/prestamos/${p.id}/devoluciones/${dv.movimiento_id}`); toast('Devolución quitada', 'ok'); saved(); }
     catch (e) { toast(e.message || 'No se pudo quitar', 'err'); }
   }
+  async function quitarAbono(p, a) {
+    const ok = await confirmDialog(`¿Quitar el abono de ${money(a.monto)} del préstamo a ${p.persona}?`, { confirmLabel: 'Quitar' });
+    if (!ok) return;
+    try { await api.del(`/prestamos/${p.id}/abonos/${a.id}`); toast('Abono quitado', 'ok'); saved(); }
+    catch (e) { toast(e.message || 'No se pudo quitar', 'err'); }
+  }
   async function remove(p) {
-    const ok = await confirmDialog(`¿Borrar el registro del préstamo a ${p.persona}? Los movimientos del banco no se tocan.`, { confirmLabel: 'Borrar', danger: true });
+    const ok = await confirmDialog(p.compartido
+      ? `¿Borrar lo que te debe ${p.persona}? El gasto vuelve a contar completo como tuyo.`
+      : `¿Borrar el registro del préstamo a ${p.persona}? Los movimientos del banco no se tocan.`, { confirmLabel: 'Borrar', danger: true });
     if (!ok) return;
     try { await api.del(`/prestamos/${p.id}`); toast('Préstamo borrado', 'ok'); saved(); }
     catch (e) { toast(e.message || 'No se pudo borrar', 'err'); }
@@ -300,6 +308,10 @@ export default function PorCobrar() {
                       <td className="num fg-3">{fmtDate(p.fecha, true)}</td>
                       <td>
                         <span className="fz-ellipsis fz-td-desc" title={p.descripcion}>{p.descripcion || 'Sin movimiento'}</span>
+                        {p.compartido && (
+                          <div className="t-meta"><span className="eu-badge eu-badge--info">Parte de un gasto</span>
+                            {p.mov_monto != null && <> de <span className="num">{money(p.mov_monto)}</span> · tu parte <span className="num">{money(p.mov_monto - p.monto)}</span></>}</div>
+                        )}
                         {p.notas && <div className="t-meta fz-ellipsis">{p.notas}</div>}
                         {p.devoluciones.length > 0 && (
                           <ul className="fz-pc-devs">
@@ -307,6 +319,16 @@ export default function PorCobrar() {
                               <li key={dv.movimiento_id} className="t-meta">
                                 <Icon name="corner-down-right" size={12} />{fmtDate(dv.fecha, true)} · <span className="num">{money(dv.monto)}</span>
                                 <button type="button" className="eu-iconbtn fz-pc-x" aria-label={`Quitar devolución de ${money(dv.monto)}`} title="Quitar devolución" onClick={() => unlink(p, dv)}><Icon name="x" size={12} /></button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {(p.abonos || []).length > 0 && (
+                          <ul className="fz-pc-devs">
+                            {p.abonos.map((a) => (
+                              <li key={`a${a.id}`} className="t-meta">
+                                <Icon name="banknote" size={12} />{fmtDate(a.fecha, true)} · <span className="num">{money(a.monto)}</span>{a.nota ? ` · ${a.nota}` : ''}
+                                <button type="button" className="eu-iconbtn fz-pc-x" aria-label={`Quitar abono de ${money(a.monto)}`} title="Quitar abono" onClick={() => quitarAbono(p, a)}><Icon name="x" size={12} /></button>
                               </li>
                             ))}
                           </ul>

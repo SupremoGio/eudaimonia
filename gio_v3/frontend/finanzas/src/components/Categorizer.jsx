@@ -5,6 +5,7 @@ import { bankName, catMeta, tipoName } from '../lib/meta.js';
 import { categoryKeys, subcatsFor } from '../lib/store.js';
 import { Icon, Kbd, saveKey, toast } from './ui.jsx';
 import { PrestamoPersonaField, usePrestamoPersona } from './PrestamoPersona.jsx';
+import { useCompartido } from './Compartido.jsx';
 
 const FREQUENT = ['SUPER', 'COMIDA_FUERA', 'CAFE/PAN', 'TRANSPORTE', 'VIVIENDA', 'OCIO', 'DIGITAL', 'SALUD', 'ROPA'];
 const STOP = new Set(['COMPRA', 'PAGO', 'CARGO', 'SPEI', 'TRANSFERENCIA', 'DE', 'EN', 'LA', 'EL', 'POR', 'MX', 'MEX', 'CDMX', 'SA', 'CV']);
@@ -58,6 +59,12 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
   }, [showAll, keys, categoria, variant]);
   const subs = subcatsFor(cats, categoria, tx.tipo);
   const mine = parte.mode === 'all' ? total : parte.mode === 'half' ? Math.round((total / 2) * 100) / 100 : Math.min(total, parseFloat(parte.amount) || 0);
+  // «Por cobrar» de Tu parte: con nombre queda registrado en Por cobrar
+  // (ligado a este gasto) y ahí o en Salud financiera se ligan sus pagos.
+  const comp = useCompartido(tx.id);
+  const puedeCompartir = isGasto && !esPrestamo && categoria !== 'EXPENSE';
+  const debe = Math.round((total - mine) * 100) / 100;
+  const compV = { on: puedeCompartir && debe > 0.004 && !!comp.persona.trim(), persona: comp.persona, monto: String(debe) };
 
   const pickCat = (k) => { if (k !== categoria) { setCategoria(k); setSub(''); } };
 
@@ -75,6 +82,8 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
 
   async function save() {
     if (busy) return;
+    const errComp = comp.validar(total, compV);
+    if (errComp) { toast(errComp, 'err'); return; }
     setBusy(true);
     const body = { categoria, subcategoria: sub };
     if (isGasto) {
@@ -84,6 +93,7 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
     try {
       await api.patch(`/transactions/${tx.id}`, body);
       if (esPrestamo) await pp.guardar(tx.id);
+      if (compV.on || comp.existente) await comp.guardar(tx.id, tx.descripcion, compV, { conservarParte: mine < total });
       let extra = '';
       if (always) {
         const d = await createRule(true);
@@ -178,6 +188,16 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
           )}
           <div className="eu-between"><span className="t-meta">Tú pagas</span><span className="t-data">{money(mine)}</span></div>
           {mine < total && <div className="eu-between"><span className="t-meta">Por cobrar</span><span className="t-data fz-fg-3">{money(total - mine)}</span></div>}
+          {mine < total && puedeCompartir && (
+            <>
+              <input className="eu-input fz-input-sm" list={`${headingId}-debe`} aria-label="¿Quién te lo debe?" placeholder="¿Quién te lo debe? (opcional)"
+                value={comp.persona} onChange={(e) => comp.setPersona(e.target.value)} autoComplete="off" />
+              <datalist id={`${headingId}-debe`}>{comp.personas.map((x) => <option key={x} value={x} />)}</datalist>
+              <span className="t-meta">{comp.existente
+                ? (comp.existente.devuelto > 0 ? `En Por cobrar · ya te pagó ${money(comp.existente.devuelto)}` : 'En Por cobrar · ahí o en Salud financiera ligas sus pagos')
+                : comp.persona.trim() ? 'Al guardar queda en Por cobrar, ligado a este gasto' : 'Con nombre queda en Por cobrar y puedes ligar sus pagos'}</span>
+            </>
+          )}
         </div>
       )}
 

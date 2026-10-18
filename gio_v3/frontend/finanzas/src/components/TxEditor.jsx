@@ -5,6 +5,7 @@ import { BANKS, catMeta } from '../lib/meta.js';
 import { categoryKeys, getCategories, getTrips, subcatsFor } from '../lib/store.js';
 import { Field, Icon, Kbd, Modal, confirmDialog, saveKey, toast } from './ui.jsx';
 import { PrestamoPersonaField, usePrestamoPersona } from './PrestamoPersona.jsx';
+import { CompartidoField, useCompartido } from './Compartido.jsx';
 
 const TIPOS_EDIT = [['GASTO', 'Gasto'], ['INGRESO', 'Ingreso'], ['PAGO', 'Pago']];
 
@@ -55,6 +56,13 @@ export default function TxEditor({ tx, onClose, onSaved }) {
   const esPrestamo = f.categoria === 'PRESTAMOS' && f.tipo === 'GASTO';
   const guardarPrestamo = (movId) => (esPrestamo ? pp.guardar(movId) : Promise.resolve());
 
+  // Gasto compartido: alguien te debe parte (queda en Por cobrar y el gasto
+  // cuenta solo tu parte). No aplica a préstamos ni a gastos de Expense.
+  const comp = useCompartido(isNew ? null : tx.id);
+  const puedeCompartir = f.tipo === 'GASTO' && !esPrestamo && f.categoria !== 'EXPENSE';
+  const compartido = puedeCompartir && comp.on;
+  const guardarCompartido = (movId) => (puedeCompartir || comp.existente ? comp.guardar(movId, f.descripcion.trim()) : Promise.resolve());
+
   const subs = subcatsFor(cats, f.categoria, f.tipo);
   const keys = categoryKeys(cats, f.categoria);
   const idp = isNew ? 'fz-n' : 'fz-e';
@@ -65,6 +73,8 @@ export default function TxEditor({ tx, onClose, onSaved }) {
       setErr('Descripción y monto son obligatorios.');
       return;
     }
+    const errComp = puedeCompartir ? comp.validar(parseFloat(f.monto)) : '';
+    if (errComp) { setErr(errComp); return; }
     setBusy(true); setErr(''); setDup(false);
     try {
       if (isNew) {
@@ -73,10 +83,12 @@ export default function TxEditor({ tx, onClose, onSaved }) {
           subcategoria: f.subcategoria, banco: f.banco, fecha: f.fecha, ...(force ? { force: true } : {}),
         });
         await guardarPrestamo(r && r.id);
+        await guardarCompartido(r && r.id);
         toast('Movimiento agregado', 'ok');
       } else {
         await api.patch(`/transactions/${tx.id}`, { ...f, descripcion: f.descripcion.trim(), monto: parseFloat(f.monto) });
         await guardarPrestamo(tx.id);
+        await guardarCompartido(tx.id);
         toast('Movimiento actualizado', 'ok');
       }
       onSaved && onSaved();
@@ -159,11 +171,13 @@ export default function TxEditor({ tx, onClose, onSaved }) {
 
         <PrestamoPersonaField p={pp} activo={esPrestamo} idp={idp} />
 
+        {puedeCompartir && <CompartidoField c={comp} total={parseFloat(f.monto) || 0} idp={idp} />}
+
         {!isNew && f.tipo === 'GASTO' && (
           <div className="eu-grid-2">
             <Field label="Mi parte (opcional)" htmlFor={`${idp}-parte`}
-              help="Si alguien más pagó o te reembolsó parte, pon solo lo que te corresponde. Vacío = 100 % tuyo.">
-              <input id={`${idp}-parte`} className="eu-input eu-input--money" type="number" step="0.01" min="0" inputMode="decimal" value={f.mi_parte} onChange={(e) => set('mi_parte', e.target.value)} placeholder="Ej. 600" />
+              help={compartido ? 'La calcula «Te deben parte»: total − lo que te deben.' : 'Si alguien más pagó o te reembolsó parte, pon solo lo que te corresponde. Vacío = 100 % tuyo.'}>
+              <input id={`${idp}-parte`} className="eu-input eu-input--money" type="number" step="0.01" min="0" inputMode="decimal" value={f.mi_parte} onChange={(e) => set('mi_parte', e.target.value)} placeholder="Ej. 600" disabled={compartido} />
             </Field>
             <Field label="Viaje (opcional)" htmlFor={`${idp}-viaje`}>
               <select id={`${idp}-viaje`} className="eu-select" value={f.viaje_id} onChange={(e) => set('viaje_id', e.target.value)}>
