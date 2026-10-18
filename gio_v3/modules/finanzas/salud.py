@@ -114,15 +114,14 @@ def index():
     for b in bienes:
         bienes_por_cat.setdefault(b['categoria'], []).append(b)
     with get_db() as db:
-        owe_me = [dict(r) for r in db.execute(
-            "SELECT * FROM debts WHERE type='owe_me' AND settled=0 ORDER BY created_at DESC"
-        ).fetchall()]
+        # «Me deben» vive en Por cobrar (est_prestamos); «Debo» en debts.
+        from modules.finanzas.estados import prestamos as _prest
+        owe_me = _prest.abiertos_salud(db)
         i_owe  = [dict(r) for r in db.execute(
             "SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY created_at DESC"
         ).fetchall()]
-        try:   # depósitos de un deudor con compromiso abierto: posibles abonos
-            from modules.finanzas import compromisos
-            sugerencias_abonos = compromisos.sugerencias(db)
+        try:   # depósitos de alguien que te debe: posibles abonos
+            sugerencias_abonos = _prest.sugerencias(db)
         except Exception:
             sugerencias_abonos = []
     return render_template('finanzas/salud.html',

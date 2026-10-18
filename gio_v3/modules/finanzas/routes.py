@@ -4,6 +4,7 @@ from datetime import date, datetime
 from collections import defaultdict
 from utils import today_str, today_date, clean_str, safe_float
 from . import compromisos as _comp
+from .estados import prestamos as _prest
 
 finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 
@@ -116,9 +117,9 @@ def index():
     from modules.finanzas.salud import _compute_patrimonio
     pat = _compute_patrimonio()
     with get_db() as db:
-        owe_me = db.execute("SELECT * FROM debts WHERE type='owe_me' AND settled=0").fetchall()
+        # «Me deben» vive en Por cobrar (est_prestamos); «Debo» en debts.
+        total_owe_me = _prest.total_por_cobrar(db)
         i_owe  = db.execute("SELECT * FROM debts WHERE type='i_owe'  AND settled=0").fetchall()
-    total_owe_me = sum(d['monto_restante'] for d in owe_me)
     total_i_owe  = sum(d['monto_restante'] for d in i_owe)
     patrimonio_neto_display = pat['patrimonio_neto'] + total_owe_me - total_i_owe
 
@@ -213,6 +214,13 @@ def add_debt():
     concept = clean_str(d.get('concept'), 300)
     dtype   = clean_str(d.get('type'), 20)
     with get_db() as db:
+        if dtype == 'owe_me':   # «Me deben» se registra en Por cobrar
+            try:
+                _prest.crear(db, person, monto=amount, concepto=concept)
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
+            db.commit()
+            return jsonify({'ok': True})
         db.execute("""INSERT INTO debts
             (type, person, concept, amount, monto_total, monto_restante, created_at)
             VALUES (?,?,?,?,?,?,?)""",
@@ -304,8 +312,10 @@ def debts_historial():
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     with get_db() as db:
         rows = db.execute("""SELECT d.*, COALESCE((SELECT MAX(paid_at) FROM debt_payments WHERE debt_id=d.id), d.created_at) AS ultimo
-                              FROM debts d WHERE d.settled=1 ORDER BY ultimo DESC""").fetchall()
-        return jsonify({'debts': [{**_debt_hist(db, d), 'ultimo': d['ultimo']} for d in rows]})
+                              FROM debts d WHERE d.settled=1 AND d.type='i_owe' ORDER BY ultimo DESC""").fetchall()
+        debts = [{**_debt_hist(db, d), 'ultimo': d['ultimo']} for d in rows] + _prest.pagados_salud(db)
+        debts.sort(key=lambda d: (d['ultimo'] or '')[:10], reverse=True)
+        return jsonify({'debts': debts})
 
 
 @finanzas_bp.route('/api/debt/<int:did>/settle', methods=['POST'])
@@ -355,14 +365,90 @@ def debts_sugerencias():
     """Depósitos de alguien con un compromiso abierto: posibles abonos (no se aplican solos)."""
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     with get_db() as db:
-        return jsonify({'sugerencias': _comp.sugerencias(db)})
+        return jsonify({'sugerencias': _prest.sugerencias(db)})
 
 
 @finanzas_bp.route('/api/debts/sugerencias/<int:mid>/descartar', methods=['POST'])
 def debts_sugerencia_descartar(mid):
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     with get_db() as db:
-        _comp.descartar(db, mid)
+        _prest.descartar_sugerencia(db, mid)
+        db.commit()
+    return jsonify({'ok': True})
+
+
+# ── «Me deben» desde Salud financiera: viven en Por cobrar (est_prestamos) ──
+# Misma forma que las rutas de debts de arriba para que Salud las use igual.
+
+@finanzas_bp.route('/api/prestamo/<int:pid>/historial')
+def prestamo_historial(pid):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        h = _prest.historial(db, pid)
+    return jsonify(h) if h else (jsonify({'error': 'not found'}), 404)
+
+
+@finanzas_bp.route('/api/prestamo/<int:pid>/candidatos')
+def prestamo_candidatos(pid):
+    """Depósitos que pueden ser abonos (primero los de la cuenta de la persona)."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        return jsonify({'depositos': _prest.candidatos_abono(db, pid)})
+
+
+@finanzas_bp.route('/api/prestamo/<int:pid>/abonar', methods=['POST'])
+def prestamo_abonar(pid):
+    """Con depósitos elegidos se ligan como devolución (su monto es el abono);
+    sin depósitos es un abono manual por `amount`."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    d = request.json or {}
+    try:
+        mov_ids = sorted({int(x) for x in (d.get('movimiento_ids') or []) if str(x).strip()})
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Los depósitos elegidos no son válidos.'}), 400
+    with get_db() as db:
+        p = _prest.uno(db, pid)
+        if not p:
+            return jsonify({'error': 'not found'}), 404
+        try:
+            if mov_ids:
+                # get_db() no tiene rollback: todo se valida antes de escribir.
+                movs = [db.execute("SELECT id, tipo, ABS(monto) AS monto FROM est_movimientos WHERE id=?", (m,)).fetchone()
+                        for m in mov_ids]
+                total = sum(m['monto'] for m in movs if m)
+                if total > p['pendiente'] + 0.01:
+                    raise ValueError(f'Los depósitos suman ${total:,.2f} y solo quedan ${p["pendiente"]:,.2f} pendientes.')
+                for m in mov_ids:
+                    if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (m,)).fetchone():
+                        raise ValueError(f'El depósito {m} ya está ligado a un préstamo.')
+                for m in mov_ids:
+                    _prest.ligar_devolucion(db, pid, m)
+            else:
+                _prest.abonar(db, pid, safe_float(d.get('amount'), min_val=0.0), clean_str(d.get('note', ''), 300))
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        db.commit()
+        p = _prest.uno(db, pid)
+    return jsonify({'ok': True, 'settled': p['estado'] == _prest.PAGADO, 'monto_restante': p['pendiente']})
+
+
+@finanzas_bp.route('/api/prestamo/<int:pid>/settle', methods=['POST'])
+def prestamo_settle(pid):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        try:
+            _prest.liquidar(db, pid)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 404
+        db.commit()
+    return jsonify({'ok': True})
+
+
+@finanzas_bp.route('/api/prestamo/<int:pid>', methods=['DELETE'])
+def prestamo_delete(pid):
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    with get_db() as db:
+        _prest.borrar(db, pid)
         db.commit()
     return jsonify({'ok': True})
 

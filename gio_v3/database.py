@@ -6182,6 +6182,19 @@ def init_db():
         except Exception as e:
             print(f"[DB] contrapartes migration warning: {e}")
 
+        # ── FINANZAS — «Me deben» vive en Por cobrar (est_prestamos): columnas
+        #    nuevas y migración de los Compromisos «me deben» que falten
+        #    (prestamos.migrar_compromisos, idempotente; debts queda de respaldo).
+        try:
+            from modules.finanzas.estados import prestamos as _prest_u
+            _prest_u.asegurar(db)
+            _n_mig = _prest_u.migrar_compromisos(db)
+            db.commit()
+            if _n_mig:
+                print(f"[DB] me deben: {_n_mig} compromisos pasados a Por cobrar")
+        except Exception as e:
+            print(f"[DB] me deben (Por cobrar) migration warning: {e}")
+
         # ── FINANZAS — abonos de «Sin conciliar» comentados por el usuario
         #    (correcciones_sin_conciliar.py). La versión lleva el tamaño de la
         #    lista: cada tanda nueva se aplica sola al arrancar.

@@ -1341,6 +1341,9 @@ def update_transaction(tx_id):
                               mi_parte_auto=CASE WHEN mi_parte IS NOT NULL AND ? IS NOT NULL
                                                   AND ABS(mi_parte - ?) < 0.005 THEN mi_parte_auto ELSE 0 END
                           WHERE id=?""", (val, val, val, tx_id))
+        # Gasto con «te deben parte» (Por cobrar): tu parte la manda lo que te
+        # deben, aunque cambie el monto o el editor reenvíe un mi_parte viejo.
+        _prest.recalcular_parte(db, tx_id)
         if 'reembolso_cat' in d:
             val = d['reembolso_cat'] or None
             db.execute("UPDATE est_movimientos SET reembolso_cat=? WHERE id=?", (val, tx_id))
@@ -2277,29 +2280,26 @@ def abonos_sin_conciliar_csv():
 
 @estados_bp.route('/api/prestamos', methods=['POST'])
 def prestamos_crear():
-    """Crea un préstamo desde el movimiento con el que se prestó. El
-    movimiento queda como PRESTAMOS/GASTO (fuera del gasto en todos lados)."""
+    """Registra lo que te deben (ver prestamos.crear):
+    - {movimiento_id, persona}: préstamo hecho con ese gasto (todo el
+      movimiento queda PRESTAMOS/GASTO, fuera del gasto en todos lados);
+    - {movimiento_id, persona, monto, compartido: true}: te deben parte de
+      ese gasto; el movimiento conserva su categoría y cuenta solo tu parte;
+    - {persona, monto, concepto}: sin movimiento."""
     if not _ok(): return _locked()
     d = request.get_json(silent=True) or {}
-    persona = clean_str(d.get('persona'), 80)
-    if not persona:
-        return jsonify({'error': 'Indica a quién le prestaste.'}), 400
+    mov_id = d.get('movimiento_id')
     try:
-        mov_id = int(d.get('movimiento_id'))
+        mov_id = int(mov_id) if mov_id not in (None, '') else None
     except (TypeError, ValueError):
-        return jsonify({'error': 'Falta el movimiento del préstamo.'}), 400
+        return jsonify({'error': 'El movimiento no es válido.'}), 400
     with get_db() as db:
-        m = _mov(db, mov_id)
-        if not m or m['tipo'] != 'GASTO':
-            return jsonify({'error': 'El movimiento no existe o no es un gasto.'}), 400
-        if db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (mov_id,)).fetchone():
-            return jsonify({'error': 'Ese movimiento ya tiene un préstamo.'}), 409
-        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado' WHERE id=?", (mov_id,))
-        pid = db.execute(
-            "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, movimiento_id, created_at) "
-            "VALUES (?, 'OTORGADO', ?, ?, ?, ?, ?)",
-            (persona, abs(float(m['monto'])), m['fecha'], clean_str(d.get('notas'), 300), mov_id, _prest.ahora())
-        ).lastrowid
+        try:
+            pid = _prest.crear(db, clean_str(d.get('persona'), 80), monto=safe_float(d.get('monto'), min_val=0.0),
+                               concepto=clean_str(d.get('concepto'), 300), notas=clean_str(d.get('notas'), 300),
+                               movimiento_id=mov_id, compartido=bool(d.get('compartido')))
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 409 if 'ya tiene' in str(e) else 400
         db.commit()
     return jsonify({'ok': True, 'id': pid}), 201
 
@@ -2322,6 +2322,13 @@ def prestamos_editar(pid):
         if 'perdido' in d:
             db.execute("UPDATE est_prestamos SET perdido_fecha=? WHERE id=?",
                        (today_str() if d.get('perdido') else None, pid))
+        if 'concepto' in d:
+            db.execute("UPDATE est_prestamos SET concepto=? WHERE id=?", (clean_str(d.get('concepto'), 300), pid))
+        if 'monto' in d:
+            try:
+                _prest.cambiar_monto(db, pid, safe_float(d.get('monto'), min_val=0.0))
+            except ValueError as e:
+                return jsonify({'error': str(e)}), 400
         db.commit()
     return jsonify({'ok': True})
 
@@ -2332,8 +2339,7 @@ def prestamos_borrar(pid):
     no se tocan."""
     if not _ok(): return _locked()
     with get_db() as db:
-        db.execute("DELETE FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,))
-        db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
+        _prest.borrar(db, pid, conservar_parte=bool(request.args.get('conservar_parte')))
         db.commit()
     return jsonify({'ok': True})
 
@@ -2349,18 +2355,37 @@ def prestamos_ligar(pid):
     except (TypeError, ValueError):
         return jsonify({'error': 'Falta el movimiento de la devolución.'}), 400
     with get_db() as db:
-        if not db.execute("SELECT 1 FROM est_prestamos WHERE id=?", (pid,)).fetchone():
-            return jsonify({'error': 'Préstamo no encontrado.'}), 404
-        m = _mov(db, mov_id)
-        if not m or m['tipo'] != 'INGRESO':
-            return jsonify({'error': 'El movimiento no existe o no es un ingreso.'}), 400
-        if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (mov_id,)).fetchone():
-            return jsonify({'error': 'Ese ingreso ya está ligado a un préstamo.'}), 409
-        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (mov_id,))
-        db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
-                   (pid, mov_id, _prest.ahora()))
+        try:
+            _prest.ligar_devolucion(db, pid, mov_id)
+        except ValueError as e:
+            msg = str(e)
+            return jsonify({'error': msg}), 404 if 'no encontrado' in msg else 409 if 'ya está' in msg else 400
         db.commit()
     return jsonify({'ok': True}), 201
+
+
+@estados_bp.route('/api/prestamos/<int:pid>/abonos', methods=['POST'])
+def prestamos_abono(pid):
+    """Abono sin movimiento del banco (efectivo)."""
+    if not _ok(): return _locked()
+    d = request.get_json(silent=True) or {}
+    with get_db() as db:
+        try:
+            aid = _prest.abonar(db, pid, safe_float(d.get('monto'), min_val=0.0), clean_str(d.get('nota'), 300),
+                                clean_str(d.get('fecha'), 10) or None)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+        db.commit()
+    return jsonify({'ok': True, 'id': aid}), 201
+
+
+@estados_bp.route('/api/prestamos/<int:pid>/abonos/<int:aid>', methods=['DELETE'])
+def prestamos_abono_quitar(pid, aid):
+    if not _ok(): return _locked()
+    with get_db() as db:
+        _prest.quitar_abono(db, pid, aid)
+        db.commit()
+    return jsonify({'ok': True})
 
 
 @estados_bp.route('/api/prestamos/<int:pid>/devoluciones/<int:mov_id>', methods=['DELETE'])

@@ -55,8 +55,9 @@ def _devoluciones(db) -> dict:
 
 def listar(db) -> list[dict]:
     devs = _devoluciones(db)
+    manuales = _abonos_manuales(db)
     rows = db.execute("""
-        SELECT p.*, m.descripcion AS mov_descripcion
+        SELECT p.*, m.descripcion AS mov_descripcion, ABS(m.monto) AS mov_monto
         FROM est_prestamos p
         LEFT JOIN est_movimientos m ON m.id = p.movimiento_id
         WHERE p.direccion = 'OTORGADO'
@@ -66,15 +67,20 @@ def listar(db) -> list[dict]:
     for r in rows:
         monto = round(abs(float(r['monto'])), 2)
         d = devs.get(r['id'], [])
-        devuelto = round(sum(x['monto'] for x in d), 2)
+        a = manuales.get(r['id'], [])
+        devuelto = round(sum(x['monto'] for x in d) + sum(x['monto'] for x in a), 2)
         pendiente = round(max(monto - devuelto, 0), 2)
+        concepto = r['concepto'] if 'concepto' in r.keys() else ''
         out.append({
             'id': r['id'], 'persona': r['contraparte'], 'fecha': r['fecha'],
             'monto': monto, 'devuelto': devuelto, 'pendiente': pendiente,
             'estado': estado(monto, devuelto, r['perdido_fecha']),
             'perdido_fecha': r['perdido_fecha'], 'notas': r['notas'] or '',
-            'movimiento_id': r['movimiento_id'], 'descripcion': r['mov_descripcion'] or '',
-            'devoluciones': d,
+            'movimiento_id': r['movimiento_id'], 'descripcion': r['mov_descripcion'] or concepto or '',
+            'concepto': concepto or '',
+            'compartido': bool(r['compartido']) if 'compartido' in r.keys() else False,
+            'mov_monto': round(float(r['mov_monto']), 2) if r['mov_monto'] is not None else None,
+            'devoluciones': d, 'abonos': a,
         })
     return out
 
@@ -211,7 +217,8 @@ def reafirmar_categorias(db) -> int:
     a contar como gasto o ingreso."""
     n = db.execute("""
         UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado'
-        WHERE id IN (SELECT movimiento_id FROM est_prestamos WHERE movimiento_id IS NOT NULL)
+        WHERE id IN (SELECT movimiento_id FROM est_prestamos
+                     WHERE movimiento_id IS NOT NULL AND COALESCE(compartido, 0) = 0)
           AND categoria != 'PRESTAMOS'
     """).rowcount
     n += db.execute("""
@@ -676,3 +683,342 @@ def registrar_manuales(db) -> tuple[int, int]:
                    f"WHERE id IN ({','.join('?' * len(ids))})", (_SUB_PROPIA, *ids))
         parejas += 1
     return creados, parejas
+
+
+# ── «Me deben» unificado (2026-10-18) ────────────────────────────────────────
+# Por cobrar es el único registro de lo que te deben: los Compromisos «me
+# deben» de Salud financiera (tabla debts) se migran aquí y Salud lee de aquí.
+# «Debo» se queda en debts. Además de prestar con un movimiento (todo el
+# movimiento es PRESTAMOS), ahora un préstamo puede:
+#   - no tener movimiento (lo registraste a mano, p. ej. desde Salud), con un
+#     concepto;
+#   - ser `compartido`: alguien te debe PARTE de un gasto tuyo (el seguro del
+#     carro que pagaste completo). El movimiento conserva su categoría y queda
+#     con mi_parte = total − lo que te deben, así el gasto solo cuenta tu parte;
+#   - recibir abonos sin movimiento del banco (efectivo, «Liquidado»), en
+#     est_prestamo_abonos. Pendiente = monto − devoluciones − abonos.
+
+SUGERIR_DIAS_ANTES = 120   # el préstamo se suele registrar después de los primeros abonos
+_DESCARTADAS = 'debt_sugerencias_descartadas'   # misma tabla que usaban los Compromisos
+
+
+def asegurar(db) -> None:
+    cols = {r['name'] for r in db.execute("PRAGMA table_info(est_prestamos)").fetchall()}
+    for col, ddl in (('concepto', "TEXT DEFAULT ''"), ('compartido', 'INTEGER DEFAULT 0'),
+                     ('debt_id', 'INTEGER DEFAULT NULL')):
+        if col not in cols:
+            db.execute(f"ALTER TABLE est_prestamos ADD COLUMN {col} {ddl}")
+    db.execute("""CREATE TABLE IF NOT EXISTS est_prestamo_abonos (
+                      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                      prestamo_id INTEGER NOT NULL,
+                      monto       REAL    NOT NULL,
+                      fecha       TEXT    NOT NULL,
+                      nota        TEXT    DEFAULT '',
+                      created_at  TEXT    NOT NULL)""")
+    db.execute(f"""CREATE TABLE IF NOT EXISTS {_DESCARTADAS} (
+                      movimiento_id INTEGER PRIMARY KEY,
+                      created_at    TEXT    NOT NULL)""")
+
+
+def _abonos_manuales(db) -> dict:
+    """prestamo_id -> [abono sin movimiento del banco]."""
+    out = {}
+    try:
+        rows = db.execute("SELECT id, prestamo_id, monto, fecha, nota FROM est_prestamo_abonos ORDER BY fecha, id").fetchall()
+    except Exception:   # tabla aún no creada (asegurar corre al arrancar)
+        return out
+    for r in rows:
+        out.setdefault(r['prestamo_id'], []).append({
+            'id': r['id'], 'fecha': r['fecha'], 'monto': round(abs(float(r['monto'])), 2), 'nota': r['nota'] or ''})
+    return out
+
+
+def uno(db, pid: int) -> dict | None:
+    return next((p for p in listar(db) if p['id'] == pid), None)
+
+
+def _mi_parte(db, mov_id: int, debe: float) -> None:
+    """Gasto compartido: el movimiento cuenta solo tu parte."""
+    m = db.execute("SELECT monto FROM est_movimientos WHERE id=?", (mov_id,)).fetchone()
+    db.execute("UPDATE est_movimientos SET mi_parte=? WHERE id=?",
+               (round(max(abs(float(m['monto'])) - debe, 0), 2), mov_id))
+
+
+def recalcular_parte(db, mov_id: int) -> None:
+    """Si el gasto tiene «te deben parte», su mi_parte la manda lo que te
+    deben (p. ej. tras editar el monto del movimiento)."""
+    p = db.execute("SELECT monto FROM est_prestamos WHERE movimiento_id=? AND compartido=1", (mov_id,)).fetchone()
+    if p:
+        _mi_parte(db, mov_id, float(p['monto']))
+
+
+def crear(db, persona: str, monto: float | None = None, concepto: str = '', notas: str = '',
+          movimiento_id: int | None = None, compartido: bool = False, fecha: str | None = None) -> int:
+    """Registra lo que te deben. ValueError con un mensaje para el usuario.
+    - con movimiento y sin `compartido`: préstamo hecho con ese movimiento
+      (todo el movimiento pasa a PRESTAMOS);
+    - con movimiento y `compartido`: te deben `monto` de ese gasto (mi_parte);
+    - sin movimiento: registro manual por `monto`."""
+    persona = (persona or '').strip()
+    if not persona:
+        raise ValueError('Indica quién te debe.')
+    if movimiento_id is None:
+        if not monto or monto <= 0:
+            raise ValueError('El monto debe ser mayor a 0.')
+        return db.execute(
+            "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, concepto, created_at) "
+            "VALUES (?, 'OTORGADO', ?, ?, ?, ?, ?)",
+            (persona, round(monto, 2), (fecha or ahora())[:10], notas, concepto, ahora())).lastrowid
+    m = db.execute("SELECT * FROM est_movimientos WHERE id=?", (movimiento_id,)).fetchone()
+    if not m or m['tipo'] != 'GASTO':
+        raise ValueError('El movimiento no existe o no es un gasto.')
+    if db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (movimiento_id,)).fetchone():
+        raise ValueError('Ese movimiento ya tiene un préstamo.')
+    total = round(abs(float(m['monto'])), 2)
+    if compartido:
+        if not monto or monto <= 0:
+            raise ValueError('Indica cuánto te deben de este gasto.')
+        if monto > total + 0.005:
+            raise ValueError(f'No te pueden deber más que el gasto (${total:,.2f}).')
+        _mi_parte(db, movimiento_id, monto)
+    else:
+        monto = total
+        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado' WHERE id=?", (movimiento_id,))
+    return db.execute(
+        "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, concepto, movimiento_id, compartido, created_at) "
+        "VALUES (?, 'OTORGADO', ?, ?, ?, ?, ?, ?, ?)",
+        (persona, round(monto, 2), m['fecha'], notas, concepto or (m['descripcion'] if compartido else ''),
+         movimiento_id, 1 if compartido else 0, ahora())).lastrowid
+
+
+def cambiar_monto(db, pid: int, monto: float) -> None:
+    """Solo préstamos sin movimiento o compartidos (el de un préstamo hecho con
+    un movimiento es el del movimiento)."""
+    p = db.execute("SELECT * FROM est_prestamos WHERE id=?", (pid,)).fetchone()
+    if not p:
+        raise ValueError('Préstamo no encontrado.')
+    if not monto or monto <= 0:
+        raise ValueError('El monto debe ser mayor a 0.')
+    if p['movimiento_id'] and not p['compartido']:
+        raise ValueError('El monto de este préstamo es el del movimiento con el que prestaste.')
+    if p['movimiento_id']:
+        total = abs(float(db.execute("SELECT monto FROM est_movimientos WHERE id=?", (p['movimiento_id'],)).fetchone()['monto']))
+        if monto > total + 0.005:
+            raise ValueError(f'No te pueden deber más que el gasto (${total:,.2f}).')
+        _mi_parte(db, p['movimiento_id'], monto)
+    db.execute("UPDATE est_prestamos SET monto=? WHERE id=?", (round(monto, 2), pid))
+
+
+def borrar(db, pid: int, conservar_parte: bool = False) -> None:
+    """Borra el registro y sus ligas. Los movimientos del banco no se tocan,
+    salvo el gasto compartido, que vuelve a ser 100 % tuyo (o conserva su
+    mi_parte con `conservar_parte`: sigue siendo compartido, solo ya no se
+    lleva la cuenta de quién debe)."""
+    p = db.execute("SELECT movimiento_id, compartido FROM est_prestamos WHERE id=?", (pid,)).fetchone()
+    if p and p['movimiento_id'] and p['compartido'] and not conservar_parte:
+        db.execute("UPDATE est_movimientos SET mi_parte=NULL WHERE id=?", (p['movimiento_id'],))
+    db.execute("DELETE FROM est_prestamo_devoluciones WHERE prestamo_id=?", (pid,))
+    db.execute("DELETE FROM est_prestamo_abonos WHERE prestamo_id=?", (pid,))
+    db.execute("DELETE FROM est_prestamos WHERE id=?", (pid,))
+
+
+def ligar_devolucion(db, pid: int, mov_id: int) -> None:
+    """Un ingreso del banco es devolución: queda PRESTAMOS/INGRESO y solo baja el pendiente."""
+    if not db.execute("SELECT 1 FROM est_prestamos WHERE id=?", (pid,)).fetchone():
+        raise ValueError('Préstamo no encontrado.')
+    m = db.execute("SELECT tipo FROM est_movimientos WHERE id=?", (mov_id,)).fetchone()
+    if not m or m['tipo'] != 'INGRESO':
+        raise ValueError(f'El movimiento {mov_id} no existe o no es un ingreso.')
+    if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (mov_id,)).fetchone():
+        raise ValueError(f'El ingreso {mov_id} ya está ligado a un préstamo.')
+    if db.execute("SELECT 1 FROM est_expense_lote_depositos WHERE movimiento_id=?", (mov_id,)).fetchone():
+        raise ValueError(f'El ingreso {mov_id} es el depósito de un lote de Expense.')
+    db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (mov_id,))
+    db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+               (pid, mov_id, ahora()))
+
+
+def abonar(db, pid: int, monto: float, nota: str = '', fecha: str | None = None) -> int:
+    """Abono sin movimiento del banco (efectivo, o lo que no quieras ligar)."""
+    p = uno(db, pid)
+    if not p:
+        raise ValueError('Préstamo no encontrado.')
+    if not monto or monto <= 0:
+        raise ValueError('El monto debe ser mayor a 0.')
+    if monto > p['pendiente'] + 0.005:
+        raise ValueError(f'El abono (${monto:,.2f}) supera lo pendiente (${p["pendiente"]:,.2f}).')
+    return db.execute("INSERT INTO est_prestamo_abonos (prestamo_id, monto, fecha, nota, created_at) VALUES (?,?,?,?,?)",
+                      (pid, round(monto, 2), (fecha or ahora())[:10], nota, ahora())).lastrowid
+
+
+def quitar_abono(db, pid: int, aid: int) -> None:
+    db.execute("DELETE FROM est_prestamo_abonos WHERE id=? AND prestamo_id=?", (aid, pid))
+
+
+def liquidar(db, pid: int) -> None:
+    """Lo que falta queda como último abono, para que el historial cuadre."""
+    p = uno(db, pid)
+    if not p:
+        raise ValueError('Préstamo no encontrado.')
+    if p['pendiente'] > 0.005:
+        abonar(db, pid, p['pendiente'], 'Liquidado')
+
+
+_CATS_ABONO_SQL = """(categoria IN ('', 'OTROS', 'PRESTAMOS') OR categoria IS NULL
+                      OR (categoria='FINANZAS' AND COALESCE(subcategoria,'') IN
+                          ('', 'Transferencia', 'Transferencia recibida', 'Reembolso compartido')))"""
+_LIGADOS_SQL = """id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
+                  AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)"""
+
+
+def _cuenta_de(db, persona: str):
+    try:
+        from . import contrapartes as _contra
+        return _contra.de_persona(db, persona)
+    except Exception:
+        return None
+
+
+def candidatos_abono(db, pid: int) -> list[dict]:
+    """Depósitos que pueden ser abonos de este préstamo: primero los de la
+    cuenta de la persona, luego los demás que no pasan de lo pendiente."""
+    p = uno(db, pid)
+    if not p:
+        return []
+    cuenta = _cuenta_de(db, p['persona'])
+    rows = db.execute(f"""
+        SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto, banco, contraparte
+        FROM est_movimientos
+        WHERE tipo='INGRESO' AND {_LIGADOS_SQL} AND {_CATS_ABONO_SQL}
+          AND ABS(monto) <= ? + 0.01
+          AND substr(fecha,1,10) >= date(substr(?,1,10), ?)
+        ORDER BY fecha DESC, id DESC LIMIT 200""",
+        (p['pendiente'], p['fecha'], f'-{SUGERIR_DIAS_ANTES} days')).fetchall()
+    out = [{**dict(r), 'de_persona': bool(cuenta) and r['contraparte'] == cuenta} for r in rows]
+    out.sort(key=lambda r: not r['de_persona'])   # estable: dentro de cada grupo sigue por fecha
+    return out[:60]
+
+
+def sugerencias(db) -> list[dict]:
+    """Depósitos de la cuenta de alguien que te debe y que todavía no son
+    abono de nada: se proponen en Salud financiera, no se aplican solos."""
+    out = []
+    for p in listar(db):
+        if p['estado'] in (PAGADO, PERDIDO) or p['pendiente'] <= 0:
+            continue
+        cuenta = _cuenta_de(db, p['persona'])
+        if not cuenta:
+            continue
+        rows = db.execute(f"""
+            SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto, categoria, subcategoria
+            FROM est_movimientos
+            WHERE tipo='INGRESO' AND contraparte=? AND {_LIGADOS_SQL} AND {_CATS_ABONO_SQL}
+              AND ABS(monto) <= ? + 0.01
+              AND substr(fecha,1,10) >= date(substr(?,1,10), ?)
+              AND id NOT IN (SELECT movimiento_id FROM {_DESCARTADAS})
+            ORDER BY fecha DESC, id DESC""",
+            (cuenta, p['pendiente'], p['fecha'], f'-{SUGERIR_DIAS_ANTES} days')).fetchall()
+        for m in rows:
+            out.append({'debt_id': p['id'], 'person': p['persona'], 'concept': p['concepto'] or p['descripcion'],
+                        'monto_restante': p['pendiente'], 'movimiento': dict(m)})
+    return out
+
+
+def descartar_sugerencia(db, movimiento_id: int) -> None:
+    db.execute(f"INSERT OR IGNORE INTO {_DESCARTADAS} (movimiento_id, created_at) VALUES (?,?)",
+               (movimiento_id, ahora()))
+
+
+# ── Vistas para Salud financiera (misma forma que los Compromisos) ──────────
+
+def _como_deuda(p: dict) -> dict:
+    return {'id': p['id'], 'kind': 'prestamo', 'type': 'owe_me', 'person': p['persona'],
+            'concept': p['concepto'] or p['descripcion'] or p['notas'],
+            'monto_total': p['monto'], 'monto_restante': p['pendiente'],
+            'settled': p['estado'] == PAGADO, 'created_at': p['fecha']}
+
+
+def abiertos_salud(db) -> list[dict]:
+    """Lo que te deben hoy (sin perdidos ni pagados)."""
+    return [_como_deuda(p) for p in listar(db) if p['estado'] in (PENDIENTE, PARCIAL)]
+
+
+def total_por_cobrar(db) -> float:
+    return round(sum(p['pendiente'] for p in listar(db) if p['estado'] in (PENDIENTE, PARCIAL)), 2)
+
+
+def historial(db, pid: int) -> dict | None:
+    """Préstamo con sus devoluciones y abonos en orden, con la forma del
+    historial de Compromisos (payments con amount/note/paid_at)."""
+    p = uno(db, pid)
+    if not p:
+        return None
+    pagos = [{'amount': d['monto'], 'note': d['descripcion'], 'paid_at': d['fecha'],
+              'movimientos': [{'id': d['movimiento_id'], 'fecha': d['fecha'], 'monto': d['monto']}]}
+             for d in p['devoluciones']]
+    pagos += [{'amount': a['monto'], 'note': a['nota'], 'paid_at': a['fecha'], 'movimientos': [], 'abono_id': a['id']}
+              for a in p['abonos']]
+    pagos.sort(key=lambda x: (x['paid_at'] or '')[:10])
+    return {**_como_deuda(p), 'payments': pagos, 'pagado': p['devuelto'], 'estado': p['estado'],
+            'movimiento_id': p['movimiento_id'], 'compartido': p['compartido']}
+
+
+def pagados_salud(db) -> list[dict]:
+    """Préstamos ya cobrados, para el historial de «Deudas liquidadas»."""
+    out = []
+    for p in listar(db):
+        if p['estado'] != PAGADO:
+            continue
+        h = historial(db, p['id'])
+        h['ultimo'] = max([x['paid_at'] or '' for x in h['payments']] + [p['fecha'] or ''])
+        out.append(h)
+    return out
+
+
+# ── Migración: Compromisos «me deben» → Por cobrar ──────────────────────────
+
+def migrar_compromisos(db) -> int:
+    """Pasa cada debts «owe_me» que aún no tenga préstamo (debt_id) a
+    est_prestamos, con sus abonos: los ligados a un depósito quedan como
+    devolución y el resto como abono manual. La fila de debts no se borra
+    (queda como respaldo) y Salud ya no la lee. Idempotente: corre en cada
+    arranque y solo toma lo nuevo."""
+    try:
+        debts = db.execute("""SELECT * FROM debts WHERE type='owe_me'
+                              AND id NOT IN (SELECT debt_id FROM est_prestamos WHERE debt_id IS NOT NULL)
+                              ORDER BY id""").fetchall()
+    except Exception:
+        return 0
+    try:
+        db.execute("SELECT 1 FROM debt_payment_movs LIMIT 1")
+        hay_movs = True
+    except Exception:
+        hay_movs = False
+    n = 0
+    for d in debts:
+        total = round(float(d['monto_total'] or d['amount'] or 0), 2)
+        if total <= 0:
+            continue
+        pid = db.execute(
+            "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, concepto, created_at, debt_id) "
+            "VALUES (?, 'OTORGADO', ?, ?, '', ?, ?, ?)",
+            (d['person'], total, (d['created_at'] or ahora())[:10], d['concept'] or '', ahora(), d['id'])).lastrowid
+        for pg in db.execute("SELECT * FROM debt_payments WHERE debt_id=? ORDER BY paid_at, id", (d['id'],)).fetchall():
+            ligado = 0.0
+            if hay_movs:
+                for (mid,) in db.execute("SELECT movimiento_id FROM debt_payment_movs WHERE payment_id=?", (pg['id'],)).fetchall():
+                    m = db.execute("SELECT ABS(monto) AS monto FROM est_movimientos WHERE id=?", (mid,)).fetchone()
+                    if not m or db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (mid,)).fetchone():
+                        continue
+                    db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (mid,))
+                    db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
+                               (pid, mid, ahora()))
+                    ligado += float(m['monto'])
+            resto = round(float(pg['amount'] or 0) - ligado, 2)
+            if resto > 0.005:
+                db.execute("INSERT INTO est_prestamo_abonos (prestamo_id, monto, fecha, nota, created_at) VALUES (?,?,?,?,?)",
+                           (pid, resto, (pg['paid_at'] or ahora())[:10], pg['note'] or '', ahora()))
+        if d['settled']:
+            liquidar(db, pid)
+        n += 1
+    return n

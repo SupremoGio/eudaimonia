@@ -82,31 +82,34 @@ def test_api_contrapartes_y_filtro(test_db):
 
 
 def test_compromiso_sugiere_y_liga_abonos(test_db):
+    """«Me deben» vive en Por cobrar (est_prestamos) desde 2026-10-18: el
+    compromiso que se registra en Salud es un préstamo sin movimiento y sus
+    depósitos se ligan como devolución."""
     c = _client()
     c.post('/finanzas/api/debt', json={'type': 'owe_me', 'person': 'Judicial', 'concept': 'Viaje GDL', 'amount': 4809.02})
     with database.get_db() as db:
-        did = db.execute("SELECT id FROM debts").fetchone()[0]
-        db.execute("UPDATE debts SET created_at='2025-12-10T10:00:00' WHERE id=?", (did,))   # el viaje fue en dic
+        assert db.execute("SELECT COUNT(*) FROM debts").fetchone()[0] == 0
+        pid = db.execute("SELECT id FROM est_prestamos").fetchone()[0]
+        db.execute("UPDATE est_prestamos SET fecha='2025-12-10' WHERE id=?", (pid,))   # el viaje fue en dic
         dep = _mov(db, '2026-02-15', 'PAGO CUENTA DE TERCERO BNET …6230 TRANSF A GIOVANY A', 300)
         otro = _mov(db, '2026-02-16', 'PAGO CUENTA DE TERCERO BNET …1239 TRANSF A GIOVANY A', 300)
         cp.actualizar(db)
         db.commit()
     sug = c.get('/finanzas/api/debts/sugerencias').get_json()['sugerencias']
-    assert [(s['debt_id'], s['movimiento']['id']) for s in sug] == [(did, dep)]
-    r = c.post(f'/finanzas/api/debt/{did}/abonar', json={'amount': 300, 'note': 'feb', 'movimiento_ids': [dep]})
+    assert [(s['debt_id'], s['movimiento']['id']) for s in sug] == [(pid, dep)]
+    # candidatos del modal: primero el de su cuenta, luego el de otra persona
+    cand = c.get(f'/finanzas/api/prestamo/{pid}/candidatos').get_json()['depositos']
+    assert [(m['id'], m['de_persona']) for m in cand][:2] == [(dep, True), (otro, False)]
+    r = c.post(f'/finanzas/api/prestamo/{pid}/abonar', json={'note': 'feb', 'movimiento_ids': [dep]})
     assert r.get_json()['monto_restante'] == 4509.02
     assert c.get('/finanzas/api/debts/sugerencias').get_json()['sugerencias'] == []
-    h = c.get(f'/finanzas/api/debt/{did}/historial').get_json()
+    h = c.get(f'/finanzas/api/prestamo/{pid}/historial').get_json()
     assert [m['id'] for m in h['payments'][0]['movimientos']] == [dep]
     with database.get_db() as db:
-        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (dep,)).fetchone()) == \
-            ('FINANZAS', 'Reembolso compartido')
-        pid = db.execute("SELECT id FROM debt_payments").fetchone()[0]
-    # un depósito ya ligado no se liga a otro abono; uno de otra persona sí se puede ligar a mano
-    assert c.post(f'/finanzas/api/debt-payment/{pid}/ligar', json={'movimiento_id': otro}).status_code == 200
-    c.delete(f'/finanzas/api/debt-payment/movimiento/{otro}')
-    with database.get_db() as db:
-        assert db.execute("SELECT subcategoria FROM est_movimientos WHERE id=?", (otro,)).fetchone()[0] == 'Transferencia recibida'
+        assert tuple(db.execute("SELECT categoria, subcategoria FROM est_movimientos WHERE id=?", (dep,)).fetchone()) ==             ('PRESTAMOS', '')
+    # un depósito ya ligado no se vuelve a ligar
+    r = c.post(f'/finanzas/api/prestamo/{pid}/abonar', json={'movimiento_ids': [dep]})
+    assert r.status_code == 400
 
 
 def test_sugerencia_descartada_no_vuelve(test_db):
