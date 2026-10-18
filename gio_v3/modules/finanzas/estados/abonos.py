@@ -55,6 +55,7 @@ def sin_conciliar(db, anio: str | None = None) -> dict:
           AND COALESCE(subcategoria, '') NOT IN ('{SUB_PROPIA}', '{SUB_COMPARTIDO}', '{SUB_EXPENSE_SIN_DETALLE}')
           AND id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
           AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)
+          AND id NOT IN (SELECT movimiento_id FROM est_prestamos WHERE movimiento_id IS NOT NULL)
         ORDER BY fecha DESC, id DESC
     """, params).fetchall()]
     rows = [r for r in rows if not cancelan(r)]
@@ -141,6 +142,9 @@ def _estado(db) -> dict:
     for r in db.execute("""SELECT d.movimiento_id, p.contraparte, p.fecha FROM est_prestamo_devoluciones d
                            JOIN est_prestamos p ON p.id = d.prestamo_id"""):
         est[r['movimiento_id']] = f"Devolución de préstamo: {r['contraparte']} ({(r['fecha'] or '')[:10]})"
+    for r in db.execute("""SELECT movimiento_id, contraparte FROM est_prestamos
+                           WHERE direccion='RECIBIDO' AND movimiento_id IS NOT NULL"""):
+        est[r['movimiento_id']] = f"Te prestó: {r['contraparte']}"
     for r in db.execute("""SELECT d.movimiento_id, l.nombre FROM est_expense_lote_depositos d
                            JOIN est_expense_lotes l ON l.id = d.lote_id"""):
         est[r['movimiento_id']] = f"Depósito de Expense: lote «{r['nombre']}»"

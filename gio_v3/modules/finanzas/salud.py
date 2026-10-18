@@ -103,6 +103,16 @@ def _compute_patrimonio():
     }
 
 
+def _categorias_gasto():
+    """(clave, nombre) para «¿Qué pagó por ti?» al registrar lo que debes."""
+    from modules.finanzas.estados.config import SUBCATEGORIAS
+    nombres = {'SUPER': 'Súper', 'COMIDA_FUERA': 'Comida fuera', 'CAFE/PAN': 'Café y pan',
+               'FAMILIA_REGALOS': 'Familia y regalos', 'CUIDADO_PERSONAL': 'Cuidado personal',
+               'TECH/DIGITAL': 'Tecnología', 'COSTOS_FINANCIEROS': 'Costos financieros'}
+    fuera = {'PRESTAMOS', 'FINANZAS', 'EXPENSE', 'PAGO_TDC', 'INGRESO', 'NOMINA', 'OTROS', 'INVERSION'}
+    return [(k, nombres.get(k, k.capitalize())) for k in SUBCATEGORIAS if k not in fuera]
+
+
 # ── Vistas ─────────────────────────────────────────────────────────────────────
 
 @salud_bp.route('/')
@@ -114,12 +124,10 @@ def index():
     for b in bienes:
         bienes_por_cat.setdefault(b['categoria'], []).append(b)
     with get_db() as db:
-        # «Me deben» vive en Por cobrar (est_prestamos); «Debo» en debts.
+        # «Me deben» y «Debo» viven en est_prestamos (OTORGADO / RECIBIDO).
         from modules.finanzas.estados import prestamos as _prest
         owe_me = _prest.abiertos_salud(db)
-        i_owe  = [dict(r) for r in db.execute(
-            "SELECT * FROM debts WHERE type='i_owe'  AND settled=0 ORDER BY created_at DESC"
-        ).fetchall()]
+        i_owe  = _prest.abiertos_salud(db, 'RECIBIDO')
         try:   # depósitos de alguien que te debe: posibles abonos
             sugerencias_abonos = _prest.sugerencias(db)
         except Exception:
@@ -142,6 +150,7 @@ def index():
         owe_me            = owe_me,
         i_owe             = i_owe,
         sugerencias_abonos = sugerencias_abonos,
+        categorias_gasto  = _categorias_gasto(),
         otras_monedas     = pat['otras_monedas'],
     )
 

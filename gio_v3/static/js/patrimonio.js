@@ -71,6 +71,7 @@
   /* ── Deudas ─────────────────────────────────────────────────────────── */
   function setDtype(t) {
     $('md-type').value = t;
+    $('md-pagocat-f').hidden = t !== 'i_owe';
     $$('[data-dtype]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.dtype === t)); });
   }
   $$('[data-dtype]').forEach(function (b) { b.addEventListener('click', function () { setDtype(b.dataset.dtype); }); });
@@ -80,7 +81,7 @@
     if (!person) { setErr('md-err', 'Ingresa el nombre.'); $('md-person').focus(); return; }
     if (!(amount > 0)) { setErr('md-err', 'Monto inválido.'); $('md-amount').focus(); return; }
     busy('f-m-debt', true);
-    send('/finanzas/api/debt', 'POST', { type: $('md-type').value, person: person, concept: $('md-concept').value.trim(), amount: amount }).then(function (d) {
+    send('/finanzas/api/debt', 'POST', { type: $('md-type').value, person: person, concept: $('md-concept').value.trim(), amount: amount, pago_cat: $('md-type').value === 'i_owe' ? $('md-pagocat').value : '' }).then(function (d) {
       if (!d.ok) { setErr('md-err', d.error || 'Error al guardar.'); busy('f-m-debt', false); return; }
       euModal.close('m-debt'); toast('Deuda registrada', 'ok'); reload();
     }).catch(function () { setErr('md-err', 'Sin conexión.'); busy('f-m-debt', false); });
@@ -139,7 +140,7 @@
     var cobro = d.type === 'owe_me';
     var html = '<ol class="pt-hist">'
       + '<li><span class="t-meta pt-hist-f">' + fecha(d.created_at) + '</span><span class="eu-grow">'
-      + (d.compartido ? 'Te debe parte de' : cobro ? 'Le prestaste' : 'Te prestaron') + (d.concept ? ' · ' + esc(d.concept) : '') + '</span>'
+      + (d.compartido ? 'Te debe parte de' : cobro ? 'Le prestaste' : d.pago_cat ? 'Pagó por ti' : 'Te prestó') + (d.concept ? ' · ' + esc(d.concept) : '') + '</span>'
       + '<span class="t-data">' + mx(d.monto_total) + '</span></li>';
     d.payments.forEach(function (p) {
       html += '<li><span class="t-meta pt-hist-f">' + fecha(p.paid_at) + '</span><span class="eu-grow">'
@@ -193,6 +194,11 @@
       $('ma-amount').value = t.dataset.monto || ''; $('ma-amount').readOnly = false; $('ma-note').value = t.dataset.nota || '';
       $('ma-kind').value = t.dataset.kind || 'debt'; $('ma-movs').innerHTML = '';
       $('ma-movs-f').hidden = t.dataset.kind !== 'prestamo';
+      var debo = t.dataset.dir === 'i_owe';
+      $('ma-movs-t').textContent = debo ? 'Pago del banco (opcional)' : 'Depósito del banco (opcional)';
+      $('ma-movs-h').textContent = debo
+        ? 'Marca la transferencia con la que le pagaste: el pago toma su monto. Si te prestó dinero no cuenta como gasto; si pagó algo por ti, cuenta como ese gasto. Sin marcar = pago en efectivo.'
+        : 'Marca el depósito con el que te pagó: el abono toma su monto y deja de contar como ingreso. Sin marcar = abono en efectivo.';
       if (t.dataset.kind === 'prestamo') cargarDepositos(t.dataset.abonar, t.dataset.mov);
       setErr('ma-err', ''); open('m-abonar', 'ma-amount');
     }
