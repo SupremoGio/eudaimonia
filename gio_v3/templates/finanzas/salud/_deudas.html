@@ -29,7 +29,7 @@
           <span class="pt-debt-r"><span class="t-data pt-tone">{{ pm.money(d.monto_restante) }}</span>
             <span class="pt-acts">
               <button type="button" class="eu-iconbtn" data-hist="{{ d.id }}" data-kind="{{ kind }}" aria-label="Historial de {{ d.person }}" title="Historial"><i data-lucide="history"></i></button>
-              <button type="button" class="eu-iconbtn" data-abonar="{{ d.id }}" data-kind="{{ kind }}" data-rest="{{ d.monto_restante }}" aria-label="Registrar {{ 'cobro' if type == 'owe_me' else 'pago' }} de {{ d.person }}" title="Registrar {{ 'cobro' if type == 'owe_me' else 'pago' }}"><i data-lucide="circle-plus"></i></button>
+              <button type="button" class="eu-iconbtn" data-abonar="{{ d.id }}" data-kind="{{ kind }}" data-dir="{{ type }}" data-rest="{{ d.monto_restante }}" aria-label="Registrar {{ 'cobro' if type == 'owe_me' else 'pago' }} de {{ d.person }}" title="Registrar {{ 'cobro' if type == 'owe_me' else 'pago' }}"><i data-lucide="circle-plus"></i></button>
               <button type="button" class="eu-iconbtn" data-settle="{{ d.id }}" data-kind="{{ kind }}" aria-label="Liquidar deuda de {{ d.person }}" title="Liquidar"><i data-lucide="circle-check"></i></button>
               <button type="button" class="eu-iconbtn pt-del" data-del-debt="{{ d.id }}" data-kind="{{ kind }}" aria-label="Eliminar deuda de {{ d.person }}" title="Eliminar"><i data-lucide="trash-2"></i></button>
             </span></span>

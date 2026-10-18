@@ -2285,7 +2285,10 @@ def prestamos_crear():
       movimiento queda PRESTAMOS/GASTO, fuera del gasto en todos lados);
     - {movimiento_id, persona, monto, compartido: true}: te deben parte de
       ese gasto; el movimiento conserva su categoría y cuenta solo tu parte;
-    - {persona, monto, concepto}: sin movimiento."""
+    - {persona, monto, concepto}: sin movimiento.
+    Con direccion: 'RECIBIDO' es lo que debes: {movimiento_id, persona} =
+    «me prestaron» con ese ingreso; sin movimiento, `pago_cat` = categoría de
+    lo que pagaron por ti (vacío = te prestaron dinero)."""
     if not _ok(): return _locked()
     d = request.get_json(silent=True) or {}
     mov_id = d.get('movimiento_id')
@@ -2297,7 +2300,9 @@ def prestamos_crear():
         try:
             pid = _prest.crear(db, clean_str(d.get('persona'), 80), monto=safe_float(d.get('monto'), min_val=0.0),
                                concepto=clean_str(d.get('concepto'), 300), notas=clean_str(d.get('notas'), 300),
-                               movimiento_id=mov_id, compartido=bool(d.get('compartido')))
+                               movimiento_id=mov_id, compartido=bool(d.get('compartido')),
+                               direccion=clean_str(d.get('direccion'), 10) or 'OTORGADO',
+                               pago_cat=clean_str(d.get('pago_cat'), 40) or None)
         except ValueError as e:
             return jsonify({'error': str(e)}), 409 if 'ya tiene' in str(e) else 400
         db.commit()
@@ -2324,6 +2329,8 @@ def prestamos_editar(pid):
                        (today_str() if d.get('perdido') else None, pid))
         if 'concepto' in d:
             db.execute("UPDATE est_prestamos SET concepto=? WHERE id=?", (clean_str(d.get('concepto'), 300), pid))
+        if 'pago_cat' in d:
+            db.execute("UPDATE est_prestamos SET pago_cat=? WHERE id=?", (clean_str(d.get('pago_cat'), 40) or None, pid))
         if 'monto' in d:
             try:
                 _prest.cambiar_monto(db, pid, safe_float(d.get('monto'), min_val=0.0))
@@ -2364,6 +2371,15 @@ def prestamos_ligar(pid):
     return jsonify({'ok': True}), 201
 
 
+@estados_bp.route('/api/prestamos/movimiento/<int:mid>')
+def prestamos_de_movimiento(mid):
+    """Panel del movimiento: de qué préstamo es origen o pago, y las deudas
+    («Debo») abiertas a las que se puede ligar como pago."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify(_prest.de_movimiento(db, mid))
+
+
 @estados_bp.route('/api/prestamos/<int:pid>/abonos', methods=['POST'])
 def prestamos_abono(pid):
     """Abono sin movimiento del banco (efectivo)."""
@@ -2392,7 +2408,7 @@ def prestamos_abono_quitar(pid, aid):
 def prestamos_desligar(pid, mov_id):
     if not _ok(): return _locked()
     with get_db() as db:
-        db.execute("DELETE FROM est_prestamo_devoluciones WHERE prestamo_id=? AND movimiento_id=?", (pid, mov_id))
+        _prest.desligar_pago(db, pid, mov_id)
         db.commit()
     return jsonify({'ok': True})
 

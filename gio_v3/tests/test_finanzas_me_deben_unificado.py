@@ -44,11 +44,12 @@ def test_migra_compromisos_me_deben(test_db):
         db.execute("""INSERT INTO debts (type, person, concept, amount, monto_total, monto_restante, settled, created_at)
                       VALUES ('i_owe', 'Banco', 'Tarjeta', 1000, 1000, 1000, 0, '2026-01-01T10:00:00')""")
         # init_db ya corrió la migración con la tabla vacía; esta toma lo nuevo
-        assert prest.migrar_compromisos(db) == 2
+        assert prest.migrar_compromisos(db) == 3
         assert prest.migrar_compromisos(db) == 0   # idempotente
         db.commit()
         por = {p['persona']: p for p in prest.listar(db)}
-        assert set(por) == {'Eli', 'Pops'}   # «Debo» se queda en debts
+        assert set(por) == {'Eli', 'Pops'}
+        assert [(p['persona'], p['pendiente']) for p in prest.listar(db, 'RECIBIDO')] == [('Banco', 1000)]   # «Debo»
         eli = por['Eli']
         assert (eli['monto'], eli['devuelto'], eli['pendiente'], eli['estado']) == (3000, 1350, 1650, 'Pagado parcial')
         assert [d['movimiento_id'] for d in eli['devoluciones']] == [dep]
@@ -113,3 +114,53 @@ def test_prestamo_con_movimiento_sigue_igual(client):
         assert prest.uno(db, r.get_json()['id'])['monto'] == 3000
     # sin movimiento ni monto no se puede
     assert client.post('/finanzas/estados/api/prestamos', json={'persona': 'Juan'}).status_code == 400
+
+
+def test_me_prestaron_y_pagos_no_cuentan(client):
+    """«Debo» por préstamo: el ingreso con el que te prestaron no es ingreso y
+    tus transferencias para pagarle no son gasto."""
+    with database.get_db() as db:
+        ing = _mov(db, 'SPEI RECIBIDO POPS', 13000, 'INGRESO', 'FINANZAS', fecha='2026-09-01', sub='Transferencia recibida')
+        pago = _mov(db, 'SPEI ENVIADO POPS', -5000, 'GASTO', 'FINANZAS', fecha='2026-10-01', sub='Transferencia enviada')
+        db.commit()
+    r = client.post('/finanzas/estados/api/prestamos', json={'direccion': 'RECIBIDO', 'movimiento_id': ing, 'persona': 'Pops'})
+    assert r.status_code == 201
+    pid = r.get_json()['id']
+    info = client.get(f'/finanzas/estados/api/prestamos/movimiento/{pago}').get_json()
+    assert [d['id'] for d in info['deudas']] == [pid] and info['pago_de'] is None
+    cand = client.get(f'/finanzas/api/prestamo/{pid}/candidatos').get_json()['depositos']
+    assert [m['id'] for m in cand] == [pago]   # el ingreso de origen no es candidato
+    assert client.post(f'/finanzas/estados/api/prestamos/{pid}/devoluciones', json={'movimiento_id': ing}).status_code == 400
+    assert client.post(f'/finanzas/estados/api/prestamos/{pid}/devoluciones', json={'movimiento_id': pago}).status_code == 201
+    with database.get_db() as db:
+        cats = dict(db.execute("SELECT id, categoria FROM est_movimientos WHERE id IN (?,?)", (ing, pago)).fetchall())
+        assert cats == {ing: 'PRESTAMOS', pago: 'PRESTAMOS'}
+        p = prest.uno(db, pid)
+        assert (p['direccion'], p['monto'], p['pendiente']) == ('RECIBIDO', 13000, 8000)
+        assert prest.total_por_cobrar(db, 'RECIBIDO') == 8000 and prest.total_por_cobrar(db) == 0
+        from modules.finanzas.estados import abonos
+        assert ing not in {m['id'] for m in abonos.sin_conciliar(db)['movimientos']}   # ya conciliado
+    html = client.get('/finanzas/salud/').get_data(as_text=True)
+    assert f'data-abonar="{pid}" data-kind="prestamo" data-dir="i_owe"' in html
+    # quitar el pago: vuelve a Sin clasificar
+    client.delete(f'/finanzas/estados/api/prestamos/{pid}/devoluciones/{pago}')
+    with database.get_db() as db:
+        assert db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (pago,)).fetchone()[0] == 'OTROS'
+
+
+def test_pagaron_por_mi_el_pago_es_gasto_real(client):
+    """«Debo» porque alguien pagó algo por ti: tu pago sí es gasto, de esa categoría."""
+    client.post('/finanzas/api/debt', json={'type': 'i_owe', 'person': 'Ale', 'concept': 'Cena cumple',
+                                            'amount': 800, 'pago_cat': 'COMIDA_FUERA'})
+    with database.get_db() as db:
+        pid = db.execute("SELECT id FROM est_prestamos WHERE direccion='RECIBIDO'").fetchone()[0]
+        pago = _mov(db, 'SPEI ENVIADO ALE', -800, 'GASTO', 'OTROS', fecha='2026-10-02')
+        db.commit()
+    r = client.post(f'/finanzas/api/prestamo/{pid}/abonar', json={'movimiento_ids': [pago]})
+    assert r.get_json()['settled'] is True
+    with database.get_db() as db:
+        assert db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (pago,)).fetchone()[0] == 'COMIDA_FUERA'
+        prest.reafirmar_categorias(db)   # no lo vuelve PRESTAMOS
+        assert db.execute("SELECT categoria FROM est_movimientos WHERE id=?", (pago,)).fetchone()[0] == 'COMIDA_FUERA'
+    h = client.get(f'/finanzas/api/prestamo/{pid}/historial').get_json()
+    assert h['type'] == 'i_owe' and h['pago_cat'] == 'COMIDA_FUERA' and h['monto_restante'] == 0

@@ -6,6 +6,7 @@ import { categoryKeys, subcatsFor } from '../lib/store.js';
 import { Icon, Kbd, saveKey, toast } from './ui.jsx';
 import { PrestamoPersonaField, usePrestamoPersona } from './PrestamoPersona.jsx';
 import { useCompartido } from './Compartido.jsx';
+import { DeudaField, useDeuda } from './Deuda.jsx';
 
 const FREQUENT = ['SUPER', 'COMIDA_FUERA', 'CAFE/PAN', 'TRANSPORTE', 'VIVIENDA', 'OCIO', 'DIGITAL', 'SALUD', 'ROPA'];
 const STOP = new Set(['COMPRA', 'PAGO', 'CARGO', 'SPEI', 'TRANSFERENCIA', 'DE', 'EN', 'LA', 'EL', 'POR', 'MX', 'MEX', 'CDMX', 'SA', 'CV']);
@@ -65,6 +66,10 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
   const puedeCompartir = isGasto && !esPrestamo && categoria !== 'EXPENSE';
   const debe = Math.round((total - mine) * 100) / 100;
   const compV = { on: puedeCompartir && debe > 0.004 && !!comp.persona.trim(), persona: comp.persona, monto: String(debe) };
+  // «Debo»: me prestaron (ingreso) o pago de lo que debes (gasto). No se
+  // mezcla con «te deben parte» ni con un préstamo que hiciste.
+  const deuda = useDeuda(tx);
+  const deudaOculta = esPrestamo || compV.on || !!comp.existente || (isGasto && mine < total);
 
   const pickCat = (k) => { if (k !== categoria) { setCategoria(k); setSub(''); } };
 
@@ -82,10 +87,11 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
 
   async function save() {
     if (busy) return;
-    const errComp = comp.validar(total, compV);
+    const errComp = comp.validar(total, compV) || (deudaOculta ? '' : deuda.validar());
     if (errComp) { toast(errComp, 'err'); return; }
     setBusy(true);
-    const body = { categoria, subcategoria: sub };
+    const catDeuda = deudaOculta ? null : deuda.categoriaFinal();
+    const body = catDeuda ? { categoria: catDeuda, subcategoria: '' } : { categoria, subcategoria: sub };
     if (isGasto) {
       body.mi_parte = parte.mode === 'all' ? null : mine;
       body.viaje_id = viaje || null;
@@ -94,12 +100,13 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
       await api.patch(`/transactions/${tx.id}`, body);
       if (esPrestamo) await pp.guardar(tx.id);
       if (compV.on || comp.existente) await comp.guardar(tx.id, tx.descripcion, compV, { conservarParte: mine < total });
+      if (!deudaOculta) await deuda.guardar();
       let extra = '';
       if (always) {
         const d = await createRule(true);
         if (d) extra = ` · regla «${kw.trim().toUpperCase()}» (${d.updated_transactions || 0})`;
       }
-      toast(`Guardado: ${catMeta(categoria).name}${extra}`, 'ok');
+      toast(`Guardado: ${catMeta(body.categoria).name}${extra}`, 'ok');
       onSaved && onSaved({ ...tx, ...body, mi_parte: body.mi_parte ?? (isGasto ? null : tx.mi_parte) }, { advance: true });
     } catch (e) {
       toast(e.message || 'No se pudo guardar', 'err');
@@ -170,6 +177,8 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
         )}
         <PrestamoPersonaField p={pp} activo={esPrestamo} idp={`${headingId}-pp`} compact />
       </div>
+
+      <DeudaField d={deuda} tx={tx} idp={`${headingId}-db`} oculto={deudaOculta} />
 
       {isGasto && (
         <div className="eu-card fz-parte">

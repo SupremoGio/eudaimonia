@@ -21,16 +21,16 @@ def test_historial_y_liquidar(test_db):
     c.post('/finanzas/api/debt', json={'type': 'i_owe', 'person': 'ELI', 'concept': 'Seguro', 'amount': 1000})
     import database
     with database.get_db() as db:
-        ids = {r['person']: r['id'] for r in db.execute("SELECT id, person FROM debts")}
+        assert db.execute("SELECT COUNT(*) FROM debts").fetchone()[0] == 0   # viven en est_prestamos
         pid = db.execute("SELECT id FROM est_prestamos WHERE contraparte='Corner'").fetchone()[0]
-    assert set(ids) == {'ELI'}   # «me deben» vive en Por cobrar
+        eli = db.execute("SELECT id FROM est_prestamos WHERE contraparte='ELI' AND direccion='RECIBIDO'").fetchone()[0]
     c.post(f"/finanzas/api/prestamo/{pid}/abonar", json={'amount': 1000, 'note': 'transferencia'})
     h = c.get(f"/finanzas/api/prestamo/{pid}/historial").get_json()
     assert h['person'] == 'Corner' and h['pagado'] == 1000 and h['monto_restante'] == 2509
     assert [p['note'] for p in h['payments']] == ['transferencia']
 
-    c.post(f"/finanzas/api/debt/{ids['ELI']}/abonar", json={'amount': 400})
-    c.post(f"/finanzas/api/debt/{ids['ELI']}/settle")
+    c.post(f"/finanzas/api/prestamo/{eli}/abonar", json={'amount': 400})
+    c.post(f"/finanzas/api/prestamo/{eli}/settle")
     liq = c.get('/finanzas/api/debts/historial').get_json()['debts']
     assert [d['person'] for d in liq] == ['ELI']
     assert liq[0]['pagado'] == 1000 and [p['amount'] for p in liq[0]['payments']] == [400, 600]

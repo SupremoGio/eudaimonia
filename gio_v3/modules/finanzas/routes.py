@@ -117,10 +117,9 @@ def index():
     from modules.finanzas.salud import _compute_patrimonio
     pat = _compute_patrimonio()
     with get_db() as db:
-        # «Me deben» vive en Por cobrar (est_prestamos); «Debo» en debts.
+        # «Me deben» y «Debo» viven en est_prestamos (OTORGADO / RECIBIDO).
         total_owe_me = _prest.total_por_cobrar(db)
-        i_owe  = db.execute("SELECT * FROM debts WHERE type='i_owe'  AND settled=0").fetchall()
-    total_i_owe  = sum(d['monto_restante'] for d in i_owe)
+        total_i_owe  = _prest.total_por_cobrar(db, 'RECIBIDO')
     patrimonio_neto_display = pat['patrimonio_neto'] + total_owe_me - total_i_owe
 
     # ── Trend: patrimonio vs snapshot anterior ──
@@ -214,9 +213,11 @@ def add_debt():
     concept = clean_str(d.get('concept'), 300)
     dtype   = clean_str(d.get('type'), 20)
     with get_db() as db:
-        if dtype == 'owe_me':   # «Me deben» se registra en Por cobrar
+        if dtype in ('owe_me', 'i_owe'):   # viven en est_prestamos
             try:
-                _prest.crear(db, person, monto=amount, concepto=concept)
+                _prest.crear(db, person, monto=amount, concepto=concept,
+                             direccion='OTORGADO' if dtype == 'owe_me' else 'RECIBIDO',
+                             pago_cat=clean_str(d.get('pago_cat'), 40) or None)
             except ValueError as e:
                 return jsonify({'error': str(e)}), 400
             db.commit()
@@ -311,9 +312,8 @@ def debts_historial():
     """Deudas ya liquidadas, la más reciente primero, con sus pagos."""
     if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
     with get_db() as db:
-        rows = db.execute("""SELECT d.*, COALESCE((SELECT MAX(paid_at) FROM debt_payments WHERE debt_id=d.id), d.created_at) AS ultimo
-                              FROM debts d WHERE d.settled=1 AND d.type='i_owe' ORDER BY ultimo DESC""").fetchall()
-        debts = [{**_debt_hist(db, d), 'ultimo': d['ultimo']} for d in rows] + _prest.pagados_salud(db)
+        # Los compromisos de debts ya se migraron a est_prestamos (debts queda de respaldo).
+        debts = _prest.pagados_salud(db)
         debts.sort(key=lambda d: (d['ultimo'] or '')[:10], reverse=True)
         return jsonify({'debts': debts})
 

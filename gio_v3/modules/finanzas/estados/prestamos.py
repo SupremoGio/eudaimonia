@@ -53,16 +53,18 @@ def _devoluciones(db) -> dict:
     return out
 
 
-def listar(db) -> list[dict]:
+def listar(db, direccion: str = 'OTORGADO') -> list[dict]:
+    """Préstamos de una dirección: OTORGADO = te deben (Por cobrar),
+    RECIBIDO = debes (te prestaron o pagaron algo por ti)."""
     devs = _devoluciones(db)
     manuales = _abonos_manuales(db)
     rows = db.execute("""
         SELECT p.*, m.descripcion AS mov_descripcion, ABS(m.monto) AS mov_monto
         FROM est_prestamos p
         LEFT JOIN est_movimientos m ON m.id = p.movimiento_id
-        WHERE p.direccion = 'OTORGADO'
+        WHERE p.direccion = ?
         ORDER BY p.fecha DESC, p.id DESC
-    """).fetchall()
+    """, (direccion,)).fetchall()
     out = []
     for r in rows:
         monto = round(abs(float(r['monto'])), 2)
@@ -79,6 +81,7 @@ def listar(db) -> list[dict]:
             'movimiento_id': r['movimiento_id'], 'descripcion': r['mov_descripcion'] or concepto or '',
             'concepto': concepto or '',
             'compartido': bool(r['compartido']) if 'compartido' in r.keys() else False,
+            'direccion': r['direccion'], 'pago_cat': (r['pago_cat'] if 'pago_cat' in r.keys() else None) or '',
             'mov_monto': round(float(r['mov_monto']), 2) if r['mov_monto'] is not None else None,
             'devoluciones': d, 'abonos': a,
         })
@@ -215,15 +218,25 @@ def reafirmar_categorias(db) -> int:
     devoluciones) deben seguir siendo PRESTAMOS aunque una regla de keyword
     («Aplicar reglas» o un import) les ponga otra categoría; si no, volverían
     a contar como gasto o ingreso."""
+    asegurar(db)   # puede correr en el arranque antes que la migración de columnas
     n = db.execute("""
         UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='Prestado'
         WHERE id IN (SELECT movimiento_id FROM est_prestamos
-                     WHERE movimiento_id IS NOT NULL AND COALESCE(compartido, 0) = 0)
+                     WHERE movimiento_id IS NOT NULL AND COALESCE(compartido, 0) = 0 AND direccion = 'OTORGADO')
+          AND categoria != 'PRESTAMOS'
+    """).rowcount
+    # «Me prestaron»: el ingreso con el que te prestaron no es ingreso.
+    n += db.execute("""
+        UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria=''
+        WHERE id IN (SELECT movimiento_id FROM est_prestamos
+                     WHERE movimiento_id IS NOT NULL AND direccion = 'RECIBIDO')
           AND categoria != 'PRESTAMOS'
     """).rowcount
     n += db.execute("""
         UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria=''
-        WHERE id IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
+        WHERE id IN (SELECT d.movimiento_id FROM est_prestamo_devoluciones d
+                     JOIN est_prestamos p ON p.id = d.prestamo_id
+                     WHERE p.direccion = 'OTORGADO' OR COALESCE(p.pago_cat, '') = '')
           AND categoria != 'PRESTAMOS'
     """).rowcount
     return n
@@ -705,7 +718,7 @@ _DESCARTADAS = 'debt_sugerencias_descartadas'   # misma tabla que usaban los Com
 def asegurar(db) -> None:
     cols = {r['name'] for r in db.execute("PRAGMA table_info(est_prestamos)").fetchall()}
     for col, ddl in (('concepto', "TEXT DEFAULT ''"), ('compartido', 'INTEGER DEFAULT 0'),
-                     ('debt_id', 'INTEGER DEFAULT NULL')):
+                     ('debt_id', 'INTEGER DEFAULT NULL'), ('pago_cat', 'TEXT DEFAULT NULL')):
         if col not in cols:
             db.execute(f"ALTER TABLE est_prestamos ADD COLUMN {col} {ddl}")
     db.execute("""CREATE TABLE IF NOT EXISTS est_prestamo_abonos (
@@ -734,7 +747,8 @@ def _abonos_manuales(db) -> dict:
 
 
 def uno(db, pid: int) -> dict | None:
-    return next((p for p in listar(db) if p['id'] == pid), None)
+    r = db.execute("SELECT direccion FROM est_prestamos WHERE id=?", (pid,)).fetchone()
+    return next((p for p in listar(db, r['direccion']) if p['id'] == pid), None) if r else None
 
 
 def _mi_parte(db, mov_id: int, debe: float) -> None:
@@ -753,22 +767,28 @@ def recalcular_parte(db, mov_id: int) -> None:
 
 
 def crear(db, persona: str, monto: float | None = None, concepto: str = '', notas: str = '',
-          movimiento_id: int | None = None, compartido: bool = False, fecha: str | None = None) -> int:
+          movimiento_id: int | None = None, compartido: bool = False, fecha: str | None = None,
+          direccion: str = 'OTORGADO', pago_cat: str | None = None) -> int:
     """Registra lo que te deben. ValueError con un mensaje para el usuario.
     - con movimiento y sin `compartido`: préstamo hecho con ese movimiento
       (todo el movimiento pasa a PRESTAMOS);
     - con movimiento y `compartido`: te deben `monto` de ese gasto (mi_parte);
     - sin movimiento: registro manual por `monto`."""
     persona = (persona or '').strip()
+    if direccion not in ('OTORGADO', 'RECIBIDO'):
+        raise ValueError('Dirección inválida.')
     if not persona:
-        raise ValueError('Indica quién te debe.')
+        raise ValueError('Indica quién te debe.' if direccion == 'OTORGADO' else 'Indica a quién le debes.')
     if movimiento_id is None:
         if not monto or monto <= 0:
             raise ValueError('El monto debe ser mayor a 0.')
         return db.execute(
-            "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, concepto, created_at) "
-            "VALUES (?, 'OTORGADO', ?, ?, ?, ?, ?)",
-            (persona, round(monto, 2), (fecha or ahora())[:10], notas, concepto, ahora())).lastrowid
+            "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, concepto, pago_cat, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (persona, direccion, round(monto, 2), (fecha or ahora())[:10], notas, concepto,
+             (pago_cat or None) if direccion == 'RECIBIDO' else None, ahora())).lastrowid
+    if direccion == 'RECIBIDO':
+        return _crear_me_prestaron(db, persona, movimiento_id, concepto, notas)
     m = db.execute("SELECT * FROM est_movimientos WHERE id=?", (movimiento_id,)).fetchone()
     if not m or m['tipo'] != 'GASTO':
         raise ValueError('El movimiento no existe o no es un gasto.')
@@ -823,17 +843,30 @@ def borrar(db, pid: int, conservar_parte: bool = False) -> None:
 
 
 def ligar_devolucion(db, pid: int, mov_id: int) -> None:
-    """Un ingreso del banco es devolución: queda PRESTAMOS/INGRESO y solo baja el pendiente."""
-    if not db.execute("SELECT 1 FROM est_prestamos WHERE id=?", (pid,)).fetchone():
+    """Liga un movimiento del banco como pago del préstamo:
+    - te deben (OTORGADO): un ingreso, que queda PRESTAMOS y solo baja el pendiente;
+    - debes (RECIBIDO): tu transferencia (gasto). Si te prestaron dinero queda
+      PRESTAMOS (no es gasto); si pagaron algo por ti, toma esa categoría
+      (pago_cat): ese sí es tu gasto real."""
+    p = db.execute("SELECT direccion, pago_cat FROM est_prestamos WHERE id=?", (pid,)).fetchone()
+    if not p:
         raise ValueError('Préstamo no encontrado.')
+    debo = p['direccion'] == 'RECIBIDO'
+    tipo, nombre = ('GASTO', 'pago') if debo else ('INGRESO', 'ingreso')
     m = db.execute("SELECT tipo FROM est_movimientos WHERE id=?", (mov_id,)).fetchone()
-    if not m or m['tipo'] != 'INGRESO':
-        raise ValueError(f'El movimiento {mov_id} no existe o no es un ingreso.')
+    if not m or m['tipo'] != tipo:
+        raise ValueError(f'El movimiento {mov_id} no existe o no es un {"gasto" if debo else "ingreso"}.')
     if db.execute("SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?", (mov_id,)).fetchone():
-        raise ValueError(f'El ingreso {mov_id} ya está ligado a un préstamo.')
-    if db.execute("SELECT 1 FROM est_expense_lote_depositos WHERE movimiento_id=?", (mov_id,)).fetchone():
-        raise ValueError(f'El ingreso {mov_id} es el depósito de un lote de Expense.')
-    db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (mov_id,))
+        raise ValueError(f'El {nombre} {mov_id} ya está ligado a un préstamo.')
+    if db.execute("SELECT 1 FROM est_prestamos WHERE movimiento_id=?", (mov_id,)).fetchone():
+        raise ValueError(f'El movimiento {mov_id} es el origen de un préstamo.')
+    if db.execute("""SELECT 1 FROM est_expense_lote_depositos WHERE movimiento_id=?
+                     UNION SELECT 1 FROM est_expense_lote_gastos WHERE movimiento_id=?""", (mov_id, mov_id)).fetchone():
+        raise ValueError(f'El movimiento {mov_id} está en un lote de Expense.')
+    if debo and p['pago_cat']:
+        db.execute("UPDATE est_movimientos SET categoria=?, subcategoria='' WHERE id=?", (p['pago_cat'], mov_id))
+    else:
+        db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (mov_id,))
     db.execute("INSERT INTO est_prestamo_devoluciones (prestamo_id, movimiento_id, created_at) VALUES (?,?,?)",
                (pid, mov_id, ahora()))
 
@@ -867,6 +900,10 @@ def liquidar(db, pid: int) -> None:
 _CATS_ABONO_SQL = """(categoria IN ('', 'OTROS', 'PRESTAMOS') OR categoria IS NULL
                       OR (categoria='FINANZAS' AND COALESCE(subcategoria,'') IN
                           ('', 'Transferencia', 'Transferencia recibida', 'Reembolso compartido')))"""
+# Tus pagos de lo que debes: transferencias enviadas o sin clasificar.
+_CATS_PAGO_SQL = """(categoria IN ('', 'OTROS', 'PRESTAMOS') OR categoria IS NULL
+                     OR (categoria='FINANZAS' AND COALESCE(subcategoria,'') IN
+                         ('', 'Transferencia', 'Transferencia enviada')))"""
 _LIGADOS_SQL = """id NOT IN (SELECT movimiento_id FROM est_prestamo_devoluciones)
                   AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_depositos)"""
 
@@ -886,14 +923,17 @@ def candidatos_abono(db, pid: int) -> list[dict]:
     if not p:
         return []
     cuenta = _cuenta_de(db, p['persona'])
+    debo = p['direccion'] == 'RECIBIDO'
     rows = db.execute(f"""
         SELECT id, substr(fecha,1,10) AS fecha, descripcion, ABS(monto) AS monto, banco, contraparte
         FROM est_movimientos
-        WHERE tipo='INGRESO' AND {_LIGADOS_SQL} AND {_CATS_ABONO_SQL}
+        WHERE tipo=? AND {_LIGADOS_SQL} AND {_CATS_PAGO_SQL if debo else _CATS_ABONO_SQL}
+          AND id NOT IN (SELECT movimiento_id FROM est_prestamos WHERE movimiento_id IS NOT NULL)
+          AND id NOT IN (SELECT movimiento_id FROM est_expense_lote_gastos)
           AND ABS(monto) <= ? + 0.01
           AND substr(fecha,1,10) >= date(substr(?,1,10), ?)
         ORDER BY fecha DESC, id DESC LIMIT 200""",
-        (p['pendiente'], p['fecha'], f'-{SUGERIR_DIAS_ANTES} days')).fetchall()
+        ('GASTO' if debo else 'INGRESO', p['pendiente'], p['fecha'], f'-{SUGERIR_DIAS_ANTES} days')).fetchall()
     out = [{**dict(r), 'de_persona': bool(cuenta) and r['contraparte'] == cuenta} for r in rows]
     out.sort(key=lambda r: not r['de_persona'])   # estable: dentro de cada grupo sigue por fecha
     return out[:60]
@@ -932,19 +972,20 @@ def descartar_sugerencia(db, movimiento_id: int) -> None:
 # ── Vistas para Salud financiera (misma forma que los Compromisos) ──────────
 
 def _como_deuda(p: dict) -> dict:
-    return {'id': p['id'], 'kind': 'prestamo', 'type': 'owe_me', 'person': p['persona'],
+    return {'id': p['id'], 'kind': 'prestamo', 'type': 'owe_me' if p['direccion'] == 'OTORGADO' else 'i_owe',
+            'person': p['persona'], 'pago_cat': p['pago_cat'],
             'concept': p['concepto'] or p['descripcion'] or p['notas'],
             'monto_total': p['monto'], 'monto_restante': p['pendiente'],
             'settled': p['estado'] == PAGADO, 'created_at': p['fecha']}
 
 
-def abiertos_salud(db) -> list[dict]:
-    """Lo que te deben hoy (sin perdidos ni pagados)."""
-    return [_como_deuda(p) for p in listar(db) if p['estado'] in (PENDIENTE, PARCIAL)]
+def abiertos_salud(db, direccion: str = 'OTORGADO') -> list[dict]:
+    """Lo que te deben (o debes) hoy, sin perdidos ni pagados."""
+    return [_como_deuda(p) for p in listar(db, direccion) if p['estado'] in (PENDIENTE, PARCIAL)]
 
 
-def total_por_cobrar(db) -> float:
-    return round(sum(p['pendiente'] for p in listar(db) if p['estado'] in (PENDIENTE, PARCIAL)), 2)
+def total_por_cobrar(db, direccion: str = 'OTORGADO') -> float:
+    return round(sum(p['pendiente'] for p in listar(db, direccion) if p['estado'] in (PENDIENTE, PARCIAL)), 2)
 
 
 def historial(db, pid: int) -> dict | None:
@@ -964,9 +1005,9 @@ def historial(db, pid: int) -> dict | None:
 
 
 def pagados_salud(db) -> list[dict]:
-    """Préstamos ya cobrados, para el historial de «Deudas liquidadas»."""
+    """Préstamos ya cobrados o pagados, para el historial de «Deudas liquidadas»."""
     out = []
-    for p in listar(db):
+    for p in listar(db) + listar(db, 'RECIBIDO'):
         if p['estado'] != PAGADO:
             continue
         h = historial(db, p['id'])
@@ -978,13 +1019,14 @@ def pagados_salud(db) -> list[dict]:
 # ── Migración: Compromisos «me deben» → Por cobrar ──────────────────────────
 
 def migrar_compromisos(db) -> int:
-    """Pasa cada debts «owe_me» que aún no tenga préstamo (debt_id) a
-    est_prestamos, con sus abonos: los ligados a un depósito quedan como
-    devolución y el resto como abono manual. La fila de debts no se borra
+    """Pasa cada compromiso de debts que aún no tenga préstamo (debt_id) a
+    est_prestamos: «me deben» como OTORGADO y «debo» como RECIBIDO, con sus
+    abonos: los ligados a un depósito quedan como devolución y el resto como
+    abono manual. La fila de debts no se borra
     (queda como respaldo) y Salud ya no la lee. Idempotente: corre en cada
     arranque y solo toma lo nuevo."""
     try:
-        debts = db.execute("""SELECT * FROM debts WHERE type='owe_me'
+        debts = db.execute("""SELECT * FROM debts WHERE type IN ('owe_me', 'i_owe')
                               AND id NOT IN (SELECT debt_id FROM est_prestamos WHERE debt_id IS NOT NULL)
                               ORDER BY id""").fetchall()
     except Exception:
@@ -1001,8 +1043,8 @@ def migrar_compromisos(db) -> int:
             continue
         pid = db.execute(
             "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, concepto, created_at, debt_id) "
-            "VALUES (?, 'OTORGADO', ?, ?, '', ?, ?, ?)",
-            (d['person'], total, (d['created_at'] or ahora())[:10], d['concept'] or '', ahora(), d['id'])).lastrowid
+            "VALUES (?, ?, ?, ?, '', ?, ?, ?)",
+            (d['person'], 'OTORGADO' if d['type'] == 'owe_me' else 'RECIBIDO', total, (d['created_at'] or ahora())[:10], d['concept'] or '', ahora(), d['id'])).lastrowid
         for pg in db.execute("SELECT * FROM debt_payments WHERE debt_id=? ORDER BY paid_at, id", (d['id'],)).fetchall():
             ligado = 0.0
             if hay_movs:
@@ -1022,3 +1064,46 @@ def migrar_compromisos(db) -> int:
             liquidar(db, pid)
         n += 1
     return n
+
+
+# ── «Debo» (RECIBIDO) desde los movimientos ─────────────────────────────────
+
+def _crear_me_prestaron(db, persona: str, movimiento_id: int, concepto: str, notas: str) -> int:
+    """«Me prestaron este dinero»: el ingreso con el que te prestaron deja de
+    contar como ingreso (PRESTAMOS) y queda como lo que debes."""
+    m = db.execute("SELECT * FROM est_movimientos WHERE id=?", (movimiento_id,)).fetchone()
+    if not m or m['tipo'] != 'INGRESO':
+        raise ValueError('El movimiento no existe o no es un ingreso.')
+    if db.execute("""SELECT 1 FROM est_prestamos WHERE movimiento_id=?
+                     UNION SELECT 1 FROM est_prestamo_devoluciones WHERE movimiento_id=?""",
+                  (movimiento_id, movimiento_id)).fetchone():
+        raise ValueError('Ese movimiento ya está ligado a un préstamo.')
+    db.execute("UPDATE est_movimientos SET categoria='PRESTAMOS', subcategoria='' WHERE id=?", (movimiento_id,))
+    return db.execute(
+        "INSERT INTO est_prestamos (contraparte, direccion, monto, fecha, notas, concepto, movimiento_id, created_at) "
+        "VALUES (?, 'RECIBIDO', ?, ?, ?, ?, ?, ?)",
+        (persona, round(abs(float(m['monto'])), 2), m['fecha'], notas, concepto or m['descripcion'],
+         movimiento_id, ahora())).lastrowid
+
+
+def de_movimiento(db, mov_id: int) -> dict:
+    """Para el panel del movimiento: de qué préstamo es origen o pago, y
+    las deudas abiertas a las que se puede ligar como pago."""
+    origen = db.execute("SELECT id FROM est_prestamos WHERE movimiento_id=?", (mov_id,)).fetchone()
+    pago = db.execute("SELECT prestamo_id FROM est_prestamo_devoluciones WHERE movimiento_id=?", (mov_id,)).fetchone()
+    corto = lambda p: p and {k: p[k] for k in ('id', 'persona', 'direccion', 'compartido', 'concepto', 'descripcion',
+                                               'monto', 'devuelto', 'pendiente', 'estado', 'pago_cat')}
+    return {
+        'origen': corto(uno(db, origen['id'])) if origen else None,
+        'pago_de': corto(uno(db, pago['prestamo_id'])) if pago else None,
+        'deudas': [corto(p) for p in listar(db, 'RECIBIDO') if p['estado'] in (PENDIENTE, PARCIAL)],
+    }
+
+
+def desligar_pago(db, pid: int, mov_id: int) -> None:
+    """Quita un pago/devolución. El de «Debo» sin categoría propia vuelve a
+    Sin clasificar; el que tomó la categoría de lo que pagaron la conserva."""
+    p = db.execute("SELECT direccion, pago_cat FROM est_prestamos WHERE id=?", (pid,)).fetchone()
+    db.execute("DELETE FROM est_prestamo_devoluciones WHERE prestamo_id=? AND movimiento_id=?", (pid, mov_id))
+    if p and p['direccion'] == 'RECIBIDO' and not p['pago_cat']:
+        db.execute("UPDATE est_movimientos SET categoria='OTROS', subcategoria='' WHERE id=? AND categoria='PRESTAMOS'", (mov_id,))
