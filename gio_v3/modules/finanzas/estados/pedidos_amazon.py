@@ -170,6 +170,7 @@ def _cargo(db, fecha, monto):
         SELECT id, fecha, descripcion, monto, banco, categoria, subcategoria FROM est_movimientos
         WHERE {_AMAZON} AND substr(fecha,1,10) BETWEEN ? AND ? AND tipo='GASTO' AND monto > 0
           AND parcialidad_num IS NULL AND COALESCE(subcategoria,'') != 'Compra a meses'
+          AND dividido_de IS NULL AND id NOT IN (SELECT padre_id FROM est_divisiones)
         ORDER BY julianday(substr(fecha,1,10)) - julianday(?), id LIMIT 1
     """, (monto, fecha, _hasta(fecha, VENTANA_DIAS), fecha)).fetchone()
 

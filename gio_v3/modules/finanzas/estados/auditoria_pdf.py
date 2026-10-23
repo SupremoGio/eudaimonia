@@ -231,7 +231,7 @@ def _buscar(db, f):
             return r
     for m in montos:
         r = db.execute("""SELECT * FROM est_movimientos WHERE banco=? AND substr(fecha,1,10)=?
-                          AND ABS(ABS(monto) - ?) < 0.01 AND descripcion=? ORDER BY id LIMIT 1""",
+                          AND ABS(ABS(monto) - ?) < 0.01 AND descripcion=? AND dividido_de IS NULL ORDER BY id LIMIT 1""",
                        (f['banco'], f['fecha'], m, f['descripcion_app'])).fetchone()
         if r:
             return r
@@ -532,7 +532,7 @@ def _plan_falta(db, f, ocupados, usados) -> list[dict]:
         return [_linea(f, None, 'sin cambio', motivo=f'ya existe una fila idéntica (id {igual["id"]})')]
     ingreso = nueva['tipo'] == 'INGRESO' or nueva['monto'] < 0
     for r in db.execute("""SELECT * FROM est_movimientos WHERE banco=? AND substr(fecha,1,10)=?
-                           AND ABS(ABS(monto) - ?) < 0.01 ORDER BY id""", (f['banco'], f['fecha'], _monto(f))).fetchall():
+                           AND ABS(ABS(monto) - ?) < 0.01 AND dividido_de IS NULL ORDER BY id""", (f['banco'], f['fecha'], _monto(f))).fetchall():
         if r['id'] in ocupados or r['id'] in usados:
             continue
         mismo_lado = r['tipo'] in _TIPOS_INTERNOS or ((r['tipo'] == 'INGRESO' or r['monto'] < 0) == ingreso)
@@ -795,7 +795,7 @@ def movimientos_periodo(db, banco: str, desde: str, hasta: str) -> list[dict]:
     col = _fecha_periodo(banco)
     rows = db.execute(f"""SELECT id, fecha, {col} AS fecha_liq, descripcion, monto, tipo, categoria,
                                  subcategoria, banco
-                          FROM est_movimientos WHERE banco=? AND {col} BETWEEN ? AND ?
+                          FROM est_movimientos WHERE banco=? AND {col} BETWEEN ? AND ? AND dividido_de IS NULL
                           ORDER BY fecha_liq, fecha, id""", (banco, desde, hasta)).fetchall()
     return [{'id': r['id'], 'fecha': r['fecha'][:10], 'fecha_liq': r['fecha_liq'],
              'lado': 'abono' if _es_abono(r) else 'cargo',
@@ -816,7 +816,7 @@ def cuadre(db) -> list[dict]:
             continue
         col = _fecha_periodo(e['banco'])
         rows = db.execute(f"""SELECT banco, monto, tipo, subcategoria, descripcion FROM est_movimientos
-                              WHERE banco=? AND {col} BETWEEN ? AND ?""",
+                              WHERE banco=? AND {col} BETWEEN ? AND ? AND dividido_de IS NULL""",
                           (e['banco'], m.group(1), m.group(2))).fetchall()
         ab = round(sum(abs(r['monto']) for r in rows if _es_abono(r)), 2)
         ca = round(sum(abs(r['monto']) for r in rows if not _es_abono(r)), 2)

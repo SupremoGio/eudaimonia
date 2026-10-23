@@ -1898,11 +1898,42 @@ def init_db():
             ("parcialidad_num",   "INTEGER DEFAULT NULL"),
             ("parcialidad_total", "INTEGER DEFAULT NULL"),
             ("compra_msi_id",     "TEXT    DEFAULT NULL"),
+            # Parte de un movimiento dividido en varias categorías: id del
+            # cargo original del banco (ver estados/divisiones.py).
+            ("dividido_de",       "INTEGER DEFAULT NULL"),
         ]:
             try:
                 db.execute(f"ALTER TABLE est_movimientos ADD COLUMN {col} {definition}")
             except Exception:
                 pass  # columna ya existe
+
+        # Movimientos divididos en varias categorías (una compra de Amazon con
+        # desodorante + ropa + balón, una transferencia que fue mitad renta y
+        # mitad préstamo). El cargo del banco se queda intacto en
+        # FINANZAS/Dividido (fuera del gasto); cada parte es una fila propia
+        # con su categoría. La categoría que manda es la de est_division_partes,
+        # que divisiones.reafirmar() vuelve a imponer después de las reglas.
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS est_divisiones (
+            padre_id         INTEGER PRIMARY KEY,
+            cat_original     TEXT    NOT NULL DEFAULT '',
+            sub_original     TEXT    DEFAULT '',
+            created_at       TEXT    NOT NULL,
+            FOREIGN KEY (padre_id) REFERENCES est_movimientos(id)
+        );
+        CREATE TABLE IF NOT EXISTS est_division_partes (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            padre_id      INTEGER NOT NULL,
+            hijo_id       INTEGER UNIQUE,
+            orden         INTEGER NOT NULL,
+            monto         REAL    NOT NULL,
+            categoria     TEXT    NOT NULL,
+            subcategoria  TEXT    DEFAULT '',
+            nota          TEXT    DEFAULT '',
+            FOREIGN KEY (padre_id) REFERENCES est_divisiones(padre_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_est_division_partes_padre ON est_division_partes (padre_id);
+        """)
 
         try:
             v_cols = [r["name"] for r in db.execute("PRAGMA table_info(viajes)").fetchall()]

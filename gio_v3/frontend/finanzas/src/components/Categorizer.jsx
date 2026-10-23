@@ -7,6 +7,7 @@ import { Icon, Kbd, saveKey, toast } from './ui.jsx';
 import { PrestamoPersonaField, usePrestamoPersona } from './PrestamoPersona.jsx';
 import { useCompartido } from './Compartido.jsx';
 import { DeudaField, useDeuda } from './Deuda.jsx';
+import { esCargoDividido, esParteDividida } from './Division.jsx';
 
 const FREQUENT = ['SUPER', 'COMIDA_FUERA', 'CAFE/PAN', 'TRANSPORTE', 'VIVIENDA', 'OCIO', 'DIGITAL', 'SALUD', 'ROPA'];
 const STOP = new Set(['COMPRA', 'PAGO', 'CARGO', 'SPEI', 'TRANSFERENCIA', 'DE', 'EN', 'LA', 'EL', 'POR', 'MX', 'MEX', 'CDMX', 'SA', 'CV']);
@@ -30,7 +31,7 @@ function parteInit(tx) {
  * Categorización rápida de un movimiento. Se usa en el drawer de escritorio
  * (variant="drawer") y en el bottom sheet de móvil (variant="sheet").
  */
-export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSaved, onClose, onMore, onPrev, onNext, headingId }) {
+export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSaved, onClose, onMore, onSplit, onPrev, onNext, headingId }) {
   const [categoria, setCategoria] = useState(tx.categoria || 'OTROS');
   const [sub, setSub] = useState(tx.subcategoria || '');
   const [parte, setParte] = useState(() => parteInit(tx));
@@ -120,6 +121,8 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
   };
 
   const ingreso = tx.tipo === 'INGRESO';
+  const cargoDividido = esCargoDividido(tx);
+  const parteDividida = esParteDividida(tx);
   return (
     <div className={`fz-cz fz-cz--${variant}`} onKeyDown={onKeyDown}>
       {variant === 'drawer' && (
@@ -149,8 +152,16 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
         {(tx.parcialidad_num && tx.parcialidad_total) ? (
           <span className="eu-badge eu-badge--info">MSI {tx.parcialidad_num}/{tx.parcialidad_total}</span>
         ) : null}
+        {parteDividida && <span className="eu-badge eu-badge--info">Parte de un movimiento dividido</span>}
       </div>
 
+      {cargoDividido ? (
+        <div className="fz-note">
+          <Icon name="split" size={16} />
+          <span className="eu-grow">Dividido en varias categorías: este cargo no suma, cuentan sus partes.</span>
+          <button type="button" className="eu-btn eu-btn--ghost eu-btn--sm" onClick={onMore}>Ver división</button>
+        </div>
+      ) : (<>
       <div className="eu-vstack fz-cz-sec">
         <span className="eu-label" id={`${headingId}-cat`}>Categoría{tx.categoria === 'OTROS' ? ' · sin clasificar' : ''}</span>
         <div className={`fz-catpick${variant === 'sheet' ? ' fz-catpick--4' : ''}`} role="radiogroup" aria-labelledby={`${headingId}-cat`}>
@@ -220,7 +231,9 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
         </div>
       )}
 
-      {variant === 'drawer' ? (
+      </>)}
+
+      {(cargoDividido || parteDividida) ? null : variant === 'drawer' ? (
         <div className="fz-rule">
           <Icon name="wand-sparkles" size={16} className="fg-brand" />
           <div className="eu-grow fz-minw0">
@@ -238,10 +251,18 @@ export default function Categorizer({ tx, cats, trips, variant = 'drawer', onSav
       )}
 
       <div className={variant === 'sheet' ? 'eu-vstack' : 'eu-hstack fz-cz-actions'}>
+        {onSplit && !cargoDividido && !parteDividida && (
+          <button type="button" className={`eu-btn eu-btn--ghost${variant === 'sheet' ? ' eu-btn--block' : ''}`} onClick={onSplit}
+            title="Un solo cargo con cosas de varias categorías (p. ej. un pedido de Amazon)">
+            <Icon name="split" size={16} />Dividir
+          </button>
+        )}
         {variant === 'drawer' && <button type="button" className="eu-btn eu-btn--ghost" onClick={onMore}>Más campos</button>}
+        {!cargoDividido && (
         <button type="button" className={`eu-btn eu-btn--primary${variant === 'sheet' ? ' eu-btn--lg eu-btn--block' : ''}`} onClick={save} disabled={busy} aria-busy={busy || undefined}>
           Guardar {variant === 'drawer' && <Kbd>{saveKey}</Kbd>}
         </button>
+        )}
         {variant === 'sheet' && <button type="button" className="eu-btn eu-btn--ghost eu-btn--block" onClick={onMore}>Editar todos los campos</button>}
       </div>
     </div>

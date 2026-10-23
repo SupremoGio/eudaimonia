@@ -95,7 +95,7 @@ export default function App() {
     unclassified,
     budgets,
     goTo: selectTab,
-    openTx: (tx) => setModal({ kind: 'tx', tx }),
+    openTx: (tx, opts) => setModal({ kind: 'tx', tx, ...(opts || {}) }),
     openNew: () => setModal({ kind: 'new' }),
     openImport: () => setModal({ kind: 'import' }),
     openCategory: (opts) => setModal({ kind: 'cat', ...opts }),
@@ -177,7 +177,7 @@ export default function App() {
       </div>
 
       {modal?.kind === 'tx' && (
-        <TxEditor tx={modal.tx} onClose={() => { close(); if (catBehind) { setModal(catBehind); setCatBehind(null); } }}
+        <TxEditor tx={modal.tx} dividir={!!modal.dividir} onClose={() => { close(); if (catBehind) { setModal(catBehind); setCatBehind(null); } }}
           onSaved={refresh} />
       )}
       {modal?.kind === 'new' && <TxEditor onClose={close} onSaved={refresh} />}

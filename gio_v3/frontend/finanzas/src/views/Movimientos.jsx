@@ -279,6 +279,7 @@ export default function Movimientos({ initial }) {
         <aside className="fz-drawer" aria-labelledby="fz-dr-t">
           <Categorizer tx={current} cats={cats} trips={trips} variant="drawer" headingId="fz-dr-t"
             onSaved={onSaved} onClose={() => setSel(null)} onMore={() => app.openTx(current)}
+            onSplit={() => app.openTx(current, { dividir: true })}
             onPrev={idx > 0 ? () => go(-1) : null} onNext={idx < rows.length - 1 ? () => go(1) : null} />
         </aside>
       )}
@@ -287,7 +288,8 @@ export default function Movimientos({ initial }) {
         <Modal title="Categorizar" eyebrow={dayLabel(current.fecha)} onClose={() => setSel(null)} initialFocus={false}>
           <div className="eu-modal-bd">
             <Categorizer tx={current} cats={cats} trips={trips} variant="sheet" headingId="fz-sh-t"
-              onSaved={onSaved} onClose={() => setSel(null)} onMore={() => { const t = current; setSel(null); app.openTx(t); }} />
+              onSaved={onSaved} onClose={() => setSel(null)} onMore={() => { const t = current; setSel(null); app.openTx(t); }}
+              onSplit={() => { const t = current; setSel(null); app.openTx(t, { dividir: true }); }} />
           </div>
         </Modal>
       )}
