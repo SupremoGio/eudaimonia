@@ -6,6 +6,7 @@ import { categoryKeys, getCategories, getTrips, subcatsFor } from '../lib/store.
 import { Field, Icon, Kbd, Modal, confirmDialog, saveKey, toast } from './ui.jsx';
 import { PrestamoPersonaField, usePrestamoPersona } from './PrestamoPersona.jsx';
 import { CompartidoField, useCompartido } from './Compartido.jsx';
+import { DivisionPanel, esCargoDividido, esParteDividida } from './Division.jsx';
 
 const TIPOS_EDIT = [['GASTO', 'Gasto'], ['INGRESO', 'Ingreso'], ['PAGO', 'Pago']];
 
@@ -33,7 +34,7 @@ function initial(tx) {
 }
 
 /** Editor completo de un movimiento (o alta de uno nuevo si no hay `tx`). */
-export default function TxEditor({ tx, onClose, onSaved }) {
+export default function TxEditor({ tx, dividir = false, onClose, onSaved }) {
   const isNew = !tx;
   const [f, setF] = useState(() => initial(tx));
   const [cats, setCats] = useState([]);
@@ -54,12 +55,19 @@ export default function TxEditor({ tx, onClose, onSaved }) {
   // prestaste y al guardar queda registrado en «Por cobrar».
   const pp = usePrestamoPersona(isNew ? null : tx.id);
   const esPrestamo = f.categoria === 'PRESTAMOS' && f.tipo === 'GASTO';
+
+  // Movimiento dividido en categorías: el monto (y en el cargo original, la
+  // categoría) se cambia en «Dividir», no aquí.
+  const cargoDividido = esCargoDividido(tx);
+  const parteDividida = esParteDividida(tx);
+  const dividido = cargoDividido || parteDividida;
+  const divisionCambio = () => { onSaved && onSaved(); onClose(); };
   const guardarPrestamo = (movId) => (esPrestamo ? pp.guardar(movId) : Promise.resolve());
 
   // Gasto compartido: alguien te debe parte (queda en Por cobrar y el gasto
   // cuenta solo tu parte). No aplica a préstamos ni a gastos de Expense.
   const comp = useCompartido(isNew ? null : tx.id);
-  const puedeCompartir = f.tipo === 'GASTO' && !esPrestamo && f.categoria !== 'EXPENSE';
+  const puedeCompartir = f.tipo === 'GASTO' && !esPrestamo && f.categoria !== 'EXPENSE' && !cargoDividido;
   const compartido = puedeCompartir && comp.on;
   const guardarCompartido = (movId) => (puedeCompartir || comp.existente ? comp.guardar(movId, f.descripcion.trim()) : Promise.resolve());
 
@@ -120,7 +128,7 @@ export default function TxEditor({ tx, onClose, onSaved }) {
     <Modal title={isNew ? 'Nuevo movimiento' : 'Editar movimiento'} eyebrow={isNew ? 'Captura manual' : catMeta(tx.categoria).name} onClose={onClose}
       footer={(
         <>
-          {!isNew && <button type="button" className="eu-btn eu-btn--danger fz-ft-start" onClick={remove} disabled={busy}><Icon name="trash-2" />Eliminar</button>}
+          {!isNew && !parteDividida && <button type="button" className="eu-btn eu-btn--danger fz-ft-start" onClick={remove} disabled={busy}><Icon name="trash-2" />Eliminar</button>}
           <button type="button" className="eu-btn eu-btn--ghost" onClick={onClose}>Cancelar</button>
           <button type="submit" form={`${idp}-form`} className="eu-btn eu-btn--primary" disabled={busy} aria-busy={busy || undefined}>
             {isNew ? 'Agregar' : 'Guardar'} <Kbd>{saveKey}</Kbd>
@@ -130,7 +138,7 @@ export default function TxEditor({ tx, onClose, onSaved }) {
       <form id={`${idp}-form`} className="eu-modal-bd" onSubmit={(e) => { e.preventDefault(); save(); }} onKeyDown={onKeyDown} noValidate>
         <div className="eu-seg fz-seg-block" role="radiogroup" aria-label="Tipo de movimiento">
           {TIPOS_EDIT.map(([id, name]) => (
-            <button key={id} type="button" role="radio" aria-checked={f.tipo === id} onClick={() => set('tipo', id)}>{name}</button>
+            <button key={id} type="button" role="radio" aria-checked={f.tipo === id} onClick={() => set('tipo', id)} disabled={dividido}>{name}</button>
           ))}
         </div>
         {!isNew && !TIPOS_EDIT.some(([id]) => id === f.tipo) && <div className="t-meta">Tipo actual: {f.tipo}</div>}
@@ -140,7 +148,7 @@ export default function TxEditor({ tx, onClose, onSaved }) {
         </Field>
         <div className="eu-grid-2">
           <Field label="Monto (MXN)" htmlFor={`${idp}-monto`}>
-            <input id={`${idp}-monto`} className="eu-input eu-input--money" inputMode="decimal" type="number" step="0.01" min="0" value={f.monto} onChange={(e) => set('monto', e.target.value)} placeholder="0.00" />
+            <input id={`${idp}-monto`} className="eu-input eu-input--money" inputMode="decimal" type="number" step="0.01" min="0" value={f.monto} onChange={(e) => set('monto', e.target.value)} placeholder="0.00" disabled={dividido} />
           </Field>
           <Field label="Fecha" htmlFor={`${idp}-fecha`}>
             <input id={`${idp}-fecha`} className="eu-input" type="date" value={f.fecha} onChange={(e) => set('fecha', e.target.value)} />
@@ -148,7 +156,7 @@ export default function TxEditor({ tx, onClose, onSaved }) {
         </div>
         <div className="eu-grid-2">
           <Field label="Categoría" htmlFor={`${idp}-cat`}>
-            <select id={`${idp}-cat`} className="eu-select" value={f.categoria} onChange={(e) => setCategoria(e.target.value)}>
+            <select id={`${idp}-cat`} className="eu-select" value={f.categoria} onChange={(e) => setCategoria(e.target.value)} disabled={cargoDividido}>
               {keys.map((k) => <option key={k} value={k}>{catMeta(k).name}</option>)}
             </select>
           </Field>
@@ -161,7 +169,7 @@ export default function TxEditor({ tx, onClose, onSaved }) {
         </div>
         {f.categoria !== 'EXPENSE' && (
           <Field label="Subcategoría (opcional)" htmlFor={`${idp}-sub`}>
-            <select id={`${idp}-sub`} className="eu-select" value={f.subcategoria} onChange={(e) => set('subcategoria', e.target.value)}>
+            <select id={`${idp}-sub`} className="eu-select" value={f.subcategoria} onChange={(e) => set('subcategoria', e.target.value)} disabled={cargoDividido}>
               <option value="">— Sin subcategoría —</option>
               {subs.map((s) => <option key={s} value={s}>{s}</option>)}
               {f.subcategoria && !subs.includes(f.subcategoria) && <option value={f.subcategoria}>{f.subcategoria}</option>}
@@ -169,11 +177,13 @@ export default function TxEditor({ tx, onClose, onSaved }) {
           </Field>
         )}
 
+        {!isNew && <DivisionPanel tx={tx} cats={cats} idp={idp} autoEdit={dividir} onChanged={divisionCambio} />}
+
         <PrestamoPersonaField p={pp} activo={esPrestamo} idp={idp} />
 
         {puedeCompartir && <CompartidoField c={comp} total={parseFloat(f.monto) || 0} idp={idp} />}
 
-        {!isNew && f.tipo === 'GASTO' && (
+        {!isNew && f.tipo === 'GASTO' && !cargoDividido && (
           <div className="eu-grid-2">
             <Field label="Mi parte (opcional)" htmlFor={`${idp}-parte`}
               help={compartido ? 'La calcula «Te deben parte»: total − lo que te deben.' : 'Si alguien más pagó o te reembolsó parte, pon solo lo que te corresponde. Vacío = 100 % tuyo.'}>

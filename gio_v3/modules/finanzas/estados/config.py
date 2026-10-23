@@ -421,7 +421,8 @@ SUBCATEGORIAS: dict[str, list[str]] = {
                            "Retiro efectivo", "Depósito", "Fideicomiso",
                            "Reembolsable", "Pago servicios", "Compra a meses",
                            "Entre cuentas propias", "Reembolso compartido",
-                           "Expense sin detalle"],
+                           "Expense sin detalle",
+                           "Dividido"],   # cargo repartido en varias categorías (divisiones.py)
     "INVERSION":         ["Ahorro", "Inversión", "Crypto", "Fondo viaje", "Fondo emergencias"],
     "NOMINA":            ["Pago nominal", "Bono", "Aguinaldo", "PTU", "Fondo de ahorro"],
     "OCIO":              ["Eventos y congresos", "Cine", "Salidas", "Videojuegos"],

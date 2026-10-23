@@ -27,6 +27,7 @@ from . import correcciones_sin_conciliar as _sinconc
 from . import msi as _msi
 from . import abonos as _abonos
 from . import contrapartes as _contra
+from . import divisiones as _div
 
 estados_bp = Blueprint(
     'estados',
@@ -88,6 +89,7 @@ _FINANZAS_NO_GASTO_SUBCATS = (
     'Depósito', 'Fideicomiso', 'Reembolsable',
     'Compra a meses',   # compra inicial a MSI: el gasto lo llevan las mensualidades (msi.py)
     'Entre cuentas propias',   # transferencia que regresó o entre cuentas del usuario
+    'Dividido',   # cargo repartido en varias categorías: el gasto lo llevan sus partes (divisiones.py)
 )
 
 
@@ -1266,7 +1268,7 @@ def create_transaction():
         if monto > 0 and not d.get('force'):
             dup = db.execute(
                 "SELECT id, descripcion, banco FROM est_movimientos "
-                "WHERE fecha=? AND ROUND(monto,2)=ROUND(?,2) AND tipo=?",
+                f"WHERE fecha=? AND ROUND(monto,2)=ROUND(?,2) AND tipo=? AND {_div.SOLO_BANCO}",
                 (fecha, monto, tipo),
             ).fetchone()
             if dup:
@@ -1309,6 +1311,23 @@ def update_transaction(tx_id):
     if not _ok(): return _locked()
     d = request.json or {}
     with get_db() as db:
+        # Movimiento dividido: el monto del cargo y de cada parte se cambia en
+        # la división (las partes deben sumar el cargo), y el cargo no tiene
+        # categoría propia. El editor reenvía todos los campos, así que solo
+        # se rechaza un cambio real.
+        actual = db.execute("SELECT monto, dividido_de FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
+        dividido = actual and (actual['dividido_de'] or _div.es_padre(db, tx_id))
+        if dividido and d.get('monto') is not None \
+                and abs(abs(safe_float(d['monto'])) - abs(actual['monto'])) > 0.005:
+            return jsonify({'error': 'Este movimiento está dividido en categorías: cambia los montos '
+                                     'en «Dividir» o deshaz la división.'}), 409
+        if dividido:
+            d.pop('monto', None)
+            d.pop('tipo', None)
+            if not actual['dividido_de']:
+                d.pop('categoria', None)
+                d.pop('subcategoria', None)
+                d.pop('mi_parte', None)
         if d.get('descripcion') is not None:
             db.execute("UPDATE est_movimientos SET descripcion=? WHERE id=?",
                        (clean_str(d['descripcion'], 300), tx_id))
@@ -1371,6 +1390,9 @@ def update_transaction(tx_id):
                     "UPDATE est_movimientos SET categoria=?, subcategoria=? WHERE id=?",
                     (cat, sub, tx_id),
                 )
+        if dividido:
+            _div.sincronizar_edicion(db, tx_id)
+            _div.reafirmar_uno(db, tx_id)
         db.commit()
     return jsonify({'ok': True})
 
@@ -1379,9 +1401,49 @@ def update_transaction(tx_id):
 def delete_transaction(tx_id):
     if not _ok(): return _locked()
     with get_db() as db:
+        r = db.execute("SELECT dividido_de FROM est_movimientos WHERE id=?", (tx_id,)).fetchone()
+        if r and r['dividido_de']:
+            return jsonify({'error': 'Es una parte de un movimiento dividido: edita la división '
+                                     'o deshazla desde «Dividir».'}), 409
+        _div.deshacer(db, tx_id)   # borrar el cargo borra también sus partes
         db.execute("DELETE FROM est_movimientos WHERE id=?", (tx_id,))
         db.commit()
     return jsonify({'ok': True})
+
+
+@estados_bp.route('/api/transactions/<int:tx_id>/division')
+def division_ver(tx_id):
+    """División del movimiento (cargo o parte): {padre, partes} o null."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        return jsonify({'division': _div.obtener(db, tx_id)})
+
+
+@estados_bp.route('/api/transactions/<int:tx_id>/division', methods=['PUT'])
+def division_guardar(tx_id):
+    """Divide un movimiento en partes con su propia categoría (o reemplaza
+    la división). Body: {partes: [{monto, categoria, subcategoria, nota}]};
+    deben sumar el monto del cargo."""
+    if not _ok(): return _locked()
+    partes = (request.json or {}).get('partes')
+    with get_db() as db:
+        try:
+            div = _div.guardar(db, tx_id, partes, _normalize_subcategoria)
+        except _div.DivisionError as e:
+            return jsonify({'error': str(e)}), 400
+        db.commit()
+    return jsonify({'ok': True, 'division': div})
+
+
+@estados_bp.route('/api/transactions/<int:tx_id>/division', methods=['DELETE'])
+def division_deshacer(tx_id):
+    """Deshace la división: borra las partes y el cargo vuelve a su
+    categoría anterior."""
+    if not _ok(): return _locked()
+    with get_db() as db:
+        ok = _div.deshacer(db, tx_id)
+        db.commit()
+    return jsonify({'ok': ok})
 
 
 @estados_bp.route('/api/transactions/reembolsos')
@@ -2143,6 +2205,7 @@ def _reaplicar_reglas(db) -> int:
     _prest.registrar_manuales(db)
     _conciliar_renta_variable(db)
     _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
+    _div.reafirmar(db)   # y ninguna regla deshace un movimiento dividido en categorías
     return total_updated
 
 
@@ -2663,7 +2726,9 @@ def _descartar_ingresos_en_credito(db, ids: list) -> int:
     ph = ','.join('?' * len(ids))
     ligadas = """SELECT movimiento_id FROM est_expense_lote_gastos UNION SELECT movimiento_id FROM est_expense_lote_depositos
                  UNION SELECT movimiento_id FROM est_prestamo_devoluciones
-                 UNION SELECT movimiento_id FROM est_prestamos WHERE movimiento_id IS NOT NULL"""
+                 UNION SELECT movimiento_id FROM est_prestamos WHERE movimiento_id IS NOT NULL
+                 UNION SELECT padre_id FROM est_divisiones
+                 UNION SELECT id FROM est_movimientos WHERE dividido_de IS NOT NULL"""
     rows = db.execute(f"""
         SELECT DISTINCT c.id FROM est_movimientos c
         JOIN est_movimientos d ON d.banco='BBVA_DEB' AND d.tipo='INGRESO'
@@ -3129,7 +3194,9 @@ def upload_file():
             # se descartaba porque ese día hubo un SPEI de $200 en débito.
             existing = {}
             for r in db.execute(
-                "SELECT fecha, monto, tipo, descripcion, banco FROM est_movimientos WHERE monto > 0"
+                # Las partes de un movimiento dividido no son renglones del
+                # banco: una parte de $100 no debe tapar un cargo real de $100.
+                f"SELECT fecha, monto, tipo, descripcion, banco FROM est_movimientos WHERE monto > 0 AND {_div.SOLO_BANCO}"
             ).fetchall():
                 # Redondeado a centavos: dos parsers pueden calcular el mismo
                 # monto por caminos distintos (división vs. parseo directo
@@ -3153,7 +3220,7 @@ def upload_file():
             existing_deb_spei = set()
             for r in db.execute("""
                 SELECT fecha, monto FROM est_movimientos
-                WHERE banco='BBVA_DEB'
+                WHERE banco='BBVA_DEB' AND dividido_de IS NULL
                   AND (UPPER(descripcion) LIKE '%SPEI RECIBIDO%'
                        OR UPPER(descripcion) LIKE '%DEPOSITO DE TERCERO%')
             """).fetchall():
@@ -3277,6 +3344,7 @@ def upload_file():
             _prest.registrar_manuales(db)
             _conciliar_renta_variable(db)
             _lotes.reafirmar_categorias(db)   # al final: ninguna corrección saca facturas del lote
+            _div.reafirmar(db)   # y ninguna regla deshace un movimiento dividido en categorías
 
             gbm_detected = _postproceso_inversiones(db)
 

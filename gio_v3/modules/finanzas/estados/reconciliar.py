@@ -68,7 +68,7 @@ def reconciliar(db, movimientos, banco, dry_run=True):
     periodo = periodos.pop()
     ini, fin = periodo.split(' al ')
     base = [dict(r) for r in db.execute(
-        "SELECT * FROM est_movimientos WHERE banco=? AND substr(fecha,1,10) BETWEEN ? AND ?",
+        "SELECT * FROM est_movimientos WHERE banco=? AND substr(fecha,1,10) BETWEEN ? AND ? AND dividido_de IS NULL",
         (banco, ini, fin)).fetchall()]
 
     pares = []
@@ -166,7 +166,8 @@ def _cobertura(db, movimientos, banco) -> float:
     if not movimientos:
         return 0.0
     hay = sum(1 for m in movimientos if db.execute(
-        "SELECT 1 FROM est_movimientos WHERE banco=? AND substr(fecha,1,10)=? AND ABS(ABS(monto)-?) < 0.005 LIMIT 1",
+        "SELECT 1 FROM est_movimientos WHERE banco=? AND substr(fecha,1,10)=? AND ABS(ABS(monto)-?) < 0.005 "
+        "AND dividido_de IS NULL LIMIT 1",
         (banco, m['fecha'], abs(float(m['monto'])))).fetchone())
     return hay / len(movimientos)
 

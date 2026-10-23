@@ -38,6 +38,7 @@ export const api = {
   get: (path, params) => request('GET', BASE + path + qs(params)),
   post: (path, body) => request('POST', BASE + path, body === undefined ? {} : body),
   patch: (path, body) => request('PATCH', BASE + path, body),
+  put: (path, body) => request('PUT', BASE + path, body),
   del: (path) => request('DELETE', BASE + path),
   admin: (path, params) => request('GET', ADMIN + path + qs(params)),
   upload: (file) => {

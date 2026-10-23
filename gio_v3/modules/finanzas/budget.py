@@ -202,7 +202,8 @@ _GASTO_EXCLUIR = ('PAGO_TDC', 'PAGO', 'TRANSFERENCIA', 'SPEI_ENVIADO', 'RETIRO',
 # estados/routes.py::_FINANZAS_NO_GASTO_SUBCATS).
 _FINANZAS_NO_GASTO = ('Transferencia recibida', 'Depósito', 'Fideicomiso', 'Reembolsable',
                       'Compra a meses',   # compra inicial a MSI: cuentan las mensualidades
-                      'Entre cuentas propias')
+                      'Entre cuentas propias',
+                      'Dividido')   # cargo repartido en varias categorías: cuentan sus partes
 # PROYECTOS ya no se excluye entero: Hosting y Software son gasto propio y
 # cuentan en Deseos; Publicidad y Reclutamiento son gasto de trabajo y quedan
 # fuera, igual que EXPENSE.

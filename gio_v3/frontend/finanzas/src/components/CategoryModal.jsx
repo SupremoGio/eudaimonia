@@ -23,7 +23,7 @@ const merchantOf = (t) => (t.descripcion || '').trim() || '(sin descripción)';
 // fideicomiso, reembolsables y transferencias recibidas. El usuario veía
 // «Compra a meses $34,221» y pensaba que se le cobraba doble.
 const REF_CATS = new Set(['PAGO_TDC', 'PAGO', 'PRESTAMOS', 'EXPENSE']);
-const REF_FINANZAS = new Set(['Transferencia recibida', 'Depósito', 'Fideicomiso', 'Reembolsable', 'Compra a meses']);
+const REF_FINANZAS = new Set(['Transferencia recibida', 'Depósito', 'Fideicomiso', 'Reembolsable', 'Compra a meses', 'Dividido']);
 const isRef = (t) => t.tipo === 'GASTO'
   && (REF_CATS.has(t.categoria) || (t.categoria === 'FINANZAS' && REF_FINANZAS.has(t.subcategoria)));
 const RefBadge = () => <span className="eu-badge fz-ref-badge" title="Se muestra como referencia: no suma a tu gasto">referencia · no suma</span>;
