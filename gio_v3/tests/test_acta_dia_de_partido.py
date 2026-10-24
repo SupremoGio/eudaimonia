@@ -67,3 +67,33 @@ def test_clasificacion_cuenta_el_partido_como_ancla_y_no_pide_gym(test_db):
         datetime.date.fromisoformat(MIERCOLES)) if d['effective_type'] == 'ancla'}
     assert 'partido_futbol' in anchors and 'gym' not in anchors
     assert c['rank'] != 'carbon'                         # el partido cuenta como ancla hecha → al menos Hierro
+
+
+# «Llegar Puntual»: entre semana siempre; fin de semana solo con partido.
+SABADO, DOMINGO = '2026-10-03', '2026-10-04'
+
+
+def test_llegar_puntual_entre_semana_siempre(test_db, monkeypatch):
+    _hoy(monkeypatch, JUEVES)
+    assert 'llegar_puntual' in _keys(adefs.get_active_grouped())
+
+
+def test_llegar_puntual_no_aparece_fin_de_semana_sin_partido(test_db, monkeypatch):
+    for dia in (SABADO, DOMINGO):
+        _hoy(monkeypatch, dia)
+        assert 'llegar_puntual' not in _keys(adefs.get_active_grouped())
+
+
+def test_llegar_puntual_aparece_domingo_con_partido(test_db, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    _partido(DOMINGO, hora='10:00')
+    acts = _keys(adefs.get_active_grouped())
+    assert 'llegar_puntual' in acts
+    assert 'gym' in acts and 'partido_futbol' not in acts   # el reemplazo del gym sigue siendo solo de miércoles
+
+
+def test_clasificacion_de_sabado_no_pide_llegar_puntual(test_db):
+    d = datetime.date.fromisoformat(SABADO)
+    hoy = adefs.ajustar_por_partido(
+        [v for v in adefs.get_active_flat().values() if adefs.eligible_today(v, 'sat', d)], d)
+    assert 'llegar_puntual' not in {x['key'] for x in hoy}

@@ -88,6 +88,21 @@ def partido_del_dia(d=None):
     return dict(row) if row else None
 
 
+# «Llegar Puntual» es para días con compromiso: entre semana siempre; sábado
+# y domingo solo si ese día hay partido (cualquier partido en futbol_partidos,
+# no solo los miércoles), porque el fin de semana no hay a dónde llegar.
+SOLO_ENTRE_SEMANA_SALVO_PARTIDO = ("llegar_puntual",)
+FIN_DE_SEMANA = ("sat", "sun")
+
+
+def hay_partido(d=None):
+    """True si en esa fecha hay un partido en futbol_partidos (cualquier día)."""
+    d = d or today_date()
+    with get_db() as db:
+        return db.execute("SELECT 1 FROM futbol_partidos WHERE fecha=? LIMIT 1",
+                          (d.isoformat(),)).fetchone() is not None
+
+
 def _sesion_por_hora(hora):
     try:
         h = int((hora or "").split(":")[0])
@@ -99,11 +114,15 @@ def _sesion_por_hora(hora):
 def ajustar_por_partido(items, d=None):
     """Aplica la regla del día de partido a una lista de actividades (dicts):
     con partido quita Gym/GymBook y rotula el ancla del partido (rival, hora y
-    sesión según la hora); sin partido quita el ancla del partido."""
+    sesión según la hora); sin partido quita el ancla del partido. Además,
+    sábado y domingo sin partido quita «Llegar Puntual»."""
     p = partido_del_dia(d)
+    sin_compromiso = weekday_code(d) in FIN_DE_SEMANA and not hay_partido(d)
     out = []
     for it in items:
         if p and it["key"] in REEMPLAZADAS_POR_PARTIDO:
+            continue
+        if sin_compromiso and it["key"] in SOLO_ENTRE_SEMANA_SALVO_PARTIDO:
             continue
         if it["key"] == PARTIDO_KEY:
             if not p:
