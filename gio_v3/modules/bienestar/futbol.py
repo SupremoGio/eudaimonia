@@ -14,6 +14,78 @@ def _now():
     return datetime.now().isoformat()
 
 
+# ── Ligas ─────────────────────────────────────────────────────────────────────
+# El usuario juega en tres ligas, cada una en su día fijo. Cada partido guarda
+# su liga (columna `liga`); si no la tiene (partidos viejos) o no se eligió,
+# se deduce de la cancha y, si no, del día de la semana.
+LIGAS = [
+    {'key': 'soccergdl',  'nombre': 'SoccerGDL',  'dia': 'wed', 'dia_label': 'Miércoles', 'tono': 'info'},
+    {'key': 'terranova',  'nombre': 'Terranova',  'dia': 'thu', 'dia_label': 'Jueves',    'tono': 'success'},
+    {'key': 'soccerpark', 'nombre': 'SoccerPark', 'dia': 'sun', 'dia_label': 'Domingo',   'tono': 'warning'},
+]
+OTRA = {'key': 'otra', 'nombre': 'Otros', 'dia': None, 'dia_label': 'Amistosos', 'tono': 'none'}
+_LIGA_KEYS = {l['key'] for l in LIGAS} | {OTRA['key']}
+_DIAS = ('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')
+_DIAS_CORTOS = ('lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom')
+_MESES = ('ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic')
+
+
+def liga_de(fecha, cancha=''):
+    """Liga deducida: primero por el nombre de la cancha, luego por el día."""
+    c = ''.join((cancha or '').lower().split())
+    for l in LIGAS:
+        if l['key'] in c:
+            return l['key']
+    try:
+        dia = _DIAS[date.fromisoformat((fecha or '')[:10]).weekday()]
+    except ValueError:
+        return OTRA['key']
+    return next((l['key'] for l in LIGAS if l['dia'] == dia), OTRA['key'])
+
+
+def _liga_valida(liga, fecha, cancha):
+    liga = (liga or '').strip().lower()
+    return liga if liga in _LIGA_KEYS else liga_de(fecha, cancha)
+
+
+def fecha_corta(fecha):
+    """'2026-10-25' -> 'dom 25 oct' (con año si no es el actual)."""
+    try:
+        d = date.fromisoformat((fecha or '')[:10])
+    except ValueError:
+        return fecha or ''
+    txt = f"{_DIAS_CORTOS[d.weekday()]} {d.day} {_MESES[d.month - 1]}"
+    return txt if d.year == date.today().year else f"{txt} {d.year}"
+
+
+_MESES_LARGOS = ('Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+                 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre')
+
+
+def mes_label(ym):
+    """'2026-10' -> 'Octubre 2026'."""
+    try:
+        y, m = (int(x) for x in ym.split('-')[:2])
+        return f"{_MESES_LARGOS[m - 1]} {y}"
+    except (ValueError, IndexError, AttributeError):
+        return ym or ''
+
+
+def _ligas_resumen(todos, programados):
+    """Una entrada por liga (más «Otros» si hay) con sus stats, su próximo
+    partido y la forma reciente."""
+    out = []
+    for l in LIGAS + [OTRA]:
+        suyos = [p for p in todos if p['liga'] == l['key']]
+        if l is OTRA and not suyos:
+            continue
+        jugados = [p for p in suyos if p['estado'] == 'jugado']
+        out.append({**l, 'stats': _stats(suyos), 'n': len(suyos),
+                    'proximo': next((p for p in programados if p['liga'] == l['key']), None),
+                    'forma': jugados[:5]})
+    return out
+
+
 def _row_to_dict(r):
     return dict(r)
 
@@ -144,6 +216,8 @@ def index():
             "SELECT * FROM futbol_partidos ORDER BY fecha DESC, id DESC"
         ).fetchall()
     todos = [_row_to_dict(r) for r in rows]
+    for p in todos:
+        p['liga'] = _liga_valida(p.get('liga'), p['fecha'], p.get('cancha'))
     jugados = [p for p in todos if p['estado'] == 'jugado']
     programados = sorted(
         (p for p in todos if p['estado'] == 'programado'),
@@ -154,6 +228,10 @@ def index():
         partidos=jugados,
         programados=programados,
         stats=_stats(todos),
+        ligas=_ligas_resumen(todos, programados),
+        liga_info={l['key']: l for l in LIGAS + [OTRA]},
+        fecha_corta=fecha_corta,
+        mes_label=mes_label,
     )
 
 
@@ -164,6 +242,8 @@ def list_partidos():
             "SELECT * FROM futbol_partidos ORDER BY fecha DESC, id DESC"
         ).fetchall()
     partidos = [_row_to_dict(r) for r in rows]
+    for p in partidos:
+        p['liga'] = _liga_valida(p.get('liga'), p['fecha'], p.get('cancha'))
     return jsonify({'partidos': partidos, 'stats': _stats(partidos)})
 
 
@@ -188,8 +268,8 @@ def crear_partido():
             """INSERT INTO futbol_partidos
                    (fecha, hora, cancha, rival, goles_favor, goles_contra,
                     goles_propios, asistencias, minutos_jugados, rendimiento,
-                    gol_log_id, estado, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    gol_log_id, estado, liga, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 d['fecha'],
                 d.get('hora', ''),
@@ -203,6 +283,7 @@ def crear_partido():
                 partido['rendimiento'],
                 log_id,
                 estado,
+                _liga_valida(d.get('liga'), d['fecha'], d.get('cancha', '')),
                 _now(),
             ),
         )
@@ -227,6 +308,9 @@ def actualizar_partido(pid):
         if f in d:
             sets.append(f'{f}=?')
             vals.append(d[f])
+    if 'liga' in d:
+        sets.append('liga=?')
+        vals.append(_liga_valida(d['liga'], d.get('fecha', partido['fecha']), d.get('cancha', partido['cancha'])))
     for f in ('goles_favor', 'goles_contra', 'goles_propios', 'asistencias', 'minutos_jugados'):
         if f in d:
             sets.append(f'{f}=?')

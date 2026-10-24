@@ -4472,6 +4472,12 @@ def init_db():
             if "estado" not in fb_cols:
                 db.execute("ALTER TABLE futbol_partidos ADD COLUMN estado TEXT DEFAULT 'jugado'")
                 db.commit()
+            # Liga del partido (SoccerGDL / Terranova / SoccerPark / otra). NULL
+            # en los partidos viejos: bienestar/futbol.py la deduce de la cancha
+            # o del día de la semana.
+            if "liga" not in fb_cols:
+                db.execute("ALTER TABLE futbol_partidos ADD COLUMN liga TEXT DEFAULT NULL")
+                db.commit()
         except Exception as e:
             print(f"[DB] futbol_partidos estado migration warning: {e}")
 

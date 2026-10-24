@@ -24,7 +24,7 @@
 .fb-card--prox{border-color:var(--border-brand)}
 .fb-ic{background:var(--cat-bg);color:var(--cat-fg)}
 .fb-card-main{flex:1;min-width:180px;display:flex;flex-direction:column;gap:4px}
-.fb-card-top{gap:var(--sp-2)}
+.fb-card-top{gap:4px var(--sp-2);flex-wrap:wrap}
 .fb-card-top .eu-badge svg{width:11px;height:11px}
 .fb-meta{display:flex;flex-wrap:wrap;gap:var(--sp-3)}
 .fb-meta span{display:inline-flex;align-items:center;gap:4px}
@@ -40,3 +40,37 @@
 .fb-result legend{padding:0}
 .fb-fgrid{gap:var(--sp-3)}
 @media (max-width:479px){.fb-card:not(.fb-card--prox){flex-wrap:nowrap;align-items:flex-start}.fb-card:not(.fb-card--prox) .fb-card-main{min-width:0}.fb-card:not(.fb-card--prox) .fb-acts{flex-direction:column}}
+/* Ligas: SoccerGDL (info) · Terranova (success) · SoccerPark (warning) · otras */
+.fb-liga--info{--lg:var(--info-fg)}.fb-liga--success{--lg:var(--success-fg)}.fb-liga--warning{--lg:var(--warning-fg)}.fb-liga--none{--lg:var(--fg-3)}
+.fb-lg--info,.fb-card--info{--lg:var(--info-fg)}.fb-lg--success,.fb-card--success{--lg:var(--success-fg)}.fb-lg--warning,.fb-card--warning{--lg:var(--warning-fg)}.fb-lg--none,.fb-card--none{--lg:var(--border-default)}
+.fb-liga{display:inline-flex;align-items:center;gap:6px;font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);color:var(--fg-2);white-space:nowrap}
+.fb-liga>i{width:8px;height:8px;border-radius:50%;background:var(--lg);flex-shrink:0}
+.fb-tabs{gap:var(--sp-5)}
+.fb-tabs button{display:inline-flex;align-items:center;gap:6px}
+.fb-tabs .fb-liga{font-size:var(--fs-13);color:inherit}
+.fb-tab-dia{color:var(--fg-3);font-weight:var(--fw-regular)}
+.fb-ct{font:var(--fs-11)/1 var(--font-data);color:var(--fg-3)}
+@media (max-width:479px){.fb-tab-dia{display:none}}
+.fb-panel{display:flex;flex-direction:column;gap:var(--sp-4)}
+@media (min-width:1024px){.fb-panel{gap:var(--sp-5)}}
+.fb-ligas{display:grid;gap:var(--sp-3);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.fb-lg{position:relative;display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4);border-top:3px solid var(--lg);transition:border-color var(--dur-fast)}
+.fb-lg:hover{border-color:var(--border-strong);border-top-color:var(--lg)}
+.fb-lg-open{position:absolute;inset:0;border:0;background:none;border-radius:inherit;cursor:pointer}
+.fb-lg-open:focus-visible{outline:2px solid var(--border-brand);outline-offset:2px}
+.fb-lg .js-new{position:relative;z-index:1}
+.fb-lg-rec{font-size:var(--fs-20);color:var(--fg-1)}
+.fb-lg-nums{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4)}
+.fb-lg-nums b{color:var(--fg-1);font-weight:var(--fw-medium)}
+.fb-lg-nums b[class*=fb-tone]{color:var(--tn)}
+.fb-lg-next{display:flex;align-items:center;gap:var(--sp-2);min-height:32px;padding-top:var(--sp-3);border-top:1px solid var(--border-subtle);font-size:var(--fs-13);color:var(--fg-2)}
+.fb-lg-next svg{width:16px;height:16px;color:var(--lg);flex-shrink:0}
+.fb-card{border-left:3px solid var(--lg,var(--border-subtle))}
+.fb-card--prox{border-left-color:var(--lg,var(--border-brand))}
+.fb-mes{margin:var(--sp-2) 0 0;font-weight:var(--fw-medium);color:var(--fg-3)}
+.fb-mes:first-of-type{margin-top:0}
+.fb-liga-pick{border:0;margin:0;padding:0;min-width:0}
+.fb-liga-pick legend{padding:0;margin-bottom:var(--sp-2)}
+.fb-liga-pick .eu-seg{display:flex;width:100%;flex-wrap:wrap}
+.fb-liga-pick .eu-seg button{flex:1;display:inline-flex;flex-direction:column;align-items:center;gap:2px;min-height:44px}
+.fb-seg-dia{font-size:var(--fs-11);color:var(--fg-3)}

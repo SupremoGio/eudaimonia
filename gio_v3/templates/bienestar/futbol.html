@@ -10,69 +10,122 @@
 {# tono del rating 1–10: ≥7 success · ≥6 brand · ≥5 warning · <5 danger #}
 {% macro tone(r) -%}{{ 'none' if r is none else ('success' if r >= 7 else ('brand' if r >= 6 else ('warning' if r >= 5 else 'danger'))) }}{%- endmacro %}
 {% macro res(p) -%}{%- set gf, gc = (p.goles_favor or 0), (p.goles_contra or 0) -%}{{ 'win' if gf > gc else ('loss' if gf < gc else 'draw') }}{%- endmacro %}
+{% macro res_txt(p) -%}{%- set r = res(p) -%}{{ 'Ganado' if r == 'win' else ('Perdido' if r == 'loss' else 'Empate') }}{%- endmacro %}
+
+{# Chip de liga: punto de color + nombre #}
+{% macro liga_chip(key) -%}{%- set l = liga_info[key] -%}<span class="fb-liga fb-liga--{{ l.tono }}"><i aria-hidden="true"></i>{{ l.nombre }}</span>{%- endmacro %}
+
+{# Las 4 cifras de un grupo de partidos (todas las ligas o una) #}
+{% macro stat_grid(s) -%}
+{% set r = s.rating_prom %}
+{% set gep = (s.ganados + s.empatados + s.perdidos) or 1 %}
+<div class="eu-grid-4 fb-stats">
+  <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="calendar"></i>Partidos</div><div class="eu-stat-val num">{{ s.total }}</div></div>
+  <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="target"></i>Goles</div><div class="eu-stat-val num">{{ s.goles_propios }}</div><div class="t-meta">{{ s.asistencias }} asistencia{{ 's' if s.asistencias != 1 }}</div></div>
+  <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="star"></i>Rating promedio</div><div class="eu-stat-val num fb-tone--{{ tone(r) }}">{{ '%.1f'|format(r) if r is not none else '—' }}</div></div>
+  <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="swords"></i>G · E · P</div><div class="eu-stat-val num">{{ s.ganados }}-{{ s.empatados }}-{{ s.perdidos }}</div>
+    <div class="fb-gep" role="img" aria-label="{{ s.ganados }} ganados, {{ s.empatados }} empatados, {{ s.perdidos }} perdidos">
+      <i class="is-win" style="width:{{ (s.ganados / gep * 100)|round(1) }}%"></i><i class="is-draw" style="width:{{ (s.empatados / gep * 100)|round(1) }}%"></i><i class="is-loss" style="width:{{ (s.perdidos / gep * 100)|round(1) }}%"></i></div></div>
+</div>
+{%- endmacro %}
 
 {% block content %}
 <div class="fb" id="fb" data-cat="hegemonikon">
   <header class="fb-hd">
     <div><div class="t-eyebrow">Hegemonikon · Fútbol</div><h1 class="t-page">Fútbol</h1>
-      <p class="t-meta fb-lead">Partidos, goles, asistencias y rendimiento. Cada gol suma XP a la salud física.</p></div>
+      <p class="t-meta fb-lead">Tus tres ligas: SoccerGDL los miércoles, Terranova los jueves y SoccerPark los domingos.</p></div>
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="calendar-plus"></i>Programar partido</button>
   </header>
 
-  {% set r = stats.rating_prom %}
-  {% set gep = (stats.ganados + stats.empatados + stats.perdidos) or 1 %}
-  <div class="eu-grid-4 fb-stats">
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="calendar"></i>Partidos</div><div class="eu-stat-val">{{ stats.total }}</div></div>
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="target"></i>Goles</div><div class="eu-stat-val">{{ stats.goles_propios }}</div><div class="t-meta">{{ stats.asistencias }} asistencia{{ 's' if stats.asistencias != 1 }}</div></div>
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="star"></i>Rating promedio</div><div class="eu-stat-val fb-tone--{{ tone(r) }}">{{ '%.1f'|format(r) if r is not none else '—' }}</div></div>
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="swords"></i>G · E · P</div><div class="eu-stat-val num">{{ stats.ganados }}-{{ stats.empatados }}-{{ stats.perdidos }}</div>
-      <div class="fb-gep" role="img" aria-label="{{ stats.ganados }} ganados, {{ stats.empatados }} empatados, {{ stats.perdidos }} perdidos">
-        <i class="is-win" style="width:{{ (stats.ganados / gep * 100)|round(1) }}%"></i><i class="is-draw" style="width:{{ (stats.empatados / gep * 100)|round(1) }}%"></i><i class="is-loss" style="width:{{ (stats.perdidos / gep * 100)|round(1) }}%"></i></div></div>
+  <div class="eu-tabs fb-tabs" role="tablist" aria-label="Liga">
+    <button type="button" role="tab" id="fb-tab-todas" aria-selected="true" aria-controls="fb-panel" data-liga="todas">Todas <span class="fb-ct num">{{ stats.total }}</span></button>
+    {% for l in ligas %}
+    <button type="button" role="tab" id="fb-tab-{{ l.key }}" aria-selected="false" aria-controls="fb-panel" tabindex="-1" data-liga="{{ l.key }}">
+      <span class="fb-liga fb-liga--{{ l.tono }}"><i aria-hidden="true"></i>{{ l.nombre }}</span>{% if l.dia %}<span class="fb-tab-dia">· {{ l.dia_label[:3] }}</span>{% endif %} <span class="fb-ct num">{{ l.stats.total }}</span></button>
+    {% endfor %}
   </div>
 
-  {% if programados %}
-  <section class="eu-vstack fb-sec" aria-labelledby="fb-prox-t">
-    <h2 class="t-eyebrow" id="fb-prox-t">Próximos partidos</h2>
-    {% for p in programados %}
-    <article class="eu-card fb-card fb-card--prox" id="fb-prox-{{ p.id }}">
-      <span class="eu-row-ic fb-ic"><i data-lucide="calendar-clock"></i></span>
-      <div class="fb-card-main"><div class="t-ui">{{ p.rival or 'Partido' }}</div>
-        <div class="fb-meta t-meta"><span><i data-lucide="calendar"></i>{{ p.fecha }}</span>{% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}{% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}</div></div>
-      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-result" data-id="{{ p.id }}"><i data-lucide="clipboard-check"></i>Registrar resultado</button>
-      <div class="fb-acts"><button type="button" class="eu-iconbtn js-edit" data-id="{{ p.id }}" aria-label="Editar"><i data-lucide="pencil"></i></button>
-        <button type="button" class="eu-iconbtn fb-danger js-del" data-id="{{ p.id }}" aria-label="Eliminar"><i data-lucide="trash-2"></i></button></div>
-    </article>
-    {% endfor %}
-  </section>
-  {% endif %}
+  <div id="fb-panel" role="tabpanel" aria-labelledby="fb-tab-todas" class="fb-panel">
+    <div data-panel="todas">{{ stat_grid(stats) }}</div>
+    {% for l in ligas %}<div data-panel="{{ l.key }}" hidden>{{ stat_grid(l.stats) }}</div>{% endfor %}
 
-  <section class="eu-vstack fb-sec" aria-labelledby="fb-hist-t">
-    <div class="eu-between"><h2 class="t-eyebrow" id="fb-hist-t">Historial</h2>
-      {% if partidos %}<span class="eu-hstack fb-form" aria-label="Forma reciente"><span class="t-meta">Forma</span>{% for p in partidos[:8] %}<span class="fb-dot is-{{ res(p) }}" title="{{ p.rival or 'Partido' }} · {{ p.goles_favor or 0 }}-{{ p.goles_contra or 0 }}"></span>{% endfor %}</span>{% endif %}</div>
-    {% for p in partidos %}
-    <article class="eu-card fb-card" id="fb-card-{{ p.id }}">
-      <span class="fb-ring fb-tone--{{ tone(p.rendimiento) }}" style="--pct:{{ ((p.rendimiento / 10 * 100)|round(0)) if p.rendimiento is not none else 0 }}"><b class="num">{{ '%.1f'|format(p.rendimiento) if p.rendimiento is not none else '—' }}</b></span>
-      <div class="fb-card-main"><div class="eu-hstack fb-card-top"><span class="t-ui">{{ p.rival or 'Partido' }}</span>{% if p.goles_propios %}<span class="eu-badge eu-badge--brand"><i data-lucide="target"></i>{{ p.goles_propios }}</span>{% endif %}</div>
-        <div class="fb-meta t-meta"><span><i data-lucide="calendar"></i>{{ p.fecha }}</span>{% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}{% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}{% if p.minutos_jugados %}<span><i data-lucide="timer"></i>{{ p.minutos_jugados }}′</span>{% endif %}{% if p.asistencias %}<span><i data-lucide="users"></i>{{ p.asistencias }} asist.</span>{% endif %}</div></div>
-      <span class="t-data num fb-score is-{{ res(p) }}">{{ p.goles_favor }}-{{ p.goles_contra }}</span>
-      <div class="fb-acts"><button type="button" class="eu-iconbtn js-edit" data-id="{{ p.id }}" aria-label="Editar"><i data-lucide="pencil"></i></button>
-        <button type="button" class="eu-iconbtn fb-danger js-del" data-id="{{ p.id }}" aria-label="Eliminar"><i data-lucide="trash-2"></i></button></div>
-    </article>
-    {% else %}
-    <div class="eu-card">{% if programados %}{{ ui.empty('target', 'Aún sin resultados', 'Tienes partidos programados arriba: registra el resultado cuando termines de jugar.') }}{% else %}{{ ui.empty('target', 'Sin partidos', 'Programa tu próximo partido para empezar tu historial de goles y rendimiento.', cta='Programar partido', cta_icon='calendar-plus') }}{% endif %}</div>
-    {% endfor %}
-  </section>
+    {# Resumen por liga: solo en «Todas». Clic en la tarjeta = abrir esa liga #}
+    <section class="eu-vstack fb-sec" data-panel="todas" aria-labelledby="fb-ligas-t">
+      <h2 class="t-eyebrow" id="fb-ligas-t">Mis ligas</h2>
+      <div class="fb-ligas">
+        {% for l in ligas if l.dia %}
+        <article class="eu-card fb-lg fb-lg--{{ l.tono }}">
+          <button type="button" class="fb-lg-open js-liga" data-liga="{{ l.key }}" aria-label="Ver partidos de {{ l.nombre }}"></button>
+          <div class="eu-between"><div><div class="t-card">{{ l.nombre }}</div><div class="t-meta">{{ l.dia_label }}</div></div>
+            <span class="t-data num fb-lg-rec" title="Ganados · empatados · perdidos">{{ l.stats.ganados }}-{{ l.stats.empatados }}-{{ l.stats.perdidos }}</span></div>
+          <div class="fb-lg-nums t-meta">
+            <span><b class="num">{{ l.stats.total }}</b> PJ</span><span><b class="num">{{ l.stats.goles_propios }}</b> gol{{ 'es' if l.stats.goles_propios != 1 }}</span><span><b class="num">{{ l.stats.asistencias }}</b> asist.</span>
+            <span><b class="num fb-tone--{{ tone(l.stats.rating_prom) }}">{{ '%.1f'|format(l.stats.rating_prom) if l.stats.rating_prom is not none else '—' }}</b> rating</span>
+          </div>
+          {% if l.forma %}<div class="eu-hstack fb-form" aria-label="Forma en {{ l.nombre }}">{% for p in l.forma %}<span class="fb-dot is-{{ res(p) }}" title="{{ fecha_corta(p.fecha) }} · {{ p.rival or 'Partido' }} · {{ p.goles_favor or 0 }}-{{ p.goles_contra or 0 }} ({{ res_txt(p) }})"></span>{% endfor %}</div>{% endif %}
+          <div class="fb-lg-next">
+            {% if l.proximo %}<i data-lucide="calendar-clock"></i><span class="eu-grow">{{ fecha_corta(l.proximo.fecha) }}{% if l.proximo.hora %} · {{ l.proximo.hora }}{% endif %}{% if l.proximo.rival %} · vs {{ l.proximo.rival }}{% endif %}</span>
+            {% else %}<i data-lucide="calendar-x"></i><span class="eu-grow">Sin partido programado</span>
+              <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-new" data-liga="{{ l.key }}"><i data-lucide="plus"></i>Programar</button>{% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="eu-vstack fb-sec js-prox-sec" aria-labelledby="fb-prox-t" {% if not programados %}hidden{% endif %}>
+      <h2 class="t-eyebrow" id="fb-prox-t">Próximos partidos</h2>
+      {% for p in programados %}
+      <article class="eu-card fb-card fb-card--prox fb-card--{{ liga_info[p.liga].tono }}" id="fb-prox-{{ p.id }}" data-liga="{{ p.liga }}">
+        <span class="eu-row-ic fb-ic"><i data-lucide="calendar-clock"></i></span>
+        <div class="fb-card-main"><div class="eu-hstack fb-card-top"><span class="t-ui">{{ ('vs ' ~ p.rival) if p.rival else 'Partido' }}</span>{{ liga_chip(p.liga) }}</div>
+          <div class="fb-meta t-meta"><span><i data-lucide="calendar"></i>{{ fecha_corta(p.fecha) }}</span>{% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}{% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}</div></div>
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-result" data-id="{{ p.id }}"><i data-lucide="clipboard-check"></i>Registrar resultado</button>
+        <div class="fb-acts"><button type="button" class="eu-iconbtn js-edit" data-id="{{ p.id }}" aria-label="Editar"><i data-lucide="pencil"></i></button>
+          <button type="button" class="eu-iconbtn fb-danger js-del" data-id="{{ p.id }}" aria-label="Eliminar"><i data-lucide="trash-2"></i></button></div>
+      </article>
+      {% endfor %}
+    </section>
+
+    <section class="eu-vstack fb-sec" aria-labelledby="fb-hist-t">
+      <div class="eu-between"><h2 class="t-eyebrow" id="fb-hist-t">Historial</h2>
+        <span class="eu-hstack fb-form js-forma" aria-label="Forma reciente" {% if not partidos %}hidden{% endif %}><span class="t-meta">Forma</span><span class="eu-hstack fb-form js-forma-dots"></span></span></div>
+      {% for p in partidos %}
+      {% set mes = p.fecha[:7] %}
+      {% if loop.first or partidos[loop.index0 - 1].fecha[:7] != mes %}<h3 class="t-meta fb-mes js-mes" data-mes="{{ mes }}">{{ mes_label(mes) }}</h3>{% endif %}
+      <article class="eu-card fb-card fb-card--{{ liga_info[p.liga].tono }}" id="fb-card-{{ p.id }}" data-liga="{{ p.liga }}" data-mes="{{ mes }}" data-res="{{ res(p) }}" data-tip="{{ fecha_corta(p.fecha) }} · {{ p.rival or 'Partido' }} · {{ p.goles_favor or 0 }}-{{ p.goles_contra or 0 }}">
+        <span class="fb-ring fb-tone--{{ tone(p.rendimiento) }}" style="--pct:{{ ((p.rendimiento / 10 * 100)|round(0)) if p.rendimiento is not none else 0 }}" title="Puntuación del partido"><b class="num">{{ '%.1f'|format(p.rendimiento) if p.rendimiento is not none else '—' }}</b></span>
+        <div class="fb-card-main"><div class="eu-hstack fb-card-top"><span class="t-ui">{{ ('vs ' ~ p.rival) if p.rival else 'Partido' }}</span>{{ liga_chip(p.liga) }}{% if p.goles_propios %}<span class="eu-badge eu-badge--brand" title="Mis goles"><i data-lucide="target"></i>{{ p.goles_propios }}</span>{% endif %}</div>
+          <div class="fb-meta t-meta"><span><i data-lucide="calendar"></i>{{ fecha_corta(p.fecha) }}</span>{% if p.hora %}<span><i data-lucide="clock"></i>{{ p.hora }}</span>{% endif %}{% if p.cancha %}<span><i data-lucide="map-pin"></i>{{ p.cancha }}</span>{% endif %}{% if p.minutos_jugados %}<span><i data-lucide="timer"></i>{{ p.minutos_jugados }}′</span>{% endif %}{% if p.asistencias %}<span><i data-lucide="users"></i>{{ p.asistencias }} asist.</span>{% endif %}</div></div>
+        <span class="t-data num fb-score is-{{ res(p) }}" aria-label="{{ res_txt(p) }} {{ p.goles_favor }} a {{ p.goles_contra }}">{{ p.goles_favor }}-{{ p.goles_contra }}</span>
+        <div class="fb-acts"><button type="button" class="eu-iconbtn js-edit" data-id="{{ p.id }}" aria-label="Editar"><i data-lucide="pencil"></i></button>
+          <button type="button" class="eu-iconbtn fb-danger js-del" data-id="{{ p.id }}" aria-label="Eliminar"><i data-lucide="trash-2"></i></button></div>
+      </article>
+      {% endfor %}
+      <div class="eu-card js-hist-empty" {% if partidos %}hidden{% endif %}>{% if programados %}{{ ui.empty('target', 'Aún sin resultados', 'Registra el resultado de tus partidos programados cuando termines de jugar.', compact=True) }}{% else %}{{ ui.empty('target', 'Sin partidos', 'Programa tu próximo partido para empezar tu historial de goles y rendimiento.', cta='Programar partido', cta_icon='calendar-plus') }}{% endif %}</div>
+    </section>
+  </div>
 </div>
 
 {% call ui.modal('m-pt', 'Programar partido', eyebrow='Fútbol') %}
 <form class="eu-modal-bd" id="f-pt" autocomplete="off">
   <input type="hidden" id="pt-id"><input type="hidden" id="pt-estado" value="programado">
+  <fieldset class="eu-field fb-liga-pick">
+    <legend class="eu-label">Liga</legend>
+    <div class="eu-seg" role="radiogroup" aria-label="Liga">
+      {% for l in ligas if l.dia %}<button type="button" role="radio" aria-checked="false" data-liga="{{ l.key }}" data-dia="{{ l.dia }}">{{ l.nombre }}<span class="fb-seg-dia">{{ l.dia_label[:3] }}</span></button>{% endfor %}
+      <button type="button" role="radio" aria-checked="false" data-liga="otra">Otra</button>
+    </div>
+    <input type="hidden" id="pt-liga">
+  </fieldset>
   <div class="eu-grid-2 fb-fgrid">
     <div class="eu-field"><label class="eu-label" for="pt-fecha">Fecha</label><input class="eu-input" id="pt-fecha" type="date"></div>
     <div class="eu-field"><label class="eu-label" for="pt-hora">Hora</label><input class="eu-input" id="pt-hora" type="time"></div>
   </div>
-  <div class="eu-field"><label class="eu-label" for="pt-cancha">Cancha</label><input class="eu-input" id="pt-cancha" placeholder="Cancha municipal…"></div>
-  <div class="eu-field"><label class="eu-label" for="pt-rival">Rival</label><input class="eu-input" id="pt-rival" placeholder="Los Tigres…"></div>
+  <div class="eu-grid-2 fb-fgrid">
+    <div class="eu-field"><label class="eu-label" for="pt-rival">Rival</label><input class="eu-input" id="pt-rival" placeholder="Los Tigres…"></div>
+    <div class="eu-field"><label class="eu-label" for="pt-cancha">Cancha (opcional)</label><input class="eu-input" id="pt-cancha" placeholder="Cancha 2…"></div>
+  </div>
   <fieldset class="eu-vstack fb-result" id="pt-result" hidden>
     <legend class="t-eyebrow">Resultado</legend>
     <div class="eu-grid-2 fb-fgrid">
