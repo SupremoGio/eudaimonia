@@ -1083,6 +1083,11 @@ def init_db():
                 db.execute("ALTER TABLE wishlist_items ADD COLUMN ec_sugerido INTEGER DEFAULT NULL")
             if "ec_pagado" not in wl_cols:
                 db.execute("ALTER TABLE wishlist_items ADD COLUMN ec_pagado INTEGER DEFAULT 0")
+            # Re-evaluación: score de la evaluación anterior y cuántas van.
+            if "score_anterior" not in wl_cols:
+                db.execute("ALTER TABLE wishlist_items ADD COLUMN score_anterior INTEGER DEFAULT NULL")
+            if "evaluaciones" not in wl_cols:
+                db.execute("ALTER TABLE wishlist_items ADD COLUMN evaluaciones INTEGER DEFAULT 0")
             db.commit()
         except Exception as e:
             print(f"[DB] wishlist EC migration warning: {e}")

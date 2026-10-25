@@ -6,7 +6,7 @@
   var root = document.getElementById('wl');
   if (!root) return;
   var API = '/guardarropa/wishlist/api';
-  var step = 0, itemId = null, item = {}, ans = {}, result = null, listFilter = 'activos';
+  var step = 0, itemId = null, item = {}, ans = {}, result = null, listFilter = 'activos', reeval = null;
   var REC = {
     compra_optima: { t: 'success', ic: 'circle-check', title: 'Adquisición estratégica óptima', desc: 'El artículo supera todos los filtros del protocolo. La compra está justificada por utilidad, eficiencia económica y diseño de vida.', action: 'Comprar', short: 'Óptima' },
     compra_limitada: { t: 'warning', ic: 'wrench', title: 'Compra limitada — inversión estratégica', desc: 'Estado financiero inestable, pero el artículo es CapEx productivo. Procede con máxima austeridad: precio mínimo, financiamiento 0% o ahorro previo obligatorio.', action: 'Comprar con austeridad', short: 'Limitada' },
@@ -162,7 +162,7 @@
       '<div class="wl-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="wl-ring-bg" cx="60" cy="60" r="52"/><circle class="wl-ring-fg" id="ring-fill" cx="60" cy="60" r="52" stroke-dasharray="' + circ + '" stroke-dashoffset="' + circ + '"/></svg>' +
       '<div class="wl-ring-c"><span class="t-data wl-score">' + r.score + '</span><span class="t-eyebrow">Score</span></div></div>' +
       '<div class="wl-rec" data-tone="' + m.t + '"><i data-lucide="' + m.ic + '"></i><span>' + m.title + '</span></div>' +
-      '<p class="t-body wl-rec-desc">' + m.desc + '</p></div>' +
+      '<p class="t-body wl-rec-desc">' + m.desc + '</p>' + delta(r) + '</div>' +
       '<ul class="wl-reasons">' + reasons + '</ul>' +
       '<div class="wl-res-actions">' +
       (positive ? '<button type="button" class="eu-btn eu-btn--primary" data-decide="comprado" data-label="' + m.action + '"><i data-lucide="shopping-bag"></i>' + m.action + '</button>'
@@ -173,6 +173,14 @@
     icons();
     requestAnimationFrame(function () { requestAnimationFrame(function () { var f = $('ring-fill'); if (f) f.style.strokeDashoffset = circ - (r.score / 100) * circ; }); });
     loadEC();
+  }
+  /** Re-evaluación: cómo cambió el score respecto a la evaluación anterior. */
+  function delta(r) {
+    if (r.score_anterior == null) return '';
+    var d = r.score - r.score_anterior, t = d > 0 ? 'success' : d < 0 ? 'danger' : '';
+    var txt = d > 0 ? 'subió ' + d : d < 0 ? 'bajó ' + (-d) : 'sin cambio';
+    return '<p class="wl-delta" data-tone="' + t + '"><i data-lucide="' + (d > 0 ? 'trending-up' : d < 0 ? 'trending-down' : 'minus') + '"></i>' +
+      'Re-evaluación: antes ' + r.score_anterior + ' → ahora ' + r.score + ' (' + txt + ')</p>';
   }
   function loadEC() {
     var precio = item.precio_estimado || 0;
@@ -221,7 +229,7 @@
     }
   });
   function resetQuiz() {
-    itemId = null; item = {}; ans = {}; result = null;
+    itemId = null; item = {}; ans = {}; result = null; reeval = null; banner();
     $('f-item').reset(); $('usos-input').value = 1;
     $$('.wl-choice').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
     visibility(); $('wl-result').innerHTML = '';
@@ -258,17 +266,20 @@
         '<div class="wl-badges"><span class="eu-badge eu-badge--status ' + est[1] + '">' + est[0] + '</span>' +
         (rec ? '<span class="eu-badge" data-tone="' + rec.t + '">' + rec.short + '</span>' : '') +
         (it.decision_override ? '<span class="eu-badge eu-badge--warning">override</span>' : '') +
+        (has && it.score_anterior != null && it.score_anterior !== it.score ? '<span class="eu-badge" title="Score de la evaluación anterior">antes ' + it.score_anterior + '</span>' : '') +
         (it.comprar_con_ec ? '<span class="eu-badge eu-badge--ec"><i data-lucide="coins"></i>' + it.ec_pagado + ' EC</span>' : '') + '</div></div>' +
         '<div class="wl-item-actions">' +
         (it.estado !== 'comprado' ? '<button type="button" class="eu-iconbtn" data-mark="comprado" data-id="' + it.id + '" aria-label="Marcar como comprado: ' + esc(it.nombre) + '" title="Marcar como comprado"><i data-lucide="check"></i></button>'
           : '<button type="button" class="eu-iconbtn" data-mark="pendiente" data-id="' + it.id + '" aria-label="Regresar a la wishlist: ' + esc(it.nombre) + '" title="Regresar a la wishlist"><i data-lucide="undo-2"></i></button>') +
+        (it.estado !== 'comprado' ? '<button type="button" class="eu-iconbtn" data-reeval="' + it.id + '" aria-label="' + (has ? 'Re-evaluar' : 'Evaluar') + ': ' + esc(it.nombre) + '" title="' + (has ? 'Re-evaluar con el protocolo' : 'Completar la evaluación') + '"><i data-lucide="refresh-cw"></i></button>' : '') +
         (it.estado !== 'descartado' ? '<button type="button" class="eu-iconbtn" data-mark="descartado" data-id="' + it.id + '" aria-label="Descartar: ' + esc(it.nombre) + '" title="Descartar"><i data-lucide="x"></i></button>' : '') +
         '<button type="button" class="eu-iconbtn wl-del" data-del="' + it.id + '" aria-label="Eliminar: ' + esc(it.nombre) + '" title="Eliminar"><i data-lucide="trash-2"></i></button></div></article>';
     }).join('');
     icons();
   }
   $('wl-list').addEventListener('click', function (e) {
-    var m = e.target.closest('[data-mark]'), d = e.target.closest('[data-del]');
+    var m = e.target.closest('[data-mark]'), d = e.target.closest('[data-del]'), rv = e.target.closest('[data-reeval]');
+    if (rv) { reevaluar(+rv.dataset.reeval); return; }
     if (m) {
       m.disabled = true;
       post(API + '/item/' + m.dataset.id + '/decide', { decision: m.dataset.mark }).then(function (r) {
@@ -284,6 +295,51 @@
       });
     }
   });
+  /* ── Re-evaluar ─────────────────────────────────────────────────────── */
+  // Abre el protocolo con el artículo y las respuestas anteriores ya cargadas:
+  // se pueden corregir datos (p. ej. el precio) y cambiar cualquier respuesta.
+  var DIAS = [0, 1, 3, 7];
+  function reevaluar(id) {
+    fetch(API + '/items').then(function (r) { return r.json(); }).then(function (all) {
+      var it = (all || []).filter(function (x) { return x.id === id; })[0];
+      if (!it) { toast('No encontré el artículo', 'err'); return; }
+      resetQuiz();
+      itemId = it.id; reeval = it;
+      $('f-nombre').value = it.nombre || ''; $('f-cat').value = it.categoria || ''; $('f-precio').value = it.precio_estimado || '';
+      $('f-marca').value = it.marca || ''; $('f-url').value = it.url || ''; $('f-desc').value = it.descripcion || '';
+      if (it.score != null) {
+        var dias = +it.dias_deseo || 0, b = DIAS.filter(function (x) { return x <= dias; }).pop();
+        pick('days', String(b == null ? 0 : b));
+        pick('calm', it.q1_persiste ? 'yes' : 'no');
+        if (it.q2_estado_financiero) pick('sol', it.q2_estado_financiero);
+        if (it.q2_clasificacion) pick('cls', it.q2_clasificacion);
+        // Fase 3 en orden: cada respuesta destapa la siguiente pregunta.
+        pick('util', it.q3_es_util ? 'yes' : 'no');
+        if (it.q3_es_util) pick('dry', it.q3_tiene_alternativa ? 'yes' : 'no');
+        if (it.q3_es_util && !it.q3_tiene_alternativa) pick('cpu', it.q3_cpu_ok ? 'yes' : 'no');
+        if (ans.cpu === 'yes') pick('mant', it.q3_mantenimiento_ok ? 'yes' : 'no');
+        if (ans.mant === 'yes') pick('cap', it.q3_costo_oportunidad_ok ? 'yes' : 'no');
+        if (it.q3_usos_mes) $('usos-input').value = it.q3_usos_mes;
+      }
+      banner();
+      setTab('quiz'); show(0);
+    }).catch(function () { toast('Sin conexión', 'err'); });
+  }
+  function banner() {
+    var el = $('wl-reeval');
+    if (!reeval) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('div'); el.id = 'wl-reeval'; el.className = 'wl-alert wl-reeval'; el.dataset.tone = 'info';
+      $('f-item').insertBefore(el, $('f-item').firstChild);
+    }
+    el.innerHTML = '<i data-lucide="refresh-cw"></i><span class="eu-grow">' + (reeval.score != null
+      ? 'Re-evaluando <b>' + esc(reeval.nombre) + '</b> · score anterior <b>' + reeval.score + '</b>. Tus respuestas anteriores ya están marcadas: cambia lo que sea distinto hoy.'
+      : 'Completando la evaluación de <b>' + esc(reeval.nombre) + '</b>.') +
+      '</span><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" id="wl-reeval-x">Cancelar</button>';
+    icons();
+    $('wl-reeval-x').onclick = function () { resetQuiz(); setTab('list'); };
+  }
+
   function updateStats() {
     fetch(API + '/items').then(function (r) { return r.json(); }).then(function (all) {
       var comp = all.filter(function (i) { return i.estado === 'comprado'; }).length;

@@ -112,3 +112,9 @@
   .wl-mini{width:40px;height:40px}
   .wl-item-actions{grid-column:1/-1;flex-direction:row;justify-content:flex-end}
 }
+/* Re-evaluar */
+.wl [data-tone=info]{--tone-fg:var(--info-fg);--tone-bg:var(--info-bg);--tone-border:var(--info-border)}
+.wl-reeval{align-items:center;margin-bottom:var(--sp-3)}
+.wl-reeval .eu-btn{flex-shrink:0}
+.wl-delta{display:inline-flex;align-items:center;gap:6px;margin:var(--sp-2) 0 0;font-size:var(--fs-13);color:var(--tone-fg,var(--fg-2))}
+.wl-delta svg{width:16px;height:16px}
