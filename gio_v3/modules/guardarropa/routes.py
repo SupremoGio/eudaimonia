@@ -1051,35 +1051,53 @@ def purchase_advisor():
 
     d       = request.get_json(force=True) or {}
     prenda  = _s(d, 'prenda', max_len=300)
-    precio  = safe_float(d.get('precio'), min_val=0.0)
-    url     = _s(d, 'url', max_len=1000)
-    motivo  = _s(d, 'motivo', max_len=500)
     if not prenda:
         return jsonify({'ok': False, 'error': 'Describe la prenda que quieres comprar'}), 400
+    try:
+        data = analizar_compra(prenda, safe_float(d.get('precio'), min_val=0.0),
+                               _s(d, 'url', max_len=1000), _s(d, 'motivo', max_len=500))
+        data['ok'] = True
+        return jsonify(data)
+    except json.JSONDecodeError:
+        return jsonify({'ok': False, 'error': 'Respuesta IA inválida'}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
+
+ES_ROPA = ('Ropa & Calzado', '')   # categorías de la wishlist que se evalúan contra el armario
+
+
+def analizar_compra(prenda, precio=0.0, url='', motivo='', categoria=''):
+    """Núcleo del asesor de compra (lo usa también la wishlist para analizar y
+    re-analizar sus artículos). Con categoria de ropa (o sin categoría) compara
+    contra el armario; con otra categoría (Tecnología, Hogar…) hace el mismo
+    análisis sin el inventario de prendas. Devuelve el dict de la IA con
+    `sources`; lanza excepción si la IA falla."""
     today = datetime.now()
     month_start = today.strftime('%Y-%m-01')
+    es_ropa = (categoria or '') in ES_ROPA
     with get_db() as db:
         items = [dict(r) for r in db.execute(
             "SELECT id, nombre, categoria, subcategoria, color_name, color_hex, marca, ocasion, "
             "estado, precio, veces_usado FROM wardrobe_items WHERE activo=1"
-        ).fetchall()]
+        ).fetchall()] if es_ropa else []
         # Contexto financiero (estados de cuenta) — opcional, la tabla puede no existir
         fin = {}
-        try:
-            fin['presupuesto_mensual'] = (db.execute(
-                "SELECT limite FROM est_budgets WHERE categoria='ROPA'").fetchone() or {'limite': None})['limite']
-            fin['gastado_mes'] = db.execute(
-                "SELECT COALESCE(SUM(ABS(COALESCE(mi_parte, monto))),0) s FROM est_movimientos "
-                "WHERE categoria='ROPA' AND tipo='GASTO' AND fecha>=?", (month_start,)).fetchone()['s']
-            fin['gastado_90d'] = db.execute(
-                "SELECT COALESCE(SUM(ABS(COALESCE(mi_parte, monto))),0) s FROM est_movimientos "
-                "WHERE categoria='ROPA' AND tipo='GASTO' AND fecha>=date('now','-90 day')").fetchone()['s']
-        except Exception:
-            pass
+        if es_ropa:
+            try:
+                fin['presupuesto_mensual'] = (db.execute(
+                    "SELECT limite FROM est_budgets WHERE categoria='ROPA'").fetchone() or {'limite': None})['limite']
+                fin['gastado_mes'] = db.execute(
+                    "SELECT COALESCE(SUM(ABS(COALESCE(mi_parte, monto))),0) s FROM est_movimientos "
+                    "WHERE categoria='ROPA' AND tipo='GASTO' AND fecha>=?", (month_start,)).fetchone()['s']
+                fin['gastado_90d'] = db.execute(
+                    "SELECT COALESCE(SUM(ABS(COALESCE(mi_parte, monto))),0) s FROM est_movimientos "
+                    "WHERE categoria='ROPA' AND tipo='GASTO' AND fecha>=date('now','-90 day')").fetchone()['s']
+            except Exception:
+                pass
         try:
             tallas = [dict(r) for r in db.execute(
-                "SELECT prenda, marca, talla FROM tallas_marca").fetchall()]
+                "SELECT prenda, marca, talla FROM tallas_marca").fetchall()] if es_ropa else []
         except Exception:
             tallas = []
 
@@ -1096,55 +1114,69 @@ def purchase_advisor():
                    f"gastado últimos 90 días: ${fin.get('gastado_90d', 0):.0f}")
     tallas_txt = ', '.join(f"{t['marca']} {t['prenda']}: {t['talla']}" for t in tallas) or 'sin registro'
 
-    prompt = f"""Eres un asesor de compras de moda masculina, frío y racional: mezcla de coach de imagen de élite y analista financiero personal. Tu trabajo es evitar compras impulsivas y redundantes, y detectar el MEJOR MOMENTO para comprar.
-
-FECHA DE HOY: {today.strftime('%Y-%m-%d')} (usuario en México, precios en MXN)
-
-PRENDA QUE QUIERE COMPRAR: {prenda}
-PRECIO QUE VE: {f'${precio:.0f} MXN' if precio else 'no indicado'}
-LINK: {url or 'no indicado'}
-POR QUÉ LA QUIERE: {motivo or 'no indicado'}
-
-SU ARMARIO ACTUAL ({len(items)} prendas):
+    if es_ropa:
+        rol = ("Eres un asesor de compras de moda masculina, frío y racional: mezcla de coach de imagen de élite "
+               "y analista financiero personal.")
+        que = 'PRENDA QUE QUIERE COMPRAR'
+        contexto = f"""SU ARMARIO ACTUAL ({len(items)} prendas):
 {inventario}
 
 FINANZAS ROPA: {fin_txt or 'sin datos'}
-TALLAS REGISTRADAS: {tallas_txt}
-
-Usa Google Search para verificar: precio actual típico de esta prenda en México (tienda oficial, Liverpool, Amazon MX, outlet), si suele bajar de precio, y próximos eventos de descuento relevantes (Buen Fin, Hot Sale, Black Friday, rebajas de temporada, cambio de colección).
-
-Evalúa:
-1. REDUNDANCIA: ¿ya tiene algo que cumple ≥80% de la función? Nómbralo.
+TALLAS REGISTRADAS: {tallas_txt}"""
+        busqueda = 'tienda oficial, Liverpool, Amazon MX, outlet'
+        evalua = """1. REDUNDANCIA: ¿ya tiene algo que cumple ≥80% de la función? Nómbralo.
 2. VERSATILIDAD: ¿con cuántas prendas de SU armario combina?
 3. COSTO POR USO estimado según su patrón de uso real.
 4. PRECIO: ¿es justo, caro o buena oferta frente al mercado?
 5. TIMING: ¿conviene esperar a un evento de descuento cercano? ¿cuánto se ahorraría?
 6. PRESUPUESTO: ¿cabe en su presupuesto de ropa de este mes?
-7. CALIDAD/MARCA: durabilidad y relación calidad-precio de la marca para esta prenda.
+7. CALIDAD/MARCA: durabilidad y relación calidad-precio de la marca para esta prenda."""
+        reglas_listas = 'usa nombres EXACTOS del inventario en similares/combina_con'
+    else:
+        rol = ("Eres un asesor de compras frío y racional: analista financiero personal y experto en producto.")
+        que = f'ARTÍCULO QUE QUIERE COMPRAR (categoría: {categoria})'
+        contexto = 'No tienes su inventario de esta categoría: si el artículo suele ser redundante, pregúntalo en el consejo.'
+        busqueda = 'tienda oficial, Liverpool, Amazon MX, Mercado Libre'
+        evalua = """1. UTILIDAD: ¿qué problema real resuelve y con qué frecuencia lo usaría?
+2. COSTO POR USO estimado.
+3. PRECIO: ¿es justo, caro o buena oferta frente al mercado?
+4. TIMING: ¿conviene esperar a un evento de descuento cercano o a un modelo nuevo? ¿cuánto se ahorraría?
+5. CALIDAD/MARCA: durabilidad, reseñas y relación calidad-precio.
+6. ALTERNATIVAS: opciones más baratas o mejores."""
+        reglas_listas = 'deja similares_en_armario y combina_con vacíos si no aplican'
+
+    prompt = f"""{rol} Tu trabajo es evitar compras impulsivas y redundantes, y detectar el MEJOR MOMENTO para comprar.
+
+FECHA DE HOY: {today.strftime('%Y-%m-%d')} (usuario en México, precios en MXN)
+
+{que}: {prenda}
+PRECIO QUE VE: {f'${precio:.0f} MXN' if precio else 'no indicado'}
+LINK: {url or 'no indicado'}
+POR QUÉ LA QUIERE: {motivo or 'no indicado'}
+
+{contexto}
+
+Usa Google Search para verificar: precio actual típico de este artículo en México ({busqueda}), si suele bajar de precio, y próximos eventos de descuento relevantes (Buen Fin, Hot Sale, Black Friday, rebajas de temporada, cambio de colección o de modelo).
+
+Evalúa:
+{evalua}
 
 Responde SOLO con un objeto JSON (sin markdown, sin ```, sin texto extra):
 {{"veredicto":"comprar|esperar|no_comprar","confianza":80,"titular":"frase corta y contundente","resumen":"2-3 líneas con el razonamiento principal","precio":{{"evaluacion":"buena_oferta|justo|caro|desconocido","rango_mercado":"$X–$Y MXN","precio_objetivo":"precio al que sí conviene comprar"}},"mejor_momento":"cuándo comprar y por qué (evento + fecha aproximada)","ahorro_esperando":"ahorro estimado si espera, o vacío","factores":[{{"nombre":"Redundancia","impacto":"positivo|negativo|neutral","detalle":"..."}}],"similares_en_armario":["nombres exactos de prendas suyas parecidas"],"combina_con":["nombres exactos de prendas suyas con las que combina"],"costo_por_uso_est":"$X por uso (supuesto de usos)","alternativas":["alternativa concreta más barata o mejor"],"consejo_final":"una línea accionable"}}
 
-REGLAS: incluye 5-7 factores · usa nombres EXACTOS del inventario en similares/combina_con · confianza entero 0-100 · sé honesto: si no hace falta, dilo sin rodeos."""
+REGLAS: incluye 5-7 factores · {reglas_listas} · confianza entero 0-100 · sé honesto: si no hace falta, dilo sin rodeos."""
 
-    sources = []
     try:
-        try:
-            raw, sources = _gemini_search(prompt)
-            data = json.loads(_extract_json(raw))
-        except Exception as e:
-            _log.warning('purchase_advisor: grounding falló, usando modo sin búsqueda: %s', e)
-            sources = []
-            data = json.loads(_extract_json(_gemini(prompt)))
-        if data.get('veredicto') not in ('comprar', 'esperar', 'no_comprar'):
-            data['veredicto'] = 'esperar'
-        data['sources'] = sources
-        data['ok'] = True
-        return jsonify(data)
-    except json.JSONDecodeError:
-        return jsonify({'ok': False, 'error': 'Respuesta IA inválida'}), 500
+        raw, sources = _gemini_search(prompt)
+        data = json.loads(_extract_json(raw))
     except Exception as e:
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        _log.warning('purchase_advisor: grounding falló, usando modo sin búsqueda: %s', e)
+        sources = []
+        data = json.loads(_extract_json(_gemini(prompt)))
+    if data.get('veredicto') not in ('comprar', 'esperar', 'no_comprar'):
+        data['veredicto'] = 'esperar'
+    data['sources'] = sources
+    return data
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────

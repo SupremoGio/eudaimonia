@@ -1,4 +1,6 @@
 import math
+import os
+import json
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
 from datetime import datetime
@@ -136,6 +138,45 @@ def submit_quiz(item_id):
     db.commit()
     return jsonify({'ok': True, 'score': score, 'recomendacion': rec, 'razones': reasons,
                     'score_anterior': prev['score']})
+
+
+@wishlist_bp.route('/api/item/<int:item_id>/ia', methods=['POST'])
+def analizar_ia(item_id):
+    """Analiza (o re-analiza) el artículo con el asesor de compra IA y guarda
+    el resultado en el artículo. Body opcional: {motivo} para darle contexto
+    nuevo («ya bajó de precio», «la mía se rompió»…)."""
+    from modules.guardarropa import routes as gr
+    if not os.environ.get('GEMINI_API_KEY'):
+        return jsonify({'ok': False, 'error': 'GEMINI_API_KEY no configurada'}), 503
+    with get_db() as db:
+        it = db.execute("SELECT * FROM wishlist_items WHERE id=?", (item_id,)).fetchone()
+    if not it:
+        return jsonify({'ok': False, 'error': 'Artículo no encontrado'}), 404
+    it = dict(it)
+    nombre = (it['nombre'] or '').strip()
+    url = (it.get('url') or '').strip()
+    if not url and nombre.lower().startswith('http'):
+        url = nombre   # se pegó el link como nombre
+    prenda = ' '.join(x for x in (nombre, it.get('marca') or '') if x)
+    motivo = ' · '.join(x for x in ((request.json or {}).get('motivo', '').strip()[:500], it.get('descripcion') or '') if x)
+    try:
+        data = gr.analizar_compra(prenda, float(it.get('precio_estimado') or 0), url, motivo, it.get('categoria') or '')
+    except json.JSONDecodeError:
+        return jsonify({'ok': False, 'error': 'Respuesta IA inválida'}), 500
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+    anterior = None
+    if it.get('ia_json'):
+        try:
+            anterior = json.loads(it['ia_json']).get('veredicto')
+        except ValueError:
+            anterior = None
+    now = datetime.now().isoformat(timespec='seconds')
+    with get_db() as db:
+        db.execute("UPDATE wishlist_items SET ia_json=?, ia_at=?, ia_veredicto_anterior=?, updated_at=? WHERE id=?",
+                   (json.dumps(data, ensure_ascii=False), now, anterior, now, item_id))
+        db.commit()
+    return jsonify({'ok': True, 'analisis': data, 'ia_at': now, 'veredicto_anterior': anterior})
 
 
 @wishlist_bp.route('/api/item/<int:item_id>/decide', methods=['POST'])

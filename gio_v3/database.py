@@ -1088,6 +1088,14 @@ def init_db():
                 db.execute("ALTER TABLE wishlist_items ADD COLUMN score_anterior INTEGER DEFAULT NULL")
             if "evaluaciones" not in wl_cols:
                 db.execute("ALTER TABLE wishlist_items ADD COLUMN evaluaciones INTEGER DEFAULT 0")
+            # Análisis IA (asesor de compra): último resultado (JSON), cuándo, y
+            # el veredicto anterior para mostrar cómo cambió al re-analizar.
+            if "ia_json" not in wl_cols:
+                db.execute("ALTER TABLE wishlist_items ADD COLUMN ia_json TEXT DEFAULT NULL")
+            if "ia_at" not in wl_cols:
+                db.execute("ALTER TABLE wishlist_items ADD COLUMN ia_at TEXT DEFAULT NULL")
+            if "ia_veredicto_anterior" not in wl_cols:
+                db.execute("ALTER TABLE wishlist_items ADD COLUMN ia_veredicto_anterior TEXT DEFAULT NULL")
             db.commit()
         except Exception as e:
             print(f"[DB] wishlist EC migration warning: {e}")
