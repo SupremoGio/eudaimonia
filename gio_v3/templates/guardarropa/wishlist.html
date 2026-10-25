@@ -39,6 +39,14 @@
     <div class="wl-grid" id="wl-list" aria-live="polite"></div>
   </section>
 </div>
+{% call ui.modal('m-ia', 'Análisis IA', eyebrow='Asesor de compra · IA', cls='wl-ia-modal') %}
+<div class="eu-modal-bd eu-vstack" id="ia-body"></div>
+<div class="eu-modal-ft">
+  <div class="eu-field wl-ia-motivo"><label class="eu-label" for="ia-motivo">¿Algo cambió? (opcional)</label><input class="eu-input" id="ia-motivo" maxlength="300" placeholder="Bajó a $1,399, la mía ya se rompió…"></div>
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-ia')">Cerrar</button>
+  <button type="button" class="eu-btn eu-btn--primary" id="ia-run"><i data-lucide="sparkles"></i><span>Re-analizar con IA</span></button>
+</div>
+{% endcall %}
 <script type="application/json" id="wl-data">{{ {'cats': categorias}|tojson }}</script>
 {% endblock %}
 

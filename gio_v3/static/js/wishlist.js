@@ -6,7 +6,10 @@
   var root = document.getElementById('wl');
   if (!root) return;
   var API = '/guardarropa/wishlist/api';
-  var step = 0, itemId = null, item = {}, ans = {}, result = null, listFilter = 'activos', reeval = null;
+  var step = 0, itemId = null, item = {}, ans = {}, result = null, listFilter = 'activos', reeval = null, iaItem = null;
+  var PA_LABEL = { comprar: 'Cómpralo', esperar: 'Espérate', no_comprar: 'No lo compres' };
+  var PA_TONE = { comprar: 'success', esperar: 'warning', no_comprar: 'danger' };
+  var PA_PRICE = { buena_oferta: 'Buena oferta', justo: 'Precio justo', caro: 'Caro', desconocido: 'Sin datos' };
   var REC = {
     compra_optima: { t: 'success', ic: 'circle-check', title: 'Adquisición estratégica óptima', desc: 'El artículo supera todos los filtros del protocolo. La compra está justificada por utilidad, eficiencia económica y diseño de vida.', action: 'Comprar', short: 'Óptima' },
     compra_limitada: { t: 'warning', ic: 'wrench', title: 'Compra limitada — inversión estratégica', desc: 'Estado financiero inestable, pero el artículo es CapEx productivo. Procede con máxima austeridad: precio mínimo, financiamiento 0% o ahorro previo obligatorio.', action: 'Comprar con austeridad', short: 'Limitada' },
@@ -266,11 +269,13 @@
         '<div class="wl-badges"><span class="eu-badge eu-badge--status ' + est[1] + '">' + est[0] + '</span>' +
         (rec ? '<span class="eu-badge" data-tone="' + rec.t + '">' + rec.short + '</span>' : '') +
         (it.decision_override ? '<span class="eu-badge eu-badge--warning">override</span>' : '') +
+        iaChip(it) +
         (has && it.score_anterior != null && it.score_anterior !== it.score ? '<span class="eu-badge" title="Score de la evaluación anterior">antes ' + it.score_anterior + '</span>' : '') +
         (it.comprar_con_ec ? '<span class="eu-badge eu-badge--ec"><i data-lucide="coins"></i>' + it.ec_pagado + ' EC</span>' : '') + '</div></div>' +
         '<div class="wl-item-actions">' +
         (it.estado !== 'comprado' ? '<button type="button" class="eu-iconbtn" data-mark="comprado" data-id="' + it.id + '" aria-label="Marcar como comprado: ' + esc(it.nombre) + '" title="Marcar como comprado"><i data-lucide="check"></i></button>'
           : '<button type="button" class="eu-iconbtn" data-mark="pendiente" data-id="' + it.id + '" aria-label="Regresar a la wishlist: ' + esc(it.nombre) + '" title="Regresar a la wishlist"><i data-lucide="undo-2"></i></button>') +
+        (it.estado !== 'comprado' ? '<button type="button" class="eu-iconbtn wl-ia-btn" data-ia="' + it.id + '" aria-label="' + (it.ia_json ? 'Re-analizar con IA' : 'Analizar con IA') + ': ' + esc(it.nombre) + '" title="' + (it.ia_json ? 'Re-analizar con IA' : 'Analizar con IA') + '"><i data-lucide="sparkles"></i></button>' : '') +
         (it.estado !== 'comprado' ? '<button type="button" class="eu-iconbtn" data-reeval="' + it.id + '" aria-label="' + (has ? 'Re-evaluar' : 'Evaluar') + ': ' + esc(it.nombre) + '" title="' + (has ? 'Re-evaluar con el protocolo' : 'Completar la evaluación') + '"><i data-lucide="refresh-cw"></i></button>' : '') +
         (it.estado !== 'descartado' ? '<button type="button" class="eu-iconbtn" data-mark="descartado" data-id="' + it.id + '" aria-label="Descartar: ' + esc(it.nombre) + '" title="Descartar"><i data-lucide="x"></i></button>' : '') +
         '<button type="button" class="eu-iconbtn wl-del" data-del="' + it.id + '" aria-label="Eliminar: ' + esc(it.nombre) + '" title="Eliminar"><i data-lucide="trash-2"></i></button></div></article>';
@@ -280,6 +285,9 @@
   $('wl-list').addEventListener('click', function (e) {
     var m = e.target.closest('[data-mark]'), d = e.target.closest('[data-del]'), rv = e.target.closest('[data-reeval]');
     if (rv) { reevaluar(+rv.dataset.reeval); return; }
+    var ia = e.target.closest('[data-ia]'), iv = e.target.closest('[data-ia-ver]');
+    if (ia) { abrirIA(+ia.dataset.ia, !ia.classList.contains('js-ia-ver')); return; }
+    if (iv) { abrirIA(+iv.dataset.iaVer, false); return; }
     if (m) {
       m.disabled = true;
       post(API + '/item/' + m.dataset.id + '/decide', { decision: m.dataset.mark }).then(function (r) {
@@ -295,6 +303,89 @@
       });
     }
   });
+  /* ── Análisis IA (asesor de compra) ─────────────────────────────────── */
+  // Se guarda en el artículo: el chip abre el último análisis; ✨ analiza o
+  // re-analiza (precios y rebajas cambian, el armario también).
+  var _items = {};
+  function iaData(it) { try { return it.ia_json ? JSON.parse(it.ia_json) : null; } catch (_) { return null; } }
+  function iaChip(it) {
+    _items[it.id] = it;
+    var a = iaData(it); if (!a) return '';
+    return '<button type="button" class="eu-badge wl-ia-chip" data-tone="' + PA_TONE[a.veredicto] + '" data-ia-ver="' + it.id + '" title="Ver análisis IA">' +
+      '<i data-lucide="sparkles"></i>IA: ' + esc(PA_LABEL[a.veredicto] || a.veredicto) + '</button>';
+  }
+  function fechaIA(s) {
+    if (!s) return '';
+    var d = new Date(s); if (isNaN(d)) return s;
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  }
+  function iaHTML(it, a, anterior) {
+    var v = a.veredicto || 'esperar', p = a.precio || {};
+    var chips = function (arr) {
+      return (arr || []).length ? '<div class="eu-chips wl-ia-chips">' + arr.map(function (x) { return '<span class="eu-chip">' + esc(x) + '</span>'; }).join('') + '</div>' : '';
+    };
+    var cambio = anterior && anterior !== v ? '<p class="wl-delta" data-tone="' + PA_TONE[v] + '"><i data-lucide="refresh-cw"></i>Antes: ' + esc(PA_LABEL[anterior] || anterior) + ' → ahora: ' + esc(PA_LABEL[v] || v) + '</p>'
+      : anterior ? '<p class="wl-delta"><i data-lucide="refresh-cw"></i>Mismo veredicto que el análisis anterior</p>' : '';
+    return '<div class="t-ui wl-ia-name">' + esc(it.nombre) + '</div>' +
+      '<div class="wl-ia-verdict" data-tone="' + PA_TONE[v] + '"><span class="eu-badge" data-tone="' + PA_TONE[v] + '">' + esc(PA_LABEL[v] || v) + '</span>' +
+      '<div class="eu-grow"><div class="t-card">' + esc(a.titular || '') + '</div><p class="t-meta">' + esc(a.resumen || '') + '</p></div>' +
+      '<div class="wl-ia-conf"><span class="t-data">' + (parseInt(a.confianza, 10) || 0) + '%</span><span class="t-eyebrow">confianza</span></div></div>' +
+      cambio +
+      '<div class="eu-grid-3 wl-ia-stats">' +
+        '<div class="eu-card eu-card--inset"><div class="t-eyebrow">Precio</div><div class="t-ui">' + esc(PA_PRICE[p.evaluacion] || p.evaluacion || '—') + '</div>' +
+          '<div class="t-meta">Mercado: ' + esc(p.rango_mercado || '—') + '</div><div class="t-meta fg-brand">Objetivo: ' + esc(p.precio_objetivo || '—') + '</div></div>' +
+        '<div class="eu-card eu-card--inset"><div class="t-eyebrow">Mejor momento</div><div class="t-meta">' + esc(a.mejor_momento || '—') + '</div>' +
+          (a.ahorro_esperando ? '<div class="t-meta fg-success">Ahorro: ' + esc(a.ahorro_esperando) + '</div>' : '') + '</div>' +
+        '<div class="eu-card eu-card--inset"><div class="t-eyebrow">Costo por uso</div><div class="t-meta">' + esc(a.costo_por_uso_est || '—') + '</div></div>' +
+      '</div>' +
+      ((a.factores || []).length ? '<ul class="wl-reasons">' + a.factores.map(function (f) {
+        var t = f.impacto === 'positivo' ? 'success' : f.impacto === 'negativo' ? 'danger' : 'warning';
+        var ic = t === 'success' ? 'check' : t === 'danger' ? 'x' : 'minus';
+        return '<li class="wl-reason" data-tone="' + t + '"><i data-lucide="' + ic + '"></i><span><b>' + esc(f.nombre) + '</b> — ' + esc(f.detalle) + '</span></li>';
+      }).join('') + '</ul>' : '') +
+      ((a.similares_en_armario || []).length ? '<div><div class="t-eyebrow">Ya tienes algo parecido</div>' + chips(a.similares_en_armario) + '</div>' : '') +
+      ((a.combina_con || []).length ? '<div><div class="t-eyebrow">Combina con</div>' + chips(a.combina_con) + '</div>' : '') +
+      ((a.alternativas || []).length ? '<div><div class="t-eyebrow">Alternativas</div>' + chips(a.alternativas) + '</div>' : '') +
+      (a.consejo_final ? '<blockquote class="t-quote wl-ia-quote">«' + esc(a.consejo_final) + '»</blockquote>' : '') +
+      ((a.sources || []).length ? '<div><div class="t-eyebrow">Fuentes consultadas</div><div class="eu-chips wl-ia-chips">' + a.sources.map(function (s) {
+        return '<a class="eu-chip" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + esc(s.title || 'fuente') + '</a>';
+      }).join('') + '</div></div>' : '') +
+      '<p class="t-meta">Analizado el ' + esc(fechaIA(it.ia_at)) + '</p>';
+  }
+  function abrirIA(id, correr) {
+    iaItem = _items[id]; if (!iaItem) return;
+    var a = iaData(iaItem);
+    $('ia-motivo').value = '';
+    $('ia-run').querySelector('span').textContent = a ? 'Re-analizar con IA' : 'Analizar con IA';
+    $('ia-body').innerHTML = a ? iaHTML(iaItem, a, iaItem.ia_veredicto_anterior)
+      : '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="sparkles"></i></div><div class="t-card">' + esc(iaItem.nombre) + '</div><p>La IA revisa precios y rebajas actuales' + ((iaItem.categoria || 'Ropa & Calzado') === 'Ropa & Calzado' ? ', tu armario' : '') + ' y te dice si conviene comprar, esperar o no comprar.</p></div>';
+    icons(); euModal.open('m-ia');
+    // El foco inicial va al título, no al campo opcional (en celular abría el teclado y bajaba todo).
+    setTimeout(function () { var t = $('m-ia-t'); t.setAttribute('tabindex', '-1'); t.focus({ preventScroll: true }); [$('m-ia'), $('m-ia').querySelector('.eu-modal'), $('ia-body')].forEach(function (el) { el.scrollTop = 0; }); }, 30);
+    if (correr) correrIA();
+  }
+  async function correrIA() {
+    var btn = $('ia-run'), lbl = btn.querySelector('span');
+    if (!iaItem || btn.disabled) return;
+    btn.disabled = true; btn.setAttribute('aria-busy', 'true'); lbl.textContent = 'Investigando precios…';
+    $('ia-body').insertAdjacentHTML('afterbegin', '<div class="eu-skel wl-ia-skel" id="ia-skel" aria-hidden="true"></div>');
+    try {
+      var r = await post(API + '/item/' + iaItem.id + '/ia', { motivo: $('ia-motivo').value.trim() });
+      if (!r.ok) { toast('Error IA: ' + (r.error || 'desconocido'), 'err'); return; }
+      iaItem = Object.assign({}, iaItem, { ia_json: JSON.stringify(r.analisis), ia_at: r.ia_at, ia_veredicto_anterior: r.veredicto_anterior });
+      _items[iaItem.id] = iaItem;
+      $('ia-body').innerHTML = iaHTML(iaItem, r.analisis, r.veredicto_anterior); icons();
+      $('ia-body').scrollTop = 0;
+      toast('Análisis IA listo: ' + (PA_LABEL[r.analisis.veredicto] || r.analisis.veredicto), 'ok');
+      loadList();
+    } catch (_) { toast('Error al conectar con IA', 'err'); }
+    finally {
+      var sk = $('ia-skel'); if (sk) sk.remove();
+      btn.disabled = false; btn.removeAttribute('aria-busy'); lbl.textContent = 'Re-analizar con IA';
+    }
+  }
+  $('ia-run').addEventListener('click', correrIA);
+
   /* ── Re-evaluar ─────────────────────────────────────────────────────── */
   // Abre el protocolo con el artículo y las respuestas anteriores ya cargadas:
   // se pueden corregir datos (p. ej. el precio) y cambiar cualquier respuesta.

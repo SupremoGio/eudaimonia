@@ -118,3 +118,23 @@
 .wl-reeval .eu-btn{flex-shrink:0}
 .wl-delta{display:inline-flex;align-items:center;gap:6px;margin:var(--sp-2) 0 0;font-size:var(--fs-13);color:var(--tone-fg,var(--fg-2))}
 .wl-delta svg{width:16px;height:16px}
+/* Análisis IA en la wishlist */
+.wl-ia-chip{cursor:pointer;display:inline-flex;align-items:center;gap:4px;border:1px solid var(--tone-border,var(--border-subtle));background:var(--tone-bg,transparent);color:var(--tone-fg,var(--fg-2))}
+.wl-ia-chip svg{width:11px;height:11px}
+.wl-ia-chip:hover{border-color:var(--tone-fg,var(--border-strong))}
+.wl-ia-modal .eu-badge[data-tone]{background:var(--tone-bg);color:var(--tone-fg);border-color:var(--tone-border)}
+.wl-ia-btn{color:var(--fg-brand)}
+.wl-ia-name{color:var(--fg-2);word-break:break-all}
+.wl-ia-verdict{display:flex;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--r-md);background:var(--tone-bg);border:1px solid var(--tone-border)}
+.wl-ia-verdict .t-meta{margin:4px 0 0}
+.wl-ia-conf{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.wl-ia-conf .t-data{font-size:var(--fs-20);color:var(--tone-fg)}
+.wl-ia-stats{gap:var(--sp-2)}
+.wl-ia-stats .eu-card{padding:var(--sp-3);display:flex;flex-direction:column;gap:4px}
+@media (max-width:639px){.wl-ia-stats{grid-template-columns:minmax(0,1fr)}}
+.wl-ia-chips{flex-wrap:wrap;overflow:visible}
+.wl-ia-quote{margin:0}
+.wl-ia-skel{height:72px;border-radius:var(--r-md)}
+.wl-ia-modal .eu-modal{max-width:680px}
+.wl-ia-modal .eu-modal-ft{flex-wrap:wrap}
+.wl-ia-motivo{flex:1 1 100%;margin:0}
