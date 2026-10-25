@@ -92,7 +92,19 @@ def submit_quiz(item_id):
 
     score, rec, reasons = _compute_protocol(d)
 
+    prev = db.execute("SELECT score FROM wishlist_items WHERE id=?", (item_id,)).fetchone()
+    if not prev:
+        return jsonify({'ok': False, 'error': 'Artículo no encontrado'}), 404
     now = datetime.now().isoformat()
+    # Re-evaluar puede corregir los datos del artículo (p. ej. el precio).
+    campos = {k: d[k] for k in ('nombre', 'categoria', 'descripcion', 'url', 'marca') if k in d}
+    if 'precio_estimado' in d:
+        campos['precio_estimado'] = float(d.get('precio_estimado') or 0)
+    if (campos.get('nombre') or 'x').strip():
+        for k, v in campos.items():
+            db.execute(f"UPDATE wishlist_items SET {k}=? WHERE id=?", (v.strip() if isinstance(v, str) else v, item_id))
+    db.execute("""UPDATE wishlist_items SET score_anterior=?, evaluaciones=COALESCE(evaluaciones,0)+1
+                  WHERE id=?""", (prev['score'], item_id))
     db.execute(
         """UPDATE wishlist_items SET
            dias_deseo=?, q1_persiste=?,
@@ -122,7 +134,8 @@ def submit_quiz(item_id):
         ),
     )
     db.commit()
-    return jsonify({'ok': True, 'score': score, 'recomendacion': rec, 'razones': reasons})
+    return jsonify({'ok': True, 'score': score, 'recomendacion': rec, 'razones': reasons,
+                    'score_anterior': prev['score']})
 
 
 @wishlist_bp.route('/api/item/<int:item_id>/decide', methods=['POST'])
