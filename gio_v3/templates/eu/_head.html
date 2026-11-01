@@ -35,11 +35,13 @@
   <!-- Tailwind precompilado en build time (antes: cdn.tailwindcss.com,
        compila en cada carga del navegador — ver gio_v3/tailwind.config.js) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind-built.css') }}">
-  <!-- Versión fijada (antes @latest — un release nuevo de Lucide podía cambiar
-       íconos o su API de montaje en producción sin ningún commit de por medio;
-       ver auditoría F-03). Actualizar a mano cuando se quiera la versión nueva,
-       no automáticamente en cada carga. -->
-  <script src="https://unpkg.com/lucide@1.31.0"></script>
+  <!-- Lucide servido desde la propia app (static/js/vendor), no desde un CDN:
+       con unpkg.com, si el celular no lo alcanzaba (red lenta, bloqueador,
+       caída del CDN) window.lucide no existía y la app entera se veía sin
+       íconos (reportado 2026-11-01 en el iPhone). Versión fijada en el nombre
+       del archivo (auditoría F-03): para actualizar, copiar
+       dist/umd/lucide.min.js del paquete npm `lucide` con el número nuevo. -->
+  <script src="{{ url_for('static', filename='js/vendor/lucide-1.31.0.min.js') }}"></script>
   <link rel="stylesheet" href="/static/css/app.css">
 
   <style>
