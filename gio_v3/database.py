@@ -6963,6 +6963,25 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_2026_11_01 migration warning: {e}")
 
+        # ── FINANZAS — Expense: folio 37990 (florería + depósito de $2,299 del
+        # 31/03), el retiro de $1,500 vuelve a la colecta y el depósito de
+        # $1,862 del 25/03 se concilia con su reporte. Ver
+        # modules/finanzas/estados/correcciones_expense_37990.py.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_folio_37990'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_expense_37990 import aplicar as _aplicar_37990
+                _r = _aplicar_37990(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_folio_37990", f"Folio 37990: {_r}")
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_folio_37990: {_r}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_folio_37990 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que

@@ -624,13 +624,16 @@ def posibles_cargos(db, item, dias: int = 45) -> list[dict]:
     """, (item['monto'], (f - timedelta(days=dias)).isoformat(), (f + timedelta(days=dias)).isoformat())).fetchall()]
 
 
-def conciliar(db) -> list[str]:
-    """Crea un lote por depósito emparejado; devuelve un resumen por lote."""
+def conciliar(db, solo=None) -> list[str]:
+    """Crea un lote por depósito emparejado; devuelve un resumen por lote.
+    `solo` (fecha, monto) limita a ese depósito y omite los de viáticos."""
     hechos = []
     for p in plan(db):
         if not p['pasada']:
             continue
         d = p['deposito']
+        if solo and not _es(d, solo):
+            continue
         if d.get('en_lote'):
             continue
         con = [g for g in p['gastos'] if g['cargo']]
@@ -652,7 +655,7 @@ def conciliar(db) -> list[str]:
                       + (f", {len(sin)} sin cargo" if sin else ""))
     # Los de viáticos quedan en un lote propio sin gastos: así salen de
     # «depósitos sin lote» / «sin conciliar» y el nombre dice qué pagaron.
-    for d in _depositos_viaticos(db):
+    for d in ([] if solo else _depositos_viaticos(db)):
         nombre, nota = ((f"Reembolso sin detalle {d['fecha']}", "Plataforma de Expense: reembolso sin detalle (no se encontró el reporte)")
                         if _sin_detalle(d) else
                         (f"Viáticos {d['fecha']}", "Plataforma de Expense: pagado de viáticos (sin gastos en la plataforma)"))
