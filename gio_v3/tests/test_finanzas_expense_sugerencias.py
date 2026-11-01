@@ -72,9 +72,9 @@ def test_sueltos(test_db):
         assert s['total_depositos'] == 12345.0 and s['total_facturas'] == 999.0
 
 
-def test_tanda_de_facturas_seguidas_y_aproximada(test_db):
+def test_tanda_de_facturas_seguidas_sin_aproximadas(test_db):
     """Un depósito grande paga una tanda de facturas seguidas (aunque haya
-    otras combinaciones posibles); otro no cuadra exacto: sale aproximado."""
+    otras combinaciones posibles); otro no cuadra exacto: no se sugiere."""
     with database.get_db() as db:
         tanda = [_mov(db, f'2024-0{m}-{d:02d}', f'FACT {m}{d}', monto, 'EXPENSE')
                  for m, d, monto in ((2, 1, 1500.0), (2, 10, 820.5), (2, 20, 2310.0), (3, 2, 999.0), (3, 15, 4100.0))]
@@ -84,5 +84,4 @@ def test_tanda_de_facturas_seguidas_y_aproximada(test_db):
         db.commit()
         s = {x['deposito']['id']: x for x in E.sugerencias(db)}
         assert [f['id'] for f in s[dep]['facturas']] == tanda and s[dep]['confianza'] == 'alta'
-        assert s[casi]['confianza'] == 'aproximada' and [f['id'] for f in s[casi]['facturas']] == [otra]
-        assert s[casi]['diferencia'] == 100.0
+        assert casi not in s                      # ya no hay sugerencias aproximadas

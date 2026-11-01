@@ -6982,6 +6982,31 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_folio_37990 migration warning: {e}")
 
+        # ── FINANZAS — Expense: columna «cerrado» de los lotes (siempre) y
+        # cierre del histórico ≤2025 marcado como pagado, una vez. Va después
+        # de las correcciones de folios para que esas se apliquen primero.
+        # Ver modules/finanzas/estados/expense_cierre_historico.py.
+        try:
+            from modules.finanzas.estados.expense_cierre_historico import asegurar_columna as _col_cerrado
+            _col_cerrado(db)
+            db.commit()
+        except Exception as e:
+            print(f"[DB] est_expense_lotes.cerrado warning: {e}")
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_cierre_2025'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.expense_cierre_historico import aplicar as _cierre_2025
+                _r = _cierre_2025(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_cierre_2025", f"Cierre histórico Expense ≤2025: {_r}")
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_cierre_2025: {_r}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_cierre_2025 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que

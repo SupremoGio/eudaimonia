@@ -20,6 +20,10 @@ from datetime import datetime
 from utils import now_local
 
 PENDIENTE, PARCIAL, REEMBOLSADO, VACIO = 'Pendiente', 'Reembolsado parcial', 'Reembolsado', 'Sin gastos'
+# Histórico (≤2025) cerrado sin conciliar (el usuario, 2026-11-01: «del 2025
+# para atrás ya no me quebraré la cabeza… lo marcamos como pagado»): el lote
+# no suma a por cobrar y sus facturas quedan Pagado. cierre_historico.py.
+CERRADO = 'Cerrado'
 ESTATUS_TERCERO = 'TERCERO'
 # Redondeos del depósito vs. la suma de facturas: hasta $1 de diferencia se
 # da por reembolsado completo.
@@ -64,18 +68,20 @@ def listar(db) -> list[dict]:
         total = round(sum(x['monto'] for x in g), 2)
         depositado = round(sum(x['monto'] for x in d), 2)
         fechas = sorted(x['fecha'] for x in g)
+        cerrado = bool(dict(r).get('cerrado'))
         out.append({
             'id': r['id'], 'nombre': r['nombre'], 'notas': r['notas'] or '',
             'desde': fechas[0] if fechas else None, 'hasta': fechas[-1] if fechas else None,
             'gastos': g, 'depositos': d,
             'total': total, 'depositado': depositado,
-            'pendiente': round(max(total - depositado, 0), 2),
+            'pendiente': 0.0 if cerrado else round(max(total - depositado, 0), 2),
             'diferencia': round(depositado - total, 2),
             'terceros': round(sum(x['monto'] for x in g if x['estatus_reembolso'] == ESTATUS_TERCERO), 2),
-            'estado': estado(total, depositado),
+            'estado': CERRADO if cerrado else estado(total, depositado),
+            'cerrado': cerrado,
         })
     # Abiertos primero, luego por la factura más reciente.
-    orden = {PENDIENTE: 0, PARCIAL: 0, VACIO: 1, REEMBOLSADO: 2}
+    orden = {PENDIENTE: 0, PARCIAL: 0, VACIO: 1, REEMBOLSADO: 2, CERRADO: 3}
     out.sort(key=lambda l: (orden[l['estado']], -(int((l['hasta'] or '0000-00-00').replace('-', '')))))
     return out
 
@@ -125,8 +131,8 @@ def sincronizar(db, lote_id: int) -> None:
     lote = next((l for l in listar(db) if l['id'] == lote_id), None)
     if not lote or not lote['gastos']:
         return
-    ok = lote['estado'] == REEMBOLSADO
-    fecha = max((d['fecha'] for d in lote['depositos']), default=None) if ok else None
+    ok = lote['estado'] in (REEMBOLSADO, CERRADO)
+    fecha = max((d['fecha'] for d in lote['depositos']), default=lote['hasta']) if ok else None
     ids = [g['id'] for g in lote['gastos']]
     ph = ','.join('?' * len(ids))
     db.execute(f"""
@@ -234,11 +240,8 @@ def _bloque_seguido(montos: list[float], objetivo: float) -> list[int] | None:
 PASADAS = ((100, 'alta'), (185, 'media'), (370, 'baja'))
 PAR_DIAS = 45
 BLOQUE_DIAS = 400          # tanda de facturas seguidas: hasta ~13 meses antes
-APROX_DIAS = 185           # aproximadas: la combinación más cercana en ~6 meses
-
-
-def _tol_aprox(monto: float) -> float:
-    return max(300.0, round(monto * 0.03, 2))
+# Sin sugerencias «aproximadas» (hasta $300 de diferencia): armaron lotes
+# con facturas que no eran (el usuario, 2026-11-01). Solo lo que cuadra ±$1.
 
 
 def _depositos_sin_lote(db) -> list[dict]:
@@ -267,8 +270,6 @@ def sugerencias(db) -> list[dict]:
         montos = [g['monto'] for g in cand]
         if modo == 'bloque':
             idx = _bloque_seguido(montos, objetivo)
-        elif modo == 'aprox':
-            idx = _combinacion(montos, objetivo, _tol_aprox(objetivo))
         else:
             idx = _combinacion(montos, objetivo)
         if idx is None:
@@ -301,9 +302,6 @@ def sugerencias(db) -> list[dict]:
             continue
         if (date.fromisoformat(b['fecha']) - date.fromisoformat(a['fecha'])).days <= PAR_DIAS:
             buscar([a, b], PASADAS[1][0], 'media')
-    for d in deps:                                   # lo más cercano, con diferencia
-        if d['id'] not in emparejados:
-            buscar([d], APROX_DIAS, 'aproximada', 'aprox')
     out.sort(key=lambda x: x['deposito']['fecha'])
     return out
 

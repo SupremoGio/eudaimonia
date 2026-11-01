@@ -10,10 +10,10 @@ import { Empty, ErrorNote, Field, Icon, Modal, Progress, Skel, confirmDialog, to
 // calcula solo y marca las facturas como Pagado cuando el lote queda cubierto;
 // las «Pagado a compañero» conservan su estatus.
 
-const TONE = { Pendiente: 'warning', 'Reembolsado parcial': 'info', Reembolsado: 'success', 'Sin gastos': 'neutral' };
+const TONE = { Pendiente: 'warning', 'Reembolsado parcial': 'info', Reembolsado: 'success', 'Sin gastos': 'neutral', Cerrado: 'neutral' };
 // Etiquetas en lenguaje llano: «conciliado» = el depósito de la empresa cubre las facturas del lote.
-const ESTADO_LBL = { Pendiente: 'Esperando pago', 'Reembolsado parcial': 'Pago parcial', Reembolsado: 'Conciliado', 'Sin gastos': 'Vacío' };
-const ESTADO_ICON = { Pendiente: 'clock', 'Reembolsado parcial': 'circle-dashed', Reembolsado: 'circle-check', 'Sin gastos': 'circle' };
+const ESTADO_LBL = { Pendiente: 'Esperando pago', 'Reembolsado parcial': 'Pago parcial', Reembolsado: 'Conciliado', 'Sin gastos': 'Vacío', Cerrado: 'Histórico · pagado' };
+const ESTADO_ICON = { Pendiente: 'clock', 'Reembolsado parcial': 'circle-dashed', Reembolsado: 'circle-check', 'Sin gastos': 'circle', Cerrado: 'archive' };
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const cerca = (a, b) => Math.abs(a - b) <= 1;
 
@@ -184,6 +184,17 @@ function LigarDeposito({ lote, cand, onClose, onSaved }) {
 
 /** Cuadre del lote: facturas vs. lo que ya depositó la empresa, con barra. */
 function LoteBalance({ l }) {
+  if (l.estado === 'Cerrado') {
+    return (
+      <div className="fz-ex-bal" data-tone="neutral">
+        <div className="fz-ex-bal-row">
+          <span><span className="t-meta">Facturas</span> <b className="num">{money(l.total)}</b></span>
+          <span><span className="t-meta">Depósitos</span> <b className="num">{money(l.depositado)}</b></span>
+        </div>
+        <div className="t-meta">Cerrado sin conciliar · cuenta como pagado</div>
+      </div>
+    );
+  }
   const pct = l.total > 0 ? (l.depositado / l.total) * 100 : 0;
   const ok = l.estado === 'Reembolsado';
   return (
@@ -255,10 +266,12 @@ function LoteCard({ l, cand, saved, open }) {
         </tbody>
       </table>
       <div className="eu-hstack fz-pad fz-ex-acts">
-        {l.estado !== 'Reembolsado' && (
+        {l.estado !== 'Reembolsado' && l.estado !== 'Cerrado' && (
           <button type="button" className="eu-btn eu-btn--secondary eu-btn--sm" onClick={() => open({ kind: 'dep', lote: l })} disabled={!cand}>Ligar depósito</button>
         )}
-        <button type="button" className="eu-btn eu-btn--ghost eu-btn--sm" onClick={() => open({ kind: 'add', lote: l })} disabled={!cand}>Agregar facturas</button>
+        {l.estado !== 'Cerrado' && (
+          <button type="button" className="eu-btn eu-btn--ghost eu-btn--sm" onClick={() => open({ kind: 'add', lote: l })} disabled={!cand}>Agregar facturas</button>
+        )}
         <span className="eu-grow" />
         <button type="button" className="eu-iconbtn" aria-label={`Borrar lote ${l.nombre}`} title="Borrar lote" onClick={borrar}><Icon name="trash-2" /></button>
       </div>
@@ -300,7 +313,7 @@ function Sugerencias({ refreshKey, saved }) {
           <h2 className="t-card">Posibles coincidencias <span className="eu-badge eu-badge--info">{lista.length}</span></h2>
           <span className="t-meta">Encontré depósitos de la empresa que suman lo mismo que un grupo de tus facturas. Ábrelas para ver qué facturas son y confirma con «Crear lote».</span>
           <details className="t-meta fz-ex-how"><summary>¿Cómo las busco?</summary>
-            Facturas que suman el depósito (±$1): primero tandas seguidas, luego combinaciones de hasta 3, 6 y 12 meses antes y pares de depósitos. Las «aproximadas» son la combinación más cercana (hasta 3% o $300 de diferencia): revísalas antes de confirmar.
+            Solo facturas que suman el depósito (±$1): primero tandas seguidas, luego combinaciones de hasta 3, 6 y 12 meses antes y pares de depósitos. Lo que no cuadra exacto no se sugiere: ármalo a mano.
           </details>
         </div>
         <button type="button" className="eu-btn eu-btn--secondary eu-btn--sm" disabled={busy || !lista.some((x) => x.confianza === 'alta')}
@@ -389,7 +402,8 @@ export default function Expense() {
   const d = res.data;
   const sueltosPend = (d?.sin_lote || []).filter((g) => (g.estatus_reembolso || 'PENDIENTE') === 'PENDIENTE');
 
-  const abiertos = (d?.lotes || []).filter((l) => l.estado !== 'Reembolsado');
+  const abiertos = (d?.lotes || []).filter((l) => l.estado !== 'Reembolsado' && l.estado !== 'Cerrado');
+  const historico = (d?.lotes || []).filter((l) => l.estado === 'Cerrado');
   const cerrados = (d?.lotes || []).filter((l) => l.estado === 'Reembolsado');
   const totalSueltos = sueltosPend.reduce((s, g) => s + g.monto, 0);
   const totalAbiertos = abiertos.reduce((s, l) => s + l.pendiente, 0);
@@ -462,6 +476,14 @@ export default function Expense() {
               <summary className="t-card fz-ex-sec"><Icon name="circle-check" />Conciliados <span className="t-meta">· {plural(cerrados.length, 'lote', 'lotes')} cubiertos por su depósito</span></summary>
               <div className="eu-vstack fz-gap-3">
                 {cerrados.map((l) => <LoteCard key={l.id} l={l} cand={cand.data} saved={saved} open={setModal} />)}
+              </div>
+            </details>
+          )}
+          {historico.length > 0 && (
+            <details className="fz-ex-done">
+              <summary className="t-card fz-ex-sec"><Icon name="archive" />Histórico cerrado <span className="t-meta">· 2025 y antes, marcado como pagado sin conciliar · {plural(historico.length, 'lote', 'lotes')} · {money(historico.reduce((s, l) => s + l.total, 0))}</span></summary>
+              <div className="eu-vstack fz-gap-3">
+                {historico.map((l) => <LoteCard key={l.id} l={l} cand={cand.data} saved={saved} open={setModal} />)}
               </div>
             </details>
           )}
