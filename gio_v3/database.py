@@ -6982,6 +6982,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_expense_folio_37990 migration warning: {e}")
 
+        # ── FINANZAS — deuda con Papá por el seguro del carro 2026, según la
+        # hoja del usuario (debe $1,666). Ver
+        # modules/finanzas/estados/correcciones_seguro_papa_2026.py.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_seguro_papa_2026_11'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_seguro_papa_2026 import aplicar as _seguro_papa
+                _r = _seguro_papa(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_seguro_papa_2026_11", f"Seguro del carro con Papá: {_r}")
+                )
+                db.commit()
+                print(f"[DB] finanzas_seguro_papa_2026_11: {_r}")
+            except Exception as e:
+                print(f"[DB] finanzas_seguro_papa_2026_11 migration warning: {e}")
+
         # ── FINANZAS — Expense: columna «cerrado» de los lotes (siempre) y
         # cierre del histórico ≤2025 marcado como pagado, una vez. Va después
         # de las correcciones de folios para que esas se apliquen primero.
