@@ -6943,6 +6943,26 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_reconciliar_bbva_tdc_2026_07_09 migration warning: {e}")
 
+        # ── FINANZAS — Expense: completar el lote del folio 40524 con los
+        # cargos que faltaban, deshacer el lote «Expense 2026-07-15» (sin
+        # depósito, con facturas de otros folios) y que ningún lote sin
+        # depósito deje sus facturas como Pagado. Ver
+        # modules/finanzas/estados/correcciones_expense_2026_11_01.py.
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_expense_2026_11_01'"
+        ).fetchone():
+            try:
+                from modules.finanzas.estados.correcciones_expense_2026_11_01 import aplicar as _aplicar_exp_1101
+                _r = _aplicar_exp_1101(db)
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_expense_2026_11_01", f"Expense 2026-11-01: {_r}")
+                )
+                db.commit()
+                print(f"[DB] finanzas_expense_2026_11_01: {_r}")
+            except Exception as e:
+                print(f"[DB] finanzas_expense_2026_11_01 migration warning: {e}")
+
         # ── WISHLIST / PRIORIDADES — duplicados (p. ej. «Apple Watch» dos veces).
         # Una sola vez: por cada nombre repetido se queda el registro más
         # completo y, a igualdad, el más reciente; se le copian los campos que
