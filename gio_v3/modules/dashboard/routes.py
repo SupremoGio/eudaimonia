@@ -439,18 +439,18 @@ def _build_deadlines(today_dt: date) -> list:
             WHERE is_active=1
               AND COALESCE(next_date, target_date) IS NOT NULL
               AND COALESCE(next_date, target_date) <= ?
-            ORDER BY fecha LIMIT 8
+            ORDER BY fecha
         """, (horizon,)).fetchall():
             raw.append(dict(r))
 
         for r in db.execute("""
-            SELECT id, title AS label, NULL AS rem_type,
+            SELECT id, title AS label, NULL AS rem_type, importante, priority, cuadrante,
                    fecha_limite AS fecha, 'task' AS kind
             FROM gtd_tasks
             WHERE (completado IS NULL OR completado=0)
               AND fecha_limite IS NOT NULL AND fecha_limite <> ''
               AND fecha_limite <= ?
-            ORDER BY fecha_limite LIMIT 8
+            ORDER BY fecha_limite
         """, (horizon,)).fetchall():
             raw.append(dict(r))
 
@@ -464,7 +464,7 @@ def _build_deadlines(today_dt: date) -> list:
             WHERE estado='programado'
               AND fecha IS NOT NULL
               AND fecha <= ?
-            ORDER BY fecha, hora LIMIT 8
+            ORDER BY fecha, hora
         """, (horizon,)).fetchall():
             raw.append(dict(r))
 
@@ -507,8 +507,54 @@ def _build_deadlines(today_dt: date) -> list:
         except Exception:
             pass
 
-    deadlines.sort(key=lambda x: x['days'])
-    return deadlines[:8]
+    # Sin tope por fuente ni total: antes cada consulta traía solo las 8 más
+    # viejas y la lista se cortaba a 8 por días, así que unos cuantos vencidos
+    # viejos sacaban lo de hoy. Ahora se ordena por urgencia e importancia y
+    # la plantilla pliega lo que pase de RADAR_VISIBLES (nunca lo de hoy).
+    for d in deadlines:
+        d['importancia'] = _importancia(d)
+    deadlines.sort(key=_radar_orden)
+    visibles = max(RADAR_VISIBLES, sum(1 for d in deadlines if _radar_tramo(d['days']) == 0))
+    for i, d in enumerate(deadlines):
+        d['extra'] = i >= visibles
+    return deadlines
+
+
+# Filas a la vista en «Pendiente»; el resto queda en «Ver N más».
+RADAR_VISIBLES = 8
+_PRIORIDAD_ALTA = {'alta', 'high', 'urgente', 'urgent', 'critica', 'crítica'}
+
+
+def _importancia(d: dict) -> int:
+    """0 normal · 1 importante · 2 muy importante. Tareas: «importante» de la
+    matriz o prioridad alta. Recordatorios de Finanzas (pagos, cortes): un
+    olvido cuesta dinero. Partidos: tienen hora fija."""
+    t = d.get('type')
+    if t == 'task':
+        if d.get('importante'):
+            return 2
+        return 1 if str(d.get('priority') or '').lower() in _PRIORIDAD_ALTA else 0
+    if t == 'reminder':
+        return 1 if d.get('tema') == 'finanzas' else 0
+    if t == 'partido':
+        return 1
+    return 0
+
+
+def _radar_tramo(days: int) -> int:
+    """0 hoy o vencido en la última semana · 1 mañana/pasado ·
+    2 vencido hace más de una semana · 3 el resto de la semana."""
+    if -7 <= days <= 0:
+        return 0
+    if days < -7:
+        return 2
+    return 1 if days <= 2 else 3
+
+
+def _radar_orden(d: dict):
+    # Dentro del tramo: lo importante primero; luego lo más cercano a hoy
+    # (hoy antes que ayer, ayer antes que hace 5 días).
+    return (_radar_tramo(d['days']), -d['importancia'], abs(d['days']))
 
 
 # ── Redirecciones de compatibilidad ──────────────────────────────────────────

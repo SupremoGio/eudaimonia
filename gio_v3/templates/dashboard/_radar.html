@@ -9,7 +9,14 @@
   </div>
   {% if data.deadlines %}
   <div class="eu-list js-radar-list">
-    {% for dl in data.deadlines %}{% include "dashboard/_radar_row.html" %}{% endfor %}
+    {% for dl in data.deadlines if not dl.extra %}{% include "dashboard/_radar_row.html" %}{% endfor %}
+    {% set extra = data.deadlines|selectattr('extra')|list %}
+    {% if extra %}
+    <details class="dash-radar-more">
+      <summary class="t-meta">Ver {{ extra|length }} más</summary>
+      {% for dl in extra %}{% include "dashboard/_radar_row.html" %}{% endfor %}
+    </details>
+    {% endif %}
   </div>
   {% endif %}
   <div class="js-radar-empty"{% if data.deadlines %} hidden{% endif %}>

@@ -110,3 +110,4 @@
 .dash-notif-hd{display:flex;gap:6px;align-items:center;padding:var(--sp-3) var(--sp-4) var(--sp-2)}
 .dash-notif-sec.is-urgent .dash-notif-hd{color:var(--danger-fg)}
 .dash-notif-sec+.dash-notif-sec{border-top:1px solid var(--border-subtle)}
+.dash-radar-more>summary{cursor:pointer;padding:var(--sp-2) var(--sp-4)}
