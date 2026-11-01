@@ -7000,6 +7000,18 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_seguro_papa_2026_11 migration warning: {e}")
 
+        # ── FINANZAS — Expense: folios mandados por el usuario (lote aunque no
+        # haya depósito; el depósito se liga solo al llegar). Cada arranque,
+        # idempotente. Ver modules/finanzas/estados/expense_folios.py.
+        try:
+            from modules.finanzas.estados.expense_folios import aplicar as _folios
+            _r = _folios(db)
+            db.commit()
+            if any(_r.values()):
+                print(f"[DB] expense_folios: {_r}")
+        except Exception as e:
+            print(f"[DB] expense_folios warning: {e}")
+
         # ── FINANZAS — Expense: columna «cerrado» de los lotes (siempre) y
         # cierre del histórico ≤2025 marcado como pagado, una vez. Va después
         # de las correcciones de folios para que esas se apliquen primero.

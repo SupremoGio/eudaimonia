@@ -2530,6 +2530,12 @@ def _insertar_deposito(db, lid, mid):
 def expense_lotes():
     if not _ok(): return _locked()
     with get_db() as db:
+        try:   # folios del usuario: ligar facturas/depósito que ya llegaron
+            from . import expense_folios as _folios
+            if any(_folios.aplicar(db).values()):
+                db.commit()
+        except Exception:
+            pass
         return jsonify(_lotes.resumen(db))
 
 
