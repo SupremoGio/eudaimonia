@@ -3,7 +3,7 @@ import { BASE, api } from '../lib/api.js';
 import { useApp } from '../lib/ctx.js';
 import { fmtDate, money, norm } from '../lib/format.js';
 import { bankName } from '../lib/meta.js';
-import { Empty, ErrorNote, Field, Icon, Modal, Skel, confirmDialog, toast, useLoad } from '../components/ui.jsx';
+import { Empty, ErrorNote, Field, Icon, Modal, Progress, Skel, confirmDialog, toast, useLoad } from '../components/ui.jsx';
 
 // Conciliación de Expense por lotes (solo PC). Varias facturas se suben
 // juntas y la empresa paga un depósito (o varios) por el lote. El estado se
@@ -11,6 +11,9 @@ import { Empty, ErrorNote, Field, Icon, Modal, Skel, confirmDialog, toast, useLo
 // las «Pagado a compañero» conservan su estatus.
 
 const TONE = { Pendiente: 'warning', 'Reembolsado parcial': 'info', Reembolsado: 'success', 'Sin gastos': 'neutral' };
+// Etiquetas en lenguaje llano: «conciliado» = el depósito de la empresa cubre las facturas del lote.
+const ESTADO_LBL = { Pendiente: 'Esperando pago', 'Reembolsado parcial': 'Pago parcial', Reembolsado: 'Conciliado', 'Sin gastos': 'Vacío' };
+const ESTADO_ICON = { Pendiente: 'clock', 'Reembolsado parcial': 'circle-dashed', Reembolsado: 'circle-check', 'Sin gastos': 'circle' };
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const cerca = (a, b) => Math.abs(a - b) <= 1;
 
@@ -179,6 +182,26 @@ function LigarDeposito({ lote, cand, onClose, onSaved }) {
   );
 }
 
+/** Cuadre del lote: facturas vs. lo que ya depositó la empresa, con barra. */
+function LoteBalance({ l }) {
+  const pct = l.total > 0 ? (l.depositado / l.total) * 100 : 0;
+  const ok = l.estado === 'Reembolsado';
+  return (
+    <div className="fz-ex-bal" data-tone={TONE[l.estado]}>
+      <div className="fz-ex-bal-row">
+        <span><span className="t-meta">Facturas</span> <b className="num">{money(l.total)}</b></span>
+        <span><span className="t-meta">Recibido</span> <b className="num fg-success">{money(l.depositado)}</b></span>
+      </div>
+      <Progress className="fz-progress-tone" pct={pct} label={`${l.nombre}: recibido ${Math.round(pct)}%`} />
+      <div className="t-meta fz-tone-fg">
+        {ok
+          ? (l.diferencia > 1 ? `✓ Cubierto · depositaron ${money(l.diferencia)} de más` : '✓ El depósito cubre todas las facturas')
+          : l.depositado > 0 ? `Faltan ${money(l.pendiente)} por recibir` : `Falta ligar el depósito de ${money(l.pendiente)}`}
+      </div>
+    </div>
+  );
+}
+
 function LoteCard({ l, cand, saved, open }) {
   async function quitarGasto(g) {
     if (!await confirmDialog(`¿Sacar «${g.descripcion}» del lote?`, { confirmLabel: 'Sacar' })) return;
@@ -199,16 +222,13 @@ function LoteCard({ l, cand, saved, open }) {
     <section className="eu-card eu-card--flush" aria-label={`Lote ${l.nombre}`}>
       <div className="eu-between fz-card-hd fz-wrap">
         <div className="eu-vstack">
-          <h2 className="t-card">{l.nombre} <span className={`eu-badge eu-badge--${TONE[l.estado]}`}>{l.estado}</span></h2>
+          <h2 className="t-card">{l.nombre} <span className={`eu-badge eu-badge--${TONE[l.estado]}`}><Icon name={ESTADO_ICON[l.estado]} size={12} />{ESTADO_LBL[l.estado] || l.estado}</span></h2>
           <span className="t-meta">
             {l.desde ? `${fmtDate(l.desde, true)} – ${fmtDate(l.hasta, true)} · ` : ''}{plural(l.gastos.length, 'factura', 'facturas')}
             {l.terceros > 0 ? ` · a compañeros ${money(l.terceros)}` : ''}{l.notas ? ` · ${l.notas}` : ''}
           </span>
         </div>
-        <span className="t-meta">
-          Facturas {money(l.total)} · depositado {money(l.depositado)} · <b className="num fz-fg-1">pendiente {money(l.pendiente)}</b>
-          {l.diferencia > 1 && <span className="fg-warning"> · depositaron {money(l.diferencia)} de más</span>}
-        </span>
+        <LoteBalance l={l} />
       </div>
       <table className="eu-table fz-ex-table">
         <colgroup><col className="c-date" /><col /><col className="c-st" /><col className="c-amt" /><col className="c-x" /></colgroup>
@@ -277,8 +297,11 @@ function Sugerencias({ refreshKey, saved }) {
     <section className="eu-card eu-card--flush" aria-label="Sugerencias de lotes">
       <div className="eu-between fz-card-hd fz-wrap">
         <div className="eu-vstack">
-          <h2 className="t-card">Sugerencias <span className="eu-badge eu-badge--info">{lista.length}</span></h2>
-          <span className="t-meta">Depósitos de la empresa sin lote y las facturas que suman lo mismo (±$1): primero tandas de facturas seguidas, luego combinaciones de hasta 3, 6 y 12 meses antes y pares de depósitos. Las «aproximadas» son la combinación más cercana (hasta 3% o $300 de diferencia): revísalas antes de crear el lote.</span>
+          <h2 className="t-card">Posibles coincidencias <span className="eu-badge eu-badge--info">{lista.length}</span></h2>
+          <span className="t-meta">Encontré depósitos de la empresa que suman lo mismo que un grupo de tus facturas. Ábrelas para ver qué facturas son y confirma con «Crear lote».</span>
+          <details className="t-meta fz-ex-how"><summary>¿Cómo las busco?</summary>
+            Facturas que suman el depósito (±$1): primero tandas seguidas, luego combinaciones de hasta 3, 6 y 12 meses antes y pares de depósitos. Las «aproximadas» son la combinación más cercana (hasta 3% o $300 de diferencia): revísalas antes de confirmar.
+          </details>
         </div>
         <button type="button" className="eu-btn eu-btn--secondary eu-btn--sm" disabled={busy || !lista.some((x) => x.confianza === 'alta')}
           onClick={() => crear(lista.filter((x) => x.confianza === 'alta'))} title="Solo las de confianza alta; las demás revísalas una por una">
@@ -340,19 +363,19 @@ function Sueltos({ refreshKey, onNuevo }) {
     <section className="eu-card eu-card--flush" aria-label="Quedan sueltos">
       <div className="eu-between fz-card-hd fz-wrap">
         <div className="eu-vstack">
-          <h2 className="t-card">Quedan sueltos</h2>
-          <span className="t-meta">Ni en un lote ni en ninguna sugerencia. Ármalos a mano con «Nuevo lote» (un depósito puede cubrir facturas de hace más de un año, o faltar alguna factura por cargar).</span>
+          <h2 className="t-card">Sin pareja todavía</h2>
+          <span className="t-meta">No encontré coincidencia automática para estos. Júntalos tú con «Nuevo lote»: elige las facturas y el depósito que las paga. Es normal si el depósito cubre facturas muy viejas o falta cargar alguna.</span>
         </div>
         <button type="button" className="eu-btn eu-btn--ghost eu-btn--sm" onClick={onNuevo}><Icon name="plus" />Nuevo lote</button>
       </div>
-      <details className="fz-pad" open={d.depositos.length <= 12}>
-        <summary className="t-ui">{plural(d.depositos.length, 'depósito', 'depósitos')} de la empresa sin pareja · <b className="num fg-success">+{money(d.total_depositos)}</b></summary>
-        {d.depositos.length > 0 && tabla(d.depositos, '+')}
-      </details>
-      <details className="fz-pad" open={d.facturas.length <= 12}>
+      {d.depositos.length > 0 && <details className="fz-pad" open={d.depositos.length <= 12}>
+        <summary className="t-ui">{plural(d.depositos.length, 'depósito', 'depósitos')} de la empresa sin facturas · <b className="num fg-success">+{money(d.total_depositos)}</b></summary>
+        {tabla(d.depositos, '+')}
+      </details>}
+      {d.facturas.length > 0 && <details className="fz-pad" open={d.facturas.length <= 12}>
         <summary className="t-ui">{plural(d.facturas.length, 'factura pendiente', 'facturas pendientes')} sin depósito · <b className="num">{money(d.total_facturas)}</b></summary>
-        {d.facturas.length > 0 && tabla(d.facturas, '')}
-      </details>
+        {tabla(d.facturas, '')}
+      </details>}
     </section>
   );
 }
@@ -366,50 +389,83 @@ export default function Expense() {
   const d = res.data;
   const sueltosPend = (d?.sin_lote || []).filter((g) => (g.estatus_reembolso || 'PENDIENTE') === 'PENDIENTE');
 
+  const abiertos = (d?.lotes || []).filter((l) => l.estado !== 'Reembolsado');
+  const cerrados = (d?.lotes || []).filter((l) => l.estado === 'Reembolsado');
+  const totalSueltos = sueltosPend.reduce((s, g) => s + g.monto, 0);
+  const totalAbiertos = abiertos.reduce((s, l) => s + l.pendiente, 0);
+  const nuevo = () => setModal({ kind: 'new' });
+
   return (
     <div className="fz-vstack-lg fz-pc">
       <div className="eu-between fz-wrap">
-        <div className="eu-hstack fz-pc-stats">
-          <div className="eu-card eu-stat">
-            <div className="eu-stat-lbl"><Icon name="receipt" />Por cobrar a la empresa</div>
-            {res.loading ? <div className="eu-skel fz-skel-val" /> : <div className="eu-stat-val">{money(d?.por_cobrar || 0)}</div>}
-            <div className="t-meta">{d ? plural(d.lotes_abiertos, 'lote abierto', 'lotes abiertos') : ' '}</div>
-          </div>
-          <div className="eu-card eu-stat">
-            <div className="eu-stat-lbl"><Icon name="badge-check" />Reembolsado {new Date().getFullYear()}</div>
-            {res.loading ? <div className="eu-skel fz-skel-val" /> : <div className="eu-stat-val">{money(d?.reembolsado_anio || 0)}</div>}
-            <div className="t-meta">Depósitos ligados a lotes</div>
-          </div>
+        <div className="eu-vstack">
+          <span className="t-meta">Por cobrar a la empresa</span>
+          {res.loading ? <div className="eu-skel fz-skel-val" /> : <div className="eu-stat-val">{money(d?.por_cobrar || 0)}</div>}
+          <span className="t-meta">Reembolsado en {new Date().getFullYear()}: <b className="num fg-success">{money(d?.reembolsado_anio || 0)}</b></span>
         </div>
         <div className="eu-hstack">
           <a className="eu-btn eu-btn--ghost" href={`${BASE}/expense/export.csv`} download><Icon name="download" />Descargar CSV</a>
-          <button type="button" className="eu-btn eu-btn--primary" onClick={() => setModal({ kind: 'new' })} disabled={!cand.data}>
+          <button type="button" className="eu-btn eu-btn--primary" onClick={nuevo} disabled={!cand.data}>
             <Icon name="plus" />Nuevo lote
           </button>
         </div>
       </div>
 
-      {sueltosPend.length > 0 && (
-        <div className="fz-note" data-tone="info" role="note">
-          <Icon name="files" size={16} />
-          <span className="eu-grow">{plural(sueltosPend.length, 'factura pendiente no está', 'facturas pendientes no están')} en ningún lote · {money(sueltosPend.reduce((s, g) => s + g.monto, 0))}</span>
-          <button type="button" className="fz-link" onClick={() => setModal({ kind: 'new' })}>Armar lote<Icon name="arrow-right" size={14} /></button>
-        </div>
-      )}
+      {/* El camino de una factura: sin lote → lote esperando pago → conciliado. */}
+      <ol className="fz-ex-flow" aria-label="Cómo se concilia un gasto de trabajo">
+        <li data-tone={sueltosPend.length ? 'warning' : 'neutral'}>
+          <span className="fz-ex-step">1</span>
+          <div className="eu-vstack">
+            <b>Facturas sin lote</b>
+            <span className="t-meta">Gastos de trabajo que aún no juntas para cobrar</span>
+            <span className="fz-ex-flow-val">{res.loading ? '…' : <>{plural(sueltosPend.length, 'factura', 'facturas')} · <span className="num">{money(totalSueltos)}</span></>}</span>
+            {sueltosPend.length > 0 && <button type="button" className="fz-link" onClick={nuevo} disabled={!cand.data}>Juntar en un lote<Icon name="arrow-right" size={14} /></button>}
+          </div>
+        </li>
+        <li data-tone={abiertos.length ? 'info' : 'neutral'}>
+          <span className="fz-ex-step">2</span>
+          <div className="eu-vstack">
+            <b>Esperando pago</b>
+            <span className="t-meta">Lotes enviados; falta el depósito de la empresa</span>
+            <span className="fz-ex-flow-val">{res.loading ? '…' : <>{plural(abiertos.length, 'lote', 'lotes')} · <span className="num">{money(totalAbiertos)}</span></>}</span>
+          </div>
+        </li>
+        <li data-tone="success">
+          <span className="fz-ex-step"><Icon name="check" size={14} /></span>
+          <div className="eu-vstack">
+            <b>Conciliado</b>
+            <span className="t-meta">El depósito cubre el lote; sus facturas quedan Pagado</span>
+            <span className="fz-ex-flow-val">{res.loading ? '…' : plural(cerrados.length, 'lote', 'lotes')}</span>
+          </div>
+        </li>
+      </ol>
 
       <Sugerencias refreshKey={app.refreshKey} saved={saved} />
-      <Sueltos refreshKey={app.refreshKey} onNuevo={() => setModal({ kind: 'new' })} />
+      <Sueltos refreshKey={app.refreshKey} onNuevo={nuevo} />
 
       <ErrorNote error={res.error} onRetry={res.reload} />
       {res.loading ? <Skel rows={3} h={120} /> : !d || d.lotes.length === 0 ? (
         <Empty icon="receipt" title="Sin lotes todavía"
-          text="Cuando subas un grupo de facturas a la empresa, júntalas en un lote; al llegar el depósito lo ligas y el lote queda reembolsado.">
-          <button type="button" className="eu-btn eu-btn--primary" onClick={() => setModal({ kind: 'new' })} disabled={!cand.data}><Icon name="plus" />Nuevo lote</button>
+          text="Cuando subas un grupo de facturas a la empresa, júntalas en un lote; al llegar el depósito lo ligas y el lote queda conciliado.">
+          <button type="button" className="eu-btn eu-btn--primary" onClick={nuevo} disabled={!cand.data}><Icon name="plus" />Nuevo lote</button>
         </Empty>
       ) : (
-        <div className="eu-vstack fz-gap-3">
-          {d.lotes.map((l) => <LoteCard key={l.id} l={l} cand={cand.data} saved={saved} open={setModal} />)}
-        </div>
+        <>
+          {abiertos.length > 0 && (
+            <div className="eu-vstack fz-gap-3">
+              <h2 className="t-card fz-ex-sec"><Icon name="clock" />Esperando pago <span className="t-meta">· liga el depósito cuando llegue</span></h2>
+              {abiertos.map((l) => <LoteCard key={l.id} l={l} cand={cand.data} saved={saved} open={setModal} />)}
+            </div>
+          )}
+          {cerrados.length > 0 && (
+            <details className="fz-ex-done" open={abiertos.length === 0}>
+              <summary className="t-card fz-ex-sec"><Icon name="circle-check" />Conciliados <span className="t-meta">· {plural(cerrados.length, 'lote', 'lotes')} cubiertos por su depósito</span></summary>
+              <div className="eu-vstack fz-gap-3">
+                {cerrados.map((l) => <LoteCard key={l.id} l={l} cand={cand.data} saved={saved} open={setModal} />)}
+              </div>
+            </details>
+          )}
+        </>
       )}
 
       {modal?.kind === 'new' && cand.data && <NuevoLote cand={cand.data} onClose={() => setModal(null)} onSaved={saved} />}
