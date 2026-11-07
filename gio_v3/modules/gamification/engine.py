@@ -437,6 +437,7 @@ def get_daily_classification(date_str=None):
             sessions_covered |= _sessions_of(d)
 
     gold_min_touches  = RECOVERY_GOLD_MIN_TOUCHES  if recovery else GOLD_MIN_TOUCHES
+    base_touches, base_sessions = gold_min_touches, (RECOVERY_GOLD_MIN_SESSIONS if recovery else GOLD_MIN_SESSIONS)
     gold_min_sessions = min(
         (RECOVERY_GOLD_MIN_SESSIONS if recovery else GOLD_MIN_SESSIONS),
         len(sessions_available)
@@ -507,6 +508,14 @@ def get_daily_classification(date_str=None):
             rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
             sessions_covered, sessions_available, gold_min_sessions,
             touch_pillars, gold_min_pillars, diamond_min_anchors
+        ),
+        "next_rank": _NEXT_RANK[rank],
+        "criteria": _next_rank_criteria(
+            rank, recovery, bool(min_anchor_keys) or anchors_done >= 1, extra_anchors,
+            touches_done, gold_min_touches, base_touches,
+            len(sessions_covered), gold_min_sessions, base_sessions,
+            len(touch_pillars), gold_min_pillars,
+            anchors_done_today, len(anchor_defs), diamond_min_anchors,
         ),
         "next_pct": _next_rank_pct(
             rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
@@ -604,6 +613,49 @@ def _condensa(names, conj):
 
 def _plural(n, word, suf="es"):
     return f"{n} {word}{suf if n != 1 else ''}"
+
+
+_NEXT_RANK = {"carbon": "iron", "iron": "gold", "gold": "diamond", "diamond": None}
+
+
+def _next_rank_criteria(rank, recovery, anchor_ok, extra_anchors,
+                        touches_done, need_touches, base_touches,
+                        sessions_done, need_sessions, base_sessions,
+                        pillars_done, need_pillars,
+                        anchors_done_today, n_anchors, diamond_min_anchors):
+    """Lo que falta para el siguiente rango, ya calculado para el héroe de
+    Inicio: [{key, label, hint, have, need, ok}]. Usa las mismas metas que
+    get_daily_classification (descuento por ancla extra y semana de descarga
+    incluidos), así la lista nunca contradice al rango. Diamante: []."""
+    def c(key, label, hint, have, need):
+        return {"key": key, "label": label, "hint": hint, "have": have, "need": need, "ok": have >= need}
+
+    if rank == "carbon":
+        hint = "o su versión mínima (⅓ del XP)"
+        if recovery:
+            hint += f" · semana de descarga: o {RECOVERY_HIERRO_TOUCHES} touches"
+        return [c("anchor", "Una ancla completa", hint, 1 if anchor_ok else 0, 1)]
+    if rank == "iron":
+        if extra_anchors:
+            extra = f"{base_touches} base − {extra_anchors} por tu{'s' if extra_anchors > 1 else ''} ancla{'s' if extra_anchors > 1 else ''} extra"
+            extra_s = f"{base_sessions} base − {extra_anchors} por tu{'s' if extra_anchors > 1 else ''} ancla{'s' if extra_anchors > 1 else ''} extra"
+        else:
+            extra = f"{base_touches} base − 1 por cada ancla extra"
+            extra_s = f"{base_sessions} base − 1 por cada ancla extra"
+        if recovery:
+            extra += " · semana de descarga"
+            extra_s += " · semana de descarga"
+        out = [c("touches", "Touches", extra, touches_done, need_touches)]
+        if need_sessions > 0:
+            out.append(c("sessions", "Sesiones del día", extra_s, sessions_done, need_sessions))
+        if need_pillars > 0:
+            out.append(c("pillars", "Pilares distintos", f"al menos {need_pillars}", pillars_done, need_pillars))
+        return out
+    if rank == "gold":
+        hint = ("todas" if diamond_min_anchors >= n_anchors
+                else f"75% de {n_anchors}, redondeo arriba")
+        return [c("anchors_pct", "Anclas de hoy", hint, anchors_done_today, diamond_min_anchors)]
+    return []
 
 
 def _next_rank_hint(rank, anchor_defs, done_anchor_keys, touch_defs, touches_done, gold_min_touches,
