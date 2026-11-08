@@ -73,3 +73,10 @@ def test_inspiracion_con_pestanas(client):
     assert 'id="insp-quote" role="tabpanel"' in html and 'id="insp-word" role="tabpanel"' in html
     assert 'id="insp-refresh"' in html
     assert 'quote-refresh' not in html and 'word-refresh' not in html
+
+
+def test_badge_de_xp_solo_se_oculta_en_inicio(client):
+    """Sprint 6: el héroe ya muestra el XP de hoy, así que la topbar de Inicio
+    no repite el badge; las demás páginas lo conservan."""
+    assert 'eu-tb-xp' not in _html(client)
+    assert 'eu-tb-xp' in client.get('/actividades/').get_data(as_text=True)

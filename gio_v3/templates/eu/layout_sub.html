@@ -95,7 +95,8 @@
   <button type="button" class="eu-search" onclick="euCmdkOpen()" aria-label="Buscar o ejecutar (Cmd/Ctrl+K)">
     <i data-lucide="search"></i>Buscar o ejecutar…<span class="kbd" data-cmdk-hint>Ctrl K</span>
   </button>
-  <span class="eu-badge eu-badge--xp eu-tb-xp" title="XP de hoy / meta diaria"><span class="eu-xp-today">—</span>&nbsp;/ {{ XP_DAILY_GOAL }} XP</span>
+  {#- Inicio lo vacía: el héroe ya muestra el XP de hoy (Inicio v2, Sprint 6). -#}
+  {% block tb_xp %}<span class="eu-badge eu-badge--xp eu-tb-xp" title="XP de hoy / meta diaria"><span class="eu-xp-today">—</span>&nbsp;/ {{ XP_DAILY_GOAL }} XP</span>{% endblock %}
   <a class="eu-badge eu-badge--ec" href="/recompensas/" title="Euda-Credits"><i data-lucide="coins"></i><span class="eu-ec-val">—</span></a>
   <button type="button" class="eu-iconbtn eu-tb-search-m" onclick="euCmdkOpen()" aria-label="Buscar"><i data-lucide="search"></i></button>
   <a class="eu-tb-avatar" href="/perfil/" aria-label="Tu perfil" title="Tu perfil"><i data-lucide="user-round"></i></a>

@@ -381,14 +381,8 @@ a[class*="btn"]:active {
      no existen en ningún template; se retiró en 2026-09.) */
   [style*="grid-column:span 2"] { grid-column:span 1 !important; }
 
-  /* Dashboard — antes sin ningún ajuste propio de teléfono: de 1024px para
-     abajo todo caía a 1 columna con los mismos tamaños de tablet. Funcionaba
-     de casualidad más que por diseño; esto le da un paso real. */
-  .hero-xp    { padding:16px !important; }
-  .tiers      { gap:4px !important; }
-  .tier       { padding:8px 3px !important; }
-  .level-card { padding:14px 12px !important; }
-  .mods-grid  { gap:8px !important; }
+  /* (Dashboard: las reglas de teléfono de .hero-xp/.tiers/.tier/.level-card/
+     .mods-grid se retiraron con Inicio v2 — el móvil vive en dashboard.css.) */
 
   /* Finanzas */
   .f-grid          { grid-template-columns:1fr !important; gap:10px !important; }
