@@ -28,8 +28,9 @@ y también desktop. Todo el texto de UI está en **español**.
 
 ### Flujo principal
 1. Login (`/login`, contraseña única) → sesión de 8 h.
-2. **Dashboard `/`**: hero de XP/nivel, heatmap de racha, tarjetas de módulos, radar de deadlines, sugerencia
-   contextual, palabra/cita del día.
+2. **Inicio `/`** (Inicio v2): héroe con la clasificación del día y lo que falta para el siguiente rango,
+   «Siguiente paso» de un clic, Equilibrio de la semana (regla del 60% por virtud), Constancia (heatmap por
+   rango), Pendiente agrupado e Inspiración (reflexión / palabra del día).
 3. **Acta Diurna `/actividades/`**: registro diario de hábitos por categoría → suma XP/EC con animación.
 4. Entrar a un módulo (sidebar desktop / bottom-nav móvil / ⌘K) para gestionar su dominio
    (p. ej. subir un estado de cuenta PDF a Finanzas, registrar comida en Nutrición, prenda en Guardarropa).
@@ -46,7 +47,7 @@ y también desktop. Todo el texto de UI está en **español**.
 | **Frontend (principal)** | **Server-side rendering con Jinja2** + JavaScript vanilla inline en cada template (fetch a endpoints `/api/...` JSON) |
 | **Frontend (Finanzas / Estados de cuenta)** | **SPA React** precompilada (`static/finanzas/assets/estados.js`, ~240 KB minificado). **No existe el código fuente JSX en el repo** — el bundle se edita a mano |
 | **CSS** | **Tailwind CSS 3.4** (precompilado a `static/css/tailwind-built.css`, se commitea) + tokens CSS propios en `static/css/app.css` + muchísimo CSS inline/`<style>` por template |
-| **Iconos** | **Lucide** vía CDN (`unpkg.com/lucide@1.31.0`, `data-lucide="..."`) |
+| **Iconos** | **Lucide** 1.31.0 servido por la app (`static/js/vendor/lucide-1.31.0.min.js`, `data-lucide="..."`) |
 | **Fuentes** | Google Fonts: Cormorant Garamond, DM Sans, JetBrains Mono |
 | **Base de datos** | **SQLite** (`pipeline.db`, en volumen persistente de Railway) + **Turso/libSQL** como respaldo cloud (HTTP `/v2/pipeline`, cliente propio en `database.py`) |
 | **Seguridad** | Flask-WTF (CSRF), Flask-Limiter (rate-limit login), cookies HttpOnly/Secure/SameSite, headers de seguridad, HSTS |
@@ -151,13 +152,13 @@ eudaimonia/                         ← raíz del repo
 | Pantalla | Template | Notas |
 |---|---|---|
 | Login | `auth/login.html` | contraseña única / setup inicial |
-| Dashboard | `dashboard/index.html` | hero XP, nivel, heatmap 21 días, grid de módulos, deadlines, sugerencia, palabra/cita, reflexión |
+| Inicio | `dashboard/index.html` + `_hero`, `_balance`, `_heat`, `_radar`, `_inspiracion` | rango + criterios + siguiente paso, XP/nivel/racha, equilibrio por virtud, constancia por rango, pendiente, reflexión/palabra |
 | Acta Diurna | `actividades/index.html` | checklist de hábitos por categoría, undo toast, animación de ícono |
 | Ataraxia | `ataraxia/index.html` | rutinas por bloques (fin de semana dual) |
 | Praxis (GTD) | `gtd/praxis.html`, `gtd/points.html` | captura rápida, secciones plegables, puntos |
 | Logros | `gamification/logros.html` | badges, clasificación, XP |
 | Recompensas | `recompensas/index.html` | tienda de EC, cooldowns |
-| Oikonomia hub | `finanzas/hub.html` | patrimonio (ocultable), deudas, links a submódulos |
+| Oikonomia hub | `finanzas/hub.html` + `hub/_hero`, `_debts`, `_budget`, `_subs` | Disponible + por día, 50·30·20, siguiente paso («Marcar pagado»), patrimonio, racha, próximos pagos, categorías en riesgo (cifras ocultables) |
 | Estados de cuenta | `finanzas/estados.html` | monta la **SPA React** (tabs: Resumen, Movimientos, Cuentas, Presupuestos, Reglas, Reportes; modal por categoría) |
 | Presupuesto | `finanzas/budget.html` | por mes (`/finanzas/budget/<mes>`) |
 | Consumo | `finanzas/consumo.html`, `consumo_detalle.html` | |
@@ -354,7 +355,7 @@ la SPA de Finanzas es un artefacto compilado sin `package.json` ni fuentes en el
 
 ### Librerías importantes
 - **Runtime Python**: ver lista completa en §2 (`gio_v3/requirements.txt`).
-- **CDN en el navegador**: Lucide `1.31.0` (unpkg), Google Fonts. React/ReactDOM vienen **embebidos** en `estados.js`.
+- **En el navegador**: Lucide `1.31.0` servido desde `static/js/vendor/` (antes unpkg: sin CDN la app se quedaba sin íconos en el iPhone), Google Fonts por CDN. React/ReactDOM vienen **embebidos** en `estados.js`.
 - **Servicios externos**: Turso (libSQL por HTTP) como respaldo de la DB; Google Gemini (`GEMINI_API_KEY`)
   para análisis de prendas en Guardarropa.
 - **Binario del sistema**: Tesseract (para `pytesseract`, OCR de estados de cuenta escaneados).
@@ -372,6 +373,10 @@ la SPA de Finanzas es un artefacto compilado sin `package.json` ni fuentes en el
   respaldo async (bootstrap automático si el volumen está vacío).
 - Login con contraseña única, CSRF, rate-limit, headers de seguridad.
 - Gamificación completa v3.1 (XP, niveles, EC, streaks, clasificación diaria, badges, penalizaciones, tienda).
+  La clasificación expone `criteria` (lo que falta para el siguiente rango) y su historial vive en
+  `daily_classification`; la regla del 60% es por virtud (`engine.balance_week`).
+- Pagos del ciclo de las tarjetas: tabla `fin_pagos_ciclo` (marcado a mano desde el hub o detectado por un
+  `PAGO_TDC` en el estado de cuenta, `modules/finanzas/pagos_ciclo.py`); lo pagado sale de los avisos.
 - **Finanzas es el módulo más maduro**: importación de estados de cuenta PDF/CSV/XLSX de BBVA (varios formatos),
   HSBC e Invex, deduplicación, categorización automática por keywords/reglas, taxonomía con subcategorías,
   `mi_parte` (gastos compartidos), MSI, presupuestos, reportes, viajes, patrimonio, deudas, inversiones.
@@ -396,7 +401,7 @@ la SPA de Finanzas es un artefacto compilado sin `package.json` ni fuentes en el
 4. **Single-user, 1 worker Gunicorn**, rate-limiter en memoria, SQLite: correcto para uso personal, no escala.
 5. **Migraciones ad-hoc** dentro de `database.py` y endpoints `/admin/*` que corrigen datos en producción
    (sin framework de migraciones versionado tipo Alembic).
-6. **Dependencia de CDNs** (Lucide, Google Fonts) — hay try/catch, pero sin ellos la UI pierde íconos/fuentes.
+6. **Dependencia de CDNs** (Google Fonts) — sin ellas la UI cae a fuentes del sistema. Lucide ya no depende de CDN.
 7. Datos sensibles (finanzas, salud, documentos, vault de contraseñas) en una app con una sola contraseña y
    sin 2FA.
 8. Configuración crítica fuera del repo (Root Directory y volumen de Railway) — ver `CLAUDE.md`.

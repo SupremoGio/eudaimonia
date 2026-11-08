@@ -43,14 +43,25 @@ const ultimaSub = () => {
 const VIAJES_URL = '/finanzas/estados/viajes/';
 
 const tabFromHash = () => {
-  const h = (window.location.hash || '').replace('#', '');
+  const h = (window.location.hash || '').replace('#', '').split('?')[0];
   if (h === 'conciliacion') return ultimaSub();
   return TABS.some((t) => t.id === h) || esConc(h) ? h : 'resumen';
 };
 
+// Filtros iniciales de Movimientos desde el hash, p. ej. el enlace «Clasificar»
+// del hub de Finanzas: #movimientos?tipo=INGRESO&category=DEPOSITO,SPEI_RECIBIDO
+const TX_FILTER_KEYS = ['tipo', 'category', 'bank', 'search', 'date_from', 'date_to', 'contraparte'];
+const filterFromHash = () => {
+  const [, q] = (window.location.hash || '').replace('#', '').split('?');
+  if (!q) return null;
+  const p = new URLSearchParams(q), f = {};
+  TX_FILTER_KEYS.forEach((k) => { if (p.get(k)) f[k] = p.get(k); });
+  return Object.keys(f).length ? f : null;
+};
+
 export default function App() {
   const [tab, setTab] = useState(tabFromHash);
-  const [txFilter, setTxFilter] = useState(null); // filtros iniciales al saltar a Movimientos
+  const [txFilter, setTxFilter] = useState(filterFromHash); // filtros iniciales al saltar a Movimientos
   const [refreshKey, setRefreshKey] = useState(0);
   const [unclassified, setUnclassified] = useState(0);
   const [budgets, setBudgets] = useState([]);
@@ -60,7 +71,7 @@ export default function App() {
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
 
   useEffect(() => {
-    const on = () => setTab(tabFromHash());
+    const on = () => { setTxFilter(filterFromHash()); setTab(tabFromHash()); };
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
