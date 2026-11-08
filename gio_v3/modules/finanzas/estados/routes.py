@@ -185,8 +185,11 @@ def _build_filters(args) -> tuple[list[str], list]:
         conditions.append("banco = ?")
         params.append(args['bank'])
     if args.get('category'):
-        conditions.append("categoria = ?")
-        params.append(args['category'])
+        # Varias separadas por coma (p. ej. «DEPOSITO,SPEI_RECIBIDO», los
+        # depósitos sin clasificar que enlaza el hub de Finanzas).
+        cats = [c.strip() for c in args['category'].split(',') if c.strip()]
+        conditions.append(f"categoria IN ({','.join('?' * len(cats))})")
+        params.extend(cats)
     if args.get('subcategoria'):
         conditions.append("subcategoria = ?")
         params.append(args['subcategoria'])

@@ -141,6 +141,8 @@ def _hub_budget_rows(bd, limit=5):
 _SEG_META = [('necesidades', 50, 'max'), ('deseos', 30, 'max'), ('ahorro_deuda', 20, 'min')]
 BUDGET_RISK_PCT = 85      # «Categorías en riesgo»: ≥ 85% del límite
 NEXT_STEP_DIAS = 3        # un pago que vence en ≤ 3 días también es «siguiente paso»
+# Estados de cuenta → Movimientos filtrado a los depósitos sin clasificar (ver filterFromHash en el SPA).
+DEPOSITOS_SIN_CLASIFICAR_URL = '/finanzas/estados/#movimientos?tipo=INGRESO&category=DEPOSITO,SPEI_RECIBIDO'
 
 
 def _hub_seg(bd):
@@ -180,7 +182,7 @@ def _hub_next_step(debts, n_sin_clasificar, monto_sin_clasificar):
     if n_sin_clasificar:
         return {'kind': 'clasificar', 'title': f"Clasificar {n_sin_clasificar} depósito{'s' if n_sin_clasificar != 1 else ''}",
                 'sub': 'que podrían ser ingreso', 'monto': monto_sin_clasificar, 'cta': 'Clasificar',
-                'href': '/finanzas/estados/#movimientos', 'tone': 'warning'}
+                'href': DEPOSITOS_SIN_CLASIFICAR_URL, 'tone': 'warning'}
     pronto = next((d for d in pend if d['dias'] <= NEXT_STEP_DIAS), None)
     if pronto:
         return {'kind': 'pago', 'title': f"Pagar {pronto['nombre']}",
@@ -293,6 +295,7 @@ def index():
         debts_total     = sum(d['saldo'] for d in debts),
         minimos_30d     = minimos_30d,
         mes_actual_nombre = _MESES_ES[today.month - 1],
+        depositos_url   = DEPOSITOS_SIN_CLASIFICAR_URL,
         next_step       = next_step,
         alerts=payment_alerts(), today=today_str(),
         **extra,

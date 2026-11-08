@@ -270,3 +270,17 @@ def test_todo_en_rango(client, monkeypatch):
         _mov(date.today().isoformat(), f'OXXO {i}', 100.0, 'GASTO', 'ALIMENTACION')
     html = _hub_section(c.get('/finanzas/').get_data(as_text=True), 'id="oik-bud-t"', '</section>')
     assert 'Todo en rango este mes' in html
+
+
+def test_enlace_a_depositos_sin_clasificar_filtra(client):
+    """El enlace «Clasificar» del hub abre Movimientos filtrado (hash que lee
+    el SPA) y la API acepta varias categorías separadas por coma."""
+    app, c = client
+    assert fr.DEPOSITOS_SIN_CLASIFICAR_URL.endswith('#movimientos?tipo=INGRESO&category=DEPOSITO,SPEI_RECIBIDO')
+    hoy = date.today().isoformat()
+    _mov(hoy, 'SPEI RECIBIDO JUAN', 1200.0, 'INGRESO', 'SPEI_RECIBIDO')
+    _mov(hoy, 'DEPOSITO EFECTIVO', 800.0, 'INGRESO', 'DEPOSITO')
+    _mov(hoy, 'PAGO DE NOMINA', 20000.0, 'INGRESO', 'NOMINA')
+    d = c.get('/finanzas/estados/api/transactions?tipo=INGRESO&category=DEPOSITO,SPEI_RECIBIDO').get_json()
+    assert d['total'] == 2 and {r['categoria'] for r in d['data']} == {'DEPOSITO', 'SPEI_RECIBIDO'}
+    assert c.get('/finanzas/estados/api/transactions?category=NOMINA').get_json()['total'] == 1

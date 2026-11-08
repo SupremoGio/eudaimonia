@@ -157,7 +157,9 @@ export default function Movimientos({ initial }) {
           <option value="">Todas</option>
           <option value="OTROS">Sin clasificar</option>
           {catKeys.map((k) => <option key={k} value={k}>{catMeta(k).name}</option>)}
-          {f.category && f.category !== 'OTROS' && !catKeys.includes(f.category) && <option value={f.category}>{catMeta(f.category).name}</option>}
+          {f.category && f.category !== 'OTROS' && !catKeys.includes(f.category) && (
+            <option value={f.category}>{f.category === 'DEPOSITO,SPEI_RECIBIDO' ? 'Depósitos sin clasificar' : f.category.split(',').map((c) => catMeta(c).name).join(' + ')}</option>
+          )}
         </select></div>
       <div className="eu-field"><label className="eu-label" htmlFor="fz-f-bank">Cuenta</label>
         <select id="fz-f-bank" className="eu-select fz-input-sm" value={f.bank} onChange={(e) => setFilter('bank', e.target.value)}>

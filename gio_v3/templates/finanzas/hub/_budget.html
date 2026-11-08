@@ -27,7 +27,7 @@
   {% endif %}
   {# Si el «Siguiente paso» del héroe ya es clasificar, el aviso no se repite. #}
   {% if estado_sin_clasificar and not (next_step and next_step.kind == 'clasificar') %}
-  <a class="oik-unclass" href="/finanzas/estados/#movimientos">
+  <a class="oik-unclass" href="{{ depositos_url }}">
     <i data-lucide="triangle-alert"></i>
     <span class="eu-grow"><b>{{ estado_sin_clasificar }} depósito{{ 's' if estado_sin_clasificar != 1 }}</b> (<span class="num">{{ hide(mx(estado_sin_clasificar_monto)) }}</span>) sin clasificar: tu ingreso y Disponible podrían estar incompletos.</span>
     <span class="oik-unclass-cta">Clasificar →</span>
