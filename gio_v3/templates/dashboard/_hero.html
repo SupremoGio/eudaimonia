@@ -48,7 +48,7 @@
       <div class="eu-mod-ic"><i data-lucide="zap"></i></div>
       <div class="eu-grow">
         <div class="t-eyebrow dash-next-eb">Siguiente paso</div>
-        <div class="dash-next-t">{{ s.label }} <span>· cierra {{ s.cat }}</span></div>
+        <div class="dash-next-t">{{ s.label }} <span>· {{ s.why or ('cierra ' ~ s.cat) }}</span></div>
       </div>
       <button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-sugg" data-key="{{ s.key }}" data-pts="{{ s.pts }}"
         aria-label="Marcar {{ s.label }}, +{{ s.pts }} XP"><i data-lucide="check"></i><span>Marcar · +{{ s.pts }} XP</span></button>

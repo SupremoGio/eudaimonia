@@ -109,6 +109,68 @@ def _build_suggestion(done_keys: set):
     return None
 
 
+def _build_next_step(done_keys: set, clf: dict):
+    """«Siguiente paso» de Inicio: la actividad pendiente de hoy que más te
+    acerca al siguiente rango (clf = engine.get_daily_classification).
+      Carbón → el ancla del día («cierra Hierro»).
+      Hierro → el touch que además cubre la sesión o el pilar que falta
+               («suma 1 touch y cubre la tarde»).
+      Oro    → un ancla más («suma 1 ancla para Diamante»).
+    Solo actividades elegibles hoy, no hechas y dentro de su ventana horaria.
+    None si no hay nada útil (Diamante o todo hecho): se usa _build_suggestion."""
+    from modules.actividades import activity_defs as adefs
+    from modules.gamification.engine import _sessions_of
+    rank = (clf or {}).get('rank')
+    if rank not in ('carbon', 'iron', 'gold'):
+        return None
+    d = today_date()
+    now = now_local()
+    wd = adefs.weekday_code(d)
+    hoy = adefs.ajustar_por_partido(
+        [x for x in adefs.get_active_flat().values() if adefs.eligible_today(x, wd, d) and not x.get('hidden')], d)
+    pend = [x for x in hoy if x['key'] not in done_keys and _suggestion_in_window(x['key'], now)]
+    ses_now = 'morning' if now.hour < 13 else 'afternoon' if now.hour < 19 else 'night'
+    ses_lbl = {'morning': 'la mañana', 'afternoon': 'la tarde', 'night': 'la noche', 'any': 'cualquier momento'}
+
+    def ahora(x):
+        ss = _sessions_of(x)
+        return ses_now in ss or 'any' in ss
+
+    def out(x, why):
+        ui = adefs.PILLAR_UI.get(x.get('pillar'), {})
+        return {'key': x['key'], 'label': x['label'], 'cat': x.get('cat') or ui.get('name', ''), 'cat_ui': ui.get('cat'),
+                'pts': x.get('pts') or 1, 'why': why}
+
+    anclas = sorted((x for x in pend if x['effective_type'] == 'ancla'), key=lambda x: not ahora(x))
+    if rank == 'carbon':
+        return out(anclas[0], 'cierra Hierro') if anclas else None
+    if rank == 'gold':
+        return out(anclas[0], 'suma 1 ancla para Diamante') if anclas else None
+
+    # Hierro → Oro: touches diarios; cuánto ayuda cada uno según lo que falta.
+    es_touch = lambda x: x['effective_type'] == 'touch' and x.get('cadence', 'daily') == 'daily'
+    hechos = [x for x in hoy if x['key'] in done_keys and es_touch(x)]
+    ses_hechas = set().union(*(_sessions_of(x) for x in hechos)) if hechos else set()
+    pil_hechos = {x['pillar'] for x in hechos}
+    crit = {c['key']: c for c in (clf.get('criteria') or [])}
+    falta_ses = 'sessions' in crit and not crit['sessions']['ok']
+    falta_pil = 'pillars' in crit and not crit['pillars']['ok']
+    best, best_score, best_why = None, -1, None
+    for x in (t for t in pend if es_touch(t)):
+        nuevas = _sessions_of(x) - ses_hechas
+        pil_nuevo = x['pillar'] not in pil_hechos
+        score = (2 if falta_ses and nuevas else 0) + (2 if falta_pil and pil_nuevo else 0) + (1 if ahora(x) else 0)
+        if score > best_score:
+            partes = ['suma 1 touch']
+            if falta_ses and nuevas:
+                ses = ses_now if ses_now in nuevas else sorted(nuevas, key=lambda s: ['morning', 'afternoon', 'night', 'any'].index(s))[0]
+                partes.append(f'cubre {ses_lbl[ses]}')
+            if falta_pil and pil_nuevo:
+                partes.append('suma un pilar nuevo')
+            best, best_score, best_why = x, score, ' y '.join(partes) if len(partes) < 3 else f"{partes[0]}, {partes[1]} y {partes[2]}"
+    return out(best, best_why) if best else None
+
+
 def _build_eudaimonia_data():
     """Construye el payload completo para window.__EUDAIMONIA_DATA__."""
     from modules.gamification.engine import get_gamification_stats
@@ -309,7 +371,7 @@ def _build_eudaimonia_data():
         'reminders':      [dict(r) for r in reminders_rows],
         'ec_balance':     ec_balance,
         'deadlines':      _build_deadlines(_today),
-        'suggestion':     _build_suggestion(today_keys),
+        'suggestion':     _build_next_step(today_keys, stats.get('classification')) or _build_suggestion(today_keys),
         'category_hues':  dict(CATEGORY_HUES),
         'eury_today':     eury_today,
         'harma_summary':  harma_summary,
@@ -406,7 +468,7 @@ def _build_dashboard_v2(data: dict) -> dict:
         'balance':     _build_balance_week(),
         'heat':        _build_heat_16w(),
         'streak_next': _streak_next(data.get('streak', 0)),
-        'sugg_cat':    _ACT_CAT_TO_VIRTUE.get(sugg['cat']) if sugg else None,
+        'sugg_cat':    (sugg.get('cat_ui') or _ACT_CAT_TO_VIRTUE.get(sugg['cat'])) if sugg else None,
         'radar_tone':  _RADAR_TONE,
     }
 
