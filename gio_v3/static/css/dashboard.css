@@ -1,20 +1,20 @@
 /* ═══════════════════════════════════════════════════════════════
    Dashboard (/) — Design System V2 · pantalla 02
    Solo tokens (app.css) y componentes eu-* (components.css).
-   Móvil: una columna Hoy → Reflexión → Pendiente → Virtudes →
-   Constancia → Palabra → Siguiente paso. ≥1024: grid 1fr / 360px.
+   Móvil: una columna Héroe → Reflexión → Pendiente → Virtudes →
+   Constancia → Palabra. ≥1024: grid 1fr / 360px.
    ═══════════════════════════════════════════════════════════════ */
 .dash{display:flex;flex-direction:column;gap:var(--sp-3)}
 .dash-main,.dash-side{display:contents}
 .dash-hello{order:0;display:none}
 .dash-hero{order:1}.dash-quote{order:2}.dash-radar{order:3}.dash-virtues{order:4}
-.dash-heat{order:5}.dash-word{order:6}.dash-next{order:7}
+.dash-heat{order:5}.dash-word{order:6}
 .dash-hello .t-page{margin:var(--sp-2) 0 0}
 .dash h2{margin:0}
 
 @media (min-width:768px){
   .dash{gap:var(--sp-4)}
-  .dash-hello{display:block}
+  .dash-hello{display:flex}
 }
 @media (min-width:1024px){
   .dash{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:var(--sp-6);align-items:start}
@@ -26,31 +26,74 @@
 .eu-mtitle .t-eyebrow{color:var(--fg-brand);margin:0 0 3px}
 .eu-mtitle .dash-mgreet{font-size:var(--fs-20)}
 
-/* ── Hoy ─────────────────────────────────────────────────────── */
+/* ── Héroe (Inicio v2: marcadores 1, 2 y 7) ──────────────────── */
+.dash-hello{align-items:flex-end;justify-content:space-between;gap:var(--sp-4)}
 .dash-hero{display:grid;gap:var(--sp-5)}
-.dash-hero-level{border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)}
+.dash-hero-main{display:flex;flex-direction:column;gap:var(--sp-5);min-width:0}
+.dash-hero-side{display:flex;flex-direction:column;gap:var(--sp-4);border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)}
 @media (min-width:768px){
-  .dash-hero{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:var(--sp-8);padding:var(--sp-6)}
-  .dash-hero-level{border-top:0;padding-top:0;border-left:1px solid var(--border-subtle);padding-left:var(--sp-8)}
+  .dash-hero{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:var(--sp-8);padding:var(--sp-6)}
+  .dash-hero-side{border-top:0;padding-top:0;border-left:1px solid var(--border-subtle);padding-left:var(--sp-8)}
 }
-@media (min-width:1024px){.dash-xp{font-size:var(--fs-40)}}
-.dash-xp .t-meta{font-family:var(--font-ui);font-size:var(--fs-13);letter-spacing:0}
-.dash-hint{margin:0}
-.dash-rank{display:flex;align-items:center;gap:var(--sp-2);color:inherit;text-decoration:none;border-radius:var(--r-md);padding:2px var(--sp-2) 2px 2px}
-.dash-rank:hover{background:var(--bg-hover)}
-.dash-rank>span{display:flex;flex-direction:column;line-height:1.1}
-.dash-rank b{margin:0}
-.dash-hero-top{align-items:center}
-.dash-level-link{color:inherit;text-decoration:none;align-items:center}
-.dash-level-sub{margin:var(--sp-1) 0 0;font-size:var(--fs-13)}
-.dash-level-link:hover .t-section{color:var(--fg-brand)}
-.dash-level-link .t-section{margin:0}
-.dash-xpbar-thin{height:4px}
+.dash-hero-rank{display:flex;align-items:center;gap:var(--sp-4)}
+.dash-hero-medal{flex-shrink:0;display:block;border-radius:var(--r-full)}
+.dash-hero-medal .eu-rank{display:block}
+.dash-hero-rank-txt{flex:1;min-width:0}
+.dash-hero-rname{font:var(--fw-semibold) var(--fs-32)/1.1 var(--font-display);color:var(--fg-1);margin-top:6px}
+.dash-hero-sub{font:var(--fw-regular) var(--fs-13)/var(--lh-normal) var(--font-ui);color:var(--fg-2);margin-top:2px}
+.dash-ladder{list-style:none;margin:10px 0 0;padding:0;display:flex;align-items:center;gap:4px}
+.dash-ladder li{display:flex;align-items:center;gap:4px}
+.dash-ladder li+li::before{content:"";width:10px;height:2px;border-radius:2px;background:var(--border-default)}
+.dash-ladder li.is-past+li::before,.dash-ladder li.is-now::before{background:var(--fg-brand)}
+.dash-ladder li.is-next .eu-rank{filter:grayscale(1);opacity:.38}
+.dash-ladder .eu-rank{display:block}
 
-/* ── Siguiente paso ──────────────────────────────────────────── */
-.dash-next-t{font-size:var(--fs-15);color:var(--fg-1)}
-.dash-next .eu-btn{align-self:flex-start}
+/* Criterios del siguiente rango (macro ui.criterion) */
+.dash-crits{list-style:none;margin:0;padding:0;border-top:1px solid var(--border-subtle)}
+.dash-crit{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) 0;border-bottom:1px solid var(--border-subtle)}
+.dash-crit-ic{width:20px;height:20px;flex-shrink:0;color:var(--fg-3)}
+.dash-crit.is-ok .dash-crit-ic{color:var(--success-fg)}
+.dash-crit-txt{flex:1;min-width:0}
+.dash-crit-l{font:var(--fw-medium) 14px/1.3 var(--font-ui);color:var(--fg-1)}
+.dash-crit.is-ok .dash-crit-l{color:var(--fg-2)}
+.dash-crit-pips{display:flex;gap:3px;flex-shrink:0}
+.dash-crit-pips i{width:18px;height:6px;border-radius:var(--r-full);background:var(--bg-raised)}
+.dash-crit-pips i.is-on{background:var(--fg-brand)}
+.dash-crit.is-ok .dash-crit-pips i.is-on{background:var(--success-fg)}
+.dash-crit-n{width:36px;text-align:right;font:var(--fw-medium) var(--fs-13)/1 var(--font-data);color:var(--fg-1)}
+.dash-crit.is-ok .dash-crit-n{color:var(--fg-2)}
+@media (max-width:479px){.dash-crit-pips i{width:12px}}
+.dash-diamond{margin:0;padding:var(--sp-4);border-radius:var(--r-lg);font-size:var(--fs-13);line-height:1.5;color:var(--fg-1);
+  background:color-mix(in oklab,var(--tier-diamante) 12%,var(--bg-surface));border:1px solid color-mix(in oklab,var(--tier-diamante) 40%,transparent)}
+
+/* Siguiente paso, dentro del héroe */
+.dash-next{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--r-lg);background:var(--bg-sunken);border:1px solid var(--border-subtle)}
 .dash-next[data-cat]{border-color:var(--cat-border)}
+.dash-next-eb{color:var(--fg-3)}
+.dash-next-t{font-size:var(--fs-15);color:var(--fg-1);margin-top:4px}
+.dash-next-t span{color:var(--fg-3);font-size:var(--fs-13)}
+.dash-next .eu-btn{flex-shrink:0;white-space:nowrap}
+.dash-next .js-sugg.is-done{background:var(--success-bg);color:var(--success-fg);border:1px solid var(--success-border)}
+.dash-next .js-sugg.is-done svg{animation:euSealIn var(--dur-slow) var(--ease-settle)}
+@media (max-width:479px){.dash-next{flex-wrap:wrap}.dash-next .eu-btn{width:100%;justify-content:center}}
+
+/* Columna derecha: XP de hoy · nivel · racha */
+.dash-hero-xp{display:flex;flex-direction:column;gap:var(--sp-2)}
+.dash-xp{font:var(--fw-medium) var(--fs-24)/1 var(--font-data);letter-spacing:-.02em;color:var(--xp-fg)}
+.dash-xp .t-meta{font-family:var(--font-ui);font-size:var(--fs-12);letter-spacing:0}
+.dash-hero-xp .eu-xpbar{height:6px}
+.dash-hero-xp .eu-xpbar i{transition:width var(--dur-ceremony) var(--ease-emphasis)}
+.dash-sep{border:0;height:1px;margin:0;background:var(--border-subtle)}
+.dash-level-link{display:flex;align-items:center;gap:var(--sp-3);color:inherit;text-decoration:none;border-radius:var(--r-md)}
+.dash-level-link:hover .dash-level-name{color:var(--fg-brand)}
+.dash-level-name{font:var(--fw-semibold) var(--fs-24)/1.2 var(--font-display);color:var(--fg-1)}
+.dash-xpbar-thin{height:4px;margin-top:var(--sp-2)}
+.dash-level-next{margin-top:6px}
+.dash-level-next b{color:var(--fg-2);font-weight:var(--fw-medium)}
+.dash-streak{display:flex;align-items:center;gap:var(--sp-2)}
+.dash-streak svg{width:18px;height:18px;color:var(--fg-brand)}
+.dash-streak-n{font:var(--fw-medium) var(--fs-15)/1.2 var(--font-data);color:var(--fg-1)}
+.dash-streak-bonus{margin-left:auto;background:var(--brand-subtle);color:var(--xp-fg);border-color:transparent}
 
 /* ── Pendiente (radar) ───────────────────────────────────────── */
 .dash-card-hd{padding:var(--sp-4) var(--sp-4) var(--sp-1)}

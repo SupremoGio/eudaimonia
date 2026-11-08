@@ -141,3 +141,16 @@
   <rect class="eu-tower-stone" x="9" y="107" width="46" height="6" rx="1.5"/>
 </svg>
 {%- endmacro %}
+
+{# Criterio del siguiente rango (engine.get_daily_classification → criteria[]):
+   ícono cumplido/pendiente · etiqueta + pista · una barrita por unidad de
+   `need` · cuenta have/need. Estilos en dashboard.css (.dash-crit*). #}
+{% macro criterion(c) -%}
+{%- set pips = [c.need, 8]|min -%}
+<li class="dash-crit{{ ' is-ok' if c.ok }}" data-key="{{ c.key }}" aria-label="{{ c.label }}: {{ c.have }} de {{ c.need }}{{ ', cumplido' if c.ok else '' }}">
+  <i data-lucide="{{ 'circle-check' if c.ok else 'circle-dashed' }}" class="dash-crit-ic"></i>
+  <div class="dash-crit-txt"><div class="dash-crit-l">{{ c.label }}</div>{% if c.hint %}<div class="t-meta">{{ c.hint }}</div>{% endif %}</div>
+  <span class="dash-crit-pips" aria-hidden="true">{% for i in range(pips) %}<i{% if i < c.have %} class="is-on"{% endif %}></i>{% endfor %}</span>
+  <span class="dash-crit-n num" aria-hidden="true">{{ c.have }}/{{ c.need }}</span>
+</li>
+{%- endmacro %}

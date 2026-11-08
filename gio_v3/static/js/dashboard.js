@@ -1,6 +1,6 @@
 /* Dashboard (/) — interacciones. Antes vivía inline en dashboard/index.html.
    Endpoints (sin cambios):
-     POST /actividades/api/activity/log   {key}  → marcar la sugerencia
+     POST /actividades/api/activity/log   {key}  → marcar la sugerencia (refresca el héroe)
      GET  /api/quote/refresh                     → nueva reflexión
      GET  /api/word/refresh                      → otra palabra del día
      POST data-url de cada fila del radar        → cumplir tarea/riego/recordatorio */
@@ -9,16 +9,42 @@
 
   function spin(btn, on) { if (btn) btn.classList.toggle('is-spinning', on); }
 
-  // ── Siguiente paso: registra la actividad y recarga (XP, tiers y radar cambian)
+  // ── Siguiente paso (dentro del héroe): registra la actividad, deja el
+  //    botón en «Hecho» y refresca rango, criterios y XP sin recargar
+  //    (mismo HTML del servidor: el héroe no se pinta dos veces).
+  function refreshHero() {
+    var hero = document.querySelector('.js-hero'); if (!hero) return Promise.resolve();
+    var oldBar = hero.querySelector('.js-hero-xp .eu-xpbar > i'), oldW = oldBar ? oldBar.style.width : null;
+    return fetch(location.pathname, { credentials: 'same-origin' }).then(function (r) { return r.text(); }).then(function (html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      ['.js-hero-rank', '.js-hero-crit', '.dash-hero-side'].forEach(function (sel) {
+        var cur = hero.querySelector(sel), neu = doc.querySelector('.js-hero ' + sel);
+        if (cur && neu) cur.replaceWith(neu);
+        else if (cur) cur.remove();
+        else if (neu) { var next = hero.querySelector('.dash-next'); if (next) next.before(neu); }
+      });
+      var bar = hero.querySelector('.js-hero-xp .eu-xpbar > i');
+      if (bar && oldW) { var to = bar.style.width; bar.style.width = oldW; requestAnimationFrame(function () { requestAnimationFrame(function () { bar.style.width = to; }); }); }
+      if (window.lucide) lucide.createIcons();
+    });
+  }
   document.querySelectorAll('.js-sugg').forEach(function (btn) {
     btn.addEventListener('click', function () {
+      if (btn.classList.contains('is-done') || btn.getAttribute('aria-busy')) return;
       btn.setAttribute('aria-busy', 'true');
       fetch('/actividades/api/activity/log', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: btn.dataset.key }),
-      }).then(function () { location.reload(); })
-        .catch(function () { btn.removeAttribute('aria-busy'); toast('No se pudo registrar', 'err'); });
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j || j.action !== 'added') throw new Error();
+        btn.removeAttribute('aria-busy');
+        btn.classList.add('is-done');
+        btn.setAttribute('aria-label', 'Hecho, +' + (j.xp || btn.dataset.pts) + ' XP');
+        btn.querySelector('span').textContent = 'Hecho · +' + (j.xp || btn.dataset.pts) + ' XP';
+        if (window.euGam && j.gam) euGam(j.gam, { el: btn });
+        return refreshHero();
+      }).catch(function () { btn.removeAttribute('aria-busy'); toast('No se pudo registrar', 'err'); });
     });
   });
 
