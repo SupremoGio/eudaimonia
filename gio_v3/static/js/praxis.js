@@ -82,6 +82,17 @@
     render();
     toast('+' + (r.xp || 0) + ' XP' + (r.bonus_xp ? ' · bono de 3 tareas +' + r.bonus_xp + ' XP' : ''), 'win');
   }
+  /* Estrella = prioridad del día (D3): máx. 3; Acta las muestra y premia */
+  async function star(id, btn) {
+    var t = find(id); if (!t) return;
+    btn.disabled = true;
+    var r = await jpost('/gtd/api/task/' + id + '/prioridad');
+    btn.disabled = false;
+    if (!r || !r.ok) { toast((r && r.error) || 'No se pudo marcar', 'err'); return; }
+    t.prioridad_dia = r.prioridad ? today() : null;
+    render();
+    toast(r.prioridad ? 'Prioridad del día · ' + r.n + '/3' : 'Quitada de prioridades');
+  }
   async function del(id) {
     if (!(await euConfirm('¿Eliminar esta tarea?', { confirmLabel: 'Eliminar' }))) return;
     var res = await fetch('/gtd/api/task/' + id, { method: 'DELETE' }).catch(function () { return null; });
@@ -98,6 +109,8 @@
     else if (b.classList.contains('js-del')) del(id);
     else if (b.classList.contains('js-unclass')) {
       await classify(id, null, null); render(); toast('Movida a Inbox');
+    } else if (b.classList.contains('js-star')) {
+      star(id, b);
     } else if (b.classList.contains('js-promote')) {
       b.disabled = true;
       if (await classify(id, true, true)) toast('→ Hoy');
@@ -118,7 +131,7 @@
   function ic(name, cls) { return '<i data-lucide="' + name + '"' + (cls ? ' class="' + cls + '"' : '') + '></i>'; }
   /* Fecha límite relativa con tono (praxis-due.js); nunca ISO */
   function dueHTML(t) {
-    var d = Due.relDue(t.fecha_limite, today());
+    var d = t.completado ? null : Due.relDue(t.fecha_limite, today());
     return d ? '<span class="eu-badge px-due' + (d.tone ? ' px-due--' + d.tone : '') + '" title="' + esc(t.fecha_limite) + '">' + esc(d.txt) + '</span>' : '';
   }
   function tipoHTML(t) {
@@ -145,6 +158,13 @@
   function rowHTML(t, sec) {
     if (sec === 'inbox') return '<li class="px-item px-item--inbox">' + titleHTML(t) + tipoHTML(t) + destHTML(t) + delHTML(t) + '</li>';
     var extra = '';
+    if (sec === 'hoy') {
+      var on = t.prioridad_dia === today();
+      extra = t.completado ? (on ? '<span class="px-star is-on" aria-label="Prioridad del día">' + ic('star') + '</span>' : '') :
+        '<button type="button" class="eu-iconbtn px-star js-star' + (on ? ' is-on' : '') + '" data-id="' + t.id + '" aria-pressed="' + on + '" ' +
+        'aria-label="' + (on ? 'Quitar «' + esc(t.title) + '» de prioridades' : 'Marcar «' + esc(t.title) + '» como prioridad del día') + '" title="' +
+        (on ? 'Quitar de prioridades' : 'Prioridad del día') + '">' + ic('star') + '</button>';
+    }
     if (!t.completado) {
       if (sec === 'semana') extra = '<button type="button" class="px-promote js-promote" data-id="' + t.id + '" aria-label="Mover «' + esc(t.title) + '» a Hoy">→ Hoy</button>';
       extra += '<button type="button" class="eu-iconbtn px-ghost js-unclass" data-id="' + t.id + '" aria-label="Regresar «' + esc(t.title) + '» a Inbox" title="Regresar a Inbox">' + ic('undo-2') + '</button>' + delHTML(t);
@@ -171,6 +191,7 @@
     ['inbox', 'hoy', 'semana', 'delegar', 'ideas'].forEach(function (k) { g[k].sort(Due.byDue); });
     // Hoy muestra también lo que ya se cerró hoy desde Hoy, tachado al final
     var hoyDone = g.done.filter(function (t) { return t.cuadrante === 'hoy'; });
+    var nPrio = tasks.filter(function (t) { return t.prioridad_dia === td; }).length;
 
     var main = '';
     if (g.inbox.length) {
@@ -185,7 +206,8 @@
       '<div class="px-hoy-hd"><div class="eu-grow"><h2 class="px-hoy-t" id="px-t-hoy">' + ic('flame') + 'Hoy</h2>' +
       '<div class="t-meta">Urgente e importante · ordenadas por fecha límite</div></div>' + bonusHTML() + '</div>' +
       (g.hoy.length || hoyDone.length ? '<ul class="px-list">' + g.hoy.concat(hoyDone).map(function (t) { return rowHTML(t, 'hoy'); }).join('') + '</ul>'
-        : empty('flame', 'Nada urgente', 'Manda aquí desde el Inbox lo urgente e importante.')) + '</section>';
+        : empty('flame', 'Nada urgente', 'Manda aquí desde el Inbox lo urgente e importante.')) +
+      '<p class="t-meta px-prio-ft">' + ic('star') + '<span><b>' + nPrio + '/3 prioridades</b> · se muestran en Acta Diurna y dan su bono al completarse</span></p></section>';
     main += '<section class="eu-card eu-card--flush px-sec px-sec--semana" data-tone="info" aria-labelledby="px-t-semana">' +
       '<div class="px-sec-hd">' + ic('calendar', 'px-sec-ic') + '<h2 class="px-sec-n" id="px-t-semana">Esta semana</h2>' +
       '<span class="t-meta px-sec-sub">Importante · agéndalo</span><span class="px-sec-ct num">' + g.semana.length + '</span></div>' +

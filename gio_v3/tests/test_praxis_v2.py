@@ -246,3 +246,88 @@ def test_pipeline_de_acta_lee_y_escribe_ideas(client):
     assert 'App de recetas' not in _ideas()
     with database.get_db() as db:
         assert db.execute('SELECT COUNT(*) FROM gtd_tasks WHERE id=?', (tid,)).fetchone()[0] == 1
+
+
+# ── Sprint 6: prioridades = estrellas en Hoy (D3) ────────────────────────────
+
+from utils import today_str
+
+
+def _hoy_task(client, texto):
+    tid = _nueva(client, texto)
+    client.post(f'/gtd/api/task/{tid}/classify', json={'importante': True, 'urgente': True})
+    return tid
+
+
+def test_estrella_maximo_tres_y_solo_en_hoy(client):
+    ids = [_hoy_task(client, f'H{i}') for i in range(4)]
+    for n, tid in enumerate(ids[:3], 1):
+        r = client.post(f'/gtd/api/task/{tid}/prioridad').get_json()
+        assert r['ok'] and r['prioridad'] is True and r['n'] == n
+    r = client.post(f'/gtd/api/task/{ids[3]}/prioridad')
+    assert r.status_code == 409 and 'Ya tienes 3' in r.get_json()['error']
+    # quitar una libera el lugar
+    assert client.post(f'/gtd/api/task/{ids[0]}/prioridad').get_json()['prioridad'] is False
+    assert client.post(f'/gtd/api/task/{ids[3]}/prioridad').get_json()['ok']
+    # una tarea de Semana no puede ser prioridad
+    sem = _nueva(client, 'S')
+    client.post(f'/gtd/api/task/{sem}/classify', json={'importante': True, 'urgente': False})
+    client.post(f'/gtd/api/task/{ids[3]}/prioridad')
+    assert client.post(f'/gtd/api/task/{sem}/prioridad').status_code == 400
+
+
+def test_acta_y_praxis_son_la_misma_tarea_y_bono_unico(client):
+    ids = [_hoy_task(client, f'P{i}') for i in range(3)]
+    for tid in ids:
+        client.post(f'/gtd/api/task/{tid}/prioridad')
+    acta = client.get('/actividades/').get_data(as_text=True)
+    for i in range(3):
+        assert f'<span class="eu-act-t">P{i}</span>' in acta
+    # una se completa en Praxis, otra en Acta: ambas cuentan
+    client.post(f'/gtd/api/task/{ids[0]}/complete')
+    r = client.post(f'/actividades/api/priority/{ids[1]}/toggle').get_json()
+    assert [p['done'] for p in r['priorities']] == [True, True, False] and not r['all3']
+    with database.get_db() as db:
+        assert db.execute('SELECT completado FROM gtd_tasks WHERE id=?', (ids[1],)).fetchone()[0] == 1
+    r = client.post(f'/gtd/api/task/{ids[2]}/complete').get_json()
+    assert r['all3'] and 'priority_bonus_gam' in r['gam']
+    assert _ledger("description='Bonus: Prioridades x3'")['c'] == 1
+    # volver a marcar en Acta no repite nada
+    r = client.post(f'/actividades/api/priority/{ids[2]}/toggle').get_json()
+    assert not r['all3']
+    assert _ledger("description='Bonus: Prioridades x3'")['c'] == 1
+
+
+def test_agregar_prioridad_desde_acta_crea_tarea_de_hoy(client):
+    for i in range(3):
+        assert client.post('/actividades/api/priority', json={'text': f'A{i}'}).status_code == 200
+    assert client.post('/actividades/api/priority', json={'text': 'A3'}).status_code == 409
+    with database.get_db() as db:
+        rows = db.execute("SELECT cuadrante, prioridad_dia FROM gtd_tasks WHERE title LIKE 'A%'").fetchall()
+    assert len(rows) == 3 and all(r['cuadrante'] == 'hoy' and r['prioridad_dia'] == today_str() for r in rows)
+
+
+def test_migra_prioridades_manuales_de_hoy_sin_duplicar(client):
+    hoy = today_str()
+    tid = _hoy_task(client, 'Llamar al banco')            # ya existe como tarea abierta
+    with database.get_db() as db:
+        db.executemany("INSERT INTO priorities (date, text, done) VALUES (?,?,?)",
+                       [(hoy, 'llamar al banco', 0), (hoy, 'Enviar declaración', 1), (hoy, 'Leer', 0), (hoy, 'Sobra', 0),
+                        ('2026-01-01', 'Otro día', 0)])
+        db.commit()
+    for _ in range(2):                                     # cargar dos veces no duplica
+        client.get('/gtd/')
+        client.get('/actividades/')
+    with database.get_db() as db:
+        star = db.execute("SELECT id, title, completado FROM gtd_tasks WHERE prioridad_dia=? ORDER BY id", (hoy,)).fetchall()
+        assert db.execute("SELECT COUNT(*) FROM gtd_tasks WHERE lower(title)='llamar al banco'").fetchone()[0] == 1
+        assert db.execute("SELECT COUNT(*) FROM priorities WHERE date=? AND gtd_task_id IS NULL", (hoy,)).fetchone()[0] == 0
+        assert db.execute("SELECT COUNT(*) FROM gtd_tasks WHERE title='Otro día'").fetchone()[0] == 0
+    assert [r['title'] for r in star] == ['Llamar al banco', 'Enviar declaración', 'Leer']   # máx. 3
+    assert star[0]['id'] == tid and star[1]['completado'] == 1
+
+
+def test_praxis_pinta_estrella_y_pie():
+    js = _src('static/js/praxis.js')
+    assert 'js-star' in js and "'/prioridad'" in js
+    assert '/3 prioridades</b> · se muestran en Acta Diurna y dan su bono al completarse' in js

@@ -4,6 +4,7 @@ import time
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES
 from utils import today_str, today_date, now_local, clean_str
+import modules.gtd.prioridades as prio
 from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
 import modules.actividades.activity_defs as adefs
@@ -78,7 +79,9 @@ def get_dashboard_stats():
             "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
         ).fetchall()]
         pipeline   = _pipeline_ideas(db)
-        priorities = db.execute("SELECT * FROM priorities WHERE date=? ORDER BY id", (today,)).fetchall()
+        # Prioridades = tareas de Hoy con estrella en Praxis (Praxis v2, D3)
+        prio.materializar(db, today)
+        priorities = prio.prioridades_hoy(db, today)
 
     return {
         "xp_today":  xp_today,
@@ -88,7 +91,7 @@ def get_dashboard_stats():
         "streak":    engine.get_gamification_streak(),
         "done_today": done_today,
         "pipeline":  pipeline,
-        "priorities":[dict(r) for r in priorities],
+        "priorities": priorities,
         # Legacy aliases for template compatibility
         "pts_today": xp_today,
         "pts_week":  xp_week,
@@ -513,60 +516,36 @@ def delete_pipeline(item_id):
     return jsonify({'ok': True})
 
 
+# Prioridades de Acta = tareas de Hoy con estrella en Praxis (handoff Praxis
+# v2, D3): agregar crea la tarea en Hoy con estrella; marcar la completa (la
+# misma acción que en Praxis, con su XP y el bono «Prioridades x3» una vez).
 @actividades_bp.route('/api/priority', methods=['POST'])
 def add_priority():
-    text  = request.json.get('text', '').strip()
-    today = today_str()
+    text = clean_str((request.json or {}).get('text', ''), max_len=300)
     if not text:
         return jsonify({'error': 'empty'}), 400
     with get_db() as db:
-        if db.execute("SELECT COUNT(*) as c FROM priorities WHERE date=?", (today,)).fetchone()["c"] >= 3:
-            return jsonify({'error': 'max 3'}), 400
-        db.execute("INSERT INTO priorities (date, text) VALUES (?,?)", (today, text))
+        if prio.crear_prioridad(db, text) is None:
+            return jsonify({'error': 'Ya tienes 3 prioridades hoy'}), 409
         db.commit()
-        rows = db.execute("SELECT * FROM priorities WHERE date=? ORDER BY id", (today,)).fetchall()
-    return jsonify({'priorities': [dict(r) for r in rows]})
+        rows = prio.prioridades_hoy(db)
+    return jsonify({'priorities': rows})
 
 
 @actividades_bp.route('/api/priority/<int:pid>/toggle', methods=['POST'])
 def toggle_priority(pid):
-    today = today_str()
-    bonus_action = None
-
+    body, code = prio.completar_tarea(pid)
+    if code == 404:
+        return jsonify(body), 404
+    gam = None
+    if code == 200:
+        g = body['gam']
+        gam = g.get('priority_bonus_gam') or g          # sus stats son las más recientes
     with get_db() as db:
-        row = db.execute("SELECT done FROM priorities WHERE id=?", (pid,)).fetchone()
-        if not row:
-            return jsonify({'error': 'not found'}), 404
-        db.execute("UPDATE priorities SET done=? WHERE id=?", (0 if row["done"] else 1, pid))
-        db.commit()
-
-        rows  = [dict(r) for r in db.execute("SELECT * FROM priorities WHERE date=? ORDER BY id", (today,)).fetchall()]
-        all3  = len(rows) == 3 and all(r["done"] for r in rows)
-
-        bonus_exists = db.execute(
-            "SELECT id FROM activity_logs WHERE activity_key='priority_bonus' AND date=?", (today,)
-        ).fetchone()
-
-        if all3 and not bonus_exists:
-            db.execute(
-                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
-                ('priority_bonus', today, 5)
-            )
-            db.commit()
-            bonus_action = 'add'
-        elif not all3 and bonus_exists:
-            db.execute("DELETE FROM activity_logs WHERE activity_key='priority_bonus' AND date=?", (today,))
-            db.commit()
-            bonus_action = 'remove'
-
-    if bonus_action == 'add':
-        gam = engine.process_priority_bonus(today)
-    elif bonus_action == 'remove':
-        gam = engine.remove_priority_bonus(today)
-    else:
-        gam = None
-
-    return jsonify({'priorities': rows, 'all3': all3, 'stats': get_dashboard_stats(), 'gam': gam})
+        rows = prio.prioridades_hoy(db)
+    all3 = len(rows) == 3 and all(r['done'] for r in rows)
+    return jsonify({'priorities': rows, 'all3': bool(code == 200 and body.get('all3')),
+                    'done_all': all3, 'stats': get_dashboard_stats(), 'gam': gam})
 
 
 @actividades_bp.route('/api/activity/undo/<int:log_id>', methods=['POST'])

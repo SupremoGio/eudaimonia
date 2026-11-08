@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, redirect
 from database import get_db, get_gtd_stats
 from datetime import date, datetime
 import modules.gamification.engine as engine
+import modules.gtd.prioridades as prio
 from utils import today_str, clean_str
 
 gtd_bp = Blueprint('gtd', __name__, template_folder='../../templates')
@@ -26,6 +27,7 @@ def _calc_cuadrante(importante, urgente):
 @gtd_bp.route('/dashboard')
 def index():
     with get_db() as db:
+        prio.materializar(db)
         tasks = [dict(r) for r in db.execute(
             "SELECT * FROM gtd_tasks ORDER BY created_at DESC"
         ).fetchall()]
@@ -106,43 +108,20 @@ def classify_task(tid):
 
 @gtd_bp.route('/api/task/<int:tid>/complete', methods=['POST'])
 def complete_task(tid):
-    today = today_str()
-    now = datetime.now().isoformat()
+    body, code = prio.completar_tarea(tid)
+    return jsonify(body), code
+
+
+@gtd_bp.route('/api/task/<int:tid>/prioridad', methods=['POST'])
+def toggle_prioridad(tid):
+    """Estrella de prioridad del día (máx. 3; 409 si ya hay 3)."""
     with get_db() as db:
-        task = db.execute("SELECT * FROM gtd_tasks WHERE id=?", (tid,)).fetchone()
-        if not task:
-            return jsonify({'error': 'not found'}), 404
-        if task['completado']:
-            return jsonify({'error': 'already done'}), 400
-        db.execute(
-            """UPDATE gtd_tasks
-               SET completado=1, fecha_completado=?, status='done', completed_at=?, actualizado_en=?
-               WHERE id=?""",
-            (today, today, now, tid)
-        )
-        priority = task['priority'] or 'normal'
-        done_count = db.execute(
-            "SELECT COUNT(*) as c FROM gtd_tasks WHERE fecha_completado=?", (today,)
-        ).fetchone()["c"]
-        # Bono de 3 tareas una sola vez al día: borrar una completada y cerrar
-        # otra vuelve a dar 3, así que se revisa el ledger antes de pagarlo.
-        bonus_paid = db.execute(
-            "SELECT 1 FROM xp_ledger WHERE source='bonus' AND date=? AND description LIKE 'Bonus diario GTD%'",
-            (today,)
-        ).fetchone() is not None
+        ok, val, code = prio.alternar_estrella(db, tid)
         db.commit()
-
-    # Una sola moneda (handoff Praxis v2, D1): el premio es XP del engine.
-    # gtd_points_log ya no se escribe; la tabla y su historial se conservan.
-    gam = engine.process_gtd_task(tid, priority)
-    bonus_xp = 0
-    if done_count >= 3 and not bonus_paid:
-        gam["daily_bonus_gam"] = engine.process_gtd_daily_bonus()
-        bonus_xp = gam["daily_bonus_gam"]["xp"]
-
-    # pts/bonus: deprecados (siempre 0), se mantienen por compatibilidad.
-    return jsonify({'ok': True, 'xp': gam.get('xp', 0), 'bonus_xp': bonus_xp, 'pts': 0, 'bonus': 0,
-                    'stats': get_gtd_stats(), 'gam': gam})
+        n = len(prio.prioridades_hoy(db))
+    if not ok:
+        return jsonify({'ok': False, 'error': val, 'n': n}), code
+    return jsonify({'ok': True, 'prioridad': val, 'n': n})
 
 
 @gtd_bp.route('/api/task/<int:tid>/update', methods=['POST'])

@@ -7279,6 +7279,16 @@ def init_db():
         # queda como histórico; desde aquí nadie escribe en ella.
         migrar_pipeline_a_ideas(db)
 
+        # Prioridades = estrellas en Hoy (handoff Praxis v2, D3): la fecha en
+        # que una tarea es prioridad del día, y en `priorities` (entrada
+        # heredada / ritual semanal) a qué tarea se convirtió cada fila.
+        gt_cols = [r["name"] for r in db.execute("PRAGMA table_info(gtd_tasks)").fetchall()]
+        if "prioridad_dia" not in gt_cols:
+            db.execute("ALTER TABLE gtd_tasks ADD COLUMN prioridad_dia TEXT")
+        pr_cols = [r["name"] for r in db.execute("PRAGMA table_info(priorities)").fetchall()]
+        if "gtd_task_id" not in pr_cols:
+            db.execute("ALTER TABLE priorities ADD COLUMN gtd_task_id INTEGER")
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
