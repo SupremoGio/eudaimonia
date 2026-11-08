@@ -296,12 +296,6 @@ _QUOTES_MOTIV = [q for q in QUOTES if q["category"] == "motivational"]
 def get_quote_of_day():
     return QUOTES[today_date().toordinal() % len(QUOTES)]
 
-def get_stoic_of_day():
-    return _QUOTES_STOIC[today_date().toordinal() % len(_QUOTES_STOIC)]
-
-def get_motivational_of_day():
-    return _QUOTES_MOTIV[today_date().toordinal() % len(_QUOTES_MOTIV)]
-
 def get_word_of_day():
     return WORDS[today_date().toordinal() % len(WORDS)]
 
