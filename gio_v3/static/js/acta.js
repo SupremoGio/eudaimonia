@@ -6,17 +6,14 @@
      DELETE /actividades/api/activity/<key>                    quitar del checklist
      POST   /actividades/api/pillar-focus        {pillar, focus_key}
      POST   /actividades/api/priority            {text}   ·  POST /api/priority/<id>/toggle
-     POST   /actividades/api/pipeline            {text}   ·  DELETE /api/pipeline/<id>
-     GET    /actividades/api/quote/refresh?cat=stoic|motivational */
+     POST   /actividades/api/pipeline            {text}   ·  DELETE /api/pipeline/<id> */
 (function () {
   'use strict';
   var root = document.getElementById('acta');
   if (!root) return;
 
-  var GOAL = parseInt(root.dataset.goal, 10) || 15;
-  var PILLARS_TOTAL = parseInt(root.dataset.pillarsTotal, 10) || 8;
   var RANKS = ['carbon', 'iron', 'gold', 'diamond'];
-  var TIER_T = { carbon: 'carbon', iron: 'hierro', gold: 'oro', diamond: 'diamante' };
+  var RNAME = { carbon: 'Carbón', iron: 'Hierro', gold: 'Oro', diamond: 'Diamante' };
   var clfRank = root.dataset.rank;
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -45,42 +42,24 @@
     recount();
   }
   $$('.acta-item').forEach(function (it) {
-    var b = $('.eu-act', it);
+    var b = $('.eu-act, .acta-anchor-btn', it);
     it.dataset.done = (b && (b.getAttribute('aria-pressed') === 'true' || b.classList.contains('is-done'))) ? '1' : '0';
   });
 
   function recount() {
-    var seen = {}, all = 0, done = 0, ancla = 0;
-    $$('.acta-virtues .acta-item, .acta-weekend .acta-item').forEach(function (it) {
-      if (seen[it.dataset.key]) return;
-      seen[it.dataset.key] = 1; all++;
-      if (it.dataset.done === '1') done++;
-      if (it.classList.contains('is-ancla')) ancla++;
-    });
     var set = function (sel, v) { $$(sel).forEach(function (el) { el.textContent = v; }); };
-    set('.js-ct-all', all); set('.js-ct-done', done); set('.js-ct-pending', all - done); set('.js-ct-ancla', ancla);
-    set('.js-done-n', done);
     $$('.acta-pillar').forEach(function (p) {
       var items = $$('.acta-item', p), d = items.filter(function (i) { return i.dataset.done === '1'; });
       var xp = d.reduce(function (s, i) { return s + (parseInt(i.dataset.pts, 10) || 0); }, 0);
-      var c = $('.js-pcount', p); if (c) c.textContent = d.length + '/' + items.length;
-      var x = $('.js-pxp', p); if (x) x.textContent = '+' + xp + ' XP';
+      var x = $('.js-pxp', p); if (x) { x.textContent = xp ? '+' + xp + ' XP' : '—'; x.classList.toggle('has-xp', xp > 0); }
     });
+    var anc = $$('.acta-anchors .acta-item');
+    set('.js-anc-done', anc.filter(function (i) { return i.dataset.done === '1'; }).length);
     $$('.acta-session').forEach(function (s) {
       var items = $$('.acta-item', s), d = items.filter(function (i) { return i.dataset.done === '1'; });
       var c = $('summary .num', s); if (c) c.textContent = d.length + '/' + items.length;
       var sb = $('.js-sbar', s); if (sb) sb.style.width = (items.length ? Math.round(d.length / items.length * 100) : 0) + '%';
     });
-    updWeekend();
-  }
-
-  function updWeekend() {
-    var wk = $('.acta-weekend'); if (!wk) return;
-    var req = $$('.acta-item', wk).filter(function (i) { return !i.dataset.optional; });
-    var d = req.filter(function (i) { return i.dataset.done === '1'; }).length;
-    var c = $('.js-wk-count', wk); if (c) c.textContent = d + ' / ' + req.length;
-    var bar = $('.js-wk-bar', wk); if (bar) bar.style.width = (req.length ? Math.round(d / req.length * 100) : 0) + '%';
-    var badge = $('.js-wk-done', wk); if (badge) badge.hidden = !(req.length && d === req.length);
   }
 
   // ── Stats del servidor ────────────────────────────────────────────────────
@@ -88,35 +67,45 @@
     if (!s) return;
     var xp = s.xp_today != null ? s.xp_today : (s.pts_today || 0);
     $$('.js-xp-today').forEach(function (el) { if (window.euCountTo) euCountTo(el, xp); else el.textContent = xp; });
-    $$('.js-xp-bar').forEach(function (el) {
-      el.style.width = Math.min(100, xp / GOAL * 100) + '%';
-      var bar = el.parentNode; bar.setAttribute('aria-valuenow', xp);
-      if (!reduced) { bar.classList.remove('is-gaining'); void bar.offsetWidth; bar.classList.add('is-gaining'); }
-    });
-    var t = function (sel, v) { var el = $(sel); if (el && v != null) el.textContent = v; };
-    t('.js-xp-week', s.xp_week != null ? s.xp_week : s.pts_week);
-    t('.js-xp-month', s.xp_month != null ? s.xp_month : s.pts_month);
-    t('.js-ec-total', Math.max(0, s.ec_total || 0));
-    var st = s.streak || 0;
-    t('.js-streak', st + ' d');
-    t('.js-streak-sub', st >= 30 ? 'Racha · +10% XP' : st >= 7 ? 'Racha · +5% XP' : st >= 5 ? (7 - st) + ' d para bono' : (5 - st) + ' d para racha');
+  }
+
+  // ── Clasificación: mismo checklist que Inicio (macro ui.criterion) ───────
+  function critHTML(c) {
+    var pips = '';
+    for (var i = 0; i < Math.min(c.need, 8); i++) pips += '<i' + (i < c.have ? ' class="is-on"' : '') + '></i>';
+    return '<li class="dash-crit' + (c.ok ? ' is-ok' : '') + '" data-key="' + esc(c.key) + '" aria-label="' +
+      esc(c.label) + ': ' + c.have + ' de ' + c.need + (c.ok ? ', cumplido' : '') + '">' +
+      '<i data-lucide="' + (c.ok ? 'circle-check' : 'circle-dashed') + '" class="dash-crit-ic"></i>' +
+      '<div class="dash-crit-txt"><div class="dash-crit-l">' + esc(c.label) + '</div>' +
+      (c.hint ? '<div class="t-meta">' + esc(c.hint) + '</div>' : '') + '</div>' +
+      '<span class="dash-crit-pips" aria-hidden="true">' + pips + '</span>' +
+      '<span class="dash-crit-n num" aria-hidden="true">' + c.have + '/' + c.need + '</span></li>';
+  }
+  function renderClf(clf) {
+    var crit = clf.criteria || [];
+    var faltan = crit.filter(function (c) { return !c.ok; }).length;
+    var sub = $('.js-clf-sub');
+    if (sub) {
+      sub.textContent = clf.next_rank
+        ? (faltan ? 'Para ' + RNAME[clf.next_rank] + ' te falta' + (faltan !== 1 ? 'n ' : ' ') + faltan + ' cosa' + (faltan !== 1 ? 's' : '') : (clf.next_hint || ''))
+        : 'Día Diamante. Lo que marques suma XP sin presión.';
+    }
+    var ul = $('.js-clf-crit');
+    if (ul) {
+      ul.innerHTML = crit.map(critHTML).join('');
+      ul.hidden = !crit.length;
+      ul.setAttribute('aria-label', 'Lo que falta para ' + (RNAME[clf.next_rank] || 'el siguiente rango'));
+    }
   }
 
   function updGam(g) {
     if (!g) return;
     var clf = g.classification;
     if (clf) {
-      var medal = $('.js-clf-rank'); if (medal && window.euRankSet) euRankSet(medal, clf.rank, 'Clasificación de hoy: ' + clf.label);
-      var cname = $('.js-clf-label'); if (cname) cname.dataset.rank = TIER_T[clf.rank] || 'carbon';
-      if (window.euRanksUpdate) euRanksUpdate($('.acta-summary .js-ranks'), clf.rank);
-      var t = function (sel, v) { var el = $(sel); if (el) el.textContent = v || ''; };
-      t('.js-clf-label', clf.label); t('.js-clf-desc', clf.desc); t('.js-clf-hint', clf.next_hint);
-      var parts = [];
-      if (clf.anchors_total > 0) parts.push('Anclas ' + clf.anchors_done + '/' + clf.anchors_total);
-      if (clf.touches_total > 0) parts.push('Touches ' + clf.touches_done + '/' + clf.touches_total);
-      t('.js-clf-meta', parts.join(' · '));
-      var track = $('.js-clf-track'); if (track) track.hidden = clf.rank === 'diamond';
-      var bar = $('.js-clf-bar'); if (bar) bar.style.width = (clf.next_pct || 0) + '%';
+      var rname = RNAME[clf.rank] || 'Carbón';
+      var medal = $('.js-clf-rank'); if (medal && window.euRankSet) euRankSet(medal, clf.rank, 'Clasificación de hoy: ' + rname);
+      var cname = $('.js-clf-label'); if (cname) cname.textContent = rname;
+      renderClf(clf);
       // Subir de clasificación es el logro central del día: festejo propio
       if (clfRank && clf.rank !== clfRank && RANKS.indexOf(clf.rank) > RANKS.indexOf(clfRank) && window.euAchievement) {
         var RAR = { iron: 'plata', gold: 'oro', diamond: 'especial' };
@@ -126,15 +115,15 @@
       clfRank = clf.rank;
       if (clf.pillars) {
         var on = {}; clf.pillars.forEach(function (p) { on[p] = 1; });
-        $$('.acta-cover-it').forEach(function (it) { it.classList.toggle('is-on', !!on[it.dataset.pillar]); });
-        $$('.js-pillars-n').forEach(function (el) { el.textContent = clf.pillars.length; });
-        $$('.js-pillars-count').forEach(function (el) { el.textContent = clf.pillars.length + ' / ' + PILLARS_TOTAL; });
+        // Ícono de la virtud encendido si se tocó hoy (antes «Cobertura de pilares»)
+        $$('.acta-pillar').forEach(function (p) {
+          var lit = !!on[p.dataset.pillar];
+          p.classList.toggle('is-on', lit);
+          var ic = $('.acta-pillar-ic', p); if (ic) ic.title = lit ? 'Tocada hoy' : 'Sin tocar hoy';
+        });
       }
     }
     if (g.coins_today != null) $$('.js-ec-today').forEach(function (el) { el.textContent = g.coins_today; });
-    var lb = $('.js-lvl-bar'); if (lb && g.level_pct != null) lb.style.width = g.level_pct + '%';
-    var ln = $('.js-lvl-name'); if (ln && g.level_name) ln.textContent = g.level_name.charAt(0) + g.level_name.slice(1).toLowerCase();
-    var nx = $('.js-lvl-next'); if (nx) nx.textContent = g.max_level ? 'nivel máximo' : (g.xp_to_next || 0) + ' XP para subir';
     if (window.euCheckLevel) euCheckLevel(g);
   }
 
@@ -277,7 +266,6 @@
   if (editBtn) editBtn.addEventListener('click', function () {
     var on = root.classList.toggle('is-editing');
     editBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    $('span', editBtn).textContent = on ? 'Listo' : 'Editar';
     if (editBar) editBar.hidden = !on;
   });
 
@@ -331,7 +319,7 @@
     });
   });
 
-  // ── Vista (por virtud / por sesión) y filtros ────────────────────────────
+  // ── Vista (por virtud / por sesión) y «Ocultar hechas» ───────────────────
   function setView(v) {
     $$('.eu-seg [data-view]').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.view === v ? 'true' : 'false'); });
     $$('[data-view-panel]').forEach(function (p) { p.hidden = p.dataset.viewPanel !== v; });
@@ -341,27 +329,35 @@
   var savedView = null; try { savedView = localStorage.getItem('acta-view'); } catch (e) {}
   if (savedView === 'session') setView('session');
 
-  root.dataset.filter = 'all';
-  $$('[data-filter]').forEach(function (c) {
-    if (c === root) return;
-    c.addEventListener('click', function () {
-      root.dataset.filter = c.dataset.filter;
-      $$('.acta-filters [data-filter]').forEach(function (x) { x.setAttribute('aria-pressed', x === c ? 'true' : 'false'); });
-    });
-  });
+  // «Ocultar hechas» (nota 1): un solo toggle, recordado en localStorage
+  var hideBtn = $('.js-hide-done');
+  function setHideDone(on) {
+    if (on) root.dataset.hideDone = ''; else delete root.dataset.hideDone;
+    if (hideBtn) hideBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    try { localStorage.setItem('acta.hideDone', on ? '1' : '0'); } catch (e) {}
+  }
+  if (hideBtn) hideBtn.addEventListener('click', function () { setHideDone(!('hideDone' in root.dataset)); });
+  var savedHide = null; try { savedHide = localStorage.getItem('acta.hideDone'); } catch (e) {}
+  if (savedHide === '1') setHideDone(true);
 
   // ── Prioridades ──────────────────────────────────────────────────────────
-  var pList = $('.js-prio-list');
+  var pList = $('.js-prio-list'), pForm = $('.js-prio-form');
   function renderP(ps) {
     pList.innerHTML = ps.map(function (p) {
       return '<button type="button" class="eu-act acta-prio-it js-prio" aria-pressed="' + (!!p.done) + '" data-id="' + p.id + '">' +
              '<span class="eu-act-check"><i data-lucide="check"></i></span><span class="eu-act-t">' + esc(p.text) + '</span></button>';
     }).join('');
+    var dn = ps.filter(function (p) { return p.done; }).length, earned = ps.length === 3 && dn === 3;
     $('.js-prio-empty').hidden = ps.length > 0;
-    $('.js-prio-bonus').hidden = !(ps.length === 3 && ps.every(function (p) { return p.done; }));
+    if (pForm) pForm.hidden = ps.length >= 3;
+    var bonus = $('.js-prio-bonus');
+    bonus.textContent = earned ? '+5 XP · +5 EC ganados' : dn + '/3 = +5 XP · +5 EC';
+    bonus.classList.toggle('is-earned', earned);
+    var pips = $('.js-prio-pips');
+    $$('i', pips).forEach(function (pip, i) { pip.classList.toggle('is-on', !!(ps[i] && ps[i].done)); });
+    pips.setAttribute('aria-valuenow', dn);
     icons();
   }
-  var pForm = $('.js-prio-form');
   if (pForm) pForm.addEventListener('submit', function (e) {
     e.preventDefault();
     var inp = $('#p-inp'), text = inp.value.trim(); if (!text) return;
@@ -381,12 +377,18 @@
 
   // ── Pipeline ─────────────────────────────────────────────────────────────
   var chips = $('.js-pipe-list');
+  function pipeCount() {
+    var n = $$('.acta-pipe-chip', chips).length;
+    set1('.js-pipe-n', n); set1('.js-pipe-s', n === 1 ? '' : 's');
+  }
+  function set1(sel, v) { var el = $(sel); if (el) el.textContent = v; }
   function renderChips(items) {
     chips.innerHTML = items.map(function (i) {
       return '<span class="eu-chip acta-pipe-chip" data-id="' + i.id + '">' + esc(i.text) +
              '<button type="button" class="acta-chip-x js-pipe-del" data-id="' + i.id + '" aria-label="Quitar «' + esc(i.text) + '» del pipeline"><i data-lucide="x"></i></button></span>';
     }).join('');
     $('.js-pipe-empty').hidden = items.length > 0;
+    pipeCount();
     icons();
   }
   var pipeForm = $('.js-pipe-form');
@@ -400,23 +402,8 @@
     var b = e.target.closest('.js-pipe-del'); if (!b) return;
     b.closest('.acta-pipe-chip').remove();
     $('.js-pipe-empty').hidden = !!$('.acta-pipe-chip', chips);
+    pipeCount();
     fetch('/actividades/api/pipeline/' + b.dataset.id, { method: 'DELETE' }).catch(function () {});
-  });
-
-  // ── Citas ────────────────────────────────────────────────────────────────
-  $$('.js-quote').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var card = btn.closest('.acta-quote');
-      btn.classList.add('is-spinning'); card.classList.add('is-swapping');
-      fetch('/actividades/api/quote/refresh?cat=' + btn.dataset.kind).then(function (r) { return r.json(); }).then(function (q) {
-        setTimeout(function () {
-          $('.js-q-text', card).textContent = '«' + q.text + '»';
-          $('.js-q-author', card).textContent = q.author;
-          card.classList.remove('is-swapping');
-        }, reduced ? 0 : 200);
-      }).catch(function () { card.classList.remove('is-swapping'); })
-        .then(function () { btn.classList.remove('is-spinning'); });
-    });
   });
 
   // ── Atajos: 1–9 marca la n-ésima actividad visible · Ctrl/⌘+Z deshace ──
@@ -430,8 +417,9 @@
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (/^[1-9]$/.test(e.key)) {
-      var panel = $('[data-view-panel]:not([hidden])');
-      var btns = $$('.js-act', panel).filter(function (b) { return b.offsetParent !== null; });
+      var btns = [];
+      $$('[data-view-panel]:not([hidden])').forEach(function (panel) { btns = btns.concat($$('.js-act', panel)); });
+      btns = btns.filter(function (b) { return b.offsetParent !== null; });
       var b = btns[parseInt(e.key, 10) - 1];
       if (b) { e.preventDefault(); b.focus(); logAct(b.dataset.key, b); }
     }

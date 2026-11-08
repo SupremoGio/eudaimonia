@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 from datetime import timedelta, datetime
 import time
 from database import get_db
-from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_random_quote
+from data import ACTIVITIES, ACTIVITY_CATEGORIES
 from utils import today_str, today_date, now_local
 from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
@@ -94,23 +94,6 @@ def get_dashboard_stats():
         "pts_week":  xp_week,
         "pts_month": xp_month,
     }
-
-
-_PAY_ALERT_UI = {"bbva": ("BBVA", "#c5a36c"), "invex": ("Invex", "#a78bfa"), "hsbc": ("HSBC", "#60a5fa")}
-
-
-def get_payment_alerts():
-    """Tarjetas que se pagan hoy (PAY_DAYS de Finanzas), sin las que ya están
-    marcadas como pagadas en el ciclo (Oikonomia v2, fin_pagos_ciclo)."""
-    from modules.finanzas.routes import PAY_DAYS, _pagados
-    d = today_date().day
-    hoy = [p for p in PAY_DAYS if p["day"] == d]
-    if not hoy:
-        return []
-    pag = _pagados()
-    return [{"label": _PAY_ALERT_UI.get(p["match"], (p["label"], "#c5a36c"))[0],
-             "color": _PAY_ALERT_UI.get(p["match"], (p["label"], "#c5a36c"))[1]}
-            for p in hoy if p["match"] not in pag]
 
 
 def get_weekend_mode():
@@ -214,9 +197,14 @@ def index():
             item["eury_proxy"] = item["pillar"] == "eury" and item["key"] != "lenguaje_corporal"
             item["done_ui"] = ctx["eurythmia_done"] if item["eury_proxy"] else bool(item.get("done"))
             by_pillar.setdefault(item["pillar"], []).append(item)
+    # Anclas de hoy (handoff Acta v2, nota 2): bloque propio arriba, en orden
+    # de sesión; las tarjetas de virtud quedan solo con touches.
+    acta_anchors = [i for sk in adefs.SESSIONS for i in ctx["grouped"].get(sk, [])
+                    if i.get("effective_type") == "ancla"]
+    acta_anchors = list({i["key"]: i for i in acta_anchors}.values())
     acta_pillars = []
     for pid in adefs.PILLAR_ORDER:
-        items = by_pillar.get(pid, [])
+        items = [i for i in by_pillar.get(pid, []) if i.get("effective_type") != "ancla"]
         if not items:
             continue
         done = [i for i in items if i["done_ui"]]
@@ -227,6 +215,8 @@ def index():
     _td = today_date()
     return render_template('actividades/index.html',
         acta_pillars  = acta_pillars,
+        acta_anchors  = acta_anchors,
+        anchors_need  = gam["classification"].get("diamond_min_anchors", 0),
         pillar_ui     = adefs.PILLAR_UI,
         acta_total    = len(seen),
         stats         = stats,
@@ -242,15 +232,13 @@ def index():
         sun_acts      = sun_acts,
         cats          = ACTIVITY_CATEGORIES,
         category_hues = CATEGORY_HUES,
-        quote_stoic   = get_stoic_of_day(),
-        quote_motiv   = get_motivational_of_day(),
-        payment_alerts= get_payment_alerts(),
         today         = _td.isoformat(),
         today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()],
         fecha_larga   = "{} {} de {}".format(
             ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()], _td.day,
             ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre",
              "octubre","noviembre","diciembre"][_td.month - 1]),
+        now_session_label = SESSION_META[ctx["now_session"]]["label"],
         weekend_mode  = weekend_mode,
         classification= gam["classification"],
     )
@@ -587,9 +575,5 @@ def undo_activity(log_id):
     return jsonify({'ok': True, 'stats': stats, 'gam': gam})
 
 
-@actividades_bp.route('/api/quote/refresh')
-def refresh_quote():
-    cat = request.args.get('cat')  # 'stoic' | 'motivational' | None
-    return jsonify(get_random_quote(category=cat))
 
 

@@ -77,6 +77,8 @@ def test_inspiracion_con_pestanas(client):
 
 def test_badge_de_xp_solo_se_oculta_en_inicio(client):
     """Sprint 6: el héroe ya muestra el XP de hoy, así que la topbar de Inicio
-    no repite el badge; las demás páginas lo conservan."""
+    no repite el badge. Acta v2 tampoco (lo muestra su tarjeta Clasificación);
+    las demás páginas lo conservan."""
     assert 'eu-tb-xp' not in _html(client)
-    assert 'eu-tb-xp' in client.get('/actividades/').get_data(as_text=True)
+    assert 'eu-tb-xp' not in client.get('/actividades/').get_data(as_text=True)
+    assert 'eu-tb-xp' in client.get('/gtd/').get_data(as_text=True)

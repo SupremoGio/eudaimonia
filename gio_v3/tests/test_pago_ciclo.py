@@ -109,8 +109,6 @@ def test_lo_pagado_sale_de_avisos_minimos_y_siguiente_paso(client):
     assert {a['label'] for a in fr.payment_alerts()} == {'BBVA TDC', 'Invex'}   # hoy es 15
     client.post('/finanzas/api/pago-ciclo', json={'cuenta': 'bbva'})
     assert {a['label'] for a in fr.payment_alerts()} == {'Invex'}
-    from modules.actividades.routes import get_payment_alerts
-    assert [a['label'] for a in get_payment_alerts()] == ['Invex']
 
     debts = fr._hub_debts([{'nombre': 'BBVA Oro', 'institucion': 'BBVA', 'saldo': 18000.0, 'tipo': 'tarjeta_credito', 'moneda': 'MXN'},
                            {'nombre': 'Invex', 'institucion': 'INVEX', 'saldo': 6000.0, 'tipo': 'tarjeta_credito', 'moneda': 'MXN'}])
