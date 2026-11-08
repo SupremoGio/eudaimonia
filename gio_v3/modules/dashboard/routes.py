@@ -328,45 +328,61 @@ _ACT_CAT_TO_VIRTUE = {
 _RADAR_TONE = {'red': 'danger', 'amber': 'warning', 'yellow': 'info', 'green': ''}
 
 
-def _build_virtues_today() -> list:
-    """XP de hoy por pilar (activity_logs × activity_defs), en el orden de activity_defs.PILLAR_ORDER."""
+def _build_balance_week() -> dict:
+    """«Equilibrio de la semana» (Inicio v2, marcador 5): XP de la semana y de
+    hoy por virtud, umbral del 60% y bonus +20%. La regla vive en
+    engine.balance_week (la misma que aplica el XP), aquí solo se presenta."""
     from modules.actividades import activity_defs as adefs
-    defs = adefs.get_active_flat()
-    today = today_str()
-    xp = {}
-    with get_db() as db:
-        for r in db.execute(
-            "SELECT activity_key, COALESCE(SUM(pts),0) AS pts FROM activity_logs "
-            "WHERE date=? AND activity_key != 'priority_bonus' GROUP BY activity_key", (today,)
-        ).fetchall():
-            key = r['activity_key']
-            pillar = 'eury' if key == 'eurythmia_session' else (defs.get(key) or {}).get('pillar')
-            if pillar:
-                xp[pillar] = xp.get(pillar, 0) + (r['pts'] or 0)
-    return [{'id': pid, 'cat': ui['cat'], 'label': ui['name'], 'fn': ui['fn'], 'icon': ui['icon'],
-             'url': ui['url'], 'xp': xp.get(pid, 0), 'done': pid in xp}
-            for pid in adefs.PILLAR_ORDER for ui in [adefs.PILLAR_UI[pid]]]
+    from modules.gamification import engine
+    b = engine.balance_week()
+    top = max([b['threshold'], *b['week'].values(), 1])
+    rows = []
+    for pid in adefs.PILLAR_ORDER:
+        ui = adefs.PILLAR_UI[pid]
+        week, today = b['week'][pid], b['today'][pid]
+        rows.append({'id': pid, 'cat': ui['cat'], 'label': ui['name'], 'fn': ui['fn'], 'icon': ui['icon'],
+                     'url': ui['url'], 'xp_today': today, 'xp_week': week, 'bonus': pid in b['bonus'],
+                     'pct': round(week / top * 100, 1)})
+    return {'rows': rows, 'threshold': round(b['threshold'], 1), 'tick': round(b['threshold'] / top * 100, 1),
+            'avg': round(b['avg'], 1), 'n_bonus': len(b['bonus']),
+            'boost_pct': round((engine.BALANCE_BOOST - 1) * 100), 'ratio_pct': round(engine.BALANCE_RATIO * 100)}
 
 
-def _build_heat_16w(goal: int = 15) -> list:
-    """16 semanas (lunes→domingo) terminando en la semana actual, para .eu-heat
-    (columna = semana, fila = día). Nivel 0–4 relativo a la meta diaria."""
+_RANK_ES = {'carbon': 'Carbón', 'iron': 'Hierro', 'gold': 'Oro', 'diamond': 'Diamante'}
+
+
+def _build_heat_16w() -> dict:
+    """«Constancia» (Inicio v2, marcador 8): 16 semanas lunes→domingo hasta la
+    semana actual (columna = semana, fila = día), coloreadas por la
+    clasificación del día (no por XP) y conteo de días por rango."""
+    from modules.gamification.engine import classification_history
     today = today_date()
     start = today - timedelta(days=today.weekday()) - timedelta(weeks=15)
-    with get_db() as db:
-        rows = db.execute(
-            "SELECT date, SUM(pts) AS xp FROM activity_logs WHERE date>=? AND date<=? GROUP BY date",
-            (start.isoformat(), today.isoformat())
-        ).fetchall()
-    by_date = {r['date']: r['xp'] or 0 for r in rows}
-    cells = []
+    ranks = classification_history(start, today)
+    cells, counts = [], {k: 0 for k in _RANK_ES}
     for i in range(16 * 7):
         d = start + timedelta(days=i)
-        v = by_date.get(d.isoformat(), 0)
-        lvl = 0 if v <= 0 else 1 if v < goal / 2 else 2 if v < goal else 3 if v < goal + 5 else 4
-        cells.append({'date': d.isoformat(), 'xp': v, 'l': lvl,
+        r = ranks.get(d.isoformat())
+        if r:
+            counts[r] += 1
+        cells.append({'date': d.isoformat(), 'rank': r, 'label': _RANK_ES.get(r, ''),
                       'today': d == today, 'future': d > today})
-    return cells
+    return {'cells': cells, 'counts': counts,
+            'stats': [{'rank': k, 'label': _RANK_ES[k], 'n': counts[k]} for k in ('diamond', 'gold', 'iron', 'carbon')]}
+
+
+def _streak_next(streak: int) -> dict:
+    """Meta de la racha (Inicio v2, marcador 7): 7 días → +5% XP, 30 → +10%."""
+    from modules.gamification.engine import _streak_xp_mult
+    streak = max(0, int(streak or 0))
+    if streak >= 30:
+        return {'days_left': 0, 'next_bonus': None, 'max': True, 'filled': 30,
+                'text': 'Bonus máximo · +10%'}
+    goal, bonus = (7, 5) if streak < 7 else (30, 10)
+    left = goal - streak
+    return {'days_left': left, 'next_bonus': bonus, 'max': False, 'filled': streak,
+            'bonus_now': round((_streak_xp_mult(streak) - 1) * 100),
+            'text': f"{left} día{'s' if left != 1 else ''} más para +{bonus}% XP"}
 
 
 def _build_dashboard_v2(data: dict) -> dict:
@@ -380,7 +396,6 @@ def _build_dashboard_v2(data: dict) -> dict:
         perks = sum(1 for b in get_all_badges() if b['perk_active'])
     except Exception:
         perks = 0
-    virtues = _build_virtues_today()
     sugg = data.get('suggestion')
     hour = now_local().hour
     return {
@@ -388,9 +403,9 @@ def _build_dashboard_v2(data: dict) -> dict:
         'next_level':  next_name,
         'streak_bonus': round((stats.get('streak_mult', 1.0) - 1) * 100),
         'perks':       perks,
-        'virtues':     virtues,
-        'virtues_done': sum(1 for v in virtues if v['done']),
+        'balance':     _build_balance_week(),
         'heat':        _build_heat_16w(),
+        'streak_next': _streak_next(data.get('streak', 0)),
         'sugg_cat':    _ACT_CAT_TO_VIRTUE.get(sugg['cat']) if sugg else None,
         'radar_tone':  _RADAR_TONE,
     }

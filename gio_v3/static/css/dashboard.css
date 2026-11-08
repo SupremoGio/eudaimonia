@@ -1,20 +1,20 @@
 /* ═══════════════════════════════════════════════════════════════
    Dashboard (/) — Design System V2 · pantalla 02
    Solo tokens (app.css) y componentes eu-* (components.css).
-   Móvil: una columna Hoy → Reflexión → Pendiente → Virtudes →
-   Constancia → Palabra → Siguiente paso. ≥1024: grid 1fr / 360px.
+   Móvil: una columna Héroe → Pendiente → Equilibrio → Constancia →
+   Inspiración. ≥1024: grid 1fr / 360px.
    ═══════════════════════════════════════════════════════════════ */
 .dash{display:flex;flex-direction:column;gap:var(--sp-3)}
 .dash-main,.dash-side{display:contents}
 .dash-hello{order:0;display:none}
-.dash-hero{order:1}.dash-quote{order:2}.dash-radar{order:3}.dash-virtues{order:4}
-.dash-heat{order:5}.dash-word{order:6}.dash-next{order:7}
+.dash-hero{order:1}.dash-radar{order:2}.dash-balance{order:3}
+.dash-heat{order:4}.dash-insp{order:5}
 .dash-hello .t-page{margin:var(--sp-2) 0 0}
 .dash h2{margin:0}
 
 @media (min-width:768px){
   .dash{gap:var(--sp-4)}
-  .dash-hello{display:block}
+  .dash-hello{display:flex}
 }
 @media (min-width:1024px){
   .dash{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:var(--sp-6);align-items:start}
@@ -26,88 +26,168 @@
 .eu-mtitle .t-eyebrow{color:var(--fg-brand);margin:0 0 3px}
 .eu-mtitle .dash-mgreet{font-size:var(--fs-20)}
 
-/* ── Hoy ─────────────────────────────────────────────────────── */
+/* ── Héroe (Inicio v2: marcadores 1, 2 y 7) ──────────────────── */
+.dash-hello{align-items:flex-end;justify-content:space-between;gap:var(--sp-4)}
 .dash-hero{display:grid;gap:var(--sp-5)}
-.dash-hero-level{border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)}
+.dash-hero-main{display:flex;flex-direction:column;gap:var(--sp-5);min-width:0}
+.dash-hero-side{display:flex;flex-direction:column;gap:var(--sp-4);border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)}
 @media (min-width:768px){
-  .dash-hero{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:var(--sp-8);padding:var(--sp-6)}
-  .dash-hero-level{border-top:0;padding-top:0;border-left:1px solid var(--border-subtle);padding-left:var(--sp-8)}
+  .dash-hero{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:var(--sp-8);padding:var(--sp-6)}
+  .dash-hero-side{border-top:0;padding-top:0;border-left:1px solid var(--border-subtle);padding-left:var(--sp-8)}
 }
-@media (min-width:1024px){.dash-xp{font-size:var(--fs-40)}}
-.dash-xp .t-meta{font-family:var(--font-ui);font-size:var(--fs-13);letter-spacing:0}
-.dash-hint{margin:0}
-.dash-rank{display:flex;align-items:center;gap:var(--sp-2);color:inherit;text-decoration:none;border-radius:var(--r-md);padding:2px var(--sp-2) 2px 2px}
-.dash-rank:hover{background:var(--bg-hover)}
-.dash-rank>span{display:flex;flex-direction:column;line-height:1.1}
-.dash-rank b{margin:0}
-.dash-hero-top{align-items:center}
-.dash-level-link{color:inherit;text-decoration:none;align-items:center}
-.dash-level-sub{margin:var(--sp-1) 0 0;font-size:var(--fs-13)}
-.dash-level-link:hover .t-section{color:var(--fg-brand)}
-.dash-level-link .t-section{margin:0}
-.dash-xpbar-thin{height:4px}
+.dash-hero-rank{display:flex;align-items:center;gap:var(--sp-4)}
+.dash-hero-medal{flex-shrink:0;display:block;border-radius:var(--r-full)}
+.dash-hero-medal .eu-rank{display:block}
+.dash-hero-rank-txt{flex:1;min-width:0}
+.dash-hero-rname{font:var(--fw-semibold) var(--fs-32)/1.1 var(--font-display);color:var(--fg-1);margin-top:6px}
+.dash-hero-sub{font:var(--fw-regular) var(--fs-13)/var(--lh-normal) var(--font-ui);color:var(--fg-2);margin-top:2px}
+.dash-ladder{list-style:none;margin:10px 0 0;padding:0;display:flex;align-items:center;gap:4px}
+.dash-ladder li{display:flex;align-items:center;gap:4px}
+.dash-ladder li+li::before{content:"";width:10px;height:2px;border-radius:2px;background:var(--border-default)}
+.dash-ladder li.is-past+li::before,.dash-ladder li.is-now::before{background:var(--fg-brand)}
+.dash-ladder li.is-next .eu-rank{filter:grayscale(1);opacity:.38}
+.dash-ladder .eu-rank{display:block}
 
-/* ── Siguiente paso ──────────────────────────────────────────── */
-.dash-next-t{font-size:var(--fs-15);color:var(--fg-1)}
-.dash-next .eu-btn{align-self:flex-start}
+/* Criterios del siguiente rango (macro ui.criterion) */
+.dash-crits{list-style:none;margin:0;padding:0;border-top:1px solid var(--border-subtle)}
+.dash-crit{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) 0;border-bottom:1px solid var(--border-subtle)}
+.dash-crit-ic{width:20px;height:20px;flex-shrink:0;color:var(--fg-3)}
+.dash-crit.is-ok .dash-crit-ic{color:var(--success-fg)}
+.dash-crit-txt{flex:1;min-width:0}
+.dash-crit-l{font:var(--fw-medium) 14px/1.3 var(--font-ui);color:var(--fg-1)}
+.dash-crit.is-ok .dash-crit-l{color:var(--fg-2)}
+.dash-crit-pips{display:flex;gap:3px;flex-shrink:0}
+.dash-crit-pips i{width:18px;height:6px;border-radius:var(--r-full);background:var(--bg-raised)}
+.dash-crit-pips i.is-on{background:var(--fg-brand)}
+.dash-crit.is-ok .dash-crit-pips i.is-on{background:var(--success-fg)}
+.dash-crit-n{width:36px;text-align:right;font:var(--fw-medium) var(--fs-13)/1 var(--font-data);color:var(--fg-1)}
+.dash-crit.is-ok .dash-crit-n{color:var(--fg-2)}
+@media (max-width:479px){.dash-crit-pips i{width:12px}}
+.dash-diamond{margin:0;padding:var(--sp-4);border-radius:var(--r-lg);font-size:var(--fs-13);line-height:1.5;color:var(--fg-1);
+  background:color-mix(in oklab,var(--tier-diamante) 12%,var(--bg-surface));border:1px solid color-mix(in oklab,var(--tier-diamante) 40%,transparent)}
+
+/* Siguiente paso, dentro del héroe */
+.dash-next{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--r-lg);background:var(--bg-sunken);border:1px solid var(--border-subtle)}
 .dash-next[data-cat]{border-color:var(--cat-border)}
+.dash-next-eb{color:var(--fg-3)}
+.dash-next-t{font-size:var(--fs-15);color:var(--fg-1);margin-top:4px}
+.dash-next-t span{color:var(--fg-3);font-size:var(--fs-13)}
+.dash-next .eu-btn{flex-shrink:0;white-space:nowrap}
+.dash-next .js-sugg.is-done{background:var(--success-bg);color:var(--success-fg);border:1px solid var(--success-border)}
+.dash-next .js-sugg.is-done svg{animation:euSealIn var(--dur-slow) var(--ease-settle)}
+@media (max-width:479px){.dash-next{flex-wrap:wrap}.dash-next .eu-btn{width:100%;justify-content:center}}
 
-/* ── Pendiente (radar) ───────────────────────────────────────── */
+/* Columna derecha: XP de hoy · nivel · racha */
+.dash-hero-xp{display:flex;flex-direction:column;gap:var(--sp-2)}
+.dash-xp{font:var(--fw-medium) var(--fs-24)/1 var(--font-data);letter-spacing:-.02em;color:var(--xp-fg)}
+.dash-xp .t-meta{font-family:var(--font-ui);font-size:var(--fs-12);letter-spacing:0}
+.dash-hero-xp .eu-xpbar{height:6px}
+.dash-hero-xp .eu-xpbar i{transition:width var(--dur-ceremony) var(--ease-emphasis)}
+.dash-sep{border:0;height:1px;margin:0;background:var(--border-subtle)}
+.dash-level-link{display:flex;align-items:center;gap:var(--sp-3);color:inherit;text-decoration:none;border-radius:var(--r-md)}
+.dash-level-link:hover .dash-level-name{color:var(--fg-brand)}
+.dash-level-name{font:var(--fw-semibold) var(--fs-24)/1.2 var(--font-display);color:var(--fg-1)}
+.dash-xpbar-thin{height:4px;margin-top:var(--sp-2)}
+.dash-level-next{margin-top:6px}
+.dash-level-next b{color:var(--fg-2);font-weight:var(--fw-medium)}
+.dash-streak{display:flex;align-items:center;gap:var(--sp-2)}
+.dash-streak svg{width:18px;height:18px;color:var(--fg-brand)}
+.dash-streak-n{font:var(--fw-medium) var(--fs-15)/1.2 var(--font-data);color:var(--fg-1)}
+.dash-streak-bonus{margin-left:auto;background:var(--brand-subtle);color:var(--xp-fg);border-color:transparent}
+
+/* ── Pendiente (Inicio v2, marcador 3) ───────────────────────── */
 .dash-card-hd{padding:var(--sp-4) var(--sp-4) var(--sp-1)}
-.dash-radar .eu-row-t{font-size:var(--fs-13)}
-.dash-radar .eu-row{padding-right:var(--sp-2)}
-.dash-radar-row{transition:opacity var(--dur-base) var(--ease-exit)}
+.dash-radar-new{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-12);color:var(--fg-3);text-decoration:none;min-height:32px}
+.dash-radar-new svg{width:14px;height:14px}
+.dash-radar-new:hover{color:var(--fg-1)}
+.dash-radar-sec+.dash-radar-sec{border-top:1px solid var(--border-subtle)}
+.dash-radar-sec-hd{display:flex;align-items:center;gap:6px;padding:var(--sp-3) var(--sp-4) var(--sp-1);color:var(--fg-3)}
+.dash-radar-sec.is-urgent .dash-radar-sec-hd{color:var(--danger-fg)}
+.dash-radar-sec-hd .num{font-family:var(--font-data)}
+.dash-radar-row{--tn:var(--fg-2);display:flex;align-items:center;gap:var(--sp-3);min-height:52px;padding:6px var(--sp-2) 6px var(--sp-4);transition:opacity var(--dur-base) var(--ease-exit)}
+.dash-radar-row[data-tone=danger]{--tn:var(--danger-fg)}.dash-radar-row[data-tone=warning]{--tn:var(--warning-fg)}.dash-radar-row[data-tone=info]{--tn:var(--info-fg)}
 .dash-radar-row.is-leaving{opacity:0}
+.dash-radar-ic{width:32px;height:32px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg-raised);color:var(--tn)}
+.dash-radar-ic svg{width:16px;height:16px}
+.dash-radar-main{flex:1;min-width:0}
+.dash-radar-t{font-size:var(--fs-13);color:var(--fg-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-radar-main .t-meta{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-radar-when{font:var(--fw-medium) var(--fs-11)/1 var(--font-data);color:var(--tn);white-space:nowrap;text-transform:uppercase;letter-spacing:.02em}
+.dash-radar-row:not([data-tone]) .dash-radar-when{color:var(--fg-3)}
+.dash-radar-act{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:var(--r-sm);border:1px solid var(--border-subtle);background:transparent;color:var(--fg-2);cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast)}
+.dash-radar-act:hover{background:var(--bg-hover);color:var(--fg-1)}
+.dash-radar-act:focus-visible{outline:2px solid var(--border-brand);outline-offset:1px}
+.dash-radar-act:disabled{opacity:.5;cursor:default}
+.dash-radar-act svg{width:16px;height:16px}
+.dash-radar-more>summary{cursor:pointer;padding:var(--sp-2) var(--sp-4)}
+.dash-radar>.js-radar-list{padding-bottom:var(--sp-2)}
 
-/* ── Virtudes ────────────────────────────────────────────────── */
-.dash-vgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-2)}
-.dash-virtue{display:flex;flex-direction:column;gap:var(--sp-3);color:inherit;text-decoration:none}
-.dash-virtue.is-done{border-color:var(--cat-border)}
-.dash-virtue:not(.is-done) .eu-mod-ic{background:var(--bg-raised);border-color:var(--border-subtle);color:var(--fg-3)}
-.dash-virtue-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (max-width:767px){
-  .dash-virtue{padding:var(--sp-3) var(--sp-1);align-items:center;gap:var(--sp-2);border-radius:var(--r-md)}
-  .dash-virtue .eu-between{justify-content:center}
-  .dash-virtue .eu-badge,.dash-virtue-none,.dash-virtue-fn{display:none}
-  .dash-virtue-txt{max-width:100%;text-align:center}
-  .dash-virtue-name{font:var(--fw-medium) var(--fs-12)/1.2 var(--font-ui);letter-spacing:0}
-  .dash-virtue:not(.is-done) .dash-virtue-name{color:var(--fg-3)}
-}
-@media (min-width:768px){.dash-vgrid{gap:var(--sp-4)}}
+/* ── Equilibrio de la semana (Inicio v2, marcador 5) ─────────── */
+.dash-balance{gap:var(--sp-4)}
+.dash-balance-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4)}
+.dash-balance-hd p{margin:2px 0 0}
+.dash-balance-hd .eu-badge{white-space:nowrap}
+.dash-bal-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-1) var(--sp-8)}
+@media (min-width:768px){.dash-bal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dash-bal{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2);margin:0 calc(-1 * var(--sp-2));border-radius:10px;color:inherit;text-decoration:none;transition:background var(--dur-fast)}
+.dash-bal:hover{background:var(--bg-hover)}
+.dash-bal:focus-visible{outline:2px solid var(--border-brand);outline-offset:0}
+.dash-bal-ic{width:32px;height:32px;border-radius:9px}
+.dash-bal-ic svg{width:16px;height:16px}
+.dash-bal-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.dash-bal-top{display:flex;align-items:baseline;gap:6px;min-width:0}
+.dash-bal-name{font:var(--fw-semibold) 16px/1.1 var(--font-display);letter-spacing:.01em;color:var(--fg-1);white-space:nowrap}
+.dash-bal-fn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-bal-today{margin-left:auto;font:var(--fw-medium) var(--fs-12)/1 var(--font-data);color:var(--cat-fg);white-space:nowrap}
+.dash-bal-today.is-none{color:var(--fg-4)}
+.dash-bal-bar{position:relative;display:block;height:6px;border-radius:var(--r-full);background:var(--bg-raised)}
+.dash-bal-bar i{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:var(--cat-fg);transition:width var(--dur-deliberate) var(--ease-emphasis)}
+.dash-bal-bar i.is-bonus{background:var(--warning-fg)}
+.dash-bal-bar b{position:absolute;top:-3px;bottom:-3px;width:1.5px;background:var(--fg-3);opacity:.6}
+.dash-bal-end{width:56px;display:flex;justify-content:flex-end;font:var(--fw-medium) var(--fs-12)/1 var(--font-data);color:var(--fg-3);white-space:nowrap}
+.dash-bal-legend{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-4)}
+.dash-bal-legend span{display:flex;align-items:center;gap:6px}
+.dash-bal-legend i{width:1.5px;height:12px;background:var(--fg-3);opacity:.6}
+@media (max-width:479px){.dash-balance-hd{flex-direction:column;align-items:flex-start}}
 
-/* ── Constancia (heatmap) ────────────────────────────────────── */
-.dash-heat-scroll{overflow-x:auto;scrollbar-width:none}
+/* ── Constancia (Inicio v2, marcador 8): por clasificación ──── */
+.dash-heat{gap:var(--sp-4)}
+.dash-heat-hd{flex-wrap:wrap;gap:var(--sp-2)}
+[data-rank]{--rk:var(--bg-raised)}
+[data-rank=iron]{--rk:var(--tier-hierro)}[data-rank=gold]{--rk:var(--tier-oro)}[data-rank=diamond]{--rk:var(--tier-diamante)}
+.dash-heat-legend{display:flex;align-items:center;gap:10px;font-size:var(--fs-11);color:var(--fg-3)}
+.dash-heat-legend span{display:flex;align-items:center;gap:4px}
+.dash-heat-legend i{width:10px;height:10px;border-radius:2px;background:var(--rk)}
+.dash-heat-body{display:flex;align-items:flex-end;gap:var(--sp-6);flex-wrap:wrap}
+.dash-heat-scroll{overflow-x:auto;scrollbar-width:none;max-width:100%}
 .dash-heat-scroll::-webkit-scrollbar{display:none}
-.dash-heat-grid{width:max-content}
-.eu-heat i.is-future{visibility:hidden}
-@media (min-width:1024px){
-  .dash-heat-grid{grid-template-rows:repeat(7,16px);grid-auto-columns:16px;gap:var(--sp-1)}
-}
-.eu-heat-legend i[data-l="0"]{background:var(--bg-raised)}
-.eu-heat-legend i[data-l="2"]{background:color-mix(in oklab,var(--brand) 45%,var(--bg-raised))}
-.eu-heat-legend i[data-l="4"]{background:var(--fg-brand-strong)}
+.dash-heat-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,12px);grid-auto-columns:12px;gap:3px;width:max-content;padding:2px}
+@media (min-width:480px){.dash-heat-grid{grid-template-rows:repeat(7,16px);grid-auto-columns:16px;gap:4px}}
+.dash-heat-grid i{border-radius:3px;background:var(--bg-raised)}
+.dash-heat-grid i[data-rank]{background:var(--rk)}
+.dash-heat-grid i.today{outline:1.5px solid var(--fg-1);outline-offset:1px}
+.dash-heat-grid i.is-future{visibility:hidden}
+.dash-heat-stats{display:grid;grid-template-columns:repeat(2,auto);gap:var(--sp-3) var(--sp-6);margin:0;padding-bottom:4px}
+.dash-heat-stats div{display:flex;flex-direction:column-reverse}
+.dash-heat-stats dd{margin:0;font:var(--fw-medium) var(--fs-17)/1.2 var(--font-data);color:var(--rk)}
+.dash-heat-stats [data-rank=carbon] dd{color:var(--fg-3)}
 
-/* ── Inspiración ─────────────────────────────────────────────── */
-.dash-eyebrow-muted{color:var(--fg-3)}
-.dash-word-hd{align-items:baseline;flex-wrap:wrap}
+/* Racha en el héroe (marcador 7) */
+.dash-streak-box{display:flex;flex-direction:column;gap:var(--sp-2)}
+.dash-streak-pips{display:flex;gap:2px}
+.dash-streak-pips i{flex:1;height:4px;border-radius:1px;background:var(--bg-raised)}
+.dash-streak-pips i.is-on{background:var(--fg-brand)}
+.dash-streak-pips i.is-goal{background:var(--border-strong)}
+.dash-streak-next b{color:var(--fg-2);font-weight:var(--fw-medium)}
+
+/* ── Inspiración (Reflexión | Palabra, Inicio v2 marcador 3) ─── */
+.dash-insp{gap:var(--sp-3);padding:var(--sp-4) var(--sp-5) var(--sp-5)}
+.dash-insp-panel{gap:var(--sp-2)}
+.dash-quote-t{margin:0;font-size:19px;line-height:1.4;color:var(--fg-2)}
+.dash-word-hd{display:flex;align-items:baseline;gap:var(--sp-2);flex-wrap:wrap}
 .dash-word-w{font:var(--fw-semibold) var(--fs-24)/1.1 var(--font-display);color:var(--fg-1)}
+.dash-word-fr{margin-left:auto;font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);color:var(--info-fg)}
 .dash-word-mean{margin:0;font-size:var(--fs-13);color:var(--fg-2);line-height:var(--lh-relaxed)}
 .dash-word-ex{margin:0;font-style:italic}
-.dash-word-fr{align-self:flex-start}
-.dash-quote-t{margin:0;font-size:var(--fs-17)}
-.js-q-cat[data-kind=stoic]{color:var(--info-fg);background:var(--info-bg);border-color:var(--info-border)}
-.js-q-cat:not([data-kind=stoic]){color:var(--success-fg);background:var(--success-bg);border-color:var(--success-border)}
 .eu-iconbtn.is-spinning svg{animation:euSpin .7s linear infinite}
-
-/* Campanita de recordatorios (topbar) */
-.dash-bell{position:relative}
-.eu-tb-util .dash-bell{padding:0!important}
-.dash-bell-ct{position:absolute;top:3px;right:1px;min-width:17px;height:17px;padding:0 4px;border-radius:var(--r-full);background:var(--brand);color:var(--fg-on-brand);font:var(--fw-semibold) var(--fs-11)/17px var(--font-data);text-align:center;box-shadow:0 0 0 2px var(--bg-canvas)}
-.dash-bell-ct.is-urgent{background:var(--danger-fg);color:var(--bg-canvas)}
-.dash-bell-ct[hidden]{display:none}
-.dash-notif{padding-left:0;padding-right:0;padding-bottom:var(--sp-4)}
-.dash-notif .eu-btn{margin:0 var(--sp-4);width:auto}
-.dash-notif-hd{display:flex;gap:6px;align-items:center;padding:var(--sp-3) var(--sp-4) var(--sp-2)}
-.dash-notif-sec.is-urgent .dash-notif-hd{color:var(--danger-fg)}
-.dash-notif-sec+.dash-notif-sec{border-top:1px solid var(--border-subtle)}
-.dash-radar-more>summary{cursor:pointer;padding:var(--sp-2) var(--sp-4)}
+.dash-insp-panel[hidden],.dash-radar [hidden]{display:none}

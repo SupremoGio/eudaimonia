@@ -4709,6 +4709,16 @@ def init_db():
             focus_key   TEXT,
             updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
         );
+        -- Historial de la clasificación diaria (Carbón/Hierro/Oro/Diamante)
+        -- para el heatmap «Constancia» de Inicio. Se llena solo
+        -- (engine.classification_history): `sig` es la firma de los registros
+        -- de ese día; si cambia (marcas algo de ayer), el día se recalcula.
+        CREATE TABLE IF NOT EXISTS daily_classification (
+            date        TEXT PRIMARY KEY,
+            rank        TEXT NOT NULL,
+            sig         TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        );
         """)
 
         if db.execute("SELECT COUNT(*) as c FROM activity_defs").fetchone()["c"] == 0:

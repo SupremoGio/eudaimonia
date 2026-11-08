@@ -5,7 +5,7 @@ Rule hierarchy:
   1. Activity XP = pts (direct, no multiplier table)
   2. EC = ec field per activity (tier-based: micro=0, progreso=1, alto=2-3)
   3. Streak bonus: +5% XP at 7d, +10% XP at 30d
-  4. Balance rule: +20% XP if category <60% weekly avg
+  4. Balance rule: +20% XP if a virtue (pillar) is <60% of the weekly average XP (balance_week)
   5. Event multipliers (special_events table)
   6. Combo bonuses: LOGOI+HEGEMONIKON+PAIDEIA=+3 XP; 5 cats=+5 XP
   7. Daily classification: Carbón / Hierro / Oro / Diamante
@@ -200,32 +200,80 @@ def _streak_xp_mult(streak):
 
 # ── Balance Rule ──────────────────────────────────────────────────────────────
 
-def _get_balance_boost(category):
-    """Return 1.20 if category is below 60% of weekly average, else 1.0."""
-    _td = today_date()
-    week_start = (_td - timedelta(days=_td.weekday())).isoformat()
-    today_s = today_str()
+# Regla del 60% por virtud (Inicio v2, «Equilibrio de la semana»): con el
+# XP de la semana (lunes → hoy) por pilar de Acta Diurna, una virtud que
+# queda bajo el 60% del promedio de los 8 gana +20% XP en lo que registres
+# de ella hasta equilibrarse. Antes contaba actividades por categoría vieja
+# de data.ACTIVITIES (Salud Física, Salud Base…), que no es lo que ve el
+# usuario; ahora el motor y la tarjeta de Inicio leen la misma función.
+# Sin XP en al menos 2 virtudes no hay bonus (no hay «promedio» que
+# equilibrar al empezar la semana).
+BALANCE_RATIO = 0.6
+BALANCE_BOOST = 1.20
+BALANCE_MIN_PILLARS = 2
+
+# Categoría vieja (data.ACTIVITIES / módulos) → pilar, para las actividades
+# que no están en activity_defs (rutinas de Ataraxia, importar estados…).
+_CAT_TO_PILLAR = {
+    'Programación': 'logoi', 'Idiomas': 'cosmo', 'Salud Mental': 'hege', 'Salud Física': 'hege',
+    'Salud Base': 'hege', 'Baile': 'eury', 'Paideia': 'paideia', 'Finanzas': 'oiko', 'Orden': 'atar',
+}
+
+
+def pillar_of(key=None, category=None):
+    """Pilar de una actividad: el de activity_defs; si no está ahí, por su
+    categoría vieja. None si no pertenece a ninguna virtud."""
+    if key == 'eurythmia_session':
+        return 'eury'
+    if key:
+        d = adefs.get_by_key(key)
+        if d and d.get('pillar') in adefs.PILLARS:
+            return d['pillar']
+        category = category or ACTIVITIES.get(key, {}).get('cat')
+    return _CAT_TO_PILLAR.get(category)
+
+
+def balance_week(d=None):
+    """XP de la semana (lunes → `d`) y de `d` por virtud, promedio de las 8,
+    umbral (60%) y qué virtudes tienen el bonus. Lo usan _get_balance_boost
+    (motor) y la tarjeta «Equilibrio de la semana» de Inicio."""
+    d = d or today_date()
+    week_start = d - timedelta(days=d.weekday())
     with get_db() as db:
-        logs = db.execute(
-            "SELECT activity_key FROM activity_logs WHERE date >= ? AND date <= ? AND activity_key != 'priority_bonus'",
-            (week_start, today_s)
+        rows = db.execute(
+            "SELECT activity_key, date, COALESCE(SUM(pts),0) AS pts FROM activity_logs "
+            "WHERE date >= ? AND date <= ? AND activity_key != 'priority_bonus' GROUP BY activity_key, date",
+            (week_start.isoformat(), d.isoformat())
         ).fetchall()
+    defs = adefs.get_active_flat()
+    week = {p: 0 for p in adefs.PILLAR_ORDER}
+    today = {p: 0 for p in adefs.PILLAR_ORDER}
+    for r in rows:
+        key = r["activity_key"]
+        if key == 'eurythmia_session':
+            p = 'eury'
+        elif key in defs:
+            p = defs[key].get('pillar')
+        else:
+            p = pillar_of(key)
+        if p not in week:
+            continue
+        week[p] += r["pts"] or 0
+        if r["date"] == d.isoformat():
+            today[p] += r["pts"] or 0
+    avg = sum(week.values()) / len(week)
+    threshold = avg * BALANCE_RATIO
+    active = sum(1 for v in week.values() if v > 0) >= BALANCE_MIN_PILLARS
+    bonus = {p for p, v in week.items() if active and v < threshold}
+    return {"week_start": week_start.isoformat(), "week": week, "today": today,
+            "avg": avg, "threshold": threshold, "bonus": bonus}
 
-    if not logs:
+
+def _get_balance_boost(pillar):
+    """1.20 si la virtud está bajo el 60% del promedio semanal (balance_week)."""
+    if not pillar:
         return 1.0
-
-    cat_counts = {}
-    for log in logs:
-        key = log["activity_key"]
-        if key in ACTIVITIES:
-            cat = ACTIVITIES[key]["cat"]
-            cat_counts[cat] = cat_counts.get(cat, 0) + 1
-
-    if len(cat_counts) < 2:
-        return 1.0
-
-    avg = sum(cat_counts.values()) / len(cat_counts)
-    return 1.20 if cat_counts.get(category, 0) < 0.6 * avg else 1.0
+    return BALANCE_BOOST if pillar in balance_week()["bonus"] else 1.0
 
 
 # ── Active Special Events ─────────────────────────────────────────────────────
@@ -242,10 +290,10 @@ def _get_active_events():
     return [dict(r) for r in rows]
 
 
-def _compute_xp_mult(category, streak):
+def _compute_xp_mult(category, streak, key=None):
     mult = 1.0
     mult *= _streak_xp_mult(streak)
-    mult *= _get_balance_boost(category)
+    mult *= _get_balance_boost(pillar_of(key, category))
     for ev in _get_active_events():
         mult *= ev["xp_multiplier"]
         if category and ev.get("focus_category") == category:
@@ -524,6 +572,46 @@ def get_daily_classification(date_str=None):
         ),
     })
     return info
+
+
+def classification_history(start, end):
+    """{fecha ISO: rango} de `start` a `end` (date), para el heatmap de Inicio.
+    Calcular cada día con get_daily_classification tarda ~4 ms; 112 días son
+    ~0.5 s por carga, así que los días pasados se guardan en
+    daily_classification con la firma de sus registros (cuántos, último id,
+    suma de pts) y solo se recalcula un día si su firma cambió. Hoy siempre
+    va en vivo. Un día sin registros es Carbón sin consultar al motor."""
+    today = today_date()
+    with get_db() as db:
+        sigs = {r["date"]: f'{r["n"]}:{r["mx"]}:{r["pts"]}' for r in db.execute(
+            "SELECT date, COUNT(*) AS n, MAX(id) AS mx, COALESCE(SUM(pts),0) AS pts FROM activity_logs "
+            "WHERE date >= ? AND date <= ? GROUP BY date", (start.isoformat(), end.isoformat())).fetchall()}
+        cached = {r["date"]: (r["rank"], r["sig"]) for r in db.execute(
+            "SELECT date, rank, sig FROM daily_classification WHERE date >= ? AND date <= ?",
+            (start.isoformat(), end.isoformat())).fetchall()}
+    out, nuevos = {}, []
+    d = start
+    while d <= end:
+        ds = d.isoformat()
+        if d > today:
+            pass
+        elif ds not in sigs:
+            out[ds] = "carbon"
+        elif d == today:
+            out[ds] = get_daily_classification(ds)["rank"]
+        elif ds in cached and cached[ds][1] == sigs[ds]:
+            out[ds] = cached[ds][0]
+        else:
+            out[ds] = get_daily_classification(ds)["rank"]
+            nuevos.append((ds, out[ds], sigs[ds]))
+        d += timedelta(days=1)
+    if nuevos:
+        now = datetime.now().isoformat(timespec="seconds")
+        with get_db() as db:
+            db.executemany("INSERT OR REPLACE INTO daily_classification (date, rank, sig, updated_at) VALUES (?,?,?,?)",
+                           [(ds, r, sg, now) for ds, r, sg in nuevos])
+            db.commit()
+    return out
 
 
 _WEEKDAY_LABELS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
@@ -1008,7 +1096,7 @@ def process_activity(key, pts, cat, log_id, ec=None):
         act_def = adefs.get_by_key(key)
         ec      = act_def["ec"] if act_def else ACTIVITIES.get(key, {}).get("ec", 0)
 
-    xp_mult  = _compute_xp_mult(cat, streak)
+    xp_mult  = _compute_xp_mult(cat, streak, key)
     final_xp = max(1, int(pts * xp_mult))
 
     _award_xp(final_xp, "activity", f"Actividad: {key}", log_id, xp_mult)

@@ -1,0 +1,31 @@
+{# Inspiración (Inicio v2, marcador 3): Reflexión y Palabra del día en una
+   sola tarjeta con pestañas. ↻ renueva la pestaña activa (/api/quote/refresh
+   o /api/word/refresh); la pestaña se recuerda en localStorage eu-dash-insp. #}
+{% set q = data.reflexion %}
+{% set w = data.word_of_day %}
+<section class="eu-card eu-card--inset eu-vstack dash-insp" aria-label="Inspiración">
+  <div class="eu-between">
+    <div class="eu-seg" role="tablist" aria-label="Inspiración">
+      <button type="button" role="tab" id="insp-tab-quote" aria-controls="insp-quote" aria-selected="true" data-insp="quote">Reflexión</button>
+      <button type="button" role="tab" id="insp-tab-word" aria-controls="insp-word" aria-selected="false" tabindex="-1" data-insp="word">Palabra · EN→FR</button>
+    </div>
+    {{ ui.iconbtn('refresh-cw', 'Otra reflexión', id='insp-refresh') }}
+  </div>
+  <div class="eu-vstack dash-insp-panel" id="insp-quote" role="tabpanel" aria-labelledby="insp-tab-quote">
+    <blockquote class="t-quote dash-quote-t js-q-text">«{{ q.text }}»</blockquote>
+    <div class="t-meta"><span class="js-q-author">{{ q.author }}</span> · <span class="js-q-cat">{{ 'Estoica' if q.category == 'stoic' else 'Motivacional' }}</span></div>
+  </div>
+  <div class="eu-vstack dash-insp-panel" id="insp-word" role="tabpanel" aria-labelledby="insp-tab-word" hidden>
+    {% if w %}
+    <div class="dash-word-hd">
+      <span class="dash-word-w js-w-word">{{ w.word }}</span>
+      <span class="t-greek js-w-phon">{{ w.phonetic }}</span>
+      <span class="dash-word-fr js-w-fr">FR · {{ w.french }}</span>
+    </div>
+    <p class="dash-word-mean js-w-meaning">{{ w.meaning }}</p>
+    <p class="t-meta dash-word-ex js-w-example">“{{ w.example }}”</p>
+    {% else %}
+    {{ ui.empty('languages', 'Sin palabra hoy', 'Todavía no hay una palabra del día cargada. Pulsa ↻ o revisa Idiomas.', compact=True) }}
+    {% endif %}
+  </div>
+</section>

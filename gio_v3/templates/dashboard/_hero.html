@@ -1,48 +1,98 @@
-{# Hoy: XP del día + clasificación (izq.) · nivel, racha, EC y perks (der.) #}
+{# Héroe de Inicio v2 (handoff Inicio-v2, marcadores 1, 2 y 7).
+   Izquierda: la clasificación manda — rango, qué falta para el siguiente
+   (clf.criteria, engine.get_daily_classification) y la acción de un clic.
+   Derecha: XP de hoy, nivel y racha como métricas secundarias. #}
 {% set clf = data.classification %}
-{# La clasificación es por anclas/touches (engine.get_daily_classification),
-   no por umbrales de XP: la escalera de insignias muestra lo que pide cada rango. #}
 {% set rank_names = {'carbon': 'Carbón', 'iron': 'Hierro', 'gold': 'Oro', 'diamond': 'Diamante'} %}
 {% set rname = rank_names.get(clf.rank, 'Carbón') %}
-<section class="eu-card eu-card--featured dash-hero" aria-label="Tu día">
-  <div class="eu-vstack eu-gap-4">
-    <div class="eu-between dash-hero-top">
-      <div class="t-eyebrow">Hoy</div>
-      <a class="dash-rank" href="/logros" aria-label="Clasificación de hoy: {{ rname }}. Ver logros">
-        {{ ui.rank(clf.rank, 52, cls='eu-rank-glow') }}
-        <span><span class="t-meta">Clasificación</span><b class="t-card">{{ rname }}</b></span>
-      </a>
+{% set crit = clf.criteria or [] %}
+{% set faltan = crit|rejectattr('ok')|list|length %}
+{% set order = ['carbon', 'iron', 'gold', 'diamond'] %}
+{% set ri = order.index(clf.rank) if clf.rank in order else 0 %}
+<section class="eu-card eu-card--featured dash-hero js-hero" aria-label="Tu día">
+  <div class="dash-hero-main">
+    <div class="dash-hero-rank js-hero-rank">
+      <a href="/logros" class="dash-hero-medal" aria-label="Clasificación de hoy: {{ rname }}. Ver logros">{{ ui.rank(clf.rank, 64, cls='eu-rank-glow') }}</a>
+      <div class="dash-hero-rank-txt">
+        <div class="t-eyebrow">Hoy · clasificación</div>
+        <div class="dash-hero-rname">{{ rname }}</div>
+        <div class="dash-hero-sub">
+          {%- if clf.next_rank and faltan -%}
+          Para {{ rank_names[clf.next_rank] }} te falta{{ 'n' if faltan != 1 }} {{ faltan }} cosa{{ 's' if faltan != 1 }}
+          {%- elif clf.next_rank -%}
+          {{ clf.next_hint }}
+          {%- else -%}
+          Máxima clasificación del día
+          {%- endif -%}
+        </div>
+        <ol class="dash-ladder" aria-label="Escalera: {{ rname }}, {{ ri + 1 }} de 4">
+          {%- for r in order %}
+          <li class="{{ 'is-past' if loop.index0 < ri else ('is-now' if loop.index0 == ri else 'is-next') }}" title="{{ rank_names[r] }}">{{ ui.rank(r, 26, locked=loop.index0 > ri) }}</li>
+          {%- endfor %}
+        </ol>
+      </div>
     </div>
-    <div class="t-data-xl fg-xp dash-xp">{{ data.xp_today }}<span class="t-meta"> / {{ XP_DAILY_GOAL }} XP</span></div>
-    {{ ui.xpbar(data.xp_today, XP_DAILY_GOAL) }}
-    {{ ui.ranks(clf.rank) }}
-    {% if clf.next_hint %}<p class="t-meta dash-hint">{{ clf.next_hint }}</p>{% endif %}
-    {% if clf.anchors_total > 0 or clf.touches_total > 0 %}
-    <div class="eu-hstack eu-gap-4 t-meta num">
-      {% if clf.anchors_total > 0 %}<span>Anclas {{ clf.anchors_done }}/{{ clf.anchors_total }}</span>{% endif %}
-      {% if clf.touches_total > 0 %}<span>Touches {{ clf.touches_done }}/{{ clf.touches_total }}</span>{% endif %}
+
+    {% if crit %}
+    <ul class="dash-crits js-hero-crit" aria-label="Lo que falta para {{ rank_names.get(clf.next_rank, '') }}">
+      {% for c in crit %}{{ ui.criterion(c) }}{% endfor %}
+    </ul>
+    {% elif not clf.next_rank %}
+    <p class="dash-diamond js-hero-crit">Día Diamante. Todo lo que marques desde aquí suma XP sin presión.</p>
+    {% endif %}
+
+    {# Siguiente paso: la actividad que cierra una categoría con un clic #}
+    {% set s = data.suggestion %}
+    {% if s %}
+    <div class="dash-next" {% if v2.sugg_cat %}data-cat="{{ v2.sugg_cat }}"{% endif %}>
+      <div class="eu-mod-ic"><i data-lucide="zap"></i></div>
+      <div class="eu-grow">
+        <div class="t-eyebrow dash-next-eb">Siguiente paso</div>
+        <div class="dash-next-t">{{ s.label }} <span>· cierra {{ s.cat }}</span></div>
+      </div>
+      <button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-sugg" data-key="{{ s.key }}" data-pts="{{ s.pts }}"
+        aria-label="Marcar {{ s.label }}, +{{ s.pts }} XP"><i data-lucide="check"></i><span>Marcar · +{{ s.pts }} XP</span></button>
+    </div>
+    {% else %}
+    <div class="dash-next">
+      <div class="eu-mod-ic"><i data-lucide="scroll-text"></i></div>
+      <div class="eu-grow">
+        <div class="t-eyebrow dash-next-eb">Siguiente paso</div>
+        <div class="dash-next-t">Nada a un clic de cerrarse <span>· revisa tu Acta</span></div>
+      </div>
+      {{ ui.button('Abrir Acta', variant='secondary', size='sm', icon='arrow-right', href='/actividades/') }}
     </div>
     {% endif %}
   </div>
 
-  <div class="eu-vstack eu-gap-3 dash-hero-level">
-    <a class="eu-hstack eu-gap-3 dash-level-link" href="/logros" aria-label="Ver logros y niveles">
-      {{ ui.tower(data.level, 96) }}
-      <div>
-        <div class="t-meta">Nivel {{ data.level }} de 10 · Torre estoica</div>
-        <div class="t-section">{{ data.level_name|title }}</div>
-        {% if data.level_subtitle %}<div class="t-quote dash-level-sub">«{{ data.level_subtitle.split('—')[-1]|trim|capitalize }}.»</div>{% endif %}
+  <div class="dash-hero-side">
+    <div class="dash-hero-xp js-hero-xp">
+      <div class="eu-between"><span class="t-meta">XP de hoy</span>
+        <span class="dash-xp num">{{ data.xp_today }}<span class="t-meta"> / {{ XP_DAILY_GOAL }}</span></span></div>
+      {{ ui.xpbar(data.xp_today, XP_DAILY_GOAL) }}
+    </div>
+    <hr class="dash-sep">
+    <a class="dash-level-link" href="/logros" aria-label="Nivel {{ data.level }} de 10: {{ data.level_name|title }}. Ver logros y niveles">
+      {{ ui.tower(data.level, 80) }}
+      <div class="eu-grow">
+        <div class="t-meta">Nivel {{ data.level }} de 10</div>
+        <div class="dash-level-name">{{ data.level_name|title }}</div>
+        <div class="eu-xpbar dash-xpbar-thin" role="progressbar" aria-valuenow="{{ data.level_pct }}" aria-valuemax="100" aria-label="Progreso al siguiente nivel"><i style="width:{{ data.level_pct }}%"></i></div>
+        <div class="t-meta dash-level-next">{% if v2.next_level %}<span class="num">{{ '{:,}'.format(data.xp_to_next) }} XP</span> para <b>{{ v2.next_level|title }}</b>{% else %}Nivel máximo{% endif %}</div>
       </div>
     </a>
-    <div class="eu-xpbar dash-xpbar-thin" role="progressbar" aria-valuenow="{{ data.level_pct }}" aria-valuemax="100" aria-label="Progreso al siguiente nivel"><i style="width:{{ data.level_pct }}%"></i></div>
-    <div class="eu-between t-meta">
-      <span class="num">{{ '{:,}'.format(data.total_xp) }} XP</span>
-      {% if v2.next_level %}<span>{{ data.xp_to_next }} para <b class="fg-2">{{ v2.next_level|title }}</b></span>{% else %}<span>Nivel máximo</span>{% endif %}
-    </div>
-    <div class="eu-grid-3 eu-gap-2">
-      <div><div class="t-data">{{ data.streak }} d</div><div class="t-meta">Racha{% if v2.streak_bonus > 0 %} · +{{ v2.streak_bonus }}%{% endif %}</div></div>
-      <div><div class="t-data fg-ec">{{ data.ec_balance }}</div><div class="t-meta">EC</div></div>
-      <div><div class="t-data">{{ v2.perks }}</div><div class="t-meta">Perks</div></div>
+    <hr class="dash-sep">
+    {% set sn = v2.streak_next %}
+    <div class="dash-streak-box">
+      <div class="dash-streak">
+        <i data-lucide="flame"></i>
+        <span class="dash-streak-n num">{{ data.streak }} día{{ 's' if data.streak != 1 }}</span>
+        {% if v2.streak_bonus > 0 %}<span class="eu-badge dash-streak-bonus">+{{ v2.streak_bonus }}% XP</span>{% endif %}
+      </div>
+      <div class="dash-streak-pips" role="img" aria-label="Racha: {{ sn.filled }} de 30 días">
+        {%- for i in range(30) %}<i class="{{ 'is-on' if i < sn.filled else ('is-goal' if i in (6, 29) else '') }}"></i>{% endfor -%}
+      </div>
+      <div class="t-meta dash-streak-next">{% if sn.max %}<b>{{ sn.text }}</b>{% else %}{{ sn.text.split(' para ')[0] }} para <b>{{ sn.text.split(' para ')[1] }}</b>{% endif %} · si se rompe, conservas tu XP</div>
     </div>
   </div>
 </section>

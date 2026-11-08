@@ -1,22 +1,31 @@
-{# Pendiente: recordatorios, tareas GTD, riego/trasplante, partidos y wishlist
-   con fecha en los próximos días (dashboard.routes._build_deadlines). #}
+{# Pendiente (Inicio v2, marcador 3): recordatorios, tareas GTD, cuidados de
+   plantas, partidos y wishlist con fecha (dashboard.routes._build_deadlines),
+   agrupados en «Hoy y vencidos» y «Esta semana». Lo que pasa de los primeros
+   (dl.extra) queda en «Ver N más» dentro de su grupo. #}
 {% set dl_icons = {'reminder': 'bell', 'task': 'square-check-big', 'wishlist': 'shopping-bag', 'partido': 'trophy', 'planta_riego': 'droplets', 'planta_trasplante': 'sprout', 'planta_fertilizar': 'flask-conical', 'planta_rotar': 'rotate-cw', 'planta_limpiar': 'sparkles', 'planta_plagas': 'bug', 'planta_tratamiento': 'spray-can'} %}
 {% set dl_labels = {'reminder': 'Recordatorio', 'task': 'Tarea · Praxis', 'wishlist': 'Wishlist', 'partido': 'Partido · Fútbol', 'planta_riego': 'Riego · Plantas', 'planta_trasplante': 'Trasplante · Plantas', 'planta_fertilizar': 'Fertilizar · Plantas', 'planta_rotar': 'Rotar · Plantas', 'planta_limpiar': 'Limpiar hojas · Plantas', 'planta_plagas': 'Revisar plagas · Plantas', 'planta_tratamiento': 'Tratamiento · Plantas'} %}
+{% set urg = data.deadlines|selectattr('days', 'le', 0)|list %}
+{% set prox = data.deadlines|selectattr('days', 'gt', 0)|list %}
 <section class="eu-card eu-card--flush dash-radar js-radar-box" aria-labelledby="dash-radar-t">
   <div class="eu-between dash-card-hd">
     <h2 class="t-card" id="dash-radar-t">Pendiente</h2>
-    <span class="t-meta js-radar-count">{{ data.deadlines|length }} próximos</span>
+    <a class="dash-radar-new" href="/perfil/#recordatorios"><i data-lucide="plus"></i>Nuevo</a>
   </div>
   {% if data.deadlines %}
-  <div class="eu-list js-radar-list">
-    {% for dl in data.deadlines if not dl.extra %}{% include "dashboard/_radar_row.html" %}{% endfor %}
-    {% set extra = data.deadlines|selectattr('extra')|list %}
-    {% if extra %}
-    <details class="dash-radar-more">
-      <summary class="t-meta">Ver {{ extra|length }} más</summary>
-      {% for dl in extra %}{% include "dashboard/_radar_row.html" %}{% endfor %}
-    </details>
-    {% endif %}
+  <div class="js-radar-list">
+    {% for titulo, items, cls in [('Hoy y vencidos', urg, 'is-urgent'), ('Esta semana', prox, '')] if items %}
+    {% set extra = items|selectattr('extra')|list %}
+    <div class="dash-radar-sec js-dl-sec {{ cls }}" role="group" aria-label="{{ titulo }}">
+      <div class="t-eyebrow dash-radar-sec-hd">{{ titulo }} <span class="num js-dl-sec-ct">{{ items|length }}</span></div>
+      {% for dl in items if not dl.extra %}{% include "dashboard/_radar_row.html" %}{% endfor %}
+      {% if extra %}
+      <details class="dash-radar-more">
+        <summary class="t-meta">Ver {{ extra|length }} más</summary>
+        {% for dl in extra %}{% include "dashboard/_radar_row.html" %}{% endfor %}
+      </details>
+      {% endif %}
+    </div>
+    {% endfor %}
   </div>
   {% endif %}
   <div class="js-radar-empty"{% if data.deadlines %} hidden{% endif %}>

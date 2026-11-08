@@ -1,0 +1,34 @@
+{# Equilibrio de la semana (Inicio v2, marcador 5): XP de la semana por
+   virtud contra el 60% del promedio. Bajo el umbral, la virtud gana +20% XP
+   (engine.balance_week: la misma regla que aplica el motor). #}
+{% set b = v2.balance %}
+<section class="eu-card eu-vstack dash-balance" aria-labelledby="dash-balance-t">
+  <div class="dash-balance-hd">
+    <div>
+      <h2 class="t-section" id="dash-balance-t">Equilibrio de la semana</h2>
+      <p class="t-meta">Bajo el {{ b.ratio_pct }}% del promedio, una virtud gana +{{ b.boost_pct }}% XP hasta equilibrarse.</p>
+    </div>
+    {% if b.n_bonus %}<span class="eu-badge eu-badge--warning">{{ b.n_bonus }} con bonus</span>{% endif %}
+  </div>
+  <div class="dash-bal-grid">
+    {% for v in b.rows %}
+    <a class="dash-bal" data-cat="{{ v.cat }}" href="{{ v.url }}"
+       aria-label="{{ v.label }}, {{ v.fn }}: {{ v.xp_week }} XP esta semana, {{ ('+' ~ v.xp_today ~ ' hoy') if v.xp_today else 'nada hoy' }}{{ ', con bonus de +' ~ b.boost_pct ~ '% XP' if v.bonus }}">
+      <span class="eu-mod-ic dash-bal-ic"><i data-lucide="{{ v.icon }}"></i></span>
+      <span class="dash-bal-body">
+        <span class="dash-bal-top">
+          <span class="dash-bal-name">{{ v.label }}</span>
+          <span class="t-meta dash-bal-fn">{{ v.fn }}</span>
+          <span class="dash-bal-today{{ ' is-none' if not v.xp_today }}">{{ ('+' ~ v.xp_today ~ ' hoy') if v.xp_today else 'hoy —' }}</span>
+        </span>
+        <span class="dash-bal-bar" aria-hidden="true"><i class="{{ 'is-bonus' if v.bonus }}" style="width:{{ v.pct }}%"></i><b style="left:{{ b.tick }}%"></b></span>
+      </span>
+      <span class="dash-bal-end">{% if v.bonus %}<span class="eu-badge eu-badge--warning num">+{{ b.boost_pct }}%</span>{% else %}<span class="num">{{ v.xp_week }} XP</span>{% endif %}</span>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="t-meta dash-bal-legend">
+    <span><i aria-hidden="true"></i>Umbral {{ b.ratio_pct }}% del promedio ({{ b.threshold|round|int }} XP)</span>
+    <span>XP a la derecha = semana · arriba = hoy</span>
+  </div>
+</section>
