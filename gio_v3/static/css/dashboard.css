@@ -1,14 +1,14 @@
 /* ═══════════════════════════════════════════════════════════════
    Dashboard (/) — Design System V2 · pantalla 02
    Solo tokens (app.css) y componentes eu-* (components.css).
-   Móvil: una columna Héroe → Reflexión → Pendiente → Equilibrio →
-   Constancia → Palabra. ≥1024: grid 1fr / 360px.
+   Móvil: una columna Héroe → Pendiente → Equilibrio → Constancia →
+   Inspiración. ≥1024: grid 1fr / 360px.
    ═══════════════════════════════════════════════════════════════ */
 .dash{display:flex;flex-direction:column;gap:var(--sp-3)}
 .dash-main,.dash-side{display:contents}
 .dash-hello{order:0;display:none}
-.dash-hero{order:1}.dash-quote{order:2}.dash-radar{order:3}.dash-balance{order:4}
-.dash-heat{order:5}.dash-word{order:6}
+.dash-hero{order:1}.dash-radar{order:2}.dash-balance{order:3}
+.dash-heat{order:4}.dash-insp{order:5}
 .dash-hello .t-page{margin:var(--sp-2) 0 0}
 .dash h2{margin:0}
 
@@ -95,12 +95,32 @@
 .dash-streak-n{font:var(--fw-medium) var(--fs-15)/1.2 var(--font-data);color:var(--fg-1)}
 .dash-streak-bonus{margin-left:auto;background:var(--brand-subtle);color:var(--xp-fg);border-color:transparent}
 
-/* ── Pendiente (radar) ───────────────────────────────────────── */
+/* ── Pendiente (Inicio v2, marcador 3) ───────────────────────── */
 .dash-card-hd{padding:var(--sp-4) var(--sp-4) var(--sp-1)}
-.dash-radar .eu-row-t{font-size:var(--fs-13)}
-.dash-radar .eu-row{padding-right:var(--sp-2)}
-.dash-radar-row{transition:opacity var(--dur-base) var(--ease-exit)}
+.dash-radar-new{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-12);color:var(--fg-3);text-decoration:none;min-height:32px}
+.dash-radar-new svg{width:14px;height:14px}
+.dash-radar-new:hover{color:var(--fg-1)}
+.dash-radar-sec+.dash-radar-sec{border-top:1px solid var(--border-subtle)}
+.dash-radar-sec-hd{display:flex;align-items:center;gap:6px;padding:var(--sp-3) var(--sp-4) var(--sp-1);color:var(--fg-3)}
+.dash-radar-sec.is-urgent .dash-radar-sec-hd{color:var(--danger-fg)}
+.dash-radar-sec-hd .num{font-family:var(--font-data)}
+.dash-radar-row{--tn:var(--fg-2);display:flex;align-items:center;gap:var(--sp-3);min-height:52px;padding:6px var(--sp-2) 6px var(--sp-4);transition:opacity var(--dur-base) var(--ease-exit)}
+.dash-radar-row[data-tone=danger]{--tn:var(--danger-fg)}.dash-radar-row[data-tone=warning]{--tn:var(--warning-fg)}.dash-radar-row[data-tone=info]{--tn:var(--info-fg)}
 .dash-radar-row.is-leaving{opacity:0}
+.dash-radar-ic{width:32px;height:32px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg-raised);color:var(--tn)}
+.dash-radar-ic svg{width:16px;height:16px}
+.dash-radar-main{flex:1;min-width:0}
+.dash-radar-t{font-size:var(--fs-13);color:var(--fg-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-radar-main .t-meta{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-radar-when{font:var(--fw-medium) var(--fs-11)/1 var(--font-data);color:var(--tn);white-space:nowrap;text-transform:uppercase;letter-spacing:.02em}
+.dash-radar-row:not([data-tone]) .dash-radar-when{color:var(--fg-3)}
+.dash-radar-act{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:var(--r-sm);border:1px solid var(--border-subtle);background:transparent;color:var(--fg-2);cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast)}
+.dash-radar-act:hover{background:var(--bg-hover);color:var(--fg-1)}
+.dash-radar-act:focus-visible{outline:2px solid var(--border-brand);outline-offset:1px}
+.dash-radar-act:disabled{opacity:.5;cursor:default}
+.dash-radar-act svg{width:16px;height:16px}
+.dash-radar-more>summary{cursor:pointer;padding:var(--sp-2) var(--sp-4)}
+.dash-radar>.js-radar-list{padding-bottom:var(--sp-2)}
 
 /* ── Equilibrio de la semana (Inicio v2, marcador 5) ─────────── */
 .dash-balance{gap:var(--sp-4)}
@@ -142,27 +162,14 @@
 .eu-heat-legend i[data-l="2"]{background:color-mix(in oklab,var(--brand) 45%,var(--bg-raised))}
 .eu-heat-legend i[data-l="4"]{background:var(--fg-brand-strong)}
 
-/* ── Inspiración ─────────────────────────────────────────────── */
-.dash-eyebrow-muted{color:var(--fg-3)}
-.dash-word-hd{align-items:baseline;flex-wrap:wrap}
+/* ── Inspiración (Reflexión | Palabra, Inicio v2 marcador 3) ─── */
+.dash-insp{gap:var(--sp-3);padding:var(--sp-4) var(--sp-5) var(--sp-5)}
+.dash-insp-panel{gap:var(--sp-2)}
+.dash-quote-t{margin:0;font-size:19px;line-height:1.4;color:var(--fg-2)}
+.dash-word-hd{display:flex;align-items:baseline;gap:var(--sp-2);flex-wrap:wrap}
 .dash-word-w{font:var(--fw-semibold) var(--fs-24)/1.1 var(--font-display);color:var(--fg-1)}
+.dash-word-fr{margin-left:auto;font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);color:var(--info-fg)}
 .dash-word-mean{margin:0;font-size:var(--fs-13);color:var(--fg-2);line-height:var(--lh-relaxed)}
 .dash-word-ex{margin:0;font-style:italic}
-.dash-word-fr{align-self:flex-start}
-.dash-quote-t{margin:0;font-size:var(--fs-17)}
-.js-q-cat[data-kind=stoic]{color:var(--info-fg);background:var(--info-bg);border-color:var(--info-border)}
-.js-q-cat:not([data-kind=stoic]){color:var(--success-fg);background:var(--success-bg);border-color:var(--success-border)}
 .eu-iconbtn.is-spinning svg{animation:euSpin .7s linear infinite}
-
-/* Campanita de recordatorios (topbar) */
-.dash-bell{position:relative}
-.eu-tb-util .dash-bell{padding:0!important}
-.dash-bell-ct{position:absolute;top:3px;right:1px;min-width:17px;height:17px;padding:0 4px;border-radius:var(--r-full);background:var(--brand);color:var(--fg-on-brand);font:var(--fw-semibold) var(--fs-11)/17px var(--font-data);text-align:center;box-shadow:0 0 0 2px var(--bg-canvas)}
-.dash-bell-ct.is-urgent{background:var(--danger-fg);color:var(--bg-canvas)}
-.dash-bell-ct[hidden]{display:none}
-.dash-notif{padding-left:0;padding-right:0;padding-bottom:var(--sp-4)}
-.dash-notif .eu-btn{margin:0 var(--sp-4);width:auto}
-.dash-notif-hd{display:flex;gap:6px;align-items:center;padding:var(--sp-3) var(--sp-4) var(--sp-2)}
-.dash-notif-sec.is-urgent .dash-notif-hd{color:var(--danger-fg)}
-.dash-notif-sec+.dash-notif-sec{border-top:1px solid var(--border-subtle)}
-.dash-radar-more>summary{cursor:pointer;padding:var(--sp-2) var(--sp-4)}
+.dash-insp-panel[hidden],.dash-radar [hidden]{display:none}

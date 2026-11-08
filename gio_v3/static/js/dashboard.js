@@ -1,8 +1,8 @@
 /* Dashboard (/) — interacciones. Antes vivía inline en dashboard/index.html.
    Endpoints (sin cambios):
      POST /actividades/api/activity/log   {key}  → marcar la sugerencia (refresca el héroe)
-     GET  /api/quote/refresh                     → nueva reflexión
-     GET  /api/word/refresh                      → otra palabra del día
+     GET  /api/quote/refresh                     → nueva reflexión (pestaña Reflexión)
+     GET  /api/word/refresh                      → otra palabra del día (pestaña Palabra)
      POST data-url de cada fila del radar        → cumplir tarea/riego/recordatorio */
 (function () {
   'use strict';
@@ -48,51 +48,71 @@
     });
   });
 
-  // ── Reflexión del día
-  var qBtn = document.getElementById('quote-refresh');
-  if (qBtn) qBtn.addEventListener('click', function () {
-    spin(qBtn, true);
-    fetch('/api/quote/refresh').then(function (r) { return r.json(); }).then(function (q) {
-      var t = document.querySelector('.js-q-text'), a = document.querySelector('.js-q-author'),
-          c = document.querySelector('.js-q-cat');
-      if (t) t.textContent = '«' + q.text + '»';
-      if (a) a.textContent = q.author;
-      if (c) { c.dataset.kind = q.category; c.textContent = q.category === 'stoic' ? 'Estoica' : 'Motivacional'; }
-    }).catch(function () {}).then(function () { spin(qBtn, false); });
+  // ── Inspiración: pestañas Reflexión | Palabra (role=tablist; las flechas
+  //    las maneja eu-a11y.js) y un solo ↻ que renueva la pestaña activa.
+  var INSP_KEY = 'eu-dash-insp';
+  var inspTabs = document.querySelectorAll('[data-insp]');
+  var inspBtn = document.getElementById('insp-refresh');
+  function inspShow(which, save) {
+    inspTabs.forEach(function (t) {
+      var on = t.dataset.insp === which;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      var panel = document.getElementById(t.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !on;
+    });
+    if (inspBtn) {
+      var lbl = which === 'word' ? 'Otra palabra' : 'Otra reflexión';
+      inspBtn.setAttribute('aria-label', lbl); inspBtn.title = lbl;
+    }
+    if (save) { try { localStorage.setItem(INSP_KEY, which); } catch (_) {} }
+  }
+  inspTabs.forEach(function (t) { t.addEventListener('click', function () { inspShow(t.dataset.insp, true); }); });
+  if (inspTabs.length) {
+    var saved = null; try { saved = localStorage.getItem(INSP_KEY); } catch (_) {}
+    inspShow(saved === 'word' ? 'word' : 'quote', false);
+  }
+  function current() { var t = document.querySelector('[data-insp][aria-selected=true]'); return t ? t.dataset.insp : 'quote'; }
+  if (inspBtn) inspBtn.addEventListener('click', function () {
+    spin(inspBtn, true);
+    if (current() === 'word') {
+      fetch('/api/word/refresh').then(function (r) { return r.json(); }).then(function (w) {
+        if (!document.querySelector('.js-w-word')) { location.reload(); return; }   // venía vacía
+        document.querySelector('.js-w-word').textContent = w.word;
+        document.querySelector('.js-w-phon').textContent = w.phonetic;
+        document.querySelector('.js-w-meaning').textContent = w.meaning;
+        document.querySelector('.js-w-example').textContent = '“' + w.example + '”';
+        document.querySelector('.js-w-fr').textContent = 'FR · ' + w.french;
+      }).catch(function () {}).then(function () { spin(inspBtn, false); });
+    } else {
+      fetch('/api/quote/refresh').then(function (r) { return r.json(); }).then(function (q) {
+        var t = document.querySelector('.js-q-text'), a = document.querySelector('.js-q-author'),
+            c = document.querySelector('.js-q-cat');
+        if (t) t.textContent = '«' + q.text + '»';
+        if (a) a.textContent = q.author;
+        if (c) c.textContent = q.category === 'stoic' ? 'Estoica' : 'Motivacional';
+      }).catch(function () {}).then(function () { spin(inspBtn, false); });
+    }
   });
 
-  // ── Palabra del día
-  var wBtn = document.getElementById('word-refresh');
-  if (wBtn) wBtn.addEventListener('click', function () {
-    spin(wBtn, true);
-    fetch('/api/word/refresh').then(function (r) { return r.json(); }).then(function (w) {
-      if (!document.querySelector('.js-w-word')) { location.reload(); return; }   // venía vacía
-      document.querySelector('.js-w-word').textContent = w.word;
-      document.querySelector('.js-w-phon').textContent = w.phonetic;
-      document.querySelector('.js-w-meaning').textContent = w.meaning;
-      document.querySelector('.js-w-example').textContent = '“' + w.example + '”';
-      document.querySelector('.js-w-fr').textContent = 'FR · ' + w.french;
-    }).catch(function () {}).then(function () { spin(wBtn, false); });
-  });
-
-  // ── Radar y campanita: marcar como cumplido. La misma fila vive en la
-  //    tarjeta «Pendiente» y en el panel de la campanita (data-key).
+  // ── Pendiente: marcar como cumplido (o posponer riego). La fila sale con
+  //    animación y se actualizan los contadores de ambos grupos.
   function syncRadar() {
-    var left = document.querySelectorAll('.dash-radar .dash-radar-row').length;
-    var count = document.querySelector('.js-radar-count'); if (count) count.textContent = left + ' próximos';
+    document.querySelectorAll('.js-dl-sec').forEach(function (sec) {
+      var n = sec.querySelectorAll('.dash-radar-row').length;
+      if (!n) { sec.remove(); return; }
+      sec.querySelector('.js-dl-sec-ct').textContent = n;
+      var more = sec.querySelector('.dash-radar-more');
+      if (more) {
+        var m = more.querySelectorAll('.dash-radar-row').length;
+        if (!m) more.remove(); else more.querySelector('summary').textContent = 'Ver ' + m + ' más';
+      }
+    });
     document.querySelectorAll('.js-radar-box').forEach(function (box) {
       if (box.querySelector('.dash-radar-row')) return;
       var list = box.querySelector('.js-radar-list'); if (list) list.remove();
       var empty = box.querySelector('.js-radar-empty'); if (empty) empty.hidden = false;
     });
-    document.querySelectorAll('.js-dl-sec').forEach(function (sec) {
-      var n = sec.querySelectorAll('.dash-radar-row').length;
-      if (!n) sec.remove(); else sec.querySelector('.js-dl-sec-ct').textContent = n;
-    });
-    var ct = document.querySelector('.js-bell-ct'), bell = document.querySelector('.dash-bell');
-    var urgent = document.querySelectorAll('.dash-radar .dash-radar-row[data-level=red]').length;
-    if (ct) { ct.textContent = left; ct.hidden = !left; ct.classList.toggle('is-urgent', urgent > 0); }
-    if (bell) bell.setAttribute('aria-label', 'Recordatorios: ' + left + ' pendiente' + (left === 1 ? '' : 's') + (urgent ? ', ' + urgent + ' para hoy o vencido' + (urgent === 1 ? '' : 's') : ''));
   }
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('.js-dl-done');

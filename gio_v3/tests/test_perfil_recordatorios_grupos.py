@@ -129,7 +129,9 @@ def test_pagina_muestra_chips_por_tema(client):
     assert 'js-rem-tema' in html and 'data-tema="finanzas"' in html and 'data-tema="eventos"' in html
 
 
-def test_campanita_separa_vencidos_de_proximos(client):
+def test_pendiente_separa_vencidos_de_proximos(client):
+    # Antes lo hacía la campanita de Inicio; desde Inicio v2 (Sprint 4) es la
+    # tarjeta «Pendiente»: «Hoy y vencidos» / «Esta semana».
     from utils import today_str
     hoy = date.fromisoformat(today_str())
     _add('2020-01-01')
@@ -137,5 +139,5 @@ def test_campanita_separa_vencidos_de_proximos(client):
     from datetime import timedelta
     _add((hoy + timedelta(days=3)).isoformat())
     html = client.get('/').get_data(as_text=True)
-    assert 'Vencidos y de hoy <span class="js-dl-sec-ct">2</span>' in html
-    assert 'Próximos días <span class="js-dl-sec-ct">1</span>' in html
+    assert 'Hoy y vencidos <span class="num js-dl-sec-ct">2</span>' in html
+    assert 'Esta semana <span class="num js-dl-sec-ct">1</span>' in html
