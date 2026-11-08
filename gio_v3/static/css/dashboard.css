@@ -150,17 +150,35 @@
 .dash-bal-legend i{width:1.5px;height:12px;background:var(--fg-3);opacity:.6}
 @media (max-width:479px){.dash-balance-hd{flex-direction:column;align-items:flex-start}}
 
-/* ── Constancia (heatmap) ────────────────────────────────────── */
-.dash-heat-scroll{overflow-x:auto;scrollbar-width:none}
+/* ── Constancia (Inicio v2, marcador 8): por clasificación ──── */
+.dash-heat{gap:var(--sp-4)}
+.dash-heat-hd{flex-wrap:wrap;gap:var(--sp-2)}
+[data-rank]{--rk:var(--bg-raised)}
+[data-rank=iron]{--rk:var(--tier-hierro)}[data-rank=gold]{--rk:var(--tier-oro)}[data-rank=diamond]{--rk:var(--tier-diamante)}
+.dash-heat-legend{display:flex;align-items:center;gap:10px;font-size:var(--fs-11);color:var(--fg-3)}
+.dash-heat-legend span{display:flex;align-items:center;gap:4px}
+.dash-heat-legend i{width:10px;height:10px;border-radius:2px;background:var(--rk)}
+.dash-heat-body{display:flex;align-items:flex-end;gap:var(--sp-6);flex-wrap:wrap}
+.dash-heat-scroll{overflow-x:auto;scrollbar-width:none;max-width:100%}
 .dash-heat-scroll::-webkit-scrollbar{display:none}
-.dash-heat-grid{width:max-content}
-.eu-heat i.is-future{visibility:hidden}
-@media (min-width:1024px){
-  .dash-heat-grid{grid-template-rows:repeat(7,16px);grid-auto-columns:16px;gap:var(--sp-1)}
-}
-.eu-heat-legend i[data-l="0"]{background:var(--bg-raised)}
-.eu-heat-legend i[data-l="2"]{background:color-mix(in oklab,var(--brand) 45%,var(--bg-raised))}
-.eu-heat-legend i[data-l="4"]{background:var(--fg-brand-strong)}
+.dash-heat-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,12px);grid-auto-columns:12px;gap:3px;width:max-content;padding:2px}
+@media (min-width:480px){.dash-heat-grid{grid-template-rows:repeat(7,16px);grid-auto-columns:16px;gap:4px}}
+.dash-heat-grid i{border-radius:3px;background:var(--bg-raised)}
+.dash-heat-grid i[data-rank]{background:var(--rk)}
+.dash-heat-grid i.today{outline:1.5px solid var(--fg-1);outline-offset:1px}
+.dash-heat-grid i.is-future{visibility:hidden}
+.dash-heat-stats{display:grid;grid-template-columns:repeat(2,auto);gap:var(--sp-3) var(--sp-6);margin:0;padding-bottom:4px}
+.dash-heat-stats div{display:flex;flex-direction:column-reverse}
+.dash-heat-stats dd{margin:0;font:var(--fw-medium) var(--fs-17)/1.2 var(--font-data);color:var(--rk)}
+.dash-heat-stats [data-rank=carbon] dd{color:var(--fg-3)}
+
+/* Racha en el héroe (marcador 7) */
+.dash-streak-box{display:flex;flex-direction:column;gap:var(--sp-2)}
+.dash-streak-pips{display:flex;gap:2px}
+.dash-streak-pips i{flex:1;height:4px;border-radius:1px;background:var(--bg-raised)}
+.dash-streak-pips i.is-on{background:var(--fg-brand)}
+.dash-streak-pips i.is-goal{background:var(--border-strong)}
+.dash-streak-next b{color:var(--fg-2);font-weight:var(--fw-medium)}
 
 /* ── Inspiración (Reflexión | Palabra, Inicio v2 marcador 3) ─── */
 .dash-insp{gap:var(--sp-3);padding:var(--sp-4) var(--sp-5) var(--sp-5)}

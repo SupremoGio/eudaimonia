@@ -82,10 +82,17 @@
       </div>
     </a>
     <hr class="dash-sep">
-    <div class="dash-streak">
-      <i data-lucide="flame"></i>
-      <span class="dash-streak-n num">{{ data.streak }} día{{ 's' if data.streak != 1 }}</span>
-      {% if v2.streak_bonus > 0 %}<span class="eu-badge dash-streak-bonus">+{{ v2.streak_bonus }}% XP</span>{% endif %}
+    {% set sn = v2.streak_next %}
+    <div class="dash-streak-box">
+      <div class="dash-streak">
+        <i data-lucide="flame"></i>
+        <span class="dash-streak-n num">{{ data.streak }} día{{ 's' if data.streak != 1 }}</span>
+        {% if v2.streak_bonus > 0 %}<span class="eu-badge dash-streak-bonus">+{{ v2.streak_bonus }}% XP</span>{% endif %}
+      </div>
+      <div class="dash-streak-pips" role="img" aria-label="Racha: {{ sn.filled }} de 30 días">
+        {%- for i in range(30) %}<i class="{{ 'is-on' if i < sn.filled else ('is-goal' if i in (6, 29) else '') }}"></i>{% endfor -%}
+      </div>
+      <div class="t-meta dash-streak-next">{% if sn.max %}<b>{{ sn.text }}</b>{% else %}{{ sn.text.split(' para ')[0] }} para <b>{{ sn.text.split(' para ')[1] }}</b>{% endif %} · si se rompe, conservas tu XP</div>
     </div>
   </div>
 </section>

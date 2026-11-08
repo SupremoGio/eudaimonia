@@ -574,6 +574,46 @@ def get_daily_classification(date_str=None):
     return info
 
 
+def classification_history(start, end):
+    """{fecha ISO: rango} de `start` a `end` (date), para el heatmap de Inicio.
+    Calcular cada día con get_daily_classification tarda ~4 ms; 112 días son
+    ~0.5 s por carga, así que los días pasados se guardan en
+    daily_classification con la firma de sus registros (cuántos, último id,
+    suma de pts) y solo se recalcula un día si su firma cambió. Hoy siempre
+    va en vivo. Un día sin registros es Carbón sin consultar al motor."""
+    today = today_date()
+    with get_db() as db:
+        sigs = {r["date"]: f'{r["n"]}:{r["mx"]}:{r["pts"]}' for r in db.execute(
+            "SELECT date, COUNT(*) AS n, MAX(id) AS mx, COALESCE(SUM(pts),0) AS pts FROM activity_logs "
+            "WHERE date >= ? AND date <= ? GROUP BY date", (start.isoformat(), end.isoformat())).fetchall()}
+        cached = {r["date"]: (r["rank"], r["sig"]) for r in db.execute(
+            "SELECT date, rank, sig FROM daily_classification WHERE date >= ? AND date <= ?",
+            (start.isoformat(), end.isoformat())).fetchall()}
+    out, nuevos = {}, []
+    d = start
+    while d <= end:
+        ds = d.isoformat()
+        if d > today:
+            pass
+        elif ds not in sigs:
+            out[ds] = "carbon"
+        elif d == today:
+            out[ds] = get_daily_classification(ds)["rank"]
+        elif ds in cached and cached[ds][1] == sigs[ds]:
+            out[ds] = cached[ds][0]
+        else:
+            out[ds] = get_daily_classification(ds)["rank"]
+            nuevos.append((ds, out[ds], sigs[ds]))
+        d += timedelta(days=1)
+    if nuevos:
+        now = datetime.now().isoformat(timespec="seconds")
+        with get_db() as db:
+            db.executemany("INSERT OR REPLACE INTO daily_classification (date, rank, sig, updated_at) VALUES (?,?,?,?)",
+                           [(ds, r, sg, now) for ds, r, sg in nuevos])
+            db.commit()
+    return out
+
+
 _WEEKDAY_LABELS_ES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 _RANK_POINTS        = {"carbon": 0, "iron": 1, "gold": 2, "diamond": 3}
 _WEEKLY_DESC = {

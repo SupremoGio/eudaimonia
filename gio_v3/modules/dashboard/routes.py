@@ -348,25 +348,41 @@ def _build_balance_week() -> dict:
             'boost_pct': round((engine.BALANCE_BOOST - 1) * 100), 'ratio_pct': round(engine.BALANCE_RATIO * 100)}
 
 
-def _build_heat_16w(goal: int = 15) -> list:
-    """16 semanas (lunes→domingo) terminando en la semana actual, para .eu-heat
-    (columna = semana, fila = día). Nivel 0–4 relativo a la meta diaria."""
+_RANK_ES = {'carbon': 'Carbón', 'iron': 'Hierro', 'gold': 'Oro', 'diamond': 'Diamante'}
+
+
+def _build_heat_16w() -> dict:
+    """«Constancia» (Inicio v2, marcador 8): 16 semanas lunes→domingo hasta la
+    semana actual (columna = semana, fila = día), coloreadas por la
+    clasificación del día (no por XP) y conteo de días por rango."""
+    from modules.gamification.engine import classification_history
     today = today_date()
     start = today - timedelta(days=today.weekday()) - timedelta(weeks=15)
-    with get_db() as db:
-        rows = db.execute(
-            "SELECT date, SUM(pts) AS xp FROM activity_logs WHERE date>=? AND date<=? GROUP BY date",
-            (start.isoformat(), today.isoformat())
-        ).fetchall()
-    by_date = {r['date']: r['xp'] or 0 for r in rows}
-    cells = []
+    ranks = classification_history(start, today)
+    cells, counts = [], {k: 0 for k in _RANK_ES}
     for i in range(16 * 7):
         d = start + timedelta(days=i)
-        v = by_date.get(d.isoformat(), 0)
-        lvl = 0 if v <= 0 else 1 if v < goal / 2 else 2 if v < goal else 3 if v < goal + 5 else 4
-        cells.append({'date': d.isoformat(), 'xp': v, 'l': lvl,
+        r = ranks.get(d.isoformat())
+        if r:
+            counts[r] += 1
+        cells.append({'date': d.isoformat(), 'rank': r, 'label': _RANK_ES.get(r, ''),
                       'today': d == today, 'future': d > today})
-    return cells
+    return {'cells': cells, 'counts': counts,
+            'stats': [{'rank': k, 'label': _RANK_ES[k], 'n': counts[k]} for k in ('diamond', 'gold', 'iron', 'carbon')]}
+
+
+def _streak_next(streak: int) -> dict:
+    """Meta de la racha (Inicio v2, marcador 7): 7 días → +5% XP, 30 → +10%."""
+    from modules.gamification.engine import _streak_xp_mult
+    streak = max(0, int(streak or 0))
+    if streak >= 30:
+        return {'days_left': 0, 'next_bonus': None, 'max': True, 'filled': 30,
+                'text': 'Bonus máximo · +10%'}
+    goal, bonus = (7, 5) if streak < 7 else (30, 10)
+    left = goal - streak
+    return {'days_left': left, 'next_bonus': bonus, 'max': False, 'filled': streak,
+            'bonus_now': round((_streak_xp_mult(streak) - 1) * 100),
+            'text': f"{left} día{'s' if left != 1 else ''} más para +{bonus}% XP"}
 
 
 def _build_dashboard_v2(data: dict) -> dict:
@@ -389,6 +405,7 @@ def _build_dashboard_v2(data: dict) -> dict:
         'perks':       perks,
         'balance':     _build_balance_week(),
         'heat':        _build_heat_16w(),
+        'streak_next': _streak_next(data.get('streak', 0)),
         'sugg_cat':    _ACT_CAT_TO_VIRTUE.get(sugg['cat']) if sugg else None,
         'radar_tone':  _RADAR_TONE,
     }
