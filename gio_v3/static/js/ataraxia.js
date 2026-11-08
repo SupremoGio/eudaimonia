@@ -55,12 +55,18 @@
   });
 
   /* ── Progreso ── */
+  /* Fila de recompensa: circle-dashed → circle-check verde al cumplirse */
+  function setReward(id, ok) {
+    var row = $('rw-' + id); if (!row || row.classList.contains('is-ok') === ok) return;
+    row.classList.toggle('is-ok', ok);
+    icon(row.querySelector('.at-rw-ic'), ok ? 'circle-check' : row.dataset.ic);
+  }
   function updateDay(dia, r) {
-    var pct = r.total ? Math.round(r.done / r.total * 100) : 0;
-    document.querySelectorAll('.js-day-cnt[data-dia="' + dia + '"]').forEach(function (el) { el.textContent = r.done + ' / ' + r.total; });
-    document.querySelectorAll('.js-day-bar[data-dia="' + dia + '"]').forEach(function (el) { el.style.width = pct + '%'; });
+    document.querySelectorAll('.js-day-cnt[data-dia="' + dia + '"]').forEach(function (el) { el.textContent = r.complete ? '✓' : r.done + '/' + r.total; });
+    document.querySelectorAll('.js-rw-cnt[data-dia="' + dia + '"]').forEach(function (el) { el.textContent = r.done + '/' + r.total; });
     $('tab-' + dia).dataset.complete = String(!!r.complete);
-    $((dia === 'sabado' ? 'sat' : 'sun') + '-day-complete').hidden = !r.complete;
+    setReward(dia, !!r.complete);
+    setReward('finde', $('tab-sabado').dataset.complete === 'true' && $('tab-domingo').dataset.complete === 'true');
     (r.bloques || []).forEach(function (bl) {
       var p = $('blprog-' + bl.bloque_id); if (p) p.textContent = bl.done_count + '/' + bl.required_count;
       var bar = $('blbar-' + bl.bloque_id); if (bar) bar.style.width = (bl.required_count ? Math.round(bl.done_count / bl.required_count * 100) : 0) + '%';
@@ -75,6 +81,7 @@
   async function toggleTask(btn) {
     var id = btn.dataset.task, bid = btn.dataset.bl, dia = btn.dataset.dia;
     if (pending[id]) return;
+    if (root.dataset.preview) { toast('Vista previa: se marca el sábado y el domingo'); return; }
     pending[id] = true;
     var done = btn.getAttribute('aria-pressed') === 'true';
     var secs = TIMERS[bid] ? TIMERS[bid].secs : 0;
@@ -89,8 +96,6 @@
         (g.combo_bonuses || []).forEach(function (c) { setTimeout(function () { toast(c.label + ' +' + c.xp + ' XP', 'win'); }, 300); });
         if (window.euGam) euGam(g, { el: btn });
       }
-      if (!done) fetch('/ataraxia/api/rutina/finde/status').then(function (r) { return r.json(); })
-        .then(function (s) { if (s.finde_perfecto) $('finde-banner').hidden = false; }).catch(function () {});
     } catch (_) { toast('Sin conexión', 'err'); }
     finally { delete pending[id]; }
   }
@@ -128,8 +133,15 @@
     } catch (_) { toast('Sin conexión', 'err'); }
   });
 
+  /* ── Menú ⋯ (nota 4): el Reset vive aquí y siempre pide confirmación ── */
+  var more = $('more-trigger'), menu = $('at-menu');
+  function setMenu(open) { menu.hidden = !open; more.setAttribute('aria-expanded', String(open)); if (open) menu.querySelector('[role=menuitem]').focus(); }
+  more.addEventListener('click', function (e) { e.stopPropagation(); setMenu(menu.hidden); });
+  document.addEventListener('click', function (e) { if (!menu.hidden && !menu.contains(e.target)) setMenu(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) { setMenu(false); more.focus(); } });
+
   /* ── Reset de la semana ── */
-  $('reset-trigger').addEventListener('click', function () { euModal.open('at-reset'); });
+  $('reset-trigger').addEventListener('click', function () { setMenu(false); euModal.open('at-reset'); });
   $('reset-confirm').addEventListener('click', async function () {
     euModal.close('at-reset');
     try {

@@ -4,46 +4,60 @@
 {% block title %}Ataraxia — Eudaimonia{% endblock %}
 {% block module_title %}ATARAXIA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/ataraxia.css') }}">{% endblock %}
-{% block mtitle %}<b>Ataraxia</b><span>Rutina · {{ sabado.done + domingo.done }}/{{ sabado.total + domingo.total }} bloques</span>{% endblock %}
+{% block mtitle %}<b>Ataraxia</b><span>Semana {{ semana_num }} · {{ sabado.done + domingo.done }}/{{ sabado.total + domingo.total }} bloques</span>{% endblock %}
 {% set TIER = {'carbon': 'carbon', 'iron': 'hierro', 'gold': 'oro', 'diamond': 'diamante'} %}
 
 {% block content %}
-<div class="at" id="at" data-cat="ataraxia" data-dia="{{ dia }}">
+<div class="at{% if not is_weekend %} is-preview{% endif %}" id="at" data-cat="ataraxia" data-dia="{{ dia }}"{% if not is_weekend %} data-preview="1"{% endif %}>
   <div class="at-main">
+    {# Encabezado (handoff Ataraxia v2, nota 1): fecha · semana, pestañas
+       compactas con su conteo y el menú ⋯ con el Reset (nota 4). #}
     <header class="at-hd">
-      <div><div class="t-eyebrow">Hoy · Rutina</div><h1 class="t-page">Ataraxia</h1>
-        <p class="t-meta at-lead">El fin de semana deja la casa y la semana en orden: sábado reset, domingo estrategia.</p></div>
+      <div class="at-hd-txt"><div class="t-eyebrow">{{ fecha_larga }} · Semana {{ semana_num }}</div><h1 class="t-page">Ataraxia</h1></div>
+      <div class="at-hd-tools">
+        <div class="eu-seg at-tabs" role="tablist" aria-label="Día">
+          {% for key, d, icon, name in [('sabado', sabado, 'flower-2', 'Sábado'), ('domingo', domingo, 'brain', 'Domingo')] %}
+          <button type="button" class="at-day-tab" role="tab" id="tab-{{ key }}" data-dia-set="{{ key }}" aria-controls="dia-{{ key }}" aria-selected="{{ 'true' if dia == key else 'false' }}" data-complete="{{ 'true' if d.complete else 'false' }}">
+            <i data-lucide="{{ icon }}"></i>{{ name }}<span class="num at-day-cnt js-day-cnt" data-dia="{{ key }}">{{ '✓' if d.complete else d.done ~ '/' ~ d.total }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        <div class="at-more">
+          <button type="button" class="eu-iconbtn eu-iconbtn--outline at-more-btn" id="more-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="at-menu" aria-label="Más opciones" title="Más opciones"><i data-lucide="ellipsis"></i></button>
+          <div class="at-menu" id="at-menu" role="menu" hidden>
+            <button type="button" class="at-menu-it" role="menuitem" id="reset-trigger"><i data-lucide="rotate-ccw"></i>Resetear semana</button>
+          </div>
+        </div>
+      </div>
     </header>
 
     {% if not is_weekend %}
-    <p class="eu-card at-note"><i data-lucide="info"></i>Hoy no es fin de semana: estás revisando las rutinas de la semana {{ semana_id }}.</p>
+    <p class="t-meta at-preview"><i data-lucide="eye"></i>Faltan {{ dias_para_sabado }} día{{ 's' if dias_para_sabado != 1 }} para el sábado · vista previa</p>
     {% endif %}
-
-    <div class="at-days" role="tablist" aria-label="Día">
-      {% for key, d, icon, name, sub in [('sabado', sabado, 'flower-2', 'Sábado', 'Ataraxia reset'), ('domingo', domingo, 'brain', 'Domingo', 'Eudaimonia strategy')] %}
-      <button type="button" class="eu-card at-day-tab" role="tab" id="tab-{{ key }}" data-dia-set="{{ key }}" aria-controls="dia-{{ key }}" aria-selected="{{ 'true' if dia == key else 'false' }}" data-complete="{{ 'true' if d.complete else 'false' }}">
-        <span class="eu-between"><span class="eu-hstack at-day-n"><i data-lucide="{{ icon }}"></i><span class="t-ui">{{ name }}</span></span>
-          <span class="t-meta num js-day-cnt" data-dia="{{ key }}">{{ d.done }} / {{ d.total }}</span></span>
-        <span class="t-meta">{{ sub }}</span>
-        <span class="eu-progress eu-progress--thin at-prog" role="progressbar" aria-label="Progreso del {{ name|lower }}"><i class="js-day-bar" data-dia="{{ key }}" style="width:{{ d.pct }}%"></i></span>
-      </button>
-      {% endfor %}
-    </div>
 
     {% include "ataraxia/_sabado.html" %}
     {% include "ataraxia/_domingo.html" %}
   </div>
 
-  <aside class="at-side" aria-label="Semana">
-    <div class="eu-card at-finde" id="finde-banner"{% if not (sat_combo and sun_combo) %} hidden{% endif %}>
-      <span class="eu-row-ic"><i data-lucide="zap"></i></span>
-      <div><div class="t-ui">Fin de semana perfecto</div><div class="t-meta">Sábado + domingo completos · +15 XP · +30 EC</div></div>
-    </div>
-    <section class="eu-card eu-vstack at-week" aria-labelledby="at-week-t">
-      <div class="eu-between"><h2 class="t-card" id="at-week-t">Semana {{ semana_id }}</h2>
-        <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm at-reset" id="reset-trigger"><i data-lucide="rotate-ccw"></i>Reset</button></div>
-      <p class="t-meta">Completa los bloques requeridos del sábado (+4 XP · +2 EC) y del domingo (+5 XP · +3 EC). Los dos = fin de semana perfecto.</p>
-      <p class="t-meta">Los bloques opcionales (como Jugos) no cuentan para el 100%.</p>
+  <aside class="at-side" aria-label="Fin de semana">
+    {# Recompensas visibles desde el inicio (nota 2): cada fila pasa a ✓ verde al cumplirse #}
+    {% set perfect = sabado.complete and domingo.complete %}
+    <section class="eu-card at-rw" aria-labelledby="at-rw-t">
+      <div class="t-eyebrow" id="at-rw-t">Recompensas del fin de semana</div>
+      {% for rid, label, sub, rw, ok, ic in [
+        ('sabado', 'Sábado completo', '<span class="num js-rw-cnt" data-dia="sabado">' ~ sabado.done ~ '/' ~ sabado.total ~ '</span> bloques requeridos', '+4 XP · +2 EC', sabado.complete, 'circle-dashed'),
+        ('domingo', 'Domingo completo', '<span class="num js-rw-cnt" data-dia="domingo">' ~ domingo.done ~ '/' ~ domingo.total ~ '</span> bloques requeridos', '+5 XP · +3 EC', domingo.complete, 'circle-dashed'),
+        ('finde', 'Fin de semana perfecto', 'los dos días al 100%', '+15 XP · +30 EC', perfect, 'zap')] %}
+      <div class="at-rw-row{% if ok %} is-ok{% endif %}" id="rw-{{ rid }}" data-ic="{{ ic }}">
+        <span class="at-rw-ic"><i data-lucide="{{ 'circle-check' if ok else ic }}"></i></span>
+        <div class="eu-grow"><div class="at-rw-l">{{ label }}</div><div class="t-meta">{{ sub|safe }}</div></div>
+        <span class="at-rw-v num">{{ rw }}</span>
+      </div>
+      {% endfor %}
+    </section>
+    <section class="at-wkday">
+      <div class="at-wkday-t">Entre semana</div>
+      <p class="t-meta">De lunes a viernes esta pantalla muestra cuánto falta para el sábado y deja revisar sin marcar. «Resetear semana» vive en el menú ⋯ y siempre pide confirmación.</p>
     </section>
   </aside>
 </div>

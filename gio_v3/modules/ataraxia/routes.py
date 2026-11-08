@@ -413,7 +413,15 @@ def index():
     domingo_data = _build_rutina("domingo", semana_id)
     sat_combo, sun_combo = _get_combo_status(semana_id)
 
+    _td = today_date()
+    fecha_larga = "{} {} de {}".format(
+        ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][dow], _td.day,
+        ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+         "octubre", "noviembre", "diciembre"][_td.month - 1])
     return render_template('ataraxia/index.html',
+        fecha_larga  = fecha_larga,
+        semana_num   = _td.isocalendar()[1],
+        dias_para_sabado = (5 - dow) % 7,
         dia          = dia,
         semana_id    = semana_id,
         sabado       = sabado_data,

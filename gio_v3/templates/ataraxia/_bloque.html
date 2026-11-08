@@ -23,7 +23,7 @@
       {% for t in bl.tareas %}
       {% set tdone = t.id in bl.done_ids %}
       <li>
-        <button type="button" class="at-task js-task" id="trow-{{ t.id }}" data-task="{{ t.id }}" data-bl="{{ bl.bloque_id }}" data-dia="{{ dia }}" aria-pressed="{{ 'true' if tdone else 'false' }}">
+        <button type="button" class="at-task js-task" id="trow-{{ t.id }}" data-task="{{ t.id }}" data-bl="{{ bl.bloque_id }}" data-dia="{{ dia }}" aria-pressed="{{ 'true' if tdone else 'false' }}"{% if not is_weekend %} aria-disabled="true"{% endif %}>
           <span class="eu-act-check"><i data-lucide="check"></i></span>
           <span class="at-task-main"><span class="at-task-t">{{ t.nombre }}</span>
             <span class="at-task-meta">
