@@ -28,9 +28,7 @@ NAV = [
         {'id': 'acta', 'label': 'Acta Diurna', 'fn': 'Registro diario',
          'icon': 'scroll-text', 'url': '/actividades/'},
         {'id': 'praxis', 'label': 'Praxis', 'fn': 'Tareas',
-         'icon': 'list-checks', 'url': '/gtd/', 'children': [
-            {'id': 'praxis-puntos', 'label': 'Puntos y nivel', 'url': '/gtd/points'},
-        ]},
+         'icon': 'list-checks', 'url': '/gtd/'},
         {'id': 'ataraxia', 'label': 'Ataraxia', 'fn': 'Rutina', 'cat': 'ataraxia',
          'icon': 'sun-dim', 'url': '/ataraxia/'},
     ]},

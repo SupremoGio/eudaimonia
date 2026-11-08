@@ -34,13 +34,8 @@ def index():
 
 @gtd_bp.route('/points')
 def points():
-    with get_db() as db:
-        log = db.execute("""SELECT l.*, t.title FROM gtd_points_log l
-            LEFT JOIN gtd_tasks t ON l.task_id=t.id
-            ORDER BY l.id DESC LIMIT 60""").fetchall()
-        daily = db.execute("""SELECT date, SUM(points_earned) as total
-            FROM gtd_points_log GROUP BY date ORDER BY date DESC LIMIT 30""").fetchall()
-    return render_template('gtd/points.html', log=log, daily=daily, stats=get_gtd_stats())
+    # Una sola moneda (D1): el progreso de Praxis es XP y vive en Logros.
+    return redirect('/logros')
 
 
 # Legacy routes redirect to new SPA
@@ -126,28 +121,28 @@ def complete_task(tid):
             (today, today, now, tid)
         )
         priority = task['priority'] or 'normal'
-        pts = task['points'] or 4
-        db.execute(
-            "INSERT INTO gtd_points_log (task_id,points_earned,reason,date) VALUES (?,?,?,?)",
-            (tid, pts, 'task_complete', today)
-        )
         done_count = db.execute(
             "SELECT COUNT(*) as c FROM gtd_tasks WHERE fecha_completado=?", (today,)
         ).fetchone()["c"]
-        bonus = 0
-        if done_count == 3:
-            db.execute(
-                "INSERT INTO gtd_points_log (task_id,points_earned,reason,date) VALUES (?,?,?,?)",
-                (None, 15, 'daily_bonus_3tasks', today)
-            )
-            bonus = 15
+        # Bono de 3 tareas una sola vez al día: borrar una completada y cerrar
+        # otra vuelve a dar 3, así que se revisa el ledger antes de pagarlo.
+        bonus_paid = db.execute(
+            "SELECT 1 FROM xp_ledger WHERE source='bonus' AND date=? AND description LIKE 'Bonus diario GTD%'",
+            (today,)
+        ).fetchone() is not None
         db.commit()
 
+    # Una sola moneda (handoff Praxis v2, D1): el premio es XP del engine.
+    # gtd_points_log ya no se escribe; la tabla y su historial se conservan.
     gam = engine.process_gtd_task(tid, priority)
-    if bonus:
+    bonus_xp = 0
+    if done_count >= 3 and not bonus_paid:
         gam["daily_bonus_gam"] = engine.process_gtd_daily_bonus()
+        bonus_xp = gam["daily_bonus_gam"]["xp"]
 
-    return jsonify({'ok': True, 'pts': pts, 'bonus': bonus, 'stats': get_gtd_stats(), 'gam': gam})
+    # pts/bonus: deprecados (siempre 0), se mantienen por compatibilidad.
+    return jsonify({'ok': True, 'xp': gam.get('xp', 0), 'bonus_xp': bonus_xp, 'pts': 0, 'bonus': 0,
+                    'stats': get_gtd_stats(), 'gam': gam})
 
 
 @gtd_bp.route('/api/task/<int:tid>/update', methods=['POST'])

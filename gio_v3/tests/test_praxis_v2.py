@@ -160,3 +160,46 @@ def test_promover_a_hoy_y_bono_con_el_conteo_de_complete(client):
         r = client.post(f'/gtd/api/task/{tid}/complete').get_json()
         assert r['stats']['done_today'] == n
     assert 'data-done-today="3"' in client.get('/gtd/').get_data(as_text=True)
+
+
+# ── Sprint 4: una sola moneda, XP (D1) ───────────────────────────────────────
+
+def _ledger(where):
+    with database.get_db() as db:
+        return db.execute(f"SELECT COALESCE(SUM(amount),0) s, COUNT(*) c FROM xp_ledger WHERE {where}").fetchone()
+
+
+def _nueva(client, texto='T'):
+    return client.post('/gtd/api/task', json={'texto': texto, 'tipo': 'tarea'}).get_json()['id']
+
+
+def test_completar_da_solo_xp_y_no_puntos(client):
+    r = client.post(f'/gtd/api/task/{_nueva(client)}/complete').get_json()
+    assert r['ok'] and r['xp'] > 0 and r['pts'] == 0 and r['bonus'] == 0 and r['bonus_xp'] == 0
+    with database.get_db() as db:
+        assert db.execute('SELECT COUNT(*) FROM gtd_points_log').fetchone()[0] == 0
+    assert _ledger("source='task'")['s'] == r['xp']
+
+
+def test_bono_de_tres_tareas_una_sola_vez(client):
+    ids = [_nueva(client, f'T{i}') for i in range(5)]
+    rs = [client.post(f'/gtd/api/task/{t}/complete').get_json() for t in ids[:3]]
+    assert [r['bonus_xp'] for r in rs] == [0, 0, 5]
+    assert 'daily_bonus_gam' in rs[2]['gam']
+    # una 4.ª no repite el bono
+    assert client.post(f'/gtd/api/task/{ids[3]}/complete').get_json()['bonus_xp'] == 0
+    # ni borrar una completada y cerrar otra (el conteo vuelve a 3)
+    client.delete(f'/gtd/api/task/{ids[0]}')
+    client.delete(f'/gtd/api/task/{ids[1]}')
+    assert client.post(f'/gtd/api/task/{ids[4]}/complete').get_json()['bonus_xp'] == 0
+    assert _ledger("source='bonus' AND description LIKE 'Bonus diario GTD%'")['c'] == 1
+
+
+def test_points_redirige_a_logros_y_sale_del_menu(client):
+    r = client.get('/gtd/points')
+    assert r.status_code == 302 and r.headers['Location'].endswith('/logros')
+    from modules.nav import NAV
+    urls = [c['url'] for g in NAV for it in g['items'] for c in it.get('children', [])]
+    assert '/gtd/points' not in urls
+    js = _src('static/js/praxis.js')
+    assert "' pts'" not in js and 'r.pts' not in js

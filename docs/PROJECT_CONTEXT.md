@@ -155,7 +155,7 @@ eudaimonia/                         ← raíz del repo
 | Inicio | `dashboard/index.html` + `_hero`, `_balance`, `_heat`, `_radar`, `_inspiracion` | rango + criterios + siguiente paso, XP/nivel/racha, equilibrio por virtud, constancia por rango, pendiente, reflexión/palabra |
 | Acta Diurna | `actividades/index.html` | checklist de hábitos por categoría, undo toast, animación de ícono |
 | Ataraxia | `ataraxia/index.html` | rutinas por bloques (fin de semana dual) |
-| Praxis (GTD) | `gtd/praxis.html`, `gtd/points.html` | captura rápida, secciones plegables, puntos |
+| Praxis (GTD) | `gtd/praxis.html`, `gtd/_capture.html` | captura en una barra, Inbox de un clic (4 destinos), Hoy con bono de 3 tareas (+5 XP), Semana «→ Hoy», fechas relativas (`praxis-due.js`). Premio solo en XP; `gtd_points_log` ya no se escribe |
 | Logros | `gamification/logros.html` | badges, clasificación, XP |
 | Recompensas | `recompensas/index.html` | tienda de EC, cooldowns |
 | Oikonomia hub | `finanzas/hub.html` + `hub/_hero`, `_debts`, `_budget`, `_subs` | Disponible + por día, 50·30·20, siguiente paso («Marcar pagado»), patrimonio, racha, próximos pagos, categorías en riesgo (cifras ocultables) |
@@ -214,7 +214,7 @@ No hay sistema de componentes formal (ni macros Jinja significativas). La reutil
 | `/` | Dashboard | principal |
 | `/actividades/` | Acta Diurna | principal |
 | `/ataraxia/` | Ataraxia (rutinas) | principal |
-| `/gtd/` (`/gtd/dashboard`), `/gtd/points` | Praxis GTD | principal |
+| `/gtd/` (`/gtd/dashboard`); `/gtd/points` → redirige a `/logros` | Praxis GTD | principal |
 | `/finanzas/` | Oikonomia hub | Módulos |
 | `/finanzas/estados/` | Estados de cuenta (SPA React) | ↳ Oikonomia |
 | `/finanzas/estados/viajes/` | Gastos de viajes | ↳ Oikonomia |

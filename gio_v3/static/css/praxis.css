@@ -2,7 +2,7 @@
    Praxis (/gtd/) — Design System V2
    Handoff Praxis v2: captura en una barra, Inbox de un clic, Hoy
    destacada con el bono, Semana con «→ Hoy» y a la derecha Delegar,
-   Ideas y Completadas hoy. /gtd/points reusa .px-hd/.px-stats/.px-level.
+   Ideas y Completadas hoy. Solo XP (D1).
    ═══════════════════════════════════════════════════════════════ */
 .px{display:flex;flex-direction:column;gap:var(--sp-4)}
 .px h1,.px p{margin:0}
@@ -10,7 +10,6 @@
 @media (min-width:1024px){.px{gap:var(--sp-5)}}
 .px-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
 .px-hd .t-page{margin-top:var(--sp-2)}
-.px-lead{margin-top:var(--sp-2);color:var(--fg-2)}   /* solo /gtd/points */
 @media (max-width:767px){.px-hd{display:none}}
 
 /* Captura (nota 1): una barra — campo, tipo segmentado y Capturar */
@@ -27,16 +26,6 @@
   .px-cap-in{flex-basis:calc(100% - 140px)}
   .px-cap-tipo{order:3;flex:1}
   .px-cap-tipo button{flex:1;justify-content:center;height:38px}
-}
-
-/* Cifras de /gtd/points */
-.px-stats{gap:var(--sp-3)}
-.px-stats .eu-card{padding:var(--sp-4)}
-@media (max-width:767px){
-  .px-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-2)}
-  .px-stats .eu-card{padding:var(--sp-3)}
-  .px-stats .eu-stat-val{font-size:var(--fs-20)}
-  .px-stats .eu-stat-lbl svg{display:none}
 }
 
 /* Matriz (notas 4–5 y 7): columna principal Inbox · Hoy · Esta semana;
@@ -60,7 +49,6 @@
 .px-sec-ct{margin-left:auto;font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--tone-fg)}
 .px-sec--inbox{border-color:var(--border-default)}
 .px-sec--inbox .js-rev{margin-left:auto}
-.px-sec-tg{flex:1;min-width:0;display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:0;background:none;text-align:left;font:inherit;color:inherit}
 .px-chev{width:16px;height:16px;color:var(--fg-3);transition:transform var(--dur-fast)}
 .px-empty{padding:0 var(--sp-4) var(--sp-4);font-style:italic}
 
@@ -156,15 +144,5 @@
 .px-rev-q{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
 .px-rev-hint{padding-top:var(--sp-2);border-top:1px solid var(--border-subtle)}
 
-/* Puntos y nivel */
-.px-level{display:flex;align-items:center;gap:var(--sp-5);flex-wrap:wrap}
-.px-seal{width:64px;height:64px}
-.px-seal .t-data{font-size:var(--fs-28);color:var(--fg-brand)}
-.px-level-main{flex:1;min-width:200px;gap:var(--sp-2)}
-.px-streak{text-align:center}
-.px-streak .t-data{font-size:var(--fs-28);color:var(--fg-brand)}
-.px-table-wrap{overflow-x:auto}
 @media (max-width:767px){.px-sec--inbox .js-rev{font-size:0;gap:0;padding:0 var(--sp-2)}.px-sec--inbox .js-rev svg{width:18px;height:18px}}
 
-/* En Puntos el encabezado no es plegable: sin cursor de botón */
-div.px-sec-tg{cursor:default}

@@ -76,10 +76,11 @@
     if (!r || !r.ok) { btn.disabled = false; btn.setAttribute('aria-pressed', 'false'); toast('Error al completar', 'err'); return; }
     t.completado = true; t.fecha_completado = today();
     doneToday = r.stats && r.stats.done_today != null ? r.stats.done_today : doneToday + 1;
-    // «+N XP» sube desde el botón antes de re-renderizar la lista.
-    if (window.euGam) euGam(Object.assign({ xp: (r.pts || 0) + (r.bonus || 0) }, r.gam || {}), { el: btn, pop: false });
+    // Una sola moneda (D1): XP. «+N XP» sube desde el botón antes de re-renderizar.
+    var xp = (r.xp || 0) + (r.bonus_xp || 0);
+    if (window.euGam) euGam(Object.assign({}, r.gam || {}, { xp: xp }), { el: btn, pop: false });
     render();
-    toast('+' + r.pts + ' pts' + (r.bonus ? ' · bonus +' + r.bonus : ''), 'win');
+    toast('+' + (r.xp || 0) + ' XP' + (r.bonus_xp ? ' · bono de 3 tareas +' + r.bonus_xp + ' XP' : ''), 'win');
   }
   async function del(id) {
     if (!(await euConfirm('¿Eliminar esta tarea?', { confirmLabel: 'Eliminar' }))) return;
