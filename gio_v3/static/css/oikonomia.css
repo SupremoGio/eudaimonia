@@ -123,20 +123,34 @@
 .oik-unclass-cta{font-weight:var(--fw-medium);white-space:nowrap}
 @media (max-width:767px){.oik-card-hd{padding:var(--sp-4) var(--sp-4) var(--sp-2)}.oik-pay{padding:var(--sp-2) var(--sp-4)}.oik-personal{padding:var(--sp-3) var(--sp-4)}}
 
-/* ── Submódulos ── */
-.oik-subs{display:grid;grid-template-columns:minmax(0,1fr);gap:0;border:1px solid var(--border-subtle);border-radius:var(--r-lg);overflow:hidden;background:var(--bg-surface)}
-.oik-sub{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);min-height:56px;text-decoration:none;color:inherit;border:0;border-bottom:1px solid var(--border-subtle);border-radius:0;box-shadow:none}
-.oik-sub:last-child{border-bottom:0}
-.oik-sub-ic{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;background:var(--bg-raised);color:var(--fg-brand);flex-shrink:0}
-.oik-sub-ic svg{width:18px;height:18px}
-.oik-sub-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;align-items:flex-start}
-.oik-flag{margin-top:2px}
-.oik-chev{width:16px;height:16px;color:var(--fg-3);flex-shrink:0}
-@media (min-width:768px){
-  .oik-subs{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--sp-3);border:0;border-radius:0;overflow:visible;background:none}
-  .oik-sub{flex-direction:column;align-items:flex-start;gap:var(--sp-3);padding:var(--sp-4);border:1px solid var(--border-subtle);border-radius:var(--r-lg);box-shadow:var(--e-1)}
-  .oik-sub:last-child{border-bottom:1px solid var(--border-subtle)}
-  .oik-sub-ic{width:auto;height:auto;background:none}
-  .oik-sub-ic svg{width:20px;height:20px}
-  .oik-chev{display:none}
+/* ── Más en Oikonomia (nota 8) ── */
+.oik-more{display:flex;flex-direction:column;gap:10px}
+.oik-more-t{color:var(--fg-3);padding-left:4px}
+.oik-more-bar{display:flex;flex-direction:column;border-radius:var(--r-md);background:var(--bg-sunken);border:1px solid var(--border-subtle);overflow:hidden}
+.oik-more-a{display:flex;align-items:center;gap:var(--sp-2);min-height:48px;padding:0 var(--sp-4);color:var(--fg-2);font:var(--fw-medium) var(--fs-13)/1 var(--font-ui);text-decoration:none;white-space:nowrap;border-bottom:1px solid var(--border-subtle);transition:background var(--dur-fast),color var(--dur-fast)}
+.oik-more-a:last-child{border-bottom:0}
+.oik-more-a:hover{background:var(--bg-hover);color:var(--fg-1)}
+.oik-more-a:focus-visible{outline:2px solid var(--border-focus);outline-offset:-2px}
+.oik-more-a svg{width:16px;height:16px;flex-shrink:0;color:var(--fg-brand)}
+.oik-more-a span{flex:1}
+.oik-more-a .oik-more-chev{color:var(--fg-3)}
+@media (min-width:1024px){
+  .oik-more-bar{flex-direction:row}
+  .oik-more-a{flex:1;justify-content:center;padding:0 var(--sp-3);border-bottom:0;border-right:1px solid var(--border-subtle)}
+  .oik-more-a:last-child{border-right:0}
+  .oik-more-a span{flex:0 1 auto}
+  .oik-more-a .oik-more-chev{display:none}
 }
+
+/* ── Móvil (< 1024px): héroe en una columna, buckets en filas, táctil ≥ 44px ── */
+@media (max-width:1023px){
+  .oik-seg-cols{grid-template-columns:minmax(0,1fr);gap:var(--sp-2)}
+  .oik-seg-col{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px var(--sp-3);padding:var(--sp-2) 0;border-bottom:1px solid var(--border-subtle)}
+  .oik-seg-col:last-child{border-bottom:0}
+  .oik-seg-st{grid-column:1/-1}
+  .oik-seg-pct{justify-content:flex-end}
+  .oik-next .eu-btn,.oik-hd .eu-btn{min-height:44px}
+  .oik-unclass{min-height:44px}
+  .oik-budget .oik-link{min-height:44px}
+}
+@media (max-width:479px){.oik-next{flex-wrap:wrap}.oik-next .eu-btn{width:100%;justify-content:center}}

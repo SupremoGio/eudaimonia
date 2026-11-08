@@ -224,7 +224,7 @@ def test_resumen_del_hub_no_resta_retiros_de_inversion_al_gasto(test_db):
 
 
 def test_tarjeta_presupuesto_dice_el_mes_si_no_es_el_actual(test_db):
-    """1/oct sin movimientos de octubre: la tarjeta muestra septiembre y lo dice."""
+    """1/oct sin movimientos de octubre: el hub muestra septiembre y lo dice."""
     from unittest.mock import patch
     import datetime as dt
     from modules.finanzas import routes as fin
@@ -239,7 +239,10 @@ def test_tarjeta_presupuesto_dice_el_mes_si_no_es_el_actual(test_db):
         with c.session_transaction() as sess:
             sess['app_ok'] = sess['fin_ok'] = True
         html = c.get('/finanzas/').get_data(as_text=True)
-    assert 'Septiembre · 2% usado' in html          # $500 / $20,000
+    # Oikonomia v2: ya no hay tarjeta «Presupuesto · N% usado»; el héroe dice
+    # de qué mes son las cifras y que ese mes ya cerró.
+    assert 'Oikonomia · Septiembre' in html
+    assert 'Disponible en septiembre' in html and 'Septiembre ya cerró' in html
 
 
 # ── 6. Gasto total de la Radiografía = consumo + aportación (2026-10-06) ─────

@@ -212,7 +212,7 @@ def index():
     _nm = 1 if today.month == 12 else today.month + 1
     _ny = today.year + 1 if today.month == 12 else today.year
     mes_ini, mes_fin = f"{cur_mes}-01", f"{_ny}-{_nm:02d}-01"
-    extra = {'budget': None, 'budget_rows': [], 'budget_risk': [], 'budget_ok_count': 0,
+    extra = {'budget': None, 'budget_risk': [], 'budget_ok_count': 0,
              'racha_meses': None, 'racha_historial': [], 'estado_sin_clasificar': 0,
              'estado_sin_clasificar_monto': 0}
 
@@ -241,7 +241,6 @@ def index():
         b['dias_restantes_incl_hoy'] = quedan if bd['es_mes_actual'] else None
         b['por_dia'] = round(bd['disponible'] / quedan, 2) if quedan > 0 else None
         b['seg'] = _hub_seg(bd)
-        extra['budget_rows'] = _hub_budget_rows(bd)
         todas = _hub_budget_rows(bd, limit=None)
         extra['budget_risk'] = [r for r in todas if r['pct'] >= BUDGET_RISK_PCT]
         extra['budget_ok_count'] = len(todas) - len(extra['budget_risk'])
@@ -255,24 +254,13 @@ def index():
     except Exception:
         pass
 
-    try:  # Estado de cuenta: ingresos pendientes de clasificar + movs del mes
+    try:  # Estado de cuenta: depósitos pendientes de clasificar (afectan el ingreso)
         with get_db() as db:
             r = db.execute(
                 "SELECT COUNT(*) n, COALESCE(SUM(ABS(monto)),0) s FROM est_movimientos "
                 "WHERE tipo='INGRESO' AND categoria IN ('DEPOSITO','SPEI_RECIBIDO')").fetchone()
             extra['estado_sin_clasificar'] = r['n']
             extra['estado_sin_clasificar_monto'] = round(r['s'], 2)
-            extra['estado_total_movs'] = db.execute(
-                "SELECT COUNT(*) n FROM est_movimientos WHERE fecha>=? AND fecha<?",
-                (mes_ini, mes_fin)).fetchone()['n']
-    except Exception:
-        pass
-
-    try:  # Consumo: gasto del mes (misma fuente que la página de Consumo)
-        with get_db() as db:
-            extra['consumo_mes'] = round(db.execute(
-                "SELECT COALESCE(SUM(precio_total),0) s FROM consumo_compras "
-                "WHERE fecha_compra >= ?", (mes_ini,)).fetchone()['s'], 2)
     except Exception:
         pass
 

@@ -255,6 +255,10 @@ def test_categorias_en_riesgo(client, monkeypatch):
     assert 'Categorías en riesgo' in html and 'Ver las 3' in html
     assert '$450</span><span class="nw-mask">••••</span> excedido' in html and 'quedan' in html
     assert 'Transporte' not in html and '1 categoría más en rango' in html
+    # El «Siguiente paso» del héroe ya es clasificar: el aviso no se repite aquí.
+    assert 'Clasificar →' not in html
+    monkeypatch.setattr(fr, '_hub_next_step', lambda *a: None)
+    html = _hub_section(c.get('/finanzas/').get_data(as_text=True), 'id="oik-bud-t"', '</section>')
     assert '1 depósito</b>' in html and '$3,210' in html and 'Clasificar →' in html
 
 

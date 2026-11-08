@@ -25,7 +25,8 @@
   {% else %}
   {{ ui.empty('pie-chart', 'Aún no hay gasto clasificado', 'Sube tu estado de cuenta para ver el avance por categoría.', 'Subir estado de cuenta', '/finanzas/estados/', 'upload', compact=True) }}
   {% endif %}
-  {% if estado_sin_clasificar %}
+  {# Si el «Siguiente paso» del héroe ya es clasificar, el aviso no se repite. #}
+  {% if estado_sin_clasificar and not (next_step and next_step.kind == 'clasificar') %}
   <a class="oik-unclass" href="/finanzas/estados/#movimientos">
     <i data-lucide="triangle-alert"></i>
     <span class="eu-grow"><b>{{ estado_sin_clasificar }} depósito{{ 's' if estado_sin_clasificar != 1 }}</b> (<span class="num">{{ hide(mx(estado_sin_clasificar_monto)) }}</span>) sin clasificar: tu ingreso y Disponible podrían estar incompletos.</span>
