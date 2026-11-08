@@ -183,6 +183,9 @@ Lista completa de rutas en `README.md` y `docs/PROJECT_CONTEXT.md`.
   (`cd gio_v3 && npm run build:css`, y commitear el resultado). Si una clase
   nueva de `components.css` solo aparece armada dinámicamente o puesta por JS,
   agrégala al `safelist` de `tailwind.config.js` o Tailwind la purga.
+- **Íconos:** Lucide 1.31.0 servido por la app (`static/js/vendor/lucide-1.31.0.min.js`, cargado en
+  `templates/eu/_head.html`), no desde un CDN: con unpkg el iPhone se quedaba sin íconos. Para
+  actualizar, copiar `dist/umd/lucide.min.js` del paquete npm con el número de versión nuevo.
 - **Macros:** `templates/_ui/macros.html` (`{% import '_ui/macros.html' as ui %}`).
   Cargas: `ui.skel()` / `euSkel(el)`; vacíos: `ui.empty(..., compact=True)` / `euEmpty()`.
 - **Motion y feedback (JS global del layout):** `static/js/eu-motion.js` →

@@ -83,6 +83,11 @@ Cada ancla completa extra (después de la primera) descuenta 1 touch y 1 sesión
 de la meta de Oro. La versión mínima de un ancla da ⅓ del XP y no cuenta para
 Oro ni Diamante.
 
+La clasificación también devuelve `next_rank` y `criteria` (qué falta para el
+siguiente rango, con `have/need`), que pinta el héroe de Inicio. El historial
+por día (heatmap «Constancia») se guarda en `daily_classification` y se llena
+solo: cada día lleva la firma de sus registros y se recalcula si cambian.
+
 ---
 
 ## Sistema de Streaks
@@ -108,8 +113,11 @@ Si se rompe: se pierde el multiplicador, **no** el XP acumulado.
 
 ## Regla de Balance
 
-Si una categoría está por debajo del 60% del promedio semanal:  
-→ acciones de esa categoría reciben **+20% XP** hasta equilibrar.
+Con el XP de la semana (lunes → hoy) de cada una de las **8 virtudes**: si una
+queda por debajo del 60% del promedio de las 8, lo que registres de ella recibe
+**+20% XP** hasta equilibrarse. Sin XP en al menos 2 virtudes no hay bonus.
+Una sola función (`engine.balance_week`) la usan el motor y la tarjeta
+«Equilibrio de la semana» de Inicio.
 
 No bloquea niveles — incentiva el equilibrio.
 
