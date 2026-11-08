@@ -48,15 +48,7 @@
   });
 
   function recount() {
-    var seen = {}, all = 0, done = 0, ancla = 0;
-    $$('.acta-anchors .acta-item, .acta-virtues .acta-item, .acta-weekend .acta-item').forEach(function (it) {
-      if (seen[it.dataset.key]) return;
-      seen[it.dataset.key] = 1; all++;
-      if (it.dataset.done === '1') done++;
-      if (it.classList.contains('is-ancla')) ancla++;
-    });
     var set = function (sel, v) { $$(sel).forEach(function (el) { el.textContent = v; }); };
-    set('.js-ct-all', all); set('.js-ct-done', done); set('.js-ct-pending', all - done); set('.js-ct-ancla', ancla);
     $$('.acta-pillar').forEach(function (p) {
       var items = $$('.acta-item', p), d = items.filter(function (i) { return i.dataset.done === '1'; });
       var xp = d.reduce(function (s, i) { return s + (parseInt(i.dataset.pts, 10) || 0); }, 0);
@@ -285,7 +277,6 @@
   if (editBtn) editBtn.addEventListener('click', function () {
     var on = root.classList.toggle('is-editing');
     editBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    $('span', editBtn).textContent = on ? 'Listo' : 'Editar';
     if (editBar) editBar.hidden = !on;
   });
 
@@ -339,7 +330,7 @@
     });
   });
 
-  // ── Vista (por virtud / por sesión) y filtros ────────────────────────────
+  // ── Vista (por virtud / por sesión) y «Ocultar hechas» ───────────────────
   function setView(v) {
     $$('.eu-seg [data-view]').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.view === v ? 'true' : 'false'); });
     $$('[data-view-panel]').forEach(function (p) { p.hidden = p.dataset.viewPanel !== v; });
@@ -349,14 +340,16 @@
   var savedView = null; try { savedView = localStorage.getItem('acta-view'); } catch (e) {}
   if (savedView === 'session') setView('session');
 
-  root.dataset.filter = 'all';
-  $$('[data-filter]').forEach(function (c) {
-    if (c === root) return;
-    c.addEventListener('click', function () {
-      root.dataset.filter = c.dataset.filter;
-      $$('.acta-filters [data-filter]').forEach(function (x) { x.setAttribute('aria-pressed', x === c ? 'true' : 'false'); });
-    });
-  });
+  // «Ocultar hechas» (nota 1): un solo toggle, recordado en localStorage
+  var hideBtn = $('.js-hide-done');
+  function setHideDone(on) {
+    if (on) root.dataset.hideDone = ''; else delete root.dataset.hideDone;
+    if (hideBtn) hideBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    try { localStorage.setItem('acta.hideDone', on ? '1' : '0'); } catch (e) {}
+  }
+  if (hideBtn) hideBtn.addEventListener('click', function () { setHideDone(!('hideDone' in root.dataset)); });
+  var savedHide = null; try { savedHide = localStorage.getItem('acta.hideDone'); } catch (e) {}
+  if (savedHide === '1') setHideDone(true);
 
   // ── Prioridades ──────────────────────────────────────────────────────────
   var pList = $('.js-prio-list');

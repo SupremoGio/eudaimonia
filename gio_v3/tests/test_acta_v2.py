@@ -145,3 +145,42 @@ def test_version_minima_desde_el_bloque_da_hierro(client):
     a = next(a for a in ctx['acta_anchors'] if not a.get('eury_proxy'))
     r = client.post('/actividades/api/activity/log', json={'key': a['key'], 'minimal': True}).get_json()
     assert r['gam']['stats']['classification']['rank'] == 'iron'
+
+
+# ── Sprint 3: encabezado y filtros ───────────────────────────────────────────
+
+def test_encabezado_tres_controles_y_sin_filtros(client):
+    import modules.actividades.routes as ar
+    html, ctx = _ctx(client)
+    hd = html.split('<header class="acta-hd">', 1)[1].split('</header>', 1)[0]
+    assert f'{ctx["fecha_larga"]} · {ar.SESSION_META[ctx["now_session"]]["label"]}' in hd
+    assert 'js-hide-done' in hd and 'Ocultar hechas' in hd and 'eye-off' in hd
+    assert 'data-view="virtue"' in hd and 'data-view="session"' in hd
+    assert 'aria-label="Editar checklist y foco del mes"' in hd
+    for fuera in ('acta-lead', 'data-filter', 'acta-filters', 'js-ct-', 'acta-alerts', 'Hoy: pagar'):
+        assert fuera not in html, fuera
+    assert 'payment_alerts' not in ctx
+
+
+def test_foco_del_mes_vive_en_la_barra_de_edicion(client):
+    html, ctx = _ctx(client)
+    bar = html.split('<div class="acta-editbar" hidden>', 1)[1].split('acta-view acta-virtues', 1)[0]
+    if ctx['foco_candidates']:
+        assert 'Foco del mes' in bar
+    assert html.count('Foco del mes</span>') <= 1
+    assert 'class="eu-card acta-foco"' not in html
+
+
+def test_todo_hecho_por_virtud(client):
+    html, ctx = _ctx(client)
+    for p in ctx['acta_pillars']:
+        assert f'Todo hecho en {p["name"]}.' in html
+
+
+def test_css_y_js_sin_data_filter():
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for f in ('static/css/acta.css', 'static/js/acta.js'):
+        src = open(os.path.join(base, f), encoding='utf-8').read()
+        assert 'data-filter' not in src and 'dataset.filter' not in src
+    js = open(os.path.join(base, 'static/js/acta.js'), encoding='utf-8').read()
+    assert "'acta.hideDone'" in js

@@ -2,7 +2,7 @@
 {% if foco_candidates %}
 {% set configured = namespace(n=0) %}
 {% for pk in foco_candidates %}{% if pillar_focus.get(pk) %}{% set configured.n = configured.n + 1 %}{% endif %}{% endfor %}
-<details class="eu-card acta-foco">
+<details class="acta-foco" open>
   <summary class="eu-between">
     <span class="eu-hstack"><i data-lucide="crosshair"></i><span class="t-ui">Foco del mes</span></span>
     <span class="eu-hstack"><span class="t-meta num">{{ configured.n }}/{{ foco_candidates|length }} configurados</span><i data-lucide="chevron-down" class="acta-chev"></i></span>

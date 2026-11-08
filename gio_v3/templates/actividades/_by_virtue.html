@@ -13,6 +13,7 @@
     <div class="acta-list">
       {% for item in p['items'] %}{% include "actividades/_item.html" %}{% endfor %}
     </div>
+    <p class="t-meta acta-alldone">Todo hecho en {{ p.name }}.</p>
   </section>
   {% else %}
   {% if not acta_anchors %}{{ ui.empty('scroll-text', 'Sin actividades', 'Tu checklist está vacío. Activa el modo edición para agregar la primera.') }}{% endif %}

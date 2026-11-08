@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
    Acta Diurna (/actividades/) — Design System V2 · pantalla 03
    Solo tokens y componentes eu-*. Desktop: grid 1fr / 320px.
-   Filtros por atributos: #acta[data-filter] × .acta-item[data-done].
+   «Ocultar hechas»: #acta[data-hide-done] × .acta-item[data-done].
    ═══════════════════════════════════════════════════════════════ */
 .acta{display:flex;flex-direction:column;gap:var(--sp-4)}
 .acta-main,.acta-side{display:flex;flex-direction:column;gap:var(--sp-4)}
@@ -15,15 +15,18 @@
 /* ── Encabezado ──────────────────────────────────────────────── */
 .acta-hd{display:flex;flex-direction:column;gap:var(--sp-3)}
 .acta-hd .t-page{margin:var(--sp-2) 0 0}
-.acta-lead{margin:var(--sp-2) 0 0;max-width:var(--reading-max)}
-.acta-hd-tools{flex-wrap:wrap}
-@media (max-width:767px){.acta-hd-txt{display:none}}
+.acta-hd-tools{flex-wrap:wrap;gap:var(--sp-2)}
+.acta-hide svg{width:14px;height:14px}
+.acta-edit{width:36px;height:36px}
+.acta-edit[aria-pressed=true]{background:var(--brand-subtle);border-color:var(--border-brand);color:var(--fg-1)}
+@media(pointer:coarse){.acta-edit{width:44px;height:44px}}
 @media (min-width:768px){
   .acta-hd{flex-direction:row;align-items:flex-end;justify-content:space-between}
 }
-.acta-editbar{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px dashed var(--border-brand);border-radius:var(--r-md);background:var(--brand-subtle)}
+.acta-editbar{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px dashed var(--border-brand);border-radius:var(--r-md);background:var(--brand-subtle)}
+.acta-editbar-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.acta-editbar .acta-foco{border-top:1px solid var(--border-subtle);padding-top:var(--sp-2)}
 .acta-editbar[hidden],.acta-view[hidden],.acta-days[hidden]{display:none}
-.acta-alerts{flex-wrap:wrap}
 
 /* ── Vistas ──────────────────────────────────────────────────── */
 .acta-virtues{display:grid;gap:var(--sp-5)}
@@ -111,16 +114,12 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta.is-editing .acta-item .eu-act{padding-right:var(--sp-12)}
 .acta.is-editing .acta-item--wk .eu-act{padding-right:var(--sp-3)}
 
-/* Filtros */
-.acta[data-filter=pending] .acta-item[data-done="1"],
-.acta[data-filter=done] .acta-item[data-done="0"],
-.acta[data-filter=ancla] .acta-item:not(.is-ancla){display:none}
-.acta[data-filter=pending] .acta-pillar:not(:has(.acta-item[data-done="0"])),
-.acta[data-filter=done] .acta-pillar:not(:has(.acta-item[data-done="1"])),
-.acta[data-filter=ancla] .acta-pillar:not(:has(.acta-item.is-ancla)){display:none}
-.acta[data-filter]:not([data-filter=all]) .acta-add{display:none}
+/* Ocultar hechas: las anclas se quedan (su tarjeta ya dice «Hecha») */
+.acta[data-hide-done] .acta-list .acta-item[data-done="1"]{display:none}
+.acta-alldone{display:none;margin:0;padding:6px 10px}
+.acta[data-hide-done] .acta-pillar:not(:has(.acta-item[data-done="0"])) .acta-alldone{display:block}
 
-/* ── Fin de semana, foco, alertas ────────────────────────────── */
+/* ── Fin de semana y foco ────────────────────────────────────── */
 .acta-weekend{border-color:var(--cat-border)}
 .acta-weekend-link{border-color:var(--cat-border);align-items:center;color:inherit;text-decoration:none}
 .acta-weekend-link>svg,.acta-weekend-link>i{color:var(--fg-3);flex:none}

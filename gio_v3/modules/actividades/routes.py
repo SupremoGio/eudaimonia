@@ -96,23 +96,6 @@ def get_dashboard_stats():
     }
 
 
-_PAY_ALERT_UI = {"bbva": ("BBVA", "#c5a36c"), "invex": ("Invex", "#a78bfa"), "hsbc": ("HSBC", "#60a5fa")}
-
-
-def get_payment_alerts():
-    """Tarjetas que se pagan hoy (PAY_DAYS de Finanzas), sin las que ya están
-    marcadas como pagadas en el ciclo (Oikonomia v2, fin_pagos_ciclo)."""
-    from modules.finanzas.routes import PAY_DAYS, _pagados
-    d = today_date().day
-    hoy = [p for p in PAY_DAYS if p["day"] == d]
-    if not hoy:
-        return []
-    pag = _pagados()
-    return [{"label": _PAY_ALERT_UI.get(p["match"], (p["label"], "#c5a36c"))[0],
-             "color": _PAY_ALERT_UI.get(p["match"], (p["label"], "#c5a36c"))[1]}
-            for p in hoy if p["match"] not in pag]
-
-
 def get_weekend_mode():
     """Returns 'sat', 'sun', or None depending on today."""
     dow = today_date().weekday()   # 5 = Saturday, 6 = Sunday
@@ -251,13 +234,13 @@ def index():
         category_hues = CATEGORY_HUES,
         quote_stoic   = get_stoic_of_day(),
         quote_motiv   = get_motivational_of_day(),
-        payment_alerts= get_payment_alerts(),
         today         = _td.isoformat(),
         today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()],
         fecha_larga   = "{} {} de {}".format(
             ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()], _td.day,
             ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre",
              "octubre","noviembre","diciembre"][_td.month - 1]),
+        now_session_label = SESSION_META[ctx["now_session"]]["label"],
         weekend_mode  = weekend_mode,
         classification= gam["classification"],
     )
