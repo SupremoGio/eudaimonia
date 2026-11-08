@@ -91,3 +91,57 @@ def test_marcar_devuelve_criterios_para_repintar(client):
     assert 'criteria' in clf and 'next_rank' in clf
     for c in clf['criteria']:
         assert set(c) >= {'key', 'label', 'hint', 'have', 'need', 'ok'}
+
+
+# ── Sprint 2: Anclas de hoy + virtudes compactas ─────────────────────────────
+
+def _ctx(client, monkeypatch=None):
+    from flask import template_rendered
+    caps = []
+    app = client.application
+
+    def rec(sender, template, context, **kw):
+        if template.name == 'actividades/index.html':
+            caps.append(context)
+    template_rendered.connect(rec, app)
+    try:
+        html = client.get('/actividades/').get_data(as_text=True)
+    finally:
+        template_rendered.disconnect(rec, app)
+    return html, caps[0]
+
+
+def test_anclas_en_su_bloque_y_sin_duplicados(client):
+    html, ctx = _ctx(client)
+    anclas = ctx['acta_anchors']
+    assert anclas and all(a['effective_type'] == 'ancla' for a in anclas)
+    assert ctx['anchors_need'] == ctx['classification']['diamond_min_anchors']
+    assert 'Anclas de hoy' in html and f'· Diamante pide {ctx["anchors_need"]}' in html
+    vista = html.split('acta-view acta-virtues', 1)[1].split('acta-view acta-sessions', 1)[0]
+    bloque = html.split('class="eu-card acta-anchors"', 1)[1].split('acta-view acta-virtues', 1)[0]
+    for a in anclas:
+        assert f'data-key="{a["key"]}"' not in vista            # no se repite en las virtudes
+        if not a.get('eury_proxy'):
+            assert f'class="acta-anchor-min js-min" data-key="{a["key"]}"' in bloque
+    keys = [k for p in ctx['acta_pillars'] for k in (i['key'] for i in p['items'])]
+    assert len(keys) == len(set(keys))
+    # «Por sesión» conserva las anclas en su horario
+    sesiones = html.split('acta-view acta-sessions', 1)[1]
+    assert f'data-key="{anclas[0]["key"]}"' in sesiones
+
+
+def test_icono_de_virtud_se_enciende_al_tocarla(client):
+    html, ctx = _ctx(client)
+    assert 'Cobertura de pilares' not in html and 'acta-cover' not in html
+    p = ctx['acta_pillars'][0]
+    assert f'class="eu-card acta-pillar" data-cat="{p["cat"]}" data-pillar="{p["id"]}"' in html
+    client.post('/actividades/api/activity/log', json={'key': p['items'][0]['key']})
+    html = client.get('/actividades/').get_data(as_text=True)
+    assert f'class="eu-card acta-pillar is-on" data-cat="{p["cat"]}" data-pillar="{p["id"]}"' in html
+
+
+def test_version_minima_desde_el_bloque_da_hierro(client):
+    _, ctx = _ctx(client)
+    a = next(a for a in ctx['acta_anchors'] if not a.get('eury_proxy'))
+    r = client.post('/actividades/api/activity/log', json={'key': a['key'], 'minimal': True}).get_json()
+    assert r['gam']['stats']['classification']['rank'] == 'iron'

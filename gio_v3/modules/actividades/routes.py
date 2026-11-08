@@ -214,9 +214,14 @@ def index():
             item["eury_proxy"] = item["pillar"] == "eury" and item["key"] != "lenguaje_corporal"
             item["done_ui"] = ctx["eurythmia_done"] if item["eury_proxy"] else bool(item.get("done"))
             by_pillar.setdefault(item["pillar"], []).append(item)
+    # Anclas de hoy (handoff Acta v2, nota 2): bloque propio arriba, en orden
+    # de sesión; las tarjetas de virtud quedan solo con touches.
+    acta_anchors = [i for sk in adefs.SESSIONS for i in ctx["grouped"].get(sk, [])
+                    if i.get("effective_type") == "ancla"]
+    acta_anchors = list({i["key"]: i for i in acta_anchors}.values())
     acta_pillars = []
     for pid in adefs.PILLAR_ORDER:
-        items = by_pillar.get(pid, [])
+        items = [i for i in by_pillar.get(pid, []) if i.get("effective_type") != "ancla"]
         if not items:
             continue
         done = [i for i in items if i["done_ui"]]
@@ -227,6 +232,8 @@ def index():
     _td = today_date()
     return render_template('actividades/index.html',
         acta_pillars  = acta_pillars,
+        acta_anchors  = acta_anchors,
+        anchors_need  = gam["classification"].get("diamond_min_anchors", 0),
         pillar_ui     = adefs.PILLAR_UI,
         acta_total    = len(seen),
         stats         = stats,

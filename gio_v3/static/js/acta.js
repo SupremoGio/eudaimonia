@@ -13,7 +13,6 @@
   var root = document.getElementById('acta');
   if (!root) return;
 
-  var PILLARS_TOTAL = parseInt(root.dataset.pillarsTotal, 10) || 8;
   var RANKS = ['carbon', 'iron', 'gold', 'diamond'];
   var RNAME = { carbon: 'Carbón', iron: 'Hierro', gold: 'Oro', diamond: 'Diamante' };
   var clfRank = root.dataset.rank;
@@ -44,13 +43,13 @@
     recount();
   }
   $$('.acta-item').forEach(function (it) {
-    var b = $('.eu-act', it);
+    var b = $('.eu-act, .acta-anchor-btn', it);
     it.dataset.done = (b && (b.getAttribute('aria-pressed') === 'true' || b.classList.contains('is-done'))) ? '1' : '0';
   });
 
   function recount() {
     var seen = {}, all = 0, done = 0, ancla = 0;
-    $$('.acta-virtues .acta-item, .acta-weekend .acta-item').forEach(function (it) {
+    $$('.acta-anchors .acta-item, .acta-virtues .acta-item, .acta-weekend .acta-item').forEach(function (it) {
       if (seen[it.dataset.key]) return;
       seen[it.dataset.key] = 1; all++;
       if (it.dataset.done === '1') done++;
@@ -61,9 +60,10 @@
     $$('.acta-pillar').forEach(function (p) {
       var items = $$('.acta-item', p), d = items.filter(function (i) { return i.dataset.done === '1'; });
       var xp = d.reduce(function (s, i) { return s + (parseInt(i.dataset.pts, 10) || 0); }, 0);
-      var c = $('.js-pcount', p); if (c) c.textContent = d.length + '/' + items.length;
-      var x = $('.js-pxp', p); if (x) x.textContent = '+' + xp + ' XP';
+      var x = $('.js-pxp', p); if (x) { x.textContent = xp ? '+' + xp + ' XP' : '—'; x.classList.toggle('has-xp', xp > 0); }
     });
+    var anc = $$('.acta-anchors .acta-item');
+    set('.js-anc-done', anc.filter(function (i) { return i.dataset.done === '1'; }).length);
     $$('.acta-session').forEach(function (s) {
       var items = $$('.acta-item', s), d = items.filter(function (i) { return i.dataset.done === '1'; });
       var c = $('summary .num', s); if (c) c.textContent = d.length + '/' + items.length;
@@ -134,8 +134,12 @@
       clfRank = clf.rank;
       if (clf.pillars) {
         var on = {}; clf.pillars.forEach(function (p) { on[p] = 1; });
-        $$('.acta-cover-it').forEach(function (it) { it.classList.toggle('is-on', !!on[it.dataset.pillar]); });
-        $$('.js-pillars-count').forEach(function (el) { el.textContent = clf.pillars.length + ' / ' + PILLARS_TOTAL; });
+        // Ícono de la virtud encendido si se tocó hoy (antes «Cobertura de pilares»)
+        $$('.acta-pillar').forEach(function (p) {
+          var lit = !!on[p.dataset.pillar];
+          p.classList.toggle('is-on', lit);
+          var ic = $('.acta-pillar-ic', p); if (ic) ic.title = lit ? 'Tocada hoy' : 'Sin tocar hoy';
+        });
       }
     }
     if (g.coins_today != null) $$('.js-ec-today').forEach(function (el) { el.textContent = g.coins_today; });
@@ -434,8 +438,9 @@
     }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (/^[1-9]$/.test(e.key)) {
-      var panel = $('[data-view-panel]:not([hidden])');
-      var btns = $$('.js-act', panel).filter(function (b) { return b.offsetParent !== null; });
+      var btns = [];
+      $$('[data-view-panel]:not([hidden])').forEach(function (panel) { btns = btns.concat($$('.js-act', panel)); });
+      btns = btns.filter(function (b) { return b.offsetParent !== null; });
       var b = btns[parseInt(e.key, 10) - 1];
       if (b) { e.preventDefault(); b.focus(); logAct(b.dataset.key, b); }
     }

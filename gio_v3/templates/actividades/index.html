@@ -22,19 +22,19 @@
 
 {% block content %}
 <div class="acta" id="acta"
-     data-rank="{{ clf.rank }}" data-pillars-total="{{ pillar_meta|length }}">
+     data-rank="{{ clf.rank }}">
   <div class="acta-main">
     {% include "actividades/_head.html" %}
     {% include "actividades/_alerts.html" %}
     {% include "actividades/_weekend.html" %}
     {% include "actividades/_foco.html" %}
+    {% include "actividades/_anchors.html" %}
     {% include "actividades/_by_virtue.html" %}
     {% include "actividades/_by_session.html" %}
   </div>
 
   <aside class="acta-side" aria-label="Resumen y listas del día">
     {% include "actividades/_summary.html" %}
-    {% include "actividades/_pillars.html" %}
     {% include "actividades/_priorities.html" %}
     {% include "actividades/_pipeline.html" %}
     {% include "actividades/_quotes.html" %}

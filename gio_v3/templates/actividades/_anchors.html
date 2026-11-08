@@ -1,0 +1,37 @@
+{# Anclas de hoy (handoff Acta v2, nota 2): las sesiones largas que deciden la
+   clasificación, separadas de los touches. Cada tarjeta es un .acta-item con
+   el mismo data-key que su copia en «Por sesión»: acta.js sincroniza ambas.
+   Solo se ve en la vista «Por virtud» (en «Por sesión» van en su horario). #}
+{% if acta_anchors %}
+{% set n_done = acta_anchors|selectattr('done_ui')|list|length %}
+<section class="eu-card acta-anchors" data-view-panel="virtue" aria-labelledby="acta-anc-t">
+  <div class="acta-anchors-hd">
+    <div>
+      <h2 class="acta-anchors-t" id="acta-anc-t"><i data-lucide="anchor"></i>Anclas de hoy</h2>
+      <p class="t-meta acta-p">Sesiones largas que suben tu clasificación. La versión mínima asegura Hierro (⅓ del XP).</p>
+    </div>
+    <span class="acta-anchors-ct num"><span class="js-anc-done">{{ n_done }}</span>/{{ acta_anchors|length }}{% if anchors_need %} <span class="t-meta">· Diamante pide {{ anchors_need }}</span>{% endif %}</span>
+  </div>
+  <div class="acta-anchors-grid">
+    {% for item in acta_anchors %}
+    {% set pu = pillar_ui.get(item.pillar, {}) %}
+    <div class="acta-item acta-anchor is-ancla" data-key="{{ item.key }}" data-cat="{{ pu.cat }}" data-pillar="{{ item.pillar }}"
+         data-type="ancla" data-pts="{{ item.pts }}">
+      <div class="acta-anchor-pl"><i data-lucide="{{ pu.icon }}"></i><span>{{ pu.name }}</span>
+        <span class="acta-anchor-xp num">+{{ item.pts }} XP{% if item.ec %} · +{{ item.ec }} EC{% endif %}</span></div>
+      <div class="acta-anchor-t acta-lbl">{{ item.label }}</div>
+      {% if item.eury_proxy %}
+      <a class="eu-btn acta-anchor-btn{% if item.done_ui %} is-done{% endif %}" href="/eurythmia/"><i data-lucide="{{ 'check' if item.done_ui else 'arrow-up-right' }}"></i>{{ 'Hecha · ver detalle' if item.done_ui else 'Registrar en Eurythmia' }}</a>
+      {% else %}
+      <button type="button" class="eu-btn acta-anchor-btn js-act" aria-pressed="{{ 'true' if item.done_ui else 'false' }}" data-key="{{ item.key }}"
+              aria-label="{{ item.label }}: completa, +{{ item.pts }} XP"><i data-lucide="check"></i><span class="acta-when-off">Completa</span><span class="acta-when-on">Hecha</span></button>
+      <button type="button" class="acta-anchor-min js-min" data-key="{{ item.key }}" aria-pressed="{{ 'true' if item.done_min else 'false' }}"
+              title="Hice la versión mínima (asegura Hierro, sin contar para Oro/Diamante)">
+        <i data-lucide="feather"></i>Versión mínima · +{{ [1, (item.pts / 3)|round|int]|max }} XP</button>
+      {% endif %}
+      <button type="button" class="eu-iconbtn acta-rm js-rm" data-key="{{ item.key }}" aria-label="Quitar «{{ item.label }}» del checklist" title="Quitar"><i data-lucide="x"></i></button>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

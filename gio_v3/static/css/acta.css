@@ -28,10 +28,57 @@
 /* ── Vistas ──────────────────────────────────────────────────── */
 .acta-virtues{display:grid;gap:var(--sp-5)}
 @media (min-width:768px){.acta-virtues{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4);align-items:start}}
-@media (max-width:767px){.acta-pillar{background:none;border:0;box-shadow:none;padding:0}}
-.acta-pillar-hd{margin-bottom:var(--sp-3)}
-.acta-pillar-xp{font-size:var(--fs-13);color:var(--cat-fg)}
 .acta-list{display:flex;flex-direction:column;gap:var(--sp-2)}
+
+/* Virtud compacta (nota 3): encabezado de una línea y filas de 44px; el
+   ícono se enciende (.is-on) si la virtud se tocó hoy (clf.pillars). */
+.acta-pillar{display:flex;flex-direction:column;gap:6px;padding:var(--sp-3);border-radius:14px}
+.acta-pillar .acta-list{gap:6px}
+.acta-pillar-hd{display:flex;align-items:center;gap:10px;min-width:0;padding:2px var(--sp-1) var(--sp-1)}
+.acta-pillar-ic{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--border-subtle);background:var(--bg-raised);color:var(--fg-4);transition:all var(--dur-base) var(--ease-standard)}
+.acta-pillar-ic svg{width:14px;height:14px}
+.acta-pillar.is-on .acta-pillar-ic{background:var(--cat-bg);color:var(--cat-fg);border-color:var(--cat-border)}
+.acta-pillar-n{font:var(--fw-semibold) var(--fs-17)/1.1 var(--font-display);white-space:nowrap}
+.acta-pillar-fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.acta-pillar-xp{margin-left:auto;flex-shrink:0;font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--fg-4)}
+.acta-pillar-xp.has-xp{color:var(--cat-fg)}
+.acta-pillar .acta-item .eu-act{min-height:44px;padding:6px 10px;gap:10px;border:1px solid var(--border-subtle);border-radius:9px;font-size:var(--fs-13)}
+.acta-pillar .acta-item .eu-act:hover{border-color:var(--cat-border);background:color-mix(in oklab,var(--cat-bg) 55%,var(--bg-raised))}
+.acta-pillar .acta-item .eu-act[aria-pressed=true],.acta-pillar .acta-item .eu-act.is-done{border-color:var(--cat-border);background:var(--cat-bg)}
+.acta-pillar .acta-item .eu-act[aria-pressed=true] .acta-lbl{color:var(--fg-2)}
+.acta-pillar .acta-item .eu-act-check{width:18px;height:18px}
+.acta-pillar .acta-item .eu-act-check svg{width:11px;height:11px}
+
+/* ── Anclas de hoy (nota 2) ──────────────────────────────────── */
+.acta-anchors{display:flex;flex-direction:column;gap:var(--sp-3);border-color:var(--border-brand);background:radial-gradient(120% 100% at 0% 0%,var(--brand-subtle),transparent 60%),var(--bg-surface)}
+.acta-anchors[hidden]{display:none}
+.acta-anchors-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4)}
+.acta-anchors-t{display:flex;align-items:center;gap:var(--sp-2);font:var(--fw-semibold) var(--fs-24)/1.2 var(--font-display)}
+.acta-anchors-t svg{width:18px;height:18px;color:var(--fg-brand)}
+.acta-anchors-hd .t-meta.acta-p{margin-top:2px}
+.acta-anchors-ct{font:var(--fw-medium) var(--fs-13) var(--font-data);color:var(--fg-2);white-space:nowrap}
+.acta-anchors-ct .t-meta{font-family:var(--font-ui)}
+.acta-anchors-grid{display:grid;gap:var(--sp-3)}
+@media (min-width:1024px){.acta-anchors-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:640px) and (max-width:1023px){.acta-anchors-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.acta-anchor{gap:var(--sp-2);padding:14px;border-radius:var(--r-md);border:1px solid var(--border-default);border-top:3px solid var(--cat-fg);background:var(--bg-raised);transition:background var(--dur-base) var(--ease-standard)}
+.acta-anchor[data-done="1"]{background:var(--cat-bg);border-color:var(--cat-border);border-top-color:var(--cat-fg)}
+.acta-anchor-pl{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-12);color:var(--cat-fg)}
+.acta-anchor-pl svg{width:14px;height:14px;flex-shrink:0}
+.acta-anchor-xp{margin-left:auto;font:var(--fw-medium) var(--fs-12) var(--font-data)}
+.acta-anchor-t{font:var(--fw-semibold) var(--fs-15)/1.3 var(--font-ui);color:var(--fg-1);min-height:40px}
+.acta-anchor-btn{width:100%;height:40px;justify-content:center;gap:var(--sp-2);border:1px solid transparent;background:var(--cat-fg);color:var(--bg-canvas);font-size:var(--fs-13);text-decoration:none}
+.acta-anchor-btn:hover{filter:brightness(1.08)}
+.acta-anchor-btn svg{width:16px;height:16px}
+.acta-anchor-btn[aria-pressed=true],.acta-anchor-btn.is-done{background:transparent;color:var(--cat-fg);border-color:var(--cat-border)}
+.acta-anchor-btn .acta-when-on,.acta-anchor-btn[aria-pressed=true] .acta-when-off{display:none}
+.acta-anchor-btn[aria-pressed=true] .acta-when-on{display:inline}
+.acta-anchor-min{display:flex;align-items:center;justify-content:center;gap:6px;min-height:32px;border-radius:var(--r-sm);border:1px dashed var(--border-strong);background:transparent;color:var(--fg-3);font:var(--fs-12)/1 var(--font-ui);cursor:pointer}
+.acta-anchor-min svg{width:12px;height:12px}
+.acta-anchor-min:hover{color:var(--fg-2);border-color:var(--cat-border)}
+.acta-anchor-min[aria-pressed=true]{border-color:var(--cat-fg);color:var(--cat-fg)}
+.acta-anchor[data-done="1"] .acta-anchor-min{visibility:hidden}
+.acta.is-editing .acta-anchor .acta-rm{top:var(--sp-2);right:var(--sp-2)}
 
 .acta-sessions{display:flex;flex-direction:column;gap:var(--sp-3)}
 .acta-session summary,.acta-foco summary{list-style:none;cursor:pointer;min-height:44px}
@@ -104,11 +151,6 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-crits .dash-crit.is-ok .dash-crit-l,.acta-crits .dash-crit.is-ok .dash-crit-n{color:var(--fg-3)}
 .acta-clf-link{color:var(--fg-3);text-decoration:none;align-self:flex-start;min-height:24px;display:inline-flex;align-items:center}
 .acta-clf-link:hover{color:var(--fg-brand)}
-.acta-cover-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-3) var(--sp-1)}
-.acta-cover-it{display:flex;flex-direction:column;align-items:center;gap:var(--sp-1);min-width:0}
-.acta-cover-it:not(.is-on) .eu-mod-ic{background:var(--bg-raised);border-color:var(--border-subtle);color:var(--fg-4)}
-.acta-cover-n{font-size:var(--fs-12);color:var(--fg-3);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.acta-cover-it.is-on .acta-cover-n{color:var(--fg-2)}
 .acta-prio-it{min-height:44px}
 .acta-prio-it .eu-act-t{font-size:var(--fs-13)}
 .acta-prio-it[aria-pressed=true] .eu-act-t{color:var(--fg-3);text-decoration:line-through}
@@ -144,9 +186,6 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-item .eu-act-check{border-color:color-mix(in oklab,var(--cat-fg) 60%,var(--border-strong))}
 .acta-item .eu-act-xp{color:var(--cat-fg)}
 .acta-item .eu-act-xp .fg-ec{color:var(--ec-fg)}
-.acta-pillar .eu-mod-ic{background:var(--cat-bg);color:var(--cat-fg);border-color:var(--cat-border)}
-@media (min-width:768px){.acta-pillar{border-top:3px solid var(--cat-fg)}}
-@media (max-width:767px){.acta-pillar-hd{padding-left:var(--sp-3);border-left:3px solid var(--cat-fg)}}
 .acta-session{border-top:3px solid var(--cat-fg)}
 .acta-session-bar{margin:calc(var(--sp-1) * -1) 0 var(--sp-3)}
 .acta-session:not([open]) .acta-session-bar{margin:var(--sp-2) 0 0}
