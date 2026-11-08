@@ -98,3 +98,57 @@ def test_fin_de_semana_se_puede_marcar(client, monkeypatch):
     _hoy(monkeypatch, DOMINGO)
     html = _get(client)
     assert 'data-preview' not in html and 'aria-disabled="true"' not in html.split('class="at-main"', 1)[1]
+
+
+# ── Sprint 2: un bloque abierto, el «Ahora» ──────────────────────────────────
+
+def _bloques_abiertos(html, dia):
+    panel = html.split(f'id="dia-{dia}"', 1)[1]
+    if dia == 'sabado':
+        panel = panel.split('id="dia-domingo"', 1)[0]
+    return panel.count('aria-expanded="true"'), panel
+
+
+def _marcar(bids):
+    with database.get_db() as db:
+        for tid in bids:
+            db.execute("INSERT INTO rutina_progreso (bloque_id, semana_id, completado) VALUES (?,?,1)", (tid, ar.get_semana_id()))
+        db.commit()
+
+
+def test_un_solo_bloque_abierto_y_es_el_primero_pendiente(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    sab = ar._build_rutina('sabado', ar.get_semana_id())
+    primero = sab['bloques'][0]
+    assert sab['ahora'] == primero['bloque_id']
+    # completar el primero mueve el «Ahora» al siguiente pendiente
+    _marcar([t['id'] for t in primero['tareas'] if not t['opcional']])
+    sab = ar._build_rutina('sabado', ar.get_semana_id())
+    siguiente = next(b for b in sab['bloques'] if b['done_count'] < b['required_count'])
+    assert sab['ahora'] == siguiente['bloque_id'] != primero['bloque_id']
+    html = _get(client, '?dia=sabado')
+    n, panel = _bloques_abiertos(html, 'sabado')
+    assert n == 1
+    assert f'class="eu-card eu-card--flush at-bl is-now" id="blcard-{siguiente["bloque_id"]}"' in panel
+    assert f'id="blprog-{primero["bloque_id"]}">Listo</span>' in panel
+
+
+def test_bloque_abierto_trae_temporizador_con_iniciar(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    html = _get(client, '?dia=domingo')
+    assert '<span>Iniciar</span>' in html and 'eu-btn eu-btn--primary eu-btn--sm js-timer' in html
+    for i in ('trow-', 'blbar-', 'blprog-', 'blpb-', 'timer-', 'js-day-cnt'):
+        assert i in html, i                     # ids que usa ataraxia.js
+
+
+def test_opcionales_con_regla_en_la_fila_y_sin_at_complete(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    html = _get(client)
+    with database.get_db() as db:
+        hay_opcional = db.execute("SELECT COUNT(*) FROM rutina_bloques WHERE opcional=1").fetchone()[0]
+    if hay_opcional:
+        assert '· opcional, no cuenta para el 100%' in html
+    assert '<span class="eu-badge">opcional</span>' not in html
+    assert 'at-complete' not in html and 'day-complete' not in _src('static/js/ataraxia.js')
+    js = _src('static/js/ataraxia.js')
+    assert 'markNow(dia)' in js and 'setOpen(justDone, false)' in js

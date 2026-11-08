@@ -376,8 +376,12 @@ def _build_rutina(dia, semana_id):
     required_bloques = [bl for bl in bloques if bl["required_count"] > 0]
     total = len(required_bloques)
     done  = sum(1 for bl in required_bloques if bl["bloque_done"])
+    # Bloque «Ahora» (handoff Ataraxia v2, nota 3): el primero del día con
+    # requeridas pendientes. Es el único que se pinta abierto.
+    ahora = next((bl["bloque_id"] for bl in bloques if bl["done_count"] < bl["required_count"]), None)
     return {
         "bloques":  bloques,
+        "ahora":    ahora,
         "total":    total,
         "done":     done,
         "pct":      int(done / total * 100) if total else 0,

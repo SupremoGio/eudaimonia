@@ -21,13 +21,25 @@
   }
   document.querySelectorAll('[data-dia-set]').forEach(function (b) { b.addEventListener('click', function () { showDia(b.dataset.diaSet); }); });
 
-  /* ── Bloques plegables ── */
+  /* ── Bloques: uno abierto, el «Ahora» (nota 3); clic en el encabezado
+     abre o cierra cualquiera ── */
+  function setOpen(bid, open) {
+    var body = $('blbody-' + bid), h = document.querySelector('[data-bl-toggle="' + bid + '"]');
+    if (!body || !h) return;
+    body.hidden = !open;
+    h.setAttribute('aria-expanded', String(open));
+  }
   root.addEventListener('click', function (e) {
     var h = e.target.closest('[data-bl-toggle]'); if (!h) return;
-    var body = $('blbody-' + h.dataset.blToggle);
-    body.hidden = !body.hidden;
-    h.setAttribute('aria-expanded', String(!body.hidden));
+    setOpen(h.dataset.blToggle, $('blbody-' + h.dataset.blToggle).hidden);
   });
+  /* «Ahora» = primer bloque del día con requeridas pendientes */
+  function markNow(dia) {
+    var cards = [].slice.call(document.querySelectorAll('[data-dia-panel="' + dia + '"] .at-bl'));
+    var now = cards.find(function (c) { return c.dataset.done !== 'true' && parseInt(c.dataset.req, 10) > 0; });
+    cards.forEach(function (c) { c.classList.toggle('is-now', c === now); });
+    return now;
+  }
 
   /* ── Temporizadores ── */
   var TIMERS = {};
@@ -38,10 +50,14 @@
     $('timer-' + bid).textContent = fmt(t.secs);
     var pct = t.ref ? t.secs / t.ref : 0;
     el.dataset.state = pct >= 1 ? 'over' : pct >= .85 ? 'near' : '';
-    var btn = el.querySelector('.js-timer');
-    btn.setAttribute('aria-label', t.running ? 'Pausar temporizador' : 'Iniciar temporizador');
+    var btn = el.querySelector('.js-timer'), ic = t.running ? 'pause' : 'play';
     btn.setAttribute('aria-pressed', String(t.running));
-    if (btn.dataset.ic !== (t.running ? 'pause' : 'play')) { btn.dataset.ic = t.running ? 'pause' : 'play'; icon(btn, btn.dataset.ic); }
+    btn.querySelector('span').textContent = t.running ? 'Pausar' : (t.secs ? 'Seguir' : 'Iniciar');
+    if (btn.dataset.ic !== ic) {
+      btn.dataset.ic = ic;
+      var i = document.createElement('i'); i.setAttribute('data-lucide', ic);
+      btn.replaceChild(i, btn.firstElementChild); lucide.createIcons({ nodes: [i] });
+    }
   }
   function stop(bid) { var t = TIMERS[bid]; if (t && t.running) { clearInterval(t.iv); t.running = false; paint(bid); } }
   root.addEventListener('click', function (e) {
@@ -67,13 +83,26 @@
     $('tab-' + dia).dataset.complete = String(!!r.complete);
     setReward(dia, !!r.complete);
     setReward('finde', $('tab-sabado').dataset.complete === 'true' && $('tab-domingo').dataset.complete === 'true');
+    var justDone = null;
     (r.bloques || []).forEach(function (bl) {
-      var p = $('blprog-' + bl.bloque_id); if (p) p.textContent = bl.done_count + '/' + bl.required_count;
-      var bar = $('blbar-' + bl.bloque_id); if (bar) bar.style.width = (bl.required_count ? Math.round(bl.done_count / bl.required_count * 100) : 0) + '%';
+      var p = $('blprog-' + bl.bloque_id); if (p) p.textContent = bl.bloque_done ? 'Listo' : bl.done_count + '/' + bl.required_count;
+      var bar = $('blbar-' + bl.bloque_id); if (bar) bar.style.width = (bl.required_count ? Math.round(bl.done_count / bl.required_count * 100) : (bl.bloque_done ? 100 : 0)) + '%';
       var pb = $('blpb-' + bl.bloque_id); if (pb) pb.setAttribute('aria-valuenow', bl.done_count);
-      var card = $('blcard-' + bl.bloque_id); if (card) card.dataset.done = String(!!bl.bloque_done);
+      var card = $('blcard-' + bl.bloque_id);
+      if (card) {
+        if (bl.bloque_done && card.dataset.done !== 'true' && bl.required_count > 0) justDone = bl.bloque_id;
+        card.dataset.done = String(!!bl.bloque_done);
+      }
       if (bl.bloque_done) stop(bl.bloque_id);
     });
+    var now = markNow(dia);
+    // Al terminar un bloque se cierra y se abre el siguiente pendiente
+    if (justDone) {
+      setTimeout(function () {
+        setOpen(justDone, false);
+        if (now) { setOpen(now.dataset.bl, true); now.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+      }, 450);
+    }
   }
 
   /* ── Marcar tareas ── */
@@ -93,7 +122,7 @@
       var g = d.gam;
       if (g && !done) {
         if (g.xp > 0 || g.ec > 0) toast('+' + g.xp + ' XP' + (g.ec > 0 ? ' · +' + g.ec + ' EC' : ''), 'win');
-        (g.combo_bonuses || []).forEach(function (c) { setTimeout(function () { toast(c.label + ' +' + c.xp + ' XP', 'win'); }, 300); });
+        (g.combo_bonuses || []).forEach(function (c) { setTimeout(function () { toast((c.name || c.label || 'Combo') + ' +' + c.xp + ' XP', 'win'); }, 300); });
         if (window.euGam) euGam(g, { el: btn });
       }
     } catch (_) { toast('Sin conexión', 'err'); }
