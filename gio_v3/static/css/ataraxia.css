@@ -98,8 +98,20 @@
 .at-task-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .at-task-rw{font:var(--fw-medium) var(--fs-12)/1 var(--font-data);color:var(--fg-3);white-space:nowrap}
 .at-task[aria-pressed=true] .at-task-rw{color:var(--cat-fg)}
-.at-prio{gap:var(--sp-2);margin-top:var(--sp-2);padding:var(--sp-3)}
-.at-prio .eu-btn{align-self:flex-start}
+/* Prioridades de la semana desde Praxis (nota 6) */
+.at-prio{display:flex;flex-direction:column;gap:6px;margin:6px 0 0 32px;padding:var(--sp-3);border-radius:var(--r-md);background:var(--bg-sunken);border:1px solid var(--border-subtle)}
+@media (max-width:479px){.at-prio{margin-left:0}}
+.at-prio-list{display:flex;flex-direction:column;gap:6px}
+.at-prio-it{display:flex;align-items:center;gap:10px;min-height:40px;padding:4px 10px;border-radius:var(--r-sm);border:1px solid var(--border-subtle);background:transparent;color:var(--fg-1);font:var(--fs-13) var(--font-ui);text-align:left;cursor:pointer}
+.at-prio-it svg{width:14px;height:14px;flex-shrink:0;color:var(--fg-4)}
+.at-prio-it:hover{border-color:var(--border-strong)}
+.at-prio-it[aria-pressed=true]{border-color:var(--border-brand);background:var(--brand-subtle)}
+.at-prio-it[aria-pressed=true] svg{color:var(--fg-brand);fill:currentColor}
+.at-prio-it[aria-disabled=true]{cursor:default}
+.at-prio-add{display:flex;gap:var(--sp-2)}
+.at-prio-add .eu-input{flex:1;min-width:0}
+.at-prio-link{color:var(--fg-3);text-decoration:none;align-self:flex-start;min-height:32px;display:inline-flex;align-items:center}
+.at-prio-link:hover{color:var(--fg-brand)}
 
 /* Revisión de la semana (notas 7 y 8): sección visible del domingo */
 .at-rev{gap:var(--sp-4);padding:var(--sp-5);margin-top:var(--sp-2)}

@@ -238,3 +238,98 @@ def test_revision_visible_y_historial_en_logros(client, monkeypatch):
     sem = client.get('/logros/semanas').get_data(as_text=True)
     assert 'Historial de semanas' in sem and '2–8 nov' in sem and 'Esta semana' in sem
     assert 'href="/logros/semanas"' in client.get('/logros').get_data(as_text=True)
+
+
+# ── Sprint 4: prioridades de la semana desde Praxis ──────────────────────────
+
+import modules.gtd.prioridades as prio
+
+LUNES_SIG = datetime.date(2026, 11, 9)          # primer día que gobiernan las elegidas el 7–8 nov
+
+
+def _semana_task(texto, cuadrante='semana'):
+    with database.get_db() as db:
+        db.execute("""INSERT INTO gtd_tasks (title,tipo,completado,status,importante,urgente,cuadrante,points,created_at,actualizado_en)
+                      VALUES (?, 'tarea', 0, 'inbox', 1, 0, ?, 4, 'x', 'x')""", (texto, cuadrante))
+        db.commit()
+        return db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+
+def test_semana_eleccion_y_vigente():
+    assert prio.semana_eleccion(DOMINGO) == '2026-11-07'
+    assert prio.semana_vigente(DOMINGO) == '2026-10-31'          # el domingo aún rige la semana anterior
+    assert prio.semana_vigente(LUNES_SIG) == '2026-11-07'
+    assert prio.semana_vigente(datetime.date(2026, 11, 15)) == '2026-11-07'
+
+
+def test_elegir_con_estrella_maximo_tres(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    ids = [_semana_task(f'S{i}') for i in range(4)]
+    _semana_task('De Hoy', 'hoy')                                   # no es opción
+    html = _get(client, '?dia=domingo')
+    box = html.split('id="prio-semana"', 1)[1].split('js-ps-empty', 1)[0]
+    assert box.count('class="at-prio-it js-ps"') == 4 and 'De Hoy' not in box
+    assert 'id="prio-1"' not in html                                # fuera los 3 inputs de texto
+    for n, tid in enumerate(ids[:3], 1):
+        r = client.post(f'/ataraxia/api/prioridad-semana/{tid}').get_json()
+        assert r['ok'] and r['n'] == n
+    r = client.post(f'/ataraxia/api/prioridad-semana/{ids[3]}')
+    assert r.status_code == 409 and r.get_json()['n'] == 3
+    assert client.post('/ataraxia/api/prioridad-semana', json={'texto': 'Otra'}).status_code == 409
+    client.post(f'/ataraxia/api/prioridad-semana/{ids[0]}')        # quitar libera el lugar
+    r = client.post('/ataraxia/api/prioridad-semana', json={'texto': 'Nueva'}).get_json()
+    assert r['ok'] and r['n'] == 3 and any(o['title'] == 'Nueva' and o['on'] for o in r['opciones'])
+    js = _src('static/js/ataraxia.js')
+    assert "d.n >= d.max && row && row.getAttribute('aria-pressed') !== 'true'" in js   # 3 → completa la tarea
+
+
+def test_acta_las_muestra_cada_dia_de_la_semana_siguiente(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    ids = [_semana_task(f'W{i}') for i in range(3)]
+    for tid in ids:
+        client.post(f'/ataraxia/api/prioridad-semana/{tid}')
+    # el domingo de la elección todavía no pasan a Hoy
+    with database.get_db() as db:
+        assert prio.materializar(db, DOMINGO.isoformat()) == 0
+        # el lunes siguiente: Hoy con estrella → Acta las muestra
+        assert prio.materializar(db, LUNES_SIG.isoformat()) == 3
+        rows = prio.prioridades_hoy(db, LUNES_SIG.isoformat())
+        assert [r['text'] for r in rows] == ['W0', 'W1', 'W2']
+        assert all(r['cuadrante'] == 'hoy' for r in db.execute(
+            "SELECT cuadrante FROM gtd_tasks WHERE id IN (?,?,?)", ids))
+        # quitar la estrella ese día la respeta; al día siguiente vuelve
+        prio.alternar_estrella(db, ids[0], LUNES_SIG.isoformat())
+        db.commit()
+        assert prio.materializar(db, LUNES_SIG.isoformat()) == 0
+        assert len(prio.prioridades_hoy(db, LUNES_SIG.isoformat())) == 2
+        martes = (LUNES_SIG + datetime.timedelta(days=1)).isoformat()
+        assert prio.materializar(db, martes) == 3
+        # completada ya no vuelve
+        db.execute("UPDATE gtd_tasks SET completado=1 WHERE id=?", (ids[1],))
+        db.commit()
+        assert prio.materializar(db, (LUNES_SIG + datetime.timedelta(days=2)).isoformat()) == 2
+
+
+def test_migra_weekly_priorities_de_la_semana_actual(test_db):
+    from utils import today_date
+    hoy = today_date()
+    actual = (hoy - datetime.timedelta(days=(hoy.weekday() - 5) % 7)).isoformat()
+    vieja = (date_ := datetime.date.fromisoformat(actual) - datetime.timedelta(days=7)).isoformat()
+    with database.get_db() as db:
+        db.execute("DELETE FROM migration_log WHERE version='ataraxia_v2_prioridades_semana'")
+        db.execute("INSERT INTO weekly_priorities (semana_id, p1, p2, p3) VALUES (?, 'Cerrar sprint', 'revisar contrato', NULL)", (actual,))
+        db.execute("INSERT INTO weekly_priorities (semana_id, p1) VALUES (?, 'Semana vieja')", (vieja,))
+        db.execute("""INSERT INTO gtd_tasks (title,tipo,completado,status,importante,urgente,cuadrante,points,created_at,actualizado_en)
+                      VALUES ('Revisar contrato', 'tarea', 0, 'inbox', 1, 0, 'semana', 4, 'x', 'x')""")
+        assert database.migrar_prioridades_semana(db) == 2
+        assert database.migrar_prioridades_semana(db) == 0
+        db.commit()
+        rows = db.execute("SELECT title, cuadrante FROM gtd_tasks WHERE prioridad_semana=? ORDER BY id", (actual,)).fetchall()
+        assert [(r['title'], r['cuadrante']) for r in rows] == [('Revisar contrato', 'semana'), ('Cerrar sprint', 'semana')]
+        assert db.execute("SELECT COUNT(*) FROM gtd_tasks WHERE title='Semana vieja'").fetchone()[0] == 0
+
+
+def test_praxis_marca_las_prioridades_de_la_semana(client):
+    html = client.get('/gtd/').get_data(as_text=True)
+    assert f'data-semanas-prio="{prio.semana_eleccion()},{prio.semana_vigente()}"' in html
+    assert 'px-sem' in _src('static/js/praxis.js')

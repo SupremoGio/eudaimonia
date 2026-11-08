@@ -31,7 +31,8 @@ def index():
         tasks = [dict(r) for r in db.execute(
             "SELECT * FROM gtd_tasks ORDER BY created_at DESC"
         ).fetchall()]
-    return render_template('gtd/praxis.html', tasks=tasks, stats=get_gtd_stats(), today=today_str())
+    return render_template('gtd/praxis.html', tasks=tasks, stats=get_gtd_stats(), today=today_str(),
+                           semanas_prio=[prio.semana_eleccion(), prio.semana_vigente()])
 
 
 @gtd_bp.route('/points')

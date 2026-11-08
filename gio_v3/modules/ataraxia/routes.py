@@ -4,8 +4,9 @@ import os
 import re
 from database import get_db
 from data import ACTIVITIES
-from utils import today_str, today_date
+from utils import today_str, today_date, clean_str
 import modules.gamification.engine as engine
+import modules.gtd.prioridades as prio
 
 ataraxia_bp = Blueprint('ataraxia', __name__, template_folder='../../templates')
 
@@ -124,23 +125,6 @@ def _get_revision_row(semana_id):
     with get_db() as db:
         row = db.execute("SELECT * FROM revision_semanal WHERE semana_id=?", (semana_id,)).fetchone()
     return dict(row) if row else None
-
-
-# ── Prioridades de la semana (ritual dominical) ───────────────────────────────
-# semana_id es el sábado del ciclo (ver get_semana_id); las 3 prioridades que
-# se capturan aquí gobiernan la semana laboral que arranca el lunes siguiente
-# a ese sábado, no la que ya terminó — por eso +2 días, no -5 como en
-# get_weekly_classification (que sí mira la semana retrospectiva).
-
-def _semana_siguiente_dias(semana_id):
-    lunes = date.fromisoformat(semana_id) + timedelta(days=2)
-    return [(lunes + timedelta(days=i)).isoformat() for i in range(7)]
-
-
-def _get_weekly_priorities(semana_id):
-    with get_db() as db:
-        row = db.execute("SELECT * FROM weekly_priorities WHERE semana_id=?", (semana_id,)).fetchone()
-    return dict(row) if row else {}
 
 
 def _fmt_num(v):
@@ -508,44 +492,45 @@ def index():
         is_weekend   = dow in (5, 6),
         today        = today_str(),
         revision     = _revision_view(semana_id),
-        weekly_priorities = _get_weekly_priorities(semana_id),
+        prio_semana  = _prio_semana_view(semana_id),
     )
 
 
-@ataraxia_bp.route('/api/prioridades-semana', methods=['POST'])
-def save_prioridades_semana():
-    data      = request.json or {}
-    semana_id = get_semana_id()
-    textos    = [(data.get(f'p{i}') or '').strip()[:200] for i in (1, 2, 3)]
-    textos    = [t for t in textos if t]
-    now       = datetime.now().isoformat()
+# ── Prioridades de la semana desde Praxis (handoff Ataraxia v2, Sprint 4) ────
+# Se eligen con estrella entre las tareas de «Esta semana» de Praxis (máx. 3);
+# gobiernan la semana Lun-Dom siguiente y Acta las muestra día a día.
 
-    dias = _semana_siguiente_dias(semana_id)
-
+def _prio_semana_view(semana_id):
     with get_db() as db:
-        db.execute(
-            """INSERT INTO weekly_priorities (semana_id, p1, p2, p3, updated_at) VALUES (?,?,?,?,?)
-               ON CONFLICT(semana_id) DO UPDATE SET
-                 p1=excluded.p1, p2=excluded.p2, p3=excluded.p3, updated_at=excluded.updated_at""",
-            (semana_id,
-             textos[0] if len(textos) > 0 else None,
-             textos[1] if len(textos) > 1 else None,
-             textos[2] if len(textos) > 2 else None,
-             now)
-        )
-        # Limpia lo sembrado antes por esta misma semana (re-guardar no debe
-        # duplicar) sin tocar prioridades sueltas que el usuario haya tecleado
-        # ese día directamente en Acta Diurna (semana_id NULL en esas filas).
-        db.execute("DELETE FROM priorities WHERE semana_id=?", (semana_id,))
-        for d in dias:
-            for t in textos:
-                db.execute(
-                    "INSERT INTO priorities (date, text, done, semana_id) VALUES (?,?,0,?)",
-                    (d, t, semana_id)
-                )
-        db.commit()
+        ops = prio.opciones_semana(db, semana_id)
+    return {"opciones": ops, "n": sum(1 for o in ops if o["on"]), "max": prio.MAX_SEMANA}
 
-    return jsonify({'ok': True, 'textos': textos, 'dias': dias})
+
+@ataraxia_bp.route('/api/prioridad-semana/<int:tid>', methods=['POST'])
+def toggle_prioridad_semana(tid):
+    semana_id = get_semana_id()
+    with get_db() as db:
+        ok, val, code = prio.alternar_semana(db, tid, semana_id)
+        db.commit()
+    view = _prio_semana_view(semana_id)
+    if not ok:
+        return jsonify({'ok': False, 'error': val, **view}), code
+    return jsonify({'ok': True, 'prioridad': val, **view})
+
+
+@ataraxia_bp.route('/api/prioridad-semana', methods=['POST'])
+def nueva_prioridad_semana():
+    texto = clean_str((request.json or {}).get('texto', ''), max_len=300)
+    if not texto:
+        return jsonify({'ok': False, 'error': 'Escribe la prioridad'}), 400
+    semana_id = get_semana_id()
+    with get_db() as db:
+        tid = prio.crear_prioridad_semana(db, texto, semana_id)
+        db.commit()
+    view = _prio_semana_view(semana_id)
+    if tid is None:
+        return jsonify({'ok': False, 'error': 'Ya elegiste 3 prioridades para la semana.', **view}), 409
+    return jsonify({'ok': True, 'id': tid, **view})
 
 
 @ataraxia_bp.route('/api/rutina/<dia>')

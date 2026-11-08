@@ -130,20 +130,44 @@
   }
   root.addEventListener('click', function (e) { var b = e.target.closest('.js-task'); if (b) toggleTask(b); });
 
-  /* ── Prioridades de la semana ── */
-  var prio = $('prio-form');
-  if (prio) prio.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var p = [1, 2, 3].map(function (n) { return $('prio-' + n).value.trim(); });
-    if (!p[0] && !p[1] && !p[2]) { toast('Escribe al menos una prioridad', 'err'); return; }
-    try {
-      var d = await jpost('/ataraxia/api/prioridades-semana', { p1: p[0], p2: p[1], p3: p[2] });
-      if (!d._ok || !d.ok) { toast('Error al guardar', 'err'); return; }
-      toast('Guardadas — aparecen en el Acta Diurna toda la semana', 'win');
-      var row = $('trow-sun_prioridades');
-      if (row && row.getAttribute('aria-pressed') !== 'true') toggleTask(row);
-    } catch (_) { toast('Sin conexión', 'err'); }
-  });
+  /* ── Prioridades de la semana desde Praxis (nota 6) ── */
+  var ps = $('prio-semana');
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function renderPS(d) {
+    ps.querySelector('.js-ps-list').innerHTML = (d.opciones || []).map(function (o) {
+      return '<button type="button" class="at-prio-it js-ps" data-id="' + o.id + '" aria-pressed="' + o.on + '"><i data-lucide="star"></i><span>' + esc(o.title) + '</span></button>';
+    }).join('');
+    ps.querySelector('.js-ps-n').textContent = d.n;
+    ps.querySelector('.js-ps-empty').hidden = (d.opciones || []).length > 0;
+    var f = ps.querySelector('.js-ps-form'); if (f) f.hidden = d.n >= d.max;
+    lucide.createIcons();
+    // Elegir 3 completa la tarea del bloque
+    var row = $('trow-sun_prioridades');
+    if (d.n >= d.max && row && row.getAttribute('aria-pressed') !== 'true') toggleTask(row);
+  }
+  if (ps) {
+    ps.addEventListener('click', async function (e) {
+      var b = e.target.closest('.js-ps'); if (!b) return;
+      if (root.dataset.preview) { toast('Vista previa: las prioridades se eligen el fin de semana'); return; }
+      b.disabled = true;
+      try {
+        var d = await jpost('/ataraxia/api/prioridad-semana/' + b.dataset.id);
+        if (!d._ok || !d.ok) { toast(d.error || 'No se pudo guardar', 'err'); b.disabled = false; return; }
+        renderPS(d);
+        toast(d.prioridad ? 'Prioridad de la semana · ' + d.n + '/3' : 'Quitada de la semana');
+      } catch (_) { toast('Sin conexión', 'err'); b.disabled = false; }
+    });
+    var psf = ps.querySelector('.js-ps-form');
+    if (psf) psf.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var inp = $('ps-inp'), texto = inp.value.trim(); if (!texto) return;
+      try {
+        var d = await jpost('/ataraxia/api/prioridad-semana', { texto: texto });
+        if (!d._ok || !d.ok) { toast(d.error || 'No se pudo guardar', 'err'); return; }
+        inp.value = ''; renderPS(d); toast('Agregada a Esta semana · ' + d.n + '/3', 'win');
+      } catch (_) { toast('Sin conexión', 'err'); }
+    });
+  }
 
   /* ── Revisión semanal ── */
   var rev = $('rev-form');

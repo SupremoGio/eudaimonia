@@ -154,8 +154,8 @@ eudaimonia/                         ← raíz del repo
 | Login | `auth/login.html` | contraseña única / setup inicial |
 | Inicio | `dashboard/index.html` + `_hero`, `_balance`, `_heat`, `_radar`, `_inspiracion` | rango + criterios + siguiente paso, XP/nivel/racha, equilibrio por virtud, constancia por rango, pendiente, reflexión/palabra |
 | Acta Diurna | `actividades/index.html` | checklist de hábitos por categoría, undo toast, animación de ícono |
-| Ataraxia | `ataraxia/index.html` | rutinas por bloques (fin de semana dual) |
-| Praxis (GTD) | `gtd/praxis.html`, `gtd/_capture.html` | captura en una barra, Inbox de un clic (4 destinos), Hoy con bono de 3 tareas (+5 XP), Semana «→ Hoy», fechas relativas (`praxis-due.js`). Premio solo en XP; `gtd_points_log` ya no se escribe. Un solo banco de ideas: el Pipeline de Acta lee y escribe `gtd_tasks` (cuadrante `ideas`). Prioridades del día = tareas de Hoy con estrella (`gtd_tasks.prioridad_dia`, máx. 3, `modules/gtd/prioridades.py`): Acta las muestra, completarlas en Acta o Praxis es la misma acción y el bono «Prioridades x3» se da una vez. La tabla `priorities` (manuales viejas / ritual semanal de Ataraxia) se convierte en estrellas al abrir Acta o Praxis |
+| Ataraxia | `ataraxia/index.html`, `_bloque.html`, `_revision.html` | rutinas por bloques (fin de semana dual): solo el bloque «Ahora» abierto, recompensas visibles desde el inicio, Reset en el menú ⋯, entre semana vista previa sin marcar. Prioridades de la semana = estrella sobre tareas «Esta semana» de Praxis (`gtd_tasks.prioridad_semana`, máx. 3) que cada día de la semana siguiente pasan a Hoy con estrella. Revisión semanal con presupuesto y días de lectura automáticos; historial en `/logros/semanas` |
+| Praxis (GTD) | `gtd/praxis.html`, `gtd/_capture.html` | captura en una barra, Inbox de un clic (4 destinos), Hoy con bono de 3 tareas (+5 XP), Semana «→ Hoy», fechas relativas (`praxis-due.js`). Premio solo en XP; `gtd_points_log` ya no se escribe. Un solo banco de ideas: el Pipeline de Acta lee y escribe `gtd_tasks` (cuadrante `ideas`). Prioridades del día = tareas de Hoy con estrella (`gtd_tasks.prioridad_dia`, máx. 3, `modules/gtd/prioridades.py`): Acta las muestra, completarlas en Acta o Praxis es la misma acción y el bono «Prioridades x3» se da una vez. La tabla `priorities` (manuales viejas) se convierte en estrellas al abrir Acta o Praxis |
 | Logros | `gamification/logros.html` | badges, clasificación, XP |
 | Recompensas | `recompensas/index.html` | tienda de EC, cooldowns |
 | Oikonomia hub | `finanzas/hub.html` + `hub/_hero`, `_debts`, `_budget`, `_subs` | Disponible + por día, 50·30·20, siguiente paso («Marcar pagado»), patrimonio, racha, próximos pagos, categorías en riesgo (cifras ocultables) |
@@ -214,6 +214,7 @@ No hay sistema de componentes formal (ni macros Jinja significativas). La reutil
 | `/` | Dashboard | principal |
 | `/actividades/` | Acta Diurna | principal |
 | `/ataraxia/` | Ataraxia (rutinas) | principal |
+| `/logros/semanas` | Historial de la revisión semanal | ↳ Logros |
 | `/gtd/` (`/gtd/dashboard`); `/gtd/points` → redirige a `/logros` | Praxis GTD | principal |
 | `/finanzas/` | Oikonomia hub | Módulos |
 | `/finanzas/estados/` | Estados de cuenta (SPA React) | ↳ Oikonomia |

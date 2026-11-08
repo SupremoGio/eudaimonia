@@ -37,13 +37,25 @@
           {% if t.xp > 0 or t.ec > 0 %}<span class="at-task-rw num">{% if t.xp > 0 %}+{{ t.xp }} XP{% endif %}{% if t.ec > 0 %} · +{{ t.ec }} EC{% endif %}</span>{% endif %}
         </button>
         {% if t.id == 'sun_prioridades' %}
-        <form class="eu-card eu-card--inset eu-vstack at-prio" id="prio-form" autocomplete="off">
-          <div class="t-meta">Tus 3 prioridades aparecen toda la semana en el Acta Diurna.</div>
-          {% for n in [1, 2, 3] %}
-          <input class="eu-input" id="prio-{{ n }}" placeholder="Prioridad {{ n }}…" maxlength="200" aria-label="Prioridad {{ n }}" value="{{ weekly_priorities['p' ~ n] or '' }}">
-          {% endfor %}
-          <button type="submit" class="eu-btn eu-btn--secondary"><i data-lucide="save"></i>Guardar prioridades</button>
-        </form>
+        {# Prioridades de la semana desde Praxis (nota 6): se eligen con
+           estrella de «Esta semana»; elegir 3 completa esta tarea. #}
+        {% set ps = prio_semana %}
+        <div class="at-prio" id="prio-semana" data-max="{{ ps.max }}">
+          <div class="t-meta">Elige hasta 3 de tu lista <b class="fg-2">Esta semana</b> en Praxis · <span class="num js-ps-n">{{ ps.n }}</span>/3</div>
+          <div class="at-prio-list js-ps-list">
+            {% for o in ps.opciones %}
+            <button type="button" class="at-prio-it js-ps" data-id="{{ o.id }}" aria-pressed="{{ 'true' if o.on else 'false' }}"{% if not is_weekend %} aria-disabled="true"{% endif %}><i data-lucide="star"></i><span>{{ o.title }}</span></button>
+            {% endfor %}
+          </div>
+          <p class="t-meta js-ps-empty"{% if ps.opciones %} hidden{% endif %}>Tu lista «Esta semana» en Praxis está vacía. Agrega aquí la primera.</p>
+          {% if is_weekend %}
+          <form class="at-prio-add js-ps-form" autocomplete="off"{% if ps.n >= ps.max %} hidden{% endif %}>
+            <input class="eu-input" id="ps-inp" placeholder="Nueva prioridad de la semana…" maxlength="300" aria-label="Nueva prioridad de la semana">
+            <button type="submit" class="eu-iconbtn eu-iconbtn--outline" aria-label="Agregar a Esta semana"><i data-lucide="plus"></i></button>
+          </form>
+          {% endif %}
+          <a class="t-meta at-prio-link" href="/gtd/">Se ven en Praxis y cada día en Acta Diurna →</a>
+        </div>
         {% endif %}
       </li>
       {% endfor %}

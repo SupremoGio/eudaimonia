@@ -17,6 +17,8 @@
   var doneOpen = false;
   /* Tareas completadas hoy según el servidor: alimenta el bono de 3 */
   var doneToday = parseInt(root.dataset.doneToday, 10) || 0;
+  /* Semanas cuyas prioridades (estrella de Ataraxia) siguen vigentes */
+  var semPrio = (root.dataset.semanasPrio || '').split(',').filter(Boolean);
 
   var Q_LABEL = { hoy: 'Hoy', semana: 'Esta semana', delegar: 'Delegar', ideas: 'Ideas' };
   var TIPO = { tarea: ['Tarea', 'pin'], idea: ['Idea', 'lightbulb'], mantenimiento: ['Mantenimiento', 'wrench'] };
@@ -134,6 +136,10 @@
     var d = t.completado ? null : Due.relDue(t.fecha_limite, today());
     return d ? '<span class="eu-badge px-due' + (d.tone ? ' px-due--' + d.tone : '') + '" title="' + esc(t.fecha_limite) + '">' + esc(d.txt) + '</span>' : '';
   }
+  function semHTML(t) {
+    return t.prioridad_semana && semPrio.indexOf(t.prioridad_semana) >= 0 && !t.completado
+      ? '<span class="eu-badge px-sem" title="Prioridad de la semana (elegida en Ataraxia)">' + ic('star') + 'Semana</span>' : '';
+  }
   function tipoHTML(t) {
     if (!t.tipo || t.tipo === 'tarea' || (t.tipo === 'idea' && t.cuadrante === 'ideas')) return '';
     var tp = TIPO[t.tipo] || TIPO.tarea;
@@ -169,7 +175,7 @@
       if (sec === 'semana') extra = '<button type="button" class="px-promote js-promote" data-id="' + t.id + '" aria-label="Mover «' + esc(t.title) + '» a Hoy">→ Hoy</button>';
       extra += '<button type="button" class="eu-iconbtn px-ghost js-unclass" data-id="' + t.id + '" aria-label="Regresar «' + esc(t.title) + '» a Inbox" title="Regresar a Inbox">' + ic('undo-2') + '</button>' + delHTML(t);
     }
-    return '<li class="px-item' + (sec === 'side' ? ' px-item--sm' : '') + (t.completado ? ' is-done' : '') + '">' + checkHTML(t) + titleHTML(t) + tipoHTML(t) + dueHTML(t) + extra + '</li>';
+    return '<li class="px-item' + (sec === 'side' ? ' px-item--sm' : '') + (t.completado ? ' is-done' : '') + '">' + checkHTML(t) + titleHTML(t) + semHTML(t) + tipoHTML(t) + dueHTML(t) + extra + '</li>';
   }
   function empty(icon, title, text) { return window.euEmpty ? euEmpty(icon, title, text || '', true) : '<p class="t-meta px-empty">' + title + '</p>'; }
 
