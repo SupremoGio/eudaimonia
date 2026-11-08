@@ -328,24 +328,24 @@ _ACT_CAT_TO_VIRTUE = {
 _RADAR_TONE = {'red': 'danger', 'amber': 'warning', 'yellow': 'info', 'green': ''}
 
 
-def _build_virtues_today() -> list:
-    """XP de hoy por pilar (activity_logs × activity_defs), en el orden de activity_defs.PILLAR_ORDER."""
+def _build_balance_week() -> dict:
+    """«Equilibrio de la semana» (Inicio v2, marcador 5): XP de la semana y de
+    hoy por virtud, umbral del 60% y bonus +20%. La regla vive en
+    engine.balance_week (la misma que aplica el XP), aquí solo se presenta."""
     from modules.actividades import activity_defs as adefs
-    defs = adefs.get_active_flat()
-    today = today_str()
-    xp = {}
-    with get_db() as db:
-        for r in db.execute(
-            "SELECT activity_key, COALESCE(SUM(pts),0) AS pts FROM activity_logs "
-            "WHERE date=? AND activity_key != 'priority_bonus' GROUP BY activity_key", (today,)
-        ).fetchall():
-            key = r['activity_key']
-            pillar = 'eury' if key == 'eurythmia_session' else (defs.get(key) or {}).get('pillar')
-            if pillar:
-                xp[pillar] = xp.get(pillar, 0) + (r['pts'] or 0)
-    return [{'id': pid, 'cat': ui['cat'], 'label': ui['name'], 'fn': ui['fn'], 'icon': ui['icon'],
-             'url': ui['url'], 'xp': xp.get(pid, 0), 'done': pid in xp}
-            for pid in adefs.PILLAR_ORDER for ui in [adefs.PILLAR_UI[pid]]]
+    from modules.gamification import engine
+    b = engine.balance_week()
+    top = max([b['threshold'], *b['week'].values(), 1])
+    rows = []
+    for pid in adefs.PILLAR_ORDER:
+        ui = adefs.PILLAR_UI[pid]
+        week, today = b['week'][pid], b['today'][pid]
+        rows.append({'id': pid, 'cat': ui['cat'], 'label': ui['name'], 'fn': ui['fn'], 'icon': ui['icon'],
+                     'url': ui['url'], 'xp_today': today, 'xp_week': week, 'bonus': pid in b['bonus'],
+                     'pct': round(week / top * 100, 1)})
+    return {'rows': rows, 'threshold': round(b['threshold'], 1), 'tick': round(b['threshold'] / top * 100, 1),
+            'avg': round(b['avg'], 1), 'n_bonus': len(b['bonus']),
+            'boost_pct': round((engine.BALANCE_BOOST - 1) * 100), 'ratio_pct': round(engine.BALANCE_RATIO * 100)}
 
 
 def _build_heat_16w(goal: int = 15) -> list:
@@ -380,7 +380,6 @@ def _build_dashboard_v2(data: dict) -> dict:
         perks = sum(1 for b in get_all_badges() if b['perk_active'])
     except Exception:
         perks = 0
-    virtues = _build_virtues_today()
     sugg = data.get('suggestion')
     hour = now_local().hour
     return {
@@ -388,8 +387,7 @@ def _build_dashboard_v2(data: dict) -> dict:
         'next_level':  next_name,
         'streak_bonus': round((stats.get('streak_mult', 1.0) - 1) * 100),
         'perks':       perks,
-        'virtues':     virtues,
-        'virtues_done': sum(1 for v in virtues if v['done']),
+        'balance':     _build_balance_week(),
         'heat':        _build_heat_16w(),
         'sugg_cat':    _ACT_CAT_TO_VIRTUE.get(sugg['cat']) if sugg else None,
         'radar_tone':  _RADAR_TONE,

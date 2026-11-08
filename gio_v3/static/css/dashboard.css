@@ -1,13 +1,13 @@
 /* ═══════════════════════════════════════════════════════════════
    Dashboard (/) — Design System V2 · pantalla 02
    Solo tokens (app.css) y componentes eu-* (components.css).
-   Móvil: una columna Héroe → Reflexión → Pendiente → Virtudes →
+   Móvil: una columna Héroe → Reflexión → Pendiente → Equilibrio →
    Constancia → Palabra. ≥1024: grid 1fr / 360px.
    ═══════════════════════════════════════════════════════════════ */
 .dash{display:flex;flex-direction:column;gap:var(--sp-3)}
 .dash-main,.dash-side{display:contents}
 .dash-hello{order:0;display:none}
-.dash-hero{order:1}.dash-quote{order:2}.dash-radar{order:3}.dash-virtues{order:4}
+.dash-hero{order:1}.dash-quote{order:2}.dash-radar{order:3}.dash-balance{order:4}
 .dash-heat{order:5}.dash-word{order:6}
 .dash-hello .t-page{margin:var(--sp-2) 0 0}
 .dash h2{margin:0}
@@ -102,21 +102,33 @@
 .dash-radar-row{transition:opacity var(--dur-base) var(--ease-exit)}
 .dash-radar-row.is-leaving{opacity:0}
 
-/* ── Virtudes ────────────────────────────────────────────────── */
-.dash-vgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-2)}
-.dash-virtue{display:flex;flex-direction:column;gap:var(--sp-3);color:inherit;text-decoration:none}
-.dash-virtue.is-done{border-color:var(--cat-border)}
-.dash-virtue:not(.is-done) .eu-mod-ic{background:var(--bg-raised);border-color:var(--border-subtle);color:var(--fg-3)}
-.dash-virtue-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (max-width:767px){
-  .dash-virtue{padding:var(--sp-3) var(--sp-1);align-items:center;gap:var(--sp-2);border-radius:var(--r-md)}
-  .dash-virtue .eu-between{justify-content:center}
-  .dash-virtue .eu-badge,.dash-virtue-none,.dash-virtue-fn{display:none}
-  .dash-virtue-txt{max-width:100%;text-align:center}
-  .dash-virtue-name{font:var(--fw-medium) var(--fs-12)/1.2 var(--font-ui);letter-spacing:0}
-  .dash-virtue:not(.is-done) .dash-virtue-name{color:var(--fg-3)}
-}
-@media (min-width:768px){.dash-vgrid{gap:var(--sp-4)}}
+/* ── Equilibrio de la semana (Inicio v2, marcador 5) ─────────── */
+.dash-balance{gap:var(--sp-4)}
+.dash-balance-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4)}
+.dash-balance-hd p{margin:2px 0 0}
+.dash-balance-hd .eu-badge{white-space:nowrap}
+.dash-bal-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-1) var(--sp-8)}
+@media (min-width:768px){.dash-bal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dash-bal{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2);margin:0 calc(-1 * var(--sp-2));border-radius:10px;color:inherit;text-decoration:none;transition:background var(--dur-fast)}
+.dash-bal:hover{background:var(--bg-hover)}
+.dash-bal:focus-visible{outline:2px solid var(--border-brand);outline-offset:0}
+.dash-bal-ic{width:32px;height:32px;border-radius:9px}
+.dash-bal-ic svg{width:16px;height:16px}
+.dash-bal-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.dash-bal-top{display:flex;align-items:baseline;gap:6px;min-width:0}
+.dash-bal-name{font:var(--fw-semibold) 16px/1.1 var(--font-display);letter-spacing:.01em;color:var(--fg-1);white-space:nowrap}
+.dash-bal-fn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-bal-today{margin-left:auto;font:var(--fw-medium) var(--fs-12)/1 var(--font-data);color:var(--cat-fg);white-space:nowrap}
+.dash-bal-today.is-none{color:var(--fg-4)}
+.dash-bal-bar{position:relative;display:block;height:6px;border-radius:var(--r-full);background:var(--bg-raised)}
+.dash-bal-bar i{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:var(--cat-fg);transition:width var(--dur-deliberate) var(--ease-emphasis)}
+.dash-bal-bar i.is-bonus{background:var(--warning-fg)}
+.dash-bal-bar b{position:absolute;top:-3px;bottom:-3px;width:1.5px;background:var(--fg-3);opacity:.6}
+.dash-bal-end{width:56px;display:flex;justify-content:flex-end;font:var(--fw-medium) var(--fs-12)/1 var(--font-data);color:var(--fg-3);white-space:nowrap}
+.dash-bal-legend{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-4)}
+.dash-bal-legend span{display:flex;align-items:center;gap:6px}
+.dash-bal-legend i{width:1.5px;height:12px;background:var(--fg-3);opacity:.6}
+@media (max-width:479px){.dash-balance-hd{flex-direction:column;align-items:flex-start}}
 
 /* ── Constancia (heatmap) ────────────────────────────────────── */
 .dash-heat-scroll{overflow-x:auto;scrollbar-width:none}

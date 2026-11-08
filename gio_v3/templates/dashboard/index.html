@@ -25,7 +25,7 @@
 {% block content %}
 {#  Héroe (rango, criterios y siguiente paso) + columna lateral (reflexión,
     radar Pendiente, palabra). Desktop: grid 1fr / 360px; móvil: una
-    columna Héroe → Reflexión → Pendiente → Virtudes → Constancia → Palabra. #}
+    columna Héroe → Reflexión → Pendiente → Equilibrio → Constancia → Palabra. #}
 <div class="dash">
   <div class="dash-main">
     <header class="dash-hello">
@@ -34,7 +34,7 @@
       {{ ui.button('Marcar actividad', icon='circle-check', href='/actividades/') }}
     </header>
     {% include "dashboard/_hero.html" %}
-    {% include "dashboard/_virtues.html" %}
+    {% include "dashboard/_balance.html" %}
     {% include "dashboard/_heat.html" %}
   </div>
 
