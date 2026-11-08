@@ -471,7 +471,8 @@ def get_daily_classification(date_str=None):
     # exigen a diario — no cuentan en el conteo de touches del día, solo dan
     # XP/EC y cobertura de pilar cuando se registran.
     touch_defs   = [d for d in defs_today.values() if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"]
-    done_touch_keys = {d["key"] for d in done_today if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"}
+    done_touch_defs = [d for d in done_today if d["effective_type"] == "touch" and d.get("cadence", "daily") == "daily"]
+    done_touch_keys = {d["key"] for d in done_touch_defs}
     touches_done = len(done_touch_keys)
 
     # Cobertura de sesiones (mañana/tarde/noche/cualquier-momento) entre los
@@ -479,10 +480,12 @@ def get_daily_classification(date_str=None):
     sessions_available = set()
     for d in touch_defs:
         sessions_available |= _sessions_of(d)
+    # Se cuentan todos los touches hechos, también uno que no tocaba hoy (ej.
+    # Jugo verde un domingo): ya suma en «Touches» y debe sumar igual en
+    # sesiones y pilares, o el checklist dice «Touches 1/5 · Sesiones 0/3».
     sessions_covered = set()
-    for d in touch_defs:
-        if d["key"] in done_touch_keys:
-            sessions_covered |= _sessions_of(d)
+    for d in done_touch_defs:
+        sessions_covered |= _sessions_of(d)
 
     gold_min_touches  = RECOVERY_GOLD_MIN_TOUCHES  if recovery else GOLD_MIN_TOUCHES
     base_touches, base_sessions = gold_min_touches, (RECOVERY_GOLD_MIN_SESSIONS if recovery else GOLD_MIN_SESSIONS)
@@ -510,7 +513,7 @@ def get_daily_classification(date_str=None):
     # exigidos (si las anclas extra bajaron la meta a 1 touch, no se piden 2
     # pilares distintos con ese único touch).
     pillars_available = {d["pillar"] for d in touch_defs}
-    touch_pillars     = {d["pillar"] for d in touch_defs if d["key"] in done_touch_keys}
+    touch_pillars     = {d["pillar"] for d in done_touch_defs}
     gold_min_pillars  = min(GOLD_MIN_PILLARS, len(pillars_available), gold_min_touches)
 
     # Ancla mínima — ver nota de ANCLA_MIN_SUFFIX arriba. Solo cuenta si esa
