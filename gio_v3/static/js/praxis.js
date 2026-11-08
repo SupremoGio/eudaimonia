@@ -24,6 +24,14 @@
   ];
   var Q_LABEL = { hoy: 'Hoy', semana: 'Esta semana', delegar: 'Delegar', ideas: 'Ideas' };
   var TIPO = { tarea: ['Tarea', 'pin'], idea: ['Idea', 'lightbulb'], mantenimiento: ['Mantenimiento', 'wrench'] };
+  /* Inbox de un clic (nota 3): cada destino manda su par importante/urgente */
+  var DEST = [
+    { q: 'hoy', label: 'Hoy', icon: 'flame', imp: 1, urg: 1, tip: 'Urgente e importante' },
+    { q: 'semana', label: 'Semana', icon: 'calendar', imp: 1, urg: 0, tip: 'Importante' },
+    { q: 'delegar', label: 'Delegar', icon: 'users', imp: 0, urg: 1, tip: 'Urgente' },
+    { q: 'ideas', label: 'Idea', icon: 'lightbulb', imp: 0, urg: 0, tip: 'Ninguno' }
+  ];
+  var Due = window.PxDue || { relDue: function () { return null; }, byDue: function () { return 0; } };
 
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   /* Fecha del servidor (zona de la app), no la del navegador */
@@ -98,13 +106,10 @@
       var q = tasks.filter(function (t) { return !t.completado && t.cuadrante == null; });
       if (!q.length) { toast('Inbox vacío'); return; }
       openReview(q, false);
-    } else if (b.dataset.cls) {
-      var t = tasks.find(function (x) { return x.id === id; });
-      t[b.dataset.cls] = b.dataset.val === '1';
-      if (t.importante != null && t.urgente != null) {
-        var c = await classify(id, t.importante, t.urgente);
-        if (c) toast('→ ' + (Q_LABEL[c] || c));
-      }
+    } else if (b.classList.contains('js-dest')) {
+      b.disabled = true;
+      var c = await classify(id, b.dataset.imp === '1', b.dataset.urg === '1');
+      if (c) toast('→ ' + (Q_LABEL[c] || c));
       render();
     }
   });
@@ -113,14 +118,19 @@
   function metaHTML(t) {
     var tp = TIPO[t.tipo] || TIPO.tarea;
     return '<div class="px-meta">' +
-      (t.fecha_limite ? '<span class="eu-badge"><i data-lucide="calendar"></i>' + esc(t.fecha_limite) + '</span>' : '') +
+      dueHTML(t) +
       '<span class="eu-badge px-tipo px-tipo--' + esc(t.tipo || 'tarea') + '"><i data-lucide="' + tp[1] + '"></i>' + tp[0] + '</span></div>';
   }
-  function segHTML(t, campo, label) {
-    var v = t[campo];
-    return '<div class="px-cls-q"><span class="t-meta">' + label + '</span><div class="eu-seg">' +
-      '<button type="button" data-id="' + t.id + '" data-cls="' + campo + '" data-val="1" aria-pressed="' + (v === true) + '">Sí</button>' +
-      '<button type="button" data-id="' + t.id + '" data-cls="' + campo + '" data-val="0" aria-pressed="' + (v === false) + '">No</button></div></div>';
+  /* Fecha límite relativa con tono (praxis-due.js); nunca ISO */
+  function dueHTML(t) {
+    var d = Due.relDue(t.fecha_limite, today());
+    return d ? '<span class="eu-badge px-due' + (d.tone ? ' px-due--' + d.tone : '') + '" title="' + esc(t.fecha_limite) + '">' + esc(d.txt) + '</span>' : '';
+  }
+  function destHTML(t) {
+    return '<div class="px-dest" role="group" aria-label="Mandar «' + esc(t.title) + '» a">' + DEST.map(function (d) {
+      return '<button type="button" class="px-dest-b js-dest" data-q="' + d.q + '" data-id="' + t.id + '" data-imp="' + d.imp + '" data-urg="' + d.urg + '" title="' + d.tip + '">' +
+        '<i data-lucide="' + d.icon + '"></i>' + d.label + '</button>';
+    }).join('') + '</div>';
   }
   function itemHTML(t, sec) {
     var main = '<div class="px-item-main"><div class="px-item-t' + (sec === 'done' ? ' is-done' : '') + '">' + esc(t.title) + '</div>' +
@@ -128,7 +138,7 @@
       (sec === 'done' ? (t.fecha_completado ? '<div class="t-meta">Completada ' + esc(t.fecha_completado) + '</div>' : '') : metaHTML(t)) + '</div>';
     var delBtn = '<button type="button" class="eu-iconbtn px-danger js-del" data-id="' + t.id + '" aria-label="Eliminar «' + esc(t.title) + '»"><i data-lucide="trash-2"></i></button>';
     if (sec === 'inbox') {
-      return '<li class="px-item px-item--inbox">' + main + '<div class="px-cls">' + segHTML(t, 'importante', '¿Importante?') + segHTML(t, 'urgente', '¿Urgente?') + '</div>' + delBtn + '</li>';
+      return '<li class="px-item px-item--inbox">' + main + destHTML(t) + delBtn + '</li>';
     }
     if (sec === 'done') {
       return '<li class="px-item"><span class="px-check is-on" aria-hidden="true"><span class="eu-act-check"><i data-lucide="check"></i></span></span>' + main + delBtn + '</li>';
@@ -143,6 +153,7 @@
       else if (t.cuadrante == null) groups.inbox.push(t);
       else if (groups[t.cuadrante]) groups[t.cuadrante].push(t);
     });
+    ['inbox', 'hoy', 'semana', 'delegar', 'ideas'].forEach(function (k) { groups[k].sort(Due.byDue); });
     groups.done = groups.done.slice(0, 40);
     root.innerHTML = SECS.map(function (s) {
       var items = groups[s.key], isOpen = open[s.key];
@@ -155,7 +166,8 @@
             '<i data-lucide="chevron-down" class="px-chev"></i></button>' +
           (s.key === 'inbox' && items.length ? '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-rev"><i data-lucide="sparkles"></i>Revisión rápida</button>' : '') +
         '</div>' +
-        (isOpen ? (items.length ? '<ul class="px-list">' + items.map(function (t) { return itemHTML(t, s.key); }).join('') + '</ul>'
+        (isOpen ? (items.length ? '<ul class="px-list">' + items.map(function (t) { return itemHTML(t, s.key); }).join('') + '</ul>' +
+            (s.key === 'inbox' ? '<p class="t-meta px-rule">Hoy = urgente e importante · Semana = importante · Delegar = urgente · Idea = ninguno</p>' : '')
           : euEmpty(s.key === 'done' ? 'circle-check' : s.key === 'inbox' ? 'inbox' : 'layers', s.key === 'done' ? 'Aún sin completadas' : s.key === 'inbox' ? 'Inbox en cero' : 'Nada aquí', s.key === 'inbox' ? 'Todo está decidido.' : '', true)) : '') +
         '</section>';
     }).join('');

@@ -80,13 +80,29 @@
 .px-danger{color:var(--fg-3)}
 .px-danger:hover{color:var(--danger-fg)}
 
-/* Clasificación en Inbox */
-.px-item--inbox{flex-wrap:wrap}
-.px-cls{display:flex;gap:var(--sp-4);flex-wrap:wrap;align-items:center}
-.px-cls-q{display:flex;align-items:center;gap:var(--sp-2)}
-.px-cls .eu-seg button,.px-rev-q .eu-seg button{min-width:44px}
+/* Inbox de un clic (nota 3): 4 destinos con el tono de su cuadrante */
+.px-item--inbox{flex-wrap:wrap;align-items:center}
+.px-item--inbox .px-item-main{padding-top:0}
+.px-dest{display:flex;gap:4px;flex-wrap:wrap}
+.px-dest-b{--d-fg:var(--fg-2);--d-bd:var(--border-default);display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 10px;border-radius:var(--r-sm);border:1px solid var(--d-bd);background:transparent;color:var(--d-fg);font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);cursor:pointer;white-space:nowrap;transition:background var(--dur-fast)}
+.px-dest-b svg{width:12px;height:12px}
+.px-dest-b[data-q=hoy]{--d-fg:var(--danger-fg);--d-bd:var(--danger-border)}
+.px-dest-b[data-q=semana]{--d-fg:var(--info-fg);--d-bd:var(--info-border)}
+.px-dest-b[data-q=delegar]{--d-fg:var(--warning-fg);--d-bd:var(--warning-border)}
+.px-dest-b[data-q=ideas]{--d-fg:var(--fg-brand);--d-bd:var(--border-brand)}
+.px-dest-b:hover{background:var(--bg-hover)}
+.px-dest-b:disabled{opacity:.5;cursor:default}
+.px-rule{margin:0;padding:10px var(--sp-4);border-top:1px solid var(--border-subtle)}
+.px-rev-q .eu-seg button{min-width:44px}
+/* Fecha límite relativa (nota 6) */
+.px-due{font-family:var(--font-data)}
+.px-due--danger{background:var(--danger-bg);color:var(--danger-fg);border-color:transparent}
+.px-due--warning{background:var(--warning-bg);color:var(--warning-fg);border-color:transparent}
 .eu-seg button[aria-pressed=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
-@media (max-width:767px){.px-item--inbox .px-cls{order:3;width:100%;padding-left:0}}
+@media (max-width:767px){
+  .px-item--inbox .px-dest{order:3;width:100%}
+  .px-dest-b{flex:1;justify-content:center;height:40px}
+}
 
 /* Revisión rápida */
 .px-rev-txt{font-size:var(--fs-20);line-height:1.35;overflow-wrap:anywhere}
@@ -101,7 +117,7 @@
 .px-streak{text-align:center}
 .px-streak .t-data{font-size:var(--fs-28);color:var(--fg-brand)}
 .px-table-wrap{overflow-x:auto}
-@media (max-width:767px){.px-sec--inbox .js-rev{font-size:0;gap:0;padding:0 var(--sp-2)}.px-sec--inbox .js-rev svg{width:18px;height:18px}.px-cls{gap:var(--sp-2) var(--sp-4)}}
+@media (max-width:767px){.px-sec--inbox .js-rev{font-size:0;gap:0;padding:0 var(--sp-2)}.px-sec--inbox .js-rev svg{width:18px;height:18px}}
 
 /* En Puntos el encabezado no es plegable: sin cursor de botón */
 div.px-sec-tg{cursor:default}

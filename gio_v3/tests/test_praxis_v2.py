@@ -63,3 +63,61 @@ def test_captura_tarea_va_al_inbox_e_idea_al_banco(client):
     assert rows[i['id']]['cuadrante'] == 'ideas'
     html = client.get('/gtd/').get_data(as_text=True)
     assert '<span class="js-mt-inbox">1</span> en inbox' in html
+
+
+# ── Sprint 2: Inbox de un clic y fechas relativas ────────────────────────────
+
+import json, shutil, subprocess
+
+DESTINOS = {'hoy': (1, 1), 'semana': (1, 0), 'delegar': (0, 1), 'ideas': (0, 0)}
+
+
+def _node(expr):
+    node = shutil.which('node')
+    if not node:
+        pytest.skip('node no está instalado')
+    code = ("const D = require(%s); console.log(JSON.stringify(%s));"
+            % (json.dumps(os.path.join(BASE, 'static/js/praxis-due.js')), expr))
+    return json.loads(subprocess.run([node, '-e', code], capture_output=True, text=True, check=True).stdout)
+
+
+@pytest.mark.parametrize('fecha,txt,tone', [
+    ('2026-11-04', 'Vencida 1 d', 'danger'),     # fecha pasada
+    ('2026-11-05', 'Hoy', 'danger'),             # hoy (jueves)
+    ('2026-11-06', 'Mañana', 'warning'),
+    ('2026-11-08', 'dom 8', 'warning'),          # 3 días
+    ('2026-11-10', 'mar 10', ''),                # 5 días: < 7, sin tono
+    ('2026-11-15', '15 nov', ''),                # 10 días
+])
+def test_reldue(fecha, txt, tone):
+    r = _node(f"D.relDue('{fecha}', '2026-11-05')")
+    assert r['txt'] == txt and r['tone'] == tone
+
+
+def test_reldue_sin_fecha_y_orden():
+    assert _node("D.relDue(null, '2026-11-05')") is None
+    orden = _node("[{id:1,fecha_limite:null},{id:2,fecha_limite:'2026-11-09'},{id:3,fecha_limite:'2026-11-04'},{id:4,fecha_limite:null}]"
+                  ".sort(D.byDue).map(t => t.id)")
+    assert orden == [3, 2, 1, 4]
+
+
+def test_js_inbox_de_un_clic_sin_fechas_iso():
+    js = _src('static/js/praxis.js')
+    assert 'segHTML' not in js and 'data-cls' not in js
+    assert "esc(t.fecha_limite) + '</span>'" not in js           # la fecha cruda ya no se pinta
+    for q, (imp, urg) in DESTINOS.items():
+        assert f"q: '{q}'" in js and f"imp: {imp}, urg: {urg}" in js
+    assert 'Hoy = urgente e importante · Semana = importante · Delegar = urgente · Idea = ninguno' in js
+
+
+@pytest.mark.parametrize('q', list(DESTINOS))
+def test_cada_destino_clasifica_en_su_cuadrante(client, q):
+    tid = client.post('/gtd/api/task', json={'texto': 'X', 'tipo': 'tarea'}).get_json()['id']
+    imp, urg = DESTINOS[q]
+    r = client.post(f'/gtd/api/task/{tid}/classify', json={'importante': bool(imp), 'urgente': bool(urg)}).get_json()
+    assert r['cuadrante'] == q
+
+
+def test_praxis_carga_praxis_due(client):
+    html = client.get('/gtd/').get_data(as_text=True)
+    assert html.index('js/praxis-due.js') < html.index('js/praxis.js')
