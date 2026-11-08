@@ -152,3 +152,89 @@ def test_opcionales_con_regla_en_la_fila_y_sin_at_complete(client, monkeypatch):
     assert 'at-complete' not in html and 'day-complete' not in _src('static/js/ataraxia.js')
     js = _src('static/js/ataraxia.js')
     assert 'markNow(dia)' in js and 'setOpen(justDone, false)' in js
+
+
+# ── Sprint 3: revisión semanal con datos automáticos ─────────────────────────
+
+import modules.actividades.activity_defs as adefs
+import modules.finanzas.budget as fbudget
+
+
+def _ancla_paideia():
+    return adefs.create('Lectura profunda', 'paideia', 'ancla', 'night', pts=3)['key']
+
+
+def _log(key, fecha):
+    with database.get_db() as db:
+        db.execute("INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,1)", (key, fecha))
+        db.commit()
+
+
+def _budget(monkeypatch, ingreso, consumo):
+    monkeypatch.setattr(fbudget, '_calc_budget', lambda mes, db: {'ingreso_real': ingreso, 'consumo': consumo})
+
+
+def test_autocompleta_presupuesto_y_lectura(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)                       # semana lun 2 – dom 8 nov
+    _budget(monkeypatch, 40000, 25600)
+    k = _ancla_paideia()
+    for f in ('2026-11-02', '2026-11-04', '2026-11-04', '2026-11-07', '2026-10-31'):
+        _log(k, f)                                   # 3 días distintos dentro de la semana
+    _log(k + '__min', '2026-11-05')                  # la versión mínima no cuenta
+    auto = ar._auto_metrics(ar.get_semana_id())
+    assert auto['presupuesto_pct'] == (64.0, 'Oikonomia')
+    assert auto['dias_lectura'] == (3.0, 'Acta')
+    html = _get(client, '?dia=domingo')
+    rev = html.split('id="rs-card"', 1)[1]
+    assert '<output class="at-metric-v num" id="rs-presupuesto_pct">64</output>' in rev
+    assert '<output class="at-metric-v num" id="rs-dias_lectura">3</output>' in rev
+    assert rev.count('class="at-auto"') == 2
+    assert 'data-metric="presupuesto_pct"' not in rev and 'data-metric="dias_lectura"' not in rev
+    assert 'data-metric="horas_sueno"' in rev       # las demás siguen a mano
+
+
+def test_sin_datos_vuelve_a_manual(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    _budget(monkeypatch, 0, 0)                       # sin ingreso
+    def boom(mes, db): raise RuntimeError('db')
+    assert 'presupuesto_pct' not in ar._auto_metrics(ar.get_semana_id())
+    monkeypatch.setattr(fbudget, '_calc_budget', boom)  # si falla la consulta
+    with database.get_db() as db:
+        db.execute("UPDATE activity_defs SET active=0 WHERE pillar='paideia'")
+        db.commit()
+    assert ar._auto_metrics(ar.get_semana_id()) == {}
+    rev = _get(client, '?dia=domingo').split('id="rs-card"', 1)[1]
+    assert 'data-metric="presupuesto_pct"' in rev and 'data-metric="dias_lectura"' in rev
+    assert 'class="at-auto"' not in rev
+
+
+def test_guardar_usa_los_valores_auto_y_muestra_delta(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    _budget(monkeypatch, 10000, 5000)
+    sem = ar.get_semana_id()
+    with database.get_db() as db:
+        db.execute("INSERT INTO revision_semanal (semana_id, presupuesto_pct, horas_sueno, created_at, updated_at) VALUES (?,?,?,'x','x')",
+                   (ar._prev_semana_id(sem), 58.0, 7.0))
+        db.commit()
+    r = client.post('/ataraxia/api/revision', json={'presupuesto_pct': 99, 'horas_sueno': 6.5}).get_json()
+    assert r['ok']
+    row = ar._get_revision_row(sem)
+    assert row['presupuesto_pct'] == 50.0 and row['horas_sueno'] == 6.5     # el cliente no pisa lo auto
+    rev = _get(client, '?dia=domingo').split('id="rs-card"', 1)[1]
+    assert '↓ 8 vs anterior · de Oikonomia' in rev                            # presupuesto: bajar es mejor
+    assert 'is-better' in rev and 'is-worse' in rev                            # sueño bajó: peor
+
+
+def test_revision_visible_y_historial_en_logros(client, monkeypatch):
+    _hoy(monkeypatch, DOMINGO)
+    html = _get(client, '?dia=domingo')
+    rev = html.split('id="rs-card"', 1)[1]
+    assert '<section class="eu-card eu-vstack at-rev" id="rs-card"' in html     # ya no es <details>
+    assert 'Revisión de la semana' in rev and '2–8 nov' in rev
+    assert 'Historial de semanas en Logros →' in rev and 'href="/logros/semanas"' in rev
+    assert '<details class="at-an">' in rev and 'Análisis' in rev
+    assert 'eu-table' not in rev and 'Últimas semanas' not in rev
+    client.post('/ataraxia/api/revision', json={'horas_sueno': 7})
+    sem = client.get('/logros/semanas').get_data(as_text=True)
+    assert 'Historial de semanas' in sem and '2–8 nov' in sem and 'Esta semana' in sem
+    assert 'href="/logros/semanas"' in client.get('/logros').get_data(as_text=True)

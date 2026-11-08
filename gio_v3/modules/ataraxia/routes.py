@@ -270,13 +270,80 @@ def _analyze_week(weekly, prev_weekly, metrics):
     }
 
 
+# ── Métricas automáticas (handoff Ataraxia v2, nota 7) ────────────────────────
+# Lo que la app ya sabe no se pide a mano: presupuesto usado (Oikonomia) y
+# días de lectura (anclas de Paideia en Acta). Si una consulta falla o no hay
+# datos, esa métrica vuelve a ser manual.
+
+def _semana_dias(semana_id):
+    """Lunes..domingo (ISO) de la semana Lun-Dom que cierra este ciclo."""
+    lunes = date.fromisoformat(semana_id) - timedelta(days=5)
+    return [(lunes + timedelta(days=i)).isoformat() for i in range(7)]
+
+
+def _auto_presupuesto_pct(semana_id):
+    """consumo / ingreso_real del mes de la semana (misma definición que el
+    héroe de Oikonomia, _calc_budget). None si no hay ingreso."""
+    from modules.finanzas.budget import _calc_budget
+    mes = _semana_dias(semana_id)[-1][:7]
+    with get_db() as db:
+        bd = _calc_budget(mes, db)
+    ing = bd.get("ingreso_real") or 0
+    if ing <= 0:
+        return None
+    return round(bd.get("consumo", 0) / ing * 100, 1)
+
+
+def _auto_dias_lectura(semana_id):
+    """Días de la semana con un ancla de Paideia completa en el Acta (la
+    versión mínima no cuenta). None si no hay anclas de Paideia."""
+    import modules.actividades.activity_defs as adefs
+    keys = [k for k, a in adefs.get_active_flat().items()
+            if a.get("pillar") == "paideia" and a.get("effective_type") == "ancla"]
+    if not keys:
+        return None
+    dias = _semana_dias(semana_id)
+    ph = ",".join("?" * len(keys))
+    with get_db() as db:
+        n = db.execute(
+            f"SELECT COUNT(DISTINCT date) FROM activity_logs WHERE activity_key IN ({ph}) AND date>=? AND date<=?",
+            keys + [dias[0], dias[-1]]).fetchone()[0]
+    return float(n)
+
+
+_AUTO_METRICS = {"presupuesto_pct": ("Oikonomia", _auto_presupuesto_pct),
+                 "dias_lectura": ("Acta", _auto_dias_lectura)}
+
+
+def _auto_metrics(semana_id):
+    """{key: (valor, fuente)} de las métricas que la app pudo calcular."""
+    out = {}
+    for key, (fuente, fn) in _AUTO_METRICS.items():
+        try:
+            v = fn(semana_id)
+        except Exception as e:  # la métrica vuelve a ser manual
+            print(f"[ataraxia] métrica auto {key} falló: {e}")
+            v = None
+        if v is not None:
+            out[key] = (v, fuente)
+    return out
+
+
+def _semana_rango(semana_id):
+    dias = _semana_dias(semana_id)
+    a, b = date.fromisoformat(dias[0]), date.fromisoformat(dias[-1])
+    mes = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+    return f"{a.day}–{b.day} {mes[b.month - 1]}" if a.month == b.month else f"{a.day} {mes[a.month - 1]} – {b.day} {mes[b.month - 1]}"
+
+
 def _revision_view(semana_id):
     actual   = _get_revision_row(semana_id) or {}
     anterior = _get_revision_row(_prev_semana_id(semana_id)) or {}
+    auto     = _auto_metrics(semana_id)
 
     metrics = []
     for m in REVISION_METRICS:
-        v  = actual.get(m["key"])
+        v  = auto[m["key"]][0] if m["key"] in auto else actual.get(m["key"])
         pv = anterior.get(m["key"])
         delta = None
         delta_str = None
@@ -290,15 +357,8 @@ def _revision_view(semana_id):
                 trend = "better"
             else:
                 trend = "worse"
-        metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "delta": delta, "delta_str": delta_str, "trend": trend})
-
-    with get_db() as db:
-        # Incluye la semana actual (el usuario guardaba y «no me aparece lo que
-        # acabo de registrar hoy»): va arriba marcada como «Esta semana».
-        hist_rows = db.execute(
-            "SELECT * FROM revision_semanal WHERE semana_id <= ? ORDER BY semana_id DESC LIMIT 7",
-            (semana_id,)
-        ).fetchall()
+        metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "delta": delta, "delta_str": delta_str, "trend": trend,
+                        "auto": m["key"] in auto, "fuente": auto.get(m["key"], (None, None))[1]})
 
     # semana_id es el sábado de este ciclo (ver get_semana_id) — el lunes de
     # esa misma semana Lun-Dom es 5 días antes.
@@ -311,11 +371,22 @@ def _revision_view(semana_id):
         "metrics":    metrics,
         "has_data":   bool(actual),
         "notas":      actual.get("notas") or "",
-        "historial":  [{**dict(r), "actual": r["semana_id"] == semana_id} for r in hist_rows],
         "weekly":     weekly,
         "analysis":   _analyze_week(weekly, prev_weekly, metrics),
         "semana_num": _week_num_of(monday_id),
+        "rango":      _semana_rango(semana_id),
     }
+
+
+def historial_semanas(limit=52):
+    """Revisiones guardadas, la más reciente arriba (vive en /logros/semanas;
+    la semana en curso va marcada como «Esta semana»)."""
+    semana_id = get_semana_id()
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM revision_semanal WHERE semana_id <= ? ORDER BY semana_id DESC LIMIT ?",
+            (semana_id, limit)).fetchall()
+    return [{**dict(r), "actual": r["semana_id"] == semana_id, "rango": _semana_rango(r["semana_id"])} for r in rows]
 
 
 # ── Data builder ──────────────────────────────────────────────────────────────
@@ -599,6 +670,10 @@ def save_revision():
             valores[m["key"]] = float(raw) if raw not in (None, "") else None
         except (TypeError, ValueError):
             valores[m["key"]] = None
+    # Las métricas automáticas se guardan con el valor de la app, no con lo
+    # que mande el cliente (en el formulario no son editables).
+    for key, (v, _f) in _auto_metrics(semana_id).items():
+        valores[key] = v
     notas = (data.get("notas") or "").strip()
     now = datetime.now().isoformat()
 

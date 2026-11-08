@@ -205,6 +205,14 @@ def streak_heatmap():
     return jsonify({'days': out, 'max_xp': max((r['xp'] for r in out), default=0)})
 
 
+# ── Historial de semanas (handoff Ataraxia v2, nota 8) ───────────────────────
+
+@gamification_bp.route('/logros/semanas')
+def logros_semanas():
+    from modules.ataraxia.routes import historial_semanas
+    return render_template('gamification/semanas.html', semanas=historial_semanas())
+
+
 # ── Logros Page ──────────────────────────────────────────────────────────────
 
 @gamification_bp.route('/logros')

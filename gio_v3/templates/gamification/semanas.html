@@ -1,0 +1,40 @@
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'logros' %}
+{% block title %}Semanas — Logros — Eudaimonia{% endblock %}
+{% block module_title %}LOGROS{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/logros.css') }}">{% endblock %}
+{% block mtitle %}<b>Semanas</b><span>Revisión semanal · historial</span>{% endblock %}
+
+{# Historial de la Revisión semanal objetiva de Ataraxia (handoff Ataraxia v2,
+   nota 8): antes vivía al final de la revisión, dentro de un acordeón. #}
+{% block content %}
+<div class="lg lg-weeks">
+  <header class="lg-hd">
+    <div><div class="t-eyebrow"><a href="/logros">Logros</a> · Ataraxia</div><h1 class="t-page">Historial de semanas</h1></div>
+  </header>
+  {% if semanas %}
+  <div class="eu-card eu-card--flush lg-weeks-wrap">
+    <table class="eu-table">
+      <thead><tr><th scope="col">Semana</th><th scope="col" class="r">Lectura</th><th scope="col" class="r">Sueño</th><th scope="col" class="r">Presup.</th><th scope="col" class="r">Kcal</th><th scope="col" class="r">Pasos</th><th scope="col" class="r">Pantalla</th></tr></thead>
+      <tbody>
+        {% for h in semanas %}
+        <tr{% if h.actual %} class="lg-weeks-now"{% endif %}>
+          <td class="num fg-3">{{ h.rango }}{% if h.actual %} <span class="eu-badge eu-badge--success">Esta semana</span>{% endif %}</td>
+          <td class="r num">{{ h.dias_lectura|int if h.dias_lectura is not none else '—' }}</td>
+          <td class="r num">{{ h.horas_sueno if h.horas_sueno is not none else '—' }}</td>
+          <td class="r num">{{ (h.presupuesto_pct|int ~ '%') if h.presupuesto_pct is not none else '—' }}</td>
+          <td class="r num">{{ h.calorias_quemadas|int if h.calorias_quemadas is not none else '—' }}</td>
+          <td class="r num">{{ h.pasos_promedio|int if h.pasos_promedio is not none else '—' }}</td>
+          <td class="r num">{{ h.screen_time_horas if h.screen_time_horas is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ ui.empty('bar-chart-3', 'Aún sin semanas', 'Guarda la Revisión de la semana en Ataraxia el domingo y aparece aquí.') }}
+  {% endif %}
+  <a class="t-meta" href="/ataraxia/?dia=domingo#rs-card">Ir a la revisión de esta semana →</a>
+</div>
+{% endblock %}
