@@ -1,44 +1,81 @@
 /* ═══════════════════════════════════════════════════════════════
-   Oikonomia Hub (/finanzas/) — Design System V2 · pantalla 06
-   Desktop: wallet 1.3fr + 3 stats · deudas (tabla) | presupuesto ·
-   accesos a submódulos. Móvil: wallet, mes en curso, deudas, accesos.
+   Oikonomia Hub (/finanzas/) — Oikonomia v2 (handoff design_handoff_oikonomia)
+   Héroe: Disponible + 50·30·20 + siguiente paso | patrimonio + racha ·
+   próximos pagos | categorías en riesgo · más en Oikonomia.
    ═══════════════════════════════════════════════════════════════ */
 .oik{display:flex;flex-direction:column;gap:var(--sp-4)}
 .oik h1,.oik h2,.oik p{margin:0}
 .oik [hidden]{display:none!important}
 @media (min-width:1024px){.oik{gap:var(--sp-6)}}
 
-.oik-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.oik-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
 .oik-hd .t-page{margin-top:var(--sp-2)}
-.oik-hd-act{gap:var(--sp-2);flex-wrap:wrap}
 @media (max-width:1023px){.oik-hd{display:none}}
-/* En desktop el ojo vive en el encabezado; en móvil, en la topbar */
-@media (min-width:1024px){.eu-topbar .js-nw-toggle{display:none}}
+/* El ojo de «Ocultar cifras» vive solo en la topbar, en todos los tamaños (nota 1). */
 
-.oik-alert{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border-color:var(--warning-border);background:var(--warning-bg);color:var(--warning-fg);font-size:var(--fs-13)}
-.oik-alert svg{width:18px;height:18px;flex-shrink:0}
+/* ── Héroe (Oikonomia v2, notas 2–5) ── */
+.oik-hero{display:grid;gap:var(--sp-5)}
+@media (min-width:1024px){.oik-hero{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:var(--sp-8);padding:var(--sp-6)}}
+.oik-hero-main{display:flex;flex-direction:column;gap:var(--sp-5);min-width:0}
+.oik-hero-side{display:flex;flex-direction:column;gap:var(--sp-4);border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)}
+@media (min-width:1024px){.oik-hero-side{border-top:0;padding-top:0;border-left:1px solid var(--border-subtle);padding-left:var(--sp-8)}}
+.oik-disp{font:var(--fw-medium) 40px/1.05 var(--font-data);letter-spacing:-.03em;color:var(--fg-1);margin-top:10px}
+@media (min-width:1024px){.oik-disp{font-size:48px}}
+.oik-disp.is-neg{color:var(--danger-fg)}
+.oik-disp-sub{font-size:var(--fs-14,14px);color:var(--fg-2);margin-top:6px;line-height:1.5}
+.oik-disp-sub b{font:var(--fw-medium) 14px var(--font-data);color:var(--fg-1)}
 
-/* ── Wallet + stats ── */
-.oik-top{display:grid;gap:var(--sp-3)}
-@media (min-width:1024px){.oik-top{grid-template-columns:minmax(0,1.3fr) repeat(3,minmax(0,1fr));gap:var(--sp-4)}}
-.oik-wallet{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:6px;padding:var(--sp-5);border-radius:var(--r-lg);border:1px solid var(--border-default);
-  background:radial-gradient(120% 100% at 100% 0%,var(--ec-bg),transparent 60%),linear-gradient(160deg,var(--bg-raised),var(--bg-surface))}
-.oik-nw{font-size:36px}
-@media (min-width:1024px){.oik-wallet{padding:var(--sp-6);gap:var(--sp-2)}.oik-nw{font-size:44px}}
-.oik-delta{gap:var(--sp-2);flex-wrap:wrap}
-.oik-delta svg{width:12px;height:12px}
-.oik-wallet-foot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2);margin-top:var(--sp-3)}
-.oik-wallet-foot .t-data{font-size:var(--fs-15)}
-@media (min-width:1024px){.oik-wallet-foot{display:none}}
-.oik-stat{display:none}
-@media (min-width:1024px){.oik-stat{display:flex;justify-content:center}}
-.oik-pct{color:var(--fg-3)}
-.oik-pct.is-warn{color:var(--warning-fg)}
-.oik-neg{color:var(--danger-fg)}
+/* Barra 50·30·20 (colores data-cat como /finanzas/budget/) */
+.oik-seg-wrap{display:flex;flex-direction:column;gap:var(--sp-3)}
+.oik-seg-track{position:relative}
+.oik-seg{display:flex;gap:2px;height:12px;border-radius:var(--r-full);background:var(--bg-raised);overflow:hidden}
+.oik-seg i{display:block;height:100%;background:var(--cat-fg)}
+.oik-seg-mark{position:absolute;top:-4px;bottom:-4px;width:1.5px;background:var(--fg-3);opacity:.7}
+.oik-seg-cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-4)}
+.oik-seg-col{display:flex;flex-direction:column;gap:4px;min-width:0}
+.oik-seg-lbl{display:flex;align-items:center;gap:6px}
+.oik-seg-lbl i{width:8px;height:8px;border-radius:2px;background:var(--cat-fg);flex-shrink:0}
+.oik-seg-pct{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.oik-seg-pct .num{font:var(--fw-medium) var(--fs-17)/1 var(--font-data);color:var(--fg-1)}
+.oik-seg-st{font-size:var(--fs-12)}
+.oik-seg-st.is-ok{color:var(--success-fg)}
+.oik-seg-st.is-warn{color:var(--warning-fg)}
 
-.oik-month{gap:var(--sp-3);padding:var(--sp-4);text-decoration:none;color:inherit}
-.oik-month .t-data{font-size:var(--fs-13)}
-@media (min-width:1024px){.oik-month{display:none}}
+/* Siguiente paso */
+.oik-next{--tn-fg:var(--fg-2);--tn-bg:var(--bg-raised);--tn-bd:var(--border-subtle);display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3);border-radius:var(--r-md);background:var(--bg-sunken);border:1px solid var(--tn-bd)}
+.oik-next[data-tone=danger]{--tn-fg:var(--danger-fg);--tn-bg:var(--danger-bg);--tn-bd:var(--danger-border)}
+.oik-next[data-tone=warning]{--tn-fg:var(--warning-fg);--tn-bg:var(--warning-bg);--tn-bd:var(--warning-border)}
+.oik-next-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--tn-bg);color:var(--tn-fg);border:1px solid var(--tn-bd)}
+.oik-next-ic svg{width:18px;height:18px}
+.oik-next-eb{color:var(--fg-3)}
+.oik-next-t{font-size:var(--fs-15);color:var(--fg-1);margin-top:4px}
+.oik-next-t>span{color:var(--fg-3);font-size:var(--fs-13)}
+.oik-next .eu-btn{flex-shrink:0;white-space:nowrap}
+.oik-next .js-pago.is-done{background:var(--success-bg);color:var(--success-fg);border:1px solid var(--success-border)}
+
+/* Columna derecha: patrimonio y racha */
+.oik-nw-link{display:flex;flex-direction:column;gap:var(--sp-2);color:inherit;text-decoration:none;border-radius:var(--r-md)}
+.oik-nw-link:hover .oik-nw{color:var(--fg-brand)}
+.oik-nw-link:focus-visible{outline:2px solid var(--border-focus);outline-offset:4px}
+.oik-nw{font:var(--fw-medium) 28px/1 var(--font-data);letter-spacing:-.02em;color:var(--fg-1)}
+.oik-nw-delta{font-size:var(--fs-12)}
+.oik-nw-delta.is-up{color:var(--success-fg)}.oik-nw-delta.is-down{color:var(--danger-fg)}
+.oik-nw-bar{display:flex;gap:2px;height:6px;border-radius:var(--r-full);overflow:hidden;margin-top:4px}
+.oik-nw-bar i{display:block;height:100%}
+.oik-nw-bar .is-assets{background:var(--fg-brand)}
+.oik-nw-bar .is-debts{flex:1;background:var(--danger-fg)}
+.oik-nw-link .t-meta b{font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--fg-2)}
+.oik-sep{border:0;height:1px;margin:0;background:var(--border-subtle)}
+.oik-racha{display:flex;flex-direction:column;gap:var(--sp-2)}
+.oik-racha-hd{display:flex;align-items:center;gap:var(--sp-2)}
+.oik-racha-hd svg{width:18px;height:18px;color:var(--fg-brand)}
+.oik-racha-n{font:var(--fw-medium) var(--fs-15)/1.2 var(--font-data)}
+.oik-racha-cells{list-style:none;margin:0;padding:0;display:flex;gap:4px}
+.oik-racha-cells li{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:var(--fs-11);color:var(--fg-3)}
+.oik-racha-cells i{width:100%;height:6px;border-radius:2px;background:var(--bg-raised)}
+.oik-racha-cells [data-st=ok] i{background:var(--fg-brand)}
+.oik-racha-cells [data-st=over] i{background:var(--danger-fg)}
+.oik-racha-cells [data-st=en_curso] i{outline:1.5px solid var(--fg-brand);outline-offset:1px}
 
 /* ── Deudas y presupuesto ── */
 .oik-row2{display:grid;gap:var(--sp-4);align-items:start}

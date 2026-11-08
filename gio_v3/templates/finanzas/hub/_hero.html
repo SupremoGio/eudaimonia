@@ -1,44 +1,92 @@
-{# Hero «wallet» de patrimonio neto + 3 stats del mes #}
+{# Héroe de Oikonomia v2 (notas 2–5): lo que decide el mes arriba —
+   Disponible y su ritmo diario, la barra 50·30·20 con su estado por bucket y
+   el siguiente paso— y, a la derecha, patrimonio y racha de meses bajo
+   presupuesto. Datos: routes.py::index (budget.seg, por_dia, next_step,
+   racha_meses/racha_historial). Todo dinero va por hide(). #}
 {% set b = budget %}
-<div class="oik-top">
-  <section class="oik-wallet" aria-labelledby="oik-nw-l">
-    <div class="t-meta" id="oik-nw-l">Patrimonio neto</div>
-    <div class="t-data-xl oik-nw num">{{ hide(mx(patrimonio_neto)) }}</div>
-    {% if pat_delta is not none %}
-    <div class="eu-hstack oik-delta nw-hide-block">
-      <span class="eu-stat-delta {{ 'up' if pat_delta >= 0 else 'down' }}"><i data-lucide="{{ 'trending-up' if pat_delta >= 0 else 'trending-down' }}"></i>{{ '+' if pat_delta >= 0 else '−' }}{{ mx(pat_delta|abs) }}{% if pat_delta_pct is not none %} ({{ pat_delta_pct|abs }}%){% endif %}</span>
-      <span class="t-meta">vs registro anterior</span>
+{% set bucket_cat = {'necesidades': 'ataraxia', 'deseos': 'cosmopolitismo', 'ahorro_deuda': 'paideia'} %}
+{% set mes_corto = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'] %}
+<section class="eu-card eu-card--featured oik-hero" aria-label="Resumen del mes">
+  <div class="oik-hero-main">
+    {% if b and b.ingreso %}
+    <div>
+      <div class="t-eyebrow">Disponible {{ 'este mes' if b.por_dia is not none else 'en ' ~ b.mes_nombre }}</div>
+      <div class="oik-disp num{{ ' is-neg' if b.disponible < 0 }}">{{ hide(('−' if b.disponible < 0 else '') ~ mx(b.disponible|abs)) }}</div>
+      <p class="oik-disp-sub">
+        {%- if b.por_dia is not none -%}
+        ≈ <b class="num">{{ hide(mx(b.por_dia if b.por_dia > 0 else 0)) }}</b> por día · quedan {{ b.dias_restantes_incl_hoy }} día{{ 's' if b.dias_restantes_incl_hoy != 1 }} ·
+        {%- else -%}
+        {{ b.mes_nombre|capitalize }} ya cerró ·
+        {%- endif %} de <span class="num">{{ hide(mx(b.ingreso)) }}</span> de ingreso recurrente
+      </p>
+    </div>
+
+    {% if b.seg %}
+    <div class="oik-seg-wrap">
+      <div class="oik-seg-track">
+        <div class="oik-seg" role="img" aria-label="Reparto del ingreso: {% for s in b.seg %}{{ s.label|lower }} {{ s.pct }}% (meta {{ '≤' if s.kind == 'max' else '≥' }} {{ s.meta_pct }}%){{ ', ' if not loop.last }}{% endfor %}">
+          {% for s in b.seg %}<i data-cat="{{ bucket_cat[s.key] }}" style="width:{{ [s.pct, 100]|min }}%"></i>{% endfor %}
+        </div>
+        <b class="oik-seg-mark" style="left:50%" aria-hidden="true"></b><b class="oik-seg-mark" style="left:80%" aria-hidden="true"></b>
+      </div>
+      <div class="oik-seg-cols">
+        {% for s in b.seg %}
+        <div class="oik-seg-col" data-cat="{{ bucket_cat[s.key] }}">
+          <div class="t-meta oik-seg-lbl"><i aria-hidden="true"></i>{{ s.label }}</div>
+          <div class="oik-seg-pct"><span class="num">{{ s.pct|round|int }}%</span><span class="t-meta">meta {{ '≤' if s.kind == 'max' else '≥' }} {{ s.meta_pct }}%</span></div>
+          <div class="oik-seg-st {{ 'is-ok' if s.ok else 'is-warn' }}">
+            {%- if s.ok -%}{{ 'en rango' if s.kind == 'max' else 'meta cumplida' }}
+            {%- elif s.kind == 'min' -%}faltan {{ hide(mx(s.falta)) }} para el {{ s.meta_pct }}%
+            {%- else -%}sobre la meta{%- endif -%}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
     {% endif %}
-    <div class="oik-wallet-foot">
-      <div><div class="t-meta">Activos</div><div class="t-data num">{{ hide(mxk(total_activos)) }}</div></div>
-      <div><div class="t-meta">Deudas</div><div class="t-data num">{{ hide(mxk(total_pasivos)) }}</div></div>
-      <div><div class="t-meta">Ahorro</div><div class="t-data num{{ ' fg-success' if b and b.ahorro_pct is not none and b.ahorro_pct > 0 }}">{{ (b.ahorro_pct ~ '%') if b and b.ahorro_pct is not none else '—' }}</div></div>
+    {% else %}
+    {{ ui.empty('wallet', 'Sin movimientos este mes', 'Sube tu estado de cuenta para ver cuánto tienes disponible y tu reparto 50·30·20.', cta='Subir estado de cuenta', cta_href='/finanzas/estados/', cta_icon='upload', compact=True) }}
+    {% endif %}
+
+    {% set n = next_step %}
+    {% if n %}
+    <div class="oik-next" data-tone="{{ n.tone }}">
+      <div class="oik-next-ic"><i data-lucide="{{ 'bell-ring' if n.kind == 'pago' else 'receipt' }}"></i></div>
+      <div class="eu-grow">
+        <div class="t-eyebrow oik-next-eb">Siguiente paso</div>
+        <div class="oik-next-t">{{ n.title }} <span>· {% if n.kind == 'pago' and n.monto %}mínimo {{ hide(mx(n.monto)) }} · {% endif %}{% if n.kind == 'clasificar' and n.monto %}{{ hide(mx(n.monto)) }} {% endif %}{{ n.sub }}</span></div>
+      </div>
+      {% if n.action == 'pago-ciclo' %}
+      <button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-pago" data-cuenta="{{ n.cuenta }}"{% if n.monto %} data-monto="{{ n.monto }}"{% endif %}
+        aria-label="Marcar pagado: {{ n.title|replace('Pagar ', '') }}"><i data-lucide="check"></i><span>{{ n.cta }}</span></button>
+      {% else %}
+      <a class="eu-btn eu-btn--primary eu-btn--sm" href="{{ n.href }}"><i data-lucide="arrow-right"></i>{{ n.cta }}</a>
+      {% endif %}
     </div>
-  </section>
+    {% endif %}
+  </div>
 
-  <div class="eu-card eu-stat oik-stat">
-    <div class="eu-stat-lbl"><i data-lucide="arrow-down-left"></i>Ingresos</div>
-    <div class="eu-stat-val">{{ hide(mxk(b.ingreso)) if b else '—' }}</div>
-    <div class="t-meta">{% if b %}{{ b.mes_nombre|capitalize }}{% if b.fuentes %} · {{ b.fuentes }} fuente{{ 's' if b.fuentes != 1 }}{% endif %}{% else %}Sin movimientos{% endif %}</div>
+  <div class="oik-hero-side">
+    {% set tot = (total_activos or 0) + (total_pasivos or 0) %}
+    <a class="oik-nw-link" href="/finanzas/salud/" aria-label="Patrimonio neto: ver Patrimonio">
+      <div class="eu-between"><span class="t-meta">Patrimonio neto</span>
+        {% if pat_delta is not none %}<span class="oik-nw-delta num nw-hide-block {{ 'is-up' if pat_delta >= 0 else 'is-down' }}">{{ '+' if pat_delta >= 0 else '−' }}{{ mx(pat_delta|abs) }} vs anterior</span>{% endif %}</div>
+      <div class="oik-nw num">{{ hide(mx(patrimonio_neto)) }}</div>
+      {% if tot %}
+      <div class="oik-nw-bar" role="img" aria-label="Activos {{ ((total_activos or 0) / tot * 100)|round|int }}%, deudas {{ ((total_pasivos or 0) / tot * 100)|round|int }}%">
+        <i class="is-assets" style="width:{{ ((total_activos or 0) / tot * 100)|round(1) }}%"></i><i class="is-debts"></i></div>
+      {% endif %}
+      <div class="eu-between t-meta"><span>Activos <b class="num">{{ hide(mxk(total_activos)) }}</b></span><span>Deudas <b class="num">{{ hide(mxk(total_pasivos)) }}</b></span></div>
+    </a>
+    {% if racha_historial %}
+    <hr class="oik-sep">
+    <div class="oik-racha">
+      <div class="oik-racha-hd"><i data-lucide="flame"></i><span class="oik-racha-n num">{{ racha_meses }} {{ 'mes' if racha_meses == 1 else 'meses' }}</span><span class="t-meta">bajo presupuesto</span></div>
+      <ol class="oik-racha-cells" aria-label="Últimos 6 meses">
+        {% for m in racha_historial %}<li data-st="{{ m.status }}" title="{{ m.mes }} · {{ {'ok': 'bajo presupuesto', 'over': 'gasto sobre el ingreso', 'sin_datos': 'sin datos', 'en_curso': 'en curso'}[m.status] }}"><i></i><span>{{ mes_corto[(m.mes[5:]|int) - 1] }}</span></li>{% endfor %}
+      </ol>
+      <div class="t-meta">Cierra {{ mes_actual_nombre }} con gasto ≤ ingreso para llegar a {{ racha_meses + 1 }}.</div>
+    </div>
+    {% endif %}
   </div>
-  <div class="eu-card eu-stat oik-stat">
-    <div class="eu-stat-lbl"><i data-lucide="arrow-up-right"></i>Gastos</div>
-    <div class="eu-stat-val">{{ hide(mxk(b.gastado)) if b else '—' }}</div>
-    {% if b and b.pct is not none %}<div class="eu-stat-delta {{ 'down' if b.pct > 100 else '' }} oik-pct{{ ' is-warn' if 90 <= b.pct <= 100 }}">{{ b.pct }}% del ingreso</div>{% else %}<div class="t-meta">—</div>{% endif %}
-  </div>
-  <div class="eu-card eu-stat oik-stat">
-    <div class="eu-stat-lbl"><i data-lucide="piggy-bank"></i>Tasa de ahorro</div>
-    <div class="eu-stat-val{{ ' fg-success' if b and b.ahorro_pct is not none and b.ahorro_pct >= 20 }}{{ ' oik-neg' if b and b.ahorro_pct is not none and b.ahorro_pct < 0 }}">{{ (b.ahorro_pct ~ '%') if b and b.ahorro_pct is not none else '—' }}</div>
-    <div class="t-meta">Meta 20% · regla 50/30/20</div>
-  </div>
-</div>
-
-{# Móvil: mes en curso #}
-{% if b %}
-<a class="eu-card eu-vstack oik-month" href="/finanzas/budget/">
-  <div class="eu-between"><span class="t-ui">{{ b.mes_nombre|capitalize }}</span><span class="t-data num">{{ hide(mx(b.gastado)) }} <span class="fg-3">/ {{ hide(mx(b.ingreso)) }}</span></span></div>
-  {{ ui.progress([b.pct or 0, 100]|min, 100, 'danger' if (b.pct or 0) > 100 else ('warning' if (b.pct or 0) >= 90 else 'brand'), label='Gastado del ingreso') }}
-  <div class="t-meta">{% if b.disponible >= 0 %}Quedan {{ hide(mx(b.disponible)) }}{% else %}Excedido por {{ hide(mx(b.disponible|abs)) }}{% endif %}{% if b.dias_restantes is not none %} · {{ b.dias_restantes }} día{{ 's' if b.dias_restantes != 1 }}{% endif %}</div>
-</a>
-{% endif %}
+</section>

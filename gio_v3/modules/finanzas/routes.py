@@ -303,6 +303,7 @@ def index():
         debts           = debts,
         debts_total     = sum(d['saldo'] for d in debts),
         minimos_30d     = minimos_30d,
+        mes_actual_nombre = _MESES_ES[today.month - 1],
         next_step       = next_step,
         alerts=payment_alerts(), today=today_str(),
         **extra,

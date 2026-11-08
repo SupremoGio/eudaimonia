@@ -166,3 +166,47 @@ def test_mes_cerrado_no_tiene_por_dia(client, monkeypatch):
         c.get('/finanzas/')
     b = ctx['budget']
     assert b['mes'] == '2026-10' and b['por_dia'] is None and b['dias_restantes_incl_hoy'] is None
+
+
+# ── Sprint 3: encabezado y héroe ─────────────────────────────────────────────
+
+def test_encabezado_una_accion_y_ojo_solo_en_topbar(client):
+    app, c = client
+    full = c.get('/finanzas/').get_data(as_text=True)
+    html = full[full.index('<div class="oik" id="oik">'):]          # solo el hub (⌘K también dice «Registrar gasto»)
+    html = html[:html.index('<script')]
+    assert 'Subir estado de cuenta' in html and 'Registrar gasto' not in html
+    html = full
+    assert html.count('class="eu-iconbtn js-nw-toggle"') == 1 and 'js-nw-toggle" aria-pressed="false"><i data-lucide="eye-off"' not in html
+    assert 'oik-alert' not in html
+    assert '<h1 class="t-page">Finanzas</h1>' in html
+    for viejo in ('oik-stat', 'oik-wallet', 'oik-month'):
+        assert viejo not in html
+
+
+def test_heroe_con_datos_y_pago_hoy(client, monkeypatch):
+    app, c = client
+    import modules.finanzas.budget as fb
+    hoy = date(2026, 10, 15)                                  # día de pago de BBVA e Invex
+    for mod in (fr, fb):
+        monkeypatch.setattr(mod, 'today_date', lambda: hoy)
+    import modules.finanzas.pagos_ciclo as pc
+    monkeypatch.setattr(pc, 'today_date', lambda: hoy)
+    _mov('2026-10-01', 'PAGO DE NOMINA', 20000.0, 'INGRESO', 'NOMINA')
+    for i in range(5):
+        _mov(f'2026-10-0{i + 2}', f'OXXO {i}', 300.0, 'GASTO', 'ALIMENTACION')
+    with database.get_db() as db:
+        db.execute("INSERT INTO salud_cuentas (nombre,tipo,institucion,saldo,moneda,activa,created_at) "
+                   "VALUES ('BBVA Oro','tarjeta_credito','BBVA',18000,'MXN',1,'x')")
+        db.execute("INSERT INTO budget_deudas (nombre,saldo_inicial,saldo_actual,pago_minimo,activa,created_at) "
+                   "VALUES ('BBVA Oro',1,1,1250,1,'x')")
+        db.commit()
+    html = c.get('/finanzas/').get_data(as_text=True)
+    assert 'Disponible este mes' in html and 'por día' in html and 'quedan 17 días' in html
+    assert 'class="oik-seg"' in html and html.count('class="oik-seg-mark"') == 2
+    assert 'meta ≥ 20%' in html and 'faltan' in html                     # sin ahorro este mes
+    assert 'Pagar BBVA Oro' in html and 'class="eu-btn eu-btn--primary eu-btn--sm js-pago" data-cuenta="bbva"' in html
+    assert 'bajo presupuesto' in html and 'oik-racha-cells' in html
+    # Marcar pagado → el siguiente paso ya no es ese pago
+    assert c.post('/finanzas/api/pago-ciclo', json={'cuenta': 'bbva'}).get_json()['ok']
+    assert 'Pagar BBVA Oro' not in c.get('/finanzas/').get_data(as_text=True)
