@@ -207,3 +207,18 @@ def test_endpoint_minima_solo_para_anclas(client):
     touch, = _solo(("Agua", "hege", "touch", "morning"))
     resp = client.post("/actividades/api/activity/log", json={"key": touch, "minimal": True})
     assert resp.status_code == 400 and "anclas" in resp.get_json()["error"] and _keys_hoy() == []
+
+
+def test_touch_fuera_de_dia_cuenta_igual_en_sesiones_y_pilares(test_db):
+    """Un touch hecho que no tocaba hoy (ej. Jugo verde un domingo) ya sumaba
+    en «Touches»; ahora suma igual en sesiones y pilares, así el checklist no
+    dice «Touches 1/5 · Sesiones 0/3»."""
+    ancla, otro = _solo(("CCNA", "logoi", "ancla", "morning"), ("Touch hoy", "atar", "touch", "night"))
+    fuera = adefs.create("Jugo verde", "hege", "touch", "morning", pts=1, days_of_week=["wed"])["key"]
+    _log(LUNES, ancla, fuera)
+    c = engine.get_daily_classification(LUNES)
+    crit = {x["key"]: x for x in c["criteria"]}
+    assert c["touches_done"] == 1
+    assert crit["touches"]["have"] == 1
+    assert crit["sessions"]["have"] == 1
+    assert crit["pillars"]["have"] == 1
