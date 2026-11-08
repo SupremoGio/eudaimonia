@@ -131,7 +131,7 @@
     var gam = d.gam || {};
     updS(d.stats); updGam(gam.stats);
     if (gam.combo_bonuses && gam.combo_bonuses.length) {
-      toast(gam.combo_bonuses.map(function (c) { return 'Combo ' + c.label + ' +' + c.xp + ' XP'; }).join(' · '), 'win');
+      toast(gam.combo_bonuses.map(function (c) { return 'Combo ' + (c.name || c.label) + ' +' + c.xp + ' XP'; }).join(' · '), 'win');
     }
     if (gam.perfect_day && window.euPerfectDay) euPerfectDay(gam.perfect_day);
     // Logros e insignias: sello + halo (eu-motion.js), uno tras otro.

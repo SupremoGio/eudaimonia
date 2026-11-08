@@ -7289,6 +7289,15 @@ def init_db():
         if "gtd_task_id" not in pr_cols:
             db.execute("ALTER TABLE priorities ADD COLUMN gtd_task_id INTEGER")
 
+        # Prioridades de la semana desde Praxis (handoff Ataraxia v2, Sprint 4):
+        # semana_id (sábado del ciclo) en que la tarea se eligió como una de
+        # las 3 de la semana, y el último día en que se pasó sola a Hoy.
+        if "prioridad_semana" not in gt_cols:
+            db.execute("ALTER TABLE gtd_tasks ADD COLUMN prioridad_semana TEXT")
+        if "prioridad_semana_dia" not in gt_cols:
+            db.execute("ALTER TABLE gtd_tasks ADD COLUMN prioridad_semana_dia TEXT")
+        migrar_prioridades_semana(db)
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
@@ -7318,6 +7327,39 @@ def migrar_pipeline_a_ideas(db):
         n += 1
     db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
                (version, f"Pipeline de Acta → Ideas de Praxis ({n} copiadas)"))
+    return n
+
+
+def migrar_prioridades_semana(db):
+    """weekly_priorities (3 textos por semana) → tareas de Praxis en «Esta
+    semana» con prioridad_semana. Solo las semanas en curso o futuras (lo
+    pasado ya no gobierna nada). Idempotente: corre una vez (migration_log) y
+    si ya existe una tarea abierta con ese título solo le pone la marca."""
+    version = "ataraxia_v2_prioridades_semana"
+    if db.execute("SELECT 1 FROM migration_log WHERE version=?", (version,)).fetchone():
+        return 0
+    hoy = today_date()
+    actual = (hoy - timedelta(days=(hoy.weekday() - 5) % 7)).isoformat()   # = ataraxia.get_semana_id
+    from datetime import datetime as _dt
+    now = _dt.now().isoformat()
+    n = 0
+    for r in db.execute("SELECT * FROM weekly_priorities WHERE semana_id>=? ORDER BY semana_id", (actual,)).fetchall():
+        for k in ("p1", "p2", "p3"):
+            txt = (r[k] or "").strip()
+            if not txt:
+                continue
+            ya = db.execute("SELECT id FROM gtd_tasks WHERE completado=0 AND lower(trim(title))=lower(?) ORDER BY id DESC LIMIT 1",
+                            (txt,)).fetchone()
+            if ya:
+                db.execute("UPDATE gtd_tasks SET prioridad_semana=? WHERE id=?", (r["semana_id"], ya["id"]))
+            else:
+                db.execute(
+                    """INSERT INTO gtd_tasks
+                       (title, tipo, completado, status, importante, urgente, cuadrante, points, created_at, actualizado_en, prioridad_semana)
+                       VALUES (?, 'tarea', 0, 'inbox', 1, 0, 'semana', 4, ?, ?, ?)""", (txt, now, now, r["semana_id"]))
+            n += 1
+    db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+               (version, f"weekly_priorities → Praxis «Esta semana» ({n} prioridades)"))
     return n
 
 

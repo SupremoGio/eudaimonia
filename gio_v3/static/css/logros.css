@@ -117,3 +117,11 @@
 
 /* Entrada: los ganados aparecen escalonados (una sola vez) */
 .eu-ach.is-earned{animation:euRise var(--dur-slow) var(--ease-enter) both}
+
+/* Historial de semanas (/logros/semanas, handoff Ataraxia v2) */
+.lg-weeks{gap:var(--sp-4)}
+.lg-weeks-wrap{overflow-x:auto}
+.lg-weeks-wrap tbody tr:last-child td{border-bottom:0}
+.lg-weeks-now td{background:var(--bg-raised)}
+.lg-weeks-link{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);color:var(--fg-2);text-decoration:none;font-size:var(--fs-13)}
+.lg-weeks-link svg{width:16px;height:16px;color:var(--fg-3)}

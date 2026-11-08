@@ -1,21 +1,22 @@
-{# Un bloque de la rutina. Espera bl, dia, horarios, weekly_priorities #}
-<section class="eu-card eu-card--flush at-bl" id="blcard-{{ bl.bloque_id }}" data-done="{{ 'true' if bl.bloque_done else 'false' }}">
-  <button type="button" class="at-bl-hd" aria-expanded="{{ 'false' if bl.bloque_done else 'true' }}" aria-controls="blbody-{{ bl.bloque_id }}" data-bl-toggle="{{ bl.bloque_id }}">
+{# Un bloque de la rutina. Espera bl, dia, ahora, horarios, is_weekend.
+   Handoff Ataraxia v2 (nota 3): solo el bloque «Ahora» (primer pendiente del
+   día) empieza abierto, con su temporizador; los demás son filas de 56px. #}
+{% set is_now = bl.bloque_id == ahora %}
+<section class="eu-card eu-card--flush at-bl{% if is_now %} is-now{% endif %}" id="blcard-{{ bl.bloque_id }}" data-bl="{{ bl.bloque_id }}" data-done="{{ 'true' if bl.bloque_done else 'false' }}" data-req="{{ bl.required_count }}">
+  <button type="button" class="at-bl-hd" aria-expanded="{{ 'true' if is_now else 'false' }}" aria-controls="blbody-{{ bl.bloque_id }}" data-bl-toggle="{{ bl.bloque_id }}">
     <span class="eu-row-ic at-bl-ic"><i data-lucide="{{ bl.icon }}"></i></span>
-    <span class="at-bl-t"><span class="t-ui">{{ bl.label }}</span>
-      <span class="t-meta"><span class="num" id="blprog-{{ bl.bloque_id }}">{{ bl.done_count }}/{{ bl.required_count }}</span>{% if bl.total_duracion %} · {{ bl.total_duracion }} min{% endif %}</span></span>
-    {% if bl.xp_total > 0 %}<span class="eu-badge eu-badge--xp">+{{ bl.xp_total }} XP</span>{% endif %}
-    <span class="eu-badge eu-badge--success at-bl-ok"><i data-lucide="check"></i>Listo</span>
-    <i data-lucide="chevron-down" class="at-chev"></i>
+    <span class="at-bl-t"><span class="at-bl-n"><span class="at-bl-l">{{ bl.label }}</span><span class="at-now">Ahora</span></span>
+      <span class="at-bl-meta num"><span id="blprog-{{ bl.bloque_id }}">{{ 'Listo' if bl.bloque_done else bl.done_count ~ '/' ~ bl.required_count }}</span>{% if bl.total_duracion %} · {{ bl.total_duracion }} min{% endif %}</span></span>
+    <span class="eu-progress eu-progress--thin at-bl-bar" role="progressbar" aria-label="Progreso: {{ bl.label }}" aria-valuemin="0" aria-valuemax="{{ bl.required_count or 0 }}" aria-valuenow="{{ bl.done_count }}" id="blpb-{{ bl.bloque_id }}"><i id="blbar-{{ bl.bloque_id }}" style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% elif bl.bloque_done %}100{% else %}0{% endif %}%"></i></span>
+    <span class="at-bl-xp num">{% if bl.xp_total > 0 %}+{{ bl.xp_total }} XP{% endif %}</span>
   </button>
-  <span class="eu-progress eu-progress--thin at-bl-bar" role="progressbar" aria-label="Progreso: {{ bl.label }}" aria-valuemin="0" aria-valuemax="{{ bl.required_count or 0 }}" aria-valuenow="{{ bl.done_count }}" id="blpb-{{ bl.bloque_id }}"><i id="blbar-{{ bl.bloque_id }}" style="width:{% if bl.required_count %}{{ (bl.done_count / bl.required_count * 100)|int }}{% else %}0{% endif %}%"></i></span>
-  <div class="at-bl-bd" id="blbody-{{ bl.bloque_id }}"{% if bl.bloque_done %} hidden{% endif %}>
+  <div class="at-bl-bd" id="blbody-{{ bl.bloque_id }}"{% if not is_now %} hidden{% endif %}>
     {% if bl.total_duracion %}
     <div class="at-timer" data-timer="{{ bl.bloque_id }}" data-ref="{{ bl.total_duracion * 60 }}">
       <i data-lucide="timer"></i><span class="t-data num at-timer-v" id="timer-{{ bl.bloque_id }}">00:00:00</span>
-      <span class="t-meta">ref. {{ bl.total_duracion }} min</span>
+      <span class="t-meta">de {{ bl.total_duracion }} min</span>
       <span class="eu-grow"></span>
-      <button type="button" class="eu-iconbtn js-timer" aria-label="Iniciar temporizador"><i data-lucide="play"></i></button>
+      <button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-timer" aria-pressed="false"><i data-lucide="play"></i><span>Iniciar</span></button>
       <button type="button" class="eu-iconbtn js-timer-reset" aria-label="Reiniciar temporizador"><i data-lucide="rotate-ccw"></i></button>
     </div>
     {% endif %}
@@ -23,24 +24,38 @@
       {% for t in bl.tareas %}
       {% set tdone = t.id in bl.done_ids %}
       <li>
-        <button type="button" class="at-task js-task" id="trow-{{ t.id }}" data-task="{{ t.id }}" data-bl="{{ bl.bloque_id }}" data-dia="{{ dia }}" aria-pressed="{{ 'true' if tdone else 'false' }}">
+        <button type="button" class="at-task js-task" id="trow-{{ t.id }}" data-task="{{ t.id }}" data-bl="{{ bl.bloque_id }}" data-dia="{{ dia }}" aria-pressed="{{ 'true' if tdone else 'false' }}"{% if not is_weekend %} aria-disabled="true"{% endif %}>
           <span class="eu-act-check"><i data-lucide="check"></i></span>
-          <span class="at-task-main"><span class="at-task-t">{{ t.nombre }}</span>
+          <span class="at-task-main"><span class="at-task-t">{{ t.nombre }}{% if t.opcional %}<span class="at-opt"> · opcional, no cuenta para el 100%</span>{% endif %}</span>
+            {% set hora = horarios.get(t.id, '') %}
+            {% if hora or t.categoria in ['SOMA', 'HEGEMONIKON', 'PAIDEIA'] %}
             <span class="at-task-meta">
-              {% set hora = horarios.get(t.id, '') %}{% if hora %}<span class="t-meta">{{ hora }}</span>{% endif %}
-              {% if t.opcional %}<span class="eu-badge">opcional</span>{% endif %}
+              {% if hora %}<span class="t-meta">{{ hora }}</span>{% endif %}
               {% if t.categoria in ['SOMA', 'HEGEMONIKON', 'PAIDEIA'] %}<span class="eu-badge eu-badge--cat" data-cat="{{ {'SOMA': 'hegemonikon', 'HEGEMONIKON': 'hegemonikon', 'PAIDEIA': 'paideia'}[t.categoria] }}">{{ {'SOMA': 'Soma', 'HEGEMONIKON': 'Hegemonikon', 'PAIDEIA': 'Paideia'}[t.categoria] }}</span>{% endif %}
-            </span></span>
+            </span>
+            {% endif %}</span>
           {% if t.xp > 0 or t.ec > 0 %}<span class="at-task-rw num">{% if t.xp > 0 %}+{{ t.xp }} XP{% endif %}{% if t.ec > 0 %} · +{{ t.ec }} EC{% endif %}</span>{% endif %}
         </button>
         {% if t.id == 'sun_prioridades' %}
-        <form class="eu-card eu-card--inset eu-vstack at-prio" id="prio-form" autocomplete="off">
-          <div class="t-meta">Tus 3 prioridades aparecen toda la semana en el Acta Diurna.</div>
-          {% for n in [1, 2, 3] %}
-          <input class="eu-input" id="prio-{{ n }}" placeholder="Prioridad {{ n }}…" maxlength="200" aria-label="Prioridad {{ n }}" value="{{ weekly_priorities['p' ~ n] or '' }}">
-          {% endfor %}
-          <button type="submit" class="eu-btn eu-btn--secondary"><i data-lucide="save"></i>Guardar prioridades</button>
-        </form>
+        {# Prioridades de la semana desde Praxis (nota 6): se eligen con
+           estrella de «Esta semana»; elegir 3 completa esta tarea. #}
+        {% set ps = prio_semana %}
+        <div class="at-prio" id="prio-semana" data-max="{{ ps.max }}">
+          <div class="t-meta">Elige hasta 3 de tu lista <b class="fg-2">Esta semana</b> en Praxis · <span class="num js-ps-n">{{ ps.n }}</span>/3</div>
+          <div class="at-prio-list js-ps-list">
+            {% for o in ps.opciones %}
+            <button type="button" class="at-prio-it js-ps" data-id="{{ o.id }}" aria-pressed="{{ 'true' if o.on else 'false' }}"{% if not is_weekend %} aria-disabled="true"{% endif %}><i data-lucide="star"></i><span>{{ o.title }}</span></button>
+            {% endfor %}
+          </div>
+          <p class="t-meta js-ps-empty"{% if ps.opciones %} hidden{% endif %}>Tu lista «Esta semana» en Praxis está vacía. Agrega aquí la primera.</p>
+          {% if is_weekend %}
+          <form class="at-prio-add js-ps-form" autocomplete="off"{% if ps.n >= ps.max %} hidden{% endif %}>
+            <input class="eu-input" id="ps-inp" placeholder="Nueva prioridad de la semana…" maxlength="300" aria-label="Nueva prioridad de la semana">
+            <button type="submit" class="eu-iconbtn eu-iconbtn--outline" aria-label="Agregar a Esta semana"><i data-lucide="plus"></i></button>
+          </form>
+          {% endif %}
+          <a class="t-meta at-prio-link" href="/gtd/">Se ven en Praxis y cada día en Acta Diurna →</a>
+        </div>
         {% endif %}
       </li>
       {% endfor %}

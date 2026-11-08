@@ -4,8 +4,9 @@ import os
 import re
 from database import get_db
 from data import ACTIVITIES
-from utils import today_str, today_date
+from utils import today_str, today_date, clean_str
 import modules.gamification.engine as engine
+import modules.gtd.prioridades as prio
 
 ataraxia_bp = Blueprint('ataraxia', __name__, template_folder='../../templates')
 
@@ -124,23 +125,6 @@ def _get_revision_row(semana_id):
     with get_db() as db:
         row = db.execute("SELECT * FROM revision_semanal WHERE semana_id=?", (semana_id,)).fetchone()
     return dict(row) if row else None
-
-
-# ── Prioridades de la semana (ritual dominical) ───────────────────────────────
-# semana_id es el sábado del ciclo (ver get_semana_id); las 3 prioridades que
-# se capturan aquí gobiernan la semana laboral que arranca el lunes siguiente
-# a ese sábado, no la que ya terminó — por eso +2 días, no -5 como en
-# get_weekly_classification (que sí mira la semana retrospectiva).
-
-def _semana_siguiente_dias(semana_id):
-    lunes = date.fromisoformat(semana_id) + timedelta(days=2)
-    return [(lunes + timedelta(days=i)).isoformat() for i in range(7)]
-
-
-def _get_weekly_priorities(semana_id):
-    with get_db() as db:
-        row = db.execute("SELECT * FROM weekly_priorities WHERE semana_id=?", (semana_id,)).fetchone()
-    return dict(row) if row else {}
 
 
 def _fmt_num(v):
@@ -270,13 +254,80 @@ def _analyze_week(weekly, prev_weekly, metrics):
     }
 
 
+# ── Métricas automáticas (handoff Ataraxia v2, nota 7) ────────────────────────
+# Lo que la app ya sabe no se pide a mano: presupuesto usado (Oikonomia) y
+# días de lectura (anclas de Paideia en Acta). Si una consulta falla o no hay
+# datos, esa métrica vuelve a ser manual.
+
+def _semana_dias(semana_id):
+    """Lunes..domingo (ISO) de la semana Lun-Dom que cierra este ciclo."""
+    lunes = date.fromisoformat(semana_id) - timedelta(days=5)
+    return [(lunes + timedelta(days=i)).isoformat() for i in range(7)]
+
+
+def _auto_presupuesto_pct(semana_id):
+    """consumo / ingreso_real del mes de la semana (misma definición que el
+    héroe de Oikonomia, _calc_budget). None si no hay ingreso."""
+    from modules.finanzas.budget import _calc_budget
+    mes = _semana_dias(semana_id)[-1][:7]
+    with get_db() as db:
+        bd = _calc_budget(mes, db)
+    ing = bd.get("ingreso_real") or 0
+    if ing <= 0:
+        return None
+    return round(bd.get("consumo", 0) / ing * 100, 1)
+
+
+def _auto_dias_lectura(semana_id):
+    """Días de la semana con un ancla de Paideia completa en el Acta (la
+    versión mínima no cuenta). None si no hay anclas de Paideia."""
+    import modules.actividades.activity_defs as adefs
+    keys = [k for k, a in adefs.get_active_flat().items()
+            if a.get("pillar") == "paideia" and a.get("effective_type") == "ancla"]
+    if not keys:
+        return None
+    dias = _semana_dias(semana_id)
+    ph = ",".join("?" * len(keys))
+    with get_db() as db:
+        n = db.execute(
+            f"SELECT COUNT(DISTINCT date) FROM activity_logs WHERE activity_key IN ({ph}) AND date>=? AND date<=?",
+            keys + [dias[0], dias[-1]]).fetchone()[0]
+    return float(n)
+
+
+_AUTO_METRICS = {"presupuesto_pct": ("Oikonomia", _auto_presupuesto_pct),
+                 "dias_lectura": ("Acta", _auto_dias_lectura)}
+
+
+def _auto_metrics(semana_id):
+    """{key: (valor, fuente)} de las métricas que la app pudo calcular."""
+    out = {}
+    for key, (fuente, fn) in _AUTO_METRICS.items():
+        try:
+            v = fn(semana_id)
+        except Exception as e:  # la métrica vuelve a ser manual
+            print(f"[ataraxia] métrica auto {key} falló: {e}")
+            v = None
+        if v is not None:
+            out[key] = (v, fuente)
+    return out
+
+
+def _semana_rango(semana_id):
+    dias = _semana_dias(semana_id)
+    a, b = date.fromisoformat(dias[0]), date.fromisoformat(dias[-1])
+    mes = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+    return f"{a.day}–{b.day} {mes[b.month - 1]}" if a.month == b.month else f"{a.day} {mes[a.month - 1]} – {b.day} {mes[b.month - 1]}"
+
+
 def _revision_view(semana_id):
     actual   = _get_revision_row(semana_id) or {}
     anterior = _get_revision_row(_prev_semana_id(semana_id)) or {}
+    auto     = _auto_metrics(semana_id)
 
     metrics = []
     for m in REVISION_METRICS:
-        v  = actual.get(m["key"])
+        v  = auto[m["key"]][0] if m["key"] in auto else actual.get(m["key"])
         pv = anterior.get(m["key"])
         delta = None
         delta_str = None
@@ -290,15 +341,8 @@ def _revision_view(semana_id):
                 trend = "better"
             else:
                 trend = "worse"
-        metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "delta": delta, "delta_str": delta_str, "trend": trend})
-
-    with get_db() as db:
-        # Incluye la semana actual (el usuario guardaba y «no me aparece lo que
-        # acabo de registrar hoy»): va arriba marcada como «Esta semana».
-        hist_rows = db.execute(
-            "SELECT * FROM revision_semanal WHERE semana_id <= ? ORDER BY semana_id DESC LIMIT 7",
-            (semana_id,)
-        ).fetchall()
+        metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "delta": delta, "delta_str": delta_str, "trend": trend,
+                        "auto": m["key"] in auto, "fuente": auto.get(m["key"], (None, None))[1]})
 
     # semana_id es el sábado de este ciclo (ver get_semana_id) — el lunes de
     # esa misma semana Lun-Dom es 5 días antes.
@@ -311,11 +355,22 @@ def _revision_view(semana_id):
         "metrics":    metrics,
         "has_data":   bool(actual),
         "notas":      actual.get("notas") or "",
-        "historial":  [{**dict(r), "actual": r["semana_id"] == semana_id} for r in hist_rows],
         "weekly":     weekly,
         "analysis":   _analyze_week(weekly, prev_weekly, metrics),
         "semana_num": _week_num_of(monday_id),
+        "rango":      _semana_rango(semana_id),
     }
+
+
+def historial_semanas(limit=52):
+    """Revisiones guardadas, la más reciente arriba (vive en /logros/semanas;
+    la semana en curso va marcada como «Esta semana»)."""
+    semana_id = get_semana_id()
+    with get_db() as db:
+        rows = db.execute(
+            "SELECT * FROM revision_semanal WHERE semana_id <= ? ORDER BY semana_id DESC LIMIT ?",
+            (semana_id, limit)).fetchall()
+    return [{**dict(r), "actual": r["semana_id"] == semana_id, "rango": _semana_rango(r["semana_id"])} for r in rows]
 
 
 # ── Data builder ──────────────────────────────────────────────────────────────
@@ -376,8 +431,12 @@ def _build_rutina(dia, semana_id):
     required_bloques = [bl for bl in bloques if bl["required_count"] > 0]
     total = len(required_bloques)
     done  = sum(1 for bl in required_bloques if bl["bloque_done"])
+    # Bloque «Ahora» (handoff Ataraxia v2, nota 3): el primero del día con
+    # requeridas pendientes. Es el único que se pinta abierto.
+    ahora = next((bl["bloque_id"] for bl in bloques if bl["done_count"] < bl["required_count"]), None)
     return {
         "bloques":  bloques,
+        "ahora":    ahora,
         "total":    total,
         "done":     done,
         "pct":      int(done / total * 100) if total else 0,
@@ -413,7 +472,15 @@ def index():
     domingo_data = _build_rutina("domingo", semana_id)
     sat_combo, sun_combo = _get_combo_status(semana_id)
 
+    _td = today_date()
+    fecha_larga = "{} {} de {}".format(
+        ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"][dow], _td.day,
+        ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre",
+         "octubre", "noviembre", "diciembre"][_td.month - 1])
     return render_template('ataraxia/index.html',
+        fecha_larga  = fecha_larga,
+        semana_num   = _td.isocalendar()[1],
+        dias_para_sabado = (5 - dow) % 7,
         dia          = dia,
         semana_id    = semana_id,
         sabado       = sabado_data,
@@ -425,44 +492,45 @@ def index():
         is_weekend   = dow in (5, 6),
         today        = today_str(),
         revision     = _revision_view(semana_id),
-        weekly_priorities = _get_weekly_priorities(semana_id),
+        prio_semana  = _prio_semana_view(semana_id),
     )
 
 
-@ataraxia_bp.route('/api/prioridades-semana', methods=['POST'])
-def save_prioridades_semana():
-    data      = request.json or {}
-    semana_id = get_semana_id()
-    textos    = [(data.get(f'p{i}') or '').strip()[:200] for i in (1, 2, 3)]
-    textos    = [t for t in textos if t]
-    now       = datetime.now().isoformat()
+# ── Prioridades de la semana desde Praxis (handoff Ataraxia v2, Sprint 4) ────
+# Se eligen con estrella entre las tareas de «Esta semana» de Praxis (máx. 3);
+# gobiernan la semana Lun-Dom siguiente y Acta las muestra día a día.
 
-    dias = _semana_siguiente_dias(semana_id)
-
+def _prio_semana_view(semana_id):
     with get_db() as db:
-        db.execute(
-            """INSERT INTO weekly_priorities (semana_id, p1, p2, p3, updated_at) VALUES (?,?,?,?,?)
-               ON CONFLICT(semana_id) DO UPDATE SET
-                 p1=excluded.p1, p2=excluded.p2, p3=excluded.p3, updated_at=excluded.updated_at""",
-            (semana_id,
-             textos[0] if len(textos) > 0 else None,
-             textos[1] if len(textos) > 1 else None,
-             textos[2] if len(textos) > 2 else None,
-             now)
-        )
-        # Limpia lo sembrado antes por esta misma semana (re-guardar no debe
-        # duplicar) sin tocar prioridades sueltas que el usuario haya tecleado
-        # ese día directamente en Acta Diurna (semana_id NULL en esas filas).
-        db.execute("DELETE FROM priorities WHERE semana_id=?", (semana_id,))
-        for d in dias:
-            for t in textos:
-                db.execute(
-                    "INSERT INTO priorities (date, text, done, semana_id) VALUES (?,?,0,?)",
-                    (d, t, semana_id)
-                )
-        db.commit()
+        ops = prio.opciones_semana(db, semana_id)
+    return {"opciones": ops, "n": sum(1 for o in ops if o["on"]), "max": prio.MAX_SEMANA}
 
-    return jsonify({'ok': True, 'textos': textos, 'dias': dias})
+
+@ataraxia_bp.route('/api/prioridad-semana/<int:tid>', methods=['POST'])
+def toggle_prioridad_semana(tid):
+    semana_id = get_semana_id()
+    with get_db() as db:
+        ok, val, code = prio.alternar_semana(db, tid, semana_id)
+        db.commit()
+    view = _prio_semana_view(semana_id)
+    if not ok:
+        return jsonify({'ok': False, 'error': val, **view}), code
+    return jsonify({'ok': True, 'prioridad': val, **view})
+
+
+@ataraxia_bp.route('/api/prioridad-semana', methods=['POST'])
+def nueva_prioridad_semana():
+    texto = clean_str((request.json or {}).get('texto', ''), max_len=300)
+    if not texto:
+        return jsonify({'ok': False, 'error': 'Escribe la prioridad'}), 400
+    semana_id = get_semana_id()
+    with get_db() as db:
+        tid = prio.crear_prioridad_semana(db, texto, semana_id)
+        db.commit()
+    view = _prio_semana_view(semana_id)
+    if tid is None:
+        return jsonify({'ok': False, 'error': 'Ya elegiste 3 prioridades para la semana.', **view}), 409
+    return jsonify({'ok': True, 'id': tid, **view})
 
 
 @ataraxia_bp.route('/api/rutina/<dia>')
@@ -587,6 +655,10 @@ def save_revision():
             valores[m["key"]] = float(raw) if raw not in (None, "") else None
         except (TypeError, ValueError):
             valores[m["key"]] = None
+    # Las métricas automáticas se guardan con el valor de la app, no con lo
+    # que mande el cliente (en el formulario no son editables).
+    for key, (v, _f) in _auto_metrics(semana_id).items():
+        valores[key] = v
     notas = (data.get("notas") or "").strip()
     now = datetime.now().isoformat()
 

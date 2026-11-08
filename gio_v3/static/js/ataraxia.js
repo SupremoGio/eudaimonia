@@ -21,13 +21,25 @@
   }
   document.querySelectorAll('[data-dia-set]').forEach(function (b) { b.addEventListener('click', function () { showDia(b.dataset.diaSet); }); });
 
-  /* ── Bloques plegables ── */
+  /* ── Bloques: uno abierto, el «Ahora» (nota 3); clic en el encabezado
+     abre o cierra cualquiera ── */
+  function setOpen(bid, open) {
+    var body = $('blbody-' + bid), h = document.querySelector('[data-bl-toggle="' + bid + '"]');
+    if (!body || !h) return;
+    body.hidden = !open;
+    h.setAttribute('aria-expanded', String(open));
+  }
   root.addEventListener('click', function (e) {
     var h = e.target.closest('[data-bl-toggle]'); if (!h) return;
-    var body = $('blbody-' + h.dataset.blToggle);
-    body.hidden = !body.hidden;
-    h.setAttribute('aria-expanded', String(!body.hidden));
+    setOpen(h.dataset.blToggle, $('blbody-' + h.dataset.blToggle).hidden);
   });
+  /* «Ahora» = primer bloque del día con requeridas pendientes */
+  function markNow(dia) {
+    var cards = [].slice.call(document.querySelectorAll('[data-dia-panel="' + dia + '"] .at-bl'));
+    var now = cards.find(function (c) { return c.dataset.done !== 'true' && parseInt(c.dataset.req, 10) > 0; });
+    cards.forEach(function (c) { c.classList.toggle('is-now', c === now); });
+    return now;
+  }
 
   /* ── Temporizadores ── */
   var TIMERS = {};
@@ -38,10 +50,14 @@
     $('timer-' + bid).textContent = fmt(t.secs);
     var pct = t.ref ? t.secs / t.ref : 0;
     el.dataset.state = pct >= 1 ? 'over' : pct >= .85 ? 'near' : '';
-    var btn = el.querySelector('.js-timer');
-    btn.setAttribute('aria-label', t.running ? 'Pausar temporizador' : 'Iniciar temporizador');
+    var btn = el.querySelector('.js-timer'), ic = t.running ? 'pause' : 'play';
     btn.setAttribute('aria-pressed', String(t.running));
-    if (btn.dataset.ic !== (t.running ? 'pause' : 'play')) { btn.dataset.ic = t.running ? 'pause' : 'play'; icon(btn, btn.dataset.ic); }
+    btn.querySelector('span').textContent = t.running ? 'Pausar' : (t.secs ? 'Seguir' : 'Iniciar');
+    if (btn.dataset.ic !== ic) {
+      btn.dataset.ic = ic;
+      var i = document.createElement('i'); i.setAttribute('data-lucide', ic);
+      btn.replaceChild(i, btn.firstElementChild); lucide.createIcons({ nodes: [i] });
+    }
   }
   function stop(bid) { var t = TIMERS[bid]; if (t && t.running) { clearInterval(t.iv); t.running = false; paint(bid); } }
   root.addEventListener('click', function (e) {
@@ -55,19 +71,38 @@
   });
 
   /* ── Progreso ── */
+  /* Fila de recompensa: circle-dashed → circle-check verde al cumplirse */
+  function setReward(id, ok) {
+    var row = $('rw-' + id); if (!row || row.classList.contains('is-ok') === ok) return;
+    row.classList.toggle('is-ok', ok);
+    icon(row.querySelector('.at-rw-ic'), ok ? 'circle-check' : row.dataset.ic);
+  }
   function updateDay(dia, r) {
-    var pct = r.total ? Math.round(r.done / r.total * 100) : 0;
-    document.querySelectorAll('.js-day-cnt[data-dia="' + dia + '"]').forEach(function (el) { el.textContent = r.done + ' / ' + r.total; });
-    document.querySelectorAll('.js-day-bar[data-dia="' + dia + '"]').forEach(function (el) { el.style.width = pct + '%'; });
+    document.querySelectorAll('.js-day-cnt[data-dia="' + dia + '"]').forEach(function (el) { el.textContent = r.complete ? '✓' : r.done + '/' + r.total; });
+    document.querySelectorAll('.js-rw-cnt[data-dia="' + dia + '"]').forEach(function (el) { el.textContent = r.done + '/' + r.total; });
     $('tab-' + dia).dataset.complete = String(!!r.complete);
-    $((dia === 'sabado' ? 'sat' : 'sun') + '-day-complete').hidden = !r.complete;
+    setReward(dia, !!r.complete);
+    setReward('finde', $('tab-sabado').dataset.complete === 'true' && $('tab-domingo').dataset.complete === 'true');
+    var justDone = null;
     (r.bloques || []).forEach(function (bl) {
-      var p = $('blprog-' + bl.bloque_id); if (p) p.textContent = bl.done_count + '/' + bl.required_count;
-      var bar = $('blbar-' + bl.bloque_id); if (bar) bar.style.width = (bl.required_count ? Math.round(bl.done_count / bl.required_count * 100) : 0) + '%';
+      var p = $('blprog-' + bl.bloque_id); if (p) p.textContent = bl.bloque_done ? 'Listo' : bl.done_count + '/' + bl.required_count;
+      var bar = $('blbar-' + bl.bloque_id); if (bar) bar.style.width = (bl.required_count ? Math.round(bl.done_count / bl.required_count * 100) : (bl.bloque_done ? 100 : 0)) + '%';
       var pb = $('blpb-' + bl.bloque_id); if (pb) pb.setAttribute('aria-valuenow', bl.done_count);
-      var card = $('blcard-' + bl.bloque_id); if (card) card.dataset.done = String(!!bl.bloque_done);
+      var card = $('blcard-' + bl.bloque_id);
+      if (card) {
+        if (bl.bloque_done && card.dataset.done !== 'true' && bl.required_count > 0) justDone = bl.bloque_id;
+        card.dataset.done = String(!!bl.bloque_done);
+      }
       if (bl.bloque_done) stop(bl.bloque_id);
     });
+    var now = markNow(dia);
+    // Al terminar un bloque se cierra y se abre el siguiente pendiente
+    if (justDone) {
+      setTimeout(function () {
+        setOpen(justDone, false);
+        if (now) { setOpen(now.dataset.bl, true); now.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+      }, 450);
+    }
   }
 
   /* ── Marcar tareas ── */
@@ -75,6 +110,7 @@
   async function toggleTask(btn) {
     var id = btn.dataset.task, bid = btn.dataset.bl, dia = btn.dataset.dia;
     if (pending[id]) return;
+    if (root.dataset.preview) { toast('Vista previa: se marca el sábado y el domingo'); return; }
     pending[id] = true;
     var done = btn.getAttribute('aria-pressed') === 'true';
     var secs = TIMERS[bid] ? TIMERS[bid].secs : 0;
@@ -86,30 +122,52 @@
       var g = d.gam;
       if (g && !done) {
         if (g.xp > 0 || g.ec > 0) toast('+' + g.xp + ' XP' + (g.ec > 0 ? ' · +' + g.ec + ' EC' : ''), 'win');
-        (g.combo_bonuses || []).forEach(function (c) { setTimeout(function () { toast(c.label + ' +' + c.xp + ' XP', 'win'); }, 300); });
+        (g.combo_bonuses || []).forEach(function (c) { setTimeout(function () { toast((c.name || c.label || 'Combo') + ' +' + c.xp + ' XP', 'win'); }, 300); });
         if (window.euGam) euGam(g, { el: btn });
       }
-      if (!done) fetch('/ataraxia/api/rutina/finde/status').then(function (r) { return r.json(); })
-        .then(function (s) { if (s.finde_perfecto) $('finde-banner').hidden = false; }).catch(function () {});
     } catch (_) { toast('Sin conexión', 'err'); }
     finally { delete pending[id]; }
   }
   root.addEventListener('click', function (e) { var b = e.target.closest('.js-task'); if (b) toggleTask(b); });
 
-  /* ── Prioridades de la semana ── */
-  var prio = $('prio-form');
-  if (prio) prio.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var p = [1, 2, 3].map(function (n) { return $('prio-' + n).value.trim(); });
-    if (!p[0] && !p[1] && !p[2]) { toast('Escribe al menos una prioridad', 'err'); return; }
-    try {
-      var d = await jpost('/ataraxia/api/prioridades-semana', { p1: p[0], p2: p[1], p3: p[2] });
-      if (!d._ok || !d.ok) { toast('Error al guardar', 'err'); return; }
-      toast('Guardadas — aparecen en el Acta Diurna toda la semana', 'win');
-      var row = $('trow-sun_prioridades');
-      if (row && row.getAttribute('aria-pressed') !== 'true') toggleTask(row);
-    } catch (_) { toast('Sin conexión', 'err'); }
-  });
+  /* ── Prioridades de la semana desde Praxis (nota 6) ── */
+  var ps = $('prio-semana');
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function renderPS(d) {
+    ps.querySelector('.js-ps-list').innerHTML = (d.opciones || []).map(function (o) {
+      return '<button type="button" class="at-prio-it js-ps" data-id="' + o.id + '" aria-pressed="' + o.on + '"><i data-lucide="star"></i><span>' + esc(o.title) + '</span></button>';
+    }).join('');
+    ps.querySelector('.js-ps-n').textContent = d.n;
+    ps.querySelector('.js-ps-empty').hidden = (d.opciones || []).length > 0;
+    var f = ps.querySelector('.js-ps-form'); if (f) f.hidden = d.n >= d.max;
+    lucide.createIcons();
+    // Elegir 3 completa la tarea del bloque
+    var row = $('trow-sun_prioridades');
+    if (d.n >= d.max && row && row.getAttribute('aria-pressed') !== 'true') toggleTask(row);
+  }
+  if (ps) {
+    ps.addEventListener('click', async function (e) {
+      var b = e.target.closest('.js-ps'); if (!b) return;
+      if (root.dataset.preview) { toast('Vista previa: las prioridades se eligen el fin de semana'); return; }
+      b.disabled = true;
+      try {
+        var d = await jpost('/ataraxia/api/prioridad-semana/' + b.dataset.id);
+        if (!d._ok || !d.ok) { toast(d.error || 'No se pudo guardar', 'err'); b.disabled = false; return; }
+        renderPS(d);
+        toast(d.prioridad ? 'Prioridad de la semana · ' + d.n + '/3' : 'Quitada de la semana');
+      } catch (_) { toast('Sin conexión', 'err'); b.disabled = false; }
+    });
+    var psf = ps.querySelector('.js-ps-form');
+    if (psf) psf.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var inp = $('ps-inp'), texto = inp.value.trim(); if (!texto) return;
+      try {
+        var d = await jpost('/ataraxia/api/prioridad-semana', { texto: texto });
+        if (!d._ok || !d.ok) { toast(d.error || 'No se pudo guardar', 'err'); return; }
+        inp.value = ''; renderPS(d); toast('Agregada a Esta semana · ' + d.n + '/3', 'win');
+      } catch (_) { toast('Sin conexión', 'err'); }
+    });
+  }
 
   /* ── Revisión semanal ── */
   var rev = $('rev-form');
@@ -128,8 +186,15 @@
     } catch (_) { toast('Sin conexión', 'err'); }
   });
 
+  /* ── Menú ⋯ (nota 4): el Reset vive aquí y siempre pide confirmación ── */
+  var more = $('more-trigger'), menu = $('at-menu');
+  function setMenu(open) { menu.hidden = !open; more.setAttribute('aria-expanded', String(open)); if (open) menu.querySelector('[role=menuitem]').focus(); }
+  more.addEventListener('click', function (e) { e.stopPropagation(); setMenu(menu.hidden); });
+  document.addEventListener('click', function (e) { if (!menu.hidden && !menu.contains(e.target)) setMenu(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) { setMenu(false); more.focus(); } });
+
   /* ── Reset de la semana ── */
-  $('reset-trigger').addEventListener('click', function () { euModal.open('at-reset'); });
+  $('reset-trigger').addEventListener('click', function () { setMenu(false); euModal.open('at-reset'); });
   $('reset-confirm').addEventListener('click', async function () {
     euModal.close('at-reset');
     try {

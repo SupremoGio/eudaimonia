@@ -158,3 +158,7 @@ span.px-star{display:inline-flex;width:32px;justify-content:center;opacity:.4}
 
 @media (max-width:767px){.px-sec--inbox .js-rev{font-size:0;gap:0;padding:0 var(--sp-2)}.px-sec--inbox .js-rev svg{width:18px;height:18px}}
 
+
+/* Prioridad de la semana (elegida el domingo en Ataraxia) */
+.px-sem{color:var(--fg-brand);border-color:var(--border-brand);background:var(--brand-subtle)}
+.px-sem svg{fill:currentColor}
