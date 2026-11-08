@@ -196,7 +196,8 @@
       return '<section class="px-side-sec px-sec" data-tone="' + (k === 'delegar' ? 'warning' : 'brand') + '" aria-labelledby="px-t-' + k + '">' +
         '<div class="px-sec-hd">' + ic(icon, 'px-sec-ic') + '<h2 class="px-sec-n" id="px-t-' + k + '">' + label + '</h2><span class="px-sec-ct num">' + g[k].length + '</span></div>' +
         (g[k].length ? '<ul class="px-list">' + g[k].map(function (t) { return rowHTML(t, 'side'); }).join('') + '</ul>'
-          : '<p class="t-meta px-side-empty">' + (k === 'delegar' ? 'Nada que delegar.' : 'Sin ideas guardadas.') + '</p>') + '</section>';
+          : '<p class="t-meta px-side-empty">' + (k === 'delegar' ? 'Nada que delegar.' : 'Sin ideas guardadas.') + '</p>') +
+        (k === 'ideas' ? '<p class="t-meta px-side-note">Un solo banco: el Pipeline de Acta Diurna guarda aquí.</p>' : '') + '</section>';
     }
     var aside = side('delegar', 'Delegar', 'users') + side('ideas', 'Ideas', 'lightbulb') +
       '<section class="px-side-sec px-done" data-tone="success">' +

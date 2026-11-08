@@ -74,6 +74,7 @@
 .px-side-sec .px-sec-hd{padding:12px 14px 8px}
 .px-side-sec .px-sec-n{font-size:var(--fs-15)}
 .px-side-empty{margin:0;padding:0 14px 12px}
+.px-side-note{margin:0;padding:8px 14px 12px;border-top:1px solid var(--border-subtle);line-height:1.45}
 .px-item--sm{align-items:center;gap:10px;min-height:44px;padding:4px 14px}
 .px-item--sm .px-item-main{padding-top:0}
 .px-item--sm .px-item-t{font-size:var(--fs-13)}

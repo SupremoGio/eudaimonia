@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 import time
 from database import get_db
 from data import ACTIVITIES, ACTIVITY_CATEGORIES
-from utils import today_str, today_date, now_local
+from utils import today_str, today_date, now_local, clean_str
 from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
 import modules.actividades.activity_defs as adefs
@@ -77,7 +77,7 @@ def get_dashboard_stats():
         done_today = [r["activity_key"] for r in db.execute(
             "SELECT activity_key FROM activity_logs WHERE date=?", (today,)
         ).fetchall()]
-        pipeline   = db.execute("SELECT * FROM pipeline_items ORDER BY id DESC").fetchall()
+        pipeline   = _pipeline_ideas(db)
         priorities = db.execute("SELECT * FROM priorities WHERE date=? ORDER BY id", (today,)).fetchall()
 
     return {
@@ -87,7 +87,7 @@ def get_dashboard_stats():
         "ec_total":  max(0, ec_total),
         "streak":    engine.get_gamification_streak(),
         "done_today": done_today,
-        "pipeline":  [dict(r) for r in pipeline],
+        "pipeline":  pipeline,
         "priorities":[dict(r) for r in priorities],
         # Legacy aliases for template compatibility
         "pts_today": xp_today,
@@ -482,22 +482,33 @@ def post_pillar_focus():
     return jsonify({'ok': True, 'pillar_focus': adefs.get_pillar_focus_map()})
 
 
+# Pipeline = Ideas de Praxis (handoff Praxis v2, D2): un solo banco en
+# gtd_tasks (cuadrante 'ideas'). La forma {id, text} se mantiene para acta.js.
+def _pipeline_ideas(db):
+    return [{"id": r["id"], "text": r["title"]} for r in db.execute(
+        "SELECT id, title FROM gtd_tasks WHERE cuadrante='ideas' AND completado=0 ORDER BY id DESC")]
+
+
 @actividades_bp.route('/api/pipeline', methods=['POST'])
 def add_pipeline():
-    text = request.json.get('text', '').strip()
+    text = clean_str((request.json or {}).get('text', ''), max_len=500)
     if not text:
         return jsonify({'error': 'empty'}), 400
+    now = datetime.now().isoformat()
     with get_db() as db:
-        db.execute("INSERT INTO pipeline_items (text, created_at) VALUES (?,?)", (text, datetime.now().isoformat()))
+        db.execute(
+            """INSERT INTO gtd_tasks
+               (title, tipo, completado, status, importante, urgente, cuadrante, points, created_at, actualizado_en)
+               VALUES (?, 'idea', 0, 'someday', 0, 0, 'ideas', 4, ?, ?)""", (text, now, now))
         db.commit()
-        items = db.execute("SELECT * FROM pipeline_items ORDER BY id DESC").fetchall()
-    return jsonify({'items': [dict(i) for i in items]})
+        items = _pipeline_ideas(db)
+    return jsonify({'items': items})
 
 
 @actividades_bp.route('/api/pipeline/<int:item_id>', methods=['DELETE'])
 def delete_pipeline(item_id):
     with get_db() as db:
-        db.execute("DELETE FROM pipeline_items WHERE id=?", (item_id,))
+        db.execute("DELETE FROM gtd_tasks WHERE id=? AND cuadrante='ideas'", (item_id,))
         db.commit()
     return jsonify({'ok': True})
 

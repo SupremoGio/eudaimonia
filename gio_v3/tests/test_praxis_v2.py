@@ -203,3 +203,46 @@ def test_points_redirige_a_logros_y_sale_del_menu(client):
     assert '/gtd/points' not in urls
     js = _src('static/js/praxis.js')
     assert "' pts'" not in js and 'r.pts' not in js
+
+
+# ── Sprint 5: Pipeline de Acta = Ideas de Praxis (D2) ────────────────────────
+
+def _ideas():
+    with database.get_db() as db:
+        return [r['title'] for r in db.execute(
+            "SELECT title FROM gtd_tasks WHERE cuadrante='ideas' AND completado=0 ORDER BY id")]
+
+
+def test_migracion_pipeline_a_ideas_idempotente(test_db):
+    with database.get_db() as db:
+        db.execute("DELETE FROM migration_log WHERE version='praxis_v2_pipeline_a_ideas'")
+        db.execute("INSERT INTO gtd_tasks (title,tipo,completado,status,importante,urgente,cuadrante,points,created_at,actualizado_en)"
+                   " VALUES ('Curso de SQL','idea',0,'someday',0,0,'ideas',4,'x','x')")
+        db.executemany("INSERT INTO pipeline_items (text, created_at) VALUES (?, '2026-11-01')",
+                       [('Viaje a Oaxaca',), ('curso de sql',), ('  ',), ('Leer Meditaciones',)])
+        assert database.migrar_pipeline_a_ideas(db) == 2          # sin duplicar «Curso de SQL»
+        assert database.migrar_pipeline_a_ideas(db) == 0          # idempotente
+        db.commit()
+    assert _ideas() == ['Curso de SQL', 'Viaje a Oaxaca', 'Leer Meditaciones']
+    database.init_db()                                           # re-arrancar no duplica
+    assert len(_ideas()) == 3
+
+
+def test_pipeline_de_acta_lee_y_escribe_ideas(client):
+    r = client.post('/actividades/api/pipeline', json={'text': 'App de recetas'}).get_json()
+    assert r['items'][0]['text'] == 'App de recetas'
+    iid = r['items'][0]['id']
+    assert 'App de recetas' in _ideas()
+    # la misma idea se ve en Praxis y en Acta
+    assert '"title": "App de recetas"' in client.get('/gtd/').get_data(as_text=True)
+    acta = client.get('/actividades/').get_data(as_text=True)
+    assert 'data-id="%d">App de recetas' % iid in acta and 'son las Ideas de Praxis' in acta
+    with database.get_db() as db:
+        assert db.execute('SELECT COUNT(*) FROM pipeline_items').fetchone()[0] == 0   # ya nadie escribe ahí
+    # quitar desde Acta borra la idea; no toca tareas de otros cuadrantes
+    tid = _nueva(client, 'Tarea normal')
+    client.delete(f'/actividades/api/pipeline/{tid}')
+    client.delete(f'/actividades/api/pipeline/{iid}')
+    assert 'App de recetas' not in _ideas()
+    with database.get_db() as db:
+        assert db.execute('SELECT COUNT(*) FROM gtd_tasks WHERE id=?', (tid,)).fetchone()[0] == 1

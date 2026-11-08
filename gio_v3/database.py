@@ -7273,10 +7273,42 @@ def init_db():
         if "pasos_promedio" not in rs_cols:
             db.execute("ALTER TABLE revision_semanal ADD COLUMN pasos_promedio REAL")
 
+        # Un solo banco de ideas (handoff Praxis v2, D2): el Pipeline de Acta
+        # Diurna pasa a vivir en gtd_tasks como ideas. Se copia una vez (sin
+        # duplicar títulos que ya estén entre las ideas) y pipeline_items
+        # queda como histórico; desde aquí nadie escribe en ella.
+        migrar_pipeline_a_ideas(db)
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")
     _traceback.print_exc()
+
+
+def migrar_pipeline_a_ideas(db):
+    """Copia pipeline_items → gtd_tasks (tipo idea, cuadrante ideas, status
+    someday). Idempotente: corre una vez (migration_log) y aun así salta los
+    títulos que ya existen como idea abierta. Devuelve cuántas copió."""
+    version = "praxis_v2_pipeline_a_ideas"
+    if db.execute("SELECT 1 FROM migration_log WHERE version=?", (version,)).fetchone():
+        return 0
+    ya = {(r["title"] or "").strip().lower() for r in db.execute(
+        "SELECT title FROM gtd_tasks WHERE cuadrante='ideas' AND completado=0")}
+    n = 0
+    for r in db.execute("SELECT text, created_at FROM pipeline_items ORDER BY id").fetchall():
+        txt = (r["text"] or "").strip()
+        if not txt or txt.lower() in ya:
+            continue
+        db.execute(
+            """INSERT INTO gtd_tasks
+               (title, tipo, completado, status, importante, urgente, cuadrante, points, created_at, actualizado_en)
+               VALUES (?, 'idea', 0, 'someday', 0, 0, 'ideas', 4, ?, ?)""",
+            (txt, r["created_at"], r["created_at"]))
+        ya.add(txt.lower())
+        n += 1
+    db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+               (version, f"Pipeline de Acta → Ideas de Praxis ({n} copiadas)"))
+    return n
 
 
 # ── Shared stat helpers ───────────────────────────────────────────────────────
