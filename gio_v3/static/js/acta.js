@@ -13,10 +13,9 @@
   var root = document.getElementById('acta');
   if (!root) return;
 
-  var GOAL = parseInt(root.dataset.goal, 10) || 15;
   var PILLARS_TOTAL = parseInt(root.dataset.pillarsTotal, 10) || 8;
   var RANKS = ['carbon', 'iron', 'gold', 'diamond'];
-  var TIER_T = { carbon: 'carbon', iron: 'hierro', gold: 'oro', diamond: 'diamante' };
+  var RNAME = { carbon: 'Carbón', iron: 'Hierro', gold: 'Oro', diamond: 'Diamante' };
   var clfRank = root.dataset.rank;
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -59,7 +58,6 @@
     });
     var set = function (sel, v) { $$(sel).forEach(function (el) { el.textContent = v; }); };
     set('.js-ct-all', all); set('.js-ct-done', done); set('.js-ct-pending', all - done); set('.js-ct-ancla', ancla);
-    set('.js-done-n', done);
     $$('.acta-pillar').forEach(function (p) {
       var items = $$('.acta-item', p), d = items.filter(function (i) { return i.dataset.done === '1'; });
       var xp = d.reduce(function (s, i) { return s + (parseInt(i.dataset.pts, 10) || 0); }, 0);
@@ -88,35 +86,45 @@
     if (!s) return;
     var xp = s.xp_today != null ? s.xp_today : (s.pts_today || 0);
     $$('.js-xp-today').forEach(function (el) { if (window.euCountTo) euCountTo(el, xp); else el.textContent = xp; });
-    $$('.js-xp-bar').forEach(function (el) {
-      el.style.width = Math.min(100, xp / GOAL * 100) + '%';
-      var bar = el.parentNode; bar.setAttribute('aria-valuenow', xp);
-      if (!reduced) { bar.classList.remove('is-gaining'); void bar.offsetWidth; bar.classList.add('is-gaining'); }
-    });
-    var t = function (sel, v) { var el = $(sel); if (el && v != null) el.textContent = v; };
-    t('.js-xp-week', s.xp_week != null ? s.xp_week : s.pts_week);
-    t('.js-xp-month', s.xp_month != null ? s.xp_month : s.pts_month);
-    t('.js-ec-total', Math.max(0, s.ec_total || 0));
-    var st = s.streak || 0;
-    t('.js-streak', st + ' d');
-    t('.js-streak-sub', st >= 30 ? 'Racha · +10% XP' : st >= 7 ? 'Racha · +5% XP' : st >= 5 ? (7 - st) + ' d para bono' : (5 - st) + ' d para racha');
+  }
+
+  // ── Clasificación: mismo checklist que Inicio (macro ui.criterion) ───────
+  function critHTML(c) {
+    var pips = '';
+    for (var i = 0; i < Math.min(c.need, 8); i++) pips += '<i' + (i < c.have ? ' class="is-on"' : '') + '></i>';
+    return '<li class="dash-crit' + (c.ok ? ' is-ok' : '') + '" data-key="' + esc(c.key) + '" aria-label="' +
+      esc(c.label) + ': ' + c.have + ' de ' + c.need + (c.ok ? ', cumplido' : '') + '">' +
+      '<i data-lucide="' + (c.ok ? 'circle-check' : 'circle-dashed') + '" class="dash-crit-ic"></i>' +
+      '<div class="dash-crit-txt"><div class="dash-crit-l">' + esc(c.label) + '</div>' +
+      (c.hint ? '<div class="t-meta">' + esc(c.hint) + '</div>' : '') + '</div>' +
+      '<span class="dash-crit-pips" aria-hidden="true">' + pips + '</span>' +
+      '<span class="dash-crit-n num" aria-hidden="true">' + c.have + '/' + c.need + '</span></li>';
+  }
+  function renderClf(clf) {
+    var crit = clf.criteria || [];
+    var faltan = crit.filter(function (c) { return !c.ok; }).length;
+    var sub = $('.js-clf-sub');
+    if (sub) {
+      sub.textContent = clf.next_rank
+        ? (faltan ? 'Para ' + RNAME[clf.next_rank] + ' te falta' + (faltan !== 1 ? 'n ' : ' ') + faltan + ' cosa' + (faltan !== 1 ? 's' : '') : (clf.next_hint || ''))
+        : 'Día Diamante. Lo que marques suma XP sin presión.';
+    }
+    var ul = $('.js-clf-crit');
+    if (ul) {
+      ul.innerHTML = crit.map(critHTML).join('');
+      ul.hidden = !crit.length;
+      ul.setAttribute('aria-label', 'Lo que falta para ' + (RNAME[clf.next_rank] || 'el siguiente rango'));
+    }
   }
 
   function updGam(g) {
     if (!g) return;
     var clf = g.classification;
     if (clf) {
-      var medal = $('.js-clf-rank'); if (medal && window.euRankSet) euRankSet(medal, clf.rank, 'Clasificación de hoy: ' + clf.label);
-      var cname = $('.js-clf-label'); if (cname) cname.dataset.rank = TIER_T[clf.rank] || 'carbon';
-      if (window.euRanksUpdate) euRanksUpdate($('.acta-summary .js-ranks'), clf.rank);
-      var t = function (sel, v) { var el = $(sel); if (el) el.textContent = v || ''; };
-      t('.js-clf-label', clf.label); t('.js-clf-desc', clf.desc); t('.js-clf-hint', clf.next_hint);
-      var parts = [];
-      if (clf.anchors_total > 0) parts.push('Anclas ' + clf.anchors_done + '/' + clf.anchors_total);
-      if (clf.touches_total > 0) parts.push('Touches ' + clf.touches_done + '/' + clf.touches_total);
-      t('.js-clf-meta', parts.join(' · '));
-      var track = $('.js-clf-track'); if (track) track.hidden = clf.rank === 'diamond';
-      var bar = $('.js-clf-bar'); if (bar) bar.style.width = (clf.next_pct || 0) + '%';
+      var rname = RNAME[clf.rank] || 'Carbón';
+      var medal = $('.js-clf-rank'); if (medal && window.euRankSet) euRankSet(medal, clf.rank, 'Clasificación de hoy: ' + rname);
+      var cname = $('.js-clf-label'); if (cname) cname.textContent = rname;
+      renderClf(clf);
       // Subir de clasificación es el logro central del día: festejo propio
       if (clfRank && clf.rank !== clfRank && RANKS.indexOf(clf.rank) > RANKS.indexOf(clfRank) && window.euAchievement) {
         var RAR = { iron: 'plata', gold: 'oro', diamond: 'especial' };
@@ -127,14 +135,10 @@
       if (clf.pillars) {
         var on = {}; clf.pillars.forEach(function (p) { on[p] = 1; });
         $$('.acta-cover-it').forEach(function (it) { it.classList.toggle('is-on', !!on[it.dataset.pillar]); });
-        $$('.js-pillars-n').forEach(function (el) { el.textContent = clf.pillars.length; });
         $$('.js-pillars-count').forEach(function (el) { el.textContent = clf.pillars.length + ' / ' + PILLARS_TOTAL; });
       }
     }
     if (g.coins_today != null) $$('.js-ec-today').forEach(function (el) { el.textContent = g.coins_today; });
-    var lb = $('.js-lvl-bar'); if (lb && g.level_pct != null) lb.style.width = g.level_pct + '%';
-    var ln = $('.js-lvl-name'); if (ln && g.level_name) ln.textContent = g.level_name.charAt(0) + g.level_name.slice(1).toLowerCase();
-    var nx = $('.js-lvl-next'); if (nx) nx.textContent = g.max_level ? 'nivel máximo' : (g.xp_to_next || 0) + ' XP para subir';
     if (window.euCheckLevel) euCheckLevel(g);
   }
 

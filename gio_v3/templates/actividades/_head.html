@@ -13,7 +13,6 @@
     <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-edit" aria-pressed="false"><i data-lucide="pencil"></i><span>Editar</span></button>
   </div>
 </header>
-<div class="eu-xpbar acta-mbar" role="progressbar" aria-label="XP de hoy" aria-valuemax="{{ XP_DAILY_GOAL }}" aria-valuenow="{{ stats.xp_today }}"><i class="js-xp-bar" style="width:{{ [100, (stats.xp_today / XP_DAILY_GOAL * 100)|round(1)]|min }}%"></i></div>
 <div class="eu-chips acta-filters" role="group" aria-label="Filtrar actividades">
   <button type="button" class="eu-chip" aria-pressed="true" data-filter="all">Todas <span class="ct js-ct-all">0</span></button>
   <button type="button" class="eu-chip" aria-pressed="false" data-filter="pending">Pendientes <span class="ct js-ct-pending">0</span></button>

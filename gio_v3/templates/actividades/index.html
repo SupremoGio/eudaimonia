@@ -5,9 +5,12 @@
 {% block module_title %}ACTA DIURNA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/acta.css') }}">{% endblock %}
 
+{# El XP del día vive en la tarjeta Clasificación: sin pastilla en la topbar #}
+{% block tb_xp %}{% endblock %}
+
 {% block mtitle %}
 <b>Acta Diurna</b>
-<span>{{ today_name }} · {{ acta_total }} actividades · <span class="js-xp-today">{{ stats.xp_today }}</span> XP</span>
+<span>{{ today_name }} · {{ acta_total }} actividades</span>
 {% endblock %}
 
 {# Reflexiones escritas: MIT se edita también en móvil; las de cierre de día
@@ -19,7 +22,7 @@
 
 {% block content %}
 <div class="acta" id="acta"
-     data-rank="{{ clf.rank }}" data-pillars-total="{{ pillar_meta|length }}" data-goal="{{ XP_DAILY_GOAL }}">
+     data-rank="{{ clf.rank }}" data-pillars-total="{{ pillar_meta|length }}">
   <div class="acta-main">
     {% include "actividades/_head.html" %}
     {% include "actividades/_alerts.html" %}
@@ -33,7 +36,6 @@
     {% include "actividades/_summary.html" %}
     {% include "actividades/_pillars.html" %}
     {% include "actividades/_priorities.html" %}
-    {% include "actividades/_progress.html" %}
     {% include "actividades/_pipeline.html" %}
     {% include "actividades/_quotes.html" %}
     <p class="t-meta eu-hstack acta-keys"><span class="kbd">1</span>–<span class="kbd">9</span> marcar · <span class="kbd" data-cmdk-mod>Ctrl</span><span class="kbd">Z</span> deshacer</p>

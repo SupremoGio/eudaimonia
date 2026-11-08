@@ -17,11 +17,9 @@
 .acta-hd .t-page{margin:var(--sp-2) 0 0}
 .acta-lead{margin:var(--sp-2) 0 0;max-width:var(--reading-max)}
 .acta-hd-tools{flex-wrap:wrap}
-.acta-mbar{height:4px}
 @media (max-width:767px){.acta-hd-txt{display:none}}
 @media (min-width:768px){
   .acta-hd{flex-direction:row;align-items:flex-end;justify-content:space-between}
-  .acta-mbar{display:none}
 }
 .acta-editbar{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px dashed var(--border-brand);border-radius:var(--r-md);background:var(--brand-subtle)}
 .acta-editbar[hidden],.acta-view[hidden],.acta-days[hidden]{display:none}
@@ -84,9 +82,28 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-foco summary svg:first-child{width:16px;height:16px;color:var(--fg-brand)}
 
 /* ── Panel lateral ───────────────────────────────────────────── */
-.acta-xp .t-meta{font-family:var(--font-ui);font-size:var(--fs-13);letter-spacing:0}
-.acta-clf{border-top:1px solid var(--border-subtle);padding-top:var(--sp-3)}
-.acta-thin{height:4px}
+/* Clasificación (nota 4): medallón + rango, XP/EC del día y el checklist
+   de Inicio (.dash-crit del macro ui.criterion, en versión compacta) */
+.acta-clf{gap:var(--sp-3)}
+.acta-clf-hd{align-items:center}
+.acta-clf-hd .eu-rank{flex-shrink:0}
+.acta-clf-name{font:var(--fw-semibold) var(--fs-24)/1.1 var(--font-display);color:var(--fg-1);margin-top:var(--sp-1)}
+.acta-clf-xp{font:var(--fw-medium) var(--fs-17)/1 var(--font-data);color:var(--xp-fg)}
+.acta-clf-xp span:last-child{font:var(--fs-12) var(--font-ui);color:var(--fg-3)}
+.acta-clf-ec{font:var(--fs-12) var(--font-data);color:var(--ec-fg);margin-top:var(--sp-1)}
+.acta-clf-sub{margin:0;font-size:var(--fs-13);color:var(--fg-2)}
+.acta-crits{list-style:none;margin:0;padding:0;border-top:1px solid var(--border-subtle)}
+.acta-crits[hidden]{display:none}
+.acta-crits .dash-crit{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-3) 0;border-bottom:1px solid var(--border-subtle)}
+.acta-crits .dash-crit-ic{width:18px;height:18px;flex-shrink:0;color:var(--fg-3)}
+.acta-crits .dash-crit.is-ok .dash-crit-ic{color:var(--success-fg)}
+.acta-crits .dash-crit-txt{flex:1;min-width:0}
+.acta-crits .dash-crit-l{font:var(--fw-medium) var(--fs-13)/1.3 var(--font-ui);color:var(--fg-1)}
+.acta-crits .dash-crit-pips{display:none}
+.acta-crits .dash-crit-n{font:var(--fw-medium) var(--fs-13)/1 var(--font-data);color:var(--fg-1)}
+.acta-crits .dash-crit.is-ok .dash-crit-l,.acta-crits .dash-crit.is-ok .dash-crit-n{color:var(--fg-3)}
+.acta-clf-link{color:var(--fg-3);text-decoration:none;align-self:flex-start;min-height:24px;display:inline-flex;align-items:center}
+.acta-clf-link:hover{color:var(--fg-brand)}
 .acta-cover-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-3) var(--sp-1)}
 .acta-cover-it{display:flex;flex-direction:column;align-items:center;gap:var(--sp-1);min-width:0}
 .acta-cover-it:not(.is-on) .eu-mod-ic{background:var(--bg-raised);border-color:var(--border-subtle);color:var(--fg-4)}
@@ -95,7 +112,6 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-prio-it{min-height:44px}
 .acta-prio-it .eu-act-t{font-size:var(--fs-13)}
 .acta-prio-it[aria-pressed=true] .eu-act-t{color:var(--fg-3);text-decoration:line-through}
-.acta-ec-link{text-decoration:none}
 .acta-pipe-chips{flex-wrap:wrap;overflow:visible}
 .acta-pipe-chip{cursor:default;padding-right:var(--sp-1)}
 .acta-chip-x{width:24px;height:24px;border:0;background:none;color:var(--fg-3);display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-full);cursor:pointer}
@@ -121,9 +137,6 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-toast .eu-toast-timer{transform-origin:left}
 .acta-toast.is-running .eu-toast-timer{animation:actaTimer 5s linear forwards}
 @keyframes actaTimer{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-
-.acta-clf-hd{align-items:center}
-.acta-clf-name{margin:0}
 
 /* ── Color por virtud (cada .acta-item trae data-cat de su pilar) ── */
 .acta-item .eu-act{border-left:3px solid color-mix(in oklab,var(--cat-fg) 65%,transparent)}
