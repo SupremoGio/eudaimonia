@@ -444,21 +444,6 @@ def _build_rutina(dia, semana_id):
     }
 
 
-def _get_combo_status(semana_id):
-    hoy = today_date()
-    dias_desde_sabado = (hoy.weekday() - 5) % 7
-    sat_date = (hoy - timedelta(days=dias_desde_sabado)).isoformat()
-    sun_date = (hoy - timedelta(days=dias_desde_sabado - 1)).isoformat()
-    with get_db() as db:
-        sat_combo = bool(db.execute(
-            "SELECT id FROM xp_ledger WHERE description='Combo: Sábado Completo' AND date=?", (sat_date,)
-        ).fetchone())
-        sun_combo = bool(db.execute(
-            "SELECT id FROM xp_ledger WHERE description='Combo: Domingo Completo' AND date=?", (sun_date,)
-        ).fetchone())
-    return sat_combo, sun_combo
-
-
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @ataraxia_bp.route('/')
@@ -470,7 +455,6 @@ def index():
 
     sabado_data  = _build_rutina("sabado",  semana_id)
     domingo_data = _build_rutina("domingo", semana_id)
-    sat_combo, sun_combo = _get_combo_status(semana_id)
 
     _td = today_date()
     fecha_larga = "{} {} de {}".format(
@@ -487,8 +471,6 @@ def index():
         domingo      = domingo_data,
         horarios     = HORARIOS,
         bloque_labels= BLOQUE_LABELS,
-        sat_combo    = sat_combo,
-        sun_combo    = sun_combo,
         is_weekend   = dow in (5, 6),
         today        = today_str(),
         revision     = _revision_view(semana_id),
@@ -627,20 +609,6 @@ def uncheck_tarea():
     )
     rutina = _build_rutina(tarea["dia"], semana_id)
     return jsonify({"ok": True, "gam": gam, "rutina": rutina})
-
-
-@ataraxia_bp.route('/api/rutina/finde/status')
-def finde_status():
-    semana_id = get_semana_id()
-    sat_combo, sun_combo = _get_combo_status(semana_id)
-    return jsonify({
-        "semana_id":      semana_id,
-        "sabado":         _build_rutina("sabado",  semana_id),
-        "domingo":        _build_rutina("domingo", semana_id),
-        "sat_combo":      sat_combo,
-        "sun_combo":      sun_combo,
-        "finde_perfecto": sat_combo and sun_combo,
-    })
 
 
 @ataraxia_bp.route('/api/revision', methods=['POST'])
