@@ -1,5 +1,6 @@
 {# Prioridades del día (handoff Acta v2, nota 5): la recompensa se ve desde el
-   principio y 3 segmentos marcan el avance; el límite de 3 lo dice la barra. #}
+   principio y 3 segmentos marcan el avance. Desde Praxis v2 (D3) son las
+   tareas de Hoy con estrella: marcar aquí completa la misma tarea. #}
 {% set prios = stats.priorities %}
 {% set pdn = prios|selectattr('done')|list|length %}
 {% set earned = prios|length == 3 and pdn == 3 %}
@@ -23,4 +24,5 @@
     <button type="submit" class="eu-iconbtn eu-iconbtn--outline" aria-label="Añadir prioridad"><i data-lucide="plus"></i></button>
   </form>
   <p class="t-meta acta-p js-prio-empty"{% if prios %} hidden{% endif %}>Elige hasta 3 cosas que de verdad importan hoy.</p>
+  <a class="t-meta acta-pipe-link" href="/gtd/">Son tus tareas de Hoy con estrella en Praxis →</a>
 </section>

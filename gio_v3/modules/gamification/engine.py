@@ -1008,8 +1008,9 @@ def _check_badges_safe():
 
 def _is_perfect_day(today):
     with get_db() as db:
-        priors = db.execute("SELECT done FROM priorities WHERE date=?", (today,)).fetchall()
-        if len(priors) != 3 or not all(p["done"] for p in priors):
+        # Prioridades = tareas de Hoy con estrella (Praxis v2, D3)
+        priors = db.execute("SELECT completado FROM gtd_tasks WHERE prioridad_dia=?", (today,)).fetchall()
+        if len(priors) != 3 or not all(p["completado"] for p in priors):
             return False
         xp_today = db.execute(
             "SELECT COALESCE(SUM(amount),0) as s FROM xp_ledger WHERE date=? AND source='activity'",

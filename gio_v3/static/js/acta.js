@@ -364,7 +364,7 @@
     post('/actividades/api/priority', { text: text }).then(function (d) {
       if (d.error) { toast(d.error, 'err'); return; }
       renderP(d.priorities); inp.value = '';
-    }).catch(function () { toast('Sin conexión', 'err'); });
+    }).catch(function (err) { toast(err && err.message === 'HTTP 409' ? 'Ya tienes 3 prioridades hoy' : 'Sin conexión', 'err'); });
   });
   if (pList) pList.addEventListener('click', function (e) {
     var b = e.target.closest('.js-prio'); if (!b) return;
