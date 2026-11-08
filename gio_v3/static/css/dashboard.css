@@ -116,7 +116,7 @@
 .dash-radar-row:not([data-tone]) .dash-radar-when{color:var(--fg-3)}
 .dash-radar-act{width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:var(--r-sm);border:1px solid var(--border-subtle);background:transparent;color:var(--fg-2);cursor:pointer;transition:background var(--dur-fast),color var(--dur-fast)}
 .dash-radar-act:hover{background:var(--bg-hover);color:var(--fg-1)}
-.dash-radar-act:focus-visible{outline:2px solid var(--border-brand);outline-offset:1px}
+.dash-radar-act:focus-visible{outline:2px solid var(--border-focus);outline-offset:1px}
 .dash-radar-act:disabled{opacity:.5;cursor:default}
 .dash-radar-act svg{width:16px;height:16px}
 .dash-radar-more>summary{cursor:pointer;padding:var(--sp-2) var(--sp-4)}
@@ -131,7 +131,7 @@
 @media (min-width:768px){.dash-bal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dash-bal{display:flex;align-items:center;gap:var(--sp-3);padding:var(--sp-2);margin:0 calc(-1 * var(--sp-2));border-radius:10px;color:inherit;text-decoration:none;transition:background var(--dur-fast)}
 .dash-bal:hover{background:var(--bg-hover)}
-.dash-bal:focus-visible{outline:2px solid var(--border-brand);outline-offset:0}
+.dash-bal:focus-visible{outline:2px solid var(--border-focus);outline-offset:0}
 .dash-bal-ic{width:32px;height:32px;border-radius:9px}
 .dash-bal-ic svg{width:16px;height:16px}
 .dash-bal-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
@@ -191,3 +191,11 @@
 .dash-word-ex{margin:0;font-style:italic}
 .eu-iconbtn.is-spinning svg{animation:euSpin .7s linear infinite}
 .dash-insp-panel[hidden],.dash-radar [hidden]{display:none}
+
+/* ── Accesibilidad (Sprint 6): foco visible y movimiento reducido ── */
+.dash-hero-medal:focus-visible,.dash-level-link:focus-visible,.dash-radar-new:focus-visible,
+.dash .eu-link:focus-visible{outline:2px solid var(--border-focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  .eu-iconbtn.is-spinning svg,.dash-next .js-sugg.is-done svg{animation:none}
+  .dash-radar-row{transition:none}
+}
