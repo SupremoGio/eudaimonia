@@ -53,8 +53,7 @@
     inp.value = '';
     open[idea ? 'ideas' : 'inbox'] = true;
     render();
-    if (idea) toast('Guardada en Banco de ideas');
-    else openReview([t], true);  /* se clasifica al momento en vez de quedar flotando */
+    toast(idea ? 'Guardada en Banco de ideas' : 'Al Inbox');
   });
 
   /* ── Acciones ── */
@@ -160,10 +159,7 @@
           : euEmpty(s.key === 'done' ? 'circle-check' : s.key === 'inbox' ? 'inbox' : 'layers', s.key === 'done' ? 'Aún sin completadas' : s.key === 'inbox' ? 'Inbox en cero' : 'Nada aquí', s.key === 'inbox' ? 'Todo está decidido.' : '', true)) : '') +
         '</section>';
     }).join('');
-    document.getElementById('st-inbox').textContent = groups.inbox.length;
-    document.getElementById('st-hoy').textContent = groups.hoy.length;
-    var td = today();
-    document.getElementById('st-done').textContent = tasks.filter(function (t) { return t.completado && t.fecha_completado === td; }).length;
+    document.querySelectorAll('.js-mt-inbox').forEach(function (el) { el.textContent = groups.inbox.length; });
     if (window.lucide) lucide.createIcons();
   }
 

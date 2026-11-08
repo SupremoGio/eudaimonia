@@ -4,24 +4,15 @@
 {% block title %}Praxis — Eudaimonia{% endblock %}
 {% block module_title %}PRAXIS{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/praxis.css') }}">{% endblock %}
-{% block mtitle %}<b>Praxis</b><span>{{ stats.inbox_n }} en inbox · {{ stats.hoy_n }} para hoy</span>{% endblock %}
+{% block mtitle %}<b>Praxis</b><span><span class="js-mt-inbox">{{ stats.inbox_n }}</span> en inbox</span>{% endblock %}
 
 {% block content %}
 <div class="px" id="px">
   <header class="px-hd">
-    <div><div class="t-eyebrow">Hoy · Tareas</div><h1 class="t-page">Praxis</h1>
-      <p class="t-meta px-lead">Captura todo, decide con la matriz de Eisenhower y ejecuta lo urgente e importante.</p></div>
-    <a class="eu-btn eu-btn--ghost" href="/gtd/points"><i data-lucide="trophy"></i>Puntos y nivel</a>
+    <div><div class="t-eyebrow">Hoy · Tareas</div><h1 class="t-page">Praxis</h1></div>
   </header>
 
   {% include "gtd/_capture.html" %}
-
-  <div class="eu-grid-4 px-stats">
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="inbox"></i>Inbox</div><div class="eu-stat-val" id="st-inbox">{{ stats.inbox_n }}</div></div>
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="flame"></i>Hoy</div><div class="eu-stat-val" id="st-hoy">{{ stats.hoy_n }}</div></div>
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="check-circle-2"></i>Hechas hoy</div><div class="eu-stat-val" id="st-done">{{ stats.done_today }}</div></div>
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="zap"></i>Racha</div><div class="eu-stat-val">{{ stats.streak }}<span class="t-meta"> d</span></div></div>
-  </div>
 
   <div id="px-root" class="px-root" data-today="{{ today }}"></div>
 </div>
