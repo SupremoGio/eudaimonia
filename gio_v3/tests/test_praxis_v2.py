@@ -121,3 +121,42 @@ def test_cada_destino_clasifica_en_su_cuadrante(client, q):
 def test_praxis_carga_praxis_due(client):
     html = client.get('/gtd/').get_data(as_text=True)
     assert html.index('js/praxis-due.js') < html.index('js/praxis.js')
+
+
+# ── Sprint 3: jerarquía de la matriz + bono visible ──────────────────────────
+
+def test_js_estructura_hoy_semana_y_columna_derecha():
+    js = _src('static/js/praxis.js')
+    # columna principal y derecha, en el orden que pide el móvil
+    assert js.index("'<div class=\"px-main\">'") < js.index('<aside class="px-side"')
+    for s in ('px-sec--inbox', 'px-sec--hoy', 'px-sec--semana'):
+        assert s in js
+    assert js.index("px-sec--inbox") < js.index("px-sec--hoy") < js.index("px-sec--semana")
+    assert js.index("side('delegar'") < js.index("side('ideas'") < js.index('<span>Completadas hoy</span>')
+    assert 'if (g.inbox.length)' in js                         # Inbox solo si tiene tareas
+    # bono de 3 visible antes de ganarlo
+    assert "'/3 hechas</span>" in js and "'bono +5 XP'" in js and "'+5 XP ganados'" in js
+    # «→ Hoy» = classify(importante=1, urgente=1)
+    assert 'js-promote' in js and 'classify(id, true, true)' in js
+    assert 'Historial completo en Logros →' in js and 'href="/logros"' in js
+
+
+def test_css_grid_y_columna_derecha():
+    css = _src('static/css/praxis.css')
+    assert 'grid-template-columns:minmax(0,1fr) 340px' in css
+    assert '.px-side-sec{' in css and 'background:var(--bg-sunken)' in css
+    assert '.px-bonus-pips i{flex:1;height:4px' in css
+    assert '.px-bonus.is-won .px-bonus-t{color:var(--success-fg)}' in css
+
+
+def test_promover_a_hoy_y_bono_con_el_conteo_de_complete(client):
+    ids = [client.post('/gtd/api/task', json={'texto': f'T{i}', 'tipo': 'tarea'}).get_json()['id'] for i in range(3)]
+    client.post(f'/gtd/api/task/{ids[0]}/classify', json={'importante': True, 'urgente': False})
+    r = client.post(f'/gtd/api/task/{ids[0]}/classify', json={'importante': True, 'urgente': True}).get_json()
+    assert r['cuadrante'] == 'hoy'
+    html = client.get('/gtd/').get_data(as_text=True)
+    assert 'data-done-today="0"' in html
+    for n, tid in enumerate(ids, 1):
+        r = client.post(f'/gtd/api/task/{tid}/complete').get_json()
+        assert r['stats']['done_today'] == n
+    assert 'data-done-today="3"' in client.get('/gtd/').get_data(as_text=True)

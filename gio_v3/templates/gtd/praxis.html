@@ -14,7 +14,7 @@
 
   {% include "gtd/_capture.html" %}
 
-  <div id="px-root" class="px-root" data-today="{{ today }}"></div>
+  <div id="px-root" class="px-root" data-today="{{ today }}" data-done-today="{{ stats.done_today }}"></div>
 </div>
 
 {% call ui.modal('px-rev', 'Revisión rápida', eyebrow='Inbox') %}
