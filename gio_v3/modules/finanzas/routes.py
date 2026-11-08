@@ -21,9 +21,26 @@ _MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
              'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
 
+def _pagados():
+    """{cuenta: fila} con el ciclo actual ya pagado (detecta antes los
+    PAGO_TDC que ya entraron en un estado de cuenta). Defensivo: {} si falla."""
+    from . import pagos_ciclo
+    try:
+        with get_db() as db:
+            if pagos_ciclo.detectar(db):
+                db.commit()
+            return pagos_ciclo.pagados(db)
+    except Exception:
+        return {}
+
+
 def payment_alerts():
     d = today_date().day
-    return [{'label': p['label']} for p in PAY_DAYS if p['day'] == d]
+    hoy = [p for p in PAY_DAYS if p['day'] == d]
+    if not hoy:
+        return []
+    pag = _pagados()
+    return [{'label': p['label']} for p in hoy if p['match'] not in pag]
 
 
 def _days_until(day):
@@ -64,6 +81,7 @@ def _hub_debts(cuentas):
     for a in activos:
         msi_banco[a['banco']] += a['restante']
     asignados = set()
+    pag = _pagados()
     out = []
     for c in cuentas:
         if c['tipo'] not in TIPOS_PASIVO or c['moneda'] in MONEDAS_EXTRANJERAS:
@@ -85,8 +103,11 @@ def _hub_debts(cuentas):
             'sub': ' · '.join(filter(None, [TIPO_META.get(c['tipo'], {}).get('label'), c.get('institucion'),
                                             'MSI por pagar' if de_msi else None])),
             'saldo': saldo, 'minimo': minimo, 'dias': dias,
+            'pagado': bool(pay and pay['match'] in pag),
             'tone': None if dias is None else 'danger' if dias == 0 else 'warning' if dias <= 7 else '',
         })
+        if out[-1]['pagado']:
+            out[-1]['tone'] = 'success'
     out.sort(key=lambda d: (d['dias'] is None, d['dias'] if d['dias'] is not None else 0, -d['saldo']))
     return out
 
@@ -286,6 +307,28 @@ def index():
         alerts=payment_alerts(), today=today_str(),
         **extra,
     )
+
+
+@finanzas_bp.route('/api/pago-ciclo', methods=['POST', 'DELETE'])
+def pago_ciclo():
+    """Marca (POST) o desmarca (DELETE) el ciclo actual de una tarjeta como
+    pagado. Body: {cuenta, monto?}; cuenta = el `match` de PAY_DAYS."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    from . import pagos_ciclo
+    d = request.get_json(silent=True) or {}
+    cuenta = (d.get('cuenta') or '').strip().lower()
+    try:
+        with get_db() as db:
+            if request.method == 'POST':
+                monto = safe_float(d.get('monto')) if d.get('monto') not in (None, '') else None
+                fila = pagos_ciclo.marcar(db, cuenta, monto)
+                db.commit()
+                return jsonify({'ok': True, 'pago': fila})
+            quitado = pagos_ciclo.deshacer(db, cuenta)
+            db.commit()
+            return jsonify({'ok': True, 'quitado': quitado})
+    except ValueError as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
 
 
 @finanzas_bp.route('/api/debt', methods=['POST'])
