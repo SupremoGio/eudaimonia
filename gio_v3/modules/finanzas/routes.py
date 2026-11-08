@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from collections import defaultdict
 from utils import today_str, today_date, clean_str, safe_float
 from . import compromisos as _comp
@@ -102,7 +102,8 @@ def _hub_debts(cuentas):
             'nombre': c['nombre'], 'cuenta': pay['match'] if pay else None,
             'sub': ' · '.join(filter(None, [TIPO_META.get(c['tipo'], {}).get('label'), c.get('institucion'),
                                             'MSI por pagar' if de_msi else None])),
-            'saldo': saldo, 'minimo': minimo, 'dias': dias,
+            'saldo': saldo, 'minimo': minimo, 'dias': dias, 'tipo': c['tipo'],
+            'vence': (today_date() + timedelta(days=dias)).isoformat() if dias is not None else None,
             'pagado': bool(pay and pay['match'] in pag),
             'tone': None if dias is None else 'danger' if dias == 0 else 'warning' if dias <= 7 else '',
         })

@@ -77,29 +77,51 @@
 .oik-racha-cells [data-st=over] i{background:var(--danger-fg)}
 .oik-racha-cells [data-st=en_curso] i{outline:1.5px solid var(--fg-brand);outline-offset:1px}
 
-/* ── Deudas y presupuesto ── */
+/* ── Próximos pagos | Categorías en riesgo (notas 6–7) ── */
 .oik-row2{display:grid;gap:var(--sp-4);align-items:start}
 @media (min-width:1024px){.oik-row2{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}}
 .oik-card-hd{padding:var(--sp-4) var(--sp-5) var(--sp-2)}
+.oik-pay-hd{display:flex;justify-content:space-between;align-items:baseline;gap:var(--sp-3);flex-wrap:wrap}
+.oik-pay-hd b{font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--fg-2)}
 .oik-link{display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:var(--fg-3)}
 .oik-link:hover{color:var(--fg-brand)}
 .oik-link svg{width:14px;height:14px}
-.oik-table th:first-child,.oik-table td:first-child{padding-left:var(--sp-5)}
-.oik-table th:last-child,.oik-table td:last-child{padding-right:var(--sp-5)}
-.oik-table tbody tr:last-child td{border-bottom:0}
-.oik-debt-list{display:none}
-@media (max-width:767px){.oik-table{display:none}.oik-debt-list{display:flex}}
-.oik-due{margin-top:4px}
+.oik-pays{list-style:none;margin:0;padding:0}
+.oik-pay{--tn:var(--fg-2);display:flex;align-items:center;gap:var(--sp-3);min-height:56px;padding:var(--sp-2) var(--sp-5);border-top:1px solid var(--border-subtle)}
+.oik-pay[data-tone=danger]{--tn:var(--danger-fg)}.oik-pay[data-tone=warning]{--tn:var(--warning-fg)}.oik-pay[data-tone=success]{--tn:var(--success-fg)}
+.oik-pay-when{width:44px;flex-shrink:0;text-align:center}
+.oik-pay-day{font:var(--fw-medium) var(--fs-13)/1 var(--font-data);color:var(--tn)}
+.oik-pay-when .t-meta{font-size:var(--fs-11);margin-top:3px;white-space:nowrap}
+.oik-pay-ic{width:32px;height:32px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg-raised);color:var(--fg-2)}
+.oik-pay-ic svg{width:16px;height:16px}
+.oik-pay-main{flex:1;min-width:0}
+.oik-pay-t{font-size:var(--fs-13);color:var(--fg-1)}
+.oik-pay-main .t-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oik-pay-min{text-align:right;flex-shrink:0}
+.oik-pay-min .num{font:var(--fw-medium) 14px/1 var(--font-data);color:var(--fg-1)}
+.oik-pay[data-tone=success] .oik-pay-min .num,.oik-pay[data-tone=success] .oik-pay-st{color:var(--success-fg)}
+.oik-pay-st{font-size:var(--fs-11);margin-top:3px}
 .oik-personal{padding:var(--sp-3) var(--sp-5);border-top:1px solid var(--border-subtle);text-decoration:none;gap:var(--sp-3);flex-wrap:wrap}
 .oik-personal:hover{background:var(--bg-hover)}
 .oik-debts .eu-empty{padding:var(--sp-6) var(--sp-5)}
 
-.oik-budget{gap:var(--sp-4)}
-.oik-bud-rows{gap:var(--sp-4)}
-.oik-bud-row{gap:6px}
-.oik-bud-amt{font-size:var(--fs-12);color:var(--fg-2)}
-.oik-bud-amt.is-warning{color:var(--warning-fg)}
-.oik-bud-amt.is-danger{color:var(--danger-fg)}
+.oik-budget{gap:14px}
+.oik-risk-rows{gap:14px}
+.oik-risk{--tn:var(--warning-fg);display:flex;flex-direction:column;gap:6px}
+.oik-risk[data-tone=danger]{--tn:var(--danger-fg)}
+.oik-risk-top{gap:var(--sp-2)}
+.oik-risk-rest{font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--tn);white-space:nowrap}
+.oik-risk-bar{position:relative;height:6px;border-radius:var(--r-full);background:var(--bg-raised)}
+.oik-risk-bar i{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:var(--tn)}
+.oik-risk-ok{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-13);color:var(--success-fg)}
+.oik-risk-ok svg{width:16px;height:16px}
+.oik-unclass{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--warning-bg);border:1px solid var(--warning-border);color:var(--warning-fg);font-size:var(--fs-12);line-height:1.45;text-decoration:none}
+.oik-unclass:hover{border-color:var(--warning-fg)}
+.oik-unclass:focus-visible{outline:2px solid var(--border-focus);outline-offset:2px}
+.oik-unclass svg{width:16px;height:16px;flex-shrink:0}
+.oik-unclass b{font-weight:var(--fw-semibold)}
+.oik-unclass-cta{font-weight:var(--fw-medium);white-space:nowrap}
+@media (max-width:767px){.oik-card-hd{padding:var(--sp-4) var(--sp-4) var(--sp-2)}.oik-pay{padding:var(--sp-2) var(--sp-4)}.oik-personal{padding:var(--sp-3) var(--sp-4)}}
 
 /* ── Submódulos ── */
 .oik-subs{display:grid;grid-template-columns:minmax(0,1fr);gap:0;border:1px solid var(--border-subtle);border-radius:var(--r-lg);overflow:hidden;background:var(--bg-surface)}
@@ -118,5 +140,3 @@
   .oik-sub-ic svg{width:20px;height:20px}
   .oik-chev{display:none}
 }
-.oik-debts .eu-badge--status{text-transform:none}
-@media (max-width:767px){.oik-card-hd{padding:var(--sp-4) var(--sp-4) var(--sp-2)}.oik-personal{padding:var(--sp-3) var(--sp-4)}}

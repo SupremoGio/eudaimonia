@@ -210,3 +210,59 @@ def test_heroe_con_datos_y_pago_hoy(client, monkeypatch):
     # Marcar pagado → el siguiente paso ya no es ese pago
     assert c.post('/finanzas/api/pago-ciclo', json={'cuenta': 'bbva'}).get_json()['ok']
     assert 'Pagar BBVA Oro' not in c.get('/finanzas/').get_data(as_text=True)
+
+
+# ── Sprint 4: Próximos pagos y Categorías en riesgo ──────────────────────────
+
+def _hub_section(html, start, end):
+    a = html.index(start)
+    return html[a:html.index(end, a)]
+
+
+def test_proximos_pagos_y_pagado(client, monkeypatch):
+    app, c = client
+    hoy = date(2026, 10, 9)
+    import modules.finanzas.pagos_ciclo as pc
+    for mod in (fr, pc):
+        monkeypatch.setattr(mod, 'today_date', lambda: hoy)
+    with database.get_db() as db:
+        for n, inst, saldo, mn in [('BBVA Oro', 'BBVA', 18420, 1250), ('Invex', 'Invex', 6880, 520)]:
+            db.execute("INSERT INTO salud_cuentas (nombre,tipo,institucion,saldo,moneda,activa,created_at) "
+                       "VALUES (?,'tarjeta_credito',?,?,'MXN',1,'x')", (n, inst, saldo))
+            db.execute("INSERT INTO budget_deudas (nombre,saldo_inicial,saldo_actual,pago_minimo,activa,created_at) "
+                       "VALUES (?,1,1,?,1,'x')", (n, mn))
+        db.commit()
+    html = _hub_section(c.get('/finanzas/').get_data(as_text=True), 'id="oik-debts-t"', '</section>')
+    assert 'Próximos pagos' in html and '<table' not in html
+    assert '$1,770' in html                                   # 1,250 + 520 en mínimos a 30 días
+    assert 'oct · 6 d' in html and 'saldo <span class="num">' in html
+    c.post('/finanzas/api/pago-ciclo', json={'cuenta': 'bbva'})
+    html = _hub_section(c.get('/finanzas/').get_data(as_text=True), 'id="oik-debts-t"', '</section>')
+    assert 'data-tone="success"' in html and '>pagado<' in html
+    assert '$520' in html.split('en mínimos')[0]               # BBVA pagada sale del total
+
+
+def test_categorias_en_riesgo(client, monkeypatch):
+    app, c = client
+    monkeypatch.setattr(fr, '_hub_budget_rows', lambda bd, limit=5: [
+        {'nombre': 'Restaurantes', 'gastado': 3450, 'meta': 3000, 'pct': 115, 'tone': 'danger', 'restante': -450},
+        {'nombre': 'Súper', 'gastado': 5820, 'meta': 6000, 'pct': 97, 'tone': 'warning', 'restante': 180},
+        {'nombre': 'Transporte', 'gastado': 1000, 'meta': 2500, 'pct': 40, 'tone': 'brand', 'restante': 1500}])
+    _mov(date.today().isoformat(), 'SPEI RECIBIDO', 3210.0, 'INGRESO', 'SPEI_RECIBIDO')
+    for i in range(5):
+        _mov(date.today().isoformat(), f'OXXO {i}', 100.0, 'GASTO', 'ALIMENTACION')
+    html = _hub_section(c.get('/finanzas/').get_data(as_text=True), 'id="oik-bud-t"', '</section>')
+    assert 'Categorías en riesgo' in html and 'Ver las 3' in html
+    assert '$450</span><span class="nw-mask">••••</span> excedido' in html and 'quedan' in html
+    assert 'Transporte' not in html and '1 categoría más en rango' in html
+    assert '1 depósito</b>' in html and '$3,210' in html and 'Clasificar →' in html
+
+
+def test_todo_en_rango(client, monkeypatch):
+    app, c = client
+    monkeypatch.setattr(fr, '_hub_budget_rows', lambda bd, limit=5: [
+        {'nombre': 'Súper', 'gastado': 100, 'meta': 6000, 'pct': 2, 'tone': 'brand', 'restante': 5900}])
+    for i in range(5):
+        _mov(date.today().isoformat(), f'OXXO {i}', 100.0, 'GASTO', 'ALIMENTACION')
+    html = _hub_section(c.get('/finanzas/').get_data(as_text=True), 'id="oik-bud-t"', '</section>')
+    assert 'Todo en rango este mes' in html
