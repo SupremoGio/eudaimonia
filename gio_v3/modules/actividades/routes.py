@@ -96,14 +96,21 @@ def get_dashboard_stats():
     }
 
 
+_PAY_ALERT_UI = {"bbva": ("BBVA", "#c5a36c"), "invex": ("Invex", "#a78bfa"), "hsbc": ("HSBC", "#60a5fa")}
+
+
 def get_payment_alerts():
+    """Tarjetas que se pagan hoy (PAY_DAYS de Finanzas), sin las que ya están
+    marcadas como pagadas en el ciclo (Oikonomia v2, fin_pagos_ciclo)."""
+    from modules.finanzas.routes import PAY_DAYS, _pagados
     d = today_date().day
-    alerts = []
-    if d == 15:
-        alerts += [{"label": "BBVA", "color": "#c5a36c"}, {"label": "Invex", "color": "#a78bfa"}]
-    if d == 30:
-        alerts.append({"label": "HSBC", "color": "#60a5fa"})
-    return alerts
+    hoy = [p for p in PAY_DAYS if p["day"] == d]
+    if not hoy:
+        return []
+    pag = _pagados()
+    return [{"label": _PAY_ALERT_UI.get(p["match"], (p["label"], "#c5a36c"))[0],
+             "color": _PAY_ALERT_UI.get(p["match"], (p["label"], "#c5a36c"))[1]}
+            for p in hoy if p["match"] not in pag]
 
 
 def get_weekend_mode():

@@ -1,20 +1,36 @@
-{# Presupuesto por categoría: ≥90% warning, >100% danger #}
+{# Categorías en riesgo (Oikonomia v2, nota 7): solo las que van ≥ 85% de su
+   límite, con lo que queda o el exceso en pesos, y el aviso de depósitos sin
+   clasificar (afectan el ingreso y el Disponible). #}
+{% set n_cats = (budget_risk|length) + budget_ok_count %}
 <section class="eu-card eu-vstack oik-budget" aria-labelledby="oik-bud-t">
   <div class="eu-between">
-    <h2 class="t-card" id="oik-bud-t">Presupuesto{% if budget %} · {{ budget.mes_nombre }}{% endif %}</h2>
-    <a class="t-meta oik-link" href="/finanzas/budget/">Editar <i data-lucide="chevron-right"></i></a>
+    <h2 class="t-card" id="oik-bud-t">Categorías en riesgo</h2>
+    {% if n_cats %}<a class="t-meta oik-link" href="/finanzas/budget/">Ver las {{ n_cats }} <i data-lucide="arrow-right"></i></a>{% endif %}
   </div>
-  {% if budget_rows %}
-  <div class="eu-vstack oik-bud-rows">
-    {% for r in budget_rows %}
-    <div class="eu-vstack oik-bud-row">
-      <div class="eu-between"><span class="t-ui">{{ r.nombre }}</span>
-        <span class="num oik-bud-amt is-{{ r.tone }}">{{ mx(r.gastado) }} <span class="fg-3">/ {{ mx(r.meta) }}</span></span></div>
-      {{ ui.progress([r.pct, 100]|min, 100, r.tone, label=r.nombre ~ ': ' ~ r.pct ~ '%') }}
+  {% if budget_risk %}
+  <div class="eu-vstack oik-risk-rows">
+    {% for r in budget_risk %}
+    {% set tone = 'danger' if r.pct > 100 else 'warning' %}
+    <div class="oik-risk" data-tone="{{ tone }}">
+      <div class="eu-between oik-risk-top"><span class="t-ui">{{ r.nombre }}</span>
+        <span class="num oik-risk-rest">{% if r.restante < 0 %}{{ hide(mx(r.restante|abs)) }} excedido{% else %}quedan {{ hide(mx(r.restante)) }}{% endif %}</span></div>
+      <div class="oik-risk-bar" role="progressbar" aria-valuenow="{{ r.pct }}" aria-valuemax="100" aria-label="{{ r.nombre }}: {{ r.pct }}% del límite"><i style="width:{{ [r.pct, 100]|min }}%"></i></div>
+      <div class="t-meta"><span class="num">{{ hide(mx(r.gastado)) }} / {{ hide(mx(r.meta)) }}</span> · {{ r.pct }}% del límite</div>
     </div>
     {% endfor %}
   </div>
+  {% if budget_ok_count %}<div class="t-meta">{{ budget_ok_count }} categoría{{ 's' if budget_ok_count != 1 }} más en rango (&lt; 85%).</div>{% endif %}
+  {% elif n_cats %}
+  <p class="oik-risk-ok"><i data-lucide="circle-check"></i>Todo en rango este mes</p>
   {% else %}
   {{ ui.empty('pie-chart', 'Aún no hay gasto clasificado', 'Sube tu estado de cuenta para ver el avance por categoría.', 'Subir estado de cuenta', '/finanzas/estados/', 'upload', compact=True) }}
+  {% endif %}
+  {# Si el «Siguiente paso» del héroe ya es clasificar, el aviso no se repite. #}
+  {% if estado_sin_clasificar and not (next_step and next_step.kind == 'clasificar') %}
+  <a class="oik-unclass" href="/finanzas/estados/#movimientos">
+    <i data-lucide="triangle-alert"></i>
+    <span class="eu-grow"><b>{{ estado_sin_clasificar }} depósito{{ 's' if estado_sin_clasificar != 1 }}</b> (<span class="num">{{ hide(mx(estado_sin_clasificar_monto)) }}</span>) sin clasificar: tu ingreso y Disponible podrían estar incompletos.</span>
+    <span class="oik-unclass-cta">Clasificar →</span>
+  </a>
   {% endif %}
 </section>

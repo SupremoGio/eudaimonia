@@ -5,7 +5,7 @@
 {% block module_title %}OIKONOMIA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/oikonomia.css') }}">{% endblock %}
 {% block mtitle %}<b>Oikonomia</b><span>Finanzas</span>{% endblock %}
-{% block topright %}<button type="button" class="eu-iconbtn js-nw-toggle" aria-pressed="false" aria-label="Ocultar cifras"><i data-lucide="eye"></i></button>{% endblock %}
+{% block topright %}<button type="button" class="eu-iconbtn js-nw-toggle" aria-pressed="false" aria-label="Ocultar cifras" title="Ocultar cifras"><i data-lucide="eye"></i></button>{% endblock %}
 
 {# Formato de dinero: $1,234 · compacto: $1.2k / $1.2M #}
 {% macro mx(v) -%}${{ '{:,.0f}'.format(v or 0) }}{%- endmacro %}
@@ -17,21 +17,11 @@
 
 {% block content %}
 <div class="oik" id="oik">
+  {# Una sola acción primaria; el ojo de «Ocultar cifras» vive solo en la topbar (Oikonomia v2, nota 1). #}
   <header class="oik-hd">
-    <div><div class="t-eyebrow">Oikonomia · Finanzas</div><h1 class="t-page">Resumen</h1></div>
-    <div class="eu-hstack oik-hd-act">
-      <button type="button" class="eu-btn eu-btn--ghost js-nw-toggle" aria-pressed="false"><i data-lucide="eye-off"></i><span>Ocultar cifras</span></button>
-      <a class="eu-btn eu-btn--secondary" href="/finanzas/estados/"><i data-lucide="upload"></i>Subir estado</a>
-      <a class="eu-btn eu-btn--primary" href="/finanzas/estados/"><i data-lucide="plus"></i>Registrar gasto</a>
-    </div>
+    <div><div class="t-eyebrow">Oikonomia · {{ (budget.mes_nombre if budget else mes_actual_nombre)|capitalize }}</div><h1 class="t-page">Finanzas</h1></div>
+    {{ ui.button('Subir estado de cuenta', icon='upload', href='/finanzas/estados/') }}
   </header>
-
-  {% if alerts %}
-  <div class="eu-card oik-alert" role="status">
-    <i data-lucide="bell-ring"></i>
-    <span>Hoy toca pagar {% for a in alerts %}<b>{{ a.label }}</b>{{ ' y ' if loop.revindex == 2 else (', ' if not loop.last) }}{% endfor %}.</span>
-  </div>
-  {% endif %}
 
   {% include "finanzas/hub/_hero.html" %}
 

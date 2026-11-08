@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, session
 from database import get_db
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from collections import defaultdict
 from utils import today_str, today_date, clean_str, safe_float
 from . import compromisos as _comp
@@ -21,9 +21,26 @@ _MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio',
              'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
 
+def _pagados():
+    """{cuenta: fila} con el ciclo actual ya pagado (detecta antes los
+    PAGO_TDC que ya entraron en un estado de cuenta). Defensivo: {} si falla."""
+    from . import pagos_ciclo
+    try:
+        with get_db() as db:
+            if pagos_ciclo.detectar(db):
+                db.commit()
+            return pagos_ciclo.pagados(db)
+    except Exception:
+        return {}
+
+
 def payment_alerts():
     d = today_date().day
-    return [{'label': p['label']} for p in PAY_DAYS if p['day'] == d]
+    hoy = [p for p in PAY_DAYS if p['day'] == d]
+    if not hoy:
+        return []
+    pag = _pagados()
+    return [{'label': p['label']} for p in hoy if p['match'] not in pag]
 
 
 def _days_until(day):
@@ -64,6 +81,7 @@ def _hub_debts(cuentas):
     for a in activos:
         msi_banco[a['banco']] += a['restante']
     asignados = set()
+    pag = _pagados()
     out = []
     for c in cuentas:
         if c['tipo'] not in TIPOS_PASIVO or c['moneda'] in MONEDAS_EXTRANJERAS:
@@ -81,17 +99,21 @@ def _hub_debts(cuentas):
         dias = _days_until(pay['day']) if pay else None
         minimo = next((v for k, v in minimos.items() if k and (k in hay or c['nombre'].lower() in k)), None)
         out.append({
-            'nombre': c['nombre'],
+            'nombre': c['nombre'], 'cuenta': pay['match'] if pay else None,
             'sub': ' · '.join(filter(None, [TIPO_META.get(c['tipo'], {}).get('label'), c.get('institucion'),
                                             'MSI por pagar' if de_msi else None])),
-            'saldo': saldo, 'minimo': minimo, 'dias': dias,
+            'saldo': saldo, 'minimo': minimo, 'dias': dias, 'tipo': c['tipo'],
+            'vence': (today_date() + timedelta(days=dias)).isoformat() if dias is not None else None,
+            'pagado': bool(pay and pay['match'] in pag),
             'tone': None if dias is None else 'danger' if dias == 0 else 'warning' if dias <= 7 else '',
         })
+        if out[-1]['pagado']:
+            out[-1]['tone'] = 'success'
     out.sort(key=lambda d: (d['dias'] is None, d['dias'] if d['dias'] is not None else 0, -d['saldo']))
     return out
 
 
-def _hub_budget_rows(bd):
+def _hub_budget_rows(bd, limit=5):
     """Presupuesto por categoría para el hub: primero las categorías con límite
     configurado (gastado / límite); si no hay ninguna, los 3 buckets 50/30/20
     (gastado / meta del bucket). tone: ≥90% warning, >100% danger."""
@@ -109,7 +131,62 @@ def _hub_budget_rows(bd):
         r['pct'] = round(r['gastado'] / r['meta'] * 100) if r['meta'] else 0
         r['tone'] = 'danger' if r['pct'] > 100 else 'warning' if r['pct'] >= 90 else 'brand'
     rows.sort(key=lambda r: -r['pct'])
-    return rows[:5]
+    for r in rows:
+        r['restante'] = round((r['meta'] or 0) - (r['gastado'] or 0), 2)
+    return rows[:limit] if limit else rows
+
+
+# Oikonomia v2 (handoff, Sprint 1): metas 50·30·20 del resumen. Necesidades y
+# Deseos son topes (kind 'max'); Ahorro y deudas es un piso (kind 'min').
+_SEG_META = [('necesidades', 50, 'max'), ('deseos', 30, 'max'), ('ahorro_deuda', 20, 'min')]
+BUDGET_RISK_PCT = 85      # «Categorías en riesgo»: ≥ 85% del límite
+NEXT_STEP_DIAS = 3        # un pago que vence en ≤ 3 días también es «siguiente paso»
+
+
+def _hub_seg(bd):
+    """Los 3 buckets del ingreso para la barra 50·30·20 del héroe:
+    {key, label, pct, meta_pct, kind, ok, monto, meta, falta}. pct sale de
+    bd['seg'] (la misma barra que /finanzas/budget/); la meta de ahorro es
+    meta_minima si existe, si no target_monto."""
+    ing = bd['ingreso_real'] or 0
+    out = []
+    for key, meta_pct, kind in _SEG_META:
+        bk = bd['buckets'][key]
+        pct = bd['seg'].get(key, 0)
+        monto = round(ing * pct / 100, 2)
+        if kind == 'min':
+            meta = bk.get('meta_minima') or bk['target_monto']
+            ok = monto >= meta
+            falta = round(max(meta - monto, 0), 2)
+        else:
+            meta = bk['target_monto']
+            ok = pct <= meta_pct
+            falta = 0
+        out.append({'key': key, 'label': bk.get('label', key), 'pct': pct, 'meta_pct': meta_pct,
+                    'kind': kind, 'ok': ok, 'monto': monto, 'meta': meta, 'falta': falta})
+    return out
+
+
+def _hub_next_step(debts, n_sin_clasificar, monto_sin_clasificar):
+    """Lo que toca resolver primero en el hub: pago que vence hoy → depósitos
+    sin clasificar → pago en ≤ 3 días → None. Las deudas ya pagadas en el
+    ciclo (d['pagado'], Sprint 2) no cuentan. El dinero va aparte (monto)
+    para que la plantilla lo pase por hide()."""
+    pend = [d for d in debts if d.get('dias') is not None and not d.get('pagado')]
+    hoy = next((d for d in pend if d['dias'] == 0), None)
+    if hoy:
+        return {'kind': 'pago', 'title': f"Pagar {hoy['nombre']}", 'sub': 'vence hoy', 'monto': hoy.get('minimo'),
+                'cuenta': hoy.get('cuenta'), 'cta': 'Marcar pagado', 'action': 'pago-ciclo', 'tone': 'danger'}
+    if n_sin_clasificar:
+        return {'kind': 'clasificar', 'title': f"Clasificar {n_sin_clasificar} depósito{'s' if n_sin_clasificar != 1 else ''}",
+                'sub': 'que podrían ser ingreso', 'monto': monto_sin_clasificar, 'cta': 'Clasificar',
+                'href': '/finanzas/estados/#movimientos', 'tone': 'warning'}
+    pronto = next((d for d in pend if d['dias'] <= NEXT_STEP_DIAS), None)
+    if pronto:
+        return {'kind': 'pago', 'title': f"Pagar {pronto['nombre']}",
+                'sub': f"vence en {pronto['dias']} día{'s' if pronto['dias'] != 1 else ''}", 'monto': pronto.get('minimo'),
+                'cuenta': pronto.get('cuenta'), 'cta': 'Marcar pagado', 'action': 'pago-ciclo', 'tone': 'warning'}
+    return None
 
 
 @finanzas_bp.route('/')
@@ -135,7 +212,9 @@ def index():
     _nm = 1 if today.month == 12 else today.month + 1
     _ny = today.year + 1 if today.month == 12 else today.year
     mes_ini, mes_fin = f"{cur_mes}-01", f"{_ny}-{_nm:02d}-01"
-    extra = {'budget': None, 'budget_rows': []}
+    extra = {'budget': None, 'budget_risk': [], 'budget_ok_count': 0,
+             'racha_meses': None, 'racha_historial': [], 'estado_sin_clasificar': 0,
+             'estado_sin_clasificar_monto': 0}
 
     try:  # Presupuesto del mes (o el último con movimientos): ingreso, gasto, ahorro, categorías
         from modules.finanzas.budget import _calc_budget, _last_month_with_data
@@ -150,30 +229,38 @@ def index():
             # Lo que se aparta a inversiones sí ocupa ingreso; un retiro no lo libera.
             'disponible': bd['disponible'],   # = ing − consumo − invertido (mismo que la Radiografía)
             'pct': round(gas / ing * 100) if ing else None,
+            # DEPRECADO (Oikonomia v2): «lo no gastado». La tasa de ahorro
+            # oficial es el bucket ahorro_deuda (lo apartado) → budget.seg.
             'ahorro_pct': round((ing - gas) / ing * 100) if ing else None,
             'dias_restantes': bd['dias_mes'] - bd['dia_actual'] if bd['es_mes_actual'] else None,
             'fuentes': len(bd['ingresos_detalle']),
         }
-        extra['budget_rows'] = _hub_budget_rows(bd)
+        b = extra['budget']
+        # Ritmo: lo disponible repartido en los días que quedan (contando hoy).
+        quedan = (bd['dias_mes'] - bd['dia_actual'] + 1) if bd['es_mes_actual'] else 0
+        b['dias_restantes_incl_hoy'] = quedan if bd['es_mes_actual'] else None
+        b['por_dia'] = round(bd['disponible'] / quedan, 2) if quedan > 0 else None
+        b['seg'] = _hub_seg(bd)
+        todas = _hub_budget_rows(bd, limit=None)
+        extra['budget_risk'] = [r for r in todas if r['pct'] >= BUDGET_RISK_PCT]
+        extra['budget_ok_count'] = len(todas) - len(extra['budget_risk'])
     except Exception:
         pass
 
-    try:  # Estado de cuenta: ingresos pendientes de clasificar + movs del mes
+    try:  # Racha de meses bajo presupuesto (los últimos 6, como en /finanzas/budget/)
+        from modules.finanzas.budget import _racha_bajo_presupuesto
         with get_db() as db:
-            extra['estado_sin_clasificar'] = db.execute(
-                "SELECT COUNT(*) n FROM est_movimientos "
-                "WHERE tipo='INGRESO' AND categoria IN ('DEPOSITO','SPEI_RECIBIDO')").fetchone()['n']
-            extra['estado_total_movs'] = db.execute(
-                "SELECT COUNT(*) n FROM est_movimientos WHERE fecha>=? AND fecha<?",
-                (mes_ini, mes_fin)).fetchone()['n']
+            extra['racha_meses'], extra['racha_historial'] = _racha_bajo_presupuesto(db, bmes, max_meses=6)
     except Exception:
         pass
 
-    try:  # Consumo: gasto del mes (misma fuente que la página de Consumo)
+    try:  # Estado de cuenta: depósitos pendientes de clasificar (afectan el ingreso)
         with get_db() as db:
-            extra['consumo_mes'] = round(db.execute(
-                "SELECT COALESCE(SUM(precio_total),0) s FROM consumo_compras "
-                "WHERE fecha_compra >= ?", (mes_ini,)).fetchone()['s'], 2)
+            r = db.execute(
+                "SELECT COUNT(*) n, COALESCE(SUM(ABS(monto)),0) s FROM est_movimientos "
+                "WHERE tipo='INGRESO' AND categoria IN ('DEPOSITO','SPEI_RECIBIDO')").fetchone()
+            extra['estado_sin_clasificar'] = r['n']
+            extra['estado_sin_clasificar_monto'] = round(r['s'], 2)
     except Exception:
         pass
 
@@ -181,6 +268,13 @@ def index():
     inversiones = sum(c['saldo'] for c in pat['cuentas']
                       if c['tipo'] == 'inversion' and c['moneda'] not in MONEDAS_EXTRANJERAS)
     debts = _hub_debts(pat['cuentas'])
+    minimos_30d = round(sum(d['minimo'] or 0 for d in debts
+                            if d['dias'] is not None and d['dias'] <= 30 and not d.get('pagado')), 2)
+    try:
+        next_step = _hub_next_step(debts, extra.get('estado_sin_clasificar') or 0,
+                                   extra.get('estado_sin_clasificar_monto') or 0)
+    except Exception:
+        next_step = None
 
     return render_template('finanzas/hub.html',
         patrimonio_neto = patrimonio_neto_display,
@@ -197,9 +291,34 @@ def index():
         pat_delta_pct   = pat_delta_pct,
         debts           = debts,
         debts_total     = sum(d['saldo'] for d in debts),
+        minimos_30d     = minimos_30d,
+        mes_actual_nombre = _MESES_ES[today.month - 1],
+        next_step       = next_step,
         alerts=payment_alerts(), today=today_str(),
         **extra,
     )
+
+
+@finanzas_bp.route('/api/pago-ciclo', methods=['POST', 'DELETE'])
+def pago_ciclo():
+    """Marca (POST) o desmarca (DELETE) el ciclo actual de una tarjeta como
+    pagado. Body: {cuenta, monto?}; cuenta = el `match` de PAY_DAYS."""
+    if not session.get('fin_ok'): return jsonify({'error':'locked'}), 403
+    from . import pagos_ciclo
+    d = request.get_json(silent=True) or {}
+    cuenta = (d.get('cuenta') or '').strip().lower()
+    try:
+        with get_db() as db:
+            if request.method == 'POST':
+                monto = safe_float(d.get('monto')) if d.get('monto') not in (None, '') else None
+                fila = pagos_ciclo.marcar(db, cuenta, monto)
+                db.commit()
+                return jsonify({'ok': True, 'pago': fila})
+            quitado = pagos_ciclo.deshacer(db, cuenta)
+            db.commit()
+            return jsonify({'ok': True, 'quitado': quitado})
+    except ValueError as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
 
 
 @finanzas_bp.route('/api/debt', methods=['POST'])

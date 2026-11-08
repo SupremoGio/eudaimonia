@@ -4713,6 +4713,20 @@ def init_db():
         -- para el heatmap «Constancia» de Inicio. Se llena solo
         -- (engine.classification_history): `sig` es la firma de los registros
         -- de ese día; si cambia (marcas algo de ayer), el día se recalcula.
+        -- Pagos del ciclo de las tarjetas (Oikonomia v2): una fila = ese ciclo
+        -- (mes de la fecha de pago de PAY_DAYS) ya está pagado, a mano desde
+        -- el hub o detectado por un PAGO_TDC en el estado de cuenta.
+        -- Ver modules/finanzas/pagos_ciclo.py.
+        CREATE TABLE IF NOT EXISTS fin_pagos_ciclo (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            cuenta        TEXT    NOT NULL,
+            ciclo         TEXT    NOT NULL,
+            monto         REAL    DEFAULT NULL,
+            origen        TEXT    NOT NULL DEFAULT 'manual',
+            movimiento_id INTEGER DEFAULT NULL,
+            created_at    TEXT    NOT NULL,
+            UNIQUE (cuenta, ciclo)
+        );
         CREATE TABLE IF NOT EXISTS daily_classification (
             date        TEXT PRIMARY KEY,
             rank        TEXT NOT NULL,
