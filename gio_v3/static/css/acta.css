@@ -63,7 +63,6 @@
 .acta-anchors-ct .t-meta{font-family:var(--font-ui)}
 .acta-anchors-grid{display:grid;gap:var(--sp-3)}
 @media (min-width:1024px){.acta-anchors-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (min-width:640px) and (max-width:1023px){.acta-anchors-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .acta-anchor{gap:var(--sp-2);padding:14px;border-radius:var(--r-md);border:1px solid var(--border-default);border-top:3px solid var(--cat-fg);background:var(--bg-raised);transition:background var(--dur-base) var(--ease-standard)}
 .acta-anchor[data-done="1"]{background:var(--cat-bg);border-color:var(--cat-border);border-top-color:var(--cat-fg)}
 .acta-anchor-pl{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-12);color:var(--cat-fg)}
@@ -82,6 +81,15 @@
 .acta-anchor-min[aria-pressed=true]{border-color:var(--cat-fg);color:var(--cat-fg)}
 .acta-anchor[data-done="1"] .acta-anchor-min{visibility:hidden}
 .acta.is-editing .acta-anchor .acta-rm{top:var(--sp-2);right:var(--sp-2)}
+@media (max-width:1023px){
+  .acta-anchor-min{min-height:44px}
+  .acta-anchor-btn{height:44px}
+  .acta-anchor-t{min-height:0}
+  .acta-anchors-hd{flex-direction:column;align-items:flex-start;gap:var(--sp-2)}
+  .acta-hide{min-height:44px}
+  .acta-hd .eu-seg button{height:38px}
+  .acta-clf-link{min-height:44px}
+}
 
 .acta-sessions{display:flex;flex-direction:column;gap:var(--sp-3)}
 .acta-session summary,.acta-foco summary{list-style:none;cursor:pointer;min-height:44px}
@@ -112,7 +120,6 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-rm{position:absolute;top:var(--sp-1);right:var(--sp-1);display:none;background:var(--bg-surface);border-color:var(--border-default)}
 .acta.is-editing .acta-rm{display:inline-flex}
 .acta.is-editing .acta-item .eu-act{padding-right:var(--sp-12)}
-.acta.is-editing .acta-item--wk .eu-act{padding-right:var(--sp-3)}
 
 /* Ocultar hechas: las anclas se quedan (su tarjeta ya dice «Hecha») */
 .acta[data-hide-done] .acta-list .acta-item[data-done="1"]{display:none}
@@ -120,7 +127,6 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta[data-hide-done] .acta-pillar:not(:has(.acta-item[data-done="0"])) .acta-alldone{display:block}
 
 /* ── Fin de semana y foco ────────────────────────────────────── */
-.acta-weekend{border-color:var(--cat-border)}
 .acta-weekend-link{border-color:var(--cat-border);align-items:center;color:inherit;text-decoration:none}
 .acta-weekend-link>svg,.acta-weekend-link>i{color:var(--fg-3);flex:none}
 .acta-foco-grid{display:grid;gap:var(--sp-3);margin-top:var(--sp-4)}
@@ -150,19 +156,30 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-crits .dash-crit.is-ok .dash-crit-l,.acta-crits .dash-crit.is-ok .dash-crit-n{color:var(--fg-3)}
 .acta-clf-link{color:var(--fg-3);text-decoration:none;align-self:flex-start;min-height:24px;display:inline-flex;align-items:center}
 .acta-clf-link:hover{color:var(--fg-brand)}
+/* Prioridades (nota 5): recompensa visible y 3 segmentos de 4px */
+.acta-prio{gap:var(--sp-2)}
+.acta-prio-hd{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-2)}
+.acta-prio-bonus{font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--fg-3);white-space:nowrap}
+.acta-prio-bonus.is-earned{color:var(--success-fg)}
+.acta-prio-pips{display:flex;gap:3px;padding-bottom:var(--sp-1)}
+.acta-prio-pips i{flex:1;height:4px;border-radius:2px;background:var(--bg-raised);transition:background var(--dur-base) var(--ease-standard)}
+.acta-prio-pips i.is-on{background:var(--success-fg)}
+.acta-prio .js-prio-form[hidden]{display:none}
 .acta-prio-it{min-height:44px}
 .acta-prio-it .eu-act-t{font-size:var(--fs-13)}
 .acta-prio-it[aria-pressed=true] .eu-act-t{color:var(--fg-3);text-decoration:line-through}
+/* Pipeline (nota 6): plegado por defecto */
+.acta-pipe{padding:0;background:var(--bg-sunken)}
+.acta-pipe-sum{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 var(--sp-4);list-style:none;cursor:pointer;color:var(--fg-2)}
+.acta-pipe-sum::-webkit-details-marker{display:none}
+.acta-pipe-sum>svg:first-child{width:16px;height:16px;color:var(--fg-brand)}
+.acta-pipe-sum .acta-chev{margin-left:auto}
+.acta-pipe-body{gap:var(--sp-3);padding:0 var(--sp-4) var(--sp-4)}
 .acta-pipe-chips{flex-wrap:wrap;overflow:visible}
 .acta-pipe-chip{cursor:default;padding-right:var(--sp-1)}
 .acta-chip-x{width:24px;height:24px;border:0;background:none;color:var(--fg-3);display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-full);cursor:pointer}
 .acta-chip-x:hover{color:var(--danger-fg);background:var(--danger-bg)}
 .acta-chip-x svg{width:14px;height:14px}
-.acta-quote-t{margin:0;font-size:var(--fs-17)}
-.acta-eyebrow-2{color:var(--fg-3)}
-.acta-quote .js-q-text,.acta-quote .js-q-author{transition:opacity var(--dur-base) var(--ease-standard)}
-.acta-quote.is-swapping .js-q-text,.acta-quote.is-swapping .js-q-author{opacity:0}
-.eu-iconbtn.is-spinning svg{animation:euSpin .7s linear infinite}
 @media (max-width:1023px){.acta-keys{display:none}}
 
 /* ── Modal de alta ───────────────────────────────────────────── */

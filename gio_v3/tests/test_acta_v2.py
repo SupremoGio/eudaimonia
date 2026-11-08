@@ -184,3 +184,48 @@ def test_css_y_js_sin_data_filter():
         assert 'data-filter' not in src and 'dataset.filter' not in src
     js = open(os.path.join(base, 'static/js/acta.js'), encoding='utf-8').read()
     assert "'acta.hideDone'" in js
+
+
+# ── Sprint 4: panel lateral y limpieza ───────────────────────────────────────
+
+def _side(html):
+    return html.split('<aside class="acta-side"', 1)[1].split('</aside>', 1)[0]
+
+
+def test_panel_lateral_tres_bloques(client):
+    html, ctx = _ctx(client)
+    side = _side(html)
+    assert side.index('acta-clf') < side.index('acta-prio') < side.index('acta-pipe')
+    assert '<details class="eu-card acta-pipe">' in side             # plegado
+    assert 'Pipeline' in side and 'js-pipe-n">0</span> idea<span class="js-pipe-s">s</span>' in side
+    for fuera in ('máx 3', 'acta-quote', 'Estoicismo', 'Motivación', 'acta-cover', 'acta-prog'):
+        assert fuera not in html, fuera
+    assert 'quote_stoic' not in ctx and 'quote_motiv' not in ctx
+    assert '0/3 = +5 XP · +5 EC' in side and side.count('<i></i>') >= 3
+
+
+def test_prioridades_recompensa_ganada(client):
+    ids = [client.post('/actividades/api/priority', json={'text': f'P{i}'}).get_json()['priorities'][-1]['id']
+           for i in range(3)]
+    for i in ids[:2]:
+        client.post(f'/actividades/api/priority/{i}/toggle')
+    side = _side(client.get('/actividades/').get_data(as_text=True))
+    assert '2/3 = +5 XP · +5 EC' in side and 'js-prio-form" hidden' in side
+    r = client.post(f'/actividades/api/priority/{ids[2]}/toggle').get_json()
+    assert r['all3']
+    side = _side(client.get('/actividades/').get_data(as_text=True))
+    assert 'js-prio-bonus is-earned">+5 XP · +5 EC ganados' in side
+    assert side.count('<i class="is-on"></i>') == 3
+
+
+def test_endpoint_de_citas_de_acta_eliminado(client):
+    assert client.get('/actividades/api/quote/refresh').status_code == 404
+    assert client.get('/api/quote/refresh').status_code == 200      # Inicio conserva Reflexión
+
+
+def test_css_muerto_eliminado():
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    css = open(os.path.join(base, 'static/css/acta.css'), encoding='utf-8').read()
+    for sel in ('.acta-mbar', '.acta-cover', '.acta-quote', '.acta-eyebrow-2', '.acta-alerts',
+                '.acta-ec-link', '.acta-thin', 'data-filter', '.acta-lead'):
+        assert sel not in css, sel

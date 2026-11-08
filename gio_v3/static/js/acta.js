@@ -6,8 +6,7 @@
      DELETE /actividades/api/activity/<key>                    quitar del checklist
      POST   /actividades/api/pillar-focus        {pillar, focus_key}
      POST   /actividades/api/priority            {text}   ·  POST /api/priority/<id>/toggle
-     POST   /actividades/api/pipeline            {text}   ·  DELETE /api/pipeline/<id>
-     GET    /actividades/api/quote/refresh?cat=stoic|motivational */
+     POST   /actividades/api/pipeline            {text}   ·  DELETE /api/pipeline/<id> */
 (function () {
   'use strict';
   var root = document.getElementById('acta');
@@ -61,16 +60,6 @@
       var c = $('summary .num', s); if (c) c.textContent = d.length + '/' + items.length;
       var sb = $('.js-sbar', s); if (sb) sb.style.width = (items.length ? Math.round(d.length / items.length * 100) : 0) + '%';
     });
-    updWeekend();
-  }
-
-  function updWeekend() {
-    var wk = $('.acta-weekend'); if (!wk) return;
-    var req = $$('.acta-item', wk).filter(function (i) { return !i.dataset.optional; });
-    var d = req.filter(function (i) { return i.dataset.done === '1'; }).length;
-    var c = $('.js-wk-count', wk); if (c) c.textContent = d + ' / ' + req.length;
-    var bar = $('.js-wk-bar', wk); if (bar) bar.style.width = (req.length ? Math.round(d / req.length * 100) : 0) + '%';
-    var badge = $('.js-wk-done', wk); if (badge) badge.hidden = !(req.length && d === req.length);
   }
 
   // ── Stats del servidor ────────────────────────────────────────────────────
@@ -352,17 +341,23 @@
   if (savedHide === '1') setHideDone(true);
 
   // ── Prioridades ──────────────────────────────────────────────────────────
-  var pList = $('.js-prio-list');
+  var pList = $('.js-prio-list'), pForm = $('.js-prio-form');
   function renderP(ps) {
     pList.innerHTML = ps.map(function (p) {
       return '<button type="button" class="eu-act acta-prio-it js-prio" aria-pressed="' + (!!p.done) + '" data-id="' + p.id + '">' +
              '<span class="eu-act-check"><i data-lucide="check"></i></span><span class="eu-act-t">' + esc(p.text) + '</span></button>';
     }).join('');
+    var dn = ps.filter(function (p) { return p.done; }).length, earned = ps.length === 3 && dn === 3;
     $('.js-prio-empty').hidden = ps.length > 0;
-    $('.js-prio-bonus').hidden = !(ps.length === 3 && ps.every(function (p) { return p.done; }));
+    if (pForm) pForm.hidden = ps.length >= 3;
+    var bonus = $('.js-prio-bonus');
+    bonus.textContent = earned ? '+5 XP · +5 EC ganados' : dn + '/3 = +5 XP · +5 EC';
+    bonus.classList.toggle('is-earned', earned);
+    var pips = $('.js-prio-pips');
+    $$('i', pips).forEach(function (pip, i) { pip.classList.toggle('is-on', !!(ps[i] && ps[i].done)); });
+    pips.setAttribute('aria-valuenow', dn);
     icons();
   }
-  var pForm = $('.js-prio-form');
   if (pForm) pForm.addEventListener('submit', function (e) {
     e.preventDefault();
     var inp = $('#p-inp'), text = inp.value.trim(); if (!text) return;
@@ -382,12 +377,18 @@
 
   // ── Pipeline ─────────────────────────────────────────────────────────────
   var chips = $('.js-pipe-list');
+  function pipeCount() {
+    var n = $$('.acta-pipe-chip', chips).length;
+    set1('.js-pipe-n', n); set1('.js-pipe-s', n === 1 ? '' : 's');
+  }
+  function set1(sel, v) { var el = $(sel); if (el) el.textContent = v; }
   function renderChips(items) {
     chips.innerHTML = items.map(function (i) {
       return '<span class="eu-chip acta-pipe-chip" data-id="' + i.id + '">' + esc(i.text) +
              '<button type="button" class="acta-chip-x js-pipe-del" data-id="' + i.id + '" aria-label="Quitar «' + esc(i.text) + '» del pipeline"><i data-lucide="x"></i></button></span>';
     }).join('');
     $('.js-pipe-empty').hidden = items.length > 0;
+    pipeCount();
     icons();
   }
   var pipeForm = $('.js-pipe-form');
@@ -401,23 +402,8 @@
     var b = e.target.closest('.js-pipe-del'); if (!b) return;
     b.closest('.acta-pipe-chip').remove();
     $('.js-pipe-empty').hidden = !!$('.acta-pipe-chip', chips);
+    pipeCount();
     fetch('/actividades/api/pipeline/' + b.dataset.id, { method: 'DELETE' }).catch(function () {});
-  });
-
-  // ── Citas ────────────────────────────────────────────────────────────────
-  $$('.js-quote').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var card = btn.closest('.acta-quote');
-      btn.classList.add('is-spinning'); card.classList.add('is-swapping');
-      fetch('/actividades/api/quote/refresh?cat=' + btn.dataset.kind).then(function (r) { return r.json(); }).then(function (q) {
-        setTimeout(function () {
-          $('.js-q-text', card).textContent = '«' + q.text + '»';
-          $('.js-q-author', card).textContent = q.author;
-          card.classList.remove('is-swapping');
-        }, reduced ? 0 : 200);
-      }).catch(function () { card.classList.remove('is-swapping'); })
-        .then(function () { btn.classList.remove('is-spinning'); });
-    });
   });
 
   // ── Atajos: 1–9 marca la n-ésima actividad visible · Ctrl/⌘+Z deshace ──

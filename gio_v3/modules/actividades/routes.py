@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify
 from datetime import timedelta, datetime
 import time
 from database import get_db
-from data import ACTIVITIES, ACTIVITY_CATEGORIES, get_stoic_of_day, get_motivational_of_day, get_random_quote
+from data import ACTIVITIES, ACTIVITY_CATEGORIES
 from utils import today_str, today_date, now_local
 from ec_constants import CATEGORY_HUES
 import modules.gamification.engine as engine
@@ -232,8 +232,6 @@ def index():
         sun_acts      = sun_acts,
         cats          = ACTIVITY_CATEGORIES,
         category_hues = CATEGORY_HUES,
-        quote_stoic   = get_stoic_of_day(),
-        quote_motiv   = get_motivational_of_day(),
         today         = _td.isoformat(),
         today_name    = ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][_td.weekday()],
         fecha_larga   = "{} {} de {}".format(
@@ -577,9 +575,5 @@ def undo_activity(log_id):
     return jsonify({'ok': True, 'stats': stats, 'gam': gam})
 
 
-@actividades_bp.route('/api/quote/refresh')
-def refresh_quote():
-    cat = request.args.get('cat')  # 'stoic' | 'motivational' | None
-    return jsonify(get_random_quote(category=cat))
 
 
