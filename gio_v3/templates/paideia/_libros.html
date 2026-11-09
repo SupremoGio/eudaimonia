@@ -1,57 +1,74 @@
-{# Libros: meta anual + stats, leyendo ahora, filtros y grid de la biblioteca #}
-{% macro bump(l, fill_id, text_id, fmt) -%}
-{%- if l.progreso_pct is not none -%}
-<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-bump" aria-label="Sumar 5% de progreso a {{ l.titulo }}"
-  data-mode="pct" data-id="{{ l.id }}" data-current="{{ l.progreso_pct }}" data-fill="{{ fill_id }}" data-text="{{ text_id }}" data-format="{{ fmt }}"
-  {% if l.progreso_pct >= 100 %}disabled{% endif %}>+5%</button>
-{%- else -%}
-<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-bump" aria-label="Sumar 10 páginas de progreso a {{ l.titulo }}"
-  data-mode="paginas" data-id="{{ l.id }}" data-total="{{ l.paginas_totales }}" data-current="{{ l.paginas_actuales }}" data-fill="{{ fill_id }}" data-text="{{ text_id }}" data-format="{{ fmt }}"
-  {% if l.paginas_actuales >= l.paginas_totales %}disabled{% endif %}>+10 págs</button>
-{%- endif -%}
-{%- endmacro %}
-
-<div class="pd-hero">
-  <div class="eu-card pd-goal">
-    <div class="eu-between">
-      <div class="t-eyebrow">Meta de lectura {{ now_year }}</div>
-      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-meta"><i data-lucide="pencil"></i>Editar meta</button>
+{# Libros (handoff Paideia v2): héroe con la meta y su ritmo + todos los libros
+   en lectura (página exacta y «Terminar +10 XP»), luego la biblioteca. #}
+{% set st = stats %}
+{% set leyendo = libros|selectattr('estado', 'equalto', 'leyendo')|list %}
+<section class="pd-hero" id="pd-hero" aria-label="Meta y lectura actual">
+  {# Meta (nota 2): ¿voy a cumplirla? #}
+  <div class="pd-goal">
+    <div class="pd-goal-hd">
+      <span class="t-eyebrow">Meta {{ now_year }}</span>
+      <button type="button" class="eu-iconbtn js-meta" aria-label="Editar meta" title="Editar meta"><i data-lucide="pencil"></i></button>
     </div>
-    <div class="pd-goal-num"><span class="t-data">{{ stats.leidos_este_anio }}</span><span class="fg-3"> / {{ stats.meta_anual }} libros</span></div>
-    {{ ui.progress(stats.leidos_este_anio, stats.meta_anual, cat='paideia', variant='cat', label='Meta de lectura anual') }}
-  </div>
-  <div class="eu-grid-4 pd-stats">
-    {{ ui.stat('Leídos', stats.total_leidos, icon='book-check') }}
-    {{ ui.stat('Leyendo', stats.leyendo, icon='book-open') }}
-    {{ ui.stat('Por leer', stats.por_leer, icon='bookmark') }}
-    {{ ui.stat('Rating prom.', stats.rating_prom if stats.rating_prom is not none else '—', icon='star') }}
-  </div>
-</div>
-
-{% set actual = libros|selectattr('estado', 'equalto', 'leyendo')|first %}
-{% if actual %}
-<article class="eu-card pd-now">
-  <button type="button" class="pd-now-open js-edit" data-id="{{ actual.id }}" aria-label="Editar {{ actual.titulo }}">
-    {% if actual.portada %}<img class="pd-cover pd-cover--now" src="{{ actual.portada }}" alt="" loading="lazy">
-    {% else %}<span class="pd-cover pd-cover--now pd-cover--empty" aria-hidden="true">{{ actual.titulo[0]|upper }}</span>{% endif %}
-    <span class="pd-now-info">
-      <span class="t-eyebrow">Leyendo ahora</span>
-      <span class="t-section pd-now-t">{{ actual.titulo }}</span>
-      {% if actual.autor %}<span class="t-meta">{{ actual.autor }}</span>{% endif %}
-    </span>
-  </button>
-  {% if actual.progreso_pct is not none or actual.paginas_totales %}
-  {% set actual_pct = actual.progreso_pct if actual.progreso_pct is not none else [100, (actual.paginas_actuales / actual.paginas_totales * 100)]|min %}
-  <div class="pd-prog">
-    <div class="eu-progress eu-progress--cat" role="progressbar" aria-valuenow="{{ actual_pct|round|int }}" aria-valuemax="100" aria-label="Progreso de {{ actual.titulo }}" id="pd-now-fill"><i style="width:{{ actual_pct|round(1) }}%"></i></div>
-    <div class="eu-between">
-      <span class="t-meta num" id="pd-now-text">{% if actual.progreso_pct is not none %}{{ actual.progreso_pct }}% leído{% else %}{{ actual.paginas_actuales }} / {{ actual.paginas_totales }} páginas · {{ actual_pct|round|int }}%{% endif %}</span>
-      {{ bump(actual, 'pd-now-fill', 'pd-now-text', 'full') }}
+    <div class="pd-goal-num"><span class="pd-goal-n num">{{ st.leidos_este_anio }}</span><span class="pd-goal-of"> / {{ st.meta_anual }} libros</span></div>
+    <div class="pd-goal-bar" role="progressbar" aria-label="Meta de lectura {{ now_year }}" aria-valuemin="0" aria-valuemax="{{ st.meta_anual }}" aria-valuenow="{{ st.leidos_este_anio }}">
+      <span class="pd-goal-track"><i style="width:{{ [100, (st.leidos_este_anio / st.meta_anual * 100) if st.meta_anual else 0]|min|round(1) }}%"></i></span>
+      <i class="pd-goal-mark" style="left:{{ st.ritmo_pct }}%"></i>
+      <span class="pd-goal-mark-l num" style="left:{{ st.ritmo_pct }}%">ritmo hoy {{ '%.1f'|format(st.ritmo_hoy) }}</span>
     </div>
+    {% if not st.faltan %}
+    <p class="pd-ritmo is-ok"><i data-lucide="circle-check"></i>Meta cumplida. Todo lo que leas suma.</p>
+    {% elif st.diff_ritmo >= 0 %}
+    <p class="pd-ritmo is-ok"><i data-lucide="trending-up"></i>Vas {{ 'al ritmo' if st.diff_ritmo < 0.5 else 'adelantado' }} · faltan {{ st.faltan }}</p>
+    <p class="t-meta">1 libro cada {{ st.cada_n_dias }} días hasta el 31 de diciembre.</p>
+    {% else %}
+    {% set atras = [1, (-st.diff_ritmo)|round|int]|max %}
+    <p class="pd-ritmo is-late"><i data-lucide="triangle-alert"></i>Vas {{ atras }} libro{{ 's' if atras != 1 }} detrás del ritmo</p>
+    <p class="t-meta">Faltan {{ st.faltan }} en {{ st.dias_restantes }} días: 1 cada {{ st.cada_n_dias }} días.</p>
+    {% endif %}
   </div>
-  {% endif %}
-</article>
-{% endif %}
+
+  {# Leyendo ahora (notas 4 y 5): todos, con página exacta #}
+  <div class="pd-reading">
+    <div class="t-eyebrow pd-reading-t">Leyendo ahora · {{ leyendo|length }}</div>
+    {% for l in leyendo %}
+    {% set total = l.paginas_totales or 0 %}
+    {% set pct = l.progreso_pct if l.progreso_pct is not none else ((l.paginas_actuales / total * 100) if total else 0) %}
+    {% set pct = [100, pct]|min %}
+    <article class="pd-rd" data-id="{{ l.id }}" data-titulo="{{ l.titulo }}">
+      <button type="button" class="pd-rd-cover js-edit" data-id="{{ l.id }}" aria-label="Editar {{ l.titulo }}">
+        {% if l.portada %}<img class="pd-cover pd-cover--rd" src="{{ l.portada }}" alt="" loading="lazy">
+        {% else %}<span class="pd-cover pd-cover--rd pd-cover--empty" aria-hidden="true">{{ l.titulo[0]|upper }}</span>{% endif %}
+      </button>
+      <div class="pd-rd-bd">
+        <div class="pd-rd-hd"><span class="pd-rd-t">{{ l.titulo }}</span>{% if l.autor %}<span class="t-meta">{{ l.autor }}</span>{% endif %}</div>
+        <span class="pd-rd-bar" role="progressbar" aria-label="Progreso de {{ l.titulo }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pct|round|int }}"><i style="width:{{ pct|round(1) }}%"></i></span>
+        {% if total %}
+        {% set left = total - (l.paginas_actuales or 0) %}
+        <span class="t-meta pd-rd-eta">{{ '≈ ' ~ ((left + paginas_sesion - 1) // paginas_sesion) ~ ' sesiones de 30 min' if left > 0 else 'Listo para terminar' }}</span>
+        {% endif %}
+        <div class="pd-rd-ft">
+          <span class="pd-rd-txt num">{% if total %}pág. {{ l.paginas_actuales or 0 }} de {{ total }} · {% endif %}{{ pct|round|int }}%</span>
+          <div class="pd-rd-acts">
+            <form class="pd-rd-form js-prog-form" data-id="{{ l.id }}" data-mode="{{ 'pagina' if total else 'pct' }}" hidden autocomplete="off">
+              <label class="t-meta" for="prog-{{ l.id }}">{{ 'Voy en la pág.' if total else 'Llevo' }}</label>
+              <input class="eu-input pd-rd-in num" id="prog-{{ l.id }}" type="number" inputmode="numeric" min="0" max="{{ total or 100 }}" value="{{ (l.paginas_actuales or 0) if total else (pct|round|int) }}">
+              {% if not total %}<span class="t-meta">%</span>{% endif %}
+              <button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button>
+            </form>
+            <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm pd-nowrap js-prog" data-id="{{ l.id }}"><i data-lucide="bookmark"></i>{{ 'Página' if total else 'Registrar %' }}</button>
+            <button type="button" class="eu-btn eu-btn--sm pd-nowrap pd-finish js-finish" data-id="{{ l.id }}"><i data-lucide="book-check"></i>Terminar +10 XP</button>
+          </div>
+        </div>
+      </div>
+    </article>
+    {% else %}
+    <p class="t-meta pd-rd-empty">No estás leyendo nada. Elige uno de «Por leer» abajo.</p>
+    {% endfor %}
+    {% if lectura %}
+    <p class="pd-anchor{% if lectura_hecha %} is-ok{% endif %} js-anchor" data-label="{{ lectura.label }}"><i data-lucide="{{ 'circle-check' if lectura_hecha else 'anchor' }}"></i><span>{% if lectura_hecha %}«{{ lectura.label }}» marcada hoy en Acta Diurna{% else %}Registrar avance hoy marca «{{ lectura.label }}» en Acta Diurna{% endif %}</span></p>
+    {% endif %}
+  </div>
+</section>
 
 <div class="pd-sec">
   <div><h2 class="t-card">Tu biblioteca</h2><p class="t-meta">Filtra por estado y entra a cualquier libro para actualizar tu progreso.</p></div>
@@ -80,16 +97,6 @@
         {% endif %}
       </span>
     </button>
-    {% if l.estado == 'leyendo' and (l.progreso_pct is not none or l.paginas_totales) %}
-    {% set l_pct = l.progreso_pct if l.progreso_pct is not none else [100, (l.paginas_actuales / l.paginas_totales * 100)]|min %}
-    <div class="pd-prog pd-card-prog">
-      <div class="eu-progress eu-progress--cat eu-progress--thin" role="progressbar" aria-valuenow="{{ l_pct|round|int }}" aria-valuemax="100" aria-label="Progreso de {{ l.titulo }}" id="pd-fill-{{ l.id }}"><i style="width:{{ l_pct|round(1) }}%"></i></div>
-      <div class="eu-between">
-        <span class="t-meta num" id="pd-text-{{ l.id }}">{{ l_pct|round|int }}% leído</span>
-        {{ bump(l, 'pd-fill-' ~ l.id, 'pd-text-' ~ l.id, 'pct') }}
-      </div>
-    </div>
-    {% endif %}
   </article>
   {% else %}
   <div class="pd-span">{{ ui.empty('book-open', 'Tu biblioteca está vacía', 'Registra tu primer libro con el botón de arriba.') }}</div>

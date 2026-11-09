@@ -9,7 +9,6 @@
   var DATA = JSON.parse(document.getElementById('pd-data').textContent || '{}');
   var PELIS = DATA.peliculas || { peliculas: [], ranking: [], vistas_n: 0, total: 0 };
   var DIMS = DATA.dims || [];
-  var TIP_ICON = { psicologia: 'brain', nutricion: 'salad', ciencia: 'flask-conical', productividad: 'zap' };
   var mod = 'libros', peFilter = 'todos', openRate = null;
 
   function $(id) { return document.getElementById(id); }
@@ -36,17 +35,6 @@
   document.querySelectorAll('[data-mod-set]').forEach(function (b) { b.addEventListener('click', function () { setMod(b.dataset.modSet); }); });
   document.querySelectorAll('.js-new').forEach(function (b) { b.addEventListener('click', function () { if (mod === 'libros') abrirNuevo(); else abrirPeli(); }); });
 
-  /* ── Tip del día ────────────────────────────────────────────────────── */
-  var tipBtn = root.querySelector('.js-tip');
-  tipBtn.addEventListener('click', function () {
-    busy(tipBtn, true);
-    json(BASE + '/api/tip/refresh').then(function (r) {
-      $('pd-tip-text').textContent = r.text;
-      $('pd-tip-ic').innerHTML = '<i data-lucide="' + (TIP_ICON[r.cat] || 'lightbulb') + '"></i>';
-      icons();
-    }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { busy(tipBtn, false); });
-  });
-
   /* ── Filtros de la biblioteca ───────────────────────────────────────── */
   document.querySelectorAll('[data-f]').forEach(function (chip) {
     chip.addEventListener('click', function () {
@@ -61,34 +49,66 @@
     });
   });
 
-  /* ── Bump rápido de progreso (sin abrir el modal) ───────────────────── */
-  document.querySelectorAll('.js-bump').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var id = btn.dataset.id, mode = btn.dataset.mode || 'paginas';
-      var current = parseInt(btn.dataset.current, 10) || 0;
-      var bar = $(btn.dataset.fill), fill = bar.querySelector('i'), text = $(btn.dataset.text);
-      var prevW = fill.style.width, prevT = text.textContent, prevN = bar.getAttribute('aria-valuenow');
-      var nuevo, pct, body, total;
-      if (mode === 'pct') {
-        nuevo = Math.min(100, current + 5); pct = nuevo; body = { progreso_pct: nuevo };
-        text.textContent = pct + '% leído';
-      } else {
-        total = parseInt(btn.dataset.total, 10);
-        nuevo = Math.min(total, current + 10); pct = Math.min(100, Math.round(nuevo / total * 100));
-        body = { paginas_actuales: nuevo };
-        text.textContent = btn.dataset.format === 'full' ? nuevo + ' / ' + total + ' páginas · ' + pct + '%' : pct + '% leído';
-      }
-      fill.style.width = pct + '%'; bar.setAttribute('aria-valuenow', pct);
-      btn.dataset.current = nuevo;
-      if (nuevo >= (mode === 'pct' ? 100 : total)) btn.disabled = true;
-      json(BASE + '/api/libros/' + id, 'PATCH', body).then(function (r) {
-        if (!r.ok) throw new Error(r.error || 'error');
-      }).catch(function () {
-        fill.style.width = prevW; text.textContent = prevT; bar.setAttribute('aria-valuenow', prevN);
-        btn.dataset.current = current; btn.disabled = false;
-        toast('No se pudo actualizar el progreso', 'err');
-      });
+  /* ── Héroe: Página / Registrar %, Terminar (handoff Paideia v2, notas 5–6).
+     Delegado en #mod-libros: refreshLibros() reemplaza su contenido. ── */
+  var libs = $('mod-libros');
+  function refreshLibros() {
+    return fetch(BASE + '/').then(function (r) { return r.text(); }).then(function (html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var fresh = doc.getElementById('mod-libros');
+      if (fresh) { libs.innerHTML = fresh.innerHTML; icons(); if (window.pdApplyFilter) pdApplyFilter(); }
     });
+  }
+  function setAnchor(label, ok) {
+    var a = libs.querySelector('.js-anchor'); if (!a || !ok) return;
+    a.classList.add('is-ok');
+    a.innerHTML = '<i data-lucide="circle-check"></i><span>«' + esc(label || a.dataset.label) + '» marcada hoy en Acta Diurna</span>';
+    icons();
+  }
+  libs.addEventListener('click', function (e) {
+    var b = e.target.closest('.js-prog, .js-finish, .js-edit, .js-meta, .js-start');
+    if (!b) return;
+    if (b.classList.contains('js-edit')) { abrirEditar(+b.dataset.id); return; }
+    if (b.classList.contains('js-meta')) { euModal.open('m-meta'); setTimeout(function () { $('meta-input').focus(); }, 30); return; }
+    var art = b.closest('.pd-rd');
+    if (b.classList.contains('js-prog')) {
+      var f = art.querySelector('.js-prog-form');
+      f.hidden = !f.hidden;
+      art.querySelectorAll('.js-prog, .js-finish').forEach(function (x) { x.hidden = !f.hidden; });
+      if (!f.hidden) { var inp = f.querySelector('input'); inp.focus(); inp.select(); }
+      return;
+    }
+    if (b.classList.contains('js-finish')) {
+      busy(b, true);
+      json(BASE + '/api/libros/' + b.dataset.id, 'PATCH', { estado: 'leido' }).then(function (r) {
+        if (!r.ok) throw new Error(r.error);
+        var st = r.stats || {};
+        var msg = '«' + art.dataset.titulo + '» terminado · +10 XP · +5 EC · meta ' + st.leidos_este_anio + '/' + st.meta_anual;
+        if (window.euGam && r.gam) euGam(r.gam, { el: b });
+        (window.euToast || toast)(msg, 'win');
+        return refreshLibros();
+      }).catch(function () { busy(b, false); toast('No se pudo terminar', 'err'); });
+    }
+  });
+  libs.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var f = e.target.closest('.js-prog-form'); if (!f) return;
+    f.hidden = true; f.closest('.pd-rd').querySelectorAll('.js-prog, .js-finish').forEach(function (x) { x.hidden = false; });
+  });
+  libs.addEventListener('submit', function (e) {
+    var f = e.target.closest('.js-prog-form'); if (!f) return;
+    e.preventDefault();
+    var v = f.querySelector('input').value, body = f.dataset.mode === 'pagina' ? { pagina: v } : { pct: v };
+    var btn = f.querySelector('button[type=submit]'); busy(btn, true);
+    json(BASE + '/api/libros/' + f.dataset.id + '/progreso', 'POST', body).then(function (r) {
+      if (!r.ok) throw new Error(r.error);
+      if (r.nueva) {
+        toast('Avance guardado · «' + r.actividad + '» marcada en Acta', 'win');
+        if (window.euGam && r.gam) euGam(r.gam, { el: btn });
+      } else toast('Avance guardado');
+      setAnchor(r.actividad, r.ancla_marcada);
+      return refreshLibros().then(function () { setAnchor(r.actividad, r.ancla_marcada); });
+    }).catch(function () { busy(btn, false); toast('No se pudo guardar el avance', 'err'); });
   });
 
   /* ── Vista previa de portada / póster ───────────────────────────────── */
@@ -220,7 +240,6 @@
       fillLibro(l); icons(); euModal.open('m-libro');
     }).catch(function () { toast('Sin conexión', 'err'); });
   }
-  document.querySelectorAll('.js-edit').forEach(function (b) { b.addEventListener('click', function () { abrirEditar(+b.dataset.id); }); });
 
   $('f-libro').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -257,9 +276,6 @@
   });
 
   /* ── Meta anual ─────────────────────────────────────────────────────── */
-  root.querySelector('.js-meta').addEventListener('click', function () {
-    euModal.open('m-meta'); setTimeout(function () { $('meta-input').focus(); }, 30);
-  });
   $('f-meta').addEventListener('submit', function (e) {
     e.preventDefault();
     json(BASE + '/api/meta', 'POST', { meta: $('meta-input').value || 12 }).then(function (r) {

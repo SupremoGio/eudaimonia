@@ -142,3 +142,74 @@ def test_progreso_valida_y_empieza_un_libro_por_leer(client):
     with database.get_db() as db:
         row = db.execute("SELECT estado, paginas_actuales, progreso_pct FROM paideia_libros WHERE id=?", (lid,)).fetchone()
     assert (row['estado'], row['paginas_actuales'], row['progreso_pct']) == ('leyendo', 200, 100)
+
+
+# ── Sprint 2: encabezado y héroe ─────────────────────────────────────────────
+
+def _src(rel):
+    return open(os.path.join(BASE, rel), encoding='utf-8').read()
+
+
+def _hero(html):
+    return html.split('id="pd-hero"', 1)[1].split('</section>', 1)[0]
+
+
+def test_encabezado_en_una_fila_sin_tip_ni_plus_duplicado(client):
+    html = client.get('/paideia/').get_data(as_text=True)
+    hd = html.split('<header class="pd-hd">', 1)[1].split('</header>', 1)[0]
+    assert 'class="eu-seg pd-tabs"' in hd and hd.count('js-new"') == 1
+    for fuera in ('pd-lead', 'pd-tip', 'pd-stats', 'pd-now', 'js-bump', '+10 págs'):
+        assert fuera not in html, fuera
+    assert html.count('class="eu-btn eu-btn--primary js-new"') == 1
+
+
+def test_heroe_meta_con_ritmo(client, monkeypatch):
+    _hoy(monkeypatch, datetime.date(2026, 7, 2))
+    monkeypatch.setattr(pr, '_get_meta', lambda: 12)
+    for i in range(4):
+        lid = _libro(client, titulo=f'L{i}', estado='leyendo')
+        client.patch(f'/paideia/api/libros/{lid}', json={'estado': 'leido', 'fecha_fin': '2026-03-01'})
+    h = _hero(client.get('/paideia/').get_data(as_text=True))
+    assert 'Meta 2026' in h and '<span class="pd-goal-n num">4</span>' in h and ' / 12 libros' in h
+    assert 'ritmo hoy 6.0' in h and 'left:50.0%' in h
+    assert 'Vas 2 libros detrás del ritmo' in h and 'Faltan 8 en 182 días: 1 cada 23 días.' in h
+
+
+def test_heroe_meta_cumplida_y_adelantado(client, monkeypatch):
+    _hoy(monkeypatch, datetime.date(2026, 1, 10))
+    monkeypatch.setattr(pr, '_get_meta', lambda: 1)
+    lid = _libro(client, estado='leyendo')
+    client.patch(f'/paideia/api/libros/{lid}', json={'estado': 'leido', 'fecha_fin': '2026-01-05'})
+    assert 'Meta cumplida. Todo lo que leas suma.' in _hero(client.get('/paideia/').get_data(as_text=True))
+    monkeypatch.setattr(pr, '_get_meta', lambda: 12)
+    assert 'Vas adelantado · faltan 11' in _hero(client.get('/paideia/').get_data(as_text=True))
+
+
+def test_heroe_todos_los_libros_en_lectura(client):
+    a = _libro(client, titulo='Meditaciones', estado='leyendo', paginas_actuales=50)
+    b = _libro(client, titulo='Sapiens', estado='leyendo', paginas_totales=None, progreso_pct=30)
+    h = _hero(client.get('/paideia/').get_data(as_text=True))
+    assert 'Leyendo ahora · 2' in h
+    assert h.count('class="pd-rd"') == 2
+    assert 'pág. 50 de 200 · 25%' in h and '≈ 6 sesiones de 30 min' in h        # 150 págs ÷ 25
+    assert f'data-id="{a}" data-mode="pagina"' in h and f'data-id="{b}" data-mode="pct"' in h
+    assert 'Registrar %' in h and h.count('Terminar +10 XP') == 2
+    assert 'pd-nowrap js-prog' in h and 'pd-nowrap pd-finish js-finish' in h
+
+
+def test_heroe_sin_lectura_y_pie_del_ancla(client, monkeypatch):
+    _hoy(monkeypatch, datetime.date(2026, 11, 10))
+    h = _hero(client.get('/paideia/').get_data(as_text=True))
+    assert 'No estás leyendo nada. Elige uno de «Por leer» abajo.' in h
+    assert 'Registrar avance hoy marca «Leer psicología — sesión profunda» en Acta Diurna' in h
+    lid = _libro(client, estado='leyendo')
+    client.post(f'/paideia/api/libros/{lid}/progreso', json={'pagina': 20})
+    h = _hero(client.get('/paideia/').get_data(as_text=True))
+    assert 'class="pd-anchor is-ok js-anchor"' in h and 'marcada hoy en Acta Diurna' in h
+
+
+def test_js_del_heroe():
+    js = _src('static/js/paideia.js')
+    assert "'/progreso'" in js and "{ estado: 'leido' }" in js and 'refreshLibros' in js
+    assert "' terminado · +10 XP · +5 EC · meta '" in js.replace('»', "'").replace('«', "'") or 'terminado · +10 XP · +5 EC · meta' in js
+    assert 'js-tip' not in js and 'js-bump' not in js

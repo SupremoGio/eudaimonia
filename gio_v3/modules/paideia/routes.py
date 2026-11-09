@@ -137,10 +137,13 @@ def index():
             "COALESCE(fecha_fin, fecha_inicio) DESC, id DESC"
         ).fetchall()
     libros = [_row_to_dict(r) for r in rows]
+    lectura = lectura_de_hoy()
     return render_template(
         'paideia/index.html', libros=libros, stats=_stats(libros),
-        tip=get_paideia_tip_of_day(), now_year=datetime.now().year,
+        tip=get_paideia_tip_of_day(), now_year=today_date().year,
         peliculas=_peliculas_state(), peli_rating_dims=PELI_RATING_DIMS,
+        lectura=lectura, lectura_hecha=bool(lectura and _lectura_hecha_hoy(lectura)),
+        paginas_sesion=PAGINAS_POR_SESION,
     )
 
 
