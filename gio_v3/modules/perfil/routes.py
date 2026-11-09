@@ -350,6 +350,11 @@ def get_reminders():
     return jsonify([dict(r) for r in rows])
 
 
+def _cuenta_desde(d):
+    """'hecho' = la siguiente fecha cuenta desde que se marca; si no, 'ciclo'."""
+    return 'hecho' if d.get('type') == 'periodico' and d.get('cuenta_desde') == 'hecho' else 'ciclo'
+
+
 @perfil_bp.route('/api/reminder/add', methods=['POST'])
 def add_reminder():
     if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
@@ -363,12 +368,12 @@ def add_reminder():
     now = datetime.now().isoformat()
     with get_db() as db:
         db.execute(
-            """INSERT INTO reminders (description, type, freq_unit, freq_value, target_date, next_date, is_active, created_at, tema)
-               VALUES (?,?,?,?,?,?,1,?,?)""",
+            """INSERT INTO reminders (description, type, freq_unit, freq_value, target_date, next_date, is_active, created_at, tema, cuenta_desde)
+               VALUES (?,?,?,?,?,?,1,?,?,?)""",
             (desc, typ,
              d.get('freq_unit', ''),
              int(d.get('freq_value') or 1),
-             target, next_d, now, rec.tema_valido(d.get('tema'), desc))
+             target, next_d, now, rec.tema_valido(d.get('tema'), desc), _cuenta_desde(d))
         )
         rid = db.execute("SELECT last_insert_rowid() as id").fetchone()['id']
         db.commit()
@@ -451,11 +456,11 @@ def edit_reminder(rid):
     with get_db() as db:
         db.execute(
             """UPDATE reminders SET description=?, type=?, freq_unit=?, freq_value=?,
-               target_date=?, next_date=?, tema=? WHERE id=?""",
+               target_date=?, next_date=?, tema=?, cuenta_desde=? WHERE id=?""",
             (desc, typ,
              d.get('freq_unit', ''),
              int(d.get('freq_value') or 1),
-             target, next_d, rec.tema_valido(d.get('tema'), desc), rid)
+             target, next_d, rec.tema_valido(d.get('tema'), desc), _cuenta_desde(d), rid)
         )
         db.commit()
     return jsonify({'ok': True})

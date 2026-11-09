@@ -116,7 +116,12 @@ def test_sugerencia_descartada_no_vuelve(test_db):
     c = _client()
     c.post('/finanzas/api/debt', json={'type': 'owe_me', 'person': 'Corner', 'concept': 'Viaje GDL', 'amount': 4809.02})
     with database.get_db() as db:
-        dep = _mov(db, '2026-07-11', 'PAGO CUENTA DE TERCERO BNET …5937 DEYVI CORNELIO', 1000)
+        # Relativa a hoy: las sugerencias solo miran SUGERIR_DIAS_ANTES (120 d)
+        # antes de registrar el compromiso; una fecha fija «caducaba» el test.
+        from datetime import date, timedelta
+        from utils import today_str
+        hace_30 = (date.fromisoformat(today_str()) - timedelta(days=30)).isoformat()
+        dep = _mov(db, hace_30, 'PAGO CUENTA DE TERCERO BNET …5937 DEYVI CORNELIO', 1000)
         cp.actualizar(db)
         db.commit()
     assert len(c.get('/finanzas/api/debts/sugerencias').get_json()['sugerencias']) == 1

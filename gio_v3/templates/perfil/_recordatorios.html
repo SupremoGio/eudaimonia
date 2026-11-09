@@ -14,6 +14,7 @@
     <div class="eu-grid-2 pf-form-grid" id="remFreqRow" hidden>
       <div class="eu-field"><label class="eu-label" for="remFreqVal">Cada</label><input class="eu-input" id="remFreqVal" type="number" min="1" value="1"></div>
       <div class="eu-field"><label class="eu-label" for="remFreqUnit">Unidad</label><select class="eu-select" id="remFreqUnit"><option value="dias">Días</option><option value="semanas">Semanas</option><option value="meses">Meses</option></select></div>
+      <div class="eu-field pf-form-span"><label class="eu-label" for="remDesde">Contar desde</label><select class="eu-select" id="remDesde"><option value="ciclo">La fecha fija del ciclo (ej. pagar la renta el día 1)</option><option value="hecho">El día en que lo marco (ej. recargar saldo)</option></select></div>
     </div>
     <div class="pf-form-ft"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm pf-danger js-rem-del" id="remDelBtn" hidden><i data-lucide="trash-2"></i>Eliminar</button><span class="pf-grow"></span><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-form-close">Cancelar</button><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm" id="remSaveBtn">Guardar</button></div>
   </form>
@@ -31,7 +32,7 @@
       <div class="eu-list">
       {% for r in g['items'] %}
       <div class="eu-row pf-rem{% if g.key == 'vencidos' %} is-late{% endif %}" id="remrow-{{ r.id }}" data-id="{{ r.id }}" data-desc="{{ r.description }}" data-type="{{ r.type }}"
-           data-date="{{ r.fecha or '' }}" data-freqval="{{ r.freq_value or 1 }}" data-frequnit="{{ r.freq_unit or 'dias' }}" data-tema="{{ r.tema }}">
+           data-date="{{ r.fecha or '' }}" data-freqval="{{ r.freq_value or 1 }}" data-frequnit="{{ r.freq_unit or 'dias' }}" data-desde="{{ r.cuenta_desde or 'ciclo' }}" data-tema="{{ r.tema }}">
         <button type="button" class="pf-rem-check js-rem-done" aria-label="Marcar «{{ r.description }}» como hecho"><span class="eu-act-check"><i data-lucide="check"></i></span></button>
         <button type="button" class="eu-row-main pf-rem-main js-rem-edit" aria-label="Editar {{ r.description }}">
           <span class="eu-row-t">{{ r.description }}</span>

@@ -87,10 +87,12 @@ def frecuencia(r) -> str:
     if u == 'dias' and n % 7 == 0:
         u, n = 'semanas', n // 7
     if n == 1:
-        return {'dias': 'Diario', 'semanas': 'Semanal', 'meses': 'Mensual'}.get(u, 'Periódico')
-    if u == 'meses' and n in (2, 3, 6, 12):
-        return {2: 'Bimestral', 3: 'Trimestral', 6: 'Semestral', 12: 'Anual'}[n]
-    return f"Cada {n} {({'dias': 'días', 'semanas': 'semanas', 'meses': 'meses'}).get(u, u)}"
+        txt = {'dias': 'Diario', 'semanas': 'Semanal', 'meses': 'Mensual'}.get(u, 'Periódico')
+    elif u == 'meses' and n in (2, 3, 6, 12):
+        txt = {2: 'Bimestral', 3: 'Trimestral', 6: 'Semestral', 12: 'Anual'}[n]
+    else:
+        txt = f"Cada {n} {({'dias': 'días', 'semanas': 'semanas', 'meses': 'meses'}).get(u, u)}"
+    return txt + (' desde que lo marcas' if r.get('cuenta_desde') == 'hecho' else '')
 
 
 def relativa(dias: int, f: date) -> str:
@@ -161,12 +163,18 @@ def _paso(ancla: date, fu: str, fv: int, k: int) -> date:
 
 
 def siguiente(r: dict, hoy: str) -> str:
-    """Siguiente fecha de un periódico al marcarlo hecho: la primera ocurrencia
-    del ciclo (anclado en target_date, la fecha que puso el usuario) posterior
-    tanto a hoy como a la fecha programada actual. Así posponer una vez no
-    mueve el día del ciclo, y pagar tarde o temprano tampoco."""
+    """Siguiente fecha de un periódico al marcarlo hecho.
+
+    · cuenta_desde='hecho' (ej. recargar saldo): hoy + la frecuencia; el ciclo
+      vuelve a empezar el día en que se marca.
+    · 'ciclo' (por defecto, ej. pagar la renta): la primera ocurrencia del
+      ciclo (anclado en target_date, la fecha que puso el usuario) posterior
+      tanto a hoy como a la fecha programada actual. Así posponer una vez no
+      mueve el día del ciclo, y pagar tarde o temprano tampoco."""
     fv = int(r.get('freq_value') or 1)
     fu = r.get('freq_unit') or 'dias'
+    if r.get('cuenta_desde') == 'hecho':
+        return _paso(date.fromisoformat(hoy[:10]), fu, fv, 1).isoformat()
     prog = r.get('next_date') or r.get('target_date') or hoy
     ancla = date.fromisoformat((r.get('target_date') or prog)[:10])
     limite = max(hoy, prog[:10])

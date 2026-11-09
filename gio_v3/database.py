@@ -7082,6 +7082,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] wishlist_dedup_2026_09 migration warning: {e}")
 
+        # ── RECORDATORIOS — cuenta_desde: 'ciclo' (la siguiente fecha sale del
+        # ciclo fijo de target_date, ej. pagar la renta el día 1) o 'hecho'
+        # (cuenta desde el día en que se marca, ej. recargar saldo: 25 días
+        # después de la última recarga). «Saldo cel» pasa a cada 25 días desde
+        # que se marca (usuario, 2026-11-09); una vez, migration_log.
+        try:
+            if 'cuenta_desde' not in [r["name"] for r in db.execute("PRAGMA table_info(reminders)").fetchall()]:
+                db.execute("ALTER TABLE reminders ADD COLUMN cuenta_desde TEXT DEFAULT 'ciclo'")
+            if not db.execute("SELECT id FROM migration_log WHERE version='recordatorio_saldo_cel_25d'").fetchone():
+                n = db.execute(
+                    """UPDATE reminders SET type='periodico', freq_unit='dias', freq_value=25, cuenta_desde='hecho'
+                       WHERE is_active=1 AND lower(trim(description)) LIKE 'saldo cel%'""").rowcount
+                db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                           ("recordatorio_saldo_cel_25d", f"Saldo cel: cada 25 días desde que se marca ({n})"))
+            db.commit()
+        except Exception as e:
+            print(f"[DB] recordatorios cuenta_desde migration warning: {e}")
+
         # ── RECORDATORIOS — tema (Finanzas / Casa y cuidado / Eventos / Otros)
         # para filtrar con chips. La columna se agrega si falta; el tema se
         # asigna por palabras clave solo a los que no tienen uno (una vez,
