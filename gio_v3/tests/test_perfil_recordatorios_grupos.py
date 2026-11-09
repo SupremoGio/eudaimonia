@@ -141,3 +141,55 @@ def test_pendiente_separa_vencidos_de_proximos(client):
     html = client.get('/').get_data(as_text=True)
     assert 'Hoy y vencidos <span class="num js-dl-sec-ct">2</span>' in html
     assert 'Esta semana <span class="num js-dl-sec-ct">1</span>' in html
+
+
+# ── «Contar desde que lo marco» (Saldo cel: 25 días desde la última recarga) ──
+
+def test_siguiente_desde_que_se_marca():
+    r = _r(1, '2026-10-10', 'periodico', 'dias', 25)
+    r['cuenta_desde'] = 'hecho'
+    assert rec.siguiente(r, '2026-11-09') == '2026-12-04'     # vencido: cuenta desde hoy
+    r['next_date'] = '2026-11-20'
+    assert rec.siguiente(r, '2026-11-09') == '2026-12-04'     # antes de tiempo: también desde hoy
+    assert rec.frecuencia(r) == 'Cada 25 días desde que lo marcas'
+    r['cuenta_desde'] = 'ciclo'                               # el modo de siempre no cambia
+    assert rec.siguiente(r, '2026-11-09') == '2026-11-29'
+
+
+def test_marcar_hecho_reinicia_25_dias(client):
+    from utils import today_str
+    from datetime import date as _d, timedelta
+    j = client.post('/perfil/api/reminder/add', json={'description': 'Recargar algo', 'type': 'periodico', 'freq_unit': 'dias',
+                                                       'freq_value': 25, 'target_date': '2026-10-01', 'cuenta_desde': 'hecho'}).get_json()
+    assert client.post(f"/perfil/api/reminder/{j['id']}/done").get_json()['ok']
+    with database.get_db() as db:
+        row = db.execute('SELECT next_date, cuenta_desde FROM reminders WHERE id=?', (j['id'],)).fetchone()
+    assert row['cuenta_desde'] == 'hecho'
+    assert row['next_date'] == (_d.fromisoformat(today_str()) + timedelta(days=25)).isoformat()
+    # editar sin la opción vuelve al ciclo fijo
+    client.post(f"/perfil/api/reminder/{j['id']}/edit", json={'description': 'Recargar algo', 'type': 'periodico', 'freq_unit': 'dias',
+                                                               'freq_value': 25, 'target_date': '2026-10-01'})
+    with database.get_db() as db:
+        assert db.execute('SELECT cuenta_desde FROM reminders WHERE id=?', (j['id'],)).fetchone()[0] == 'ciclo'
+
+
+def test_migracion_saldo_cel(test_db):
+    with database.get_db() as db:
+        db.execute("DELETE FROM migration_log WHERE version='recordatorio_saldo_cel_25d'")
+        db.execute("INSERT INTO reminders (description, type, target_date, next_date, is_active, created_at) "
+                   "VALUES ('Saldo cel', 'unico', '2026-11-01', '2026-11-01', 1, 'x')")
+        db.execute("INSERT INTO reminders (description, type, target_date, next_date, is_active, created_at) "
+                   "VALUES ('Pagar Renta', 'periodico', '2026-11-01', '2026-11-01', 1, 'x')")
+        db.commit()
+    database.init_db()
+    with database.get_db() as db:
+        s = db.execute("SELECT * FROM reminders WHERE description='Saldo cel'").fetchone()
+        r = db.execute("SELECT * FROM reminders WHERE description='Pagar Renta'").fetchone()
+    assert (s['type'], s['freq_unit'], s['freq_value'], s['cuenta_desde']) == ('periodico', 'dias', 25, 'hecho')
+    assert s['next_date'] == '2026-11-01'                     # sigue vencido hasta que lo marques
+    assert r['cuenta_desde'] == 'ciclo'
+
+
+def test_formulario_trae_contar_desde(client):
+    html = client.get('/perfil/').get_data(as_text=True)
+    assert 'id="remDesde"' in html and 'El día en que lo marco' in html

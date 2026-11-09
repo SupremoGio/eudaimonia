@@ -126,6 +126,7 @@
 /* ── Formularios ── */
 .pf-form{display:flex;flex-direction:column;gap:var(--sp-3)}
 .pf-form-grid{gap:var(--sp-3)}
+.pf-form-span{grid-column:1/-1}
 @media (max-width:767px){.pf-form-grid.eu-grid-3,.pf-form-grid.eu-grid-2{grid-template-columns:minmax(0,1fr)}}
 .pf-form-ft{display:flex;justify-content:flex-end;gap:var(--sp-2)}
 

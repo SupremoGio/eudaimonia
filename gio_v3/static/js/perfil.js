@@ -447,6 +447,7 @@
     $('remDate').value = d.date || '';
     $('remFreqVal').value = d.freqval || 1;
     $('remFreqUnit').value = d.frequnit || 'dias';
+    $('remDesde').value = d.desde || 'ciclo';
     $('remTema').value = d.tema || '';
     remTypeSync();
     openForm('remForm', 'remDesc');
@@ -460,6 +461,7 @@
     if (type === 'periodico') {
       payload.freq_value = parseInt($('remFreqVal').value, 10) || 1;
       payload.freq_unit = $('remFreqUnit').value;
+      payload.cuenta_desde = $('remDesde').value;
       payload.next_date = date || null;
     }
     var j = await post(editId ? '/perfil/api/reminder/' + editId + '/edit' : '/perfil/api/reminder/add', payload);
