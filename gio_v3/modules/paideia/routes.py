@@ -1,10 +1,13 @@
 import os
 import requests
 from flask import Blueprint, render_template, request, jsonify
+import calendar
 from datetime import datetime
 from database import get_db
 from data import get_paideia_tip_of_day, get_random_paideia_tip
+from utils import today_str, today_date
 import modules.gamification.engine as engine
+import modules.actividades.activity_defs as adefs
 
 paideia_bp = Blueprint('paideia', __name__, template_folder='../../templates')
 
@@ -22,6 +25,14 @@ _OMDB_API_KEY = os.environ.get('OMDB_API_KEY', '')
 
 _META_KEY = 'paideia_meta_anual'
 _DEFAULT_META = 12
+
+# ── Libros — terminar uno da XP (handoff Paideia v2, nota 6), igual que una película
+_LIBRO_XP = 10
+_LIBRO_EC = 5
+# Páginas por sesión de 30 min, para el «≈ N sesiones» del héroe
+PAGINAS_POR_SESION = 25
+# Si hoy no hay ancla de Paideia en Acta, registrar avance marca este touch
+_LECTURA_TOUCH = 'leer_general'
 
 # ── Películas — ranking personal (mismo patrón que Música dentro de EURYTHMIA) ─
 _PELI_XP = 5
@@ -69,12 +80,34 @@ def _get_meta():
     return int(row['value']) if row else _DEFAULT_META
 
 
+def ritmo(meta, leidos, hoy=None):
+    """¿Voy a cumplir la meta? (handoff Paideia v2, nota 2)
+    ritmo_hoy: libros que «tocaría» llevar hoy para ir parejo; diff_ritmo > 0
+    = adelantado; faltan y cada_n_dias: 1 libro cada N días para cerrar."""
+    hoy = hoy or today_date()
+    dias_anio = 366 if calendar.isleap(hoy.year) else 365
+    dia = hoy.timetuple().tm_yday
+    ritmo_hoy = round(meta * dia / dias_anio, 1)
+    faltan = max(0, meta - leidos)
+    dias_restantes = dias_anio - dia
+    return {
+        'ritmo_hoy':      ritmo_hoy,
+        'diff_ritmo':     round(leidos - ritmo_hoy, 1),
+        'faltan':         faltan,
+        'dias_restantes': dias_restantes,
+        'cada_n_dias':    (round(dias_restantes / faltan) if dias_restantes else 0) if faltan else None,
+        'ritmo_pct':      round(min(100, ritmo_hoy / meta * 100), 1) if meta else 0,
+    }
+
+
 def _stats(libros):
-    this_year = datetime.now().year
+    this_year = today_date().year
     leidos_anio = [l for l in libros if l['estado'] == 'leido' and l['fecha_fin'] and l['fecha_fin'][:4] == str(this_year)]
     ratings = [l['rating'] for l in libros if l['rating'] is not None]
+    meta = _get_meta()
     return {
-        'meta_anual': _get_meta(),
+        **ritmo(meta, len(leidos_anio)),
+        'meta_anual': meta,
         'leidos_este_anio': len(leidos_anio),
         'total_leidos': sum(1 for l in libros if l['estado'] == 'leido'),
         'leyendo': sum(1 for l in libros if l['estado'] == 'leyendo'),
@@ -306,19 +339,147 @@ def actualizar_libro(lid):
     if not sets:
         return jsonify({'ok': False, 'error': 'nada que actualizar'}), 400
 
+    with get_db() as db:
+        prev = db.execute("SELECT estado FROM paideia_libros WHERE id=?", (lid,)).fetchone()
+    if not prev:
+        return jsonify({'ok': False, 'error': 'not found'}), 404
     vals.append(lid)
     with get_db() as db:
         db.execute(f"UPDATE paideia_libros SET {', '.join(sets)} WHERE id=?", vals)
         db.commit()
-    return jsonify({'ok': True})
+
+    # Terminar un libro da +10 XP · +5 EC; salir de «leído» lo revierte
+    gam = None
+    nuevo = d.get('estado', prev['estado'])
+    if nuevo == 'leido' and prev['estado'] != 'leido':
+        gam = _premiar_libro(lid)
+    elif prev['estado'] == 'leido' and nuevo != 'leido':
+        gam = _revertir_libro(lid)
+    return jsonify({'ok': True, 'gam': gam, 'stats': _stats(_todos_los_libros())})
 
 
 @paideia_bp.route('/api/libros/<int:lid>', methods=['DELETE'])
 def eliminar_libro(lid):
     with get_db() as db:
+        row = db.execute("SELECT estado FROM paideia_libros WHERE id=?", (lid,)).fetchone()
         db.execute("DELETE FROM paideia_libros WHERE id=?", (lid,))
         db.commit()
+    if row and row['estado'] == 'leido':
+        _revertir_libro(lid)                      # igual que eliminar_pelicula
     return jsonify({'ok': True})
+
+
+@paideia_bp.route('/api/libros/<int:lid>/progreso', methods=['POST'])
+def progreso_libro(lid):
+    """Registrar avance ({pagina} o {pct}): guarda el progreso y marca una vez
+    al día la lectura de Paideia en Acta (handoff Paideia v2, nota 5)."""
+    d = request.json or {}
+    with get_db() as db:
+        libro = db.execute("SELECT * FROM paideia_libros WHERE id=?", (lid,)).fetchone()
+    if not libro:
+        return jsonify({'ok': False, 'error': 'not found'}), 404
+    total = libro['paginas_totales']
+    try:
+        if d.get('pagina') not in (None, ''):
+            pagina = max(0, int(d['pagina']))
+            if total:
+                pagina = min(pagina, total)
+            pct = round(pagina / total * 100) if total else libro['progreso_pct']
+            sets, vals = ['paginas_actuales=?'], [pagina]
+            if total:
+                sets.append('progreso_pct=?'); vals.append(pct)
+        elif d.get('pct') not in (None, ''):
+            pct = _clamp_pct(d['pct'])
+            sets, vals = ['progreso_pct=?'], [pct]
+            if total:
+                sets.append('paginas_actuales=?'); vals.append(round(total * pct / 100))
+        else:
+            return jsonify({'ok': False, 'error': 'pagina o pct requerido'}), 400
+    except (TypeError, ValueError):
+        return jsonify({'ok': False, 'error': 'valor inválido'}), 400
+    if libro['estado'] == 'por_leer':                 # registrar avance = empezar a leerlo
+        sets += ['estado=?', 'fecha_inicio=COALESCE(fecha_inicio, ?)']
+        vals += ['leyendo', today_str()]
+    with get_db() as db:
+        db.execute(f"UPDATE paideia_libros SET {', '.join(sets)} WHERE id=?", vals + [lid])
+        db.commit()
+    marca = _marcar_lectura_acta()
+    return jsonify({'ok': True, 'pct': pct, 'ancla_marcada': bool(marca),
+                    'actividad': marca and marca['label'], 'nueva': bool(marca and marca['nueva']),
+                    'gam': marca and marca.get('gam')})
+
+
+def _todos_los_libros():
+    with get_db() as db:
+        return [_row_to_dict(r) for r in db.execute("SELECT * FROM paideia_libros").fetchall()]
+
+
+def _premiar_libro(lid):
+    key = f"paideia_libro_{lid}"
+    with get_db() as db:
+        cur = db.execute("INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                         (key, today_str(), _LIBRO_XP))
+        log_id = cur.lastrowid
+        db.commit()
+    return engine.process_activity(key, _LIBRO_XP, 'Lectura', log_id, ec=_LIBRO_EC)
+
+
+def _revertir_libro(lid):
+    with get_db() as db:
+        log_row = db.execute("SELECT id FROM activity_logs WHERE activity_key=? ORDER BY id DESC LIMIT 1",
+                             (f"paideia_libro_{lid}",)).fetchone()
+        if not log_row:
+            return None
+        db.execute("DELETE FROM activity_logs WHERE id=?", (log_row['id'],))
+        db.commit()
+    return engine.remove_activity(log_row['id'])
+
+
+def lectura_de_hoy():
+    """La actividad de Acta que registra la lectura hoy: el ancla de Paideia
+    que toca hoy (con el Foco del mes aplicado) o, si no hay, el touch
+    «Leer 5 páginas». {key, label, pts, cat, ancla} o None."""
+    hoy = today_date()
+    wd = adefs.DAY_CODES[hoy.weekday()]
+    acts = [a for a in adefs.get_active_flat().values()
+            if a.get('pillar') == 'paideia' and not a.get('hidden') and adefs.eligible_today(a, wd, hoy)]
+    a = next((x for x in acts if x.get('effective_type') == 'ancla'), None) \
+        or next((x for x in acts if x['key'] == _LECTURA_TOUCH), None)
+    if not a:
+        return None
+    return {'key': a['key'], 'label': a['label'], 'pts': a['pts'], 'cat': a.get('cat') or 'Lectura',
+            'ancla': a.get('effective_type') == 'ancla'}
+
+
+def _lectura_hecha_hoy(act):
+    with get_db() as db:
+        return db.execute("SELECT 1 FROM activity_logs WHERE activity_key=? AND date=?",
+                          (act['key'], today_str())).fetchone() is not None
+
+
+def _marcar_lectura_acta():
+    """Marca (una vez al día) la lectura de Paideia en Acta. Si ya estaba la
+    versión mínima del ancla, la sube a completa sin sumar dos veces."""
+    act = lectura_de_hoy()
+    if not act:
+        return None
+    if _lectura_hecha_hoy(act):
+        return {**act, 'nueva': False}
+    today = today_str()
+    min_id = None
+    with get_db() as db:
+        cur = db.execute("INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)", (act['key'], today, act['pts']))
+        log_id = cur.lastrowid
+        prev_min = db.execute("SELECT id FROM activity_logs WHERE activity_key=? AND date=?",
+                              (act['key'] + engine.ANCLA_MIN_SUFFIX, today)).fetchone()
+        if prev_min:
+            min_id = prev_min['id']
+            db.execute("DELETE FROM activity_logs WHERE id=?", (min_id,))
+        db.commit()
+    if min_id:
+        engine.remove_activity(min_id)
+    gam = engine.process_activity(act['key'], act['pts'], act['cat'], log_id)
+    return {**act, 'nueva': True, 'gam': gam}
 
 
 # ── Películas ─────────────────────────────────────────────────────────────────
