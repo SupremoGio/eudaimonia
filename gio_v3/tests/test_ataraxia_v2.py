@@ -15,7 +15,7 @@ import database
 import modules.ataraxia.routes as ar
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DOMINGO, MIERCOLES = datetime.date(2026, 11, 8), datetime.date(2026, 11, 4)
+DOMINGO, MIERCOLES, JUEVES = datetime.date(2026, 11, 8), datetime.date(2026, 11, 4), datetime.date(2026, 11, 5)
 
 
 @pytest.fixture
@@ -85,9 +85,9 @@ def test_recompensa_se_marca_al_completar_el_dia(client, monkeypatch):
 
 
 def test_entre_semana_vista_previa_solo_lectura(client, monkeypatch):
-    _hoy(monkeypatch, MIERCOLES)
+    _hoy(monkeypatch, JUEVES)                         # lun–mié es prórroga; jue–vie, vista previa
     html = _get(client)
-    assert 'Faltan 3 días para el sábado · vista previa' in html
+    assert 'Faltan 2 días para el sábado · vista previa' in html
     assert 'data-preview="1"' in html
     tareas = html.count('class="at-task js-task"')
     assert tareas and html.count('aria-disabled="true"') >= tareas
@@ -333,3 +333,66 @@ def test_praxis_marca_las_prioridades_de_la_semana(client):
     html = client.get('/gtd/').get_data(as_text=True)
     assert f'data-semanas-prio="{prio.semana_eleccion()},{prio.semana_vigente()}"' in html
     assert 'px-sem' in _src('static/js/praxis.js')
+
+
+
+# ── Prórroga: lunes a miércoles se termina el fin de semana anterior ─────────
+
+import modules.gamification.engine as engine
+
+
+@pytest.mark.parametrize('d', [datetime.date(2026, 11, 9), datetime.date(2026, 11, 10), datetime.date(2026, 11, 11)])
+def test_prorroga_lunes_a_miercoles_se_puede_marcar(client, monkeypatch, d):
+    _hoy(monkeypatch, d)
+    html = _get(client)
+    assert 'Prórroga: tienes hasta el miércoles para cerrar el fin de semana del 7–8 nov' in html
+    assert 'data-preview' not in html and 'aria-disabled="true"' not in html.split('class="at-main"', 1)[1]
+    assert ar.get_semana_id() == '2026-11-07'          # sigue siendo el fin de semana anterior
+
+
+def test_prorroga_abre_domingo_si_el_sabado_ya_esta(client, monkeypatch):
+    _hoy(monkeypatch, datetime.date(2026, 11, 9))
+    with database.get_db() as db:
+        for r in db.execute("SELECT id FROM rutina_bloques WHERE dia='sabado' AND opcional=0").fetchall():
+            db.execute("INSERT INTO rutina_progreso (bloque_id, semana_id, completado) VALUES (?, '2026-11-07', 1)", (r['id'],))
+        db.commit()
+    html = _get(client)
+    assert 'id="dia-domingo" role="tabpanel" aria-labelledby="tab-domingo" data-dia-panel="domingo">' in html
+
+
+def _logs(fecha, keys):
+    with database.get_db() as db:
+        for k in keys:
+            db.execute("INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,0)", (k, fecha))
+        db.commit()
+
+
+def _combos(desc):
+    with database.get_db() as db:
+        return db.execute("SELECT COUNT(*) FROM xp_ledger WHERE description=?", (desc,)).fetchone()[0]
+
+
+def test_combo_del_sabado_se_paga_aunque_se_cierre_el_lunes(test_db):
+    sat = sorted(engine.SAT_COMBO_KEYS)
+    _logs('2026-11-07', sat[:4])                       # 4 bloques el sábado
+    _logs('2026-11-09', sat[4:])                       # el resto el lunes
+    combos = engine._check_combo_bonus('2026-11-09', sat[4:])
+    assert [c['type'] for c in combos] == ['sat_complete']
+    assert engine._check_combo_bonus('2026-11-10', []) == []       # una sola vez por ciclo
+    assert _combos('Combo: Sábado Completo') == 1
+
+
+def test_fin_de_semana_perfecto_con_prorroga(test_db, monkeypatch):
+    sat, sun = sorted(engine.SAT_COMBO_KEYS), sorted(engine.SUN_COMBO_KEYS)
+    _logs('2026-11-07', sat)
+    engine._check_combo_bonus('2026-11-07', sat)
+    _logs('2026-11-10', sun)                           # domingo cerrado el martes
+    engine._check_combo_bonus('2026-11-10', sun)
+    assert _combos('Combo: Domingo Completo') == 1
+    monkeypatch.setattr(engine, 'today_str', lambda: '2026-11-10')
+    monkeypatch.setattr(engine, 'today_date', lambda: datetime.date(2026, 11, 10))
+    assert engine._gather_achievement_stats()['weekend_perfect_week'] is True
+    # el jueves siguiente ya es otro ciclo de lectura, pero sigue siendo el mismo
+    # fin de semana: el sábado 14 abre uno nuevo y no hereda combos
+    assert engine._sabado_ciclo('2026-11-14') == '2026-11-14'
+    assert engine._sabado_ciclo('2026-11-13') == '2026-11-07'
