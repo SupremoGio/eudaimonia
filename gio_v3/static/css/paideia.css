@@ -135,6 +135,8 @@
 .pe-pos.is-top{background:var(--cat-bg);color:var(--cat-fg);border:1px solid var(--cat-border)}
 .pe-rank-info{display:flex;flex-direction:column;gap:2px}
 .pe-rank-info .t-ui{overflow-wrap:anywhere}
+.pe-rank-row .pd-stars svg{width:15px;height:15px}
+.pe-stars:empty{display:none}
 
 /* Modales */
 .pd-fgrid{gap:var(--sp-3)}

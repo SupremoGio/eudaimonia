@@ -313,6 +313,17 @@
   }
   function sub(p) { return esc(p.director || '') + (p.anio ? (p.director ? ' · ' : '') + p.anio : ''); }
   function score(v) { return v != null ? Number(v).toFixed(1) : '—'; }
+  /* Una escala (handoff Paideia v2, Sprint 4): en lista y ranking las películas
+     se ven en ★ 1–5 como los libros (mi_rating 1–10 ÷ 2). El detalle por
+     dimensión sigue en 1–10 dentro de su panel. Sin cambios en la base. */
+  function stars5(v) { return v == null ? null : Math.max(1, Math.min(5, Math.round(Number(v) / 2))); }
+  function starsHtml(v) {
+    var n = stars5(v); if (n == null) return '';
+    var h = '';
+    for (var i = 1; i <= 5; i++) h += '<i data-lucide="star" class="' + (i <= n ? 'is-on' : '') + '"></i>';
+    return '<span class="pd-stars" role="img" aria-label="' + n + ' de 5 estrellas (' + score(v) + '/10)" title="' + score(v) + '/10">' + h + '</span>';
+  }
+  function rateLbl(v) { return v != null ? stars5(v) + '/5' : 'Calificar'; }
 
   function ratePanel(p) {
     return DIMS.map(function (d) {
@@ -332,7 +343,7 @@
       box.innerHTML = items.length ? '<ol class="eu-card eu-card--flush eu-list pe-rank-list">' + items.map(function (p, i) {
         return '<li class="eu-row pe-rank-row"><span class="pe-pos t-data' + (i < 3 ? ' is-top' : '') + '">' + (i + 1) + '</span>' +
           '<span class="eu-grow pe-rank-info"><span class="t-ui">' + esc(p.titulo) + '</span><span class="t-meta">' + sub(p) + '</span></span>' +
-          '<span class="t-data fg-brand">' + score(p.mi_rating) + '<span class="t-meta">/10</span></span></li>';
+          starsHtml(p.mi_rating) + '</li>';
       }).join('') + '</ol>'
         : '<div class="eu-card">' + emptyHtml('trophy', 'Tu ranking está vacío', 'Aún no calificaste ninguna película vista.') + '</div>';
       icons(); return;
@@ -352,9 +363,10 @@
         '<span class="pd-badges"><span class="eu-badge' + (p.vista ? ' eu-badge--success' : '') + '">' + (p.vista ? 'Vista' : 'Pendiente') + '</span>' +
         (p.genero ? '<span class="eu-badge">' + esc(p.genero) + '</span>' : '') + '</span>' +
         '<span class="t-card pd-card-t">' + esc(p.titulo) + '</span><span class="t-meta">' + sub(p) + '</span>' +
+        '<span class="pe-stars" id="pe-stars-' + p.id + '">' + starsHtml(p.mi_rating) + '</span>' +
         '<div class="pe-actions">' +
         '<button type="button" class="eu-act-check pe-check" data-act="vista" data-id="' + p.id + '" aria-pressed="' + !!p.vista + '" aria-label="' + (p.vista ? 'Marcar como pendiente' : 'Marcar como vista') + ': ' + esc(p.titulo) + '"><i data-lucide="check"></i></button>' +
-        '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm pe-rate' + (p.mi_rating != null ? ' is-rated' : '') + '" data-act="rate" data-id="' + p.id + '" aria-expanded="' + (openRate === p.id) + '" aria-controls="pe-panel-' + p.id + '"' + (p.vista ? '' : ' disabled') + '><i data-lucide="star"></i><span class="num" id="pe-score-' + p.id + '">' + score(p.mi_rating) + '</span></button>' +
+        '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm pe-rate' + (p.mi_rating != null ? ' is-rated' : '') + '" data-act="rate" data-id="' + p.id + '" aria-expanded="' + (openRate === p.id) + '" aria-controls="pe-panel-' + p.id + '"' + (p.vista ? '' : ' disabled') + '><i data-lucide="star"></i><span class="num" id="pe-score-' + p.id + '">' + rateLbl(p.mi_rating) + '</span></button>' +
         '<span class="eu-grow"></span>' +
         '<button type="button" class="eu-iconbtn" data-act="del" data-id="' + p.id + '" aria-label="Eliminar ' + esc(p.titulo) + '"><i data-lucide="trash-2"></i></button>' +
         '</div></div></div>' +
@@ -402,7 +414,8 @@
       var p = PELIS.peliculas.filter(function (x) { return x.id === id; })[0];
       if (!p) return;
       $('pe-panel-' + id).innerHTML = ratePanel(p);
-      $('pe-score-' + id).textContent = score(p.mi_rating);
+      $('pe-score-' + id).textContent = rateLbl(p.mi_rating);
+      $('pe-stars-' + id).innerHTML = starsHtml(p.mi_rating); icons();
       document.querySelector('[data-act="rate"][data-id="' + id + '"]').classList.toggle('is-rated', p.mi_rating != null);
       var dot = document.querySelector('#pe-panel-' + id + ' [data-dim="' + dim + '"][data-val="' + val + '"]');
       if (dot) dot.focus();

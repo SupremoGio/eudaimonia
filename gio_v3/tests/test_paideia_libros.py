@@ -261,3 +261,14 @@ def test_fuera_el_tip(client):
     css = _src('static/css/paideia.css')
     for sel in ('.pd-tip', '.pd-stats', '.pd-now{', '.pd-now-', '.pd-card-prog', '.pd-lead'):
         assert sel not in css, sel
+
+
+# ── Sprint 4: películas en ★ 1–5 en lista y ranking ──────────────────────────
+
+def test_peliculas_en_estrellas_sin_cambiar_la_base():
+    js = _src('static/js/paideia.js')
+    assert 'Math.round(Number(v) / 2)' in js and 'Math.max(1, Math.min(5,' in js
+    rank = js.split("if (peFilter === 'ranking')", 1)[1].split('icons(); return;', 1)[0]
+    assert 'starsHtml(p.mi_rating)' in rank and "'/10</span>" not in rank
+    assert "id=\"pe-stars-' + p.id" in js and 'rateLbl(p.mi_rating)' in js
+    assert 'Tu rating · <b class="t-data">' in js                 # el detalle 1–10 sigue en el panel
