@@ -33,6 +33,8 @@
 /* Entre semana: vista previa, sin marcar */
 .at-preview{display:flex;align-items:center;gap:var(--sp-2)}
 .at-preview svg{width:14px;height:14px;color:var(--info-fg)}
+.at-prorroga{color:var(--fg-2)}
+.at-prorroga svg{color:var(--warning-fg)}
 .at-task[aria-disabled=true]{cursor:default}
 .at-task[aria-disabled=true]:hover{border-color:var(--border-subtle)}
 

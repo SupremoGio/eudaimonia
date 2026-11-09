@@ -444,17 +444,37 @@ def _build_rutina(dia, semana_id):
     }
 
 
+# Lunes a miércoles: prórroga para cerrar el fin de semana anterior.
+PRORROGA_DIAS = (0, 1, 2)
+
+
+def _finde_rango(semana_id):
+    sab = date.fromisoformat(semana_id)
+    dom = sab + timedelta(days=1)
+    mes = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+    return f"{sab.day}–{dom.day} {mes[dom.month - 1]}" if sab.month == dom.month else f"{sab.day} {mes[sab.month - 1]} – {dom.day} {mes[dom.month - 1]}"
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @ataraxia_bp.route('/')
 def index():
     semana_id = get_semana_id()
     dow = today_date().weekday()
-    default_dia = "domingo" if dow == 6 else "sabado"
-    dia = request.args.get('dia', default_dia)
+    # Prórroga (usuario, 2026-11-09): lo que quedó pendiente del fin de
+    # semana se puede terminar hasta el miércoles; jueves y viernes, vista previa.
+    en_prorroga = dow in PRORROGA_DIAS
+    puede_marcar = dow in (5, 6) or en_prorroga
 
     sabado_data  = _build_rutina("sabado",  semana_id)
     domingo_data = _build_rutina("domingo", semana_id)
+    if dow == 6:
+        default_dia = "domingo"
+    elif en_prorroga and sabado_data["complete"] and not domingo_data["complete"]:
+        default_dia = "domingo"
+    else:
+        default_dia = "sabado"
+    dia = request.args.get('dia', default_dia)
 
     _td = today_date()
     fecha_larga = "{} {} de {}".format(
@@ -471,7 +491,9 @@ def index():
         domingo      = domingo_data,
         horarios     = HORARIOS,
         bloque_labels= BLOQUE_LABELS,
-        is_weekend   = dow in (5, 6),
+        is_weekend   = puede_marcar,
+        en_prorroga  = en_prorroga,
+        finde_rango  = _finde_rango(semana_id),
         today        = today_str(),
         revision     = _revision_view(semana_id),
         prio_semana  = _prio_semana_view(semana_id),

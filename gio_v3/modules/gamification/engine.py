@@ -362,6 +362,13 @@ SUN_COMBO_KEYS = frozenset({
 })
 
 
+def _sabado_ciclo(today):
+    """Sábado del ciclo de fin de semana al que pertenece `today` (ISO): el
+    mismo día en sábado, el anterior de domingo a viernes."""
+    d = date.fromisoformat(today[:10])
+    return (d - timedelta(days=(d.weekday() - 5) % 7)).isoformat()
+
+
 def _check_combo_bonus(today, keys_today):
     cats = {ACTIVITIES[k]["cat"] for k in keys_today if k in ACTIVITIES}
     combos = []
@@ -392,12 +399,20 @@ def _check_combo_bonus(today, keys_today):
         _award_xp(5, "bonus", "Combo: 5 categorías")
         combos.append({"type": "5cats", "icon": "🌟", "name": "5 Virtudes", "description": "Cinco categorías distintas en un día", "xp": 5, "ec": 0})
 
+    # Fin de semana: se cuenta todo el ciclo (sábado → hoy), no solo hoy: los
+    # bloques se pueden terminar hasta el miércoles (prórroga de Ataraxia), así
+    # que un sábado cerrado el lunes también paga su combo, una vez por ciclo.
+    desde = _sabado_ciclo(today)
+    with get_db() as db:
+        keys_finde = {r["activity_key"] for r in db.execute(
+            "SELECT DISTINCT activity_key FROM activity_logs WHERE date>=? AND date<=?", (desde, today))}
+
     # Weekend: sábado completo → +4 XP bonus (6 bloques requeridos; Jugos es opcional)
-    if SAT_COMBO_KEYS.issubset(set(keys_today)):
+    if SAT_COMBO_KEYS.issubset(keys_finde):
         with get_db() as db:
             sat_done = db.execute(
-                "SELECT id FROM xp_ledger WHERE source='bonus' AND description='Combo: Sábado Completo' AND date=?",
-                (today,)
+                "SELECT id FROM xp_ledger WHERE source='bonus' AND description='Combo: Sábado Completo' AND date>=? AND date<=?",
+                (desde, today)
             ).fetchone()
         if not sat_done:
             _award_xp(4, "bonus", "Combo: Sábado Completo")
@@ -405,11 +420,11 @@ def _check_combo_bonus(today, keys_today):
             combos.append({"type": "sat_complete", "icon": "🔥", "name": "Sábado Completo", "description": "Todos los bloques del sábado completados", "xp": 4, "ec": 2})
 
     # Weekend: domingo completo → +5 XP bonus (9 bloques)
-    if SUN_COMBO_KEYS.issubset(set(keys_today)):
+    if SUN_COMBO_KEYS.issubset(keys_finde):
         with get_db() as db:
             sun_done = db.execute(
-                "SELECT id FROM xp_ledger WHERE source='bonus' AND description='Combo: Domingo Completo' AND date=?",
-                (today,)
+                "SELECT id FROM xp_ledger WHERE source='bonus' AND description='Combo: Domingo Completo' AND date>=? AND date<=?",
+                (desde, today)
             ).fetchone()
         if not sun_done:
             _award_xp(5, "bonus", "Combo: Domingo Completo")
@@ -909,14 +924,16 @@ def _gather_achievement_stats():
             if cl["rank"] == "diamond":
                 diamond_week += 1
 
-        # Weekend perfect: both sat + sun combos awarded this ISO week
+        # Fin de semana perfecto: los dos combos en el mismo ciclo (sábado → hoy),
+        # aunque uno se haya cerrado en la prórroga de lunes a miércoles.
+        finde = _sabado_ciclo(today)
         sat_combo_week = db.execute(
             "SELECT COUNT(*) as c FROM xp_ledger WHERE description='Combo: Sábado Completo' AND date>=?",
-            (week_start,)
+            (finde,)
         ).fetchone()["c"]
         sun_combo_week = db.execute(
             "SELECT COUNT(*) as c FROM xp_ledger WHERE description='Combo: Domingo Completo' AND date>=?",
-            (week_start,)
+            (finde,)
         ).fetchone()["c"]
 
     streak     = get_gamification_streak()

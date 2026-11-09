@@ -31,7 +31,9 @@
       </div>
     </header>
 
-    {% if not is_weekend %}
+    {% if en_prorroga %}
+    <p class="t-meta at-preview at-prorroga"><i data-lucide="hourglass"></i>Prórroga: tienes hasta el miércoles para cerrar el fin de semana del {{ finde_rango }}</p>
+    {% elif not is_weekend %}
     <p class="t-meta at-preview"><i data-lucide="eye"></i>Faltan {{ dias_para_sabado }} día{{ 's' if dias_para_sabado != 1 }} para el sábado · vista previa</p>
     {% endif %}
 
@@ -57,7 +59,7 @@
     </section>
     <section class="at-wkday">
       <div class="at-wkday-t">Entre semana</div>
-      <p class="t-meta">De lunes a viernes esta pantalla muestra cuánto falta para el sábado y deja revisar sin marcar. «Resetear semana» vive en el menú ⋯ y siempre pide confirmación.</p>
+      <p class="t-meta">De lunes a miércoles puedes terminar lo que quedó pendiente del fin de semana (las recompensas se pagan igual). Jueves y viernes la pantalla muestra cuánto falta para el sábado y deja revisar sin marcar. «Resetear semana» vive en el menú ⋯ y siempre pide confirmación.</p>
     </section>
   </aside>
 </div>
