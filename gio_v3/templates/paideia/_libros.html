@@ -70,36 +70,46 @@
   </div>
 </section>
 
-<div class="pd-sec">
-  <div><h2 class="t-card">Tu biblioteca</h2><p class="t-meta">Filtra por estado y entra a cualquier libro para actualizar tu progreso.</p></div>
-  <div class="eu-chips" role="group" aria-label="Filtrar biblioteca por estado">
-    {{ ui.chip('Todos', pressed=True, count=libros|length, **{'data-f': 'todos'}) }}
-    {{ ui.chip('Leyendo', count=stats.leyendo, **{'data-f': 'leyendo'}) }}
-    {{ ui.chip('Por leer', count=stats.por_leer, **{'data-f': 'por_leer'}) }}
-    {{ ui.chip('Leídos', count=stats.total_leidos, **{'data-f': 'leido'}) }}
+{# Biblioteca de portadas (nota 8): Por leer / Leídos / Todos. Los libros en
+   lectura viven en el héroe y no se repiten aquí. #}
+{% set biblio = libros|rejectattr('estado', 'equalto', 'leyendo')|list %}
+{% set n_por_leer = biblio|selectattr('estado', 'equalto', 'por_leer')|list|length %}
+{% set n_leidos = biblio|selectattr('estado', 'equalto', 'leido')|list|length %}
+<div class="pd-sec" id="pd-lib">
+  <h2 class="pd-sec-t">Tu biblioteca</h2>
+  <div class="eu-chips pd-filters" role="group" aria-label="Filtrar biblioteca">
+    {{ ui.chip('Por leer', pressed=True, count=n_por_leer, **{'data-f': 'por_leer'}) }}
+    {{ ui.chip('Leídos', count=n_leidos, **{'data-f': 'leido'}) }}
+    {{ ui.chip('Todos', count=biblio|length, **{'data-f': 'todos'}) }}
   </div>
 </div>
 
-{% set EST = {'leyendo': ('Leyendo', 'info'), 'por_leer': ('Por leer', ''), 'leido': ('Leído', 'success')} %}
-<div class="pd-grid" id="pd-grid">
-  {% for l in libros %}
-  <article class="eu-card pd-card" data-estado="{{ l.estado }}">
-    <button type="button" class="pd-card-open js-edit" data-id="{{ l.id }}" aria-label="Editar {{ l.titulo }}">
-      {% if l.portada %}<img class="pd-cover" src="{{ l.portada }}" alt="" loading="lazy">
-      {% else %}<span class="pd-cover pd-cover--empty" aria-hidden="true">{{ l.titulo[0]|upper }}</span>{% endif %}
-      <span class="pd-card-bd">
-        <span class="pd-badges">{{ ui.badge(EST[l.estado][0], EST[l.estado][1]) }}{{ ui.badge(l.categoria) }}</span>
-        <span class="t-card pd-card-t">{{ l.titulo }}</span>
-        {% if l.autor %}<span class="t-meta">{{ l.autor }}</span>{% endif %}
-        {% if l.paginas_totales %}<span class="t-meta num">{{ l.paginas_totales }} páginas</span>{% endif %}
-        {% if l.estado == 'leido' and l.rating %}
-        <span class="pd-stars" aria-label="{{ l.rating }} de 5 estrellas">{% for i in range(1,6) %}<i data-lucide="star" class="{{ 'is-on' if i <= l.rating }}"></i>{% endfor %}</span>
-        {% endif %}
-      </span>
-    </button>
+<div class="pd-grid" id="pd-grid" data-filter="por_leer">
+  {% for l in biblio %}
+  <article class="pd-book" data-estado="{{ l.estado }}">
+    <div class="pd-book-cover">
+      <button type="button" class="pd-book-open js-edit" data-id="{{ l.id }}" aria-label="Editar {{ l.titulo }}">
+        {% if l.portada %}<img src="{{ l.portada }}" alt="" loading="lazy">
+        {% else %}<span class="pd-book-ini" aria-hidden="true">{{ l.titulo[0]|upper }}</span>{% endif %}
+      </button>
+      {% if l.estado == 'por_leer' %}
+      <button type="button" class="pd-book-start js-start" data-id="{{ l.id }}" aria-label="Empezar {{ l.titulo }}"><i data-lucide="book-open"></i>Empezar</button>
+      {% endif %}
+    </div>
+    <div class="pd-book-bd">
+      <span class="pd-book-t">{{ l.titulo }}</span>
+      {% if l.estado == 'leido' %}
+      {% if l.autor %}<span class="t-meta">{{ l.autor }}</span>{% endif %}
+      {% if l.rating %}
+      <span class="pd-stars" aria-label="{{ l.rating }} de 5 estrellas">{% for i in range(1,6) %}<i data-lucide="star" class="{{ 'is-on' if i <= l.rating }}"></i>{% endfor %}</span>
+      {% else %}
+      <button type="button" class="pd-book-rate js-rate" data-id="{{ l.id }}">Sin calificar · calificar →</button>
+      {% endif %}
+      {% else %}
+      <span class="t-meta">{{ l.autor or 'Autor desconocido' }}{% if l.paginas_totales %} · {{ l.paginas_totales }} p.{% endif %}</span>
+      {% endif %}
+    </div>
   </article>
-  {% else %}
-  <div class="pd-span">{{ ui.empty('book-open', 'Tu biblioteca está vacía', 'Registra tu primer libro con el botón de arriba.') }}</div>
   {% endfor %}
-  <div class="pd-span" id="pd-nomatch" hidden>{{ ui.empty('filter', 'Nada en este filtro', 'No hay libros con este estado todavía.') }}</div>
+  <div class="pd-span" id="pd-nomatch"{% if biblio and n_por_leer %} hidden{% endif %}>{{ ui.empty('library', 'Nada aquí todavía', 'Agrega un libro con «+ Libro» o cambia de filtro.', compact=True) }}</div>
 </div>

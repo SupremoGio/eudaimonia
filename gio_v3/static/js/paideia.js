@@ -1,6 +1,8 @@
-/* Paideia — Design System V2: libros (meta anual, bump de progreso, filtros,
-   modal con búsqueda OpenLibrary + portada) y películas (ranking personal con
-   calificación por dimensiones y búsqueda OMDb). */
+/* Paideia — Design System V2 · handoff Paideia v2. Libros: héroe (meta con
+   ritmo, leyendo ahora con «Página» → /progreso y «Terminar +10 XP»),
+   biblioteca de portadas con filtros y «Empezar», modal con búsqueda
+   OpenLibrary + portada. Películas: ranking personal con calificación por
+   dimensiones y búsqueda OMDb. */
 (function () {
   'use strict';
   var root = document.getElementById('pd');
@@ -35,19 +37,21 @@
   document.querySelectorAll('[data-mod-set]').forEach(function (b) { b.addEventListener('click', function () { setMod(b.dataset.modSet); }); });
   document.querySelectorAll('.js-new').forEach(function (b) { b.addEventListener('click', function () { if (mod === 'libros') abrirNuevo(); else abrirPeli(); }); });
 
-  /* ── Filtros de la biblioteca ───────────────────────────────────────── */
-  document.querySelectorAll('[data-f]').forEach(function (chip) {
-    chip.addEventListener('click', function () {
-      var f = chip.dataset.f, shown = 0;
-      document.querySelectorAll('[data-f]').forEach(function (c) { c.setAttribute('aria-pressed', String(c === chip)); });
-      document.querySelectorAll('.pd-card').forEach(function (card) {
-        var ok = f === 'todos' || card.dataset.estado === f;
-        card.hidden = !ok; if (ok) shown++;
-      });
-      var nm = $('pd-nomatch');
-      if (nm) nm.hidden = shown > 0 || !document.querySelector('.pd-card');
+  /* ── Filtros de la biblioteca (nota 8): Por leer · Leídos · Todos ─────── */
+  var bookFilter = 'por_leer';
+  function pdApplyFilter() {
+    var shown = 0, any = false;
+    document.querySelectorAll('[data-f]').forEach(function (c) { c.setAttribute('aria-pressed', String(c.dataset.f === bookFilter)); });
+    document.querySelectorAll('.pd-book').forEach(function (b) {
+      any = true;
+      var ok = bookFilter === 'todos' || b.dataset.estado === bookFilter;
+      b.hidden = !ok; if (ok) shown++;
     });
-  });
+    var g = $('pd-grid'); if (g) g.dataset.filter = bookFilter;
+    var nm = $('pd-nomatch'); if (nm) nm.hidden = shown > 0;
+  }
+  window.pdApplyFilter = pdApplyFilter;
+  pdApplyFilter();
 
   /* ── Héroe: Página / Registrar %, Terminar (handoff Paideia v2, notas 5–6).
      Delegado en #mod-libros: refreshLibros() reemplaza su contenido. ── */
@@ -66,9 +70,26 @@
     icons();
   }
   libs.addEventListener('click', function (e) {
-    var b = e.target.closest('.js-prog, .js-finish, .js-edit, .js-meta, .js-start');
+    var chip = e.target.closest('[data-f]');
+    if (chip) { bookFilter = chip.dataset.f; pdApplyFilter(); return; }
+    var b = e.target.closest('.js-prog, .js-finish, .js-edit, .js-meta, .js-start, .js-rate');
     if (!b) return;
     if (b.classList.contains('js-edit')) { abrirEditar(+b.dataset.id); return; }
+    if (b.classList.contains('js-rate')) {
+      abrirEditar(+b.dataset.id).then(function () {
+        var r = $('lb-rating-row'); if (r) { r.scrollIntoView({ block: 'center' }); var st = r.querySelector('.pd-star'); if (st) st.focus(); }
+      });
+      return;
+    }
+    if (b.classList.contains('js-start')) {
+      busy(b, true);
+      json(BASE + '/api/libros/' + b.dataset.id, 'PATCH', { estado: 'leyendo' }).then(function (r) {
+        if (!r.ok) throw new Error(r.error);
+        toast('Empezado · ya está en «Leyendo ahora»', 'win');
+        return refreshLibros().then(function () { var h = $('pd-hero'); if (h) h.scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+      }).catch(function () { busy(b, false); toast('No se pudo empezar', 'err'); });
+      return;
+    }
     if (b.classList.contains('js-meta')) { euModal.open('m-meta'); setTimeout(function () { $('meta-input').focus(); }, 30); return; }
     var art = b.closest('.pd-rd');
     if (b.classList.contains('js-prog')) {
@@ -234,7 +255,7 @@
     setTimeout(function () { $('lb-titulo').focus(); }, 30);
   }
   function abrirEditar(id) {
-    json(BASE + '/api/libros').then(function (d) {
+    return json(BASE + '/api/libros').then(function (d) {
       var l = (d.libros || []).filter(function (x) { return x.id === id; })[0];
       if (!l) { toast('No se encontró el libro', 'err'); return; }
       fillLibro(l); icons(); euModal.open('m-libro');

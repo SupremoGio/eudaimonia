@@ -213,3 +213,51 @@ def test_js_del_heroe():
     assert "'/progreso'" in js and "{ estado: 'leido' }" in js and 'refreshLibros' in js
     assert "' terminado · +10 XP · +5 EC · meta '" in js.replace('»', "'").replace('«', "'") or 'terminado · +10 XP · +5 EC · meta' in js
     assert 'js-tip' not in js and 'js-bump' not in js
+
+
+# ── Sprint 3: biblioteca de portadas y limpieza ──────────────────────────────
+
+def _grid(html):
+    return html.split('id="pd-grid"', 1)[1].split('id="pd-nomatch"', 1)[0]
+
+
+def test_biblioteca_sin_repetir_los_que_leo_y_con_filtros(client):
+    a = _libro(client, titulo='Leyendo uno', estado='leyendo')
+    b = _libro(client, titulo='Por leer uno')
+    c = _libro(client, titulo='Leído uno', estado='leyendo')
+    client.patch(f'/paideia/api/libros/{c}', json={'estado': 'leido'})
+    html = client.get('/paideia/').get_data(as_text=True)
+    g = _grid(html)
+    assert 'Leyendo uno' not in g and 'Por leer uno' in g and 'Leído uno' in g
+    assert html.count('Leyendo uno</span>') == 1                     # solo en el héroe
+    sec = html.split('id="pd-lib"', 1)[1].split('id="pd-grid"', 1)[0]
+    assert sec.index('Por leer') < sec.index('Leídos') < sec.index('Todos')
+    assert 'data-filter="por_leer"' in html
+    assert f'class="pd-book-start js-start" data-id="{b}"' in g        # Empezar sobre la portada
+    assert f'class="pd-book-rate js-rate" data-id="{c}">Sin calificar · calificar →' in g
+    assert 'eu-badge' not in g                                      # fuera badges de estado/categoría
+    assert ' · 200 p.' in g
+
+
+def test_empezar_lo_mueve_al_heroe(client):
+    b = _libro(client, titulo='Nuevo libro')
+    client.patch(f'/paideia/api/libros/{b}', json={'estado': 'leyendo'})
+    html = client.get('/paideia/').get_data(as_text=True)
+    assert 'Nuevo libro' in _hero(html) and 'Nuevo libro' not in _grid(html)
+
+
+def test_leido_con_estrellas(client):
+    c = _libro(client, titulo='Calificado', estado='leyendo')
+    client.patch(f'/paideia/api/libros/{c}', json={'estado': 'leido', 'rating': 4})
+    g = _grid(client.get('/paideia/').get_data(as_text=True))
+    assert 'aria-label="4 de 5 estrellas"' in g
+
+
+def test_fuera_el_tip(client):
+    assert client.get('/paideia/api/tip/refresh').status_code == 404
+    assert 'tip' not in client.get('/paideia/api/summary').get_json()
+    import data
+    assert not hasattr(data, 'get_paideia_tip_of_day') and not hasattr(data, 'PAIDEIA_TIPS')
+    css = _src('static/css/paideia.css')
+    for sel in ('.pd-tip', '.pd-stats', '.pd-now{', '.pd-now-', '.pd-card-prog', '.pd-lead'):
+        assert sel not in css, sel

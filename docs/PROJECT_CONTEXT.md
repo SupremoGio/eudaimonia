@@ -170,7 +170,7 @@ eudaimonia/                         ← raíz del repo
 | Guardarropa / Wishlist | `guardarropa/index.html` (~2 300 líneas), `guardarropa/wishlist.html` | fotos, outfits |
 | Viajes | `viajes/index.html` | itinerario, maleta, outfits por día |
 | Cosmopolitismo | `idiomas/index.html` | |
-| Paideia | `paideia/index.html` | libros/películas |
+| Paideia | `paideia/index.html`, `_libros.html` | libros/películas. Libros: héroe con la meta anual y su ritmo (`paideia.ritmo`) + todos los libros en lectura con página exacta (`POST /paideia/api/libros/<id>/progreso`, marca una vez al día el ancla de Paideia de hoy en Acta o, si no hay, «Leer 5 páginas») y «Terminar» (+10 XP · +5 EC, revertible); biblioteca de portadas Por leer / Leídos / Todos |
 | Eurythmia | `eurythmia/index.html` | |
 | Harma | `harma/index.html` | vehículo |
 | Plantas | `plantas/index.html` | |

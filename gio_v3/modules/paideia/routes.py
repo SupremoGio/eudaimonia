@@ -4,7 +4,6 @@ from flask import Blueprint, render_template, request, jsonify
 import calendar
 from datetime import datetime
 from database import get_db
-from data import get_paideia_tip_of_day, get_random_paideia_tip
 from utils import today_str, today_date
 import modules.gamification.engine as engine
 import modules.actividades.activity_defs as adefs
@@ -140,7 +139,7 @@ def index():
     lectura = lectura_de_hoy()
     return render_template(
         'paideia/index.html', libros=libros, stats=_stats(libros),
-        tip=get_paideia_tip_of_day(), now_year=today_date().year,
+        now_year=today_date().year,
         peliculas=_peliculas_state(), peli_rating_dims=PELI_RATING_DIMS,
         lectura=lectura, lectura_hecha=bool(lectura and _lectura_hecha_hoy(lectura)),
         paginas_sesion=PAGINAS_POR_SESION,
@@ -156,14 +155,7 @@ def summary():
     return jsonify({
         'stats': _stats(libros),
         'leyendo': leyendo,
-        'tip': get_paideia_tip_of_day(),
     })
-
-
-@paideia_bp.route('/api/tip/refresh')
-def tip_refresh():
-    cat = request.args.get('cat')
-    return jsonify(get_random_paideia_tip(category=cat))
 
 
 @paideia_bp.route('/api/meta', methods=['POST'])

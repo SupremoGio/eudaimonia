@@ -34,7 +34,7 @@
 .pd-reading{display:flex;flex-direction:column;padding:var(--sp-2) var(--sp-6)}
 @media (max-width:1023px){.pd-reading{padding:var(--sp-2) var(--sp-5)}}
 .pd-reading-t{padding:var(--sp-4) 0 var(--sp-1)}
-.pd-rd{display:flex;gap:var(--sp-4);padding:var(--sp-4) 0;border-bottom:1px solid var(--border-subtle)}
+.pd-rd{display:flex;align-items:flex-start;gap:var(--sp-4);padding:var(--sp-4) 0;border-bottom:1px solid var(--border-subtle)}
 .pd-rd-cover{padding:0;border:0;background:none;cursor:pointer;border-radius:var(--r-sm);flex-shrink:0}
 .pd-rd-cover:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .pd-cover--rd{width:56px;height:80px}
@@ -53,6 +53,13 @@
 .pd-rd-form{display:flex;align-items:center;gap:6px}
 .pd-rd-in{width:80px;height:32px;padding:0 var(--sp-2);border-color:var(--border-brand);font-family:var(--font-data)}
 @media (max-width:1023px){.pd-rd-acts .eu-btn,.pd-rd-in{min-height:44px}}
+@media (max-width:639px){
+  .pd-rd{gap:var(--sp-3)}
+  .pd-cover--rd{width:44px;height:64px}
+  .pd-rd-acts{margin-left:0;width:100%;flex-wrap:nowrap}
+  .pd-rd-acts > .eu-btn{flex:1;justify-content:center;padding:0 var(--sp-2)}
+  .pd-rd-form{flex:1;flex-wrap:wrap}
+}
 .pd-rd-empty{padding:var(--sp-5) 0}
 .pd-anchor{display:flex;align-items:center;gap:var(--sp-2);padding:var(--sp-3) 0 var(--sp-4);font-size:var(--fs-12);color:var(--fg-3)}
 .pd-anchor svg{width:14px;height:14px;flex-shrink:0}
@@ -61,32 +68,37 @@
 /* Portadas */
 .pd-cover{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:64px;aspect-ratio:2/3;object-fit:cover;border-radius:var(--r-sm);border:1px solid var(--border-subtle);background:var(--bg-raised)}
 .pd-cover--empty{background:var(--cat-bg);color:var(--cat-fg);border-color:var(--cat-border);font:var(--fw-medium) var(--fs-24)/1 var(--font-display)}
-.pd-cover--now{width:80px}
 
-/* Leyendo ahora */
-.pd-now{display:flex;flex-direction:column;gap:var(--sp-3);border-left:3px solid var(--cat-fg)}
-.pd-now-open,.pd-card-open{display:flex;gap:var(--sp-4);align-items:flex-start;width:100%;padding:0;border:0;background:none;text-align:left;font:inherit;color:inherit;cursor:pointer;border-radius:var(--r-sm)}
-.pd-now-open:focus-visible,.pd-card-open:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.pd-now-info,.pd-card-bd{display:flex;flex-direction:column;gap:var(--sp-1);min-width:0;flex:1}
-.pd-now-t{line-height:1.25}
-.pd-prog{display:flex;flex-direction:column;gap:var(--sp-2)}
-
-/* Biblioteca */
-.pd-sec{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.pd-sec .t-meta{margin-top:var(--sp-1)}
-.pd-sec .eu-chips{max-width:100%}
-.pd-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-3)}
-@media (min-width:640px){.pd-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
-.pd-card{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-4)}
-.pd-card-open:hover .pd-card-t{color:var(--fg-brand)}
-.pd-card-t{line-height:1.3;overflow-wrap:anywhere}
-.pd-badges{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin-bottom:var(--sp-1)}
-.pd-stars{display:inline-flex;gap:2px;margin-top:var(--sp-1);color:var(--fg-3)}
-.pd-stars svg{width:14px;height:14px}
+/* Biblioteca de portadas (nota 8): 6 / 3 / 2 columnas, portadas 2:3 */
+.pd-sec{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.pd-sec-t{margin:0;font:var(--fw-semibold) var(--fs-20)/1.2 var(--font-display)}
+.pd-filters{max-width:100%}
+.pd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4) var(--sp-3)}
+@media (min-width:640px){.pd-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:1024px){.pd-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:var(--sp-4)}}
+.pd-book{display:flex;flex-direction:column;gap:var(--sp-2);min-width:0}
+.pd-book-cover{position:relative;aspect-ratio:2/3;border-radius:6px;overflow:hidden;background:var(--cat-bg);border:1px solid var(--cat-border);box-shadow:inset 4px 0 0 rgba(0,0,0,.25)}
+.pd-book[data-estado=leido] .pd-book-cover{opacity:.85}
+.pd-book-open{display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:0;border:0;background:none;cursor:pointer;color:var(--cat-fg)}
+.pd-book-open:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.pd-book-open img{width:100%;height:100%;object-fit:cover;display:block}
+.pd-book-ini{font:var(--fw-semibold) 40px/1 var(--font-display)}
+.pd-book-start{position:absolute;left:var(--sp-2);right:var(--sp-2);bottom:var(--sp-2);display:flex;align-items:center;justify-content:center;gap:6px;height:32px;border-radius:var(--r-sm);border:0;background:color-mix(in oklab,var(--bg-canvas) 78%,transparent);color:var(--fg-1);font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);cursor:pointer;backdrop-filter:blur(4px)}
+.pd-book-start svg{width:13px;height:13px}
+.pd-book-start:hover{background:var(--cat-fg);color:var(--bg-canvas)}
+@media (max-width:1023px){.pd-book-start{height:44px}}
+.pd-book-bd{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pd-book-t{font:var(--fw-semibold) var(--fs-15)/1.2 var(--font-display);color:var(--fg-1);overflow-wrap:anywhere}
+.pd-book-rate{align-self:flex-start;padding:0;border:0;background:none;color:var(--fg-3);font:var(--fs-12) var(--font-ui);cursor:pointer;text-align:left;min-height:24px}
+.pd-book-rate:hover{color:var(--fg-brand)}
+.pd-stars{display:inline-flex;gap:2px;color:var(--fg-3)}
+.pd-stars svg{width:13px;height:13px}
 .pd-stars .is-on{color:var(--xp-fg);fill:currentColor}
-.pd-card-prog{padding-top:var(--sp-3);border-top:1px solid var(--border-subtle)}
 
 /* Películas */
+.pd-card-bd{display:flex;flex-direction:column;gap:var(--sp-1);min-width:0;flex:1}
+.pd-card-t{line-height:1.3;overflow-wrap:anywhere}
+.pd-badges{display:flex;flex-wrap:wrap;gap:var(--sp-1);margin-bottom:var(--sp-1)}
 .pe-hero{display:flex;flex-direction:column;gap:var(--sp-3);border-top:3px solid var(--cat-fg)}
 .pe-sub{margin-top:var(--sp-1)}
 .pe-count{display:flex;flex-direction:column;align-items:flex-end}
