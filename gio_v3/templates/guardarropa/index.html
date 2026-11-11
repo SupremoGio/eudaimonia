@@ -8,15 +8,11 @@
 
 {% block content %}
 <div class="gr-root" id="gr" data-tab="prendas" data-view="grid">
-  <div class="gr-main">
-    {% include "guardarropa/_head.html" %}
-    {% include "guardarropa/_prendas.html" %}
-    {% include "guardarropa/_outfits.html" %}
-    <section class="gr-panel eu-vstack" data-panel="analisis" id="gr-analisis" aria-label="Análisis del armario" hidden></section>
-  </div>
-  <aside class="gr-side" aria-label="Outfit de hoy, rotación y wishlist">
-    {% include "guardarropa/_side.html" %}
-  </aside>
+  {% include "guardarropa/_head.html" %}
+  {% include "guardarropa/_hero.html" %}
+  {% include "guardarropa/_prendas.html" %}
+  {% include "guardarropa/_outfits.html" %}
+  <section class="gr-panel eu-vstack" data-panel="analisis" id="gr-analisis" aria-label="Análisis del armario" hidden></section>
 </div>
 
 <button type="button" class="gr-fab js-fab" aria-label="Nueva prenda"><i data-lucide="plus"></i></button>

@@ -85,8 +85,10 @@ def _skip_ids(raw):
 def index():
     items, outfits = _armario()
     hoy = today_date()
+    skip = _skip_ids(request.args.get('skip'))     # «Otro»: el JS pide el héroe con las ya vistas
     return render_template('guardarropa/index.html',
-                           sugerencia=stylist.sugerencia_del_dia(outfits, hoy),
+                           sugerencia=stylist.sugerencia_del_dia(outfits, hoy, skip=skip),
+                           skip=','.join(skip),
                            rot=stylist.rotacion(items, hoy),
                            items=items, outfits=outfits,
                            categorias=CATEGORIAS, ocasiones=OCASIONES,

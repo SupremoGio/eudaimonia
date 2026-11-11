@@ -1,0 +1,71 @@
+{# Héroe (handoff Guardarropa v2, notas 2–4 y 6): el outfit de hoy con su razón
+   y la rotación de 90 días con meta del 70 %. Datos: stylist.sugerencia_del_dia
+   y stylist.rotacion. guardarropa.js lo vuelve a pedir tras usar / «Otro». #}
+{% set sug = sugerencia %}
+<section class="gr-hero" id="gr-hero" aria-label="Outfit de hoy y rotación"
+         data-outfit="{{ sug.outfit.id if sug else '' }}" data-skip="{{ skip or '' }}">
+  <div class="gr-today-hero">
+    {% if sug %}
+    {% set o = sug.outfit %}
+    <button type="button" class="gr-today-grid js-today-view" data-id="{{ o.id }}" aria-label="Ver «{{ o.nombre }}» completo">
+      {% for p in sug.piezas[:4] %}
+      <span class="gr-today-pc">
+        {% if p.foto %}<img src="/guardarropa/photos/{{ p.foto|urlencode }}" alt="" loading="lazy">
+        {% else %}<span class="gr-today-sw" data-hex="{{ p.color_hex or '' }}"><i data-lucide="shirt"></i></span>{% endif %}
+        {% if p.olvidada %}<span class="gr-today-idle num">{{ '0 usos' if p.dias_sin_uso is none else p.dias_sin_uso ~ ' d' }}</span>{% endif %}
+      </span>
+      {% endfor %}
+    </button>
+    <div class="gr-today-bd">
+      <div class="t-eyebrow">Outfit de hoy{% if o.ocasion %} · {{ o.ocasion }}{% endif %}</div>
+      <div class="gr-today-n">{{ o.nombre }}</div>
+      <ul class="gr-today-list">
+        {% for p in sug.piezas %}<li>{{ p.nombre }} <span>· {{ 'usada hoy' if sug.usado_hoy else p.ultimo_uso_txt }}</span></li>{% endfor %}
+      </ul>
+      <p class="t-meta gr-today-why">{{ sug.razon }}</p>
+      <div class="gr-today-acts">
+        {% if sug.usado_hoy %}
+        <button type="button" class="eu-btn gr-today-used" disabled><i data-lucide="check"></i>Usado hoy{% if outfit_xp.key and outfit_xp.done %} · +{{ outfit_xp.pts }} XP{% endif %}</button>
+        {% else %}
+        <button type="button" class="eu-btn eu-btn--primary js-today-use" data-id="{{ o.id }}"><i data-lucide="check"></i>Usar hoy{% if outfit_xp.key and not outfit_xp.done %} · +{{ outfit_xp.pts }} XP{% endif %}</button>
+        {% if sug.hay_otro %}<button type="button" class="eu-btn eu-btn--secondary js-today-next"><i data-lucide="shuffle"></i>Otro</button>{% endif %}
+        {% endif %}
+        <button type="button" class="eu-btn eu-btn--ghost gr-coach-btn js-coach" data-occ="{{ o.ocasion or '' }}"><i data-lucide="sparkles"></i>Pedir al coach</button>
+      </div>
+    </div>
+    {% else %}
+    <div class="gr-today-bd">
+      <div class="t-eyebrow">Outfit de hoy</div>
+      <div class="gr-today-n">Aún no hay outfits</div>
+      <p class="t-meta">Guarda tu primer outfit y aquí te sugeriremos uno cada día, con la razón.</p>
+      <div class="gr-today-acts">
+        <button type="button" class="eu-btn eu-btn--primary js-new-outfit"><i data-lucide="plus"></i>Nuevo outfit</button>
+        <button type="button" class="eu-btn eu-btn--ghost gr-coach-btn js-coach" data-occ=""><i data-lucide="sparkles"></i>Pedir al coach</button>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="gr-rot-hero">
+    <div class="gr-rot-hd"><span class="t-eyebrow">Rotación · 90 días</span><span class="t-meta">meta ≥ {{ rot.rotacion_meta }}%</span></div>
+    <div><span class="gr-rot-n num">{{ rot.rotacion_pct if rot.total else '—' }}{% if rot.total %}%{% endif %}</span><span class="t-meta"> del armario en uso</span></div>
+    <div class="gr-rot-bar" role="progressbar" aria-label="Rotación de 90 días" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ rot.rotacion_pct }}">
+      <i class="gr-rot-fill" style="width:{{ rot.rotacion_pct }}%"></i><i class="gr-rot-mark" style="left:{{ rot.rotacion_meta }}%"></i>
+    </div>
+    {% if not rot.total %}
+    <p class="t-meta">Agrega prendas para medir cuánto de tu armario usas.</p>
+    {% elif rot.faltan_para_meta %}
+    <p class="gr-rot-msg">Usar {{ rot.faltan_para_meta }} olvidada{{ 's' if rot.faltan_para_meta != 1 }} más te lleva a la meta.</p>
+    {% else %}
+    <p class="gr-rot-msg is-ok">En meta: casi todo tu armario está en uso.</p>
+    {% endif %}
+    {% if rot.olvidadas_n %}
+    <button type="button" class="gr-idle-btn js-idle-filter">
+      <span class="gr-idle-strip" aria-hidden="true">
+        {% for x in rot.olvidadas %}{% if x.foto %}<img src="/guardarropa/photos/{{ x.foto|urlencode }}" alt="" loading="lazy">{% else %}<i data-hex="{{ x.color_hex or '' }}"></i>{% endif %}{% endfor %}
+      </span>
+      <span class="eu-grow">{{ rot.olvidadas_n }} olvidada{{ 's' if rot.olvidadas_n != 1 }} · sin usar 90 d</span><span>Ver →</span>
+    </button>
+    {% endif %}
+  </div>
+</section>

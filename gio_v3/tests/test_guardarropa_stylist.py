@@ -92,6 +92,7 @@ def test_si_ya_se_uso_hoy_se_muestra_ese():
     lista = [_of(1, i, ultimo='2026-11-11', usos=2), _of(2, i, ultimo=None)]
     s = stylist.sugerencia_del_dia(lista, HOY)
     assert s['outfit']['id'] == 1 and s['usado_hoy']
+    assert s['razon'] == 'Ya lo usaste hoy. Mañana te sugerimos otro.'
     assert stylist.sugerencia_del_dia(lista, HOY, skip=['1'])['outfit']['id'] == 2
 
 
@@ -154,3 +155,66 @@ def test_api_sugerencia_skip(client):
     assert a['outfit']['id'] != b['outfit']['id']
     assert b['razon'] and b['piezas'][0]['ultimo_uso_txt'] == 'nunca usada'
     assert client.get('/guardarropa/').status_code == 200
+
+
+# ── Sprint 2: encabezado + héroe ─────────────────────────────────────────────
+
+def _hero(html):
+    return html.split('id="gr-hero"', 1)[1].split('</section>', 1)[0]
+
+
+def test_encabezado_un_solo_boton_y_wishlist(client):
+    html = client.get('/guardarropa/').get_data(as_text=True)
+    hd = html.split('<header class="gr-hd">', 1)[1].split('</header>', 1)[0]
+    assert 'Vida · Estilo · 0 prendas' in hd
+    assert 'class="eu-seg gr-tablist" role="tablist"' in hd
+    root = html.split('id="gr"', 1)[1].split('id="gr-data"', 1)[0]
+    assert hd.count('href="/guardarropa/wishlist/"') == 1 and root.count('href="/guardarropa/wishlist/"') == 1
+    assert 'data-view-set' not in html and 'gr-viewseg' not in html
+    for fuera in ('gr-side', 'gr-today-mini', 'Uso · 90 días', '<details class="eu-card gr-ai"'):
+        assert fuera not in html, fuera
+    assert 'value="vista:list"' in html                             # la vista pasa al menú de orden
+
+
+def test_heroe_outfit_de_hoy_con_razon(client):
+    _seed()
+    html = client.get('/guardarropa/').get_data(as_text=True)
+    h = _hero(html)
+    assert html.index('id="gr-hero"') < html.index('id="gr-prendas"')   # lo primero que se ve
+    assert 'Outfit de hoy · Casual' in h and 'class="gr-today-n">O1<' in h
+    assert '<span>· nunca usada</span>' in h and 'gr-today-why' in h
+    assert 'class="gr-today-idle num">0 usos<' in h                      # olvidada (0 usos, >90 d en el armario)
+    assert 'js-today-use' in h and 'js-today-next' in h and 'js-coach' in h
+    assert 'Rotación · 90 días' in h and 'meta ≥ 70%' in h and 'left:70%' in h
+    assert '2 olvidadas · sin usar 90 d' in h and 'js-idle-filter' in h
+
+
+def test_otro_no_repite_y_usado_hoy(client):
+    _seed()
+    a = client.get('/guardarropa/').get_data(as_text=True)
+    oa = _hero(a).split('class="gr-today-n">', 1)[1].split('<', 1)[0]
+    b = client.get('/guardarropa/?skip=' + ('1' if oa == 'O1' else '2')).get_data(as_text=True)
+    assert _hero(b).split('class="gr-today-n">', 1)[1].split('<', 1)[0] != oa
+    assert client.post('/guardarropa/api/outfit/2/usar').get_json()['ok']
+    h = _hero(client.get('/guardarropa/').get_data(as_text=True))
+    assert 'class="gr-today-n">O2<' in h and 'Usado hoy' in h and 'js-today-use' not in h
+    assert '<span>· usada hoy</span>' in h
+
+
+def test_usar_hoy_da_xp_una_vez(client):
+    _seed()
+    h = _hero(client.get('/guardarropa/').get_data(as_text=True))
+    import modules.actividades.activity_defs as adefs
+    act = adefs.get_by_key('outfit')
+    if act and act['active'] and not act['hidden']:
+        assert f"Usar hoy · +{act['pts']} XP" in h
+        client.post('/actividades/api/activity/log', json={'key': 'outfit'})
+        h = _hero(client.get('/guardarropa/').get_data(as_text=True))
+        assert 'Usar hoy</button>' in h.replace('\n', '') or '· +' not in h.split('js-today-use', 1)[1].split('</button>', 1)[0]
+
+
+def test_coach_es_un_modal_reutilizable(client):
+    html = client.get('/guardarropa/').get_data(as_text=True)
+    modal = html.split('id="gr-coach"', 1)[1]
+    assert 'id="ai-go"' in modal and 'id="ai-occs"' in modal
+    assert html.count('js-coach') >= 2                                  # héroe + pestaña Outfits

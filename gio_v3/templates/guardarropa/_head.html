@@ -1,25 +1,20 @@
-{# Encabezado: título, pestañas (Prendas · Outfits · Análisis · Wishlist) y acciones #}
+{# Encabezado (handoff Guardarropa v2, nota 1): eyebrow con el total, pestañas
+   como eu-seg, un solo acceso a la Wishlist y un solo botón primario
+   contextual (+ Prenda / + Outfit). El selector de vista vive en el menú
+   de orden; el FAB solo en móvil. #}
 <header class="gr-hd">
   <div class="gr-hd-t">
-    <div class="t-eyebrow">Vida · Estilo</div>
+    <div class="t-eyebrow">Vida · Estilo · {{ items|length }} prenda{{ 's' if items|length != 1 }}</div>
     <h1 class="t-page">Guardarropa</h1>
   </div>
-  <div class="eu-hstack gr-hd-act">
-    <div class="eu-seg gr-viewseg" role="group" aria-label="Vista de prendas">
-      <button type="button" data-view-set="grid" aria-pressed="true" aria-label="Cuadrícula"><i data-lucide="layout-grid"></i></button>
-      <button type="button" data-view-set="list" aria-pressed="false" aria-label="Lista"><i data-lucide="list"></i></button>
+  <div class="gr-hd-act">
+    <div class="eu-seg gr-tablist" role="tablist" aria-label="Secciones del guardarropa">
+      <button type="button" role="tab" data-tab-set="prendas" aria-selected="true" aria-controls="gr-prendas">Prendas</button>
+      <button type="button" role="tab" data-tab-set="outfits" aria-selected="false" aria-controls="gr-outfits">Outfits</button>
+      <button type="button" role="tab" data-tab-set="analisis" aria-selected="false" aria-controls="gr-analisis">Análisis</button>
     </div>
-    <button type="button" class="eu-btn eu-btn--primary js-new-item" data-for="prendas"><i data-lucide="plus"></i>Nueva prenda</button>
-    <button type="button" class="eu-btn eu-btn--primary js-new-outfit" data-for="outfits" hidden><i data-lucide="plus"></i>Nuevo outfit</button>
+    <a class="gr-wishlink" href="/guardarropa/wishlist/">Wishlist{% if wish.n %}<span class="num">{{ wish.n }}</span>{% endif %}<i data-lucide="arrow-up-right" aria-hidden="true"></i></a>
+    <button type="button" class="eu-btn eu-btn--primary gr-hd-new js-new-item" data-for="prendas"><i data-lucide="plus"></i>Prenda</button>
+    <button type="button" class="eu-btn eu-btn--primary gr-hd-new js-new-outfit" data-for="outfits" hidden><i data-lucide="plus"></i>Outfit</button>
   </div>
 </header>
-<nav class="eu-seg gr-tabs" aria-label="Guardarropa">
-  {#- La lista de tabs no puede contener el enlace a Wishlist (otra página): va fuera
-      del tablist, separado por un divisor y con flecha para que se lea como enlace. -#}
-  <div class="gr-tablist" role="tablist" aria-label="Secciones del guardarropa">
-    <button type="button" role="tab" data-tab-set="prendas" aria-selected="true" aria-controls="gr-prendas">Prendas<span class="num">{{ items|length }}</span></button>
-    <button type="button" role="tab" data-tab-set="outfits" aria-selected="false" aria-controls="gr-outfits">Outfits<span class="num">{{ outfits|length }}</span></button>
-    <button type="button" role="tab" data-tab-set="analisis" aria-selected="false" aria-controls="gr-analisis">Análisis</button>
-  </div>
-  <a class="gr-tabs-link" href="/guardarropa/wishlist/">Wishlist{% if wish.n %}<span class="num">{{ wish.n }}</span>{% endif %}<i data-lucide="arrow-up-right" aria-hidden="true"></i></a>
-</nav>

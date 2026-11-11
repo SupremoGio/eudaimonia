@@ -149,11 +149,10 @@
   try { view = localStorage.getItem('gr-view') === 'list' ? 'list' : 'grid'; } catch (_) {}
   function setView(v) {
     view = v; root.dataset.view = v;
-    $$('[data-view-set]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.viewSet === v)); });
+    $$('#gr-sort [value^="vista:"]').forEach(function (o) { o.textContent = (o.value === 'vista:' + v ? '✓ ' : '') + (o.value === 'vista:grid' ? 'Vista: cuadrícula' : 'Vista: lista'); });
     try { localStorage.setItem('gr-view', v); } catch (_) {}
     renderGrid();
   }
-  $$('[data-view-set]').forEach(function (b) { b.addEventListener('click', function () { setView(b.dataset.viewSet); }); });
 
   /* ── Departamentos y filtros ──────────────────────────────── */
   var DEPARTMENTS = [
@@ -229,7 +228,15 @@
     renderGrid();
   }
   $('gr-q').addEventListener('input', filterItems);
-  sortEl.addEventListener('change', function () { try { localStorage.setItem('gr-sort', sortEl.value); } catch (_) {} filterItems(); });
+  /* El menú de orden también cambia la vista (cuadrícula / lista): esas
+     opciones no son un orden, así que se aplica la vista y se regresa al orden. */
+  var lastSort = sortEl.value;
+  sortEl.addEventListener('change', function () {
+    if (sortEl.value.indexOf('vista:') === 0) { setView(sortEl.value.slice(6)); sortEl.value = lastSort; return; }
+    lastSort = sortEl.value;
+    try { localStorage.setItem('gr-sort', sortEl.value); } catch (_) {}
+    filterItems();
+  });
   document.querySelector('.js-clear-color').addEventListener('click', function () { st.color = ''; st.idle = false; filterItems(); });
   document.querySelector('.js-clear-cat').addEventListener('click', function () { st.catF = null; filterItems(); });
 
@@ -370,7 +377,7 @@
     ALL_OUTFITS.forEach(function (o) { (o.items || []).forEach(function (i) { if (i.id === id) i.foto = filename; }); });
     renderGrid();
     if (detailId === id && !$('gr-detail').hidden) openDetailInPlace(id);
-    renderToday();
+    refreshHero();
   }
   async function uploadFile(id, file) {
     var fd = new FormData(); fd.append('file', file);
@@ -413,7 +420,7 @@
     if (d.veces_usado == null) { toast('No se pudo registrar', 'err'); return; }
     var it = ALL_ITEMS.find(function (x) { return x.id === id; });
     if (it) { it.veces_usado = d.veces_usado; it.ultimo_uso = d.ultimo_uso || TODAY; }
-    filterItems(); renderRotation();
+    filterItems(); refreshHero();
     openDetailInPlace(id);
     toast('Uso registrado');
   }
@@ -424,7 +431,7 @@
     if (!res.ok) { toast('No se pudo eliminar', 'err'); return; }
     ALL_ITEMS.splice(ALL_ITEMS.findIndex(function (x) { return x.id === id; }), 1);
     euModal.close('gr-detail'); detailId = null;
-    renderDepts(); filterItems(); renderRotation();
+    renderDepts(); filterItems(); refreshHero();
     toast('Prenda eliminada');
   }
 
@@ -536,7 +543,7 @@
     if (pendingFotoUrl && !saved.foto) await photoFromUrl(saved.id, pendingFotoUrl);  /* la foto es opcional */
     pendingFotoUrl = '';
     euModal.close('gr-item');
-    renderDepts(); filterItems(); renderRotation();
+    renderDepts(); filterItems(); refreshHero();
     toast('«' + saved.nombre + '» guardada');
     setTimeout(function () { openDetail(saved.id); }, 80);
   });
@@ -553,7 +560,19 @@
     else if (b.classList.contains('js-uso')) registerUso(id);
     else if (b.classList.contains('js-del-item')) deleteItem(id);
     else if (b.classList.contains('js-fab')) { if (tab === 'outfits') openOutfitForm(null); else openItemForm(null); }
-    else if (b.classList.contains('js-idle-filter')) jumpFilter({ idle: true });
+    else if (b.classList.contains('js-idle-filter')) {
+      if (tab !== 'prendas') setTab('prendas');
+      jumpFilter({ idle: true });
+      $('gr-prendas').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+    else if (b.classList.contains('js-today-use')) useOutfit(id, b);
+    else if (b.classList.contains('js-today-next')) {
+      var cur = parseInt($('gr-hero').dataset.outfit, 10);
+      b.setAttribute('aria-busy', 'true');
+      refreshHero(heroSkip.concat(cur ? [cur] : []));
+    }
+    else if (b.classList.contains('js-today-view')) openOutfitView(id);
+    else if (b.classList.contains('js-coach')) openCoach(b.dataset.occ);
   });
 
   /* ── Outfits ──────────────────────────────────────────────── */
@@ -636,8 +655,7 @@
         }
       }
       toast(msg, 'win');
-      todayOffset = 0;  /* el de hoy pasa a ser el que se acaba de usar */
-      renderOutfits(); renderToday(); filterItems(); renderRotation();
+      renderOutfits(); filterItems(); refreshHero([]);  /* el de hoy pasa a ser el que se acaba de usar */
       return true;
     } catch (_) { toast('No se pudo registrar', 'err'); return false; }
     finally { if (btn) btn.removeAttribute('aria-busy'); }
@@ -648,7 +666,7 @@
     var res = await fetch('/guardarropa/api/outfit/' + id, { method: 'DELETE' });
     if (!res.ok) { toast('No se pudo eliminar', 'err'); return false; }
     ALL_OUTFITS.splice(ALL_OUTFITS.findIndex(function (x) { return x.id === id; }), 1);
-    renderOutfits(); renderToday();
+    renderOutfits(); refreshHero();
     toast('Outfit eliminado');
     return true;
   }
@@ -774,7 +792,7 @@
     if (id) { var i = ALL_OUTFITS.findIndex(function (x) { return x.id === saved.id; }); if (i >= 0) ALL_OUTFITS[i] = Object.assign(ALL_OUTFITS[i], saved); }
     else ALL_OUTFITS.unshift(saved);
     euModal.close('gr-outfit');
-    renderOutfits(); renderToday();
+    renderOutfits(); refreshHero();
     toast('Outfit «' + saved.nombre + '» guardado');
   });
 
@@ -884,63 +902,41 @@
     var d = ai.last;
     var notas = [d.why_works, (d.tips || []).join(' · ')].filter(Boolean).join('\n');
     var saved = await (await jpost('/guardarropa/api/outfit', { nombre: d.nombre, ocasion: d.ocasion || ai.occ, rating: d.rating || 4, notas: notas, item_ids: d.item_ids || [] })).json().catch(function () { return {}; });
-    if (saved.id) { ALL_OUTFITS.unshift(saved); renderOutfits(); renderToday(); $('ai-result').hidden = true; toast('Outfit guardado'); }
+    if (saved.id) { ALL_OUTFITS.unshift(saved); renderOutfits(); refreshHero(); $('ai-result').hidden = true; toast('Outfit guardado'); }
     else toast('No se pudo guardar', 'err');
   });
 
   /* ── Panel lateral: outfit de hoy y rotación ──────────────── */
-  var todayOffset = 0;
-  function todayPick() {
-    var list = ALL_OUTFITS.filter(function (o) { return (o.items || []).length; });
-    if (!list.length) return null;
-    var worn = list.find(function (o) { return o.ultimo_uso === TODAY; });
-    if (worn && !todayOffset) return worn;
-    /* Sugerencia: el que lleva más tiempo sin usarse; a igualdad, el de mejor rating */
-    list.sort(function (a, b) { return (a.ultimo_uso || '').localeCompare(b.ultimo_uso || '') || (b.rating || 0) - (a.rating || 0); });
-    return list[todayOffset % list.length];
-  }
-  function renderToday() {
-    var o = todayPick();
-    var card = document.querySelector('.gr-today'), empty = document.querySelector('.gr-today-empty'), mini = document.querySelector('.gr-today-mini');
-    card.hidden = !o; empty.hidden = !!o; mini.hidden = !o;
-    if (!o) return;
-    var used = o.ultimo_uso === TODAY;
-    var its = (o.items || []).slice().sort(function (a, b) { return (b.foto ? 1 : 0) - (a.foto ? 1 : 0); }).slice(0, 2);
-    card.querySelector('.gr-today-pieces').innerHTML = its.map(function (i) { return '<span class="gr-ph">' + visualHTML(i) + '</span>'; }).join('');
-    card.querySelector('.gr-today-pieces').dataset.id = o.id;
-    $$('.gr-today-name').forEach(function (el) { el.textContent = o.nombre; });
-    card.querySelector('.gr-today-sub').textContent = [o.ocasion, plural((o.items || []).length, 'prenda'), used ? 'usado hoy' : (o.ultimo_uso ? 'último: ' + o.ultimo_uso : 'nunca usado')].filter(Boolean).join(' · ');
-    var use = card.querySelector('.js-today-use');
-    use.dataset.id = o.id;
-    use.disabled = used;
-    use.innerHTML = used ? '<i data-lucide="check"></i>Usado hoy' : 'Usar hoy' + (XP.key && !XP.done ? ' · +' + XP.pts + ' XP' : '');
-    card.querySelector('.js-today-next').hidden = ALL_OUTFITS.filter(function (x) { return (x.items || []).length; }).length < 2;
-    mini.dataset.id = o.id;
-    mini.querySelector('.gr-today-mini-ph').innerHTML = its[0] ? visualHTML(its[0]) : '';
-    var badge = mini.querySelector('.gr-today-xp');
-    badge.textContent = used ? 'Usado ✓' : (XP.key && !XP.done ? '+' + XP.pts + ' XP' : 'Ver');
-    icons();
-  }
-  document.querySelector('.js-today-use').addEventListener('click', function () { useOutfit(parseInt(this.dataset.id, 10), this); });
-  document.querySelector('.js-today-next').addEventListener('click', function () { todayOffset++; renderToday(); });
-  $$('.js-today-view').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var id = parseInt(b.dataset.id || document.querySelector('.gr-today-pieces').dataset.id, 10);
-      if (id) openOutfitView(id);
+  /* ── Héroe: outfit de hoy + rotación (handoff Guardarropa v2) ──────────
+     Lo pinta el servidor (stylist.sugerencia_del_dia / rotacion); aquí solo
+     se vuelve a pedir tras usar un outfit, «Otro» o cambios en el armario. */
+  var heroSkip = [];
+  var heroTimer = null;
+  function refreshHero(skip) {
+    if (skip !== undefined) heroSkip = skip;
+    clearTimeout(heroTimer);
+    return new Promise(function (resolve) {
+      heroTimer = setTimeout(function () {
+        fetch('/guardarropa/' + (heroSkip.length ? '?skip=' + heroSkip.join(',') : ''))
+          .then(function (r) { return r.text(); })
+          .then(function (html) {
+            var fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('gr-hero');
+            var cur = $('gr-hero');
+            if (fresh && cur) { cur.replaceWith(fresh); paintHexes(fresh); icons(); }
+            resolve();
+          }).catch(function () { resolve(); });
+      }, 60);
     });
-  });
-
-  function renderRotation() {
-    var total = ALL_ITEMS.length;
-    var idle = ALL_ITEMS.filter(isIdle).length;
-    var pct = total ? Math.round((total - idle) / total * 100) : 0;
-    $('gr-rot-pct').textContent = total ? pct + '%' : '—';
-    var bar = $('gr-rot-bar');
-    bar.querySelector('i').style.width = pct + '%';
-    bar.setAttribute('aria-valuenow', pct);
-    var b = $('gr-rot-idle');
-    b.textContent = !total ? 'Aún no hay prendas' : idle ? plural(idle, 'prenda') + ' sin usar · candidata' + (idle === 1 ? '' : 's') + ' a donar' : 'Todas las prendas se usaron en los últimos 90 días';
-    b.disabled = !idle;
+  }
+  /* Miniaturas sin foto: color de la prenda (sin estilos inline en la plantilla) */
+  function paintHexes(el) {
+    $$('[data-hex]', el).forEach(function (x) { if (x.dataset.hex) x.style.background = x.dataset.hex; });
+  }
+  paintHexes(document);
+  function openCoach(occ) {
+    var b = occ && document.querySelector('#ai-occs [data-ai-occ="' + occ + '"]');
+    if (b) b.click();
+    euModal.open('gr-coach');
   }
 
   /* ── Análisis (armario cápsula) ───────────────────────────── */
@@ -1155,8 +1151,6 @@
   renderDepts();
   setView(view);
   filterItems();
-  renderToday();
-  renderRotation();
   function fromHash() { var h = location.hash.slice(1); if (h === 'outfits' || h === 'analisis') setTab(h); }
   window.addEventListener('hashchange', fromHash);
   fromHash();

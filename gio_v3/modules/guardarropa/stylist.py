@@ -509,12 +509,14 @@ def sugerencia_del_dia(outfits, hoy, skip=(), clima=None):
         resto = [o for o in orden if o.get('id') not in skip] or orden
         elegido = resto[0]
     piezas = [_pieza(i, hoy) for i in elegido['items']]
+    usado_hoy = elegido.get('ultimo_uso') == hoy_iso
     return {
         'outfit':            {k: v for k, v in elegido.items() if k != 'items'},
         'piezas':            piezas,
         'piezas_olvidadas':  [p['id'] for p in piezas if p['olvidada']],
-        'razon':             _razon(elegido, piezas, lista, hoy, clima),
-        'usado_hoy':         elegido.get('ultimo_uso') == hoy_iso,
+        'razon':             ('Ya lo usaste hoy. Mañana te sugerimos otro.' if usado_hoy
+                              else _razon(elegido, piezas, lista, hoy, clima)),
+        'usado_hoy':         usado_hoy,
         'hay_otro':          len(lista) > 1,
     }
 

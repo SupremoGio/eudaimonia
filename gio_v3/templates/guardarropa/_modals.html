@@ -108,3 +108,33 @@
   <button type="button" class="eu-btn eu-btn--primary js-ov-use">Usar hoy</button>
 </div>
 {% endcall %}
+
+{# Coach de imagen · IA (handoff Guardarropa v2, nota 6): modal reutilizable que
+   se abre desde el héroe («Pedir al coach», con la ocasión precargada) y desde
+   la pestaña Outfits. #}
+{% call ui.modal('gr-coach', 'Coach de imagen · IA', eyebrow='3 propuestas con tus prendas', cls='gr-coach-scrim') %}
+<div class="eu-modal-bd gr-coach-bd" id="ai-gen">
+  <div class="eu-vstack gr-ai-bd">
+      <div class="eu-seg gr-ai-mode" role="group" aria-label="Modo">
+        <button type="button" data-ai-mode="ocasion" aria-pressed="true">Por ocasión</button>
+        <button type="button" data-ai-mode="item" aria-pressed="false">Desde una prenda</button>
+      </div>
+      <div class="eu-field" id="ai-anchor-wrap" hidden>
+        <label class="eu-label" for="ai-anchor">¿Qué prenda quieres combinar?</label>
+        <select class="eu-select" id="ai-anchor"><option value="">— elegir prenda —</option></select>
+        <div class="gr-ai-anchor" id="ai-anchor-prev" hidden></div>
+      </div>
+      <div class="eu-chips" id="ai-occs" role="group" aria-label="Ocasión">
+        {% for oc, lbl in [('Casual','Casual'), ('Business','Business'), ('Formal','Formal'), ('Social','Social'), ('Cita','Cita'), ('Reunión importante','Reunión'), ('Fin de semana','Fin de semana')] %}
+        <button type="button" class="eu-chip" data-ai-occ="{{ oc }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ lbl }}</button>
+        {% endfor %}
+      </div>
+      <div class="eu-field">
+        <label class="eu-label" for="ai-ctx">Contexto <span class="t-meta">(opcional)</span></label>
+        <input class="eu-input" id="ai-ctx" maxlength="300" placeholder="Ej. cena en terraza, hace fresco, quiero verme relajado">
+      </div>
+      <button type="button" class="eu-btn eu-btn--secondary gr-ai-go" id="ai-go"><i data-lucide="sparkles"></i><span>Generar look</span></button>
+      <div id="ai-result" hidden></div>
+    </div>
+</div>
+{% endcall %}
