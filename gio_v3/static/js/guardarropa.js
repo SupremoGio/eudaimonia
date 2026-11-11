@@ -832,25 +832,53 @@
       $('ai-anchor-wrap').hidden = ai.mode !== 'item';
       $('ai-go').querySelector('span').textContent = aiLabel();
       $('ai-result').hidden = true;
-      if (ai.mode === 'item' && !$('ai-anchor').dataset.filled) {
-        var byCat = {};
-        ALL_ITEMS.forEach(function (i) { (byCat[i.categoria] = byCat[i.categoria] || []).push(i); });
-        $('ai-anchor').innerHTML = '<option value="">— elegir prenda —</option>' + Object.keys(byCat).sort().map(function (c) {
-          return '<optgroup label="' + esc(c) + '">' + byCat[c].map(function (i) { return '<option value="' + i.id + '">' + esc(i.nombre) + '</option>'; }).join('') + '</optgroup>';
-        }).join('');
-        $('ai-anchor').dataset.filled = '1';
+      if (ai.mode === 'item' && !$('ai-cats').dataset.filled) {
+        var cats = Array.from(new Set(ALL_ITEMS.map(function (i) { return i.categoria || ''; }).filter(Boolean))).sort();
+        $('ai-cats').innerHTML = ['<button type="button" class="eu-chip" data-pick-cat="" aria-pressed="true">Todas</button>'].concat(cats.map(function (c) {
+          return '<button type="button" class="eu-chip" data-pick-cat="' + esc(c) + '" aria-pressed="false">' + esc(c) + '</button>';
+        })).join('');
+        $('ai-cats').dataset.filled = '1';
+        renderPick();
       }
     });
   });
-  $('ai-anchor').addEventListener('change', function () {
-    ai.anchor = this.value ? parseInt(this.value, 10) : null;
-    var it = ai.anchor && ALL_ITEMS.find(function (x) { return x.id === ai.anchor; }), prev = $('ai-anchor-prev');
+  /* Selector visual de prenda: fotos (o color) en lugar de un menú con solo nombres */
+  var pick = { q: '', cat: '' };
+  function renderPick() {
+    var q = pick.q.toLowerCase();
+    var list = ALL_ITEMS.filter(function (i) {
+      return (!pick.cat || i.categoria === pick.cat) &&
+        (!q || [i.nombre, i.categoria, i.subcategoria, i.color_name, i.marca].join(' ').toLowerCase().indexOf(q) >= 0);
+    });
+    $('ai-pick').innerHTML = list.length ? list.map(function (i) {
+      return '<button type="button" class="gr-pick" role="option" data-pick="' + i.id + '" aria-selected="' + String(i.id === ai.anchor) + '" title="' + esc(i.nombre) + '">' +
+        '<span class="gr-pick-ph">' + visualHTML(i) + '</span><span class="gr-pick-n">' + esc(i.nombre) + '</span></button>';
+    }).join('') : '<p class="t-meta fg-3 gr-pick-empty">Sin prendas que coincidan.</p>';
+  }
+  function setAnchor(id) {
+    ai.anchor = id;
+    var it = id && ALL_ITEMS.find(function (x) { return x.id === id; }), prev = $('ai-anchor-prev');
     prev.hidden = !it;
-    if (!it) { prev.innerHTML = ''; return; }
+    $('ai-picker').hidden = !!it;
+    if (!it) { prev.innerHTML = ''; renderPick(); return; }
     var meta = [it.categoria, it.subcategoria, it.color_name, it.marca].filter(Boolean).map(esc).join(' · ');
     prev.innerHTML = '<span class="gr-ai-anchor-ph">' + visualHTML(it) + '</span>' +
-      '<span class="eu-vstack"><span class="t-ui">' + esc(it.nombre) + '</span><span class="t-meta">' + meta + '</span>' +
-      '<span class="t-meta fg-3">' + (it.foto ? 'La IA verá esta foto para leer color, textura y corte reales.' : 'Sin foto: la IA solo usará los datos de la prenda.') + '</span></span>';
+      '<span class="eu-vstack eu-grow"><span class="t-ui">' + esc(it.nombre) + '</span><span class="t-meta">' + meta + '</span>' +
+      '<span class="t-meta fg-3">' + (it.foto ? 'La IA verá esta foto para leer color, textura y corte reales.' : 'Sin foto: la IA solo usará los datos de la prenda.') + '</span></span>' +
+      '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-pick-change">Cambiar</button>';
+  }
+  $('ai-q').addEventListener('input', function () { pick.q = this.value.trim(); renderPick(); });
+  $('ai-cats').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pick-cat]'); if (!b) return;
+    pick.cat = b.dataset.pickCat;
+    $$('#ai-cats [data-pick-cat]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    renderPick();
+  });
+  $('ai-pick').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pick]'); if (b) setAnchor(parseInt(b.dataset.pick, 10));
+  });
+  $('ai-anchor-prev').addEventListener('click', function (e) {
+    if (e.target.closest('.js-pick-change')) { setAnchor(null); $('ai-q').focus(); }
   });
   $('ai-occs').addEventListener('click', function (e) {
     var b = e.target.closest('[data-ai-occ]'); if (!b) return;

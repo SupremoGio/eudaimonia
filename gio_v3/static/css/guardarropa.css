@@ -173,6 +173,25 @@ body:has(#gr[data-tab=analisis]) .gr-fab{display:none}
 .gr-ai-anchor-ph{position:relative;width:88px;height:110px;flex-shrink:0;border-radius:var(--r-md);overflow:hidden;background:var(--bg-raised)}
 .gr-ai-anchor-ph > *{position:absolute;inset:0;width:100%;height:100%}
 .gr-ai-anchor-ph > .gr-img{object-fit:cover}
+.gr-ai-anchor[hidden],.gr-pickr[hidden]{display:none}
+.gr-ai-anchor{margin-top:0}
+.gr-ai-anchor .js-pick-change{flex-shrink:0;align-self:flex-start}
+/* Selector visual de prenda (coach «Desde una prenda») */
+.gr-pickr{display:flex;flex-direction:column;gap:var(--sp-2)}
+.gr-pick-cats{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.gr-pick-cats::-webkit-scrollbar{display:none}
+.gr-pick-cats .eu-chip{flex-shrink:0}
+.gr-pick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2);max-height:300px;overflow-y:auto;padding:2px}
+@media (min-width:640px){.gr-pick-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.gr-pick{display:flex;flex-direction:column;gap:4px;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;min-width:0}
+.gr-pick-ph{position:relative;aspect-ratio:3/4;border-radius:var(--r-md);overflow:hidden;background:var(--bg-raised);border:1px solid var(--border-subtle)}
+.gr-pick-ph > *{position:absolute;inset:0;width:100%;height:100%}
+.gr-pick-ph > .gr-img{object-fit:cover}
+.gr-pick:hover .gr-pick-ph{border-color:var(--border-brand)}
+.gr-pick:focus-visible{outline:none}
+.gr-pick:focus-visible .gr-pick-ph,.gr-pick[aria-selected=true] .gr-pick-ph{outline:2px solid var(--brand);outline-offset:1px}
+.gr-pick-n{font-size:var(--fs-12);color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gr-pick-empty{grid-column:1/-1;margin:var(--sp-2) 0}
 .gr-ai-photo-ok{display:flex;gap:var(--sp-1);align-items:center;margin:0}
 .gr-ai-photo-ok svg{width:14px;height:14px}
 .gr-ai-tabs{align-self:flex-start;max-width:100%;overflow-x:auto}

@@ -120,9 +120,13 @@
         <button type="button" data-ai-mode="item" aria-pressed="false">Desde una prenda</button>
       </div>
       <div class="eu-field" id="ai-anchor-wrap" hidden>
-        <label class="eu-label" for="ai-anchor">¿Qué prenda quieres combinar?</label>
-        <select class="eu-select" id="ai-anchor"><option value="">— elegir prenda —</option></select>
+        <label class="eu-label" for="ai-q">¿Qué prenda quieres combinar?</label>
         <div class="gr-ai-anchor" id="ai-anchor-prev" hidden></div>
+        <div class="gr-pickr" id="ai-picker">
+          <input class="eu-input" id="ai-q" type="search" placeholder="Buscar prenda…" autocomplete="off">
+          <div class="eu-chips gr-pick-cats" id="ai-cats" role="group" aria-label="Categoría"></div>
+          <div class="gr-pick-grid" id="ai-pick" role="listbox" aria-label="Prendas"></div>
+        </div>
       </div>
       <div class="eu-chips" id="ai-occs" role="group" aria-label="Ocasión">
         {% for oc, lbl in [('Casual','Casual'), ('Business','Business'), ('Formal','Formal'), ('Social','Social'), ('Cita','Cita'), ('Reunión importante','Reunión'), ('Fin de semana','Fin de semana')] %}
