@@ -167,7 +167,7 @@ eudaimonia/                         ← raíz del repo
 | Hegemonikon hub | `bienestar/index.html` | links a salud, fútbol, nutrición, recetas, guardarropa, viajes |
 | Salud médica / Fútbol | `bienestar/salud.html`, `bienestar/futbol.html` | |
 | Nutrición / Recetas | `nutricion/index.html`, `recetas/index.html` | |
-| Guardarropa / Wishlist | `guardarropa/index.html` (~2 300 líneas), `guardarropa/wishlist.html` | fotos, outfits |
+| Guardarropa / Wishlist | `guardarropa/index.html`, `_head`, `_hero`, `_prendas`, `_outfits`, `_modals`; `guardarropa/wishlist.html` | héroe «Outfit de hoy» con razón (`stylist.sugerencia_del_dia`: piezas olvidadas, clima si se conoce, combinación más usada) y «Otro» (`?skip=`), rotación 90 d con meta 70 % (`stylist.rotacion`); controles en una fila; cuadrícula de fotos 3:4 con dato de uso; coach de imagen como modal |
 | Viajes | `viajes/index.html` | itinerario, maleta, outfits por día |
 | Cosmopolitismo | `idiomas/index.html` | |
 | Paideia | `paideia/index.html`, `_libros.html` | libros/películas. Libros: héroe con la meta anual y su ritmo (`paideia.ritmo`) + todos los libros en lectura con página exacta (`POST /paideia/api/libros/<id>/progreso`, marca una vez al día el ancla de Paideia de hoy en Acta o, si no hay, «Leer 5 páginas») y «Terminar» (+10 XP · +5 EC, revertible); biblioteca de portadas Por leer / Leídos / Todos |

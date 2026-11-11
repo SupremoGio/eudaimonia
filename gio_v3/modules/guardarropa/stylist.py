@@ -414,3 +414,127 @@ def sanitize_proposal(prop, by_id, shortlist, anchor=None):
         'rating': max(1, min(5, rating)),
         'autocompletado': auto,
     }
+
+
+# ── Outfit de hoy y rotación (handoff Guardarropa v2, notas 3–4) ──────────────
+# Antes la sugerencia del día la elegía guardarropa.js (el outfit que más
+# tiempo lleva sin usarse) y la UI solo decía «ocasión · usado N veces». Aquí
+# se elige igual, pero explicando por qué: piezas olvidadas, clima (si se
+# conoce) y si es tu combinación más usada de esa ocasión.
+
+IDLE_DAYS = 90
+ROTACION_META = 70
+_ABRIGO_SLOTS = ('capa_ext', 'capa_media')
+
+
+def _dias(desde_iso, hoy):
+    try:
+        return (hoy - date.fromisoformat(str(desde_iso)[:10])).days
+    except Exception:
+        return None
+
+
+def es_olvidada(item, hoy):
+    """Mismo criterio que la cuadrícula: último uso hace más de 90 días, o
+    nunca usada y más de 90 días en el armario. Las usadas antes de existir
+    ultimo_uso (sin fecha pero con usos) no cuentan."""
+    if item.get('ultimo_uso'):
+        d = _dias(item['ultimo_uso'], hoy)
+        return d is not None and d > IDLE_DAYS
+    if (item.get('veces_usado') or 0) > 0:
+        return False
+    d = _dias(item.get('created_at'), hoy)
+    return d is not None and d > IDLE_DAYS
+
+
+def ultimo_uso_txt(item, hoy):
+    d = _dias(item.get('ultimo_uso'), hoy) if item.get('ultimo_uso') else None
+    if d is None:
+        return 'nunca usada' if not (item.get('veces_usado') or 0) else 'sin fecha de uso'
+    return 'hoy' if d <= 0 else 'ayer' if d == 1 else f'hace {d} d'
+
+
+def _pieza(item, hoy):
+    p = dict(item)
+    p['dias_sin_uso'] = _dias(item['ultimo_uso'], hoy) if item.get('ultimo_uso') else None
+    p['ultimo_uso_txt'] = ultimo_uso_txt(item, hoy)
+    p['olvidada'] = es_olvidada(item, hoy)
+    return p
+
+
+def _razon(outfit, piezas, outfits, hoy, clima=None):
+    partes = []
+    olv = [p for p in piezas if p['olvidada']]
+    if olv:
+        n = len(olv)
+        partes.append(f"Reúne {n} prenda{'s' if n != 1 else ''} sin usar en más de {IDLE_DAYS} días"
+                      if n > 1 else f"Recupera «{olv[0]['nombre']}», sin usar en más de {IDLE_DAYS} días")
+    temp = (clima or {}).get('temp')
+    if temp is not None:
+        abrigo = next((p for p in piezas if slot_of(p) in _ABRIGO_SLOTS), None)
+        if abrigo and temp <= 22:
+            partes.append(f"el clima de hoy ({round(temp)} °C) permite {abrigo['nombre'].lower()}")
+        elif not abrigo and temp >= 24:
+            partes.append(f"va ligero para el clima de hoy ({round(temp)} °C)")
+    occ = (outfit.get('ocasion') or '').strip()
+    mismos = [o for o in outfits if (o.get('ocasion') or '').strip() == occ and o.get('items')]
+    usos = outfit.get('veces_usado') or 0
+    if usos and occ and len(mismos) > 1 and usos >= max((o.get('veces_usado') or 0) for o in mismos):
+        partes.append(f"es tu combinación más usada de {occ}")
+    if not partes:
+        if not usos:
+            partes.append('Nunca lo has usado: buen día para estrenarlo')
+        else:
+            d = _dias(outfit.get('ultimo_uso'), hoy) if outfit.get('ultimo_uso') else None
+            partes.append(f'Es el que más tiempo lleva sin usarse ({d} d)' if d else 'Es el que más tiempo lleva sin usarse')
+    txt = '; '.join(partes)
+    return txt[0].upper() + txt[1:] + '.'
+
+
+def sugerencia_del_dia(outfits, hoy, skip=(), clima=None):
+    """El outfit de hoy: el que ya usaste hoy (si no pides otro) o el que más
+    tiempo lleva sin usarse, a igualdad el de mejor rating. `skip` excluye ids
+    para «Otro»; si ya se excluyeron todos, vuelve a empezar. None si no hay
+    outfits con prendas."""
+    lista = [o for o in outfits if o.get('items')]
+    if not lista:
+        return None
+    hoy_iso = hoy.isoformat()
+    skip = {int(s) for s in skip if str(s).strip().isdigit()}
+    usado = next((o for o in lista if o.get('ultimo_uso') == hoy_iso), None)
+    if usado and not skip:
+        elegido = usado
+    else:
+        orden = sorted(lista, key=lambda o: (o.get('ultimo_uso') or '', -(o.get('rating') or 0), o.get('id') or 0))
+        resto = [o for o in orden if o.get('id') not in skip] or orden
+        elegido = resto[0]
+    piezas = [_pieza(i, hoy) for i in elegido['items']]
+    usado_hoy = elegido.get('ultimo_uso') == hoy_iso
+    return {
+        'outfit':            {k: v for k, v in elegido.items() if k != 'items'},
+        'piezas':            piezas,
+        'piezas_olvidadas':  [p['id'] for p in piezas if p['olvidada']],
+        'razon':             ('Ya lo usaste hoy. Mañana te sugerimos otro.' if usado_hoy
+                              else _razon(elegido, piezas, lista, hoy, clima)),
+        'usado_hoy':         usado_hoy,
+        'hay_otro':          len(lista) > 1,
+    }
+
+
+def rotacion(items, hoy, meta=ROTACION_META, max_olvidadas=5):
+    """Prendas en uso en 90 días ÷ total, cuánto falta para la meta y las
+    olvidadas (las que más tiempo llevan sin usarse primero)."""
+    total = len(items)
+    olv = [i for i in items if es_olvidada(i, hoy)]
+    usadas = total - len(olv)
+    olv.sort(key=lambda i: (i.get('ultimo_uso') or '', i.get('created_at') or ''))
+    from math import ceil
+    return {
+        'rotacion_pct':     round(usadas / total * 100) if total else 0,
+        'rotacion_meta':    meta,
+        'faltan_para_meta': max(0, ceil(total * meta / 100) - usadas) if total else 0,
+        'olvidadas':        [{'id': i['id'], 'nombre': i.get('nombre'), 'color_hex': i.get('color_hex'),
+                              'foto': i.get('foto')} for i in olv[:max_olvidadas]],
+        'olvidadas_n':      len(olv),
+        'total':            total,
+    }
