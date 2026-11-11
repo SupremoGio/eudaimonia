@@ -68,6 +68,40 @@
     $$('.wl-choice[data-q="' + q + '"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === v)); });
     visibility();
   }
+  /* ── ¿Ya tienes algo parecido? (Guardarropa v2, Sprint 4) ───────────────
+     Cruza el deseo contra el armario (misma función/tipo y color parecido)
+     y precarga la pregunta DRY con el resultado; el usuario puede cambiarla. */
+  var parecidas = null, dryAuto = false;
+  function loadParecidas() {
+    parecidas = null; dryAuto = false; renderParecidas();
+    var q = 'nombre=' + encodeURIComponent(item.nombre || '') + '&descripcion=' + encodeURIComponent(item.descripcion || '');
+    fetch(API + '/parecidas?' + q).then(function (r) { return r.json(); }).then(function (d) {
+      parecidas = d && d.parecidas; renderParecidas(); visibility();
+    }).catch(function () {});
+  }
+  function renderParecidas() {
+    var box = $('wl-parecidas');
+    if (!box) {
+      var fs = $('q-dry'); if (!fs) return;
+      box = document.createElement('div'); box.id = 'wl-parecidas'; box.className = 'wl-par'; box.setAttribute('aria-live', 'polite');
+      fs.insertBefore(box, fs.querySelector('.wl-choices'));
+    }
+    var p = parecidas;
+    box.hidden = !p;
+    if (!p) { box.innerHTML = ''; return; }
+    if (!p.n) {
+      box.innerHTML = '<i data-lucide="search-check"></i><span>Tu armario no tiene nada parecido en <b>' + esc(p.slot_label) + '</b>.</span>';
+    } else {
+      var que = p.tipo ? p.tipo + (p.n === 1 ? '' : 's') : 'en ' + p.slot_label;
+      var thumbs = p.items.map(function (i) {
+        return i.foto ? '<img src="/guardarropa/photos/' + encodeURIComponent(i.foto) + '" alt="" title="' + esc(i.nombre) + '">'
+          : '<i class="wl-par-sw" style="background:' + esc(i.color_hex || '#444') + '" title="' + esc(i.nombre) + '"></i>';
+      }).join('');
+      box.innerHTML = '<span class="wl-par-strip">' + thumbs + '</span><span class="wl-par-t">Ya tienes <b>' + p.n + ' parecida' + (p.n === 1 ? '' : 's') + '</b> · ' + esc(que) +
+        (p.color ? ', en ' + esc(p.color) : '') + '</span><a class="wl-par-link" href="/guardarropa/?ids=' + p.items.map(function (i) { return i.id; }).join(',') + '">Ver →</a>';
+    }
+    if (window.lucide) lucide.createIcons();
+  }
   // Muestra las preguntas condicionales y limpia las respuestas que quedan ocultas.
   function visibility() {
     var vis = {
@@ -77,6 +111,13 @@
       'q-mant': ans.util === 'yes' && ans.dry === 'no' && ans.cpu === 'yes',
       'q-cap': ans.util === 'yes' && ans.dry === 'no' && ans.cpu === 'yes' && ans.mant === 'yes',
     };
+    /* Precarga DRY con el cruce del armario (solo si aún no se respondió) */
+    if (vis['q-dry'] && parecidas && ans.dry == null && !dryAuto) {
+      dryAuto = true;
+      ans.dry = parecidas.n ? 'yes' : 'no';
+      $$('.wl-choice[data-q="dry"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === ans.dry)); });
+      vis['q-cpu'] = ans.dry === 'no';
+    }
     Object.keys(vis).forEach(function (id) {
       $(id).hidden = !vis[id];
       if (!vis[id]) {
@@ -106,6 +147,7 @@
       nombre: nombre, categoria: $('f-cat').value, precio_estimado: parseFloat($('f-precio').value) || 0,
       marca: $('f-marca').value, url: $('f-url').value, descripcion: $('f-desc').value,
     };
+    loadParecidas();
     if (itemId) { show(1); return; }
     var btn = this.querySelector('[type=submit]'); btn.disabled = true;
     var save = function () {
@@ -232,7 +274,7 @@
     }
   });
   function resetQuiz() {
-    itemId = null; item = {}; ans = {}; result = null; reeval = null; banner();
+    itemId = null; item = {}; ans = {}; result = null; reeval = null; parecidas = null; dryAuto = false; renderParecidas(); banner();
     $('f-item').reset(); $('usos-input').value = 1;
     $$('.wl-choice').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
     visibility(); $('wl-result').innerHTML = '';

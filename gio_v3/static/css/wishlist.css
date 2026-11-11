@@ -138,3 +138,14 @@
 .wl-ia-modal .eu-modal{max-width:680px}
 .wl-ia-modal .eu-modal-ft{flex-wrap:wrap}
 .wl-ia-motivo{flex:1 1 100%;margin:0}
+
+/* ¿Ya tienes algo parecido? (Guardarropa v2, Sprint 4) */
+.wl-par{display:flex;align-items:center;gap:var(--sp-3);padding:10px var(--sp-3);border-radius:10px;border:1px solid var(--border-subtle);background:var(--bg-sunken);font-size:var(--fs-13);color:var(--fg-2)}
+.wl-par[hidden]{display:none}
+.wl-par > svg{width:16px;height:16px;color:var(--success-fg);flex-shrink:0}
+.wl-par:has(.wl-par-strip){border-color:var(--warning-border);background:var(--warning-bg);color:var(--warning-fg)}
+.wl-par-strip{display:flex;flex-shrink:0}
+.wl-par-strip > *{width:28px;height:36px;border-radius:6px;margin-right:-8px;object-fit:cover;box-shadow:0 0 0 2px var(--warning-bg);background:var(--bg-raised)}
+.wl-par-t{flex:1;min-width:0;padding-left:var(--sp-2)}
+.wl-par-link{flex-shrink:0;color:inherit;font-weight:var(--fw-medium);text-decoration:none;min-height:32px;display:inline-flex;align-items:center}
+.wl-par-link:hover{text-decoration:underline}

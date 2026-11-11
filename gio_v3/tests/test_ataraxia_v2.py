@@ -372,12 +372,15 @@ def _combos(desc):
         return db.execute("SELECT COUNT(*) FROM xp_ledger WHERE description=?", (desc,)).fetchone()[0]
 
 
-def test_combo_del_sabado_se_paga_aunque_se_cierre_el_lunes(test_db):
+def test_combo_del_sabado_se_paga_aunque_se_cierre_el_lunes(test_db, monkeypatch):
     sat = sorted(engine.SAT_COMBO_KEYS)
     _logs('2026-11-07', sat[:4])                       # 4 bloques el sábado
     _logs('2026-11-09', sat[4:])                       # el resto el lunes
+    # el motor anota el XP con today_str(): se fija al día simulado
+    monkeypatch.setattr(engine, 'today_str', lambda: '2026-11-09')
     combos = engine._check_combo_bonus('2026-11-09', sat[4:])
     assert [c['type'] for c in combos] == ['sat_complete']
+    monkeypatch.setattr(engine, 'today_str', lambda: '2026-11-10')
     assert engine._check_combo_bonus('2026-11-10', []) == []       # una sola vez por ciclo
     assert _combos('Combo: Sábado Completo') == 1
 
@@ -385,8 +388,10 @@ def test_combo_del_sabado_se_paga_aunque_se_cierre_el_lunes(test_db):
 def test_fin_de_semana_perfecto_con_prorroga(test_db, monkeypatch):
     sat, sun = sorted(engine.SAT_COMBO_KEYS), sorted(engine.SUN_COMBO_KEYS)
     _logs('2026-11-07', sat)
+    monkeypatch.setattr(engine, 'today_str', lambda: '2026-11-07')
     engine._check_combo_bonus('2026-11-07', sat)
     _logs('2026-11-10', sun)                           # domingo cerrado el martes
+    monkeypatch.setattr(engine, 'today_str', lambda: '2026-11-10')
     engine._check_combo_bonus('2026-11-10', sun)
     assert _combos('Combo: Domingo Completo') == 1
     monkeypatch.setattr(engine, 'today_str', lambda: '2026-11-10')

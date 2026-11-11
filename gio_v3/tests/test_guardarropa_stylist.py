@@ -253,3 +253,58 @@ def test_js_cuadricula_con_dato_de_uso_y_hoy():
     assert "'Mostrando ' + lbl" in js
     css = _src('static/css/guardarropa.css')
     assert 'grid-template-columns:repeat(6,minmax(0,1fr))' in css and '.gr-search{flex:1 1 220px;min-width:0;max-width:320px}' in css
+
+
+# ── Sprint 4: la Wishlist cruza contra el armario ────────────────────────────
+
+ARMARIO = [
+    {'id': 1, 'nombre': 'Chamarra de mezclilla', 'categoria': 'Chamarra / Abrigo', 'color_hex': '#5671A0'},
+    {'id': 2, 'nombre': 'Chamarra bomber', 'categoria': 'Chamarra / Abrigo', 'color_hex': '#1D1B1E'},
+    {'id': 3, 'nombre': 'Blazer azul', 'categoria': 'Blazer / Saco', 'color_hex': '#2A3756'},
+    {'id': 4, 'nombre': 'Tenis blancos', 'categoria': 'Sneakers', 'color_hex': '#EDEBE6'},
+    {'id': 5, 'nombre': 'Botas chelsea', 'categoria': 'Botas', 'color_hex': '#6B4429'},
+    {'id': 6, 'nombre': 'Jeans índigo', 'categoria': 'Jeans', 'color_hex': '#2E3D5C'},
+]
+
+
+def test_parecidas_por_tipo():
+    r = stylist.parecidas({'nombre': 'Chamarra de piel'}, ARMARIO)
+    assert r['n'] == 2 and [i['id'] for i in r['items']] == [1, 2]
+    assert r['tipo'] == 'chamarra' and r['slot_label'] == 'Capa exterior' and not r['por_color']
+
+
+def test_parecidas_por_color():
+    r = stylist.parecidas({'nombre': 'Chamarra de piel negra'}, ARMARIO)
+    assert r['n'] == 1 and r['items'][0]['id'] == 2 and r['color'] == 'negro' and r['por_color']
+    # color sin coincidencias: se queda con el tipo
+    r = stylist.parecidas({'nombre': 'Chamarra roja'}, ARMARIO)
+    assert r['n'] == 2 and not r['por_color'] and r['color'] is None
+
+
+def test_parecidas_cae_a_la_funcion_si_no_hay_del_tipo():
+    r = stylist.parecidas({'nombre': 'Gabardina beige'}, ARMARIO)      # capa exterior, sin gabardinas
+    assert r['tipo'] is None and r['n'] == 3                             # 2 chamarras + blazer
+    r = stylist.parecidas({'nombre': 'Mocasines', 'descripcion': 'para la oficina'}, ARMARIO)
+    assert r['slot'] == 'calzado' and {i['id'] for i in r['items']} == {4, 5}
+
+
+def test_no_es_ropa_o_sin_parecidas():
+    assert stylist.parecidas({'nombre': 'MacBook Pro 14'}, ARMARIO) is None
+    r = stylist.parecidas({'nombre': 'Reloj de acero'}, ARMARIO)                  # accesorio: no hay ninguno
+    assert r['n'] == 0 and r['items'] == []
+
+
+def test_api_parecidas(client):
+    _seed()
+    r = client.get('/guardarropa/wishlist/api/parecidas?nombre=Camisa%20de%20lino').get_json()
+    assert r['ok'] and r['parecidas']['n'] == 2 and r['parecidas']['tipo'] == 'camisa'
+    assert client.get('/guardarropa/wishlist/api/parecidas?nombre=Laptop').get_json()['parecidas'] is None
+
+
+def test_js_wishlist_precarga_dry_y_filtro_en_armario():
+    js = _src('static/js/wishlist.js')
+    assert "API + '/parecidas?'" in js and "ans.dry = parecidas.n ? 'yes' : 'no'" in js
+    assert 'ans.dry == null && !dryAuto' in js                       # no pisa una respuesta ya dada
+    assert '/guardarropa/?ids=' in js
+    gjs = _src('static/js/guardarropa.js')
+    assert "get('ids')" in gjs and "st.ids.indexOf(r.id) >= 0" in gjs
