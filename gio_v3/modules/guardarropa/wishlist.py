@@ -49,6 +49,18 @@ def existe():
     return jsonify({'existe': r})
 
 
+@wishlist_bp.route('/api/parecidas')
+def api_parecidas():
+    """«¿Ya tienes algo parecido?» antes del protocolo de compra: prendas
+    activas del armario con la misma función/tipo y color parecido (nota 8)."""
+    from modules.guardarropa import stylist
+    deseo = {'nombre': request.args.get('nombre', ''), 'descripcion': request.args.get('descripcion', '')}
+    with get_db() as db:
+        items = [dict(r) for r in db.execute(
+            "SELECT id, nombre, categoria, subcategoria, color_hex, color_name, foto FROM wardrobe_items WHERE activo=1")]
+    return jsonify({'ok': True, 'parecidas': stylist.parecidas(deseo, items)})
+
+
 @wishlist_bp.route('/admin/duplicados')
 def admin_duplicados():
     """Auditoría de solo lectura de duplicados en las dos listas de deseos."""

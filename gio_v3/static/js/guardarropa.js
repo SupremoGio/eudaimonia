@@ -163,7 +163,12 @@
     { key: 'calzado', label: 'Calzado', cats: ['Zapatos formales', 'Zapatos casuales', 'Sneakers', 'Botas', 'Sandalias'] },
     { key: 'accesorios', label: 'Accesorios', cats: ['Calcetas', 'Accesorio'] }
   ];
-  var st = { dept: '', cat: '', color: '', catF: null, idle: false };
+  var st = { dept: '', cat: '', color: '', catF: null, idle: false, ids: null };
+  /* ?ids=1,2 (desde la Wishlist: «Ya tienes N parecidas · Ver →») */
+  (function () {
+    var q = new URLSearchParams(location.search).get('ids');
+    if (q) st.ids = q.split(',').map(Number).filter(Boolean);
+  })();
   var items = ALL_ITEMS.slice();
   var sortEl = $('gr-sort');
   try { var s0 = localStorage.getItem('gr-sort'); if (s0 && sortEl.querySelector('option[value="' + s0 + '"]')) sortEl.value = s0; } catch (_) {}
@@ -215,12 +220,14 @@
         (!q || r.nombre.toLowerCase().indexOf(q) >= 0 || (r.marca || '').toLowerCase().indexOf(q) >= 0 || (r.color_name || '').toLowerCase().indexOf(q) >= 0) &&
         (!st.color || ((colorFamily(r) || {}).name || 'Otro') === st.color) &&
         (st.catF === null || r.categoria === st.catF) &&
-        (!st.idle || isIdle(r));
+        (!st.idle || isIdle(r)) &&
+        (!st.ids || st.ids.indexOf(r.id) >= 0);
     });
     items.sort(SORTERS[sortEl.value] || SORTERS.recientes);
     /* Filtros que no se ven en los chips (olvidadas, color o categoría desde
        Análisis): una línea «Mostrando N … · Quitar filtro». */
-    var lbl = st.idle ? plural(items.length, 'olvidada') + ' (sin usar ' + IDLE_DAYS + ' d o nunca)'
+    var lbl = st.ids ? plural(items.length, 'prenda') + ' parecida' + (items.length === 1 ? '' : 's') + ' a tu deseo de la Wishlist'
+      : st.idle ? plural(items.length, 'olvidada') + ' (sin usar ' + IDLE_DAYS + ' d o nunca)'
       : st.color ? plural(items.length, 'prenda') + ' · ' + st.color
       : st.catF !== null ? plural(items.length, 'prenda') + ' · ' + (st.catF || 'Sin categoría') : '';
     $('gr-note').hidden = !lbl;
@@ -237,10 +244,14 @@
     try { localStorage.setItem('gr-sort', sortEl.value); } catch (_) {}
     filterItems();
   });
-  document.querySelector('.js-clear-filter').addEventListener('click', function () { st.color = ''; st.idle = false; st.catF = null; filterItems(); });
+  document.querySelector('.js-clear-filter').addEventListener('click', function () {
+    st.color = ''; st.idle = false; st.catF = null; st.ids = null;
+    try { history.replaceState(null, '', location.pathname + location.hash); } catch (_) {}
+    filterItems();
+  });
 
   function jumpFilter(patch) {
-    st.color = ''; st.catF = null; st.idle = false; st.dept = ''; st.cat = '';
+    st.color = ''; st.catF = null; st.idle = false; st.ids = null; st.dept = ''; st.cat = '';
     Object.assign(st, patch);
     $('gr-q').value = '';
     renderDepts();

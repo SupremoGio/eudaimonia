@@ -538,3 +538,85 @@ def rotacion(items, hoy, meta=ROTACION_META, max_olvidadas=5):
         'olvidadas_n':      len(olv),
         'total':            total,
     }
+
+
+# ── Wishlist: ¿ya tienes algo parecido? (handoff Guardarropa v2, nota 8) ─────
+# Antes de comprar, la Wishlist cruza el deseo contra el armario: misma
+# función/tipo de prenda y, si el nombre menciona un color, color parecido.
+# La Wishlist usa categorías generales («Ropa & Calzado») y no guarda color,
+# así que el tipo y el color se leen del nombre y la descripción.
+
+_COLOR_WORDS = [
+    ('azul marino', ('azul marino', 'marino', 'navy')),
+    ('negro', ('negro', 'negra', 'black')),
+    ('blanco', ('blanco', 'blanca', 'white', 'hueso', 'crema')),
+    ('gris', ('gris', 'gray', 'grey', 'plomo')),
+    ('marrón', ('cafe', 'marron', 'brown', 'chocolate', 'cognac', 'piel cafe')),
+    ('beige / camel', ('beige', 'camel', 'arena', 'khaki', 'caqui', 'tan')),
+    ('denim / azul grisáceo', ('denim', 'mezclilla')),
+    ('oliva', ('oliva', 'olive', 'militar')),
+    ('verde', ('verde', 'green')),
+    ('azul', ('azul', 'blue', 'celeste')),
+    ('rojo', ('rojo', 'roja', 'red', 'vino', 'borgona', 'tinto')),
+    ('rosa', ('rosa', 'pink')),
+    ('morado', ('morado', 'morada', 'lila', 'purple')),
+    ('amarillo', ('amarillo', 'amarilla', 'mostaza', 'yellow')),
+    ('naranja', ('naranja', 'orange')),
+]
+_FAMILIA_AFIN = {'azul marino': ('azul marino', 'azul', 'denim / azul grisáceo'),
+                 'azul': ('azul', 'azul marino', 'denim / azul grisáceo', 'turquesa'),
+                 'verde': ('verde', 'oliva', 'lima'), 'oliva': ('oliva', 'verde'),
+                 'beige / camel': ('beige / camel', 'marrón', 'amarillo'), 'marrón': ('marrón', 'beige / camel', 'naranja')}
+
+
+def color_del_texto(texto):
+    t = _norm(texto)
+    for familia, kws in _COLOR_WORDS:
+        if _match(t, kws):
+            return familia
+    return None
+
+
+def _tipo_de(texto, slot):
+    """La palabra de prenda que dio la función (ej. «chamarra», «tenis»)."""
+    t = _norm(texto)
+    for s, kws in _SLOT_KEYWORDS:
+        if s == slot:
+            return next((k for k in kws if _match(t, (k,))), None)
+    return None
+
+
+def parecidas(deseo, items, max_items=6):
+    """Prendas del armario parecidas a lo que se quiere comprar.
+    deseo: {'nombre', 'descripcion'?}. Devuelve None si no es ropa (no se
+    pudo leer la función de la prenda); si no, {'n', 'items', 'tipo',
+    'slot', 'slot_label', 'color', 'por_color'}."""
+    texto = ' '.join(str(deseo.get(k) or '') for k in ('nombre', 'descripcion'))
+    slot = slot_of({'nombre': texto})
+    if slot == 'otro':
+        return None
+    tipo = _tipo_de(texto, slot)
+    mismos = [i for i in items if slot_of(i) == slot]
+    if tipo:
+        del_tipo = [i for i in mismos if _match(_norm(' '.join(str(i.get(k) or '') for k in ('categoria', 'subcategoria', 'nombre'))), (tipo,))]
+        if del_tipo:
+            mismos = del_tipo
+        else:
+            tipo = None
+    color = color_del_texto(texto)
+    por_color = False
+    if color:
+        afines = _FAMILIA_AFIN.get(color, (color,))
+        del_color = [i for i in mismos if color_profile(i)['familia'] in afines]
+        if del_color:
+            mismos, por_color = del_color, True
+    return {
+        'n':          len(mismos),
+        'items':      [{'id': i['id'], 'nombre': i.get('nombre'), 'foto': i.get('foto'), 'color_hex': i.get('color_hex')}
+                       for i in mismos[:max_items]],
+        'tipo':       tipo,
+        'slot':       slot,
+        'slot_label': SLOT_LABEL.get(slot, slot),
+        'color':      color if por_color else None,
+        'por_color':  por_color,
+    }
