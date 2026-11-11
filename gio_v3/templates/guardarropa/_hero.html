@@ -3,7 +3,8 @@
    y stylist.rotacion. guardarropa.js lo vuelve a pedir tras usar / «Otro». #}
 {% set sug = sugerencia %}
 <section class="gr-hero" id="gr-hero" aria-label="Outfit de hoy y rotación"
-         data-outfit="{{ sug.outfit.id if sug else '' }}" data-skip="{{ skip or '' }}">
+         data-outfit="{{ sug.outfit.id if sug else '' }}" data-skip="{{ skip or '' }}"
+         data-piezas="{{ sug.piezas|map(attribute='id')|join(',') if sug else '' }}">
   <div class="gr-today-hero">
     {% if sug %}
     {% set o = sug.outfit %}

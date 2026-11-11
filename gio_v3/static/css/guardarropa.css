@@ -78,13 +78,18 @@
 .gr-coach-bd{max-height:min(72vh,820px);overflow-y:auto}
 
 /* ── Barra de herramientas ── */
+/* Una fila (nota 5): búsqueda (máx. 320px) · departamentos · orden */
 .gr-toolbar{display:flex;gap:var(--sp-3);align-items:center}
-.gr-search{flex:1;min-width:0;max-width:420px}
-.gr-sort{display:flex;align-items:center;gap:var(--sp-2);flex-shrink:0}
-.gr-sort .eu-select{height:36px;width:auto;font-size:var(--fs-13)}
+.gr-search{flex:1 1 220px;min-width:0;max-width:320px}
+.gr-search .eu-input{height:36px}
+.gr-depts{flex:0 1 auto;min-width:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.gr-depts::-webkit-scrollbar{display:none}
+.gr-depts .eu-chip{flex-shrink:0;height:32px}
+.gr-sort{margin-left:auto;height:36px;width:auto;flex-shrink:0;font-size:var(--fs-13)}
 .gr-subcats{margin-top:calc(var(--sp-2) * -1)}
-.gr-result{gap:var(--sp-2);flex-wrap:wrap}
-.gr-filter svg{width:12px;height:12px}
+.gr-note{margin:0}
+.gr-note-x{padding:0;border:0;background:none;color:var(--fg-brand);font:inherit;cursor:pointer;min-height:24px}
+.gr-note-x:hover{text-decoration:underline}
 
 /* ── Foto / swatch ── */
 .gr-ph{position:relative;display:block;aspect-ratio:3/4;border-radius:var(--r-md);overflow:hidden;background:var(--bg-raised);border:1px solid var(--border-subtle)}
@@ -93,16 +98,21 @@
 .gr-sw{display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,color-mix(in srgb,var(--sw) 85%,transparent),var(--sw));color:color-mix(in srgb,var(--sw) 30%,white);font:var(--fw-medium) var(--fs-24)/1 var(--font-display)}
 
 /* ── Grid de prendas ── */
+/* Cuadrícula de fotos 3:4 (nota 7): 6 / 4 / 2 columnas */
 .gr-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-3)}
-@media (min-width:640px){.gr-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media (min-width:1024px){.gr-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--sp-4)}}
-@media (min-width:1360px){.gr-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media (min-width:640px){.gr-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (min-width:1024px){.gr-grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
 .gr-card{position:relative;min-width:0}
 .gr-card-open{display:flex;flex-direction:column;gap:var(--sp-2);width:100%;padding:0;border:0;background:none;text-align:left;cursor:pointer;color:inherit;font:inherit;border-radius:var(--r-md)}
 .gr-card-open:hover .gr-ph{border-color:var(--border-strong)}
 .gr-card-open:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
 .gr-card-t{font:var(--fw-medium) var(--fs-13)/1.3 var(--font-ui);color:var(--fg-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.gr-card-m{margin-top:-4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gr-card-m{margin-top:-4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:var(--fs-11) var(--font-data);color:var(--fg-3)}
+.gr-grid .gr-ph > .gr-img{object-fit:cover}
+.gr-sw--ic{color:var(--fg-1)}
+.gr-sw--ic svg{width:36px;height:36px;opacity:.5;mix-blend-mode:difference}
+.gr-card.is-today .gr-ph{outline:1.5px solid var(--fg-brand);outline-offset:2px}
+.gr-hoy{position:absolute;right:6px;top:6px;display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:var(--r-full);background:var(--brand);color:var(--fg-on-brand);font:var(--fw-semibold) 10px/1 var(--font-ui);letter-spacing:.04em}
 .gr-idle{color:var(--warning-fg)}
 .gr-card.is-idle .gr-ph{border-color:var(--warning-border)}
 .gr-card-edit{position:absolute;top:var(--sp-2);right:var(--sp-2);width:32px;height:32px;background:color-mix(in srgb,var(--bg-surface) 85%,transparent);backdrop-filter:blur(4px);opacity:0;transition:opacity var(--dur-fast)}
@@ -299,10 +309,10 @@ body:has(#gr[data-tab=analisis]) .gr-fab{display:none}
 .gr-ms > .gr-img,.gr-pthumb > .gr-img,.gr-lthumb > .gr-img{object-fit:cover}
 @media (max-width:767px){
   .gr-toolbar{flex-wrap:wrap;gap:var(--sp-2)}
-  .gr-search{flex:1 1 100%;max-width:none}
-  .gr-sort{margin-left:auto}
-  .gr-sort .t-meta{display:inline}
-  .gr-sort .eu-select{max-width:none;height:36px}
+  .gr-search{flex:1 1 0;max-width:none}
+  .gr-depts{flex:1 1 100%;order:3}
+  .gr-sort{height:40px;max-width:44%}
+  .gr-search .eu-input{height:40px}
 }
 
 

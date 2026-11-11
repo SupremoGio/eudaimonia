@@ -218,13 +218,13 @@
         (!st.idle || isIdle(r));
     });
     items.sort(SORTERS[sortEl.value] || SORTERS.recientes);
-    $('gr-count').textContent = plural(items.length, 'prenda');
-    var cc = document.querySelector('.js-clear-color');
-    cc.hidden = !st.color && !st.idle;
-    cc.innerHTML = esc(st.idle ? 'Sin uso · ' + IDLE_DAYS + ' d' : st.color) + ' <i data-lucide="x"></i>';
-    var ck = document.querySelector('.js-clear-cat');
-    ck.hidden = st.catF === null;
-    ck.innerHTML = esc(st.catF || 'Sin categoría') + ' <i data-lucide="x"></i>';
+    /* Filtros que no se ven en los chips (olvidadas, color o categoría desde
+       Análisis): una línea «Mostrando N … · Quitar filtro». */
+    var lbl = st.idle ? plural(items.length, 'olvidada') + ' (sin usar ' + IDLE_DAYS + ' d o nunca)'
+      : st.color ? plural(items.length, 'prenda') + ' · ' + st.color
+      : st.catF !== null ? plural(items.length, 'prenda') + ' · ' + (st.catF || 'Sin categoría') : '';
+    $('gr-note').hidden = !lbl;
+    $('gr-note-t').textContent = lbl ? 'Mostrando ' + lbl : '';
     renderGrid();
   }
   $('gr-q').addEventListener('input', filterItems);
@@ -237,8 +237,7 @@
     try { localStorage.setItem('gr-sort', sortEl.value); } catch (_) {}
     filterItems();
   });
-  document.querySelector('.js-clear-color').addEventListener('click', function () { st.color = ''; st.idle = false; filterItems(); });
-  document.querySelector('.js-clear-cat').addEventListener('click', function () { st.catF = null; filterItems(); });
+  document.querySelector('.js-clear-filter').addEventListener('click', function () { st.color = ''; st.idle = false; st.catF = null; filterItems(); });
 
   function jumpFilter(patch) {
     st.color = ''; st.catF = null; st.idle = false; st.dept = ''; st.cat = '';
@@ -251,9 +250,22 @@
   }
 
   /* ── Grid / lista ─────────────────────────────────────────── */
+  /* Dato de uso (nota 7): «12 usos · hace 3 d»; en warning «Sin usar 96 d» /
+     «Sin usar nunca» si la prenda está olvidada. */
+  function diasDesde(iso) {
+    if (!iso) return null;
+    return Math.round((new Date(TODAY + 'T12:00:00') - new Date(iso.slice(0, 10) + 'T12:00:00')) / 86400000);
+  }
   function usoMeta(r) {
-    if (isIdle(r)) return '<span class="gr-idle">' + (r.veces_usado ? 'Sin uso' : '0 usos') + ' · ' + IDLE_DAYS + ' d</span>';
-    return plural(r.veces_usado || 0, 'uso');
+    var d = diasDesde(r.ultimo_uso);
+    if (isIdle(r)) return '<span class="gr-idle">' + (d == null ? 'Sin usar nunca' : 'Sin usar ' + d + ' d') + '</span>';
+    var n = plural(r.veces_usado || 0, 'uso');
+    if (d == null) return n;
+    return n + ' · ' + (d <= 0 ? 'hoy' : d === 1 ? 'ayer' : 'hace ' + d + ' d');
+  }
+  function hoyIds() {
+    var h = $('gr-hero');
+    return ((h && h.dataset.piezas) || '').split(',').filter(Boolean).map(Number);
   }
   function renderGrid() {
     var grid = $('gr-grid');
@@ -278,12 +290,15 @@
           (r.precio ? '<span class="t-meta num">' + money(r.precio) + '</span>' : '') + '</button>';
       }).join('') + '</div>';
     } else {
+      var hoy = hoyIds();
       grid.innerHTML = items.map(function (r) {
-        return '<article class="gr-card' + (isIdle(r) ? ' is-idle' : '') + '">' +
+        var isHoy = hoy.indexOf(r.id) >= 0;
+        return '<article class="gr-card' + (isIdle(r) ? ' is-idle' : '') + (isHoy ? ' is-today' : '') + '">' +
           '<button type="button" class="gr-card-open js-open" data-id="' + r.id + '" aria-label="Ver ' + esc(r.nombre) + '">' +
-          '<span class="gr-ph">' + visualHTML(r) + '</span>' +
+          '<span class="gr-ph">' + (photoSrc(r) ? visualHTML(r) : '<span class="gr-sw gr-sw--ic" style="--sw:' + esc(r.color_hex || '#444') + '"><i data-lucide="shirt"></i></span>') +
+          (isHoy ? '<span class="gr-hoy">HOY</span>' : '') + '</span>' +
           '<span class="gr-card-t">' + esc(r.nombre) + '</span>' +
-          '<span class="t-meta gr-card-m">' + esc(r.categoria) + ' · ' + usoMeta(r) + '</span></button>' +
+          '<span class="gr-card-m num">' + usoMeta(r) + '</span></button>' +
           '<button type="button" class="eu-iconbtn gr-card-edit js-edit-item" data-id="' + r.id + '" aria-label="Editar ' + esc(r.nombre) + '"><i data-lucide="pencil"></i></button>' +
           '</article>';
       }).join('');
@@ -922,7 +937,7 @@
           .then(function (html) {
             var fresh = new DOMParser().parseFromString(html, 'text/html').getElementById('gr-hero');
             var cur = $('gr-hero');
-            if (fresh && cur) { cur.replaceWith(fresh); paintHexes(fresh); icons(); }
+            if (fresh && cur) { cur.replaceWith(fresh); paintHexes(fresh); renderGrid(); icons(); }
             resolve();
           }).catch(function () { resolve(); });
       }, 60);

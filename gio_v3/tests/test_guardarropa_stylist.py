@@ -218,3 +218,38 @@ def test_coach_es_un_modal_reutilizable(client):
     modal = html.split('id="gr-coach"', 1)[1]
     assert 'id="ai-go"' in modal and 'id="ai-occs"' in modal
     assert html.count('js-coach') >= 2                                  # héroe + pestaña Outfits
+
+
+# ── Sprint 3: controles en una fila + cuadrícula de fotos ────────────────────
+
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _src(rel):
+    return open(os.path.join(BASE, rel), encoding='utf-8').read()
+
+
+def test_una_fila_de_controles(client):
+    html = client.get('/guardarropa/').get_data(as_text=True)
+    bar = html.split('<div class="gr-toolbar">', 1)[1].split('id="gr-subcats"', 1)[0]
+    assert bar.index('id="gr-q"') < bar.index('id="gr-depts"') < bar.index('id="gr-sort"')
+    assert 'id="gr-note"' in html and 'Quitar filtro' in html
+    for fuera in ('gr-count', 'js-clear-color', 'js-clear-cat', 'gr-result'):
+        assert fuera not in html, fuera
+
+
+def test_heroe_expone_las_piezas_de_hoy(client):
+    _seed()
+    h = client.get('/guardarropa/').get_data(as_text=True).split('id="gr-hero"', 1)[1].split('>', 1)[0]
+    assert 'data-piezas="1"' in h or 'data-piezas="2"' in h
+
+
+def test_js_cuadricula_con_dato_de_uso_y_hoy():
+    js = _src('static/js/guardarropa.js')
+    assert "'Sin usar nunca'" in js and "'Sin usar ' + d + ' d'" in js and "' · ' + (d <= 0 ? 'hoy'" in js
+    assert '<span class="gr-hoy">HOY</span>' in js and 'is-today' in js
+    grid = js.split('var hoy = hoyIds();', 1)[1].split('</article>', 1)[0]
+    assert 'r.marca' not in grid and 'r.categoria' not in grid and 'temporada' not in grid
+    assert "'Mostrando ' + lbl" in js
+    css = _src('static/css/guardarropa.css')
+    assert 'grid-template-columns:repeat(6,minmax(0,1fr))' in css and '.gr-search{flex:1 1 220px;min-width:0;max-width:320px}' in css
