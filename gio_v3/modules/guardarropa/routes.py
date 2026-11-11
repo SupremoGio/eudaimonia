@@ -6,7 +6,7 @@ from flask import Blueprint, render_template, request, jsonify, send_from_direct
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps
 from database import get_db
-from utils import clean_str, safe_float, uploads_base_dir, today_str, optimize_photo
+from utils import clean_str, safe_float, uploads_base_dir, today_str, today_date, optimize_photo
 from ec_constants import EC_RATE
 from modules.guardarropa import stylist
 from ia import gemini, gemini_search, extract_json, photo_for_ai
@@ -49,8 +49,8 @@ def _row(r):
 
 # ── Pages ─────────────────────────────────────────────────────────────────────
 
-@guardarropa_bp.route('/')
-def index():
+def _armario():
+    """Prendas activas y outfits con sus piezas (con uso, para la sugerencia)."""
     with get_db() as db:
         items = [_row(r) for r in db.execute(
             "SELECT * FROM wardrobe_items WHERE activo=1 ORDER BY created_at DESC"
@@ -59,7 +59,8 @@ def index():
             "SELECT * FROM outfits ORDER BY created_at DESC"
         ).fetchall()
         outfit_items_raw = db.execute(
-            "SELECT oi.outfit_id, wi.id, wi.nombre, wi.categoria, wi.color_hex, wi.foto "
+            "SELECT oi.outfit_id, wi.id, wi.nombre, wi.categoria, wi.color_hex, wi.foto, "
+            "wi.ultimo_uso, wi.veces_usado, wi.created_at "
             "FROM outfit_items oi JOIN wardrobe_items wi ON oi.item_id=wi.id"
         ).fetchall()
 
@@ -73,8 +74,20 @@ def index():
         od = _row(o)
         od['items'] = oi_map.get(o['id'], [])
         outfits.append(od)
+    return items, outfits
 
+
+def _skip_ids(raw):
+    return [x for x in str(raw or '').split(',') if x.strip().isdigit()]
+
+
+@guardarropa_bp.route('/')
+def index():
+    items, outfits = _armario()
+    hoy = today_date()
     return render_template('guardarropa/index.html',
+                           sugerencia=stylist.sugerencia_del_dia(outfits, hoy),
+                           rot=stylist.rotacion(items, hoy),
                            items=items, outfits=outfits,
                            categorias=CATEGORIAS, ocasiones=OCASIONES,
                            temporadas=TEMPORADAS, estados=ESTADOS,
@@ -113,6 +126,15 @@ def _wishlist_summary():
 
 
 # ── Wardrobe items API ────────────────────────────────────────────────────────
+
+@guardarropa_bp.route('/api/sugerencia')
+def api_sugerencia():
+    """«Otro»: la siguiente mejor sugerencia excluyendo las ya vistas
+    (?skip=<id>[,<id>…]); si se excluyeron todas, vuelve a empezar."""
+    _items, outfits = _armario()
+    sug = stylist.sugerencia_del_dia(outfits, today_date(), skip=_skip_ids(request.args.get('skip')))
+    return jsonify({'ok': True, 'sugerencia': sug, 'outfit_xp': _outfit_xp_state()})
+
 
 @guardarropa_bp.route('/api/items')
 def api_items():
