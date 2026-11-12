@@ -1,0 +1,23 @@
+{# ?vista=progreso: la escalera dancística (antes panel Progreso) #}
+{% set lv = state.level %}
+<div class="eu-card ey-level">
+  <div class="ey-ring">
+    <svg viewBox="0 0 130 130" aria-hidden="true"><circle class="ey-ring-bg" cx="65" cy="65" r="56"/><circle class="ey-ring-fg" cx="65" cy="65" r="56" transform="rotate(-90 65 65)" stroke-dasharray="351.86" stroke-dashoffset="{{ (351.86 * (1 - lv.pct))|round(2) }}"/></svg>
+    <div class="ey-ring-txt"><span class="t-meta">Nivel {{ lv.level.n }}</span><span class="t-card">{{ lv.level.name }}</span></div>
+  </div>
+  <div class="eu-vstack ey-level-bd">
+    <div class="t-eyebrow">{{ lv.level.sub }}</div>
+    <p class="t-section">{{ (state.total_min / 60)|round(1) }} horas de práctica deliberada acumuladas</p>
+    <p class="t-body ey-forecast">{% if lv.idx == levels|length - 1 %}Nivel máximo — ahora se trata de refinar.{% elif state.nivel_eta_semanas %}A tu ritmo de 4 semanas alcanzas <b class="fg-brand">{{ levels[lv.idx + 1].name }}</b> en <b class="fg-brand">≈ {{ state.nivel_eta_semanas|round|int }} semanas</b>.{% else %}Registra sesiones para estimar cuándo alcanzas <b class="fg-brand">{{ levels[lv.idx + 1].name }}</b>.{% endif %}</p>
+  </div>
+</div>
+<ol class="eu-card eu-card--flush eu-list ey-ladder">
+  {% for L in levels %}
+  {% set done, cur = loop.index0 < lv.idx, loop.index0 == lv.idx %}
+  <li class="eu-row ey-rung {{ 'is-cur' if cur else ('is-done' if done else 'is-next') }}"{% if cur %} aria-current="step"{% endif %}>
+    <span class="ey-rung-n t-data">{% if done %}<i data-lucide="check"></i>{% else %}{{ L.n }}{% endif %}</span>
+    <span class="eu-grow ey-rung-bd"><span class="t-card">{{ L.name }}</span><span class="t-meta">{{ L.sub }}</span></span>
+    <span class="t-data t-meta">{{ L.h }} h</span>
+  </li>
+  {% endfor %}
+</ol>

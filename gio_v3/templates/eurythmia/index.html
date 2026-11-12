@@ -5,35 +5,140 @@
 {% block module_title %}EURYTHMIA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/eurythmia.css') }}">{% endblock %}
 {% block mtitle %}<b>Eurythmia</b><span>Baile · Ritmo · Cuerpo</span>{% endblock %}
+{% block back_href %}{{ '/actividades/' if from_acta else nav_back }}{% endblock %}
+{% block topright %}{% if from_acta %}<a class="ey-acta-back" href="/actividades/">← Acta Diurna</a>{% endif %}{% endblock %}
 
+{# Handoff Eurythmia v2: abrir y bailar. La sesión ya viene armada con tu
+   duración habitual y el paso que sugiere el espaciado; lo que ganas se ve
+   antes de guardar y el repertorio se mueve con lo que bailas de verdad. #}
+{% set st = state %}
+{% set lv = st.level %}
+{% set nxt = levels[lv.idx + 1] if lv.idx + 1 < levels|length else None %}
 {% block content %}
-<div class="ey" id="ey" data-cat="eurythmia" data-mod="baile">
-  <header class="ey-hd">
-    {# Un encabezado por submódulo; el CSS muestra el que coincide con data-mod #}
-    <div class="ey-for-baile"><div class="t-eyebrow">Eurythmia · εὐρυθμία · buen ritmo</div><h1 class="t-page">Salsa cubana</h1>
-      <p class="t-meta ey-lead">Práctica deliberada de casino en bucles cortos y repertorio de figuras.</p></div>
-    <span class="ey-for-baile">{{ ui.badge('Nivel ' ~ state.level.level.n ~ ' · ' ~ state.level.level.name, cat='eurythmia', icon='footprints') }}</span>
-    <div class="ey-for-musica"><div class="t-eyebrow">Eurythmia · εὐρυθμία · buen ritmo</div><h2 class="t-page">Música</h2>
-      <p class="t-meta ey-lead">Cultura musical: los 100 mejores álbumes de Apple Music, escuchados y ranking personal.</p></div>
-  </header>
+<div class="ey" id="ey" data-cat="eurythmia" data-vista="{{ vista }}"{% if from_acta %} data-from="acta"{% endif %}>
+  <div class="ey-main">
+    <header class="ey-hd">
+      <div><div class="t-eyebrow ey-eyebrow">Eurythmia · εὐρυθμία</div>
+        <h1 class="t-page">{{ {'musica': 'Música', 'bitacora': 'Bitácora', 'progreso': 'Progreso'}.get(vista, 'Salsa cubana') }}</h1></div>
+    </header>
 
-  <nav class="eu-tabs ey-tabs" role="tablist" aria-label="Submódulos de Eurythmia">
-    <button type="button" role="tab" id="tab-baile" data-mod-set="baile" aria-selected="true" aria-controls="mod-baile"><i data-lucide="footprints"></i>Baile</button>
-    <button type="button" role="tab" id="tab-musica" data-mod-set="musica" aria-selected="false" aria-controls="mod-musica"><i data-lucide="disc-3"></i>Música</button>
-  </nav>
+    {% if vista %}
+    <a class="ey-back t-meta" href="/eurythmia/{{ '?from=acta' if from_acta }}">← Sesión</a>
+    {% if vista == 'musica' %}{% include "eurythmia/_musica.html" %}
+    {% elif vista == 'bitacora' %}<div class="eu-vstack ey-log" id="ey-log-list"></div>
+    {% else %}{% include "eurythmia/_progreso.html" %}{% endif %}
+    {% else %}
 
-  <section class="ey-mod eu-vstack" id="mod-baile" role="tabpanel" aria-labelledby="tab-baile">
-    {% include "eurythmia/_baile.html" %}
-  </section>
-  <section class="ey-mod eu-vstack" id="mod-musica" role="tabpanel" aria-labelledby="tab-musica" hidden>
-    {% include "eurythmia/_musica.html" %}
-  </section>
+    {# Franja (notas 1 y 7): nivel con ETA · racha con el próximo bono · semana #}
+    <section class="ey-strip" id="ey-strip" aria-label="Tu progreso">
+      <a class="ey-cell ey-cell--lvl" href="/eurythmia/?vista=progreso">
+        <span class="t-meta">Nivel {{ lv.level.n }} de {{ levels|length }} · {{ lv.level.sub }}</span>
+        <span class="ey-lvl-n">{{ lv.level.name }}</span>
+        <span class="ey-bar ey-bar--lg"><i style="--p:{{ (lv.pct * 100)|round(1) }}%"></i></span>
+        <span class="eu-between num t-meta"><span id="ey-hours">{{ (st.total_min / 60)|round(1) }} / {{ lv.level.h }} h</span>
+          {% if nxt %}<span>{{ nxt.name }}{% if st.nivel_eta_semanas %} ≈ {{ st.nivel_eta_semanas|round|int }} sem{% endif %}</span>{% endif %}</span>
+      </a>
+      <div class="ey-cell">
+        <span class="ey-cell-l"><i data-lucide="flame"></i>Racha</span>
+        <span class="ey-cell-v num" id="ey-streak">{{ st.streak }} d</span>
+        {% set rb = st.racha_bono %}
+        <span class="t-meta{{ ' ey-warn' if rb and rb.dias - st.streak <= 2 }}" id="ey-streak-sub">{% if rb %}bono a los {{ rb.dias }} d · +{{ rb.ec }} EC{% else %}todos los bonos ganados{% endif %}</span>
+      </div>
+      <div class="ey-cell">
+        <span class="ey-cell-l"><i data-lucide="calendar-days"></i>Esta semana</span>
+        <span class="ey-cell-v num" id="ey-week">{{ st.semana.min }} min</span>
+        <span class="t-meta" id="ey-week-sub">{{ st.semana.sesiones }} sesi{{ 'ón' if st.semana.sesiones == 1 else 'ones' }} · meta {{ st.semana.meta }}</span>
+      </div>
+    </section>
+
+    {# Sesión de hoy (notas 2, 3 y 5): armada, con el cierre en la misma tarjeta #}
+    <section class="ey-today" id="ey-today" aria-labelledby="ey-today-t" data-mode="idle">
+      <div class="ey-idle">
+        <div class="ey-today-hd">
+          <h2 class="t-section" id="ey-today-t">Sesión de hoy</h2>
+          <div class="eu-seg ey-durs" role="group" aria-label="Duración">
+            {% for p in [20, 30, 45, 60] %}<button type="button" data-min="{{ p }}" aria-pressed="{{ 'true' if p == st.duracion_habitual else 'false' }}">{{ p }}′</button>{% endfor %}
+          </div>
+        </div>
+        <div class="ey-loop">
+          <div class="ey-loopbar" id="ey-loopbar" aria-label="El bucle"></div>
+          <p class="t-meta">Disociación → un paso con foco → improvisa con lo que sabes.</p>
+        </div>
+        <div class="ey-drill">
+          <div class="eu-between"><span class="ey-sub">Paso a drillar</span><span class="t-meta">Sugerido por espaciado</span></div>
+          <div class="ey-sugg" id="ey-sugg" role="group" aria-label="Paso sugerido"></div>
+          <button type="button" class="ey-link js-other" aria-expanded="false">Otro paso…</button>
+          <div class="ey-other" id="ey-other" hidden></div>
+        </div>
+        <div class="ey-today-ft">
+          <button type="button" class="ey-clave" id="ey-sound-toggle" role="switch" aria-checked="false"><span class="ey-sw"><i></i></span>Clave · <span class="num" id="ey-bpm-lbl">180</span> bpm</button>
+          <span class="eu-grow"></span>
+          <button type="button" class="eu-btn eu-btn--primary eu-btn--lg" id="ey-start-btn"><i data-lucide="play"></i>Empezar · <span id="ey-start-min">30</span> min</button>
+        </div>
+      </div>
+
+      <form class="ey-closing" id="f-close" novalidate>
+        <div><div class="t-eyebrow ey-eyebrow">Sesión completada</div><h2 class="t-section" id="ey-close-t"></h2></div>
+        <div class="eu-vstack ey-flow-wrap"><span class="t-meta" id="ey-flow-l">¿Cómo se sintió?</span>
+          <div class="ey-flow5" role="radiogroup" aria-labelledby="ey-flow-l" id="ey-flow-row"></div></div>
+        <div class="ey-close-row">
+          <button type="button" class="eu-chip" id="ey-close-grabado" aria-pressed="false"><i data-lucide="video"></i>Grabé esta práctica · +{{ grabado_xp }} XP</button>
+          <span class="eu-grow"></span>
+          <span class="num ey-reward" id="ey-reward" aria-live="polite"></span>
+        </div>
+        <details class="ey-improv"><summary class="t-meta">Nota de improvisación (opcional)</summary>
+          <textarea class="eu-textarea" id="ey-improv" rows="2" placeholder="Encadené enchufla doble con vacílala sin pensarlo…"></textarea></details>
+        <div class="ey-close-ft">
+          <button type="button" class="eu-btn eu-btn--ghost js-close-cancel">Cancelar</button>
+          <button type="submit" class="eu-btn eu-btn--primary" id="ey-save-btn">Guardar</button>
+        </div>
+      </form>
+
+      <div class="ey-saved">
+        <i data-lucide="check" class="ey-saved-ic"></i>
+        <div class="eu-grow"><div class="ey-saved-t">Sesión guardada</div><div class="t-meta" id="ey-saved-sub"></div></div>
+        {% if from_acta %}<a class="eu-btn eu-btn--primary eu-btn--sm" href="/actividades/">Volver a Acta</a>{% endif %}
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-again">Otra sesión</button>
+      </div>
+    </section>
+
+    {# Repertorio (nota 4): dominio, estado y «hace N d», ordenado por espaciado #}
+    <section class="ey-rep" aria-labelledby="ey-rep-t">
+      <div class="ey-rep-hd"><h2 class="t-section" id="ey-rep-t">Repertorio</h2>
+        <div class="eu-seg" role="group" aria-label="Tipo de figuras">
+          <button type="button" data-kind="pareja" aria-pressed="true">En pareja</button>
+          <button type="button" data-kind="libres" aria-pressed="false">Pasos libres</button>
+        </div></div>
+      <div id="ey-rep-list"></div>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="ey-side" aria-label="Sesiones, música y ciencia">
+    <section class="ey-box" aria-labelledby="ey-last-t">
+      <h2 class="ey-sub ey-box-hd" id="ey-last-t">Últimas sesiones</h2>
+      <div id="ey-last"></div>
+      <a class="ey-box-ft" href="/eurythmia/?vista=bitacora">Bitácora completa →</a>
+    </section>
+    <section class="ey-box ey-box--sunken ey-mus" aria-labelledby="ey-mus-t">
+      <div class="eu-between"><h2 class="ey-sub" id="ey-mus-t"><i data-lucide="disc-3"></i>Música</h2><span class="num t-meta" id="ey-mus-n">{{ musica.escuchados_n }}/{{ musica.total }}</span></div>
+      <span class="ey-bar"><i style="--p:{{ (musica.escuchados_n / musica.total * 100)|round(1) if musica.total else 0 }}%"></i></span>
+      {% if album_siguiente %}<div class="ey-mus-next">Siguiente: <b>{{ album_siguiente.album }}</b> <span class="fg-3">· {{ album_siguiente.artista }} · #{{ album_siguiente.rank }}</span></div>{% endif %}
+      <a class="ey-link" href="/eurythmia/?vista=musica">Abrir los {{ musica.total }} álbumes →</a>
+    </section>
+    <details class="ey-box ey-box--sunken ey-sci">
+      <summary class="ey-sub">Por qué funciona · {{ science|length }}</summary>
+      {% for s in science %}
+      <div class="ey-sci-it"><div class="ey-sci-t"><span aria-hidden="true">{{ s.icon }}</span> {{ s.title }} <span class="t-meta">· {{ s.tag }}</span></div><p class="t-meta">{{ s.body }}</p></div>
+      {% endfor %}
+    </details>
+  </aside>
 </div>
 
 <div data-cat="eurythmia">{% include "eurythmia/_modals.html" %}</div>
 <script type="application/json" id="ey-data">{{ {
   'phases': phases, 'levels': levels, 'flow': flow_labels, 'state': state,
-  'musica': musica, 'dims': rating_dims,
+  'musica': musica, 'dims': rating_dims, 'grabado': {'xp': grabado_xp, 'ec': grabado_ec},
 }|tojson }}</script>
 {% endblock %}
 

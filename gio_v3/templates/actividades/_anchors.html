@@ -21,7 +21,7 @@
         <span class="acta-anchor-xp num">+{{ item.pts }} XP{% if item.ec %} · +{{ item.ec }} EC{% endif %}</span></div>
       <div class="acta-anchor-t acta-lbl">{{ item.label }}</div>
       {% if item.eury_proxy %}
-      <a class="eu-btn acta-anchor-btn{% if item.done_ui %} is-done{% endif %}" href="/eurythmia/"><i data-lucide="{{ 'check' if item.done_ui else 'arrow-up-right' }}"></i>{{ 'Hecha · ver detalle' if item.done_ui else 'Registrar en Eurythmia' }}</a>
+      <a class="eu-btn acta-anchor-btn{% if item.done_ui %} is-done{% endif %}" href="/eurythmia/?from=acta"><i data-lucide="{{ 'check' if item.done_ui else 'arrow-up-right' }}"></i>{{ 'Hecha · ver detalle' if item.done_ui else 'Registrar en Eurythmia' }}</a>
       {% else %}
       <button type="button" class="eu-btn acta-anchor-btn js-act" aria-pressed="{{ 'true' if item.done_ui else 'false' }}" data-key="{{ item.key }}"
               aria-label="{{ item.label }}: completa, +{{ item.pts }} XP"><i data-lucide="check"></i><span class="acta-when-off">Completa</span><span class="acta-when-on">Hecha</span></button>

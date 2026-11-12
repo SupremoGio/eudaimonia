@@ -1,15 +1,19 @@
-/* Eurythmia — Design System V2: baile (sesión guiada con metrónomo, runner y
-   cierre en bitácora; repertorio con drills; escalera de niveles) y música
-   (100 mejores álbumes con ranking personal por dimensiones). */
+/* Eurythmia — handoff Eurythmia v2. «Sesión de hoy» ya armada (duración
+   habitual, bucle proporcional, 3 pasos sugeridos por espaciado), runner de
+   la sesión guiada, cierre en la misma tarjeta con la recompensa en vivo,
+   repertorio por espaciado y lateral (últimas sesiones, música, ciencia).
+   Vistas completas: ?vista=bitacora | musica | progreso. */
 (function () {
   'use strict';
   var root = document.getElementById('ey');
   if (!root) return;
   var D = JSON.parse(document.getElementById('ey-data').textContent || '{}');
-  var PHASES = D.phases || [], LEVELS = D.levels || [], FLOW = D.flow || [], DIMS = D.dims || [];
+  var PHASES = D.phases || [], FLOW = D.flow || [], DIMS = D.dims || [], GRAB = D.grabado || { xp: 3, ec: 1 };
   var STATE = D.state, MUSICA = D.musica;
-  var PH_CAT = { diso: 'eurythmia', paso: 'oikonomia', improv: 'harma' };
+  var VISTA = root.dataset.vista || '';
   var MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var PH_BG = ['ph1', 'ph2', 'ph3'];
+  var PH_CAT = { diso: 'eurythmia', paso: 'oikonomia', improv: 'harma' };
 
   function $(id) { return document.getElementById(id); }
   function $$(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
@@ -20,31 +24,9 @@
     if (body !== undefined) { o.headers = { 'Content-Type': 'application/json' }; o.body = JSON.stringify(body); }
     return fetch(url, o).then(function (r) { return r.json().then(function (d) { d._ok = r.ok; return d; }); });
   }
-  function mini(items) {
-    return items.map(function (it) {
-      return '<div class="eu-card eu-stat"><div class="eu-stat-lbl">' + it[1] + '</div><div class="eu-stat-val' + (it[2] ? ' fg-brand' : '') + '">' + it[0] + '</div></div>';
-    }).join('');
-  }
   function emptyHtml(ic, t, txt) {
     return '<div class="eu-card"><div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="' + ic + '"></i></div><div class="t-card">' + t + '</div><p>' + txt + '</p></div></div>';
   }
-
-  /* ── Submódulos y sub-pestañas ──────────────────────────────────────── */
-  function setMod(m) {
-    root.dataset.mod = m;
-    $$('[data-mod-set]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.modSet === m)); });
-    $('mod-baile').hidden = m !== 'baile';
-    $('mod-musica').hidden = m !== 'musica';
-    if (m === 'musica') renderMusica();
-  }
-  $$('[data-mod-set]').forEach(function (b) { b.addEventListener('click', function () { setMod(b.dataset.modSet); }); });
-  function setTab(t) {
-    $$('[data-tab]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === t)); });
-    $$('.ey-panel').forEach(function (p) { p.hidden = p.id !== 'panel-' + t; });
-  }
-  $$('[data-tab]').forEach(function (b) { b.addEventListener('click', function () { setTab(b.dataset.tab); }); });
-
-  /* ── Sesión: duración, fases, paso y metrónomo ──────────────────────── */
   function splitMinutes(total) {
     var base = [10, 15, 5], sum = 30;
     var mins = base.map(function (b) { return Math.max(1, Math.round(b / sum * total)); });
@@ -52,42 +34,96 @@
     mins[1] = Math.max(1, mins[1] + diff);
     return mins;
   }
-  function allSteps() { return STATE.repertoire.libres.concat(STATE.repertoire.pareja); }
   function fmtTime(sec) { var m = Math.floor(sec / 60), s = sec % 60; return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'); }
+  function allSteps() { return STATE.repertoire.pareja.concat(STATE.repertoire.libres); }
+  function stepBy(key) { return allSteps().filter(function (s) { return s.step_key === key; })[0]; }
+  function hace(d) { return d == null ? 'sin práctica' : d === 0 ? 'hoy' : d === 1 ? 'ayer' : 'hace ' + d + ' d'; }
+  function fecha(iso) {
+    var p = iso.split('-').map(Number), hoy = new Date(), d = new Date(p[0], p[1] - 1, p[2]);
+    var diff = Math.round((new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()) - d) / 864e5);
+    return diff === 0 ? 'hoy' : diff === 1 ? 'ayer' : diff < 7 ? ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getDay()] : p[2] + ' ' + MES[p[1] - 1];
+  }
 
-  var total = 30, stepKey = allSteps()[0] ? allSteps()[0].step_key : '';
+  /* Recompensa en vivo: las mismas fórmulas que /api/session y
+     /api/preview-reward (xp = min + 4·fluidez; EC por fluidez y duración;
+     el grabado +3 XP · +1 EC una vez al día). */
+  function sessionEc(min, flow) { return (flow >= 5 ? 2 : flow >= 3 ? 1 : 0) + (min >= 45 ? 1 : 0); }
+  function reward(min, flow, grabado) {
+    var g = grabado && !STATE.grabado_today;
+    return { xp: min + flow * 4 + (g ? GRAB.xp : 0), ec: sessionEc(min, flow) + (g ? GRAB.ec : 0) };
+  }
+
+  /* ── Lateral: últimas sesiones ── */
+  function renderLast() {
+    var box = $('ey-last'); if (!box) return;
+    var log = (STATE.log || []).slice(0, 4);
+    box.innerHTML = log.length ? log.map(function (l) {
+      var dots = ''; for (var i = 1; i <= 5; i++) dots += '<i' + (i <= l.flow ? ' class="is-on"' : '') + '></i>';
+      return '<div class="ey-last-row"><span class="ey-dots5" aria-label="Fluidez ' + l.flow + ' de 5">' + dots + '</span>' +
+        '<div class="eu-grow ey-min"><div class="ey-last-t">' + esc(l.step || 'Sesión libre') + '</div><div class="num t-meta">' + fecha(l.date) + ' · ' + l.min + '′ · ' + esc(FLOW[l.flow] || '') + '</div></div>' +
+        (l.grabado ? '<i data-lucide="video" class="ey-vid" aria-label="Grabada"></i>' : '') + '</div>';
+    }).join('') : '<p class="t-meta ey-box-empty">Aún no hay sesiones.</p>';
+  }
+
+  /* ── Bitácora completa (?vista=bitacora) ── */
+  function renderBitacora() {
+    var box = $('ey-log-list'); if (!box) return;
+    var log = STATE.log || [];
+    if (!log.length) { box.innerHTML = emptyHtml('notebook-pen', 'Sin sesiones todavía', 'Empieza una sesión en «Sesión de hoy».'); icons(); return; }
+    box.innerHTML = log.map(function (l) {
+      var p = l.date.split('-').map(Number);
+      return '<article class="eu-card ey-entry"><div class="eu-between"><div><span class="t-card">' + p[2] + ' ' + MES[p[1] - 1] + '</span> <span class="t-meta num">' + l.min + ' min</span></div>' +
+        '<span class="eu-badge eu-badge--xp num">+' + l.xp + ' XP</span></div>' +
+        '<div class="ey-splitbar" aria-label="Reparto ' + l.split.join(' / ') + ' min">' + l.split.map(function (mn, i) {
+          return '<i class="' + PH_BG[i] + '" style="flex:' + Math.max(mn, 0.0001) + '"></i>';
+        }).join('') + '</div>' +
+        '<div class="ey-entry-tags">' + (l.step ? '<span class="eu-badge eu-badge--cat" data-cat="eurythmia"><i data-lucide="music"></i>' + esc(l.step) + '</span>' : '') +
+        '<span class="eu-badge">' + esc(FLOW[l.flow] || '') + '</span>' +
+        (l.grabado ? '<span class="eu-badge eu-badge--info"><i data-lucide="video"></i>grabado</span>' : '') + '</div>' +
+        (l.improv ? '<p class="t-quote ey-quote">“' + esc(l.improv) + '”</p>' : '') + '</article>';
+    }).join('');
+    icons();
+  }
+
   var sound = false, bpm = 180, metroTimer = null, audioCtx = null;
+  var total = STATE.duracion_habitual || 30;
+  var stepKey = (STATE.sugerencias[0] || allSteps()[0] || {}).step_key || '';
+  var today = $('ey-today');
 
-  function renderSession() {
-    $$('#ey-presets [data-min]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.min === total)); });
-    $('ey-total-range').value = total;
-    $('ey-total-n').textContent = total;
-    var mins = splitMinutes(total);
-    $('ey-phases').innerHTML = PHASES.map(function (p, i) {
-      return '<li class="ey-phase" data-cat="' + (PH_CAT[p.id] || 'eurythmia') + '">' +
-        '<span class="ey-phase-bd"><span class="eu-between"><span class="t-ui"><span class="ey-glyph-sm" aria-hidden="true">' + esc(p.glyph) + '</span> ' + esc(p.short) + '</span>' +
-        '<span class="t-data ey-phase-min">' + mins[i] + '<span class="t-meta"> min</span></span></span>' +
-        '<span class="t-meta">' + esc(p.principle) + ' — ' + esc(p.desc) + '</span></span></li>';
-    }).join('');
-    $('ey-split-lbl').textContent = total + ' min repartidos';
-    $('ey-start-min').textContent = total;
-  }
-  function renderSteps() {
-    $('ey-step-chips').innerHTML = allSteps().map(function (s) {
-      return '<button type="button" class="eu-chip" data-step="' + esc(s.step_key) + '" aria-pressed="' + (s.step_key === stepKey) + '">' + esc(s.name) + '</button>';
-    }).join('');
-  }
-  $('ey-step-chips').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-step]'); if (!b) return;
-    stepKey = b.dataset.step; renderSteps();
-    var nb = document.querySelector('#ey-step-chips [data-step="' + CSS.escape(stepKey) + '"]'); if (nb) nb.focus();
-  });
-  $$('#ey-presets [data-min]').forEach(function (b) { b.addEventListener('click', function () { total = +b.dataset.min; renderSession(); }); });
-  $('ey-total-range').addEventListener('input', function (e) { total = +e.target.value; renderSession(); });
-  $('ey-bpm-range').addEventListener('input', function (e) { bpm = +e.target.value; $('ey-bpm-n').textContent = bpm; if (metroTimer) startMetro(); });
-  $('ey-sound-toggle').addEventListener('click', function () {
-    sound = !sound; this.setAttribute('aria-checked', String(sound));
-  });
+  if (today) {
+    /* ── Sesión de hoy (nota 2) ── */
+    var renderIdle = function () {
+      $$('.ey-durs [data-min]').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.min === total)); });
+      var mins = splitMinutes(total);
+      $('ey-loopbar').innerHTML = PHASES.map(function (p, i) {
+        return '<div class="ey-seg ' + PH_BG[i] + '" style="flex:' + mins[i] + '"><span class="ey-seg-g" aria-hidden="true">' + esc(p.glyph) + '</span>' +
+          '<span class="ey-seg-n">' + esc(p.id === 'paso' ? 'Paso' : p.short) + '</span><span class="ey-seg-m num">' + mins[i] + '′</span></div>';
+      }).join('');
+      $('ey-start-min').textContent = total;
+      var sug = STATE.sugerencias.slice();
+      if (stepKey && !sug.some(function (s) { return s.step_key === stepKey; })) {
+        var st = stepBy(stepKey); if (st) sug = [{ step_key: st.step_key, nombre: st.name, mastery: st.mastery, dias: st.dias }].concat(sug.slice(0, 2));
+      }
+      $('ey-sugg').innerHTML = sug.length ? sug.map(function (s) {
+        return '<button type="button" class="ey-sug" data-step="' + esc(s.step_key) + '" aria-pressed="' + (s.step_key === stepKey) + '">' +
+          '<span class="ey-sug-n">' + esc(s.nombre) + '</span><span class="ey-bar"><i style="--p:' + s.mastery + '%"></i></span>' +
+          '<span class="ey-sug-s' + (s.dias == null || s.dias > 10 ? ' ey-warn' : '') + '">' + s.mastery + '% · ' + hace(s.dias) + '</span></button>';
+      }).join('') : '<p class="t-meta">Todo tu repertorio está automatizado. Elige un paso para mantenerlo.</p>';
+      $('ey-other').innerHTML = allSteps().map(function (s) {
+        return '<button type="button" class="eu-chip" data-step="' + esc(s.step_key) + '" aria-pressed="' + (s.step_key === stepKey) + '">' + esc(s.name) + '</button>';
+      }).join('');
+    };
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('.ey-durs [data-min]');
+      if (b) { total = +b.dataset.min; renderIdle(); return; }
+      var st = e.target.closest('#ey-sugg [data-step], #ey-other [data-step]');
+      if (st) { stepKey = st.dataset.step; renderIdle(); return; }
+      if (e.target.closest('.js-other')) {
+        var o = $('ey-other'), btn = e.target.closest('.js-other'); o.hidden = !o.hidden; btn.setAttribute('aria-expanded', String(!o.hidden));
+      }
+    });
+    $('ey-sound-toggle').addEventListener('click', function () { sound = !sound; this.setAttribute('aria-checked', String(sound)); });
+    $('ey-bpm-range').addEventListener('input', function (e) { bpm = +e.target.value; $('ey-bpm-n').textContent = bpm; $('ey-bpm-lbl').textContent = bpm; if (metroTimer) startMetro(); });
 
   function metroTick() {
     try {
@@ -105,7 +141,7 @@
   var runner = null, runnerInterval = null, finishing = false;
   function startRunner() {
     var mins = splitMinutes(total);
-    var st = allSteps().filter(function (s) { return s.step_key === stepKey; })[0];
+    var st = stepBy(stepKey);
     runner = { phaseIdx: 0, mins: mins, secondsLeft: mins[0] * 60, paused: false, stepName: st ? st.name : '' };
     setPause(false);
     renderRunner();
@@ -155,162 +191,95 @@
   new MutationObserver(function () {
     if ($('m-run').hidden && runner && !finishing) { stopRunner(); runner = null; toast('Sesión cancelada'); }
   }).observe($('m-run'), { attributes: true, attributeFilter: ['hidden'] });
-  $('ey-start-btn').addEventListener('click', startRunner);
 
-  /* ── Hoja de cierre ─────────────────────────────────────────────────── */
-  var closeCtx = null, flow = 3, closeGrabado = false;
-  function openClose(mins, split, stepName) {
-    closeCtx = { min: mins, split: split, step: stepName };
-    flow = 3; closeGrabado = false;
-    $('ey-close-min').textContent = mins;
-    $('ey-close-sub').textContent = split.join(' · ') + ' min' + (stepName ? ' · técnica en ' + stepName : '');
-    $('ey-improv').value = '';
-    $('ey-close-grabado').setAttribute('aria-pressed', 'false');
-    renderFlow();
-    euModal.open('m-close');
-  }
-  function renderFlow() {
-    var h = '';
-    for (var n = 1; n <= 5; n++) {
-      h += '<button type="button" class="ey-flow-btn' + (flow >= n ? ' is-on' : '') + '" role="radio" data-flow="' + n + '" aria-checked="' + (flow === n) + '" aria-label="' + esc(FLOW[n]) + '"><i data-lucide="music"></i></button>';
-    }
-    $('ey-flow-row').innerHTML = h;
-    $('ey-flow-lbl').textContent = FLOW[flow];
-    $('ey-close-xp').textContent = closeCtx ? closeCtx.min + flow * 4 : 0;
-    icons();
-  }
-  $('ey-flow-row').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-flow]'); if (!b) return;
-    flow = +b.dataset.flow; renderFlow();
-    var nb = document.querySelector('[data-flow="' + flow + '"]'); if (nb) nb.focus();
-  });
-  $('ey-close-grabado').addEventListener('click', function () {
-    closeGrabado = !closeGrabado; this.setAttribute('aria-pressed', String(closeGrabado));
-  });
-  $('f-close').addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (!closeCtx) return;
-    var btn = $('ey-save-btn'); btn.disabled = true; btn.setAttribute('aria-busy', 'true');
-    post('/eurythmia/api/session', {
-      min: closeCtx.min, split: closeCtx.split, step: closeCtx.step,
-      flow: flow, improv: $('ey-improv').value.trim(), grabado: closeGrabado,
-    }).then(function (d) {
-      if (d.error || !d._ok) { toast('No se pudo guardar la sesión', 'err'); return; }
-      STATE = d.state; closeCtx = null;
-      euModal.close('m-close');
-      toast('+' + d.xp + ' XP · Sesión guardada', 'win');
-      if (window.euGam) euGam(d.gam || { xp: d.xp });
-      setTab('bitacora');
-      renderRepertorio(); renderProgreso(); renderBitacora(); renderSteps();
-    }).catch(function () { toast('Error de red', 'err'); })
-      .finally(function () { btn.disabled = false; btn.removeAttribute('aria-busy'); });
-  });
 
-  /* ── Repertorio ─────────────────────────────────────────────────────── */
-  var kind = 'libres';
-  function mastery(m) {
-    if (m >= 75) return { label: 'Automatizado', cls: 'eu-badge--success', bar: 'is-auto' };
-    if (m >= 34) return { label: 'Drillando', cls: 'eu-badge--warning', bar: 'is-drill' };
-    return { label: 'Aprendiendo', cls: '', bar: '' };
+    /* ── Cierre en la misma tarjeta (nota 5) ── */
+    var closeCtx = null, flow = 3, closeGrabado = false;
+    var setMode = function (m) { today.dataset.mode = m; };
+    var openClose = function (mins, split, stepName) {
+      closeCtx = { min: mins, split: split, step: stepName, key: stepKey };
+      flow = 3; closeGrabado = false;
+      $('ey-close-t').textContent = mins + ' min' + (stepName ? ' · ' + stepName : '');
+      $('ey-improv').value = '';
+      $('ey-close-grabado').setAttribute('aria-pressed', 'false');
+      renderFlow();
+      setMode('closing');
+      today.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    var renderFlow = function () {
+      var h = '';
+      for (var n = 1; n <= 5; n++) h += '<button type="button" class="ey-flow-b" role="radio" data-flow="' + n + '" aria-checked="' + (flow === n) + '">' + esc(FLOW[n]) + '</button>';
+      $('ey-flow-row').innerHTML = h;
+      var r = reward(closeCtx.min, flow, closeGrabado);
+      $('ey-reward').textContent = '+' + r.xp + ' XP · +' + r.ec + ' EC';
+    };
+    $('ey-flow-row').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-flow]'); if (!b) return;
+      flow = +b.dataset.flow; renderFlow();
+      var nb = document.querySelector('[data-flow="' + flow + '"]'); if (nb) nb.focus();
+    });
+    $('ey-close-grabado').addEventListener('click', function () {
+      closeGrabado = !closeGrabado; this.setAttribute('aria-pressed', String(closeGrabado)); renderFlow();
+    });
+    root.querySelector('.js-close-cancel').addEventListener('click', function () { closeCtx = null; setMode('idle'); });
+    root.querySelector('.js-again').addEventListener('click', function () { setMode('idle'); renderIdle(); });
+    $('f-close').addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (!closeCtx) return;
+      var btn = $('ey-save-btn'); btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+      var ctx = closeCtx;
+      post('/eurythmia/api/session', {
+        min: ctx.min, split: ctx.split, step: ctx.step, step_key: ctx.key,
+        flow: flow, improv: $('ey-improv').value.trim(), grabado: closeGrabado,
+      }).then(function (d) {
+        if (d.error || !d._ok) { toast('No se pudo guardar la sesión', 'err'); return; }
+        STATE = d.state; closeCtx = null;
+        var xp = d.xp + (d.grabado_gam ? GRAB.xp : 0);
+        $('ey-saved-sub').textContent = '+' + xp + ' XP · +' + d.ec_total + ' EC' +
+          (d.step_mastery_nuevo != null ? ' · ' + ctx.step + ' sube a ' + d.step_mastery_nuevo + '%' : '') + ' · racha ' + STATE.streak + ' d';
+        setMode('saved');
+        if (window.euGam) euGam(d.gam || { xp: d.xp });
+        refreshStrip(); renderRep(); renderLast(); icons();
+      }).catch(function () { toast('Error de red', 'err'); })
+        .finally(function () { btn.disabled = false; btn.removeAttribute('aria-busy'); });
+    });
+    $('ey-start-btn').addEventListener('click', startRunner);
+
+    /* Franja: se vuelve a pedir la página y se reemplaza (sin recargar) */
+    var refreshStrip = function () {
+      fetch(location.pathname).then(function (r) { return r.text(); }).then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html'), a = $('ey-strip'), b = doc.getElementById('ey-strip');
+        if (a && b) { a.replaceWith(b); icons(); }
+      });
+    };
+
+    renderIdle();
+    if (root.dataset.from === 'acta') setTimeout(function () { today.scrollIntoView({ block: 'start' }); }, 50);
   }
-  function renderRepertorio() {
+
+  /* ── Repertorio (nota 4) ── */
+  var kind = 'pareja';
+  function renderRep() {
+    var box = $('ey-rep-list'); if (!box) return;
     var list = STATE.repertoire[kind] || [];
-    var auto = list.filter(function (s) { return s.mastery >= 75; }).length;
-    var reps = list.reduce(function (a, s) { return a + s.reps; }, 0);
-    $('ey-rep-stats').innerHTML = mini([[list.length, 'Figuras'], [auto, 'Automatizadas', true], [reps, 'Reps totales']]);
-    $('ey-rep-list').innerHTML = list.length ? list.map(function (s) {
-      var st = mastery(s.mastery);
-      return '<article class="eu-card ey-fig"><div class="eu-between"><span class="t-card">' + esc(s.name) + '</span><span class="eu-badge ' + st.cls + '">' + st.label + '</span></div>' +
-        '<div class="t-meta">' + esc(s.note) + ' · <span class="num">' + s.reps + '</span> reps</div>' +
-        '<div class="ey-fig-row"><div class="eu-progress eu-progress--thin ey-mbar ' + st.bar + '" role="progressbar" aria-label="Dominio de ' + esc(s.name) + '" aria-valuenow="' + s.mastery + '" aria-valuemax="100"><i style="width:' + s.mastery + '%"></i></div>' +
-        '<span class="t-data ey-mpct">' + s.mastery + '%</span>' +
-        '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-drill="' + esc(s.step_key) + '" aria-label="Registrar 10 repeticiones de ' + esc(s.name) + '"><i data-lucide="plus"></i>10 reps</button></div></article>';
-    }).join('') : emptyHtml('footprints', 'Sin figuras', 'No hay figuras en esta categoría.');
-    icons();
+    box.innerHTML = list.length ? list.map(function (s) {
+      var m = s.mastery || 0, est = m >= 80 ? 'auto' : m >= 50 ? 'cons' : 'apr';
+      var old = s.dias != null && s.dias > 10 && m < 80;
+      return '<div class="ey-rep-row" data-e="' + est + '"><span class="ey-rep-n">' + esc(s.name) + '</span>' +
+        '<span class="ey-rep-m"><span class="ey-bar"><i style="--p:' + m + '%"></i></span><span class="num t-meta">' + m + '%</span></span>' +
+        '<span class="ey-rep-e">' + esc(s.estado) + '</span>' +
+        '<span class="num ey-rep-d' + (old ? ' ey-warn' : '') + '">' + hace(s.dias) + '</span></div>';
+    }).join('') : '<p class="t-meta ey-box-empty">No hay figuras en esta categoría.</p>';
   }
   $$('[data-kind]').forEach(function (c) {
     c.addEventListener('click', function () {
       kind = c.dataset.kind;
       $$('[data-kind]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === c)); });
-      renderRepertorio();
+      renderRep();
     });
   });
-  $('ey-rep-list').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-drill]'); if (!b) return;
-    var key = b.dataset.drill; b.disabled = true;
-    post('/eurythmia/api/drill', { step_key: key }).then(function (d) {
-      if (d.error) { toast('No se pudo registrar', 'err'); return; }
-      ['libres', 'pareja'].forEach(function (k) {
-        STATE.repertoire[k] = STATE.repertoire[k].map(function (s) {
-          return s.step_key === d.step_key ? Object.assign({}, s, { mastery: d.mastery, reps: d.reps }) : s;
-        });
-      });
-      toast('+10 reps · dominio +3', 'ok');
-      renderRepertorio(); renderSteps();
-      var nb = document.querySelector('[data-drill="' + CSS.escape(key) + '"]'); if (nb) nb.focus();
-    }).catch(function () { toast('Error de red', 'err'); }).finally(function () { b.disabled = false; });
-  });
 
-  /* ── Progreso ───────────────────────────────────────────────────────── */
-  function levelFromMinutes(totalMin) {
-    var hours = totalMin / 60, cur = LEVELS[LEVELS.length - 1];
-    for (var i = 0; i < LEVELS.length; i++) { if (hours < LEVELS[i].h) { cur = LEVELS[i]; break; } }
-    var idx = LEVELS.indexOf(cur), prevH = idx > 0 ? LEVELS[idx - 1].h : 0;
-    var pct = cur.h > prevH ? (hours - prevH) / (cur.h - prevH) : 1;
-    return { level: cur, idx: idx, pct: Math.min(1, Math.max(0, pct)), hoursToNext: Math.max(0, cur.h - hours) };
-  }
-  function renderProgreso() {
-    var sv = $$('.ey-stats .eu-stat-val');
-    if (sv.length >= 3) { sv[0].textContent = STATE.streak + ' d'; sv[1].textContent = (STATE.total_min / 60).toFixed(1); sv[2].textContent = STATE.sessions; }
-    var lv = levelFromMinutes(STATE.total_min), circ = 2 * Math.PI * 56, ring = $('ey-ring-fg');
-    ring.setAttribute('stroke-dasharray', circ);
-    ring.setAttribute('stroke-dashoffset', circ * (1 - lv.pct));
-    var next = LEVELS[Math.min(lv.idx + 1, LEVELS.length - 1)], isMax = lv.idx === LEVELS.length - 1;
-    var weeks = STATE.avg_daily > 0 ? Math.ceil(lv.hoursToNext * 60 / STATE.avg_daily / 7) : 0;
-    $('ey-forecast').innerHTML = isMax ? 'Nivel máximo — ahora se trata de refinar.'
-      : (STATE.avg_daily > 0
-        ? 'A tu ritmo de <b>' + STATE.avg_daily + ' min/día</b> alcanzas <b class="fg-brand">' + esc(next.name) + '</b> en <b class="fg-brand">~' + weeks + ' semana' + (weeks !== 1 ? 's' : '') + '</b>.'
-        : 'Registra tu primera sesión para estimar cuándo alcanzas <b class="fg-brand">' + esc(next.name) + '</b>.');
-    $('ey-ladder').innerHTML = LEVELS.map(function (L, i) {
-      var done = i < lv.idx, cur = i === lv.idx;
-      return '<li class="eu-row ey-rung' + (cur ? ' is-cur' : done ? ' is-done' : ' is-next') + '"' + (cur ? ' aria-current="step"' : '') + '>' +
-        '<span class="ey-rung-n t-data">' + (done ? '<i data-lucide="check"></i>' : L.n) + '</span>' +
-        '<span class="eu-grow ey-rung-bd"><span class="t-card">' + esc(L.name) + '</span><span class="t-meta">' + esc(L.sub) + '</span></span>' +
-        '<span class="t-data t-meta">' + L.h + ' h</span></li>';
-    }).join('');
-    icons();
-  }
-
-  /* ── Bitácora ───────────────────────────────────────────────────────── */
-  function renderBitacora() {
-    var log = STATE.log || [];
-    var totalMin = log.reduce(function (a, l) { return a + l.min; }, 0);
-    var xp = log.reduce(function (a, l) { return a + l.xp; }, 0);
-    $('ey-log-stats').innerHTML = mini([[log.length, 'Sesiones', true], [Math.floor(totalMin / 60) + 'h', 'Registradas'], [xp, 'XP en bitácora']]);
-    $('ey-grabado-chip').setAttribute('aria-pressed', String(!!STATE.grabado_today));
-    if (!log.length) { $('ey-log-list').innerHTML = emptyHtml('notebook-pen', 'Sin sesiones todavía', 'Empieza una sesión guiada en la pestaña Sesión.'); icons(); return; }
-    $('ey-log-list').innerHTML = log.map(function (l) {
-      var p = l.date.split('-').map(Number);
-      return '<article class="eu-card ey-entry"><div class="eu-between"><div><span class="t-card">' + p[2] + ' ' + MES[p[1] - 1] + '</span> <span class="t-meta num">' + l.min + ' min</span></div>' +
-        '<span class="eu-badge eu-badge--xp num">+' + l.xp + ' XP</span></div>' +
-        '<div class="ey-splitbar" aria-label="Reparto ' + l.split.join(' / ') + ' min">' + l.split.map(function (mn, i) {
-          return '<i data-cat="' + (PH_CAT[(PHASES[i] || {}).id] || 'eurythmia') + '" style="flex:' + Math.max(mn, 0.0001) + '"></i>';
-        }).join('') + '</div>' +
-        '<div class="ey-entry-tags">' + (l.step ? '<span class="eu-badge eu-badge--cat" data-cat="eurythmia"><i data-lucide="music"></i>' + esc(l.step) + '</span>' : '') +
-        '<span class="eu-badge">' + esc(FLOW[l.flow] || '') + '</span>' +
-        (l.grabado ? '<span class="eu-badge eu-badge--info"><i data-lucide="video"></i>grabado</span>' : '') + '</div>' +
-        (l.improv ? '<p class="t-quote ey-quote">“' + esc(l.improv) + '”</p>' : '') + '</article>';
-    }).join('');
-    icons();
-  }
-  $('ey-grabado-chip').addEventListener('click', function () {
-    post('/eurythmia/api/grabado/toggle').then(function (d) {
-      if (!d.state) { toast('Error al guardar', 'err'); return; }
-      STATE = d.state; renderBitacora();
-      toast(d.action === 'added' ? 'Marcado como grabado' : 'Desmarcado', 'ok');
-    }).catch(function () { toast('Error de red', 'err'); });
-  });
-
+  if (VISTA === 'musica') {
   /* ── Música ─────────────────────────────────────────────────────────── */
   var muFilter = 'todos', openRate = null;
   function score(v) { return v != null ? Number(v).toFixed(1) : '—'; }
@@ -403,7 +372,8 @@
     });
   });
 
-  /* ── init ───────────────────────────────────────────────────────────── */
-  renderSession(); renderSteps(); renderRepertorio(); renderProgreso(); renderBitacora();
-  if (location.hash === '#musica') setMod('musica');
+    renderMusica();
+  }
+  /* ── init ── */
+  renderRep(); renderLast(); renderBitacora(); icons();
 })();

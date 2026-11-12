@@ -7134,6 +7134,22 @@ def init_db():
         except Exception as e:
             print(f"[DB] medico_medicamentos terminado_en migration warning: {e}")
 
+        # ── EURYTHMIA v2 (Sprint 1): last_practiced por paso del repertorio
+        # (para sugerir por espaciado). Backfill una vez desde eury_sessions.step,
+        # que es texto libre: se compara por clave y por nombre normalizado.
+        try:
+            if 'last_practiced' not in [r["name"] for r in db.execute("PRAGMA table_info(eury_repertoire)").fetchall()]:
+                db.execute("ALTER TABLE eury_repertoire ADD COLUMN last_practiced TEXT DEFAULT NULL")
+                db.commit()
+            if not db.execute("SELECT id FROM migration_log WHERE version='eury_last_practiced_backfill'").fetchone():
+                from modules.eurythmia.routes import backfill_last_practiced
+                n = backfill_last_practiced(db)
+                db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                           ("eury_last_practiced_backfill", f"last_practiced desde eury_sessions ({n} pasos)"))
+                db.commit()
+        except Exception as e:
+            print(f"[DB] eury_repertoire last_practiced migration warning: {e}")
+
         # ── HARMA v2 (Sprint 4): recordatorios generados desde Harma
         # (origen='harma', origen_id = documento/póliza) y el movimiento de
         # Oikonomia de cada servicio (fin_mov_id). Columnas nullable; el
