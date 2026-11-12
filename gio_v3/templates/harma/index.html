@@ -6,40 +6,76 @@
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/harma.css') }}">{% endblock %}
 {% block mtitle %}<b>Harma</b><span>Mecánica · mantenimiento</span>{% endblock %}
 
+{# Handoff Harma v2: qué le toca hoy al carro y por qué, y registrarlo en el
+   mismo lugar. El odómetro va primero porque todo el plan depende de él. #}
 {% block content %}
-<div class="hm" id="hm" data-cat="harma" data-today="{{ today }}">
-  <header class="hm-hd">
-    <div><div class="t-eyebrow">Harma · ἅρμα · la cuadriga</div><h1 class="t-page">Mantenimiento</h1>
-      <p class="t-meta hm-lead">El auriga gobierna al caballo. Cuidar al caballo es cuidar el viaje. Los intervalos se cumplen por kilometraje o tiempo — lo que llegue primero.</p></div>
-  </header>
-
-  <div class="hm-top">
-    <section class="eu-card hm-veh" aria-label="Vehículo">
-      <div class="eu-between hm-veh-top">
-        <div class="eu-grow"><div class="t-section" id="hm-veh-name">{{ vehiculo.nombre if vehiculo else 'Mi carro' }}</div><div class="t-meta" id="hm-veh-sub">—</div></div>
-        <span class="hm-plate t-data" id="hm-veh-plate" hidden></span>
+<div class="hm" id="hm" data-cat="harma" data-today="{{ today }}" data-vista="{{ vista }}">
+  <div class="hm-main">
+    <header class="hm-hd">
+      <div class="hm-hd-t">
+        <div class="t-eyebrow">Harma · ἅρμα</div>
+        <h1 class="t-page"><span id="hm-veh-name">{{ vehiculo.nombre if vehiculo else 'Mi carro' }}</span> <span class="hm-veh-sub" id="hm-veh-sub"></span></h1>
       </div>
-      <div class="eu-between hm-odo">
-        <div><div class="t-eyebrow">Odómetro</div><div class="hm-km"><span class="t-data" id="hm-veh-km">0</span><span class="t-meta">km</span></div></div>
-        <button type="button" class="eu-btn eu-btn--primary js-veh"><i data-lucide="gauge"></i>Registrar km / editar</button>
+      <div class="hm-hd-act">
+        <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-veh"><i data-lucide="pencil"></i>Editar vehículo</button>
+        <button type="button" class="eu-btn eu-btn--secondary js-serv-new"><i data-lucide="plus"></i>Servicio</button>
+      </div>
+    </header>
+
+    {# Franja: odómetro editable · ritmo · gasto de 12 meses (notas 1 y 7) #}
+    <section class="hm-strip" aria-label="Vehículo">
+      <form class="hm-cell hm-odo" id="hm-odo" autocomplete="off" novalidate>
+        <span class="hm-cell-l"><i data-lucide="gauge"></i>Odómetro</span>
+        <span class="hm-odo-row">
+          <input class="eu-input hm-odo-in" id="hm-odo-in" inputmode="numeric" aria-label="Kilometraje actual">
+          <span class="t-meta">km</span>
+          <button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Actualizar</button>
+        </span>
+        <span class="t-meta hm-odo-age" id="hm-odo-age" aria-live="polite"></span>
+      </form>
+      <div class="hm-cell">
+        <span class="hm-cell-l"><i data-lucide="trending-up"></i>Ritmo</span>
+        <span class="hm-cell-v num" id="hm-ritmo">—</span>
+        <span class="t-meta">promedio de 12 meses</span>
+      </div>
+      <div class="hm-cell">
+        <span class="hm-cell-l"><i data-lucide="receipt"></i>Gasto · 12 meses</span>
+        <span class="hm-cell-v num" id="hm-gasto">$0</span>
+        <span class="t-meta" id="hm-gasto-sub"></span>
       </div>
     </section>
-    <div class="eu-grid-3 hm-status" aria-label="Estado del plan">
-      <div class="eu-card eu-stat hm-st" data-tone="danger" id="hm-stbox-vencidos"><div class="eu-stat-lbl"><i data-lucide="octagon-alert"></i>Vencidos</div><div class="eu-stat-val" id="hm-st-vencidos">0</div></div>
-      <div class="eu-card eu-stat hm-st" data-tone="warning" id="hm-stbox-urgentes"><div class="eu-stat-lbl"><i data-lucide="triangle-alert"></i>Urgentes</div><div class="eu-stat-val" id="hm-st-urgentes">0</div></div>
-      <div class="eu-card eu-stat hm-st" data-tone="success" id="hm-stbox-nominal"><div class="eu-stat-lbl"><i data-lucide="circle-check"></i>Al día</div><div class="eu-stat-val" id="hm-st-nominal">0</div></div>
-    </div>
+
+    {% if not vista %}
+    <section class="hm-now" id="hm-now" aria-labelledby="hm-now-t">
+      <div class="hm-sec-hd"><h2 class="t-section" id="hm-now-t">Toca ahora</h2><span class="t-meta" id="hm-now-n"></span></div>
+      <div id="hm-now-list"></div>
+    </section>
+    <section class="hm-next" aria-labelledby="hm-next-t">
+      <div class="hm-sec-hd"><h2 class="t-section" id="hm-next-t">Lo siguiente</h2>
+        <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-plan-new"><i data-lucide="plus"></i>Al plan</button></div>
+      <div id="hm-next-list"></div>
+      <button type="button" class="hm-ok-btn js-ok-toggle" aria-expanded="false"><i data-lucide="shield-check"></i><span class="eu-grow" id="hm-ok-t">Al día</span><span class="t-meta js-ok-hint">Ver</span></button>
+      <div id="hm-ok-list" hidden></div>
+    </section>
+    {% else %}
+    <a class="hm-back t-meta" href="/harma/">← Plan</a>
+    {% include "harma/_bitacora.html" %}
+    {% include "harma/_papeles.html" %}
+    {% endif %}
   </div>
 
-  <nav class="eu-tabs hm-tabs" role="tablist" aria-label="Secciones de Harma">
-    <button type="button" role="tab" id="tab-plan" data-tab="plan" aria-selected="true" aria-controls="pane-plan"><i data-lucide="list-checks"></i>Plan</button>
-    <button type="button" role="tab" id="tab-bitacora" data-tab="bitacora" aria-selected="false" aria-controls="pane-bitacora"><i data-lucide="notebook-pen"></i>Bitácora</button>
-    <button type="button" role="tab" id="tab-papeles" data-tab="papeles" aria-selected="false" aria-controls="pane-papeles"><i data-lucide="folder-open"></i>Papeles</button>
-  </nav>
-
-  {% include "harma/_plan.html" %}
-  {% include "harma/_bitacora.html" %}
-  {% include "harma/_papeles.html" %}
+  {# Lateral: papeles y bitácora sin pestañas (nota 5) #}
+  <aside class="hm-side" aria-label="Papeles y bitácora">
+    <section class="hm-box" aria-labelledby="hm-pap-t">
+      <div class="hm-box-hd"><h2 class="hm-sub" id="hm-pap-t">Papeles</h2><a class="t-meta" href="/harma/?vista=papeles">Todo →</a></div>
+      <div id="hm-pap-list"></div>
+    </section>
+    <section class="hm-box hm-box--sunken" aria-labelledby="hm-bit-t">
+      <div class="hm-box-hd"><h2 class="hm-sub" id="hm-bit-t">Bitácora</h2><a class="t-meta" href="/harma/?vista=bitacora">Todo →</a></div>
+      <div id="hm-bit-list"></div>
+      <a class="hm-box-ft t-meta" id="hm-sin" href="/harma/?vista=papeles#hm-sin-t"></a>
+    </section>
+  </aside>
 </div>
 
 <div data-cat="harma">{% include "harma/_modals.html" %}</div>
@@ -47,7 +83,9 @@
   'cat_defs': cat_defs, 'tipos_servicio': tipos_servicio, 'tipos_documento': tipos_documento,
   'tipos_siniestro': tipos_siniestro, 'estados_siniestro': estados_siniestro,
   'state': {'vehiculo': vehiculo, 'servicios': servicios, 'plan': plan, 'plan_counts': plan_counts,
-            'documentos': documentos, 'polizas': polizas, 'siniestros': siniestros, 'total_costo': total_costo},
+            'documentos': documentos, 'polizas': polizas, 'siniestros': siniestros, 'total_costo': total_costo,
+            'grupos': grupos, 'gasto_12m': gasto_12m, 'costo_km': costo_km, 'ultimo_taller': ultimo_taller,
+            'papeles': papeles, 'siniestros_abiertos': siniestros_abiertos, 'fin_ok': fin_ok},
 }|tojson }}</script>
 {% endblock %}
 
