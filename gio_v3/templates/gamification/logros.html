@@ -5,30 +5,28 @@
 {% block module_title %}LOGROS{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/logros.css') }}">{% endblock %}
 
-{% block mtitle %}<b>Logros</b><span>Tú · progreso</span>{% endblock %}
+{% block mtitle %}<b>Logros</b><span>Tú · largo plazo</span>{% endblock %}
 
-{% set earned_ach = achievements|selectattr('unlocked')|list|length %}
-{% set earned_bdg = badges|selectattr('unlocked')|list|length %}
-{% set total_items = achievements|length + badges|length %}
-{% set earned_all = earned_ach + earned_bdg %}
-
+{# Handoff Logros v2: la vista de largo plazo. Encabezado con pestañas
+   Colección / Historial (?tab=), héroe de nivel con ETA y pista de 10 tramos.
+   Lo de hoy (racha, clasificación, XP del día) vive en Inicio y en Acta. #}
 {% block content %}
-<div class="lg">
+<div class="lg" data-tab="{{ tab }}">
   {% include "gamification/_head.html" %}
-  {% include "gamification/_levels.html" %}
-
+  {% if tab == 'historial' %}
+    {% include "gamification/_historial.html" %}
+  {% else %}
   <div class="lg-grid">
     <div class="lg-main">
+      {% include "gamification/_near.html" %}
       {% include "gamification/_collection.html" %}
     </div>
-    <aside class="lg-side" aria-label="Perks, clasificación e historial">
+    <aside class="lg-side" aria-label="Perks y constancia">
       {% include "gamification/_perks.html" %}
-      {% include "gamification/_today.html" %}
       {% include "gamification/_heat.html" %}
-      {% include "gamification/_xplog.html" %}
-      <a class="eu-card eu-card--interactive lg-weeks-link" href="/logros/semanas"><i data-lucide="bar-chart-3"></i><span class="eu-grow">Historial de semanas</span><i data-lucide="chevron-right"></i></a>
     </aside>
   </div>
+  {% endif %}
 </div>
 {% endblock %}
 

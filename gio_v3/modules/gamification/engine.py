@@ -916,13 +916,10 @@ def _gather_achievement_stats():
             ((today_date() - timedelta(days=7)).isoformat(),)
         ).fetchone()["c"]
 
-        # Diamond days this week
-        diamond_week = 0
-        for i in range(7):
-            d = (today_date() - timedelta(days=i)).isoformat()
-            cl = get_daily_classification(d)
-            if cl["rank"] == "diamond":
-                diamond_week += 1
+        # Días Diamante de los últimos 7 (caché de classification_history:
+        # mismo rango que get_daily_classification, sin recalcular cada día)
+        _r7 = classification_history(_td - timedelta(days=6), _td)
+        diamond_week = sum(1 for r in _r7.values() if r == "diamond")
 
         # Fin de semana perfecto: los dos combos en el mismo ciclo (sábado → hoy),
         # aunque uno se haya cerrado en la prórroga de lunes a miércoles.

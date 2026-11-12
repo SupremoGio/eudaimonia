@@ -237,7 +237,7 @@ def test_revision_visible_y_historial_en_logros(client, monkeypatch):
     client.post('/ataraxia/api/revision', json={'horas_sueno': 7})
     sem = client.get('/logros/semanas').get_data(as_text=True)
     assert 'Historial de semanas' in sem and '2–8 nov' in sem and 'Esta semana' in sem
-    assert 'href="/logros/semanas"' in client.get('/logros').get_data(as_text=True)
+    assert 'href="/logros/semanas"' in client.get('/logros?tab=historial').get_data(as_text=True)
 
 
 # ── Sprint 4: prioridades de la semana desde Praxis ──────────────────────────

@@ -233,7 +233,7 @@
           '<span>Completadas hoy</span><span class="px-sec-ct num">' + g.done.length + '</span>' + ic('chevron-down', 'px-chev') + '</button>' +
         (doneOpen ? (g.done.length ? '<ul class="px-list">' + g.done.map(function (t) { return rowHTML(t, 'side'); }).join('') + '</ul>'
           : '<p class="t-meta px-side-empty">Aún nada hoy.</p>') : '') +
-        '<a class="t-meta px-done-link" href="/logros">Historial completo en Logros →</a></section>';
+        '<a class="t-meta px-done-link" href="/logros?tab=historial&fuente=Praxis">Historial completo en Logros →</a></section>';
 
     root.innerHTML = '<div class="px-main">' + main + '</div><aside class="px-side" aria-label="Delegar, ideas y completadas">' + aside + '</aside>';
     document.querySelectorAll('.js-mt-inbox').forEach(function (el) { el.textContent = g.inbox.length; });

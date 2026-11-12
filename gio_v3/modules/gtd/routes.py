@@ -38,7 +38,7 @@ def index():
 @gtd_bp.route('/points')
 def points():
     # Una sola moneda (D1): el progreso de Praxis es XP y vive en Logros.
-    return redirect('/logros')
+    return redirect('/logros?tab=historial&fuente=Praxis')
 
 
 # Legacy routes redirect to new SPA
