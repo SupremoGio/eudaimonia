@@ -1,7 +1,7 @@
 {% from "perfil/_macros.html" import doc_row %}
-<section class="pf-sec eu-vstack" id="sec-documentos" data-sec-panel="documentos" hidden>
-  {% set sec_title, sec_sub = 'Documentos', 'Archivos generales; los ligados a un dato (INE, RFC…) viven junto a ese campo.' %}
-  {% set sec_action = '<label class="eu-btn eu-btn--secondary eu-btn--sm pf-upload"><input type="file" class="js-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip"><i data-lucide="upload"></i>Subir</label>' %}
+<section class="pf-sec eu-vstack" id="sec-documentos" data-sec-panel="documentos"{% if cur != 'documentos' %} hidden{% endif %}>
+  {% set sec_title, sec_sub = 'Documentos', '' %}
+  {% set sec_action = '<label class="eu-btn eu-btn--secondary pf-upload"><input type="file" class="js-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx,.txt,.xml,.zip"><i data-lucide="upload"></i>Subir</label>' %}
   {% include "perfil/_sechead.html" %}
   <div class="eu-card eu-card--flush">
     <div class="eu-list" id="docsList">

@@ -7124,6 +7124,17 @@ def init_db():
         except Exception as e:
             print(f"[DB] recordatorios_tema_2026_09 migration warning: {e}")
 
+        # ── RECORDATORIOS — vinculado_oikonomia (Perfil v2, Sprint 5): los
+        # pagos de tarjeta que ya lleva Oikonomia (PAY_DAYS / fin_pagos_ciclo)
+        # se marcan para enlazar allá en vez de duplicarse. Solo la columna;
+        # el marcado lo hace perfil.resumen.vincular_pagos con fin_ok.
+        try:
+            if 'vinculado_oikonomia' not in [r["name"] for r in db.execute("PRAGMA table_info(reminders)").fetchall()]:
+                db.execute("ALTER TABLE reminders ADD COLUMN vinculado_oikonomia INTEGER DEFAULT 0")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] reminders vinculado_oikonomia migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,

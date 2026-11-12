@@ -1,35 +1,39 @@
 {% from "perfil/_macros.html" import doc_row %}
-<section class="pf-sec eu-vstack" id="sec-datos" data-sec-panel="datos" hidden>
-  {% set sec_title, sec_sub, sec_action = 'Datos personales', 'Identidad y contacto. Los campos privados se ocultan hasta que los muestres.', '' %}
+{# Datos personales (nota 5): tres grupos; clic en el valor = copiar; lápiz
+   al pasar el cursor; adjuntos como conteo. Los privados se revelan juntos
+   (un solo fetch) y se vuelven a ocultar a los 30 s o al cambiar de sección. #}
+<section class="pf-sec eu-vstack" id="sec-datos" data-sec-panel="datos"{% if cur != 'datos' %} hidden{% endif %}>
+  {% set sec_title, sec_sub = 'Datos personales', '' %}
+  {% set sec_action = '<button type="button" class="eu-btn eu-btn--secondary js-reveal" aria-pressed="false"><i data-lucide="eye"></i><span>Mostrar privados</span></button>' %}
   {% include "perfil/_sechead.html" %}
-  <div class="eu-card pf-fields">
-    {% for item in info %}
+  <div class="eu-card eu-card--flush pf-fields">
+    {% for g in grupos_datos if g.rows %}
+    <div class="pf-grp-hd{{ ' is-priv' if g.key == 'priv' }}">
+      <span class="pf-grp-t">{% if g.key == 'priv' %}<i data-lucide="lock"></i>{% endif %}{{ g.label }}</span>
+      {% if g.key == 'priv' %}<span class="t-meta js-priv-hint">ocultos</span>{% endif %}
+    </div>
+    {% for item in g.rows %}
     {% set field_docs = docs_by_field.get(item.key, []) %}
-    {% set empty = item.value == placeholder %}
-    <div class="pf-field" data-key="{{ item.key }}">
-      <div class="eu-hstack pf-field-lbl">
-        <span class="t-meta">{{ item.label }}</span>
-        {% if item.private %}<span class="eu-badge pf-priv"><i data-lucide="lock"></i>privado</span>{% endif %}
-      </div>
-      <div class="pf-field-view" id="vrow-{{ item.key }}">
-        <span class="pf-val{{ ' is-priv' if item.private and not empty }}{{ ' is-empty' if empty }}" id="val-{{ item.key }}">{% if item.private and not empty %}••••••••{% else %}{{ 'Sin capturar' if empty else item.value }}{% endif %}</span>
+    <div class="pf-field" data-key="{{ item.key }}"{% if item.private %} data-priv="1"{% endif %}>
+      <div class="pf-field-row" id="vrow-{{ item.key }}">
+        <span class="pf-field-l">{{ item.label }}</span>
+        <button type="button" class="pf-val js-val{{ ' is-empty' if not item.lleno }}{{ ' is-mono' if item.mono }}" title="{{ 'Copiar' if item.lleno else 'Capturar' }}" data-key="{{ item.key }}">
+          <span id="val-{{ item.key }}">{% if not item.lleno %}Sin capturar{% elif item.private %}••••••••••{% else %}{{ item.value }}{% endif %}</span><span class="pf-copied" hidden>copiado</span>
+        </button>
         <span class="pf-actions">
-          {% if item.private %}<button type="button" class="eu-iconbtn js-vis" data-key="{{ item.key }}" id="eyebtn-{{ item.key }}" aria-label="Mostrar u ocultar {{ item.label }}"><i data-lucide="eye"></i></button>{% endif %}
-          <button type="button" class="eu-iconbtn js-copy" data-key="{{ item.key }}" aria-label="Copiar {{ item.label }}"><i data-lucide="copy"></i></button>
-          <button type="button" class="eu-iconbtn js-edit" data-key="{{ item.key }}" aria-label="Editar {{ item.label }}"><i data-lucide="pencil"></i></button>
-          {% if item.key not in ['telefono', 'email'] %}
-          <button type="button" class="eu-iconbtn pf-attach js-attach{{ ' has-docs' if field_docs }}" data-key="{{ item.key }}" id="attachbtn-{{ item.key }}" aria-expanded="false" aria-controls="fdp-{{ item.key }}" aria-label="Documentos de {{ item.label }}">
-            <i data-lucide="paperclip"></i>{% if field_docs %}<span class="pf-attach-n" id="badge-{{ item.key }}">{{ field_docs|length }}</span>{% endif %}
-          </button>
+          {% if item.adjuntos %}
+          <button type="button" class="pf-docs js-attach{{ ' has-docs' if field_docs }}" data-key="{{ item.key }}" id="attachbtn-{{ item.key }}" aria-expanded="false" aria-controls="fdp-{{ item.key }}" aria-label="Documentos de {{ item.label }}"{% if not field_docs %} hidden{% endif %}><i data-lucide="paperclip"></i><span class="num" id="badge-{{ item.key }}">{{ field_docs|length }}</span></button>
           {% endif %}
+          <button type="button" class="eu-iconbtn pf-edit js-edit" data-key="{{ item.key }}" aria-label="Editar {{ item.label }}"><i data-lucide="pencil"></i></button>
         </span>
       </div>
       <form class="pf-field-edit js-edit-form" id="erow-{{ item.key }}" data-key="{{ item.key }}" hidden>
-        <input class="eu-input" id="einp-{{ item.key }}" value="{{ '' if empty else item.value }}" aria-label="{{ item.label }}" autocomplete="off">
+        <input class="eu-input" id="einp-{{ item.key }}" value="{{ item.value or '' }}" aria-label="{{ item.label }}" autocomplete="off">
+        {% if item.adjuntos %}<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-attach" data-key="{{ item.key }}" aria-label="Adjuntos de {{ item.label }}"><i data-lucide="paperclip"></i></button>{% endif %}
         <button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button>
         <button type="button" class="eu-iconbtn js-cancel" data-key="{{ item.key }}" aria-label="Cancelar"><i data-lucide="x"></i></button>
       </form>
-      {% if item.key not in ['telefono', 'email'] %}
+      {% if item.adjuntos %}
       <div class="eu-card eu-card--inset pf-fdp" id="fdp-{{ item.key }}" hidden>
         <div class="eu-between">
           <span class="t-meta">Documentos · {{ item.label }}</span>
@@ -46,5 +50,7 @@
       {% endif %}
     </div>
     {% endfor %}
+    {% endfor %}
+    <div class="pf-fields-ft t-meta">Clic en un valor para copiarlo. Los privados se vuelven a ocultar a los 30 s.</div>
   </div>
 </section>

@@ -7,6 +7,7 @@ from database import get_db
 from utils import uploads_base_dir, today_str
 import modules.gamification.engine as engine
 from modules.perfil import recordatorios as rec
+from modules.perfil import resumen as rs
 
 PLACEHOLDER = '— editar —'
 
@@ -77,38 +78,23 @@ def index():
         else:
             docs_general.append(d)
 
-    # Build history dict: key → last 8 entries (newest first)
-    meas_history = {}
-    for r in hist_rows:
-        k = r["key"]
-        if k not in meas_history:
-            meas_history[k] = []
-        if len(meas_history[k]) < 8:
-            meas_history[k].append({"value": r["value"], "date": r["recorded_at"][:10]})
-
     reminders = [dict(r) for r in reminders]
+    hoy = date.fromisoformat(today_str())
 
-    # ── Stats para el hero ────────────────────────────────────────────────
-    campos_completos  = sum(1 for i in info if i['value'] != PLACEHOLDER)
-    medidas_completas = sum(1 for m in measurements if m['value'] != PLACEHOLDER)
-    horizon = (date.today() + timedelta(days=3)).isoformat()
-    rem_urgentes = sum(
-        1 for r in reminders
-        if (r.get('next_date') or r.get('target_date')) and (r.get('next_date') or r.get('target_date')) <= horizon
-    )
-    stats = {
-        'campos_completos':  campos_completos,
-        'campos_total':      len(info),
-        'medidas_completas': medidas_completas,
-        'medidas_total':     len(measurements),
-        'docs_total':        len(all_docs),
-        'rem_total':         len(reminders),
-        'rem_urgentes':      rem_urgentes,
-        'vault_total':       len(vault),
-    }
+    # Pagos de tarjeta que ya lleva Oikonomia: se enlazan (solo con fin_ok)
+    fin_ok = bool(session.get('fin_ok'))
+    if fin_ok:
+        try:
+            with get_db() as db:
+                if rs.vincular_pagos(db):
+                    reminders = [dict(r) for r in db.execute(
+                        "SELECT * FROM reminders WHERE is_active=1 ORDER BY COALESCE(next_date, target_date, '9999-12-31'), created_at"
+                    ).fetchall()]
+        except Exception:
+            pass
 
-    meas_by_key = {m['key']: dict(m) for m in measurements}
-    rem_grupos = rec.agrupar(reminders, date.fromisoformat(today_str()))
+    med_rows = rs.medidas(measurements, hist_rows, hoy)
+    rem_grupos = rs.grupos_recordatorios(reminders, hoy)
 
     # ── Plicómetro (pliegues cutáneos): calcular deltas contra la lectura previa
     pliegue_log = [dict(p) for p in pliegue_rows]
@@ -122,30 +108,17 @@ def index():
     for t in tallas_rows:
         tallas_por_prenda.setdefault(t['prenda'], []).append(dict(t))
 
-    # ── Tarjeta «Tú» (DS V2 · pantalla 10): nivel, racha, EC e insignias ──
-    gam = engine.get_gamification_stats()
-    try:
-        from modules.gamification.badges import get_all_badges
-        _b = get_all_badges()
-        badges_earned, badges_total = sum(1 for b in _b if b['unlocked']), len(_b)
-    except Exception:
-        badges_earned, badges_total = 0, 0
     nombre = next((i['value'] for i in info if i['key'] == 'nombre' and i['value'] != PLACEHOLDER), '')
-    me = {
-        'nombre':  nombre,
-        'inicial': (nombre.strip()[:1] or 'Tú').upper() if nombre else 'Tú',
-        'level': gam['level'], 'level_name': gam['level_name'], 'level_pct': gam['level_pct'],
-        'streak': gam['streak'], 'ec': gam['total_coins'],
-        'badges_earned': badges_earned, 'badges_total': badges_total,
-    }
+    me = {'nombre': nombre, 'inicial': (nombre.strip()[:1] or 'Tú').upper() if nombre else 'Tú'}
+    sec = request.args.get('sec', 'resumen')
 
     return render_template('perfil/index.html',
-                           me=me,
+                           me=me, sec=sec, fin_ok=fin_ok,
                            placeholder=PLACEHOLDER,
                            info=info,
+                           grupos_datos=rs.grupos_datos(info, docs_by_field),
                            measurements=measurements,
-                           meas_by_key=meas_by_key,
-                           meas_history=meas_history,
+                           med_rows=med_rows,
                            docs=docs_general,
                            docs_by_field=docs_by_field,
                            reminders=reminders,
@@ -155,7 +128,64 @@ def index():
                            vault=vault,
                            pliegue_log=pliegue_log,
                            tallas_por_prenda=tallas_por_prenda,
-                           stats=stats)
+                           nav_counts=rs.nav_counts(info, med_rows, rem_grupos, len(all_docs), len(vault)),
+                           atencion=rs.atencion(rem_grupos, info, med_rows, fin_ok),
+                           tiles=rs.tiles(rem_grupos, info, med_rows))
+
+
+@perfil_bp.route('/api/privados')
+def privados():
+    """Los valores privados en un solo fetch (Mostrar privados / copiar uno
+    oculto). Nunca viajan en el HTML de la página."""
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    with get_db() as db:
+        rows = db.execute("SELECT key, value FROM personal_info WHERE private=1").fetchall()
+    return jsonify({'ok': True, 'valores': {r['key']: r['value'] for r in rows if rs.lleno(r['value'])}})
+
+
+@perfil_bp.route('/api/medidas/lote', methods=['POST'])
+def medidas_lote():
+    """«Guardar lectura de hoy»: una lectura solo para las medidas que
+    cambiaron (no infla el historial con valores repetidos)."""
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    d = request.get_json(force=True, silent=True) or {}
+    valores = d.get('valores') or {}
+    if not isinstance(valores, dict):
+        return jsonify({'ok': False, 'error': 'valores inválidos'}), 400
+    now = datetime.now().isoformat()
+    guardadas = []
+    with get_db() as db:
+        actuales = {r['key']: r['value'] for r in db.execute("SELECT key, value FROM body_measurements").fetchall()}
+        for k, v in valores.items():
+            v = str(v if v is not None else '').strip().replace(',', '.')
+            if k not in actuales or not v:
+                continue
+            a, b = rs._num(v), rs._num(actuales[k])
+            if v == actuales[k] or (a is not None and b is not None and a == b):
+                continue
+            db.execute("UPDATE body_measurements SET value=? WHERE key=?", (v, k))
+            db.execute("INSERT INTO body_measurements_history (key, value, recorded_at) VALUES (?,?,?)", (k, v, now))
+            guardadas.append(k)
+        db.commit()
+    return jsonify({'ok': True, 'guardadas': guardadas})
+
+
+@perfil_bp.route('/api/recordatorios/<int:rid>/posponer', methods=['POST'])
+def posponer_recordatorio(rid):
+    """«Mañana» del Resumen: mueve esta ocurrencia a mañana sin tocar la
+    recurrencia (misma regla que /snooze)."""
+    if not session.get('fin_ok'): return jsonify({'error': 'locked'}), 403
+    manana = (date.fromisoformat(today_str()) + timedelta(days=1)).isoformat()
+    with get_db() as db:
+        row = db.execute("SELECT type FROM reminders WHERE id=?", (rid,)).fetchone()
+        if not row:
+            return jsonify({'ok': False, 'error': 'No encontrado'}), 404
+        if row['type'] == 'unico':
+            db.execute("UPDATE reminders SET target_date=?, next_date=? WHERE id=?", (manana, manana, rid))
+        else:
+            db.execute("UPDATE reminders SET next_date=? WHERE id=?", (manana, rid))
+        db.commit()
+    return jsonify({'ok': True, 'fecha': manana})
 
 
 @perfil_bp.route('/api/update', methods=['POST'])

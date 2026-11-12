@@ -1,6 +1,8 @@
-/* Perfil «Tú» — Design System V2 · pantalla 10
-   Navegación por hash entre secciones, edición en línea de datos y medidas,
-   documentos, recordatorios, contraseñas, tallas, plicómetro y ajustes. */
+/* Perfil «Tú» — handoff Perfil v2.
+   Secciones por ?sec= (Resumen por defecto), «Requiere atención» con Hecho,
+   Mañana y Capturar en línea, datos con clic para copiar y privados en grupo
+   (un solo fetch, se ocultan a los 30 s), medidas en lote, documentos,
+   recordatorios, contraseñas, tallas, plicómetro y ajustes. */
 (function () {
   'use strict';
   var root = document.getElementById('pf');
@@ -8,10 +10,9 @@
 
   var data = JSON.parse(document.getElementById('pf-data').textContent || '{}');
   var PH = '— editar —';
-  var rv = data.rv || {}, priv = data.priv || {}, mv = data.mv || {};
+  var rv = data.rv || {}, mv = data.mv || {};     /* los privados NO vienen aquí */
   var vaultCache = {};
   var MAX_MB = 10;  /* MAX_CONTENT_LENGTH de app.py */
-  var desk = window.matchMedia('(min-width:1024px)');
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -23,10 +24,10 @@
     if (old) old.replaceWith(i); else btn.prepend(i);
     icons(i);
   }
-  function copy(text) {
-    if (!text) { toast('Nada que copiar', 'err'); return; }
-    navigator.clipboard.writeText(text).then(function () { toast('Copiado'); },
-      function () { toast('No se pudo copiar', 'err'); });
+  function copy(text, quiet) {
+    if (!text) { toast('Nada que copiar', 'err'); return Promise.resolve(false); }
+    return navigator.clipboard.writeText(text).then(function () { if (!quiet) toast('Copiado'); return true; },
+      function () { toast('No se pudo copiar', 'err'); return false; });
   }
   async function post(url, body) {
     var opts = { method: 'POST' };
@@ -42,30 +43,48 @@
   }
   function fail(j, msg) { if (!j.expired) toast((msg || 'Error') + (j.error ? ': ' + j.error : ''), 'err'); }
 
-  /* ── Navegación por secciones ─────────────────────────────── */
+  /* ── Secciones (?sec=) ────────────────────────────────────── */
   var SECS = Array.prototype.map.call(document.querySelectorAll('[data-sec-panel]'), function (s) { return s.dataset.secPanel; });
-  function show(sec) {
-    if (SECS.indexOf(sec) < 0) sec = desk.matches ? 'datos' : '';
+  function show(sec, push) {
+    if (SECS.indexOf(sec) < 0) sec = 'resumen';
+    if (root.dataset.sec !== sec) hidePriv();
     root.dataset.sec = sec;
     document.querySelectorAll('[data-sec-panel]').forEach(function (p) { p.hidden = p.dataset.secPanel !== sec; });
     document.querySelectorAll('.pf-subnav [data-sec-link]').forEach(function (a) {
       if (a.dataset.secLink === sec) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
+    if (push) {
+      try { history.pushState({ sec: sec }, '', location.pathname + (sec === 'resumen' ? '' : '?sec=' + sec)); } catch (_) {}
+      window.scrollTo(0, 0);
+    }
   }
-  var navigated = false;  /* ¿se abrió la sección desde esta misma página? */
-  function route() { show(location.hash.slice(1)); }
-  window.addEventListener('hashchange', function () { navigated = true; route(); window.scrollTo(0, 0); });
-  desk.addEventListener('change', route);
-  route();
-
-  /* Móvil: con una sección abierta, el «volver» de la topbar regresa al hub */
-  var tbBack = document.querySelector('.eu-tb-back');
-  if (tbBack) tbBack.addEventListener('click', function (e) {
-    if (desk.matches || !root.dataset.sec) return;
+  root.addEventListener('click', function (e) {
+    var a = e.target.closest('[data-sec-link],[data-sec-go]');
+    if (!a || e.metaKey || e.ctrlKey) return;
     e.preventDefault();
-    if (navigated) history.back();
-    else { history.replaceState(null, '', location.pathname); route(); window.scrollTo(0, 0); }
+    show(a.dataset.secLink || a.dataset.secGo, true);
+    if (a.dataset.lote) loteOpen();
   });
+  window.addEventListener('popstate', function () { show(new URLSearchParams(location.search).get('sec') || 'resumen'); });
+  /* Compatibilidad: enlaces viejos con #recordatorios, #datos… */
+  if (location.hash && SECS.indexOf(location.hash.slice(1)) >= 0) {
+    show(location.hash.slice(1));
+    try { history.replaceState(null, '', location.pathname + '?sec=' + location.hash.slice(1)); } catch (_) {}
+  }
+
+  /* Contadores del lateral y del Resumen sin recargar */
+  function bump(sec, d) {
+    var el = document.querySelector('[data-ct="' + sec + '"]');
+    if (!el) return;
+    var m = el.textContent.match(/^(\d+)(.*)$/);
+    var n = Math.max(0, (m ? parseInt(m[1], 10) : 0) + d), rest = m ? m[2] : '';
+    if (sec === 'resumen') { el.textContent = n ? n + ' urgente' + (n === 1 ? '' : 's') : ''; el.classList.toggle('is-warn', n > 0); return; }
+    if (sec === 'datos') {
+      var t = el.textContent.split('/'); el.textContent = (parseInt(t[0], 10) + d) + '/' + t[1];
+      var tile = document.querySelector('.js-tile-datos'); if (tile) tile.textContent = el.textContent; return;
+    }
+    el.textContent = n ? n + rest : '';
+  }
 
   /* ── Tema ─────────────────────────────────────────────────── */
   function syncTheme() {
@@ -83,22 +102,117 @@
   });
   syncTheme();
 
-  /* ── Datos personales ─────────────────────────────────────── */
-  function renderVal(k, reveal) {
-    var el = $('val-' + k), v = rv[k], empty = !v || v === PH;
-    el.classList.toggle('is-empty', empty);
-    el.classList.toggle('is-priv', !!priv[k] && !reveal && !empty);
-    el.textContent = empty ? 'Sin capturar' : (priv[k] && !reveal ? '••••••••' : v);
-    el.dataset.showing = reveal ? '1' : '0';
+  /* ── Resumen: Requiere atención (nota 3) ─────────────────── */
+  function attnRemove(row) {
+    row.remove();
+    var n = document.querySelectorAll('.js-attn .pf-attn-row').length;
+    var ct = document.querySelector('.js-attn-n');
+    if (ct) ct.textContent = n ? n + ' cosa' + (n === 1 ? '' : 's') : '';
+    document.querySelector('.js-attn-ok').hidden = n > 0;
+  }
+  function remRowGone(id) {          /* la misma fila en Recordatorios */
+    var r = $('remrow-' + id);
+    if (r) remRemove(r);
+  }
+  root.addEventListener('click', async function (e) {
+    var b = e.target.closest('button');
+    if (!b || !b.closest('.js-attn')) return;
+    var row = b.closest('.pf-attn-row'), j;
+    if (b.classList.contains('js-attn-done')) {
+      b.disabled = true;
+      j = await post('/perfil/api/reminder/' + row.dataset.rem + '/done');
+      if (!j.ok) { b.disabled = false; fail(j, 'Error al actualizar'); return; }
+      if (j.gam && window.euGam) euGam(j.gam, { el: b });
+      attnRemove(row); remRowGone(row.dataset.rem); bump('resumen', -1); bump('recordatorios', -1);
+      toast('Hecho · +3 XP');
+    } else if (b.classList.contains('js-attn-snooze')) {
+      b.setAttribute('aria-busy', 'true');
+      j = await post('/perfil/api/recordatorios/' + row.dataset.rem + '/posponer');
+      b.removeAttribute('aria-busy');
+      if (!j.ok) { fail(j, 'No se pudo posponer'); return; }
+      attnRemove(row); bump('resumen', -1);
+      toast('Pospuesto a mañana');
+    } else if (b.classList.contains('js-attn-cap')) {
+      b.hidden = true;
+      var f = row.querySelector('.js-attn-form'); f.hidden = false; f.querySelector('input').focus();
+    }
+  });
+  document.querySelectorAll('.js-attn-form').forEach(function (f) {
+    f.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var row = f.closest('.pf-attn-row'), k = row.dataset.campo, val = f.querySelector('input').value.trim();
+      if (!val) { toast('Escribe un valor', 'err'); return; }
+      var j = await post('/perfil/api/update', { key: k, value: val });
+      if (!j.ok) { fail(j, 'Error al guardar'); return; }
+      fieldSaved(k, val);
+      attnRemove(row);
+      toast('Guardado');
+    });
+  });
+
+  /* ── Datos personales (nota 5) ────────────────────────────── */
+  var privVals = null, privTimer = null, revealBtn = document.querySelector('.js-reveal');
+  function isPriv(k) { var f = document.querySelector('.pf-field[data-key="' + k + '"]'); return !!(f && f.dataset.priv); }
+  function filled(k) { var el = document.querySelector('.js-val[data-key="' + k + '"]'); return el && !el.classList.contains('is-empty'); }
+  async function loadPriv() {
+    if (privVals) return privVals;
+    var r = await fetch('/perfil/api/privados');
+    if (!r.ok) { toast('No se pudieron leer los privados', 'err'); return null; }
+    privVals = (await r.json()).valores || {};
+    return privVals;
+  }
+  function paintPriv(show) {
+    document.querySelectorAll('.pf-field[data-priv]').forEach(function (f) {
+      var k = f.dataset.key;
+      if (!filled(k)) return;
+      $('val-' + k).textContent = show && privVals ? (privVals[k] || '') : '••••••••••';
+    });
+    var hint = document.querySelector('.js-priv-hint');
+    if (hint) hint.textContent = show ? 'visibles · se ocultan en 30 s' : 'ocultos';
+    if (revealBtn) {
+      revealBtn.setAttribute('aria-pressed', String(show));
+      revealBtn.querySelector('span').textContent = show ? 'Ocultar privados' : 'Mostrar privados';
+      setIcon(revealBtn, show ? 'eye-off' : 'eye');
+    }
+  }
+  function hidePriv() {
+    clearTimeout(privTimer);
+    if (revealBtn && revealBtn.getAttribute('aria-pressed') === 'true') paintPriv(false);
+    privVals = null;                 /* se vuelven a pedir la próxima vez */
+  }
+  if (revealBtn) revealBtn.addEventListener('click', async function () {
+    if (revealBtn.getAttribute('aria-pressed') === 'true') { hidePriv(); return; }
+    if (!(await loadPriv())) return;
+    paintPriv(true);
+    clearTimeout(privTimer);
+    privTimer = setTimeout(hidePriv, 30000);
+  });
+  function flashCopied(btn) {
+    var c = btn.querySelector('.pf-copied'); if (!c) return;
+    c.hidden = false; setTimeout(function () { c.hidden = true; }, 1200);
   }
   function editOpen(k) {
     $('vrow-' + k).hidden = true;
     $('erow-' + k).hidden = false;
-    $('einp-' + k).focus();
+    var inp = $('einp-' + k);
+    if (isPriv(k) && filled(k) && !inp.value) loadPriv().then(function (v) { if (v) inp.value = v[k] || ''; });
+    inp.focus();
   }
   function editClose(k) {
     $('vrow-' + k).hidden = false;
     $('erow-' + k).hidden = true;
+    if (isPriv(k)) $('einp-' + k).value = '';     /* no dejar el privado en el DOM */
+  }
+  function fieldSaved(k, val) {
+    var wasEmpty = !filled(k);
+    var btn = document.querySelector('.js-val[data-key="' + k + '"]');
+    if (btn) {
+      btn.classList.remove('is-empty');
+      btn.title = 'Copiar';
+      $('val-' + k).textContent = isPriv(k) ? '••••••••••' : val;
+    }
+    if (isPriv(k)) { if (privVals) privVals[k] = val; } else rv[k] = val;
+    if (wasEmpty) { bump('datos', 1); var a = document.querySelector('.js-attn [data-campo="' + k + '"]'); if (a) attnRemove(a); }
   }
 
   /* Panel de documentos por campo: solo uno abierto a la vez */
@@ -115,34 +229,32 @@
     openPanel = p.hidden ? null : k;
   }
   function attachCount(k, delta) {
-    var btn = $('attachbtn-' + k);
-    if (!btn) return;
-    var badge = $('badge-' + k);
-    var n = (badge ? parseInt(badge.textContent, 10) || 0 : 0) + delta;
-    if (n > 0) {
-      if (!badge) { badge = document.createElement('span'); badge.className = 'pf-attach-n'; badge.id = 'badge-' + k; btn.appendChild(badge); }
-      badge.textContent = n;
-    } else if (badge) badge.remove();
+    var btn = $('attachbtn-' + k), badge = $('badge-' + k);
+    if (!btn || !badge) return;
+    var n = (parseInt(badge.textContent, 10) || 0) + delta;
+    badge.textContent = n;
+    btn.hidden = n <= 0;
     btn.classList.toggle('has-docs', n > 0);
     var emptyEl = $('fdp-empty-' + k);
     if (emptyEl) emptyEl.hidden = n > 0;
   }
 
-  root.addEventListener('click', function (e) {
+  root.addEventListener('click', async function (e) {
     var b = e.target.closest('button');
-    if (!b) return;
+    if (!b || b.closest('.js-attn')) return;
     var k = b.dataset.key;
-    if (b.classList.contains('js-vis')) {
-      var showing = $('val-' + k).dataset.showing === '1';
-      renderVal(k, !showing);
-      setIcon(b, showing ? 'eye' : 'eye-off');
-    } else if (b.classList.contains('js-copy')) copy(rv[k] === PH ? '' : rv[k]);
+    if (b.classList.contains('js-val')) {
+      if (!filled(k)) { editOpen(k); return; }
+      if (isPriv(k)) {
+        /* Copiar un privado oculto: el valor viene del backend, no del DOM */
+        var v = await loadPriv();
+        if (v && await copy(v[k], true)) flashCopied(b);
+        if (!(revealBtn && revealBtn.getAttribute('aria-pressed') === 'true')) privVals = null;
+      } else if (await copy(rv[k], true)) flashCopied(b);
+    }
     else if (b.classList.contains('js-edit')) editOpen(k);
     else if (b.classList.contains('js-cancel')) editClose(k);
     else if (b.classList.contains('js-attach')) togglePanel(k);
-    else if (b.classList.contains('js-mcopy')) copy(mv[k] === PH ? '' : mv[k]);
-    else if (b.classList.contains('js-medit')) mOpen(k);
-    else if (b.classList.contains('js-mcancel')) mClose(k);
   });
 
   document.querySelectorAll('.js-edit-form').forEach(function (f) {
@@ -154,65 +266,48 @@
       if (!val) { toast('Escribe un valor', 'err'); return; }
       var j = await post('/perfil/api/update', { key: k, value: val });
       if (!j.ok) { fail(j, 'Error al guardar'); return; }
-      rv[k] = val;
-      renderVal(k, false);
-      var eye = $('eyebtn-' + k);
-      if (eye) setIcon(eye, 'eye');
+      fieldSaved(k, val);
       editClose(k);
       toast('Guardado');
     });
   });
 
-  /* ── Medidas ──────────────────────────────────────────────── */
-  function mOpen(k) { $('mvrow-' + k).hidden = true; $('merow-' + k).hidden = false; $('meinp-' + k).focus(); }
-  function mClose(k) { $('mvrow-' + k).hidden = false; $('merow-' + k).hidden = true; }
-  function diff(a, b) {
-    var x = parseFloat(a), y = parseFloat(b);
-    if (isNaN(x) || isNaN(y) || !x || !y) return null;
-    return Math.round((x - y) * 10) / 10;
+  /* ── Medidas en lote (nota 6) ─────────────────────────────── */
+  var mt = $('pf-mt'), loteFt = document.querySelector('.js-lote-ft'), loteBtn = document.querySelector('.js-lote');
+  function loteOpen() {
+    if (!mt) return;
+    mt.classList.add('is-lote');
+    mt.querySelectorAll('.js-mt-in').forEach(function (i) { i.value = i.dataset.orig; i.hidden = false; });
+    mt.querySelectorAll('.js-mt-view').forEach(function (v) { v.hidden = true; });
+    loteFt.hidden = false;
+    if (loteBtn) loteBtn.hidden = true;
+    var first = mt.querySelector('.js-mt-in'); if (first) first.focus();
   }
-  function deltaHtml(d) {
-    if (d === null) return '<span class="t-meta">—</span>';
-    return '<span class="eu-badge pf-delta' + (d > 0 ? ' is-up' : d < 0 ? ' is-down' : '') + '">' + (d > 0 ? '+' + d : d < 0 ? d : '=') + '</span>';
+  function loteClose() {
+    mt.classList.remove('is-lote');
+    mt.querySelectorAll('.js-mt-in').forEach(function (i) { i.hidden = true; });
+    mt.querySelectorAll('.js-mt-view').forEach(function (v) { v.hidden = false; });
+    loteFt.hidden = true;
+    if (loteBtn) loteBtn.hidden = false;
   }
-
-  document.querySelectorAll('.js-medit-form').forEach(function (f) {
-    var k = f.dataset.key;
-    f.addEventListener('keydown', function (e) { if (e.key === 'Escape') mClose(k); });
-    f.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      var val = $('meinp-' + k).value.trim();
-      if (!val) { toast('Escribe un valor', 'err'); return; }
-      var prev = mv[k];
-      var j = await post('/perfil/api/update_measurement', { key: k, value: val });
+  if (loteBtn) loteBtn.addEventListener('click', loteOpen);
+  if (mt) {
+    mt.querySelector('.js-lote-cancel').addEventListener('click', loteClose);
+    mt.querySelector('.js-lote-save').addEventListener('click', async function () {
+      var vals = {}, n = 0;
+      mt.querySelectorAll('.js-mt-in').forEach(function (i) {
+        var v = i.value.trim().replace(',', '.');
+        if (v && v !== i.dataset.orig) { vals[i.dataset.key] = v; n++; }
+      });
+      if (!n) { loteClose(); toast('Sin cambios'); return; }
+      var j = await post('/perfil/api/medidas/lote', { valores: vals });
       if (!j.ok) { fail(j, 'Error al guardar'); return; }
-      mv[k] = val;
-      var valEl = $('mval-' + k);
-      valEl.textContent = val;
-      valEl.parentElement.classList.remove('is-empty');
-      var d = diff(val, prev), badge = $('mdelta-' + k);
-      if (badge) {
-        badge.hidden = d === null;
-        if (d !== null) {
-          badge.classList.toggle('is-up', d > 0);
-          badge.classList.toggle('is-down', d < 0);
-          badge.textContent = d > 0 ? '+' + d : d < 0 ? d : '=';
-        }
-      }
-      var h = j.history || [];
-      if (h.length) {
-        $('mhist-' + k).innerHTML = h.map(function (en, i) {
-          var nx = h[i + 1];
-          return '<div class="eu-between pf-hist-row"><span class="t-meta">' + esc(en.date) + '</span><span class="num">' +
-            esc(en.value) + '</span>' + deltaHtml(nx ? diff(en.value, nx.value) : null) + '</div>';
-        }).join('');
-        $('mhistbtn-' + k).textContent = 'Historial (' + h.length + ')';
-        $('mhistwrap-' + k).hidden = false;
-      }
-      mClose(k);
-      toast('Guardado');
+      toast((j.guardadas || []).length + ' medida' + ((j.guardadas || []).length === 1 ? '' : 's') + ' actualizada' + ((j.guardadas || []).length === 1 ? '' : 's'));
+      setTimeout(function () { location.reload(); }, 500);
     });
-  });
+    mt.addEventListener('keydown', function (e) { if (e.key === 'Escape' && mt.classList.contains('is-lote')) loteClose(); });
+  }
+  if (new URLSearchParams(location.search).get('lote') === '1') loteOpen();
 
   /* ── Documentos ───────────────────────────────────────────── */
   function docRow(doc, field) {
@@ -286,8 +381,11 @@
       row.classList.add('is-busy');
       j = await post('/perfil/api/reminder/' + id + '/done');
       if (!j.ok) { row.classList.remove('is-busy'); fail(j, 'Error al actualizar'); return; }
+      var at = document.querySelector('.js-attn [data-rem="' + id + '"]');
+      if (at) { attnRemove(at); bump('resumen', -1); }
+      if (j.gam && window.euGam) euGam(j.gam, { el: b });
       if (row.dataset.type === 'unico') {
-        remRemove(row);
+        remRemove(row); bump('recordatorios', -1);
         toast('Hecho');
       } else location.reload();
     } else if (b.classList.contains('js-rem-del')) {
@@ -427,7 +525,7 @@
     if (!snoozeRow) return;
     var j = await post('/perfil/api/reminder/' + snoozeRow.dataset.id + '/snooze', body);
     if (!j.ok) { fail(j, 'No se pudo posponer'); return; }
-    location.hash = 'recordatorios'; location.reload();
+    location.reload();
   }
   document.querySelector('.js-snooze-date').addEventListener('change', function () {
     if (this.value) snoozeTo({ fecha: this.value });
@@ -465,7 +563,7 @@
       payload.next_date = date || null;
     }
     var j = await post(editId ? '/perfil/api/reminder/' + editId + '/edit' : '/perfil/api/reminder/add', payload);
-    if (j.ok) { location.hash = 'recordatorios'; location.reload(); } else fail(j, 'Error');
+    if (j.ok) { location.reload(); } else fail(j, 'Error');
   });
 
   /* Contraseñas */
