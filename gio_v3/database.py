@@ -7199,6 +7199,32 @@ def init_db():
         except Exception as e:
             print(f"[DB] reminders vinculado_oikonomia migration warning: {e}")
 
+        # ── COSMOPOLITISMO v2 (Sprint 1): score guardado de cada entrada del
+        # journal (nullable: NULL si LanguageTool no respondió), rondas de
+        # repaso ya premiadas (no duplicar XP por ronda) y los dos touches de
+        # Acta que se marcan solos al practicar (repaso y journal).
+        try:
+            if 'score' not in [r["name"] for r in db.execute("PRAGMA table_info(lang_journal)").fetchall()]:
+                db.execute("ALTER TABLE lang_journal ADD COLUMN score INTEGER DEFAULT NULL")
+            db.execute("""CREATE TABLE IF NOT EXISTS lang_quiz_rounds (
+                round_id   TEXT PRIMARY KEY,
+                language   TEXT NOT NULL,
+                score      INTEGER NOT NULL DEFAULT 0,
+                total      INTEGER NOT NULL DEFAULT 0,
+                xp         INTEGER NOT NULL DEFAULT 0,
+                date       TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )""")
+            db.executemany(
+                """INSERT OR IGNORE INTO activity_defs
+                   (key, label, cat, pts, ec, tier, session, pillar, type, active, hidden, custom, sort_order)
+                   VALUES (?,?,?,?,?,?,?,?,?,1,0,0,?)""",
+                [("idiomas_repaso", "Repaso de vocabulario", "Idiomas", 2, 0, "micro", "any", "cosmo", "touch", 3),
+                 ("idiomas_journal", "Writing journal", "Idiomas", 5, 1, "progreso", "any", "cosmo", "touch", 4)])
+            db.commit()
+        except Exception as e:
+            print(f"[DB] cosmopolitismo v2 migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
