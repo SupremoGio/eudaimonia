@@ -4536,6 +4536,12 @@ def viajes_page():
     return render_template('finanzas/viajes.html')
 
 
+@estados_bp.route('/viajes/nuevo')
+def viajes_nuevo():
+    # Un solo alta de viajes: vive en /viajes (su m-trip lleva el presupuesto).
+    return redirect('/viajes/?nuevo=1')
+
+
 @estados_bp.route('/api/trips')
 def list_trips():
     if not _ok(): return _locked()
@@ -4600,7 +4606,12 @@ def update_trip(trip_id):
         return jsonify({'ok': True})
     params.append(trip_id)
     with get_db() as db:
+        old = db.execute("SELECT estado FROM viajes WHERE id=?", (trip_id,)).fetchone()
         db.execute(f"UPDATE viajes SET {', '.join(fields)} WHERE id=?", params)
+        if old and 'estado' in d:
+            # Mismo cierre que en /viajes: guarda cuántos ítems no regresaron.
+            from modules.viajes.routes import cerrar_viaje
+            cerrar_viaje(db, trip_id, d['estado'], old['estado'])
         db.commit()
     return jsonify({'ok': True})
 

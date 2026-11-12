@@ -13,10 +13,13 @@
     <div class="eu-field"><label class="eu-label" for="f-ocasion">Tipo de viaje</label>
       <select class="eu-select" id="f-ocasion"><option value="">General</option><option value="negocios">Negocios</option><option value="casual">Casual / Turismo</option><option value="playa">Playa / Resort</option><option value="aventura">Aventura / Outdoor</option><option value="formal">Evento formal</option></select></div>
   </div>
+  {% if fin_ok %}<div class="eu-field"><label class="eu-label" for="f-presupuesto">Presupuesto total (MXN)</label><input class="eu-input eu-input--money" id="f-presupuesto" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>{% endif %}
   <div class="eu-field"><label class="eu-label" for="f-notas">Notas (opcional)</label><textarea class="eu-textarea" id="f-notas" rows="2" placeholder="Detalles, recordatorios…"></textarea></div>
   <div class="eu-err" id="modal-err" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>
 </form>
-<div class="eu-modal-ft">
+<div class="eu-modal-ft vj-ft">
+  <button type="button" class="eu-btn eu-btn--danger js-del" hidden><i data-lucide="trash-2"></i>Eliminar</button>
+  <span class="eu-grow"></span>
   <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-trip')">Cancelar</button>
   <button type="submit" form="f-trip" class="eu-btn eu-btn--primary">Guardar</button>
 </div>

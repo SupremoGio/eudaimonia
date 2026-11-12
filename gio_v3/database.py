@@ -1591,6 +1591,26 @@ def init_db():
         except Exception as e:
             print(f"[DB] viajes presupuesto migration warning: {e}")
 
+        # ── VIAJES v2 (Sprint 1): consumibles que no regresan (pasta, shampoo,
+        # jabón) y el resultado del regreso guardado al completar el viaje
+        # (viajes.olvidados, nullable: NULL = aún sin cerrar).
+        try:
+            vm_cols = [r["name"] for r in db.execute("PRAGMA table_info(viaje_maleta)").fetchall()]
+            if "no_regresa" not in vm_cols:
+                db.execute("ALTER TABLE viaje_maleta ADD COLUMN no_regresa INTEGER DEFAULT 0")
+            v_cols = [r["name"] for r in db.execute("PRAGMA table_info(viajes)").fetchall()]
+            if "olvidados" not in v_cols:
+                db.execute("ALTER TABLE viajes ADD COLUMN olvidados INTEGER DEFAULT NULL")
+            if not db.execute("SELECT id FROM migration_log WHERE version='viajes_v2_consumibles'").fetchone():
+                n = db.execute("""UPDATE viaje_maleta SET no_regresa=1
+                                  WHERE es_extra=1 AND item_id IS NULL
+                                    AND nombre IN ('Pasta dental','Shampoo','Jabón corporal')""").rowcount
+                db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                           ("viajes_v2_consumibles", f"viaje_maleta.no_regresa en consumibles ({n} ítems)"))
+            db.commit()
+        except Exception as e:
+            print(f"[DB] viajes v2 migration warning: {e}")
+
         # ── ESTADOS DE CUENTA (SG Credit Card module) ────────────────────────
         db.executescript("""
         CREATE TABLE IF NOT EXISTS est_movimientos (

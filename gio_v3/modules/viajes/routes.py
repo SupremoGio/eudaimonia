@@ -1,30 +1,43 @@
 from datetime import datetime, date, timedelta
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, session, redirect, has_request_context
 from database import get_db
-from utils import today_str
+from utils import today_str, today_date
 
 viajes_bp = Blueprint('viajes', __name__, template_folder='../../templates')
 
 # ── Extras estándar que siempre se sugieren ───────────────────────────────────
 EXTRAS_ESTANDAR = [
-    ("Identificación / Pasaporte",    "Documentos",  1),
-    ("Tarjetas bancarias",            "Documentos",  1),
-    ("Efectivo",                      "Documentos",  1),
-    ("Cepillo de dientes",            "Higiene",     1),
-    ("Pasta dental",                  "Higiene",     1),
-    ("Desodorante",                   "Higiene",     1),
-    ("Shampoo",                       "Higiene",     1),
-    ("Jabón corporal",                "Higiene",     1),
-    ("Cargador de celular",           "Tecnología",  1),
-    ("Auriculares",                   "Tecnología",  1),
-    ("Power bank",                    "Tecnología",  1),
-    ("Medicamentos personales",       "Salud",       1),
-    ("Bolsa para ropa sucia",         "Varios",      1),
+    # (nombre, categoría, cantidad, no_regresa) — los consumibles se gastan en
+    # el viaje y no cuentan en el checklist de regreso.
+    ("Identificación / Pasaporte",    "Documentos",  1, 0),
+    ("Tarjetas bancarias",            "Documentos",  1, 0),
+    ("Efectivo",                      "Documentos",  1, 0),
+    ("Cepillo de dientes",            "Higiene",     1, 0),
+    ("Pasta dental",                  "Higiene",     1, 1),
+    ("Desodorante",                   "Higiene",     1, 0),
+    ("Shampoo",                       "Higiene",     1, 1),
+    ("Jabón corporal",                "Higiene",     1, 1),
+    ("Cargador de celular",           "Tecnología",  1, 0),
+    ("Auriculares",                   "Tecnología",  1, 0),
+    ("Power bank",                    "Tecnología",  1, 0),
+    ("Medicamentos personales",       "Salud",       1, 0),
+    ("Bolsa para ropa sucia",         "Varios",      1, 0),
 ]
 
 
 def _row(r):
     return dict(r)
+
+
+def _fin_ok():
+    return bool(has_request_context() and session.get('fin_ok'))
+
+
+def _presupuesto(d):
+    try:
+        return max(0.0, round(float(d.get('presupuesto') or 0), 2))
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _gen_dias(viaje_id, fecha_inicio_str, fecha_fin_str, db):
@@ -48,7 +61,7 @@ def _gen_dias(viaje_id, fecha_inicio_str, fecha_fin_str, db):
 
 @viajes_bp.route('/')
 def index():
-    return render_template('viajes/index.html', today=today_str())
+    return render_template('viajes/index.html', today=today_str(), fin_ok=_fin_ok())
 
 
 # ── API Trips ─────────────────────────────────────────────────────────────────
@@ -65,7 +78,14 @@ def api_trips():
             GROUP BY v.id
             ORDER BY v.fecha_inicio DESC
         """).fetchall()
-    return jsonify([_row(r) for r in rows])
+        res = []
+        for r in rows:
+            t = _row(r)
+            t['regreso'] = resultado_regreso(db, r)
+            if not _fin_ok():
+                t.pop('presupuesto', None)
+            res.append(t)
+    return jsonify(res)
 
 
 @viajes_bp.route('/api/trips', methods=['POST'])
@@ -84,8 +104,8 @@ def api_create_trip():
     with get_db() as db:
         cur = db.execute(
             """INSERT INTO viajes (nombre, destino, fecha_inicio, fecha_fin, estado,
-               tipo_clima, ocasion, notas, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
+               tipo_clima, ocasion, notas, presupuesto, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
             (nombre,
              d.get('destino', ''),
              inicio, fin,
@@ -93,10 +113,12 @@ def api_create_trip():
              d.get('tipo_clima', ''),
              d.get('ocasion', ''),
              d.get('notas', ''),
+             _presupuesto(d) if _fin_ok() else 0,
              now),
         )
         viaje_id = cur.lastrowid
         _gen_dias(viaje_id, inicio, fin, db)
+        _regenerar_maleta(viaje_id, db)      # arranca con los extras estándar
     return jsonify({'ok': True, 'id': viaje_id})
 
 
@@ -106,22 +128,38 @@ def api_get_trip(vid):
         v = db.execute("SELECT * FROM viajes WHERE id=?", (vid,)).fetchone()
         if not v:
             return jsonify({'error': 'No encontrado'}), 404
-        total_dias = db.execute(
-            "SELECT COUNT(*) as c FROM viaje_dias WHERE viaje_id=?", (vid,)
-        ).fetchone()['c']
-        packed_ida    = db.execute(
-            "SELECT COUNT(*) as c FROM viaje_maleta WHERE viaje_id=? AND packed_ida=1", (vid,)
-        ).fetchone()['c']
-        packed_vuelta = db.execute(
-            "SELECT COUNT(*) as c FROM viaje_maleta WHERE viaje_id=? AND packed_vuelta=1", (vid,)
-        ).fetchone()['c']
-        total_items = db.execute(
-            "SELECT COUNT(*) as c FROM viaje_maleta WHERE viaje_id=?", (vid,)
-        ).fetchone()['c']
-    res = _row(v)
-    res.update(total_dias=total_dias, packed_ida=packed_ida,
-               packed_vuelta=packed_vuelta, total_items=total_items)
+        p = preparacion(db, v)
+        res = _row(v)
+        res.update(total_dias=p['outfits']['total'], packed_ida=p['ida']['hechos'],
+                   packed_vuelta=p['vuelta']['hechos'], total_items=p['ida']['total'],
+                   preparacion=p, regreso=resultado_regreso(db, v))
+        if _fin_ok():
+            res['dinero'] = dinero(db, v)
+        else:
+            res.pop('presupuesto', None)
     return jsonify(res)
+
+
+def dinero(db, v):
+    """Tarjeta «Dinero» (solo con fin_ok): lo gastado según los movimientos
+    vinculados (misma suma que el desglose de Oikonomia) y los movimientos en
+    las fechas del viaje aún sin vincular (la misma consulta de sugerencias)."""
+    from modules.finanzas.estados.routes import _GASTO_FILTER, _MONTO
+    gastado = db.execute(f"SELECT COALESCE(SUM({_MONTO}), 0) t FROM est_movimientos "
+                         f"WHERE viaje_id=? AND {_GASTO_FILTER}", (v['id'],)).fetchone()['t'] or 0
+    sug = db.execute(f"""SELECT id, monto, mi_parte FROM est_movimientos
+                         WHERE viaje_id IS NULL AND fecha BETWEEN ? AND ? AND {_GASTO_FILTER}
+                         ORDER BY fecha ASC, monto DESC LIMIT 100""",
+                     (v['fecha_inicio'], v['fecha_fin'])).fetchall()
+    pres = v['presupuesto'] or 0
+    return {
+        'presupuesto': round(pres, 2),
+        'gastado': round(gastado, 2),
+        'restan': round(pres - gastado, 2),
+        'pct': round(gastado / pres * 100) if pres > 0 else None,
+        'sugeridos': {'n': len(sug), 'ids': [r['id'] for r in sug],
+                      'total': round(sum(abs(r['mi_parte'] if r['mi_parte'] is not None else r['monto']) for r in sug), 2)},
+    }
 
 
 @viajes_bp.route('/api/trips/<int:vid>', methods=['PATCH'])
@@ -136,7 +174,7 @@ def api_update_trip(vid):
         return jsonify({'ok': False, 'error': 'Fechas inválidas'}), 400
     with get_db() as db:
         old = db.execute(
-            "SELECT fecha_inicio, fecha_fin FROM viajes WHERE id=?", (vid,)
+            "SELECT fecha_inicio, fecha_fin, estado FROM viajes WHERE id=?", (vid,)
         ).fetchone()
         if not old:
             return jsonify({'ok': False, 'error': 'No encontrado'}), 404
@@ -147,14 +185,22 @@ def api_update_trip(vid):
              d.get('estado','planificado'), d.get('tipo_clima',''),
              d.get('ocasion',''), d.get('notas',''), vid),
         )
+        if _fin_ok() and 'presupuesto' in d:
+            db.execute("UPDATE viajes SET presupuesto=? WHERE id=?", (_presupuesto(d), vid))
+        cerrar_viaje(db, vid, d.get('estado', 'planificado'), old['estado'])
         # Si cambian las fechas, regenerar días (conserva outfits de días que sigan existiendo)
         if old['fecha_inicio'] != inicio or old['fecha_fin'] != fin:
             # Eliminar días fuera del nuevo rango
+            db.execute(
+                "DELETE FROM viaje_dia_outfits WHERE dia_id IN (SELECT id FROM viaje_dias "
+                "WHERE viaje_id=? AND (fecha < ? OR fecha > ?))", (vid, inicio, fin),
+            )
             db.execute(
                 "DELETE FROM viaje_dias WHERE viaje_id=? AND (fecha < ? OR fecha > ?)",
                 (vid, inicio, fin),
             )
             _gen_dias(vid, inicio, fin, db)
+            _regenerar_maleta(vid, db)
     return jsonify({'ok': True})
 
 
@@ -234,14 +280,22 @@ def api_set_outfit(vid, dia_id):
             "INSERT INTO viaje_dia_outfits (dia_id, outfit_id) VALUES (?,?)",
             (dia_id, outfit_id),
         )
-    return jsonify({'ok': True})
+        return jsonify(_tras_outfit(db, vid))
 
 
 @viajes_bp.route('/api/trips/<int:vid>/dias/<int:dia_id>/outfit', methods=['DELETE'])
 def api_remove_outfit(vid, dia_id):
     with get_db() as db:
-        db.execute("DELETE FROM viaje_dia_outfits WHERE dia_id=?", (dia_id,))
-    return jsonify({'ok': True})
+        db.execute("DELETE FROM viaje_dia_outfits WHERE dia_id=? AND dia_id IN "
+                   "(SELECT id FROM viaje_dias WHERE viaje_id=?)", (dia_id, vid))
+        return jsonify(_tras_outfit(db, vid))
+
+
+def _tras_outfit(db, vid):
+    """Respuesta de asignar/quitar outfit: la maleta ya regenerada y los medidores."""
+    _regenerar_maleta(vid, db)
+    v = db.execute("SELECT * FROM viajes WHERE id=?", (vid,)).fetchone()
+    return {'ok': True, 'maleta': _maleta(db, vid), 'preparacion': preparacion(db, v)}
 
 
 # ── API Outfits (para el picker) ──────────────────────────────────────────────
@@ -286,93 +340,244 @@ def api_wardrobe_items():
 @viajes_bp.route('/api/trips/<int:vid>/maleta')
 def api_maleta(vid):
     with get_db() as db:
-        items = [_row(r) for r in db.execute(
-            """SELECT vm.*, wi.foto AS item_foto, wi.color_hex AS item_color
-               FROM viaje_maleta vm
-               LEFT JOIN wardrobe_items wi ON wi.id = vm.item_id
-               WHERE vm.viaje_id=? ORDER BY vm.categoria, vm.nombre""",
-            (vid,),
-        ).fetchall()]
+        items = _maleta(db, vid)
     return jsonify(items)
+
+
+def _regenerar_maleta(vid, db, extras=False):
+    """Recalcula las prendas de la maleta desde los outfits asignados por día.
+
+    Conserva los checks (ida/vuelta) y `no_regresa` de las prendas que ya
+    estaban, no toca los ítems manuales (es_extra=1) y siembra los extras
+    estándar solo si el viaje aún no tiene ninguno (o si `extras=True`, el
+    botón «Generar» de compatibilidad, que repone los que falten).
+    Devuelve cuántas prendas salieron de los outfits, o None si no existe."""
+    viaje = db.execute("SELECT * FROM viajes WHERE id=?", (vid,)).fetchone()
+    if not viaje:
+        return None
+
+    outfit_items = db.execute("""
+        SELECT wi.id, wi.nombre, wi.categoria, wi.color_hex, wi.foto,
+               COUNT(DISTINCT vd.id) AS dias_uso
+        FROM viaje_dia_outfits vdo
+        JOIN viaje_dias vd ON vd.id=vdo.dia_id AND vd.viaje_id=?
+        JOIN outfit_items oi ON oi.outfit_id=vdo.outfit_id
+        JOIN wardrobe_items wi ON wi.id=oi.item_id AND wi.activo=1
+        GROUP BY wi.id
+    """, (vid,)).fetchall()
+
+    inicio = date.fromisoformat(viaje['fecha_inicio'])
+    fin    = date.fromisoformat(viaje['fecha_fin'])
+    noches = (fin - inicio).days
+
+    # Conservar el check de empacado de las prendas que ya estaban (se regenera
+    # cada vez que se asigna/quita un outfit: no debe resetear lo ya marcado)
+    prev = {
+        r['item_id']: (r['packed_ida'], r['packed_vuelta'], r['no_regresa'] or 0)
+        for r in db.execute(
+            "SELECT item_id, packed_ida, packed_vuelta, no_regresa FROM viaje_maleta "
+            "WHERE viaje_id=? AND es_extra=0 AND item_id IS NOT NULL", (vid,)
+        ).fetchall()
+    }
+    # Prendas que el usuario ya agregó a mano: no se duplican
+    manuales = {r['item_id'] for r in db.execute(
+        "SELECT item_id FROM viaje_maleta WHERE viaje_id=? AND es_extra=1 AND item_id IS NOT NULL", (vid,)
+    ).fetchall()}
+
+    db.execute("DELETE FROM viaje_maleta WHERE viaje_id=? AND es_extra=0", (vid,))
+
+    filas = [
+        (vid, r['nombre'], _categorize(r['categoria']),
+         _smart_quantity(r['categoria'], r['dias_uso'], noches),
+         *prev.get(r['id'], (0, 0, 0)), r['id'])
+        for r in outfit_items if r['id'] not in manuales
+    ]
+    if filas:
+        db.executemany(
+            """INSERT INTO viaje_maleta
+               (viaje_id, nombre, categoria, cantidad, packed_ida, packed_vuelta,
+                no_regresa, es_extra, item_id)
+               VALUES (?,?,?,?,?,?,?,0,?)""", filas)
+
+    existentes = {r['nombre'] for r in db.execute(
+        "SELECT nombre FROM viaje_maleta WHERE viaje_id=?", (vid,)
+    ).fetchall()}
+    sembrados = any(n in existentes for n, *_ in EXTRAS_ESTANDAR)
+    if extras or not sembrados:
+        db.executemany(
+            """INSERT INTO viaje_maleta
+               (viaje_id, nombre, categoria, cantidad, packed_ida, packed_vuelta,
+                no_regresa, es_extra, item_id)
+               VALUES (?,?,?,?,0,0,?,1,NULL)""",
+            [(vid, n, c, q, nr) for n, c, q, nr in EXTRAS_ESTANDAR if n not in existentes],
+        )
+    return len(outfit_items)
+
+
+def _maleta(db, vid):
+    """Maleta del viaje con `dias_uso`: en cuántos días aparece cada prenda."""
+    usos = {r['item_id']: r['n'] for r in db.execute("""
+        SELECT oi.item_id, COUNT(DISTINCT vd.id) AS n
+        FROM viaje_dias vd
+        JOIN viaje_dia_outfits vdo ON vdo.dia_id=vd.id
+        JOIN outfit_items oi ON oi.outfit_id=vdo.outfit_id
+        WHERE vd.viaje_id=? GROUP BY oi.item_id
+    """, (vid,)).fetchall()}
+    items = [_row(r) for r in db.execute(
+        """SELECT vm.*, wi.foto AS item_foto, wi.color_hex AS item_color
+           FROM viaje_maleta vm
+           LEFT JOIN wardrobe_items wi ON wi.id = vm.item_id
+           WHERE vm.viaje_id=? ORDER BY vm.categoria, vm.nombre""",
+        (vid,),
+    ).fetchall()]
+    for m in items:
+        m['no_regresa'] = m.get('no_regresa') or 0
+        m['dias_uso'] = usos.get(m['item_id'], 0) if m['item_id'] else 0
+    return items
+
+
+def fase(v, hoy=None):
+    """'cerrado' si está completado; 'regreso' desde el último día; si no 'antes'."""
+    hoy = (hoy or today_date()).isoformat()
+    if v['estado'] == 'completado':
+        return 'cerrado'
+    if hoy >= v['fecha_fin']:
+        return 'regreso'
+    return 'antes'
+
+
+def preparacion(db, v, hoy=None):
+    """Medidores del viaje: outfits por día, maleta de ida y de vuelta (sin
+    consumibles), fase según la fecha y días que faltan para salir."""
+    hoy = hoy or today_date()
+    vid = v['id']
+    dias_total = db.execute("SELECT COUNT(*) c FROM viaje_dias WHERE viaje_id=?", (vid,)).fetchone()['c']
+    dias_con = db.execute("""SELECT COUNT(DISTINCT vd.id) c FROM viaje_dias vd
+                             JOIN viaje_dia_outfits vdo ON vdo.dia_id=vd.id
+                             WHERE vd.viaje_id=?""", (vid,)).fetchone()['c']
+    m = db.execute("""SELECT COUNT(*) total,
+                             COALESCE(SUM(packed_ida), 0) ida,
+                             COALESCE(SUM(CASE WHEN COALESCE(no_regresa,0)=0 THEN 1 END), 0) vuelta_total,
+                             COALESCE(SUM(CASE WHEN COALESCE(no_regresa,0)=0 AND packed_vuelta=1 THEN 1 END), 0) vuelta
+                      FROM viaje_maleta WHERE viaje_id=?""", (vid,)).fetchone()
+    return {
+        'outfits': {'dias_con': dias_con, 'total': dias_total},
+        'ida': {'hechos': m['ida'], 'total': m['total']},
+        'vuelta': {'hechos': m['vuelta'], 'total_sin_consumibles': m['vuelta_total']},
+        'fase': fase(v, hoy),
+        'dias_para': (date.fromisoformat(v['fecha_inicio']) - hoy).days,
+    }
+
+
+def resultado_regreso(db, v, hoy=None):
+    """Para viajes pasados: {olvidados, total}. Usa lo guardado al cerrar
+    (viajes.olvidados) o, si aún no se cierra, lo calcula con la maleta."""
+    hoy = (hoy or today_date()).isoformat()
+    if v['estado'] != 'completado' and v['fecha_fin'] >= hoy:
+        return None
+    p = preparacion(db, v)
+    total = p['vuelta']['total_sin_consumibles']
+    if v['olvidados'] is not None and v['estado'] == 'completado':
+        return {'olvidados': v['olvidados'], 'total': total}
+    if not total:
+        return None
+    return {'olvidados': total - p['vuelta']['hechos'], 'total': total}
+
+
+def cerrar_viaje(db, vid, estado_nuevo, estado_viejo):
+    """Al pasar a «completado» guarda cuántos ítems no regresaron; si deja de
+    estar completado, el resultado se borra (se recalcula al volver a cerrar)."""
+    if estado_nuevo == 'completado' and estado_viejo != 'completado':
+        p = preparacion(db, db.execute("SELECT * FROM viajes WHERE id=?", (vid,)).fetchone())
+        db.execute("UPDATE viajes SET olvidados=? WHERE id=?",
+                   (p['vuelta']['total_sin_consumibles'] - p['vuelta']['hechos'], vid))
+    elif estado_nuevo != 'completado' and estado_viejo == 'completado':
+        db.execute("UPDATE viajes SET olvidados=NULL WHERE id=?", (vid,))
+
+
+# ── Sugerencias de outfit por día ─────────────────────────────────────────────
+
+# Tipo de viaje → ocasiones de Guardarropa compatibles
+_OCASION_VIAJE = {
+    'negocios': ('business', 'formal'),
+    'formal':   ('formal', 'business', 'social'),
+    'casual':   ('casual', 'social'),
+    'playa':    ('casual', 'loungewear', 'social'),
+    'aventura': ('deportivo', 'casual'),
+}
+_DIA_FORMAL = ('cena', 'formal', 'boda', 'gala', 'evento', 'junta', 'reunión', 'reunion')
+_CLIMA = {'calor': 'calor', 'frio': 'frío', 'templado': 'templado', 'lluvia': 'lluvia'}
+
+
+def sugerencias(db, vid, dia_id, n=3):
+    """Hasta `n` outfits para un día: por ocasión compatible con el tipo de viaje
+    y con la descripción del día («cena», «formal»… → formal), sin repetir el
+    outfit del día anterior ni el actual, y ordenados por cuántas prendas
+    comparten con la maleta (más compartidas = menos peso)."""
+    v = db.execute("SELECT * FROM viajes WHERE id=?", (vid,)).fetchone()
+    dia = db.execute("SELECT * FROM viaje_dias WHERE id=? AND viaje_id=?", (dia_id, vid)).fetchone()
+    if not v or not dia:
+        return None
+    desc = (dia['descripcion'] or '').lower()
+    formal = any(w in desc for w in _DIA_FORMAL)
+    if formal:
+        ocasiones = ('formal', 'business', 'social')
+    else:
+        ocasiones = _OCASION_VIAJE.get((v['ocasion'] or '').lower())
+
+    excluir = {r['outfit_id'] for r in db.execute("""
+        SELECT vdo.outfit_id FROM viaje_dia_outfits vdo JOIN viaje_dias vd ON vd.id=vdo.dia_id
+        WHERE vd.viaje_id=? AND (vd.id=? OR vd.fecha=?)
+    """, (vid, dia_id, (date.fromisoformat(dia['fecha']) - timedelta(days=1)).isoformat())).fetchall()}
+
+    en_maleta = {r['item_id'] for r in db.execute(
+        "SELECT item_id FROM viaje_maleta WHERE viaje_id=? AND item_id IS NOT NULL", (vid,)).fetchall()}
+    prendas = {}
+    for r in db.execute("""SELECT oi.outfit_id, oi.item_id FROM outfit_items oi
+                           JOIN wardrobe_items wi ON wi.id=oi.item_id AND wi.activo=1""").fetchall():
+        prendas.setdefault(r['outfit_id'], set()).add(r['item_id'])
+
+    def compatible(o):
+        oc = (o['ocasion'] or '').lower()
+        return not ocasiones or not oc or any(x in oc for x in ocasiones)
+
+    cand = [o for o in db.execute("SELECT * FROM outfits ORDER BY nombre").fetchall()
+            if o['id'] not in excluir and prendas.get(o['id']) and compatible(o)]
+    cand.sort(key=lambda o: (-len(prendas[o['id']] & en_maleta), -(o['veces_usado'] or 0), o['nombre'].lower()))
+
+    clima = _CLIMA.get(v['tipo_clima'] or '')
+    res = []
+    for o in cand[:n]:
+        comp = len(prendas[o['id']] & en_maleta)
+        if formal:
+            razon = 'para la ' + desc.split()[0] if desc.startswith('cena') else 'formal'
+        else:
+            razon = ' · '.join(x for x in ((o['ocasion'] or '').split(',')[0].strip().lower(), clima) if x) or 'tu guardarropa'
+        if comp:
+            razon += f" · comparte {comp} prenda{'s' if comp != 1 else ''}"
+        res.append({'id': o['id'], 'nombre': o['nombre'], 'razon': razon})
+    return res
+
+
+@viajes_bp.route('/api/trips/<int:vid>/dias/<int:dia_id>/sugerencias')
+def api_sugerencias(vid, dia_id):
+    with get_db() as db:
+        s = sugerencias(db, vid, dia_id)
+        if s is None:
+            return jsonify({'error': 'Día no encontrado'}), 404
+        total = db.execute("""SELECT COUNT(DISTINCT o.id) c FROM outfits o
+                              JOIN outfit_items oi ON oi.outfit_id=o.id""").fetchone()['c']
+    return jsonify({'data': s, 'total': total})
 
 
 @viajes_bp.route('/api/trips/<int:vid>/maleta/generar', methods=['POST'])
 def api_generar_maleta(vid):
-    """Genera la lista de maleta basada en los outfits seleccionados por día."""
+    """Compatibilidad: la maleta ya se regenera sola al asignar/quitar outfits."""
     with get_db() as db:
-        viaje = db.execute("SELECT * FROM viajes WHERE id=?", (vid,)).fetchone()
-        if not viaje:
-            return jsonify({'ok': False, 'error': 'Viaje no encontrado'}), 404
-
-        # Recopilar todos los wardrobe_items de los outfits asignados en este viaje
-        outfit_items = db.execute("""
-            SELECT wi.id, wi.nombre, wi.categoria, wi.color_hex, wi.foto,
-                   COUNT(*) AS dias_uso
-            FROM viaje_dia_outfits vdo
-            JOIN viaje_dias vd ON vd.id=vdo.dia_id AND vd.viaje_id=?
-            JOIN outfit_items oi ON oi.outfit_id=vdo.outfit_id
-            JOIN wardrobe_items wi ON wi.id=oi.item_id AND wi.activo=1
-            GROUP BY wi.id
-        """, (vid,)).fetchall()
-
-        # Calcular duración del viaje
-        inicio = date.fromisoformat(viaje['fecha_inicio'])
-        fin    = date.fromisoformat(viaje['fecha_fin'])
-        noches = (fin - inicio).days
-
-        # Conservar el check de empacado de las prendas que ya estaban (se regenera seguido,
-        # cada vez que se asigna/quita un outfit, así que no debe resetear lo ya marcado)
-        packed_by_item = {
-            r['item_id']: (r['packed_ida'], r['packed_vuelta'])
-            for r in db.execute(
-                "SELECT item_id, packed_ida, packed_vuelta FROM viaje_maleta "
-                "WHERE viaje_id=? AND es_extra=0 AND item_id IS NOT NULL", (vid,)
-            ).fetchall()
-        }
-
-        # Eliminar maleta anterior (solo items de outfits; conservar manuales del usuario)
-        db.execute(
-            "DELETE FROM viaje_maleta WHERE viaje_id=? AND es_extra=0", (vid,)
-        )
-
-        # Insertar items de outfits
-        now = datetime.now().isoformat()
-        if outfit_items:
-            db.executemany(
-                """INSERT INTO viaje_maleta
-                   (viaje_id, nombre, categoria, cantidad, packed_ida, packed_vuelta,
-                    es_extra, item_id)
-                   VALUES (?,?,?,?,?,?,0,?)""",
-                [
-                    (vid, r['nombre'],
-                     _categorize(r['categoria']),
-                     _smart_quantity(r['categoria'], r['dias_uso'], noches),
-                     *packed_by_item.get(r['id'], (0, 0)),
-                     r['id'])
-                    for r in outfit_items
-                ],
-            )
-
-        # Insertar extras estándar solo si aún no existen (por nombre)
-        existing_nombres = {r['nombre'] for r in db.execute(
-            "SELECT nombre FROM viaje_maleta WHERE viaje_id=?", (vid,)
-        ).fetchall()}
-
-        extras_to_insert = [
-            (vid, nombre, cat, cant, 0, 0, 1, None)
-            for nombre, cat, cant in EXTRAS_ESTANDAR
-            if nombre not in existing_nombres
-        ]
-        if extras_to_insert:
-            db.executemany(
-                """INSERT INTO viaje_maleta
-                   (viaje_id, nombre, categoria, cantidad, packed_ida, packed_vuelta,
-                    es_extra, item_id)
-                   VALUES (?,?,?,?,?,?,?,?)""",
-                extras_to_insert,
-            )
-
-    return jsonify({'ok': True, 'outfit_items': len(outfit_items)})
+        n = _regenerar_maleta(vid, db, extras=True)
+    if n is None:
+        return jsonify({'ok': False, 'error': 'Viaje no encontrado'}), 404
+    return jsonify({'ok': True, 'outfit_items': n})
 
 
 def _categorize(categoria_guardarropa: str) -> str:
@@ -414,6 +619,14 @@ def _smart_quantity(categoria: str, dias_uso: int, noches: int) -> int:
 @viajes_bp.route('/api/trips/<int:vid>/maleta/<int:item_id>', methods=['PATCH'])
 def api_toggle_maleta(vid, item_id):
     d = request.get_json(silent=True) or {}
+    if 'no_regresa' in d:
+        val = 1 if d.get('no_regresa') else 0
+        with get_db() as db:
+            cur = db.execute("UPDATE viaje_maleta SET no_regresa=? WHERE id=? AND viaje_id=?",
+                             (val, item_id, vid))
+            if not cur.rowcount:
+                return jsonify({'ok': False, 'error': 'Item no encontrado'}), 404
+        return jsonify({'ok': True, 'value': val})
     field = d.get('field', 'packed_ida')
     if field not in ('packed_ida', 'packed_vuelta'):
         return jsonify({'ok': False, 'error': 'Campo inválido'}), 400

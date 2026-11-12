@@ -1,25 +1,27 @@
-/* Viajes — Design System V2: lista agrupada (vigentes / próximos / pasados) y
-   detalle con outfit por día (picker desde Guardarropa), maleta por categorías
-   (generada desde outfits + extras, prendas o ítems sueltos) y checklist de regreso. */
+/* Viajes v2 — un viaje, una página: lista con el próximo viaje destacado y
+   detalle con cuenta regresiva, medidores de preparación, fases Antes | Regreso
+   (outfits por día con sugerencias en la fila + maleta que se arma sola) y
+   lateral con Dinero (solo fin_ok) y Otros viajes con su resultado del regreso. */
 (function () {
   'use strict';
   var root = document.getElementById('vj');
   if (!root) return;
-  var API = '/viajes/api';
+  var API = '/viajes/api', FIN = '/finanzas/estados/api';
   var TODAY = root.dataset.today || new Date().toISOString().slice(0, 10);
-  var CAT_ORDER = ['Documentos', 'Tops', 'Bottoms', 'Calzado', 'Ropa interior', 'Formal', 'Abrigo', 'Accesorios', 'Higiene', 'Tecnología', 'Salud', 'Ropa', 'Varios'];
-  var ESTADO = { planificado: ['Planificado', 'eu-badge--info'], activo: ['En curso', 'eu-badge--success'], completado: ['Completado', ''], cancelado: ['Cancelado', 'eu-badge--danger'] };
-  var CLIMA = { calor: 'Calor / Playa', frio: 'Frío / Nieve', templado: 'Templado', lluvia: 'Lluvioso' };
-  var OCASION = { negocios: 'Negocios', casual: 'Casual / Turismo', playa: 'Playa / Resort', aventura: 'Aventura / Outdoor', formal: 'Evento formal' };
+  var FIN_OK = root.dataset.fin === '1';
+  var CAT_ORDER = ['Tops', 'Bottoms', 'Formal', 'Abrigo', 'Calzado', 'Ropa interior', 'Accesorios', 'Ropa', 'Documentos', 'Higiene', 'Tecnología', 'Salud', 'Varios'];
+  var CLIMA = { calor: 'Calor', frio: 'Frío', templado: 'Templado', lluvia: 'Lluvioso' };
+  var OCASION = { negocios: 'Negocios', casual: 'Casual', playa: 'Playa', aventura: 'Aventura', formal: 'Evento formal' };
+  var MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  var DIA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 
   var trips = [], curId = null, curTrip = null, dias = [], maleta = [], outfits = null, wardrobe = null;
-  var editing = false, pickerDia = null, activeTab = 'outfits', aiMode = 'wardrobe';
+  var fase = 'antes', openDia = null, editing = false, pickerDia = null, aiMode = 'wardrobe', menuItem = null;
 
   function $(id) { return document.getElementById(id); }
   function $$(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function icons() { if (window.lucide) lucide.createIcons(); }
-  function fmtD(s) { return s ? s.slice(0, 10).split('-').reverse().join('/') : '—'; }
   function getJ(url) { return fetch(url).then(function (r) { return r.json(); }); }
   function send(url, method, body) {
     var o = { method: method };
@@ -27,65 +29,84 @@
     return fetch(url, o).then(function (r) { return r.json(); });
   }
   function plural(n, s, p) { return n + ' ' + (n === 1 ? s : (p || s + 's')); }
+  function money(n) { return '$' + Math.round(+n || 0).toLocaleString('es-MX'); }
+  function d(s) { return new Date(s + 'T12:00:00'); }
+  function diff(a, b) { return Math.round((d(b) - d(a)) / 86400000); }
+  function corta(s) { var x = d(s); return x.getDate() + ' ' + MES[x.getMonth()]; }
+  function rango(a, b) {
+    var x = d(a), y = d(b);
+    if (x.getFullYear() !== y.getFullYear()) return corta(a) + ' ' + x.getFullYear() + ' – ' + corta(b) + ' ' + y.getFullYear();
+    if (x.getMonth() === y.getMonth()) return x.getDate() + '–' + y.getDate() + ' ' + MES[y.getMonth()];
+    return corta(a) + ' – ' + corta(b);
+  }
+  function diaCorto(s) { var x = d(s); return DIA[x.getDay()] + ' ' + x.getDate(); }
   function emptyHtml(ic, t, txt) {
     return '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="' + ic + '"></i></div><div class="t-card">' + t + '</div><p>' + txt + '</p></div>';
   }
   function setErr(id, msg) { var e = $(id); e.hidden = !msg; e.querySelector('span').textContent = msg || ''; }
-  function setProg(id, n, total) {
-    var bar = $(id), pct = total ? Math.round(n / total * 100) : 0;
-    bar.setAttribute('aria-valuenow', pct); bar.querySelector('i').style.width = pct + '%';
-    return pct;
-  }
   function swatch(hex, cls) { return '<span class="vj-sw ' + (cls || '') + '" style="--sw:' + esc(hex || '#444') + '"></span>'; }
   function photo(foto, cls) { return '<img class="' + cls + '" src="/guardarropa/photos/' + esc(foto) + '" alt="" loading="lazy">'; }
+  function bar(pct, tone) { return '<span class="vj-bar' + (tone ? ' vj-bar--' + tone : '') + '" aria-hidden="true"><i style="--p:' + Math.max(0, Math.min(100, pct)) + '%"></i></span>'; }
+
+  /* Cuenta regresiva del viaje: «en 18 días», «hoy», «último día», «completado»… */
+  function cuenta(t) {
+    if (t.estado === 'completado') return 'completado';
+    var para = diff(TODAY, t.fecha_inicio), resta = diff(TODAY, t.fecha_fin);
+    if (resta < 0) return 'terminó';
+    if (resta === 0) return 'último día';
+    if (para > 1) return para > 60 ? 'en ' + Math.round(para / 30) + ' meses' : 'en ' + para + ' días';
+    if (para === 1) return 'mañana';
+    if (para === 0) return 'hoy';
+    return 'día ' + (1 - para) + ' de ' + (diff(t.fecha_inicio, t.fecha_fin) + 1);
+  }
+  /* Resultado del regreso de un viaje pasado («todo regresó» / «N olvidados»). */
+  function regresoTxt(r) {
+    if (!r) return null;
+    return r.olvidados > 0 ? [plural(r.olvidados, 'olvidado'), 'warning'] : ['todo regresó', 'success'];
+  }
+  function grupo(t) { return t.fecha_fin < TODAY || t.estado === 'completado' ? 'pasado' : t.fecha_inicio > TODAY ? 'proximo' : 'vigente'; }
 
   /* ── Lista ──────────────────────────────────────────────────────────── */
   function loadTrips() { return getJ(API + '/trips').then(function (t) { trips = t || []; }); }
 
-  function tripCard(t) {
-    var est = ESTADO[t.estado] || [t.estado, ''];
-    var d = t.total_dias || 0, p = t.items_packed || 0;
-    return '<button type="button" class="eu-card eu-card--interactive vj-card" data-trip="' + t.id + '" aria-label="Ver detalle de ' + esc(t.nombre) + '">' +
-      '<span class="eu-between vj-card-top"><span class="t-card vj-card-t">' + esc(t.nombre) + '</span><span class="eu-badge eu-badge--status ' + est[1] + '">' + esc(est[0]) + '</span></span>' +
-      (t.destino ? '<span class="t-meta vj-card-dest"><i data-lucide="map-pin"></i>' + esc(t.destino) + '</span>' : '') +
-      '<span class="t-data vj-card-dates">' + fmtD(t.fecha_inicio) + ' — ' + fmtD(t.fecha_fin) + '</span>' +
-      '<span class="eu-between vj-card-ft"><span class="t-meta">' + plural(d, 'día') + ' · ' + plural(p, 'ítem') + ' empacado' + (p !== 1 ? 's' : '') + '</span><span class="t-meta fg-brand vj-card-go">Ver<i data-lucide="arrow-right"></i></span></span>' +
-      '</button>';
+  function tripRow(t) {
+    var g = grupo(t), r = g === 'pasado' ? regresoTxt(t.regreso) : null;
+    var right = g === 'pasado' ? (r ? '<span class="vj-res vj-res--' + r[1] + '">' + r[0] + '</span>' : '')
+      : '<span class="t-meta">' + (g === 'vigente' ? 'en curso' : cuenta(t)) + '</span>';
+    var tipo = OCASION[t.ocasion] || (t.estado === 'completado' ? 'completado' : '');
+    return '<button type="button" class="vj-trow" data-trip="' + t.id + '"><i data-lucide="plane"></i>' +
+      '<span class="vj-trow-bd"><span class="t-ui vj-trow-t">' + esc(t.nombre) + '</span><span class="vj-trow-s">' + rango(t.fecha_inicio, t.fecha_fin) + (tipo ? ' · ' + esc(tipo.toLowerCase()) : '') + '</span></span>' + right + '</button>';
   }
 
   function renderList() {
     setView('list');
     var box = $('trip-sections');
-    var g = { vigente: [], proximo: [], pasado: [] };
-    trips.forEach(function (t) {
-      if (t.fecha_fin < TODAY) g.pasado.push(t);
-      else if (t.fecha_inicio > TODAY) g.proximo.push(t);
-      else g.vigente.push(t);
-    });
-    g.vigente.sort(function (a, b) { return a.fecha_inicio.localeCompare(b.fecha_inicio); });
-    g.proximo.sort(function (a, b) { return a.fecha_inicio.localeCompare(b.fecha_inicio); });
-    g.pasado.sort(function (a, b) { return b.fecha_inicio.localeCompare(a.fecha_inicio); });
-    var sv = $$('#vj-stats .eu-stat-val');
-    sv[0].textContent = g.vigente.length; sv[1].textContent = g.proximo.length; sv[2].textContent = g.pasado.length;
-
     if (!trips.length) {
       box.innerHTML = '<div class="eu-card">' + emptyHtml('plane', 'Aún no tienes viajes', 'Crea tu primer viaje para planear outfits por día y armar la maleta.') +
         '<div class="vj-empty-cta"><button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Crear primer viaje</button></div></div>';
-      $$('.js-new', box).forEach(function (b) { b.addEventListener('click', function () { openTrip(false); }); });
       icons(); return;
     }
-    box.innerHTML = [
-      { k: 'vigente', l: 'Vigentes', ic: 'plane', t: g.vigente },
-      { k: 'proximo', l: 'Próximos', ic: 'calendar-clock', t: g.proximo },
-      { k: 'pasado', l: 'Pasados', ic: 'history', t: g.pasado },
-    ].map(function (s) {
-      return '<section class="vj-sec vj-sec--' + s.k + '" aria-label="' + s.l + '"><h2 class="t-eyebrow vj-sec-t"><i data-lucide="' + s.ic + '"></i>' + s.l + ' <span class="num">(' + s.t.length + ')</span></h2>' +
-        (s.t.length ? '<div class="vj-grid">' + s.t.map(tripCard).join('') + '</div>' : euEmpty('calendar-x', 'Sin viajes ' + s.l.toLowerCase(), '', true)) + '</section>';
-    }).join('');
-    icons();
+    var vig = trips.filter(function (t) { return grupo(t) === 'vigente'; }).sort(function (a, b) { return a.fecha_inicio.localeCompare(b.fecha_inicio); });
+    var prox = trips.filter(function (t) { return grupo(t) === 'proximo'; }).sort(function (a, b) { return a.fecha_inicio.localeCompare(b.fecha_inicio); });
+    var pas = trips.filter(function (t) { return grupo(t) === 'pasado'; }).sort(function (a, b) { return b.fecha_inicio.localeCompare(a.fecha_inicio); });
+    var dest = vig[0] || prox[0];
+    var rest = vig.slice(dest === vig[0] ? 1 : 0).concat(prox.filter(function (t) { return t !== dest; }));
+    var html = '';
+    if (dest) {
+      var meta = [dest.destino, rango(dest.fecha_inicio, dest.fecha_fin), plural(diff(dest.fecha_inicio, dest.fecha_fin), 'noche'), CLIMA[dest.tipo_clima], OCASION[dest.ocasion]].filter(Boolean).map(esc).join(' · ');
+      html += '<button type="button" class="eu-card eu-card--interactive vj-feat" data-trip="' + dest.id + '" aria-label="Abrir ' + esc(dest.nombre) + '">' +
+        '<span class="t-eyebrow vj-eyebrow">' + (grupo(dest) === 'vigente' ? 'En curso' : 'Próximo viaje') + ' · ' + cuenta(dest) + '</span>' +
+        '<span class="t-section vj-feat-t">' + esc(dest.nombre) + '</span><span class="vj-dmeta">' + meta + '</span>' +
+        '<span class="t-meta fg-brand vj-feat-go">Preparar<i data-lucide="arrow-right"></i></span></button>';
+    }
+    [['Próximos', rest], ['Pasados', pas]].forEach(function (s) {
+      if (!s[1].length) return;
+      html += '<section class="eu-card eu-card--inset vj-others" aria-label="' + s[0] + '"><h2 class="t-eyebrow vj-others-hd">' + s[0] + ' <span class="num">· ' + s[1].length + '</span></h2>' + s[1].map(tripRow).join('') + '</section>';
+    });
+    box.innerHTML = html; icons();
   }
-  $('trip-sections').addEventListener('click', function (e) {
-    var c = e.target.closest('[data-trip]'); if (c) showDetail(+c.dataset.trip);
+  root.addEventListener('click', function (e) {
+    var c = e.target.closest('[data-trip]'); if (c && root.contains(c)) showDetail(+c.dataset.trip);
   });
 
   function setView(v) {
@@ -95,52 +116,155 @@
     var nb = document.querySelector('.eu-topbar .js-new'); if (nb) nb.hidden = v !== 'list';
   }
   function showList() {
-    curId = null; curTrip = null;
+    curId = null; curTrip = null; closeMenu();
     history.replaceState(null, '', location.pathname);
     renderList(); window.scrollTo(0, 0);
   }
 
   /* ── Detalle ────────────────────────────────────────────────────────── */
   function showDetail(id) {
-    curId = id;
+    curId = id; openDia = null;
     setView('detail');
     $('detail-title').textContent = 'Cargando…';
-    history.replaceState(null, '', location.pathname + '?trip=' + id);
-    return Promise.all([
-      getJ(API + '/trips/' + id), getJ(API + '/trips/' + id + '/dias'), getJ(API + '/trips/' + id + '/maleta'),
-      outfits ? Promise.resolve(outfits) : getJ(API + '/outfits'),
-    ]).then(function (r) {
-      curTrip = r[0]; dias = r[1] || []; maleta = r[2] || []; outfits = r[3] || [];
-      renderHeader(); switchTab(activeTab); window.scrollTo(0, 0);
+    history.replaceState(null, '', location.pathname + '?id=' + id);
+    return Promise.all([getJ(API + '/trips/' + id), getJ(API + '/trips/' + id + '/dias'), getJ(API + '/trips/' + id + '/maleta')]).then(function (r) {
+      if (r[0].error) throw new Error(r[0].error);
+      curTrip = r[0]; dias = r[1] || []; maleta = r[2] || [];
+      fase = curTrip.preparacion.fase === 'antes' ? 'antes' : 'regreso';
+      renderDetail(); window.scrollTo(0, 0);
     }).catch(function () { toast('No se pudo cargar el viaje', 'err'); showList(); });
   }
+  function reloadTrip() {
+    return getJ(API + '/trips/' + curId).then(function (t) { if (!t.error) { curTrip = t; renderHeader(); renderPrep(); renderMoney(); } });
+  }
+  function renderDetail() { renderHeader(); renderPhase(); renderMoney(); renderOthers(); }
+
   function renderHeader() {
-    var t = curTrip, est = ESTADO[t.estado] || [t.estado, ''];
+    var t = curTrip;
+    $('detail-eyebrow').textContent = 'Vida · Viajes · ' + cuenta(t);
     $('detail-title').textContent = t.nombre;
-    var b = $('detail-estado-badge'); b.className = 'eu-badge eu-badge--status ' + est[1]; b.textContent = est[0];
-    $('detail-destino').textContent = t.destino || '—';
-    $('detail-fechas').textContent = fmtD(t.fecha_inicio) + ' — ' + fmtD(t.fecha_fin);
-    var noches = Math.round((new Date(t.fecha_fin) - new Date(t.fecha_inicio)) / 86400000);
-    $('detail-duracion').textContent = plural(t.total_dias, 'día') + ' / ' + plural(noches, 'noche');
-    // Mismo viaje, misma fila en `viajes`: el presupuesto vive en Estados de Cuenta (Oikonomia).
-    $('detail-presupuesto-link').href = '/finanzas/estados/viajes/?trip=' + t.id;
-    var extra = [CLIMA[t.tipo_clima] || t.tipo_clima, OCASION[t.ocasion] || t.ocasion].filter(Boolean);
-    $('detail-clima').textContent = extra.length ? extra.join(' · ') : '—';
+    var noches = diff(t.fecha_inicio, t.fecha_fin);
+    $('detail-meta').textContent = [t.destino, rango(t.fecha_inicio, t.fecha_fin), plural(noches, 'noche'), CLIMA[t.tipo_clima] || t.tipo_clima, OCASION[t.ocasion] || t.ocasion].filter(Boolean).join(' · ');
   }
-  function switchTab(tab) {
-    activeTab = tab;
-    ['outfits', 'maleta', 'regreso'].forEach(function (t) {
-      $('tab-' + t).setAttribute('aria-selected', String(t === tab));
-      $('pane-' + t).hidden = t !== tab;
-    });
-    if (tab === 'outfits') renderOutfits();
-    if (tab === 'maleta') renderMaleta();
-    if (tab === 'regreso') renderRegreso();
+
+  /* Medidores: Outfits · Maleta (ida o regreso según la fase) · Presupuesto (fin_ok) */
+  function cuentaMaleta() {
+    var pool = fase === 'antes' ? maleta : maleta.filter(function (m) { return !m.no_regresa; });
+    var f = fase === 'antes' ? 'packed_ida' : 'packed_vuelta';
+    return { n: pool.filter(function (m) { return m[f]; }).length, t: pool.length };
   }
-  $$('[data-pane]').forEach(function (b) { b.addEventListener('click', function () { switchTab(b.dataset.pane); }); });
-  $$('.js-back').forEach(function (b) { b.addEventListener('click', showList); });
+  function renderPrep() {
+    var con = dias.filter(function (x) { return x.outfits && x.outfits.length; }).length, tot = dias.length, m = cuentaMaleta();
+    var cells = [
+      { l: 'Outfits', ic: 'shirt', v: con + '/' + tot, p: tot ? con / tot * 100 : 0, ok: tot && con === tot,
+        s: !tot ? 'sin días' : con === tot ? 'todos los días listos' : 'faltan ' + plural(tot - con, 'día') },
+      { l: fase === 'antes' ? 'Maleta · ida' : 'Maleta · regreso', ic: 'luggage', v: m.n + '/' + m.t, p: m.t ? m.n / m.t * 100 : 0, ok: m.t && m.n === m.t,
+        s: !m.t ? 'vacía' : m.n === m.t ? (fase === 'antes' ? 'todo empacado' : 'nada se queda') : 'faltan ' + (m.t - m.n) },
+    ];
+    var din = curTrip.dinero;
+    if (FIN_OK && din) {
+      cells.push(din.presupuesto > 0
+        ? { l: 'Presupuesto', ic: 'wallet', v: din.pct + '%', p: din.pct, over: din.gastado > din.presupuesto, s: money(din.gastado) + ' de ' + money(din.presupuesto) }
+        : { l: 'Presupuesto', ic: 'wallet', v: '—', p: 0, s: 'sin presupuesto · ' + money(din.gastado) });
+    }
+    var el = $('vj-prep');
+    el.dataset.n = cells.length;
+    el.innerHTML = cells.map(function (c) {
+      var tone = c.over ? 'danger' : c.ok ? 'success' : c.l === 'Presupuesto' ? 'brand' : '';
+      return '<div class="vj-prep-c' + (c.ok ? ' is-ok' : '') + (c.over ? ' is-over' : '') + '"><span class="vj-prep-l"><i data-lucide="' + c.ic + '"></i>' + c.l + '</span>' +
+        '<span class="vj-mono22">' + c.v + '</span>' + bar(c.p, tone) + '<span class="t-meta">' + c.s + '</span></div>';
+    }).join('');
+    icons();
+  }
+
+  function renderPhase() {
+    var cerrado = curTrip.preparacion.fase === 'cerrado';
+    $$('#vj-phases [data-fase]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.fase === fase)); });
+    $('phase-hint').textContent = fase === 'antes'
+      ? (curTrip.preparacion.fase === 'antes' ? 'Regreso se abre solo el ' + corta(curTrip.fecha_fin) : 'Ya es el regreso: marca lo que va de vuelta')
+      : 'Misma maleta, check de vuelta · sin consumibles';
+    $('box-dias').hidden = fase !== 'antes';
+    $('box-maleta').classList.toggle('is-regreso', fase !== 'antes');
+    $('maleta-t').textContent = fase === 'antes' ? 'Maleta' : 'Regreso';
+    $('maleta-hint').textContent = fase === 'antes' ? 'Se actualiza sola con tus outfits' : 'Marca lo que ya va de vuelta';
+    renderCierre(cerrado);
+    if (fase === 'antes') renderOutfits();
+    renderMaleta(); renderPrep();
+  }
+  $$('#vj-phases [data-fase]').forEach(function (b) {
+    b.addEventListener('click', function () { fase = b.dataset.fase; openDia = null; closeMenu(); renderPhase(); });
+  });
+
+  /* Viaje cerrado: «Todo regresó» o «N olvidados» con la lista */
+  function renderCierre(cerrado) {
+    var el = $('vj-cierre');
+    el.hidden = !cerrado;
+    if (!cerrado) return;
+    var r = curTrip.regreso || { olvidados: 0 };
+    var falt = maleta.filter(function (m) { return !m.no_regresa && !m.packed_vuelta; });
+    el.className = 'vj-cierre vj-cierre--' + (r.olvidados > 0 ? 'warning' : 'success');
+    el.innerHTML = r.olvidados > 0
+      ? '<i data-lucide="alert-triangle"></i><div><b>' + plural(r.olvidados, 'olvidado') + '</b>' + (falt.length ? '<p class="t-meta">' + falt.map(function (m) { return esc(m.nombre); }).join(' · ') + '</p>' : '') + '</div>'
+      : '<i data-lucide="check-circle-2"></i><div><b>Todo regresó</b><p class="t-meta">Nada se quedó en este viaje.</p></div>';
+    icons();
+  }
 
   /* ── Outfits por día ────────────────────────────────────────────────── */
+  function renderOutfits() {
+    var el = $('dias-list');
+    var con = dias.filter(function (x) { return x.outfits && x.outfits.length; }).length;
+    $('dias-n').textContent = con + '/' + dias.length;
+    if (!dias.length) { el.innerHTML = '<li>' + emptyHtml('calendar-x', 'Sin días', 'Este viaje aún no tiene días para planear outfits.') + '</li>'; icons(); return; }
+    el.innerHTML = dias.map(function (x, i) {
+      var o = x.outfits && x.outfits[0], open = openDia === x.id;
+      var desc = x.descripcion || 'Día ' + (i + 1);
+      var sub = o ? [desc, o.prendas].filter(Boolean).join(' · ') : 'Sin outfit';
+      return '<li class="vj-day' + (o ? ' has-outfit' : '') + (x.fecha === TODAY ? ' is-today' : '') + '">' +
+        '<div class="vj-day-row"><span class="vj-day-f">' + diaCorto(x.fecha) + '</span>' +
+        '<span class="vj-day-bd"><span class="vj-day-t">' + esc(o ? o.nombre : desc) + '</span><span class="vj-day-s">' + esc(sub) + '</span></span>' +
+        '<button type="button" class="eu-btn eu-btn--sm vj-day-btn' + (o || open ? '' : ' is-pick') + '" data-open="' + x.id + '" aria-expanded="' + open + '">' + (open ? 'Cerrar' : o ? 'Cambiar' : 'Elegir') + '</button></div>' +
+        (open ? '<div class="vj-sugs" id="sugs-' + x.id + '">' + euSkelHTML(1, 48) + '</div>' : '') + '</li>';
+    }).join('');
+    icons();
+    if (openDia) loadSugs(openDia);
+  }
+  function loadSugs(diaId) {
+    getJ(API + '/trips/' + curId + '/dias/' + diaId + '/sugerencias').then(function (r) {
+      var box = $('sugs-' + diaId); if (!box) return;
+      var s = r.data || [];
+      box.innerHTML = s.map(function (o) {
+        return '<button type="button" class="vj-sug" data-sug="' + o.id + '" data-dia="' + diaId + '"><span class="t-ui">' + esc(o.nombre) + '</span><span class="vj-sug-w">' + esc(o.razon) + '</span></button>';
+      }).join('') + '<button type="button" class="vj-sug vj-sug--all" data-pick="' + diaId + '"><span class="t-ui">Ver todos…</span><span class="vj-sug-w">' + plural(r.total || 0, 'outfit') + '</span></button>';
+      var f = box.querySelector('button'); if (f) f.focus();
+    }).catch(function () { var box = $('sugs-' + diaId); if (box) box.innerHTML = '<p class="t-meta">No se pudieron cargar las sugerencias.</p>'; });
+  }
+  $('dias-list').addEventListener('click', function (e) {
+    var o = e.target.closest('[data-open]'), s = e.target.closest('[data-sug]'), p = e.target.closest('[data-pick]');
+    if (o) { openDia = openDia === +o.dataset.open ? null : +o.dataset.open; renderOutfits(); }
+    else if (s) assign(+s.dataset.dia, +s.dataset.sug, s);
+    else if (p) openPicker(+p.dataset.pick);
+  });
+
+  function assign(diaId, outfitId, btn) {
+    if (btn) btn.disabled = true;
+    return send(API + '/trips/' + curId + '/dias/' + diaId + '/outfit', 'POST', { outfit_id: outfitId }).then(function (r) {
+      if (!r.ok) { toast(r.error || 'Error', 'err'); if (btn) btn.disabled = false; return; }
+      toast('Outfit asignado · maleta actualizada', 'ok'); openDia = null; return afterOutfit(r);
+    }).catch(function () { toast('Sin conexión', 'err'); if (btn) btn.disabled = false; });
+  }
+  function unassign(diaId) {
+    return send(API + '/trips/' + curId + '/dias/' + diaId + '/outfit', 'DELETE').then(function (r) {
+      if (r.ok) { toast('Outfit quitado'); openDia = null; return afterOutfit(r); }
+    }).catch(function () { toast('Sin conexión', 'err'); });
+  }
+  // La respuesta trae la maleta ya regenerada: se repinta sin recargar.
+  function afterOutfit(r) {
+    maleta = r.maleta || maleta;
+    if (r.preparacion) curTrip.preparacion = r.preparacion;
+    return getJ(API + '/trips/' + curId + '/dias').then(function (x) { dias = x || []; renderOutfits(); renderMaleta(); renderPrep(); });
+  }
+
+  /* Picker completo («Ver todos…» / Cambiar), con «Quitar outfit» dentro */
   function mosaic(items) {
     var all = (items || []).filter(function (i) { return i.foto; }).concat((items || []).filter(function (i) { return !i.foto; })).slice(0, 4);
     if (!all.length) return '<span class="vj-mosaic vj-mosaic--empty"><i data-lucide="shirt"></i></span>';
@@ -148,45 +272,9 @@
       return i.foto ? photo(i.foto, 'vj-ms') : swatch(i.color_hex, 'vj-ms');
     }).join('') + '</span>';
   }
-  function thumb(o) {
-    var full = (outfits || []).filter(function (x) { return x.id === o.id; })[0];
-    var items = full ? full.items || [] : [];
-    var wp = items.filter(function (i) { return i.foto; })[0];
-    if (wp) return photo(wp.foto, 'vj-thumb');
-    if (items[0]) return swatch(items[0].color_hex, 'vj-thumb');
-    return '<span class="vj-thumb vj-thumb--ic"><i data-lucide="shirt"></i></span>';
-  }
-  function renderOutfits() {
-    var el = $('dias-list');
-    if (!dias.length) {
-      el.innerHTML = '<li>' + emptyHtml('calendar-x', 'Sin días cargados', 'Este viaje aún no tiene itinerario de días para planificar outfits.') + '</li>';
-      $('outfits-progress-txt').textContent = ''; setProg('outfits-prog', 0, 0); icons(); return;
-    }
-    var con = dias.filter(function (d) { return d.outfits && d.outfits.length; }).length;
-    $('outfits-progress-txt').textContent = con + ' de ' + dias.length + ' días con outfit';
-    setProg('outfits-prog', con, dias.length);
-    el.innerHTML = dias.map(function (d, i) {
-      var o = d.outfits && d.outfits[0];
-      var wd = new Date(d.fecha + 'T12:00:00').toLocaleDateString('es-MX', { weekday: 'short' });
-      return '<li class="vj-day' + (o ? ' has-outfit' : '') + (d.fecha === TODAY ? ' is-today' : '') + '">' +
-        '<span class="vj-day-n"><span class="t-meta">Día</span><span class="t-data">' + (i + 1) + '</span></span>' +
-        '<span class="vj-day-bd"><span class="t-ui">' + esc(wd) + ' · <span class="num">' + fmtD(d.fecha) + '</span></span>' + (d.descripcion ? '<span class="t-meta">' + esc(d.descripcion) + '</span>' : '') + '</span>' +
-        (o ? '<span class="vj-day-act"><button type="button" class="vj-ochip" data-pick="' + d.id + '" aria-label="Cambiar outfit: ' + esc(o.nombre) + '">' + thumb(o) + '<span class="vj-ochip-t">' + esc(o.nombre) + '</span></button>' +
-          '<button type="button" class="eu-iconbtn" data-unpick="' + d.id + '" aria-label="Quitar outfit del día ' + (i + 1) + '"><i data-lucide="x"></i></button></span>'
-          : '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm vj-day-add" data-pick="' + d.id + '"><i data-lucide="plus"></i>Elegir outfit</button>') +
-        '</li>';
-    }).join('');
-    icons();
-  }
-  $('dias-list').addEventListener('click', function (e) {
-    var p = e.target.closest('[data-pick]'), u = e.target.closest('[data-unpick]');
-    if (p) openPicker(+p.dataset.pick);
-    else if (u) unassign(+u.dataset.unpick);
-  });
-
   function openPicker(diaId) {
-    pickerDia = dias.filter(function (d) { return d.id === diaId; })[0]; if (!pickerDia) return;
-    $('picker-day-label').textContent = fmtD(pickerDia.fecha) + (pickerDia.descripcion ? ' — ' + pickerDia.descripcion : '');
+    pickerDia = dias.filter(function (x) { return x.id === diaId; })[0]; if (!pickerDia) return;
+    $('picker-day-label').textContent = diaCorto(pickerDia.fecha) + (pickerDia.descripcion ? ' — ' + pickerDia.descripcion : '');
     $('btn-quitar-outfit').hidden = !(pickerDia.outfits && pickerDia.outfits.length);
     var grid = $('picker-outfit-grid');
     grid.innerHTML = euSkelHTML(3, 72);
@@ -207,116 +295,150 @@
   }
   $('picker-outfit-grid').addEventListener('click', function (e) {
     var c = e.target.closest('[data-outfit]'); if (!c || !pickerDia) return;
-    send(API + '/trips/' + curId + '/dias/' + pickerDia.id + '/outfit', 'POST', { outfit_id: +c.dataset.outfit }).then(function (r) {
-      if (!r.ok) { toast(r.error || 'Error', 'err'); return; }
-      euModal.close('m-picker'); toast('Outfit asignado ✓', 'ok'); afterOutfitChange();
-    }).catch(function () { toast('Sin conexión', 'err'); });
+    euModal.close('m-picker'); assign(pickerDia.id, +c.dataset.outfit);
   });
   $('btn-quitar-outfit').addEventListener('click', function () {
     if (!pickerDia) return; var id = pickerDia.id; euModal.close('m-picker'); unassign(id);
   });
-  function unassign(diaId) {
-    send(API + '/trips/' + curId + '/dias/' + diaId + '/outfit', 'DELETE').then(function (r) {
-      if (r.ok) { toast('Outfit quitado'); afterOutfitChange(); }
-    }).catch(function () { toast('Sin conexión', 'err'); });
-  }
-  // Tras cambiar outfits se recalcula la maleta en silencio, para que las prendas
-  // aparezcan en el checklist sin tener que pulsar «Generar».
-  function afterOutfitChange() {
-    return getJ(API + '/trips/' + curId + '/dias').then(function (d) { dias = d || []; renderOutfits(); })
-      .then(function () { return send(API + '/trips/' + curId + '/maleta/generar', 'POST', {}); })
-      .then(function (r) { if (r && r.ok) return reloadMaleta(); });
-  }
-  function reloadMaleta() {
-    return getJ(API + '/trips/' + curId + '/maleta').then(function (m) {
-      maleta = m || [];
-      if (activeTab === 'maleta') renderMaleta();
-      if (activeTab === 'regreso') renderRegreso();
-    });
-  }
 
-  /* ── Maleta y regreso ───────────────────────────────────────────────── */
-  function grouped() {
+  /* ── Maleta / Regreso ───────────────────────────────────────────────── */
+  function grouped(list) {
     var cats = {};
-    maleta.forEach(function (m) { (cats[m.categoria] = cats[m.categoria] || []).push(m); });
+    list.forEach(function (m) { (cats[m.categoria] = cats[m.categoria] || []).push(m); });
     return CAT_ORDER.filter(function (c) { return cats[c]; }).concat(Object.keys(cats).filter(function (c) { return CAT_ORDER.indexOf(c) < 0; }))
       .map(function (c) { return { cat: c, items: cats[c] }; });
   }
-  function itemThumb(m) {
-    if (m.item_foto) return photo(m.item_foto, 'vj-ithumb');
-    if (m.item_color) return swatch(m.item_color, 'vj-ithumb');
+  function qty(m) {
+    if (m.no_regresa) return 'no regresa';
+    if (m.dias_uso > 1) return m.dias_uso + ' días';
+    if (m.cantidad > 1) return '× ' + m.cantidad;
     return '';
   }
-  function listHtml(field, withDel) {
-    return grouped().map(function (g) {
-      var done = g.items.filter(function (m) { return m[field]; }).length;
-      return '<section class="vj-cat"><h3 class="eu-between t-eyebrow vj-cat-t"><span>' + esc(g.cat) + '</span><span class="num t-meta">' + done + '/' + g.items.length + '</span></h3><ul class="vj-items">' +
-        g.items.map(function (m) {
-          var on = !!m[field];
-          return '<li class="vj-item' + (on ? ' is-done' : '') + '">' +
-            '<button type="button" class="vj-chk" role="checkbox" aria-checked="' + on + '" data-chk="' + m.id + '" data-field="' + field + '">' +
-            '<span class="vj-chk-box" aria-hidden="true"><i data-lucide="check"></i></span>' + itemThumb(m) +
-            '<span class="vj-item-t">' + esc(m.nombre) + (m.cantidad > 1 ? ' <span class="t-meta num">×' + m.cantidad + '</span>' : '') + '</span></button>' +
-            (withDel ? '<button type="button" class="eu-iconbtn vj-item-del" data-del="' + m.id + '" aria-label="Eliminar ' + esc(m.nombre) + '"><i data-lucide="x"></i></button>' : '') +
-            '</li>';
-        }).join('') + '</ul></section>';
-    }).join('');
-  }
-  function progTxt(field, id, barId, suffix) {
-    var n = maleta.filter(function (m) { return m[field]; }).length, t = maleta.length;
-    var pct = setProg(barId, n, t);
-    $(id).textContent = t ? n + ' de ' + t + ' ítems empacados' + suffix + ' (' + pct + '%)' : '';
-    return { n: n, t: t };
-  }
   function renderMaleta() {
-    progTxt('packed_ida', 'maleta-progress-txt', 'maleta-prog', '');
-    $('maleta-list').innerHTML = maleta.length ? listHtml('packed_ida', true)
-      : emptyHtml('luggage', 'Tu maleta está vacía', 'Asigna outfits a tus días en «Outfits por día» y aquí irán apareciendo las prendas, o genera la lista con extras estándar.');
+    var field = fase === 'antes' ? 'packed_ida' : 'packed_vuelta';
+    var list = fase === 'antes' ? maleta : maleta.filter(function (m) { return !m.no_regresa; });
+    var c = cuentaMaleta();
+    $('maleta-n').textContent = c.n + '/' + c.t;
+    $('maleta-list').innerHTML = list.length ? grouped(list).map(function (g) {
+      return '<h3 class="vj-bag-cat">' + esc(g.cat) + '</h3><ul class="vj-bag-items">' + g.items.map(function (m) {
+        var on = !!m[field];
+        return '<li class="vj-item' + (on ? ' is-done' : '') + (m.no_regresa ? ' is-cons' : '') + '" data-item="' + m.id + '">' +
+          '<button type="button" class="vj-chk" role="checkbox" aria-checked="' + on + '" data-chk="' + m.id + '" data-field="' + field + '">' +
+          '<span class="vj-chk-box" aria-hidden="true"><i data-lucide="check"></i></span>' +
+          '<span class="vj-item-t">' + esc(m.nombre) + '</span><span class="vj-item-q">' + qty(m) + '</span></button>' +
+          '<button type="button" class="eu-iconbtn vj-item-menu" data-menu="' + m.id + '" aria-haspopup="menu" aria-label="Opciones de ' + esc(m.nombre) + '"><i data-lucide="more-horizontal"></i></button></li>';
+      }).join('') + '</ul>';
+    }).join('') : emptyHtml('luggage', fase === 'antes' ? 'Tu maleta está vacía' : 'Nada que revisar', fase === 'antes' ? 'Elige un outfit en cualquier día y sus prendas aparecen aquí.' : 'Cuando tu maleta tenga ítems, aquí marcas lo que va de vuelta.');
     icons();
   }
-  function renderRegreso() {
-    progTxt('packed_vuelta', 'regreso-progress-txt', 'regreso-prog', ' de regreso');
-    $('regreso-list').innerHTML = maleta.length ? listHtml('packed_vuelta', false)
-      : emptyHtml('package-check', 'Nada que revisar aún', 'Genera tu maleta primero, en la pestaña «Mi maleta», para ver aquí el checklist de regreso.');
-    icons();
+  function toggleChk(c) {
+    var id = +c.dataset.chk, field = c.dataset.field, item = maleta.filter(function (m) { return m.id === id; })[0];
+    if (!item) return;
+    var now = !item[field];
+    item[field] = now ? 1 : 0;
+    c.setAttribute('aria-checked', String(now)); c.closest('.vj-item').classList.toggle('is-done', now);
+    var st = cuentaMaleta(); $('maleta-n').textContent = st.n + '/' + st.t; renderPrep();
+    send(API + '/trips/' + curId + '/maleta/' + id, 'PATCH', { field: field }).then(function () {
+      if (now && st.n === st.t) toast(field === 'packed_vuelta' ? 'Nada se queda ✓' : 'Todo empacado ✓', 'win');
+    }).catch(function () { item[field] = now ? 0 : 1; toast('Sin conexión', 'err'); renderMaleta(); renderPrep(); });
   }
-  function onListClick(e) {
-    var c = e.target.closest('[data-chk]'), d = e.target.closest('[data-del]');
-    if (c) {
-      var id = +c.dataset.chk, field = c.dataset.field, item = maleta.filter(function (m) { return m.id === id; })[0];
-      if (!item) return;
-      var now = !item[field];
-      item[field] = now ? 1 : 0;
-      c.setAttribute('aria-checked', String(now)); c.closest('.vj-item').classList.toggle('is-done', now);
-      var st = field === 'packed_ida' ? progTxt(field, 'maleta-progress-txt', 'maleta-prog', '') : progTxt(field, 'regreso-progress-txt', 'regreso-prog', ' de regreso');
-      var sec = c.closest('.vj-cat'); var cnt = sec.querySelector('.vj-cat-t .num');
-      cnt.textContent = sec.querySelectorAll('[aria-checked=true]').length + '/' + sec.querySelectorAll('[data-chk]').length;
-      send(API + '/trips/' + curId + '/maleta/' + id, 'PATCH', { field: field }).then(function () {
-        if (field === 'packed_vuelta' && now && st.n === st.t) toast('¡Todo empacado! Viaje completo', 'win');
-      }).catch(function () {
-        item[field] = now ? 0 : 1; toast('Sin conexión', 'err');
-        if (field === 'packed_ida') renderMaleta(); else renderRegreso();
-      });
-    } else if (d) {
-      var did = +d.dataset.del;
-      send(API + '/trips/' + curId + '/maleta/' + did, 'DELETE').then(function (r) {
+
+  /* Menú del ítem (clic en ⋯ o clic largo): no regresa / quitar */
+  var menu = document.createElement('div');
+  menu.className = 'vj-menu'; menu.setAttribute('role', 'menu'); menu.hidden = true;
+  document.body.appendChild(menu);
+  function openMenu(id, anchor) {
+    var m = maleta.filter(function (x) { return x.id === id; })[0]; if (!m) return;
+    menuItem = m;
+    menu.innerHTML = '<button type="button" role="menuitem" data-act="cons"><i data-lucide="' + (m.no_regresa ? 'rotate-ccw' : 'droplet') + '"></i>' + (m.no_regresa ? 'Sí regresa' : 'No regresa (consumible)') + '</button>' +
+      '<button type="button" role="menuitem" data-act="del"><i data-lucide="x"></i>Quitar de la maleta</button>';
+    menu.hidden = false; icons();
+    var r = anchor.getBoundingClientRect(), w = menu.offsetWidth;
+    menu.style.setProperty('--x', Math.max(8, Math.min(window.innerWidth - w - 8, r.right - w)) + 'px');
+    var h = menu.offsetHeight, y = r.bottom + 4 + h > window.innerHeight ? r.top - h - 4 : r.bottom + 4;
+    menu.style.setProperty('--y', Math.max(8, y) + 'px');
+    menu.querySelector('button').focus();
+  }
+  function closeMenu() { menu.hidden = true; menuItem = null; }
+  // composedPath: el ícono del botón puede re-pintarse (lucide) y quedar fuera del DOM.
+  document.addEventListener('click', function (e) {
+    if (menu.hidden) return;
+    var dentro = e.composedPath().some(function (n) { return n === menu || (n.dataset && n.dataset.menu); });
+    if (!dentro) closeMenu();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) closeMenu(); });
+  window.addEventListener('scroll', function () { if (!menu.hidden) closeMenu(); }, true);
+  menu.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b || !menuItem) return;
+    var m = menuItem; closeMenu();
+    if (b.dataset.act === 'cons') {
+      var val = m.no_regresa ? 0 : 1;
+      send(API + '/trips/' + curId + '/maleta/' + m.id, 'PATCH', { no_regresa: val }).then(function (r) {
         if (!r.ok) return;
-        maleta = maleta.filter(function (m) { return m.id !== did; }); renderMaleta(); toast('Ítem eliminado');
+        m.no_regresa = val; renderMaleta(); renderPrep();
+        toast(val ? m.nombre + ': no regresa' : m.nombre + ': sí regresa');
+      }).catch(function () { toast('Sin conexión', 'err'); });
+    } else {
+      send(API + '/trips/' + curId + '/maleta/' + m.id, 'DELETE').then(function (r) {
+        if (!r.ok) return;
+        maleta = maleta.filter(function (x) { return x.id !== m.id; }); renderMaleta(); renderPrep(); toast('Ítem quitado');
       }).catch(function () { toast('Sin conexión', 'err'); });
     }
-  }
-  $('maleta-list').addEventListener('click', onListClick);
-  $('regreso-list').addEventListener('click', onListClick);
-
-  $('btn-generar').addEventListener('click', function () {
-    var btn = this; btn.disabled = true; btn.setAttribute('aria-busy', 'true'); btn.querySelector('span').textContent = 'Generando…';
-    send(API + '/trips/' + curId + '/maleta/generar', 'POST', {}).then(function (r) {
-      if (!r.ok) { toast(r.error || 'Error al generar', 'err'); return; }
-      toast('Maleta generada — ' + plural(r.outfit_items || 0, 'prenda') + ' de tus outfits + extras estándar', 'ok');
-      return reloadMaleta();
-    }).catch(function () { toast('Sin conexión', 'err'); })
-      .finally(function () { btn.disabled = false; btn.removeAttribute('aria-busy'); btn.querySelector('span').textContent = 'Generar desde outfits'; });
   });
+  var press = null, longFired = false;
+  $('maleta-list').addEventListener('pointerdown', function (e) {
+    var c = e.target.closest('[data-chk]'); if (!c) return;
+    longFired = false;
+    press = setTimeout(function () { longFired = true; openMenu(+c.dataset.chk, c); }, 550);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { $('maleta-list').addEventListener(ev, function () { clearTimeout(press); }); });
+  $('maleta-list').addEventListener('contextmenu', function (e) {
+    var c = e.target.closest('[data-chk]'); if (!c) return;
+    e.preventDefault(); if (!longFired) openMenu(+c.dataset.chk, c);
+  });
+  $('maleta-list').addEventListener('click', function (e) {
+    var c = e.target.closest('[data-chk]'), mn = e.target.closest('[data-menu]');
+    if (c) { if (longFired) { longFired = false; return; } toggleChk(c); }
+    else if (mn) { if (menuItem && menuItem.id === +mn.dataset.menu && !menu.hidden) closeMenu(); else openMenu(+mn.dataset.menu, mn); }
+  });
+  function reloadMaleta() {
+    return getJ(API + '/trips/' + curId + '/maleta').then(function (m) { maleta = m || []; renderMaleta(); renderPrep(); });
+  }
+
+  /* ── Lateral: Dinero (fin_ok) y Otros viajes ────────────────────────── */
+  function renderMoney() {
+    var box = $('vj-money'); if (!box) return;
+    var din = curTrip.dinero;
+    box.hidden = !din; if (!din) return;
+    $('money-gastado').textContent = money(din.gastado);
+    $('money-de').textContent = din.presupuesto > 0 ? 'de ' + money(din.presupuesto) : 'sin presupuesto';
+    var b = $('money-bar'), pct = din.presupuesto > 0 ? Math.min(100, din.pct) : 0;
+    b.hidden = !(din.presupuesto > 0); b.setAttribute('aria-valuenow', pct); b.querySelector('i').style.setProperty('--p', pct + '%');
+    b.classList.toggle('is-over', din.gastado > din.presupuesto && din.presupuesto > 0);
+    $('money-rest').textContent = din.presupuesto > 0 ? (din.restan >= 0 ? 'restan ' + money(din.restan) : 'excedido por ' + money(-din.restan)) : 'Define un presupuesto al editar el viaje.';
+    var s = din.sugeridos;
+    $('money-sug').hidden = !s.n;
+    $('money-sug-t').textContent = plural(s.n, 'movimiento') + ' en estas fechas sin vincular · ' + money(s.total);
+    $('money-go').href = '/finanzas/estados/viajes/?id=' + curTrip.id;
+  }
+  var ml = $('money-link');
+  if (ml) ml.addEventListener('click', function () {
+    var ids = (curTrip.dinero && curTrip.dinero.sugeridos.ids) || []; if (!ids.length) return;
+    ml.disabled = true;
+    send(FIN + '/trips/' + curId + '/tag', 'POST', { tx_ids: ids }).then(function (r) {
+      if (!r.ok) { toast(r.error || 'No se pudo vincular', 'err'); return; }
+      toast(plural(r.tagged, 'movimiento') + ' vinculado' + (r.tagged !== 1 ? 's' : ''), 'ok'); return reloadTrip();
+    }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { ml.disabled = false; });
+  });
+
+  function renderOthers() {
+    var otros = trips.filter(function (t) { return t.id !== curId; });
+    var fut = otros.filter(function (t) { return grupo(t) !== 'pasado'; }).sort(function (a, b) { return a.fecha_inicio.localeCompare(b.fecha_inicio); });
+    var pas = otros.filter(function (t) { return grupo(t) === 'pasado'; }).sort(function (a, b) { return b.fecha_inicio.localeCompare(a.fecha_inicio); });
+    var list = fut.concat(pas).slice(0, 6);
+    $('others-list').innerHTML = list.length ? list.map(tripRow).join('') : '<p class="t-meta vj-others-empty">No hay otros viajes.</p>';
+    icons();
+  }
 
   /* ── Agregar ítem ───────────────────────────────────────────────────── */
   function setAi(mode) {
@@ -324,7 +446,6 @@
     $$('[data-ai]').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.ai === mode)); });
     $('ai-panel-wardrobe').hidden = mode !== 'wardrobe';
     $('ai-panel-generic').hidden = mode !== 'generic';
-    // En modo «prenda» agregar es un clic sobre la tarjeta: no hace falta botón de envío.
     $('ai-submit-btn').hidden = mode !== 'generic';
     setTimeout(function () { $(mode === 'generic' ? 'ai-nombre' : 'ai-wi-search').focus(); }, 20);
   }
@@ -380,7 +501,7 @@
     }).catch(function () { setErr('ai-err', 'Sin conexión'); });
   });
 
-  /* ── Viaje: crear / editar / eliminar ───────────────────────────────── */
+  /* ── Viaje: un solo alta y edición (presupuesto solo con fin_ok) ────── */
   var F = ['nombre', 'destino', 'estado', 'inicio', 'fin', 'clima', 'ocasion', 'notas'];
   function openTrip(isEdit) {
     editing = !!isEdit && !!curTrip;
@@ -389,11 +510,15 @@
     var t = editing ? curTrip : {};
     var v = { nombre: t.nombre, destino: t.destino, estado: t.estado || 'planificado', inicio: t.fecha_inicio, fin: t.fecha_fin, clima: t.tipo_clima, ocasion: t.ocasion, notas: t.notas };
     F.forEach(function (k) { $('f-' + k).value = v[k] || ''; });
+    if ($('f-presupuesto')) $('f-presupuesto').value = editing && t.dinero && t.dinero.presupuesto ? t.dinero.presupuesto : '';
+    $$('#m-trip .js-del').forEach(function (b) { b.hidden = !editing; });
     euModal.open('m-trip');
     setTimeout(function () { $('f-nombre').focus(); }, 20);
   }
-  $$('.js-new').forEach(function (b) { b.addEventListener('click', function () { openTrip(false); }); });
-  $$('.js-edit').forEach(function (b) { b.addEventListener('click', function () { openTrip(true); }); });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.js-new')) openTrip(false);
+    else if (e.target.closest('.js-edit')) openTrip(true);
+  });
   $('f-trip').addEventListener('submit', function (e) {
     e.preventDefault();
     var nombre = $('f-nombre').value.trim(), inicio = $('f-inicio').value, fin = $('f-fin').value;
@@ -405,6 +530,7 @@
       nombre: nombre, destino: $('f-destino').value.trim(), fecha_inicio: inicio, fecha_fin: fin,
       estado: $('f-estado').value, tipo_clima: $('f-clima').value, ocasion: $('f-ocasion').value, notas: $('f-notas').value.trim(),
     };
+    if ($('f-presupuesto')) payload.presupuesto = parseFloat($('f-presupuesto').value) || 0;
     var btn = document.querySelector('[form="f-trip"]'); btn.disabled = true;
     send(editing ? API + '/trips/' + curId : API + '/trips', editing ? 'PATCH' : 'POST', payload).then(function (r) {
       if (!r.ok) { setErr('modal-err', r.error || 'Error al guardar'); return; }
@@ -413,22 +539,24 @@
       return loadTrips().then(function () { return id ? showDetail(id) : renderList(); });
     }).catch(function () { setErr('modal-err', 'Sin conexión'); }).finally(function () { btn.disabled = false; });
   });
-  $$('.js-del').forEach(function (b) {
+  $$('#m-trip .js-del').forEach(function (b) {
     b.addEventListener('click', function () {
       var name = curTrip ? curTrip.nombre : 'este viaje';
-      euConfirm('¿Eliminar «' + name + '»? Se borrarán los días, outfits y maleta de este viaje.', { confirmLabel: 'Eliminar' }).then(function (ok) {
+      euConfirm('¿Eliminar «' + name + '»? Se borran sus días, outfits y maleta; los movimientos de Oikonomia solo se desvinculan.', { confirmLabel: 'Eliminar' }).then(function (ok) {
         if (!ok) return;
         send(API + '/trips/' + curId, 'DELETE').then(function (r) {
           if (!r.ok) { toast('No se pudo eliminar', 'err'); return; }
-          toast('Viaje eliminado'); return loadTrips().then(showList);
+          euModal.close('m-trip'); toast('Viaje eliminado'); return loadTrips().then(showList);
         }).catch(function () { toast('Sin conexión', 'err'); });
       });
     });
   });
+  $$('.js-back').forEach(function (b) { b.addEventListener('click', function () { loadTrips().then(showList); }); });
 
-  /* ── Boot ───────────────────────────────────────────────────────────── */
+  /* ── Boot: ?id= (o ?trip=, enlaces viejos) abre el viaje; ?nuevo=1 el alta ── */
   loadTrips().then(function () {
-    var tp = Number(new URLSearchParams(location.search).get('trip'));
+    var q = new URLSearchParams(location.search), tp = Number(q.get('id') || q.get('trip'));
     if (tp && trips.some(function (t) { return t.id === tp; })) showDetail(tp); else renderList();
+    if (q.get('nuevo') === '1') { history.replaceState(null, '', location.pathname); openTrip(false); }
   }).catch(function () { $('trip-sections').innerHTML = '<div class="eu-card">' + emptyHtml('wifi-off', 'Sin conexión', 'No se pudieron cargar tus viajes.') + '</div>'; icons(); });
 })();
