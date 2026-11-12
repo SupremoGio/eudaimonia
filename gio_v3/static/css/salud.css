@@ -7,8 +7,6 @@
 .sl h1,.sl h2,.sl h3,.sl p,.sl ol,.sl ul{margin:0}
 .sl [hidden],[id^=m-] [hidden]{display:none!important}
 .sl-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.sl-hd .t-page{margin-top:var(--sp-2)}
-@media (max-width:767px){.sl-hd{display:none}}
 @media (min-width:768px){.eu-topbar .js-new-ep{display:none}}
 .sl-gap{gap:var(--sp-2)}
 .sl-mt{margin-top:var(--sp-3)}

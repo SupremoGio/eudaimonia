@@ -81,12 +81,11 @@
 .pf-sec{gap:var(--sp-4)}
 .pf-sec-hd{display:flex;align-items:flex-start;gap:var(--sp-3);flex-wrap:wrap}
 .pf-sec-hd .pf-p{margin-top:var(--sp-2)}
-.pf-sec-title{margin-top:var(--sp-2)}
+.pf-sec-title{margin:0}
 .pf-sec-hd > .eu-btn,.pf-sec-hd > .pf-upload{align-self:flex-end}
 @media (max-width:1023px){
   .pf-sec-hd{align-items:center}
-  .pf-eyebrow,.pf-sec-hd .pf-p{display:none}
-  .pf-sec-title{margin-top:0;font-size:var(--fs-24)}
+  .pf-sec-hd .pf-p{display:none}
 }
 
 /* ── Datos personales (nota 5) ── */

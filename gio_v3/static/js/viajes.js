@@ -95,7 +95,7 @@
     if (dest) {
       var meta = [dest.destino, rango(dest.fecha_inicio, dest.fecha_fin), plural(diff(dest.fecha_inicio, dest.fecha_fin), 'noche'), CLIMA[dest.tipo_clima], OCASION[dest.ocasion]].filter(Boolean).map(esc).join(' · ');
       html += '<button type="button" class="eu-card eu-card--interactive vj-feat" data-trip="' + dest.id + '" aria-label="Abrir ' + esc(dest.nombre) + '">' +
-        '<span class="t-eyebrow vj-eyebrow">' + (grupo(dest) === 'vigente' ? 'En curso' : 'Próximo viaje') + ' · ' + cuenta(dest) + '</span>' +
+        '<span class="t-eyebrow vj-count">' + (grupo(dest) === 'vigente' ? 'En curso' : 'Próximo viaje') + ' · ' + cuenta(dest) + '</span>' +
         '<span class="t-section vj-feat-t">' + esc(dest.nombre) + '</span><span class="vj-dmeta">' + meta + '</span>' +
         '<span class="t-meta fg-brand vj-feat-go">Preparar<i data-lucide="arrow-right"></i></span></button>';
     }
@@ -141,7 +141,7 @@
 
   function renderHeader() {
     var t = curTrip;
-    $('detail-eyebrow').textContent = 'Vida · Viajes · ' + cuenta(t);
+    var c = cuenta(t); $('detail-eyebrow').textContent = c.charAt(0).toUpperCase() + c.slice(1);
     $('detail-title').textContent = t.nombre;
     var noches = diff(t.fecha_inicio, t.fecha_fin);
     $('detail-meta').textContent = [t.destino, rango(t.fecha_inicio, t.fecha_fin), plural(noches, 'noche'), CLIMA[t.tipo_clima] || t.tipo_clima, OCASION[t.ocasion] || t.ocasion].filter(Boolean).join(' · ');

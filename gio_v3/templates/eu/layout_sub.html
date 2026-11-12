@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
-  <title>{% block title %}EUDAIMONIA{% endblock %}</title>
+  {#- Pestaña del navegador: el nombre del menú (o de la vista). Solo el detalle
+      de una entidad lo sobrescribe con su nombre. -#}
+  <title>{% block title %}{% set _t = nav_title or self.module_title()|trim|title %}{{ _t ~ ' — ' if _t }}Eudaimonia{% endblock %}</title>
   {% include "eu/_head.html" %}
   {% block head %}{% endblock %}
 </head>

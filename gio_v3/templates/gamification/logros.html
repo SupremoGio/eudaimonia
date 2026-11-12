@@ -1,11 +1,9 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'logros' %}
-{% block title %}Logros — Eudaimonia{% endblock %}
 {% block module_title %}LOGROS{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/logros.css') }}">{% endblock %}
 
-{% block mtitle %}<b>Logros</b><span>Tú · largo plazo</span>{% endblock %}
 
 {# Handoff Logros v2: la vista de largo plazo. Encabezado con pestañas
    Colección / Historial (?tab=), héroe de nivel con ETA y pista de 10 tramos.

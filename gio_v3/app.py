@@ -170,8 +170,9 @@ def create_app():
     # Navegación V2: NAV/ACTIONS (modules/nav.py) + la página actual resuelta,
     # disponibles en todas las plantillas → sidebar, bottom nav, sheet de
     # Módulos, breadcrumb y ⌘K salen de una sola fuente.
-    from modules.nav import nav_context
+    from modules.nav import nav_context, page_info
     app.context_processor(nav_context)
+    app.jinja_env.globals['nav_page'] = page_info   # para ui.page_head
 
     @app.errorhandler(429)
     def too_many_requests(e):

@@ -9,8 +9,6 @@
 @media (min-width:1024px){.oik{gap:var(--sp-6)}}
 
 .oik-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
-.oik-hd .t-page{margin-top:var(--sp-2)}
-@media (max-width:1023px){.oik-hd{display:none}}
 /* El ojo de «Ocultar cifras» vive solo en la topbar, en todos los tamaños (nota 1). */
 
 /* ── Héroe (Oikonomia v2, notas 2–5) ── */

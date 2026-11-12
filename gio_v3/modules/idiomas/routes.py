@@ -82,7 +82,7 @@ def index():
         journal = db.execute("SELECT * FROM lang_journal ORDER BY entry_date DESC, id DESC LIMIT 200").fetchall()
     return render_template('idiomas/index.html',
         vista=vista if vista in ('plan', 'tests', 'journal') else '',
-        tests=tests, journal=[_entrada(r) for r in journal], today=today_str())
+        tests=tests, journal=[_entrada(r) for r in journal], today=today_str(), plan=_plan_estado())
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────────

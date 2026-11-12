@@ -4,19 +4,15 @@
 {% set CATS = ['Tecnología','Hogar','Ropa · Accesorios','Salud · Fitness','Auto','Entretenimiento','Otros'] %}
 {% set PRI = {'Alta': ('danger','Alta'), 'Media': ('warning','Media'), 'Baja': ('info','Baja')} %}
 {% macro money(n) -%}${{ "{:,.0f}".format(n) }}{%- endmacro %}
-{% block title %}Prioridades — Oikonomia{% endblock %}
 {% block module_title %}WISHLIST{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/wishlist.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/prioridades.css') }}">{% endblock %}
-{% block mtitle %}<b>Prioridades</b><span>Oikonomia · compras planeadas</span>{% endblock %}
 {% block topright %}<button type="button" class="eu-iconbtn js-add" aria-label="Nuevo artículo"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
 <div class="pr" id="pr" data-cat="oikonomia">
-  <header class="pr-hd">
-    <div><div class="t-eyebrow">Oikonomia · Wishlist</div><h1 class="t-page">Lista de prioridades</h1>
-      <p class="t-meta pr-lead">Compras planeadas. Cada artículo nuevo pasa por el protocolo de compra antes de entrar a la lista.</p></div>
+  {% call ui.page_head(eyebrow='Lista de prioridades · ' ~ summary.pend_count ~ ' pendiente' ~ ('s' if summary.pend_count != 1 else ''), cls='pr-hd') %}
     <button type="button" class="eu-btn eu-btn--primary js-add"><i data-lucide="plus"></i>Nuevo artículo</button>
-  </header>
+  {% endcall %}
 
   <div class="eu-grid-4 pr-stats">
     {% for key, lbl, tone in [('alta_pend','Alta · pendiente','danger'),('media_pend','Media · pendiente','warning'),('baja_pend','Baja · pendiente','info')] %}

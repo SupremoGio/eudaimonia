@@ -1,19 +1,15 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'recetas' %}
-{% block title %}Recetas — Eudaimonia{% endblock %}
 {% block module_title %}RECETAS{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/recetas.css') }}">{% endblock %}
-{% block mtitle %}<b>Recetas</b><span>Hegemonikon · {{ recetas|length }} receta{{ 's' if recetas|length != 1 }}</span>{% endblock %}
-{% block topright %}<button type="button" class="eu-iconbtn js-new" aria-label="Nueva receta"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
 <div class="rc" id="rc" data-cat="hegemonikon">
-  <header class="rc-hd">
-    <div><div class="t-eyebrow">Hegemonikon · Recetas</div><h1 class="t-page">Recetario</h1>
-      <p class="t-meta rc-lead">Tus recetas con macros por porción, ingredientes y pasos que puedes ir marcando.</p></div>
+  {% set _aptas = recetas|selectattr('fodmap', 'equalto', 'seguro')|list|length %}
+  {% call ui.page_head(eyebrow=recetas|length ~ ' receta' ~ ('s' if recetas|length != 1 else '') ~ (' · ' ~ _aptas ~ ' aptas FODMAP' if _aptas else ''), cls='rc-hd') %}
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva receta</button>
-  </header>
+  {% endcall %}
 
   <div class="eu-grid-3 rc-stats">
     <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="book-open"></i>Recetas</div><div class="eu-stat-val" id="st-total">{{ recetas|length }}</div></div>

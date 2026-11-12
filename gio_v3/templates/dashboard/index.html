@@ -1,14 +1,7 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'dashboard' %}
-{% block title %}Inicio — Eudaimonia{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
-
-{# Móvil: la topbar muestra fecha + saludo (DS V2 · 02 Dashboard móvil) #}
-{% block mtitle %}
-<span class="t-eyebrow">{{ fecha_larga }}</span>
-<b class="dash-mgreet">{{ v2.greeting }}, Gio</b>
-{% endblock %}
 
 {# Sin campanita en Inicio: duplicaba «Pendiente» (Inicio v2, Sprint 4). #}
 {# Sin el badge de XP de la topbar: el héroe ya lo muestra (Sprint 6). #}
@@ -20,11 +13,9 @@
     Pendiente → Equilibrio → Constancia → Inspiración. #}
 <div class="dash">
   <div class="dash-main">
-    <header class="dash-hello">
-      <div><div class="t-eyebrow">{{ fecha_larga }}</div>
-        <h1 class="t-page">{{ v2.greeting }}, Gio</h1></div>
+    {% call ui.page_head(eyebrow=fecha_larga|capitalize ~ (' · semana ' ~ semana_iso if semana_iso else ''), cls='dash-hello') %}
       {{ ui.button('Marcar actividad', icon='circle-check', href='/actividades/') }}
-    </header>
+    {% endcall %}
     {% include "dashboard/_hero.html" %}
     {% include "dashboard/_balance.html" %}
     {% include "dashboard/_heat.html" %}

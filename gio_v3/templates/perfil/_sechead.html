@@ -1,8 +1,7 @@
-{# Encabezado de sección: eyebrow, título y una acción a la derecha (html). #}
+{# Encabezado de sección (h2): título y una acción a la derecha (html). El h1 «Perfil» va una vez arriba (ui.page_head). #}
 <header class="pf-sec-hd">
   <div class="eu-grow">
-    <div class="t-eyebrow pf-eyebrow">Tú · Αὐτός</div>
-    <h1 class="t-page pf-sec-title">{{ sec_title }}</h1>
+    <h2 class="t-section pf-sec-title">{{ sec_title }}</h2>
     {% if sec_sub %}<p class="t-meta pf-p">{{ sec_sub }}</p>{% endif %}
   </div>
   {% if sec_action %}{{ sec_action|safe }}{% endif %}

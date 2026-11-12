@@ -13,9 +13,8 @@
 }
 /* Encabezado (nota 1): fecha · semana, pestañas compactas y menú ⋯ */
 .at-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
-.at-hd .t-page{margin-top:var(--sp-2)}
 .at-hd-tools{display:flex;align-items:center;gap:var(--sp-2);flex-shrink:0}
-@media (max-width:767px){.at-hd-txt{display:none}.at-hd-tools{width:100%}.at-tabs{flex:1}.at-tabs .at-day-tab{flex:1;justify-content:center}}
+@media (max-width:767px){.at-hd-tools{width:100%}.at-tabs{flex:1}.at-tabs .at-day-tab{flex:1;justify-content:center}}
 .at-p{color:var(--fg-2)}
 .at-tabs .at-day-tab{display:inline-flex;align-items:center;gap:var(--sp-2);height:36px;padding:0 var(--sp-3);white-space:nowrap}
 .at-tabs .at-day-tab svg{width:14px;height:14px}

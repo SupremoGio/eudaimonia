@@ -1,18 +1,16 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'logros' %}
-{% block title %}Semanas — Logros — Eudaimonia{% endblock %}
+{% block title %}Semanas — Eudaimonia{% endblock %}
 {% block module_title %}LOGROS{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/logros.css') }}">{% endblock %}
-{% block mtitle %}<b>Semanas</b><span>Revisión semanal · historial</span>{% endblock %}
+{% block mtitle %}<b>Semanas</b><span>Logros</span>{% endblock %}
 
 {# Historial de la Revisión semanal objetiva de Ataraxia (handoff Ataraxia v2,
    nota 8): antes vivía al final de la revisión, dentro de un acordeón. #}
 {% block content %}
 <div class="lg lg-weeks">
-  <header class="lg-hd">
-    <div><div class="t-eyebrow"><a href="/logros">Logros</a> · Ataraxia</div><h1 class="t-page">Historial de semanas</h1></div>
-  </header>
+  {{ ui.page_head(eyebrow='Revisión semanal de Ataraxia', title='Semanas', cls='lg-hd') }}
   {% if semanas %}
   <div class="eu-card eu-card--flush lg-weeks-wrap">
     <table class="eu-table">

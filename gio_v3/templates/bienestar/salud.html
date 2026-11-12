@@ -1,20 +1,15 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'bienestar' %}
-{% block title %}Salud — Hegemonikon{% endblock %}
 {% block module_title %}HEGEMONIKON · Salud{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/salud.css') }}">{% endblock %}
-{% block mtitle %}<b>Salud</b><span>Hegemonikon · {{ stats.activos }} activo{{ 's' if stats.activos != 1 }}</span>{% endblock %}
-{% block topright %}<button type="button" class="eu-iconbtn js-new-ep" aria-label="Nuevo episodio"><i data-lucide="plus"></i></button>{% endblock %}
 {% set TIPO = {'enfermedad': ('Enfermedad', 'thermometer', 'danger'), 'lesion': ('Lesión', 'activity', 'warning'), 'consulta': ('Consulta', 'stethoscope', 'info')} %}
 
 {% block content %}
 <div class="sl" id="sl" data-cat="hegemonikon"{% if ep_abrir %} data-ep="{{ ep_abrir }}"{% endif %}>
-  <header class="sl-hd">
-    <div><div class="t-eyebrow">Hegemonikon · Salud</div><h1 class="t-page">Salud</h1>
-      </div>
+  {% call ui.page_head(eyebrow=(stats.activos ~ ' episodio' ~ ('s' if stats.activos != 1 else '') ~ ' activo' ~ ('s' if stats.activos != 1 else '')) if stats.activos else 'Sin episodios activos', cls='sl-hd') %}
     <button type="button" class="eu-btn eu-btn--primary js-new-ep"><i data-lucide="plus"></i>Nuevo episodio</button>
-  </header>
+  {% endcall %}
 
   {% include "bienestar/salud/_analytics.html" %}
 

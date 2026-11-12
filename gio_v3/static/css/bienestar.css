@@ -13,10 +13,7 @@
 
 /* Encabezado */
 .hg-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4)}
-.hg-hd .t-page{margin-top:var(--sp-2)}
-.hg-eyebrow{color:var(--cat-fg)}
 .hg-hd .eu-btn{height:40px;flex-shrink:0}
-@media (max-width:767px){.hg-hd-t{display:none}.hg-hd{justify-content:flex-end;margin-bottom:calc(var(--sp-2) * -1)}}
 .hg-sub{padding-left:var(--sp-1);font:var(--fw-medium) var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3)}
 
 /* ── Hoy en tu cuerpo (nota 1) ── */

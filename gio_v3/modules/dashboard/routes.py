@@ -489,6 +489,7 @@ def index():
         data=data,
         v2=_build_dashboard_v2(data),
         fecha_larga=fecha_larga,
+        semana_iso=hoy.isocalendar()[1],
     )
 
 

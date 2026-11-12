@@ -1,17 +1,12 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'actividades' %}
-{% block title %}Acta Diurna — Eudaimonia{% endblock %}
 {% block module_title %}ACTA DIURNA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/acta.css') }}">{% endblock %}
 
 {# El XP del día vive en la tarjeta Clasificación: sin pastilla en la topbar #}
 {% block tb_xp %}{% endblock %}
 
-{% block mtitle %}
-<b>Acta Diurna</b>
-<span>{{ today_name }} · {{ acta_total }} actividades</span>
-{% endblock %}
 
 {# Reflexiones escritas: MIT se edita también en móvil; las de cierre de día
    (gratitud, corrección, síntesis) solo en desktop. Ver /api/reflexion. #}

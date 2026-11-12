@@ -15,7 +15,6 @@
 
 /* ── Encabezado (nota 1): pestañas, Wishlist y un solo botón primario ── */
 .gr-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
-.gr-hd .t-page{margin-top:var(--sp-2)}
 .gr-hd-act{display:flex;align-items:center;gap:var(--sp-2);flex-shrink:0;white-space:nowrap}
 .gr-tablist button{height:32px;padding:0 var(--sp-3);font-size:var(--fs-12)}
 .gr-tablist button:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
@@ -25,7 +24,6 @@
 .gr-wishlink svg{width:13px;height:13px}
 .gr-hd-new{height:40px}
 @media (max-width:767px){
-  .gr-hd-t{display:none}                   /* el título va en la topbar; «+» es el FAB */
   .gr-hd-act{width:100%}
   .gr-tablist{flex:1}
   .gr-tablist button{flex:1;height:40px}
@@ -132,7 +130,6 @@
 body:has(#gr[data-tab=analisis]) .gr-fab{display:none}
 
 /* ── Outfits ── */
-.gr-lead{color:var(--fg-2);max-width:640px}
 .gr-ostats{gap:var(--sp-3)}
 .gr-ostats .eu-card{padding:var(--sp-4)}
 .gr-stat-txt{font:var(--fw-medium) var(--fs-17)/1.2 var(--font-ui);letter-spacing:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

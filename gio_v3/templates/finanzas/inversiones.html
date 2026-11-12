@@ -8,19 +8,15 @@
 {% macro money2(n) -%}${{ "{:,.2f}".format(n) }}{%- endmacro %}
 {% set MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'] %}
 {% macro fcorte(f) -%}{{ f[8:10]|int }} {{ MESES[f[5:7]|int - 1] }} {{ f[:4] }}{%- endmacro %}
-{% block title %}Inversiones — Oikonomia{% endblock %}
 {% block module_title %}INVERSIONES{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/inversiones.css') }}">{% endblock %}
-{% block mtitle %}<b>Inversiones</b><span>Oikonomia · portafolio</span>{% endblock %}
 {% block topright %}<button type="button" class="eu-iconbtn js-nw-toggle" aria-pressed="false" aria-label="Ocultar cifras"><i data-lucide="eye"></i></button>{% endblock %}
 
 {% block content %}
 <div class="iv" id="iv" data-cat="oikonomia">
-  <header class="iv-hd">
-    <div><div class="t-eyebrow">Oikonomia · Inversiones</div><h1 class="t-page">Portafolio</h1>
-      <p class="t-meta iv-lead">Saldo real de cada plataforma al último corte, más lo que entra o sale después según tus estados de cuenta.</p></div>
+  {% call ui.page_head(eyebrow=('Portafolio · al corte del ' ~ fcorte(fecha_corte)) if fecha_corte else 'Portafolio', cls='iv-hd') %}
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Registrar movimiento</button>
-  </header>
+  {% endcall %}
 
   <section class="eu-card iv-hero" aria-labelledby="iv-saldo-l">
     <div class="iv-hero-top">

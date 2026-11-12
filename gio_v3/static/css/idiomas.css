@@ -11,10 +11,7 @@
 .id-skel-line{display:inline-block;height:12px;width:220px;vertical-align:middle}
 
 .id-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
-.id-hd .t-page{margin-top:var(--sp-2)}
-.id-eyebrow{color:var(--cat-fg)}
 .id-lang button{height:34px;padding:0 var(--sp-4)}
-@media (max-width:767px){.id-hd .t-page{font-size:var(--fs-24)}}
 .id-back{align-self:flex-start;padding-left:0}
 
 /* Layout 1fr / 320px; en móvil el lateral va debajo */

@@ -4,10 +4,7 @@
 .gv [hidden],#m-trip [hidden]{display:none!important}
 .gv-view{gap:var(--sp-4)}
 .gv-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.gv-hd .t-page{margin-top:var(--sp-2)}
-.gv-lead{margin-top:var(--sp-2);color:var(--fg-2)}
 .gv-back{padding-left:0;margin-bottom:var(--sp-2)}
-@media (max-width:767px){.gv-hd{display:none}}
 @media (min-width:768px){.eu-topbar .js-new{display:none}}
 .gv-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 [data-tone=danger]{--tone-fg:var(--danger-fg)}

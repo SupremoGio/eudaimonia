@@ -6,13 +6,10 @@
 .vj [hidden],#m-trip [hidden],#m-picker [hidden],#m-item [hidden],.vj-menu[hidden]{display:none!important}
 .vj-view{gap:var(--sp-4)}
 .vj-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.vj-hd .t-page{margin-top:var(--sp-2)}
-.vj-lead{margin-top:var(--sp-2);color:var(--fg-2);max-width:640px}
-@media (max-width:767px){.vj-hd{display:none}}
 @media (min-width:768px){.eu-topbar .js-new{display:none}}
 .vj-sections{gap:var(--sp-4)}
 .vj-empty-cta{display:flex;justify-content:center;padding-bottom:var(--sp-6)}
-.vj-eyebrow{color:var(--cat-fg)}
+.vj-count{color:var(--cat-fg)}
 .vj-dmeta{font-size:var(--fs-13);color:var(--fg-3);overflow-wrap:anywhere}
 .vj-mono22{font:var(--fw-medium) 22px/1.1 var(--font-data);color:var(--fg-1)}
 

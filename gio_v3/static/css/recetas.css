@@ -3,9 +3,6 @@
 .rc h1,.rc h2,.rc p,.rc ul,.rc ol{margin:0}
 .rc [hidden],#m-rc [hidden]{display:none!important}
 .rc-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.rc-hd .t-page{margin-top:var(--sp-2)}
-.rc-lead{margin-top:var(--sp-2);color:var(--fg-2)}
-@media (max-width:767px){.rc-hd{display:none}}
 @media (min-width:768px){.eu-topbar .js-new{display:none}}
 .rc-stats{gap:var(--sp-3)}
 .rc-stats .eu-card{padding:var(--sp-4)}

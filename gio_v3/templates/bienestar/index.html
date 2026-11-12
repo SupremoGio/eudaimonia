@@ -1,10 +1,8 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'hegemonikon' %}
-{% block title %}Hegemonikon — Eudaimonia{% endblock %}
 {% block module_title %}HEGEMONIKON{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/bienestar.css') }}">{% endblock %}
-{% block mtitle %}<b>Hegemonikon</b><span>Salud</span>{% endblock %}
 
 {# Handoff Hegemonikon v2: el hub del cuerpo te dice cómo estás hoy y qué
    tienes pendiente antes de mandarte a otra página. #}
@@ -24,13 +22,12 @@
 {% block content %}
 <div class="hg" id="hg" data-cat="hegemonikon">
   <div class="hg-main">
-    <header class="hg-hd">
-      <div class="hg-hd-t">
-        <div class="t-eyebrow hg-eyebrow">Virtudes · Salud</div>
-        <h1 class="t-page">Hegemonikon</h1>
-      </div>
+    {% set _eb = [] %}
+    {% if t %}{% set _ = _eb.append(t.episodios_activos ~ ' en tratamiento') %}{% endif %}
+    {% if data.partido and data.partido.hay %}{% set _ = _eb.append('partido el ' ~ data.partido.fecha_txt) %}{% endif %}
+    {% call ui.page_head(eyebrow=_eb|join(' · '), cls='hg-hd') %}
       <button type="button" class="eu-btn eu-btn--secondary js-new-ep"><i data-lucide="plus"></i>Episodio</button>
-    </header>
+    {% endcall %}
 
     {% include "bienestar/_hoy.html" %}
 

@@ -1,10 +1,8 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'finanzas' %}
-{% block title %}Oikonomia — Finanzas{% endblock %}
 {% block module_title %}OIKONOMIA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/oikonomia.css') }}">{% endblock %}
-{% block mtitle %}<b>Oikonomia</b><span>Finanzas</span>{% endblock %}
 {% block topright %}<button type="button" class="eu-iconbtn js-nw-toggle" aria-pressed="false" aria-label="Ocultar cifras" title="Ocultar cifras"><i data-lucide="eye"></i></button>{% endblock %}
 
 {# Formato de dinero: $1,234 · compacto: $1.2k / $1.2M #}
@@ -18,10 +16,10 @@
 {% block content %}
 <div class="oik" id="oik">
   {# Una sola acción primaria; el ojo de «Ocultar cifras» vive solo en la topbar (Oikonomia v2, nota 1). #}
-  <header class="oik-hd">
-    <div><div class="t-eyebrow">Oikonomia · {{ (budget.mes_nombre if budget else mes_actual_nombre)|capitalize }}</div><h1 class="t-page">Finanzas</h1></div>
+  {% set _mes = (budget.mes_nombre if budget else mes_actual_nombre)|capitalize %}
+  {% call ui.page_head(eyebrow=_mes ~ (' · disponible ' ~ hide(mx(budget.disponible)) if budget and budget.ingreso else ''), cls='oik-hd') %}
     {{ ui.button('Subir estado de cuenta', icon='upload', href='/finanzas/estados/') }}
-  </header>
+  {% endcall %}
 
   {% include "finanzas/hub/_hero.html" %}
 

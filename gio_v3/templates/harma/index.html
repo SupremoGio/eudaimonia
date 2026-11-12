@@ -1,26 +1,21 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'harma' %}
-{% block title %}Harma — Eudaimonia{% endblock %}
 {% block module_title %}HARMA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/harma.css') }}">{% endblock %}
-{% block mtitle %}<b>Harma</b><span>Mecánica · mantenimiento</span>{% endblock %}
 
 {# Handoff Harma v2: qué le toca hoy al carro y por qué, y registrarlo en el
    mismo lugar. El odómetro va primero porque todo el plan depende de él. #}
 {% block content %}
 <div class="hm" id="hm" data-cat="harma" data-today="{{ today }}" data-vista="{{ vista }}">
   <div class="hm-main">
-    <header class="hm-hd">
-      <div class="hm-hd-t">
-        <div class="t-eyebrow">Harma · ἅρμα</div>
-        <h1 class="t-page"><span id="hm-veh-name">{{ vehiculo.nombre if vehiculo else 'Mi carro' }}</span> <span class="hm-veh-sub" id="hm-veh-sub"></span></h1>
-      </div>
+    {% set _veh_eb %}<span id="hm-veh-name">{{ vehiculo.nombre if vehiculo else 'Mi carro' }}</span><span id="hm-veh-sub">{% if vehiculo and vehiculo.km_actual %} · {{ '{:,}'.format(vehiculo.km_actual|int) }} km{% endif %}</span>{% endset %}
+    {% call ui.page_head(eyebrow=_veh_eb, cls='hm-hd') %}
       <div class="hm-hd-act">
         <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-veh"><i data-lucide="pencil"></i>Editar vehículo</button>
         <button type="button" class="eu-btn eu-btn--secondary js-serv-new"><i data-lucide="plus"></i>Servicio</button>
       </div>
-    </header>
+    {% endcall %}
 
     {# Franja: odómetro editable · ritmo · gasto de 12 meses (notas 1 y 7) #}
     <section class="hm-strip" aria-label="Vehículo">

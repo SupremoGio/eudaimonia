@@ -12,14 +12,12 @@
 
 /* ── Encabezado (nota 1) ── */
 .lg-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
-.lg-hd .t-page{margin-top:var(--sp-2)}
 .lg-tabs{flex-shrink:0}
 .lg-tabs a{display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:6px;color:var(--fg-3);font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);text-decoration:none;white-space:nowrap}
 .lg-tabs a:hover{color:var(--fg-1)}
 .lg-tabs a[aria-selected=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
 .lg-tabs a:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
 @media (max-width:767px){
-  .lg-hd-t{display:none}                     /* el título vive en la topbar */
   .lg-tabs{width:100%}
   .lg-tabs a{flex:1;justify-content:center;height:40px}
 }

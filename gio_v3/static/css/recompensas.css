@@ -10,9 +10,7 @@
 
 /* ── Encabezado (nota 1) ── */
 .rw-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4)}
-.rw-hd .t-page{margin-top:var(--sp-2)}
 .rw-hd .eu-btn{height:40px;flex-shrink:0}
-@media (max-width:767px){.rw-hd-t{display:none}.rw-hd{justify-content:flex-end;margin-bottom:calc(var(--sp-2) * -1)}}
 
 /* ── Héroe: saldo | siguiente meta (notas 1–3) ── */
 .rw-hero{display:grid;grid-template-columns:minmax(0,1fr);border-radius:var(--r-lg);border:1px solid var(--border-brand);background:radial-gradient(120% 100% at 0% 0%,var(--brand-subtle),transparent 60%),var(--bg-surface)}

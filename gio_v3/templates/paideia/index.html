@@ -1,16 +1,13 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'paideia' %}
-{% block title %}Paideia — Eudaimonia{% endblock %}
 {% block module_title %}PAIDEIA · Libros{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/paideia.css') }}">{% endblock %}
-{% block mtitle %}<b>Paideia</b><span>Libros y películas</span>{% endblock %}
 {% block content %}
 <div class="pd" id="pd" data-cat="paideia" data-mod="libros">
   {# Encabezado en una fila (handoff Paideia v2, nota 1): pestañas como eu-seg y
      un solo botón primario (+ Libro / + Película). #}
-  <header class="pd-hd">
-    <div><div class="t-eyebrow">Paideia · Formación</div><h1 class="t-page">Biblioteca</h1></div>
+  {% call ui.page_head(eyebrow=stats.leidos_este_anio ~ ' de ' ~ stats.meta_anual ~ ' libros en ' ~ now_year if stats.meta_anual else stats.leidos_este_anio ~ ' libros en ' ~ now_year, cls='pd-hd') %}
     <div class="pd-hd-tools">
       <div class="eu-seg pd-tabs" role="tablist" aria-label="Submódulos de Paideia">
         <button type="button" role="tab" id="tab-libros" data-mod-set="libros" aria-selected="true" aria-controls="mod-libros"><i data-lucide="library"></i>Libros</button>
@@ -18,7 +15,7 @@
       </div>
       <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i><span class="js-new-lbl">Libro</span></button>
     </div>
-  </header>
+  {% endcall %}
 
   <section class="pd-panel eu-vstack" id="mod-libros" role="tabpanel" aria-labelledby="tab-libros">
     {% include "paideia/_libros.html" %}

@@ -179,7 +179,7 @@ def test_encabezado_una_accion_y_ojo_solo_en_topbar(client):
     html = full
     assert html.count('class="eu-iconbtn js-nw-toggle"') == 1 and 'js-nw-toggle" aria-pressed="false"><i data-lucide="eye-off"' not in html
     assert 'oik-alert' not in html
-    assert '<h1 class="t-page">Finanzas</h1>' in html
+    assert '<h1 class="t-page">Oikonomia</h1>' in html            # h1 = nombre del menú (Navegación)
     for viejo in ('oik-stat', 'oik-wallet', 'oik-month'):
         assert viejo not in html
 

@@ -9,9 +9,6 @@
 .dt h1,.dt h2,.dt p,.dt ol{margin:0}
 .dt [hidden],#m-add [hidden],#m-meal [hidden],#m-slip [hidden]{display:none!important}
 .dt-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
-.dt-hd .t-page{margin-top:var(--sp-2)}
-.dt-eyebrow{color:var(--cat-fg)}
-@media (max-width:767px){.dt-hd .t-page{font-size:var(--fs-24)}}
 .dt-back{align-self:flex-start;padding-left:0}
 .dt-card-hd{padding:var(--sp-3) var(--sp-4);border-bottom:1px solid var(--border-subtle)}
 .dt-pad{padding:var(--sp-4)}

@@ -195,8 +195,8 @@ def test_encabezado_y_heroe(client):
     _ec(84)
     _reward('Masaje', 90, cooldown_days=30)
     html = _get(client)
-    hd = html.split('<header class="rw-hd">', 1)[1].split('</header>', 1)[0]
-    assert 'Tú · Tienda EC' in hd and 'eu-btn eu-btn--ghost js-new' in hd and 'Recompensa</button>' in hd
+    hd = html.split('<header class="eu-page-hd rw-hd">', 1)[1].split('</header>', 1)[0]   # ui.page_head (Navegación)
+    assert '84 EC' in hd and 'Tú ·' not in hd and '<h1 class="t-page">Recompensas</h1>' in hd and 'eu-btn eu-btn--ghost js-new' in hd and 'Recompensa</button>' in hd
     assert 'rw-lead' not in html and 'rw-level' not in html
     assert html.count('class="num fg-ec js-ec"') == 1                     # saldo en un solo bloque
     hero = html.split('id="rw-hero"', 1)[1].split('</section>', 1)[0]

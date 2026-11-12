@@ -71,7 +71,8 @@
   function renderVeh() {
     var v = STATE.vehiculo || {};
     $('hm-veh-name').textContent = v.nombre || 'Mi carro';
-    $('hm-veh-sub').textContent = [v.anio, v.motor, v.placas].filter(Boolean).join(' · ');
+    // Antetítulo: vehículo · km (handoff Navegación: el título es «Harma»).
+    $('hm-veh-sub').textContent = v.km_actual ? ' · ' + Number(v.km_actual).toLocaleString('es-MX') + ' km' : '';
     var inp = $('hm-odo-in');
     if (document.activeElement !== inp) inp.value = Number(v.km_actual || 0).toLocaleString('es-MX');
     var age = v.km_edad_dias, el = $('hm-odo-age');

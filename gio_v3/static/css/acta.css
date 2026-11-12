@@ -13,8 +13,6 @@
 }
 
 /* ── Encabezado ──────────────────────────────────────────────── */
-.acta-hd{display:flex;flex-direction:column;gap:var(--sp-3)}
-.acta-hd .t-page{margin:var(--sp-2) 0 0}
 .acta-hd-tools{flex-wrap:wrap;gap:var(--sp-2)}
 .acta-hide svg{width:14px;height:14px}
 /* Móvil: «Ocultar hechas» solo ícono para que los 3 controles quepan en una fila */
@@ -27,7 +25,6 @@
 .acta-edit[aria-pressed=true]{background:var(--brand-subtle);border-color:var(--border-brand);color:var(--fg-1)}
 @media(pointer:coarse){.acta-edit{width:44px;height:44px}}
 @media (min-width:768px){
-  .acta-hd{flex-direction:row;align-items:flex-end;justify-content:space-between}
 }
 .acta-editbar{display:flex;flex-direction:column;gap:var(--sp-3);padding:var(--sp-3) var(--sp-4);border:1px dashed var(--border-brand);border-radius:var(--r-md);background:var(--brand-subtle)}
 .acta-editbar-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}

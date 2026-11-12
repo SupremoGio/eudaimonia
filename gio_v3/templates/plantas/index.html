@@ -1,19 +1,16 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'plantas' %}
-{% block title %}Plantas — Eudaimonia{% endblock %}
 {% block module_title %}PLANTAS{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/plantas.css') }}">{% endblock %}
-{% block mtitle %}<b>Plantas</b><span>Vida · riego y trasplante</span>{% endblock %}
-{% block topright %}<button type="button" class="eu-iconbtn js-new" aria-label="Nueva planta"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
 <div class="pl" id="pl" data-cat="ataraxia">
-  <header class="pl-hd">
-    <div><div class="t-eyebrow">Vida · Plantas</div><h1 class="t-page">Mis plantas</h1>
-      <p class="t-meta pl-lead">Riego y trasplante con fechas reales, ajustadas por temporada según esté en interior o en balcón.</p></div>
+  {% set _tot = counts.values()|sum %}
+  {% set _aten = counts['vencido'] + counts['urgente'] %}
+  {% call ui.page_head(eyebrow=_tot ~ ' planta' ~ ('s' if _tot != 1 else '') ~ ' · ' ~ (_aten ~ ' por atender' if _aten else 'todas al día'), cls='pl-hd') %}
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva planta</button>
-  </header>
+  {% endcall %}
 
   {% if temporada.label %}
   {%- macro pct_txt(f) -%}
