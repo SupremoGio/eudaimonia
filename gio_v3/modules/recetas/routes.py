@@ -6,6 +6,22 @@ from database import get_db
 recetas_bp = Blueprint('recetas', __name__)
 
 CATEGORIAS = ['Desayuno', 'Almuerzo', 'Cena', 'Snack', 'Meal Prep', 'Post-Entrenamiento']
+# Un solo recetario (Nutrición v2): etiqueta FODMAP y momentos del plan
+FODMAP = ['seguro', 'porcion', 'evitar']
+MOMENTOS = [('desayuno', 'Desayuno'), ('colacion', 'Colación'), ('comida', 'Comida'), ('pregym', 'Pre-gym'), ('cena', 'Cena')]
+
+
+def _fodmap(d):
+    v = (d.get('fodmap') or '').strip().lower()
+    return v if v in FODMAP else None
+
+
+def _momento(d):
+    m = d.get('momento') or []
+    if isinstance(m, str):
+        m = m.split(',')
+    validos = {k for k, _ in MOMENTOS}
+    return ','.join(x.strip() for x in m if x.strip() in validos)
 
 
 def _row(r):
@@ -26,7 +42,8 @@ def index():
         ).fetchall()]
     return render_template('recetas/index.html',
                            recetas=recetas,
-                           categorias=CATEGORIAS)
+                           categorias=CATEGORIAS, momentos=MOMENTOS,
+                           fodmap_sel=request.args.get('fodmap') == 'seguro')
 
 
 @recetas_bp.route('/api/list')
@@ -38,6 +55,9 @@ def api_list():
     if cat:
         sql += " AND categoria=?"
         params.append(cat)
+    if request.args.get('fodmap') in FODMAP:
+        sql += " AND fodmap=?"
+        params.append(request.args.get('fodmap'))
     if q:
         sql += " AND (nombre LIKE ? OR tags LIKE ? OR ingredientes LIKE ?)"
         params += [f'%{q}%', f'%{q}%', f'%{q}%']
@@ -57,8 +77,8 @@ def create():
                (nombre, categoria, descripcion, ingredientes, instrucciones,
                 calorias, proteina, carbos, grasa,
                 tiempo_prep, tiempo_coccion, porciones,
-                video_url, tags, favorita, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                video_url, tags, favorita, fodmap, momento, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
                 d.get('nombre', '').strip(),
                 d.get('categoria', 'Almuerzo'),
@@ -75,6 +95,7 @@ def create():
                 d.get('video_url', ''),
                 d.get('tags', ''),
                 1 if d.get('favorita') else 0,
+                _fodmap(d), _momento(d),
                 now,
             )
         )
@@ -93,7 +114,7 @@ def update(rid):
                nombre=?, categoria=?, descripcion=?, ingredientes=?, instrucciones=?,
                calorias=?, proteina=?, carbos=?, grasa=?,
                tiempo_prep=?, tiempo_coccion=?, porciones=?,
-               video_url=?, tags=?, favorita=?
+               video_url=?, tags=?, favorita=?, fodmap=?, momento=?
                WHERE id=?""",
             (
                 d.get('nombre', '').strip(),
@@ -111,6 +132,7 @@ def update(rid):
                 d.get('video_url', ''),
                 d.get('tags', ''),
                 1 if d.get('favorita') else 0,
+                _fodmap(d), _momento(d),
                 rid,
             )
         )

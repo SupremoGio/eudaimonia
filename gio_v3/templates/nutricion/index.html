@@ -7,78 +7,84 @@
 {% block mtitle %}<b>Nutrición</b><span>Díaita · bajo en FODMAP</span>{% endblock %}
 
 {% block content %}
-<div class="dt" id="dt" data-cat="hegemonikon" data-tab="hoy">
+{% set DIAS = {'L':'Lunes','M':'Martes','X':'Miércoles','J':'Jueves','V':'Viernes','S':'Sábado','D':'Domingo'} %}
+<div class="dt" id="dt" data-cat="hegemonikon" data-vista="{{ vista }}">
   <header class="dt-hd">
-    <div><div class="t-eyebrow">Hegemonikon · Díaita</div><h1 class="t-page">Nutrición</h1>
-      <p class="t-meta dt-lead">δίαιτα, el régimen del cuerpo · protocolo bajo en FODMAP.</p></div>
-    <div class="eu-hstack dt-kpis" aria-label="Hoy">
-      <span class="eu-badge eu-badge--xp num" id="k-xp">+0 XP</span>
-      <span class="eu-badge eu-badge--ec num" id="k-ec">+0 EC</span>
-      <span class="eu-badge num" id="k-streak"><i data-lucide="flame"></i>0 d limpios</span>
-    </div>
+    <div><div class="t-eyebrow dt-eyebrow">Hegemonikon · Díaita · bajo en FODMAP</div>
+      <h1 class="t-page">{% if vista == 'semana' %}Semana{% elif vista == 'sintomas' %}Síntomas{% else %}{{ DIAS[state.today] }} {{ state.fecha[8:]|int }}{% endif %}</h1></div>
+    <ol class="dt-tira" aria-label="Semana">
+      {% for d in state.tira %}<li class="dt-tira-d is-{{ d.estado }}{% if d.hoy %} is-hoy{% endif %}" title="{{ DIAS[d.k] }} · {{ {'cerrado':'día limpio','hoy':'hoy','futuro':'por venir','abierto':'sin cerrar'}[d.estado] }}">
+        <span>{{ d.k }}</span><i aria-hidden="true"></i></li>{% endfor %}
+    </ol>
   </header>
 
-  <nav class="eu-tabs dt-tabs" role="tablist" aria-label="Secciones de nutrición">
-    {% for key, label in [('hoy', 'Hoy'), ('recetas', 'Recetas'), ('sintomas', 'Síntomas'), ('semana', 'Semana')] %}
-    <button type="button" role="tab" data-tab-set="{{ key }}" aria-selected="{{ 'true' if loop.first else 'false' }}" aria-controls="tab-{{ key }}">{{ label }}</button>
-    {% endfor %}
-  </nav>
-
-  {# ── HOY ── #}
-  <section class="dt-panel dt-hoy" id="tab-hoy" role="tabpanel" data-panel="hoy">
-    <div class="eu-vstack dt-hoy-main">
-      <div class="eu-between dt-hoy-hd">
-        <div><div class="t-section" id="hoy-day"></div><div class="t-meta" id="hoy-progress"></div></div>
-        <div class="eu-seg" role="group" aria-label="Vista">
-          <button type="button" data-variant="ritmo" aria-pressed="true">Ritmo</button>
-          <button type="button" data-variant="protocolo" aria-pressed="false">Protocolo</button>
-        </div>
-      </div>
-      <div id="hoy-view"></div>
-    </div>
-    <aside class="eu-vstack dt-rail" aria-label="Resumen del día">
-      <div class="eu-card dt-ring-card" id="hoy-ring"></div>
-      <div id="hoy-status"></div>
-      <div class="eu-vstack dt-actions">
-        <button type="button" class="eu-btn eu-btn--primary eu-btn--block js-add" data-day=""><i data-lucide="plus"></i>Agregar comida o colación</button>
-        <button type="button" class="eu-btn eu-btn--ghost eu-btn--block dt-slip-btn js-slip"><i data-lucide="x-circle"></i>Caí en la tentación</button>
-      </div>
-    </aside>
-  </section>
-
-  {# ── RECETAS ── #}
-  <section class="dt-panel eu-vstack" id="tab-recetas" role="tabpanel" data-panel="recetas" hidden>
-    <div class="eu-chips" id="rec-filter" role="group" aria-label="Momento"></div>
-    <div class="eu-card eu-card--flush"><div class="eu-list" id="rec-list"></div></div>
-    <p class="t-meta dt-foot">Todas verificadas para fase de eliminación. Usa <b>+</b> para sumarlas al plan de hoy.</p>
-  </section>
-
-  {# ── SÍNTOMAS ── #}
-  <section class="dt-panel dt-sint" id="tab-sintomas" role="tabpanel" data-panel="sintomas" hidden>
-    <div class="eu-vstack dt-sint-main">
-      <div class="eu-card eu-vstack"><div class="t-eyebrow">Tus disparadores · evitar</div><div class="dt-tags" id="sint-triggers"></div></div>
-      <div id="sint-slips"></div>
-      <div class="eu-card eu-card--flush"><div class="dt-card-hd t-card">Cómo cayeron las comidas</div><div class="eu-list" id="sint-meals"></div></div>
-    </div>
-    <div class="eu-card eu-vstack dt-bristol">
-      <div class="t-eyebrow">Escala de Bristol · tránsito</div>
-      <div class="dt-bristol-btns" id="bristol-btns" role="radiogroup" aria-label="Escala de Bristol"></div>
-      <div class="t-meta dt-bristol-desc" id="bristol-desc"></div>
-    </div>
-  </section>
-
-  {# ── SEMANA ── #}
-  <section class="dt-panel eu-vstack" id="tab-semana" role="tabpanel" data-panel="semana" hidden>
-    <div class="dt-sem-stats">
-      <div class="eu-card eu-stat"><div class="eu-stat-lbl">Días planeados</div><div class="eu-stat-val" id="sem-planned"></div></div>
-      <div class="eu-card eu-stat"><div class="eu-stat-lbl">Comidas en la semana</div><div class="eu-stat-val" id="sem-total"></div></div>
-      <div class="eu-card dt-guide"><i data-lucide="repeat"></i><p class="t-meta">Planifica un día y usa <b>Repetir L–V</b>. La repetición estable ayuda a identificar tus disparadores.</p></div>
-    </div>
+{% if vista %}
+  <a class="eu-btn eu-btn--ghost eu-btn--sm dt-back" href="/nutricion/"><i data-lucide="arrow-left"></i>Hoy</a>
+  {% if vista == 'semana' %}
+  <section class="eu-vstack dt-semana" aria-label="Planeación semanal">
+    <div class="eu-card dt-guide"><i data-lucide="repeat"></i><p class="t-meta">Planifica un día y usa <b>Repetir L–V</b>. La repetición estable ayuda a identificar tus disparadores.</p></div>
     <div class="dt-days" id="sem-days" role="tablist" aria-label="Día"></div>
     <div id="sem-day"></div>
     <div class="dt-week" id="sem-grid"></div>
     <div class="eu-card eu-card--flush"><div class="dt-card-hd t-card">Cómo ganas XP y EC</div><div class="eu-list" id="sem-rules"></div></div>
   </section>
+  {% else %}
+  <section class="eu-card eu-card--flush dt-hist" aria-labelledby="hist-t">
+    <div class="dt-card-hd"><h2 class="t-card" id="hist-t">Cómo cayeron las comidas</h2></div>
+    <div class="eu-list" id="hist-list">
+      {% for h in state.historial %}
+      <div class="eu-row dt-hist-row" data-meal="{{ h.id }}">
+        <div class="eu-row-main"><div class="t-meta num">{{ DIAS[h.day_key] }} {{ h.fecha }} · {{ h.time_str }} · {{ h.slot }}</div><div class="eu-row-t">{{ h.name }}</div>
+          {% if h.sym_tags %}<div class="eu-row-s">{{ h.sym_tags|join(' · ') }}</div>{% endif %}</div>
+        {% if h.symptom %}<span class="dt-feel dt-f--{{ h.symptom }}">{{ {'bien':'Bien','regular':'Pesado','mal':'Molestia'}.get(h.symptom, h.symptom) }}</span>
+        {% else %}<span class="dt-feels-row"><span class="t-meta">Pendiente</span>{% for f, l in [('bien','Bien'),('regular','Pesado'),('mal','Molestia')] %}<button type="button" class="dt-feel-b dt-f--{{ f }}" data-feel="{{ f }}" data-meal="{{ h.id }}">{{ l }}</button>{% endfor %}</span>{% endif %}
+      </div>
+      {% else %}{{ ui.empty('notebook-pen', 'Aún sin registros', 'Al marcar «Cumplí» en Hoy, la fila te pregunta cómo te cayó.', compact=True) }}{% endfor %}
+    </div>
+  </section>
+  <section class="eu-card eu-card--flush" aria-labelledby="desl-t">
+    <div class="dt-card-hd"><h2 class="t-card" id="desl-t">Deslices · 30 días</h2></div>
+    <div class="eu-list">
+      {% for s in state.deslices_30d %}<div class="eu-row"><span class="eu-row-ic dt-slip-ic"><i data-lucide="{{ s.glyph or 'flag' }}"></i></span>
+        <div class="eu-row-main"><div class="eu-row-t">{{ s.label }}{% if s.over %} · me pasé{% endif %}</div><div class="eu-row-s num">{{ s.date }}{% if s.note %} · {{ s.note }}{% endif %}</div></div>
+        <span class="t-data num fg-danger">−{{ s.pen }}</span></div>
+      {% else %}<p class="t-meta dt-pad">Sin deslices en 30 días.</p>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+{% else %}
+  <div class="dt-layout">
+    <section class="eu-card dt-today" aria-labelledby="hoy-t">
+      <div class="dt-today-hd"><h2 class="t-section" id="hoy-t">Hoy</h2><span class="dt-mono12" id="hoy-n"></span></div>
+      <ol class="dt-rows" id="hoy-list" aria-live="polite"></ol>
+      <div class="dt-cerrado" id="hoy-cerrado" role="status" hidden></div>
+      <button type="button" class="dt-add-row js-add"><i data-lucide="plus"></i>Agregar comida o colación · del recetario</button>
+    </section>
+
+    <aside class="eu-vstack dt-side" aria-label="El día">
+      <section class="eu-card dt-dia" aria-labelledby="dia-t">
+        <div class="eu-between"><h2 class="t-eyebrow" id="dia-t">El día</h2><span class="dt-streak num" id="dia-streak"><i data-lucide="flame"></i>0 d limpios</span></div>
+        <div class="dt-macro"><span class="dt-macro-l"><span>Kcal</span><span class="num" id="m-kcal-v"></span></span><span class="dt-bar"><i id="m-kcal"></i></span></div>
+        <div class="dt-macro"><span class="dt-macro-l"><span>Proteína</span><span class="num" id="m-prot-v"></span></span><span class="dt-bar"><i id="m-prot"></i></span></div>
+        <div class="dt-dia-ft"><span class="dt-xp num" id="dia-xp">+0 XP</span><span class="dt-ec num" id="dia-ec">+0 EC</span><span class="eu-grow"></span><span class="t-meta" id="dia-acta"></span></div>
+      </section>
+      <section class="eu-card dt-bristol" aria-labelledby="br-t">
+        <h2 class="t-eyebrow" id="br-t">Bristol · hoy</h2>
+        <div class="dt-bristol-btns" id="bristol-btns" role="radiogroup" aria-label="Escala de Bristol"></div>
+        <span class="t-meta" id="bristol-desc"></span>
+      </section>
+      <section class="eu-card eu-card--inset dt-trig" aria-labelledby="tr-t">
+        <h2 class="t-eyebrow" id="tr-t">Disparadores · 30 días</h2>
+        <div id="trig-list"></div>
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-slip">Registrar un desliz</button>
+      </section>
+      <a class="eu-card eu-card--inset dt-link" href="/recetas/?fodmap=seguro"><i data-lucide="chef-hat"></i>
+        <span class="eu-grow"><span class="dt-link-t">Recetario</span><span class="t-meta" id="rec-res">{{ state.recetario.total }} recetas · {{ state.recetario.aptas }} aptas FODMAP</span></span><span class="t-meta">Abrir →</span></a>
+      <nav class="dt-more" aria-label="Más de Nutrición"><a href="/nutricion/?vista=semana"><i data-lucide="calendar-days"></i>Planeación semanal</a><a href="/nutricion/?vista=sintomas"><i data-lucide="notebook-pen"></i>Síntomas{% if state.pendientes %} · {{ state.pendientes|length }} pendiente{{ 's' if state.pendientes|length != 1 }}{% endif %}</a></nav>
+    </aside>
+  </div>
+{% endif %}
 </div>
 
 {% call ui.modal('m-meal', 'Comida', eyebrow='Plan') %}<div class="eu-modal-bd" id="meal-content"></div>{% endcall %}

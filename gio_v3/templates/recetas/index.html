@@ -26,6 +26,7 @@
     <div class="eu-chips" role="group" aria-label="Categoría">
       <button type="button" class="eu-chip" data-fcat="" aria-pressed="true">Todas</button>
       {% for c in categorias %}<button type="button" class="eu-chip" data-fcat="{{ c }}" aria-pressed="false">{{ c }}</button>{% endfor %}
+      <button type="button" class="eu-chip rc-chip-fodmap" id="rc-fodmap" aria-pressed="{{ 'true' if fodmap_sel else 'false' }}"><i data-lucide="leaf"></i>Apta FODMAP</button>
     </div>
   </div>
 
@@ -45,6 +46,10 @@
   <div class="eu-grid-2 rc-fgrid">
     <div class="eu-field"><label class="eu-label" for="rm-categoria">Categoría</label><select class="eu-select" id="rm-categoria">{% for c in categorias %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select></div>
     <div class="eu-field"><label class="eu-label" for="rm-porciones">Porciones</label><input class="eu-input eu-input--money" id="rm-porciones" type="number" min="1" value="1"></div>
+  </div>
+  <div class="eu-grid-2 rc-fgrid">
+    <div class="eu-field"><label class="eu-label" for="rm-fodmap">FODMAP</label><select class="eu-select" id="rm-fodmap"><option value="">Sin etiqueta</option><option value="seguro">Apta (segura)</option><option value="porcion">Solo en porción</option><option value="evitar">Evitar</option></select></div>
+    <div class="eu-field"><span class="eu-label">Momento del plan</span><div class="eu-chips rc-momentos" id="rm-momento" role="group" aria-label="Momento del plan">{% for k, l in momentos %}<button type="button" class="eu-chip" data-mom="{{ k }}" aria-pressed="false">{{ l }}</button>{% endfor %}</div></div>
   </div>
   <div class="eu-field"><label class="eu-label" for="rm-descripcion">Descripción corta</label><textarea class="eu-textarea" id="rm-descripcion" rows="2" placeholder="Alta en proteína, rápida de preparar…"></textarea></div>
   <div class="eu-grid-2 rc-fgrid">

@@ -72,3 +72,12 @@
 .rc-row--step .eu-textarea{flex:1;min-height:64px}
 .rc-check{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-13);color:var(--fg-2);cursor:pointer}
 .rc-check input{accent-color:var(--brand);width:16px;height:16px}
+
+/* Un solo recetario (Nutrición v2): FODMAP, momento y «Agregar a hoy» */
+.rc-chip-fodmap svg{width:13px;height:13px}
+.rc-fod{align-self:flex-start}
+.rc-d-badges{gap:6px;flex-wrap:wrap}
+.rc-momentos{flex-wrap:wrap}
+.rc-hoy{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;padding:var(--sp-3);border-radius:var(--r-md);background:var(--bg-sunken)}
+.rc-hoy .t-meta{flex-basis:100%}
+.rc-hoy-sel{flex:1;min-width:140px;width:auto}
