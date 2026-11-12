@@ -6,6 +6,12 @@
   if (!root) return;
   var ALL = JSON.parse(document.getElementById('rc-data').textContent || '[]');
   var list = ALL.slice(), cat = '', active = null;
+  var fodmapOnly = $id('rc-fodmap') && $id('rc-fodmap').getAttribute('aria-pressed') === 'true';
+  function $id(i) { return document.getElementById(i); }
+  var FOD = { seguro: ['Apta FODMAP', 'success'], porcion: ['FODMAP · porción', 'warning'], evitar: ['FODMAP · evitar', 'danger'] };
+  var SLOTS = ['Desayuno', 'Colación AM', 'Comida', 'Colación PM', 'Pre-gym', 'Cena'];
+  var MOM_SLOT = { desayuno: 'Desayuno', colacion: 'Colación AM', comida: 'Comida', pregym: 'Pre-gym', cena: 'Cena' };
+  function fodBadge(r) { var f = FOD[r.fodmap]; return f ? '<span class="eu-badge eu-badge--' + f[1] + ' rc-fod">' + f[0] + '</span>' : ''; }
   var CAT = { 'Desayuno': 'oikonomia', 'Almuerzo': 'hegemonikon', 'Cena': 'paideia', 'Snack': 'eurythmia', 'Meal Prep': 'cosmopolitismo', 'Post-Entrenamiento': 'harma' };
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -20,7 +26,7 @@
   function filter() {
     var q = $('rc-q').value.trim().toLowerCase();
     list = ALL.filter(function (r) {
-      return (!cat || r.categoria === cat) && (!q || r.nombre.toLowerCase().indexOf(q) >= 0 || (r.tags || '').toLowerCase().indexOf(q) >= 0 ||
+      return (!cat || r.categoria === cat) && (!fodmapOnly || r.fodmap === 'seguro') && (!q || r.nombre.toLowerCase().indexOf(q) >= 0 || (r.tags || '').toLowerCase().indexOf(q) >= 0 ||
         (r.ingredientes || []).some(function (i) { return String(i.item || i).toLowerCase().indexOf(q) >= 0; }));
     });
     render();
@@ -41,7 +47,7 @@
       var m = mins(r);
       return '<article class="eu-card rc-card" data-cat="' + (CAT[r.categoria] || 'hegemonikon') + '">' +
         '<button type="button" class="rc-card-open js-open" data-id="' + r.id + '" aria-pressed="' + (active === r.id) + '">' +
-          '<span class="t-eyebrow rc-card-cat">' + esc(r.categoria) + '</span><span class="t-ui rc-card-t">' + esc(r.nombre) + '</span>' +
+          '<span class="t-eyebrow rc-card-cat">' + esc(r.categoria) + '</span><span class="t-ui rc-card-t">' + esc(r.nombre) + '</span>' + fodBadge(r) +
           (macroChips(r) ? '<span class="rc-chips">' + macroChips(r) + '</span>' : '') +
           '<span class="t-meta rc-card-m">' + (m ? '<span><i data-lucide="clock"></i>' + m + ' min</span>' : '') + (r.porciones ? '<span><i data-lucide="utensils"></i>' + r.porciones + ' porc.</span>' : '') + '</span></button>' +
         '<button type="button" class="eu-iconbtn rc-fav js-fav" data-id="' + r.id + '" aria-pressed="' + !!r.favorita + '" aria-label="Favorita: ' + esc(r.nombre) + '"><i data-lucide="star"></i></button></article>';
@@ -69,10 +75,13 @@
     var m = mins(r);
     $('rc-content').innerHTML =
       '<div class="rc-d-hd" data-cat="' + (CAT[r.categoria] || 'hegemonikon') + '"><button type="button" class="eu-iconbtn rc-back js-close" aria-label="Volver"><i data-lucide="chevron-left"></i></button>' +
-        '<div class="eu-grow"><span class="eu-badge eu-badge--cat">' + esc(r.categoria) + '</span><h2 class="t-section">' + esc(r.nombre) + '</h2>' +
+        '<div class="eu-grow"><span class="eu-hstack rc-d-badges"><span class="eu-badge eu-badge--cat">' + esc(r.categoria) + '</span>' + fodBadge(r) + '</span><h2 class="t-section">' + esc(r.nombre) + '</h2>' +
         (r.descripcion ? '<p class="t-meta fg-2">' + esc(r.descripcion) + '</p>' : '') +
         '<div class="rc-card-m t-meta">' + (r.tiempo_prep ? '<span><i data-lucide="clock"></i>Prep ' + r.tiempo_prep + ' min</span>' : '') + (r.tiempo_coccion ? '<span><i data-lucide="flame"></i>Cocción ' + r.tiempo_coccion + ' min</span>' : '') +
         (r.porciones ? '<span><i data-lucide="utensils"></i>' + r.porciones + ' porción' + (r.porciones > 1 ? 'es' : '') + '</span>' : '') + '</div></div></div>' +
+      '<div class="rc-hoy"><label class="t-meta" for="rc-hoy-slot">Agregar a hoy</label><select class="eu-select rc-hoy-sel" id="rc-hoy-slot">' +
+        SLOTS.map(function (s) { var def = MOM_SLOT[(r.momento || '').split(',')[0]] || 'Comida'; return '<option' + (s === def ? ' selected' : '') + '>' + s + '</option>'; }).join('') +
+        '</select><button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-hoy" data-id="' + r.id + '"><i data-lucide="calendar-plus"></i>Agregar a hoy</button></div>' +
       ((r.proteina || r.carbos || r.grasa || r.calorias) ? '<div class="eu-vstack rc-sec"><div class="t-eyebrow">Macros por porción' + (r.calorias ? ' · <span class="num">' + r.calorias + ' kcal</span>' : '') + '</div>' +
         bar('Proteína', r.proteina, 'is-p', 'g') + bar('Carbos', r.carbos, 'is-c', 'g') + bar('Grasa', r.grasa, 'is-g', 'g') + '</div>' : '') +
       video +
@@ -109,6 +118,9 @@
       'rm-prep': r ? r.tiempo_prep : 0, 'rm-coccion': r ? r.tiempo_coccion : 0, 'rm-cal': r ? r.calorias : '', 'rm-pro': r ? r.proteina : '', 'rm-carb': r ? r.carbos : '', 'rm-fat': r ? r.grasa : '', 'rm-video': r ? r.video_url : '' };
     Object.keys(v).forEach(function (k) { $(k).value = v[k] == null ? '' : v[k]; });
     $('rm-fav').checked = !!(r && r.favorita);
+    $('rm-fodmap').value = (r && r.fodmap) || '';
+    var moms = ((r && r.momento) || '').split(',');
+    document.querySelectorAll('#rm-momento [data-mom]').forEach(function (b) { b.setAttribute('aria-pressed', String(moms.indexOf(b.dataset.mom) >= 0)); });
     $('rm-err').hidden = true;
     $('ing-list').innerHTML = ''; $('step-list').innerHTML = '';
     ((r && r.ingredientes && r.ingredientes.length) ? r.ingredientes : [null]).forEach(ingRow);
@@ -125,7 +137,8 @@
     var payload = { nombre: nombre, categoria: $('rm-categoria').value, descripcion: $('rm-descripcion').value.trim(), porciones: parseInt($('rm-porciones').value, 10) || 1,
       tiempo_prep: parseInt($('rm-prep').value, 10) || 0, tiempo_coccion: parseInt($('rm-coccion').value, 10) || 0, calorias: parseFloat($('rm-cal').value) || 0,
       proteina: parseFloat($('rm-pro').value) || 0, carbos: parseFloat($('rm-carb').value) || 0, grasa: parseFloat($('rm-fat').value) || 0,
-      video_url: $('rm-video').value.trim(), favorita: $('rm-fav').checked,
+      video_url: $('rm-video').value.trim(), favorita: $('rm-fav').checked, fodmap: $('rm-fodmap').value,
+      momento: Array.prototype.filter.call(document.querySelectorAll('#rm-momento [data-mom]'), function (b) { return b.getAttribute('aria-pressed') === 'true'; }).map(function (b) { return b.dataset.mom; }),
       ingredientes: Array.prototype.map.call(document.querySelectorAll('#ing-list .rc-row'), function (row) { var i = row.querySelectorAll('input'); return { item: i[0].value.trim(), cantidad: i[1].value.trim(), unidad: i[2].value.trim() }; }).filter(function (i) { return i.item; }),
       instrucciones: Array.prototype.map.call(document.querySelectorAll('#step-list textarea'), function (t) { return t.value.trim(); }).filter(Boolean) };
     var id = $('rm-id').value;
@@ -145,6 +158,14 @@
     else if (!root.contains(b)) return;
     else if (b.classList.contains('js-open')) open(id);
     else if (b.classList.contains('js-close')) close();
+    else if (b.classList.contains('js-hoy')) {
+      b.disabled = true;
+      fetch('/nutricion/api/comida', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ receta_id: id, slot: $('rc-hoy-slot').value }) })
+        .then(function (r) { return r.json(); }).then(function (d) {
+          b.disabled = false;
+          if (d.meal) toast('Agregada a hoy · ' + d.meal.slot + ' ' + d.meal.time, 'ok'); else toast('No se pudo agregar', 'err');
+        }).catch(function () { b.disabled = false; toast('Sin conexión', 'err'); });
+    }
     else if (b.classList.contains('js-step')) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
     else if (b.classList.contains('js-edit')) form(ALL.find(function (r) { return r.id === id; }));
     else if (b.classList.contains('js-fav')) {
@@ -161,9 +182,11 @@
     }
   });
   $('rc-q').addEventListener('input', filter);
+  $('rc-fodmap').addEventListener('click', function () { fodmapOnly = !fodmapOnly; this.setAttribute('aria-pressed', String(fodmapOnly)); filter(); });
+  $('rm-momento').addEventListener('click', function (e) { var b = e.target.closest('[data-mom]'); if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); });
   document.querySelectorAll('[data-fcat]').forEach(function (b) {
     b.addEventListener('click', function () { cat = b.dataset.fcat; document.querySelectorAll('[data-fcat]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); filter(); });
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('rc-detail').dataset.open && !document.querySelector('.eu-scrim:not([hidden])')) close(); });
-  render();
+  if (fodmapOnly) filter(); else render();
 })();

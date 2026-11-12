@@ -7225,6 +7225,27 @@ def init_db():
         except Exception as e:
             print(f"[DB] cosmopolitismo v2 migration warning: {e}")
 
+        # ── NUTRICIÓN v2: el XP pasa por el motor desde esta fecha (el histórico
+        # con source='nutricion' no se toca) y un solo recetario con etiqueta
+        # FODMAP y momento; el banco de Nutrición se migra sin duplicar.
+        try:
+            db.execute("INSERT OR IGNORE INTO app_settings (key, value) VALUES ('nutri_engine_since', ?)",
+                       (today_str(),))
+            rc_cols = [r["name"] for r in db.execute("PRAGMA table_info(recetas)").fetchall()]
+            if "fodmap" not in rc_cols:
+                db.execute("ALTER TABLE recetas ADD COLUMN fodmap TEXT DEFAULT NULL")
+            if "momento" not in rc_cols:
+                db.execute("ALTER TABLE recetas ADD COLUMN momento TEXT DEFAULT ''")
+            db.commit()
+            if not db.execute("SELECT id FROM migration_log WHERE version='nutri_banco_a_recetas'").fetchone():
+                from modules.nutricion.routes import migrar_banco
+                n = migrar_banco(db)
+                db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                           ("nutri_banco_a_recetas", f"banco de Nutrición → recetas ({n} nuevas)"))
+                db.commit()
+        except Exception as e:
+            print(f"[DB] nutricion v2 migration warning: {e}")
+
         db.executescript("""
         CREATE TABLE IF NOT EXISTS revision_semanal (
             semana_id         TEXT PRIMARY KEY,
