@@ -1,0 +1,53 @@
+{# Pestaña Historial (nota 8): desglose de XP de 90 días agrupado por día,
+   filtrable por fuente (?fuente=) y las últimas 5 semanas de Ataraxia. #}
+<div class="lg-hist">
+  <section class="eu-card eu-card--flush lg-log" aria-labelledby="lg-log-t" data-fuente="{{ fuente }}">
+    <div class="lg-log-hd">
+      <h2 class="t-section" id="lg-log-t">Desglose de XP</h2>
+      {% if fuentes %}
+      <div class="eu-chips lg-src" role="group" aria-label="Fuente">
+        <button type="button" class="eu-chip" data-src="" aria-pressed="{{ 'true' if not fuente else 'false' }}">Todas <span class="num fg-3">{{ n_total }}</span></button>
+        {% for f in fuentes %}<button type="button" class="eu-chip" data-src="{{ f.k }}" aria-pressed="{{ 'true' if fuente == f.k else 'false' }}">{{ f.k }} <span class="num fg-3">{{ f.n }}</span></button>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% if grupos %}
+    <div class="lg-days js-days">
+      {% for g in grupos %}
+      <div class="lg-day-g" data-i="{{ loop.index0 }}">
+        <div class="lg-day-hd"><span>{{ g.label }}</span><span class="num js-day-sum">{% set t = g.rows|sum(attribute='amount') %}{{ '+' if t > 0 }}{{ t|int }} XP</span></div>
+        {% for r in g.rows %}
+        <div class="lg-log-row" data-src="{{ r.fuente }}" data-amt="{{ r.amount|int }}">
+          <span class="num lg-amt {{ 'pos' if r.amount > 0 else 'neg' }}">{{ '+' if r.amount > 0 }}{{ r.amount|int }}</span>
+          <span class="lg-log-desc">{{ r.desc }}</span>
+          <span class="eu-badge">{{ r.fuente }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="lg-more"><button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-more" hidden>Cargar más</button></div>
+    <div class="js-log-empty" hidden>{{ ui.empty('scroll-text', 'Nada de esta fuente', 'En los últimos 90 días no hay XP con este filtro.', compact=True) }}</div>
+    {% else %}
+    {{ ui.empty('scroll-text', 'Sin historial todavía', 'Completa actividades para empezar a ganar XP y ver su desglose aquí.') }}
+    {% endif %}
+  </section>
+
+  <section class="eu-card eu-card--flush lg-wk" aria-labelledby="lg-wk-t">
+    <div class="eu-between lg-wk-hd"><h2 class="t-section" id="lg-wk-t">Semanas</h2><span class="t-meta">Revisión de Ataraxia</span></div>
+    {% if semanas %}
+    <div class="lg-wk-row lg-wk-th"><span>Semana</span><span>Lect.</span><span>Presup.</span><span>Total</span></div>
+    {% for h in semanas %}
+    <div class="lg-wk-row{{ ' is-now' if h.actual }}">
+      <span>{{ h.rango }}{% if h.actual %} · esta{% endif %}</span>
+      <span>{{ h.dias_lectura|int if h.dias_lectura is not none else '—' }}</span>
+      <span>{{ (h.presupuesto_pct|int ~ '%') if h.presupuesto_pct is not none else '—' }}</span>
+      <span class="lg-wk-xp">{{ h.xp_total }}</span>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="lg-wk-empty">{{ ui.empty('bar-chart-3', 'Aún sin semanas', 'Guarda la Revisión de la semana en Ataraxia el domingo.', compact=True) }}</div>
+    {% endif %}
+    <a class="lg-wk-link t-meta" href="/logros/semanas">Todas las semanas y métricas →</a>
+  </section>
+</div>

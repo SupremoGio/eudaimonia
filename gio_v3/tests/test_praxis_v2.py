@@ -138,7 +138,7 @@ def test_js_estructura_hoy_semana_y_columna_derecha():
     assert "'/3 hechas</span>" in js and "'bono +5 XP'" in js and "'+5 XP ganados'" in js
     # «→ Hoy» = classify(importante=1, urgente=1)
     assert 'js-promote' in js and 'classify(id, true, true)' in js
-    assert 'Historial completo en Logros →' in js and 'href="/logros"' in js
+    assert 'Historial completo en Logros →' in js and 'href="/logros?tab=historial&fuente=Praxis"' in js
 
 
 def test_css_grid_y_columna_derecha():
@@ -197,7 +197,7 @@ def test_bono_de_tres_tareas_una_sola_vez(client):
 
 def test_points_redirige_a_logros_y_sale_del_menu(client):
     r = client.get('/gtd/points')
-    assert r.status_code == 302 and r.headers['Location'].endswith('/logros')
+    assert r.status_code == 302 and r.headers['Location'].endswith('/logros?tab=historial&fuente=Praxis')
     from modules.nav import NAV
     urls = [c['url'] for g in NAV for it in g['items'] for c in it.get('children', [])]
     assert '/gtd/points' not in urls

@@ -9,9 +9,33 @@ Reglas:
   - No permanentes en perks (excepto especiales)
   - Anti-abuso: >3 perks seguidos → -10% XP por 2 días
 """
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from database import get_db
 from utils import today_str, today_date
+
+def combo(*parts):
+    """Progreso de una condición compuesta: % promedio de sus partes (cada
+    una tope en su meta) y la etiqueta con el detalle «racha 12/30 · nivel 4/7»."""
+    # El nivel solo no cuenta como avance: sin progreso en lo demás, 0 %.
+    if all(h <= 0 for h, _, lbl in parts if lbl != "nivel"):
+        pct = 0
+    else:
+        pct = round(sum(min(h, n) / n for h, n, _ in parts) / len(parts) * 100)
+    return (pct, 100, " · ".join(f"{lbl} {min(h, n)}/{n}" for h, n, lbl in parts))
+
+
+def progress_of(defn, stats):
+    """(have, need, label) de una definición medible con las mismas stats con
+    que el motor decide el desbloqueo; None si no es medible."""
+    fn = defn.get("progress")
+    if not fn:
+        return None
+    try:
+        h, n, lbl = fn(stats)
+    except Exception:
+        return None
+    return (int(h or 0), int(n), lbl)
+
 
 # ── Badge Definitions ─────────────────────────────────────────────────────────
 #
@@ -29,6 +53,7 @@ BADGE_DEFS = {
         "perk_days":   0,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("prog_count", 0) >= 5,
+        "progress":    lambda s: (s.get("prog_count", 0), 5, "actividades de programación"),
     },
     "chef_de_hierro": {
         "name":        "Chef de Hierro",
@@ -39,6 +64,7 @@ BADGE_DEFS = {
         "perk_days":   0,
         "ec_bonus":    10,
         "condition":   lambda s: s.get("salud_base_7d", 0) >= 7,
+        "progress":    lambda s: (s.get("salud_base_7d", 0), 7, "días con salud base · 7 d"),
     },
     "silencio_redes": {
         "name":        "Silencio de Redes",
@@ -49,6 +75,7 @@ BADGE_DEFS = {
         "perk_days":   1,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("redes_7", 0) >= 3,
+        "progress":    lambda s: (s.get("redes_7", 0), 3, "días < 3.5 h de redes · 7 d"),
     },
 
     # ── PLATA ─────────────────────────────────────────────────────────────────
@@ -61,6 +88,7 @@ BADGE_DEFS = {
         "perk_days":   0,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("diamond_week", 0) >= 3 and s.get("github_count", 0) >= 1,
+        "progress":    lambda s: combo((s.get("diamond_week", 0), 3, "Diamante semana"), (s.get("github_count", 0), 1, "GitHub")),
     },
     "poliglota_activo": {
         "name":        "Políglota Activo",
@@ -71,6 +99,7 @@ BADGE_DEFS = {
         "perk_days":   7,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("conv_month", 0) >= 3,
+        "progress":    lambda s: (s.get("conv_month", 0), 3, "conversaciones este mes"),
     },
     "pichichi_elite": {
         "name":        "Pichichi de Élite",
@@ -81,6 +110,7 @@ BADGE_DEFS = {
         "perk_days":   5,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("gol_month", 0) >= 3,
+        "progress":    lambda s: (s.get("gol_month", 0), 3, "goles este mes"),
     },
     "maestro_flow": {
         "name":        "Maestro del Flow",
@@ -91,6 +121,7 @@ BADGE_DEFS = {
         "perk_days":   7,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("diamond_week", 0) >= 3,
+        "progress":    lambda s: (s.get("diamond_week", 0), 3, "días Diamante esta semana"),
     },
 
     # ── ORO ───────────────────────────────────────────────────────────────────
@@ -103,6 +134,7 @@ BADGE_DEFS = {
         "perk_days":   14,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("github_count", 0) >= 10,
+        "progress":    lambda s: (s.get("github_count", 0), 10, "proyectos en GitHub"),
     },
     "stoic_commander": {
         "name":        "Stoic Commander",
@@ -113,6 +145,7 @@ BADGE_DEFS = {
         "perk_days":   0,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("streak", 0) >= 30 and s.get("current_level", 0) >= 7,
+        "progress":    lambda s: combo((s.get("streak", 0), 30, "racha"), (s.get("current_level", 0), 7, "nivel")),
     },
     "diplomatico": {
         "name":        "Diplomático",
@@ -123,6 +156,7 @@ BADGE_DEFS = {
         "perk_days":   0,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("conv_month", 0) >= 5 and s.get("current_level", 0) >= 8,
+        "progress":    lambda s: combo((s.get("conv_month", 0), 5, "conversaciones"), (s.get("current_level", 0), 8, "nivel")),
     },
 
     # ── ESPECIALES ────────────────────────────────────────────────────────────
@@ -139,6 +173,7 @@ BADGE_DEFS = {
             s.get("github_count", 0) >= 3 and
             s.get("current_level", 0) >= 6
         ),
+        "progress":    lambda s: combo((s.get("streak", 0), 21, "racha"), (s.get("github_count", 0), 3, "GitHub"), (s.get("current_level", 0), 6, "nivel")),
     },
     "clean_code_clean_wallet": {
         "name":        "Clean Code, Clean Wallet",
@@ -149,6 +184,7 @@ BADGE_DEFS = {
         "perk_days":   0,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("total_diamond_days", 0) >= 5,
+        "progress":    lambda s: (s.get("total_diamond_days", 0), 5, "días Diamante"),
     },
     "eudaimonia_sync": {
         "name":        "Eudaimonia Sync",
@@ -159,6 +195,7 @@ BADGE_DEFS = {
         "perk_days":   7,
         "ec_bonus":    0,
         "condition":   lambda s: s.get("weekend_complete", 0) >= 1,
+        "progress":    lambda s: (s.get("weekend_complete", 0), 1, "fin de semana completo"),
     },
 }
 
@@ -217,11 +254,14 @@ def _gather_badge_stats():
             ((today_date() - timedelta(days=30)).isoformat(),)
         ).fetchone()["c"]
 
-    # Count total diamond days from last 90 days
+    # Días Diamante entre las últimas 90 fechas con actividad. La caché de
+    # classification_history da el mismo rango que get_daily_classification.
+    from modules.gamification.engine import classification_history
+    fechas = all_dates_with_activity[:90]
     total_diamond_days = 0
-    for d in all_dates_with_activity[:90]:
-        if get_daily_classification(d)["rank"] == "diamond":
-            total_diamond_days += 1
+    if fechas:
+        ranks = classification_history(date.fromisoformat(min(fechas)), _td)
+        total_diamond_days = sum(1 for d in fechas if ranks.get(d) == "diamond")
 
     stats.update({
         "github_count":      github_count,

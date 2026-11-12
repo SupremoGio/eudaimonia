@@ -21,6 +21,7 @@ ACHIEVEMENT_DEFS = {
         "xp":          5,
         "hidden":      False,
         "condition":   lambda s: s["total_activity_count"] >= 1,
+        "progress":    lambda s: (s["total_activity_count"], 1, "actividades"),
     },
 
     # ── Tier 2: Patrones de comportamiento (semanas 1-4) ──────────────────────
@@ -51,6 +52,7 @@ ACHIEVEMENT_DEFS = {
         "hidden":      True,
         # xp_week_acts excluye achievement XP — evita dispararse por cadena de logros
         "condition":   lambda s: s.get("xp_week_acts", s["xp_week"]) >= 200,
+        "progress":    lambda s: (s.get("xp_week_acts", s["xp_week"]), 200, "XP de actividades esta semana"),
     },
 
     # ── Tier 3: Rachas (consistencia sostenida) ───────────────────────────────
@@ -62,6 +64,7 @@ ACHIEVEMENT_DEFS = {
         "xp":          25,
         "hidden":      True,
         "condition":   lambda s: s["streak"] >= 7,
+        "progress":    lambda s: (s["streak"], 7, "días de racha"),
     },
     "racha_10": {
         "name":        "Imparable",
@@ -71,6 +74,7 @@ ACHIEVEMENT_DEFS = {
         "xp":          40,
         "hidden":      True,
         "condition":   lambda s: s["streak"] >= 10,
+        "progress":    lambda s: (s["streak"], 10, "días de racha"),
     },
     "racha_21": {
         "name":        "Hábito Forjado",
@@ -80,6 +84,7 @@ ACHIEVEMENT_DEFS = {
         "xp":          70,
         "hidden":      True,
         "condition":   lambda s: s["streak"] >= 21,
+        "progress":    lambda s: (s["streak"], 21, "días de racha"),
     },
     "racha_30": {
         "name":        "Modo Bestia",
@@ -89,6 +94,7 @@ ACHIEVEMENT_DEFS = {
         "xp":          100,
         "hidden":      True,
         "condition":   lambda s: s["streak"] >= 30,
+        "progress":    lambda s: (s["streak"], 30, "días de racha"),
     },
 
     # ── Tier 4: Volumen / profundidad (meses de práctica) ─────────────────────
@@ -100,6 +106,7 @@ ACHIEVEMENT_DEFS = {
         "xp":          60,
         "hidden":      True,
         "condition":   lambda s: s["prog_count"] >= 50,
+        "progress":    lambda s: (s["prog_count"], 50, "actividades de programación"),
     },
     "polimata": {
         "name":        "Polímata",
@@ -110,6 +117,7 @@ ACHIEVEMENT_DEFS = {
         "hidden":      True,
         # Fix: había 15 pero solo existen 10 categorías — nunca podía dispararse
         "condition":   lambda s: len(s["all_cats_ever"]) >= 10,
+        "progress":    lambda s: (len(s["all_cats_ever"]), 10, "categorías"),
     },
     "millonario": {
         "name":        "El Gran Inicio",
@@ -119,6 +127,7 @@ ACHIEVEMENT_DEFS = {
         "xp":          15,
         "hidden":      True,
         "condition":   lambda s: s["total_coins"] >= 1000,
+        "progress":    lambda s: (s["total_coins"], 1000, "EC acumulados"),
     },
 
     # ── Tier 4b: Fin de semana perfecto ──────────────────────────────────────
@@ -141,6 +150,7 @@ ACHIEVEMENT_DEFS = {
         "xp":          0,
         "hidden":      True,
         "condition":   lambda s: s["current_level"] >= 5,
+        "progress":    lambda s: (s["total_xp"], 3000, "XP"),
     },
     "nivel_10": {
         "name":        "Supremo",
@@ -150,5 +160,6 @@ ACHIEVEMENT_DEFS = {
         "xp":          0,
         "hidden":      True,
         "condition":   lambda s: s["current_level"] >= 10,
+        "progress":    lambda s: (s["total_xp"], 6500, "XP"),
     },
 }

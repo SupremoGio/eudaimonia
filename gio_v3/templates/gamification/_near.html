@@ -1,0 +1,19 @@
+{# Cerca de desbloquear (nota 4): las 3 insignias o logros bloqueados más avanzados #}
+{% if near %}
+<section class="eu-vstack lg-near" aria-labelledby="lg-near-t">
+  <div class="lg-sec-hd"><h2 class="t-section" id="lg-near-t">Cerca de desbloquear</h2><span class="t-meta">lo más avanzado de lo bloqueado</span></div>
+  <div class="lg-near-grid">
+    {% for n in near %}
+    <article class="eu-card lg-near-card" data-rarity="{{ n.tier }}">
+      <div class="eu-hstack eu-gap-3">
+        <span class="lg-seal is-dashed"><i data-lucide="{{ n.icon }}"></i></span>
+        <div class="lg-min"><div class="lg-rar">{{ n.tier_label }}</div><div class="lg-near-name">{{ n.name }}</div></div>
+      </div>
+      <div class="lg-bar" role="progressbar" aria-valuenow="{{ n.pct }}" aria-valuemax="100" aria-label="{{ n.name }}: {{ n.pct }}%"><i style="--p:{{ n.pct }}%"></i></div>
+      <div class="eu-between lg-near-prog"><span>{{ n.label }}</span><span class="num">{{ n.prog }}</span></div>
+      {% if n.perk %}<div class="t-meta">{{ n.perk }}</div>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

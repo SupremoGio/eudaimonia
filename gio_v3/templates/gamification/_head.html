@@ -1,27 +1,62 @@
-{# Encabezado (desktop) + sello de nivel (móvil) + stats #}
-{% set pct_camino = ((stats.total_xp / max_xp * 100) if max_xp else 0)|round|int %}
+{# Encabezado (nota 1) + héroe de nivel con ETA y camino de 10 niveles (notas 2–3) #}
+{% set nxt = levels[stats.level] if not stats.max_level else None %}
+{% set pct_camino = [((stats.total_xp / max_xp * 100) if max_xp else 0)|round|int, 100]|min %}
 <header class="lg-hd">
-  <div>
-    <div class="t-eyebrow">Camino a Eudaimón · {{ [pct_camino, 100]|min }}%</div>
+  <div class="lg-hd-t">
+    <div class="t-eyebrow">Tú · largo plazo</div>
     <h1 class="t-page">Logros</h1>
   </div>
-  <div class="lg-stats">
-    <div class="eu-card lg-stat"><div class="t-data">{{ stats.streak }} d</div><div class="t-meta">Racha{% if stats.streak >= 30 %} · +10% XP{% elif stats.streak >= 7 %} · +5% XP{% endif %}</div></div>
-    <div class="eu-card lg-stat"><div class="t-data lg-diamond">{{ diamond_30 }}</div><div class="t-meta">Días diamante · 30 d</div></div>
-    <div class="eu-card lg-stat"><div class="t-data">{{ earned_bdg }} / {{ badges|length }}</div><div class="t-meta">Insignias</div></div>
-  </div>
+  <nav class="eu-seg lg-tabs" role="tablist" aria-label="Vista">
+    <a role="tab" href="/logros" aria-selected="{{ 'true' if tab != 'historial' else 'false' }}">Colección</a>
+    <a role="tab" href="/logros?tab=historial" aria-selected="{{ 'true' if tab == 'historial' else 'false' }}">Historial</a>
+  </nav>
 </header>
 
-<section class="eu-card eu-card--featured lg-seal" aria-label="Tu nivel">
-  {{ ui.tower(stats.level, 120) }}
-  <div>
-    <div class="t-eyebrow">Nivel {{ stats.level }} de 10</div>
-    <div class="t-page lg-seal-name">{{ stats.level_name }}</div>
-    {% if level_quote %}<div class="t-quote lg-seal-q">«{{ level_quote }}»</div>{% endif %}
+<section class="lg-hero" aria-label="Tu nivel">
+  <div class="lg-hero-lv">
+    {{ ui.tower(stats.level, 120) }}
+    <div class="lg-hero-bd">
+      <div class="t-eyebrow">Nivel {{ stats.level }} de 10</div>
+      <div class="lg-hero-name">{{ stats.level_name|title }}</div>
+      {% if level_quote %}<div class="t-quote lg-hero-q">«{{ level_quote }}»</div>{% endif %}
+      {{ ui.xpbar(stats.level_pct, 100, label='% del nivel') }}
+      <div class="eu-between t-meta">
+        <span class="num">{{ '{:,}'.format(stats.total_xp|int) }} XP</span>
+        {% if nxt %}<span><b class="num lg-falta">{{ '{:,}'.format(stats.xp_to_next|int) }} XP</b> para {{ nxt.name|title }}</span>{% else %}<span>Nivel máximo</span>{% endif %}
+      </div>
+      {% if nxt %}
+      <div class="lg-eta">
+        <i data-lucide="trending-up"></i>
+        {% if eta.dias_siguiente %}<span>≈ {{ eta.dias_siguiente }} día{{ '' if eta.dias_siguiente == 1 else 's' }} a tu ritmo · <span class="num fg-3">{{ eta.xp_dia_30 }} XP/día (30 d)</span></span>
+        {% else %}<span>Sin XP en los últimos 30 días: registra actividad para estimar cuándo subes.</span>{% endif %}
+      </div>
+      {% endif %}
+    </div>
   </div>
-  {{ ui.xpbar(stats.level_pct, 100, label='% del nivel') }}
-  <div class="eu-between t-meta lg-seal-ft">
-    <span class="num">{{ '{:,}'.format(stats.total_xp|int) }} XP</span>
-    {% if not stats.max_level %}{% set nxt = levels[stats.level] %}<span>{{ nxt.name|title }} · {{ '{:,}'.format(nxt.xp) }}</span>{% else %}<span>Nivel máximo</span>{% endif %}
+
+  <div class="lg-hero-path">
+    <div class="eu-between lg-path-hd">
+      <span class="t-eyebrow">Camino a Eudaimón</span>
+      <span class="t-meta num">{{ '{:,}'.format(stats.total_xp|int) }} / {{ '{:,}'.format(max_xp) }} · {{ pct_camino }}%</span>
+    </div>
+    <ol class="lg-path" aria-label="Los diez niveles">
+      {% for l in levels %}
+      <li class="lg-path-seg is-{{ l.state }}"{% if l.state == 'now' %} aria-current="step"{% endif %} title="{{ l.name|title }} · {{ '{:,}'.format(l.xp) }} XP">
+        <span class="lg-path-bar"><i style="--p:{{ l.fill }}%"></i></span>
+        <span class="lg-path-n num">{{ l.n }}</span>
+      </li>
+      {% endfor %}
+    </ol>
+    <div class="lg-miles">
+      {% set cur = levels[stats.level - 1] %}
+      <div class="lg-mile"><span class="t-meta">Ahora · {{ cur.n }}</span><span class="lg-mile-n">{{ cur.name|title }}</span><span class="t-meta num">desde {{ '{:,}'.format(cur.xp) }}</span></div>
+      {% if nxt %}
+      <div class="lg-mile is-next"><span class="t-meta">Siguiente · {{ nxt.n }}</span><span class="lg-mile-n">{{ nxt.name|title }}</span><span class="t-meta num">{{ '{:,}'.format(nxt.xp) }}{% if eta.dias_siguiente %} · ≈ {{ eta.dias_siguiente }} d{% endif %}</span></div>
+      {% set meta = levels[-1] %}
+      <div class="lg-mile is-goal"><span class="t-meta">Meta · 10</span><span class="lg-mile-n">{{ meta.name|title }}</span><span class="t-meta num">{{ '{:,}'.format(meta.xp) }}{% if eta.dias_meta %} · ≈ {% if eta.dias_meta >= 60 %}{{ (eta.dias_meta / 30.4)|round(1) }} meses{% else %}{{ eta.dias_meta }} d{% endif %}{% endif %}</span></div>
+      {% else %}
+      <div class="lg-mile is-goal"><span class="t-meta">Meta</span><span class="lg-mile-n">Alcanzada</span><span class="t-meta">Nivel máximo</span></div>
+      {% endif %}
+    </div>
   </div>
 </section>
