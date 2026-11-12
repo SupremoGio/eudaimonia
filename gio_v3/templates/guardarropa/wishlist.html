@@ -1,18 +1,13 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'guardarropa' %}
-{% block title %}Protocolo de compra — Eudaimonia{% endblock %}
 {% block module_title %}WISHLIST{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/wishlist.css') }}">{% endblock %}
-{% block mtitle %}<b>Wishlist</b><span>Protocolo de compra · {{ today }}</span>{% endblock %}
 {% block back_href %}/guardarropa/{% endblock %}
 
 {% block content %}
 <div class="wl" id="wl" data-cat="identidad">
-  <header class="wl-hd">
-    <div><div class="t-eyebrow"><i data-lucide="shield"></i>Protocolo v2.0 · {{ today }}</div><h1 class="t-page">Supremo protocolo de compra</h1>
-      <p class="t-meta wl-lead">Sistema de decisión basado en psicología del comportamiento, economía conductual y diseño de vida estoico. Evalúa cada deseo de adquisición con rigor antes de actuar.</p></div>
-  </header>
+  {{ ui.page_head(eyebrow='Protocolo de compra v2', cls='wl-hd') }}
 
   <div class="eu-grid-4 wl-stats">
     {{ ui.stat('Evaluados', '—', icon='clipboard-list') }}

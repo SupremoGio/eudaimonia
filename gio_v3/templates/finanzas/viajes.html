@@ -1,21 +1,18 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'finanzas' %}
-{% block title %}Gastos de viaje — Oikonomia{% endblock %}
+{% block title %}Gastos de viaje — Eudaimonia{% endblock %}
 {% block module_title %}VIAJES{% endblock %}
-{% block back_href %}/finanzas/estados/{% endblock %}
+{% block back_href %}/viajes/{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fin-viajes.css') }}">{% endblock %}
-{% block mtitle %}<b>Gastos de viaje</b><span>Oikonomia · presupuesto por viaje</span>{% endblock %}
+{% block mtitle %}<b>Gastos de viaje</b><span>Oikonomia</span>{% endblock %}
 
 {% block content %}
 <div class="gv" id="gv" data-cat="oikonomia" data-view="list">
   {# ── Lista ── #}
   <section class="gv-view eu-vstack" id="vw-list" aria-labelledby="gv-list-t">
-    <header class="gv-hd">
-      <div><a class="eu-btn eu-btn--ghost eu-btn--sm gv-back" href="/finanzas/estados/"><i data-lucide="arrow-left"></i>Estados de cuenta</a>
-        <div class="t-eyebrow">Oikonomia · Gastos de viaje</div><h1 class="t-page" id="gv-list-t">Mis viajes</h1>
-        <p class="t-meta gv-lead">Presupuesto por viaje y los movimientos de tus estados de cuenta vinculados a cada uno. Los viajes se crean y editan en <a href="/viajes/">Viajes</a>.</p></div>
-    </header>
+    {# Fuera de NAV desde Viajes v2 S4: el desglose de cada viaje se abre desde su tarjeta «Dinero». #}
+    {{ ui.page_head(eyebrow='Desglose por viaje', title='Gastos de viaje', cls='gv-hd', id='gv-list-t') }}
     <div class="gv-grid" id="trip-grid" aria-live="polite">{{ ui.skel(2, 160) }}</div>
   </section>
 
@@ -24,7 +21,7 @@
     <div class="gv-dhd">
       <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm gv-back js-back"><i data-lucide="arrow-left"></i>Mis viajes</button>
       <div class="eu-between gv-dhd-row">
-        <div class="eu-grow"><div class="t-eyebrow" id="detail-meta-dest"></div><h1 class="t-page" id="detail-title">—</h1></div>
+        <div class="eu-grow"><div class="t-eyebrow" id="detail-meta-dest"></div><h2 class="t-page" id="detail-title">—</h2></div>
         <div class="eu-hstack gv-actions">
           <a class="eu-btn eu-btn--secondary eu-btn--sm" id="detail-maleta-link" href="/viajes/"><i data-lucide="plane"></i>Abrir viaje</a>
         </div>

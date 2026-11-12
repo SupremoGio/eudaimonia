@@ -154,3 +154,19 @@
   <span class="dash-crit-n num" aria-hidden="true">{{ c.have }}/{{ c.need }}</span>
 </li>
 {%- endmacro %}
+
+{#- Encabezado de pantalla (handoff Navegación): h1 = nombre del menú
+    (nav_title, o `title` en el detalle de una entidad), antetítulo = un dato
+    vivo del módulo en el tinte del módulo (omitido si no hay), acciones a la
+    derecha vía {% call %}. En móvil el h1 queda solo para lectores de
+    pantalla: la barra superior ya lo muestra. -#}
+{% macro page_head(eyebrow=None, title=None, cls='', id=None) -%}
+{%- set _p = nav_page() -%}
+<header class="eu-page-hd{% if cls %} {{ cls }}{% endif %}"{% if _p.cat %} data-cat="{{ _p.cat }}"{% endif %}>
+  <div class="eu-page-hd-t">
+    {%- if eyebrow %}<div class="t-eyebrow eu-page-eb">{{ eyebrow }}</div>{% endif %}
+    <h1 class="t-page"{% if id %} id="{{ id }}"{% endif %}>{{ title or _p.title }}</h1>
+  </div>
+  {%- if caller is defined %}<div class="eu-page-hd-a">{{ caller() }}</div>{% endif %}
+</header>
+{%- endmacro %}

@@ -152,8 +152,9 @@ def test_version_minima_desde_el_bloque_da_hierro(client):
 def test_encabezado_tres_controles_y_sin_filtros(client):
     import modules.actividades.routes as ar
     html, ctx = _ctx(client)
-    hd = html.split('<header class="acta-hd">', 1)[1].split('</header>', 1)[0]
-    assert f'{ctx["fecha_larga"]} · {ar.SESSION_META[ctx["now_session"]]["label"]}' in hd
+    hd = html.split('<header class="eu-page-hd acta-hd">', 1)[1].split('</header>', 1)[0]   # ui.page_head (Navegación)
+    assert f'{ctx["fecha_larga"].capitalize()} · {ar.SESSION_META[ctx["now_session"]]["label"].lower()}' in hd
+    assert '<h1 class="t-page">Acta Diurna</h1>' in hd
     assert 'js-hide-done' in hd and 'Ocultar hechas' in hd and 'eye-off' in hd
     assert 'data-view="virtue"' in hd and 'data-view="session"' in hd
     assert 'aria-label="Editar checklist y foco del mes"' in hd

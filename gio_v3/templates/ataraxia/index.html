@@ -1,10 +1,8 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'ataraxia' %}
-{% block title %}Ataraxia — Eudaimonia{% endblock %}
 {% block module_title %}ATARAXIA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/ataraxia.css') }}">{% endblock %}
-{% block mtitle %}<b>Ataraxia</b><span>Semana {{ semana_num }} · {{ sabado.done + domingo.done }}/{{ sabado.total + domingo.total }} bloques</span>{% endblock %}
 {% set TIER = {'carbon': 'carbon', 'iron': 'hierro', 'gold': 'oro', 'diamond': 'diamante'} %}
 
 {% block content %}
@@ -12,8 +10,7 @@
   <div class="at-main">
     {# Encabezado (handoff Ataraxia v2, nota 1): fecha · semana, pestañas
        compactas con su conteo y el menú ⋯ con el Reset (nota 4). #}
-    <header class="at-hd">
-      <div class="at-hd-txt"><div class="t-eyebrow">{{ fecha_larga }} · Semana {{ semana_num }}</div><h1 class="t-page">Ataraxia</h1></div>
+    {% call ui.page_head(eyebrow='Semana ' ~ semana_num ~ ' · ' ~ (sabado.done + domingo.done) ~ '/' ~ (sabado.total + domingo.total) ~ ' bloques', cls='at-hd') %}
       <div class="at-hd-tools">
         <div class="eu-seg at-tabs" role="tablist" aria-label="Día">
           {% for key, d, icon, name in [('sabado', sabado, 'flower-2', 'Sábado'), ('domingo', domingo, 'brain', 'Domingo')] %}
@@ -29,7 +26,7 @@
           </div>
         </div>
       </div>
-    </header>
+    {% endcall %}
 
     {% if en_prorroga %}
     <p class="t-meta at-preview at-prorroga"><i data-lucide="hourglass"></i>Prórroga: tienes hasta el miércoles para cerrar el fin de semana del {{ finde_rango }}</p>

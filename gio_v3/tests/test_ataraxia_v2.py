@@ -49,8 +49,8 @@ def _side(html):
 def test_encabezado_fecha_semana_y_pestanas(client, monkeypatch):
     _hoy(monkeypatch, DOMINGO)
     html = _get(client)
-    hd = html.split('<header class="at-hd">', 1)[1].split('</header>', 1)[0]
-    assert 'Domingo 8 de noviembre · Semana 45' in hd
+    hd = html.split('<header class="eu-page-hd at-hd"', 1)[1].split('</header>', 1)[0]   # ui.page_head (Navegación)
+    assert 'Semana 45 · ' in hd and ' bloques</div>' in hd and '<h1 class="t-page">Ataraxia</h1>' in hd
     assert 'class="eu-seg at-tabs"' in hd
     assert 'id="tab-sabado"' in hd and 'id="tab-domingo"' in hd
     assert hd.count('js-day-cnt') == 2
@@ -236,7 +236,7 @@ def test_revision_visible_y_historial_en_logros(client, monkeypatch):
     assert 'eu-table' not in rev and 'Últimas semanas' not in rev
     client.post('/ataraxia/api/revision', json={'horas_sueno': 7})
     sem = client.get('/logros/semanas').get_data(as_text=True)
-    assert 'Historial de semanas' in sem and '2–8 nov' in sem and 'Esta semana' in sem
+    assert '<h1 class="t-page">Semanas</h1>' in sem and '2–8 nov' in sem and 'Esta semana' in sem
     assert 'href="/logros/semanas"' in client.get('/logros?tab=historial').get_data(as_text=True)
 
 

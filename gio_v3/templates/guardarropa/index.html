@@ -1,10 +1,8 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'guardarropa' %}
-{% block title %}Guardarropa — Eudaimonia{% endblock %}
 {% block module_title %}GUARDARROPA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/guardarropa.css') }}">{% endblock %}
-{% block mtitle %}<b>Guardarropa</b><span>Vida · {{ items|length }} prenda{{ 's' if items|length != 1 }}</span>{% endblock %}
 
 {% block content %}
 <div class="gr-root" id="gr" data-tab="prendas" data-view="grid">

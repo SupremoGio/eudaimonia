@@ -1,22 +1,18 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'nutricion' %}
-{% block title %}Nutrición — Díaita{% endblock %}
 {% block module_title %}DÍAITA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/nutricion.css') }}">{% endblock %}
-{% block mtitle %}<b>Nutrición</b><span>Díaita · bajo en FODMAP</span>{% endblock %}
 
 {% block content %}
 {% set DIAS = {'L':'Lunes','M':'Martes','X':'Miércoles','J':'Jueves','V':'Viernes','S':'Sábado','D':'Domingo'} %}
 <div class="dt" id="dt" data-cat="hegemonikon" data-vista="{{ vista }}">
-  <header class="dt-hd">
-    <div><div class="t-eyebrow dt-eyebrow">Hegemonikon · Díaita · bajo en FODMAP</div>
-      <h1 class="t-page">{% if vista == 'semana' %}Semana{% elif vista == 'sintomas' %}Síntomas{% else %}{{ DIAS[state.today] }} {{ state.fecha[8:]|int }}{% endif %}</h1></div>
+  {% call ui.page_head(eyebrow=DIAS[state.today] ~ ' ' ~ state.fecha[8:]|int ~ ' · ' ~ state.streak ~ ' d limpios', cls='dt-hd') %}
     <ol class="dt-tira" aria-label="Semana">
       {% for d in state.tira %}<li class="dt-tira-d is-{{ d.estado }}{% if d.hoy %} is-hoy{% endif %}" title="{{ DIAS[d.k] }} · {{ {'cerrado':'día limpio','hoy':'hoy','futuro':'por venir','abierto':'sin cerrar'}[d.estado] }}">
         <span>{{ d.k }}</span><i aria-hidden="true"></i></li>{% endfor %}
     </ol>
-  </header>
+  {% endcall %}
 
 {% if vista %}
   <a class="eu-btn eu-btn--ghost eu-btn--sm dt-back" href="/nutricion/"><i data-lucide="arrow-left"></i>Hoy</a>

@@ -4,8 +4,6 @@
 .bg [hidden],#m-dd [hidden]{display:none!important}
 .bg-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .bg-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.bg-hd .t-page{margin-top:var(--sp-2)}
-@media (max-width:767px){.bg-hd .t-eyebrow,.bg-hd .t-page{display:none}}
 .bg-live{display:inline-flex;align-items:center;gap:var(--sp-2)}
 .bg-hd-act{flex-wrap:wrap;justify-content:flex-end}
 @media (max-width:767px){.bg-dl{display:none}}  /* descargas solo en PC */

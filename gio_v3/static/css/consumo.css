@@ -4,9 +4,6 @@
 .ci [hidden],#m-reg [hidden],#m-nuevo [hidden]{display:none!important}
 .ci .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .ci-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.ci-hd .t-page{margin-top:var(--sp-2)}
-.ci-lead{margin-top:var(--sp-2);color:var(--fg-2)}
-@media (max-width:767px){.ci-hd{display:none}}
 @media (min-width:768px){.eu-topbar .js-nuevo{display:none}}
 [data-tone=danger]{--tone-fg:var(--danger-fg);--tone-bg:var(--danger-bg);--tone-border:var(--danger-border)}
 [data-tone=warning]{--tone-fg:var(--warning-fg);--tone-bg:var(--warning-bg);--tone-border:var(--warning-border)}

@@ -146,7 +146,7 @@ def test_pagina_sin_pestanas(client):
     for fuera in ('role="tablist" aria-label="Secciones', 'data-tab-set', 'tab-recetas', 'data-variant', 'Ritmo', 'hoy-ring', 'hoy-status',
                   'dt-lead', 'id="k-xp"', 'Caí en la tentación'):
         assert fuera not in html, fuera
-    for dentro in ('Hegemonikon · Díaita · bajo en FODMAP', 'class="dt-tira"', 'id="hoy-list"', 'Agregar comida o colación · del recetario',
+    for dentro in ('d limpios</div>', '<h1 class="t-page">Nutrición</h1>', 'class="dt-tira"', 'id="hoy-list"', 'Agregar comida o colación · del recetario',
                    'El día', 'Bristol · hoy', 'Disparadores · 30 días', 'Registrar un desliz', '/recetas/?fodmap=seguro',
                    '?vista=semana', '?vista=sintomas', 'id="m-meal"', 'id="m-slip"', 'id="m-add"'):
         assert dentro in html, dentro

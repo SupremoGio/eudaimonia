@@ -639,6 +639,21 @@ body.nw-hidden .nw-hide-block{display:none!important}
 .eu-confirm-msg{margin:0;white-space:pre-line;font:var(--fw-medium) var(--fs-17)/var(--lh-snug) var(--font-display);color:var(--fg-1)}
 
 
+/* ── Encabezado de pantalla (handoff Navegación) ─────────────────────────────
+   ui.page_head: antetítulo = dato vivo en el tinte del módulo (--cat-fg si la
+   pantalla tiene data-cat, si no --fg-brand); h1 = nombre del menú; acciones a
+   la derecha. En móvil el h1 se oculta visualmente: la barra ya lo dice. */
+.eu-page-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap;min-width:0}
+.eu-page-hd-t{display:flex;flex-direction:column;gap:var(--sp-2);min-width:0}
+.eu-page-hd .t-page{margin:0;overflow-wrap:anywhere}
+.eu-page-eb{color:var(--fg-brand)}
+.eu-page-hd[data-cat] .eu-page-eb{color:var(--cat-fg)}
+.eu-page-hd-a{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
+@media (max-width:767px){
+  .eu-page-hd{align-items:center}
+  .eu-page-hd .t-page{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SAFE AREAS — PWA en modo app (standalone) con notch / isla y barra de
    estado translúcida (apple-mobile-web-app-status-bar-style), y iPhone en

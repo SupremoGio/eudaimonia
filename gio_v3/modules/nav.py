@@ -41,7 +41,8 @@ NAV = [
             {'id': 'patrimonio', 'label': 'Patrimonio', 'url': '/finanzas/salud/', 'icon': 'scale'},
             {'id': 'consumo', 'label': 'Consumo', 'url': '/finanzas/consumo/', 'icon': 'shopping-cart'},
             {'id': 'fin-wishlist', 'label': 'Wishlist', 'url': '/finanzas/prioridades/', 'icon': 'star'},
-            {'id': 'gastos-viaje', 'label': 'Gastos de viaje', 'url': '/finanzas/estados/viajes/', 'icon': 'plane'},
+            # «Gastos de viaje» salió del menú tras Viajes v2 S4: un viaje, una página
+            # (/viajes/); su desglose sigue en /finanzas/estados/viajes/?id=.
             {'id': 'coach', 'label': 'Coach financiero', 'url': '/finanzas/coach/', 'icon': 'sparkles'},
         ]},
         {'id': 'hegemonikon', 'label': 'Hegemonikon', 'fn': 'Salud', 'cat': 'hegemonikon',
@@ -109,6 +110,18 @@ BOTTOM_NAV = [
 _BOTTOM_DIRECT = {'inicio', 'acta', 'praxis'}
 _TU_GROUP = 'Tú'
 
+# Vistas internas de una pantalla (?vista=… o ?tab=…): la barra las conoce y
+# muestra «Módulo › Vista» con volver al módulo (handoff Navegación, nota 5).
+# Clave = id del ítem o subpágina de NAV; '_param' cambia el parámetro leído.
+# Una vista que no está aquí se ignora.
+VIEWS = {
+    'harma':          {'bitacora': 'Bitácora', 'papeles': 'Papeles'},
+    'eurythmia':      {'bitacora': 'Bitácora', 'musica': 'Música', 'progreso': 'Progreso'},
+    'cosmopolitismo': {'plan': 'Plan', 'tests': 'Tests', 'journal': 'Journal'},
+    'nutricion':      {'semana': 'Semana', 'sintomas': 'Síntomas'},
+    'logros':         {'_param': 'tab', 'historial': 'Historial'},
+}
+
 # Sidebar: subpáginas visibles antes de «Más…»
 SIDEBAR_MAX_CHILDREN = 4
 
@@ -166,13 +179,34 @@ _CMDK_ACTIONS = [{'label': a['label'], 'url': a['url'], 'icon': a['icon'],
                   'q': a['label'] + ' ' + a.get('keywords', '')} for a in ACTIONS]
 
 
+def view_of(item, child, args):
+    """Nombre de la vista activa según VIEWS (o None)."""
+    node = child or item
+    if not node:
+        return None
+    m = VIEWS.get(node['id'])
+    if not m:
+        return None
+    v = (args or {}).get(m.get('_param', 'vista'))
+    return m.get(v) if v and not v.startswith('_') else None
+
+
+def page_info():
+    """Título y tinte de la pantalla actual para ui.page_head (global de Jinja:
+    las macros importadas sin contexto no ven nav_title)."""
+    c = nav_context()
+    it = c['nav_here']['item']
+    return {'title': c['nav_title'], 'cat': it.get('cat') if it else None}
+
+
 def nav_context():
     """Variables de navegación para layout_sub.html (context processor)."""
     try:
-        path = request.path
+        path, args = request.path, request.args
     except RuntimeError:  # fuera de un request (p. ej. render en tests sin contexto)
-        path = '/'
+        path, args = '/', {}
     group, item, child = resolve(path)
+    view = view_of(item, child, args)
 
     here = {'group': group, 'item': item, 'child': child}
     crumbs, title, sub, back = [], None, None, '/'
@@ -193,6 +227,14 @@ def nav_context():
             title = item['label']
             sub = item.get('fn')
             back = '/'
+        if view:
+            # La vista es una página más: el módulo (o subpágina) pasa a ser enlace.
+            node = child or item
+            crumbs = [({'label': c['label'], 'url': node['url']} if c.get('current') else c) for c in crumbs]
+            crumbs.append({'label': view, 'current': True})
+            sub = node['label']
+            title = view
+            back = node['url']
 
     if item and item['id'] in _BOTTOM_DIRECT:
         bottom_active = item['id']
@@ -216,6 +258,7 @@ def nav_context():
         'nav_title': title,
         'nav_sub': sub,
         'nav_back': back,
+        'nav_view': view,
         'nav_bottom_active': bottom_active,
         'nav_sheet': sheet,
         'nav_sb_max': SIDEBAR_MAX_CHILDREN,

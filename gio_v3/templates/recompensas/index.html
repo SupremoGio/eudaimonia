@@ -1,23 +1,17 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'recompensas' %}
-{% block title %}Recompensas — Eudaimonia{% endblock %}
 {% block module_title %}RECOMPENSAS{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/recompensas.css') }}">{% endblock %}
-{% block mtitle %}<b>Recompensas</b><span>Tú · tienda EC</span>{% endblock %}
 
 {# Handoff Recompensas v2: la tienda responde, en orden, ¿qué puedo canjear
    hoy?, ¿qué viene después y cuándo llego? y ¿qué me falta desbloquear?
    Todo medido con el ritmo real de EC ganados (30 d). #}
 {% block content %}
 <div class="rw" id="rw" data-ec="{{ ec_balance }}" data-rate="{{ ec_rate }}">
-  <header class="rw-hd">
-    <div class="rw-hd-t">
-      <div class="t-eyebrow">Tú · Tienda EC</div>
-      <h1 class="t-page">Recompensas</h1>
-    </div>
+  {% call ui.page_head(eyebrow=ec_balance ~ ' EC' ~ (' · ' ~ grupos.available|length ~ ' al alcance' if grupos.available else ''), cls='rw-hd') %}
     <button type="button" class="eu-btn eu-btn--ghost js-new"><i data-lucide="plus"></i>Recompensa</button>
-  </header>
+  {% endcall %}
 
   {% include "recompensas/_balance.html" %}
 

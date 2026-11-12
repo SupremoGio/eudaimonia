@@ -3,11 +3,10 @@
 .pd h1,.pd h2,.pd p,.pd ol{margin:0}
 .pd [hidden],#m-libro [hidden],#m-peli [hidden]{display:none!important}
 .pd-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.pd-hd .t-page{margin-top:var(--sp-2)}
 .pd-hd-tools{display:flex;align-items:center;gap:var(--sp-2);flex-shrink:0}
 .pd-tabs button{display:inline-flex;align-items:center;gap:6px;height:32px;font-size:var(--fs-12)}
 .pd-tabs svg{width:14px;height:14px}
-@media (max-width:767px){.pd-hd > div:first-child{display:none}.pd-hd-tools{width:100%}.pd-tabs{flex:1}.pd-tabs button{flex:1;justify-content:center;height:38px}}
+@media (max-width:767px){.pd-hd-tools{width:100%}.pd-tabs{flex:1}.pd-tabs button{flex:1;justify-content:center;height:38px}}
 .pd-nowrap{white-space:nowrap}
 .pd-span{grid-column:1/-1}
 

@@ -1,10 +1,8 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'eurythmia' %}
-{% block title %}Eurythmia — Eudaimonia{% endblock %}
 {% block module_title %}EURYTHMIA{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/eurythmia.css') }}">{% endblock %}
-{% block mtitle %}<b>Eurythmia</b><span>Baile · Ritmo · Cuerpo</span>{% endblock %}
 {% block back_href %}{{ '/actividades/' if from_acta else nav_back }}{% endblock %}
 {% block topright %}{% if from_acta %}<a class="ey-acta-back" href="/actividades/">← Acta Diurna</a>{% endif %}{% endblock %}
 
@@ -17,10 +15,7 @@
 {% block content %}
 <div class="ey" id="ey" data-cat="eurythmia" data-vista="{{ vista }}"{% if from_acta %} data-from="acta"{% endif %}>
   <div class="ey-main">
-    <header class="ey-hd">
-      <div><div class="t-eyebrow ey-eyebrow">Eurythmia · εὐρυθμία</div>
-        <h1 class="t-page">{{ {'musica': 'Música', 'bitacora': 'Bitácora', 'progreso': 'Progreso'}.get(vista, 'Salsa cubana') }}</h1></div>
-    </header>
+    {{ ui.page_head(eyebrow='Salsa cubana · nivel ' ~ lv.level.n, cls='ey-hd') }}
 
     {% if vista %}
     <a class="ey-back t-meta" href="/eurythmia/{{ '?from=acta' if from_acta }}">← Sesión</a>
@@ -78,7 +73,7 @@
       </div>
 
       <form class="ey-closing" id="f-close" novalidate>
-        <div><div class="t-eyebrow ey-eyebrow">Sesión completada</div><h2 class="t-section" id="ey-close-t"></h2></div>
+        <div><div class="t-eyebrow ey-close-eb">Sesión completada</div><h2 class="t-section" id="ey-close-t"></h2></div>
         <div class="eu-vstack ey-flow-wrap"><span class="t-meta" id="ey-flow-l">¿Cómo se sintió?</span>
           <div class="ey-flow5" role="radiogroup" aria-labelledby="ey-flow-l" id="ey-flow-row"></div></div>
         <div class="ey-close-row">

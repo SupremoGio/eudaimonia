@@ -1,10 +1,6 @@
 {# Encabezado (handoff Acta v2, nota 1): fecha + sesión actual y 3 controles —
    Ocultar hechas, vista Por virtud / Por sesión y editar (incluye el Foco del mes). #}
-<header class="acta-hd">
-  <div class="acta-hd-txt">
-    <div class="t-eyebrow">{{ fecha_larga }} · {{ now_session_label }}</div>
-    <h1 class="t-page">Acta Diurna</h1>
-  </div>
+{% call ui.page_head(eyebrow=fecha_larga|capitalize ~ ' · ' ~ now_session_label|lower, cls='acta-hd') %}
   <div class="eu-hstack acta-hd-tools">
     <button type="button" class="eu-chip acta-hide js-hide-done" aria-pressed="false" aria-label="Ocultar hechas" title="Ocultar hechas"><i data-lucide="eye-off"></i><span class="acta-hide-t">Ocultar hechas</span></button>
     <div class="eu-seg" role="tablist" aria-label="Vista">
@@ -14,7 +10,7 @@
     <button type="button" class="eu-iconbtn eu-iconbtn--outline acta-edit js-edit" aria-pressed="false"
             aria-label="Editar checklist y foco del mes" title="Editar checklist y foco del mes"><i data-lucide="pencil"></i></button>
   </div>
-</header>
+{% endcall %}
 <div class="acta-editbar" hidden>
   <div class="acta-editbar-row">
     <span class="t-meta">Modo edición: quita actividades con ✕ o agrega una nueva.</span>

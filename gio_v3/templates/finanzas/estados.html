@@ -1,5 +1,5 @@
 {% extends "eu/layout_sub.html" %}{% set pg='finanzas' %}
-{% block title %}Estados de Cuenta — Eudaimonia{% endblock %}
+{% import '_ui/macros.html' as ui %}
 {% block module_title %}ESTADOS DE CUENTA{% endblock %}
 {% block topright %}{% endblock %}
 
@@ -12,6 +12,7 @@
   window.__EU_API_BASE__ = '/finanzas/estados/api';
 </script>
 
+{{ ui.page_head(cls='fz-page-hd') }}
 <div id="estados-root" data-cat="oikonomia">
   {#- Esqueleto de carga: React lo reemplaza al montar. -#}
   <div class="eu-vstack" aria-busy="true" aria-label="Cargando estados de cuenta">

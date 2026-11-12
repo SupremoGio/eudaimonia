@@ -20,11 +20,8 @@
 
 /* ── Encabezado ── */
 .hm-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-4);flex-wrap:wrap}
-.hm-hd .t-page{margin-top:var(--sp-2)}
-.hm-veh-sub{font:var(--fw-regular) var(--fs-15)/1 var(--font-ui);color:var(--fg-3)}
 .hm-hd-act{display:flex;gap:var(--sp-2);align-items:center;flex-shrink:0}
 .hm-hd-act .eu-btn--secondary{height:40px}
-@media (max-width:767px){.hm-hd .t-eyebrow{display:none}.hm-hd .t-page{margin-top:0;font-size:var(--fs-24)}}
 
 /* ── Franja del vehículo (notas 1 y 7) ── */
 .hm-strip{display:grid;grid-template-columns:minmax(0,1fr);border-radius:var(--r-lg);background:var(--bg-surface);border:1px solid var(--border-subtle)}

@@ -2,21 +2,18 @@
 {% import '_ui/macros.html' as ui %}
 {% import 'finanzas/salud/_macros.html' as pm with context %}
 {% set pg = 'finanzas' %}
-{% block title %}Patrimonio — Oikonomia{% endblock %}
 {% block module_title %}PATRIMONIO{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/patrimonio.css') }}">{% endblock %}
-{% block mtitle %}<b>Patrimonio</b><span>Oikonomia · salud financiera</span>{% endblock %}
 {% block topright %}<button type="button" class="eu-iconbtn js-nw-toggle" aria-pressed="false" aria-label="Ocultar cifras"><i data-lucide="eye"></i></button>{% endblock %}
 
 {% block content %}
 <div class="pt-root" id="pt" data-cat="oikonomia">
-  <header class="pt-hd">
-    <div><div class="t-eyebrow">Oikonomia · Salud financiera · {{ today }}</div><h1 class="t-page">Patrimonio</h1></div>
+  {% call ui.page_head(eyebrow='Salud financiera · ' ~ today, cls='pt-hd') %}
     <div class="eu-hstack pt-hd-act">
       <a class="eu-btn eu-btn--secondary eu-btn--sm" href="/finanzas/inversiones/"><i data-lucide="trending-up"></i>Inversiones</a>
       <button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-snap" title="Guarda el patrimonio de hoy para ver su evolución"><i data-lucide="camera"></i>Registrar hoy</button>
     </div>
-  </header>
+  {% endcall %}
 
   {% include "finanzas/salud/_hero.html" %}
   {% include "finanzas/salud/_historial.html" %}

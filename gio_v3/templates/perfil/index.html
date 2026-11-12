@@ -1,10 +1,8 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'perfil' %}
-{% block title %}Perfil — Eudaimonia{% endblock %}
 {% block module_title %}PERFIL{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">{% endblock %}
-{% block mtitle %}<b>Tú</b><span>Αὐτός</span>{% endblock %}
 
 {# Handoff Perfil v2: tu archivo personal — identifica, guarda y avisa. El
    estado de juego (nivel, XP, EC) vive en otras partes y aquí no se repite.
@@ -27,6 +25,8 @@
   </aside>
 
   <div class="pf-main">
+    {% set _sem = rem_grupos|selectattr('key', 'in', ['vencidos', 'hoy', 'semana'])|map(attribute='items')|map('length')|sum %}
+    {{ ui.page_head(eyebrow=(_sem ~ ' recordatorio' ~ ('s' if _sem != 1 else '') ~ ' esta semana') if _sem else '', cls='pf-hd') }}
     {% include "perfil/_resumen.html" %}
     {% include "perfil/_datos.html" %}
     {% include "perfil/_medidas.html" %}

@@ -1,22 +1,19 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'idiomas' %}
-{% block title %}Cosmopolitismo — Eudaimonia{% endblock %}
 {% block module_title %}COSMOPOLITISMO{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/idiomas.css') }}">{% endblock %}
-{% block mtitle %}<b>Cosmopolitismo</b><span>Idiomas · plan C1</span>{% endblock %}
 
 {% block content %}
 <div class="id" id="id" data-cat="cosmopolitismo" data-vista="{{ vista }}" data-today="{{ today }}">
-  <header class="id-hd">
-    <div><div class="t-eyebrow id-eyebrow">Virtudes · Idiomas</div><h1 class="t-page">Cosmopolitismo</h1></div>
+  {% call ui.page_head(eyebrow='Plan C1 · semana ' ~ plan.semana_actual ~ ' de ' ~ plan.total_semanas, cls='id-hd') %}
     {% if not vista %}
     <div class="eu-seg id-lang" role="tablist" aria-label="Idioma" id="id-lang">
       <button type="button" role="tab" data-lang="en" aria-selected="true">English</button>
       <button type="button" role="tab" data-lang="fr" aria-selected="false">Français</button>
     </div>
     {% endif %}
-  </header>
+  {% endcall %}
 
 {% if vista %}
   <a class="eu-btn eu-btn--ghost eu-btn--sm id-back" href="/idiomas/"><i data-lucide="arrow-left"></i>Cosmopolitismo</a>

@@ -9,8 +9,6 @@
 .px [hidden]{display:none!important}
 @media (min-width:1024px){.px{gap:var(--sp-5)}}
 .px-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.px-hd .t-page{margin-top:var(--sp-2)}
-@media (max-width:767px){.px-hd{display:none}}
 
 /* Captura (nota 1): una barra — campo, tipo segmentado y Capturar */
 .px-capture{padding:6px;border-radius:var(--r-md);background:var(--bg-surface);border:1px solid var(--border-default)}

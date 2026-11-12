@@ -6,15 +6,13 @@
    ═══════════════════════════════════════════════════════════════ */
 .dash{display:flex;flex-direction:column;gap:var(--sp-3)}
 .dash-main,.dash-side{display:contents}
-.dash-hello{order:0;display:none}
+.dash-hello{order:0}
 .dash-hero{order:1}.dash-radar{order:2}.dash-balance{order:3}
 .dash-heat{order:4}.dash-insp{order:5}
-.dash-hello .t-page{margin:var(--sp-2) 0 0}
 .dash h2{margin:0}
 
 @media (min-width:768px){
   .dash{gap:var(--sp-4)}
-  .dash-hello{display:flex}
 }
 @media (min-width:1024px){
   .dash{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:var(--sp-6);align-items:start}
@@ -22,12 +20,7 @@
   .dash-side{display:flex;flex-direction:column;gap:var(--sp-4)}
 }
 
-/* Topbar móvil: fecha + saludo */
-.eu-mtitle .t-eyebrow{color:var(--fg-brand);margin:0 0 3px}
-.eu-mtitle .dash-mgreet{font-size:var(--fs-20)}
-
 /* ── Héroe (Inicio v2: marcadores 1, 2 y 7) ──────────────────── */
-.dash-hello{align-items:flex-end;justify-content:space-between;gap:var(--sp-4)}
 .dash-hero{display:grid;gap:var(--sp-5)}
 .dash-hero-main{display:flex;flex-direction:column;gap:var(--sp-5);min-width:0}
 .dash-hero-side{display:flex;flex-direction:column;gap:var(--sp-4);border-top:1px solid var(--border-subtle);padding-top:var(--sp-4)}

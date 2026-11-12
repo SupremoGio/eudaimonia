@@ -1,16 +1,12 @@
 {# Encabezado (nota 1) + héroe de nivel con ETA y camino de 10 niveles (notas 2–3) #}
 {% set nxt = levels[stats.level] if not stats.max_level else None %}
 {% set pct_camino = [((stats.total_xp / max_xp * 100) if max_xp else 0)|round|int, 100]|min %}
-<header class="lg-hd">
-  <div class="lg-hd-t">
-    <div class="t-eyebrow">Tú · largo plazo</div>
-    <h1 class="t-page">Logros</h1>
-  </div>
+{% call ui.page_head(eyebrow='Nivel ' ~ stats.level ~ (' · ' ~ '{:,}'.format(stats.xp_to_next|int) ~ ' XP para el ' ~ (stats.level + 1) if nxt else ' · nivel máximo'), cls='lg-hd') %}
   <nav class="eu-seg lg-tabs" role="tablist" aria-label="Vista">
     <a role="tab" href="/logros" aria-selected="{{ 'true' if tab != 'historial' else 'false' }}">Colección</a>
     <a role="tab" href="/logros?tab=historial" aria-selected="{{ 'true' if tab == 'historial' else 'false' }}">Historial</a>
   </nav>
-</header>
+{% endcall %}
 
 <section class="lg-hero" aria-label="Tu nivel">
   <div class="lg-hero-lv">

@@ -1,16 +1,15 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'gtd' %}
-{% block title %}Praxis — Eudaimonia{% endblock %}
 {% block module_title %}PRAXIS{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/praxis.css') }}">{% endblock %}
-{% block mtitle %}<b>Praxis</b><span><span class="js-mt-inbox">{{ stats.inbox_n }}</span> en inbox</span>{% endblock %}
 
 {% block content %}
 <div class="px" id="px">
-  <header class="px-hd">
-    <div><div class="t-eyebrow">Hoy · Tareas</div><h1 class="t-page">Praxis</h1></div>
-  </header>
+  {% set _abiertas = tasks|rejectattr('status', 'equalto', 'done')|list %}
+  {% set _hoy_n = _abiertas|selectattr('cuadrante', 'equalto', 'hoy')|list|length %}
+  {% set _venc_n = _abiertas|selectattr('due_date')|selectattr('due_date', 'lt', today)|list|length %}
+  {{ ui.page_head(eyebrow=(_hoy_n ~ ' para hoy') ~ (' · ' ~ _venc_n ~ ' vencida' ~ ('s' if _venc_n != 1 else '') if _venc_n else ''), cls='px-hd') }}
 
   {% include "gtd/_capture.html" %}
 

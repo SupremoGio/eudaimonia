@@ -165,8 +165,8 @@ def _hero(html):
 
 def test_encabezado_un_solo_boton_y_wishlist(client):
     html = client.get('/guardarropa/').get_data(as_text=True)
-    hd = html.split('<header class="gr-hd">', 1)[1].split('</header>', 1)[0]
-    assert 'Vida · Estilo · 0 prendas' in hd
+    hd = html.split('<header class="eu-page-hd gr-hd"', 1)[1].split('</header>', 1)[0]   # ui.page_head (Navegación)
+    assert '0 prendas</div>' in hd and 'Vida ·' not in hd and '<h1 class="t-page">Guardarropa</h1>' in hd
     assert 'class="eu-seg gr-tablist" role="tablist"' in hd
     root = html.split('id="gr"', 1)[1].split('id="gr-data"', 1)[0]
     assert hd.count('href="/guardarropa/wishlist/"') == 1 and root.count('href="/guardarropa/wishlist/"') == 1

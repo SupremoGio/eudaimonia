@@ -164,8 +164,8 @@ def test_encabezado_y_heroe(client):
     for i in range(10):
         _xp(30, days_ago=i)                                         # 300 XP → Efebo; 30 XP/día... /30 = 10
     html = _get(client)
-    hd = html.split('<header class="lg-hd">', 1)[1].split('</header>', 1)[0]
-    assert 'Tú · largo plazo' in hd and 'role="tablist"' in hd
+    hd = html.split('<header class="eu-page-hd lg-hd">', 1)[1].split('</header>', 1)[0]   # ui.page_head (Navegación)
+    assert 'Nivel 2 · 600 XP para el 3' in hd and 'role="tablist"' in hd and '<h1 class="t-page">Logros</h1>' in hd
     assert 'href="/logros?tab=historial"' in hd and 'aria-selected="true">Colección' in hd
     for fuera in ('lg-stats', 'Días diamante', '>Los diez niveles<', 'lg-levels'):
         assert fuera not in html, fuera

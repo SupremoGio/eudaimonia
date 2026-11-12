@@ -2,11 +2,7 @@
    como eu-seg, un solo acceso a la Wishlist y un solo botón primario
    contextual (+ Prenda / + Outfit). El selector de vista vive en el menú
    de orden; el FAB solo en móvil. #}
-<header class="gr-hd">
-  <div class="gr-hd-t">
-    <div class="t-eyebrow">Vida · Estilo · {{ items|length }} prenda{{ 's' if items|length != 1 }}</div>
-    <h1 class="t-page">Guardarropa</h1>
-  </div>
+{% call ui.page_head(eyebrow=items|length ~ ' prenda' ~ ('s' if items|length != 1 else '') ~ (' · rotación ' ~ rot.rotacion_pct ~ ' %' if rot and rot.total else ''), cls='gr-hd') %}
   <div class="gr-hd-act">
     <div class="eu-seg gr-tablist" role="tablist" aria-label="Secciones del guardarropa">
       <button type="button" role="tab" data-tab-set="prendas" aria-selected="true" aria-controls="gr-prendas">Prendas</button>
@@ -17,4 +13,4 @@
     <button type="button" class="eu-btn eu-btn--primary gr-hd-new js-new-item" data-for="prendas"><i data-lucide="plus"></i>Prenda</button>
     <button type="button" class="eu-btn eu-btn--primary gr-hd-new js-new-outfit" data-for="outfits" hidden><i data-lucide="plus"></i>Outfit</button>
   </div>
-</header>
+{% endcall %}

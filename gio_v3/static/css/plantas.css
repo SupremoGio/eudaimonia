@@ -3,9 +3,6 @@
 .pl h1,.pl h2,.pl p{margin:0}
 .pl [hidden],#m-planta [hidden]{display:none!important}
 .pl-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.pl-hd .t-page{margin-top:var(--sp-2)}
-.pl-lead{margin-top:var(--sp-2);color:var(--fg-2)}
-@media (max-width:767px){.pl-hd{display:none}}
 @media (min-width:768px){.eu-topbar .js-new{display:none}}
 [data-tone=danger]{--tone-fg:var(--danger-fg);--tone-bg:var(--danger-bg);--tone-border:var(--danger-border)}
 [data-tone=warning]{--tone-fg:var(--warning-fg);--tone-bg:var(--warning-bg);--tone-border:var(--warning-border)}

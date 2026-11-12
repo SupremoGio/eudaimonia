@@ -2,11 +2,6 @@
 .wl{display:flex;flex-direction:column;gap:var(--sp-4)}
 .wl h1,.wl h2,.wl p,.wl ol,.wl ul,.wl fieldset,.wl legend{margin:0}
 .wl [hidden]{display:none!important}
-.wl-hd .t-eyebrow{display:inline-flex;align-items:center;gap:var(--sp-1)}
-.wl-hd .t-eyebrow svg{width:12px;height:12px}
-.wl-hd .t-page{margin-top:var(--sp-2)}
-.wl-lead{margin-top:var(--sp-2);color:var(--fg-2);max-width:720px}
-@media (max-width:767px){.wl-hd{display:none}}
 [data-tone=danger]{--tone-fg:var(--danger-fg);--tone-bg:var(--danger-bg);--tone-border:var(--danger-border)}
 [data-tone=warning]{--tone-fg:var(--warning-fg);--tone-bg:var(--warning-bg);--tone-border:var(--warning-border)}
 [data-tone=success]{--tone-fg:var(--success-fg);--tone-bg:var(--success-bg);--tone-border:var(--success-border)}

@@ -156,7 +156,8 @@ def _hero(html):
 
 def test_encabezado_en_una_fila_sin_tip_ni_plus_duplicado(client):
     html = client.get('/paideia/').get_data(as_text=True)
-    hd = html.split('<header class="pd-hd">', 1)[1].split('</header>', 1)[0]
+    hd = html.split('<header class="eu-page-hd pd-hd"', 1)[1].split('</header>', 1)[0]   # ui.page_head (Navegación)
+    assert '<h1 class="t-page">Paideia</h1>' in hd
     assert 'class="eu-seg pd-tabs"' in hd and hd.count('js-new"') == 1
     for fuera in ('pd-lead', 'pd-tip', 'pd-stats', 'pd-now', 'js-bump', '+10 págs'):
         assert fuera not in html, fuera

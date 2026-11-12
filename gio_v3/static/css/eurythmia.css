@@ -12,9 +12,6 @@
 .ey-main,.ey-side{display:flex;flex-direction:column;gap:var(--sp-5);min-width:0}
 .ey-side{gap:var(--sp-4)}
 @media (min-width:1024px){.ey{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:var(--sp-6);align-items:start}}
-.ey-hd .t-page{margin-top:var(--sp-2)}
-.ey-eyebrow{color:var(--cat-fg)}
-@media (max-width:767px){.ey-hd{display:none}}
 .ey-back{color:var(--fg-2);text-decoration:none;margin-bottom:calc(var(--sp-2) * -1)}
 .ey-acta-back{font-size:var(--fs-12);color:var(--fg-2);text-decoration:none;white-space:nowrap}
 .ey-acta-back:hover{color:var(--fg-1)}
@@ -208,3 +205,4 @@
 .ey-dot:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
 @media (pointer:coarse){.ey-dot{height:32px}}
 .ey-overall b{font-size:var(--fs-15)}
+.ey-close-eb{color:var(--cat-fg)}

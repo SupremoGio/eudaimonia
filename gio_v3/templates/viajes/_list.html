@@ -1,10 +1,9 @@
 {# Vista 1: próximo viaje destacado + secciones (próximos / pasados con su resultado del regreso) #}
 <section class="vj-view eu-vstack" id="vw-list" aria-labelledby="vj-list-t">
-  <header class="vj-hd">
-    <div><div class="t-eyebrow">Vida · Viajes</div><h1 class="t-page" id="vj-list-t">Mis viajes</h1>
-      <p class="t-meta vj-lead">Un outfit por día, la maleta se arma sola y al regresar revisas que nada se quede.</p></div>
+  {# TODO paquete Viajes: antetítulo con el próximo viaje (hoy se arma en el cliente). #}
+  {% call ui.page_head(cls='vj-hd', id='vj-list-t') %}
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nuevo viaje</button>
-  </header>
+  {% endcall %}
   <div class="eu-vstack vj-sections" id="trip-sections" aria-live="polite">
     {{ ui.skel(3, 96) }}
   </div>

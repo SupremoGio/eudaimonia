@@ -45,7 +45,7 @@ def test_captura_en_una_barra_y_sin_cifras(client):
     assert 'Capturar</button>' in cap
     for fuera in ('px-lead', 'Puntos y nivel', 'px-stats', 'id="st-'):
         assert fuera not in px, fuera
-    assert '<span class="js-mt-inbox">0</span> en inbox</span>' in html
+    assert '0 para hoy</div>' in html and '<h1 class="t-page">Praxis</h1>' in html   # antetítulo vivo (Navegación)
 
 
 def test_js_y_css_sin_st():
@@ -62,7 +62,7 @@ def test_captura_tarea_va_al_inbox_e_idea_al_banco(client):
     assert rows[t['id']]['cuadrante'] is None
     assert rows[i['id']]['cuadrante'] == 'ideas'
     html = client.get('/gtd/').get_data(as_text=True)
-    assert '<span class="js-mt-inbox">1</span> en inbox' in html
+    assert 'Renovar pasaporte' in html          # el Inbox se pinta en el cliente desde los datos de la página
 
 
 # ── Sprint 2: Inbox de un clic y fechas relativas ────────────────────────────

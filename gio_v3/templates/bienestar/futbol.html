@@ -1,11 +1,8 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'bienestar' %}
-{% block title %}Fútbol — Hegemonikon{% endblock %}
 {% block module_title %}HEGEMONIKON · Fútbol{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/futbol.css') }}">{% endblock %}
-{% block mtitle %}<b>Fútbol</b><span>Hegemonikon · {{ stats.total }} partido{{ 's' if stats.total != 1 }}</span>{% endblock %}
-{% block topright %}<button type="button" class="eu-iconbtn js-new" aria-label="Programar partido"><i data-lucide="plus"></i></button>{% endblock %}
 
 {# tono del rating 1–10: ≥7 success · ≥6 brand · ≥5 warning · <5 danger #}
 {% macro tone(r) -%}{{ 'none' if r is none else ('success' if r >= 7 else ('brand' if r >= 6 else ('warning' if r >= 5 else 'danger'))) }}{%- endmacro %}
@@ -31,11 +28,9 @@
 
 {% block content %}
 <div class="fb" id="fb" data-cat="hegemonikon">
-  <header class="fb-hd">
-    <div><div class="t-eyebrow">Hegemonikon · Fútbol</div><h1 class="t-page">Fútbol</h1>
-      <p class="t-meta fb-lead">Tus tres ligas: SoccerGDL los miércoles, Terranova los jueves y SoccerPark los domingos.</p></div>
+  {% call ui.page_head(eyebrow=stats.total ~ ' partido' ~ ('s' if stats.total != 1 else ''), cls='fb-hd') %}
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="calendar-plus"></i>Programar partido</button>
-  </header>
+  {% endcall %}
 
   <div class="eu-tabs fb-tabs" role="tablist" aria-label="Liga">
     <button type="button" role="tab" id="fb-tab-todas" aria-selected="true" aria-controls="fb-panel" data-liga="todas">Todas <span class="fb-ct num">{{ stats.total }}</span></button>

@@ -1,11 +1,8 @@
 {% extends "eu/layout_sub.html" %}
 {% import '_ui/macros.html' as ui %}
 {% set pg = 'viajes' %}
-{% block title %}Viajes — Eudaimonia{% endblock %}
 {% block module_title %}VIAJES{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/viajes.css') }}">{% endblock %}
-{% block mtitle %}<b>Viajes</b><span>Vida · outfits y maleta</span>{% endblock %}
-{% block topright %}<button type="button" class="eu-iconbtn js-new" aria-label="Nuevo viaje"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
 <div class="vj" id="vj" data-cat="cosmopolitismo" data-today="{{ today }}" data-fin="{{ 1 if fin_ok else 0 }}" data-view="list">

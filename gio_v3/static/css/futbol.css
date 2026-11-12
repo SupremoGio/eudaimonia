@@ -4,9 +4,6 @@
 .fb [hidden],#m-pt [hidden]{display:none!important}
 @media (min-width:1024px){.fb{gap:var(--sp-5)}}
 .fb-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
-.fb-hd .t-page{margin-top:var(--sp-2)}
-.fb-lead{margin-top:var(--sp-2);color:var(--fg-2)}
-@media (max-width:767px){.fb-hd{display:none}}
 @media (min-width:768px){.eu-topbar .js-new{display:none}}
 .fb-stats{gap:var(--sp-3)}
 .fb-stats .eu-card{padding:var(--sp-4)}

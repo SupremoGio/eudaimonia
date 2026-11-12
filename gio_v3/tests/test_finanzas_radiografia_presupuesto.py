@@ -241,7 +241,7 @@ def test_tarjeta_presupuesto_dice_el_mes_si_no_es_el_actual(test_db):
         html = c.get('/finanzas/').get_data(as_text=True)
     # Oikonomia v2: ya no hay tarjeta «Presupuesto · N% usado»; el héroe dice
     # de qué mes son las cifras y que ese mes ya cerró.
-    assert 'Oikonomia · Septiembre' in html
+    assert '<div class="t-eyebrow eu-page-eb">Septiembre' in html     # antetítulo sin el nombre del módulo (Navegación)
     assert 'Disponible en septiembre' in html and 'Septiembre ya cerró' in html
 
 
