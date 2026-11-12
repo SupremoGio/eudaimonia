@@ -1,10 +1,11 @@
 import os, re, uuid
-from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
+from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort, session, has_request_context
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from database import get_db
 from utils import today_str, today_date, uploads_base_dir
 import modules.gamification.engine as engine
+from modules.harma import plan as hp
 
 harma_bp = Blueprint('harma', __name__, template_folder='../../templates')
 
@@ -63,6 +64,10 @@ ESTADOS_SINIESTRO = [
 _PROXIMIDAD_DIAS = 14
 
 
+def _fin_ok():
+    return has_request_context() and bool(session.get('fin_ok'))
+
+
 def _now():
     return datetime.now().isoformat()
 
@@ -103,11 +108,12 @@ def _compute_plan_item(item, km_actual, today):
     }
 
 
-def _serialize_plan(db, vehiculo):
+def _serialize_plan(db, vehiculo, ritmo=None):
     today = today_date()
     km_actual = vehiculo['km_actual'] if vehiculo else 0
     rows = [dict(r) for r in db.execute("SELECT * FROM harma_plan_items ORDER BY id").fetchall()]
-    items = [_compute_plan_item(r, km_actual, today) for r in rows]
+    items = [hp.enriquecer(_compute_plan_item(r, km_actual, today), ritmo, _months_between(r['last_date'], today))
+             for r in rows]
     order = {'vencido': 0, 'urgente': 1, 'proximo': 2, 'nominal': 3}
     items.sort(key=lambda it: (CAT_ORDER.index(it['cat']) if it['cat'] in CAT_ORDER else 99, order[it['status']]))
     return items
@@ -151,10 +157,19 @@ def _serialize_polizas(db):
 def _state():
     with get_db() as db:
         vehiculo = _get_vehiculo(db)
+        hoy = today_date()
+        ritmo = hp.ritmo_km_mes(db, vehiculo, hoy)
+        if vehiculo:
+            f = hp._d(vehiculo.get('km_actualizado'))
+            vehiculo['km_edad_dias'] = (hoy - f).days if f else None
+            vehiculo['km_ritmo_mes'] = ritmo
         servicios = [dict(r) for r in db.execute(
             "SELECT * FROM harma_servicios ORDER BY id DESC LIMIT 40"
         ).fetchall()]
-        plan = _serialize_plan(db, vehiculo)
+        plan = _serialize_plan(db, vehiculo, ritmo)
+        gasto_12m = db.execute("SELECT COALESCE(SUM(costo),0) s FROM harma_servicios WHERE fecha >= ?",
+                               ((hoy - timedelta(days=365)).isoformat(),)).fetchone()['s']
+        taller = db.execute("SELECT taller FROM harma_servicios WHERE COALESCE(taller,'') != '' ORDER BY fecha DESC, id DESC LIMIT 1").fetchone()
         documentos = [dict(r) for r in db.execute(
             "SELECT * FROM harma_documentos ORDER BY id DESC"
         ).fetchall()]
@@ -175,6 +190,13 @@ def _state():
         'servicios': servicios,
         'plan': plan,
         'plan_counts': counts,
+        'grupos': hp.grupos(plan),
+        'gasto_12m': gasto_12m,
+        'costo_km': round(gasto_12m / (ritmo * 12), 2) if ritmo else None,
+        'ultimo_taller': taller['taller'] if taller else '',
+        'papeles': hp.papeles(documentos, polizas, today_date(), _poliza_status),
+        'siniestros_abiertos': sum(1 for x in siniestros if x['estado'] in ('reportado', 'en_proceso')),
+        'fin_ok': _fin_ok(),
         'documentos': documentos,
         'polizas': polizas,
         'siniestros': siniestros,
@@ -221,6 +243,13 @@ def _log_servicio(tipo, titulo, descripcion, km, costo, taller, fecha, plan_item
         db.commit()
 
     gam = engine.process_activity(_SERVICIO_KEY, _SERVICIO_XP, 'Mecánica', log_id)
+    # El gasto llega a Oikonomia (solo con fin_ok; sin backfill de servicios viejos)
+    if costo and costo > 0 and _fin_ok():
+        try:
+            with get_db() as db:
+                hp.crear_gasto(db, titulo, costo, fecha, servicio_id)
+        except Exception:
+            pass
     return servicio_id, gam
 
 
@@ -228,7 +257,8 @@ def _log_servicio(tipo, titulo, descripcion, km, costo, taller, fecha, plan_item
 
 @harma_bp.route('/')
 def index():
-    return render_template('harma/index.html', today=today_str(), **_state())
+    vista = request.args.get('vista') if request.args.get('vista') in ('bitacora', 'papeles') else ''
+    return render_template('harma/index.html', today=today_str(), vista=vista, **_state())
 
 
 @harma_bp.route('/api/state')
@@ -249,6 +279,8 @@ def api_vehiculo_update():
                 km_actual = max(0, int(data['km_actual']))
             except (TypeError, ValueError):
                 return jsonify({'error': 'invalid km'}), 400
+            if km_actual < (vehiculo['km_actual'] or 0):
+                return jsonify({'error': f"El odómetro no baja: ya marca {vehiculo['km_actual']:,} km"}), 400
         db.execute(
             "UPDATE harma_vehiculo SET nombre=?, marca=?, modelo=?, anio=?, motor=?, color=?, placas=?, "
             "km_actual=?, km_actualizado=? WHERE id=?",
@@ -299,6 +331,8 @@ def api_servicio_delete(sid):
         row = db.execute("SELECT * FROM harma_servicios WHERE id=?", (sid,)).fetchone()
         if not row:
             return jsonify({'error': 'not found'}), 404
+        if 'fin_mov_id' in row.keys() and row['fin_mov_id']:
+            db.execute("DELETE FROM est_movimientos WHERE id=?", (row['fin_mov_id'],))
         db.execute("DELETE FROM harma_servicios WHERE id=?", (sid,))
         db.commit()
         log_id = row['activity_log_id']
@@ -444,6 +478,8 @@ def api_documento_upload():
             ),
         )
         db.commit()
+        if request.form.get('tipo') == 'verificacion' and request.form.get('fecha_vencimiento'):
+            hp.upsert_recordatorio(db, 'Renovar verificación vehicular', request.form.get('fecha_vencimiento'), cur.lastrowid)
     return jsonify({'ok': True, 'id': cur.lastrowid, 'state': _state()})
 
 
@@ -501,6 +537,8 @@ def api_poliza_create():
             ),
         )
         db.commit()
+        if request.form.get('vigencia_fin'):
+            hp.upsert_recordatorio(db, f'Renovar póliza · {aseguradora}', request.form.get('vigencia_fin'), cur.lastrowid)
     return jsonify({'ok': True, 'id': cur.lastrowid, 'state': _state()})
 
 

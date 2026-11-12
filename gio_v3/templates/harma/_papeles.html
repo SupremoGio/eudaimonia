@@ -1,5 +1,5 @@
 {# Documentos, póliza de seguro y siniestros #}
-<div class="hm-pane" id="pane-papeles" role="tabpanel" aria-labelledby="tab-papeles" hidden>
+{% if vista == 'papeles' %}<div class="hm-pane" id="pane-papeles">
   <div class="hm-papers">
     <section class="eu-vstack hm-sec" aria-labelledby="hm-doc-t">
       <div class="eu-between"><h2 class="t-card" id="hm-doc-t">Documentos</h2><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-doc-new"><i data-lucide="upload"></i>Subir</button></div>
@@ -14,4 +14,4 @@
       <div class="hm-cards" id="hm-siniestro-list"></div>
     </section>
   </div>
-</div>
+</div>{% endif %}

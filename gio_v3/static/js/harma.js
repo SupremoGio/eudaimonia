@@ -1,6 +1,8 @@
-/* Harma — Design System V2: vehículo + odómetro, plan de mantenimiento por
-   categoría (progreso doble km/tiempo), bitácora de servicios y papeles
-   (documentos, póliza y siniestros con archivos adjuntos). */
+/* Harma — handoff Harma v2. Odómetro editable en su lugar, plan por urgencia
+   («Toca ahora» / «Lo siguiente» / «Al día») con doble barra km·meses y
+   registro en la misma fila, lateral con papeles y bitácora. Las vistas
+   completas (?vista=bitacora|papeles) conservan la bitácora, documentos,
+   pólizas y siniestros de siempre. Todas las APIs devuelven {state}. */
 (function () {
   'use strict';
   var root = document.getElementById('hm');
@@ -17,7 +19,8 @@
   };
   var POL = { vigente: ['Vigente', 'eu-badge--success'], proximo: ['Por vencer', 'eu-badge--warning'], vencida: ['Vencida', 'eu-badge--danger'], sin_fecha: ['Sin fecha', ''] };
   var MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-  var filter = 'all', detail = null;
+  var detail = null, editing = null, showOk = false;
+  var VISTA = root.dataset.vista || '';
 
   function $(id) { return document.getElementById(id); }
   function $$(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
@@ -53,13 +56,6 @@
   function onSubmit(id, fn) { $(id).addEventListener('submit', function (e) { e.preventDefault(); fn(); }); }
   function openM(id, focus) { euModal.open(id); if (focus) setTimeout(function () { $(focus).focus(); }, 20); }
 
-  /* ── Pestañas ───────────────────────────────────────────────────────── */
-  $$('[data-tab]').forEach(function (b) {
-    b.addEventListener('click', function () {
-      $$('[data-tab]').forEach(function (x) { x.setAttribute('aria-selected', String(x === b)); });
-      $$('.hm-pane').forEach(function (p) { p.hidden = p.id !== 'pane-' + b.dataset.tab; });
-    });
-  });
   // Botones «nuevo» (incluidos los que aparecen dentro de estados vacíos).
   root.addEventListener('click', function (e) {
     var b = e.target.closest('.js-veh,.js-plan-new,.js-serv-new,.js-doc-new,.js-pol-new,.js-sin-new'); if (!b) return;
@@ -71,19 +67,35 @@
     else openSin();
   });
 
-  /* ── Vehículo ───────────────────────────────────────────────────────── */
+  /* ── Vehículo, odómetro, ritmo y gasto (notas 1 y 7) ─────────────────── */
   function renderVeh() {
     var v = STATE.vehiculo || {};
     $('hm-veh-name').textContent = v.nombre || 'Mi carro';
-    $('hm-veh-sub').textContent = [v.marca, v.modelo, v.anio, v.motor, v.color].filter(Boolean).join(' · ') || '—';
-    $('hm-veh-plate').hidden = !v.placas; $('hm-veh-plate').textContent = v.placas || '';
-    $('hm-veh-km').textContent = Number(v.km_actual || 0).toLocaleString('es-MX');
+    $('hm-veh-sub').textContent = [v.anio, v.motor, v.placas].filter(Boolean).join(' · ');
+    var inp = $('hm-odo-in');
+    if (document.activeElement !== inp) inp.value = Number(v.km_actual || 0).toLocaleString('es-MX');
+    var age = v.km_edad_dias, el = $('hm-odo-age');
+    el.textContent = age == null ? 'sin fecha de actualización' : age === 0 ? 'actualizado hoy' :
+      'actualizado hace ' + age + ' d' + (age > 21 ? ' · el plan puede ir atrasado' : '');
+    el.classList.toggle('is-old', age == null || age > 21);
+    el.classList.remove('is-err');
+    $('hm-ritmo').innerHTML = v.km_ritmo_mes ? Number(v.km_ritmo_mes).toLocaleString('es-MX') + ' <span class="t-meta">km/mes</span>' : '—';
+    $('hm-gasto').textContent = money(STATE.gasto_12m);
+    $('hm-gasto-sub').textContent = [STATE.costo_km != null ? '$' + Number(STATE.costo_km).toFixed(2) + '/km' : '', STATE.fin_ok ? 'en Oikonomia' : ''].filter(Boolean).join(' · ');
   }
+  $('hm-odo').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = parseInt($('hm-odo-in').value.replace(/[^0-9]/g, ''), 10), cur = (STATE.vehiculo || {}).km_actual || 0;
+    var el = $('hm-odo-age');
+    if (isNaN(v)) { el.textContent = 'Escribe el kilometraje'; el.classList.add('is-err'); return; }
+    if (v < cur) { el.textContent = 'El odómetro no baja: ya marca ' + Number(cur).toLocaleString('es-MX') + ' km'; el.classList.add('is-err'); return; }
+    call('/harma/api/vehiculo', json('POST', { km_actual: v }), 'Kilometraje actualizado');
+  });
   function openVeh() {
     var v = STATE.vehiculo || {};
     ['nombre', 'placas', 'marca', 'modelo', 'anio', 'motor', 'color'].forEach(function (k) { $('v-' + k).value = v[k] || ''; });
     $('v-km').value = v.km_actual || 0;
-    openM('m-veh', 'v-km');
+    openM('m-veh', 'v-nombre');
   }
   onSubmit('f-m-veh', function () {
     call('/harma/api/vehiculo', json('POST', {
@@ -93,47 +105,69 @@
     }), 'Vehículo actualizado', 'm-veh', 'f-m-veh');
   });
 
-  /* ── Estado y plan ──────────────────────────────────────────────────── */
-  function renderStatus() {
-    var c = STATE.plan_counts;
-    [['vencidos', c.vencido], ['urgentes', c.urgente], ['nominal', c.nominal]].forEach(function (x) {
-      $('hm-st-' + x[0]).textContent = x[1];
-      $('hm-stbox-' + x[0]).classList.toggle('is-on', x[1] > 0);
-    });
+  /* ── Plan por urgencia (notas 2–4) ─────────────────────────────────── */
+  function tone(p) { return p >= 1 ? 'danger' : p >= 0.85 ? 'warning' : p >= 0.65 ? 'mid' : 'success'; }
+  function bars(it) {
+    var h = '';
+    if (it.con_km) h += '<span class="hm-b"><span>km</span><span class="hm-b-t" data-t="' + tone(it.km_pct) + '"><i style="--p:' + Math.min(100, it.km_pct * 100).toFixed(1) + '%"></i></span></span>';
+    if (it.con_tiempo) h += '<span class="hm-b"><span>meses</span><span class="hm-b-t" data-t="' + tone(it.time_pct) + '"><i style="--p:' + Math.min(100, it.time_pct * 100).toFixed(1) + '%"></i></span></span>';
+    return '<span class="hm-bars" aria-hidden="true">' + h + '</span>';
   }
-  function renderFilters() {
-    var c = STATE.plan_counts;
-    $('hm-filters').innerHTML = [['all', 'Todos', STATE.plan.length], ['vencido', 'Vencidos', c.vencido], ['urgente', 'Urgentes', c.urgente], ['proximo', 'Próximos', c.proximo]]
-      .map(function (f) { return '<button type="button" class="eu-chip" data-f="' + f[0] + '" aria-pressed="' + (filter === f[0]) + '">' + f[1] + ' <span class="ct">' + f[2] + '</span></button>'; }).join('');
+  function head(it, withState) {
+    return '<button type="button" class="hm-name js-detail" data-item="' + esc(it.id) + '">' +
+      '<span class="hm-name-t">' + esc(it.name) + '<span class="hm-tag">' + esc(it.cat_label) + '</span>' +
+      (it.critical ? '<span class="hm-crit">crítico</span>' : '') + '</span>' +
+      '<span class="hm-why' + (withState ? ' is-' + it.status : '') + '">' + esc(it.motivo) + (it.fluido ? ' · caduca aunque no lo uses' : '') + '</span></button>';
   }
-  $('hm-filters').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-f]'); if (!b) return;
-    filter = b.dataset.f; renderPlan();
-    var nb = document.querySelector('#hm-filters [data-f="' + filter + '"]'); if (nb) nb.focus();
-  });
+  function nowRow(it) {
+    var ed = editing === it.id, v = STATE.vehiculo || {};
+    return '<div class="hm-item" data-item="' + esc(it.id) + '"><div class="hm-row2">' + head(it, true) + bars(it) +
+      '<button type="button" class="eu-btn eu-btn--sm ' + (ed ? 'eu-btn--ghost' : 'eu-btn--secondary') + ' js-reg">' + (ed ? 'Cancelar' : 'Registrar') + '</button></div>' +
+      (ed ? '<form class="hm-reg js-reg-form" novalidate>' +
+        '<label class="hm-reg-f">Km<input class="eu-input num" name="km" inputmode="numeric" value="' + (v.km_actual || '') + '"></label>' +
+        '<label class="hm-reg-f">Costo<input class="eu-input num" name="costo" inputmode="decimal" placeholder="$0"></label>' +
+        '<label class="hm-reg-f hm-reg-taller">Taller<input class="eu-input" name="taller" value="' + esc(STATE.ultimo_taller || '') + '"></label>' +
+        '<button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar · +5 XP</button></form>' : '') + '</div>';
+  }
+  function nextRow(it) {
+    return '<div class="hm-item" data-item="' + esc(it.id) + '"><div class="hm-row2 hm-row2--next">' + head(it, false) + bars(it) +
+      '<span class="num hm-eta">' + esc(it.eta_txt) + '</span></div></div>';
+  }
+  function okRow(it) {
+    return '<button type="button" class="hm-okrow js-detail" data-item="' + esc(it.id) + '"><span class="eu-grow">' + esc(it.name) + ' <span class="hm-okcat">' + esc(it.cat_label) + '</span></span><span class="num hm-eta">' + esc(it.eta_txt) + '</span></button>';
+  }
   function renderPlan() {
-    renderFilters();
-    var vis = filter === 'all' ? STATE.plan : STATE.plan.filter(function (it) { return it.status === filter; });
-    var by = {}; vis.forEach(function (it) { (by[it.cat] = by[it.cat] || []).push(it); });
-    var h = CAT_DEFS.filter(function (c) { return by[c.id] && by[c.id].length; }).map(function (c) {
-      return '<section class="hm-cat" aria-label="' + esc(c.label) + '"><h3 class="t-eyebrow hm-cat-t"><i data-lucide="' + (CAT_ICON[c.id] || 'wrench') + '"></i>' + esc(c.label) + '<span class="hm-cat-rule"></span></h3><div class="hm-rows">' +
-        by[c.id].sort(function (a, b) { return b.pct - a.pct; }).map(rowHtml).join('') + '</div></section>';
-    }).join('');
-    $('hm-plan-cats').innerHTML = h || emptyHtml('search-x', 'Nada en este filtro', 'Prueba con otro filtro o agrega un servicio al plan de mantenimiento.', 'js-plan-new', 'Servicio al plan');
-    icons();
+    if (!$('hm-now')) return;
+    var g = STATE.grupos || { ahora: [], siguiente: [], al_dia: [] };
+    var venc = g.ahora.some(function (i) { return i.status === 'vencido'; });
+    $('hm-now').dataset.t = venc ? 'danger' : g.ahora.length ? 'warning' : '';
+    $('hm-now-n').textContent = g.ahora.length ? g.ahora.length : '';
+    $('hm-now-list').innerHTML = g.ahora.length ? g.ahora.map(nowRow).join('') :
+      '<p class="hm-none">Nada urgente. El siguiente servicio está abajo.</p>';
+    $('hm-next-list').innerHTML = g.siguiente.length ? g.siguiente.map(nextRow).join('') : '<p class="hm-none hm-none--mute">Nada próximo por ahora.</p>';
+    $('hm-ok-t').textContent = 'Al día · ' + g.al_dia.length;
+    $('hm-ok-list').innerHTML = g.al_dia.map(okRow).join('');
+    $('hm-ok-list').hidden = !showOk;
+    document.querySelector('.js-ok-toggle').setAttribute('aria-expanded', String(showOk));
+    document.querySelector('.js-ok-hint').textContent = showOk ? 'Ocultar' : 'Ver';
+    var f = document.querySelector('.js-reg-form input[name=costo]'); if (f) f.focus();
   }
-  function rowHtml(it) {
-    var s = ST[it.status], pct = Math.min(1, it.pct) * 100;
-    return '<button type="button" class="eu-card eu-card--interactive hm-row" data-tone="' + s.t + '" data-item="' + esc(it.id) + '" aria-label="' + esc(it.name) + ': ' + s.l + '">' +
-      '<span class="eu-between hm-row-top"><span class="t-ui hm-row-t">' + esc(it.name) + '</span><span class="hm-row-badges">' +
-      (it.critical ? '<span class="eu-badge eu-badge--danger">Crítico</span>' : '') + '<span class="eu-badge eu-badge--status ' + s.b + '">' + s.l + '</span></span></span>' +
-      '<span class="eu-progress eu-progress--thin hm-prog" aria-hidden="true"><i style="width:' + pct.toFixed(1) + '%"></i></span>' +
-      '<span class="eu-between hm-row-ft t-meta"><span>Último: <span class="num">' + km(it.last_km) + '</span> · ' + date(it.last_date) + '</span>' +
-      '<span class="num' + (it.km_left < 0 ? ' hm-over' : '') + '">' + (it.km_left < 0 ? 'Vencido hace ' + km(-it.km_left) : 'Faltan ' + km(it.km_left)) + '</span></span></button>';
-  }
-  $('hm-plan-cats').addEventListener('click', function (e) {
-    var r = e.target.closest('[data-item]'); if (!r) return;
-    var it = STATE.plan.filter(function (x) { return String(x.id) === r.dataset.item; })[0]; if (it) openDetail(it);
+  root.addEventListener('click', function (e) {
+    var b = e.target.closest('.js-reg,.js-detail,.js-ok-toggle'); if (!b) return;
+    if (b.classList.contains('js-ok-toggle')) { showOk = !showOk; renderPlan(); icons(); return; }
+    var id = b.closest('[data-item]').dataset.item;
+    if (b.classList.contains('js-reg')) { editing = editing === id ? null : id; renderPlan(); icons(); return; }
+    var it = STATE.plan.filter(function (x) { return String(x.id) === id; })[0]; if (it) openDetail(it);
+  });
+  root.addEventListener('submit', function (e) {
+    var f = e.target.closest('.js-reg-form'); if (!f) return;
+    e.preventDefault();
+    var id = f.closest('[data-item]').dataset.item;
+    var k = parseInt((f.km.value || '').replace(/[^0-9]/g, ''), 10);
+    f.querySelector('[type=submit]').setAttribute('aria-busy', 'true');
+    call('/harma/api/plan/' + encodeURIComponent(id) + '/marcar', json('POST', {
+      km: isNaN(k) ? null : k, costo: parseFloat((f.costo.value || '').replace(/[^0-9.]/g, '')) || 0, taller: f.taller.value.trim(),
+    }), 'Servicio registrado').then(function (d) { if (d) editing = null; renderPlan(); icons(); });
   });
 
   function openDetail(it) {
@@ -144,27 +178,16 @@
     $('hm-detail').dataset.tone = s.t;
     $('hm-detail-desc').textContent = it.desc || ''; $('hm-detail-desc').hidden = !it.desc;
     $('hm-detail-stats').innerHTML = [
-      ['Intervalo km', it.km_interval < 999999 ? km(it.km_interval) : '—'],
-      ['Intervalo tiempo', it.meses_interval < 999 ? it.meses_interval + ' meses' : '—'],
+      ['Intervalo km', it.con_km ? km(it.km_interval) : '—'],
+      ['Intervalo tiempo', it.con_tiempo ? it.meses_interval + ' meses' : '—'],
       ['Último servicio', km(it.last_km), date(it.last_date)],
-      ['Próximo', km(it.next_km), 'en ' + km(Math.max(0, it.km_left))],
+      ['Próximo', it.con_km ? km(it.next_km) : '—', it.eta_txt],
     ].map(function (r) {
       return '<div class="eu-card eu-card--inset hm-dstat"><div class="t-eyebrow">' + r[0] + '</div><div class="t-data hm-dstat-v">' + r[1] + '</div>' + (r[2] ? '<div class="t-meta">' + r[2] + '</div>' : '') + '</div>';
     }).join('');
-    $('hm-detail-bars').innerHTML = [['Progreso por kilómetros', it.km_pct], ['Progreso por tiempo', it.time_pct]].map(function (b) {
-      var over = b[1] >= 1;
-      return '<div class="hm-dbar' + (over ? ' is-over' : '') + '"><div class="eu-between t-meta"><span>' + b[0] + '</span><span class="num hm-dbar-v">' + Math.round(b[1] * 100) + '%</span></div>' +
-        '<div class="eu-progress hm-prog" role="progressbar" aria-label="' + b[0] + '" aria-valuenow="' + Math.round(b[1] * 100) + '" aria-valuemax="100"><i style="width:' + (Math.min(1, b[1]) * 100).toFixed(1) + '%"></i></div></div>';
-    }).join('');
+    $('hm-detail-bars').innerHTML = '<p class="t-meta">' + esc(it.motivo) + '</p>';
     openM('m-detail');
   }
-  $('hm-detail-mark').addEventListener('click', function () {
-    euModal.close('m-detail');
-    $('m-marcar-t').textContent = 'Registrar: ' + detail.name;
-    $('mk-km').value = (STATE.vehiculo || {}).km_actual || '';
-    ['mk-costo', 'mk-taller', 'mk-desc'].forEach(function (k) { $(k).value = ''; });
-    openM('m-marcar', 'mk-km');
-  });
   $('hm-detail-edit').addEventListener('click', function () {
     euModal.close('m-detail');
     $('pe-km').value = detail.last_km; $('pe-fecha').value = detail.last_date || '';
@@ -175,11 +198,6 @@
     euConfirm('¿Quitar «' + it.name + '» del plan?', { confirmLabel: 'Quitar' }).then(function (ok) {
       if (ok) call('/harma/api/plan/' + encodeURIComponent(it.id), { method: 'DELETE' }, 'Servicio quitado del plan', 'm-detail');
     });
-  });
-  onSubmit('f-m-marcar', function () {
-    call('/harma/api/plan/' + encodeURIComponent(detail.id) + '/marcar', json('POST', {
-      km: num('mk-km'), costo: num('mk-costo') || 0, taller: $('mk-taller').value.trim(), descripcion: $('mk-desc').value.trim(),
-    }), 'Servicio registrado', 'm-marcar', 'f-m-marcar');
   });
   onSubmit('f-m-plan-edit', function () {
     call('/harma/api/plan/' + encodeURIComponent(detail.id), json('PATCH', { last_km: num('pe-km'), last_date: $('pe-fecha').value || null }), 'Actualizado', 'm-plan-edit', 'f-m-plan-edit');
@@ -197,16 +215,23 @@
     }), 'Agregado al plan', 'm-plan', 'f-m-plan');
   });
 
-  /* ── Historial y bitácora ───────────────────────────────────────────── */
-  function renderHist() {
-    var rec = STATE.servicios.slice(0, 5);
-    $('hm-historial').innerHTML = rec.length ? rec.map(function (s) {
-      var ic = s.plan_item_id ? 'check' : tipoIcon(s.tipo, TIPOS_SERVICIO);
-      return '<li class="eu-row"><span class="eu-row-ic hm-hist-ic"><i data-lucide="' + ic + '"></i></span><span class="eu-grow hm-hist-bd"><span class="t-ui">' + esc(s.titulo) + '</span>' +
-        '<span class="t-meta">' + (s.km ? '<span class="num">' + km(s.km) + '</span> · ' : '') + date(s.fecha) + '</span></span><span class="t-data fg-brand">' + money(s.costo) + '</span></li>';
-    }).join('') : '<li>' + emptyHtml('history', 'Aún no hay historial', 'Registra tu primer servicio y aquí quedará el rastro completo.', 'js-serv-new', 'Registrar servicio') + '</li>';
-    $('hm-historial').classList.toggle('is-empty', !rec.length);
+  /* ── Lateral: papeles y bitácora (nota 5) ─────────────────────────── */
+  function renderSide() {
+    var P = STATE.papeles || [];
+    $('hm-pap-list').innerHTML = P.length ? P.map(function (p) {
+      var sub = p.dias == null ? 'Sin vencimiento' : p.dias < 0 ? 'Venció hace ' + (-p.dias) + ' d' : p.dias === 0 ? 'Vence hoy' : 'Vence en ' + p.dias + ' d · ' + date(p.vence);
+      var act = p.status === 'vencida' ? '<a class="hm-pap-a" href="/harma/?vista=papeles">Subir nueva</a>' :
+        (p.archivo ? '<a class="hm-pap-a" href="/harma/documentos/' + encodeURIComponent(p.archivo) + '" target="_blank" rel="noopener">Ver</a>' : '');
+      return '<div class="hm-pap" data-s="' + p.status + '"><i class="hm-dot"></i><div class="eu-grow hm-min"><div class="hm-pap-t">' + esc(p.titulo) + '</div><div class="hm-pap-s">' + sub + '</div></div>' + act + '</div>';
+    }).join('') : '<p class="hm-box-empty t-meta">Sin papeles todavía.</p>';
+    var S = STATE.servicios.slice(0, 3);
+    $('hm-bit-list').innerHTML = S.length ? S.map(function (s) {
+      return '<div class="hm-bit"><div class="eu-grow hm-min"><div class="hm-bit-t">' + esc(s.titulo) + '</div><div class="num t-meta">' + date(s.fecha) + (s.km ? ' · ' + km(s.km) : '') + '</div></div><span class="num hm-bit-c">' + (s.costo ? money(s.costo) : '—') + '</span></div>';
+    }).join('') : '<p class="hm-box-empty t-meta">Aún no hay servicios.</p>';
+    var n = STATE.siniestros_abiertos || 0;
+    $('hm-sin').textContent = n ? 'Siniestros: ' + n + ' en proceso →' : 'Siniestros: ninguno abierto';
   }
+
   function actions(links, delAttr, lblDel) {
     return '<div class="hm-actions">' + links + '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm hm-del" ' + delAttr + '><i data-lucide="trash-2"></i>' + (lblDel || 'Eliminar') + '</button></div>';
   }
@@ -214,6 +239,7 @@
     return name ? '<a class="eu-btn eu-btn--secondary eu-btn--sm" href="/harma/documentos/' + encodeURIComponent(name) + '" target="_blank" rel="noopener"><i data-lucide="external-link"></i>' + label + '</a>' : '';
   }
   function renderServ() {
+    if (!$('hm-serv-list')) return;
     $('hm-cost-total').textContent = money(STATE.total_costo);
     $('hm-serv-list').innerHTML = STATE.servicios.length ? STATE.servicios.map(function (s) {
       return '<article class="eu-card hm-card"><div class="eu-between"><span class="eu-hstack hm-card-t"><i data-lucide="' + tipoIcon(s.tipo, TIPOS_SERVICIO) + '"></i><span class="t-ui">' + esc(s.titulo) + '</span></span><span class="t-data fg-brand">' + money(s.costo) + '</span></div>' +
@@ -225,6 +251,7 @@
     $('s-tipo').value = 'otro'; $('s-fecha').value = TODAY;
     ['s-titulo', 's-costo', 's-taller', 's-desc'].forEach(function (k) { $(k).value = ''; });
     $('s-km').value = (STATE.vehiculo || {}).km_actual || '';
+    $('s-taller').value = STATE.ultimo_taller || '';
     openM('m-serv', 's-titulo');
   }
   onSubmit('f-m-serv', function () {
@@ -238,6 +265,7 @@
 
   /* ── Papeles ────────────────────────────────────────────────────────── */
   function renderDocs() {
+    if (!$('hm-doc-list')) return;
     $('hm-doc-list').innerHTML = STATE.documentos.length ? STATE.documentos.map(function (d) {
       var pdf = /\.pdf$/i.test(d.nombre_archivo || '');
       return '<article class="eu-card hm-card"><div class="eu-hstack hm-doc"><span class="eu-row-ic"><i data-lucide="' + (pdf ? 'file-text' : 'image') + '"></i></span>' +
@@ -246,6 +274,7 @@
     }).join('') : emptyHtml('file-text', 'Sin documentos', 'Sube tarjeta de circulación, factura o cualquier papel importante del vehículo.', 'js-doc-new', 'Subir');
   }
   function renderPols() {
+    if (!$('hm-poliza-list')) return;
     $('hm-poliza-list').innerHTML = STATE.polizas.length ? STATE.polizas.map(function (p) {
       var bits = [], st = POL[p.status] || [p.status, ''];
       if (p.numero_poliza) bits.push('póliza ' + esc(p.numero_poliza));
@@ -258,6 +287,7 @@
     }).join('') : emptyHtml('shield', 'Sin póliza registrada', 'Agrega los datos de tu seguro para tenerlos a la mano cuando los necesites.', 'js-pol-new', 'Agregar');
   }
   function renderSins() {
+    if (!$('hm-siniestro-list')) return;
     $('hm-siniestro-list').innerHTML = STATE.siniestros.length ? STATE.siniestros.map(function (s) {
       var bits = [date(s.fecha)];
       if (s.costo_estimado) bits.push('estimado ' + money(s.costo_estimado));
@@ -334,7 +364,7 @@
   });
 
   function renderAll() {
-    renderVeh(); renderStatus(); renderPlan(); renderHist(); renderServ(); renderDocs(); renderPols(); renderSins(); icons();
+    renderVeh(); renderPlan(); renderSide(); renderServ(); renderDocs(); renderPols(); renderSins(); icons();
   }
   renderAll();
 })();

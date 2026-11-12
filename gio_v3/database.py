@@ -7134,6 +7134,24 @@ def init_db():
         except Exception as e:
             print(f"[DB] medico_medicamentos terminado_en migration warning: {e}")
 
+        # ── HARMA v2 (Sprint 4): recordatorios generados desde Harma
+        # (origen='harma', origen_id = documento/póliza) y el movimiento de
+        # Oikonomia de cada servicio (fin_mov_id). Columnas nullable; el
+        # recordatorio manual de verificación que exista queda vinculado.
+        try:
+            rem_cols = [r["name"] for r in db.execute("PRAGMA table_info(reminders)").fetchall()]
+            if 'origen' not in rem_cols:
+                db.execute("ALTER TABLE reminders ADD COLUMN origen TEXT DEFAULT NULL")
+            if 'origen_id' not in rem_cols:
+                db.execute("ALTER TABLE reminders ADD COLUMN origen_id INTEGER DEFAULT NULL")
+            if 'fin_mov_id' not in [r["name"] for r in db.execute("PRAGMA table_info(harma_servicios)").fetchall()]:
+                db.execute("ALTER TABLE harma_servicios ADD COLUMN fin_mov_id INTEGER DEFAULT NULL")
+            db.commit()
+            from modules.harma.plan import vincular_recordatorios
+            vincular_recordatorios(db)
+        except Exception as e:
+            print(f"[DB] harma v2 migration warning: {e}")
+
         # ── RECORDATORIOS — vinculado_oikonomia (Perfil v2, Sprint 5): los
         # pagos de tarjeta que ya lleva Oikonomia (PAY_DAYS / fin_pagos_ciclo)
         # se marcan para enlazar allá en vez de duplicarse. Solo la columna;
