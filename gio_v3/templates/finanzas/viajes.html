@@ -6,7 +6,6 @@
 {% block back_href %}/finanzas/estados/{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fin-viajes.css') }}">{% endblock %}
 {% block mtitle %}<b>Gastos de viaje</b><span>Oikonomia · presupuesto por viaje</span>{% endblock %}
-{% block topright %}<button type="button" class="eu-iconbtn js-new" aria-label="Nuevo viaje"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
 <div class="gv" id="gv" data-cat="oikonomia" data-view="list">
@@ -15,8 +14,7 @@
     <header class="gv-hd">
       <div><a class="eu-btn eu-btn--ghost eu-btn--sm gv-back" href="/finanzas/estados/"><i data-lucide="arrow-left"></i>Estados de cuenta</a>
         <div class="t-eyebrow">Oikonomia · Gastos de viaje</div><h1 class="t-page" id="gv-list-t">Mis viajes</h1>
-        <p class="t-meta gv-lead">Presupuesto por viaje y los movimientos de tus estados de cuenta vinculados a cada uno.</p></div>
-      <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nuevo viaje</button>
+        <p class="t-meta gv-lead">Presupuesto por viaje y los movimientos de tus estados de cuenta vinculados a cada uno. Los viajes se crean y editan en <a href="/viajes/">Viajes</a>.</p></div>
     </header>
     <div class="gv-grid" id="trip-grid" aria-live="polite">{{ ui.skel(2, 160) }}</div>
   </section>
@@ -28,9 +26,7 @@
       <div class="eu-between gv-dhd-row">
         <div class="eu-grow"><div class="t-eyebrow" id="detail-meta-dest"></div><h1 class="t-page" id="detail-title">—</h1></div>
         <div class="eu-hstack gv-actions">
-          <a class="eu-btn eu-btn--secondary eu-btn--sm" id="detail-maleta-link" href="#"><i data-lucide="luggage"></i>Maleta</a>
-          <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-edit"><i data-lucide="pencil"></i>Editar</button>
-          <button type="button" class="eu-iconbtn js-del" aria-label="Eliminar viaje"><i data-lucide="trash-2"></i></button>
+          <a class="eu-btn eu-btn--secondary eu-btn--sm" id="detail-maleta-link" href="/viajes/"><i data-lucide="plane"></i>Abrir viaje</a>
         </div>
       </div>
     </div>
@@ -71,23 +67,6 @@
   </section>
 </div>
 
-<div data-cat="oikonomia">
-{% call ui.modal('m-trip', 'Nuevo viaje', eyebrow='Gastos de viaje') %}
-<form class="eu-modal-bd" id="f-trip" autocomplete="off" novalidate>
-  <div class="eu-field"><label class="eu-label" for="f-nombre">Nombre del viaje *</label><input class="eu-input" id="f-nombre" placeholder="Ej: Cancún mayo 2026" maxlength="200"></div>
-  <div class="eu-grid-2 gv-fgrid">
-    <div class="eu-field"><label class="eu-label" for="f-destino">Destino</label><input class="eu-input" id="f-destino" placeholder="Ej: Cancún, Q.R." maxlength="100"></div>
-    <div class="eu-field"><label class="eu-label" for="f-estado">Estado</label><select class="eu-select" id="f-estado"><option value="planificado">Planificado</option><option value="activo">Activo (en curso)</option><option value="completado">Completado</option><option value="cancelado">Cancelado</option></select></div>
-    <div class="eu-field"><label class="eu-label" for="f-inicio">Fecha inicio *</label><input class="eu-input" id="f-inicio" type="date"></div>
-    <div class="eu-field"><label class="eu-label" for="f-fin">Fecha fin *</label><input class="eu-input" id="f-fin" type="date"></div>
-  </div>
-  <div class="eu-field"><label class="eu-label" for="f-presupuesto">Presupuesto total (MXN)</label><input class="eu-input eu-input--money" id="f-presupuesto" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00"></div>
-  <div class="eu-field"><label class="eu-label" for="f-notas">Notas (opcional)</label><textarea class="eu-textarea" id="f-notas" rows="2" placeholder="Detalles del viaje…"></textarea></div>
-  <div class="eu-err" id="modal-err" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>
-</form>
-<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-trip')">Cancelar</button><button type="submit" form="f-trip" class="eu-btn eu-btn--primary">Guardar</button></div>
-{% endcall %}
-</div>
 {% endblock %}
 
 {% block scripts %}

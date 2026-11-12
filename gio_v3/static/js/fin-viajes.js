@@ -1,6 +1,8 @@
 /* Oikonomia · Gastos de viaje — Design System V2: lista de viajes con avance
    del presupuesto y detalle (desglose por concepto, sugerencias para vincular
-   movimientos de los estados de cuenta y transacciones vinculadas). */
+   movimientos de los estados de cuenta y transacciones vinculadas).
+   Un solo alta y edición: los viajes se crean, editan y eliminan en /viajes
+   (su m-trip lleva el presupuesto); aquí quedan el desglose y la vinculación. */
 (function () {
   'use strict';
   var root = document.getElementById('gv');
@@ -9,7 +11,7 @@
   var ICON = { Vuelos: 'plane', Hotel: 'building', Transporte: 'car', Comida: 'utensils', Experiencias: 'drama', Otros: 'package' };
   var CAT = { Vuelos: 'cosmopolitismo', Hotel: 'paideia', Transporte: 'hegemonikon', Comida: 'harma', Experiencias: 'eurythmia', Otros: 'identidad' };
   var ESTADO = { planificado: ['Planificado', 'eu-badge--info'], activo: ['En curso', 'eu-badge--success'], completado: ['Completado', ''], cancelado: ['Cancelado', 'eu-badge--danger'] };
-  var trips = [], curId = null, summary = null, tagged = [], suggested = [], editing = false;
+  var trips = [], curId = null, summary = null, tagged = [], suggested = [];
   // Tabla de vinculadas: orden por columna (asc/desc) y filtro por concepto
   // desde el desglose (clic en un concepto muestra solo sus movimientos).
   var sortKey = 'fecha', sortDir = 'asc', conceptoSel = null;
@@ -31,11 +33,9 @@
   function send(u, m, b) { return fetch(u, { method: m, headers: { 'Content-Type': 'application/json' }, body: b === undefined ? undefined : JSON.stringify(b) }).then(function (r) { return r.json(); }); }
   function empty(ic, t, txt) { return '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="' + ic + '"></i></div><div class="t-card">' + t + '</div><p>' + txt + '</p></div>'; }
   function tone(pct, over) { return over ? 'danger' : pct > 80 ? 'warning' : 'brand'; }
-  function setErr(msg) { var e = $('modal-err'); e.hidden = !msg; e.querySelector('span').textContent = msg || ''; }
 
   function setView(v) {
     root.dataset.view = v; $('vw-list').hidden = v !== 'list'; $('vw-detail').hidden = v !== 'detail';
-    var tb = document.querySelector('.eu-topbar .js-new'); if (tb) tb.hidden = v !== 'list';
   }
 
   /* ── Lista ──────────────────────────────────────────────────────────── */
@@ -44,21 +44,21 @@
     setView('list');
     var grid = $('trip-grid');
     if (!trips.length) {
-      grid.innerHTML = '<div class="eu-card gv-span">' + empty('plane', 'Aún no tienes viajes', 'Crea un viaje con su presupuesto y vincula los movimientos de tus estados de cuenta.') +
-        '<div class="gv-cta"><button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Crear primer viaje</button></div></div>';
+      grid.innerHTML = '<div class="eu-card gv-span">' + empty('plane', 'Aún no tienes viajes', 'Crea el viaje en Viajes con su presupuesto y aquí vinculas los movimientos de tus estados de cuenta.') +
+        '<div class="gv-cta"><a class="eu-btn eu-btn--primary" href="/viajes/?nuevo=1"><i data-lucide="plus"></i>Crear viaje en Viajes</a></div></div>';
       icons(); return;
     }
     grid.innerHTML = trips.map(function (t) {
       var pct = t.presupuesto > 0 ? Math.min(t.total_gastado / t.presupuesto * 100, 100) : 0, over = t.presupuesto > 0 && t.total_gastado > t.presupuesto;
       var est = ESTADO[t.estado] || [t.estado, ''];
-      return '<button type="button" class="eu-card eu-card--interactive gv-card" data-trip="' + t.id + '" data-tone="' + tone(pct, over) + '" aria-label="Ver detalle de ' + esc(t.nombre) + '">' +
-        '<span class="eu-between gv-card-top"><span class="t-card gv-card-t">' + esc(t.nombre) + '</span><span class="eu-badge eu-badge--status ' + est[1] + '">' + esc(est[0]) + '</span></span>' +
+      return '<div class="eu-card gv-card" data-tone="' + tone(pct, over) + '">' +
+        '<span class="eu-between gv-card-top"><a class="t-card gv-card-t" href="/viajes/?id=' + t.id + '">' + esc(t.nombre) + '</a><span class="eu-badge eu-badge--status ' + est[1] + '">' + esc(est[0]) + '</span></span>' +
         (t.destino ? '<span class="t-meta gv-dest"><i data-lucide="map-pin"></i>' + esc(t.destino) + '</span>' : '') +
         '<span class="t-data gv-dates">' + fmtD(t.fecha_inicio) + ' — ' + fmtD(t.fecha_fin) + '</span>' +
         (t.presupuesto > 0
           ? '<span class="eu-progress eu-progress--thin gv-prog" aria-hidden="true"><i style="width:' + pct.toFixed(1) + '%"></i></span><span class="eu-between t-meta num"><span>$' + fmt(t.total_gastado) + '</span><span>' + pct.toFixed(0) + '% de $' + fmt(t.presupuesto) + '</span></span>'
           : '<span class="t-meta">Sin presupuesto · $' + fmt(t.total_gastado) + ' gastado</span>') +
-        '<span class="eu-between gv-card-ft t-meta"><span>' + t.tx_count + ' transaccion' + (t.tx_count !== 1 ? 'es' : '') + '</span><span class="fg-brand gv-go">Ver<i data-lucide="arrow-right"></i></span></span></button>';
+        '<span class="eu-between gv-card-ft t-meta"><span>' + t.tx_count + ' transaccion' + (t.tx_count !== 1 ? 'es' : '') + '</span><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm gv-go" data-trip="' + t.id + '" aria-label="Desglose de ' + esc(t.nombre) + '">Desglose<i data-lucide="arrow-right"></i></button></span></div>';
     }).join('');
     icons();
   }
@@ -69,7 +69,7 @@
   /* ── Detalle ────────────────────────────────────────────────────────── */
   function showDetail(id) {
     curId = id; setView('detail');
-    history.replaceState(null, '', location.pathname + '?trip=' + id);
+    history.replaceState(null, '', location.pathname + '?id=' + id);
     return Promise.all([getJ(API + '/trips/' + id + '/summary'), getJ(API + '/trips/' + id + '/transactions')]).then(function (r) {
       summary = r[0]; tagged = r[1].data || []; conceptoSel = null;
       renderDetail(); window.scrollTo(0, 0);
@@ -82,7 +82,7 @@
     $('detail-title').textContent = t.nombre;
     $('detail-meta-dest').textContent = (t.destino || 'Sin destino') + ' · ' + fmtD(t.fecha_inicio) + ' — ' + fmtD(t.fecha_fin);
     // Misma fila en `viajes`: la maleta y outfits viven en el módulo Viajes.
-    $('detail-maleta-link').href = '/viajes/?trip=' + t.id;
+    $('detail-maleta-link').href = '/viajes/?id=' + t.id;
     $('detail-gastado').textContent = '$' + fmt(gastado);
     $('detail-presupuesto').textContent = pres > 0 ? '$' + fmt(pres) : '—';
     var r = $('detail-restante');
@@ -182,49 +182,8 @@
     }).catch(function () { toast('Sin conexión', 'err'); });
   });
 
-  /* ── Crear / editar / eliminar ──────────────────────────────────────── */
-  function openTrip(isEdit) {
-    editing = !!isEdit && !!summary && !!curId;
-    $('m-trip-t').textContent = editing ? 'Editar viaje' : 'Nuevo viaje'; setErr('');
-    var t = editing ? summary.trip : {};
-    $('f-nombre').value = t.nombre || ''; $('f-destino').value = t.destino || ''; $('f-estado').value = t.estado || 'planificado';
-    $('f-inicio').value = t.fecha_inicio || ''; $('f-fin').value = t.fecha_fin || ''; $('f-presupuesto').value = t.presupuesto || ''; $('f-notas').value = t.notas || '';
-    euModal.open('m-trip'); setTimeout(function () { $('f-nombre').focus(); }, 20);
-  }
-  document.addEventListener('click', function (e) {
-    if (e.target.closest('.js-new')) openTrip(false);
-    else if (e.target.closest('#gv .js-edit')) openTrip(true);
-  });
-  $('f-trip').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var nombre = $('f-nombre').value.trim(), inicio = $('f-inicio').value, fin = $('f-fin').value;
-    if (!nombre) { setErr('El nombre es obligatorio'); $('f-nombre').focus(); return; }
-    if (!inicio) { setErr('Ingresa la fecha de inicio'); $('f-inicio').focus(); return; }
-    if (!fin) { setErr('Ingresa la fecha de fin'); $('f-fin').focus(); return; }
-    if (fin < inicio) { setErr('La fecha fin debe ser posterior al inicio'); $('f-fin').focus(); return; }
-    var payload = { nombre: nombre, destino: $('f-destino').value.trim(), fecha_inicio: inicio, fecha_fin: fin,
-      presupuesto: parseFloat($('f-presupuesto').value) || 0, estado: $('f-estado').value, notas: $('f-notas').value.trim() };
-    var btn = document.querySelector('[form="f-trip"]'); btn.disabled = true;
-    send(editing ? API + '/trips/' + curId : API + '/trips', editing ? 'PATCH' : 'POST', payload).then(function (r) {
-      if (!r.ok) { setErr(r.error || 'Error al guardar'); return; }
-      euModal.close('m-trip'); toast(editing ? 'Viaje actualizado ✓' : 'Viaje creado ✓', 'ok');
-      var id = editing ? curId : r.id;
-      return loadTrips().then(function () { return id ? showDetail(id) : renderList(); });
-    }).catch(function () { setErr('Sin conexión'); }).finally(function () { btn.disabled = false; });
-  });
-  root.querySelector('.js-del').addEventListener('click', function () {
-    var name = summary && summary.trip ? summary.trip.nombre : 'este viaje';
-    euConfirm('¿Eliminar «' + name + '»? Las transacciones se desvincularán (no se eliminan).', { confirmLabel: 'Eliminar' }).then(function (ok) {
-      if (!ok) return;
-      send(API + '/trips/' + curId, 'DELETE').then(function (r) {
-        if (!r.ok) { toast('No se pudo eliminar', 'err'); return; }
-        toast('Viaje eliminado'); return loadTrips().then(showList);
-      }).catch(function () { toast('Sin conexión', 'err'); });
-    });
-  });
-
   loadTrips().then(function () {
-    var tp = Number(new URLSearchParams(location.search).get('trip'));
+    var q = new URLSearchParams(location.search), tp = Number(q.get('id') || q.get('trip'));
     if (tp && trips.some(function (t) { return t.id === tp; })) showDetail(tp); else renderList();
   }).catch(function () { $('trip-grid').innerHTML = '<div class="eu-card">' + empty('wifi-off', 'Sin conexión', 'No se pudieron cargar los viajes.') + '</div>'; icons(); });
 })();

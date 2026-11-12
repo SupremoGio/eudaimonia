@@ -18,10 +18,12 @@
 @media (min-width:640px){.gv-grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
 .gv-span{grid-column:1/-1}
 .gv-cta{display:flex;justify-content:center;padding-bottom:var(--sp-6)}
-.gv-card{display:flex;flex-direction:column;gap:var(--sp-2);width:100%;padding:var(--sp-4);text-align:left;font:inherit;color:inherit;cursor:pointer;border-top:3px solid var(--tone-fg)}
+.gv-card{display:flex;flex-direction:column;gap:var(--sp-2);width:100%;padding:var(--sp-4);text-align:left;border-top:3px solid var(--tone-fg)}
 .gv-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .gv-card-top{align-items:flex-start}
-.gv-card-t{overflow-wrap:anywhere}
+.gv-card-t{overflow-wrap:anywhere;color:var(--fg-1);text-decoration:none}
+.gv-card-t:hover{text-decoration:underline}
+.gv-card-ft .gv-go{margin-right:calc(var(--sp-2) * -1)}
 .gv-dest,.gv-go{display:inline-flex;align-items:center;gap:var(--sp-1)}
 .gv-dest svg,.gv-go svg{width:12px;height:12px}
 .gv-dates{font-size:var(--fs-13);color:var(--fg-2)}
