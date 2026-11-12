@@ -6,48 +6,39 @@
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/perfil.css') }}">{% endblock %}
 {% block mtitle %}<b>Tú</b><span>Αὐτός</span>{% endblock %}
 
+{# Handoff Perfil v2: tu archivo personal — identifica, guarda y avisa. El
+   estado de juego (nivel, XP, EC) vive en otras partes y aquí no se repite.
+   Lateral con 7 secciones y su contador; Resumen por defecto (?sec=). #}
 {% set sections = [
+  ('resumen', 'layout-dashboard', 'Resumen'),
   ('datos', 'user-round', 'Datos personales'),
-  ('medidas', 'ruler', 'Medidas corporales'),
-  ('documentos', 'folder', 'Documentos'),
+  ('medidas', 'ruler', 'Medidas'),
   ('recordatorios', 'bell', 'Recordatorios'),
+  ('documentos', 'folder', 'Documentos'),
   ('vault', 'key-round', 'Contraseñas'),
   ('ajustes', 'settings-2', 'Ajustes'),
 ] %}
-{% set counts = {
-  'datos': stats.campos_completos ~ '/' ~ stats.campos_total,
-  'medidas': stats.medidas_completas ~ '/' ~ stats.medidas_total,
-  'documentos': stats.docs_total,
-  'recordatorios': stats.rem_total,
-  'vault': stats.vault_total,
-} %}
-{% set subs = {
-  'datos': 'Nombre, identificación y contacto',
-  'medidas': 'Medidas, tallas por marca y plicómetro',
-  'documentos': stats.docs_total ~ ' archivo' ~ ('s' if stats.docs_total != 1 else ''),
-  'recordatorios': (stats.rem_urgentes ~ ' en los próximos 3 días') if stats.rem_urgentes else (stats.rem_total ~ ' activos'),
-  'vault': stats.vault_total ~ ' guardada' ~ ('s' if stats.vault_total != 1 else '') ~ ' · cifradas',
-  'ajustes': 'Tema, sesión y zona de peligro',
-} %}
+{% set cur = sec if sec in sections|map(attribute=0)|list else 'resumen' %}
 
 {% block content %}
-<div class="pf" id="pf" data-sec="">
+<div class="pf" id="pf" data-sec="{{ cur }}">
   <aside class="pf-aside">
     {% include "perfil/_card.html" %}
   </aside>
 
   <div class="pf-main">
-    {% include "perfil/_hub.html" %}
+    {% include "perfil/_resumen.html" %}
     {% include "perfil/_datos.html" %}
     {% include "perfil/_medidas.html" %}
-    {% include "perfil/_documentos.html" %}
     {% include "perfil/_recordatorios.html" %}
+    {% include "perfil/_documentos.html" %}
     {% include "perfil/_vault.html" %}
     {% include "perfil/_ajustes.html" %}
   </div>
 </div>
-{% set pf_js = {'rv': {}, 'priv': {}, 'mv': {}} %}
-{% for i in info %}{% set _ = pf_js.rv.update({i.key: i.value}) %}{% set _ = pf_js.priv.update({i.key: i.private}) %}{% endfor %}
+{# Solo los valores NO privados: los privados se piden con /api/privados #}
+{% set pf_js = {'rv': {}, 'mv': {}} %}
+{% for i in info if not i.private %}{% set _ = pf_js.rv.update({i.key: i.value}) %}{% endfor %}
 {% for m in measurements %}{% set _ = pf_js.mv.update({m.key: m.value}) %}{% endfor %}
 <script type="application/json" id="pf-data">{{ pf_js|tojson }}</script>
 {% endblock %}

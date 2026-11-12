@@ -1,6 +1,6 @@
-<section class="pf-sec eu-vstack" id="sec-vault" data-sec-panel="vault" hidden>
-  {% set sec_title, sec_sub = 'Contraseñas', 'Cifradas en la base de datos; se descifran solo cuando las muestras o copias.' %}
-  {% set sec_action = '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-vault-new"><i data-lucide="plus"></i>Nueva</button>' %}
+<section class="pf-sec eu-vstack" id="sec-vault" data-sec-panel="vault"{% if cur != 'vault' %} hidden{% endif %}>
+  {% set sec_title, sec_sub = 'Contraseñas', '' %}
+  {% set sec_action = '<button type="button" class="eu-btn eu-btn--secondary js-vault-new"><i data-lucide="plus"></i>Nueva</button>' %}
   {% include "perfil/_sechead.html" %}
   <form class="eu-card pf-form js-vault-form" id="vaultForm" hidden autocomplete="off">
     <input type="hidden" id="vaultEditId" value="">

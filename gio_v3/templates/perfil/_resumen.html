@@ -1,0 +1,46 @@
+{# Resumen (notas 2–3): lo urgente primero y tres accesos con su estado. #}
+<section class="pf-sec eu-vstack" id="sec-resumen" data-sec-panel="resumen"{% if cur != 'resumen' %} hidden{% endif %}>
+  {% set sec_title, sec_sub, sec_action = 'Resumen', '', '' %}
+  {% include "perfil/_sechead.html" %}
+
+  <section class="pf-attn" aria-labelledby="pf-attn-t">
+    <div class="pf-attn-hd"><h2 class="t-section" id="pf-attn-t">Requiere atención</h2><span class="t-meta js-attn-n">{% if atencion %}{{ atencion|length }} cosa{{ 's' if atencion|length != 1 }}{% endif %}</span></div>
+    <div class="js-attn">
+    {% for a in atencion %}
+      {% if a.tipo == 'rem' %}
+      <div class="pf-attn-row" data-rem="{{ a.id }}">
+        <button type="button" class="pf-ck{{ ' is-late' if a.vencido }} js-attn-done" aria-label="Marcar «{{ a.desc }}» como hecho"></button>
+        <div class="pf-min eu-grow"><div class="pf-attn-t">{{ a.desc }}</div>
+          <div class="pf-attn-s"><span class="{{ 'is-late' if a.vencido else 'is-today' }}">{{ a.when_txt }}</span><span>{{ a.tema }}</span>{% if a.freq %}<span>↻ {{ a.freq }}</span>{% endif %}</div></div>
+        {% if a.link %}<a class="pf-attn-link" href="{{ a.link }}">En Oikonomia →</a>{% endif %}
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-attn-snooze"><i data-lucide="alarm-clock"></i>Mañana</button>
+      </div>
+      {% elif a.tipo == 'dato' %}
+      <div class="pf-attn-row" data-campo="{{ a.campo }}">
+        <span class="pf-attn-ic"><i data-lucide="{{ 'lock' if a.privado else 'user-round' }}"></i></span>
+        <div class="pf-min eu-grow"><div class="pf-attn-t">{{ a.label }} sin capturar</div><div class="pf-attn-s"><span>{{ 'Dato privado' if a.privado else 'Dato personal' }}</span></div></div>
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-attn-cap">Capturar</button>
+        <form class="pf-attn-form js-attn-form" hidden><input class="eu-input" aria-label="{{ a.label }}" placeholder="{{ a.label }}" autocomplete="off"><button type="submit" class="eu-btn eu-btn--primary eu-btn--sm">Guardar</button></form>
+      </div>
+      {% else %}
+      <div class="pf-attn-row" data-medidas>
+        <span class="pf-attn-ic"><i data-lucide="ruler"></i></span>
+        <div class="pf-min eu-grow"><div class="pf-attn-t">{{ a.n }} medida{{ 's' if a.n != 1 }} sin actualizar en más de 60 días</div><div class="pf-attn-s"><span>{{ a.labels }}</span></div></div>
+        <a class="eu-btn eu-btn--secondary eu-btn--sm" href="?sec=medidas&lote=1" data-sec-go="medidas" data-lote="1">Actualizar</a>
+      </div>
+      {% endif %}
+    {% endfor %}
+    </div>
+    <div class="pf-attn-ok js-attn-ok"{% if atencion %} hidden{% endif %}><i data-lucide="check"></i>Todo al día.</div>
+  </section>
+
+  <div class="pf-tiles">
+    {% for t in tiles %}
+    <a class="pf-tile" href="?sec={{ t.sec }}" data-sec-go="{{ t.sec }}">
+      <span class="t-meta pf-tile-l"><i data-lucide="{{ t.icon }}"></i>{{ t.label }}</span>
+      <span class="num pf-tile-v js-tile-{{ t.sec }}">{{ t.val }}</span>
+      <span class="t-meta">{{ t.sub }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>

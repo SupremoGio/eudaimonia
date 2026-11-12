@@ -1,4 +1,5 @@
-<section class="pf-sec eu-vstack" id="sec-ajustes" data-sec-panel="ajustes" hidden>
+{# Ajustes (nota 8): Tema y Cerrar sesión solo aquí; zona de peligro al fondo. #}
+<section class="pf-sec eu-vstack" id="sec-ajustes" data-sec-panel="ajustes"{% if cur != 'ajustes' %} hidden{% endif %}>
   {% set sec_title, sec_sub, sec_action = 'Ajustes', '', '' %}
   {% include "perfil/_sechead.html" %}
   <div class="eu-card eu-card--flush">
@@ -17,7 +18,7 @@
   <div class="eu-card eu-vstack pf-danger-zone">
     <div class="t-eyebrow pf-danger-eyebrow">Zona de peligro</div>
     <div class="t-card">Reset de gamificación</div>
-    <p class="t-meta pf-p">Borra XP, EC, racha, logros y badges. Tu historial de actividades y los módulos no se tocan, pero el progreso vuelve a cero. No se puede deshacer.</p>
+    <p class="t-meta pf-p">Borra XP, EC, racha, logros e insignias. El historial de actividades queda intacto. Pide escribir RESET.</p>
     <button type="button" class="eu-btn eu-btn--danger pf-danger-btn" id="reset-trigger"><i data-lucide="rotate-ccw"></i>Reset gamificación</button>
   </div>
   {% call ui.modal('reset-modal', '¿Empiezas de nuevo?', eyebrow='Zona de peligro') %}

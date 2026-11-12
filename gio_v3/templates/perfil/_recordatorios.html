@@ -1,6 +1,8 @@
-<section class="pf-sec eu-vstack" id="sec-recordatorios" data-sec-panel="recordatorios" hidden>
-  {% set sec_title, sec_sub = 'Recordatorios', 'Únicos o periódicos; los periódicos se reprograman solos al cumplirlos (+3 XP).' %}
-  {% set sec_action = '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-rem-new"><i data-lucide="plus"></i>Nuevo</button>' %}
+{# Recordatorios (notas 4 y 8): Vencidos · Hoy · Esta semana · Después. Los pagos
+   de tarjeta que ya lleva Oikonomia enlazan allá (solo con fin_ok). #}
+<section class="pf-sec eu-vstack" id="sec-recordatorios" data-sec-panel="recordatorios"{% if cur != 'recordatorios' %} hidden{% endif %}>
+  {% set sec_title, sec_sub = 'Recordatorios', '' %}
+  {% set sec_action = '<button type="button" class="eu-btn eu-btn--secondary js-rem-new"><i data-lucide="plus"></i>Nuevo</button>' %}
   {% include "perfil/_sechead.html" %}
   <form class="eu-card pf-form js-rem-form" id="remForm" hidden autocomplete="off">
     <input type="hidden" id="remEditId" value="">
@@ -26,9 +28,9 @@
   {% endif %}
   <div class="eu-card eu-card--flush" id="remindersList">
     {% for g in rem_grupos %}
-    {% set cerrado = g.key in ('despues', 'sin_fecha') %}
+    {% set cerrado = false %}
     <details class="pf-remg pf-remg--{{ g.key }}"{% if not cerrado %} open{% endif %}>
-      <summary class="pf-remg-hd"><i data-lucide="chevron-right" class="pf-remg-chev"></i><span>{{ g.titulo }}</span><span class="eu-badge js-remg-ct{% if g.key == 'vencidos' %} eu-badge--danger{% elif g.key == 'hoy' %} eu-badge--warning{% endif %}">{{ g['items']|length }}</span></summary>
+      <summary class="pf-remg-hd"><i data-lucide="chevron-right" class="pf-remg-chev"></i><span>{{ g.titulo }}</span><span class="num js-remg-ct">{{ g['items']|length }}</span></summary>
       <div class="eu-list">
       {% for r in g['items'] %}
       <div class="eu-row pf-rem{% if g.key == 'vencidos' %} is-late{% endif %}" id="remrow-{{ r.id }}" data-id="{{ r.id }}" data-desc="{{ r.description }}" data-type="{{ r.type }}"
@@ -36,8 +38,9 @@
         <button type="button" class="pf-rem-check js-rem-done" aria-label="Marcar «{{ r.description }}» como hecho"><span class="eu-act-check"><i data-lucide="check"></i></span></button>
         <button type="button" class="eu-row-main pf-rem-main js-rem-edit" aria-label="Editar {{ r.description }}">
           <span class="eu-row-t">{{ r.description }}</span>
-          <span class="eu-row-s">{% if r.rel %}<span class="pf-rem-when"{% if r.fecha %} title="{{ r.fecha }}"{% endif %}>{{ r.rel }}</span>{% endif %}{% if r.freq %}<span class="pf-rem-freq"><i data-lucide="repeat"></i>{{ r.freq }}</span>{% endif %}<span class="pf-rem-tema pf-rem-tema--{{ r.tema }}">{{ {'finanzas': 'Finanzas', 'casa': 'Casa y cuidado', 'eventos': 'Eventos', 'otros': 'Otros'}[r.tema] }}</span></span>
+          <span class="eu-row-s">{% if r.rel %}<span class="pf-rem-when"{% if r.fecha %} title="{{ r.fecha }}"{% endif %}>{{ r.rel }}</span>{% endif %}<span class="pf-rem-tema pf-rem-tema--{{ r.tema }}">{{ {'finanzas': 'Finanzas', 'casa': 'Casa y cuidado', 'eventos': 'Eventos', 'otros': 'Otros'}[r.tema] }}</span>{% if r.freq %}<span class="pf-rem-freq">↻ {{ r.freq }} · +3 XP</span>{% endif %}</span>
         </button>
+        {% if fin_ok and r.vinculado_oikonomia %}<a class="pf-attn-link" href="/finanzas/">En Oikonomia →</a>{% endif %}
         {% if g.key in ('vencidos', 'hoy') %}
         <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-rem-snooze" aria-controls="remSnooze" aria-expanded="false" aria-label="Posponer {{ r.description }}"><i data-lucide="alarm-clock"></i><span class="pf-hide-xs">Posponer</span></button>
         {% endif %}
