@@ -1,0 +1,19 @@
+{# Próximo partido (nota 5): liga, rival, forma, rating; aviso de que
+   reemplaza a Gym en Acta Diurna y de una lesión activa. #}
+{% set pt = data.partido %}
+<section class="hg-match" id="hg-match" aria-labelledby="hg-match-t">
+  <div class="eu-between"><h2 class="hg-sub" id="hg-match-t">Próximo partido</h2>
+    {% if pt.hay %}<span class="hg-liga" data-tono="{{ pt.tono }}"><i></i>{{ pt.liga }}</span>{% endif %}</div>
+  {% if pt.hay %}
+  <div><div class="hg-match-r">{{ ('vs ' ~ pt.rival) if pt.rival else 'Partido' }}</div>
+    <div class="num t-meta">{{ pt.fecha_txt }}{% if pt.hora %} · {{ pt.hora }}{% endif %}{% if pt.cancha %} · {{ pt.cancha }}{% endif %}</div></div>
+  {% else %}
+  <div class="hg-mute">Sin partido programado</div>
+  {% endif %}
+  {% if pt.forma or pt.rating_prom %}
+  <div class="hg-forma"><span>Forma</span><span class="hg-dots" aria-label="Últimos resultados: {{ pt.forma|join(', ') }}">{% for r in pt.forma %}<i data-r="{{ r }}" title="{{ {'G': 'Ganado', 'E': 'Empate', 'P': 'Perdido'}[r] }}"></i>{% endfor %}</span><span class="eu-grow"></span>{% if pt.rating_prom %}<span class="num">{{ pt.rating_prom }} rating</span>{% endif %}</div>
+  {% endif %}
+  {% if pt.hay and pt.reemplaza_gym %}<div class="hg-note">Ese día reemplaza a Gym y GymBook en Acta Diurna.</div>{% endif %}
+  {% if pt.hay and pt.lesion_activa %}<div class="hg-warn-note"><i data-lucide="alert-triangle"></i>Tienes una lesión activa{% if pt.lesion_zona %} en {{ pt.lesion_zona|lower }}{% endif %}. ¿Juegas?</div>{% endif %}
+  {% if not pt.hay %}<a class="hg-link-more" href="/bienestar/futbol/">Programar en Fútbol →</a>{% endif %}
+</section>

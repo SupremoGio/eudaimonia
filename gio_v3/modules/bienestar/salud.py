@@ -2,8 +2,8 @@ import os, uuid
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, abort
 from werkzeug.utils import secure_filename
 from database import get_db
-from datetime import datetime
-from utils import uploads_base_dir
+from datetime import date, datetime, timedelta
+from utils import uploads_base_dir, today_date
 
 medico_bp = Blueprint('medico', __name__, template_folder='../../templates')
 
@@ -20,11 +20,146 @@ def _today():
     return datetime.now().date().isoformat()
 
 
+# ── Helpers compartidos con el hub de Hegemonikon (v2) ───────────────────────
+
+RECURRENCIA_DIAS = 90
+
+
+def recuperacion_por_tipo(db):
+    """Días promedio de recuperación por tipo de episodio (solo resueltos)."""
+    return [dict(r) for r in db.execute("""
+        SELECT tipo,
+               ROUND(AVG(julianday(fecha_fin) - julianday(fecha_inicio)), 1) AS avg_dias,
+               COUNT(*) AS total
+        FROM   medico_episodios
+        WHERE  fecha_fin IS NOT NULL AND activo = 0
+        GROUP  BY tipo
+        ORDER  BY avg_dias DESC
+    """).fetchall()]
+
+
+def recurrencias(db):
+    return [dict(r) for r in db.execute("""
+        SELECT titulo,
+               COUNT(*) AS veces,
+               MIN(fecha_inicio) AS primera,
+               MAX(fecha_inicio) AS ultima,
+               CAST(julianday(MAX(fecha_inicio)) - julianday(MIN(fecha_inicio)) AS INTEGER) AS dias_entre
+        FROM   medico_episodios
+        GROUP  BY LOWER(titulo)
+        HAVING COUNT(*) > 1
+        ORDER  BY veces DESC, dias_entre ASC
+    """).fetchall()]
+
+
+def cada_dias(r):
+    """Intervalo promedio entre episodios de una recurrencia."""
+    if not r.get('dias_entre') or r['veces'] < 2:
+        return None
+    return r['dias_entre'] // (r['veces'] - 1)
+
+
+def _alerta_key(titulo):
+    return 'hg_alerta_oculta_hasta:' + (titulo or '').strip().lower()
+
+
+def alerta_oculta(db, titulo, hoy=None):
+    row = db.execute("SELECT value FROM app_settings WHERE key=?", (_alerta_key(titulo),)).fetchone()
+    return bool(row and row['value'] >= (hoy or today_date()).isoformat())
+
+
+def ocultar_alerta(db, titulo, dias=30, hoy=None):
+    hasta = ((hoy or today_date()) + timedelta(days=dias)).isoformat()
+    db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?,?)", (_alerta_key(titulo), hasta))
+    db.commit()
+    return hasta
+
+
+def recurrencia_alerta(db, hoy=None):
+    """La primera recurrencia con intervalo promedio < 90 días que no esté
+    oculta: {titulo, veces, cada_dias}. None si no hay."""
+    for r in recurrencias(db):
+        c = cada_dias(r)
+        if c is not None and 0 < c < RECURRENCIA_DIAS and not alerta_oculta(db, r['titulo'], hoy):
+            return {'titulo': r['titulo'], 'veces': r['veces'], 'cada_dias': c}
+    return None
+
+
+def _dias(desde, hoy):
+    try:
+        return (hoy - date.fromisoformat(str(desde)[:10])).days
+    except (TypeError, ValueError):
+        return None
+
+
+def auto_terminar(db, hoy=None):
+    """Fin automático: un medicamento con duracion_dias deja de tomarse al
+    cumplir esos días desde la fecha de su receta. Los que no tienen duración
+    («si hay dolor») nunca se apagan solos. Devuelve cuántos terminó."""
+    hoy = hoy or today_date()
+    n = 0
+    for m in db.execute("""
+        SELECT m.id, m.duracion_dias, r.fecha FROM medico_medicamentos m
+        JOIN medico_recetas r ON r.id = m.receta_id
+        WHERE m.tomando = 1 AND m.duracion_dias IS NOT NULL AND m.duracion_dias > 0
+    """).fetchall():
+        d = _dias(m['fecha'], hoy)
+        if d is not None and d >= m['duracion_dias']:
+            db.execute("UPDATE medico_medicamentos SET tomando=0, terminado_en=? WHERE id=?", (hoy.isoformat(), m['id']))
+            n += 1
+    if n:
+        db.commit()
+    return n
+
+
+def medicamentos_de(db, episodio_id, hoy=None):
+    """Medicamentos del episodio con dia_n contado desde la fecha de la receta."""
+    hoy = hoy or today_date()
+    out = []
+    for m in db.execute("""
+        SELECT m.*, r.fecha AS receta_fecha, r.medico, r.especialidad FROM medico_medicamentos m
+        JOIN medico_recetas r ON r.id = m.receta_id
+        WHERE r.episodio_id = ? ORDER BY m.tomando DESC, r.fecha DESC, m.id
+    """, (episodio_id,)).fetchall():
+        m = dict(m)
+        dia = _dias(m['receta_fecha'], hoy) or 0
+        dur = m.get('duracion_dias') or None
+        out.append({
+            'id': m['id'], 'nombre': m['nombre'], 'dosis': m.get('dosis') or '', 'frecuencia': m.get('frecuencia') or '',
+            'medico': m.get('medico') or '', 'dia_n': dia, 'duracion_dias': dur, 'tomando': bool(m['tomando']),
+            'pct': min(100, round(dia / dur * 100)) if dur else 0,
+            'casi': bool(dur and m['tomando'] and dur - dia <= 2),
+        })
+    return out
+
+
+def tratamiento(db, hoy=None):
+    """El episodio activo más reciente con sus medicamentos, recetas,
+    documentos y tu promedio de recuperación para su tipo. None si no hay."""
+    hoy = hoy or today_date()
+    e = db.execute("SELECT * FROM medico_episodios WHERE activo=1 ORDER BY fecha_inicio DESC, id DESC LIMIT 1").fetchone()
+    if not e:
+        return None
+    e = dict(e)
+    prom = next((r['avg_dias'] for r in recuperacion_por_tipo(db) if r['tipo'] == e['tipo']), None)
+    recetas = db.execute("SELECT medico, especialidad FROM medico_recetas WHERE episodio_id=? ORDER BY fecha DESC", (e['id'],)).fetchall()
+    docs = db.execute("SELECT COUNT(*) c FROM medico_documentos WHERE episodio_id=?", (e['id'],)).fetchone()['c']
+    activos = db.execute("SELECT COUNT(*) c FROM medico_episodios WHERE activo=1").fetchone()['c']
+    return {
+        'id': e['id'], 'titulo': e['titulo'], 'tipo': e['tipo'], 'zona': e.get('zona_cuerpo') or '',
+        'fecha_inicio': e['fecha_inicio'], 'dia_n': _dias(e['fecha_inicio'], hoy) or 0,
+        'avg_recuperacion_tipo': prom, 'medicamentos': medicamentos_de(db, e['id'], hoy),
+        'recetas': len(recetas), 'documentos': docs, 'episodios_activos': activos,
+        'medico': (recetas[0]['medico'] + (' · ' + recetas[0]['especialidad'] if recetas[0]['especialidad'] else '')) if recetas and recetas[0]['medico'] else '',
+    }
+
+
 # ── Index ─────────────────────────────────────────────────────────────────────
 
 @medico_bp.route('/')
 def index():
     with get_db() as db:
+        auto_terminar(db)
         rows = db.execute("""
             SELECT e.*,
                    COUNT(DISTINCT r.id)                              AS num_recetas,
@@ -43,15 +178,7 @@ def index():
         ultimo_inicio = episodios[0]['fecha_inicio'] if episodios else None
 
         # ── Analytics ────────────────────────────────────────────────────────
-        recovery = [dict(r) for r in db.execute("""
-            SELECT tipo,
-                   ROUND(AVG(julianday(fecha_fin) - julianday(fecha_inicio)), 1) AS avg_dias,
-                   COUNT(*) AS total
-            FROM   medico_episodios
-            WHERE  fecha_fin IS NOT NULL AND activo = 0
-            GROUP  BY tipo
-            ORDER  BY avg_dias DESC
-        """).fetchall()]
+        recovery = recuperacion_por_tipo(db)
 
         monthly = [dict(r) for r in db.execute("""
             SELECT strftime('%Y-%m', fecha_inicio) AS mes,
@@ -71,17 +198,11 @@ def index():
             LIMIT  5
         """).fetchall()]
 
-        recurrencia = [dict(r) for r in db.execute("""
-            SELECT titulo,
-                   COUNT(*) AS veces,
-                   MIN(fecha_inicio) AS primera,
-                   MAX(fecha_inicio) AS ultima,
-                   CAST(julianday(MAX(fecha_inicio)) - julianday(MIN(fecha_inicio)) AS INTEGER) AS dias_entre
-            FROM   medico_episodios
-            GROUP  BY LOWER(titulo)
-            HAVING COUNT(*) > 1
-            ORDER  BY veces DESC, dias_entre ASC
-        """).fetchall()]
+        recurrencia = recurrencias(db)
+        for r in recurrencia:
+            r['cada_dias'] = cada_dias(r)
+        alerta = recurrencia_alerta(db)
+        resueltos_6m = [e for e in episodios if e['fecha_inicio'] >= (today_date() - timedelta(days=183)).isoformat()]
 
         top_meds = [dict(r) for r in db.execute("""
             SELECT m.nombre, COUNT(*) AS cnt
@@ -106,7 +227,12 @@ def index():
             zonas=zonas,
             recurrencia=recurrencia,
             top_meds=top_meds,
+            alerta=alerta,
+            n_6m=len(resueltos_6m),
+            recup_media=(round(sum(r['avg_dias'] * r['total'] for r in recovery) / sum(r['total'] for r in recovery), 1)
+                         if recovery and sum(r['total'] for r in recovery) else None),
         ),
+        ep_abrir=request.args.get('ep', type=int),
     )
 
 
@@ -155,7 +281,20 @@ def actualizar_episodio(eid):
     with get_db() as db:
         db.execute(f"UPDATE medico_episodios SET {', '.join(sets)} WHERE id=?", vals)
         db.commit()
-    return jsonify({'ok': True})
+        out = {'ok': True}
+        # Al resolver: cuántos días duró y contra tu promedio del tipo
+        # (el promedio sin contar este episodio).
+        if 'activo' in d and not d['activo']:
+            e = db.execute("SELECT tipo, fecha_inicio, fecha_fin FROM medico_episodios WHERE id=?", (eid,)).fetchone()
+            if e:
+                try:
+                    dias = (date.fromisoformat(e['fecha_fin'][:10]) - date.fromisoformat(e['fecha_inicio'][:10])).days
+                except (TypeError, ValueError):
+                    dias = None
+                prom = db.execute("""SELECT AVG(julianday(fecha_fin) - julianday(fecha_inicio)) AS a FROM medico_episodios
+                                     WHERE tipo=? AND activo=0 AND fecha_fin IS NOT NULL AND id != ?""", (e['tipo'], eid)).fetchone()['a']
+                out.update(dias=dias, vs_promedio=(round(dias - prom, 1) if dias is not None and prom is not None else None))
+    return jsonify(out)
 
 
 @medico_bp.route('/api/episodios/<int:eid>', methods=['DELETE'])
@@ -260,8 +399,8 @@ def actualizar_medicamento(mid):
         return jsonify({'ok': False, 'error': 'campo tomando requerido'}), 400
     with get_db() as db:
         db.execute(
-            "UPDATE medico_medicamentos SET tomando=? WHERE id=?",
-            (int(d['tomando']), mid),
+            "UPDATE medico_medicamentos SET tomando=?, terminado_en=? WHERE id=?",
+            (int(d['tomando']), None if int(d['tomando']) else today_date().isoformat(), mid),
         )
         db.commit()
     return jsonify({'ok': True})

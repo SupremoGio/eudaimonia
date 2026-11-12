@@ -8,7 +8,6 @@
 .sl [hidden],[id^=m-] [hidden]{display:none!important}
 .sl-hd{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
 .sl-hd .t-page{margin-top:var(--sp-2)}
-.sl-lead{margin-top:var(--sp-2);color:var(--fg-2)}
 @media (max-width:767px){.sl-hd{display:none}}
 @media (min-width:768px){.eu-topbar .js-new-ep{display:none}}
 .sl-gap{gap:var(--sp-2)}
@@ -16,20 +15,6 @@
 .sl-ellip{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .sl-danger{color:var(--fg-3)}
 .sl-danger:hover{color:var(--danger-fg)}
-
-/* Cifras */
-.sl-stats{display:grid;gap:var(--sp-3)}
-@media (min-width:768px){.sl-stats{grid-template-columns:minmax(0,1.4fr) repeat(2,minmax(0,1fr))}}
-.sl-stats > .eu-card{padding:var(--sp-4)}
-.sl-hero{display:flex;align-items:center;gap:var(--sp-4)}
-.sl-hero-ic{width:48px;height:48px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sl-hero-ic svg{width:24px;height:24px}
-.sl-hero.is-ok .sl-hero-ic{background:var(--success-bg);color:var(--success-fg)}
-.sl-hero.is-ok .eu-stat-val{color:var(--success-fg)}
-.sl-hero.is-alert{border-color:var(--warning-border)}
-.sl-hero.is-alert .sl-hero-ic{background:var(--warning-bg);color:var(--warning-fg)}
-.sl-hero.is-alert .eu-stat-val{color:var(--warning-fg)}
-@media (max-width:767px){.sl-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.sl-hero{grid-column:1/-1}}
 
 /* Alertas y análisis */
 .sl-alert{display:flex;gap:var(--sp-3);align-items:flex-start;padding:var(--sp-3) var(--sp-4);border-color:var(--warning-border);background:var(--warning-bg);font-size:var(--fs-13);color:var(--fg-1)}
@@ -91,6 +76,15 @@
 .sl-med-ic{width:32px;height:32px;background:var(--cat-bg);color:var(--cat-fg)}
 .sl-med-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .sl-med.is-off{opacity:.6}
+/* «día N de M» (Hegemonikon v2, nota 3) */
+.sl-med-prog{display:flex;flex-direction:column;gap:4px;margin-top:4px;max-width:200px}
+.sl-med-d{font-size:var(--fs-12);color:var(--fg-2)}
+.sl-med-d.is-casi{color:var(--warning-fg)}
+.sl-med-bar{display:block;height:4px;border-radius:var(--r-full);background:var(--bg-raised);overflow:hidden}
+.sl-med-bar i{display:block;height:100%;width:var(--p);background:var(--cat-fg)}
+.sl-med.is-off .sl-med-bar i{background:var(--fg-4)}
+/* Análisis plegado con resumen en el summary */
+.sl-an-t{display:flex;flex-direction:column;gap:2px;min-width:0}
 .sl-med.is-off .sl-med-ic{background:var(--bg-raised);color:var(--fg-3)}
 .sl-med .eu-iconbtn{width:32px;height:32px}
 .sl-switch{position:relative;width:40px;height:24px;flex-shrink:0;padding:0;border:1px solid var(--border-default);border-radius:var(--r-full);background:var(--bg-raised);cursor:pointer;transition:background var(--dur-fast)}

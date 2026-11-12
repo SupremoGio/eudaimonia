@@ -52,11 +52,20 @@
     $('detail-content').hidden = true; $('detail-empty').hidden = false;
     delete $('sl-detail').dataset.open;
   }
-  function medHTML(m) {
-    var sub = [m.dosis, m.frecuencia, m.duracion_dias ? m.duracion_dias + ' d' : ''].filter(Boolean).join(' · ') || '—';
+  /* «día N de M» con barra (misma regla que el hub: N cuenta desde la
+     fecha de la receta; al cumplir la duración el medicamento se apaga solo) */
+  function medDia(m, fecha) {
+    if (!m.duracion_dias) return '';
+    var n = days(fecha), pct = m.tomando ? Math.min(100, Math.round(n / m.duracion_dias * 100)) : 100;
+    var casi = m.tomando && m.duracion_dias - n <= 2;
+    return '<span class="sl-med-prog"><span class="num sl-med-d' + (casi ? ' is-casi' : '') + '">' + (m.tomando ? 'día ' + n + ' de ' + m.duracion_dias : 'terminado') + '</span>' +
+      '<span class="sl-med-bar"><i style="--p:' + pct + '%"></i></span></span>';
+  }
+  function medHTML(m, fecha) {
+    var sub = [m.dosis, m.frecuencia].filter(Boolean).join(' · ') || (m.duracion_dias ? '' : '—');
     return '<li class="sl-med' + (m.tomando ? '' : ' is-off') + '" id="med-' + m.id + '">' +
       '<span class="eu-row-ic sl-med-ic"><i data-lucide="pill"></i></span>' +
-      '<span class="sl-med-t"><span class="t-ui">' + esc(m.nombre) + '</span><span class="t-meta">' + esc(sub) + '</span></span>' +
+      '<span class="sl-med-t"><span class="t-ui">' + esc(m.nombre) + '</span><span class="t-meta">' + esc(sub) + '</span>' + medDia(m, fecha) + '</span>' +
       '<button type="button" class="sl-switch js-med-toggle" role="switch" data-id="' + m.id + '" aria-checked="' + !!m.tomando + '" aria-label="Tomándolo: ' + esc(m.nombre) + '"><span></span></button>' +
       '<button type="button" class="eu-iconbtn sl-danger js-med-del" data-id="' + m.id + '" aria-label="Eliminar ' + esc(m.nombre) + '"><i data-lucide="x"></i></button></li>';
   }
@@ -80,7 +89,7 @@
           (r.notas ? '<p class="t-meta fg-2 sl-rx-notes">«' + esc(r.notas) + '»</p>' : '') + '</div>' +
           '<div class="eu-hstack sl-gap"><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-add-med" data-id="' + r.id + '"><i data-lucide="plus"></i>Med.</button>' +
           '<button type="button" class="eu-iconbtn sl-danger js-del-rx" data-id="' + r.id + '" aria-label="Eliminar receta"><i data-lucide="trash-2"></i></button></div></div>' +
-          (r.medicamentos.length ? '<ul class="sl-meds">' + r.medicamentos.map(medHTML).join('') + '</ul>' : '<p class="t-meta">Sin medicamentos.</p>') + '</li>';
+          (r.medicamentos.length ? '<ul class="sl-meds">' + r.medicamentos.map(function (m) { return medHTML(m, r.fecha); }).join('') + '</ul>' : '<p class="t-meta">Sin medicamentos.</p>') + '</li>';
       }).join('') + '</ol>' : euEmpty('pill', 'Sin recetas', 'Agrega la receta o el medicamento de este episodio.', true)) +
       '<div class="eu-between sl-sec-hd"><h3 class="t-card">Documentos</h3><button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-add-doc" data-id="' + ep.id + '"><i data-lucide="upload"></i>Documento</button></div>' +
       (docs && docs.length ? '<div class="eu-list sl-docs">' + docs.map(function (dc) {
@@ -170,7 +179,14 @@
   });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('sl-detail').dataset.open && !document.querySelector('.eu-scrim:not([hidden])')) close(); });
 
-  /* Abre solo el episodio activo si es el único */
-  var act = EPS.filter(function (e) { return e.activo; });
-  if (act.length === 1 && window.matchMedia('(min-width:1024px)').matches) select(act[0].id);
+  /* ?ep=<id> abre ese episodio (enlace «Ver episodio →» del hub); si no,
+     el activo si es el único (en desktop) */
+  var ep = parseInt(root.dataset.ep, 10);
+  if (ep && EPS.some(function (e) { return e.id === ep; })) {
+    select(ep);
+    var card = $('card-' + ep); if (card) card.scrollIntoView({ block: 'nearest' });
+  } else {
+    var act = EPS.filter(function (e) { return e.activo; });
+    if (act.length === 1 && window.matchMedia('(min-width:1024px)').matches) select(act[0].id);
+  }
 })();

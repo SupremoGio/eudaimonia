@@ -1,12 +1,13 @@
 {# Análisis de patrones: recurrencias rápidas, episodios por mes, recuperación, zonas y medicamentos #}
 {% set an = analytics %}
-{% for r in an.recurrencia if r.dias_entre is not none and 0 < r.dias_entre < 90 %}
+{# Alerta de recurrencia: la misma regla que el hub (< 90 días, ocultable 30 d) #}
+{% if an.alerta %}
 <div class="eu-card sl-alert" role="status"><i data-lucide="alert-triangle"></i>
-  <p><b>{{ r.titulo }}</b> ha recurrido {{ r.veces }} veces — en promedio cada <b>{{ (r.dias_entre // (r.veces - 1)) if r.veces > 1 else r.dias_entre }} días</b>. Consulta a un especialista para prevenirlo.</p></div>
-{% endfor %}
+  <p><b>{{ an.alerta.titulo }}</b> ha recurrido {{ an.alerta.veces }} veces — en promedio cada <b>{{ an.alerta.cada_dias }} días</b>. Consulta a un especialista para prevenirlo.</p></div>
+{% endif %}
 {% if an.recurrencia or an.monthly or an.recovery %}
-<details class="eu-card eu-card--flush sl-an" open>
-  <summary class="sl-an-sum"><span class="eu-row-ic"><i data-lucide="bar-chart-3"></i></span><span class="t-card eu-grow">Análisis de patrones</span><i data-lucide="chevron-down" class="sl-chev sl-an-chev"></i></summary>
+<details class="eu-card eu-card--flush sl-an">
+  <summary class="sl-an-sum"><span class="eu-row-ic"><i data-lucide="bar-chart-3"></i></span><span class="eu-grow sl-an-t"><span class="t-card">Análisis de patrones</span><span class="t-meta">{{ an.n_6m }} episodio{{ 's' if an.n_6m != 1 }} en 6 meses{% if an.recup_media is not none %} · recuperación media {{ an.recup_media }} d{% endif %}</span></span><i data-lucide="chevron-down" class="sl-chev sl-an-chev"></i></summary>
   <div class="sl-an-grid">
     <div class="eu-vstack sl-an-col">
       <div class="t-eyebrow">Episodios por mes</div>
@@ -23,7 +24,7 @@
       {% if an.recurrencia %}
       <div class="t-eyebrow sl-mt">Recurrencias</div>
       {% for r in an.recurrencia %}
-      <div class="eu-between"><span class="t-meta sl-ellip">{{ r.titulo }}</span><span class="eu-hstack sl-gap"><span class="eu-badge{{ ' eu-badge--warning' if r.dias_entre and r.dias_entre < 90 }}">{{ r.veces }}×</span>{% if r.dias_entre %}<span class="t-meta num">{{ r.dias_entre }} d</span>{% endif %}</span></div>
+      <div class="eu-between"><span class="t-meta sl-ellip">{{ r.titulo }}</span><span class="eu-hstack sl-gap"><span class="eu-badge{{ ' eu-badge--warning' if r.cada_dias and r.cada_dias < 90 }}">{{ r.veces }}×</span>{% if r.cada_dias %}<span class="t-meta num">cada {{ r.cada_dias }} d</span>{% endif %}</span></div>
       {% endfor %}{% endif %}
     </div>
     <div class="eu-vstack sl-an-col">

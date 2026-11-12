@@ -1,0 +1,39 @@
+{# «Hoy en tu cuerpo» (nota 1): peso, comidas, tratamiento y movimiento. #}
+{% set p = data.peso %}
+{% set n = data.nutricion %}
+<section class="hg-hoy" id="hg-hoy" aria-label="Hoy en tu cuerpo">
+  <a class="hg-cell" href="/perfil/?sec=medidas">
+    <span class="hg-cell-l"><i data-lucide="scale"></i>Peso</span>
+    {% if p.actual is not none %}
+    <span class="hg-cell-v num">{{ p.actual }} kg</span>
+    <span class="hg-spark" aria-hidden="true">{% for h in p.barras %}<i class="{{ ('is-' ~ ('good' if p.bueno else 'bad')) if loop.last and p.bueno is not none else ('is-last' if loop.last else '') }}" style="--h:{{ h }}px"></i>{% endfor %}</span>
+    <span class="t-meta">{% if data.peso_trend is not none %}{{ ('+' if data.peso_trend > 0 else '') ~ data.peso_trend }}{% if p.entre %} en {{ p.entre }} d{% endif %} · {% endif %}{{ 'hoy' if p.edad == 0 else 'hace ' ~ p.edad ~ ' d' }}</span>
+    {% else %}
+    <span class="hg-cell-v hg-mute">Sin lecturas</span>
+    <span class="t-meta">Captúralo en Perfil →</span>
+    {% endif %}
+  </a>
+  <a class="hg-cell" href="/nutricion/">
+    <span class="hg-cell-l"><i data-lucide="salad"></i>Comidas hoy</span>
+    <span class="hg-cell-v num">{{ n.comidas_done }}/{{ n.comidas_total }}</span>
+    <span class="t-meta">{% if n.siguiente %}Siguiente: {{ n.siguiente|lower }} · {% endif %}racha {{ n.streak }} d</span>
+  </a>
+  {% set t = data.tratamiento %}
+  {% set nmeds = (t.medicamentos|selectattr('tomando')|list|length) if t else 0 %}
+  <a class="hg-cell" href="{{ ('/bienestar/salud/?ep=' ~ t.id) if t else '/bienestar/salud/' }}" id="hg-cell-trat">
+    <span class="hg-cell-l"><i data-lucide="{{ 'activity' if t else 'shield-check' }}"></i>En tratamiento</span>
+    <span class="hg-cell-v {{ 'hg-warn' if t else 'hg-ok' }}">{% if t %}{{ nmeds }} med.{% else %}Nada{% endif %}</span>
+    <span class="t-meta">{% if t %}{{ t.titulo }} · día {{ t.dia_n }}{% else %}Todo bajo control{% endif %}</span>
+  </a>
+  {% set pt = data.partido %}
+  <a class="hg-cell" href="/bienestar/futbol/">
+    <span class="hg-cell-l"><i data-lucide="trophy"></i>Movimiento</span>
+    {% if pt.hay %}
+    <span class="hg-cell-v num">{{ pt.fecha_txt }}{% if pt.hora %} {{ pt.hora }}{% endif %}</span>
+    <span class="t-meta">Partido{% if pt.reemplaza_gym %} · reemplaza Gym{% endif %}</span>
+    {% else %}
+    <span class="hg-cell-v hg-mute">Sin partido</span>
+    <span class="t-meta">Programa el próximo →</span>
+    {% endif %}
+  </a>
+</section>

@@ -1,0 +1,38 @@
+{# «En tratamiento» (notas 2–3): el episodio activo a cero clics, con sus
+   medicamentos («día N de M», Terminé / Deshacer) y «Marcar resuelto». #}
+{% set t = data.tratamiento %}
+{% set TIPO = {'enfermedad': 'Enfermedad', 'lesion': 'Lesión', 'consulta': 'Consulta'} %}
+<section class="hg-trat{{ ' is-open' if t else ' is-clear' }}" id="hg-trat" aria-labelledby="hg-trat-t"{% if t %} data-id="{{ t.id }}"{% endif %}>
+  <div class="hg-trat-hd"><h2 class="t-section" id="hg-trat-t">En tratamiento</h2>{% if t %}<span class="t-meta">{{ t.episodios_activos }} episodio{{ 's' if t.episodios_activos != 1 }}</span>{% endif %}</div>
+  {% if t %}
+  <div class="hg-ep">
+    <span class="hg-ep-ic"><i data-lucide="{{ 'activity' if t.tipo == 'lesion' else ('thermometer' if t.tipo == 'enfermedad' else 'stethoscope') }}"></i></span>
+    <div class="eu-grow hg-min">
+      <div class="hg-ep-t">{{ t.titulo }}{% if t.zona %} <span class="t-meta">· {{ t.zona }}</span>{% endif %}</div>
+      <div class="t-meta">{{ TIPO.get(t.tipo, 'Episodio') }} · desde {{ t.fecha_inicio }} · día {{ t.dia_n }}{% if t.avg_recuperacion_tipo %} · tu promedio en {{ TIPO.get(t.tipo, 'este tipo')|lower }}: {{ t.avg_recuperacion_tipo|round|int }} d{% endif %}</div>
+    </div>
+    <button type="button" class="eu-btn eu-btn--sm hg-resolve js-resolve"><i data-lucide="check"></i>Marcar resuelto</button>
+  </div>
+  {% for m in t.medicamentos %}
+  <div class="hg-med{{ ' is-off' if not m.tomando }}" data-med="{{ m.id }}">
+    <i data-lucide="pill" class="hg-med-ic"></i>
+    <div class="hg-min"><div class="hg-med-t">{{ m.nombre }}{% if m.dosis %} <span class="num t-meta">{{ m.dosis }}</span>{% endif %}</div>
+      <div class="t-meta">{{ [m.frecuencia, m.medico]|select|join(' · ') or '—' }}</div></div>
+    <div class="hg-med-prog">
+      <span class="num hg-med-d{{ ' is-casi' if m.casi }}">{% if not m.tomando %}terminado{% elif m.duracion_dias %}día {{ m.dia_n }} de {{ m.duracion_dias }}{% else %}sin duración{% endif %}</span>
+      <span class="hg-bar"><i style="--p:{{ 100 if not m.tomando else m.pct }}%"></i></span>
+    </div>
+    <button type="button" class="eu-btn eu-btn--sm {{ 'eu-btn--secondary js-med-stop' if m.tomando else 'eu-btn--ghost js-med-undo' }}">{{ 'Terminé' if m.tomando else 'Deshacer' }}</button>
+  </div>
+  {% endfor %}
+  <div class="hg-trat-ft t-meta">
+    <span>{{ t.recetas }} receta{{ 's' if t.recetas != 1 }}{% if t.medico %} · {{ t.medico }}{% endif %}</span>
+    <span>{{ t.documentos }} documento{{ 's' if t.documentos != 1 }}</span>
+    <a class="hg-link-more" href="/bienestar/salud/?ep={{ t.id }}">Ver episodio →</a>
+  </div>
+  {% endif %}
+  <div class="hg-clear js-clear"{% if t %} hidden{% endif %}>
+    <i data-lucide="shield-check"></i><span class="eu-grow js-clear-t">Nada en tratamiento.</span>
+    <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-reopen" hidden>Deshacer</button>
+  </div>
+</section>

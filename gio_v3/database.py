@@ -7124,6 +7124,16 @@ def init_db():
         except Exception as e:
             print(f"[DB] recordatorios_tema_2026_09 migration warning: {e}")
 
+        # ── SALUD — terminado_en (Hegemonikon v2, Sprint 1): fecha en que un
+        # medicamento se terminó (solo al cumplir duracion_dias o con
+        # «Terminé»). Nullable; idempotente.
+        try:
+            if 'terminado_en' not in [r["name"] for r in db.execute("PRAGMA table_info(medico_medicamentos)").fetchall()]:
+                db.execute("ALTER TABLE medico_medicamentos ADD COLUMN terminado_en TEXT DEFAULT NULL")
+                db.commit()
+        except Exception as e:
+            print(f"[DB] medico_medicamentos terminado_en migration warning: {e}")
+
         # ── RECORDATORIOS — vinculado_oikonomia (Perfil v2, Sprint 5): los
         # pagos de tarjeta que ya lleva Oikonomia (PAY_DAYS / fin_pagos_ciclo)
         # se marcan para enlazar allá en vez de duplicarse. Solo la columna;

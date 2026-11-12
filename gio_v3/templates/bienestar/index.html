@@ -1,37 +1,77 @@
 {% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
 {% set pg = 'hegemonikon' %}
 {% block title %}Hegemonikon — Eudaimonia{% endblock %}
 {% block module_title %}HEGEMONIKON{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/bienestar.css') }}">{% endblock %}
 {% block mtitle %}<b>Hegemonikon</b><span>Salud</span>{% endblock %}
 
+{# Handoff Hegemonikon v2: el hub del cuerpo te dice cómo estás hoy y qué
+   tienes pendiente antes de mandarte a otra página. #}
 {% set s = data.salud %}
-{% set links = [
+{% set t = data.tratamiento %}
+{% set pt = data.partido %}
+{% set body = [
   ('/bienestar/salud/', 'stethoscope', 'Salud',
-    ((s.episodios_activos ~ ' episodio' ~ ('s' if s.episodios_activos != 1) ~ ' activo' ~ ('s' if s.episodios_activos != 1)) ~ ((' · ' ~ s.meds_activos ~ ' medicamento' ~ ('s' if s.meds_activos != 1)) if s.meds_activos else '')) if s.episodios_activos else 'Al día',
-    'warning' if s.episodios_activos else ''),
-  ('/nutricion/', 'salad', 'Nutrición', data.nutricion.comidas_done ~ '/' ~ data.nutricion.comidas_total ~ ' comidas hoy · racha ' ~ data.nutricion.streak ~ ' d', ''),
-  ('/recetas/', 'chef-hat', 'Recetas', data.recetas.total ~ ' recetas · ' ~ data.recetas.favoritas ~ ' favoritas', ''),
-  ('/bienestar/futbol/', 'trophy', 'Fútbol', (data.futbol.partidos ~ ' partido' ~ ('s' if data.futbol.partidos != 1) ~ ((' · rating ' ~ data.futbol.rating) if data.futbol.rating else '')) if data.futbol.partidos else 'Registra tu primer partido', ''),
-  ('/guardarropa/', 'shirt', 'Guardarropa', data.guardarropa['items'] ~ ' prendas · ' ~ data.guardarropa.outfits ~ ' outfits', ''),
-  ('/viajes/', 'plane', 'Viajes', (data.viajes.total ~ ' viaje' ~ ('s' if data.viajes.total != 1) ~ ((' · ' ~ data.viajes.proximos ~ ' próximo' ~ ('s' if data.viajes.proximos != 1)) if data.viajes.proximos else '')) if data.viajes.total else 'Planifica tu primer viaje', ''),
+    ((s.episodios_activos ~ ' activo' ~ ('s' if s.episodios_activos != 1)) if s.episodios_activos else 'Al día') ~ ' · historial de ' ~ s.historial,
+    s.episodios_activos > 0),
+  ('/nutricion/', 'salad', 'Nutrición', data.nutricion.comidas_done ~ '/' ~ data.nutricion.comidas_total ~ ' comidas · racha ' ~ data.nutricion.streak ~ ' d', false),
+  ('/recetas/', 'chef-hat', 'Recetas', data.recetas.total ~ ' · ' ~ data.recetas.favoritas ~ ' favoritas', false),
+  ('/bienestar/futbol/', 'trophy', 'Fútbol',
+    (pt.jugados ~ ' PJ · ' ~ pt.record ~ ((' · ' ~ pt.rating_prom) if pt.rating_prom else '')) if pt.jugados else 'Registra tu primer partido', false),
 ] %}
 
 {% block content %}
-<div class="hg" data-cat="hegemonikon">
-  <header class="hg-hd">
-    <div class="t-eyebrow">Virtudes · Salud</div>
-    <h1 class="t-page">Hegemonikon</h1>
-    <p class="t-meta hg-lead">La razón que gobierna el cuerpo: salud, nutrición, movimiento y presencia.</p>
-  </header>
-  <nav class="hg-grid" aria-label="Secciones de Hegemonikon">
-    {% for url, icon, label, sub, tone in links %}
-    <a class="eu-card eu-card--interactive hg-link{{ ' is-' ~ tone if tone }}" href="{{ url }}">
-      <span class="eu-row-ic hg-ic"><i data-lucide="{{ icon }}"></i></span>
-      <span class="hg-link-t"><span class="t-ui">{{ label }}</span><span class="t-meta">{{ sub }}</span></span>
-      <i data-lucide="chevron-right" class="hg-chev"></i>
-    </a>
-    {% endfor %}
-  </nav>
+<div class="hg" id="hg" data-cat="hegemonikon">
+  <div class="hg-main">
+    <header class="hg-hd">
+      <div class="hg-hd-t">
+        <div class="t-eyebrow hg-eyebrow">Virtudes · Salud</div>
+        <h1 class="t-page">Hegemonikon</h1>
+      </div>
+      <button type="button" class="eu-btn eu-btn--secondary js-new-ep"><i data-lucide="plus"></i>Episodio</button>
+    </header>
+
+    {% include "bienestar/_hoy.html" %}
+
+    {% set al = data.recurrencia_alerta %}
+    {% if al %}
+    <div class="hg-alert" id="hg-alert" role="status" data-titulo="{{ al.titulo }}">
+      <i data-lucide="alert-triangle"></i>
+      <span class="eu-grow"><b>{{ al.titulo }}</b> · {{ al.veces }} veces, cada {{ al.cada_dias }} días en promedio. Vale la pena ver a un especialista.</span>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-alert-hide">Ocultar 30 d</button>
+    </div>
+    {% endif %}
+
+    {% include "bienestar/_tratamiento.html" %}
+
+    <section class="hg-body" id="hg-body" aria-labelledby="hg-body-t">
+      <h2 class="hg-sub" id="hg-body-t">Cuerpo</h2>
+      <nav class="hg-grid" aria-label="Secciones de Hegemonikon">
+        {% for url, icon, label, sub, warn in body %}
+        <a class="hg-link{{ ' is-warning' if warn }}" href="{{ url }}">
+          <span class="hg-ic"><i data-lucide="{{ icon }}"></i></span>
+          <span class="hg-link-t"><span class="t-ui">{{ label }}</span><span class="t-meta">{{ sub }}</span></span>
+          <i data-lucide="chevron-right" class="hg-chev"></i>
+        </a>
+        {% endfor %}
+      </nav>
+    </section>
+  </div>
+
+  <aside class="hg-side" aria-label="Próximo partido y otros accesos">
+    {% include "bienestar/_partido.html" %}
+    <section class="hg-also" aria-labelledby="hg-also-t">
+      <h2 class="hg-sub" id="hg-also-t">También aquí</h2>
+      <a class="hg-also-row" href="/guardarropa/"><i data-lucide="shirt"></i><span class="eu-grow">Guardarropa</span><span class="t-meta">{{ data.guardarropa['items'] }} prendas</span></a>
+      <a class="hg-also-row" href="/viajes/"><i data-lucide="plane"></i><span class="eu-grow">Viajes</span>
+        <span class="t-meta">{% set v = data.viajes.proximo %}{% if v %}{{ v.destino }} · {{ 'hoy' if v.en_dias <= 0 else 'en ' ~ v.en_dias ~ ' d' }}{% elif data.viajes.total %}{{ data.viajes.total }} viaje{{ 's' if data.viajes.total != 1 }}{% else %}Planifica uno{% endif %}</span></a>
+    </section>
+  </aside>
 </div>
+{% include "bienestar/salud/_modals.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/hegemonikon.js') }}"></script>
 {% endblock %}
