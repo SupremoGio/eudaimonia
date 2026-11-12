@@ -7,112 +7,126 @@
 {% block mtitle %}<b>Cosmopolitismo</b><span>Idiomas · plan C1</span>{% endblock %}
 
 {% block content %}
-<div class="id" id="id" data-cat="cosmopolitismo">
+<div class="id" id="id" data-cat="cosmopolitismo" data-vista="{{ vista }}" data-today="{{ today }}">
   <header class="id-hd">
-    <div class="t-eyebrow">Virtudes · Idiomas</div><h1 class="t-page">Cosmopolitismo</h1>
-    <p class="t-meta id-lead">Ruta a C1 en 26 semanas: vocabulario diario, tests oficiales, quiz con repetición espaciada y escritura con feedback real.</p>
+    <div><div class="t-eyebrow id-eyebrow">Virtudes · Idiomas</div><h1 class="t-page">Cosmopolitismo</h1></div>
+    {% if not vista %}
+    <div class="eu-seg id-lang" role="tablist" aria-label="Idioma" id="id-lang">
+      <button type="button" role="tab" data-lang="en" aria-selected="true">English</button>
+      <button type="button" role="tab" data-lang="fr" aria-selected="false">Français</button>
+    </div>
+    {% endif %}
   </header>
 
-  {# ── Plan C1 ── #}
-  <section class="eu-card id-plan" aria-labelledby="id-plan-t">
-    <div class="id-plan-top">
-      <div class="id-ring" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="id-ring-bg" cx="50" cy="50" r="42"/><circle class="id-ring-fg" id="plan-ring" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg>
-        <div class="id-ring-c"><span class="t-data num" id="plan-week">—</span><span class="t-meta">semana</span></div></div>
-      <div class="eu-vstack id-plan-info">
-        <h2 class="t-card" id="id-plan-t">Plan C1 · 26 semanas</h2>
-        <div class="t-meta" id="plan-fase" aria-busy="true"><span class="eu-skel id-skel-line" aria-hidden="true"></span><span class="sr-only">Cargando plan</span></div>
-        <div class="eu-progress eu-progress--cat" role="progressbar" aria-label="Progreso del plan" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="plan-bar"><i id="plan-fill" style="width:0%"></i></div>
-        <div class="t-meta" id="plan-inicio"></div>
-      </div>
-      <div class="id-plan-stats">
-        <div class="eu-stat"><div class="eu-stat-lbl">Tests</div><div class="eu-stat-val">{{ tests|length }}</div></div>
-        <div class="eu-stat"><div class="eu-stat-lbl">Journal</div><div class="eu-stat-val">{{ journal|length }}</div></div>
-      </div>
-    </div>
-    <div class="id-cps" id="plan-cps" aria-label="Checkpoints del plan"></div>
+{% if vista %}
+  <a class="eu-btn eu-btn--ghost eu-btn--sm id-back" href="/idiomas/"><i data-lucide="arrow-left"></i>Cosmopolitismo</a>
+  {% if vista == 'plan' %}
+  <section class="eu-card eu-vstack id-box" aria-labelledby="vp-t">
+    <div class="eu-between id-box-hd"><h2 class="t-section" id="vp-t">Plan C1 · checkpoints</h2>
+      <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-reiniciar"><i data-lucide="rotate-ccw"></i>Reiniciar plan</button></div>
+    <p class="t-meta" id="plan-inicio"></p>
+    <div class="id-cps" id="plan-cps" aria-label="Checkpoints del plan">{{ ui.skel(4, 96) }}</div>
   </section>
+  {% elif vista == 'tests' %}
+  <section class="eu-card eu-card--flush id-box" aria-labelledby="vt-t">
+    <div class="eu-between id-box-hd id-pad"><h2 class="t-section" id="vt-t">Tests · todos los resultados</h2>
+      <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-add-test"><i data-lucide="plus"></i>Resultado</button></div>
+    {% if tests %}
+    <div class="id-table-wrap"><table class="eu-table">
+      <thead><tr><th scope="col">Tipo</th><th scope="col">Idioma · destreza</th><th scope="col" class="r">Score</th><th scope="col">Fecha</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
+      <tbody>{% for t in tests %}<tr data-id="{{ t.id }}">
+        <td><span class="eu-badge eu-badge--cat">{{ t.test_type }}</span></td><td class="fg-2">{{ t.idioma or '—' }}{% if t.destreza %} · {{ t.destreza }}{% endif %}</td>
+        <td class="r num fg-brand">{{ t.score }}</td><td class="num fg-3">{{ t.test_date }}</td>
+        <td class="r"><button type="button" class="eu-iconbtn id-danger js-del-test" data-id="{{ t.id }}" aria-label="Eliminar {{ t.test_type }}"><i data-lucide="trash-2"></i></button></td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<div class="id-pad">{{ ui.empty('award', 'Aún no registras resultados', 'Agrega tu primer examen o prueba de nivel.', compact=True) }}</div>{% endif %}
+  </section>
+  {% else %}
+  <section class="eu-card eu-vstack id-box" aria-labelledby="vj-t">
+    <h2 class="t-section" id="vj-t">Writing journal · todas las entradas</h2>
+    <div class="id-entries">
+      {% for e in journal %}{% include "idiomas/_entrada.html" %}{% else %}
+      {{ ui.empty('notebook-pen', 'Sin entradas aún', 'Escribe la primera en Cosmopolitismo.', compact=True) }}{% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
-  <div class="id-grid">
-    {# ── Palabra del día ── #}
-    <section class="eu-card eu-vstack id-word" aria-labelledby="id-word-t">
-      <div class="eu-between"><h2 class="t-eyebrow" id="id-word-t">Word of the day</h2>
-        <span class="eu-hstack id-gap"><span class="eu-badge eu-badge--cat">EN → FR</span><button type="button" class="eu-iconbtn js-word" aria-label="Otra palabra"><i data-lucide="refresh-cw"></i></button></span></div>
-      <div class="id-word-b" id="wb" aria-live="polite">
-        <div class="t-meta" id="wph">{{ word.phonetic }}</div>
-        <div class="id-w" id="ww">{{ word.word }}</div>
-        <p class="t-body fg-2" id="wm">{{ word.meaning }}</p>
-        <blockquote class="t-quote id-ex" id="we">«{{ word.example }}»</blockquote>
-        <span class="eu-badge" id="wf">FR · {{ word.french }}</span>
-      </div>
-    </section>
+{% else %}
+  <div class="id-layout">
+    <div class="eu-vstack id-main">
+      {# ── Plan: tiempo contra hecho + siguiente checkpoint ── #}
+      <section class="eu-card id-plan" id="id-plan" aria-label="Plan C1">
+        <div class="id-plan-l">
+          <span class="t-meta" id="plan-t"><span class="eu-skel id-skel-line"></span></span>
+          <div class="id-prow id-prow--t"><span>Tiempo</span><span class="id-bar"><i id="plan-tiempo"></i></span><span class="num" id="plan-tiempo-v">—</span></div>
+          <div class="id-prow id-prow--h"><span id="plan-hecho-l">Hecho</span><span class="id-bar"><i id="plan-hecho"></i></span><span class="num" id="plan-hecho-v">—</span></div>
+          <span class="id-atraso" id="plan-atraso" hidden></span>
+        </div>
+        <a class="id-plan-r" href="/idiomas/?vista=plan" aria-label="Ver checkpoints del plan">
+          <span class="t-meta" id="cp-fase">Siguiente checkpoint</span>
+          <span class="id-cp-t" id="cp-t">—</span>
+          <span class="id-mono12" id="cp-vence"></span>
+        </a>
+      </section>
 
-    {# ── Tests ── #}
-    <section class="eu-card eu-card--flush id-tests" aria-labelledby="id-tests-t">
-      <div class="id-card-hd"><h2 class="t-card" id="id-tests-t">Tests · IELTS / DALF</h2></div>
-      <form class="id-test-form" id="f-test" autocomplete="off">
-        <div class="eu-field"><label class="eu-label" for="tt-type">Tipo</label><select class="eu-select" id="tt-type">{% for t in ['IELTS', 'DALF C1', 'DALF C2', 'DELF B2', 'TOEFL', 'Cambridge C1 Advanced', 'Otro'] %}<option>{{ t }}</option>{% endfor %}</select></div>
-        <div class="eu-field"><label class="eu-label" for="tt-idioma">Idioma</label><select class="eu-select" id="tt-idioma"><option>English</option><option>Français</option></select></div>
-        <div class="eu-field"><label class="eu-label" for="tt-destreza">Destreza</label><select class="eu-select" id="tt-destreza">{% for d in ['General', 'Listening', 'Reading', 'Writing', 'Speaking'] %}<option>{{ d }}</option>{% endfor %}</select></div>
-        <div class="eu-field"><label class="eu-label" for="tt-score">Score</label><input class="eu-input" id="tt-score" placeholder="7.5"></div>
-        <div class="eu-field"><label class="eu-label" for="tt-date">Fecha</label><input class="eu-input" type="date" id="tt-date" value="{{ today }}"></div>
-        <button type="submit" class="eu-btn eu-btn--secondary id-test-add"><i data-lucide="plus"></i>Agregar</button>
-      </form>
-      {% if tests %}
-      <div class="id-table-wrap"><table class="eu-table">
-        <thead><tr><th scope="col">Tipo</th><th scope="col">Idioma · destreza</th><th scope="col" class="r">Score</th><th scope="col">Fecha</th><th scope="col"><span class="sr-only">Acciones</span></th></tr></thead>
-        <tbody>{% for t in tests %}<tr data-id="{{ t.id }}">
-          <td><span class="eu-badge eu-badge--cat">{{ t.test_type }}</span></td><td class="fg-2">{{ t.idioma or '—' }}{% if t.destreza %} · {{ t.destreza }}{% endif %}</td>
-          <td class="r num fg-brand">{{ t.score }}</td><td class="num fg-3">{{ t.test_date }}</td>
-          <td class="r"><button type="button" class="eu-iconbtn id-danger js-del-test" data-id="{{ t.id }}" aria-label="Eliminar {{ t.test_type }}"><i data-lucide="trash-2"></i></button></td></tr>{% endfor %}</tbody>
-      </table></div>
-      {% else %}{{ ui.empty('award', 'Aún no registras resultados', 'Agrega tu primer examen o prueba de nivel para seguir tu avance.', compact=True) }}{% endif %}
-    </section>
+      {# ── Repaso de hoy: una pregunta a la vez ── #}
+      <section class="eu-card id-rep" id="id-rep" aria-labelledby="rep-t" aria-live="polite">
+        <div class="id-rep-hd">
+          <div><h2 class="t-section" id="rep-t">Repaso de hoy</h2><div class="t-meta" id="rep-sub">—</div></div>
+          <span class="id-dots" id="rep-dots" aria-hidden="true"></span>
+        </div>
+        <div id="rep-body">{{ ui.skel(2, 48) }}</div>
+      </section>
+
+      {# ── Writing journal ── #}
+      <section class="eu-card eu-vstack id-j" aria-labelledby="j-t">
+        <div class="id-j-hd"><h2 class="t-section" id="j-t">Writing journal</h2>
+          <span class="id-spark" id="j-spark" aria-label="Tendencia de tu puntuación"></span></div>
+        <p class="t-meta" id="j-prompt"></p>
+        <textarea class="eu-textarea id-jtxt" id="j-text" rows="4" aria-label="Entrada del journal" placeholder="Write in English…"></textarea>
+        <div class="id-j-act"><span class="id-mono12" id="j-words">0 palabras</span><span class="eu-grow"></span>
+          <button type="button" class="eu-btn eu-btn--primary js-revisar"><i data-lucide="spell-check"></i>Revisar y guardar</button></div>
+        <div class="id-fb" id="j-res" hidden></div>
+        <div class="id-entries-hd"><span class="t-eyebrow">Entradas anteriores</span><a class="t-meta" href="/idiomas/?vista=journal">Todas →</a></div>
+        <div class="id-entries" id="j-list"></div>
+      </section>
+    </div>
+
+    <aside class="eu-vstack id-side" aria-label="Palabra, tests y Acta">
+      <section class="eu-card id-word" aria-labelledby="w-t">
+        <h2 class="t-eyebrow" id="w-t">Palabra del día</h2>
+        <span class="id-w" id="w-word">—</span>
+        <span class="id-mono12" id="w-ph"></span>
+        <span class="id-w-mean" id="w-mean"></span>
+        <span class="id-w-ex" id="w-ex"></span>
+        <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm id-w-btn" id="w-add"><i data-lucide="plus"></i>Añadir a repaso</button>
+      </section>
+      <section class="eu-card id-tests" aria-labelledby="ts-t">
+        <div class="eu-between id-tests-hd"><h2 class="t-eyebrow" id="ts-t">Tests</h2>
+          <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-add-test"><i data-lucide="plus"></i>Resultado</button></div>
+        <div id="ts-rows"></div>
+        <a class="id-tests-ft t-meta" href="/idiomas/?vista=tests" id="ts-ft">Todos los resultados →</a>
+      </section>
+      <a class="id-acta" href="/actividades/" id="id-acta"><span>Cosmopolitismo en Acta Diurna</span><span class="num" id="acta-v">—</span></a>
+    </aside>
   </div>
+{% endif %}
+</div>
 
-  {# ── Quiz ── #}
-  <section class="eu-card eu-vstack id-quiz" aria-labelledby="id-quiz-t">
-    <div class="id-quiz-hd">
-      <div class="eu-hstack id-gap"><span class="eu-row-ic id-ic"><i data-lucide="graduation-cap"></i></span><div><h2 class="t-card" id="id-quiz-t">Quiz de vocabulario C1</h2><div class="t-meta">5 preguntas · repite primero las palabras vencidas</div></div></div>
-      <div class="eu-hstack id-gap">
-        <div class="eu-seg" role="group" aria-label="Idioma del quiz"><button type="button" data-lang="en" aria-pressed="true">English</button><button type="button" data-lang="fr" aria-pressed="false">Français</button></div>
-        <button type="button" class="eu-btn eu-btn--primary js-quiz"><i data-lucide="play"></i>Iniciar</button>
-      </div>
-    </div>
-    <div id="quiz-body" hidden><div class="eu-vstack id-qs" id="quiz-qs"></div><button type="button" class="eu-btn eu-btn--primary js-check">Verificar respuestas</button></div>
-    <div id="quiz-res" hidden>
-      <div class="id-score"><span class="t-data num" id="quiz-score"></span><span class="t-meta">correctas</span></div>
-      <div class="eu-vstack id-qs" id="quiz-items"></div>
-      <button type="button" class="eu-btn eu-btn--secondary js-quiz"><i data-lucide="rotate-ccw"></i>Nuevo quiz</button>
-    </div>
-  </section>
-
-  {# ── Journal ── #}
-  <section class="eu-card eu-vstack id-journal" aria-labelledby="id-j-t">
-    <div class="eu-hstack id-gap"><span class="eu-row-ic id-ic"><i data-lucide="pen-line"></i></span><div><h2 class="t-card" id="id-j-t">Writing journal</h2><div class="t-meta">Escribe y recibe feedback gramatical real con LanguageTool</div></div></div>
-    <div class="eu-grid-3 id-jmeta">
-      <div class="eu-field"><label class="eu-label" for="j-lang">Idioma</label><select class="eu-select" id="j-lang"><option>English</option><option>Français</option><option>Español</option><option>Deutsch</option></select></div>
-      <div class="eu-field"><label class="eu-label" for="j-fase">Fase del plan</label><select class="eu-select" id="j-fase"><option value="">Sin fase</option><option value="1">1 · Cierre de brechas</option><option value="2">2 · Expansión de rango</option><option value="3">3 · Producción</option><option value="4">4 · Consolidación</option></select></div>
-      <div class="eu-field"><label class="eu-label" for="j-destreza">Destreza</label><select class="eu-select" id="j-destreza"><option>Escritura</option><option>Gramática</option><option>Vocabulario</option></select></div>
-    </div>
-    <textarea class="eu-textarea id-jtxt" id="j-text" aria-label="Texto del journal" placeholder="Escribe en el idioma que practicas…"></textarea>
-    <div class="eu-hstack id-jact"><button type="button" class="eu-btn eu-btn--secondary js-fb"><i data-lucide="spell-check"></i>Feedback real</button><button type="button" class="eu-btn eu-btn--primary js-save-j"><i data-lucide="save"></i>Guardar entrada</button></div>
-    <div class="eu-card eu-card--inset eu-vstack id-fb" id="fb-box" hidden aria-live="polite">
-      <div class="eu-between"><div><div class="t-data num fg-brand id-fb-score" id="fb-score"></div><div class="t-meta" id="fb-grade"></div></div><div class="t-meta" id="fb-words"></div></div>
-      <ul class="id-fb-list" id="fb-list"></ul>
-    </div>
-    <div class="eu-vstack id-entries">
-      <div class="t-eyebrow">Entradas anteriores</div>
-      {% for e in journal %}
-      <article class="id-entry" data-id="{{ e.id }}">
-        <div class="eu-between"><span class="t-meta num">{{ e.entry_date }}{% if e.fase %} · Fase {{ e.fase }}{% endif %}{% if e.destreza %} · {{ e.destreza }}{% endif %}</span>
-          <span class="eu-hstack id-gap"><span class="eu-badge eu-badge--cat">{{ e.language }}</span><button type="button" class="eu-iconbtn id-danger js-del-j" data-id="{{ e.id }}" aria-label="Eliminar entrada"><i data-lucide="trash-2"></i></button></span></div>
-        <p class="t-body fg-2">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</p>
-      </article>
-      {% else %}
-      {{ ui.empty('notebook-pen', 'Sin entradas aún', 'Escribe la primera arriba.', compact=True) }}
-      {% endfor %}
-    </div>
-  </section>
+<div data-cat="cosmopolitismo">
+{% call ui.modal('m-test', 'Nuevo resultado', eyebrow='Tests') %}
+<form class="eu-modal-bd id-test-form" id="f-test" autocomplete="off" novalidate>
+  <div class="eu-field"><label class="eu-label" for="tt-type">Tipo</label><select class="eu-select" id="tt-type">{% for t in ['IELTS', 'DALF C1', 'DALF C2', 'DELF B2', 'TOEFL', 'Cambridge C1 Advanced', 'Otro'] %}<option>{{ t }}</option>{% endfor %}</select></div>
+  <div class="eu-field"><label class="eu-label" for="tt-idioma">Idioma</label><select class="eu-select" id="tt-idioma"><option>English</option><option>Français</option></select></div>
+  <div class="eu-field"><label class="eu-label" for="tt-destreza">Destreza</label><select class="eu-select" id="tt-destreza">{% for d in ['Listening', 'Reading', 'Writing', 'Speaking', 'General'] %}<option>{{ d }}</option>{% endfor %}</select></div>
+  <div class="eu-field"><label class="eu-label" for="tt-score">Score</label><input class="eu-input" id="tt-score" placeholder="7.5 · 58/100"></div>
+  <div class="eu-field"><label class="eu-label" for="tt-date">Fecha</label><input class="eu-input" type="date" id="tt-date" value="{{ today }}"></div>
+</form>
+<div class="eu-modal-ft">
+  <button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-test')">Cancelar</button>
+  <button type="submit" form="f-test" class="eu-btn eu-btn--primary">Guardar</button>
+</div>
+{% endcall %}
 </div>
 {% endblock %}
 

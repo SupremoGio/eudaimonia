@@ -1,0 +1,10 @@
+{# Entrada del journal: fecha · fase · idioma · score y, al abrirla, sus correcciones guardadas #}
+<details class="id-entry" data-id="{{ e.id }}">
+  <summary class="id-entry-hd">
+    <span class="id-mono12">{{ e.entry_date }}{% if e.fase %} · fase {{ e.fase }}{% endif %} · {{ e.language }}{% if e.score is not none %} · <b class="fg-brand">{{ e.score }}</b>{% endif %}</span>
+    <button type="button" class="eu-iconbtn id-danger js-del-j" data-id="{{ e.id }}" aria-label="Eliminar entrada"><i data-lucide="trash-2"></i></button>
+    <span class="id-entry-txt">{{ e.entry_text[:200] }}{% if e.entry_text|length > 200 %}…{% endif %}</span>
+  </summary>
+  {% if e.correcciones %}<ul class="id-corr">{% for c in e.correcciones %}<li><s>{{ c.issue }}</s>{% if c.suggestion %} → <b>{{ c.suggestion }}</b>{% endif %} <span>· {{ c.type }}</span></li>{% endfor %}</ul>
+  {% elif e.score is none %}<p class="t-meta">Sin revisión guardada.</p>{% else %}<p class="t-meta">Sin correcciones.</p>{% endif %}
+</details>

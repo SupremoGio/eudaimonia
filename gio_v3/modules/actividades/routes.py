@@ -397,21 +397,9 @@ def save_reflexion():
     gam = None
     auto_checked = False
     if texto:
-        act = adefs.get_by_key(key)
-        with get_db() as db:
-            existing = db.execute(
-                "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (key, today)
-            ).fetchone()
-        if not existing and act:
-            with get_db() as db:
-                cursor = db.execute(
-                    "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
-                    (key, today, act['pts'])
-                )
-                log_id = cursor.lastrowid
-                db.commit()
-            gam = engine.process_activity(key, act['pts'], act['cat'], log_id)
-            auto_checked = True
+        from modules.actividades.touch import marcar_touch
+        gam = marcar_touch(key)
+        auto_checked = gam is not None
 
     return jsonify({'ok': True, 'auto_checked': auto_checked, 'stats': get_dashboard_stats(), 'gam': gam})
 
