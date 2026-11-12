@@ -1,13 +1,16 @@
-{# Canjes y gastos recientes (coins_ledger negativos) #}
-<section class="eu-card eu-card--flush rw-hist" aria-labelledby="rw-hist-t">
-  <div class="eu-between rw-hist-hd"><h2 class="t-card" id="rw-hist-t">Canjes y gastos</h2><span class="t-meta">últimos 60</span></div>
-  <div class="eu-list js-hist">
+{# Canjes recientes: los últimos 4; «Todo →» despliega el resto (60). #}
+<section class="eu-card eu-card--flush rw-hist" id="rw-hist" aria-labelledby="rw-hist-t">
+  <div class="eu-between rw-hist-hd">
+    <h2 class="t-card" id="rw-hist-t">Canjes recientes</h2>
+    {% if history|length > 4 %}<button type="button" class="rw-link js-hist-all" aria-expanded="false">Todo →</button>{% endif %}
+  </div>
+  <div class="js-hist">
     {% for g in history %}
-    <div class="eu-row">
-      <div class="eu-row-main"><div class="eu-row-t">{{ g.description }}</div><div class="eu-row-s">{{ g.date }} · ${{ '{:,}'.format(g.ec * ec_rate) }} MXN</div></div>
-      <span class="eu-amt rw-minus">−{{ g.ec }}</span>
+    <div class="rw-hrow"{% if loop.index > 4 %} hidden{% endif %}>
+      <div class="rw-min eu-grow"><div class="rw-hrow-t">{{ g.description|replace('Recompensa: ', '') }}</div><div class="t-meta">{{ g.date }} · ${{ '{:,}'.format(g.ec * ec_rate) }}</div></div>
+      <span class="num rw-minus">−{{ g.ec }}</span>
     </div>
     {% endfor %}
   </div>
-  <div class="js-hist-empty"{% if history %} hidden{% endif %}>{{ ui.empty('receipt', 'Sin canjes aún', 'Lo que canjees o gastes quedará registrado aquí.') }}</div>
+  {% if not history %}<div class="rw-hist-empty">{{ ui.empty('receipt', 'Sin canjes aún', 'Lo que canjees o gastes quedará registrado aquí.', compact=True) }}</div>{% endif %}
 </section>

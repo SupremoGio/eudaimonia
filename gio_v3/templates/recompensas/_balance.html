@@ -1,10 +1,30 @@
-{# Saldo de Euda-Credits (se incluye dos veces: arriba en móvil, en el panel en desktop) #}
-<section class="eu-card eu-vstack rw-balance" aria-label="Saldo de EC">
-  <div class="t-meta">Saldo</div>
-  <div class="eu-hstack rw-balance-n"><span class="t-data-xl fg-ec js-ec">{{ ec_balance }}</span><span class="t-ui fg-3">EC</span></div>
-  <div class="t-meta num">≈ $<span class="js-ec-mxn">{{ '{:,}'.format(ec_balance * ec_rate) }}</span> MXN</div>
-  <div class="rw-balance-more">
-    <div class="eu-between t-meta"><span>Esta semana</span><span class="num fg-2">+{{ ec_week }} EC</span></div>
-    <div class="eu-between t-meta"><span>Promedio diario · 30 d</span><span class="num fg-2">{{ ec_daily }} EC</span></div>
+{# Héroe (notas 1–3): el saldo una sola vez (más el chip de la topbar) y la
+   siguiente meta: la recompensa «Reuniendo EC» con menos EC faltantes. #}
+<section class="rw-hero" id="rw-hero" aria-label="Saldo y siguiente meta">
+  <div class="rw-bal">
+    <span class="t-eyebrow">Saldo</span>
+    <div class="rw-bal-n"><span class="num fg-ec js-ec">{{ ec_balance }}</span><span class="fg-3"> EC</span></div>
+    <span class="t-meta num">≈ $<span class="js-ec-mxn">{{ '{:,}'.format(ec_balance * ec_rate) }}</span> MXN · 1 EC = ${{ ec_rate }}</span>
+    <div class="rw-bal-more t-meta">
+      <span>Semana <b class="num rw-pos">+{{ ec_week }}</b></span>
+      <span>Ritmo <b class="num fg-2">{{ ec_daily|round(1)|string|replace('.0', '') }} EC/día</b></span>
+    </div>
+  </div>
+  <div class="rw-goal">
+    <div class="eu-between rw-goal-hd"><span class="t-eyebrow">Siguiente meta</span><span class="t-meta">la más cercana que aún no alcanzas</span></div>
+    {% if meta %}
+    <div class="rw-goal-row">
+      <span class="rw-goal-ic"><i data-lucide="{{ meta.icon }}"></i></span>
+      <div class="eu-grow rw-min"><div class="rw-goal-n">{{ meta.name }}</div><div class="t-meta">{{ meta.regla }}</div></div>
+      <div class="rw-goal-cost"><div class="num fg-ec">{{ meta.ec_cost }} EC</div><div class="t-meta num">${{ '{:,}'.format(meta.ec_cost * ec_rate) }}</div></div>
+    </div>
+    <div class="rw-bar rw-bar--lg" role="progressbar" aria-valuenow="{{ meta.ec_pct }}" aria-valuemax="100" aria-label="EC reunidos para {{ meta.name }}"><i style="--p:{{ meta.ec_pct }}%"></i></div>
+    <div class="eu-between rw-goal-ft">
+      <span>Faltan <b class="num">{{ meta.ec_left }} EC</b></span>
+      {% if meta.eta_txt %}<span>≈ <b class="num">{{ meta.eta_txt }}</b> a tu ritmo</span>{% else %}<span class="fg-3">Sin EC ganados en 30 días</span>{% endif %}
+    </div>
+    {% else %}
+    <div class="rw-goal-none"><i data-lucide="party-popper"></i><span>Todo lo periódico está a tu alcance.</span></div>
+    {% endif %}
   </div>
 </section>

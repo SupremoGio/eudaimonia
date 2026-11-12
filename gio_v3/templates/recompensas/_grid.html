@@ -1,53 +1,76 @@
-{# Tarjetas de recompensa: costo en EC y MXN, nivel, cooldown, progreso hacia el costo #}
-<div class="rw-grid">
-  {% for r in rewards %}
-  {% set need = 'Requiere nivel ' ~ r.level_required if r.status == 'level'
-      else ('Faltan ' ~ (r.ec_cost - ec_balance) ~ ' EC' if r.status == 'ec'
-      else (r.block_reason if r.status == 'wait'
-      else ('Conseguida' if r.status == 'done'
-      else ('Una sola vez' if r.unica
-      else (r.max_por_ventana ~ ' por fin de semana' ~ (' · llevas ' ~ r.usados_ventana if r.usados_ventana else '') if r.max_por_ventana
-      else ('Cada ' ~ r.cooldown_days ~ ' d' if r.cooldown_days else 'Sin espera')))))) %}
-  <article class="eu-card eu-vstack rw-card is-{{ r.status }}" data-status="{{ r.status }}" data-id="{{ r.id }}"
-           data-name="{{ r.name }}" data-desc="{{ r.description or '' }}" data-cost="{{ r.ec_cost }}"
-           data-level="{{ r.level_required }}" data-cool="{{ r.cooldown_days }}" data-weekend="{{ r.weekend_only or 0 }}" data-max="{{ r.max_por_ventana or 0 }}" data-unica="{{ 1 if r.unica else 0 }}">
-    <div class="eu-hstack eu-gap-3">
-      <div class="eu-row-ic rw-ic"><i data-lucide="{{ 'lock' if r.status == 'level' else ('circle-check-big' if r.status == 'done' else r.icon) }}"></i></div>
-      <div class="eu-grow">
-        <h2 class="rw-name">{{ r.name }}</h2>
-        <div class="t-meta">Nivel {{ r.level_required }}+ · {{ need }}</div>
+{# Tres grupos en vez de filtros (notas 4–6). Editar o borrar: clic en el
+   nombre o el ícono abre el modal (nota 8). #}
+{% macro rdata(r) -%}
+data-id="{{ r.id }}" data-name="{{ r.name }}" data-desc="{{ r.description or '' }}" data-cost="{{ r.ec_cost }}"
+data-level="{{ r.level_required }}" data-cool="{{ r.cooldown_days }}" data-weekend="{{ r.weekend_only or 0 }}"
+data-max="{{ r.max_por_ventana or 0 }}" data-unica="{{ 1 if r.unica else 0 }}" data-badge="{{ r.badge_required or '' }}"
+{%- endmacro %}
+
+<section class="rw-sec" aria-labelledby="rw-av-t">
+  <div class="rw-sec-hd"><h2 class="t-section" id="rw-av-t">Puedes canjear ahora</h2><span class="num rw-pos">{{ grupos.available|length }}</span></div>
+  {% if grupos.available %}
+  <div class="rw-av-grid">
+    {% for r in grupos.available %}
+    <article class="eu-card rw-av" {{ rdata(r) }}>
+      <button type="button" class="rw-open js-edit" aria-label="Editar {{ r.name }}">
+        <span class="rw-ic rw-ic--ec"><i data-lucide="{{ r.icon }}"></i></span>
+        <span class="rw-min eu-grow"><span class="rw-name">{{ r.name }}</span><span class="t-meta">{{ r.regla }}</span></span>
+      </button>
+      <div class="eu-between rw-av-price"><span class="num fg-ec rw-cost">{{ r.ec_cost }}<span class="t-meta"> EC</span></span><span class="t-meta num">${{ '{:,}'.format(r.ec_cost * ec_rate) }}</span></div>
+      <button type="button" class="eu-btn eu-btn--primary eu-btn--block js-ask"><i data-lucide="sparkles"></i>Canjear</button>
+      <div class="rw-confirm" hidden>
+        <div class="num rw-after">Saldo {{ ec_balance }} → {{ ec_balance - r.ec_cost }} EC</div>
+        <div class="rw-confirm-btns">
+          <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-cancel">Cancelar</button>
+          <button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-confirm">Confirmar</button>
+        </div>
       </div>
-    </div>
-    {% if r.description %}<p class="t-meta rw-desc">{{ r.description }}</p>{% endif %}
-    <div class="eu-hstack rw-tags">
-      {% if r.unica %}<span class="eu-badge{{ ' eu-badge--success' if r.status == 'done' }}"><i data-lucide="{{ 'check' if r.status == 'done' else 'gem' }}"></i>Única vez</span>
-      {% elif r.max_por_ventana %}<span class="eu-badge"><i data-lucide="repeat"></i>{{ r.max_por_ventana }} por fin de semana{{ ' · llevas ' ~ r.usados_ventana if r.usados_ventana }}</span>
-      {% elif r.cooldown_days %}<span class="eu-badge"><i data-lucide="repeat"></i>Periódica</span>{% endif %}
-      {% if r.ventana %}<span class="eu-badge eu-badge--info"><i data-lucide="calendar-days"></i>{{ r.ventana }}</span>{% endif %}
-      {% if r.badge_required %}<span class="eu-badge"><i data-lucide="award"></i>{{ r.badge_required }}</span>{% endif %}
-      {% if r.last_redeemed %}<span class="t-meta">{{ 'Conseguida el' if r.status == 'done' else 'Último canje' }} {{ r.last_redeemed[:10] }}</span>{% endif %}
-    </div>
-    <div class="eu-between rw-price">
-      <span class="t-data fg-ec rw-cost">{{ r.ec_cost }} <span class="t-meta">EC</span></span>
-      <span class="eu-hstack rw-tools">
-        <span class="t-meta num">${{ '{:,}'.format(r.ec_cost * ec_rate) }}</span>
-        <button type="button" class="eu-iconbtn js-edit" aria-label="Editar {{ r.name }}" title="Editar"><i data-lucide="pencil"></i></button>
-        <button type="button" class="eu-iconbtn js-del" aria-label="Eliminar {{ r.name }}" title="Eliminar"><i data-lucide="trash-2"></i></button>
-      </span>
-    </div>
-    {% if r.status == 'ec' %}
-    <div class="eu-progress eu-progress--thin rw-progress" role="progressbar" aria-label="EC reunidos para {{ r.name }}" aria-valuenow="{{ r.ec_pct }}" aria-valuemax="100"><i style="width:{{ r.ec_pct }}%"></i></div>
-    {% endif %}
-    {% if r.status == 'available' %}
-    <button type="button" class="eu-btn eu-btn--primary eu-btn--sm eu-btn--block js-redeem"><i data-lucide="sparkles"></i>Canjear</button>
-    {% else %}
-    <button type="button" class="eu-btn eu-btn--secondary eu-btn--sm eu-btn--block" disabled>{{ 'Bloqueada' if r.status == 'level' else ('Reuniendo EC' if r.status == 'ec' else ('Conseguida' if r.status == 'done' else 'En espera')) }}</button>
-    {% endif %}
-  </article>
+    </article>
+    {% endfor %}
+  </div>
   {% else %}
-  <div class="rw-empty">
-    {{ ui.empty('gift', 'Aún no hay recompensas', 'Crea tu primera recompensa y convierte tu esfuerzo en algo tangible.') }}
+  <div class="rw-none">Nada disponible por ahora. Tu siguiente meta está arriba.</div>
+  {% endif %}
+</section>
+
+{% if grupos.ec %}
+<section class="eu-card eu-card--flush rw-list" aria-labelledby="rw-ec-t">
+  <div class="rw-list-hd"><h2 class="t-card" id="rw-ec-t">Reuniendo EC</h2><span class="t-meta">ordenadas por cercanía</span></div>
+  {% for r in grupos.ec %}
+  <div class="rw-row rw-row--ec" {{ rdata(r) }}>
+    <button type="button" class="rw-open js-edit" aria-label="Editar {{ r.name }}">
+      <span class="rw-ic"><i data-lucide="{{ r.icon }}"></i></span>
+      <span class="rw-min eu-grow"><span class="rw-name">{{ r.name }}</span><span class="t-meta">{{ r.regla }}</span></span>
+    </button>
+    <div class="rw-row-prog">
+      <div class="rw-bar" role="progressbar" aria-valuenow="{{ r.ec_pct }}" aria-valuemax="100" aria-label="EC reunidos para {{ r.name }}"><i style="--p:{{ r.ec_pct }}%"></i></div>
+      <span class="num t-meta">faltan {{ r.ec_left }}{% if r.eta_txt %} · ≈ {{ r.eta_txt }}{% endif %}</span>
+    </div>
+    <span class="num fg-ec rw-row-cost">{{ r.ec_cost }}</span>
   </div>
   {% endfor %}
-</div>
-<div class="js-filter-empty" hidden>{{ ui.empty('filter', 'Nada con este filtro', 'Prueba con otro estado.') }}</div>
+</section>
+{% endif %}
+
+{% if grupos.later or grupos.done %}
+<section class="eu-card eu-card--flush rw-list rw-later" aria-labelledby="rw-lt-t">
+  <div class="rw-list-hd"><h2 class="t-card" id="rw-lt-t">Se abren más adelante</h2><span class="t-meta">por nivel, insignia o espera</span></div>
+  {% for r in grupos.later %}
+  {% set q = r.req or {} %}
+  <div class="rw-row rw-row--later" {{ rdata(r) }}>
+    <button type="button" class="rw-open js-edit" aria-label="Editar {{ r.name }}">
+      <span class="rw-ic"><i data-lucide="{{ r.icon }}"></i></span>
+      <span class="rw-min eu-grow"><span class="rw-name">{{ r.name }}</span><span class="t-meta">{{ r.regla }}</span></span>
+    </button>
+    <span class="eu-badge rw-req{{ ' eu-badge--info' if q.tipo == 'espera' else (' eu-badge--warning' if q.cerca else '') }}" data-req="{{ q.tipo }}">
+      <i data-lucide="{{ 'hourglass' if q.tipo == 'espera' else ('lock' if q.tipo == 'nivel' else 'award') }}"></i>{{ q.texto }}</span>
+    <span class="num rw-row-cost fg-3">{{ r.ec_cost }}</span>
+  </div>
+  {% endfor %}
+  <div class="rw-later-ft t-meta">Editar o borrar: abre cualquier recompensa.{% if grupos.done %} Conseguidas ({{ grupos.done|length }}) en el historial.{% endif %}</div>
+</section>
+{% endif %}
+
+{% if not rewards %}
+{{ ui.empty('gift', 'Aún no hay recompensas', 'Crea tu primera recompensa y convierte tu esfuerzo en algo tangible.') }}
+{% endif %}

@@ -6,27 +6,36 @@
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/recompensas.css') }}">{% endblock %}
 {% block mtitle %}<b>Recompensas</b><span>Tú · tienda EC</span>{% endblock %}
 
+{# Handoff Recompensas v2: la tienda responde, en orden, ¿qué puedo canjear
+   hoy?, ¿qué viene después y cuándo llego? y ¿qué me falta desbloquear?
+   Todo medido con el ritmo real de EC ganados (30 d). #}
 {% block content %}
 <div class="rw" id="rw" data-ec="{{ ec_balance }}" data-rate="{{ ec_rate }}">
-  <div class="rw-main">
-    <header class="rw-hd">
-      <div>
-        <div class="t-eyebrow">Tienda</div>
-        <h1 class="t-page">Recompensas</h1>
-        <p class="t-meta rw-lead">Premios reales pagados con disciplina. 1 EC = ${{ ec_rate }} MXN.</p>
-      </div>
-      <button type="button" class="eu-btn eu-btn--secondary js-new"><i data-lucide="plus"></i>Nueva recompensa</button>
-    </header>
-    {% include "recompensas/_balance.html" %}
-    {% include "recompensas/_filters.html" %}
-    {% include "recompensas/_grid.html" %}
+  <header class="rw-hd">
+    <div class="rw-hd-t">
+      <div class="t-eyebrow">Tú · Tienda EC</div>
+      <h1 class="t-page">Recompensas</h1>
+    </div>
+    <button type="button" class="eu-btn eu-btn--ghost js-new"><i data-lucide="plus"></i>Recompensa</button>
+  </header>
+
+  {% include "recompensas/_balance.html" %}
+
+  <div class="rw-undo" id="rw-undo" role="status" aria-live="polite" hidden>
+    <i data-lucide="check"></i><span class="eu-grow js-undo-t"></span>
+    <button type="button" class="eu-btn eu-btn--sm rw-undo-btn js-undo">Deshacer</button>
   </div>
-  <aside class="rw-side" aria-label="Saldo, gasto libre e historial">
-    {% include "recompensas/_balance.html" %}
-    {% include "recompensas/_level.html" %}
-    {% include "recompensas/_spend.html" %}
-    {% include "recompensas/_history.html" %}
-  </aside>
+
+  <div class="rw-body">
+    <div class="rw-main" id="rw-main">
+      {% include "recompensas/_grid.html" %}
+    </div>
+    <aside class="rw-side" aria-label="Wishlists, gasto libre y canjes recientes">
+      {% include "recompensas/_wishlists.html" %}
+      {% include "recompensas/_spend.html" %}
+      {% include "recompensas/_history.html" %}
+    </aside>
+  </div>
 </div>
 {% include "recompensas/_modal.html" %}
 {% endblock %}

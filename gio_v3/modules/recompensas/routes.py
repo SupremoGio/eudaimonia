@@ -1,5 +1,6 @@
+import math
 import random
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, session
 from datetime import date, datetime, timedelta
 from database import get_db
 from modules.gamification.engine import get_gamification_stats
@@ -153,65 +154,221 @@ def _reward_icon(name):
     return "gift"
 
 
+def _badge_ok(key):
+    if not key:
+        return True
+    with get_db() as db:
+        return db.execute("SELECT 1 FROM badges WHERE key=? AND unlocked_at IS NOT NULL", (key,)).fetchone() is not None
+
+
 def _reward_status(r, ec_balance, current_level):
-    """available · level (bloqueada por nivel) · wait (cooldown, fin de semana,
-    badge) · ec (solo faltan EC) · done (única ya canjeada) — los filtros de la
-    tienda V2."""
+    """available · level (falta nivel) · badge (falta insignia) · ec (solo
+    faltan EC) · wait (cooldown, ventana o tope del fin de semana) · done
+    (única ya canjeada)."""
     if r.get("unica") and r.get("last_redeemed"):
         return "done"
     if r["can_redeem"]:
         return "available"
     if current_level < r["level_required"]:
         return "level"
+    if not _badge_ok(r.get("badge_required")):
+        return "badge"
     if ec_balance < r["ec_cost"]:
         can_otherwise, _ = _can_redeem(r, 10 ** 9, current_level)
         return "ec" if can_otherwise else "wait"
     return "wait"
 
 
-@recompensas_bp.route('/')
-def index():
-    ec_balance    = _get_ec_balance()
-    level_info    = _get_level()
-    rewards       = _get_all_rewards()
-    current_level = level_info["level"]
+# ── Recompensas v2: ritmo, ETA, requisitos con progreso y grupos ─────────────
 
+def ec_ritmo(hoy=None):
+    """EC ganados (solo positivos) en los últimos 30 días / 30, y los de la
+    semana. Con el neto, cada canje alargaría las ETA."""
+    hoy = hoy or today_date()
+    with get_db() as db:
+        ec_30 = db.execute("SELECT COALESCE(SUM(amount),0) s FROM coins_ledger WHERE amount>0 AND date>=? AND date<=?",
+                           ((hoy - timedelta(days=29)).isoformat(), hoy.isoformat())).fetchone()["s"]
+        ec_week = db.execute("SELECT COALESCE(SUM(amount),0) s FROM coins_ledger WHERE amount>0 AND date>=? AND date<=?",
+                             ((hoy - timedelta(days=hoy.weekday())).isoformat(), hoy.isoformat())).fetchone()["s"]
+    return round(ec_30 / 30, 1), int(ec_week)
+
+
+def eta_dias(faltan, ritmo):
+    if faltan <= 0:
+        return 0
+    if not ritmo or ritmo <= 0:
+        return None
+    return math.ceil(faltan / ritmo)
+
+
+def eta_txt(dias):
+    if dias is None:
+        return None
+    if dias <= 1:
+        return "1 día"
+    if dias < 30:
+        return f"{dias} días"
+    return f"{dias / 30:.1f} meses"
+
+
+def _espera_corta(reason):
+    """block_reason abreviado para el badge de requisito."""
+    import re
+    m = re.match(r"Ya van (\d+) este fin de semana · disponible el (\S+ \d+)", reason)
+    if m:
+        return f"{m.group(1)}/{m.group(1)} · {m.group(2)}"
+    m = re.match(r"Disponible el (\S+ \d+)", reason)
+    if m:
+        return f"Disponible el {m.group(1)}"
+    m = re.match(r"Cooldown: (\d+) días restantes", reason)
+    if m:
+        n = int(m.group(1))
+        return "Mañana" if n == 1 else f"En {n} días"
+    return {"Solo disponible en fin de semana": "Solo sáb–dom",
+            "Solo de viernes a domingo": "Solo vie–dom"}.get(reason, reason)
+
+
+class _Requisitos:
+    """Calcula los requisitos con progreso, con las stats de insignias de
+    Logros (una sola vez por página) y el ritmo de XP."""
+
+    def __init__(self, level_info):
+        from modules.gamification.routes import eta_nivel
+        self.level_info = level_info
+        self.xp_dia = eta_nivel(level_info["total_xp"])["xp_dia_30"]
+        self._stats = None
+
+    def stats(self):
+        if self._stats is None:
+            from modules.gamification.badges import _gather_badge_stats
+            try:
+                self._stats = _gather_badge_stats()
+            except Exception:
+                self._stats = {}
+        return self._stats
+
+    def nivel(self, n):
+        from modules.gamification.engine import LEVEL_THRESHOLDS
+        umbral = LEVEL_THRESHOLDS[min(max(n, 1), 10) - 1][0]
+        faltan = max(0, umbral - self.level_info["total_xp"])
+        dias = eta_dias(faltan, self.xp_dia)
+        txt = eta_txt(dias)
+        return {"tipo": "nivel", "texto": f"Nivel {n}" + (f" · ≈ {txt.replace(' días', ' d').replace(' día', ' d')}" if txt else ""),
+                "have": self.level_info["total_xp"], "need": umbral, "eta_txt": txt, "eta_dias": dias,
+                "cerca": dias is not None and dias <= 30}
+
+    def insignia(self, key):
+        from modules.gamification.badges import BADGE_DEFS, progress_of
+        from modules.gamification.routes import prog_txt
+        defn = BADGE_DEFS.get(key) or next((d for d in BADGE_DEFS.values() if d["name"].lower() == (key or "").lower()), None)
+        if not defn:
+            return {"tipo": "insignia", "texto": f"Insignia {key}", "have": None, "need": None, "eta_txt": None, "cerca": False}
+        p = progress_of(defn, self.stats()) if self.stats() else None
+        have, need = (p[0], p[1]) if p else (None, None)
+        return {"tipo": "insignia", "texto": defn["name"] + (f" · {prog_txt(p)}" if p else ""), "have": have, "need": need,
+                "eta_txt": None, "cerca": bool(p) and need and have / need >= 0.75}
+
+
+def _requisito(r, reqs, current_level):
+    if r["status"] == "level":
+        return reqs.nivel(r["level_required"])
+    if r["status"] == "badge":
+        return reqs.insignia(r["badge_required"])
+    if r["status"] == "wait":
+        return {"tipo": "espera", "texto": _espera_corta(r["block_reason"]), "have": None, "need": None,
+                "eta_txt": None, "cerca": False}
+    return None
+
+
+def _regla(r):
+    """Una línea con la regla de la recompensa: «Cada 7 d», «2 por fin de semana»…"""
+    if r.get("unica"):
+        base = "Única vez"
+    elif r.get("max_por_ventana"):
+        base = f"{r['max_por_ventana']} por fin de semana"
+    elif r.get("cooldown_days"):
+        base = f"Cada {r['cooldown_days']} d"
+    else:
+        base = "Sin espera"
+    v = {1: "sáb y dom", 2: "vie a dom"}.get(ventana_modo(r.get("weekend_only")))
+    return base + (f" · {v}" if v and not r.get("max_por_ventana") else "")
+
+
+def tienda():
+    """Todo lo que pinta /recompensas/: recompensas con estado, regla, ETA y
+    requisito; meta; grupos; ritmo e historial."""
+    ec_balance = _get_ec_balance()
+    level_info = _get_level()
+    rewards = _get_all_rewards()
+    lvl = level_info["level"]
+    ritmo, ec_week = ec_ritmo()
+    reqs = _Requisitos(level_info)
     for r in rewards:
-        can, reason = _can_redeem(r, ec_balance, current_level)
+        can, reason = _can_redeem(r, ec_balance, lvl)
         r["can_redeem"] = can
         r["block_reason"] = reason if not can else ""
-        r["status"] = _reward_status(r, ec_balance, current_level)
+        r["status"] = _reward_status(r, ec_balance, lvl)
         r["icon"] = _reward_icon(r["name"])
         r["ventana"] = _VENTANA_LABEL.get(ventana_modo(r.get("weekend_only")), "")
         r["max_por_ventana"] = int(r.get("max_por_ventana") or 0)
         r["usados_ventana"] = canjes_en_ventana(r) if r["max_por_ventana"] else 0
         r["ec_pct"] = min(100, round(ec_balance / r["ec_cost"] * 100)) if r["ec_cost"] else 100
-    # Las conseguidas (únicas ya canjeadas) al final
-    rewards.sort(key=lambda r: r["status"] == "done")
+        r["ec_left"] = max(0, r["ec_cost"] - ec_balance)
+        r["eta_dias"] = eta_dias(r["ec_left"], ritmo)
+        r["eta_txt"] = eta_txt(r["eta_dias"])
+        r["regla"] = _regla(r)
+        r["req"] = _requisito(r, reqs, lvl)
 
-    today = today_date()
-    week_start = (today - timedelta(days=today.weekday())).isoformat()
-    month_ago = (today - timedelta(days=29)).isoformat()
+    available = [r for r in rewards if r["status"] == "available"]
+    ec = sorted((r for r in rewards if r["status"] == "ec"), key=lambda r: (r["ec_left"], r["ec_cost"]))
+    later = ([r for r in rewards if r["status"] == "wait"] +
+             sorted((r for r in rewards if r["status"] in ("level", "badge")), key=lambda r: r["ec_cost"]))
+    done = [r for r in rewards if r["status"] == "done"]
+
     with get_db() as db:
-        ec_week = db.execute("SELECT COALESCE(SUM(amount),0) s FROM coins_ledger WHERE amount>0 AND date>=?",
-                             (week_start,)).fetchone()["s"]
-        ec_30 = db.execute("SELECT COALESCE(SUM(amount),0) s FROM coins_ledger WHERE amount>0 AND date>=?",
-                           (month_ago,)).fetchone()["s"]
         history = [dict(r) for r in db.execute(
             "SELECT id, ABS(amount) AS ec, description, date, source FROM coins_ledger "
             "WHERE amount < 0 ORDER BY id DESC LIMIT 60").fetchall()]
+    return {
+        "rewards": rewards, "ec_balance": ec_balance, "level_info": level_info, "ec_rate": EC_RATE,
+        "ec_week": ec_week, "ec_daily": ritmo, "history": history,
+        "meta": ec[0] if ec else None,
+        "grupos": {"available": available, "ec": ec, "later": later, "done": done},
+    }
 
-    return render_template('recompensas/index.html',
-        rewards      = rewards,
-        ec_balance   = ec_balance,
-        level_info   = level_info,
-        gam          = get_gamification_stats(),
-        ec_rate      = EC_RATE,
-        ec_week      = ec_week,
-        ec_daily     = round(ec_30 / 30, 1),
-        history      = history,
-        counts       = {k: sum(1 for r in rewards if r["status"] == k) for k in ("available", "level", "wait", "ec", "done")},
-    )
+
+def wishlists_ec(ec_balance, ritmo, fin_ok, limite=5):
+    """Lo pagable con EC de las dos wishlists, normalizado a {nombre, fuente,
+    ec, url}. Finanzas solo con fin_ok (la misma regla que wishlist_dedup).
+    La compra no se duplica: cada fila lleva a su propio flujo (comprar-ec)."""
+    items = []
+    with get_db() as db:
+        for r in db.execute(
+                "SELECT id, nombre, precio_estimado, ec_sugerido FROM wishlist_items "
+                "WHERE COALESCE(estado,'evaluando') NOT IN ('comprado','descartado')").fetchall():
+            ec = r["ec_sugerido"] or (math.ceil((r["precio_estimado"] or 0) / EC_RATE) if r["precio_estimado"] else 0)
+            if ec > 0:
+                items.append({"nombre": r["nombre"], "fuente": "Guardarropa", "ec": int(ec),
+                              "url": "/guardarropa/wishlist/", "icon": "shirt"})
+        if fin_ok:
+            for r in db.execute(
+                    "SELECT id, nombre, precio_estimado FROM lista_prioridades "
+                    "WHERE estado='Pendiente' AND COALESCE(precio_estimado,0) > 0").fetchall():
+                items.append({"nombre": r["nombre"], "fuente": "Finanzas", "ec": math.ceil(r["precio_estimado"] / EC_RATE),
+                              "url": "/finanzas/prioridades/", "icon": "shopping-bag"})
+    items.sort(key=lambda i: (i["ec"], i["nombre"]))
+    for i in items:
+        i["alcanzable"] = ec_balance >= i["ec"]
+        i["faltan"] = max(0, i["ec"] - ec_balance)
+        i["eta_txt"] = eta_txt(eta_dias(i["faltan"], ritmo))
+    return items[:limite]
+
+
+@recompensas_bp.route('/')
+def index():
+    ctx = tienda()
+    ctx["wishlists"] = wishlists_ec(ctx["ec_balance"], ctx["ec_daily"], session.get("fin_ok"))
+    return render_template('recompensas/index.html', **ctx)
 
 
 @recompensas_bp.route('/api/rewards', methods=['GET'])
@@ -378,4 +535,40 @@ def redeem_reward(reward_id):
         "ec_spent": cost,
         "bonus_ec": bonus_ec,
         "ec_remaining": ec_balance - cost + bonus_ec,
+        "saldo_antes": ec_balance,
+        "saldo_despues": ec_balance - cost + bonus_ec,
     })
+
+
+UNDO_MIN = 10
+
+
+@recompensas_bp.route('/api/redeem/<int:reward_id>/undo', methods=['POST'])
+def undo_redeem(reward_id):
+    """Deshace el último canje si fue hace 10 minutos o menos: borra el cargo
+    (y su racha de suerte), y restaura last_redeemed. usados_ventana se cuenta
+    desde coins_ledger, así que el tope del fin de semana queda bien solo."""
+    with get_db() as db:
+        reward = db.execute("SELECT * FROM rewards WHERE id=?", (reward_id,)).fetchone()
+        if not reward:
+            return jsonify({"error": "not found"}), 404
+        desc = f"Recompensa: {reward['name']}"
+        cargo = db.execute(
+            "SELECT id, amount, created_at FROM coins_ledger WHERE source='reward' AND description=? AND amount<0 "
+            "ORDER BY id DESC LIMIT 1", (desc,)).fetchone()
+        try:
+            hace = datetime.now() - datetime.fromisoformat(cargo["created_at"]) if cargo else None
+        except (TypeError, ValueError):
+            hace = None
+        if hace is None or hace > timedelta(minutes=UNDO_MIN) or hace < timedelta(0):
+            return jsonify({"error": "Ya no se puede deshacer"}), 409
+        db.execute("DELETE FROM coins_ledger WHERE id=?", (cargo["id"],))
+        db.execute("DELETE FROM coins_ledger WHERE source='bonus_variable' AND description=? AND created_at=?",
+                   (f"Racha de suerte al canjear: {reward['name']}", cargo["created_at"]))
+        prev = db.execute(
+            "SELECT created_at FROM coins_ledger WHERE source='reward' AND description=? AND amount<0 "
+            "ORDER BY id DESC LIMIT 1", (desc,)).fetchone()
+        db.execute("UPDATE rewards SET last_redeemed=?, status=? WHERE id=?",
+                   (prev["created_at"] if prev else None, "redeemed" if prev else "available", reward_id))
+        db.commit()
+    return jsonify({"ok": True, "ec_balance": _get_ec_balance()})

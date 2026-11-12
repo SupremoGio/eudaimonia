@@ -73,7 +73,10 @@ def test_canje_de_unica_la_mueve_a_conseguidas(client):
     assert client.post(f'/recompensas/api/rewards/{rid}/redeem').get_json()['redeemed']
     assert client.post(f'/recompensas/api/rewards/{rid}/redeem').status_code == 400
     html = client.get('/recompensas/').get_data(as_text=True)
-    assert 'data-filter="done">Conseguidas' in html and 'Conseguida el' in html
+    # Recompensas v2: las conseguidas salen de los grupos y quedan en el historial
+    grupos = html.split('id="rw-main"', 1)[1].split('</aside>', 1)[0].split('id="rw-hist"', 1)
+    assert 'Conseguidas (1) en el historial' in grupos[0] and 'data-name="Kindle Paperwhite"' not in grupos[0]
+    assert 'Kindle Paperwhite' in grupos[1]
 
 
 def test_editar_permite_cambiar_unica(client):

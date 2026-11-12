@@ -1,0 +1,15 @@
+{# Desde tus wishlists (nota 7): lo pagable con EC de Guardarropa y Finanzas
+   (esta solo con fin_ok). Cada fila lleva a su propio flujo de compra. #}
+{% if wishlists %}
+<section class="eu-card eu-card--flush rw-wish" aria-labelledby="rw-wish-t">
+  <div class="eu-between rw-list-hd"><h2 class="t-card" id="rw-wish-t">Desde tus wishlists</h2><span class="t-meta">pagables con EC</span></div>
+  {% for w in wishlists %}
+  <a class="rw-wrow" href="{{ w.url }}">
+    <span class="rw-ic rw-ic--sm"><i data-lucide="{{ w.icon }}"></i></span>
+    <span class="rw-min eu-grow"><span class="rw-wrow-t">{{ w.nombre }}</span><span class="t-meta">Wishlist · {{ w.fuente }}</span></span>
+    <span class="rw-wrow-r"><span class="num fg-ec">{{ w.ec }} EC</span>
+      {% if w.alcanzable %}<span class="rw-ok">alcanzable</span>{% else %}<span class="t-meta">faltan {{ w.faltan }}{% if w.eta_txt %} · ≈ {{ w.eta_txt }}{% endif %}</span>{% endif %}</span>
+  </a>
+  {% endfor %}
+</section>
+{% endif %}
