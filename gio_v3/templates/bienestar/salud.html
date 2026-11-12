@@ -9,22 +9,12 @@
 {% set TIPO = {'enfermedad': ('Enfermedad', 'thermometer', 'danger'), 'lesion': ('Lesión', 'activity', 'warning'), 'consulta': ('Consulta', 'stethoscope', 'info')} %}
 
 {% block content %}
-<div class="sl" id="sl" data-cat="hegemonikon">
+<div class="sl" id="sl" data-cat="hegemonikon"{% if ep_abrir %} data-ep="{{ ep_abrir }}"{% endif %}>
   <header class="sl-hd">
     <div><div class="t-eyebrow">Hegemonikon · Salud</div><h1 class="t-page">Salud</h1>
-      <p class="t-meta sl-lead">Episodios, recetas, medicamentos y estudios en un solo historial.</p></div>
+      </div>
     <button type="button" class="eu-btn eu-btn--primary js-new-ep"><i data-lucide="plus"></i>Nuevo episodio</button>
   </header>
-
-  <div class="sl-stats">
-    <div class="eu-card sl-hero{{ ' is-ok' if stats.activos == 0 else ' is-alert' }}">
-      <span class="sl-hero-ic"><i data-lucide="{{ 'shield-check' if stats.activos == 0 else 'activity' }}"></i></span>
-      <div><div class="eu-stat-val num" id="stat-activos">{{ stats.activos }}</div>
-        <div class="t-ui">Episodios activos</div><div class="t-meta">{{ 'Todo bajo control' if stats.activos == 0 else 'Requieren seguimiento' }}</div></div>
-    </div>
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="pill"></i>Medicamentos activos</div><div class="eu-stat-val">{{ stats.meds_activos }}</div></div>
-    <div class="eu-card eu-stat"><div class="eu-stat-lbl"><i data-lucide="history"></i>Historial</div><div class="eu-stat-val">{{ stats.total }}</div>{% if stats.ultimo %}<div class="t-meta">Último: {{ stats.ultimo }}</div>{% endif %}</div>
-  </div>
 
   {% include "bienestar/salud/_analytics.html" %}
 
