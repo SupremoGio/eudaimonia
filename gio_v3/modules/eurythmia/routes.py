@@ -1,5 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify
-from datetime import datetime, timedelta
+import re
+import unicodedata
+from collections import Counter
+from datetime import date, datetime, timedelta
 from database import get_db
 from utils import today_str, today_date
 import modules.gamification.engine as engine
@@ -159,12 +162,83 @@ def _eury_streak():
     return streak
 
 
+# ── Eurythmia v2: espaciado, dominio por sesión, semana y bonos ─────────────
+
+SIN_PRACTICA_DIAS = 30        # un paso sin last_practiced cuenta como 30 días
+META_SEMANA = 4
+
+
+def _norm(t):
+    t = unicodedata.normalize('NFKD', (t or '').lower())
+    return re.sub(r'[^a-z0-9]+', ' ', ''.join(c for c in t if not unicodedata.combining(c))).strip()
+
+
+def _paso_de(db, step):
+    """El paso del repertorio que corresponde al texto libre de una sesión
+    (por clave o por nombre normalizado), o None."""
+    n = _norm(step)
+    if not n:
+        return None
+    for r in db.execute("SELECT * FROM eury_repertoire").fetchall():
+        if n in (_norm(r['step_key']), _norm(r['name'])):
+            return dict(r)
+    return None
+
+
+def backfill_last_practiced(db):
+    """last_practiced = la última eury_sessions.date de cada paso."""
+    n = 0
+    ult = {}
+    for r in db.execute("SELECT step, MAX(date) d FROM eury_sessions WHERE COALESCE(step,'') != '' GROUP BY step").fetchall():
+        p = _paso_de(db, r['step'])
+        if p and (p['step_key'] not in ult or r['d'] > ult[p['step_key']]):
+            ult[p['step_key']] = r['d']
+    for k, d in ult.items():
+        db.execute("UPDATE eury_repertoire SET last_practiced=? WHERE step_key=? AND (last_practiced IS NULL OR last_practiced < ?)", (d, k, d))
+        n += 1
+    db.commit()
+    return n
+
+
+def _dias(lp, hoy):
+    try:
+        return (hoy - date.fromisoformat(str(lp)[:10])).days
+    except (TypeError, ValueError):
+        return None
+
+
+def _estado(m):
+    return 'Automatizado' if m >= 80 else ('Consolidando' if m >= 50 else 'Aprendiendo')
+
+
+def _enriquecer(r, hoy):
+    d = _dias(r.get('last_practiced'), hoy)
+    dias = SIN_PRACTICA_DIAS if d is None else d
+    return {**r, 'dias': d, 'score': dias * (100 - (r['mastery'] or 0)), 'estado': _estado(r['mastery'] or 0)}
+
+
 def _repertoire():
+    hoy = today_date()
     with get_db() as db:
         rows = db.execute("SELECT * FROM eury_repertoire ORDER BY id").fetchall()
-    libres = [dict(r) for r in rows if r["kind"] == "libres"]
-    pareja = [dict(r) for r in rows if r["kind"] == "pareja"]
-    return {"libres": libres, "pareja": pareja}
+    allr = [_enriquecer(dict(r), hoy) for r in rows]
+    orden = lambda lst: sorted(lst, key=lambda r: -r['score'])
+    return {"libres": orden([r for r in allr if r["kind"] == "libres"]),
+            "pareja": orden([r for r in allr if r["kind"] == "pareja"])}
+
+
+def sugerencias(repertoire, n=3):
+    """Los n pasos no automatizados (dominio < 80) con más días sin practicar
+    × (100 − dominio)."""
+    todos = repertoire['pareja'] + repertoire['libres']
+    cand = sorted((r for r in todos if (r['mastery'] or 0) < 80), key=lambda r: -r['score'])
+    return [{'step_key': r['step_key'], 'nombre': r['name'], 'kind': r['kind'], 'mastery': r['mastery'] or 0,
+             'dias': r['dias']} for r in cand[:n]]
+
+
+def racha_bono(streak):
+    hitos = sorted(k for k in _STREAK_EC_BONUS if k > streak)
+    return {'dias': hitos[0], 'ec': _STREAK_EC_BONUS[hitos[0]]} if hitos else None
 
 
 def _state():
@@ -176,6 +250,13 @@ def _state():
         grabado_today = db.execute(
             "SELECT id FROM activity_logs WHERE activity_key=? AND date=?", (_GRABADO_KEY, today)
         ).fetchone() is not None
+        hoy = today_date()
+        lunes = (hoy - timedelta(days=hoy.weekday())).isoformat()
+        sem = db.execute("SELECT COALESCE(SUM(min),0) m, COUNT(*) n FROM eury_sessions WHERE date>=? AND date<=?",
+                         (lunes, today)).fetchone()
+        min_4sem = db.execute("SELECT COALESCE(SUM(min),0) m FROM eury_sessions WHERE date>? AND date<=?",
+                              ((hoy - timedelta(days=28)).isoformat(), today)).fetchone()['m']
+        ult10 = [r['min'] for r in db.execute("SELECT min FROM eury_sessions ORDER BY id DESC LIMIT 10").fetchall()]
 
     log = [{
         "id": r["id"], "date": r["date"], "min": r["min"],
@@ -186,16 +267,32 @@ def _state():
 
     days_practiced = len({r["date"] for r in log_rows}) if log_rows else 0
     avg_daily = round(total_min / max(1, days_practiced)) if days_practiced else 0
+    level = _level_from_minutes(total_min)
+    horas_semana = min_4sem / 60 / 4
+    streak = _eury_streak()
+    repertoire = _repertoire()
+    if ult10:
+        c = Counter(ult10)
+        top = max(c.values())
+        duracion = next(m for m in ult10 if c[m] == top)      # empate: la más reciente
+    else:
+        duracion = 30
 
     return {
         "total_min": total_min,
         "sessions": sessions_count,
-        "streak": _eury_streak(),
+        "streak": streak,
         "avg_daily": avg_daily,
-        "level": _level_from_minutes(total_min),
-        "repertoire": _repertoire(),
+        "level": level,
+        "repertoire": repertoire,
         "log": log,
         "grabado_today": grabado_today,
+        "sugerencias": sugerencias(repertoire),
+        "semana": {"min": sem['m'], "sesiones": sem['n'], "meta": META_SEMANA},
+        "nivel_eta_semanas": (round(level['hours_to_next'] / horas_semana, 1)
+                              if horas_semana > 0 and level['hours_to_next'] > 0 else None),
+        "racha_bono": racha_bono(streak),
+        "duracion_habitual": duracion,
     }
 
 
@@ -203,12 +300,17 @@ def _state():
 
 @eurythmia_bp.route('/')
 def index():
+    vista = request.args.get('vista') if request.args.get('vista') in ('bitacora', 'musica', 'progreso') else ''
+    musica = _musica_state()
+    siguiente = next((a for a in musica['albumes'] if not a['escuchado']), None)
     return render_template(
         'eurythmia/index.html',
         phases=PHASES, levels=LEVELS, flow_labels=FLOW_LABELS, science=SCIENCE,
         state=_state(),
-        musica=_musica_state(),
+        musica=musica, album_siguiente=siguiente,
         rating_dims=RATING_DIMS,
+        vista=vista, from_acta=request.args.get('from') == 'acta',
+        grabado_xp=_GRABADO_XP, grabado_ec=_GRABADO_EC,
     )
 
 
@@ -264,9 +366,17 @@ def api_session():
             (today, minutes, split[0], split[1], split[2], step, flow, improv, xp, int(grabado), log_id, now)
         )
         session_id = cur2.lastrowid
+        # Dominio por sesión real (nota 4): el paso drillado sube según la fluidez
+        step_mastery = None
+        paso = _paso_de(db, data.get('step_key') or step) or _paso_de(db, step)
+        if paso:
+            step_mastery = min(100, (paso['mastery'] or 0) + flow)
+            db.execute("UPDATE eury_repertoire SET mastery=?, reps=reps+10, last_practiced=? WHERE id=?",
+                       (step_mastery, today, paso['id']))
         db.commit()
 
-    gam = engine.process_activity(_SESSION_KEY, xp, 'Baile', log_id, ec=_session_ec(minutes, flow))
+    session_ec = _session_ec(minutes, flow)
+    gam = engine.process_activity(_SESSION_KEY, xp, 'Baile', log_id, ec=session_ec)
 
     grabado_gam = None
     if grabado:
@@ -284,12 +394,32 @@ def api_session():
                 grabado_gam = engine.process_activity(_GRABADO_KEY, _GRABADO_XP, 'Baile', grabado_log_id, ec=_GRABADO_EC)
 
     streak_gam = _maybe_award_dance_streak(_eury_streak(), today)
+    ec_total = session_ec + (_GRABADO_EC if grabado_gam else 0) + \
+        (_STREAK_EC_BONUS.get(_eury_streak(), 0) if streak_gam else 0)
 
     return jsonify({
         'ok': True, 'session_id': session_id, 'xp': xp,
         'gam': gam, 'grabado_gam': grabado_gam, 'streak_gam': streak_gam,
+        'step_mastery_nuevo': step_mastery, 'ec_total': ec_total,
         'state': _state(),
     })
+
+
+@eurythmia_bp.route('/api/preview-reward')
+def api_preview_reward():
+    """La recompensa de una sesión antes de guardarla, con las mismas
+    fórmulas que /api/session (para no duplicarlas en JS)."""
+    try:
+        minutes = max(1, min(300, int(request.args.get('min', 30))))
+        flow = max(1, min(5, int(request.args.get('flow', 3))))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid'}), 400
+    grabado = request.args.get('grabado') in ('1', 'true')
+    with get_db() as db:
+        ya = db.execute("SELECT 1 FROM activity_logs WHERE activity_key=? AND date=?", (_GRABADO_KEY, today_str())).fetchone()
+    extra = grabado and not ya
+    return jsonify({'xp': minutes + flow * 4 + (_GRABADO_XP if extra else 0),
+                    'ec': _session_ec(minutes, flow) + (_GRABADO_EC if extra else 0)})
 
 
 @eurythmia_bp.route('/api/grabado/toggle', methods=['POST'])
