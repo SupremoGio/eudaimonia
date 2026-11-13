@@ -12,7 +12,7 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
 
 **Resumen:**
 - Los 16 paquetes del ORDEN (70 sprints) y los transversales están **hechos**.
-- De **Remates**, Login S1 y Recetas S1 están **hechos**, y Wishlist S1 está **pendiente**.
+- **Remates:** Login S1, Recetas S1 y Wishlist de Oikonomia S1 están **hechos**.
 
 ## Inicio v2
 
@@ -224,7 +224,7 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
 |---|---|---|---|
 | Login S1 · pulido | hecho | una sola cita: `templates/auth/login.html:24` (`au-hero-q`, solo escritorio) y `:41` (`au-mob-q`, solo móvil), sin `au-q`; mínimo 8: `modules/auth/routes.py:8` (`MIN_PASS`), contador «N de 8» `login.html:60` (`#au-pw-n`, `eu-help`), `static/js/login.js:33` (`contar`); coincidencia en el segundo campo: `login.js:41` (`coincide`), `login.html:65` (`#au-err2`); mostrar/ocultar: `ui.iconbtn('eye', …, pressed=False)` en `login.html:54`, `:59`, `:64`; bloqueo: `app.py:203` (429 con `retry_after` y `Retry-After`), `login.js:70` (`bloquear`, botón deshabilitado y «Espera N s»); busy: `aria-busy` + spinner de `components.css:55`; `tests/test_login.py` | verificar a mano: que en el iPhone se vea una sola cita y la cuenta regresiva (en Playwright con iPhone 13 se ve una cita, y «Espera 60 s» → «59 s» con el botón deshabilitado). En móvil la página no tiene `h1` visible porque el del hero se oculta. Ya pasaba antes y no se cambió, porque `a11y_lint` no admite dos `h1`. |
 | Recetas S1 · encontrar y usar | hecho | sin stats (el antetítulo da el conteo y `recetas.js` lo mantiene vivo); «Para hoy»: `modules/recetas/routes.py:43` (`para_hoy`: plan de hoy de `nutricion_semana` sin sembrar; momentos sin receta y sin comer; aptas FODMAP del momento; favoritas y luego menos usadas en 14 días, `:99`), `/recetas/api/para-hoy` `:136`, `templates/recetas/index.html:19`; «Usar» = `POST /nutricion/api/comida` con `receta_id`, que ahora se guarda (`modules/nutricion/routes.py:997`, columna `nutricion_semana.receta_id` en `database.py:7274`), `static/js/recetas.js:181` (`usar`); categorías en `eu-seg` con desplazamiento horizontal `index.html:47`, chip FODMAP aparte `:52`; búsqueda por ingrediente `recetas.js` (`match`); detalle: franja de 4 celdas en mono `recetas.js:110`, porciones `:131` (`setPorc`, `parseQty` `:33`), pasos con casilla `:98`, «Cocinar» `:160` (← → `:173`, Esc por `euDialog`, `wakeLock` `:156`), `index.html:108`; modal con «Avanzado» plegado `index.html:85`; `tests/test_recetas.py` (9) | El chip «Apta FODMAP» **no** se activa por fase de eliminación: Nutrición no tiene esa fase (no hay columna, ajuste ni ruta), así que no se inventó. Sigue funcionando `?fodmap=seguro`. Las comidas agregadas desde el recetario antes de este sprint no tienen `receta_id`, así que se reconocen por nombre. verificar a mano: `wakeLock` en el iPhone (Safari 16.4+; si se niega, la pantalla puede apagarse) y el bloque «Para hoy» con el plan real. |
-| Wishlist de Oikonomia S1 · por mes y contra el presupuesto | pendiente | **Re-auditado el 2026-11-13 (verificación final):** ningún archivo del sprint cambió desde `main` y la evidencia sigue en las mismas líneas. solo lo que ya había: redirección sin `fin_ok`, `modules/finanzas/prioridades.py:13`; dedup al crear, `:74` (`wishlist_dedup.existente`); `/api/ec-status`, `:163` | Todo el sprint. 1) El antetítulo dice «Lista de prioridades · N pendientes», sin el «$X» (`templates/finanzas/prioridades.html:13`). 2) Siguen las 4 `eu-stat` (`:19`–`21`). Falta el «libre para deseos» de Oikonomia S1: hoy solo existe `deseos.total_gastado` del presupuesto 50·30·20 (`modules/finanzas/coach.py:110`), así que la celda «Este mes» necesita definir ese cálculo. 3) Falta agrupar por `mes_objetivo`; hoy hay chips de estado y prioridad (`static/js/prioridades.js:40`). 4) Faltan las acciones en la fila: «Comprado» con precio en línea, «Mover de mes» y «⋯». 5) Falta «o N EC». 6) Falta el enlace «también en Guardarropa». El criterio «sin `fin_ok` redirige» ya se cumple. |
+| Wishlist de Oikonomia S1 · por mes y contra el presupuesto | hecho | «libre para deseos»: `modules/finanzas/budget.py:543` (`libre_deseos(db, mes)`: meta del grupo Deseos de la regla 50·30·20, el 30 % del ingreso recurrente que calcula `_calc_budget` para `/finanzas/budget/` y el héroe de Oikonomia, menos lo gastado en Deseos; `None` sin ingreso); h1 «Wishlist» con antetítulo «N pendientes · $X» `templates/finanzas/prioridades.html:21`; franja de 3 celdas `:25` (barra apilada por prioridad, «Este mes» `:35` solo si hay `libre`, comprado en el año); grupos por `mes_objetivo` `modules/finanzas/prioridades.py:33` (`GRUPOS`), `:48` (`grupo_de`), `:71` (`vista`), plantilla `:56`; Comprado y Descartado plegados `:64`; fila `templates/finanzas/prioridades/_item.html`: prioridad `eu-badge` `:10`, `protocolo_rec` `:14`, «también en Guardarropa» `:21` (`_en_guardarropa`, `prioridades.py:57`), precio en mono `:25`, «o N EC» `:26`, «Comprado» con el precio en línea `:30`, «Mover de mes» `:33` y menú ⋯; JS `static/js/prioridades.js:52` (`recalc`), `:90` (menús con flechas y Esc), `:154` (mover sin recargar con `/api/get` + `/api/update`); EC: endpoint nuevo `POST /api/comprar-ec/<id>` `prioridades.py:211`; sin `fin_ok` sigue redirigiendo `:13`; `tests/test_wishlist_oikonomia.py` (11) | «Este mes» incluye lo atrasado (mes objetivo anterior al actual, con el badge «Desde …»), para que la celda y el grupo sumen lo mismo. El pago con EC de un artículo que ya está en la lista no tenía endpoint: solo existía al dar de alta en el protocolo. Se agregó `comprar-ec`, que escribe el mismo registro en `coins_ledger` y no cambia ningún endpoint existente. Se quitó el modal «¡Comprado!», porque el precio ahora se pide en la fila. `test_vacios` ya no espera el vacío de filtro, porque el sprint quitó los chips. verificar a mano: «Este mes» contra lo libre para deseos con tu ingreso real de noviembre (sin ingreso registrado, la celda no aparece). |
 
 ## Notas de la Fase 1 que ya quedaron resueltas
 - **XP negativo del desliz (antes de 1.2):** el motor no acepta montos negativos, porque `process_activity` aplica `max(1, …)`. El desliz se descuenta con `engine._award_xp(-pen, 'activity', …, log_id)`, y `remove_activity` lo revierte. Está documentado en `modules/nutricion/routes.py`, sección «XP por el motor».
@@ -264,14 +264,12 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
 
 
 ## Cierre
-- **Fecha:** 2026-11-13. Es la rama `claude/modest-cray-h9zrlf` justo antes de mergear a `main`.
-- **Sprints:** 92 en total: **91 hechos**, **0 parciales** y **1 pendiente**. El pendiente es Remates · Wishlist de Oikonomia S1. Los 70 del ORDEN están hechos.
-- **Tests:** `pytest -n 4 tests` dio **1527 passed**, 0 failed, en 4 min 9 s. Durante esta ronda se ajustaron 2 tests, sin tocar código de la app:
-  - `test_plantas_ajustes`: validaba el manejo de Esc anterior del panel, que A11y S2 pasó a `euDialog` a propósito.
-  - `test_login`: fallaba si los intentos cruzaban el cambio de minuto del límite. Además, `conftest` fija días de pago de prueba, para que cambiar `PAY_DAYS` no rompa la suite.
+- **Fecha:** 2026-11-13. Es la rama `claude/modest-cray-h9zrlf` después de Wishlist de Oikonomia S1. La ronda anterior entró a `main` en [SupremoGio/eudaimonia#128](https://github.com/SupremoGio/eudaimonia/pull/128).
+- **Sprints:** 92 en total: **92 hechos**, **0 parciales** y **0 pendientes**. Están cerrados los 70 del ORDEN, los transversales y los 3 de Remates.
+- **Tests:** `pytest -n 4 tests` dio **1538 passed**, 0 failed, en 4 min 11 s.
 - **`pre_deploy_check`:** «All pre-deploy checks passed». init_db y niveles OK, A11y sin problemas nuevos y 19 macros documentadas.
-- **Capturas** (`capturas.py antes` desde `origin/main` → `despues-final`):
-  - 28 de 50 cambiaron, y el único cambio real es la ruta nueva `/_ui`. Las 10 rutas siguientes cambiaron entre 0.03 % y 0.08 %, todas por suavizado de texto, no por diseño:
+- **Capturas** (corrida del 2026-11-13, `antes` desde `origin/main` → `despues-final`):
+  - El único cambio real fue la ruta nueva `/_ui`. Las 10 rutas siguientes cambiaron entre 0.03 % y 0.08 %, todas por suavizado de texto:
     - `/finanzas/consumo/`
     - `/finanzas/estados/`
     - `/recetas/`
@@ -282,8 +280,7 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
     - `/finanzas/inversiones/`
     - `/bienestar/`
     - `/bienestar/futbol/`
-  - Recetas S1 se hizo después de esta corrida, y Login no entra en la lista, porque `capturas.py` corre con sesión iniciada.
-  - Tres rutas de la lista de `capturas.py` no existen ni en `main`: `/finanzas/presupuesto/`, `/bienestar/nutricion/` y `/logros/`.
+  - Recetas S1 y la Wishlist se revisaron después, con Playwright y axe en escritorio y en iPhone 13.
 
 ### Verificar a mano
 - [ ] **Inicio v2 · S6 · móvil, limpieza y QA:** orden de bloques en móvil (Héroe → Pendiente → …) y topbar sin XP: es layout, se ve en pantalla
@@ -297,8 +294,7 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
 - [ ] **A11y + catálogo (y Capturas) · S2 · línea base en 0 y `euDialog`:** lector de pantalla real (VoiceOver), axe no lo cubre
 - [ ] **Remates (Login, Recetas, Wishlist de Oikonomia) · Login S1 · pulido:** que en el iPhone se vea una sola cita y la cuenta regresiva (en Playwright con iPhone 13 se ve una cita, y «Espera 60 s» → «59 s» con el botón deshabilitado). En móvil la página no tiene `h1` visible porque el del hero se oculta. Ya pasaba antes y no se cambió, porque `a11y_lint` no admite dos `h1`.
 - [ ] **Remates (Login, Recetas, Wishlist de Oikonomia) · Recetas S1 · encontrar y usar:** `wakeLock` en el iPhone (Safari 16.4+; si se niega, la pantalla puede apagarse) y el bloque «Para hoy» con el plan real.
+- [ ] **Remates (Login, Recetas, Wishlist de Oikonomia) · Wishlist de Oikonomia S1 · por mes y contra el presupuesto:** «Este mes» contra lo libre para deseos con tu ingreso real de noviembre (sin ingreso registrado, la celda no aparece).
 
 ## Siguiente paso
-- **ORDEN (Fases 1–3):** no queda ningún sprint pendiente.
-- **Siguiente: Wishlist de Oikonomia S1**, el último sprint pendiente. Toca `modules/finanzas/*`, así que conviene correrla sola. Antes hay que decidir cómo se calcula «libre para deseos». Si no existe, la celda «Este mes» no aparece, como dice el sprint.
-- Capturas, A11y + catálogo, Login S1 y Recetas S1 entran a `main` con este PR.
+No queda ningún sprint pendiente: los paquetes del ORDEN, los transversales y Remates están cerrados. Lo que falta son las casillas de «Verificar a mano» del Cierre. Cualquier handoff nuevo empieza con su propio `SPRINTS.md`.

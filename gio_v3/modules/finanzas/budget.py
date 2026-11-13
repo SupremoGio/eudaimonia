@@ -540,6 +540,23 @@ def _calc_budget(mes, db):
     }
 
 
+def libre_deseos(db, mes):
+    """«Libre para deseos» de un mes (Remates · Wishlist S1): la meta del bucket
+    Deseos de la regla 50·30·20 (30 % del ingreso recurrente, la misma de
+    /finanzas/budget/ y del héroe de Oikonomia) menos lo ya gastado en Deseos.
+    {meta, gastado, libre} — libre puede ser negativo (meta rebasada). None si
+    el mes no tiene ingreso: sin ingreso no hay meta y la celda no aparece."""
+    try:
+        bd = _calc_budget(mes, db)
+    except Exception:
+        return None
+    if not bd.get('ingreso_real'):
+        return None
+    des = bd['buckets']['deseos']
+    return {'meta': des['target_monto'], 'gastado': des['total_gastado'],
+            'libre': round(des['target_monto'] - des['total_gastado'], 2)}
+
+
 # ── Vista principal ───────────────────────────────────────────────────────────
 
 @budget_bp.route('/')
