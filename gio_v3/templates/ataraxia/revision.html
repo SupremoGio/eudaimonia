@@ -1,0 +1,174 @@
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'ataraxia' %}
+{# Revisión de la semana (handoff Revisión): un recorrido de 4 pasos para
+   cerrar la semana. 1 Cómo fue (veredicto de _analyze_week) · 2 Los números
+   (6 automáticas + 3 a mano) · 3 Cerrar cabos (inbox, vencidas y avisos) ·
+   4 La que viene (prioridades + calendario). Cada paso se guarda solo en
+   /ataraxia/api/revision; «Cerrar la semana» manda cerrar:true. #}
+{% block module_title %}ATARAXIA{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/ataraxia.css') }}">{% endblock %}
+{% block topright %}<span class="rv-saved" id="rv-saved" role="status">Se guarda sola</span>{% endblock %}
+{% set TIER = {'carbon': 'carbon', 'iron': 'hierro', 'gold': 'oro', 'diamond': 'diamante'} %}
+
+{% block content %}
+{% set an = rv.analysis %}{% set wk = rv.weekly %}{% set rw = rv.recompensa %}
+<div class="rv" id="rv" data-cat="ataraxia" data-paso="{{ paso }}" data-cerrada="{{ 'true' if rv.cerrada else 'false' }}">
+  <aside class="rv-side">
+    {{ ui.page_head(eyebrow='Semana ' ~ rv.semana_num ~ ' · ' ~ rv.rango, cls='rv-hd') }}
+    <nav aria-label="Pasos de la revisión">
+      <ol class="rv-steps">
+        {% for id, label, tiempo in pasos %}{% set n = loop.index %}
+        <li><a class="rv-step" href="?paso={{ n }}" data-go="{{ n }}"{% if n == paso %} aria-current="step"{% endif %}{% if n < paso or rv.cerrada %} data-done="true"{% endif %}>
+          <span class="rv-dot" aria-hidden="true"><i data-lucide="check"></i><b class="num">{{ n }}</b></span>
+          <span class="rv-step-l">{{ label }}</span><span class="rv-step-t num">{{ tiempo }}</span>
+        </a></li>
+        {% endfor %}
+      </ol>
+    </nav>
+    <p class="rv-reward t-meta">Al terminar: <b class="num">+{{ rw.xp }} XP · +{{ rw.ec }} EC</b> y la casilla «Planeación» de Ataraxia se marca sola.</p>
+  </aside>
+
+  <div class="rv-main">
+    {# ── Paso 1 · Cómo fue ─────────────────────────────────────────── #}
+    <section class="rv-panel eu-vstack" data-panel="1" aria-labelledby="rv-h1"{% if paso != 1 %} hidden{% endif %}>
+      <h2 class="rv-h" id="rv-h1" tabindex="-1">Cómo fue</h2>
+      <div class="rv-verdict at-tier" data-t="{{ TIER.get(wk.rank, 'carbon') }}">
+        <div class="eu-grow">
+          <div class="t-eyebrow at-tier-fg">{{ an.verdict_title.split(' — ')[0] }}</div>
+          <div class="rv-verdict-r">{{ wk.label }}</div>
+          <p class="rv-verdict-b">{{ an.verdict_body }}</p>
+        </div>
+        {% if an.vs_prev.trend %}
+        <div class="rv-vs">
+          <span class="num rv-vs-v is-{{ an.vs_prev.trend }}">{{ '↑' if an.vs_prev.trend == 'up' else ('↓' if an.vs_prev.trend == 'down' else '=') }} vs {{ an.vs_prev.prev_label }}</span>
+          <span class="t-meta">semana pasada</span>
+        </div>
+        {% endif %}
+      </div>
+      <ol class="rv-days" aria-label="Los 7 días">
+        {% for d in wk.days %}
+        {% set tag = 'mejor día' if an.best_day and d.date == an.best_day.date else ('más flojo' if an.worst_day and d.date == an.worst_day.date and an.worst_day.date != an.best_day.date else '') %}
+        <li class="rv-day at-tier{{ ' is-future' if d.future }}{{ ' is-best' if tag == 'mejor día' }}{{ ' is-worst' if tag == 'más flojo' }}" data-t="{{ TIER.get(d.rank, '') if not d.future else '' }}">
+          <span class="t-meta">{{ d.weekday }}</span>
+          <span class="rv-day-dot" role="img" aria-label="{{ d.label if not d.future else 'Aún no' }}"></span>
+          <span class="num rv-day-xp">{{ (d.xp ~ ' XP') if not d.future else '—' }}</span>
+          {% if tag %}<span class="rv-day-tag">{{ tag }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+      <div class="eu-field">
+        <label class="rv-q" for="rv-notas">{{ rv.pregunta }}</label>
+        <textarea class="eu-textarea" id="rv-notas" rows="3" placeholder="Una línea. Se guarda con la revisión." data-save="notas">{{ rv.notas }}</textarea>
+      </div>
+    </section>
+
+    {# ── Paso 2 · Los números ──────────────────────────────────────── #}
+    <section class="rv-panel eu-vstack" data-panel="2" aria-labelledby="rv-h2"{% if paso != 2 %} hidden{% endif %}>
+      <div class="rv-panel-hd"><h2 class="rv-h" id="rv-h2" tabindex="-1">Los números</h2><span class="t-meta">{{ rv.auto_n }} de {{ rv.metrics|length }} los pone la app</span></div>
+      <div class="rv-metrics">
+        {% for m in rv.metrics %}
+        <div class="rv-metric{% if m.auto %} is-auto{% endif %}">
+          <div class="rv-metric-hd"><label class="t-meta" for="rv-m-{{ m.key }}">{{ m.label }}</label><span class="rv-src{% if m.auto %} is-auto{% endif %}">{{ m.fuente if m.auto else 'tú' }}</span></div>
+          {% if m.auto %}
+          <output class="rv-metric-v num" id="rv-m-{{ m.key }}">{{ m.value_str }} <span class="t-meta">{{ m.unit }}</span></output>
+          {% else %}
+          <div class="rv-metric-in"><input class="eu-input rv-input num" type="number" step="{{ m.step }}" min="{{ m.min }}" max="{{ m.max }}" inputmode="decimal" placeholder="{{ m.placeholder }}" id="rv-m-{{ m.key }}" data-save="{{ m.key }}" value="{{ m.value_str }}"><span class="t-meta">{{ m.unit }}</span></div>
+          {% endif %}
+          <span class="rv-delta num{% if m.trend %} is-{{ m.trend }}{% endif %}">
+            {%- if m.delta is not none %}{{ m.delta_str }} vs anterior
+            {%- elif not m.auto and m.prev_value is not none %}sem. pasada {{ m.prev_str }}
+            {%- elif m.auto %}sin dato previo
+            {%- else %}a mano{% endif -%}
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if an.wellness_flags %}
+      <div class="rv-watch" role="note">
+        <div class="t-eyebrow rv-watch-eb">A vigilar</div>
+        {% for f in an.wellness_flags %}<p class="rv-watch-t">{{ f.text }}</p>{% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    {# ── Paso 3 · Cerrar cabos ─────────────────────────────────────── #}
+    <section class="rv-panel eu-vstack" data-panel="3" aria-labelledby="rv-h3"{% if paso != 3 %} hidden{% endif %}>
+      <div class="rv-panel-hd"><h2 class="rv-h" id="rv-h3" tabindex="-1">Cerrar cabos</h2><span class="t-meta"><span class="num" id="rv-pend">{{ cabos_n }}</span> pendientes</span></div>
+      {% for g in cabos if g['items'] %}
+      <section class="eu-card eu-card--flush rv-group" aria-labelledby="rv-g-{{ g.id }}">
+        <div class="rv-group-hd"><h3 class="t-eyebrow" id="rv-g-{{ g.id }}">{{ g.label }}</h3><span class="t-meta">{{ g.src }}</span></div>
+        <ul class="rv-cabos">
+          {% for i in g['items'] %}
+          <li class="rv-cabo" data-key="{{ i.key }}">
+            <span class="rv-cabo-t">{{ i.t }}{% if i.s %} <span class="t-meta">· {{ i.s }}</span>{% endif %}</span>
+            <span class="rv-cabo-acts">
+              {% for a in i.acts %}
+              {% if a.href %}<a class="eu-btn eu-btn--secondary eu-btn--sm" href="{{ a.href }}">{{ a.l }}</a>
+              {% else %}<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-calls="{{ a.calls|tojson|forceescape }}" data-res="{{ a.res }}"{% if a.tachar %} data-tachar="1"{% endif %}{% if a.title %} title="{{ a.title }}"{% endif %} aria-label="{{ a.title or a.l }}: {{ i.t }}">{{ a.l }}</button>{% endif %}
+              {% endfor %}
+            </span>
+            <span class="rv-cabo-res" hidden></span>
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% else %}
+      {{ ui.empty('check-check', 'Nada que cerrar', 'Inbox vacío, sin vencidas ni avisos de la semana.', compact=True) }}
+      {% endfor %}
+      <p class="t-meta">Nada aquí bloquea el avance: lo que dejes queda en Praxis y en la campana.</p>
+    </section>
+
+    {# ── Paso 4 · La que viene ─────────────────────────────────────── #}
+    {% set ps = prio_semana %}
+    <section class="rv-panel eu-vstack" data-panel="4" aria-labelledby="rv-h4"{% if paso != 4 %} hidden{% endif %}>
+      <h2 class="rv-h" id="rv-h4" tabindex="-1">La que viene</h2>
+      <div class="rv-next">
+        <section class="eu-card eu-card--flush rv-prio" id="rv-prio" aria-labelledby="rv-prio-t" data-max="{{ ps.max }}" data-full="{{ 'true' if ps.n >= ps.max else 'false' }}">
+          <div class="rv-group-hd"><h3 class="t-eyebrow" id="rv-prio-t">3 prioridades</h3><span class="num rv-prio-n{% if ps.n >= ps.max %} is-full{% endif %}" id="rv-prio-n">{{ ps.n }}/{{ ps.max }}</span></div>
+          <ul class="rv-prio-list" id="rv-prio-list">
+            {% for o in ps.opciones %}
+            <li><button type="button" class="rv-prio-it" data-id="{{ o.id }}" aria-pressed="{{ 'true' if o.on else 'false' }}"><i data-lucide="star"></i><span>{{ o.title }}</span></button></li>
+            {% endfor %}
+          </ul>
+          <p class="t-meta rv-prio-empty" id="rv-prio-empty"{% if ps.opciones %} hidden{% endif %}>Tu lista «Esta semana» en Praxis está vacía. Escribe la primera.</p>
+          <form class="rv-prio-add" id="rv-prio-add" autocomplete="off"{% if ps.n >= ps.max %} hidden{% endif %}>
+            <input class="eu-input" id="rv-prio-inp" maxlength="300" placeholder="Nueva prioridad…" aria-label="Nueva prioridad de la semana">
+            <button type="submit" class="eu-iconbtn eu-iconbtn--outline" aria-label="Agregar prioridad"><i data-lucide="plus"></i></button>
+          </form>
+        </section>
+        <section class="eu-card eu-card--flush rv-cal" aria-labelledby="rv-cal-t">
+          <div class="rv-group-hd"><h3 class="t-eyebrow" id="rv-cal-t">Ya en el calendario</h3><span class="t-meta num">{{ proxima[0].day }}–{{ proxima[-1].day }}</span></div>
+          <ul class="rv-cal-list">
+            {% for c in calendario %}
+            <li class="rv-cal-it"><span class="num t-meta">{{ c.d }}</span><span>{{ c.t }} <span class="t-meta">· {{ c.m }}</span></span></li>
+            {% endfor %}
+          </ul>
+        </section>
+      </div>
+    </section>
+
+    {# ── Cierre ────────────────────────────────────────────────────── #}
+    <section class="rv-panel rv-done" data-panel="5" aria-labelledby="rv-h5"{% if paso != 5 %} hidden{% endif %}>
+      <div class="t-eyebrow rv-done-eb">Semana {{ rv.semana_num }} cerrada</div>
+      <h2 class="rv-done-t num" id="rv-h5" tabindex="-1">+{{ rw.xp }} XP · +{{ rw.ec }} EC</h2>
+      <p class="t-meta" id="rv-done-sub">{{ ps.n }} prioridad{{ 'es' if ps.n != 1 }} · Planeación marcada en Ataraxia</p>
+      <div class="rv-done-acts">
+        <a class="eu-btn eu-btn--secondary" href="/logros/semanas">Ver en Logros › Semanas</a>
+        <a class="eu-btn eu-btn--primary" href="/">Volver a Inicio</a>
+      </div>
+      <a class="t-meta rv-reopen" href="?paso=1" data-go="1">Revisar otra vez los pasos</a>
+    </section>
+
+    <div class="rv-nav" id="rv-nav"{% if paso == 5 %} hidden{% endif %}>
+      <button type="button" class="eu-btn eu-btn--ghost" id="rv-prev"{% if paso <= 1 %} hidden{% endif %}><i data-lucide="arrow-left"></i>Atrás</button>
+      <span class="eu-grow"></span>
+      <button type="button" class="eu-btn eu-btn--primary" id="rv-next">{{ ('Cerrar la semana' if not rv.cerrada else 'Guardar y ver el cierre') if paso == 4 else 'Siguiente' }}{% if paso != 4 %}<i data-lucide="arrow-right"></i>{% endif %}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/revision.js') }}"></script>
+{% endblock %}
