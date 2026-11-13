@@ -202,11 +202,12 @@ QUICK = [
 _QUICK_BY_ID = {q['id']: q for q in QUICK}
 
 
-def quick_for(session_obj, uses=None):
+def quick_for(session_obj, uses=None, ocultos=(), por_uso=True):
     """Registros que el usuario puede usar (sin los que piden un permiso que no
-    tiene), ordenados por uso (desc) y luego por el orden de QUICK."""
-    ok = [q for q in QUICK if not q.get('perm') or (session_obj or {}).get(q['perm'])]
-    uses = uses or {}
+    tiene ni los que ocultó en Ajustes · quick_off:<id>), ordenados por uso
+    (desc) y luego por el orden de QUICK; sin «Ordenar por uso», solo QUICK."""
+    ok = [q for q in QUICK if (not q.get('perm') or (session_obj or {}).get(q['perm'])) and q['id'] not in ocultos]
+    uses = (uses or {}) if por_uso else {}
     orden = {q['id']: i for i, q in enumerate(QUICK)}
     return sorted(ok, key=lambda q: (-uses.get(q['id'], 0), orden[q['id']]))
 
@@ -322,8 +323,9 @@ def _quick_ctx():
     """QUICK filtrado por permisos y ordenado por uso, para la hoja y ⌘K."""
     try:
         from flask import session
-        from modules.quick import usos
-        return quick_for(session, usos())
+        from modules.quick import usos, preferencias
+        ocultos, por_uso = preferencias()
+        return quick_for(session, usos(), ocultos, por_uso)
     except Exception:
         return quick_for({}, {})
 

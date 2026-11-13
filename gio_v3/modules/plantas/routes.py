@@ -156,6 +156,29 @@ def _serialize_plantas(db, today=None):
     return plantas
 
 
+_HOY_STATUS = ('vencido', 'urgente')
+
+
+def cuidados_hoy(plantas):
+    """«Hoy» (handoff Plantas S1): todos los cuidados vencidos o urgentes de
+    todas las plantas, por atraso (el más atrasado primero; riego gana el
+    empate). Misma fuente que las tarjetas: _compute_planta."""
+    out = []
+    for p in plantas:
+        regla_r = (f"cada {p['riego_interval_efectivo']} d (ajustado; base {p['dias_riego']} d)"
+                   if p['riego_interval_efectivo'] != p['dias_riego'] else f"cada {p['dias_riego']} d")
+        items = [('riego', 'Riego', p['riego_status'], p['riego_dias'], regla_r, True),
+                 ('trasplante', 'Trasplante', p['trasplante_status'], p['trasplante_dias'], f"cada {p['meses_trasplante']} meses", False)]
+        items += [(c['tipo'], c['label'], c['status'], c['dias'], f"cada {c['cada_dias']} d" + (f" · {c['nota']}" if c.get('nota') else ''), False)
+                  for c in p.get('cuidados', []) if not c.get('pausado')]
+        for tipo, label, status, dias, regla, riego in items:
+            if status in _HOY_STATUS:
+                out.append({'planta_id': p['id'], 'nombre': p['nombre'], 'entorno': p['entorno'], 'tipo': tipo, 'label': label,
+                            'status': status, 'dias': dias, 'regla': regla, 'pospuesto_ok': riego})
+    out.sort(key=lambda h: (h['dias'], 0 if h['tipo'] == 'riego' else 1, h['nombre']))
+    return out
+
+
 def _state():
     today = today_date()
     with get_db() as db:
@@ -166,6 +189,7 @@ def _state():
     temporada = seasonal_factor(today.month, 'balcon')
     temporada['factor_interior'] = seasonal_factor(today.month, 'interior')['factor']
     return {'plantas': plantas, 'counts': counts, 'total': len(plantas), 'temporada': temporada,
+            'hoy': cuidados_hoy(plantas),
             'cuidados_extra': {k: {'label': v[0], 'dias': v[1]} for k, v in CUIDADOS_EXTRA.items()},
             'fertilizar_pausado': today.month in FERTILIZAR_PAUSA}
 

@@ -44,6 +44,20 @@ def usos(db=None):
         return _q(d)
 
 
+def preferencias(db=None):
+    """(ocultos, por_uso) de Ajustes › Captura rápida: quick_off:<id> = '1'
+    oculta un registro; quick_orden_uso = '0' apaga el orden por uso."""
+    def _q(d):
+        n = len('quick_off:')
+        ocultos = {r['key'][n:] for r in d.execute(
+            "SELECT key, value FROM app_settings WHERE substr(key,1,?)='quick_off:'", (n,)).fetchall() if str(r['value']) == '1'}
+        return ocultos, _setting(d, 'quick_orden_uso', '1') != '0'
+    if db is not None:
+        return _q(db)
+    with get_db() as d:
+        return _q(d)
+
+
 def _etiqueta_cat(c):
     return (c or '').replace('_', ' ').replace('/', ' / ').capitalize()
 

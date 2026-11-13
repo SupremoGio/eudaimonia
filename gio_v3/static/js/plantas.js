@@ -1,19 +1,24 @@
-/* Plantas — Design System V2: tarjetas con dos calendarios (riego ajustado por
-   temporada y trasplante), filtros, alta/edición con foto y sugerencia de
-   intervalos por especie (tabla local). */
+/* Plantas — handoff Plantas y Ajustes (S1–S2).
+   «Hoy»: todos los cuidados vencidos o urgentes, con «Aún húmeda» en riego
+   y «Regar las N» por entorno; filtro por entorno y cuadrícula compacta con
+   el siguiente cuidado; panel de la planta con pestañas Cuidados · Fotos ·
+   Historial · Doctor (380px en escritorio, hoja en móvil). «Editar datos»
+   abre m-planta (corto; lo avanzado plegado). Endpoints de siempre. */
 (function () {
   'use strict';
   var root = document.getElementById('pl');
   if (!root) return;
   var BASE = '/plantas';
   var PLANTAS = JSON.parse(document.getElementById('pl-data').textContent || '[]');
+  var HOY = JSON.parse((document.getElementById('pl-hoy-data') || {}).textContent || '[]');
   var ST = {
     vencido: ['Vencido', 'eu-badge--danger', 'danger'], urgente: ['Urgente', 'eu-badge--warning', 'warning'],
     proximo: ['Próximo', 'eu-badge--brand', 'brand'], nominal: ['Al día', 'eu-badge--success', 'success'],
   };
   var IA = JSON.parse((document.getElementById('pl-ia') || {}).textContent || 'false');
   var TODAY = JSON.parse((document.getElementById('pl-today') || {}).textContent || 'null');
-  var filter = 'todas', fotoFile = null, sugTimer = null;
+  var env = 'todas', sel = null, opener = null, fotoFile = null, sugTimer = null;
+  var MOVIL = window.matchMedia ? window.matchMedia('(max-width:1023px)') : { matches: false };
 
   function $(id) { return document.getElementById(id); }
   function $$(sel, el) { return Array.prototype.slice.call((el || document).querySelectorAll(sel)); }
@@ -22,12 +27,8 @@
   function jpost(url, body) {
     return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }).then(function (r) { return r.json(); });
   }
+  function planta(id) { return PLANTAS.filter(function (x) { return x.id === +id; })[0]; }
 
-  function items() {
-    if (filter === 'pendientes') return PLANTAS.filter(function (p) { return p.status !== 'nominal'; });
-    if (filter === 'al_dia') return PLANTAS.filter(function (p) { return p.status === 'nominal'; });
-    return PLANTAS;
-  }
   /* Cuándo toca, en palabras: «hoy», «mañana», «en 5 d», «hace 2 d». */
   function cuando(dias, tipo) {
     if (dias === 0) return 'hoy';
@@ -39,106 +40,181 @@
   }
   var EXTRA_IC = { fertilizar: 'flask-conical', rotar: 'rotate-cw', limpiar: 'sparkles', plagas: 'bug', tratamiento: 'spray-can' };
   var EXTRA_BTN = { fertilizar: 'Fertilicé', rotar: 'Roté', limpiar: 'Limpié', plagas: 'Revisé', tratamiento: 'Apliqué' };
+  var BTN = { riego: 'Regué', trasplante: 'Trasplanté' };
   /* Normaliza riego / trasplante / cuidados extra a una misma forma. */
   function careItems(p) {
     var r = {
-      tipo: 'riego', label: 'Riego', icon: 'droplet', btn: 'Regué', status: p.riego_status, pct: p.riego_pct, dias: p.riego_dias,
+      tipo: 'riego', label: 'Riego', icon: 'droplet', btn: 'Regué', status: p.riego_status, pct: p.riego_pct, dias: p.riego_dias, prox: p.riego_proxima,
       regla: (p.riego_interval_efectivo !== p.dias_riego ? 'cada ' + p.riego_interval_efectivo + ' d (ajustado; base ' + p.dias_riego + ' d)' : 'cada ' + p.dias_riego + ' d') +
         (p.riego_pospuesta ? ' · pospuesto (aún húmeda)' : '')
     };
     var t = { tipo: 'trasplante', label: 'Trasplante', icon: 'sprout', btn: 'Trasplanté', status: p.trasplante_status, pct: p.trasplante_pct,
-      dias: p.trasplante_dias, regla: 'cada ' + p.meses_trasplante + ' meses' };
+      dias: p.trasplante_dias, prox: p.trasplante_proxima, regla: 'cada ' + p.meses_trasplante + ' meses' };
     return [r, t].concat((p.cuidados || []).map(function (c) {
       return { tipo: c.tipo, label: c.label, icon: EXTRA_IC[c.tipo] || 'leaf', btn: EXTRA_BTN[c.tipo] || 'Hecho', status: c.status,
-        pct: c.pct, dias: c.dias, regla: 'cada ' + c.cada_dias + ' d' + (c.nota ? ' · ' + esc(c.nota) : ''), pausado: c.pausado, extra: true };
+        pct: c.pct, dias: c.dias, prox: c.proxima, regla: 'cada ' + c.cada_dias + ' d' + (c.nota ? ' · ' + c.nota : ''), pausado: c.pausado, extra: true };
     }));
   }
-  function badge(it) {
-    var s = ST[it.status], lbl = s[0];
-    if (it.status === 'urgente') lbl = it.tipo === 'trasplante' ? 'Esta semana' : 'Hoy';
-    return '<span class="eu-badge eu-badge--status ' + s[1] + '">' + lbl + '</span>';
+  /* El siguiente cuidado de una planta (el más cercano; lo pausado no cuenta). */
+  function siguiente(p) {
+    var its = careItems(p).filter(function (it) { return !it.pausado; });
+    its.sort(function (a, b) { return a.dias - b.dias || (a.tipo === 'riego' ? -1 : 1); });
+    return its[0];
   }
-  function care(p, it) {
-    var pct = Math.min(1, it.pct || 0) * 100;
-    var extra = (it.dias < 0 ? 'Tocaba ' : 'Toca ') + cuando(it.dias, it.tipo) + ' · ' + it.regla;
-    var acts = (it.tipo === 'riego' && it.status !== 'nominal'
-        ? '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-posponer="' + p.id + '" aria-label="' + esc(p.nombre) + ': aún está húmeda, posponer 2 días" title="Revisé la tierra y aún está húmeda: posponer 2 días"><i data-lucide="clock"></i>Aún húmeda</button>' : '') +
-      '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-care="' + it.tipo + '" data-id="' + p.id + '" aria-label="' + it.btn + ' ' + esc(p.nombre) + '">' +
-      '<i data-lucide="check"></i>' + it.btn + '</button>';
-    return '<div class="pl-care" data-tone="' + ST[it.status][2] + '"><span class="pl-care-ic"><i data-lucide="' + it.icon + '"></i></span>' +
-      '<div class="pl-care-bd"><div class="eu-between"><span class="t-ui">' + it.label + '</span>' + badge(it) + '</div>' +
-      '<div class="eu-progress eu-progress--thin pl-prog" aria-hidden="true"><i style="width:' + pct.toFixed(1) + '%"></i></div><span class="t-meta">' + extra + '</span></div>' +
-      '<div class="pl-care-act">' + acts + '</div></div>';
+  function thumb(p, cls) {
+    if (p.foto) return '<img class="' + cls + '" src="' + BASE + '/foto/' + encodeURIComponent(p.foto) + '" alt="" loading="lazy">';
+    if (p.ref_foto) return '<img class="' + cls + '" src="' + esc(p.ref_foto) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
+    return '<span class="' + cls + ' pl-ph" aria-hidden="true"><i data-lucide="flower-2"></i></span>';
   }
-  /* Cuidados extra al día: una sola línea en lugar de una fila cada uno. */
-  function moreLine(rest) {
-    if (!rest.length) return '';
-    return '<p class="t-meta pl-more">' + rest.map(function (it) {
-      return '<span><i data-lucide="' + it.icon + '"></i>' + esc(it.label) + ' · ' + (it.pausado ? 'en pausa (invierno)' : cuando(it.dias, it.tipo)) + '</span>';
-    }).join('') + '</p>';
+  function entornoTxt(p) { return p.entorno === 'balcon' ? 'balcón' : 'interior'; }
+
+  /* ── «Hoy» (nota 1) ─────────────────────────────────────────────────── */
+  function renderHoy() {
+    var ul = $('pl-hoy-list'), n = HOY.length;
+    $('pl-hoy-n').textContent = n || '';
+    $('pl-hoy').classList.toggle('is-late', HOY.some(function (h) { return h.status === 'vencido'; }));
+    if (!n) {
+      var nx = PLANTAS.map(function (p) { return { p: p, it: siguiente(p) }; }).filter(function (x) { return x.it; })
+        .sort(function (a, b) { return a.it.dias - b.it.dias; })[0];
+      ul.innerHTML = '<li class="pl-hoy-ok"><i data-lucide="circle-check"></i><span>Todas al día.' +
+        (nx ? ' Siguiente: ' + esc(nx.p.nombre) + ', ' + esc(nx.it.label.toLowerCase()) + ' ' + cuando(nx.it.dias, nx.it.tipo) + '.' : '') + '</span></li>';
+    } else {
+      ul.innerHTML = HOY.map(function (h) {
+        var p = planta(h.planta_id) || { nombre: h.nombre };
+        var late = h.dias < 0, btn = BTN[h.tipo] || EXTRA_BTN[h.tipo] || 'Hecho';
+        return '<li class="pl-hoy-row" data-tone="' + ST[h.status][2] + '">' +
+          '<button type="button" class="pl-hoy-th" data-open="' + h.planta_id + '" aria-label="Abrir ' + esc(p.nombre) + '">' + thumb(p, 'pl-hoy-img') + '</button>' +
+          '<div class="pl-hoy-tx"><div class="pl-hoy-n"><b>' + esc(p.nombre) + '</b> · <span class="pl-hoy-care">' + esc(h.label.toLowerCase()) + '</span></div>' +
+          '<div class="t-meta">' + (late ? 'tocaba ' : 'toca ') + cuando(h.dias, h.tipo) + ' · ' + esc(h.regla) + '</div></div>' +
+          '<div class="pl-hoy-acts">' +
+          (h.tipo === 'riego' && h.pospuesto_ok ? '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-posponer="' + h.planta_id + '" title="Revisé la tierra y aún está húmeda: posponer 2 días" aria-label="' + esc(p.nombre) + ': aún está húmeda, posponer 2 días">Aún húmeda</button>' : '') +
+          '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-care="' + h.tipo + '" data-id="' + h.planta_id + '" aria-label="' + btn + ' ' + esc(p.nombre) + '"><i data-lucide="check"></i>' + btn + '</button>' +
+          '</div></li>';
+      }).join('');
+    }
+    groupBar();
   }
-  /* «Regar las N pendientes del balcón / de interior» cuando hay 2 o más. */
+  /* «N del balcón / de interior piden agua · Regar las N» cuando hay 2 o más
+     (mismo criterio que /api/riego-grupo: riego que no está al día). */
   function groupBar() {
     var box = $('pl-group'); if (!box) return;
-    var html = ['balcon', 'interior'].map(function (env) {
-      var n = PLANTAS.filter(function (p) { return p.entorno === env && p.riego_status !== 'nominal'; }).length;
-      return n >= 2 ? '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-grupo="' + env + '"><i data-lucide="droplets"></i>Regar las ' + n + ' pendientes ' + (env === 'balcon' ? 'del balcón' : 'de interior') + '</button>' : '';
+    var html = ['balcon', 'interior'].map(function (e) {
+      var n = PLANTAS.filter(function (p) { return p.entorno === e && p.riego_status !== 'nominal'; }).length;
+      return n >= 2 ? '<div class="pl-group-row"><span class="eu-grow">' + n + (e === 'balcon' ? ' del balcón' : ' de interior') + ' piden agua</span>' +
+        '<button type="button" class="eu-btn eu-btn--primary eu-btn--sm" data-grupo="' + e + '"><i data-lucide="droplets"></i>Regar las ' + n + '</button></div>' : '';
     }).join('');
     box.innerHTML = html; box.hidden = !html;
   }
-  function render() {
-    var list = items(), box = $('pl-grid');
+
+  /* ── Cuadrícula compacta (nota 2) ───────────────────────────────────── */
+  function renderGrid() {
+    var list = PLANTAS.filter(function (p) { return env === 'todas' || p.entorno === env; }), box = $('pl-grid');
     if (!list.length) {
       box.innerHTML = PLANTAS.length
-        ? window.euEmptyFilter('Ninguna planta en este filtro.', 'Sin «' + (filter === 'pendientes' ? 'Pendientes' : 'Al día') + '» hay ' + PLANTAS.length + '.',
-            { key: 'todas', label: filter === 'pendientes' ? 'Pendientes' : 'Al día' }, 'pl-span')
+        ? window.euEmptyFilter('Ninguna planta en ' + (env === 'balcon' ? 'el balcón' : 'interior') + '.', 'Sin ese filtro hay ' + PLANTAS.length + '.',
+            { key: 'todas', label: env === 'balcon' ? 'Balcón' : 'Interior' }, 'pl-span')
         : '<div class="eu-card pl-span">' + window.euEmpty('sprout', 'Aún no agregas ninguna planta', 'Agrega la primera con el botón de arriba.', false,
             '<button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva planta</button>') + '</div>';
       icons(); return;
     }
     box.innerHTML = list.map(function (p) {
-      var env = '<span class="pl-env"><i data-lucide="' + (p.entorno === 'balcon' ? 'sun' : 'house') + '"></i>' + (p.entorno === 'balcon' ? 'Balcón' : 'Interior') + '</span>';
-      var sub = [env].concat([p.especie, p.ubicacion].filter(Boolean).map(esc)).join(' · ') +
-        (p.especie_cientifica && p.especie_cientifica !== p.especie ? ' · <i>' + esc(p.especie_cientifica) + '</i>' : '');
-      return '<article class="eu-card eu-card--flush pl-card" data-tone="' + ST[p.status][2] + '">' +
-        (p.foto ? '<img class="pl-cover" src="' + BASE + '/foto/' + encodeURIComponent(p.foto) + '" alt="" loading="lazy">'
-          : p.ref_foto ? '<span class="pl-cover-ref"><img class="pl-cover" src="' + esc(p.ref_foto) + '" alt="" loading="lazy" referrerpolicy="no-referrer"><span class="pl-cover-tag">Foto de referencia</span></span>'
-          : '<span class="pl-cover pl-cover--empty" aria-hidden="true"><i data-lucide="flower-2"></i></span>') +
-        '<div class="pl-card-bd"><div class="eu-between pl-card-hd"><div class="eu-grow"><h2 class="t-card pl-card-t">' + esc(p.nombre) + '</h2><p class="t-meta">' + sub + '</p></div>' +
-        (IA ? '<button type="button" class="eu-iconbtn" data-doctor="' + p.id + '" aria-label="Doctor de plantas: ' + esc(p.nombre) + '" title="Doctor de plantas"><i data-lucide="stethoscope"></i></button>' : '') +
-        '<button type="button" class="eu-iconbtn" data-edit="' + p.id + '" aria-label="Editar ' + esc(p.nombre) + '"><i data-lucide="pencil"></i></button></div>' +
-        (function () {
-          var its = careItems(p), main = its.filter(function (it) { return !it.extra || it.status !== 'nominal'; });
-          return main.map(function (it) { return care(p, it); }).join('') + moreLine(its.filter(function (it) { return it.extra && it.status === 'nominal'; }));
-        })() +
-        (p.notas ? '<p class="t-meta pl-notes">' + esc(p.notas) + '</p>' : '') + '</div></article>';
+      var it = siguiente(p), tone = it ? ST[it.status][2] : 'success';
+      var next = it ? esc(it.label.toLowerCase()) + ' ' + cuando(it.dias, it.tipo) : 'al día';
+      return '<button type="button" class="pl-tile" data-open="' + p.id + '" data-tone="' + tone + '"' + (sel === p.id ? ' aria-current="true"' : '') + '>' +
+        thumb(p, 'pl-tile-img') + '<span class="pl-tile-bd"><span class="pl-tile-n">' + esc(p.nombre) + '</span>' +
+        '<span class="pl-tile-next">' + next + '</span></span></button>';
     }).join('');
     icons();
   }
-  function sync() {
-    var c = { vencido: 0, urgente: 0, proximo: 0, nominal: 0 };
-    PLANTAS.forEach(function (p) { c[p.status]++; });
-    Object.keys(c).forEach(function (k) {
-      var b = $('pl-st-' + k); b.querySelector('.eu-stat-val').textContent = c[k]; b.classList.toggle('is-on', c[k] > 0);
-    });
-    $('pl-f-todas').querySelector('.ct').textContent = PLANTAS.length;
-    $('pl-f-pendientes').querySelector('.ct').textContent = c.vencido + c.urgente + c.proximo;
-    $('pl-f-al_dia').querySelector('.ct').textContent = c.nominal;
-  }
-  function apply(d) { PLANTAS = d.state.plantas; sync(); render(); groupBar(); }
 
-  $$('[data-f]').forEach(function (b) {
+  /* ── Panel de la planta (nota 3) ────────────────────────────────────── */
+  var tab = 'care';
+  function careHTML(p, it) {
+    var pct = Math.min(1, it.pct || 0) * 100, f = it.prox ? fmtFecha(it.prox) : '';
+    var acts = (it.tipo === 'riego' && it.status !== 'nominal'
+        ? '<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" data-posponer="' + p.id + '" aria-label="' + esc(p.nombre) + ': aún está húmeda, posponer 2 días">Aún húmeda</button>' : '') +
+      (it.pausado ? '' : '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-care="' + it.tipo + '" data-id="' + p.id + '" aria-label="' + it.btn + ' ' + esc(p.nombre) + '"><i data-lucide="check"></i>' + it.btn + '</button>');
+    return '<div class="pl-pp-care" data-tone="' + ST[it.status][2] + '">' +
+      '<div class="eu-between"><span class="t-ui"><i data-lucide="' + it.icon + '"></i>' + esc(it.label) + '</span>' +
+      '<span class="pl-pp-when">' + (it.pausado ? 'en pausa (invierno)' : (it.dias < 0 ? 'tocaba ' : '') + cuando(it.dias, it.tipo)) + '</span></div>' +
+      '<div class="eu-progress eu-progress--thin pl-prog" aria-hidden="true"><i style="width:' + pct.toFixed(1) + '%"></i></div>' +
+      '<div class="pl-pp-row"><span class="t-meta">' + esc(it.regla) + (f && !it.pausado ? ' · próxima ' + f : '') + '</span><span class="pl-pp-acts">' + acts + '</span></div></div>';
+  }
+  function renderPanel() {
+    var p = planta(sel), pan = $('pl-panel');
+    if (!p) { pan.hidden = true; root.classList.remove('has-panel'); return; }
+    pan.hidden = false; root.classList.add('has-panel');
+    $('pp-cover').innerHTML = thumb(p, 'pl-pp-img');
+    $('pp-name').textContent = p.nombre;
+    $('pp-sub').innerHTML = [p.especie_cientifica && p.especie_cientifica !== p.especie ? esc(p.especie) + ' <i>' + esc(p.especie_cientifica) + '</i>' : esc(p.especie),
+      esc(p.ubicacion), entornoTxt(p)].filter(Boolean).join(' · ');
+    $('pp-care-list').innerHTML = careItems(p).map(function (it) { return careHTML(p, it); }).join('');
+    var nt = $('pp-notas'); nt.textContent = p.notas || ''; nt.hidden = !p.notas;
+    fillOtra(p);
+    icons();
+  }
+  function setTab(t, foco) {
+    if (t === 'doctor' && !$('pp-doctor')) t = 'care';
+    tab = t;
+    $$('[data-pp-tab]').forEach(function (b) {
+      var on = b.dataset.ppTab === t;
+      b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1;
+      $(b.getAttribute('aria-controls')).hidden = !on;
+      if (on && foco) b.focus();
+    });
+    if (t === 'fotos') loadFotos(sel);
+    if (t === 'hist') loadHist(sel);
+    if (t === 'doctor') prepDoctor(sel);
+  }
+  function openPanel(id, from) {
+    sel = +id; opener = from || null;
+    renderPanel(); renderGrid(); setTab('care');
+    if (MOVIL.matches) { document.documentElement.style.overflow = 'hidden'; $('pp-name').focus(); }
+    else if (from) $('pp-name').focus();
+  }
+  function closePanel() {
+    var back = sel;
+    sel = null; renderPanel(); renderGrid();
+    document.documentElement.style.overflow = '';
+    var t = opener && document.contains(opener) ? opener
+      : (document.querySelector('.pl-tile[data-open="' + back + '"]') || document.querySelector('[data-open="' + back + '"]'));
+    if (t) t.focus();
+  }
+  $('pl-panel').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-pp-tab]'); if (t) { setTab(t.dataset.ppTab); return; }
+    if (e.target.closest('.js-pp-close')) { closePanel(); return; }
+    if (e.target.closest('.js-pp-edit')) { var p = planta(sel); if (p) fill(p); }
+  });
+  $('pl-panel').addEventListener('keydown', function (e) {
+    var t = e.target.closest && e.target.closest('[data-pp-tab]');
+    if (t && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+      var tabs = $$('[data-pp-tab]'), i = tabs.indexOf(t) + (e.key === 'ArrowRight' ? 1 : -1);
+      setTab(tabs[(i + tabs.length) % tabs.length].dataset.ppTab, true); e.preventDefault();
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || sel === null || document.querySelector('.eu-scrim:not([hidden])')) return;
+    closePanel();
+  });
+
+  function apply(d) {
+    PLANTAS = d.state.plantas; HOY = d.state.hoy || [];
+    var n = HOY.length, eb = root.querySelector('.eu-page-eb');
+    if (eb) eb.textContent = PLANTAS.length + ' planta' + (PLANTAS.length !== 1 ? 's' : '') + ' · ' + (n ? n + ' por atender hoy' : 'todas al día');
+    renderHoy(); renderGrid(); if (sel !== null) { if (planta(sel)) renderPanel(); else closePanel(); }
+  }
+
+  $$('[data-env]').forEach(function (b) {
     b.addEventListener('click', function () {
-      filter = b.dataset.f;
-      $$('[data-f]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
-      render();
+      env = b.dataset.env;
+      $$('[data-env]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      renderGrid();
     });
   });
   root.addEventListener('click', function (e) {
     if (e.target.closest('.js-new')) { openNew(); return; }
-    if (e.target.closest('.js-empty-drop')) { var t = document.querySelector('[data-f="todas"]'); if (t) t.click(); return; }
-    var ed = e.target.closest('[data-edit]'); if (ed) { openEdit(+ed.dataset.edit); return; }
-    var dr = e.target.closest('[data-doctor]'); if (dr) { openDoctor(+dr.dataset.doctor); return; }
+    if (e.target.closest('.js-empty-drop')) { var t = document.querySelector('[data-env="todas"]'); if (t) t.click(); return; }
+    var op = e.target.closest('[data-open]'); if (op) { openPanel(op.dataset.open, op); return; }
     var pp = e.target.closest('[data-posponer]');
     if (pp) {
       pp.disabled = true;
@@ -159,13 +235,14 @@
       return;
     }
     var c = e.target.closest('[data-care]'); if (!c) return;
-    var tipo = c.dataset.care, id = c.dataset.id; c.disabled = true;
+    var tipo = c.dataset.care, id = c.dataset.id, enPanel = !!c.closest('#pl-panel'); c.disabled = true;
     fetch(BASE + '/api/plantas/' + id + '/cuidado/' + tipo, { method: 'POST' }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d.ok) { toast('Error al guardar', 'err'); c.disabled = false; return; }
       apply(d);
       if (d.ya_registrado) { toast(d.msg || 'Ya estaba registrado hoy', 'ok'); return; }
       toast(d.gam && d.gam.xp ? '+' + d.gam.xp + ' XP · +' + d.gam.ec + ' EC' : 'Registrado', d.gam && d.gam.xp ? 'win' : 'ok');
-      var nb = document.querySelector('[data-care="' + tipo + '"][data-id="' + id + '"]'); if (nb) nb.focus();
+      var nb = enPanel ? document.querySelector('#pl-panel [data-care="' + tipo + '"]') : $('pl-hoy-list').querySelector('button');
+      if (nb) nb.focus();
       if (d.gam && window.euGam) euGam(d.gam, { el: nb });
     }).catch(function () { toast('Sin conexión', 'err'); c.disabled = false; });
   });
@@ -195,7 +272,8 @@
     setTaxon(p.especie_cientifica ? { cient: p.especie_cientifica, comun: p.especie, foto: p.ref_foto, cred: p.ref_foto_credito } : null);
     $('pl-taxa').hidden = true; $('pl-taxa').innerHTML = '';
     $('pl-last-wrap').hidden = !!p.id; $('pl-last-riego').value = TODAY || ''; if (TODAY) $('pl-last-riego').max = TODAY;
-    loadHist(p.id); loadFotos(p.id); fillExtras(p); fillOtra(p); if ($('pl-ficha')) $('pl-ficha').hidden = true;
+    fillExtras(p); if ($('pl-ficha')) $('pl-ficha').hidden = true;
+    $('pl-avanzado').open = !p.id;               // «Avanzado» abierto solo en el alta
     $('pl-delete-btn').hidden = !p.id;
     $('m-planta-t').textContent = p.id ? 'Editar planta' : 'Nueva planta';
     fotoFile = null; setFoto(p.foto ? BASE + '/foto/' + encodeURIComponent(p.foto) : null); hideSug();
@@ -281,7 +359,7 @@
 
   /* ── Registrar en otra fecha («la regué ayer») ──────────────────────── */
   function fillOtra(p) {
-    var box = $('pl-otra'); box.hidden = !(p && p.id); if (box.hidden) return;
+    if (!p) return;
     var opts = [['riego', 'Riego'], ['trasplante', 'Trasplante']].concat((p.cuidados || []).map(function (c) { return [c.tipo, c.label]; }));
     $('pl-otra-tipo').innerHTML = opts.map(function (o) { return '<option value="' + o[0] + '">' + esc(o[1]) + '</option>'; }).join('');
     var f = $('pl-otra-fecha');
@@ -291,21 +369,21 @@
       f.value = d.toISOString().slice(0, 10); f.max = TODAY; f.min = min.toISOString().slice(0, 10);
     }
   }
-  document.querySelector('#m-planta .js-otra').addEventListener('click', function () {
-    var id = $('pl-id').value, tipo = $('pl-otra-tipo').value, fecha = $('pl-otra-fecha').value, b = this;
+  document.querySelector('#pl-panel .js-otra').addEventListener('click', function () {
+    var id = sel, tipo = $('pl-otra-tipo').value, fecha = $('pl-otra-fecha').value, b = this;
     if (!id || !fecha) return;
     b.disabled = true;
     jpost(BASE + '/api/plantas/' + id + '/cuidado/' + tipo, { fecha: fecha }).then(function (d) {
       if (!d.ok) { toast(d.error || 'No se pudo registrar', 'err'); return; }
-      apply(d); loadHist(id);
+      apply(d); if (tab === 'hist') loadHist(id);
       toast(d.ya_registrado ? d.msg : 'Registrado el ' + fmtFecha(fecha) + (d.gam && d.gam.xp ? ' · +' + d.gam.xp + ' XP' : ''), d.gam ? 'win' : 'ok');
     }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { b.disabled = false; });
   });
 
   /* ── Fotos de evolución ─────────────────────────────────────────────── */
   function loadFotos(id) {
-    var box = $('pl-fotos'), ul = $('pl-fotos-strip');
-    box.hidden = !id; ul.innerHTML = ''; if (!id) return;
+    var ul = $('pl-fotos-strip');
+    ul.innerHTML = ''; if (!id) return;
     fetch(BASE + '/api/plantas/' + id + '/fotos').then(function (r) { return r.json(); }).then(function (d) {
       var fotos = d.fotos || [];
       ul.innerHTML = fotos.length ? fotos.map(function (f) {
@@ -317,16 +395,14 @@
       icons();
     }).catch(function () { ul.innerHTML = '<li class="t-meta">No se pudieron cargar las fotos.</li>'; });
   }
-  document.querySelector('#m-planta .js-foto-add').addEventListener('click', function () { $('pl-foto-add').click(); });
+  document.querySelector('#pl-panel .js-foto-add').addEventListener('click', function () { $('pl-foto-add').click(); });
   $('pl-foto-add').addEventListener('change', function () {
-    var f = this.files && this.files[0], id = $('pl-id').value; if (!f || !id) return;
+    var f = this.files && this.files[0], id = sel; if (!f || !id) return;
     var fd = new FormData(); fd.append('foto', f); this.value = '';
     toast('Subiendo foto…', 'ok');
     fetch(BASE + '/api/plantas/' + id + '/fotos', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d.ok) { toast(d.error || 'No se pudo subir', 'err'); return; }
       apply(d); loadFotos(id);
-      var p = PLANTAS.filter(function (x) { return String(x.id) === id; })[0];
-      setFoto(p && p.foto ? BASE + '/foto/' + encodeURIComponent(p.foto) : null);
       toast('Foto agregada', 'ok');
     }).catch(function () { toast('Sin conexión', 'err'); });
   });
@@ -336,9 +412,7 @@
       if (!ok) return;
       fetch(BASE + '/api/fotos/' + b.dataset.fotoDel, { method: 'DELETE' }).then(function (r) { return r.json(); }).then(function (d) {
         if (!d.ok) { toast('No se pudo borrar', 'err'); return; }
-        var id = $('pl-id').value; apply(d); loadFotos(id);
-        var p = PLANTAS.filter(function (x) { return String(x.id) === id; })[0];
-        setFoto(p && p.foto ? BASE + '/foto/' + encodeURIComponent(p.foto) : null);
+        var id = sel; apply(d); loadFotos(id);
       }).catch(function () { toast('Sin conexión', 'err'); });
     });
   });
@@ -348,8 +422,8 @@
     diagnostico: ['stethoscope', 'Diagnóstico'], fertilizar: ['flask-conical', 'Fertilizada'], rotar: ['rotate-cw', 'Rotada'], limpiar: ['sparkles', 'Hojas limpias'], plagas: ['bug', 'Plagas revisadas'] };
   function fmtFecha(f) { var d = f.split('-'); return d[2] + '/' + d[1] + '/' + d[0]; }
   function loadHist(id) {
-    var box = $('pl-hist'), ul = $('pl-hist-list');
-    box.hidden = !id; ul.innerHTML = ''; if (!id) return;
+    var ul = $('pl-hist-list');
+    ul.innerHTML = ''; if (!id) return;
     ul.innerHTML = '<li class="t-meta">Cargando…</li>';
     fetch(BASE + '/api/plantas/' + id + '/bitacora').then(function (r) { return r.json(); }).then(function (d) {
       var rows = d.bitacora || [];
@@ -366,10 +440,9 @@
     b.disabled = true;
     fetch(BASE + '/api/bitacora/' + b.dataset.undo, { method: 'DELETE' }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d.ok) { toast(d.error || 'No se pudo deshacer', 'err'); b.disabled = false; return; }
-      apply(d); loadHist($('pl-id').value); toast('Registro deshecho', 'ok');
+      apply(d); loadHist(sel); toast('Registro deshecho', 'ok');
     }).catch(function () { toast('Sin conexión', 'err'); b.disabled = false; });
   });
-  function openEdit(id) { var p = PLANTAS.filter(function (x) { return x.id === id; })[0]; if (p) fill(p); }
 
   // Sugerencia de intervalos por especie: nunca sobreescribe sola, solo ofrece «Usar».
   $('pl-especie').addEventListener('input', function () {
@@ -420,6 +493,7 @@
     fetch(id ? BASE + '/api/plantas/' + id : BASE + '/api/plantas', { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
       if (!d.ok) { toast('Error: ' + (d.error || 'no se pudo guardar'), 'err'); return; }
       euModal.close('m-planta'); apply(d); toast(id ? 'Planta actualizada ✓' : 'Planta agregada ✓', 'ok');
+      if (!id && d.id) openPanel(d.id);
     }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { btn.disabled = false; });
   });
   $('pl-delete-btn').addEventListener('click', function () {
@@ -429,7 +503,7 @@
       if (!ok) return;
       fetch(BASE + '/api/plantas/' + id, { method: 'DELETE' }).then(function (r) { return r.json(); }).then(function (d) {
         if (!d.ok) { toast('Error al eliminar', 'err'); return; }
-        euModal.close('m-planta'); apply(d); toast('Planta eliminada');
+        euModal.close('m-planta'); sel = null; apply(d); closePanel(); toast('Planta eliminada');
       }).catch(function () { toast('Sin conexión', 'err'); });
     });
   });
@@ -438,34 +512,32 @@
   var dr = { id: null, foto: null };
   var URG = { alta: ['Urgencia alta', 'eu-badge--danger'], media: ['Urgencia media', 'eu-badge--warning'], baja: ['Urgencia baja', 'eu-badge--success'] };
   var LUZ_TXT = { baja: 'baja', media: 'media', brillante: 'brillante indirecta', sol_directo: 'sol directo' };
-  function planta(id) { return PLANTAS.filter(function (x) { return x.id === id; })[0]; }
   function busy(btn, on, txt) {
     btn.disabled = on; btn.setAttribute('aria-busy', String(on));
     var sp = btn.querySelector('span'); if (sp) { if (!btn.dataset.lbl) btn.dataset.lbl = sp.textContent; sp.textContent = on ? txt : btn.dataset.lbl; }
   }
-  function openDoctor(id) {
-    var p = planta(id); if (!p || !$('m-doctor')) return;
+  function prepDoctor(id) {
+    var p = planta(id); if (!p || !$('pp-doctor') || dr.id === id) return;
     dr.id = id; dr.foto = null;
-    $('dr-planta').textContent = p.nombre + (p.especie ? ' · ' + p.especie : '') + ' · ' + (p.entorno === 'balcon' ? 'Balcón' : 'Interior');
     $$('[data-sint]').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
     $('dr-texto').value = ''; $('dr-result').innerHTML = ''; $('cx-result').innerHTML = '';
     var img = $('dr-foto-img');
     if (p.foto) { img.src = BASE + '/foto/' + encodeURIComponent(p.foto); img.hidden = false; $('dr-foto-cap').textContent = 'Se usará la foto de portada; mejor toma una de cómo está hoy.'; }
     else { img.removeAttribute('src'); img.hidden = true; $('dr-foto-cap').textContent = 'Sin foto: agrega una para un diagnóstico más certero.'; }
-    icons(); euModal.open('m-doctor');
+    icons();
   }
-  if ($('m-doctor')) {
-    $('m-doctor').addEventListener('click', function (e) {
+  if ($('pp-doctor')) {
+    $('pp-doctor').addEventListener('click', function (e) {
       var b = e.target.closest('[data-sint]'); if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
     });
-    document.querySelector('#m-doctor .js-dr-foto').addEventListener('click', function () { $('dr-foto-input').click(); });
+    document.querySelector('#pp-doctor .js-dr-foto').addEventListener('click', function () { $('dr-foto-input').click(); });
     $('dr-foto-input').addEventListener('change', function () {
       var f = this.files && this.files[0]; if (!f) return;
       dr.foto = f;
       var rd = new FileReader(); rd.onload = function (ev) { var img = $('dr-foto-img'); img.src = ev.target.result; img.hidden = false; }; rd.readAsDataURL(f);
       $('dr-foto-cap').textContent = 'Foto de hoy lista (se guarda en su línea de tiempo).';
     });
-    document.querySelector('#m-doctor .js-dr-go').addEventListener('click', function () {
+    document.querySelector('#pp-doctor .js-dr-go').addEventListener('click', function () {
       var btn = this, fd = new FormData();
       $$('[data-sint][aria-pressed="true"]').forEach(function (b) { fd.append('sintomas', b.dataset.sint); });
       fd.append('texto', $('dr-texto').value.trim());
@@ -476,14 +548,14 @@
         $('dr-result').innerHTML = dxHTML(d.diagnostico); icons();
       }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { busy(btn, false); });
     });
-    document.querySelector('#m-doctor .js-cx-go').addEventListener('click', function () {
+    document.querySelector('#pp-doctor .js-cx-go').addEventListener('click', function () {
       var btn = this; busy(btn, true, 'Analizando…'); $('cx-result').innerHTML = '';
       fetch(BASE + '/api/plantas/' + dr.id + '/consejo').then(function (r) { return r.json(); }).then(function (d) {
         if (!d.ok) { toast(d.error || 'No se pudo analizar', 'err'); return; }
         $('cx-result').innerHTML = d.suficiente ? cxHTML(d.consejo, d.historial) : '<p class="t-meta">' + esc(d.msg) + '</p>'; icons();
       }).catch(function () { toast('Sin conexión', 'err'); }).finally(function () { busy(btn, false); });
     });
-    $('m-doctor').addEventListener('click', function (e) {
+    $('pp-doctor').addEventListener('click', function (e) {
       var b = e.target.closest('[data-aplicar]'); if (!b) return;
       var fd = new FormData(); fd.append(b.dataset.aplicar, b.dataset.valor); b.disabled = true;
       fetch(BASE + '/api/plantas/' + dr.id, { method: 'POST', body: fd }).then(function (r) { return r.json(); }).then(function (d) {
@@ -569,5 +641,6 @@
     $('pl-ficha').hidden = true; toast('Valores aplicados: revisa y guarda', 'ok');
   });
 
-  render(); groupBar();
+  renderHoy(); renderGrid();
+  if (!MOVIL.matches && PLANTAS.length) openPanel((HOY[0] || PLANTAS[0]).planta_id || PLANTAS[0].id);
 })();

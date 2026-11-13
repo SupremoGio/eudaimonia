@@ -44,6 +44,10 @@ ALLOWED_EXT = {'.pdf', '.jpg', '.jpeg', '.png', '.webp', '.doc', '.docx', '.xls'
 
 @perfil_bp.route('/')
 def index():
+    # Las preferencias de avisos viven en Ajustes (handoff Plantas y Ajustes).
+    if request.args.get('sec') == 'avisos':
+        from flask import redirect
+        return redirect('/perfil/?sec=ajustes#avisos')
     with get_db() as db:
         info         = db.execute("SELECT * FROM personal_info ORDER BY rowid").fetchall()
         measurements = db.execute("SELECT * FROM body_measurements ORDER BY rowid").fetchall()
@@ -116,9 +120,10 @@ def index():
         avisos_prefs = _av.preferencias(db, session)
         from modules import onboarding as _onb
         onb = _onb.estado(db, inicio=False)
+        ajustes = _ajustes_view(db)
 
     return render_template('perfil/index.html',
-                           onb=onb,
+                           onb=onb, ajustes=ajustes,
                            avisos_prefs=avisos_prefs,
                            me=me, sec=sec, fin_ok=fin_ok,
                            placeholder=PLACEHOLDER,
@@ -583,3 +588,86 @@ def vault_delete(vid):
         db.execute("DELETE FROM password_vault WHERE id=?", (vid,))
         db.commit()
     return jsonify({'ok': True})
+
+
+
+# ── Ajustes (handoff Plantas y Ajustes, nota 4) ──────────────────────────────
+# Un solo lugar para lo configurable. POST /perfil/api/ajustes {clave, valor}
+# solo acepta claves de la lista blanca; el valor se guarda como '1'/'0'.
+
+def _ajustes_view(db):
+    from modules import nav
+    from modules.quick import preferencias
+    ocultos, por_uso = preferencias(db)
+    oculto = db.execute("SELECT value FROM app_settings WHERE key='onb_oculto'").fetchone()
+    return {'quick': [{'id': q['id'], 'label': q['label'], 'on': q['id'] not in ocultos} for q in nav.QUICK],
+            'por_uso': por_uso, 'onb_visible': not (oculto and oculto['value'] == '1')}
+
+
+def clave_permitida(clave):
+    """Lista blanca de Ajustes: avisos_off:<fuente>, quick_off:<id>,
+    quick_orden_uso y onb_oculto."""
+    from modules import nav
+    from modules.avisos import FUENTES
+    if clave in ('quick_orden_uso', 'onb_oculto'):
+        return True
+    if clave.startswith('avisos_off:'):
+        return clave[len('avisos_off:'):] in {f[0] for f in FUENTES}
+    if clave.startswith('quick_off:'):
+        return clave[len('quick_off:'):] in {q['id'] for q in nav.QUICK}
+    return False
+
+
+@perfil_bp.route('/api/ajustes', methods=['POST'])
+def api_ajustes():
+    d = request.get_json(silent=True) or {}
+    clave = str(d.get('clave') or '')
+    if not clave_permitida(clave):
+        return jsonify({'ok': False, 'error': 'Ajuste desconocido'}), 400
+    valor = '1' if d.get('valor') in (True, 1, '1', 'true') else '0'
+    with get_db() as db:
+        db.execute("INSERT OR REPLACE INTO app_settings (key, value) VALUES (?, ?)", (clave, valor))
+        db.commit()
+        conteo = None
+        if clave.startswith('avisos_off:'):
+            from modules import avisos as av
+            conteo = av.recolectar(db)['conteo_hoy']
+    return jsonify({'ok': True, 'clave': clave, 'valor': valor, 'conteo_hoy': conteo})
+
+
+# Tablas que van en «Exportar todo». Sin la bóveda de contraseñas, sin
+# app_settings (tokens y hashes de acceso) y sin archivos/fotos.
+EXPORT_TABLAS = [
+    'est_movimientos', 'est_budgets', 'est_prestamos', 'activity_logs', 'xp_ledger', 'coins_ledger',
+    'gtd_tasks', 'reminders', 'personal_info', 'body_measurements', 'body_measurements_history',
+    'plantas', 'plantas_bitacora', 'plantas_cuidados', 'medico_episodios', 'medico_recetas', 'medico_medicamentos',
+    'harma_vehiculo', 'harma_servicios', 'harma_plan_items', 'harma_polizas', 'wardrobe_items', 'outfits',
+    'rewards', 'lang_journal', 'lang_test_results', 'eury_sessions', 'revision_semanal', 'nutricion_deslices',
+    'futbol_partidos', 'achievements', 'badges',
+]
+
+
+@perfil_bp.route('/api/exportar')
+def api_exportar():
+    """Zip con un CSV por tabla principal (solo lectura). Incluye finanzas,
+    así que pide la misma llave que Oikonomia (fin_ok)."""
+    if not session.get('fin_ok'):
+        return jsonify({'error': 'locked'}), 403
+    import csv, io, zipfile
+    buf = io.BytesIO()
+    with get_db() as db, zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as zf:
+        existentes = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        for t in EXPORT_TABLAS:
+            if t not in existentes:
+                continue
+            cur = db.execute(f'SELECT * FROM "{t}"')
+            cols = [c[0] for c in cur.description]
+            out = io.StringIO()
+            w = csv.writer(out)
+            w.writerow(cols)
+            for row in cur.fetchall():
+                w.writerow([row[c] for c in cols])
+            zf.writestr(f'{t}.csv', '\ufeff' + out.getvalue())
+    nombre = f"eudaimonia_{today_str()}.zip"
+    return Response(buf.getvalue(), mimetype='application/zip',
+                    headers={'Content-Disposition': f'attachment; filename="{nombre}"'})

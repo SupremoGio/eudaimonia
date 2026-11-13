@@ -654,28 +654,38 @@
   });
 })();
 
-/* ── Avisos: qué fuentes entran a la campana (handoff Avisos, S3) ───── */
+/* ── Ajustes (handoff Plantas y Ajustes, nota 4): cada interruptor guarda
+   al instante. data-inv="1": la clave guarda lo apagado (avisos_off:, quick_off:,
+   onb_oculto), así que el valor es lo contrario de «encendido». ───────────── */
 (function () {
-  var box = document.getElementById('avisos-prefs');
-  if (!box) return;
-  box.addEventListener('click', function (e) {
-    var sw = e.target.closest('[data-fuente]');
+  var sec = document.getElementById('sec-ajustes');
+  if (!sec) return;
+  sec.addEventListener('click', function (e) {
+    var q = e.target.closest('.js-aj-quick');
+    if (q) {
+      var l = document.getElementById('aj-quick-list'), open = l.hidden;
+      l.hidden = !open; q.setAttribute('aria-expanded', String(open)); q.textContent = open ? 'Listo' : 'Editar';
+      return;
+    }
+    var sw = e.target.closest('[data-aj]');
     if (!sw || sw.getAttribute('aria-busy') === 'true') return;
     var on = sw.getAttribute('aria-checked') !== 'true';
-    sw.setAttribute('aria-checked', on ? 'true' : 'false');
-    sw.setAttribute('aria-busy', 'true');
-    fetch('/api/avisos/preferencias', {
+    sw.setAttribute('aria-checked', String(on)); sw.setAttribute('aria-busy', 'true');
+    fetch('/perfil/api/ajustes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fuente: sw.dataset.fuente, activa: on })
+      body: JSON.stringify({ clave: sw.dataset.aj, valor: sw.dataset.inv === '1' ? !on : on })
     }).then(function (r) { return r.json().then(function (d) { if (!r.ok || !d.ok) throw new Error(d.error); return d; }); })
       .then(function (d) {
-        if (window.euAvisos) window.euAvisos.setCount(d.conteo_hoy);
-        toast(on ? 'Vuelve a la campana' : 'Fuera de la campana');
+        if (d.conteo_hoy !== null && d.conteo_hoy !== undefined && window.euAvisos) window.euAvisos.setCount(d.conteo_hoy);
+        var n = document.getElementById('aj-quick-n');
+        if (n && sw.dataset.aj.indexOf('quick_off:') === 0) {
+          var all = document.querySelectorAll('#aj-quick-list [data-aj]');
+          n.textContent = [].filter.call(all, function (x) { return x.getAttribute('aria-checked') === 'true'; }).length + ' de ' + all.length;
+        }
+        toast('Guardado');
       })
-      .catch(function () {
-        sw.setAttribute('aria-checked', on ? 'false' : 'true');
-        toast('No se pudo guardar', 'err');
-      })
+      .catch(function () { sw.setAttribute('aria-checked', String(!on)); toast('No se pudo guardar', 'err'); })
       .then(function () { sw.removeAttribute('aria-busy'); });
   });
+  if (location.hash) { var t = document.getElementById(location.hash.slice(1)); if (t && sec.contains(t)) setTimeout(function () { t.scrollIntoView(); }, 50); }
 })();

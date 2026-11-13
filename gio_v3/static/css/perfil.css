@@ -236,3 +236,11 @@
 .pf-danger-eyebrow{color:var(--danger-fg)}
 .pf-danger-btn{align-self:flex-start}
 .eu-seg button[aria-pressed=true]{background:var(--bg-raised);color:var(--fg-1);box-shadow:var(--e-2)}
+
+
+/* Ajustes por grupos (handoff Plantas y Ajustes, nota 4) */
+.pf-aj-g{display:flex;flex-direction:column;gap:6px;scroll-margin-top:calc(var(--topbar-h) + var(--sp-4))}
+.pf-aj-eb{margin:0;padding:0 4px;color:var(--fg-3)}
+.pf-aj-row{min-height:56px}
+.pf-aj-sub{border-top:1px solid var(--border-subtle);background:var(--bg-sunken)}
+.pf-aj-sub .pf-aj-row{padding-left:var(--sp-6)}

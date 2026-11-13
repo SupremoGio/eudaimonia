@@ -283,11 +283,14 @@ def test_apagar_fuente_la_quita_de_la_campana_y_el_conteo(client):
 
 
 def test_preferencias_en_perfil(client):
-    html = client.get('/perfil/?sec=avisos').get_data(as_text=True)
+    # Desde el handoff Plantas y Ajustes viven en Ajustes › Avisos.
+    r = client.get('/perfil/?sec=avisos')
+    assert r.status_code == 302 and r.headers['Location'].endswith('/perfil/?sec=ajustes#avisos')
+    html = client.get('/perfil/?sec=ajustes').get_data(as_text=True)
     assert 'id="avisos-prefs"' in html
     for fid, nombre, _r, perm in av.FUENTES:
         if not perm:
-            assert f'data-fuente="{fid}"' in html
+            assert f'data-aj="avisos_off:{fid}"' in html
 
 
 def test_inicio_y_campana_muestran_los_mismos_pendientes_de_hoy(fin):
