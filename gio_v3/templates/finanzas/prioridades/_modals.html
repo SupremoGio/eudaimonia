@@ -1,4 +1,4 @@
-{# Modales: editar, marcar comprado y protocolo de compra (alta de artículo) #}
+{# Modales: editar y protocolo de compra (alta de artículo). «Comprado» se pide en la fila (Remates · Wishlist S1). #}
 {% macro fields(pfx) -%}
 <div class="eu-grid-2 pr-fgrid">
   <div class="eu-field pr-span"><label class="eu-label" for="{{ pfx }}Nombre">Artículo *</label><input class="eu-input" id="{{ pfx }}Nombre" placeholder="ej. Apple Watch Series 9"></div>
@@ -19,15 +19,6 @@
   <div class="eu-field"><label class="eu-label" for="fEstado">Estado</label><select class="eu-select" id="fEstado"><option>Pendiente</option><option>Comprado</option><option>Descartado</option></select></div>
 </form>
 <div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-edit')">Cancelar</button><button type="submit" form="f-edit" class="eu-btn eu-btn--primary">Guardar</button></div>
-{% endcall %}
-
-{% call ui.modal('m-comprar', '¡Comprado!', eyebrow='Prioridades') %}
-<form class="eu-modal-bd" id="f-comprar" novalidate>
-  <input type="hidden" id="comprarId">
-  <p class="t-section" id="comprarNombre"></p>
-  <div class="eu-field"><label class="eu-label" for="cPrecioReal">¿Cuánto pagaste realmente? (MXN)</label><input class="eu-input eu-input--money" id="cPrecioReal" type="number" min="0" inputmode="decimal" placeholder="0"></div>
-</form>
-<div class="eu-modal-ft"><button type="button" class="eu-btn eu-btn--ghost" onclick="euModal.close('m-comprar')">Cancelar</button><button type="submit" form="f-comprar" class="eu-btn eu-btn--primary"><i data-lucide="check"></i>Confirmar</button></div>
 {% endcall %}
 
 {% call ui.modal('m-proto', 'Supremo protocolo de compra', eyebrow='Protocolo de compra v2.0') %}

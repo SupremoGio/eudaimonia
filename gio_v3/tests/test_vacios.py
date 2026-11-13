@@ -83,7 +83,10 @@ def test_no_quedan_vacios_a_mano():
 def test_kinds_asignados(client):
     assert 'eu-empty--period' in _get(client, '/finanzas/budget/')                 # bucket sin gasto → period
     assert 'data-kind="filter"' in _get(client, '/finanzas/consumo/')               # nomatch → filter
-    assert 'data-kind="filter"' in _get(client, '/finanzas/prioridades/')
+    # Wishlist de Oikonomia: Remates · Wishlist S1 quitó los chips de filtro (agrupa por mes),
+    # así que ya no tiene vacío de filtro; con artículos pinta los grupos.
+    assert 'data-kind="filter"' not in _get(client, '/finanzas/prioridades/')
+    assert 'class="pr-group"' in _get(client, '/finanzas/prioridades/')
     assert 'data-kind="filter"' in _get(client, '/logros')
     assert 'data-kind="setup"' in _get(client, '/perfil/?sec=documentos')           # Documentos → setup
     assert 'data-kind="done"' in _get(client, '/')                                  # radar vacío → done

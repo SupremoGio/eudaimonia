@@ -4,6 +4,7 @@ from database import get_db
 from ec_constants import EC_RATE
 from modules import wishlist_dedup
 import datetime
+from utils import today_date
 
 prioridades_bp = Blueprint('prioridades', __name__, template_folder='../../templates')
 
@@ -25,50 +26,96 @@ def _fmt_mes(val):
     return f"{MESES.get(m, m)} {y}"
 
 
+# ── Remates · Wishlist S1: por mes y contra el presupuesto ───────────────────
+# Grupos por mes_objetivo. «Este mes» incluye lo atrasado (mes_objetivo
+# anterior al actual, marcado en la fila) para que la celda y el grupo sumen
+# lo mismo. Comprado y Descartado van plegados al final.
+GRUPOS = [('este', 'Este mes'), ('prox', 'Próximo'), ('despues', 'Más adelante'), ('sin', 'Sin fecha')]
+PRIO_ORDEN = {'Alta': 0, 'Media': 1, 'Baja': 2}
+REC = {   # protocolo_rec → (tono, etiqueta corta); las mismas de prioridades.js
+    'compra_optima': ('success', 'Óptima'), 'compra_limitada': ('warning', 'Limitada'),
+    'reevaluar': ('warning', 'Re-evaluar'), 'no_compres': ('danger', 'No compres'),
+    'bloqueo_supervivencia': ('danger', 'Bloqueo'), 'glitch_emocional': ('danger', 'Glitch emocional'),
+}
+
+
+def _mes_mas(mes, n):
+    y, m = int(mes[:4]), int(mes[5:7]) + n
+    y += (m - 1) // 12
+    return f"{y}-{(m - 1) % 12 + 1:02d}"
+
+
+def grupo_de(mes_objetivo, mes_actual):
+    mo = (mes_objetivo or '')[:7]
+    if len(mo) != 7:
+        return 'sin'
+    if mo <= mes_actual:
+        return 'este'
+    return 'prox' if mo == _mes_mas(mes_actual, 1) else 'despues'
+
+
+def _en_guardarropa(db):
+    """Nombres normalizados de la wishlist de Guardarropa que siguen vivos."""
+    try:
+        rows = db.execute("SELECT nombre FROM wishlist_items "
+                          "WHERE COALESCE(estado,'evaluando') NOT IN ('descartado')").fetchall()
+    except Exception:
+        return set()
+    return {wishlist_dedup.normaliza(r['nombre']) for r in rows}
+
+
+def _ec_balance(db):
+    return max(0, int(db.execute("SELECT COALESCE(SUM(amount),0) AS s FROM coins_ledger").fetchone()['s'] or 0))
+
+
+def vista(db, hoy=None):
+    """Todo lo que pinta /finanzas/prioridades/: grupos, plegados y la franja."""
+    from modules.finanzas.budget import libre_deseos
+    hoy = hoy or today_date()
+    mes = hoy.strftime('%Y-%m')
+    rows = [dict(r) for r in db.execute("SELECT * FROM lista_prioridades").fetchall()]
+    guarda = _en_guardarropa(db)
+    balance = _ec_balance(db)
+    for d in rows:
+        d['mes_label'] = _fmt_mes(d.get('mes_objetivo', ''))
+        d['grupo'] = grupo_de(d.get('mes_objetivo'), mes)
+        d['atrasado'] = d['grupo'] == 'este' and (d.get('mes_objetivo') or '')[:7] < mes
+        d['rec'] = REC.get(d.get('protocolo_rec') or '')
+        d['en_guardarropa'] = wishlist_dedup.normaliza(d['nombre']) in guarda
+        precio = d.get('precio_estimado') or 0
+        d['ec'] = math.ceil(precio / EC_RATE) if precio > 0 else 0
+        d['puede_ec'] = d['estado'] == 'Pendiente' and 0 < d['ec'] <= balance
+    orden = lambda d: (PRIO_ORDEN.get(d['prioridad'], 3), (d['nombre'] or '').lower())
+    pend = sorted([d for d in rows if d['estado'] == 'Pendiente'], key=orden)
+    grupos = [{'key': k, 'label': l, 'items': [d for d in pend if d['grupo'] == k]} for k, l in GRUPOS]
+    for g in grupos:
+        g['total'] = round(sum(d['precio_estimado'] or 0 for d in g['items']), 2)
+    comprados = sorted([d for d in rows if d['estado'] == 'Comprado'],
+                       key=lambda d: d.get('purchased_at') or '', reverse=True)
+    descartados = sorted([d for d in rows if d['estado'] == 'Descartado'], key=orden)
+    anio = str(hoy.year)
+    del_anio = [d for d in comprados if (d.get('purchased_at') or '')[:4] == anio]
+    por_prio = {p: round(sum(d['precio_estimado'] or 0 for d in pend if d['prioridad'] == p), 2) for p in PRIO_ORDEN}
+    este = grupos[0]
+    return {
+        'mes': mes,
+        'meses_mover': [{'mes': _mes_mas(mes, n), 'label': _fmt_mes(_mes_mas(mes, n))} for n in range(0, 4)],
+        'grupos': grupos, 'comprados': comprados, 'descartados': descartados,
+        'franja': {
+            'pend_total': round(sum(por_prio.values()), 2), 'pend_count': len(pend), 'por_prio': por_prio,
+            'este_total': este['total'], 'este_count': len(este['items']),
+            'libre': libre_deseos(db, mes),
+            'anio': hoy.year, 'anio_total': round(sum(d['precio_real'] or 0 for d in del_anio), 2), 'anio_count': len(del_anio),
+        },
+        'ec_balance': balance, 'ec_rate': EC_RATE,
+    }
+
+
 @prioridades_bp.route('/')
 def index():
     with get_db() as db:
-        items = db.execute("""
-            SELECT * FROM lista_prioridades
-            ORDER BY
-                CASE estado WHEN 'Pendiente' THEN 0 WHEN 'Comprado' THEN 1 ELSE 2 END,
-                CASE prioridad WHEN 'Alta' THEN 1 WHEN 'Media' THEN 2 WHEN 'Baja' THEN 3 END,
-                mes_objetivo, nombre
-        """).fetchall()
-
-        raw = db.execute("""
-            SELECT prioridad, estado,
-                   COALESCE(SUM(precio_estimado),0) as te,
-                   COALESCE(SUM(precio_real),0)     as tr,
-                   COUNT(*) as cnt
-            FROM lista_prioridades
-            GROUP BY prioridad, estado
-        """).fetchall()
-
-    summary = {
-        'alta_pend': 0, 'media_pend': 0, 'baja_pend': 0,
-        'gastado': 0, 'pend_count': 0, 'comp_count': 0, 'desc_count': 0,
-    }
-    for r in raw:
-        if r['estado'] == 'Pendiente':
-            summary['pend_count'] += r['cnt']
-            if r['prioridad'] == 'Alta':  summary['alta_pend']  += r['te']
-            if r['prioridad'] == 'Media': summary['media_pend'] += r['te']
-            if r['prioridad'] == 'Baja':  summary['baja_pend']  += r['te']
-        elif r['estado'] == 'Comprado':
-            summary['comp_count'] += r['cnt']
-            summary['gastado']    += r['tr']
-        elif r['estado'] == 'Descartado':
-            summary['desc_count'] += r['cnt']
-
-    items_dict = []
-    for it in items:
-        d = dict(it)
-        d['mes_label'] = _fmt_mes(d.get('mes_objetivo', ''))
-        items_dict.append(d)
-
-    return render_template('finanzas/prioridades.html',
-                           pg='prioridades', items=items_dict, summary=summary)
+        v = vista(db)
+    return render_template('finanzas/prioridades.html', pg='prioridades', v=v, rec_map=REC)
 
 
 @prioridades_bp.route('/api/existe')
@@ -158,6 +205,30 @@ def delete(iid):
         db.execute("DELETE FROM lista_prioridades WHERE id=?", (iid,))
         db.commit()
     return jsonify({'ok': True})
+
+
+@prioridades_bp.route('/api/comprar-ec/<int:iid>', methods=['POST'])
+def comprar_ec(iid):
+    """«o N EC» de la fila (Remates · Wishlist S1): el mismo registro que el
+    alta con comprar_con_ec (coins_ledger, source 'reward') para un artículo
+    que ya está en la lista; lo marca Comprado. El monto lo calcula el servidor."""
+    now = datetime.datetime.now().isoformat()
+    with get_db() as db:
+        it = db.execute("SELECT * FROM lista_prioridades WHERE id=?", (iid,)).fetchone()
+        if not it or it['estado'] != 'Pendiente':
+            return jsonify({'ok': False, 'error': 'Artículo no disponible'}), 404
+        ec = math.ceil((it['precio_estimado'] or 0) / EC_RATE) if (it['precio_estimado'] or 0) > 0 else 0
+        if ec <= 0:
+            return jsonify({'ok': False, 'error': 'El artículo no tiene precio'}), 400
+        balance = _ec_balance(db)
+        if balance < ec:
+            return jsonify({'ok': False, 'error': f'EC insuficientes (tienes {balance}, necesitas {ec})'}), 400
+        db.execute("""INSERT INTO coins_ledger (amount, source, reference_id, description, date, created_at)
+                      VALUES (?,?,?,?,?,?)""", (-ec, 'reward', iid, f"Wishlist: {it['nombre']}", now[:10], now))
+        db.execute("""UPDATE lista_prioridades SET estado='Comprado', comprar_con_ec=1, ec_pagado=?,
+                      precio_real=0, purchased_at=? WHERE id=?""", (ec, now, iid))
+        db.commit()
+    return jsonify({'ok': True, 'ec': ec, 'balance': balance - ec})
 
 
 @prioridades_bp.route('/api/ec-status')

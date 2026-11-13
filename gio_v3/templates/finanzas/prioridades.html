@@ -3,41 +3,75 @@
 {% set pg = 'finanzas' %}
 {% set CATS = ['Tecnología','Hogar','Ropa · Accesorios','Salud · Fitness','Auto','Entretenimiento','Otros'] %}
 {% set PRI = {'Alta': ('danger','Alta'), 'Media': ('warning','Media'), 'Baja': ('info','Baja')} %}
-{% macro money(n) -%}${{ "{:,.0f}".format(n) }}{%- endmacro %}
+{% macro money(n) -%}${{ "{:,.0f}".format(n or 0) }}{%- endmacro %}
 {% block module_title %}WISHLIST{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/wishlist.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/prioridades.css') }}">{% endblock %}
 {% block topright %}<button type="button" class="eu-iconbtn js-add" aria-label="Nuevo artículo"><i data-lucide="plus"></i></button>{% endblock %}
 
 {% block content %}
-<div class="pr" id="pr" data-cat="oikonomia">
-  {% call ui.page_head(eyebrow='Lista de prioridades · ' ~ summary.pend_count ~ ' pendiente' ~ ('s' if summary.pend_count != 1 else ''), cls='pr-hd') %}
+{# Remates · Wishlist de Oikonomia S1: h1 «Wishlist» con antetítulo vivo;
+   franja de 3 celdas (pendiente por prioridad, este mes contra «libre para
+   deseos» de budget.libre_deseos, comprado en el año); grupos por
+   mes_objetivo; Comprado y Descartado plegados. prioridades.js recalcula la
+   franja y los totales desde los data-* de las filas. #}
+{% set f = v.franja %}
+<div class="pr" id="pr" data-cat="oikonomia" data-mes="{{ v.mes }}" data-anio="{{ f.anio }}"
+     {% if f.libre %}data-libre="{{ f.libre.libre }}" data-meta="{{ f.libre.meta }}"{% endif %}
+     data-ec-balance="{{ v.ec_balance }}" data-ec-rate="{{ v.ec_rate }}">
+  {% call ui.page_head(eyebrow=f.pend_count ~ ' pendiente' ~ ('s' if f.pend_count != 1 else '') ~ ' · ' ~ money(f.pend_total), cls='pr-hd') %}
     <button type="button" class="eu-btn eu-btn--primary js-add"><i data-lucide="plus"></i>Nuevo artículo</button>
   {% endcall %}
 
-  <div class="eu-grid-4 pr-stats">
-    {% for key, lbl, tone in [('alta_pend','Alta · pendiente','danger'),('media_pend','Media · pendiente','warning'),('baja_pend','Baja · pendiente','info')] %}
-    <div class="eu-card eu-stat pr-st" data-tone="{{ tone }}"><div class="eu-stat-lbl"><span class="pr-dot"></span>{{ lbl }}</div><div class="eu-stat-val">{{ money(summary[key]) }}</div></div>
-    {% endfor %}
-    <div class="eu-card eu-stat pr-st" data-tone="success"><div class="eu-stat-lbl"><i data-lucide="circle-check"></i>{{ summary.comp_count }} comprado{{ 's' if summary.comp_count != 1 }}</div><div class="eu-stat-val">{{ money(summary.gastado) }}</div></div>
-  </div>
+  <section class="eu-card pr-strip" aria-label="Resumen de la wishlist">
+    <div class="pr-cell">
+      <div class="t-meta">Pendiente</div>
+      <div class="pr-cell-v num" id="pr-pend">{{ money(f.pend_total) }}</div>
+      <div class="pr-stack" role="img" id="pr-stack" aria-label="Alta {{ money(f.por_prio.Alta) }}, Media {{ money(f.por_prio.Media) }}, Baja {{ money(f.por_prio.Baja) }}">
+        {% for p in ['Alta','Media','Baja'] %}<i data-tone="{{ PRI[p][0] }}" data-p="{{ p }}" style="flex-grow:{{ f.por_prio[p] }}"></i>{% endfor %}
+      </div>
+      <div class="pr-legend t-meta">{% for p in ['Alta','Media','Baja'] %}<span data-tone="{{ PRI[p][0] }}"><span class="pr-dot"></span>{{ p }} <span class="num" data-leg="{{ p }}">{{ money(f.por_prio[p]) }}</span></span>{% endfor %}</div>
+    </div>
+    {% if f.libre %}
+    <div class="pr-cell" id="pr-este-cell">
+      <div class="t-meta">Este mes</div>
+      <div class="pr-cell-v num"><span id="pr-este">{{ money(f.este_total) }}</span> <span class="t-meta">de <span class="num">{{ money(f.libre.libre if f.libre.libre > 0 else 0) }}</span> libre para deseos</span></div>
+      {% set pct = ((f.este_total / f.libre.libre * 100) if f.libre.libre > 0 else (100 if f.este_total else 0)) %}
+      <div class="eu-progress eu-progress--{{ 'danger' if pct > 100 else ('warning' if pct > 85 else 'success') }} pr-este-bar" id="pr-este-bar" role="progressbar" aria-label="Este mes contra lo libre para deseos" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ [pct, 100]|min|round|int }}"><i style="width:{{ [pct, 100]|min }}%"></i></div>
+      <div class="t-meta" id="pr-este-meta">Meta de Deseos {{ money(f.libre.meta) }} · gastado {{ money(f.libre.gastado) }}</div>
+    </div>
+    {% endif %}
+    <div class="pr-cell">
+      <div class="t-meta">Comprado en {{ f.anio }}</div>
+      <div class="pr-cell-v num" id="pr-anio">{{ money(f.anio_total) }}</div>
+      <div class="t-meta"><span class="num" id="pr-anio-n">{{ f.anio_count }}</span> artículo{{ 's' if f.anio_count != 1 }}</div>
+    </div>
+  </section>
 
-  <div class="eu-chips" role="group" aria-label="Filtrar artículos">
-    {{ ui.chip('Todos', pressed=True, count=items|length, **{'data-f': 'todos'}) }}
-    {{ ui.chip('Pendiente', count=summary.pend_count, **{'data-f': 'Pendiente'}) }}
-    {% for p in ['Alta','Media','Baja'] %}<button type="button" class="eu-chip" data-f="{{ p }}" data-tone="{{ PRI[p][0] }}" aria-pressed="false"><span class="pr-dot"></span>{{ p }}</button>{% endfor %}
-    {{ ui.chip('Comprado', icon='circle-check', count=summary.comp_count, **{'data-f': 'Comprado'}) }}
-    {{ ui.chip('Descartado', icon='trash-2', count=summary.desc_count, **{'data-f': 'Descartado'}) }}
-  </div>
-
-  <div class="pr-list" id="cardList">
-    {% for it in items %}{% include "finanzas/prioridades/_item.html" %}
-    {% else %}
-    <div class="eu-card">{{ ui.empty('star', 'Sin artículos en la lista', 'Registra lo que quieres comprar y evalúalo con el protocolo de compra antes de decidir.') }}</div>
+  {% set hay = v.grupos|sum(attribute='items', start=[])|length or v.comprados or v.descartados %}
+  {% if not hay %}
+  <div class="eu-card">{{ ui.empty('star', 'Sin artículos en la lista', 'Registra lo que quieres comprar y evalúalo con el protocolo de compra antes de decidir.', kind='setup') }}</div>
+  {% endif %}
+  <div class="pr-groups" id="pr-groups"{% if not hay %} hidden{% endif %}>
+    {% for g in v.grupos %}
+    <section class="pr-group" data-g="{{ g.key }}" aria-labelledby="pr-g-{{ g.key }}"{% if not g['items'] %} hidden{% endif %}>
+      <h2 class="pr-group-hd" id="pr-g-{{ g.key }}"><span class="t-eyebrow">{{ g.label }}</span><span class="t-meta num"><span data-gn>{{ g['items']|length }}</span> · <span data-gt>{{ money(g.total) }}</span></span></h2>
+      <ul class="pr-list" data-list="{{ g.key }}">
+        {% for it in g['items'] %}{% include "finanzas/prioridades/_item.html" %}{% endfor %}
+      </ul>
+    </section>
     {% endfor %}
-    <div class="eu-card" id="pr-nomatch" hidden>{{ ui.empty('filter', 'Ningún artículo en este filtro.', 'No hay artículos que coincidan.', kind='filter') }}</div>
+    {% for key, label, lista in [('Comprado', 'Comprado', v.comprados), ('Descartado', 'Descartado', v.descartados)] %}
+    <details class="pr-done" data-done="{{ key }}"{% if not lista %} hidden{% endif %}>
+      <summary class="pr-done-sum"><span class="t-ui">{{ label }}</span><span class="eu-badge num" data-dn>{{ lista|length }}</span><i data-lucide="chevron-down" class="pr-done-chev"></i></summary>
+      <ul class="pr-list" data-list="{{ key }}">
+        {% for it in lista %}{% include "finanzas/prioridades/_item.html" %}{% endfor %}
+      </ul>
+    </details>
+    {% endfor %}
   </div>
 </div>
 
+<script type="application/json" id="pr-meses">{{ v.meses_mover|tojson }}</script>
 {% include "finanzas/prioridades/_modals.html" %}
 {% endblock %}
 

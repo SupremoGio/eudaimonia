@@ -1,5 +1,7 @@
-/* Prioridades (wishlist de Oikonomia) — Design System V2: lista filtrable,
-   editar / comprado / descartar / eliminar, y alta de artículos a través del
+/* Prioridades (wishlist de Oikonomia) — Design System V2. Remates · Wishlist
+   S1: grupos por mes_objetivo, franja viva (pendiente, este mes contra «libre
+   para deseos», comprado en el año), «Comprado» con el precio en línea,
+   «Mover de mes», «o N EC» y menú ⋯; alta de artículos a través del
    protocolo de compra (pasos compartidos con la wishlist de Guardarropa; aquí
    el score se calcula en el cliente y el pago con EC se registra al agregar). */
 (function () {
@@ -32,60 +34,183 @@
       url: $(p + 'Url').value.trim(), notas: $(p + 'Notas').value.trim() };
   }
 
-  /* ── Filtros (se recuerdan por dispositivo) ─────────────────────────── */
-  function filter(f) {
-    var shown = 0;
-    $$('[data-f]').forEach(function (c) { c.setAttribute('aria-pressed', String(c.dataset.f === f)); });
-    $$('.pr-card').forEach(function (c) {
-      var ok = f === 'todos' || c.dataset.estado === f || c.dataset.prioridad === f;
-      c.hidden = !ok; if (ok) shown++;
-    });
-    $('pr-nomatch').hidden = shown > 0 || !$$('.pr-card').length;
-    if (!shown && window.euSetDrop) euSetDrop($('pr-nomatch'), euChipLabel(document.querySelector('[data-f="' + f + '"]'), f),
-      $$('.pr-card').length, function () { filter('todos'); });
-    try { localStorage.setItem('wl_filter', f); } catch (e) { /* sin storage */ }
+  /* ── Remates · Wishlist S1: grupos por mes, franja viva y acciones en la fila ── */
+  var MES = root.dataset.mes, ANIO = root.dataset.anio;
+  var MESES = JSON.parse(($('pr-meses') || {}).textContent || '[]');
+  var LIBRE = root.dataset.libre != null ? +root.dataset.libre : null;
+  var balance = +root.dataset.ecBalance || 0;
+  function money(n) { return '$' + Math.round(n || 0).toLocaleString('en-US'); }
+  function mesMas(m, n) { var y = +m.slice(0, 4), k = +m.slice(5, 7) + n; y += Math.floor((k - 1) / 12); k = (k - 1) % 12 + 1; return y + '-' + (k < 10 ? '0' : '') + k; }
+  function grupoDe(m) { if (!m || m.length !== 7) return 'sin'; if (m <= MES) return 'este'; return m === mesMas(MES, 1) ? 'prox' : 'despues'; }
+  function rows(sel) { return $$('.pr-row' + (sel || '')); }
+  function insertar(list, row) {
+    var k = row.dataset.orden, sig = $$('.pr-row', list).filter(function (r) { return r !== row && r.dataset.orden > k; })[0];
+    list.insertBefore(row, sig || null);
   }
-  $$('[data-f]').forEach(function (c) { c.addEventListener('click', function () { filter(c.dataset.f); }); });
-  try { var saved = localStorage.getItem('wl_filter'); if (saved && document.querySelector('[data-f="' + saved + '"]')) filter(saved); } catch (e) { /* sin storage */ }
 
-  /* ── Acciones de la lista ───────────────────────────────────────────── */
+  /* Recalcula la franja, el antetítulo y los conteos desde las filas */
+  function recalc() {
+    var pend = rows('[data-estado="Pendiente"]'), por = { Alta: 0, Media: 0, Baja: 0 }, total = 0, este = 0;
+    pend.forEach(function (r) { var v = +r.dataset.precio; total += v; if (por[r.dataset.prioridad] != null) por[r.dataset.prioridad] += v; if (grupoDe(r.dataset.mes) === 'este') este += v; });
+    var eb = document.querySelector('.pr-hd .t-eyebrow');
+    if (eb) eb.textContent = pend.length + ' pendiente' + (pend.length !== 1 ? 's' : '') + ' · ' + money(total);
+    $('pr-pend').textContent = money(total);
+    Object.keys(por).forEach(function (k) {
+      var seg = document.querySelector('#pr-stack [data-p="' + k + '"]'); if (seg) seg.style.flexGrow = por[k];
+      var lg = document.querySelector('[data-leg="' + k + '"]'); if (lg) lg.textContent = money(por[k]);
+    });
+    $('pr-stack').setAttribute('aria-label', 'Alta ' + money(por.Alta) + ', Media ' + money(por.Media) + ', Baja ' + money(por.Baja));
+    if ($('pr-este')) {
+      $('pr-este').textContent = money(este);
+      var pct = LIBRE > 0 ? este / LIBRE * 100 : (este ? 100 : 0), bar = $('pr-este-bar');
+      bar.className = 'eu-progress eu-progress--' + (pct > 100 ? 'danger' : pct > 85 ? 'warning' : 'success') + ' pr-este-bar';
+      bar.setAttribute('aria-valuenow', Math.round(Math.min(pct, 100)));
+      bar.querySelector('i').style.width = Math.min(pct, 100) + '%';
+    }
+    var compr = rows('[data-estado="Comprado"]').filter(function (r) { return r.dataset.comprado === ANIO; });
+    $('pr-anio').textContent = money(compr.reduce(function (s, r) { return s + +r.dataset.real; }, 0));
+    $('pr-anio-n').textContent = compr.length;
+    $$('.pr-group').forEach(function (g) {
+      var rs = $$('.pr-row', g);
+      g.hidden = !rs.length;
+      g.querySelector('[data-gn]').textContent = rs.length;
+      g.querySelector('[data-gt]').textContent = money(rs.reduce(function (s, r) { return s + +r.dataset.precio; }, 0));
+    });
+    $$('.pr-done').forEach(function (d) { var n = $$('.pr-row', d).length; d.hidden = !n; d.querySelector('[data-dn]').textContent = n; });
+  }
+
+  /* Menús (Mover de mes y ⋯): uno abierto a la vez, flechas, Esc y foco de vuelta */
+  var abierto = null;
+  function cerrarMenu(foco) {
+    if (!abierto) return;
+    abierto.menu.hidden = true; abierto.btn.setAttribute('aria-expanded', 'false');
+    if (foco) abierto.btn.focus();
+    abierto = null;
+  }
+  function abrirMenu(btn) {
+    var menu = btn.parentNode.querySelector('.pr-menu');
+    if (abierto && abierto.btn === btn) { cerrarMenu(true); return; }
+    cerrarMenu(false);
+    if (menu.dataset.kind === 'mover') {
+      var actual = btn.closest('.pr-row').dataset.mes;
+      menu.innerHTML = MESES.filter(function (m) { return m.mes !== actual; }).map(function (m, i) {
+        return '<button type="button" role="menuitem" class="js-mover" data-mes="' + m.mes + '"><i data-lucide="calendar"></i>' + (i === 0 && m.mes === MES ? 'Este mes · ' : '') + esc(m.label) + '</button>';
+      }).join('');
+      icons();
+    }
+    menu.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    abierto = { btn: btn, menu: menu };
+    var first = menu.querySelector('[role=menuitem]'); if (first) first.focus();
+  }
+  document.addEventListener('click', function (e) { if (abierto && !abierto.menu.contains(e.target) && e.target.closest('.js-menu') !== abierto.btn) cerrarMenu(false); });
+  root.addEventListener('keydown', function (e) {
+    if (!abierto || !abierto.menu.contains(document.activeElement)) return;
+    var its = $$('[role=menuitem]', abierto.menu), i = its.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown') { e.preventDefault(); its[(i + 1) % its.length].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); its[(i - 1 + its.length) % its.length].focus(); }
+    else if (e.key === 'Home') { e.preventDefault(); its[0].focus(); }
+    else if (e.key === 'End') { e.preventDefault(); its[its.length - 1].focus(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cerrarMenu(true); }
+    else if (e.key === 'Tab') cerrarMenu(false);
+  });
+
+  /* Pasa una fila pendiente a Comprado (precio real o EC) sin recargar */
+  function aComprado(row, real, ec) {
+    row.dataset.estado = 'Comprado'; row.dataset.real = real; row.dataset.comprado = ANIO; row.classList.add('is-done');
+    ['.pr-buy', '.js-comprar', '.js-ec', '.js-descartar'].forEach(function (s) { var n = row.querySelector(s); if (n) n.remove(); });
+    var mv = row.querySelector('.pr-menu[data-kind="mover"]'); if (mv) mv.parentNode.remove();
+    row.querySelector('.pr-price').textContent = money(ec ? +row.dataset.precio : real);
+    if (ec) row.querySelector('.pr-row-t').insertAdjacentHTML('beforeend', '<span class="eu-badge eu-badge--ec"><i data-lucide="coins"></i>' + ec + ' EC</span>');
+    var list = document.querySelector('[data-list="Comprado"]'); list.insertBefore(row, list.firstChild);
+    icons(); recalc();
+  }
+  function afterEC() {   // con menos EC, algunas filas ya no se pueden pagar
+    root.dataset.ecBalance = balance;
+    $$('.js-ec').forEach(function (b) { if (+b.dataset.ec > balance) b.remove(); });
+  }
+
   root.addEventListener('click', function (e) {
-    var t;
-    if ((t = e.target.closest('[data-edit]'))) {
-      fetch(BASE + '/api/get/' + t.dataset.edit).then(function (r) { return r.json(); }).then(function (d) {
-        $('editId').value = t.dataset.edit;
+    var t = e.target.closest('button'); if (!t || !root.contains(t)) return;
+    var row = t.closest('.pr-row'), id = row && row.dataset.id;
+    if (t.classList.contains('js-menu')) { abrirMenu(t); return; }
+    if (t.classList.contains('js-comprar')) {
+      var form = row.querySelector('.pr-buy'), open = form.hidden;
+      form.hidden = !open; t.setAttribute('aria-expanded', String(open));
+      if (open) { var inp = form.querySelector('input'); inp.focus(); inp.select(); }
+      return;
+    }
+    if (t.classList.contains('js-buy-x')) { row.querySelector('.pr-buy').hidden = true; var c = row.querySelector('.js-comprar'); c.setAttribute('aria-expanded', 'false'); c.focus(); return; }
+    if (t.classList.contains('js-ec')) {
+      var ec = +t.dataset.ec, nombre = row.dataset.nombre;
+      euConfirm('¿Pagar ' + ec + ' EC por «' + nombre + '»? Se descontarán de tu balance y quedará como comprado.', { confirmLabel: 'Pagar ' + ec + ' EC' }).then(function (ok) {
+        if (!ok) return;
+        post(BASE + '/api/comprar-ec/' + id).then(function (d) {
+          if (!d.ok) { toast(d.error || 'No se pudo pagar', 'err'); return; }
+          balance = d.balance; afterEC(); aComprado(row, 0, d.ec); toast('Comprado con ' + d.ec + ' EC', 'win');
+        }).catch(function () { toast('Sin conexión', 'err'); });
+      });
+      return;
+    }
+    if (t.classList.contains('js-mover')) {
+      var mes = t.dataset.mes, label = t.textContent, trig = abierto && abierto.btn;
+      cerrarMenu(false);
+      fetch(BASE + '/api/get/' + id).then(function (r) { return r.json(); }).then(function (d) {
+        d.mes_objetivo = mes;
+        return post(BASE + '/api/update/' + id, d);
+      }).then(function () {
+        row.dataset.mes = mes;
+        $$('.pr-row-t .eu-badge', row).forEach(function (b) { if (/^Desde /.test(b.textContent)) b.remove(); });
+        insertar(document.querySelector('[data-list="' + grupoDe(mes) + '"]'), row);
+        recalc();
+        if (trig) trig.focus();
+        toast('Movido a ' + label.replace('Este mes · ', ''), 'ok');
+      }).catch(function () { toast('Sin conexión', 'err'); });
+      return;
+    }
+    if (t.classList.contains('js-edit')) {
+      cerrarMenu(false);
+      fetch(BASE + '/api/get/' + id).then(function (r) { return r.json(); }).then(function (d) {
+        $('editId').value = id;
         $('fNombre').value = d.nombre || ''; $('fCategoria').value = d.categoria || ''; $('fPrioridad').value = d.prioridad || 'Media';
         $('fPrecio').value = d.precio_estimado || ''; $('fMes').value = d.mes_objetivo || ''; $('fTienda').value = d.tienda || '';
         $('fUrl').value = d.url || ''; $('fNotas').value = d.notas || ''; $('fEstado').value = d.estado || 'Pendiente';
         euModal.open('m-edit'); setTimeout(function () { $('fNombre').focus(); }, 20);
       }).catch(function () { toast('Sin conexión', 'err'); });
-    } else if ((t = e.target.closest('[data-comprar]'))) {
-      $('comprarId').value = t.dataset.comprar; $('comprarNombre').textContent = t.dataset.nombre;
-      $('cPrecioReal').value = +t.dataset.precio || '';
-      euModal.open('m-comprar'); setTimeout(function () { $('cPrecioReal').focus(); }, 20);
-    } else if ((t = e.target.closest('[data-descartar]'))) {
-      var id = t.dataset.descartar;
-      euConfirm('¿Descartar este artículo?', { danger: false, confirmLabel: 'Descartar' }).then(function (ok) {
+      return;
+    }
+    if (t.classList.contains('js-descartar')) {
+      cerrarMenu(false);
+      euConfirm('¿Descartar «' + row.dataset.nombre + '»?', { danger: false, confirmLabel: 'Descartar' }).then(function (ok) {
         if (ok) post(BASE + '/api/descartar/' + id).then(function () { toast('Descartado'); reload(); });
       });
-    } else if ((t = e.target.closest('[data-del]'))) {
-      var did = t.dataset.del;
-      euConfirm('¿Eliminar definitivamente este artículo?', { confirmLabel: 'Eliminar' }).then(function (ok) {
-        if (ok) post(BASE + '/api/delete/' + did).then(function () { toast('Eliminado'); reload(); });
+      return;
+    }
+    if (t.classList.contains('js-del')) {
+      cerrarMenu(false);
+      euConfirm('¿Eliminar definitivamente «' + row.dataset.nombre + '»?', { confirmLabel: 'Eliminar' }).then(function (ok) {
+        if (ok) post(BASE + '/api/delete/' + id).then(function () { row.remove(); recalc(); toast('Eliminado'); });
       });
     }
   });
+  root.addEventListener('submit', function (e) {
+    var form = e.target.closest('.pr-buy'); if (!form) return;
+    e.preventDefault();
+    var row = form.closest('.pr-row'), real = parseFloat(form.querySelector('input').value);
+    if (!(real >= 0)) { toast('Escribe el precio que pagaste', 'err'); form.querySelector('input').focus(); return; }
+    post(BASE + '/api/comprar/' + row.dataset.id, { precio_real: real }).then(function () { aComprado(row, real, 0); toast('¡Comprado!', 'win'); })
+      .catch(function () { toast('Sin conexión', 'err'); });
+  });
+  root.addEventListener('keydown', function (e) {
+    var form = e.target.closest && e.target.closest('.pr-buy');
+    if (form && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); form.querySelector('.js-buy-x').click(); }
+  });
+
   $('f-edit').addEventListener('submit', function (e) {
     e.preventDefault();
     var body = readFields('f');
     if (!body.nombre) { toast('El nombre es requerido', 'err'); $('fNombre').focus(); return; }
     body.estado = $('fEstado').value;
     post(BASE + '/api/update/' + $('editId').value, body).then(function () { euModal.close('m-edit'); toast('Guardado', 'ok'); reload(); })
-      .catch(function () { toast('Sin conexión', 'err'); });
-  });
-  $('f-comprar').addEventListener('submit', function (e) {
-    e.preventDefault();
-    post(BASE + '/api/comprar/' + $('comprarId').value, { precio_real: $('cPrecioReal').value }).then(function () { euModal.close('m-comprar'); toast('¡Comprado!', 'win'); reload(500); })
       .catch(function () { toast('Sin conexión', 'err'); });
   });
 
