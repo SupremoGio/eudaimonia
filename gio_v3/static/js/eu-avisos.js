@@ -46,7 +46,10 @@
   function setCount(n) {
     var btn = $('eu-avisos-btn'); if (!btn) return;
     n = Math.max(0, n | 0);
+    var prev = btn.getAttribute('aria-label');
     btn.setAttribute('aria-label', 'Avisos, ' + n + ' para hoy');
+    var live = $('eu-avisos-live');
+    if (live && prev && prev !== btn.getAttribute('aria-label')) live.textContent = n + ' aviso' + (n !== 1 ? 's' : '') + ' para hoy';
     var b = btn.querySelector('.eu-avisos-badge');
     if (n && !b) { b = doc.createElement('b'); b.className = 'eu-avisos-badge'; b.setAttribute('aria-hidden', 'true'); btn.appendChild(b); }
     if (b) { if (n) b.textContent = n; else b.remove(); }
@@ -187,15 +190,14 @@
     }).catch(function (e) { if (root.toast) root.toast(e.message || 'No se pudo posponer', 'err'); });
   }
 
-  /* ── Abrir / cerrar ──────────────────────────────────────────────────── */
-  function isOpen() { var p = $('eu-avisos'); return p && !p.hidden; }
+  /* ── Abrir / cerrar (euDialog: foco atrapado, Esc y regreso del foco) ── */
+  function isOpen() { var p = $('eu-avisos'); return p && root.euDialog && root.euDialog.isOpen(p); }
   function open() {
     var p = $('eu-avisos'), btn = $('eu-avisos-btn'); if (!p || isOpen()) return;
-    state.opener = btn;
-    p.hidden = false;
+    var movil = root.matchMedia && root.matchMedia('(max-width:767px)').matches;
+    root.euDialog.open(p, btn, { focus: false, scrimClose: true, lock: movil,
+      onClose: function () { doc.documentElement.classList.remove('eu-avisos-open'); } });
     doc.documentElement.classList.add('eu-avisos-open');
-    if (btn) btn.setAttribute('aria-expanded', 'true');
-    if (root.matchMedia && root.matchMedia('(max-width:767px)').matches) doc.documentElement.style.overflow = 'hidden';
     var bd = $('eu-avisos-bd');
     if (!state.data && bd) bd.innerHTML = root.euSkelHTML ? root.euSkelHTML(3, 52) : '';
     else render();
@@ -211,32 +213,13 @@
       if (bd) bd.innerHTML = '<div class="eu-avisos-empty"><b>No se pudieron cargar</b><span>Intenta de nuevo en un momento.</span></div>';
     });
   }
-  function close() {
-    var p = $('eu-avisos'), btn = $('eu-avisos-btn'); if (!p || !isOpen()) return;
-    p.hidden = true;
-    doc.documentElement.classList.remove('eu-avisos-open');
-    doc.documentElement.style.overflow = '';
-    if (btn) btn.setAttribute('aria-expanded', 'false');
-    if (state.opener && doc.contains(state.opener)) state.opener.focus();
-  }
-  function onKey(e) {
-    if (!isOpen()) return;
-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return; }
-    if (e.key !== 'Tab') return;
-    var box = $('eu-avisos').querySelector('.eu-avisos');
-    var f = [].filter.call(box.querySelectorAll(FOCUSABLE), function (n) { return n.offsetParent !== null; });
-    if (!f.length) return;
-    var a = f[0], z = f[f.length - 1];
-    if (e.shiftKey && (doc.activeElement === a || !box.contains(doc.activeElement))) { e.preventDefault(); z.focus(); }
-    else if (!e.shiftKey && (doc.activeElement === z || !box.contains(doc.activeElement))) { e.preventDefault(); a.focus(); }
-  }
+  function close() { var p = $('eu-avisos'); if (p && isOpen()) root.euDialog.close(p); }
 
   function init() {
     var btn = $('eu-avisos-btn'), p = $('eu-avisos');
     if (!btn || !p) return;
     btn.addEventListener('click', function () { isOpen() ? close() : open(); });
     p.addEventListener('click', function (e) {
-      if (e.target === p) { close(); return; }
       var t = e.target.closest('[data-avtab]');
       if (t) { state.tab = t.getAttribute('data-avtab'); render(); return; }
       var li = e.target.closest('.eu-avisos-row'); if (!li) return;
@@ -246,7 +229,6 @@
       else if (e.target.closest('[data-av-snz]')) snooze(li, a);
       else if (e.target.closest('[data-av-go]')) close();
     });
-    doc.addEventListener('keydown', onKey, true);
     // Lo que resuelve otro flujo (captura rápida, la página del módulo)
     // puede cambiar el conteo: se refresca al volver a la pestaña.
     doc.addEventListener('visibilitychange', function () { if (!doc.hidden && !isOpen()) load().catch(function () {}); });

@@ -98,7 +98,7 @@
     <i data-lucide="search"></i>Buscar o ejecutar…<span class="kbd" data-cmdk-hint>Ctrl K</span>
   </button>
   {#- Inicio lo vacía: el héroe ya muestra el XP de hoy (Inicio v2, Sprint 6). -#}
-  {% block tb_xp %}<span class="eu-badge eu-badge--xp eu-tb-xp" title="XP de hoy / meta diaria"><span class="eu-xp-today">—</span>&nbsp;/ {{ XP_DAILY_GOAL }} XP</span>{% endblock %}
+  {% block tb_xp %}<span class="eu-badge eu-badge--xp eu-tb-xp" title="XP de hoy / meta diaria" aria-live="polite"><span class="eu-xp-today">—</span>&nbsp;/ {{ XP_DAILY_GOAL }} XP</span>{% endblock %}
   <a class="eu-badge eu-badge--ec" href="/recompensas/" title="Euda-Credits"><i data-lucide="coins"></i><span class="eu-ec-val">—</span></a>
   {#- Campana del centro de avisos (handoff Avisos): entre EC y el avatar;
       en móvil, a la izquierda de EC (order en components.css). -#}
@@ -106,6 +106,7 @@
   <button type="button" id="eu-avisos-btn" class="eu-avisos-btn" aria-label="Avisos, {{ _avn }} para hoy" aria-haspopup="dialog" aria-controls="eu-avisos" aria-expanded="false" title="Avisos">
     <i data-lucide="bell"></i>{% if _avn %}<b class="eu-avisos-badge" aria-hidden="true">{{ _avn }}</b>{% endif %}
   </button>
+  <span class="sr-only" id="eu-avisos-live" aria-live="polite"></span>
   <button type="button" class="eu-iconbtn eu-tb-search-m" onclick="euCmdkOpen()" aria-label="Buscar"><i data-lucide="search"></i></button>
   <a class="eu-tb-avatar" href="/perfil/" aria-label="Tu perfil" title="Tu perfil"><i data-lucide="user-round"></i></a>
 </header>
@@ -138,7 +139,7 @@
 </nav>
 
 <!-- SHEET «Módulos» (móvil) — grid 4×3 desde NAV -->
-<div class="eu-scrim eu-scrim--sheet" id="eu-mod-sheet" hidden onclick="if(event.target===this) euModSheet(false)">
+<div class="eu-scrim eu-scrim--sheet" id="eu-mod-sheet" hidden>
   <div class="eu-sheet" role="dialog" aria-modal="true" aria-labelledby="eu-mod-title">
     <div class="eu-sheet-grab" aria-hidden="true"></div>
     <div class="eu-sheet-hd">
@@ -195,15 +196,16 @@
 <script type="application/json" id="eu-quick-data">{{ nav_quick|tojson }}</script>
 
 <!-- COMMAND PALETTE (⌘K) — Acciones · Páginas · Recientes · Sistema (NAV) -->
-<div class="eu-cmdk-scrim" id="eu-cmdk" hidden onclick="if(event.target===this) euCmdkClose()">
+<div class="eu-cmdk-scrim" id="eu-cmdk" hidden>
   <div class="eu-cmdk" role="dialog" aria-modal="true" aria-label="Buscar o ejecutar">
     <div class="eu-cmdk-in">
       <i data-lucide="search"></i>
-      <input type="text" id="eu-cmdk-input" placeholder="Buscar páginas o acciones… (griego o español)" autocomplete="off" spellcheck="false"
+      <input type="text" id="eu-cmdk-input" aria-label="Buscar páginas o acciones" placeholder="Buscar páginas o acciones… (griego o español)" autocomplete="off" spellcheck="false"
              role="combobox" aria-expanded="true" aria-controls="eu-cmdk-list" aria-autocomplete="list">
       <span class="kbd">esc</span>
     </div>
-    <div class="eu-cmdk-list" id="eu-cmdk-list" role="listbox"></div>
+    <div class="eu-cmdk-list" id="eu-cmdk-list" role="listbox" aria-label="Resultados"></div>
+    <span class="sr-only" id="eu-cmdk-status" role="status" aria-live="polite"></span>
     <form class="eu-cmdk-form eu-quick-form" id="eu-cmdk-form" hidden novalidate autocomplete="off"></form>
     <div class="eu-cmdk-ft" id="eu-cmdk-ft">
       <span><span class="kbd">↑</span><span class="kbd">↓</span>navegar</span>
@@ -231,66 +233,25 @@
             transition:width .3s ease, opacity .2s ease;">
 </div>
 
+<script src="{{ url_for('static', filename='js/eu-dialog.js') }}"></script>
 <script>
-/* ── Sheet «Módulos» (móvil): role=dialog, Esc/scrim/✕, el foco va al primer
-   módulo al abrir y regresa al botón al cerrar. ── */
+/* ── Diálogos (handoff A11y, S2): la hoja de Módulos, los ui.modal (euModal)
+   y ⌘K usan euDialog (static/js/eu-dialog.js): role/aria-modal/
+   aria-labelledby, foco atrapado, Esc y regreso del foco al disparador. ── */
 function euModSheet(open){
   var sh=document.getElementById('eu-mod-sheet'), btn=document.getElementById('eu-mod-btn');
   if(!sh) return;
-  sh.hidden=!open;
-  if(btn) btn.setAttribute('aria-expanded', open?'true':'false');
-  document.documentElement.style.overflow = open ? 'hidden' : '';
-  if(open){ var f=sh.querySelector('.eu-modgrid a'); if(f) f.focus(); }
-  else if(btn){ btn.focus(); }
+  if(open) euDialog.open(sh, btn, {focus: '.eu-modgrid a', scrimClose: true});
+  else euDialog.close(sh);
 }
-document.addEventListener('keydown',function(e){
-  var sh=document.getElementById('eu-mod-sheet');
-  if(e.key==='Escape' && sh && !sh.hidden) euModSheet(false);
-});
 
 /* ── Modales V2 (macro ui.modal): <div class="eu-scrim" id hidden> ─────────
-   euModal.open(id) / euModal.close(id). role=dialog, foco atrapado, Esc
-   cierra, el foco vuelve a quien lo abrió. En <768px se ve como bottom
-   sheet (mismo markup, ver components.css). ── */
-window.euModal = (function(){
-  var stack = [];
-  function focusables(el){
-    return [].slice.call(el.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'))
-      .filter(function(n){ return n.offsetParent !== null; });
-  }
-  function open(id){
-    var sc = document.getElementById(id); if (!sc || !sc.hidden) return;
-    stack.push({id: id, opener: document.activeElement});
-    sc.hidden = false;
-    document.documentElement.style.overflow = 'hidden';
-    var f = focusables(sc); var first = f.find(function(n){ return /INPUT|SELECT|TEXTAREA/.test(n.tagName); }) || f[0];
-    if (first) setTimeout(function(){ first.focus(); }, 10);
-    if (!sc._euBound) {
-      sc._euBound = true;
-      sc.addEventListener('mousedown', function(e){ if (e.target === sc) close(id); });
-    }
-  }
-  function close(id){
-    var sc = document.getElementById(id); if (!sc || sc.hidden) return;
-    sc.hidden = true;
-    var i = -1; stack.forEach(function(s, k){ if (s.id === id) i = k; });
-    var entry = i >= 0 ? stack.splice(i, 1)[0] : null;
-    if (!stack.length) document.documentElement.style.overflow = '';
-    if (entry && entry.opener && entry.opener.focus) entry.opener.focus();
-  }
-  document.addEventListener('keydown', function(e){
-    if (!stack.length) return;
-    var top = document.getElementById(stack[stack.length - 1].id);
-    if (e.key === 'Escape') { e.preventDefault(); close(top.id); return; }
-    if (e.key === 'Tab') {
-      var f = focusables(top); if (!f.length) return;
-      var a = f[0], z = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); }
-      else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); }
-    }
-  });
-  return {open: open, close: close};
-})();
+   euModal.open(id) / euModal.close(id), sobre euDialog. En <768px se ve
+   como bottom sheet (mismo markup, ver components.css). ── */
+window.euModal = {
+  open: function(id){ var sc=document.getElementById(id); if (sc && sc.hidden) euDialog.open(sc, document.activeElement, {scrimClose: true}); },
+  close: function(id){ var sc=document.getElementById(id); if (sc) euDialog.close(sc); }
+};
 
 /* ── Sidebar: «Más…» despliega el resto de subpáginas; colapsar a riel ── */
 function euSbMore(btn){
@@ -614,6 +575,8 @@ document.addEventListener('keydown', (e) => {
       });
     });
     list.innerHTML = html || '<div class="eu-cmdk-empty">Sin resultados para «' + esc(query) + '»</div>';
+    var st = document.getElementById('eu-cmdk-status');      // resultados en vivo (aria-live)
+    if (st) st.textContent = query ? (shown.length ? shown.length + ' resultado' + (shown.length !== 1 ? 's' : '') : 'Sin resultados') : '';
     try { lucide.createIcons(); } catch(e){}
     setActive(0);
     footer(); describeNow();
@@ -652,18 +615,10 @@ document.addEventListener('keydown', (e) => {
   if (qform) qform.addEventListener('keydown', function(e){ if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeForm(); } });
 
   window.euCmdkOpen = function(){
-    opener = document.activeElement;
-    scrim.hidden = false;
-    document.documentElement.style.overflow = 'hidden';
     closeForm(); input.value = ''; render('');
-    setTimeout(function(){ input.focus(); }, 10);
+    euDialog.open(scrim, document.activeElement, {focus: input, scrimClose: true});
   };
-  window.euCmdkClose = function(){
-    if (scrim.hidden) return;
-    scrim.hidden = true;
-    document.documentElement.style.overflow = '';
-    if (opener && opener.focus) opener.focus();
-  };
+  window.euCmdkClose = function(){ euDialog.close(scrim); };
 
   input.addEventListener('input', function(){ render(input.value); });
   input.addEventListener('keydown', function(e){
