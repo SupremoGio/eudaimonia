@@ -21,6 +21,13 @@ from modules.recompensas import routes as rw
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
+def _ahora():
+    """Reloj de la app (zona de la app) sin tz: así guarda la app sus fechas; datetime.now()
+    del servidor (UTC) se desfasa un día cerca de la medianoche."""
+    from utils import now_local
+    return now_local().replace(tzinfo=None)
+
+
 def _client(fin_ok=False):
     from app import create_app
     app = create_app()
@@ -115,7 +122,7 @@ def test_requisito_nivel_con_eta(test_db):
 def test_requisito_espera_abreviado(test_db, monkeypatch):
     _limpia()
     _ec(1000)
-    _reward('Cine', 15, cooldown_days=7, last_redeemed=(datetime.now() - timedelta(days=2)).isoformat())
+    _reward('Cine', 15, cooldown_days=7, last_redeemed=(_ahora() - timedelta(days=2)).isoformat())
     r = rw.tienda()['rewards'][0]
     assert r['status'] == 'wait' and r['req'] == {**r['req'], 'tipo': 'espera', 'texto': 'En 5 días'}
     assert rw._espera_corta('Ya van 2 este fin de semana · disponible el sáb 15 nov') == '2/2 · sáb 15'

@@ -82,15 +82,11 @@ NAV = [
 # Acciones de ⌘K. Por ahora navegan a la pantalla donde se hace cada cosa;
 # cuando esas pantallas acepten un parámetro para abrir su formulario
 # directo (Fase 3), basta con cambiar la url aquí.
+# Lo que es un registro (gasto, tarea, actividad…) vive en QUICK; aquí queda lo
+# que no se captura en una frase.
 ACTIONS = [
-    {'id': 'marcar', 'label': 'Marcar actividad', 'icon': 'check-circle-2', 'url': '/actividades/',
-     'keywords': 'acta registrar habito xp'},
-    {'id': 'gasto', 'label': 'Registrar gasto', 'icon': 'plus', 'url': '/finanzas/estados/',
-     'keywords': 'movimiento gasto oikonomia finanzas'},
     {'id': 'estado', 'label': 'Subir estado de cuenta', 'icon': 'upload', 'url': '/finanzas/estados/',
      'keywords': 'pdf banco bbva hsbc invex importar'},
-    {'id': 'tarea', 'label': 'Nueva tarea', 'icon': 'list-plus', 'url': '/gtd/',
-     'keywords': 'praxis gtd inbox'},
     {'id': 'prenda', 'label': 'Nueva prenda', 'icon': 'shirt', 'url': '/guardarropa/?nueva=1',
      'keywords': 'ropa guardarropa'},
     # Los recordatorios son una sección de Perfil (no una página propia), así
@@ -99,16 +95,131 @@ ACTIONS = [
      'keywords': 'recordatorio nuevo pendiente aviso alarma vencido perfil'},
 ]
 
-# Bottom nav (móvil): 5 destinos. 'modulos' no navega, abre el sheet.
+# Captura rápida (handoff Captura, nota 5): una sola fuente para la hoja «+»
+# del móvil y para ⌘K. Cada registro postea al endpoint que YA usa su módulo
+# (no hay endpoints de escritura nuevos para los datos del módulo):
+#   post      {method, url, body}: en body, "{campo}" toma el valor del campo y
+#             "{today}", "{tomorrow}", "{hora}" se resuelven en el cliente.
+#   id_from   llave de la respuesta con el id creado (para then/undo: "{id}").
+#   then      pasos extra condicionados a un campo (mismo formato que post).
+#   undo      cómo deshacer (solo si el módulo ya tiene borrado/undo).
+#   fields    name, label, kind (money|number|text|chips), options (fijas) o
+#             options_from (las da GET /api/quick/options), default, fallback.
+#   perm      permiso de sesión requerido ('fin_ok'); sin él no se envía.
+#   url       respaldo: la pantalla con el formulario completo (⌘↵ / sin post).
+# Endpoints verificados en cada routes.py:
+#   gasto       POST /finanzas/estados/api/transactions · DELETE …/<id>
+#   comida      POST /nutricion/api/cumplir (+ /api/desliz) · POST /api/descumplir
+#   tarea/nota  POST /gtd/api/task (+ /classify, /update) · DELETE /gtd/api/task/<id>
+#   actividad   POST /actividades/api/activity/log · POST …/activity/undo/<log_id>
+#   peso        POST /perfil/api/update_measurement (pide fin_ok, como en Perfil)
+#   baile       POST /eurythmia/api/session
+#   km          POST /harma/api/vehiculo (solo km_actual; el odómetro no baja)
+#   medicamento Salud no tiene «marcar toma» todavía → solo url de respaldo.
+QUICK = [
+    {'id': 'gasto', 'label': 'Gasto', 'icon': 'wallet', 'cat': 'oikonomia', 'perm': 'fin_ok',
+     'keywords': ['gasto', 'pague', 'pagué', 'compre', 'compré'],
+     'url': '/finanzas/estados/',
+     'fields': [
+         {'name': 'monto', 'label': 'Monto', 'kind': 'money', 'placeholder': '0'},
+         {'name': 'concepto', 'label': 'Concepto', 'kind': 'text', 'placeholder': 'Tacos, gasolina…', 'fallback': 'Gasto {hora}'},
+         {'name': 'categoria', 'label': 'Categoría', 'kind': 'chips', 'options_from': 'categorias'},
+         {'name': 'cuenta', 'label': 'Cuenta', 'kind': 'chips', 'options_from': 'cuentas'},
+     ],
+     'post': {'method': 'POST', 'url': '/finanzas/estados/api/transactions',
+              'body': {'fecha': '{today}', 'descripcion': '{concepto}', 'monto': '{monto}',
+                       'categoria': '{categoria}', 'banco': '{cuenta}', 'tipo': 'GASTO'}},
+     'id_from': 'id',
+     'undo': {'method': 'DELETE', 'url': '/finanzas/estados/api/transactions/{id}'}},
+    {'id': 'comida', 'label': 'Comida', 'icon': 'salad', 'cat': 'hegemonikon', 'reward': '+XP',
+     'keywords': ['comida', 'comi', 'comí', 'desayuno', 'cena', 'colacion', 'colación', 'snack'],
+     'url': '/nutricion/',
+     'fields': [
+         {'name': 'meal', 'label': 'Cuál', 'kind': 'chips', 'options_from': 'comidas'},
+         {'name': 'como', 'label': 'Cómo fue', 'kind': 'chips', 'default': 'limpia',
+          'options': [{'value': 'limpia', 'label': 'Limpia'}, {'value': 'desliz', 'label': 'Con desliz'}]},
+     ],
+     'post': {'method': 'POST', 'url': '/nutricion/api/cumplir', 'body': {'meal_id': '{meal}'}},
+     'then': [{'if': {'como': 'desliz'}, 'method': 'POST', 'url': '/nutricion/api/desliz',
+               'body': {'trig_id': 'otro', 'note': 'Captura rápida'}}],
+     'undo': {'method': 'POST', 'url': '/nutricion/api/descumplir', 'body': {'meal_id': '{meal}'}}},
+    {'id': 'tarea', 'label': 'Tarea', 'icon': 'list-checks', 'cat': None,
+     'keywords': ['tarea', 'pendiente', 'todo'],
+     'url': '/gtd/',
+     'fields': [
+         {'name': 'texto', 'label': 'Qué', 'kind': 'text', 'placeholder': 'Llamar al banco'},
+         {'name': 'cuando', 'label': 'Cuándo', 'kind': 'chips', 'default': 'inbox',
+          'options': [{'value': 'hoy', 'label': 'Hoy'}, {'value': 'manana', 'label': 'Mañana'},
+                      {'value': 'semana', 'label': 'Esta semana'}, {'value': 'inbox', 'label': 'Inbox'}]},
+     ],
+     'post': {'method': 'POST', 'url': '/gtd/api/task', 'body': {'texto': '{texto}', 'tipo': 'tarea'}},
+     'id_from': 'id',
+     'then': [{'if': {'cuando': 'hoy'}, 'method': 'POST', 'url': '/gtd/api/task/{id}/classify', 'body': {'importante': 1, 'urgente': 1}},
+              {'if': {'cuando': 'semana'}, 'method': 'POST', 'url': '/gtd/api/task/{id}/classify', 'body': {'importante': 1, 'urgente': 0}},
+              {'if': {'cuando': 'manana'}, 'method': 'POST', 'url': '/gtd/api/task/{id}/update', 'body': {'fecha_limite': '{tomorrow}'}}],
+     'undo': {'method': 'DELETE', 'url': '/gtd/api/task/{id}'}},
+    {'id': 'actividad', 'label': 'Actividad', 'icon': 'circle-check', 'cat': None, 'reward': '+XP',
+     'keywords': ['hice', 'marcar', 'actividad'],
+     'url': '/actividades/',
+     'fields': [{'name': 'key', 'label': 'Cuál', 'kind': 'chips', 'options_from': 'actividades'}],
+     'post': {'method': 'POST', 'url': '/actividades/api/activity/log', 'body': {'key': '{key}'}},
+     'id_from': 'log_id',
+     'undo': {'method': 'POST', 'url': '/actividades/api/activity/undo/{id}'}},
+    {'id': 'peso', 'label': 'Peso', 'icon': 'scale', 'cat': 'hegemonikon', 'perm': 'fin_ok',
+     'keywords': ['peso', 'kg', 'pesé', 'pese'],
+     'url': '/perfil/?sec=medidas',
+     'fields': [{'name': 'kg', 'label': 'Kg', 'kind': 'number', 'placeholder': '78.4', 'step': 'any'}],
+     'post': {'method': 'POST', 'url': '/perfil/api/update_measurement', 'body': {'key': 'peso', 'value': '{kg}'}}},
+    {'id': 'baile', 'label': 'Sesión de baile', 'icon': 'music-2', 'cat': 'eurythmia', 'reward': '+XP',
+     'keywords': ['baile', 'salsa', 'bailé', 'baile'],
+     'url': '/eurythmia/',
+     'fields': [
+         {'name': 'min', 'label': 'Minutos', 'kind': 'chips', 'options_from': 'minutos'},
+         {'name': 'flow', 'label': 'Cómo se sintió', 'kind': 'chips', 'default': 3,
+          'options': [{'value': 1, 'label': '1 · trabado'}, {'value': 2, 'label': '2'}, {'value': 3, 'label': '3 · fluido'},
+                      {'value': 4, 'label': '4'}, {'value': 5, 'label': '5 · en la música'}]},
+     ],
+     'post': {'method': 'POST', 'url': '/eurythmia/api/session', 'body': {'min': '{min}', 'flow': '{flow}'}}},
+    {'id': 'km', 'label': 'Kilometraje', 'icon': 'gauge', 'cat': 'harma',
+     'keywords': ['km', 'odometro', 'odómetro', 'kilometraje'],
+     'url': '/harma/',
+     'fields': [{'name': 'km', 'label': 'Km', 'kind': 'number', 'placeholder': '84200'}],
+     'post': {'method': 'POST', 'url': '/harma/api/vehiculo', 'body': {'km_actual': '{km}'}}},
+    {'id': 'medicamento', 'label': 'Tomé medicina', 'icon': 'pill', 'cat': 'hegemonikon',
+     'keywords': ['medicina', 'pastilla', 'tome', 'tomé', 'med'],
+     'url': '/bienestar/salud/', 'fields': []},
+    {'id': 'nota', 'label': 'Nota', 'icon': 'notebook-pen', 'cat': None,
+     'keywords': ['nota', 'idea', 'apunte'],
+     'url': '/gtd/',
+     'fields': [{'name': 'texto', 'label': 'Texto', 'kind': 'text', 'placeholder': 'Algo que no quieres olvidar'}],
+     'post': {'method': 'POST', 'url': '/gtd/api/task', 'body': {'texto': '{texto}', 'tipo': 'idea'}},
+     'id_from': 'id',
+     'undo': {'method': 'DELETE', 'url': '/gtd/api/task/{id}'}},
+]
+_QUICK_BY_ID = {q['id']: q for q in QUICK}
+
+
+def quick_for(session_obj, uses=None):
+    """Registros que el usuario puede usar (sin los que piden un permiso que no
+    tiene), ordenados por uso (desc) y luego por el orden de QUICK."""
+    ok = [q for q in QUICK if not q.get('perm') or (session_obj or {}).get(q['perm'])]
+    uses = uses or {}
+    orden = {q['id']: i for i, q in enumerate(QUICK)}
+    return sorted(ok, key=lambda q: (-uses.get(q['id'], 0), orden[q['id']]))
+
+
+# Bottom nav (móvil): Inicio · Acta · + · Praxis · Módulos (handoff Captura,
+# notas 2–4). 'registrar' abre la hoja de captura rápida y 'modulos' el sheet;
+# «Tú» salió de la barra: Perfil, Logros y Recompensas viven en Módulos y en
+# el avatar. Acta y Praxis llevan contador (GET /api/quick/badges).
 BOTTOM_NAV = [
     {'id': 'inicio', 'label': 'Inicio', 'icon': 'house', 'url': '/'},
-    {'id': 'acta', 'label': 'Acta', 'icon': 'scroll-text', 'url': '/actividades/'},
-    {'id': 'praxis', 'label': 'Praxis', 'icon': 'list-checks', 'url': '/gtd/'},
+    {'id': 'acta', 'label': 'Acta', 'icon': 'scroll-text', 'url': '/actividades/', 'badge': 'acta'},
+    {'id': 'registrar', 'label': 'Registrar', 'icon': 'plus', 'url': None},
+    {'id': 'praxis', 'label': 'Praxis', 'icon': 'list-checks', 'url': '/gtd/', 'badge': 'praxis'},
     {'id': 'modulos', 'label': 'Módulos', 'icon': 'layout-grid', 'url': None},
-    {'id': 'tu', 'label': 'Tú', 'icon': 'user-round', 'url': '/perfil/'},
 ]
 _BOTTOM_DIRECT = {'inicio', 'acta', 'praxis'}
-_TU_GROUP = 'Tú'
 
 # Vistas internas de una pantalla (?vista=… o ?tab=…): la barra las conoce y
 # muestra «Módulo › Vista» con volver al módulo (handoff Navegación, nota 5).
@@ -199,6 +310,16 @@ def page_info():
     return {'title': c['nav_title'], 'cat': it.get('cat') if it else None}
 
 
+def _quick_ctx():
+    """QUICK filtrado por permisos y ordenado por uso, para la hoja y ⌘K."""
+    try:
+        from flask import session
+        from modules.quick import usos
+        return quick_for(session, usos())
+    except Exception:
+        return quick_for({}, {})
+
+
 def nav_context():
     """Variables de navegación para layout_sub.html (context processor)."""
     try:
@@ -238,16 +359,13 @@ def nav_context():
 
     if item and item['id'] in _BOTTOM_DIRECT:
         bottom_active = item['id']
-    elif group and group['group'] == _TU_GROUP:
-        bottom_active = 'tu'
     elif item:
         bottom_active = 'modulos'
     else:
         bottom_active = None
 
     # Sheet de Módulos: todo lo que no tiene pestaña propia en la bottom nav.
-    sheet = [it for g in NAV for it in g['items']
-             if it['id'] not in _BOTTOM_DIRECT and it['id'] != 'perfil']
+    sheet = [it for g in NAV for it in g['items'] if it['id'] not in _BOTTOM_DIRECT]
 
     return {
         'NAV': NAV,
@@ -263,5 +381,6 @@ def nav_context():
         'nav_sheet': sheet,
         'nav_sb_max': SIDEBAR_MAX_CHILDREN,
         'nav_cmdk': {'pages': _CMDK_PAGES, 'actions': _CMDK_ACTIONS},
+        'nav_quick': _quick_ctx(),
         'XP_DAILY_GOAL': XP_DAILY_GOAL,
     }

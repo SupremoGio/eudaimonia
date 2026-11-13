@@ -1,7 +1,7 @@
 # Estado de los handoffs v2 (Fase 0 de `design_handoff_ORDEN.md`)
 
 Revisado el 2026-11-12 contra `main`, después del merge de Nutrición v2 (PR #121).
-**Los 16 paquetes, 70 sprints en total, están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
+**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2) y Captura rápida (3) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
 Las rutas son relativas a `gio_v3/`.
 
 Algunos paquetes se implementaron en un solo commit con todos sus sprints. En esos casos se repite el commit y la evidencia de cada sprint apunta a su pieza.
@@ -78,6 +78,11 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 | Nutrición v2 | S2 · Hoy por hora + «¿Cómo cayó?» | hecho | `d48fef6` | `templates/nutricion/index.html`, `static/js/nutricion.js` |
 | Nutrición v2 | S3 · el día, Bristol y disparadores | hecho | `d48fef6` | `disparadores_30d` en `modules/nutricion/routes.py` |
 | Nutrición v2 | S4 · un solo recetario | hecho | `d48fef6` | `modules/nutricion/routes.py:503` (`migrar_banco`), `recetas.fodmap` y `recetas.momento` |
+| Navegación | S1 · `ui.page_head`, `VIEWS` y `nav_view` | hecho | `637162d` | `modules/nav.py` (`VIEWS`, `view_of`, `page_info`), `templates/_ui/macros.html` (`page_head`) |
+| Navegación | S2 · la regla en todas las pantallas | hecho | `637162d` | `tests/test_nav.py` (un h1 por ruta de NAV = `nav_title`, sin lemas) |
+| Captura rápida | S1 · registro `QUICK` + `/api/quick/options` | hecho | rama actual | `modules/nav.py` (`QUICK`, `quick_for`), `modules/quick.py` |
+| Captura rápida | S2 · «+» en la barra, hoja y contadores | hecho | rama actual | `templates/eu/layout_sub.html` (`#eu-quick`), `static/js/eu-quick.js`, `/api/quick/badges` |
+| Captura rápida | S3 · ⌘K que registra | hecho | rama actual | `eu-quick.js` (`parse`), `tests/quick_parse_cases.json` |
 
 ## Notas de la Fase 1 que ya quedaron resueltas
 - **XP negativo del desliz (antes de 1.2):** el motor no acepta montos negativos, porque `process_activity` aplica `max(1, …)`. El desliz se descuenta con `engine._award_xp(-pen, 'activity', …, log_id)`, y `remove_activity` lo revierte. Está documentado en `modules/nutricion/routes.py`, sección «XP por el motor».

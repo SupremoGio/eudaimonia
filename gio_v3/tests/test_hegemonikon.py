@@ -19,6 +19,13 @@ from modules.bienestar import salud as sl
 from modules.bienestar import routes as br
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _ahora():
+    """Reloj de la app (zona de la app) sin tz: así guarda la app sus fechas; datetime.now()
+    del servidor (UTC) se desfasa un día cerca de la medianoche."""
+    from utils import now_local
+    return now_local().replace(tzinfo=None)
 HOY = today_date()
 
 
@@ -206,7 +213,7 @@ def test_hub_peso_con_spark(client):
     with database.get_db() as db:
         for i, v in enumerate([79.6, 79.0, 78.4]):
             db.execute("INSERT INTO body_measurements_history (key, value, recorded_at) VALUES ('peso',?,?)",
-                       (str(v), (datetime.now() - timedelta(days=12 - i * 3)).isoformat()))
+                       (str(v), (_ahora() - timedelta(days=12 - i * 3)).isoformat()))
         db.commit()
     hoy = client.get('/bienestar/').get_data(as_text=True).split('id="hg-hoy"', 1)[1].split('</section>', 1)[0]
     assert '78.4 kg' in hoy and '-0.6 en 3 d · hace 6 d' in hoy and 'is-good' in hoy
