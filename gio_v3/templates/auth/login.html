@@ -42,7 +42,7 @@
         <p class="t-meta">{{ 'Introduce tu contraseña para continuar.' if has_pass else 'Es la primera vez: define la contraseña general de la app (mínimo 4 caracteres).' }}</p>
       </div>
       {# Usuario fijo e invisible: ayuda a los gestores de contraseñas a guardar el acceso #}
-      <input type="text" name="username" value="eudaimonia" autocomplete="username" hidden>
+      <input type="text" name="username" value="eudaimonia" autocomplete="username" aria-label="Usuario" hidden>
       {% if has_pass %}
       <div class="eu-field">
         <label class="eu-label" for="au-pw">Contraseña</label>
