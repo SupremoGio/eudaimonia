@@ -82,7 +82,7 @@
 .hm-ok-btn > svg{width:14px;height:14px;color:var(--success-fg)}
 .hm-okrow{display:flex;align-items:center;gap:var(--sp-4);width:100%;min-height:44px;padding:4px var(--sp-4);border:0;border-top:1px solid var(--border-subtle);background:var(--bg-sunken);color:var(--fg-2);font:inherit;font-size:var(--fs-13);text-align:left;cursor:pointer}
 .hm-okrow:last-child{border-radius:0 0 var(--r-lg) var(--r-lg)}
-.hm-okcat{font-size:var(--fs-11);color:var(--fg-4)}
+.hm-okcat{font-size:var(--fs-11);color:var(--fg-3)}
 
 /* ── Lateral (nota 5) ── */
 .hm-box{display:flex;flex-direction:column;border-radius:var(--r-lg);background:var(--bg-surface);border:1px solid var(--border-subtle)}
