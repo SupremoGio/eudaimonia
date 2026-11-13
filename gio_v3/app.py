@@ -201,7 +201,21 @@ def create_app():
 
     @app.errorhandler(429)
     def too_many_requests(e):
-        return jsonify({'ok': False, 'error': 'Demasiados intentos. Espera un momento.'}), 429
+        # retry_after (s) + Retry-After: login.js muestra «Espera N s» con el
+        # botón deshabilitado (Remates · Login S1). Se toma de la ventana del
+        # límite que se rebasó; si no se puede leer, un minuto.
+        import math, time as _t
+        espera = 60
+        try:
+            lim = limiter.current_limit
+            if lim is not None and lim.reset_at:
+                espera = max(1, math.ceil(lim.reset_at - _t.time()))
+        except Exception:
+            pass
+        r = jsonify({'ok': False, 'error': f'Demasiados intentos. Espera {espera} s.',
+                     'retry_after': espera})
+        r.headers['Retry-After'] = str(espera)
+        return r, 429
 
     from flask_wtf.csrf import CSRFError
     @app.errorhandler(CSRFError)

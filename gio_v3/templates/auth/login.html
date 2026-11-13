@@ -1,5 +1,10 @@
 {# Login — Design System V2 · pantalla 01. Pantalla sin shell (sin sidebar
-   ni bottom nav): comparte solo el <head> con layout_sub.html. #}
+   ni bottom nav): comparte solo el <head> con layout_sub.html.
+   Remates · Login S1: una sola cita (móvil en el bloque de marca, escritorio
+   en el hero), mínimo 8 en el alta, mostrar/ocultar y cuenta regresiva. #}
+{% import '_ui/macros.html' as ui %}
+{% set QUOTE = '«La felicidad de tu vida depende de la calidad de tus pensamientos.»' %}
+{% set QUOTE_BY = 'Marco Aurelio · Meditaciones V.16' %}
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
@@ -16,6 +21,7 @@
       <div class="t-eyebrow">{{ hero.fecha }} · Día {{ hero.dia }}</div>
       <h1 class="t-hero au-hero-t">Cada día,<br><span>un acto de carácter.</span></h1>
       <p class="t-body au-hero-p">Hábitos, finanzas, salud y aprendizaje en un solo lugar. Cada acción suma XP hacia Eudaimón.</p>
+      <blockquote class="t-quote au-hero-q">{{ QUOTE }}<cite class="t-meta">{{ QUOTE_BY }}</cite></blockquote>
     </div>
     {% if hero.stats %}
     <dl class="eu-hstack au-stats">
@@ -32,38 +38,38 @@
     <div class="au-mob">
       <div class="eu-level-seal au-seal" aria-hidden="true"><i data-lucide="landmark"></i></div>
       <div class="au-word">EUDAIMONIA</div>
-      <blockquote class="t-quote au-mob-q">«La felicidad de tu vida depende de la calidad de tus pensamientos.»</blockquote>
-      <div class="t-meta">Marco Aurelio · Meditaciones V.16</div>
+      <blockquote class="t-quote au-mob-q">{{ QUOTE }}<cite class="t-meta">{{ QUOTE_BY }}</cite></blockquote>
     </div>
 
     <form class="eu-vstack au-form" id="au-form" data-mode="{{ 'login' if has_pass else 'setup' }}" novalidate>
       <div class="au-head">
         <h2 class="t-page">{{ 'Bienvenido de vuelta' if has_pass else 'Crea tu contraseña' }}</h2>
-        <p class="t-meta">{{ 'Introduce tu contraseña para continuar.' if has_pass else 'Es la primera vez: define la contraseña general de la app (mínimo 4 caracteres).' }}</p>
+        <p class="t-meta">{{ 'Introduce tu contraseña para continuar.' if has_pass else 'Es la primera vez: define la contraseña general de la app (mínimo ' ~ min_len ~ ' caracteres).' }}</p>
       </div>
       {# Usuario fijo e invisible: ayuda a los gestores de contraseñas a guardar el acceso #}
       <input type="text" name="username" value="eudaimonia" autocomplete="username" aria-label="Usuario" hidden>
       {% if has_pass %}
       <div class="eu-field">
         <label class="eu-label" for="au-pw">Contraseña</label>
-        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw" type="password" maxlength="64" autocomplete="current-password" autofocus aria-describedby="au-err"></div>
+        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw" type="password" maxlength="64" autocomplete="current-password" autofocus aria-describedby="au-err">{{ ui.iconbtn('eye', 'Mostrar contraseña', pressed=False, **{'data-eye': 'au-pw'}) }}</div>
       </div>
       {% else %}
       <div class="eu-field">
         <label class="eu-label" for="au-pw">Nueva contraseña</label>
-        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw" type="password" maxlength="64" autocomplete="new-password" autofocus aria-describedby="au-err"></div>
+        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw" type="password" maxlength="64" minlength="{{ min_len }}" autocomplete="new-password" autofocus aria-describedby="au-pw-n au-err">{{ ui.iconbtn('eye', 'Mostrar contraseña', pressed=False, **{'data-eye': 'au-pw'}) }}</div>
+        <div class="eu-help num au-count" id="au-pw-n" data-min="{{ min_len }}" aria-live="polite">0 de {{ min_len }}</div>
       </div>
       <div class="eu-field">
         <label class="eu-label" for="au-pw2">Confirmar contraseña</label>
-        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw2" type="password" maxlength="64" autocomplete="new-password" aria-describedby="au-err"></div>
+        <div class="eu-input-wrap"><i data-lucide="lock"></i><input class="eu-input au-input" id="au-pw2" type="password" maxlength="64" autocomplete="new-password" aria-describedby="au-err2">{{ ui.iconbtn('eye', 'Mostrar confirmación', pressed=False, **{'data-eye': 'au-pw2'}) }}</div>
+        <div class="eu-help au-err2" id="au-err2" aria-live="polite" hidden><i data-lucide="alert-circle"></i><span>Las contraseñas no coinciden</span></div>
       </div>
       {% endif %}
       <div class="eu-err au-err" id="au-err" role="alert" hidden><i data-lucide="alert-circle"></i><span></span></div>
       <button type="submit" class="eu-btn eu-btn--primary eu-btn--lg eu-btn--block" id="au-submit">
-        {{ 'Entrar' if has_pass else 'Guardar y entrar' }}<span class="kbd au-kbd" aria-hidden="true">↵</span>
+        <span class="au-lbl">{{ 'Entrar' if has_pass else 'Guardar y entrar' }}</span><span class="kbd au-kbd" aria-hidden="true">↵</span>
       </button>
       <div class="t-meta au-secure"><i data-lucide="shield-check"></i>Sesión segura · 8 horas</div>
-      <blockquote class="t-quote au-q">«No es que tengamos poco tiempo, sino que perdemos mucho.»<cite class="t-meta">Séneca</cite></blockquote>
     </form>
   </section>
 </main>

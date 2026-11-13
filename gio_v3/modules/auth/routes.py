@@ -5,6 +5,8 @@ from extensions import limiter
 
 auth_bp = Blueprint('auth', __name__, template_folder='../../templates')
 
+MIN_PASS = 8   # Remates · Login S1 (antes 4); login.js lo lee de data-min
+
 
 def _get_pass_hash():
     with get_db() as db:
@@ -43,7 +45,7 @@ def login_page():
     if session.get('app_ok'):
         return redirect('/')
     has_pass = bool(_get_pass_hash())
-    return render_template('auth/login.html', has_pass=has_pass,
+    return render_template('auth/login.html', has_pass=has_pass, min_len=MIN_PASS,
                            hero=_login_hero(with_stats=has_pass))
 
 
@@ -95,8 +97,8 @@ def login():
 def setup():
     d = request.get_json(force=True)
     new_pw = d.get('password', '')
-    if not new_pw or len(new_pw) < 4:
-        return jsonify({'ok': False, 'error': 'Mínimo 4 caracteres'}), 400
+    if not new_pw or len(new_pw) < MIN_PASS:
+        return jsonify({'ok': False, 'error': f'Mínimo {MIN_PASS} caracteres'}), 400
     current_hash = _get_pass_hash()
     if current_hash is not None and not session.get('app_ok'):
         current_pw = d.get('current_password', '')

@@ -12,7 +12,7 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
 
 **Resumen:**
 - Los 16 paquetes del ORDEN (70 sprints) y los transversales están **hechos**.
-- De **Remates**, Login S1 y Recetas S1 están **parciales** y Wishlist S1 está **pendiente**.
+- De **Remates**, Login S1 está **hecho**, Recetas S1 está **parcial** y Wishlist S1 está **pendiente**.
 
 ## Inicio v2
 
@@ -222,7 +222,7 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
 
 | Sprint | Estado | Evidencia (archivo:línea) | Falta |
 |---|---|---|---|
-| Login S1 · pulido | parcial | ya existe: límite de 5 por minuto en el endpoint, `modules/auth/routes.py:79` (`@limiter.limit("5 per minute; 20 per hour")`), y el 429 se muestra como texto en `static/js/login.js:45`; `aria-busy` en el botón, `login.js:28`, `:35` | 1) Hay dos citas: la de Marco Aurelio en `templates/auth/login.html:36` y la de Séneca (`au-q`) en `:66`, así que falta quitar `au-q` y pasar la cita al hero en escritorio. 2) El mínimo sigue en 4 (`login.js:32`, `modules/auth/routes.py:98`), sin contador «N de 8» ni validación en el segundo campo (`login.html:58`). 3) Falta el botón `ui.iconbtn('eye', …)` con `aria-pressed`. 4) No hay cuenta regresiva «Espera N s» ni botón deshabilitado ante el 429. 5) Confirmar el spinner de `busy`. Faltan los tests del límite y del mínimo. **No se cumple ningún criterio de aceptación.** |
+| Login S1 · pulido | hecho | una sola cita: `templates/auth/login.html:24` (`au-hero-q`, solo escritorio) y `:41` (`au-mob-q`, solo móvil), sin `au-q`; mínimo 8: `modules/auth/routes.py:8` (`MIN_PASS`), contador «N de 8» `login.html:60` (`#au-pw-n`, `eu-help`), `static/js/login.js:33` (`contar`); coincidencia en el segundo campo: `login.js:41` (`coincide`), `login.html:65` (`#au-err2`); mostrar/ocultar: `ui.iconbtn('eye', …, pressed=False)` en `login.html:54`, `:59`, `:64`; bloqueo: `app.py:203` (429 con `retry_after` y `Retry-After`), `login.js:70` (`bloquear`, botón deshabilitado y «Espera N s»); busy: `aria-busy` + spinner de `components.css:55`; `tests/test_login.py` | verificar a mano: que en el iPhone se vea una sola cita y la cuenta regresiva (en Playwright con iPhone 13 se ve una cita, y «Espera 60 s» → «59 s» con el botón deshabilitado). En móvil la página no tiene `h1` visible porque el del hero se oculta. Ya pasaba antes y no se cambió, porque `a11y_lint` no admite dos `h1`. |
 | Recetas S1 · encontrar y usar | parcial | búsqueda por ingrediente: `static/js/recetas.js:31`; chip «Apta FODMAP» aparte: `templates/recetas/index.html:25` | 1) Siguen las 3 `eu-stat` (`templates/recetas/index.html:15`–`17`). 2) Falta «Para hoy», que necesita una ruta que lea los momentos del plan de Nutrición y «Usar» contra su endpoint. 3) Las categorías siguen como `eu-chips` (`:22`), no como `eu-seg`, y el FODMAP no se activa por la fase de eliminación (`modules/recetas/routes.py:46` solo lee `?fodmap=`). 4) El detalle no tiene franja de macros, selector de porciones, pasos con casilla ni modo «Cocinar» con `wakeLock`. 5) El modal no tiene «Avanzado». **No se cumple ningún criterio de aceptación.** |
 | Wishlist de Oikonomia S1 · por mes y contra el presupuesto | pendiente | solo lo que ya había: redirección sin `fin_ok`, `modules/finanzas/prioridades.py:13`; dedup al crear, `:74` (`wishlist_dedup.existente`); `/api/ec-status`, `:163` | Todo el sprint. 1) El antetítulo dice «Lista de prioridades · N pendientes», sin el «$X» (`templates/finanzas/prioridades.html:13`). 2) Siguen las 4 `eu-stat` (`:19`–`21`). Falta el «libre para deseos» de Oikonomia S1: hoy solo existe `deseos.total_gastado` del presupuesto 50·30·20 (`modules/finanzas/coach.py:110`), así que la celda «Este mes» necesita definir ese cálculo. 3) Falta agrupar por `mes_objetivo`; hoy hay chips de estado y prioridad (`static/js/prioridades.js:40`). 4) Faltan las acciones en la fila: «Comprado» con precio en línea, «Mover de mes» y «⋯». 5) Falta «o N EC». 6) Falta el enlace «también en Guardarropa». El criterio «sin `fin_ok` redirige» ya se cumple. |
 
@@ -264,8 +264,6 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
 
 ## Siguiente paso
 - **ORDEN (Fases 1–3):** no queda ningún sprint pendiente.
-- **Siguiente: Remates · Login S1.** Remates va en la Fase 3, después de Navegación S2, que está hecha. Sus tres sprints son independientes entre sí, así que se toma el primero del `SPRINTS.md`. Toca `auth/login.html`, `login.js`, `login.css` y `modules/auth/routes.py`, y no choca con nada abierto.
-- **Después:** Recetas S1 y Wishlist de Oikonomia S1.
-  - **Recetas S1** toca `templates/recetas/*`, el archivo de choque con Nutrición S4 y Hegemonikon S3. Los dos están hechos, así que no hay bloqueo.
-  - **Wishlist S1** toca `modules/finanzas/*`, y conviene que corra sola. Antes hay que decidir cómo se calcula «libre para deseos». Si no existe, la celda «Este mes» no aparece, como dice el sprint.
-- **Sin mergear:** Capturas y A11y + catálogo siguen en la rama. Se mergean antes de abrir los Remates, para que el `a11y_lint` y el catálogo ya corran en esos PR.
+- **Siguiente: Remates · Recetas S1.** Login S1 ya está hecho, y los tres sprints de Remates son independientes, así que sigue el próximo del `SPRINTS.md`. Toca `templates/recetas/*`, el archivo de choque con Nutrición S4 y Hegemonikon S3, que ya están hechos. «Para hoy» usa el endpoint de Nutrición S4, que también está hecho.
+- **Después: Wishlist de Oikonomia S1.** Toca `modules/finanzas/*`, así que conviene correrla sola. Antes hay que decidir cómo se calcula «libre para deseos». Si no existe, la celda «Este mes» no aparece, como dice el sprint.
+- **Sin mergear:** Capturas, A11y + catálogo y Login S1 siguen en la rama.
