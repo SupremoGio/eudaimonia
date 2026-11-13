@@ -171,7 +171,7 @@ def test_lateral_y_resumen(client):
     _rem('Verificación', -2)
     html = _get(client)
     aside = html.split('<aside class="pf-aside">', 1)[1].split('</aside>', 1)[0]
-    assert 'Tú · Αὐτός' in aside and aside.count('class="pf-nav-it"') == 8                    # + Avisos (handoff Avisos, S3)
+    assert 'Tú · Αὐτός' in aside and aside.count('class="pf-nav-it"') == 9                    # + Avisos y Primeros pasos
     for fuera in ('Nivel ', 'xpbar', '/logros', '/recompensas', ' EC'):
         assert fuera not in aside, fuera
     assert 'data-ct="resumen">1 urgente' in aside and 'is-warn' in aside
