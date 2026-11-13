@@ -111,8 +111,15 @@ _ICONO = r'(?:\s*(?:<i\b[^>]*data-lucide[^>]*>\s*</i>|<svg\b.*?</svg>|\{\{\s*ic\
 _NOMBRE = re.compile(r'\b(aria-label|aria-labelledby|title)\s*=')
 
 
+def _sin_comentarios(texto):
+    """Quita <!-- --> y {# #} conservando los saltos de línea (archivo:línea)."""
+    blanco = lambda m: re.sub(r'[^\n]', ' ', m.group(0))
+    return re.sub(r'\{#.*?#\}', blanco, re.sub(r'<!--.*?-->', blanco, texto, flags=re.S), flags=re.S)
+
+
 def lint_html(rel, texto):
     out = []
+    texto = _sin_comentarios(texto)
     # 1) botones/enlaces de solo ícono
     for m in re.finditer(r'<(button|a)\b([^>]*)>(' + _ICONO + r')</\1>', texto, flags=re.S | re.I):
         if not _NOMBRE.search(m.group(2)) and '**' not in m.group(2):
