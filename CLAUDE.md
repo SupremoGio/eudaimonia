@@ -196,6 +196,16 @@ Lista completa de rutas en `README.md` y `docs/PROJECT_CONTEXT.md`.
 - **PWA:** `static/manifest.json` + `static/icons/` (theme-color `#09070F`);
   safe areas con `env(safe-area-inset-*)` en el bloque SAFE AREAS de components.css.
 - Referencia de diseño: `docs/design/design-system-v2/` (README + `PROMPTS.md`).
+- **Antes de crear un componente, revisa `/_ui` y `docs/COMPONENTES.md`.** `/_ui` es el
+  catálogo vivo (solo con `FLASK_ENV=development` o `session['is_admin']`) y pinta las macros
+  reales en los dos temas. `docs/COMPONENTES.md` se genera con
+  `python gio_v3/scripts/gen_componentes_md.py` desde el comentario `{# … #}` sobre cada macro.
+  `pre_deploy_check` falla si una macro nueva no tiene ese comentario.
+- **Accesibilidad:** `pre_deploy_check` corre `scripts/a11y_lint.py` y falla con problemas nuevos.
+  Las reglas están en `docs/A11Y.md`. Los diálogos y las hojas usan `euDialog`
+  (`static/js/eu-dialog.js`), no su propio manejo de foco ni de Esc.
+- **Capturas antes/después:** `python gio_v3/scripts/capturas.py <etiqueta>` y
+  `--comparar a b` (solo desarrollo; Playwright + Pillow). Las capturas van a `gio_v3/capturas/`, que no se commitea.
 
 ## Limpieza del repo
 

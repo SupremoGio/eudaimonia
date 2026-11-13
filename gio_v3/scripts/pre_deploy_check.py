@@ -129,10 +129,23 @@ def _check_a11y():
     return []
 
 
+def _check_macros_documentadas():
+    """Cada macro de _ui/macros.html lleva un comentario {# … #} encima
+    (lo lee scripts/gen_componentes_md.py para docs/COMPONENTES.md y /_ui)."""
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import gen_componentes_md as gm
+    faltan = gm.macros_sin_comentario()
+    if faltan:
+        return [f"Macro sin comentario en _ui/macros.html: {n} (agrega {{# una línea #}} encima)" for n in faltan]
+    print(f"[OK] Macros — {len(gm.macros())} documentadas")
+    return []
+
+
 def main():
     all_errors = []
     for fn in (_check_ec_constants, _check_activities, _check_ataraxia_import,
-               _check_init_db, _check_level_thresholds, _check_a11y):
+               _check_init_db, _check_level_thresholds, _check_a11y, _check_macros_documentadas):
         try:
             all_errors.extend(fn())
         except Exception as e:

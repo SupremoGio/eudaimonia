@@ -1,7 +1,7 @@
 # Estado de los handoffs v2 (Fase 0 de `design_handoff_ORDEN.md`)
 
 Revisado el 2026-11-12 contra `main`, después del merge de Nutrición v2 (PR #121).
-**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2), Captura rápida (3), Avisos (3), Revisión semanal (2), Estados vacíos (2) y Plantas y Ajustes (3) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
+**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2), Captura rápida (3), Avisos (3), Revisión semanal (2), Estados vacíos (2), Plantas y Ajustes (3) y A11y + catálogo (3, más las capturas) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
 Las rutas son relativas a `gio_v3/`.
 
 Algunos paquetes se implementaron en un solo commit con todos sus sprints. En esos casos se repite el commit y la evidencia de cada sprint apunta a su pieza.
@@ -88,11 +88,15 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 | Avisos | S3 · preferencias + Inicio | hecho | `117e813` | `templates/perfil/_avisos.html` (`avisos_off:<fuente>`), `modules/dashboard/routes.py` (`_build_deadlines(…, avisos_hoy)`) |
 | Revisión semanal | S1 · ruta `/ataraxia/revision`, pasos 1–2, guardado parcial | hecho | `53cdc23` | `modules/ataraxia/routes.py` (`revision`, `save_revision` con `cerrar`, `_AUTO_METRICS` con 6), `templates/ataraxia/revision.html`, `static/js/revision.js` |
 | Revisión semanal | S2 · pasos 3–4, cierre y entradas | hecho | `53cdc23` | `_cabos`, `_calendario`, `_marcar_tarea('sun_planeacion')`, aviso `ata:revision:<semana>`, ⌘K `revision` en `modules/nav.py` |
-| Estados vacíos | S1 · `ui.empty(kind=…)`, migración y `?demo=1` | hecho | rama actual | `templates/_ui/macros.html` (`empty` con setup/period/filter/done), `modules/demo.py`, `euEmptyFilter`/`euSetDrop` en `static/js/eu-motion.js` |
-| Estados vacíos | S2 · Primeros pasos | hecho | rama actual | `modules/onboarding.py`, `templates/_ui/onboarding.html` (Inicio y Perfil › Primeros pasos) |
-| Plantas y Ajustes | Plantas S1 · «Hoy» y cuadrícula compacta | hecho | rama actual | `modules/plantas/routes.py` (`cuidados_hoy`, `hoy` en `_state`), `templates/plantas/index.html`, `static/js/plantas.js` |
-| Plantas y Ajustes | Plantas S2 · panel con pestañas | hecho | rama actual | `#pl-panel` (Cuidados · Fotos · Historial · Doctor), `m-planta` con `<details id="pl-avanzado">`; `m-doctor` eliminado |
-| Plantas y Ajustes | Ajustes S1 · un solo lugar para lo configurable | hecho | rama actual | `templates/perfil/_ajustes.html`, `POST /perfil/api/ajustes` (lista blanca), `GET /perfil/api/exportar` (zip de CSV) |
+| Estados vacíos | S1 · `ui.empty(kind=…)`, migración y `?demo=1` | hecho | `c296c8f` | `templates/_ui/macros.html` (`empty` con setup/period/filter/done), `modules/demo.py`, `euEmptyFilter`/`euSetDrop` en `static/js/eu-motion.js` |
+| Estados vacíos | S2 · Primeros pasos | hecho | `c296c8f` | `modules/onboarding.py`, `templates/_ui/onboarding.html` (Inicio y Perfil › Primeros pasos) |
+| Plantas y Ajustes | Plantas S1 · «Hoy» y cuadrícula compacta | hecho | `c296c8f` | `modules/plantas/routes.py` (`cuidados_hoy`, `hoy` en `_state`), `templates/plantas/index.html`, `static/js/plantas.js` |
+| Plantas y Ajustes | Plantas S2 · panel con pestañas | hecho | `c296c8f` | `#pl-panel` (Cuidados · Fotos · Historial · Doctor), `m-planta` con `<details id="pl-avanzado">`; `m-doctor` eliminado |
+| Plantas y Ajustes | Ajustes S1 · un solo lugar para lo configurable | hecho | `c296c8f` | `templates/perfil/_ajustes.html`, `POST /perfil/api/ajustes` (lista blanca), `GET /perfil/api/exportar` (zip de CSV) |
+| Capturas | `scripts/capturas.py` | hecho | rama actual | escritorio y móvil sobre la base de ejemplo; `--comparar a b` genera un HTML con la diferencia |
+| A11y + catálogo | S1 · `a11y_lint` en `pre_deploy_check` | hecho | rama actual | `scripts/a11y_lint.py`, `scripts/a11y_baseline.json`, `docs/A11Y.md` |
+| A11y + catálogo | S2 · línea base en 0 y `euDialog` | hecho | rama actual | `static/js/eu-dialog.js` (ui.modal, Módulos, ⌘K, captura, avisos, plantas); un commit por módulo |
+| A11y + catálogo | S3 · `/_ui` y `docs/COMPONENTES.md` | hecho | rama actual | `templates/_ui/catalogo.html`, `scripts/gen_componentes_md.py`, regla en `CLAUDE.md` |
 
 ## Notas de la Fase 1 que ya quedaron resueltas
 - **XP negativo del desliz (antes de 1.2):** el motor no acepta montos negativos, porque `process_activity` aplica `max(1, …)`. El desliz se descuenta con `engine._award_xp(-pen, 'activity', …, log_id)`, y `remove_activity` lo revierte. Está documentado en `modules/nutricion/routes.py`, sección «XP por el motor».
@@ -123,6 +127,12 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 - **Panel:** en escritorio se abre solo, con la primera planta de Hoy. En móvil es una hoja a pantalla completa. Esc lo cierra y el foco vuelve a la tarjeta.
 - **Ajustes:** la sección «Avisos» de Perfil desaparece. `/perfil/?sec=avisos` redirige a `?sec=ajustes#avisos`. `/api/avisos/preferencias` sigue existiendo por compatibilidad.
 - **Exportar:** pide `fin_ok`, porque incluye finanzas. Deja fuera la bóveda de contraseñas, `app_settings` (tokens y hashes) y las fotos.
+
+## Notas de A11y + catálogo
+- **Línea base inicial: 29 problemas.** Eran 13 de `--fg-4` en texto, 10 de `outline:none` sin reemplazo, 4 campos sin etiqueta y 2 `onclick` en fondos. Uno de los campos era un `<select>` dentro de un comentario HTML; ahora el lint ignora los comentarios. Hoy la línea base está en 0, sin excepciones.
+- **Anillo de foco de los campos:** `outline:2px solid transparent` en vez de `none`. El anillo visible sigue siendo el `box-shadow`, y el outline transparente aparece en modo de alto contraste.
+- **`euConfirm`** (`eu-motion.js`) conserva su propio manejo: es un `alertdialog` creado al vuelo, con foco atrapado y Esc. No pasa por `euDialog`.
+- **Catálogo `/_ui`:** responde 404 salvo con `FLASK_ENV=development`, `app.debug` o `session['is_admin']`. El ejemplo de `page_head` baja su `h1` a `role=heading` de nivel 2 para no tener dos `h1` en la página.
 
 ## Siguiente paso
 No queda ningún sprint pendiente en el ORDEN. Cualquier handoff nuevo empieza con su propio `SPRINTS.md`.

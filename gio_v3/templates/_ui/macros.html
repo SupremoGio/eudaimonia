@@ -2,6 +2,7 @@
     Destino: gio_v3/templates/_ui/macros.html
     Uso: {% import '_ui/macros.html' as ui %} -#}
 
+{# Botón o enlace (href) con variante primary|secondary|ghost|danger, tamaño sm|md|lg, busy y block. #}
 {% macro button(label, variant='primary', size='md', icon=None, href=None, busy=False, block=False, type='button', extra='') -%}
 {%- set cls = 'eu-btn eu-btn--' ~ variant ~ (' eu-btn--' ~ size if size != 'md' else '') ~ (' eu-btn--block' if block else '') ~ (' ' ~ extra if extra else '') -%}
 {%- if href -%}
@@ -11,15 +12,18 @@
 {%- endif -%}
 {%- endmacro %}
 
+{# Botón de solo ícono: el label es obligatorio (va en aria-label). #}
 {% macro iconbtn(icon, label, variant='', pressed=None) -%}
 <button type="button" class="eu-iconbtn{{ ' eu-iconbtn--' ~ variant if variant }}" aria-label="{{ label }}"{% if pressed is not none %} aria-pressed="{{ 'true' if pressed else 'false' }}"{% endif %} {{ kwargs|xmlattr }}><i data-lucide="{{ icon }}"></i></button>
 {%- endmacro %}
 
+{# Tarjeta eu-card (variante interactive|featured|inset|flush); se usa con call. #}
 {% macro card(variant='', tag='div', href=None) -%}
 {%- set t = 'a' if href else tag -%}
 <{{ t }} class="eu-card{{ ' eu-card--' ~ variant if variant }}"{% if href %} href="{{ href }}"{% endif %} {{ kwargs|xmlattr }}>{{ caller() }}</{{ t }}>
 {%- endmacro %}
 
+{# Cifra con etiqueta, ícono y delta (↑/↓) o una línea de contexto. #}
 {% macro stat(label, value, icon=None, delta=None, delta_dir='up', meta=None) -%}
 <div class="eu-card eu-stat">
   <div class="eu-stat-lbl">{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}</div>
@@ -28,14 +32,17 @@
 </div>
 {%- endmacro %}
 
+{# Insignia: variante de color, tinte de categoría (cat) o de estado (status). #}
 {% macro badge(text, variant='', cat=None, status=False, icon=None) -%}
 <span class="eu-badge{{ ' eu-badge--' ~ variant if variant }}{{ ' eu-badge--cat' if cat }}{{ ' eu-badge--status' if status }}"{% if cat %} data-cat="{{ cat|lower }}"{% endif %}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ text }}</span>
 {%- endmacro %}
 
+{# Chip de filtro o selección con aria-pressed y contador opcional. #}
 {% macro chip(label, pressed=False, count=None, icon=None) -%}
 <button type="button" class="eu-chip" aria-pressed="{{ 'true' if pressed else 'false' }}" {{ kwargs|xmlattr }}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}{% if count is not none %} <span class="ct">{{ count }}</span>{% endif %}</button>
 {%- endmacro %}
 
+{# Campo con <label for>: text, money, textarea; ayuda o error (aria-invalid + aria-describedby). #}
 {% macro field(name, label, type='text', value='', placeholder='', help=None, error=None, money=False) -%}
 <div class="eu-field">
   <label class="eu-label" for="f-{{ name }}">{{ label }}</label>
@@ -48,15 +55,18 @@
 </div>
 {%- endmacro %}
 
+{# Barra de progreso (role=progressbar) por variante o tinte de categoría. #}
 {% macro progress(value, max=100, variant='brand', thin=False, cat=None, label=None) -%}
 {%- set pct = [ (value / max * 100) if max else 0, 100 ]|min -%}
 <div class="eu-progress eu-progress--{{ variant }}{{ ' eu-progress--thin' if thin }}"{% if cat %} data-cat="{{ cat|lower }}"{% endif %} role="progressbar" aria-valuenow="{{ value }}" aria-valuemax="{{ max }}"{% if label %} aria-label="{{ label }}"{% endif %}><i style="width:{{ pct|round(1) }}%"></i></div>
 {%- endmacro %}
 
+{# Barra de XP hacia la meta, con su aria-label «N de M XP». #}
 {% macro xpbar(value, max, label='XP') -%}
 <div class="eu-xpbar" role="progressbar" aria-valuenow="{{ value }}" aria-valuemax="{{ max }}" aria-label="{{ value }} de {{ max }} {{ label }}"><i style="width:{{ ([value / max * 100, 100]|min)|round(1) }}%"></i></div>
 {%- endmacro %}
 
+{# Fila de actividad de Acta marcable (aria-pressed) con su XP/EC. #}
 {% macro activity(a, done=False) -%}
 <button type="button" class="eu-act" data-cat="{{ a.categoria|lower }}" data-id="{{ a.id }}" aria-pressed="{{ 'true' if done else 'false' }}">
   <span class="eu-act-check"><i data-lucide="check"></i></span>
@@ -65,6 +75,7 @@
 </button>
 {%- endmacro %}
 
+{# Fila de lista: ícono, título, subtítulo y monto; enlace si lleva href. #}
 {% macro row(title, sub=None, icon=None, cat=None, href=None, amount=None, amount_pos=False) -%}
 {%- set t = 'a' if href else 'div' -%}
 <{{ t }} class="eu-row{{ ' eu-row--interactive' if href }}"{% if href %} href="{{ href }}"{% endif %}>
@@ -74,6 +85,7 @@
 </{{ t }}>
 {%- endmacro %}
 
+{# Modal (role=dialog, aria-labelledby) que abre y cierra euModal / euDialog; se usa con call. #}
 {% macro modal(id, title, eyebrow=None, cls='') -%}
 <div class="eu-scrim{% if cls %} {{ cls }}{% endif %}" id="{{ id }}" hidden>
   <div class="eu-modal" role="dialog" aria-modal="true" aria-labelledby="{{ id }}-t">

@@ -169,7 +169,7 @@ def lint_paginas(raiz, archivos):
         if rel in vistos or rel not in archivos:
             return 0
         vistos = vistos | {rel}
-        t = archivos[rel]
+        t = _sin_comentarios(archivos[rel])
         n = _h1(re.sub(r'\{%\s*macro\b.*?\{%\s*endmacro\s*%\}', '', t, flags=re.S))
         for inc in re.findall(r'\{%-?\s*include\s+"([^"]+)"', t):
             n += contar('templates/' + inc, vistos)
