@@ -313,9 +313,30 @@
   }
 
   /* ── Vacío (mismo markup que ui.empty()) para listas que arma JS ─────── */
-  function euEmpty(icon, title, text, compact, ctaHtml) {
-    return '<div class="eu-empty' + (compact ? ' eu-empty--sm' : '') + '"><div class="eu-empty-ic"><i data-lucide="' + esc(icon) + '"></i></div>' +
+  function euEmpty(icon, title, text, compact, ctaHtml, extraCls) {
+    return '<div class="eu-empty' + (compact ? ' eu-empty--sm' : '') + (extraCls ? ' ' + esc(extraCls) : '') + '"><div class="eu-empty-ic"><i data-lucide="' + esc(icon) + '"></i></div>' +
       '<div class="t-card">' + esc(title) + '</div>' + (text ? '<p>' + esc(text) + '</p>' : '') + (ctaHtml || '') + '</div>';
+  }
+  /* kind='filter' (mismo markup que ui.empty(kind='filter')): una línea que
+     dice qué filtro sobra y cuántos hay sin él; el botón .js-empty-drop
+     lleva data-drop para que la página quite ese filtro. */
+  function euEmptyFilter(title, hint, drop, extraCls) {
+    return '<div class="eu-empty eu-empty--filter' + (extraCls ? ' ' + esc(extraCls) : '') + '" data-kind="filter" role="status">' +
+      '<span class="eu-empty-ic"><i data-lucide="search-x"></i></span>' +
+      '<span class="eu-empty-tx"><b>' + esc(title) + '</b> <span class="js-empty-hint">' + esc(hint || '') + '</span></span>' +
+      (drop ? '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-empty-drop" data-drop="' + esc(drop.key || '') + '">Quitar «' + esc(drop.label) + '»</button>' : '') +
+      '</div>';
+  }
+  /* «Sin X hay N»: dado el filtro activo, cuántos resultados hay al quitar
+     cada uno; devuelve el que más libera (o null). filtros: [{key, label}],
+     contar(sinKey) → número de resultados sin ese filtro. */
+  function euDropFilter(filtros, contar) {
+    var best = null;
+    (filtros || []).forEach(function (f) {
+      var n = contar(f.key);
+      if (n > 0 && (!best || n > best.count)) best = { key: f.key, label: f.label, count: n };
+    });
+    return best;
   }
 
   /* ── Esqueleto de carga: filas .eu-skel en un envoltorio aria-busy que
@@ -334,6 +355,52 @@
   window.euMotion = { reduced: reduced };
   window.euCountTo = euCountTo;
   window.euEmpty = euEmpty;
+  window.euEmptyFilter = euEmptyFilter;
+  /* ── Primeros pasos (Inicio y Perfil): ocultar/mostrar y abrir la captura
+     rápida del registro si existe (en móvil, la hoja «+»). ─────────────── */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('.js-onb-ocultar,.js-onb-mostrar,[data-onb-quick]'); if (!t) return;
+    if (t.hasAttribute('data-onb-quick')) {
+      var q = window.euQuick;
+      if (q && q.openSheet && window.matchMedia && window.matchMedia('(max-width:1023px)').matches) {
+        e.preventDefault(); q.openSheet(true, t.getAttribute('data-onb-quick'));
+      }
+      return;
+    }
+    var oculto = t.classList.contains('js-onb-ocultar');
+    fetch('/api/onboarding/oculto', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ oculto: oculto }) })
+      .then(function (r) { if (r.ok) location.reload(); });
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    var c = document.getElementById('eu-onb');
+    var n = c && +c.getAttribute('data-nuevos');
+    if (n && window.toast) { toast('Primeros pasos · +' + (n * 10) + ' XP', 'win'); if (window.euRefreshXp) euRefreshXp(); }
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.js-setup-reveal'); if (!b) return;
+    var su = b.closest('[data-kind="setup"]'), body = document.querySelector('[data-setup-body]');
+    if (!body) return;
+    if (su) su.hidden = true;
+    body.hidden = false;
+    var f = body.querySelector('button,a[href],input,textarea,select');
+    if (f) f.focus();
+  });
+  /* Para un ui.empty(kind='filter') pintado por el servidor: escribe «Sin «X»
+     hay N.» y conecta «Quitar «X»» con onDrop. */
+  window.euSetDrop = function (box, label, count, onDrop) {
+    if (!box) return;
+    var hint = box.querySelector('.js-empty-hint'), drop = box.querySelector('.js-empty-drop');
+    if (hint) hint.textContent = count ? 'Sin «' + label + '» hay ' + count + '.' : 'Prueba con otro filtro.';
+    if (!drop) return;
+    drop.textContent = 'Quitar «' + label + '»';
+    drop.hidden = !count;
+    drop.onclick = onDrop;
+  };
+  /* Texto de un chip de filtro sin su contador. */
+  window.euChipLabel = function (chip, fallback) {
+    return chip ? chip.textContent.replace(/[0-9]+/g, '').trim() : (fallback || '');
+  };
+  window.euDropFilter = euDropFilter;
   window.euRank = euRank;
   window.euRankSet = euRankSet;
   window.euRanksUpdate = euRanksUpdate;

@@ -17,6 +17,12 @@
       </div>
     {% endcall %}
 
+    {% if setup %}
+    {{ ui.empty('car', 'Registra tu vehículo', 'Con marca, año y kilometraje armo el plan de mantenimiento: ' ~ (plan|length) ~ ' servicios con sus intervalos, qué toca ahora y cuánto gastas al año.',
+                kind='setup', eyebrow='Harma · primer uso', steps=['Marca, modelo y año', 'Kilometraje actual', 'Último servicio (opcional)'],
+                cta='Agregar vehículo', cta_icon='plus', cta_class='js-veh', example_href='?demo=1') }}
+    {% endif %}
+    <div class="hm-body"{% if setup %} hidden{% endif %}>
     {# Franja: odómetro editable · ritmo · gasto de 12 meses (notas 1 y 7) #}
     <section class="hm-strip" aria-label="Vehículo">
       <form class="hm-cell hm-odo" id="hm-odo" autocomplete="off" novalidate>
@@ -57,10 +63,11 @@
     {% include "harma/_bitacora.html" %}
     {% include "harma/_papeles.html" %}
     {% endif %}
+    </div>
   </div>
 
   {# Lateral: papeles y bitácora sin pestañas (nota 5) #}
-  <aside class="hm-side" aria-label="Papeles y bitácora">
+  <aside class="hm-side" aria-label="Papeles y bitácora"{% if setup %} hidden{% endif %}>
     <section class="hm-box" aria-labelledby="hm-pap-t">
       <div class="hm-box-hd"><h2 class="hm-sub" id="hm-pap-t">Papeles</h2><a class="t-meta" href="/harma/?vista=papeles">Todo →</a></div>
       <div id="hm-pap-list"></div>

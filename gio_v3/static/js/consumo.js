@@ -29,6 +29,8 @@
           card.hidden = !ok; if (ok) shown++;
         });
         $('ci-nomatch').hidden = shown > 0 || !$$('.ci-card').length;
+        if (!shown && window.euSetDrop) euSetDrop($('ci-nomatch'), euChipLabel(chip), $$('.ci-card').length,
+          function () { var all = document.querySelector('[data-f="all"]'); if (all) all.click(); });
       });
     });
     $$('.js-nuevo').forEach(function (b) {

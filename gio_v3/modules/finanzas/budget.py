@@ -802,3 +802,32 @@ def mini_summary(mes=None):
         'disponible':    data['disponible'],
         'buckets':       buckets_out,
     })
+
+
+_MESES_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto',
+             'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+
+
+def ultimo_periodo_txt(mes=None, bucket=None, meses_atras=12):
+    """Vacío kind='period' (handoff Estados vacíos): el último mes antes de
+    `mes` con gasto, para no perder la referencia. «Octubre: $18,420 en 9
+    categorías.» (o de un bucket). '' si no hay ninguno o algo falla."""
+    try:
+        mes = mes or today_date().strftime('%Y-%m')
+        y, m = int(mes[:4]), int(mes[5:7])
+        with get_db() as db:
+            for _ in range(meses_atras):
+                y, m = (y, m - 1) if m > 1 else (y - 1, 12)
+                d = _calc_budget(f"{y}-{m:02d}", db)
+                if bucket:
+                    b = d['buckets'].get(bucket) or {}
+                    total, cats = b.get('total_gastado') or 0, [c for c in b.get('cats', []) if c.get('gastado')]
+                else:
+                    total = d.get('total_gastado') or 0
+                    cats = [c for bk in d['buckets'].values() for c in bk.get('cats', []) if c.get('gastado')]
+                if total > 0:
+                    n = len(cats)
+                    return f"{_MESES_ES[m - 1]}: ${total:,.0f} en {n} categoría{'s' if n != 1 else ''}."
+    except Exception:
+        return ''
+    return ''

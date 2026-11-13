@@ -1,3 +1,4 @@
+{% import '_ui/macros.html' as ui %}
 {# Patrimonio: montos ocultables y listas de cuentas por grupo #}
 {% set KIND = {'liq': ('cosmopolitismo', ''), 'inv': ('ataraxia', ''), 'pas': ('harma', '−')} %}
 {% macro hide(v, mask='••••') -%}<span class="nw-real">{{ v }}</span><span class="nw-mask">{{ mask }}</span>{%- endmacro %}
@@ -32,7 +33,7 @@
     {% endfor %}
   </ul>
   {% else %}
-  <div class="eu-empty eu-empty--sm pt-empty"><div class="eu-empty-ic"><i data-lucide="{{ icon }}"></i></div><p>{{ empty_txt }}</p><button type="button" class="eu-btn eu-btn--secondary eu-btn--sm" data-new-cuenta="{{ tipo_default }}"><i data-lucide="plus"></i>{{ add_lbl }}</button></div>
+  <div class="pt-empty">{{ ui.empty(icon, 'Sin ' ~ title|lower, empty_txt, compact=True, cta=add_lbl, cta_icon='plus', cta_attrs={'data-new-cuenta': tipo_default}) }}</div>
   {% endif %}
 </section>
 {%- endmacro %}

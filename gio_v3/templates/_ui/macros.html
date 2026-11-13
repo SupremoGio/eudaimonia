@@ -2,8 +2,8 @@
     Destino: gio_v3/templates/_ui/macros.html
     Uso: {% import '_ui/macros.html' as ui %} -#}
 
-{% macro button(label, variant='primary', size='md', icon=None, href=None, busy=False, block=False, type='button') -%}
-{%- set cls = 'eu-btn eu-btn--' ~ variant ~ (' eu-btn--' ~ size if size != 'md' else '') ~ (' eu-btn--block' if block else '') -%}
+{% macro button(label, variant='primary', size='md', icon=None, href=None, busy=False, block=False, type='button', extra='') -%}
+{%- set cls = 'eu-btn eu-btn--' ~ variant ~ (' eu-btn--' ~ size if size != 'md' else '') ~ (' eu-btn--block' if block else '') ~ (' ' ~ extra if extra else '') -%}
 {%- if href -%}
 <a class="{{ cls }}" href="{{ href }}" {{ kwargs|xmlattr }}>{% if icon %}<i data-lucide="{{ icon }}"></i>{% endif %}{{ label }}</a>
 {%- else -%}
@@ -89,14 +89,70 @@
 <div class="eu-skel-wrap" aria-busy="true" role="status" aria-label="Cargando">{% for _ in range(rows) %}<div class="eu-skel" style="height:{{ h }}px"></div>{% endfor %}</div>
 {%- endmacro %}
 
-{% macro empty(icon, title, text, cta=None, cta_href=None, cta_icon=None, kbd=None, compact=False) -%}
+{# Vacío (handoff Estados vacíos): un macro, cuatro tipos. El tipo decide
+   tono, tamaño y acción.
+   · period (por defecto, = lo de siempre): sin datos en este periodo. Con
+     ghost ('bars'|'rows') deja la forma del contenido en fantasma y con
+     last muestra el último periodo con datos junto a la acción.
+   · setup: primer uso del módulo. Ocupa el lugar del contenido: eyebrow,
+     qué hará con datos, 1–3 steps, la acción y «Ver un ejemplo»
+     (example_href, normalmente ?demo=1).
+   · filter: una línea. drop_filter={label, count, href} dice qué filtro
+     sobra y cuántos hay sin él; sin href, el JS de la página lo maneja
+     (.js-empty-drop / .js-empty-hint).
+   · done: todo hecho, tono positivo, compacto y con xp opcional.
+   cta_attrs: atributos extra del botón (p. ej. {'data-quick': 'peso'});
+   cta_class: clases extra (p. ej. la .js-… que el JS del módulo ya escucha).
+   Con un setup en pantalla, la primera escritura exitosa recarga la página
+   (fetch global del layout) para pasar del vacío al contenido. #}
+{% macro empty(icon, title, text, cta=None, cta_href=None, cta_icon=None, kbd=None, compact=False,
+               kind='period', steps=None, example_href=None, last=None, ghost=None, drop_filter=None,
+               xp=None, eyebrow=None, cta_attrs=None, cta_class='') -%}
+{%- set _ca = cta_attrs or {} -%}
+{%- if kind == 'setup' -%}
+<section class="eu-empty eu-empty--setup" data-kind="setup" data-setup-reload="{{ request.path if request is defined else '' }}">
+  {% if eyebrow %}<div class="t-eyebrow eu-empty-eb">{{ eyebrow }}</div>{% endif %}
+  <h2 class="eu-empty-t">{{ title }}</h2>
+  <p>{{ text }}</p>
+  {% if steps %}<ol class="eu-empty-steps">{% for st in steps %}<li{% if loop.first %} class="is-next"{% endif %}><span class="num">{{ loop.index }}</span>{{ st }}</li>{% endfor %}</ol>{% endif %}
+  <div class="eu-empty-acts">
+    {% if cta %}{{ button(cta, icon=cta_icon, href=cta_href, extra=cta_class, **_ca) }}{% endif %}
+    {% if example_href %}<a class="eu-btn eu-btn--secondary" href="{{ example_href }}"><i data-lucide="eye"></i>Ver un ejemplo</a>{% endif %}
+  </div>
+</section>
+{%- elif kind == 'filter' -%}
+<div class="eu-empty eu-empty--filter" data-kind="filter" role="status">
+  <span class="eu-empty-ic"><i data-lucide="{{ icon }}"></i></span>
+  <span class="eu-empty-tx"><b>{{ title }}</b> <span class="js-empty-hint">{% if drop_filter %}Sin «{{ drop_filter.label }}» hay {{ drop_filter.count }}.{% else %}{{ text }}{% endif %}</span></span>
+  {% if drop_filter and drop_filter.href %}<a class="eu-btn eu-btn--secondary eu-btn--sm js-empty-drop" href="{{ drop_filter.href }}">Quitar «{{ drop_filter.label }}»</a>
+  {%- else %}<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-empty-drop"{% if not drop_filter %} hidden{% endif %}>{% if drop_filter %}Quitar «{{ drop_filter.label }}»{% endif %}</button>{% endif %}
+  {% if cta %}{{ button(cta, variant='ghost', size='sm', icon=cta_icon, href=cta_href, extra=cta_class, **_ca) }}{% endif %}
+</div>
+{%- elif kind == 'done' -%}
+<div class="eu-empty eu-empty--done" data-kind="done" role="status">
+  <span class="eu-empty-ok"><i data-lucide="{{ icon or 'check' }}"></i></span>
+  <div class="eu-empty-tx"><div class="eu-empty-t">{{ title }}</div>{% if text %}<p>{{ text }}</p>{% endif %}</div>
+  {% if xp %}<span class="num eu-empty-xp">+{{ xp }} XP</span>{% endif %}
+  {% if cta %}{{ button(cta, variant='secondary', size='sm', icon=cta_icon, href=cta_href, extra=cta_class, **_ca) }}{% endif %}
+</div>
+{%- elif ghost or last -%}
+<div class="eu-empty eu-empty--period" data-kind="period">
+  {% if ghost == 'bars' %}<div class="eu-ghost eu-ghost--bars" aria-hidden="true">{% for _ in range(8) %}<i></i>{% endfor %}</div>
+  {% elif ghost == 'rows' %}<div class="eu-ghost eu-ghost--rows" aria-hidden="true"><i></i><i></i><i></i></div>{% endif %}
+  <div class="eu-empty-line">
+    <span class="eu-empty-tx"><b>{{ title }}</b> {{ text }}{% if last %} <span class="t-meta">{{ last }}</span>{% endif %}</span>
+    {% if cta %}{{ button(cta, variant='secondary', size='sm', icon=cta_icon, href=cta_href, extra=cta_class, **_ca) }}{% endif %}
+  </div>
+</div>
+{%- else -%}
 <div class="eu-empty{% if compact %} eu-empty--sm{% endif %}">
   <div class="eu-empty-ic"><i data-lucide="{{ icon }}"></i></div>
   <div class="t-card">{{ title }}</div>
-  <p>{{ text }}</p>
-  {% if cta %}{{ button(cta, icon=cta_icon, href=cta_href) }}{% endif %}
+  {% if text %}<p>{{ text }}</p>{% endif %}
+  {% if cta %}{{ button(cta, icon=cta_icon, href=cta_href, extra=cta_class, **_ca) }}{% endif %}
   {% if kbd %}<span class="t-meta">o pulsa <span class="kbd">{{ kbd }}</span></span>{% endif %}
 </div>
+{%- endif %}
 {%- endmacro %}
 
 {# ── Insignias de clasificación del día (sprite: _ui/rank_sprite.html) ──

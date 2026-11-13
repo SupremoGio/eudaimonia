@@ -5,7 +5,7 @@
   var root = document.getElementById('rc');
   if (!root) return;
   var ALL = JSON.parse(document.getElementById('rc-data').textContent || '[]');
-  var list = ALL.slice(), cat = '', active = null;
+  var list = ALL.slice(), cat = '', active = null, dropF = null;
   var fodmapOnly = $id('rc-fodmap') && $id('rc-fodmap').getAttribute('aria-pressed') === 'true';
   function $id(i) { return document.getElementById(i); }
   var FOD = { seguro: ['Apta FODMAP', 'success'], porcion: ['FODMAP · porción', 'warning'], evitar: ['FODMAP · evitar', 'danger'] };
@@ -25,10 +25,17 @@
   }
   function filter() {
     var q = $('rc-q').value.trim().toLowerCase();
-    list = ALL.filter(function (r) {
-      return (!cat || r.categoria === cat) && (!fodmapOnly || r.fodmap === 'seguro') && (!q || r.nombre.toLowerCase().indexOf(q) >= 0 || (r.tags || '').toLowerCase().indexOf(q) >= 0 ||
+    function match(r, skip) {
+      return (skip === 'cat' || !cat || r.categoria === cat) && (skip === 'fodmap' || !fodmapOnly || r.fodmap === 'seguro') &&
+        (skip === 'q' || !q || r.nombre.toLowerCase().indexOf(q) >= 0 || (r.tags || '').toLowerCase().indexOf(q) >= 0 ||
         (r.ingredientes || []).some(function (i) { return String(i.item || i).toLowerCase().indexOf(q) >= 0; }));
-    });
+    }
+    list = ALL.filter(function (r) { return match(r); });
+    var act = [];
+    if (cat) act.push({ key: 'cat', label: cat });
+    if (fodmapOnly) act.push({ key: 'fodmap', label: 'FODMAP seguro' });
+    if (q) act.push({ key: 'q', label: $('rc-q').value.trim() });
+    dropF = list.length ? null : window.euDropFilter(act, function (k) { return ALL.filter(function (r) { return match(r, k); }).length; });
     render();
   }
   function macroChips(r) {
@@ -38,9 +45,10 @@
   function render() {
     var g = $('rc-grid');
     if (!list.length) {
-      g.innerHTML = '<div class="eu-card rc-span">' + (ALL.length
-        ? '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="search-x"></i></div><div class="t-card">Sin resultados</div><p>Ninguna receta coincide con este filtro.</p></div>'
-        : '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="cooking-pot"></i></div><div class="t-card">Aún no tienes recetas</div><p>Agrega la primera para empezar tu recetario.</p><button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva receta</button></div>') + '</div>';
+      g.innerHTML = ALL.length
+        ? window.euEmptyFilter('Ninguna receta coincide con estos filtros.', dropF ? 'Sin «' + dropF.label + '» hay ' + dropF.count + '.' : 'Prueba con otro filtro.', dropF, 'rc-span')
+        : '<div class="eu-card rc-span">' + window.euEmpty('cooking-pot', 'Aún no tienes recetas', 'Agrega la primera para empezar tu recetario.', false,
+            '<button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva receta</button>') + '</div>';
       icons(); return;
     }
     g.innerHTML = list.map(function (r) {
@@ -182,6 +190,14 @@
     }
   });
   $('rc-q').addEventListener('input', filter);
+  // «Quitar «X»» del vacío de filtro (kind=filter)
+  $('rc-grid').addEventListener('click', function (e) {
+    var b = e.target.closest('.js-empty-drop'); if (!b) return;
+    if (b.dataset.drop === 'cat') { var all = document.querySelector('[data-fcat=""]'); if (all) { all.click(); return; } cat = ''; }
+    else if (b.dataset.drop === 'fodmap') { $('rc-fodmap').click(); return; }
+    else if (b.dataset.drop === 'q') $('rc-q').value = '';
+    filter();
+  });
   $('rc-fodmap').addEventListener('click', function () { fodmapOnly = !fodmapOnly; this.setAttribute('aria-pressed', String(fodmapOnly)); filter(); });
   $('rm-momento').addEventListener('click', function (e) { var b = e.target.closest('[data-mom]'); if (b) b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true')); });
   document.querySelectorAll('[data-fcat]').forEach(function (b) {

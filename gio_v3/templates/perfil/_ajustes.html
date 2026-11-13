@@ -1,20 +1,72 @@
-{# Ajustes (nota 8): Tema y Cerrar sesión solo aquí; zona de peligro al fondo. #}
+{# Ajustes (handoff Plantas y Ajustes, nota 4): un solo lugar para lo
+   configurable, por grupos. Los interruptores guardan al instante con
+   POST /perfil/api/ajustes {clave, valor} (lista blanca en perfil/routes.py).
+   El reset de gamificación queda igual, en la zona de peligro. #}
+{% macro sw(clave, label, on, sub='', id='') -%}
+<li class="eu-row pf-aj-row">
+  <div class="eu-row-main"><div class="eu-row-t" id="aj-{{ id or clave|replace(':', '-') }}">{{ label }}</div>{% if sub %}<div class="eu-row-s">{{ sub }}</div>{% endif %}</div>
+  <button type="button" class="eu-switch" role="switch" data-aj="{{ clave }}" data-inv="{{ '1' if clave.startswith(('avisos_off:', 'quick_off:', 'onb_oculto')) else '0' }}" aria-checked="{{ 'true' if on else 'false' }}" aria-labelledby="aj-{{ id or clave|replace(':', '-') }}"><span></span></button>
+</li>
+{%- endmacro %}
 <section class="pf-sec eu-vstack" id="sec-ajustes" data-sec-panel="ajustes"{% if cur != 'ajustes' %} hidden{% endif %}>
   {% set sec_title, sec_sub, sec_action = 'Ajustes', '', '' %}
   {% include "perfil/_sechead.html" %}
-  <div class="eu-card eu-card--flush">
-    <div class="eu-list">
-      <div class="eu-row">
-        <div class="eu-row-ic"><i data-lucide="sun-moon"></i></div>
+
+  <div class="pf-aj-g" id="apariencia">
+    <h3 class="t-eyebrow pf-aj-eb">Apariencia</h3>
+    <div class="eu-card eu-card--flush"><ul class="eu-list" role="list">
+      <li class="eu-row pf-aj-row">
         <div class="eu-row-main"><div class="eu-row-t">Tema</div><div class="eu-row-s">Se guarda en este dispositivo</div></div>
         <div class="eu-seg js-theme-seg" role="group" aria-label="Tema"><button type="button" data-theme-set="dark">Noche</button><button type="button" data-theme-set="light">Día</button></div>
-      </div>
-      <button type="button" class="eu-row eu-row--interactive pf-logout" onclick="logoutApp()">
-        <div class="eu-row-ic"><i data-lucide="log-out"></i></div>
-        <div class="eu-row-main"><div class="eu-row-t">Cerrar sesión</div></div>
-      </button>
-    </div>
+      </li>
+    </ul></div>
   </div>
+
+  {# Avisos: qué fuentes entran a la campana (antes en /perfil/?sec=avisos) #}
+  <div class="pf-aj-g" id="avisos">
+    <h3 class="t-eyebrow pf-aj-eb">Avisos</h3>
+    <div class="eu-card eu-card--flush" id="avisos-prefs"><ul class="eu-list" role="list">
+      {% for f in avisos_prefs if f.id != 'logros' %}{{ sw('avisos_off:' ~ f.id, f.nombre, f.activa, f.desc) }}{% endfor %}
+      {% for f in avisos_prefs if f.id == 'logros' %}{{ sw('avisos_off:logros', 'Logros en la campana', f.activa, 'Insignias y logros nuevos; se marcan vistos al abrir el panel') }}{% endfor %}
+    </ul></div>
+  </div>
+
+  <div class="pf-aj-g" id="captura">
+    <h3 class="t-eyebrow pf-aj-eb">Captura rápida</h3>
+    <div class="eu-card eu-card--flush"><ul class="eu-list" role="list">
+      {{ sw('quick_orden_uso', 'Ordenar por uso', ajustes.por_uso, 'Los que más registras, primero') }}
+      <li class="eu-row pf-aj-row">
+        <div class="eu-row-main"><div class="eu-row-t">Registros visibles</div><div class="eu-row-s num" id="aj-quick-n">{{ ajustes.quick|selectattr('on')|list|length }} de {{ ajustes.quick|length }}</div></div>
+        <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-aj-quick" aria-expanded="false" aria-controls="aj-quick-list">Editar</button>
+      </li>
+    </ul>
+    <ul class="eu-list pf-aj-sub" role="list" id="aj-quick-list" hidden>
+      {% for q in ajustes.quick %}{{ sw('quick_off:' ~ q.id, q.label, q.on) }}{% endfor %}
+    </ul></div>
+  </div>
+
+  <div class="pf-aj-g" id="inicio">
+    <h3 class="t-eyebrow pf-aj-eb">Inicio</h3>
+    <div class="eu-card eu-card--flush"><ul class="eu-list" role="list">
+      {{ sw('onb_oculto', 'Mostrar «Primeros pasos»', ajustes.onb_visible, (onb.n ~ '/' ~ onb.total ~ ' completos') if onb else '') }}
+    </ul></div>
+  </div>
+
+  <div class="pf-aj-g" id="datos">
+    <h3 class="t-eyebrow pf-aj-eb">Datos</h3>
+    <div class="eu-card eu-card--flush"><ul class="eu-list" role="list">
+      <li class="eu-row pf-aj-row">
+        <div class="eu-row-main"><div class="eu-row-t">Exportar todo (CSV)</div><div class="eu-row-s">Un zip con un CSV por tabla: movimientos, actividades, plantas, salud… Sin fotos ni contraseñas.</div></div>
+        {% if fin_ok %}<a class="eu-btn eu-btn--secondary eu-btn--sm" href="/perfil/api/exportar" download><i data-lucide="download"></i>Descargar</a>
+        {% else %}<span class="t-meta">Desbloquea Oikonomia para exportar</span>{% endif %}
+      </li>
+      <li class="eu-row pf-aj-row">
+        <div class="eu-row-main"><div class="eu-row-t">Cerrar sesión</div></div>
+        <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm" onclick="logoutApp()"><i data-lucide="log-out"></i>Salir</button>
+      </li>
+    </ul></div>
+  </div>
+
   <div class="eu-card eu-vstack pf-danger-zone">
     <div class="t-eyebrow pf-danger-eyebrow">Zona de peligro</div>
     <div class="t-card">Reset de gamificación</div>

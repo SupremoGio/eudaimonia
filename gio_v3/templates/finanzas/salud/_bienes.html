@@ -36,6 +36,6 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="pt-empty"><p class="t-meta">Registra tus bienes: carro, lavadora, sofá, refrigerador…</p><button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-new-bien"><i data-lucide="plus"></i>Agregar primer bien</button></div>
+  <div class="pt-empty">{{ ui.empty('sofa', 'Aún sin bienes', 'Registra tus bienes: carro, lavadora, sofá, refrigerador…', compact=True, cta='Agregar primer bien', cta_icon='plus', cta_class='js-new-bien') }}</div>
   {% endif %}
 </section>

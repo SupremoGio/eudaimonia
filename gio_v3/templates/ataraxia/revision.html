@@ -114,7 +114,7 @@
         </ul>
       </section>
       {% else %}
-      {{ ui.empty('check-check', 'Nada que cerrar', 'Inbox vacío, sin vencidas ni avisos de la semana.', compact=True) }}
+      {{ ui.empty('check', 'Nada que cerrar', 'Inbox vacío, sin vencidas ni avisos de la semana.', kind='done') }}
       {% endfor %}
       <p class="t-meta">Nada aquí bloquea el avance: lo que dejes queda en Praxis y en la campana.</p>
     </section>

@@ -86,7 +86,7 @@
   function render(movs, perdidos) {
     perdidos = perdidos || [];
     if (!movs.length && !perdidos.length) {
-      $('dd-body').innerHTML = '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="receipt"></i></div><div class="t-card">Sin movimientos</div><p>Esta categoría no tiene movimientos registrados en ' + esc(MES) + '.</p></div>';
+      $('dd-body').innerHTML = window.euEmpty('receipt', 'Sin movimientos', 'Esta categoría no tiene movimientos registrados en ' + MES + '.');
       icons(); footer(); return;
     }
     $('dd-body').innerHTML = '<ul class="bg-movs">' + movs.map(function (m) {

@@ -111,5 +111,5 @@
     </div>
   </article>
   {% endfor %}
-  <div class="pd-span" id="pd-nomatch"{% if biblio and n_por_leer %} hidden{% endif %}>{{ ui.empty('library', 'Nada aquí todavía', 'Agrega un libro con «+ Libro» o cambia de filtro.', compact=True) }}</div>
+  <div class="pd-span" id="pd-nomatch"{% if biblio and n_por_leer %} hidden{% endif %}>{% if biblio %}{{ ui.empty('library', 'Ningún libro en este filtro.', 'Cambia de filtro para ver el resto.', kind='filter') }}{% else %}{{ ui.empty('library', 'Aún sin libros', 'Agrega el primero con «+ Libro».', compact=True) }}{% endif %}</div>
 </div>

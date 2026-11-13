@@ -170,6 +170,7 @@
     if (q) st.ids = q.split(',').map(Number).filter(Boolean);
   })();
   var items = ALL_ITEMS.slice();
+  var dropF = null;   // filtro que más libera cuando no hay resultados (kind=filter)
   var sortEl = $('gr-sort');
   try { var s0 = localStorage.getItem('gr-sort'); if (s0 && sortEl.querySelector('option[value="' + s0 + '"]')) sortEl.value = s0; } catch (_) {}
 
@@ -214,15 +215,26 @@
   function filterItems() {
     var q = $('gr-q').value.trim().toLowerCase();
     var dept = DEPARTMENTS.find(function (d) { return d.key === st.dept; });
-    items = ALL_ITEMS.filter(function (r) {
-      return (!dept.cats || dept.cats.indexOf(r.categoria) >= 0) &&
-        (!st.cat || r.categoria === st.cat) &&
-        (!q || r.nombre.toLowerCase().indexOf(q) >= 0 || (r.marca || '').toLowerCase().indexOf(q) >= 0 || (r.color_name || '').toLowerCase().indexOf(q) >= 0) &&
-        (!st.color || ((colorFamily(r) || {}).name || 'Otro') === st.color) &&
-        (st.catF === null || r.categoria === st.catF) &&
-        (!st.idle || isIdle(r)) &&
-        (!st.ids || st.ids.indexOf(r.id) >= 0);
-    });
+    // skip: un filtro a ignorar (para el vacío «Sin X hay N», kind=filter)
+    function match(r, skip) {
+      return (skip === 'dept' || !dept.cats || dept.cats.indexOf(r.categoria) >= 0) &&
+        (skip === 'cat' || !st.cat || r.categoria === st.cat) &&
+        (skip === 'q' || !q || r.nombre.toLowerCase().indexOf(q) >= 0 || (r.marca || '').toLowerCase().indexOf(q) >= 0 || (r.color_name || '').toLowerCase().indexOf(q) >= 0) &&
+        (skip === 'color' || !st.color || ((colorFamily(r) || {}).name || 'Otro') === st.color) &&
+        (skip === 'catF' || st.catF === null || r.categoria === st.catF) &&
+        (skip === 'idle' || !st.idle || isIdle(r)) &&
+        (skip === 'ids' || !st.ids || st.ids.indexOf(r.id) >= 0);
+    }
+    items = ALL_ITEMS.filter(function (r) { return match(r); });
+    var activos = [];
+    if (dept.cats) activos.push({ key: 'dept', label: dept.label || dept.key });
+    if (st.cat) activos.push({ key: 'cat', label: st.cat });
+    if (q) activos.push({ key: 'q', label: $('gr-q').value.trim() });
+    if (st.color) activos.push({ key: 'color', label: st.color });
+    if (st.catF !== null) activos.push({ key: 'catF', label: st.catF || 'Sin categoría' });
+    if (st.idle) activos.push({ key: 'idle', label: 'Olvidadas' });
+    if (st.ids) activos.push({ key: 'ids', label: 'Parecidas' });
+    dropF = items.length ? null : window.euDropFilter(activos, function (k) { return ALL_ITEMS.filter(function (r) { return match(r, k); }).length; });
     items.sort(SORTERS[sortEl.value] || SORTERS.recientes);
     /* Filtros que no se ven en los chips (olvidadas, color o categoría desde
        Análisis): una línea «Mostrando N … · Quitar filtro». */
@@ -283,13 +295,14 @@
     grid.className = view === 'list' ? 'eu-card eu-card--flush gr-list' : 'gr-grid';
     if (!ALL_ITEMS.length) {
       grid.className = 'gr-grid';
-      grid.innerHTML = '<div class="eu-empty gr-span"><div class="eu-empty-ic"><i data-lucide="shirt"></i></div><div class="t-card">Tu armario está vacío</div>' +
-        '<p>Añade tu primera prenda para empezar a construir tu catálogo.</p><button type="button" class="eu-btn eu-btn--primary js-new-item"><i data-lucide="plus"></i>Nueva prenda</button></div>';
+      grid.innerHTML = window.euEmpty('shirt', 'Tu armario está vacío', 'Añade tu primera prenda para empezar a construir tu catálogo.', false,
+        '<button type="button" class="eu-btn eu-btn--primary js-new-item"><i data-lucide="plus"></i>Nueva prenda</button>', 'gr-span');
       icons(); return;
     }
     if (!items.length) {
       grid.className = 'gr-grid';
-      grid.innerHTML = '<div class="eu-empty gr-span"><div class="eu-empty-ic"><i data-lucide="search-x"></i></div><div class="t-card">Sin resultados</div><p>Ninguna prenda coincide con este filtro.</p></div>';
+      grid.innerHTML = window.euEmptyFilter('Ninguna prenda cumple estos filtros.',
+        dropF ? 'Sin «' + dropF.label + '» hay ' + dropF.count + '.' : 'Prueba con otro filtro.', dropF, 'gr-span');
       icons(); return;
     }
     if (view === 'list') {
@@ -620,10 +633,11 @@
     var list = otFilter ? ALL_OUTFITS.filter(function (o) { return (o.ocasion || '').toLowerCase() === otFilter.toLowerCase(); }) : ALL_OUTFITS;
     var grid = $('ot-grid');
     if (!list.length) {
-      grid.innerHTML = '<div class="eu-empty gr-span"><div class="eu-empty-ic"><i data-lucide="' + (otFilter ? 'search-x' : 'layers') + '"></i></div>' +
-        '<div class="t-card">' + (otFilter ? 'Sin resultados' : 'Sin outfits guardados') + '</div><p>' +
-        (otFilter ? 'No hay outfits guardados para esta ocasión.' : 'Crea tu primer look o pídele uno al coach de imagen.') + '</p>' +
-        (otFilter ? '' : '<button type="button" class="eu-btn eu-btn--primary js-new-outfit"><i data-lucide="plus"></i>Nuevo outfit</button>') + '</div>';
+      grid.innerHTML = otFilter
+        ? window.euEmptyFilter('No hay outfits para «' + otFilter + '».', 'Sin ese filtro hay ' + ALL_OUTFITS.length + '.',
+            ALL_OUTFITS.length ? { key: 'ot', label: otFilter } : null, 'gr-span')
+        : window.euEmpty('layers', 'Sin outfits guardados', 'Crea tu primer look o pídele uno al coach de imagen.', false,
+            '<button type="button" class="eu-btn eu-btn--primary js-new-outfit"><i data-lucide="plus"></i>Nuevo outfit</button>', 'gr-span');
       icons(); return;
     }
     grid.innerHTML = list.map(function (o) {
@@ -643,6 +657,25 @@
     }).join('');
     icons();
   }
+  // «Quitar «X»» del vacío de filtro (ui.empty kind=filter)
+  $('gr').addEventListener('click', function (e) {
+    var b = e.target.closest('.js-empty-drop'); if (!b) return;
+    var k = b.dataset.drop;
+    if (k === 'ot') {
+      var all = document.querySelector('#ot-filters [data-occ=""]');
+      if (all) all.click(); else { otFilter = ''; renderOutfits(); }
+      return;
+    }
+    if (k === 'dept') st.dept = '';
+    else if (k === 'cat') st.cat = '';
+    else if (k === 'q') $('gr-q').value = '';
+    else if (k === 'color') st.color = '';
+    else if (k === 'catF') st.catF = null;
+    else if (k === 'idle') st.idle = false;
+    else if (k === 'ids') st.ids = null;
+    renderDepts();
+    filterItems();
+  });
   $('ot-filters').addEventListener('click', function (e) {
     var b = e.target.closest('[data-occ]'); if (!b) return;
     otFilter = b.dataset.occ;
@@ -1024,8 +1057,8 @@
     var box = $('gr-analisis');
     var act = ALL_ITEMS.filter(function (i) { return i.activo !== 0; });
     if (!act.length) {
-      box.innerHTML = advisorHTML() + '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="sparkles"></i></div><div class="t-card">Aún no hay nada que analizar</div>' +
-        '<p>Añade algunas prendas y aquí verás qué tan cerca estás de un armario cápsula completo, con cada principio explicado.</p></div>';
+      box.innerHTML = advisorHTML() + window.euEmpty('sparkles', 'Aún no hay nada que analizar',
+        'Añade algunas prendas y aquí verás qué tan cerca estás de un armario cápsula completo, con cada principio explicado.');
       icons(); return;
     }
     var colorMap = {};

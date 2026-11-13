@@ -294,7 +294,19 @@ if TURSO_URL and TURSO_TOKEN:
         print(f"[DB] TURSO FALLO ({e}) - usando SQLite local"
               f"{' en volumen' if _HAS_VOLUME else ' (datos NO persistiran en redeploy)'}")
 
+# Modo ejemplo (?demo=1, handoff Estados vacíos): mientras una petición pinta
+# datos de muestra, get_db() apunta a una copia temporal de la base de ejemplo
+# (modules/demo.py). Nada de lo que pase ahí llega a la base real ni a Turso.
+import contextvars as _contextvars
+DEMO_PATH = _contextvars.ContextVar('eu_demo_db', default=None)
+
+
 def get_db():
+    _demo = DEMO_PATH.get()
+    if _demo:
+        c = _sqlite3.connect(_demo)
+        c.row_factory = _sqlite3.Row
+        return c
     if _USE_HYBRID:
         return _HybridConn(_DB_PATH, _TURSO_HOST, _TURSO_TOKEN_VAL, async_sync=_TURSO_ASYNC)
     c = _sqlite3.connect(_DB_PATH)

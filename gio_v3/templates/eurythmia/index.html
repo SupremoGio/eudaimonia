@@ -16,6 +16,13 @@
 <div class="ey" id="ey" data-cat="eurythmia" data-vista="{{ vista }}"{% if from_acta %} data-from="acta"{% endif %}>
   <div class="ey-main">
     {{ ui.page_head(eyebrow='Salsa cubana · nivel ' ~ lv.level.n, cls='ey-hd') }}
+    {% set setup = not state.sessions and not vista and not eu_demo %}
+    {% if setup %}
+    {{ ui.empty('music-2', 'Tu primera sesión de baile', 'Cada sesión sigue el bucle disociación → paso → improvisación. Con lo que registres te sugiero qué figura repasar, llevo tu racha y tu nivel.',
+                kind='setup', eyebrow='Eurythmia · primer uso', steps=['Pon una canción de la lista', 'Sigue el bucle de 20–45 min', 'Califica el flow al cerrar'],
+                cta='Empezar la sesión de hoy', cta_icon='play', cta_class='js-setup-reveal', example_href='?demo=1') }}
+    {% endif %}
+    <div class="ey-body" data-setup-body{% if setup %} hidden{% endif %}>
 
     {% if vista %}
     <a class="ey-back t-meta" href="/eurythmia/{{ '?from=acta' if from_acta }}">← Sesión</a>
@@ -107,6 +114,7 @@
       <div id="ey-rep-list"></div>
     </section>
     {% endif %}
+    </div>
   </div>
 
   <aside class="ey-side" aria-label="Sesiones, música y ciencia">

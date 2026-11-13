@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="dark">
+<html lang="es" class="dark"{% if eu_demo %} data-demo{% endif %}>
 <head>
   {#- Pestaña del navegador: el nombre del menú (o de la vista). Solo el detalle
       de una entidad lo sobrescribe con su nombre. -#}
@@ -113,6 +113,7 @@
 
 <!-- CONTENT -->
 <main id="eu-main" class="p-4 md:p-6 overflow-x-hidden" tabindex="-1">
+  {% if eu_demo %}<div class="eu-demo-band" role="note"><i data-lucide="eye"></i><span><b>Ejemplo</b> · nada se guarda</span><a href="{{ request.path }}">Salir del ejemplo</a></div>{% endif %}
   {% block content %}{% endblock %}
 </main>
 
@@ -187,7 +188,7 @@
       </div>
     </div>
     <div class="eu-avisos-bd" id="eu-avisos-bd"></div>
-    <div class="eu-avisos-ft"><span class="grow" id="eu-avisos-foot"></span><a href="/perfil/?sec=avisos">Preferencias</a></div>
+    <div class="eu-avisos-ft"><span class="grow" id="eu-avisos-foot"></span><a href="/perfil/?sec=ajustes#avisos">Preferencias</a></div>
   </div>
 </div>
 
@@ -425,15 +426,31 @@ document.addEventListener('keydown', (e) => {
     }, _reduced ? 0 : 150);
   }
 
+  // Modo ejemplo (?demo=1): las lecturas siguen viendo la base de muestra y
+  // ninguna escritura sale (handoff Estados vacíos).
+  var _demo = document.documentElement.hasAttribute('data-demo');
   window.fetch=function(url,opts){
     opts=opts||{};
     var m=(opts.method||'GET').toUpperCase();
+    if(_demo){
+      if(m!=='GET'&&m!=='HEAD'){
+        if(window.toast) toast('Ejemplo · nada se guarda');
+        return Promise.reject(new Error('Ejemplo · nada se guarda'));
+      }
+      if(typeof url==='string'&&(url[0]==='/'&&url[1]!=='/')&&!/[?&]demo=1/.test(url)) url+=(url.indexOf('?')<0?'?':'&')+'demo=1';
+    }
     if(m!=='GET'&&m!=='HEAD'){
       if(opts.headers instanceof Headers){opts.headers.set('X-CSRFToken',_t);}
       else{opts.headers=Object.assign({'X-CSRFToken':_t},opts.headers||{});}
     }
     _barStart();
-    return _f(url,opts).finally(_barEnd);
+    var p=_f(url,opts).finally(_barEnd);
+    var _su=document.querySelector('[data-setup-reload]'), _pre=_su&&_su.getAttribute('data-setup-reload');
+    if(m!=='GET'&&m!=='HEAD'&&_pre&&typeof url==='string'&&url.indexOf(_pre)===0){
+      // Primer uso: la primera escritura del módulo pasa del vacío al contenido.
+      p.then(function(r){ if(r.ok) setTimeout(function(){ location.reload(); }, 900); });
+    }
+    return p;
   };
 })();
 </script>

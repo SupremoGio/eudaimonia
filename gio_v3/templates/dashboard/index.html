@@ -16,6 +16,7 @@
     {% call ui.page_head(eyebrow=fecha_larga|capitalize ~ (' · semana ' ~ semana_iso if semana_iso else ''), cls='dash-hello') %}
       {{ ui.button('Marcar actividad', icon='circle-check', href='/actividades/') }}
     {% endcall %}
+    {% if onb %}{% include "_ui/onboarding.html" %}{% endif %}
     {% include "dashboard/_hero.html" %}
     {% include "dashboard/_balance.html" %}
     {% include "dashboard/_heat.html" %}

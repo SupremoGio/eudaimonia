@@ -424,10 +424,11 @@ def test_consejo_pide_historial_minimo_y_luego_usa_la_ia(client, ia_fake):
 def test_pagina_oculta_el_doctor_sin_api_key(client, monkeypatch):
     monkeypatch.delenv('GEMINI_API_KEY', raising=False)
     html = client.get('/plantas/').get_data(as_text=True)
-    assert 'm-doctor' not in html and 'js-ficha' not in html
+    assert 'pl-tab-doctor' not in html and 'js-ficha' not in html
     monkeypatch.setenv('GEMINI_API_KEY', 'x')
     html = client.get('/plantas/').get_data(as_text=True)
-    assert 'm-doctor' in html and 'js-ficha' in html
+    assert 'pl-tab-doctor' in html and 'js-ficha' in html          # Doctor: pestaña del panel (Plantas S2)
+    assert 'id="m-doctor"' not in html
 
 
 # ── Especie confirmada con fotos (iNaturalist, desde el navegador) ───────────

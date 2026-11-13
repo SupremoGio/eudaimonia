@@ -1,7 +1,7 @@
 # Estado de los handoffs v2 (Fase 0 de `design_handoff_ORDEN.md`)
 
 Revisado el 2026-11-12 contra `main`, después del merge de Nutrición v2 (PR #121).
-**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2), Captura rápida (3), Avisos (3) y Revisión semanal (2) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
+**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2), Captura rápida (3), Avisos (3), Revisión semanal (2), Estados vacíos (2) y Plantas y Ajustes (3) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
 Las rutas son relativas a `gio_v3/`.
 
 Algunos paquetes se implementaron en un solo commit con todos sus sprints. En esos casos se repite el commit y la evidencia de cada sprint apunta a su pieza.
@@ -86,8 +86,13 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 | Avisos | S1 · contrato `avisos(db, hoy)` + `recolectar()` | hecho | `117e813` | `modules/avisos.py` (`FUENTES`, `recolectar`, endpoints), tabla `avisos_estado`; un `avisos()` en finanzas, salud, recordatorios, harma, gtd, plantas, fútbol, actividades y gamification |
 | Avisos | S2 · campana + panel | hecho | `117e813` | `templates/eu/layout_sub.html` (`#eu-avisos-btn`, `#eu-avisos`), `static/js/eu-avisos.js` |
 | Avisos | S3 · preferencias + Inicio | hecho | `117e813` | `templates/perfil/_avisos.html` (`avisos_off:<fuente>`), `modules/dashboard/routes.py` (`_build_deadlines(…, avisos_hoy)`) |
-| Revisión semanal | S1 · ruta `/ataraxia/revision`, pasos 1–2, guardado parcial | hecho | rama actual | `modules/ataraxia/routes.py` (`revision`, `save_revision` con `cerrar`, `_AUTO_METRICS` con 6), `templates/ataraxia/revision.html`, `static/js/revision.js` |
-| Revisión semanal | S2 · pasos 3–4, cierre y entradas | hecho | rama actual | `_cabos`, `_calendario`, `_marcar_tarea('sun_planeacion')`, aviso `ata:revision:<semana>`, ⌘K `revision` en `modules/nav.py` |
+| Revisión semanal | S1 · ruta `/ataraxia/revision`, pasos 1–2, guardado parcial | hecho | `53cdc23` | `modules/ataraxia/routes.py` (`revision`, `save_revision` con `cerrar`, `_AUTO_METRICS` con 6), `templates/ataraxia/revision.html`, `static/js/revision.js` |
+| Revisión semanal | S2 · pasos 3–4, cierre y entradas | hecho | `53cdc23` | `_cabos`, `_calendario`, `_marcar_tarea('sun_planeacion')`, aviso `ata:revision:<semana>`, ⌘K `revision` en `modules/nav.py` |
+| Estados vacíos | S1 · `ui.empty(kind=…)`, migración y `?demo=1` | hecho | rama actual | `templates/_ui/macros.html` (`empty` con setup/period/filter/done), `modules/demo.py`, `euEmptyFilter`/`euSetDrop` en `static/js/eu-motion.js` |
+| Estados vacíos | S2 · Primeros pasos | hecho | rama actual | `modules/onboarding.py`, `templates/_ui/onboarding.html` (Inicio y Perfil › Primeros pasos) |
+| Plantas y Ajustes | Plantas S1 · «Hoy» y cuadrícula compacta | hecho | rama actual | `modules/plantas/routes.py` (`cuidados_hoy`, `hoy` en `_state`), `templates/plantas/index.html`, `static/js/plantas.js` |
+| Plantas y Ajustes | Plantas S2 · panel con pestañas | hecho | rama actual | `#pl-panel` (Cuidados · Fotos · Historial · Doctor), `m-planta` con `<details id="pl-avanzado">`; `m-doctor` eliminado |
+| Plantas y Ajustes | Ajustes S1 · un solo lugar para lo configurable | hecho | rama actual | `templates/perfil/_ajustes.html`, `POST /perfil/api/ajustes` (lista blanca), `GET /perfil/api/exportar` (zip de CSV) |
 
 ## Notas de la Fase 1 que ya quedaron resueltas
 - **XP negativo del desliz (antes de 1.2):** el motor no acepta montos negativos, porque `process_activity` aplica `max(1, …)`. El desliz se descuenta con `engine._award_xp(-pen, 'activity', …, log_id)`, y `remove_activity` lo revierte. Está documentado en `modules/nutricion/routes.py`, sección «XP por el motor».
@@ -107,6 +112,17 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 - **Racha de anclas:** es la racha de Acta que usa Inicio (días seguidos con actividad), contada al domingo de la semana revisada.
 - **«Mover» en vencidas:** pasa la fecha límite al lunes siguiente. «Hoy» la pone para hoy y la manda al cuadrante Hoy.
 - **Casilla de la rutina:** `check_tarea` ya no vuelve a pagar una casilla que estaba marcada.
+
+## Notas de Estados vacíos
+- **`?demo=1`:** cada petición usa una copia temporal de una base de ejemplo (esquema completo y datos de muestra). La copia se borra al terminar, así que nada llega a la base real ni a Turso. En el navegador, el `fetch` global bloquea las escrituras y agrega `demo=1` a las lecturas.
+- **Primer uso:** la primera escritura del módulo en una pantalla con `setup` recarga la página para pasar al contenido. En Eurythmia e Idiomas la pantalla principal es la primera acción, así que el botón solo muestra el contenido.
+- **Datos que ya vienen sembrados:** las anclas, las recompensas de ejemplo, el repertorio de Eurythmia y el plan de Idiomas. Por eso «Elige tus anclas» aparece hecho desde el inicio, y para «tu primera recompensa» las de ejemplo no cuentan. Eurythmia muestra el `setup` mientras no hay ninguna sesión, e Idiomas mientras no hay tests ni journal.
+
+## Notas de Plantas y Ajustes
+- **«Regar las N»:** usa el mismo `/api/riego-grupo`, que riega todas las del entorno con el riego no al día, igual que antes. Por eso la barra cuenta así, y puede incluir alguna «próxima» que todavía no está en la lista de Hoy.
+- **Panel:** en escritorio se abre solo, con la primera planta de Hoy. En móvil es una hoja a pantalla completa. Esc lo cierra y el foco vuelve a la tarjeta.
+- **Ajustes:** la sección «Avisos» de Perfil desaparece. `/perfil/?sec=avisos` redirige a `?sec=ajustes#avisos`. `/api/avisos/preferencias` sigue existiendo por compatibilidad.
+- **Exportar:** pide `fin_ok`, porque incluye finanzas. Deja fuera la bóveda de contraseñas, `app_settings` (tokens y hashes) y las fotos.
 
 ## Siguiente paso
 No queda ningún sprint pendiente en el ORDEN. Cualquier handoff nuevo empieza con su propio `SPRINTS.md`.

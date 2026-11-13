@@ -53,7 +53,7 @@
     {% else %}
     <div class="ci-span">{{ ui.empty('shopping-cart', 'Sin productos registrados', 'Agrega los productos que compras de forma recurrente para llevar seguimiento de su frecuencia y gasto.') }}</div>
     {% endfor %}
-    <div class="ci-span" id="ci-nomatch" hidden>{{ ui.empty('filter', 'Nada en este filtro', 'No hay productos que coincidan.') }}</div>
+    <div class="ci-span" id="ci-nomatch" hidden>{{ ui.empty('filter', 'Ningún producto en este filtro.', 'No hay productos que coincidan.', kind='filter') }}</div>
   </div>
 </div>
 

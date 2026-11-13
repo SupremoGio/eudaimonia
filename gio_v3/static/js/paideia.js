@@ -49,6 +49,8 @@
     });
     var g = $('pd-grid'); if (g) g.dataset.filter = bookFilter;
     var nm = $('pd-nomatch'); if (nm) nm.hidden = shown > 0;
+    if (nm && !shown && window.euSetDrop) euSetDrop(nm, euChipLabel(document.querySelector('[data-f="' + bookFilter + '"]'), bookFilter),
+      document.querySelectorAll('.pd-book').length, function () { bookFilter = 'todos'; pdApplyFilter(); });
   }
   window.pdApplyFilter = pdApplyFilter;
   pdApplyFilter();
@@ -376,7 +378,7 @@
     icons();
   }
   function emptyHtml(ic, t, txt) {
-    return '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="' + ic + '"></i></div><div class="t-card">' + t + '</div><p>' + txt + '</p></div>';
+    return window.euEmpty(ic, t, txt);                 // mismo markup que ui.empty()
   }
 
   function syncCounters() {

@@ -72,5 +72,7 @@ data-max="{{ r.max_por_ventana or 0 }}" data-unica="{{ 1 if r.unica else 0 }}" d
 {% endif %}
 
 {% if not rewards %}
-{{ ui.empty('gift', 'Aún no hay recompensas', 'Crea tu primera recompensa y convierte tu esfuerzo en algo tangible.') }}
+{{ ui.empty('gift', 'Ponle precio a tu esfuerzo', 'Cada actividad te da EC. Aquí decides en qué los gastas: un libro, una cena, un día libre. Cuando te alcance, la canjeas.',
+            kind='setup', eyebrow='Recompensas · primer uso', steps=['Piensa en algo que de verdad quieras', 'Ponle un costo en EC (10 EC ≈ $100)', 'Canjéala cuando te alcance'],
+            cta='Crear recompensa', cta_icon='plus', cta_class='js-new', example_href='?demo=1') }}
 {% endif %}

@@ -7,6 +7,7 @@
     <div class="eu-list" id="docsList">
       {% for doc in docs %}{{ doc_row(doc) }}{% endfor %}
     </div>
-    <div class="js-docs-empty"{% if docs %} hidden{% endif %}>{{ ui.empty('file-text', 'Aún no hay documentos', 'Sube contratos, identificaciones o cualquier archivo que quieras tener a la mano.') }}</div>
+    <div class="js-docs-empty"{% if docs %} hidden{% endif %}>{{ ui.empty('file-text', 'Tus papeles, a la mano', 'Sube contratos, identificaciones o cualquier archivo que quieras encontrar rápido. Quedan en tu volumen, no en la nube de nadie más.',
+            kind='setup', eyebrow='Documentos · primer uso', steps=['Pulsa «Subir» arriba', 'Elige uno o varios archivos (PDF, imagen, Office)', 'Ligalos a un dato de Perfil si quieres']) }}</div>
   </div>
 </section>
