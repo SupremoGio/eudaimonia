@@ -7266,6 +7266,12 @@ def init_db():
                 db.execute("ALTER TABLE recetas ADD COLUMN fodmap TEXT DEFAULT NULL")
             if "momento" not in rc_cols:
                 db.execute("ALTER TABLE recetas ADD COLUMN momento TEXT DEFAULT ''")
+            # Remates · Recetas S1: la comida del plan recuerda de qué receta
+            # salió (POST /nutricion/api/comida con receta_id) → «Para hoy» sabe
+            # qué momento ya tiene receta y cuánto se usó cada una en 14 días.
+            ns_cols = [r["name"] for r in db.execute("PRAGMA table_info(nutricion_semana)").fetchall()]
+            if "receta_id" not in ns_cols:
+                db.execute("ALTER TABLE nutricion_semana ADD COLUMN receta_id INTEGER DEFAULT NULL")
             db.commit()
             if not db.execute("SELECT id FROM migration_log WHERE version='nutri_banco_a_recetas'").fetchone():
                 from modules.nutricion.routes import migrar_banco

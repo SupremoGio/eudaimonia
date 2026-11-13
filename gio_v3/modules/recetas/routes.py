@@ -24,6 +24,92 @@ def _momento(d):
     return ','.join(x.strip() for x in m if x.strip() in validos)
 
 
+# ── «Para hoy» (Remates · Recetas S1) ─────────────────────────────────────────
+# Lee el plan del día de Nutrición (nutricion_semana de hoy) sin sembrarlo: si
+# hoy no hay plan, no hay bloque. Por cada momento sin receta asignada y sin
+# comer todavía, 3 recetas aptas FODMAP de ese momento: favoritas primero,
+# luego las menos usadas en 14 días. «Usar» llama a POST /nutricion/api/comida
+# con receta_id, que guarda nutricion_semana.receta_id.
+SUGERENCIAS_POR_MOMENTO = 3
+USO_DIAS = 14
+_DIAS = 'LMXJVSD'
+
+
+def _norm(s):
+    import unicodedata
+    return ''.join(c for c in unicodedata.normalize('NFD', (s or '').lower()) if unicodedata.category(c) != 'Mn').strip()
+
+
+def para_hoy(db, hoy=None):
+    """[{slot, time, momento, sugerencias: [{id, nombre, calorias, proteina, favorita, usos}]}];
+    [] si Nutrición no tiene plan para hoy."""
+    from datetime import timedelta
+    from utils import today_date
+    from modules.nutricion.routes import momento_de_slot
+    hoy = hoy or today_date()
+    week = (hoy - timedelta(days=hoy.weekday())).isoformat()
+    dia = _DIAS[hoy.weekday()]
+    try:
+        plan = db.execute("SELECT * FROM nutricion_semana WHERE week_start=? AND day_key=? ORDER BY time_str, id",
+                          (week, dia)).fetchall()
+    except Exception:
+        return []
+    if not plan:
+        return []
+    recetas = db.execute("SELECT id, nombre, calorias, proteina, favorita, fodmap, momento FROM recetas").fetchall()
+    por_nombre = {_norm(r['nombre']): r['id'] for r in recetas}
+
+    def receta_de(m):
+        rid = m['receta_id'] if 'receta_id' in m.keys() else None
+        if rid:
+            return rid
+        # comidas del recetario anteriores a receta_id: mismo nombre y agregadas a mano
+        return por_nombre.get(_norm(m['name'])) if m['custom'] else None
+
+    # Usos en los últimos 14 días (hoy incluido)
+    desde = hoy - timedelta(days=USO_DIAS - 1)
+    usos = {}
+    for m in db.execute("SELECT * FROM nutricion_semana WHERE week_start>=?",
+                        ((desde - timedelta(days=desde.weekday())).isoformat(),)).fetchall():
+        try:
+            f = date_from(m['week_start'], m['day_key'])
+        except Exception:
+            continue
+        rid = receta_de(m)
+        if rid and desde <= f <= hoy:
+            usos[rid] = usos.get(rid, 0) + 1
+
+    slots, orden = {}, []
+    for m in plan:
+        s = slots.get(m['slot'])
+        if s is None:
+            s = slots[m['slot']] = {'slot': m['slot'], 'time': m['time_str'], 'con_receta': False, 'hecho': False}
+            orden.append(m['slot'])
+        s['con_receta'] = s['con_receta'] or bool(receta_de(m))
+        s['hecho'] = s['hecho'] or bool(m['done'])
+
+    out = []
+    for nombre in orden:
+        s = slots[nombre]
+        if s['con_receta'] or s['hecho']:
+            continue
+        mom = momento_de_slot(nombre)
+        aptas = [r for r in recetas if r['fodmap'] == 'seguro'
+                 and mom in [x.strip() for x in (r['momento'] or '').split(',')]]
+        aptas.sort(key=lambda r: (not r['favorita'], usos.get(r['id'], 0), r['nombre'].lower()))
+        sug = [{'id': r['id'], 'nombre': r['nombre'], 'calorias': r['calorias'] or 0,
+                'proteina': round(r['proteina'] or 0), 'favorita': bool(r['favorita']), 'usos': usos.get(r['id'], 0)}
+               for r in aptas[:SUGERENCIAS_POR_MOMENTO]]
+        if sug:
+            out.append({'slot': nombre, 'time': s['time'], 'momento': mom, 'sugerencias': sug})
+    return out
+
+
+def date_from(week_start, day_key):
+    from datetime import date, timedelta
+    return date.fromisoformat(week_start) + timedelta(days=_DIAS.index(day_key))
+
+
 def _row(r):
     d = dict(r)
     for f in ('ingredientes', 'instrucciones'):
@@ -40,10 +126,17 @@ def index():
         recetas = [_row(r) for r in db.execute(
             "SELECT * FROM recetas ORDER BY favorita DESC, created_at DESC"
         ).fetchall()]
+        hoy_plan = para_hoy(db)
     return render_template('recetas/index.html',
-                           recetas=recetas,
+                           recetas=recetas, para_hoy=hoy_plan,
                            categorias=CATEGORIAS, momentos=MOMENTOS,
                            fodmap_sel=request.args.get('fodmap') == 'seguro')
+
+
+@recetas_bp.route('/api/para-hoy')
+def api_para_hoy():
+    with get_db() as db:
+        return jsonify(para_hoy(db))
 
 
 @recetas_bp.route('/api/list')
