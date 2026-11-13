@@ -1,0 +1,20 @@
+[
+  {"in": "gasto 180 tacos", "out": {"id": "gasto", "values": {"monto": 180, "concepto": "tacos"}, "ready": true}},
+  {"in": "Pagué $1,250.50 gasolina premium", "out": {"id": "gasto", "values": {"monto": 1250.5, "concepto": "gasolina premium"}, "ready": true}},
+  {"in": "gasto tacos", "out": {"id": "gasto", "values": {"concepto": "tacos"}, "ready": false, "missing": ["monto"]}},
+  {"in": "peso 78.2", "out": {"id": "peso", "values": {"kg": 78.2}, "ready": true}},
+  {"in": "peso 78,2", "out": {"id": "peso", "values": {"kg": 78.2}, "ready": true}},
+  {"in": "km 84,500", "out": {"id": "km", "values": {"km": 84500}, "ready": true}},
+  {"in": "tarea llamar al banco", "out": {"id": "tarea", "values": {"texto": "llamar al banco"}, "ready": true}},
+  {"in": "tarea pagar renta mañana", "out": {"id": "tarea", "values": {"texto": "pagar renta", "cuando": "manana"}, "ready": true}},
+  {"in": "baile 45", "out": {"id": "baile", "values": {"min": 45}, "ready": true}},
+  {"in": "salsa", "out": {"id": "baile", "values": {}, "ready": true}},
+  {"in": "cena", "out": {"id": "comida", "values": {"meal_slot": "cena"}, "ready": true}},
+  {"in": "desayuno desliz", "out": {"id": "comida", "values": {"meal_slot": "desayuno", "como": "desliz"}, "ready": true}},
+  {"in": "nota comprar focos", "out": {"id": "nota", "values": {"texto": "comprar focos"}, "ready": true}},
+  {"in": "hice gym", "out": {"id": "actividad", "values": {"key_text": "gym"}, "ready": true}},
+  {"in": "medicina", "out": {"id": "medicamento", "values": {}, "ready": false}},
+  {"in": "xyz", "out": null},
+  {"in": "finanzas", "out": null},
+  {"in": "", "out": null}
+]

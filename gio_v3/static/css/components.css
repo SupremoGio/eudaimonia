@@ -654,6 +654,48 @@ body.nw-hidden .nw-hide-block{display:none!important}
   .eu-page-hd .t-page{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 }
 
+/* ── Captura rápida (handoff Captura): «+» en la barra, contadores y hoja ── */
+.eu-bnav a{position:relative}
+.eu-bnav-badge{position:absolute;top:6px;left:calc(50% + 6px);min-width:16px;height:16px;padding:0 4px;border-radius:var(--r-full);background:var(--danger-fg);color:var(--fg-on-brand);font:var(--fw-semibold) 10px/16px var(--font-data);text-align:center}
+.eu-bnav-badge[hidden]{display:none}
+.eu-bnav .eu-bnav-plus{justify-content:flex-start}
+.eu-bnav-plus-c{width:48px;height:48px;margin-top:-18px;border-radius:50%;background:var(--brand);color:var(--fg-on-brand);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px var(--bg-canvas),var(--e-2);transition:transform var(--dur-base) var(--ease-settle)}
+.eu-bnav .eu-bnav-plus svg{width:22px;height:22px;stroke-width:2.25}
+.eu-bnav-plus.is-open .eu-bnav-plus-c{transform:rotate(45deg)}
+.eu-bnav-plus:focus-visible{outline:none}
+.eu-bnav-plus:focus-visible .eu-bnav-plus-c{outline:2px solid var(--fg-1);outline-offset:3px}
+.eu-quick-scrim{z-index:190}
+.eu-quick{padding-bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + var(--sp-4))}
+.eu-quick .eu-sheet-hd{align-items:baseline}
+.eu-quick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-2)}
+.eu-quick-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:76px;border-radius:var(--r-md);border:1px solid var(--border-subtle);background:var(--bg-sunken);color:var(--fg-1);font:var(--fw-medium) var(--fs-12)/1.2 var(--font-ui);text-align:center;cursor:pointer;padding:0 var(--sp-1)}
+.eu-quick-cell svg{width:20px;height:20px;color:var(--fg-2)}
+.eu-quick-cell[data-cat] svg{color:var(--cat-fg)}
+.eu-quick-cell:hover,.eu-quick-cell:focus-visible{border-color:var(--border-strong);background:var(--bg-hover)}
+.eu-quick-cell:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.eu-quick-form{display:flex;flex-direction:column;gap:var(--sp-3)}
+.eu-quick-fhd{display:flex;align-items:center;gap:var(--sp-2)}
+.eu-quick-rw{margin-left:auto;font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--xp-fg,var(--fg-brand))}
+.eu-quick-fields{display:flex;flex-direction:column;gap:var(--sp-3)}
+.eu-quick-fields .eu-input--money{font-family:var(--font-data);font-size:var(--fs-15)}
+.eu-quick-chips{display:flex;flex-wrap:wrap;gap:6px}
+.eu-quick-chip{height:36px}
+.eu-quick-chip[aria-checked=true]{border-color:var(--border-brand);background:var(--bg-raised);color:var(--fg-1)}
+.eu-quick-save{height:48px}
+.eu-quick-undo{height:32px;padding:0 var(--sp-2);border:0;border-radius:var(--r-sm);background:transparent;color:var(--fg-brand);font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);cursor:pointer}
+.eu-quick-undo:hover,.eu-quick-undo:focus-visible{background:var(--bg-hover)}
+/* ⌘K que registra */
+.eu-cmdk-it.eu-cmdk-now{height:auto}
+.eu-cmdk-now{display:flex;align-items:center;gap:var(--sp-3);min-height:56px;padding:var(--sp-2) var(--sp-3);border-radius:var(--r-md);border:1px solid var(--border-brand);color:var(--fg-1);text-decoration:none}
+.eu-cmdk-now svg{width:18px;height:18px;color:var(--fg-brand);flex-shrink:0}
+.eu-cmdk-now[aria-selected=true]{background:var(--bg-hover)}
+.eu-cmdk-now-bd{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.eu-cmdk-now-t{font-size:var(--fs-15)}
+.eu-cmdk-now-d{font-size:var(--fs-12);color:var(--fg-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eu-cmdk-now .eu-quick-rw{margin-left:0}
+.eu-cmdk-now .kbd{flex-shrink:0}
+.eu-cmdk-form{padding:var(--sp-3) var(--sp-4);max-height:380px;overflow:auto}
+
 /* ═══════════════════════════════════════════════════════════════
    SAFE AREAS — PWA en modo app (standalone) con notch / isla y barra de
    estado translúcida (apple-mobile-web-app-status-bar-style), y iPhone en

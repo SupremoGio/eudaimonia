@@ -19,6 +19,13 @@ from utils import today_str
 from modules.perfil import resumen as rs
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _ahora():
+    """Reloj de la app (zona de la app) sin tz: así guarda la app sus fechas; datetime.now()
+    del servidor (UTC) se desfasa un día cerca de la medianoche."""
+    from utils import now_local
+    return now_local().replace(tzinfo=None)
 HOY = date.fromisoformat(today_str())
 
 
@@ -72,7 +79,7 @@ def _todo_lleno():
 def _medida(key, *vals, dias=0):
     with database.get_db() as db:
         for i, v in enumerate(vals):
-            ts = (datetime.now() - timedelta(days=dias + len(vals) - 1 - i)).isoformat()
+            ts = (_ahora() - timedelta(days=dias + len(vals) - 1 - i)).isoformat()
             db.execute("INSERT INTO body_measurements_history (key, value, recorded_at) VALUES (?,?,?)", (key, str(v), ts))
         db.execute("UPDATE body_measurements SET value=? WHERE key=?", (str(vals[-1]), key))
         db.commit()

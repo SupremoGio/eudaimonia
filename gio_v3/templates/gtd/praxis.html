@@ -6,9 +6,9 @@
 
 {% block content %}
 <div class="px" id="px">
-  {% set _abiertas = tasks|rejectattr('status', 'equalto', 'done')|list %}
+  {% set _abiertas = tasks|rejectattr('completado')|list %}
   {% set _hoy_n = _abiertas|selectattr('cuadrante', 'equalto', 'hoy')|list|length %}
-  {% set _venc_n = _abiertas|selectattr('due_date')|selectattr('due_date', 'lt', today)|list|length %}
+  {% set _venc_n = _abiertas|selectattr('fecha_limite')|selectattr('fecha_limite', 'lt', today)|list|length %}
   {{ ui.page_head(eyebrow=(_hoy_n ~ ' para hoy') ~ (' · ' ~ _venc_n ~ ' vencida' ~ ('s' if _venc_n != 1 else '') if _venc_n else ''), cls='px-hd') }}
 
   {% include "gtd/_capture.html" %}

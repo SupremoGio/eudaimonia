@@ -100,6 +100,8 @@ def create_app():
     app.register_blueprint(viajes_bp,     url_prefix='/viajes')
     app.register_blueprint(eurythmia_bp,  url_prefix='/eurythmia')
     app.register_blueprint(harma_bp,      url_prefix='/harma')
+    from modules.quick import quick_bp
+    app.register_blueprint(quick_bp)          # captura rápida: /api/quick/*
     app.register_blueprint(paideia_bp,    url_prefix='/paideia')
     app.register_blueprint(plantas_bp,    url_prefix='/plantas')
     csrf.exempt(estados_bp)
