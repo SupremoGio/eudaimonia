@@ -184,13 +184,12 @@ def test_autocompleta_presupuesto_y_lectura(client, monkeypatch):
     auto = ar._auto_metrics(ar.get_semana_id())
     assert auto['presupuesto_pct'] == (64.0, 'Oikonomia')
     assert auto['dias_lectura'] == (3.0, 'Acta')
-    html = _get(client, '?dia=domingo')
-    rev = html.split('id="rs-card"', 1)[1]
-    assert '<output class="at-metric-v num" id="rs-presupuesto_pct">64</output>' in rev
-    assert '<output class="at-metric-v num" id="rs-dias_lectura">3</output>' in rev
-    assert rev.count('class="at-auto"') == 2
-    assert 'data-metric="presupuesto_pct"' not in rev and 'data-metric="dias_lectura"' not in rev
-    assert 'data-metric="horas_sueno"' in rev       # las demás siguen a mano
+    # La revisión vive en /ataraxia/revision (handoff Revisión, paso 2)
+    rev = client.get('/ataraxia/revision?paso=2').get_data(as_text=True).split('data-panel="2"', 1)[1]
+    assert 'id="rv-m-presupuesto_pct">64 <span class="t-meta">%</span></output>' in rev
+    assert 'id="rv-m-dias_lectura">3 <span class="t-meta">de 7</span></output>' in rev
+    assert 'data-save="presupuesto_pct"' not in rev and 'data-save="dias_lectura"' not in rev
+    assert 'data-save="horas_sueno"' in rev         # las demás siguen a mano
 
 
 def test_sin_datos_vuelve_a_manual(client, monkeypatch):
@@ -202,10 +201,10 @@ def test_sin_datos_vuelve_a_manual(client, monkeypatch):
     with database.get_db() as db:
         db.execute("UPDATE activity_defs SET active=0 WHERE pillar='paideia'")
         db.commit()
-    assert ar._auto_metrics(ar.get_semana_id()) == {}
-    rev = _get(client, '?dia=domingo').split('id="rs-card"', 1)[1]
-    assert 'data-metric="presupuesto_pct"' in rev and 'data-metric="dias_lectura"' in rev
-    assert 'class="at-auto"' not in rev
+    auto = ar._auto_metrics(ar.get_semana_id())
+    assert 'presupuesto_pct' not in auto and 'dias_lectura' not in auto
+    rev = client.get('/ataraxia/revision?paso=2').get_data(as_text=True).split('data-panel="2"', 1)[1]
+    assert 'data-save="presupuesto_pct"' in rev and 'data-save="dias_lectura"' in rev
 
 
 def test_guardar_usa_los_valores_auto_y_muestra_delta(client, monkeypatch):
@@ -220,20 +219,19 @@ def test_guardar_usa_los_valores_auto_y_muestra_delta(client, monkeypatch):
     assert r['ok']
     row = ar._get_revision_row(sem)
     assert row['presupuesto_pct'] == 50.0 and row['horas_sueno'] == 6.5     # el cliente no pisa lo auto
-    rev = _get(client, '?dia=domingo').split('id="rs-card"', 1)[1]
-    assert '↓ 8 vs anterior · de Oikonomia' in rev                            # presupuesto: bajar es mejor
-    assert 'is-better' in rev and 'is-worse' in rev                            # sueño bajó: peor
+    rev = client.get('/ataraxia/revision?paso=2').get_data(as_text=True).split('data-panel="2"', 1)[1]
+    assert '<span class="rv-delta num is-better">-8 vs anterior</span>' in rev   # presupuesto: bajar es mejor
+    assert '<span class="rv-delta num is-worse">-0.5 vs anterior</span>' in rev  # sueño bajó: peor
 
 
 def test_revision_visible_y_historial_en_logros(client, monkeypatch):
     _hoy(monkeypatch, DOMINGO)
     html = _get(client, '?dia=domingo')
-    rev = html.split('id="rs-card"', 1)[1]
-    assert '<section class="eu-card eu-vstack at-rev" id="rs-card"' in html     # ya no es <details>
-    assert 'Revisión de la semana' in rev and '2–8 nov' in rev
-    assert 'Historial de semanas en Logros →' in rev and 'href="/logros/semanas"' in rev
-    assert '<details class="at-an">' in rev and 'Análisis' in rev
-    assert 'eu-table' not in rev and 'Últimas semanas' not in rev
+    # Handoff Revisión: el formulario salió de Ataraxia; queda el enlace.
+    assert 'id="rs-card"' not in html and 'id="rev-form"' not in html
+    assert 'class="at-rev-link" href="/ataraxia/revision"' in html
+    rev = client.get('/ataraxia/revision').get_data(as_text=True)
+    assert 'Semana 45 · 2–8 nov' in rev and 'href="/logros/semanas"' in rev
     client.post('/ataraxia/api/revision', json={'horas_sueno': 7})
     sem = client.get('/logros/semanas').get_data(as_text=True)
     assert '<h1 class="t-page">Semanas</h1>' in sem and '2–8 nov' in sem and 'Esta semana' in sem

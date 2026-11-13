@@ -93,6 +93,9 @@ ACTIONS = [
     # que el ⌘K no los encontraba; /perfil/#recordatorios abre esa sección.
     {'id': 'recordatorios', 'label': 'Recordatorios', 'icon': 'bell', 'url': '/perfil/#recordatorios',
      'keywords': 'recordatorio nuevo pendiente aviso alarma vencido perfil'},
+    # Revisión semanal (handoff Revisión, S2): cerrar la semana en 4 pasos.
+    {'id': 'revision', 'label': 'Revisión de la semana', 'icon': 'calendar-check', 'url': '/ataraxia/revision',
+     'keywords': 'revision semanal domingo cerrar semana planeacion prioridades inbox'},
 ]
 
 # Captura rápida (handoff Captura, nota 5): una sola fuente para la hoja «+»
@@ -231,6 +234,8 @@ VIEWS = {
     'cosmopolitismo': {'plan': 'Plan', 'tests': 'Tests', 'journal': 'Journal'},
     'nutricion':      {'semana': 'Semana', 'sintomas': 'Síntomas'},
     'logros':         {'_param': 'tab', 'historial': 'Historial'},
+    # Vistas que son una ruta propia dentro del módulo (no un ?param).
+    'ataraxia':       {'_rutas': {'/ataraxia/revision': 'Revisión'}},
 }
 
 # Sidebar: subpáginas visibles antes de «Más…»
@@ -290,7 +295,7 @@ _CMDK_ACTIONS = [{'label': a['label'], 'url': a['url'], 'icon': a['icon'],
                   'q': a['label'] + ' ' + a.get('keywords', '')} for a in ACTIONS]
 
 
-def view_of(item, child, args):
+def view_of(item, child, args, path=None):
     """Nombre de la vista activa según VIEWS (o None)."""
     node = child or item
     if not node:
@@ -298,6 +303,9 @@ def view_of(item, child, args):
     m = VIEWS.get(node['id'])
     if not m:
         return None
+    for ruta, label in m.get('_rutas', {}).items():
+        if path and _matches(path, ruta):
+            return label
     v = (args or {}).get(m.get('_param', 'vista'))
     return m.get(v) if v and not v.startswith('_') else None
 
@@ -332,7 +340,7 @@ def nav_context():
     except RuntimeError:  # fuera de un request (p. ej. render en tests sin contexto)
         path, args = '/', {}
     group, item, child = resolve(path)
-    view = view_of(item, child, args)
+    view = view_of(item, child, args, path)
 
     here = {'group': group, 'item': item, 'child': child}
     crumbs, title, sub, back = [], None, None, '/'

@@ -2,5 +2,6 @@
   {% set dia = 'domingo' %}
   {% set ahora = domingo.ahora %}
   {% for bl in domingo.bloques %}{% include "ataraxia/_bloque.html" %}{% endfor %}
-  {% include "ataraxia/_revision.html" %}
+  {# La revisión vive en su propia ruta (handoff Revisión): aquí solo el enlace. #}
+  <a class="at-rev-link" href="/ataraxia/revision"><i data-lucide="calendar-check"></i>Revisión de la semana →<span class="t-meta">4 pasos · 8 min</span></a>
 </section>

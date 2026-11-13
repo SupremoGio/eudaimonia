@@ -36,6 +36,10 @@
             {% endif %}</span>
           {% if t.xp > 0 or t.ec > 0 %}<span class="at-task-rw num">{% if t.xp > 0 %}+{{ t.xp }} XP{% endif %}{% if t.ec > 0 %} · +{{ t.ec }} EC{% endif %}</span>{% endif %}
         </button>
+        {% if t.id == 'sun_planeacion' %}
+        {# La Planeación es la revisión de la semana: la abre y se marca sola al cerrarla. #}
+        <a class="at-rev-link at-plan-link" href="/ataraxia/revision"><i data-lucide="calendar-check"></i>Abrir la revisión de la semana<span class="t-meta">se marca sola al cerrar</span></a>
+        {% endif %}
         {% if t.id == 'sun_prioridades' %}
         {# Prioridades de la semana desde Praxis (nota 6): se eligen con
            estrella de «Esta semana»; elegir 3 completa esta tarea. #}

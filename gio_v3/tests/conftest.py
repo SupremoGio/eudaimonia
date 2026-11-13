@@ -27,4 +27,6 @@ def test_db(tmp_path, monkeypatch):
     # (Inicio, campana) cambian según la hora a la que corre la suite.
     import modules.actividades.routes as _act
     monkeypatch.setattr(_act, "ANCLAS_AVISO_HORA", 99)
+    import modules.ataraxia.routes as _ata          # idem: revisión del domingo 17:00
+    monkeypatch.setattr(_ata, "REVISION_AVISO_HORA", 99)
     yield db_file

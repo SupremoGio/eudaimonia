@@ -7451,6 +7451,21 @@ def init_db():
             db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
                        ('avisos_estado_v1', 'Tabla avisos_estado (centro de avisos)'))
 
+        # Revisión semanal unificada (handoff Revisión, S1): métricas que la
+        # app ya sabe, el paso donde quedó, el cierre y si ya pagó XP. Antes
+        # el XP se pagaba en el primer guardado, así que toda revisión que ya
+        # existe al migrar cuenta como pagada (una sola vez, migration_log).
+        rv_cols = [r["name"] for r in db.execute("PRAGMA table_info(revision_semanal)").fetchall()]
+        for col, ddl in (("min_baile", "REAL"), ("dias_limpios", "REAL"), ("peso", "REAL"),
+                         ("racha_anclas", "REAL"), ("paso", "INTEGER"), ("cerrada_at", "TEXT"),
+                         ("xp_pagado", "INTEGER DEFAULT 0")):
+            if col not in rv_cols:
+                db.execute(f"ALTER TABLE revision_semanal ADD COLUMN {col} {ddl}")
+        if not db.execute("SELECT 1 FROM migration_log WHERE version='revision_semanal_v2'").fetchone():
+            db.execute("UPDATE revision_semanal SET xp_pagado=1")
+            db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                       ('revision_semanal_v2', 'Revisión en 4 pasos: columnas auto, paso, cierre y xp_pagado'))
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

@@ -1,6 +1,6 @@
 /* Ataraxia — Design System V2.
    Rutina de fin de semana (sábado reset · domingo estrategia) por bloques con
-   temporizador, prioridades de la semana, revisión semanal y reset. */
+   temporizador, prioridades de la semana y reset (la revisión vive en revision.js). */
 (function () {
   'use strict';
   var root = document.getElementById('at');
@@ -168,23 +168,6 @@
       } catch (_) { toast('Sin conexión', 'err'); }
     });
   }
-
-  /* ── Revisión semanal ── */
-  var rev = $('rev-form');
-  if (rev) rev.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    var body = { notas: $('rs-notas').value || '' };
-    document.querySelectorAll('[data-metric]').forEach(function (i) { body[i.dataset.metric] = i.value; });
-    try {
-      var d = await jpost('/ataraxia/api/revision', body);
-      if (!d._ok || !d.ok) { toast('Error al guardar', 'err'); return; }
-      if (d.first_save && d.gam) {
-        toast('Revisión guardada · +' + d.gam.xp + ' XP · +' + d.gam.ec + ' EC', 'win');
-        if (window.euGam) euGam(d.gam);
-      } else toast('Revisión guardada');
-      setTimeout(function () { location.reload(); }, 900);
-    } catch (_) { toast('Sin conexión', 'err'); }
-  });
 
   /* ── Menú ⋯ (nota 4): el Reset vive aquí y siempre pide confirmación ── */
   var more = $('more-trigger'), menu = $('at-menu');

@@ -107,13 +107,22 @@ def get_semana_id():
 # poder colorear el delta contra la semana anterior sin subjetividad.
 
 REVISION_METRICS = [
-    {"key": "dias_lectura",      "label": "Lectura (Kindle)",    "unit": "días",   "icon": "book-open",   "direction": "up",   "step": "1",   "min": "0", "max": "7",    "placeholder": "0–7"},
-    {"key": "horas_sueno",       "label": "Sueño promedio",      "unit": "h/noche","icon": "moon",        "direction": "up",   "step": "any", "min": "0", "max": "12",   "placeholder": "7.5"},
+    # Las 6 que la app sabe (handoff Revisión, nota 3) — si su consulta
+    # falla, se capturan a mano como las demás.
     {"key": "presupuesto_pct",   "label": "Presupuesto usado",   "unit": "%",      "icon": "landmark",    "direction": "down", "step": "any", "min": "0", "max": "300",  "placeholder": "85"},
-    {"key": "calorias_quemadas", "label": "Calorías quemadas",   "unit": "kcal/d", "icon": "flame",       "direction": "up",   "step": "1",   "min": "0", "max": "6000", "placeholder": "2200"},
+    {"key": "dias_lectura",      "label": "Días de lectura",     "unit": "de 7",   "icon": "book-open",   "direction": "up",   "step": "1",   "min": "0", "max": "7",    "placeholder": "0–7"},
+    {"key": "min_baile",         "label": "Baile",               "unit": "min",    "icon": "music-2",     "direction": "up",   "step": "1",   "min": "0", "max": "3000", "placeholder": "120"},
+    {"key": "dias_limpios",      "label": "Días limpios",        "unit": "de 7",   "icon": "salad",       "direction": "up",   "step": "1",   "min": "0", "max": "7",    "placeholder": "0–7"},
+    {"key": "peso",              "label": "Peso",                "unit": "kg",     "icon": "scale",       "direction": "down", "step": "any", "min": "0", "max": "400",  "placeholder": "78.4"},
+    {"key": "racha_anclas",      "label": "Racha de anclas",     "unit": "días",   "icon": "flame",       "direction": "up",   "step": "1",   "min": "0", "max": "3650", "placeholder": "0"},
+    # Las que solo tú sabes.
+    {"key": "horas_sueno",       "label": "Sueño promedio",      "unit": "h/noche","icon": "moon",        "direction": "up",   "step": "any", "min": "0", "max": "12",   "placeholder": "7.5"},
     {"key": "pasos_promedio",    "label": "Pasos promedio",      "unit": "pasos/d","icon": "footprints",  "direction": "up",   "step": "1",   "min": "0", "max": "30000","placeholder": "8000"},
     {"key": "screen_time_horas", "label": "Pantalla en redes",   "unit": "h/día",  "icon": "smartphone",  "direction": "down", "step": "any", "min": "0", "max": "12",   "placeholder": "1.5"},
 ]
+# calorias_quemadas ya no se pide (handoff Revisión): la columna se queda con
+# el histórico y Logros › Semanas la sigue mostrando.
+_REVISION_KEYS = [m["key"] for m in REVISION_METRICS]
 
 
 def _prev_semana_id(semana_id):
@@ -227,8 +236,9 @@ def _analyze_week(weekly, prev_weekly, metrics):
     verdict = _VERDICT_COPY.get(weekly["rank"], _VERDICT_COPY["carbon"])
     best_day, worst_day = _best_worst_day(weekly["days"])
 
-    vs_prev = {"trend": None, "delta_pts": None, "text": None}
+    vs_prev = {"trend": None, "delta_pts": None, "text": None, "prev_label": None}
     if prev_weekly and prev_weekly.get("days_evaluated"):
+        vs_prev["prev_label"] = prev_weekly.get("label")
         delta = round(weekly["avg_points"] - prev_weekly["avg_points"], 2)
         vs_prev["delta_pts"] = delta
         if abs(delta) < 0.05:
@@ -295,8 +305,76 @@ def _auto_dias_lectura(semana_id):
     return float(n)
 
 
+def _hasta_hoy(semana_id):
+    """Días de la semana ya vividos (no cuenta lo que aún no pasa)."""
+    hoy = today_date().isoformat()
+    return [d for d in _semana_dias(semana_id) if d <= hoy]
+
+
+def _auto_min_baile(semana_id):
+    """Minutos de baile de la semana (sesiones de Eurythmia). None si
+    Eurythmia nunca se ha usado."""
+    dias = _semana_dias(semana_id)
+    with get_db() as db:
+        if not db.execute("SELECT 1 FROM eury_sessions LIMIT 1").fetchone():
+            return None
+        n = db.execute("SELECT COALESCE(SUM(min),0) FROM eury_sessions WHERE date>=? AND date<=?",
+                       (dias[0], dias[-1])).fetchone()[0]
+    return float(n)
+
+
+def _auto_dias_limpios(semana_id):
+    """Días de la semana con el día de Nutrición cerrado y sin desliz (la
+    misma regla que la racha de Nutrición). None si Nutrición no se usa."""
+    dias = _hasta_hoy(semana_id)
+    with get_db() as db:
+        if not db.execute("SELECT 1 FROM activity_logs WHERE substr(activity_key,1,10)='nutri_dia_' LIMIT 1").fetchone():
+            return None
+        cerrados = {r[0][len('nutri_dia_'):] for r in db.execute(
+            "SELECT activity_key FROM activity_logs WHERE activity_key IN ({})".format(",".join("?" * len(dias))),
+            ["nutri_dia_" + d for d in dias]).fetchall()} if dias else set()
+        deslices = {r[0] for r in db.execute(
+            "SELECT DISTINCT date FROM nutricion_deslices WHERE date>=? AND date<=?", (dias[0], dias[-1])).fetchall()} if dias else set()
+    return float(sum(1 for d in dias if d in cerrados and d not in deslices))
+
+
+def _auto_peso(semana_id):
+    """Última medida de peso de Perfil hasta el domingo de la semana."""
+    domingo = _semana_dias(semana_id)[-1]
+    with get_db() as db:
+        r = db.execute("""SELECT value FROM body_measurements_history WHERE key='peso' AND substr(recorded_at,1,10)<=?
+                          ORDER BY recorded_at DESC, id DESC LIMIT 1""", (domingo,)).fetchone()
+        if not r:
+            r = db.execute("SELECT value FROM body_measurements WHERE key='peso'").fetchone()
+    try:
+        return float(str(r["value"]).replace(",", ".")) if r else None
+    except ValueError:                       # el marcador «— editar —» de Perfil
+        return None
+
+
+def _auto_racha_anclas(semana_id):
+    """Racha de Acta (días seguidos con actividad, como Inicio) al cierre de
+    la semana: al domingo, o a hoy si la semana sigue en curso."""
+    corte = min(date.fromisoformat(_semana_dias(semana_id)[-1]), today_date())
+    with get_db() as db:
+        fechas = {r[0] for r in db.execute(
+            "SELECT DISTINCT date FROM activity_logs WHERE date<=? UNION SELECT DISTINCT date FROM xp_ledger WHERE source!='penalty' AND date<=?",
+            (corte.isoformat(), corte.isoformat())).fetchall()}
+    n, d = 0, corte
+    if d == today_date() and d.isoformat() not in fechas:   # hoy aún puede llegar
+        d -= timedelta(days=1)
+    while d.isoformat() in fechas:
+        n += 1
+        d -= timedelta(days=1)
+    return float(n)
+
+
 _AUTO_METRICS = {"presupuesto_pct": ("Oikonomia", _auto_presupuesto_pct),
-                 "dias_lectura": ("Acta", _auto_dias_lectura)}
+                 "dias_lectura": ("Acta", _auto_dias_lectura),
+                 "min_baile": ("Eurythmia", _auto_min_baile),
+                 "dias_limpios": ("Nutrición", _auto_dias_limpios),
+                 "peso": ("Perfil", _auto_peso),
+                 "racha_anclas": ("Acta", _auto_racha_anclas)}
 
 
 def _auto_metrics(semana_id):
@@ -341,7 +419,7 @@ def _revision_view(semana_id):
                 trend = "better"
             else:
                 trend = "worse"
-        metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "delta": delta, "delta_str": delta_str, "trend": trend,
+        metrics.append({**m, "value": v, "value_str": _fmt_num(v), "prev_value": pv, "prev_str": _fmt_num(pv), "delta": delta, "delta_str": delta_str, "trend": trend,
                         "auto": m["key"] in auto, "fuente": auto.get(m["key"], (None, None))[1]})
 
     # semana_id es el sábado de este ciclo (ver get_semana_id) — el lunes de
@@ -351,6 +429,8 @@ def _revision_view(semana_id):
     weekly         = engine.get_weekly_classification(monday_id)
     prev_weekly    = engine.get_weekly_classification(prev_monday_id)
 
+    best = _best_worst_day(weekly["days"])[0]
+    act = ACTIVITIES["revision_semanal"]
     return {
         "metrics":    metrics,
         "has_data":   bool(actual),
@@ -359,7 +439,20 @@ def _revision_view(semana_id):
         "analysis":   _analyze_week(weekly, prev_weekly, metrics),
         "semana_num": _week_num_of(monday_id),
         "rango":      _semana_rango(semana_id),
+        "semana_id":  semana_id,
+        "auto_n":     sum(1 for m in metrics if m["auto"]),
+        "paso":       actual.get("paso") or 1,
+        "cerrada":    bool(actual.get("cerrada_at")),
+        "xp_pagado":  bool(actual.get("xp_pagado")),
+        "recompensa": {"xp": act["pts"], "ec": act["ec"]},
+        "best_day":   best,
+        "pregunta":   (f"¿Qué hizo que el {_DIA_LARGO.get(best['weekday'], best['weekday'])} fuera tu mejor día?" if best else
+                       "¿Qué te funcionó esta semana?"),
     }
+
+
+_DIA_LARGO = {"Lun": "lunes", "Mar": "martes", "Mié": "miércoles", "Jue": "jueves",
+              "Vie": "viernes", "Sáb": "sábado", "Dom": "domingo"}
 
 
 def historial_semanas(limit=52):
@@ -495,9 +588,189 @@ def index():
         en_prorroga  = en_prorroga,
         finde_rango  = _finde_rango(semana_id),
         today        = today_str(),
-        revision     = _revision_view(semana_id),
         prio_semana  = _prio_semana_view(semana_id),
     )
+
+
+# ── Revisión de la semana en 4 pasos (handoff Revisión) ──────────────────────
+# Una sola ruta para cerrar la semana: 1 Cómo fue · 2 Los números · 3 Cerrar
+# cabos · 4 La que viene. Cada paso se guarda solo (/api/revision parcial) y
+# el cierre (cerrar:true) paga una vez y marca «Planeación» del domingo.
+
+REVISION_PASOS = [("como", "Cómo fue", "1 min"), ("numeros", "Los números", "2 min"),
+                  ("cabos", "Cerrar cabos", "3 min"), ("viene", "La que viene", "2 min")]
+REVISION_AVISO_HORA = 17     # el domingo desde las 17:00 la revisión entra a la campana
+_DIA_CORTO = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
+
+
+def _hace(fecha, hoy):
+    try:
+        n = (hoy - date.fromisoformat(str(fecha)[:10])).days
+    except (TypeError, ValueError):
+        return ""
+    return "hoy" if n <= 0 else ("ayer" if n == 1 else f"hace {n} d")
+
+
+def _cabos(hoy, sess):
+    """Paso 3: inbox de Praxis, tareas vencidas y avisos de la semana. Cada
+    fila trae las acciones de un toque contra los endpoints de su módulo."""
+    with get_db() as db:
+        inbox = [dict(r) for r in db.execute(
+            """SELECT id, title, created_at FROM gtd_tasks WHERE completado=0 AND cuadrante IS NULL
+               AND COALESCE(tipo,'tarea')!='idea' ORDER BY created_at""").fetchall()]
+        vistos = {t["id"] for t in inbox}
+        vencidas = [dict(r) for r in db.execute(
+            """SELECT id, title, fecha_limite FROM gtd_tasks WHERE completado=0 AND COALESCE(fecha_limite,'')!=''
+               AND fecha_limite < ? ORDER BY fecha_limite, id""", (hoy.isoformat(),)).fetchall() if r["id"] not in vistos]
+        try:
+            from modules import avisos as av
+            semana = av.recolectar(db, hoy, sess)["semana"]
+        except Exception as e:
+            print(f"[ataraxia] avisos para la revisión: {e}")
+            semana = []
+    prox_lunes = hoy + timedelta(days=7 - hoy.weekday())
+    grupos = [
+        {"id": "inbox", "label": "Inbox de Praxis", "src": "Praxis", "items": [{
+            "key": f"t{t['id']}", "t": t["title"], "s": _hace(t["created_at"], hoy),
+            "acts": [{"l": "Esta semana", "res": "A esta semana", "calls": [
+                         {"method": "POST", "url": f"/gtd/api/task/{t['id']}/classify", "body": {"importante": True, "urgente": False}}]},
+                     {"l": "Algún día", "res": "A ideas", "calls": [
+                         {"method": "POST", "url": f"/gtd/api/task/{t['id']}/classify", "body": {"importante": False, "urgente": False}}]},
+                     {"l": "Borrar", "res": "Borrada", "tachar": True, "calls": [
+                         {"method": "DELETE", "url": f"/gtd/api/task/{t['id']}"}]}]} for t in inbox]},
+        {"id": "vencidas", "label": "Vencidas", "src": "Praxis", "items": [{
+            "key": f"t{t['id']}", "t": t["title"],
+            "s": "venció " + _DIA_CORTO[date.fromisoformat(t["fecha_limite"][:10]).weekday()] + " " + str(int(t["fecha_limite"][8:10])),
+            "acts": [{"l": "Hoy", "res": "Para hoy", "calls": [
+                         {"method": "POST", "url": f"/gtd/api/task/{t['id']}/update", "body": {"fecha_limite": hoy.isoformat()}},
+                         {"method": "POST", "url": f"/gtd/api/task/{t['id']}/classify", "body": {"importante": True, "urgente": True}}]},
+                     {"l": "Mover", "title": "A la próxima semana", "res": "Al lunes " + str(prox_lunes.day), "calls": [
+                         {"method": "POST", "url": f"/gtd/api/task/{t['id']}/update", "body": {"fecha_limite": prox_lunes.isoformat()}}]},
+                     {"l": "Hecha", "res": "Hecha", "tachar": True, "calls": [
+                         {"method": "POST", "url": f"/gtd/api/task/{t['id']}/complete"}]}]} for t in vencidas]},
+    ]
+    avisos_items = []
+    for a in semana:
+        ac = a.get("accion") or {}
+        acts = []
+        if ac.get("method"):
+            acts.append({"l": ac.get("label") or "Hecho", "res": ac.get("hecho") or "Hecho", "tachar": True,
+                         "calls": [{"method": ac["method"], "url": ac["url"], "body": ac.get("body") or {}}]})
+        elif ac.get("url"):
+            acts.append({"l": ac.get("label") or "Ver", "href": ac["url"]})
+        acts.append({"l": "Posponer", "res": "Pospuesto", "calls": [
+            {"method": "POST", "url": f"/api/avisos/{a['clave']}/posponer", "body": {"nivel": "semana"}}]})
+        avisos_items.append({"key": a["clave"], "t": a["titulo"], "s": a["modulo"] + (" · " + a["detalle"] if a.get("detalle") else ""), "acts": acts})
+    grupos.append({"id": "avisos", "label": "Avisos de la semana", "src": "Avisos", "items": avisos_items})
+    return grupos
+
+
+def _proxima_semana(semana_id):
+    """Lunes..domingo que siguen al fin de semana del ciclo (lo que gobiernan
+    las prioridades elegidas ahora)."""
+    lunes = date.fromisoformat(semana_id) + timedelta(days=2)
+    return [lunes + timedelta(days=i) for i in range(7)]
+
+
+def _calendario(semana_id, sess):
+    """Paso 4 «Ya en el calendario»: lo que ya cae la semana que viene."""
+    dias = _proxima_semana(semana_id)
+    a, b = dias[0].isoformat(), dias[-1].isoformat()
+    out = []
+
+    def add(d, t, m):
+        out.append({"fecha": d.isoformat() if isinstance(d, date) else d, "t": t, "m": m})
+
+    with get_db() as db:
+        try:
+            for p in db.execute("""SELECT fecha, hora, rival FROM futbol_partidos WHERE estado='programado'
+                                   AND fecha>=? AND fecha<=? ORDER BY fecha, hora""", (a, b)).fetchall():
+                add(p["fecha"][:10], "Partido vs " + (p["rival"] or "rival por confirmar") + (f" · {p['hora']}" if p["hora"] else ""), "Fútbol")
+        except Exception as e:
+            print(f"[ataraxia] calendario fútbol: {e}")
+        try:
+            for r in db.execute("""SELECT description, COALESCE(next_date, target_date) AS f FROM reminders
+                                   WHERE is_active=1 AND COALESCE(next_date, target_date)>=? AND COALESCE(next_date, target_date)<=?""",
+                                (a, b)).fetchall():
+                add(r["f"][:10], r["description"], "Perfil")
+        except Exception as e:
+            print(f"[ataraxia] calendario recordatorios: {e}")
+        if sess.get("fin_ok"):
+            try:
+                from modules.finanzas.routes import PAY_DAYS, ESTADO_CORTE
+                from modules.finanzas import pagos_ciclo
+                for d in dias:
+                    for p in PAY_DAYS:
+                        if pagos_ciclo._due(d.year, d.month, p["day"]) == d:
+                            add(d, f"Pago {p['label']}", "Oikonomia")
+                    for _banco, (dia, label) in ESTADO_CORTE.items():
+                        if pagos_ciclo._due(d.year, d.month, dia) == d:
+                            add(d, f"Corte {label}", "Oikonomia")
+            except Exception as e:
+                print(f"[ataraxia] calendario Oikonomia: {e}")
+        try:
+            from modules.harma.routes import _get_vehiculo, _compute_plan_item, _months_between
+            from modules.harma import plan as hp
+            v = _get_vehiculo(db)
+            if v:
+                ritmo = hp.ritmo_km_mes(db, v, dias[0])
+                for r in db.execute("SELECT * FROM harma_plan_items").fetchall():
+                    it = hp.enriquecer(_compute_plan_item(dict(r), v["km_actual"] or 0, dias[0]), ritmo,
+                                       _months_between(r["last_date"], dias[0]))
+                    if it["eta_meses"] is not None and it["eta_meses"] <= 0.25:
+                        add(a, it["name"] + (" · ya toca" if it["eta_meses"] <= 0 else " · esta semana"), "Harma")
+        except Exception as e:
+            print(f"[ataraxia] calendario Harma: {e}")
+    sab = dias[5]
+    try:
+        with get_db() as db:
+            n = db.execute("SELECT COUNT(DISTINCT bloque_id) FROM rutina_bloques WHERE dia IN ('sabado','domingo')").fetchone()[0]
+        add(sab, f"Ataraxia · {n} bloques", "Ataraxia")
+    except Exception as e:
+        print(f"[ataraxia] calendario rutina: {e}")
+    add(dias[6], f"Revisión semana {dias[0].isocalendar()[1]}", "aquí")
+    out.sort(key=lambda x: x["fecha"])
+    for x in out:
+        d = date.fromisoformat(x["fecha"])
+        x["d"] = f"{_DIA_CORTO[d.weekday()]} {d.day}"
+    return out
+
+
+@ataraxia_bp.route('/revision')
+def revision():
+    from flask import session
+    semana_id = get_semana_id()
+    rv = _revision_view(semana_id)
+    try:
+        paso = int(request.args.get('paso') or 0)
+    except ValueError:
+        paso = 0
+    if not 1 <= paso <= 5:
+        paso = 5 if rv["cerrada"] else rv["paso"]
+    hoy = today_date()
+    cabos = _cabos(hoy, session)
+    return render_template('ataraxia/revision.html',
+        rv=rv, paso=paso, pasos=REVISION_PASOS,
+        cabos=cabos, cabos_n=sum(len(g["items"]) for g in cabos),
+        prio_semana=_prio_semana_view(semana_id),
+        calendario=_calendario(semana_id, session),
+        proxima=_proxima_semana(semana_id),
+    )
+
+
+def avisos(db, hoy):
+    """Aviso del centro (modules/avisos.py): el domingo desde las 17:00, si la
+    semana no está cerrada, «Revisión de la semana» entra a Hoy."""
+    from modules.avisos import aviso
+    from utils import now_local
+    if hoy.weekday() != 6 or hoy != today_date() or now_local().hour < REVISION_AVISO_HORA:
+        return []
+    semana_id = (hoy - timedelta(days=1)).isoformat()
+    r = db.execute("SELECT cerrada_at FROM revision_semanal WHERE semana_id=?", (semana_id,)).fetchone()
+    if r and r["cerrada_at"]:
+        return []
+    return [aviso(f"ata:revision:{semana_id}", 'Ataraxia', 'calendar-check', 'Revisión de la semana',
+                  'cierra la semana en 4 pasos', hoy, 'hoy', {'label': 'Abrir', 'url': '/ataraxia/revision'})]
 
 
 # ── Prioridades de la semana desde Praxis (handoff Ataraxia v2, Sprint 4) ────
@@ -545,25 +818,25 @@ def get_rutina(dia):
     return jsonify(_build_rutina(dia, semana_id))
 
 
-@ataraxia_bp.route('/api/rutina/check', methods=['POST'])
-def check_tarea():
-    data      = request.json or {}
-    sub_id    = data.get('bloque_id')
-    tiempo_seg = int(data.get('tiempo_seg') or 0)
-    semana_id = get_semana_id()
-    now       = datetime.now().isoformat()
+REVISION_TAREA = "sun_planeacion"      # «Planeación» del domingo: la cierra la revisión
 
+
+def _marcar_tarea(sub_id, semana_id, tiempo_seg=0):
+    """Marca una tarea de la rutina (lo que hace /api/rutina/check). None si
+    la tarea no existe; si ya estaba marcada no vuelve a pagar."""
+    now = datetime.now().isoformat()
     with get_db() as db:
         tarea = db.execute("SELECT * FROM rutina_bloques WHERE id=?", (sub_id,)).fetchone()
     if not tarea:
-        return jsonify({"error": "not found"}), 404
+        return None
     tarea = dict(tarea)
     parent_bloque = tarea["bloque_id"]
 
     with get_db() as db:
         existing = db.execute(
-            "SELECT id FROM rutina_progreso WHERE bloque_id=? AND semana_id=?", (sub_id, semana_id)
+            "SELECT id, completado FROM rutina_progreso WHERE bloque_id=? AND semana_id=?", (sub_id, semana_id)
         ).fetchone()
+        ya = bool(existing and existing["completado"])
         if existing:
             db.execute(
                 "UPDATE rutina_progreso SET completado=1, completado_at=?, tiempo_real_seg=? WHERE bloque_id=? AND semana_id=?",
@@ -592,7 +865,7 @@ def check_tarea():
         bloque_complete = set(req_ids).issubset(done_ids) if req_ids else False
 
     gam = None
-    if tarea["tier"] != "micro" or bloque_complete:
+    if not ya and (tarea["tier"] != "micro" or bloque_complete):   # ya marcada: no paga otra vez
         gam = engine.process_rutina_check(
             sub_key   = sub_id,
             xp        = tarea["xp"] if tarea["tier"] != "micro" else 0,
@@ -600,9 +873,18 @@ def check_tarea():
             cat       = tarea.get("categoria") or "",
             bloque_id = parent_bloque if bloque_complete else None,
         )
+    return {"ok": True, "ya": ya, "dia": tarea["dia"], "bloque_complete": bloque_complete, "gam": gam}
 
-    rutina = _build_rutina(tarea["dia"], semana_id)
-    return jsonify({"ok": True, "bloque_complete": bloque_complete, "gam": gam, "rutina": rutina})
+
+@ataraxia_bp.route('/api/rutina/check', methods=['POST'])
+def check_tarea():
+    data       = request.json or {}
+    semana_id  = get_semana_id()
+    r = _marcar_tarea(data.get('bloque_id'), semana_id, int(data.get('tiempo_seg') or 0))
+    if not r:
+        return jsonify({"error": "not found"}), 404
+    rutina = _build_rutina(r["dia"], semana_id)
+    return jsonify({"ok": True, "bloque_complete": r["bloque_complete"], "gam": r["gam"], "rutina": rutina})
 
 
 @ataraxia_bp.route('/api/rutina/uncheck', methods=['POST'])
@@ -635,64 +917,74 @@ def uncheck_tarea():
 
 @ataraxia_bp.route('/api/revision', methods=['POST'])
 def save_revision():
+    """Guardado parcial de la revisión (handoff Revisión, S1): solo se tocan
+    las llaves que vienen en el cuerpo, así cada paso se guarda solo y se
+    puede retomar a medias. Las métricas automáticas siempre se guardan con
+    el valor de la app, no con lo que mande el cliente.
+
+    `cerrar: true` cierra la semana: XP/EC una sola vez por semana
+    (xp_pagado) y marca la casilla «Planeación» del domingo en la rutina."""
     data = request.json or {}
     semana_id = get_semana_id()
-
-    valores = {}
-    for m in REVISION_METRICS:
-        raw = data.get(m["key"])
-        try:
-            valores[m["key"]] = float(raw) if raw not in (None, "") else None
-        except (TypeError, ValueError):
-            valores[m["key"]] = None
-    # Las métricas automáticas se guardan con el valor de la app, no con lo
-    # que mande el cliente (en el formulario no son editables).
-    for key, (v, _f) in _auto_metrics(semana_id).items():
-        valores[key] = v
-    notas = (data.get("notas") or "").strip()
     now = datetime.now().isoformat()
 
+    cambios = {}
+    for key in _REVISION_KEYS + ["calorias_quemadas"]:
+        if key in data:
+            raw = data.get(key)
+            try:
+                cambios[key] = float(raw) if raw not in (None, "") else None
+            except (TypeError, ValueError):
+                cambios[key] = None
+    for key, (v, _f) in _auto_metrics(semana_id).items():
+        cambios[key] = v
+    if "notas" in data:
+        cambios["notas"] = clean_str(data.get("notas") or "", max_len=4000)
+    if "paso" in data:
+        try:
+            cambios["paso"] = max(1, min(int(data["paso"]), 4))
+        except (TypeError, ValueError):
+            pass
+    cerrar = bool(data.get("cerrar"))
+
     with get_db() as db:
-        existing = db.execute(
-            "SELECT semana_id FROM revision_semanal WHERE semana_id=?", (semana_id,)
-        ).fetchone()
-        is_first_save = existing is None
-        if existing:
-            db.execute(
-                """UPDATE revision_semanal SET dias_lectura=?, horas_sueno=?, presupuesto_pct=?,
-                   calorias_quemadas=?, pasos_promedio=?, screen_time_horas=?, notas=?, updated_at=? WHERE semana_id=?""",
-                (valores["dias_lectura"], valores["horas_sueno"], valores["presupuesto_pct"],
-                 valores["calorias_quemadas"], valores["pasos_promedio"], valores["screen_time_horas"], notas, now, semana_id)
-            )
-        else:
-            db.execute(
-                """INSERT INTO revision_semanal
-                   (semana_id, dias_lectura, horas_sueno, presupuesto_pct, calorias_quemadas, pasos_promedio, screen_time_horas, notas, created_at, updated_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
-                (semana_id, valores["dias_lectura"], valores["horas_sueno"], valores["presupuesto_pct"],
-                 valores["calorias_quemadas"], valores["pasos_promedio"], valores["screen_time_horas"], notas, now, now)
-            )
+        row = db.execute("SELECT * FROM revision_semanal WHERE semana_id=?", (semana_id,)).fetchone()
+        is_first_save = row is None
+        if is_first_save:
+            db.execute("INSERT INTO revision_semanal (semana_id, notas, created_at, updated_at, xp_pagado) VALUES (?, '', ?, ?, 0)",
+                       (semana_id, now, now))
+            row = {"xp_pagado": 0, "cerrada_at": None}
+        if cerrar and not row["cerrada_at"]:
+            cambios["cerrada_at"] = now
+        pagar = cerrar and not row["xp_pagado"]
+        if pagar:
+            cambios["xp_pagado"] = 1
+        cambios["updated_at"] = now
+        cols = ", ".join(f"{k}=?" for k in cambios)
+        db.execute(f"UPDATE revision_semanal SET {cols} WHERE semana_id=?", list(cambios.values()) + [semana_id])
         db.commit()
 
-    # XP/EC solo en el primer guardado de la semana — editar una revisión ya
-    # guardada (ajustar un dato, agregar notas) no debe volver a pagar. Usa
-    # los mismos valores ya calibrados en data.py (ACTIVITIES['revision_semanal'],
-    # tier "alto") en vez de inventar un número nuevo — así queda dentro de la
-    # misma economía de XP/EC que el resto del sistema, no una excepción aparte.
     gam = None
-    if is_first_save:
+    if pagar:
+        # Mismos valores calibrados de data.py (ACTIVITIES['revision_semanal']).
         act = ACTIVITIES["revision_semanal"]
-        today = today_str()
         with get_db() as db:
-            cursor = db.execute(
-                "INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
-                ("revision_semanal", today, act["pts"])
-            )
-            log_id = cursor.lastrowid
+            log_id = db.execute("INSERT INTO activity_logs (activity_key, date, pts) VALUES (?,?,?)",
+                                ("revision_semanal", today_str(), act["pts"])).lastrowid
             db.commit()
         gam = engine.process_activity("revision_semanal", act["pts"], act["cat"], log_id, ec=act["ec"])
+    planeacion = None
+    if cerrar:
+        try:
+            planeacion = _marcar_tarea(REVISION_TAREA, semana_id)
+        except Exception as e:               # la revisión ya quedó cerrada
+            print(f"[ataraxia] no se pudo marcar {REVISION_TAREA}: {e}")
+        if planeacion and planeacion.get("gam") and not gam:
+            gam = planeacion["gam"]
 
-    return jsonify({"ok": True, "semana_id": semana_id, "first_save": is_first_save, "gam": gam})
+    return jsonify({"ok": True, "semana_id": semana_id, "first_save": is_first_save, "gam": gam,
+                    "cerrada": cerrar or bool(row["cerrada_at"]), "pagada": pagar,
+                    "planeacion": bool(planeacion and planeacion.get("ok"))})
 
 
 @ataraxia_bp.route('/api/rutina/reset', methods=['POST'])

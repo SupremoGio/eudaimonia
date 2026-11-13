@@ -1,7 +1,7 @@
 # Estado de los handoffs v2 (Fase 0 de `design_handoff_ORDEN.md`)
 
 Revisado el 2026-11-12 contra `main`, después del merge de Nutrición v2 (PR #121).
-**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2), Captura rápida (3) y Avisos (3) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
+**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2), Captura rápida (3), Avisos (3) y Revisión semanal (2) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
 Las rutas son relativas a `gio_v3/`.
 
 Algunos paquetes se implementaron en un solo commit con todos sus sprints. En esos casos se repite el commit y la evidencia de cada sprint apunta a su pieza.
@@ -83,9 +83,11 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 | Captura rápida | S1 · registro `QUICK` + `/api/quick/options` | hecho | `a84a3af` | `modules/nav.py` (`QUICK`, `quick_for`), `modules/quick.py` |
 | Captura rápida | S2 · «+» en la barra, hoja y contadores | hecho | `a84a3af` | `templates/eu/layout_sub.html` (`#eu-quick`), `static/js/eu-quick.js`, `/api/quick/badges` |
 | Captura rápida | S3 · ⌘K que registra | hecho | `a84a3af` | `eu-quick.js` (`parse`), `tests/quick_parse_cases.json` |
-| Avisos | S1 · contrato `avisos(db, hoy)` + `recolectar()` | hecho | rama actual | `modules/avisos.py` (`FUENTES`, `recolectar`, endpoints), tabla `avisos_estado`; un `avisos()` en finanzas, salud, recordatorios, harma, gtd, plantas, fútbol, actividades y gamification |
-| Avisos | S2 · campana + panel | hecho | rama actual | `templates/eu/layout_sub.html` (`#eu-avisos-btn`, `#eu-avisos`), `static/js/eu-avisos.js` |
-| Avisos | S3 · preferencias + Inicio | hecho | rama actual | `templates/perfil/_avisos.html` (`avisos_off:<fuente>`), `modules/dashboard/routes.py` (`_build_deadlines(…, avisos_hoy)`) |
+| Avisos | S1 · contrato `avisos(db, hoy)` + `recolectar()` | hecho | `117e813` | `modules/avisos.py` (`FUENTES`, `recolectar`, endpoints), tabla `avisos_estado`; un `avisos()` en finanzas, salud, recordatorios, harma, gtd, plantas, fútbol, actividades y gamification |
+| Avisos | S2 · campana + panel | hecho | `117e813` | `templates/eu/layout_sub.html` (`#eu-avisos-btn`, `#eu-avisos`), `static/js/eu-avisos.js` |
+| Avisos | S3 · preferencias + Inicio | hecho | `117e813` | `templates/perfil/_avisos.html` (`avisos_off:<fuente>`), `modules/dashboard/routes.py` (`_build_deadlines(…, avisos_hoy)`) |
+| Revisión semanal | S1 · ruta `/ataraxia/revision`, pasos 1–2, guardado parcial | hecho | rama actual | `modules/ataraxia/routes.py` (`revision`, `save_revision` con `cerrar`, `_AUTO_METRICS` con 6), `templates/ataraxia/revision.html`, `static/js/revision.js` |
+| Revisión semanal | S2 · pasos 3–4, cierre y entradas | hecho | rama actual | `_cabos`, `_calendario`, `_marcar_tarea('sun_planeacion')`, aviso `ata:revision:<semana>`, ⌘K `revision` en `modules/nav.py` |
 
 ## Notas de la Fase 1 que ya quedaron resueltas
 - **XP negativo del desliz (antes de 1.2):** el motor no acepta montos negativos, porque `process_activity` aplica `max(1, …)`. El desliz se descuenta con `engine._award_xp(-pen, 'activity', …, log_id)`, y `remove_activity` lo revierte. Está documentado en `modules/nutricion/routes.py`, sección «XP por el motor».
@@ -98,6 +100,13 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 - **Deshacer:** solo se ofrece cuando el módulo tiene endpoint inverso: pago de tarjeta (`DELETE /finanzas/api/pago-ciclo`), posponer y descartar (`/api/avisos/<clave>/restaurar`). «Hecho» en recordatorios y tareas, y «Registrar» en Harma, no tienen inverso que restaure el estado anterior, así que no muestran Deshacer.
 - **Logros:** antes nada marcaba `notified=1`, así que todo el histórico seguía en 0. El grupo Logros solo muestra lo desbloqueado en los últimos 14 días.
 - **Fuentes extra:** Plantas y Fútbol entran al centro para que «Pendiente» de Inicio y la campana muestren los mismos pendientes de hoy. Nutrición no tiene un «síntoma sin registrar» con fecha que avisar, así que quedó fuera.
+
+## Notas de Revisión semanal
+- **XP una sola vez:** antes se pagaba en el primer guardado. Ahora se paga al cerrar (`cerrar: true`) y se marca `xp_pagado`. La migración `revision_semanal_v2` deja como pagadas las revisiones que ya existían, así que cerrar una semana guardada con el formulario viejo no vuelve a pagar.
+- **Calorías quemadas:** ya no se piden (el mockup trae 9 métricas sin ellas). La columna y el histórico se quedan, y Logros › Semanas la sigue mostrando.
+- **Racha de anclas:** es la racha de Acta que usa Inicio (días seguidos con actividad), contada al domingo de la semana revisada.
+- **«Mover» en vencidas:** pasa la fecha límite al lunes siguiente. «Hoy» la pone para hoy y la manda al cuadrante Hoy.
+- **Casilla de la rutina:** `check_tarea` ya no vuelve a pagar una casilla que estaba marcada.
 
 ## Siguiente paso
 No queda ningún sprint pendiente en el ORDEN. Cualquier handoff nuevo empieza con su propio `SPRINTS.md`.

@@ -57,6 +57,7 @@ FUENTES = [
     ('plantas', 'Plantas', 'modules.plantas.routes', None),
     ('futbol', 'Fútbol', 'modules.bienestar.futbol', None),
     ('acta', 'Acta Diurna', 'modules.actividades.routes', None),
+    ('ataraxia', 'Revisión semanal', 'modules.ataraxia.routes', None),
     ('logros', 'Logros', 'modules.gamification.routes', None),
 ]
 
@@ -133,6 +134,7 @@ _DESC = {
     'harma': 'Plan de mantenimiento y papeles del vehículo',
     'praxis': 'Tareas con fecha límite vencida',
     'acta': 'Anclas sin registrar después de las 20:00',
+    'ataraxia': 'El domingo desde las 17:00, si la semana no está cerrada',
     'plantas': 'Riegos y cuidados que tocan hoy',
     'futbol': 'Partido de hoy y resultados pendientes',
 }
