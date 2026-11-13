@@ -122,7 +122,7 @@ svg.lucide{stroke-width:1.5}
 .eu-input,.eu-select,.eu-textarea{width:100%;height:44px;padding:0 var(--sp-3);background:var(--bg-raised);border:1px solid var(--border-default);border-radius:var(--r-sm);color:var(--fg-1);font:var(--fs-15) var(--font-ui);transition:border-color var(--dur-fast),box-shadow var(--dur-fast)}
 .eu-input::placeholder,.eu-textarea::placeholder{color:var(--fg-3)}
 .eu-input:hover,.eu-select:hover,.eu-textarea:hover{border-color:var(--border-strong)}
-.eu-input:focus,.eu-select:focus,.eu-textarea:focus{outline:none;border-color:var(--border-focus);box-shadow:0 0 0 3px var(--brand-muted)}
+.eu-input:focus,.eu-select:focus,.eu-textarea:focus{outline:2px solid transparent;border-color:var(--border-focus);box-shadow:0 0 0 3px var(--brand-muted)}
 .eu-input[aria-invalid=true]{border-color:var(--danger-fg)}
 .eu-input:disabled{opacity:.5}
 .eu-textarea{height:auto;min-height:96px;padding:var(--sp-3);line-height:var(--lh-relaxed);resize:vertical}
@@ -206,7 +206,7 @@ svg.lucide{stroke-width:1.5}
 .eu-ach-seal{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--rc);border:1px solid color-mix(in oklab,var(--rc) 45%,transparent);background:radial-gradient(circle at 35% 30%,color-mix(in oklab,var(--rc) 22%,transparent),transparent 70%)}
 .eu-ach-seal svg{width:22px;height:22px}
 .eu-ach.is-earned{border-color:color-mix(in oklab,var(--rc) 35%,transparent)}
-.eu-ach.is-locked .eu-ach-seal{color:var(--fg-4);border-style:dashed;border-color:var(--border-strong);background:none}
+.eu-ach.is-locked .eu-ach-seal{color:var(--fg-3);border-style:dashed;border-color:var(--border-strong);background:none}
 .eu-ach.is-locked .t-card{color:var(--fg-2)}
 .eu-ach-rar{font:var(--fw-medium) var(--fs-11)/1 var(--font-ui);letter-spacing:var(--ls-eyebrow);text-transform:uppercase;color:var(--rc)}
 
@@ -631,7 +631,7 @@ body.nw-hidden .nw-hide-block{display:none!important}
 /* Accesibilidad: salto al contenido (visible solo con foco) */
 .eu-skip{position:fixed;left:var(--sp-4);top:0;z-index:var(--z-cmdk);padding:var(--sp-2) var(--sp-4);border-radius:var(--r-sm);background:var(--brand);color:var(--fg-on-brand);font:var(--fw-medium) var(--fs-13)/1.2 var(--font-ui);text-decoration:none;transform:translateY(-120%);transition:transform var(--dur-fast) var(--ease-standard)}
 .eu-skip:focus,.eu-skip:focus-visible{transform:translateY(calc(var(--sp-2) + env(safe-area-inset-top)))}
-#eu-main:focus{outline:none}
+#eu-main:focus:not(:focus-visible){outline:2px solid transparent}
 
 /* Confirmación (euConfirm): mismo markup que ui.modal, más angosto en desktop */
 @media (min-width:768px){.eu-confirm .eu-modal{max-width:400px}}
