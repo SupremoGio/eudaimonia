@@ -320,6 +320,11 @@ def _quick_ctx():
         return quick_for({}, {})
 
 
+def _avisos_hoy():
+    from modules.avisos import conteo_hoy
+    return conteo_hoy()
+
+
 def nav_context():
     """Variables de navegación para layout_sub.html (context processor)."""
     try:
@@ -382,5 +387,8 @@ def nav_context():
         'nav_sb_max': SIDEBAR_MAX_CHILDREN,
         'nav_cmdk': {'pages': _CMDK_PAGES, 'actions': _CMDK_ACTIONS},
         'nav_quick': _quick_ctx(),
+        # Campana: conteo de «Hoy» del centro de avisos. Perezoso (solo lo
+        # evalúa el layout) y cacheado por petición en avisos.recolectar.
+        'nav_avisos_hoy': _avisos_hoy,
         'XP_DAILY_GOAL': XP_DAILY_GOAL,
     }

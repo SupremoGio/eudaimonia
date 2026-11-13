@@ -102,6 +102,8 @@ def create_app():
     app.register_blueprint(harma_bp,      url_prefix='/harma')
     from modules.quick import quick_bp
     app.register_blueprint(quick_bp)          # captura rápida: /api/quick/*
+    from modules.avisos import avisos_bp
+    app.register_blueprint(avisos_bp)         # centro de avisos: /api/avisos*
     app.register_blueprint(paideia_bp,    url_prefix='/paideia')
     app.register_blueprint(plantas_bp,    url_prefix='/plantas')
     csrf.exempt(estados_bp)

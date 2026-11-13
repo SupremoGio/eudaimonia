@@ -361,3 +361,20 @@ def eliminar_partido(pid):
         db.execute("DELETE FROM futbol_partidos WHERE id=?", (pid,))
         db.commit()
     return jsonify({'ok': True})
+
+
+def avisos(db, hoy):
+    """Avisos de Fútbol para el centro (modules/avisos.py): el partido de hoy
+    y los programados ya pasados que esperan su resultado (Hoy)."""
+    from modules.avisos import aviso
+    out = []
+    for p in db.execute("""SELECT id, fecha, hora, cancha, rival FROM futbol_partidos
+                           WHERE estado='programado' AND fecha IS NOT NULL AND fecha <= ?
+                           ORDER BY fecha, hora""", (hoy.isoformat(),)).fetchall():
+        hoy_es = p['fecha'][:10] == hoy.isoformat()
+        out.append(aviso(
+            f"fut:partido:{p['id']}", 'Fútbol', 'trophy',
+            'vs ' + (p['rival'] or 'rival por confirmar') + (f" · {p['hora']}" if p['hora'] else ''),
+            (p['cancha'] or 'Cancha por confirmar') if hoy_es else 'falta el resultado', p['fecha'][:10], 'hoy',
+            {'label': 'Resultado', 'url': f"/bienestar/futbol?resultado={p['id']}"}))
+    return out

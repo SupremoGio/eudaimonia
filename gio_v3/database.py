@@ -7438,6 +7438,19 @@ def init_db():
             db.execute("ALTER TABLE gtd_tasks ADD COLUMN prioridad_semana_dia TEXT")
         migrar_prioridades_semana(db)
 
+        # Avisos, un solo centro (handoff Avisos, S1): estado por clave estable
+        # de cada aviso — pospuesto hasta una fecha o descartado. Los avisos
+        # en sí no se guardan: cada módulo los calcula con su avisos(db, hoy).
+        db.execute("""CREATE TABLE IF NOT EXISTS avisos_estado (
+            clave           TEXT PRIMARY KEY,
+            pospuesto_hasta TEXT,
+            descartado      INTEGER DEFAULT 0,
+            actualizado     TEXT
+        )""")
+        if not db.execute("SELECT 1 FROM migration_log WHERE version='avisos_estado_v1'").fetchone():
+            db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                       ('avisos_estado_v1', 'Tabla avisos_estado (centro de avisos)'))
+
         db.commit()
   except Exception as e:
     print(f"[DB] init_db error (app seguirá iniciando): {e}")

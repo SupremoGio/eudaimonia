@@ -43,6 +43,90 @@ def payment_alerts():
     return [{'label': p['label']} for p in hoy if p['match'] not in pag]
 
 
+PAGO_AVISO_DIAS = 7          # un pago entra a «Esta semana» a 7 días
+PRESUPUESTO_AVISO_PCT = 0.85  # mismo umbral que budgetAlerts() del bundle
+ESTADO_CORTE = {'BBVA_TDC': (22, 'BBVA TDC')}   # tarjetas con día de corte conocido
+ESTADO_GRACIA_DIAS = 3       # el banco tarda en publicar el estado
+
+
+def avisos(db, hoy):
+    """Avisos de Oikonomia para el centro (modules/avisos.py). Envuelve
+    pagos_ciclo (lo mismo que payment_alerts y el hub), _detectar_avisos_msi,
+    los presupuestos al 85 % y el estado de cuenta que falta subir."""
+    from modules.avisos import aviso, relativo, fecha_corta, huella
+    from . import pagos_ciclo
+    from .estados.routes import _detectar_avisos_msi, presupuestos_mes
+    out = []
+
+    # Pagos de tarjeta: hoy → Hoy; ≤ 7 días → Esta semana. Marcar pagado en línea.
+    if pagos_ciclo.detectar(db, hoy):
+        db.commit()
+    pagados = pagos_ciclo.pagados(db, hoy)
+    for p in PAY_DAYS:
+        if p['match'] in pagados:
+            continue
+        cic, due, _prev = pagos_ciclo.ciclo(p, hoy)
+        dias = (due - hoy).days
+        if dias > PAGO_AVISO_DIAS:
+            continue
+        body = {'cuenta': p['match']}
+        out.append(aviso(
+            f"oik:pago:{p['match']}:{cic}", 'Oikonomia', 'wallet', f"Pago de {p['label']}",
+            'vence hoy' if dias <= 0 else f'vence {relativo(dias)} · {fecha_corta(due)}', due,
+            'hoy' if dias <= 0 else 'semana',
+            {'label': 'Marcar pagado', 'method': 'POST', 'url': '/finanzas/api/pago-ciclo', 'body': body,
+             'hecho': 'Pago registrado',
+             'deshacer': {'method': 'DELETE', 'url': '/finanzas/api/pago-ciclo', 'body': body}},
+            perm='fin_ok'))
+
+    # Compras a MSI con señales de doble conteo (solo avisa; se revisa a mano).
+    msi = _detectar_avisos_msi(db)
+    if msi:
+        n = len(msi)
+        out.append(aviso(
+            f"oik:msi:{huella(m['compra_msi_id'] for m in msi)}", 'Oikonomia', 'wallet',
+            f"{n} compra{'s' if n != 1 else ''} a MSI por revisar",
+            msi[0]['descripcion'] if n == 1 else 'posible doble conteo de mensualidades', None, 'semana',
+            {'label': 'Ver', 'url': '/finanzas/estados/#movimientos'}, perm='fin_ok'))
+
+    # Presupuestos al 85 % o más este mes (las alertas del bundle, publicadas aquí).
+    ym = hoy.strftime('%Y-%m')
+    for b in presupuestos_mes(db, hoy.replace(day=1).isoformat()):
+        if b['limite'] <= 0:
+            continue
+        pct = abs(b['gastado']) / b['limite']
+        if pct < PRESUPUESTO_AVISO_PCT:
+            continue
+        pasado = pct > 1
+        out.append(aviso(
+            f"oik:presupuesto:{b['id']}:{ym}:{'excedido' if pasado else 'alerta'}", 'Oikonomia',
+            'octagon-alert' if pasado else 'triangle-alert',
+            f"Presupuesto de {b['nombre']} {'excedido' if pasado else 'al ' + str(round(pct * 100)) + ' %'}",
+            f"${abs(b['gastado']):,.0f} de ${b['limite']:,.0f}", None, 'semana',
+            {'label': 'Ver', 'url': '/finanzas/budget/'}, perm='fin_ok'))
+
+    # Estado de cuenta por subir: pasó el corte (+ gracia) y no hay ningún
+    # movimiento de esa tarjeta en el periodo que cerró.
+    lim = hoy - timedelta(days=ESTADO_GRACIA_DIAS)
+    for banco, (dia, label) in ESTADO_CORTE.items():
+        corte = pagos_ciclo._due(lim.year, lim.month, dia)
+        if corte > lim:
+            y, m = (lim.year, lim.month - 1) if lim.month > 1 else (lim.year - 1, 12)
+            corte = pagos_ciclo._due(y, m, dia)
+        y, m = (corte.year, corte.month - 1) if corte.month > 1 else (corte.year - 1, 12)
+        inicio = pagos_ciclo._due(y, m, dia)      # periodo (inicio, corte]
+        if not db.execute("SELECT 1 FROM est_movimientos WHERE banco=? LIMIT 1", (banco,)).fetchone():
+            continue                              # tarjeta que nunca se ha importado
+        hay = db.execute("SELECT 1 FROM est_movimientos WHERE banco=? AND substr(fecha,1,10) > ? AND substr(fecha,1,10) <= ? LIMIT 1",
+                         (banco, inicio.isoformat(), corte.isoformat())).fetchone()
+        if not hay:
+            out.append(aviso(
+                f"oik:estado:{banco}:{corte.isoformat()}", 'Oikonomia', 'upload',
+                f"Subir estado de cuenta {label}", f"cortó el {fecha_corta(corte)}", corte, 'semana',
+                {'label': 'Subir', 'url': '/finanzas/estados/'}, perm='fin_ok'))
+    return out
+
+
 def _days_until(day):
     """Días hasta el próximo `day` del mes (un 30/31 en meses cortos cae en el último día)."""
     import calendar

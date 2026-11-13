@@ -111,8 +111,12 @@ def index():
     nombre = next((i['value'] for i in info if i['key'] == 'nombre' and i['value'] != PLACEHOLDER), '')
     me = {'nombre': nombre, 'inicial': (nombre.strip()[:1] or 'Tú').upper() if nombre else 'Tú'}
     sec = request.args.get('sec', 'resumen')
+    from modules import avisos as _av
+    with get_db() as db:
+        avisos_prefs = _av.preferencias(db, session)
 
     return render_template('perfil/index.html',
+                           avisos_prefs=avisos_prefs,
                            me=me, sec=sec, fin_ok=fin_ok,
                            placeholder=PLACEHOLDER,
                            info=info,

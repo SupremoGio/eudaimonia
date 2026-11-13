@@ -182,3 +182,26 @@ def siguiente(r: dict, hoy: str) -> str:
     while (cand := _paso(ancla, fu, fv, k)).isoformat() <= limite:
         k += 1
     return cand.isoformat()
+
+
+AVISO_SEMANA_DIAS = 7
+
+
+def avisos(db, hoy):
+    """Avisos de Perfil para el centro (modules/avisos.py): recordatorios
+    vencidos o de hoy (Hoy) y de los próximos 7 días (Esta semana). «Hecho»
+    usa el endpoint de siempre (da XP y, si es periódico, agenda el siguiente)."""
+    from modules.avisos import aviso
+    rows = [dict(r) for r in db.execute("SELECT * FROM reminders WHERE is_active=1").fetchall()]
+    out = []
+    for g in agrupar(rows, hoy):
+        for r in g['items']:
+            dias = r.get('dias')
+            if dias is None or dias > AVISO_SEMANA_DIAS:
+                continue
+            out.append(aviso(
+                f"per:rec:{r['id']}:{r['fecha'][:10]}", 'Perfil', 'bell', r.get('description') or 'Recordatorio',
+                (r.get('rel') or '').lower(), r['fecha'][:10], 'hoy' if dias <= 0 else 'semana',
+                {'label': 'Hecho', 'method': 'POST', 'url': f"/perfil/api/reminder/{r['id']}/done",
+                 'hecho': 'Recordatorio hecho'}))
+    return out

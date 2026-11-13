@@ -370,7 +370,7 @@ def _build_eudaimonia_data():
         'reflexion':      get_quote_of_day(),
         'reminders':      [dict(r) for r in reminders_rows],
         'ec_balance':     ec_balance,
-        'deadlines':      _build_deadlines(_today),
+        'deadlines':      _build_deadlines(_today, _avisos_hoy(_today)),
         'suggestion':     _build_next_step(today_keys, stats.get('classification')) or _build_suggestion(today_keys),
         'category_hues':  dict(CATEGORY_HUES),
         'eury_today':     eury_today,
@@ -500,11 +500,43 @@ _PLANTA_VERBO = {
 }
 
 
-def _build_deadlines(today_dt: date) -> list:
+def _avisos_hoy(today_dt: date):
+    """Nivel «hoy» del centro de avisos (modules/avisos.recolectar, la misma
+    llamada cacheada que pinta la campana). None si falla: el radar sigue
+    con sus propias consultas."""
+    try:
+        from modules import avisos as av
+        with get_db() as db:
+            return av.recolectar(db, today_dt)['hoy']
+    except Exception:
+        return None
+
+
+def _clave_aviso(d: dict):
+    """Clave del centro de avisos que corresponde a una fila propia del radar."""
+    t, f = d.get('kind') or d.get('type'), str(d.get('fecha') or '')[:10]
+    if t == 'reminder':
+        return f"per:rec:{d['id']}:{f}"
+    if t == 'task':
+        return f"pra:tarea:{d['id']}:{f}"
+    if t == 'partido':
+        return f"fut:partido:{d['id']}"
+    if t and t.startswith('planta_'):
+        return f"pla:{t[7:]}:{d['id']}:{f}"
+    return None
+
+
+def _build_deadlines(today_dt: date, avisos_hoy=None) -> list:
     """Recordatorios y tareas GTD con fecha en los próximos 6 días (o vencidos).
     Plantas usa un horizonte más corto (3 días) a propósito — el usuario lo
     pidió así para no ver el riego "venir" con tanta anticipación como el
-    resto de los pendientes."""
+    resto de los pendientes.
+
+    Con `avisos_hoy` (handoff Avisos, S3) el tramo «Hoy y vencidos» sale del
+    centro de avisos: Inicio y la campana muestran los mismos pendientes de
+    hoy. Las filas propias que el centro también publica se quedan (con sus
+    botones), las pospuestas/apagadas en la campana se van, y se suman los
+    avisos de hoy de otros módulos (pagos, Harma, Salud…)."""
     horizon = (today_dt + timedelta(days=6)).isoformat()
     plant_horizon = (today_dt + timedelta(days=3)).isoformat()
     raw = []
@@ -560,11 +592,39 @@ def _build_deadlines(today_dt: date) -> list:
     except Exception:
         pass
 
+    if avisos_hoy is not None:
+        claves = {a['clave'] for a in avisos_hoy}
+        propias = set()
+        filtrado = []
+        for d in raw:
+            try:
+                vencida = date.fromisoformat(str(d['fecha'])[:10]) <= today_dt
+            except (TypeError, ValueError):
+                vencida = False
+            k = _clave_aviso(d)
+            if vencida:
+                if k not in claves:
+                    continue                      # pospuesto, descartado o fuente apagada
+                propias.add(k)
+                d['clave'] = k
+            filtrado.append(d)
+        raw = filtrado
+        for a in avisos_hoy:
+            if a['clave'] in propias:
+                continue
+            ac = a.get('accion') or {}
+            raw.append({'id': a['clave'], 'clave': a['clave'], 'label': a['titulo'], 'rem_type': None,
+                        'fecha': a.get('fecha') or today_dt.isoformat(), 'kind': 'aviso',
+                        'icono': a.get('icono'), 'modulo': a.get('modulo'), 'detalle': a.get('detalle'),
+                        'accion': ac})
+
     deadlines = []
     for d in raw:
         try:
             d['type'] = d.pop('kind')
             days = (date.fromisoformat(d['fecha'][:10]) - today_dt).days
+            if d['type'] == 'aviso':
+                days = min(days, 0)               # un aviso de «hoy» siempre va arriba
             d['days'] = days
             if days < 0:
                 d['badge'] = 'VENCIDO'
@@ -616,6 +676,8 @@ def _importancia(d: dict) -> int:
         return 1 if d.get('tema') == 'finanzas' else 0
     if t == 'partido':
         return 1
+    if t == 'aviso':                       # pagos y presupuestos: un olvido cuesta dinero
+        return 1 if d.get('modulo') == 'Oikonomia' else 0
     return 0
 
 

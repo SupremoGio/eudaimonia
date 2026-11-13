@@ -822,3 +822,28 @@ def serve_foto(filename):
     if '..' in filename or '/' in filename:
         abort(400)
     return send_from_directory(UPLOAD_DIR, filename)
+
+
+_AVISO_VERBO = {
+    'riego': 'Regar {}', 'trasplante': 'Trasplantar {}', 'fertilizar': 'Fertilizar {}',
+    'rotar': 'Rotar {}', 'limpiar': 'Limpiar hojas de {}', 'plagas': 'Revisar plagas de {}',
+    'tratamiento': 'Tratamiento a {}',
+}
+
+
+def avisos(db, hoy):
+    """Avisos de Plantas para el centro (modules/avisos.py): los cuidados que
+    tocan hoy o ya vencieron (misma agenda que /plantas/ e Inicio), con
+    «Hecho» en línea (registra el cuidado, da XP)."""
+    from modules.avisos import aviso, relativo
+    out = []
+    for a in agenda(hoy, 0):
+        if a['dias'] > 0:
+            continue
+        out.append(aviso(
+            f"pla:{a['tipo']}:{a['planta_id']}:{str(a['fecha'])[:10]}", 'Plantas', 'droplets' if a['tipo'] == 'riego' else 'sprout',
+            _AVISO_VERBO.get(a['tipo'], '{}').format(a['nombre']), 'toca hoy' if a['dias'] == 0 else f"tocaba {relativo(a['dias'])}",
+            str(a['fecha'])[:10], 'hoy',
+            {'label': 'Hecho', 'method': 'POST', 'url': f"/plantas/api/plantas/{a['planta_id']}/cuidado/{a['tipo']}",
+             'hecho': 'Cuidado registrado'}))
+    return out

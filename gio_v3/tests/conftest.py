@@ -22,4 +22,9 @@ def test_db(tmp_path, monkeypatch):
     monkeypatch.setattr(database, "_USE_HYBRID", False)
     monkeypatch.setattr(database, "SEMBRAR_DATOS_USUARIO", False)   # sin las plantas reales del usuario
     database.init_db()
+    # Centro de avisos: las anclas de Acta pasan a «Hoy» después de las 20:00
+    # de la hora REAL; sin esto, los tests que cuentan pendientes de hoy
+    # (Inicio, campana) cambian según la hora a la que corre la suite.
+    import modules.actividades.routes as _act
+    monkeypatch.setattr(_act, "ANCLAS_AVISO_HORA", 99)
     yield db_file

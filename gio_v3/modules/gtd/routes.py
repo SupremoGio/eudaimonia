@@ -187,3 +187,22 @@ def task_status(tid):
 def word_refresh():
     from data import get_random_word
     return jsonify(get_random_word())
+
+
+def avisos(db, hoy):
+    """Avisos de Praxis para el centro (modules/avisos.py): tareas abiertas
+    con fecha límite vencida o de hoy (Hoy), con «Hecho» en línea."""
+    from modules.avisos import aviso, relativo
+    out = []
+    for t in db.execute("""SELECT id, title, fecha_limite FROM gtd_tasks
+                           WHERE COALESCE(completado,0)=0 AND COALESCE(fecha_limite,'')!='' AND fecha_limite <= ?
+                           ORDER BY fecha_limite, id LIMIT 60""", (hoy.isoformat(),)).fetchall():
+        try:
+            dias = (date.fromisoformat(t['fecha_limite'][:10]) - hoy).days
+        except ValueError:
+            continue
+        out.append(aviso(
+            f"pra:tarea:{t['id']}:{t['fecha_limite'][:10]}", 'Praxis', 'list-checks', t['title'],
+            'vence hoy' if dias == 0 else f'venció {relativo(dias)}', t['fecha_limite'][:10], 'hoy',
+            {'label': 'Hecho', 'method': 'POST', 'url': f"/gtd/api/task/{t['id']}/complete", 'hecho': 'Tarea completada'}))
+    return out

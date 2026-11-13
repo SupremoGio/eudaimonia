@@ -100,6 +100,12 @@
   {#- Inicio lo vacía: el héroe ya muestra el XP de hoy (Inicio v2, Sprint 6). -#}
   {% block tb_xp %}<span class="eu-badge eu-badge--xp eu-tb-xp" title="XP de hoy / meta diaria"><span class="eu-xp-today">—</span>&nbsp;/ {{ XP_DAILY_GOAL }} XP</span>{% endblock %}
   <a class="eu-badge eu-badge--ec" href="/recompensas/" title="Euda-Credits"><i data-lucide="coins"></i><span class="eu-ec-val">—</span></a>
+  {#- Campana del centro de avisos (handoff Avisos): entre EC y el avatar;
+      en móvil, a la izquierda de EC (order en components.css). -#}
+  {% set _avn = nav_avisos_hoy() %}
+  <button type="button" id="eu-avisos-btn" class="eu-avisos-btn" aria-label="Avisos, {{ _avn }} para hoy" aria-haspopup="dialog" aria-controls="eu-avisos" aria-expanded="false" title="Avisos">
+    <i data-lucide="bell"></i>{% if _avn %}<b class="eu-avisos-badge" aria-hidden="true">{{ _avn }}</b>{% endif %}
+  </button>
   <button type="button" class="eu-iconbtn eu-tb-search-m" onclick="euCmdkOpen()" aria-label="Buscar"><i data-lucide="search"></i></button>
   <a class="eu-tb-avatar" href="/perfil/" aria-label="Tu perfil" title="Tu perfil"><i data-lucide="user-round"></i></a>
 </header>
@@ -165,6 +171,26 @@
     <form class="eu-quick-form" id="eu-quick-form" hidden novalidate autocomplete="off"></form>
   </div>
 </div>
+<!-- AVISOS — un solo centro (handoff Avisos). Popover de 440px anclado a la
+     campana en escritorio; hoja inferior en móvil. Lo llena eu-avisos.js
+     desde GET /api/avisos. -->
+<div class="eu-avisos-scrim" id="eu-avisos" hidden>
+  <div class="eu-avisos" role="dialog" aria-modal="true" aria-labelledby="eu-avisos-t">
+    <div class="eu-sheet-grab eu-avisos-grab" aria-hidden="true"></div>
+    <div class="eu-avisos-hd">
+      <h2 class="eu-avisos-t" id="eu-avisos-t">Avisos</h2>
+      <span class="eu-avisos-total num" id="eu-avisos-total"></span>
+      <span class="grow"></span>
+      <div class="eu-seg eu-avisos-seg" role="group" aria-label="Mostrar">
+        <button type="button" data-avtab="todo" aria-pressed="true">Todo</button>
+        <button type="button" data-avtab="pend" aria-pressed="false">Pendientes</button>
+      </div>
+    </div>
+    <div class="eu-avisos-bd" id="eu-avisos-bd"></div>
+    <div class="eu-avisos-ft"><span class="grow" id="eu-avisos-foot"></span><a href="/perfil/?sec=avisos">Preferencias</a></div>
+  </div>
+</div>
+
 <script type="application/json" id="eu-quick-data">{{ nav_quick|tojson }}</script>
 
 <!-- COMMAND PALETTE (⌘K) — Acciones · Páginas · Recientes · Sistema (NAV) -->
@@ -282,6 +308,7 @@ function euSbRail(){
 <script src="{{ url_for('static', filename='js/eu-a11y.js') }}"></script>
 <script src="{{ url_for('static', filename='js/eu-celebrate.js') }}"></script>
 <script src="{{ url_for('static', filename='js/eu-quick.js') }}"></script>
+<script src="{{ url_for('static', filename='js/eu-avisos.js') }}"></script>
 <script>if (window.euRefreshXp) euRefreshXp({ initial: true });</script>
 <script>
 /* Envuelto en try/catch: si el CDN de lucide falla o tarda (red lenta,
