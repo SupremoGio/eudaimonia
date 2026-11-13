@@ -33,8 +33,8 @@
   function tipoIcon(id, list) { return (list.filter(function (t) { return t.id === id; })[0] || {}).icon || 'wrench'; }
   function num(id) { var v = $(id).value; return v === '' ? null : +v; }
   function emptyHtml(ic, t, txt, act, actLbl) {
-    return '<div class="eu-card"><div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="' + ic + '"></i></div><div class="t-card">' + t + '</div><p>' + txt + '</p>' +
-      (act ? '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm ' + act + '"><i data-lucide="plus"></i>' + actLbl + '</button>' : '') + '</div></div>';
+    return '<div class="eu-card">' + window.euEmpty(ic, t, txt, false,
+      act ? '<button type="button" class="eu-btn eu-btn--secondary eu-btn--sm ' + act + '"><i data-lucide="plus"></i>' + actLbl + '</button>' : '') + '</div>';
   }
   function busy(form, on) { var b = document.querySelector('[form="' + form + '"]'); if (b) { b.disabled = on; b.setAttribute('aria-busy', String(on)); } }
   // Todas las APIs devuelven {state}; se re-renderiza todo con el estado nuevo.

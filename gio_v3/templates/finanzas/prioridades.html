@@ -34,7 +34,7 @@
     {% else %}
     <div class="eu-card">{{ ui.empty('star', 'Sin artículos en la lista', 'Registra lo que quieres comprar y evalúalo con el protocolo de compra antes de decidir.') }}</div>
     {% endfor %}
-    <div class="eu-card" id="pr-nomatch" hidden>{{ ui.empty('filter', 'Nada en este filtro', 'No hay artículos que coincidan.') }}</div>
+    <div class="eu-card" id="pr-nomatch" hidden>{{ ui.empty('filter', 'Ningún artículo en este filtro.', 'No hay artículos que coincidan.', kind='filter') }}</div>
   </div>
 </div>
 

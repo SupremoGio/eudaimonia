@@ -23,7 +23,8 @@
   {% elif n_cats %}
   <p class="oik-risk-ok"><i data-lucide="circle-check"></i>Todo en rango este mes</p>
   {% else %}
-  {{ ui.empty('pie-chart', 'Aún no hay gasto clasificado', 'Sube tu estado de cuenta para ver el avance por categoría.', 'Subir estado de cuenta', '/finanzas/estados/', 'upload', compact=True) }}
+  {{ ui.empty('pie-chart', 'Aún no hay gasto clasificado este mes.', 'Sube tu estado de cuenta para ver el avance por categoría.', kind='period', ghost='rows',
+              last=oik_ultimo_periodo(), cta='Subir estado', cta_href='/finanzas/estados/', cta_icon='upload') }}
   {% endif %}
   {# Si el «Siguiente paso» del héroe ya es clasificar, el aviso no se repite. #}
   {% if estado_sin_clasificar and not (next_step and next_step.kind == 'clasificar') %}

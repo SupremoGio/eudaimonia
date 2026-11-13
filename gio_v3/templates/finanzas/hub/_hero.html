@@ -45,7 +45,8 @@
     </div>
     {% endif %}
     {% else %}
-    {{ ui.empty('wallet', 'Sin movimientos este mes', 'Sube tu estado de cuenta para ver cuánto tienes disponible y tu reparto 50·30·20.', cta='Subir estado de cuenta', cta_href='/finanzas/estados/', cta_icon='upload', compact=True) }}
+    {{ ui.empty('wallet', 'Sin movimientos este mes.', 'Sube tu estado de cuenta para ver cuánto tienes disponible y tu reparto 50·30·20.', kind='period', ghost='bars',
+                last=oik_ultimo_periodo(), cta='Subir estado de cuenta', cta_href='/finanzas/estados/', cta_icon='upload') }}
     {% endif %}
 
     {% set n = next_step %}

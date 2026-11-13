@@ -297,7 +297,7 @@
   function renderList(items) {
     var box = $('wl-list');
     if (!items.length) {
-      box.innerHTML = '<div class="eu-card wl-span"><div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="package"></i></div><div class="t-card">Nada por aquí</div><p>Los artículos que evalúes con el protocolo aparecerán aquí para decidir si conviene comprarlos.</p></div></div>';
+      box.innerHTML = '<div class="eu-card wl-span">' + window.euEmpty('package', 'Nada por aquí', 'Los artículos que evalúes con el protocolo aparecerán aquí para decidir si conviene comprarlos.') + '</div>';
       icons(); return;
     }
     var circ = 2 * Math.PI * 16;
@@ -400,7 +400,7 @@
     $('ia-motivo').value = '';
     $('ia-run').querySelector('span').textContent = a ? 'Re-analizar con IA' : 'Analizar con IA';
     $('ia-body').innerHTML = a ? iaHTML(iaItem, a, iaItem.ia_veredicto_anterior)
-      : '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="sparkles"></i></div><div class="t-card">' + esc(iaItem.nombre) + '</div><p>La IA revisa precios y rebajas actuales' + ((iaItem.categoria || 'Ropa & Calzado') === 'Ropa & Calzado' ? ', tu armario' : '') + ' y te dice si conviene comprar, esperar o no comprar.</p></div>';
+      : window.euEmpty('sparkles', iaItem.nombre, 'La IA revisa precios y rebajas actuales' + ((iaItem.categoria || 'Ropa & Calzado') === 'Ropa & Calzado' ? ', tu armario' : '') + ' y te dice si conviene comprar, esperar o no comprar.');
     icons(); euModal.open('m-ia');
     // El foco inicial va al título, no al campo opcional (en celular abría el teclado y bajaba todo).
     setTimeout(function () { var t = $('m-ia-t'); t.setAttribute('tabindex', '-1'); t.focus({ preventScroll: true }); [$('m-ia'), $('m-ia').querySelector('.eu-modal'), $('ia-body')].forEach(function (el) { el.scrollTop = 0; }); }, 30);

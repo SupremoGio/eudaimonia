@@ -6,6 +6,7 @@
 
 {% block content %}
 <div class="id" id="id" data-cat="cosmopolitismo" data-vista="{{ vista }}" data-today="{{ today }}">
+  {% set setup = not tests and not journal and not vista and not eu_demo %}
   {% call ui.page_head(eyebrow='Plan C1 · semana ' ~ plan.semana_actual ~ ' de ' ~ plan.total_semanas, cls='id-hd') %}
     {% if not vista %}
     <div class="eu-seg id-lang" role="tablist" aria-label="Idioma" id="id-lang">
@@ -49,7 +50,12 @@
   {% endif %}
 
 {% else %}
-  <div class="id-layout">
+  {% if setup %}
+  {{ ui.empty('languages', 'Arranca tu plan C1', 'El plan son 3 fases con checkpoints semanales. Con tus entradas del journal y tus tests mido si vas adelante o atrás del calendario y qué destreza flojea.',
+              kind='setup', eyebrow='Cosmopolitismo · primer uso', steps=['Escribe tu primera entrada del journal', 'Registra un test de nivel (aunque sea de práctica)', 'Marca los checkpoints que ya cumples'],
+              cta='Empezar', cta_icon='play', cta_class='js-setup-reveal', example_href='?demo=1') }}
+  {% endif %}
+  <div class="id-layout" data-setup-body{% if setup %} hidden{% endif %}>
     <div class="eu-vstack id-main">
       {# ── Plan: tiempo contra hecho + siguiente checkpoint ── #}
       <section class="eu-card id-plan" id="id-plan" aria-label="Plan C1">

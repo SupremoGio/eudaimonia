@@ -31,7 +31,7 @@
   function fmtD(s) { return s ? s.slice(0, 10).split('-').reverse().join('/') : '—'; }
   function getJ(u) { return fetch(u).then(function (r) { return r.json(); }); }
   function send(u, m, b) { return fetch(u, { method: m, headers: { 'Content-Type': 'application/json' }, body: b === undefined ? undefined : JSON.stringify(b) }).then(function (r) { return r.json(); }); }
-  function empty(ic, t, txt) { return '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="' + ic + '"></i></div><div class="t-card">' + t + '</div><p>' + txt + '</p></div>'; }
+  function empty(ic, t, txt) { return window.euEmpty(ic, t, txt); }
   function tone(pct, over) { return over ? 'danger' : pct > 80 ? 'warning' : 'brand'; }
 
   function setView(v) {

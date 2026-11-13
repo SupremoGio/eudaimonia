@@ -12,6 +12,13 @@
     <button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva planta</button>
   {% endcall %}
 
+  {% set setup = not total and not eu_demo %}
+  {% if setup %}
+  {{ ui.empty('sprout', 'Agrega tu primera planta', 'Con su especie y dónde vive calculo cada cuándo regarla según la temporada, te aviso cuando toque y llevo su bitácora.',
+              kind='setup', eyebrow='Plantas · primer uso', steps=['Nombre y especie (o una foto para identificarla)', 'Dónde vive: interior o balcón', 'Cuándo la regaste por última vez'],
+              cta='Nueva planta', cta_icon='plus', cta_class='js-new', example_href='?demo=1') }}
+  {% endif %}
+  <div class="pl-body"{% if setup %} hidden{% endif %}>
   {% if temporada.label %}
   {%- macro pct_txt(f) -%}
     {%- if f > 1.005 %}~{{ ((f - 1) * 100)|round|int }}% menos seguido{% elif f < 0.995 %}~{{ ((1 - f) * 100)|round|int }}% más seguido{% else %}sin cambio{% endif -%}
@@ -37,6 +44,7 @@
   </div>
 
   <div class="pl-grid" id="pl-grid" aria-live="polite"></div>
+  </div>
 </div>
 
 <div data-cat="ataraxia">

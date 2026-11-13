@@ -114,8 +114,11 @@ def index():
     from modules import avisos as _av
     with get_db() as db:
         avisos_prefs = _av.preferencias(db, session)
+        from modules import onboarding as _onb
+        onb = _onb.estado(db, inicio=False)
 
     return render_template('perfil/index.html',
+                           onb=onb,
                            avisos_prefs=avisos_prefs,
                            me=me, sec=sec, fin_ok=fin_ok,
                            placeholder=PLACEHOLDER,

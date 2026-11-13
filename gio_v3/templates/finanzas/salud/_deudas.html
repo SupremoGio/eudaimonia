@@ -37,7 +37,7 @@
         {% endfor %}
       </ul>
       {% else %}
-      <div class="eu-empty eu-empty--sm pt-debt-empty"><div class="eu-empty-ic"><i data-lucide="{{ empty_ic }}"></i></div><p>{{ empty_txt }}</p></div>
+      {{ ui.empty(empty_ic, empty_txt, '', compact=True) }}
       {% endif %}
       <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm eu-btn--block" data-new-debt="{{ type }}"><i data-lucide="plus"></i>{{ add }}</button>
       {% if type == 'owe_me' %}<a class="t-meta pt-debt-link" href="/finanzas/estados/#porcobrar">Lo que te deben vive en Por cobrar · ver detalle <i data-lucide="arrow-right"></i></a>{% endif %}

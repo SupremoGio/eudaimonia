@@ -7,10 +7,18 @@
 {% block content %}
 <div class="gr-root" id="gr" data-tab="prendas" data-view="grid">
   {% include "guardarropa/_head.html" %}
+  {% set setup = not items and not eu_demo %}
+  {% if setup %}
+  {{ ui.empty('shirt', 'Arma tu armario', 'Con tus prendas te sugiero un outfit cada día, mido cuánto rotas tu ropa y te aviso de lo que llevas meses sin usar.',
+              kind='setup', eyebrow='Guardarropa · primer uso', steps=['Fotografía o describe 5–10 prendas que usas seguido', 'Combina tres en tu primer outfit', 'Márcalo como «Usado hoy»'],
+              cta='Agregar prenda', cta_icon='plus', cta_class='js-new-item', example_href='?demo=1') }}
+  {% endif %}
+  <div class="gr-body"{% if setup %} hidden{% endif %}>
   {% include "guardarropa/_hero.html" %}
   {% include "guardarropa/_prendas.html" %}
   {% include "guardarropa/_outfits.html" %}
   <section class="gr-panel eu-vstack" data-panel="analisis" id="gr-analisis" aria-label="Análisis del armario" hidden></section>
+  </div>
 </div>
 
 <button type="button" class="gr-fab js-fab" aria-label="Nueva prenda"><i data-lucide="plus"></i></button>

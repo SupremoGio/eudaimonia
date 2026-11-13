@@ -474,6 +474,8 @@
     if (g && !g.querySelector('.pf-rem')) g.remove();
     listEmpty('remindersList', '.js-rem-empty');
     remFiltro(remTema);
+  var remNone = document.querySelector('.js-rem-none');
+  if (remNone) remNone.addEventListener('click', function (e) { if (e.target.closest('.js-empty-drop')) remFiltro(''); });
   }
 
   /* Chips de tema: ocultan filas de otros temas y los grupos que quedan
@@ -499,7 +501,16 @@
     });
     var list = $('remindersList'); if (list) list.classList.toggle('is-filtered', !!tema);
     var none = document.querySelector('.js-rem-none');
-    if (none) none.hidden = !(tema && !visibles);
+    if (none) {
+      none.hidden = !(tema && !visibles);
+      // kind=filter: cuál filtro sobra y cuántos hay sin él
+      var chip = document.querySelector('.js-rem-tema[data-tema="' + tema + '"]');
+      var lbl = chip ? chip.textContent.replace(/\d+/g, '').trim() : tema;
+      var total = document.querySelectorAll('#remindersList .pf-rem').length;
+      var hint = none.querySelector('.js-empty-hint'), drop = none.querySelector('.js-empty-drop');
+      if (hint) hint.textContent = 'Sin «' + lbl + '» hay ' + total + '.';
+      if (drop) { drop.textContent = 'Quitar «' + lbl + '»'; drop.hidden = !total; }
+    }
     if (snoozeRow && snoozeRow.hidden) snoozeClose();
   }
   remFiltro(remTema);

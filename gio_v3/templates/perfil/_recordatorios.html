@@ -51,7 +51,7 @@
     {% endfor %}
     <div class="js-rem-empty"{% if reminders %} hidden{% endif %}>{{ ui.empty('list-todo', 'Nada pendiente', 'Crea un recordatorio único o periódico y aparecerá en el radar de Inicio.') }}</div>
   </div>
-  <p class="t-meta js-rem-none" hidden>No hay recordatorios con este tema.</p>
+  <div class="js-rem-none" hidden>{{ ui.empty('filter', 'No hay recordatorios con este tema.', '', kind='filter', drop_filter={'label': 'tema', 'count': 0}) }}</div>
   <div class="eu-card pf-snooze" id="remSnooze" role="group" aria-label="Posponer hasta" hidden>
     <button type="button" class="eu-chip js-snooze-opt" data-dias="1">Mañana</button>
     <button type="button" class="eu-chip js-snooze-opt" data-dias="3">En 3 días</button>

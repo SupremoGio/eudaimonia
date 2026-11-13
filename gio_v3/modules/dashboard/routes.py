@@ -484,8 +484,16 @@ def index():
     hoy = today_date()
     fecha_larga = f"{_DIAS_ES[hoy.weekday()]} {hoy.day} de {_MESES_ES[hoy.month - 1]}"
     data = _build_eudaimonia_data()
+    onb = None
+    try:                                       # Primeros pasos (handoff Estados vacíos, S2)
+        from modules import onboarding
+        with get_db() as db:
+            onb = onboarding.estado(db)
+    except Exception as e:
+        print(f'[dashboard] onboarding: {e}')
     return render_template(
         'dashboard/index.html',
+        onb=onb, onb_lugar='inicio',
         data=data,
         v2=_build_dashboard_v2(data),
         fecha_larga=fecha_larga,

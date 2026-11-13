@@ -54,6 +54,7 @@
     {% endfor %}
   </ul>
   {% else %}
-  {{ ui.empty('piggy-bank', 'Sin gasto registrado', 'Aún no hay movimientos en este bucket para ' ~ mes ~ '. Importa tus estados de cuenta para verlos aquí.') }}
+  {{ ui.empty('piggy-bank', 'Sin gasto en ' ~ mes ~ '.', 'Aún no llega el estado de cuenta de este mes.', kind='period', ghost='rows',
+              last=oik_ultimo_periodo(mes, bk), cta='Subir estado', cta_href='/finanzas/estados/', cta_icon='upload') }}
   {% endif %}
 </section>

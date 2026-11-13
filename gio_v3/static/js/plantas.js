@@ -89,9 +89,11 @@
   function render() {
     var list = items(), box = $('pl-grid');
     if (!list.length) {
-      box.innerHTML = '<div class="eu-card pl-span"><div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="sprout"></i></div><div class="t-card">' +
-        (PLANTAS.length ? 'Nada por aquí' : 'Aún no agregas ninguna planta') + '</div><p>' + (PLANTAS.length ? 'Cambia el filtro para ver el resto.' : 'Agrega la primera con el botón de arriba.') + '</p>' +
-        (PLANTAS.length ? '' : '<button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva planta</button>') + '</div></div>';
+      box.innerHTML = PLANTAS.length
+        ? window.euEmptyFilter('Ninguna planta en este filtro.', 'Sin «' + (filter === 'pendientes' ? 'Pendientes' : 'Al día') + '» hay ' + PLANTAS.length + '.',
+            { key: 'todas', label: filter === 'pendientes' ? 'Pendientes' : 'Al día' }, 'pl-span')
+        : '<div class="eu-card pl-span">' + window.euEmpty('sprout', 'Aún no agregas ninguna planta', 'Agrega la primera con el botón de arriba.', false,
+            '<button type="button" class="eu-btn eu-btn--primary js-new"><i data-lucide="plus"></i>Nueva planta</button>') + '</div>';
       icons(); return;
     }
     box.innerHTML = list.map(function (p) {
@@ -134,6 +136,7 @@
   });
   root.addEventListener('click', function (e) {
     if (e.target.closest('.js-new')) { openNew(); return; }
+    if (e.target.closest('.js-empty-drop')) { var t = document.querySelector('[data-f="todas"]'); if (t) t.click(); return; }
     var ed = e.target.closest('[data-edit]'); if (ed) { openEdit(+ed.dataset.edit); return; }
     var dr = e.target.closest('[data-doctor]'); if (dr) { openDoctor(+dr.dataset.doctor); return; }
     var pp = e.target.closest('[data-posponer]');

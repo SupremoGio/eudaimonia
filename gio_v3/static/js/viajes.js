@@ -41,7 +41,7 @@
   }
   function diaCorto(s) { var x = d(s); return DIA[x.getDay()] + ' ' + x.getDate(); }
   function emptyHtml(ic, t, txt) {
-    return '<div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="' + ic + '"></i></div><div class="t-card">' + t + '</div><p>' + txt + '</p></div>';
+    return window.euEmpty(ic, t, txt);                 // mismo markup que ui.empty()
   }
   function setErr(id, msg) { var e = $(id); e.hidden = !msg; e.querySelector('span').textContent = msg || ''; }
   function swatch(hex, cls) { return '<span class="vj-sw ' + (cls || '') + '" style="--sw:' + esc(hex || '#444') + '"></span>'; }

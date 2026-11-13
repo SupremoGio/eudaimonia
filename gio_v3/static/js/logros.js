@@ -16,6 +16,10 @@
       root.dataset.status = c.dataset.status;
       press(chips, c);
       if (collEmpty) collEmpty.hidden = $$('.lg-item', root).some(function (a) { return a.offsetParent !== null; });
+      if (collEmpty && !collEmpty.hidden && window.euSetDrop) {
+        var todos = chips.filter(function (x) { return !x.dataset.status || x.dataset.status === 'todos' || x.dataset.status === 'all'; })[0];
+        euSetDrop(collEmpty, euChipLabel(c), $$('.lg-item', root).length, function () { if (todos) todos.click(); });
+      }
     });
   });
 
@@ -43,6 +47,12 @@
     visibles.slice(0, shown).forEach(function (g) { g.hidden = false; });
     if (more) more.hidden = visibles.length <= shown;
     if (logEmpty) logEmpty.hidden = visibles.length > 0;
+    if (logEmpty && !visibles.length && src && window.euSetDrop) {
+      var on = srcChips.filter(function (b) { return b.dataset.src === src; })[0];
+      euSetDrop(logEmpty, euChipLabel(on, src), days.length, function () {
+        var all = srcChips.filter(function (b) { return !b.dataset.src; })[0]; if (all) all.click();
+      });
+    }
   }
   srcChips.forEach(function (b) {
     b.addEventListener('click', function () {

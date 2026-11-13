@@ -25,7 +25,7 @@
     return fetch(url, o).then(function (r) { return r.json().then(function (d) { d._ok = r.ok; return d; }); });
   }
   function emptyHtml(ic, t, txt) {
-    return '<div class="eu-card"><div class="eu-empty"><div class="eu-empty-ic"><i data-lucide="' + ic + '"></i></div><div class="t-card">' + t + '</div><p>' + txt + '</p></div></div>';
+    return '<div class="eu-card">' + window.euEmpty(ic, t, txt) + '</div>';   // mismo markup que ui.empty()
   }
   function splitMinutes(total) {
     var base = [10, 15, 5], sum = 30;

@@ -37,10 +37,9 @@
     {% else %}
     <div class="gr-today-bd">
       <div class="t-eyebrow">Outfit de hoy</div>
-      <div class="gr-today-n">Aún no hay outfits</div>
-      <p class="t-meta">Guarda tu primer outfit y aquí te sugeriremos uno cada día, con la razón.</p>
+      {{ ui.empty('layers', 'Aún no hay outfits', 'Guarda tu primer outfit y aquí te sugeriremos uno cada día, con la razón.', compact=True,
+                  cta='Nuevo outfit', cta_icon='plus', cta_class='js-new-outfit') }}
       <div class="gr-today-acts">
-        <button type="button" class="eu-btn eu-btn--primary js-new-outfit"><i data-lucide="plus"></i>Nuevo outfit</button>
         <button type="button" class="eu-btn eu-btn--ghost gr-coach-btn js-coach" data-occ=""><i data-lucide="sparkles"></i>Pedir al coach</button>
       </div>
     </div>

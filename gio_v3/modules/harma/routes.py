@@ -296,7 +296,15 @@ def _log_servicio(tipo, titulo, descripcion, km, costo, taller, fecha, plan_item
 @harma_bp.route('/')
 def index():
     vista = request.args.get('vista') if request.args.get('vista') in ('bitacora', 'papeles') else ''
-    return render_template('harma/index.html', today=today_str(), vista=vista, **_state())
+    st = _state()
+    return render_template('harma/index.html', today=today_str(), vista=vista, setup=sin_configurar(st), **st)
+
+
+def sin_configurar(st):
+    """Primer uso (handoff Estados vacíos): el vehículo sembrado sigue sin
+    marca ni kilometraje y no hay ningún servicio registrado."""
+    v = st.get('vehiculo')
+    return not v or (not (v.get('marca') or '').strip() and not v.get('km_actual') and not st.get('servicios'))
 
 
 @harma_bp.route('/api/state')

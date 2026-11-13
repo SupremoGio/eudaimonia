@@ -122,6 +122,15 @@ def create_app():
         if not session.get('app_ok'):
             return redirect(url_for('auth.login_page'))
 
+    # «Ver un ejemplo» (?demo=1): base de muestra de solo lectura por petición.
+    from modules.onboarding import onboarding_bp
+    app.register_blueprint(onboarding_bp)     # Primeros pasos: /api/onboarding/*
+    from modules import demo as _demo
+    _demo.init_app(app)
+    # Vacío kind='period': el último mes con gasto, junto a la acción.
+    from modules.finanzas.budget import ultimo_periodo_txt
+    app.jinja_env.globals['oik_ultimo_periodo'] = ultimo_periodo_txt
+
     @app.route('/api/health/v31')
     def health_v31():
         from ec_constants import EC_VALUE_MXN, GAMIFICATION_VERSION

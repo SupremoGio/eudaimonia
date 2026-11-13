@@ -29,6 +29,6 @@
   </div>
   {% endif %}
   <div class="js-radar-empty"{% if data.deadlines %} hidden{% endif %}>
-    {{ ui.empty('calendar-check', 'Nada en el radar', 'No tienes recordatorios, tareas ni vencimientos próximos.') }}
+    {{ ui.empty('check', 'Nada en el radar', 'No tienes recordatorios, tareas ni vencimientos próximos.', kind='done') }}
   </div>
 </section>

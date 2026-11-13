@@ -27,7 +27,7 @@
       {% endfor %}
     </div>
     <div class="lg-more"><button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-more" hidden>Cargar más</button></div>
-    <div class="js-log-empty" hidden>{{ ui.empty('scroll-text', 'Nada de esta fuente', 'En los últimos 90 días no hay XP con este filtro.', compact=True) }}</div>
+    <div class="js-log-empty" hidden>{{ ui.empty('scroll-text', 'Nada de esta fuente en 90 días.', 'En los últimos 90 días no hay XP con este filtro.', kind='filter') }}</div>
     {% else %}
     {{ ui.empty('scroll-text', 'Sin historial todavía', 'Completa actividades para empezar a ganar XP y ver su desglose aquí.') }}
     {% endif %}

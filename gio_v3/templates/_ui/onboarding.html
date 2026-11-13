@@ -1,0 +1,31 @@
+{# Primeros pasos (handoff Estados vacíos, nota 5). Espera `onb` =
+   onboarding.estado(db) y `onb_lugar` ('inicio' | 'perfil'). Cada paso se
+   marca solo al existir su dato; el siguiente lleva el botón primario. #}
+{% set _perfil = onb_lugar == 'perfil' %}
+{% if _perfil or onb.modo in ('abierta', 'listo') %}
+<section class="eu-card eu-card--flush eu-onb" id="eu-onb" aria-labelledby="eu-onb-t" data-lugar="{{ onb_lugar }}"{% if onb.nuevos %} data-nuevos="{{ onb.nuevos|length }}"{% endif %}>
+  <div class="eu-onb-hd">
+    <div class="eu-grow">
+      <div class="t-eyebrow eu-onb-eb num">Primeros pasos · {{ onb.n }}/{{ onb.total }}</div>
+      <h2 class="eu-onb-t" id="eu-onb-t">{% if onb.siguiente %}Siguiente: {{ onb.siguiente.titulo|lower }}{% else %}Listo. Todo lo diario ya tiene con qué trabajar.{% endif %}</h2>
+    </div>
+    {% if not _perfil and onb.modo == 'abierta' %}<button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-onb-ocultar">Ocultar</button>{% endif %}
+  </div>
+  <div class="eu-progress eu-progress--thin eu-onb-bar" role="progressbar" aria-label="Primeros pasos" aria-valuemin="0" aria-valuemax="{{ onb.total }}" aria-valuenow="{{ onb.n }}"><i style="width:{{ onb.pct }}%"></i></div>
+  <ol class="eu-onb-list">
+    {% for p in onb.pasos %}
+    <li class="eu-onb-row{{ ' is-done' if p.hecho }}">
+      <span class="eu-onb-dot" aria-hidden="true">{% if p.hecho %}<i data-lucide="check"></i>{% endif %}</span>
+      <div class="eu-onb-tx"><div class="eu-onb-rt">{{ p.titulo }}{% if p.hecho %}<span class="sr-only"> · hecho</span>{% endif %}</div><div class="t-meta">{{ p.detalle }}</div></div>
+      {% if p.hecho %}<span class="num eu-onb-xp">+{{ onb.xp }} XP</span>
+      {% else %}<a class="eu-btn eu-btn--sm {{ 'eu-btn--primary' if p.siguiente else 'eu-btn--secondary' }}" href="{{ p.url }}"{% if p.quick %} data-onb-quick="{{ p.quick }}"{% endif %}>{{ p.accion }}</a>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+{% elif onb.modo == 'oculta' %}
+<div class="eu-card eu-onb-off" id="eu-onb">
+  <span class="eu-grow t-meta">Primeros pasos ocultos · <span class="num">{{ onb.n }}/{{ onb.total }}</span>. Vuelven en Perfil › Primeros pasos.</span>
+  <button type="button" class="eu-btn eu-btn--ghost eu-btn--sm js-onb-mostrar">Mostrar</button>
+</div>
+{% endif %}

@@ -15,6 +15,7 @@
   ('documentos', 'folder', 'Documentos'),
   ('vault', 'key-round', 'Contraseñas'),
   ('avisos', 'bell-ring', 'Avisos'),
+  ('pasos', 'list-checks', 'Primeros pasos'),
   ('ajustes', 'settings-2', 'Ajustes'),
 ] %}
 {% set cur = sec if sec in sections|map(attribute=0)|list else 'resumen' %}
@@ -35,6 +36,11 @@
     {% include "perfil/_documentos.html" %}
     {% include "perfil/_vault.html" %}
     {% include "perfil/_avisos.html" %}
+    <section class="pf-sec eu-vstack" id="sec-pasos" data-sec-panel="pasos"{% if cur != 'pasos' %} hidden{% endif %}>
+      {% set sec_title, sec_sub, sec_action = 'Primeros pasos', 'Los cinco datos que alimentan lo diario. Se marcan solos cuando existe el dato.', '' %}
+      {% include "perfil/_sechead.html" %}
+      {% if onb %}{% set onb_lugar = 'perfil' %}{% include "_ui/onboarding.html" %}{% endif %}
+    </section>
     {% include "perfil/_ajustes.html" %}
   </div>
 </div>

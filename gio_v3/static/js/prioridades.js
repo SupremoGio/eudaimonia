@@ -41,6 +41,8 @@
       c.hidden = !ok; if (ok) shown++;
     });
     $('pr-nomatch').hidden = shown > 0 || !$$('.pr-card').length;
+    if (!shown && window.euSetDrop) euSetDrop($('pr-nomatch'), euChipLabel(document.querySelector('[data-f="' + f + '"]'), f),
+      $$('.pr-card').length, function () { filter('todos'); });
     try { localStorage.setItem('wl_filter', f); } catch (e) { /* sin storage */ }
   }
   $$('[data-f]').forEach(function (c) { c.addEventListener('click', function () { filter(c.dataset.f); }); });
