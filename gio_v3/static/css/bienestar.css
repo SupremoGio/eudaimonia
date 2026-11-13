@@ -69,7 +69,7 @@
 .hg-bar i{display:block;height:100%;width:var(--p);background:var(--cat-fg)}
 .hg-med.is-off{opacity:.55}
 .hg-med.is-off .hg-med-t{text-decoration:line-through}
-.hg-med.is-off .hg-med-ic{color:var(--fg-4)}
+.hg-med.is-off .hg-med-ic{color:var(--fg-3)}
 .hg-med.is-off .hg-bar i{background:var(--fg-4)}
 .hg-med .eu-btn{justify-self:end}
 @media (max-width:639px){
