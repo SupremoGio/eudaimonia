@@ -1,0 +1,202 @@
+{
+ "total": 29,
+ "por_modulo": {
+  "components": 5,
+  "eu": 4,
+  "ataraxia": 3,
+  "acta": 2,
+  "logros": 2,
+  "perfil": 2,
+  "praxis": 2,
+  "wishlist": 2,
+  "bienestar": 1,
+  "dashboard": 1,
+  "harma": 1,
+  "nutricion": 1,
+  "plantas": 1,
+  "auth": 1,
+  "eurythmia": 1
+ },
+ "por_regla": {
+  "fg4-texto": 13,
+  "outline-sin-foco": 10,
+  "campo-sin-label": 4,
+  "onclick-sin-rol": 2
+ },
+ "problemas": {
+  "34124d10ffef": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/acta.css",
+   "codigo": ".acta-pillar-ic{color:var(--fg-4)}",
+   "n": 1
+  },
+  "aad1c6f074d4": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/acta.css",
+   "codigo": ".acta-pillar-xp{color:var(--fg-4)}",
+   "n": 1
+  },
+  "650f30b410d7": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/ataraxia.css",
+   "codigo": ".at-prio-it svg{color:var(--fg-4)}",
+   "n": 1
+  },
+  "c404327f9fe8": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/ataraxia.css",
+   "codigo": ".rv-h{outline:none}",
+   "n": 1
+  },
+  "3254429521c7": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/ataraxia.css",
+   "codigo": ".rv-done-t{outline:none}",
+   "n": 1
+  },
+  "17d35b5b3e71": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/bienestar.css",
+   "codigo": ".hg-med.is-off .hg-med-ic{color:var(--fg-4)}",
+   "n": 1
+  },
+  "70b38b041794": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/components.css",
+   "codigo": ".eu-ach.is-locked .eu-ach-seal{color:var(--fg-4)}",
+   "n": 1
+  },
+  "02dd7e81746b": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/components.css",
+   "codigo": ".eu-input:focus{outline:none}",
+   "n": 1
+  },
+  "66e856e576d7": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/components.css",
+   "codigo": ".eu-select:focus{outline:none}",
+   "n": 1
+  },
+  "5e96da5786f8": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/components.css",
+   "codigo": ".eu-textarea:focus{outline:none}",
+   "n": 1
+  },
+  "5b380ab53379": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/components.css",
+   "codigo": "#eu-main:focus{outline:none}",
+   "n": 1
+  },
+  "c0e46304e68a": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/dashboard.css",
+   "codigo": ".dash-bal-today.is-none{color:var(--fg-4)}",
+   "n": 1
+  },
+  "48ec22c4ff08": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/harma.css",
+   "codigo": ".hm-okcat{color:var(--fg-4)}",
+   "n": 1
+  },
+  "1e83d13eb20f": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/logros.css",
+   "codigo": ".lg-path-n{color:var(--fg-4)}",
+   "n": 1
+  },
+  "8b6f0e8bbf07": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/logros.css",
+   "codigo": ".lg-item.is-locked .lg-seal{color:var(--fg-4)}",
+   "n": 1
+  },
+  "ce33685f5661": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/nutricion.css",
+   "codigo": ".dt-luego{color:var(--fg-4)}",
+   "n": 1
+  },
+  "aa1c7aaad5a8": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/perfil.css",
+   "codigo": ".pf-val.is-empty{color:var(--fg-4)}",
+   "n": 1
+  },
+  "f4df67920819": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/perfil.css",
+   "codigo": ".pf-edit{color:var(--fg-4)}",
+   "n": 1
+  },
+  "89aeeebb8993": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/plantas.css",
+   "codigo": ".pl-pp-name{outline:none}",
+   "n": 1
+  },
+  "f195fbe75c5b": {
+   "regla": "fg4-texto",
+   "archivo": "static/css/praxis.css",
+   "codigo": ".px-ghost{color:var(--fg-4)}",
+   "n": 1
+  },
+  "7f7369700ee3": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/praxis.css",
+   "codigo": ".px-cap-in{outline:none}",
+   "n": 1
+  },
+  "d89839b129a3": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/wishlist.css",
+   "codigo": ".wl-step .t-section:focus{outline:none}",
+   "n": 1
+  },
+  "81a1b6f049cf": {
+   "regla": "outline-sin-foco",
+   "archivo": "static/css/wishlist.css",
+   "codigo": ".wl-q legend:focus{outline:none}",
+   "n": 1
+  },
+  "70b6f4b5625a": {
+   "regla": "campo-sin-label",
+   "archivo": "templates/auth/login.html",
+   "codigo": "<input type=\"text\" name=\"username\" value=\"eudaimonia\" autocomplete=\"username\" hidden>",
+   "n": 1
+  },
+  "16a0479321a0": {
+   "regla": "campo-sin-label",
+   "archivo": "templates/eu/layout_sub.html",
+   "codigo": "<select>",
+   "n": 1
+  },
+  "de7c730722d6": {
+   "regla": "campo-sin-label",
+   "archivo": "templates/eu/layout_sub.html",
+   "codigo": "<input type=\"text\" id=\"eu-cmdk-input\" placeholder=\"Buscar páginas o acciones… (griego o español)\" autocomplete=\"off\" spe",
+   "n": 1
+  },
+  "7d86e02f2a1f": {
+   "regla": "onclick-sin-rol",
+   "archivo": "templates/eu/layout_sub.html",
+   "codigo": "<div class=\"eu-scrim eu-scrim--sheet\" id=\"eu-mod-sheet\" hidden onclick=\"if(event.target===this) euModSheet(false)\">",
+   "n": 1
+  },
+  "d5869b463e2a": {
+   "regla": "onclick-sin-rol",
+   "archivo": "templates/eu/layout_sub.html",
+   "codigo": "<div class=\"eu-cmdk-scrim\" id=\"eu-cmdk\" hidden onclick=\"if(event.target===this) euCmdkClose()\">",
+   "n": 1
+  },
+  "4bad2324bd3e": {
+   "regla": "campo-sin-label",
+   "archivo": "templates/eurythmia/index.html",
+   "codigo": "<textarea class=\"eu-textarea\" id=\"ey-improv\" rows=\"2\" placeholder=\"Encadené enchufla doble con vacílala sin pensarlo…\">",
+   "n": 1
+  }
+ }
+}
