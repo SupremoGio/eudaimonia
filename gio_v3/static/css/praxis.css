@@ -12,10 +12,10 @@
 
 /* Captura (nota 1): una barra — campo, tipo segmentado y Capturar */
 .px-capture{padding:6px;border-radius:var(--r-md);background:var(--bg-surface);border:1px solid var(--border-default)}
-.px-capture:focus-within{border-color:var(--border-brand)}
+.px-capture:focus-within{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--brand-muted)}
 .px-cap-row{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}
 .px-cap-ic{width:16px;height:16px;margin-left:var(--sp-2);color:var(--fg-3);flex-shrink:0}
-.px-cap-in{flex:1;min-width:0;height:40px;border:0;background:transparent;color:var(--fg-1);font:var(--fs-15) var(--font-ui);outline:none}
+.px-cap-in{flex:1;min-width:0;height:40px;border:0;background:transparent;color:var(--fg-1);font:var(--fs-15) var(--font-ui);outline:2px solid transparent}
 .px-cap-in::placeholder{color:var(--fg-4)}
 .px-cap-tipo button{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 10px;font-size:var(--fs-12);white-space:nowrap}
 .px-cap-tipo svg{width:13px;height:13px}
@@ -106,7 +106,7 @@ span.px-star{display:inline-flex;width:32px;justify-content:center;opacity:.4}
 .px-notas{line-height:1.5}
 .px-item .eu-badge{flex-shrink:0}
 .px-item .eu-badge svg{width:11px;height:11px}
-.px-ghost{color:var(--fg-4)}
+.px-ghost{color:var(--fg-3)}
 .px-ghost:hover{color:var(--fg-2)}
 @media (hover:hover){.px-item .js-del,.px-item .js-unclass{opacity:0}.px-item:hover .js-del,.px-item:hover .js-unclass,.px-item :focus-visible{opacity:1}}
 .px-tipo--idea{color:var(--fg-brand)}
