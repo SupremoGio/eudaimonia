@@ -262,7 +262,43 @@ Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`
 - **`euConfirm`** (`eu-motion.js`) conserva su propio manejo: es un `alertdialog` creado al vuelo, con foco atrapado y Esc. No pasa por `euDialog`.
 - **Catálogo `/_ui`:** responde 404 salvo con `FLASK_ENV=development`, `app.debug` o `session['is_admin']`. El ejemplo de `page_head` baja su `h1` a `role=heading` de nivel 2 para no tener dos `h1` en la página.
 
+
+## Cierre
+- **Fecha:** 2026-11-13. Es la rama `claude/modest-cray-h9zrlf` justo antes de mergear a `main`.
+- **Sprints:** 92 en total: **91 hechos**, **0 parciales** y **1 pendiente**. El pendiente es Remates · Wishlist de Oikonomia S1. Los 70 del ORDEN están hechos.
+- **Tests:** `pytest -n 4 tests` dio **1527 passed**, 0 failed, en 4 min 9 s. Durante esta ronda se ajustaron 2 tests, sin tocar código de la app:
+  - `test_plantas_ajustes`: validaba el manejo de Esc anterior del panel, que A11y S2 pasó a `euDialog` a propósito.
+  - `test_login`: fallaba si los intentos cruzaban el cambio de minuto del límite. Además, `conftest` fija días de pago de prueba, para que cambiar `PAY_DAYS` no rompa la suite.
+- **`pre_deploy_check`:** «All pre-deploy checks passed». init_db y niveles OK, A11y sin problemas nuevos y 19 macros documentadas.
+- **Capturas** (`capturas.py antes` desde `origin/main` → `despues-final`):
+  - 28 de 50 cambiaron, y el único cambio real es la ruta nueva `/_ui`. Las 10 rutas siguientes cambiaron entre 0.03 % y 0.08 %, todas por suavizado de texto, no por diseño:
+    - `/finanzas/consumo/`
+    - `/finanzas/estados/`
+    - `/recetas/`
+    - `/`
+    - `/recompensas/`
+    - `/idiomas/`
+    - `/finanzas/`
+    - `/finanzas/inversiones/`
+    - `/bienestar/`
+    - `/bienestar/futbol/`
+  - Recetas S1 se hizo después de esta corrida, y Login no entra en la lista, porque `capturas.py` corre con sesión iniciada.
+  - Tres rutas de la lista de `capturas.py` no existen ni en `main`: `/finanzas/presupuesto/`, `/bienestar/nutricion/` y `/logros/`.
+
+### Verificar a mano
+- [ ] **Inicio v2 · S6 · móvil, limpieza y QA:** orden de bloques en móvil (Héroe → Pendiente → …) y topbar sin XP: es layout, se ve en pantalla
+- [ ] **Oikonomia v2 · S5 · accesos compactos, móvil y limpieza:** disposición móvil de los accesos
+- [ ] **Acta v2 · S4 · panel lateral, móvil y limpieza:** panel lateral en móvil
+- [ ] **Paideia v2 · S3 · biblioteca en portadas:** portadas reales dependen de las URL de imagen guardadas
+- [ ] **Guardarropa v2 · S3 · filtros en una fila + fotos:** fotos: dependen del volumen de uploads en Railway
+- [ ] **Viajes v2 · S3 · outfits en la fila, maleta en 2 columnas:** las 2 columnas de la maleta son layout
+- [ ] **Nutrición v2 · S4 · un solo recetario:** que `migrar_banco` ya corrió en producción (no se corren migraciones en esta auditoría)
+- [ ] **Plantas y Ajustes · Plantas S2 · panel con pestañas:** hoja a pantalla completa en móvil
+- [ ] **A11y + catálogo (y Capturas) · S2 · línea base en 0 y `euDialog`:** lector de pantalla real (VoiceOver), axe no lo cubre
+- [ ] **Remates (Login, Recetas, Wishlist de Oikonomia) · Login S1 · pulido:** que en el iPhone se vea una sola cita y la cuenta regresiva (en Playwright con iPhone 13 se ve una cita, y «Espera 60 s» → «59 s» con el botón deshabilitado). En móvil la página no tiene `h1` visible porque el del hero se oculta. Ya pasaba antes y no se cambió, porque `a11y_lint` no admite dos `h1`.
+- [ ] **Remates (Login, Recetas, Wishlist de Oikonomia) · Recetas S1 · encontrar y usar:** `wakeLock` en el iPhone (Safari 16.4+; si se niega, la pantalla puede apagarse) y el bloque «Para hoy» con el plan real.
+
 ## Siguiente paso
 - **ORDEN (Fases 1–3):** no queda ningún sprint pendiente.
 - **Siguiente: Wishlist de Oikonomia S1**, el último sprint pendiente. Toca `modules/finanzas/*`, así que conviene correrla sola. Antes hay que decidir cómo se calcula «libre para deseos». Si no existe, la celda «Este mes» no aparece, como dice el sprint.
-- **Sin mergear:** Capturas, A11y + catálogo, Login S1 y Recetas S1 siguen en la rama.
+- Capturas, A11y + catálogo, Login S1 y Recetas S1 entran a `main` con este PR.
