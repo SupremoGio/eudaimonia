@@ -72,13 +72,24 @@ def test_login_js_usa_el_minimo_de_la_plantilla():
 
 
 # ── Bloqueo por intentos ────────────────────────────────────────────────────
+def _hasta_bloqueo(client):
+    """Falla hasta el 429. La ventana del límite es fija por minuto: si los
+    intentos cruzan el cambio de minuto el conteo se reinicia una vez, así
+    que se permiten hasta 11 intentos (nunca cruza dos veces en < 1 min)."""
+    fallos = 0
+    for _ in range(11):
+        r = client.post('/login', json={'password': 'mala'})
+        if r.status_code == 429:
+            return fallos, r
+        assert r.status_code == 401
+        fallos += 1
+    raise AssertionError('nunca llegó el 429')
+
+
 def test_sexto_intento_fallido_responde_bloqueo_con_espera(client):
     _con_pass()
-    for _ in range(5):
-        r = client.post('/login', json={'password': 'mala'})
-        assert r.status_code == 401
-    r = client.post('/login', json={'password': 'mala'})
-    assert r.status_code == 429
+    fallos, r = _hasta_bloqueo(client)
+    assert fallos >= 5                     # el 429 nunca llega antes de 5 fallos
     d = r.get_json()
     assert d['ok'] is False
     assert isinstance(d['retry_after'], int) and 1 <= d['retry_after'] <= 60
@@ -88,8 +99,7 @@ def test_sexto_intento_fallido_responde_bloqueo_con_espera(client):
 
 def test_bloqueado_ni_la_correcta_entra(client):
     _con_pass('correcta-123')
-    for _ in range(5):
-        client.post('/login', json={'password': 'mala'})
+    _hasta_bloqueo(client)
     r = client.post('/login', json={'password': 'correcta-123'})
     assert r.status_code == 429
     with client.session_transaction() as s:
