@@ -119,6 +119,44 @@ def _serialize_plan(db, vehiculo, ritmo=None):
     return items
 
 
+def avisos(db, hoy):
+    """Avisos de Harma para el centro (modules/avisos.py): plan vencido (Hoy)
+    o urgente (Esta semana), con «Registrar» en línea, y papeles vencidos
+    (Hoy) o que vencen en ≤ 30 días (Esta semana)."""
+    from modules.avisos import aviso, relativo, fecha_corta
+    out = []
+    vehiculo = _get_vehiculo(db)
+    km_actual = vehiculo['km_actual'] if vehiculo else 0
+    nombre = (vehiculo or {}).get('nombre') or ''
+    for r in db.execute("SELECT * FROM harma_plan_items ORDER BY id").fetchall():
+        it = _compute_plan_item(dict(r), km_actual, hoy)
+        if it['status'] not in ('vencido', 'urgente'):
+            continue
+        if it['time_pct'] >= it['km_pct']:
+            detalle = f"por tiempo · {_months_between(it['last_date'], hoy)} de {it['meses_interval']} meses"
+        else:
+            detalle = f"por km · {max(0, km_actual - (it['last_km'] or 0)):,} de {it['km_interval']:,} km"
+        out.append(aviso(
+            f"har:plan:{it['id']}:{it['last_date'] or it['last_km']}", 'Harma', 'gauge', it['name'], detalle,
+            None, 'hoy' if it['status'] == 'vencido' else 'semana',
+            {'label': 'Registrar', 'method': 'POST', 'url': f"/harma/api/plan/{it['id']}/marcar", 'body': {},
+             'hecho': 'Servicio registrado'}))
+    docs = [dict(d) for d in db.execute("SELECT id, titulo, fecha_vencimiento, nombre_archivo FROM harma_documentos").fetchall()]
+    pols = [dict(p) for p in db.execute("SELECT id, aseguradora, vigencia_fin, nombre_archivo FROM harma_polizas").fetchall()]
+    for x in hp.papeles(docs, pols, hoy, _poliza_status):
+        if x['status'] not in ('vencida', 'proximo') or x['dias'] is None:
+            continue
+        vencida = x['status'] == 'vencida'
+        detalle = (f"venció {relativo(x['dias'])}" if vencida else f"vence {relativo(x['dias'])} · {fecha_corta(x['vence'])}")
+        out.append(aviso(
+            f"har:papel:{x['tipo']}:{x['id']}:{x['vence'][:10]}", 'Harma',
+            'shield-check' if x['tipo'] == 'poliza' else 'file-text',
+            ('Renovar ' + x['titulo'].replace('Póliza · ', 'póliza · ')) if x['tipo'] == 'poliza' else x['titulo'],
+            detalle + (f' · {nombre}' if nombre and vencida else ''), x['vence'][:10],
+            'hoy' if vencida else 'semana', {'label': 'Ver', 'url': '/harma/?vista=papeles'}))
+    return out
+
+
 def _slugify(name, db):
     base = re.sub(r'[^a-z0-9]+', '_', name.strip().lower()).strip('_') or 'servicio'
     slug, n = base, 2

@@ -555,3 +555,22 @@ def undo_activity(log_id):
 
 
 
+
+
+ANCLAS_AVISO_HORA = 20   # después de las 20:00 las anclas que faltan pasan a «Hoy»
+
+
+def avisos(db, hoy):
+    """Avisos de Acta Diurna para el centro (modules/avisos.py): a partir de
+    las 20:00, las anclas del día que faltan (mismo conteo que la insignia
+    de la barra, modules/quick.badges)."""
+    from modules.avisos import aviso
+    from modules.quick import badges
+    if hoy != today_date() or now_local().hour < ANCLAS_AVISO_HORA:
+        return []
+    n = badges(db)['acta']
+    if not n:
+        return []
+    return [aviso(f"act:anclas:{hoy.isoformat()}", 'Acta Diurna', 'anchor',
+                  f"{n} ancla{'s' if n != 1 else ''} sin registrar", 'el día cierra pronto', hoy, 'hoy',
+                  {'label': 'Registrar', 'url': '/actividades/'})]

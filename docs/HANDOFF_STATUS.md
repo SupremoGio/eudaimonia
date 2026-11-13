@@ -1,7 +1,7 @@
 # Estado de los handoffs v2 (Fase 0 de `design_handoff_ORDEN.md`)
 
 Revisado el 2026-11-12 contra `main`, después del merge de Nutrición v2 (PR #121).
-**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2) y Captura rápida (3) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
+**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2), Captura rápida (3) y Avisos (3) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
 Las rutas son relativas a `gio_v3/`.
 
 Algunos paquetes se implementaron en un solo commit con todos sus sprints. En esos casos se repite el commit y la evidencia de cada sprint apunta a su pieza.
@@ -80,15 +80,24 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 | Nutrición v2 | S4 · un solo recetario | hecho | `d48fef6` | `modules/nutricion/routes.py:503` (`migrar_banco`), `recetas.fodmap` y `recetas.momento` |
 | Navegación | S1 · `ui.page_head`, `VIEWS` y `nav_view` | hecho | `637162d` | `modules/nav.py` (`VIEWS`, `view_of`, `page_info`), `templates/_ui/macros.html` (`page_head`) |
 | Navegación | S2 · la regla en todas las pantallas | hecho | `637162d` | `tests/test_nav.py` (un h1 por ruta de NAV = `nav_title`, sin lemas) |
-| Captura rápida | S1 · registro `QUICK` + `/api/quick/options` | hecho | rama actual | `modules/nav.py` (`QUICK`, `quick_for`), `modules/quick.py` |
-| Captura rápida | S2 · «+» en la barra, hoja y contadores | hecho | rama actual | `templates/eu/layout_sub.html` (`#eu-quick`), `static/js/eu-quick.js`, `/api/quick/badges` |
-| Captura rápida | S3 · ⌘K que registra | hecho | rama actual | `eu-quick.js` (`parse`), `tests/quick_parse_cases.json` |
+| Captura rápida | S1 · registro `QUICK` + `/api/quick/options` | hecho | `a84a3af` | `modules/nav.py` (`QUICK`, `quick_for`), `modules/quick.py` |
+| Captura rápida | S2 · «+» en la barra, hoja y contadores | hecho | `a84a3af` | `templates/eu/layout_sub.html` (`#eu-quick`), `static/js/eu-quick.js`, `/api/quick/badges` |
+| Captura rápida | S3 · ⌘K que registra | hecho | `a84a3af` | `eu-quick.js` (`parse`), `tests/quick_parse_cases.json` |
+| Avisos | S1 · contrato `avisos(db, hoy)` + `recolectar()` | hecho | rama actual | `modules/avisos.py` (`FUENTES`, `recolectar`, endpoints), tabla `avisos_estado`; un `avisos()` en finanzas, salud, recordatorios, harma, gtd, plantas, fútbol, actividades y gamification |
+| Avisos | S2 · campana + panel | hecho | rama actual | `templates/eu/layout_sub.html` (`#eu-avisos-btn`, `#eu-avisos`), `static/js/eu-avisos.js` |
+| Avisos | S3 · preferencias + Inicio | hecho | rama actual | `templates/perfil/_avisos.html` (`avisos_off:<fuente>`), `modules/dashboard/routes.py` (`_build_deadlines(…, avisos_hoy)`) |
 
 ## Notas de la Fase 1 que ya quedaron resueltas
 - **XP negativo del desliz (antes de 1.2):** el motor no acepta montos negativos, porque `process_activity` aplica `max(1, …)`. El desliz se descuenta con `engine._award_xp(-pen, 'activity', …, log_id)`, y `remove_activity` lo revierte. Está documentado en `modules/nutricion/routes.py`, sección «XP por el motor».
 - **Insignias con el histórico (después de 1.2):** no se reprocesa el histórico de `xp_ledger` con `source='nutricion'`, y la marca `app_settings.nutri_engine_since` separa lo viejo de lo nuevo. Ninguna insignia recibe de golpe acciones viejas.
 - **Helper de touch de Acta (1.3 / 1.4):** es `modules/actividades/touch.py` (`marcar_touch`). Lo usan Idiomas y la reflexión de Acta.
 - **Columnas `origen` y `origen_id` de recordatorios:** existen una sola vez y las usa Harma (`plan.upsert_recordatorio`).
+
+## Notas de Avisos
+- **«Estado de cuenta por subir»:** `summary_pendientes()` no lo calcula. El aviso nuevo solo cubre BBVA TDC, la única tarjeta con día de corte conocido (22). Se dispara si pasaron 3 días del corte y no hay ningún movimiento de esa tarjeta en el periodo que cerró (`ESTADO_CORTE` en `modules/finanzas/routes.py`).
+- **Deshacer:** solo se ofrece cuando el módulo tiene endpoint inverso: pago de tarjeta (`DELETE /finanzas/api/pago-ciclo`), posponer y descartar (`/api/avisos/<clave>/restaurar`). «Hecho» en recordatorios y tareas, y «Registrar» en Harma, no tienen inverso que restaure el estado anterior, así que no muestran Deshacer.
+- **Logros:** antes nada marcaba `notified=1`, así que todo el histórico seguía en 0. El grupo Logros solo muestra lo desbloqueado en los últimos 14 días.
+- **Fuentes extra:** Plantas y Fútbol entran al centro para que «Pendiente» de Inicio y la campana muestren los mismos pendientes de hoy. Nutrición no tiene un «síntoma sin registrar» con fecha que avisar, así que quedó fuera.
 
 ## Siguiente paso
 No queda ningún sprint pendiente en el ORDEN. Cualquier handoff nuevo empieza con su propio `SPRINTS.md`.

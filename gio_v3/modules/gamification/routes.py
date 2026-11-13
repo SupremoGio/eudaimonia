@@ -481,3 +481,49 @@ def reset_gamification():
         # se vuelvan a disparar (evita XP inesperado en la primera actividad post-reset)
         db.commit()
     return jsonify({"ok": True, "message": "Reset completo — empezando desde cero"})
+
+
+LOGRO_AVISO_DIAS = 14   # solo lo desbloqueado hace poco: lo antiguo nunca se marcó notified
+
+
+def avisos(db, hoy):
+    """Avisos de Logros para el centro (modules/avisos.py): insignias y
+    logros desbloqueados con notified=0. Se marcan vistos al abrir el panel."""
+    from modules.avisos import aviso
+    desde = (hoy - timedelta(days=LOGRO_AVISO_DIAS)).isoformat()
+    out = []
+    for r in db.execute("""SELECT key, tier, unlocked_at FROM badges
+                           WHERE unlocked_at IS NOT NULL AND COALESCE(notified,0)=0 AND substr(unlocked_at,1,10) >= ?""",
+                        (desde,)).fetchall():
+        d = BADGE_DEFS.get(r['key'])
+        if not d:
+            continue
+        tier = {'bronze': 'bronce', 'silver': 'plata', 'gold': 'oro'}.get(r['tier'] or d.get('tier'), r['tier'] or '')
+        out.append(aviso(f"log:badge:{r['key']}:{r['unlocked_at'][:10]}", 'Logros', (lucide_for(d.get('icon')).replace('circle', 'award')),
+                         f"Insignia: {d['name']}" + (f' · {tier}' if tier else ''), d.get('description', ''),
+                         r['unlocked_at'][:10], 'logro', {'label': 'Ver', 'url': '/logros'}))
+    for r in db.execute("""SELECT key, unlocked_at, xp_earned, coins_earned FROM achievements
+                           WHERE unlocked_at IS NOT NULL AND COALESCE(notified,0)=0 AND substr(unlocked_at,1,10) >= ?""",
+                        (desde,)).fetchall():
+        d = ACHIEVEMENT_DEFS.get(r['key'])
+        if not d:
+            continue
+        premio = ' · '.join(x for x in (f"+{r['xp_earned']} XP" if r['xp_earned'] else '',
+                                        f"+{r['coins_earned']} EC" if r['coins_earned'] else '') if x)
+        out.append(aviso(f"log:logro:{r['key']}:{r['unlocked_at'][:10]}", 'Logros', (lucide_for(d.get('icon')).replace('circle', 'trophy')),
+                         f"Logro: {d['name']}", premio or d.get('description', ''),
+                         r['unlocked_at'][:10], 'logro', {'label': 'Ver', 'url': '/logros'}))
+    return out
+
+
+def marcar_vistos(db, claves):
+    """notified=1 en las insignias/logros de esas claves (log:badge|logro:<key>:…)."""
+    n = 0
+    for c in claves:
+        partes = c.split(':')
+        if len(partes) < 3 or partes[0] != 'log':
+            continue
+        tabla = {'badge': 'badges', 'logro': 'achievements'}.get(partes[1])
+        if tabla:
+            n += db.execute(f"UPDATE {tabla} SET notified=1 WHERE key=? AND COALESCE(notified,0)=0", (partes[2],)).rowcount
+    return n

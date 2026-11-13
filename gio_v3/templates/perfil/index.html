@@ -14,6 +14,7 @@
   ('recordatorios', 'bell', 'Recordatorios'),
   ('documentos', 'folder', 'Documentos'),
   ('vault', 'key-round', 'Contraseñas'),
+  ('avisos', 'bell-ring', 'Avisos'),
   ('ajustes', 'settings-2', 'Ajustes'),
 ] %}
 {% set cur = sec if sec in sections|map(attribute=0)|list else 'resumen' %}
@@ -33,6 +34,7 @@
     {% include "perfil/_recordatorios.html" %}
     {% include "perfil/_documentos.html" %}
     {% include "perfil/_vault.html" %}
+    {% include "perfil/_avisos.html" %}
     {% include "perfil/_ajustes.html" %}
   </div>
 </div>

@@ -642,3 +642,29 @@
     }
   });
 })();
+
+/* ── Avisos: qué fuentes entran a la campana (handoff Avisos, S3) ───── */
+(function () {
+  var box = document.getElementById('avisos-prefs');
+  if (!box) return;
+  box.addEventListener('click', function (e) {
+    var sw = e.target.closest('[data-fuente]');
+    if (!sw || sw.getAttribute('aria-busy') === 'true') return;
+    var on = sw.getAttribute('aria-checked') !== 'true';
+    sw.setAttribute('aria-checked', on ? 'true' : 'false');
+    sw.setAttribute('aria-busy', 'true');
+    fetch('/api/avisos/preferencias', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fuente: sw.dataset.fuente, activa: on })
+    }).then(function (r) { return r.json().then(function (d) { if (!r.ok || !d.ok) throw new Error(d.error); return d; }); })
+      .then(function (d) {
+        if (window.euAvisos) window.euAvisos.setCount(d.conteo_hoy);
+        toast(on ? 'Vuelve a la campana' : 'Fuera de la campana');
+      })
+      .catch(function () {
+        sw.setAttribute('aria-checked', on ? 'false' : 'true');
+        toast('No se pudo guardar', 'err');
+      })
+      .then(function () { sw.removeAttribute('aria-busy'); });
+  });
+})();

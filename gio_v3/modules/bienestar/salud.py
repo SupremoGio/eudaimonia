@@ -133,6 +133,34 @@ def medicamentos_de(db, episodio_id, hoy=None):
     return out
 
 
+def avisos(db, hoy):
+    """Avisos de Salud para el centro (modules/avisos.py): la recurrencia
+    (Esta semana) y los medicamentos que terminan hoy o mañana (Hoy)."""
+    from modules.avisos import aviso, slug
+    out = []
+    r = recurrencia_alerta(db, hoy)
+    if r:
+        out.append(aviso(f"sal:recurrencia:{slug(r['titulo'])}", 'Salud', 'activity',
+                         f"{r['titulo']} recurrente", f"{r['veces']} veces · cada {r['cada_dias']} d",
+                         None, 'semana', {'label': 'Ver', 'url': '/bienestar/salud/'}))
+    for m in db.execute("""
+        SELECT m.id, m.nombre, m.duracion_dias, r.fecha FROM medico_medicamentos m
+        JOIN medico_recetas r ON r.id = m.receta_id
+        WHERE m.tomando = 1 AND m.duracion_dias IS NOT NULL AND m.duracion_dias > 0
+    """).fetchall():
+        dia = _dias(m['fecha'], hoy)
+        if dia is None:
+            continue
+        resta = m['duracion_dias'] - dia
+        if 0 <= resta <= 1:
+            fin = hoy + timedelta(days=resta)
+            out.append(aviso(f"sal:med:{m['id']}:{fin.isoformat()}", 'Salud', 'pill',
+                             f"{m['nombre']} termina {'hoy' if resta == 0 else 'mañana'}",
+                             f"día {dia} de {m['duracion_dias']}", fin, 'hoy',
+                             {'label': 'Ver', 'url': '/bienestar/salud/'}))
+    return out
+
+
 def tratamiento(db, hoy=None):
     """El episodio activo más reciente con sus medicamentos, recetas,
     documentos y tu promedio de recuperación para su tipo. None si no hay."""

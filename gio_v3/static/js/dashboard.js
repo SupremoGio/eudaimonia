@@ -114,13 +114,21 @@
       var empty = box.querySelector('.js-radar-empty'); if (empty) empty.hidden = false;
     });
   }
+  // Lo resuelto desde la campana sale también de «Pendiente» (misma fuente).
+  document.addEventListener('eu:avisos-changed', function (e) {
+    var k = e.detail && e.detail.clave; if (!k) return;
+    document.querySelectorAll('.dash-radar-row').forEach(function (row) { if (row.dataset.clave === k) row.remove(); });
+    syncRadar();
+  });
   document.addEventListener('click', function (e) {
     var btn = e.target.closest && e.target.closest('.js-dl-done');
     if (!btn || btn.disabled) return;
     var key = btn.closest('.dash-radar-row').dataset.key;
     var copies = document.querySelectorAll('.dash-radar-row[data-key="' + key + '"] .js-dl-done');
     copies.forEach(function (b) { b.disabled = true; });
-    fetch(btn.dataset.url, { method: 'POST' }).then(function (r) { return r.json(); }).then(function (j) {
+    var opt = { method: btn.dataset.method || 'POST' };
+    if (btn.dataset.body) { opt.headers = { 'Content-Type': 'application/json' }; opt.body = btn.dataset.body; }
+    fetch(btn.dataset.url, opt).then(function (r) { return r.json(); }).then(function (j) {
       if (!j.ok) { copies.forEach(function (b) { b.disabled = false; }); toast('No se pudo marcar', 'err'); return; }
       if (j.gam && window.euXpGain) euXpGain({ el: btn, xp: j.gam.xp });
       document.querySelectorAll('.dash-radar-row[data-key="' + key + '"]').forEach(function (row) { row.classList.add('is-leaving'); });
@@ -128,6 +136,7 @@
         document.querySelectorAll('.dash-radar-row[data-key="' + key + '"]').forEach(function (row) { row.remove(); });
         syncRadar();
       }, 220);
+      if (window.euAvisos) euAvisos.load().catch(function () {});
       if (j.gam && j.gam.xp) toast('+' + j.gam.xp + ' XP' + (j.gam.ec ? ' · +' + j.gam.ec + ' EC' : ''), 'win');
       else toast(j.msg || 'Hecho', 'ok');
       if (j.gam && window.euGam) euGam(j.gam);

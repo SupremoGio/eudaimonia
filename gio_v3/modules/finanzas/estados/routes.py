@@ -2016,22 +2016,26 @@ def get_accounts():
 @estados_bp.route('/api/budgets')
 def get_budgets():
     if not _ok(): return _locked()
-    month_start = now_local().replace(day=1).strftime("%Y-%m-%d")
-
     with get_db() as db:
-        budgets = db.execute(
-            "SELECT * FROM est_budgets ORDER BY limite DESC"
-        ).fetchall()
+        return jsonify(presupuestos_mes(db, now_local().replace(day=1).strftime("%Y-%m-%d")))
 
-        spending = {}
-        rows = db.execute(f"""
-            SELECT categoria, SUM({_MONTO}) AS total
-            FROM est_movimientos
-            WHERE tipo='GASTO' AND {_PAGO_CATS} AND fecha >= ?
-            GROUP BY categoria
-        """, (month_start,)).fetchall()
-        for r in rows:
-            spending[r['categoria']] = r['total'] or 0
+
+def presupuestos_mes(db, month_start):
+    """Presupuestos con lo gastado desde `month_start` (lo usan /api/budgets
+    y el aviso de presupuesto del centro de avisos)."""
+    budgets = db.execute(
+        "SELECT * FROM est_budgets ORDER BY limite DESC"
+    ).fetchall()
+
+    spending = {}
+    rows = db.execute(f"""
+        SELECT categoria, SUM({_MONTO}) AS total
+        FROM est_movimientos
+        WHERE tipo='GASTO' AND {_PAGO_CATS} AND fecha >= ?
+        GROUP BY categoria
+    """, (month_start,)).fetchall()
+    for r in rows:
+        spending[r['categoria']] = r['total'] or 0
 
     result = []
     for b in budgets:
@@ -2043,7 +2047,7 @@ def get_budgets():
             'limite':   float(b['limite']),
             'gastado':  round(float(spent), 2),
         })
-    return jsonify(result)
+    return result
 
 
 @estados_bp.route('/api/budgets', methods=['POST'])

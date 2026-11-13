@@ -757,4 +757,74 @@ body.nw-hidden .nw-hide-block{display:none!important}
 .eu-ranks--sm .eu-rank-step.is-now .eu-rank{width:42px;height:42px;margin:-1px 0 2px}
 .eu-ranks--sm .eu-rank-step b{font-size:var(--fs-12)}
 
+/* ── Avisos, un solo centro (handoff Avisos): campana + panel ─────────────
+   Escritorio: popover de 440px anclado a la campana. Móvil (<768): hoja
+   inferior con el patrón de #eu-quick; la campana va a la izquierda de EC. */
+.eu-avisos-btn{position:relative;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:var(--r-sm);border:1px solid var(--border-default);background:transparent;color:var(--fg-2);cursor:pointer;transition:background var(--dur-fast),border-color var(--dur-fast)}
+.eu-avisos-btn svg{width:18px;height:18px}
+.eu-avisos-btn:hover{background:var(--bg-hover);color:var(--fg-1)}
+.eu-avisos-btn[aria-expanded=true]{background:var(--bg-raised);border-color:var(--border-brand);color:var(--fg-1)}
+.eu-avisos-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.eu-avisos-badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-full);background:var(--danger-fg);color:var(--fg-on-brand);font:var(--fw-semibold) var(--fs-11)/18px var(--font-data);font-style:normal;text-align:center;box-shadow:0 0 0 2px var(--bg-canvas)}
+@media (max-width:767px){
+  .eu-topbar>.eu-avisos-btn{order:1}
+  .eu-topbar>.eu-badge--ec{order:2}
+  .eu-topbar>.eu-tb-search-m{order:3}
+}
+
+.eu-avisos-scrim{position:fixed;inset:0;z-index:var(--z-modal)}
+.eu-avisos{position:fixed;top:calc(var(--topbar-h) + env(safe-area-inset-top) + var(--sp-2));right:var(--sp-6);width:440px;max-width:calc(100vw - 2 * var(--sp-4));max-height:min(740px,calc(100dvh - var(--topbar-h) - var(--sp-8)));display:flex;flex-direction:column;border-radius:var(--r-lg);background:var(--bg-surface);border:1px solid var(--border-default);box-shadow:var(--e-3);overflow:hidden;animation:euRise var(--dur-base) var(--ease-enter) both}
+.eu-avisos-grab{display:none}
+.eu-avisos-hd{display:flex;align-items:center;gap:10px;padding:var(--sp-4) var(--sp-4) var(--sp-3)}
+.eu-avisos-t{margin:0;font:var(--fw-semibold) 22px/1.2 var(--font-display);color:var(--fg-1)}
+.eu-avisos-total{font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--fg-3)}
+.eu-avisos-seg button{height:28px;font-size:var(--fs-12)}
+.eu-avisos-bd{flex:1;overflow:auto;overscroll-behavior:contain}
+.eu-avisos-bd .eu-skel-wrap{padding:var(--sp-2) var(--sp-4) var(--sp-4)}
+.eu-avisos-g{border-top:1px solid var(--border-subtle)}
+.eu-avisos-gh{display:flex;align-items:center;gap:var(--sp-2);margin:0;padding:var(--sp-3) var(--sp-4) 6px;font:var(--fw-medium) var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--fg-3)}
+.eu-avisos-gh::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--av-tone)}
+.eu-avisos-gh .num{font-family:var(--font-data);color:var(--fg-2);letter-spacing:0}
+.eu-avisos-g[data-nivel=hoy]{--av-tone:var(--danger-fg)}
+.eu-avisos-g[data-nivel=semana]{--av-tone:var(--warning-fg)}
+.eu-avisos-g[data-nivel=logro]{--av-tone:var(--xp-fg)}
+.eu-avisos-list{list-style:none;margin:0;padding:0 0 var(--sp-1)}
+.eu-avisos-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:var(--sp-3);min-height:60px;padding:var(--sp-2) var(--sp-4)}
+.eu-avisos-row:hover{background:var(--bg-hover)}
+.eu-avisos-ic{width:28px;height:28px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;background:var(--bg-sunken);color:var(--av-tone)}
+.eu-avisos-ic svg{width:14px;height:14px}
+.eu-avisos-tx{min-width:0}
+.eu-avisos-tt{font-size:var(--fs-13);color:var(--fg-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eu-avisos-st{font-size:var(--fs-12);color:var(--fg-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eu-avisos-acts{display:flex;align-items:center;gap:var(--sp-1)}
+.eu-avisos-act{height:30px;padding:0 10px;border-radius:var(--r-sm);border:0;background:var(--bg-raised);color:var(--fg-1);font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center}
+.eu-avisos-act:hover{background:var(--bg-hover);color:var(--fg-1)}
+.eu-avisos-act[aria-busy=true]{opacity:.6;pointer-events:none}
+.eu-avisos-snz{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:0;background:transparent;color:var(--fg-3);cursor:pointer}
+.eu-avisos-snz svg{width:15px;height:15px}
+.eu-avisos-snz:hover{background:var(--bg-hover);color:var(--fg-1)}
+.eu-avisos-act:focus-visible,.eu-avisos-snz:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.eu-avisos-empty{display:flex;flex-direction:column;align-items:center;gap:var(--sp-2);padding:var(--sp-12) var(--sp-6);text-align:center}
+.eu-avisos-empty svg{width:20px;height:20px;color:var(--success-fg)}
+.eu-avisos-empty b{font:var(--fw-semibold) 18px/1.2 var(--font-display);color:var(--fg-1)}
+.eu-avisos-empty span{font-size:var(--fs-12);color:var(--fg-3)}
+.eu-avisos-ft{display:flex;align-items:center;gap:10px;padding:10px var(--sp-4);border-top:1px solid var(--border-subtle);background:var(--bg-sunken);font-size:var(--fs-12);color:var(--fg-3)}
+.eu-avisos-ft a{color:var(--fg-2)}
+.eu-avisos-ft a:hover{color:var(--fg-1)}
+/* Interruptor genérico: <button role="switch" aria-checked class="eu-switch"><span></span></button> */
+.eu-switch{position:relative;width:40px;height:24px;flex-shrink:0;padding:0;border-radius:var(--r-full);border:1px solid var(--border-default);background:var(--bg-sunken);cursor:pointer;transition:background var(--dur-fast),border-color var(--dur-fast)}
+.eu-switch span{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--fg-3);transition:transform var(--dur-fast) var(--ease-standard),background var(--dur-fast)}
+.eu-switch[aria-checked=true]{background:var(--brand);border-color:var(--brand)}
+.eu-switch[aria-checked=true] span{transform:translateX(16px);background:var(--fg-on-brand)}
+.eu-switch:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.eu-switch[aria-busy=true]{opacity:.6}
+@media (max-width:767px){
+  .eu-avisos-scrim{background:var(--bg-overlay);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:210}
+  .eu-avisos{top:auto;right:0;left:0;bottom:0;width:100%;max-width:none;max-height:85dvh;border-radius:var(--r-xl) var(--r-xl) 0 0;border-bottom:0;padding-top:var(--sp-2);padding-bottom:env(safe-area-inset-bottom);animation:euSheetIn var(--dur-base) var(--ease-enter)}
+  .eu-avisos-grab{display:block;margin-bottom:0}
+  /* Con la hoja abierta, el toast con «Deshacer» va arriba y por encima. */
+  html.eu-avisos-open .eu-toast-host{z-index:220;top:calc(env(safe-area-inset-top) + var(--sp-3));bottom:auto}
+  .eu-avisos-row{min-height:64px}
+}
+
 }
