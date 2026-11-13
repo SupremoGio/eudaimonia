@@ -13,7 +13,7 @@ finanzas_bp = Blueprint('finanzas', __name__, template_folder='../../templates')
 # busca en el nombre/institución de la cuenta de pasivo para el badge de
 # vencimiento del hub; `label` es el aviso del día de pago.
 PAY_DAYS = [
-    {'match': 'bbva',  'day': 15, 'label': 'BBVA TDC'},
+    {'match': 'bbva',  'day': 11, 'label': 'BBVA TDC'},   # límite de pago: 11 (corte el 22)
     {'match': 'invex', 'day': 15, 'label': 'Invex'},
     {'match': 'hsbc',  'day': 30, 'label': 'HSBC'},
 ]
