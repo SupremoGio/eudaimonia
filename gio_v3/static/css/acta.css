@@ -41,12 +41,12 @@
 .acta-pillar{display:flex;flex-direction:column;gap:6px;padding:var(--sp-3);border-radius:14px}
 .acta-pillar .acta-list{gap:6px}
 .acta-pillar-hd{display:flex;align-items:center;gap:10px;min-width:0;padding:2px var(--sp-1) var(--sp-1)}
-.acta-pillar-ic{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--border-subtle);background:var(--bg-raised);color:var(--fg-4);transition:all var(--dur-base) var(--ease-standard)}
+.acta-pillar-ic{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--border-subtle);background:var(--bg-raised);color:var(--fg-3);transition:all var(--dur-base) var(--ease-standard)}
 .acta-pillar-ic svg{width:14px;height:14px}
 .acta-pillar.is-on .acta-pillar-ic{background:var(--cat-bg);color:var(--cat-fg);border-color:var(--cat-border)}
 .acta-pillar-n{font:var(--fw-semibold) var(--fs-17)/1.1 var(--font-display);white-space:nowrap}
 .acta-pillar-fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.acta-pillar-xp{margin-left:auto;flex-shrink:0;font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--fg-4)}
+.acta-pillar-xp{margin-left:auto;flex-shrink:0;font:var(--fw-medium) var(--fs-12) var(--font-data);color:var(--fg-3)}
 .acta-pillar-xp.has-xp{color:var(--cat-fg)}
 .acta-pillar .acta-item .eu-act{min-height:44px;padding:6px 10px;gap:10px;border:1px solid var(--border-subtle);border-radius:9px;font-size:var(--fs-13)}
 .acta-pillar .acta-item .eu-act:hover{border-color:var(--cat-border);background:color-mix(in oklab,var(--cat-bg) 55%,var(--bg-raised))}
@@ -198,7 +198,7 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-toast{position:relative;pointer-events:auto;width:100%;max-width:420px;overflow:hidden}
 .acta-toast[hidden]{display:none}
 .acta-toast .eu-toast-timer{transform-origin:left}
-.acta-toast.is-running .eu-toast-timer{animation:actaTimer 5s linear forwards}
+@media (prefers-reduced-motion:no-preference){.acta-toast.is-running .eu-toast-timer{animation:actaTimer 5s linear forwards}}
 @keyframes actaTimer{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 
 /* ── Color por virtud (cada .acta-item trae data-cat de su pilar) ── */

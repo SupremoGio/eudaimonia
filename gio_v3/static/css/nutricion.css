@@ -77,7 +77,7 @@
 .dt-ask{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;padding:0 var(--sp-4) var(--sp-3) calc(56px + 14px + var(--sp-4))}
 @media (max-width:767px){.dt-ask{padding-left:var(--sp-4)}}
 .dt-ask .dt-feel-b{flex-direction:row;height:32px;padding:0 var(--sp-3);border-radius:var(--r-full);background:transparent;border-color:var(--tbo);color:var(--tn)}
-.dt-luego{height:32px;padding:0 var(--sp-2);border:0;background:none;font:var(--fs-12) var(--font-ui);color:var(--fg-4);cursor:pointer}
+.dt-luego{height:32px;padding:0 var(--sp-2);border:0;background:none;font:var(--fs-12) var(--font-ui);color:var(--fg-3);cursor:pointer}
 .dt-luego:hover{color:var(--fg-2)}
 .dt-cerrado{display:flex;align-items:center;gap:var(--sp-3);padding:14px var(--sp-4);border-top:1px solid var(--success-border);background:var(--success-bg);font-size:var(--fs-13);color:var(--success-fg)}
 .dt-cerrado svg{width:16px;height:16px}

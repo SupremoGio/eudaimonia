@@ -112,10 +112,40 @@ def _check_level_thresholds():
     return errors
 
 
+def _check_a11y():
+    """Accesibilidad (docs/A11Y.md): falla solo con problemas NUEVOS respecto a
+    scripts/a11y_baseline.json; los que ya estaban se listan sin bloquear."""
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import a11y_lint
+    probs = a11y_lint.lint()
+    nuevos = a11y_lint.nuevos(probs)
+    viejos = len(probs) - len(nuevos)
+    if viejos:
+        print(f"[..] A11y — {viejos} problema(s) ya conocidos en la línea base (no bloquean)")
+    if nuevos:
+        return [f"A11y nuevo: {p['archivo']}:{p['linea']} [{p['regla']}] {p['codigo'][:80]}" for p in nuevos]
+    print("[OK] A11y — sin problemas nuevos")
+    return []
+
+
+def _check_macros_documentadas():
+    """Cada macro de _ui/macros.html lleva un comentario {# … #} encima
+    (lo lee scripts/gen_componentes_md.py para docs/COMPONENTES.md y /_ui)."""
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import gen_componentes_md as gm
+    faltan = gm.macros_sin_comentario()
+    if faltan:
+        return [f"Macro sin comentario en _ui/macros.html: {n} (agrega {{# una línea #}} encima)" for n in faltan]
+    print(f"[OK] Macros — {len(gm.macros())} documentadas")
+    return []
+
+
 def main():
     all_errors = []
     for fn in (_check_ec_constants, _check_activities, _check_ataraxia_import,
-               _check_init_db, _check_level_thresholds):
+               _check_init_db, _check_level_thresholds, _check_a11y, _check_macros_documentadas):
         try:
             all_errors.extend(fn())
         except Exception as e:

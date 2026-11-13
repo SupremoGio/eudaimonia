@@ -102,12 +102,12 @@
 .pf-val:hover{background:var(--bg-hover)}
 .pf-val:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
 .pf-val.is-mono{font:var(--fw-medium) var(--fs-13)/1.3 var(--font-data)}
-.pf-val.is-empty{color:var(--fg-4);cursor:text;font-family:var(--font-ui);font-weight:var(--fw-regular)}
+.pf-val.is-empty{color:var(--fg-3);cursor:text;font-family:var(--font-ui);font-weight:var(--fw-regular)}
 .pf-copied{font:var(--fw-medium) var(--fs-11)/1 var(--font-ui);color:var(--success-fg)}
 .pf-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .pf-actions .eu-iconbtn{width:28px;height:28px}
 .pf-actions .eu-iconbtn svg{width:13px;height:13px}
-.pf-edit{color:var(--fg-4);opacity:0;transition:opacity var(--dur-fast)}
+.pf-edit{color:var(--fg-3);opacity:0;transition:opacity var(--dur-fast)}
 .pf-field:hover .pf-edit,.pf-edit:focus-visible{opacity:1}
 @media (pointer:coarse){.pf-edit{opacity:1}}
 .pf-docs{display:inline-flex;align-items:center;gap:3px;height:22px;padding:0 6px;border-radius:var(--r-full);border:0;background:var(--bg-raised);color:var(--fg-2);font:var(--fw-medium) var(--fs-11)/1 var(--font-data);cursor:pointer}

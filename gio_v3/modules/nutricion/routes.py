@@ -988,12 +988,13 @@ def add_comida():
                         time=data.get('time') or _SLOT_TIME.get(slot, '12:00'))
         db.execute(
             """INSERT INTO nutricion_semana
-               (week_start,day_key,slot,time_str,name,kcal,protein,tag,note,items_json,swap,xp,custom)
-               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1)""",
+               (week_start,day_key,slot,time_str,name,kcal,protein,tag,note,items_json,swap,xp,custom,receta_id)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,?)""",
             [week_str, day_key, slot, data.get('time', '12:00'), data['name'],
              data.get('kcal', 0), data.get('protein', 0), data.get('tag', 'safe'),
              data.get('note', 'Comida personalizada.'),
-             json.dumps(data.get('items', [])), data.get('swap', ''), xp]
+             json.dumps(data.get('items', [])), data.get('swap', ''), xp,
+             data.get('receta_id') or None]
         )
         db.commit()
         meal_id = db.execute('SELECT last_insert_rowid() as i').fetchone()['i']

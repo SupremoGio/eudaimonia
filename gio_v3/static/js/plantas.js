@@ -142,8 +142,8 @@
   }
   function renderPanel() {
     var p = planta(sel), pan = $('pl-panel');
-    if (!p) { pan.hidden = true; root.classList.remove('has-panel'); return; }
-    pan.hidden = false; root.classList.add('has-panel');
+    if (!p) { root.classList.remove('has-panel'); return; }
+    root.classList.add('has-panel');
     $('pp-cover').innerHTML = thumb(p, 'pl-pp-img');
     $('pp-name').textContent = p.nombre;
     $('pp-sub').innerHTML = [p.especie_cientifica && p.especie_cientifica !== p.especie ? esc(p.especie) + ' <i>' + esc(p.especie_cientifica) + '</i>' : esc(p.especie),
@@ -166,20 +166,25 @@
     if (t === 'hist') loadHist(sel);
     if (t === 'doctor') prepDoctor(sel);
   }
+  /* Panel con euDialog: en móvil es modal (hoja, foco atrapado); en
+     escritorio, un panel lateral no modal. En ambos, Esc lo cierra y el
+     foco vuelve a la tarjeta. */
   function openPanel(id, from) {
-    sel = +id; opener = from || null;
+    var pan = $('pl-panel'), cambio = sel !== null;
+    sel = +id;
     renderPanel(); renderGrid(); setTab('care');
-    if (MOVIL.matches) { document.documentElement.style.overflow = 'hidden'; $('pp-name').focus(); }
-    else if (from) $('pp-name').focus();
+    if (cambio && window.euDialog.isOpen(pan)) { if (from) $('pp-name').focus(); return; }
+    window.euDialog.open(pan, from || null, {
+      box: pan.querySelector('.pl-panel-in'), modal: MOVIL.matches, focus: from || MOVIL.matches ? $('pp-name') : false,
+      onClose: function () {
+        var back = sel; sel = null; renderPanel(); renderGrid();
+        var t = from && document.contains(from) ? from
+          : (document.querySelector('.pl-tile[data-open="' + back + '"]') || document.querySelector('[data-open="' + back + '"]'));
+        if (t) t.focus();
+      }
+    });
   }
-  function closePanel() {
-    var back = sel;
-    sel = null; renderPanel(); renderGrid();
-    document.documentElement.style.overflow = '';
-    var t = opener && document.contains(opener) ? opener
-      : (document.querySelector('.pl-tile[data-open="' + back + '"]') || document.querySelector('[data-open="' + back + '"]'));
-    if (t) t.focus();
-  }
+  function closePanel() { var pan = $('pl-panel'); if (window.euDialog.isOpen(pan)) window.euDialog.close(pan, { noFocus: true }); else { sel = null; renderPanel(); renderGrid(); } }
   $('pl-panel').addEventListener('click', function (e) {
     var t = e.target.closest('[data-pp-tab]'); if (t) { setTab(t.dataset.ppTab); return; }
     if (e.target.closest('.js-pp-close')) { closePanel(); return; }
@@ -192,11 +197,6 @@
       setTab(tabs[(i + tabs.length) % tabs.length].dataset.ppTab, true); e.preventDefault();
     }
   });
-  document.addEventListener('keydown', function (e) {
-    if (e.key !== 'Escape' || sel === null || document.querySelector('.eu-scrim:not([hidden])')) return;
-    closePanel();
-  });
-
   function apply(d) {
     PLANTAS = d.state.plantas; HOY = d.state.hoy || [];
     var n = HOY.length, eb = root.querySelector('.eu-page-eb');

@@ -132,7 +132,7 @@
 .dash-bal-name{font:var(--fw-semibold) 16px/1.1 var(--font-display);letter-spacing:.01em;color:var(--fg-1);white-space:nowrap}
 .dash-bal-fn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dash-bal-today{margin-left:auto;font:var(--fw-medium) var(--fs-12)/1 var(--font-data);color:var(--cat-fg);white-space:nowrap}
-.dash-bal-today.is-none{color:var(--fg-4)}
+.dash-bal-today.is-none{color:var(--fg-3)}
 .dash-bal-bar{position:relative;display:block;height:6px;border-radius:var(--r-full);background:var(--bg-raised)}
 .dash-bal-bar i{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:var(--cat-fg);transition:width var(--dur-deliberate) var(--ease-emphasis)}
 .dash-bal-bar i.is-bonus{background:var(--warning-fg)}

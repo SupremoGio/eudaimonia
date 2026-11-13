@@ -254,27 +254,26 @@
     pick.hidden = true; form.hidden = false;
     renderForm(form, id, vals, { back: function () { step(null); }, saved: function () { openSheet(false); } });
   }
+  /* Diálogo con euDialog (handoff A11y, S2): foco atrapado, Esc (vuelve del
+     formulario a la lista; en la lista, cierra) y regreso del foco. */
+  function marcar(open) { if (btn) { btn.setAttribute('aria-expanded', open ? 'true' : 'false'); btn.classList.toggle('is-open', !!open); } }
   function openSheet(open, id, vals) {
-    if (!sheet) return;
-    if (open) { opener = doc.activeElement; sheet.hidden = false; doc.documentElement.style.overflow = 'hidden'; step(id || null, vals); }
-    else { sheet.hidden = true; doc.documentElement.style.overflow = ''; form.innerHTML = ''; if (opener && opener.focus) opener.focus(); }
-    if (btn) { btn.setAttribute('aria-expanded', open ? 'true' : 'false'); btn.classList.toggle('is-open', !!open); }
+    if (!sheet || !root.euDialog) return;
+    if (open) {
+      opener = doc.activeElement;
+      root.euDialog.open(sheet, opener, {
+        focus: false,
+        onEscape: function () { if (!form.hidden) { step(null); return true; } },
+        onClose: function () { form.innerHTML = ''; marcar(false); },
+      });
+      marcar(true); step(id || null, vals);
+    } else root.euDialog.close(sheet);
   }
   if (btn) btn.addEventListener('click', function () { openSheet(sheet.hidden); });
   if (sheet) {
     sheet.addEventListener('click', function (e) {
       if (e.target === sheet) { openSheet(false); return; }
       var c = e.target.closest('[data-quick]'); if (c) step(c.dataset.quick);
-    });
-    doc.addEventListener('keydown', function (e) {
-      if (sheet.hidden) return;
-      if (e.key === 'Escape') { e.preventDefault(); if (!form.hidden) step(null); else openSheet(false); return; }
-      if (e.key === 'Tab') {                                     // foco atrapado en la hoja
-        var f = [].slice.call(sheet.querySelectorAll('button:not([disabled]),input,[href]')).filter(function (n) { return n.offsetParent !== null; });
-        if (!f.length) return;
-        if (e.shiftKey && doc.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
-        else if (!e.shiftKey && doc.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
-      }
     });
   }
 

@@ -27,7 +27,7 @@
 .wl-tag{display:inline-flex;align-items:center;gap:var(--sp-2);align-self:flex-start;padding:var(--sp-1) var(--sp-3);border-radius:var(--r-full);background:var(--cat-bg);border:1px solid var(--cat-border);color:var(--cat-fg)}
 .wl-tag svg{width:12px;height:12px}
 .wl-insight{color:var(--fg-2);padding-left:var(--sp-3);border-left:2px solid var(--cat-border)}
-.wl-step .t-section:focus,.wl-q legend:focus{outline:none}
+
 .wl-fgrid{gap:var(--sp-3)}
 @media (max-width:479px){.wl-fgrid{grid-template-columns:minmax(0,1fr)}}
 .wl-money{display:flex;align-items:center}

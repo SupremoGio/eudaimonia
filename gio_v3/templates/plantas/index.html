@@ -31,7 +31,7 @@
       <section class="eu-card eu-card--flush pl-hoy" id="pl-hoy" aria-labelledby="pl-hoy-t">
         <div class="pl-hoy-hd">
           <h2 class="pl-hoy-t" id="pl-hoy-t">Hoy</h2>
-          <span class="num t-meta" id="pl-hoy-n">{{ _n_hoy or '' }}</span>
+          <span class="num t-meta" id="pl-hoy-n" aria-live="polite">{{ _n_hoy or '' }}</span>
           <span class="eu-grow"></span>
           {% if temporada.label %}<span class="t-meta pl-season" title="Riego ajustado por temporada en Guadalajara">{{ temporada.label }} · balcón {{ pct_txt(temporada.factor) }} · interior {{ pct_txt(temporada.factor_interior) }}</span>{% endif %}
         </div>

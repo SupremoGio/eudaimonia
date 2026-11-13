@@ -157,7 +157,7 @@
 .pl-pp-img{display:flex;width:100%;height:140px;object-fit:cover}
 .pl-pp-close{position:absolute;top:var(--sp-2);right:var(--sp-2);background:var(--bg-glass);width:36px;height:36px}
 .pl-pp-hd{display:flex;flex-direction:column;gap:2px;padding:14px var(--sp-4) 10px}
-.pl-pp-name{margin:0;font:var(--fw-semibold) 22px/1.2 var(--font-display);outline:none}
+.pl-pp-name{margin:0;font:var(--fw-semibold) 22px/1.2 var(--font-display)}
 .pl-pp-tabs{display:flex;gap:2px;padding:0 var(--sp-3);border-bottom:1px solid var(--border-subtle);overflow-x:auto}
 .pl-pp-tabs button{height:40px;padding:0 10px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--fg-3);font:var(--fw-medium) var(--fs-12)/1 var(--font-ui);cursor:pointer;white-space:nowrap}
 .pl-pp-tabs button[aria-selected=true]{border-bottom-color:var(--brand);color:var(--fg-1)}

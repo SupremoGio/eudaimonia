@@ -50,3 +50,6 @@ node_modules/
 
 # Logs
 *.log
+
+# Capturas antes/después (scripts/capturas.py)
+capturas/

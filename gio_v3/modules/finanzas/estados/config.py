@@ -313,6 +313,9 @@ CATEGORIAS: dict[str, tuple[str, str]] = {
     "YZA PLUS":             ("SALUD", "Farmacia"),
     "BPK CLIN FARMA":       ("SALUD", "Farmacia"),
     "BP MISC ALTA PROT":    ("SALUD", "Farmacia"),
+    # Psicólogo va antes de "MEDIC"/"CLINICA": el primer keyword que aparece gana.
+    "PSICOLOG":             ("SALUD", "Psicólogo"),   # PSICOLOGO/PSICOLOGA/PSICOLOGIA
+    "PSICOTERAP":           ("SALUD", "Psicólogo"),
     "MEDIC":                ("SALUD", "Consultas"),
     "DOCTOR":               ("SALUD", "Consultas"),
     "CLINICA":              ("SALUD", "Consultas"),
@@ -431,7 +434,7 @@ SUBCATEGORIAS: dict[str, list[str]] = {
     "PROYECTOS":         ["Publicidad", "Hosting", "Software", "Reclutamiento"],
     "ROPA":              ["Ropa", "Calzado", "Ropa deportiva"],
     "SALSA":             ["Clases", "Congreso", "Social", "Taller", "App"],
-    "SALUD":             ["Consultas", "Farmacia", "Estudios"],
+    "SALUD":             ["Consultas", "Psicólogo", "Farmacia", "Estudios"],
     "TECH/DIGITAL":      ["Deudas MSI", "Accesorios", "Software"],
     "TRANSPORTE":        ["Gasolina", "Seguro auto", "Mantenimiento auto", "Taxi/apps", "Estacionamiento", "Pago auto"],
     "VIAJES":            ["Transporte", "Hospedaje", "Comida", "Restaurante", "Salidas", "Otros"],

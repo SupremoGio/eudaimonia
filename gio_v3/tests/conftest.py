@@ -30,3 +30,21 @@ def test_db(tmp_path, monkeypatch):
     import modules.ataraxia.routes as _ata          # idem: revisión del domingo 17:00
     monkeypatch.setattr(_ata, "REVISION_AVISO_HORA", 99)
     yield db_file
+
+
+# Días de pago de prueba. Los tests de Oikonomia, Avisos y Perfil arman sus
+# escenarios sobre estos días («el 15 vencen BBVA e Invex»). PAY_DAYS real es
+# configuración del usuario (BBVA pasó del 15 al 11 en 2026-11) y no debe
+# romper la suite cuando cambia. Todos los consumidores leen
+# modules.finanzas.routes.PAY_DAYS al momento de usarlo.
+PAY_DAYS_TEST = [
+    {'match': 'bbva',  'day': 15, 'label': 'BBVA TDC'},
+    {'match': 'invex', 'day': 15, 'label': 'Invex'},
+    {'match': 'hsbc',  'day': 30, 'label': 'HSBC'},
+]
+
+
+@pytest.fixture(autouse=True)
+def _pay_days_de_prueba(monkeypatch):
+    import modules.finanzas.routes as _fr
+    monkeypatch.setattr(_fr, 'PAY_DAYS', [dict(p) for p in PAY_DAYS_TEST])

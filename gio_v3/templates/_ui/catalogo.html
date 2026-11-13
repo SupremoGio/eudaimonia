@@ -1,0 +1,203 @@
+{% extends "eu/layout_sub.html" %}
+{% import '_ui/macros.html' as ui %}
+{% set pg = 'ui' %}
+{# Catálogo vivo de componentes (handoff A11y + catálogo, S3). Solo en
+   desarrollo o para admin (ruta /_ui en app.py). Renderiza las MACROS
+   REALES de _ui/macros.html, sin copias: cada sección lleva la firma que lee
+   scripts/gen_componentes_md.py. Antes de crear un componente, revisa esto
+   y docs/COMPONENTES.md. #}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/catalogo.css') }}">{% endblock %}
+{% set firma = {} %}{% for m in macros %}{% set _ = firma.update({m.nombre: m}) %}{% endfor %}
+{% macro sec(nombre) -%}
+<section class="ct-sec eu-vstack" id="m-{{ nombre }}" aria-labelledby="m-{{ nombre }}-t">
+  <div class="ct-sec-hd"><h3 class="ct-name" id="m-{{ nombre }}-t">ui.{{ nombre }}</h3>
+    <p class="t-meta">{{ firma[nombre].doc.split('\n')[0] if firma.get(nombre) else '' }}</p></div>
+  <code class="ct-sig">ui.{{ nombre }}({{ firma[nombre].args if firma.get(nombre) else '' }})</code>
+  <div class="ct-demo">{{ caller() }}</div>
+</section>
+{%- endmacro %}
+
+{% block content %}
+<div class="ct" id="ct">
+  {% call ui.page_head(eyebrow='Design System V2 · ' ~ macros|length ~ ' macros', title='Componentes', cls='ct-hd') %}
+    <div class="eu-seg" role="group" aria-label="Tema">
+      <button type="button" data-ct-theme="dark" aria-pressed="true">Noche</button>
+      <button type="button" data-ct-theme="light" aria-pressed="false">Día</button>
+    </div>
+  {% endcall %}
+  <nav class="ct-toc" aria-label="Secciones">
+    <a href="#fundamentos">Fundamentos</a> · <a href="#componentes">Componentes</a> · <a href="#patrones">Patrones</a> · <a href="#a11y">Accesibilidad</a>
+  </nav>
+
+  {# ── Fundamentos ── #}
+  <section class="eu-vstack ct-block" id="fundamentos" aria-labelledby="ct-f-t">
+    <h2 class="t-section" id="ct-f-t">Fundamentos</h2>
+
+    <h3 class="t-eyebrow">Color · contraste contra --bg-canvas (calculado en el navegador)</h3>
+    {% for grupo, tokens in [
+      ('Fondos', ['bg-canvas', 'bg-sunken', 'bg-surface', 'bg-raised', 'bg-hover', 'bg-press', 'bg-overlay', 'bg-glass']),
+      ('Texto', ['fg-1', 'fg-2', 'fg-3', 'fg-4', 'fg-brand', 'fg-brand-strong']),
+      ('Bordes', ['border-subtle', 'border-default', 'border-strong', 'border-brand', 'border-focus']),
+      ('Marca y estado', ['brand', 'success-fg', 'warning-fg', 'danger-fg', 'info-fg', 'xp-fg', 'ec-fg'])] %}
+    <div class="ct-sw-g"><div class="t-meta ct-sw-gt">{{ grupo }}</div>
+      <ul class="ct-sws" role="list">
+        {% for t in tokens %}<li class="ct-sw" data-token="--{{ t }}"><span class="ct-sw-c" data-sw="--{{ t }}" aria-hidden="true"></span>
+          <code>--{{ t }}</code><span class="num t-meta ct-cr" data-cr="--{{ t }}"></span></li>{% endfor %}
+      </ul></div>
+    {% endfor %}
+    <div class="ct-sw-g"><div class="t-meta ct-sw-gt">Tintes de categoría (--cat-fg / --cat-bg / --cat-border con data-cat)</div>
+      <ul class="ct-cats" role="list">
+        {% for c in cats %}<li data-cat="{{ c }}" class="ct-cat"><span class="ct-cat-dot" aria-hidden="true"></span>{{ c }}</li>{% endfor %}
+      </ul></div>
+
+    <h3 class="t-eyebrow">Tipografía</h3>
+    <div class="ct-type">
+      {% for fs in ['11', '12', '13', '15', '17', '20', '24', '28', '32', '40'] %}
+      <div class="ct-type-row"><code>--fs-{{ fs }}</code>
+        <span class="ct-ty-d" data-fs="{{ fs }}">Eudaimonía</span>
+        <span class="ct-ty-u" data-fs="{{ fs }}">Constancia diaria</span>
+        <span class="ct-ty-m num" data-fs="{{ fs }}">1,248 XP</span></div>
+      {% endfor %}
+      <p class="t-meta">Display: --font-display · Interfaz: --font-ui · Datos: --font-data (.num, .t-data)</p>
+    </div>
+
+    <h3 class="t-eyebrow">Espaciado · radios · elevaciones</h3>
+    <div class="ct-scale">
+      {% for s in ['1', '2', '3', '4', '5', '6', '8', '10', '12', '16'] %}<div class="ct-sp"><span class="ct-sp-bar" data-sp="{{ s }}"></span><code>--sp-{{ s }}</code></div>{% endfor %}
+    </div>
+    <div class="ct-scale ct-rad">
+      {% for r in ['xs', 'sm', 'md', 'lg', 'xl', 'full'] %}<div class="ct-r" data-r="{{ r }}"><code>--r-{{ r }}</code></div>{% endfor %}
+      {% for e in ['0', '1', '2', '3'] %}<div class="ct-e" data-e="{{ e }}"><code>--e-{{ e }}</code></div>{% endfor %}
+    </div>
+  </section>
+
+  {# ── Componentes: un ejemplo por macro ── #}
+  <section class="eu-vstack ct-block" id="componentes" aria-labelledby="ct-c-t">
+    <h2 class="t-section" id="ct-c-t">Componentes</h2>
+
+    {% call sec('button') %}
+      <div class="ct-row">{{ ui.button('Primario') }}{{ ui.button('Secundario', 'secondary', icon='plus') }}{{ ui.button('Ghost', 'ghost') }}{{ ui.button('Peligro', 'danger', icon='trash-2') }}</div>
+      <div class="ct-row">{{ ui.button('Chico', size='sm') }}{{ ui.button('Mediano') }}{{ ui.button('Grande', size='lg') }}{{ ui.button('Guardando', busy=True) }}{{ ui.button('Enlace', 'secondary', href='#componentes') }}</div>
+      <div class="ct-row ct-narrow">{{ ui.button('Bloque', block=True) }}</div>
+    {% endcall %}
+    {% call sec('iconbtn') %}<div class="ct-row">{{ ui.iconbtn('pencil', 'Editar') }}{{ ui.iconbtn('star', 'Destacar', pressed=True) }}{{ ui.iconbtn('x', 'Cerrar', 'outline') }}</div>{% endcall %}
+    {% call sec('card') %}
+      <div class="ct-grid">
+        {% for v in ['', 'interactive', 'featured', 'inset', 'flush'] %}{% call ui.card(v) %}<div class="ct-pad"><b>eu-card{{ '--' ~ v if v }}</b><p class="t-meta">Contenido de ejemplo.</p></div>{% endcall %}{% endfor %}
+      </div>
+    {% endcall %}
+    {% call sec('stat') %}<div class="ct-grid">{{ ui.stat('Patrimonio', '$220,024', icon='scale', delta='+4.2 %') }}{{ ui.stat('Gasto', '$18,420', icon='receipt', delta='−6 %', delta_dir='down') }}{{ ui.stat('Racha', '11 días', icon='flame', meta='récord: 30') }}</div>{% endcall %}
+    {% call sec('badge') %}
+      <div class="ct-row">{% for v in ['', 'brand', 'xp', 'ec', 'success', 'warning', 'danger', 'info'] %}{{ ui.badge(v or 'neutral', v) }}{% endfor %}</div>
+      <div class="ct-row">{{ ui.badge('Paideia', cat='paideia') }}{{ ui.badge('Harma', cat='harma') }}{{ ui.badge('Vencido', 'danger', status=True) }}{{ ui.badge('Con ícono', 'brand', icon='sparkles') }}</div>
+    {% endcall %}
+    {% call sec('chip') %}<div class="ct-row">{{ ui.chip('Todas', pressed=True, count=10) }}{{ ui.chip('Interior', count=7) }}{{ ui.chip('Con ícono', icon='sun') }}</div>{% endcall %}
+    {% call sec('field') %}
+      <div class="ct-grid">{{ ui.field('ct-a', 'Nombre', placeholder='Monstera') }}{{ ui.field('ct-b', 'Monto', money=True, value='1,250', help='En pesos') }}
+        {{ ui.field('ct-c', 'Correo', type='email', value='x', error='Correo no válido') }}{{ ui.field('ct-d', 'Notas', type='textarea', placeholder='Opcional') }}</div>
+    {% endcall %}
+    {% call sec('progress') %}<div class="eu-vstack">{{ ui.progress(64, label='Presupuesto') }}{{ ui.progress(30, thin=True, label='Delgada') }}{{ ui.progress(80, cat='paideia', label='Paideia') }}</div>{% endcall %}
+    {% call sec('xpbar') %}{{ ui.xpbar(11, 15) }}{% endcall %}
+    {% call sec('activity') %}<div class="ct-grid">{{ ui.activity({'id': 1, 'nombre': 'Leer 20 min', 'categoria': 'paideia', 'xp': 3, 'ec': 1}) }}{{ ui.activity({'id': 2, 'nombre': 'Gimnasio', 'categoria': 'hegemonikon', 'xp': 4}, done=True) }}</div>{% endcall %}
+    {% call sec('row') %}
+      <div class="eu-card eu-card--flush"><div class="eu-list">
+        {{ ui.row('Supermercado', sub='hoy · BBVA', icon='shopping-cart', cat='oikonomia', amount='−$842') }}
+        {{ ui.row('Nómina', sub='15 nov', icon='banknote', amount='+$32,000', amount_pos=True) }}
+        {{ ui.row('Ver todos', icon='arrow-right', href='#componentes') }}
+      </div></div>
+    {% endcall %}
+    {% call sec('modal') %}
+      {{ ui.button('Abrir modal', 'secondary', onclick="euModal.open('ct-modal')") }}
+      {% call ui.modal('ct-modal', 'Modal de ejemplo', eyebrow='Catálogo') %}
+      <div class="eu-modal-bd"><p class="t-meta">role=dialog, aria-labelledby al título, foco atrapado, Esc cierra y el foco vuelve al botón (euDialog).</p>
+        {{ ui.field('ct-m', 'Un campo') }}</div>
+      <div class="eu-modal-ft">{{ ui.button('Cancelar', 'ghost', onclick="euModal.close('ct-modal')") }}{{ ui.button('Guardar') }}</div>
+      {% endcall %}
+    {% endcall %}
+    {% call sec('skel') %}{{ ui.skel(2, 40) }}{% endcall %}
+    {% call sec('empty') %}
+      <div class="ct-grid">
+        <div class="eu-card">{{ ui.empty('gift', 'Aún no hay', 'Período (por defecto): igual que siempre.', cta='Crear', cta_href='#') }}</div>
+        <div class="eu-card">{{ ui.empty('gift', 'Compacto', 'Con compact=True.', compact=True) }}</div>
+        {{ ui.empty('car', 'Registra tu vehículo', 'Primer uso del módulo.', kind='setup', eyebrow='Ejemplo · primer uso', steps=['Uno', 'Dos'], cta='Agregar', example_href='#') }}
+        <div class="eu-card">{{ ui.empty('wallet', 'Sin gasto este mes.', 'Fantasma y último periodo.', kind='period', ghost='bars', last='Octubre: $18,420 en 9 categorías.', cta='Subir', cta_href='#') }}</div>
+        <div class="eu-card">{{ ui.empty('filter', 'Ninguna prenda.', '', kind='filter', drop_filter={'label': 'Verde', 'count': 4, 'href': '#'}) }}</div>
+        <div class="eu-card">{{ ui.empty('check', 'Inbox en cero', 'Procesaste 7 hoy.', kind='done', xp=5) }}</div>
+      </div>
+    {% endcall %}
+    {% call sec('rank') %}<div class="ct-row">{% for r in ['carbon', 'iron', 'gold', 'diamond'] %}{{ ui.rank(r, 48, label=r) }}{% endfor %}{{ ui.rank('gold', 48, label='bloqueado', locked=True) }}</div>{% endcall %}
+    {% call sec('ranks') %}{{ ui.ranks('gold') }}{% endcall %}
+    {% call sec('tower') %}{{ ui.tower(4, next_name='Estrategos') }}{% endcall %}
+    {% call sec('criterion') %}<ul class="ct-list" role="list">{{ ui.criterion({'key': 'ancla', 'label': 'Una ancla completa', 'hint': 'o su versión mínima', 'have': 1, 'need': 1, 'ok': True}) }}{{ ui.criterion({'key': 'touches', 'label': '3 touches', 'hint': 'en 2 momentos del día', 'have': 1, 'need': 3, 'ok': False}) }}</ul>{% endcall %}
+    {# El ejemplo no puede ser un segundo <h1> de esta página: se pinta la
+       macro real y su h1 baja a role=heading nivel 2 solo aquí. #}
+    {% set _ph %}{{ ui['page_head'](eyebrow='Jueves 12 nov · semana 46', title='Título de pantalla') }}{% endset %}
+    {% call sec('page_head') %}<div class="ct-demo-ph">{{ _ph|replace('h1 class="t-page"'|safe, 'div role="heading" aria-level="2" class="t-page"'|safe)|replace('</h1>'|safe, '</div>'|safe) }}</div>{% endcall %}
+
+    <h3 class="t-eyebrow">Componentes CSS sin macro</h3>
+    <div class="ct-grid">
+      <div><code>.eu-seg</code><div class="eu-seg" role="group" aria-label="Ejemplo"><button type="button" aria-pressed="true">Todo</button><button type="button" aria-pressed="false">Pendientes</button></div></div>
+      <div><code>.eu-tabs</code><div class="eu-tabs" role="tablist" aria-label="Ejemplo"><button type="button" role="tab" aria-selected="true">Cuidados</button><button type="button" role="tab" aria-selected="false" tabindex="-1">Fotos</button></div></div>
+      <div><code>.eu-table</code><table class="eu-table"><thead><tr><th scope="col">Mes</th><th scope="col" class="r">Gasto</th></tr></thead><tbody><tr><td>Octubre</td><td class="r num">$18,420</td></tr><tr><td>Noviembre</td><td class="r num">$12,030</td></tr></tbody></table></div>
+      <div><code>.eu-switch</code><button type="button" class="eu-switch" role="switch" aria-checked="true" aria-label="Interruptor de ejemplo"><span></span></button></div>
+    </div>
+  </section>
+
+  {# ── Patrones ── #}
+  <section class="eu-vstack ct-block" id="patrones" aria-labelledby="ct-p-t">
+    <h2 class="t-section" id="ct-p-t">Patrones</h2>
+    <ul class="ct-pat" role="list">
+      <li><b>Hoja inferior</b><span>En móvil, para elegir o capturar sin salir de la pantalla (#eu-quick, panel de avisos, panel de plantas). Siempre con euDialog.</span></li>
+      <li><b>Toast con Deshacer</b><span>Cuando una acción en línea se puede revertir: guarda al instante y ofrece Deshacer 6 s (eu-avisos.js, eu-quick.js).</span></li>
+      <li><b>Fila con acción en línea</b><span>Lo que se resuelve con un toque (Marcar pagado, Regué, Hecho) va en la fila, no en otra pantalla.</span></li>
+      <li><b>Cierre en la misma tarjeta</b><span>Al terminar un flujo, la tarjeta muestra el resultado y lo que sigue (cierre de la Revisión, «Todas al día»).</span></li>
+      <li><b>&lt;details&gt; «Avanzado»</b><span>Lo que se usa poco va plegado: abierto solo en el alta (m-planta).</span></li>
+    </ul>
+    <details class="ct-adv"><summary>Avanzado <span class="t-meta">ejemplo del patrón</span></summary><p class="t-meta">Intervalos, ficha IA y otros cuidados.</p></details>
+  </section>
+
+  <section class="eu-vstack ct-block" id="a11y" aria-labelledby="ct-a-t">
+    <h2 class="t-section" id="ct-a-t">Accesibilidad</h2>
+    <p class="t-meta">Reglas que hace cumplir <code>scripts/a11y_lint.py</code> en pre_deploy_check: ver docs/A11Y.md. Contraste: --fg-3 (5.1:1) para texto secundario; --fg-4 (2.9:1) solo deshabilitado o decorativo.</p>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* Catálogo: contraste de cada token contra --bg-canvas (WCAG) y tema. Los
+   colores pueden venir en oklch(): se convierten pintando en un canvas. */
+(function () {
+  var cv = document.createElement('canvas'); cv.width = cv.height = 1;
+  var cx = cv.getContext('2d', { willReadFrequently: true });
+  function rgb(color) {
+    cx.clearRect(0, 0, 1, 1); cx.fillStyle = '#000'; cx.fillStyle = color; cx.fillRect(0, 0, 1, 1);
+    var d = cx.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2], d[3] / 255];
+  }
+  function lum(c) {
+    return [0, 1, 2].reduce(function (s, i) { var v = c[i] / 255; v = v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); return s + v * [0.2126, 0.7152, 0.0722][i]; }, 0);
+  }
+  function pinta() {
+    var cs = getComputedStyle(document.documentElement), bg = rgb(cs.getPropertyValue('--bg-canvas').trim());
+    document.querySelectorAll('[data-sw]').forEach(function (el) { el.style.background = 'var(' + el.dataset.sw + ')'; });
+    document.querySelectorAll('[data-cr]').forEach(function (el) {
+      var v = cs.getPropertyValue(el.dataset.cr).trim(); if (!v) { el.textContent = ''; return; }
+      var c = rgb(v), a = c[3];                                       // mezcla sobre el fondo si es translúcido
+      c = [0, 1, 2].map(function (i) { return Math.round(c[i] * a + bg[i] * (1 - a)); });
+      var l1 = lum(c), l2 = lum(bg), r = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+      el.textContent = r.toFixed(1) + ':1' + (r >= 4.5 ? ' AA' : r >= 3 ? ' AA grande' : '');
+    });
+  }
+  document.querySelectorAll('[data-ct-theme]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      if (window._applyTheme) _applyTheme(b.dataset.ctTheme);
+      document.querySelectorAll('[data-ct-theme]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      setTimeout(pinta, 30);
+    });
+  });
+  var cur = document.documentElement.classList.contains('light') ? 'light' : 'dark';
+  document.querySelectorAll('[data-ct-theme]').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.ctTheme === cur)); });
+  pinta();
+})();
+</script>
+{% endblock %}

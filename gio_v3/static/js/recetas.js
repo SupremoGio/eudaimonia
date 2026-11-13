@@ -1,11 +1,14 @@
 /* Recetas — Design System V2: grid filtrable + detalle (en móvil a pantalla
-   completa), favoritas, pasos marcables y formulario con filas dinámicas. */
+   completa), favoritas, pasos marcables y formulario con filas dinámicas.
+   Remates · Recetas S1: «Para hoy» (Usar → POST /nutricion/api/comida),
+   categorías en eu-seg, franja de macros, porciones que recalculan las
+   cantidades, pasos con casilla y modo «Cocinar» (← → Esc, wakeLock). */
 (function () {
   'use strict';
   var root = document.getElementById('rc');
   if (!root) return;
   var ALL = JSON.parse(document.getElementById('rc-data').textContent || '[]');
-  var list = ALL.slice(), cat = '', active = null, dropF = null;
+  var list = ALL.slice(), cat = '', active = null, dropF = null, porc = 1;
   var fodmapOnly = $id('rc-fodmap') && $id('rc-fodmap').getAttribute('aria-pressed') === 'true';
   function $id(i) { return document.getElementById(i); }
   var FOD = { seguro: ['Apta FODMAP', 'success'], porcion: ['FODMAP · porción', 'warning'], evitar: ['FODMAP · evitar', 'danger'] };
@@ -18,10 +21,25 @@
   function icons() { if (window.lucide) lucide.createIcons(); }
   function mins(r) { return (r.tiempo_prep || 0) + (r.tiempo_coccion || 0); }
 
-  function stats() {
-    $('st-total').textContent = ALL.length;
-    $('st-fav').textContent = ALL.filter(function (r) { return r.favorita; }).length;
-    $('st-cats').textContent = new Set(ALL.map(function (r) { return r.categoria; })).size;
+  /* Antetítulo vivo: «N recetas · M aptas FODMAP» (ya no hay stats) */
+  function eyebrow() {
+    var e = document.querySelector('.rc-hd .t-eyebrow'); if (!e) return;
+    var n = ALL.length, a = ALL.filter(function (r) { return r.fodmap === 'seguro'; }).length;
+    e.textContent = n + ' receta' + (n !== 1 ? 's' : '') + (a ? ' · ' + a + ' aptas FODMAP' : '');
+  }
+
+  /* ── Porciones: recalcula en cliente la cantidad numérica inicial
+     («200», «1.5», «1,5», «1/2», «1 1/2»); lo demás («al gusto») queda igual ── */
+  function parseQty(s) {
+    var m = String(s == null ? '' : s).trim().match(/^(\d+)\s+(\d+)\/(\d+)|^(\d+)\/(\d+)|^(\d+(?:[.,]\d+)?)/);
+    if (!m) return null;
+    var n = m[1] ? +m[1] + m[2] / m[3] : m[4] ? m[4] / m[5] : parseFloat(m[6].replace(',', '.'));
+    return { n: n, rest: String(s).trim().slice(m[0].length) };
+  }
+  function fmtQty(n) { return (Math.round(n * 100) / 100).toLocaleString('es-MX', { maximumFractionDigits: 2 }); }
+  function escalar(s, factor) {
+    var q = parseQty(s);
+    return q && factor !== 1 ? fmtQty(q.n * factor) + q.rest : String(s == null ? '' : s);
   }
   function filter() {
     var q = $('rc-q').value.trim().toLowerCase();
@@ -67,18 +85,17 @@
     var r = ALL.find(function (x) { return x.id === id; }); if (!r) return;
     active = id;
     document.querySelectorAll('.js-open').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.id === id)); });
-    var maxM = Math.max(r.proteina || 0, r.carbos || 0, r.grasa || 0, 1), video = '';
+    var video = '';
     if (r.video_url) {
       var yt = r.video_url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
       video = yt ? '<div class="rc-video"><iframe src="https://www.youtube.com/embed/' + yt[1] + '" title="Video de la receta" allowfullscreen loading="lazy"></iframe></div>'
         : '<a class="eu-btn eu-btn--secondary eu-btn--sm rc-vlink" href="' + esc(r.video_url) + '" target="_blank" rel="noopener"><i data-lucide="play-circle"></i>Ver video</a>';
     }
-    function bar(lbl, v, cls, u) { return v ? '<div class="rc-mbar"><span class="t-meta">' + lbl + '</span><span class="rc-mbar-t ' + cls + '"><i style="width:' + Math.round(v / maxM * 100) + '%"></i></span><span class="t-meta num">' + v + u + '</span></div>' : ''; }
-    var ings = (r.ingredientes || []).map(function (i) {
-      return typeof i === 'string' ? '<li><span>' + esc(i) + '</span></li>' : '<li><span>' + esc(i.item || '') + '</span><span class="t-meta num">' + esc(i.cantidad || '') + (i.unidad ? ' ' + esc(i.unidad) : '') + '</span></li>';
-    }).join('');
+    porc = r.porciones || 1;
+    function cell(lbl, v, u, cls) { return '<div class="rc-mcell ' + cls + '"><span class="t-meta">' + lbl + '</span><span class="rc-mcell-v num">' + (v ? Math.round(v) + u : '—') + '</span></div>'; }
+    var ings = (r.ingredientes || []).length ? '<ul class="rc-ings" id="rc-ings">' + ingsHtml(r, 1) + '</ul>' : '';
     var steps = (r.instrucciones || []).map(function (s, i) {
-      return '<li><button type="button" class="rc-step js-step" aria-pressed="false"><span class="rc-step-n num">' + (i + 1) + '</span><span>' + esc(s) + '</span></button></li>';
+      return '<li><button type="button" class="rc-step js-step" aria-pressed="false"><span class="rc-step-box" aria-hidden="true"><i data-lucide="check"></i></span><span class="rc-step-n num">' + (i + 1) + '</span><span>' + esc(s) + '</span></button></li>';
     }).join('');
     var m = mins(r);
     $('rc-content').innerHTML =
@@ -90,16 +107,92 @@
       '<div class="rc-hoy"><label class="t-meta" for="rc-hoy-slot">Agregar a hoy</label><select class="eu-select rc-hoy-sel" id="rc-hoy-slot">' +
         SLOTS.map(function (s) { var def = MOM_SLOT[(r.momento || '').split(',')[0]] || 'Comida'; return '<option' + (s === def ? ' selected' : '') + '>' + s + '</option>'; }).join('') +
         '</select><button type="button" class="eu-btn eu-btn--secondary eu-btn--sm js-hoy" data-id="' + r.id + '"><i data-lucide="calendar-plus"></i>Agregar a hoy</button></div>' +
-      ((r.proteina || r.carbos || r.grasa || r.calorias) ? '<div class="eu-vstack rc-sec"><div class="t-eyebrow">Macros por porción' + (r.calorias ? ' · <span class="num">' + r.calorias + ' kcal</span>' : '') + '</div>' +
-        bar('Proteína', r.proteina, 'is-p', 'g') + bar('Carbos', r.carbos, 'is-c', 'g') + bar('Grasa', r.grasa, 'is-g', 'g') + '</div>' : '') +
+      ((r.proteina || r.carbos || r.grasa || r.calorias) ? '<div class="eu-vstack rc-sec"><div class="t-eyebrow">Macros por porción</div><div class="rc-mstrip">' +
+        cell('Kcal', r.calorias, '', 'is-k') + cell('Proteína', r.proteina, ' g', 'is-p') + cell('Carbos', r.carbos, ' g', 'is-c') + cell('Grasa', r.grasa, ' g', 'is-g') + '</div></div>' : '') +
       video +
-      (ings ? '<div class="eu-vstack rc-sec"><div class="t-eyebrow">Ingredientes</div><ul class="rc-ings">' + ings + '</ul></div>' : '') +
-      (steps ? '<div class="eu-vstack rc-sec"><div class="t-eyebrow">Instrucciones · toca para marcar</div><ol class="rc-steps">' + steps + '</ol></div>' : '') +
+      (ings ? '<div class="eu-vstack rc-sec"><div class="rc-sec-hd"><div class="t-eyebrow">Ingredientes</div>' +
+        '<div class="rc-porc" role="group" aria-label="Porciones"><button type="button" class="eu-iconbtn js-porc" data-d="-1" aria-label="Menos porciones"><i data-lucide="minus"></i></button>' +
+        '<span class="t-meta"><output class="num" id="rc-porc-n" aria-live="polite">' + porc + '</output> porc.</span>' +
+        '<button type="button" class="eu-iconbtn js-porc" data-d="1" aria-label="Más porciones"><i data-lucide="plus"></i></button></div></div>' + ings + '</div>' : '') +
+      (steps ? '<div class="eu-vstack rc-sec"><div class="rc-sec-hd"><div class="t-eyebrow">Pasos · toca para marcar</div>' +
+        '<button type="button" class="eu-btn eu-btn--primary eu-btn--sm js-cook" data-id="' + r.id + '"><i data-lucide="chef-hat"></i>Cocinar</button></div><ol class="rc-steps">' + steps + '</ol></div>' : '') +
       '<div class="eu-hstack rc-d-act"><button type="button" class="eu-btn eu-btn--secondary eu-grow js-edit" data-id="' + r.id + '"><i data-lucide="pencil"></i>Editar</button>' +
         '<button type="button" class="eu-btn eu-btn--danger js-del" data-id="' + r.id + '"><i data-lucide="trash-2"></i>Eliminar</button></div>';
     $('rc-content').hidden = false; $('rc-empty').hidden = true; $('rc-detail').dataset.open = 'true';
     icons();
   }
+  function ingsHtml(r, factor) {
+    return (r.ingredientes || []).map(function (i) {
+      if (typeof i === 'string') return '<li><span>' + esc(i) + '</span></li>';
+      var c = escalar(i.cantidad || '', factor);
+      return '<li><span>' + esc(i.item || '') + '</span><span class="t-meta num">' + esc(c) + (i.unidad ? ' ' + esc(i.unidad) : '') + '</span></li>';
+    }).join('');
+  }
+  function setPorc(n) {
+    var r = ALL.find(function (x) { return x.id === active; }); if (!r) return;
+    porc = Math.max(1, Math.min(50, n));
+    $('rc-porc-n').textContent = porc;
+    $('rc-ings').innerHTML = ingsHtml(r, porc / (r.porciones || 1));
+  }
+
+  /* ── Cocinar: un paso a la vez, 24px, wakeLock si existe ── */
+  var cook = { r: null, i: 0, lock: null };
+  function cookPaint() {
+    var pasos = cook.r.instrucciones || [];
+    $('rc-cook-n').textContent = 'Paso ' + (cook.i + 1) + ' de ' + pasos.length;
+    $('rc-cook-step').textContent = pasos[cook.i];
+    document.querySelector('.js-cook-prev').disabled = cook.i === 0;
+    var nx = document.querySelector('.js-cook-next');
+    nx.innerHTML = cook.i === pasos.length - 1 ? 'Terminar<i data-lucide="check"></i>' : 'Siguiente<i data-lucide="arrow-right"></i>';
+    icons();
+  }
+  function cookGo(d) {
+    var n = (cook.r.instrucciones || []).length;
+    if (d > 0 && cook.i === n - 1) { window.euDialog.close($('rc-cook')); toast('¡Buen provecho!'); return; }
+    cook.i = Math.max(0, Math.min(n - 1, cook.i + d)); cookPaint();
+  }
+  async function wake(on) {
+    try {
+      if (on && 'wakeLock' in navigator) cook.lock = await navigator.wakeLock.request('screen');
+      else if (!on && cook.lock) { await cook.lock.release(); cook.lock = null; }
+    } catch (_) { cook.lock = null; }   // sin permiso o sin soporte: la pantalla puede apagarse
+  }
+  function cookOpen(r, from) {
+    if (!(r.instrucciones || []).length) return;
+    cook.r = r; cook.i = 0;
+    $('rc-cook-t').textContent = r.nombre;
+    cookPaint();
+    window.euDialog.open($('rc-cook'), from, { box: $('rc-cook').querySelector('.rc-cook-in'), focus: '.js-cook-next',
+      onClose: function () { wake(false); } });
+    wake(true);
+  }
+  document.addEventListener('visibilitychange', function () {   // el navegador suelta el lock al ocultar la pestaña
+    if (document.visibilityState === 'visible' && window.euDialog.isOpen($('rc-cook')) && !cook.lock) wake(true);
+  });
+  $('rc-cook').addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { e.preventDefault(); cookGo(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); cookGo(-1); }
+  });
+  document.querySelector('.js-cook-prev').addEventListener('click', function () { cookGo(-1); });
+  document.querySelector('.js-cook-next').addEventListener('click', function () { cookGo(1); });
+  document.querySelector('.js-cook-x').addEventListener('click', function () { window.euDialog.close($('rc-cook')); });
+
+  /* ── «Para hoy»: Usar asigna la receta al momento con el endpoint de Nutrición ── */
+  function usar(b) {
+    var id = +b.dataset.id, slot = b.dataset.slot, r = ALL.find(function (x) { return x.id === id; });
+    b.setAttribute('aria-busy', 'true');
+    fetch('/nutricion/api/comida', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ receta_id: id, slot: slot }) })
+      .then(function (res) { return res.json(); }).then(function (d) {
+        b.removeAttribute('aria-busy');
+        if (!d.meal) { toast('No se pudo asignar', 'err'); return; }
+        var row = b.closest('.rc-today-row'), list = row.parentNode;
+        row.remove();
+        if (!list.children.length) $('rc-today').remove();
+        else (list.querySelector('.js-usar') || document.body).focus();
+        toast('«' + (r ? r.nombre : d.meal.name) + '» en ' + slot + ' · hoy', 'ok');
+      }).catch(function () { b.removeAttribute('aria-busy'); toast('Sin conexión', 'err'); });
+  }
+
   function close() {
     active = null; $('rc-content').hidden = true; $('rc-empty').hidden = false; delete $('rc-detail').dataset.open;
     document.querySelectorAll('.js-open').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
@@ -130,6 +223,7 @@
     var moms = ((r && r.momento) || '').split(',');
     document.querySelectorAll('#rm-momento [data-mom]').forEach(function (b) { b.setAttribute('aria-pressed', String(moms.indexOf(b.dataset.mom) >= 0)); });
     $('rm-err').hidden = true;
+    $('rc-avanzado').open = !!(r && (r.calorias || r.proteina || r.carbos || r.grasa || r.tiempo_prep || r.tiempo_coccion || r.video_url || r.descripcion));
     $('ing-list').innerHTML = ''; $('step-list').innerHTML = '';
     ((r && r.ingredientes && r.ingredientes.length) ? r.ingredientes : [null]).forEach(ingRow);
     ((r && r.instrucciones && r.instrucciones.length) ? r.instrucciones : ['']).forEach(stepRow);
@@ -154,7 +248,7 @@
     if (!res.ok) { $('rm-err').querySelector('span').textContent = 'Error al guardar'; $('rm-err').hidden = false; return; }
     var saved = await res.json();
     if (id) { var k = ALL.findIndex(function (r) { return r.id === saved.id; }); if (k >= 0) ALL[k] = saved; } else ALL.unshift(saved);
-    euModal.close('m-rc'); filter(); stats(); toast('Receta «' + saved.nombre + '» guardada');
+    euModal.close('m-rc'); filter(); eyebrow(); toast('Receta «' + saved.nombre + '» guardada');
     setTimeout(function () { open(saved.id); }, 60);
   });
 
@@ -164,7 +258,10 @@
     var id = b.dataset.id ? +b.dataset.id : null;
     if (b.classList.contains('js-new')) form(null);
     else if (!root.contains(b)) return;
-    else if (b.classList.contains('js-open')) open(id);
+    else if (b.classList.contains('js-open') || b.classList.contains('js-ver')) open(id);
+    else if (b.classList.contains('js-usar')) usar(b);
+    else if (b.classList.contains('js-porc')) setPorc(porc + +b.dataset.d);
+    else if (b.classList.contains('js-cook')) cookOpen(ALL.find(function (r) { return r.id === id; }), b);
     else if (b.classList.contains('js-close')) close();
     else if (b.classList.contains('js-hoy')) {
       b.disabled = true;
@@ -180,13 +277,13 @@
       var d = await fetch('/recetas/api/recipe/' + id + '/favorita', { method: 'POST' }).then(function (r) { return r.json(); }).catch(function () { return null; });
       if (!d) { toast('Error', 'err'); return; }
       var r = ALL.find(function (x) { return x.id === id; }); if (r) r.favorita = d.favorita ? 1 : 0;
-      b.setAttribute('aria-pressed', String(!!d.favorita)); stats();
+      b.setAttribute('aria-pressed', String(!!d.favorita));
     } else if (b.classList.contains('js-del')) {
       var rr = ALL.find(function (x) { return x.id === id; });
       if (!(await euConfirm('¿Eliminar «' + (rr ? rr.nombre : '') + '»?', { confirmLabel: 'Eliminar' }))) return;
       await fetch('/recetas/api/recipe/' + id, { method: 'DELETE' });
       ALL.splice(ALL.findIndex(function (x) { return x.id === id; }), 1);
-      close(); filter(); stats(); toast('Receta eliminada');
+      close(); filter(); eyebrow(); toast('Receta eliminada');
     }
   });
   $('rc-q').addEventListener('input', filter);
@@ -203,6 +300,8 @@
   document.querySelectorAll('[data-fcat]').forEach(function (b) {
     b.addEventListener('click', function () { cat = b.dataset.fcat; document.querySelectorAll('[data-fcat]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); filter(); });
   });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('rc-detail').dataset.open && !document.querySelector('.eu-scrim:not([hidden])')) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !e.defaultPrevented && $('rc-detail').dataset.open && !document.querySelector('.eu-scrim:not([hidden])') && !window.euDialog.top()) close();
+  });
   if (fodmapOnly) filter(); else render();
 })();

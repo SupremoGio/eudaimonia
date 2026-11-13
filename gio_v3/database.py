@@ -2615,6 +2615,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] finanzas_cafe_pan_categoria_propia_2026_09 migration warning: {e}")
 
+        # ── ESTADOS DE CUENTA — SALUD/Psicólogo (2026-11, a petición del usuario):
+        #    terapia como necesidad (SALUD), no como Cuidado personal (deseo). Solo
+        #    siembra su naturaleza; no reclasifica movimientos existentes. ──
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='finanzas_salud_psicologo_2026_11'"
+        ).fetchone():
+            try:
+                db.execute(
+                    "INSERT OR IGNORE INTO est_categoria_naturaleza (categoria, subcategoria, naturaleza) "
+                    "VALUES ('SALUD', 'Psicólogo', 'VARIABLE')")
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("finanzas_salud_psicologo_2026_11",
+                     "Subcategoría SALUD/Psicólogo: naturaleza VARIABLE (igual que Consultas)."))
+                db.commit()
+            except Exception as e:
+                print(f"[DB] finanzas_salud_psicologo_2026_11 migration warning: {e}")
+
         # ── ESTADOS DE CUENTA — Qin/Tortas planchadas/Gorditas a Fast Food (a
         #    petición explícita del usuario) ─────────────────────────────────
         if not db.execute(
@@ -7248,6 +7266,12 @@ def init_db():
                 db.execute("ALTER TABLE recetas ADD COLUMN fodmap TEXT DEFAULT NULL")
             if "momento" not in rc_cols:
                 db.execute("ALTER TABLE recetas ADD COLUMN momento TEXT DEFAULT ''")
+            # Remates · Recetas S1: la comida del plan recuerda de qué receta
+            # salió (POST /nutricion/api/comida con receta_id) → «Para hoy» sabe
+            # qué momento ya tiene receta y cuánto se usó cada una en 14 días.
+            ns_cols = [r["name"] for r in db.execute("PRAGMA table_info(nutricion_semana)").fetchall()]
+            if "receta_id" not in ns_cols:
+                db.execute("ALTER TABLE nutricion_semana ADD COLUMN receta_id INTEGER DEFAULT NULL")
             db.commit()
             if not db.execute("SELECT id FROM migration_log WHERE version='nutri_banco_a_recetas'").fetchone():
                 from modules.nutricion.routes import migrar_banco

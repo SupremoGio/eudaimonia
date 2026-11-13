@@ -128,7 +128,9 @@ def test_modal_corto_con_avanzado(client):
     assert 'id="pl-delete-btn"' in modal
     js = open(os.path.join(BASE, 'static/js/plantas.js'), encoding='utf-8').read()
     assert "$('pl-avanzado').open = !p.id" in js                                    # abierto solo en el alta
-    assert "e.key !== 'Escape'" in js and 'closePanel' in js                         # Esc cierra y devuelve el foco
+    # Esc cierra y devuelve el foco: desde A11y S2 lo maneja euDialog (onClose enfoca la tarjeta)
+    assert 'window.euDialog.open(pan' in js and 'onClose' in js and 'closePanel' in js
+    assert 'if (t) t.focus()' in js
 
 
 # ── Ajustes S1 ───────────────────────────────────────────────────────────────

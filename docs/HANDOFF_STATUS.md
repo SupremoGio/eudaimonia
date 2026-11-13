@@ -1,98 +1,230 @@
-# Estado de los handoffs v2 (Fase 0 de `design_handoff_ORDEN.md`)
+# Estado de los handoffs v2
 
-Revisado el 2026-11-12 contra `main`, después del merge de Nutrición v2 (PR #121).
-**Los 16 paquetes del ORDEN (70 sprints) y los transversales Navegación (2), Captura rápida (3), Avisos (3), Revisión semanal (2), Estados vacíos (2) y Plantas y Ajustes (3) están hechos.** La evidencia es el commit en `main` y una ruta `archivo:línea` del código que cada sprint pide.
-Las rutas son relativas a `gio_v3/`.
+Revisado el 2026-11-13 leyendo el código de la rama `claude/modest-cray-h9zrlf`, que es `main` más los commits de Capturas, A11y y el catálogo, todavía sin mergear. Las rutas son relativas a `gio_v3/`.
 
-Algunos paquetes se implementaron en un solo commit con todos sus sprints. En esos casos se repite el commit y la evidencia de cada sprint apunta a su pieza.
+**Fuente de los handoffs:** las carpetas `design_handoff_*/` no están en el repo. Se auditaron las copias subidas a la sesión: `design_handoff_ORDEN.md`, `FASE0.md` y un `SPRINTS.md` por paquete.
 
-| Paquete | Sprint | Estado | Commit | Evidencia |
-|---|---|---|---|---|
-| Inicio v2 | S1 · criterios del siguiente rango | hecho | `511f4d6` | `modules/gamification/engine.py:727` (`_next_rank_criteria`), `:579` (`criteria`) |
-| Inicio v2 | S2 · héroe + «Siguiente paso» | hecho | `1169660` | `modules/dashboard/routes.py:112` (`_build_next_step`) |
-| Inicio v2 | S3 · equilibrio de la semana (60%) | hecho | `db8b156` | `modules/gamification/engine.py:8` (regla de balance) |
-| Inicio v2 | S4 · Pendiente primero + Inspiración | hecho | `627cf70` | `templates/dashboard/` (columna lateral) |
-| Inicio v2 | S5 · constancia por rango + meta de racha | hecho | `60e69e9` | `modules/gamification/routes.py:328` (`constancia`) |
-| Inicio v2 | S6 · móvil, limpieza y QA | hecho | `e01f08c` | topbar sin XP en Inicio |
-| Oikonomia v2 | S1 · datos del resumen | hecho | `53e1a2c` | `modules/finanzas/routes.py:142` (`BUDGET_RISK_PCT`), `:24` |
-| Oikonomia v2 | S2 · «Marcar pagado» | hecho | `7f89ea6` | `modules/finanzas/pagos_ciclo.py:69` (`pagados`) |
-| Oikonomia v2 | S3 · encabezado + héroe | hecho | `f7793a1` | `templates/finanzas/hub/` |
-| Oikonomia v2 | S4 · Próximos pagos + Categorías en riesgo | hecho | `5d2d5c6` | `templates/finanzas/hub/_debts.html:1`, `_subs.html:2` |
-| Oikonomia v2 | S5 · accesos compactos, móvil y limpieza | hecho | `f8b2639` | `templates/finanzas/hub/_subs.html` |
-| Acta v2 | S1 · clasificación con criterios | hecho | `7b372d1` | `modules/gamification/engine.py:763` |
-| Acta v2 | S2 · «Anclas de hoy» + virtudes compactas | hecho | `e719c4c` | `modules/actividades/routes.py:203` |
-| Acta v2 | S3 · encabezado y filtros | hecho | `815429f` | `templates/actividades/` |
-| Acta v2 | S4 · panel lateral, móvil y limpieza | hecho | `c04c418` | `templates/actividades/` |
-| Praxis v2 | S1 · captura en una barra | hecho | `a275697` | `templates/gtd/` |
-| Praxis v2 | S2 · Inbox de un clic, fechas relativas | hecho | `394944a` | `templates/gtd/` |
-| Praxis v2 | S3 · Hoy destacada + bono visible | hecho | `9b2f184` | `templates/gtd/` |
-| Praxis v2 | S4 · una sola moneda XP (D1) | hecho | `91f9076` | `modules/gtd/prioridades.py:226`, `modules/gtd/routes.py:40` |
-| Praxis v2 | S5 · pipeline de Acta = Ideas (D2) | hecho | `bee8c4d` | `modules/actividades/routes.py:81`, `:477` |
-| Praxis v2 | S6 · prioridades = estrellas (D3) | hecho | `9302e54` | `modules/gamification/engine.py:1025`, `modules/gtd/prioridades.py:92` |
-| Ataraxia v2 | S1 · encabezado, pestañas y recompensas | hecho | `7276406` | `templates/ataraxia/` |
-| Ataraxia v2 | S2 · un bloque abierto «Ahora» | hecho | `ba11882` | `modules/ataraxia/routes.py:434` |
-| Ataraxia v2 | S3 · revisión semanal automática | hecho | `753b614` | `modules/ataraxia/routes.py:126`, `modules/gamification/routes.py:365` |
-| Ataraxia v2 | S4 · prioridades semanales desde Praxis | hecho | `1273c9e` | `modules/ataraxia/routes.py:503`, `templates/ataraxia/_bloque.html:40` |
-| Paideia v2 | S1 · ritmo, XP y ancla de Acta | hecho | `d21b63f` | `modules/paideia/routes.py:82` (`ritmo`), `:29` (`_LIBRO_XP`) |
-| Paideia v2 | S2 · encabezado + héroe | hecho | `f6bc81d` | `templates/paideia/` |
-| Paideia v2 | S3 · biblioteca en portadas | hecho | `f3011ae` | `templates/paideia/` |
-| Paideia v2 | S4 (opcional) · una escala de calificación | hecho | `c83cf60` | películas en ★ 1–5 |
-| Guardarropa v2 | S1 · razón de la sugerencia y rotación | hecho | `cfefd78` | `modules/guardarropa/stylist.py:419` |
-| Guardarropa v2 | S2 · encabezado + «Outfit de hoy» | hecho | `5ee3c17` | `templates/guardarropa/` |
-| Guardarropa v2 | S3 · filtros en una fila + fotos | hecho | `2dbd520` | `templates/guardarropa/` |
-| Guardarropa v2 | S4 (opcional) · wishlist contra el armario | hecho | `67c29e9` | `modules/guardarropa/routes.py:1091` |
-| Logros v2 | S1 · ETA de nivel, progreso de insignias, constancia | hecho | `2d6ecdd` | `modules/gamification/routes.py:242` (`dias_siguiente`), `modules/gamification/badges.py:27` |
-| Logros v2 | S2 · encabezado + héroe de nivel | hecho | `2d6ecdd` | `templates/gamification/` |
-| Logros v2 | S3 · pestaña Colección | hecho | `2d6ecdd` | `modules/gamification/routes.py:246` (`coleccion_con_progreso`) |
-| Logros v2 | S4 · pestaña Historial | hecho | `2d6ecdd` | historial de canjes y XP en Logros |
-| Recompensas v2 | S1 · ETA, meta y requisitos | hecho | `5240d1e` | `modules/recompensas/routes.py:196` (`eta_dias`), `:299` |
-| Recompensas v2 | S2 · saldo y siguiente meta | hecho | `5240d1e` | `templates/recompensas/` |
-| Recompensas v2 | S3 · grupos + canje con confirmación | hecho | `5240d1e` | `templates/recompensas/` |
-| Recompensas v2 | S4 · desde tus wishlists | hecho | `5240d1e` | `modules/recompensas/routes.py:340` (`wishlists_ec`) |
-| Perfil v2 | S1 · contadores y «Requiere atención» | hecho | `e797790` | `modules/perfil/resumen.py:174` (`atencion`) |
-| Perfil v2 | S2 · lateral + Resumen | hecho | `e797790` | `templates/perfil/` |
-| Perfil v2 | S3 · copiar con un clic, privados | hecho | `e797790` | `/perfil/api/privados` |
-| Perfil v2 | S4 · medidas en lote | hecho | `e797790` | `modules/perfil/routes.py:146` |
-| Perfil v2 | S5 · recordatorios ↔ Oikonomia | hecho | `e797790` | `modules/perfil/resumen.py:143` (`vinculado_oikonomia`) |
-| Hegemonikon v2 | S1 · resumen del cuerpo, tratamiento | hecho | `d9a05eb` | `modules/bienestar/salud.py:136` (`tratamiento`) |
-| Hegemonikon v2 | S2 · «Hoy en tu cuerpo» + «En tratamiento» | hecho | `d9a05eb` | `templates/bienestar/` |
-| Hegemonikon v2 | S3 · partido, «Cuerpo» y «También aquí» | hecho | `d9a05eb` | `modules/bienestar/routes.py:54` (`_proximo_partido`) |
-| Hegemonikon v2 | S4 · Salud sin resumen repetido | hecho | `d9a05eb` | `templates/bienestar/` |
-| Harma v2 | S1 · ritmo, edad del km, ETA y gasto | hecho | `2512fd4` | `modules/harma/plan.py:27` (`ritmo_km_mes`) |
-| Harma v2 | S2 · odómetro y plan por urgencia | hecho | `2512fd4` | `templates/harma/` |
-| Harma v2 | S3 · papeles y bitácora | hecho | `2512fd4` | `modules/harma/plan.py:93` (`papeles`) |
-| Harma v2 | S4 · verificación con Perfil, gasto con Oikonomia | hecho | `2512fd4` | `modules/harma/plan.py:152` (`crear_gasto`) |
-| Eurythmia v2 | S1 · espaciado, dominio, semana y bonos | hecho | `2671a18` | `modules/eurythmia/routes.py:230` (`sugerencias`) |
-| Eurythmia v2 | S2 · franja + «Sesión de hoy» | hecho | `2671a18` | `templates/eurythmia/index.html` |
-| Eurythmia v2 | S3 · repertorio y lateral | hecho | `2671a18` | `templates/eurythmia/_progreso.html` |
-| Eurythmia v2 | S4 · volver a Acta | hecho | `2671a18` | `templates/actividades/_item.html:11`, `_anchors.html:24` |
-| Viajes v2 | S1 · maleta automática, consumibles, sugerencias | hecho | `627967f` | `modules/viajes/routes.py:347` (`_regenerar_maleta`), `:512` (`sugerencias`) |
-| Viajes v2 | S2 · encabezado, preparación y fases | hecho | `627967f` | `templates/viajes/_detail.html` |
-| Viajes v2 | S3 · outfits en la fila, maleta en 2 columnas | hecho | `627967f` | `static/js/viajes.js` |
-| Viajes v2 | S4 · una sola página, Dinero en el lateral | hecho | `627967f` | `templates/viajes/_detail.html` (`vj-money`), `templates/finanzas/viajes.html` |
-| Idiomas v2 | S1 · XP, Acta, plan real, feedback guardado | hecho | `8fbaa2b` | `modules/actividades/touch.py:12` (`marcar_touch`), `modules/idiomas/routes.py` |
-| Idiomas v2 | S2 · selector de idioma y repaso | hecho | `8fbaa2b` | `static/js/idiomas.js` (`id_lang`) |
-| Idiomas v2 | S3 · journal con revisión y tendencia | hecho | `8fbaa2b` | `/idiomas/api/journal/revisar` |
-| Idiomas v2 | S4 · palabra del día, tests por destreza, Acta | hecho | `8fbaa2b` | `modules/idiomas/routes.py:615` (`ultimo_por_destreza`) |
-| Nutrición v2 | S1 · XP por el motor, racha calculada | hecho | `d48fef6` | `modules/nutricion/routes.py:630` (`_log`) |
-| Nutrición v2 | S2 · Hoy por hora + «¿Cómo cayó?» | hecho | `d48fef6` | `templates/nutricion/index.html`, `static/js/nutricion.js` |
-| Nutrición v2 | S3 · el día, Bristol y disparadores | hecho | `d48fef6` | `disparadores_30d` en `modules/nutricion/routes.py` |
-| Nutrición v2 | S4 · un solo recetario | hecho | `d48fef6` | `modules/nutricion/routes.py:503` (`migrar_banco`), `recetas.fodmap` y `recetas.momento` |
-| Navegación | S1 · `ui.page_head`, `VIEWS` y `nav_view` | hecho | `637162d` | `modules/nav.py` (`VIEWS`, `view_of`, `page_info`), `templates/_ui/macros.html` (`page_head`) |
-| Navegación | S2 · la regla en todas las pantallas | hecho | `637162d` | `tests/test_nav.py` (un h1 por ruta de NAV = `nav_title`, sin lemas) |
-| Captura rápida | S1 · registro `QUICK` + `/api/quick/options` | hecho | `a84a3af` | `modules/nav.py` (`QUICK`, `quick_for`), `modules/quick.py` |
-| Captura rápida | S2 · «+» en la barra, hoja y contadores | hecho | `a84a3af` | `templates/eu/layout_sub.html` (`#eu-quick`), `static/js/eu-quick.js`, `/api/quick/badges` |
-| Captura rápida | S3 · ⌘K que registra | hecho | `a84a3af` | `eu-quick.js` (`parse`), `tests/quick_parse_cases.json` |
-| Avisos | S1 · contrato `avisos(db, hoy)` + `recolectar()` | hecho | `117e813` | `modules/avisos.py` (`FUENTES`, `recolectar`, endpoints), tabla `avisos_estado`; un `avisos()` en finanzas, salud, recordatorios, harma, gtd, plantas, fútbol, actividades y gamification |
-| Avisos | S2 · campana + panel | hecho | `117e813` | `templates/eu/layout_sub.html` (`#eu-avisos-btn`, `#eu-avisos`), `static/js/eu-avisos.js` |
-| Avisos | S3 · preferencias + Inicio | hecho | `117e813` | `templates/perfil/_avisos.html` (`avisos_off:<fuente>`), `modules/dashboard/routes.py` (`_build_deadlines(…, avisos_hoy)`) |
-| Revisión semanal | S1 · ruta `/ataraxia/revision`, pasos 1–2, guardado parcial | hecho | `53cdc23` | `modules/ataraxia/routes.py` (`revision`, `save_revision` con `cerrar`, `_AUTO_METRICS` con 6), `templates/ataraxia/revision.html`, `static/js/revision.js` |
-| Revisión semanal | S2 · pasos 3–4, cierre y entradas | hecho | `53cdc23` | `_cabos`, `_calendario`, `_marcar_tarea('sun_planeacion')`, aviso `ata:revision:<semana>`, ⌘K `revision` en `modules/nav.py` |
-| Estados vacíos | S1 · `ui.empty(kind=…)`, migración y `?demo=1` | hecho | rama actual | `templates/_ui/macros.html` (`empty` con setup/period/filter/done), `modules/demo.py`, `euEmptyFilter`/`euSetDrop` en `static/js/eu-motion.js` |
-| Estados vacíos | S2 · Primeros pasos | hecho | rama actual | `modules/onboarding.py`, `templates/_ui/onboarding.html` (Inicio y Perfil › Primeros pasos) |
-| Plantas y Ajustes | Plantas S1 · «Hoy» y cuadrícula compacta | hecho | rama actual | `modules/plantas/routes.py` (`cuidados_hoy`, `hoy` en `_state`), `templates/plantas/index.html`, `static/js/plantas.js` |
-| Plantas y Ajustes | Plantas S2 · panel con pestañas | hecho | rama actual | `#pl-panel` (Cuidados · Fotos · Historial · Doctor), `m-planta` con `<details id="pl-avanzado">`; `m-doctor` eliminado |
-| Plantas y Ajustes | Ajustes S1 · un solo lugar para lo configurable | hecho | rama actual | `templates/perfil/_ajustes.html`, `POST /perfil/api/ajustes` (lista blanca), `GET /perfil/api/exportar` (zip de CSV) |
+**Cómo se clasifica:**
+- **hecho:** el código tiene lo que piden las tareas y los criterios de «Aceptación».
+- **parcial:** la columna «Falta» dice qué queda.
+- **pendiente:** no hay evidencia.
+- **verificar a mano:** el criterio es visual (móvil, orden en pantalla), de teclado o depende de datos reales, así que leer el código no basta para confirmarlo. Esos criterios se revisaron con Playwright y axe al implementar cada sprint, pero aquí se marcan para revisarlos en el dispositivo.
+
+**Resumen:**
+- Los 16 paquetes del ORDEN (70 sprints) y los transversales están **hechos**.
+- De **Remates**, Login S1 y Recetas S1 están **hechos**, y Wishlist S1 está **pendiente**.
+
+## Inicio v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · criterios del siguiente rango | hecho | `modules/gamification/engine.py:727` (`_next_rank_criteria`), `:579` (`criteria`); `tests/test_clasificacion_criterios.py` | — |
+| S2 · héroe + «Siguiente paso» | hecho | `modules/dashboard/routes.py:112` (`_build_next_step`); `tests/test_dashboard_siguiente_paso.py`, `test_dashboard_hero_v2.py` | — |
+| S3 · equilibrio de la semana (60%) | hecho | `modules/gamification/engine.py:8` (regla de balance); `tests/test_dashboard_balance_semana.py` | — |
+| S4 · Pendiente primero + Inspiración | hecho | `templates/dashboard/index.html:12`; `tests/test_dashboard_pendiente_inspiracion.py` | — |
+| S5 · constancia por rango + meta de racha | hecho | `modules/gamification/routes.py:328` (`constancia`); `tests/test_clasificacion_diaria_v2.py`, `test_dashboard_constancia_racha.py` | — |
+| S6 · móvil, limpieza y QA | hecho | `templates/dashboard/index.html:16` (`page_head`) | verificar a mano: orden de bloques en móvil (Héroe → Pendiente → …) y topbar sin XP: es layout, se ve en pantalla |
+
+## Oikonomia v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · datos del resumen | hecho | `modules/finanzas/routes.py:223` (metas 50·30·20), `:226` (`BUDGET_RISK_PCT`); `tests/test_oikonomia_hub.py` | — |
+| S2 · «Marcar pagado» | hecho | `modules/finanzas/pagos_ciclo.py:69` (`pagados`); `tests/test_pago_ciclo.py` | — |
+| S3 · encabezado + héroe | hecho | `templates/finanzas/hub/_hero.html:1` | — |
+| S4 · Próximos pagos + Categorías en riesgo | hecho | `modules/finanzas/routes.py:144` (`_hub_debts`), `:200` (`_hub_budget_rows`); `templates/finanzas/hub/_debts.html:1` | — |
+| S5 · accesos compactos, móvil y limpieza | hecho | `templates/finanzas/hub/_subs.html` | verificar a mano: disposición móvil de los accesos |
+
+## Acta v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · clasificación con criterios | hecho | `modules/gamification/engine.py:579` (`criteria`); `tests/test_acta_v2.py` | — |
+| S2 · «Anclas de hoy» + virtudes compactas | hecho | `modules/actividades/routes.py:205` (`acta_anchors`); `templates/actividades/_anchors.html` | — |
+| S3 · encabezado y filtros | hecho | `templates/actividades/index.html` (`page_head`); `tests/test_acta_v2.py` | — |
+| S4 · panel lateral, móvil y limpieza | hecho | `templates/actividades/index.html:32` (pipeline plegado) | verificar a mano: panel lateral en móvil |
+
+## Praxis v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · captura en una barra | hecho | `templates/gtd/_capture.html`; `tests/test_praxis_v2.py` | — |
+| S2 · Inbox de un clic, fechas relativas | hecho | `templates/gtd/praxis.html`; `tests/test_praxis_v2.py` | — |
+| S3 · Hoy destacada + bono visible | hecho | `modules/gtd/prioridades.py:221` (bono diario en `xp_ledger`) | — |
+| S4 · una sola moneda XP (D1) | hecho | `modules/gtd/routes.py:38` (`/points` solo redirige); `tests/test_praxis_v2.py` | — |
+| S5 · pipeline de Acta = Ideas (D2) | hecho | `modules/actividades/routes.py:81` (`_pipeline_ideas`), `:477` | — |
+| S6 · prioridades = estrellas (D3) | hecho | `modules/gamification/engine.py:1025` | — |
+
+## Ataraxia v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · encabezado, pestañas y recompensas | hecho | `templates/ataraxia/index.html:15` (`role="tablist"`); `tests/test_ataraxia_v2.py` | — |
+| S2 · un bloque abierto «Ahora» | hecho | `modules/ataraxia/routes.py:527` | — |
+| S3 · revisión semanal automática | hecho | `modules/ataraxia/routes.py:267` (métricas automáticas), `modules/gamification/routes.py:365` | — |
+| S4 · prioridades semanales desde Praxis | hecho | `modules/ataraxia/routes.py:9` (`prio`), `:68`; `modules/gtd/prioridades.py:29` (`semana_eleccion`) | — |
+
+## Paideia v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · ritmo, XP y ancla de Acta | hecho | `modules/paideia/routes.py:82` (`ritmo`), `:29` (`_LIBRO_XP`); `tests/test_paideia_libros.py` | — |
+| S2 · encabezado + héroe | hecho | `templates/paideia/index.html:10` (`page_head` con meta anual) | — |
+| S3 · biblioteca en portadas | hecho | `templates/paideia/index.html` | verificar a mano: portadas reales dependen de las URL de imagen guardadas |
+| S4 (opcional) · una escala de calificación | hecho | películas en ★ 1–5 (commit `c83cf60`) | — |
+
+## Guardarropa v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · razón de la sugerencia y rotación | hecho | `modules/guardarropa/stylist.py:465` (`_razon`), `:517`; `tests/test_guardarropa_stylist.py` | — |
+| S2 · encabezado + «Outfit de hoy» | hecho | `templates/guardarropa/index.html` | — |
+| S3 · filtros en una fila + fotos | hecho | `templates/guardarropa/index.html` | verificar a mano: fotos: dependen del volumen de uploads en Railway |
+| S4 (opcional) · wishlist contra el armario | hecho | `modules/guardarropa/routes.py:52` (`_armario`), `:97` (`_wishlist_summary`); `tests/test_wishlist_duplicados.py` | — |
+
+## Logros v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · ETA de nivel, progreso de insignias, constancia | hecho | `modules/gamification/routes.py:242` (`dias_siguiente`), `modules/gamification/badges.py:27` (`progress_of`); `tests/test_logros.py` | — |
+| S2 · encabezado + héroe de nivel | hecho | `templates/gamification/_head.html` | — |
+| S3 · pestaña Colección | hecho | `modules/gamification/routes.py:246` (`coleccion_con_progreso`); `templates/gamification/_collection.html` | — |
+| S4 · pestaña Historial | hecho | `templates/gamification/_historial.html`; `modules/gamification/routes.py:427` | — |
+
+## Recompensas v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · ETA, meta y requisitos | hecho | `modules/recompensas/routes.py:196` (`eta_dias`); `tests/test_recompensas.py` | — |
+| S2 · saldo y siguiente meta | hecho | `templates/recompensas/index.html` | — |
+| S3 · grupos + canje con confirmación | hecho | `templates/recompensas/index.html` (`euConfirm` al canjear) | — |
+| S4 · desde tus wishlists | hecho | `modules/recompensas/routes.py:340` (`wishlists_ec`) | — |
+
+## Perfil v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · contadores y «Requiere atención» | hecho | `modules/perfil/resumen.py:174` (`atencion`); `tests/test_perfil.py` | — |
+| S2 · lateral + Resumen | hecho | `templates/perfil/_resumen.html`, `_sechead.html` | — |
+| S3 · copiar con un clic, privados | hecho | `templates/perfil/_vault.html`; `/perfil/api/privados` | — |
+| S4 · medidas en lote | hecho | `modules/perfil/routes.py:158` (`/api/medidas/lote`), `:100` | — |
+| S5 · recordatorios ↔ Oikonomia | hecho | `modules/perfil/resumen.py:143` (`vinculado_oikonomia`); `tests/test_perfil_recordatorios_grupos.py` | — |
+
+## Hegemonikon v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · resumen del cuerpo, tratamiento | hecho | `modules/bienestar/salud.py:164` (`tratamiento`); `tests/test_hegemonikon.py` | — |
+| S2 · «Hoy en tu cuerpo» + «En tratamiento» | hecho | `templates/bienestar/_hoy.html`, `_tratamiento.html` | — |
+| S3 · partido, «Cuerpo» y «También aquí» | hecho | `modules/bienestar/routes.py:147` (`_proximo_partido`); `templates/bienestar/index.html:62` | — |
+| S4 · Salud sin resumen repetido | hecho | `templates/bienestar/salud.html` | — |
+
+## Harma v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · ritmo, edad del km, ETA y gasto | hecho | `modules/harma/plan.py:27` (`ritmo_km_mes`); `tests/test_harma.py` | — |
+| S2 · odómetro y plan por urgencia | hecho | `templates/harma/index.html` | — |
+| S3 · papeles y bitácora | hecho | `modules/harma/plan.py:93` (`papeles`); `templates/harma/_papeles.html`, `_bitacora.html` | — |
+| S4 · verificación con Perfil, gasto con Oikonomia | hecho | `modules/harma/plan.py:152` (`crear_gasto`) | — |
+
+## Eurythmia v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · espaciado, dominio, semana y bonos | hecho | `modules/eurythmia/routes.py:230` (`sugerencias`); `tests/test_eurythmia.py` | — |
+| S2 · franja + «Sesión de hoy» | hecho | `templates/eurythmia/index.html:56` | — |
+| S3 · repertorio y lateral | hecho | `templates/eurythmia/_progreso.html` | — |
+| S4 · volver a Acta | hecho | `templates/actividades/_item.html:11`, `_anchors.html:24` | — |
+
+## Viajes v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · maleta automática, consumibles, sugerencias | hecho | `modules/viajes/routes.py:347` (`_regenerar_maleta`), `:512` (`sugerencias`); `tests/test_viajes_v2.py` | — |
+| S2 · encabezado, preparación y fases | hecho | `templates/viajes/_detail.html` | — |
+| S3 · outfits en la fila, maleta en 2 columnas | hecho | `static/js/viajes.js:3` | verificar a mano: las 2 columnas de la maleta son layout |
+| S4 · una sola página, Dinero en el lateral | hecho | `templates/viajes/_detail.html:43` (`vj-money`) | — |
+
+## Idiomas v2 (Cosmopolitismo)
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · XP, Acta, plan real, feedback guardado | hecho | `modules/actividades/touch.py:12` (`marcar_touch`), `modules/idiomas/routes.py:9`; `tests/test_idiomas.py` | — |
+| S2 · selector de idioma y repaso | hecho | `static/js/idiomas.js:1` (`id_lang`), `modules/idiomas/routes.py:282` | — |
+| S3 · journal con revisión y tendencia | hecho | `modules/idiomas/routes.py:228` (`/api/journal/revisar`) | — |
+| S4 · palabra del día, tests por destreza, Acta | hecho | `modules/idiomas/routes.py:615` (`ultimo_por_destreza`) | — |
+
+## Nutrición v2
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · XP por el motor, racha calculada | hecho | `modules/nutricion/routes.py:630` (`_log`); `tests/test_nutricion_engine.py` | — |
+| S2 · Hoy por hora + «¿Cómo cayó?» | hecho | `templates/nutricion/index.html`, `static/js/nutricion.js` | — |
+| S3 · el día, Bristol y disparadores | hecho | `templates/nutricion/index.html:69`, `modules/nutricion/routes.py:721` (`disparadores_30d`) | — |
+| S4 · un solo recetario | hecho | `modules/nutricion/routes.py:481` (`migrar_banco`); `recetas.fodmap` y `recetas.momento` en `modules/recetas/routes.py:14`, `:19` | verificar a mano: que `migrar_banco` ya corrió en producción (no se corren migraciones en esta auditoría) |
+
+## Navegación
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · `ui.page_head`, `VIEWS` y `nav_view` | hecho | `modules/nav.py:232` (`VIEWS`), `:299` (`view_of`); `templates/_ui/macros.html:231` (`page_head`) | — |
+| S2 · la regla en todas las pantallas | hecho | `tests/test_nav.py` (un h1 por ruta de NAV = `nav_title`) | — |
+
+## Captura rápida
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · registro `QUICK` + `/api/quick/options` | hecho | `modules/nav.py:122` (`QUICK`), `:205` (`quick_for`); `modules/quick.py`; `tests/test_quick.py` | — |
+| S2 · «+» en la barra, hoja y contadores | hecho | `templates/eu/layout_sub.html:122` (`#eu-quick`), `static/js/eu-quick.js` | — |
+| S3 · ⌘K que registra | hecho | `static/js/eu-quick.js:29` (`parse`); `tests/quick_parse_cases.json` | — |
+
+## Avisos
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · contrato `avisos(db, hoy)` + `recolectar()` | hecho | `modules/avisos.py:51` (`FUENTES`), `:189` (`recolectar`); `tests/test_avisos.py` | — |
+| S2 · campana + panel | hecho | `templates/eu/layout_sub.html:106` (`#eu-avisos-btn`), `static/js/eu-avisos.js` | — |
+| S3 · preferencias + Inicio | hecho | `modules/quick.py:47` (`preferencias`), `templates/perfil/_ajustes.html` (`avisos_off:<fuente>`) | — |
+
+## Revisión semanal
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · ruta, pasos 1–2, guardado parcial | hecho | `modules/ataraxia/routes.py:740` (`revision`), `:919` (`save_revision`); `tests/test_revision.py` | — |
+| S2 · pasos 3–4, cierre y entradas | hecho | `modules/ataraxia/routes.py:614` (`_cabos`); `templates/ataraxia/revision.html`, `static/js/revision.js` | — |
+
+## Estados vacíos
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| S1 · `ui.empty(kind=…)`, migración y `?demo=1` | hecho | `templates/_ui/macros.html:120` (`empty`), `modules/demo.py:33` (`_seed`); `tests/test_vacios.py` | — |
+| S2 · Primeros pasos | hecho | `modules/onboarding.py`, `templates/_ui/onboarding.html` | — |
+
+## Plantas y Ajustes
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| Plantas S1 · «Hoy» y cuadrícula compacta | hecho | `modules/plantas/routes.py:162` (`cuidados_hoy`); `tests/test_plantas_ajustes.py` | — |
+| Plantas S2 · panel con pestañas | hecho | `templates/plantas/index.html` (`#pl-panel`, `<details id="pl-avanzado">`), `static/js/plantas.js` | verificar a mano: hoja a pantalla completa en móvil |
+| Ajustes S1 · un solo lugar para lo configurable | hecho | `modules/perfil/routes.py:595` (`/api/ajustes`), `:650` (`/api/exportar`); `templates/perfil/_ajustes.html` | — |
+
+## A11y + catálogo (y Capturas)
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| Capturas · `scripts/capturas.py` | hecho | `scripts/capturas.py` (`--comparar a b`) | sin mergear a `main` |
+| S1 · `a11y_lint` en `pre_deploy_check` | hecho | `scripts/pre_deploy_check.py:115` (`_check_a11y`), `scripts/a11y_lint.py`; `tests/test_a11y_lint.py` | sin mergear a `main` |
+| S2 · línea base en 0 y `euDialog` | hecho | `scripts/a11y_baseline.json` (vacío), `static/js/eu-dialog.js:3` | sin mergear a `main`; verificar a mano: lector de pantalla real (VoiceOver), axe no lo cubre |
+| S3 · `/_ui` y `docs/COMPONENTES.md` | hecho | `app.py:136` (`/_ui`), `scripts/pre_deploy_check.py:132`, `scripts/gen_componentes_md.py`; `tests/test_catalogo_ui.py` | sin mergear a `main` |
+
+## Remates (Login, Recetas, Wishlist de Oikonomia)
+
+| Sprint | Estado | Evidencia (archivo:línea) | Falta |
+|---|---|---|---|
+| Login S1 · pulido | hecho | una sola cita: `templates/auth/login.html:24` (`au-hero-q`, solo escritorio) y `:41` (`au-mob-q`, solo móvil), sin `au-q`; mínimo 8: `modules/auth/routes.py:8` (`MIN_PASS`), contador «N de 8» `login.html:60` (`#au-pw-n`, `eu-help`), `static/js/login.js:33` (`contar`); coincidencia en el segundo campo: `login.js:41` (`coincide`), `login.html:65` (`#au-err2`); mostrar/ocultar: `ui.iconbtn('eye', …, pressed=False)` en `login.html:54`, `:59`, `:64`; bloqueo: `app.py:203` (429 con `retry_after` y `Retry-After`), `login.js:70` (`bloquear`, botón deshabilitado y «Espera N s»); busy: `aria-busy` + spinner de `components.css:55`; `tests/test_login.py` | verificar a mano: que en el iPhone se vea una sola cita y la cuenta regresiva (en Playwright con iPhone 13 se ve una cita, y «Espera 60 s» → «59 s» con el botón deshabilitado). En móvil la página no tiene `h1` visible porque el del hero se oculta. Ya pasaba antes y no se cambió, porque `a11y_lint` no admite dos `h1`. |
+| Recetas S1 · encontrar y usar | hecho | sin stats (el antetítulo da el conteo y `recetas.js` lo mantiene vivo); «Para hoy»: `modules/recetas/routes.py:43` (`para_hoy`: plan de hoy de `nutricion_semana` sin sembrar; momentos sin receta y sin comer; aptas FODMAP del momento; favoritas y luego menos usadas en 14 días, `:99`), `/recetas/api/para-hoy` `:136`, `templates/recetas/index.html:19`; «Usar» = `POST /nutricion/api/comida` con `receta_id`, que ahora se guarda (`modules/nutricion/routes.py:997`, columna `nutricion_semana.receta_id` en `database.py:7274`), `static/js/recetas.js:181` (`usar`); categorías en `eu-seg` con desplazamiento horizontal `index.html:47`, chip FODMAP aparte `:52`; búsqueda por ingrediente `recetas.js` (`match`); detalle: franja de 4 celdas en mono `recetas.js:110`, porciones `:131` (`setPorc`, `parseQty` `:33`), pasos con casilla `:98`, «Cocinar» `:160` (← → `:173`, Esc por `euDialog`, `wakeLock` `:156`), `index.html:108`; modal con «Avanzado» plegado `index.html:85`; `tests/test_recetas.py` (9) | El chip «Apta FODMAP» **no** se activa por fase de eliminación: Nutrición no tiene esa fase (no hay columna, ajuste ni ruta), así que no se inventó. Sigue funcionando `?fodmap=seguro`. Las comidas agregadas desde el recetario antes de este sprint no tienen `receta_id`, así que se reconocen por nombre. verificar a mano: `wakeLock` en el iPhone (Safari 16.4+; si se niega, la pantalla puede apagarse) y el bloque «Para hoy» con el plan real. |
+| Wishlist de Oikonomia S1 · por mes y contra el presupuesto | pendiente | **Re-auditado el 2026-11-13 (verificación final):** ningún archivo del sprint cambió desde `main` y la evidencia sigue en las mismas líneas. solo lo que ya había: redirección sin `fin_ok`, `modules/finanzas/prioridades.py:13`; dedup al crear, `:74` (`wishlist_dedup.existente`); `/api/ec-status`, `:163` | Todo el sprint. 1) El antetítulo dice «Lista de prioridades · N pendientes», sin el «$X» (`templates/finanzas/prioridades.html:13`). 2) Siguen las 4 `eu-stat` (`:19`–`21`). Falta el «libre para deseos» de Oikonomia S1: hoy solo existe `deseos.total_gastado` del presupuesto 50·30·20 (`modules/finanzas/coach.py:110`), así que la celda «Este mes» necesita definir ese cálculo. 3) Falta agrupar por `mes_objetivo`; hoy hay chips de estado y prioridad (`static/js/prioridades.js:40`). 4) Faltan las acciones en la fila: «Comprado» con precio en línea, «Mover de mes» y «⋯». 5) Falta «o N EC». 6) Falta el enlace «también en Guardarropa». El criterio «sin `fin_ok` redirige» ya se cumple. |
 
 ## Notas de la Fase 1 que ya quedaron resueltas
 - **XP negativo del desliz (antes de 1.2):** el motor no acepta montos negativos, porque `process_activity` aplica `max(1, …)`. El desliz se descuenta con `engine._award_xp(-pen, 'activity', …, log_id)`, y `remove_activity` lo revierte. Está documentado en `modules/nutricion/routes.py`, sección «XP por el motor».
@@ -124,5 +256,49 @@ Algunos paquetes se implementaron en un solo commit con todos sus sprints. En es
 - **Ajustes:** la sección «Avisos» de Perfil desaparece. `/perfil/?sec=avisos` redirige a `?sec=ajustes#avisos`. `/api/avisos/preferencias` sigue existiendo por compatibilidad.
 - **Exportar:** pide `fin_ok`, porque incluye finanzas. Deja fuera la bóveda de contraseñas, `app_settings` (tokens y hashes) y las fotos.
 
+## Notas de A11y + catálogo
+- **Línea base inicial: 29 problemas.** Eran 13 de `--fg-4` en texto, 10 de `outline:none` sin reemplazo, 4 campos sin etiqueta y 2 `onclick` en fondos. Uno de los campos era un `<select>` dentro de un comentario HTML; ahora el lint ignora los comentarios. Hoy la línea base está en 0, sin excepciones.
+- **Anillo de foco de los campos:** `outline:2px solid transparent` en vez de `none`. El anillo visible sigue siendo el `box-shadow`, y el outline transparente aparece en modo de alto contraste.
+- **`euConfirm`** (`eu-motion.js`) conserva su propio manejo: es un `alertdialog` creado al vuelo, con foco atrapado y Esc. No pasa por `euDialog`.
+- **Catálogo `/_ui`:** responde 404 salvo con `FLASK_ENV=development`, `app.debug` o `session['is_admin']`. El ejemplo de `page_head` baja su `h1` a `role=heading` de nivel 2 para no tener dos `h1` en la página.
+
+
+## Cierre
+- **Fecha:** 2026-11-13. Es la rama `claude/modest-cray-h9zrlf` justo antes de mergear a `main`.
+- **Sprints:** 92 en total: **91 hechos**, **0 parciales** y **1 pendiente**. El pendiente es Remates · Wishlist de Oikonomia S1. Los 70 del ORDEN están hechos.
+- **Tests:** `pytest -n 4 tests` dio **1527 passed**, 0 failed, en 4 min 9 s. Durante esta ronda se ajustaron 2 tests, sin tocar código de la app:
+  - `test_plantas_ajustes`: validaba el manejo de Esc anterior del panel, que A11y S2 pasó a `euDialog` a propósito.
+  - `test_login`: fallaba si los intentos cruzaban el cambio de minuto del límite. Además, `conftest` fija días de pago de prueba, para que cambiar `PAY_DAYS` no rompa la suite.
+- **`pre_deploy_check`:** «All pre-deploy checks passed». init_db y niveles OK, A11y sin problemas nuevos y 19 macros documentadas.
+- **Capturas** (`capturas.py antes` desde `origin/main` → `despues-final`):
+  - 28 de 50 cambiaron, y el único cambio real es la ruta nueva `/_ui`. Las 10 rutas siguientes cambiaron entre 0.03 % y 0.08 %, todas por suavizado de texto, no por diseño:
+    - `/finanzas/consumo/`
+    - `/finanzas/estados/`
+    - `/recetas/`
+    - `/`
+    - `/recompensas/`
+    - `/idiomas/`
+    - `/finanzas/`
+    - `/finanzas/inversiones/`
+    - `/bienestar/`
+    - `/bienestar/futbol/`
+  - Recetas S1 se hizo después de esta corrida, y Login no entra en la lista, porque `capturas.py` corre con sesión iniciada.
+  - Tres rutas de la lista de `capturas.py` no existen ni en `main`: `/finanzas/presupuesto/`, `/bienestar/nutricion/` y `/logros/`.
+
+### Verificar a mano
+- [ ] **Inicio v2 · S6 · móvil, limpieza y QA:** orden de bloques en móvil (Héroe → Pendiente → …) y topbar sin XP: es layout, se ve en pantalla
+- [ ] **Oikonomia v2 · S5 · accesos compactos, móvil y limpieza:** disposición móvil de los accesos
+- [ ] **Acta v2 · S4 · panel lateral, móvil y limpieza:** panel lateral en móvil
+- [ ] **Paideia v2 · S3 · biblioteca en portadas:** portadas reales dependen de las URL de imagen guardadas
+- [ ] **Guardarropa v2 · S3 · filtros en una fila + fotos:** fotos: dependen del volumen de uploads en Railway
+- [ ] **Viajes v2 · S3 · outfits en la fila, maleta en 2 columnas:** las 2 columnas de la maleta son layout
+- [ ] **Nutrición v2 · S4 · un solo recetario:** que `migrar_banco` ya corrió en producción (no se corren migraciones en esta auditoría)
+- [ ] **Plantas y Ajustes · Plantas S2 · panel con pestañas:** hoja a pantalla completa en móvil
+- [ ] **A11y + catálogo (y Capturas) · S2 · línea base en 0 y `euDialog`:** lector de pantalla real (VoiceOver), axe no lo cubre
+- [ ] **Remates (Login, Recetas, Wishlist de Oikonomia) · Login S1 · pulido:** que en el iPhone se vea una sola cita y la cuenta regresiva (en Playwright con iPhone 13 se ve una cita, y «Espera 60 s» → «59 s» con el botón deshabilitado). En móvil la página no tiene `h1` visible porque el del hero se oculta. Ya pasaba antes y no se cambió, porque `a11y_lint` no admite dos `h1`.
+- [ ] **Remates (Login, Recetas, Wishlist de Oikonomia) · Recetas S1 · encontrar y usar:** `wakeLock` en el iPhone (Safari 16.4+; si se niega, la pantalla puede apagarse) y el bloque «Para hoy» con el plan real.
+
 ## Siguiente paso
-No queda ningún sprint pendiente en el ORDEN. Cualquier handoff nuevo empieza con su propio `SPRINTS.md`.
+- **ORDEN (Fases 1–3):** no queda ningún sprint pendiente.
+- **Siguiente: Wishlist de Oikonomia S1**, el último sprint pendiente. Toca `modules/finanzas/*`, así que conviene correrla sola. Antes hay que decidir cómo se calcula «libre para deseos». Si no existe, la celda «Este mes» no aparece, como dice el sprint.
+- Capturas, A11y + catálogo, Login S1 y Recetas S1 entran a `main` con este PR.

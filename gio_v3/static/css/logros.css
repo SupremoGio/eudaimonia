@@ -45,7 +45,7 @@
 .lg-path-bar{display:block;height:8px;border-radius:2px;background:var(--xp-track);overflow:hidden}
 .lg-path-bar i{display:block;height:100%;width:var(--p);background:var(--xp-fill)}
 .lg-path-seg.is-now .lg-path-bar{outline:1.5px solid var(--fg-brand-strong);outline-offset:2px}
-.lg-path-n{font-size:var(--fs-11);color:var(--fg-4)}
+.lg-path-n{font-size:var(--fs-11);color:var(--fg-3)}
 .lg-path-seg.is-past .lg-path-n{color:var(--fg-2)}
 .lg-path-seg.is-now .lg-path-n{color:var(--fg-brand-strong)}
 .lg-miles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--sp-3);border-top:1px solid var(--border-subtle)}
@@ -95,7 +95,7 @@
 .lg-item--ach .lg-seal{width:32px;height:32px;border:0}
 .lg-item--ach .lg-seal svg{width:15px;height:15px}
 .lg-item.is-locked{background:transparent}
-.lg-item.is-locked .lg-seal{background:var(--bg-sunken);border-color:var(--border-default);color:var(--fg-4)}
+.lg-item.is-locked .lg-seal{background:var(--bg-sunken);border-color:var(--border-default);color:var(--fg-3)}
 .lg-item-hd{display:flex;align-items:baseline;gap:var(--sp-2);min-width:0}
 .lg-item-hd .lg-rar{font-size:10px;flex-shrink:0}
 .lg-item-name{font:var(--fw-semibold) var(--fs-15)/1.2 var(--font-display);color:var(--fg-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
