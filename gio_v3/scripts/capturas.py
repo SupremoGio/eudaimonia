@@ -46,7 +46,7 @@ RUTAS = """
 /  /actividades/  /gtd/  /ataraxia/  /ataraxia/revision
 /finanzas/  /finanzas/presupuesto/  /finanzas/estados/  /finanzas/inversiones/  /finanzas/consumo/
 /bienestar/  /bienestar/salud/  /bienestar/nutricion/  /bienestar/futbol/  /recetas/
-/paideia/  /idiomas/  /eurythmia/  /guardarropa/  /guardarropa/wishlist/
+/paideia/  /idiomas/  /eurythmia/  /eurythmia/musica/  /guardarropa/  /guardarropa/wishlist/
 /viajes/  /harma/  /plantas/  /logros/  /recompensas/  /perfil/  /perfil/?sec=ajustes
 /_ui
 """.split()

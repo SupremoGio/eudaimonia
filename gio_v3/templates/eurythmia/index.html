@@ -15,7 +15,11 @@
 {% block content %}
 <div class="ey" id="ey" data-cat="eurythmia" data-vista="{{ vista }}"{% if from_acta %} data-from="acta"{% endif %}>
   <div class="ey-main">
-    {{ ui.page_head(eyebrow='Salsa cubana · nivel ' ~ lv.level.n, cls='ey-hd') }}
+    {# Música es subpágina de Eurythmia (/eurythmia/musica/): acceso junto al título, porque en móvil la tarjeta lateral queda al final #}
+    {% set _eb = (musica.escuchados_n ~ ' de ' ~ musica.total ~ ' álbumes escuchados') if vista == 'musica' else ('Salsa cubana · nivel ' ~ lv.level.n) %}
+    {% call ui.page_head(eyebrow=_eb, cls='ey-hd') %}
+      {% if vista != 'musica' %}<a class="eu-btn eu-btn--secondary ey-mus-btn" href="/eurythmia/musica/"><i data-lucide="disc-3"></i>Música <span class="num t-meta">{{ musica.escuchados_n }}/{{ musica.total }}</span></a>{% endif %}
+    {% endcall %}
     {% set setup = not state.sessions and not vista and not eu_demo %}
     {% if setup %}
     {{ ui.empty('music-2', 'Tu primera sesión de baile', 'Cada sesión sigue el bucle disociación → paso → improvisación. Con lo que registres te sugiero qué figura repasar, llevo tu racha y tu nivel.',
@@ -127,7 +131,7 @@
       <div class="eu-between"><h2 class="ey-sub" id="ey-mus-t"><i data-lucide="disc-3"></i>Música</h2><span class="num t-meta" id="ey-mus-n">{{ musica.escuchados_n }}/{{ musica.total }}</span></div>
       <span class="ey-bar"><i style="--p:{{ (musica.escuchados_n / musica.total * 100)|round(1) if musica.total else 0 }}%"></i></span>
       {% if album_siguiente %}<div class="ey-mus-next">Siguiente: <b>{{ album_siguiente.album }}</b> <span class="fg-3">· {{ album_siguiente.artista }} · #{{ album_siguiente.rank }}</span></div>{% endif %}
-      <a class="ey-link" href="/eurythmia/?vista=musica">Abrir los {{ musica.total }} álbumes →</a>
+      <a class="ey-link" href="/eurythmia/musica/">Abrir los {{ musica.total }} álbumes →</a>
     </section>
     <details class="ey-box ey-box--sunken ey-sci">
       <summary class="ey-sub">Por qué funciona · {{ science|length }}</summary>

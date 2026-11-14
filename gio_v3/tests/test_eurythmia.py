@@ -153,13 +153,13 @@ def test_pagina_principal(client):
         assert fuera not in html, fuera
     for dentro in ('id="ey-strip"', 'Sesión de hoy', 'ey-durs', 'Disociación → un paso con foco → improvisa con lo que sabes.',
                    'Otro paso…', 'Empezar ·', 'id="f-close"', '¿Cómo se sintió?', 'Grabé esta práctica · +3 XP',
-                   'Repertorio', 'Últimas sesiones', '?vista=bitacora', '?vista=musica', 'Por qué funciona · 4', 'id="m-run"'):
+                   'Repertorio', 'Últimas sesiones', '?vista=bitacora', 'href="/eurythmia/musica/"', 'Por qué funciona · 4', 'id="m-run"'):
         assert dentro in html, dentro
     assert '<details class="ey-box ey-box--sunken ey-sci">' in html                 # plegado
 
 
 def test_vistas_completas(client):
-    mus = client.get('/eurythmia/?vista=musica').get_data(as_text=True)
+    mus = client.get('/eurythmia/musica/').get_data(as_text=True)
     assert 'id="mu-list"' in mus and 'Sesión de hoy' not in mus and '← Sesión' in mus
     assert 'id="ey-log-list"' in client.get('/eurythmia/?vista=bitacora').get_data(as_text=True)
     assert 'ey-ladder' in client.get('/eurythmia/?vista=progreso').get_data(as_text=True)

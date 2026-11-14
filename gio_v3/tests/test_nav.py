@@ -113,13 +113,23 @@ def test_un_h1_igual_al_menu(client, url, label):
         assert eb.count('·') <= 1, (url, eb)          # máximo dos piezas
 
 
-@pytest.mark.parametrize('url,vista', [('/harma/?vista=bitacora', 'Bitácora'), ('/eurythmia/?vista=musica', 'Música'),
+@pytest.mark.parametrize('url,vista', [('/harma/?vista=bitacora', 'Bitácora'), ('/eurythmia/?vista=progreso', 'Progreso'),
                                        ('/idiomas/?vista=plan', 'Plan'), ('/nutricion/?vista=semana', 'Semana'),
                                        ('/logros?tab=historial', 'Historial')])
 def test_vistas_titulan_con_su_nombre(client, url, vista):
     html = client.get(url).get_data(as_text=True)
     assert _h1s(html) == [vista] and f'<title>{vista} — Eudaimonia</title>' in html
     assert f'<span aria-current="page">{vista}</span>' in html
+
+
+def test_musica_es_subpagina_de_eurythmia(client):
+    eury = next(it for g in nav.NAV for it in g['items'] if it['id'] == 'eurythmia')
+    assert [c['url'] for c in eury.get('children', [])] == ['/eurythmia/musica/']
+    html = client.get('/eurythmia/musica/').get_data(as_text=True)
+    assert _h1s(html) == ['Música'] and '<title>Música — Eudaimonia</title>' in html
+    assert '<span aria-current="page">Música</span>' in html and 'href="/eurythmia/musica/"' in html   # breadcrumb + menú
+    r = client.get('/eurythmia/?vista=musica&from=acta')
+    assert r.status_code == 302 and r.headers['Location'].endswith('/eurythmia/musica/?from=acta')
 
 
 def test_sin_lemas_ni_eyebrows_de_modulo():

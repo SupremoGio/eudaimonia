@@ -57,7 +57,9 @@ NAV = [
         {'id': 'cosmopolitismo', 'label': 'Cosmopolitismo', 'fn': 'Idiomas', 'cat': 'cosmopolitismo',
          'icon': 'languages', 'url': '/idiomas/'},
         {'id': 'eurythmia', 'label': 'Eurythmia', 'fn': 'Baile', 'cat': 'eurythmia',
-         'icon': 'music-2', 'url': '/eurythmia/'},
+         'icon': 'music-2', 'url': '/eurythmia/', 'children': [
+            {'id': 'musica', 'label': 'Música', 'url': '/eurythmia/musica/', 'icon': 'disc-3'},
+        ]},
     ]},
     {'group': 'Vida', 'items': [
         {'id': 'guardarropa', 'label': 'Guardarropa', 'fn': 'Ropa', 'cat': 'identidad',
@@ -231,7 +233,7 @@ _BOTTOM_DIRECT = {'inicio', 'acta', 'praxis'}
 # Una vista que no está aquí se ignora.
 VIEWS = {
     'harma':          {'bitacora': 'Bitácora', 'papeles': 'Papeles'},
-    'eurythmia':      {'bitacora': 'Bitácora', 'musica': 'Música', 'progreso': 'Progreso'},
+    'eurythmia':      {'bitacora': 'Bitácora', 'progreso': 'Progreso'},   # Música es subpágina (NAV)
     'cosmopolitismo': {'plan': 'Plan', 'tests': 'Tests', 'journal': 'Journal'},
     'nutricion':      {'semana': 'Semana', 'sintomas': 'Síntomas'},
     'logros':         {'_param': 'tab', 'historial': 'Historial'},
