@@ -207,7 +207,7 @@ def comparar(a, b):
     cambiadas = [f for f in filas if f['cambio'] > UMBRAL]
     iguales = [f for f in filas if f['cambio'] <= UMBRAL]
     doc = f"""<!doctype html><html lang="es"><meta charset="utf-8"><title>Comparar {html.escape(a)} · {html.escape(b)}</title>
-<style>body{{margin:0;padding:24px;background:#09070F;color:#F2EDE0;font:14px system-ui}}h1{{font-weight:600}}
+<style>body{{margin:0;padding:24px;background:#0C0B09;color:#F2EDE0;font:14px system-ui}}h1{{font-weight:600}}
 section{{margin:0 0 32px}}h2{{font-size:16px;margin:0 0 8px}}small{{color:#C2B69E;font-weight:400}}
 .row{{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}}figure{{margin:0}}img{{width:100%;border:1px solid #333}}
 figcaption{{color:#C2B69E;font-size:12px}}.na{{color:#C2B69E}}details{{margin-top:24px}}</style>

@@ -257,9 +257,9 @@ En total hay **~330 rutas** en 28 blueprints.
 ### Colores (tema oscuro — default)
 | Token | Valor | Uso |
 |---|---|---|
-| `--bg` | `#09070F` | fondo (negro violáceo) |
-| `--surf` | `#0F0C1A` | superficies, nav |
-| `--card` / `--card2` | `#1A1627` / `#221D32` | tarjetas / inputs |
+| `--bg` | `#0C0B09` | fondo (carbón cálido; hasta 2026-11 era `#09070F`, negro violáceo) |
+| `--surf` | `#12100D` | superficies, nav |
+| `--card` / `--card2` | `#1B1915` / `#24211C` | tarjetas / inputs |
 | `--b` / `--b2` | `rgba(201,168,76,.15/.30)` | bordes (dorado translúcido) |
 | `--gold` / `--gold-l` | `#C9A84C` / `#E8C96D` | **color de marca**, acentos, activo, foco |
 | `--text` / `--mid` / `--dim` / `--muted` | `#F2EDE0` / `#A89880` / `#8A7A60` / `#6A6050` | texto (crema cálido) |
@@ -441,7 +441,7 @@ journal, tests) · Eurythmia (baile) · Harma (vehículo: servicios, pólizas, d
 (riego/trasplante) · Perfil (datos, medidas, documentos, vault) · Logros · Recompensas.
 
 IDENTIDAD A CONSERVAR:
-"Templo estoico nocturno": fondo casi negro violáceo (#09070F), acento dorado (#C9A84C), texto
+"Templo estoico nocturno": fondo casi negro en carbón cálido (#0C0B09), acento dorado (#C9A84C), texto
 crema (#F2EDE0), serif clásica para títulos, nombres griegos de los módulos, micro-celebraciones
 al ganar XP. Moderniza sin perder ese carácter: más aire, mejor jerarquía, menos ruido.
 
