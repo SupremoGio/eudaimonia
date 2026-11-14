@@ -11,7 +11,8 @@
    ═══════════════════════════════════════════════════════════════ */
 :root,html.dark{
 /* ── 1 · PRIMITIVAS ─────────────────────────────────────────── */
---ink-950:#09070F;--ink-900:#0F0C1A;--ink-850:#15111F;--ink-800:#1A1627;--ink-750:#221D32;--ink-700:#2B2540;--ink-600:#3A3352;--ink-500:#524A6B;
+/* Modo noche «Carbón cálido» (1b): antes #09070F #0F0C1A #15111F #1A1627 #221D32 #2B2540 #3A3352 #524A6B (violeta) */
+--ink-950:#0C0B09;--ink-900:#12100D;--ink-850:#171512;--ink-800:#1B1915;--ink-750:#24211C;--ink-700:#2D2A24;--ink-600:#3D382F;--ink-500:#574F43;
 --parch-50:#F2EDE0;--parch-200:#C2B69E;--parch-400:#978870;--parch-600:#6A6050;
 --gold-50:#F7EDCF;--gold-100:#F0DFA6;--gold-200:#E8C96D;--gold-300:#D9B85B;--gold-400:#C9A84C;--gold-500:#A88A3A;--gold-600:#8B6914;--gold-650:#7A5C10;--gold-700:#6B5010;--gold-800:#4A370B;--gold-900:#2A1F08;
 
@@ -22,8 +23,8 @@
 --bg-raised:var(--ink-750);      /* inputs, tarjeta anidada, popovers */
 --bg-hover:var(--ink-700);
 --bg-press:var(--ink-600);
---bg-overlay:rgba(9,7,15,.72);
---bg-glass:rgba(9,7,15,.82);
+--bg-overlay:rgba(12,11,9,.72);
+--bg-glass:rgba(12,11,9,.84);
 
 /* Bordes — neutros por defecto; el oro es énfasis, no estructura */
 --border-subtle:rgba(242,237,224,.06);
@@ -32,14 +33,14 @@
 --border-brand:rgba(201,168,76,.34);
 --border-focus:var(--gold-400);
 
-/* Texto (ratios sobre --bg-surface #1A1627) */
---fg-1:var(--parch-50);   /* 15.6:1  títulos, cuerpo */
---fg-2:var(--parch-200);  /* 9.4:1   secundario */
---fg-3:var(--parch-400);  /* 5.1:1   terciario, meta (AA) */
---fg-4:var(--parch-600);  /* 2.9:1   SOLO deshabilitado/decorativo */
+/* Texto (ratios sobre --bg-surface #1B1915) */
+--fg-1:var(--parch-50);   /* 15.0:1  títulos, cuerpo */
+--fg-2:var(--parch-200);  /* 8.8:1   secundario */
+--fg-3:var(--parch-400);  /* 5.1:1   terciario, meta (AA; 5.7:1 sobre canvas) */
+--fg-4:var(--parch-600);  /* 2.8:1   SOLO deshabilitado/decorativo */
 --fg-brand:var(--gold-400);        /* 7.7:1 */
---fg-brand-strong:var(--gold-200); /* 10.6:1 cifras héroe */
---fg-on-brand:#09070F;             /* 8.7:1 sobre oro */
+--fg-brand-strong:var(--gold-200); /* 10.9:1 cifras héroe */
+--fg-on-brand:#0C0B09;             /* 8.6:1 sobre oro */
 
 /* Marca */
 --brand:var(--gold-400);--brand-hover:var(--gold-300);--brand-press:var(--gold-500);
@@ -145,7 +146,7 @@ color-scheme:light;
    (tonos semánticos -l/-d, radar de deadlines, superficies de nav).
    Se irán retirando conforme cada pantalla migre a componentes eu-*. */
 :root, html.dark {
-  --surf-nav:var(--bg-sunken); --surf-top:rgba(9,7,15,0.97);
+  --surf-nav:var(--bg-sunken); --surf-top:rgba(12,11,9,0.97);
   --gold-glow:rgba(201,168,76,0.45); --gold-g:rgba(201,168,76,0.28);
 
   --violet:#a78bfa;  --violet-l:#c4b5fd;  --violet-d:rgba(167,139,250,.10);

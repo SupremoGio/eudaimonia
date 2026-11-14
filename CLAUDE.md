@@ -193,7 +193,7 @@ Lista completa de rutas en `README.md` y `docs/PROJECT_CONTEXT.md`.
   acción que dé XP (float «+N XP», barra, contador, logros), `euAchievement()`.
   `static/js/eu-celebrate.js` es **solo** el level-up (`euCheckLevel`). Sin
   confeti. `static/js/eu-a11y.js`: flechas en `role=tablist` y salto al contenido.
-- **PWA:** `static/manifest.json` + `static/icons/` (theme-color `#09070F`);
+- **PWA:** `static/manifest.json` + `static/icons/` (theme-color `#0C0B09`, modo noche «carbón cálido»);
   safe areas con `env(safe-area-inset-*)` en el bloque SAFE AREAS de components.css.
 - Referencia de diseño: `docs/design/design-system-v2/` (README + `PROMPTS.md`).
 - **Antes de crear un componente, revisa `/_ui` y `docs/COMPONENTES.md`.** `/_ui` es el
