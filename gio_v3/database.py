@@ -7373,6 +7373,25 @@ def init_db():
             if col not in ea_cols:
                 db.execute(f"ALTER TABLE eury_albums ADD COLUMN {col} INTEGER DEFAULT NULL")
 
+        # Migración: «Tu rating» solo con los 4 criterios calificados. Antes
+        # mi_rating promediaba lo que hubiera (un solo 10 → 10/10 y primer
+        # lugar de «Mi ranking»). Se recalcula una vez; los criterios que ya
+        # calificaste no se tocan, solo el promedio de los incompletos queda
+        # vacío hasta que los completes.
+        if not db.execute("SELECT id FROM migration_log WHERE version='eury_albums_rating_completo'").fetchone():
+            try:
+                import math as _m
+                for r in db.execute("SELECT id, rating_sonido, rating_letras, rating_consistencia, rating_replay "
+                                    "FROM eury_albums").fetchall():
+                    vals = [r["rating_sonido"], r["rating_letras"], r["rating_consistencia"], r["rating_replay"]]
+                    mr = None if any(v is None for v in vals) else _m.floor(sum(vals) / 4 * 10 + 0.5) / 10
+                    db.execute("UPDATE eury_albums SET mi_rating=? WHERE id=?", (mr, r["id"]))
+                db.execute("INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                           ("eury_albums_rating_completo", "mi_rating solo con los 4 criterios calificados"))
+                db.commit()
+            except Exception as e:
+                print(f"[DB] eury_albums_rating_completo migration warning: {e}")
+
         # Seed: Apple Music 100 Best Albums — solo rank/artista/álbum/año/
         # género (dato de referencia). Escuchado/rating/notas son míos, se
         # llenan usando la app, no vienen precargados.

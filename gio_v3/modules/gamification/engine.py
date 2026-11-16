@@ -216,14 +216,19 @@ BALANCE_MIN_PILLARS = 2
 # que no están en activity_defs (rutinas de Ataraxia, importar estados…).
 _CAT_TO_PILLAR = {
     'Programación': 'logoi', 'Idiomas': 'cosmo', 'Salud Mental': 'hege', 'Salud Física': 'hege',
-    'Salud Base': 'hege', 'Baile': 'eury', 'Paideia': 'paideia', 'Finanzas': 'oiko', 'Orden': 'atar',
+    'Salud Base': 'hege', 'Baile': 'eury', 'Música': 'eury', 'Paideia': 'paideia', 'Finanzas': 'oiko', 'Orden': 'atar',
 }
+# Registros propios de Eurythmia que no viven en activity_defs: la sesión, el
+# bono de grabación, las rachas (eurythmia_*) y los álbumes de Música
+# (eury_album_<id>). Sin esto el XP de los álbumes no contaba para Eurythmia
+# en el equilibrio de la semana.
+_EURY_PREFIJOS = ('eurythmia_', 'eury_album_')
 
 
 def pillar_of(key=None, category=None):
     """Pilar de una actividad: el de activity_defs; si no está ahí, por su
     categoría vieja. None si no pertenece a ninguna virtud."""
-    if key == 'eurythmia_session':
+    if key and key.startswith(_EURY_PREFIJOS):
         return 'eury'
     if key:
         d = adefs.get_by_key(key)
