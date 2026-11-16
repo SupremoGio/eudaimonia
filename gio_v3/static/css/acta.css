@@ -219,3 +219,14 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-item.is-ancla .eu-act-xp{font-size:var(--fs-13);font-weight:var(--fw-semibold)}
 .acta-tag--ancla{background:var(--cat-fg);color:var(--bg-canvas);border-color:transparent;gap:3px;letter-spacing:.02em}
 .acta-tag--ancla svg{width:11px;height:11px}
+
+/* Ocasionales y hitos (one_time): sección plegada debajo de las vistas */
+.acta-ocas{padding:0}
+.acta-ocas-sum{display:flex;align-items:center;gap:var(--sp-2);min-height:48px;padding:var(--sp-3) var(--sp-4);list-style:none;cursor:pointer}
+.acta-ocas-sum::-webkit-details-marker{display:none}
+.acta-ocas-sum > svg:first-child{width:16px;height:16px;color:var(--fg-brand)}
+.acta-ocas-sum .t-meta{margin-left:auto}
+.acta-ocas-chev{width:16px;height:16px;transition:transform var(--dur-fast)}
+.acta-ocas[open] .acta-ocas-chev{transform:rotate(180deg)}
+.acta-ocas-grp{display:flex;flex-direction:column;gap:var(--sp-2);padding:0 var(--sp-4) var(--sp-4)}
+.acta-ocas-t{margin:var(--sp-2) 0 0}

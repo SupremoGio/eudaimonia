@@ -1,0 +1,23 @@
+{# Ocasionales y hitos: los hábitos sin horario (bonus como «Gol» o «Grabar
+   pieza») y los hitos de una sola vez (one_time: al marcarlos dan su XP y
+   desaparecen). Antes no se pintaban en Acta y solo se podían marcar desde
+   la captura rápida, que los cortaba al final de su lista de 12. Plegado
+   para no competir con las anclas y los touches del día. #}
+{% if acta_ocasionales %}
+{% set _ocd = acta_ocasionales|selectattr('done_ui')|list|length %}
+<details class="eu-card acta-ocas" id="acta-ocas">
+  <summary class="acta-ocas-sum">
+    <i data-lucide="sparkles"></i><span class="t-card">Ocasionales y hitos</span>
+    <span class="t-meta num">{{ acta_ocasionales|length }}{% if _ocd %} · {{ _ocd }} hoy{% endif %}</span>
+    <i data-lucide="chevron-down" class="acta-ocas-chev"></i>
+  </summary>
+  {% for titulo, lista in [('Bonus', acta_ocasionales|rejectattr('one_time')|list), ('Hitos (una sola vez)', acta_ocasionales|selectattr('one_time')|list)] if lista %}
+  <div class="acta-ocas-grp">
+    <h3 class="t-eyebrow acta-ocas-t">{{ titulo }}</h3>
+    <div class="acta-list">
+      {% for item in lista %}{% include "actividades/_item.html" %}{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</details>
+{% endif %}

@@ -75,13 +75,15 @@ def test_recordatorio_de_reactivacion_solo_con_datos_del_usuario(test_db, monkey
 def test_calendario_de_anclas(test_db):
     act = [d for d in adefs.get_active_flat().values() if d['type'] == 'ancla' and d['key'] != 'gym']
     cal = {dia: sorted(d['key'] for d in act if not d['days_of_week'] or dia in d['days_of_week'].split(',')) for dia in DIAS}
+    # Plan C1 de idiomas (idiomas_c1_plan_2026_11): inglés y francés se parten
+    # en sesión A/B (mismos días) y el sábado suma el repaso de idiomas.
     assert cal == {
         'mon': ['ancla_ingles', 'piano_pianoforall'],
         'tue': ['ancla_frances', 'ancla_leer_psico'],
         'wed': ['partido_futbol', 'piano_pianoforall'],
-        'thu': ['ancla_baile', 'ancla_ingles'],
-        'fri': ['ancla_frances', 'piano_pianoforall'],
-        'sat': ['ancla_baile'],
+        'thu': ['ancla_baile', 'ancla_ingles_b'],
+        'fri': ['ancla_frances_b', 'piano_pianoforall'],
+        'sat': ['ancla_baile', 'ancla_repaso_idiomas'],
         'sun': ['ancla_leer_psico'],
     }
 
