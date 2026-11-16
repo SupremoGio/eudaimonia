@@ -18,7 +18,7 @@
     <div class="acta-item acta-anchor is-ancla" data-key="{{ item.key }}" data-cat="{{ pu.cat }}" data-pillar="{{ item.pillar }}"
          data-type="ancla" data-pts="{{ item.pts }}">
       <div class="acta-anchor-pl"><i data-lucide="{{ pu.icon }}"></i><span>{{ pu.name }}</span>
-        <span class="acta-anchor-xp num">+{{ item.pts }} XP{% if item.ec %} · +{{ item.ec }} EC{% endif %}</span></div>
+        <span class="acta-anchor-xp num">{% if item.eury_proxy and not item.pts %}XP de la sesión{% else %}+{{ item.pts }} XP{% if item.ec %} · +{{ item.ec }} EC{% endif %}{% endif %}</span></div>
       <div class="acta-anchor-t acta-lbl">{{ item.label }}</div>
       {% if item.eury_proxy %}
       <a class="eu-btn acta-anchor-btn{% if item.done_ui %} is-done{% endif %}" href="/eurythmia/?from=acta"><i data-lucide="{{ 'check' if item.done_ui else 'arrow-up-right' }}"></i>{{ 'Hecha · ver detalle' if item.done_ui else 'Registrar en Eurythmia' }}</a>

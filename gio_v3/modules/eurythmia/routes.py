@@ -345,6 +345,20 @@ def api_split():
     return jsonify({"split": _split_minutes(total)})
 
 
+def _marcar_baile_en_acta(d=None):
+    """Una sesión real completa el baile de Acta del día (eury_proxy: p. ej.
+    el ancla «Baile — sesión profunda» de jue/sáb). Se registra con 0 pts: el
+    XP y los EC ya los dio la sesión. Así el motor, la insignia de anclas y
+    el «Siguiente paso» de Inicio lo ven hecho (todos leen activity_logs)."""
+    import modules.actividades.activity_defs as adefs
+    from modules.actividades.touch import marcar_touch
+    wd = adefs.weekday_code(d)
+    for it in adefs.get_active_flat().values():
+        if (adefs.es_proxy_eurythmia(it) and not it.get('hidden') and it['type'] != 'ocasional'
+                and adefs.eligible_today(it, wd, d)):
+            marcar_touch(it['key'], pts=0)
+
+
 @eurythmia_bp.route('/api/session', methods=['POST'])
 def api_session():
     data = request.get_json(silent=True) or {}
@@ -393,6 +407,7 @@ def api_session():
 
     session_ec = _session_ec(minutes, flow)
     gam = engine.process_activity(_SESSION_KEY, xp, 'Baile', log_id, ec=session_ec)
+    _marcar_baile_en_acta()
 
     grabado_gam = None
     if grabado:

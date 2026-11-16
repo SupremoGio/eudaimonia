@@ -28,6 +28,16 @@ PILLAR_UI = {
 }
 PILLAR_ORDER = ("logoi", "hege", "paideia", "cosmo", "oiko", "atar", "eury", "philia")
 CADENCES = ("daily", "weekly")
+
+# Eurythmia en Acta: el baile se registra con una sesión real en /eurythmia/
+# (eury_proxy: se ve hecho si hubo sesión hoy y la sesión lo marca, ver
+# eurythmia.routes._marcar_baile_en_acta). Estos hábitos del pilar son la
+# excepción: se marcan a mano en Acta (el piano no es baile).
+EURY_MANUAL_KEYS = frozenset({"lenguaje_corporal", "piano_flowkey", "piano_pianoforall", "piano_grabar_libro"})
+
+
+def es_proxy_eurythmia(item):
+    return item.get("pillar") == "eury" and item.get("key") not in EURY_MANUAL_KEYS
 DAY_CODES = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 
 
