@@ -73,8 +73,12 @@ def test_recordatorio_de_reactivacion_solo_con_datos_del_usuario(test_db, monkey
 
 
 def test_calendario_de_anclas(test_db):
+    # Una semana normal (sin fechas puntuales como el autodiagnóstico C1)
+    from datetime import date, timedelta
+    lunes = date(2026, 11, 16)
     act = [d for d in adefs.get_active_flat().values() if d['type'] == 'ancla' and d['key'] != 'gym']
-    cal = {dia: sorted(d['key'] for d in act if not d['days_of_week'] or dia in d['days_of_week'].split(',')) for dia in DIAS}
+    cal = {dia: sorted(d['key'] for d in act if adefs.eligible_today(d, dia, lunes + timedelta(days=i)))
+           for i, dia in enumerate(DIAS)}
     # Plan C1 de idiomas (idiomas_c1_plan_2026_11): inglés y francés se parten
     # en sesión A/B (mismos días) y el sábado suma el repaso de idiomas.
     assert cal == {

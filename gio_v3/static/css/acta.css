@@ -230,3 +230,20 @@ details[open] > summary .acta-chev{transform:rotate(180deg)}
 .acta-ocas[open] .acta-ocas-chev{transform:rotate(180deg)}
 .acta-ocas-grp{display:flex;flex-direction:column;gap:var(--sp-2);padding:0 var(--sp-4) var(--sp-4)}
 .acta-ocas-t{margin:var(--sp-2) 0 0}
+
+/* Vista del día (ajuste v2): «Foco de hoy» y el resto plegado en «Extras» */
+.acta-hoy{display:flex;flex-direction:column;gap:var(--sp-3)}
+.acta-hoy-hd{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-2)}
+.acta-hoy-t{display:flex;align-items:center;gap:var(--sp-2);margin:0;font:var(--fw-semibold) var(--fs-15)/1.2 var(--font-ui)}
+.acta-hoy-t svg{width:16px;height:16px;color:var(--fg-brand)}
+.acta-extras{display:flex;flex-direction:column;gap:var(--sp-3)}
+.acta-extras-sum{display:flex;align-items:center;gap:var(--sp-2);min-height:48px;padding:var(--sp-3) var(--sp-4);list-style:none;cursor:pointer}
+.acta-extras-sum::-webkit-details-marker{display:none}
+.acta-extras-sum > svg:first-child{width:16px;height:16px;color:var(--fg-3)}
+.acta-extras-sum .t-meta{margin-left:auto}
+.acta-extras[open] .acta-ocas-chev{transform:rotate(180deg)}
+.acta-extras-bd{display:flex;flex-direction:column;gap:var(--sp-3);margin-top:var(--sp-3)}
+.acta-checklist{display:block;margin-top:2px}
+.acta-anchor-dur{margin-top:-4px}
+.acta-hoy,.acta-extras{grid-column:1/-1}
+@media (min-width:768px){.acta-extras-bd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-4);align-items:start}}

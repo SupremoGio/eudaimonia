@@ -7409,6 +7409,24 @@ def init_db():
             except Exception as e:
                 print(f"[DB] idiomas_c1_plan_2026_11 migration warning: {e}")
 
+        # ── ACTA — columnas del ajuste v2 (todas opcionales) ─────────────────
+        #   foco           1 = touch visible en «Foco de hoy» (Acta); el resto
+        #                  va plegado en «Extras».
+        #   checklist      sub-pasos de un hábito (se muestran bajo su nombre).
+        #   fechas         CSV de fechas ISO: el hábito SOLO existe esos días.
+        #   excepto_fechas CSV de fechas ISO: el hábito NO aparece esos días.
+        #   duracion_min / minima_min  minutos de la sesión y de su versión
+        #                  mínima (se muestran en la tarjeta del ancla).
+        try:
+            ad_cols6 = [r["name"] for r in db.execute("PRAGMA table_info(activity_defs)").fetchall()]
+            for col, ddl in (("foco", "INTEGER NOT NULL DEFAULT 0"), ("checklist", "TEXT"), ("fechas", "TEXT"),
+                             ("excepto_fechas", "TEXT"), ("duracion_min", "INTEGER"), ("minima_min", "INTEGER")):
+                if col not in ad_cols6:
+                    db.execute(f"ALTER TABLE activity_defs ADD COLUMN {col} {ddl}")
+            db.commit()
+        except Exception as e:
+            print(f"[DB] activity_defs ajuste v2 columns warning: {e}")
+
         # ── COSMOPOLITISMO v2 (Sprint 1): score guardado de cada entrada del
         # journal (nullable: NULL si LanguageTool no respondió), rondas de
         # repaso ya premiadas (no duplicar XP por ronda) y los dos touches de
@@ -7434,6 +7452,78 @@ def init_db():
             db.commit()
         except Exception as e:
             print(f"[DB] cosmopolitismo v2 migration warning: {e}")
+
+        # ── COSMOPOLITISMO + ACTA — ajuste v2 del plan de idiomas (2026-11) ──
+        # (Va después de COSMOPOLITISMO v2: en una base nueva ese bloque crea
+        # idiomas_repaso e idiomas_journal, que este ajuste desactiva.)
+        # El usuario mandó eudaimonia_ajuste_v2.json (resumen en
+        # docs/idiomas_c1_plan.md): menos casillas por día y foco en idiomas.
+        #  · Fusiones: Ritual nocturno (5 pts) absorbe skin care, corrección y
+        #    3 agradecimientos (su reflexión escrita pasa al ritual); «Meditar +
+        #    visualizar» (3 pts); «Nutrición del día» (fruta + colación, 2 pts).
+        #  · Idiomas: fuera Repaso de vocabulario, VividVocab, Writing journal y
+        #    la escucha/lectura mixtas; Anki EN+FR diario (la key anki_idiomas,
+        #    con su historial); escucha y lectura separadas por idioma, alternadas
+        #    para tocar los dos idiomas cada día; sesiones B a 7 pts; minutos de
+        #    cada sesión y de su versión mínima; «Conversación con humano» pasa a
+        #    ocasional; autodiagnóstico C1 en 3 sábados, en lugar del repaso.
+        #  · Los recordatorios de checkpoint del plan anterior (4 fases) se
+        #    desactivan: ahora el checkpoint es el ancla «Autodiagnóstico C1».
+        if not db.execute(
+            "SELECT id FROM migration_log WHERE version='idiomas_ajuste_v2_2026_11'"
+        ).fetchone():
+            try:
+                fechas_cp = "2027-01-23,2027-04-03,2027-06-12"
+                db.execute("""UPDATE activity_defs SET active=0 WHERE key IN
+                              ('idiomas_repaso','VividVocab','idiomas_journal','podcast_idiomas','lectura_idiomas',
+                               'skincare_noche','correccion_diaria','gratitud_diaria','visualizacion',
+                               'comer_fruta','colacion')""")
+                upd = [
+                    ("partido", dict(label="Partido extra (fuera del miércoles)")),
+                    ("conversacion", dict(label="Conversación con humano 10 min+", type="ocasional", pts=5, ec=2)),
+                    ("ritual_nocturno", dict(pts=5, ec=0, checklist="Skin care|Corrección diaria|3 agradecimientos")),
+                    ("meditar", dict(label="Meditar + visualizar", pts=3, ec=0)),
+                    ("anki_idiomas", dict(label="Anki EN+FR · 10 min", days_of_week=None, session="morning",
+                                          pts=2, ec=0, foco=1, duracion_min=10)),
+                    ("ancla_ingles", dict(duracion_min=60, minima_min=20)),
+                    ("ancla_frances", dict(duracion_min=60, minima_min=20)),
+                    ("ancla_ingles_b", dict(pts=7, ec=2, duracion_min=60, minima_min=20)),
+                    ("ancla_frances_b", dict(pts=7, ec=2, duracion_min=60, minima_min=20)),
+                    ("ancla_repaso_idiomas", dict(duracion_min=60, minima_min=25, excepto_fechas=fechas_cp)),
+                ]
+                for key, f in upd:
+                    db.execute(f"UPDATE activity_defs SET {', '.join(c + '=?' for c in f)} WHERE key=?", (*f.values(), key))
+                db.executemany(
+                    """INSERT OR IGNORE INTO activity_defs
+                       (key, label, cat, pts, ec, tier, session, pillar, type, cadence, days_of_week,
+                        active, hidden, custom, sort_order, foco, duracion_min, fechas)
+                       VALUES (?,?,?,?,?,?,?,?,?,'daily',?,1,0,0,?,?,?,?)""",
+                    [
+                        ("nutricion_dia", "Nutrición del día (fruta + colación)", "Salud Base", 2, 0, "micro", "any",
+                         "hege", "touch", None, 12, 0, None, None),
+                        ("escucha_en", "Escucha extensiva EN · 20 min", "Idiomas", 2, 0, "micro", "any",
+                         "cosmo", "touch", "mon,wed,thu", 32, 1, 20, None),
+                        ("escucha_fr", "Escucha extensiva FR · 20 min", "Idiomas", 2, 0, "micro", "any",
+                         "cosmo", "touch", "tue,fri,sun", 33, 1, 20, None),
+                        ("lectura_fr", "Lectura extensiva FR · 20 min", "Idiomas", 3, 1, "micro", "night",
+                         "cosmo", "touch", "mon,wed,thu", 34, 1, 20, None),
+                        ("lectura_en", "Lectura extensiva EN · 20 min", "Idiomas", 3, 1, "micro", "night",
+                         "cosmo", "touch", "tue,fri,sun", 35, 1, 20, None),
+                        ("autodiagnostico_c1", "Autodiagnóstico C1 (EN + FR)", "Idiomas", 30, 10, "alto", "afternoon",
+                         "cosmo", "ancla", "sat", 19, 0, 90, fechas_cp),
+                    ])
+                db.execute("""UPDATE reminders SET is_active=0 WHERE type='unico' AND is_active=1 AND (
+                                description LIKE 'Inglés · checkpoint fase %' OR description LIKE 'Francés · checkpoint fase %')""")
+                db.execute(
+                    "INSERT INTO migration_log (version, description, applied_at) VALUES (?,?,datetime('now'))",
+                    ("idiomas_ajuste_v2_2026_11",
+                     "Ajuste v2: fusiones (ritual, meditar+visualizar, nutrición), idiomas por día (Anki diario, "
+                     "escucha/lectura EN·FR alternadas), sesiones B 7 pts, conversación ocasional, autodiagnóstico "
+                     f"C1 ({fechas_cp}) en lugar del repaso, recordatorios de checkpoint viejos desactivados.")
+                )
+                db.commit()
+            except Exception as e:
+                print(f"[DB] idiomas_ajuste_v2_2026_11 migration warning: {e}")
 
         # ── NUTRICIÓN v2: el XP pasa por el motor desde esta fecha (el histórico
         # con source='nutricion' no se toca) y un solo recetario con etiqueta

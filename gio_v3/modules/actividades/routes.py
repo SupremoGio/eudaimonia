@@ -39,7 +39,12 @@ SESSION_META = {
 # desktop en la plantilla); mit (Most Important Task) es planeación de la
 # mañana y sí es editable también en mobile (ver REFLECT_ALL_KEYS en
 # templates/actividades/index.html).
-REFLECT_KEYS = {"gratitud_diaria", "correccion_diaria", "sintesis_activa", "mit"}
+REFLECT_KEYS = {"gratitud_diaria", "correccion_diaria", "sintesis_activa", "mit", "ritual_nocturno"}
+# Ajuste v2: el Ritual nocturno absorbe corrección y 3 agradecimientos (su
+# reflexión escrita), pero también incluye el skin care: escribirla no lo marca.
+REFLECT_NO_AUTO = {"ritual_nocturno"}
+# Vista del día (ajuste v2): touches con foco visibles, máximo 8.
+FOCO_MAX = 8
 
 
 def get_eurythmia_today():
@@ -205,9 +210,17 @@ def index():
     acta_anchors = [i for sk in adefs.SESSIONS for i in ctx["grouped"].get(sk, [])
                     if i.get("effective_type") == "ancla"]
     acta_anchors = list({i["key"]: i for i in acta_anchors}.values())
+    # Vista del día (ajuste v2): los touches con foco (máx. FOCO_MAX) van en
+    # «Foco de hoy», bajo las anclas; las tarjetas por virtud con el resto
+    # quedan plegadas en «Extras». Sin touches con foco, la vista es la de antes.
+    acta_foco = sorted((i for p in by_pillar.values() for i in p
+                        if i.get("effective_type") == "touch" and i.get("foco")),
+                       key=lambda i: (i.get("sort_order") or 0, i["label"]))[:FOCO_MAX]
+    foco_keys = {i["key"] for i in acta_foco}
     acta_pillars = []
     for pid in adefs.PILLAR_ORDER:
-        items = [i for i in by_pillar.get(pid, []) if i.get("effective_type") != "ancla"]
+        items = [i for i in by_pillar.get(pid, [])
+                 if i.get("effective_type") != "ancla" and i["key"] not in foco_keys]
         if not items:
             continue
         done = [i for i in items if i["done_ui"]]
@@ -226,6 +239,7 @@ def index():
     _td = today_date()
     return render_template('actividades/index.html',
         acta_ocasionales = acta_ocasionales,
+        acta_foco     = acta_foco,
         acta_pillars  = acta_pillars,
         acta_anchors  = acta_anchors,
         anchors_need  = gam["classification"].get("diamond_min_anchors", 0),
@@ -329,7 +343,7 @@ def log_activity():
         if act['effective_type'] != 'ancla':
             return jsonify({'error': 'solo las anclas tienen versión mínima'}), 400
         key = min_key
-        pts = max(1, round(pts * engine.ANCLA_MIN_XP_RATIO))
+        pts = max(1, int(pts * engine.ANCLA_MIN_XP_RATIO + 0.5))   # redondeo hacia arriba, igual que la plantilla
         ec  = 0
 
     with get_db() as db:
@@ -414,7 +428,7 @@ def save_reflexion():
 
     gam = None
     auto_checked = False
-    if texto:
+    if texto and key not in REFLECT_NO_AUTO:
         from modules.actividades.touch import marcar_touch
         gam = marcar_touch(key)
         auto_checked = gam is not None

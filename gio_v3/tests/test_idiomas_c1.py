@@ -40,15 +40,16 @@ def test_anclas_partidas_en_a_y_b_con_los_mismos_dias(test_db):
     assert en_a['label'].startswith('Inglés · Sesión A') and en_b['label'].startswith('Inglés · Sesión B')
     assert fr_a['label'].startswith('Francés · Sesión A') and fr_b['label'].startswith('Francés · Sesión B')
     for a, b in ((en_a, en_b), (fr_a, fr_b)):
-        assert (b['pts'], b['ec'], b['session'], b['type'], b['pillar']) == (a['pts'], a['ec'], a['session'], 'ancla', 'cosmo')
+        assert (b['session'], b['type'], b['pillar'], b['ec']) == (a['session'], 'ancla', 'cosmo', a['ec'])
+        assert b['pts'] == a['pts'] + 1          # ajuste v2: la sesión B vale 7 (absorbe conversación y writing)
 
 
 def test_repaso_opcionales_y_certificacion(test_db):
     rep, en = _def('ancla_repaso_idiomas'), _def('ancla_ingles')
     assert (rep['type'], rep['days_of_week'], rep['session'], rep['pts'], rep['ec']) == ('ancla', 'sat', 'afternoon', en['pts'], en['ec'])
-    assert (_def('anki_idiomas')['days_of_week'], _def('anki_idiomas')['pts']) == ('wed,sun', 1)
-    assert _def('lectura_idiomas')['type'] == 'touch' and _def('lectura_idiomas')['pts'] == 1
-    assert _def('podcast_idiomas')['label'].startswith('Escucha extensiva')
+    # ajuste v2: Anki diario; escucha y lectura separadas por idioma (las mixtas, fuera)
+    assert (_def('anki_idiomas')['days_of_week'], _def('anki_idiomas')['pts']) == (None, 2)
+    assert _def('lectura_idiomas')['active'] == 0 and _def('podcast_idiomas')['active'] == 0
     assert _def('test_cert')['active'] == 0
 
 
@@ -78,6 +79,8 @@ def test_checkpoints_solo_con_datos_del_usuario(test_db, monkeypatch):
         db.commit()
     database.init_db()
     fechas = _n()
+    # El plan v1 los creó; el ajuste v2 ya corrió antes (su registro sigue), así
+    # que en esta re-ejecución forzada quedan los 9 activos.
     assert fechas == ['2026-11-21', '2027-01-09', '2027-01-23', '2027-03-20', '2027-04-03',
                       '2027-05-29', '2027-06-26', '2027-07-24', '2027-09-18']
     from datetime import date
